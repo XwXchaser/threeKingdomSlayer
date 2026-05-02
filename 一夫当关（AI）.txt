@@ -1,0 +1,316 @@
+《一夫当关》技术设计文档（海量敌人波次版）
+适用于 Coder 类 AI 直接开发。
+核心玩法：5 列（站位） × 可变排数（波次填充），敌人向前补齐，玩家使用 6 种手势攻击，支持海量敌人在多波中持续涌出。
+
+1. 游戏整体循环（不变）
+<details> <summary>流程图</summary>
+
+
+
+
+
+
+
+
+
+</details>
+2. 战斗核心系统（规则保持不变）
+2.1 行列结构
+固定 5 列（站位数），每列就是一个排队列。
+
+每个敌人占用 1~5 列（例如巨型敌人占 3 列，同一排内它独占多列，其他敌人不能站在被占用的列上）。
+
+排数：动态变化。初始为 0 排，随着波次生成，向后方不断增加新的排。
+
+补齐规则：同原设计，当某一列前排死亡空出位置，后排同列敌人按 前进速度 向前移动。
+
+2.2 敌人属性（与之前相同，略）
+详见原文档 2.3。
+
+2.3 玩家攻击系统（6 种，不变）
+3. 波次生成系统（新增）
+3.1 关卡配置（波次结构）
+每个关卡包含多个 波次 (Wave)。
+波次数据结构：
+
+json
+{
+  "waveId": 1,
+  "enemyRows": [
+    { "rowEnemies": [101, 102, 103, 102, 101] },  // 一行的5列敌人ID
+    { "rowEnemies": [104, 101, 101, 101, 104] },
+    ...
+  ],
+  "nextWaveDelay": 3.0,    // 本波敌人全部死亡后，延迟3秒生成下一波
+  "isBossWave": false
+}
+每一波会一次性生成若干 排 的敌人（整个行军队列追加到当前所有排的后面）。
+
+所有波次的敌人总数量可达到 数十万（配置表里累加每波的行数 × 5）。
+
+玩家在战斗中会看到敌人源源不断从远处涌来（实际上是逐波追加后排）。
+
+3.2 波次生成逻辑
+初始波：关卡开始立即生成第一波（比如 5 排）。
+
+生成新波的条件（二选一，策划可配置）：
+
+清空条件：当前所有敌人（所有排）全部死亡后，等待 nextWaveDelay 秒，生成下一波。
+
+进度条件：当所有敌人中 最前排的排索引 大于某个阈值（例如玩家已经推进到第 10 排之后），就在后方追加下一波（不等完全清空），实现“无限增援”效果。
+
+推荐使用 清空条件，给玩家休息补给时间，更符合“歇息补给”需求。
+
+生成方式：在现有敌人列表的最后面 追加新的排，排号递增。
+
+注意：正在移动的敌人不受影响，新排从屏幕外（或指定出生点）逐步进入。
+
+当最后一波敌人也被清空后，关卡胜利。
+
+3.3 海量总数实现
+总敌人数 = Sum(每波的行数 × 5)
+
+如果每波 10 行（50 个敌人），1000 波即可达到 5 万敌人。
+
+同时在场敌人数 = 当前所有未死亡的敌人（最多为当前已生成波次的总敌人数，但玩家会持续击杀，所以峰值一般在波次生成瞬间。由于波次生成有间隔，峰值可控）。
+
+4. 性能优化方案（关键更新）
+原方案中的“海量敌人涌出效果”适合 几千上万个独立移动单位，但本游戏敌人是 整齐的行列，每列独立移动。优化重点：
+
+4.1 渲染优化：GPU Instancing + 行列合并
+每个敌人是一个 GameObject 会导致性能爆炸（如果同时存在 1000+ 个）。
+
+改进方案：
+
+按列合并 Mesh：将同一列的所有敌人合并为一个 动态 Mesh，每个敌人只是 Mesh 中的一个四边形（Quad），共用材质和纹理图集。
+
+每列拥有独立的 Mesh，敌人的前进/死亡/攻击动画改为 UV 偏移 + 缩放/位移。
+
+这种方式可以支持 单列数千个敌人 而只有 5 个 Draw Call（每列一个）。
+
+攻击判定仍需要逻辑层面的个体数据（生命值、状态等），但渲染时合并。
+
+简化方法（如果 Unity 实现难度较高）：
+
+仍然使用独立 GameObject，但启用 GPU Instancing + 对象池，同时限制同屏敌人上限（通过波次控制，不超过 500 个）。
+
+5 列 × 100 排 = 500 个敌人，中等设备可流畅运行（使用 URP + GPU Instancing + 简单 AI）。
+
+对于 5~6 位总数，通过波次循环更替，不同时存在所有敌人即可。
+
+推荐采用 “独立 GameObject + GPU Instancing + 同屏 ≤ 500”，开发速度快，且满足 5~6 万总数（波次累加）。
+
+4.2 逻辑更新优化
+批量更新队列移动：每列单独维护一个 List<EnemyLogic>，移动逻辑使用 for 循环，避免每帧扫描所有活着的敌人。
+
+攻击冷却检测：只有最前排（索引 0）进入玩家攻击范围的敌人才需要攻击，其他后排敌人可进入低频率更新（例如每 0.2 秒检测一次攻击距离变化）。
+
+使用 Job System（可选）：将移动、补齐逻辑放入 IJobParallelFor，每个敌人一个 job。
+
+4.3 内存与对象池
+即使总敌人数量巨大，同时存在的 Enemy 对象数量 = 当前已生成但未死亡的敌人数。
+
+采用 分块对象池：提前创建一批 Enemy 实例（比如 1000 个），当需要生成新敌人时，从池中激活并重新初始化；死亡时回池。
+
+如果波次总数量超过池容量，可动态扩增池大小（但受同屏上限控制）。
+
+4.4 与原始《海量敌人涌出效果》方案结合
+原方案中提到的技术可以借用：
+
+Billboard 脚本：使每个敌人的 Sprite 始终面向摄像机，保证 2D 效果。
+
+材质开启 GPU Instancing：如果使用独立 GameObject，必须开启。
+
+Depth Write：确保正确遮挡（后排敌人被前排遮挡）。
+
+对象池：通用。
+
+简化渲染：使用 Quad 面片 + 序列帧动画，而非 3D 模型。
+
+不同点：
+
+不需要伪 3D 的大量随机移动，而是规则的行列前进。
+
+5. 波次配置与数据
+5.1 关卡配置文件（含波次）
+csharp
+[System.Serializable]
+public class WaveConfig
+{
+    public int waveId;
+    public float nextWaveDelay;       // 此波清完后延迟多久出下一波
+    public bool isBossWave;
+    public List<RowConfig> rows;      // 此波包含的所有排
+}
+
+[System.Serializable]
+public class RowConfig
+{
+    public int[] enemyIds;            // 长度必须为5
+}
+
+public class StageConfig : ScriptableObject
+{
+    public int stageId;
+    public string stageName;
+    public List<WaveConfig> waves;    // 按照顺序执行
+    public List<int> killStreakThresholds; // 连杀奖励触发阈值
+    public RewardConfig clearReward;
+}
+5.2 敌人总数计算示例
+一个关卡配置 100 波，每波 10 排，每排 5 个敌人 → 总敌人 = 100×10×5 = 5000。
+
+要达到 10 万敌人：200 波 × 100 排/波 × 5 = 100,000。
+即每波 100 排，同时在场最多 100 排 × 5 = 500 个敌人，性能安全。
+
+5.3 波次生成时机（伪代码）
+csharp
+public class WaveSpawner : MonoBehaviour
+{
+    private int currentWaveIndex = 0;
+    private List<WaveConfig> waves;
+    private bool isWaveCleared = true;
+    private float waveClearTimer = 0f;
+
+    void Update()
+    {
+        if (currentWaveIndex >= waves.Count) 
+        {
+            // 关卡胜利
+            return;
+        }
+
+        if (isWaveCleared)
+        {
+            waveClearTimer += Time.deltaTime;
+            if (waveClearTimer >= waves[currentWaveIndex].nextWaveDelay)
+            {
+                SpawnWave(waves[currentWaveIndex]);
+                isWaveCleared = false;
+                waveClearTimer = 0f;
+            }
+        }
+        else
+        {
+            // 检查当前所有敌人是否全部死亡
+            if (EnemyManager.GetAllAliveEnemies().Count == 0)
+            {
+                isWaveCleared = true;
+                currentWaveIndex++;
+            }
+        }
+    }
+
+    void SpawnWave(WaveConfig wave)
+    {
+        foreach (var row in wave.rows)
+        {
+            // 在每列的最后面追加新的敌人（根据enemyIds）
+            for (int col = 0; col < 5; col++)
+            {
+                int enemyId = row.enemyIds[col];
+                Enemy newEnemy = EnemyPool.Get(enemyId);
+                newEnemy.SetPosition(col, currentMaxRowIndex++);
+                columnLists[col].Add(newEnemy);
+            }
+        }
+    }
+}
+6. 技术实现要点（面向 Coder）
+6.1 行列数据结构（性能优化版）
+csharp
+public class Column
+{
+    public int columnIndex;  // 0~4
+    public List<Enemy> enemies;  // 从 index 0 为最前排（靠近玩家）
+    // ... 
+}
+当敌人死亡时，从 enemies 列表中移除，后续元素自动前移（逻辑上已前进）。
+
+视觉上，每个敌人需要知道自己当前的目标位置（根据排索引计算世界坐标），使用 MoveTowards 平滑移动。
+
+6.2 攻击范围判定
+由于玩家攻击是 点击某一列 或 划动全列，判定相对简单：
+
+戳击：获取点击的列索引，以及攻击范围（纵深若干排），对该列的前 rangeRow 个敌人造成伤害。
+
+斩击/横扫：对所有列的前 rangeRow 个敌人造成伤害。
+
+挑飞：根据手势区域，判定影响哪些列（例如中间三列）的前排敌人。
+
+6.3 GPU Instancing 配置（独立 GameObject 方案）
+为敌人的 Sprite 材质勾选 Enable GPU Instancing。
+
+确保所有敌人使用 同一个材质实例（但不能用 MaterialPropertyBlock 破坏合批，除非显式支持）。
+
+动画方案：使用 Sprite Sheet + Animator，但 Animator 会每帧更新每个敌人的材质属性，破坏 Instancing。
+
+替代：使用自定义 Shader，通过 _Time 参数驱动顶点 UV 偏移来模拟简单动画（行走、待机）。
+
+更简单的做法：接受动画破坏合批，因为同时存在 500 个敌人时，Draw Call 也不会太高（每个材质变体可能几十个），可以用 SpriteRenderer 的图集动画。优先保证开发速度。
+
+6.4 对象池
+csharp
+public class EnemyPool : MonoBehaviour
+{
+    private Dictionary<int, Queue<Enemy>> pool = new Dictionary<int, Queue<Enemy>>();
+
+    public Enemy Get(int enemyId)
+    {
+        if (pool.ContainsKey(enemyId) && pool[enemyId].Count > 0)
+        {
+            var e = pool[enemyId].Dequeue();
+            e.gameObject.SetActive(true);
+            e.ResetState();
+            return e;
+        }
+        // 创建新实例
+        var prefab = Resources.Load<GameObject>($"Enemies/Enemy_{enemyId}");
+        var newEnemy = Instantiate(prefab).GetComponent<Enemy>();
+        return newEnemy;
+    }
+
+    public void Return(Enemy e)
+    {
+        e.gameObject.SetActive(false);
+        if (!pool.ContainsKey(e.id)) pool[e.id] = new Queue<Enemy>();
+        pool[e.id].Enqueue(e);
+    }
+}
+6.5 前进移动实现
+每个敌人拥有 targetWorldPos（根据所在排索引计算），在 Update 中移动。当逻辑上的排索引变化时（因为前排死亡导致它前进），重新计算目标位置，并可能瞬间跳跃或平滑移动。
+
+为避免卡顿，可使用 排队移动：只有最前排的敌人在移动时，才触发其后的敌人依次移动（类似于火车）。实现较复杂，但对于行列规则简单游戏，可以直接每帧将所有敌人位置 Lerp 到其逻辑位置。
+
+7. 美术资源需求（补充）
+敌人数量多，但复用少数几种类型（骷髅、兽人、Boss 等）。每种敌人需要：
+
+行走循环动画（可选，可以用静态+位移模拟）
+
+攻击动画
+
+受击/死亡动画
+
+由于敌人会大量出现，动画帧数不宜过多（建议 4~6 帧循环）。
+
+背景可使用无限滚动的多层视差，增强纵深感。
+
+8. 性能测试指标
+平台	同屏敌人上限	建议波次设计
+PC/主机	1000	每波 ≤ 200 排
+高端移动	500	每波 ≤ 100 排
+低端移动	200	每波 ≤ 40 排
+可通过设置 动态质量等级 来限制最大同时排数。
+
+9. 总结
+玩法核心：行列补齐 + 6 种手势攻击 + BOSS 红光招架。
+
+海量敌人实现：通过 波次系统 累加总数，同时在场敌人受性能限制（建议 200~500 个）。
+
+性能方案：独立 GameObject + GPU Instancing + 对象池 + 优化更新频率。
+
+配置要求：支持策划在 Excel 中配置每个波次的每一排敌人 ID。
+
+与原方案结合：可复用 BillBoard、材质设置、对象池等技巧，但无需伪 3D 随机移动。
+
+此方案平衡了 玩法规则 与 海量敌人涌出 的体验，且开发复杂度可控。

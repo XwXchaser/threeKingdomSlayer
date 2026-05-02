@@ -1,0 +1,25 @@
+# Unity generated folders
+threeKingdomSlayer/Library/
+threeKingdomSlayer/Temp/
+threeKingdomSlayer/Logs/
+threeKingdomSlayer/Build/
+threeKingdomSlayer/Builds/
+threeKingdomSlayer/UserSettings/
+threeKingdomSlayer/obj/
+threeKingdomSlayer/*.csproj
+threeKingdomSlayer/*.sln
+threeKingdomSlayer/*.user
+threeKingdomSlayer/*.userprefs
+threeKingdomSlayer/UnityPackageManager.meta
+
+# IDE
+.idea/
+*.sln
+*.csproj
+*.user
+*.suo
+.vs/
+
+# OS
+Thumbs.db
+.DS_Store
