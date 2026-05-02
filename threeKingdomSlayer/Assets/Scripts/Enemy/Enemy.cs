@@ -270,9 +270,8 @@ public class Enemy : MonoBehaviour
     {
         if (state == EnemyState.Dead) return;
         state = EnemyState.Dead;
+        // 触发死亡事件，EnemyManager 通过 RegisterEnemy 订阅了此事件
         OnDeath?.Invoke(this);
-        // 由EnemyPool回收
-        EnemyManager.Instance?.OnEnemyDied(this);
     }
 
     #endregion
