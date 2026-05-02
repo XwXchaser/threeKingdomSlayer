@@ -241,3 +241,78 @@
 6. **手势识别**：使用Unity Input System的触摸/鼠标事件，结合位置和持续时间判断手势类型
 7. **透明度渐变**：玩家只能看到最近5排，提供 `float[] rowAlphaFactors` 字段供策划配置每排透明度系数
 8. **透明度实现**：使用 `MaterialPropertyBlock` 设置材质透明度，避免破坏合批
+
+---
+
+## 项目任务清单 (Todo List)
+
+### 已完成 ✅
+
+- [x] 阶段一：项目初始化与环境搭建
+- [x] 阶段二：数据层 ScriptableObject 配置系统
+  - [x] EnemyConfig.cs — 敌人配置
+  - [x] HeroConfig.cs — 武将配置
+  - [x] StageConfig.cs — 关卡配置（含阵型参数）
+  - [x] WaveConfig / RowConfig — 波次/排配置
+  - [x] RowFormation.cs — 阵型计算器 + 预设表
+- [x] 阶段三：核心战斗系统脚本
+  - [x] Column.cs — 列数据结构
+  - [x] ColumnManager.cs — 5列管理器
+  - [x] Enemy.cs — 敌人实体（状态机/伤害/阵型位置/透明度）
+  - [x] EnemyPool.cs — 对象池
+  - [x] EnemyManager.cs — 敌人管理器（单例）
+  - [x] StageController.cs — 关卡流程控制器（单例）
+- [x] 阶段四：玩家攻击系统
+  - [x] PlayerState.cs — 玩家状态（单例）
+  - [x] AttackSystem.cs — 6种攻击实现
+  - [x] InputManager.cs — 手势输入检测
+- [x] 阶段五：波次生成系统
+  - [x] WaveSpawner.cs — 协程驱动波次生成
+- [x] 阶段六：UI系统
+  - [x] BattleHUD.cs — 战斗HUD
+  - [x] MainMenuUI.cs — 主菜单
+- [x] BUG修复（3个）
+  - [x] EnemyPool — enemyId在ResetEnemy后丢失
+  - [x] EnemyManager — PlayerState伤害引用未连接
+  - [x] Enemy — StageController null引用添加警告日志
+- [x] 阵型系统（梯形/扇形内收）
+- [x] Git仓库建立并推送至 GitHub
+- [x] 13个 .meta 文件已添加并推送
+- [x] 编译错误修复：Enemy.Die() 访问权限
+
+### 待办（需手动操作） 🔴
+
+**高优先级：**
+- [ ] 创建 `MainMenu` 和 `Battle` 场景
+- [ ] 在 `EditorBuildSettings` 中注册场景
+- [ ] 创建 ScriptableObject 实例：
+  - [ ] 骷髅兵 (EnemyConfig)
+  - [ ] 赵云 (HeroConfig)
+  - [ ] 第1关 (StageConfig，含3~5波敌人配置)
+- [ ] 创建敌人预制体（带 Enemy 组件和 Renderer）
+- [ ] 注册敌人预制体到 EnemyPool
+- [ ] 在 Battle 场景中挂载所有管理器组件：
+  - [ ] StageController
+  - [ ] EnemyManager
+  - [ ] EnemyPool
+  - [ ] ColumnManager
+  - [ ] PlayerState
+  - [ ] AttackSystem
+  - [ ] InputManager
+  - [ ] WaveSpawner
+  - [ ] BattleHUD
+- [ ] 在 MainMenu 场景中挂载 MainMenuUI
+- [ ] 设置材质为透明渲染模式（Fade/Transparent）
+
+**中优先级：**
+- [ ] 阶段七：美术资源占位（几何体/颜色区分）
+- [ ] 创建 RowFormationPreset 实例（可选）
+
+**低优先级：**
+- [ ] 阶段八：整合与测试
+  - [ ] 场景切换串联
+  - [ ] 完整战斗流程测试
+  - [ ] 6种攻击手势测试
+  - [ ] 敌人前进补齐逻辑测试
+  - [ ] 玩家死亡和复活测试
+  - [ ] 同屏200~500敌人性能测试
