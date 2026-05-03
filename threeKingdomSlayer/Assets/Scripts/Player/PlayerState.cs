@@ -1,0 +1,292 @@
+using UnityEngine;
+
+/// <summary>
+/// 关卡状态枚举
+/// </summary>
+public enum StageState
+{
+    None,
+    Starting,
+    InProgress,
+    Victory,
+    Defeat
+}
+
+/// <summary>
+/// 玩家状态 - 单例
+/// 管理玩家属性（生命值、复活次数、6种攻击属性等）
+/// 处理玩家受伤和复活逻辑
+/// </summary>
+public class PlayerState : MonoBehaviour
+{
+    public static PlayerState Instance { get; private set; }
+
+    [Header("武将配置")]
+    public HeroConfig heroConfig;
+
+    [Header("运行时状态")]
+    public float currentHealth;
+    public int currentRevives;
+    public int killCount;
+    public int coinCount;
+    public int currentWave;
+    public StageState stageState = StageState.None;
+
+    // 冷却计时器
+    private float stabCooldownTimer;
+    private float slashCooldownTimer;
+    private float pierceCooldownTimer;
+    private float sweepCooldownTimer;
+    private float launchCooldownTimer;
+    private float parryCooldownTimer;
+
+    // 事件
+    public System.Action<float, float> OnHealthChanged; // current, max
+    public System.Action<int> OnReviveCountChanged;
+    public System.Action<int> OnKillCountChanged;
+    public System.Action<int> OnCoinChanged;
+    public System.Action<int> OnWaveChanged;
+    public System.Action<StageState> OnStageStateChanged;
+    public System.Action OnPlayerDied;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    private void Start()
+    {
+        if (heroConfig == null)
+        {
+            Debug.LogError("[PlayerState] heroConfig 未赋值！将使用默认值运行，部分功能可能受限");
+            // 不 return，允许游戏在无配置时继续运行（使用默认值）
+        }
+        ResetPlayer();
+    }
+
+    private void Update()
+    {
+        // 更新冷却计时器
+        if (stabCooldownTimer > 0) stabCooldownTimer -= Time.deltaTime;
+        if (slashCooldownTimer > 0) slashCooldownTimer -= Time.deltaTime;
+        if (pierceCooldownTimer > 0) pierceCooldownTimer -= Time.deltaTime;
+        if (sweepCooldownTimer > 0) sweepCooldownTimer -= Time.deltaTime;
+        if (launchCooldownTimer > 0) launchCooldownTimer -= Time.deltaTime;
+        if (parryCooldownTimer > 0) parryCooldownTimer -= Time.deltaTime;
+    }
+
+    /// <summary>
+    /// 重置玩家状态（关卡开始时调用）
+    /// heroConfig 为 null 时使用默认值，确保不报错
+    /// </summary>
+    public void ResetPlayer()
+    {
+        // heroConfig 为 null 时使用安全默认值
+        currentHealth = heroConfig != null ? heroConfig.maxHealth : 100f;
+        currentRevives = heroConfig != null ? heroConfig.reviveCount : 0;
+        killCount = 0;
+        coinCount = 0;
+        currentWave = 0;
+        stageState = StageState.Starting;
+
+        stabCooldownTimer = 0f;
+        slashCooldownTimer = 0f;
+        pierceCooldownTimer = 0f;
+        sweepCooldownTimer = 0f;
+        launchCooldownTimer = 0f;
+        parryCooldownTimer = 0f;
+
+        float maxHp = heroConfig != null ? heroConfig.maxHealth : 100f;
+        OnHealthChanged?.Invoke(currentHealth, maxHp);
+        OnReviveCountChanged?.Invoke(currentRevives);
+        OnKillCountChanged?.Invoke(0);
+        OnCoinChanged?.Invoke(0);
+        OnWaveChanged?.Invoke(0);
+    }
+
+    #region 伤害系统
+
+    /// <summary>
+    /// 玩家受到伤害
+    /// </summary>
+    public void TakeDamage(float damage)
+    {
+        if (stageState == StageState.Defeat || stageState == StageState.Victory) return;
+
+        currentHealth -= damage;
+        OnHealthChanged?.Invoke(currentHealth, heroConfig != null ? heroConfig.maxHealth : 500f);
+
+        Debug.Log($"[PlayerState] 受到伤害: {damage}, 剩余生命: {currentHealth}");
+
+        if (currentHealth <= 0f)
+        {
+            HandleDeath();
+        }
+    }
+
+    /// <summary>
+    /// 处理玩家死亡
+    /// </summary>
+    private void HandleDeath()
+    {
+        if (currentRevives > 0)
+        {
+            // 复活
+            currentRevives--;
+            currentHealth = heroConfig.maxHealth * heroConfig.reviveHealthPercent;
+            OnHealthChanged?.Invoke(currentHealth, heroConfig.maxHealth);
+            OnReviveCountChanged?.Invoke(currentRevives);
+            Debug.Log($"[PlayerState] 复活！剩余复活次数: {currentRevives}, 生命值: {currentHealth}");
+        }
+        else
+        {
+            // 真正死亡
+            stageState = StageState.Defeat;
+            OnStageStateChanged?.Invoke(StageState.Defeat);
+            OnPlayerDied?.Invoke();
+            Debug.Log("[PlayerState] 玩家阵亡，游戏结束");
+        }
+    }
+
+    #endregion
+
+    #region 攻击冷却
+
+    /// <summary>
+    /// 检查攻击是否可用
+    /// </summary>
+    public bool IsAttackReady(AttackType attackType)
+    {
+        return GetCooldownTimer(attackType) <= 0f;
+    }
+
+    /// <summary>
+    /// 触发攻击冷却
+    /// </summary>
+    public void StartCooldown(AttackType attackType)
+    {
+        float cooldown = GetCooldownDuration(attackType);
+        SetCooldownTimer(attackType, cooldown);
+    }
+
+    /// <summary>
+    /// 获取攻击冷却进度（0~1, 0=可用）
+    /// </summary>
+    public float GetCooldownProgress(AttackType attackType)
+    {
+        float timer = GetCooldownTimer(attackType);
+        float duration = GetCooldownDuration(attackType);
+        if (duration <= 0f) return 0f;
+        return Mathf.Clamp01(timer / duration);
+    }
+
+    private float GetCooldownTimer(AttackType type)
+    {
+        return type switch
+        {
+            AttackType.Stab => stabCooldownTimer,
+            AttackType.Slash => slashCooldownTimer,
+            AttackType.Pierce => pierceCooldownTimer,
+            AttackType.Sweep => sweepCooldownTimer,
+            AttackType.Launch => launchCooldownTimer,
+            AttackType.Parry => parryCooldownTimer,
+            _ => 0f
+        };
+    }
+
+    private void SetCooldownTimer(AttackType type, float value)
+    {
+        switch (type)
+        {
+            case AttackType.Stab: stabCooldownTimer = value; break;
+            case AttackType.Slash: slashCooldownTimer = value; break;
+            case AttackType.Pierce: pierceCooldownTimer = value; break;
+            case AttackType.Sweep: sweepCooldownTimer = value; break;
+            case AttackType.Launch: launchCooldownTimer = value; break;
+            case AttackType.Parry: parryCooldownTimer = value; break;
+        }
+    }
+
+    private float GetCooldownDuration(AttackType type)
+    {
+        if (heroConfig == null) return 1f;
+        return type switch
+        {
+            AttackType.Stab => heroConfig.stabCooldown,
+            AttackType.Slash => heroConfig.slashCooldown,
+            AttackType.Pierce => heroConfig.pierceCooldown,
+            AttackType.Sweep => heroConfig.sweepCooldown,
+            AttackType.Launch => heroConfig.launchCooldown,
+            AttackType.Parry => 0.5f, // 招架冷却固定0.5秒
+            _ => 1f
+        };
+    }
+
+    #endregion
+
+    #region 统计
+
+    /// <summary>
+    /// 增加击杀数
+    /// </summary>
+    public void AddKill()
+    {
+        killCount++;
+        OnKillCountChanged?.Invoke(killCount);
+    }
+
+    /// <summary>
+    /// 增加铜钱
+    /// </summary>
+    public void AddCoins(int amount)
+    {
+        coinCount += amount;
+        OnCoinChanged?.Invoke(coinCount);
+    }
+
+    /// <summary>
+    /// 设置当前波次
+    /// </summary>
+    public void SetCurrentWave(int wave)
+    {
+        currentWave = wave;
+        OnWaveChanged?.Invoke(wave);
+    }
+
+    /// <summary>
+    /// 设置关卡状态
+    /// </summary>
+    public void SetStageState(StageState state)
+    {
+        stageState = state;
+        OnStageStateChanged?.Invoke(state);
+    }
+
+    #endregion
+}
+
+/// <summary>
+/// 攻击类型枚举
+/// </summary>
+public enum AttackType
+{
+    Stab,   // 戳击
+    Slash,  // 斩击
+    Pierce, // 穿刺
+    Sweep,  // 横扫
+    Launch, // 挑飞
+    Parry   // 招架
+}
