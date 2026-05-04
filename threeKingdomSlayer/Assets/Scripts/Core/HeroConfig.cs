@@ -40,6 +40,7 @@ public class HeroConfig : ScriptableObject
     public float launchDamage = 25f;
     public int launchRangeRows = 2;     // 影响多少排
     public float launchCooldown = 1.0f;
+    public float launchDuration = 2f;   // 击飞持续时间（秒）
     public float launchPoiseDamage = 30f; // 挑飞架势伤害
     
     [Header("招架属性")]

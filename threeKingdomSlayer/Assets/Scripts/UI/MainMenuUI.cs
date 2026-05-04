@@ -21,16 +21,25 @@ public class MainMenuUI : MonoBehaviour
         {
             titleText.text = "一夫当关";
         }
+        else
+        {
+            Debug.LogWarning("[MainMenuUI] titleText 未赋值，标题将不显示");
+        }
 
         if (startButton != null)
         {
             startButton.onClick.AddListener(OnStartGame);
+        }
+        else
+        {
+            Debug.LogWarning("[MainMenuUI] startButton 未赋值，无法开始游戏");
         }
 
         if (quitButton != null)
         {
             quitButton.onClick.AddListener(OnQuitGame);
         }
+        // quitButton 可选，不强制
     }
 
     /// <summary>

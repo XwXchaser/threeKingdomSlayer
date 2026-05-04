@@ -77,9 +77,14 @@ public static class RowFormation
 
     /// <summary>
     /// 公式计算X偏移（方案B）
-    /// 公式：currentSpread = Lerp(maxSpread, minSpread, t)
+    /// 公式：currentSpread = Lerp(minSpread, maxSpread, t)
     ///       其中 t = Pow(rowIndex / maxRow, powerCurve)
     ///       列偏移 = (columnIndex - 2) * (currentSpread * 2 / 4)
+    ///
+    /// BUG FIX: 交换了 maxSpread 和 minSpread 的插值顺序。
+    /// 之前是 Lerp(maxSpread, minSpread, t)，导致前排宽、后排窄（向前收敛）。
+    /// 现在改为 Lerp(minSpread, maxSpread, t)，实现前排窄、后排宽（向后收敛）。
+    /// 这样更符合视觉透视效果：远处的敌人看起来更宽，近处的更窄。
     /// </summary>
     private static float CalculateOffsetByFormula(
         int rowIndex,
@@ -95,8 +100,10 @@ public static class RowFormation
         // 曲线插值
         float t = Mathf.Pow(normalizedRow, powerCurve);
 
-        // 当前排的半宽
-        float currentSpread = Mathf.Lerp(maxSpread, minSpread, t);
+        // BUG FIX: 交换插值顺序，实现向后收敛（前排窄、后排宽）
+        // 之前：Lerp(maxSpread, minSpread, t) → 前排宽、后排窄（向前收敛）
+        // 现在：Lerp(minSpread, maxSpread, t) → 前排窄、后排宽（向后收敛）
+        float currentSpread = Mathf.Lerp(minSpread, maxSpread, t);
 
         // 列索引0~4映射到 -currentSpread ~ +currentSpread
         // 列0在最左，列2在中心，列4在最右

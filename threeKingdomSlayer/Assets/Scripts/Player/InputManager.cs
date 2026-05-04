@@ -54,10 +54,17 @@ public class InputManager : MonoBehaviour
 
     private void Update()
     {
-        // 鼠标输入（PC调试用）
-        HandleMouseInput();
-        // 触摸输入（移动端）
-        HandleTouchInput();
+        // BUG FIX: 鼠标和触摸输入互斥
+        // 如果有触摸输入，则跳过鼠标输入（避免在触摸屏设备上双重触发）
+        if (Input.touchCount > 0)
+        {
+            HandleTouchInput();
+        }
+        else
+        {
+            // 鼠标输入（PC调试用）
+            HandleMouseInput();
+        }
     }
 
     #region 鼠标输入
@@ -228,6 +235,11 @@ public class InputManager : MonoBehaviour
 
     /// <summary>
     /// 处理滑动手势
+    /// 设计文档规则：
+    /// - 水平滑动（左右）：斩击（任意区域）
+    /// - 从屏幕一侧（Left/Right）水平滑向另一侧：横扫
+    /// - 中间区域垂直滑动（上下）：挑飞
+    /// 优先级：横扫 > 挑飞 > 斩击
     /// </summary>
     private void ProcessSwipeGesture(Vector2 direction, Vector2 releasePos)
     {
@@ -243,31 +255,35 @@ public class InputManager : MonoBehaviour
 
         // 判断屏幕区域
         ScreenZone zone = GetScreenZone(releasePos);
+        ScreenZone startZone = GetScreenZone(touchStartPos);
 
-        if (isHorizontal)
+        // 优先级1：从屏幕一侧水平滑向另一侧 → 横扫
+        if (isHorizontal && startZone != ScreenZone.Middle && zone != ScreenZone.Middle && startZone != zone)
         {
-            // 水平滑动 → 斩击（任意区域）
-            bool executed = attackSystem?.TryExecuteAttack(AttackType.Slash) ?? false;
-            if (executed) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
-        }
-        else if (isVertical && zone == ScreenZone.Middle)
-        {
-            // 中间区域向上滑动 → 挑飞
-            bool executed = attackSystem?.TryExecuteAttack(AttackType.Launch) ?? false;
-            if (executed) OnAttackExecuted?.Invoke(AttackType.Launch, -1);
-        }
-        else if (isHorizontal && (zone == ScreenZone.Left || zone == ScreenZone.Right))
-        {
-            // 从一侧滑向另一侧 → 横扫
             bool executed = attackSystem?.TryExecuteAttack(AttackType.Sweep) ?? false;
             if (executed) OnAttackExecuted?.Invoke(AttackType.Sweep, -1);
+            return;
         }
-        else
+
+        // 优先级2：中间区域垂直滑动 → 挑飞
+        if (isVertical && zone == ScreenZone.Middle)
         {
-            // 默认作为斩击处理
+            bool executed = attackSystem?.TryExecuteAttack(AttackType.Launch) ?? false;
+            if (executed) OnAttackExecuted?.Invoke(AttackType.Launch, -1);
+            return;
+        }
+
+        // 优先级3：水平滑动 → 斩击（兜底）
+        if (isHorizontal)
+        {
             bool executed = attackSystem?.TryExecuteAttack(AttackType.Slash) ?? false;
             if (executed) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
+            return;
         }
+
+        // 其他情况也作为斩击处理
+        bool defaultExecuted = attackSystem?.TryExecuteAttack(AttackType.Slash) ?? false;
+        if (defaultExecuted) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
     }
 
     #endregion
@@ -302,11 +318,72 @@ public class InputManager : MonoBehaviour
 
     /// <summary>
     /// 根据屏幕X坐标映射到列索引（0~4）
+    ///
+    /// BUG FIX: 使用基于实际敌人位置的最近列检测，而非简单的屏幕均匀分割。
+    /// 之前简单地将屏幕X坐标均匀映射到5列，但阵型是梯形/扇形的，
+    /// 列的实际X位置不是均匀分布的，导致点击A列却打到B列。
+    ///
+    /// 新方案：遍历所有列的最前排敌人，找到屏幕X坐标最近的敌人所在列。
+    /// 如果没有任何敌人，则回退到均匀分割方案。
     /// </summary>
     private int GetColumnFromScreenPosition(Vector2 screenPos)
     {
+        // BUG FIX: 使用基于实际敌人位置的最近列检测
+        // 将屏幕坐标转换为世界坐标（通过摄像机）
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            // 回退到均匀分割
+            return FallbackGetColumn(screenPos);
+        }
+
+        // 创建一条从摄像机穿过屏幕点的射线
+        Ray ray = mainCamera.ScreenPointToRay(screenPos);
+        
+        // 在Z=0平面上计算射线与平面的交点
+        // 假设敌人在Z=0平面附近（实际敌人Z坐标可能不同，但用于列判定足够了）
+        float planeZ = 0f;
+        float rayDistance = (planeZ - ray.origin.z) / ray.direction.z;
+        Vector3 worldPoint = ray.origin + ray.direction * rayDistance;
+
+        // 遍历所有列的最前排敌人，找到最近的列
+        int bestColumn = -1;
+        float bestDistance = float.MaxValue;
+
+        if (AttackSystem.Instance != null && AttackSystem.Instance.columnManager != null)
+        {
+            for (int col = 0; col < 5; col++)
+            {
+                Enemy frontEnemy = AttackSystem.Instance.columnManager.GetFrontEnemy(col);
+                if (frontEnemy != null && frontEnemy.state != EnemyState.Dead)
+                {
+                    // 使用敌人的世界X坐标与射线交点X坐标的距离
+                    float dist = Mathf.Abs(frontEnemy.transform.position.x - worldPoint.x);
+                    if (dist < bestDistance)
+                    {
+                        bestDistance = dist;
+                        bestColumn = col;
+                    }
+                }
+            }
+        }
+
+        // 如果找到了最近的敌人列，使用它
+        if (bestColumn >= 0)
+        {
+            return bestColumn;
+        }
+
+        // 回退：如果没有敌人，使用均匀分割
+        return FallbackGetColumn(screenPos);
+    }
+
+    /// <summary>
+    /// 回退方案：将屏幕X坐标均匀映射到5列
+    /// </summary>
+    private int FallbackGetColumn(Vector2 screenPos)
+    {
         float screenWidth = Screen.width;
-        // 将屏幕X坐标映射到5列
         float normalizedX = screenPos.x / screenWidth; // 0~1
         int column = Mathf.FloorToInt(normalizedX * 5f);
         return Mathf.Clamp(column, 0, 4);

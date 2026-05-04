@@ -41,6 +41,8 @@ public class AttackSystem : MonoBehaviour
 
     /// <summary>
     /// 尝试执行攻击
+    /// BUG FIX: 只有实际命中至少一个敌人时，才触发冷却和消耗
+    /// 如果攻击未命中任何敌人（例如点击了没有敌人的列），不消耗冷却
     /// </summary>
     public bool TryExecuteAttack(AttackType attackType, int targetColumn = -1)
     {
@@ -54,20 +56,28 @@ public class AttackSystem : MonoBehaviour
             return false;
         }
 
-        // 执行攻击
+        // 执行攻击，获取是否命中至少一个敌人
+        bool hitAny = false;
         switch (attackType)
         {
-            case AttackType.Stab:   ExecuteStab(targetColumn); break;
-            case AttackType.Slash:  ExecuteSlash(); break;
-            case AttackType.Pierce: ExecutePierce(targetColumn); break;
-            case AttackType.Sweep:  ExecuteSweep(); break;
-            case AttackType.Launch: ExecuteLaunch(); break;
-            case AttackType.Parry:  ExecuteParry(); break;
+            case AttackType.Stab:   hitAny = ExecuteStab(targetColumn); break;
+            case AttackType.Slash:  hitAny = ExecuteSlash(); break;
+            case AttackType.Pierce: hitAny = ExecutePierce(targetColumn); break;
+            case AttackType.Sweep:  hitAny = ExecuteSweep(); break;
+            case AttackType.Launch: hitAny = ExecuteLaunch(); break;
+            case AttackType.Parry:  hitAny = ExecuteParry(); break;
         }
 
-        // 触发冷却
-        playerState.StartCooldown(attackType);
-        return true;
+        // BUG FIX: 只有实际命中至少一个敌人时，才触发冷却
+        // 如果攻击未命中任何敌人（例如点击了没有敌人的列），不消耗冷却
+        if (hitAny)
+        {
+            playerState.StartCooldown(attackType);
+            return true;
+        }
+
+        Debug.Log($"[AttackSystem] {attackType} 未命中任何敌人，不消耗冷却");
+        return false;
     }
 
     #region 攻击类型实现
@@ -75,9 +85,10 @@ public class AttackSystem : MonoBehaviour
     /// <summary>
     /// 戳击：点击任意列 → 对该列前N排造成伤害
     /// </summary>
-    private void ExecuteStab(int columnIndex)
+    /// <returns>是否命中至少一个敌人</returns>
+    private bool ExecuteStab(int columnIndex)
     {
-        if (columnIndex < 0 || columnManager == null || playerState?.heroConfig == null) return;
+        if (columnIndex < 0 || columnManager == null || playerState?.heroConfig == null) return false;
 
         float damage = playerState.heroConfig.stabDamage;
         int rangeRows = playerState.heroConfig.stabRangeRows;
@@ -86,14 +97,16 @@ public class AttackSystem : MonoBehaviour
         ApplyDamageToTargets(targets, damage, DamageType.Stab);
 
         Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{damage} 目标数:{targets.Count}");
+        return targets.Count > 0;
     }
 
     /// <summary>
     /// 斩击：划动屏幕 → 对所有列前N排造成伤害
     /// </summary>
-    private void ExecuteSlash()
+    /// <returns>是否命中至少一个敌人</returns>
+    private bool ExecuteSlash()
     {
-        if (columnManager == null || playerState?.heroConfig == null) return;
+        if (columnManager == null || playerState?.heroConfig == null) return false;
 
         float damage = playerState.heroConfig.slashDamage;
         int rangeRows = playerState.heroConfig.slashRangeRows;
@@ -102,14 +115,16 @@ public class AttackSystem : MonoBehaviour
         ApplyDamageToTargets(targets, damage, DamageType.Slash);
 
         Debug.Log($"[AttackSystem] 斩击 伤害:{damage} 目标数:{targets.Count}");
+        return targets.Count > 0;
     }
 
     /// <summary>
     /// 穿刺：长按某列后松开 → 对该列造成高额伤害
     /// </summary>
-    private void ExecutePierce(int columnIndex)
+    /// <returns>是否命中至少一个敌人</returns>
+    private bool ExecutePierce(int columnIndex)
     {
-        if (columnIndex < 0 || columnManager == null || playerState?.heroConfig == null) return;
+        if (columnIndex < 0 || columnManager == null || playerState?.heroConfig == null) return false;
 
         float damage = playerState.heroConfig.pierceDamage;
         int rangeRows = playerState.heroConfig.pierceRangeRows;
@@ -118,14 +133,16 @@ public class AttackSystem : MonoBehaviour
         ApplyDamageToTargets(targets, damage, DamageType.Pierce);
 
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{damage} 目标数:{targets.Count}");
+        return targets.Count > 0;
     }
 
     /// <summary>
     /// 横扫：从屏幕一侧长按后划向另一侧松开 → 对所有列造成伤害
     /// </summary>
-    private void ExecuteSweep()
+    /// <returns>是否命中至少一个敌人</returns>
+    private bool ExecuteSweep()
     {
-        if (columnManager == null || playerState?.heroConfig == null) return;
+        if (columnManager == null || playerState?.heroConfig == null) return false;
 
         float damage = playerState.heroConfig.sweepDamage;
         int rangeRows = playerState.heroConfig.sweepRangeRows;
@@ -134,18 +151,21 @@ public class AttackSystem : MonoBehaviour
         ApplyDamageToTargets(targets, damage, DamageType.Sweep);
 
         Debug.Log($"[AttackSystem] 横扫 伤害:{damage} 目标数:{targets.Count}");
+        return targets.Count > 0;
     }
 
     /// <summary>
     /// 挑飞：在屏幕中间区域向上滑动 → 对所有列造成挑飞伤害+架势伤害
     /// </summary>
-    private void ExecuteLaunch()
+    /// <returns>是否命中至少一个敌人</returns>
+    private bool ExecuteLaunch()
     {
-        if (columnManager == null || playerState?.heroConfig == null) return;
+        if (columnManager == null || playerState?.heroConfig == null) return false;
 
         float damage = playerState.heroConfig.launchDamage;
         float poiseDamage = playerState.heroConfig.launchPoiseDamage;
         int rangeRows = playerState.heroConfig.launchRangeRows;
+        float duration = playerState.heroConfig.launchDuration;
 
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(rangeRows);
         foreach (var enemy in targets)
@@ -153,18 +173,20 @@ public class AttackSystem : MonoBehaviour
             if (enemy == null || enemy.state == EnemyState.Dead) continue;
             enemy.TakeDamage(damage, DamageType.Launch);
             enemy.TakePoiseDamage(poiseDamage);
-            enemy.Launch(playerState.heroConfig.launchCooldown); // 使用挑飞持续时间
+            enemy.Launch(duration);
         }
 
-        Debug.Log($"[AttackSystem] 挑飞 伤害:{damage} 架势伤害:{poiseDamage} 目标数:{targets.Count}");
+        Debug.Log($"[AttackSystem] 挑飞 伤害:{damage} 架势伤害:{poiseDamage} 击飞时间:{duration}s 目标数:{targets.Count}");
+        return targets.Count > 0;
     }
 
     /// <summary>
     /// 招架：在红光提示时反方向划动 → 招架BOSS攻击
     /// </summary>
-    private void ExecuteParry()
+    /// <returns>是否命中至少一个敌人</returns>
+    private bool ExecuteParry()
     {
-        if (playerState?.heroConfig == null) return;
+        if (playerState?.heroConfig == null) return false;
 
         float damage = playerState.heroConfig.parryDamage;
         float poiseDamage = playerState.heroConfig.parryPoiseDamage;
@@ -188,6 +210,7 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 招架 伤害:{damage} 架势伤害:{poiseDamage} 目标数:{frontEnemies.Count}");
+        return frontEnemies.Count > 0;
     }
 
     #endregion

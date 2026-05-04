@@ -5,6 +5,7 @@ using UnityEngine;
 /// <summary>
 /// 波次生成器
 /// 实现波次生成逻辑，清空条件，生成方式
+/// 每个关卡通常只有1个波次，波次之间播放剧情演出，玩家手动点击"继续"按钮触发下一波
 /// </summary>
 public class WaveSpawner : MonoBehaviour
 {
@@ -16,6 +17,10 @@ public class WaveSpawner : MonoBehaviour
     public ColumnManager columnManager;
     public EnemyManager enemyManager;
 
+    [Header("敌人配置（Inspector 拖拽赋值）")]
+    [Tooltip("将 EnemyConfig ScriptableObject 拖拽到这里，系统会自动按 enemyId 索引。如果不赋值，会尝试从 Resources/EnemyConfigs/ 加载")]
+    public List<EnemyConfig> enemyConfigs = new List<EnemyConfig>();
+
     [Header("生成参数")]
     public Transform spawnRoot; // 生成根节点（可选）
 
@@ -23,6 +28,10 @@ public class WaveSpawner : MonoBehaviour
     private int currentWaveIndex = -1;
     private bool isSpawning;
     private bool isWaveComplete;
+    private bool isAllWavesCompleted;
+
+    // 敌人配置缓存（避免每帧 Resources.LoadAll）
+    private static Dictionary<int, EnemyConfig> enemyConfigCache = new Dictionary<int, EnemyConfig>();
 
     // 事件
     public System.Action<int> OnWaveStarted;       // waveIndex
@@ -52,10 +61,24 @@ public class WaveSpawner : MonoBehaviour
         if (enemyPool == null) enemyPool = FindObjectOfType<EnemyPool>();
         if (columnManager == null) columnManager = FindObjectOfType<ColumnManager>();
         if (enemyManager == null) enemyManager = FindObjectOfType<EnemyManager>();
+
+        // 初始化敌人配置缓存：优先使用 Inspector 拖拽的配置
+        // 这样策划可以直接在 Inspector 中拖拽 EnemyConfig 赋值，无需放入 Resources 文件夹
+        if (enemyConfigs != null && enemyConfigs.Count > 0)
+        {
+            foreach (var cfg in enemyConfigs)
+            {
+                if (cfg != null && !enemyConfigCache.ContainsKey(cfg.enemyId))
+                {
+                    enemyConfigCache[cfg.enemyId] = cfg;
+                    Debug.Log($"[WaveSpawner] 从 Inspector 加载敌人配置: {cfg.enemyName} (enemyId={cfg.enemyId})");
+                }
+            }
+        }
     }
 
     /// <summary>
-    /// 开始生成波次
+    /// 开始生成波次（关卡开始时调用）
     /// </summary>
     public void StartWaveSpawning()
     {
@@ -66,21 +89,25 @@ public class WaveSpawner : MonoBehaviour
         }
 
         currentWaveIndex = -1;
-        StartCoroutine(SpawnNextWave());
+        isAllWavesCompleted = false;
+        SpawnNextWave();
     }
 
     /// <summary>
-    /// 生成下一波
+    /// 生成下一波（由 StageController 在玩家点击"继续"后调用）
     /// </summary>
-    private IEnumerator SpawnNextWave()
+    public void SpawnNextWave()
     {
+        if (isAllWavesCompleted) return;
+
         currentWaveIndex++;
 
         // 所有波次已完成
         if (currentWaveIndex >= stageConfig.waves.Count)
         {
+            isAllWavesCompleted = true;
             OnAllWavesCompleted?.Invoke();
-            yield break;
+            return;
         }
 
         WaveConfig wave = stageConfig.waves[currentWaveIndex];
@@ -101,8 +128,20 @@ public class WaveSpawner : MonoBehaviour
 
         isSpawning = false;
 
-        // 等待当前波次所有敌人死亡
-        yield return StartCoroutine(WaitForWaveClear());
+        // 启动协程等待当前波次所有敌人死亡
+        StartCoroutine(WaitForWaveClearAndNotify());
+    }
+
+    /// <summary>
+    /// 等待当前波次清空，然后触发完成事件
+    /// </summary>
+    private IEnumerator WaitForWaveClearAndNotify()
+    {
+        // 等待直到所有敌人都死亡
+        while (enemyManager != null && !enemyManager.IsAllEnemiesDead)
+        {
+            yield return new WaitForSeconds(0.5f);
+        }
 
         // 波次已清空
         isWaveComplete = true;
@@ -110,40 +149,75 @@ public class WaveSpawner : MonoBehaviour
 
         Debug.Log($"[WaveSpawner] 第 {currentWaveIndex + 1} 波已清空");
 
-        // 等待延迟后生成下一波
-        float delay = wave.nextWaveDelay > 0 ? wave.nextWaveDelay : 3f;
-        yield return new WaitForSeconds(delay);
-
-        // 生成下一波
-        StartCoroutine(SpawnNextWave());
+        // 注意：不自动生成下一波，等待 StageController 在玩家点击"继续"后调用 SpawnNextWave()
     }
 
     /// <summary>
-    /// 生成一排敌人（5列）
+    /// 生成一排敌人
+    /// 根据 enemyIds 长度决定该排有多少个敌人站位
+    /// 每个敌人根据其 occupySlots 占用对应数量的列
+    /// 该排所有敌人共享相同的排索引（rowIndex）
     /// </summary>
     private void SpawnRow(RowConfig row)
     {
-        if (row.enemyIds == null || row.enemyIds.Length != 5)
+        if (row.enemyIds == null || row.enemyIds.Length == 0)
         {
-            Debug.LogWarning("[WaveSpawner] RowConfig.enemyIds 长度不为5，跳过");
+            Debug.LogWarning("[WaveSpawner] RowConfig.enemyIds 为空，跳过");
             return;
         }
 
-        for (int col = 0; col < 5; col++)
+        // 计算该排所有敌人的总占位数，确定起始列偏移
+        int totalSlots = 0;
+        int[] slotCounts = new int[row.enemyIds.Length];
+        for (int i = 0; i < row.enemyIds.Length; i++)
         {
-            int enemyId = row.enemyIds[col];
-            if (enemyId <= 0) continue; // 0或负数表示该列无敌人
+            int enemyId = row.enemyIds[i];
+            if (enemyId <= 0)
+            {
+                slotCounts[i] = 0;
+                continue;
+            }
+            EnemyConfig config = GetEnemyConfig(enemyId);
+            int slots = (config != null) ? Mathf.Clamp(config.occupySlots, 1, 5) : 1;
+            slotCounts[i] = slots;
+            totalSlots += slots;
+        }
+
+        // 计算起始列偏移，使敌人居中排列
+        // 例如 totalSlots=5 时起始列=0，totalSlots=3 时起始列=1
+        int startColumn = (5 - totalSlots) / 2;
+        if (startColumn < 0) startColumn = 0;
+
+        // BUG FIX: 该排所有敌人共享相同的排索引
+        // 排索引 = 当前波次中已生成的总排数（即所有列中最大的敌人数量）
+        // 这样确保同一排的敌人在不同列中拥有相同的 rowIndex
+        int rowIndex = 0;
+        if (columnManager != null)
+        {
+            for (int c = 0; c < 5; c++)
+            {
+                int count = columnManager.GetColumnEnemyCount(c);
+                if (count > rowIndex)
+                    rowIndex = count;
+            }
+        }
+
+        int currentCol = startColumn;
+        for (int i = 0; i < row.enemyIds.Length; i++)
+        {
+            int enemyId = row.enemyIds[i];
+            if (enemyId <= 0) continue;
+
+            int slots = slotCounts[i];
 
             // 从对象池获取敌人
             Enemy enemy = enemyPool?.GetEnemy(enemyId);
             if (enemy == null)
             {
                 Debug.LogWarning($"[WaveSpawner] 无法获取敌人ID {enemyId}，跳过");
+                currentCol += slots;
                 continue;
             }
-
-            // 获取该列当前敌人数量作为排索引
-            int rowIndex = columnManager?.GetColumnEnemyCount(col) ?? 0;
 
             // 初始化敌人
             EnemyConfig config = GetEnemyConfig(enemyId);
@@ -151,42 +225,48 @@ public class WaveSpawner : MonoBehaviour
             {
                 Debug.LogWarning($"[WaveSpawner] 未找到敌人ID {enemyId} 的配置");
                 enemyPool.ReturnEnemy(enemy);
+                currentCol += slots;
                 continue;
             }
 
-            enemy.Initialize(config, col, rowIndex);
+            enemy.Initialize(config, currentCol, rowIndex);
 
             // 注册到管理器
             enemyManager?.RegisterEnemy(enemy);
+
+            currentCol += slots;
         }
     }
 
     /// <summary>
-    /// 等待当前波次所有敌人死亡
-    /// </summary>
-    private IEnumerator WaitForWaveClear()
-    {
-        // 等待直到所有敌人都死亡
-        while (enemyManager != null && !enemyManager.IsAllEnemiesDead)
-        {
-            yield return new WaitForSeconds(0.5f);
-        }
-    }
-
-    /// <summary>
-    /// 获取敌人配置（从Resources或引用）
-    /// 实际项目中应从配置管理器获取
+    /// 获取敌人配置（带缓存）
+    /// 首次加载后缓存到字典，避免重复 Resources.LoadAll
     /// </summary>
     private EnemyConfig GetEnemyConfig(int enemyId)
     {
-        // 简单实现：从Resources加载
-        // 实际项目中应使用配置管理器缓存
+        // 先从缓存查找
+        if (enemyConfigCache.TryGetValue(enemyId, out EnemyConfig cached))
+        {
+            return cached;
+        }
+
+        // 缓存未命中，从Resources加载并缓存
         EnemyConfig[] configs = Resources.LoadAll<EnemyConfig>("");
         foreach (var cfg in configs)
         {
-            if (cfg.enemyId == enemyId)
-                return cfg;
+            if (!enemyConfigCache.ContainsKey(cfg.enemyId))
+            {
+                enemyConfigCache[cfg.enemyId] = cfg;
+            }
         }
+
+        // 再次从缓存查找
+        if (enemyConfigCache.TryGetValue(enemyId, out EnemyConfig result))
+        {
+            return result;
+        }
+
+        Debug.LogError($"[WaveSpawner] 未找到敌人ID {enemyId} 的配置，请确认已创建对应的 EnemyConfig ScriptableObject 并放置在 Resources 文件夹中");
         return null;
     }
 
@@ -204,6 +284,11 @@ public class WaveSpawner : MonoBehaviour
     /// 当前波次是否已完成
     /// </summary>
     public bool IsWaveComplete => isWaveComplete;
+
+    /// <summary>
+    /// 是否所有波次已完成
+    /// </summary>
+    public bool IsAllWavesCompleted => isAllWavesCompleted;
 
     /// <summary>
     /// 获取总波次数

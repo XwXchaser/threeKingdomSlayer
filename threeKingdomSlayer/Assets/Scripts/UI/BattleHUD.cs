@@ -56,8 +56,11 @@ public class BattleHUD : MonoBehaviour
 
     private void Update()
     {
-        // 每帧更新冷却指示器
-        UpdateCooldownUI();
+        // 每帧更新冷却指示器（仅在 PlayerState 就绪时执行）
+        if (PlayerState.Instance != null && PlayerState.Instance.heroConfig != null)
+        {
+            UpdateCooldownUI();
+        }
     }
 
     private void OnDestroy()

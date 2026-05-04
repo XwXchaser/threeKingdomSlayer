@@ -111,6 +111,16 @@ public class ColumnManager : MonoBehaviour
 
     /// <summary>
     /// 更新敌人在列中的排索引（前进后调用）
+    /// 前进后，后方所有敌人使用 ResetMovementState() + StartMoving() 向前补齐一排。
+    /// 先重置移动状态（state=Idle, moveProgress=0），
+    /// 再更新排索引（SetRowIndex），
+    /// 最后调用 StartMoving() 开始向更前一排移动。
+    ///
+    /// BUG FIX: 跳过当前敌人（enemy 参数），只处理后方敌人。
+    /// 当前敌人已经在 UpdateMovement() 中自己更新了 rowIndex，
+    /// 如果 UpdateEnemyRow() 再处理当前敌人，会重置 moveProgress=0，
+    /// 导致 UpdateMovement() 中 StartMoving() 被跳过（state==Moving && isMovingToNextRow==true），
+    /// 造成"永远无法补齐"的无限循环。
     /// </summary>
     public void UpdateEnemyRow(int columnIndex, Enemy enemy)
     {
@@ -123,10 +133,19 @@ public class ColumnManager : MonoBehaviour
             // 将敌人前移一位
             column.enemies.RemoveAt(currentIndex);
             column.enemies.Insert(currentIndex - 1, enemy);
-            // 更新所有受影响的排索引
-            for (int i = currentIndex - 1; i < column.enemies.Count; i++)
+            // 更新后方所有敌人的排索引（跳过当前敌人，从 currentIndex 开始）
+            // currentIndex 是当前敌人在 RemoveAt 前的索引，RemoveAt+Insert 后当前敌人移到 currentIndex-1
+            // 所以后方敌人从 currentIndex 开始（原来的 currentIndex+1 现在在 currentIndex）
+            for (int i = currentIndex; i < column.enemies.Count; i++)
             {
-                column.enemies[i].SetRowIndex(i);
+                Enemy e = column.enemies[i];
+                // 先重置移动状态（state=Idle, moveProgress=0），
+                // 使 StartMoving() 能通过 state==Moving 保护检查
+                e.ResetMovementState();
+                // 再更新排索引（内部调用 UpdateWorldPosition() 更新位置）
+                e.SetRowIndex(i);
+                // 最后调用 StartMoving() 开始向更前一排移动
+                e.StartMoving();
             }
         }
     }

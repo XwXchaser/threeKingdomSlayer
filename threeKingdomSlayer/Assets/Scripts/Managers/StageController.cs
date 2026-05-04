@@ -31,6 +31,8 @@ public class StageController : MonoBehaviour
     public float formationPowerCurve = 1.2f;
     [Tooltip("排间距（Z轴，世界单位）")]
     public float rowSpacing = 2.5f;
+    [Tooltip("阵型整体Z轴偏移（正值=远离摄像机，负值=靠近摄像机）")]
+    public float formationOffsetZ = 0f;
 
     [Header("组件引用")]
     public WaveSpawner waveSpawner;
@@ -68,6 +70,7 @@ public class StageController : MonoBehaviour
             formationMinSpread = stageConfig.formationMinSpread;
             formationPowerCurve = stageConfig.formationPowerCurve;
             rowSpacing = stageConfig.rowSpacing;
+            formationOffsetZ = stageConfig.formationOffsetZ;
         }
     }
 
@@ -101,6 +104,12 @@ public class StageController : MonoBehaviour
             playerState.OnPlayerDied += OnPlayerDefeated;
             playerState.OnStageStateChanged += OnPlayerStageStateChanged;
         }
+
+        // 自动开始关卡（Battle场景加载后直接进入战斗）
+        // 注意：延迟一帧执行，确保所有组件都已初始化完毕
+        // 例如 EnemyPool 在 Awake 中注册预制体，StartStage 中 PrewarmEnemyPools 需要用到
+        Debug.Log("[StageController] 场景加载完成，自动开始关卡");
+        Invoke(nameof(StartStage), 0.1f);
     }
 
     #region 关卡流程
@@ -160,6 +169,8 @@ public class StageController : MonoBehaviour
     /// </summary>
     private void SetState(StageState newState)
     {
+        if (currentState == newState) return; // BUG FIX: 防止重复设置导致循环
+
         currentState = newState;
         OnStageStateChanged?.Invoke(newState);
         playerState?.SetStageState(newState);
@@ -290,19 +301,19 @@ public class StageController : MonoBehaviour
 
     /// <summary>
     /// 获取指定列和排的X轴偏移量（梯形/扇形阵型）
+    /// 使用缓存避免每帧遍历所有敌人，每0.2秒刷新一次
+    ///
+    /// BUG FIX: 使用 maxVisibleRows 作为固定的最大排数基准，而非动态的 cachedMaxRow。
+    /// 之前使用动态 cachedMaxRow 导致当某列敌人减少时，maxRow 变小，
+    /// 阵型公式中的 normalizedRow 变大，所有列向中间收缩。
+    /// 现在使用固定的 maxVisibleRows，确保阵型位置始终稳定。
     /// </summary>
     public float GetFormationOffset(int columnIndex, int rowIndex)
     {
-        // 计算当前最大排数：从所有存活敌人中获取最大rowIndex
-        int maxRow = 0;
-        if (enemyManager != null)
-        {
-            foreach (var enemy in enemyManager.GetAllAliveEnemies())
-            {
-                if (enemy.rowIndex > maxRow)
-                    maxRow = enemy.rowIndex;
-            }
-        }
+        // BUG FIX: 使用固定的 maxVisibleRows 作为最大排数基准
+        // 这样即使某列敌人减少，阵型位置也不会变化
+        // 使用 maxVisibleRows - 1 作为最大排索引，确保阵型始终按最大可见排数计算
+        int maxRow = Mathf.Max(maxVisibleRows - 1, 0);
 
         return RowFormation.GetColumnOffsetX(
             rowIndex, columnIndex, maxRow,
@@ -319,6 +330,35 @@ public class StageController : MonoBehaviour
     public float GetRowSpacing()
     {
         return rowSpacing;
+    }
+
+    /// <summary>
+    /// 获取阵型整体Z轴偏移
+    /// </summary>
+    public float GetFormationOffsetZ()
+    {
+        return formationOffsetZ;
+    }
+
+    /// <summary>
+    /// 获取补齐移动时长（秒）
+    /// 敌人死亡后，后方所有敌人同时使用此固定时长补齐到前一排
+    /// </summary>
+    public float GetRushMoveDuration()
+    {
+        if (stageConfig != null)
+        {
+            return stageConfig.rushMoveDuration;
+        }
+        return 0.5f; // 默认值
+    }
+
+    /// <summary>
+    /// 获取最大可见排数
+    /// </summary>
+    public int GetMaxVisibleRows()
+    {
+        return maxVisibleRows;
     }
 
     #endregion

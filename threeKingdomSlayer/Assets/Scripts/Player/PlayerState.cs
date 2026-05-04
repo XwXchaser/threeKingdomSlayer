@@ -71,8 +71,8 @@ public class PlayerState : MonoBehaviour
     {
         if (heroConfig == null)
         {
-            Debug.LogError("[PlayerState] heroConfig 未赋值！");
-            return;
+            Debug.LogError("[PlayerState] heroConfig 未赋值！将使用默认值运行，部分功能可能受限");
+            // 不 return，允许游戏在无配置时继续运行（使用默认值）
         }
         ResetPlayer();
     }
@@ -90,13 +90,13 @@ public class PlayerState : MonoBehaviour
 
     /// <summary>
     /// 重置玩家状态（关卡开始时调用）
+    /// heroConfig 为 null 时使用默认值，确保不报错
     /// </summary>
     public void ResetPlayer()
     {
-        if (heroConfig == null) return;
-
-        currentHealth = heroConfig.maxHealth;
-        currentRevives = heroConfig.reviveCount;
+        // heroConfig 为 null 时使用安全默认值
+        currentHealth = heroConfig != null ? heroConfig.maxHealth : 100f;
+        currentRevives = heroConfig != null ? heroConfig.reviveCount : 0;
         killCount = 0;
         coinCount = 0;
         currentWave = 0;
@@ -109,7 +109,8 @@ public class PlayerState : MonoBehaviour
         launchCooldownTimer = 0f;
         parryCooldownTimer = 0f;
 
-        OnHealthChanged?.Invoke(currentHealth, heroConfig.maxHealth);
+        float maxHp = heroConfig != null ? heroConfig.maxHealth : 100f;
+        OnHealthChanged?.Invoke(currentHealth, maxHp);
         OnReviveCountChanged?.Invoke(currentRevives);
         OnKillCountChanged?.Invoke(0);
         OnCoinChanged?.Invoke(0);
