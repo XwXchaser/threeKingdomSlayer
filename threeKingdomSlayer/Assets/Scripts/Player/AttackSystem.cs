@@ -205,11 +205,15 @@ public class AttackSystem : MonoBehaviour
 
         foreach (var enemy in frontEnemies)
         {
-            enemy.TakeDamage(damage, DamageType.Poise);
+            // BUG FIX: 招架造成的是血量伤害，不应使用 DamageType.Poise（架势倍率）。
+            // DamageType.Poise 会应用 EnemyConfig.poiseDamageMultiplier，如果该值<1
+            // 会导致招架伤害低于预期。
+            // 使用 DamageType.Stab 应用普通伤害倍率。
+            enemy.TakeDamage(damage, DamageType.Stab);
             enemy.TakePoiseDamage(poiseDamage);
         }
 
-        Debug.Log($"[AttackSystem] 招架 伤害:{damage} 架势伤害:{poiseDamage} 目标数:{frontEnemies.Count}");
+        Debug.Log($"[AttackSystem] 招架 伤害:{damage} (type=Stab) 架势伤害:{poiseDamage} 目标数:{frontEnemies.Count}");
         return frontEnemies.Count > 0;
     }
 

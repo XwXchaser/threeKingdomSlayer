@@ -55,14 +55,18 @@ public class StageConfig : ScriptableObject
     public int maxVisibleRows = 5;
 
     [Header("补齐移动配置")]
-    [Tooltip("敌人死亡后，后方敌人补齐到前一排的移动时长（秒）。所有后方敌人同时移动，使用此固定时长")]
-    public float rushMoveDuration = 0.5f;
+    [Tooltip("连续补齐移动间的延迟（秒）。补齐移动完成后若仍需继续前进，等待此延迟后再开始下一次补齐移动。用于实现'快移动+停顿'的效果")]
+    public float rushMoveDelay = 0.2f;
 
     [Header("排阵型配置（梯形/扇形内收）")]
     [Tooltip("方案A：预设表。若设置则优先使用预设表，否则使用方案B公式计算")]
     public RowFormationPreset formationPreset;
 
-    [Header("方案B：公式参数（仅当未设置预设表时生效）")]
+    [Header("方案B：手动每排宽度（优先级最高）")]
+    [Tooltip("手动指定每一排的半宽值，数组索引=排索引（0=最前排）。\n例如 [4.0, 3.5, 3.0, 2.5, 2.0] 表示第0排半宽4.0、第1排半宽3.5...\n设置此数组后，方案A预设表和方案C公式均被忽略。\n若数组长度不足（如只有3个值但排索引=4），则对超出部分使用最后一位的值。")]
+    public float[] manualRowHalfWidths;
+
+    [Header("方案C：公式参数（仅当未设置预设表和手动数组时生效）")]
     [Tooltip("最前排（rowIndex=0）的半宽。例如4.0表示最前排最左列X=-4.0，最右列X=+4.0")]
     public float formationMaxSpread = 4.0f;
     [Tooltip("最后排的半宽。例如0.5表示最后排最左列X=-0.5，最右列X=+0.5")]

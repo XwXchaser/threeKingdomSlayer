@@ -20,9 +20,15 @@ public class StageController : MonoBehaviour
     [Header("可见排数限制")]
     public int maxVisibleRows = 5;
 
+    [Header("补齐移动配置")]
+    [Tooltip("连续补齐移动间的延迟（秒）。补齐移动完成后若仍需继续前进，等待此延迟后再开始下一次补齐移动")]
+    public float rushMoveDelay = 0.2f;
+
     [Header("排阵型配置（梯形/扇形内收）")]
     [Tooltip("方案A：预设表。若设置则优先使用预设表，否则使用方案B公式计算")]
     public RowFormationPreset formationPreset;
+    [Tooltip("方案B：手动每排半宽（优先级最高）。若设置此数组，方案A和方案C均被忽略")]
+    public float[] manualRowHalfWidths;
     [Tooltip("最前排（rowIndex=0）的半宽。例如4.0表示最前排最左列X=-4.0，最右列X=+4.0")]
     public float formationMaxSpread = 4.0f;
     [Tooltip("最后排的半宽。例如0.5表示最后排最左列X=-0.5，最右列X=+0.5")]
@@ -65,7 +71,10 @@ public class StageController : MonoBehaviour
         {
             rowAlphaFactors = stageConfig.rowAlphaFactors;
             maxVisibleRows = stageConfig.maxVisibleRows;
+            // BUG FIX: 读取补齐移动延迟配置
+            rushMoveDelay = stageConfig.rushMoveDelay;
             formationPreset = stageConfig.formationPreset;
+            manualRowHalfWidths = stageConfig.manualRowHalfWidths;
             formationMaxSpread = stageConfig.formationMaxSpread;
             formationMinSpread = stageConfig.formationMinSpread;
             formationPowerCurve = stageConfig.formationPowerCurve;
@@ -317,6 +326,7 @@ public class StageController : MonoBehaviour
 
         return RowFormation.GetColumnOffsetX(
             rowIndex, columnIndex, maxRow,
+            manualRowHalfWidths,
             formationPreset,
             formationMaxSpread,
             formationMinSpread,
@@ -341,24 +351,21 @@ public class StageController : MonoBehaviour
     }
 
     /// <summary>
-    /// 获取补齐移动时长（秒）
-    /// 敌人死亡后，后方所有敌人同时使用此固定时长补齐到前一排
-    /// </summary>
-    public float GetRushMoveDuration()
-    {
-        if (stageConfig != null)
-        {
-            return stageConfig.rushMoveDuration;
-        }
-        return 0.5f; // 默认值
-    }
-
-    /// <summary>
     /// 获取最大可见排数
     /// </summary>
     public int GetMaxVisibleRows()
     {
         return maxVisibleRows;
+    }
+
+    /// <summary>
+    /// 获取补齐移动延迟（连续补齐移动间的停顿时间）
+    /// Problem 3 修复：允许配置补齐移动间的延迟，
+    /// 以配合加快的单次补齐移动速度，保持整体补齐节奏。
+    /// </summary>
+    public float GetRushMoveDelay()
+    {
+        return rushMoveDelay;
     }
 
     #endregion

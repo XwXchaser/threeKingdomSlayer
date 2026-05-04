@@ -31,6 +31,16 @@ public class BattleHUD : MonoBehaviour
     public Image launchCooldownImage;
     public Image parryCooldownImage;
 
+    [Header("冷却充能指示器 (Radial 填充)")]
+    [Tooltip("每个冷却图标下方的子 Image，ImageType=Filled/Radial360/Top。\n" +
+             "fillAmount 从 0→1 对应冷却进度从 0%→100%，冷却完毕保持 fillAmount=1 表示技能就绪。")]
+    public Image stabChargeFill;
+    public Image slashChargeFill;
+    public Image pierceChargeFill;
+    public Image sweepChargeFill;
+    public Image launchChargeFill;
+    public Image parryChargeFill;
+
     [Header("关卡状态")]
     public GameObject victoryPanel;
     public GameObject defeatPanel;
@@ -60,6 +70,7 @@ public class BattleHUD : MonoBehaviour
         if (PlayerState.Instance != null && PlayerState.Instance.heroConfig != null)
         {
             UpdateCooldownUI();
+            UpdateCooldownFillUI();
         }
     }
 
@@ -144,6 +155,29 @@ public class BattleHUD : MonoBehaviour
         image.fillAmount = progress;
         // 冷却中显示红色，可用时显示绿色
         image.color = progress > 0f ? Color.red : Color.green;
+    }
+
+    /// <summary>
+    /// 更新冷却充能 Radial 填充指示器
+    /// fillAmount 从 0→1（冷却进度0%→100%），冷却完毕保持 fillAmount=1 表示技能就绪
+    /// </summary>
+    private void UpdateCooldownFillUI()
+    {
+        if (PlayerState.Instance == null) return;
+        UpdateChargeFill(stabChargeFill, AttackType.Stab);
+        UpdateChargeFill(slashChargeFill, AttackType.Slash);
+        UpdateChargeFill(pierceChargeFill, AttackType.Pierce);
+        UpdateChargeFill(sweepChargeFill, AttackType.Sweep);
+        UpdateChargeFill(launchChargeFill, AttackType.Launch);
+        UpdateChargeFill(parryChargeFill, AttackType.Parry);
+    }
+
+    private void UpdateChargeFill(Image image, AttackType type)
+    {
+        if (image == null) return;
+        float progress = PlayerState.Instance.GetCooldownProgress(type);
+        // progress = timer/duration (1→0), 反向得到 0→1
+        image.fillAmount = 1f - progress;
     }
 
     private void OnStageStateChanged(StageState state)

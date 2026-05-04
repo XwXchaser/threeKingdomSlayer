@@ -11,6 +11,9 @@ public class InputManager : MonoBehaviour
 
     [Header("手势参数")]
     public float longPressDuration = 0.3f;   // 长按判定时间（秒）
+    [Tooltip("最小蓄力时间（秒）：所有蓄力攻击（横扫、斩击、穿刺、挑飞）必须按住鼠标达到此时长后，手势判定才生效。\n" +
+             "未达到前，任何划动/点击仅触发普通攻击（戳击/斩击）或无操作。")]
+    public float minChargeTime = 0.5f;       // 最小蓄力时间（秒）
     public float swipeThreshold = 50f;       // 滑动判定最小距离（像素）
     public float screenZoneWidthRatio = 0.3f; // 左右区域宽度比例
 
@@ -22,11 +25,27 @@ public class InputManager : MonoBehaviour
     private float touchStartTime;
     private bool isTouching;
     private bool isLongPress;
+    private bool isCharged;     // 蓄力是否已满（pressDuration >= minChargeTime）
     private bool isSwiping;
     private int currentTouchId = -1;
+    private Vector2 currentPointerPos; // 当前指针位置（鼠标/触摸），用于蓄力指示器
 
     // 事件
     public System.Action<AttackType, int> OnAttackExecuted; // attackType, targetColumn
+
+    // 蓄力事件（用于动态蓄力瞄准指示器 ChargeIndicatorController）
+    /// <summary>
+    /// 蓄力开始，参数：屏幕坐标
+    /// </summary>
+    public System.Action<Vector2> OnChargeBegan;
+    /// <summary>
+    /// 蓄力进度更新，参数：屏幕坐标, progress (0→1)
+    /// </summary>
+    public System.Action<Vector2, float> OnChargeUpdated;
+    /// <summary>
+    /// 蓄力结束
+    /// </summary>
+    public System.Action OnChargeEnded;
 
     private void Awake()
     {
@@ -65,6 +84,14 @@ public class InputManager : MonoBehaviour
             // 鼠标输入（PC调试用）
             HandleMouseInput();
         }
+
+        // 每帧更新蓄力进度（鼠标/触摸通用）
+        if (isTouching)
+        {
+            float pressDuration = Time.time - touchStartTime;
+            float chargeProgress = Mathf.Clamp01(pressDuration / minChargeTime);
+            OnChargeUpdated?.Invoke(currentPointerPos, chargeProgress);
+        }
     }
 
     #region 鼠标输入
@@ -79,6 +106,10 @@ public class InputManager : MonoBehaviour
             isTouching = true;
             isLongPress = false;
             isSwiping = false;
+            currentPointerPos = Input.mousePosition;
+
+            // 触发蓄力开始事件
+            OnChargeBegan?.Invoke(currentPointerPos);
         }
 
         // 鼠标按住
@@ -92,6 +123,12 @@ public class InputManager : MonoBehaviour
             if (!isLongPress && pressDuration >= longPressDuration && swipeDistance < swipeThreshold)
             {
                 isLongPress = true;
+            }
+
+            // 检测蓄力完成（pressDuration >= minChargeTime）
+            if (!isCharged && pressDuration >= minChargeTime)
+            {
+                isCharged = true;
             }
 
             // 检测滑动
@@ -110,8 +147,12 @@ public class InputManager : MonoBehaviour
 
             ProcessGesture(releasePos, pressDuration, swipeDistance);
 
+            // 触发蓄力结束事件（在重置状态之前）
+            OnChargeEnded?.Invoke();
+
             isTouching = false;
             isLongPress = false;
+            isCharged = false;
             isSwiping = false;
         }
     }
@@ -135,6 +176,10 @@ public class InputManager : MonoBehaviour
                 isTouching = true;
                 isLongPress = false;
                 isSwiping = false;
+                currentPointerPos = touch.position;
+
+                // 触发蓄力开始事件
+                OnChargeBegan?.Invoke(currentPointerPos);
                 break;
 
             case TouchPhase.Moved:
@@ -148,10 +193,24 @@ public class InputManager : MonoBehaviour
                         isLongPress = true;
                     }
 
+                    if (!isCharged && pressDuration >= minChargeTime)
+                    {
+                        isCharged = true;
+                    }
+
                     if (!isSwiping && swipeDistance >= swipeThreshold)
                     {
                         isSwiping = true;
                     }
+
+                    currentPointerPos = touch.position;
+                }
+                break;
+
+            case TouchPhase.Stationary:
+                if (isTouching)
+                {
+                    currentPointerPos = touch.position;
                 }
                 break;
 
@@ -164,8 +223,12 @@ public class InputManager : MonoBehaviour
 
                     ProcessGesture(touch.position, pressDuration, swipeDistance);
 
+                    // 触发蓄力结束事件（在重置状态之前）
+                    OnChargeEnded?.Invoke();
+
                     isTouching = false;
                     isLongPress = false;
+                    isCharged = false;
                     isSwiping = false;
                     currentTouchId = -1;
                 }
@@ -179,26 +242,43 @@ public class InputManager : MonoBehaviour
 
     /// <summary>
     /// 处理手势识别
+    /// 蓄力规则：
+    /// - pressDuration >= minChargeTime：蓄力已满，允许判定蓄力攻击（穿刺/横扫/挑飞/斩击）
+    /// - pressDuration <  minChargeTime：未达到最小蓄力时间，仅触发普通攻击（戳击/斩击），不触发蓄力攻击
     /// </summary>
     private void ProcessGesture(Vector2 releasePos, float pressDuration, float swipeDistance)
     {
-        // 1. 滑动手势（距离 >= 阈值）
-        if (swipeDistance >= swipeThreshold)
-        {
-            Vector2 swipeDirection = releasePos - touchStartPos;
-            ProcessSwipeGesture(swipeDirection, releasePos);
-            return;
-        }
+        bool isSwiped = swipeDistance >= swipeThreshold;
 
-        // 2. 长按手势（时间 >= 阈值，距离 < 阈值）
-        if (pressDuration >= longPressDuration)
+        if (pressDuration >= minChargeTime)
         {
-            ProcessLongPressGesture(releasePos);
-            return;
+            // 蓄力已满 → 蓄力攻击判定
+            if (isSwiped)
+            {
+                Vector2 swipeDirection = releasePos - touchStartPos;
+                ProcessSwipeGesture(swipeDirection, releasePos);
+            }
+            else
+            {
+                // 长按后松开（无滑动） → 穿刺
+                ProcessLongPressGesture(releasePos);
+            }
         }
-
-        // 3. 点击手势（时间 < 阈值，距离 < 阈值）
-        ProcessTapGesture(releasePos);
+        else
+        {
+            // 未达到最小蓄力时间 → 仅触发普通攻击
+            if (isSwiped)
+            {
+                // 快速滑动 → 斩击（作为普通攻击，不触发横扫/挑飞等蓄力变体）
+                bool executed = attackSystem?.TryExecuteAttack(AttackType.Slash) ?? false;
+                if (executed) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
+            }
+            else
+            {
+                // 快速点击 → 戳击
+                ProcessTapGesture(releasePos);
+            }
+        }
     }
 
     /// <summary>

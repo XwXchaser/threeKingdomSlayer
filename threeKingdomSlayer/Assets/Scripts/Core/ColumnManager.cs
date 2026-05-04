@@ -111,16 +111,11 @@ public class ColumnManager : MonoBehaviour
 
     /// <summary>
     /// 更新敌人在列中的排索引（前进后调用）
-    /// 前进后，后方所有敌人使用 ResetMovementState() + StartMoving() 向前补齐一排。
-    /// 先重置移动状态（state=Idle, moveProgress=0），
-    /// 再更新排索引（SetRowIndex），
-    /// 最后调用 StartMoving() 开始向更前一排移动。
+    /// 仅在非补齐移动（自然移动、眩晕/挑飞后恢复）完成后调用。
+    /// 补齐移动（死亡触发）由 Column.RemoveEnemy() 独立处理。
     ///
-    /// BUG FIX: 跳过当前敌人（enemy 参数），只处理后方敌人。
-    /// 当前敌人已经在 UpdateMovement() 中自己更新了 rowIndex，
-    /// 如果 UpdateEnemyRow() 再处理当前敌人，会重置 moveProgress=0，
-    /// 导致 UpdateMovement() 中 StartMoving() 被跳过（state==Moving && isMovingToNextRow==true），
-    /// 造成"永远无法补齐"的无限循环。
+    /// 链式触发补齐移动，必须等待前一敌人完全补齐完毕，后一敌人才能开始补齐。
+    /// 更新后方所有敌人的行索引后，只启动第一个敌人，后续通过 OnRushMoveComplete 逐个触发。
     /// </summary>
     public void UpdateEnemyRow(int columnIndex, Enemy enemy)
     {
@@ -128,24 +123,51 @@ public class ColumnManager : MonoBehaviour
 
         Column column = columns[columnIndex];
         int currentIndex = column.enemies.IndexOf(enemy);
+        Debug.Log($"[ColumnManager] UpdateEnemyRow: col={columnIndex}, enemyId={enemy.config?.enemyId}, currentIndex={currentIndex}, count={column.enemies.Count}");
         if (currentIndex > 0)
         {
             // 将敌人前移一位
             column.enemies.RemoveAt(currentIndex);
             column.enemies.Insert(currentIndex - 1, enemy);
-            // 更新后方所有敌人的排索引（跳过当前敌人，从 currentIndex 开始）
-            // currentIndex 是当前敌人在 RemoveAt 前的索引，RemoveAt+Insert 后当前敌人移到 currentIndex-1
-            // 所以后方敌人从 currentIndex 开始（原来的 currentIndex+1 现在在 currentIndex）
+            Debug.Log($"[ColumnManager] 重排列顺序：enemyId={enemy.config?.enemyId}, from={currentIndex}→{currentIndex - 1}");
+            // BUG FIX: SetRowIndex(i+1) 而非 SetRowIndex(i)，
+            // 因为链式补齐移动完成后，UpdateMovement() 中会执行 rowIndex--，
+            // 最终 rowIndex = (i+1) - 1 = i，与列表位置匹配。
+            //
+            // 如果使用 SetRowIndex(i)，则 rowIndex 最终为 i-1，导致位置偏移。
             for (int i = currentIndex; i < column.enemies.Count; i++)
             {
                 Enemy e = column.enemies[i];
-                // 先重置移动状态（state=Idle, moveProgress=0），
-                // 使 StartMoving() 能通过 state==Moving 保护检查
+                Debug.Log($"[ColumnManager] 更新后方敌人: enemyId={e.config?.enemyId}, oldRow={e.rowIndex}, newRow={i}");
                 e.ResetMovementState();
-                // 再更新排索引（内部调用 UpdateWorldPosition() 更新位置）
-                e.SetRowIndex(i);
-                // 最后调用 StartMoving() 开始向更前一排移动
-                e.StartMoving();
+                e.SetRowIndex(i + 1);
+                // BUG FIX: Problem 4 - 设置目标排位置为列表位置
+                e.targetRow = i;
+                e.pendingRushMove = true;
+            }
+
+            // 只启动第一个后方敌人的补齐移动，后续通过链式触发
+            if (currentIndex < column.enemies.Count)
+            {
+                Enemy firstToMove = column.enemies[currentIndex];
+                System.Action<Enemy> handler = null;
+                handler = (completedEnemy) =>
+                {
+                    completedEnemy.OnRushMoveComplete -= handler;
+                    int idx = column.enemies.IndexOf(completedEnemy);
+                    int nextIdx = idx + 1;
+                    if (nextIdx >= 0 && nextIdx < column.enemies.Count)
+                    {
+                        Enemy nextEnemy = column.enemies[nextIdx];
+                        if (nextEnemy.pendingRushMove)
+                        {
+                            nextEnemy.OnRushMoveComplete += handler;
+                            nextEnemy.TryStartRushMove();
+                        }
+                    }
+                };
+                firstToMove.OnRushMoveComplete += handler;
+                firstToMove.TryStartRushMove();
             }
         }
     }

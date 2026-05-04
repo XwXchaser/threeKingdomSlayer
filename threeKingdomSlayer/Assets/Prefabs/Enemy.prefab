@@ -53,6 +53,8 @@ MonoBehaviour:
   currentPoise: 0
   columnIndex: 0
   rowIndex: 0
+  pendingRushMove: 0
+  targetRow: -1
 --- !u!212 &3042528735547855719
 SpriteRenderer:
   m_ObjectHideFlags: 0

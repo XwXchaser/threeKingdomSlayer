@@ -62,13 +62,19 @@ public class WaveSpawner : MonoBehaviour
         if (columnManager == null) columnManager = FindObjectOfType<ColumnManager>();
         if (enemyManager == null) enemyManager = FindObjectOfType<EnemyManager>();
 
+        // BUG FIX: 清空静态缓存，避免场景重载（重新开始/返回主菜单）时缓存了旧的配置。
+        // 静态缓存在场景切换后仍然存在，如果 StageConfig 更换了不同的 EnemyConfig，
+        // ContainsKey 检查会导致新配置无法覆盖旧缓存，使用过期的配置数据。
+        enemyConfigCache.Clear();
+        Debug.Log($"[WaveSpawner] 清空敌人配置缓存 (count={enemyConfigCache.Count})");
+
         // 初始化敌人配置缓存：优先使用 Inspector 拖拽的配置
         // 这样策划可以直接在 Inspector 中拖拽 EnemyConfig 赋值，无需放入 Resources 文件夹
         if (enemyConfigs != null && enemyConfigs.Count > 0)
         {
             foreach (var cfg in enemyConfigs)
             {
-                if (cfg != null && !enemyConfigCache.ContainsKey(cfg.enemyId))
+                if (cfg != null)
                 {
                     enemyConfigCache[cfg.enemyId] = cfg;
                     Debug.Log($"[WaveSpawner] 从 Inspector 加载敌人配置: {cfg.enemyName} (enemyId={cfg.enemyId})");

@@ -146,8 +146,18 @@ public class PlayerState : MonoBehaviour
         {
             // 复活
             currentRevives--;
-            currentHealth = heroConfig.maxHealth * heroConfig.reviveHealthPercent;
-            OnHealthChanged?.Invoke(currentHealth, heroConfig.maxHealth);
+            // BUG FIX: heroConfig null 保护，避免 Scene 重载时序问题或配置缺失导致 NPE。
+            // 如果 heroConfig 为 null，使用硬编码默认值确保复活逻辑不崩溃。
+            if (heroConfig == null)
+            {
+                Debug.LogError("[PlayerState] HandleDeath: heroConfig 为 null，使用默认值");
+                currentHealth = 100f * 0.5f; // 默认 maxHealth=100, reviveHealthPercent=50%
+            }
+            else
+            {
+                currentHealth = heroConfig.maxHealth * heroConfig.reviveHealthPercent;
+            }
+            OnHealthChanged?.Invoke(currentHealth, heroConfig != null ? heroConfig.maxHealth : 100f);
             OnReviveCountChanged?.Invoke(currentRevives);
             Debug.Log($"[PlayerState] 复活！剩余复活次数: {currentRevives}, 生命值: {currentHealth}");
         }

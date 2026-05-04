@@ -1,4 +1,5 @@
 using UnityEngine;
+using DG.Tweening;
 
 /// <summary>
 /// 敌人状态枚举
@@ -35,16 +36,51 @@ public class Enemy : MonoBehaviour
     private float attackTimer;      // 攻击冷却计时器（攻击动画结束后开始冷却）
     private float attackAnimTimer;  // 攻击动画计时器（攻击动作执行时间）
     private bool isAttackAnimating; // 是否正在播放攻击动画
+
+    // 补齐移动链式触发
+    // pendingRushMove = true 表示该敌人已标记为需要向前补齐，
+    // TryStartRushMove() 会根据当前状态决定何时开始移动。
+    // 链式触发：补齐移动完全完成（moveProgress >= 1.0）时，
+    // OnRushMoveComplete 事件通知列管理器启动下一个敌人。
+    // 必须等待前一敌人完全补齐完毕，后一敌人才能开始补齐。
+    public bool pendingRushMove; // 标记需要向前补齐
+    public System.Action<Enemy> OnRushMoveComplete; // 补齐移动完成事件（移动完全结束时触发）
     private float moveProgress; // 0~1, 当前排内移动进度
     private bool isMovingToNextRow;
-    private MaterialPropertyBlock mpb;
+
+    // 标记当前移动是否为"补齐移动"（由 RemoveEnemy/UpdateEnemyRow 触发）。
+    // 补齐移动完成后不触发 UpdateEnemyRow()，避免无限循环。
+    private bool isRushMove;
+
+    // BUG FIX: 新增补齐延迟计时器（Problem 3）
+    // 补齐移动完成后，若判定需继续补齐（rowIndex >= attackRange），
+    // 先等待 rushMoveDelay 秒再开始下一次补齐移动。
+    // 这样可以将 rushMoveSpeed 设置得更快（单次移动更迅速），
+    // 而整体补齐速度通过 rushMoveDelay 来调节，达到"快移动+停顿"的效果。
+    private float rushMoveDelayTimer;
+    // OnRushMoveComplete 是否已触发（避免在同一个移动过程中重复触发）
+    private bool rushMoveChainTriggered;
+    // 敌人此次补齐的目标排位置（即列表位置）
+    // 由 Column.RemoveEnemy() / ColumnManager.UpdateEnemyRow() 设置：
+    // SetRowIndex(i+1) 后设置 targetRow = i
+    // 在补齐移动完成的延迟循环中，检查 rowIndex <= targetRow 时停止补齐，
+    // 防止多个敌人在 delay 循环中全部汇聚到 row=0。
+    // targetRow = -1 表示未设置（非补齐移动），此时沿用旧行为。
+    public int targetRow = -1;
     private Renderer[] renderers;
+    // 材质实例数组（用于闪白效果）
+    // 通过 renderer.material 创建实例，避免 MaterialPropertyBlock 在对象禁用时不生效的问题。
+    // 在 Initialize() 中创建，在 ResetEnemy() 中销毁。
+    private Material[] flashMaterials;
     private bool initialized;
 
     // 受伤闪白相关
     private float hitFlashTimer; // 闪白剩余时间
     private Color originalColor = Color.white; // 精灵原始颜色（白色）
     private const float HIT_FLASH_DURATION = 0.15f; // 闪白持续时间
+
+    // DOTween: 前进补齐时 Y 轴弹跳偏移（由 DOTween 驱动，在 UpdateWorldPosition 中应用）
+    private float bounceYOffset;
 
     // 事件
     public System.Action<Enemy> OnDeath;
@@ -53,7 +89,6 @@ public class Enemy : MonoBehaviour
     private void Awake()
     {
         renderers = GetComponentsInChildren<Renderer>();
-        mpb = new MaterialPropertyBlock();
     }
 
     /// <summary>
@@ -80,11 +115,21 @@ public class Enemy : MonoBehaviour
         isAttackAnimating = false;
         moveProgress = 0f;
         isMovingToNextRow = false;
+        isRushMove = false;
+        pendingRushMove = false;
+        // BUG FIX: 初始化重置新字段
+        rushMoveDelayTimer = 0f;
+        rushMoveChainTriggered = false;
+        targetRow = -1;
+        bounceYOffset = 0f;
+        // 创建材质实例（用于闪白效果）
+        // 通过 renderer.material 创建实例，避免 MaterialPropertyBlock 在对象禁用时不生效
+        CreateFlashMaterials();
+
         initialized = true;
 
         gameObject.SetActive(true);
         UpdateWorldPosition();
-        UpdateAlpha();
 
         // BUG FIX: 敌人生成后不自动开始移动。
         // 敌人开局时直接站在对应排位置，不需要移动。
@@ -125,10 +170,28 @@ public class Enemy : MonoBehaviour
                 break;
         }
 
+        // BUG FIX: 补齐移动延迟计时器（Problem 3）
+        // 当敌人完成一次补齐移动后，如果还需要继续补齐（rowIndex >= attackRange），
+        // 会启动延迟计时器，等待 rushMoveDelay 秒后再开始下一次补齐移动。
+        if (rushMoveDelayTimer > 0f)
+        {
+            rushMoveDelayTimer -= Time.deltaTime;
+            if (rushMoveDelayTimer <= 0f)
+            {
+                // 延迟结束，尝试再次开始补齐移动
+                Debug.Log($"[Enemy] 补齐延迟结束，尝试继续补齐: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}");
+                TryStartRushMove();
+            }
+        }
+
         // 更新受伤闪白计时器
         if (hitFlashTimer > 0f)
         {
             hitFlashTimer -= Time.deltaTime;
+            if (hitFlashTimer <= 0f)
+            {
+                Debug.Log($"[Enemy] 闪白结束: enemyId={config?.enemyId}");
+            }
         }
 
         // 每帧更新透明度（含闪白效果）
@@ -154,7 +217,11 @@ public class Enemy : MonoBehaviour
     /// 如果保护检查依赖 isMovingToNextRow，会导致保护失效，
     /// moveProgress 被重置为 0，造成"无限补齐"的无限循环。
     /// </summary>
-    public void StartMoving()
+    /// <summary>
+    /// 开始向前移动
+    /// </summary>
+    /// <param name="isRush">是否为补齐移动（由死亡/重排列触发）。补齐移动完成后不触发 UpdateEnemyRow()。</param>
+    public void StartMoving(bool isRush = false)
     {
         if (state == EnemyState.Dead) return;
 
@@ -162,6 +229,7 @@ public class Enemy : MonoBehaviour
         // 否则 UpdateWorldPosition() 中 targetRowZ 计算为正值，敌人会向后退
         if (rowIndex <= 0)
         {
+            Debug.Log($"[Enemy] StartMoving→StartAttacking (row=0): enemyId={config?.enemyId}, col={columnIndex}");
             StartAttacking();
             return;
         }
@@ -175,35 +243,52 @@ public class Enemy : MonoBehaviour
             return;
         }
 
+        isRushMove = isRush;
+        Debug.Log($"[Enemy] StartMoving: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, targetRow={rowIndex - 1}, isRush={isRush}");
         state = EnemyState.Moving;
         isMovingToNextRow = true;
         moveProgress = 0f;
+
+        // DOTween: 前进补齐时 Y 轴弹跳动画（一边前进一边沿 Y 轴跳动）
+        if (isRush)
+        {
+            DOTween.Kill(transform, false); // 终止之前可能残留的弹跳动画
+            float moveDuration = config != null ? config.moveSpeed : 1f;
+            float bounceHeight = 0.5f; // 弹跳峰值高度
+            // 通过 DOTween.To 驱动 bounceYOffset，形成抛物线弹跳轨迹
+            DOTween.To(() => bounceYOffset, x => bounceYOffset = x, bounceHeight, moveDuration * 0.5f)
+                .SetEase(Ease.OutQuad)
+                .SetTarget(transform)
+                .SetId("rushBounce");
+            DOTween.To(() => bounceYOffset, x => bounceYOffset = x, 0f, moveDuration * 0.5f)
+                .SetEase(Ease.InQuad)
+                .SetDelay(moveDuration * 0.5f)
+                .SetTarget(transform)
+                .SetId("rushBounce");
+        }
     }
 
     /// <summary>
     /// 开始攻击
     /// BUG FIX: 攻击分为两个阶段：
-    ///   阶段1：攻击动画（attackAnimTimer）— 播放攻击动作，不造成伤害
-    ///   阶段2：攻击冷却（attackTimer）— 动画结束后造成伤害，然后进入冷却
-    /// 这样攻击动画执行期间敌人不会立即再次攻击，配合动画效果
+    ///   阶段1：攻击冷却（attackTimer）— 先进入冷却再攻击
+    ///   阶段2：攻击动画（attackAnimTimer）— 冷却结束后播放攻击动画并造成伤害
+    /// 这样敌人进入攻击范围后不会立即攻击，而是先进入冷却，符合"先冷却后攻击"的规则。
     ///
-    /// BUG FIX: 不再重置 attackTimer 为 0f。
-    /// attackTimer 在 Initialize() 中被初始化为 1f（正数），
-    /// 在冷却阶段结束后才被设为 cooldown 值。
-    /// 如果在 StartAttacking() 中重置 attackTimer = 0f，
-    /// 会导致 UpdateAttack() 中 isAttackAnimating == false 时
-    /// 立即触发 attackTimer <= 0f 条件，跳过冷却直接开始下一次攻击。
+    /// 攻击优先级规则（Problem 1 修复）：
+    ///   1. 进入攻击范围 → 先进入攻击冷却，再执行攻击
+    ///   2. 攻击冷却期间需要向前补齐 → 先补齐再攻击
+    ///   3. 正在攻击动画中 → 完成当前攻击后再判断是否需要向前补齐
     /// </summary>
     public void StartAttacking()
     {
         if (state == EnemyState.Dead) return;
         state = EnemyState.Attacking;
-        // 先播放攻击动画（固定0.5秒），动画结束后才造成伤害
-        attackAnimTimer = 0.5f;
-        isAttackAnimating = true;
-        // BUG FIX: 不重置 attackTimer，避免跳过冷却
-        // attackTimer 在 Initialize() 中初始化为 1f
-        // 在冷却阶段结束后才被设为 cooldown 值
+        // BUG FIX: 先进入攻击冷却阶段，冷却结束后才播放攻击动画
+        // 不再立即播放攻击动画，而是从冷却阶段开始
+        isAttackAnimating = false;
+        // 初始冷却：attackTimer 已在 Initialize() 中设为 1f，保留该值
+        // 后续冷却在 UpdateAttack() 的动画结束后设置
     }
 
     public void Stun(float duration)
@@ -247,9 +332,19 @@ public class Enemy : MonoBehaviour
     /// 常规移动：基于 moveSpeed（秒/排），从当前排(rowIndex)移动到前一排(rowIndex-1)
     /// 移动完成后更新 rowIndex，检查是否到达攻击距离
     ///
-    /// BUG FIX: 移动完成后不调用 StartMoving() 继续移动，
-    /// 而是由 Column.RemoveEnemy() / ColumnManager.UpdateEnemyRow() 触发补齐移动。
-    /// 避免"无限补齐"的无限循环。
+    /// 链式补齐：
+    ///   - 补齐移动（isRush=true）在移动完全完成（moveProgress >= 1.0）时，
+    ///     触发 OnRushMoveComplete 事件，通知列管理器启动下一个需要补齐的敌人。
+    ///     必须等待前一敌人完全补齐完毕，后一敌人才能开始补齐。
+    ///   - 每个敌人每次补齐只前进一排，不再连续多排补齐。
+    ///     后续补齐通过延迟计时器（rushMoveDelayTimer）在移动完成后触发。
+    ///     这样各敌人最终停在各自正确的排位置（rowIndex = listPosition），不会发生重合。
+    ///
+    /// 补齐延迟：
+    ///   - 补齐移动完成后，如果还需要继续前进（rowIndex >= attackRange），
+    ///     启动延迟计时器，等待 rushMoveDelay 秒后再开始下一次补齐移动。
+    ///   - 这样可以将单次补齐移动速度（moveSpeed）加快，
+    ///     而整体补齐节奏通过 rushMoveDelay 来调节，达到"快移动+停顿"的效果。
     /// </summary>
     private void UpdateMovement()
     {
@@ -261,31 +356,90 @@ public class Enemy : MonoBehaviour
 
         if (moveProgress >= 1f)
         {
+            bool wasRush = isRushMove;
+            Debug.Log($"[Enemy] 移动完成: enemyId={config?.enemyId}, col={columnIndex}, oldRow={rowIndex}, newRow={rowIndex - 1}, isRush={wasRush}");
             moveProgress = 0f;
             isMovingToNextRow = false;
+            isRushMove = false;
+            rushMoveChainTriggered = false; // 重置链式触发标记
 
-            // 常规移动：rowIndex 尚未更新，需要前进一排
+            // 移动完成：rowIndex 前进一排
             rowIndex--;
 
             // BUG FIX: 防止 rowIndex 变为负数
             if (rowIndex < 0) rowIndex = 0;
 
-            // 前进一排后，通知ColumnManager更新列内排序
-            EnemyManager.Instance?.OnEnemyMovedForward(this);
-
-            // BUG FIX: 使用 EnemyConfig.attackRange 决定攻击距离
-            // attackRange=1 表示需要到最前排（rowIndex=0）才能攻击
-            // attackRange=2 表示距离玩家还有1排时（rowIndex=1）就能攻击
-            // 以此类推
+            // 使用 EnemyConfig.attackRange 决定攻击距离
             int attackRange = config != null ? (int)Mathf.Max(1, config.attackRange) : 1;
-            if (rowIndex < attackRange)
+            bool reachedAttackRange = rowIndex < attackRange;
+
+            if (wasRush)
             {
-                StartAttacking();
+                if (reachedAttackRange)
+                {
+                    // 到达攻击范围，开始攻击
+                    Debug.Log($"[Enemy] 补齐移动完成（到达攻击范围）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}");
+                    StartAttacking();
+                }
+                else if (targetRow >= 0 && rowIndex <= targetRow)
+                {
+                    // BUG FIX: Problem 4 - 已到达目标位置（列表位置），停止补齐
+                    // targetRow 由 Column.RemoveEnemy() / ColumnManager.UpdateEnemyRow() 设置，
+                    // 值为列表位置 i（SetRowIndex(i+1) 后的目标排）。
+                    // 当 rowIndex <= targetRow 时，该敌人已到达正确位置，禁止继续向前补齐，
+                    // 防止多个敌人在 delay 循环中全部汇聚到 row=0 导致重叠。
+                    Debug.Log($"[Enemy] 补齐移动完成（到达目标位置，停止补齐）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
+                    state = EnemyState.Idle;
+                    pendingRushMove = false;
+                    targetRow = -1;
+                }
+                else
+                {
+                    // 尚未到达攻击范围，启动补齐延迟
+                    // 不再连续多排补齐，而是等待 rushMoveDelay 秒后再开始下一次补齐移动。
+                    float delay = 0f;
+                    if (StageController.Instance != null)
+                    {
+                        delay = StageController.Instance.GetRushMoveDelay();
+                    }
+                    if (delay > 0f)
+                    {
+                        Debug.Log($"[Enemy] 补齐移动完成（等待延迟继续补齐）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, delay={delay:F2}s");
+                        state = EnemyState.Idle;
+                        pendingRushMove = true;
+                        rushMoveDelayTimer = delay;
+                    }
+                    else
+                    {
+                        // 无延迟，立即继续补齐
+                        Debug.Log($"[Enemy] 补齐移动完成（立即继续补齐）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}");
+                        state = EnemyState.Idle;
+                        pendingRushMove = true;
+                        TryStartRushMove();
+                    }
+                }
+
+                // BUG FIX: 链式触发移至移动完全完成后，而非移动中期。
+                // 必须等待前一敌人完全补齐完毕（moveProgress >= 1.0），
+                // 后一敌人才能开始补齐。这样符合"逐个向前补齐"的行为。
+                // 使用 rushMoveChainTriggered 避免在同一个移动过程中重复触发。
+                if (!rushMoveChainTriggered)
+                {
+                    rushMoveChainTriggered = true;
+                    Debug.Log($"[Enemy] 补齐移动完全完成（触发链式）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}");
+                    OnRushMoveComplete?.Invoke(this);
+                }
             }
-            // BUG FIX: 不再调用 StartMoving() 继续移动。
-            // 移动完成后，由 ColumnManager.UpdateEnemyRow() 触发后方敌人的补齐移动。
-            // 如果这里调用 StartMoving()，会导致当前敌人继续向前移动，
-            // 而 UpdateEnemyRow() 又会触发后方敌人补齐移动，造成无限循环。
+            else
+            {
+                // 自然移动完成后，通知ColumnManager更新列内排序
+                if (reachedAttackRange)
+                {
+                    StartAttacking();
+                }
+                EnemyManager.Instance?.OnEnemyMovedForward(this);
+                Debug.Log($"[Enemy] 自然移动完成，触发 UpdateEnemyRow: enemyId={config?.enemyId}, col={columnIndex}");
+            }
         }
 
         UpdateWorldPosition();
@@ -294,15 +448,18 @@ public class Enemy : MonoBehaviour
     /// <summary>
     /// 更新攻击状态
     /// BUG FIX: 攻击分为两个阶段：
-    ///   阶段1：攻击动画（attackAnimTimer > 0）— 播放攻击动作，不造成伤害
-    ///   阶段2：攻击冷却（attackTimer > 0）— 动画结束后造成伤害，然后进入冷却
-    /// 这样攻击动画执行期间敌人不会立即再次攻击，配合动画效果
+    ///   阶段1：攻击冷却（attackTimer > 0）— 先进入冷却再攻击
+    ///   阶段2：攻击动画（attackAnimTimer > 0）— 播放攻击动作，动画结束时造成伤害
+    ///
+    /// 攻击优先级规则（Problem 1 修复）：
+    ///   1. 冷却期间如果 pendingRushMove == true → 先执行补齐再攻击
+    ///   2. 动画期间不中断 → 完成当前攻击后检查 pendingRushMove
     /// </summary>
     private void UpdateAttack()
     {
         if (isAttackAnimating)
         {
-            // 阶段1：播放攻击动画
+            // 阶段2：播放攻击动画（动画期间不中断）
             attackAnimTimer -= Time.deltaTime;
             if (attackAnimTimer <= 0f)
             {
@@ -312,15 +469,26 @@ public class Enemy : MonoBehaviour
                 // 进入冷却阶段
                 float cooldown = config != null ? (1f / config.attackSpeed) : 1f;
                 attackTimer = cooldown;
+
+                // BUG FIX: 完成当前攻击后，检查是否需要向前补齐
+                // 如果 pendingRushMove == true，优先执行补齐
+                TryStartRushMove();
             }
         }
         else
         {
-            // 阶段2：攻击冷却
+            // 阶段1：攻击冷却
+            // BUG FIX: 冷却期间如果标记了需要补齐，先执行补齐再攻击
+            if (pendingRushMove)
+            {
+                TryStartRushMove();
+                return; // 如果成功开始移动，直接返回，不再处理冷却
+            }
+
             attackTimer -= Time.deltaTime;
             if (attackTimer <= 0f)
             {
-                // 冷却结束，开始下一次攻击动画
+                // 冷却结束，开始攻击动画
                 attackAnimTimer = 0.5f;
                 isAttackAnimating = true;
             }
@@ -349,15 +517,82 @@ public class Enemy : MonoBehaviour
         float multiplier = GetDamageMultiplier(damageType);
         float finalDamage = damage * multiplier;
 
+        Debug.Log($"[Enemy] TakeDamage: enemyId={config?.enemyId}, col={columnIndex}, raw={damage:F1}, mult={multiplier:F2}, final={finalDamage:F1}, hp={currentHealth:F1}→{currentHealth - finalDamage:F1}");
+
         currentHealth -= finalDamage;
         OnDamageTaken?.Invoke(this);
 
-        // 触发受伤闪白效果
+        // BUG FIX: 同步应用闪白（立即设置颜色，不依赖 Update 循环）
+        // 即使敌人秒杀死亡，闪白效果也在死亡前被渲染
+        // 否则 Die() 设置 state = Dead 后，Update() 提前返回，UpdateAlpha() 不被调用
+        ApplyHitFlashImmediate();
+
+        // 触发受伤闪白效果（非致命伤通过 Update 循环过渡恢复）
         hitFlashTimer = HIT_FLASH_DURATION;
+        Debug.Log($"[Enemy] 触发闪白: enemyId={config?.enemyId}, duration={HIT_FLASH_DURATION}");
+
+        // DOTween: 受击大小抖动效果（与闪白同步触发）
+        transform.DOKill(true); // 完成当前正在播放的任何缩放动画，避免与新抖动冲突
+        transform.DOPunchScale(new Vector3(0.2f, 0.2f, 0.2f), 0.15f, 8, 0.5f);
 
         if (currentHealth <= 0f)
         {
             Die();
+        }
+    }
+
+    /// <summary>
+    /// 同步应用闪白效果（在 TakeDamage 中调用）
+    /// 直接通过材质实例设置 color = white，确保即使敌人立即死亡，
+    /// 闪白也在协程等待期间可见（协程中 state=Dead 但 UpdateAlpha 不执行，
+    /// 材质颜色在协程等待期间保持白色）。
+    /// </summary>
+    private void ApplyHitFlashImmediate()
+    {
+        if (flashMaterials == null) return;
+        foreach (var mat in flashMaterials)
+        {
+            if (mat != null) mat.color = Color.white;
+        }
+    }
+
+    /// <summary>
+    /// 创建材质实例（用于闪白效果）
+    /// 通过 renderer.material 创建实例，确保修改 color 不会影响其他敌人。
+    /// 在 Initialize() 中调用，在 ResetEnemy() 中销毁。
+    /// </summary>
+    private void CreateFlashMaterials()
+    {
+        // 先销毁旧的材质实例
+        DestroyFlashMaterials();
+
+        if (renderers == null || renderers.Length == 0) return;
+
+        flashMaterials = new Material[renderers.Length];
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            // renderer.material 会创建材质实例（自动实例化 sharedMaterial）
+            flashMaterials[i] = renderers[i].material;
+            // 初始颜色设为白色（精灵原始颜色）
+            flashMaterials[i].color = Color.white;
+        }
+    }
+
+    /// <summary>
+    /// 销毁材质实例
+    /// </summary>
+    private void DestroyFlashMaterials()
+    {
+        if (flashMaterials != null)
+        {
+            foreach (var mat in flashMaterials)
+            {
+                if (mat != null)
+                {
+                    Object.Destroy(mat);
+                }
+            }
+            flashMaterials = null;
         }
     }
 
@@ -399,12 +634,50 @@ public class Enemy : MonoBehaviour
 
     /// <summary>
     /// 死亡
+    /// BUG FIX: 改为使用协程处理闪白效果，而非立即触发死亡事件。
+    /// 因为 EnemyManager.OnEnemyDied() → EnemyPool.ReturnEnemy() → ResetEnemy() → SetActive(false)
+    /// 会在同一帧禁用 GameObject，导致材质颜色修改无法被渲染（渲染管线跳过禁用对象）。
+    ///
+    /// 新流程：
+    ///   1. state = Dead（Update 提前返回，不再处理攻击/移动逻辑）
+    ///   2. 启动协程 FlashThenRelease()
+    ///   3. 协程中通过材质实例设置白色，等待 HIT_FLASH_DURATION 秒
+    ///   4. 协程结束后触发 OnDeath 事件（池回收，禁用 GameObject）
+    ///   此时闪白已在屏幕上显示了至少一帧，即使 GameObject 被禁用，用户已看到闪烁。
     /// </summary>
     public void Die()
     {
         if (state == EnemyState.Dead) return;
         state = EnemyState.Dead;
-        // 触发死亡事件，EnemyManager 通过 RegisterEnemy 订阅了此事件
+        // 启动闪白协程（材质实例 + 延迟触发死亡事件）
+        StartCoroutine(FlashThenRelease());
+    }
+
+    /// <summary>
+    /// 闪白协程 + DOTween 死亡动效
+    /// 流程：
+    ///   1. 立即将材质颜色设为白色（闪白）
+    ///   2. 使用 DOTween Sequence 等待 HIT_FLASH_DURATION 秒（闪白保持）
+    ///   3. 缩放至 0（InBack 缓动，死亡消失效果）
+    ///   4. 恢复缩放为 1（供对象池复用），触发 OnDeath 事件
+    /// </summary>
+    private System.Collections.IEnumerator FlashThenRelease()
+    {
+        // 立即将材质颜色设为白色（闪白）
+        ApplyHitFlashImmediate();
+
+        // 构建 DOTween 序列：先闪白保持，再缩放消失
+        Sequence deathSequence = DOTween.Sequence();
+        deathSequence.AppendInterval(HIT_FLASH_DURATION);
+        deathSequence.Append(transform.DOScale(0f, 0.3f).SetEase(Ease.InBack));
+
+        // 等待序列完成
+        yield return deathSequence.WaitForCompletion();
+
+        // 恢复缩放（供对象池复用）
+        transform.localScale = Vector3.one;
+
+        // 闪白+死亡动效结束后触发死亡事件（EnemyManager.OnEnemyDied → ReturnEnemy → SetActive(false)）
         OnDeath?.Invoke(this);
     }
 
@@ -417,17 +690,64 @@ public class Enemy : MonoBehaviour
     /// 重置 state=Idle、isMovingToNextRow=false、moveProgress=0，
     /// 以便 StartMoving() 能通过 state==Moving 保护检查，重新开始移动。
     ///
-    /// 注意：ResetMovementState() + StartMoving() 的组合用于列内补齐移动。
-    /// Column.RemoveEnemy() 和 ColumnManager.UpdateEnemyRow() 中，
-    /// 先调用 ResetMovementState() 重置状态，
-    /// 再调用 SetRowIndex() 更新 rowIndex（内部调用 UpdateWorldPosition() 更新位置），
-    /// 最后调用 StartMoving() 开始向更前一排移动。
+    /// BUG FIX: 不再重置 pendingRushMove 标记，
+    /// 由 Column.RemoveEnemy() 单独控制 pendingRushMove 的设置。
     /// </summary>
     public void ResetMovementState()
     {
         state = EnemyState.Idle;
         isMovingToNextRow = false;
         moveProgress = 0f;
+    }
+
+    /// <summary>
+    /// 尝试开始补齐移动（链式触发）
+    /// 根据当前状态决定是否立即开始移动：
+    ///   - Idle：直接开始移动（或攻击，若已到最前排）
+    ///   - Attacking（冷却阶段）：中断冷却，优先补齐
+    ///   - Attacking（动画阶段）：等待动画完成，由 UpdateAttack() 调用
+    ///   - Stunned/Launched：等待恢复
+    ///
+    /// 返回值：true 表示已处理（开始移动或立即触发链式完成），false 表示等待下次尝试
+    /// </summary>
+    public bool TryStartRushMove()
+    {
+        if (!pendingRushMove || state == EnemyState.Dead)
+            return false;
+
+        switch (state)
+        {
+            case EnemyState.Idle:
+                pendingRushMove = false;
+                StartMoving(true);
+                // 如果 state 未变为 Moving（例如 rowIndex=0 直接进入攻击），
+                // 立即触发链式完成，让下一个敌人开始补齐
+                if (state != EnemyState.Moving)
+                {
+                    OnRushMoveComplete?.Invoke(this);
+                }
+                return true;
+
+            case EnemyState.Attacking:
+                if (!isAttackAnimating)
+                {
+                    // 冷却阶段：先执行补齐再攻击
+                    pendingRushMove = false;
+                    ResetMovementState();
+                    StartMoving(true);
+                    return true;
+                }
+                // 动画阶段：等待动画完成，由 UpdateAttack() 调用 TryStartRushMove
+                return false;
+
+            case EnemyState.Stunned:
+            case EnemyState.Launched:
+                // 等待恢复，恢复后 StartMoving() 会检查 pendingRushMove
+                return false;
+
+            default:
+                return false;
+        }
     }
 
     /// <summary>
@@ -477,7 +797,7 @@ public class Enemy : MonoBehaviour
     /// 移动过程中：从当前排(rowIndex)位置平滑移动到前一排(rowIndex-1)位置
     /// 非移动中：固定在当前排(rowIndex)位置
     ///
-    /// BUG FIX: 移动过程中 X 轴使用 rowIndex（旧排位置）计算阵型偏移，
+    /// BUG FIX: 移动过程中使用 rowIndex（当前排位置）计算阵型偏移，
     /// 因为 rowIndex 在移动过程中尚未更新（移动完成后才 rowIndex--）。
     /// 这样 X 轴和 Z 轴同步，避免"梯形向内聚拢"问题。
     /// </summary>
@@ -509,13 +829,17 @@ public class Enemy : MonoBehaviour
         float zPos;
         if (isMovingToNextRow)
         {
-            // 移动中：从当前排向目标排平滑过渡
-            // moveProgress: 0→1 表示从起点排移动到终点排
+            // BUG FIX: 移动过程中同时平滑过渡 X 轴和 Z 轴。
+            // 之前 X 轴仅使用 rowIndex（当前排），导致移动完成时 X 瞬间跳跃到目标排的偏移量。
+            // 现在 X 和 Z 都从当前排(rowIndex)平滑过渡到目标排(rowIndex-1)，
+            // 使阵型的梯形/扇形展开在移动过程中就正确显示，而非抵达后才调整。
             //
             // rowIndex 尚未更新，使用 rowIndex 作为起点，rowIndex-1 作为终点
-            // currentRowZ = GetRowZ(rowIndex, ...) — 当前排位置
-            // targetRowZ  = GetRowZ(rowIndex - 1, ...) — 前一排位置
-            // rowIndex从4→3→2→1→0，Z值从0→-2.5→-5.0→-7.5→-10，向-Z方向移动（前进）
+            float currentX = xPos; // 当前排的 X 偏移（已在上面通过 GetFormationOffset 计算）
+            float targetX = StageController.Instance.GetFormationOffset(columnIndex, rowIndex - 1);
+            xPos = Mathf.Lerp(currentX, targetX, moveProgress);
+
+            // Z 轴：从当前排向目标排平滑过渡
             float currentRowZ = GetRowZ(rowIndex, rowSpacing, offsetZ);
             float targetRowZ = GetRowZ(rowIndex - 1, rowSpacing, offsetZ);
             zPos = Mathf.Lerp(currentRowZ, targetRowZ, moveProgress);
@@ -529,39 +853,35 @@ public class Enemy : MonoBehaviour
         // 使用 localPosition 而非 position，这样敌人会相对于父节点定位
         // 你可以在场景中创建一个空的 Enemies GameObject 作为父节点，
         // 然后调整父节点的 Transform Position 来整体移动所有敌人的位置
-        transform.localPosition = new Vector3(xPos, 0f, zPos);
+        // DOTween: 前进补齐时 Y 轴弹跳由 bounceYOffset 驱动（非补齐移动时 bounceYOffset = 0）
+        transform.localPosition = new Vector3(xPos, bounceYOffset, zPos);
     }
 
     /// <summary>
     /// 更新透明度（基于排索引）+ 受伤闪白效果
-    /// 使用精灵图片的原始颜色（白色），仅修改透明度
-    /// 受伤时短暂变为白色（闪白），然后恢复
+    /// 使用材质实例直接修改 color，确保闪白在对象禁用前始终可见。
     /// </summary>
     private void UpdateAlpha()
     {
-        if (renderers == null || renderers.Length == 0) return;
+        if (flashMaterials == null || flashMaterials.Length == 0) return;
 
         float alpha = GetAlphaForRow(rowIndex);
 
-        foreach (var renderer in renderers)
+        foreach (var mat in flashMaterials)
         {
-            renderer.GetPropertyBlock(mpb);
+            if (mat == null) continue;
 
             // 使用白色作为基础色，仅通过透明度控制显示
-            // 这样精灵图片的上色不会被覆盖
             Color color = Color.white;
             color.a = alpha;
 
-            // 受伤闪白效果：hitFlashTimer > 0 时显示纯白色
-            // 闪白结束后恢复原始颜色
+            // 受伤闪白效果：hitFlashTimer > 0 时设置全白全透明（alpha=1），无视排索引透明度
             if (hitFlashTimer > 0f)
             {
-                // 闪白期间：颜色为白色，透明度不变
-                // 这样精灵图片会短暂显示为白色（闪白）
+                color = Color.white; // (1, 1, 1, 1) — 全白全透明
             }
 
-            mpb.SetColor("_Color", color);
-            renderer.SetPropertyBlock(mpb);
+            mat.color = color;
         }
     }
 
@@ -602,6 +922,9 @@ public class Enemy : MonoBehaviour
     /// </summary>
     public void ResetEnemy()
     {
+        // 终止所有活跃的 DOTween 动画（完成当前值后跳转到最终值）
+        transform.DOKill(true);
+
         state = EnemyState.Dead;
         currentHealth = 0f;
         currentPoise = 0f;
@@ -609,6 +932,8 @@ public class Enemy : MonoBehaviour
         initialized = false;
         OnDeath = null;
         OnDamageTaken = null;
+        // 销毁材质实例，避免内存泄漏
+        DestroyFlashMaterials();
         gameObject.SetActive(false);
     }
 

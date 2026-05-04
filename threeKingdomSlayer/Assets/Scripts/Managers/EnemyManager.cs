@@ -78,6 +78,8 @@ public class EnemyManager : MonoBehaviour
 
     /// <summary>
     /// 敌人死亡回调
+    /// 注意：闪白效果现在由 Enemy.Die() 中的协程处理（使用材质实例 + 延迟触发死亡事件），
+    /// 因此此处直接回收敌人到对象池即可。
     /// </summary>
     private void OnEnemyDied(Enemy enemy)
     {
@@ -89,7 +91,7 @@ public class EnemyManager : MonoBehaviour
         // 从列中移除
         columnManager?.RemoveEnemyFromColumn(enemy.columnIndex, enemy);
 
-        // 回收对象
+        // 回收对象（Enemy.Die() 中的协程已处理闪白延迟）
         EnemyPool.Instance?.ReturnEnemy(enemy);
 
         // 触发事件

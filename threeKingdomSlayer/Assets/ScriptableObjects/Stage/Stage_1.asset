@@ -34,8 +34,16 @@ MonoBehaviour:
   - 0.5
   - 0.2
   maxVisibleRows: 5
+  rushMoveDelay: 0.2
   formationPreset: {fileID: 0}
+  manualRowHalfWidths:
+  - 4
+  - 3.5
+  - 3
+  - 2.5
+  - 2
   formationMaxSpread: 4
   formationMinSpread: 0.5
   formationPowerCurve: 1.2
   rowSpacing: 2.5
+  formationOffsetZ: 0

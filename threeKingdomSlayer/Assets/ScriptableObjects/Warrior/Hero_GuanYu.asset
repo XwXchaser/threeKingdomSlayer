@@ -17,21 +17,21 @@ MonoBehaviour:
   maxHealth: 500
   reviveCount: 0
   reviveHealthPercent: 0.5
-  stabDamage: 200
+  stabDamage: 100
   stabRangeRows: 1
-  stabCooldown: 0.5
-  slashDamage: 100
+  stabCooldown: 3
+  slashDamage: 50
   slashRangeRows: 1
-  slashCooldown: 0.8
+  slashCooldown: 5
   pierceDamage: 200
   pierceRangeRows: 5
-  pierceCooldown: 1.5
-  sweepDamage: 200
-  sweepRangeRows: 3
-  sweepCooldown: 1.2
+  pierceCooldown: 10
+  sweepDamage: 100
+  sweepRangeRows: 2
+  sweepCooldown: 10
   launchDamage: 25
   launchRangeRows: 2
-  launchCooldown: 1
+  launchCooldown: 5
   launchDuration: 2
   launchPoiseDamage: 30
   parryDamage: 15
