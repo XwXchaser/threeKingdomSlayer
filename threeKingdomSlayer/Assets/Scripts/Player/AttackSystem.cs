@@ -13,6 +13,13 @@ public class AttackSystem : MonoBehaviour
     public ColumnManager columnManager;
     public PlayerState playerState;
 
+    [Header("攻击波预制体（可选，null 则用占位 Quad）")]
+    public GameObject stabWavePrefab;
+    public GameObject slashWavePrefab;
+    public GameObject pierceWavePrefab;
+    public GameObject sweepWavePrefab;
+    public GameObject launchWavePrefab;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -94,7 +101,11 @@ public class AttackSystem : MonoBehaviour
         int rangeRows = playerState.heroConfig.stabRangeRows;
 
         List<Enemy> targets = columnManager.GetEnemiesInRange(columnIndex, rangeRows);
-        ApplyDamageToTargets(targets, damage, DamageType.Stab);
+        if (targets.Count > 0)
+        {
+            Vector3 wavePos = GetWavePosition(targets, columnIndex);
+            AttackWave.Create(wavePos, DamageType.Stab, damage, targets, prefab: stabWavePrefab);
+        }
 
         Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{damage} 目标数:{targets.Count}");
         return targets.Count > 0;
@@ -112,7 +123,11 @@ public class AttackSystem : MonoBehaviour
         int rangeRows = playerState.heroConfig.slashRangeRows;
 
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(rangeRows);
-        ApplyDamageToTargets(targets, damage, DamageType.Slash);
+        if (targets.Count > 0)
+        {
+            Vector3 wavePos = GetWavePosition(targets, -1);
+            AttackWave.Create(wavePos, DamageType.Slash, damage, targets, prefab: slashWavePrefab);
+        }
 
         Debug.Log($"[AttackSystem] 斩击 伤害:{damage} 目标数:{targets.Count}");
         return targets.Count > 0;
@@ -130,7 +145,11 @@ public class AttackSystem : MonoBehaviour
         int rangeRows = playerState.heroConfig.pierceRangeRows;
 
         List<Enemy> targets = columnManager.GetEnemiesInRange(columnIndex, rangeRows);
-        ApplyDamageToTargets(targets, damage, DamageType.Pierce);
+        if (targets.Count > 0)
+        {
+            Vector3 wavePos = GetWavePosition(targets, columnIndex);
+            AttackWave.Create(wavePos, DamageType.Pierce, damage, targets, prefab: pierceWavePrefab);
+        }
 
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{damage} 目标数:{targets.Count}");
         return targets.Count > 0;
@@ -148,7 +167,11 @@ public class AttackSystem : MonoBehaviour
         int rangeRows = playerState.heroConfig.sweepRangeRows;
 
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(rangeRows);
-        ApplyDamageToTargets(targets, damage, DamageType.Sweep);
+        if (targets.Count > 0)
+        {
+            Vector3 wavePos = GetWavePosition(targets, -1);
+            AttackWave.Create(wavePos, DamageType.Sweep, damage, targets, prefab: sweepWavePrefab);
+        }
 
         Debug.Log($"[AttackSystem] 横扫 伤害:{damage} 目标数:{targets.Count}");
         return targets.Count > 0;
@@ -168,12 +191,16 @@ public class AttackSystem : MonoBehaviour
         float duration = playerState.heroConfig.launchDuration;
 
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(rangeRows);
-        foreach (var enemy in targets)
+        if (targets.Count > 0)
         {
-            if (enemy == null || enemy.state == EnemyState.Dead) continue;
-            enemy.TakeDamage(damage, DamageType.Launch);
-            enemy.TakePoiseDamage(poiseDamage);
-            enemy.Launch(duration);
+            Vector3 wavePos = GetWavePosition(targets, -1);
+            AttackWave.Create(wavePos, DamageType.Launch, damage, targets,
+                onHit: (enemy) =>
+                {
+                    enemy.TakePoiseDamage(poiseDamage);
+                    enemy.Launch(duration);
+                },
+                prefab: launchWavePrefab);
         }
 
         Debug.Log($"[AttackSystem] 挑飞 伤害:{damage} 架势伤害:{poiseDamage} 击飞时间:{duration}s 目标数:{targets.Count}");
@@ -222,15 +249,28 @@ public class AttackSystem : MonoBehaviour
     #region 工具方法
 
     /// <summary>
-    /// 对目标列表应用伤害
+    /// 计算攻击波的生成位置
+    /// 单列攻击：置于该列的前排敌人前方；多列攻击：置于屏幕中央
     /// </summary>
-    private void ApplyDamageToTargets(List<Enemy> targets, float damage, DamageType damageType)
+    private Vector3 GetWavePosition(List<Enemy> targets, int targetColumn)
     {
-        foreach (var enemy in targets)
-        {
-            if (enemy == null || enemy.state == EnemyState.Dead) continue;
-            enemy.TakeDamage(damage, damageType);
-        }
+        if (targets.Count == 0)
+            return new Vector3(0, 1.5f, -10f);
+
+        // 取第一个（最前排）目标的位置
+        Vector3 pos = targets[0].transform.position;
+
+        // X: 单列攻击用该列的 X，多列攻击居中
+        if (targetColumn < 0)
+            pos.x = 0f;
+
+        // Y: 敌人胸口高度（pivot 通常在地面，+1.5f 到躯干位置）
+        pos.y = targets[0].transform.position.y + 1.5f;
+
+        // Z: 稍微靠前（更接近玩家），让波看起来是从玩家方向飞来的
+        pos.z += 0.5f;
+
+        return pos;
     }
 
     /// <summary>
