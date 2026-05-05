@@ -85,6 +85,10 @@ public class Enemy : MonoBehaviour
     // DOTween: 当前攻击动画序列（用于在 Die() 中取消正在执行的攻击动作）
     private Sequence attackSequence;
 
+    // 敌人物体原始缩放值（从预制体读取，用于攻击动画/死亡后还原）
+    // 不能硬编码为 Vector3.one，因为不同敌人可能有不同默认缩放（如 0.5）
+    private Vector3 originalScale;
+
     // 事件
     public System.Action<Enemy> OnDeath;
     public System.Action<Enemy> OnDamageTaken;
@@ -133,6 +137,10 @@ public class Enemy : MonoBehaviour
         initialized = true;
 
         gameObject.SetActive(true);
+
+        // 保存原始缩放值，用于攻击动画/死亡后的还原
+        originalScale = transform.localScale;
+
         UpdateWorldPosition();
 
         // 如果敌人已在攻击范围内（由 EnemyConfig.attackRange 决定），直接进入攻击状态
@@ -228,8 +236,16 @@ public class Enemy : MonoBehaviour
         if (state == EnemyState.Dead) return;
 
         // 如果敌人已在攻击范围内（由 EnemyConfig.attackRange 决定），直接进入攻击状态而非移动
+        // 补齐移动（isRush=true）优先级高于攻击：即使已在攻击范围内，也先向前补齐空位
         int attackRange = config != null ? (int)Mathf.Max(1, config.attackRange) : 1;
-        if (rowIndex < attackRange)
+        if (!isRush && rowIndex < attackRange)
+        {
+            StartAttacking();
+            return;
+        }
+
+        // 补齐移动：如果已在目标位置或之前，不需要移动，恢复攻击
+        if (isRush && targetRow >= 0 && rowIndex <= targetRow)
         {
             StartAttacking();
             return;
@@ -285,11 +301,12 @@ public class Enemy : MonoBehaviour
     {
         if (state == EnemyState.Dead) return;
         state = EnemyState.Attacking;
-        // BUG FIX: 先进入攻击冷却阶段，冷却结束后才播放攻击动画
-        // 不再立即播放攻击动画，而是从冷却阶段开始
         isAttackAnimating = false;
-        // 初始冷却：attackTimer 已在 Initialize() 中设为 1f，保留该值
-        // 后续冷却在 UpdateAttack() 的动画结束后设置
+        // 使用与攻击动画 OnComplete 中相同的冷却计算，保证补齐后首次攻击也遵循攻击 CD
+        float totalInterval = config != null ? (1f / config.attackSpeed) : 1f;
+        float cooldown = totalInterval * 0.4f;
+        if (cooldown < 0.1f) cooldown = 0.1f;
+        attackTimer = cooldown;
     }
 
     public void Stun(float duration)
@@ -376,28 +393,12 @@ public class Enemy : MonoBehaviour
 
             if (wasRush)
             {
-                if (reachedAttackRange)
+                // BUG FIX: 补齐移动优先级高于攻击。即使当前行已在攻击范围内，
+                // 只要尚未到达目标位置（targetRow），就必须继续向前补齐。
+                // 先检查是否需要继续补齐，然后再判断是否开始攻击。
+                if (targetRow >= 0 && rowIndex > targetRow)
                 {
-                    // 到达攻击范围，开始攻击
-                    Debug.Log($"[Enemy] 补齐移动完成（到达攻击范围）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}");
-                    StartAttacking();
-                }
-                else if (targetRow >= 0 && rowIndex <= targetRow)
-                {
-                    // BUG FIX: Problem 4 - 已到达目标位置（列表位置），停止补齐
-                    // targetRow 由 Column.RemoveEnemy() / ColumnManager.UpdateEnemyRow() 设置，
-                    // 值为列表位置 i（SetRowIndex(i+1) 后的目标排）。
-                    // 当 rowIndex <= targetRow 时，该敌人已到达正确位置，禁止继续向前补齐，
-                    // 防止多个敌人在 delay 循环中全部汇聚到 row=0 导致重叠。
-                    Debug.Log($"[Enemy] 补齐移动完成（到达目标位置，停止补齐）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
-                    state = EnemyState.Idle;
-                    pendingRushMove = false;
-                    targetRow = -1;
-                }
-                else
-                {
-                    // 尚未到达攻击范围，启动补齐延迟
-                    // 不再连续多排补齐，而是等待 rushMoveDelay 秒后再开始下一次补齐移动。
+                    // 尚未到达目标位置（列表位置），继续补齐
                     float delay = 0f;
                     if (StageController.Instance != null)
                     {
@@ -405,7 +406,7 @@ public class Enemy : MonoBehaviour
                     }
                     if (delay > 0f)
                     {
-                        Debug.Log($"[Enemy] 补齐移动完成（等待延迟继续补齐）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, delay={delay:F2}s");
+                        Debug.Log($"[Enemy] 补齐移动完成（等待延迟继续补齐）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}, delay={delay:F2}s");
                         state = EnemyState.Idle;
                         pendingRushMove = true;
                         rushMoveDelayTimer = delay;
@@ -413,11 +414,27 @@ public class Enemy : MonoBehaviour
                     else
                     {
                         // 无延迟，立即继续补齐
-                        Debug.Log($"[Enemy] 补齐移动完成（立即继续补齐）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}");
+                        Debug.Log($"[Enemy] 补齐移动完成（立即继续补齐）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
                         state = EnemyState.Idle;
                         pendingRushMove = true;
                         TryStartRushMove();
                     }
+                }
+                else if (reachedAttackRange)
+                {
+                    // 已到达目标位置且在攻击范围内，开始攻击
+                    Debug.Log($"[Enemy] 补齐移动完成（到达目标位置+攻击范围）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}");
+                    pendingRushMove = false;
+                    targetRow = -1;
+                    StartAttacking();
+                }
+                else
+                {
+                    // 已到达目标位置但不在攻击范围内，停止补齐
+                    Debug.Log($"[Enemy] 补齐移动完成（到达目标位置，停止补齐）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
+                    state = EnemyState.Idle;
+                    pendingRushMove = false;
+                    targetRow = -1;
                 }
 
                 // BUG FIX: 链式触发移至移动完全完成后，而非移动中期。
@@ -698,10 +715,14 @@ public class Enemy : MonoBehaviour
 
         // BUG FIX: 取消正在执行的攻击 DOTween 动画
         // 若敌人在攻击动画中被秒杀，立即中断攻击动作（前移+翻转），直接进入死亡状态
+        // Kill() 后立即重置位置和缩放：Kill 会留下中断时的中间值（如翻转-0.2），
+        // 若不重置，死亡动效期间敌人位置/缩放会是错误的
         if (attackSequence != null && attackSequence.IsActive())
         {
             attackSequence.Kill();
             attackSequence = null;
+            UpdateWorldPosition();
+            transform.localScale = originalScale;
         }
         isAttackAnimating = false;
         isMovingToNextRow = false;
@@ -760,7 +781,7 @@ public class Enemy : MonoBehaviour
         yield return deathSeq.WaitForCompletion();
 
         // 恢复缩放和旋转（供对象池复用）
-        transform.localScale = Vector3.one;
+        transform.localScale = originalScale;
         transform.localRotation = Quaternion.identity;
 
         // 死亡动效结束后触发死亡事件（EnemyManager.OnEnemyDied → ReturnEnemy → SetActive(false)）
@@ -781,6 +802,18 @@ public class Enemy : MonoBehaviour
     /// </summary>
     public void ResetMovementState()
     {
+        // 若敌人正在播放攻击动画，先清理 DOTween 序列并重置位置/缩放
+        // 否则后续 StartMoving() 中的 DOTween.Kill(transform, false) 会直接中断攻击 tween，
+        // 留下中间值（如 ScaleX=-0.2）导致视觉错误，且攻击动画与补齐移动并发
+        if (attackSequence != null && attackSequence.IsActive())
+        {
+            attackSequence.Kill();
+            attackSequence = null;
+            UpdateWorldPosition();
+            transform.localScale = originalScale;
+        }
+        isAttackAnimating = false;
+
         state = EnemyState.Idle;
         isMovingToNextRow = false;
         moveProgress = 0f;
@@ -817,10 +850,15 @@ public class Enemy : MonoBehaviour
             case EnemyState.Attacking:
                 if (!isAttackAnimating)
                 {
-                    // 冷却阶段：先执行补齐再攻击
-                    pendingRushMove = false;
+                    // 冷却阶段：中断攻击，但等待 rushMoveDelay 后再开始补齐
+                    // 不立即 StartMoving，避免跳过补齐延迟计时器
                     ResetMovementState();
-                    StartMoving(true);
+                    pendingRushMove = true;
+                    float delay = StageController.Instance?.GetRushMoveDelay() ?? 0f;
+                    if (delay > 0f)
+                        rushMoveDelayTimer = delay;
+                    else
+                        StartMoving(true);
                     return true;
                 }
                 // 动画阶段：等待动画完成，由 UpdateAttack() 调用 TryStartRushMove

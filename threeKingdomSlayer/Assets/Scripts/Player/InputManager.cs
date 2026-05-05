@@ -363,35 +363,15 @@ public class InputManager : MonoBehaviour
 
     /// <summary>
     /// 根据屏幕X坐标映射到列索引（0~4）
-    ///
-    /// BUG FIX: 使用基于实际敌人位置的最近列检测，而非简单的屏幕均匀分割。
-    /// 之前简单地将屏幕X坐标均匀映射到5列，但阵型是梯形/扇形的，
-    /// 列的实际X位置不是均匀分布的，导致点击A列却打到B列。
-    ///
-    /// 新方案：遍历所有列的最前排敌人，找到屏幕X坐标最近的敌人所在列。
-    /// 如果没有任何敌人，则回退到均匀分割方案。
+    /// 将敌人投影到屏幕空间，直接比较屏幕X距离。
+    /// 如果最近匹配超过半列宽度，返回 -1 阻断攻击（防止空列自动跳转到邻列）。
     /// </summary>
     private int GetColumnFromScreenPosition(Vector2 screenPos)
     {
-        // BUG FIX: 使用基于实际敌人位置的最近列检测
-        // 将屏幕坐标转换为世界坐标（通过摄像机）
         Camera mainCamera = Camera.main;
         if (mainCamera == null)
-        {
-            // 回退到均匀分割
             return FallbackGetColumn(screenPos);
-        }
 
-        // 创建一条从摄像机穿过屏幕点的射线
-        Ray ray = mainCamera.ScreenPointToRay(screenPos);
-        
-        // 在Z=0平面上计算射线与平面的交点
-        // 假设敌人在Z=0平面附近（实际敌人Z坐标可能不同，但用于列判定足够了）
-        float planeZ = 0f;
-        float rayDistance = (planeZ - ray.origin.z) / ray.direction.z;
-        Vector3 worldPoint = ray.origin + ray.direction * rayDistance;
-
-        // 遍历所有列的最前排敌人，找到最近的列
         int bestColumn = -1;
         float bestDistance = float.MaxValue;
 
@@ -402,8 +382,8 @@ public class InputManager : MonoBehaviour
                 Enemy frontEnemy = AttackSystem.Instance.columnManager.GetFrontEnemy(col);
                 if (frontEnemy != null && frontEnemy.state != EnemyState.Dead)
                 {
-                    // 使用敌人的世界X坐标与射线交点X坐标的距离
-                    float dist = Mathf.Abs(frontEnemy.transform.position.x - worldPoint.x);
+                    Vector3 enemyScreenPos = mainCamera.WorldToScreenPoint(frontEnemy.transform.position);
+                    float dist = Mathf.Abs(enemyScreenPos.x - screenPos.x);
                     if (dist < bestDistance)
                     {
                         bestDistance = dist;
@@ -413,14 +393,13 @@ public class InputManager : MonoBehaviour
             }
         }
 
-        // 如果找到了最近的敌人列，使用它
-        if (bestColumn >= 0)
-        {
+        // 阈值：半列宽度。超过此距离说明点击位置与存活的敌人列偏差过大，阻断攻击
+        float halfColumnWidth = Screen.width / 10f;
+        if (bestColumn >= 0 && bestDistance <= halfColumnWidth)
             return bestColumn;
-        }
 
-        // 回退：如果没有敌人，使用均匀分割
-        return FallbackGetColumn(screenPos);
+        // 没有足够近的存活敌人 → 返回 -1，攻击不会触发
+        return -1;
     }
 
     /// <summary>

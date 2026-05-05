@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 using UnityEngine.UI;
 
 /// <summary>
@@ -9,19 +10,19 @@ public class BattleHUD : MonoBehaviour
 {
     [Header("生命值")]
     public Slider healthSlider;
-    public Text healthText;
+    public TMP_Text healthText;
 
     [Header("复活次数")]
-    public Text reviveText;
+    public TMP_Text reviveText;
 
     [Header("连杀计数")]
-    public Text killCountText;
+    public TMP_Text killCountText;
 
     [Header("铜钱")]
-    public Text coinText;
+    public TMP_Text coinText;
 
     [Header("波次")]
-    public Text waveText;
+    public TMP_Text waveText;
 
     [Header("冷却指示器")]
     public Image stabCooldownImage;
@@ -44,7 +45,7 @@ public class BattleHUD : MonoBehaviour
     [Header("关卡状态")]
     public GameObject victoryPanel;
     public GameObject defeatPanel;
-    public Text resultCoinText;
+    public TMP_Text resultCoinText;
 
     private void Start()
     {
