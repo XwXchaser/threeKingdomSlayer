@@ -82,6 +82,9 @@ public class Enemy : MonoBehaviour
     // DOTween: 前进补齐时 Y 轴弹跳偏移（由 DOTween 驱动，在 UpdateWorldPosition 中应用）
     private float bounceYOffset;
 
+    // DOTween: 当前攻击动画序列（用于在 Die() 中取消正在执行的攻击动作）
+    private Sequence attackSequence;
+
     // 事件
     public System.Action<Enemy> OnDeath;
     public System.Action<Enemy> OnDamageTaken;
@@ -122,6 +125,7 @@ public class Enemy : MonoBehaviour
         rushMoveChainTriggered = false;
         targetRow = -1;
         bounceYOffset = 0f;
+        attackSequence = null;
         // 创建材质实例（用于闪白效果）
         // 通过 renderer.material 创建实例，避免 MaterialPropertyBlock 在对象禁用时不生效
         CreateFlashMaterials();
@@ -131,11 +135,9 @@ public class Enemy : MonoBehaviour
         gameObject.SetActive(true);
         UpdateWorldPosition();
 
-        // BUG FIX: 敌人生成后不自动开始移动。
-        // 敌人开局时直接站在对应排位置，不需要移动。
-        // 只有当前排被击杀出现空位时，Column.RemoveEnemy() 才会触发后方敌人前进。
-        // 如果 rowIndex == 0（最前排），直接进入攻击状态。
-        if (rowIndex <= 0)
+        // 如果敌人已在攻击范围内（由 EnemyConfig.attackRange 决定），直接进入攻击状态
+        int attackRange = config != null ? (int)Mathf.Max(1, config.attackRange) : 1;
+        if (rowIndex < attackRange)
         {
             StartAttacking();
         }
@@ -225,11 +227,10 @@ public class Enemy : MonoBehaviour
     {
         if (state == EnemyState.Dead) return;
 
-        // BUG FIX: 如果已经到达最前排，直接进入攻击状态而非移动
-        // 否则 UpdateWorldPosition() 中 targetRowZ 计算为正值，敌人会向后退
-        if (rowIndex <= 0)
+        // 如果敌人已在攻击范围内（由 EnemyConfig.attackRange 决定），直接进入攻击状态而非移动
+        int attackRange = config != null ? (int)Mathf.Max(1, config.attackRange) : 1;
+        if (rowIndex < attackRange)
         {
-            Debug.Log($"[Enemy] StartMoving→StartAttacking (row=0): enemyId={config?.enemyId}, col={columnIndex}");
             StartAttacking();
             return;
         }
@@ -449,7 +450,7 @@ public class Enemy : MonoBehaviour
     /// 更新攻击状态
     /// BUG FIX: 攻击分为两个阶段：
     ///   阶段1：攻击冷却（attackTimer > 0）— 先进入冷却再攻击
-    ///   阶段2：攻击动画（attackAnimTimer > 0）— 播放攻击动作，动画结束时造成伤害
+    ///   阶段2：攻击动画（DOTween）— 使用 DOTween Sequence 播放前移+翻转+后退动效，动画结束时造成伤害
     ///
     /// 攻击优先级规则（Problem 1 修复）：
     ///   1. 冷却期间如果 pendingRushMove == true → 先执行补齐再攻击
@@ -459,21 +460,9 @@ public class Enemy : MonoBehaviour
     {
         if (isAttackAnimating)
         {
-            // 阶段2：播放攻击动画（动画期间不中断）
-            attackAnimTimer -= Time.deltaTime;
-            if (attackAnimTimer <= 0f)
-            {
-                // 动画结束，造成伤害
-                isAttackAnimating = false;
-                PerformAttack();
-                // 进入冷却阶段
-                float cooldown = config != null ? (1f / config.attackSpeed) : 1f;
-                attackTimer = cooldown;
-
-                // BUG FIX: 完成当前攻击后，检查是否需要向前补齐
-                // 如果 pendingRushMove == true，优先执行补齐
-                TryStartRushMove();
-            }
+            // 阶段2：DOTween 攻击动画播放中
+            // 动画完成后通过 OnComplete 回调处理（PerformAttack + 设置冷却 + TryStartRushMove）
+            return;
         }
         else
         {
@@ -488,9 +477,8 @@ public class Enemy : MonoBehaviour
             attackTimer -= Time.deltaTime;
             if (attackTimer <= 0f)
             {
-                // 冷却结束，开始攻击动画
-                attackAnimTimer = 0.5f;
-                isAttackAnimating = true;
+                // 冷却结束，使用 DOTween 播放攻击动画
+                PlayAttackAnimationTween();
             }
         }
     }
@@ -500,6 +488,59 @@ public class Enemy : MonoBehaviour
         // 通知玩家受到伤害
         // 由EnemyManager转发给PlayerState
         EnemyManager.Instance?.OnEnemyAttackPlayer(this);
+    }
+
+    /// <summary>
+    /// 使用 DOTween 播放攻击动效
+    /// 效果：向前（-Z方向）移动 + 左右镜像翻转（scale.X * -1）→ 后退到原位 + 翻转回正
+    /// 动画时长基于 attackSpeed（攻击速度越快动画越快）
+    /// 动画完成后：PerformAttack() → 进入冷却 → 检查是否需要补齐
+    /// </summary>
+    private void PlayAttackAnimationTween()
+    {
+        isAttackAnimating = true;
+
+        // 保存起始位置和缩放（动画完成后恢复）
+        Vector3 startPos = transform.localPosition;
+        Vector3 startScale = transform.localScale;
+
+        // 根据 attackSpeed 计算动画时长
+        // 攻击间隔 = 1/attackSpeed，动画占 60%，冷却占 40%
+        float totalInterval = config != null ? (1f / config.attackSpeed) : 1f;
+        float animDuration = totalInterval * 0.6f;
+        // 限制最小/最大动画时长
+        animDuration = Mathf.Clamp(animDuration, 0.15f, 0.6f);
+        float halfAnim = animDuration * 0.5f;
+        float forwardDistance = 0.5f; // 向前移动距离
+
+        attackSequence = DOTween.Sequence();
+        attackSequence.SetTarget(transform);
+        attackSequence.SetId("attackAnim");
+
+        // 阶段1：向前移动 + 左右镜像翻转
+        // 使用 Join 让两个动画同时进行
+        attackSequence.Append(transform.DOLocalMoveZ(startPos.z - forwardDistance, halfAnim).SetEase(Ease.OutQuad));
+        attackSequence.Join(transform.DOScaleX(-startScale.x, halfAnim).SetEase(Ease.OutQuad));
+
+        // 阶段2：后退到原位 + 翻转回正常
+        attackSequence.Append(transform.DOLocalMoveZ(startPos.z, halfAnim).SetEase(Ease.InQuad));
+        attackSequence.Join(transform.DOScaleX(startScale.x, halfAnim).SetEase(Ease.InQuad));
+
+        // 动画完成回调
+        attackSequence.OnComplete(() =>
+        {
+            attackSequence = null;
+            isAttackAnimating = false;
+            PerformAttack();
+
+            // 进入冷却阶段（动画占 60%，冷却占 40%）
+            float cooldown = totalInterval * 0.4f;
+            if (cooldown < 0.1f) cooldown = 0.1f; // 最小冷却时间
+            attackTimer = cooldown;
+
+            // 完成当前攻击后，检查是否需要向前补齐
+            TryStartRushMove();
+        });
     }
 
     #endregion
@@ -521,6 +562,12 @@ public class Enemy : MonoBehaviour
 
         currentHealth -= finalDamage;
         OnDamageTaken?.Invoke(this);
+
+        // 受伤跳字：在敌人右侧显示红色带黑描边的伤害数字
+        if (DamageNumberManager.Instance != null)
+        {
+            DamageNumberManager.Instance.Spawn(transform.position, finalDamage);
+        }
 
         // BUG FIX: 同步应用闪白（立即设置颜色，不依赖 Update 循环）
         // 即使敌人秒杀死亡，闪白效果也在死亡前被渲染
@@ -640,44 +687,83 @@ public class Enemy : MonoBehaviour
     ///
     /// 新流程：
     ///   1. state = Dead（Update 提前返回，不再处理攻击/移动逻辑）
-    ///   2. 启动协程 FlashThenRelease()
-    ///   3. 协程中通过材质实例设置白色，等待 HIT_FLASH_DURATION 秒
+    ///   2. 取消正在执行的攻击 DOTween 动画
+    ///   3. 启动死亡动效协程 DeathBounceAndFall()
     ///   4. 协程结束后触发 OnDeath 事件（池回收，禁用 GameObject）
-    ///   此时闪白已在屏幕上显示了至少一帧，即使 GameObject 被禁用，用户已看到闪烁。
     /// </summary>
     public void Die()
     {
         if (state == EnemyState.Dead) return;
         state = EnemyState.Dead;
-        // 启动闪白协程（材质实例 + 延迟触发死亡事件）
-        StartCoroutine(FlashThenRelease());
+
+        // BUG FIX: 取消正在执行的攻击 DOTween 动画
+        // 若敌人在攻击动画中被秒杀，立即中断攻击动作（前移+翻转），直接进入死亡状态
+        if (attackSequence != null && attackSequence.IsActive())
+        {
+            attackSequence.Kill();
+            attackSequence = null;
+        }
+        isAttackAnimating = false;
+        isMovingToNextRow = false;
+
+        // 启动死亡动效协程（弹起 + 旋转 + 重力掉落）
+        StartCoroutine(DeathBounceAndFall());
     }
 
     /// <summary>
-    /// 闪白协程 + DOTween 死亡动效
-    /// 流程：
-    ///   1. 立即将材质颜色设为白色（闪白）
-    ///   2. 使用 DOTween Sequence 等待 HIT_FLASH_DURATION 秒（闪白保持）
-    ///   3. 缩放至 0（InBack 缓动，死亡消失效果）
-    ///   4. 恢复缩放为 1（供对象池复用），触发 OnDeath 事件
+    /// 死亡动效协程 — 弹起 + 随机旋转 + 重力掉落
+    /// 使用 DOTween 实现：
+    ///   1. 立即闪白（ApplyHitFlashImmediate）
+    ///   2. 弹起（Y 轴向上 OutQuad 缓动）
+    ///   3. 随机旋转（在 X 和 Z 轴上随机角度，贯穿整个动画）
+    ///   4. 受重力掉落离开屏幕（Y 轴向下 InQuad 缓动）
+    ///   5. 恢复缩放和旋转（供对象池复用），触发 OnDeath 事件
     /// </summary>
-    private System.Collections.IEnumerator FlashThenRelease()
+    private System.Collections.IEnumerator DeathBounceAndFall()
     {
         // 立即将材质颜色设为白色（闪白）
         ApplyHitFlashImmediate();
 
-        // 构建 DOTween 序列：先闪白保持，再缩放消失
-        Sequence deathSequence = DOTween.Sequence();
-        deathSequence.AppendInterval(HIT_FLASH_DURATION);
-        deathSequence.Append(transform.DOScale(0f, 0.3f).SetEase(Ease.InBack));
+        // 保存起始位置
+        Vector3 startPos = transform.localPosition;
+
+        // 构建 DOTween 序列
+        Sequence deathSeq = DOTween.Sequence();
+        deathSeq.SetTarget(transform);
+        deathSeq.SetId("deathAnim");
+
+        float jumpHeight = Random.Range(1.5f, 3.0f);   // 弹起高度
+        float fallDistance = 20f;                        // 掉落距离（确保离开屏幕）
+        float jumpDuration = 0.3f;                       // 弹起时长
+        float fallDuration = 0.8f;                       // 掉落时长
+
+        // 阶段1：弹起（OutQuad 缓动，模拟起跳的加速度）
+        deathSeq.Append(transform.DOLocalMoveY(startPos.y + jumpHeight, jumpDuration).SetEase(Ease.OutQuad));
+
+        // 阶段2：受重力掉落离开屏幕（InQuad 缓动，模拟自由落体加速）
+        deathSeq.Append(transform.DOLocalMoveY(startPos.y - fallDistance, fallDuration).SetEase(Ease.InQuad));
+
+        // 随机旋转（贯穿整个动画：弹起阶段 + 掉落阶段）
+        // 在 X 轴和 Z 轴上随机旋转，模拟被击飞后的翻滚
+        Vector3 randomRotation = new Vector3(
+            Random.Range(-60f, 60f),   // X 轴轻微翻转
+            0f,                          // Y 轴不旋转（2D 精灵）
+            Random.Range(-360f, 360f)   // Z 轴大角度旋转
+        );
+        float totalAnimDuration = jumpDuration + fallDuration;
+        transform.DORotate(randomRotation, totalAnimDuration, RotateMode.LocalAxisAdd)
+            .SetEase(Ease.OutQuad)
+            .SetTarget(transform)
+            .SetId("deathAnim");
 
         // 等待序列完成
-        yield return deathSequence.WaitForCompletion();
+        yield return deathSeq.WaitForCompletion();
 
-        // 恢复缩放（供对象池复用）
+        // 恢复缩放和旋转（供对象池复用）
         transform.localScale = Vector3.one;
+        transform.localRotation = Quaternion.identity;
 
-        // 闪白+死亡动效结束后触发死亡事件（EnemyManager.OnEnemyDied → ReturnEnemy → SetActive(false)）
+        // 死亡动效结束后触发死亡事件（EnemyManager.OnEnemyDied → ReturnEnemy → SetActive(false)）
         OnDeath?.Invoke(this);
     }
 
