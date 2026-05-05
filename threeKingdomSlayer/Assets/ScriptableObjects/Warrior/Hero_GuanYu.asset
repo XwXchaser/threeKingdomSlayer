@@ -19,16 +19,16 @@ MonoBehaviour:
   reviveHealthPercent: 0.5
   stabDamage: 100
   stabRangeRows: 1
-  stabCooldown: 3
+  stabCooldown: 1
   slashDamage: 50
   slashRangeRows: 1
-  slashCooldown: 5
+  slashCooldown: 2
   pierceDamage: 200
   pierceRangeRows: 5
-  pierceCooldown: 10
+  pierceCooldown: 5
   sweepDamage: 100
   sweepRangeRows: 2
-  sweepCooldown: 10
+  sweepCooldown: 5
   launchDamage: 25
   launchRangeRows: 2
   launchCooldown: 5

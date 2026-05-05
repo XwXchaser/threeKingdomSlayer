@@ -130,24 +130,46 @@ public class ColumnManager : MonoBehaviour
             column.enemies.RemoveAt(currentIndex);
             column.enemies.Insert(currentIndex - 1, enemy);
             Debug.Log($"[ColumnManager] 重排列顺序：enemyId={enemy.config?.enemyId}, from={currentIndex}→{currentIndex - 1}");
-            // BUG FIX: SetRowIndex(i+1) 而非 SetRowIndex(i)，
-            // 因为链式补齐移动完成后，UpdateMovement() 中会执行 rowIndex--，
-            // 最终 rowIndex = (i+1) - 1 = i，与列表位置匹配。
-            //
-            // 如果使用 SetRowIndex(i)，则 rowIndex 最终为 i-1，导致位置偏移。
+
+            // BUG FIX（v1 - 过滤Dead敌人）: 跳过 Dead 状态的敌人（可能在死亡协程窗口期内，后续由 RemoveEnemy 处理）。
+            // 从 currentIndex 开始扫描，将存活敌人紧凑排列并清除 Dead 敌人。
+            // BUG FIX（v2 - 移除 SetRowIndex 瞬移）: 不再调用 SetRowIndex()，
+            // 敌人保持当前 rowIndex，利用 targetRow 控制逐步前进（多步补齐）。
+            int writeIdx = currentIndex;
             for (int i = currentIndex; i < column.enemies.Count; i++)
             {
                 Enemy e = column.enemies[i];
-                Debug.Log($"[ColumnManager] 更新后方敌人: enemyId={e.config?.enemyId}, oldRow={e.rowIndex}, newRow={i}");
+                if (e.state == EnemyState.Dead)
+                {
+                    Debug.Log($"[ColumnManager] 跳过 Dead 敌人（稍后由其自身 OnDeath 处理）: enemyId={e.config?.enemyId}, col={columnIndex}, row={e.rowIndex}");
+                    continue;
+                }
+
+                // 紧凑排列存活敌人
+                if (i != writeIdx)
+                {
+                    column.enemies[writeIdx] = e;
+                }
+
+                Debug.Log($"[ColumnManager] 更新后方敌人: enemyId={e.config?.enemyId}, curRow={e.rowIndex}, writeIdx={writeIdx}");
                 e.ResetMovementState();
-                e.SetRowIndex(i + 1);
-                // BUG FIX: Problem 4 - 设置目标排位置为列表位置
-                e.targetRow = i;
+                // BUG FIX（移除 SetRowIndex 瞬移）: 不再调用 SetRowIndex()，
+                // 敌人保持当前 rowIndex，利用 targetRow 控制多步补齐。
+                // 从当前位置一步步前进到目标位置，无瞬移。
+                e.targetRow = writeIdx;
                 e.pendingRushMove = true;
+
+                writeIdx++;
             }
 
-            // 只启动第一个后方敌人的补齐移动，后续通过链式触发
-            if (currentIndex < column.enemies.Count)
+            // 移除 Dead 敌人留下的空洞
+            if (writeIdx < column.enemies.Count)
+            {
+                column.enemies.RemoveRange(writeIdx, column.enemies.Count - writeIdx);
+            }
+
+            // 只启动第一个存活敌人的补齐移动，后续通过链式触发
+            if (writeIdx > currentIndex)
             {
                 Enemy firstToMove = column.enemies[currentIndex];
                 System.Action<Enemy> handler = null;

@@ -3,7 +3,7 @@ using UnityEngine;
 /// <summary>
 /// 输入管理器
 /// 使用Unity Input System检测点击、长按、滑动等手势
-/// 区分不同手势区域（屏幕左侧/右侧/中间）
+/// 通过划动角度判定攻击类型（纯方向判定，不依赖屏幕区域）
 /// </summary>
 public class InputManager : MonoBehaviour
 {
@@ -15,7 +15,10 @@ public class InputManager : MonoBehaviour
              "未达到前，任何划动/点击仅触发普通攻击（戳击/斩击）或无操作。")]
     public float minChargeTime = 0.5f;       // 最小蓄力时间（秒）
     public float swipeThreshold = 50f;       // 滑动判定最小距离（像素）
-    public float screenZoneWidthRatio = 0.3f; // 左右区域宽度比例
+    [Tooltip("垂直角度阈值（度）：划动方向与垂直轴夹角小于此值时判定为挑飞。范围0~90")]
+    public float verticalSwipeThreshold = 30f;
+    [Tooltip("水平角度阈值（度）：划动方向与水平轴夹角小于此值时判定为横扫。范围0~90")]
+    public float horizontalSwipeThreshold = 30f;
 
     [Header("攻击系统")]
     public AttackSystem attackSystem;
@@ -115,6 +118,9 @@ public class InputManager : MonoBehaviour
         // 鼠标按住
         if (isTouching && Input.GetMouseButton(0))
         {
+            // 更新当前指针位置（供蓄力指示器跟随鼠标）
+            currentPointerPos = Input.mousePosition;
+
             float pressDuration = Time.time - touchStartTime;
             Vector2 currentPos = (Vector2)Input.mousePosition;
             float swipeDistance = Vector2.Distance(currentPos, touchStartPos);
@@ -314,54 +320,39 @@ public class InputManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 处理滑动手势
-    /// 设计文档规则：
-    /// - 水平滑动（左右）：斩击（任意区域）
-    /// - 从屏幕一侧（Left/Right）水平滑向另一侧：横扫
-    /// - 中间区域垂直滑动（上下）：挑飞
-    /// 优先级：横扫 > 挑飞 > 斩击
+    /// 处理滑动手势（纯角度判定）
+    /// 规则：
+    /// - 近垂直划动（与垂直方向夹角 < verticalSwipeThreshold）→ 挑飞 Launch
+    /// - 近水平划动（与水平方向夹角 < horizontalSwipeThreshold）→ 横扫 Sweep
+    /// - 对角线划动 → 斩击 Slash（兜底）
+    /// 不再依赖屏幕区域（Left/Middle/Right），仅通过划动角度识别
     /// </summary>
     private void ProcessSwipeGesture(Vector2 direction, Vector2 releasePos)
     {
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        // 归一化角度到 0~360
-        if (angle < 0) angle += 360f;
+        // 计算方向向量与垂直轴（上方向 = (0,1)）的夹角
+        float angleToVertical = Vector2.Angle(direction, Vector2.up);
+        // 计算方向向量与水平轴（右方向 = (1,0)）的夹角
+        float angleToHorizontal = Vector2.Angle(direction, Vector2.right);
 
-        // 判断滑动方向
-        // 水平滑动（左右）：角度在 0±45 或 180±45
-        // 垂直滑动（上下）：角度在 90±45 或 270±45
-        bool isHorizontal = (angle < 45f || angle > 315f) || (angle > 135f && angle < 225f);
-        bool isVertical = (angle > 45f && angle < 135f) || (angle > 225f && angle < 315f);
-
-        // 判断屏幕区域
-        ScreenZone zone = GetScreenZone(releasePos);
-        ScreenZone startZone = GetScreenZone(touchStartPos);
-
-        // 优先级1：从屏幕一侧水平滑向另一侧 → 横扫
-        if (isHorizontal && startZone != ScreenZone.Middle && zone != ScreenZone.Middle && startZone != zone)
-        {
-            bool executed = attackSystem?.TryExecuteAttack(AttackType.Sweep) ?? false;
-            if (executed) OnAttackExecuted?.Invoke(AttackType.Sweep, -1);
-            return;
-        }
-
-        // 优先级2：中间区域垂直滑动 → 挑飞
-        if (isVertical && zone == ScreenZone.Middle)
+        // 近垂直划动（上/下）→ 挑飞
+        // 方向与垂直轴夹角 < verticalSwipeThreshold
+        if (angleToVertical < verticalSwipeThreshold)
         {
             bool executed = attackSystem?.TryExecuteAttack(AttackType.Launch) ?? false;
             if (executed) OnAttackExecuted?.Invoke(AttackType.Launch, -1);
             return;
         }
 
-        // 优先级3：水平滑动 → 斩击（兜底）
-        if (isHorizontal)
+        // 近水平划动（左/右）→ 横扫
+        // 方向与水平轴夹角 < horizontalSwipeThreshold
+        if (angleToHorizontal < horizontalSwipeThreshold)
         {
-            bool executed = attackSystem?.TryExecuteAttack(AttackType.Slash) ?? false;
-            if (executed) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
+            bool executed = attackSystem?.TryExecuteAttack(AttackType.Sweep) ?? false;
+            if (executed) OnAttackExecuted?.Invoke(AttackType.Sweep, -1);
             return;
         }
 
-        // 其他情况也作为斩击处理
+        // 对角线划动 → 斩击（兜底）
         bool defaultExecuted = attackSystem?.TryExecuteAttack(AttackType.Slash) ?? false;
         if (defaultExecuted) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
     }
@@ -369,32 +360,6 @@ public class InputManager : MonoBehaviour
     #endregion
 
     #region 屏幕坐标映射
-
-    /// <summary>
-    /// 屏幕区域枚举
-    /// </summary>
-    private enum ScreenZone
-    {
-        Left,
-        Middle,
-        Right
-    }
-
-    /// <summary>
-    /// 根据屏幕坐标判断区域
-    /// </summary>
-    private ScreenZone GetScreenZone(Vector2 screenPos)
-    {
-        float screenWidth = Screen.width;
-        float zoneWidth = screenWidth * screenZoneWidthRatio;
-
-        if (screenPos.x < zoneWidth)
-            return ScreenZone.Left;
-        else if (screenPos.x > screenWidth - zoneWidth)
-            return ScreenZone.Right;
-        else
-            return ScreenZone.Middle;
-    }
 
     /// <summary>
     /// 根据屏幕X坐标映射到列索引（0~4）

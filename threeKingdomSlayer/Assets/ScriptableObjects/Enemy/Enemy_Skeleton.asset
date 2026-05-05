@@ -16,10 +16,10 @@ MonoBehaviour:
   enemyId: 101
   maxHealth: 100
   occupySlots: 1
-  attackSpeed: 1
+  attackSpeed: 0.3
   attackDamage: 10
-  attackRange: 0
-  moveSpeed: 1
+  attackRange: 3
+  moveSpeed: 0.3
   maxPoise: 50
   stunDuration: 1.5
   launchDuration: 2

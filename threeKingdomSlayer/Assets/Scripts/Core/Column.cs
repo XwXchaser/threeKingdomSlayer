@@ -76,30 +76,58 @@ public class Column
             int colIndex = enemy.columnIndex;
             Debug.Log($"[Column] RemoveEnemy: column={colIndex}, deadIndex={index}, remaining={enemies.Count}");
 
-            // BUG FIX: 恢复 SetRowIndex(i+1) 调用。
-            // 每次 RemoveEnemy 重新设置后方敌人的排索引为列表位置+1，
-            // 这样补齐移动完成后 rowIndex-- = 列表位置，不会因连续多次补齐导致重合。
-            // 例如：位置0排索引1→移动→rowIndex=0；位置1排索引2→移动→rowIndex=1
-            // 各敌人最终排索引与列表位置一致，不会发生重合。
-            for (int i = index; i < enemies.Count; i++)
+            // BUG FIX（v1 - 过滤Dead敌人）: 清除所有处于 Dead 状态的敌人（同时死亡，协程同时完成时，
+            // 后方敌人 OnDeath 事件尚未处理）。这些敌人的死亡协程（FlashThenRelease）已完成，state 为 Dead，
+            // 它们的 OnDeath 事件会在后续被触发（EnemyManager.OnEnemyDied 会处理它们）。
+            // 如果不清理它们：TryStartRushMove() 会因 state==Dead 返回 false，导致链式补齐永久中断。
+            //
+            // BUG FIX（v2 - 移除 SetRowIndex 瞬移）: 不再调用 SetRowIndex() 设置 rowIndex，
+            // 因为 SetRowIndex() 立即调用 UpdateWorldPosition()，将敌人从当前位置瞬时跳转到目标位置。
+            // 改为让敌人保持当前 rowIndex，利用 targetRow 控制逐步前进（多步补齐）。
+            // UpdateMovement() 中已有的逻辑：移动完成后检查 rowIndex <= targetRow，
+            // 若未到达则延迟后继续移动，从当前位置一步步前进到目标位置，无瞬移。
+            int aliveCount = 0;
+            for (int i = 0; i < enemies.Count; i++)
             {
-                Enemy backEnemy = enemies[i];
-                // 设置排索引为新列表位置+1（一次补齐移动后降为列表位置）
-                backEnemy.SetRowIndex(i + 1);
-                // BUG FIX: Problem 4 - 设置目标排位置为列表位置
-                // 当 rowIndex <= targetRow 时，停止延迟循环中的继续补齐
-                backEnemy.targetRow = i;
+                Enemy e = enemies[i];
+                if (e.state == EnemyState.Dead)
+                {
+                    Debug.Log($"[Column] 跳过 Dead 敌人（稍后由其自身 OnDeath 处理）: enemyId={e.config?.enemyId}, col={colIndex}, row={e.rowIndex}");
+                    continue;
+                }
+
+                // 将存活敌人紧凑排列到列表前面
+                if (i != aliveCount)
+                {
+                    enemies[aliveCount] = e;
+                }
+
+                // BUG FIX（移除 SetRowIndex 瞬移）: 
+                // 不再调用 SetRowIndex() 设置排索引，因为 SetRowIndex() 会立即调用 UpdateWorldPosition()
+                // 将敌人从当前位置（如 row=2）瞬时跳转到目标位置（row=1），造成"瞬移"视觉。
+                // 替代方案：敌人保持当前 rowIndex，利用 targetRow 控制前进距离。
+                // UpdateMovement() 中已有的逻辑：移动完成后检查 rowIndex <= targetRow，
+                // 若未到达则延迟后继续移动（多步补齐），从当前位置一步步前进到目标位置。
+                e.targetRow = aliveCount;
                 // 重置移动状态（重置 state=Idle 使 StartMoving 能通过保护检查）
-                backEnemy.ResetMovementState();
+                e.ResetMovementState();
                 // 标记需要向前补齐（链式触发）
-                backEnemy.pendingRushMove = true;
-                Debug.Log($"[Column] 标记补齐移动: enemyId={backEnemy.config?.enemyId}, col={colIndex}, newRow={i + 1}, targetRow={i}, pending={backEnemy.pendingRushMove}");
+                e.pendingRushMove = true;
+                Debug.Log($"[Column] 标记补齐移动: enemyId={e.config?.enemyId}, col={colIndex}, curRow={e.rowIndex}, targetRow={aliveCount}, pending={e.pendingRushMove}");
+
+                aliveCount++;
             }
 
-            // 只启动第一个敌人的补齐移动，后续通过链式触发
-            if (index < enemies.Count)
+            // 移除列表末尾的"空洞"（被跳过的 Dead 敌人留下的空位）
+            if (aliveCount < enemies.Count)
             {
-                Enemy firstToMove = enemies[index];
+                enemies.RemoveRange(aliveCount, enemies.Count - aliveCount);
+            }
+
+            // 只启动第一个存活敌人的补齐移动，后续通过链式触发
+            if (aliveCount > 0)
+            {
+                Enemy firstToMove = enemies[0];
                 firstToMove.OnRushMoveComplete += OnColumnRushMoveComplete;
                 firstToMove.TryStartRushMove();
                 Debug.Log($"[Column] 启动链式补齐: enemyId={firstToMove.config?.enemyId}, col={colIndex}, row={firstToMove.rowIndex}");
