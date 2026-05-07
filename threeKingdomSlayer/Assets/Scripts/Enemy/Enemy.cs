@@ -698,15 +698,12 @@ public class Enemy : MonoBehaviour
 
     /// <summary>
     /// 死亡
-    /// BUG FIX: 改为使用协程处理闪白效果，而非立即触发死亡事件。
-    /// 因为 EnemyManager.OnEnemyDied() → EnemyPool.ReturnEnemy() → ResetEnemy() → SetActive(false)
-    /// 会在同一帧禁用 GameObject，导致材质颜色修改无法被渲染（渲染管线跳过禁用对象）。
-    ///
-    /// 新流程：
+    /// 流程：
     ///   1. state = Dead（Update 提前返回，不再处理攻击/移动逻辑）
     ///   2. 取消正在执行的攻击 DOTween 动画
-    ///   3. 启动死亡动效协程 DeathBounceAndFall()
-    ///   4. 协程结束后触发 OnDeath 事件（池回收，禁用 GameObject）
+    ///   3. 立即触发 OnDeath 事件 → EnemyManager 计入击杀、判断通关
+    ///   4. 启动死亡动效协程 DeathBounceAndFall()（弹起+旋转+掉落，纯视觉）
+    ///   5. 协程结束后回收到对象池
     /// </summary>
     public void Die()
     {
@@ -727,7 +724,10 @@ public class Enemy : MonoBehaviour
         isAttackAnimating = false;
         isMovingToNextRow = false;
 
-        // 启动死亡动效协程（弹起 + 旋转 + 重力掉落）
+        // 立即触发死亡事件：计入击杀数、判断通关（不等死亡动画播完）
+        OnDeath?.Invoke(this);
+
+        // 启动死亡动效协程（弹起 + 旋转 + 重力掉落，纯视觉表现）
         StartCoroutine(DeathBounceAndFall());
     }
 
@@ -738,7 +738,7 @@ public class Enemy : MonoBehaviour
     ///   2. 弹起（Y 轴向上 OutQuad 缓动）
     ///   3. 随机旋转（在 X 和 Z 轴上随机角度，贯穿整个动画）
     ///   4. 受重力掉落离开屏幕（Y 轴向下 InQuad 缓动）
-    ///   5. 恢复缩放和旋转（供对象池复用），触发 OnDeath 事件
+    ///   5. 恢复缩放和旋转（供对象池复用），回收到对象池
     /// </summary>
     private System.Collections.IEnumerator DeathBounceAndFall()
     {
@@ -784,8 +784,8 @@ public class Enemy : MonoBehaviour
         transform.localScale = originalScale;
         transform.localRotation = Quaternion.identity;
 
-        // 死亡动效结束后触发死亡事件（EnemyManager.OnEnemyDied → ReturnEnemy → SetActive(false)）
-        OnDeath?.Invoke(this);
+        // 死亡动效结束后回收到对象池
+        EnemyPool.Instance?.ReturnEnemy(this);
     }
 
     #endregion

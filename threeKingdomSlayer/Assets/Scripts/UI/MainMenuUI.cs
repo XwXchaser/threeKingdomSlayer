@@ -2,8 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 主菜单UI
-/// 显示游戏标题和新游戏按钮
+/// 主菜单UI — 点击开始后触发 CameraManager 推入动画
 /// </summary>
 public class MainMenuUI : MonoBehaviour
 {
@@ -12,48 +11,37 @@ public class MainMenuUI : MonoBehaviour
     public Button startButton;
     public Button quitButton;
 
-    [Header("场景名称")]
-    public string battleSceneName = "Battle";
+    [Header("过渡")]
+    public CameraManager cameraManager;
 
     private void Start()
     {
         if (titleText != null)
-        {
             titleText.text = "一夫当关";
-        }
         else
-        {
-            Debug.LogWarning("[MainMenuUI] titleText 未赋值，标题将不显示");
-        }
+            Debug.LogWarning("[MainMenuUI] titleText 未赋值");
 
         if (startButton != null)
-        {
             startButton.onClick.AddListener(OnStartGame);
-        }
         else
-        {
-            Debug.LogWarning("[MainMenuUI] startButton 未赋值，无法开始游戏");
-        }
+            Debug.LogWarning("[MainMenuUI] startButton 未赋值");
 
         if (quitButton != null)
-        {
             quitButton.onClick.AddListener(OnQuitGame);
-        }
-        // quitButton 可选，不强制
     }
 
-    /// <summary>
-    /// 开始游戏按钮
-    /// </summary>
     public void OnStartGame()
     {
         Debug.Log("[MainMenu] 开始游戏");
-        UnityEngine.SceneManagement.SceneManager.LoadScene(battleSceneName);
+        if (cameraManager != null)
+            cameraManager.PlayDeparture();
+        else
+        {
+            Debug.LogWarning("[MainMenu] CameraManager 未赋值，直接加载");
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Battle");
+        }
     }
 
-    /// <summary>
-    /// 退出游戏按钮
-    /// </summary>
     public void OnQuitGame()
     {
         Debug.Log("[MainMenu] 退出游戏");

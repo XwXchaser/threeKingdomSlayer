@@ -159,6 +159,44 @@ public class Column
     }
 
     /// <summary>
+    /// 触发补齐前移：将列中所有存活敌人向列表前方补齐。
+    /// 用于波次生成后的初始前移——敌人 spawn 在靠后排，需要逐步前进到攻击位置。
+    /// 逻辑与 RemoveEnemy 的存活敌人重排相同，但不移除任何敌人。
+    /// </summary>
+    public void TriggerFillForward()
+    {
+        if (enemies.Count == 0) return;
+
+        int aliveCount = 0;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            Enemy e = enemies[i];
+            if (e.state == EnemyState.Dead) continue;
+
+            if (i != aliveCount)
+                enemies[aliveCount] = e;
+
+            e.targetRow = aliveCount;
+            e.ResetMovementState();
+            e.pendingRushMove = true;
+            aliveCount++;
+        }
+
+        if (aliveCount < enemies.Count)
+            enemies.RemoveRange(aliveCount, enemies.Count - aliveCount);
+
+        if (aliveCount > 0)
+        {
+            Enemy first = enemies[0];
+            if (first.rowIndex > 0)
+            {
+                first.OnRushMoveComplete += OnColumnRushMoveComplete;
+                first.TryStartRushMove();
+            }
+        }
+    }
+
+    /// <summary>
     /// 获取该列敌人总数
     /// </summary>
     public int EnemyCount => enemies.Count;
