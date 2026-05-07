@@ -1,0 +1,5198 @@
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Attack\AttackWave.cs ---
+using System.Collections.Generic;
+using UnityEngine;
+using DG.Tweening;
+
+public class AttackWave : MonoBehaviour
+{
+    private enum WaveMode { Fixed, Travel }
+
+    private struct TargetEntry
+    {
+        public Enemy enemy;
+        public float hitDelay;
+        public float zThreshold;
+    }
+
+    private WaveMode mode;
+    private float damage;
+    private DamageType damageType;
+    private System.Action<Enemy> onHit;
+    private List<TargetEntry> targets = new List<TargetEntry>();
+    private float elapsed;
+    private int nextIndex;
+    private float lifetime;
+    private float fadeStartTime;
+    private Material mat;
+    private Vector3 targetScale;
+    private Color waveColor;
+
+    private Sequence travelSeq;
+
+    private const float StabStagger = 0.03f;
+    private const float SlashStagger = 0.05f;
+    private const float PierceStagger = 0.02f;
+    private const float SweepStagger = 0.06f;
+    private const float LaunchStagger = 0.04f;
+
+    private const float ProjectileSpeed = 8f;
+    private const float StabThrustTime = 0.2f;
+    private const float StabRetractTime = 0.3f;
+    private const float EndZOffset = 3f;
+
+    public static AttackWave Create(Vector3 position, DamageType damageType, float damage,
+        List<Enemy> targets, System.Action<Enemy> onHit = null, GameObject prefab = null)
+    {
+        GameObject obj;
+        Material material = null;
+        Color color = GetColor(damageType);
+        color.a = 0.85f;
+
+        if (prefab != null)
+        {
+            // 用 prefab 自己的 Z 作为旅行起点，X/Y 保持 GetWavePosition 计算值（列对齐+高度）
+            Vector3 spawnPos = position;
+            spawnPos.z = prefab.transform.position.z;
+            obj = Object.Instantiate(prefab, spawnPos, prefab.transform.rotation);
+            obj.name = $"Wave_{damageType}";
+            Renderer r = obj.GetComponentInChildren<Renderer>();
+            if (r != null) material = r.material;
+        }
+        else
+        {
+            obj = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            obj.name = $"Wave_{damageType}";
+            Renderer renderer = obj.GetComponent<Renderer>();
+            material = new Material(Shader.Find("Sprites/Default"));
+            material.color = color;
+            renderer.material = material;
+            obj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            obj.transform.position = position;
+            obj.transform.localScale = Vector3.zero;
+        }
+
+        AttackWave wave = obj.AddComponent<AttackWave>();
+        wave.mat = material;
+        wave.damage = damage;
+        wave.damageType = damageType;
+        wave.onHit = onHit;
+        wave.waveColor = color;
+
+        if (prefab != null)
+            wave.targetScale = obj.transform.localScale;
+        else
+            wave.targetScale = damageType switch
+            {
+                DamageType.Stab => new Vector3(0.5f, 3f, 1f),
+                DamageType.Slash => new Vector3(9f, 2f, 1f),
+                DamageType.Pierce => new Vector3(0.6f, 1.2f, 1f),
+                DamageType.Sweep => new Vector3(12f, 2.5f, 1f),
+                DamageType.Launch => new Vector3(9f, 1.5f, 1f),
+                _ => new Vector3(5f, 1.5f, 1f)
+            };
+
+        List<Enemy> alive = new List<Enemy>();
+        foreach (var e in targets)
+            if (e != null && e.state != EnemyState.Dead)
+                alive.Add(e);
+
+        if (alive.Count == 0)
+        {
+            wave.mode = WaveMode.Fixed;
+            wave.lifetime = 0.2f;
+            wave.fadeStartTime = 0f;
+            wave.targetScale = Vector3.zero;
+            return wave;
+        }
+
+        bool isTravel = damageType == DamageType.Sweep || damageType == DamageType.Pierce || damageType == DamageType.Stab;
+        wave.mode = isTravel ? WaveMode.Travel : WaveMode.Fixed;
+
+        if (isTravel)
+            wave.SetupTravel(alive, obj.transform.position.z);
+        else
+            wave.SetupFixed(alive);
+
+        return wave;
+    }
+
+    private void SetupTravel(List<Enemy> alive, float startZ)
+    {
+        // 确定旅行方向：取最远敌人的 Z（离 startZ 最远的那个）
+        float furthestZ = alive[0].transform.position.z;
+        float closestZ = alive[0].transform.position.z;
+        foreach (var e in alive)
+        {
+            if (e.transform.position.z > furthestZ) furthestZ = e.transform.position.z;
+            if (e.transform.position.z < closestZ) closestZ = e.transform.position.z;
+        }
+
+        // 判断旅行方向：从 startZ 朝向敌人最远端的那个方向
+        bool travelPositiveZ = furthestZ > startZ;
+        bool isStab = damageType == DamageType.Stab;
+
+        // 戳击：刺到最近敌人前 2.5 单位即返回，不穿到敌人身后
+        float endTravelZ;
+        if (isStab)
+            endTravelZ = travelPositiveZ ? closestZ - 2.5f : closestZ + 2.5f;
+        else
+            endTravelZ = travelPositiveZ ? furthestZ + EndZOffset : furthestZ - EndZOffset;
+
+        float thrustTime;
+        if (isStab)
+        {
+            thrustTime = StabThrustTime;
+        }
+        else
+        {
+            float thrustDistance = Mathf.Abs(startZ - endTravelZ);
+            thrustTime = thrustDistance / ProjectileSpeed;
+        }
+
+        // 按旅行途中遇到的顺序排序 zThreshold（+Z 旅行则升序，-Z 则降序）
+        if (travelPositiveZ)
+            alive.Sort((a, b) => a.transform.position.z.CompareTo(b.transform.position.z));
+        else
+            alive.Sort((a, b) => b.transform.position.z.CompareTo(a.transform.position.z));
+
+        foreach (var enemy in alive)
+            targets.Add(new TargetEntry { enemy = enemy, zThreshold = enemy.transform.position.z });
+
+        bool shouldRetract = isStab;
+
+        // 缩放淡入
+        transform.localScale = Vector3.zero;
+        transform.DOScale(targetScale, 0.06f).SetEase(Ease.OutQuad).SetTarget(transform);
+
+        // 戳击：刺出前立即命中所有目标（刺击范围只有1排，视觉上刺到最近敌人前方即返回）
+        if (isStab)
+        {
+            foreach (var t in targets)
+                HitTarget(t.enemy);
+        }
+
+        // DOTween 序列：刺出 → (收回) → 销毁
+        travelSeq = DOTween.Sequence();
+        travelSeq.SetTarget(transform);
+
+        var thrust = transform.DOMoveZ(endTravelZ, thrustTime).SetEase(Ease.OutQuad);
+        if (!isStab)
+            thrust.OnUpdate(CheckHitThresholds);
+        travelSeq.Append(thrust);
+
+        if (shouldRetract)
+        {
+            float retractTime = StabRetractTime;
+            var retract = transform.DOMoveZ(startZ, retractTime).SetEase(Ease.InQuad);
+            travelSeq.Append(retract);
+
+            if (mat != null)
+                travelSeq.Join(mat.DOFade(0f, retractTime).SetEase(Ease.InQuad));
+        }
+        else
+        {
+            // 贯穿后短停顿再淡出
+            if (mat != null)
+            {
+                travelSeq.AppendInterval(0.05f);
+                travelSeq.Append(mat.DOFade(0f, 0.35f).SetEase(Ease.InQuad));
+            }
+        }
+
+        travelSeq.OnComplete(() =>
+        {
+            travelSeq = null;
+            Destroy(gameObject);
+        });
+    }
+
+    private void CheckHitThresholds()
+    {
+        // 判断旅行方向以选择正确的比较方式
+        if (targets.Count < 2 || targets[0].zThreshold < targets[targets.Count - 1].zThreshold)
+        {
+            // +Z 方向旅行：zThreshold 升序，超过阈值即命中
+            while (nextIndex < targets.Count)
+            {
+                if (transform.position.z < targets[nextIndex].zThreshold) break;
+                HitTarget(targets[nextIndex].enemy);
+                nextIndex++;
+            }
+        }
+        else
+        {
+            // -Z 方向旅行：zThreshold 降序，低于阈值即命中
+            while (nextIndex < targets.Count)
+            {
+                if (transform.position.z > targets[nextIndex].zThreshold) break;
+                HitTarget(targets[nextIndex].enemy);
+                nextIndex++;
+            }
+        }
+    }
+
+    private void SetupFixed(List<Enemy> alive)
+    {
+        float staggerPerRow = damageType switch
+        {
+            DamageType.Stab => StabStagger,
+            DamageType.Slash => SlashStagger,
+            DamageType.Launch => LaunchStagger,
+            _ => 0.05f
+        };
+
+        alive.Sort((a, b) => a.rowIndex.CompareTo(b.rowIndex));
+
+        float maxDelay = 0f;
+        int minRow = alive[0].rowIndex;
+
+        foreach (var enemy in alive)
+        {
+            float delay = (enemy.rowIndex - minRow) * staggerPerRow;
+            targets.Add(new TargetEntry { enemy = enemy, hitDelay = delay });
+            if (delay > maxDelay) maxDelay = delay;
+        }
+
+        lifetime = maxDelay + 0.3f;
+        fadeStartTime = maxDelay + 0.05f;
+    }
+
+    private void Update()
+    {
+        if (mode == WaveMode.Fixed)
+        {
+            elapsed += Time.deltaTime;
+            UpdateFixed();
+        }
+    }
+
+    private void UpdateFixed()
+    {
+        float scaleDuration = 0.06f;
+        if (elapsed < scaleDuration)
+        {
+            float t = elapsed / scaleDuration;
+            t = t * t * (3f - 2f * t);
+            transform.localScale = Vector3.Lerp(Vector3.zero, targetScale, t);
+        }
+        else
+        {
+            transform.localScale = targetScale;
+        }
+
+        while (nextIndex < targets.Count && elapsed >= targets[nextIndex].hitDelay)
+        {
+            HitTarget(targets[nextIndex].enemy);
+            nextIndex++;
+        }
+
+        if (elapsed >= fadeStartTime && mat != null)
+        {
+            float fadeDuration = lifetime - fadeStartTime;
+            float alpha = fadeDuration > 0f ? 1f - (elapsed - fadeStartTime) / fadeDuration : 0f;
+            alpha = Mathf.Clamp01(alpha);
+            Color c = waveColor;
+            c.a = alpha;
+            mat.color = c;
+        }
+
+        if (elapsed >= lifetime)
+            Destroy(gameObject);
+    }
+
+    private void HitTarget(Enemy enemy)
+    {
+        if (enemy != null && enemy.state != EnemyState.Dead)
+        {
+            enemy.TakeDamage(damage, damageType);
+            onHit?.Invoke(enemy);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (travelSeq != null && travelSeq.IsActive())
+            travelSeq.Kill();
+        travelSeq = null;
+    }
+
+    private static Color GetColor(DamageType type) => type switch
+    {
+        DamageType.Stab => new Color(1f, 0.85f, 0.15f),
+        DamageType.Slash => new Color(0.2f, 0.65f, 1f),
+        DamageType.Pierce => new Color(0.2f, 1f, 0.35f),
+        DamageType.Sweep => new Color(1f, 0.25f, 0.1f),
+        DamageType.Launch => new Color(0.7f, 0.2f, 1f),
+        _ => Color.white
+    };
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Core\Column.cs ---
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// 单列敌人管理
+/// 维护一列中的敌人列表，index 0 = 最前排（靠近玩家）
+/// </summary>
+[System.Serializable]
+public class Column
+{
+    public int columnIndex; // 0~4
+    public List<Enemy> enemies = new List<Enemy>(); // index 0 = 最前排
+
+    public Column(int index)
+    {
+        columnIndex = index;
+        enemies = new List<Enemy>();
+    }
+
+    /// <summary>
+    /// 获取最前排的敌人
+    /// </summary>
+    public Enemy GetFrontEnemy()
+    {
+        if (enemies.Count > 0)
+            return enemies[0];
+        return null;
+    }
+
+    /// <summary>
+    /// 获取指定排的敌人（0=最前排）
+    /// </summary>
+    public Enemy GetEnemyAtRow(int rowIndex)
+    {
+        if (rowIndex >= 0 && rowIndex < enemies.Count)
+            return enemies[rowIndex];
+        return null;
+    }
+
+    /// <summary>
+    /// 在队列末尾添加敌人
+    /// 注意：enemy 的 rowIndex 应在调用此方法前由调用方设置好
+    /// 此方法仅将敌人加入列表，不再覆盖 rowIndex
+    /// </summary>
+    public void AddEnemy(Enemy enemy)
+    {
+        // BUG FIX: 不再覆盖 enemy 的 rowIndex
+        // 调用方（如 WaveSpawner.SpawnRow）已通过 enemy.Initialize() 设置了正确的 rowIndex
+        // 这里只设置 columnIndex 以确保列索引正确
+        enemy.columnIndex = columnIndex;
+        enemies.Add(enemy);
+    }
+
+    /// <summary>
+    /// 移除指定敌人（通常是最前排死亡）
+    /// 移除敌人后，后方所有敌人标记 pendingRushMove = true，
+    /// 更新排索引 SetRowIndex(i+1)，然后链式触发补齐移动。
+    ///
+    /// 链式补齐改进：
+    ///   - SetRowIndex(i+1)：后方敌人排索引设为新列表位置+1，
+    ///     补齐移动完成后 rowIndex-- = 列表位置，不会与其他敌人重合。
+    ///   - 链式触发：第一个敌人补齐移动完全完成(moveProgress>=1.0)时，
+    ///     通过 OnRushMoveComplete 事件启动下一个敌人。
+    ///     必须等待前一敌人完全补齐完毕，后一敌人才能开始补齐。
+    ///
+    /// Problem 3 修复（补齐延迟）：
+    ///   - 补齐移动完成后若还需继续前进，启动延迟计时器，
+    ///     延迟结束后再开始下一次补齐移动。
+    /// </summary>
+    public void RemoveEnemy(Enemy enemy)
+    {
+        int index = enemies.IndexOf(enemy);
+        if (index >= 0)
+        {
+            enemies.RemoveAt(index);
+            int colIndex = enemy.columnIndex;
+            Debug.Log($"[Column] RemoveEnemy: column={colIndex}, deadIndex={index}, remaining={enemies.Count}");
+
+            // BUG FIX（v1 - 过滤Dead敌人）: 清除所有处于 Dead 状态的敌人（同时死亡，协程同时完成时，
+            // 后方敌人 OnDeath 事件尚未处理）。这些敌人的死亡协程（FlashThenRelease）已完成，state 为 Dead，
+            // 它们的 OnDeath 事件会在后续被触发（EnemyManager.OnEnemyDied 会处理它们）。
+            // 如果不清理它们：TryStartRushMove() 会因 state==Dead 返回 false，导致链式补齐永久中断。
+            //
+            // BUG FIX（v2 - 移除 SetRowIndex 瞬移）: 不再调用 SetRowIndex() 设置 rowIndex，
+            // 因为 SetRowIndex() 立即调用 UpdateWorldPosition()，将敌人从当前位置瞬时跳转到目标位置。
+            // 改为让敌人保持当前 rowIndex，利用 targetRow 控制逐步前进（多步补齐）。
+            // UpdateMovement() 中已有的逻辑：移动完成后检查 rowIndex <= targetRow，
+            // 若未到达则延迟后继续移动，从当前位置一步步前进到目标位置，无瞬移。
+            int aliveCount = 0;
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                Enemy e = enemies[i];
+                if (e.state == EnemyState.Dead)
+                {
+                    Debug.Log($"[Column] 跳过 Dead 敌人（稍后由其自身 OnDeath 处理）: enemyId={e.config?.enemyId}, col={colIndex}, row={e.rowIndex}");
+                    continue;
+                }
+
+                // 将存活敌人紧凑排列到列表前面
+                if (i != aliveCount)
+                {
+                    enemies[aliveCount] = e;
+                }
+
+                // BUG FIX（移除 SetRowIndex 瞬移）: 
+                // 不再调用 SetRowIndex() 设置排索引，因为 SetRowIndex() 会立即调用 UpdateWorldPosition()
+                // 将敌人从当前位置（如 row=2）瞬时跳转到目标位置（row=1），造成"瞬移"视觉。
+                // 替代方案：敌人保持当前 rowIndex，利用 targetRow 控制前进距离。
+                // UpdateMovement() 中已有的逻辑：移动完成后检查 rowIndex <= targetRow，
+                // 若未到达则延迟后继续移动（多步补齐），从当前位置一步步前进到目标位置。
+                e.targetRow = aliveCount;
+                // 重置移动状态（重置 state=Idle 使 StartMoving 能通过保护检查）
+                e.ResetMovementState();
+                // 标记需要向前补齐（链式触发）
+                e.pendingRushMove = true;
+                Debug.Log($"[Column] 标记补齐移动: enemyId={e.config?.enemyId}, col={colIndex}, curRow={e.rowIndex}, targetRow={aliveCount}, pending={e.pendingRushMove}");
+
+                aliveCount++;
+            }
+
+            // 移除列表末尾的"空洞"（被跳过的 Dead 敌人留下的空位）
+            if (aliveCount < enemies.Count)
+            {
+                enemies.RemoveRange(aliveCount, enemies.Count - aliveCount);
+            }
+
+            // 只启动第一个存活敌人的补齐移动，后续通过链式触发
+            if (aliveCount > 0)
+            {
+                Enemy firstToMove = enemies[0];
+                firstToMove.OnRushMoveComplete += OnColumnRushMoveComplete;
+                firstToMove.TryStartRushMove();
+                Debug.Log($"[Column] 启动链式补齐: enemyId={firstToMove.config?.enemyId}, col={colIndex}, row={firstToMove.rowIndex}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// 链式补齐回调：当前敌人补齐完成后，启动下一个敌人
+    /// </summary>
+    private void OnColumnRushMoveComplete(Enemy enemy)
+    {
+        // 取消订阅当前敌人的完成事件
+        enemy.OnRushMoveComplete -= OnColumnRushMoveComplete;
+
+        // 查找下一个需要补齐的敌人
+        int idx = enemies.IndexOf(enemy);
+        int nextIdx = idx + 1;
+        if (nextIdx >= 0 && nextIdx < enemies.Count)
+        {
+            Enemy nextEnemy = enemies[nextIdx];
+            if (nextEnemy.pendingRushMove)
+            {
+                nextEnemy.OnRushMoveComplete += OnColumnRushMoveComplete;
+                nextEnemy.TryStartRushMove();
+                Debug.Log($"[Column] 链式触发下一个: enemyId={nextEnemy.config?.enemyId}, col={columnIndex}, row={nextEnemy.rowIndex}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// 触发补齐前移：将列中所有存活敌人向列表前方补齐。
+    /// 用于波次生成后的初始前移——敌人 spawn 在靠后排，需要逐步前进到攻击位置。
+    /// 逻辑与 RemoveEnemy 的存活敌人重排相同，但不移除任何敌人。
+    /// </summary>
+    public void TriggerFillForward()
+    {
+        if (enemies.Count == 0) return;
+
+        int aliveCount = 0;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            Enemy e = enemies[i];
+            if (e.state == EnemyState.Dead) continue;
+
+            if (i != aliveCount)
+                enemies[aliveCount] = e;
+
+            e.targetRow = aliveCount;
+            e.ResetMovementState();
+            e.pendingRushMove = true;
+            aliveCount++;
+        }
+
+        if (aliveCount < enemies.Count)
+            enemies.RemoveRange(aliveCount, enemies.Count - aliveCount);
+
+        if (aliveCount > 0)
+        {
+            Enemy first = enemies[0];
+            if (first.rowIndex > 0)
+            {
+                first.OnRushMoveComplete += OnColumnRushMoveComplete;
+                first.TryStartRushMove();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 获取该列敌人总数
+    /// </summary>
+    public int EnemyCount => enemies.Count;
+
+    /// <summary>
+    /// 该列是否为空
+    /// </summary>
+    public bool IsEmpty => enemies.Count == 0;
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Core\ColumnManager.cs ---
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// 列管理器
+/// 管理5列敌人，提供添加/移除/查询接口
+/// 实现补齐逻辑：当某列前排死亡，后排自动前移
+/// </summary>
+public class ColumnManager : MonoBehaviour
+{
+    [Header("列配置")]
+    public int columnCount = 5; // 默认5列
+
+    // 5列敌人列表
+    private Column[] columns;
+
+    private void Awake()
+    {
+        InitializeColumns();
+    }
+
+    /// <summary>
+    /// 初始化5列
+    /// </summary>
+    private void InitializeColumns()
+    {
+        columns = new Column[columnCount];
+        for (int i = 0; i < columnCount; i++)
+        {
+            columns[i] = new Column(i);
+        }
+    }
+
+    #region 添加敌人
+
+    /// <summary>
+    /// 向指定列添加敌人（追加到队列末尾）
+    /// </summary>
+    public void AddEnemyToColumn(int columnIndex, Enemy enemy)
+    {
+        if (!IsValidColumn(columnIndex)) return;
+
+        columns[columnIndex].AddEnemy(enemy);
+    }
+
+    /// <summary>
+    /// 批量向指定列添加敌人
+    /// </summary>
+    public void AddEnemiesToColumn(int columnIndex, List<Enemy> enemies)
+    {
+        if (!IsValidColumn(columnIndex)) return;
+
+        foreach (var enemy in enemies)
+        {
+            columns[columnIndex].AddEnemy(enemy);
+        }
+    }
+
+    /// <summary>
+    /// 向所有列添加敌人（用于波次生成）
+    /// 传入长度为5的列表，每个元素是对应列的敌人列表
+    /// </summary>
+    public void AddEnemiesToAllColumns(List<Enemy>[] columnEnemies)
+    {
+        for (int i = 0; i < columnCount && i < columnEnemies.Length; i++)
+        {
+            if (columnEnemies[i] != null)
+            {
+                AddEnemiesToColumn(i, columnEnemies[i]);
+            }
+        }
+    }
+
+    #endregion
+
+    #region 移除敌人
+
+    /// <summary>
+    /// 从指定列移除敌人
+    /// </summary>
+    public void RemoveEnemyFromColumn(int columnIndex, Enemy enemy)
+    {
+        if (!IsValidColumn(columnIndex)) return;
+
+        columns[columnIndex].RemoveEnemy(enemy);
+    }
+
+    /// <summary>
+    /// 清空所有列
+    /// </summary>
+    public void ClearAllColumns()
+    {
+        for (int i = 0; i < columnCount; i++)
+        {
+            columns[i].enemies.Clear();
+        }
+    }
+
+    /// <summary>
+    /// 清空指定列
+    /// </summary>
+    public void ClearColumn(int columnIndex)
+    {
+        if (!IsValidColumn(columnIndex)) return;
+        columns[columnIndex].enemies.Clear();
+    }
+
+    #endregion
+
+    #region 更新敌人位置
+
+    /// <summary>
+    /// 更新敌人在列中的排索引（前进后调用）
+    /// 仅在非补齐移动（自然移动、眩晕/挑飞后恢复）完成后调用。
+    /// 补齐移动（死亡触发）由 Column.RemoveEnemy() 独立处理。
+    ///
+    /// 链式触发补齐移动，必须等待前一敌人完全补齐完毕，后一敌人才能开始补齐。
+    /// 更新后方所有敌人的行索引后，只启动第一个敌人，后续通过 OnRushMoveComplete 逐个触发。
+    /// </summary>
+    public void UpdateEnemyRow(int columnIndex, Enemy enemy)
+    {
+        if (!IsValidColumn(columnIndex)) return;
+
+        Column column = columns[columnIndex];
+        int currentIndex = column.enemies.IndexOf(enemy);
+        Debug.Log($"[ColumnManager] UpdateEnemyRow: col={columnIndex}, enemyId={enemy.config?.enemyId}, currentIndex={currentIndex}, count={column.enemies.Count}");
+        if (currentIndex > 0)
+        {
+            // 将敌人前移一位
+            column.enemies.RemoveAt(currentIndex);
+            column.enemies.Insert(currentIndex - 1, enemy);
+            Debug.Log($"[ColumnManager] 重排列顺序：enemyId={enemy.config?.enemyId}, from={currentIndex}→{currentIndex - 1}");
+
+            // BUG FIX（v1 - 过滤Dead敌人）: 跳过 Dead 状态的敌人（可能在死亡协程窗口期内，后续由 RemoveEnemy 处理）。
+            // 从 currentIndex 开始扫描，将存活敌人紧凑排列并清除 Dead 敌人。
+            // BUG FIX（v2 - 移除 SetRowIndex 瞬移）: 不再调用 SetRowIndex()，
+            // 敌人保持当前 rowIndex，利用 targetRow 控制逐步前进（多步补齐）。
+            int writeIdx = currentIndex;
+            for (int i = currentIndex; i < column.enemies.Count; i++)
+            {
+                Enemy e = column.enemies[i];
+                if (e.state == EnemyState.Dead)
+                {
+                    Debug.Log($"[ColumnManager] 跳过 Dead 敌人（稍后由其自身 OnDeath 处理）: enemyId={e.config?.enemyId}, col={columnIndex}, row={e.rowIndex}");
+                    continue;
+                }
+
+                // 紧凑排列存活敌人
+                if (i != writeIdx)
+                {
+                    column.enemies[writeIdx] = e;
+                }
+
+                Debug.Log($"[ColumnManager] 更新后方敌人: enemyId={e.config?.enemyId}, curRow={e.rowIndex}, writeIdx={writeIdx}");
+                e.ResetMovementState();
+                // BUG FIX（移除 SetRowIndex 瞬移）: 不再调用 SetRowIndex()，
+                // 敌人保持当前 rowIndex，利用 targetRow 控制多步补齐。
+                // 从当前位置一步步前进到目标位置，无瞬移。
+                e.targetRow = writeIdx;
+                e.pendingRushMove = true;
+
+                writeIdx++;
+            }
+
+            // 移除 Dead 敌人留下的空洞
+            if (writeIdx < column.enemies.Count)
+            {
+                column.enemies.RemoveRange(writeIdx, column.enemies.Count - writeIdx);
+            }
+
+            // 只启动第一个存活敌人的补齐移动，后续通过链式触发
+            if (writeIdx > currentIndex)
+            {
+                Enemy firstToMove = column.enemies[currentIndex];
+                System.Action<Enemy> handler = null;
+                handler = (completedEnemy) =>
+                {
+                    completedEnemy.OnRushMoveComplete -= handler;
+                    int idx = column.enemies.IndexOf(completedEnemy);
+                    int nextIdx = idx + 1;
+                    if (nextIdx >= 0 && nextIdx < column.enemies.Count)
+                    {
+                        Enemy nextEnemy = column.enemies[nextIdx];
+                        if (nextEnemy.pendingRushMove)
+                        {
+                            nextEnemy.OnRushMoveComplete += handler;
+                            nextEnemy.TryStartRushMove();
+                        }
+                    }
+                };
+                firstToMove.OnRushMoveComplete += handler;
+                firstToMove.TryStartRushMove();
+            }
+        }
+    }
+
+    #endregion
+
+    #region 查询接口
+
+    /// <summary>
+    /// 获取指定列
+    /// </summary>
+    public Column GetColumn(int columnIndex)
+    {
+        if (!IsValidColumn(columnIndex)) return null;
+        return columns[columnIndex];
+    }
+
+    /// <summary>
+    /// 获取指定列的最前排敌人
+    /// </summary>
+    public Enemy GetFrontEnemy(int columnIndex)
+    {
+        if (!IsValidColumn(columnIndex)) return null;
+        return columns[columnIndex].GetFrontEnemy();
+    }
+
+    /// <summary>
+    /// 获取指定列指定排的敌人
+    /// </summary>
+    public Enemy GetEnemyAt(int columnIndex, int rowIndex)
+    {
+        if (!IsValidColumn(columnIndex)) return null;
+        return columns[columnIndex].GetEnemyAtRow(rowIndex);
+    }
+
+    /// <summary>
+    /// 获取指定列的所有敌人
+    /// </summary>
+    public List<Enemy> GetEnemiesInColumn(int columnIndex)
+    {
+        if (!IsValidColumn(columnIndex)) return null;
+        return columns[columnIndex].enemies;
+    }
+
+    /// <summary>
+    /// 获取所有列的所有敌人（用于遍历攻击）
+    /// </summary>
+    public List<Enemy> GetAllEnemies()
+    {
+        List<Enemy> allEnemies = new List<Enemy>();
+        for (int i = 0; i < columnCount; i++)
+        {
+            allEnemies.AddRange(columns[i].enemies);
+        }
+        return allEnemies;
+    }
+
+    /// <summary>
+    /// 获取指定列前N排的所有敌人
+    /// </summary>
+    public List<Enemy> GetEnemiesInRange(int columnIndex, int rangeRows)
+    {
+        List<Enemy> result = new List<Enemy>();
+        if (!IsValidColumn(columnIndex)) return result;
+
+        Column column = columns[columnIndex];
+        int count = Mathf.Min(rangeRows, column.enemies.Count);
+        for (int i = 0; i < count; i++)
+        {
+            result.Add(column.enemies[i]);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// 获取所有列前N排的所有敌人（用于斩击/横扫等范围攻击）
+    /// </summary>
+    public List<Enemy> GetAllEnemiesInRange(int rangeRows)
+    {
+        List<Enemy> result = new List<Enemy>();
+        for (int i = 0; i < columnCount; i++)
+        {
+            result.AddRange(GetEnemiesInRange(i, rangeRows));
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// 获取所有列中排索引小于等于指定值的敌人
+    /// </summary>
+    public List<Enemy> GetEnemiesByRowLimit(int maxRowIndex)
+    {
+        List<Enemy> result = new List<Enemy>();
+        for (int i = 0; i < columnCount; i++)
+        {
+            Column column = columns[i];
+            for (int j = 0; j < column.enemies.Count && j <= maxRowIndex; j++)
+            {
+                result.Add(column.enemies[j]);
+            }
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// 指定列是否为空
+    /// </summary>
+    public bool IsColumnEmpty(int columnIndex)
+    {
+        if (!IsValidColumn(columnIndex)) return true;
+        return columns[columnIndex].IsEmpty;
+    }
+
+    /// <summary>
+    /// 是否所有列为空
+    /// </summary>
+    public bool AreAllColumnsEmpty()
+    {
+        for (int i = 0; i < columnCount; i++)
+        {
+            if (!columns[i].IsEmpty) return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// 获取指定列的敌人数量
+    /// </summary>
+    public int GetColumnEnemyCount(int columnIndex)
+    {
+        if (!IsValidColumn(columnIndex)) return 0;
+        return columns[columnIndex].EnemyCount;
+    }
+
+    /// <summary>
+    /// 获取所有列的敌人总数
+    /// </summary>
+    public int GetTotalEnemyCount()
+    {
+        int total = 0;
+        for (int i = 0; i < columnCount; i++)
+        {
+            total += columns[i].EnemyCount;
+        }
+        return total;
+    }
+
+    #endregion
+
+    #region 工具方法
+
+    private bool IsValidColumn(int columnIndex)
+    {
+        return columnIndex >= 0 && columnIndex < columnCount;
+    }
+
+    #endregion
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Core\EnemyConfig.cs ---
+using UnityEngine;
+
+/// <summary>
+/// 敌人配置 - ScriptableObject
+/// 策划可在Unity编辑器中创建和配置不同类型的敌人
+/// </summary>
+[CreateAssetMenu(fileName = "NewEnemyConfig", menuName = "一夫当关/敌人配置")]
+public class EnemyConfig : ScriptableObject
+{
+    [Header("基础属性")]
+    public string enemyName = "骷髅兵";
+    public int enemyId;
+    
+    [Header("战斗属性")]
+    public float maxHealth = 100f;
+    public int occupySlots = 1;          // 站位数（1~5）
+    public float attackSpeed = 1f;       // 每秒攻击次数
+    public float attackDamage = 10f;     // 攻击力
+    public float attackRange = 1f;       // 攻击距离（多少排）
+    public float moveSpeed = 1f;         // 前进速度（秒/排）
+    
+    [Header("架势系统")]
+    public float maxPoise = 50f;         // 最大架势值
+    public float stunDuration = 1.5f;    // 眩晕时间（秒）
+    public float launchDuration = 2f;    // 击飞时间（秒）
+    
+    [Header("奖励")]
+    public int coinReward = 10;          // 击败后掉落铜钱
+    
+    [Header("弱点系统")]
+    public float stabDamageMultiplier = 1f;      // 戳击伤害倍率
+    public float slashDamageMultiplier = 1f;     // 斩击伤害倍率
+    public float pierceDamageMultiplier = 1f;    // 穿刺伤害倍率
+    public float sweepDamageMultiplier = 1f;     // 横扫伤害倍率
+    public float launchDamageMultiplier = 1f;    // 挑飞伤害倍率
+    public float poiseDamageMultiplier = 1f;     // 架势伤害倍率
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Core\HeroConfig.cs ---
+using UnityEngine;
+
+/// <summary>
+/// 武将配置 - ScriptableObject
+/// 不同武将拥有不同的属性数值
+/// </summary>
+[CreateAssetMenu(fileName = "NewHeroConfig", menuName = "一夫当关/武将配置")]
+public class HeroConfig : ScriptableObject
+{
+    [Header("基本信息")]
+    public string heroName = "赵云";
+    public int heroId;
+    
+    [Header("基础属性")]
+    public float maxHealth = 500f;
+    public int reviveCount = 3;
+    public float reviveHealthPercent = 0.5f; // 复活时回复生命值百分比
+    
+    [Header("戳击属性")]
+    public float stabDamage = 30f;
+    public int stabRangeRows = 1;       // 影响多少排
+    public float stabCooldown = 0.3f;   // 冷却时间（秒）
+    
+    [Header("斩击属性")]
+    public float slashDamage = 20f;
+    public int slashRangeRows = 2;      // 影响多少排
+    public float slashCooldown = 0.8f;
+    
+    [Header("穿刺属性")]
+    public float pierceDamage = 80f;
+    public int pierceRangeRows = 5;     // 影响多少排
+    public float pierceCooldown = 1.5f;
+    
+    [Header("横扫属性")]
+    public float sweepDamage = 40f;
+    public int sweepRangeRows = 3;      // 影响多少排
+    public float sweepCooldown = 1.2f;
+    
+    [Header("挑飞属性")]
+    public float launchDamage = 25f;
+    public int launchRangeRows = 2;     // 影响多少排
+    public float launchCooldown = 1.0f;
+    public float launchDuration = 2f;   // 击飞持续时间（秒）
+    public float launchPoiseDamage = 30f; // 挑飞架势伤害
+    
+    [Header("招架属性")]
+    public float parryDamage = 15f;
+    public float parryPoiseDamage = 40f;
+    
+    [Header("伤害加成")]
+    [Range(0f, 2f)]
+    public float damageBonusPercent = 0f; // 百分比伤害加成（0=无加成）
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Core\RowFormation.cs ---
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// 排阵型配置（预设表 - 方案A）
+/// 策划可在Unity编辑器中创建和微调每排的精确X偏移
+/// </summary>
+[CreateAssetMenu(fileName = "NewRowFormationPreset", menuName = "一夫当关/排阵型预设")]
+public class RowFormationPreset : ScriptableObject
+{
+    [System.Serializable]
+    public struct RowData
+    {
+        [Tooltip("该排5列的X偏移值（世界单位），长度必须为5")]
+        public float[] columnOffsets;
+    }
+
+    [Tooltip("rows[0]对应最前排（排索引0），按顺序配置")]
+    public List<RowData> rows;
+
+    /// <summary>
+    /// 获取指定排索引的列偏移数组
+    /// 如果排索引超出预设长度，返回最后一排的数据
+    /// </summary>
+    public float[] GetColumnOffsets(int rowIndex)
+    {
+        if (rows == null || rows.Count == 0)
+            return null;
+
+        int clampedIndex = Mathf.Min(rowIndex, rows.Count - 1);
+        return rows[clampedIndex].columnOffsets;
+    }
+}
+
+/// <summary>
+/// 排阵型计算器
+/// 支持三种方案（优先级从高到低）：
+///   方案B：手动每排半宽数组（float[] manualRowHalfWidths）
+///   方案A：预设表（RowFormationPreset ScriptableObject）
+///   方案C：公式计算（动态生成，参数化调整）
+/// 优先使用方案B，若未设置则使用方案A，均未设置则使用方案C
+/// </summary>
+public static class RowFormation
+{
+    /// <summary>
+    /// 获取指定排、指定列的X轴偏移值
+    /// </summary>
+    /// <param name="rowIndex">排索引（0=最前排）</param>
+    /// <param name="columnIndex">列索引（0~4）</param>
+    /// <param name="maxRow">当前最大排索引（用于公式计算）</param>
+    /// <param name="manualRowHalfWidths">手动每排半宽数组（方案B，最高优先级，可选）</param>
+    /// <param name="preset">预设表（方案A，可选）</param>
+    /// <param name="maxSpread">最前排半宽（方案C参数）</param>
+    /// <param name="minSpread">最后排半宽（方案C参数）</param>
+    /// <param name="powerCurve">内收曲线指数（方案C参数，1=线性）</param>
+    /// <returns>X轴偏移值（世界单位）</returns>
+    public static float GetColumnOffsetX(
+        int rowIndex,
+        int columnIndex,
+        int maxRow,
+        float[] manualRowHalfWidths = null,
+        RowFormationPreset preset = null,
+        float maxSpread = 4.0f,
+        float minSpread = 0.5f,
+        float powerCurve = 1.2f)
+    {
+        // 方案B（最高优先级）：手动每排半宽数组
+        if (manualRowHalfWidths != null && manualRowHalfWidths.Length > 0)
+        {
+            // 如果 rowIndex 超出数组长度，使用最后一个值
+            int clampedIndex = Mathf.Min(rowIndex, manualRowHalfWidths.Length - 1);
+            float spread = manualRowHalfWidths[clampedIndex];
+            // 列索引0~4映射到 -spread ~ +spread
+            // 列0在最左，列2在中心，列4在最右
+            return (columnIndex - 2) * (spread * 2f / 4f);
+        }
+
+        // 方案A：使用预设表
+        if (preset != null)
+        {
+            float[] offsets = preset.GetColumnOffsets(rowIndex);
+            if (offsets != null && columnIndex >= 0 && columnIndex < offsets.Length)
+            {
+                return offsets[columnIndex];
+            }
+        }
+
+        // 方案C：公式计算
+        return CalculateOffsetByFormula(rowIndex, columnIndex, maxRow, maxSpread, minSpread, powerCurve);
+    }
+
+    /// <summary>
+    /// 公式计算X偏移（方案B）
+    /// 公式：currentSpread = Lerp(minSpread, maxSpread, t)
+    ///       其中 t = Pow(rowIndex / maxRow, powerCurve)
+    ///       列偏移 = (columnIndex - 2) * (currentSpread * 2 / 4)
+    ///
+    /// BUG FIX: 交换了 maxSpread 和 minSpread 的插值顺序。
+    /// 之前是 Lerp(maxSpread, minSpread, t)，导致前排宽、后排窄（向前收敛）。
+    /// 现在改为 Lerp(minSpread, maxSpread, t)，实现前排窄、后排宽（向后收敛）。
+    /// 这样更符合视觉透视效果：远处的敌人看起来更宽，近处的更窄。
+    /// </summary>
+    private static float CalculateOffsetByFormula(
+        int rowIndex,
+        int columnIndex,
+        int maxRow,
+        float maxSpread,
+        float minSpread,
+        float powerCurve)
+    {
+        // 防止除以零
+        float normalizedRow = maxRow > 0 ? Mathf.Clamp01((float)rowIndex / maxRow) : 0f;
+
+        // 曲线插值
+        float t = Mathf.Pow(normalizedRow, powerCurve);
+
+        // BUG FIX: 恢复插值顺序，实现向前展开（前排宽、后排窄）
+        // 之前：Lerp(minSpread, maxSpread, t) → 前排窄、后排宽（向玩家方向收拢）
+        // 现在：Lerp(maxSpread, minSpread, t) → 前排宽、后排窄（向远处收敛）
+        // 在Unity中，-Z方向为前进方向（朝向玩家摄像机），
+        // 前排（rowIndex=0）最靠近摄像机，应视觉上更宽（maxSpread），
+        // 后排（rowIndex=max）远离摄像机，应视觉上更窄（minSpread）。
+        float currentSpread = Mathf.Lerp(maxSpread, minSpread, t);
+
+        // 列索引0~4映射到 -currentSpread ~ +currentSpread
+        // 列0在最左，列2在中心，列4在最右
+        float columnOffset = (columnIndex - 2) * (currentSpread * 2f / 4f);
+
+        return columnOffset;
+    }
+
+    /// <summary>
+    /// 获取指定排的5列完整X偏移数组（用于Gizmos调试）
+    /// </summary>
+    public static float[] GetRowOffsets(
+        int rowIndex,
+        int maxRow,
+        float[] manualRowHalfWidths = null,
+        RowFormationPreset preset = null,
+        float maxSpread = 4.0f,
+        float minSpread = 0.5f,
+        float powerCurve = 1.2f)
+    {
+        float[] offsets = new float[5];
+        for (int col = 0; col < 5; col++)
+        {
+            offsets[col] = GetColumnOffsetX(rowIndex, col, maxRow, manualRowHalfWidths, preset, maxSpread, minSpread, powerCurve);
+        }
+        return offsets;
+    }
+
+    /// <summary>
+    /// 在Scene视图中绘制Gizmos显示阵型位置点
+    /// </summary>
+    public static void DrawFormationGizmos(
+        int maxVisibleRows,
+        float rowSpacing,
+        float[] manualRowHalfWidths = null,
+        RowFormationPreset preset = null,
+        float maxSpread = 4.0f,
+        float minSpread = 0.5f,
+        float powerCurve = 1.2f)
+    {
+        Gizmos.color = Color.yellow;
+        for (int row = 0; row < maxVisibleRows; row++)
+        {
+            for (int col = 0; col < 5; col++)
+            {
+                float x = GetColumnOffsetX(row, col, maxVisibleRows - 1, manualRowHalfWidths, preset, maxSpread, minSpread, powerCurve);
+                float z = -(row * rowSpacing);
+                Gizmos.DrawSphere(new Vector3(x, 0f, z), 0.15f);
+            }
+        }
+    }
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Core\StageConfig.cs ---
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// 一排敌人的配置
+/// 每排的敌人数量由 enemyIds 长度决定，每个敌人ID对应一个站位
+/// 敌人实际占用的列数由其 occupySlots 决定
+/// </summary>
+[Serializable]
+public class RowConfig
+{
+    [Tooltip("该排的敌人ID列表，每个ID对应一个站位。敌人实际占用的列数由 EnemyConfig.occupySlots 决定")]
+    public int[] enemyIds = new int[5]; // 长度决定该排有多少个敌人站位
+}
+
+/// <summary>
+/// 波次配置
+/// 每个关卡通常只有1个波次，波次之间播放剧情演出
+/// </summary>
+[Serializable]
+public class WaveConfig
+{
+    public int waveId;
+    public bool isBossWave;
+    [Tooltip("此波包含的所有排，按顺序从远到近生成")]
+    public List<RowConfig> rows = new List<RowConfig>();
+}
+
+/// <summary>
+/// 关卡配置 - ScriptableObject
+/// </summary>
+[CreateAssetMenu(fileName = "NewStageConfig", menuName = "一夫当关/关卡配置")]
+public class StageConfig : ScriptableObject
+{
+    [Header("关卡信息")]
+    public int stageId;
+    public string stageName = "第一关";
+    
+    [Header("波次配置")]
+    public List<WaveConfig> waves = new List<WaveConfig>(); // 按顺序执行
+    
+    [Header("连杀奖励")]
+    public List<int> killStreakThresholds = new List<int> { 10, 25, 50, 100 }; // 连杀奖励触发阈值
+    
+    [Header("通关奖励")]
+    public int clearCoinReward = 100;
+    
+    [Header("透明度渐变配置")]
+    [Tooltip("每排的透明度系数，索引0=最前排。例如 [1.0, 0.8, 0.6, 0.4, 0.2] 表示前5排从100%到20%")]
+    public float[] rowAlphaFactors = new float[] { 1.0f, 0.8f, 0.6f, 0.4f, 0.2f };
+    
+    [Header("可见排数限制")]
+    [Tooltip("玩家能看到的最大排数，超出此排数的敌人完全透明")]
+    public int maxVisibleRows = 5;
+
+    [Header("补齐移动配置")]
+    [Tooltip("连续补齐移动间的延迟（秒）。补齐移动完成后若仍需继续前进，等待此延迟后再开始下一次补齐移动。用于实现'快移动+停顿'的效果")]
+    public float rushMoveDelay = 0.2f;
+
+    [Header("排阵型配置（梯形/扇形内收）")]
+    [Tooltip("方案A：预设表。若设置则优先使用预设表，否则使用方案B公式计算")]
+    public RowFormationPreset formationPreset;
+
+    [Header("方案B：手动每排宽度（优先级最高）")]
+    [Tooltip("手动指定每一排的半宽值，数组索引=排索引（0=最前排）。\n例如 [4.0, 3.5, 3.0, 2.5, 2.0] 表示第0排半宽4.0、第1排半宽3.5...\n设置此数组后，方案A预设表和方案C公式均被忽略。\n若数组长度不足（如只有3个值但排索引=4），则对超出部分使用最后一位的值。")]
+    public float[] manualRowHalfWidths;
+
+    [Header("方案C：公式参数（仅当未设置预设表和手动数组时生效）")]
+    [Tooltip("最前排（rowIndex=0）的半宽。例如4.0表示最前排最左列X=-4.0，最右列X=+4.0")]
+    public float formationMaxSpread = 4.0f;
+    [Tooltip("最后排的半宽。例如0.5表示最后排最左列X=-0.5，最右列X=+0.5")]
+    public float formationMinSpread = 0.5f;
+    [Tooltip("内收曲线指数。1.0=线性，>1.0=后排更快收拢，<1.0=前排更快收拢")]
+    public float formationPowerCurve = 1.2f;
+    [Tooltip("排间距（Z轴，世界单位）")]
+    public float rowSpacing = 2.5f;
+    [Tooltip("阵型整体Z轴偏移（正值=远离摄像机，负值=靠近摄像机）。例如设为10，则最前排敌人Z=10，远离摄像机")]
+    public float formationOffsetZ = 0f;
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Editor\WaveConfigEditor.cs ---
+using UnityEditor;
+using UnityEngine;
+
+/// <summary>
+/// WaveConfig 的自定义 Inspector 编辑器
+/// 在新建 element 时自动递增 WaveId
+/// </summary>
+[CustomPropertyDrawer(typeof(WaveConfig))]
+public class WaveConfigDrawer : PropertyDrawer
+{
+    private const float LineHeight = 18f;
+    private const float Spacing = 2f;
+
+    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    {
+        EditorGUI.BeginProperty(position, label, property);
+
+        // 获取属性
+        SerializedProperty waveIdProp = property.FindPropertyRelative("waveId");
+        SerializedProperty isBossWaveProp = property.FindPropertyRelative("isBossWave");
+        SerializedProperty rowsProp = property.FindPropertyRelative("rows");
+
+        // 计算布局
+        float y = position.y;
+        float width = position.width;
+
+        // 标题行
+        Rect headerRect = new Rect(position.x, y, width, LineHeight);
+        string headerText = string.IsNullOrEmpty(label.text) ? $"波次 {waveIdProp.intValue}" : label.text;
+        EditorGUI.LabelField(headerRect, headerText, EditorStyles.boldLabel);
+        y += LineHeight + Spacing;
+
+        // WaveId 显示（只读，自动管理）
+        Rect idLabelRect = new Rect(position.x, y, width * 0.3f, LineHeight);
+        EditorGUI.LabelField(idLabelRect, "Wave ID");
+        Rect idValueRect = new Rect(position.x + width * 0.3f, y, width * 0.2f, LineHeight);
+        EditorGUI.LabelField(idValueRect, waveIdProp.intValue.ToString());
+        y += LineHeight + Spacing;
+
+        // IsBossWave
+        Rect bossRect = new Rect(position.x, y, width, LineHeight);
+        isBossWaveProp.boolValue = EditorGUI.Toggle(bossRect, "BOSS波次", isBossWaveProp.boolValue);
+        y += LineHeight + Spacing;
+
+        // Rows 列表
+        Rect rowsRect = new Rect(position.x, y, width, LineHeight);
+        EditorGUI.PropertyField(rowsRect, rowsProp, new GUIContent("敌人排配置"), true);
+
+        EditorGUI.EndProperty();
+    }
+
+    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+    {
+        SerializedProperty rowsProp = property.FindPropertyRelative("rows");
+        float rowsHeight = EditorGUI.GetPropertyHeight(rowsProp, true);
+        return 3 * (LineHeight + Spacing) + rowsHeight + 10f;
+    }
+}
+
+/// <summary>
+/// StageConfig 的自定义 Inspector 编辑器
+/// 在 Waves 列表中添加新 element 时自动分配 WaveId
+/// </summary>
+[CustomEditor(typeof(StageConfig))]
+public class StageConfigEditor : Editor
+{
+    private SerializedProperty wavesProp;
+
+    private void OnEnable()
+    {
+        wavesProp = serializedObject.FindProperty("waves");
+    }
+
+    public override void OnInspectorGUI()
+    {
+        serializedObject.Update();
+
+        // 绘制默认 Inspector（排除 waves 属性）
+        DrawPropertiesExcluding(serializedObject, "waves");
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("波次配置", EditorStyles.boldLabel);
+
+        // 手动绘制 waves 列表
+        int listSize = wavesProp.arraySize;
+        int newSize = EditorGUILayout.IntField("波次数", listSize);
+
+        // 检测是否新增了 element
+        if (newSize > listSize)
+        {
+            // 新增了 element，自动分配 WaveId
+            wavesProp.arraySize = newSize;
+            for (int i = listSize; i < newSize; i++)
+            {
+                SerializedProperty newWave = wavesProp.GetArrayElementAtIndex(i);
+                SerializedProperty waveIdProp = newWave.FindPropertyRelative("waveId");
+                // 自动分配 ID = 当前最大 ID + 1
+                int maxId = 0;
+                for (int j = 0; j < i; j++)
+                {
+                    SerializedProperty existingWave = wavesProp.GetArrayElementAtIndex(j);
+                    int existingId = existingWave.FindPropertyRelative("waveId").intValue;
+                    if (existingId > maxId) maxId = existingId;
+                }
+                waveIdProp.intValue = maxId + 1;
+            }
+        }
+        else if (newSize < listSize)
+        {
+            // 删除了 element
+            wavesProp.arraySize = newSize;
+        }
+
+        EditorGUI.indentLevel++;
+        for (int i = 0; i < wavesProp.arraySize; i++)
+        {
+            SerializedProperty wave = wavesProp.GetArrayElementAtIndex(i);
+            SerializedProperty waveIdProp = wave.FindPropertyRelative("waveId");
+            SerializedProperty rowsProp = wave.FindPropertyRelative("rows");
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField($"波次 {waveIdProp.intValue}", EditorStyles.boldLabel);
+
+            // WaveId（只读显示）
+            EditorGUI.BeginDisabledGroup(true);
+            EditorGUILayout.IntField("Wave ID", waveIdProp.intValue);
+            EditorGUI.EndDisabledGroup();
+
+            // BUG FIX: WaveConfig 没有 nextWaveDelay 字段，已移除
+            SerializedProperty bossProp = wave.FindPropertyRelative("isBossWave");
+            bossProp.boolValue = EditorGUILayout.Toggle("BOSS波次", bossProp.boolValue);
+
+            EditorGUILayout.PropertyField(rowsProp, new GUIContent("敌人排配置"), true);
+
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.Space();
+        }
+        EditorGUI.indentLevel--;
+
+        serializedObject.ApplyModifiedProperties();
+    }
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Enemy\Enemy.cs ---
+using UnityEngine;
+using DG.Tweening;
+
+/// <summary>
+/// 敌人状态枚举
+/// </summary>
+public enum EnemyState
+{
+    Idle,
+    Moving,
+    Attacking,
+    Stunned,
+    Launched,
+    Dead
+}
+
+/// <summary>
+/// 敌人实体 - MonoBehaviour
+/// 管理敌人的生命值、架势值、状态机、前进移动、透明度渐变
+/// </summary>
+public class Enemy : MonoBehaviour
+{
+    [Header("配置")]
+    public EnemyConfig config;
+
+    [Header("运行时状态")]
+    public EnemyState state = EnemyState.Idle;
+    public float currentHealth;
+    public float currentPoise;
+    public int columnIndex;
+    public int rowIndex; // 0 = 最前排
+
+    // 内部状态
+    private float stunTimer;
+    private float launchTimer;
+    private float attackTimer;      // 攻击冷却计时器（攻击动画结束后开始冷却）
+    private float attackAnimTimer;  // 攻击动画计时器（攻击动作执行时间）
+    private bool isAttackAnimating; // 是否正在播放攻击动画
+
+    // 补齐移动链式触发
+    // pendingRushMove = true 表示该敌人已标记为需要向前补齐，
+    // TryStartRushMove() 会根据当前状态决定何时开始移动。
+    // 链式触发：补齐移动完全完成（moveProgress >= 1.0）时，
+    // OnRushMoveComplete 事件通知列管理器启动下一个敌人。
+    // 必须等待前一敌人完全补齐完毕，后一敌人才能开始补齐。
+    public bool pendingRushMove; // 标记需要向前补齐
+    public System.Action<Enemy> OnRushMoveComplete; // 补齐移动完成事件（移动完全结束时触发）
+    private float moveProgress; // 0~1, 当前排内移动进度
+    private bool isMovingToNextRow;
+
+    // 标记当前移动是否为"补齐移动"（由 RemoveEnemy/UpdateEnemyRow 触发）。
+    // 补齐移动完成后不触发 UpdateEnemyRow()，避免无限循环。
+    private bool isRushMove;
+
+    // BUG FIX: 新增补齐延迟计时器（Problem 3）
+    // 补齐移动完成后，若判定需继续补齐（rowIndex >= attackRange），
+    // 先等待 rushMoveDelay 秒再开始下一次补齐移动。
+    // 这样可以将 rushMoveSpeed 设置得更快（单次移动更迅速），
+    // 而整体补齐速度通过 rushMoveDelay 来调节，达到"快移动+停顿"的效果。
+    private float rushMoveDelayTimer;
+    // OnRushMoveComplete 是否已触发（避免在同一个移动过程中重复触发）
+    private bool rushMoveChainTriggered;
+    // 敌人此次补齐的目标排位置（即列表位置）
+    // 由 Column.RemoveEnemy() / ColumnManager.UpdateEnemyRow() 设置：
+    // SetRowIndex(i+1) 后设置 targetRow = i
+    // 在补齐移动完成的延迟循环中，检查 rowIndex <= targetRow 时停止补齐，
+    // 防止多个敌人在 delay 循环中全部汇聚到 row=0。
+    // targetRow = -1 表示未设置（非补齐移动），此时沿用旧行为。
+    public int targetRow = -1;
+    private Renderer[] renderers;
+    // 材质实例数组（用于闪白效果）
+    // 通过 renderer.material 创建实例，避免 MaterialPropertyBlock 在对象禁用时不生效的问题。
+    // 在 Initialize() 中创建，在 ResetEnemy() 中销毁。
+    private Material[] flashMaterials;
+    private bool initialized;
+
+    // 受伤闪白相关
+    private float hitFlashTimer; // 闪白剩余时间
+    private Color originalColor = Color.white; // 精灵原始颜色（白色）
+    private const float HIT_FLASH_DURATION = 0.15f; // 闪白持续时间
+
+    // DOTween: 前进补齐时 Y 轴弹跳偏移（由 DOTween 驱动，在 UpdateWorldPosition 中应用）
+    private float bounceYOffset;
+
+    // DOTween: 当前攻击动画序列（用于在 Die() 中取消正在执行的攻击动作）
+    private Sequence attackSequence;
+
+    // 敌人物体原始缩放值（从预制体读取，用于攻击动画/死亡后还原）
+    // 不能硬编码为 Vector3.one，因为不同敌人可能有不同默认缩放（如 0.5）
+    private Vector3 originalScale;
+
+    // 事件
+    public System.Action<Enemy> OnDeath;
+    public System.Action<Enemy> OnDamageTaken;
+
+    private void Awake()
+    {
+        renderers = GetComponentsInChildren<Renderer>();
+    }
+
+    /// <summary>
+    /// 初始化敌人（从对象池取出时调用）
+    /// 敌人生成时直接站在对应排位置，不自动开始移动。
+    /// 只有当前排出现空位时（通过 Column.RemoveEnemy()），
+    /// 后方敌人才会向前补齐。
+    /// </summary>
+    public void Initialize(EnemyConfig cfg, int col, int row)
+    {
+        config = cfg;
+        columnIndex = col;
+        rowIndex = row;
+
+        currentHealth = cfg.maxHealth;
+        currentPoise = cfg.maxPoise;
+        state = EnemyState.Idle;
+        stunTimer = 0f;
+        launchTimer = 0f;
+        // BUG FIX: attackTimer 初始化为一个正数，避免第一次进入 UpdateAttack() 时
+        // 立即触发冷却结束（attackTimer <= 0f），导致攻击动画被跳过
+        attackTimer = 1f;
+        attackAnimTimer = 0f;
+        isAttackAnimating = false;
+        moveProgress = 0f;
+        isMovingToNextRow = false;
+        isRushMove = false;
+        pendingRushMove = false;
+        // BUG FIX: 初始化重置新字段
+        rushMoveDelayTimer = 0f;
+        rushMoveChainTriggered = false;
+        targetRow = -1;
+        bounceYOffset = 0f;
+        attackSequence = null;
+        // 创建材质实例（用于闪白效果）
+        // 通过 renderer.material 创建实例，避免 MaterialPropertyBlock 在对象禁用时不生效
+        CreateFlashMaterials();
+
+        initialized = true;
+
+        gameObject.SetActive(true);
+
+        // 保存原始缩放值，用于攻击动画/死亡后的还原
+        originalScale = transform.localScale;
+
+        UpdateWorldPosition();
+
+        // 如果敌人已在攻击范围内（由 EnemyConfig.attackRange 决定），直接进入攻击状态
+        int attackRange = config != null ? (int)Mathf.Max(1, config.attackRange) : 1;
+        if (rowIndex < attackRange)
+        {
+            StartAttacking();
+        }
+    }
+
+    /// <summary>
+    /// 每帧更新
+    /// </summary>
+    private void Update()
+    {
+        if (!initialized || state == EnemyState.Dead) return;
+
+        switch (state)
+        {
+            case EnemyState.Stunned:
+                UpdateStun();
+                break;
+            case EnemyState.Launched:
+                UpdateLaunch();
+                break;
+            case EnemyState.Moving:
+                UpdateMovement();
+                break;
+            case EnemyState.Attacking:
+                UpdateAttack();
+                break;
+            case EnemyState.Idle:
+            default:
+                // Idle状态下什么都不做，等待外部调用 StartMoving()
+                // 注意：不要在这里自动调用 StartMoving()，否则会导致无限循环
+                // 因为 UpdateMovement() 完成后会设置 state = Idle
+                break;
+        }
+
+        // BUG FIX: 补齐移动延迟计时器（Problem 3）
+        // 当敌人完成一次补齐移动后，如果还需要继续补齐（rowIndex >= attackRange），
+        // 会启动延迟计时器，等待 rushMoveDelay 秒后再开始下一次补齐移动。
+        if (rushMoveDelayTimer > 0f)
+        {
+            rushMoveDelayTimer -= Time.deltaTime;
+            if (rushMoveDelayTimer <= 0f)
+            {
+                // 延迟结束，尝试再次开始补齐移动
+                Debug.Log($"[Enemy] 补齐延迟结束，尝试继续补齐: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}");
+                TryStartRushMove();
+            }
+        }
+
+        // 更新受伤闪白计时器
+        if (hitFlashTimer > 0f)
+        {
+            hitFlashTimer -= Time.deltaTime;
+            if (hitFlashTimer <= 0f)
+            {
+                Debug.Log($"[Enemy] 闪白结束: enemyId={config?.enemyId}");
+            }
+        }
+
+        // 每帧更新透明度（含闪白效果）
+        UpdateAlpha();
+    }
+
+    #region 状态切换
+
+     /// <summary>
+    /// 开始向前移动（常规移动，基于 moveSpeed 秒数）
+    /// BUG FIX: 当 rowIndex == 0 时，敌人已经到达最前排，不应再向前移动。
+    /// 如果此时调用 StartMoving()，UpdateWorldPosition() 中 isMovingToNextRow == true 时，
+    /// targetRowZ = -((0 - 1) * rowSpacing) = +rowSpacing（正数），
+    /// 敌人会向远离玩家的方向（正 Z 方向）移动，表现为"后退"。
+    /// 修复：rowIndex == 0 时直接进入 Attacking 状态。
+    ///
+    /// BUG FIX: 如果已经在 Moving 状态，不重置 moveProgress。
+    /// 否则当 Column.RemoveEnemy() 或 ColumnManager.UpdateEnemyRow() 中调用 StartMoving()
+    /// 时，会重置 moveProgress = 0f，导致正在移动中的敌人回到移动起点，看起来像是后退。
+    ///
+    /// 注意：保护检查只基于 state，不检查 isMovingToNextRow。
+    /// 因为 ResetMovementState() 会重置 isMovingToNextRow = false，
+    /// 如果保护检查依赖 isMovingToNextRow，会导致保护失效，
+    /// moveProgress 被重置为 0，造成"无限补齐"的无限循环。
+    /// </summary>
+    /// <summary>
+    /// 开始向前移动
+    /// </summary>
+    /// <param name="isRush">是否为补齐移动（由死亡/重排列触发）。补齐移动完成后不触发 UpdateEnemyRow()。</param>
+    public void StartMoving(bool isRush = false)
+    {
+        if (state == EnemyState.Dead) return;
+
+        // 如果敌人已在攻击范围内（由 EnemyConfig.attackRange 决定），直接进入攻击状态而非移动
+        // 补齐移动（isRush=true）优先级高于攻击：即使已在攻击范围内，也先向前补齐空位
+        int attackRange = config != null ? (int)Mathf.Max(1, config.attackRange) : 1;
+        if (!isRush && rowIndex < attackRange)
+        {
+            StartAttacking();
+            return;
+        }
+
+        // 补齐移动：如果已在目标位置或之前，不需要移动，恢复攻击
+        if (isRush && targetRow >= 0 && rowIndex <= targetRow)
+        {
+            StartAttacking();
+            return;
+        }
+
+        // BUG FIX: 如果已经在 Moving 状态，不重置 moveProgress
+        // 避免被 Column.RemoveEnemy() / ColumnManager.UpdateEnemyRow() 重复调用时
+        // 重置移动进度，导致敌人回到移动起点（看起来像后退）
+        // 注意：不检查 isMovingToNextRow，因为 ResetMovementState() 会重置它
+        if (state == EnemyState.Moving)
+        {
+            return;
+        }
+
+        isRushMove = isRush;
+        Debug.Log($"[Enemy] StartMoving: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, targetRow={rowIndex - 1}, isRush={isRush}");
+        state = EnemyState.Moving;
+        isMovingToNextRow = true;
+        moveProgress = 0f;
+
+        // DOTween: 前进补齐时 Y 轴弹跳动画（一边前进一边沿 Y 轴跳动）
+        if (isRush)
+        {
+            DOTween.Kill(transform, false); // 终止之前可能残留的弹跳动画
+            float moveDuration = config != null ? config.moveSpeed : 1f;
+            float bounceHeight = 0.5f; // 弹跳峰值高度
+            // 通过 DOTween.To 驱动 bounceYOffset，形成抛物线弹跳轨迹
+            DOTween.To(() => bounceYOffset, x => bounceYOffset = x, bounceHeight, moveDuration * 0.5f)
+                .SetEase(Ease.OutQuad)
+                .SetTarget(transform)
+                .SetId("rushBounce");
+            DOTween.To(() => bounceYOffset, x => bounceYOffset = x, 0f, moveDuration * 0.5f)
+                .SetEase(Ease.InQuad)
+                .SetDelay(moveDuration * 0.5f)
+                .SetTarget(transform)
+                .SetId("rushBounce");
+        }
+    }
+
+    /// <summary>
+    /// 开始攻击
+    /// BUG FIX: 攻击分为两个阶段：
+    ///   阶段1：攻击冷却（attackTimer）— 先进入冷却再攻击
+    ///   阶段2：攻击动画（attackAnimTimer）— 冷却结束后播放攻击动画并造成伤害
+    /// 这样敌人进入攻击范围后不会立即攻击，而是先进入冷却，符合"先冷却后攻击"的规则。
+    ///
+    /// 攻击优先级规则（Problem 1 修复）：
+    ///   1. 进入攻击范围 → 先进入攻击冷却，再执行攻击
+    ///   2. 攻击冷却期间需要向前补齐 → 先补齐再攻击
+    ///   3. 正在攻击动画中 → 完成当前攻击后再判断是否需要向前补齐
+    /// </summary>
+    public void StartAttacking()
+    {
+        if (state == EnemyState.Dead) return;
+        state = EnemyState.Attacking;
+        isAttackAnimating = false;
+        // 使用与攻击动画 OnComplete 中相同的冷却计算，保证补齐后首次攻击也遵循攻击 CD
+        float totalInterval = config != null ? (1f / config.attackSpeed) : 1f;
+        float cooldown = totalInterval * 0.4f;
+        if (cooldown < 0.1f) cooldown = 0.1f;
+        attackTimer = cooldown;
+    }
+
+    public void Stun(float duration)
+    {
+        if (state == EnemyState.Dead) return;
+        state = EnemyState.Stunned;
+        stunTimer = duration;
+    }
+
+    public void Launch(float duration)
+    {
+        if (state == EnemyState.Dead) return;
+        state = EnemyState.Launched;
+        launchTimer = duration;
+    }
+
+    #endregion
+
+    #region 状态更新
+
+    private void UpdateStun()
+    {
+        stunTimer -= Time.deltaTime;
+        if (stunTimer <= 0f)
+        {
+            StartMoving();
+        }
+    }
+
+    private void UpdateLaunch()
+    {
+        launchTimer -= Time.deltaTime;
+        if (launchTimer <= 0f)
+        {
+            StartMoving();
+        }
+    }
+
+    /// <summary>
+    /// 更新移动状态
+    /// 常规移动：基于 moveSpeed（秒/排），从当前排(rowIndex)移动到前一排(rowIndex-1)
+    /// 移动完成后更新 rowIndex，检查是否到达攻击距离
+    ///
+    /// 链式补齐：
+    ///   - 补齐移动（isRush=true）在移动完全完成（moveProgress >= 1.0）时，
+    ///     触发 OnRushMoveComplete 事件，通知列管理器启动下一个需要补齐的敌人。
+    ///     必须等待前一敌人完全补齐完毕，后一敌人才能开始补齐。
+    ///   - 每个敌人每次补齐只前进一排，不再连续多排补齐。
+    ///     后续补齐通过延迟计时器（rushMoveDelayTimer）在移动完成后触发。
+    ///     这样各敌人最终停在各自正确的排位置（rowIndex = listPosition），不会发生重合。
+    ///
+    /// 补齐延迟：
+    ///   - 补齐移动完成后，如果还需要继续前进（rowIndex >= attackRange），
+    ///     启动延迟计时器，等待 rushMoveDelay 秒后再开始下一次补齐移动。
+    ///   - 这样可以将单次补齐移动速度（moveSpeed）加快，
+    ///     而整体补齐节奏通过 rushMoveDelay 来调节，达到"快移动+停顿"的效果。
+    /// </summary>
+    private void UpdateMovement()
+    {
+        if (!isMovingToNextRow) return;
+
+        // 常规移动：基于 moveSpeed（秒/排）
+        float speed = config != null ? config.moveSpeed : 1f;
+        moveProgress += Time.deltaTime / speed;
+
+        if (moveProgress >= 1f)
+        {
+            bool wasRush = isRushMove;
+            Debug.Log($"[Enemy] 移动完成: enemyId={config?.enemyId}, col={columnIndex}, oldRow={rowIndex}, newRow={rowIndex - 1}, isRush={wasRush}");
+            moveProgress = 0f;
+            isMovingToNextRow = false;
+            isRushMove = false;
+            rushMoveChainTriggered = false; // 重置链式触发标记
+
+            // 移动完成：rowIndex 前进一排
+            rowIndex--;
+
+            // BUG FIX: 防止 rowIndex 变为负数
+            if (rowIndex < 0) rowIndex = 0;
+
+            // 使用 EnemyConfig.attackRange 决定攻击距离
+            int attackRange = config != null ? (int)Mathf.Max(1, config.attackRange) : 1;
+            bool reachedAttackRange = rowIndex < attackRange;
+
+            if (wasRush)
+            {
+                // BUG FIX: 补齐移动优先级高于攻击。即使当前行已在攻击范围内，
+                // 只要尚未到达目标位置（targetRow），就必须继续向前补齐。
+                // 先检查是否需要继续补齐，然后再判断是否开始攻击。
+                if (targetRow >= 0 && rowIndex > targetRow)
+                {
+                    // 尚未到达目标位置（列表位置），继续补齐
+                    float delay = 0f;
+                    if (StageController.Instance != null)
+                    {
+                        delay = StageController.Instance.GetRushMoveDelay();
+                    }
+                    if (delay > 0f)
+                    {
+                        Debug.Log($"[Enemy] 补齐移动完成（等待延迟继续补齐）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}, delay={delay:F2}s");
+                        state = EnemyState.Idle;
+                        pendingRushMove = true;
+                        rushMoveDelayTimer = delay;
+                    }
+                    else
+                    {
+                        // 无延迟，立即继续补齐
+                        Debug.Log($"[Enemy] 补齐移动完成（立即继续补齐）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
+                        state = EnemyState.Idle;
+                        pendingRushMove = true;
+                        TryStartRushMove();
+                    }
+                }
+                else if (reachedAttackRange)
+                {
+                    // 已到达目标位置且在攻击范围内，开始攻击
+                    Debug.Log($"[Enemy] 补齐移动完成（到达目标位置+攻击范围）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}");
+                    pendingRushMove = false;
+                    targetRow = -1;
+                    StartAttacking();
+                }
+                else
+                {
+                    // 已到达目标位置但不在攻击范围内，停止补齐
+                    Debug.Log($"[Enemy] 补齐移动完成（到达目标位置，停止补齐）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
+                    state = EnemyState.Idle;
+                    pendingRushMove = false;
+                    targetRow = -1;
+                }
+
+                // BUG FIX: 链式触发移至移动完全完成后，而非移动中期。
+                // 必须等待前一敌人完全补齐完毕（moveProgress >= 1.0），
+                // 后一敌人才能开始补齐。这样符合"逐个向前补齐"的行为。
+                // 使用 rushMoveChainTriggered 避免在同一个移动过程中重复触发。
+                if (!rushMoveChainTriggered)
+                {
+                    rushMoveChainTriggered = true;
+                    Debug.Log($"[Enemy] 补齐移动完全完成（触发链式）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}");
+                    OnRushMoveComplete?.Invoke(this);
+                }
+            }
+            else
+            {
+                // 自然移动完成后，通知ColumnManager更新列内排序
+                if (reachedAttackRange)
+                {
+                    StartAttacking();
+                }
+                EnemyManager.Instance?.OnEnemyMovedForward(this);
+                Debug.Log($"[Enemy] 自然移动完成，触发 UpdateEnemyRow: enemyId={config?.enemyId}, col={columnIndex}");
+            }
+        }
+
+        UpdateWorldPosition();
+    }
+
+    /// <summary>
+    /// 更新攻击状态
+    /// BUG FIX: 攻击分为两个阶段：
+    ///   阶段1：攻击冷却（attackTimer > 0）— 先进入冷却再攻击
+    ///   阶段2：攻击动画（DOTween）— 使用 DOTween Sequence 播放前移+翻转+后退动效，动画结束时造成伤害
+    ///
+    /// 攻击优先级规则（Problem 1 修复）：
+    ///   1. 冷却期间如果 pendingRushMove == true → 先执行补齐再攻击
+    ///   2. 动画期间不中断 → 完成当前攻击后检查 pendingRushMove
+    /// </summary>
+    private void UpdateAttack()
+    {
+        if (isAttackAnimating)
+        {
+            // 阶段2：DOTween 攻击动画播放中
+            // 动画完成后通过 OnComplete 回调处理（PerformAttack + 设置冷却 + TryStartRushMove）
+            return;
+        }
+        else
+        {
+            // 阶段1：攻击冷却
+            // BUG FIX: 冷却期间如果标记了需要补齐，先执行补齐再攻击
+            if (pendingRushMove)
+            {
+                TryStartRushMove();
+                return; // 如果成功开始移动，直接返回，不再处理冷却
+            }
+
+            attackTimer -= Time.deltaTime;
+            if (attackTimer <= 0f)
+            {
+                // 冷却结束，使用 DOTween 播放攻击动画
+                PlayAttackAnimationTween();
+            }
+        }
+    }
+
+    private void PerformAttack()
+    {
+        // 通知玩家受到伤害
+        // 由EnemyManager转发给PlayerState
+        EnemyManager.Instance?.OnEnemyAttackPlayer(this);
+    }
+
+    /// <summary>
+    /// 使用 DOTween 播放攻击动效
+    /// 效果：向前（-Z方向）移动 + 左右镜像翻转（scale.X * -1）→ 后退到原位 + 翻转回正
+    /// 动画时长基于 attackSpeed（攻击速度越快动画越快）
+    /// 动画完成后：PerformAttack() → 进入冷却 → 检查是否需要补齐
+    /// </summary>
+    private void PlayAttackAnimationTween()
+    {
+        isAttackAnimating = true;
+
+        // 保存起始位置和缩放（动画完成后恢复）
+        Vector3 startPos = transform.localPosition;
+        Vector3 startScale = transform.localScale;
+
+        // 根据 attackSpeed 计算动画时长
+        // 攻击间隔 = 1/attackSpeed，动画占 60%，冷却占 40%
+        float totalInterval = config != null ? (1f / config.attackSpeed) : 1f;
+        float animDuration = totalInterval * 0.6f;
+        // 限制最小/最大动画时长
+        animDuration = Mathf.Clamp(animDuration, 0.15f, 0.6f);
+        float halfAnim = animDuration * 0.5f;
+        float forwardDistance = 0.5f; // 向前移动距离
+
+        attackSequence = DOTween.Sequence();
+        attackSequence.SetTarget(transform);
+        attackSequence.SetId("attackAnim");
+
+        // 阶段1：向前移动 + 左右镜像翻转
+        // 使用 Join 让两个动画同时进行
+        attackSequence.Append(transform.DOLocalMoveZ(startPos.z - forwardDistance, halfAnim).SetEase(Ease.OutQuad));
+        attackSequence.Join(transform.DOScaleX(-startScale.x, halfAnim).SetEase(Ease.OutQuad));
+
+        // 阶段2：后退到原位 + 翻转回正常
+        attackSequence.Append(transform.DOLocalMoveZ(startPos.z, halfAnim).SetEase(Ease.InQuad));
+        attackSequence.Join(transform.DOScaleX(startScale.x, halfAnim).SetEase(Ease.InQuad));
+
+        // 动画完成回调
+        attackSequence.OnComplete(() =>
+        {
+            attackSequence = null;
+            isAttackAnimating = false;
+            PerformAttack();
+
+            // 进入冷却阶段（动画占 60%，冷却占 40%）
+            float cooldown = totalInterval * 0.4f;
+            if (cooldown < 0.1f) cooldown = 0.1f; // 最小冷却时间
+            attackTimer = cooldown;
+
+            // 完成当前攻击后，检查是否需要向前补齐
+            TryStartRushMove();
+        });
+    }
+
+    #endregion
+
+    #region 伤害系统
+
+    /// <summary>
+    /// 受到伤害
+    /// </summary>
+    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab)
+    {
+        if (state == EnemyState.Dead) return;
+
+        // 应用弱点倍率
+        float multiplier = GetDamageMultiplier(damageType);
+        float finalDamage = damage * multiplier;
+
+        Debug.Log($"[Enemy] TakeDamage: enemyId={config?.enemyId}, col={columnIndex}, raw={damage:F1}, mult={multiplier:F2}, final={finalDamage:F1}, hp={currentHealth:F1}→{currentHealth - finalDamage:F1}");
+
+        currentHealth -= finalDamage;
+        OnDamageTaken?.Invoke(this);
+
+        // 受伤跳字：在敌人右侧显示红色带黑描边的伤害数字
+        if (DamageNumberManager.Instance != null)
+        {
+            DamageNumberManager.Instance.Spawn(transform.position, finalDamage);
+        }
+
+        // BUG FIX: 同步应用闪白（立即设置颜色，不依赖 Update 循环）
+        // 即使敌人秒杀死亡，闪白效果也在死亡前被渲染
+        // 否则 Die() 设置 state = Dead 后，Update() 提前返回，UpdateAlpha() 不被调用
+        ApplyHitFlashImmediate();
+
+        // 触发受伤闪白效果（非致命伤通过 Update 循环过渡恢复）
+        hitFlashTimer = HIT_FLASH_DURATION;
+        Debug.Log($"[Enemy] 触发闪白: enemyId={config?.enemyId}, duration={HIT_FLASH_DURATION}");
+
+        // DOTween: 受击大小抖动效果（与闪白同步触发）
+        transform.DOKill(true); // 完成当前正在播放的任何缩放动画，避免与新抖动冲突
+        transform.DOPunchScale(new Vector3(0.2f, 0.2f, 0.2f), 0.15f, 8, 0.5f);
+
+        if (currentHealth <= 0f)
+        {
+            Die();
+        }
+    }
+
+    /// <summary>
+    /// 同步应用闪白效果（在 TakeDamage 中调用）
+    /// 直接通过材质实例设置 color = white，确保即使敌人立即死亡，
+    /// 闪白也在协程等待期间可见（协程中 state=Dead 但 UpdateAlpha 不执行，
+    /// 材质颜色在协程等待期间保持白色）。
+    /// </summary>
+    private void ApplyHitFlashImmediate()
+    {
+        if (flashMaterials == null) return;
+        foreach (var mat in flashMaterials)
+        {
+            if (mat != null) mat.color = Color.white;
+        }
+    }
+
+    /// <summary>
+    /// 创建材质实例（用于闪白效果）
+    /// 通过 renderer.material 创建实例，确保修改 color 不会影响其他敌人。
+    /// 在 Initialize() 中调用，在 ResetEnemy() 中销毁。
+    /// </summary>
+    private void CreateFlashMaterials()
+    {
+        // 先销毁旧的材质实例
+        DestroyFlashMaterials();
+
+        if (renderers == null || renderers.Length == 0) return;
+
+        flashMaterials = new Material[renderers.Length];
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            // renderer.material 会创建材质实例（自动实例化 sharedMaterial）
+            flashMaterials[i] = renderers[i].material;
+            // 初始颜色设为白色（精灵原始颜色）
+            flashMaterials[i].color = Color.white;
+        }
+    }
+
+    /// <summary>
+    /// 销毁材质实例
+    /// </summary>
+    private void DestroyFlashMaterials()
+    {
+        if (flashMaterials != null)
+        {
+            foreach (var mat in flashMaterials)
+            {
+                if (mat != null)
+                {
+                    Object.Destroy(mat);
+                }
+            }
+            flashMaterials = null;
+        }
+    }
+
+    /// <summary>
+    /// 受到架势伤害
+    /// </summary>
+    public void TakePoiseDamage(float poiseDamage)
+    {
+        if (state == EnemyState.Dead) return;
+
+        currentPoise -= poiseDamage;
+        if (currentPoise <= 0f)
+        {
+            // 架势破碎 -> 眩晕
+            float stunDuration = config != null ? config.stunDuration : 1.5f;
+            Stun(stunDuration);
+            currentPoise = config != null ? config.maxPoise : 50f; // 重置架势
+        }
+    }
+
+    /// <summary>
+    /// 根据伤害类型获取倍率
+    /// </summary>
+    private float GetDamageMultiplier(DamageType damageType)
+    {
+        if (config == null) return 1f;
+
+        switch (damageType)
+        {
+            case DamageType.Stab:   return config.stabDamageMultiplier;
+            case DamageType.Slash:  return config.slashDamageMultiplier;
+            case DamageType.Pierce: return config.pierceDamageMultiplier;
+            case DamageType.Sweep:  return config.sweepDamageMultiplier;
+            case DamageType.Launch: return config.launchDamageMultiplier;
+            case DamageType.Poise:  return config.poiseDamageMultiplier;
+            default: return 1f;
+        }
+    }
+
+    /// <summary>
+    /// 死亡
+    /// BUG FIX: 改为使用协程处理闪白效果，而非立即触发死亡事件。
+    /// 因为 EnemyManager.OnEnemyDied() → EnemyPool.ReturnEnemy() → ResetEnemy() → SetActive(false)
+    /// 会在同一帧禁用 GameObject，导致材质颜色修改无法被渲染（渲染管线跳过禁用对象）。
+    ///
+    /// 新流程：
+    ///   1. state = Dead（Update 提前返回，不再处理攻击/移动逻辑）
+    ///   2. 取消正在执行的攻击 DOTween 动画
+    ///   3. 启动死亡动效协程 DeathBounceAndFall()
+    ///   4. 协程结束后触发 OnDeath 事件（池回收，禁用 GameObject）
+    /// </summary>
+    public void Die()
+    {
+        if (state == EnemyState.Dead) return;
+        state = EnemyState.Dead;
+
+        // BUG FIX: 取消正在执行的攻击 DOTween 动画
+        // 若敌人在攻击动画中被秒杀，立即中断攻击动作（前移+翻转），直接进入死亡状态
+        // Kill() 后立即重置位置和缩放：Kill 会留下中断时的中间值（如翻转-0.2），
+        // 若不重置，死亡动效期间敌人位置/缩放会是错误的
+        if (attackSequence != null && attackSequence.IsActive())
+        {
+            attackSequence.Kill();
+            attackSequence = null;
+            UpdateWorldPosition();
+            transform.localScale = originalScale;
+        }
+        isAttackAnimating = false;
+        isMovingToNextRow = false;
+
+        // 启动死亡动效协程（弹起 + 旋转 + 重力掉落）
+        StartCoroutine(DeathBounceAndFall());
+    }
+
+    /// <summary>
+    /// 死亡动效协程 — 弹起 + 随机旋转 + 重力掉落
+    /// 使用 DOTween 实现：
+    ///   1. 立即闪白（ApplyHitFlashImmediate）
+    ///   2. 弹起（Y 轴向上 OutQuad 缓动）
+    ///   3. 随机旋转（在 X 和 Z 轴上随机角度，贯穿整个动画）
+    ///   4. 受重力掉落离开屏幕（Y 轴向下 InQuad 缓动）
+    ///   5. 恢复缩放和旋转（供对象池复用），触发 OnDeath 事件
+    /// </summary>
+    private System.Collections.IEnumerator DeathBounceAndFall()
+    {
+        // 立即将材质颜色设为白色（闪白）
+        ApplyHitFlashImmediate();
+
+        // 保存起始位置
+        Vector3 startPos = transform.localPosition;
+
+        // 构建 DOTween 序列
+        Sequence deathSeq = DOTween.Sequence();
+        deathSeq.SetTarget(transform);
+        deathSeq.SetId("deathAnim");
+
+        float jumpHeight = Random.Range(1.5f, 3.0f);   // 弹起高度
+        float fallDistance = 20f;                        // 掉落距离（确保离开屏幕）
+        float jumpDuration = 0.3f;                       // 弹起时长
+        float fallDuration = 0.8f;                       // 掉落时长
+
+        // 阶段1：弹起（OutQuad 缓动，模拟起跳的加速度）
+        deathSeq.Append(transform.DOLocalMoveY(startPos.y + jumpHeight, jumpDuration).SetEase(Ease.OutQuad));
+
+        // 阶段2：受重力掉落离开屏幕（InQuad 缓动，模拟自由落体加速）
+        deathSeq.Append(transform.DOLocalMoveY(startPos.y - fallDistance, fallDuration).SetEase(Ease.InQuad));
+
+        // 随机旋转（贯穿整个动画：弹起阶段 + 掉落阶段）
+        // 在 X 轴和 Z 轴上随机旋转，模拟被击飞后的翻滚
+        Vector3 randomRotation = new Vector3(
+            Random.Range(-60f, 60f),   // X 轴轻微翻转
+            0f,                          // Y 轴不旋转（2D 精灵）
+            Random.Range(-360f, 360f)   // Z 轴大角度旋转
+        );
+        float totalAnimDuration = jumpDuration + fallDuration;
+        transform.DORotate(randomRotation, totalAnimDuration, RotateMode.LocalAxisAdd)
+            .SetEase(Ease.OutQuad)
+            .SetTarget(transform)
+            .SetId("deathAnim");
+
+        // 等待序列完成
+        yield return deathSeq.WaitForCompletion();
+
+        // 恢复缩放和旋转（供对象池复用）
+        transform.localScale = originalScale;
+        transform.localRotation = Quaternion.identity;
+
+        // 死亡动效结束后触发死亡事件（EnemyManager.OnEnemyDied → ReturnEnemy → SetActive(false)）
+        OnDeath?.Invoke(this);
+    }
+
+    #endregion
+
+    #region 位置与透明度
+
+    /// <summary>
+    /// 重置移动状态（列内补齐时调用）
+    /// 重置 state=Idle、isMovingToNextRow=false、moveProgress=0，
+    /// 以便 StartMoving() 能通过 state==Moving 保护检查，重新开始移动。
+    ///
+    /// BUG FIX: 不再重置 pendingRushMove 标记，
+    /// 由 Column.RemoveEnemy() 单独控制 pendingRushMove 的设置。
+    /// </summary>
+    public void ResetMovementState()
+    {
+        // 若敌人正在播放攻击动画，先清理 DOTween 序列并重置位置/缩放
+        // 否则后续 StartMoving() 中的 DOTween.Kill(transform, false) 会直接中断攻击 tween，
+        // 留下中间值（如 ScaleX=-0.2）导致视觉错误，且攻击动画与补齐移动并发
+        if (attackSequence != null && attackSequence.IsActive())
+        {
+            attackSequence.Kill();
+            attackSequence = null;
+            UpdateWorldPosition();
+            transform.localScale = originalScale;
+        }
+        isAttackAnimating = false;
+
+        state = EnemyState.Idle;
+        isMovingToNextRow = false;
+        moveProgress = 0f;
+    }
+
+    /// <summary>
+    /// 尝试开始补齐移动（链式触发）
+    /// 根据当前状态决定是否立即开始移动：
+    ///   - Idle：直接开始移动（或攻击，若已到最前排）
+    ///   - Attacking（冷却阶段）：中断冷却，优先补齐
+    ///   - Attacking（动画阶段）：等待动画完成，由 UpdateAttack() 调用
+    ///   - Stunned/Launched：等待恢复
+    ///
+    /// 返回值：true 表示已处理（开始移动或立即触发链式完成），false 表示等待下次尝试
+    /// </summary>
+    public bool TryStartRushMove()
+    {
+        if (!pendingRushMove || state == EnemyState.Dead)
+            return false;
+
+        switch (state)
+        {
+            case EnemyState.Idle:
+                pendingRushMove = false;
+                StartMoving(true);
+                // 如果 state 未变为 Moving（例如 rowIndex=0 直接进入攻击），
+                // 立即触发链式完成，让下一个敌人开始补齐
+                if (state != EnemyState.Moving)
+                {
+                    OnRushMoveComplete?.Invoke(this);
+                }
+                return true;
+
+            case EnemyState.Attacking:
+                if (!isAttackAnimating)
+                {
+                    // 冷却阶段：中断攻击，但等待 rushMoveDelay 后再开始补齐
+                    // 不立即 StartMoving，避免跳过补齐延迟计时器
+                    ResetMovementState();
+                    pendingRushMove = true;
+                    float delay = StageController.Instance?.GetRushMoveDelay() ?? 0f;
+                    if (delay > 0f)
+                        rushMoveDelayTimer = delay;
+                    else
+                        StartMoving(true);
+                    return true;
+                }
+                // 动画阶段：等待动画完成，由 UpdateAttack() 调用 TryStartRushMove
+                return false;
+
+            case EnemyState.Stunned:
+            case EnemyState.Launched:
+                // 等待恢复，恢复后 StartMoving() 会检查 pendingRushMove
+                return false;
+
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// 设置列和排索引
+    /// </summary>
+    public void SetColumnPosition(int col, int row)
+    {
+        columnIndex = col;
+        rowIndex = row;
+        UpdateWorldPosition();
+    }
+
+    /// <summary>
+    /// 仅设置排索引（列内前移时调用）
+    /// </summary>
+    public void SetRowIndex(int row)
+    {
+        rowIndex = row;
+        UpdateWorldPosition();
+    }
+
+    /// <summary>
+    /// 根据排索引计算Z轴位置
+    /// 在Unity中，-Z轴是前进方向（朝向玩家），+Z轴是后退方向（远离玩家）。
+    /// rowIndex=0在最前排（最靠近玩家），rowIndex越大越远离玩家。
+    ///
+    /// 公式：zPos = (maxVisibleRows - 1 - rowIndex) * (-rowSpacing) + offsetZ
+    /// rowIndex=0 → Z = (5-1-0) * (-2.5) = -10（最靠近玩家）
+    /// rowIndex=4 → Z = (5-1-4) * (-2.5) = 0（最远离玩家）
+    ///
+    /// 前进方向：rowIndex从4→3→2→1→0，Z值从0→-2.5→-5.0→-7.5→-10
+    /// 即向-Z方向移动。-Z方向是前进方向（朝向玩家），所以这是前进。
+    /// </summary>
+    private float GetRowZ(int row, float spacing, float offset)
+    {
+        int maxRow = 4; // 默认值
+        if (StageController.Instance != null)
+        {
+            maxRow = StageController.Instance.GetMaxVisibleRows() - 1;
+        }
+        return (maxRow - row) * (-spacing) + offset;
+    }
+
+    /// <summary>
+    /// 更新世界坐标
+    /// 列：X轴使用梯形/扇形阵型偏移，排：Z轴偏移
+    /// 移动过程中：从当前排(rowIndex)位置平滑移动到前一排(rowIndex-1)位置
+    /// 非移动中：固定在当前排(rowIndex)位置
+    ///
+    /// BUG FIX: 移动过程中使用 rowIndex（当前排位置）计算阵型偏移，
+    /// 因为 rowIndex 在移动过程中尚未更新（移动完成后才 rowIndex--）。
+    /// 这样 X 轴和 Z 轴同步，避免"梯形向内聚拢"问题。
+    /// </summary>
+    private void UpdateWorldPosition()
+    {
+        float xPos;
+        float rowSpacing = 2.5f;
+        if (StageController.Instance != null)
+        {
+            // BUG FIX: 移动过程中使用 rowIndex（旧排位置）计算 X 轴偏移
+            // 因为 rowIndex 在移动过程中尚未更新（移动完成后才 rowIndex--）
+            // 这样 X 轴和 Z 轴同步，避免"梯形向内聚拢"问题
+            xPos = StageController.Instance.GetFormationOffset(columnIndex, rowIndex);
+            rowSpacing = StageController.Instance.GetRowSpacing();
+        }
+        else
+        {
+            // 回退到原始直线排列
+            xPos = (columnIndex - 2) * 2.0f;
+        }
+
+        // 获取阵型整体Z轴偏移（用于调整敌人生成位置远离/靠近摄像机）
+        float offsetZ = 0f;
+        if (StageController.Instance != null)
+        {
+            offsetZ = StageController.Instance.GetFormationOffsetZ();
+        }
+
+        float zPos;
+        if (isMovingToNextRow)
+        {
+            // BUG FIX: 移动过程中同时平滑过渡 X 轴和 Z 轴。
+            // 之前 X 轴仅使用 rowIndex（当前排），导致移动完成时 X 瞬间跳跃到目标排的偏移量。
+            // 现在 X 和 Z 都从当前排(rowIndex)平滑过渡到目标排(rowIndex-1)，
+            // 使阵型的梯形/扇形展开在移动过程中就正确显示，而非抵达后才调整。
+            //
+            // rowIndex 尚未更新，使用 rowIndex 作为起点，rowIndex-1 作为终点
+            float currentX = xPos; // 当前排的 X 偏移（已在上面通过 GetFormationOffset 计算）
+            float targetX = StageController.Instance.GetFormationOffset(columnIndex, rowIndex - 1);
+            xPos = Mathf.Lerp(currentX, targetX, moveProgress);
+
+            // Z 轴：从当前排向目标排平滑过渡
+            float currentRowZ = GetRowZ(rowIndex, rowSpacing, offsetZ);
+            float targetRowZ = GetRowZ(rowIndex - 1, rowSpacing, offsetZ);
+            zPos = Mathf.Lerp(currentRowZ, targetRowZ, moveProgress);
+        }
+        else
+        {
+            // 非移动中：固定在当前排位置
+            zPos = GetRowZ(rowIndex, rowSpacing, offsetZ);
+        }
+
+        // 使用 localPosition 而非 position，这样敌人会相对于父节点定位
+        // 你可以在场景中创建一个空的 Enemies GameObject 作为父节点，
+        // 然后调整父节点的 Transform Position 来整体移动所有敌人的位置
+        // DOTween: 前进补齐时 Y 轴弹跳由 bounceYOffset 驱动（非补齐移动时 bounceYOffset = 0）
+        transform.localPosition = new Vector3(xPos, bounceYOffset, zPos);
+    }
+
+    /// <summary>
+    /// 更新透明度（基于排索引）+ 受伤闪白效果
+    /// 使用材质实例直接修改 color，确保闪白在对象禁用前始终可见。
+    /// </summary>
+    private void UpdateAlpha()
+    {
+        if (flashMaterials == null || flashMaterials.Length == 0) return;
+
+        float alpha = GetAlphaForRow(rowIndex);
+
+        foreach (var mat in flashMaterials)
+        {
+            if (mat == null) continue;
+
+            // 使用白色作为基础色，仅通过透明度控制显示
+            Color color = Color.white;
+            color.a = alpha;
+
+            // 受伤闪白效果：hitFlashTimer > 0 时设置全白全透明（alpha=1），无视排索引透明度
+            if (hitFlashTimer > 0f)
+            {
+                color = Color.white; // (1, 1, 1, 1) — 全白全透明
+            }
+
+            mat.color = color;
+        }
+    }
+
+    /// <summary>
+    /// 根据排索引获取透明度
+    /// </summary>
+    private float GetAlphaForRow(int row)
+    {
+        // 从StageController获取透明度配置
+        // 默认：第0排=1.0, 第1排=0.8, 第2排=0.6, 第3排=0.4, 第4排=0.2, 第5排+=0
+        float[] factors;
+        if (StageController.Instance != null)
+        {
+            factors = StageController.Instance.rowAlphaFactors;
+        }
+        else
+        {
+            factors = new float[] { 1.0f, 0.8f, 0.6f, 0.4f, 0.2f };
+            Debug.LogWarning("[Enemy] StageController.Instance 为 null，使用默认透明度配置");
+        }
+
+        if (row < factors.Length)
+            return factors[row];
+        return 0f;
+    }
+
+    #endregion
+
+    #region 对象池
+
+    private void OnDisable()
+    {
+        initialized = false;
+    }
+
+    /// <summary>
+    /// 重置状态（回收到对象池时调用）
+    /// </summary>
+    public void ResetEnemy()
+    {
+        // 终止所有活跃的 DOTween 动画（完成当前值后跳转到最终值）
+        transform.DOKill(true);
+
+        state = EnemyState.Dead;
+        currentHealth = 0f;
+        currentPoise = 0f;
+        config = null;
+        initialized = false;
+        OnDeath = null;
+        OnDamageTaken = null;
+        // 销毁材质实例，避免内存泄漏
+        DestroyFlashMaterials();
+        gameObject.SetActive(false);
+    }
+
+    #endregion
+}
+
+/// <summary>
+/// 伤害类型枚举
+/// </summary>
+public enum DamageType
+{
+    Stab,   // 戳击
+    Slash,  // 斩击
+    Pierce, // 穿刺
+    Sweep,  // 横扫
+    Launch, // 挑飞
+    Poise   // 架势伤害
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Enemy\EnemyPool.cs ---
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// 通用对象池 - 按敌人ID分池管理
+/// 支持预创建和动态扩容
+///
+/// 【自动注册方案】
+/// 将敌人预制体放入 Resources/EnemyPrefabs/ 文件夹下，
+/// 预制体文件名格式为：Enemy_{enemyId}.prefab
+/// 例如：Enemy_1.prefab、Enemy_2.prefab
+/// 系统会在 Awake() 时自动扫描并注册，无需手动调用 RegisterPrefab()
+///
+/// 如果不想使用自动注册，也可以手动调用 RegisterPrefab() 注册
+/// </summary>
+public class EnemyPool : MonoBehaviour
+{
+    public static EnemyPool Instance { get; private set; }
+
+    [Header("池设置")]
+    public Transform poolRoot; // 对象池根节点（可选，用于存放未激活的敌人）
+    public Transform enemiesRoot; // 敌人运行时父节点（可选，用于场景中整体移动敌人位置）
+    public int defaultPoolSize = 20; // 每个池默认预创建数量
+
+    [Header("自动注册设置")]
+    [Tooltip("是否在 Awake 时自动从 Resources/EnemyPrefabs/ 加载预制体")]
+    public bool autoLoadFromResources = true;
+    [Tooltip("Resources 中存放敌人预制体的文件夹路径（相对于 Resources 根目录）")]
+    public string resourcesPrefabPath = "EnemyPrefabs";
+
+    // 按敌人ID分池：Dictionary<enemyId, Queue<Enemy>>
+    private Dictionary<int, Queue<Enemy>> pools = new Dictionary<int, Queue<Enemy>>();
+
+    // 敌人预制体注册表：Dictionary<enemyId, GameObject>
+    private Dictionary<int, GameObject> enemyPrefabs = new Dictionary<int, GameObject>();
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+
+        if (poolRoot == null)
+        {
+            poolRoot = transform;
+        }
+
+        // 自动从 Resources 加载预制体
+        if (autoLoadFromResources)
+        {
+            AutoRegisterPrefabsFromResources();
+        }
+    }
+
+    /// <summary>
+    /// 从 Resources 文件夹自动加载并注册敌人预制体
+    /// 预制体文件名格式：Enemy_{enemyId}.prefab
+    /// 例如：Enemy_1.prefab → enemyId = 1
+    ///       Enemy_2.prefab → enemyId = 2
+    ///
+    /// 【回退方案】
+    /// 1. 优先从 Resources/EnemyPrefabs/ 加载
+    /// 2. 如果为空，尝试从项目 Prefabs/ 目录加载（通过 Resources.Load 无法直接访问 Prefabs 目录）
+    /// 3. 如果仍然没有，则动态创建临时 Cube 作为敌人（确保至少能看到敌人出现）
+    /// </summary>
+    private void AutoRegisterPrefabsFromResources()
+    {
+        GameObject[] prefabs = Resources.LoadAll<GameObject>(resourcesPrefabPath);
+        if (prefabs == null || prefabs.Length == 0)
+        {
+            Debug.Log($"[EnemyPool] Resources/{resourcesPrefabPath}/ 中未找到任何预制体，尝试创建临时敌人");
+
+            // 回退方案：动态创建临时 Cube 作为敌人
+            // 这样即使没有预制体，也能看到敌人出现
+            CreateFallbackEnemyPrefab(101); // 对应 Enemy_Skeleton.asset 的 enemyId
+            return;
+        }
+
+        foreach (GameObject prefab in prefabs)
+        {
+            // 从文件名解析 enemyId
+            // 格式：Enemy_{enemyId} 或 Enemy_{enemyId}_任意后缀
+            string name = prefab.name;
+            int enemyId = ParseEnemyIdFromName(name);
+            if (enemyId > 0)
+            {
+                RegisterPrefab(enemyId, prefab);
+                Debug.Log($"[EnemyPool] 自动注册敌人预制体: {name} → enemyId={enemyId}");
+            }
+            else
+            {
+                Debug.LogWarning($"[EnemyPool] 无法从文件名解析 enemyId: {name}，跳过注册。" +
+                    $"请确保文件名格式为 Enemy_{{enemyId}}，例如 Enemy_1");
+            }
+        }
+    }
+
+    /// <summary>
+    /// 创建临时敌人预制体（回退方案）
+    /// 当 Resources/EnemyPrefabs/ 中没有预制体时，动态创建 Cube 作为敌人
+    /// 这样即使没有配置预制体，也能看到敌人出现并测试游戏逻辑
+    /// </summary>
+    private void CreateFallbackEnemyPrefab(int enemyId)
+    {
+        // 创建临时 GameObject
+        GameObject tempPrefab = new GameObject($"Enemy_{enemyId}_Temp");
+        
+        // 添加 Cube 网格和渲染器，使其可见
+        MeshFilter meshFilter = tempPrefab.AddComponent<MeshFilter>();
+        meshFilter.sharedMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
+        MeshRenderer meshRenderer = tempPrefab.AddComponent<MeshRenderer>();
+        meshRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
+        meshRenderer.sharedMaterial.color = Color.red; // 临时敌人用红色区分
+        
+        // 添加 Enemy 组件
+        tempPrefab.AddComponent<Enemy>();
+        
+        // 注册到对象池
+        RegisterPrefab(enemyId, tempPrefab);
+        Debug.Log($"[EnemyPool] 已创建临时敌人预制体 (enemyId={enemyId})，请尽快将预制体放入 Resources/EnemyPrefabs/ 目录");
+    }
+
+    /// <summary>
+    /// 从文件名解析敌人ID
+    /// 支持格式：Enemy_1、Enemy_1_v2、Enemy_1_弓箭手 等
+    /// </summary>
+    private int ParseEnemyIdFromName(string name)
+    {
+        // 查找 "Enemy_" 前缀
+        const string prefix = "Enemy_";
+        if (!name.StartsWith(prefix)) return -1;
+
+        string afterPrefix = name.Substring(prefix.Length);
+        // 提取数字部分（直到遇到非数字字符）
+        string numberStr = "";
+        foreach (char c in afterPrefix)
+        {
+            if (char.IsDigit(c))
+            {
+                numberStr += c;
+            }
+            else
+            {
+                break; // 遇到非数字字符就停止
+            }
+        }
+
+        if (int.TryParse(numberStr, out int id))
+        {
+            return id;
+        }
+        return -1;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    /// <summary>
+    /// 注册敌人预制体
+    /// </summary>
+    public void RegisterPrefab(int enemyId, GameObject prefab)
+    {
+        if (!enemyPrefabs.ContainsKey(enemyId))
+        {
+            enemyPrefabs[enemyId] = prefab;
+        }
+    }
+
+    /// <summary>
+    /// 预创建指定ID的敌人池
+    /// </summary>
+    public void PrewarmPool(int enemyId, int count)
+    {
+        if (!enemyPrefabs.ContainsKey(enemyId))
+        {
+            Debug.LogError($"[EnemyPool] 未注册敌人ID {enemyId} 的预制体");
+            return;
+        }
+
+        if (!pools.ContainsKey(enemyId))
+        {
+            pools[enemyId] = new Queue<Enemy>();
+        }
+
+        GameObject prefab = enemyPrefabs[enemyId];
+        for (int i = 0; i < count; i++)
+        {
+            Enemy enemy = CreateNewEnemy(prefab);
+            enemy.ResetEnemy();
+            pools[enemyId].Enqueue(enemy);
+        }
+    }
+
+    /// <summary>
+    /// 从对象池获取一个敌人
+    /// </summary>
+    public Enemy GetEnemy(int enemyId)
+    {
+        // 如果池不存在，先创建
+        if (!pools.ContainsKey(enemyId))
+        {
+            pools[enemyId] = new Queue<Enemy>();
+        }
+
+        // 如果池为空且有预制体，动态扩容
+        if (pools[enemyId].Count == 0)
+        {
+            if (!enemyPrefabs.ContainsKey(enemyId))
+            {
+                Debug.LogError($"[EnemyPool] 未注册敌人ID {enemyId} 的预制体");
+                return null;
+            }
+            Enemy enemy = CreateNewEnemy(enemyPrefabs[enemyId]);
+            enemy.ResetEnemy();
+            return enemy;
+        }
+
+        Enemy pooled = pools[enemyId].Dequeue();
+        // 从对象池取出时，挂载到 enemiesRoot 下（如果设置了的话）
+        // 这样敌人会相对于 enemiesRoot 定位，调整 enemiesRoot 的 Position 即可整体移动
+        if (enemiesRoot != null)
+        {
+            pooled.transform.SetParent(enemiesRoot);
+        }
+        pooled.gameObject.SetActive(true);
+        return pooled;
+    }
+
+    /// <summary>
+    /// 回收敌人到对象池
+    /// </summary>
+    public void ReturnEnemy(Enemy enemy)
+    {
+        if (enemy == null) return;
+
+        // 必须在ResetEnemy()之前读取enemyId，因为ResetEnemy会将config置null
+        int enemyId = enemy.config != null ? enemy.config.enemyId : -1;
+
+        enemy.ResetEnemy();
+        // 回收时挂回 poolRoot（隐藏起来），下次激活时 CreateNewEnemy 会重新挂到 enemiesRoot
+        enemy.transform.SetParent(poolRoot);
+
+        if (!pools.ContainsKey(enemyId))
+        {
+            pools[enemyId] = new Queue<Enemy>();
+        }
+        pools[enemyId].Enqueue(enemy);
+    }
+
+    /// <summary>
+    /// 创建新的敌人实例
+    /// 如果设置了 enemiesRoot，则挂载到 enemiesRoot 下（用于场景中整体移动敌人位置）
+    /// 否则挂载到 poolRoot 下
+    /// </summary>
+    private Enemy CreateNewEnemy(GameObject prefab)
+    {
+        // 激活的敌人挂载到 enemiesRoot，未激活的挂载到 poolRoot
+        Transform parent = enemiesRoot != null ? enemiesRoot : poolRoot;
+        GameObject go = Instantiate(prefab, parent);
+        Enemy enemy = go.GetComponent<Enemy>();
+        if (enemy == null)
+        {
+            enemy = go.AddComponent<Enemy>();
+        }
+        return enemy;
+    }
+
+    /// <summary>
+    /// 清空所有池
+    /// </summary>
+    public void ClearAllPools()
+    {
+        foreach (var kvp in pools)
+        {
+            foreach (var enemy in kvp.Value)
+            {
+                if (enemy != null && enemy.gameObject != null)
+                {
+                    Destroy(enemy.gameObject);
+                }
+            }
+        }
+        pools.Clear();
+    }
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Managers\DamageNumberManager.cs ---
+using UnityEngine;
+using System.Collections.Generic;
+
+/// <summary>
+/// 伤害数字管理器（单例 + 对象池）
+/// 管理 DamageNumber 对象的生成、回收和复用
+/// </summary>
+public class DamageNumberManager : MonoBehaviour
+{
+    public static DamageNumberManager Instance { get; private set; }
+
+    [Header("对象池设置")]
+    [SerializeField] private GameObject damageNumberPrefab;
+    [SerializeField] private int initialPoolSize = 20;
+
+    [Header("位置偏移")]
+    [SerializeField] private Vector3 positionOffset = new Vector3(0f, 2.5f, 0f); // 敌人头顶正上方
+
+    private Queue<DamageNumber> pool = new Queue<DamageNumber>();
+    private Transform poolRoot;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
+    private void Start()
+    {
+        // 创建对象池根节点
+        GameObject root = new GameObject("DamageNumberPool");
+        root.transform.SetParent(transform);
+        poolRoot = root.transform;
+
+        // 预创建初始池
+        if (damageNumberPrefab != null)
+        {
+            for (int i = 0; i < initialPoolSize; i++)
+            {
+                CreateNewDamageNumber();
+            }
+        }
+        else
+        {
+            Debug.LogError("[DamageNumberManager] damageNumberPrefab 未设置！");
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    /// <summary>
+    /// 创建一个新的伤害数字对象并加入池
+    /// </summary>
+    private DamageNumber CreateNewDamageNumber()
+    {
+        GameObject go = Instantiate(damageNumberPrefab, poolRoot);
+        go.SetActive(false);
+        DamageNumber dn = go.GetComponent<DamageNumber>();
+        if (dn == null)
+        {
+            dn = go.AddComponent<DamageNumber>();
+        }
+        dn.OnReturnToPool = ReturnDamageNumber;
+        pool.Enqueue(dn);
+        return dn;
+    }
+
+    /// <summary>
+    /// 从对象池获取一个伤害数字对象，如果没有可用则新建
+    /// </summary>
+    private DamageNumber GetDamageNumber()
+    {
+        if (pool.Count == 0)
+        {
+            CreateNewDamageNumber();
+        }
+        return pool.Dequeue();
+    }
+
+    /// <summary>
+    /// 回收伤害数字对象到池
+    /// </summary>
+    private void ReturnDamageNumber(DamageNumber dn)
+    {
+        if (dn == null) return;
+        dn.ResetNumber();
+        dn.transform.SetParent(poolRoot);
+        pool.Enqueue(dn);
+    }
+
+    /// <summary>
+    /// 在指定敌人位置右侧显示伤害数字
+    /// </summary>
+    /// <param name="enemyWorldPos">敌人的世界坐标位置</param>
+    /// <param name="damage">伤害数值</param>
+    public void Spawn(Vector3 enemyWorldPos, float damage)
+    {
+        if (damageNumberPrefab == null) return;
+
+        DamageNumber dn = GetDamageNumber();
+
+        // 位置：敌人位置 + 右侧偏上偏移
+        Vector3 spawnPos = enemyWorldPos + positionOffset;
+
+        // 添加随机水平偏移（±0.3f），避免多个伤害数字完全重叠
+        spawnPos.x += Random.Range(-0.3f, 0.3f);
+
+        dn.Show(spawnPos, damage);
+    }
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Managers\EnemyManager.cs ---
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// 敌人管理器 - 单例
+/// 管理所有存活的敌人，处理敌人死亡事件，协调列管理
+/// </summary>
+public class EnemyManager : MonoBehaviour
+{
+    public static EnemyManager Instance { get; private set; }
+
+    [Header("列管理")]
+    public ColumnManager columnManager;
+
+    // 所有存活敌人的列表（用于遍历）
+    private List<Enemy> allAliveEnemies = new List<Enemy>();
+
+    // 事件
+    public System.Action<Enemy> OnAnyEnemyDied;
+    public System.Action OnAllEnemiesDied;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    private void Start()
+    {
+        if (columnManager == null)
+        {
+            columnManager = FindObjectOfType<ColumnManager>();
+        }
+    }
+
+    #region 敌人注册
+
+    /// <summary>
+    /// 注册新生成的敌人
+    /// </summary>
+    public void RegisterEnemy(Enemy enemy)
+    {
+        if (enemy == null) return;
+
+        allAliveEnemies.Add(enemy);
+        enemy.OnDeath += OnEnemyDied;
+
+        // 添加到列管理
+        columnManager?.AddEnemyToColumn(enemy.columnIndex, enemy);
+    }
+
+    /// <summary>
+    /// 批量注册敌人
+    /// </summary>
+    public void RegisterEnemies(List<Enemy> enemies)
+    {
+        foreach (var enemy in enemies)
+        {
+            RegisterEnemy(enemy);
+        }
+    }
+
+    #endregion
+
+    #region 敌人事件处理
+
+    /// <summary>
+    /// 敌人死亡回调
+    /// 注意：闪白效果现在由 Enemy.Die() 中的协程处理（使用材质实例 + 延迟触发死亡事件），
+    /// 因此此处直接回收敌人到对象池即可。
+    /// </summary>
+    private void OnEnemyDied(Enemy enemy)
+    {
+        if (enemy == null) return;
+
+        allAliveEnemies.Remove(enemy);
+        enemy.OnDeath -= OnEnemyDied;
+
+        // 从列中移除
+        columnManager?.RemoveEnemyFromColumn(enemy.columnIndex, enemy);
+
+        // 回收对象（Enemy.Die() 中的协程已处理闪白延迟）
+        EnemyPool.Instance?.ReturnEnemy(enemy);
+
+        // 触发事件
+        OnAnyEnemyDied?.Invoke(enemy);
+
+        // 检查是否所有敌人都死亡
+        if (allAliveEnemies.Count == 0)
+        {
+            OnAllEnemiesDied?.Invoke();
+        }
+    }
+
+    /// <summary>
+    /// 敌人前进了一排（由Enemy调用）
+    /// </summary>
+    public void OnEnemyMovedForward(Enemy enemy)
+    {
+        if (enemy == null) return;
+        columnManager?.UpdateEnemyRow(enemy.columnIndex, enemy);
+    }
+
+    /// <summary>
+    /// 敌人攻击玩家（由Enemy调用）
+    /// </summary>
+    public void OnEnemyAttackPlayer(Enemy enemy)
+    {
+        if (enemy == null) return;
+        float damage = enemy.config != null ? enemy.config.attackDamage : 10f;
+        PlayerState.Instance?.TakeDamage(damage);
+    }
+
+    #endregion
+
+    #region 查询接口
+
+    /// <summary>
+    /// 获取所有存活敌人
+    /// </summary>
+    public List<Enemy> GetAllAliveEnemies()
+    {
+        return allAliveEnemies;
+    }
+
+    /// <summary>
+    /// 获取指定列的所有敌人
+    /// </summary>
+    public List<Enemy> GetEnemiesInColumn(int columnIndex)
+    {
+        return columnManager?.GetColumn(columnIndex)?.enemies;
+    }
+
+    /// <summary>
+    /// 获取指定列的最前排敌人
+    /// </summary>
+    public Enemy GetFrontEnemyInColumn(int columnIndex)
+    {
+        return columnManager?.GetColumn(columnIndex)?.GetFrontEnemy();
+    }
+
+    /// <summary>
+    /// 获取存活敌人总数
+    /// </summary>
+    public int AliveEnemyCount => allAliveEnemies.Count;
+
+    /// <summary>
+    /// 是否所有敌人都已死亡
+    /// </summary>
+    public bool IsAllEnemiesDead => allAliveEnemies.Count == 0;
+
+    #endregion
+
+    #region 清理
+
+    /// <summary>
+    /// 清除所有敌人（关卡切换时调用）
+    /// </summary>
+    public void ClearAllEnemies()
+    {
+        // 复制列表以避免迭代时修改
+        var enemiesToClear = new List<Enemy>(allAliveEnemies);
+        foreach (var enemy in enemiesToClear)
+        {
+            if (enemy != null)
+            {
+                enemy.OnDeath -= OnEnemyDied;
+                EnemyPool.Instance?.ReturnEnemy(enemy);
+            }
+        }
+        allAliveEnemies.Clear();
+        columnManager?.ClearAllColumns();
+    }
+
+    #endregion
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Managers\StageController.cs ---
+using System.Collections;
+using UnityEngine;
+
+/// <summary>
+/// 关卡流程控制器 - 单例
+/// 管理关卡开始、进行中、胜利、失败状态
+/// 协调 WaveSpawner、EnemyManager、PlayerState 之间的交互
+/// </summary>
+public class StageController : MonoBehaviour
+{
+    public static StageController Instance { get; private set; }
+
+    [Header("关卡配置")]
+    public StageConfig stageConfig;
+
+    [Header("透明度渐变配置")]
+    [Tooltip("每排的透明度系数，索引0=最前排")]
+    public float[] rowAlphaFactors = new float[] { 1.0f, 0.8f, 0.6f, 0.4f, 0.2f };
+
+    [Header("可见排数限制")]
+    public int maxVisibleRows = 5;
+
+    [Header("补齐移动配置")]
+    [Tooltip("连续补齐移动间的延迟（秒）。补齐移动完成后若仍需继续前进，等待此延迟后再开始下一次补齐移动")]
+    public float rushMoveDelay = 0.2f;
+
+    [Header("排阵型配置（梯形/扇形内收）")]
+    [Tooltip("方案A：预设表。若设置则优先使用预设表，否则使用方案B公式计算")]
+    public RowFormationPreset formationPreset;
+    [Tooltip("方案B：手动每排半宽（优先级最高）。若设置此数组，方案A和方案C均被忽略")]
+    public float[] manualRowHalfWidths;
+    [Tooltip("最前排（rowIndex=0）的半宽。例如4.0表示最前排最左列X=-4.0，最右列X=+4.0")]
+    public float formationMaxSpread = 4.0f;
+    [Tooltip("最后排的半宽。例如0.5表示最后排最左列X=-0.5，最右列X=+0.5")]
+    public float formationMinSpread = 0.5f;
+    [Tooltip("内收曲线指数。1.0=线性，>1.0=后排更快收拢，<1.0=前排更快收拢")]
+    public float formationPowerCurve = 1.2f;
+    [Tooltip("排间距（Z轴，世界单位）")]
+    public float rowSpacing = 2.5f;
+    [Tooltip("阵型整体Z轴偏移（正值=远离摄像机，负值=靠近摄像机）")]
+    public float formationOffsetZ = 0f;
+
+    [Header("组件引用")]
+    public WaveSpawner waveSpawner;
+    public EnemyManager enemyManager;
+    public PlayerState playerState;
+    public EnemyPool enemyPool;
+
+    [Header("场景引用")]
+    public string mainMenuSceneName = "MainMenu";
+    public string battleSceneName = "Battle";
+
+    // 运行时状态
+    private StageState currentState = StageState.None;
+
+    // 事件
+    public System.Action<StageState> OnStageStateChanged;
+    public System.Action OnStageVictory;
+    public System.Action OnStageDefeat;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+
+        if (stageConfig != null)
+        {
+            rowAlphaFactors = stageConfig.rowAlphaFactors;
+            maxVisibleRows = stageConfig.maxVisibleRows;
+            // BUG FIX: 读取补齐移动延迟配置
+            rushMoveDelay = stageConfig.rushMoveDelay;
+            formationPreset = stageConfig.formationPreset;
+            manualRowHalfWidths = stageConfig.manualRowHalfWidths;
+            formationMaxSpread = stageConfig.formationMaxSpread;
+            formationMinSpread = stageConfig.formationMinSpread;
+            formationPowerCurve = stageConfig.formationPowerCurve;
+            rowSpacing = stageConfig.rowSpacing;
+            formationOffsetZ = stageConfig.formationOffsetZ;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    private void Start()
+    {
+        // 自动查找组件引用
+        if (waveSpawner == null) waveSpawner = FindObjectOfType<WaveSpawner>();
+        if (enemyManager == null) enemyManager = FindObjectOfType<EnemyManager>();
+        if (playerState == null) playerState = FindObjectOfType<PlayerState>();
+        if (enemyPool == null) enemyPool = FindObjectOfType<EnemyPool>();
+
+        // 注册事件
+        if (waveSpawner != null)
+        {
+            waveSpawner.OnAllWavesCompleted += OnAllWavesCleared;
+        }
+        if (enemyManager != null)
+        {
+            enemyManager.OnAnyEnemyDied += OnEnemyDied;
+        }
+        if (playerState != null)
+        {
+            playerState.OnPlayerDied += OnPlayerDefeated;
+            playerState.OnStageStateChanged += OnPlayerStageStateChanged;
+        }
+
+        // 自动开始关卡（Battle场景加载后直接进入战斗）
+        // 注意：延迟一帧执行，确保所有组件都已初始化完毕
+        // 例如 EnemyPool 在 Awake 中注册预制体，StartStage 中 PrewarmEnemyPools 需要用到
+        Debug.Log("[StageController] 场景加载完成，自动开始关卡");
+        Invoke(nameof(StartStage), 0.1f);
+    }
+
+    #region 关卡流程
+
+    /// <summary>
+    /// 开始关卡
+    /// </summary>
+    public void StartStage()
+    {
+        if (stageConfig == null)
+        {
+            Debug.LogError("[StageController] stageConfig 未赋值，无法开始关卡");
+            return;
+        }
+
+        Debug.Log($"[StageController] 开始关卡: {stageConfig.stageName}");
+
+        // 重置所有状态
+        playerState?.ResetPlayer();
+        enemyManager?.ClearAllEnemies();
+
+        // 预创建对象池
+        PrewarmEnemyPools();
+
+        // 设置关卡状态为进行中
+        SetState(StageState.InProgress);
+
+        // 开始生成波次
+        waveSpawner?.StartWaveSpawning();
+    }
+
+    /// <summary>
+    /// 预创建敌人对象池
+    /// </summary>
+    private void PrewarmEnemyPools()
+    {
+        if (stageConfig == null || enemyPool == null) return;
+
+        // 遍历所有波次，收集所有用到的敌人ID
+        foreach (var wave in stageConfig.waves)
+        {
+            foreach (var row in wave.rows)
+            {
+                foreach (int enemyId in row.enemyIds)
+                {
+                    if (enemyId > 0)
+                    {
+                        enemyPool.PrewarmPool(enemyId, enemyPool.defaultPoolSize);
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 设置关卡状态
+    /// </summary>
+    private void SetState(StageState newState)
+    {
+        if (currentState == newState) return; // BUG FIX: 防止重复设置导致循环
+
+        currentState = newState;
+        OnStageStateChanged?.Invoke(newState);
+        playerState?.SetStageState(newState);
+    }
+
+    #endregion
+
+    #region 事件回调
+
+    /// <summary>
+    /// 所有波次已清空 → 关卡胜利
+    /// </summary>
+    private void OnAllWavesCleared()
+    {
+        if (currentState != StageState.InProgress) return;
+
+        Debug.Log("[StageController] 所有波次已清空，关卡胜利！");
+        SetState(StageState.Victory);
+
+        // 发放通关奖励
+        if (stageConfig != null)
+        {
+            playerState?.AddCoins(stageConfig.clearCoinReward);
+        }
+
+        OnStageVictory?.Invoke();
+    }
+
+    /// <summary>
+    /// 玩家阵亡 → 关卡失败
+    /// </summary>
+    private void OnPlayerDefeated()
+    {
+        if (currentState == StageState.Defeat || currentState == StageState.Victory) return;
+
+        Debug.Log("[StageController] 玩家阵亡，关卡失败");
+        SetState(StageState.Defeat);
+        OnStageDefeat?.Invoke();
+    }
+
+    /// <summary>
+    /// 玩家状态变化
+    /// </summary>
+    private void OnPlayerStageStateChanged(StageState state)
+    {
+        // 同步状态
+        if (currentState != state)
+        {
+            currentState = state;
+        }
+    }
+
+    /// <summary>
+    /// 敌人死亡回调 - 增加击杀数和铜钱
+    /// </summary>
+    private void OnEnemyDied(Enemy enemy)
+    {
+        if (enemy?.config == null) return;
+
+        playerState?.AddKill();
+        playerState?.AddCoins(enemy.config.coinReward);
+    }
+
+    #endregion
+
+    #region 场景管理
+
+    /// <summary>
+    /// 重新开始关卡
+    /// </summary>
+    public void RestartStage()
+    {
+        StartCoroutine(RestartStageCoroutine());
+    }
+
+    private IEnumerator RestartStageCoroutine()
+    {
+        // 清理所有敌人
+        enemyManager?.ClearAllEnemies();
+        enemyPool?.ClearAllPools();
+
+        // 等待一帧确保清理完成
+        yield return null;
+
+        // 重新开始
+        StartStage();
+    }
+
+    /// <summary>
+    /// 返回主菜单
+    /// </summary>
+    public void GoToMainMenu()
+    {
+        UnityEngine.SceneManagement.SceneManager.LoadScene(mainMenuSceneName);
+    }
+
+    /// <summary>
+    /// 进入战斗场景
+    /// </summary>
+    public void GoToBattleScene()
+    {
+        UnityEngine.SceneManagement.SceneManager.LoadScene(battleSceneName);
+    }
+
+    #endregion
+
+    #region 查询
+
+    /// <summary>
+    /// 获取当前关卡状态
+    /// </summary>
+    public StageState CurrentState => currentState;
+
+    /// <summary>
+    /// 关卡是否正在进行
+    /// </summary>
+    public bool IsStageInProgress => currentState == StageState.InProgress;
+
+    /// <summary>
+    /// 关卡是否胜利
+    /// </summary>
+    public bool IsStageVictory => currentState == StageState.Victory;
+
+    /// <summary>
+    /// 关卡是否失败
+    /// </summary>
+    public bool IsStageDefeat => currentState == StageState.Defeat;
+
+    /// <summary>
+    /// 获取指定列和排的X轴偏移量（梯形/扇形阵型）
+    /// 使用缓存避免每帧遍历所有敌人，每0.2秒刷新一次
+    ///
+    /// BUG FIX: 使用 maxVisibleRows 作为固定的最大排数基准，而非动态的 cachedMaxRow。
+    /// 之前使用动态 cachedMaxRow 导致当某列敌人减少时，maxRow 变小，
+    /// 阵型公式中的 normalizedRow 变大，所有列向中间收缩。
+    /// 现在使用固定的 maxVisibleRows，确保阵型位置始终稳定。
+    /// </summary>
+    public float GetFormationOffset(int columnIndex, int rowIndex)
+    {
+        // BUG FIX: 使用固定的 maxVisibleRows 作为最大排数基准
+        // 这样即使某列敌人减少，阵型位置也不会变化
+        // 使用 maxVisibleRows - 1 作为最大排索引，确保阵型始终按最大可见排数计算
+        int maxRow = Mathf.Max(maxVisibleRows - 1, 0);
+
+        return RowFormation.GetColumnOffsetX(
+            rowIndex, columnIndex, maxRow,
+            manualRowHalfWidths,
+            formationPreset,
+            formationMaxSpread,
+            formationMinSpread,
+            formationPowerCurve
+        );
+    }
+
+    /// <summary>
+    /// 获取排间距
+    /// </summary>
+    public float GetRowSpacing()
+    {
+        return rowSpacing;
+    }
+
+    /// <summary>
+    /// 获取阵型整体Z轴偏移
+    /// </summary>
+    public float GetFormationOffsetZ()
+    {
+        return formationOffsetZ;
+    }
+
+    /// <summary>
+    /// 获取最大可见排数
+    /// </summary>
+    public int GetMaxVisibleRows()
+    {
+        return maxVisibleRows;
+    }
+
+    /// <summary>
+    /// 获取补齐移动延迟（连续补齐移动间的停顿时间）
+    /// Problem 3 修复：允许配置补齐移动间的延迟，
+    /// 以配合加快的单次补齐移动速度，保持整体补齐节奏。
+    /// </summary>
+    public float GetRushMoveDelay()
+    {
+        return rushMoveDelay;
+    }
+
+    #endregion
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Player\AttackSystem.cs ---
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// 攻击系统
+/// 实现6种攻击类型：戳击、斩击、穿刺、横扫、挑飞、招架
+/// </summary>
+public class AttackSystem : MonoBehaviour
+{
+    public static AttackSystem Instance { get; private set; }
+
+    [Header("组件引用")]
+    public ColumnManager columnManager;
+    public PlayerState playerState;
+
+    [Header("攻击波预制体（可选，null 则用占位 Quad）")]
+    public GameObject stabWavePrefab;
+    public GameObject slashWavePrefab;
+    public GameObject pierceWavePrefab;
+    public GameObject sweepWavePrefab;
+    public GameObject launchWavePrefab;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    private void Start()
+    {
+        if (columnManager == null)
+            columnManager = FindObjectOfType<ColumnManager>();
+        if (playerState == null)
+            playerState = FindObjectOfType<PlayerState>();
+    }
+
+    /// <summary>
+    /// 尝试执行攻击
+    /// BUG FIX: 只有实际命中至少一个敌人时，才触发冷却和消耗
+    /// 如果攻击未命中任何敌人（例如点击了没有敌人的列），不消耗冷却
+    /// </summary>
+    public bool TryExecuteAttack(AttackType attackType, int targetColumn = -1)
+    {
+        if (playerState == null) return false;
+        if (playerState.stageState != StageState.InProgress) return false;
+
+        // 检查冷却
+        if (!playerState.IsAttackReady(attackType))
+        {
+            Debug.Log($"[AttackSystem] {attackType} 冷却中");
+            return false;
+        }
+
+        // 执行攻击，获取是否命中至少一个敌人
+        bool hitAny = false;
+        switch (attackType)
+        {
+            case AttackType.Stab:   hitAny = ExecuteStab(targetColumn); break;
+            case AttackType.Slash:  hitAny = ExecuteSlash(); break;
+            case AttackType.Pierce: hitAny = ExecutePierce(targetColumn); break;
+            case AttackType.Sweep:  hitAny = ExecuteSweep(); break;
+            case AttackType.Launch: hitAny = ExecuteLaunch(); break;
+            case AttackType.Parry:  hitAny = ExecuteParry(); break;
+        }
+
+        // BUG FIX: 只有实际命中至少一个敌人时，才触发冷却
+        // 如果攻击未命中任何敌人（例如点击了没有敌人的列），不消耗冷却
+        if (hitAny)
+        {
+            playerState.StartCooldown(attackType);
+            return true;
+        }
+
+        Debug.Log($"[AttackSystem] {attackType} 未命中任何敌人，不消耗冷却");
+        return false;
+    }
+
+    #region 攻击类型实现
+
+    /// <summary>
+    /// 戳击：点击任意列 → 对该列前N排造成伤害
+    /// </summary>
+    /// <returns>是否命中至少一个敌人</returns>
+    private bool ExecuteStab(int columnIndex)
+    {
+        if (columnIndex < 0 || columnManager == null || playerState?.heroConfig == null) return false;
+
+        float damage = playerState.heroConfig.stabDamage;
+        int rangeRows = playerState.heroConfig.stabRangeRows;
+
+        List<Enemy> targets = columnManager.GetEnemiesInRange(columnIndex, rangeRows);
+        if (targets.Count > 0)
+        {
+            Vector3 wavePos = GetWavePosition(targets, columnIndex);
+            AttackWave.Create(wavePos, DamageType.Stab, damage, targets, prefab: stabWavePrefab);
+        }
+
+        Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{damage} 目标数:{targets.Count}");
+        return targets.Count > 0;
+    }
+
+    /// <summary>
+    /// 斩击：划动屏幕 → 对所有列前N排造成伤害
+    /// </summary>
+    /// <returns>是否命中至少一个敌人</returns>
+    private bool ExecuteSlash()
+    {
+        if (columnManager == null || playerState?.heroConfig == null) return false;
+
+        float damage = playerState.heroConfig.slashDamage;
+        int rangeRows = playerState.heroConfig.slashRangeRows;
+
+        List<Enemy> targets = columnManager.GetAllEnemiesInRange(rangeRows);
+        if (targets.Count > 0)
+        {
+            Vector3 wavePos = GetWavePosition(targets, -1);
+            AttackWave.Create(wavePos, DamageType.Slash, damage, targets, prefab: slashWavePrefab);
+        }
+
+        Debug.Log($"[AttackSystem] 斩击 伤害:{damage} 目标数:{targets.Count}");
+        return targets.Count > 0;
+    }
+
+    /// <summary>
+    /// 穿刺：长按某列后松开 → 对该列造成高额伤害
+    /// </summary>
+    /// <returns>是否命中至少一个敌人</returns>
+    private bool ExecutePierce(int columnIndex)
+    {
+        if (columnIndex < 0 || columnManager == null || playerState?.heroConfig == null) return false;
+
+        float damage = playerState.heroConfig.pierceDamage;
+        int rangeRows = playerState.heroConfig.pierceRangeRows;
+
+        List<Enemy> targets = columnManager.GetEnemiesInRange(columnIndex, rangeRows);
+        if (targets.Count > 0)
+        {
+            Vector3 wavePos = GetWavePosition(targets, columnIndex);
+            AttackWave.Create(wavePos, DamageType.Pierce, damage, targets, prefab: pierceWavePrefab);
+        }
+
+        Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{damage} 目标数:{targets.Count}");
+        return targets.Count > 0;
+    }
+
+    /// <summary>
+    /// 横扫：从屏幕一侧长按后划向另一侧松开 → 对所有列造成伤害
+    /// </summary>
+    /// <returns>是否命中至少一个敌人</returns>
+    private bool ExecuteSweep()
+    {
+        if (columnManager == null || playerState?.heroConfig == null) return false;
+
+        float damage = playerState.heroConfig.sweepDamage;
+        int rangeRows = playerState.heroConfig.sweepRangeRows;
+
+        List<Enemy> targets = columnManager.GetAllEnemiesInRange(rangeRows);
+        if (targets.Count > 0)
+        {
+            Vector3 wavePos = GetWavePosition(targets, -1);
+            AttackWave.Create(wavePos, DamageType.Sweep, damage, targets, prefab: sweepWavePrefab);
+        }
+
+        Debug.Log($"[AttackSystem] 横扫 伤害:{damage} 目标数:{targets.Count}");
+        return targets.Count > 0;
+    }
+
+    /// <summary>
+    /// 挑飞：在屏幕中间区域向上滑动 → 对所有列造成挑飞伤害+架势伤害
+    /// </summary>
+    /// <returns>是否命中至少一个敌人</returns>
+    private bool ExecuteLaunch()
+    {
+        if (columnManager == null || playerState?.heroConfig == null) return false;
+
+        float damage = playerState.heroConfig.launchDamage;
+        float poiseDamage = playerState.heroConfig.launchPoiseDamage;
+        int rangeRows = playerState.heroConfig.launchRangeRows;
+        float duration = playerState.heroConfig.launchDuration;
+
+        List<Enemy> targets = columnManager.GetAllEnemiesInRange(rangeRows);
+        if (targets.Count > 0)
+        {
+            Vector3 wavePos = GetWavePosition(targets, -1);
+            AttackWave.Create(wavePos, DamageType.Launch, damage, targets,
+                onHit: (enemy) =>
+                {
+                    enemy.TakePoiseDamage(poiseDamage);
+                    enemy.Launch(duration);
+                },
+                prefab: launchWavePrefab);
+        }
+
+        Debug.Log($"[AttackSystem] 挑飞 伤害:{damage} 架势伤害:{poiseDamage} 击飞时间:{duration}s 目标数:{targets.Count}");
+        return targets.Count > 0;
+    }
+
+    /// <summary>
+    /// 招架：在红光提示时反方向划动 → 招架BOSS攻击
+    /// </summary>
+    /// <returns>是否命中至少一个敌人</returns>
+    private bool ExecuteParry()
+    {
+        if (playerState?.heroConfig == null) return false;
+
+        float damage = playerState.heroConfig.parryDamage;
+        float poiseDamage = playerState.heroConfig.parryPoiseDamage;
+
+        // 招架只对当前正在攻击的BOSS敌人有效
+        // 获取所有列最前排的敌人，对其造成招架伤害
+        List<Enemy> frontEnemies = new List<Enemy>();
+        for (int i = 0; i < 5; i++)
+        {
+            Enemy front = columnManager?.GetFrontEnemy(i);
+            if (front != null && front.state != EnemyState.Dead)
+            {
+                frontEnemies.Add(front);
+            }
+        }
+
+        foreach (var enemy in frontEnemies)
+        {
+            // BUG FIX: 招架造成的是血量伤害，不应使用 DamageType.Poise（架势倍率）。
+            // DamageType.Poise 会应用 EnemyConfig.poiseDamageMultiplier，如果该值<1
+            // 会导致招架伤害低于预期。
+            // 使用 DamageType.Stab 应用普通伤害倍率。
+            enemy.TakeDamage(damage, DamageType.Stab);
+            enemy.TakePoiseDamage(poiseDamage);
+        }
+
+        Debug.Log($"[AttackSystem] 招架 伤害:{damage} (type=Stab) 架势伤害:{poiseDamage} 目标数:{frontEnemies.Count}");
+        return frontEnemies.Count > 0;
+    }
+
+    #endregion
+
+    #region 工具方法
+
+    /// <summary>
+    /// 计算攻击波的生成位置
+    /// 单列攻击：置于该列的前排敌人前方；多列攻击：置于屏幕中央
+    /// </summary>
+    private Vector3 GetWavePosition(List<Enemy> targets, int targetColumn)
+    {
+        if (targets.Count == 0)
+            return new Vector3(0, 1.5f, -10f);
+
+        // 取第一个（最前排）目标的位置
+        Vector3 pos = targets[0].transform.position;
+
+        // X: 单列攻击用该列的 X，多列攻击居中
+        if (targetColumn < 0)
+            pos.x = 0f;
+
+        // Y: 敌人胸口高度（pivot 通常在地面，+1.5f 到躯干位置）
+        pos.y = targets[0].transform.position.y + 1.5f;
+
+        // Z: 稍微靠前（更接近玩家），让波看起来是从玩家方向飞来的
+        pos.z += 0.5f;
+
+        return pos;
+    }
+
+    /// <summary>
+    /// 获取攻击的伤害值（用于UI显示）
+    /// </summary>
+    public float GetAttackDamage(AttackType attackType)
+    {
+        if (playerState?.heroConfig == null) return 0f;
+        return attackType switch
+        {
+            AttackType.Stab => playerState.heroConfig.stabDamage,
+            AttackType.Slash => playerState.heroConfig.slashDamage,
+            AttackType.Pierce => playerState.heroConfig.pierceDamage,
+            AttackType.Sweep => playerState.heroConfig.sweepDamage,
+            AttackType.Launch => playerState.heroConfig.launchDamage,
+            AttackType.Parry => playerState.heroConfig.parryDamage,
+            _ => 0f
+        };
+    }
+
+    #endregion
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Player\InputManager.cs ---
+using UnityEngine;
+
+/// <summary>
+/// 输入管理器
+/// 使用Unity Input System检测点击、长按、滑动等手势
+/// 通过划动角度判定攻击类型（纯方向判定，不依赖屏幕区域）
+/// </summary>
+public class InputManager : MonoBehaviour
+{
+    public static InputManager Instance { get; private set; }
+
+    [Header("手势参数")]
+    public float longPressDuration = 0.3f;   // 长按判定时间（秒）
+    [Tooltip("最小蓄力时间（秒）：所有蓄力攻击（横扫、斩击、穿刺、挑飞）必须按住鼠标达到此时长后，手势判定才生效。\n" +
+             "未达到前，任何划动/点击仅触发普通攻击（戳击/斩击）或无操作。")]
+    public float minChargeTime = 0.5f;       // 最小蓄力时间（秒）
+    public float swipeThreshold = 50f;       // 滑动判定最小距离（像素）
+    [Tooltip("垂直角度阈值（度）：划动方向与垂直轴夹角小于此值时判定为挑飞。范围0~90")]
+    public float verticalSwipeThreshold = 30f;
+    [Tooltip("水平角度阈值（度）：划动方向与水平轴夹角小于此值时判定为横扫。范围0~90")]
+    public float horizontalSwipeThreshold = 30f;
+
+    [Header("攻击系统")]
+    public AttackSystem attackSystem;
+
+    // 触摸状态
+    private Vector2 touchStartPos;
+    private float touchStartTime;
+    private bool isTouching;
+    private bool isLongPress;
+    private bool isCharged;     // 蓄力是否已满（pressDuration >= minChargeTime）
+    private bool isSwiping;
+    private int currentTouchId = -1;
+    private Vector2 currentPointerPos; // 当前指针位置（鼠标/触摸），用于蓄力指示器
+
+    // 事件
+    public System.Action<AttackType, int> OnAttackExecuted; // attackType, targetColumn
+
+    // 蓄力事件（用于动态蓄力瞄准指示器 ChargeIndicatorController）
+    /// <summary>
+    /// 蓄力开始，参数：屏幕坐标
+    /// </summary>
+    public System.Action<Vector2> OnChargeBegan;
+    /// <summary>
+    /// 蓄力进度更新，参数：屏幕坐标, progress (0→1)
+    /// </summary>
+    public System.Action<Vector2, float> OnChargeUpdated;
+    /// <summary>
+    /// 蓄力结束
+    /// </summary>
+    public System.Action OnChargeEnded;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    private void Start()
+    {
+        if (attackSystem == null)
+            attackSystem = FindObjectOfType<AttackSystem>();
+    }
+
+    private void Update()
+    {
+        // BUG FIX: 鼠标和触摸输入互斥
+        // 如果有触摸输入，则跳过鼠标输入（避免在触摸屏设备上双重触发）
+        if (Input.touchCount > 0)
+        {
+            HandleTouchInput();
+        }
+        else
+        {
+            // 鼠标输入（PC调试用）
+            HandleMouseInput();
+        }
+
+        // 每帧更新蓄力进度（鼠标/触摸通用）
+        if (isTouching)
+        {
+            float pressDuration = Time.time - touchStartTime;
+            float chargeProgress = Mathf.Clamp01(pressDuration / minChargeTime);
+            OnChargeUpdated?.Invoke(currentPointerPos, chargeProgress);
+        }
+    }
+
+    #region 鼠标输入
+
+    private void HandleMouseInput()
+    {
+        // 鼠标按下
+        if (Input.GetMouseButtonDown(0))
+        {
+            touchStartPos = Input.mousePosition;
+            touchStartTime = Time.time;
+            isTouching = true;
+            isLongPress = false;
+            isSwiping = false;
+            currentPointerPos = Input.mousePosition;
+
+            // 触发蓄力开始事件
+            OnChargeBegan?.Invoke(currentPointerPos);
+        }
+
+        // 鼠标按住
+        if (isTouching && Input.GetMouseButton(0))
+        {
+            // 更新当前指针位置（供蓄力指示器跟随鼠标）
+            currentPointerPos = Input.mousePosition;
+
+            float pressDuration = Time.time - touchStartTime;
+            Vector2 currentPos = (Vector2)Input.mousePosition;
+            float swipeDistance = Vector2.Distance(currentPos, touchStartPos);
+
+            // 检测长按
+            if (!isLongPress && pressDuration >= longPressDuration && swipeDistance < swipeThreshold)
+            {
+                isLongPress = true;
+            }
+
+            // 检测蓄力完成（pressDuration >= minChargeTime）
+            if (!isCharged && pressDuration >= minChargeTime)
+            {
+                isCharged = true;
+            }
+
+            // 检测滑动
+            if (!isSwiping && swipeDistance >= swipeThreshold)
+            {
+                isSwiping = true;
+            }
+        }
+
+        // 鼠标松开
+        if (Input.GetMouseButtonUp(0) && isTouching)
+        {
+            Vector2 releasePos = Input.mousePosition;
+            float pressDuration = Time.time - touchStartTime;
+            float swipeDistance = Vector2.Distance(releasePos, touchStartPos);
+
+            ProcessGesture(releasePos, pressDuration, swipeDistance);
+
+            // 触发蓄力结束事件（在重置状态之前）
+            OnChargeEnded?.Invoke();
+
+            isTouching = false;
+            isLongPress = false;
+            isCharged = false;
+            isSwiping = false;
+        }
+    }
+
+    #endregion
+
+    #region 触摸输入
+
+    private void HandleTouchInput()
+    {
+        if (Input.touchCount == 0) return;
+
+        Touch touch = Input.GetTouch(0);
+
+        switch (touch.phase)
+        {
+            case TouchPhase.Began:
+                touchStartPos = touch.position;
+                touchStartTime = Time.time;
+                currentTouchId = touch.fingerId;
+                isTouching = true;
+                isLongPress = false;
+                isSwiping = false;
+                currentPointerPos = touch.position;
+
+                // 触发蓄力开始事件
+                OnChargeBegan?.Invoke(currentPointerPos);
+                break;
+
+            case TouchPhase.Moved:
+                if (isTouching)
+                {
+                    float pressDuration = Time.time - touchStartTime;
+                    float swipeDistance = Vector2.Distance(touch.position, touchStartPos);
+
+                    if (!isLongPress && pressDuration >= longPressDuration && swipeDistance < swipeThreshold)
+                    {
+                        isLongPress = true;
+                    }
+
+                    if (!isCharged && pressDuration >= minChargeTime)
+                    {
+                        isCharged = true;
+                    }
+
+                    if (!isSwiping && swipeDistance >= swipeThreshold)
+                    {
+                        isSwiping = true;
+                    }
+
+                    currentPointerPos = touch.position;
+                }
+                break;
+
+            case TouchPhase.Stationary:
+                if (isTouching)
+                {
+                    currentPointerPos = touch.position;
+                }
+                break;
+
+            case TouchPhase.Ended:
+            case TouchPhase.Canceled:
+                if (isTouching && touch.fingerId == currentTouchId)
+                {
+                    float pressDuration = Time.time - touchStartTime;
+                    float swipeDistance = Vector2.Distance(touch.position, touchStartPos);
+
+                    ProcessGesture(touch.position, pressDuration, swipeDistance);
+
+                    // 触发蓄力结束事件（在重置状态之前）
+                    OnChargeEnded?.Invoke();
+
+                    isTouching = false;
+                    isLongPress = false;
+                    isCharged = false;
+                    isSwiping = false;
+                    currentTouchId = -1;
+                }
+                break;
+        }
+    }
+
+    #endregion
+
+    #region 手势识别
+
+    /// <summary>
+    /// 处理手势识别
+    /// 蓄力规则：
+    /// - pressDuration >= minChargeTime：蓄力已满，允许判定蓄力攻击（穿刺/横扫/挑飞/斩击）
+    /// - pressDuration <  minChargeTime：未达到最小蓄力时间，仅触发普通攻击（戳击/斩击），不触发蓄力攻击
+    /// </summary>
+    private void ProcessGesture(Vector2 releasePos, float pressDuration, float swipeDistance)
+    {
+        bool isSwiped = swipeDistance >= swipeThreshold;
+
+        if (pressDuration >= minChargeTime)
+        {
+            // 蓄力已满 → 蓄力攻击判定
+            if (isSwiped)
+            {
+                Vector2 swipeDirection = releasePos - touchStartPos;
+                ProcessSwipeGesture(swipeDirection, releasePos);
+            }
+            else
+            {
+                // 长按后松开（无滑动） → 穿刺
+                ProcessLongPressGesture(releasePos);
+            }
+        }
+        else
+        {
+            // 未达到最小蓄力时间 → 仅触发普通攻击
+            if (isSwiped)
+            {
+                // 快速滑动 → 斩击（作为普通攻击，不触发横扫/挑飞等蓄力变体）
+                bool executed = attackSystem?.TryExecuteAttack(AttackType.Slash) ?? false;
+                if (executed) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
+            }
+            else
+            {
+                // 快速点击 → 戳击
+                ProcessTapGesture(releasePos);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 处理点击手势 → 戳击
+    /// </summary>
+    private void ProcessTapGesture(Vector2 position)
+    {
+        int column = GetColumnFromScreenPosition(position);
+        if (column >= 0)
+        {
+            bool executed = attackSystem?.TryExecuteAttack(AttackType.Stab, column) ?? false;
+            if (executed)
+            {
+                OnAttackExecuted?.Invoke(AttackType.Stab, column);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 处理长按手势 → 穿刺
+    /// </summary>
+    private void ProcessLongPressGesture(Vector2 position)
+    {
+        int column = GetColumnFromScreenPosition(position);
+        if (column >= 0)
+        {
+            bool executed = attackSystem?.TryExecuteAttack(AttackType.Pierce, column) ?? false;
+            if (executed)
+            {
+                OnAttackExecuted?.Invoke(AttackType.Pierce, column);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 处理滑动手势（纯角度判定）
+    /// 规则：
+    /// - 近垂直划动（与垂直方向夹角 < verticalSwipeThreshold）→ 挑飞 Launch
+    /// - 近水平划动（与水平方向夹角 < horizontalSwipeThreshold）→ 横扫 Sweep
+    /// - 对角线划动 → 斩击 Slash（兜底）
+    /// 不再依赖屏幕区域（Left/Middle/Right），仅通过划动角度识别
+    /// </summary>
+    private void ProcessSwipeGesture(Vector2 direction, Vector2 releasePos)
+    {
+        // 计算方向向量与垂直轴（上方向 = (0,1)）的夹角
+        float angleToVertical = Vector2.Angle(direction, Vector2.up);
+        // 计算方向向量与水平轴（右方向 = (1,0)）的夹角
+        float angleToHorizontal = Vector2.Angle(direction, Vector2.right);
+
+        // 近垂直划动（上/下）→ 挑飞
+        // 方向与垂直轴夹角 < verticalSwipeThreshold
+        if (angleToVertical < verticalSwipeThreshold)
+        {
+            bool executed = attackSystem?.TryExecuteAttack(AttackType.Launch) ?? false;
+            if (executed) OnAttackExecuted?.Invoke(AttackType.Launch, -1);
+            return;
+        }
+
+        // 近水平划动（左/右）→ 横扫
+        // 方向与水平轴夹角 < horizontalSwipeThreshold
+        if (angleToHorizontal < horizontalSwipeThreshold)
+        {
+            bool executed = attackSystem?.TryExecuteAttack(AttackType.Sweep) ?? false;
+            if (executed) OnAttackExecuted?.Invoke(AttackType.Sweep, -1);
+            return;
+        }
+
+        // 对角线划动 → 斩击（兜底）
+        bool defaultExecuted = attackSystem?.TryExecuteAttack(AttackType.Slash) ?? false;
+        if (defaultExecuted) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
+    }
+
+    #endregion
+
+    #region 屏幕坐标映射
+
+    /// <summary>
+    /// 根据屏幕X坐标映射到列索引（0~4）
+    /// 将敌人投影到屏幕空间，直接比较屏幕X距离。
+    /// 如果最近匹配超过半列宽度，返回 -1 阻断攻击（防止空列自动跳转到邻列）。
+    /// </summary>
+    private int GetColumnFromScreenPosition(Vector2 screenPos)
+    {
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
+            return FallbackGetColumn(screenPos);
+
+        int bestColumn = -1;
+        float bestDistance = float.MaxValue;
+
+        if (AttackSystem.Instance != null && AttackSystem.Instance.columnManager != null)
+        {
+            for (int col = 0; col < 5; col++)
+            {
+                Enemy frontEnemy = AttackSystem.Instance.columnManager.GetFrontEnemy(col);
+                if (frontEnemy != null && frontEnemy.state != EnemyState.Dead)
+                {
+                    Vector3 enemyScreenPos = mainCamera.WorldToScreenPoint(frontEnemy.transform.position);
+                    float dist = Mathf.Abs(enemyScreenPos.x - screenPos.x);
+                    if (dist < bestDistance)
+                    {
+                        bestDistance = dist;
+                        bestColumn = col;
+                    }
+                }
+            }
+        }
+
+        // 阈值：半列宽度。超过此距离说明点击位置与存活的敌人列偏差过大，阻断攻击
+        float halfColumnWidth = Screen.width / 10f;
+        if (bestColumn >= 0 && bestDistance <= halfColumnWidth)
+            return bestColumn;
+
+        // 没有足够近的存活敌人 → 返回 -1，攻击不会触发
+        return -1;
+    }
+
+    /// <summary>
+    /// 回退方案：将屏幕X坐标均匀映射到5列
+    /// </summary>
+    private int FallbackGetColumn(Vector2 screenPos)
+    {
+        float screenWidth = Screen.width;
+        float normalizedX = screenPos.x / screenWidth; // 0~1
+        int column = Mathf.FloorToInt(normalizedX * 5f);
+        return Mathf.Clamp(column, 0, 4);
+    }
+
+    #endregion
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Player\PlayerState.cs ---
+using UnityEngine;
+
+/// <summary>
+/// 关卡状态枚举
+/// </summary>
+public enum StageState
+{
+    None,
+    Starting,
+    InProgress,
+    Victory,
+    Defeat
+}
+
+/// <summary>
+/// 玩家状态 - 单例
+/// 管理玩家属性（生命值、复活次数、6种攻击属性等）
+/// 处理玩家受伤和复活逻辑
+/// </summary>
+public class PlayerState : MonoBehaviour
+{
+    public static PlayerState Instance { get; private set; }
+
+    [Header("武将配置")]
+    public HeroConfig heroConfig;
+
+    [Header("运行时状态")]
+    public float currentHealth;
+    public int currentRevives;
+    public int killCount;
+    public int coinCount;
+    public int currentWave;
+    public StageState stageState = StageState.None;
+
+    // 冷却计时器
+    private float stabCooldownTimer;
+    private float slashCooldownTimer;
+    private float pierceCooldownTimer;
+    private float sweepCooldownTimer;
+    private float launchCooldownTimer;
+    private float parryCooldownTimer;
+
+    // 事件
+    public System.Action<float, float> OnHealthChanged; // current, max
+    public System.Action<int> OnReviveCountChanged;
+    public System.Action<int> OnKillCountChanged;
+    public System.Action<int> OnCoinChanged;
+    public System.Action<int> OnWaveChanged;
+    public System.Action<StageState> OnStageStateChanged;
+    public System.Action OnPlayerDied;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    private void Start()
+    {
+        if (heroConfig == null)
+        {
+            Debug.LogError("[PlayerState] heroConfig 未赋值！将使用默认值运行，部分功能可能受限");
+            // 不 return，允许游戏在无配置时继续运行（使用默认值）
+        }
+        ResetPlayer();
+    }
+
+    private void Update()
+    {
+        // 更新冷却计时器
+        if (stabCooldownTimer > 0) stabCooldownTimer -= Time.deltaTime;
+        if (slashCooldownTimer > 0) slashCooldownTimer -= Time.deltaTime;
+        if (pierceCooldownTimer > 0) pierceCooldownTimer -= Time.deltaTime;
+        if (sweepCooldownTimer > 0) sweepCooldownTimer -= Time.deltaTime;
+        if (launchCooldownTimer > 0) launchCooldownTimer -= Time.deltaTime;
+        if (parryCooldownTimer > 0) parryCooldownTimer -= Time.deltaTime;
+    }
+
+    /// <summary>
+    /// 重置玩家状态（关卡开始时调用）
+    /// heroConfig 为 null 时使用默认值，确保不报错
+    /// </summary>
+    public void ResetPlayer()
+    {
+        // heroConfig 为 null 时使用安全默认值
+        currentHealth = heroConfig != null ? heroConfig.maxHealth : 100f;
+        currentRevives = heroConfig != null ? heroConfig.reviveCount : 0;
+        killCount = 0;
+        coinCount = 0;
+        currentWave = 0;
+        stageState = StageState.Starting;
+
+        stabCooldownTimer = 0f;
+        slashCooldownTimer = 0f;
+        pierceCooldownTimer = 0f;
+        sweepCooldownTimer = 0f;
+        launchCooldownTimer = 0f;
+        parryCooldownTimer = 0f;
+
+        float maxHp = heroConfig != null ? heroConfig.maxHealth : 100f;
+        OnHealthChanged?.Invoke(currentHealth, maxHp);
+        OnReviveCountChanged?.Invoke(currentRevives);
+        OnKillCountChanged?.Invoke(0);
+        OnCoinChanged?.Invoke(0);
+        OnWaveChanged?.Invoke(0);
+    }
+
+    #region 伤害系统
+
+    /// <summary>
+    /// 玩家受到伤害
+    /// </summary>
+    public void TakeDamage(float damage)
+    {
+        if (stageState == StageState.Defeat || stageState == StageState.Victory) return;
+
+        currentHealth -= damage;
+        OnHealthChanged?.Invoke(currentHealth, heroConfig != null ? heroConfig.maxHealth : 500f);
+
+        Debug.Log($"[PlayerState] 受到伤害: {damage}, 剩余生命: {currentHealth}");
+
+        if (currentHealth <= 0f)
+        {
+            HandleDeath();
+        }
+    }
+
+    /// <summary>
+    /// 处理玩家死亡
+    /// </summary>
+    private void HandleDeath()
+    {
+        if (currentRevives > 0)
+        {
+            // 复活
+            currentRevives--;
+            // BUG FIX: heroConfig null 保护，避免 Scene 重载时序问题或配置缺失导致 NPE。
+            // 如果 heroConfig 为 null，使用硬编码默认值确保复活逻辑不崩溃。
+            if (heroConfig == null)
+            {
+                Debug.LogError("[PlayerState] HandleDeath: heroConfig 为 null，使用默认值");
+                currentHealth = 100f * 0.5f; // 默认 maxHealth=100, reviveHealthPercent=50%
+            }
+            else
+            {
+                currentHealth = heroConfig.maxHealth * heroConfig.reviveHealthPercent;
+            }
+            OnHealthChanged?.Invoke(currentHealth, heroConfig != null ? heroConfig.maxHealth : 100f);
+            OnReviveCountChanged?.Invoke(currentRevives);
+            Debug.Log($"[PlayerState] 复活！剩余复活次数: {currentRevives}, 生命值: {currentHealth}");
+        }
+        else
+        {
+            // 真正死亡
+            stageState = StageState.Defeat;
+            OnStageStateChanged?.Invoke(StageState.Defeat);
+            OnPlayerDied?.Invoke();
+            Debug.Log("[PlayerState] 玩家阵亡，游戏结束");
+        }
+    }
+
+    #endregion
+
+    #region 攻击冷却
+
+    /// <summary>
+    /// 检查攻击是否可用
+    /// </summary>
+    public bool IsAttackReady(AttackType attackType)
+    {
+        return GetCooldownTimer(attackType) <= 0f;
+    }
+
+    /// <summary>
+    /// 触发攻击冷却
+    /// </summary>
+    public void StartCooldown(AttackType attackType)
+    {
+        float cooldown = GetCooldownDuration(attackType);
+        SetCooldownTimer(attackType, cooldown);
+    }
+
+    /// <summary>
+    /// 获取攻击冷却进度（0~1, 0=可用）
+    /// </summary>
+    public float GetCooldownProgress(AttackType attackType)
+    {
+        float timer = GetCooldownTimer(attackType);
+        float duration = GetCooldownDuration(attackType);
+        if (duration <= 0f) return 0f;
+        return Mathf.Clamp01(timer / duration);
+    }
+
+    private float GetCooldownTimer(AttackType type)
+    {
+        return type switch
+        {
+            AttackType.Stab => stabCooldownTimer,
+            AttackType.Slash => slashCooldownTimer,
+            AttackType.Pierce => pierceCooldownTimer,
+            AttackType.Sweep => sweepCooldownTimer,
+            AttackType.Launch => launchCooldownTimer,
+            AttackType.Parry => parryCooldownTimer,
+            _ => 0f
+        };
+    }
+
+    private void SetCooldownTimer(AttackType type, float value)
+    {
+        switch (type)
+        {
+            case AttackType.Stab: stabCooldownTimer = value; break;
+            case AttackType.Slash: slashCooldownTimer = value; break;
+            case AttackType.Pierce: pierceCooldownTimer = value; break;
+            case AttackType.Sweep: sweepCooldownTimer = value; break;
+            case AttackType.Launch: launchCooldownTimer = value; break;
+            case AttackType.Parry: parryCooldownTimer = value; break;
+        }
+    }
+
+    private float GetCooldownDuration(AttackType type)
+    {
+        if (heroConfig == null) return 1f;
+        return type switch
+        {
+            AttackType.Stab => heroConfig.stabCooldown,
+            AttackType.Slash => heroConfig.slashCooldown,
+            AttackType.Pierce => heroConfig.pierceCooldown,
+            AttackType.Sweep => heroConfig.sweepCooldown,
+            AttackType.Launch => heroConfig.launchCooldown,
+            AttackType.Parry => 0.5f, // 招架冷却固定0.5秒
+            _ => 1f
+        };
+    }
+
+    #endregion
+
+    #region 统计
+
+    /// <summary>
+    /// 增加击杀数
+    /// </summary>
+    public void AddKill()
+    {
+        killCount++;
+        OnKillCountChanged?.Invoke(killCount);
+    }
+
+    /// <summary>
+    /// 增加铜钱
+    /// </summary>
+    public void AddCoins(int amount)
+    {
+        coinCount += amount;
+        OnCoinChanged?.Invoke(coinCount);
+    }
+
+    /// <summary>
+    /// 设置当前波次
+    /// </summary>
+    public void SetCurrentWave(int wave)
+    {
+        currentWave = wave;
+        OnWaveChanged?.Invoke(wave);
+    }
+
+    /// <summary>
+    /// 设置关卡状态
+    /// </summary>
+    public void SetStageState(StageState state)
+    {
+        stageState = state;
+        OnStageStateChanged?.Invoke(state);
+    }
+
+    #endregion
+}
+
+/// <summary>
+/// 攻击类型枚举
+/// </summary>
+public enum AttackType
+{
+    Stab,   // 戳击
+    Slash,  // 斩击
+    Pierce, // 穿刺
+    Sweep,  // 横扫
+    Launch, // 挑飞
+    Parry   // 招架
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\UI\BattleHUD.cs ---
+using UnityEngine;
+using TMPro;
+using UnityEngine.UI;
+
+/// <summary>
+/// 战斗HUD
+/// 显示玩家生命值、连杀计数、当前波次、铜钱数量
+/// </summary>
+public class BattleHUD : MonoBehaviour
+{
+    [Header("生命值")]
+    public Slider healthSlider;
+    public TMP_Text healthText;
+
+    [Header("复活次数")]
+    public TMP_Text reviveText;
+
+    [Header("连杀计数")]
+    public TMP_Text killCountText;
+
+    [Header("铜钱")]
+    public TMP_Text coinText;
+
+    [Header("波次")]
+    public TMP_Text waveText;
+
+    [Header("冷却指示器")]
+    public Image stabCooldownImage;
+    public Image slashCooldownImage;
+    public Image pierceCooldownImage;
+    public Image sweepCooldownImage;
+    public Image launchCooldownImage;
+    public Image parryCooldownImage;
+
+    [Header("冷却充能指示器 (Radial 填充)")]
+    [Tooltip("每个冷却图标下方的子 Image，ImageType=Filled/Radial360/Top。\n" +
+             "fillAmount 从 0→1 对应冷却进度从 0%→100%，冷却完毕保持 fillAmount=1 表示技能就绪。")]
+    public Image stabChargeFill;
+    public Image slashChargeFill;
+    public Image pierceChargeFill;
+    public Image sweepChargeFill;
+    public Image launchChargeFill;
+    public Image parryChargeFill;
+
+    [Header("关卡状态")]
+    public GameObject victoryPanel;
+    public GameObject defeatPanel;
+    public TMP_Text resultCoinText;
+
+    private void Start()
+    {
+        // 注册事件
+        if (PlayerState.Instance != null)
+        {
+            PlayerState.Instance.OnHealthChanged += UpdateHealth;
+            PlayerState.Instance.OnReviveCountChanged += UpdateRevives;
+            PlayerState.Instance.OnKillCountChanged += UpdateKillCount;
+            PlayerState.Instance.OnCoinChanged += UpdateCoins;
+            PlayerState.Instance.OnWaveChanged += UpdateWave;
+            PlayerState.Instance.OnStageStateChanged += OnStageStateChanged;
+        }
+
+        // 初始隐藏结果面板
+        if (victoryPanel != null) victoryPanel.SetActive(false);
+        if (defeatPanel != null) defeatPanel.SetActive(false);
+    }
+
+    private void Update()
+    {
+        // 每帧更新冷却指示器（仅在 PlayerState 就绪时执行）
+        if (PlayerState.Instance != null && PlayerState.Instance.heroConfig != null)
+        {
+            UpdateCooldownUI();
+            UpdateCooldownFillUI();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (PlayerState.Instance != null)
+        {
+            PlayerState.Instance.OnHealthChanged -= UpdateHealth;
+            PlayerState.Instance.OnReviveCountChanged -= UpdateRevives;
+            PlayerState.Instance.OnKillCountChanged -= UpdateKillCount;
+            PlayerState.Instance.OnCoinChanged -= UpdateCoins;
+            PlayerState.Instance.OnWaveChanged -= UpdateWave;
+            PlayerState.Instance.OnStageStateChanged -= OnStageStateChanged;
+        }
+    }
+
+    #region UI更新
+
+    private void UpdateHealth(float current, float max)
+    {
+        if (healthSlider != null)
+        {
+            healthSlider.maxValue = max;
+            healthSlider.value = current;
+        }
+        if (healthText != null)
+        {
+            healthText.text = $"{Mathf.CeilToInt(current)}/{Mathf.CeilToInt(max)}";
+        }
+    }
+
+    private void UpdateRevives(int count)
+    {
+        if (reviveText != null)
+        {
+            reviveText.text = $"复活: {count}";
+            reviveText.gameObject.SetActive(count > 0);
+        }
+    }
+
+    private void UpdateKillCount(int count)
+    {
+        if (killCountText != null)
+        {
+            killCountText.text = $"击杀: {count}";
+        }
+    }
+
+    private void UpdateCoins(int count)
+    {
+        if (coinText != null)
+        {
+            coinText.text = $"铜钱: {count}";
+        }
+    }
+
+    private void UpdateWave(int wave)
+    {
+        if (waveText != null)
+        {
+            int totalWaves = WaveSpawner.Instance != null ? WaveSpawner.Instance.TotalWaves : 0;
+            waveText.text = $"波次: {wave}/{totalWaves}";
+        }
+    }
+
+    private void UpdateCooldownUI()
+    {
+        if (PlayerState.Instance == null) return;
+
+        UpdateCooldownImage(stabCooldownImage, AttackType.Stab);
+        UpdateCooldownImage(slashCooldownImage, AttackType.Slash);
+        UpdateCooldownImage(pierceCooldownImage, AttackType.Pierce);
+        UpdateCooldownImage(sweepCooldownImage, AttackType.Sweep);
+        UpdateCooldownImage(launchCooldownImage, AttackType.Launch);
+        UpdateCooldownImage(parryCooldownImage, AttackType.Parry);
+    }
+
+    private void UpdateCooldownImage(Image image, AttackType type)
+    {
+        if (image == null) return;
+        float progress = PlayerState.Instance.GetCooldownProgress(type);
+        image.fillAmount = progress;
+        // 冷却中显示红色，可用时显示绿色
+        image.color = progress > 0f ? Color.red : Color.green;
+    }
+
+    /// <summary>
+    /// 更新冷却充能 Radial 填充指示器
+    /// fillAmount 从 0→1（冷却进度0%→100%），冷却完毕保持 fillAmount=1 表示技能就绪
+    /// </summary>
+    private void UpdateCooldownFillUI()
+    {
+        if (PlayerState.Instance == null) return;
+        UpdateChargeFill(stabChargeFill, AttackType.Stab);
+        UpdateChargeFill(slashChargeFill, AttackType.Slash);
+        UpdateChargeFill(pierceChargeFill, AttackType.Pierce);
+        UpdateChargeFill(sweepChargeFill, AttackType.Sweep);
+        UpdateChargeFill(launchChargeFill, AttackType.Launch);
+        UpdateChargeFill(parryChargeFill, AttackType.Parry);
+    }
+
+    private void UpdateChargeFill(Image image, AttackType type)
+    {
+        if (image == null) return;
+        float progress = PlayerState.Instance.GetCooldownProgress(type);
+        // progress = timer/duration (1→0), 反向得到 0→1
+        image.fillAmount = 1f - progress;
+    }
+
+    private void OnStageStateChanged(StageState state)
+    {
+        switch (state)
+        {
+            case StageState.Victory:
+                ShowVictory();
+                break;
+            case StageState.Defeat:
+                ShowDefeat();
+                break;
+        }
+    }
+
+    #endregion
+
+    #region 结果面板
+
+    private void ShowVictory()
+    {
+        if (victoryPanel != null)
+        {
+            victoryPanel.SetActive(true);
+            if (resultCoinText != null && PlayerState.Instance != null)
+            {
+                resultCoinText.text = $"获得铜钱: {PlayerState.Instance.coinCount}";
+            }
+        }
+    }
+
+    private void ShowDefeat()
+    {
+        if (defeatPanel != null)
+        {
+            defeatPanel.SetActive(true);
+            if (resultCoinText != null && PlayerState.Instance != null)
+            {
+                resultCoinText.text = $"获得铜钱: {PlayerState.Instance.coinCount}";
+            }
+        }
+    }
+
+    #endregion
+
+    #region 按钮事件
+
+    /// <summary>
+    /// 重新开始按钮
+    /// </summary>
+    public void OnRestartButton()
+    {
+        StageController.Instance?.RestartStage();
+    }
+
+    /// <summary>
+    /// 返回主菜单按钮
+    /// </summary>
+    public void OnMainMenuButton()
+    {
+        StageController.Instance?.GoToMainMenu();
+    }
+
+    #endregion
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\UI\CameraManager.cs ---
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+/// <summary>
+/// 场景相机管理器：背景图缩放 + OnRenderImage 模糊 + 场景过渡。
+/// 挂载在 Main Camera 上，每个场景独立配置。
+/// </summary>
+public class CameraManager : MonoBehaviour
+{
+    [Header("背景")]
+    [Tooltip("拖入要做缩放动画的 RectTransform（如背景 Image）")]
+    public RectTransform background;
+
+    [Header("动画参数")]
+    [Tooltip("动画时长（秒）")]
+    public float duration = 1.2f;
+    [Tooltip("模糊强度峰值")]
+    public float maxBlur = 4f;
+    [Tooltip("背景目标缩放倍率（Departure=放大推入，Arrival=从大缩回）")]
+    public float targetScale = 1.5f;
+    [Tooltip("背景位移偏移（相对 anchoredPosition 的增量）")]
+    public Vector2 positionOffset;
+
+    [Header("场景加载（仅 Departure）")]
+    [Tooltip("推入完成后要加载的场景名")]
+    public string nextScene;
+
+    [Header("独立测试")]
+    [Tooltip("勾选后 Start 时自动播放 Arrival 动画（不受场景切换影响）")]
+    public bool autoPlayOnStart;
+
+    // 跨场景信号
+    public static bool IsArriving { get; private set; }
+
+    private Material blurMat;
+    private bool isRunning;
+
+    private void Awake()
+    {
+        var shader = Shader.Find("Hidden/BlurEffect");
+        blurMat = shader != null ? new Material(shader) : null;
+        if (blurMat == null)
+            Debug.LogError("[CameraManager] Shader 'Hidden/BlurEffect' 未找到");
+    }
+
+    private void Start()
+    {
+        if (IsArriving || autoPlayOnStart)
+        {
+            IsArriving = false;
+            StartCoroutine(ArrivalRoutine());
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (blurMat != null) Destroy(blurMat);
+    }
+
+    /// <summary>
+    /// MainMenu 调用：开始推入动画 + 加载下一场景。
+    /// </summary>
+    public void PlayDeparture()
+    {
+        if (isRunning || background == null || blurMat == null) return;
+        StartCoroutine(DepartureRoutine());
+    }
+
+    /// <summary>
+    /// 也可手动触发接入动画（用于测试 Battle 场景）。
+    /// </summary>
+    public void PlayArrival()
+    {
+        if (isRunning || background == null || blurMat == null) return;
+        StartCoroutine(ArrivalRoutine());
+    }
+
+    // ──── 动画协程 ────
+
+    private System.Collections.IEnumerator DepartureRoutine()
+    {
+        isRunning = true;
+        Debug.Log("[CameraManager] Departure 开始");
+
+        Vector2 origAnchored = background.anchoredPosition;
+        Vector3 origScale = background.localScale;
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            float easeT = t * t;
+
+            background.localScale = Vector3.Lerp(origScale, Vector3.one * targetScale, easeT);
+            background.anchoredPosition = origAnchored + positionOffset * easeT;
+            SetBlur(easeT * maxBlur);
+            yield return null;
+        }
+
+        background.localScale = Vector3.one * targetScale;
+        background.anchoredPosition = origAnchored + positionOffset;
+        SetBlur(maxBlur);
+
+        isRunning = false;
+        Debug.Log("[CameraManager] Departure 完成，加载 " + nextScene);
+
+        if (!string.IsNullOrEmpty(nextScene))
+        {
+            IsArriving = true;
+            SceneManager.LoadSceneAsync(nextScene);
+        }
+    }
+
+    private System.Collections.IEnumerator ArrivalRoutine()
+    {
+        isRunning = true;
+        Debug.Log("[CameraManager] Arrival 开始");
+
+        // 以当前 scale 为起点，targetScale 为终点
+        Vector3 startScale = background.localScale;
+        Vector3 endScale = Vector3.one * targetScale;
+        Vector2 startAnchored = background.anchoredPosition;
+        Vector2 endAnchored = startAnchored - positionOffset;
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            float easeT = 1f - (1f - t) * (1f - t);
+
+            background.localScale = Vector3.Lerp(startScale, endScale, easeT);
+            background.anchoredPosition = Vector2.Lerp(startAnchored, endAnchored, easeT);
+            SetBlur((1f - easeT) * maxBlur);
+            yield return null;
+        }
+
+        background.localScale = endScale;
+        background.anchoredPosition = endAnchored;
+        SetBlur(0f);
+
+        isRunning = false;
+        Debug.Log("[CameraManager] Arrival 完成");
+    }
+
+    // ──── 模糊 ────
+
+    private float currentBlur;
+
+    public void SetBlur(float t)
+    {
+        currentBlur = Mathf.Max(0f, t);
+    }
+
+    private void OnRenderImage(RenderTexture src, RenderTexture dst)
+    {
+        if (blurMat == null || currentBlur <= 0.001f)
+        {
+            Graphics.Blit(src, dst);
+            return;
+        }
+
+        int w = src.width / 2;
+        int h = src.height / 2;
+
+        var rtA = RenderTexture.GetTemporary(w, h, 0, src.format);
+        var rtB = RenderTexture.GetTemporary(w, h, 0, src.format);
+        rtA.filterMode = FilterMode.Bilinear;
+        rtB.filterMode = FilterMode.Bilinear;
+
+        blurMat.SetFloat("_BlurSize", currentBlur);
+
+        Graphics.Blit(src, rtA, blurMat, 0);
+        Graphics.Blit(rtA, rtB, blurMat, 1);
+        Graphics.Blit(rtB, dst, blurMat, 2);
+
+        RenderTexture.ReleaseTemporary(rtA);
+        RenderTexture.ReleaseTemporary(rtB);
+    }
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\UI\DamageNumber.cs ---
+using UnityEngine;
+using TMPro;
+using DG.Tweening;
+
+/// <summary>
+/// 伤害跳字
+/// 受击后在敌人右侧弹出红色带黑色描边的伤害数字，
+/// 向上飘动并逐渐淡出，完成后回收到对象池
+/// </summary>
+public class DamageNumber : MonoBehaviour
+{
+    [Header("组件")]
+    [SerializeField] private TextMeshPro tmp;
+
+    [Header("动效参数")]
+    [SerializeField] private float floatUpDistance = 2f;     // 上飘距离
+    [SerializeField] private float duration = 0.8f;           // 动画时长
+    [SerializeField] private float fontSize = 3f;             // 字体大小
+    [SerializeField] private float outlineWidth = 0.35f;      // 描边宽度
+    [SerializeField] private Color textColor = Color.red;     // 文字颜色
+    [SerializeField] private Color outlineColor = Color.black; // 描边颜色
+
+    // 对象池引用（由 DamageNumberManager 设置）
+    [System.NonSerialized] public System.Action<DamageNumber> OnReturnToPool;
+
+    private Sequence animSeq;
+
+    private void Awake()
+    {
+        if (tmp == null)
+            tmp = GetComponent<TextMeshPro>();
+
+        if (tmp == null)
+        {
+            tmp = gameObject.AddComponent<TextMeshPro>();
+        }
+
+        // 初始化 TextMeshPro 属性
+        tmp.fontSize = fontSize;
+        tmp.color = textColor;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.fontStyle = FontStyles.Bold;
+
+        // 启用描边
+        tmp.fontMaterial.EnableKeyword("OUTLINE_ON");
+        tmp.outlineWidth = outlineWidth;
+        tmp.outlineColor = outlineColor;
+    }
+
+    /// <summary>
+    /// 在指定世界坐标位置显示伤害数字
+    /// </summary>
+    /// <param name="worldPos">世界坐标位置</param>
+    /// <param name="damage">伤害数值</param>
+    public void Show(Vector3 worldPos, float damage)
+    {
+        // 重新激活对象
+        gameObject.SetActive(true);
+        transform.position = worldPos;
+
+        // 重置透明度
+        Color c = tmp.color;
+        c.a = 1f;
+        tmp.color = c;
+
+        // 设置伤害数值（取整显示）
+        tmp.text = Mathf.RoundToInt(damage).ToString();
+
+        // 终止可能正在播放的动画
+        if (animSeq != null && animSeq.IsActive())
+        {
+            animSeq.Kill();
+            animSeq = null;
+        }
+
+        // 上飘终点
+        Vector3 endPos = worldPos + new Vector3(0f, floatUpDistance, 0f);
+
+        // DOTween 动画：向上漂浮 + 透明度淡出
+        animSeq = DOTween.Sequence();
+        animSeq.SetTarget(transform);
+        animSeq.SetId("damageNumber");
+
+        animSeq.Join(transform.DOMove(endPos, duration).SetEase(Ease.OutQuad));
+        animSeq.Join(tmp.DOFade(0f, duration).SetEase(Ease.InQuad));
+
+        animSeq.OnComplete(() =>
+        {
+            animSeq = null;
+            gameObject.SetActive(false);
+            OnReturnToPool?.Invoke(this);
+        });
+    }
+
+    /// <summary>
+    /// 重置状态（对象池回收时调用）
+    /// </summary>
+    public void ResetNumber()
+    {
+        if (animSeq != null && animSeq.IsActive())
+        {
+            animSeq.Kill();
+            animSeq = null;
+        }
+
+        Color c = tmp.color;
+        c.a = 1f;
+        tmp.color = c;
+
+        gameObject.SetActive(false);
+    }
+
+    private void OnDestroy()
+    {
+        if (animSeq != null && animSeq.IsActive())
+        {
+            animSeq.Kill();
+            animSeq = null;
+        }
+    }
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\UI\MainMenuUI.cs ---
+using UnityEngine;
+using UnityEngine.UI;
+
+/// <summary>
+/// 主菜单UI — 点击开始后触发 CameraManager 推入动画
+/// </summary>
+public class MainMenuUI : MonoBehaviour
+{
+    [Header("UI元素")]
+    public Text titleText;
+    public Button startButton;
+    public Button quitButton;
+
+    [Header("过渡")]
+    public CameraManager cameraManager;
+
+    private void Start()
+    {
+        if (titleText != null)
+            titleText.text = "一夫当关";
+        else
+            Debug.LogWarning("[MainMenuUI] titleText 未赋值");
+
+        if (startButton != null)
+            startButton.onClick.AddListener(OnStartGame);
+        else
+            Debug.LogWarning("[MainMenuUI] startButton 未赋值");
+
+        if (quitButton != null)
+            quitButton.onClick.AddListener(OnQuitGame);
+    }
+
+    public void OnStartGame()
+    {
+        Debug.Log("[MainMenu] 开始游戏");
+        if (cameraManager != null)
+            cameraManager.PlayDeparture();
+        else
+        {
+            Debug.LogWarning("[MainMenu] CameraManager 未赋值，直接加载");
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Battle");
+        }
+    }
+
+    public void OnQuitGame()
+    {
+        Debug.Log("[MainMenu] 退出游戏");
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\UI\PingPongAnim.cs ---
+using UnityEngine;
+using UnityEngine.UI;
+
+/// <summary>
+/// 序列帧乒乓动画。默认在两帧间微呼吸，随机触发眨眼走完整循环。
+/// 支持 SpriteRenderer（世界空间）和 UI Image（Canvas）。
+/// </summary>
+public class PingPongAnim : MonoBehaviour
+{
+    [SerializeField] private Sprite[] frames;
+    [SerializeField] private float fps = 8f;
+    [SerializeField] private bool playOnStart = true;
+    [Tooltip("每秒触发眨眼的概率")]
+    [SerializeField] private float blinkChancePerSecond = 0.3f;
+
+    private SpriteRenderer sr;
+    private Image img;
+    private float timer;
+    private int index;
+    private int direction = 1;
+    private bool blinking;
+
+    private void Awake()
+    {
+        sr = GetComponent<SpriteRenderer>();
+        img = GetComponent<Image>();
+    }
+
+    private void Start()
+    {
+        if (!playOnStart) enabled = false;
+    }
+
+    private void OnEnable()
+    {
+        timer = 0f;
+        index = 0;
+        direction = 1;
+        blinking = false;
+    }
+
+    private void Update()
+    {
+        if (frames == null || frames.Length == 0) return;
+
+        timer += Time.deltaTime;
+        float interval = 1f / fps;
+
+        // Random blink trigger
+        if (!blinking && frames.Length >= 4)
+        {
+            if (Random.value < blinkChancePerSecond * Time.deltaTime)
+            {
+                blinking = true;
+                index = 1;
+                direction = 1;
+                timer = 0f;
+            }
+        }
+
+        while (timer >= interval)
+        {
+            timer -= interval;
+            AdvanceFrame();
+        }
+    }
+
+    private void AdvanceFrame()
+    {
+        if (blinking)
+            AdvanceBlink();
+        else
+            AdvanceIdle();
+    }
+
+    private void AdvanceIdle()
+    {
+        index = index == 0 ? 1 : 0;
+        ApplySprite(frames[index]);
+    }
+
+    private void AdvanceBlink()
+    {
+        index += direction;
+
+        if (index >= frames.Length - 1)
+        {
+            index = frames.Length - 1;
+            direction = -1;
+        }
+        else if (index <= 0)
+        {
+            index = 0;
+            direction = 1;
+            blinking = false;
+        }
+
+        ApplySprite(frames[index]);
+    }
+
+    private void ApplySprite(Sprite s)
+    {
+        if (sr != null) sr.sprite = s;
+        if (img != null) img.sprite = s;
+    }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (sr == null) sr = GetComponent<SpriteRenderer>();
+        if (img == null) img = GetComponent<Image>();
+        if (frames != null && frames.Length > 0 && index < frames.Length)
+            ApplySprite(frames[index]);
+    }
+#endif
+}
+
+--- C:\threeKingdomSlayer\threeKingdomSlayer\Assets\Scripts\Wave\WaveSpawner.cs ---
