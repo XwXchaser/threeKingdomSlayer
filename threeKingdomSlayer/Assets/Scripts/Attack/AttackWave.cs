@@ -35,8 +35,8 @@ public class AttackWave : MonoBehaviour
     private const float LaunchStagger = 0.04f;
 
     private const float ProjectileSpeed = 8f;
-    private const float StabThrustTime = 0.45f;
-    private const float StabRetractTime = 0.75f;
+    private const float StabThrustTime = 0.2f;
+    private const float StabRetractTime = 0.3f;
     private const float EndZOffset = 3f;
 
     public static AttackWave Create(Vector3 position, DamageType damageType, float damage,
