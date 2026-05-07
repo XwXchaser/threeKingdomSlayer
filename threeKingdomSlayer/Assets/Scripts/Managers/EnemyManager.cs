@@ -91,11 +91,12 @@ public class EnemyManager : MonoBehaviour
         // 从列中移除
         columnManager?.RemoveEnemyFromColumn(enemy.columnIndex, enemy);
 
-        // 回收对象（Enemy.Die() 中的协程已处理闪白延迟）
-        EnemyPool.Instance?.ReturnEnemy(enemy);
-
-        // 触发事件
+        // 触发事件（必须在 ReturnEnemy 之前，因为 ReturnEnemy→ResetEnemy 会将 config 置 null，
+        // 导致 StageController.OnEnemyDied 中 enemy?.config 判定失败，跳过 AddKill/AddCoins）
         OnAnyEnemyDied?.Invoke(enemy);
+
+        // 注意：不再在此处调用 EnemyPool.Instance?.ReturnEnemy(enemy)
+        // 对象回收由 Enemy.DeathBounceAndFall() 协程在死亡动画播完后处理
 
         // 检查是否所有敌人都死亡
         if (allAliveEnemies.Count == 0)

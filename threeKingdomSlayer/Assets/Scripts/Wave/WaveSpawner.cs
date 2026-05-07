@@ -134,6 +134,15 @@ public class WaveSpawner : MonoBehaviour
 
         isSpawning = false;
 
+        // 波次生成完成后，触发所有列的初始前移补齐
+        // 普通波次敌人从后排 spawn（rowIndex+2），需要逐步前进填补前方空位
+        for (int c = 0; c < 5; c++)
+        {
+            var col = columnManager.GetColumn(c);
+            if (col != null && col.enemies.Count > 0)
+                col.TriggerFillForward();
+        }
+
         // 启动协程等待当前波次所有敌人死亡
         StartCoroutine(WaitForWaveClearAndNotify());
     }
@@ -207,6 +216,12 @@ public class WaveSpawner : MonoBehaviour
                     rowIndex = count;
             }
         }
+
+        // 普通波次：敌人从第3排（rowIndex+2）出场，营造压迫前进感
+        // BOSS波次：直接从最前排出场，立刻交战
+        WaveConfig currentWave = stageConfig.waves[currentWaveIndex];
+        if (!currentWave.isBossWave)
+            rowIndex += 2;
 
         int currentCol = startColumn;
         for (int i = 0; i < row.enemyIds.Length; i++)
