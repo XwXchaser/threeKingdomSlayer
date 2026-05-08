@@ -89,6 +89,9 @@ public class Enemy : MonoBehaviour
     // 不能硬编码为 Vector3.one，因为不同敌人可能有不同默认缩放（如 0.5）
     private Vector3 originalScale;
 
+    // 血条UI缓存
+    private EnemyHealthBar cachedHealthBar;
+
     // 事件
     public System.Action<Enemy> OnDeath;
     public System.Action<Enemy> OnDamageTaken;
@@ -584,6 +587,16 @@ public class Enemy : MonoBehaviour
         if (DamageNumberManager.Instance != null)
         {
             DamageNumberManager.Instance.Spawn(transform.position, finalDamage);
+        }
+
+        // 血条显示（非BOSS、未死亡时显示）
+        if (config != null && !config.isBoss && currentHealth > 0f)
+        {
+            if (cachedHealthBar == null)
+                cachedHealthBar = GetComponent<EnemyHealthBar>();
+            if (cachedHealthBar == null)
+                cachedHealthBar = gameObject.AddComponent<EnemyHealthBar>();
+            cachedHealthBar.Show(currentHealth / config.maxHealth);
         }
 
         // BUG FIX: 同步应用闪白（立即设置颜色，不依赖 Update 循环）

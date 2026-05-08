@@ -27,6 +27,9 @@ public class EnemyConfig : ScriptableObject
     [Header("奖励")]
     public int coinReward = 10;          // 击败后掉落铜钱
     
+    [Header("BOSS")]
+    public bool isBoss = false;
+    
     [Header("弱点系统")]
     public float stabDamageMultiplier = 1f;      // 戳击伤害倍率
     public float slashDamageMultiplier = 1f;     // 斩击伤害倍率
