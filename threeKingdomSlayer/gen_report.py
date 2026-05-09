@@ -1,5 +1,7 @@
 import os
 import re
+import sys
+print("脚本开始运行", file=sys.stderr)
 
 def generate_unity_report(project_path, output_file):
     with open(output_file, 'w', encoding='utf-8') as out:
@@ -70,7 +72,7 @@ def generate_unity_report(project_path, output_file):
 
 if __name__ == "__main__":
     # 请修改下面的路径为你的 Unity 项目根目录
-    project_folder = r"C:\threeKingdomSlayer\threeKingdomSlayer"
-    output_path = r"C:\threeKingdomSlayer\_summaries\unity_report.txt"
+    project_folder = r"H:\Project\threeKingdomSlayer\threeKingdomSlayer"
+    output_path = r"H:\Project\threeKingdomSlayer\_summaries\unity_report.txt"
     
     generate_unity_report(project_folder, output_path)
