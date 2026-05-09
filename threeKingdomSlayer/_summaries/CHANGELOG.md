@@ -1,6 +1,26 @@
 # 开发日志
 
-## 2025-05-09 — 招架（Parry）机制完善
+## 2025-12-16 — 补齐链断裂修复 & 缩放残留修复
+
+### 概述
+修复 Launch（挑飞）攻击杀死敌人后补齐链中断，以及多敌人快速受击时缩放永久变形两个 Bug。
+
+### Bug 1: 挑飞击杀后补齐链中断
+
+**根因**：`AttackWave` 以 0.04s/排 stagger 命中敌人。前排敌人先死 → `RemoveEnemy()` 为后方敌人设 `targetRow`，但后方敌人尚未被命中。0.04s 后命中 → `Launch()` 无条件重置 `targetRow = -1`。落地时 `UpdateLaunch()` 查不到 targetRow，走自然移动而非补齐。
+
+**修复**：`Launch()` 不再重置 `targetRow`。`RemoveEnemy()` 设置的值保留到落地。
+
+### Bug 2: 多敌人快速受击时缩放永久变形
+
+**根因**：`DOTween.Kill("punchScale")` 是全局 Kill，会误杀其他敌人正在运行的 punch tween。敌人 A 的 punch 被敌人 B 的受击 Kill 打断，scale 停在中间振动值无法恢复。`Launch()` 中同样存在全局 `DOTween.Kill("punchScale")` / `DOTween.Kill("rushBounce")` 误杀问题。
+
+**修复**：
+- `TakeDamage`：punch tween ID 改为 per-instance `$"punch_{GetInstanceID()}"`
+- `Launch`：移除冗余的全局 `DOTween.Kill("punchScale")` / `DOTween.Kill("rushBounce")`（`transform.DOKill(false)` 已覆盖本对象）
+
+### 涉及文件
+- `Assets/Scripts/Enemy/Enemy.cs` — `Launch()` 不重置 targetRow；`TakeDamage()` per-instance punch ID；`Launch()` 移除全局 DOTween.Kill
 
 ### 概述
 完善 Parry 攻击的触发、打断、架势判定、眩晕规则，重构敌人攻击与架势系统。

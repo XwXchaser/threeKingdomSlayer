@@ -25,6 +25,9 @@ MonoBehaviour:
   maxPoise: 100
   stunDuration: 1.5
   launchDuration: 2
+  launchYHeight: 20
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
   coinReward: 10
   isBoss: 0
   stabDamageMultiplier: 1

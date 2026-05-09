@@ -24,7 +24,12 @@ public class EnemyConfig : ScriptableObject
     [Header("架势系统")]
     public float maxPoise = 50f;         // 最大架势值
     public float stunDuration = 1.5f;    // 眩晕时间（秒）
-    public float launchDuration = 2f;    // 击飞时间（秒）
+
+    [Header("击飞系统")]
+    public float launchDuration = 2f;           // 击飞持续时间（秒）
+    public float launchYHeight = 3f;            // 击飞Y轴高度
+    [Range(1f, 5f)] public float launchedDamageTakenMultiplier = 1.5f;  // 击飞状态下受到伤害倍率
+    public float launchedHitExtendDuration = 0.5f;  // 击飞状态下被攻击增加的浮空时间（秒）
     
     [Header("奖励")]
     public int coinReward = 10;          // 击败后掉落铜钱

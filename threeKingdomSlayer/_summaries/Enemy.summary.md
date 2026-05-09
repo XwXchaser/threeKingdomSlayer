@@ -58,10 +58,11 @@ Enemy（敌人实体与对象池）
 - **死亡异步**：`Die()` 设 state=Dead 并启动协程。`OnDeath` 事件仅在 DOTween 死亡序列完成后触发（弹跳 + 旋转 + 坠落），防止闪烁期间对象被停用
 - **链式补齐规则**：`pendingRushMove` 标记 + `TryStartRushMove()`。Idle：立即启动。Attacking/冷却：中断。Attacking/动画：等待。Stunned/Launched：等待。用 `rushMoveDelayTimer` 实现"快移+暂停"节奏
 - **对象池命名**：`Resources/EnemyPrefabs/` 中预制体必须命名为 `Enemy_{id}`（如 `Enemy_1.prefab`）
-- **受伤抖动隔离**：`TakeDamage` 中的 punch scale tween 使用 `DOTween.Kill("punchScale")` + `.SetId("punchScale")`，不再使用 `transform.DOKill(true)` 以防误杀攻击动画 tween
+- **受伤抖动隔离**：`TakeDamage` 中的 punch scale tween 使用 per-instance ID（`$"punch_{GetInstanceID()}"`），避免全局 `DOTween.Kill("punchScale")` 误杀其他敌人的 punch tween 导致缩放停在中间值无法恢复
 - **架势破碎不再眩晕**：`TakePoiseDamage` 击破架势时仅重置 `currentPoise`，不再调用 `Stun()`。眩晕仅通过 `CheckParryStunThresholds`（Boss 血量百分比阈值）触发
 - **Parry 打断规则**：仅当 `parryPoiseDamage >= maxPoise` 且敌人处于 AttackSpawn 阶段时，`CancelAttack()` 打断攻击返回冷却；否则仅造成伤害+架势伤害，不打断不眩晕
 - **targetRow 系统**：防止敌人全部挤到第 0 排，给每个敌人设定特定目标。移动到 `rowIndex <= targetRow` 时停止
+- **Launch 不重置 targetRow**：`Launch()` 不再重置 `targetRow = -1`。当 Launch 攻击错开命中（AttackWave stagger 0.04s/排），前方敌人先死触发 `RemoveEnemy()` 设置后方敌人的 `targetRow`，若 `Launch()` 重置则落地后链式补齐中断
 
 ## 扩展指南
 
