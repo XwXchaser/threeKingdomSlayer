@@ -20,20 +20,22 @@ MonoBehaviour:
   stabDamage: 100
   stabRangeRows: 1
   stabCooldown: 1
-  slashDamage: 50
+  slashDamage: 10
   slashRangeRows: 1
-  slashCooldown: 2
+  slashCooldown: 1
   pierceDamage: 200
   pierceRangeRows: 5
   pierceCooldown: 5
   sweepDamage: 100
   sweepRangeRows: 2
   sweepCooldown: 5
-  launchDamage: 25
+  launchDamage: 10
   launchRangeRows: 2
   launchCooldown: 5
   launchDuration: 2
-  launchPoiseDamage: 30
+  launchPoiseDamage: 50
   parryDamage: 15
   parryPoiseDamage: 50
+  parryRangeRows: 1
+  parryCooldown: 0.5
   damageBonusPercent: 0

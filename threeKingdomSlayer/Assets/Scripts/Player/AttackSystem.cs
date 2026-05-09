@@ -206,8 +206,10 @@ public class AttackSystem : MonoBehaviour
             AttackWave.Create(wavePos, DamageType.Launch, damage, targets,
                 onHit: (enemy) =>
                 {
-                    enemy.TakePoiseDamage(poiseDamage);
-                    enemy.Launch(duration);
+                    // 只有架势破碎时才触发挑飞
+                    bool broken = enemy.TakePoiseDamage(poiseDamage);
+                    if (broken)
+                        enemy.Launch(duration);
                 },
                 prefab: launchWavePrefab);
         }

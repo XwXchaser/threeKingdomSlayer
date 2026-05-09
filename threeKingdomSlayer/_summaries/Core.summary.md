@@ -23,7 +23,7 @@ Core（核心数据结构与配置）
 ## 公开接口
 
 **Column**：
-- `GetFrontEnemy()`, `GetEnemyAtRow(rowIndex)`, `AddEnemy(Enemy)`, `RemoveEnemy(Enemy)`, `TriggerFillForward()`
+- `GetFrontEnemy()`, `GetEnemyAtRow(rowIndex)`, `AddEnemy(Enemy)`, `RemoveEnemy(Enemy)`, `TriggerFillForward()`, `StartRushFromLaunched(Enemy)`
 - 属性：`EnemyCount`, `IsEmpty`
 
 **ColumnManager**：
@@ -47,7 +47,7 @@ Core（核心数据结构与配置）
 
 ## 重要规则
 
-- **链式补齐**：敌人死亡填补时仅启动第一个存活敌人移动，后续敌人通过 `OnRushMoveComplete` 事件链式触发 — 每个必须完全完成后一个才启动
+- **链式补齐**：敌人死亡填补时仅启动第一个存活敌人移动，后续敌人通过 `OnRushMoveComplete` 事件链式触发 — 每个必须完全完成后一个才启动。击飞落地敌人通过 `StartRushFromLaunched()` 加入链式补齐，确保 `OnRushMoveComplete` 正确订阅
 - **禁止 SetRowIndex 瞬移**：`RemoveEnemy()` 和 `UpdateEnemyRow()` 不再调用 `SetRowIndex()`，改为设置 `targetRow` 让 `UpdateMovement()` 逐步前进
 - **Dead 敌人过滤**：两方法在重排时均过滤 Dead 状态敌人，防止链中断
 - **阵型优先级**：`manualRowHalfWidths`（最高）> `formationPreset`（预设表）> 公式（`Lerp(maxSpread, minSpread, t^powerCurve)`）。`maxVisibleRows` 作固定分母（非动态 maxRow），保证列失去敌人时位置稳定。`t = rowIndex / (maxVisibleRows - 1)`

@@ -114,8 +114,8 @@ public class ColumnManager : MonoBehaviour
     /// 仅在非补齐移动（自然移动、眩晕/挑飞后恢复）完成后调用。
     /// 补齐移动（死亡触发）由 Column.RemoveEnemy() 独立处理。
     ///
-    /// 链式触发补齐移动，必须等待前一敌人完全补齐完毕，后一敌人才能开始补齐。
-    /// 更新后方所有敌人的行索引后，只启动第一个敌人，后续通过 OnRushMoveComplete 逐个触发。
+    /// 击飞敌人保留在列中（可被攻击），不参与补齐，不阻塞后方敌人填充前方空位。
+    /// Dead 敌人跳过并清理。存活敌人紧凑排列，链式触发补齐。
     /// </summary>
     public void UpdateEnemyRow(int columnIndex, Enemy enemy)
     {
@@ -131,65 +131,71 @@ public class ColumnManager : MonoBehaviour
             column.enemies.Insert(currentIndex - 1, enemy);
             Debug.Log($"[ColumnManager] 重排列顺序：enemyId={enemy.config?.enemyId}, from={currentIndex}→{currentIndex - 1}");
 
-            // BUG FIX（v1 - 过滤Dead敌人）: 跳过 Dead 状态的敌人（可能在死亡协程窗口期内，后续由 RemoveEnemy 处理）。
-            // 从 currentIndex 开始扫描，将存活敌人紧凑排列并清除 Dead 敌人。
-            // BUG FIX（v2 - 移除 SetRowIndex 瞬移）: 不再调用 SetRowIndex()，
-            // 敌人保持当前 rowIndex，利用 targetRow 控制逐步前进（多步补齐）。
+            // 紧凑排列：Launched 保留原位不参与补齐，Dead 跳过并清理，存活敌人向前补齐
             int writeIdx = currentIndex;
+            bool anyPendingRush = false;
             for (int i = currentIndex; i < column.enemies.Count; i++)
             {
                 Enemy e = column.enemies[i];
                 if (e.state == EnemyState.Dead)
                 {
-                    Debug.Log($"[ColumnManager] 跳过 Dead 敌人（稍后由其自身 OnDeath 处理）: enemyId={e.config?.enemyId}, col={columnIndex}, row={e.rowIndex}");
+                    Debug.Log($"[ColumnManager] 跳过 Dead 敌人: enemyId={e.config?.enemyId}, col={columnIndex}, row={e.rowIndex}");
+                    continue;
+                }
+                if (e.state == EnemyState.Launched)
+                {
+                    if (i != writeIdx) column.enemies[writeIdx] = e;
+                    e.targetRow = writeIdx;
+                    Debug.Log($"[ColumnManager] 保留 Launched 敌人（不参与补齐）: enemyId={e.config?.enemyId}, col={columnIndex}, row={e.rowIndex}, listPos={writeIdx}");
+                    writeIdx++;
                     continue;
                 }
 
-                // 紧凑排列存活敌人
-                if (i != writeIdx)
-                {
-                    column.enemies[writeIdx] = e;
-                }
-
-                Debug.Log($"[ColumnManager] 更新后方敌人: enemyId={e.config?.enemyId}, curRow={e.rowIndex}, writeIdx={writeIdx}");
-                e.ResetMovementState();
-                // BUG FIX（移除 SetRowIndex 瞬移）: 不再调用 SetRowIndex()，
-                // 敌人保持当前 rowIndex，利用 targetRow 控制多步补齐。
-                // 从当前位置一步步前进到目标位置，无瞬移。
+                if (i != writeIdx) column.enemies[writeIdx] = e;
                 e.targetRow = writeIdx;
+                e.ResetMovementState();
                 e.pendingRushMove = true;
-
+                anyPendingRush = true;
+                Debug.Log($"[ColumnManager] 标记补齐移动: enemyId={e.config?.enemyId}, col={columnIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
                 writeIdx++;
             }
 
             // 移除 Dead 敌人留下的空洞
             if (writeIdx < column.enemies.Count)
-            {
                 column.enemies.RemoveRange(writeIdx, column.enemies.Count - writeIdx);
-            }
 
-            // 只启动第一个存活敌人的补齐移动，后续通过链式触发
-            if (writeIdx > currentIndex)
+            // 链式触发：从第一个 pendingRushMove 的存活敌人开始
+            if (anyPendingRush)
             {
-                Enemy firstToMove = column.enemies[currentIndex];
-                System.Action<Enemy> handler = null;
-                handler = (completedEnemy) =>
+                for (int i = currentIndex; i < column.enemies.Count; i++)
                 {
-                    completedEnemy.OnRushMoveComplete -= handler;
-                    int idx = column.enemies.IndexOf(completedEnemy);
-                    int nextIdx = idx + 1;
-                    if (nextIdx >= 0 && nextIdx < column.enemies.Count)
+                    if (column.enemies[i].pendingRushMove)
                     {
-                        Enemy nextEnemy = column.enemies[nextIdx];
-                        if (nextEnemy.pendingRushMove)
-                        {
-                            nextEnemy.OnRushMoveComplete += handler;
-                            nextEnemy.TryStartRushMove();
-                        }
+                        column.enemies[i].OnRushMoveComplete += OnColumnManagerRushComplete;
+                        column.enemies[i].TryStartRushMove();
+                        Debug.Log($"[ColumnManager] 启动链式补齐: enemyId={column.enemies[i].config?.enemyId}, col={columnIndex}");
+                        break;
                     }
-                };
-                firstToMove.OnRushMoveComplete += handler;
-                firstToMove.TryStartRushMove();
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// ColumnManager 补齐链回调：当前敌人补齐完成后，启动下一个 pendingRushMove 的存活敌人
+    /// </summary>
+    private void OnColumnManagerRushComplete(Enemy completed)
+    {
+        completed.OnRushMoveComplete -= OnColumnManagerRushComplete;
+        Column column = columns[completed.columnIndex];
+        int idx = column.enemies.IndexOf(completed);
+        for (int i = idx + 1; i < column.enemies.Count; i++)
+        {
+            if (column.enemies[i].pendingRushMove)
+            {
+                column.enemies[i].OnRushMoveComplete += OnColumnManagerRushComplete;
+                column.enemies[i].TryStartRushMove();
+                return;
             }
         }
     }

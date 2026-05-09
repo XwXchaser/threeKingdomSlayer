@@ -33,6 +33,9 @@ public class Enemy : MonoBehaviour
     // 内部状态
     private float stunTimer;
     private float launchTimer;
+    private float launchTimeElapsed;   // 已浮空时间（用于计算动画阶段）
+    private float launchTotalDuration; // 浮空总时长（可被攻击延长）
+    private Vector3 launchStartLocalPos; // 挑飞起始位置
     private float attackTimer;      // 攻击冷却计时器（攻击动画结束后开始冷却）
     private float attackAnimTimer;  // 攻击动画计时器（攻击动作执行时间）
     public bool isAttackAnimating; // 是否正在播放攻击动画（AttackSpawn 或 AttackDraw）
@@ -275,6 +278,7 @@ public class Enemy : MonoBehaviour
         if (isRush)
         {
             DOTween.Kill(transform, false); // 终止之前可能残留的弹跳动画
+            transform.localScale = originalScale; // 重置被 DOPunchScale 打断后的残留 scale
             float moveDuration = config != null ? config.moveSpeed : 1f;
             float bounceHeight = 0.5f; // 弹跳峰值高度
             // 通过 DOTween.To 驱动 bounceYOffset，形成抛物线弹跳轨迹
@@ -322,11 +326,54 @@ public class Enemy : MonoBehaviour
         stunTimer = duration;
     }
 
+    /// <summary>
+    /// 挑飞：打断当前攻击动作（类似招架），将敌人击飞
+    /// 若已处于击飞状态则忽略（延长由 TakeDamage 处理）
+    /// </summary>
     public void Launch(float duration)
     {
         if (state == EnemyState.Dead) return;
+        if (state == EnemyState.Launched) return;
+
+        // 清理所有 DOTween 动效（攻击动画、受击抖动等）
+        // BUG FIX: 移除 DOTween.Kill("punchScale") 和 DOTween.Kill("rushBounce")，
+        // 它们是全局 Kill，会误杀其他敌人的 tween。transform.DOKill(false) 已足够清理本对象。
+        transform.DOKill(false);
+        DOTween.Kill(transform, false);
+        if (attackSequence != null && attackSequence.IsActive())
+        {
+            attackSequence.Kill();
+            attackSequence = null;
+        }
+        UpdateWorldPosition();
+        transform.localScale = originalScale;
+        isAttackAnimating = false;
+        isAttackDrawPhase = false;
+        isMovingToNextRow = false;
+        pendingRushMove = false;
+        // BUG FIX: 不重置 targetRow。当 Launch 攻击错开命中时，
+        // RemoveEnemy() 可能在 Launch() 之前设置 targetRow（前方敌人先死），
+        // 若此处重置为 -1，落地后 UpdateLaunch() 不会触发补齐，导致链式前移中断。
+
         state = EnemyState.Launched;
         launchTimer = duration;
+        launchTimeElapsed = 0f;
+        launchTotalDuration = duration;
+        launchStartLocalPos = transform.localPosition;
+
+        Debug.Log($"[Enemy] 挑飞: enemyId={config?.enemyId}, duration={duration:F2}s");
+    }
+
+    /// <summary>
+    /// 延长浮空时间（被攻击命中时调用）
+    /// 增加的浮空时间会改变动画阶段计算（可能从坠落回到起跳）
+    /// </summary>
+    public void ExtendLaunch(float extendTime)
+    {
+        if (state != EnemyState.Launched) return;
+        launchTotalDuration += extendTime;
+        launchTimer += extendTime;
+        Debug.Log($"[Enemy] 延长浮空: enemyId={config?.enemyId}, +{extendTime:F2}s, 剩余={launchTimer:F2}s");
     }
 
     /// <summary>
@@ -375,13 +422,78 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 更新击飞状态：正弦波 Y 轴动画（起跳 → 坠落）
+    /// launchTimeElapsed / launchTotalDuration 决定当前动画阶段
+    /// 被攻击延长时 launchTotalDuration 增加，进度比例改变，自动切换阶段
+    /// </summary>
     private void UpdateLaunch()
     {
         launchTimer -= Time.deltaTime;
+        launchTimeElapsed += Time.deltaTime;
+
         if (launchTimer <= 0f)
         {
-            StartMoving();
+            // 浮空结束，回到地面
+            transform.localPosition = new Vector3(
+                transform.localPosition.x,
+                launchStartLocalPos.y,
+                transform.localPosition.z);
+
+            // 先退出击飞状态，再根据情况决定后续行为
+            state = EnemyState.Idle;
+
+            // 如果 targetRow 被 Column 设置（前方死敌产生空位），则补齐前移
+            if (targetRow >= 0 && rowIndex > targetRow)
+            {
+                pendingRushMove = true;
+                // 通过 Column 管理链式补齐，确保 OnRushMoveComplete 被正确订阅
+                // 否则补齐完成后链式触发会中断，后方敌人不会继续前移
+                var col = EnemyManager.Instance?.columnManager?.GetColumn(columnIndex);
+                if (col != null)
+                    col.StartRushFromLaunched(this);
+                else
+                    TryStartRushMove();
+            }
+            else
+            {
+                int attackRange = config != null ? (int)Mathf.Max(1, config.attackRange) : 1;
+                if (rowIndex < attackRange)
+                {
+                    StartAttacking();
+                }
+                else
+                {
+                    // 不在攻击范围内，检查前方列位是否被非 Dead 敌人占据
+                    int frontRow = rowIndex - 1;
+                    bool frontOccupied = false;
+                    var col = EnemyManager.Instance?.columnManager?.GetColumn(columnIndex);
+                    if (col != null && frontRow >= 0 && frontRow < col.enemies.Count)
+                    {
+                        Enemy front = col.enemies[frontRow];
+                        if (front != null && front != this && front.state != EnemyState.Dead)
+                            frontOccupied = true;
+                    }
+                    if (frontOccupied)
+                    {
+                        Debug.Log($"[Enemy] 落地后前方被占据，等待补齐: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, frontRow={frontRow}");
+                    }
+                    else
+                    {
+                        StartMoving();
+                    }
+                }
+            }
+            return;
         }
+
+        // 正弦波 Y 轴动画：0→π 对应 起跳→坠落
+        float progress = launchTimeElapsed / launchTotalDuration;
+        float yOffset = Mathf.Sin(progress * Mathf.PI) * (config != null ? config.launchYHeight : 3f);
+        transform.localPosition = new Vector3(
+            transform.localPosition.x,
+            launchStartLocalPos.y + yOffset,
+            transform.localPosition.z);
     }
 
     /// <summary>
@@ -611,6 +723,10 @@ public class Enemy : MonoBehaviour
     {
         if (state == EnemyState.Dead) return;
 
+        // 击飞状态下受到伤害倍率
+        if (state == EnemyState.Launched && config != null)
+            damage *= config.launchedDamageTakenMultiplier;
+
         // 应用弱点倍率
         float multiplier = GetDamageMultiplier(damageType);
         float finalDamage = damage * multiplier;
@@ -646,11 +762,20 @@ public class Enemy : MonoBehaviour
         Debug.Log($"[Enemy] 触发闪白: enemyId={config?.enemyId}, duration={HIT_FLASH_DURATION}");
 
         // DOTween: 受击大小抖动效果（与闪白同步触发）
-        // 仅杀掉旧的 punch scale tween，不触碰攻击动画等其他 tween
-        DOTween.Kill("punchScale");
+        // BUG FIX: 使用 per-instance ID（基于 GetInstanceID），避免全局 DOTween.Kill("punchScale")
+        // 误杀其他敌人的 punch tween，导致其他敌人缩放停在中间值无法恢复。
+        string punchId = $"punch_{GetInstanceID()}";
+        DOTween.Kill(punchId);
+        transform.localScale = originalScale;
         transform.DOPunchScale(new Vector3(0.2f, 0.2f, 0.2f), 0.15f, 8, 0.5f)
             .SetTarget(transform)
-            .SetId("punchScale");
+            .SetId(punchId);
+
+        // 击飞状态下被攻击延长浮空时间
+        if (state == EnemyState.Launched && config != null && config.launchedHitExtendDuration > 0f)
+        {
+            ExtendLaunch(config.launchedHitExtendDuration);
+        }
 
         if (currentHealth <= 0f)
         {
@@ -714,19 +839,19 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
-    /// 受到架势伤害
+    /// 受到架势伤害，返回是否破碎
     /// </summary>
-    public void TakePoiseDamage(float poiseDamage)
+    public bool TakePoiseDamage(float poiseDamage)
     {
-        if (state == EnemyState.Dead) return;
+        if (state == EnemyState.Dead) return false;
 
         currentPoise -= poiseDamage;
         if (currentPoise <= 0f)
         {
-            // 架势破碎：仅重置架势值，不再造成眩晕
-            // 眩晕仅对 Boss 敌人生效，通过 CheckParryStunThresholds（血量百分比阈值）触发
             currentPoise = config != null ? config.maxPoise : 50f;
+            return true;
         }
+        return false;
     }
 
     /// <summary>
@@ -790,6 +915,7 @@ public class Enemy : MonoBehaviour
     public void Die()
     {
         if (state == EnemyState.Dead) return;
+        bool wasLaunched = (state == EnemyState.Launched);
         state = EnemyState.Dead;
 
         // BUG FIX: 取消正在执行的攻击 DOTween 动画
@@ -811,7 +937,10 @@ public class Enemy : MonoBehaviour
         OnDeath?.Invoke(this);
 
         // 启动死亡动效协程（弹起 + 旋转 + 重力掉落，纯视觉表现）
-        StartCoroutine(DeathBounceAndFall());
+        if (wasLaunched)
+            StartCoroutine(LaunchDeathEffect());
+        else
+            StartCoroutine(DeathBounceAndFall());
     }
 
     /// <summary>
@@ -868,6 +997,42 @@ public class Enemy : MonoBehaviour
         transform.localRotation = Quaternion.identity;
 
         // 死亡动效结束后回收到对象池
+        EnemyPool.Instance?.ReturnEnemy(this);
+    }
+
+    /// <summary>
+    /// 击飞死亡动效 — 从当前击飞位置旋转坠落
+    /// 不弹起，直接从当前位置（可能在空中）旋转并掉出屏幕
+    /// </summary>
+    private System.Collections.IEnumerator LaunchDeathEffect()
+    {
+        ApplyHitFlashImmediate();
+
+        Vector3 startPos = transform.localPosition;
+
+        Sequence deathSeq = DOTween.Sequence();
+        deathSeq.SetTarget(transform);
+        deathSeq.SetId("deathAnim");
+
+        float fallDistance = 20f;
+        float fallDuration = 0.8f;
+
+        // 从当前位置（可能在击飞空中）直接坠落
+        deathSeq.Append(transform.DOLocalMoveY(startPos.y - fallDistance, fallDuration).SetEase(Ease.InQuad));
+
+        // 随机旋转（比普通死亡更大角度，更有击飞感）
+        Vector3 randomRotation = new Vector3(
+            Random.Range(-90f, 90f),
+            0f,
+            Random.Range(-540f, -360f)
+        );
+        deathSeq.Join(transform.DORotate(randomRotation, fallDuration, RotateMode.LocalAxisAdd).SetEase(Ease.OutQuad));
+
+        yield return deathSeq.WaitForCompletion();
+
+        transform.localScale = originalScale;
+        transform.localRotation = Quaternion.identity;
+
         EnemyPool.Instance?.ReturnEnemy(this);
     }
 
