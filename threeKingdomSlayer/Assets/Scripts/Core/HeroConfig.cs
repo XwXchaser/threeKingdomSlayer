@@ -46,6 +46,8 @@ public class HeroConfig : ScriptableObject
     [Header("招架属性")]
     public float parryDamage = 15f;
     public float parryPoiseDamage = 40f;
+    public int parryRangeRows = 1;
+    public float parryCooldown = 0.5f;
     
     [Header("伤害加成")]
     [Range(0f, 2f)]

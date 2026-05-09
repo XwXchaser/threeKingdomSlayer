@@ -40,6 +40,10 @@ public class PlayerState : MonoBehaviour
     private float launchCooldownTimer;
     private float parryCooldownTimer;
 
+    // 减伤Buff
+    private float damageReductionPercent;
+    private float damageReductionTimer;
+
     // 事件
     public System.Action<float, float> OnHealthChanged; // current, max
     public System.Action<int> OnReviveCountChanged;
@@ -86,6 +90,8 @@ public class PlayerState : MonoBehaviour
         if (sweepCooldownTimer > 0) sweepCooldownTimer -= Time.deltaTime;
         if (launchCooldownTimer > 0) launchCooldownTimer -= Time.deltaTime;
         if (parryCooldownTimer > 0) parryCooldownTimer -= Time.deltaTime;
+
+        if (damageReductionTimer > 0) damageReductionTimer -= Time.deltaTime;
     }
 
     /// <summary>
@@ -108,6 +114,8 @@ public class PlayerState : MonoBehaviour
         sweepCooldownTimer = 0f;
         launchCooldownTimer = 0f;
         parryCooldownTimer = 0f;
+        damageReductionPercent = 0f;
+        damageReductionTimer = 0f;
 
         float maxHp = heroConfig != null ? heroConfig.maxHealth : 100f;
         OnHealthChanged?.Invoke(currentHealth, maxHp);
@@ -126,10 +134,16 @@ public class PlayerState : MonoBehaviour
     {
         if (stageState == StageState.Defeat || stageState == StageState.Victory) return;
 
-        currentHealth -= damage;
+        float finalDamage = damage;
+        if (damageReductionTimer > 0f)
+        {
+            finalDamage = damage * (1f - damageReductionPercent);
+        }
+
+        currentHealth -= finalDamage;
         OnHealthChanged?.Invoke(currentHealth, heroConfig != null ? heroConfig.maxHealth : 500f);
 
-        Debug.Log($"[PlayerState] 受到伤害: {damage}, 剩余生命: {currentHealth}");
+        Debug.Log($"[PlayerState] 受到伤害: {damage}(原始) -> {finalDamage}(最终), 剩余生命: {currentHealth}");
 
         if (currentHealth <= 0f)
         {
@@ -240,7 +254,7 @@ public class PlayerState : MonoBehaviour
             AttackType.Pierce => heroConfig.pierceCooldown,
             AttackType.Sweep => heroConfig.sweepCooldown,
             AttackType.Launch => heroConfig.launchCooldown,
-            AttackType.Parry => 0.5f, // 招架冷却固定0.5秒
+            AttackType.Parry => heroConfig.parryCooldown,
             _ => 1f
         };
     }
@@ -283,6 +297,19 @@ public class PlayerState : MonoBehaviour
     {
         stageState = state;
         OnStageStateChanged?.Invoke(state);
+    }
+
+    #endregion
+
+    #region 减伤Buff
+
+    /// <summary>
+    /// 应用减伤Buff（招架成功后调用）
+    /// </summary>
+    public void ApplyDamageReduction(float percent, float duration)
+    {
+        damageReductionPercent = percent;
+        damageReductionTimer = duration;
     }
 
     #endregion

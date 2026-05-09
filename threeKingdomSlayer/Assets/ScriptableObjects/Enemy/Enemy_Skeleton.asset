@@ -16,17 +16,23 @@ MonoBehaviour:
   enemyId: 101
   maxHealth: 50
   occupySlots: 1
-  attackSpeed: 0.3
+  attackSpeed: 0.2
   attackDamage: 10
   attackRange: 1
+  attackSpawnDuration: 2
+  attackDrawDuration: 1
   moveSpeed: 0.3
   maxPoise: 50
-  stunDuration: 1.5
+  stunDuration: 5
   launchDuration: 2
   coinReward: 10
+  isBoss: 0
   stabDamageMultiplier: 1
   slashDamageMultiplier: 1
   pierceDamageMultiplier: 1
   sweepDamageMultiplier: 1
   launchDamageMultiplier: 1
   poiseDamageMultiplier: 1
+  parryStunThresholds:
+  - healthPercent: 0.7
+    stunDuration: 5

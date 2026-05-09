@@ -20,6 +20,15 @@ public class AttackSystem : MonoBehaviour
     public GameObject sweepWavePrefab;
     public GameObject launchWavePrefab;
 
+    [Header("招架参数")]
+    public float parryCooldown = 0.5f;
+    public int parryRowRange = 1;
+    public float parryDamage = 30f;
+    public float parryPoiseDamage = 20f;
+    public float stunDurationAfterParry = 1.5f;
+    [Range(0f, 1f)] public float parryDamageReductionPercent = 0.5f;
+    public float parryDamageReductionDuration = 1f;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -208,40 +217,47 @@ public class AttackSystem : MonoBehaviour
     }
 
     /// <summary>
-    /// 招架：在红光提示时反方向划动 → 招架BOSS攻击
+    /// 招架：无蓄力垂直划动触发
+    /// 命中逻辑：对 parryRangeRows 排内的所有敌人造成伤害和架势伤害
+    /// 打断规则：仅当敌人处于 AttackSpawn 阶段 且 parryPoiseDamage >= 敌人 maxPoise 时才打断攻击
+    /// 血量百分比眩晕仅对 Boss 敌人生效（CheckParryStunThresholds 内部已做 isBoss 门控）
     /// </summary>
     /// <returns>是否命中至少一个敌人</returns>
     private bool ExecuteParry()
     {
-        if (playerState?.heroConfig == null) return false;
+        if (columnManager == null || playerState?.heroConfig == null) return false;
 
         float damage = playerState.heroConfig.parryDamage;
         float poiseDamage = playerState.heroConfig.parryPoiseDamage;
+        int rangeRows = playerState.heroConfig.parryRangeRows;
 
-        // 招架只对当前正在攻击的BOSS敌人有效
-        // 获取所有列最前排的敌人，对其造成招架伤害
-        List<Enemy> frontEnemies = new List<Enemy>();
-        for (int i = 0; i < 5; i++)
+        List<Enemy> targets = columnManager.GetAllEnemiesInRange(rangeRows);
+        if (targets.Count == 0) return false;
+
+        foreach (var enemy in targets)
         {
-            Enemy front = columnManager?.GetFrontEnemy(i);
-            if (front != null && front.state != EnemyState.Dead)
+            // 仅在 AttackSpawn 阶段（攻击动画中且非收招）且 parryPoiseDamage >= maxPoise 时可以打断
+            if (enemy.state == EnemyState.Attacking && enemy.isAttackAnimating && !enemy.isAttackDrawPhase
+                && poiseDamage >= (enemy.config != null ? enemy.config.maxPoise : float.MaxValue))
             {
-                frontEnemies.Add(front);
+                enemy.CancelAttack();
+                // 打断成功，不造成伤害
+            }
+            else
+            {
+                // 无法打断：正常造成伤害 + 架势伤害
+                enemy.TakeDamage(damage, DamageType.Stab);
+                enemy.TakePoiseDamage(poiseDamage);
+                // 血量百分比眩晕仅对 Boss 生效（CheckParryStunThresholds 内部已做 isBoss 门控）
+                enemy.CheckParryStunThresholds();
             }
         }
 
-        foreach (var enemy in frontEnemies)
-        {
-            // BUG FIX: 招架造成的是血量伤害，不应使用 DamageType.Poise（架势倍率）。
-            // DamageType.Poise 会应用 EnemyConfig.poiseDamageMultiplier，如果该值<1
-            // 会导致招架伤害低于预期。
-            // 使用 DamageType.Stab 应用普通伤害倍率。
-            enemy.TakeDamage(damage, DamageType.Stab);
-            enemy.TakePoiseDamage(poiseDamage);
-        }
+        // TODO: 减伤代码暂时注释，日后作为角色技能单独部署
+        // playerState.ApplyDamageReduction(parryDamageReductionPercent, parryDamageReductionDuration);
 
-        Debug.Log($"[AttackSystem] 招架 伤害:{damage} (type=Stab) 架势伤害:{poiseDamage} 目标数:{frontEnemies.Count}");
-        return frontEnemies.Count > 0;
+        Debug.Log($"[AttackSystem] 招架 伤害:{damage} 架势伤害:{poiseDamage} 目标数:{targets.Count}");
+        return true;
     }
 
     #endregion
@@ -286,7 +302,7 @@ public class AttackSystem : MonoBehaviour
             AttackType.Pierce => playerState.heroConfig.pierceDamage,
             AttackType.Sweep => playerState.heroConfig.sweepDamage,
             AttackType.Launch => playerState.heroConfig.launchDamage,
-            AttackType.Parry => playerState.heroConfig.parryDamage,
+            AttackType.Parry => parryDamage,
             _ => 0f
         };
     }

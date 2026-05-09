@@ -275,9 +275,20 @@ public class InputManager : MonoBehaviour
             // 未达到最小蓄力时间 → 仅触发普通攻击
             if (isSwiped)
             {
-                // 快速滑动 → 斩击（作为普通攻击，不触发横扫/挑飞等蓄力变体）
-                bool executed = attackSystem?.TryExecuteAttack(AttackType.Slash) ?? false;
-                if (executed) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
+                Vector2 swipeDirection = releasePos - touchStartPos;
+                float angleToVertical = Vector2.Angle(swipeDirection, Vector2.up);
+                if (angleToVertical < verticalSwipeThreshold)
+                {
+                    // 无蓄力垂直划动 → 招架
+                    bool executed = attackSystem?.TryExecuteAttack(AttackType.Parry) ?? false;
+                    if (executed) OnAttackExecuted?.Invoke(AttackType.Parry, -1);
+                }
+                else
+                {
+                    // 快速滑动 → 斩击
+                    bool executed = attackSystem?.TryExecuteAttack(AttackType.Slash) ?? false;
+                    if (executed) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
+                }
             }
             else
             {

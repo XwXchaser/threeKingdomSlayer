@@ -17,6 +17,8 @@ public class EnemyConfig : ScriptableObject
     public float attackSpeed = 1f;       // 每秒攻击次数
     public float attackDamage = 10f;     // 攻击力
     public float attackRange = 1f;       // 攻击距离（多少排）
+    public float attackSpawnDuration = 0.3f;  // 攻击前摇（翻面出招）时间
+    public float attackDrawDuration = 0.3f;   // 攻击收招（返回原位）时间
     public float moveSpeed = 1f;         // 前进速度（秒/排）
     
     [Header("架势系统")]
@@ -37,4 +39,17 @@ public class EnemyConfig : ScriptableObject
     public float sweepDamageMultiplier = 1f;     // 横扫伤害倍率
     public float launchDamageMultiplier = 1f;    // 挑飞伤害倍率
     public float poiseDamageMultiplier = 1f;     // 架势伤害倍率
+
+    [Header("招架血量眩晕阈值")]
+    public ParryStunThreshold[] parryStunThresholds;  // 招架后血量低于某百分比时触发眩晕
+}
+
+/// <summary>
+/// 招架眩晕阈值：招架造成伤害后，若敌人血量低于 healthPercent，则眩晕 stunDuration 秒
+/// </summary>
+[System.Serializable]
+public struct ParryStunThreshold
+{
+    [Range(0f, 1f)] public float healthPercent;  // 血量百分比阈值（0~1）
+    public float stunDuration;                     // 对应的眩晕时间（秒）
 }
