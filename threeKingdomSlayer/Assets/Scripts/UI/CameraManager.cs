@@ -25,6 +25,10 @@ public class CameraManager : MonoBehaviour
     [Tooltip("推入完成后要加载的场景名")]
     public string nextScene;
 
+    [Header("模糊")]
+    [Tooltip("用于 OnRenderImage 后处理模糊的 Shader")]
+    [SerializeField] private Shader blurShader;
+
     [Header("独立测试")]
     [Tooltip("勾选后 Start 时自动播放 Arrival 动画（不受场景切换影响）")]
     public bool autoPlayOnStart;
@@ -37,10 +41,10 @@ public class CameraManager : MonoBehaviour
 
     private void Awake()
     {
-        var shader = Shader.Find("Hidden/BlurEffect");
+        var shader = blurShader != null ? blurShader : Shader.Find("Hidden/BlurEffect");
         blurMat = shader != null ? new Material(shader) : null;
         if (blurMat == null)
-            Debug.LogError("[CameraManager] Shader 'Hidden/BlurEffect' 未找到");
+            Debug.LogError("[CameraManager] Shader 'Hidden/BlurEffect' 未找到且 blurShader 未赋值");
     }
 
     private void Start()
@@ -62,7 +66,7 @@ public class CameraManager : MonoBehaviour
     /// </summary>
     public void PlayDeparture()
     {
-        if (isRunning || background == null || blurMat == null) return;
+        if (isRunning || background == null) return;
         StartCoroutine(DepartureRoutine());
     }
 
@@ -71,7 +75,7 @@ public class CameraManager : MonoBehaviour
     /// </summary>
     public void PlayArrival()
     {
-        if (isRunning || background == null || blurMat == null) return;
+        if (isRunning || background == null) return;
         StartCoroutine(ArrivalRoutine());
     }
 

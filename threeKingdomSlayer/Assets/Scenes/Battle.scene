@@ -350,6 +350,7 @@ MonoBehaviour:
   positionOffset: {x: 0, y: 0}
   nextScene: 
   autoPlayOnStart: 1
+  blurShader: {fileID: 4800000, guid: 4e28707423744b9104a59d231cc0ac4, type: 3}
 --- !u!1 &149835880
 GameObject:
   m_ObjectHideFlags: 0
@@ -3008,7 +3009,7 @@ MonoBehaviour:
   m_CancelButton: Cancel
   m_InputActionsPerSecond: 10
   m_RepeatDelay: 0.5
-  m_ForceModuleActive: 0
+  m_ForceModuleActive: 1
 --- !u!114 &1696116558
 MonoBehaviour:
   m_ObjectHideFlags: 0
