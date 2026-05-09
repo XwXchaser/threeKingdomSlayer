@@ -35,7 +35,8 @@ public class Enemy : MonoBehaviour
     private float launchTimer;
     private float attackTimer;      // 攻击冷却计时器（攻击动画结束后开始冷却）
     private float attackAnimTimer;  // 攻击动画计时器（攻击动作执行时间）
-    private bool isAttackAnimating; // 是否正在播放攻击动画
+    public bool isAttackAnimating; // 是否正在播放攻击动画（AttackSpawn 或 AttackDraw）
+    public bool isAttackDrawPhase;  // 是否处于攻击收招阶段（不可被招架打断）
 
     // 补齐移动链式触发
     // pendingRushMove = true 表示该敌人已标记为需要向前补齐，
@@ -123,6 +124,7 @@ public class Enemy : MonoBehaviour
         attackTimer = 1f;
         attackAnimTimer = 0f;
         isAttackAnimating = false;
+        isAttackDrawPhase = false;
         moveProgress = 0f;
         isMovingToNextRow = false;
         isRushMove = false;
@@ -305,6 +307,7 @@ public class Enemy : MonoBehaviour
         if (state == EnemyState.Dead) return;
         state = EnemyState.Attacking;
         isAttackAnimating = false;
+        isAttackDrawPhase = false;
         // 使用与攻击动画 OnComplete 中相同的冷却计算，保证补齐后首次攻击也遵循攻击 CD
         float totalInterval = config != null ? (1f / config.attackSpeed) : 1f;
         float cooldown = totalInterval * 0.4f;
@@ -324,6 +327,39 @@ public class Enemy : MonoBehaviour
         if (state == EnemyState.Dead) return;
         state = EnemyState.Launched;
         launchTimer = duration;
+    }
+
+    /// <summary>
+    /// 打断当前攻击动作（招架触发）
+    /// 仅在 AttackSpawn 阶段可打断；AttackDraw 收招阶段不可打断，返回 false
+    /// 打断后返回攻击冷却阶段（非眩晕），等待 attackTimer 后重新攻击
+    /// </summary>
+    public bool CancelAttack()
+    {
+        if (state == EnemyState.Dead) return false;
+        // 只在 AttackSpawn 阶段可打断；AttackDraw 阶段不可打断
+        if (!isAttackAnimating || isAttackDrawPhase) return false;
+
+        // 清理 DOTween 残留（修复形变不恢复问题）
+        transform.DOKill(false);
+
+        if (attackSequence != null && attackSequence.IsActive())
+        {
+            attackSequence.Kill();
+            attackSequence = null;
+        }
+        UpdateWorldPosition();
+        transform.localScale = originalScale;
+        isAttackAnimating = false;
+        isAttackDrawPhase = false;
+
+        // 重置攻击冷却，回到 AttackSpeed 等待状态（非眩晕）
+        float totalInterval = config != null ? (1f / config.attackSpeed) : 1f;
+        attackTimer = totalInterval * 0.4f;
+        if (attackTimer < 0.1f) attackTimer = 0.1f;
+
+        Debug.Log($"[Enemy] 招架打断攻击成功: enemyId={config?.enemyId}, col={columnIndex}, 返回冷却 {attackTimer:F2}s");
+        return true;
     }
 
     #endregion
@@ -467,14 +503,15 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
-    /// 更新攻击状态
-    /// BUG FIX: 攻击分为两个阶段：
-    ///   阶段1：攻击冷却（attackTimer > 0）— 先进入冷却再攻击
-    ///   阶段2：攻击动画（DOTween）— 使用 DOTween Sequence 播放前移+翻转+后退动效，动画结束时造成伤害
+    /// 更新攻击状态（三阶段攻击循环）
+    ///   阶段1：攻击冷却（attackTimer > 0）→ 等待冷却
+    ///   阶段2：AttackSpawn 前摇（DOTween，可被招架打断）→ 向前翻面，完成时造成伤害
+    ///   阶段3：AttackDraw 收招（DOTween，不可打断）→ 返回原位
     ///
-    /// 攻击优先级规则（Problem 1 修复）：
+    /// 攻击优先级规则：
     ///   1. 冷却期间如果 pendingRushMove == true → 先执行补齐再攻击
-    ///   2. 动画期间不中断 → 完成当前攻击后检查 pendingRushMove
+    ///   2. AttackSpawn 动画期间 → 可被招架打断（CancelAttack）
+    ///   3. AttackDraw 动画期间 → 不可中断，完成当前攻击后检查 pendingRushMove
     /// </summary>
     private void UpdateAttack()
     {
@@ -511,54 +548,54 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
-    /// 使用 DOTween 播放攻击动效
-    /// 效果：向前（-Z方向）移动 + 左右镜像翻转（scale.X * -1）→ 后退到原位 + 翻转回正
-    /// 动画时长基于 attackSpeed（攻击速度越快动画越快）
-    /// 动画完成后：PerformAttack() → 进入冷却 → 检查是否需要补齐
+    /// 使用 DOTween 播放攻击动效（三阶段攻击循环）
+    ///   AttackSpawn（前摇翻面）：向前移动 + 镜像翻转，完成时造成伤害，可被招架打断
+    ///   AttackDraw（收招返回）：后退到原位 + 翻转回正，不可被招架打断
+    ///   冷却阶段（AttackSpeed）：等待 attackTimer 倒计时，冷却结束后再次进入 AttackSpawn
     /// </summary>
     private void PlayAttackAnimationTween()
     {
         isAttackAnimating = true;
+        isAttackDrawPhase = false;
 
-        // 保存起始位置和缩放（动画完成后恢复）
         Vector3 startPos = transform.localPosition;
         Vector3 startScale = transform.localScale;
 
-        // 根据 attackSpeed 计算动画时长
-        // 攻击间隔 = 1/attackSpeed，动画占 60%，冷却占 40%
         float totalInterval = config != null ? (1f / config.attackSpeed) : 1f;
-        float animDuration = totalInterval * 0.6f;
-        // 限制最小/最大动画时长
-        animDuration = Mathf.Clamp(animDuration, 0.15f, 0.6f);
-        float halfAnim = animDuration * 0.5f;
-        float forwardDistance = 0.5f; // 向前移动距离
+        float spawnDuration = config != null ? config.attackSpawnDuration : 0.3f;
+        float drawDuration = config != null ? config.attackDrawDuration : 0.3f;
+        float forwardDistance = 0.5f;
 
         attackSequence = DOTween.Sequence();
         attackSequence.SetTarget(transform);
         attackSequence.SetId("attackAnim");
 
-        // 阶段1：向前移动 + 左右镜像翻转
-        // 使用 Join 让两个动画同时进行
-        attackSequence.Append(transform.DOLocalMoveZ(startPos.z - forwardDistance, halfAnim).SetEase(Ease.OutQuad));
-        attackSequence.Join(transform.DOScaleX(-startScale.x, halfAnim).SetEase(Ease.OutQuad));
+        // AttackSpawn：向前移动 + 左右镜像翻转（可被招架打断）
+        attackSequence.Append(transform.DOLocalMoveZ(startPos.z - forwardDistance, spawnDuration).SetEase(Ease.OutQuad));
+        attackSequence.Join(transform.DOScaleX(-startScale.x, spawnDuration).SetEase(Ease.OutQuad));
 
-        // 阶段2：后退到原位 + 翻转回正常
-        attackSequence.Append(transform.DOLocalMoveZ(startPos.z, halfAnim).SetEase(Ease.InQuad));
-        attackSequence.Join(transform.DOScaleX(startScale.x, halfAnim).SetEase(Ease.InQuad));
+        // AttackSpawn 完成 → 造成伤害，进入 AttackDraw 收招阶段
+        attackSequence.AppendCallback(() =>
+        {
+            PerformAttack();
+            isAttackDrawPhase = true; // 进入收招阶段，此后不可被招架打断
+        });
 
-        // 动画完成回调
+        // AttackDraw：后退到原位 + 翻转回正（不可被招架打断）
+        attackSequence.Append(transform.DOLocalMoveZ(startPos.z, drawDuration).SetEase(Ease.InQuad));
+        attackSequence.Join(transform.DOScaleX(startScale.x, drawDuration).SetEase(Ease.InQuad));
+
+        // 收招完成 → 进入冷却阶段
         attackSequence.OnComplete(() =>
         {
             attackSequence = null;
             isAttackAnimating = false;
-            PerformAttack();
+            isAttackDrawPhase = false;
 
-            // 进入冷却阶段（动画占 60%，冷却占 40%）
             float cooldown = totalInterval * 0.4f;
-            if (cooldown < 0.1f) cooldown = 0.1f; // 最小冷却时间
+            if (cooldown < 0.1f) cooldown = 0.1f;
             attackTimer = cooldown;
 
-            // 完成当前攻击后，检查是否需要向前补齐
             TryStartRushMove();
         });
     }
@@ -609,8 +646,11 @@ public class Enemy : MonoBehaviour
         Debug.Log($"[Enemy] 触发闪白: enemyId={config?.enemyId}, duration={HIT_FLASH_DURATION}");
 
         // DOTween: 受击大小抖动效果（与闪白同步触发）
-        transform.DOKill(true); // 完成当前正在播放的任何缩放动画，避免与新抖动冲突
-        transform.DOPunchScale(new Vector3(0.2f, 0.2f, 0.2f), 0.15f, 8, 0.5f);
+        // 仅杀掉旧的 punch scale tween，不触碰攻击动画等其他 tween
+        DOTween.Kill("punchScale");
+        transform.DOPunchScale(new Vector3(0.2f, 0.2f, 0.2f), 0.15f, 8, 0.5f)
+            .SetTarget(transform)
+            .SetId("punchScale");
 
         if (currentHealth <= 0f)
         {
@@ -683,10 +723,39 @@ public class Enemy : MonoBehaviour
         currentPoise -= poiseDamage;
         if (currentPoise <= 0f)
         {
-            // 架势破碎 -> 眩晕
-            float stunDuration = config != null ? config.stunDuration : 1.5f;
-            Stun(stunDuration);
-            currentPoise = config != null ? config.maxPoise : 50f; // 重置架势
+            // 架势破碎：仅重置架势值，不再造成眩晕
+            // 眩晕仅对 Boss 敌人生效，通过 CheckParryStunThresholds（血量百分比阈值）触发
+            currentPoise = config != null ? config.maxPoise : 50f;
+        }
+    }
+
+    /// <summary>
+    /// 招架后检查血量百分比阈值，若低于阈值则眩晕
+    /// 取 healthPercent 最小（最严格）的匹配阈值，避免重复眩晕
+    /// </summary>
+    public void CheckParryStunThresholds()
+    {
+        if (state == EnemyState.Dead || state == EnemyState.Stunned || state == EnemyState.Launched) return;
+        // 仅 Boss 敌人才会因血量百分比触发招架眩晕
+        if (config == null || !config.isBoss) return;
+        if (config.parryStunThresholds == null || config.parryStunThresholds.Length == 0) return;
+
+        float healthPercent = currentHealth / config.maxHealth;
+
+        float bestHealthPercent = float.MaxValue;
+        float bestStunDuration = 0f;
+        foreach (var t in config.parryStunThresholds)
+        {
+            if (healthPercent < t.healthPercent && t.healthPercent < bestHealthPercent)
+            {
+                bestHealthPercent = t.healthPercent;
+                bestStunDuration = t.stunDuration;
+            }
+        }
+
+        if (bestStunDuration > 0f)
+        {
+            Stun(bestStunDuration);
         }
     }
 
@@ -735,6 +804,7 @@ public class Enemy : MonoBehaviour
             transform.localScale = originalScale;
         }
         isAttackAnimating = false;
+        isAttackDrawPhase = false;
         isMovingToNextRow = false;
 
         // 立即触发死亡事件：计入击杀数、判断通关（不等死亡动画播完）
@@ -826,6 +896,7 @@ public class Enemy : MonoBehaviour
             transform.localScale = originalScale;
         }
         isAttackAnimating = false;
+        isAttackDrawPhase = false;
 
         state = EnemyState.Idle;
         isMovingToNextRow = false;

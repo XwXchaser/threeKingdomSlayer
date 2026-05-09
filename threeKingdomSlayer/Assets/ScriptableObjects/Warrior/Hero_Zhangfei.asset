@@ -35,5 +35,5 @@ MonoBehaviour:
   launchDuration: 2
   launchPoiseDamage: 30
   parryDamage: 15
-  parryPoiseDamage: 40
+  parryPoiseDamage: 50
   damageBonusPercent: 0
