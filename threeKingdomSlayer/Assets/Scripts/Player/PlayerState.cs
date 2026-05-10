@@ -40,6 +40,9 @@ public class PlayerState : MonoBehaviour
     private float damageReductionPercent;
     private float damageReductionTimer;
 
+    // 无敌标记（狂怒大招等）
+    [System.NonSerialized] public bool isInvincible;
+
     // 事件
     public System.Action<float, float> OnHealthChanged; // current, max
     public System.Action<int> OnReviveCountChanged;
@@ -125,6 +128,7 @@ public class PlayerState : MonoBehaviour
     public void TakeDamage(float damage)
     {
         if (stageState == StageState.Defeat || stageState == StageState.Victory) return;
+        if (isInvincible) return;
 
         float finalDamage = damage;
         if (damageReductionTimer > 0f)
@@ -212,6 +216,10 @@ public class PlayerState : MonoBehaviour
     private float GetCooldownDuration(AttackType type)
     {
         if (heroConfig == null) return 1f;
+        if (type == AttackType.Ultimate)
+        {
+            return heroConfig.ultimateSkillConfig != null ? heroConfig.ultimateSkillConfig.cooldown : 5f;
+        }
         var cfg = heroConfig.GetSkillConfig(type);
         return cfg != null ? cfg.cooldown : 1f;
     }

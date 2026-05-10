@@ -33,10 +33,6 @@ public class AttackSkillConfig : ScriptableObject
     public GameObject attackWavePrefab;
 
     [Header("大招")]
-    [Tooltip("是否为大招技能")]
-    public bool isUltimate = false;
-    [Tooltip("大招消耗能量")]
-    public int ultimateEnergyCost = 100;
     [Tooltip("命中时获得能量（非大招技能有效）")]
     public int ultimateEnergyGain = 10;
 }

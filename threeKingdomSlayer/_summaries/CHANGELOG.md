@@ -1,5 +1,51 @@
 # 开发日志
 
+## 2025-12-20 — Ult 独立配置体系重构（UltimateSkillConfig）
+
+### 概述
+将大招从 `AttackSkillConfig` 中完全剥离，建立独立的 `UltimateSkillConfig` ScriptableObject 体系。同时修复狂怒大招（Berserk）的三个运行时 Bug。
+
+### 架构变更
+- **新增 `UltimateSkillConfig`**：独立于普通攻击配置的 Ult 专属资产。公共字段：`cooldown`（秒，与普通技能统一单位）、`energyCost`、`damage`、`damageType`。Berserk 专用：`berserkDuration`、`berserkStabCooldown`、`berserkDamageMultiplier`。未来其他类型 Ult 可扩展各自字段
+- **`AttackSkillConfig` 清理**：移除 `isUltimate`、`ultimateEnergyCost`、`berserkDuration`、`berserkStabCooldown`、`berserkDamageMultiplier`。仅保留 `ultimateEnergyGain`（普攻命中充能值）
+- **`HeroConfig`**：新增 `ultimateSkillConfig` 字段，独立于 `skillConfigs` 列表
+- **`PlayerState.GetCooldownDuration`**：Ult 路径改为读取 `heroConfig.ultimateSkillConfig.cooldown`
+- **`UltimateSystem.EnergyCost`**：改为读取 `heroConfig.ultimateSkillConfig.energyCost`
+
+### 新增文件
+- `Assets/Scripts/Core/UltimateSkillConfig.cs` — 大招 ScriptableObject，菜单 `一夫当关/大招技能配置`
+- `Assets/Scripts/Core/UltimateEffect_Berserk.cs` — 狂怒大招效果（无敌+自动Stab+禁技能输入）
+- `Assets/Prefabs/UltimateBerserkEffect.prefab` — 挂载 UltimateEffect_Berserk 的预制体
+- `Assets/ScriptableObjects/Skills/Zhangfei_BerserkUlt.asset` — 张飞狂怒 Ult（cooldown=10s, damage=100, berserkDuration=5s, stabCooldown=0.5s, mult=1.5x）
+
+### 删除文件
+- `Assets/ScriptableObjects/Skills/Zhangfei_Ultimate.asset` — 旧 Ult（AttackSkillConfig 类型，已废弃）
+
+### 修改文件
+- `Assets/Scripts/Core/AttackSkillConfig.cs` — 清理 Ult 字段
+- `Assets/Scripts/Core/HeroConfig.cs` — 新增 `ultimateSkillConfig` 字段
+- `Assets/Scripts/Core/UltimateSystem.cs` — `EnergyCost` 属性读 `ultimateSkillConfig.energyCost`；`ActivateUltimate` 减 `EnergyCost` 而非重置为 0
+- `Assets/Scripts/Player/PlayerState.cs` — `GetCooldownDuration` Ult 路径读 `ultimateSkillConfig.cooldown`
+- `Assets/Scripts/Player/AttackSystem.cs` — 新增 `ForceExecuteStab(int column, float damage)` 供 Ult 效果调用
+- `Assets/Scripts/Player/InputManager.cs` — 新增 `skillInputEnabled` 字段，`ProcessGesture` 检查此开关
+- `Assets/Scripts/UI/BattleHUD.cs` — 新增 `SetHealthBarColor()` / `ResetHealthBarColor()` 血条颜色控制
+- `Assets/ScriptableObjects/Warrior/Hero_Zhangfei.asset` — `skillConfigs` 从 7→6（移除 Ult），`ultimateSkillConfig` 指向 Zhangfei_BerserkUlt
+- `Assets/Scenes/Battle.scene` — UltimateSystem 的 `ultimateEffectPrefab` 指向 UltimateBerserkEffect
+
+### Bug 修复
+
+| Bug | 修复 |
+|---|---|
+| **Stab 只戳左/中列，漏掉右列** | `ExecuteAutoStab()` 每轮重新收集存活列，用 `stabRoundIndex` 轮转遍历，确保所有列依次被戳 |
+| **Ult 结束后血条变白不恢复原色** | 不再依赖 `BattleHUD` 间接保存。`UltimateEffect_Berserk` 直接持有 `Image` 引用和原始 `Color?`，Cleanup 时直接写回 |
+| **Ult cooldown 单位不一致** | 统一为秒。`UltimateSkillConfig.cooldown=10` = 每 10 秒发动 1 次，与 `AttackSkillConfig.cooldown` 同一标准 |
+
+### 扩展指南
+- **新 Ult 效果**：继承 `UltimateEffect`，在 `Execute()` 中实现逻辑，可读取 `PlayerState.Instance.heroConfig.ultimateSkillConfig` 获取配置
+- **新 Ult 资产**：通过 Create 菜单 `一夫当关/大招技能配置` 创建 `.asset`，填入字段，拖入对应 `HeroConfig.ultimateSkillConfig`
+
+---
+
 ## 2025-12-18 — 攻击技能可配置化重构（AttackSkillConfig）
 
 ### 概述

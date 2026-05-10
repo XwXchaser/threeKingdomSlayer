@@ -3163,7 +3163,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -3325,8 +3325,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxUltimateEnergy: 100
-  energyGainPerHit: 0a0000000a0000000f0000000c0000000800000005000000
-  ultimateEffectPrefab: {fileID: 0}
+  ultimateEffectPrefab: {fileID: 868059625762725541, guid: 5c40d0eb838fa164f929972d845f043c, type: 3}
   currentEnergy: 0
 --- !u!4 &1467880411
 Transform:
@@ -3962,18 +3961,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   columnManager: {fileID: 1289233715}
   playerState: {fileID: 1878310418}
-  stabWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
-  slashWavePrefab: {fileID: 5586448634090008248, guid: 3e7c2ba9889d0d8498227914332b7adc, type: 3}
-  pierceWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
-  sweepWavePrefab: {fileID: 5586448634090008248, guid: 3e7c2ba9889d0d8498227914332b7adc, type: 3}
-  launchWavePrefab: {fileID: 0}
-  parryCooldown: 0.5
-  parryRowRange: 1
-  parryDamage: 30
-  parryPoiseDamage: 20
-  stunDurationAfterParry: 1.5
-  parryDamageReductionPercent: 0.5
-  parryDamageReductionDuration: 1
 --- !u!1 &1813989278
 GameObject:
   m_ObjectHideFlags: 0

@@ -24,5 +24,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b9436d083cf392d448b491eb34d9fb60, type: 2}
   - {fileID: 11400000, guid: f626e0c5b2498c44699381bf54ba9d68, type: 2}
   - {fileID: 11400000, guid: c596fb21c45e31e42b8e55d2d324b333, type: 2}
-  - {fileID: 11400000, guid: 935db9c535bddd84bbbcbe841f165f07, type: 2}
+  ultimateSkillConfig: {fileID: 11400000, guid: 40ca4210425d4b9793489b8a60b17b33, type: 2}
   damageBonusPercent: 0

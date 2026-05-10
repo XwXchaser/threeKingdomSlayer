@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   attackType: 0
   damageType: 0
-  damage: 100
+  damage: 10
   poiseDamage: 0
   rangeRows: 1
   cooldown: 0.5
@@ -23,3 +23,6 @@ MonoBehaviour:
   isUltimate: 0
   ultimateEnergyCost: 100
   ultimateEnergyGain: 10
+  berserkDuration: 5
+  berserkStabCooldown: 0.5
+  berserkDamageMultiplier: 1.5

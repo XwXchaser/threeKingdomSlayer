@@ -23,6 +23,9 @@ public class InputManager : MonoBehaviour
     [Header("攻击系统")]
     public AttackSystem attackSystem;
 
+    // 技能输入开关（狂怒大招期间关闭）
+    [System.NonSerialized] public bool skillInputEnabled = true;
+
     // 触摸状态
     private Vector2 touchStartPos;
     private float touchStartTime;
@@ -254,6 +257,8 @@ public class InputManager : MonoBehaviour
     /// </summary>
     private void ProcessGesture(Vector2 releasePos, float pressDuration, float swipeDistance)
     {
+        if (!skillInputEnabled) return;
+
         bool isSwiped = swipeDistance >= swipeThreshold;
 
         if (pressDuration >= minChargeTime)
