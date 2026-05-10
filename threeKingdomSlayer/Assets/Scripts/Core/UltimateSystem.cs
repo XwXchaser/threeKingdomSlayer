@@ -26,8 +26,17 @@ public class UltimateSystem : MonoBehaviour
     public System.Action OnUltimateActivated;
 
     public float EnergyPercent => maxUltimateEnergy > 0 ? (float)currentEnergy / maxUltimateEnergy : 0f;
-    public bool IsReady => currentEnergy >= maxUltimateEnergy;
+    public bool IsReady => currentEnergy >= EnergyCost;
     public int CurrentEnergy => currentEnergy;
+
+    private int EnergyCost
+    {
+        get
+        {
+            var cfg = PlayerState.Instance?.heroConfig?.ultimateSkillConfig;
+            return cfg != null ? cfg.energyCost : maxUltimateEnergy;
+        }
+    }
 
     private void Awake()
     {
@@ -96,9 +105,19 @@ public class UltimateSystem : MonoBehaviour
             return;
         }
 
-        currentEnergy = 0;
-        OnEnergyChanged?.Invoke(0f);
+        var playerState = PlayerState.Instance;
+        if (playerState != null && !playerState.IsAttackReady(AttackType.Ultimate))
+        {
+            Debug.LogWarning("[UltimateSystem] 大招冷却中");
+            return;
+        }
+
+        currentEnergy = Mathf.Max(0, currentEnergy - EnergyCost);
+        OnEnergyChanged?.Invoke(EnergyPercent);
         OnUltimateActivated?.Invoke();
+
+        if (playerState != null)
+            playerState.StartCooldown(AttackType.Ultimate);
 
         Debug.Log("[UltimateSystem] 大招激活！");
 

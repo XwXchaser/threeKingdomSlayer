@@ -21,6 +21,10 @@ public class HeroConfig : ScriptableObject
     [Tooltip("装配的技能列表。每个 AttackType 对应一个技能配置，策划可拖拽不同的 .asset 来定制武将。")]
     public List<AttackSkillConfig> skillConfigs = new List<AttackSkillConfig>();
 
+    [Header("大招配置")]
+    [Tooltip("大招技能配置（独立于普通技能体系）")]
+    public UltimateSkillConfig ultimateSkillConfig;
+
     [Header("伤害加成")]
     [Range(0f, 2f)]
     public float damageBonusPercent = 0f;

@@ -224,6 +224,42 @@ public class BattleHUD : MonoBehaviour
 
     #endregion
 
+    #region 血量条颜色
+
+    private Color healthBarDefaultColor;
+    private bool healthBarColorSaved;
+
+    /// <summary>
+    /// 设置血量条填充颜色（狂怒大招期间变橙等）
+    /// </summary>
+    public void SetHealthBarColor(Color color)
+    {
+        if (healthSlider != null && healthSlider.fillRect != null)
+        {
+            var img = healthSlider.fillRect.GetComponent<UnityEngine.UI.Image>();
+            if (img != null)
+            {
+                if (!healthBarColorSaved)
+                {
+                    healthBarDefaultColor = img.color;
+                    healthBarColorSaved = true;
+                }
+                img.color = color;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 恢复血量条默认颜色
+    /// </summary>
+    public void ResetHealthBarColor()
+    {
+        if (healthBarColorSaved)
+            SetHealthBarColor(healthBarDefaultColor);
+    }
+
+    #endregion
+
     #region 按钮事件
 
     /// <summary>

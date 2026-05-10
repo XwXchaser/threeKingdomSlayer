@@ -10,7 +10,7 @@ HUD 显示（血量、复活、击杀、金币、波次、冷却指示器、胜�
 
 | 类 | 说明 |
 |---|---|
-| `BattleHUD` (MonoBehaviour) | 战斗 UI 绑定。订阅全部 `PlayerState` 事件。更新血条 Slider+Text、复活显示、击杀数、金币数、波次进度。每帧冷却 UI：Image 的 `fillAmount` 径向冷却 + 各技能图标独立的充能填充 Image。显示胜/负面板及金币统计。重开和主菜单按钮。 |
+| `BattleHUD` (MonoBehaviour) | 战斗 UI 绑定。订阅全部 `PlayerState` 事件。更新血条 Slider+Text、复活显示、击杀数、金币数、波次进度。每帧冷却 UI：Image 的 `fillAmount` 径向冷却 + 各技能图标独立的充能填充 Image。显示胜/负面板及金币统计。重开和主菜单按钮。`SetHealthBarColor(Color)` / `ResetHealthBarColor()` 供 Ult 效果控制血条颜色。 |
 | `CameraManager` (MonoBehaviour) | 挂载于相机的场景转场：背景 RectTransform 缩放 + 位置动画 + `OnRenderImage` 模糊效果（使用自定义 shader `Hidden/BlurEffect`）。`PlayDeparture()` 动画结束后加载下一场景。`PlayArrival()` 场景启动时动画。用静态 `IsArriving` 标志实现跨场景交接。 |
 | `DamageNumber` (MonoBehaviour) | 浮动伤害跳字（TextMeshPro）。`Show(Vector3 worldPos, float damage)` 启动 DOTween 上浮 + 淡出。完成后调用 `OnReturnToPool` 回调返还 `DamageNumberManager`。配置：红色文字、黑色描边、粗体。 |
 | `MainMenuUI` (MonoBehaviour) | 主菜单：标题、开始按钮（触发 `CameraManager.PlayDeparture()` 或直接加载场景）、退出按钮（Editor 停止或 `Application.Quit`）。 |
@@ -75,3 +75,4 @@ HUD 显示（血量、复活、击杀、金币、波次、冷却指示器、胜�
 - **新指示器样式**：修改 `ChargeIndicatorController` 的精灵图片或动画参数（`appearThreshold`, `spinSpeed`）
 - **血条自定义**：修改 `EnemyHealthBar` 的颜色阈值（`lowThreshold`）、显示时长（`displayDuration`）或尺寸参数
 - **大招按钮样式**：修改 `UltimateButtonUI` 的 `inactiveAlpha`、`readyColor`，或替换 Fill Image 的精灵/颜色
+- **血条颜色控制**：`BattleHUD.SetHealthBarColor()` 保存原色后设置新色；`ResetHealthBarColor()` 恢复。狂怒 Ult 期间变橙，结束后自动恢复

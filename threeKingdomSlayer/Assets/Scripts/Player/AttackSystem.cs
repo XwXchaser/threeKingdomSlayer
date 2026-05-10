@@ -224,5 +224,27 @@ public class AttackSystem : MonoBehaviour
         return cfg != null ? cfg.damage : 0f;
     }
 
+    /// <summary>
+    /// 强制执行 Stab（绕过冷却），直接指定最终伤害值，供狂怒大招等调用
+    /// </summary>
+    public bool ForceExecuteStab(int columnIndex, float damage)
+    {
+        if (playerState == null || columnManager == null || columnIndex < 0) return false;
+        if (playerState.stageState != StageState.InProgress) return false;
+
+        var cfg = GetConfig(AttackType.Stab);
+        if (cfg == null) return false;
+
+        List<Enemy> targets = columnManager.GetEnemiesInRange(columnIndex, cfg.rangeRows);
+        if (targets.Count > 0)
+        {
+            Vector3 wavePos = GetWavePosition(targets, columnIndex);
+            AttackWave.Create(wavePos, cfg.damageType, damage, targets, prefab: cfg.attackWavePrefab);
+        }
+
+        Debug.Log($"[AttackSystem] 强制Stab 列{columnIndex} 伤害:{damage} 目标数:{targets.Count}");
+        return targets.Count > 0;
+    }
+
     #endregion
 }
