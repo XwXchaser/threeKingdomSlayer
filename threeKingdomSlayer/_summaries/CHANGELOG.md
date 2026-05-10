@@ -1,5 +1,34 @@
 # 开发日志
 
+## 2025-12-18 — 攻击技能可配置化重构（AttackSkillConfig）
+
+### 概述
+将攻击参数从 HeroConfig 平铺字段和 AttackSystem 硬编码字段中解耦，拆分为独立的 `AttackSkillConfig` ScriptableObject 资产。大招也纳入该配置系统。策划可在 Inspector 中拖拽不同技能资产来装配武将的攻击组合。
+
+### 新增文件
+- `Assets/Scripts/Core/AttackSkillConfig.cs` — ScriptableObject，含 attackType、damageType、damage、poiseDamage、rangeRows、cooldown、launchDuration、attackWavePrefab、isUltimate、ultimateEnergyCost、ultimateEnergyGain
+- `Assets/ScriptableObjects/Warrior/Skills/Zhangfei_Stab.asset` — 戳击（damage=100, range=1, cooldown=1s）
+- `Assets/ScriptableObjects/Warrior/Skills/Zhangfei_Slash.asset` — 斩击（damage=10, range=1, cooldown=1s）
+- `Assets/ScriptableObjects/Warrior/Skills/Zhangfei_Pierce.asset` — 穿刺（damage=200, range=5, cooldown=5s）
+- `Assets/ScriptableObjects/Warrior/Skills/Zhangfei_Sweep.asset` — 横扫（damage=100, range=2, cooldown=5s）
+- `Assets/ScriptableObjects/Warrior/Skills/Zhangfei_Launch.asset` — 挑飞（damage=10, range=2, cooldown=5s, poise=50, duration=2s）
+- `Assets/ScriptableObjects/Warrior/Skills/Zhangfei_Parry.asset` — 招架（damage=15, poise=50, range=1, cooldown=0.5s）
+- `Assets/ScriptableObjects/Warrior/Skills/Zhangfei_Ultimate.asset` — 大招（damage=100, range=5, cooldown=10s, isUltimate=true, energyCost=100）
+
+### 修改文件
+- `Assets/Scripts/Core/HeroConfig.cs` — 删除所有平铺攻击字段（stabDamage~parryCooldown），替换为 `List<AttackSkillConfig> skillConfigs` + `GetSkillConfig(AttackType)` 查询方法
+- `Assets/Scripts/Player/AttackSystem.cs` — 全面重构：删除 5 个 wavePrefab 字段 + 7 个 parry 参数字段；6 个 Execute* 方法全部改为 `heroConfig.GetSkillConfig(attackType)` 读取 damage/damageType/rangeRows/poiseDamage/launchDuration/attackWavePrefab
+- `Assets/Scripts/Player/PlayerState.cs` — `AttackType` 枚举新增 `Ultimate`；6 个独立冷却计时器替换为 `Dictionary<AttackType, float> cooldownTimers`；`GetCooldownDuration()` 改为从 `heroConfig.GetSkillConfig()` 读取
+- `Assets/Scripts/Core/UltimateSystem.cs` — 删除 `energyGainPerHit[]` 数组；`AddEnergyForAttack()` 改为 `heroConfig.GetSkillConfig(attackType).ultimateEnergyGain`
+- `Assets/ScriptableObjects/Warrior/Hero_Zhangfei.asset` — 旧平铺字段清除，`skillConfigs` 列表含 7 个技能资产 GUID 引用
+
+### 架构要点
+- **输入与配置解耦**：InputManager 仍产生 AttackType + 手势参数，AttackSystem 根据 AttackType 查配置再执行
+- **策划友好**：每个技能一个 .asset，Inspector 拖拽装配；不同武将可复用/替换技能配置
+- **大招纳入统一体系**：`AttackType.Ultimate` 作为一个技能类型，有独立的 AttackSkillConfig，但执行路径仍走 UltimateSystem（UI 按钮直达）
+
+---
+
 ## 2025-12-18 — 大招系统（Ultimate System）
 
 ### 概述

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98a5aaeb5141a6a40b614df2cddb4ab7, type: 3}
+  m_Name: Zhangfei_Stab
+  m_EditorClassIdentifier: 
+  attackType: 0
+  damageType: 0
+  damage: 100
+  poiseDamage: 0
+  rangeRows: 1
+  cooldown: 0.5
+  launchDuration: 0
+  attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
+  isUltimate: 0
+  ultimateEnergyCost: 100
+  ultimateEnergyGain: 10

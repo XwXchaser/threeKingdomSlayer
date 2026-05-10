@@ -17,25 +17,12 @@ MonoBehaviour:
   maxHealth: 500
   reviveCount: 0
   reviveHealthPercent: 0.5
-  stabDamage: 100
-  stabRangeRows: 1
-  stabCooldown: 1
-  slashDamage: 10
-  slashRangeRows: 1
-  slashCooldown: 1
-  pierceDamage: 200
-  pierceRangeRows: 5
-  pierceCooldown: 5
-  sweepDamage: 100
-  sweepRangeRows: 2
-  sweepCooldown: 5
-  launchDamage: 10
-  launchRangeRows: 2
-  launchCooldown: 5
-  launchDuration: 2
-  launchPoiseDamage: 50
-  parryDamage: 15
-  parryPoiseDamage: 50
-  parryRangeRows: 1
-  parryCooldown: 0.5
+  skillConfigs:
+  - {fileID: 11400000, guid: be0d2cd0d81581742ad3b5d189204f52, type: 2}
+  - {fileID: 11400000, guid: c4862b3d5d44d2543af3deae939e5053, type: 2}
+  - {fileID: 11400000, guid: bb54309c327b81441b6ee3035a6d2db2, type: 2}
+  - {fileID: 11400000, guid: b9436d083cf392d448b491eb34d9fb60, type: 2}
+  - {fileID: 11400000, guid: f626e0c5b2498c44699381bf54ba9d68, type: 2}
+  - {fileID: 11400000, guid: c596fb21c45e31e42b8e55d2d324b333, type: 2}
+  - {fileID: 11400000, guid: 935db9c535bddd84bbbcbe841f165f07, type: 2}
   damageBonusPercent: 0
