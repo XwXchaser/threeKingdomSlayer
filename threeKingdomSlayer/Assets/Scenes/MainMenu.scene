@@ -703,8 +703,8 @@ MonoBehaviour:
   targetScale: 1.5
   positionOffset: {x: 0, y: -300}
   nextScene: Battle
+  blurShader: {fileID: 4800000, guid: 30e48207473247b419405ad932c10cca, type: 3}
   autoPlayOnStart: 0
-  blurShader: {fileID: 4800000, guid: 4e28707423744b9104a59d231cc0ac4, type: 3}
 --- !u!1 &891565938
 GameObject:
   m_ObjectHideFlags: 0

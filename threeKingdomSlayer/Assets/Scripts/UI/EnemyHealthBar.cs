@@ -27,6 +27,7 @@ public class EnemyHealthBar : MonoBehaviour
     private GameObject barRoot;
     private MeshRenderer bgRenderer;
     private MeshRenderer fillRenderer;
+    private Material fillMaterialInstance;
     private float hideTimer;
     private bool created;
     private Vector3 fillOriginPos;
@@ -89,8 +90,11 @@ public class EnemyHealthBar : MonoBehaviour
         var fillMf = fillGo.AddComponent<MeshFilter>();
         fillMf.sharedMesh = quad;
         fillRenderer = fillGo.AddComponent<MeshRenderer>();
-        fillRenderer.sharedMaterial = _barMaterial;
-        fillRenderer.material.color = highColor;
+        // 显式创建材质实例并直接赋值给 Renderer，不依赖 Renderer.material 的内部缓存
+        fillMaterialInstance = new Material(_barMaterial);
+        fillMaterialInstance.mainTexture = Texture2D.whiteTexture;
+        fillMaterialInstance.color = highColor;
+        fillRenderer.material = fillMaterialInstance;
 
         fillOriginPos = fillGo.transform.localPosition;
         fillFullWidth = barWidth;
@@ -131,7 +135,12 @@ public class EnemyHealthBar : MonoBehaviour
         fillT.localScale = new Vector3(fillWidth, barHeight, 1f);
 
         var t = lowThreshold > 0.001f ? Mathf.Clamp01(percent / lowThreshold) : 1f;
-        fillRenderer.material.color = Color.Lerp(lowColor, highColor, t);
+        // 确保 Renderer 使用我们的材质实例（disable/enable 后可能被 Unity 内部重置）
+        if (fillMaterialInstance != null && fillRenderer.material != fillMaterialInstance)
+        {
+            fillRenderer.material = fillMaterialInstance;
+        }
+        fillMaterialInstance.color = Color.Lerp(lowColor, highColor, t);
     }
 
     private Vector3 GetHeadWorldPosition()
