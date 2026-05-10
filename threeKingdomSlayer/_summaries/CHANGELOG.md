@@ -1,5 +1,30 @@
 # 开发日志
 
+## 2025-12-17 — 敌人血条显示修复（颜色 + Z 遮挡）
+
+### 概述
+修复非第一排敌人血条显示异常：纯白无颜色、被 Canvas 背景遮挡。
+
+### Bug 1: 血条 Fill 颜色丢失（纯白）
+
+**根因**：`EnemyHealthBar.Show()` 中通过 `fillRenderer.material` 获取材质实例并缓存为 `fillMaterialInstance`。当 `barRoot` 反复 `SetActive(false/true)` 后，Unity 内部可能重新创建 Renderer 的材质实例。旧代码通过 `fillMaterialInstance = fillRenderer.material` "认领"新实例，但未显式写回 Renderer，导致 `fillMaterialInstance.color` 设置到一个 Renderer 不再使用的材质上。显示为 Unlit/Color 默认白色。
+
+**修复**：
+- `EnsureCreated()`：改为显式 `new Material(_barMaterial)` + `fillRenderer.material = fillMaterialInstance`
+- `Show()`：检测到 Renderer 材质与缓存不一致时，主动将缓存的实例**写回** `fillRenderer.material = fillMaterialInstance`，而非"认领" Renderer 的新实例
+
+### Bug 2: 后排敌人血条被 Canvas 遮挡
+
+**根因**：Canvas 为 Screen Space - Camera 模式，`planeDistance=10`。摄像机在世界 z=-10。Canvas 平面在 z≈-0.34。敌人 Z 范围：前排 z=-10 到后排 z=0。后排敌人血条（含头部偏移）在 Canvas 平面后方，Canvas 的 ZWrite 遮挡了后排血条。
+
+**修复**：Canvas `planeDistance` 从 10 改为 15，Canvas 平面移到 z≈4.5（所有敌人后方）。
+
+### 涉及文件
+- `Assets/Scripts/UI/EnemyHealthBar.cs` — 材质实例显式创建与管理
+- `Assets/Scenes/Battle.scene` — Canvas planeDistance: 10 → 15
+
+---
+
 ## 2025-12-16 — 补齐链断裂修复 & 缩放残留修复
 
 ### 概述

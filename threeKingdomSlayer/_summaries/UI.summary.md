@@ -63,7 +63,7 @@ HUD 显示（血量、复活、击杀、金币、波次、冷却指示器、胜�
 - **DamageNumber 池化**：由 `DamageNumberManager` 通过 `OnReturnToPool` 回调外部管理。池根节点是管理器的子对象
 - **PingPongAnim 眨眼**：每帧随机触发（`Random.value < blinkChancePerSecond * deltaTime`），至少需要 4 帧
 - **ChargeIndicatorController**：独立于 `BattleHUD`，直接订阅 `InputManager` 和 `PlayerState` 事件。蓄力进度映射：`fillAmount = (progress - appearThreshold) / (1 - appearThreshold)`
-- **EnemyHealthBar**：由 `Enemy` 在首次 `Show()` 时通过 `GetComponent/AddComponent` 延迟创建。血条 GameObject 不挂载为敌人子物体，避免攻击翻转时继承缩放。每帧 `Update()` 跟随敌人世界位置
+- **EnemyHealthBar**：由 `Enemy` 在首次 `Show()` 时通过 `GetComponent/AddComponent` 延迟创建。血条 GameObject 不挂载为敌人子物体，避免攻击翻转时继承缩放。每帧 `Update()` 跟随敌人世界位置。材质实例采用显式 `new Material()` + `fillRenderer.material = instance` 管理，不依赖 Unity 内部缓存（disable/enable 后可能重建实例）
 
 ## 扩展指南
 
