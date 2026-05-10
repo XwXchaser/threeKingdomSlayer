@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -32,13 +33,8 @@ public class PlayerState : MonoBehaviour
     public int currentWave;
     public StageState stageState = StageState.None;
 
-    // 冷却计时器
-    private float stabCooldownTimer;
-    private float slashCooldownTimer;
-    private float pierceCooldownTimer;
-    private float sweepCooldownTimer;
-    private float launchCooldownTimer;
-    private float parryCooldownTimer;
+    // 冷却计时器（按攻击类型索引）
+    private Dictionary<AttackType, float> cooldownTimers = new Dictionary<AttackType, float>();
 
     // 减伤Buff
     private float damageReductionPercent;
@@ -84,12 +80,13 @@ public class PlayerState : MonoBehaviour
     private void Update()
     {
         // 更新冷却计时器
-        if (stabCooldownTimer > 0) stabCooldownTimer -= Time.deltaTime;
-        if (slashCooldownTimer > 0) slashCooldownTimer -= Time.deltaTime;
-        if (pierceCooldownTimer > 0) pierceCooldownTimer -= Time.deltaTime;
-        if (sweepCooldownTimer > 0) sweepCooldownTimer -= Time.deltaTime;
-        if (launchCooldownTimer > 0) launchCooldownTimer -= Time.deltaTime;
-        if (parryCooldownTimer > 0) parryCooldownTimer -= Time.deltaTime;
+        var keys = new List<AttackType>(cooldownTimers.Keys);
+        for (int i = 0; i < keys.Count; i++)
+        {
+            var type = keys[i];
+            if (cooldownTimers[type] > 0)
+                cooldownTimers[type] -= Time.deltaTime;
+        }
 
         if (damageReductionTimer > 0) damageReductionTimer -= Time.deltaTime;
     }
@@ -108,12 +105,7 @@ public class PlayerState : MonoBehaviour
         currentWave = 0;
         stageState = StageState.Starting;
 
-        stabCooldownTimer = 0f;
-        slashCooldownTimer = 0f;
-        pierceCooldownTimer = 0f;
-        sweepCooldownTimer = 0f;
-        launchCooldownTimer = 0f;
-        parryCooldownTimer = 0f;
+        cooldownTimers.Clear();
         damageReductionPercent = 0f;
         damageReductionTimer = 0f;
 
@@ -194,7 +186,7 @@ public class PlayerState : MonoBehaviour
     /// </summary>
     public bool IsAttackReady(AttackType attackType)
     {
-        return GetCooldownTimer(attackType) <= 0f;
+        return !cooldownTimers.ContainsKey(attackType) || cooldownTimers[attackType] <= 0f;
     }
 
     /// <summary>
@@ -203,7 +195,7 @@ public class PlayerState : MonoBehaviour
     public void StartCooldown(AttackType attackType)
     {
         float cooldown = GetCooldownDuration(attackType);
-        SetCooldownTimer(attackType, cooldown);
+        cooldownTimers[attackType] = cooldown;
     }
 
     /// <summary>
@@ -211,52 +203,17 @@ public class PlayerState : MonoBehaviour
     /// </summary>
     public float GetCooldownProgress(AttackType attackType)
     {
-        float timer = GetCooldownTimer(attackType);
+        float timer = cooldownTimers.ContainsKey(attackType) ? cooldownTimers[attackType] : 0f;
         float duration = GetCooldownDuration(attackType);
         if (duration <= 0f) return 0f;
         return Mathf.Clamp01(timer / duration);
     }
 
-    private float GetCooldownTimer(AttackType type)
-    {
-        return type switch
-        {
-            AttackType.Stab => stabCooldownTimer,
-            AttackType.Slash => slashCooldownTimer,
-            AttackType.Pierce => pierceCooldownTimer,
-            AttackType.Sweep => sweepCooldownTimer,
-            AttackType.Launch => launchCooldownTimer,
-            AttackType.Parry => parryCooldownTimer,
-            _ => 0f
-        };
-    }
-
-    private void SetCooldownTimer(AttackType type, float value)
-    {
-        switch (type)
-        {
-            case AttackType.Stab: stabCooldownTimer = value; break;
-            case AttackType.Slash: slashCooldownTimer = value; break;
-            case AttackType.Pierce: pierceCooldownTimer = value; break;
-            case AttackType.Sweep: sweepCooldownTimer = value; break;
-            case AttackType.Launch: launchCooldownTimer = value; break;
-            case AttackType.Parry: parryCooldownTimer = value; break;
-        }
-    }
-
     private float GetCooldownDuration(AttackType type)
     {
         if (heroConfig == null) return 1f;
-        return type switch
-        {
-            AttackType.Stab => heroConfig.stabCooldown,
-            AttackType.Slash => heroConfig.slashCooldown,
-            AttackType.Pierce => heroConfig.pierceCooldown,
-            AttackType.Sweep => heroConfig.sweepCooldown,
-            AttackType.Launch => heroConfig.launchCooldown,
-            AttackType.Parry => heroConfig.parryCooldown,
-            _ => 1f
-        };
+        var cfg = heroConfig.GetSkillConfig(type);
+        return cfg != null ? cfg.cooldown : 1f;
     }
 
     #endregion
@@ -320,10 +277,11 @@ public class PlayerState : MonoBehaviour
 /// </summary>
 public enum AttackType
 {
-    Stab,   // 戳击
-    Slash,  // 斩击
-    Pierce, // 穿刺
-    Sweep,  // 横扫
-    Launch, // 挑飞
-    Parry   // 招架
+    Stab,     // 戳击
+    Slash,    // 斩击
+    Pierce,   // 穿刺
+    Sweep,    // 横扫
+    Launch,   // 挑飞
+    Parry,    // 招架
+    Ultimate  // 大招
 }
