@@ -44,6 +44,8 @@ Core（核心数据结构与配置）
 - `EnemyConfig`, `HeroConfig`, `RowFormationPreset`, `StageConfig` 均为 Unity ScriptableObject，无代码依赖
 - `RowFormation` 为纯静态工具类，无 MonoBehaviour 依赖
 - `WaveConfig`, `RowConfig` 为纯可序列化数据类
+- `UltimateSystem` 为 MonoBehaviour singleton，依赖 `UltimateEffect` 抽象类
+- `UltimateEffect_AllEnemyDamage` 依赖 `EnemyManager`（读取存活敌人）
 
 ## 重要规则
 

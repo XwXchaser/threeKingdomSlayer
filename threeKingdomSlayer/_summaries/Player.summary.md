@@ -12,7 +12,7 @@ Player（玩家系统）
 
 | 类 | 说明 |
 |---|---|
-| `AttackSystem` (MonoBehaviour, singleton) | 执行 6 种攻击。`TryExecuteAttack(AttackType, targetColumn)` 通过 PlayerState 检查冷却，委托给类型专用方法，触发 AttackWave。仅当至少命中一个敌人时才触发冷却。包含波位置计算和 UI 伤害查询。 |
+| `AttackSystem` (MonoBehaviour, singleton) | 执行 6 种攻击。`TryExecuteAttack(AttackType, targetColumn)` 通过 PlayerState 检查冷却，委托给类型专用方法，触发 AttackWave。仅当至少命中一个敌人时才触发冷却。包含波位置计算和 UI 伤害查询。命中后调用 `UltimateSystem.AddEnergyForAttack(attackType)` 增加大招充能。 |
 | `InputManager` (MonoBehaviour, singleton) | 统一鼠标 + 触摸输入。手势识别：点击 -> Stab，长按（>=`longPressDuration`）-> Pierce（若充能 >=`minChargeTime`），带角度分析的滑动 -> Launch（近垂直）、Sweep（近水平）、Slash（斜向/默认）。无充能快速滑动：近垂直（夹角 < `verticalSwipeThreshold`）-> Parry，其余 -> Slash。暴露 `OnChargeBegan/Updated/Ended` 供 UI 充能指示器（`ChargeIndicatorController`）使用。列映射：屏幕坐标投影到世界坐标，匹配最近存活敌人所在列。 |
 | `PlayerState` (MonoBehaviour, singleton) | 玩家属性：血量、复活、击杀、金币、当前波次、关卡状态。6 个独立冷却计时器。`TakeDamage()` 处理死亡/复活。`ResetPlayer()` 用于关卡重开。全部属性变化均有事件。 |
 | `AttackType` (enum) | Stab, Slash, Pierce, Sweep, Launch, Parry |
@@ -37,7 +37,7 @@ Player（玩家系统）
 
 ## 依赖模块
 
-- **AttackSystem**：`ColumnManager` (Core), `PlayerState`, `HeroConfig` (Core), `AttackWave` (Attack), `Enemy`, `DamageType`
+- **AttackSystem**：`ColumnManager` (Core), `PlayerState`, `HeroConfig` (Core), `AttackWave` (Attack), `Enemy`, `DamageType`, `UltimateSystem` (Core)
 - **InputManager**：`AttackSystem`, `AttackType`, `Enemy`（列映射用）, Unity `Camera.main`, `Input` 系统
 - **PlayerState**：`HeroConfig` (Core), `StageState` 枚举（自定）, `AttackType` 枚举（自定）
 
