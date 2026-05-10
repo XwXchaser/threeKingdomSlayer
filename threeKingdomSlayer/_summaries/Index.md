@@ -8,12 +8,12 @@
 | 序号 | 模块 | 文件数 | 职责概要 |
 |---|---|---|---|
 | 1 | [Attack](Attack.summary.md) | 1 | 攻击波视觉特效：沿 Z 轴旅行或原地固定命中，DOTween 驱动 |
-| 2 | [Core](Core.summary.md) | 6 | 阵型数据结构、敌人/武将/关卡 ScriptableObject 配置、排位置计算 |
+| 2 | [Core](Core.summary.md) | 9 | 阵型数据结构、敌人/武将/关卡 ScriptableObject 配置、排位置计算、大招系统 |
 | 3 | [Editor](Editor.summary.md) | 1 | StageConfig/WaveConfig 自定义 Inspector 绘制工具 |
 | 4 | [Enemy](Enemy.summary.md) | 2 | 敌人状态机、移动/攻击/受击/死亡动画、按 enemyId 对象池 |
 | 5 | [Managers](Managers.summary.md) | 3 | 编排层：伤害跳字、敌人生命周期协调、关卡流程（开始/胜/负/重开） |
 | 6 | [Player](Player.summary.md) | 3 | 手势到攻击输入映射、攻击执行与目标选择、玩家属性与冷却 |
-| 7 | [UI](UI.summary.md) | 5 | 战斗 HUD、场景转场模糊动画、浮动伤害跳字、主菜单、精灵动画 |
+| 7 | [UI](UI.summary.md) | 6 | 战斗 HUD、场景转场模糊动画、浮动伤害跳字、主菜单、精灵动画、大招按钮 |
 | 8 | [Wave](Wave.summary.md) | 1 | 按 StageConfig 波次生成敌人、阵型前压、波次完成监控 |
 
 ## 模块依赖关系
@@ -46,6 +46,17 @@
     └─────────────┘
 ```
 
+**大招系统**（独立，读 AttackSystem 写入，读 EnemyManager）：
+```
+    ┌──────────────┐
+    │UltimateSystem│ (singleton)
+    └──────┬───────┘
+           │
+    ┌──────▼──────┐
+    │UltimateEffect│ (abstract)
+    └──────────────┘
+```
+
 **配置层**（ScriptableObject，无运行时依赖）：
 `EnemyConfig`, `HeroConfig`, `StageConfig`(+`WaveConfig`/`RowConfig`), `RowFormationPreset`
 
@@ -74,7 +85,7 @@
 
 ## 核心设计模式
 
-- **Singleton**：`ColumnManager`, `EnemyPool`, `DamageNumberManager`, `EnemyManager`, `StageController`, `AttackSystem`, `InputManager`, `PlayerState`, `WaveSpawner`
+- **Singleton**：`ColumnManager`, `EnemyPool`, `DamageNumberManager`, `EnemyManager`, `StageController`, `AttackSystem`, `InputManager`, `PlayerState`, `WaveSpawner`, `UltimateSystem`
 - **Object Pool**：`EnemyPool`（按 enemyId 分池）、`DamageNumberManager`（DamageNumber 对象池）
 - **Event-Driven**：C# event 贯穿全部模块，实现松耦合通信
 - **Factory Method**：`AttackWave.Create()` 静态工厂

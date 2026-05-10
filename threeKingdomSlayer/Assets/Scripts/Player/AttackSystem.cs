@@ -89,6 +89,7 @@ public class AttackSystem : MonoBehaviour
         if (hitAny)
         {
             playerState.StartCooldown(attackType);
+            UltimateSystem.Instance?.AddEnergyForAttack(attackType);
             return true;
         }
 

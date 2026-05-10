@@ -15,6 +15,7 @@ HUD 显示（血量、复活、击杀、金币、波次、冷却指示器、胜�
 | `DamageNumber` (MonoBehaviour) | 浮动伤害跳字（TextMeshPro）。`Show(Vector3 worldPos, float damage)` 启动 DOTween 上浮 + 淡出。完成后调用 `OnReturnToPool` 回调返还 `DamageNumberManager`。配置：红色文字、黑色描边、粗体。 |
 | `MainMenuUI` (MonoBehaviour) | 主菜单：标题、开始按钮（触发 `CameraManager.PlayDeparture()` 或直接加载场景）、退出按钮（Editor 停止或 `Application.Quit`）。 |
 | `PingPongAnim` (MonoBehaviour) | 精灵序列动画器。两种模式：idle ping-pong（帧 [0,1] 间来回），随机触发的眨眼播放完整帧序列。同时支持 `SpriteRenderer` 和 UI `Image`。可配置 FPS 和眨眼概率。 |
+| `UltimateButtonUI` (MonoBehaviour) | 大招按钮 UI 控制器。订阅 UltimateSystem 事件：OnEnergyChanged 驱动 fillImage.fillAmount（Vertical/Bottom 填充）和 EnergyText（TMP 数值），OnUltimateReady 高亮按钮并设为可交互，OnUltimateActivated 恢复半透明。未充满时 CanvasGroup.alpha 控制透明度。按钮点击调用 UltimateSystem.ActivateUltimate() |
 
 ## 公开接口
 
@@ -55,6 +56,7 @@ HUD 显示（血量、复活、击杀、金币、波次、冷却指示器、胜�
 - **PingPongAnim**：`SpriteRenderer`, `UnityEngine.UI.Image`
 - **ChargeIndicatorController**：`InputManager`（`OnChargeBegan/Updated/Ended` 事件）, `PlayerState`（`OnPlayerDied`）, `UnityEngine.UI`
 - **EnemyHealthBar**：无外部代码依赖（纯程序化 Mesh + Shader）；由 `Enemy` 内部创建和管理
+- **UltimateButtonUI**：依赖 `UltimateSystem` singleton 事件（OnEnergyChanged/OnUltimateReady/OnUltimateActivated），使用 CanvasGroup + Image.Filled/Vertical + TMP
 
 ## 重要规则
 
@@ -72,3 +74,4 @@ HUD 显示（血量、复活、击杀、金币、波次、冷却指示器、胜�
 - **新伤害跳字样式**：配置 `DamageNumber` 序列化字段（颜色、大小、描边）或创建变体预制体
 - **新指示器样式**：修改 `ChargeIndicatorController` 的精灵图片或动画参数（`appearThreshold`, `spinSpeed`）
 - **血条自定义**：修改 `EnemyHealthBar` 的颜色阈值（`lowThreshold`）、显示时长（`displayDuration`）或尺寸参数
+- **大招按钮样式**：修改 `UltimateButtonUI` 的 `inactiveAlpha`、`readyColor`，或替换 Fill Image 的精灵/颜色

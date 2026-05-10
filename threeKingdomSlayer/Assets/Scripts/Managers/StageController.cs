@@ -138,6 +138,7 @@ public class StageController : MonoBehaviour
 
         // 重置所有状态
         playerState?.ResetPlayer();
+        UltimateSystem.Instance?.ResetEnergy();
         enemyManager?.ClearAllEnemies();
 
         // 预创建对象池

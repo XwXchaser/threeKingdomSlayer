@@ -1,5 +1,34 @@
 # 开发日志
 
+## 2025-12-18 — 大招系统（Ultimate System）
+
+### 概述
+实现大招充能系统：攻击命中充能 → UI 按钮垂直填充 → 充满后可点击触发全敌伤害。
+
+### 新增文件
+- `Assets/Scripts/Core/UltimateSystem.cs` — 单例，充能管理（maxUltimateEnergy=100），按 AttackType 索引的 energyGainPerHit 数组，事件 OnEnergyChanged/OnUltimateReady/OnUltimateActivated
+- `Assets/Scripts/Core/UltimateEffect.cs` — 抽象基类，Execute() + GetLifetime()
+- `Assets/Scripts/Core/UltimateEffect_AllEnemyDamage.cs` — 示例效果：遍历 EnemyManager.GetAllAliveEnemies() 造成伤害
+- `Assets/Scripts/UI/UltimateButtonUI.cs` — 按钮 UI：CanvasGroup.alpha 透明度、fillImage.fillAmount 垂直填充、TMP 数值显示、交互控制
+
+### 集成点
+- `AttackSystem.cs`：每次命中后调用 `UltimateSystem.Instance.AddEnergyForAttack(attackType)`
+- `StageController.cs`：`StartStage()` 中调用 `UltimateSystem.Instance.ResetEnergy()`
+
+### 场景配置
+- Battle.scene：根级 UltimateSystem GameObject + BattleHUD/UltimateButton（Button + Fill Image + EnergyText）
+
+### 涉及文件
+- `Assets/Scripts/Core/UltimateSystem.cs` — 新增
+- `Assets/Scripts/Core/UltimateEffect.cs` — 新增
+- `Assets/Scripts/Core/UltimateEffect_AllEnemyDamage.cs` — 新增
+- `Assets/Scripts/UI/UltimateButtonUI.cs` — 新增
+- `Assets/Scripts/Player/AttackSystem.cs` — 集成 UltimateSystem.AddEnergyForAttack
+- `Assets/Scripts/Managers/StageController.cs` — 集成 UltimateSystem.ResetEnergy
+- `Assets/Scenes/Battle.scene` — UltimateSystem + UltimateButton UI 对象
+
+---
+
 ## 2025-12-17 — 敌人血条显示修复（颜色 + Z 遮挡）
 
 ### 概述
