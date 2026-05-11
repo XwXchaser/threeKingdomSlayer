@@ -8,7 +8,7 @@
 | 序号 | 模块 | 文件数 | 职责概要 |
 |---|---|---|---|
 | 1 | [Attack](Attack.summary.md) | 1 | 攻击波视觉特效：沿 Z 轴旅行或原地固定命中，DOTween 驱动 |
-| 2 | [Core](Core.summary.md) | 9 | 阵型数据结构、敌人/武将/关卡 ScriptableObject 配置、排位置计算、大招系统 |
+| 2 | [Core](Core.summary.md) | 12 | 阵型数据结构、敌人/武将/关卡 ScriptableObject 配置、排位置计算、大招系统、存档系统、关卡管理 |
 | 3 | [Editor](Editor.summary.md) | 1 | StageConfig/WaveConfig 自定义 Inspector 绘制工具 |
 | 4 | [Enemy](Enemy.summary.md) | 2 | 敌人状态机、移动/攻击/受击/死亡动画、按 enemyId 对象池 |
 | 5 | [Managers](Managers.summary.md) | 3 | 编排层：伤害跳字、敌人生命周期协调、关卡流程（开始/胜/负/重开） |
@@ -58,11 +58,13 @@
 ```
 
 **配置层**（ScriptableObject，无运行时依赖）：
-`EnemyConfig`, `AttackSkillConfig`, `UltimateSkillConfig`, `HeroConfig`, `StageConfig`(+`WaveConfig`/`RowConfig`), `RowFormationPreset`
+`EnemyConfig`, `AttackSkillConfig`, `UltimateSkillConfig`, `HeroConfig`, `StageConfig`(+`WaveConfig`/`RowConfig`), `RowFormationPreset`, `StageRegistry`
 
-**静态工具**（无 MonoBehaviour 依赖）：`RowFormation`
+**静态工具**（无 MonoBehaviour 依赖）：`RowFormation`, `SaveManager`
 
 **UI 层**（读取 singleton，写入屏幕）：`BattleHUD`, `ChargeIndicatorController`, `EnemyHealthBar`, `CameraManager`, `MainMenuUI`, `PingPongAnim`
+
+**关卡管理层**（MonoBehaviour singleton）：`StageConfigManager`（MainMenu 场景 Inspector 配置关卡列表）
 
 ## 全局枚举位置
 
@@ -85,7 +87,7 @@
 
 ## 核心设计模式
 
-- **Singleton**：`ColumnManager`, `EnemyPool`, `DamageNumberManager`, `EnemyManager`, `StageController`, `AttackSystem`, `InputManager`, `PlayerState`, `WaveSpawner`, `UltimateSystem`
+- **Singleton**：`ColumnManager`, `EnemyPool`, `DamageNumberManager`, `EnemyManager`, `StageController`, `AttackSystem`, `InputManager`, `PlayerState`, `WaveSpawner`, `UltimateSystem`, `StageConfigManager`
 - **Object Pool**：`EnemyPool`（按 enemyId 分池）、`DamageNumberManager`（DamageNumber 对象池）
 - **Event-Driven**：C# event 贯穿全部模块，实现松耦合通信
 - **Factory Method**：`AttackWave.Create()` 静态工厂

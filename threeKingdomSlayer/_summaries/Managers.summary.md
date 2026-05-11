@@ -12,7 +12,7 @@ Managers（管理器层）
 |---|---|
 | `DamageNumberManager` (MonoBehaviour, singleton) | `DamageNumber` TextMeshPro 对象的对象池。`Spawn(Vector3 worldPos, float damage)` 在敌人上方显示红色浮动伤害数字，带随机 X 抖动。 |
 | `EnemyManager` (MonoBehaviour, singleton) | 全部存活敌人的中央注册表。处理 `RegisterEnemy()`、死亡回调（`OnEnemyDied` — 从 Column 移除、回池、触发事件）、前移转发（`OnEnemyMovedForward`）、攻击转发（`OnEnemyAttackPlayer`）和 `ClearAllEnemies()`。事件：`OnAnyEnemyDied`, `OnAllEnemiesDied`。 |
-| `StageController` (MonoBehaviour, singleton) | 顶层关卡流程。Start 时自动开始关卡。管理 `StageState` 转换（None -> InProgress -> Victory/Defeat）。连线事件：`WaveSpawner.OnAllWavesCompleted` -> Victory；`PlayerState.OnPlayerDied` -> Defeat；`EnemyManager.OnAnyEnemyDied` -> 加击杀/金币。暴露阵型参数。处理 MainMenu 和 Battle 场景加载。StartStage() 中调用 `UltimateSystem.ResetEnergy()` 重置大招充能。 |
+| `StageController` (MonoBehaviour, singleton) | 顶层关卡流程。Start 时自动开始关卡。管理 `StageState` 转换（None -> InProgress -> Victory/Defeat）。连线事件：`WaveSpawner.OnAllWavesCompleted` -> Victory；`PlayerState.OnPlayerDied` -> Defeat；`EnemyManager.OnAnyEnemyDied` -> 加击杀/金币。暴露阵型参数。处理 MainMenu 和 Battle 场景加载。`StartStage()` 中调用 `UltimateSystem.ResetEnergy()` 重置大招充能，从 `SaveManager` 恢复铜钱。Victory 时调用 `SaveManager.MarkStageCleared()` / `SetCoins()` 自动存档。`PendingStageConfig` 静态变量接收 MainMenu 传入的关卡配置，Awake 中消费。 |
 | `StageState` (enum) | None, Starting, InProgress, Victory, Defeat |
 
 ## 公开接口
@@ -39,7 +39,7 @@ Managers（管理器层）
 
 - **DamageNumberManager**：`DamageNumber` (UI), TextMeshPro
 - **EnemyManager**：`ColumnManager` (Core), `EnemyPool` (Enemy), `PlayerState` (Player), `Enemy` (Enemy)
-- **StageController**：`StageConfig` (Core), `RowFormation` (Core), `WaveSpawner` (Wave), `EnemyManager`, `PlayerState`, `EnemyPool`, `Enemy`, `UltimateSystem` (Core) + Unity `SceneManager`
+- **StageController**：`StageConfig` (Core), `RowFormation` (Core), `WaveSpawner` (Wave), `EnemyManager`, `PlayerState`, `EnemyPool`, `Enemy`, `UltimateSystem` (Core), `SaveManager` (Core) + Unity `SceneManager`
 
 ## 重要规则
 

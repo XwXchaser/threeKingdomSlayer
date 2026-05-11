@@ -275,7 +275,10 @@ public class BattleHUD : MonoBehaviour
     /// </summary>
     public void OnMainMenuButton()
     {
-        StageController.Instance?.GoToMainMenu();
+        if (StageController.Instance != null)
+            StageController.Instance.GoToMainMenu();
+        else
+            UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
     }
 
     #endregion

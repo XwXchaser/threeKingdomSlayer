@@ -12,10 +12,23 @@ public class WaveSpawner : MonoBehaviour
     public static WaveSpawner Instance { get; private set; }
 
     [Header("配置")]
+    [Tooltip("关卡配置。留空则运行时从 StageController 自动获取")]
     public StageConfig stageConfig;
     public EnemyPool enemyPool;
     public ColumnManager columnManager;
     public EnemyManager enemyManager;
+
+    /// <summary>
+    /// 运行时解析关卡配置：优先用自身序列化字段，留空则从 StageController 读取
+    /// </summary>
+    private StageConfig ResolvedStageConfig
+    {
+        get
+        {
+            if (stageConfig != null) return stageConfig;
+            return StageController.Instance != null ? StageController.Instance.stageConfig : null;
+        }
+    }
 
     [Header("敌人配置（Inspector 拖拽赋值）")]
     [Tooltip("将 EnemyConfig ScriptableObject 拖拽到这里，系统会自动按 enemyId 索引。如果不赋值，会尝试从 Resources/EnemyConfigs/ 加载")]
@@ -88,7 +101,8 @@ public class WaveSpawner : MonoBehaviour
     /// </summary>
     public void StartWaveSpawning()
     {
-        if (stageConfig == null || stageConfig.waves.Count == 0)
+        var cfg = ResolvedStageConfig;
+        if (cfg == null || cfg.waves.Count == 0)
         {
             Debug.LogError("[WaveSpawner] 关卡配置为空或没有波次配置");
             return;
@@ -109,14 +123,14 @@ public class WaveSpawner : MonoBehaviour
         currentWaveIndex++;
 
         // 所有波次已完成
-        if (currentWaveIndex >= stageConfig.waves.Count)
+        if (currentWaveIndex >= ResolvedStageConfig.waves.Count)
         {
             isAllWavesCompleted = true;
             OnAllWavesCompleted?.Invoke();
             return;
         }
 
-        WaveConfig wave = stageConfig.waves[currentWaveIndex];
+        WaveConfig wave = ResolvedStageConfig.waves[currentWaveIndex];
         isSpawning = true;
         isWaveComplete = false;
 
@@ -163,6 +177,13 @@ public class WaveSpawner : MonoBehaviour
         OnWaveCompleted?.Invoke(currentWaveIndex);
 
         Debug.Log($"[WaveSpawner] 第 {currentWaveIndex + 1} 波已清空");
+
+        // 检查是否所有波次已完成（最后一波清空后触发胜利）
+        if (currentWaveIndex >= ResolvedStageConfig.waves.Count - 1)
+        {
+            isAllWavesCompleted = true;
+            OnAllWavesCompleted?.Invoke();
+        }
 
         // 注意：不自动生成下一波，等待 StageController 在玩家点击"继续"后调用 SpawnNextWave()
     }
@@ -219,7 +240,7 @@ public class WaveSpawner : MonoBehaviour
 
         // 普通波次：敌人从第3排（rowIndex+2）出场，营造压迫前进感
         // BOSS波次：直接从最前排出场，立刻交战
-        WaveConfig currentWave = stageConfig.waves[currentWaveIndex];
+        WaveConfig currentWave = ResolvedStageConfig.waves[currentWaveIndex];
         if (!currentWave.isBossWave)
             rowIndex += 2;
 
@@ -314,5 +335,5 @@ public class WaveSpawner : MonoBehaviour
     /// <summary>
     /// 获取总波次数
     /// </summary>
-    public int TotalWaves => stageConfig != null ? stageConfig.waves.Count : 0;
+    public int TotalWaves => ResolvedStageConfig != null ? ResolvedStageConfig.waves.Count : 0;
 }

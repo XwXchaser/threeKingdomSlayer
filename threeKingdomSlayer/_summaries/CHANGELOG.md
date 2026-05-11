@@ -1,5 +1,42 @@
 # 开发日志
 
+## 2025-12-21 — 选关系统 + 存档系统 + Victory BUG修复
+
+### 概述
+新增选关界面、存档系统、修复击杀全部敌人不弹VictoryPanel的BUG。MainMenu重构为4按钮布局（新游戏/继续游戏/删除存档/退出），关卡按钮自动从StageConfigManager生成。
+
+### 新增文件
+- `Assets/Scripts/Core/StageConfigManager.cs` — MonoBehaviour，挂载于MainMenu场景。Inspector中拖入StageConfig资产并排序，列表顺序决定解锁顺序。关卡配置的唯一来源，不再自动扫描Resources
+- `Assets/Scripts/Core/SaveManager.cs` — 静态存档管理器。PlayerPrefs + JsonUtility 存储 `clearedStageIds` + `coinCount`。`HasSave` / `MarkStageCleared()` / `Delete()` / `GetNextAvailableStageId()` / `IsStageCleared()`
+- `Assets/Scripts/Core/StageRegistry.cs` — ScriptableObject 关卡注册表（创建菜单：`一夫当关/关卡注册表`）。保留为资产但运行时不被 StageConfigManager 加载
+- `Assets/Resources/StageConfigs/` — 关卡配置资产目录
+- `Assets/Resources/StageRegistry.asset` — 关卡注册表资产
+
+### 修改文件
+- `Assets/Scripts/UI/MainMenuUI.cs` — 全面重构。4个按钮预置场景中（newGameButton/continueButton/deleteSaveButton/quitButton），Run时通过RefreshUI控制显隐。选关网格从StageConfigManager自动生成（GridLayoutGroup，已通关/可挑战/未解锁三种状态）。OnNewGame清除存档并从第一关开始；OnContinueGame找第一个未通关关卡
+- `Assets/Scripts/Managers/StageController.cs` — `SelectedStageId`(int) 替换为 `PendingStageConfig`(static StageConfig)。Awake中消费PendingStageConfig覆盖stageConfig。Victory时调用SaveManager.MarkStageCleared()/SetCoins()存档。StartStage中从SaveManager恢复铜钱
+- `Assets/Scripts/UI/BattleHUD.cs` — `OnMainMenuButton()` 增加 fallback：`StageController.Instance` 为 null 时直接 `SceneManager.LoadScene("MainMenu")`。修复VictoryPanel/DefeatPanel的"返回主菜单"按钮点击无效BUG
+- `Assets/Scripts/Wave/WaveSpawner.cs` — `Start()` 开头新增 `enemyConfigCache.Clear()`，修复场景重载后静态缓存残留导致新配置无法覆盖旧缓存的BUG
+
+### 场景变更
+- `MainMenu.scene` — 新增 StageConfigManager GameObject（含2个StageConfig）；Canvas新增 NewGameButton/ContinueButton/DeleteSaveButton/QuitButton，onClick 持久连线到 MainMenuUI 方法
+- `Battle.scene` — Victory/Defeat 面板的 MainMenuButton onClick 接线到 BattleHUD.OnMainMenuButton
+
+### Bug 修复
+
+| Bug | 修复 |
+|---|---|
+| **击杀全部敌人不弹VictoryPanel** | WaveSpawner的`enemyConfigCache`为静态字典，场景重载后旧缓存残留。`ContainsKey`检查导致新StageConfig的EnemyConfig无法覆盖缓存，敌人用过期配置初始化失败，`IsAllEnemiesDead`永远为false。`Start()`中加`enemyConfigCache.Clear()` |
+| **通关后"返回主菜单"按钮无功能** | Victory/Defeat面板按钮onClick丢失。BattleHUD.OnMainMenuButton增加fallback直接`SceneManager.LoadScene("MainMenu")`，Battle.scene中持久化连线 | 
+| **无通关存档时显示"继续游戏"按钮** | MainMenuUI.RefreshUI() 根据 `SaveManager.HasSave` 控制显隐：无存档→仅显示"新游戏"，有存档→显示"继续游戏"+ "删除存档" |
+| **继续游戏/选关按钮始终加载第一关** | StageController从`SelectedStageId`(int)改为`PendingStageConfig`(StageConfig静态变量)，MainMenu设置后跨场景传递，Battle Awake消费。确保正确关卡配置被加载 |
+
+### 扩展指南
+- **配置更多关卡**：在MainMenu场景中找到 StageConfigManager GameObject，在Inspector的Stages列表中拖入StageConfig资产并排序。列表顺序 = 解锁顺序
+- **新增存档字段**：在`SaveData`类中添加字段，在`SaveManager`中添加对应getter/setter
+
+---
+
 ## 2025-12-20 — Ult 独立配置体系重构（UltimateSkillConfig）
 
 ### 概述
