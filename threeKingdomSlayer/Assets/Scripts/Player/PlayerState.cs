@@ -48,6 +48,7 @@ public class PlayerState : MonoBehaviour
     public System.Action<int> OnReviveCountChanged;
     public System.Action<int> OnKillCountChanged;
     public System.Action<int> OnCoinChanged;
+    public System.Action<int, int> OnCoinGained; // (amount gained, total coins)
     public System.Action<int> OnWaveChanged;
     public System.Action<StageState> OnStageStateChanged;
     public System.Action OnPlayerDied;
@@ -244,6 +245,7 @@ public class PlayerState : MonoBehaviour
     {
         coinCount += amount;
         OnCoinChanged?.Invoke(coinCount);
+        if (amount > 0) OnCoinGained?.Invoke(amount, coinCount);
     }
 
     /// <summary>

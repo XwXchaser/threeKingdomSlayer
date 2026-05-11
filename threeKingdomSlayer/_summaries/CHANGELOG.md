@@ -1,5 +1,47 @@
 # 开发日志
 
+## 2025-12-23 — 铜钱计数器UI + 铜钱流转修正 + MainMenu总铜钱显示
+
+### 概述
+在 Battle 场景新增铜钱计数器UI（CoinCounterUI），修复铜钱数据流问题（本局铜钱 vs 总铜钱），并在 MainMenu 显示玩家持有的总铜钱数。
+
+### 新增文件
+- `Assets/Scripts/UI/CoinCounterUI.cs` — Battle 场景铜钱UI控制器。订阅 `PlayerState.OnCoinGained` 事件，DOTween 缩放跳动 + 飘字动画
+
+### 场景变更
+- `Battle.scene` — `BattleHUD(Canvas)/CoinCounter` 层级：
+  - `CoinIcon` (Image, 40x40, 金色) — 获得铜钱时 DOPunchScale 跳动
+  - `TotalText` (TMP, fontSize 40, 白色, 方正粗黑宋简体) — 显示本局铜钱数，获得时 DOPunchScale 跳动
+  - `FloatAnchor` (空GameObject) — 控制飘字起始位置，拖动调整
+- `MainMenu.scene` — `Canvas/CoinDisplay` 重构为图标+文字结构：
+  - `CoinIcon` (Image, 40x40, 金色)
+  - `CoinText` (TMP, fontSize 30, 金色, 方正粗黑宋简体) — 显示总铜钱数
+  - 锚定右上角 (-30, -30)
+
+### 修改文件
+- `Assets/Scripts/UI/CoinCounterUI.cs` — 新增
+- `Assets/Scripts/Player/PlayerState.cs` — 新增 `OnCoinGained(int amount, int total)` 事件；`coinCount` 仅记录本局铜钱，`ResetPlayer()` 归零
+- `Assets/Scripts/Managers/StageController.cs` — `StartStage()` 移除存档铜钱恢复；`OnAllWavesCleared()` 通关时结算 `SaveManager.SetCoins(saved + sessionCoins)`
+- `Assets/Scripts/UI/MainMenuUI.cs` — 新增 `coinText` 字段，`UpdateCoinDisplay()` 读取 `SaveManager.Load().coinCount` 显示总铜钱
+
+### 铜钱数据流
+```
+杀敌 → PlayerState.AddCoins() → coinCount++ (本局) + 触发 OnCoinGained
+通关 → StageController.OnAllWavesCleared() → SaveManager.SetCoins(存档总铜钱 + 本局铜钱)
+新关卡 → PlayerState.ResetPlayer() → coinCount = 0 (从零开始)
+MainMenu → MainMenuUI.UpdateCoinDisplay() → 显示 SaveManager.Load().coinCount (总持有)
+```
+
+### Bug 修复
+
+| Bug | 修复 |
+|---|---|
+| **TotalText 从0跳到总金币** | `StartStage()` 中移除了从 SaveManager 恢复铜钱到 PlayerState.coinCount 的代码。本局铜钱从0开始 |
+| **通关时铜钱已提前累加** | 金币仅在通关时结算：`OnAllWavesCleared()` 中 `SaveManager.SetCoins(saved + sessionCoins)` |
+| **金色飘字位置不对** | 新增 `FloatAnchor` 空GameObject 控制飘字起始位置，Inspector 中拖动调整 |
+
+---
+
 ## 2025-12-21 — 选关系统 + 存档系统 + Victory BUG修复
 
 ### 概述

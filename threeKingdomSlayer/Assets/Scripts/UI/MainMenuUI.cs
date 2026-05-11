@@ -11,6 +11,9 @@ public class MainMenuUI : MonoBehaviour
     public Button deleteSaveButton;
     public Button quitButton;
 
+    [Header("铜钱")]
+    public TMP_Text coinText;
+
     [Header("关卡配置")]
     [Tooltip("场景中 StageConfigManager 组件上的关卡列表。运行时自动查找")]
     public StageConfigManager stageConfigManager;
@@ -31,6 +34,7 @@ public class MainMenuUI : MonoBehaviour
         else
             Debug.LogWarning("[MainMenuUI] 未找到 StageConfigManager 或关卡列表为空，请将 StageConfigManager 添加到场景并配置关卡");
 
+        UpdateCoinDisplay();
         CreateStageGrid();
         SetupButtons();
     }
@@ -132,6 +136,8 @@ public class MainMenuUI : MonoBehaviour
     private void RefreshUI()
     {
         bool hasSave = SaveManager.HasSave;
+
+        UpdateCoinDisplay();
 
         if (newGameButton != null)
             newGameButton.gameObject.SetActive(!hasSave);
@@ -252,6 +258,12 @@ public class MainMenuUI : MonoBehaviour
         }
         CreateStageGrid();
         RefreshUI();
+    }
+
+    private void UpdateCoinDisplay()
+    {
+        if (coinText != null)
+            coinText.text = $"总铜钱: {SaveManager.Load().coinCount}";
     }
 
     private void StartBattle()

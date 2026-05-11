@@ -33,7 +33,8 @@ Player（玩家系统）
 - `TakeDamage(float damage)`, `ResetPlayer()`
 - `IsAttackReady(AttackType)`, `StartCooldown(AttackType)`, `GetCooldownProgress(AttackType)`
 - `AddKill()`, `AddCoins(int)`, `SetCurrentWave(int)`, `SetStageState(StageState)`
-- 事件：`OnHealthChanged`, `OnReviveCountChanged`, `OnKillCountChanged`, `OnCoinChanged`, `OnWaveChanged`, `OnStageStateChanged`, `OnPlayerDied`
+- 事件：`OnHealthChanged`, `OnReviveCountChanged`, `OnKillCountChanged`, `OnCoinGained`, `OnCoinChanged`, `OnWaveChanged`, `OnStageStateChanged`, `OnPlayerDied`
+- `coinCount`：仅记录本局获得铜钱，`ResetPlayer()` 归零。通关时由 `StageController` 结算到 `SaveManager`
 
 ## 依赖模块
 
@@ -54,6 +55,7 @@ Player（玩家系统）
 - **`ForceExecuteStab` 仅 Ult 效果调用**，绕过冷却和能量检查，直接对指定列造成指定伤害
 - **`skillInputEnabled` 仅禁技能手势**：狂怒 Ult 期间设为 false，不影响战斗外 UI（设置等）
 - **AttackSystem 仅命中时消耗冷却**；InputManager 是手势到攻击映射的守门人
+- **铜钱数据分离**：`coinCount` 仅记录本局铜钱（session-only），`ResetPlayer()` 归零。`OnCoinGained(int amount, int total)` 事件供 CoinCounterUI 订阅；`OnCoinChanged(int total)` 供 BattleHUD 等旧代码兼容。通关时由 StageController 调用 `SaveManager.SetCoins()` 结算
 
 ## 扩展指南
 
