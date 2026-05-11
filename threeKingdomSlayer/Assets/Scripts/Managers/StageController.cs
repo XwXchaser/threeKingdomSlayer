@@ -151,12 +151,6 @@ public class StageController : MonoBehaviour
 
         // 重置所有状态
         playerState?.ResetPlayer();
-        // 恢复存档中的铜钱（继续/选关时使用，新游戏存档已删除）
-        if (SaveManager.HasSave && playerState != null)
-        {
-            playerState.coinCount = SaveManager.Load().coinCount;
-            playerState.AddCoins(0); // 触发 OnCoinChanged UI 更新
-        }
         UltimateSystem.Instance?.ResetEnergy();
         enemyManager?.ClearAllEnemies();
 
@@ -219,18 +213,18 @@ public class StageController : MonoBehaviour
         Debug.Log("[StageController] 所有波次已清空，关卡胜利！");
         SetState(StageState.Victory);
 
-        // 发放通关奖励
+        // 发放通关奖励 + 结算本局铜钱到存档
         if (stageConfig != null)
         {
             playerState?.AddCoins(stageConfig.clearCoinReward);
         }
 
-        // 存档：标记关卡已通关 + 保存铜钱
+        // 存档：标记关卡已通关 + 累加本局铜钱
         if (stageConfig != null)
         {
             SaveManager.MarkStageCleared(stageConfig.stageId);
             if (playerState != null)
-                SaveManager.SetCoins(playerState.coinCount);
+                SaveManager.SetCoins(SaveManager.Load().coinCount + playerState.coinCount);
         }
 
         OnStageVictory?.Invoke();

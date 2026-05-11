@@ -12,7 +12,7 @@ Managers（管理器层）
 |---|---|
 | `DamageNumberManager` (MonoBehaviour, singleton) | `DamageNumber` TextMeshPro 对象的对象池。`Spawn(Vector3 worldPos, float damage)` 在敌人上方显示红色浮动伤害数字，带随机 X 抖动。 |
 | `EnemyManager` (MonoBehaviour, singleton) | 全部存活敌人的中央注册表。处理 `RegisterEnemy()`、死亡回调（`OnEnemyDied` — 从 Column 移除、回池、触发事件）、前移转发（`OnEnemyMovedForward`）、攻击转发（`OnEnemyAttackPlayer`）和 `ClearAllEnemies()`。事件：`OnAnyEnemyDied`, `OnAllEnemiesDied`。 |
-| `StageController` (MonoBehaviour, singleton) | 顶层关卡流程。Start 时自动开始关卡。管理 `StageState` 转换（None -> InProgress -> Victory/Defeat）。连线事件：`WaveSpawner.OnAllWavesCompleted` -> Victory；`PlayerState.OnPlayerDied` -> Defeat；`EnemyManager.OnAnyEnemyDied` -> 加击杀/金币。暴露阵型参数。处理 MainMenu 和 Battle 场景加载。`StartStage()` 中调用 `UltimateSystem.ResetEnergy()` 重置大招充能，从 `SaveManager` 恢复铜钱。Victory 时调用 `SaveManager.MarkStageCleared()` / `SetCoins()` 自动存档。`PendingStageConfig` 静态变量接收 MainMenu 传入的关卡配置，Awake 中消费。 |
+| `StageController` (MonoBehaviour, singleton) | 顶层关卡流程。Start 时自动开始关卡。管理 `StageState` 转换（None -> InProgress -> Victory/Defeat）。连线事件：`WaveSpawner.OnAllWavesCompleted` -> Victory；`PlayerState.OnPlayerDied` -> Defeat；`EnemyManager.OnAnyEnemyDied` -> 加击杀/金币。暴露阵型参数。处理 MainMenu 和 Battle 场景加载。`StartStage()` 中调用 `UltimateSystem.ResetEnergy()` 重置大招充能，**不再从 SaveManager 恢复铜钱**（本局铜钱从零开始）。`OnAllWavesCleared()` 通关时调用 `SaveManager.SetCoins(saved + PlayerState.coinCount)` 结算本局铜钱到总持有，再 `MarkStageCleared()`。`PendingStageConfig` 静态变量接收 MainMenu 传入的关卡配置，Awake 中消费。 |
 | `StageState` (enum) | None, Starting, InProgress, Victory, Defeat |
 
 ## 公开接口
@@ -45,7 +45,8 @@ Managers（管理器层）
 
 - **StageController 自动开始**：`Start()` 中调用 `Invoke(nameof(StartStage), 0.1f)` 延迟一帧，确保所有组件初始化完毕
 - **EnemyManager 死亡流程**：`OnEnemyDied` -> 从存活列表移除 -> 取消订阅事件 -> `ColumnManager.RemoveEnemyFromColumn` -> `EnemyPool.ReturnEnemy` -> 触发 `OnAnyEnemyDied` -> 检查 `OnAllEnemiesDied`
-- **关卡胜利触发**：`WaveSpawner.OnAllWavesCompleted` 触发 -> `SetState(Victory)` + 金币奖励
+- **关卡胜利触发**：`WaveSpawner.OnAllWavesCompleted` 触发 -> `SetState(Victory)` + 铜钱结算（`SaveManager.SetCoins(saved + PlayerState.coinCount)`）+ 关卡存档
+- **铜钱流转规则**：本局铜钱仅记录在 `PlayerState.coinCount`，`StartStage()` 中 `ResetPlayer()` 归零。通关时 `OnAllWavesCleared()` 一次性累加到 `SaveManager` 存档。失败/中途退出不结算
 - **关卡失败触发**：`PlayerState.OnPlayerDied` 触发 -> `SetState(Defeat)`
 - **重复状态保护**：`SetState()` 在应用前检查 `currentState == newState`
 
