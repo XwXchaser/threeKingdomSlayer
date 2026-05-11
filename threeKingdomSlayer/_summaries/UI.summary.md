@@ -13,7 +13,7 @@ HUD 显示（血量、复活、击杀、金币、波次、冷却指示器、胜�
 | `BattleHUD` (MonoBehaviour) | 战斗 UI 绑定。订阅全部 `PlayerState` 事件。更新血条 Slider+Text、复活显示、击杀数、金币数、波次进度。每帧冷却 UI：Image 的 `fillAmount` 径向冷却 + 各技能图标独立的充能填充 Image。显示胜/负面板及金币统计。重开和主菜单按钮。`SetHealthBarColor(Color)` / `ResetHealthBarColor()` 供 Ult 效果控制血条颜色。 |
 | `CameraManager` (MonoBehaviour) | 挂载于相机的场景转场：背景 RectTransform 缩放 + 位置动画 + `OnRenderImage` 模糊效果（使用自定义 shader `Hidden/BlurEffect`）。`PlayDeparture()` 动画结束后加载下一场景。`PlayArrival()` 场景启动时动画。用静态 `IsArriving` 标志实现跨场景交接。 |
 | `DamageNumber` (MonoBehaviour) | 浮动伤害跳字（TextMeshPro）。`Show(Vector3 worldPos, float damage)` 启动 DOTween 上浮 + 淡出。完成后调用 `OnReturnToPool` 回调返还 `DamageNumberManager`。配置：红色文字、黑色描边、粗体。 |
-| `MainMenuUI` (MonoBehaviour) | 主菜单：标题、开始按钮（触发 `CameraManager.PlayDeparture()` 或直接加载场景）、退出按钮（Editor 停止或 `Application.Quit`）。 |
+| `MainMenuUI` (MonoBehaviour) | 主菜单：4个预置按钮（新游戏/继续游戏/删除存档/退出），根据 `SaveManager.HasSave` 控制显隐。选关网格从 `StageConfigManager` Inspector 列表自动生成（GridLayoutGroup 横向排列，溢出换行），每按钮显示关卡名+状态（已通关/可挑战/未解锁）。OnNewGame 删除存档从第一关开始；OnContinueGame 找第一个未通关关卡；OnDeleteSave 删除存档并重建网格。关卡选择通过 `StageController.PendingStageConfig` 跨场景传递。 |
 | `PingPongAnim` (MonoBehaviour) | 精灵序列动画器。两种模式：idle ping-pong（帧 [0,1] 间来回），随机触发的眨眼播放完整帧序列。同时支持 `SpriteRenderer` 和 UI `Image`。可配置 FPS 和眨眼概率。 |
 | `UltimateButtonUI` (MonoBehaviour) | 大招按钮 UI 控制器。订阅 UltimateSystem 事件：OnEnergyChanged 驱动 fillImage.fillAmount（Vertical/Bottom 填充）和 EnergyText（TMP 数值），OnUltimateReady 高亮按钮并设为可交互，OnUltimateActivated 恢复半透明。未充满时 CanvasGroup.alpha 控制透明度。按钮点击调用 UltimateSystem.ActivateUltimate() |
 
@@ -52,7 +52,7 @@ HUD 显示（血量、复活、击杀、金币、波次、冷却指示器、胜�
 - **BattleHUD**：`PlayerState`, `WaveSpawner`, `StageController`, `AttackType`, `StageState`, `UnityEngine.UI`, `TMPro`
 - **CameraManager**：Unity `SceneManager`, 自定义 shader `Hidden/BlurEffect`
 - **DamageNumber**：`TMPro`, `DOTween`
-- **MainMenuUI**：`CameraManager`, Unity `SceneManager`, `UnityEditor`（条件编译）
+- **MainMenuUI**：`StageConfigManager`（关卡列表）, `SaveManager`, `CameraManager`, Unity `SceneManager`, `UnityEditor`（条件编译）。4个按钮 public 字段：`newGameButton`/`continueButton`/`deleteSaveButton`/`quitButton`
 - **PingPongAnim**：`SpriteRenderer`, `UnityEngine.UI.Image`
 - **ChargeIndicatorController**：`InputManager`（`OnChargeBegan/Updated/Ended` 事件）, `PlayerState`（`OnPlayerDied`）, `UnityEngine.UI`
 - **EnemyHealthBar**：无外部代码依赖（纯程序化 Mesh + Shader）；由 `Enemy` 内部创建和管理

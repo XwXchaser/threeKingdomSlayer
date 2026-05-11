@@ -13,6 +13,11 @@ public class StageController : MonoBehaviour
     [Header("关卡配置")]
     public StageConfig stageConfig;
 
+    /// <summary>
+    /// 待加载的关卡配置（MainMenu选关后设置，Battle场景 Awake 时读取并清空）
+    /// </summary>
+    public static StageConfig PendingStageConfig;
+
     [Header("透明度渐变配置")]
     [Tooltip("每排的透明度系数，索引0=最前排")]
     public float[] rowAlphaFactors = new float[] { 1.0f, 0.8f, 0.6f, 0.4f, 0.2f };
@@ -66,6 +71,14 @@ public class StageController : MonoBehaviour
             return;
         }
         Instance = this;
+
+        // 从 MainMenu 传入的关卡配置（静态变量跨场景传递）
+        if (PendingStageConfig != null)
+        {
+            stageConfig = PendingStageConfig;
+            Debug.Log($"[StageController] 加载关卡: {stageConfig.stageName} (stageId={stageConfig.stageId})");
+            PendingStageConfig = null; // 消费后清空，避免误用
+        }
 
         if (stageConfig != null)
         {
@@ -138,6 +151,12 @@ public class StageController : MonoBehaviour
 
         // 重置所有状态
         playerState?.ResetPlayer();
+        // 恢复存档中的铜钱（继续/选关时使用，新游戏存档已删除）
+        if (SaveManager.HasSave && playerState != null)
+        {
+            playerState.coinCount = SaveManager.Load().coinCount;
+            playerState.AddCoins(0); // 触发 OnCoinChanged UI 更新
+        }
         UltimateSystem.Instance?.ResetEnergy();
         enemyManager?.ClearAllEnemies();
 
@@ -204,6 +223,14 @@ public class StageController : MonoBehaviour
         if (stageConfig != null)
         {
             playerState?.AddCoins(stageConfig.clearCoinReward);
+        }
+
+        // 存档：标记关卡已通关 + 保存铜钱
+        if (stageConfig != null)
+        {
+            SaveManager.MarkStageCleared(stageConfig.stageId);
+            if (playerState != null)
+                SaveManager.SetCoins(playerState.coinCount);
         }
 
         OnStageVictory?.Invoke();
