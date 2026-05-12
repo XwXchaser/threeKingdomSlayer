@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98a5aaeb5141a6a40b614df2cddb4ab7, type: 3}
   m_Name: Zhangfei_Stab
   m_EditorClassIdentifier: 
+  id: 1
   attackType: 0
   damageType: 0
   damage: 10
@@ -20,9 +21,4 @@ MonoBehaviour:
   cooldown: 0.5
   launchDuration: 0
   attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
-  isUltimate: 0
-  ultimateEnergyCost: 100
   ultimateEnergyGain: 10
-  berserkDuration: 5
-  berserkStabCooldown: 0.5
-  berserkDamageMultiplier: 1.5

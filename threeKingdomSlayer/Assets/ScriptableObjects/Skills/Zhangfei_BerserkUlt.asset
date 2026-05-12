@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0119fd66269247c09b7d8b299c40b7de, type: 3}
   m_Name: Zhangfei_BerserkUlt
   m_EditorClassIdentifier: 
+  id: 1
   cooldown: 10
   energyCost: 100
   damage: 10

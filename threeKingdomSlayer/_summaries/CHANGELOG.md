@@ -1,5 +1,27 @@
 # 开发日志
 
+## 2026-05-03 — 技能配置编号字段
+
+### 概述
+为 `AttackSkillConfig` 和 `UltimateSkillConfig` 新增 `id` 字段，方便按编号管理和定位技能资产。
+
+### 修改文件
+- `Assets/Scripts/Core/AttackSkillConfig.cs` — 新增 `public int id` 字段（`[Header("基本信息")]` 首位）
+- `Assets/Scripts/Core/UltimateSkillConfig.cs` — 新增 `public int id` 字段（`[Header("基础")]` 首位）
+
+### 资产变更
+| 资产 | id |
+|---|---|
+| `Zhangfei_Stab.asset` | 1 |
+| `Zhangfei_Slash.asset` | 2 |
+| `Zhangfei_Pierce.asset` | 3 |
+| `Zhangfei_Sweep.asset` | 4 |
+| `Zhangfei_Launch.asset` | 5 |
+| `Zhangfei_Parry.asset` | 6 |
+| `Zhangfei_BerserkUlt.asset` | 1 |
+
+---
+
 ## 2025-12-23 — 铜钱计数器UI + 铜钱流转修正 + MainMenu总铜钱显示
 
 ### 概述

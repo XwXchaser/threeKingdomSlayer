@@ -10,6 +10,8 @@ using UnityEngine;
 public class UltimateSkillConfig : ScriptableObject
 {
     [Header("基础")]
+    [Tooltip("技能编号，唯一标识")]
+    public int id;
     [Tooltip("冷却时间（秒）。填 5 = 每 5 秒可发动一次")]
     public float cooldown = 5f;
     [Tooltip("消耗能量值")]

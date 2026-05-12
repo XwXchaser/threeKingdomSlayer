@@ -9,6 +9,8 @@ using UnityEngine;
 public class AttackSkillConfig : ScriptableObject
 {
     [Header("基本信息")]
+    [Tooltip("技能编号，唯一标识")]
+    public int id;
     public AttackType attackType;
     public DamageType damageType = DamageType.Stab;
 
