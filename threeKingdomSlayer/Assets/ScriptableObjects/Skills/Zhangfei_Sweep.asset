@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98a5aaeb5141a6a40b614df2cddb4ab7, type: 3}
   m_Name: Zhangfei_Sweep
   m_EditorClassIdentifier: 
+  id: 4
   attackType: 3
   damageType: 3
   damage: 100
@@ -20,6 +21,4 @@ MonoBehaviour:
   cooldown: 5
   launchDuration: 0
   attackWavePrefab: {fileID: 5586448634090008248, guid: 3e7c2ba9889d0d8498227914332b7adc, type: 3}
-  isUltimate: 0
-  ultimateEnergyCost: 100
   ultimateEnergyGain: 12
