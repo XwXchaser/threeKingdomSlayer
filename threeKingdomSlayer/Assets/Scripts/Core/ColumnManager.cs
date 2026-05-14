@@ -123,13 +123,13 @@ public class ColumnManager : MonoBehaviour
 
         Column column = columns[columnIndex];
         int currentIndex = column.enemies.IndexOf(enemy);
-        Debug.Log($"[ColumnManager] UpdateEnemyRow: col={columnIndex}, enemyId={enemy.config?.enemyId}, currentIndex={currentIndex}, count={column.enemies.Count}");
+        Debug.Log($"[ColumnManager] UpdateEnemyRow: col={columnIndex}, enemyId={enemy.enemyId}, currentIndex={currentIndex}, count={column.enemies.Count}");
         if (currentIndex > 0)
         {
             // 将敌人前移一位
             column.enemies.RemoveAt(currentIndex);
             column.enemies.Insert(currentIndex - 1, enemy);
-            Debug.Log($"[ColumnManager] 重排列顺序：enemyId={enemy.config?.enemyId}, from={currentIndex}→{currentIndex - 1}");
+            Debug.Log($"[ColumnManager] 重排列顺序：enemyId={enemy.enemyId}, from={currentIndex}→{currentIndex - 1}");
 
             // 紧凑排列：Launched 保留原位不参与补齐，Dead 跳过并清理，存活敌人向前补齐
             int writeIdx = currentIndex;
@@ -139,14 +139,14 @@ public class ColumnManager : MonoBehaviour
                 Enemy e = column.enemies[i];
                 if (e.state == EnemyState.Dead)
                 {
-                    Debug.Log($"[ColumnManager] 跳过 Dead 敌人: enemyId={e.config?.enemyId}, col={columnIndex}, row={e.rowIndex}");
+                    Debug.Log($"[ColumnManager] 跳过 Dead 敌人: enemyId={e.enemyId}, col={columnIndex}, row={e.rowIndex}");
                     continue;
                 }
                 if (e.state == EnemyState.Launched)
                 {
                     if (i != writeIdx) column.enemies[writeIdx] = e;
                     e.targetRow = writeIdx;
-                    Debug.Log($"[ColumnManager] 保留 Launched 敌人（不参与补齐）: enemyId={e.config?.enemyId}, col={columnIndex}, row={e.rowIndex}, listPos={writeIdx}");
+                    Debug.Log($"[ColumnManager] 保留 Launched 敌人（不参与补齐）: enemyId={e.enemyId}, col={columnIndex}, row={e.rowIndex}, listPos={writeIdx}");
                     writeIdx++;
                     continue;
                 }
@@ -156,7 +156,7 @@ public class ColumnManager : MonoBehaviour
                 e.ResetMovementState();
                 e.pendingRushMove = true;
                 anyPendingRush = true;
-                Debug.Log($"[ColumnManager] 标记补齐移动: enemyId={e.config?.enemyId}, col={columnIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
+                Debug.Log($"[ColumnManager] 标记补齐移动: enemyId={e.enemyId}, col={columnIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
                 writeIdx++;
             }
 
@@ -173,7 +173,7 @@ public class ColumnManager : MonoBehaviour
                     {
                         column.enemies[i].OnRushMoveComplete += OnColumnManagerRushComplete;
                         column.enemies[i].TryStartRushMove();
-                        Debug.Log($"[ColumnManager] 启动链式补齐: enemyId={column.enemies[i].config?.enemyId}, col={columnIndex}");
+                        Debug.Log($"[ColumnManager] 启动链式补齐: enemyId={column.enemies[i].enemyId}, col={columnIndex}");
                         break;
                     }
                 }

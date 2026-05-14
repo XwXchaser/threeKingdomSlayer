@@ -20,13 +20,50 @@ public enum EnemyState
 /// </summary>
 public class Enemy : MonoBehaviour
 {
-    [Header("配置")]
-    public EnemyConfig config;
+    [Header("基础属性")]
+    public string enemyName = "骷髅兵";
+    public int enemyId;
 
-    [Header("运行时状态")]
-    public EnemyState state = EnemyState.Idle;
-    public float currentHealth;
-    public float currentPoise;
+    [Header("战斗属性")]
+    public float maxHealth = 100f;
+    public int occupySlots = 1;
+    public float attackSpeed = 1f;
+    public float attackDamage = 10f;
+    public float attackRange = 1f;
+    public float attackSpawnDuration = 0.3f;
+    public float attackDrawDuration = 0.3f;
+    public float moveSpeed = 1f;
+
+    [Header("架势系统")]
+    public float maxPoise = 50f;
+    public float stunDuration = 1.5f;
+
+    [Header("击飞系统")]
+    public float launchDuration = 2f;
+    public float launchYHeight = 3f;
+    [Range(1f, 5f)] public float launchedDamageTakenMultiplier = 1.5f;
+    public float launchedHitExtendDuration = 0.5f;
+
+    [Header("奖励")]
+    public int coinReward = 10;
+
+    [Header("BOSS")]
+    public bool isBoss;
+
+    [Header("弱点系统")]
+    public float stabDamageMultiplier = 1f;
+    public float slashDamageMultiplier = 1f;
+    public float pierceDamageMultiplier = 1f;
+    public float sweepDamageMultiplier = 1f;
+    public float launchDamageMultiplier = 1f;
+    public float poiseDamageMultiplier = 1f;
+
+    [Header("招架血量眩晕阈值")]
+    public ParryStunThreshold[] parryStunThresholds;
+
+    [System.NonSerialized] public EnemyState state = EnemyState.Idle;
+    [System.NonSerialized] public float currentHealth;
+    [System.NonSerialized] public float currentPoise;
     public int columnIndex;
     public int rowIndex; // 0 = 最前排
 
@@ -111,14 +148,13 @@ public class Enemy : MonoBehaviour
     /// 只有当前排出现空位时（通过 Column.RemoveEnemy()），
     /// 后方敌人才会向前补齐。
     /// </summary>
-    public void Initialize(EnemyConfig cfg, int col, int row)
+    public void Initialize(int col, int row)
     {
-        config = cfg;
         columnIndex = col;
         rowIndex = row;
 
-        currentHealth = cfg.maxHealth;
-        currentPoise = cfg.maxPoise;
+        currentHealth = maxHealth;
+        currentPoise = maxPoise;
         state = EnemyState.Idle;
         stunTimer = 0f;
         launchTimer = 0f;
@@ -152,8 +188,8 @@ public class Enemy : MonoBehaviour
         UpdateWorldPosition();
 
         // 如果敌人已在攻击范围内（由 EnemyConfig.attackRange 决定），直接进入攻击状态
-        int attackRange = config != null ? (int)Mathf.Max(1, config.attackRange) : 1;
-        if (rowIndex < attackRange)
+        int atkRange = (int)Mathf.Max(1, attackRange);
+        if (rowIndex < atkRange)
         {
             StartAttacking();
         }
@@ -197,7 +233,7 @@ public class Enemy : MonoBehaviour
             if (rushMoveDelayTimer <= 0f)
             {
                 // 延迟结束，尝试再次开始补齐移动
-                Debug.Log($"[Enemy] 补齐延迟结束，尝试继续补齐: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}");
+                Debug.Log($"[Enemy] 补齐延迟结束，尝试继续补齐: enemyId={enemyId}, col={columnIndex}, row={rowIndex}");
                 TryStartRushMove();
             }
         }
@@ -208,7 +244,7 @@ public class Enemy : MonoBehaviour
             hitFlashTimer -= Time.deltaTime;
             if (hitFlashTimer <= 0f)
             {
-                Debug.Log($"[Enemy] 闪白结束: enemyId={config?.enemyId}");
+                Debug.Log($"[Enemy] 闪白结束: enemyId={enemyId}");
             }
         }
 
@@ -243,10 +279,10 @@ public class Enemy : MonoBehaviour
     {
         if (state == EnemyState.Dead) return;
 
-        // 如果敌人已在攻击范围内（由 EnemyConfig.attackRange 决定），直接进入攻击状态而非移动
+        // 如果敌人已在攻击范围内，直接进入攻击状态而非移动
         // 补齐移动（isRush=true）优先级高于攻击：即使已在攻击范围内，也先向前补齐空位
-        int attackRange = config != null ? (int)Mathf.Max(1, config.attackRange) : 1;
-        if (!isRush && rowIndex < attackRange)
+        int atkRange = (int)Mathf.Max(1, attackRange);
+        if (!isRush && rowIndex < atkRange)
         {
             StartAttacking();
             return;
@@ -269,7 +305,7 @@ public class Enemy : MonoBehaviour
         }
 
         isRushMove = isRush;
-        Debug.Log($"[Enemy] StartMoving: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, targetRow={rowIndex - 1}, isRush={isRush}");
+        Debug.Log($"[Enemy] StartMoving: enemyId={enemyId}, col={columnIndex}, row={rowIndex}, targetRow={rowIndex - 1}, isRush={isRush}");
         state = EnemyState.Moving;
         isMovingToNextRow = true;
         moveProgress = 0f;
@@ -279,7 +315,7 @@ public class Enemy : MonoBehaviour
         {
             DOTween.Kill(transform, false); // 终止之前可能残留的弹跳动画
             transform.localScale = originalScale; // 重置被 DOPunchScale 打断后的残留 scale
-            float moveDuration = config != null ? config.moveSpeed : 1f;
+            float moveDuration = moveSpeed;
             float bounceHeight = 0.5f; // 弹跳峰值高度
             // 通过 DOTween.To 驱动 bounceYOffset，形成抛物线弹跳轨迹
             DOTween.To(() => bounceYOffset, x => bounceYOffset = x, bounceHeight, moveDuration * 0.5f)
@@ -313,7 +349,7 @@ public class Enemy : MonoBehaviour
         isAttackAnimating = false;
         isAttackDrawPhase = false;
         // 使用与攻击动画 OnComplete 中相同的冷却计算，保证补齐后首次攻击也遵循攻击 CD
-        float totalInterval = config != null ? (1f / config.attackSpeed) : 1f;
+        float totalInterval = (1f / attackSpeed);
         float cooldown = totalInterval * 0.4f;
         if (cooldown < 0.1f) cooldown = 0.1f;
         attackTimer = cooldown;
@@ -361,7 +397,7 @@ public class Enemy : MonoBehaviour
         launchTotalDuration = duration;
         launchStartLocalPos = transform.localPosition;
 
-        Debug.Log($"[Enemy] 挑飞: enemyId={config?.enemyId}, duration={duration:F2}s");
+        Debug.Log($"[Enemy] 挑飞: enemyId={enemyId}, duration={duration:F2}s");
     }
 
     /// <summary>
@@ -373,7 +409,7 @@ public class Enemy : MonoBehaviour
         if (state != EnemyState.Launched) return;
         launchTotalDuration += extendTime;
         launchTimer += extendTime;
-        Debug.Log($"[Enemy] 延长浮空: enemyId={config?.enemyId}, +{extendTime:F2}s, 剩余={launchTimer:F2}s");
+        Debug.Log($"[Enemy] 延长浮空: enemyId={enemyId}, +{extendTime:F2}s, 剩余={launchTimer:F2}s");
     }
 
     /// <summary>
@@ -401,11 +437,11 @@ public class Enemy : MonoBehaviour
         isAttackDrawPhase = false;
 
         // 重置攻击冷却，回到 AttackSpeed 等待状态（非眩晕）
-        float totalInterval = config != null ? (1f / config.attackSpeed) : 1f;
+        float totalInterval = (1f / attackSpeed);
         attackTimer = totalInterval * 0.4f;
         if (attackTimer < 0.1f) attackTimer = 0.1f;
 
-        Debug.Log($"[Enemy] 招架打断攻击成功: enemyId={config?.enemyId}, col={columnIndex}, 返回冷却 {attackTimer:F2}s");
+        Debug.Log($"[Enemy] 招架打断攻击成功: enemyId={enemyId}, col={columnIndex}, 返回冷却 {attackTimer:F2}s");
         return true;
     }
 
@@ -457,8 +493,8 @@ public class Enemy : MonoBehaviour
             }
             else
             {
-                int attackRange = config != null ? (int)Mathf.Max(1, config.attackRange) : 1;
-                if (rowIndex < attackRange)
+                int atkRange = (int)Mathf.Max(1, attackRange);
+                if (rowIndex < atkRange)
                 {
                     StartAttacking();
                 }
@@ -476,7 +512,7 @@ public class Enemy : MonoBehaviour
                     }
                     if (frontOccupied)
                     {
-                        Debug.Log($"[Enemy] 落地后前方被占据，等待补齐: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, frontRow={frontRow}");
+                        Debug.Log($"[Enemy] 落地后前方被占据，等待补齐: enemyId={enemyId}, col={columnIndex}, row={rowIndex}, frontRow={frontRow}");
                     }
                     else
                     {
@@ -489,7 +525,7 @@ public class Enemy : MonoBehaviour
 
         // 正弦波 Y 轴动画：0→π 对应 起跳→坠落
         float progress = launchTimeElapsed / launchTotalDuration;
-        float yOffset = Mathf.Sin(progress * Mathf.PI) * (config != null ? config.launchYHeight : 3f);
+        float yOffset = Mathf.Sin(progress * Mathf.PI) * (launchYHeight);
         transform.localPosition = new Vector3(
             transform.localPosition.x,
             launchStartLocalPos.y + yOffset,
@@ -520,13 +556,13 @@ public class Enemy : MonoBehaviour
         if (!isMovingToNextRow) return;
 
         // 常规移动：基于 moveSpeed（秒/排）
-        float speed = config != null ? config.moveSpeed : 1f;
+        float speed = moveSpeed;
         moveProgress += Time.deltaTime / speed;
 
         if (moveProgress >= 1f)
         {
             bool wasRush = isRushMove;
-            Debug.Log($"[Enemy] 移动完成: enemyId={config?.enemyId}, col={columnIndex}, oldRow={rowIndex}, newRow={rowIndex - 1}, isRush={wasRush}");
+            Debug.Log($"[Enemy] 移动完成: enemyId={enemyId}, col={columnIndex}, oldRow={rowIndex}, newRow={rowIndex - 1}, isRush={wasRush}");
             moveProgress = 0f;
             isMovingToNextRow = false;
             isRushMove = false;
@@ -538,9 +574,9 @@ public class Enemy : MonoBehaviour
             // BUG FIX: 防止 rowIndex 变为负数
             if (rowIndex < 0) rowIndex = 0;
 
-            // 使用 EnemyConfig.attackRange 决定攻击距离
-            int attackRange = config != null ? (int)Mathf.Max(1, config.attackRange) : 1;
-            bool reachedAttackRange = rowIndex < attackRange;
+            // 使用 attackRange 决定攻击距离
+            int atkRange = (int)Mathf.Max(1, attackRange);
+            bool reachedAttackRange = rowIndex < atkRange;
 
             if (wasRush)
             {
@@ -557,7 +593,7 @@ public class Enemy : MonoBehaviour
                     }
                     if (delay > 0f)
                     {
-                        Debug.Log($"[Enemy] 补齐移动完成（等待延迟继续补齐）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}, delay={delay:F2}s");
+                        Debug.Log($"[Enemy] 补齐移动完成（等待延迟继续补齐）: enemyId={enemyId}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}, delay={delay:F2}s");
                         state = EnemyState.Idle;
                         pendingRushMove = true;
                         rushMoveDelayTimer = delay;
@@ -565,7 +601,7 @@ public class Enemy : MonoBehaviour
                     else
                     {
                         // 无延迟，立即继续补齐
-                        Debug.Log($"[Enemy] 补齐移动完成（立即继续补齐）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
+                        Debug.Log($"[Enemy] 补齐移动完成（立即继续补齐）: enemyId={enemyId}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
                         state = EnemyState.Idle;
                         pendingRushMove = true;
                         TryStartRushMove();
@@ -574,7 +610,7 @@ public class Enemy : MonoBehaviour
                 else if (reachedAttackRange)
                 {
                     // 已到达目标位置且在攻击范围内，开始攻击
-                    Debug.Log($"[Enemy] 补齐移动完成（到达目标位置+攻击范围）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}");
+                    Debug.Log($"[Enemy] 补齐移动完成（到达目标位置+攻击范围）: enemyId={enemyId}, col={columnIndex}, row={rowIndex}");
                     pendingRushMove = false;
                     targetRow = -1;
                     StartAttacking();
@@ -582,7 +618,7 @@ public class Enemy : MonoBehaviour
                 else
                 {
                     // 已到达目标位置但不在攻击范围内，停止补齐
-                    Debug.Log($"[Enemy] 补齐移动完成（到达目标位置，停止补齐）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
+                    Debug.Log($"[Enemy] 补齐移动完成（到达目标位置，停止补齐）: enemyId={enemyId}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
                     state = EnemyState.Idle;
                     pendingRushMove = false;
                     targetRow = -1;
@@ -595,7 +631,7 @@ public class Enemy : MonoBehaviour
                 if (!rushMoveChainTriggered)
                 {
                     rushMoveChainTriggered = true;
-                    Debug.Log($"[Enemy] 补齐移动完全完成（触发链式）: enemyId={config?.enemyId}, col={columnIndex}, row={rowIndex}");
+                    Debug.Log($"[Enemy] 补齐移动完全完成（触发链式）: enemyId={enemyId}, col={columnIndex}, row={rowIndex}");
                     OnRushMoveComplete?.Invoke(this);
                 }
             }
@@ -607,7 +643,7 @@ public class Enemy : MonoBehaviour
                     StartAttacking();
                 }
                 EnemyManager.Instance?.OnEnemyMovedForward(this);
-                Debug.Log($"[Enemy] 自然移动完成，触发 UpdateEnemyRow: enemyId={config?.enemyId}, col={columnIndex}");
+                Debug.Log($"[Enemy] 自然移动完成，触发 UpdateEnemyRow: enemyId={enemyId}, col={columnIndex}");
             }
         }
 
@@ -673,9 +709,9 @@ public class Enemy : MonoBehaviour
         Vector3 startPos = transform.localPosition;
         Vector3 startScale = transform.localScale;
 
-        float totalInterval = config != null ? (1f / config.attackSpeed) : 1f;
-        float spawnDuration = config != null ? config.attackSpawnDuration : 0.3f;
-        float drawDuration = config != null ? config.attackDrawDuration : 0.3f;
+        float totalInterval = (1f / attackSpeed);
+        float spawnDuration = attackSpawnDuration;
+        float drawDuration = attackDrawDuration;
         float forwardDistance = 0.5f;
 
         attackSequence = DOTween.Sequence();
@@ -724,14 +760,14 @@ public class Enemy : MonoBehaviour
         if (state == EnemyState.Dead) return;
 
         // 击飞状态下受到伤害倍率
-        if (state == EnemyState.Launched && config != null)
-            damage *= config.launchedDamageTakenMultiplier;
+        if (state == EnemyState.Launched)
+            damage *= launchedDamageTakenMultiplier;
 
         // 应用弱点倍率
         float multiplier = GetDamageMultiplier(damageType);
         float finalDamage = damage * multiplier;
 
-        Debug.Log($"[Enemy] TakeDamage: enemyId={config?.enemyId}, col={columnIndex}, raw={damage:F1}, mult={multiplier:F2}, final={finalDamage:F1}, hp={currentHealth:F1}→{currentHealth - finalDamage:F1}");
+        Debug.Log($"[Enemy] TakeDamage: enemyId={enemyId}, col={columnIndex}, raw={damage:F1}, mult={multiplier:F2}, final={finalDamage:F1}, hp={currentHealth:F1}→{currentHealth - finalDamage:F1}");
 
         currentHealth -= finalDamage;
         OnDamageTaken?.Invoke(this);
@@ -743,13 +779,13 @@ public class Enemy : MonoBehaviour
         }
 
         // 血条显示（非BOSS、未死亡时显示）
-        if (config != null && !config.isBoss && currentHealth > 0f)
+        if (!isBoss && currentHealth > 0f)
         {
             if (cachedHealthBar == null)
                 cachedHealthBar = GetComponent<EnemyHealthBar>();
             if (cachedHealthBar == null)
                 cachedHealthBar = gameObject.AddComponent<EnemyHealthBar>();
-            cachedHealthBar.Show(currentHealth / config.maxHealth);
+            cachedHealthBar.Show(currentHealth / maxHealth);
         }
 
         // BUG FIX: 同步应用闪白（立即设置颜色，不依赖 Update 循环）
@@ -759,7 +795,7 @@ public class Enemy : MonoBehaviour
 
         // 触发受伤闪白效果（非致命伤通过 Update 循环过渡恢复）
         hitFlashTimer = HIT_FLASH_DURATION;
-        Debug.Log($"[Enemy] 触发闪白: enemyId={config?.enemyId}, duration={HIT_FLASH_DURATION}");
+        Debug.Log($"[Enemy] 触发闪白: enemyId={enemyId}, duration={HIT_FLASH_DURATION}");
 
         // DOTween: 受击大小抖动效果（与闪白同步触发）
         // BUG FIX: 使用 per-instance ID（基于 GetInstanceID），避免全局 DOTween.Kill("punchScale")
@@ -772,9 +808,9 @@ public class Enemy : MonoBehaviour
             .SetId(punchId);
 
         // 击飞状态下被攻击延长浮空时间
-        if (state == EnemyState.Launched && config != null && config.launchedHitExtendDuration > 0f)
+        if (state == EnemyState.Launched && launchedHitExtendDuration > 0f)
         {
-            ExtendLaunch(config.launchedHitExtendDuration);
+            ExtendLaunch(launchedHitExtendDuration);
         }
 
         if (currentHealth <= 0f)
@@ -848,7 +884,7 @@ public class Enemy : MonoBehaviour
         currentPoise -= poiseDamage;
         if (currentPoise <= 0f)
         {
-            currentPoise = config != null ? config.maxPoise : 50f;
+            currentPoise = maxPoise;
             return true;
         }
         return false;
@@ -862,14 +898,14 @@ public class Enemy : MonoBehaviour
     {
         if (state == EnemyState.Dead || state == EnemyState.Stunned || state == EnemyState.Launched) return;
         // 仅 Boss 敌人才会因血量百分比触发招架眩晕
-        if (config == null || !config.isBoss) return;
-        if (config.parryStunThresholds == null || config.parryStunThresholds.Length == 0) return;
+        if (!isBoss) return;
+        if (parryStunThresholds == null || parryStunThresholds.Length == 0) return;
 
-        float healthPercent = currentHealth / config.maxHealth;
+        float healthPercent = currentHealth / maxHealth;
 
         float bestHealthPercent = float.MaxValue;
         float bestStunDuration = 0f;
-        foreach (var t in config.parryStunThresholds)
+        foreach (var t in parryStunThresholds)
         {
             if (healthPercent < t.healthPercent && t.healthPercent < bestHealthPercent)
             {
@@ -889,16 +925,14 @@ public class Enemy : MonoBehaviour
     /// </summary>
     private float GetDamageMultiplier(DamageType damageType)
     {
-        if (config == null) return 1f;
-
         switch (damageType)
         {
-            case DamageType.Stab:   return config.stabDamageMultiplier;
-            case DamageType.Slash:  return config.slashDamageMultiplier;
-            case DamageType.Pierce: return config.pierceDamageMultiplier;
-            case DamageType.Sweep:  return config.sweepDamageMultiplier;
-            case DamageType.Launch: return config.launchDamageMultiplier;
-            case DamageType.Poise:  return config.poiseDamageMultiplier;
+            case DamageType.Stab:   return stabDamageMultiplier;
+            case DamageType.Slash:  return slashDamageMultiplier;
+            case DamageType.Pierce: return pierceDamageMultiplier;
+            case DamageType.Sweep:  return sweepDamageMultiplier;
+            case DamageType.Launch: return launchDamageMultiplier;
+            case DamageType.Poise:  return poiseDamageMultiplier;
             default: return 1f;
         }
     }
@@ -1268,7 +1302,7 @@ public class Enemy : MonoBehaviour
         float[] factors;
         if (StageController.Instance != null)
         {
-            factors = StageController.Instance.rowAlphaFactors;
+            factors = StageController.Instance.GetRowAlphaFactors();
         }
         else
         {
@@ -1301,7 +1335,6 @@ public class Enemy : MonoBehaviour
         state = EnemyState.Dead;
         currentHealth = 0f;
         currentPoise = 0f;
-        config = null;
         initialized = false;
         OnDeath = null;
         OnDamageTaken = null;
@@ -1324,4 +1357,14 @@ public enum DamageType
     Sweep,  // 横扫
     Launch, // 挑飞
     Poise   // 架势伤害
+}
+
+/// <summary>
+/// 招架眩晕阈值：招架造成伤害后，若敌人血量低于 healthPercent，则眩晕 stunDuration 秒
+/// </summary>
+[System.Serializable]
+public struct ParryStunThreshold
+{
+    [UnityEngine.Range(0f, 1f)] public float healthPercent;
+    public float stunDuration;
 }

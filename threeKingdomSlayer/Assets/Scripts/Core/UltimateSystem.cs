@@ -17,8 +17,7 @@ public class UltimateSystem : MonoBehaviour
     [Tooltip("大招效果预制体（需挂载 UltimateEffect 子类组件）")]
     public GameObject ultimateEffectPrefab;
 
-    [Header("运行时状态")]
-    [SerializeField] private int currentEnergy;
+    [System.NonSerialized] private int currentEnergy;
 
     // 事件
     public System.Action<float> OnEnergyChanged;

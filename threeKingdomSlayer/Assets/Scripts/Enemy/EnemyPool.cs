@@ -242,7 +242,7 @@ public class EnemyPool : MonoBehaviour
         if (enemy == null) return;
 
         // 必须在ResetEnemy()之前读取enemyId，因为ResetEnemy会将config置null
-        int enemyId = enemy.config != null ? enemy.config.enemyId : -1;
+        int enemyId = enemy.enemyId;
 
         enemy.ResetEnemy();
         // 回收时挂回 poolRoot（隐藏起来），下次激活时 CreateNewEnemy 会重新挂到 enemiesRoot
@@ -271,6 +271,19 @@ public class EnemyPool : MonoBehaviour
             enemy = go.AddComponent<Enemy>();
         }
         return enemy;
+    }
+
+    /// <summary>
+    /// 根据 enemyId 获取敌人占位数（从预制体读取，无需实例化）
+    /// </summary>
+    public int GetEnemyOccupySlots(int enemyId)
+    {
+        if (enemyPrefabs.TryGetValue(enemyId, out GameObject prefab))
+        {
+            Enemy e = prefab.GetComponent<Enemy>();
+            if (e != null) return Mathf.Clamp(e.occupySlots, 1, 5);
+        }
+        return 1;
     }
 
     /// <summary>

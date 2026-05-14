@@ -30,10 +30,6 @@ public class WaveSpawner : MonoBehaviour
         }
     }
 
-    [Header("敌人配置（Inspector 拖拽赋值）")]
-    [Tooltip("将 EnemyConfig ScriptableObject 拖拽到这里，系统会自动按 enemyId 索引。如果不赋值，会尝试从 Resources/EnemyConfigs/ 加载")]
-    public List<EnemyConfig> enemyConfigs = new List<EnemyConfig>();
-
     [Header("生成参数")]
     public Transform spawnRoot; // 生成根节点（可选）
 
@@ -42,9 +38,6 @@ public class WaveSpawner : MonoBehaviour
     private bool isSpawning;
     private bool isWaveComplete;
     private bool isAllWavesCompleted;
-
-    // 敌人配置缓存（避免每帧 Resources.LoadAll）
-    private static Dictionary<int, EnemyConfig> enemyConfigCache = new Dictionary<int, EnemyConfig>();
 
     // 事件
     public System.Action<int> OnWaveStarted;       // waveIndex
@@ -74,26 +67,6 @@ public class WaveSpawner : MonoBehaviour
         if (enemyPool == null) enemyPool = FindObjectOfType<EnemyPool>();
         if (columnManager == null) columnManager = FindObjectOfType<ColumnManager>();
         if (enemyManager == null) enemyManager = FindObjectOfType<EnemyManager>();
-
-        // BUG FIX: 清空静态缓存，避免场景重载（重新开始/返回主菜单）时缓存了旧的配置。
-        // 静态缓存在场景切换后仍然存在，如果 StageConfig 更换了不同的 EnemyConfig，
-        // ContainsKey 检查会导致新配置无法覆盖旧缓存，使用过期的配置数据。
-        enemyConfigCache.Clear();
-        Debug.Log($"[WaveSpawner] 清空敌人配置缓存 (count={enemyConfigCache.Count})");
-
-        // 初始化敌人配置缓存：优先使用 Inspector 拖拽的配置
-        // 这样策划可以直接在 Inspector 中拖拽 EnemyConfig 赋值，无需放入 Resources 文件夹
-        if (enemyConfigs != null && enemyConfigs.Count > 0)
-        {
-            foreach (var cfg in enemyConfigs)
-            {
-                if (cfg != null)
-                {
-                    enemyConfigCache[cfg.enemyId] = cfg;
-                    Debug.Log($"[WaveSpawner] 从 Inspector 加载敌人配置: {cfg.enemyName} (enemyId={cfg.enemyId})");
-                }
-            }
-        }
     }
 
     /// <summary>
@@ -213,8 +186,7 @@ public class WaveSpawner : MonoBehaviour
                 slotCounts[i] = 0;
                 continue;
             }
-            EnemyConfig config = GetEnemyConfig(enemyId);
-            int slots = (config != null) ? Mathf.Clamp(config.occupySlots, 1, 5) : 1;
+            int slots = enemyPool != null ? enemyPool.GetEnemyOccupySlots(enemyId) : 1;
             slotCounts[i] = slots;
             totalSlots += slots;
         }
@@ -261,55 +233,13 @@ public class WaveSpawner : MonoBehaviour
                 continue;
             }
 
-            // 初始化敌人
-            EnemyConfig config = GetEnemyConfig(enemyId);
-            if (config == null)
-            {
-                Debug.LogWarning($"[WaveSpawner] 未找到敌人ID {enemyId} 的配置");
-                enemyPool.ReturnEnemy(enemy);
-                currentCol += slots;
-                continue;
-            }
-
-            enemy.Initialize(config, currentCol, rowIndex);
+            enemy.Initialize(currentCol, rowIndex);
 
             // 注册到管理器
             enemyManager?.RegisterEnemy(enemy);
 
             currentCol += slots;
         }
-    }
-
-    /// <summary>
-    /// 获取敌人配置（带缓存）
-    /// 首次加载后缓存到字典，避免重复 Resources.LoadAll
-    /// </summary>
-    private EnemyConfig GetEnemyConfig(int enemyId)
-    {
-        // 先从缓存查找
-        if (enemyConfigCache.TryGetValue(enemyId, out EnemyConfig cached))
-        {
-            return cached;
-        }
-
-        // 缓存未命中，从Resources加载并缓存
-        EnemyConfig[] configs = Resources.LoadAll<EnemyConfig>("");
-        foreach (var cfg in configs)
-        {
-            if (!enemyConfigCache.ContainsKey(cfg.enemyId))
-            {
-                enemyConfigCache[cfg.enemyId] = cfg;
-            }
-        }
-
-        // 再次从缓存查找
-        if (enemyConfigCache.TryGetValue(enemyId, out EnemyConfig result))
-        {
-            return result;
-        }
-
-        Debug.LogError($"[WaveSpawner] 未找到敌人ID {enemyId} 的配置，请确认已创建对应的 EnemyConfig ScriptableObject 并放置在 Resources 文件夹中");
-        return null;
     }
 
     /// <summary>

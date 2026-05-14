@@ -48,12 +48,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  config: {fileID: 11400000, guid: 52ba613f66b3ace44ab0a5d862e4d5e9, type: 2}
-  state: 0
-  currentHealth: 0
-  currentPoise: 0
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 50
+  occupySlots: 1
+  attackSpeed: 0.2
+  attackDamage: 10
+  attackRange: 1
+  attackSpawnDuration: 2
+  attackDrawDuration: 1
+  moveSpeed: 0.3
+  maxPoise: 50
+  stunDuration: 5
+  launchDuration: 5
+  launchYHeight: 3
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 1
+  coinReward: 10
+  isBoss: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds:
+  - healthPercent: 0.7
+    stunDuration: 5
   columnIndex: 0
   rowIndex: 0
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
   pendingRushMove: 0
   targetRow: -1
 --- !u!212 &3042528735547855719

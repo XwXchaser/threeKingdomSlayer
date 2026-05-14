@@ -1990,21 +1990,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   stageConfig: {fileID: 11400000, guid: 81048452505b7774591dba212d695a8e, type: 2}
-  rowAlphaFactors:
-  - 1
-  - 0.8
-  - 0.6
-  - 0.4
-  - 0.2
-  maxVisibleRows: 5
-  rushMoveDelay: 0.2
-  formationPreset: {fileID: 0}
-  manualRowHalfWidths: []
-  formationMaxSpread: 4
-  formationMinSpread: 0.5
-  formationPowerCurve: 1.2
-  rowSpacing: 2.5
-  formationOffsetZ: 0
   waveSpawner: {fileID: 1221163314}
   enemyManager: {fileID: 598331925}
   playerState: {fileID: 1878310418}
@@ -3960,7 +3945,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxUltimateEnergy: 100
   ultimateEffectPrefab: {fileID: 868059625762725541, guid: 5c40d0eb838fa164f929972d845f043c, type: 3}
-  currentEnergy: 0
 --- !u!4 &1467880411
 Transform:
   m_ObjectHideFlags: 0
@@ -4103,7 +4087,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!212 &1616279146
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -4838,12 +4822,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   heroConfig: {fileID: 11400000, guid: 6a50843ddffb1fa43af2e2a34d5d2432, type: 2}
-  currentHealth: 0
-  currentRevives: 0
-  killCount: 0
-  coinCount: 0
-  currentWave: 0
-  stageState: 0
 --- !u!4 &1878310419
 Transform:
   m_ObjectHideFlags: 0
@@ -4953,7 +4931,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!64 &1961784257
 MeshCollider:
   m_ObjectHideFlags: 0
