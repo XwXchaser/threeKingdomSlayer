@@ -98,10 +98,12 @@ public class Column
                 }
 
                 // 正常存活敌人：紧凑前移并标记补齐
+                // Boss 在 Approaching 状态时不参与补齐（由 BossPause/BossResume 自行控制）
                 if (i != writeIdx) enemies[writeIdx] = e;
                 e.targetRow = writeIdx;
                 e.ResetMovementState();
-                e.pendingRushMove = true;
+                if (!(e.isBoss && e.bossState == BossState.Approaching))
+                    e.pendingRushMove = true;
                 Debug.Log($"[Column] 标记补齐移动: enemyId={e.enemyId}, col={colIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
                 writeIdx++;
             }

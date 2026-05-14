@@ -13,8 +13,7 @@ public class UltimateEffect_Berserk : UltimateEffect
     private Coroutine berserkRoutine;
     private List<int> aliveCols = new List<int>();
     private int stabRoundIndex;
-    private Color? originalHealthBarColor;
-    private Image healthBarImage;
+
 
     public override void Execute()
     {
@@ -25,17 +24,10 @@ public class UltimateEffect_Berserk : UltimateEffect
             return;
         }
 
-        // 保存并设置血量条为橙色
+        // 设置血量条为橙色（委托给 BattleHUD → HeroHUD）
         var hud = FindObjectOfType<BattleHUD>();
-        if (hud != null && hud.healthSlider != null && hud.healthSlider.fillRect != null)
-        {
-            healthBarImage = hud.healthSlider.fillRect.GetComponent<Image>();
-            if (healthBarImage != null)
-            {
-                originalHealthBarColor = healthBarImage.color;
-                healthBarImage.color = new Color(1f, 0.5f, 0f); // orange
-            }
-        }
+        if (hud != null)
+            hud.SetHealthBarColor(new Color(1f, 0.5f, 0f)); // orange
 
         // 无敌
         if (PlayerState.Instance != null)
@@ -105,10 +97,9 @@ public class UltimateEffect_Berserk : UltimateEffect
             InputManager.Instance.skillInputEnabled = true;
 
         // 恢复血量条原始颜色
-        if (healthBarImage != null && originalHealthBarColor.HasValue)
-        {
-            healthBarImage.color = originalHealthBarColor.Value;
-        }
+        var hud = FindObjectOfType<BattleHUD>();
+        if (hud != null)
+            hud.ResetHealthBarColor();
     }
 
     private void OnDestroy()

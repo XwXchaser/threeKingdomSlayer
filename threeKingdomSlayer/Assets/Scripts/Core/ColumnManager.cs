@@ -14,6 +14,12 @@ public class ColumnManager : MonoBehaviour
     // 5列敌人列表
     private Column[] columns;
 
+    /// <summary>
+    /// 列结构变化事件（RemoveEnemy / UpdateEnemyRow 后触发）
+    /// Boss 用此事件检测前排是否清空以恢复推进
+    /// </summary>
+    public System.Action OnColumnsModified;
+
     private void Awake()
     {
         InitializeColumns();
@@ -83,6 +89,7 @@ public class ColumnManager : MonoBehaviour
         if (!IsValidColumn(columnIndex)) return;
 
         columns[columnIndex].RemoveEnemy(enemy);
+        OnColumnsModified?.Invoke();
     }
 
     /// <summary>
@@ -154,8 +161,12 @@ public class ColumnManager : MonoBehaviour
                 if (i != writeIdx) column.enemies[writeIdx] = e;
                 e.targetRow = writeIdx;
                 e.ResetMovementState();
-                e.pendingRushMove = true;
-                anyPendingRush = true;
+                // Boss 在 Approaching 阶段不参与列内补齐，由分阶段推进系统控制
+                if (!(e.isBoss && e.bossState == BossState.Approaching))
+                {
+                    e.pendingRushMove = true;
+                    anyPendingRush = true;
+                }
                 Debug.Log($"[ColumnManager] 标记补齐移动: enemyId={e.enemyId}, col={columnIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
                 writeIdx++;
             }
@@ -178,6 +189,8 @@ public class ColumnManager : MonoBehaviour
                     }
                 }
             }
+
+            OnColumnsModified?.Invoke();
         }
     }
 

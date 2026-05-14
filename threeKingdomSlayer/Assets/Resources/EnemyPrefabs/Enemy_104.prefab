@@ -58,7 +58,7 @@ MonoBehaviour:
   attackSpawnDuration: 2
   attackDrawDuration: 1
   moveSpeed: 0.3
-  maxPoise: 50
+  maxPoise: 200
   stunDuration: 5
   launchDuration: 5
   launchYHeight: 3

@@ -15,6 +15,16 @@ public enum EnemyState
 }
 
 /// <summary>
+/// Boss 推进状态枚举
+/// </summary>
+public enum BossState
+{
+    None,        // 非Boss或未进入分阶段推进
+    Approaching, // Boss暂停在第3排(rowIndex=2)，等待前两排清空
+    InCombat     // Boss已到达应战排(rowIndex=1)，进入战斗
+}
+
+/// <summary>
 /// 敌人实体 - MonoBehaviour
 /// 管理敌人的生命值、架势值、状态机、前进移动、透明度渐变
 /// </summary>
@@ -49,6 +59,9 @@ public class Enemy : MonoBehaviour
 
     [Header("BOSS")]
     public bool isBoss;
+    [Tooltip("Boss 血条 Prefab（可选，为 null 时使用 BattleHUD 默认模板）")]
+    public GameObject bossHealthBarPrefab;
+    [System.NonSerialized] public BossState bossState = BossState.None;
 
     [Header("弱点系统")]
     public float stabDamageMultiplier = 1f;
@@ -136,8 +149,24 @@ public class Enemy : MonoBehaviour
     // 事件
     public System.Action<Enemy> OnDeath;
     public System.Action<Enemy> OnDamageTaken;
+    public System.Action<Enemy, float, float> OnHealthChanged; // enemy, current, max
+    public System.Action<Enemy, float, float> OnPoiseChanged;  // enemy, current, max
+    public System.Action<Enemy> OnBossEngaged;                  // Boss 到达应战排
+
+    // Boss 分阶段推进
+    private System.Action _onColumnsModifiedHandler;
+    private float _bossEngageTimer; // Boss 到达应战排后的无敌缓冲时间
 
     private void Awake()
+    {
+        renderers = GetComponentsInChildren<Renderer>();
+    }
+
+    /// <summary>
+    /// 对象从池中重新激活时重建 Renderer 缓存
+    /// Awake 只在首次创建时执行，池复用不会重新 Awake
+    /// </summary>
+    private void OnEnable()
     {
         renderers = GetComponentsInChildren<Renderer>();
     }
@@ -156,6 +185,7 @@ public class Enemy : MonoBehaviour
         currentHealth = maxHealth;
         currentPoise = maxPoise;
         state = EnemyState.Idle;
+        bossState = BossState.None;
         stunTimer = 0f;
         launchTimer = 0f;
         // BUG FIX: attackTimer 初始化为一个正数，避免第一次进入 UpdateAttack() 时
@@ -235,6 +265,19 @@ public class Enemy : MonoBehaviour
                 // 延迟结束，尝试再次开始补齐移动
                 Debug.Log($"[Enemy] 补齐延迟结束，尝试继续补齐: enemyId={enemyId}, col={columnIndex}, row={rowIndex}");
                 TryStartRushMove();
+            }
+        }
+
+        // Boss 应战缓冲计时器：到达应战排后短暂无敌（给出场动画留时间）
+        if (_bossEngageTimer > 0f)
+        {
+            _bossEngageTimer -= Time.deltaTime;
+            if (_bossEngageTimer <= 0f)
+            {
+                bossState = BossState.InCombat;
+                Debug.Log($"[Enemy] Boss进入战斗（缓冲结束）: enemyId={enemyId}, col={columnIndex}, row={rowIndex}");
+                OnBossEngaged?.Invoke(this);
+                StartAttacking();
             }
         }
 
@@ -345,6 +388,15 @@ public class Enemy : MonoBehaviour
     public void StartAttacking()
     {
         if (state == EnemyState.Dead) return;
+
+        // Boss 首次进入攻击状态：若尚未进入 InCombat，立即进入并创建血条
+        if (isBoss && bossState == BossState.None)
+        {
+            bossState = BossState.InCombat;
+            Debug.Log($"[Enemy] Boss直接进入战斗(rowIndex={rowIndex}): enemyId={enemyId}, col={columnIndex}");
+            OnBossEngaged?.Invoke(this);
+        }
+
         state = EnemyState.Attacking;
         isAttackAnimating = false;
         isAttackDrawPhase = false;
@@ -413,6 +465,18 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
+    /// 检查敌人当前是否可被击飞（挑飞）
+    /// 基础条件：处于 Stunned 状态
+    /// ForceLaunch Buff：始终可击飞
+    /// </summary>
+    public bool CanBeLaunched()
+    {
+        if (PlayerState.Instance != null && PlayerState.Instance.HasBuff(BuffType.ForceLaunch))
+            return true;
+        return state == EnemyState.Stunned;
+    }
+
+    /// <summary>
     /// 打断当前攻击动作（招架触发）
     /// 仅在 AttackSpawn 阶段可打断；AttackDraw 收招阶段不可打断，返回 false
     /// 打断后返回攻击冷却阶段（非眩晕），等待 attackTimer 后重新攻击
@@ -454,7 +518,19 @@ public class Enemy : MonoBehaviour
         stunTimer -= Time.deltaTime;
         if (stunTimer <= 0f)
         {
-            StartMoving();
+            // STUN 结束后重置 Poise，开始新一周期的削韧循环
+            currentPoise = maxPoise;
+            OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
+
+            // Boss 就位后锁定位置，不参与补齐前移
+            if (isBoss && (bossState == BossState.InCombat || _bossEngageTimer > 0f))
+            {
+                StartAttacking();
+            }
+            else
+            {
+                StartMoving();
+            }
         }
     }
 
@@ -478,6 +554,14 @@ public class Enemy : MonoBehaviour
 
             // 先退出击飞状态，再根据情况决定后续行为
             state = EnemyState.Idle;
+
+            // Boss 就位后（战斗中或缓冲中）锁定位置，不参与补齐前移
+            if (isBoss && (bossState == BossState.InCombat || _bossEngageTimer > 0f))
+            {
+                Debug.Log($"[Enemy] Boss落地锁定位置: enemyId={enemyId}, col={columnIndex}, row={rowIndex}");
+                StartAttacking();
+                return;
+            }
 
             // 如果 targetRow 被 Column 设置（前方死敌产生空位），则补齐前移
             if (targetRow >= 0 && rowIndex > targetRow)
@@ -574,6 +658,19 @@ public class Enemy : MonoBehaviour
             // BUG FIX: 防止 rowIndex 变为负数
             if (rowIndex < 0) rowIndex = 0;
 
+            // Boss 分阶段推进：到达第3排(rowIndex=2)，暂停等待前两排清空
+            if (isBoss && rowIndex == 2 && bossState == BossState.None)
+            {
+                BossPause();
+                OnColumnsModifiedForBoss(); // 立即检查前两排是否已空，防止漏检
+                if (!rushMoveChainTriggered)
+                {
+                    rushMoveChainTriggered = true;
+                    OnRushMoveComplete?.Invoke(this);
+                }
+                return;
+            }
+
             // 使用 attackRange 决定攻击距离
             int atkRange = (int)Mathf.Max(1, attackRange);
             bool reachedAttackRange = rowIndex < atkRange;
@@ -633,6 +730,21 @@ public class Enemy : MonoBehaviour
                     rushMoveChainTriggered = true;
                     Debug.Log($"[Enemy] 补齐移动完全完成（触发链式）: enemyId={enemyId}, col={columnIndex}, row={rowIndex}");
                     OnRushMoveComplete?.Invoke(this);
+
+                    // Boss 分阶段推进：到达第2排(rowIndex=1)，启动缓冲计时器
+                    if (isBoss && rowIndex <= 1 && (bossState == BossState.Approaching || bossState == BossState.None))
+                    {
+                        // 取消列监听，防止 OnColumnsModifiedForBoss 误触发 BossResume
+                        var cm = EnemyManager.Instance?.columnManager;
+                        if (cm != null && _onColumnsModifiedHandler != null)
+                        {
+                            cm.OnColumnsModified -= _onColumnsModifiedHandler;
+                            _onColumnsModifiedHandler = null;
+                        }
+                        // 1秒无敌缓冲，为出场动画预留时间
+                        _bossEngageTimer = 1f;
+                        Debug.Log($"[Enemy] Boss到达应战排，启动缓冲计时器: enemyId={enemyId}, col={columnIndex}, row={rowIndex}");
+                    }
                 }
             }
             else
@@ -758,6 +870,7 @@ public class Enemy : MonoBehaviour
     public void TakeDamage(float damage, DamageType damageType = DamageType.Stab)
     {
         if (state == EnemyState.Dead) return;
+        if (isBoss && bossState != BossState.InCombat) return;
 
         // 击飞状态下受到伤害倍率
         if (state == EnemyState.Launched)
@@ -771,6 +884,7 @@ public class Enemy : MonoBehaviour
 
         currentHealth -= finalDamage;
         OnDamageTaken?.Invoke(this);
+        OnHealthChanged?.Invoke(this, currentHealth, maxHealth);
 
         // 受伤跳字：在敌人右侧显示红色带黑描边的伤害数字
         if (DamageNumberManager.Instance != null)
@@ -875,16 +989,21 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
-    /// 受到架势伤害，返回是否破碎
+    /// 受到架势（Poise）伤害
+    /// Poise 不会自动回复；归零时触发 STUN，STUN 结束后重置 Poise 到满值
     /// </summary>
     public bool TakePoiseDamage(float poiseDamage)
     {
         if (state == EnemyState.Dead) return false;
+        if (isBoss && bossState != BossState.InCombat) return false;
 
         currentPoise -= poiseDamage;
+        OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
+
         if (currentPoise <= 0f)
         {
-            currentPoise = maxPoise;
+            currentPoise = 0f;
+            Stun(stunDuration);
             return true;
         }
         return false;
@@ -1120,6 +1239,30 @@ public class Enemy : MonoBehaviour
         switch (state)
         {
             case EnemyState.Idle:
+                // BOSS 补齐规则：前方一整排（所有列）必须清空才前进，而非仅看本列
+                if (isBoss && bossState == BossState.None && rowIndex > 2)
+                {
+                    if (!IsRowClearForBoss(rowIndex - 1))
+                    {
+                        // 前方排仍有存活敌人，订阅列修改事件等待重试
+                        var cm = EnemyManager.Instance?.columnManager;
+                        if (cm != null && _onColumnsModifiedHandler == null)
+                        {
+                            _onColumnsModifiedHandler = OnColumnsModifiedForBoss;
+                            cm.OnColumnsModified += _onColumnsModifiedHandler;
+                            Debug.Log($"[Enemy] Boss等待前方排清空(row={rowIndex - 1}): enemyId={enemyId}, col={columnIndex}");
+                        }
+                        return false; // 不清除 pendingRushMove，等待重试
+                    }
+                    // 前方排已清空，取消等待订阅（如有）
+                    if (_onColumnsModifiedHandler != null)
+                    {
+                        var cm2 = EnemyManager.Instance?.columnManager;
+                        if (cm2 != null)
+                            cm2.OnColumnsModified -= _onColumnsModifiedHandler;
+                        _onColumnsModifiedHandler = null;
+                    }
+                }
                 pendingRushMove = false;
                 StartMoving(true);
                 // 如果 state 未变为 Moving（例如 rowIndex=0 直接进入攻击），
@@ -1299,20 +1442,191 @@ public class Enemy : MonoBehaviour
     {
         // 从StageController获取透明度配置
         // 默认：第0排=1.0, 第1排=0.8, 第2排=0.6, 第3排=0.4, 第4排=0.2, 第5排+=0
-        float[] factors;
+        float[] factors = null;
         if (StageController.Instance != null)
         {
             factors = StageController.Instance.GetRowAlphaFactors();
         }
-        else
+
+        if (factors == null)
         {
             factors = new float[] { 1.0f, 0.8f, 0.6f, 0.4f, 0.2f };
-            Debug.LogWarning("[Enemy] StageController.Instance 为 null，使用默认透明度配置");
         }
 
         if (row < factors.Length)
             return factors[row];
         return 0f;
+    }
+
+    #endregion
+
+    #region Boss 分阶段推进
+
+    /// <summary>
+    /// Boss 分阶段推进入口：根据当前 rowIndex 决定行为
+    ///   rowIndex >= 2: 暂停等待前两排清空
+    ///   rowIndex <= 1: 直接进入战斗
+    /// 由 EnemyManager.RegisterEnemy 在 Boss 注册后调用
+    /// </summary>
+    public void StartBossPhaseAdvance()
+    {
+        if (!isBoss || bossState != BossState.None || state == EnemyState.Dead) return;
+
+        // BOSS 已在最前排：直接应战
+        if (rowIndex <= 1)
+        {
+            bossState = BossState.InCombat;
+            Debug.Log($"[Enemy] Boss直接进入战斗(rowIndex={rowIndex}): enemyId={enemyId}, col={columnIndex}");
+            OnBossEngaged?.Invoke(this);
+            return;
+        }
+
+        // BOSS 在后方：参与正常补齐链，TryStartRushMove 中的跨列检查保证
+        // BOSS 仅在整排前方清空时才前进。到达 rowIndex=2 时触发 BossPause。
+        Debug.Log($"[Enemy] Boss加入补齐链(rowIndex={rowIndex}): enemyId={enemyId}, col={columnIndex}");
+    }
+
+    /// <summary>
+    /// BOSS 补齐检查：指定排（跨所有列）是否已无存活非BOSS敌人
+    /// </summary>
+    private bool IsRowClearForBoss(int row)
+    {
+        var cm = EnemyManager.Instance?.columnManager;
+        if (cm == null) return true;
+
+        for (int c = 0; c < cm.columnCount; c++)
+        {
+            var col = cm.GetColumn(c);
+            if (col == null) continue;
+            if (row < col.enemies.Count)
+            {
+                var e = col.enemies[row];
+                if (e != null && e != this && e.state != EnemyState.Dead)
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Boss 在第3排暂停：停止移动，等待前两排清空
+    /// </summary>
+    private void BossPause()
+    {
+        bossState = BossState.Approaching;
+        state = EnemyState.Idle;
+        pendingRushMove = false;
+        targetRow = -1;
+
+        // 停止 DOTween
+        transform.DOKill(false);
+        UpdateWorldPosition();
+        transform.localScale = originalScale;
+
+        // BUG FIX: 确保 Boss 在 Approaching 阶段可见
+        // 强制启用 SpriteRenderer（某些路径可能导致 renderer 被禁用）
+        if (renderers != null)
+        {
+            foreach (var r in renderers)
+            {
+                if (r != null) r.enabled = true;
+            }
+        }
+        gameObject.SetActive(true);
+
+        // 立即触发一次 UpdateAlpha 确保透明度正确
+        // 防御：若 flashMaterials 意外为 null，直接通过 renderer 设置 alpha
+        if (flashMaterials != null && flashMaterials.Length > 0)
+        {
+            UpdateAlpha();
+        }
+        else if (renderers != null)
+        {
+            float rowAlpha = GetAlphaForRow(rowIndex);
+            foreach (var r in renderers)
+            {
+                if (r != null) r.material.color = new Color(1f, 1f, 1f, rowAlpha);
+            }
+        }
+
+        // 订阅列修改事件，检测前两排是否清空
+        var cm = EnemyManager.Instance?.columnManager;
+        if (cm != null)
+        {
+            _onColumnsModifiedHandler = OnColumnsModifiedForBoss;
+            cm.OnColumnsModified += _onColumnsModifiedHandler;
+        }
+
+        float alpha = GetAlphaForRow(rowIndex);
+        Debug.Log($"[Enemy] Boss暂停在第3排: enemyId={enemyId}, col={columnIndex}, rowIndex={rowIndex}, pos={transform.localPosition}, alpha={alpha}, active={gameObject.activeSelf}, rendererEnabled={GetComponent<SpriteRenderer>()?.enabled}, 等待前两排清空");
+    }
+
+    /// <summary>
+    /// 列修改回调：Boss 分阶段推进的两种等待模式
+    ///   1. BossState.Approaching（BossPause）：检测前两排(rowIndex 0,1)是否全部清空
+    ///   2. BossState.None + pendingRushMove（补齐等待）：检测前方排是否已清空，重试 TryStartRushMove
+    /// </summary>
+    private void OnColumnsModifiedForBoss()
+    {
+        if (state == EnemyState.Dead) return;
+
+        if (bossState == BossState.Approaching)
+        {
+            // 模式1：BossPause — 等待前两排清空
+            var cm = EnemyManager.Instance?.columnManager;
+            if (cm == null) return;
+
+            for (int c = 0; c < cm.columnCount; c++)
+            {
+                var col = cm.GetColumn(c);
+                if (col == null) continue;
+                for (int r = 0; r <= 1 && r < col.enemies.Count; r++)
+                {
+                    var e = col.enemies[r];
+                    if (e != null && e != this && e.state != EnemyState.Dead)
+                        return;
+                }
+            }
+
+            BossResume();
+            return;
+        }
+
+        if (bossState == BossState.None && pendingRushMove && rowIndex > 2)
+        {
+            // 模式2：补齐等待 — 前方排已清空，重试 TryStartRushMove
+            if (IsRowClearForBoss(rowIndex - 1))
+            {
+                var cm = EnemyManager.Instance?.columnManager;
+                if (cm != null && _onColumnsModifiedHandler != null)
+                {
+                    cm.OnColumnsModified -= _onColumnsModifiedHandler;
+                    _onColumnsModifiedHandler = null;
+                }
+                Debug.Log($"[Enemy] Boss前方排已清空，重试补齐: enemyId={enemyId}, col={columnIndex}, row={rowIndex}");
+                TryStartRushMove();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Boss 恢复推进：从第3排(rowIndex=2)补齐移动到第2排(rowIndex=1)
+    /// </summary>
+    private void BossResume()
+    {
+        // 取消订阅
+        var cm = EnemyManager.Instance?.columnManager;
+        if (cm != null && _onColumnsModifiedHandler != null)
+        {
+            cm.OnColumnsModified -= _onColumnsModifiedHandler;
+            _onColumnsModifiedHandler = null;
+        }
+
+        Debug.Log($"[Enemy] Boss恢复推进: enemyId={enemyId}, col={columnIndex}, 从第3排→第2排");
+
+        targetRow = 1;
+        pendingRushMove = true;
+        TryStartRushMove();
     }
 
     #endregion
@@ -1336,8 +1650,21 @@ public class Enemy : MonoBehaviour
         currentHealth = 0f;
         currentPoise = 0f;
         initialized = false;
+        // 清理 Boss 分阶段推进订阅
+        if (_onColumnsModifiedHandler != null)
+        {
+            var cm = EnemyManager.Instance?.columnManager;
+            if (cm != null)
+                cm.OnColumnsModified -= _onColumnsModifiedHandler;
+            _onColumnsModifiedHandler = null;
+        }
+        bossState = BossState.None;
+
         OnDeath = null;
         OnDamageTaken = null;
+        OnHealthChanged = null;
+        OnPoiseChanged = null;
+        OnBossEngaged = null;
         // 销毁材质实例，避免内存泄漏
         DestroyFlashMaterials();
         gameObject.SetActive(false);

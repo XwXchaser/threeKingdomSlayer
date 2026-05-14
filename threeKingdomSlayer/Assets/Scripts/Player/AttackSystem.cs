@@ -157,11 +157,28 @@ public class AttackSystem : MonoBehaviour
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, -1);
+
+            // 概率击飞 Buff：每次攻击时判定一次（对所有目标生效）
+            bool probLaunchActive = playerState != null && playerState.HasBuff(BuffType.ProbabilityLaunch);
+
             AttackWave.Create(wavePos, cfg.damageType, cfg.damage, targets,
                 onHit: (enemy) =>
                 {
-                    bool broken = enemy.TakePoiseDamage(cfg.poiseDamage);
-                    if (broken)
+                    enemy.TakePoiseDamage(cfg.poiseDamage);
+
+                    bool canLaunch = enemy.CanBeLaunched();
+                    // 概率击飞：非 CanBeLaunched 时按概率强制进入 Stun 后再 Launch
+                    if (!canLaunch && probLaunchActive)
+                    {
+                        // 默认 30% 概率触发
+                        if (Random.value < 0.3f)
+                        {
+                            enemy.Stun(cfg.launchDuration * 0.5f);
+                            canLaunch = true;
+                        }
+                    }
+
+                    if (canLaunch)
                         enemy.Launch(cfg.launchDuration);
                 },
                 prefab: cfg.attackWavePrefab);
@@ -181,8 +198,24 @@ public class AttackSystem : MonoBehaviour
 
         foreach (var enemy in targets)
         {
-            if (enemy.state == EnemyState.Attacking && enemy.isAttackAnimating && !enemy.isAttackDrawPhase
-                && cfg.poiseDamage >= enemy.maxPoise)
+            bool canInterrupt = enemy.state == EnemyState.Attacking
+                && enemy.isAttackAnimating
+                && !enemy.isAttackDrawPhase;
+
+            if (enemy.isBoss)
+            {
+                // Boss: parry 无条件打断攻击，打断成功才造成 Poise 伤害
+                if (canInterrupt)
+                {
+                    enemy.CancelAttack();
+                    enemy.TakePoiseDamage(cfg.poiseDamage);
+                }
+                else
+                {
+                    enemy.TakeDamage(cfg.damage, cfg.damageType);
+                }
+            }
+            else if (canInterrupt && cfg.poiseDamage >= enemy.maxPoise)
             {
                 enemy.CancelAttack();
             }

@@ -210,11 +210,9 @@ public class WaveSpawner : MonoBehaviour
             }
         }
 
-        // 普通波次：敌人从第3排（rowIndex+2）出场，营造压迫前进感
-        // BOSS波次：直接从最前排出场，立刻交战
-        WaveConfig currentWave = ResolvedStageConfig.waves[currentWaveIndex];
-        if (!currentWave.isBossWave)
-            rowIndex += 2;
+        // 所有敌人从第3排（rowIndex+2）出场，营造压迫前进感
+        // Boss 也从此出场，通过分阶段推进系统（BossPause/BossResume）控制前进
+        rowIndex += 2;
 
         int currentCol = startColumn;
         for (int i = 0; i < row.enemyIds.Length; i++)
