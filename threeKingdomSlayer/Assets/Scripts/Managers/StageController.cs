@@ -18,33 +18,6 @@ public class StageController : MonoBehaviour
     /// </summary>
     public static StageConfig PendingStageConfig;
 
-    [Header("透明度渐变配置")]
-    [Tooltip("每排的透明度系数，索引0=最前排")]
-    public float[] rowAlphaFactors = new float[] { 1.0f, 0.8f, 0.6f, 0.4f, 0.2f };
-
-    [Header("可见排数限制")]
-    public int maxVisibleRows = 5;
-
-    [Header("补齐移动配置")]
-    [Tooltip("连续补齐移动间的延迟（秒）。补齐移动完成后若仍需继续前进，等待此延迟后再开始下一次补齐移动")]
-    public float rushMoveDelay = 0.2f;
-
-    [Header("排阵型配置（梯形/扇形内收）")]
-    [Tooltip("方案A：预设表。若设置则优先使用预设表，否则使用方案B公式计算")]
-    public RowFormationPreset formationPreset;
-    [Tooltip("方案B：手动每排半宽（优先级最高）。若设置此数组，方案A和方案C均被忽略")]
-    public float[] manualRowHalfWidths;
-    [Tooltip("最前排（rowIndex=0）的半宽。例如4.0表示最前排最左列X=-4.0，最右列X=+4.0")]
-    public float formationMaxSpread = 4.0f;
-    [Tooltip("最后排的半宽。例如0.5表示最后排最左列X=-0.5，最右列X=+0.5")]
-    public float formationMinSpread = 0.5f;
-    [Tooltip("内收曲线指数。1.0=线性，>1.0=后排更快收拢，<1.0=前排更快收拢")]
-    public float formationPowerCurve = 1.2f;
-    [Tooltip("排间距（Z轴，世界单位）")]
-    public float rowSpacing = 2.5f;
-    [Tooltip("阵型整体Z轴偏移（正值=远离摄像机，负值=靠近摄像机）")]
-    public float formationOffsetZ = 0f;
-
     [Header("组件引用")]
     public WaveSpawner waveSpawner;
     public EnemyManager enemyManager;
@@ -76,23 +49,16 @@ public class StageController : MonoBehaviour
         if (PendingStageConfig != null)
         {
             stageConfig = PendingStageConfig;
-            Debug.Log($"[StageController] 加载关卡: {stageConfig.stageName} (stageId={stageConfig.stageId})");
-            PendingStageConfig = null; // 消费后清空，避免误用
+            PendingStageConfig = null;
         }
 
         if (stageConfig != null)
         {
-            rowAlphaFactors = stageConfig.rowAlphaFactors;
-            maxVisibleRows = stageConfig.maxVisibleRows;
-            // BUG FIX: 读取补齐移动延迟配置
-            rushMoveDelay = stageConfig.rushMoveDelay;
-            formationPreset = stageConfig.formationPreset;
-            manualRowHalfWidths = stageConfig.manualRowHalfWidths;
-            formationMaxSpread = stageConfig.formationMaxSpread;
-            formationMinSpread = stageConfig.formationMinSpread;
-            formationPowerCurve = stageConfig.formationPowerCurve;
-            rowSpacing = stageConfig.rowSpacing;
-            formationOffsetZ = stageConfig.formationOffsetZ;
+            Debug.Log($"[StageController] 加载关卡: {stageConfig.stageName} (stageId={stageConfig.stageId})");
+        }
+        else
+        {
+            Debug.LogWarning("[StageController] stageConfig 未设置");
         }
     }
 
@@ -259,10 +225,8 @@ public class StageController : MonoBehaviour
     /// </summary>
     private void OnEnemyDied(Enemy enemy)
     {
-        if (enemy?.config == null) return;
-
         playerState?.AddKill();
-        playerState?.AddCoins(enemy.config.coinReward);
+        playerState?.AddCoins(enemy.coinReward);
     }
 
     #endregion
@@ -341,18 +305,17 @@ public class StageController : MonoBehaviour
     /// </summary>
     public float GetFormationOffset(int columnIndex, int rowIndex)
     {
-        // BUG FIX: 使用固定的 maxVisibleRows 作为最大排数基准
-        // 这样即使某列敌人减少，阵型位置也不会变化
-        // 使用 maxVisibleRows - 1 作为最大排索引，确保阵型始终按最大可见排数计算
-        int maxRow = Mathf.Max(maxVisibleRows - 1, 0);
+        var fc = stageConfig?.formationConfig;
+        if (fc == null) return (columnIndex - 2) * 2.0f;
+        int maxRow = Mathf.Max(fc.maxVisibleRows - 1, 0);
 
         return RowFormation.GetColumnOffsetX(
             rowIndex, columnIndex, maxRow,
-            manualRowHalfWidths,
-            formationPreset,
-            formationMaxSpread,
-            formationMinSpread,
-            formationPowerCurve
+            fc.manualRowHalfWidths,
+            fc.formationPreset,
+            fc.formationMaxSpread,
+            fc.formationMinSpread,
+            fc.formationPowerCurve
         );
     }
 
@@ -361,23 +324,22 @@ public class StageController : MonoBehaviour
     /// </summary>
     public float GetRowSpacing()
     {
-        return rowSpacing;
+        return stageConfig?.formationConfig?.rowSpacing ?? 2.5f;
     }
 
-    /// <summary>
-    /// 获取阵型整体Z轴偏移
-    /// </summary>
     public float GetFormationOffsetZ()
     {
-        return formationOffsetZ;
+        return stageConfig?.formationConfig?.formationOffsetZ ?? 0f;
     }
 
-    /// <summary>
-    /// 获取最大可见排数
-    /// </summary>
     public int GetMaxVisibleRows()
     {
-        return maxVisibleRows;
+        return stageConfig?.formationConfig?.maxVisibleRows ?? 5;
+    }
+
+    public float[] GetRowAlphaFactors()
+    {
+        return stageConfig?.formationConfig?.rowAlphaFactors;
     }
 
     /// <summary>
@@ -387,7 +349,7 @@ public class StageController : MonoBehaviour
     /// </summary>
     public float GetRushMoveDelay()
     {
-        return rushMoveDelay;
+        return stageConfig?.rushMoveDelay ?? 0.2f;
     }
 
     #endregion

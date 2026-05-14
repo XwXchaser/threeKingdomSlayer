@@ -25,13 +25,12 @@ public class PlayerState : MonoBehaviour
     [Header("武将配置")]
     public HeroConfig heroConfig;
 
-    [Header("运行时状态")]
-    public float currentHealth;
-    public int currentRevives;
-    public int killCount;
-    public int coinCount;
-    public int currentWave;
-    public StageState stageState = StageState.None;
+    [System.NonSerialized] public float currentHealth;
+    [System.NonSerialized] public int currentRevives;
+    [System.NonSerialized] public int killCount;
+    [System.NonSerialized] public int coinCount;
+    [System.NonSerialized] public int currentWave;
+    [System.NonSerialized] public StageState stageState = StageState.None;
 
     // 冷却计时器（按攻击类型索引）
     private Dictionary<AttackType, float> cooldownTimers = new Dictionary<AttackType, float>();

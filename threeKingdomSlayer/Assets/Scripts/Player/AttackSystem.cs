@@ -182,7 +182,7 @@ public class AttackSystem : MonoBehaviour
         foreach (var enemy in targets)
         {
             if (enemy.state == EnemyState.Attacking && enemy.isAttackAnimating && !enemy.isAttackDrawPhase
-                && cfg.poiseDamage >= (enemy.config != null ? enemy.config.maxPoise : float.MaxValue))
+                && cfg.poiseDamage >= enemy.maxPoise)
             {
                 enemy.CancelAttack();
             }

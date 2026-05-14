@@ -58,7 +58,7 @@
 ```
 
 **配置层**（ScriptableObject，无运行时依赖）：
-`EnemyConfig`, `AttackSkillConfig`, `UltimateSkillConfig`, `HeroConfig`, `StageConfig`(+`WaveConfig`/`RowConfig`), `RowFormationPreset`, `StageRegistry`
+`AttackSkillConfig`, `UltimateSkillConfig`, `HeroConfig`, `StageConfig`(+`WaveConfig`/`RowConfig`), `RowFormationPreset`, `StageRegistry`
 
 **静态工具**（无 MonoBehaviour 依赖）：`RowFormation`, `SaveManager`
 

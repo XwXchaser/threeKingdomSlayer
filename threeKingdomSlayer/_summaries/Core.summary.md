@@ -12,7 +12,6 @@ Core（核心数据结构与配置）
 |---|---|
 | `Column` (Serializable) | 管理单列敌人列表。Index 0 = 最前排。处理 `RemoveEnemy()`（链式触发补齐前移）、`TriggerFillForward()`（生成后初始压缩）和链式回调 `OnColumnRushMoveComplete`。 |
 | `ColumnManager` (MonoBehaviour) | 5 个 Column 实例的单例式管理器。提供按列增删改查、范围查询（`GetEnemiesInRange`、`GetAllEnemiesInRange`、`GetEnemiesByRowLimit`）和非死亡前移的 `UpdateEnemyRow()` 链式逻辑。 |
-| `EnemyConfig` (ScriptableObject) | 敌人数值：`enemyName`、血量、`occupySlots`(1-5)、攻速/攻击/射程、移速、最大韧性、眩晕/击飞时长、金币奖励、`isBoss` 开关、6 种伤害类型弱点倍率、`parryStunThresholds`（Boss 招架血量百分比眩晕阈值数组）。菜单：`Assets > Create > 一夫当关/敌人配置` |
 | `AttackSkillConfig` (ScriptableObject) | 攻击技能配置：`id`（编号）、`attackType`（枚举）、`damageType`、`damage`、`poiseDamage`、`rangeRows`、`cooldown`、`launchDuration`、`attackWavePrefab`、`ultimateEnergyGain`（命中充能值）。每个技能一个 .asset，策划可拖拽装配。菜单：`Assets > Create > 一夫当关/攻击技能配置` |
 | `UltimateSkillConfig` (ScriptableObject) | 大招技能配置（独立体系）：`id`（编号）、`cooldown`（秒）、`energyCost`、`damage`、`damageType`。Berserk 专用：`berserkDuration`、`berserkStabCooldown`、`berserkDamageMultiplier`。每个大招一个 .asset。菜单：`Assets > Create > 一夫当关/大招技能配置` |
 | `HeroConfig` (ScriptableObject) | 武将数值：`heroId`、血量、复活次数、复活血量百分比。`List<AttackSkillConfig> skillConfigs` 技能装配列表 + `GetSkillConfig(AttackType)` 查询方法。`UltimateSkillConfig ultimateSkillConfig` 大招配置（独立字段）。全局 `damageBonusPercent`。菜单：`Assets > Create > 一夫当关/武将配置` |
@@ -65,7 +64,7 @@ Core（核心数据结构与配置）
 
 - `Column` 依赖 `Enemy`（读 state, rowIndex, columnIndex，调用方法）
 - `ColumnManager` 依赖 `Column`, `Enemy`
-- `EnemyConfig`, `AttackSkillConfig`, `HeroConfig`, `RowFormationPreset`, `StageConfig` 均为 Unity ScriptableObject，无代码依赖
+- `AttackSkillConfig`, `HeroConfig`, `RowFormationPreset`, `StageConfig` 均为 Unity ScriptableObject，无代码依赖
 - `RowFormation` 为纯静态工具类，无 MonoBehaviour 依赖
 - `WaveConfig`, `RowConfig` 为纯可序列化数据类
 - `SaveData` 为纯可序列化数据类（存档数据载体）
@@ -88,7 +87,7 @@ Core（核心数据结构与配置）
 
 ## 扩展指南
 
-- **新敌人类型**：通过 Create 菜单创建 `EnemyConfig` 资产，设置 enemyId、数值、弱点倍率
+- **新敌人类型**：直接在 Enemy 预制体上配置所有属性字段（enemyName、enemyId、maxHealth 等），无需额外创建 ScriptableObject
 - **新武将**：创建 `HeroConfig` 资产，创建所需 `AttackSkillConfig` 资产拖入 `skillConfigs` 列表，创建 `UltimateSkillConfig` 资产拖入 `ultimateSkillConfig`，赋给 `PlayerState.heroConfig`
 - **新阵型**：创建 `RowFormationPreset` 资产，配置每排偏移，赋给 `StageConfig.formationPreset`
 - **新关卡**：创建 `StageConfig` 资产，配置 waves/rows，拖入 `StageController.stageConfig`

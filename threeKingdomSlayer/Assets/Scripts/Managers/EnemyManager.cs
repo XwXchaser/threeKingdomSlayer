@@ -91,8 +91,7 @@ public class EnemyManager : MonoBehaviour
         // 从列中移除
         columnManager?.RemoveEnemyFromColumn(enemy.columnIndex, enemy);
 
-        // 触发事件（必须在 ReturnEnemy 之前，因为 ReturnEnemy→ResetEnemy 会将 config 置 null，
-        // 导致 StageController.OnEnemyDied 中 enemy?.config 判定失败，跳过 AddKill/AddCoins）
+        // 触发事件（必须在 ReturnEnemy 之前）
         OnAnyEnemyDied?.Invoke(enemy);
 
         // 注意：不再在此处调用 EnemyPool.Instance?.ReturnEnemy(enemy)
@@ -120,7 +119,7 @@ public class EnemyManager : MonoBehaviour
     public void OnEnemyAttackPlayer(Enemy enemy)
     {
         if (enemy == null) return;
-        float damage = enemy.config != null ? enemy.config.attackDamage : 10f;
+        float damage = enemy.attackDamage;
         PlayerState.Instance?.TakeDamage(damage);
     }
 

@@ -12,15 +12,16 @@ Enemy（敌人实体与对象池）
 
 | 类 | 说明 |
 |---|---|
-| `Enemy` (MonoBehaviour) | 完整敌人实体。状态机：Idle/Moving/Attacking/Stunned/Launched/Dead。处理：逐排移动（DOTween 弹跳）、三阶段攻击动画（AttackSpawn 前冲+翻转可打断 → AttackDraw 收招不可打断 → 冷却）、带闪烁效果的受伤反馈（材质实例方案 + 隔离式 punch scale tween）、死亡序列（弹跳 + 旋转 + 重力坠落）、按排透明度。链式补齐系统：`pendingRushMove`、`targetRow`、`rushMoveDelayTimer`、`OnRushMoveComplete` 事件。`IsBoss` 通过 `config.isBoss` 访问。内置 `EnemyHealthBar` 组件管理头顶血条。 |
+| `Enemy` (MonoBehaviour) | 完整敌人实体。所有属性通过 `[SerializeField]` 直接序列化在预制体上（enemyName、enemyId、maxHealth、occupySlots、attackSpeed/Damage/Range/SpawnDuration/DrawDuration、moveSpeed、maxPoise、stunDuration、launchDuration/YHeight、launchedDamageTakenMultiplier/HitExtendDuration、coinReward、isBoss、6种伤害倍率、parryStunThresholds）。状态机：Idle/Moving/Attacking/Stunned/Launched/Dead。处理：逐排移动（DOTween 弹跳）、三阶段攻击动画（AttackSpawn 前冲+翻转可打断 → AttackDraw 收招不可打断 → 冷却）、带闪烁效果的受伤反馈（材质实例方案 + 隔离式 punch scale tween）、死亡序列（弹跳 + 旋转 + 重力坠落）、按排透明度。链式补齐系统：`pendingRushMove`、`targetRow`、`rushMoveDelayTimer`、`OnRushMoveComplete` 事件。内置 `EnemyHealthBar` 组件管理头顶血条。
 | `EnemyState` (enum) | Idle, Moving, Attacking, Stunned, Launched, Dead |
 | `DamageType` (enum) | Stab, Slash, Pierce, Sweep, Launch, Poise |
-| `EnemyPool` (MonoBehaviour, singleton) | 按 enemyId 索引的对象池。自动从 `Resources/EnemyPrefabs/` 注册预制体（命名规则：`Enemy_{id}.prefab`）。若未找到预制体则回退为动态创建红色 Cube。支持 `RegisterPrefab()`、`PrewarmPool()`、`GetEnemy()`、`ReturnEnemy()`、`ClearAllPools()`。为池根节点和运行时敌人根节点维护不同的父 Transform。 |
+| `EnemyPool` (MonoBehaviour, singleton) | 按 enemyId 索引的对象池。自动从 `Resources/EnemyPrefabs/` 注册预制体（命名规则：`Enemy_{id}.prefab`）。若未找到预制体则回退为动态创建红色 Cube。支持 `RegisterPrefab()`、`PrewarmPool()`、`GetEnemy()`、`ReturnEnemy()`、`ClearAllPools()`、`GetEnemyOccupySlots(int enemyId)`（从预制体读取占位数，无需实例化）。为池根节点和运行时敌人根节点维护不同的父 Transform。 |
 
 ## 公开接口
 
 **Enemy**：
-- `Initialize(EnemyConfig cfg, int col, int row)` — 从对象池激活
+- `Initialize(int col, int row)` — 从对象池激活（使用直接序列化字段，无需传入 config）
+- `ParryStunThreshold` (struct) — 招架后血量百分比眩晕阈值，定义于 Enemy.cs
 - `TakeDamage(float damage, DamageType type)` — 施加伤害（含弱点倍率、闪烁、弹缩放）
 - `TakePoiseDamage(float poiseDamage)` — 架势击破时仅重置架势值，不再造成眩晕
 - `CancelAttack()` — 招架打断攻击动作，返回攻击冷却阶段（非眩晕）
@@ -43,7 +44,6 @@ Enemy（敌人实体与对象池）
 
 ## 依赖模块
 
-- `EnemyConfig`（Core）
 - `StageController`（Managers）— 读取 `GetRushMoveDelay()`, `GetMaxVisibleRows()`, `rowAlphaFactors`, `GetFormationOffset()`, `GetRowSpacing()`, `GetFormationOffsetZ()`
 - `EnemyManager`（Managers）— 调用 `OnEnemyMovedForward()`, `OnEnemyAttackPlayer()`
 - `DamageNumberManager`（Managers）— 受伤时调用 `Spawn()`
@@ -67,5 +67,5 @@ Enemy（敌人实体与对象池）
 ## 扩展指南
 
 - **新敌人状态**：添加到 `EnemyState` 枚举，在 `Update()` switch 中添加 case，创建 `UpdateXxx()` 方法
-- **新伤害类型行为**：在 `GetDamageMultiplier()` 中添加 case，在 `EnemyConfig` 中添加弱点字段
+- **新伤害类型行为**：在 `GetDamageMultiplier()` 中添加 case，在 Enemy 组件上添加对应的弱点倍率字段
 - **新死亡动画**：修改 `DeathBounceAndFall()` 协程或提供可配置的 DOTween 模板

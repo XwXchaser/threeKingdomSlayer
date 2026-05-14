@@ -83,7 +83,7 @@ public class Column
                 Enemy e = enemies[i];
                 if (e.state == EnemyState.Dead)
                 {
-                    Debug.Log($"[Column] 跳过 Dead 敌人: enemyId={e.config?.enemyId}, col={colIndex}, row={e.rowIndex}");
+                    Debug.Log($"[Column] 跳过 Dead 敌人: enemyId={e.enemyId}, col={colIndex}, row={e.rowIndex}");
                     continue;
                 }
                 if (e.state == EnemyState.Launched)
@@ -92,7 +92,7 @@ public class Column
                     // 但设置 targetRow 用于落地后检测前方空位
                     if (i != writeIdx) enemies[writeIdx] = e;
                     e.targetRow = writeIdx;
-                    Debug.Log($"[Column] 保留 Launched 敌人（不参与补齐）: enemyId={e.config?.enemyId}, col={colIndex}, row={e.rowIndex}, listPos={writeIdx}");
+                    Debug.Log($"[Column] 保留 Launched 敌人（不参与补齐）: enemyId={e.enemyId}, col={colIndex}, row={e.rowIndex}, listPos={writeIdx}");
                     writeIdx++;
                     continue;
                 }
@@ -102,7 +102,7 @@ public class Column
                 e.targetRow = writeIdx;
                 e.ResetMovementState();
                 e.pendingRushMove = true;
-                Debug.Log($"[Column] 标记补齐移动: enemyId={e.config?.enemyId}, col={colIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
+                Debug.Log($"[Column] 标记补齐移动: enemyId={e.enemyId}, col={colIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
                 writeIdx++;
             }
 
@@ -126,7 +126,7 @@ public class Column
             {
                 enemies[i].OnRushMoveComplete += OnColumnRushMoveComplete;
                 enemies[i].TryStartRushMove();
-                Debug.Log($"[Column] 启动链式补齐: enemyId={enemies[i].config?.enemyId}, col={colIndex}, row={enemies[i].rowIndex}");
+                Debug.Log($"[Column] 启动链式补齐: enemyId={enemies[i].enemyId}, col={colIndex}, row={enemies[i].rowIndex}");
                 return;
             }
         }
@@ -146,7 +146,7 @@ public class Column
             {
                 enemies[i].OnRushMoveComplete += OnColumnRushMoveComplete;
                 enemies[i].TryStartRushMove();
-                Debug.Log($"[Column] 链式触发下一个: enemyId={enemies[i].config?.enemyId}, col={columnIndex}, row={enemies[i].rowIndex}");
+                Debug.Log($"[Column] 链式触发下一个: enemyId={enemies[i].enemyId}, col={columnIndex}, row={enemies[i].rowIndex}");
                 return;
             }
         }
@@ -171,7 +171,7 @@ public class Column
 
         enemy.OnRushMoveComplete += OnColumnRushMoveComplete;
         enemy.TryStartRushMove();
-        Debug.Log($"[Column] 击飞落地启动链式: enemyId={enemy.config?.enemyId}, col={columnIndex}, row={enemy.rowIndex}");
+        Debug.Log($"[Column] 击飞落地启动链式: enemyId={enemy.enemyId}, col={columnIndex}, row={enemy.rowIndex}");
     }
 
     /// <summary>

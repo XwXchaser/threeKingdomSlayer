@@ -1,5 +1,39 @@
 # 开发日志
 
+## 2025-12-24 — EnemyConfig 合并到 Enemy + 幽灵引用架构规范
+
+### 概述
+将 `EnemyConfig` ScriptableObject 消除，所有敌人属性直接序列化到 Enemy 预制体的 `Enemy` MonoBehaviour 组件上。这是「幽灵引用」清理的核心案例。
+
+### 架构变更
+- **Enemy.cs**：移除 `public EnemyConfig config` 字段，新增 ~25 个直接 `[SerializeField]` 字段（enemyName、enemyId、maxHealth、occupySlots、attackSpeed/Damage/Range/SpawnDuration/DrawDuration、moveSpeed、maxPoise、stunDuration、launchDuration/YHeight、launchedDamageTakenMultiplier/HitExtendDuration、coinReward、isBoss、6 种伤害倍率、parryStunThresholds）。`Initialize` 签名从 `(EnemyConfig cfg, int col, int row)` 改为 `(int col, int row)`
+- **EnemyPool.cs**：新增 `GetEnemyOccupySlots(int enemyId)` 方法，从预制体读取占位数（无需实例化）
+- **WaveSpawner.cs**：移除 `enemyConfigs` 列表、`enemyConfigCache` 静态字典、`GetEnemyConfig()` 方法。`SpawnRow()` 改用 `enemyPool.GetEnemyOccupySlots()` 和直接 `enemy.Initialize(col, row)`
+- **Column.cs / ColumnManager.cs / EnemyManager.cs / StageController.cs / AttackSystem.cs**：所有 `enemy.config?.X` / `enemy.config != null ? enemy.config.X : default` 替换为 `enemy.X` 直接字段访问
+- **ParryStunThreshold** struct 从 EnemyConfig.cs 移至 Enemy.cs
+- **删除文件**：`EnemyConfig.cs` + `.meta`、3 个 `.asset` 文件（Enemy_Skeleton/Shilde/Boss）
+- **预制体迁移**：Enemy_101/102/104.prefab 的 Enemy 组件已写入原 EnemyConfig 全部值
+
+### 设计规范
+- 新增 `design/anti-ghost-reference.md` — 架构规范：禁止 Resources.Load/静态缓存/字符串ID查找获取配置数据
+- 新增 `skill/use-architecture-constraints.md` — 使用指南：新对话如何加载并遵守此规范
+
+### 涉及文件
+- `Assets/Scripts/Enemy/Enemy.cs` — 字段迁移 + `Initialize` 改签
+- `Assets/Scripts/Enemy/EnemyPool.cs` — 新增 `GetEnemyOccupySlots()`
+- `Assets/Scripts/Wave/WaveSpawner.cs` — 移除 config 体系
+- `Assets/Scripts/Core/Column.cs` — `.config?.enemyId` → `.enemyId`
+- `Assets/Scripts/Core/ColumnManager.cs` — 同上
+- `Assets/Scripts/Managers/EnemyManager.cs` — `.config.attackDamage` → `.attackDamage`
+- `Assets/Scripts/Managers/StageController.cs` — `.config.coinReward` → `.coinReward`
+- `Assets/Scripts/Player/AttackSystem.cs` — `.config.maxPoise` → `.maxPoise`
+- `Assets/Resources/EnemyPrefabs/Enemy_101.prefab` — 写入骨架兵值
+- `Assets/Resources/EnemyPrefabs/Enemy_102.prefab` — 写入盾兵值
+- `Assets/Resources/EnemyPrefabs/Enemy_104.prefab` — 写入Boss值
+- `_summaries/` — 全量更新 Enemy/Core/Wave/Index/CHANGELOG
+
+---
+
 ## 2026-05-03 — 技能配置编号字段
 
 ### 概述

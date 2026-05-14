@@ -50,9 +50,9 @@ public static class RowFormation
     /// <param name="maxRow">当前最大排索引（用于公式计算）</param>
     /// <param name="manualRowHalfWidths">手动每排半宽数组（方案B，最高优先级，可选）</param>
     /// <param name="preset">预设表（方案A，可选）</param>
-    /// <param name="maxSpread">最前排半宽（方案C参数）</param>
-    /// <param name="minSpread">最后排半宽（方案C参数）</param>
-    /// <param name="powerCurve">内收曲线指数（方案C参数，1=线性）</param>
+    /// <param name="maxSpread">后排半宽（方案C参数，Lerp终点，后排宽）</param>
+    /// <param name="minSpread">前排半宽（方案C参数，Lerp起点，前排窄）</param>
+    /// <param name="powerCurve">扩散曲线指数（方案C参数，1=线性）</param>
     /// <returns>X轴偏移值（世界单位）</returns>
     public static float GetColumnOffsetX(
         int rowIndex,
@@ -90,15 +90,12 @@ public static class RowFormation
     }
 
     /// <summary>
-    /// 公式计算X偏移（方案B）
+    /// 公式计算X偏移（方案C）
     /// 公式：currentSpread = Lerp(minSpread, maxSpread, t)
     ///       其中 t = Pow(rowIndex / maxRow, powerCurve)
     ///       列偏移 = (columnIndex - 2) * (currentSpread * 2 / 4)
     ///
-    /// BUG FIX: 交换了 maxSpread 和 minSpread 的插值顺序。
-    /// 之前是 Lerp(maxSpread, minSpread, t)，导致前排宽、后排窄（向前收敛）。
-    /// 现在改为 Lerp(minSpread, maxSpread, t)，实现前排窄、后排宽（向后收敛）。
-    /// 这样更符合视觉透视效果：远处的敌人看起来更宽，近处的更窄。
+    /// 前排窄、后排宽（由窄变宽），形成向远处扩散的视觉效果。
     /// </summary>
     private static float CalculateOffsetByFormula(
         int rowIndex,
@@ -114,13 +111,8 @@ public static class RowFormation
         // 曲线插值
         float t = Mathf.Pow(normalizedRow, powerCurve);
 
-        // BUG FIX: 恢复插值顺序，实现向前展开（前排宽、后排窄）
-        // 之前：Lerp(minSpread, maxSpread, t) → 前排窄、后排宽（向玩家方向收拢）
-        // 现在：Lerp(maxSpread, minSpread, t) → 前排宽、后排窄（向远处收敛）
-        // 在Unity中，-Z方向为前进方向（朝向玩家摄像机），
-        // 前排（rowIndex=0）最靠近摄像机，应视觉上更宽（maxSpread），
-        // 后排（rowIndex=max）远离摄像机，应视觉上更窄（minSpread）。
-        float currentSpread = Mathf.Lerp(maxSpread, minSpread, t);
+        // 前排窄、后排宽（由窄变宽），向远处扩散
+        float currentSpread = Mathf.Lerp(minSpread, maxSpread, t);
 
         // 列索引0~4映射到 -currentSpread ~ +currentSpread
         // 列0在最左，列2在中心，列4在最右
