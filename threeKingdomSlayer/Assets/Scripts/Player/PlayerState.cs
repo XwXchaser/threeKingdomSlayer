@@ -35,6 +35,9 @@ public class PlayerState : MonoBehaviour
     // 冷却计时器（按攻击类型索引）
     private Dictionary<AttackType, float> cooldownTimers = new Dictionary<AttackType, float>();
 
+    // Buff 系统
+    private Dictionary<BuffType, float> buffTimers = new Dictionary<BuffType, float>();
+
     // 减伤Buff
     private float damageReductionPercent;
     private float damageReductionTimer;
@@ -92,6 +95,20 @@ public class PlayerState : MonoBehaviour
         }
 
         if (damageReductionTimer > 0) damageReductionTimer -= Time.deltaTime;
+
+        // 更新 Buff 计时器
+        var expired = new List<BuffType>();
+        foreach (var kv in buffTimers)
+        {
+            if (kv.Value > 0f)
+            {
+                buffTimers[kv.Key] -= Time.deltaTime;
+                if (buffTimers[kv.Key] <= 0f)
+                    expired.Add(kv.Key);
+            }
+        }
+        foreach (var t in expired)
+            buffTimers.Remove(t);
     }
 
     /// <summary>
@@ -111,6 +128,7 @@ public class PlayerState : MonoBehaviour
         cooldownTimers.Clear();
         damageReductionPercent = 0f;
         damageReductionTimer = 0f;
+        buffTimers.Clear();
 
         float maxHp = heroConfig != null ? heroConfig.maxHealth : 100f;
         OnHealthChanged?.Invoke(currentHealth, maxHp);
@@ -267,6 +285,34 @@ public class PlayerState : MonoBehaviour
 
     #endregion
 
+    #region Buff 系统
+
+    /// <summary>
+    /// 检查是否拥有指定 Buff
+    /// </summary>
+    public bool HasBuff(BuffType type)
+    {
+        return buffTimers.ContainsKey(type);
+    }
+
+    /// <summary>
+    /// 应用 Buff（duration=0 表示永久）
+    /// </summary>
+    public void ApplyBuff(BuffType type, float duration = 0f)
+    {
+        buffTimers[type] = duration;
+    }
+
+    /// <summary>
+    /// 移除 Buff
+    /// </summary>
+    public void RemoveBuff(BuffType type)
+    {
+        buffTimers.Remove(type);
+    }
+
+    #endregion
+
     #region 减伤Buff
 
     /// <summary>
@@ -279,6 +325,15 @@ public class PlayerState : MonoBehaviour
     }
 
     #endregion
+}
+
+/// <summary>
+/// Buff 类型枚举
+/// </summary>
+public enum BuffType
+{
+    ForceLaunch,       // 强制击飞：CanBeLaunched 始终返回 true
+    ProbabilityLaunch  // 概率击飞：攻击时按概率强制击飞
 }
 
 /// <summary>

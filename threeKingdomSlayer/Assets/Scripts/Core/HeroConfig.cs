@@ -12,6 +12,10 @@ public class HeroConfig : ScriptableObject
     public string heroName = "赵云";
     public int heroId;
 
+    [Header("UI Prefab")]
+    [Tooltip("英雄 HUD Prefab（每个武将拥有独立的 HUD 布局和素材）")]
+    public GameObject heroHUDPrefab;
+
     [Header("基础属性")]
     public float maxHealth = 500f;
     public int reviveCount = 3;

@@ -15,10 +15,10 @@ MonoBehaviour:
   id: 1
   attackType: 0
   damageType: 0
-  damage: 10
+  damage: 100
   poiseDamage: 0
-  rangeRows: 1
-  cooldown: 0.5
+  rangeRows: 2
+  cooldown: 0.2
   launchDuration: 0
   attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
   ultimateEnergyGain: 10

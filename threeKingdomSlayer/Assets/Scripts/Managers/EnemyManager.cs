@@ -18,6 +18,7 @@ public class EnemyManager : MonoBehaviour
     // 事件
     public System.Action<Enemy> OnAnyEnemyDied;
     public System.Action OnAllEnemiesDied;
+    public System.Action<Enemy> OnBossEngaged;
 
     private void Awake()
     {
@@ -57,6 +58,13 @@ public class EnemyManager : MonoBehaviour
         allAliveEnemies.Add(enemy);
         enemy.OnDeath += OnEnemyDied;
 
+        // Boss: 订阅分阶段推进事件 + 初始化分阶段推进
+        if (enemy.isBoss)
+        {
+            enemy.OnBossEngaged += HandleBossEngaged;
+            enemy.StartBossPhaseAdvance();
+        }
+
         // 添加到列管理
         columnManager?.AddEnemyToColumn(enemy.columnIndex, enemy);
     }
@@ -87,6 +95,7 @@ public class EnemyManager : MonoBehaviour
 
         allAliveEnemies.Remove(enemy);
         enemy.OnDeath -= OnEnemyDied;
+        enemy.OnBossEngaged -= HandleBossEngaged;
 
         // 从列中移除
         columnManager?.RemoveEnemyFromColumn(enemy.columnIndex, enemy);
@@ -124,6 +133,14 @@ public class EnemyManager : MonoBehaviour
     }
 
     #endregion
+
+    /// <summary>
+    /// Boss 到达应战排：通知 BattleHUD 创建血条
+    /// </summary>
+    private void HandleBossEngaged(Enemy boss)
+    {
+        OnBossEngaged?.Invoke(boss);
+    }
 
     #region 查询接口
 
