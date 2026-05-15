@@ -66,6 +66,7 @@ MonoBehaviour:
   launchedHitExtendDuration: 1
   coinReward: 10
   isBoss: 1
+  bossHealthBarPrefab: {fileID: 3365436119990249603, guid: 9a1fc4950f5206a4bb1f8a56c5ef9c61, type: 3}
   stabDamageMultiplier: 1
   slashDamageMultiplier: 1
   pierceDamageMultiplier: 1

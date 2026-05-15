@@ -50,6 +50,7 @@ Player（玩家系统）
 - **含死区的列映射**：`GetColumnFromScreenPosition` 将敌人世界位置投影到屏幕空间，找最近列。若最近敌人距离超过半列宽则返回 -1（攻击被阻止）
 - **Parry 参数现已从 HeroConfig.skillConfigs 读取**：所有攻击参数（damage/poiseDamage/rangeRows/cooldown 等）均通过 `heroConfig.GetSkillConfig(attackType)` 获取，AttackSystem 自身无硬编码攻击字段
 - **Parry 使用配置的 damageType**（当前为 Stab），而非独立的 Poise 类型
+- **Parry 仅 Boss 造成架势伤害**：`ExecuteParry` 中非 Boss 敌人仅调用 `TakeDamage`，不调用 `TakePoiseDamage`。Boss 保留完整招架机制（架势伤害+打断+血量阈值眩晕）
 - **大招 AttackType.Ultimate 已加入枚举**，使用独立的 `UltimateSkillConfig`，执行路径走 UltimateSystem（UI 按钮直达），不走 AttackSystem.TryExecuteAttack
 - **Ult cooldown 与普通技能统一单位**（秒）：`UltimateSkillConfig.cooldown=10` = 每 10 秒 1 次
 - **`ForceExecuteStab` 仅 Ult 效果调用**，绕过冷却和能量检查，直接对指定列造成指定伤害

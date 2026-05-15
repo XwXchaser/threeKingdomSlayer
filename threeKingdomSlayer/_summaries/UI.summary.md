@@ -13,7 +13,7 @@ HUD 显示（血量、复活、击杀、金币、波次、冷却指示器、胜�
 | `BattleHUD` (MonoBehaviour) | 战斗 UI 绑定。订阅全部 `PlayerState` 事件。更新血条 Slider+Text、复活显示、击杀数、金币数、波次进度。每帧冷却 UI：Image 的 `fillAmount` 径向冷却 + 各技能图标独立的充能填充 Image。显示胜/负面板及金币统计。重开和主菜单按钮。`SetHealthBarColor(Color)` / `ResetHealthBarColor()` 供 Ult 效果控制血条颜色。 |
 | `CameraManager` (MonoBehaviour) | 挂载于相机的场景转场：背景 RectTransform 缩放 + 位置动画 + `OnRenderImage` 模糊效果（使用自定义 shader `Hidden/BlurEffect`）。`PlayDeparture()` 动画结束后加载下一场景。`PlayArrival()` 场景启动时动画。用静态 `IsArriving` 标志实现跨场景交接。 |
 | `DamageNumber` (MonoBehaviour) | 浮动伤害跳字（TextMeshPro）。`Show(Vector3 worldPos, float damage)` 启动 DOTween 上浮 + 淡出。完成后调用 `OnReturnToPool` 回调返还 `DamageNumberManager`。配置：红色文字、黑色描边、粗体。 |
-| `CoinCounterUI` (MonoBehaviour) | Battle 场景铜钱UI。订阅 `PlayerState.OnCoinGained`。CoinIcon（Image，获得时 DOPunchScale 跳动）+ TotalText（TMP，显示本局铜钱数，获得时 DOPunchScale 跳动）+ FloatAnchor（空GameObject，控制飘字起始位置）。获得铜钱时在 FloatAnchor 位置生成金色 "+N" 飘字（TMP），DOTween 上浮+淡出后销毁。Inspector 可配：iconPunchScale/Duration、totalPunchScale/Duration、floatDuration、floatTextColor/FontSize/floatUpDistance。 |
+| `CoinCounterUI` (MonoBehaviour) | Battle 场景铜钱UI。订阅 `PlayerState.OnCoinGained`。CoinIcon（Image，获得时 DOPunchScale 跳动）+ TotalText（TMP，显示本局铜钱数，获得时 DOPunchScale 跳动）+ FloatAnchor（空GameObject，控制飘字起始位置）。获得铜钱时在 FloatAnchor 位置生成金色 "+N" 飘字（TMP，overflowMode=Overflow 防裁剪），DOTween 上浮+淡出后销毁。Inspector 可配：iconPunchScale/Duration、totalPunchScale/Duration、floatDuration、floatTextColor/FontSize/floatTextRectSize/floatUpDistance。 |
 | `MainMenuUI` (MonoBehaviour) | 主菜单：4个预置按钮（新游戏/继续游戏/删除存档/退出），根据 `SaveManager.HasSave` 控制显隐。选关网格从 `StageConfigManager` Inspector 列表自动生成（GridLayoutGroup 横向排列，溢出换行），每按钮显示关卡名+状态（已通关/可挑战/未解锁）。OnNewGame 删除存档从第一关开始；OnContinueGame 找第一个未通关关卡；OnDeleteSave 删除存档并重建网格。关卡选择通过 `StageController.PendingStageConfig` 跨场景传递。coinText 字段显示总铜钱（SaveManager.Load().coinCount）。 |
 | `PingPongAnim` (MonoBehaviour) | 精灵序列动画器。两种模式：idle ping-pong（帧 [0,1] 间来回），随机触发的眨眼播放完整帧序列。同时支持 `SpriteRenderer` 和 UI `Image`。可配置 FPS 和眨眼概率。 |
 | `UltimateButtonUI` (MonoBehaviour) | 大招按钮 UI 控制器。订阅 UltimateSystem 事件：OnEnergyChanged 驱动 fillImage.fillAmount（Vertical/Bottom 填充）和 EnergyText（TMP 数值），OnUltimateReady 高亮按钮并设为可交互，OnUltimateActivated 恢复半透明。未充满时 CanvasGroup.alpha 控制透明度。按钮点击调用 UltimateSystem.ActivateUltimate() |
@@ -41,7 +41,7 @@ HUD 显示（血量、复活、击杀、金币、波次、冷却指示器、胜�
 
 **CoinCounterUI**：
 - 序列化字段：`coinIcon` (Image), `totalText` (TMP_Text), `floatTextAnchor` (Transform)
-- Inspector 可配参数：`floatTextColor`, `floatTextFontSize`, `floatUpDistance`, `floatDuration`, `iconPunchScale`, `iconPunchDuration`, `totalPunchScale`, `totalPunchDuration`
+- Inspector 可配参数：`floatTextColor`, `floatTextFontSize`, `floatTextRectSize`, `floatUpDistance`, `floatDuration`, `iconPunchScale`, `iconPunchDuration`, `totalPunchScale`, `totalPunchDuration`
 
 **PingPongAnim**：
 - 序列化字段：`frames[]`, `fps`, `playOnStart`, `blinkChancePerSecond`
@@ -74,7 +74,7 @@ HUD 显示（血量、复活、击杀、金币、波次、冷却指示器、胜�
 - **ChargeIndicatorController**：独立于 `BattleHUD`，直接订阅 `InputManager` 和 `PlayerState` 事件。蓄力进度映射：`fillAmount = (progress - appearThreshold) / (1 - appearThreshold)`
 - **EnemyHealthBar**：由 `Enemy` 在首次 `Show()` 时通过 `GetComponent/AddComponent` 延迟创建。血条 GameObject 不挂载为敌人子物体，避免攻击翻转时继承缩放。每帧 `Update()` 跟随敌人世界位置。材质实例采用显式 `new Material()` + `fillRenderer.material = instance` 管理，不依赖 Unity 内部缓存（disable/enable 后可能重建实例）
 
-- **CoinCounterUI 飘字**：每次获得铜钱生成临时 TMP GameObject，用 DOTween.Sequence 做上浮+淡出，OnComplete 销毁。FloatAnchor 空 GameObject 控制飘字起始位置，Inspector 中拖动调整。
+- **CoinCounterUI 飘字**：每次获得铜钱生成临时 TMP GameObject（`overflowMode = Overflow` 防裁剪，`rectSize` 可配），用 DOTween.Sequence 做上浮+淡出，OnComplete 销毁。FloatAnchor 空 GameObject 控制飘字起始位置，Inspector 中拖动调整。
 - **铜钱显示数据源**：Battle 中 CoinCounterUI 显示 `PlayerState.coinCount`（本局）；MainMenu 中 CoinDisplay 显示 `SaveManager.Load().coinCount`（总持有）。两者数据源不同，不可混用。
 
 ## 扩展指南

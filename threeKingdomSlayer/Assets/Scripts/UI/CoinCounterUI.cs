@@ -17,6 +17,8 @@ public class CoinCounterUI : MonoBehaviour
     [Header("飘字样式")]
     [SerializeField] private Color floatTextColor = new Color(1f, 0.85f, 0.2f); // 金色
     [SerializeField] private float floatTextFontSize = 28f;
+    [SerializeField] private Vector2 floatTextRectSize = new Vector2(200f, 60f);
+    [Tooltip("飘字向上移动的距离")]
     [SerializeField] private float floatUpDistance = 60f;
     [SerializeField] private float floatDuration = 0.7f;
 
@@ -97,7 +99,10 @@ public class CoinCounterUI : MonoBehaviour
 
         var rect = go.GetComponent<RectTransform>();
         rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.sizeDelta = new Vector2(100f, 40f);
+        rect.sizeDelta = floatTextRectSize;
+
+        // 防止 RectTransform 过小时文字被裁剪
+        text.overflowMode = TextOverflowModes.Overflow;
 
         // 用 floatTextAnchor 定位，未设置则 fallback 到 totalText 右上
         if (floatTextAnchor != null)

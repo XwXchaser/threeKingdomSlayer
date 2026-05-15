@@ -12,7 +12,7 @@ Enemy（敌人实体与对象池）
 
 | 类 | 说明 |
 |---|---|
-| `Enemy` (MonoBehaviour) | 完整敌人实体。所有属性通过 `[SerializeField]` 直接序列化在预制体上（enemyName、enemyId、maxHealth、occupySlots、attackSpeed/Damage/Range/SpawnDuration/DrawDuration、moveSpeed、maxPoise、stunDuration、launchDuration/YHeight、launchedDamageTakenMultiplier/HitExtendDuration、coinReward、isBoss、6种伤害倍率、parryStunThresholds）。状态机：Idle/Moving/Attacking/Stunned/Launched/Dead。处理：逐排移动（DOTween 弹跳）、三阶段攻击动画（AttackSpawn 前冲+翻转可打断 → AttackDraw 收招不可打断 → 冷却）、带闪烁效果的受伤反馈（材质实例方案 + 隔离式 punch scale tween）、死亡序列（弹跳 + 旋转 + 重力坠落）、按排透明度。链式补齐系统：`pendingRushMove`、`targetRow`、`rushMoveDelayTimer`、`OnRushMoveComplete` 事件。内置 `EnemyHealthBar` 组件管理头顶血条。
+| `Enemy` (MonoBehaviour) | 完整敌人实体。所有属性通过 `[SerializeField]` 直接序列化在预制体上（enemyName、enemyId、maxHealth、occupySlots、attackSpeed/Damage/Range/SpawnDuration/DrawDuration、moveSpeed、maxPoise、stunDuration、launchDuration/YHeight、launchedDamageTakenMultiplier/HitExtendDuration、coinReward、isBoss、6种伤害倍率、parryStunThresholds）。运行时每实例分配唯一 `instanceId`，`DebugTag` 属性（格式 `#3(101)`）用于调试日志区分同预制体不同实例。状态机：Idle/Moving/Attacking/Stunned/Launched/Dead。处理：逐排移动（DOTween 弹跳）、三阶段攻击动画（AttackSpawn 前冲+翻转可打断 → AttackDraw 收招不可打断 → 冷却）、带闪烁效果的受伤反馈（材质实例方案 + 隔离式 punch scale tween）、死亡序列（弹跳 + 旋转 + 重力坠落）、按排透明度。链式补齐系统：`pendingRushMove`、`targetRow`、`rushMoveDelayTimer`、`OnRushMoveComplete` 事件。内置 `EnemyHealthBar` 组件管理头顶血条。
 | `EnemyState` (enum) | Idle, Moving, Attacking, Stunned, Launched, Dead |
 | `DamageType` (enum) | Stab, Slash, Pierce, Sweep, Launch, Poise |
 | `EnemyPool` (MonoBehaviour, singleton) | 按 enemyId 索引的对象池。自动从 `Resources/EnemyPrefabs/` 注册预制体（命名规则：`Enemy_{id}.prefab`）。若未找到预制体则回退为动态创建红色 Cube。支持 `RegisterPrefab()`、`PrewarmPool()`、`GetEnemy()`、`ReturnEnemy()`、`ClearAllPools()`、`GetEnemyOccupySlots(int enemyId)`（从预制体读取占位数，无需实例化）。为池根节点和运行时敌人根节点维护不同的父 Transform。 |
@@ -20,7 +20,7 @@ Enemy（敌人实体与对象池）
 ## 公开接口
 
 **Enemy**：
-- `Initialize(int col, int row)` — 从对象池激活（使用直接序列化字段，无需传入 config）
+- `Initialize(int col, int row)` — 从对象池激活（分配唯一 instanceId，使用直接序列化字段，无需传入 config）
 - `ParryStunThreshold` (struct) — 招架后血量百分比眩晕阈值，定义于 Enemy.cs
 - `TakeDamage(float damage, DamageType type)` — 施加伤害（含弱点倍率、闪烁、弹缩放）
 - `TakePoiseDamage(float poiseDamage)` — 架势击破时仅重置架势值，不再造成眩晕
@@ -29,10 +29,12 @@ Enemy（敌人实体与对象池）
 - `Die()` — 启动死亡协程
 - `StartMoving(bool isRush)` — 开始前进一排
 - `StartAttacking()` — 进入攻击状态（先冷却后动画）
-- `Stun(float duration)`, `Launch(float duration)` — 控制效果
+- `Stun(float duration)` — 眩晕（击飞中仅重置Poise不进眩晕；眩晕时Kill DOTween清理移动状态；结束后恢复 pendingRushMove 链）
+- `Launch(float duration)` — 挑飞
 - `ResetMovementState()` — 为链式补齐重新触发重置状态
 - `TryStartRushMove()` — 基于当前状态尝试链式补齐；返回 bool
 - `ResetEnemy()` — 为回池做完整重置
+- `DebugTag` (string) — 调试标签属性，格式 `#instanceId(enemyId)`，如 `#3(101)`
 - 事件：`OnDeath`, `OnDamageTaken`, `OnRushMoveComplete`
 
 **EnemyPool** (singleton)：
@@ -63,6 +65,8 @@ Enemy（敌人实体与对象池）
 - **Parry 打断规则**：仅当 `parryPoiseDamage >= maxPoise` 且敌人处于 AttackSpawn 阶段时，`CancelAttack()` 打断攻击返回冷却；否则仅造成伤害+架势伤害，不打断不眩晕
 - **targetRow 系统**：防止敌人全部挤到第 0 排，给每个敌人设定特定目标。移动到 `rowIndex <= targetRow` 时停止
 - **Launch 不重置 targetRow**：`Launch()` 不再重置 `targetRow = -1`。当 Launch 攻击错开命中（AttackWave stagger 0.04s/排），前方敌人先死触发 `RemoveEnemy()` 设置后方敌人的 `targetRow`，若 `Launch()` 重置则落地后链式补齐中断
+- **Stun 安全规则**：击飞中（Launched）不进眩晕，仅重置 Poise 防止敌人冻结半空。眩晕进入时 Kill 全部 DOTween + 清理移动状态（`isMovingToNextRow`/`isRushMove`/`moveProgress`）+ `UpdateWorldPosition()` 锁定位置。眩晕结束后恢复 `pendingRushMove` 链
+- **DebugTag 调试**：所有 Enemy/Column/ColumnManager 的 Debug.Log 统一使用 `DebugTag`（`#instanceId(enemyId)`）而非裸 `enemyId`，方便区分同预制体不同实例
 
 ## 扩展指南
 
