@@ -15,7 +15,7 @@ MonoBehaviour:
   id: 1
   attackType: 0
   damageType: 0
-  damage: 100
+  damage: 10
   poiseDamage: 0
   rangeRows: 2
   cooldown: 0.2

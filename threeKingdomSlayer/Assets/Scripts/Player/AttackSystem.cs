@@ -221,8 +221,8 @@ public class AttackSystem : MonoBehaviour
             }
             else
             {
+                // 非Boss敌人不施加架势伤害（没有眩晕设计），仅造成伤害
                 enemy.TakeDamage(cfg.damage, cfg.damageType);
-                enemy.TakePoiseDamage(cfg.poiseDamage);
                 enemy.CheckParryStunThresholds();
             }
         }

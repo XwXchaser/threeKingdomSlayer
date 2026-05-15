@@ -1,5 +1,49 @@
 # 开发日志
 
+## 2026-01-17 — 调试日志实例化 + 眩晕状态修正 + 招架平衡调整 + UI修复
+
+### 概述
+运行时调试日志全面升级（区分同预制体不同实例），修复眩晕状态机的两个严重 Bug，招架平衡性调整（非Boss敌人移除架势伤害），铜钱飘字裁剪修复，Stab 伤害下调。
+
+### 新增内容
+
+**Enemy 实例 ID 系统** (`Enemy.cs`)
+- 新增 `instanceId`（`[System.NonSerialized]`，运行时自增分配）和 `DebugTag` 属性（格式 `#3(101)` = 实例#3 预制体ID 101）
+- `Initialize()` 中分配 `instanceId`
+- Enemy.cs / Column.cs / ColumnManager.cs 全部 ~80 处 `Debug.Log` 从 `enemyId={e.enemyId}` 改为 `{e.DebugTag}`
+- 同屏出现 3 个 Enemy_101 实例时日志从 `enemyId=101...` 变为 `#1(101)...` / `#7(101)...` / `#12(101)...`，可区分不同实例
+
+### Bug 修复
+
+| Bug | 修复 |
+|---|---|
+| **眩晕冻结半空敌人** | `Stun()` 检测 `state == EnemyState.Launched`，击飞中仅重置 Poise，不进入眩晕。敌人被挑飞后再受招架不会卡在半空 |
+| **眩晕后移动状态残留** | `Stun()` 进入时主动 `DOTween.Kill(transform)` + 清理 `isMovingToNextRow`/`isRushMove`/`moveProgress`，调用 `UpdateWorldPosition()` 锁定当前位置。眩晕结束后检查 `pendingRushMove`，若被标记则恢复 Rush 链 |
+| **铜钱飘字被裁剪** | CoinCounterUI 新增 `floatTextRectSize`（默认 200x60），飘字 TMP 设置 `overflowMode = Overflow`，防止 RectTransform 过小时文字被裁剪 |
+
+### 平衡调整
+
+| 变更 | 说明 |
+|---|---|
+| **招架不再对普兵造成架势伤害** | `ExecuteParry()` 中非 Boss 敌人移除 `TakePoiseDamage` 调用，仅造成伤害。Boss 保留完整招架机制 |
+| **Stab 伤害 100→10** | `Zhangfei_Stab.asset` damage 从 100 下调至 10 |
+
+### 涉及文件
+- `Assets/Scripts/Enemy/Enemy.cs` — 新增 instanceId/DebugTag；Stun 状态修正；全部日志升级
+- `Assets/Scripts/Core/Column.cs` — 全部日志升级为 DebugTag
+- `Assets/Scripts/Core/ColumnManager.cs` — 全部日志升级为 DebugTag
+- `Assets/Scripts/Player/AttackSystem.cs` — ExecuteParry 非Boss移除TakePoiseDamage
+- `Assets/Scripts/UI/CoinCounterUI.cs` — floatTextRectSize + overflowMode
+- `Assets/ScriptableObjects/Skills/Zhangfei_Stab.asset` — damage 100→10
+- `Assets/Prefabs/UI/HeroHUD_Zhangfei.prefab` — HP 纹理替换（压缩）+ 头像新增
+- `Assets/Prefabs/UI/BossHealthBar.prefab` — Boss血条预制体调整
+- `Assets/Prefabs/Slash.prefab` / `Stab.prefab` — 攻击波预制体调整
+- `Assets/Resources/EnemyPrefabs/Enemy_104.prefab` — Boss预制体调整
+- `Assets/Scenes/Battle.scene` — 场景层级调整
+- `Assets/Sprites/zhangfei/` — HP纹理压缩（-40%体积）；新增 zhangfei_head.png / money.png
+
+---
+
 ## 2025-12-24 — EnemyConfig 合并到 Enemy + 幽灵引用架构规范
 
 ### 概述

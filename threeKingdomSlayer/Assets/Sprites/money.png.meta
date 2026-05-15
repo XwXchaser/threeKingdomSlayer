@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: XH4Y5HukACoqCEV6AIgAxBx8pPVzTQ8/uo+nBy3BC4O9QSdF1V0hgs4=
+guid: WSlM5yOtV34A1NQ8t5JWuws8RBYl/3h89NpS/3DhKnn4CETDet/1mew=
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -37,7 +37,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 0
+    filterMode: 1
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -48,7 +48,7 @@ TextureImporter:
   compressionQuality: 50
   spriteMode: 1
   spriteExtrude: 1
-  spriteMeshType: 0
+  spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 16
