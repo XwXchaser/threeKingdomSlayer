@@ -61,9 +61,15 @@ public class Enemy : MonoBehaviour
 
     [Header("击飞系统")]
     public float launchDuration = 2f;
+    [Tooltip("下落重力加速度（真实重力=9.8，游戏建议15~25）")]
+    public float launchGravity = 20f;
+    [Tooltip("空中被击中时的向上反弹速度")]
+    public float launchReboundVelocity = 8f;
+    [Tooltip("空中Y轴随机高度范围（仅初始击飞时随机一次）")]
     public float launchYHeightMin = 1.5f;
     public float launchYHeightMax = 4.5f;
     [Range(1f, 5f)] public float launchedDamageTakenMultiplier = 1.5f;
+    [Tooltip("空中被击中时延长浮空的时间（秒）")]
     public float launchedHitExtendDuration = 0.5f;
 
     [Header("奖励")]
@@ -95,10 +101,9 @@ public class Enemy : MonoBehaviour
     // 内部状态
     private float stunTimer;
     private float launchTimer;
-    private float launchTimeElapsed;   // 已浮空时间（用于计算动画阶段）
-    private float launchTotalDuration; // 浮空总时长（可被攻击延长）
+    private float launchVelocityY;     // 当前Y轴速度
     private Vector3 launchStartLocalPos; // 挑飞起始位置
-    private float currentLaunchYHeight;   // 本次挑飞的随机 Y 高度
+    private float currentLaunchYHeight;   // 本次挑飞的随机 Y 高度（仅用于初速度计算）
     private float attackTimer;      // 攻击冷却计时器（攻击动画结束后开始冷却）
     private float attackAnimTimer;  // 攻击动画计时器（攻击动作执行时间）
     public bool isAttackAnimating; // 是否正在播放攻击动画（AttackSpawn 或 AttackDraw）
@@ -479,24 +484,23 @@ public class Enemy : MonoBehaviour
 
         state = EnemyState.Launched;
         launchTimer = launchDuration;
-        launchTimeElapsed = 0f;
-        launchTotalDuration = launchDuration;
         launchStartLocalPos = transform.localPosition;
         currentLaunchYHeight = Random.Range(launchYHeightMin, launchYHeightMax);
+        launchVelocityY = Mathf.Sqrt(2f * launchGravity * currentLaunchYHeight);
 
-        Debug.Log($"[Enemy] 挑飞: {DebugTag}, duration={launchDuration:F2}s");
+        Debug.Log($"[Enemy] 挑飞: {DebugTag}, duration={launchDuration:F2}s, v0={launchVelocityY:F2}");
     }
 
     /// <summary>
     /// 延长浮空时间（被攻击命中时调用）
-    /// 增加的浮空时间会改变动画阶段计算（可能从坠落回到起跳）
+    /// 从当前位置叠加反弹速度，产生"颠球"效果
     /// </summary>
     public void ExtendLaunch(float extendTime)
     {
         if (state != EnemyState.Launched) return;
-        launchTotalDuration += extendTime;
         launchTimer += extendTime;
-        Debug.Log($"[Enemy] 延长浮空: {DebugTag}, +{extendTime:F2}s, 剩余={launchTimer:F2}s");
+        launchVelocityY = launchReboundVelocity;
+        Debug.Log($"[Enemy] 延长浮空: {DebugTag}, +{extendTime:F2}s, 剩余={launchTimer:F2}s, 反弹速度={launchReboundVelocity:F2}");
     }
 
     /// <summary>
@@ -575,16 +579,25 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
-    /// 更新击飞状态：正弦波 Y 轴动画（起跳 → 坠落）
-    /// launchTimeElapsed / launchTotalDuration 决定当前动画阶段
-    /// 被攻击延长时 launchTotalDuration 增加，进度比例改变，自动切换阶段
+    /// 更新击飞状态：恒定重力加速度驱动
+    /// 初始击飞给予上升初速度 sqrt(2*g*H)，空中受击叠加反弹速度
     /// </summary>
     private void UpdateLaunch()
     {
         launchTimer -= Time.deltaTime;
-        launchTimeElapsed += Time.deltaTime;
 
-        if (launchTimer <= 0f)
+        // 恒定重力（计时器到期后加速下落，避免悬浮）
+        float gravity = launchTimer > 0f ? launchGravity : launchGravity * 3f;
+        launchVelocityY -= gravity * Time.deltaTime;
+
+        // 计算新Y偏移
+        float currentY = transform.localPosition.y - launchStartLocalPos.y;
+        float newY = currentY + launchVelocityY * Time.deltaTime;
+
+        // 着陆条件：自然落地（低于地面且正在下落）
+        bool landed = newY <= 0f && launchVelocityY <= 0f;
+
+        if (landed)
         {
             // 浮空结束，回到地面
             transform.localPosition = new Vector3(
@@ -607,8 +620,6 @@ public class Enemy : MonoBehaviour
             if (targetRow >= 0 && rowIndex > targetRow)
             {
                 pendingRushMove = true;
-                // 通过 Column 管理链式补齐，确保 OnRushMoveComplete 被正确订阅
-                // 否则补齐完成后链式触发会中断，后方敌人不会继续前移
                 var col = EnemyManager.Instance?.columnManager?.GetColumn(columnIndex);
                 if (col != null)
                     col.StartRushFromLaunched(this);
@@ -624,7 +635,6 @@ public class Enemy : MonoBehaviour
                 }
                 else
                 {
-                    // 不在攻击范围内，检查前方列位是否被非 Dead 敌人占据
                     int frontRow = rowIndex - 1;
                     bool frontOccupied = false;
                     var col = EnemyManager.Instance?.columnManager?.GetColumn(columnIndex);
@@ -647,12 +657,10 @@ public class Enemy : MonoBehaviour
             return;
         }
 
-        // 正弦波 Y 轴动画：0→π 对应 起跳→坠落
-        float progress = launchTimeElapsed / launchTotalDuration;
-        float yOffset = Mathf.Sin(progress * Mathf.PI) * currentLaunchYHeight;
+        // 应用位置
         transform.localPosition = new Vector3(
             transform.localPosition.x,
-            launchStartLocalPos.y + yOffset,
+            launchStartLocalPos.y + newY,
             transform.localPosition.z);
     }
 
