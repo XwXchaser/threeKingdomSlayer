@@ -240,11 +240,6 @@ public class BattleHUD : MonoBehaviour
 
     private void OnBossEngaged(Enemy boss)
     {
-        if (bossHealthBarPrefab == null)
-        {
-            Debug.LogError("[BattleHUD] bossHealthBarPrefab 未赋值！");
-            return;
-        }
         if (bossBarsParent == null)
         {
             Debug.LogError("[BattleHUD] bossBarsParent 未赋值！");
@@ -261,6 +256,11 @@ public class BattleHUD : MonoBehaviour
 
         // 如果 Boss 自身挂载了 bossHealthBarPrefab，优先使用
         var bossPrefab = boss.bossHealthBarPrefab != null ? boss.bossHealthBarPrefab : bossHealthBarPrefab;
+        if (bossPrefab == null)
+        {
+            Debug.LogError($"[BattleHUD] Boss #{boss.enemyId} 的 bossHealthBarPrefab 未赋值！（BattleHUD 和 Enemy 上均为空）");
+            return;
+        }
         var go = Instantiate(bossPrefab, bossBarsParent);
         var ui = go.GetComponent<BossHealthUI>();
         if (ui != null)
