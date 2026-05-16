@@ -60,7 +60,8 @@ MonoBehaviour:
   moveSpeed: 0.3
   maxPoise: 50
   stunDuration: 5
-  launchDuration: 1
+  launchDuration: 0.8
+  launchRiseTime: 0.25
   launchYHeightMin: 2.8
   launchYHeightMax: 3.2
   launchedDamageTakenMultiplier: 1.5
