@@ -61,7 +61,8 @@ public class Enemy : MonoBehaviour
 
     [Header("击飞系统")]
     public float launchDuration = 2f;
-    public float launchYHeight = 3f;
+    public float launchYHeightMin = 1.5f;
+    public float launchYHeightMax = 4.5f;
     [Range(1f, 5f)] public float launchedDamageTakenMultiplier = 1.5f;
     public float launchedHitExtendDuration = 0.5f;
 
@@ -97,6 +98,7 @@ public class Enemy : MonoBehaviour
     private float launchTimeElapsed;   // 已浮空时间（用于计算动画阶段）
     private float launchTotalDuration; // 浮空总时长（可被攻击延长）
     private Vector3 launchStartLocalPos; // 挑飞起始位置
+    private float currentLaunchYHeight;   // 本次挑飞的随机 Y 高度
     private float attackTimer;      // 攻击冷却计时器（攻击动画结束后开始冷却）
     private float attackAnimTimer;  // 攻击动画计时器（攻击动作执行时间）
     public bool isAttackAnimating; // 是否正在播放攻击动画（AttackSpawn 或 AttackDraw）
@@ -480,6 +482,7 @@ public class Enemy : MonoBehaviour
         launchTimeElapsed = 0f;
         launchTotalDuration = duration;
         launchStartLocalPos = transform.localPosition;
+        currentLaunchYHeight = Random.Range(launchYHeightMin, launchYHeightMax);
 
         Debug.Log($"[Enemy] 挑飞: {DebugTag}, duration={duration:F2}s");
     }
@@ -646,7 +649,7 @@ public class Enemy : MonoBehaviour
 
         // 正弦波 Y 轴动画：0→π 对应 起跳→坠落
         float progress = launchTimeElapsed / launchTotalDuration;
-        float yOffset = Mathf.Sin(progress * Mathf.PI) * (launchYHeight);
+        float yOffset = Mathf.Sin(progress * Mathf.PI) * currentLaunchYHeight;
         transform.localPosition = new Vector3(
             transform.localPosition.x,
             launchStartLocalPos.y + yOffset,
