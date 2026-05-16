@@ -452,7 +452,7 @@ public class Enemy : MonoBehaviour
     /// 挑飞：打断当前攻击动作（类似招架），将敌人击飞
     /// 若已处于击飞状态则忽略（延长由 TakeDamage 处理）
     /// </summary>
-    public void Launch(float duration)
+    public void Launch()
     {
         if (state == EnemyState.Dead) return;
         if (state == EnemyState.Launched) return;
@@ -478,13 +478,13 @@ public class Enemy : MonoBehaviour
         // 若此处重置为 -1，落地后 UpdateLaunch() 不会触发补齐，导致链式前移中断。
 
         state = EnemyState.Launched;
-        launchTimer = duration;
+        launchTimer = launchDuration;
         launchTimeElapsed = 0f;
-        launchTotalDuration = duration;
+        launchTotalDuration = launchDuration;
         launchStartLocalPos = transform.localPosition;
         currentLaunchYHeight = Random.Range(launchYHeightMin, launchYHeightMax);
 
-        Debug.Log($"[Enemy] 挑飞: {DebugTag}, duration={duration:F2}s");
+        Debug.Log($"[Enemy] 挑飞: {DebugTag}, duration={launchDuration:F2}s");
     }
 
     /// <summary>

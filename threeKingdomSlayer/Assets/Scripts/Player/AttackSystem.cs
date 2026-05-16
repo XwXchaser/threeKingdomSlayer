@@ -179,7 +179,7 @@ public class AttackSystem : MonoBehaviour
                     }
 
                     if (canLaunch)
-                        enemy.Launch(cfg.launchDuration);
+                        enemy.Launch();
                 },
                 prefab: cfg.attackWavePrefab);
         }
