@@ -95,7 +95,11 @@ public class BossHealthUI : MonoBehaviour
 
         if (poiseFill != null)
         {
-            float target = _maxPoise > 0f ? _boss.currentPoise / _maxPoise : 0f;
+            // 架势恢复中优先用时间进度（不受击飞等状态切换影响），否则用 currentPoise
+            float recoveryProgress = _boss.stunRecoveryProgress;
+            float target = recoveryProgress < 1f
+                ? recoveryProgress
+                : (_maxPoise > 0f ? _boss.currentPoise / _maxPoise : 0f);
             if (!Mathf.Approximately(poiseFill.fillAmount, target))
             {
                 poiseFill.fillAmount = target;

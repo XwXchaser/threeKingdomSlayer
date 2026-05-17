@@ -95,11 +95,24 @@ public class Enemy : MonoBehaviour
     [System.NonSerialized] public EnemyState state = EnemyState.Idle;
     [System.NonSerialized] public float currentHealth;
     [System.NonSerialized] public float currentPoise;
+    /// <summary> 眩晕恢复进度 (0→1)，基于实际时间，不受状态切换影响 </summary>
+    public float stunRecoveryProgress
+    {
+        get
+        {
+            if (_poiseRecoveryEndTime <= 0f || _appliedStunDuration <= 0f) return 1f;
+            float remaining = _poiseRecoveryEndTime - Time.time;
+            if (remaining <= 0f) return 1f;
+            return 1f - (remaining / _appliedStunDuration);
+        }
+    }
     public int columnIndex;
     public int rowIndex; // 0 = 最前排
 
     // 内部状态
     private float stunTimer;
+    private float _appliedStunDuration; // 实际应用的眩晕时长（用于 UI 恢复进度）
+    private float _poiseRecoveryEndTime; // 架势恢复完成的时间点（Time.time + duration）
     private float launchTimer;
     private float launchVelocityY;     // 当前Y轴速度
     private Vector3 launchStartLocalPos; // 挑飞起始位置
@@ -250,6 +263,14 @@ public class Enemy : MonoBehaviour
     private void Update()
     {
         if (!initialized || state == EnemyState.Dead) return;
+
+        // 架势时间恢复到期（独立于状态，击飞中也会继续计时）
+        if (_poiseRecoveryEndTime > 0f && Time.time >= _poiseRecoveryEndTime)
+        {
+            currentPoise = maxPoise;
+            _poiseRecoveryEndTime = 0f;
+            OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
+        }
 
         switch (state)
         {
@@ -451,6 +472,8 @@ public class Enemy : MonoBehaviour
 
         state = EnemyState.Stunned;
         stunTimer = duration;
+        _appliedStunDuration = duration;
+        _poiseRecoveryEndTime = Time.time + duration;
     }
 
     /// <summary>
@@ -559,6 +582,7 @@ public class Enemy : MonoBehaviour
         {
             // STUN 结束后重置 Poise，开始新一周期的削韧循环
             currentPoise = maxPoise;
+            _poiseRecoveryEndTime = 0f;
             OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
 
             // Boss 就位后锁定位置，不参与补齐前移
@@ -1043,6 +1067,7 @@ public class Enemy : MonoBehaviour
     public bool TakePoiseDamage(float poiseDamage)
     {
         if (state == EnemyState.Dead) return false;
+        if (state == EnemyState.Stunned) return false; // 眩晕期间免疫架势伤害
         if (isBoss && bossState != BossState.InCombat) return false;
 
         currentPoise -= poiseDamage;
