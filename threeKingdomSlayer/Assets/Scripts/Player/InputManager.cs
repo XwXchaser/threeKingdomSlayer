@@ -261,6 +261,10 @@ public class InputManager : MonoBehaviour
 
         bool isSwiped = swipeDistance >= swipeThreshold;
 
+        // QTE 优先级检测：QTE 窗口内优先匹配 QTE（窗口短暂且后果重大）
+        if (TryConsumeQTEInput(releasePos, isSwiped, swipeDistance, pressDuration))
+            return;
+
         if (pressDuration >= minChargeTime)
         {
             // 蓄力已满 → 蓄力攻击判定
@@ -427,6 +431,45 @@ public class InputManager : MonoBehaviour
         float normalizedX = screenPos.x / screenWidth; // 0~1
         int column = Mathf.FloorToInt(normalizedX * 5f);
         return Mathf.Clamp(column, 0, 4);
+    }
+
+    #endregion
+
+    #region QTE 输入
+
+    private QTEController _cachedQTEController;
+
+    /// <summary>
+    /// 尝试将当前手势作为 QTE 输入消费
+    /// 若 QTE 活跃且手势匹配成功，返回 true（阻止普通攻击处理）
+    /// </summary>
+    private bool TryConsumeQTEInput(Vector2 releasePos, bool isSwiped, float swipeDistance, float pressDuration)
+    {
+        if (_cachedQTEController == null)
+            _cachedQTEController = FindObjectOfType<QTEController>();
+        if (_cachedQTEController == null || !_cachedQTEController.IsQTEActive)
+            return false;
+
+        if (isSwiped)
+        {
+            Vector2 direction = releasePos - touchStartPos;
+            float swipeSpeed = swipeDistance / Mathf.Max(pressDuration, 0.001f);
+            if (_cachedQTEController.TryQTESwipe(direction, swipeSpeed, releasePos))
+            {
+                Debug.Log($"[InputManager] QTE 划动成功 speed={swipeSpeed:F0}");
+                return true;
+            }
+        }
+        else
+        {
+            if (_cachedQTEController.TryQTEClick(releasePos))
+            {
+                Debug.Log("[InputManager] QTE 点击成功");
+                return true;
+            }
+        }
+
+        return false;
     }
 
     #endregion

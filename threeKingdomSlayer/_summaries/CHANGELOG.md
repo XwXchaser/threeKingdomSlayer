@@ -1,5 +1,68 @@
 # 开发日志
 
+## 2026-05-17 — BOSS QTE 攻击系统
+
+### 概述
+为 Enemy_104（Boss）实现 QTE 攻击系统：点击型和划动型两种 QTE 交互，支持单次攻击内多个 QTE 交错判定（TripleClick 0s/0.3s/0.6s 三连击），完整状态机驱动，玩家输入优先拦截（QTE 优先级高于普通攻击），成功扣 Boss 架势+充能大招，失败扣玩家血量。
+
+### 新增内容
+
+**QTE 配置层** (3 个 ScriptableObject)
+- `QTEConfig` — 单个 QTE 行为配置：类型（Click/Swipe）、时机（预警窗口、判定窗口）、划动参数（方向/角度容差/最小速度）、效果数值（架势伤害/大招充能/失败伤害）、视觉（指示器 prefab、屏幕归一化坐标）
+- `QTEAttackConfig` — 一次 QTE 攻击的完整配置：QTESlot 列表（config + 延迟秒数）、BOSS 动画参数（Trigger 名/前摇时间）、可选飞行物（prefab/飞行时间/目标 Z）、攻击后冷却
+- `BossQTEData` — Boss QTE 数据根配置：QTE 攻击列表、循环开关、首次冷却、基础冷却
+
+**QTE 运行时** (3 个 MonoBehaviour)
+- `QTEController` — QTE 状态机：Idle → CoolingDown → WaitingForAttackFinish → PerformingQTEAttack → QTEJudging → QTECompleted。Phase-based 驱动（每个 slot 按 delay 独立 warning→judge→resolve），支持 `TryConsumeClick` / `TryQTESwipe` 输入接口，Click 用 `RectTransformUtility.RectangleContainsScreenPoint` 判定，Swipe 用角度+速度双阈值判定。成功扣 Boss 架势+充能大招，失败扣玩家血量
+- `QTEDisplay` — Canvas UI 管理器：`SpawnIndicator`（DOTween scale pulse 预警动画）、`ShowQTEResult`（成功/失败特效 + 指示器缩小消失）、`ClearAllIndicators`
+- `QTEProjectile` — DOTween 飞行物：`Initialize` 飞向目标坐标、`ContinuePassThrough`（失败时穿过摄像机）、`DestroyOnSuccess`（成功时销毁）
+
+**改动现有文件**
+- `InputManager.cs` — `ProcessGesture` 顶部新增 `TryConsumeQTEInput`：QTE 判定窗口内优先匹配 QTE 点击/划动，匹配成功则短路后续攻击逻辑
+- `Enemy.cs` — 新增 `QTEAttacking` 枚举值；`EnterQTEAttack` / `ExitQTEAttack` 方法；`StartAttacking` 中 QTE 等待期间阻止新攻击
+
+**ScriptableObject 资产** (`Assets/ScriptableObjects/QTE/`)
+| 资产 | 说明 |
+|---|---|
+| `BossQTEData_104.asset` | TripleClick + Swipe 两轮攻击，loopAttacks=true，firstCooldown=5s |
+| `QTEAttackConfig_TripleClick.asset` | 3 个 Click slot (0s/0.3s/0.6s)，animationLeadTime=0.3s |
+| `QTEAttackConfig_Swipe.asset` | 1 个 Swipe slot (0s delay，方向=右，最小速度=500px/s) |
+| `QTEConfig_Click_1/2/3.asset` | Click 配置（屏幕三位置，架势伤害 20，失败伤害 15） |
+| `QTEConfig_Swipe.asset` | Swipe 配置（架势伤害 40，失败伤害 20，判定窗口 2s） |
+
+**Canvas UI Prefab** (`Assets/Prefabs/QTE/`)
+- `QTE_Click_Indicator_1/2/3.prefab` — Image + RectTransform (200×200，circle 1 精灵)
+- `QTE_Swipe_Indicator.prefab` — Image + RectTransform (400×60，PoiseBar 精灵)
+
+**场景/Prefab 连线**
+- `Enemy_104.prefab` — 挂载 QTEController (qteData=BossQTEData_104, enemy 自动解析)
+- `Battle.scene` — QTEDisplay 挂载到 Canvas (indicatorParent=QTEIndicators)
+
+### 涉及文件
+- `Assets/Scripts/QTE/QTEConfig.cs` — 新增
+- `Assets/Scripts/QTE/QTEAttackConfig.cs` — 新增
+- `Assets/Scripts/QTE/BossQTEData.cs` — 新增
+- `Assets/Scripts/QTE/QTEController.cs` — 新增
+- `Assets/Scripts/QTE/QTEDisplay.cs` — 新增
+- `Assets/Scripts/QTE/QTEProjectile.cs` — 新增
+- `Assets/Scripts/Player/InputManager.cs` — 新增 TryConsumeQTEInput 优先拦截
+- `Assets/Scripts/Enemy/Enemy.cs` — 新增 QTEAttacking 状态
+- `Assets/ScriptableObjects/QTE/BossQTEData_104.asset` — 新增
+- `Assets/ScriptableObjects/QTE/QTEAttackConfig_TripleClick.asset` — 新增
+- `Assets/ScriptableObjects/QTE/QTEAttackConfig_Swipe.asset` — 新增
+- `Assets/ScriptableObjects/QTE/QTEConfig_Click_1.asset` — 新增
+- `Assets/ScriptableObjects/QTE/QTEConfig_Click_2.asset` — 新增
+- `Assets/ScriptableObjects/QTE/QTEConfig_Click_3.asset` — 新增
+- `Assets/ScriptableObjects/QTE/QTEConfig_Swipe.asset` — 新增
+- `Assets/Prefabs/QTE/QTE_Click_Indicator_1.prefab` — 新增
+- `Assets/Prefabs/QTE/QTE_Click_Indicator_2.prefab` — 新增
+- `Assets/Prefabs/QTE/QTE_Click_Indicator_3.prefab` — 新增
+- `Assets/Prefabs/QTE/QTE_Swipe_Indicator.prefab` — 新增
+- `Assets/Resources/EnemyPrefabs/Enemy_104.prefab` — 挂载 QTEController
+- `Assets/Scenes/Battle.scene` — 挂载 QTEDisplay
+
+---
+
 ## 2026-01-17 — 调试日志实例化 + 眩晕状态修正 + 招架平衡调整 + UI修复
 
 ### 概述

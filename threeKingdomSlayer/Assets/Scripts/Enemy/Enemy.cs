@@ -11,7 +11,8 @@ public enum EnemyState
     Attacking,
     Stunned,
     Launched,
-    Dead
+    Dead,
+    QTEAttacking  // BOSS QTE 攻击演出中
 }
 
 /// <summary>
@@ -170,6 +171,9 @@ public class Enemy : MonoBehaviour
     // DOTween: 当前攻击动画序列（用于在 Die() 中取消正在执行的攻击动作）
     private Sequence attackSequence;
 
+    // QTE 控制器缓存
+    private QTEController _qteController;
+
     // 敌人物体原始缩放值（从预制体读取，用于攻击动画/死亡后还原）
     // 不能硬编码为 Vector3.one，因为不同敌人可能有不同默认缩放（如 0.5）
     private Vector3 originalScale;
@@ -285,6 +289,9 @@ public class Enemy : MonoBehaviour
                 break;
             case EnemyState.Attacking:
                 UpdateAttack();
+                break;
+            case EnemyState.QTEAttacking:
+                // QTE 攻击演出中，由 QTEController 驱动，此处不做任何事
                 break;
             case EnemyState.Idle:
             default:
@@ -429,6 +436,22 @@ public class Enemy : MonoBehaviour
     {
         if (state == EnemyState.Dead) return;
 
+        // 若 QTEController 正在等待攻击结束以触发 QTE，不要开始新攻击
+        if (isBoss)
+        {
+            var qte = GetQTEController();
+            if (qte != null && qte.State == QTEState.WaitingForAttackFinish)
+            {
+                // QTE 即将接手，等待 QTE 触发
+                // 但需要检查：如果 QTE 还在等待且当前没有攻击动画，立即通知
+                if (!isAttackAnimating)
+                {
+                    qte.OnEnemyAttackComplete();
+                }
+                return;
+            }
+        }
+
         // Boss 首次进入攻击状态：若尚未进入 InCombat，立即进入并创建血条
         if (isBoss && bossState == BossState.None)
         {
@@ -569,6 +592,57 @@ public class Enemy : MonoBehaviour
 
         Debug.Log($"[Enemy] 招架打断攻击成功: {DebugTag}, col={columnIndex}, 返回冷却 {attackTimer:F2}s");
         return true;
+    }
+
+    /// <summary>
+    /// 进入 QTE 攻击状态（由 QTEController 调用）
+    /// 中断当前攻击，切换到 QTEAttacking 状态
+    /// </summary>
+    public void EnterQTEAttack()
+    {
+        if (state == EnemyState.Dead) return;
+
+        // 中断当前攻击动画
+        if (attackSequence != null && attackSequence.IsActive())
+        {
+            attackSequence.Kill();
+            attackSequence = null;
+        }
+        transform.DOKill(false);
+        UpdateWorldPosition();
+        transform.localScale = originalScale;
+        isAttackAnimating = false;
+        isAttackDrawPhase = false;
+        isMovingToNextRow = false;
+
+        state = EnemyState.QTEAttacking;
+        Debug.Log($"[Enemy] 进入QTE攻击: {DebugTag}");
+    }
+
+    /// <summary>
+    /// 退出 QTE 攻击状态（由 QTEController 调用）
+    /// </summary>
+    public void ExitQTEAttack()
+    {
+        if (state != EnemyState.QTEAttacking) return;
+        state = EnemyState.Attacking;
+        // 重置攻击冷却
+        float totalInterval = (1f / attackSpeed);
+        attackTimer = totalInterval * 0.4f;
+        if (attackTimer < 0.1f) attackTimer = 0.1f;
+        isAttackAnimating = false;
+        isAttackDrawPhase = false;
+        Debug.Log($"[Enemy] 退出QTE攻击: {DebugTag}");
+    }
+
+    /// <summary>
+    /// 获取 QTEController（懒加载缓存）
+    /// </summary>
+    public QTEController GetQTEController()
+    {
+        if (_qteController == null)
+            _qteController = GetComponent<QTEController>();
+        return _qteController;
     }
 
     #endregion
@@ -927,6 +1001,13 @@ public class Enemy : MonoBehaviour
             float cooldown = totalInterval * 0.4f;
             if (cooldown < 0.1f) cooldown = 0.1f;
             attackTimer = cooldown;
+
+            // 通知 QTEController 攻击完成（若 QTE 正在等待攻击结束）
+            if (isBoss)
+            {
+                var qte = GetQTEController();
+                if (qte != null) qte.OnEnemyAttackComplete();
+            }
 
             TryStartRushMove();
         });
