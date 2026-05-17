@@ -17,6 +17,7 @@ HUD 显示（血量、复活、击杀、金币、波次、冷却指示器、胜�
 | `MainMenuUI` (MonoBehaviour) | 主菜单：4个预置按钮（新游戏/继续游戏/删除存档/退出），根据 `SaveManager.HasSave` 控制显隐。选关网格从 `StageConfigManager` Inspector 列表自动生成（GridLayoutGroup 横向排列，溢出换行），每按钮显示关卡名+状态（已通关/可挑战/未解锁）。OnNewGame 删除存档从第一关开始；OnContinueGame 找第一个未通关关卡；OnDeleteSave 删除存档并重建网格。关卡选择通过 `StageController.PendingStageConfig` 跨场景传递。coinText 字段显示总铜钱（SaveManager.Load().coinCount）。 |
 | `PingPongAnim` (MonoBehaviour) | 精灵序列动画器。两种模式：idle ping-pong（帧 [0,1] 间来回），随机触发的眨眼播放完整帧序列。同时支持 `SpriteRenderer` 和 UI `Image`。可配置 FPS 和眨眼概率。 |
 | `UltimateButtonUI` (MonoBehaviour) | 大招按钮 UI 控制器。订阅 UltimateSystem 事件：OnEnergyChanged 驱动 fillImage.fillAmount（Vertical/Bottom 填充）和 EnergyText（TMP 数值），OnUltimateReady 高亮按钮并设为可交互，OnUltimateActivated 恢复半透明。未充满时 CanvasGroup.alpha 控制透明度。按钮点击调用 UltimateSystem.ActivateUltimate() |
+| `QTEDisplay` (MonoBehaviour) | QTE 指示器管理器（挂载于 Canvas）。`SpawnIndicator(QTEConfig)` 实例化 QTE 指示器 prefab 并设置 anchor → DOTween Scale 脉冲预警动画。`ShowQTEResult(indicator, success)` 显示成功/失败特效 + 指示器缩小消失。`ClearAllIndicators()` 清理所有活跃指示器。indicatorParent（指示器父 RectTransform）、默认 prefab、结果特效 prefab 均可 Inspector 配置 |
 
 ## 公开接口
 

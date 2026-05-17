@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25b6f8e4fd291b84a8e1e2b6a251a91d, type: 3}
+  m_Name: QTEConfig_Click_1
+  m_EditorClassIdentifier: 
+  qteType: 0
+  warningDuration: 0.5
+  judgeWindow: 1.5
+  swipeDirection: 90
+  swipeAngleTolerance: 25
+  swipeMinSpeed: 500
+  poiseDamage: 20
+  ultimateEnergyGain: 10
+  failureDamage: 15
+  qteIndicatorPrefab: {fileID: 4020735676731632093, guid: 1e6630f00b8ec814683df17726170700, type: 3}
+  screenPosition: {x: 0.3, y: 0.6}

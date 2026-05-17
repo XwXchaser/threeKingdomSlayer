@@ -13,8 +13,9 @@
 | 4 | [Enemy](Enemy.summary.md) | 2 | 敌人状态机、移动/攻击/受击/死亡动画、按 enemyId 对象池 |
 | 5 | [Managers](Managers.summary.md) | 3 | 编排层：伤害跳字、敌人生命周期协调、关卡流程（开始/胜/负/重开） |
 | 6 | [Player](Player.summary.md) | 3 | 手势到攻击输入映射、攻击执行与目标选择、玩家属性与冷却 |
-| 7 | [UI](UI.summary.md) | 6 | 战斗 HUD、场景转场模糊动画、浮动伤害跳字、主菜单、精灵动画、大招按钮 |
-| 8 | [Wave](Wave.summary.md) | 1 | 按 StageConfig 波次生成敌人、阵型前压、波次完成监控 |
+| 7 | [QTE](QTE.summary.md) | 6 | Boss QTE 攻击：配置驱动多段 QTE 编排、状态机、输入优先拦截、Canvas UI 指示器 |
+| 8 | [UI](UI.summary.md) | 6 | 战斗 HUD、场景转场模糊动画、浮动伤害跳字、主菜单、精灵动画、大招按钮 |
+| 9 | [Wave](Wave.summary.md) | 1 | 按 StageConfig 波次生成敌人、阵型前压、波次完成监控 |
 
 ## 模块依赖关系
 
@@ -38,8 +39,15 @@
            │                               │
     ┌──────▼──────┐               ┌───────▼──────┐
     │DamageNumber │               │  InputManager │
-    │  Manager    │               └──────────────┘
-    └──────┬──────┘
+    │  Manager    │               └──────┬───────┘
+    └──────┬──────┘                      │
+           │                      ┌──────▼──────┐
+    ┌──────▼──────┐               │ QTEController│ (Boss)
+    │DamageNumber │               └──────┬──────┘
+    └─────────────┘                      │
+                                   ┌──────▼──────┐
+                                   │  QTEDisplay  │
+                                   └─────────────┘
            │
     ┌──────▼──────┐
     │DamageNumber │
@@ -58,7 +66,7 @@
 ```
 
 **配置层**（ScriptableObject，无运行时依赖）：
-`AttackSkillConfig`, `UltimateSkillConfig`, `HeroConfig`, `StageConfig`(+`WaveConfig`/`RowConfig`), `RowFormationPreset`, `StageRegistry`
+`AttackSkillConfig`, `UltimateSkillConfig`, `HeroConfig`, `StageConfig`(+`WaveConfig`/`RowConfig`), `RowFormationPreset`, `StageRegistry`, `QTEConfig`, `QTEAttackConfig`, `BossQTEData`
 
 **静态工具**（无 MonoBehaviour 依赖）：`RowFormation`, `SaveManager`
 
@@ -72,6 +80,8 @@
 |---|---|
 | `DamageType` | `Assets/Scripts/Enemy/Enemy.cs` |
 | `EnemyState` | `Assets/Scripts/Enemy/Enemy.cs` |
+| `QTEState` | `Assets/Scripts/QTE/QTEController.cs` |
+| `QTEType` | `Assets/Scripts/QTE/QTEConfig.cs` |
 | `AttackType` | `Assets/Scripts/Player/PlayerState.cs` |
 | `StageState` | `Assets/Scripts/Player/PlayerState.cs` |
 
