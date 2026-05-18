@@ -454,7 +454,7 @@ public class InputManager : MonoBehaviour
         {
             Vector2 direction = releasePos - touchStartPos;
             float swipeSpeed = swipeDistance / Mathf.Max(pressDuration, 0.001f);
-            if (_cachedQTEController.TryQTESwipe(direction, swipeSpeed, releasePos))
+            if (_cachedQTEController.TryQTESwipe(touchStartPos, direction, swipeSpeed, releasePos))
             {
                 Debug.Log($"[InputManager] QTE 划动成功 speed={swipeSpeed:F0}");
                 return true;
