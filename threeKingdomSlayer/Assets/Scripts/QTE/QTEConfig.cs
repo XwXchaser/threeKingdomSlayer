@@ -29,9 +29,9 @@ public class QTEConfig : ScriptableObject
     [Tooltip("划动方向（角度制，0=右, 90=上, 180=左, 270=下）")]
     [Range(0f, 360f)] public float swipeDirection = 90f;
     [Tooltip("角度容差（±度），划动方向与目标方向夹角小于此值判定成功")]
-    [Range(5f, 45f)] public float swipeAngleTolerance = 25f;
+    [Range(5f, 90f)] public float swipeAngleTolerance = 60f;
     [Tooltip("划动最小速度（像素/秒）")]
-    public float swipeMinSpeed = 500f;
+    public float swipeMinSpeed = 200f;
 
     [Header("成功效果")]
     [Tooltip("架势伤害")]
@@ -48,4 +48,6 @@ public class QTEConfig : ScriptableObject
     public GameObject qteIndicatorPrefab;
     [Tooltip("QTE 指示器在屏幕上的归一化坐标 (0~1)")]
     public Vector2 screenPosition = new Vector2(0.5f, 0.6f);
+    [Tooltip("QTE 指示器在 Canvas 上的尺寸（像素，基于参考分辨率 1080×1920）")]
+    public Vector2 indicatorSize = new Vector2(200f, 200f);
 }

@@ -16,10 +16,11 @@ MonoBehaviour:
   warningDuration: 0.5
   judgeWindow: 2
   swipeDirection: 0
-  swipeAngleTolerance: 25
-  swipeMinSpeed: 500
+  swipeAngleTolerance: 60
+  swipeMinSpeed: 200
   poiseDamage: 40
   ultimateEnergyGain: 20
   failureDamage: 20
   qteIndicatorPrefab: {fileID: 3166970949203987014, guid: dfc0e9f6df46cbd4f9c6de1373017a8f, type: 3}
   screenPosition: {x: 0.5, y: 0.55}
+  indicatorSize: {x: 800, y: 200}

@@ -59,6 +59,12 @@ public class QTEController : MonoBehaviour
     private List<QTEInstance> _activeQTEs = new List<QTEInstance>();
     private GameObject _activeProjectile;
 
+    // QTE 精灵动画
+    private SpriteRenderer _enemySpriteRenderer;
+    private PingPongAnim _enemyPingPongAnim;
+    private Sprite _originalSprite;
+    private Coroutine _qteAnimCoroutine;
+
     // 事件
     public System.Action OnQTETriggered;       // QTE 攻击触发
     public System.Action OnQTESuccess;         // QTE 判定成功
@@ -167,6 +173,7 @@ public class QTEController : MonoBehaviour
         }
 
         enemy.EnterQTEAttack();
+        StartQTEAnimation();
         SpawnProjectile();
         OnQTETriggered?.Invoke();
     }
@@ -226,6 +233,64 @@ public class QTEController : MonoBehaviour
         if (_activeProjectile != null)
             DOTween.Kill(_activeProjectile);
     }
+
+    #region QTE 精灵动画
+
+    private void StartQTEAnimation()
+    {
+        if (_currentAttack == null || _currentAttack.qteAnimationFrames == null || _currentAttack.qteAnimationFrames.Length == 0)
+            return;
+
+        // 懒加载缓存
+        if (_enemySpriteRenderer == null)
+        {
+            _enemySpriteRenderer = enemy.GetComponent<SpriteRenderer>();
+            _enemyPingPongAnim = enemy.GetComponent<PingPongAnim>();
+        }
+        if (_enemySpriteRenderer == null) return;
+
+        _originalSprite = _enemySpriteRenderer.sprite;
+
+        // 暂停 PingPongAnim（避免与 QTE 动画冲突）
+        if (_enemyPingPongAnim != null)
+            _enemyPingPongAnim.enabled = false;
+
+        _qteAnimCoroutine = StartCoroutine(PlayQTEAnimation());
+    }
+
+    private System.Collections.IEnumerator PlayQTEAnimation()
+    {
+        var frames = _currentAttack.qteAnimationFrames;
+        float interval = 1f / Mathf.Max(_currentAttack.qteAnimationFPS, 1f);
+        int count = frames.Length;
+
+        for (int i = 0; i < count; i++)
+        {
+            if (_state != QTEState.PerformingQTEAttack && _state != QTEState.QTEJudging)
+                yield break;
+            _enemySpriteRenderer.sprite = frames[i];
+            yield return new WaitForSeconds(interval);
+        }
+    }
+
+    private void StopQTEAnimation()
+    {
+        if (_qteAnimCoroutine != null)
+        {
+            StopCoroutine(_qteAnimCoroutine);
+            _qteAnimCoroutine = null;
+        }
+
+        // 恢复原始精灵
+        if (_enemySpriteRenderer != null && _originalSprite != null)
+            _enemySpriteRenderer.sprite = _originalSprite;
+
+        // 恢复 PingPongAnim
+        if (_enemyPingPongAnim != null)
+            _enemyPingPongAnim.enabled = true;
+    }
+
+    #endregion
 
     #endregion
 
@@ -288,14 +353,9 @@ public class QTEController : MonoBehaviour
     {
         get
         {
+            // QTE 阶段一旦开始，所有输入均被 QTE 系统拦截，防止误触普通攻击
             if (_state != QTEState.QTEJudging && _state != QTEState.PerformingQTEAttack) return false;
-            if (!_qtePhaseStarted) return false;
-            foreach (var qte in _activeQTEs)
-            {
-                if (!qte.resolved && qte.IsInJudgeWindow(_qtePhaseTimer))
-                    return true;
-            }
-            return false;
+            return _qtePhaseStarted;
         }
     }
 
@@ -318,7 +378,7 @@ public class QTEController : MonoBehaviour
         return false;
     }
 
-    public bool TryQTESwipe(Vector2 swipeDirection, float swipeSpeed, Vector2 screenPos)
+    public bool TryQTESwipe(Vector2 startScreenPos, Vector2 swipeDirection, float swipeSpeed, Vector2 releaseScreenPos)
     {
         if (_state != QTEState.QTEJudging && _state != QTEState.PerformingQTEAttack) return false;
         if (!_qtePhaseStarted) return false;
@@ -328,7 +388,18 @@ public class QTEController : MonoBehaviour
             if (qte.resolved || qte.config.qteType != QTEType.Swipe) continue;
             if (!qte.IsInJudgeWindow(_qtePhaseTimer)) continue;
 
-            if (swipeSpeed < qte.config.swipeMinSpeed) continue;
+            if (swipeSpeed < qte.config.swipeMinSpeed)
+            {
+                Debug.Log($"[QTEController] 划动速度不足: {swipeSpeed:F0} < {qte.config.swipeMinSpeed}");
+                continue;
+            }
+
+            // 检查划动是否经过指示器区域
+            Rect? indicatorRect = GetIndicatorScreenRect(qte);
+            if (indicatorRect == null) continue;
+
+            if (!LineIntersectsRect(startScreenPos, releaseScreenPos, indicatorRect.Value))
+                continue;
 
             float targetAngle = qte.config.swipeDirection;
             float swipeAngle = Mathf.Atan2(swipeDirection.y, swipeDirection.x) * Mathf.Rad2Deg;
@@ -340,8 +411,60 @@ public class QTEController : MonoBehaviour
                 ResolveQTE(qte, true);
                 return true;
             }
+            else
+            {
+                Debug.Log($"[QTEController] 划动角度偏差过大: {diff:F1}° > {qte.config.swipeAngleTolerance}° (目标{qte.config.swipeDirection}°)");
+            }
         }
         return false;
+    }
+
+    /// <summary>
+    /// 获取 QTE 指示器在屏幕空间中的矩形
+    /// </summary>
+    private Rect? GetIndicatorScreenRect(QTEInstance qte)
+    {
+        if (qte.indicator == null) return null;
+        var rt = qte.indicator.GetComponent<RectTransform>();
+        if (rt == null) return null;
+
+        Vector3[] corners = new Vector3[4];
+        rt.GetWorldCorners(corners);
+        return new Rect(corners[0].x, corners[0].y,
+            corners[2].x - corners[0].x,
+            corners[2].y - corners[0].y);
+    }
+
+    /// <summary>
+    /// 线段与矩形相交检测
+    /// </summary>
+    private bool LineIntersectsRect(Vector2 p1, Vector2 p2, Rect rect)
+    {
+        if (rect.Contains(p1) || rect.Contains(p2))
+            return true;
+
+        Vector2 bl = new Vector2(rect.xMin, rect.yMin);
+        Vector2 tl = new Vector2(rect.xMin, rect.yMax);
+        Vector2 tr = new Vector2(rect.xMax, rect.yMax);
+        Vector2 br = new Vector2(rect.xMax, rect.yMin);
+
+        return LinesIntersect(p1, p2, bl, tl)
+            || LinesIntersect(p1, p2, tl, tr)
+            || LinesIntersect(p1, p2, tr, br)
+            || LinesIntersect(p1, p2, br, bl);
+    }
+
+    private bool LinesIntersect(Vector2 a1, Vector2 a2, Vector2 b1, Vector2 b2)
+    {
+        Vector2 d1 = a2 - a1;
+        Vector2 d2 = b2 - b1;
+        float cross = d1.x * d2.y - d1.y * d2.x;
+        if (Mathf.Approximately(cross, 0f)) return false;
+
+        float t = ((b1.x - a1.x) * d2.y - (b1.y - a1.y) * d2.x) / cross;
+        float u = ((b1.x - a1.x) * d1.y - (b1.y - a1.y) * d1.x) / cross;
+
+        return t >= 0f && t <= 1f && u >= 0f && u <= 1f;
     }
 
     private bool IsClickInQTEArea(Vector2 screenPos, QTEInstance qte)
@@ -448,6 +571,9 @@ public class QTEController : MonoBehaviour
 
         // 通知敌人恢复
         enemy.ExitQTEAttack();
+
+        // 停止 QTE 精灵动画
+        StopQTEAnimation();
 
         // 清理指示器
         if (qteDisplay != null)

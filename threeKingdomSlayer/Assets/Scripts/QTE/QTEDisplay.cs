@@ -56,6 +56,7 @@ public class QTEDisplay : MonoBehaviour
             rt.anchorMin = config.screenPosition;
             rt.anchorMax = config.screenPosition;
             rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = config.indicatorSize;
         }
 
         // 预警动画：缩放脉冲
