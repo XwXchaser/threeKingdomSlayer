@@ -134,8 +134,13 @@ public class WaveSpawner : MonoBehaviour
 
         isSpawning = false;
 
-        // PerColumn: 波次生成完成后，每列独立压缩补齐
-        if (fillRule != FillUpRule.PerRow)
+        // 波次生成完成后，触发初始前移
+        if (fillRule == FillUpRule.PerRow)
+        {
+            // PerRow: 逐排补齐——检测清空排并压缩
+            columnManager.RowBasedFillUp();
+        }
+        else
         {
             for (int c = 0; c < 5; c++)
             {
@@ -194,8 +199,8 @@ public class WaveSpawner : MonoBehaviour
         int rowIndex;
         if (explicitRowIndex >= 0)
         {
-            // PerRow 模式：使用调用方传入的顺序排号
-            rowIndex = explicitRowIndex;
+            // PerRow 模式：推后2排，由 RowBasedFillUp 触发逐步前移
+            rowIndex = explicitRowIndex + 2;
         }
         else
         {

@@ -143,6 +143,16 @@ public class EnemyHealthBar : MonoBehaviour
         fillMaterialInstance.color = Color.Lerp(lowColor, highColor, t);
     }
 
+    /// <summary>
+    /// 立即隐藏血条（用于敌人死亡时立即关闭血条）
+    /// </summary>
+    public void Hide()
+    {
+        hideTimer = 0f;
+        if (barRoot != null)
+            barRoot.SetActive(false);
+    }
+
     private Vector3 GetHeadWorldPosition()
     {
         return _enemyTransform.position + new Vector3(0, _cachedYOffset * _enemyTransform.lossyScale.y, 0);
