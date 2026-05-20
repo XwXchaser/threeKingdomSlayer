@@ -80,9 +80,22 @@ public class QTEController : MonoBehaviour
 
     private void Start()
     {
+        Debug.Log($"[QTEController] Start: enemy={enemy?.name}, isBoss={enemy?.isBoss}, bossState={enemy?.bossState}, qteData={qteData?.name}, qteAttacksCount={qteData?.qteAttacks?.Count}");
         if (enemy != null && enemy.isBoss)
         {
             enemy.OnBossEngaged += OnBossEngaged;
+            Debug.Log($"[QTEController] 已订阅 OnBossEngaged, bossState={enemy.bossState}");
+            // 若 Boss 在 Start() 之前已进入战斗（如 StartBossPhaseAdvance 在 RegisterEnemy 中
+            // 先于本 Start 触发 OnBossEngaged），补启动 QTE 冷却
+            if (enemy.bossState == BossState.InCombat)
+            {
+                Debug.Log("[QTEController] 补触发 OnBossEngaged（Start时已在InCombat）");
+                OnBossEngaged(enemy);
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"[QTEController] Start跳过: enemy={(enemy==null?"null":"notBoss")}");
         }
     }
 
@@ -114,13 +127,20 @@ public class QTEController : MonoBehaviour
 
     private void OnBossEngaged(Enemy boss)
     {
-        if (qteData == null || qteData.qteAttacks.Count == 0) return;
+        Debug.Log($"[QTEController] OnBossEngaged: qteData={qteData?.name}, attacksCount={qteData?.qteAttacks?.Count}");
+        if (qteData == null || qteData.qteAttacks.Count == 0)
+        {
+            Debug.LogWarning("[QTEController] OnBossEngaged 跳过: qteData为空或无qteAttacks");
+            return;
+        }
         _currentAttackIndex = 0;
+        Debug.Log($"[QTEController] 开始QTE冷却: firstQTECooldown={qteData.firstQTECooldown}s");
         StartCooldown(qteData.firstQTECooldown);
     }
 
     private void StartCooldown(float duration)
     {
+        Debug.Log($"[QTEController] StartCooldown: {duration}s, 状态 {_state} → CoolingDown");
         _state = QTEState.CoolingDown;
         _qteTimer = duration;
     }
@@ -130,12 +150,15 @@ public class QTEController : MonoBehaviour
         _qteTimer -= Time.deltaTime;
         if (_qteTimer <= 0f)
         {
+            Debug.Log($"[QTEController] 冷却结束, isAttackAnimating={enemy.isAttackAnimating}");
             if (enemy.isAttackAnimating)
             {
+                Debug.Log("[QTEController] 等待当前攻击完成...");
                 _state = QTEState.WaitingForAttackFinish;
             }
             else
             {
+                Debug.Log("[QTEController] 触发QTE攻击");
                 TriggerQTEAttack();
             }
         }
@@ -143,14 +166,20 @@ public class QTEController : MonoBehaviour
 
     public void OnEnemyAttackComplete()
     {
+        Debug.Log($"[QTEController] OnEnemyAttackComplete: state={_state}");
         if (_state == QTEState.WaitingForAttackFinish)
+        {
+            Debug.Log("[QTEController] 攻击完成，触发QTE攻击");
             TriggerQTEAttack();
+        }
     }
 
     private void TriggerQTEAttack()
     {
+        Debug.Log($"[QTEController] TriggerQTEAttack: attackIndex={_currentAttackIndex}, totalAttacks={qteData.qteAttacks.Count}");
         if (qteData == null || qteData.qteAttacks.Count == 0) return;
         _currentAttack = qteData.qteAttacks[_currentAttackIndex];
+        Debug.Log($"[QTEController] 当前攻击: {_currentAttack?.name}, slots={_currentAttack?.qteSlots?.Count}");
         _state = QTEState.PerformingQTEAttack;
         _qteTimer = 0f;
         _qtePhaseStarted = false;
@@ -419,6 +448,25 @@ public class QTEController : MonoBehaviour
         return false;
     }
 
+    private Camera _qteCanvasCamera;
+    private bool _qteCanvasCameraChecked;
+
+    private Camera GetQTECanvasCamera()
+    {
+        if (!_qteCanvasCameraChecked)
+        {
+            _qteCanvasCameraChecked = true;
+            if (qteDisplay == null) qteDisplay = FindObjectOfType<QTEDisplay>();
+            if (qteDisplay != null)
+            {
+                var canvas = qteDisplay.GetComponent<Canvas>();
+                if (canvas != null && canvas.renderMode == RenderMode.ScreenSpaceCamera)
+                    _qteCanvasCamera = canvas.worldCamera;
+            }
+        }
+        return _qteCanvasCamera;
+    }
+
     /// <summary>
     /// 获取 QTE 指示器在屏幕空间中的矩形
     /// </summary>
@@ -430,6 +478,12 @@ public class QTEController : MonoBehaviour
 
         Vector3[] corners = new Vector3[4];
         rt.GetWorldCorners(corners);
+        var cam = GetQTECanvasCamera();
+        if (cam != null)
+        {
+            for (int i = 0; i < 4; i++)
+                corners[i] = cam.WorldToScreenPoint(corners[i]);
+        }
         return new Rect(corners[0].x, corners[0].y,
             corners[2].x - corners[0].x,
             corners[2].y - corners[0].y);
@@ -475,7 +529,8 @@ public class QTEController : MonoBehaviour
         var rt = qte.indicator.GetComponent<RectTransform>();
         if (rt == null) return false;
 
-        return RectTransformUtility.RectangleContainsScreenPoint(rt, screenPos);
+        var cam = GetQTECanvasCamera();
+        return RectTransformUtility.RectangleContainsScreenPoint(rt, screenPos, cam);
     }
 
     private void SpawnQTEIndicator(QTEInstance qte)
@@ -488,8 +543,14 @@ public class QTEController : MonoBehaviour
                 Debug.LogWarning("[QTEController] 未找到 QTEDisplay");
                 return;
             }
+            Debug.Log($"[QTEController] 找到 QTEDisplay: {qteDisplay.gameObject.name}");
         }
+        Debug.Log($"[QTEController] 生成指示器: type={qte.config.qteType}, prefab={qte.config.qteIndicatorPrefab?.name}, pos={qte.config.screenPosition}");
         qte.indicator = qteDisplay.SpawnIndicator(qte.config);
+        if (qte.indicator != null)
+            Debug.Log($"[QTEController] 指示器已生成: {qte.indicator.name}, active={qte.indicator.activeSelf}, parent={qte.indicator.transform.parent?.name}");
+        else
+            Debug.LogWarning("[QTEController] SpawnIndicator返回null!");
     }
 
     private void ResolveQTE(QTEInstance qte, bool success)

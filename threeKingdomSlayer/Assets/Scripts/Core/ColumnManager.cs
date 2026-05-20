@@ -88,7 +88,17 @@ public class ColumnManager : MonoBehaviour
     {
         if (!IsValidColumn(columnIndex)) return;
 
-        columns[columnIndex].RemoveEnemy(enemy);
+        FillUpRule rule = StageController.Instance?.GetFillUpRule() ?? FillUpRule.PerColumn;
+        if (rule == FillUpRule.PerRow)
+        {
+            // 逐排补齐：仅移除敌人，不触发逐列链，由 RowBasedFillUp 统一处理
+            columns[columnIndex].RemoveEnemy(enemy, skipChain: true);
+            RowBasedFillUp();
+        }
+        else
+        {
+            columns[columnIndex].RemoveEnemy(enemy);
+        }
         OnColumnsModified?.Invoke();
     }
 
@@ -127,6 +137,16 @@ public class ColumnManager : MonoBehaviour
     public void UpdateEnemyRow(int columnIndex, Enemy enemy)
     {
         if (!IsValidColumn(columnIndex)) return;
+
+        FillUpRule rule = StageController.Instance?.GetFillUpRule() ?? FillUpRule.PerColumn;
+        if (rule == FillUpRule.PerRow)
+        {
+            // 逐排补齐：自然移动后不触发逐列链，由 RowBasedFillUp 统一处理
+            Debug.Log($"[ColumnManager] UpdateEnemyRow (PerRow): col={columnIndex}, {enemy.DebugTag}, 触发 RowBasedFillUp");
+            RowBasedFillUp();
+            OnColumnsModified?.Invoke();
+            return;
+        }
 
         Column column = columns[columnIndex];
         int currentIndex = column.enemies.IndexOf(enemy);
@@ -267,7 +287,8 @@ public class ColumnManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 获取指定列前N排的所有敌人
+    /// 获取指定列中 rowIndex 小于 rangeRows 的所有敌人（按排索引而非列表位置过滤）
+    /// Boss 敌人始终包含在内，不受 rangeRows 限制
     /// </summary>
     public List<Enemy> GetEnemiesInRange(int columnIndex, int rangeRows)
     {
@@ -275,10 +296,11 @@ public class ColumnManager : MonoBehaviour
         if (!IsValidColumn(columnIndex)) return result;
 
         Column column = columns[columnIndex];
-        int count = Mathf.Min(rangeRows, column.enemies.Count);
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < column.enemies.Count; i++)
         {
-            result.Add(column.enemies[i]);
+            var e = column.enemies[i];
+            if (e.rowIndex < rangeRows || (e.isBoss && e.bossState == BossState.InCombat))
+                result.Add(e);
         }
         return result;
     }
@@ -297,7 +319,7 @@ public class ColumnManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 获取所有列中排索引小于等于指定值的敌人
+    /// 获取所有列中 rowIndex 小于等于 maxRowIndex 的敌人（按排索引而非列表位置过滤）
     /// </summary>
     public List<Enemy> GetEnemiesByRowLimit(int maxRowIndex)
     {
@@ -305,9 +327,10 @@ public class ColumnManager : MonoBehaviour
         for (int i = 0; i < columnCount; i++)
         {
             Column column = columns[i];
-            for (int j = 0; j < column.enemies.Count && j <= maxRowIndex; j++)
+            for (int j = 0; j < column.enemies.Count; j++)
             {
-                result.Add(column.enemies[j]);
+                if (column.enemies[j].rowIndex <= maxRowIndex)
+                    result.Add(column.enemies[j]);
             }
         }
         return result;
@@ -354,6 +377,53 @@ public class ColumnManager : MonoBehaviour
             total += columns[i].EnemyCount;
         }
         return total;
+    }
+
+    #endregion
+
+    #region 逐排补齐（Row-Based Fill-Up）
+
+    /// <summary>
+    /// 逐排补齐：扫描所有列中存活敌人的 rowIndex（非 Dead、非 Launched），
+    /// 找出已完全清空的行，然后将各列敌人向清空行压缩。
+    /// 在 PerRow 模式下，任何列结构变化后都应调用此方法。
+    ///
+    /// 注意：使用 enemy.rowIndex 而非列表位置判断排归属。
+    /// RemoveEnemy(skipChain=true) 移除阵亡敌人后列表位置会变化，
+    /// 但存活敌人保留原有 rowIndex，列表位置不再反映真实排号。
+    /// </summary>
+    public void RowBasedFillUp()
+    {
+        // 1. 收集所有存活（非 Dead、非 Launched）敌人所在的排号
+        int maxRow = 0;
+        var occupiedRows = new System.Collections.Generic.HashSet<int>();
+        for (int c = 0; c < columnCount; c++)
+        {
+            foreach (var e in columns[c].enemies)
+            {
+                if (e == null) continue;
+                if (e.state == EnemyState.Dead) continue;
+                // Launched 敌人仍占据其排位置——击飞≠空位，后排不应因此前移
+                int r = e.rowIndex;
+                if (r > maxRow) maxRow = r;
+                occupiedRows.Add(r);
+            }
+        }
+
+        // 2. 确定哪些排已完全清空（跨所有列无存活敌人）
+        bool[] clearRows = new bool[maxRow + 1];
+        for (int r = 0; r <= maxRow; r++)
+        {
+            clearRows[r] = !occupiedRows.Contains(r);
+            if (clearRows[r])
+                Debug.Log($"[ColumnManager] RowBasedFillUp: 第{r}排已清空");
+        }
+
+        // 3. 各列按 clearRows 压缩
+        for (int c = 0; c < columnCount; c++)
+        {
+            columns[c].CompactByClearRows(clearRows);
+        }
     }
 
     #endregion

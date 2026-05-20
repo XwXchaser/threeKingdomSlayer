@@ -369,6 +369,13 @@ public class Enemy : MonoBehaviour
     {
         if (state == EnemyState.Dead) return;
 
+        // 逐排补齐模式：非补齐移动时，检查前方整排是否已完全清空
+        if (!isRush && StageController.Instance?.GetFillUpRule() == FillUpRule.PerRow && !IsFrontRowClear())
+        {
+            Debug.Log($"[Enemy] PerRow 模式等待前排清空: {DebugTag}, col={columnIndex}, row={rowIndex}");
+            return;
+        }
+
         // 如果敌人已在攻击范围内，直接进入攻击状态而非移动
         // 补齐移动（isRush=true）优先级高于攻击：即使已在攻击范围内，也先向前补齐空位
         int atkRange = (int)Mathf.Max(1, attackRange);
@@ -705,6 +712,13 @@ public class Enemy : MonoBehaviour
 
             // 先退出击飞状态，再根据情况决定后续行为
             state = EnemyState.Idle;
+
+            // 逐排补齐：落地后触发 RowBasedFillUp（Launched→Idle 可能改变清空行状态）
+            if (StageController.Instance?.GetFillUpRule() == FillUpRule.PerRow)
+            {
+                var cm = EnemyManager.Instance?.columnManager;
+                if (cm != null) cm.RowBasedFillUp();
+            }
 
             // Boss 就位后（战斗中或缓冲中）锁定位置，不参与补齐前移
             if (isBoss && (bossState == BossState.InCombat || _bossEngageTimer > 0f))
@@ -1641,7 +1655,8 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
-    /// BOSS 补齐检查：指定排（跨所有列）是否已无存活非BOSS敌人
+    /// BOSS 补齐检查：指定排（跨所有列）是否已无存活非BOSS敌人。
+    /// 使用 enemy.rowIndex 而非列表位置判断排归属（PerRow 模式下列表位置不再反映真实排号）。
     /// </summary>
     private bool IsRowClearForBoss(int row)
     {
@@ -1652,14 +1667,26 @@ public class Enemy : MonoBehaviour
         {
             var col = cm.GetColumn(c);
             if (col == null) continue;
-            if (row < col.enemies.Count)
+            foreach (var e in col.enemies)
             {
-                var e = col.enemies[row];
-                if (e != null && e != this && e.state != EnemyState.Dead)
+                if (e == null) continue;
+                if (e == this) continue;
+                if (e.rowIndex != row) continue;
+                if (e.state != EnemyState.Dead)
                     return false;
             }
         }
         return true;
+    }
+
+    /// <summary>
+    /// 逐排补齐检查：前方一整排（跨所有列）是否已无存活敌人。
+    /// 用于 PerRow 模式下非补齐移动的前置检查。
+    /// </summary>
+    private bool IsFrontRowClear()
+    {
+        if (rowIndex <= 0) return true;
+        return IsRowClearForBoss(rowIndex - 1);
     }
 
     /// <summary>
