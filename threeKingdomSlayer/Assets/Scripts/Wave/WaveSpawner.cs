@@ -114,20 +114,35 @@ public class WaveSpawner : MonoBehaviour
         Debug.Log($"[WaveSpawner] 开始生成第 {currentWaveIndex + 1} 波，共 {wave.rows.Count} 排敌人");
 
         // 生成该波的所有排
-        foreach (RowConfig row in wave.rows)
+        FillUpRule fillRule = ResolvedStageConfig?.fillUpRule ?? FillUpRule.PerColumn;
+        if (fillRule == FillUpRule.PerRow)
         {
-            SpawnRow(row);
+            // PerRow: 每排使用顺序递增的排号，确保 rowIndex 正确对应配置中的排位
+            int rowIdx = 0;
+            foreach (RowConfig row in wave.rows)
+            {
+                SpawnRow(row, fillRule, rowIdx++);
+            }
+        }
+        else
+        {
+            foreach (RowConfig row in wave.rows)
+            {
+                SpawnRow(row, fillRule);
+            }
         }
 
         isSpawning = false;
 
-        // 波次生成完成后，触发所有列的初始前移补齐
-        // 普通波次敌人从后排 spawn（rowIndex+2），需要逐步前进填补前方空位
-        for (int c = 0; c < 5; c++)
+        // PerColumn: 波次生成完成后，每列独立压缩补齐
+        if (fillRule != FillUpRule.PerRow)
         {
-            var col = columnManager.GetColumn(c);
-            if (col != null && col.enemies.Count > 0)
-                col.TriggerFillForward();
+            for (int c = 0; c < 5; c++)
+            {
+                var col = columnManager.GetColumn(c);
+                if (col != null && col.enemies.Count > 0)
+                    col.TriggerFillForward();
+            }
         }
 
         // 启动协程等待当前波次所有敌人死亡
@@ -163,11 +178,11 @@ public class WaveSpawner : MonoBehaviour
 
     /// <summary>
     /// 生成一排敌人
-    /// 根据 enemyIds 长度决定该排有多少个敌人站位
-    /// 每个敌人根据其 occupySlots 占用对应数量的列
-    /// 该排所有敌人共享相同的排索引（rowIndex）
+    /// enemyIds[i] 直接对应第 i 列（0=最左, 4=最右）。填 0 表示该列为空。
+    /// 该排所有敌人共享相同的排索引（rowIndex）。
     /// </summary>
-    private void SpawnRow(RowConfig row)
+    /// <param name="explicitRowIndex">PerRow 模式下的显式排号（>=0 时直接使用，无需计算）</param>
+    private void SpawnRow(RowConfig row, FillUpRule fillRule = FillUpRule.PerColumn, int explicitRowIndex = -1)
     {
         if (row.enemyIds == null || row.enemyIds.Length == 0)
         {
@@ -175,68 +190,48 @@ public class WaveSpawner : MonoBehaviour
             return;
         }
 
-        // 计算该排所有敌人的总占位数，确定起始列偏移
-        int totalSlots = 0;
-        int[] slotCounts = new int[row.enemyIds.Length];
-        for (int i = 0; i < row.enemyIds.Length; i++)
+        // 该排所有敌人共享相同的排索引
+        int rowIndex;
+        if (explicitRowIndex >= 0)
         {
-            int enemyId = row.enemyIds[i];
-            if (enemyId <= 0)
+            // PerRow 模式：使用调用方传入的顺序排号
+            rowIndex = explicitRowIndex;
+        }
+        else
+        {
+            // PerColumn 模式：基于最大列数量计算后排位置
+            rowIndex = 0;
+            if (columnManager != null)
             {
-                slotCounts[i] = 0;
-                continue;
+                for (int c = 0; c < 5; c++)
+                {
+                    int count = columnManager.GetColumnEnemyCount(c);
+                    if (count > rowIndex)
+                        rowIndex = count;
+                }
             }
-            int slots = enemyPool != null ? enemyPool.GetEnemyOccupySlots(enemyId) : 1;
-            slotCounts[i] = slots;
-            totalSlots += slots;
+            rowIndex += 2; // 从后排出场，通过 TriggerFillForward 前移
         }
 
-        // 计算起始列偏移，使敌人居中排列
-        // 例如 totalSlots=5 时起始列=0，totalSlots=3 时起始列=1
-        int startColumn = (5 - totalSlots) / 2;
-        if (startColumn < 0) startColumn = 0;
-
-        // BUG FIX: 该排所有敌人共享相同的排索引
-        // 排索引 = 当前波次中已生成的总排数（即所有列中最大的敌人数量）
-        // 这样确保同一排的敌人在不同列中拥有相同的 rowIndex
-        int rowIndex = 0;
-        if (columnManager != null)
-        {
-            for (int c = 0; c < 5; c++)
-            {
-                int count = columnManager.GetColumnEnemyCount(c);
-                if (count > rowIndex)
-                    rowIndex = count;
-            }
-        }
-
-        // 所有敌人从第3排（rowIndex+2）出场，营造压迫前进感
-        // Boss 也从此出场，通过分阶段推进系统（BossPause/BossResume）控制前进
-        rowIndex += 2;
-
-        int currentCol = startColumn;
         for (int i = 0; i < row.enemyIds.Length; i++)
         {
             int enemyId = row.enemyIds[i];
             if (enemyId <= 0) continue;
-
-            int slots = slotCounts[i];
 
             // 从对象池获取敌人
             Enemy enemy = enemyPool?.GetEnemy(enemyId);
             if (enemy == null)
             {
                 Debug.LogWarning($"[WaveSpawner] 无法获取敌人ID {enemyId}，跳过");
-                currentCol += slots;
                 continue;
             }
 
-            enemy.Initialize(currentCol, rowIndex);
+            // 直接使用数组索引作为列号：enemyIds[0]=列0(最左), enemyIds[4]=列4(最右)
+            Debug.Log($"[WaveSpawner] 生成敌人 id={enemyId} → 列{i} 排{rowIndex} (fillRule={fillRule})");
+            enemy.Initialize(i, rowIndex);
 
             // 注册到管理器
             enemyManager?.RegisterEnemy(enemy);
-
-            currentCol += slots;
         }
     }
 

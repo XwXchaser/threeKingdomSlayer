@@ -67,14 +67,17 @@ public class Column
     ///   - 补齐移动完成后若还需继续前进，启动延迟计时器，
     ///     延迟结束后再开始下一次补齐移动。
     /// </summary>
-    public void RemoveEnemy(Enemy enemy)
+    /// <param name="skipChain">true=仅移除敌人，不压缩列表、不启动链（逐排补齐时由 ColumnManager 统一处理）</param>
+    public void RemoveEnemy(Enemy enemy, bool skipChain = false)
     {
         int index = enemies.IndexOf(enemy);
         if (index >= 0)
         {
             enemies.RemoveAt(index);
             int colIndex = enemy.columnIndex;
-            Debug.Log($"[Column] RemoveEnemy: column={colIndex}, deadIndex={index}, remaining={enemies.Count}");
+            Debug.Log($"[Column] RemoveEnemy: column={colIndex}, deadIndex={index}, remaining={enemies.Count}, skipChain={skipChain}");
+
+            if (skipChain) return;
 
             // 紧凑排列存活敌人，Dead 跳过并移除，Launched 保留在原位不参与补齐
             int writeIdx = 0;
@@ -177,6 +180,75 @@ public class Column
     }
 
     /// <summary>
+    /// 逐排补齐：根据 clearRows 压缩本列敌人列表。
+    /// clearRows[r]=true 表示第 r 排（跨所有列）已清空，该排的敌人都应移除/跳过。
+    /// 压缩后标记需要前移的敌人并启动链式补齐。
+    ///
+    /// 注意：使用 enemy.rowIndex 而非列表位置判断排归属。
+    /// RemoveEnemy(skipChain=true) 后列表位置已变化，rowIndex 才是真实排号。
+    /// </summary>
+    public void CompactByClearRows(bool[] clearRows)
+    {
+        // 第一遍：计算每个存活的敌人应该移动到的新排号
+        // targetRow = rowIndex - 低于该排的已清空排数
+        // 这与 PerColumn 的 writeIdx 不同：writeIdx 是顺序紧凑（0,1,2...），
+        // 而 row-based 会保留排与排之间的空隙（仅压缩掉已清空的排）
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            Enemy e = enemies[i];
+            if (e == null) continue;
+            int row = e.rowIndex;
+
+            bool isClearRow = row < clearRows.Length && clearRows[row];
+            if (e.state == EnemyState.Dead || isClearRow)
+                continue;
+
+            // 统计低于 row 的已清空排数
+            int clearBelow = 0;
+            for (int r = 0; r < row && r < clearRows.Length; r++)
+            {
+                if (clearRows[r]) clearBelow++;
+            }
+
+            int newRow = row - clearBelow;
+
+            if (e.state == EnemyState.Launched)
+            {
+                e.targetRow = newRow;
+                continue;
+            }
+
+            if (newRow != row)
+            {
+                e.targetRow = newRow;
+                e.ResetMovementState();
+                if (!(e.isBoss && e.bossState == BossState.Approaching))
+                    e.pendingRushMove = true;
+                Debug.Log($"[Column] RowBased 标记补齐: {e.DebugTag}, col={columnIndex}, curRow={row}, targetRow={newRow}");
+            }
+        }
+
+        // 第二遍：从列表中移除 Dead 和 clearRow 的敌人
+        int writeIdx = 0;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            Enemy e = enemies[i];
+            int row = e.rowIndex;
+            bool isClearRow = row < clearRows.Length && clearRows[row];
+            if (e.state == EnemyState.Dead || isClearRow)
+                continue;
+
+            if (i != writeIdx) enemies[writeIdx] = e;
+            writeIdx++;
+        }
+
+        if (writeIdx < enemies.Count)
+            enemies.RemoveRange(writeIdx, enemies.Count - writeIdx);
+
+        StartRushMoveChain(columnIndex);
+    }
+
+    /// <summary>
     /// 触发补齐前移：将列中所有存活敌人向列表前方补齐。
     /// 用于波次生成后的初始前移——敌人 spawn 在靠后排，需要逐步前进到攻击位置。
     /// 逻辑与 RemoveEnemy 的存活敌人重排相同，但不移除任何敌人。
@@ -186,7 +258,6 @@ public class Column
         if (enemies.Count == 0) return;
 
         int writeIdx = 0;
-        Enemy firstToMove = null;
         for (int i = 0; i < enemies.Count; i++)
         {
             Enemy e = enemies[i];
@@ -203,18 +274,13 @@ public class Column
             e.targetRow = writeIdx;
             e.ResetMovementState();
             e.pendingRushMove = true;
-            if (firstToMove == null) firstToMove = e;
             writeIdx++;
         }
 
         if (writeIdx < enemies.Count)
             enemies.RemoveRange(writeIdx, enemies.Count - writeIdx);
 
-        if (firstToMove != null && firstToMove.rowIndex > 0)
-        {
-            firstToMove.OnRushMoveComplete += OnColumnRushMoveComplete;
-            firstToMove.TryStartRushMove();
-        }
+        StartRushMoveChain(columnIndex);
     }
 
     /// <summary>

@@ -82,6 +82,7 @@ public class StageController : MonoBehaviour
         if (waveSpawner != null)
         {
             waveSpawner.OnAllWavesCompleted += OnAllWavesCleared;
+            waveSpawner.OnWaveCompleted += OnWaveCleared;
         }
         if (enemyManager != null)
         {
@@ -168,6 +169,15 @@ public class StageController : MonoBehaviour
     #endregion
 
     #region 事件回调
+
+    /// <summary>
+    /// 单波清空 → 自动生成下一波
+    /// </summary>
+    private void OnWaveCleared(int waveIndex)
+    {
+        Debug.Log($"[StageController] 第{waveIndex + 1}波清空，自动开始下一波");
+        waveSpawner?.SpawnNextWave();
+    }
 
     /// <summary>
     /// 所有波次已清空 → 关卡胜利
@@ -350,6 +360,14 @@ public class StageController : MonoBehaviour
     public float GetRushMoveDelay()
     {
         return stageConfig?.rushMoveDelay ?? 0.2f;
+    }
+
+    /// <summary>
+    /// 获取当前关卡的补齐规则
+    /// </summary>
+    public FillUpRule GetFillUpRule()
+    {
+        return stageConfig?.fillUpRule ?? FillUpRule.PerColumn;
     }
 
     #endregion
