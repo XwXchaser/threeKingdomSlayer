@@ -118,6 +118,7 @@ public class Enemy : MonoBehaviour
     private float launchVelocityY;     // 当前Y轴速度
     private Vector3 launchStartLocalPos; // 挑飞起始位置
     private float currentLaunchYHeight;   // 本次挑飞的随机 Y 高度（仅用于初速度计算）
+    private float _remainingStunOnLaunch;  // 挑飞时被中断的眩晕剩余时间（落地后恢复）
     private float attackTimer;      // 攻击冷却计时器（攻击动画结束后开始冷却）
     private float attackAnimTimer;  // 攻击动画计时器（攻击动作执行时间）
     public bool isAttackAnimating; // 是否正在播放攻击动画（AttackSpawn 或 AttackDraw）
@@ -224,6 +225,7 @@ public class Enemy : MonoBehaviour
         bossState = BossState.None;
         stunTimer = 0f;
         launchTimer = 0f;
+        _remainingStunOnLaunch = 0f;
         // BUG FIX: attackTimer 初始化为一个正数，避免第一次进入 UpdateAttack() 时
         // 立即触发冷却结束（attackTimer <= 0f），导致攻击动画被跳过
         attackTimer = 1f;
@@ -490,9 +492,11 @@ public class Enemy : MonoBehaviour
         }
 
         // 眩晕时清理移动状态，避免 DOTween 残留和状态不一致
-        // 保留 pendingRushMove，待眩晕结束后由 UpdateStun 检查并恢复 Rush 链
+        // 若正在补齐移动，恢复 pendingRushMove 标记，确保眩晕结束后链式补齐能继续
         if (state == EnemyState.Moving)
         {
+            if (isRushMove)
+                pendingRushMove = true;
             DOTween.Kill(transform, false);
             isMovingToNextRow = false;
             isRushMove = false;
@@ -514,6 +518,9 @@ public class Enemy : MonoBehaviour
     {
         if (state == EnemyState.Dead) return;
         if (state == EnemyState.Launched) return;
+
+        // 保存被中断的眩晕剩余时间，落地后恢复
+        _remainingStunOnLaunch = (state == EnemyState.Stunned && stunTimer > 0f) ? stunTimer : 0f;
 
         // 清理所有 DOTween 动效（攻击动画、受击抖动等）
         // BUG FIX: 移除 DOTween.Kill("punchScale") 和 DOTween.Kill("rushBounce")，
@@ -666,6 +673,11 @@ public class Enemy : MonoBehaviour
             _poiseRecoveryEndTime = 0f;
             OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
 
+            // BUG FIX: 必须先从 Stunned 状态退出，否则 TryStartRushMove 检测到
+            // state==Stunned 会直接返回 false，而 StartMoving 也可能因 PerRow 前排检查
+            // 等原因提前返回不改变状态，导致敌人永久卡在 Stunned 状态
+            state = EnemyState.Idle;
+
             // Boss 就位后锁定位置，不参与补齐前移
             if (isBoss && (bossState == BossState.InCombat || _bossEngageTimer > 0f))
             {
@@ -695,6 +707,10 @@ public class Enemy : MonoBehaviour
         float gravity = launchTimer > 0f ? launchGravity : launchGravity * 3f;
         launchVelocityY -= gravity * Time.deltaTime;
 
+        // 挑飞期间眩晕计时继续跑，避免落地后恢复已过期的眩晕
+        if (_remainingStunOnLaunch > 0f)
+            _remainingStunOnLaunch = Mathf.Max(0f, _remainingStunOnLaunch - Time.deltaTime);
+
         // 计算新Y偏移
         float currentY = transform.localPosition.y - launchStartLocalPos.y;
         float newY = currentY + launchVelocityY * Time.deltaTime;
@@ -712,6 +728,16 @@ public class Enemy : MonoBehaviour
 
             // 先退出击飞状态，再根据情况决定后续行为
             state = EnemyState.Idle;
+
+            // BUG FIX: 挑飞打断了眩晕，落地后恢复剩余的眩晕时间
+            // 避免 BOSS 在眩晕未结束时落地立即攻击
+            if (_remainingStunOnLaunch > 0f)
+            {
+                float remaining = _remainingStunOnLaunch;
+                _remainingStunOnLaunch = 0f;
+                Stun(remaining);
+                return;
+            }
 
             // 逐排补齐：落地后触发 RowBasedFillUp（Launched→Idle 可能改变清空行状态）
             if (StageController.Instance?.GetFillUpRule() == FillUpRule.PerRow)
@@ -1253,6 +1279,12 @@ public class Enemy : MonoBehaviour
         isAttackAnimating = false;
         isAttackDrawPhase = false;
         isMovingToNextRow = false;
+
+        // 立即隐藏血条（非BOSS），避免血条随死亡动画飘落
+        if (!isBoss && cachedHealthBar != null)
+        {
+            cachedHealthBar.Hide();
+        }
 
         // 立即触发死亡事件：计入击杀数、判断通关（不等死亡动画播完）
         OnDeath?.Invoke(this);

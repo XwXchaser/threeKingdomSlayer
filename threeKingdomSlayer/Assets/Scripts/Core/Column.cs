@@ -167,13 +167,8 @@ public class Column
         int idx = enemies.IndexOf(enemy);
         if (idx < 0 || !enemy.pendingRushMove) return;
 
-        // 如果前方有正在移动的敌人，等待其完成（由它的 OnRushMoveComplete 链式触发）
-        for (int i = 0; i < idx; i++)
-        {
-            if (enemies[i].state == EnemyState.Moving)
-                return;
-        }
-
+        // 落地后立即开始补齐，不等待前方敌人移动完成。
+        // 前方敌人与落地敌人目标排不同，可并发移动，互不阻塞。
         enemy.OnRushMoveComplete += OnColumnRushMoveComplete;
         enemy.TryStartRushMove();
         Debug.Log($"[Column] 击飞落地启动链式: {enemy.DebugTag}, col={columnIndex}, row={enemy.rowIndex}");
@@ -221,10 +216,23 @@ public class Column
             if (newRow != row)
             {
                 e.targetRow = newRow;
-                e.ResetMovementState();
-                if (!(e.isBoss && e.bossState == BossState.Approaching))
-                    e.pendingRushMove = true;
-                Debug.Log($"[Column] RowBased 标记补齐: {e.DebugTag}, col={columnIndex}, curRow={row}, targetRow={newRow}");
+                // BUG FIX: 不重置 Stunned/Launched 敌人的状态。
+                // ResetMovementState 会将 state 设为 Idle，导致晕眩/击飞被意外打断。
+                // 对于这些状态，仅设置 targetRow 和 pendingRushMove，
+                // 由 TryStartRushMove 等待状态恢复后再开始补齐移动。
+                if (e.state == EnemyState.Stunned || e.state == EnemyState.Launched)
+                {
+                    if (!(e.isBoss && e.bossState == BossState.Approaching))
+                        e.pendingRushMove = true;
+                    Debug.Log($"[Column] RowBased 标记补齐（保留状态）: {e.DebugTag}, col={columnIndex}, curRow={row}, targetRow={newRow}, state={e.state}");
+                }
+                else
+                {
+                    e.ResetMovementState();
+                    if (!(e.isBoss && e.bossState == BossState.Approaching))
+                        e.pendingRushMove = true;
+                    Debug.Log($"[Column] RowBased 标记补齐: {e.DebugTag}, col={columnIndex}, curRow={row}, targetRow={newRow}");
+                }
             }
         }
 
