@@ -1,0 +1,377 @@
+局内成长系统框架设计文档（供 AI Agent 开发）
+1. 概述
+本文档定义了三套局内奖励系统的运行机制、数据配置方式、存储逻辑及局外成长预留接口。
+
+核心约束：
+
+所有奖励配置必须通过 ScriptableObject 在 Inspector 窗口完成，尽量减少策划直接修改代码。
+
+功能实现应遵循“框架优先，内容可配”原则，示例数值仅作参考，不写死。
+
+预留局外成长扩展点，支持开局时携带额外能力、动态修改奖励行为。
+
+2. 连击奖励系统（Combo Reward）
+2.1 运行机制（框架要求）
+触发条件：每次攻击命中敌人（无论是否击杀）增加连击计数。单次攻击命中多个敌人时，连击增加量可配置（例如：每次命中 +1，或每个命中敌人 +1）。
+
+重置条件：连续未命中时间超过阈值（可配置）后，连击计数归零。
+
+奖励形式：触发式计时 BUFF。当连击数首次达到或超过某个预设阈值时，立即触发一个持续指定时间的 BUFF。每个阈值一局内可多次触发（即连击重置后重新达到该阈值可再次触发）。
+
+BUFF 叠加规则：
+
+不同种类的 BUFF（不同 buffId）可同时存在，互不影响。
+
+同种类的 BUFF（相同 buffId）刷新持续时间，不叠加效果数值或时长。
+
+BUFF 生命周期：纯局内临时状态，不持久化。连击计数归零不会移除已激活的 BUFF，BUFF 独立计时，时间到后自行消失。
+
+2.2 数据配置（策划配表）
+使用 ScriptableObject，路径建议：Assets/ScriptableObjects/Combo/ComboBuffConfig.asset
+
+csharp
+[CreateAssetMenu(menuName = "一夫当关/连击Buff配置")]
+public class ComboBuffConfig : ScriptableObject
+{
+    public float resetDelay = 2f;               // 未命中重置延迟（秒）
+    public HitIncrementMode incrementMode;      // 连击增加模式
+    public List<ComboBuffTrigger> triggers;     // 连击阈值触发列表
+}
+
+public enum HitIncrementMode
+{
+    PerHit,     // 每次命中动作 +1（无论命中多少敌人）
+    PerEnemy    // 每个被命中的敌人 +1
+}
+
+[System.Serializable]
+public class ComboBuffTrigger
+{
+    public int requiredCombo;                   // 触发所需连击数（达到或超过即触发）
+    public string buffId;                       // Buff 唯一标识，用于同类刷新判定
+    public float duration;                      // Buff 持续时间（秒）
+    public List<StatModifier> modifiers;        // Buff 提供的属性修正
+}
+
+[System.Serializable]
+public class StatModifier
+{
+    public string statId;                       // 属性标识，如 "invincible", "attack_speed", "damage_multiplier"
+    public float additiveBonus;                 // 加法加成（如 0.05 表示 +5%）
+    public bool isOverride;                     // 是否为覆盖型效果（如无敌、隐身）
+}
+示例配置（仅示意）：
+
+resetDelay = 2
+
+incrementMode = PerHit
+
+triggers:
+
+requiredCombo = 10, buffId = "invincible_short", duration = 2, modifiers: [{statId:"invincible", additiveBonus:1, isOverride:true}]
+
+requiredCombo = 20, buffId = "attack_speed_boost", duration = 5, modifiers: [{statId:"attack_speed", additiveBonus:0.15}]
+
+requiredCombo = 30, buffId = "damage_boost", duration = 4, modifiers: [{statId:"damage_multiplier", additiveBonus:0.20}]
+
+requiredCombo = 50, buffId = "energy_boost", duration = 8, modifiers: [{statId:"energy_gain", additiveBonus:0.5}]
+
+2.3 运行时数据结构
+csharp
+public class ComboBuffState
+{
+    public int currentCombo;
+    public float lastHitTime;
+    public List<ActiveBuff> activeBuffs;
+}
+
+public class ActiveBuff
+{
+    public string buffId;
+    public float endTime;                   // 绝对时间戳（Time.time + duration）
+    public List<StatModifier> modifiers;
+}
+逻辑流程：
+
+每次命中 → 增加 currentCombo → 检查所有 requiredCombo <= currentCombo 的触发器。
+
+如果 activeBuffs 中存在相同 buffId 的 Buff → 刷新其 endTime。
+
+否则 → 创建新 ActiveBuff，添加到列表，并应用 modifiers。
+
+每帧（或每次属性查询时）遍历 activeBuffs，移除 endTime <= Time.time 的 Buff，并撤销其效果。
+
+连击重置时：不清除 activeBuffs，只重置 currentCombo 和 lastHitTime。
+
+2.4 扩展接口预留
+局外成长接入点：
+
+提供 OnComboTrigger(ComboBuffTrigger trigger) 事件，允许外部系统监听并追加效果。
+
+支持开局时预置某些 Buff（例如“开局自带 3 秒无敌”）。
+
+效果系统可插拔：StatModifier 使用 statId 字符串，建议维护一个 StatModifierApplier 注册表，便于新增自定义属性（如暴击、移速）。
+
+3. 总击杀奖励系统（Total Kill Reward）
+3.1 运行机制（框架要求）
+触发条件：累计击杀敌人总数（本局内累积，不因时间重置）达到预设里程碑。
+
+奖励形式：一次性即时发放（铜钱、本局经验、生命恢复、额外三选一奖励等）。每个里程碑一局内仅触发一次。
+
+特殊规则：玩家中途退出、死亡或通关时，均可获得已达成里程碑的奖励。通关额外奖励（StageConfig.clearCoinReward）独立于本系统。
+
+生命周期：里程碑领取状态需在局内记录（防止重复领取），并在结算时累加到持久化存档。
+
+3.2 数据配置（策划配表）
+使用 ScriptableObject，路径建议：Assets/ScriptableObjects/KillReward/TotalKillMilestoneConfig.asset
+
+csharp
+[CreateAssetMenu(menuName = "一夫当关/总击杀里程碑配置")]
+public class TotalKillMilestoneConfig : ScriptableObject
+{
+    public List<Milestone> milestones;
+}
+
+[System.Serializable]
+public class Milestone
+{
+    public int requiredKills;                   // 所需击杀数
+    public List<RewardItem> rewards;            // 奖励列表
+}
+
+[System.Serializable]
+public class RewardItem
+{
+    public RewardType type;                     // Coin, Exp, HealthRestore, GrantRandomUpgrade, etc.
+    public int intValue;                        // 铜钱数量、经验值等
+    public float floatValue;                    // 血量恢复百分比（0~1）
+    public UpgradeRarity forcedRarity;          // 若 type=GrantRandomUpgrade，指定稀有度
+}
+
+public enum RewardType { Coin, Exp, HealthRestore, GrantRandomUpgrade }
+示例配置（仅示意）：
+
+requiredKills=50, rewards: [{type:Coin, intValue:100}]
+
+requiredKills=100, rewards: [{type:Coin, intValue:150}, {type:Exp, intValue:50}]
+
+requiredKills=200, rewards: [{type:Coin, intValue:200}, {type:HealthRestore, floatValue:0.2}]
+
+requiredKills=400, rewards: [{type:GrantRandomUpgrade, forcedRarity:Common}]
+
+3.3 存储与结算接口
+运行时数据结构（可放在 PlayerState 或专用组件）：
+
+csharp
+public class KillRewardState
+{
+    public int totalKills;
+    public bool[] milestoneClaimed;  // 长度等于配置中 milestones 数量
+}
+结算接口：
+
+csharp
+public interface IKillRewardSettable
+{
+    void OnSettleRewards();          // 退出/死亡/通关时调用，遍历未领取里程碑，发放奖励并累加到存档
+}
+结算流程：
+
+主动退出 / 死亡 / 通关 → 调用 OnSettleRewards()。
+
+对于每个未领取的里程碑，按 rewards 列表依次发放：
+
+Coin：调用 SaveManager.AddCoins(intValue)。
+
+Exp：直接增加本局经验值（PlayerState.AddExp）。
+
+HealthRestore：恢复生命（PlayerState.Heal）。
+
+GrantRandomUpgrade：立即触发一次三选一（不消耗升级机会）。
+
+标记 milestoneClaimed[i] = true。
+
+通关时额外加上 StageConfig.clearCoinReward。
+
+3.4 扩展接口预留
+局外成长接入点：
+
+允许外部系统修改里程碑需求（例如“里程碑所需击杀数减少 10%”）。
+
+提供 OnMilestoneReached(Milestone milestone) 事件。
+
+支持在结算时修改获得的铜钱数量（如增加全局倍率）。
+
+4. 经验三选一奖励系统（Level-up Choice Reward）
+4.1 运行机制（框架要求）
+获取方式：击杀敌人获得经验值，经验满后升级，每次升级弹出三选一界面。玩家选择一项本局永久加成。
+
+奖励类型：数值强化、机制修饰（如每X次攻击触发额外攻击）、资源经济（击杀掉钱、经验加成）等。
+
+持续时间：本局内永久生效，新对局重置。
+
+稀有度系统：支持配置不同稀有度（普通/稀有/传说）及出现权重。
+
+4.2 数据配置（策划配表）
+每个奖励独立一个 ScriptableObject，路径建议：Assets/ScriptableObjects/Upgrades/
+
+csharp
+[CreateAssetMenu(menuName = "一夫当关/升级奖励定义")]
+public class UpgradeDefinition : ScriptableObject
+{
+    public string displayName;
+    public string description;
+    public UpgradeRarity rarity;              // Common, Rare, Legendary
+    public List<UpgradeEffect> effects;       // 一个奖励可以有多个效果
+}
+
+[System.Serializable]
+public class UpgradeEffect
+{
+    public string effectType;                 // "damage_multiplier", "on_attack_trigger", "on_kill_chance", etc.
+    public float floatValue;                  // 数值参数
+    public int intValue;                      // 整数参数（如触发所需次数）
+    public string stringValue;                // 字符串参数（如触发攻击类型 "Slash"）
+}
+
+public enum UpgradeRarity { Common, Rare, Legendary }
+升级池配置（控制出现概率和可选列表）：
+
+csharp
+[CreateAssetMenu(menuName = "一夫当关/升级奖励池配置")]
+public class UpgradePoolConfig : ScriptableObject
+{
+    public List<WeightedUpgrade> commonPool;
+    public List<WeightedUpgrade> rarePool;
+    public List<WeightedUpgrade> legendaryPool;
+    public float commonWeight = 0.8f;
+    public float rareWeight = 0.15f;
+    public float legendaryWeight = 0.05f;
+}
+
+[System.Serializable]
+public class WeightedUpgrade
+{
+    public UpgradeDefinition upgrade;
+    public int weight;
+}
+经验曲线配置：
+
+csharp
+[CreateAssetMenu(menuName = "一夫当关/经验曲线配置")]
+public class ExpCurveConfig : ScriptableObject
+{
+    public List<int> expRequiredPerLevel;   // 索引0为从0级升到1级所需经验，1为1→2所需...
+}
+示例效果（仅示意）：
+
+effectType="damage_multiplier", floatValue=0.15 → 伤害 +15%
+
+effectType="on_attack_trigger", intValue=3, stringValue="Stab", floatValue=0.4 → 每3次攻击触发一次40%伤害的戳击
+
+effectType="on_kill_chance", floatValue=0.1, intValue=1, stringValue="Coin" → 10%击杀掉落1铜钱
+
+4.3 运行时存储
+csharp
+public class PlayerUpgradeState
+{
+    public int currentLevel;
+    public int currentExp;
+    public List<UpgradeDefinition> acquiredUpgrades;   // 已选择的升级定义
+    // 可选：缓存效果列表以便快速查询
+}
+升级流程：
+
+增加经验 → 检查 currentExp >= expRequiredPerLevel[currentLevel] → currentLevel++，经验溢出保留 → 弹出三选一界面。
+
+三选一随机逻辑：根据权重和稀有度，从池中抽取 3 个不同的 UpgradeDefinition。
+
+选择后 acquiredUpgrades.Add(choice)，并立即应用所有 effects。
+
+4.4 扩展接口预留
+局外成长接入点：
+
+支持在开局时向 acquiredUpgrades 预置某些升级（即初始携带能力）。
+
+允许外部系统动态修改经验获取倍率、升级选项数量。
+
+提供 OnBeforeUpgradeChoice 事件，可修改候选列表。
+
+效果系统可插拔：effectType 采用字符串标识，建议维护一个 IEffectExecutor 注册表，便于新增效果类型而无需修改核心逻辑。
+
+5. 局外成长系统预留接口（重要）
+未来将实现局外成长（如武将天赋、全局升级、永久加成等），当前所有局内系统必须留出以下扩展点：
+
+开局初始化注入：
+
+提供一个 IGameStartModifier 接口，局外系统可在游戏开始时修改 PlayerState 的初始属性（如额外攻击力、初始连击数、初始经验值、预置 Buff、预置升级等）。
+
+示例调用：GameManager.OnGameStart += externalSystem.ApplyModifiers
+
+动态结算加成：
+
+总击杀奖励结算时，允许外部系统修改获得的铜钱数量（如增加百分比）。
+
+提供 OnBeforeKillRewardSettle 事件，可修改奖励数值。
+
+行为监听：
+
+连击系统开放 OnComboUpdated、OnComboTrigger 事件。
+
+总击杀系统开放 OnTotalKillsChanged、OnMilestoneReached 事件。
+
+三选一系统开放 OnUpgradeChosen 事件。
+
+配置覆盖：
+
+允许局外系统动态替换或增加升级池中的选项（例如解锁稀有奖励的出现资格）。
+
+允许修改连击阈值、里程碑需求等配置参数（通过克隆 ScriptableObject 或使用代理模式）。
+
+实现建议：在核心逻辑中使用 UnityEvent 或 C# event，并在 GameManager 或 PlayerState 中提供注册方法。
+
+6. 策划配置工作流
+所有配置应满足：
+
+无需编写代码：策划在 Unity Inspector 中创建 ScriptableObject 资产，填写参数。
+
+实时热加载：配置修改后无需重启游戏（使用 ScriptableObject 的 OnValidate 或重新加载池）。
+
+版本控制友好：每个配置资产独立文件，便于合并。
+
+推荐的目录结构：
+
+text
+Assets/
+  ScriptableObjects/
+    Combo/
+      ComboBuffConfig.asset
+    KillReward/
+      TotalKillMilestoneConfig.asset
+    Upgrades/
+      Definitions/               (每个升级一个 .asset)
+        DamagePlus.asset
+        OnAttackTrigger_Stab.asset
+        ...
+      UpgradePoolConfig.asset
+    ExpCurve/
+      DefaultExpCurve.asset
+7. 开发注意事项
+不要直接实现示例中的具体数值或具体奖励名称。框架必须支持完全通过配置改变所有参数（重置时间、阈值、Buff 效果、里程碑数值、升级效果等）。
+
+示例奖励（如“连刺”、“剑气”）仅作示意，实际内容策划可自行定义。
+
+所有 UI 显示文本（奖励名称、描述）应存放在配置中，不硬编码。
+
+考虑性能：连击系统每帧检测重置计时和 Buff 过期，使用 Time.unscaledDeltaTime 避免受时间缩放影响。
+
+存档系统：总击杀奖励结算时，铜钱增加应调用 SaveManager.AddCoins()，注意线程/协程安全。
+
+连击 Buff 的同类判定：严格依赖 buffId 字符串比较，大小写敏感。
+
+8. 三套系统的对比总结
+系统	触发方式	奖励形式	持续时间	叠加规则	是否持久化
+连击奖励	连击数达到阈值	计时 BUFF	固定时长	不同类共存，同类刷新时长	否
+总击杀奖励	累计击杀数达里程碑	一次性奖励	即时	每个里程碑每局一次	是（铜钱等）
+三选一奖励	升级时选择	本局永久效果	本局永久	可叠加（数值或逻辑）	否
+本文档供 AI Agent 开发阶段使用。完成框架搭建后，策划可自行配置具体内容。如有疑问，请优先参考框架设计原则，而非示例数值。

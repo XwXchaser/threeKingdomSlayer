@@ -141,6 +141,7 @@ public class UltimateButtonUI : MonoBehaviour
 
     private void OnButtonClick()
     {
+        if (Time.timeScale == 0f) return; // 暂停时不触发大招
         UltimateSystem.Instance?.ActivateUltimate();
     }
 }

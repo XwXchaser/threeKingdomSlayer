@@ -52,8 +52,9 @@ public class StageConfig : ScriptableObject
     [Header("波次配置")]
     public List<WaveConfig> waves = new List<WaveConfig>(); // 按顺序执行
     
-    [Header("连杀奖励")]
-    public List<int> killStreakThresholds = new List<int> { 10, 25, 50, 100 }; // 连杀奖励触发阈值
+    [Header("总击杀奖励")]
+    [Tooltip("累计击杀里程碑，每个阈值可配置多条奖励（铜钱/回血/升级）")]
+    public List<KillMilestoneEntry> killMilestones = new List<KillMilestoneEntry>();
     
     [Header("通关奖励")]
     public int clearCoinReward = 100;

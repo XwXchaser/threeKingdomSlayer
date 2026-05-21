@@ -91,11 +91,11 @@ public class Column
                 }
                 if (e.state == EnemyState.Launched)
                 {
-                    // 击飞敌人留在列中（可被攻击），不参与补齐，不阻塞后方敌人填充前方空位
-                    // 但设置 targetRow 用于落地后检测前方空位
+                    // 击飞敌人留在列中（可被攻击），静默补齐到目标位置，不播放动画
                     if (i != writeIdx) enemies[writeIdx] = e;
                     e.targetRow = writeIdx;
-                    Debug.Log($"[Column] 保留 Launched 敌人（不参与补齐）: {e.DebugTag}, col={colIndex}, row={e.rowIndex}, listPos={writeIdx}");
+                    e.SilentFillToTargetRow();
+                    Debug.Log($"[Column] 击飞静默补齐: {e.DebugTag}, col={colIndex}, listPos={writeIdx}");
                     writeIdx++;
                     continue;
                 }
@@ -209,18 +209,22 @@ public class Column
 
             if (e.state == EnemyState.Launched)
             {
-                e.targetRow = newRow;
+                if (newRow != row)
+                {
+                    e.targetRow = newRow;
+                    e.SilentFillToTargetRow();
+                }
                 continue;
             }
 
             if (newRow != row)
             {
                 e.targetRow = newRow;
-                // BUG FIX: 不重置 Stunned/Launched 敌人的状态。
-                // ResetMovementState 会将 state 设为 Idle，导致晕眩/击飞被意外打断。
-                // 对于这些状态，仅设置 targetRow 和 pendingRushMove，
+                // BUG FIX: 不重置 Stunned 敌人的状态。
+                // ResetMovementState 会将 state 设为 Idle，导致晕眩被意外打断。
+                // 对于 Stunned 状态，仅设置 targetRow 和 pendingRushMove，
                 // 由 TryStartRushMove 等待状态恢复后再开始补齐移动。
-                if (e.state == EnemyState.Stunned || e.state == EnemyState.Launched)
+                if (e.state == EnemyState.Stunned)
                 {
                     if (!(e.isBoss && e.bossState == BossState.Approaching))
                         e.pendingRushMove = true;
@@ -243,7 +247,9 @@ public class Column
             Enemy e = enemies[i];
             int row = e.rowIndex;
             bool isClearRow = row < clearRows.Length && clearRows[row];
-            if (e.state == EnemyState.Dead || isClearRow)
+            // Launched 敌人可能被第一遍的 SilentFillToTargetRow 移入了 clearRow，
+            // 此时不应将其移除（clearRow 状态已过期，该排现在有敌人）
+            if (e.state == EnemyState.Dead || (isClearRow && e.state != EnemyState.Launched))
                 continue;
 
             if (i != writeIdx) enemies[writeIdx] = e;
@@ -274,6 +280,7 @@ public class Column
             {
                 if (i != writeIdx) enemies[writeIdx] = e;
                 e.targetRow = writeIdx;
+                e.SilentFillToTargetRow();
                 writeIdx++;
                 continue;
             }

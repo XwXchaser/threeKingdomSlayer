@@ -1422,6 +1422,42 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
+    /// 击飞中的敌人静默补齐：直接更新 rowIndex 和 X/Z 位置，保留当前 Y（击飞高度）。
+    /// 不播放 DOTween 弹跳动画，不触发补齐链。
+    /// 由 Column 在 RemoveEnemy / CompactByClearRows / TriggerFillForward 中调用。
+    /// </summary>
+    public void SilentFillToTargetRow()
+    {
+        if (targetRow < 0 || rowIndex <= targetRow) return;
+
+        int oldRow = rowIndex;
+        rowIndex = targetRow;
+        targetRow = -1;
+
+        float xPos;
+        float rowSpacing = 2.5f;
+        float offsetZ = 0f;
+        if (StageController.Instance != null)
+        {
+            xPos = StageController.Instance.GetFormationOffset(columnIndex, rowIndex);
+            rowSpacing = StageController.Instance.GetRowSpacing();
+            offsetZ = StageController.Instance.GetFormationOffsetZ();
+        }
+        else
+        {
+            xPos = (columnIndex - 2) * 2.0f;
+        }
+
+        float zPos = GetRowZ(rowIndex, rowSpacing, offsetZ);
+
+        // 保留当前 Y：击飞高度由 UpdateLaunch() 管理，不重置
+        float currentY = transform.localPosition.y;
+        transform.localPosition = new Vector3(xPos, currentY, zPos);
+
+        Debug.Log($"[Enemy] 击飞静默补齐: {DebugTag}, col={columnIndex}, row={oldRow}→{rowIndex}, pos=({xPos:F2},{currentY:F2},{zPos:F2})");
+    }
+
+    /// <summary>
     /// 尝试开始补齐移动（链式触发）
     /// 根据当前状态决定是否立即开始移动：
     ///   - Idle：直接开始移动（或攻击，若已到最前排）
@@ -1492,7 +1528,19 @@ public class Enemy : MonoBehaviour
 
             case EnemyState.Stunned:
             case EnemyState.Launched:
-                // 等待恢复，恢复后 StartMoving() 会检查 pendingRushMove
+                // 普通敌人没有眩晕设计，不应被眩晕/击飞阻塞补齐移动
+                if (!isBoss)
+                {
+                    state = EnemyState.Idle;
+                    pendingRushMove = false;
+                    StartMoving(true);
+                    if (state != EnemyState.Moving)
+                    {
+                        OnRushMoveComplete?.Invoke(this);
+                    }
+                    return true;
+                }
+                // Boss 等待恢复
                 return false;
 
             default:

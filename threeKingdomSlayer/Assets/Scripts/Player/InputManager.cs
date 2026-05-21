@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// 输入管理器
@@ -79,6 +80,9 @@ public class InputManager : MonoBehaviour
 
     private void Update()
     {
+        // 暂停时不处理任何输入
+        if (Time.timeScale == 0f) return;
+
         // BUG FIX: 鼠标和触摸输入互斥
         // 如果有触摸输入，则跳过鼠标输入（避免在触摸屏设备上双重触发）
         if (Input.touchCount > 0)
@@ -107,6 +111,10 @@ public class InputManager : MonoBehaviour
         // 鼠标按下
         if (Input.GetMouseButtonDown(0))
         {
+            // UI 之上的点击不处理游戏输入
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+                return;
+
             touchStartPos = Input.mousePosition;
             touchStartTime = Time.time;
             isTouching = true;

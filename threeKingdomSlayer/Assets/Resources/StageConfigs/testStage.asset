@@ -25,7 +25,29 @@ MonoBehaviour:
     - enemyIds: 6500000000000000660000000000000000000000
     - enemyIds: 6500000000000000000000000000000065000000
     - enemyIds: 0000000000000000680000000000000000000000
-  killStreakThresholds: 0a000000140000001e00000028000000
+  killMilestones:
+  - killThreshold: 5
+    rewards:
+    - rewardType: 0
+      rewardAmount: 30
+  - killThreshold: 10
+    rewards:
+    - rewardType: 1
+      rewardAmount: 20
+  - killThreshold: 20
+    rewards:
+    - rewardType: 0
+      rewardAmount: 50
+    - rewardType: 1
+      rewardAmount: 25
+  - killThreshold: 35
+    rewards:
+    - rewardType: 1
+      rewardAmount: 40
+  - killThreshold: 50
+    rewards:
+    - rewardType: 0
+      rewardAmount: 100
   clearCoinReward: 100
   formationConfig: {fileID: 11400000, guid: f329fc350cf1b54439fcc603e63223ba, type: 2}
   fillUpRule: 1
