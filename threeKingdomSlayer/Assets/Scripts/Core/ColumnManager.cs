@@ -173,7 +173,8 @@ public class ColumnManager : MonoBehaviour
                 {
                     if (i != writeIdx) column.enemies[writeIdx] = e;
                     e.targetRow = writeIdx;
-                    Debug.Log($"[ColumnManager] 保留 Launched 敌人（不参与补齐）: {e.DebugTag}, col={columnIndex}, row={e.rowIndex}, listPos={writeIdx}");
+                    e.SilentFillToTargetRow();
+                    Debug.Log($"[ColumnManager] 击飞静默补齐: {e.DebugTag}, col={columnIndex}, listPos={writeIdx}");
                     writeIdx++;
                     continue;
                 }

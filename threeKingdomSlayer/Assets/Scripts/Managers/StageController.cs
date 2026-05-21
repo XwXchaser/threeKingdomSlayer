@@ -30,6 +30,7 @@ public class StageController : MonoBehaviour
 
     // 运行时状态
     private StageState currentState = StageState.None;
+    private bool _coinsSettled;
 
     // 事件
     public System.Action<StageState> OnStageStateChanged;
@@ -121,6 +122,10 @@ public class StageController : MonoBehaviour
         UltimateSystem.Instance?.ResetEnergy();
         enemyManager?.ClearAllEnemies();
 
+        // 重置击杀奖励管理器
+        var killRewardManager = FindObjectOfType<KillRewardManager>();
+        killRewardManager?.ResetRewards();
+
         // 预创建对象池
         PrewarmEnemyPools();
 
@@ -189,19 +194,18 @@ public class StageController : MonoBehaviour
         Debug.Log("[StageController] 所有波次已清空，关卡胜利！");
         SetState(StageState.Victory);
 
-        // 发放通关奖励 + 结算本局铜钱到存档
+        // 发放通关奖励
         if (stageConfig != null)
         {
             playerState?.AddCoins(stageConfig.clearCoinReward);
         }
 
-        // 存档：标记关卡已通关 + 累加本局铜钱
+        // 标记通关 + 结算铜钱
         if (stageConfig != null)
         {
             SaveManager.MarkStageCleared(stageConfig.stageId);
-            if (playerState != null)
-                SaveManager.SetCoins(SaveManager.Load().coinCount + playerState.coinCount);
         }
+        SettleCoins();
 
         OnStageVictory?.Invoke();
     }
@@ -265,11 +269,30 @@ public class StageController : MonoBehaviour
     }
 
     /// <summary>
-    /// 返回主菜单
+    /// 返回主菜单（结算铜钱后跳转）
     /// </summary>
     public void GoToMainMenu()
     {
+        SettleCoins();
         UnityEngine.SceneManagement.SceneManager.LoadScene(mainMenuSceneName);
+    }
+
+    /// <summary>
+    /// 结算本局铜钱到存档（幂等：同一局只结算一次）
+    /// </summary>
+    private void SettleCoins()
+    {
+        if (_coinsSettled) return;
+        if (playerState == null) return;
+
+        int sessionCoins = playerState.coinCount;
+        if (sessionCoins <= 0) return;
+
+        int total = SaveManager.GetCoins() + sessionCoins;
+        SaveManager.SetCoins(total);
+        _coinsSettled = true;
+
+        Debug.Log($"[StageController] 铜钱已结算: +{sessionCoins}, 总铜钱: {total}");
     }
 
     /// <summary>

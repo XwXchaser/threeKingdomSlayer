@@ -18,7 +18,7 @@ MonoBehaviour:
   damage: 10
   poiseDamage: 50
   rangeRows: 2
-  cooldown: 5
+  cooldown: 1
   launchDuration: 0.5
   attackWavePrefab: {fileID: 0}
   ultimateEnergyGain: 8

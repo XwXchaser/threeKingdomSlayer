@@ -263,7 +263,7 @@ public class MainMenuUI : MonoBehaviour
     private void UpdateCoinDisplay()
     {
         if (coinText != null)
-            coinText.text = $"总铜钱: {SaveManager.Load().coinCount}";
+            coinText.text = $"总铜钱: {SaveManager.GetCoins()}";
     }
 
     private void StartBattle()

@@ -266,6 +266,15 @@ public class PlayerState : MonoBehaviour
     }
 
     /// <summary>
+    /// 获取本局获得指定道具的数量（当前仅支持 Coin）
+    /// </summary>
+    public int GetSessionProp(PropType type)
+    {
+        if (type == PropType.Coin) return coinCount;
+        return 0;
+    }
+
+    /// <summary>
     /// 设置当前波次
     /// </summary>
     public void SetCurrentWave(int wave)
