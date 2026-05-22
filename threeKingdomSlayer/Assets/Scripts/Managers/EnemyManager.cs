@@ -19,6 +19,8 @@ public class EnemyManager : MonoBehaviour
     public System.Action<Enemy> OnAnyEnemyDied;
     public System.Action OnAllEnemiesDied;
     public System.Action<Enemy> OnBossEngaged;
+    /// <summary>新敌人注册时触发（用于外部系统订阅敌人事件）</summary>
+    public System.Action<Enemy> OnEnemyRegistered;
 
     private void Awake()
     {
@@ -67,6 +69,9 @@ public class EnemyManager : MonoBehaviour
 
         // 添加到列管理
         columnManager?.AddEnemyToColumn(enemy.columnIndex, enemy);
+
+        // 通知外部系统有新敌人
+        OnEnemyRegistered?.Invoke(enemy);
     }
 
     /// <summary>

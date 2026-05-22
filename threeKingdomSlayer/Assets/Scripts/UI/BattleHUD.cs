@@ -30,6 +30,9 @@ public class BattleHUD : MonoBehaviour
     [Tooltip("同时显示 Boss 血条的最大数量")]
     public int maxBossBars = 5;
 
+    [Header("连击UI")]
+    public ComboUI comboUI;
+
     [Header("关卡状态")]
     public GameObject victoryPanel;
     public GameObject defeatPanel;

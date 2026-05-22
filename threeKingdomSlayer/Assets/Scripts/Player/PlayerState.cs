@@ -54,6 +54,8 @@ public class PlayerState : MonoBehaviour
     public System.Action<int> OnWaveChanged;
     public System.Action<StageState> OnStageStateChanged;
     public System.Action OnPlayerDied;
+    public System.Action<int> OnComboChanged;
+    public System.Action<string> OnComboTrigger;
 
     private void Awake()
     {
