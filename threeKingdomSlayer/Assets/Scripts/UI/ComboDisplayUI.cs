@@ -1,45 +1,50 @@
-using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 
 /// <summary>
-/// 连击特效显示 — 两张精灵图：填充倒计时图 + 静态图，命中时缩放动画
+/// 连击特效显示 — "连"字 + 动态数字，统一填充 + 命中缩放动画
 /// </summary>
 public class ComboDisplayUI : MonoBehaviour
 {
-    [Header("图片")]
-    [Tooltip("填充图（Image.Type=Filled, FillMethod=Horizontal, FillOrigin=Left）")]
-    public Image fillImage;
-    [Tooltip("静态图（普通 Image）")]
-    public Image staticImage;
+    [Header("连字")]
+    public Image lianFillImage;
+    public Image lianStaticImage;
+
+    [Header("数字素材")]
+    [Tooltip("0-9 填充面 Sprite")]
+    public Sprite[] digitFillSprites;
+    [Tooltip("0-9 底面 Sprite（alpha 后缀）")]
+    public Sprite[] digitAlphaSprites;
+
+    [Header("数字预制体")]
+    [Tooltip("DigitSlot 预制体，含 FillImage + StaticImage 子节点")]
+    public GameObject digitPrefab;
+    [Tooltip("数字的父容器（水平排列）")]
+    public Transform digitParent;
 
     [Header("缩放动画")]
-    [Tooltip("缩放峰值（1=原大小, 1.3=放大30%）")]
     public float scaleAmplitude = 1.3f;
-    [Tooltip("缩放动画时长（秒）")]
     public float scaleDuration = 0.15f;
 
-    private Coroutine _scaleRoutine;
+    private List<DigitSlot> _digitPool = new List<DigitSlot>();
     private int _lastCombo;
+    private bool _visible;
+    private Coroutine _scaleRoutine;
     private Vector3 _baseScale;
-    private Color _fillColor, _staticColor;
+
+    private class DigitSlot
+    {
+        public GameObject go;
+        public Image fillImage;
+        public Image staticImage;
+    }
 
     private void Awake()
     {
         _baseScale = transform.localScale;
-
-        if (fillImage != null)
-        {
-            _fillColor = fillImage.color;
-            _fillColor.a = 0f;
-            fillImage.color = _fillColor;
-        }
-        if (staticImage != null)
-        {
-            _staticColor = staticImage.color;
-            _staticColor.a = 0f;
-            staticImage.color = _staticColor;
-        }
+        SetVisible(false);
     }
 
     private void Start()
@@ -57,10 +62,9 @@ public class ComboDisplayUI : MonoBehaviour
     private void Update()
     {
         var cm = ComboManager.Instance;
-        if (cm == null) return;
+        if (cm == null || !_visible) return;
 
-        if (cm.CurrentCombo > 0 && fillImage != null)
-            fillImage.fillAmount = cm.ComboResetProgress;
+        ApplyFillAmounts(cm.ComboResetProgress);
     }
 
     private void OnComboUpdated(int combo)
@@ -69,11 +73,9 @@ public class ComboDisplayUI : MonoBehaviour
         {
             if (combo > _lastCombo)
             {
+                RebuildDigits(combo);
                 SetVisible(true);
-
-                if (fillImage != null)
-                    fillImage.fillAmount = 1f;
-
+                ApplyFillAmounts(1f);
                 PlayScaleAnimation();
             }
         }
@@ -85,21 +87,105 @@ public class ComboDisplayUI : MonoBehaviour
         _lastCombo = combo;
     }
 
+    private void RebuildDigits(int combo)
+    {
+        var digits = GetDigits(combo);
+        int needed = digits.Count;
+
+        while (_digitPool.Count < needed)
+        {
+            var go = Instantiate(digitPrefab, digitParent);
+            var slot = new DigitSlot
+            {
+                go = go,
+                staticImage = go.transform.Find("StaticImage")?.GetComponent<Image>(),
+                fillImage = go.transform.Find("FillImage")?.GetComponent<Image>()
+            };
+            if (slot.fillImage != null)
+            {
+                slot.fillImage.type = Image.Type.Filled;
+                slot.fillImage.fillMethod = Image.FillMethod.Horizontal;
+                slot.fillImage.fillOrigin = 0;
+            }
+            _digitPool.Add(slot);
+        }
+
+        for (int i = 0; i < _digitPool.Count; i++)
+        {
+            var slot = _digitPool[i];
+            bool active = i < needed;
+            slot.go.SetActive(active);
+            if (active)
+            {
+                int d = digits[i];
+                if (slot.fillImage != null && d < digitFillSprites.Length)
+                    slot.fillImage.sprite = digitFillSprites[d];
+                if (slot.staticImage != null && d < digitAlphaSprites.Length)
+                    slot.staticImage.sprite = digitAlphaSprites[d];
+            }
+        }
+    }
+
+    private void ApplyFillAmounts(float progress)
+    {
+        int digitCount = 0;
+        for (int i = 0; i < _digitPool.Count; i++)
+            if (_digitPool[i].go.activeSelf)
+                digitCount++;
+
+        int N = 1 + digitCount;
+
+        if (lianFillImage != null)
+            lianFillImage.fillAmount = Mathf.Clamp01(N * progress - 0);
+
+        int di = 0;
+        for (int i = 0; i < _digitPool.Count; i++)
+        {
+            if (!_digitPool[i].go.activeSelf) continue;
+            if (_digitPool[i].fillImage != null)
+                _digitPool[i].fillImage.fillAmount = Mathf.Clamp01(N * progress - (di + 1));
+            di++;
+        }
+    }
+
     private void SetVisible(bool visible)
     {
+        _visible = visible;
         float a = visible ? 1f : 0f;
-        if (fillImage != null)
+        SetImageAlpha(lianFillImage, a);
+        SetImageAlpha(lianStaticImage, a);
+        foreach (var slot in _digitPool)
         {
-            var c = fillImage.color;
-            c.a = a;
-            fillImage.color = c;
+            if (slot.go.activeSelf)
+            {
+                SetImageAlpha(slot.fillImage, a);
+                SetImageAlpha(slot.staticImage, a);
+            }
         }
-        if (staticImage != null)
+    }
+
+    private static void SetImageAlpha(Image img, float a)
+    {
+        if (img == null) return;
+        var c = img.color;
+        c.a = a;
+        img.color = c;
+    }
+
+    private static List<int> GetDigits(int value)
+    {
+        var list = new List<int>();
+        if (value == 0)
         {
-            var c = staticImage.color;
-            c.a = a;
-            staticImage.color = c;
+            list.Add(0);
+            return list;
         }
+        while (value > 0)
+        {
+            list.Insert(0, value % 10);
+            value /= 10;
+        }
+        return list;
     }
 
     private void PlayScaleAnimation()
