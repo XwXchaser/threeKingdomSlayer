@@ -124,6 +124,9 @@ public class ComboDisplayUI : MonoBehaviour
                     slot.staticImage.sprite = digitAlphaSprites[d];
             }
         }
+
+        // 强制重建布局，确保 DigitParent 的 ContentSizeFitter 即时生效
+        LayoutRebuilder.ForceRebuildLayoutImmediate(digitParent as RectTransform);
     }
 
     private void ApplyFillAmounts(float progress)
