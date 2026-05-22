@@ -126,6 +126,9 @@ public class StageController : MonoBehaviour
         var killRewardManager = FindObjectOfType<KillRewardManager>();
         killRewardManager?.ResetRewards();
 
+        // 重置连击管理器
+        ComboManager.Instance?.ResetCombo();
+
         // 预创建对象池
         PrewarmEnemyPools();
 
