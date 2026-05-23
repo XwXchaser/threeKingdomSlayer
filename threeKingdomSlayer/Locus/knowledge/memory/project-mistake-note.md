@@ -9,29 +9,26 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1778764012219
-updatedAt: 1779459656311
+updatedAt: 1779544176599
 ---
 
 # project-mistake-note
 
 ## Summary
-更新至 2025-07-16 — DigitSlot 尺寸统一 + 衰减速度视觉修复
+更新至 2025-07-16 — ExpBar DisabledColor + ExpGem 屏幕空间 baseSpeed 缩放
 
 <!-- locus:body:start -->
-### DigitSlot 全拉伸 anchor 导致数字不可见 ✅ 已修复
-- 症状：DigitSlot 子节点（StaticImage/FillImage）锚点改为全拉伸 (0,0)-(1,1) 后，运行时 GO active=true、alpha=1 但数字不可见
-- 根因：HorizontalLayoutGroup (childControlWidth=true) + preserveAspect=true 的 Image 在拉伸锚点下 preferredWidth 计算异常，无 LayoutElement 导致 DigitSlot 宽度坍缩为 0
-- 修复（2025-07）：
-  1. DigitSlot prefab 添加 LayoutElement（preferredWidth=50, preferredHeight=50, minWidth=30, minHeight=30）
-  2. ComboDisplayUI.RebuildDigits 末尾添加 LayoutRebuilder.ForceRebuildLayoutImmediate() 确保 ContentSizeFitter 即时生效
-  3. 场景重导入恢复 ComboDisplayUI 序列化数据（重编译后 Inspector 字段被清空的 Unity 已知问题）
-- 文件：Assets/Prefabs/UI/DigitSlot.prefab, Assets/Scripts/UI/ComboDisplayUI.cs
+### ExpBar Fill 亮度异常暗沉 ✅ 已修复（2025-07）
+- 症状：ExpBar 中的 Fill Image（sprite=ex_fill）渲染亮度明显低于美术素材原图。Image.color=(1,1,1,1)、material=UI/Default、sprite 像素正确、无 Mask/RectMask2D、CanvasGroup alpha=1，一切参数名义上正确但 Fill 仍然偏暗且半透明
+- 根因：ExpBar 的 Slider 组件 `m_Interactable: 0`（不可交互），Unity Selectable 机制自动将 ColorBlock 中的 `m_DisabledColor` 应用到 targetGraphic（Fill Image）。原 DisabledColor 为 `RGBA(0.784, 0.784, 0.784, 0.502)`（灰色 + 50% 透明度），导致 CanvasRenderer.color 被覆写为该值
+- 排查关键：Image.color 仅设置组件的目标颜色，实际渲染由 CanvasRenderer.color 决定。Slider（Selectable 子类）在非 interactable 时会覆写 targetGraphic 关联的 CanvasRenderer.color。用 `CanvasRenderer.GetColor()` 而非 `Image.color` 才能看到真实渲染色
+- 修复：将 Slider ColorBlock 的 `disabledColor` 设为 `(1,1,1,1)`（与 normalColor 一致），使 interactable 状态变化不影响渲染颜色
+- 预防规则：所有纯展示型 Slider/Button/Toggle（不被玩家操作）若设为 `interactable=false`，必须将其 ColorBlock 的 disabledColor 设为与 normalColor 相同的值，否则 UI 渲染颜色会异常
+- 文件：Assets/Scenes/Battle.scene (ExpBar Slider)
 
-### DigitSlot 与「连」字尺寸不一致导致 fillAmount 衰减速度视觉差异 ✅ 已修复
-- 症状：「连」字 FillImage（100×100）和 DigitSlot FillImage（50×50, DigitParent scale=2.5）虽然 fillAmount 数学衰减速率完全一致，但像素级视觉速度差 2 倍
-- 根因：fillAmount 裁剪的是 RectTransform 渲染宽度，「连」100px vs 数字 125px（50×2.5）宽度不同，每秒消失像素数不同
-- 修复（2025-07）：
-  1. DigitSlot prefab 尺寸从 50×50 改为 100×100（LayoutElement 同步：prefW/H 100, minW/H 60）
-  2. Battle.scene DigitParent localScale 从 (2.5, 2.5, 2.5) 重置为 (1, 1, 1)
-- 文件：Assets/Prefabs/UI/DigitSlot.prefab, Assets/Scenes/Battle.scene
+### 经验宝石飞行速度极慢 ✅ 已修复（2025-07-16）
+- 症状：ExpGem 从世界空间 SpriteRenderer 切换到屏幕空间 UI Image 后，宝石飞行几乎不动
+- 根因：世界空间与屏幕空间的坐标尺度完全不同。世界空间两物体间距通常 5~20 单位，baseSpeed=8 合适。切换到屏幕空间（Canvas 参考分辨率 1080×1920）后，宝石从敌人位置飞到 ExpBar 距离约 500~1500 像素，baseSpeed=8 意味着需要 60~180 秒
+- 修复：将 `ExpGemManager.baseSpeed` 从 8 改为 800（屏幕空间像素/秒），同时更新场景中已序列化的值
+- 预防规则：切换坐标系（世界↔屏幕）时必须检查速度/距离参数的量纲是否匹配。世界空间：1~20 单位/s；屏幕空间（参考分辨率）：500~1500 像素/s
 <!-- locus:body:end -->

@@ -61,11 +61,15 @@ MonoBehaviour:
   maxPoise: 100
   stunDuration: 1.5
   launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
   launchYHeightMin: 2.8
   launchYHeightMax: 3.2
   launchedDamageTakenMultiplier: 1.5
   launchedHitExtendDuration: 0.5
   coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 21300000, guid: 9615f3c03352d4a4684e7679ae7c28cc, type: 3}
   isBoss: 0
   bossHealthBarPrefab: {fileID: 0}
   stabDamageMultiplier: 1

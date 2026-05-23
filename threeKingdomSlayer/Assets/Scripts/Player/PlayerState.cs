@@ -25,12 +25,20 @@ public class PlayerState : MonoBehaviour
     [Header("武将配置")]
     public HeroConfig heroConfig;
 
+    [Header("升级系统")]
+    public ExpCurveConfig expCurveConfig;
+
     [System.NonSerialized] public float currentHealth;
     [System.NonSerialized] public int currentRevives;
     [System.NonSerialized] public int killCount;
     [System.NonSerialized] public int coinCount;
     [System.NonSerialized] public int currentWave;
     [System.NonSerialized] public StageState stageState = StageState.None;
+
+    // 升级系统运行时
+    [System.NonSerialized] public int currentLevel;
+    [System.NonSerialized] public float currentExp;
+    [System.NonSerialized] public List<UpgradeAcquired> acquiredUpgrades = new List<UpgradeAcquired>();
 
     // 冷却计时器（按攻击类型索引）
     private Dictionary<AttackType, float> cooldownTimers = new Dictionary<AttackType, float>();
@@ -56,6 +64,8 @@ public class PlayerState : MonoBehaviour
     public System.Action OnPlayerDied;
     public System.Action<int> OnComboChanged;
     public System.Action<string> OnComboTrigger;
+    public System.Action<float, float> OnExpChanged;     // (currentExp, requiredExp)
+    public System.Action<int> OnLevelUp;                  // (newLevel)
 
     private void Awake()
     {
@@ -126,6 +136,11 @@ public class PlayerState : MonoBehaviour
         coinCount = 0;
         currentWave = 0;
         stageState = StageState.Starting;
+
+        currentLevel = 0;
+        currentExp = 0f;
+        acquiredUpgrades.Clear();
+        UpgradeEffectManager.Instance?.ResetAll();
 
         cooldownTimers.Clear();
         damageReductionPercent = 0f;
@@ -246,6 +261,63 @@ public class PlayerState : MonoBehaviour
 
     #endregion
 
+    #region 升级系统
+
+    /// <summary>
+    /// 获取指定升级的当前等级（0=未获得）
+    /// </summary>
+    public int GetUpgradeLevel(string upgradeId)
+    {
+        for (int i = 0; i < acquiredUpgrades.Count; i++)
+        {
+            if (acquiredUpgrades[i].definition.upgradeId == upgradeId)
+                return acquiredUpgrades[i].currentLevel;
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// 获取升级到下一级所需经验，返回-1表示已满级
+    /// </summary>
+    public int GetExpRequiredForNextLevel()
+    {
+        if (expCurveConfig == null || expCurveConfig.expRequiredPerLevel == null) return -1;
+        if (currentLevel >= expCurveConfig.expRequiredPerLevel.Count) return -1;
+        return expCurveConfig.expRequiredPerLevel[currentLevel];
+    }
+
+    /// <summary>
+    /// 增加经验值，返回实际触发的升级次数
+    /// </summary>
+    public int AddExp(float amount)
+    {
+        if (stageState != StageState.InProgress) return 0;
+        if (expCurveConfig == null) return 0;
+
+        currentExp += amount;
+        int levelUps = 0;
+
+        while (true)
+        {
+            int required = GetExpRequiredForNextLevel();
+            if (required < 0) break;
+            if (currentExp < required) break;
+
+            currentExp -= required;
+            currentLevel++;
+            levelUps++;
+            OnLevelUp?.Invoke(currentLevel);
+        }
+
+        int nextReq = GetExpRequiredForNextLevel();
+        float displayReq = nextReq > 0 ? nextReq : currentExp;
+        OnExpChanged?.Invoke(currentExp, displayReq);
+
+        return levelUps;
+    }
+
+    #endregion
+
     #region 统计
 
     /// <summary>
@@ -345,6 +417,16 @@ public enum BuffType
 {
     ForceLaunch,       // 强制击飞：CanBeLaunched 始终返回 true
     ProbabilityLaunch  // 概率击飞：攻击时按概率强制击飞
+}
+
+/// <summary>
+/// 已获得的升级记录
+/// </summary>
+[System.Serializable]
+public class UpgradeAcquired
+{
+    public UpgradeDefinition definition;
+    public int currentLevel;
 }
 
 /// <summary>

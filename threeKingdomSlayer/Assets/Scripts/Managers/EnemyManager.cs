@@ -108,6 +108,12 @@ public class EnemyManager : MonoBehaviour
         // 触发事件（必须在 ReturnEnemy 之前）
         OnAnyEnemyDied?.Invoke(enemy);
 
+        // 经验值流转：击杀 → 生成经验宝石飞向经验条
+        if (ExpGemManager.Instance != null)
+            ExpGemManager.Instance.SpawnGem(enemy.transform.position, enemy.expReward, enemy.gemSprite);
+        else
+            PlayerState.Instance?.AddExp(enemy.expReward); // 回退：直接加经验
+
         // 注意：不再在此处调用 EnemyPool.Instance?.ReturnEnemy(enemy)
         // 对象回收由 Enemy.DeathBounceAndFall() 协程在死亡动画播完后处理
 

@@ -1,0 +1,174 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// 升级效果管理器 - 单例
+///
+/// 管理三选一升级奖励的永久数值累积（damage_multiplier / attack_speed 等）
+/// 和行为型效果的 IEffectExecutor 注册表（on_attack_trigger / unlock_attack 等）。
+///
+/// 数值型效果累积在此处，由 AttackSystem 在计算伤害时查询 GetDamageMultiplier()。
+/// 行为型效果通过 RegisterExecutor 注册执行器，ApplyUpgrade 时自动分发。
+/// </summary>
+public class UpgradeEffectManager : MonoBehaviour
+{
+    public static UpgradeEffectManager Instance { get; private set; }
+
+    // ── 数值累积 ──
+    private float _damageMultiplier = 1f;
+    private float _attackSpeedMultiplier = 1f;
+    private float _moveSpeedMultiplier = 1f;
+    private float _expMultiplier = 1f;
+
+    // ── 已应用升级追踪 (upgradeId → level) ──
+    private Dictionary<string, int> _appliedUpgrades = new Dictionary<string, int>();
+
+    // ── 行为执行器注册表 (effectType → executor) ──
+    private Dictionary<string, IEffectExecutor> _executors = new Dictionary<string, IEffectExecutor>();
+
+    // ── 升级事件 ──
+    public System.Action<UpgradeDefinition, int> OnUpgradeApplied; // (def, newLevel)
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
+
+    /// <summary>注册行为型效果执行器</summary>
+    public void RegisterExecutor(string effectType, IEffectExecutor executor)
+    {
+        _executors[effectType] = executor;
+    }
+
+    /// <summary>注销行为型效果执行器</summary>
+    public void UnregisterExecutor(string effectType)
+    {
+        _executors.Remove(effectType);
+    }
+
+    /// <summary>
+    /// 应用升级奖励 — 由 UpgradeChoiceManager 在玩家选择后调用
+    /// </summary>
+    public void ApplyUpgrade(UpgradeDefinition def)
+    {
+        int currentLevel = _appliedUpgrades.TryGetValue(def.upgradeId, out int lv) ? lv : 0;
+        int newLevel = currentLevel + 1;
+
+        if (newLevel > def.maxLevel)
+        {
+            Debug.LogWarning($"[UpgradeEffectManager] {def.upgradeId} 已达最大等级 {def.maxLevel}，跳过");
+            return;
+        }
+
+        _appliedUpgrades[def.upgradeId] = newLevel;
+        ApplyNumericEffect(def, newLevel);
+
+        // 同步到 PlayerState（保持两份记录一致）
+        SyncToPlayerState(def, newLevel);
+
+        if (_executors.TryGetValue(def.effectType, out var executor))
+            executor.Execute(def, newLevel);
+
+        OnUpgradeApplied?.Invoke(def, newLevel);
+
+        Debug.Log($"[UpgradeEffectManager] 应用 {def.displayName} Lv.{newLevel} (effectType={def.effectType})");
+    }
+
+    /// <summary>获取指定升级的当前等级（0=未获得）</summary>
+    public int GetUpgradeLevel(string upgradeId)
+    {
+        return _appliedUpgrades.TryGetValue(upgradeId, out int lv) ? lv : 0;
+    }
+
+    // ── 数值查询接口 ──
+
+    public float GetDamageMultiplier() => _damageMultiplier;
+    public float GetAttackSpeedMultiplier() => _attackSpeedMultiplier;
+    public float GetMoveSpeedMultiplier() => _moveSpeedMultiplier;
+    public float GetExpMultiplier() => _expMultiplier;
+
+    /// <summary>
+    /// 根据描述模板和当前等级生成效果文本
+    /// </summary>
+    public string GetDescription(UpgradeDefinition def)
+    {
+        int level = _appliedUpgrades.TryGetValue(def.upgradeId, out int lv) ? lv : 0;
+        int nextLevel = level + 1;
+        float nextValue = def.floatValue * nextLevel;
+        int nextIntValue = def.intValue * nextLevel;
+
+        string desc = def.descriptionTemplate;
+        desc = desc.Replace("{0}", (nextValue * 100f).ToString("F0"));
+        desc = desc.Replace("{1}", nextIntValue.ToString());
+
+        return desc;
+    }
+
+    private void SyncToPlayerState(UpgradeDefinition def, int level)
+    {
+        var ps = PlayerState.Instance;
+        if (ps == null) return;
+
+        for (int i = 0; i < ps.acquiredUpgrades.Count; i++)
+        {
+            if (ps.acquiredUpgrades[i].definition == def)
+            {
+                ps.acquiredUpgrades[i].currentLevel = level;
+                return;
+            }
+        }
+        ps.acquiredUpgrades.Add(new UpgradeAcquired { definition = def, currentLevel = level });
+    }
+
+    /// <summary>重置所有升级效果（新对局开始时调用）</summary>
+    public void ResetAll()
+    {
+        // 先移除所有行为型效果
+        foreach (var kv in _appliedUpgrades)
+        {
+            // 尝试通过 registered executors 移除
+            // 注意：此时没有 def 引用，仅通过 upgradeId 清理
+        }
+
+        _appliedUpgrades.Clear();
+        _damageMultiplier = 1f;
+        _attackSpeedMultiplier = 1f;
+        _moveSpeedMultiplier = 1f;
+        _expMultiplier = 1f;
+    }
+
+    // ── 内部 ──
+
+    private void ApplyNumericEffect(UpgradeDefinition def, int level)
+    {
+        switch (def.effectType)
+        {
+            case "damage_multiplier":
+                _damageMultiplier += def.floatValue;
+                break;
+            case "attack_speed":
+                _attackSpeedMultiplier += def.floatValue;
+                break;
+            case "move_speed":
+                _moveSpeedMultiplier += def.floatValue;
+                break;
+            case "exp_multiplier":
+                _expMultiplier += def.floatValue;
+                break;
+            case "unlock_attack":
+                // 数值叠加由注册的 UnlockAttackExecutor 处理
+                break;
+        }
+    }
+}
