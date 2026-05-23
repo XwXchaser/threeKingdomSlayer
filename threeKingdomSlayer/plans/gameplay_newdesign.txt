@@ -116,7 +116,7 @@ public class ActiveBuff
 3.1 运行机制（框架要求）
 触发条件：累计击杀敌人总数（本局内累积，不因时间重置）达到预设里程碑。
 
-奖励形式：一次性即时发放（铜钱、本局经验、生命恢复、额外三选一奖励等）。每个里程碑一局内仅触发一次。
+奖励形式：一次性即时发放（铜钱、本局经验、生命恢复等）。每个里程碑一局内仅触发一次。不暂停游戏，仅弹即时UI。
 
 特殊规则：玩家中途退出、死亡或通关时，均可获得已达成里程碑的奖励。通关额外奖励（StageConfig.clearCoinReward）独立于本系统。
 
@@ -148,7 +148,7 @@ public class RewardItem
     public UpgradeRarity forcedRarity;          // 若 type=GrantRandomUpgrade，指定稀有度
 }
 
-public enum RewardType { Coin, Exp, HealthRestore, GrantRandomUpgrade }
+public enum RewardType { Coin, Exp, HealthRestore, GrantRandomUpgrade /* 预留，暂不使用 */ }
 示例配置（仅示意）：
 
 requiredKills=50, rewards: [{type:Coin, intValue:100}]
@@ -157,7 +157,7 @@ requiredKills=100, rewards: [{type:Coin, intValue:150}, {type:Exp, intValue:50}]
 
 requiredKills=200, rewards: [{type:Coin, intValue:200}, {type:HealthRestore, floatValue:0.2}]
 
-requiredKills=400, rewards: [{type:GrantRandomUpgrade, forcedRarity:Common}]
+注意：GrantRandomUpgrade 为预留值，暂不使用。总击杀奖励与三选一奖励系统无关联。
 
 3.3 存储与结算接口
 运行时数据结构（可放在 PlayerState 或专用组件）：
@@ -187,7 +187,7 @@ Exp：直接增加本局经验值（PlayerState.AddExp）。
 
 HealthRestore：恢复生命（PlayerState.Heal）。
 
-GrantRandomUpgrade：立即触发一次三选一（不消耗升级机会）。
+GrantRandomUpgrade：预留值，暂不实现。
 
 标记 milestoneClaimed[i] = true。
 

@@ -22,6 +22,10 @@ public class BattleHUD : MonoBehaviour
     [Header("波次")]
     public TMP_Text waveText;
 
+    [Header("经验条")]
+    public Slider expSlider;
+    public TMP_Text expLevelText;
+
     [Header("Boss 血条")]
     [Tooltip("BossHealthBar 模板 Prefab（BattleHUD 动态实例化）")]
     public GameObject bossHealthBarPrefab;
@@ -68,6 +72,8 @@ public class BattleHUD : MonoBehaviour
             PlayerState.Instance.OnCoinChanged += UpdateCoins;
             PlayerState.Instance.OnWaveChanged += UpdateWave;
             PlayerState.Instance.OnStageStateChanged += OnStageStateChanged;
+            PlayerState.Instance.OnExpChanged += UpdateExpBar;
+            PlayerState.Instance.OnLevelUp += UpdateExpLevel;
         }
 
         if (!_bossEventSubscribed && EnemyManager.Instance != null)
@@ -101,6 +107,13 @@ public class BattleHUD : MonoBehaviour
 
         if (_heroHUD == null)
             Debug.LogError("[BattleHUD] heroHUDPrefab 上未找到 HeroHUD 组件");
+
+        // 将 ExpBar Slider 和 Canvas 引用传给 ExpGemManager
+        if (ExpGemManager.Instance != null)
+        {
+            ExpGemManager.Instance.expSlider = expSlider;
+            ExpGemManager.Instance.gemParent = (RectTransform)transform;
+        }
     }
 
     private void Update()
@@ -129,6 +142,8 @@ public class BattleHUD : MonoBehaviour
             PlayerState.Instance.OnCoinChanged -= UpdateCoins;
             PlayerState.Instance.OnWaveChanged -= UpdateWave;
             PlayerState.Instance.OnStageStateChanged -= OnStageStateChanged;
+            PlayerState.Instance.OnExpChanged -= UpdateExpBar;
+            PlayerState.Instance.OnLevelUp -= UpdateExpLevel;
         }
 
         if (EnemyManager.Instance != null)
@@ -168,6 +183,21 @@ public class BattleHUD : MonoBehaviour
             int totalWaves = WaveSpawner.Instance != null ? WaveSpawner.Instance.TotalWaves : 0;
             waveText.text = $"波次: {wave}/{totalWaves}";
         }
+    }
+
+    private void UpdateExpBar(float currentExp, float requiredExp)
+    {
+        if (expSlider != null)
+        {
+            expSlider.maxValue = requiredExp > 0 ? requiredExp : 1f;
+            expSlider.value = Mathf.Min(currentExp, expSlider.maxValue);
+        }
+    }
+
+    private void UpdateExpLevel(int level)
+    {
+        if (expLevelText != null)
+            expLevelText.text = $"Lv.{level}";
     }
 
     private void UpdateCooldownUI()

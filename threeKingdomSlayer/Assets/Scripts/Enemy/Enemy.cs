@@ -75,6 +75,9 @@ public class Enemy : MonoBehaviour
 
     [Header("奖励")]
     public int coinReward = 10;
+    public float expReward = 10f;
+    [Tooltip("死亡掉落的经验宝石精灵（为空时使用 ExpGemManager 默认 prefab）")]
+    public Sprite gemSprite;
 
     [Header("BOSS")]
     public bool isBoss;

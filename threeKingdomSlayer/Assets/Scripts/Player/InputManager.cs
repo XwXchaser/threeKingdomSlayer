@@ -26,6 +26,8 @@ public class InputManager : MonoBehaviour
 
     // 技能输入开关（狂怒大招期间关闭）
     [System.NonSerialized] public bool skillInputEnabled = true;
+    /// <summary>输入屏蔽帧计数器（由 UpgradeChoiceManager 设置，防止选择选项的点击触发攻击）</summary>
+    [System.NonSerialized] public int blockInputFrames = 0;
 
     // 触摸状态
     private Vector2 touchStartPos;
@@ -81,7 +83,31 @@ public class InputManager : MonoBehaviour
     private void Update()
     {
         // 暂停时不处理任何输入
-        if (Time.timeScale == 0f) return;
+        if (Time.timeScale == 0f)
+        {
+            if (isTouching)
+            {
+                isTouching = false;
+                isLongPress = false;
+                isCharged = false;
+                isSwiping = false;
+                OnChargeEnded?.Invoke();
+            }
+            return;
+        }
+
+        // 输入屏蔽帧：由 UpgradeChoiceManager 在恢复 timeScale 后设置，防止选择选项的点击触发攻击
+        if (blockInputFrames > 0)
+        {
+            blockInputFrames--;
+            isTouching = false;
+            isLongPress = false;
+            isCharged = false;
+            isSwiping = false;
+            return;
+        }
+
+        Debug.Log($"[InputManager] Update frame={Time.frameCount} timeScale={Time.timeScale} isTouching={isTouching} mouseDown={Input.GetMouseButtonDown(0)} mouseUp={Input.GetMouseButtonUp(0)} mouseHeld={Input.GetMouseButton(0)} touchCount={Input.touchCount}");
 
         // BUG FIX: 鼠标和触摸输入互斥
         // 如果有触摸输入，则跳过鼠标输入（避免在触摸屏设备上双重触发）
@@ -112,7 +138,9 @@ public class InputManager : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             // UI 之上的点击不处理游戏输入
-            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            Debug.Log($"[InputManager] MouseDown frame={Time.frameCount} overUI={overUI}");
+            if (overUI)
                 return;
 
             touchStartPos = Input.mousePosition;
@@ -162,6 +190,7 @@ public class InputManager : MonoBehaviour
             float pressDuration = Time.time - touchStartTime;
             float swipeDistance = Vector2.Distance(releasePos, touchStartPos);
 
+            Debug.Log($"[InputManager] MouseUp frame={Time.frameCount} pressDuration={pressDuration:F3} swipeDistance={swipeDistance:F1}");
             ProcessGesture(releasePos, pressDuration, swipeDistance);
 
             // 触发蓄力结束事件（在重置状态之前）
@@ -187,6 +216,10 @@ public class InputManager : MonoBehaviour
         switch (touch.phase)
         {
             case TouchPhase.Began:
+                // UI 之上的触摸不处理游戏输入
+                if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject(touch.fingerId))
+                    break;
+
                 touchStartPos = touch.position;
                 touchStartTime = Time.time;
                 currentTouchId = touch.fingerId;
@@ -265,6 +298,7 @@ public class InputManager : MonoBehaviour
     /// </summary>
     private void ProcessGesture(Vector2 releasePos, float pressDuration, float swipeDistance)
     {
+        Debug.Log($"[InputManager] ProcessGesture frame={Time.frameCount} pressDuration={pressDuration:F3} swipeDistance={swipeDistance:F1} skillInputEnabled={skillInputEnabled}");
         if (!skillInputEnabled) return;
 
         bool isSwiped = swipeDistance >= swipeThreshold;
