@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779520344306
-updatedAt: 1779544159707
+updatedAt: 1779554707616
 ---
 
 # phase3-development-summary
@@ -111,6 +111,26 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 - `Assets/Prefabs/ExpGem.prefab` — 屏幕空间 UI Image + ExpGem 组件，RectTransform (100×100)
 - `Assets/Prefabs/UI/UpgradeCard.prefab` — 卡片 Prefab（UpgradeChoicePopup 实例化）
 
+### ✅ 敌人精灵动画系统（2025-07-17，临时方案，后续改为 Animator）
+- `EnemySpriteController` — 新组件，读取 `Enemy.state` 驱动 `SpriteRenderer.sprite` 切换
+  - 职责分离，挂在 Enemy prefab 上，与 Enemy.cs 解耦
+  - 精灵规则：
+    - **Dead（最高优先级）**：立即切换 dead sprite，中断一切
+    - **受击闪烁**：`TriggerHitFlash()` 由 `Enemy.TakeDamage` 调用，持续 0.3s，仅 Idle/Moving/Attacking冷却阶段 触发
+    - **Attacking**：AttackSpawn 前半=attack1，后半+AttackDraw=attack2；冷却阶段=idle
+    - **Launched**：knockUp sprite，直到落地或死亡
+    - **QTEAttacking**：不干预（QTEController 自行管理）
+    - **Idle/Moving/Stunned**：idle sprite
+- `Enemy.cs` 改动：
+  - 新增 `cachedSpriteController` 缓存，`TakeDamage` 中调用 `TriggerHitFlash()`
+  - 新增 `useAttackFlip` bool（默认 true），关闭后攻击动画跳过 `DOScaleX` 镜像翻转
+- Prefab 配置：`Enemy_101.prefab` / `Enemy_102.prefab` 已添加组件并配置 6 个精灵引用
+- 精灵资源：
+  - `Assets/Sprites/Enemy/Enemy1/` — Enemy_1(idle), attack1, attack2, dead, hitted, knockUp
+  - `Assets/Sprites/Enemy/Enemy2/` — Enemy_2(idle), attack1, attack2, dead, hitted, knockUp
+  - 旧 `Assets/Sprites/Enemy/Enemy_1.png` / `Enemy_2.png` 已删除（迁移到子文件夹）
+- 已知限制：`Enemy_104.prefab` 尚未配置 EnemySpriteController（无对应精灵资源）
+
 ## 关键代码文件清单
 
 | 文件 | 职责 |
@@ -129,7 +149,8 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 | `Assets/Scripts/Player/PlayerState.cs` | 经验/等级/acquiredUpgrades |
 | `Assets/Scripts/Player/InputManager.cs` | blockInputFrames 防误触 |
 | `Assets/Scripts/Player/AttackSystem.cs` | GetDamageMultiplier 集成 |
-| `Assets/Scripts/Enemy/Enemy.cs` | gemSprite 字段 |
+| `Assets/Scripts/Enemy/Enemy.cs` | gemSprite + cachedSpriteController + useAttackFlip |
+| `Assets/Scripts/Enemy/EnemySpriteController.cs` | 敌人类状态驱动精灵切换 |
 | `Assets/Scripts/Managers/EnemyManager.cs` | SpawnGem 调用点 + gemSprite 传递 |
 
 ## 场景对象
@@ -150,6 +171,7 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 4. 空间切换：世界空间距离小（~10 单位），屏幕空间距离大（~1000 像素），切换坐标系时必须同步调整速度参数
 5. 暂停期间动画需使用 SetUpdate(true)（DOTween）或 Time.unscaledDeltaTime
 6. 新 .cs 文件后必须 unity_recompile 再 unity_execute
+7. **读取 .meta 文件 GUID 不可用 bash `find` + `head` 直读**：.meta 文件的 GUID 可能被 Unity 内部重新映射，AssetDatabase 中的实际 GUID 可能与 .meta 文件内容不同。获取 GUID 必须通过 `AssetDatabase.FindAssets` / `AssetDatabase.GUIDToAssetPath`
 
 ## 精灵部署位置
 
@@ -158,6 +180,8 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 | 经验宝石 | `Assets/Sprites/ExpGem_placeholder.png`（替换此文件） |
 | 普通经验宝石 | `Assets/Sprites/ex_point_normal.png` |
 | 稀有经验宝石 | `Assets/Sprites/ex_point_rare.png` |
+| 敌人精灵 Enemy1 | `Assets/Sprites/Enemy/Enemy1/` (6 帧) |
+| 敌人精灵 Enemy2 | `Assets/Sprites/Enemy/Enemy2/` (6 帧) |
 | 卡片稀有度背景 | 待用户提供 — 需在 UpgradeCard Prefab 上拖拽 |
 | 弹窗面板背景 | 待用户提供 — 需在 UpgradeChoicePopup 上拖拽 |
 

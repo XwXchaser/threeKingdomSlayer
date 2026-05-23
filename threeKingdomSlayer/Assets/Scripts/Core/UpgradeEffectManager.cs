@@ -62,6 +62,19 @@ public class UpgradeEffectManager : MonoBehaviour
     /// </summary>
     public void ApplyUpgrade(UpgradeDefinition def)
     {
+        // 道具型：路由到 ItemInventory，不追踪到 _appliedUpgrades
+        if (!string.IsNullOrEmpty(def.gestureId))
+        {
+            if (ItemInventory.Instance != null)
+                ItemInventory.Instance.AddItem(def);
+            else
+                Debug.LogWarning("[UpgradeEffectManager] ItemInventory 未找到，道具无法添加");
+
+            SyncToPlayerState(def, 0); // level=0 标记为道具型（PlayerState 中不追踪等级）
+            OnUpgradeApplied?.Invoke(def, 0);
+            return;
+        }
+
         int currentLevel = _appliedUpgrades.TryGetValue(def.upgradeId, out int lv) ? lv : 0;
         int newLevel = currentLevel + 1;
 
@@ -134,11 +147,11 @@ public class UpgradeEffectManager : MonoBehaviour
     /// <summary>重置所有升级效果（新对局开始时调用）</summary>
     public void ResetAll()
     {
-        // 先移除所有行为型效果
+        // 清理行为型效果
         foreach (var kv in _appliedUpgrades)
         {
-            // 尝试通过 registered executors 移除
-            // 注意：此时没有 def 引用，仅通过 upgradeId 清理
+            foreach (var exec in _executors.Values)
+                exec.Remove(kv.Key);
         }
 
         _appliedUpgrades.Clear();
@@ -146,6 +159,9 @@ public class UpgradeEffectManager : MonoBehaviour
         _attackSpeedMultiplier = 1f;
         _moveSpeedMultiplier = 1f;
         _expMultiplier = 1f;
+
+        // 清空道具库存
+        ItemInventory.Instance?.ClearAll();
     }
 
     // ── 内部 ──

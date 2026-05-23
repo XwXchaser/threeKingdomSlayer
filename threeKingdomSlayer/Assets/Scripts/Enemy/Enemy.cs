@@ -54,6 +54,7 @@ public class Enemy : MonoBehaviour
     public float attackRange = 1f;
     public float attackSpawnDuration = 0.3f;
     public float attackDrawDuration = 0.3f;
+    public bool useAttackFlip = true;
     public float moveSpeed = 1f;
 
     [Header("架势系统")]
@@ -184,6 +185,7 @@ public class Enemy : MonoBehaviour
 
     // 血条UI缓存
     private EnemyHealthBar cachedHealthBar;
+    private EnemySpriteController cachedSpriteController;
 
     // 事件
     public System.Action<Enemy> OnDeath;
@@ -1021,7 +1023,8 @@ public class Enemy : MonoBehaviour
 
         // AttackSpawn：向前移动 + 左右镜像翻转（可被招架打断）
         attackSequence.Append(transform.DOLocalMoveZ(startPos.z - forwardDistance, spawnDuration).SetEase(Ease.OutQuad));
-        attackSequence.Join(transform.DOScaleX(-startScale.x, spawnDuration).SetEase(Ease.OutQuad));
+        if (useAttackFlip)
+            attackSequence.Join(transform.DOScaleX(-startScale.x, spawnDuration).SetEase(Ease.OutQuad));
 
         // AttackSpawn 完成 → 造成伤害，进入 AttackDraw 收招阶段
         attackSequence.AppendCallback(() =>
@@ -1032,7 +1035,8 @@ public class Enemy : MonoBehaviour
 
         // AttackDraw：后退到原位 + 翻转回正（不可被招架打断）
         attackSequence.Append(transform.DOLocalMoveZ(startPos.z, drawDuration).SetEase(Ease.InQuad));
-        attackSequence.Join(transform.DOScaleX(startScale.x, drawDuration).SetEase(Ease.InQuad));
+        if (useAttackFlip)
+            attackSequence.Join(transform.DOScaleX(startScale.x, drawDuration).SetEase(Ease.InQuad));
 
         // 收招完成 → 进入冷却阶段
         attackSequence.OnComplete(() =>
@@ -1102,6 +1106,12 @@ public class Enemy : MonoBehaviour
         // 即使敌人秒杀死亡，闪白效果也在死亡前被渲染
         // 否则 Die() 设置 state = Dead 后，Update() 提前返回，UpdateAlpha() 不被调用
         ApplyHitFlashImmediate();
+
+        // 触发受伤精灵闪烁（仅 Idle/Moving 状态，持续 0.3 秒）
+        if (cachedSpriteController == null)
+            cachedSpriteController = GetComponent<EnemySpriteController>();
+        if (cachedSpriteController != null)
+            cachedSpriteController.TriggerHitFlash();
 
         // 触发受伤闪白效果（非致命伤通过 Update 循环过渡恢复）
         hitFlashTimer = HIT_FLASH_DURATION;
