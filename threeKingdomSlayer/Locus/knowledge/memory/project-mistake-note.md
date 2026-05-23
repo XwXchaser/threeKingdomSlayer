@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1778764012219
-updatedAt: 1779544176599
+updatedAt: 1779555009287
 ---
 
 # project-mistake-note
@@ -31,4 +31,9 @@ updatedAt: 1779544176599
 - 根因：世界空间与屏幕空间的坐标尺度完全不同。世界空间两物体间距通常 5~20 单位，baseSpeed=8 合适。切换到屏幕空间（Canvas 参考分辨率 1080×1920）后，宝石从敌人位置飞到 ExpBar 距离约 500~1500 像素，baseSpeed=8 意味着需要 60~180 秒
 - 修复：将 `ExpGemManager.baseSpeed` 从 8 改为 800（屏幕空间像素/秒），同时更新场景中已序列化的值
 - 预防规则：切换坐标系（世界↔屏幕）时必须检查速度/距离参数的量纲是否匹配。世界空间：1~20 单位/s；屏幕空间（参考分辨率）：500~1500 像素/s
+
+### .meta 文件 GUID 不可直接读取 ✅ 已记录（2025-07-17）
+- 症状：使用 bash `find` + `head` 直接读取 `.meta` 文件获取 GUID，然后通过 GUID 查找资产，结果不可靠。部分 Sprite 的 .meta 文件 GUID 与实际 AssetDatabase 中的 GUID 不一致
+- 根因：Unity 可能在导入过程中内部重新映射精灵子资产的 GUID，.meta 文件中记录的 `guid:` 值与 `AssetDatabase.FindAssets` 返回的实际 GUID 不同，特别是 Texture 类型导入为多个 Sprite 子资产时
+- 预防规则：获取 GUID 永远通过 `AssetDatabase.FindAssets("t:Sprite ...")` / `AssetDatabase.GUIDToAssetPath` 等 Editor API，禁止直接解析 .meta 文件获取 GUID
 <!-- locus:body:end -->

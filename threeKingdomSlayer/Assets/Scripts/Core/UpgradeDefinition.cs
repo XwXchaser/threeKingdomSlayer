@@ -10,6 +10,8 @@ using UnityEngine;
 public class UpgradeDefinition : ScriptableObject
 {
     [Header("标识")]
+    [Tooltip("奖励类型：数值buff | 道具 | 被动攻击")]
+    public UpgradeCategory category;
     [Tooltip("唯一标识符")]
     public string upgradeId;
 
@@ -38,6 +40,20 @@ public class UpgradeDefinition : ScriptableObject
     [Tooltip("基础攻击技能配置骨架")]
     public AttackSkillConfig baseAttackConfig;
 
+    [Header("UI 图标")]
+    [Tooltip("所有类型的升级均需配置图标，供 BuffDisplayPanel 显示")]
+    public Sprite icon;
+
+    [Header("被动攻击型（category=Passive 时生效）")]
+    [Tooltip("触发阈值（每X次攻击触发一次效果）")]
+    public int triggerParam;
+
+    [Header("道具型（category=Item 时生效）")]
+    [Tooltip("获得后可使用的次数，-1=无限次")]
+    public int useCount = 1;
+    [Tooltip("触发手势: circle(画圈) | long_press_swipe_down(长按下滑)")]
+    public string gestureId;
+
     [Header("前置条件")]
     [Tooltip("需要其他选项达到指定等级后才会进入抽取池")]
     public List<UpgradePrerequisite> prerequisites;
@@ -50,6 +66,16 @@ public class UpgradePrerequisite
     public UpgradeDefinition requiredUpgrade;
     [Tooltip("前置升级最低等级")]
     public int requiredLevel = 1;
+}
+
+/// <summary>
+/// 升级奖励类型：数值buff型 | 道具型 | 被动攻击型
+/// </summary>
+public enum UpgradeCategory
+{
+    Numeric,   // 数值buff型：伤害/攻速/移速/经验倍率等永久加成
+    Item,      // 道具型：手势触发的一次性/限次道具（大旋风、落雷等）
+    Passive    // 被动攻击型：每N次攻击自动触发效果
 }
 
 public enum UpgradeRarity

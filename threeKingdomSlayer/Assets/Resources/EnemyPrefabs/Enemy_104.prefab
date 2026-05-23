@@ -58,6 +58,7 @@ MonoBehaviour:
   attackRange: 1
   attackSpawnDuration: 2
   attackDrawDuration: 1
+  useAttackFlip: 0
   moveSpeed: 0.3
   maxPoise: 200
   stunDuration: 5
@@ -69,6 +70,8 @@ MonoBehaviour:
   launchedDamageTakenMultiplier: 1.5
   launchedHitExtendDuration: 1
   coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
   isBoss: 1
   bossHealthBarPrefab: {fileID: 3365436119990249603, guid: 9a1fc4950f5206a4bb1f8a56c5ef9c61, type: 3}
   stabDamageMultiplier: 1

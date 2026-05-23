@@ -20,9 +20,12 @@ public class InputManager : MonoBehaviour
     public float verticalSwipeThreshold = 30f;
     [Tooltip("水平角度阈值（度）：划动方向与水平轴夹角小于此值时判定为横扫。范围0~90")]
     public float horizontalSwipeThreshold = 30f;
+    [Tooltip("长按下滑角度阈值（度）：长按后划动方向与下方向夹角小于此值时判定为落雷道具。")]
+    public float swipeDownAngleThreshold = 30f;
 
-    [Header("攻击系统")]
+    [Header("工具引用")]
     public AttackSystem attackSystem;
+    public WhirlwindController whirlwindController;
 
     // 技能输入开关（狂怒大招期间关闭）
     [System.NonSerialized] public bool skillInputEnabled = true;
@@ -127,6 +130,30 @@ public class InputManager : MonoBehaviour
             float pressDuration = Time.time - touchStartTime;
             float chargeProgress = Mathf.Clamp01(pressDuration / minChargeTime);
             OnChargeUpdated?.Invoke(currentPointerPos, chargeProgress);
+
+            // 画圈道具检测（按住中每帧）
+            if (whirlwindController != null)
+            {
+                if (whirlwindController.IsActive)
+                {
+                    whirlwindController.TickActive(currentPointerPos);
+                }
+                else if (whirlwindController.CanCircle)
+                {
+                    if (whirlwindController.UpdateCircleDetection(currentPointerPos))
+                    {
+                        if (ItemInventory.Instance != null && ItemInventory.Instance.TryConsume("circle"))
+                        {
+                            var def = ItemInventory.Instance.GetDefinition("circle");
+                            whirlwindController.Activate(def);
+                        }
+                        else
+                        {
+                            whirlwindController.ResetCircleDetection();
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -191,7 +218,15 @@ public class InputManager : MonoBehaviour
             float swipeDistance = Vector2.Distance(releasePos, touchStartPos);
 
             Debug.Log($"[InputManager] MouseUp frame={Time.frameCount} pressDuration={pressDuration:F3} swipeDistance={swipeDistance:F1}");
-            ProcessGesture(releasePos, pressDuration, swipeDistance);
+
+            if (whirlwindController != null && whirlwindController.IsActive)
+            {
+                whirlwindController.Deactivate();
+            }
+            else
+            {
+                ProcessGesture(releasePos, pressDuration, swipeDistance);
+            }
 
             // 触发蓄力结束事件（在重置状态之前）
             OnChargeEnded?.Invoke();
@@ -271,7 +306,14 @@ public class InputManager : MonoBehaviour
                     float pressDuration = Time.time - touchStartTime;
                     float swipeDistance = Vector2.Distance(touch.position, touchStartPos);
 
-                    ProcessGesture(touch.position, pressDuration, swipeDistance);
+                    if (whirlwindController != null && whirlwindController.IsActive)
+                    {
+                        whirlwindController.Deactivate();
+                    }
+                    else
+                    {
+                        ProcessGesture(touch.position, pressDuration, swipeDistance);
+                    }
 
                     // 触发蓄力结束事件（在重置状态之前）
                     OnChargeEnded?.Invoke();
@@ -305,6 +347,10 @@ public class InputManager : MonoBehaviour
 
         // QTE 优先级检测：QTE 窗口内优先匹配 QTE（窗口短暂且后果重大）
         if (TryConsumeQTEInput(releasePos, isSwiped, swipeDistance, pressDuration))
+            return;
+
+        // 道具手势检测：长按+下滑 → 落雷（QTE 之下、攻击之上）
+        if (TryConsumeItemGesture(releasePos, isSwiped, swipeDistance, pressDuration))
             return;
 
         if (pressDuration >= minChargeTime)
@@ -417,6 +463,77 @@ public class InputManager : MonoBehaviour
         // 对角线划动 → 斩击（兜底）
         bool defaultExecuted = attackSystem?.TryExecuteAttack(AttackType.Slash) ?? false;
         if (defaultExecuted) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
+    }
+
+    #endregion
+
+    #region 道具手势
+
+    /// <summary>
+    /// 尝试将当前手势作为道具输入消费（QTE 之后、攻击之前）
+    /// 仅支持 long_press_swipe_down（画圈已在 Update 中按住检测处理）
+    /// </summary>
+    private bool TryConsumeItemGesture(Vector2 releasePos, bool isSwiped, float swipeDistance, float pressDuration)
+    {
+        if (!isSwiped) return false;
+        if (ItemInventory.Instance == null) return false;
+        if (!ItemInventory.Instance.HasItem("long_press_swipe_down")) return false;
+
+        // 长按判定
+        if (pressDuration < longPressDuration) return false;
+
+        // 下滑方向判定
+        Vector2 swipeDir = releasePos - touchStartPos;
+        float angleToDown = Vector2.Angle(swipeDir, Vector2.down);
+        if (angleToDown > swipeDownAngleThreshold) return false;
+
+        // 消耗道具
+        if (!ItemInventory.Instance.TryConsume("long_press_swipe_down"))
+            return false;
+
+        var def = ItemInventory.Instance.GetDefinition("long_press_swipe_down");
+        if (def == null || def.baseAttackConfig == null)
+        {
+            Debug.LogWarning("[InputManager] 落雷道具定义或 baseAttackConfig 为空");
+            return true; // 已消耗，但不执行
+        }
+
+        ExecuteLightning(def);
+        return true;
+    }
+
+    /// <summary>执行落雷：5×5 网格扩散伤害（切比雪夫距离，加法衰减），BOSS 全额</summary>
+    private void ExecuteLightning(UpgradeDefinition def)
+    {
+        var enemies = EnemyManager.Instance?.GetAllAliveEnemies();
+        if (enemies == null || enemies.Count == 0)
+        {
+            Debug.Log("[InputManager] 落雷：无存活敌人");
+            return;
+        }
+
+        var cfg = def.baseAttackConfig;
+        float baseDmg = cfg.damage
+            * (UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetDamageMultiplier() : 1f);
+
+        int hitCount = 0;
+        foreach (var enemy in enemies)
+        {
+            if (enemy == null || enemy.state == EnemyState.Dead) continue;
+
+            int col = enemy.columnIndex;
+            int row = enemy.rowIndex;
+            int dist = Mathf.Max(Mathf.Abs(col - 2), Mathf.Abs(row - 2));
+            if (dist > 2) continue;
+
+            float dmg = enemy.isBoss ? baseDmg : baseDmg * (1f - dist * 0.1f);
+            if (dmg <= 0f) continue;
+
+            enemy.TakeDamage(dmg, cfg.damageType);
+            hitCount++;
+        }
+
+        Debug.Log($"[InputManager] 落雷 baseDmg={baseDmg:F0} hit={hitCount}");
     }
 
     #endregion
