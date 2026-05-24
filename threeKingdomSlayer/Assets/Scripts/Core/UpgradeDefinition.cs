@@ -47,6 +47,8 @@ public class UpgradeDefinition : ScriptableObject
     [Header("被动攻击型（category=Passive 时生效）")]
     [Tooltip("触发阈值（每X次攻击触发一次效果）")]
     public int triggerParam;
+    [Tooltip("幻影攻击列表（多段幻影依次执行），每段配置伤害比例与透明度")]
+    public List<PhantomStep> phantomSteps = new List<PhantomStep>();
 
     [Header("道具型（category=Item 时生效）")]
     [Tooltip("获得后可使用的次数，-1=无限次")]
@@ -83,4 +85,16 @@ public enum UpgradeRarity
     Common,
     Rare,
     Legendary
+}
+
+/// <summary>
+/// 幻影攻击配置段 — 被动攻击型每段幻影的伤害比例和透明度
+/// </summary>
+[System.Serializable]
+public struct PhantomStep
+{
+    [Tooltip("伤害比例（0.3=30%）")]
+    public float damageRatio;
+    [Tooltip("透明度（0.6=60%）")]
+    public float alpha;
 }

@@ -20,5 +20,12 @@ MonoBehaviour:
   rangeRows: 1
   cooldown: 0.5
   launchDuration: 0.5
-  attackWavePrefab: {fileID: 5586448634090008248, guid: 3e7c2ba9889d0d8498227914332b7adc, type: 3}
+  attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
+  stabSpawnYOffset: 1.5
+  stabSpawnZOffset: 0.5
+  slashSweepHalfWidth: 3
+  slashSweepAngle: 60
+  slashSweepDuration: 0.4
+  slashSpawnYOffset: 0
+  slashSpawnZOffset: -3.6
   ultimateEnergyGain: 10

@@ -40,22 +40,27 @@ public class AttackWave : MonoBehaviour
     private const float EndZOffset = 3f;
 
     public static AttackWave Create(Vector3 position, DamageType damageType, float damage,
-        List<Enemy> targets, System.Action<Enemy> onHit = null, GameObject prefab = null, float zOffset = 0f)
+        List<Enemy> targets, System.Action<Enemy> onHit = null, GameObject prefab = null, float zOffset = 0f,
+        float? alphaOverride = null)
     {
         GameObject obj;
         Material material = null;
         Color color = GetColor(damageType);
-        color.a = 0.85f;
+        color.a = alphaOverride ?? 0.85f;
 
         if (prefab != null)
         {
+            // prefab 路径：用浅色调避免覆盖 sprite 纹理细节
+            color = Color.Lerp(color, Color.white, 0.5f);
+            color.a = alphaOverride ?? 0.85f;
+
             // 用 prefab 自己的 Z 作为旅行起点，X/Y 保持 GetWavePosition 计算值（列对齐+高度）
             Vector3 spawnPos = position;
             spawnPos.z = prefab.transform.position.z + zOffset;
             obj = Object.Instantiate(prefab, spawnPos, prefab.transform.rotation);
             obj.name = $"Wave_{damageType}";
             Renderer r = obj.GetComponentInChildren<Renderer>();
-            if (r != null) material = r.material;
+            if (r != null) { material = r.material; material.color = color; }
         }
         else
         {
@@ -296,7 +301,7 @@ public class AttackWave : MonoBehaviour
             float alpha = fadeDuration > 0f ? 1f - (elapsed - fadeStartTime) / fadeDuration : 0f;
             alpha = Mathf.Clamp01(alpha);
             Color c = waveColor;
-            c.a = alpha;
+            c.a *= alpha;
             mat.color = c;
         }
 

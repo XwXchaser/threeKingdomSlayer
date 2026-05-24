@@ -10,6 +10,9 @@ public class AttackSystem : MonoBehaviour
 {
     public static AttackSystem Instance { get; private set; }
 
+    /// <summary>攻击执行事件（仅 Slash/Sweep/Stab/Pierce/Launch 五种有效攻击触发）</summary>
+    public System.Action<AttackType, int, bool> OnAttackPerformed; // attackType, targetColumn, slashLeftToRight
+
     [Header("组件引用")]
     public ColumnManager columnManager;
     public PlayerState playerState;
@@ -44,7 +47,7 @@ public class AttackSystem : MonoBehaviour
     /// 尝试执行攻击
     /// BUG FIX: 只有实际命中至少一个敌人时，才触发冷却和消耗
     /// </summary>
-    public bool TryExecuteAttack(AttackType attackType, int targetColumn = -1)
+    public bool TryExecuteAttack(AttackType attackType, int targetColumn = -1, bool slashLeftToRight = true)
     {
         if (playerState == null) return false;
         if (playerState.stageState != StageState.InProgress) return false;
@@ -59,7 +62,7 @@ public class AttackSystem : MonoBehaviour
         switch (attackType)
         {
             case AttackType.Stab:   hitAny = ExecuteStab(targetColumn); break;
-            case AttackType.Slash:  hitAny = ExecuteSlash(); break;
+            case AttackType.Slash:  hitAny = ExecuteSlash(slashLeftToRight); break;
             case AttackType.Pierce: hitAny = ExecutePierce(targetColumn); break;
             case AttackType.Sweep:  hitAny = ExecuteSweep(); break;
             case AttackType.Launch: hitAny = ExecuteLaunch(); break;
@@ -70,6 +73,11 @@ public class AttackSystem : MonoBehaviour
         {
             playerState.StartCooldown(attackType);
             UltimateSystem.Instance?.AddEnergyForAttack(attackType);
+
+            // 仅五种有效攻击类型触发被动计数（排除 Parry 和 Ultimate）
+            if (attackType != AttackType.Parry && attackType != AttackType.Ultimate)
+                OnAttackPerformed?.Invoke(attackType, targetColumn, slashLeftToRight);
+
             return true;
         }
 
@@ -91,17 +99,21 @@ public class AttackSystem : MonoBehaviour
 
         float finalDmg = GetFinalDamage(cfg);
         List<Enemy> targets = columnManager.GetEnemiesInRange(columnIndex, cfg.rangeRows);
+        // Stab 严格按 rangeRows 过滤，且只命中应战 Boss（排除未应战 Boss 导致 wave 位置错误）
+        targets = targets.FindAll(e => e.rowIndex < cfg.rangeRows && (!e.isBoss || e.bossState == BossState.InCombat));
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, columnIndex);
-            AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab);
+            wavePos.y = targets[0].transform.position.y + cfg.stabSpawnYOffset;
+            AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
+                prefab: cfg.attackWavePrefab, zOffset: cfg.stabSpawnZOffset);
         }
 
         Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
         return targets.Count > 0;
     }
 
-    private bool ExecuteSlash()
+    private bool ExecuteSlash(bool leftToRight)
     {
         var cfg = GetConfig(AttackType.Slash);
         if (cfg == null || columnManager == null) return false;
@@ -111,10 +123,14 @@ public class AttackSystem : MonoBehaviour
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, -1);
-            AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab);
+            wavePos.y = targets[0].transform.position.y + cfg.slashSpawnYOffset;
+            wavePos.z = targets[0].transform.position.z + cfg.slashSpawnZOffset;
+            SweepEffect.Create(wavePos, cfg.damageType, finalDmg, targets, leftToRight,
+                cfg.slashSweepHalfWidth, cfg.slashSweepAngle, cfg.slashSweepDuration,
+                prefab: cfg.attackWavePrefab);
         }
 
-        Debug.Log($"[AttackSystem] 斩击 伤害:{finalDmg} 目标数:{targets.Count}");
+        Debug.Log($"[AttackSystem] 斩击 方向:{(leftToRight ? "L→R" : "R→L")} 伤害:{finalDmg} 目标数:{targets.Count}");
         return targets.Count > 0;
     }
 
@@ -272,6 +288,103 @@ public class AttackSystem : MonoBehaviour
     }
 
     /// <summary>
+    /// 执行幻影攻击 — 被动触发，继承原攻击类型，按比例缩放伤害和透明度。
+    /// 不消耗冷却、不加能量、不计入攻击计数器。
+    /// </summary>
+    public bool ExecutePhantomAttack(AttackType attackType, int targetColumn, bool slashLeftToRight,
+        float damageRatio, float alpha)
+    {
+        if (playerState == null || columnManager == null) return false;
+        if (playerState.stageState != StageState.InProgress) return false;
+
+        var cfg = GetConfig(attackType);
+        if (cfg == null) return false;
+
+        float finalDmg = GetFinalDamage(cfg) * damageRatio;
+
+        switch (attackType)
+        {
+            case AttackType.Stab:
+            {
+                if (targetColumn < 0) return false;
+                var targets = columnManager.GetEnemiesInRange(targetColumn, cfg.rangeRows);
+                targets = targets.FindAll(e => e.rowIndex < cfg.rangeRows && (!e.isBoss || e.bossState == BossState.InCombat));
+                if (targets.Count > 0)
+                {
+                    Vector3 wavePos = GetWavePosition(targets, targetColumn);
+                    wavePos.y = targets[0].transform.position.y + cfg.stabSpawnYOffset;
+                    AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
+                        prefab: cfg.attackWavePrefab, zOffset: cfg.stabSpawnZOffset, alphaOverride: alpha);
+                }
+                return targets.Count > 0;
+            }
+            case AttackType.Slash:
+            {
+                var targets = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
+                if (targets.Count > 0)
+                {
+                    Vector3 wavePos = GetWavePosition(targets, -1);
+                    wavePos.y = targets[0].transform.position.y + cfg.slashSpawnYOffset;
+                    wavePos.z = targets[0].transform.position.z + cfg.slashSpawnZOffset;
+                    SweepEffect.Create(wavePos, cfg.damageType, finalDmg, targets, slashLeftToRight,
+                        cfg.slashSweepHalfWidth, cfg.slashSweepAngle, cfg.slashSweepDuration,
+                        prefab: cfg.attackWavePrefab, alphaOverride: alpha);
+                }
+                return targets.Count > 0;
+            }
+            case AttackType.Pierce:
+            {
+                if (targetColumn < 0) return false;
+                var targets = columnManager.GetEnemiesInRange(targetColumn, cfg.rangeRows);
+                if (targets.Count > 0)
+                {
+                    Vector3 wavePos = GetWavePosition(targets, targetColumn);
+                    AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
+                        prefab: cfg.attackWavePrefab, alphaOverride: alpha);
+                }
+                return targets.Count > 0;
+            }
+            case AttackType.Sweep:
+            {
+                var targets = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
+                if (targets.Count > 0)
+                {
+                    Vector3 wavePos = GetWavePosition(targets, -1);
+                    AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
+                        prefab: cfg.attackWavePrefab, alphaOverride: alpha);
+                }
+                return targets.Count > 0;
+            }
+            case AttackType.Launch:
+            {
+                var targets = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
+                if (targets.Count > 0)
+                {
+                    Vector3 wavePos = GetWavePosition(targets, -1);
+                    bool probLaunchActive = playerState != null && playerState.HasBuff(BuffType.ProbabilityLaunch);
+                    AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
+                        onHit: (enemy) =>
+                        {
+                            enemy.TakePoiseDamage(cfg.poiseDamage * damageRatio);
+                            bool canLaunch = enemy.CanBeLaunched();
+                            if (!canLaunch && probLaunchActive && Random.value < 0.3f)
+                            {
+                                enemy.Stun(cfg.launchDuration * 0.5f);
+                                canLaunch = true;
+                            }
+                            if (canLaunch)
+                                enemy.Launch();
+                        },
+                        prefab: cfg.attackWavePrefab, alphaOverride: alpha);
+                }
+                return targets.Count > 0;
+            }
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
     /// 强制执行 Stab（绕过冷却），直接指定最终伤害值，供狂怒大招等调用
     /// </summary>
     public bool ForceExecuteStab(int columnIndex, float damage)
@@ -283,10 +396,13 @@ public class AttackSystem : MonoBehaviour
         if (cfg == null) return false;
 
         List<Enemy> targets = columnManager.GetEnemiesInRange(columnIndex, cfg.rangeRows);
+        targets = targets.FindAll(e => e.rowIndex < cfg.rangeRows && (!e.isBoss || e.bossState == BossState.InCombat));
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, columnIndex);
-            AttackWave.Create(wavePos, cfg.damageType, damage, targets, prefab: cfg.attackWavePrefab);
+            wavePos.y = targets[0].transform.position.y + cfg.stabSpawnYOffset;
+            AttackWave.Create(wavePos, cfg.damageType, damage, targets,
+                prefab: cfg.attackWavePrefab, zOffset: cfg.stabSpawnZOffset);
         }
 
         Debug.Log($"[AttackSystem] 强制Stab 列{columnIndex} 伤害:{damage} 目标数:{targets.Count}");

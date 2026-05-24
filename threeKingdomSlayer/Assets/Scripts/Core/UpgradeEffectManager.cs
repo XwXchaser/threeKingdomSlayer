@@ -62,7 +62,7 @@ public class UpgradeEffectManager : MonoBehaviour
     /// </summary>
     public void ApplyUpgrade(UpgradeDefinition def)
     {
-        // 道具型：路由到 ItemInventory，不追踪到 _appliedUpgrades
+        // 道具型：路由到 ItemInventory
         if (!string.IsNullOrEmpty(def.gestureId))
         {
             if (ItemInventory.Instance != null)
@@ -75,27 +75,50 @@ public class UpgradeEffectManager : MonoBehaviour
             return;
         }
 
-        int currentLevel = _appliedUpgrades.TryGetValue(def.upgradeId, out int lv) ? lv : 0;
-        int newLevel = currentLevel + 1;
+        // 被动攻击型：路由到 PassiveTriggerModule
+        if (def.category == UpgradeCategory.Passive)
+        {
+            int currentLevel = _appliedUpgrades.TryGetValue(def.upgradeId, out int lv) ? lv : 0;
+            int newLevel = currentLevel + 1;
+            if (newLevel > def.maxLevel)
+            {
+                Debug.LogWarning($"[UpgradeEffectManager] {def.upgradeId} 已达最大等级 {def.maxLevel}，跳过");
+                return;
+            }
+            _appliedUpgrades[def.upgradeId] = newLevel;
+            SyncToPlayerState(def, newLevel);
 
-        if (newLevel > def.maxLevel)
+            if (PassiveTriggerModule.Instance != null)
+                PassiveTriggerModule.Instance.Register(def);
+            else
+                Debug.LogWarning("[UpgradeEffectManager] PassiveTriggerModule 未找到");
+
+            OnUpgradeApplied?.Invoke(def, newLevel);
+            Debug.Log($"[UpgradeEffectManager] 应用被动 {def.displayName} Lv.{newLevel} threshold={def.triggerParam}");
+            return;
+        }
+
+        int currentNumericLevel = _appliedUpgrades.TryGetValue(def.upgradeId, out int ln) ? ln : 0;
+        int newNumericLevel = currentNumericLevel + 1;
+
+        if (newNumericLevel > def.maxLevel)
         {
             Debug.LogWarning($"[UpgradeEffectManager] {def.upgradeId} 已达最大等级 {def.maxLevel}，跳过");
             return;
         }
 
-        _appliedUpgrades[def.upgradeId] = newLevel;
-        ApplyNumericEffect(def, newLevel);
+        _appliedUpgrades[def.upgradeId] = newNumericLevel;
+        ApplyNumericEffect(def, newNumericLevel);
 
         // 同步到 PlayerState（保持两份记录一致）
-        SyncToPlayerState(def, newLevel);
+        SyncToPlayerState(def, newNumericLevel);
 
         if (_executors.TryGetValue(def.effectType, out var executor))
-            executor.Execute(def, newLevel);
+            executor.Execute(def, newNumericLevel);
 
-        OnUpgradeApplied?.Invoke(def, newLevel);
+        OnUpgradeApplied?.Invoke(def, newNumericLevel);
 
-        Debug.Log($"[UpgradeEffectManager] 应用 {def.displayName} Lv.{newLevel} (effectType={def.effectType})");
+        Debug.Log($"[UpgradeEffectManager] 应用 {def.displayName} Lv.{newNumericLevel} (effectType={def.effectType})");
     }
 
     /// <summary>获取指定升级的当前等级（0=未获得）</summary>
@@ -118,12 +141,24 @@ public class UpgradeEffectManager : MonoBehaviour
     {
         int level = _appliedUpgrades.TryGetValue(def.upgradeId, out int lv) ? lv : 0;
         int nextLevel = level + 1;
-        float nextValue = def.floatValue * nextLevel;
-        int nextIntValue = def.intValue * nextLevel;
 
         string desc = def.descriptionTemplate;
-        desc = desc.Replace("{0}", (nextValue * 100f).ToString("F0"));
-        desc = desc.Replace("{1}", nextIntValue.ToString());
+
+        if (def.category == UpgradeCategory.Passive)
+        {
+            // Passive: {0}=triggerParam, {1}=phantomSteps count, {2}=first step damage%
+            desc = desc.Replace("{0}", def.triggerParam.ToString());
+            desc = desc.Replace("{1}", (def.phantomSteps?.Count ?? 0).ToString());
+            if (def.phantomSteps != null && def.phantomSteps.Count > 0)
+                desc = desc.Replace("{2}", (def.phantomSteps[0].damageRatio * 100f).ToString("F0"));
+        }
+        else
+        {
+            float nextValue = def.floatValue * nextLevel;
+            int nextIntValue = def.intValue * nextLevel;
+            desc = desc.Replace("{0}", (nextValue * 100f).ToString("F0"));
+            desc = desc.Replace("{1}", nextIntValue.ToString());
+        }
 
         return desc;
     }
@@ -159,6 +194,9 @@ public class UpgradeEffectManager : MonoBehaviour
         _attackSpeedMultiplier = 1f;
         _moveSpeedMultiplier = 1f;
         _expMultiplier = 1f;
+
+        // 清空被动攻击模块
+        PassiveTriggerModule.Instance?.ResetAll();
 
         // 清空道具库存
         ItemInventory.Instance?.ClearAll();

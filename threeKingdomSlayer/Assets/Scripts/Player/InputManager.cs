@@ -383,7 +383,8 @@ public class InputManager : MonoBehaviour
                 else
                 {
                     // 快速滑动 → 斩击
-                    bool executed = attackSystem?.TryExecuteAttack(AttackType.Slash) ?? false;
+                    bool slashLeftToRight = swipeDirection.x > 0;
+                    bool executed = attackSystem?.TryExecuteAttack(AttackType.Slash, -1, slashLeftToRight) ?? false;
                     if (executed) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
                 }
             }
@@ -461,7 +462,8 @@ public class InputManager : MonoBehaviour
         }
 
         // 对角线划动 → 斩击（兜底）
-        bool defaultExecuted = attackSystem?.TryExecuteAttack(AttackType.Slash) ?? false;
+        bool slashLeftToRight = direction.x > 0;
+        bool defaultExecuted = attackSystem?.TryExecuteAttack(AttackType.Slash, -1, slashLeftToRight) ?? false;
         if (defaultExecuted) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
     }
 
