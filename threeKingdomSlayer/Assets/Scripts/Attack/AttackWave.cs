@@ -40,7 +40,7 @@ public class AttackWave : MonoBehaviour
     private const float EndZOffset = 3f;
 
     public static AttackWave Create(Vector3 position, DamageType damageType, float damage,
-        List<Enemy> targets, System.Action<Enemy> onHit = null, GameObject prefab = null)
+        List<Enemy> targets, System.Action<Enemy> onHit = null, GameObject prefab = null, float zOffset = 0f)
     {
         GameObject obj;
         Material material = null;
@@ -51,7 +51,7 @@ public class AttackWave : MonoBehaviour
         {
             // 用 prefab 自己的 Z 作为旅行起点，X/Y 保持 GetWavePosition 计算值（列对齐+高度）
             Vector3 spawnPos = position;
-            spawnPos.z = prefab.transform.position.z;
+            spawnPos.z = prefab.transform.position.z + zOffset;
             obj = Object.Instantiate(prefab, spawnPos, prefab.transform.rotation);
             obj.name = $"Wave_{damageType}";
             Renderer r = obj.GetComponentInChildren<Renderer>();
@@ -126,16 +126,21 @@ public class AttackWave : MonoBehaviour
             if (e.transform.position.z < closestZ) closestZ = e.transform.position.z;
         }
 
-        // 判断旅行方向：从 startZ 朝向敌人最远端的那个方向
-        bool travelPositiveZ = furthestZ > startZ;
         bool isStab = damageType == DamageType.Stab;
 
-        // 戳击：刺到最近敌人前 2.5 单位即返回，不穿到敌人身后
+        // 戳击：向最远目标方向旅行，到达后收回；非戳击：向最远目标方向贯穿
+        bool travelPositiveZ;
         float endTravelZ;
         if (isStab)
-            endTravelZ = travelPositiveZ ? closestZ - 2.5f : closestZ + 2.5f;
+        {
+            travelPositiveZ = furthestZ > startZ;
+            endTravelZ = furthestZ;
+        }
         else
+        {
+            travelPositiveZ = furthestZ > startZ;
             endTravelZ = travelPositiveZ ? furthestZ + EndZOffset : furthestZ - EndZOffset;
+        }
 
         float thrustTime;
         if (isStab)
