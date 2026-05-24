@@ -57,6 +57,10 @@ public class Enemy : MonoBehaviour
     public bool useAttackFlip = true;
     public float moveSpeed = 1f;
 
+    [Header("共享血量")]
+    [Tooltip("与同行相邻同ID敌人共享血量")]
+    public bool shareHealthWithAdjacent = false;
+
     [Header("架势系统")]
     public float maxPoise = 50f;
     public float stunDuration = 1.5f;
@@ -85,6 +89,7 @@ public class Enemy : MonoBehaviour
     [Tooltip("Boss 血条 Prefab（可选，为 null 时使用 BattleHUD 默认模板）")]
     public GameObject bossHealthBarPrefab;
     [System.NonSerialized] public BossState bossState = BossState.None;
+    [System.NonSerialized] public SharedHealthGroup sharedHealthGroup;
 
     [Header("弱点系统")]
     public float stabDamageMultiplier = 1f;
@@ -849,6 +854,38 @@ public class Enemy : MonoBehaviour
             // BUG FIX: 防止 rowIndex 变为负数
             if (rowIndex < 0) rowIndex = 0;
 
+            // 共享血量组：补齐移动后检查是否仍在同一排，不同排则解散
+            // 但如果组内有成员正在移动中或等待补齐，跳过检查（rowIndex 仍在变动）
+            if (sharedHealthGroup != null)
+            {
+                bool anyMemberInFlux = false;
+                foreach (var m in sharedHealthGroup.members)
+                {
+                    if (m != this && m.state != EnemyState.Dead && (m.state == EnemyState.Moving || m.pendingRushMove))
+                    {
+                        anyMemberInFlux = true;
+                        break;
+                    }
+                }
+                if (!anyMemberInFlux)
+                {
+                    bool sameRow = true;
+                    foreach (var m in sharedHealthGroup.members)
+                    {
+                        if (m != this && m.state != EnemyState.Dead && m.rowIndex != rowIndex)
+                        {
+                            sameRow = false;
+                            break;
+                        }
+                    }
+                    if (!sameRow)
+                    {
+                        Debug.Log($"[Enemy] 补齐移动导致解散共享血量组: {DebugTag}, row={rowIndex}");
+                        sharedHealthGroup.Disband();
+                    }
+                }
+            }
+
             // Boss 分阶段推进：到达第3排(rowIndex=2)，暂停等待前两排清空
             if (isBoss && rowIndex == 2 && bossState == BossState.None)
             {
@@ -1072,6 +1109,12 @@ public class Enemy : MonoBehaviour
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
 
+        if (sharedHealthGroup != null)
+        {
+            sharedHealthGroup.TakeDamage(damage, damageType, this);
+            return;
+        }
+
         // 击飞状态下受到伤害倍率
         if (state == EnemyState.Launched)
             damage *= launchedDamageTakenMultiplier;
@@ -1152,6 +1195,30 @@ public class Enemy : MonoBehaviour
         {
             if (mat != null) mat.color = Color.white;
         }
+    }
+
+    /// <summary>
+    /// 受伤视觉反馈（闪白+抖动），不修改HP，供 SharedHealthGroup 调用
+    /// </summary>
+    public void ApplyDamageFeedback()
+    {
+        if (state == EnemyState.Dead) return;
+
+        ApplyHitFlashImmediate();
+
+        if (cachedSpriteController == null)
+            cachedSpriteController = GetComponent<EnemySpriteController>();
+        if (cachedSpriteController != null)
+            cachedSpriteController.TriggerHitFlash();
+
+        hitFlashTimer = HIT_FLASH_DURATION;
+
+        string punchId = $"punch_{GetInstanceID()}";
+        DOTween.Kill(punchId);
+        transform.localScale = originalScale;
+        transform.DOPunchScale(new Vector3(0.2f, 0.2f, 0.2f), 0.15f, 8, 0.5f)
+            .SetTarget(transform)
+            .SetId(punchId);
     }
 
     /// <summary>
@@ -1249,7 +1316,7 @@ public class Enemy : MonoBehaviour
     /// <summary>
     /// 根据伤害类型获取倍率
     /// </summary>
-    private float GetDamageMultiplier(DamageType damageType)
+    public float GetDamageMultiplier(DamageType damageType)
     {
         switch (damageType)
         {
@@ -1933,6 +2000,7 @@ public class Enemy : MonoBehaviour
             _onColumnsModifiedHandler = null;
         }
         bossState = BossState.None;
+        sharedHealthGroup = null;
 
         OnDeath = null;
         OnDamageTaken = null;

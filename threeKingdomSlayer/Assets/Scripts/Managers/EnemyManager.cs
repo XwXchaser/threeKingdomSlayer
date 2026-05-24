@@ -12,8 +12,19 @@ public class EnemyManager : MonoBehaviour
     [Header("列管理")]
     public ColumnManager columnManager;
 
+    [Header("共享血量")]
+    [Tooltip("共享血量敌人之间的连接特效 Prefab")]
+    public GameObject sharedHealthChainPrefab;
+    [Tooltip("铁链缩放")]
+    public Vector3 chainScale = Vector3.one;
+    [Tooltip("铁链Y轴偏移")]
+    public float chainYOffset = 0f;
+
     // 所有存活敌人的列表（用于遍历）
     private List<Enemy> allAliveEnemies = new List<Enemy>();
+
+    // 活跃的共享血量组
+    private List<SharedHealthGroup> activeGroups = new List<SharedHealthGroup>();
 
     // 事件
     public System.Action<Enemy> OnAnyEnemyDied;
@@ -191,6 +202,37 @@ public class EnemyManager : MonoBehaviour
 
     #endregion
 
+    #region 共享血量组
+
+    public void RegisterGroup(SharedHealthGroup group)
+    {
+        if (group != null && !activeGroups.Contains(group))
+            activeGroups.Add(group);
+    }
+
+    public void RemoveGroup(SharedHealthGroup group)
+    {
+        if (group != null)
+            activeGroups.Remove(group);
+    }
+
+    private void LateUpdate()
+    {
+        // 更新铁链位置
+        for (int i = activeGroups.Count - 1; i >= 0; i--)
+        {
+            var g = activeGroups[i];
+            if (g == null || g.members.Count < 2)
+            {
+                activeGroups.RemoveAt(i);
+                continue;
+            }
+            g.UpdateAllChainPositions();
+        }
+    }
+
+    #endregion
+
     #region 清理
 
     /// <summary>
@@ -198,6 +240,28 @@ public class EnemyManager : MonoBehaviour
     /// </summary>
     public void ClearAllEnemies()
     {
+        // 清理所有共享血量组
+        var groupsToClear = new List<SharedHealthGroup>(activeGroups);
+        foreach (var g in groupsToClear)
+        {
+            if (g != null)
+            {
+                // 清除成员的组引用，避免 Disband/KillAll 内部重复清理
+                foreach (var m in g.members)
+                {
+                    if (m != null) m.sharedHealthGroup = null;
+                }
+                g.members.Clear();
+                // 销毁铁链
+                foreach (var chain in g.chainObjects)
+                {
+                    if (chain != null) Destroy(chain);
+                }
+                g.chainObjects.Clear();
+            }
+        }
+        activeGroups.Clear();
+
         // 复制列表以避免迭代时修改
         var enemiesToClear = new List<Enemy>(allAliveEnemies);
         foreach (var enemy in enemiesToClear)
