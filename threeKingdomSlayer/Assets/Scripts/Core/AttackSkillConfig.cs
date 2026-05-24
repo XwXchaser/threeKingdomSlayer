@@ -34,6 +34,24 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("攻击波预制体（可为空，使用默认 Quad）")]
     public GameObject attackWavePrefab;
 
+    [Header("戳击偏移")]
+    [Tooltip("生成位置 Y 偏移（相对敌人中心）")]
+    public float stabSpawnYOffset = 1.5f;
+    [Tooltip("生成位置 Z 偏移（相对敌人中心）")]
+    public float stabSpawnZOffset = 0.5f;
+
+    [Header("斩击扇形扫掠")]
+    [Tooltip("扫掠半宽（X 轴范围，默认 5）")]
+    public float slashSweepHalfWidth = 5f;
+    [Tooltip("扇形旋转角度（度，默认 50）")]
+    public float slashSweepAngle = 50f;
+    [Tooltip("扫掠持续时长（秒，默认 0.25）")]
+    public float slashSweepDuration = 0.25f;
+    [Tooltip("生成位置 Y 偏移（相对敌人中心）")]
+    public float slashSpawnYOffset = 1.5f;
+    [Tooltip("生成位置 Z 偏移（相对敌人中心）")]
+    public float slashSpawnZOffset = 0.5f;
+
     [Header("大招")]
     [Tooltip("命中时获得能量（非大招技能有效）")]
     public int ultimateEnergyGain = 10;

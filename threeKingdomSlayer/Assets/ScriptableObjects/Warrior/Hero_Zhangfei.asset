@@ -15,7 +15,7 @@ MonoBehaviour:
   heroName: Zhangfei
   heroId: 101
   heroHUDPrefab: {fileID: 7974586438746567504, guid: 16f0844e7d3a1bb45a8ed55b8ad2adc4, type: 3}
-  maxHealth: 500
+  maxHealth: 100
   reviveCount: 0
   reviveHealthPercent: 0.5
   skillConfigs:

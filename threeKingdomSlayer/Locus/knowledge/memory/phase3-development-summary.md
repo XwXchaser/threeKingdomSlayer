@@ -9,13 +9,13 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779520344306
-updatedAt: 1779598384946
+updatedAt: 1779631193601
 ---
 
 # phase3-development-summary
 
 ## Summary
-第三期局内成长系统（经验三选一）开发状态与技术总结 — 2025-07
+第三期局内成长系统（经验三选一）开发状态 — 含虚幻武器被动奖励、UI弹窗重构、Bug修复记录
 
 <!-- locus:body:start -->
 # 第三期：局内成长系统（经验三选一）开发状态
@@ -76,9 +76,10 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
   - `ConfirmChoice()` 后检查 `_pendingLevelUps`，连续升级时刷新弹窗
   - 恢复时设置 `InputManager.blockInputFrames=2` 防止误触发攻击
 - `UpgradeChoicePopup` — UI 容器
-  - 独立 Canvas，Sort Order 高于 BattleHUD
+  - 独立 Canvas（UpgradePopupCanvas），Sort Order 高于 BattleHUD
   - DOTween 淡入/淡出动画（使用 `SetUpdate(true)` 在暂停时播放）
-  - 竖向堆叠 `UpgradeCard` 实例
+  - 竖向堆叠 `UpgradeCard` 实例（VerticalLayoutGroup + ContentSizeFitter）
+  - `cardSpacing` 属性自动同步到 VerticalLayoutGroup.spacing
 - `UpgradeCard` — 单个选项卡片
   - 显示 `displayName` + 动态描述 `GetDescription()`
   - 稀有度配色（common/rare/legendary）
@@ -96,20 +97,33 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 - `IEffectExecutor` 接口 — 行为型效果扩展点
   - `Execute(UpgradeDefinition def, int level)`
 
-### ✅ 配置数据
-- `UpgradeDefinition` ScriptableObject（`Assets/ScriptableObjects/Upgrades/Definitions/`）
-  - `DamagePlus.asset` — 造成伤害提升
-  - `AttackSpeed.asset` — 攻击速度提升
-  - `OnAttackStab.asset` — 每3次攻击触发戳击
-  - `OnKillCoin.asset` — 击杀掉落铜钱
-- `UpgradePoolConfig.asset` — 稀有度池+权重配置
-- `UpgradeRarity` 枚举：Common / Rare / Legendary
-- `UpgradePrerequisite` — 前置条件（可选）
-- `ExpCurveConfig` — 经验曲线（`Assets/ScriptableObjects/ExpCurve/`）
+### ✅ 被动攻击奖励：虚幻武器 (PhantomWeapon) — 2025-07-18
+- `PassiveTriggerModule` — 攻击计数器+触发逻辑
+  - 每第5次有效攻击触发（Slash/Stab/Sweep/Pierce/Launch 计入，Parry 和 Ult 不计）
+  - 幻影攻击不算入累积次数
+  - 框架支持多段幻影（不同 damageRatio/alpha）
+- `AttackSystem.ExecutePhantomAttack()` — 穿通执行攻击（不耗冷却、不加能量、不计入计数器）
+- `UpgradeDefinition` 新增：
+  - `triggerCount` (int) — 触发所需攻击次数
+  - `countedAttackTypes` (AttackType[]) — 计数的攻击类型
+  - `phantomDamages` (PhantomDamageStep[]) — 多段幻影参数数组
+  - `PhantomDamageStep` 结构体：`damageRatio` (float) + `alpha` (float)
+- `UpgradeEffectManager.InitializePassive()` — 注册 PassiveTriggerModule
+- `PhantomWeapon.asset` — 配置：triggerCount=5, 单段60%伤害+60%alpha
+- `AttackWave.Create` / `SweepEffect.Create` — 新增 `alphaOverride` 参数
 
-### ✅ Prefab
-- `Assets/Prefabs/ExpGem.prefab` — 屏幕空间 UI Image + ExpGem 组件，RectTransform (100×100)
-- `Assets/Prefabs/UI/UpgradeCard.prefab` — 卡片 Prefab（UpgradeChoicePopup 实例化）
+### ✅ UI 三选一弹窗重构（2025-07-18）
+- **新 Prefab**：
+  - `Assets/Prefabs/UI/UpgradePopup.prefab` — Image(Sliced, background_31_outside) + CanvasGroup + VLG + CSF
+  - `Assets/Prefabs/UI/UpgradeCard.prefab` — Image(Sliced, background_31_inside) + Button + IconBg(background_31__select) + 文本
+- **素材**：`Assets/Sprites/31Reward/` — 9-slice 底框图片
+  - `background_31_outside.png` (512×171, border=35) — 大底框
+  - `background_31_inside.png` (512×171, border=20) — 选项底框
+  - `background_31__select.png` (512×512) — 选项图标底框
+- **Battle.scene 结构**：
+  - `UpgradePopupCanvas` (Canvas + CanvasScaler 1080×1920 + GraphicRaycaster, sortingOrder=100)
+    - `UpgradePopup` (Image + CanvasGroup + UpgradeChoicePopup + VLG + CSF)
+- `UpgradeChoicePopup.cardSpacing` → 属性自动同步 VLG.spacing
 
 ### ✅ 敌人精灵动画系统（2025-07-17，临时方案，后续改为 Animator）
 - `EnemySpriteController` — 新组件，读取 `Enemy.state` 驱动 `SpriteRenderer.sprite` 切换
@@ -164,27 +178,40 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
   - 修复：解散检查加前置守卫——若组内任何成员 `state==Moving` 或 `pendingRushMove==true`，跳过检查
 - **待完成**：`EnemyManager.sharedHealthChainPrefab` 在 Battle.scene 中为 NULL，需准备铁链 Prefab 并拖入
 
+## 最近 Bug 修复（2025-07-18）
+
+### Bug: UpgradePopup/UpgradeCard 背景不显示
+- **根因**：Battle.scene 中 `UpgradePopup` 是独立根对象（无 Canvas 父节点），Image 无法在屏幕空间渲染；`UpgradePopupCanvas` 错误挂载了 Image/VLG/CSF 等组件
+- **修复**：清理 UpgradePopupCanvas 多余组件，将 UpgradePopup 移至其子节点下
+
+### Bug: Stab/Slash Wave 颜色异常（绿色调）
+- **根因**：之前 prefab 路径中从未调用 `material.color = color`（旧bug），上次修复补上后，`GetColor()` 饱和色直接叠加白色 sprite 上造成过强着色
+- **修复**：prefab 路径用 `Color.Lerp(color, Color.white, 0.5f)` 淡化色调
+
 ## 关键代码文件清单
 
 | 文件 | 职责 |
 |------|------|
 | `Assets/Scripts/Core/UpgradeChoiceManager.cs` | 暂停/弹窗/连续升级流程 |
-| `Assets/Scripts/Core/UpgradeEffectManager.cs` | 效果累积+行为分发 |
-| `Assets/Scripts/Core/UpgradeDefinition.cs` | 升级定义 SO + 前置条件 |
+| `Assets/Scripts/Core/UpgradeEffectManager.cs` | 效果累积+行为分发+被动初始化 |
+| `Assets/Scripts/Core/UpgradeDefinition.cs` | 升级定义 SO + PhantomDamageStep |
 | `Assets/Scripts/Core/UpgradePoolConfig.cs` | 稀有度池配置 SO |
 | `Assets/Scripts/Core/ExpCurveConfig.cs` | 经验曲线配置 SO |
 | `Assets/Scripts/Core/ExpGem.cs` | 屏幕空间 UI Image 飞行宝石 |
 | `Assets/Scripts/Core/ExpGemManager.cs` | 宝石管理单例（飞行+收集+屏幕坐标） |
 | `Assets/Scripts/Core/IEffectExecutor.cs` | 行为型效果接口 |
+| `Assets/Scripts/Core/PassiveTriggerModule.cs` | 被动触发模块（攻击计数+幻影触发） |
 | `Assets/Scripts/UI/UpgradeChoicePopup.cs` | 三选一弹窗容器 |
 | `Assets/Scripts/UI/UpgradeCard.cs` | 单个选项卡片 |
 | `Assets/Scripts/UI/BattleHUD.cs` | 经验条+gemParent/expSlider 传递 |
 | `Assets/Scripts/Player/PlayerState.cs` | 经验/等级/acquiredUpgrades |
 | `Assets/Scripts/Player/InputManager.cs` | blockInputFrames 防误触 |
-| `Assets/Scripts/Player/AttackSystem.cs` | GetDamageMultiplier 集成 |
+| `Assets/Scripts/Player/AttackSystem.cs` | GetDamageMultiplier + ExecutePhantomAttack |
+| `Assets/Scripts/Attack/AttackWave.cs` | AttackWave + alphaOverride 参数 |
+| `Assets/Scripts/Attack/SweepEffect.cs` | SweepEffect + alphaOverride 参数 |
 | `Assets/Scripts/Enemy/Enemy.cs` | gemSprite + cachedSpriteController + useAttackFlip + shareHealthWithAdjacent |
 | `Assets/Scripts/Enemy/EnemySpriteController.cs` | 敌人类状态驱动精灵切换 |
-| `Assets/Scripts/Enemy/SharedHealthGroup.cs` | 共享血量组（NEW） |
+| `Assets/Scripts/Enemy/SharedHealthGroup.cs` | 共享血量组 |
 | `Assets/Scripts/Managers/EnemyManager.cs` | SpawnGem + sharedHealthChainPrefab + 组注册 |
 | `Assets/Scripts/Wave/WaveSpawner.cs` | CreateSharedHealthGroups() |
 
@@ -195,7 +222,8 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 | `ExpGemManager` | Battle.scene 根级 | 单例，baseSpeed=800 |
 | `UpgradeChoiceManager` | Battle.scene | 单例，poolConfig 已拖拽 |
 | `UpgradeEffectManager` | Battle.scene | 单例 |
-| `UpgradeChoicePopup` | Battle.scene 独立 Canvas | canvasGroup 淡入淡出 |
+| `UpgradePopupCanvas` | Battle.scene 根级 | Canvas + CanvasScaler(1080×1920) + GraphicRaycaster, sortingOrder=100 |
+| `UpgradePopup` | UpgradePopupCanvas 子节点 | Image + CanvasGroup + UpgradeChoicePopup + VLG + CSF |
 | `ExpBar Slider` | BattleHUD Canvas 下 | expSlider + expLevelText |
 
 ## 开发避坑规则（后续必须遵守）
@@ -208,6 +236,8 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 6. 新 .cs 文件后必须 unity_recompile 再 unity_execute
 7. **读取 .meta 文件 GUID 不可用 bash `find` + `head` 直读**：.meta 文件的 GUID 可能被 Unity 内部重新映射，AssetDatabase 中的实际 GUID 可能与 .meta 文件内容不同。获取 GUID 必须通过 `AssetDatabase.FindAssets` / `AssetDatabase.GUIDToAssetPath`
 8. **补齐期间 rowIndex 不稳定**：链式补齐（RushMove）期间，同组成员逐个完成移动，rowIndex 短暂不同步。对 rowIndex 有依赖的跨成员系统（如共享血量组）必须在成员稳定后（无 Moving/pendingRushMove）再执行一致性检查
+9. **新建 Canvas 必须配置 CanvasScaler + GraphicRaycaster**，否则 UI 元素无法渲染/交互。Canvas 的 Image 和 CanvasGroup 应挂载在子节点上而非 Canvas 自身
+10. **UI 元素必须在 Canvas 子节点下**才能屏幕空间渲染，独立根对象的 Image 组件无效
 
 ## 精灵部署位置
 
@@ -218,9 +248,10 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 | 稀有经验宝石 | `Assets/Sprites/ex_point_rare.png` |
 | 敌人精灵 Enemy1 | `Assets/Sprites/Enemy/Enemy1/` (6 帧) |
 | 敌人精灵 Enemy2 | `Assets/Sprites/Enemy/Enemy2/` (6 帧) |
-| 铁链（待提供） | 用户将会准备链子美术素材 |
-| 卡片稀有度背景 | 待用户提供 — 需在 UpgradeCard Prefab 上拖拽 |
-| 弹窗面板背景 | 待用户提供 — 需在 UpgradeChoicePopup 上拖拽 |
+| 铁链 | `Assets/Sprites/Enemy/Enemy2/chain.png` |
+| 三选一底框（大） | `Assets/Sprites/31Reward/background_31_outside.png` |
+| 三选一底框（选项） | `Assets/Sprites/31Reward/background_31_inside.png` |
+| 三选一图标框 | `Assets/Sprites/31Reward/background_31__select.png` |
 
 ## 字体
 

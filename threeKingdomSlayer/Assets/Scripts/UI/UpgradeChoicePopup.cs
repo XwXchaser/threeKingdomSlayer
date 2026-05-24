@@ -14,8 +14,13 @@ public class UpgradeChoicePopup : MonoBehaviour
     [Header("布局")]
     public Transform cardsParent;
     public GameObject cardPrefab;
-    [Tooltip("卡片竖向间距")]
-    public float cardSpacing = 20f;
+    [Tooltip("卡片竖向间距 — 同步到 VerticalLayoutGroup.spacing")]
+    [SerializeField] private float _cardSpacing = 20f;
+    public float cardSpacing
+    {
+        get => _cardSpacing;
+        set { _cardSpacing = value; ApplySpacing(); }
+    }
 
     [Header("动画")]
     public CanvasGroup canvasGroup;
@@ -24,7 +29,25 @@ public class UpgradeChoicePopup : MonoBehaviour
     [Tooltip("弹窗关闭淡出时长")]
     public float fadeOutDuration = 0.15f;
 
+    private VerticalLayoutGroup _layoutGroup;
     private List<UpgradeCard> _spawnedCards = new List<UpgradeCard>();
+
+    private void Awake()
+    {
+        _layoutGroup = GetComponent<VerticalLayoutGroup>();
+        ApplySpacing();
+    }
+
+    private void OnValidate()
+    {
+        ApplySpacing();
+    }
+
+    private void ApplySpacing()
+    {
+        if (_layoutGroup != null)
+            _layoutGroup.spacing = _cardSpacing;
+    }
 
     private void Start()
     {
@@ -34,9 +57,12 @@ public class UpgradeChoicePopup : MonoBehaviour
             UpgradeChoiceManager.Instance.OnAllChoicesDone += Hide;
         }
 
-        // 初始隐藏
+        // 初始隐藏 — alpha=0 且不阻挡射线
         if (canvasGroup != null)
+        {
             canvasGroup.alpha = 0f;
+            canvasGroup.blocksRaycasts = false;
+        }
     }
 
     private void OnDestroy()
@@ -79,12 +105,14 @@ public class UpgradeChoicePopup : MonoBehaviour
     private void FadeIn()
     {
         if (canvasGroup == null) return;
+        canvasGroup.blocksRaycasts = true;
         canvasGroup.DOFade(1f, fadeInDuration).SetUpdate(true);
     }
 
     private void FadeOut()
     {
         if (canvasGroup == null) return;
+        canvasGroup.blocksRaycasts = false;
         canvasGroup.DOFade(0f, fadeOutDuration).SetUpdate(true);
     }
 }
