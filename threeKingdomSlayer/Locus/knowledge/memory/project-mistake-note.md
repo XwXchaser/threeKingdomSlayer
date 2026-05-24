@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1778764012219
-updatedAt: 1779555009287
+updatedAt: 1779598404789
 ---
 
 # project-mistake-note
@@ -36,4 +36,12 @@ updatedAt: 1779555009287
 - 症状：使用 bash `find` + `head` 直接读取 `.meta` 文件获取 GUID，然后通过 GUID 查找资产，结果不可靠。部分 Sprite 的 .meta 文件 GUID 与实际 AssetDatabase 中的 GUID 不一致
 - 根因：Unity 可能在导入过程中内部重新映射精灵子资产的 GUID，.meta 文件中记录的 `guid:` 值与 `AssetDatabase.FindAssets` 返回的实际 GUID 不同，特别是 Texture 类型导入为多个 Sprite 子资产时
 - 预防规则：获取 GUID 永远通过 `AssetDatabase.FindAssets("t:Sprite ...")` / `AssetDatabase.GUIDToAssetPath` 等 Editor API，禁止直接解析 .meta 文件获取 GUID
+
+### 共享血量组补齐期间解散 ✅ 已修复（2025-07-17）
+- 症状：`CreateSharedHealthGroups()` 在补齐前正确创建了组（row=2），但进游戏后组不存在，共享血量完全不工作
+- 根因：组在生成排（row=2）创建后，`RowBasedFillUp()` 触发链式补齐（row=2→1→0）。链式补齐逐个移动成员——第一个成员移动完成 `rowIndex--` 后，第二个成员 rowIndex 仍为旧值 → `UpdateMovement()` 中的解散检查检测到 rowIndex 不同 → 立即 `Disband()` → 组秒解散
+- 排查关键：`pendingRushMove` 在 `TryStartRushMove()` 中已置 false（移动开始时清除），移动完成时无法用它判断是否仍在补齐。必须检查其他成员的 `state==Moving` 或 `pendingRushMove==true`
+- 修复：解散检查加前置守卫——若组内任何成员 `state==EnemyState.Moving || pendingRushMove`，跳过检查。只有所有成员稳定后才做同行一致性判断
+- 预防规则：链式补齐期间 rowIndex 不稳定。对 rowIndex 有依赖的跨成员系统必须在成员全部稳定后（无 Moving 且无 pendingRushMove）再执行一致性检查
+- 文件：`Assets/Scripts/Enemy/Enemy.cs` (UpdateMovement), `Assets/Scripts/Wave/WaveSpawner.cs` (CreateSharedHealthGroups)
 <!-- locus:body:end -->

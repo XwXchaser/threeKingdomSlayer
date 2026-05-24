@@ -60,6 +60,7 @@ MonoBehaviour:
   attackDrawDuration: 1
   useAttackFlip: 0
   moveSpeed: 0.3
+  shareHealthWithAdjacent: 1
   maxPoise: 100
   stunDuration: 1.5
   launchDuration: 2

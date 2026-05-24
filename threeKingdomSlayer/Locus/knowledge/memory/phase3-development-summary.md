@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779520344306
-updatedAt: 1779554707616
+updatedAt: 1779598384946
 ---
 
 # phase3-development-summary
@@ -131,6 +131,39 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
   - 旧 `Assets/Sprites/Enemy/Enemy_1.png` / `Enemy_2.png` 已删除（迁移到子文件夹）
 - 已知限制：`Enemy_104.prefab` 尚未配置 EnemySpriteController（无对应精灵资源）
 
+### ✅ 共享血量组系统（2025-07-17）
+- **设计规则**：同行相邻同ID且 `shareHealthWithAdjacent=true` 的敌人自动共享一个血量池
+  - 同行：`rowIndex` 相同
+  - 相邻：`columnIndex` 连续（col, col+1, col+2, ...）
+  - 同ID：`enemyId` 相同
+  - 攻击任一成员 → 扣共享池；池归零 → 所有成员同时死亡（触发多次死亡事件）
+  - Launched 状态不破坏组；PerColumn 补齐后不同行则解散；PerRow 补齐后始终同行不解散
+- `SharedHealthGroup`（`Assets/Scripts/Enemy/SharedHealthGroup.cs`）— 数据类
+  - `currentHealth` / `maxHealth` / `members` / `chainObjects`
+  - `TakeDamage(rawDamage, damageType, hitMember)` — 扣除共享池，扣完触发 `KillAll()`
+  - `KillAll()` — 每个成员独立调用 `Die()`（触发独立死亡事件/掉落）
+  - `Disband()` — 剩余HP平分，解除共享关系
+  - `SpawnChains()` / `UpdateAllChainPositions()` — 铁链视觉连接（chainPrefab 为空则跳过）
+- `Enemy.cs` 改动：
+  - 新增 `shareHealthWithAdjacent` bool（默认 false），Inspector 可配置
+  - 新增 `sharedHealthGroup` (NonSerialized) — 运行时组引用
+  - `TakeDamage()` — 有组时重定向到 `SharedHealthGroup.TakeDamage()`
+  - `UpdateMovement()` — 移动完成后解散检查（**已修复**：补齐期间跳过解散，见下方 Bug 记录）
+  - `ResetEnemy()` — 清理 `sharedHealthGroup = null`
+- `EnemyManager.cs` 改动：
+  - `sharedHealthChainPrefab` / `chainScale` / `chainYOffset` — 铁链配置
+  - `RegisterGroup()` / `RemoveGroup()` — 组注册表管理
+  - `LateUpdate()` — 每帧更新所有组的铁链位置
+  - `ClearAllEnemies()` — 清理所有组的引用
+- `WaveSpawner.cs` 改动：
+  - `CreateSharedHealthGroups()` — 生成后扫描存活敌人，按 rowIndex 分组，同行相邻同ID建立组
+  - 调用时机：`SpawnNextWave()` 中补齐前调用（UpdateMovement 的解散守卫保证存活）
+- `Enemy_102.prefab` — `shareHealthWithAdjacent = true` 已配置
+- **已知 Bug 修复（2025-07-17）**：
+  - 问题：组在补齐前创建（row=2），`RowBasedFillUp()` 链式补齐期间，第一个成员移动完成 rowIndex-- 后第二个成员 rowIndex 尚未变化 → `UpdateMovement()` 解散检查触发 Disband() → 组秒解散
+  - 修复：解散检查加前置守卫——若组内任何成员 `state==Moving` 或 `pendingRushMove==true`，跳过检查
+- **待完成**：`EnemyManager.sharedHealthChainPrefab` 在 Battle.scene 中为 NULL，需准备铁链 Prefab 并拖入
+
 ## 关键代码文件清单
 
 | 文件 | 职责 |
@@ -149,9 +182,11 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 | `Assets/Scripts/Player/PlayerState.cs` | 经验/等级/acquiredUpgrades |
 | `Assets/Scripts/Player/InputManager.cs` | blockInputFrames 防误触 |
 | `Assets/Scripts/Player/AttackSystem.cs` | GetDamageMultiplier 集成 |
-| `Assets/Scripts/Enemy/Enemy.cs` | gemSprite + cachedSpriteController + useAttackFlip |
+| `Assets/Scripts/Enemy/Enemy.cs` | gemSprite + cachedSpriteController + useAttackFlip + shareHealthWithAdjacent |
 | `Assets/Scripts/Enemy/EnemySpriteController.cs` | 敌人类状态驱动精灵切换 |
-| `Assets/Scripts/Managers/EnemyManager.cs` | SpawnGem 调用点 + gemSprite 传递 |
+| `Assets/Scripts/Enemy/SharedHealthGroup.cs` | 共享血量组（NEW） |
+| `Assets/Scripts/Managers/EnemyManager.cs` | SpawnGem + sharedHealthChainPrefab + 组注册 |
+| `Assets/Scripts/Wave/WaveSpawner.cs` | CreateSharedHealthGroups() |
 
 ## 场景对象
 
@@ -172,6 +207,7 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 5. 暂停期间动画需使用 SetUpdate(true)（DOTween）或 Time.unscaledDeltaTime
 6. 新 .cs 文件后必须 unity_recompile 再 unity_execute
 7. **读取 .meta 文件 GUID 不可用 bash `find` + `head` 直读**：.meta 文件的 GUID 可能被 Unity 内部重新映射，AssetDatabase 中的实际 GUID 可能与 .meta 文件内容不同。获取 GUID 必须通过 `AssetDatabase.FindAssets` / `AssetDatabase.GUIDToAssetPath`
+8. **补齐期间 rowIndex 不稳定**：链式补齐（RushMove）期间，同组成员逐个完成移动，rowIndex 短暂不同步。对 rowIndex 有依赖的跨成员系统（如共享血量组）必须在成员稳定后（无 Moving/pendingRushMove）再执行一致性检查
 
 ## 精灵部署位置
 
@@ -182,6 +218,7 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 | 稀有经验宝石 | `Assets/Sprites/ex_point_rare.png` |
 | 敌人精灵 Enemy1 | `Assets/Sprites/Enemy/Enemy1/` (6 帧) |
 | 敌人精灵 Enemy2 | `Assets/Sprites/Enemy/Enemy2/` (6 帧) |
+| 铁链（待提供） | 用户将会准备链子美术素材 |
 | 卡片稀有度背景 | 待用户提供 — 需在 UpgradeCard Prefab 上拖拽 |
 | 弹窗面板背景 | 待用户提供 — 需在 UpgradeChoicePopup 上拖拽 |
 

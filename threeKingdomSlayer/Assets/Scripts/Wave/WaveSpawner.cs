@@ -134,6 +134,11 @@ public class WaveSpawner : MonoBehaviour
 
         isSpawning = false;
 
+        // 波次生成完成后，创建共享血量组
+        // 注意：必须在补齐前创建。UpdateMovement 中的解散检查已跳过正在补齐的成员，
+        // 所以组会安全度过补齐期，补齐完成后所有成员在同一排自然不会被解散。
+        CreateSharedHealthGroups();
+
         // 波次生成完成后，触发初始前移
         if (fillRule == FillUpRule.PerRow)
         {
@@ -264,4 +269,69 @@ public class WaveSpawner : MonoBehaviour
     /// 获取总波次数
     /// </summary>
     public int TotalWaves => ResolvedStageConfig != null ? ResolvedStageConfig.waves.Count : 0;
+
+    #region 共享血量组
+
+    /// <summary>
+    /// 扫描当前所有存活敌人，为同行相邻同ID且 shareHealthWithAdjacent 的敌人创建共享血量组
+    /// </summary>
+    private void CreateSharedHealthGroups()
+    {
+        if (enemyManager == null) return;
+
+        var allEnemies = enemyManager.GetAllAliveEnemies();
+        if (allEnemies.Count == 0) return;
+
+        // 按 rowIndex 分组
+        var rows = new Dictionary<int, List<Enemy>>();
+        foreach (var enemy in allEnemies)
+        {
+            if (enemy == null || !enemy.shareHealthWithAdjacent) continue;
+            if (enemy.sharedHealthGroup != null) continue;
+
+            if (!rows.ContainsKey(enemy.rowIndex))
+                rows[enemy.rowIndex] = new List<Enemy>();
+            rows[enemy.rowIndex].Add(enemy);
+        }
+
+        foreach (var kvp in rows)
+        {
+            var rowEnemies = kvp.Value;
+            rowEnemies.Sort((a, b) => a.columnIndex.CompareTo(b.columnIndex));
+
+            int i = 0;
+            while (i < rowEnemies.Count)
+            {
+                int start = i;
+                int enemyId = rowEnemies[i].enemyId;
+                i++;
+
+                while (i < rowEnemies.Count
+                    && rowEnemies[i].enemyId == enemyId
+                    && rowEnemies[i].columnIndex == rowEnemies[i - 1].columnIndex + 1)
+                {
+                    i++;
+                }
+
+                int count = i - start;
+                if (count >= 2)
+                {
+                    var group = new SharedHealthGroup(
+                        enemyManager.sharedHealthChainPrefab,
+                        enemyManager.chainScale,
+                        enemyManager.chainYOffset);
+
+                    for (int j = start; j < i; j++)
+                        group.AddMember(rowEnemies[j]);
+
+                    group.SpawnChains();
+                    enemyManager.RegisterGroup(group);
+
+                    Debug.Log($"[WaveSpawner] 创建共享血量组: enemyId={enemyId}, row={kvp.Key}, members={count}, poolHP={group.currentHealth:F0}/{group.maxHealth:F0}");
+                }
+            }
+        }
+    }
+
+    #endregion
 }
