@@ -51,7 +51,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: "\u76FE\u5175"
   enemyId: 102
-  maxHealth: 100
+  maxHealth: 30
   occupySlots: 1
   attackSpeed: 0.2
   attackDamage: 10
@@ -71,7 +71,7 @@ MonoBehaviour:
   launchedDamageTakenMultiplier: 1.5
   launchedHitExtendDuration: 0.5
   coinReward: 10
-  expReward: 10
+  expReward: 50
   gemSprite: {fileID: 21300000, guid: 9615f3c03352d4a4684e7679ae7c28cc, type: 3}
   isBoss: 0
   bossHealthBarPrefab: {fileID: 0}

@@ -1104,7 +1104,7 @@ public class Enemy : MonoBehaviour
     /// <summary>
     /// 受到伤害
     /// </summary>
-    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab)
+    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null)
     {
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
@@ -1129,10 +1129,10 @@ public class Enemy : MonoBehaviour
         OnDamageTaken?.Invoke(this);
         OnHealthChanged?.Invoke(this, currentHealth, maxHealth);
 
-        // 受伤跳字：在敌人右侧显示红色带黑描边的伤害数字
+        // 受伤跳字
         if (DamageNumberManager.Instance != null)
         {
-            DamageNumberManager.Instance.Spawn(transform.position, finalDamage);
+            DamageNumberManager.Instance.Spawn(transform.position, finalDamage, damageNumberColor);
         }
 
         // 血条显示（非BOSS、未死亡时显示）

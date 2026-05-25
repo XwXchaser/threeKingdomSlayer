@@ -103,7 +103,7 @@ public class DamageNumberManager : MonoBehaviour
     /// </summary>
     /// <param name="enemyWorldPos">敌人的世界坐标位置</param>
     /// <param name="damage">伤害数值</param>
-    public void Spawn(Vector3 enemyWorldPos, float damage)
+    public void Spawn(Vector3 enemyWorldPos, float damage, Color? colorOverride = null)
     {
         if (damageNumberPrefab == null) return;
 
@@ -115,6 +115,6 @@ public class DamageNumberManager : MonoBehaviour
         // 添加随机水平偏移（±0.3f），避免多个伤害数字完全重叠
         spawnPos.x += Random.Range(-0.3f, 0.3f);
 
-        dn.Show(spawnPos, damage);
+        dn.Show(spawnPos, damage, colorOverride);
     }
 }

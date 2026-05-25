@@ -47,9 +47,11 @@ public class UpgradeDefinition : ScriptableObject
     public Sprite icon;
 
     [Header("被动攻击型（category=Passive 时生效）")]
-    [Tooltip("触发阈值（每X次攻击触发一次效果）")]
+    [Tooltip("按等级配置幻影效果。index 0 = Lv1。如果填写了此列表，优先使用；否则回退到下方旧字段")]
+    public List<PhantomLevelConfig> phantomLevels = new List<PhantomLevelConfig>();
+    [Tooltip("[旧版兼容] 触发阈值（每X次攻击触发一次效果）— phantomLevels 有数据时忽略")]
     public int triggerParam;
-    [Tooltip("幻影攻击列表（多段幻影依次执行），每段配置伤害比例与透明度")]
+    [Tooltip("[旧版兼容] 幻影攻击列表 — phantomLevels 有数据时忽略")]
     public List<PhantomStep> phantomSteps = new List<PhantomStep>();
 
     [Header("道具型（category=Item 时生效）")]
@@ -61,6 +63,22 @@ public class UpgradeDefinition : ScriptableObject
     [Header("前置条件")]
     [Tooltip("需要其他选项达到指定等级后才会进入抽取池")]
     public List<UpgradePrerequisite> prerequisites;
+
+    /// <summary>获取指定等级的幻影配置。优先使用 phantomLevels，回退到旧字段。</summary>
+    public void GetPhantomConfig(int level, out int triggerParam, out List<PhantomStep> steps)
+    {
+        if (phantomLevels != null && phantomLevels.Count >= level)
+        {
+            var cfg = phantomLevels[level - 1];
+            triggerParam = cfg.triggerParam;
+            steps = cfg.phantomSteps;
+        }
+        else
+        {
+            triggerParam = this.triggerParam;
+            steps = this.phantomSteps;
+        }
+    }
 }
 
 [System.Serializable]
@@ -99,4 +117,19 @@ public struct PhantomStep
     public float damageRatio;
     [Tooltip("透明度（0.6=60%）")]
     public float alpha;
+    [Tooltip("该段幻影延迟（秒），0=无延迟。用于错开多段幻影的视觉")]
+    public float delaySeconds;
+}
+
+/// <summary>
+/// 被动攻击型按等级配置（index 0 = Lv1）
+/// 每级可独立设置触发阈值和幻影段数
+/// </summary>
+[System.Serializable]
+public struct PhantomLevelConfig
+{
+    [Tooltip("触发阈值（每X次攻击触发一次效果）")]
+    public int triggerParam;
+    [Tooltip("该等级的幻影攻击段数列表")]
+    public List<PhantomStep> phantomSteps;
 }

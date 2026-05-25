@@ -52,16 +52,16 @@ public class DamageNumber : MonoBehaviour
     /// </summary>
     /// <param name="worldPos">世界坐标位置</param>
     /// <param name="damage">伤害数值</param>
-    public void Show(Vector3 worldPos, float damage)
+    public void Show(Vector3 worldPos, float damage, Color? colorOverride = null)
     {
         // 重新激活对象
         gameObject.SetActive(true);
         transform.position = worldPos;
 
-        // 重置透明度
-        Color c = tmp.color;
-        c.a = 1f;
-        tmp.color = c;
+        // 使用覆盖颜色或默认颜色
+        Color displayColor = colorOverride ?? textColor;
+        displayColor.a = 1f;
+        tmp.color = displayColor;
 
         // 设置伤害数值（取整显示）
         tmp.text = Mathf.RoundToInt(damage).ToString();

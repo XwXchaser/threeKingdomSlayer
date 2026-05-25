@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5eab6a0cbf20ec64ba732f894b672d49, type: 3}
   m_Name: OnKillCoin
   m_EditorClassIdentifier: 
+  category: 0
   upgradeId: on_kill_coin
   displayName: "\u655B\u8D22"
   descriptionTemplate: "\u51FB\u6740\u654C\u4EBA\u6709 {0}% \u6982\u7387\u6389\u843D
@@ -20,7 +21,13 @@ MonoBehaviour:
   maxLevel: 5
   effectType: on_kill_chance
   floatValue: 10
-  intValue: 1
+  intValue: 0
+  secondaryIntValue: 0
   stringValue: Coin
   baseAttackConfig: {fileID: 0}
+  icon: {fileID: 21300000, guid: 873085b440e94d74893cd55c7875fea8, type: 3}
+  triggerParam: 0
+  phantomSteps: []
+  useCount: 1
+  gestureId: 
   prerequisites: []

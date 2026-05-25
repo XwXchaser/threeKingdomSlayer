@@ -93,7 +93,7 @@ public class UpgradeEffectManager : MonoBehaviour
             SyncToPlayerState(def, newLevel);
 
             if (PassiveTriggerModule.Instance != null)
-                PassiveTriggerModule.Instance.Register(def);
+                PassiveTriggerModule.Instance.Register(def, newLevel);
             else
                 Debug.LogWarning("[UpgradeEffectManager] PassiveTriggerModule 未找到");
 
@@ -154,11 +154,11 @@ public class UpgradeEffectManager : MonoBehaviour
 
         if (def.category == UpgradeCategory.Passive)
         {
-            // Passive: {0}=triggerParam, {1}=phantomSteps count, {2}=first step damage%
-            desc = desc.Replace("{0}", def.triggerParam.ToString());
-            desc = desc.Replace("{1}", (def.phantomSteps?.Count ?? 0).ToString());
-            if (def.phantomSteps != null && def.phantomSteps.Count > 0)
-                desc = desc.Replace("{2}", (def.phantomSteps[0].damageRatio * 100f).ToString("F0"));
+            def.GetPhantomConfig(nextLevel, out int triggerParam, out var steps);
+            desc = desc.Replace("{0}", triggerParam.ToString());
+            desc = desc.Replace("{1}", (steps?.Count ?? 0).ToString());
+            if (steps != null && steps.Count > 0)
+                desc = desc.Replace("{2}", (steps[0].damageRatio * 100f).ToString("F0"));
         }
         else if (def.effectType == "stab_range_boost" || def.effectType == "sweep_range_boost")
         {

@@ -23,11 +23,13 @@ public class SweepEffect : MonoBehaviour
     private bool leftToRight;
     private Material mat;
     private Color waveColor;
+    private Color? damageNumberColor;
     private Sequence seq;
 
     public static void Create(Vector3 centerPos, DamageType damageType, float damage,
         List<Enemy> targets, bool leftToRight, float halfWidth, float fanAngle, float duration,
-        System.Action<Enemy> onHit = null, GameObject prefab = null, float? alphaOverride = null)
+        System.Action<Enemy> onHit = null, GameObject prefab = null, float? alphaOverride = null,
+        Color? damageNumberColor = null)
     {
         if (targets == null || targets.Count == 0) return;
 
@@ -73,6 +75,7 @@ public class SweepEffect : MonoBehaviour
         effect.damageType = damageType;
         effect.onHit = onHit;
         effect.leftToRight = leftToRight;
+        effect.damageNumberColor = damageNumberColor;
 
         // 按 X 排序：L→R 升序，R→L 降序
         List<Enemy> sorted = new List<Enemy>(targets);
@@ -155,7 +158,7 @@ public class SweepEffect : MonoBehaviour
     {
         if (enemy != null && enemy.state != EnemyState.Dead)
         {
-            enemy.TakeDamage(damage, damageType);
+            enemy.TakeDamage(damage, damageType, damageNumberColor);
             onHit?.Invoke(enemy);
         }
     }
