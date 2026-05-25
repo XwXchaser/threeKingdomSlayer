@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1778764012219
-updatedAt: 1779681965636
+updatedAt: 1779692595852
 ---
 
 # project-mistake-note
@@ -31,6 +31,12 @@ updatedAt: 1779681965636
 - 历史：暂停菜单出现过（commit `af1b4e1` — 点击穿透修复），三选一弹窗又出现一次
 - 预防规则：**任何带 CanvasGroup 的全屏/覆盖式 Canvas，必须在初始化时同步设置 `blocksRaycasts = false`；显示时设为 `true`，隐藏时立即设为 `false`**。这包括：暂停菜单、升级弹窗、GameOver 面板、任何半屏以上覆盖层
 - 检查方法：出问题时在 Inspector 中逐个关闭 Canvas（禁用 GameObject），确认交互恢复后检查该 Canvas 的 CanvasGroup.blocksRaycasts
+
+### 全屏 Image.raycastTarget 同源问题（2025-07-19）
+- 与 CanvasGroup.blocksRaycasts 同源：Unity Image 组件默认 `raycastTarget = true`，全屏覆盖 Image 同样会拦截所有 Raycast 输入
+- PlayerHitFeedback 中的 HittedOverlay 已在 Start() 中显式设置 `raycastTarget = false`，且通过 unity_execute 创建时也设为 false
+- 预防规则：任何全屏覆盖的纯视觉 UI 元素（边框、闪屏、暗幕），必须设 `raycastTarget = false`
+- 文件：`Assets/Scripts/Player/PlayerHitFeedback.cs`
 
 ### 9-slice Sprite Border = 0 导致 Sliced Image 不拉伸 ✅ 已修复（2025-07-18）
 - 症状：UpgradePopup/UpgradeCard 使用了 Image Type=Sliced，但背景图无论 ContentSizeFitter 如何调整，视觉上都不拉伸
