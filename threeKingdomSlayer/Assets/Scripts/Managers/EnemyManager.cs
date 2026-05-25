@@ -121,9 +121,15 @@ public class EnemyManager : MonoBehaviour
 
         // 经验值流转：击杀 → 生成经验宝石飞向经验条
         if (ExpGemManager.Instance != null)
-            ExpGemManager.Instance.SpawnGem(enemy.transform.position, enemy.expReward, enemy.gemSprite);
+        {
+            float expMult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetExpMultiplier() : 1f;
+            ExpGemManager.Instance.SpawnGem(enemy.transform.position, enemy.expReward * expMult, enemy.gemSprite);
+        }
         else
-            PlayerState.Instance?.AddExp(enemy.expReward); // 回退：直接加经验
+        {
+            float expMult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetExpMultiplier() : 1f;
+            PlayerState.Instance?.AddExp(enemy.expReward * expMult); // 回退：直接加经验
+        }
 
         // 注意：不再在此处调用 EnemyPool.Instance?.ReturnEnemy(enemy)
         // 对象回收由 Enemy.DeathBounceAndFall() 协程在死亡动画播完后处理

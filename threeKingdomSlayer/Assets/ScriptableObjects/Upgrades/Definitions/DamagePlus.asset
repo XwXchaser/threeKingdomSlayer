@@ -12,14 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5eab6a0cbf20ec64ba732f894b672d49, type: 3}
   m_Name: DamagePlus
   m_EditorClassIdentifier: 
+  category: 0
   upgradeId: damage_plus
   displayName: "\u795E\u529B"
   descriptionTemplate: "\u9020\u6210\u4F24\u5BB3\u63D0\u5347 {0}%"
   rarity: 0
   maxLevel: 10
   effectType: damage_multiplier
-  floatValue: 0.1
+  floatValue: 0.05
   intValue: 0
   stringValue: 
   baseAttackConfig: {fileID: 0}
+  icon: {fileID: 0}
+  triggerParam: 0
+  phantomSteps: []
+  useCount: 1
+  gestureId: 
   prerequisites: []
