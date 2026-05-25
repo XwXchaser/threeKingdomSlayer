@@ -10,18 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 98a5aaeb5141a6a40b614df2cddb4ab7, type: 3}
-  m_Name: Zhangfei_Sweep
+  m_Name: Zhangfei_Pierce
   m_EditorClassIdentifier: 
-  id: 4
-  attackType: 3
-  damageType: 3
-  damage: 100
+  id: 3
+  attackType: 2
+  damageType: 2
+  damage: 20
   poiseDamage: 0
-  rangeRows: 2
+  rangeRows: 5
   cooldown: 5
-  launchDuration: 0.2
-  attackWavePrefab: {fileID: 5586448634090008248, guid: 3e7c2ba9889d0d8498227914332b7adc, type: 3}
+  launchDuration: 0.5
+  attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
+  stabSpawnYOffset: 1.5
+  stabSpawnZOffset: 0.5
   slashSweepHalfWidth: 5
   slashSweepAngle: 50
   slashSweepDuration: 0.25
-  ultimateEnergyGain: 12
+  slashSpawnYOffset: 1.5
+  slashSpawnZOffset: 0.5
+  ultimateEnergyGain: 15

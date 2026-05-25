@@ -25,6 +25,7 @@ public class AttackWave : MonoBehaviour
     private Material mat;
     private Vector3 targetScale;
     private Color waveColor;
+    private Color? damageNumberColor;
 
     private Sequence travelSeq;
 
@@ -41,7 +42,7 @@ public class AttackWave : MonoBehaviour
 
     public static AttackWave Create(Vector3 position, DamageType damageType, float damage,
         List<Enemy> targets, System.Action<Enemy> onHit = null, GameObject prefab = null, float zOffset = 0f,
-        float? alphaOverride = null)
+        float? alphaOverride = null, Color? damageNumberColor = null)
     {
         GameObject obj;
         Material material = null;
@@ -81,6 +82,7 @@ public class AttackWave : MonoBehaviour
         wave.damageType = damageType;
         wave.onHit = onHit;
         wave.waveColor = color;
+        wave.damageNumberColor = damageNumberColor;
 
         if (prefab != null)
             wave.targetScale = obj.transform.localScale;
@@ -313,7 +315,7 @@ public class AttackWave : MonoBehaviour
     {
         if (enemy != null && enemy.state != EnemyState.Dead)
         {
-            enemy.TakeDamage(damage, damageType);
+            enemy.TakeDamage(damage, damageType, damageNumberColor);
             onHit?.Invoke(enemy);
         }
     }

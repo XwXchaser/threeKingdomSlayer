@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -68,26 +69,40 @@ public class PassiveTriggerModule : MonoBehaviour
             if (state.currentCount >= state.threshold)
             {
                 state.currentCount = 0;
-                ExecutePhantoms(state);
+                StartCoroutine(ExecutePhantoms(state));
             }
         }
     }
 
-    private void ExecutePhantoms(PassiveState state)
+    private System.Collections.IEnumerator ExecutePhantoms(PassiveState state)
     {
         if (AttackSystem.Instance == null)
         {
             Debug.LogWarning("[PassiveTriggerModule] AttackSystem.Instance is null, 无法执行幻影");
-            return;
+            yield break;
         }
         if (state.phantomSteps == null || state.phantomSteps.Count == 0)
         {
             Debug.LogWarning($"[PassiveTriggerModule] {state.definition.displayName} phantomSteps 为空");
-            return;
+            yield break;
         }
 
-        foreach (var step in state.phantomSteps)
+        for (int i = 0; i < state.phantomSteps.Count; i++)
         {
+            var step = state.phantomSteps[i];
+
+            // 首段之前的延迟
+            if (i == 0 && step.delaySeconds > 0f)
+                yield return new WaitForSeconds(step.delaySeconds);
+            // 段间延迟
+            if (i > 0)
+            {
+                float delay = step.delaySeconds > 0f ? step.delaySeconds : 0.15f;
+                yield return new WaitForSeconds(delay);
+            }
+
+            if (AttackSystem.Instance == null) yield break;
+
             bool hit = AttackSystem.Instance.ExecutePhantomAttack(
                 _lastAttackType, _lastTargetColumn, _lastSlashLeftToRight,
                 step.damageRatio, step.alpha);
@@ -100,15 +115,16 @@ public class PassiveTriggerModule : MonoBehaviour
     }
 
     /// <summary>注册被动升级（由 UpgradeEffectManager 调用）</summary>
-    public void Register(UpgradeDefinition def)
+    public void Register(UpgradeDefinition def, int level)
     {
         if (def == null) return;
 
+        def.GetPhantomConfig(level, out int triggerParam, out var steps);
+
         if (_states.TryGetValue(def.upgradeId, out var existing))
         {
-            // 已存在则更新阈值和幻影配置（等级提升）
-            existing.threshold = def.triggerParam;
-            existing.phantomSteps = def.phantomSteps;
+            existing.threshold = triggerParam;
+            existing.phantomSteps = steps;
             existing.definition = def;
         }
         else
@@ -117,13 +133,13 @@ public class PassiveTriggerModule : MonoBehaviour
             {
                 definition = def,
                 currentCount = 0,
-                threshold = def.triggerParam,
-                phantomSteps = def.phantomSteps
+                threshold = triggerParam,
+                phantomSteps = steps
             };
         }
 
-        OnPassiveRegistered?.Invoke(def.upgradeId, def.triggerParam);
-        Debug.Log($"[PassiveTriggerModule] 注册被动: {def.displayName} threshold={def.triggerParam} steps={def.phantomSteps?.Count ?? 0}");
+        OnPassiveRegistered?.Invoke(def.upgradeId, triggerParam);
+        Debug.Log($"[PassiveTriggerModule] 注册被动: {def.displayName} Lv.{level} threshold={triggerParam} steps={steps?.Count ?? 0}");
     }
 
     /// <summary>注销被动升级</summary>

@@ -335,6 +335,7 @@ public class AttackSystem : MonoBehaviour
         if (cfg == null) return false;
 
         float finalDmg = GetFinalDamage(cfg) * damageRatio;
+        Color phantomColor = new Color(0.3f, 0.5f, 1f); // 幻影伤害数字颜色：蓝色
 
         switch (attackType)
         {
@@ -350,7 +351,8 @@ public class AttackSystem : MonoBehaviour
                     Vector3 wavePos = GetWavePosition(targets, targetColumn);
                     wavePos.y = targets[0].transform.position.y + cfg.stabSpawnYOffset;
                     AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
-                        prefab: cfg.attackWavePrefab, zOffset: cfg.stabSpawnZOffset, alphaOverride: alpha);
+                        prefab: cfg.attackWavePrefab, zOffset: cfg.stabSpawnZOffset, alphaOverride: alpha,
+                        damageNumberColor: phantomColor);
                 }
                 return targets.Count > 0;
             }
@@ -366,7 +368,8 @@ public class AttackSystem : MonoBehaviour
                     wavePos.z = targets[0].transform.position.z + cfg.slashSpawnZOffset;
                     SweepEffect.Create(wavePos, cfg.damageType, finalDmg, targets, slashLeftToRight,
                         cfg.slashSweepHalfWidth, cfg.slashSweepAngle, cfg.slashSweepDuration,
-                        prefab: cfg.attackWavePrefab, alphaOverride: alpha);
+                        prefab: cfg.attackWavePrefab, alphaOverride: alpha,
+                        damageNumberColor: phantomColor);
                 }
                 return targets.Count > 0;
             }
@@ -380,7 +383,8 @@ public class AttackSystem : MonoBehaviour
                 {
                     Vector3 wavePos = GetWavePosition(targets, targetColumn);
                     AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
-                        prefab: cfg.attackWavePrefab, alphaOverride: alpha);
+                        prefab: cfg.attackWavePrefab, alphaOverride: alpha,
+                        damageNumberColor: phantomColor);
                 }
                 return targets.Count > 0;
             }
@@ -393,7 +397,8 @@ public class AttackSystem : MonoBehaviour
                 {
                     Vector3 wavePos = GetWavePosition(targets, -1);
                     AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
-                        prefab: cfg.attackWavePrefab, alphaOverride: alpha);
+                        prefab: cfg.attackWavePrefab, alphaOverride: alpha,
+                        damageNumberColor: phantomColor);
                 }
                 return targets.Count > 0;
             }
@@ -417,7 +422,8 @@ public class AttackSystem : MonoBehaviour
                             if (canLaunch)
                                 enemy.Launch();
                         },
-                        prefab: cfg.attackWavePrefab, alphaOverride: alpha);
+                        prefab: cfg.attackWavePrefab, alphaOverride: alpha,
+                        damageNumberColor: phantomColor);
                 }
                 return targets.Count > 0;
             }

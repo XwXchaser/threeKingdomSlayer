@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779520344306
-updatedAt: 1779682011022
+updatedAt: 1779691799262
 ---
 
 # phase3-development-summary
@@ -95,11 +95,12 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 | sweep_range_boost | 波长 | Numeric | 横扫范围+1排/级，该范围伤害-1%/级 | Rare |
 | phantom_weapon | 虚幻武器 | Passive | 每5次攻击触发1次30%伤害幻影 | Rare |
 
-### ✅ 被动攻击奖励：虚幻武器 (PhantomWeapon)
+### ✅ 被动攻击奖励：虚幻武器 (PhantomWeapon) — Phase 2 完成
 - `PassiveTriggerModule` — 攻击计数器+幻影触发逻辑
 - `AttackSystem.ExecutePhantomAttack()` — 穿通执行攻击
-- 代码验证通过：订阅 ✅ | 奖池 ✅ | 路由 ✅
-- ⚠️ 实际触发待 Play Mode 获取后验证
+- 延迟攻击（delaySeconds 可逐级配置）
+- 蓝色伤害数字 (#4D7FFF) 以区分幻影伤害
+- per-level 独立配置：TriggerParam / DamageRatio / Alpha / delaySeconds
 
 ### ✅ UI 三选一弹窗重构（2025-07-18）
 - 新 Prefab：`UpgradePopup.prefab`、`UpgradeCard.prefab`
@@ -114,73 +115,6 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 ## 未修复问题（详见 Locus/knowledge/memory/unresolved-issues.md）
 
 1. **QTE 无法触发**（高优先级）：QTEController._state 始终 Idle，OnBossEngaged 不触发
-2. **虚幻武器待验证**（中优先级）：代码路径正确，需 Play Mode 实测
-3. **cardPrefab 空引用偶现**（中优先级）：Editor 中已正确赋值，需确认 Play Mode 是否复现
-
-## 关键代码文件清单
-
-| 文件 | 职责 |
-|------|------|
-| `Assets/Scripts/Core/UpgradeChoiceManager.cs` | 暂停/弹窗/连续升级流程 |
-| `Assets/Scripts/Core/UpgradeEffectManager.cs` | 效果累积+行为分发+被动初始化 |
-| `Assets/Scripts/Core/UpgradeDefinition.cs` | 升级定义 SO + PhantomStep + secondaryIntValue |
-| `Assets/Scripts/Core/UpgradePoolConfig.cs` | 稀有度池配置 SO |
-| `Assets/Scripts/Core/ExpCurveConfig.cs` | 经验曲线配置 SO |
-| `Assets/Scripts/Core/ExpGem.cs` | 屏幕空间 UI Image 飞行宝石 |
-| `Assets/Scripts/Core/ExpGemManager.cs` | 宝石管理单例 |
-| `Assets/Scripts/Core/IEffectExecutor.cs` | 行为型效果接口 |
-| `Assets/Scripts/Core/PassiveTriggerModule.cs` | 被动触发模块 |
-| `Assets/Scripts/UI/UpgradeChoicePopup.cs` | 三选一弹窗容器 |
-| `Assets/Scripts/UI/UpgradeCard.cs` | 单个选项卡片 |
-| `Assets/Scripts/UI/BattleHUD.cs` | 经验条+gemParent/expSlider 传递 |
-| `Assets/Scripts/Player/PlayerState.cs` | 经验/等级/acquiredUpgrades |
-| `Assets/Scripts/Player/InputManager.cs` | blockInputFrames 防误触 |
-| `Assets/Scripts/Player/AttackSystem.cs` | GetDamageMultiplier + ExecutePhantomAttack |
-| `Assets/Scripts/Attack/AttackWave.cs` | AttackWave + alphaOverride |
-| `Assets/Scripts/Attack/SweepEffect.cs` | SweepEffect + alphaOverride |
-| `Assets/Scripts/Enemy/Enemy.cs` | gemSprite + useAttackFlip |
-| `Assets/Scripts/Enemy/EnemySpriteController.cs` | 敌人类状态驱动精灵切换 |
-| `Assets/Scripts/Enemy/SharedHealthGroup.cs` | 共享血量组 |
-| `Assets/Scripts/Managers/EnemyManager.cs` | SpawnGem + sharedHealthChainPrefab |
-| `Assets/Scripts/Wave/WaveSpawner.cs` | CreateSharedHealthGroups() |
-
-## 场景对象
-
-| 对象 | 位置 | 说明 |
-|------|------|------|
-| `ExpGemManager` | Battle.scene 根级 | 单例，baseSpeed=800 |
-| `UpgradeChoiceManager` | Battle.scene | 单例，poolConfig 已拖拽 |
-| `UpgradeEffectManager` | Battle.scene | 单例 |
-| `UpgradePopupCanvas` | Battle.scene 根级 | Canvas + CanvasScaler(1080×1920) + GraphicRaycaster, sortingOrder=100 |
-| `UpgradePopup` | UpgradePopupCanvas 子节点 | Image + CanvasGroup + UpgradeChoicePopup + VLG + CSF |
-| `ExpBar Slider` | BattleHUD Canvas 下 | expSlider + expLevelText |
-
-## 开发避坑规则（后续必须遵守）
-
-1. 任何暂停/恢复游戏（修改 Time.timeScale）恢复时必须设 InputManager.blockInputFrames=2
-2. timeScale=0 期间必须重置 InputManager 所有输入状态
-3. 纯展示型 Slider/Button（不交互）设 `interactable=false` 时必须将其 ColorBlock.disabledColor 设为与 normalColor 一致
-4. 空间切换：世界空间距离小（~10 单位），屏幕空间距离大（~1000 像素），切换坐标系时必须同步调整速度参数
-5. 暂停期间动画需使用 SetUpdate(true)（DOTween）或 Time.unscaledDeltaTime
-6. 新 .cs 文件后必须 unity_recompile 再 unity_execute
-7. 读取 .meta 文件 GUID 不可用 bash `find` + `head` 直读，必须通过 AssetDatabase API
-8. 补齐期间 rowIndex 不稳定：链式补齐（RushMove）期间，同组成员逐个完成移动，rowIndex 短暂不同步。对 rowIndex 有依赖的跨成员系统必须在成员稳定后再执行一致性检查
-9. 新建 Canvas 必须配置 CanvasScaler + GraphicRaycaster，Canvas 的 Image 和 CanvasGroup 应挂载在子节点上
-10. UI 元素必须在 Canvas 子节点下才能屏幕空间渲染
-11. **9-slice Sliced Image 的 sprite border 必须非零**：border=0 时图片不拉伸，导入后必须在 Sprite Editor 设置 Border
-12. **修改 prefab/scene/cs 后必须：保存 → unity_recompile → 确认编译通过 → 再进入 Play Mode**
-13. **CanvasGroup.blocksRaycasts 必须在显隐逻辑中同步维护**：显示=true，隐藏=false
-
-## 精灵部署位置
-
-| 用途 | 路径 |
-|------|------|
-| 经验宝石 | `Assets/Sprites/ExpGem_placeholder.png`、`ex_point_normal.png`、`ex_point_rare.png` |
-| 敌人精灵 Enemy1 | `Assets/Sprites/Enemy/Enemy1/` (6 帧) |
-| 敌人精灵 Enemy2 | `Assets/Sprites/Enemy/Enemy2/` (6 帧) |
-| 铁链 | `Assets/Sprites/Enemy/Enemy2/chain.png` |
-| 三选一底框（大） | `Assets/Sprites/31Reward/background_31_outside.png` (border=35) |
-| 三选一底框（选项） | `Assets/Sprites/31Reward/background_31_inside.png` (border=20) |
-| 三选一图标框 | `Assets/Sprites/31Reward/background_31__select.png` |
-| 奖励图标 | `Assets/Sprites/31Reward/icon/icon_31_*.png` (6 个) |
+2. ~~虚幻武器待验证~~ ✅ 已完成（延迟攻击、蓝色伤害数字、per-level 配置）
+3. **cardPrefab 空引用偶现**（低优先级）：Editor 中已正确赋值，需确认 Play Mode 是否复现
 <!-- locus:body:end -->

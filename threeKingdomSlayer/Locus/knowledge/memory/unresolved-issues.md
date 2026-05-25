@@ -9,13 +9,13 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779681797075
-updatedAt: 1779682031835
+updatedAt: 1779691704417
 ---
 
 # unresolved-issues
 
 ## Summary
-当前 3 个未修复问题：QTE 无法触发、虚幻武器待验证、cardPrefab 偶现空引用 — 含调试步骤和关键文件
+当前 2 个未修复问题：QTE 无法触发、cardPrefab 偶现空引用 — 含调试步骤和关键文件。TODO-2（虚幻武器）已完成。
 
 <!-- locus:body:start -->
 # 未修复问题 TODO（2025-07-18）
@@ -49,24 +49,9 @@ updatedAt: 1779682031835
 
 ---
 
-## TODO-2 [中] 虚幻武器触发验证
+## TODO-2 [已完成] 虚幻武器触发验证 ✅
 
-**症状**: 用户反馈「虚幻武器无法触发」
-
-**代码验证已通过**:
-- `PassiveTriggerModule` 订阅 `AttackSystem.OnAttackPerformed` ✅
-- `PhantomWeapon.asset` 在 commonPool ✅
-- `UpgradeEffectManager.ApplyUpgrade` → `PassiveTriggerModule.Register` 路由 ✅
-
-**调试步骤**:
-1. Play Mode → 升级获取「虚幻武器」
-2. 执行攻击 5 次 → 观察第 5 次是否触发幻影攻击
-3. 在 `PassiveTriggerModule.OnAttackPerformed` 中检查计数器是否正确累加
-4. 在 `AttackSystem.ExecutePhantomAttack` 中检查是否被调用
-
-**关键文件**:
-- `Assets/Scripts/Core/PassiveTriggerModule.cs`
-- `Assets/Scripts/Player/AttackSystem.cs` — `ExecutePhantomAttack()`
+Phase 2 已完成：延迟攻击、蓝色伤害数字、per-level 配置均已实现。
 
 ---
 

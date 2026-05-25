@@ -10,22 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 98a5aaeb5141a6a40b614df2cddb4ab7, type: 3}
-  m_Name: Zhangfei_Slash
+  m_Name: Zhangfei_Sweep
   m_EditorClassIdentifier: 
-  id: 2
-  attackType: 1
-  damageType: 1
-  damage: 80
+  id: 4
+  attackType: 3
+  damageType: 3
+  damage: 8
   poiseDamage: 0
-  rangeRows: 1
-  cooldown: 0.5
-  launchDuration: 0.5
-  attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
+  rangeRows: 2
+  cooldown: 5
+  launchDuration: 0.2
+  attackWavePrefab: {fileID: 5586448634090008248, guid: 3e7c2ba9889d0d8498227914332b7adc, type: 3}
   stabSpawnYOffset: 1.5
   stabSpawnZOffset: 0.5
-  slashSweepHalfWidth: 3
-  slashSweepAngle: 60
-  slashSweepDuration: 0.4
-  slashSpawnYOffset: 0
-  slashSpawnZOffset: -3.6
-  ultimateEnergyGain: 10
+  slashSweepHalfWidth: 5
+  slashSweepAngle: 50
+  slashSweepDuration: 0.25
+  slashSpawnYOffset: 1.5
+  slashSpawnZOffset: 0.5
+  ultimateEnergyGain: 12
