@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779520344306
-updatedAt: 1779691799262
+updatedAt: 1779694437206
 ---
 
 # phase3-development-summary
@@ -106,6 +106,20 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 - 新 Prefab：`UpgradePopup.prefab`、`UpgradeCard.prefab`
 - 9-slice 素材：`background_31_outside.png`(border=35)、`background_31_inside.png`(border=20)、`background_31__select.png`
 - Battle.scene 结构：`UpgradePopupCanvas` → `UpgradePopup`（Image + CanvasGroup + VLG + CSF）
+
+### ✅ 玩家受击反馈 PlayerHitFeedback（2025-07-19）
+- `PlayerHitFeedback` 组件挂载在 Player GameObject 上
+- 监听 `PlayerState.OnHealthChanged`，检测伤害（current < _lastHealth）
+- **hitted 边框图**：全屏 Image（HittedOverlay）瞬间全白 → 停留 hittedDuration → 淡出 hittedFadeDuration
+  - 放在 `BattleHUD(Canvas)/HittedOverlay` 下，sprite=hitted.png，初始 alpha=0
+  - 防输入拦截：`raycastTarget = false`（Start 中强制设置）
+- **镜头抖动**：`Camera.main.DOShakePosition(shakeDuration, shakeIntensity, shakeVibrato)`
+  - 与 CameraManager.OnRenderImage 模糊后处理兼容（抖动在模糊之前）
+- Inspector 可调参数：
+  - hittedImage（Image 引用）、hittedDuration（默认 0.3s）、hittedFadeDuration（默认 0.1s）
+  - shakeDuration（默认 0.2s）、shakeIntensity（默认 0.3）、shakeVibrato（默认 20）
+- 风险防范：全屏 Image 默认 raycastTarget=true 会拦截输入，Start() 中强制设为 false
+- 文件：`Assets/Scripts/Player/PlayerHitFeedback.cs`
 
 ### ✅ Bug 修复（2025-07-18）
 - 9-slice sprite border=0 → 修复为 (35,35,35,35) / (20,20,20,20)
