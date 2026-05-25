@@ -29,10 +29,12 @@ public class UpgradeDefinition : ScriptableObject
     [Header("效果")]
     [Tooltip("效果类型: damage_multiplier | attack_speed | on_attack_trigger | on_kill_chance | unlock_attack")]
     public string effectType;
-    [Tooltip("每级浮点叠加值（如0.1=每级+10%）")]
+    [Tooltip("每级浮点加成 — 填此处：damage_multiplier/attack_speed/move_speed/exp_multiplier（0.05 = 每级+5%）")]
     public float floatValue;
-    [Tooltip("整数参数（如on_attack_trigger的触发次数）")]
+    [Tooltip("每级整数加成 — 填此处：stab_range_boost 范围排数 / on_attack_trigger 触发次数 / unlock_attack 等")]
     public int intValue;
+    [Tooltip("每级第二整数加成 — 仅 stab_range_boost 填此处（伤害惩罚%，5 = -5%/级）")]
+    public int secondaryIntValue;
     [Tooltip("字符串参数（如on_kill_chance的掉落类型）")]
     public string stringValue;
 

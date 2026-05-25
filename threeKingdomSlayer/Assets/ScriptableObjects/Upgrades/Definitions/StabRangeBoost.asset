@@ -10,17 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5eab6a0cbf20ec64ba732f894b672d49, type: 3}
-  m_Name: AttackSpeed
+  m_Name: StabRangeBoost
   m_EditorClassIdentifier: 
   category: 0
-  upgradeId: attack_speed
-  displayName: "\u75BE\u98CE"
-  descriptionTemplate: "\u653B\u51FB\u901F\u5EA6\u63D0\u5347 {0}%"
-  rarity: 0
-  maxLevel: 10
-  effectType: attack_speed
-  floatValue: 0.15
-  intValue: 0
+  upgradeId: stab_range_boost
+  displayName: "\u5EF6\u957F"
+  descriptionTemplate: "\u6233\u51FB\u7C7B\uFF08Stab\u3001Pierce\uFF09\u83B7\u5F97
+    {0} \u6392\u653B\u51FB\u8303\u56F4\u63D0\u5347\uFF0C\u8BE5\u63D0\u5347\u8303\u56F4\u7684\u653B\u51FB\u4F24\u5BB3
+    -{1}%"
+  rarity: 1
+  maxLevel: 5
+  effectType: stab_range_boost
+  floatValue: 0
+  intValue: 1
+  secondaryIntValue: 5
   stringValue: 
   baseAttackConfig: {fileID: 0}
   icon: {fileID: 0}

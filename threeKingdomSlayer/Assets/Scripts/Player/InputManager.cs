@@ -110,7 +110,7 @@ public class InputManager : MonoBehaviour
             return;
         }
 
-        Debug.Log($"[InputManager] Update frame={Time.frameCount} timeScale={Time.timeScale} isTouching={isTouching} mouseDown={Input.GetMouseButtonDown(0)} mouseUp={Input.GetMouseButtonUp(0)} mouseHeld={Input.GetMouseButton(0)} touchCount={Input.touchCount}");
+        // Debug.Log($"[InputManager] Update frame={Time.frameCount} timeScale={Time.timeScale} isTouching={isTouching} mouseDown={Input.GetMouseButtonDown(0)} mouseUp={Input.GetMouseButtonUp(0)} mouseHeld={Input.GetMouseButton(0)} touchCount={Input.touchCount}"); // COMMENTED: too verbose
 
         // BUG FIX: 鼠标和触摸输入互斥
         // 如果有触摸输入，则跳过鼠标输入（避免在触摸屏设备上双重触发）

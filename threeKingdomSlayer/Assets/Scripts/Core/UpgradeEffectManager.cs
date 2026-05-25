@@ -19,6 +19,10 @@ public class UpgradeEffectManager : MonoBehaviour
     private float _attackSpeedMultiplier = 1f;
     private float _moveSpeedMultiplier = 1f;
     private float _expMultiplier = 1f;
+    private int _stabRangeBonus;
+    private float _stabDamagePenalty;
+    private int _sweepRangeBonus;
+    private float _sweepDamagePenalty;
 
     // ── 已应用升级追踪 (upgradeId → level) ──
     private Dictionary<string, int> _appliedUpgrades = new Dictionary<string, int>();
@@ -133,6 +137,10 @@ public class UpgradeEffectManager : MonoBehaviour
     public float GetAttackSpeedMultiplier() => _attackSpeedMultiplier;
     public float GetMoveSpeedMultiplier() => _moveSpeedMultiplier;
     public float GetExpMultiplier() => _expMultiplier;
+    public int GetStabRangeBonus() => _stabRangeBonus;
+    public float GetStabDamagePenalty() => _stabDamagePenalty;
+    public int GetSweepRangeBonus() => _sweepRangeBonus;
+    public float GetSweepDamagePenalty() => _sweepDamagePenalty;
 
     /// <summary>
     /// 根据描述模板和当前等级生成效果文本
@@ -151,6 +159,11 @@ public class UpgradeEffectManager : MonoBehaviour
             desc = desc.Replace("{1}", (def.phantomSteps?.Count ?? 0).ToString());
             if (def.phantomSteps != null && def.phantomSteps.Count > 0)
                 desc = desc.Replace("{2}", (def.phantomSteps[0].damageRatio * 100f).ToString("F0"));
+        }
+        else if (def.effectType == "stab_range_boost" || def.effectType == "sweep_range_boost")
+        {
+            desc = desc.Replace("{0}", (def.intValue * nextLevel).ToString());
+            desc = desc.Replace("{1}", (def.secondaryIntValue * nextLevel).ToString());
         }
         else
         {
@@ -194,6 +207,10 @@ public class UpgradeEffectManager : MonoBehaviour
         _attackSpeedMultiplier = 1f;
         _moveSpeedMultiplier = 1f;
         _expMultiplier = 1f;
+        _stabRangeBonus = 0;
+        _stabDamagePenalty = 0f;
+        _sweepRangeBonus = 0;
+        _sweepDamagePenalty = 0f;
 
         // 清空被动攻击模块
         PassiveTriggerModule.Instance?.ResetAll();
@@ -219,6 +236,14 @@ public class UpgradeEffectManager : MonoBehaviour
                 break;
             case "exp_multiplier":
                 _expMultiplier += def.floatValue;
+                break;
+            case "stab_range_boost":
+                _stabRangeBonus += def.intValue;
+                _stabDamagePenalty += def.secondaryIntValue * 0.01f;
+                break;
+            case "sweep_range_boost":
+                _sweepRangeBonus += def.intValue;
+                _sweepDamagePenalty += def.secondaryIntValue * 0.01f;
                 break;
             case "unlock_attack":
                 // 数值叠加由注册的 UnlockAttackExecutor 处理
