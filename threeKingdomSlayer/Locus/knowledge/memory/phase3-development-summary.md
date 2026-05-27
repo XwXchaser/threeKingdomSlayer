@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779520344306
-updatedAt: 1779895286146
+updatedAt: 1779897490309
 ---
 
 # phase3-development-summary
@@ -158,6 +158,38 @@ UpgradePopup.prefab
   - shakeDuration（默认 0.2s）、shakeIntensity（默认 0.3）、shakeVibrato（默认 20）
 - 风险防范：全屏 Image 默认 raycastTarget=true 会拦截输入，Start() 中强制设为 false
 - 文件：`Assets/Scripts/Player/PlayerHitFeedback.cs`
+
+### ✅ 攻击打断系统（2025-07-21）
+
+**三级打断体系**（详见 `design/attack-interrupt-system.md`）：
+
+| 层级 | 攻击类型 | 打断条件 | 视觉反馈 |
+|------|---------|---------|---------|
+| Level 1 | 普通攻击 | 任何直接伤害即可打断 | 白色闪白 + 缩放抖动 |
+| Level 2 | C技(蓄力技) | 仅 Parry / Launch 打断 | 橙红弹刀闪烁 + 水平抖动 |
+| Level 3 | QTE攻击(BOSS) | 不可打断 | N/A |
+
+**C技 霸体机制**：
+- `isCFrame = true` 窗口内（PerformAttack 之前），非 Parry/Launch 伤害只触发弹刀反馈
+- Parry/Launch 作为唯一能打断 C技 的手段，获得战术价值
+- `canInterruptCFrame` 参数沿 AttackWave → TakeDamage 完整传递
+
+**sharedHealthGroup 打断修复**：
+- **问题**：共享血量敌人（如 Enemy_101）的 TakeDamage 在打断检查之前就通过 sharedHealthGroup.TakeDamage() return
+- **修复**：将打断逻辑块移到 sharedHealthGroup 调用之前（`Enemy.cs` 第1138行）
+- Enemy_101.prefab: `cAttackProbability` 设为 0（仅使用普通攻击，便于测试）
+
+**已验证**：
+- Parry 成功打断 C技：`isCFrame=True, canInterruptC=True → CancelAttack`
+- Stab 命中 C技敌人触发弹刀：`isCFrame=True, canInterruptC=False → PlayClankEffect`
+- 非攻击状态不受影响：`state=Idle → 条件不满足`
+- 收招阶段不可打断：`isDraw=True → 条件不满足`
+
+**待实现**：
+- P0: sharedHealthGroup 遍历打断传递
+- P1: WhirlwindController.ExecuteLaunch() 绕过 TakeDamage 需确认
+- P2: 旅行波到达时序 vs spawnDuration 窗口期优化
+- P2: 三选一技能伤害接入 canInterruptCFrame
 
 ### ✅ Bug 修复
 - 9-slice sprite border=0 → 修复为 (35,35,35,35) / (20,20,20,20)
