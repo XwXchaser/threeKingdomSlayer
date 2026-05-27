@@ -1135,6 +1135,22 @@ public class Enemy : MonoBehaviour
         if (isBoss && bossState != BossState.InCombat) return;
         if (state == EnemyState.QTEAttacking) return; // QTE攻击期间不受伤害打断
 
+        // ----- 攻击打断逻辑（必须在 sharedHealthGroup 之前，确保共享血量敌人也能被打断） -----
+        // 仅在 AttackSpawn 阶段可打断（AttackDraw 收招阶段不可打断）
+        if (state == EnemyState.Attacking && isAttackAnimating && !isAttackDrawPhase)
+        {
+            if (isCFrame && !canInterruptCFrame)
+            {
+                // C技霸体窗口 + 非 Parry/Launch 伤害 → 弹刀反馈，不打断
+                PlayClankEffect();
+            }
+            else
+            {
+                // 普通攻击 或 C技+Parry/Launch → 打断
+                CancelAttack();
+            }
+        }
+
         if (sharedHealthGroup != null)
         {
             sharedHealthGroup.TakeDamage(damage, damageType, this);
@@ -1169,22 +1185,6 @@ public class Enemy : MonoBehaviour
             if (cachedHealthBar == null)
                 cachedHealthBar = gameObject.AddComponent<EnemyHealthBar>();
             cachedHealthBar.Show(currentHealth / maxHealth);
-        }
-
-        // ----- 攻击打断逻辑 -----
-        // 仅在 AttackSpawn 阶段可打断（AttackDraw 收招阶段不可打断）
-        if (state == EnemyState.Attacking && isAttackAnimating && !isAttackDrawPhase)
-        {
-            if (isCFrame && !canInterruptCFrame)
-            {
-                // C技霸体窗口 + 非 Parry/Launch 伤害 → 弹刀反馈，不打断
-                PlayClankEffect();
-            }
-            else
-            {
-                // 普通攻击 或 C技+Parry/Launch → 打断
-                CancelAttack();
-            }
         }
 
         // BUG FIX: 同步应用闪白（立即设置颜色，不依赖 Update 循环）

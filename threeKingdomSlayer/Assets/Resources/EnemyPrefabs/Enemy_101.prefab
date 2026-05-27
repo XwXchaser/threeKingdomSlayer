@@ -60,6 +60,8 @@ MonoBehaviour:
   attackDrawDuration: 1
   useAttackFlip: 0
   moveSpeed: 0.3
+  cAttackProbability: 0
+  cAttackSpawnDuration: 0.6
   shareHealthWithAdjacent: 0
   maxPoise: 50
   stunDuration: 5
@@ -88,6 +90,7 @@ MonoBehaviour:
   rowIndex: 0
   isAttackAnimating: 0
   isAttackDrawPhase: 0
+  isCFrame: 0
   pendingRushMove: 0
   targetRow: -1
 --- !u!212 &3042528735547855719
