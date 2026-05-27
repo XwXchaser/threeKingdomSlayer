@@ -1,105 +1,56 @@
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>
-/// 三选一弹窗 — 管理升级选项卡片的显示/隐藏、动画
-///
-/// 监听 UpgradeChoiceManager.OnChoicesReady / OnChoiceSelected / OnAllChoicesDone
-/// 在独立 Canvas 上竖向堆叠选项卡片，支持连续升级时刷新内容。
+/// 三选一弹窗 — prefab 中预置 3 张卡片，手动调整布局。
+/// 代码只负责填充内容 + 淡入淡出动画。
+/// 由 UpgradeChoiceManager 动态 Instantiate / Destroy 管理生命周期。
 /// </summary>
 public class UpgradeChoicePopup : MonoBehaviour
 {
-    [Header("布局")]
-    public Transform cardsParent;
-    public GameObject cardPrefab;
-    [Tooltip("卡片竖向间距 — 同步到 VerticalLayoutGroup.spacing")]
-    [SerializeField] private float _cardSpacing = 20f;
-    public float cardSpacing
-    {
-        get => _cardSpacing;
-        set { _cardSpacing = value; ApplySpacing(); }
-    }
+    [Header("预置卡片")]
+    public UpgradeCard card1;
+    public UpgradeCard card2;
+    public UpgradeCard card3;
 
     [Header("动画")]
     public CanvasGroup canvasGroup;
-    [Tooltip("弹窗打开淡入时长")]
     public float fadeInDuration = 0.2f;
-    [Tooltip("弹窗关闭淡出时长")]
     public float fadeOutDuration = 0.15f;
 
-    private VerticalLayoutGroup _layoutGroup;
-    private List<UpgradeCard> _spawnedCards = new List<UpgradeCard>();
+    private UpgradeCard[] _cards;
 
     private void Awake()
     {
-        _layoutGroup = GetComponent<VerticalLayoutGroup>();
-        ApplySpacing();
+        _cards = new[] { card1, card2, card3 };
     }
 
-    private void OnValidate()
+    public void ShowChoices(List<UpgradeDefinition> choices)
     {
-        ApplySpacing();
-    }
-
-    private void ApplySpacing()
-    {
-        if (_layoutGroup != null)
-            _layoutGroup.spacing = _cardSpacing;
-    }
-
-    private void Start()
-    {
-        if (UpgradeChoiceManager.Instance != null)
+        for (int i = 0; i < _cards.Length; i++)
         {
-            UpgradeChoiceManager.Instance.OnChoicesReady += ShowChoices;
-            UpgradeChoiceManager.Instance.OnAllChoicesDone += Hide;
-        }
-
-        // 初始隐藏 — alpha=0 且不阻挡射线
-        if (canvasGroup != null)
-        {
-            canvasGroup.alpha = 0f;
-            canvasGroup.blocksRaycasts = false;
-        }
-    }
-
-    private void OnDestroy()
-    {
-        if (UpgradeChoiceManager.Instance != null)
-        {
-            UpgradeChoiceManager.Instance.OnChoicesReady -= ShowChoices;
-            UpgradeChoiceManager.Instance.OnAllChoicesDone -= Hide;
-        }
-    }
-
-    private void ShowChoices(List<UpgradeDefinition> choices)
-    {
-        // 清理旧卡片
-        for (int i = 0; i < _spawnedCards.Count; i++)
-            Destroy(_spawnedCards[i].gameObject);
-        _spawnedCards.Clear();
-
-        // 生成新卡片
-        for (int i = 0; i < choices.Count; i++)
-        {
-            var go = Instantiate(cardPrefab, cardsParent);
-            var card = go.GetComponent<UpgradeCard>();
-            if (card != null)
+            if (i < choices.Count && choices[i] != null)
             {
-                card.Setup(choices[i]);
-                _spawnedCards.Add(card);
+                _cards[i].gameObject.SetActive(true);
+                _cards[i].Setup(choices[i]);
+            }
+            else
+            {
+                _cards[i].gameObject.SetActive(false);
             }
         }
-
-        // 淡入动画（使用 Time.unscaledDeltaTime，因为游戏可能已暂停）
         FadeIn();
     }
 
-    private void Hide()
+    public void Dismiss(Action onDone)
     {
-        FadeOut();
+        FadeOut(() =>
+        {
+            onDone?.Invoke();
+            Destroy(gameObject);
+        });
     }
 
     private void FadeIn()
@@ -109,10 +60,16 @@ public class UpgradeChoicePopup : MonoBehaviour
         canvasGroup.DOFade(1f, fadeInDuration).SetUpdate(true);
     }
 
-    private void FadeOut()
+    private void FadeOut(Action onComplete = null)
     {
-        if (canvasGroup == null) return;
+        if (canvasGroup == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
         canvasGroup.blocksRaycasts = false;
-        canvasGroup.DOFade(0f, fadeOutDuration).SetUpdate(true);
+        var tw = canvasGroup.DOFade(0f, fadeOutDuration).SetUpdate(true);
+        if (onComplete != null)
+            tw.OnComplete(() => onComplete());
     }
 }

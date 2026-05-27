@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779520344306
-updatedAt: 1779694437206
+updatedAt: 1779895286146
 ---
 
 # phase3-development-summary
@@ -32,7 +32,8 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
   → 经验满 → PlayerState.OnLevelUp 触发
   → UpgradeChoiceManager.StartChoiceFlow()
     → Time.timeScale=0, 随机抽取 choiceCount 个 UpgradeDefinition
-    → UpgradeChoicePopup.ShowChoices() — 竖向堆叠卡片淡入
+    → Instantiate(popupPrefab) 动态生成弹窗（不在场景中预置）
+    → UpgradeChoicePopup.ShowChoices() — 填充3张预置卡片内容 + 淡入
     → 玩家点击 UpgradeCard → ConfirmChoice(selected)
       → UpgradeEffectManager.ApplyUpgrade(def)
         → 数值累积（damage_multiplier/attack_speed/move_speed/exp/stabRange/sweepRange）
@@ -41,6 +42,56 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
       → 恢复 timeScale=1 + InputManager.blockInputFrames=2
       → 若还有 pendingLevelUps → 再次 ShowNextChoice（仍暂停）
 ```
+
+## 三选一UI架构（2025-07-20 重构）
+
+### 设计原则
+- **所有布局由用户在 Prefab 中手动调整**，代码绝不覆写 Inspector 值
+- **卡片不单独为 prefab**，而是 UpgradePopup.prefab 内的普通 GameObject
+- **弹窗由 UpgradeChoiceManager 动态 Instantiate/Destroy**，不在场景中预置
+- 代码只负责：填充数据（文本+图标）+ 淡入淡出动画
+
+### Prefab 结构
+
+```
+UpgradePopup.prefab
+├─ FrameBg (Image)          ← 用户拖入 outsideframe sprite
+└─ Content (VerticalLayoutGroup)
+   ├─ InsideFrame (Image)   ← 用户拖入 insideframe sprite
+   ├─ Card1                 ← 普通GameObject，用户手动调整位置/大小
+   ├─ Card2
+   └─ Card3
+       每张Card: Image(背景) + Button + CanvasGroup + UpgradeCard + LayoutElement
+         ├─ IconBg/Icon     ← 用户拖入 iconframe sprite
+         ├─ NameText        ← 方正粗黑宋简体 SDF
+         └─ DescriptionText ← 方正粗黑宋简体 SDF
+```
+
+### 关键脚本
+
+**UpgradeChoicePopup.cs** (~65行)
+- 3个 public 字段：`card1/card2/card3`（Inspector中串接）
+- `ShowChoices()`: 按选项数显隐卡片 + 调用 Setup() 填充
+- `Dismiss()`: 淡出后 Destroy
+- **不再包含**: 动态生成、spacing覆写、padding覆写、contentRect
+
+**UpgradeCard.cs** (~45行)
+- 5个 public 字段：`backgroundImage/iconImage/nameText/descriptionText/button`
+- `Setup(def)`: 填充 nameText.text、descriptionText.text、iconImage.sprite
+- `OnClicked()`: 调用 `UpgradeChoiceManager.ConfirmChoice(_upgradeDef)`
+- **不再包含**: 稀有度颜色覆写（GetRarityColor已删除）
+
+**UpgradeChoiceManager.cs** — 不变
+- 动态 Instantiate(popupPrefab) / Dismiss 后 Destroy
+- 暂停/连续升级流程管理
+
+### 已修复的UI问题
+- ✅ 字段未串接 → 代码创建后手动wire
+- ✅ 中文字体 → 方正粗黑宋简体 SDF
+- ✅ 图标不显示 → 新增 iconImage 字段 + Setup中赋值
+- ✅ 背景颜色染色 → 移除 GetRarityColor()
+- ✅ Missing Prefab → 删除残留 + 重建为普通GameObject
+- ✅ 代码覆写Inspector → 移除所有动态生成和padding/spacing覆写
 
 ## 已完成功能
 
@@ -65,14 +116,6 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 - `EnemyManager.OnEnemyDied` → `ExpGemManager.SpawnGem()`
 - `Enemy.gemSprite` (Sprite) — 每个敌人可配置不同的经验宝石精灵
 - 精灵文件：`Assets/Sprites/ExpGem_placeholder.png`、`ex_point_normal.png`、`ex_point_rare.png`
-
-### ✅ 三选一弹窗系统
-- `UpgradeChoiceManager` — 暂停/弹窗/连续升级流程管理
-- `UpgradeChoicePopup` — UI 容器（9-slice Image + CanvasGroup + VLG + CSF）
-- `UpgradeCard` — 单个选项卡片（9-slice Image + Button + 文本）
-- 素材：`Assets/Sprites/31Reward/` — 9-slice 底框图片（border 已修复）
-- 图标：`Assets/Sprites/31Reward/icon/icon_31_*.png`（6 个：exp/larger/longer/money/power/unrealWeapons）
-- 字体：`Assets/Fonts/方正粗黑宋简体 SDF.asset`
 
 ### ✅ 效果系统（2025-07-18 更新）
 - `UpgradeEffectManager` — 效果累积与分发
@@ -102,11 +145,6 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 - 蓝色伤害数字 (#4D7FFF) 以区分幻影伤害
 - per-level 独立配置：TriggerParam / DamageRatio / Alpha / delaySeconds
 
-### ✅ UI 三选一弹窗重构（2025-07-18）
-- 新 Prefab：`UpgradePopup.prefab`、`UpgradeCard.prefab`
-- 9-slice 素材：`background_31_outside.png`(border=35)、`background_31_inside.png`(border=20)、`background_31__select.png`
-- Battle.scene 结构：`UpgradePopupCanvas` → `UpgradePopup`（Image + CanvasGroup + VLG + CSF）
-
 ### ✅ 玩家受击反馈 PlayerHitFeedback（2025-07-19）
 - `PlayerHitFeedback` 组件挂载在 Player GameObject 上
 - 监听 `PlayerState.OnHealthChanged`，检测伤害（current < _lastHealth）
@@ -121,14 +159,14 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
 - 风险防范：全屏 Image 默认 raycastTarget=true 会拦截输入，Start() 中强制设为 false
 - 文件：`Assets/Scripts/Player/PlayerHitFeedback.cs`
 
-### ✅ Bug 修复（2025-07-18）
+### ✅ Bug 修复
 - 9-slice sprite border=0 → 修复为 (35,35,35,35) / (20,20,20,20)
 - InputManager Debug.Log 帧刷屏 → 注释掉
 - UpgradePopup/UpgradeCard 背景图不显示 → 更换素材解决
-
-## 未修复问题（详见 Locus/knowledge/memory/unresolved-issues.md）
-
-1. **QTE 无法触发**（高优先级）：QTEController._state 始终 Idle，OnBossEngaged 不触发
-2. ~~虚幻武器待验证~~ ✅ 已完成（延迟攻击、蓝色伤害数字、per-level 配置）
-3. **cardPrefab 空引用偶现**（低优先级）：Editor 中已正确赋值，需确认 Play Mode 是否复现
+- UpgradeCard 字段未串接 → 代码串接
+- 中文不显示 → 方正粗黑宋简体 SDF
+- 图标不显示 → iconImage 字段 + Setup 赋值
+- 背景染色 → 移除 GetRarityColor
+- Missing Prefab 残留 → 重建为普通GameObject
+- 代码覆写Inspector → 移除所有动态生成和布局覆写
 <!-- locus:body:end -->

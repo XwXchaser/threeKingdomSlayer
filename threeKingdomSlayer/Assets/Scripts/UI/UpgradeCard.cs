@@ -10,14 +10,10 @@ public class UpgradeCard : MonoBehaviour
 {
     [Header("UI 组件")]
     public Image backgroundImage;
+    public Image iconImage;
     public TextMeshProUGUI nameText;
     public TextMeshProUGUI descriptionText;
     public Button button;
-
-    [Header("稀有度背景色（占位，后续替换为图片）")]
-    public Color commonColor = Color.gray;
-    public Color rareColor = Color.blue;
-    public Color legendaryColor = new Color(1f, 0.84f, 0f);
 
     private UpgradeDefinition _upgradeDef;
 
@@ -30,10 +26,13 @@ public class UpgradeCard : MonoBehaviour
             descriptionText.text = UpgradeEffectManager.Instance != null
                 ? UpgradeEffectManager.Instance.GetDescription(def)
                 : def.descriptionTemplate;
-        if (backgroundImage != null)
-            backgroundImage.color = GetRarityColor(def.rarity);
+        if (iconImage != null && def.icon != null)
+            iconImage.sprite = def.icon;
         if (button != null)
+        {
+            button.onClick.RemoveAllListeners();
             button.onClick.AddListener(OnClicked);
+        }
     }
 
     private void OnClicked()
@@ -43,13 +42,4 @@ public class UpgradeCard : MonoBehaviour
             UpgradeChoiceManager.Instance.ConfirmChoice(_upgradeDef);
     }
 
-    private Color GetRarityColor(UpgradeRarity rarity)
-    {
-        switch (rarity)
-        {
-            case UpgradeRarity.Rare: return rareColor;
-            case UpgradeRarity.Legendary: return legendaryColor;
-            default: return commonColor;
-        }
-    }
 }
