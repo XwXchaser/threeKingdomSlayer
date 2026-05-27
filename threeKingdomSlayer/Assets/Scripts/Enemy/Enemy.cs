@@ -57,6 +57,12 @@ public class Enemy : MonoBehaviour
     public bool useAttackFlip = true;
     public float moveSpeed = 1f;
 
+    [Header("C技（蓄力攻击）")]
+    [Tooltip("使用C技的概率（0=不使用），仅精英/BOSS有效")]
+    [Range(0f, 1f)] public float cAttackProbability = 0f;
+    [Tooltip("C技蓄力/前摇时长（应明显长于普通攻击）")]
+    public float cAttackSpawnDuration = 0.6f;
+
     [Header("共享血量")]
     [Tooltip("与同行相邻同ID敌人共享血量")]
     public bool shareHealthWithAdjacent = false;
@@ -132,6 +138,7 @@ public class Enemy : MonoBehaviour
     private float attackAnimTimer;  // 攻击动画计时器（攻击动作执行时间）
     public bool isAttackAnimating; // 是否正在播放攻击动画（AttackSpawn 或 AttackDraw）
     public bool isAttackDrawPhase;  // 是否处于攻击收招阶段（不可被招架打断）
+    public bool isCFrame;           // 是否处于C技起始帧（霸体窗口），仅 Parry/Launch 可打断
 
     // 补齐移动链式触发
     // pendingRushMove = true 表示该敌人已标记为需要向前补齐，
@@ -242,6 +249,7 @@ public class Enemy : MonoBehaviour
         attackAnimTimer = 0f;
         isAttackAnimating = false;
         isAttackDrawPhase = false;
+        isCFrame = false;
         moveProgress = 0f;
         isMovingToNextRow = false;
         isRushMove = false;
@@ -546,6 +554,7 @@ public class Enemy : MonoBehaviour
         transform.localScale = originalScale;
         isAttackAnimating = false;
         isAttackDrawPhase = false;
+        isCFrame = false;
         isMovingToNextRow = false;
         pendingRushMove = false;
         // BUG FIX: 不重置 targetRow。当 Launch 攻击错开命中时，
@@ -608,6 +617,7 @@ public class Enemy : MonoBehaviour
         transform.localScale = originalScale;
         isAttackAnimating = false;
         isAttackDrawPhase = false;
+        isCFrame = false;
 
         // 重置攻击冷却，回到 AttackSpeed 等待状态（非眩晕）
         float totalInterval = (1f / attackSpeed);
@@ -637,6 +647,7 @@ public class Enemy : MonoBehaviour
         transform.localScale = originalScale;
         isAttackAnimating = false;
         isAttackDrawPhase = false;
+        isCFrame = false;
         isMovingToNextRow = false;
 
         state = EnemyState.QTEAttacking;
@@ -1043,14 +1054,26 @@ public class Enemy : MonoBehaviour
     /// </summary>
     private void PlayAttackAnimationTween()
     {
+        // 判定是否使用C技
+        bool isCAttack = cAttackProbability > 0f && Random.value < cAttackProbability;
+        PlayAttackAnimationTween(isCAttack);
+    }
+
+    /// <summary>
+    /// 使用 DOTween 播放攻击动效
+    /// </summary>
+    /// <param name="isCAttack">是否播放C技（蓄力攻击），C技有更长的前摇并在前摇期间启用霸体</param>
+    private void PlayAttackAnimationTween(bool isCAttack)
+    {
         isAttackAnimating = true;
         isAttackDrawPhase = false;
+        isCFrame = isCAttack; // C技在前摇期间处于霸体窗口
 
         Vector3 startPos = transform.localPosition;
         Vector3 startScale = transform.localScale;
 
         float totalInterval = (1f / attackSpeed);
-        float spawnDuration = attackSpawnDuration;
+        float spawnDuration = isCAttack ? cAttackSpawnDuration : attackSpawnDuration;
         float drawDuration = attackDrawDuration;
         float forwardDistance = 0.5f;
 
@@ -1068,6 +1091,7 @@ public class Enemy : MonoBehaviour
         {
             PerformAttack();
             isAttackDrawPhase = true; // 进入收招阶段，此后不可被招架打断
+            isCFrame = false;          // 伤害帧结束霸体窗口
         });
 
         // AttackDraw：后退到原位 + 翻转回正（不可被招架打断）
@@ -1081,6 +1105,7 @@ public class Enemy : MonoBehaviour
             attackSequence = null;
             isAttackAnimating = false;
             isAttackDrawPhase = false;
+            isCFrame = false;
 
             float cooldown = totalInterval * 0.4f;
             if (cooldown < 0.1f) cooldown = 0.1f;
@@ -1104,10 +1129,11 @@ public class Enemy : MonoBehaviour
     /// <summary>
     /// 受到伤害
     /// </summary>
-    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null)
+    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false)
     {
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
+        if (state == EnemyState.QTEAttacking) return; // QTE攻击期间不受伤害打断
 
         if (sharedHealthGroup != null)
         {
@@ -1145,9 +1171,23 @@ public class Enemy : MonoBehaviour
             cachedHealthBar.Show(currentHealth / maxHealth);
         }
 
+        // ----- 攻击打断逻辑 -----
+        // 仅在 AttackSpawn 阶段可打断（AttackDraw 收招阶段不可打断）
+        if (state == EnemyState.Attacking && isAttackAnimating && !isAttackDrawPhase)
+        {
+            if (isCFrame && !canInterruptCFrame)
+            {
+                // C技霸体窗口 + 非 Parry/Launch 伤害 → 弹刀反馈，不打断
+                PlayClankEffect();
+            }
+            else
+            {
+                // 普通攻击 或 C技+Parry/Launch → 打断
+                CancelAttack();
+            }
+        }
+
         // BUG FIX: 同步应用闪白（立即设置颜色，不依赖 Update 循环）
-        // 即使敌人秒杀死亡，闪白效果也在死亡前被渲染
-        // 否则 Die() 设置 state = Dead 后，Update() 提前返回，UpdateAlpha() 不被调用
         ApplyHitFlashImmediate();
 
         // 触发受伤精灵闪烁（仅 Idle/Moving 状态，持续 0.3 秒）
@@ -1161,8 +1201,6 @@ public class Enemy : MonoBehaviour
         Debug.Log($"[Enemy] 触发闪白: {DebugTag}, duration={HIT_FLASH_DURATION}");
 
         // DOTween: 受击大小抖动效果（与闪白同步触发）
-        // BUG FIX: 使用 per-instance ID（基于 GetInstanceID），避免全局 DOTween.Kill("punchScale")
-        // 误杀其他敌人的 punch tween，导致其他敌人缩放停在中间值无法恢复。
         string punchId = $"punch_{GetInstanceID()}";
         DOTween.Kill(punchId);
         transform.localScale = originalScale;
@@ -1219,6 +1257,32 @@ public class Enemy : MonoBehaviour
         transform.DOPunchScale(new Vector3(0.2f, 0.2f, 0.2f), 0.15f, 8, 0.5f)
             .SetTarget(transform)
             .SetId(punchId);
+    }
+
+    /// <summary>
+    /// 弹刀反馈：玩家攻击C技霸体敌人时的视觉/触觉反馈
+    /// 红色闪烁 + 水平抖动（区别于普通受击的白色闪白 + 缩放抖动）
+    /// </summary>
+    private void PlayClankEffect()
+    {
+        // 红色闪烁
+        if (flashMaterials != null)
+        {
+            foreach (var mat in flashMaterials)
+            {
+                if (mat != null) mat.color = new Color(1f, 0.3f, 0.15f); // 橙红
+            }
+        }
+        hitFlashTimer = 0.12f; // 比普通受击更短
+
+        // 水平抖动（区别于普通受击的缩放抖动）
+        string clankId = $"clank_{GetInstanceID()}";
+        DOTween.Kill(clankId);
+        transform.DOPunchPosition(new Vector3(0.15f, 0f, 0f), 0.12f, 4, 0.5f)
+            .SetTarget(transform)
+            .SetId(clankId);
+
+        Debug.Log($"[Enemy] 弹刀: {DebugTag}, C技霸体阻挡");
     }
 
     /// <summary>

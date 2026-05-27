@@ -206,7 +206,8 @@ public class AttackSystem : MonoBehaviour
                     if (canLaunch)
                         enemy.Launch();
                 },
-                prefab: cfg.attackWavePrefab);
+                prefab: cfg.attackWavePrefab,
+                canInterruptCFrame: true);
         }
 
         Debug.Log($"[AttackSystem] 挑飞 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 击飞时间:{cfg.launchDuration}s 目标数:{targets.Count}");
@@ -224,33 +225,11 @@ public class AttackSystem : MonoBehaviour
 
         foreach (var enemy in targets)
         {
-            bool canInterrupt = enemy.state == EnemyState.Attacking
-                && enemy.isAttackAnimating
-                && !enemy.isAttackDrawPhase;
-
+            // TakeDamage 内部处理打断逻辑（canInterruptCFrame=true 可打断C技霸体）
+            enemy.TakeDamage(finalDmg, cfg.damageType, canInterruptCFrame: true);
             if (enemy.isBoss)
-            {
-                // Boss: parry 无条件打断攻击，打断成功才造成 Poise 伤害
-                if (canInterrupt)
-                {
-                    enemy.CancelAttack();
-                    enemy.TakePoiseDamage(cfg.poiseDamage);
-                }
-                else
-                {
-                    enemy.TakeDamage(finalDmg, cfg.damageType);
-                }
-            }
-            else if (canInterrupt && cfg.poiseDamage >= enemy.maxPoise)
-            {
-                enemy.CancelAttack();
-            }
-            else
-            {
-                // 非Boss敌人不施加架势伤害（没有眩晕设计），仅造成伤害
-                enemy.TakeDamage(finalDmg, cfg.damageType);
-                enemy.CheckParryStunThresholds();
-            }
+                enemy.TakePoiseDamage(cfg.poiseDamage);
+            enemy.CheckParryStunThresholds();
         }
 
         Debug.Log($"[AttackSystem] 招架 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 目标数:{targets.Count}");
@@ -423,7 +402,8 @@ public class AttackSystem : MonoBehaviour
                                 enemy.Launch();
                         },
                         prefab: cfg.attackWavePrefab, alphaOverride: alpha,
-                        damageNumberColor: phantomColor);
+                        damageNumberColor: phantomColor,
+                        canInterruptCFrame: true);
                 }
                 return targets.Count > 0;
             }

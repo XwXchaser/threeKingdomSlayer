@@ -9,13 +9,13 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1778764012219
-updatedAt: 1779692595852
+updatedAt: 1779895245116
 ---
 
 # project-mistake-note
 
 ## Summary
-更新至 2025-07-18 — 三选一系统错误汇总 + QTE/虚幻武器未修复问题
+更新至 2025-07-19 — 新增核心规则「代码不得覆写 Inspector 手动值」+ Edge 旋转部署
 
 <!-- locus:body:start -->
 ### Stab Wave 视觉旅行方向错误 ✅ 已修复（2025-07-18）
@@ -54,7 +54,7 @@ updatedAt: 1779692595852
 - 症状：触发三选一时 `UnassignedReferenceException: The variable cardPrefab of UpgradeChoicePopup has not been assigned`，游戏卡死
 - 根因分析：`cardPrefab` 在 Prefab 和 Scene 实例中均已正确赋值（当前 Editor 状态验证通过），但运行时偶现 null。可能原因：① 修改场景/Prefab 后未保存即进入 Play Mode；② 脚本修改后未 `unity_recompile` 导致旧代码读取新序列化数据失败；③ 存在多个 `UpgradeChoicePopup` 实例（一个正确、一个遗漏）
 - 预防规则：每次修改 `.prefab` / `.unity` / `.cs` 后必须：保存场景 → `unity_recompile` → 确认编译通过 → 再进入 Play Mode
-- 当前状态：Editor 中 cardPrefab 已正确赋值，需实际 Play Mode 验证
+- 当前状态：**已废弃 — cardPrefab 字段已删除，改为预置3张卡片**
 - 文件：`Assets/Scripts/UI/UpgradeChoicePopup.cs:87`
 
 ### UpgradePopup/UpgradeCard 背景图不显示 ✅ 已修复（2025-07-18）
@@ -63,19 +63,50 @@ updatedAt: 1779692595852
 - 修复：用户更换图片素材后问题解决
 - 预防规则：新导入的 UI 图片建议控制在 2048×2048 以内，优先使用 PNG 格式
 
-### QTEController 始终 Idle / QTE 无法触发 ⚠️ 未修复（2025-07-18）
-- 症状：QTE 反击无法交互，QTEController._state 始终为 Idle
-- 已排除：CanvasGroup 阻挡（QTE Canvas 无 CanvasGroup）、QTE 配置缺失（qteData/prefabs 均已配置）、InputManager.skillInputEnabled/blockInputFrames 阻挡（均为正常值）
-- 待查：Boss 是否进入 InCombat → OnBossEngaged 是否触发 → 冷却计时器是否启动
-- 文件：`Assets/Scripts/QTE/QTEController.cs`
+### IsPointerOverGameObject 拦截 UI-based 游戏交互 🔁 新类别（2025-07-19）
+- 症状：QTE 指示器正常显示，但玩家点击/滑动永远无法命中判定。Console 无任何 QTE 成功的日志，也无 InputManager 的 MouseDown/MouseUp 日志
+- 根因：QTE 指示器是 Canvas 下的 UI 元素（Graphic 有 RaycastTarget）。`InputManager.HandleMouseInput()` 在 `MouseDown` 时调用 `EventSystem.current.IsPointerOverGameObject()`，检测到指示器后判定为"点击了 UI"，直接 `return` 丢弃输入。`isTouching` 保持 false，后续 `MouseUp` 也不会触发 `ProcessGesture`，QTE 输入被完全阻断
+- 修复：在 overUI 检查中增加 `!IsAnyQTEActive()` 条件。QTE 活跃时放行 UI 上的点击/触摸，让输入经 `ProcessGesture` → `TryConsumeQTEInput` 进入 QTE 判定。同理修复触摸输入（`HandleTouchInput` 的 TouchBegan）
+- 预防规则：**当 UI 元素本身就是游戏交互目标（非菜单/按钮），且通过 `ProcessGesture` 路由输入时，overUI 检查必须为这些元素放行**。不要仅凭 `IsPointerOverGameObject` 就丢弃输入，要考虑"当前是否有 UI-based 的游戏交互在等待输入"
+- 文件：`Assets/Scripts/Player/InputManager.cs` (HandleMouseInput line ~164, HandleTouchInput line ~254, IsAnyQTEActive)
 
-### 虚幻武器待验证（2025-07-18）
-- 代码路径验证通过：PassiveTriggerModule 订阅 OnAttackPerformed ✅、PhantomWeapon 在奖池 ✅、ApplyUpgrade 路由正确 ✅
-- 当前测试中玩家 Lv=0 未获取任何升级，无法实测触发。待玩家升级获取后验证
+### ⚠️ 核心规则：代码不得覆写用户在 Inspector 中手动设置的值 🔁 反复出现（2025-07-19，更新于 2025-07-20）
+- 症状：用户在 Prefab 中手动调整了 Content 的 RectTransform、子节点的 rotation/scale/sprite 等属性，但运行时 / Awake / OnValidate 中被代码重置为硬编码值
+- 案例 1：`FlexibleFrame.EnsureChildren()` 对已存在的子节点仍覆写 anchorMin/Max、pivot、sizeDelta、anchoredPosition → **✅ 已修复：所有 RectTransform 赋值移入 `if (!existed)` 块内，已存在节点完全不触碰**
+- 案例 2：`UpgradeChoicePopup.ApplyPadding()` 硬编码覆写 `contentRect.anchoredPosition` 和 `contentRect.sizeDelta` → **✅ 已修复：删除 contentRect 覆写代码及 _padding* 字段，移除 ApplyPadding() 方法**
+- 案例 3：`UpgradeChoicePopup.ApplySpacing()` 覆写 VerticalLayoutGroup.spacing → **✅ 已修复：改为预置3张卡片，删除所有动态生成和spacing覆写**
+- 预防规则：
+  1. **Awake/Start/OnValidate 中只能读取 Inspector 值，不得写回硬编码默认值**
+  2. 如需初始化 RectTransform 布局，在 Editor 脚本或 Prefab 阶段做，不在运行时做
+  3. 任何对 `anchorMin/anchorMax/pivot/localRotation/localScale/anchoredPosition/sizeDelta` 的赋值都是高危操作，必须先确认是否会覆盖用户手动调整
+  4. 子节点的创建/销毁必须在 Editor 时完成（Prefab 阶段），运行时只能使用已有节点
+  5. 设计组件时遵循「配置与布局分离」：配置（Inspector 序列化字段）由用户控制，布局（运行时计算）仅读取配置来调整派生值
+  6. `OnValidate()` 中不得调用会覆写 Inspector 序列化字段的方法
+- 文件：`Assets/Scripts/UI/FlexibleFrame.cs`（已删除）、`Assets/Scripts/UI/UpgradeChoicePopup.cs`
 
-### QTE Prefab 交互被 Canvas 阻挡 🔁 与 CanvasGroup 同类问题（2025-07-18）
-- 症状：QTE Prefab 无法点击/滑动交互
-- 根因：同 CanvasGroup.blocksRaycasts 问题 — 其他 Canvas（如 HUD、弹窗）的 GraphicRaycaster 拦截了 QTE Canvas 的输入事件
-- 排查：确认 QTE Canvas sortingOrder 是否大于所有常驻 Canvas；确认其他 Canvas 是否有未关闭的 CanvasGroup blocksRaycasts=true
-- 预防规则：弹窗/暂停/HUD Canvas 的 blocksRaycasts 状态必须在显隐逻辑中同步维护
+### 代码创建GameObject未串接组件字段 🔁 新类别（2025-07-20）
+- 症状：通过 unity_execute 代码创建 Card1/2/3 的完整GameObject结构后，UpgradeCard 组件的 public 字段（backgroundImage/nameText/descriptionText/button/iconImage）全部为 None，Setup() 中 `if (xx != null)` 全部跳过，UI 无任何数据显示
+- 根因：代码创建 GameObject 并 AddComponent 后，未将子节点的组件引用赋值到脚本的序列化字段。Unity 不会自动串接这些引用
+- 修复：创建完成后用代码逐一串接：`uc.backgroundImage = cardT.GetComponent<Image>()` 等
+- 预防规则：**代码创建含脚本组件的 GameObject 后，必须检查该脚本所有 `public` / `[SerializeField]` 字段是否需要手动串接子节点/同级组件引用**
+- 文件：`Assets/Prefabs/UI/UpgradePopup.prefab`、`Assets/Scripts/UI/UpgradeCard.cs`
+
+### TMP 字体不支持中文（2025-07-20）
+- 症状：3选1卡片的 NameText 和 DescriptionText 无法显示中文，只显示方块或空白
+- 根因：代码创建的 TextMeshProUGUI 默认使用 LiberationSans SDF（西文字体），不包含中文字形
+- 修复：将字体改为 `Assets/Fonts/方正粗黑宋简体 SDF.asset`（项目中已有的中文字体）
+- 预防规则：创建含中文文本的 TMP 组件时，必须显式设置 font 为中文字体
+
+### Image.color 覆写导致 Sprite 被染色（2025-07-20）
+- 症状：用户已在 prefab 中为卡片设置好背景 sprite，但运行时背景颜色和其他卡片不一致（更深/更蓝/更金）
+- 根因：`UpgradeCard.Setup()` 调用 `GetRarityColor(def.rarity)` 覆写 `backgroundImage.color`（Common灰/Rare蓝/Legendary金），染色了用户设置好的 sprite
+- 修复：移除 `GetRarityColor()` 调用及相关字段（commonColor/rareColor/legendaryColor），不再覆写 backgroundImage.color
+- 预防规则：**如果用户已通过 sprite 控制UI外观，代码不得额外覆写 Image.color**
+- 文件：`Assets/Scripts/UI/UpgradeCard.cs`
+
+### UpgradeCard.prefab 删除后 Missing Prefab 残留（2025-07-20）
+- 症状：用户删除 UpgradeCard.prefab 后，UpgradePopup.prefab 中的 Card1/2/3 变为 Missing Prefab，且无法 Unpack
+- 根因：PrefabUtility.UnpackPrefabInstance 在源 prefab 已删除时无法正常工作
+- 修复：删除 Missing Prefab 实例，用代码重建完整 GameObject 结构（Image+Button+CanvasGroup+UpgradeCard+LayoutElement 及子节点）
+- 预防规则：删除 prefab 前先确保没有其他 prefab/scene 通过 prefab instance 引用它
 <!-- locus:body:end -->

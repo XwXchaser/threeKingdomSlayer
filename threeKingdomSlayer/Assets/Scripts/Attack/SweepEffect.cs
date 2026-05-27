@@ -18,6 +18,7 @@ public class SweepEffect : MonoBehaviour
     private float damage;
     private DamageType damageType;
     private System.Action<Enemy> onHit;
+    private bool canInterruptCFrame;
     private List<TargetEntry> targets = new List<TargetEntry>();
     private int nextIndex;
     private bool leftToRight;
@@ -29,7 +30,7 @@ public class SweepEffect : MonoBehaviour
     public static void Create(Vector3 centerPos, DamageType damageType, float damage,
         List<Enemy> targets, bool leftToRight, float halfWidth, float fanAngle, float duration,
         System.Action<Enemy> onHit = null, GameObject prefab = null, float? alphaOverride = null,
-        Color? damageNumberColor = null)
+        Color? damageNumberColor = null, bool canInterruptCFrame = false)
     {
         if (targets == null || targets.Count == 0) return;
 
@@ -76,6 +77,7 @@ public class SweepEffect : MonoBehaviour
         effect.onHit = onHit;
         effect.leftToRight = leftToRight;
         effect.damageNumberColor = damageNumberColor;
+        effect.canInterruptCFrame = canInterruptCFrame;
 
         // 按 X 排序：L→R 升序，R→L 降序
         List<Enemy> sorted = new List<Enemy>(targets);
@@ -158,7 +160,7 @@ public class SweepEffect : MonoBehaviour
     {
         if (enemy != null && enemy.state != EnemyState.Dead)
         {
-            enemy.TakeDamage(damage, damageType, damageNumberColor);
+            enemy.TakeDamage(damage, damageType, damageNumberColor, canInterruptCFrame);
             onHit?.Invoke(enemy);
         }
     }

@@ -164,10 +164,10 @@ public class InputManager : MonoBehaviour
         // 鼠标按下
         if (Input.GetMouseButtonDown(0))
         {
-            // UI 之上的点击不处理游戏输入
+            // UI 之上的点击不处理游戏输入（QTE 活跃时除外：QTE 指示器本身是 UI 元素）
             bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
             Debug.Log($"[InputManager] MouseDown frame={Time.frameCount} overUI={overUI}");
-            if (overUI)
+            if (overUI && !IsAnyQTEActive())
                 return;
 
             touchStartPos = Input.mousePosition;
@@ -251,8 +251,8 @@ public class InputManager : MonoBehaviour
         switch (touch.phase)
         {
             case TouchPhase.Began:
-                // UI 之上的触摸不处理游戏输入
-                if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject(touch.fingerId))
+                // UI 之上的触摸不处理游戏输入（QTE 活跃时除外：QTE 指示器本身是 UI 元素）
+                if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject(touch.fingerId) && !IsAnyQTEActive())
                     break;
 
                 touchStartPos = touch.position;
@@ -599,6 +599,13 @@ public class InputManager : MonoBehaviour
     #region QTE 输入
 
     private QTEController _cachedQTEController;
+
+    private bool IsAnyQTEActive()
+    {
+        if (_cachedQTEController == null)
+            _cachedQTEController = FindObjectOfType<QTEController>();
+        return _cachedQTEController != null && _cachedQTEController.IsQTEActive;
+    }
 
     /// <summary>
     /// 尝试将当前手势作为 QTE 输入消费

@@ -18,6 +18,8 @@ public class UpgradeChoiceManager : MonoBehaviour
 
     [Header("配置")]
     public UpgradePoolConfig poolConfig;
+    [Tooltip("弹窗 Prefab（运行时动态生成/销毁，不在场景中预置）")]
+    public GameObject popupPrefab;
     [Tooltip("选项数量（默认 3，可扩展为 4 选 1 / 5 选 1）")]
     public int choiceCount = 3;
     [Tooltip("弹窗期间是否暂停游戏")]
@@ -27,6 +29,7 @@ public class UpgradeChoiceManager : MonoBehaviour
     private bool _isChoosing;
     private int _pendingLevelUps;
     private List<UpgradeDefinition> _currentChoices;
+    private UpgradeChoicePopup _activePopup;
 
     // ── 事件（供 UI 订阅）──
     public System.Action<List<UpgradeDefinition>> OnChoicesReady;
@@ -78,6 +81,20 @@ public class UpgradeChoiceManager : MonoBehaviour
     private void ShowNextChoice()
     {
         _currentChoices = DrawChoices();
+
+        // 动态生成弹窗（不在场景中预置）
+        if (_activePopup == null)
+        {
+            if (popupPrefab == null)
+            {
+                Debug.LogError("[UpgradeChoiceManager] popupPrefab 未配置");
+                return;
+            }
+            var go = Instantiate(popupPrefab);
+            _activePopup = go.GetComponent<UpgradeChoicePopup>();
+        }
+
+        _activePopup.ShowChoices(_currentChoices);
         OnChoicesReady?.Invoke(_currentChoices);
     }
 
@@ -104,6 +121,14 @@ public class UpgradeChoiceManager : MonoBehaviour
             Debug.Log($"[UpgradeChoiceManager] 全部选择完成，恢复 timeScale=1 (frame={Time.frameCount})");
             _isChoosing = false;
             _currentChoices = null;
+
+            if (_activePopup != null)
+            {
+                var popup = _activePopup;
+                _activePopup = null;
+                popup.Dismiss(() => { });
+            }
+
             if (pauseGameDuringChoice)
             {
                 Time.timeScale = 1f;

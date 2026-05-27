@@ -17,6 +17,7 @@ public class AttackWave : MonoBehaviour
     private float damage;
     private DamageType damageType;
     private System.Action<Enemy> onHit;
+    private bool canInterruptCFrame;
     private List<TargetEntry> targets = new List<TargetEntry>();
     private float elapsed;
     private int nextIndex;
@@ -42,7 +43,7 @@ public class AttackWave : MonoBehaviour
 
     public static AttackWave Create(Vector3 position, DamageType damageType, float damage,
         List<Enemy> targets, System.Action<Enemy> onHit = null, GameObject prefab = null, float zOffset = 0f,
-        float? alphaOverride = null, Color? damageNumberColor = null)
+        float? alphaOverride = null, Color? damageNumberColor = null, bool canInterruptCFrame = false)
     {
         GameObject obj;
         Material material = null;
@@ -83,6 +84,7 @@ public class AttackWave : MonoBehaviour
         wave.onHit = onHit;
         wave.waveColor = color;
         wave.damageNumberColor = damageNumberColor;
+        wave.canInterruptCFrame = canInterruptCFrame;
 
         if (prefab != null)
             wave.targetScale = obj.transform.localScale;
@@ -315,7 +317,7 @@ public class AttackWave : MonoBehaviour
     {
         if (enemy != null && enemy.state != EnemyState.Dead)
         {
-            enemy.TakeDamage(damage, damageType, damageNumberColor);
+            enemy.TakeDamage(damage, damageType, damageNumberColor, canInterruptCFrame);
             onHit?.Invoke(enemy);
         }
     }
