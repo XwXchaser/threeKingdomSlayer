@@ -16,17 +16,11 @@ MonoBehaviour:
   rareWeight: 0.15
   legendaryWeight: 0.05
   commonPool:
-  - upgrade: {fileID: 11400000, guid: 961580bcfd22c5842baa8ea69dc7d8f4, type: 2}
+  - upgrade: {fileID: 11400000, guid: 246953bd7d7719a449a2c5c92b26b6e2, type: 2}
     weight: 10
   - upgrade: {fileID: 11400000, guid: 570297b9f08ef0c42988680913f70bd3, type: 2}
     weight: 10
   - upgrade: {fileID: 11400000, guid: 3fc88d0e01fc4a34cb3f123aefc9acaf, type: 2}
-    weight: 10
-  - upgrade: {fileID: 11400000, guid: 651f88fb2330d7b4988f97df5d58dc8a, type: 2}
-    weight: 10
-  - upgrade: {fileID: 11400000, guid: e965be9a60eab8e4d84512b5c227d8d8, type: 2}
-    weight: 10
-  - upgrade: {fileID: 11400000, guid: 6acf2380436ebfe40a1352fbcc6d9f3e, type: 2}
     weight: 10
   rarePool: []
   legendaryPool: []

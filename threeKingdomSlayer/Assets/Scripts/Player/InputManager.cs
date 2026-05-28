@@ -131,29 +131,7 @@ public class InputManager : MonoBehaviour
             float chargeProgress = Mathf.Clamp01(pressDuration / minChargeTime);
             OnChargeUpdated?.Invoke(currentPointerPos, chargeProgress);
 
-            // 画圈道具检测（按住中每帧）
-            if (whirlwindController != null)
-            {
-                if (whirlwindController.IsActive)
-                {
-                    whirlwindController.TickActive(currentPointerPos);
-                }
-                else if (whirlwindController.CanCircle)
-                {
-                    if (whirlwindController.UpdateCircleDetection(currentPointerPos))
-                    {
-                        if (ItemInventory.Instance != null && ItemInventory.Instance.TryConsume("circle"))
-                        {
-                            var def = ItemInventory.Instance.GetDefinition("circle");
-                            whirlwindController.Activate(def);
-                        }
-                        else
-                        {
-                            whirlwindController.ResetCircleDetection();
-                        }
-                    }
-                }
-            }
+            // 大旋风自动运转中（点击 BuffIcon 激活，已在 WhirlwindController.Update 自驱动）
         }
     }
 
@@ -218,15 +196,7 @@ public class InputManager : MonoBehaviour
             float swipeDistance = Vector2.Distance(releasePos, touchStartPos);
 
             Debug.Log($"[InputManager] MouseUp frame={Time.frameCount} pressDuration={pressDuration:F3} swipeDistance={swipeDistance:F1}");
-
-            if (whirlwindController != null && whirlwindController.IsActive)
-            {
-                whirlwindController.Deactivate();
-            }
-            else
-            {
-                ProcessGesture(releasePos, pressDuration, swipeDistance);
-            }
+            ProcessGesture(releasePos, pressDuration, swipeDistance);
 
             // 触发蓄力结束事件（在重置状态之前）
             OnChargeEnded?.Invoke();
@@ -305,15 +275,7 @@ public class InputManager : MonoBehaviour
                 {
                     float pressDuration = Time.time - touchStartTime;
                     float swipeDistance = Vector2.Distance(touch.position, touchStartPos);
-
-                    if (whirlwindController != null && whirlwindController.IsActive)
-                    {
-                        whirlwindController.Deactivate();
-                    }
-                    else
-                    {
-                        ProcessGesture(touch.position, pressDuration, swipeDistance);
-                    }
+                    ProcessGesture(touch.position, pressDuration, swipeDistance);
 
                     // 触发蓄力结束事件（在重置状态之前）
                     OnChargeEnded?.Invoke();
@@ -349,9 +311,6 @@ public class InputManager : MonoBehaviour
         if (TryConsumeQTEInput(releasePos, isSwiped, swipeDistance, pressDuration))
             return;
 
-        // 道具手势检测：长按+下滑 → 落雷（QTE 之下、攻击之上）
-        if (TryConsumeItemGesture(releasePos, isSwiped, swipeDistance, pressDuration))
-            return;
 
         if (pressDuration >= minChargeTime)
         {
@@ -469,43 +428,8 @@ public class InputManager : MonoBehaviour
 
     #endregion
 
-    #region 道具手势
-
-    /// <summary>
-    /// 尝试将当前手势作为道具输入消费（QTE 之后、攻击之前）
-    /// 仅支持 long_press_swipe_down（画圈已在 Update 中按住检测处理）
-    /// </summary>
-    private bool TryConsumeItemGesture(Vector2 releasePos, bool isSwiped, float swipeDistance, float pressDuration)
-    {
-        if (!isSwiped) return false;
-        if (ItemInventory.Instance == null) return false;
-        if (!ItemInventory.Instance.HasItem("long_press_swipe_down")) return false;
-
-        // 长按判定
-        if (pressDuration < longPressDuration) return false;
-
-        // 下滑方向判定
-        Vector2 swipeDir = releasePos - touchStartPos;
-        float angleToDown = Vector2.Angle(swipeDir, Vector2.down);
-        if (angleToDown > swipeDownAngleThreshold) return false;
-
-        // 消耗道具
-        if (!ItemInventory.Instance.TryConsume("long_press_swipe_down"))
-            return false;
-
-        var def = ItemInventory.Instance.GetDefinition("long_press_swipe_down");
-        if (def == null || def.baseAttackConfig == null)
-        {
-            Debug.LogWarning("[InputManager] 落雷道具定义或 baseAttackConfig 为空");
-            return true; // 已消耗，但不执行
-        }
-
-        ExecuteLightning(def);
-        return true;
-    }
-
     /// <summary>执行落雷：5×5 网格扩散伤害（切比雪夫距离，加法衰减），BOSS 全额</summary>
-    private void ExecuteLightning(UpgradeDefinition def)
+    public void ExecuteLightning(UpgradeDefinition def)
     {
         var enemies = EnemyManager.Instance?.GetAllAliveEnemies();
         if (enemies == null || enemies.Count == 0)
@@ -537,8 +461,6 @@ public class InputManager : MonoBehaviour
 
         Debug.Log($"[InputManager] 落雷 baseDmg={baseDmg:F0} hit={hitCount}");
     }
-
-    #endregion
 
     #region 屏幕坐标映射
 

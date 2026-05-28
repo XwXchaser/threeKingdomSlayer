@@ -10,7 +10,7 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1778051399341
-updatedAt: 1778051399341
+updatedAt: 1779940228617
 ---
 
 # user-preference
@@ -24,4 +24,5 @@ updatedAt: 1778051399341
 <!-- locus:maintain-rules:end -->
 
 <!-- locus:body:start -->
+- **先分析后实现**：若用户未在对话中明确提及「实现」「开始做」「动手」等指令，仅做分析和方案设计，输出 Plan 给用户确认。只有在用户明确说「开始实现」「按这个方案做」之后才进入工程改动。收到新需求默认先思考，不直接修改代码或场景。
 <!-- locus:body:end -->
