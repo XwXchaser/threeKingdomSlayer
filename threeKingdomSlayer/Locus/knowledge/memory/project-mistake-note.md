@@ -9,13 +9,13 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1778764012219
-updatedAt: 1779951793855
+updatedAt: 1779970193040
 ---
 
 # project-mistake-note
 
 ## Summary
-更新至 2025-07-19 — 新增核心规则「代码不得覆写 Inspector 手动值」+ Edge 旋转部署
+更新至 2025-08-06 — 新增「Slider 填充条透明度问题」（alphaIsTransparency + Filled vs Simple 两层根因）
 
 <!-- locus:body:start -->
 ### Stab Wave 视觉旅行方向错误 ✅ 已修复（2025-07-18）
@@ -123,4 +123,13 @@ updatedAt: 1779951793855
 - 修复：在 Prefab 中将子节点 Button 组件拖入 BuffIcon 的 `_button` 字段
 - 预防规则：**预制体中的 `[SerializeField]` 字段（尤其是 Button、Image、TMP 等 UI 组件引用）创建后必须逐个确认已串接**。与「代码创建GameObject未串接组件字段」同源
 - 文件：`Assets/Prefabs/UI/BuffIcon.prefab`、`Assets/Scripts/UI/BuffIcon.cs`
+
+### Slider 填充条透明度问题 🔁 反复出现（2025-08-06）
+- 症状：Slider 的 Fill Image 在游戏中始终半透明/透明，即使 Image.color.a=1、CanvasGroup.alpha=1、Sprite 已拖入
+- 根因（两层）：
+  1. **Fill Image type 用了 Filled**：Unity Slider 对 Simple 和 Filled 类型的 fillRect 处理机制不同。Simple 通过 RectTransform 裁剪控制填充，Filled 通过 fillAmount 控制。两者同时存在时冲突，fillAmount=0 导致 Image 渲染为空。**项目中已验证的正确模式：fillRect Image 必须用 Simple 类型**（参考 HeroHUD_Zhangfei health bar）
+  2. **Sprite 导入设置 alphaIsTransparency=False**：UI Sprite 必须设 `alphaIsTransparency=True`，否则 Unity 不将 alpha 通道用于透明度混合，导致渲染异常。**任何用作 UI Image 的 sprite，导入后必须确认 alphaIsTransparency=True**
+- 修复：① ProgressSlider Fill Image type=Filled→Simple；② `slider_stage_siller.png` alphaIsTransparency=False→True
+- 预防规则：**新建 Slider 填充条时：① fillRect Image type 必须为 Simple（不是 Filled）；② fill sprite 的 alphaIsTransparency 必须为 True**
+- 文件：`Assets/Scenes/Battle.scene` (ProgressSlider)、`Assets/Sprites/BatlleHUD/slider_stage_siller.png`
 <!-- locus:body:end -->
