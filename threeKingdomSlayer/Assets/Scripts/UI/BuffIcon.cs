@@ -9,6 +9,7 @@ using TMPro;
 public class BuffIcon : MonoBehaviour
 {
     [SerializeField] private Image _iconImage;
+    [SerializeField] private Image _frameImage;
     [SerializeField] private TextMeshProUGUI _badgeText;
     [SerializeField] private Button _button;
 
@@ -50,6 +51,15 @@ public class BuffIcon : MonoBehaviour
             _badgeText.text = text;
     }
 
+    public void SetFrame(Sprite sprite)
+    {
+        if (_frameImage != null)
+        {
+            _frameImage.sprite = sprite;
+            _frameImage.enabled = sprite != null;
+        }
+    }
+
     /// <summary>清空图标数据并隐藏</summary>
     public void ResetSlot()
     {
@@ -57,6 +67,7 @@ public class BuffIcon : MonoBehaviour
         GestureId = null;
         Category = UpgradeCategory.Numeric;
         if (_iconImage != null) _iconImage.sprite = null;
+        if (_frameImage != null) { _frameImage.sprite = null; _frameImage.enabled = false; }
         if (_badgeText != null) _badgeText.text = "";
         if (_button != null)
         {
