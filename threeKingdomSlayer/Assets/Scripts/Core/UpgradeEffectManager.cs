@@ -134,6 +134,13 @@ public class UpgradeEffectManager : MonoBehaviour
     // ── 数值查询接口 ──
 
     public float GetDamageMultiplier() => _damageMultiplier;
+
+    /// <summary>叠加伤害倍率（供道具型测试等直接调用）</summary>
+    public void AddDamageBonus(float amount)
+    {
+        _damageMultiplier += amount;
+        Debug.Log($"[UpgradeEffectManager] 伤害加成 +{amount:P0} → 当前倍率 {_damageMultiplier:P0}");
+    }
     public float GetAttackSpeedMultiplier() => _attackSpeedMultiplier;
     public float GetMoveSpeedMultiplier() => _moveSpeedMultiplier;
     public float GetExpMultiplier() => _expMultiplier;

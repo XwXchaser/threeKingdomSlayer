@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1778764012219
-updatedAt: 1779895245116
+updatedAt: 1779951793855
 ---
 
 # project-mistake-note
@@ -109,4 +109,18 @@ updatedAt: 1779895245116
 - 根因：PrefabUtility.UnpackPrefabInstance 在源 prefab 已删除时无法正常工作
 - 修复：删除 Missing Prefab 实例，用代码重建完整 GameObject 结构（Image+Button+CanvasGroup+UpgradeCard+LayoutElement 及子节点）
 - 预防规则：删除 prefab 前先确保没有其他 prefab/scene 通过 prefab instance 引用它
+
+### ItemInventory 组件未挂载到场景 ✅ 已修复（2025-08-06）
+- 症状：道具选择后 BuffDisplayPanel 不显示图标，ItemInventory.AddItem 调用无效果（Instance 为 null）
+- 根因：ItemInventory.cs 依赖 Awake() 中的 Instance 赋值，但没有任何 GameObject 挂载该组件。整个道具存储/消耗/事件链路完全断裂
+- 修复：通过 unity_execute 将 ItemInventory 组件添加到 Manager GameObject（与 UpgradeEffectManager 同级）
+- 预防规则：任何单例组件必须确认场景中至少有一个 GameObject 挂载了它。创建新单例时同步在场景/初始化流程中挂载
+- 文件：`Assets/Scripts/Core/ItemInventory.cs`、`Assets/Scenes/Battle.scene`
+
+### BuffIcon._button 未在 Prefab 中串接 ✅ 已修复（2025-08-06）
+- 症状：TestDamageBoost 道具图标显示正常，但点击无响应（OnItemIconClicked 不触发），图标不消失，伤害加成不生效
+- 根因：BuffIcon.prefab 中 `_button` 字段未在 Inspector 中拖入 Button 组件引用。Setup() 中 `if (_button != null)` 跳过，Button.onClick 从未绑定
+- 修复：在 Prefab 中将子节点 Button 组件拖入 BuffIcon 的 `_button` 字段
+- 预防规则：**预制体中的 `[SerializeField]` 字段（尤其是 Button、Image、TMP 等 UI 组件引用）创建后必须逐个确认已串接**。与「代码创建GameObject未串接组件字段」同源
+- 文件：`Assets/Prefabs/UI/BuffIcon.prefab`、`Assets/Scripts/UI/BuffIcon.cs`
 <!-- locus:body:end -->

@@ -9,13 +9,13 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779520344306
-updatedAt: 1779897490309
+updatedAt: 1779951793809
 ---
 
 # phase3-development-summary
 
 ## Summary
-第三期局内成长系统（经验三选一）开发状态 — 含虚幻武器被动奖励、UI弹窗重构、Bug修复记录。7种奖励全部完成，3个未修复问题。
+第三期局内成长系统（经验三选一）开发状态 — 含虚幻武器被动奖励、UI弹窗重构、BuffDisplayPanel左侧图标面板、道具Icon点击触发改造。8种奖励全部完成。
 
 <!-- locus:body:start -->
 # 第三期：局内成长系统（经验三选一）开发状态
@@ -38,6 +38,7 @@ Enemy dies → EnemyManager.SpawnGem(世界坐标, expReward, enemy.gemSprite)
       → UpgradeEffectManager.ApplyUpgrade(def)
         → 数值累积（damage_multiplier/attack_speed/move_speed/exp/stabRange/sweepRange）
         → IEffectExecutor 行为分发（on_attack_trigger/unlock_attack）
+        → 道具型 → ItemInventory.AddItem(def) → BuffDisplayPanel 点亮 ColumnB 图标
         → 同步到 PlayerState.acquiredUpgrades
       → 恢复 timeScale=1 + InputManager.blockInputFrames=2
       → 若还有 pendingLevelUps → 再次 ShowNextChoice（仍暂停）
@@ -123,10 +124,11 @@ UpgradePopup.prefab
   - 新增范围加成：`stab_range_boost`（戳击范围+intValue排/级，伤害惩罚-secondaryIntValue%/级）
   - 新增范围加成：`sweep_range_boost`（横扫范围+intValue排/级，伤害惩罚-secondaryIntValue%/级）
   - 行为型注册表：`Dictionary<string, IEffectExecutor>`
+  - 新增 `AddDamageBonus(float)` — 供道具型测试等直接叠加伤害倍率
 - `UpgradeDefinition` 新增字段：`secondaryIntValue` — 第二整数加成（范围伤害惩罚%）
 - `GetDescription()` — {0}=intValue*level, {1}=secondaryIntValue*level（范围类）或 floatValue*level（数值类）
 
-### ✅ 当前三选一奖励选项（共7种）
+### ✅ 当前三选一奖励选项（共8种）
 
 | ID | 名称 | 类型 | 效果 | 稀有度 |
 |----|------|------|------|--------|
@@ -137,6 +139,7 @@ UpgradePopup.prefab
 | stab_range_boost | 延长 | Numeric | 戳击范围+1排/级，该范围伤害-1%/级 | Rare |
 | sweep_range_boost | 波长 | Numeric | 横扫范围+1排/级，该范围伤害-1%/级 | Rare |
 | phantom_weapon | 虚幻武器 | Passive | 每5次攻击触发1次30%伤害幻影 | Rare |
+| test_damage_boost | 伤害加成 | Item | 使用后获得100%伤害加成（1次） | Common |
 
 ### ✅ 被动攻击奖励：虚幻武器 (PhantomWeapon) — Phase 2 完成
 - `PassiveTriggerModule` — 攻击计数器+幻影触发逻辑
@@ -191,6 +194,76 @@ UpgradePopup.prefab
 - P2: 旅行波到达时序 vs spawnDuration 窗口期优化
 - P2: 三选一技能伤害接入 canInterruptCFrame
 
+### ✅ 左侧 Buff 图标面板 BuffDisplayPanel（2025-08-06）
+
+**设计原则**：
+- 槽位制：Inspector 中 `_columnASlots` / `_columnBSlots` 列表预置 BuffIcon 实例，代码按序分配
+- 手动布局：与 UpgradePopup 设计一致，无 VerticalLayoutGroup，用户手动摆放图标位置
+- 代码不创建/销毁实例，只 SetActive 切换显隐
+
+**两根柱子**：
+
+| 列 | 存放内容 | 生命周期 | 显示逻辑 |
+|----|---------|---------|---------|
+| ColumnA | 数值型(Numeric) + 被动型(Passive) | 持久，永不删除 | 再次获得仅更新角标（Lv.N / 阈值数） |
+| ColumnB | 道具型(Item) | 可消耗，消耗后槽位前移补位 | 点击图标触发效果 → TryConsume → 图标消失+CompactColumnB |
+
+**双列联动**：同一 UpgradeDefinition 可能同时出现在 ColumnA（被动注册）和 ColumnB（道具库存），由 `PassiveTriggerModule.OnPassiveRegistered` 和 `ItemInventory.OnItemChanged` 分别驱动。
+
+**关键脚本**：
+
+**BuffDisplayPanel.cs** (~212行)
+- `_columnASlots` / `_columnBSlots` — `List<BuffIcon>`，Inspector 中增删
+- `_upgradeIcons` — upgradeId → BuffIcon 映射（ColumnA）
+- `_itemIcons` — gestureId → BuffIcon 映射（ColumnB）
+- 监听三个事件：`UpgradeEffectManager.OnUpgradeApplied`、`ItemInventory.OnItemChanged`、`PassiveTriggerModule.OnPassiveRegistered`
+- 首次收到升级时淡入面板（CanvasGroup alpha 0→1）
+- CompactColumnB：被消耗图标之后的槽位依次前移补位
+
+**BuffIcon.cs** (~69行)
+- `_iconImage` / `_badgeText` / `_button` — 80×80 Image + Badge TMP + Button
+- `Setup()` — 设置图标、角标、按钮状态（Item 型可点击，其他型不可交互）
+- `ResetSlot()` — 清空所有数据并 SetActive(false)
+- `OnClicked` — 道具点击回调（仅 Item 型绑定）
+
+**道具点击分发流程**（BuffDisplayPanel.OnItemIconClicked）：
+```
+点击 BuffIcon → TryConsume(gestureId)
+  → 成功 → 按 gestureId 分发：
+    "circle"         → WhirlwindController.Activate(def)    // 大旋风自动运转
+    "long_press_swipe_down" → InputManager.ExecuteLightning(def)  // 落雷
+    "damage_boost"   → UpgradeEffectManager.AddDamageBonus(def.floatValue)  // 伤害加成
+  → TryConsume 触发 OnItemChanged → BuffDisplayPanel 移除图标 + CompactColumnB
+```
+
+**ItemInventory 挂载修复**：
+- ItemInventory 组件未在场景任何 GameObject 上，导致道具存储/消耗链路完全断裂
+- 已添加到 Manager GameObject（与 UpgradeEffectManager 同级）
+
+**WhirlwindController 重构**：
+- 从画圈手势驱动改为点击 BuffIcon 激活 → 自动运转
+- 移除：画圈检测（~80行）、手指追踪角度累积、TickActive
+- 新增：`autoDuration`（默认5s）、`autoSpinSpeed`（默认180°/s）
+- Update() 自动倒计时 → 持续伤害 → 定时击飞
+
+**InputManager 简化**：
+- 移除：画圈检测代码（~35行，Update 中的每帧检测+MouseUp/TouchEnd 中的 Deactivate 分支）
+- 移除：`TryConsumeItemGesture`（长按下滑检测，~35行）
+- `ExecuteLightning` 改为 public（供 BuffDisplayPanel 直接调用）
+
+**场景结构**：
+```
+BattleHUD(Canvas)/BuffDisplayPanel [CanvasGroup, BuffDisplayPanel]
+├─ ColumnA (6 BuffIcon slots: A_0~A_5, 默认disabled)
+└─ ColumnB (4 BuffIcon slots: B_0~B_4, 默认disabled)
+```
+
+**新增文件**：
+- `Assets/Prefabs/UI/BuffIcon.prefab` — 80×80 Image+Button+Badge
+- `Assets/Scripts/UI/BuffDisplayPanel.cs`
+- `Assets/Scripts/UI/BuffIcon.cs`
+- `Assets/ScriptableObjects/Upgrades/Definitions/TestDamageBoost.asset` — 测试道具（gestureId=dmg_boost, floatValue=1.0）
+
 ### ✅ Bug 修复
 - 9-slice sprite border=0 → 修复为 (35,35,35,35) / (20,20,20,20)
 - InputManager Debug.Log 帧刷屏 → 注释掉
@@ -201,4 +274,6 @@ UpgradePopup.prefab
 - 背景染色 → 移除 GetRarityColor
 - Missing Prefab 残留 → 重建为普通GameObject
 - 代码覆写Inspector → 移除所有动态生成和布局覆写
+- **ItemInventory 未挂载** → 添加到 Manager GameObject
+- **TestDamageBoost 点击无响应** → BuffIcon._button 字段未在 Prefab 中串接，修复后图标消失+伤害加成正常
 <!-- locus:body:end -->
