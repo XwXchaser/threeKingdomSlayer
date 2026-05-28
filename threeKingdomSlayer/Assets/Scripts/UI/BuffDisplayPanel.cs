@@ -15,6 +15,12 @@ public class BuffDisplayPanel : MonoBehaviour
     [SerializeField] private List<BuffIcon> _columnASlots = new List<BuffIcon>();
     [SerializeField] private List<BuffIcon> _columnBSlots = new List<BuffIcon>();
 
+    [Header("底框精灵")]
+    [Tooltip("index 0 = Lv.1, index 4 = Lv.5")]
+    [SerializeField] private Sprite[] _levelFrames = new Sprite[5];
+    [Tooltip("道具型统一底框")]
+    [SerializeField] private Sprite _skillFrame;
+
     // upgradeId → slot（ColumnA）
     private Dictionary<string, BuffIcon> _upgradeIcons = new Dictionary<string, BuffIcon>();
     // gestureId → slot（ColumnB）
@@ -87,6 +93,7 @@ public class BuffDisplayPanel : MonoBehaviour
 
             to.Setup(from.IconSprite, from.UpgradeId, from.Category, from.GestureId);
             to.SetBadge(from.BadgeText);
+            to.SetFrame(_skillFrame);
             to.OnClicked -= OnItemIconClicked;
             to.OnClicked += OnItemIconClicked;
             to.gameObject.SetActive(true);
@@ -121,6 +128,7 @@ public class BuffDisplayPanel : MonoBehaviour
                 if (icon == null) return;
 
                 icon.Setup(def.icon, def.upgradeId, UpgradeCategory.Item, def.gestureId);
+                icon.SetFrame(_skillFrame);
                 icon.OnClicked += OnItemIconClicked;
                 icon.gameObject.SetActive(true);
                 _itemIcons[def.gestureId] = icon;
@@ -139,7 +147,10 @@ public class BuffDisplayPanel : MonoBehaviour
                 icon.Setup(def.icon, def.upgradeId, def.category, null);
                 icon.gameObject.SetActive(true);
                 _upgradeIcons[def.upgradeId] = icon;
+                icon.SetFrame(GetLevelFrame(newLevel));
             }
+
+            icon.SetFrame(GetLevelFrame(newLevel));
 
             if (def.category == UpgradeCategory.Passive)
             {
@@ -178,6 +189,12 @@ public class BuffDisplayPanel : MonoBehaviour
     {
         if (_upgradeIcons.TryGetValue(upgradeId, out var icon))
             icon.SetBadge(threshold.ToString());
+    }
+
+    private Sprite GetLevelFrame(int level)
+    {
+        int index = Mathf.Clamp(level - 1, 0, _levelFrames.Length - 1);
+        return _levelFrames[index];
     }
 
     // ── 道具点击 ──

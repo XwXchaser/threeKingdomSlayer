@@ -5384,6 +5384,13 @@ MonoBehaviour:
   - {fileID: 654673679}
   - {fileID: 407797584}
   - {fileID: 1298957826}
+  _levelFrames:
+  - {fileID: 21300000, guid: 9e8b480f92c2b8a4bb7a75682c4f1897, type: 3}
+  - {fileID: 21300000, guid: b25598ddc6666fd4c852c004f10e1463, type: 3}
+  - {fileID: 21300000, guid: c633cfbb7f7aa9f4483e97843235d604, type: 3}
+  - {fileID: 21300000, guid: 11632d1045dcae4419c2f921bbf2b107, type: 3}
+  - {fileID: 21300000, guid: 824cd75ae3faba94e90ce5a1b9eaba1d, type: 3}
+  _skillFrame: {fileID: 21300000, guid: e6c8d1c36953fae43a82bf8dbe96619c, type: 3}
 --- !u!225 &1115154745
 CanvasGroup:
   m_ObjectHideFlags: 0
