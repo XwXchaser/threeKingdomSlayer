@@ -70,4 +70,23 @@ public class StageConfig : ScriptableObject
     [Header("补齐移动配置（每个关卡可不同）")]
     [Tooltip("连续补齐移动间的延迟（秒）。用于实现'快移动+停顿'的效果")]
     public float rushMoveDelay = 0.2f;
+
+    /// <summary>
+    /// 自动计算本关卡所有波次中非零 enemyId 的总数（即总需击杀敌人数量）
+    /// </summary>
+    public int GetTotalEnemyCount()
+    {
+        int count = 0;
+        foreach (var wave in waves)
+        {
+            if (wave == null || wave.rows == null) continue;
+            foreach (var row in wave.rows)
+            {
+                if (row == null || row.enemyIds == null) continue;
+                foreach (var eid in row.enemyIds)
+                    if (eid > 0) count++;
+            }
+        }
+        return count;
+    }
 }

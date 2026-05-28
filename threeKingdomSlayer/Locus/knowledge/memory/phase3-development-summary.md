@@ -9,13 +9,13 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779520344306
-updatedAt: 1779951793809
+updatedAt: 1779970275127
 ---
 
 # phase3-development-summary
 
 ## Summary
-第三期局内成长系统（经验三选一）开发状态 — 含虚幻武器被动奖励、UI弹窗重构、BuffDisplayPanel左侧图标面板、道具Icon点击触发改造。8种奖励全部完成。
+第三期局内成长系统（经验三选一）开发状态 + 击杀进度条 & 击杀里程碑闪现（2025-08-06）
 
 <!-- locus:body:start -->
 # 第三期：局内成长系统（经验三选一）开发状态
@@ -276,4 +276,56 @@ BattleHUD(Canvas)/BuffDisplayPanel [CanvasGroup, BuffDisplayPanel]
 - 代码覆写Inspector → 移除所有动态生成和布局覆写
 - **ItemInventory 未挂载** → 添加到 Manager GameObject
 - **TestDamageBoost 点击无响应** → BuffIcon._button 字段未在 Prefab 中串接，修复后图标消失+伤害加成正常
+
+---
+
+## 击杀进度条 & 击杀里程碑闪现（2025-08-06）
+
+### ✅ 击杀进度条（KillRewardUI.ProgressSlider）
+
+**功能**：右侧纵向从下往上，显示关卡击杀进度 currentKill/totalEnemyCount。
+
+**场景配置**：
+```
+KillRewardUI
+├─ ProgressSlider (Slider, direction=BottomToTop)
+│  ├─ Background → 底框 sprite
+│  ├─ Fill Area/Fill → slider_stage_siller.png (Image type=Simple)
+│  └─ MilestoneLabel × N → 左侧自动生成
+```
+
+**里程碑标签**（KillRewardUI.BuildMilestoneLabels）：
+- 从 StageConfig.killMilestones 自动读取阈值
+- 按比例放置在 Slider 左侧：`anchoredPosition.y = sliderHeight * ratio + offsetY`
+- Inspector 可调：`milestoneLabelColor`、`milestoneLabelFontSize`、`milestoneLabelOffsetX`、`milestoneLabelOffsetY`
+- 预制体：`Assets/Prefabs/UI/MilestoneLabel.prefab`（TMP_Text，方正粗黑宋简体 SDF，fontSize=18，白色）
+
+**填充条透明度修复（两层根因）**：
+1. Fill Image type: Filled→Simple（与 HeroHUD health bar 一致，Slider 通过 RectTransform 裁剪控制填充）
+2. sprite alphaIsTransparency: False→True（UI Sprite 必须为 True，否则 alpha 通道不被 UI shader 正确处理）
+
+### ✅ 击杀里程碑闪现（KillMilestoneDisplay）
+
+**功能**：全局击杀数到达阈值时，显示对应 sprite 并闪烁后消失。与关卡配置解耦。
+
+**配置**：`GlobalKillDisplayConfig` ScriptableObject（`Assets/ScriptableObjects/GlobalKillDisplayConfig.asset`）
+- `entries: List<KillDisplayEntry>` — 每项含 killThreshold、displaySprite、displayDuration、displaySize、displayPosition
+
+**效果**：入场闪烁 → 停留 → 淡出消失
+
+**关键脚本**：
+- `KillMilestoneDisplay.cs` — 监听 PlayerState.OnKillCountChanged，到达阈值时触发协程
+- `GlobalKillDisplayConfig.cs` — ScriptableObject 配置类
+
+**场景结构**：
+```
+BattleHUD(Canvas)/KillMilestoneDisplay [KillMilestoneDisplay]
+└─ KillDisplay_X × N → 代码动态创建 Image，alpha 控制显隐
+```
+
+**新增文件**：
+- `Assets/Scripts/UI/KillMilestoneDisplay.cs`
+- `Assets/Scripts/Core/GlobalKillDisplayConfig.cs`
+- `Assets/ScriptableObjects/GlobalKillDisplayConfig.asset`
+- `Assets/Prefabs/UI/MilestoneLabel.prefab`
 <!-- locus:body:end -->
