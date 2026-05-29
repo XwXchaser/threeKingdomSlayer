@@ -15,14 +15,7 @@ MonoBehaviour:
   qteSlots:
   - config: {fileID: 11400000, guid: 6e3646cfac5a4994586d2efc6ab77e1e, type: 2}
     delay: 0
-  qteAnimationFrames:
-  - {fileID: 21300000, guid: 75ea04e2909643849b02ecff54942c70, type: 3}
-  - {fileID: 21300000, guid: 753cb5d480b78744e8818bae249a2d8d, type: 3}
-  - {fileID: 21300000, guid: 935bac9486e783948a9729da0ec21beb, type: 3}
-  - {fileID: 21300000, guid: 9a9a2d64d4f390849a0a99eb1099c793, type: 3}
-  - {fileID: 21300000, guid: 24d4c133310f3b64da77393673ebac2d, type: 3}
-  - {fileID: 21300000, guid: 75ea04e2909643849b02ecff54942c70, type: 3}
-  qteAnimationFPS: 12
+  qteAnimationClip: {fileID: 7400000, guid: a83e84d8d7554a740b81f6bb9f3093f2, type: 2}
   animationLeadTime: 0.3
   projectilePrefab: {fileID: 0}
   projectileFlightTime: 0.8
