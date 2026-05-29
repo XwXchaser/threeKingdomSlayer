@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 7412376307176555471}
   - component: {fileID: 1158898008409058618}
   - component: {fileID: 7928693510256076554}
+  - component: {fileID: 5100236280932012696}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Enemy_104
@@ -60,6 +61,9 @@ MonoBehaviour:
   attackDrawDuration: 1
   useAttackFlip: 0
   moveSpeed: 0.3
+  cAttackProbability: 0
+  cAttackSpawnDuration: 0.6
+  shareHealthWithAdjacent: 0
   maxPoise: 200
   stunDuration: 5
   launchDuration: 5
@@ -89,6 +93,7 @@ MonoBehaviour:
   rowIndex: 0
   isAttackAnimating: 0
   isAttackDrawPhase: 0
+  isCFrame: 0
   pendingRushMove: 0
   targetRow: -1
 --- !u!212 &3042528735547855719
@@ -202,3 +207,26 @@ MonoBehaviour:
   enemy: {fileID: 0}
   qteDisplay: {fileID: 0}
   _state: 0
+--- !u!95 &5100236280932012696
+Animator:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 688460577474092011}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 96a57c519cd149c4d9b182b24a952ef5, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_UpdateFrequencyMode: 0
+  m_UpdateFrequency: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

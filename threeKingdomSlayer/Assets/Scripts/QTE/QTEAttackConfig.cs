@@ -26,10 +26,8 @@ public class QTEAttackConfig : ScriptableObject
     public List<QTESlot> qteSlots = new List<QTESlot>();
 
     [Header("BOSS 演出")]
-    [Tooltip("QTE 攻击期间播放的精灵帧动画（按顺序播放一次）")]
-    public Sprite[] qteAnimationFrames;
-    [Tooltip("精灵动画播放速率（帧/秒）")]
-    public float qteAnimationFPS = 12f;
+    [Tooltip("QTE 攻击期间播放的 AnimationClip")]
+    public AnimationClip qteAnimationClip;
     [Tooltip("动画播放到 QTE 起始的延迟（秒）")]
     public float animationLeadTime = 0.3f;
 

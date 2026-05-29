@@ -59,11 +59,8 @@ public class QTEController : MonoBehaviour
     private List<QTEInstance> _activeQTEs = new List<QTEInstance>();
     private GameObject _activeProjectile;
 
-    // QTE 精灵动画
-    private SpriteRenderer _enemySpriteRenderer;
-    private PingPongAnim _enemyPingPongAnim;
-    private Sprite _originalSprite;
-    private Coroutine _qteAnimCoroutine;
+    // QTE 动画
+    private Animator _animator;
 
     // 事件
     public System.Action OnQTETriggered;       // QTE 攻击触发
@@ -263,60 +260,24 @@ public class QTEController : MonoBehaviour
             DOTween.Kill(_activeProjectile);
     }
 
-    #region QTE 精灵动画
+    #region QTE 动画
 
     private void StartQTEAnimation()
     {
-        if (_currentAttack == null || _currentAttack.qteAnimationFrames == null || _currentAttack.qteAnimationFrames.Length == 0)
+        if (_currentAttack == null || _currentAttack.qteAnimationClip == null)
             return;
 
-        // 懒加载缓存
-        if (_enemySpriteRenderer == null)
-        {
-            _enemySpriteRenderer = enemy.GetComponent<SpriteRenderer>();
-            _enemyPingPongAnim = enemy.GetComponent<PingPongAnim>();
-        }
-        if (_enemySpriteRenderer == null) return;
+        if (_animator == null)
+            _animator = GetComponent<Animator>();
+        if (_animator == null) return;
 
-        _originalSprite = _enemySpriteRenderer.sprite;
-
-        // 暂停 PingPongAnim（避免与 QTE 动画冲突）
-        if (_enemyPingPongAnim != null)
-            _enemyPingPongAnim.enabled = false;
-
-        _qteAnimCoroutine = StartCoroutine(PlayQTEAnimation());
-    }
-
-    private System.Collections.IEnumerator PlayQTEAnimation()
-    {
-        var frames = _currentAttack.qteAnimationFrames;
-        float interval = 1f / Mathf.Max(_currentAttack.qteAnimationFPS, 1f);
-        int count = frames.Length;
-
-        for (int i = 0; i < count; i++)
-        {
-            if (_state != QTEState.PerformingQTEAttack && _state != QTEState.QTEJudging)
-                yield break;
-            _enemySpriteRenderer.sprite = frames[i];
-            yield return new WaitForSeconds(interval);
-        }
+        _animator.SetTrigger("QTEAttack");
     }
 
     private void StopQTEAnimation()
     {
-        if (_qteAnimCoroutine != null)
-        {
-            StopCoroutine(_qteAnimCoroutine);
-            _qteAnimCoroutine = null;
-        }
-
-        // 恢复原始精灵
-        if (_enemySpriteRenderer != null && _originalSprite != null)
-            _enemySpriteRenderer.sprite = _originalSprite;
-
-        // 恢复 PingPongAnim
-        if (_enemyPingPongAnim != null)
-            _enemyPingPongAnim.enabled = true;
+        if (_animator != null)
+            _animator.Play("Idle");
     }
 
     #endregion
