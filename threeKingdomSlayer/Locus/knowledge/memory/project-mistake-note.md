@@ -9,13 +9,13 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1778764012219
-updatedAt: 1779970193040
+updatedAt: 1780165889786
 ---
 
 # project-mistake-note
 
 ## Summary
-更新至 2025-08-06 — 新增「Slider 填充条透明度问题」（alphaIsTransparency + Filled vs Simple 两层根因）
+更新至 2025-08-07 — 新增 Animator AnyState 转移错误打断动画规则 + 敌人动画状态机设计规范 + EnemySpriteController 空实现问题
 
 <!-- locus:body:start -->
 ### Stab Wave 视觉旅行方向错误 ✅ 已修复（2025-07-18）
@@ -132,4 +132,40 @@ updatedAt: 1779970193040
 - 修复：① ProgressSlider Fill Image type=Filled→Simple；② `slider_stage_siller.png` alphaIsTransparency=False→True
 - 预防规则：**新建 Slider 填充条时：① fillRect Image type 必须为 Simple（不是 Filled）；② fill sprite 的 alphaIsTransparency 必须为 True**
 - 文件：`Assets/Scenes/Battle.scene` (ProgressSlider)、`Assets/Sprites/BatlleHUD/slider_stage_siller.png`
+
+### Animator AnyState 转移导致动画被错误打断 ✅ 已修复（2025-08-07）
+- 症状：敌人被击飞后 Launched 精灵只闪现一瞬间就回到 Idle；敌人在 Launched 状态下受击会切换到 HitFlash（受击动画）而非保持 Launched 动画
+- 根因：三个敌人 Animator Controller 中均配置了 `AnyState → HitFlash`（Hit trigger 条件）。AnyState 转移的优先级高于当前状态的转移，当 `SetTrigger("Hit")` 在 Launched 期间触发时，Animator 直接从 Launched 跳到 HitFlash，0.9s 后回到 Idle。Launched 动画被打断，表现为"敌人还没落地就站起来了"
+- 修复：
+  1. 移除所有控制器的 AnyState→HitFlash
+  2. 改为从**可被打断的状态**添加显式 Hit trigger 转移：
+     - 101/102：Idle→HitFlash、Attack→HitFlash
+     - 103：Idle→HitFlash、CAttack1→HitFlash、CAttack2→HitFlash、CAttack3→HitFlash
+  3. Launched、Dead 状态不添加 HitFlash 转移，从 Animator 层面阻止受击动画偷走击飞动画
+  4. 代码侧 `HitFlashRoutine()` 已有守卫（Launched/Dead/QTEAttacking/isCFrame 不 SetTrigger），形成 Animator + 代码双重保险
+- 预防规则：
+  1. **AnyState 转移只能用于真正"从任何状态都应该触发"的场景（如 Dead）**。对于条件性的打断（如受击动画），必须用显式状态转移
+  2. 设计 Animator 时先列出所有状态，明确哪些状态之间可以互相转移，再逐条添加。不要用 AnyState 偷懒
+  3. 当"某些状态不应该触发某个 Trigger"时，必须同时在 Animator 层（不添加对应转移）和代码层（SetTrigger 前检查状态）做双重守卫
+  4. 修改 Animator Controller 后必须在 Play Mode 中验证：击飞→空中受击→落地恢复 全流程
+- 文件：`Assets/Animations/Enemy_101.controller`、`Enemy_102.controller`、`Enemy_103.controller`、`Assets/Scripts/Enemy/Enemy.cs` (HitFlashRoutine)
+
+### 敌人动画状态机设计规范（2025-08-07）
+- 所有普通敌人（非Boss）共用同一套 Animator 状态机逻辑：
+  - **Idle**（默认状态）：循环播放 Idle 动画
+  - **Attack**（101/102）：Trigger 进入，HasExitTime 自动回 Idle。Attack 动画是单次播放的非循环 clip（如2帧精灵序列）
+  - **CAttack1→CAttack2→CAttack3→Idle**（103 C技链）：HasExitTime 链式转移，每一步播完自动进入下一步，最后回 Idle。CAttack 由代码通过 CAttack trigger 触发，代码在 CA 结束后设 variant 回 0
+  - **Launched**：AnyState→Launched（Launch trigger），无自动回 Idle 的转移。代码 `UpdateLaunch()` 控制落地时机，落地时 `animator.Play("Idle")` 切回
+  - **Dead**：AnyState→Dead（Dead trigger），终端状态无离开转移
+  - **HitFlash**：从 Idle/Attack/CAttack1-3 通过 Hit trigger 转移进入，HasExitTime(0.9s)→Idle。不在击飞/死亡时触发
+  - **Stunned**：代码层状态，Animator 保持 Idle。代码控制眩晕计时和退出
+- 时序关系：spawnDuration（前摇）= 攻击判定窗口开始前的时间；drawDuration（收招）= 攻击判定结束后的等待时间。Attack/CAttack 动画应在 spawnDuration 内播完，drawDuration 期间保持最后一帧，然后回 Idle
+- 文件：`Assets/Animations/Enemy_101.controller`、`Enemy_102.controller`、`Enemy_103.controller`、`Assets/Scripts/Enemy/Enemy.cs`
+
+### EnemySpriteController.TriggerHitFlash() 为空实现（2025-08-07）
+- 症状：Enemy.cs 的 `TriggerHitFlash()` 原本委托给 `_spriteCtrl?.TriggerHitFlash()`，但 EnemySpriteController 从未挂载到任何敌人 Prefab 上，调用始终为空操作。受击闪烁实际上只靠材质 flash（白色闪白），没有精灵替换的红色闪烁效果
+- 根因：EnemySpriteController 组件从未被添加到 101/102/103 的 Prefab 中
+- 修复：将 `TriggerHitFlash()` 改为启动 `HitFlashRoutine` 协程，通过 Animator 的 HitFlash 状态播放受击动画（HitFlash clip 为单帧精灵短暂显示）。EnemySpriteController.TriggerHitFlash() 保留但当前未使用
+- 预防规则：添加新组件时同步确认所有需要它的 Prefab 已挂载该组件
+- 文件：`Assets/Scripts/Enemy/Enemy.cs`、`Assets/Scripts/Enemy/EnemySpriteController.cs`
 <!-- locus:body:end -->

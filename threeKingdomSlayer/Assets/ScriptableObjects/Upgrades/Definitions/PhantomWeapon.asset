@@ -55,7 +55,19 @@ MonoBehaviour:
   triggerParam: 5
   phantomSteps:
   - damageRatio: 0.3
-    alpha: 0.8
+    alpha: 0.3
+    delaySeconds: 0
+  - damageRatio: 0.4
+    alpha: 0.3
+    delaySeconds: 0
+  - damageRatio: 0.5
+    alpha: 0.3
+    delaySeconds: 0
+  - damageRatio: 0.6
+    alpha: 0.3
+    delaySeconds: 0
+  - damageRatio: 0.75
+    alpha: 0.3
     delaySeconds: 0
   useCount: 1
   gestureId: 

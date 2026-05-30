@@ -16,6 +16,7 @@ MonoBehaviour:
   - config: {fileID: 11400000, guid: 6e3646cfac5a4994586d2efc6ab77e1e, type: 2}
     delay: 0
   qteAnimationClip: {fileID: 7400000, guid: a83e84d8d7554a740b81f6bb9f3093f2, type: 2}
+  animationDuration: 1.5
   animationLeadTime: 0.3
   projectilePrefab: {fileID: 0}
   projectileFlightTime: 0.8

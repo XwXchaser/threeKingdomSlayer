@@ -107,7 +107,8 @@ public class EnemySpriteController : MonoBehaviour
         {
             // AttackSpawn 阶段：前半 attack1，后半 attack2
             float elapsed = Time.time - attackStartTime;
-            float halfSpawn = enemy.attackSpawnDuration * 0.5f;
+            float spawnDur = enemy.currentStepSpawnDuration;
+            float halfSpawn = spawnDur * 0.5f;
             spriteRenderer.sprite = elapsed < halfSpawn ? attack1Sprite : attack2Sprite;
         }
         else

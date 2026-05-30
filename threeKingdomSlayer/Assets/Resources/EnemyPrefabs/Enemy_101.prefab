@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 3042528735547855719}
   - component: {fileID: 7412376307176555471}
   - component: {fileID: 2221974472477629242}
-  - component: {fileID: 3601251478275626982}
+  - component: {fileID: 4985420312235204657}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Enemy_101
@@ -51,17 +51,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: "\u6301\u5251\u6742\u5175"
   enemyId: 101
-  maxHealth: 15
+  maxHealth: 100
   occupySlots: 1
   attackSpeed: 0.25
   attackDamage: 10
   attackRange: 1
-  attackSpawnDuration: 2
-  attackDrawDuration: 1
-  useAttackFlip: 0
   moveSpeed: 0.3
-  cAttackProbability: 0
-  cAttackSpawnDuration: 0.6
+  attackSequence:
+  - isCAttack: 0
+    spawnDuration: 2
+    drawDuration: 1
+    extraCooldown: 0
+    useFlip: 0
   shareHealthWithAdjacent: 0
   maxPoise: 50
   stunDuration: 5
@@ -188,21 +189,26 @@ MonoBehaviour:
   highColor: {r: 0.2, g: 0.8, b: 0.2, a: 1}
   lowColor: {r: 0.9, g: 0.2, b: 0.2, a: 1}
   lowThreshold: 0.3
---- !u!114 &3601251478275626982
-MonoBehaviour:
+--- !u!95 &4985420312235204657
+Animator:
+  serializedVersion: 6
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 688460577474092011}
   m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 246453c5b3220d941bab2053e3afbb3f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  idleSprite: {fileID: 21300000, guid: 97fbb0c3b3e57cb40963cb783d66343e, type: 3}
-  attack1Sprite: {fileID: 21300000, guid: 9b8e0c41616959340a7a1400bc811e24, type: 3}
-  attack2Sprite: {fileID: 21300000, guid: 3d7d4eae5bbbedc4db184e2de659718c, type: 3}
-  deadSprite: {fileID: 21300000, guid: 8ced882283ee3674888030826966a3e7, type: 3}
-  hittedSprite: {fileID: 21300000, guid: a8a0c66ff8ebc274c9edbf538fc6428b, type: 3}
-  knockUpSprite: {fileID: 21300000, guid: 08dc19a798f29ab4d9408e841e989b8b, type: 3}
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: dd82b46f8eda9d344b1cbd2f8d86f54d, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_UpdateFrequencyMode: 0
+  m_UpdateFrequency: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
