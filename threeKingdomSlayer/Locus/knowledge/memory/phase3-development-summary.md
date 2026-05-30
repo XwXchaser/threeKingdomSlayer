@@ -9,13 +9,13 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779520344306
-updatedAt: 1779970275127
+updatedAt: 1780166172310
 ---
 
 # phase3-development-summary
 
 ## Summary
-第三期局内成长系统（经验三选一）开发状态 + 击杀进度条 & 击杀里程碑闪现（2025-08-06）
+第三期局内成长系统（经验三选一）+ 击杀进度条 & 击杀里程碑闪现 + 敌人动画状态机重构（2025-08-07）
 
 <!-- locus:body:start -->
 # 第三期：局内成长系统（经验三选一）开发状态
@@ -276,6 +276,7 @@ BattleHUD(Canvas)/BuffDisplayPanel [CanvasGroup, BuffDisplayPanel]
 - 代码覆写Inspector → 移除所有动态生成和布局覆写
 - **ItemInventory 未挂载** → 添加到 Manager GameObject
 - **TestDamageBoost 点击无响应** → BuffIcon._button 字段未在 Prefab 中串接，修复后图标消失+伤害加成正常
+- **Animator AnyState→HitFlash 抢走 Launched 动画** → 改为显式状态转移（见下）
 
 ---
 
@@ -328,4 +329,92 @@ BattleHUD(Canvas)/KillMilestoneDisplay [KillMilestoneDisplay]
 - `Assets/Scripts/Core/GlobalKillDisplayConfig.cs`
 - `Assets/ScriptableObjects/GlobalKillDisplayConfig.asset`
 - `Assets/Prefabs/UI/MilestoneLabel.prefab`
+
+---
+
+## 敌人动画状态机统一（2025-08-07）
+
+### ✅ 攻击序列改造
+
+**目标**：将所有敌人的攻击从概率驱动改为序列驱动（类似 BOSS 逻辑）。
+
+**数据结构**：
+```csharp
+[System.Serializable]
+public struct AttackStep
+{
+    public bool isCAttack;
+    public float spawnDuration;   // 前摇（秒）
+    public float drawDuration;    // 收招（秒）
+    public float extraCooldown;   // 额外冷却
+    public bool useFlip;          // 攻击时左右翻转
+}
+// Enemy 中: public List<AttackStep> attackSequence;
+```
+
+**已移除的废弃字段**（统一使用 attackSequence）：
+- `cAttackProbability` — C技概率（改为 sequence 中 isCAttack 控制）
+- `cAttackSpawnDuration` — CA 前摇（改为 AttackStep.spawnDuration）
+
+**保留但含义已变的字段**：
+- `attackSpeed` — 保留在 Inspector 但当前未使用，留待后续接入 sequence 节奏控制
+
+**执行流程**：
+```
+UpdateAttack() → _currentAttackStep 自增（循环）
+  → 读取 attackSequence[_currentAttackStep]
+  → PlayAttackAnimationTween():
+      spawnDuration 内播完攻击动画（Attack/CAttack trigger）
+      drawDuration 保持最后一帧 → 回 Idle
+  → PerformAttack() 在 spawnDuration 结束时触发 AttackWave
+  → cooldown = drawDuration + extraCooldown
+```
+
+### ✅ 敌人动画状态机规范
+
+所有普通敌人（101/102/103）共用统一的 Animator 逻辑：
+
+| 状态 | 进入方式 | 退出方式 | 循环 |
+|------|---------|---------|------|
+| Idle | 默认状态 | Trigger Attack/CAttack/Launch/Dead | 循环 |
+| Attack (101/102) | Attack trigger | HasExitTime→Idle | 单次 |
+| CAttack1-3 (103) | CAttack trigger→CAttack1 | HasExitTime 链: 1→2→3→Idle | 单次 |
+| Launched | AnyState + Launch trigger | 代码控制落地→Play("Idle") | 单次 |
+| Dead | AnyState + Dead trigger | 终端状态 | 单次 |
+| HitFlash | Hit trigger（仅从 Idle/Attack/CAttack1-3） | HasExitTime(0.9s)→Idle | 单次 |
+| Stunned | 代码层状态，Animator 保持 Idle | stunTimer到期→Play("Idle") | 不适用 |
+
+**关键设计决策**：
+- Stunned 不是 Animator 状态：眩晕期间敌人原地不动，代码控制计时和退出
+- Launched 不进 HitFlash：击飞后空中受击保持 Launched 动画，不切受击闪烁
+- CAttack 链通过 HasExitTime 自动推进：代码只需触发 CAttack trigger，Animator 自动 CA1→CA2→CA3→Idle
+
+### ✅ Animator AnyState→HitFlash 修复
+
+**症状**：敌人击飞后 Launched 动画只闪现一瞬间就回 Idle
+
+**根因**：三个控制器均有 `AnyState → HitFlash (Hit trigger)`，在 Launched 期间若收到 Hit trigger 会抢走动画
+
+**修复**：
+- 移除 AnyState→HitFlash
+- 改为显式转移：从 Idle、Attack、CAttack1-3 添加 Hit trigger→HitFlash
+- Launched 和 Dead 不添加，代码侧 `HitFlashRoutine()` 已有守卫（Launched/Dead/QTEAttacking/isCFrame 不 SetTrigger）
+- HitFlash→Idle (HasExitTime=0.9)
+
+### ✅ Enemy_103 部署
+
+**动画**：`Assets/Sprites/Enemy/Enemy3/` — Idle、CAttack1-3、Dead、Launched、HitFlash 各 anim 文件
+
+**Animator**：`Assets/Animations/Enemy_103.controller` — CAttack1→CAttack2→CAttack3 链式转移
+
+**Prefab**：`Assets/Resources/EnemyPrefabs/Enemy_103.prefab`
+
+**攻击序列配置**：
+- `isCAttack=true, spawnDuration=0.3, drawDuration=0.3, extraCooldown=0.5`（3步相同）
+- CA1→CA2→CA3 组成一个完整攻击动作的3帧动画
+
+### ✅ 已知问题与注意事项
+- **EnemySpriteController.TriggerHitFlash()** 为空实现 — 组件从未挂载到任何敌人 Prefab，敌人受击闪烁实际依赖材质 flash。保留方法但不建议在新敌人中使用
+- `attackSpeed` 字段含义待明确 — 当前未接入序列节奏控制，计划与 AttackStep 各阶段的整体速度倍率挂钩
+- 101/102 的 Launched 动画仍是精灵替换方案（EnemySpriteController），未走 Animator。这两者与 103 的 Launched 实现方式不同，后续应统一为 Animator 驱动
 <!-- locus:body:end -->

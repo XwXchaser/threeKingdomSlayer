@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 
@@ -26,6 +27,24 @@ public enum BossState
 }
 
 /// <summary>
+/// 攻击序列中的一步，定义该步的攻击类型和参数
+/// </summary>
+[System.Serializable]
+public struct AttackStep
+{
+    [Tooltip("是否C技（霸体窗口 + CAttack动画trigger）")]
+    public bool isCAttack;
+    [Tooltip("前摇时长（秒）")]
+    public float spawnDuration;
+    [Tooltip("收招时长（秒）")]
+    public float drawDuration;
+    [Tooltip("该步攻击后的额外冷却（秒）")]
+    public float extraCooldown;
+    [Tooltip("攻击时是否左右翻转")]
+    public bool useFlip;
+}
+
+/// <summary>
 /// 敌人实体 - MonoBehaviour
 /// 管理敌人的生命值、架势值、状态机、前进移动、透明度渐变
 /// </summary>
@@ -40,6 +59,7 @@ public class Enemy : MonoBehaviour
     /// </summary>
     [System.NonSerialized] public int instanceId;
     private static int _nextInstanceId = 1;
+    private EnemyState _lastLoggedState = EnemyState.Idle;
 
     /// <summary>
     /// 调试标签：instanceId(enemyId)，如 #3(101)
@@ -52,16 +72,11 @@ public class Enemy : MonoBehaviour
     public float attackSpeed = 1f;
     public float attackDamage = 10f;
     public float attackRange = 1f;
-    public float attackSpawnDuration = 0.3f;
-    public float attackDrawDuration = 0.3f;
-    public bool useAttackFlip = true;
     public float moveSpeed = 1f;
 
-    [Header("C技（蓄力攻击）")]
-    [Tooltip("使用C技的概率（0=不使用），仅精英/BOSS有效")]
-    [Range(0f, 1f)] public float cAttackProbability = 0f;
-    [Tooltip("C技蓄力/前摇时长（应明显长于普通攻击）")]
-    public float cAttackSpawnDuration = 0.6f;
+    [Header("攻击序列")]
+    [Tooltip("攻击序列（按顺序循环执行每步攻击）")]
+    public List<AttackStep> attackSequence;
 
     [Header("共享血量")]
     [Tooltip("与同行相邻同ID敌人共享血量")]
@@ -139,6 +154,9 @@ public class Enemy : MonoBehaviour
     public bool isAttackAnimating; // 是否正在播放攻击动画（AttackSpawn 或 AttackDraw）
     public bool isAttackDrawPhase;  // 是否处于攻击收招阶段（不可被招架打断）
     public bool isCFrame;           // 是否处于C技起始帧（霸体窗口），仅 Parry/Launch 可打断
+    private int _currentAttackStep;  // 攻击序列当前位置
+    /// <summary> 当前攻击步骤的前摇时长（供 EnemySpriteController 读取） </summary>
+    [System.NonSerialized] public float currentStepSpawnDuration;
 
     // 补齐移动链式触发
     // pendingRushMove = true 表示该敌人已标记为需要向前补齐，
@@ -186,7 +204,10 @@ public class Enemy : MonoBehaviour
     private float bounceYOffset;
 
     // DOTween: 当前攻击动画序列（用于在 Die() 中取消正在执行的攻击动作）
-    private Sequence attackSequence;
+    private Sequence _attackTween;
+
+    // Animator HitFlash 协程引用
+    private Coroutine _hitFlashRoutine;
 
     // QTE 控制器缓存
     private QTEController _qteController;
@@ -197,7 +218,8 @@ public class Enemy : MonoBehaviour
 
     // 血条UI缓存
     private EnemyHealthBar cachedHealthBar;
-    private EnemySpriteController cachedSpriteController;
+    private Animator _animator;
+    private EnemySpriteController _spriteCtrl;
 
     // 事件
     public System.Action<Enemy> OnDeath;
@@ -250,6 +272,7 @@ public class Enemy : MonoBehaviour
         isAttackAnimating = false;
         isAttackDrawPhase = false;
         isCFrame = false;
+        _currentAttackStep = 0;
         moveProgress = 0f;
         isMovingToNextRow = false;
         isRushMove = false;
@@ -259,7 +282,7 @@ public class Enemy : MonoBehaviour
         rushMoveChainTriggered = false;
         targetRow = -1;
         bounceYOffset = 0f;
-        attackSequence = null;
+        _attackTween = null;
         // 创建材质实例（用于闪白效果）
         // 通过 renderer.material 创建实例，避免 MaterialPropertyBlock 在对象禁用时不生效
         CreateFlashMaterials();
@@ -267,6 +290,10 @@ public class Enemy : MonoBehaviour
         initialized = true;
 
         gameObject.SetActive(true);
+
+        // 缓存 Animator 和 SpriteController 引用
+        _animator = GetComponent<Animator>();
+        _spriteCtrl = GetComponent<EnemySpriteController>();
 
         // 保存原始缩放值，用于攻击动画/死亡后的还原
         originalScale = transform.localScale;
@@ -545,10 +572,10 @@ public class Enemy : MonoBehaviour
         // 它们是全局 Kill，会误杀其他敌人的 tween。transform.DOKill(false) 已足够清理本对象。
         transform.DOKill(false);
         DOTween.Kill(transform, false);
-        if (attackSequence != null && attackSequence.IsActive())
+        if (_attackTween != null && _attackTween.IsActive())
         {
-            attackSequence.Kill();
-            attackSequence = null;
+            _attackTween.Kill();
+            _attackTween = null;
         }
         UpdateWorldPosition();
         transform.localScale = originalScale;
@@ -562,6 +589,8 @@ public class Enemy : MonoBehaviour
         // 若此处重置为 -1，落地后 UpdateLaunch() 不会触发补齐，导致链式前移中断。
 
         state = EnemyState.Launched;
+        // 直接 Play Launched 跳过触发器竞争（Hit 触发器可能与 Launch 竞态）
+        _animator?.Play("Launched", 0, 0f);
         launchTimer = launchDuration;
         launchStartLocalPos = transform.localPosition;
         currentLaunchYHeight = Random.Range(launchYHeightMin, launchYHeightMax);
@@ -608,10 +637,10 @@ public class Enemy : MonoBehaviour
         // 清理 DOTween 残留（修复形变不恢复问题）
         transform.DOKill(false);
 
-        if (attackSequence != null && attackSequence.IsActive())
+        if (_attackTween != null && _attackTween.IsActive())
         {
-            attackSequence.Kill();
-            attackSequence = null;
+            _attackTween.Kill();
+            _attackTween = null;
         }
         UpdateWorldPosition();
         transform.localScale = originalScale;
@@ -637,10 +666,10 @@ public class Enemy : MonoBehaviour
         if (state == EnemyState.Dead) return;
 
         // 中断当前攻击动画
-        if (attackSequence != null && attackSequence.IsActive())
+        if (_attackTween != null && _attackTween.IsActive())
         {
-            attackSequence.Kill();
-            attackSequence = null;
+            _attackTween.Kill();
+            _attackTween = null;
         }
         transform.DOKill(false);
         UpdateWorldPosition();
@@ -698,6 +727,7 @@ public class Enemy : MonoBehaviour
             // state==Stunned 会直接返回 false，而 StartMoving 也可能因 PerRow 前排检查
             // 等原因提前返回不改变状态，导致敌人永久卡在 Stunned 状态
             state = EnemyState.Idle;
+            _animator?.Play("Idle", 0, 0f);
 
             // Boss 就位后锁定位置，不参与补齐前移
             if (isBoss && (bossState == BossState.InCombat || _bossEngageTimer > 0f))
@@ -749,6 +779,7 @@ public class Enemy : MonoBehaviour
 
             // 先退出击飞状态，再根据情况决定后续行为
             state = EnemyState.Idle;
+            _animator?.Play("Idle", 0, 0f);
 
             // BUG FIX: 挑飞打断了眩晕，落地后恢复剩余的眩晕时间
             // 避免 BOSS 在眩晕未结束时落地立即攻击
@@ -1051,43 +1082,52 @@ public class Enemy : MonoBehaviour
     ///   AttackSpawn（前摇翻面）：向前移动 + 镜像翻转，完成时造成伤害，可被招架打断
     ///   AttackDraw（收招返回）：后退到原位 + 翻转回正，不可被招架打断
     ///   冷却阶段（AttackSpeed）：等待 attackTimer 倒计时，冷却结束后再次进入 AttackSpawn
+    ///
+    ///   按 attackSequence 顺序循环执行每步攻击
     /// </summary>
     private void PlayAttackAnimationTween()
     {
-        // 判定是否使用C技
-        bool isCAttack = cAttackProbability > 0f && Random.value < cAttackProbability;
-        PlayAttackAnimationTween(isCAttack);
-    }
+        if (attackSequence == null || attackSequence.Count == 0)
+        {
+            Debug.LogWarning("[Enemy] attackSequence 为空，跳过攻击");
+            return;
+        }
 
-    /// <summary>
-    /// 使用 DOTween 播放攻击动效
-    /// </summary>
-    /// <param name="isCAttack">是否播放C技（蓄力攻击），C技有更长的前摇并在前摇期间启用霸体</param>
-    private void PlayAttackAnimationTween(bool isCAttack)
-    {
+        var step = attackSequence[_currentAttackStep];
+        _currentAttackStep = (_currentAttackStep + 1) % attackSequence.Count;
+
+        bool isCAttack = step.isCAttack;
+        float spawnDuration = step.spawnDuration;
+        float drawDuration = step.drawDuration;
+        float extraCooldown = step.extraCooldown;
+        bool useFlip = step.useFlip;
+        currentStepSpawnDuration = spawnDuration;
+
+        // 直接切回 Idle（不用 SetTrigger，避免残留 Idle 触发器与 Launch 竞争）
+        _animator?.Play("Idle", 0, 0f);
+
         isAttackAnimating = true;
         isAttackDrawPhase = false;
-        isCFrame = isCAttack; // C技在前摇期间处于霸体窗口
+        isCFrame = isCAttack;
+        _animator?.SetTrigger(isCAttack ? "CAttack" : "Attack");
 
         Vector3 startPos = transform.localPosition;
         Vector3 startScale = transform.localScale;
 
         float totalInterval = (1f / attackSpeed);
-        float spawnDuration = isCAttack ? cAttackSpawnDuration : attackSpawnDuration;
-        float drawDuration = attackDrawDuration;
         float forwardDistance = 0.5f;
 
-        attackSequence = DOTween.Sequence();
-        attackSequence.SetTarget(transform);
-        attackSequence.SetId("attackAnim");
+        _attackTween = DOTween.Sequence();
+        _attackTween.SetTarget(transform);
+        _attackTween.SetId("attackAnim");
 
         // AttackSpawn：向前移动 + 左右镜像翻转（可被招架打断）
-        attackSequence.Append(transform.DOLocalMoveZ(startPos.z - forwardDistance, spawnDuration).SetEase(Ease.OutQuad));
-        if (useAttackFlip)
-            attackSequence.Join(transform.DOScaleX(-startScale.x, spawnDuration).SetEase(Ease.OutQuad));
+        _attackTween.Append(transform.DOLocalMoveZ(startPos.z - forwardDistance, spawnDuration).SetEase(Ease.OutQuad));
+        if (useFlip)
+            _attackTween.Join(transform.DOScaleX(-startScale.x, spawnDuration).SetEase(Ease.OutQuad));
 
         // AttackSpawn 完成 → 造成伤害，进入 AttackDraw 收招阶段
-        attackSequence.AppendCallback(() =>
+        _attackTween.AppendCallback(() =>
         {
             PerformAttack();
             isAttackDrawPhase = true; // 进入收招阶段，此后不可被招架打断
@@ -1095,19 +1135,19 @@ public class Enemy : MonoBehaviour
         });
 
         // AttackDraw：后退到原位 + 翻转回正（不可被招架打断）
-        attackSequence.Append(transform.DOLocalMoveZ(startPos.z, drawDuration).SetEase(Ease.InQuad));
-        if (useAttackFlip)
-            attackSequence.Join(transform.DOScaleX(startScale.x, drawDuration).SetEase(Ease.InQuad));
+        _attackTween.Append(transform.DOLocalMoveZ(startPos.z, drawDuration).SetEase(Ease.InQuad));
+        if (useFlip)
+            _attackTween.Join(transform.DOScaleX(startScale.x, drawDuration).SetEase(Ease.InQuad));
 
         // 收招完成 → 进入冷却阶段
-        attackSequence.OnComplete(() =>
+        _attackTween.OnComplete(() =>
         {
-            attackSequence = null;
+            _attackTween = null;
             isAttackAnimating = false;
             isAttackDrawPhase = false;
             isCFrame = false;
 
-            float cooldown = totalInterval * 0.4f;
+            float cooldown = totalInterval * 0.4f + extraCooldown;
             if (cooldown < 0.1f) cooldown = 0.1f;
             attackTimer = cooldown;
 
@@ -1117,6 +1157,9 @@ public class Enemy : MonoBehaviour
                 var qte = GetQTEController();
                 if (qte != null) qte.OnEnemyAttackComplete();
             }
+
+            // 攻击结束，Animator 直接回到 Idle（不用 SetTrigger）
+            _animator?.Play("Idle", 0, 0f);
 
             TryStartRushMove();
         });
@@ -1191,10 +1234,7 @@ public class Enemy : MonoBehaviour
         ApplyHitFlashImmediate();
 
         // 触发受伤精灵闪烁（仅 Idle/Moving 状态，持续 0.3 秒）
-        if (cachedSpriteController == null)
-            cachedSpriteController = GetComponent<EnemySpriteController>();
-        if (cachedSpriteController != null)
-            cachedSpriteController.TriggerHitFlash();
+        TriggerHitFlash();
 
         // 触发受伤闪白效果（非致命伤通过 Update 循环过渡恢复）
         hitFlashTimer = HIT_FLASH_DURATION;
@@ -1244,10 +1284,7 @@ public class Enemy : MonoBehaviour
 
         ApplyHitFlashImmediate();
 
-        if (cachedSpriteController == null)
-            cachedSpriteController = GetComponent<EnemySpriteController>();
-        if (cachedSpriteController != null)
-            cachedSpriteController.TriggerHitFlash();
+        TriggerHitFlash();
 
         hitFlashTimer = HIT_FLASH_DURATION;
 
@@ -1257,6 +1294,31 @@ public class Enemy : MonoBehaviour
         transform.DOPunchScale(new Vector3(0.2f, 0.2f, 0.2f), 0.15f, 8, 0.5f)
             .SetTarget(transform)
             .SetId(punchId);
+    }
+
+    /// <summary>
+    /// 触发受伤精灵闪烁（Animator HitFlash 状态，0.3秒后自动回到 Idle）
+    /// C技霸体帧(isCFrame)、击飞(Launched)、死亡(Dead)、QTE攻击中不触发 HitFlash 动画
+    /// </summary>
+    private void TriggerHitFlash()
+    {
+        if (_hitFlashRoutine != null)
+            StopCoroutine(_hitFlashRoutine);
+        _hitFlashRoutine = StartCoroutine(HitFlashRoutine());
+    }
+
+    private System.Collections.IEnumerator HitFlashRoutine()
+    {
+        // 守卫：C帧弹刀、击飞、死亡、QTE 不播 HitFlash 动画
+        if (state != EnemyState.Launched
+            && state != EnemyState.Dead
+            && state != EnemyState.QTEAttacking
+            && !isCFrame)
+        {
+            _animator?.SetTrigger("Hit");
+        }
+        yield return new WaitForSeconds(0.3f);
+        _hitFlashRoutine = null;
     }
 
     /// <summary>
@@ -1408,15 +1470,16 @@ public class Enemy : MonoBehaviour
         if (state == EnemyState.Dead) return;
         bool wasLaunched = (state == EnemyState.Launched);
         state = EnemyState.Dead;
+        _animator?.SetTrigger("Dead");
 
         // BUG FIX: 取消正在执行的攻击 DOTween 动画
         // 若敌人在攻击动画中被秒杀，立即中断攻击动作（前移+翻转），直接进入死亡状态
         // Kill() 后立即重置位置和缩放：Kill 会留下中断时的中间值（如翻转-0.2），
         // 若不重置，死亡动效期间敌人位置/缩放会是错误的
-        if (attackSequence != null && attackSequence.IsActive())
+        if (_attackTween != null && _attackTween.IsActive())
         {
-            attackSequence.Kill();
-            attackSequence = null;
+            _attackTween.Kill();
+            _attackTween = null;
             UpdateWorldPosition();
             transform.localScale = originalScale;
         }
@@ -1550,10 +1613,10 @@ public class Enemy : MonoBehaviour
         // 若敌人正在播放攻击动画，先清理 DOTween 序列并重置位置/缩放
         // 否则后续 StartMoving() 中的 DOTween.Kill(transform, false) 会直接中断攻击 tween，
         // 留下中间值（如 ScaleX=-0.2）导致视觉错误，且攻击动画与补齐移动并发
-        if (attackSequence != null && attackSequence.IsActive())
+        if (_attackTween != null && _attackTween.IsActive())
         {
-            attackSequence.Kill();
-            attackSequence = null;
+            _attackTween.Kill();
+            _attackTween = null;
             UpdateWorldPosition();
             transform.localScale = originalScale;
         }

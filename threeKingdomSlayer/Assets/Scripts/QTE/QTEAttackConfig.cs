@@ -28,6 +28,8 @@ public class QTEAttackConfig : ScriptableObject
     [Header("BOSS 演出")]
     [Tooltip("QTE 攻击期间播放的 AnimationClip")]
     public AnimationClip qteAnimationClip;
+    [Tooltip("动画总时长（秒），0 = 自动根据 QTE 槽位计算")]
+    public float animationDuration;
     [Tooltip("动画播放到 QTE 起始的延迟（秒）")]
     public float animationLeadTime = 0.3f;
 
