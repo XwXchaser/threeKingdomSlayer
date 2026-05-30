@@ -78,6 +78,20 @@ public class Enemy : MonoBehaviour
     [Tooltip("攻击序列（按顺序循环执行每步攻击）")]
     public List<AttackStep> attackSequence;
 
+    [Header("远程攻击")]
+    [Tooltip("是否为远程单位（攻击时发射飞行物而非贴身造成伤害）")]
+    public bool isRanged;
+    [Tooltip("飞行物 Prefab（需挂载 EnemyProjectile 组件）")]
+    public GameObject projectilePrefab;
+    [Tooltip("飞行物抛物线最高点高度")]
+    public float projectileArcHeight = 3f;
+    [Tooltip("飞行物飞行时长")]
+    public float projectileFlyDuration = 1f;
+    [Tooltip("飞行物目标 Z 偏移（相对主摄像机 Z，越大越过摄像机越远）")]
+    public float projectileZTargetOffset = 5f;
+    [Tooltip("飞行物目标 X 偏移（相对敌人当前位置 X）")]
+    public float projectileXOffset = 0f;
+
     [Header("共享血量")]
     [Tooltip("与同行相邻同ID敌人共享血量")]
     public bool shareHealthWithAdjacent = false;
@@ -1078,6 +1092,32 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
+    /// 远程攻击：发射飞行物（箭矢）
+    /// </summary>
+    private void SpawnProjectile()
+    {
+        if (projectilePrefab == null)
+        {
+            Debug.LogWarning($"[Enemy] {DebugTag} isRanged=true 但 projectilePrefab 为空");
+            return;
+        }
+
+        GameObject go = Instantiate(projectilePrefab);
+        var proj = go.GetComponent<EnemyProjectile>();
+        if (proj == null)
+            proj = go.AddComponent<EnemyProjectile>();
+
+        Vector3 startPos = transform.position;
+        float camZ = Camera.main != null ? Camera.main.transform.position.z : 0f;
+        float endZ = camZ + projectileZTargetOffset;
+        float endX = startPos.x + projectileXOffset;
+
+        proj.Launch(startPos, endZ, endX, attackDamage, projectileArcHeight, projectileFlyDuration);
+
+        Debug.Log($"[Enemy] {DebugTag} 发射飞行物: start=({startPos.x:F1},{startPos.y:F1},{startPos.z:F1}) endZ={endZ:F1} endX={endX:F1}");
+    }
+
+    /// <summary>
     /// 使用 DOTween 播放攻击动效（三阶段攻击循环）
     ///   AttackSpawn（前摇翻面）：向前移动 + 镜像翻转，完成时造成伤害，可被招架打断
     ///   AttackDraw（收招返回）：后退到原位 + 翻转回正，不可被招架打断
@@ -1126,18 +1166,39 @@ public class Enemy : MonoBehaviour
         if (useFlip)
             _attackTween.Join(transform.DOScaleX(-startScale.x, spawnDuration).SetEase(Ease.OutQuad));
 
-        // AttackSpawn 完成 → 造成伤害，进入 AttackDraw 收招阶段
-        _attackTween.AppendCallback(() =>
+        // 远程攻击：不移动，在 spawnDuration 结束时发射飞行物
+        if (isRanged)
         {
-            PerformAttack();
-            isAttackDrawPhase = true; // 进入收招阶段，此后不可被招架打断
-            isCFrame = false;          // 伤害帧结束霸体窗口
-        });
+            // AttackSpawn 结束 → 发射飞行物
+            _attackTween.AppendInterval(spawnDuration);
+            _attackTween.AppendCallback(() =>
+            {
+                SpawnProjectile();
+                isAttackDrawPhase = true;
+            });
+            // AttackDraw 阶段：等待 drawDuration
+            _attackTween.AppendInterval(drawDuration);
+        }
+        else
+        {
+            // 近战：向前 + 翻转（AttackSpawn）
+            _attackTween.Append(transform.DOLocalMoveZ(startPos.z - forwardDistance, spawnDuration).SetEase(Ease.OutQuad));
+            if (useFlip)
+                _attackTween.Join(transform.DOScaleX(-startScale.x, spawnDuration).SetEase(Ease.OutQuad));
 
-        // AttackDraw：后退到原位 + 翻转回正（不可被招架打断）
-        _attackTween.Append(transform.DOLocalMoveZ(startPos.z, drawDuration).SetEase(Ease.InQuad));
-        if (useFlip)
-            _attackTween.Join(transform.DOScaleX(startScale.x, drawDuration).SetEase(Ease.InQuad));
+            // AttackSpawn 完成 → 造成伤害，进入 AttackDraw 收招阶段
+            _attackTween.AppendCallback(() =>
+            {
+                PerformAttack();
+                isAttackDrawPhase = true; // 进入收招阶段，此后不可被招架打断
+                isCFrame = false;          // 伤害帧结束霸体窗口
+            });
+
+            // AttackDraw：后退到原位 + 翻转回正（不可被招架打断）
+            _attackTween.Append(transform.DOLocalMoveZ(startPos.z, drawDuration).SetEase(Ease.InQuad));
+            if (useFlip)
+                _attackTween.Join(transform.DOScaleX(startScale.x, drawDuration).SetEase(Ease.InQuad));
+        }
 
         // 收招完成 → 进入冷却阶段
         _attackTween.OnComplete(() =>

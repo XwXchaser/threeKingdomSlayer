@@ -17,6 +17,10 @@ public class AttackSystem : MonoBehaviour
     public ColumnManager columnManager;
     public PlayerState playerState;
 
+    [Header("招架远程飞行物")]
+    [Tooltip("招架时扫描飞行物的范围半径")]
+    public float parryProjectileRange = 4f;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -217,8 +221,27 @@ public class AttackSystem : MonoBehaviour
     private bool ExecuteParry()
     {
         var cfg = GetConfig(AttackType.Parry);
-        if (cfg == null || columnManager == null) return false;
+        if (cfg == null) return false;
 
+        // 优先：扫描附近的远程飞行物并反弹
+        var projectiles = FindObjectsOfType<EnemyProjectile>();
+        Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
+        bool deflectedAny = false;
+        foreach (var p in projectiles)
+        {
+            if (p == null) continue;
+            float dist = Vector3.Distance(p.GetWorldPosition(), playerPos);
+            if (dist <= parryProjectileRange)
+            {
+                p.Deflect();
+                deflectedAny = true;
+                Debug.Log($"[AttackSystem] 招架反弹飞行物: dist={dist:F1}");
+            }
+        }
+        if (deflectedAny) return true;
+
+        // 无飞行物在范围内 → 对敌人执行招架伤害
+        if (columnManager == null) return false;
         float finalDmg = GetFinalDamage(cfg);
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
         if (targets.Count == 0) return false;
