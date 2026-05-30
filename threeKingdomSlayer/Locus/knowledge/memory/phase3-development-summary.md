@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779520344306
-updatedAt: 1780166282770
+updatedAt: 1780169716179
 ---
 
 # phase3-development-summary
@@ -175,6 +175,32 @@ UpgradePopup.prefab
 - 移除 AnyState→HitFlash，改为显式转移
 - 101/102/103 共用规范（见上文状态转移表）
 
+### ✅ Enemy_105 远程弓箭手（2025-08-08）
+- **攻击范围**：3格，远程单位
+- **攻击类型**：非C技（`isCFrame=false`），可被任意攻击打断
+- **远程飞行物**：`EnemyProjectile.cs` — DOTween 抛物线飞行
+  - Z/X 线性插值 + Y 两段抛物线（OutQuad 上升 + InQuad 下降）
+  - X轴俯仰旋转（-25°→+30°）模拟重力弧线
+  - Z轴自旋（0→15°）模拟空气动力学
+  - 飞行物独立于敌人状态（死亡/击飞不影响已射出箭矢）
+- **Parry 格挡**：玩家只能用 Parry 格挡远程攻击
+  - `AttackSystem.ExecuteParry()` 扫描范围内 `EnemyProjectile` 实例
+  - `parryProjectileRange` 默认 4f
+  - 格挡成功 → `Deflect()`：旋转720° + 坠落销毁
+  - 未格挡 → 到达目标点后 `PlayerState.TakeDamage()`
+- **动画**：单 AnimationClip 含3帧精灵关键帧（attack1@0s, attack2@1s, attack3@2s, stopTime=3s）
+- **Animator**：`Assets/Animations/Enemy_105.controller` — 遵循统一规范（Idle/Attack/HitFlash/Launched/Dead，AnyState→Dead+Launched）
+- **Prefab**：`Assets/Resources/EnemyPrefabs/Enemy_105.prefab`
+  - `isRanged=true`, `attackRange=3`
+  - `projectilePrefab` 指向 `Assets/Prefabs/arrow.prefab`
+  - scale: 0.2（遵循 103 惯例）
+- **素材**：`Assets/Sprites/Enemy/Enemy5/`
+- **Enemy.cs 改动**：
+  - 新增 Header "远程攻击" 字段：`isRanged`, `projectilePrefab`, `arcHeight`, `flyDuration`, `zTargetOffset`, `xOffset`
+  - `SpawnProjectile()` 方法：在攻击动画 spawnDuration 结束时 Instantiate + Launch
+  - `PlayAttackAnimationTween` 远程分支：跳过 move/flip DOTween，追加 interval+callback+interval
+- **testStage 注册**：enemyId=105 (hex 0x69="69")
+
 ---
 
 ## 新建敌人所需清单
@@ -195,13 +221,18 @@ UpgradePopup.prefab
    - Enemy_XXX_Dead.anim
    - Enemy_XXX_Launched.anim
 
-3. **Animator Controller**（参考现有 101/102/103 的转移规则创建 `.controller`）
+3. **Animator Controller**（参考现有 101/102/103/105 的转移规则创建 `.controller`）
 
 4. **Enemy Prefab**（放入 `Assets/Resources/EnemyPrefabs/`）
    - Enemy.cs 组件 + Animator + SpriteRenderer + Collider
    - 配置 `attackSequence` 列表
+   - 远程单位需额外配置 `isRanged=true` + `projectilePrefab` 等字段
 
 5. **StageConfig 注册** — 在 `testStage.asset` 中添加 spawn 条目
+
+6. **远程飞行物**（如果是远程单位）
+   - 飞行物 Prefab 挂载 `EnemyProjectile` 组件
+   - 在敌人 Prefab 的 `projectilePrefab` 字段串接
 
 ---
 
@@ -219,4 +250,5 @@ UpgradePopup.prefab
 - Animator AnyState→HitFlash 打断 Launched → 改为显式转移
 - Stab Wave 视觉方向错误 → 改用最远目标方向
 - sharedHealthGroup 打断失效 → 打断逻辑移到 sharedHealthGroup 前
+- Enemy_105 projectilePrefab=NULL → arrow不出现 → unity_execute 串接引用
 <!-- locus:body:end -->

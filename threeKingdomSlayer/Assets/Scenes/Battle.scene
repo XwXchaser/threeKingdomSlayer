@@ -8285,6 +8285,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   columnManager: {fileID: 1289233715}
   playerState: {fileID: 1878310418}
+  parryProjectileRange: 4
 --- !u!1 &1812484211
 GameObject:
   m_ObjectHideFlags: 0
