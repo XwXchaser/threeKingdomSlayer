@@ -234,6 +234,7 @@ public class Enemy : MonoBehaviour
     private EnemyHealthBar cachedHealthBar;
     private Animator _animator;
     private EnemySpriteController _spriteCtrl;
+    private AnimationClip _attackClip; // 缓存的 Attack clip（用于同步 DOTween 与 Animator 时长）
 
     // 事件
     public System.Action<Enemy> OnDeath;
@@ -308,6 +309,20 @@ public class Enemy : MonoBehaviour
         // 缓存 Animator 和 SpriteController 引用
         _animator = GetComponent<Animator>();
         _spriteCtrl = GetComponent<EnemySpriteController>();
+
+        // 缓存 Attack AnimationClip（用于远程 DOTween 时长同步）
+        _attackClip = null;
+        if (_animator != null && _animator.runtimeAnimatorController != null)
+        {
+            foreach (var clip in _animator.runtimeAnimatorController.animationClips)
+            {
+                if (clip.name.Contains("_Attack") && !clip.name.Contains("_CAttack"))
+                {
+                    _attackClip = clip;
+                    break;
+                }
+            }
+        }
 
         // 保存原始缩放值，用于攻击动画/死亡后的还原
         originalScale = transform.localScale;
@@ -1161,11 +1176,6 @@ public class Enemy : MonoBehaviour
         _attackTween.SetTarget(transform);
         _attackTween.SetId("attackAnim");
 
-        // AttackSpawn：向前移动 + 左右镜像翻转（可被招架打断）
-        _attackTween.Append(transform.DOLocalMoveZ(startPos.z - forwardDistance, spawnDuration).SetEase(Ease.OutQuad));
-        if (useFlip)
-            _attackTween.Join(transform.DOScaleX(-startScale.x, spawnDuration).SetEase(Ease.OutQuad));
-
         // 远程攻击：不移动，在 spawnDuration 结束时发射飞行物
         if (isRanged)
         {
@@ -1176,8 +1186,10 @@ public class Enemy : MonoBehaviour
                 SpawnProjectile();
                 isAttackDrawPhase = true;
             });
-            // AttackDraw 阶段：等待 drawDuration
-            _attackTween.AppendInterval(drawDuration);
+            // AttackDraw 阶段：等待到 Animator clip 结束（而非硬编码 drawDuration）
+            float clipLength = _attackClip != null ? _attackClip.length : (spawnDuration + drawDuration);
+            float remainingTime = Mathf.Max(0.1f, clipLength - spawnDuration);
+            _attackTween.AppendInterval(remainingTime);
         }
         else
         {

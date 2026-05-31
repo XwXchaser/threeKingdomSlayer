@@ -70,10 +70,17 @@ public class EnemyProjectile : MonoBehaviour
         _flyTween?.Kill();
         _flyTween = null;
 
-        // 旋转 + 向下坠落（类似死亡坠落效果）
+        // 三轴随机旋转 + 随机坠落（模拟死亡坠落效果）
+        float rx = Random.Range(-300f, 300f);
+        float ry = Random.Range(-200f, 200f);
+        float rz = Random.Range(500f, 900f);
+        float fallY = transform.position.y - Random.Range(3f, 6f);
+        float driftX = transform.position.x + Random.Range(-1f, 1f);
+
         _deflectTween = DOTween.Sequence();
-        _deflectTween.Join(transform.DORotate(new Vector3(0, 0, 720), 1.5f, RotateMode.LocalAxisAdd).SetEase(Ease.OutQuad));
-        _deflectTween.Join(transform.DOMoveY(transform.position.y - 5f, 1.5f).SetEase(Ease.InQuad));
+        _deflectTween.Join(transform.DORotate(new Vector3(rx, ry, rz), 1.5f, RotateMode.LocalAxisAdd).SetEase(Ease.OutQuad));
+        _deflectTween.Join(transform.DOMoveY(fallY, 1.5f).SetEase(Ease.InQuad));
+        _deflectTween.Join(transform.DOMoveX(driftX, 1.5f).SetEase(Ease.OutQuad));
         _deflectTween.OnComplete(() =>
         {
             ReturnToPool();

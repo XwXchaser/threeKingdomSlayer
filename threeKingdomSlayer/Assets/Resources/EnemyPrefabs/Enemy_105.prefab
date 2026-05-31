@@ -177,7 +177,7 @@ MonoBehaviour:
   moveSpeed: 0.2
   attackSequence:
   - isCAttack: 0
-    spawnDuration: 1.5
+    spawnDuration: 2
     drawDuration: 1.5
     extraCooldown: 0
     useFlip: 0
