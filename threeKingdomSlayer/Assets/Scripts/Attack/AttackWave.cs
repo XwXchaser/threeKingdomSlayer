@@ -29,6 +29,9 @@ public class AttackWave : MonoBehaviour
     private Color? damageNumberColor;
 
     private Sequence travelSeq;
+    private bool _shouldReturnWave;
+    private float _returnDamageMultiplier = 0.5f;
+    private bool _isReturning;
 
     private const float StabStagger = 0.03f;
     private const float SlashStagger = 0.05f;
@@ -43,38 +46,100 @@ public class AttackWave : MonoBehaviour
 
     public static AttackWave Create(Vector3 position, DamageType damageType, float damage,
         List<Enemy> targets, System.Action<Enemy> onHit = null, GameObject prefab = null, float zOffset = 0f,
-        float? alphaOverride = null, Color? damageNumberColor = null, bool canInterruptCFrame = false)
+        float? alphaOverride = null, Color? damageNumberColor = null, bool canInterruptCFrame = false,
+        Material materialOverride = null)
+    {
+        return CreateInternal(position, damageType, damage, targets, onHit, prefab, zOffset,
+            alphaOverride, damageNumberColor, canInterruptCFrame, materialOverride,
+            shouldReturnWave: false, returnDamageMultiplier: 0.5f);
+    }
+
+    /// <summary>
+    /// 创建折返波 — return_wave 被动触发。波到达终点后折返，再次命中路径上所有敌人。
+    /// </summary>
+    public static AttackWave CreateReturnWave(Vector3 position, DamageType damageType, float damage,
+        List<Enemy> targets, float returnDamageMultiplier,
+        System.Action<Enemy> onHit = null, GameObject prefab = null, float zOffset = 0f,
+        float? alphaOverride = null, Color? damageNumberColor = null, bool canInterruptCFrame = false,
+        Material materialOverride = null, Color? colorOverride = null)
+    {
+        return CreateInternal(position, damageType, damage, targets, onHit, prefab, zOffset,
+            alphaOverride, damageNumberColor, canInterruptCFrame, materialOverride,
+            shouldReturnWave: true, returnDamageMultiplier: returnDamageMultiplier,
+            colorOverride: colorOverride);
+    }
+
+    private static AttackWave CreateInternal(Vector3 position, DamageType damageType, float damage,
+        List<Enemy> targets, System.Action<Enemy> onHit, GameObject prefab, float zOffset,
+        float? alphaOverride, Color? damageNumberColor, bool canInterruptCFrame,
+        Material materialOverride, bool shouldReturnWave, float returnDamageMultiplier,
+        Color? colorOverride = null)
     {
         GameObject obj;
         Material material = null;
-        Color color = GetColor(damageType);
-        color.a = alphaOverride ?? 0.85f;
+        Color color;
+
+        if (materialOverride != null)
+        {
+            // 幻影材质路径：使用传入材质，仅叠加 alpha
+            material = new Material(materialOverride);
+            color = material.color;
+            color.a = alphaOverride ?? materialOverride.color.a;
+            material.color = color;
+        }
+        else
+        {
+            color = colorOverride ?? GetColor(damageType);
+            color.a = alphaOverride ?? 0.85f;
+        }
 
         if (prefab != null)
         {
-            // prefab 路径：用浅色调避免覆盖 sprite 纹理细节
-            color = Color.Lerp(color, Color.white, 0.5f);
-            color.a = alphaOverride ?? 0.85f;
-
-            // 用 prefab 自己的 Z 作为旅行起点，X/Y 保持 GetWavePosition 计算值（列对齐+高度）
             Vector3 spawnPos = position;
             spawnPos.z = prefab.transform.position.z + zOffset;
             obj = Object.Instantiate(prefab, spawnPos, prefab.transform.rotation);
-            obj.name = $"Wave_{damageType}";
-            Renderer r = obj.GetComponentInChildren<Renderer>();
-            if (r != null) { material = r.material; material.color = color; }
+            obj.name = shouldReturnWave ? $"ReturnWave_{damageType}" : $"Wave_{damageType}";
+
+            if (materialOverride != null)
+            {
+                // 幻影材质：直接赋给 Renderer
+                Renderer r = obj.GetComponentInChildren<Renderer>();
+                if (r != null) { r.material = material; }
+            }
+            else if (shouldReturnWave)
+            {
+                // 折返波：不混白，直接用传入颜色
+                color.a = alphaOverride ?? 0.85f;
+                Renderer r = obj.GetComponentInChildren<Renderer>();
+                if (r != null) { material = r.material; material.color = color; }
+            }
+            else
+            {
+                // 正常路径：用浅色调避免覆盖 sprite 纹理细节
+                color = Color.Lerp(color, Color.white, 0.5f);
+                color.a = alphaOverride ?? 0.85f;
+                Renderer r = obj.GetComponentInChildren<Renderer>();
+                if (r != null) { material = r.material; material.color = color; }
+            }
         }
         else
         {
             obj = GameObject.CreatePrimitive(PrimitiveType.Quad);
             obj.name = $"Wave_{damageType}";
-            Renderer renderer = obj.GetComponent<Renderer>();
-            material = new Material(Shader.Find("Sprites/Default"));
-            material.color = color;
-            renderer.material = material;
             obj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             obj.transform.position = position;
             obj.transform.localScale = Vector3.zero;
+            Renderer renderer = obj.GetComponent<Renderer>();
+            if (materialOverride != null)
+            {
+                renderer.material = material;
+            }
+            else
+            {
+                material = new Material(Shader.Find("Sprites/Default"));
+                material.color = color;
+                renderer.material = material;
+            }
         }
 
         AttackWave wave = obj.AddComponent<AttackWave>();
@@ -85,6 +150,8 @@ public class AttackWave : MonoBehaviour
         wave.waveColor = color;
         wave.damageNumberColor = damageNumberColor;
         wave.canInterruptCFrame = canInterruptCFrame;
+        wave._shouldReturnWave = shouldReturnWave;
+        wave._returnDamageMultiplier = returnDamageMultiplier;
 
         if (prefab != null)
             wave.targetScale = obj.transform.localScale;
@@ -202,6 +269,30 @@ public class AttackWave : MonoBehaviour
             if (mat != null)
                 travelSeq.Join(mat.DOFade(0f, retractTime).SetEase(Ease.InQuad));
         }
+        else if (_shouldReturnWave)
+        {
+            // 折返波：前行完成 → 折返再次命中路径上所有敌人（降低伤害）
+            travelSeq.AppendCallback(() =>
+            {
+                _isReturning = true;
+                nextIndex = 0;
+
+                // 反转目标顺序以匹配折返方向
+                targets.Reverse();
+            });
+
+            float returnDistance = Mathf.Abs(transform.position.z - startZ) + EndZOffset;
+            float returnTime = returnDistance / ProjectileSpeed;
+            var returnMove = transform.DOMoveZ(startZ - EndZOffset, returnTime).SetEase(Ease.InQuad);
+            returnMove.OnUpdate(CheckHitThresholds);
+            travelSeq.Append(returnMove);
+
+            // 回旋镖旋转: Y轴360°高速旋转
+            travelSeq.Join(transform.DORotate(new Vector3(0f, 360f, 0f), returnTime, RotateMode.FastBeyond360).SetEase(Ease.Linear));
+
+            if (mat != null)
+                travelSeq.Join(mat.DOFade(0f, returnTime).SetEase(Ease.InQuad));
+        }
         else
         {
             // 贯穿后短停顿再淡出
@@ -317,7 +408,8 @@ public class AttackWave : MonoBehaviour
     {
         if (enemy != null && enemy.state != EnemyState.Dead)
         {
-            enemy.TakeDamage(damage, damageType, damageNumberColor, canInterruptCFrame);
+            float hitDamage = _isReturning ? damage * _returnDamageMultiplier : damage;
+            enemy.TakeDamage(hitDamage, damageType, damageNumberColor, canInterruptCFrame);
             onHit?.Invoke(enemy);
         }
     }

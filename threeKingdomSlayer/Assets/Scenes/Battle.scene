@@ -8348,6 +8348,8 @@ MonoBehaviour:
   columnManager: {fileID: 1289233715}
   playerState: {fileID: 1878310418}
   parryProjectileRange: 10
+  _phantomMaterial: {fileID: 2100000, guid: fee439e9b5beeee4e8d78510d42a97ee, type: 2}
+  _chainBouncePrefab: {fileID: 6047275720404681381, guid: e5859ea2ae076734dbfd60135c133a81, type: 3}
 --- !u!1 &1812484211
 GameObject:
   m_ObjectHideFlags: 0

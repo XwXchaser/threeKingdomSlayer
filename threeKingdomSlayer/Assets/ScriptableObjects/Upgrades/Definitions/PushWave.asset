@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5eab6a0cbf20ec64ba732f894b672d49, type: 3}
+  m_Name: PushWave
+  m_EditorClassIdentifier: 
+  category: 0
+  upgradeId: push_wave
+  displayName: "\u51FB\u9000\u6CE2"
+  descriptionTemplate: "\u653B\u51FB\u547D\u4E2D\u65F6\u5C06\u654C\u4EBA\u51FB\u9000{0}\u6392\uFF08BOSS\u514D\u75AB\uFF09"
+  rarity: 0
+  maxLevel: 5
+  effectType: push_wave
+  floatValue: 0
+  intValue: 1
+  secondaryIntValue: 0
+  stringValue: 
+  baseAttackConfig: {fileID: 0}
+  icon: {fileID: 0}
+  phantomLevels: []
+  triggerParam: 0
+  phantomSteps: []
+  useCount: 1
+  gestureId: 
+  prerequisites: []

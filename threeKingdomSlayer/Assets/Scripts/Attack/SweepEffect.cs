@@ -30,7 +30,8 @@ public class SweepEffect : MonoBehaviour
     public static void Create(Vector3 centerPos, DamageType damageType, float damage,
         List<Enemy> targets, bool leftToRight, float halfWidth, float fanAngle, float duration,
         System.Action<Enemy> onHit = null, GameObject prefab = null, float? alphaOverride = null,
-        Color? damageNumberColor = null, bool canInterruptCFrame = false)
+        Color? damageNumberColor = null, bool canInterruptCFrame = false,
+        Material materialOverride = null)
     {
         if (targets == null || targets.Count == 0) return;
 
@@ -42,19 +43,38 @@ public class SweepEffect : MonoBehaviour
         Vector3 spawnPos = new Vector3(startX, centerPos.y, centerPos.z);
         GameObject obj;
         Material material = null;
-        Color color = GetSlashColor(damageType);
-        color.a = alphaOverride ?? 0.85f;
+        Color color;
+
+        if (materialOverride != null)
+        {
+            material = new Material(materialOverride);
+            color = material.color;
+            color.a = alphaOverride ?? materialOverride.color.a;
+            material.color = color;
+        }
+        else
+        {
+            color = GetSlashColor(damageType);
+            color.a = alphaOverride ?? 0.85f;
+        }
 
         if (prefab != null)
         {
-            // prefab 路径：用浅色调避免覆盖 sprite 纹理细节
-            color = Color.Lerp(color, Color.white, 0.5f);
-            color.a = alphaOverride ?? 0.85f;
-
             obj = Object.Instantiate(prefab, spawnPos, prefab.transform.rotation);
             obj.name = $"Slash_{damageType}";
-            Renderer r = obj.GetComponentInChildren<Renderer>();
-            if (r != null) { material = r.material; material.color = color; }
+
+            if (materialOverride != null)
+            {
+                Renderer r = obj.GetComponentInChildren<Renderer>();
+                if (r != null) { r.material = material; }
+            }
+            else
+            {
+                color = Color.Lerp(color, Color.white, 0.5f);
+                color.a = alphaOverride ?? 0.85f;
+                Renderer r = obj.GetComponentInChildren<Renderer>();
+                if (r != null) { material = r.material; material.color = color; }
+            }
         }
         else
         {
@@ -62,11 +82,18 @@ public class SweepEffect : MonoBehaviour
             obj.name = $"Slash_{damageType}";
             obj.transform.position = spawnPos;
             obj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-            Renderer renderer = obj.GetComponent<Renderer>();
-            material = new Material(Shader.Find("Sprites/Default"));
-            material.color = color;
-            renderer.material = material;
             obj.transform.localScale = new Vector3(12f, 2.5f, 1f);
+            Renderer renderer = obj.GetComponent<Renderer>();
+            if (materialOverride != null)
+            {
+                renderer.material = material;
+            }
+            else
+            {
+                material = new Material(Shader.Find("Sprites/Default"));
+                material.color = color;
+                renderer.material = material;
+            }
         }
 
         SweepEffect effect = obj.AddComponent<SweepEffect>();

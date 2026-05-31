@@ -21,6 +21,14 @@ public class AttackSystem : MonoBehaviour
     [Tooltip("招架时扫描飞行物的范围半径")]
     public float parryProjectileRange = 4f;
 
+    [Header("幻影攻击")]
+    [Tooltip("幻影攻击使用的紫色透明材质")]
+    [SerializeField] private Material _phantomMaterial;
+
+    [Header("连锁弹射")]
+    [Tooltip("弹射连线用的Chain预制体")]
+    [SerializeField] private GameObject _chainBouncePrefab;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -115,6 +123,7 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
+        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Stab);
         return targets.Count > 0;
     }
 
@@ -137,6 +146,7 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 斩击 方向:{(leftToRight ? "L→R" : "R→L")} 伤害:{finalDmg} 目标数:{targets.Count}");
+        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Slash);
         return targets.Count > 0;
     }
 
@@ -155,6 +165,7 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
+        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Pierce);
         return targets.Count > 0;
     }
 
@@ -173,6 +184,7 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 横扫 伤害:{finalDmg} 目标数:{targets.Count}");
+        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Sweep);
         return targets.Count > 0;
     }
 
@@ -215,6 +227,7 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 挑飞 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 击飞时间:{cfg.launchDuration}s 目标数:{targets.Count}");
+        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Launch);
         return targets.Count > 0;
     }
 
@@ -317,6 +330,30 @@ public class AttackSystem : MonoBehaviour
         return 1f;
     }
 
+    /// <summary>
+    /// 在成功攻击后应用位移效果（push_wave / convergence_wave）
+    /// </summary>
+    private void ApplyDisplacementEffects(List<Enemy> targets, AttackType attackType)
+    {
+        if (UpgradeEffectManager.Instance == null || columnManager == null) return;
+
+        int pushDist = UpgradeEffectManager.Instance.GetPushWaveDistance();
+        if (pushDist > 0)
+        {
+            bool pushed = columnManager.ApplyPushWave(targets, pushDist);
+            Debug.Log($"[AttackSystem] 击退波: pushDist={pushDist} pushed={pushed} targets={targets.Count}");
+            if (pushed) return; // 击退成功 → 跳过聚拢，避免叠加错位
+        }
+
+        int convergence = UpgradeEffectManager.Instance.GetConvergenceStep();
+        if (convergence > 0)
+        {
+            float dmgPct = UpgradeEffectManager.Instance.GetConvergenceDamagePercent();
+            columnManager.ApplyConvergenceWave(targets, convergence, dmgPct);
+            Debug.Log($"[AttackSystem] 聚拢波: step={convergence} dmgPct={dmgPct:P0} targets={targets.Count}");
+        }
+    }
+
     public float GetAttackDamage(AttackType attackType)
     {
         var cfg = GetConfig(attackType);
@@ -354,7 +391,7 @@ public class AttackSystem : MonoBehaviour
                     wavePos.y = targets[0].transform.position.y + cfg.stabSpawnYOffset;
                     AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
                         prefab: cfg.attackWavePrefab, zOffset: cfg.stabSpawnZOffset, alphaOverride: alpha,
-                        damageNumberColor: phantomColor);
+                        damageNumberColor: phantomColor, materialOverride: _phantomMaterial);
                 }
                 return targets.Count > 0;
             }
@@ -371,7 +408,7 @@ public class AttackSystem : MonoBehaviour
                     SweepEffect.Create(wavePos, cfg.damageType, finalDmg, targets, slashLeftToRight,
                         cfg.slashSweepHalfWidth, cfg.slashSweepAngle, cfg.slashSweepDuration,
                         prefab: cfg.attackWavePrefab, alphaOverride: alpha,
-                        damageNumberColor: phantomColor);
+                        damageNumberColor: phantomColor, materialOverride: _phantomMaterial);
                 }
                 return targets.Count > 0;
             }
@@ -386,7 +423,7 @@ public class AttackSystem : MonoBehaviour
                     Vector3 wavePos = GetWavePosition(targets, targetColumn);
                     AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
                         prefab: cfg.attackWavePrefab, alphaOverride: alpha,
-                        damageNumberColor: phantomColor);
+                        damageNumberColor: phantomColor, materialOverride: _phantomMaterial);
                 }
                 return targets.Count > 0;
             }
@@ -400,7 +437,7 @@ public class AttackSystem : MonoBehaviour
                     Vector3 wavePos = GetWavePosition(targets, -1);
                     AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
                         prefab: cfg.attackWavePrefab, alphaOverride: alpha,
-                        damageNumberColor: phantomColor);
+                        damageNumberColor: phantomColor, materialOverride: _phantomMaterial);
                 }
                 return targets.Count > 0;
             }
@@ -426,13 +463,191 @@ public class AttackSystem : MonoBehaviour
                         },
                         prefab: cfg.attackWavePrefab, alphaOverride: alpha,
                         damageNumberColor: phantomColor,
-                        canInterruptCFrame: true);
+                        canInterruptCFrame: true, materialOverride: _phantomMaterial);
                 }
                 return targets.Count > 0;
             }
             default:
                 return false;
         }
+    }
+
+    /// <summary>
+    /// 折返波 — 被动触发（return_wave）。当前波到达终点后折返，再次命中路径上所有敌人。
+    /// </summary>
+    public bool ExecuteReturnWave(AttackType attackType, int targetColumn, bool slashLeftToRight,
+        float damageRatio)
+    {
+        if (playerState == null || columnManager == null) return false;
+        if (playerState.stageState != StageState.InProgress) return false;
+
+        var cfg = GetConfig(attackType);
+        if (cfg == null) return false;
+
+        float finalDmg = GetFinalDamage(cfg);
+        List<Enemy> targets;
+
+        if (attackType == AttackType.Pierce)
+        {
+            if (targetColumn < 0) return false;
+            int effectiveRows = GetEffectiveRangeRows(cfg);
+            targets = columnManager.GetEnemiesInRange(targetColumn, effectiveRows);
+            finalDmg *= GetStabPierceDamagePenalty();
+        }
+        else // Sweep
+        {
+            int effectiveRows = GetEffectiveSweepRangeRows(cfg);
+            targets = columnManager.GetAllEnemiesInRange(effectiveRows);
+            finalDmg *= GetSweepDamagePenalty();
+        }
+
+        if (targets.Count == 0) return false;
+
+        Vector3 wavePos = GetWavePosition(targets, targetColumn);
+        Color waveColor = new Color(0.2f, 0.7f, 1f); // 青蓝色折返波
+        float alpha = 0.75f;
+
+        if (attackType == AttackType.Pierce)
+        {
+            wavePos.y = targets[0].transform.position.y + cfg.stabSpawnYOffset;
+            AttackWave.CreateReturnWave(wavePos, cfg.damageType, finalDmg, targets, damageRatio,
+                prefab: cfg.attackWavePrefab, zOffset: cfg.stabSpawnZOffset,
+                alphaOverride: alpha, damageNumberColor: waveColor, colorOverride: waveColor);
+        }
+        else
+        {
+            AttackWave.CreateReturnWave(wavePos, cfg.damageType, finalDmg, targets, damageRatio,
+                prefab: cfg.attackWavePrefab,
+                alphaOverride: alpha, damageNumberColor: waveColor, colorOverride: waveColor);
+        }
+
+        Debug.Log($"[AttackSystem] 折返波: type={attackType} dmg={finalDmg} returnRatio={damageRatio} targets={targets.Count}");
+        return true;
+    }
+
+    /// <summary>
+    /// 连锁弹射 — 被动触发（chain_bounce）。Pierce命中后弹射至同行最近敌人，最多 maxBounces 次。
+    /// </summary>
+    public bool ExecuteChainBounce(AttackType attackType, int targetColumn,
+        float damageRetention, int maxBounces)
+    {
+        if (playerState == null || columnManager == null || targetColumn < 0) return false;
+        if (playerState.stageState != StageState.InProgress) return false;
+
+        var cfg = GetConfig(attackType);
+        if (cfg == null) return false;
+
+        int effectiveRows = GetEffectiveRangeRows(cfg);
+        var initialTargets = columnManager.GetEnemiesInRange(targetColumn, effectiveRows);
+        initialTargets = initialTargets.FindAll(e => e.rowIndex < effectiveRows && (!e.isBoss || e.bossState == BossState.InCombat));
+        if (initialTargets.Count == 0) return false;
+
+        float baseDamage = GetFinalDamage(cfg) * GetStabPierceDamagePenalty();
+        int totalBounces = 0;
+
+        foreach (var startEnemy in initialTargets)
+        {
+            if (startEnemy == null || startEnemy.state == EnemyState.Dead) continue;
+
+            Enemy current = startEnemy;
+            float bounceDamage = baseDamage * damageRetention;
+
+            for (int i = 0; i < maxBounces; i++)
+            {
+                Enemy next = FindNearestSameRowEnemy(current, targetColumn);
+                if (next == null) break;
+
+                // 直接造成弹射伤害
+                next.TakeDamage(bounceDamage, cfg.damageType);
+
+                // 连锁闪电视觉：LineRenderer连接 current → next
+                StartCoroutine(CreateChainVisual(current, next));
+
+                bounceDamage *= damageRetention;
+                current = next;
+                totalBounces++;
+            }
+        }
+
+        Debug.Log($"[AttackSystem] 连锁弹射: col={targetColumn} retention={damageRetention} maxBounces={maxBounces} actual={totalBounces}");
+        return totalBounces > 0;
+    }
+
+    /// <summary>
+    /// 连锁弹射闪电连线视觉 — 使用 Chain 预制体连接两个敌人，紫色调 + 0.35s 渐隐
+    /// </summary>
+    private System.Collections.IEnumerator CreateChainVisual(Enemy from, Enemy to)
+    {
+        if (from == null || to == null || _chainBouncePrefab == null) yield break;
+
+        Vector3 fromPos = from.transform.position + Vector3.up * 0.5f;
+        Vector3 toPos = to.transform.position + Vector3.up * 0.5f;
+        Vector3 mid = (fromPos + toPos) * 0.5f;
+        float dist = Vector3.Distance(fromPos, toPos);
+        if (dist < 0.01f) yield break;
+
+        var chainGo = Object.Instantiate(_chainBouncePrefab, mid, Quaternion.identity);
+        chainGo.name = "ChainBounce";
+        var sr = chainGo.GetComponent<SpriteRenderer>();
+        if (sr == null) { Destroy(chainGo); yield break; }
+
+        // 紫色闪电色调
+        sr.color = new Color(0.7f, 0.3f, 1f, 1f);
+        sr.sortingOrder = 100;
+
+        // 拉伸 X 以连接两个敌人 (sprite 为 1x1 世界单位)
+        Vector3 scale = chainGo.transform.localScale;
+        scale.x = dist;
+        chainGo.transform.localScale = scale;
+
+        // 旋转指向目标方向
+        Vector3 dir = (toPos - fromPos).normalized;
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        chainGo.transform.rotation = Quaternion.Euler(0f, 0f, angle);
+
+        // 渐隐
+        float duration = 0.35f;
+        float elapsed = 0f;
+        while (elapsed < duration && sr != null)
+        {
+            elapsed += Time.deltaTime;
+            float a = 1f - elapsed / duration;
+            sr.color = new Color(0.7f, 0.3f, 1f, a);
+            yield return null;
+        }
+
+        if (chainGo != null) Destroy(chainGo);
+    }
+
+    /// <summary>
+    /// 寻找同行（同 rowIndex）不同列中最近的敌人（按列距离）
+    /// </summary>
+    private Enemy FindNearestSameRowEnemy(Enemy source, int excludeColumn)
+    {
+        if (columnManager == null || source == null) return null;
+
+        int sourceRow = source.rowIndex;
+        Enemy best = null;
+        int bestDist = int.MaxValue;
+
+        for (int col = 0; col < columnManager.columnCount; col++)
+        {
+            if (col == excludeColumn) continue;
+            if (col == source.columnIndex) continue;
+
+            Enemy candidate = columnManager.GetColumn(col)?.GetEnemyAtRow(sourceRow);
+            if (candidate == null || candidate.state == EnemyState.Dead) continue;
+            if (candidate.isBoss && candidate.bossState != BossState.InCombat) continue;
+
+            int dist = Mathf.Abs(col - source.columnIndex);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                best = candidate;
+            }
+        }
+
+        return best;
     }
 
     /// <summary>

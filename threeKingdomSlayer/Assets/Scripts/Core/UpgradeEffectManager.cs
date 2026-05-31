@@ -23,6 +23,9 @@ public class UpgradeEffectManager : MonoBehaviour
     private float _stabDamagePenalty;
     private int _sweepRangeBonus;
     private float _sweepDamagePenalty;
+    private int _pushWaveDistance;
+    private int _convergenceStep;
+    private float _convergenceDamagePercent = 0.1f;
 
     // ── 已应用升级追踪 (upgradeId → level) ──
     private Dictionary<string, int> _appliedUpgrades = new Dictionary<string, int>();
@@ -148,6 +151,9 @@ public class UpgradeEffectManager : MonoBehaviour
     public float GetStabDamagePenalty() => _stabDamagePenalty;
     public int GetSweepRangeBonus() => _sweepRangeBonus;
     public float GetSweepDamagePenalty() => _sweepDamagePenalty;
+    public int GetPushWaveDistance() => _pushWaveDistance;
+    public int GetConvergenceStep() => _convergenceStep;
+    public float GetConvergenceDamagePercent() => _convergenceDamagePercent;
 
     /// <summary>
     /// 根据描述模板和当前等级生成效果文本
@@ -161,16 +167,41 @@ public class UpgradeEffectManager : MonoBehaviour
 
         if (def.category == UpgradeCategory.Passive)
         {
-            def.GetPhantomConfig(nextLevel, out int triggerParam, out var steps);
-            desc = desc.Replace("{0}", triggerParam.ToString());
-            desc = desc.Replace("{1}", (steps?.Count ?? 0).ToString());
-            if (steps != null && steps.Count > 0)
-                desc = desc.Replace("{2}", (steps[0].damageRatio * 100f).ToString("F0"));
+            int triggerParam;
+
+            if (def.effectType == "passive_return_wave")
+            {
+                triggerParam = def.intValue > 0 ? def.intValue : 4;
+                desc = desc.Replace("{0}", triggerParam.ToString());
+                desc = desc.Replace("{1}", (def.floatValue * 100f).ToString("F0"));
+            }
+            else if (def.effectType == "passive_chain_bounce")
+            {
+                triggerParam = def.intValue > 0 ? def.intValue : 6;
+                int maxBounces = def.secondaryIntValue > 0 ? def.secondaryIntValue : 3;
+                desc = desc.Replace("{0}", triggerParam.ToString());
+                desc = desc.Replace("{1}", maxBounces.ToString());
+                desc = desc.Replace("{2}", (def.floatValue * 100f).ToString("F0"));
+            }
+            else
+            {
+                def.GetPhantomConfig(nextLevel, out triggerParam, out var steps);
+                desc = desc.Replace("{0}", triggerParam.ToString());
+                desc = desc.Replace("{1}", (steps?.Count ?? 0).ToString());
+                if (steps != null && steps.Count > 0)
+                    desc = desc.Replace("{2}", (steps[0].damageRatio * 100f).ToString("F0"));
+            }
         }
         else if (def.effectType == "stab_range_boost" || def.effectType == "sweep_range_boost")
         {
             desc = desc.Replace("{0}", (def.intValue * nextLevel).ToString());
             desc = desc.Replace("{1}", (def.secondaryIntValue * nextLevel).ToString());
+        }
+        else if (def.effectType == "push_wave" || def.effectType == "convergence_wave")
+        {
+            // {0}=intValue*level (格数/排数), {1}=floatValue*100 (百分比)
+            desc = desc.Replace("{0}", (def.intValue * nextLevel).ToString());
+            desc = desc.Replace("{1}", (def.floatValue * 100f).ToString("F0"));
         }
         else
         {
@@ -218,6 +249,9 @@ public class UpgradeEffectManager : MonoBehaviour
         _stabDamagePenalty = 0f;
         _sweepRangeBonus = 0;
         _sweepDamagePenalty = 0f;
+        _pushWaveDistance = 0;
+        _convergenceStep = 0;
+        _convergenceDamagePercent = 0.1f;
 
         // 清空被动攻击模块
         PassiveTriggerModule.Instance?.ResetAll();
@@ -251,6 +285,13 @@ public class UpgradeEffectManager : MonoBehaviour
             case "sweep_range_boost":
                 _sweepRangeBonus += def.intValue;
                 _sweepDamagePenalty += def.secondaryIntValue * 0.01f;
+                break;
+            case "push_wave":
+                _pushWaveDistance += def.intValue;
+                break;
+            case "convergence_wave":
+                _convergenceStep += def.intValue;
+                if (def.floatValue > 0f) _convergenceDamagePercent = def.floatValue;
                 break;
             case "unlock_attack":
                 // 数值叠加由注册的 UnlockAttackExecutor 处理

@@ -307,4 +307,48 @@ public class Column
     /// 该列是否为空
     /// </summary>
     public bool IsEmpty => enemies.Count == 0;
+
+    #region 位移辅助方法
+
+    /// <summary>
+    /// 静默移除敌人（不触发补齐链、不压缩列表），用于位移操作。
+    /// </summary>
+    public void RemoveEnemySilent(Enemy enemy)
+    {
+        enemies.Remove(enemy);
+    }
+
+    /// <summary>
+    /// 按 rowIndex 升序插入敌人，用于位移后重新插入。
+    /// 不触发补齐链。调用前 enemy.rowIndex 需已设为目标值。
+    /// </summary>
+    public void InsertEnemySorted(Enemy enemy)
+    {
+        enemy.columnIndex = columnIndex;
+        int insertIdx = enemies.Count;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            if (enemies[i].rowIndex > enemy.rowIndex)
+            {
+                insertIdx = i;
+                break;
+            }
+        }
+        enemies.Insert(insertIdx, enemy);
+    }
+
+    /// <summary>
+    /// 检查指定 rowIndex 是否已被占据（排除指定敌人自身）。
+    /// </summary>
+    public bool IsRowOccupied(int rowIndex, Enemy exclude = null)
+    {
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            if (enemies[i] != exclude && enemies[i].rowIndex == rowIndex)
+                return true;
+        }
+        return false;
+    }
+
+    #endregion
 }
