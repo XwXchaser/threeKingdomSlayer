@@ -1928,6 +1928,7 @@ MonoBehaviour:
   victoryPanel: {fileID: 2147134743}
   defeatPanel: {fileID: 1311201911}
   resultCoinText: {fileID: 2063563001}
+  victoryStampPrefab: {fileID: 7487446596157964604, guid: 6c5374f68cfd29f44852f41a1cda5317, type: 3}
 --- !u!114 &275758064
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6513,7 +6514,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -6674,6 +6675,67 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1338917295}
   m_CullTransparentMesh: 1
+--- !u!1001 &1440193170
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1736063005971055504, guid: 62df127e4f854a6418289bf7f9736fcc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1736063005971055504, guid: 62df127e4f854a6418289bf7f9736fcc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1736063005971055504, guid: 62df127e4f854a6418289bf7f9736fcc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1736063005971055504, guid: 62df127e4f854a6418289bf7f9736fcc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1736063005971055504, guid: 62df127e4f854a6418289bf7f9736fcc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1736063005971055504, guid: 62df127e4f854a6418289bf7f9736fcc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1736063005971055504, guid: 62df127e4f854a6418289bf7f9736fcc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1736063005971055504, guid: 62df127e4f854a6418289bf7f9736fcc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1736063005971055504, guid: 62df127e4f854a6418289bf7f9736fcc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1736063005971055504, guid: 62df127e4f854a6418289bf7f9736fcc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4490234657047111907, guid: 62df127e4f854a6418289bf7f9736fcc, type: 3}
+      propertyPath: m_Name
+      value: Enemy_105
+      objectReference: {fileID: 0}
+    - target: {fileID: 4490234657047111907, guid: 62df127e4f854a6418289bf7f9736fcc, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 62df127e4f854a6418289bf7f9736fcc, type: 3}
 --- !u!1 &1453562869
 GameObject:
   m_ObjectHideFlags: 0
@@ -8285,7 +8347,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   columnManager: {fileID: 1289233715}
   playerState: {fileID: 1878310418}
-  parryProjectileRange: 4
+  parryProjectileRange: 10
 --- !u!1 &1812484211
 GameObject:
   m_ObjectHideFlags: 0
@@ -9792,7 +9854,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -9973,3 +10035,4 @@ SceneRoots:
   - {fileID: 1477361870}
   - {fileID: 1151661540}
   - {fileID: 281332808465826428}
+  - {fileID: 1440193170}
