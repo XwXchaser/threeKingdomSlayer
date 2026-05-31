@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using DG.Tweening;
 
 /// <summary>
 /// 战斗HUD — 管理全局UI（波次、铜钱、击杀、Boss血条、胜负面板）。
@@ -41,6 +42,8 @@ public class BattleHUD : MonoBehaviour
     public GameObject victoryPanel;
     public GameObject defeatPanel;
     public TMP_Text resultCoinText;
+    [Tooltip("通关印章 Prefab（victory.prefab），世界空间 SpriteRenderer")]
+    public GameObject victoryStampPrefab;
 
     // 运行时实例化的英雄 HUD
     private HeroHUD _heroHUD;
@@ -240,6 +243,70 @@ public class BattleHUD : MonoBehaviour
             victoryPanel.SetActive(true);
             if (resultCoinText != null && PlayerState.Instance != null)
                 resultCoinText.text = $"获得铜钱: {PlayerState.Instance.coinCount}";
+        }
+
+        PlayVictoryStamp();
+    }
+
+    /// <summary>
+    /// 通关印章动画 — victory1 先砸下，victory2 随后砸下（OutBack 过冲回弹）
+    /// </summary>
+    private void PlayVictoryStamp()
+    {
+        if (victoryStampPrefab == null) return;
+
+        var cam = Camera.main;
+        if (cam == null) return;
+
+        var stamp = Instantiate(victoryStampPrefab, cam.transform);
+        stamp.transform.localPosition = new Vector3(0f, 0f, 8f);
+        stamp.transform.localRotation = Quaternion.identity;
+
+        var victory1 = stamp.transform.Find("victory1");
+        var victory2 = stamp.transform.Find("victory2");
+
+        // 记录原始缩放，初始设为 3x
+        Vector3 origScale1 = Vector3.one, origScale2 = Vector3.one;
+        SpriteRenderer sr1 = null, sr2 = null;
+
+        if (victory1 != null)
+        {
+            sr1 = victory1.GetComponent<SpriteRenderer>();
+            origScale1 = victory1.localScale;
+            victory1.localScale = origScale1 * 3f;
+            if (sr1 != null) { var c = sr1.color; c.a = 0f; sr1.color = c; }
+        }
+        if (victory2 != null)
+        {
+            sr2 = victory2.GetComponent<SpriteRenderer>();
+            origScale2 = victory2.localScale;
+            victory2.localScale = origScale2 * 3f;
+            if (sr2 != null) { var c = sr2.color; c.a = 0f; sr2.color = c; }
+        }
+
+        var seq = DOTween.Sequence();
+        seq.SetUpdate(true); // 无视 timeScale 暂停
+
+        // victory1 印章砸下
+        if (victory1 != null && sr1 != null)
+        {
+            seq.AppendCallback(() =>
+            {
+                var c = sr1.color; c.a = 1f; sr1.color = c;
+            });
+            seq.Append(victory1.DOScale(origScale1, 0.4f).SetEase(Ease.OutBack));
+        }
+
+        seq.AppendInterval(0.2f);
+
+        // victory2 印章砸下
+        if (victory2 != null && sr2 != null)
+        {
+            seq.AppendCallback(() =>
+            {
+                var c = sr2.color; c.a = 1f; sr2.color = c;
+            });
+            seq.Append(victory2.DOScale(origScale2, 0.4f).SetEase(Ease.OutBack));
         }
     }
 
