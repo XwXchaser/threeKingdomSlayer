@@ -429,6 +429,262 @@ public class ColumnManager : MonoBehaviour
 
     #endregion
 
+    #region 位移效果（击退/聚拢）
+
+    /// <summary>
+    /// 将敌人移动到目标列的指定排（保留 row 位置），更新世界坐标。
+    /// 若目标位置已被占据则返回 false（调用方需处理冲突）。
+    /// 不触发补齐链。
+    /// </summary>
+    public bool MoveEnemyToColumnAtRow(Enemy enemy, int targetCol, int targetRow)
+    {
+        if (!IsValidColumn(targetCol)) return false;
+        int srcCol = enemy.columnIndex;
+
+        if (columns[targetCol].IsRowOccupied(targetRow, enemy))
+        {
+            Debug.Log($"[ColumnManager] MoveEnemyToColumnAtRow blocked: {enemy.DebugTag} → col={targetCol} row={targetRow} occupied");
+            return false;
+        }
+
+        columns[srcCol].RemoveEnemySilent(enemy);
+        enemy.columnIndex = targetCol;
+        enemy.SetRowIndex(targetRow);
+        columns[targetCol].InsertEnemySorted(enemy);
+
+        Debug.Log($"[ColumnManager] MoveEnemyToColumnAtRow: {enemy.DebugTag} col {srcCol}→{targetCol}, row={targetRow}");
+        return true;
+    }
+
+    /// <summary>
+    /// 将敌人追加到目标列末尾，更新世界坐标。
+    /// </summary>
+    public void MoveEnemyToColumnEnd(Enemy enemy, int targetCol)
+    {
+        if (!IsValidColumn(targetCol)) return;
+        int srcCol = enemy.columnIndex;
+        if (srcCol == targetCol) return;
+
+        columns[srcCol].RemoveEnemySilent(enemy);
+        int newRow = columns[targetCol].enemies.Count;
+        enemy.columnIndex = targetCol;
+        enemy.SetRowIndex(newRow);
+        columns[targetCol].AddEnemy(enemy);
+
+        Debug.Log($"[ColumnManager] MoveEnemyToColumnEnd: {enemy.DebugTag} col {srcCol}→{targetCol}, newRow={newRow}");
+    }
+
+    /// <summary>
+    /// 击退栈式阻塞检测：检查某列被击中的敌人能否向后推移。
+    /// 规则：若 [maxHitRow+1, maxHitRow+pushAmount] 区间内存在非 hit 敌人 → 整列阻塞。
+    /// BOSS 不参与判断（免疫击退，不阻塞击退）。
+    /// </summary>
+    /// <returns>true = 可以击退</returns>
+    public bool CanPushColumn(int columnIndex, int pushAmount, HashSet<Enemy> hitEnemies)
+    {
+        if (!IsValidColumn(columnIndex)) return false;
+
+        var colEnemies = columns[columnIndex].enemies;
+        int maxHitRow = -1;
+
+        for (int i = 0; i < colEnemies.Count; i++)
+        {
+            var e = colEnemies[i];
+            if (e.isBoss) continue;
+            if (!hitEnemies.Contains(e)) continue;
+            if (e.rowIndex > maxHitRow) maxHitRow = e.rowIndex;
+        }
+
+        if (maxHitRow < 0) return false;
+
+        for (int r = maxHitRow + 1; r <= maxHitRow + pushAmount; r++)
+        {
+            for (int i = 0; i < colEnemies.Count; i++)
+            {
+                var e = colEnemies[i];
+                if (e.isBoss) continue;
+                if (e.rowIndex == r && !hitEnemies.Contains(e))
+                {
+                    Debug.Log($"[ColumnManager] Push blocked: col={columnIndex}, blocker={e.DebugTag} at row={r}");
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 对单列执行击退：将该列中被击中的敌人向后移动 pushAmount 排。
+    /// 预条件：已通过 CanPushColumn 检查。
+    /// </summary>
+    public void ExecutePush(int columnIndex, int pushAmount, List<Enemy> columnHitEnemies)
+    {
+        if (!IsValidColumn(columnIndex) || columnHitEnemies.Count == 0) return;
+
+        var col = columns[columnIndex];
+
+        // 从列表中移除所有被击中的敌人
+        foreach (var e in columnHitEnemies)
+            col.RemoveEnemySilent(e);
+
+        // 更新 rowIndex
+        foreach (var e in columnHitEnemies)
+            e.SetRowIndex(e.rowIndex + pushAmount);
+
+        // 按 rowIndex 升序重新插入
+        columnHitEnemies.Sort((a, b) => a.rowIndex.CompareTo(b.rowIndex));
+        foreach (var e in columnHitEnemies)
+            col.InsertEnemySorted(e);
+
+        Debug.Log($"[ColumnManager] ExecutePush: col={columnIndex}, pushed={columnHitEnemies.Count} enemies by {pushAmount} rows");
+
+        // 每个被击退的敌人重检攻击范围
+        foreach (var e in columnHitEnemies)
+            e.RecheckAttackRange();
+
+        OnColumnsModified?.Invoke();
+    }
+
+    /// <summary>
+    /// 击退波完整逻辑：逐列检查栈式阻塞 → 执行击退。
+    /// BOSS 免疫击退。
+    /// 返回 true 表示至少有一列成功执行了击退。
+    /// </summary>
+    public bool ApplyPushWave(List<Enemy> hitEnemies, int pushAmount)
+    {
+        if (hitEnemies == null || hitEnemies.Count == 0) return false;
+
+        var hitSet = new HashSet<Enemy>(hitEnemies);
+        var byColumn = new Dictionary<int, List<Enemy>>();
+
+        foreach (var e in hitEnemies)
+        {
+            if (e.isBoss) continue;
+            if (!byColumn.ContainsKey(e.columnIndex))
+                byColumn[e.columnIndex] = new List<Enemy>();
+            byColumn[e.columnIndex].Add(e);
+        }
+
+        bool anyPushed = false;
+        foreach (var kv in byColumn)
+        {
+            int col = kv.Key;
+            if (CanPushColumn(col, pushAmount, hitSet))
+            {
+                ExecutePush(col, pushAmount, kv.Value);
+                anyPushed = true;
+            }
+        }
+        return anyPushed;
+    }
+
+    /// <summary>
+    /// 聚拢波完整逻辑：将击中敌人向 col=2 移动 step 列。
+    /// 冲突裁决：多敌人目标同位置 → 各承受 convergenceDamagePercent% HP 伤害 → 重新分配到 col=1/col=3 末尾。
+    /// BOSS 不承受聚拢伤害但仍参与位移。
+    /// </summary>
+    public void ApplyConvergenceWave(List<Enemy> hitEnemies, int step, float convergenceDamagePercent)
+    {
+        if (hitEnemies == null || hitEnemies.Count == 0) return;
+
+        // 1. 计算每个敌人的目标列（向 col=2 靠近 step 步）
+        var targets = new List<(Enemy enemy, int targetCol, int targetRow)>();
+        foreach (var e in hitEnemies)
+        {
+            if (e.state == EnemyState.Dead) continue;
+            int curCol = e.columnIndex;
+            int targetCol = curCol;
+            if (curCol < 2) targetCol = Mathf.Min(curCol + step, 2);
+            else if (curCol > 2) targetCol = Mathf.Max(curCol - step, 2);
+
+            targets.Add((e, targetCol, e.rowIndex));
+        }
+
+        // 2. 按 (targetCol, targetRow) 分组，检测冲突
+        var groups = new Dictionary<(int col, int row), List<Enemy>>();
+        foreach (var (enemy, targetCol, targetRow) in targets)
+        {
+            // 同时检查目标位置是否已被非本次聚拢的敌人占据
+            var key = (targetCol, targetRow);
+            if (!groups.ContainsKey(key))
+                groups[key] = new List<Enemy>();
+            groups[key].Add(enemy);
+        }
+
+        // 3. 处理无冲突的单敌人
+        var conflicted = new List<Enemy>();
+        foreach (var kv in groups)
+        {
+            if (kv.Value.Count == 1)
+            {
+                var enemy = kv.Value[0];
+                bool existingOccupied = columns[kv.Key.col].IsRowOccupied(kv.Key.row, enemy);
+                if (existingOccupied)
+                {
+                    // 目标位置被非聚拢敌人占据 → 算入冲突
+                    conflicted.Add(enemy);
+                }
+                else
+                {
+                    MoveEnemyToColumnAtRow(enemy, kv.Key.col, kv.Key.row);
+                }
+            }
+            else
+            {
+                conflicted.AddRange(kv.Value);
+            }
+        }
+
+        // 4. 冲突裁决：聚拢伤害 + 重新分配到 col=1/col=3
+        if (conflicted.Count > 0)
+            ResolveConvergenceConflicts(conflicted, convergenceDamagePercent);
+
+        OnColumnsModified?.Invoke();
+    }
+
+    /// <summary>
+    /// 聚拢冲突裁决：冲突敌人各承受 %HP 伤害（BOSS 除外），
+    /// 重新分配到 col=1 和 col=3 末尾，若满则溢出到 col=0/col=4。
+    /// </summary>
+    private void ResolveConvergenceConflicts(List<Enemy> conflicted, float damagePercent)
+    {
+        // 施加聚拢伤害（BOSS 除外）
+        foreach (var e in conflicted)
+        {
+            if (!e.isBoss && damagePercent > 0f)
+            {
+                float dmg = e.maxHealth * damagePercent;
+                e.TakeDamage(dmg, DamageType.Convergence);
+                Debug.Log($"[ColumnManager] Convergence damage: {e.DebugTag} takes {dmg} ({damagePercent:P0} HP)");
+            }
+        }
+
+        // 重新分配：交替放入 col=1 和 col=3
+        for (int i = 0; i < conflicted.Count; i++)
+        {
+            var e = conflicted[i];
+            if (e.state == EnemyState.Dead) continue;
+
+            int spillCol = (i % 2 == 0) ? 1 : 3;
+
+            // 检查溢出条件：若目标列已满（有敌人但这不是硬限制），先尝试 col=1/3，
+            // 若溢出列也无空间则继续外溢到 col=0/col=4
+            if (columns[spillCol].enemies.Count <= columns[2].enemies.Count + 2)
+            {
+                MoveEnemyToColumnEnd(e, spillCol);
+            }
+            else
+            {
+                // 溢出到更外侧
+                int outerCol = spillCol == 1 ? 0 : 4;
+                MoveEnemyToColumnEnd(e, outerCol);
+            }
+        }
+    }
+
+    #endregion
+
     #region 工具方法
 
     private bool IsValidColumn(int columnIndex)

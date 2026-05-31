@@ -483,6 +483,16 @@ public class Enemy : MonoBehaviour
         isMovingToNextRow = true;
         moveProgress = 0f;
 
+        // 补齐移动时播放行走动画（弹跳 + Walk 精灵交替共存）
+        if (isRush)
+        {
+            _animator?.SetTrigger("Walk");
+            // 加速 Walk 动画，使两帧都能在 moveSpeed 时间内可见
+            // Walk clip 约 0.6s 循环，需在 moveSpeed 时间内至少完成一次循环
+            if (_animator != null && moveSpeed > 0f)
+                _animator.speed = Mathf.Max(1f, 0.6f / moveSpeed);
+        }
+
         // DOTween: 前进补齐时 Y 轴弹跳动画（一边前进一边沿 Y 轴跳动）
         if (isRush)
         {
@@ -570,7 +580,14 @@ public class Enemy : MonoBehaviour
         if (state == EnemyState.Moving)
         {
             if (isRushMove)
+            {
                 pendingRushMove = true;
+                if (_animator != null)
+                {
+                    _animator.speed = 1f;
+                    _animator.ResetTrigger("Walk");
+                }
+            }
             DOTween.Kill(transform, false);
             isMovingToNextRow = false;
             isRushMove = false;
@@ -917,6 +934,14 @@ public class Enemy : MonoBehaviour
             moveProgress = 0f;
             isMovingToNextRow = false;
             isRushMove = false;
+
+            // 移动结束切回 Idle（退出 Walk 动画）
+            if (_animator != null)
+            {
+                _animator.speed = 1f;
+                _animator.ResetTrigger("Walk");
+            }
+            _animator?.Play("Idle", 0, 0f);
             rushMoveChainTriggered = false; // 重置链式触发标记
 
             // 移动完成：rowIndex 前进一排
@@ -1848,6 +1873,32 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
+    /// 位移后重检攻击范围：被推离攻击范围则重新前进，反之恢复攻击
+    /// </summary>
+    public void RecheckAttackRange()
+    {
+        if (state == EnemyState.Dead) return;
+        int atkRange = (int)Mathf.Max(1, attackRange);
+
+        if (rowIndex < atkRange)
+        {
+            // 在攻击范围内 → 直接攻击
+            if (state == EnemyState.Attacking) return; // 已在攻击中
+            CancelAttack();
+            StartAttacking();
+        }
+        else
+        {
+            // 被推离攻击范围 → 取消攻击，重新前进
+            CancelAttack();
+            // 重置状态为Idle后调用StartMoving（Moving已做保护）
+            if (state != EnemyState.Moving && state != EnemyState.Idle)
+                state = EnemyState.Idle;
+            StartMoving(isRush: true);
+        }
+    }
+
+    /// <summary>
     /// 根据排索引计算Z轴位置
     /// 在Unity中，-Z轴是前进方向（朝向玩家），+Z轴是后退方向（远离玩家）。
     /// rowIndex=0在最前排（最靠近玩家），rowIndex越大越远离玩家。
@@ -2225,7 +2276,8 @@ public enum DamageType
     Pierce, // 穿刺
     Sweep,  // 横扫
     Launch, // 挑飞
-    Poise   // 架势伤害
+    Poise,       // 架势伤害
+    Convergence  // 聚拢冲突伤害
 }
 
 /// <summary>
