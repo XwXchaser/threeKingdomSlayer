@@ -25,8 +25,12 @@ public class AttackSystem : MonoBehaviour
     [Tooltip("幻影攻击使用的紫色透明材质")]
     [SerializeField] private Material _phantomMaterial;
 
-    [Header("连锁弹射")]
-    [Tooltip("弹射连线用的Chain预制体")]
+    [Header("被动效果Prefab")]
+    [Tooltip("折返波使用的视觉Prefab")]
+    [SerializeField] private GameObject _returnWavePrefab;
+    [Tooltip("连锁弹射闪电连线使用的视觉Prefab")]
+    [SerializeField] private GameObject _chainBounceVisualPrefab;
+    [Tooltip("弹射连线用的Chain预制体（回退方案）")]
     [SerializeField] private GameObject _chainBouncePrefab;
 
     private void Awake()
@@ -473,55 +477,48 @@ public class AttackSystem : MonoBehaviour
     }
 
     /// <summary>
-    /// 折返波 — 被动触发（return_wave）。当前波到达终点后折返，再次命中路径上所有敌人。
+    /// 折返波 — 被动触发（return_wave）。多列回旋镖：以目标列为中心 ±1列，
+    /// 飞出 rangeRows 排 → 折返飞回，每段命中范围内所有敌人。
     /// </summary>
     public bool ExecuteReturnWave(AttackType attackType, int targetColumn, bool slashLeftToRight,
-        float damageRatio)
+        float damageRatio, int rangeRows)
     {
         if (playerState == null || columnManager == null) return false;
         if (playerState.stageState != StageState.InProgress) return false;
+        if (targetColumn < 0) return false;
 
         var cfg = GetConfig(attackType);
         if (cfg == null) return false;
 
-        float finalDmg = GetFinalDamage(cfg);
-        List<Enemy> targets;
-
-        if (attackType == AttackType.Pierce)
+        // 多列收集：targetColumn ± 1（钳位到有效列范围）
+        List<Enemy> targets = new List<Enemy>();
+        int colMin = Mathf.Max(0, targetColumn - 1);
+        int colMax = Mathf.Min(columnManager.columnCount - 1, targetColumn + 1);
+        for (int col = colMin; col <= colMax; col++)
         {
-            if (targetColumn < 0) return false;
-            int effectiveRows = GetEffectiveRangeRows(cfg);
-            targets = columnManager.GetEnemiesInRange(targetColumn, effectiveRows);
-            finalDmg *= GetStabPierceDamagePenalty();
-        }
-        else // Sweep
-        {
-            int effectiveRows = GetEffectiveSweepRangeRows(cfg);
-            targets = columnManager.GetAllEnemiesInRange(effectiveRows);
-            finalDmg *= GetSweepDamagePenalty();
+            var colTargets = columnManager.GetEnemiesInRange(col, rangeRows);
+            foreach (var e in colTargets)
+            {
+                if (e.rowIndex < rangeRows && (!e.isBoss || e.bossState == BossState.InCombat))
+                    targets.Add(e);
+            }
         }
 
         if (targets.Count == 0) return false;
 
+        float finalDmg = GetFinalDamage(cfg) * GetStabPierceDamagePenalty();
         Vector3 wavePos = GetWavePosition(targets, targetColumn);
-        Color waveColor = new Color(0.2f, 0.7f, 1f); // 青蓝色折返波
-        float alpha = 0.75f;
+        Color waveColor = new Color(0.2f, 0.7f, 1f); // 青蓝色回旋镖
+        float alpha = 0.85f;
 
-        if (attackType == AttackType.Pierce)
-        {
-            wavePos.y = targets[0].transform.position.y + cfg.stabSpawnYOffset;
-            AttackWave.CreateReturnWave(wavePos, cfg.damageType, finalDmg, targets, damageRatio,
-                prefab: cfg.attackWavePrefab, zOffset: cfg.stabSpawnZOffset,
-                alphaOverride: alpha, damageNumberColor: waveColor, colorOverride: waveColor);
-        }
-        else
-        {
-            AttackWave.CreateReturnWave(wavePos, cfg.damageType, finalDmg, targets, damageRatio,
-                prefab: cfg.attackWavePrefab,
-                alphaOverride: alpha, damageNumberColor: waveColor, colorOverride: waveColor);
-        }
+        GameObject wavePrefab = _returnWavePrefab != null ? _returnWavePrefab : cfg.attackWavePrefab;
+        wavePos.y = targets[0].transform.position.y + cfg.stabSpawnYOffset;
 
-        Debug.Log($"[AttackSystem] 折返波: type={attackType} dmg={finalDmg} returnRatio={damageRatio} targets={targets.Count}");
+        AttackWave.CreateReturnWave(wavePos, cfg.damageType, finalDmg, targets, damageRatio,
+            prefab: wavePrefab, zOffset: cfg.stabSpawnZOffset,
+            alphaOverride: alpha, damageNumberColor: waveColor, colorOverride: waveColor);
+
+        Debug.Log($"[AttackSystem] 回旋镖: type={attackType} dmg={finalDmg} returnRatio={damageRatio} cols=[{colMin},{colMax}] rangeRows={rangeRows} targets={targets.Count}");
         return true;
     }
 
@@ -578,7 +575,10 @@ public class AttackSystem : MonoBehaviour
     /// </summary>
     private System.Collections.IEnumerator CreateChainVisual(Enemy from, Enemy to)
     {
-        if (from == null || to == null || _chainBouncePrefab == null) yield break;
+        if (from == null || to == null) yield break;
+
+        GameObject visualPrefab = _chainBounceVisualPrefab != null ? _chainBounceVisualPrefab : _chainBouncePrefab;
+        if (visualPrefab == null) yield break;
 
         Vector3 fromPos = from.transform.position + Vector3.up * 0.5f;
         Vector3 toPos = to.transform.position + Vector3.up * 0.5f;
@@ -586,24 +586,16 @@ public class AttackSystem : MonoBehaviour
         float dist = Vector3.Distance(fromPos, toPos);
         if (dist < 0.01f) yield break;
 
-        var chainGo = Object.Instantiate(_chainBouncePrefab, mid, Quaternion.identity);
+        var chainGo = Object.Instantiate(visualPrefab, mid, visualPrefab.transform.rotation);
         chainGo.name = "ChainBounce";
         var sr = chainGo.GetComponent<SpriteRenderer>();
         if (sr == null) { Destroy(chainGo); yield break; }
 
-        // 紫色闪电色调
-        sr.color = new Color(0.7f, 0.3f, 1f, 1f);
+        // 闪电色调
+        sr.color = new Color(0.6f, 0.2f, 1f, 1f);
         sr.sortingOrder = 100;
 
-        // 拉伸 X 以连接两个敌人 (sprite 为 1x1 世界单位)
-        Vector3 scale = chainGo.transform.localScale;
-        scale.x = dist;
-        chainGo.transform.localScale = scale;
-
-        // 旋转指向目标方向
-        Vector3 dir = (toPos - fromPos).normalized;
-        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-        chainGo.transform.rotation = Quaternion.Euler(0f, 0f, angle);
+        // 保持原始大小和旋转，仅放置在两敌人中间
 
         // 渐隐
         float duration = 0.35f;
@@ -612,7 +604,7 @@ public class AttackSystem : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float a = 1f - elapsed / duration;
-            sr.color = new Color(0.7f, 0.3f, 1f, a);
+            sr.color = new Color(0.6f, 0.2f, 1f, a);
             yield return null;
         }
 

@@ -24,7 +24,7 @@ MonoBehaviour:
   secondaryIntValue: 3
   stringValue: 
   baseAttackConfig: {fileID: 0}
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: ec29000cd1a53df488faa3a6f4537030, type: 3}
   phantomLevels: []
   triggerParam: 0
   phantomSteps: []

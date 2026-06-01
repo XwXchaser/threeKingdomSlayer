@@ -154,8 +154,13 @@ public class BuffDisplayPanel : MonoBehaviour
 
             if (def.category == UpgradeCategory.Passive)
             {
-                def.GetPhantomConfig(newLevel, out int threshold, out _);
-                icon.SetBadge(threshold.ToString());
+                // 仅 phantom_weapon 在此设角标，return_wave/chain_bounce 由 OnPassiveRegistered 负责
+                if (def.effectType == "passive_phantom_weapon")
+                {
+                    def.GetPhantomConfig(newLevel, out int threshold, out _);
+                    icon.SetBadge(threshold.ToString());
+                }
+                // else: OnPassiveRegistered 已正确设置阈值角标
             }
             else
             {
