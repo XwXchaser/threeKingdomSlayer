@@ -251,33 +251,26 @@ public class AttackWave : MonoBehaviour
                 HitTarget(t.enemy);
         }
 
-        // DOTween 序列：刺出 → (收回) → 销毁
+        // DOTween 序列：前行 → (return_wave折返 | stab收回 | 贯穿淡出)
         travelSeq = DOTween.Sequence();
         travelSeq.SetTarget(transform);
 
         var thrust = transform.DOMoveZ(endTravelZ, thrustTime).SetEase(Ease.OutQuad);
-        if (!isStab)
+        if (!isStab || _shouldReturnWave)
             thrust.OnUpdate(CheckHitThresholds);
         travelSeq.Append(thrust);
 
-        if (shouldRetract)
-        {
-            float retractTime = StabRetractTime;
-            var retract = transform.DOMoveZ(startZ, retractTime).SetEase(Ease.InQuad);
-            travelSeq.Append(retract);
+        // 回旋镖前飞自旋：~4转/秒 (1440°/s)
+        if (_shouldReturnWave)
+            travelSeq.Join(transform.DORotate(new Vector3(90f, 1440f * thrustTime, 0f), thrustTime, RotateMode.FastBeyond360).SetEase(Ease.Linear));
 
-            if (mat != null)
-                travelSeq.Join(mat.DOFade(0f, retractTime).SetEase(Ease.InQuad));
-        }
-        else if (_shouldReturnWave)
+        if (_shouldReturnWave)
         {
-            // 折返波：前行完成 → 折返再次命中路径上所有敌人（降低伤害）
+            // return_wave 优先：前行完成 → 折返再次命中路径上所有敌人（降低伤害）
             travelSeq.AppendCallback(() =>
             {
                 _isReturning = true;
                 nextIndex = 0;
-
-                // 反转目标顺序以匹配折返方向
                 targets.Reverse();
             });
 
@@ -287,11 +280,20 @@ public class AttackWave : MonoBehaviour
             returnMove.OnUpdate(CheckHitThresholds);
             travelSeq.Append(returnMove);
 
-            // 回旋镖旋转: Y轴360°高速旋转
-            travelSeq.Join(transform.DORotate(new Vector3(0f, 360f, 0f), returnTime, RotateMode.FastBeyond360).SetEase(Ease.Linear));
+            // 回旋镖折返自旋：继续 ~4转/秒
+            travelSeq.Join(transform.DORotate(new Vector3(90f, 1440f * returnTime, 0f), returnTime, RotateMode.FastBeyond360).SetEase(Ease.Linear));
 
             if (mat != null)
                 travelSeq.Join(mat.DOFade(0f, returnTime).SetEase(Ease.InQuad));
+        }
+        else if (shouldRetract)
+        {
+            float retractTime = StabRetractTime;
+            var retract = transform.DOMoveZ(startZ, retractTime).SetEase(Ease.InQuad);
+            travelSeq.Append(retract);
+
+            if (mat != null)
+                travelSeq.Join(mat.DOFade(0f, retractTime).SetEase(Ease.InQuad));
         }
         else
         {

@@ -154,8 +154,8 @@ public class PassiveTriggerModule : MonoBehaviour
         }
         else
         {
-            // return_wave / chain_bounce: 阈值来自 intValue
-            triggerParam = def.intValue > 0 ? def.intValue : (kind == PassiveKind.ReturnWave ? 4 : 6);
+            // return_wave / chain_bounce: 临时测试模式 always trigger
+            triggerParam = 1;
         }
 
         if (_states.TryGetValue(def.upgradeId, out var existing))
@@ -200,21 +200,19 @@ public class PassiveTriggerModule : MonoBehaviour
     {
         if (AttackSystem.Instance == null) yield break;
 
-        // 折返波仅对 Pierce / Sweep 有效（列/排攻击波可折返）
-        if (_lastAttackType != AttackType.Pierce && _lastAttackType != AttackType.Sweep)
+        // 折返波仅对 Pierce / Stab 有效
+        if (_lastAttackType != AttackType.Pierce && _lastAttackType != AttackType.Stab)
         {
-            // 非折返兼容类型 → 退化为普通幻影攻击
             AttackSystem.Instance.ExecutePhantomAttack(
                 _lastAttackType, _lastTargetColumn, _lastSlashLeftToRight,
                 state.damageRatio, 0.6f);
             yield break;
         }
 
-        // Phase 5 将实现真正的折返：当前波到达终点 → 掉头 → 再次命中
-        // Phase 2 占位：先打出一次幻影攻击作为基础效果
+        int rangeRows = state.definition.intValue > 0 ? state.definition.intValue : 2;
         bool hit = AttackSystem.Instance.ExecuteReturnWave(
             _lastAttackType, _lastTargetColumn, _lastSlashLeftToRight,
-            state.damageRatio);
+            state.damageRatio, rangeRows);
 
         OnPassiveTriggered?.Invoke(state.definition.upgradeId);
         Debug.Log($"[PassiveTriggerModule] 折返波触发: {state.definition.displayName} type={_lastAttackType} ratio={state.damageRatio} hit={hit}");
@@ -225,18 +223,15 @@ public class PassiveTriggerModule : MonoBehaviour
     {
         if (AttackSystem.Instance == null) yield break;
 
-        // 连锁弹射仅对 Pierce 有效（列攻击才能弹射至同行其他列）
-        if (_lastAttackType != AttackType.Pierce)
+        // 连锁弹射仅对 Pierce / Stab 有效
+        if (_lastAttackType != AttackType.Pierce && _lastAttackType != AttackType.Stab)
         {
-            // 非 Pierce → 退化为普通幻影攻击
             AttackSystem.Instance.ExecutePhantomAttack(
                 _lastAttackType, _lastTargetColumn, _lastSlashLeftToRight,
                 state.damageRatio, 0.6f);
             yield break;
         }
 
-        // Phase 5 将实现真正的弹射：找到同行最近敌人 → 发射弹射波 → 链式传递
-        // Phase 2 占位：先打出一次幻影攻击作为基础效果
         bool hit = AttackSystem.Instance.ExecuteChainBounce(
             _lastAttackType, _lastTargetColumn,
             state.damageRatio, state.maxBounces);

@@ -104,7 +104,19 @@ public class Column
                 // Boss 在 Approaching 状态时不参与补齐（由 BossPause/BossResume 自行控制）
                 if (i != writeIdx) enemies[writeIdx] = e;
                 e.targetRow = writeIdx;
-                e.ResetMovementState();
+
+                // 仅当敌人需要移动时才重置状态；正在攻击动画中的敌人不打断
+                bool needsMove = e.rowIndex != writeIdx;
+                if (needsMove && !e.isAttackAnimating)
+                {
+                    e.ResetMovementState();
+                }
+                else if (needsMove && e.isAttackAnimating)
+                {
+                    // 攻击动画中：保留状态，仅标记 targetRow/pendingRushMove
+                    // 由攻击动画 OnComplete 中的 TryStartRushMove 自然衔接
+                    Debug.Log($"[Column] 标记补齐（保留攻击动画）: {e.DebugTag}, col={colIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
+                }
                 if (!(e.isBoss && e.bossState == BossState.Approaching))
                     e.pendingRushMove = true;
                 Debug.Log($"[Column] 标记补齐移动: {e.DebugTag}, col={colIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
@@ -220,15 +232,16 @@ public class Column
             if (newRow != row)
             {
                 e.targetRow = newRow;
-                // BUG FIX: 不重置 Stunned 敌人的状态。
-                // ResetMovementState 会将 state 设为 Idle，导致晕眩被意外打断。
-                // 对于 Stunned 状态，仅设置 targetRow 和 pendingRushMove，
+                // BUG FIX: 不重置 Stunned / 正在攻击动画的敌人状态。
+                // ResetMovementState 会 Kill DOTween 攻击动画 + 重置 state → Idle，
+                // 导致晕眩或攻击动作被意外打断。
+                // 对于这些状态，仅设置 targetRow 和 pendingRushMove，
                 // 由 TryStartRushMove 等待状态恢复后再开始补齐移动。
-                if (e.state == EnemyState.Stunned)
+                if (e.state == EnemyState.Stunned || e.isAttackAnimating)
                 {
                     if (!(e.isBoss && e.bossState == BossState.Approaching))
                         e.pendingRushMove = true;
-                    Debug.Log($"[Column] RowBased 标记补齐（保留状态）: {e.DebugTag}, col={columnIndex}, curRow={row}, targetRow={newRow}, state={e.state}");
+                    Debug.Log($"[Column] RowBased 标记补齐（保留状态）: {e.DebugTag}, col={columnIndex}, curRow={row}, targetRow={newRow}, state={e.state} isAttackAnimating={e.isAttackAnimating}");
                 }
                 else
                 {
