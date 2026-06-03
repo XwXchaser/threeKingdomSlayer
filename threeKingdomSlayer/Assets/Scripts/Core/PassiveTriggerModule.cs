@@ -34,6 +34,10 @@ public class PassiveTriggerModule : MonoBehaviour
         public int maxBounces;    // chain_bounce 最大弹射次数
     }
 
+    [Header("测试开关")]
+    [Tooltip("开启后 ReturnWave/ChainBounce 每次攻击都触发（忽略配表的 intValue）")]
+    [SerializeField] private bool _forceTriggerEveryAttack;
+
     private Dictionary<string, PassiveState> _states = new Dictionary<string, PassiveState>();
 
     // 攻击上下文 — 由 OnAttackPerformed 暂存，供效果执行时使用
@@ -154,8 +158,7 @@ public class PassiveTriggerModule : MonoBehaviour
         }
         else
         {
-            // return_wave / chain_bounce: 临时测试模式 always trigger
-            triggerParam = 1;
+            triggerParam = _forceTriggerEveryAttack ? 1 : def.intValue;
         }
 
         if (_states.TryGetValue(def.upgradeId, out var existing))
