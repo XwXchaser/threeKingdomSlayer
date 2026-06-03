@@ -10,13 +10,13 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1779520344306
-updatedAt: 1780456554013
+updatedAt: 1780503422924
 ---
 
 # phase3-development-summary
 
 ## Summary
-第三期局内成长系统（经验三选一）开发状态 + 击杀进度条 & 击杀里程碑闪现 + 位移效果三选一系统（击退波/聚拢波/回旋波/连锁弹射）+ Victory层级修复 + 测试开关（2025-08-10）
+第三期局内成长系统（经验三选一）开发状态 + 位移效果三选一BUG修复（击退波/聚拢波/回旋波/连锁弹射）+ 被动特效prefab部署 + 补齐打断攻击BUG修复 + C技霸体位移BUG修复 + BOSS墙壁保护 + RowBasedFillUp打断BOSS Rush修复 (2025-08-10)
 
 <!-- locus:maintain-rules:start -->
 Keep only durable and reusable project memory
@@ -25,15 +25,43 @@ Remove temporary context, one-off tasks, and unsupported guesses
 <!-- locus:maintain-rules:end -->
 
 <!-- locus:body:start -->
-### 🔧 本会话 Bug 修复（2025-08-10）
+### Bug: Rush 重叠检测导致无限重试循环
 
-**Victory(panel) 被三选一弹窗遮挡**：
-- 问题：UpgradePopup.prefab 自带 Canvas sortOrder=100，BattleHUD(Canvas) sortOrder=0，通关"胜利"大字被盖住
-- 修复：给 `BattleHUD(Canvas)/Victory(panel)` 添加 Canvas 组件，`overrideSorting=true, sortingOrder=200`
-- 文件：`Assets/Scenes/Battle.scene`（需手动 Ctrl+S 保存）
+**状态**: ✅ 已修复 (2025-08-09)
 
-**测试硬编码 triggerParam=1 未回退**：
-- 问题：PassiveTriggerModule.Register() 硬编码 triggerParam=1，ReturnWave/ChainBounce 每次攻击都触发
-- 修复：新增 `[SerializeField] private bool _forceTriggerEveryAttack` 测试开关（默认 false）
-- 文件：`Assets/Scripts/Core/PassiveTriggerModule.cs`
+**现象**: 聚拢波将敌人移到其他列后，`RecheckAttackRange` 命令 rush 到 row 0，但 row 0 已被该列原有敌人占据 → Rush 重叠检测触发回退 → 0.1s 后重试 → 无限循环。日志 `[RowTrace] #19(103) row 1→0` 反复出现。
+
+**根因**: Rush 重叠检测中设置了 `pendingRushMove=true` + 0.1s 延迟重试，但目标行持续被占 → 死循环。
+
+**修复**: Rush 重叠时不再设置重试，直接放弃。该敌人留在当前排位等待前方敌人死亡后由死亡链自然补齐。
+
+### Bug: C技霸体敌人被普攻位移
+
+**状态**: ✅ 已修复 (2025-08-10)
+
+**现象**: 处于C技攻击步骤中的敌人被普攻(Stab/Slash/Pierce/Sweep)的击退/聚拢推动。
+
+**根因**: `ApplyPushWave` / `ApplyConvergenceWave` 未检查 `e.isCFrame`。
+
+**修复**: 位移方法新增 `canInterruptCFrame` 参数。普攻传 `false` → 跳过C技敌人；Launch(挑飞)传 `true` → 可破霸体。
+
+### Bug: 普通敌人被击退到BOSS身后 → 卡关
+
+**状态**: ✅ 已修复 (2025-08-10)
+
+**现象**: 击退将普通敌人推到BOSS所在排之后，BOSS因BossPause无法前进且敌人被BOSS挡住。
+
+**根因**: `CanPushColumn` / `ExecutePush` 跳过BOSS检查，未将BOSS排视为墙壁。
+
+**修复**: 新增 `GetBossRowInColumn`；`CanPushColumn` 规则3阻止越界击退；`ExecutePush` 钳制上限 `bossRow - 1`。
+
+### Bug: RowBasedFillUp 打断 BOSS Rush 移动 → 卡关
+
+**状态**: ✅ 已修复 (2025-08-10)
+
+**现象**: BOSS到达row=2触发BossPause后，前排敌人死亡 → BossResume → StartMoving，同帧位移PostDisplacementFillUp再次RowBasedFillUp → CompactByClearRows杀Moving状态。BOSS卡死在Idle无法前进。
+
+**根因**: `CompactByClearRows` 保护名单遗漏 `Moving` 状态。
+
+**修复**: 保护条件新增 `e.state == EnemyState.Moving`。
 <!-- locus:body:end -->
