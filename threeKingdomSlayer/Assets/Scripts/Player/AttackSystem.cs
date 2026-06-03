@@ -127,7 +127,7 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
-        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Stab);
+        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Stab, canInterruptCFrame: false);
         return targets.Count > 0;
     }
 
@@ -150,7 +150,7 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 斩击 方向:{(leftToRight ? "L→R" : "R→L")} 伤害:{finalDmg} 目标数:{targets.Count}");
-        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Slash);
+        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Slash, canInterruptCFrame: false);
         return targets.Count > 0;
     }
 
@@ -169,7 +169,7 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
-        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Pierce);
+        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Pierce, canInterruptCFrame: false);
         return targets.Count > 0;
     }
 
@@ -188,7 +188,7 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 横扫 伤害:{finalDmg} 目标数:{targets.Count}");
-        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Sweep);
+        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Sweep, canInterruptCFrame: false);
         return targets.Count > 0;
     }
 
@@ -231,7 +231,7 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 挑飞 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 击飞时间:{cfg.launchDuration}s 目标数:{targets.Count}");
-        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Launch);
+        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Launch, canInterruptCFrame: true);
         return targets.Count > 0;
     }
 
@@ -337,25 +337,35 @@ public class AttackSystem : MonoBehaviour
     /// <summary>
     /// 在成功攻击后应用位移效果（push_wave / convergence_wave）
     /// </summary>
-    private void ApplyDisplacementEffects(List<Enemy> targets, AttackType attackType)
+    private void ApplyDisplacementEffects(List<Enemy> targets, AttackType attackType, bool canInterruptCFrame)
     {
         if (UpgradeEffectManager.Instance == null || columnManager == null) return;
 
         int pushDist = UpgradeEffectManager.Instance.GetPushWaveDistance();
+        int convergence = UpgradeEffectManager.Instance.GetConvergenceStep();
+
+        Debug.Log($"[Displacement] === START atkType={attackType} push={pushDist} conv={convergence} targets={targets.Count} canInterruptCFrame={canInterruptCFrame} ===");
+        Debug.Log(columnManager.DumpColumns());
+
         if (pushDist > 0)
         {
-            bool pushed = columnManager.ApplyPushWave(targets, pushDist);
-            Debug.Log($"[AttackSystem] 击退波: pushDist={pushDist} pushed={pushed} targets={targets.Count}");
-            if (pushed) return; // 击退成功 → 跳过聚拢，避免叠加错位
+            columnManager.ApplyPushWave(targets, pushDist, canInterruptCFrame);
+            Debug.Log($"[Displacement] after PUSH:");
+            Debug.Log(columnManager.DumpColumns());
         }
 
-        int convergence = UpgradeEffectManager.Instance.GetConvergenceStep();
         if (convergence > 0)
         {
             float dmgPct = UpgradeEffectManager.Instance.GetConvergenceDamagePercent();
-            columnManager.ApplyConvergenceWave(targets, convergence, dmgPct);
-            Debug.Log($"[AttackSystem] 聚拢波: step={convergence} dmgPct={dmgPct:P0} targets={targets.Count}");
+            columnManager.ApplyConvergenceWave(targets, convergence, dmgPct, canInterruptCFrame);
+            Debug.Log($"[Displacement] after CONVERGENCE:");
+            Debug.Log(columnManager.DumpColumns());
         }
+
+        columnManager.PostDisplacementFillUp();
+        Debug.Log($"[Displacement] after FILLUP:");
+        Debug.Log(columnManager.DumpColumns());
+        Debug.Log($"[Displacement] === END ===");
     }
 
     public float GetAttackDamage(AttackType attackType)

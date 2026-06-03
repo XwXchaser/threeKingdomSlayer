@@ -677,9 +677,8 @@ public class Enemy : MonoBehaviour
     public bool CancelAttack()
     {
         if (state == EnemyState.Dead) return false;
-        // 只在 AttackSpawn 阶段可打断；AttackDraw 阶段不可打断
-        if (!isAttackAnimating || isAttackDrawPhase) return false;
 
+        // 全阶段可打断：AttackDraw / AttackSpawn / 冷却阶段均可打断
         // 清理 DOTween 残留（修复形变不恢复问题）
         transform.DOKill(false);
 
@@ -694,12 +693,12 @@ public class Enemy : MonoBehaviour
         isAttackDrawPhase = false;
         isCFrame = false;
 
-        // 重置攻击冷却，回到 AttackSpeed 等待状态（非眩晕）
+        // 重置攻击冷却
         float totalInterval = (1f / attackSpeed);
         attackTimer = totalInterval * 0.4f;
         if (attackTimer < 0.1f) attackTimer = 0.1f;
 
-        Debug.Log($"[Enemy] 招架打断攻击成功: {DebugTag}, col={columnIndex}, 返回冷却 {attackTimer:F2}s");
+        Debug.Log($"[Enemy] 打断攻击成功: {DebugTag}, col={columnIndex}, 返回冷却 {attackTimer:F2}s");
         return true;
     }
 
@@ -945,10 +944,27 @@ public class Enemy : MonoBehaviour
             rushMoveChainTriggered = false; // 重置链式触发标记
 
             // 移动完成：rowIndex 前进一排
+            int oldRowForLog = rowIndex;
             rowIndex--;
 
             // BUG FIX: 防止 rowIndex 变为负数
             if (rowIndex < 0) rowIndex = 0;
+            if (rowIndex != oldRowForLog)
+                Debug.Log($"[RowTrace] {DebugTag} row {oldRowForLog}→{rowIndex} | caller=UpdateMovement(moveComplete)");
+
+            // Rush 重叠检查：如果目标行已被同列其他敌人占据，回退放弃，等死亡链自然补齐
+            if (wasRush)
+            {
+                var col = EnemyManager.Instance?.columnManager?.GetColumn(columnIndex);
+                if (col != null && col.IsRowOccupied(rowIndex, this))
+                {
+                    rowIndex++;
+                    state = EnemyState.Idle;
+                    UpdateWorldPosition();
+                    Debug.Log($"[Enemy] Rush 目标行被占用，放弃补齐等待死亡链: {DebugTag}, col={columnIndex}, row={rowIndex}");
+                    return;
+                }
+            }
 
             // 共享血量组：补齐移动后检查是否仍在同一排，不同排则解散
             // 但如果组内有成员正在移动中或等待补齐，跳过检查（rowIndex 仍在变动）
@@ -1868,8 +1884,14 @@ public class Enemy : MonoBehaviour
     /// </summary>
     public void SetRowIndex(int row)
     {
+        int oldRow = rowIndex;
         rowIndex = row;
         UpdateWorldPosition();
+        // 追踪所有 rowIndex 变化，定位击退跳排根因
+        var st = new System.Diagnostics.StackTrace(1, true);
+        var frame = st.GetFrame(0);
+        string caller = frame != null ? $"{frame.GetMethod().DeclaringType?.Name}.{frame.GetMethod().Name}:{frame.GetFileLineNumber()}" : "?";
+        Debug.Log($"[RowTrace] {DebugTag} row {oldRow}→{row} | caller={caller}");
     }
 
     /// <summary>
@@ -1894,6 +1916,8 @@ public class Enemy : MonoBehaviour
             // 重置状态为Idle后调用StartMoving（Moving已做保护）
             if (state != EnemyState.Moving && state != EnemyState.Idle)
                 state = EnemyState.Idle;
+            // 设置 targetRow 为攻击范围最前排，确保 Rush 到位后能进入攻击
+            targetRow = atkRange - 1;
             StartMoving(isRush: true);
         }
     }

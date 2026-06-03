@@ -53,7 +53,7 @@ MonoBehaviour:
   enemyId: 101
   maxHealth: 15
   occupySlots: 1
-  attackSpeed: 0.01
+  attackSpeed: 0.1
   attackDamage: 10
   attackRange: 1
   moveSpeed: 0.3
