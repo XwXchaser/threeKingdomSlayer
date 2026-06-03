@@ -347,6 +347,11 @@ public class Column
                 break;
             }
         }
+        // 防御性检测：若插入位置前后存在同 rowIndex 的敌人，记录警告
+        if (insertIdx < enemies.Count && enemies[insertIdx].rowIndex == enemy.rowIndex)
+            Debug.LogWarning($"[Column] InsertEnemySorted OVERLAP: {enemy.DebugTag} row={enemy.rowIndex} collides with {enemies[insertIdx].DebugTag} at same row in col={columnIndex}");
+        else if (insertIdx > 0 && enemies[insertIdx - 1].rowIndex == enemy.rowIndex)
+            Debug.LogWarning($"[Column] InsertEnemySorted OVERLAP: {enemy.DebugTag} row={enemy.rowIndex} collides with {enemies[insertIdx - 1].DebugTag} at same row in col={columnIndex}");
         enemies.Insert(insertIdx, enemy);
     }
 
