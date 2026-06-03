@@ -232,12 +232,12 @@ public class Column
             if (newRow != row)
             {
                 e.targetRow = newRow;
-                // BUG FIX: 不重置 Stunned / 正在攻击动画的敌人状态。
-                // ResetMovementState 会 Kill DOTween 攻击动画 + 重置 state → Idle，
-                // 导致晕眩或攻击动作被意外打断。
+                // BUG FIX: 不重置 Stunned / 攻击动画中 / Moving 状态的敌人。
+                // ResetMovementState 会 Kill DOTween 动画 + 重置 state → Idle，
+                // 导致晕眩/攻击动作/正在进行的补齐移动被意外打断。
                 // 对于这些状态，仅设置 targetRow 和 pendingRushMove，
                 // 由 TryStartRushMove 等待状态恢复后再开始补齐移动。
-                if (e.state == EnemyState.Stunned || e.isAttackAnimating)
+                if (e.state == EnemyState.Stunned || e.isAttackAnimating || e.state == EnemyState.Moving)
                 {
                     if (!(e.isBoss && e.bossState == BossState.Approaching))
                         e.pendingRushMove = true;
