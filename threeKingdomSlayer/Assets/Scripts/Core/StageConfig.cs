@@ -28,7 +28,6 @@ public class RowConfig
 
 /// <summary>
 /// 波次配置
-/// 每个关卡通常只有1个波次，波次之间播放剧情演出
 /// </summary>
 [Serializable]
 public class WaveConfig
@@ -37,6 +36,14 @@ public class WaveConfig
     public bool isBossWave;
     [Tooltip("此波包含的所有排，按顺序从远到近生成")]
     public List<RowConfig> rows = new List<RowConfig>();
+
+    [Header("补齐延迟（本波次独立配置）")]
+    [Tooltip("启用动态补齐：存活敌人越少，补齐延迟越短（用于后期割草加速）")]
+    public bool enableDynamicRush = false;
+    [Tooltip("补齐移动基础延迟（秒），敌人数量 >=10 时使用此值")]
+    public float rushMoveDelay = 0.2f;
+    [Tooltip("补齐移动最低延迟（秒），敌人数量 →0 时趋近此值")]
+    public float rushMoveDelayMin = 0.02f;
 }
 
 /// <summary>

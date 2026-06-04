@@ -380,12 +380,30 @@ public class StageController : MonoBehaviour
 
     /// <summary>
     /// 获取补齐移动延迟（连续补齐移动间的停顿时间）
-    /// Problem 3 修复：允许配置补齐移动间的延迟，
-    /// 以配合加快的单次补齐移动速度，保持整体补齐节奏。
+    /// 优先使用当前波次配置：若启用动态补齐，则根据场上存活敌人数量在 [delayMin, delayMax] 间线性插值。
+    /// 未启用动态补齐时使用波次静态延迟；找不到波次配置时回退到全局默认值。
     /// </summary>
     public float GetRushMoveDelay()
     {
-        return stageConfig?.rushMoveDelay ?? 0.2f;
+        if (stageConfig == null) return 0.2f;
+
+        WaveConfig waveCfg = null;
+        int waveIdx = waveSpawner != null ? waveSpawner.CurrentWaveIndex : -1;
+        if (waveIdx >= 0 && waveIdx < stageConfig.waves.Count)
+            waveCfg = stageConfig.waves[waveIdx];
+
+        if (waveCfg != null)
+        {
+            if (waveCfg.enableDynamicRush)
+            {
+                int alive = enemyManager != null ? enemyManager.AliveEnemyCount : 10;
+                float t = Mathf.Clamp01(alive / 10f);
+                return Mathf.Lerp(waveCfg.rushMoveDelayMin, waveCfg.rushMoveDelay, t);
+            }
+            return waveCfg.rushMoveDelay;
+        }
+
+        return stageConfig.rushMoveDelay;
     }
 
     /// <summary>
