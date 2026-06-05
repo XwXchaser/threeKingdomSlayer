@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <WwiseDocument Type="WorkUnit" ID="{145CD4F3-C7BC-4676-946E-3D08481A678D}" SchemaVersion="133">
 	<Events>
-		<WorkUnit Name="Default Work Unit" ID="{145CD4F3-C7BC-4676-946E-3D08481A678D}" PersistMode="Standalone"/>
+		<WorkUnit Name="Default Work Unit" ID="{145CD4F3-C7BC-4676-946E-3D08481A678D}" PersistMode="Standalone">
+			<ChildrenList>
+				<Event Name="Stage1_Bgm1_Play" ID="{CDBD2255-592C-4711-9FEC-AA3E74249E29}">
+					<ChildrenList>
+						<Action Name="" ID="{F9811DCD-C6B7-4B0F-9934-AA69A31006B5}" ShortID="661212478">
+							<ReferenceList>
+								<Reference Name="Target">
+									<ObjectRef Name="bgm_fight_stage1_1" ID="{A3067854-0B07-4973-9B32-3EF3638DE098}" WorkUnitID="{B43FBC5F-92CF-4769-9520-00534891348F}"/>
+								</Reference>
+							</ReferenceList>
+						</Action>
+					</ChildrenList>
+				</Event>
+			</ChildrenList>
+		</WorkUnit>
 	</Events>
 </WwiseDocument>

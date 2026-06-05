@@ -1,0 +1,43 @@
+{
+ "ProjectInfo": {
+  "Project": {
+   "Name": "threeKingdomSlayer_WwiseProject",
+   "GUID": "{3A971B2A-C3FC-45C1-8FF7-5CFB60A47BA9}",
+   "Generator": "2025.1.8.9170"
+  },
+  "CacheRoot": "../.cache",
+  "Platforms": [
+   {
+    "Name": "Android",
+    "GUID": "{4AF85216-22B9-4A0C-8B5F-B053639D74B2}",
+    "BasePlatform": "Android",
+    "BasePlatformGUID": "{A2D401DE-B8B6-4FEB-8142-137C34D507CA}",
+    "Path": "Android"
+   },
+   {
+    "Name": "Mac",
+    "GUID": "{1ABFB299-D6E2-4AF7-8EFE-BCB3AB66543B}",
+    "BasePlatform": "Mac",
+    "BasePlatformGUID": "{9C6217D5-DD11-4795-87C1-6CE02853C540}",
+    "Path": "Mac"
+   },
+   {
+    "Name": "Windows",
+    "GUID": "{C35EBF2B-08B6-4DD1-8ED0-747821F2E96D}",
+    "BasePlatform": "Windows",
+    "BasePlatformGUID": "{6E0CB257-C6C8-4C5C-8366-2740DFC441EB}",
+    "Path": "Windows"
+   }
+  ],
+  "Languages": [
+   {
+    "Name": "English(US)",
+    "Id": "684519430",
+    "GUID": "{80092538-7774-495D-ABF6-3BEA3E46BB03}",
+    "Default": "true",
+    "UseAsStandIn": "true"
+   }
+  ],
+  "FileHash": "{B9091FC4-9600-1326-E316-3A082EB9FAAB}"
+ }
+}

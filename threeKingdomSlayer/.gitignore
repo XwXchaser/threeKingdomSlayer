@@ -1,1 +1,33 @@
 .apk
+
+# Wwise 工程 — 临时文件
+threeKingdomSlayer_WwiseProject/.cache/
+threeKingdomSlayer_WwiseProject/Originals/
+threeKingdomSlayer_WwiseProject/.backup/
+threeKingdomSlayer_WwiseProject/WwiseProfiler/
+
+# Wwise — 用户本地配置
+Assets/Wwise/LauncherInfo.json
+
+# Unity 临时文件
+[Dd]ebug/
+[Bb]uild/
+[Oo]bj/
+[Tt]emp/
+Library/
+
+# IDE
+.idea/
+.vs/
+*.csproj
+*.sln
+*.user
+*.userosscache
+*.suo
+*.userprefs
+.DS_Store
+Thumbs.db
+
+# 项目临时文件
+*.tmp
+*.log

@@ -1,6 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <WwiseDocument Type="WorkUnit" ID="{B43FBC5F-92CF-4769-9520-00534891348F}" SchemaVersion="133">
 	<Containers>
-		<WorkUnit Name="Default Work Unit" ID="{B43FBC5F-92CF-4769-9520-00534891348F}" PersistMode="Standalone"/>
+		<WorkUnit Name="Default Work Unit" ID="{B43FBC5F-92CF-4769-9520-00534891348F}" PersistMode="Standalone">
+			<ChildrenList>
+				<Sound Name="bgm_fight_stage1_1" ID="{A3067854-0B07-4973-9B32-3EF3638DE098}" ShortID="978109992">
+					<ReferenceList>
+						<Reference Name="Conversion">
+							<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{21D7FA21-026B-4C2D-B7A6-4E4C985BCC1D}"/>
+						</Reference>
+						<Reference Name="OutputBus">
+							<ObjectRef Name="Main Audio Bus" ID="{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}" WorkUnitID="{17D50E2A-48B6-4138-A060-F8018A27B2CE}"/>
+						</Reference>
+					</ReferenceList>
+					<ChildrenList>
+						<AudioFileSource Name="bgm_fight_stage1_1" ID="{5894F838-A107-4567-8C26-5DE01432474C}">
+							<Language>SFX</Language>
+							<AudioFile>bgm_fight_stage1_1.wav</AudioFile>
+							<MediaIDList>
+								<MediaID ID="644218377"/>
+							</MediaIDList>
+						</AudioFileSource>
+					</ChildrenList>
+					<ActiveSourceList>
+						<ActiveSource Name="bgm_fight_stage1_1" ID="{5894F838-A107-4567-8C26-5DE01432474C}" Platform="Linked"/>
+					</ActiveSourceList>
+				</Sound>
+			</ChildrenList>
+		</WorkUnit>
 	</Containers>
 </WwiseDocument>

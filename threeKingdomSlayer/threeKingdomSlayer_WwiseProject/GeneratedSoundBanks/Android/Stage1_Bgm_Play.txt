@@ -1,0 +1,6 @@
+Event	ID	Name			Wwise Object Path	Notes
+	2336985179	Stage1_Bgm1_Play			\Default Work Unit\Stage1_Bgm1_Play	
+
+In Memory Audio	ID	Name	Audio source file		Wwise Object Path	Notes	Data Size
+	644218377	bgm_fight_stage1_1	.cache\EB\{EB4F9798-8CA0-303B-D284-06DE752AACF7}.wem		\Containers\Default Work Unit\bgm_fight_stage1_1		9818208
+
