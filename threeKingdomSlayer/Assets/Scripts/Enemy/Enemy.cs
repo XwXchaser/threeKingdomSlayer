@@ -635,8 +635,9 @@ public class Enemy : MonoBehaviour
         // 若此处重置为 -1，落地后 UpdateLaunch() 不会触发补齐，导致链式前移中断。
 
         state = EnemyState.Launched;
-        // 直接 Play Launched 跳过触发器竞争（Hit 触发器可能与 Launch 竞态）
-        _animator?.Play("Launched", 0, 0f);
+        // 清除 TakeDamage 阶段遗留的 Hit trigger，避免落地切 Idle 后被捕获跳转 HitFlash
+        _animator?.ResetTrigger("Hit");
+        _animator?.Play("Launched_Rise", 0, 0f);
         launchTimer = launchDuration;
         launchStartLocalPos = transform.localPosition;
         currentLaunchYHeight = Random.Range(launchYHeightMin, launchYHeightMax);
@@ -654,6 +655,8 @@ public class Enemy : MonoBehaviour
         if (state != EnemyState.Launched) return;
         launchTimer += extendTime;
         launchVelocityY = launchReboundVelocity;
+        // 再击飞：重新播放 Rise 动画
+        _animator?.Play("Launched_Rise", 0, 0f);
         Debug.Log($"[Enemy] 延长浮空: {DebugTag}, +{extendTime:F2}s, 剩余={launchTimer:F2}s, 反弹速度={launchReboundVelocity:F2}");
     }
 
