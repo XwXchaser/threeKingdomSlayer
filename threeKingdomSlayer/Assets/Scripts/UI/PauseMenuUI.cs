@@ -17,6 +17,9 @@ public class PauseMenuUI : MonoBehaviour
     public UnityEngine.UI.Button continueButton;
     public UnityEngine.UI.Button mainMenuButton;
 
+    [Header("音量")]
+    public UnityEngine.UI.Slider volumeSlider;
+
     [Header("结算信息")]
     public TMP_Text coinEarnedText;
     public TMP_Text killCountText;
@@ -35,6 +38,16 @@ public class PauseMenuUI : MonoBehaviour
 
         if (pausePanel != null)
             pausePanel.SetActive(false);
+
+        if (volumeSlider != null)
+        {
+            volumeSlider.minValue = 0f;
+            volumeSlider.maxValue = 1f;
+            volumeSlider.value = WwiseAudioManager.Instance != null
+                ? WwiseAudioManager.Instance.GetMasterVolume()
+                : 1f;
+            volumeSlider.onValueChanged.AddListener(OnVolumeChanged);
+        }
     }
 
     private void OnDestroy()
@@ -42,6 +55,7 @@ public class PauseMenuUI : MonoBehaviour
         if (pauseButton != null) pauseButton.onClick.RemoveListener(OnPauseClicked);
         if (continueButton != null) continueButton.onClick.RemoveListener(OnContinueClicked);
         if (mainMenuButton != null) mainMenuButton.onClick.RemoveListener(OnMainMenuClicked);
+        if (volumeSlider != null) volumeSlider.onValueChanged.RemoveListener(OnVolumeChanged);
     }
 
     private void OnPauseClicked()
@@ -70,6 +84,11 @@ public class PauseMenuUI : MonoBehaviour
     {
         Time.timeScale = 1f;
         StageController.Instance?.GoToMainMenu();
+    }
+
+    private void OnVolumeChanged(float value)
+    {
+        WwiseAudioManager.Instance?.SetMasterVolume(value);
     }
 
     private void RefreshSettlementInfo()
