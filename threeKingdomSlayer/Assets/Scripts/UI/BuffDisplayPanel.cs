@@ -27,21 +27,26 @@ public class BuffDisplayPanel : MonoBehaviour
     private Dictionary<string, BuffIcon> _itemIcons = new Dictionary<string, BuffIcon>();
 
     private CanvasGroup _canvasGroup;
-    private bool _firstUpgradeReceived;
     private int _columnBUsedCount;
+
+    private const string POTION_GESTURE_ID = "health_potion";
+    private BuffIcon _potionSlot;
 
     private void Start()
     {
         _canvasGroup = GetComponent<CanvasGroup>();
         if (_canvasGroup == null)
             _canvasGroup = gameObject.AddComponent<CanvasGroup>();
-        _canvasGroup.alpha = 0f;
-        _canvasGroup.blocksRaycasts = false;
+        // 血包槽位始终可见
+        _canvasGroup.alpha = 1f;
+        _canvasGroup.blocksRaycasts = true;
 
         foreach (var slot in _columnASlots)
             if (slot != null) slot.gameObject.SetActive(false);
         foreach (var slot in _columnBSlots)
             if (slot != null) slot.gameObject.SetActive(false);
+
+        InitializePotionSlot();
 
         if (UpgradeEffectManager.Instance != null)
             UpgradeEffectManager.Instance.OnUpgradeApplied += OnUpgradeApplied;
@@ -59,6 +64,10 @@ public class BuffDisplayPanel : MonoBehaviour
             ItemInventory.Instance.OnItemChanged -= OnItemChanged;
         if (PassiveTriggerModule.Instance != null)
             PassiveTriggerModule.Instance.OnPassiveRegistered -= OnPassiveRegistered;
+        if (_potionSlot != null)
+            _potionSlot.OnClicked -= OnPotionClicked;
+        if (HealthPotionManager.Instance != null)
+            HealthPotionManager.Instance.OnPotionCountChanged -= OnPotionCountChanged;
     }
 
     // ── 槽位分配 ──
@@ -82,9 +91,11 @@ public class BuffDisplayPanel : MonoBehaviour
         return _columnBSlots[_columnBUsedCount++];
     }
 
-    /// <summary>ColumnB 槽位前移补位：将 removedIndex 之后的已用槽依次前移</summary>
+    /// <summary>ColumnB 槽位前移补位：将 removedIndex 之后的已用槽依次前移。永不触碰血包槽位(index 0)。</summary>
     private void CompactColumnB(int removedIndex)
     {
+        if (removedIndex < 1) return; // 血包槽位不可移除
+
         for (int i = removedIndex; i < _columnBUsedCount - 1; i++)
         {
             var from = _columnBSlots[i + 1];
@@ -107,21 +118,61 @@ public class BuffDisplayPanel : MonoBehaviour
         var last = _columnBSlots[_columnBUsedCount - 1];
         if (last != null) last.ResetSlot();
         _columnBUsedCount--;
+        if (_columnBUsedCount < 1) _columnBUsedCount = 1;
+    }
+
+    // ── 血包槽位 ──
+
+    private void InitializePotionSlot()
+    {
+        var manager = HealthPotionManager.Instance;
+        if (manager == null || _columnBSlots.Count == 0) return;
+
+        _potionSlot = _columnBSlots[0];
+        if (_potionSlot == null) return;
+
+        var def = manager.potionDefinition;
+        if (def != null)
+        {
+            _potionSlot.Setup(def.icon, def.upgradeId, UpgradeCategory.Item, POTION_GESTURE_ID);
+            _potionSlot.SetFrame(_skillFrame);
+        }
+
+        _potionSlot.OnClicked += OnPotionClicked;
+        _potionSlot.gameObject.SetActive(true);
+        _columnBUsedCount = 1;
+
+        manager.targetSlot = _potionSlot.GetComponent<RectTransform>();
+        manager.OnPotionCountChanged += OnPotionCountChanged;
+        UpdatePotionSlot(manager.PotionCount);
+    }
+
+    private void OnPotionCountChanged(int count)
+    {
+        UpdatePotionSlot(count);
+    }
+
+    private void UpdatePotionSlot(int count)
+    {
+        if (_potionSlot == null) return;
+        _potionSlot.SetBadge(count.ToString());
+        _potionSlot.SetDimmed(count <= 0);
+    }
+
+    private void OnPotionClicked(BuffIcon icon)
+    {
+        HealthPotionManager.Instance?.TryUsePotion();
     }
 
     // ── 事件回调 ──
 
     private void OnUpgradeApplied(UpgradeDefinition def, int newLevel)
     {
-        if (!_firstUpgradeReceived)
-        {
-            _firstUpgradeReceived = true;
-            _canvasGroup.alpha = 1f;
-            _canvasGroup.blocksRaycasts = true;
-        }
-
         if (def.category == UpgradeCategory.Item)
         {
+            // 快速修复：如果 alpha 曾被外部重置，确保 Item 型奖励到达时面板可见
+            if (_canvasGroup != null) _canvasGroup.alpha = 1f;
+
             if (!_itemIcons.TryGetValue(def.gestureId, out var icon))
             {
                 icon = ClaimColumnBSlot();

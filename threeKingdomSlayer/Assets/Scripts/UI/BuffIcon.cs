@@ -37,6 +37,7 @@ public class BuffIcon : MonoBehaviour
             {
                 _button.interactable = true;
                 _button.onClick.AddListener(() => OnClicked?.Invoke(this));
+                if (_iconImage != null) _iconImage.raycastTarget = true;
             }
             else
             {
@@ -58,6 +59,15 @@ public class BuffIcon : MonoBehaviour
             _frameImage.sprite = sprite;
             _frameImage.enabled = sprite != null;
         }
+    }
+
+    /// <summary>设置半透明状态（用于未持有的道具槽位显示）</summary>
+    public void SetDimmed(bool dimmed)
+    {
+        if (_iconImage != null)
+            _iconImage.color = dimmed ? new Color(1f, 1f, 1f, 0.35f) : Color.white;
+        if (_button != null)
+            _button.interactable = !dimmed;
     }
 
     /// <summary>清空图标数据并隐藏</summary>

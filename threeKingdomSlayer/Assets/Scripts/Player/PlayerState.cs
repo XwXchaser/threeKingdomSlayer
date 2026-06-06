@@ -183,6 +183,17 @@ public class PlayerState : MonoBehaviour
     }
 
     /// <summary>
+    /// 回复生命值（不超过最大值）
+    /// </summary>
+    public void Heal(float amount)
+    {
+        if (stageState == StageState.Defeat || stageState == StageState.Victory) return;
+        float maxHp = heroConfig != null ? heroConfig.maxHealth : 100f;
+        currentHealth = Mathf.Min(currentHealth + amount, maxHp);
+        OnHealthChanged?.Invoke(currentHealth, maxHp);
+    }
+
+    /// <summary>
     /// 处理玩家死亡
     /// </summary>
     private void HandleDeath()

@@ -124,6 +124,7 @@ public class AttackSystem : MonoBehaviour
             wavePos.y = targets[0].transform.position.y + cfg.stabSpawnYOffset;
             AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
                 prefab: cfg.attackWavePrefab, zOffset: cfg.stabSpawnZOffset);
+            WwiseAudioManager.Instance?.PostEvent("Player_Attack");
         }
 
         Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -147,6 +148,7 @@ public class AttackSystem : MonoBehaviour
             SweepEffect.Create(wavePos, cfg.damageType, finalDmg, targets, leftToRight,
                 cfg.slashSweepHalfWidth, cfg.slashSweepAngle, cfg.slashSweepDuration,
                 prefab: cfg.attackWavePrefab);
+            WwiseAudioManager.Instance?.PostEvent("Player_Attack");
         }
 
         Debug.Log($"[AttackSystem] 斩击 方向:{(leftToRight ? "L→R" : "R→L")} 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -255,7 +257,11 @@ public class AttackSystem : MonoBehaviour
                 Debug.Log($"[AttackSystem] 招架反弹飞行物: dist={dist:F1}");
             }
         }
-        if (deflectedAny) return true;
+        if (deflectedAny)
+        {
+            WwiseAudioManager.Instance?.PostEvent("Player_Parry");
+            return true;
+        }
 
         // 无飞行物在范围内 → 对敌人执行招架伤害
         if (columnManager == null) return false;
@@ -273,6 +279,7 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 招架 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 目标数:{targets.Count}");
+        WwiseAudioManager.Instance?.PostEvent("Player_Parry");
         return true;
     }
 
