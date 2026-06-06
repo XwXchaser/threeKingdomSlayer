@@ -10,6 +10,20 @@
 					<ObjectExclusionList/>
 					<GameSyncExclusionList/>
 				</SoundBank>
+				<SoundBank Name="Player_Attack" ID="{2EE3096B-B838-4E2C-9882-608648F13042}">
+					<ObjectInclusionList>
+						<ObjectRef Name="Player_Attack" ID="{25045FB5-06F5-40AA-9FB0-28523ABF40AF}" WorkUnitID="{145CD4F3-C7BC-4676-946E-3D08481A678D}" Origin="Manual" Filter="7"/>
+					</ObjectInclusionList>
+					<ObjectExclusionList/>
+					<GameSyncExclusionList/>
+				</SoundBank>
+				<SoundBank Name="Player_Parry" ID="{758FA472-F70E-497F-AB2C-B20F732FD4A7}">
+					<ObjectInclusionList>
+						<ObjectRef Name="Player_Parry" ID="{DFD7DCD7-A505-4D27-AF1E-A295F5611A5F}" WorkUnitID="{145CD4F3-C7BC-4676-946E-3D08481A678D}" Origin="Manual" Filter="7"/>
+					</ObjectInclusionList>
+					<ObjectExclusionList/>
+					<GameSyncExclusionList/>
+				</SoundBank>
 			</ChildrenList>
 		</WorkUnit>
 	</SoundBanks>

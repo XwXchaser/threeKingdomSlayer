@@ -9,6 +9,7 @@ public class ExpGem : MonoBehaviour
     [System.NonSerialized] public float expAmount;
     [System.NonSerialized] public float speed;
     [System.NonSerialized] public Vector3 targetPosition; // 屏幕空间
+    [System.NonSerialized] public System.Action<ExpGem> onArrived;
 
     private RectTransform _rectTransform;
     private Image _image;
@@ -29,7 +30,10 @@ public class ExpGem : MonoBehaviour
         if (dir.magnitude <= step)
         {
             _collected = true;
-            ExpGemManager.Instance?.OnGemArrived(this);
+            if (onArrived != null)
+                onArrived(this);
+            else
+                ExpGemManager.Instance?.OnGemArrived(this);
             Destroy(gameObject);
             return;
         }

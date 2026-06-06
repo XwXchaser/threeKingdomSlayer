@@ -6,9 +6,53 @@
 				<Event Name="Stage1_Bgm1_Play" ID="{CDBD2255-592C-4711-9FEC-AA3E74249E29}">
 					<ChildrenList>
 						<Action Name="" ID="{F9811DCD-C6B7-4B0F-9934-AA69A31006B5}" ShortID="661212478">
+							<PropertyList>
+								<Property Name="FadeInCurve" Type="int16" Value="1"/>
+								<Property Name="FadeTime" Type="Real64" Value="2"/>
+							</PropertyList>
 							<ReferenceList>
 								<Reference Name="Target">
 									<ObjectRef Name="bgm_fight_stage1_1" ID="{A3067854-0B07-4973-9B32-3EF3638DE098}" WorkUnitID="{B43FBC5F-92CF-4769-9520-00534891348F}"/>
+								</Reference>
+							</ReferenceList>
+						</Action>
+						<Action Name="" ID="{7FAA22FA-9BBF-423D-AEBA-A249F2777CE3}" ShortID="101263613">
+							<PropertyList>
+								<Property Name="FadeInCurve" Type="int16" Value="1"/>
+								<Property Name="FadeTime" Type="Real64" Value="3"/>
+							</PropertyList>
+							<ReferenceList>
+								<Reference Name="Target">
+									<ObjectRef Name="battle_ev" ID="{50A6EF5E-47D9-4EDF-9E71-852274198B41}" WorkUnitID="{B43FBC5F-92CF-4769-9520-00534891348F}"/>
+								</Reference>
+							</ReferenceList>
+						</Action>
+					</ChildrenList>
+				</Event>
+				<Event Name="Player_Attack" ID="{25045FB5-06F5-40AA-9FB0-28523ABF40AF}">
+					<ChildrenList>
+						<Action Name="" ID="{2E084B0B-7502-4666-9078-BB1977BF29C5}" ShortID="748294607">
+							<ReferenceList>
+								<Reference Name="Target">
+									<ObjectRef Name="attackVoice_head" ID="{5A90ABDF-B338-4638-8F22-16FE36C4AF92}" WorkUnitID="{B43FBC5F-92CF-4769-9520-00534891348F}"/>
+								</Reference>
+							</ReferenceList>
+						</Action>
+						<Action Name="" ID="{ADBEA39B-E6D5-4F78-8E0A-906A25CB42D8}" ShortID="572277963">
+							<ReferenceList>
+								<Reference Name="Target">
+									<ObjectRef Name="attackVoiceTile" ID="{697059BF-0F47-42BC-98E4-300D9F104551}" WorkUnitID="{B43FBC5F-92CF-4769-9520-00534891348F}"/>
+								</Reference>
+							</ReferenceList>
+						</Action>
+					</ChildrenList>
+				</Event>
+				<Event Name="Player_Parry" ID="{DFD7DCD7-A505-4D27-AF1E-A295F5611A5F}">
+					<ChildrenList>
+						<Action Name="" ID="{FE835CC3-96BD-4856-9F69-47F1AA2E9392}" ShortID="217854245">
+							<ReferenceList>
+								<Reference Name="Target">
+									<ObjectRef Name="parry" ID="{3A289612-B794-4025-8268-D891E5F8BD71}" WorkUnitID="{B43FBC5F-92CF-4769-9520-00534891348F}"/>
 								</Reference>
 							</ReferenceList>
 						</Action>

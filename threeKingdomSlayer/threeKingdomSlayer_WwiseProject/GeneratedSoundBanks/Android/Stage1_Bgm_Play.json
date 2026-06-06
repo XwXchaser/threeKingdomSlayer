@@ -10,7 +10,7 @@
     "Type": "User",
     "GUID": "{F00886D5-30BC-415B-9463-ED9FD1271039}",
     "Language": "SFX",
-    "Hash": "{16C05512-6F50-D3E4-1106-5565123AF696}",
+    "Hash": "{2EE10B10-4758-560F-45EA-EC38B1FFB685}",
     "ObjectPath": "\\SoundBanks\\Default Work Unit\\Stage1_Bgm_Play",
     "ShortName": "Stage1_Bgm_Play",
     "Path": "Stage1_Bgm_Play.bnk",
@@ -21,7 +21,15 @@
       "Streaming": "false",
       "Location": "Memory",
       "ShortName": "bgm_fight_stage1_1.wav",
-      "CachePath": "EB/{EB4F9798-8CA0-303B-D284-06DE752AACF7}.wem"
+      "CachePath": "B9/{B965B6E0-B109-6A7E-BAB5-8D2055E82297}.wem"
+     },
+     {
+      "Id": "905223778",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "battle_ev.wav",
+      "CachePath": "3D/{3D70C0FF-311D-B50D-A5F2-4108ED620E79}.wem"
      }
     ],
     "Events": [
@@ -30,18 +38,19 @@
       "Name": "Stage1_Bgm1_Play",
       "ObjectPath": "\\Events\\Default Work Unit\\Stage1_Bgm1_Play",
       "GUID": "{CDBD2255-592C-4711-9FEC-AA3E74249E29}",
-      "DurationType": "OneShot",
-      "DurationMin": "55.65823",
-      "DurationMax": "55.65823",
+      "DurationType": "Infinite",
       "MediaRefs": [
        {
         "Id": "644218377"
+       },
+       {
+        "Id": "905223778"
        }
       ]
      }
     ]
    }
   ],
-  "FileHash": "{D107FF25-ACCE-F708-60A0-D7C7A91F3BD4}"
+  "FileHash": "{2818EFB8-D68E-B7DB-05DF-D1B9CB132699}"
  }
 }

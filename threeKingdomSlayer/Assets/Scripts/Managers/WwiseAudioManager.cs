@@ -14,6 +14,9 @@ public class WwiseAudioManager : MonoBehaviour
     [SerializeField] private string bgmBankName = "Stage1_Bgm_Play.bnk";
     [SerializeField] private string bgmEventName = "Stage1_Bgm1_Play";
 
+    [Header("SFX Bank")]
+    [SerializeField] private string sfxBankName = "Player_Attack.bnk";
+
     private Dictionary<string, uint> _loadedBanks = new Dictionary<string, uint>();
     private uint _currentBgmPlayingID;
     private bool _bgmStopped;
@@ -34,6 +37,8 @@ public class WwiseAudioManager : MonoBehaviour
     private void Start()
     {
         LoadBank(bgmBankName);
+        LoadBank(sfxBankName);
+        LoadBank("Player_Parry.bnk");
     }
 
     private void OnDestroy()
@@ -51,6 +56,9 @@ public class WwiseAudioManager : MonoBehaviour
         if (scene.name == "Battle")
         {
             StopBGM();
+            // 兜底：确保 WwiseAudioManager GameObject 上所有 Event 已停止
+            // 防止 StopPlayingID 在场景切换时序下的不可靠行为
+            AkSoundEngine.StopAll(gameObject);
         }
     }
 
@@ -149,7 +157,10 @@ public class WwiseAudioManager : MonoBehaviour
         {
             _currentBgmPlayingID = AkSoundEngine.PostEvent(
                 bgmEventName,
-                gameObject
+                gameObject,
+                (uint)AkCallbackType.AK_EndOfEvent,
+                OnBgmEnded,
+                null
             );
         }
     }

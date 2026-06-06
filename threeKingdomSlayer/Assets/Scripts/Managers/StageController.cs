@@ -129,6 +129,9 @@ public class StageController : MonoBehaviour
         // 重置连击管理器
         ComboManager.Instance?.ResetCombo();
 
+        // 重置血包掉落
+        HealthPotionManager.Instance?.ResetForNewStage();
+
         // 预创建对象池
         PrewarmEnemyPools();
 

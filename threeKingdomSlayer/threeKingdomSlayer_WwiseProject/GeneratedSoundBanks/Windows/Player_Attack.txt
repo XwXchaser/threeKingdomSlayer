@@ -1,0 +1,10 @@
+Event	ID	Name			Wwise Object Path	Notes
+	2824512041	Player_Attack			\Default Work Unit\Player_Attack	
+
+In Memory Audio	ID	Name	Audio source file		Wwise Object Path	Notes	Data Size
+	34878787	playerattackvoice1	.cache\CF\{CF7D292D-C56C-81A1-B2AD-E083BC159758}.wem		\Containers\Default Work Unit\playervoice\attackVoice_head\playerattackvoice1		68704
+	375420932	playerattackvoice2	.cache\FD\{FD7CBF8E-F481-DFD8-0F20-2120764FA671}.wem		\Containers\Default Work Unit\playervoice\attackVoice_head\playerattackvoice2		74848
+	794427965	playerattackvoice3	.cache\4D\{4D56B2A7-18AC-E2F5-A772-052A6FA6FD3F}.wem		\Containers\Default Work Unit\playervoice\attackVoice_head\playerattackvoice3		91264
+	794786191	stab	.cache\5E\{5ECB02C7-E443-FEFD-99B5-0EA3D64F0195}.wem		\Containers\Default Work Unit\playervoice\attackVoiceTile\stab		65632
+	831359038	slash	.cache\C8\{C81F1DDF-0964-5F8B-5978-40B9588DDF2E}.wem		\Containers\Default Work Unit\playervoice\attackVoiceTile\slash		49248
+

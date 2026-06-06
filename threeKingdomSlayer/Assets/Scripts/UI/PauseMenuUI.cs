@@ -66,6 +66,10 @@ public class PauseMenuUI : MonoBehaviour
         _isPaused = true;
         // 先显示面板再暂停（SetActive 必须在 timeScale=0 之前，且不能放在可能抛异常的代码之后）
         if (pausePanel != null) pausePanel.SetActive(true);
+
+        // 打开面板时同步音量滑动条到当前数据层值
+        if (volumeSlider != null && WwiseAudioManager.Instance != null)
+            volumeSlider.value = WwiseAudioManager.Instance.GetMasterVolume();
         
         try { RefreshSettlementInfo(); }
         catch (System.Exception e) { Debug.LogWarning($"[PauseMenuUI] RefreshSettlementInfo 异常: {e.Message}"); }

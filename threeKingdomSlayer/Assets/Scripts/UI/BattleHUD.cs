@@ -111,11 +111,15 @@ public class BattleHUD : MonoBehaviour
         if (_heroHUD == null)
             Debug.LogError("[BattleHUD] heroHUDPrefab 上未找到 HeroHUD 组件");
 
-        // 将 ExpBar Slider 和 Canvas 引用传给 ExpGemManager
+        // 将 ExpBar Slider 和 Canvas 引用传给 ExpGemManager 和 HealthPotionManager
         if (ExpGemManager.Instance != null)
         {
             ExpGemManager.Instance.expSlider = expSlider;
             ExpGemManager.Instance.gemParent = (RectTransform)transform;
+        }
+        if (HealthPotionManager.Instance != null)
+        {
+            HealthPotionManager.Instance.gemParent = (RectTransform)transform;
         }
     }
 

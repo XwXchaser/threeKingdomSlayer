@@ -13,6 +13,8 @@ namespace AK
 {
     namespace EVENTS
     {
+        static const AkUniqueID PLAYER_ATTACK = 2824512041U;
+        static const AkUniqueID PLAYER_PARRY = 4017406829U;
         static const AkUniqueID STAGE1_BGM1_PLAY = 2336985179U;
     } // namespace EVENTS
 
@@ -24,6 +26,8 @@ namespace AK
     namespace BANKS
     {
         static const AkUniqueID INIT = 1355168291U;
+        static const AkUniqueID PLAYER_ATTACK = 2824512041U;
+        static const AkUniqueID PLAYER_PARRY = 4017406829U;
         static const AkUniqueID STAGE1_BGM_PLAY = 2837830026U;
     } // namespace BANKS
 

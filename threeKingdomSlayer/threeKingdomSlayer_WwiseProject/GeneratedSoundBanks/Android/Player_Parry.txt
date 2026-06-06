@@ -1,0 +1,6 @@
+Event	ID	Name			Wwise Object Path	Notes
+	4017406829	Player_Parry			\Default Work Unit\Player_Parry	
+
+In Memory Audio	ID	Name	Audio source file		Wwise Object Path	Notes	Data Size
+	211797627	parry	.cache\5F\{5FFC0523-6A2D-F16B-9191-C4D22011CD00}.wem		\Containers\Default Work Unit\parry		44128
+
