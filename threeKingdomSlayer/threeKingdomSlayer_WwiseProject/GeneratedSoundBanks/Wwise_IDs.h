@@ -16,6 +16,11 @@ namespace AK
         static const AkUniqueID STAGE1_BGM1_PLAY = 2336985179U;
     } // namespace EVENTS
 
+    namespace GAME_PARAMETERS
+    {
+        static const AkUniqueID MASTERVOLUME = 2918011349U;
+    } // namespace GAME_PARAMETERS
+
     namespace BANKS
     {
         static const AkUniqueID INIT = 1355168291U;

@@ -16,6 +16,7 @@ public class WwiseAudioManager : MonoBehaviour
 
     private Dictionary<string, uint> _loadedBanks = new Dictionary<string, uint>();
     private uint _currentBgmPlayingID;
+    private bool _bgmStopped;
 
     private void Awake()
     {
@@ -27,6 +28,7 @@ public class WwiseAudioManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
         SceneManager.sceneUnloaded += OnSceneUnloaded;
+        ApplySavedVolume();
     }
 
     private void Start()
@@ -116,6 +118,7 @@ public class WwiseAudioManager : MonoBehaviour
         }
 
         StopBGM();
+        _bgmStopped = false;
 
         _currentBgmPlayingID = AkSoundEngine.PostEvent(
             eventName,
@@ -130,6 +133,7 @@ public class WwiseAudioManager : MonoBehaviour
 
     public void StopBGM()
     {
+        _bgmStopped = true;
         if (_currentBgmPlayingID != 0)
         {
             AkSoundEngine.StopPlayingID(_currentBgmPlayingID);
@@ -139,7 +143,8 @@ public class WwiseAudioManager : MonoBehaviour
 
     private void OnBgmEnded(object in_cookie, AkCallbackType in_type, AkCallbackInfo in_info)
     {
-        // BGM 自然结束时循环：重新播放
+        if (_bgmStopped) return;
+
         if (!string.IsNullOrEmpty(bgmEventName))
         {
             _currentBgmPlayingID = AkSoundEngine.PostEvent(
@@ -174,6 +179,37 @@ public class WwiseAudioManager : MonoBehaviour
             playingID,
             fadeOutMs * 1000
         );
+    }
+
+    #endregion
+
+    #region 音量控制
+
+    private const string VOLUME_KEY = "wwise_master_volume";
+    private const string RTPC_NAME = "MasterVolume";
+    private float _masterVolume = 1f;
+
+    /// <summary>设置主音量 (0~1)</summary>
+    public void SetMasterVolume(float normalized)
+    {
+        _masterVolume = Mathf.Clamp01(normalized);
+        float rtpcValue = _masterVolume * 100f;
+        AkSoundEngine.SetRTPCValue(RTPC_NAME, rtpcValue);
+        PlayerPrefs.SetFloat(VOLUME_KEY, _masterVolume);
+        PlayerPrefs.Save();
+    }
+
+    /// <summary>获取主音量 (0~1)</summary>
+    public float GetMasterVolume()
+    {
+        return _masterVolume;
+    }
+
+    /// <summary>恢复上次保存的音量</summary>
+    public void ApplySavedVolume()
+    {
+        float saved = PlayerPrefs.GetFloat(VOLUME_KEY, 1f);
+        SetMasterVolume(saved);
     }
 
     #endregion
