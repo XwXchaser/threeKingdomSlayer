@@ -49,6 +49,8 @@ public class UpgradeDefinition : ScriptableObject
     [Header("被动攻击型（category=Passive 时生效）")]
     [Tooltip("按等级配置幻影效果。index 0 = Lv1。如果填写了此列表，优先使用；否则回退到下方旧字段")]
     public List<PhantomLevelConfig> phantomLevels = new List<PhantomLevelConfig>();
+    [Tooltip("按等级配置定时AOE（effectType=passive_timed_aoe）。index 0 = Lv1")]
+    public List<TimedAoeLevelConfig> timedAoeLevels = new List<TimedAoeLevelConfig>();
     [Tooltip("[旧版兼容] 触发阈值（每X次攻击触发一次效果）— phantomLevels 有数据时忽略")]
     public int triggerParam;
     [Tooltip("[旧版兼容] 幻影攻击列表 — phantomLevels 有数据时忽略")]
@@ -79,6 +81,20 @@ public class UpgradeDefinition : ScriptableObject
             steps = this.phantomSteps;
         }
     }
+}
+
+/// <summary>
+/// 定时AOE被动（effectType=passive_timed_aoe）每级独立配置
+/// </summary>
+[System.Serializable]
+public struct TimedAoeLevelConfig
+{
+    [Tooltip("触发间隔（秒）")]
+    public float intervalSeconds;
+    [Tooltip("每次伤害")]
+    public int damage;
+    [Tooltip("影响的列索引列表: 1=col1, 2=col2, 3=col3")]
+    public List<int> columns;
 }
 
 [System.Serializable]

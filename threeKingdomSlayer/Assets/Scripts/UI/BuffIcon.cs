@@ -13,6 +13,11 @@ public class BuffIcon : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _badgeText;
     [SerializeField] private Button _button;
 
+    [Header("冷却显示（计时被动专用）")]
+    [SerializeField] private Image _cooldownDim;
+    [SerializeField] private Image _cooldownFill;
+    [SerializeField] private TextMeshProUGUI _countdownText;
+
     public string UpgradeId { get; private set; }
     public string GestureId { get; private set; }
     public UpgradeCategory Category { get; private set; }
@@ -28,7 +33,10 @@ public class BuffIcon : MonoBehaviour
         GestureId = gestureId;
 
         if (_iconImage != null && icon != null)
+        {
             _iconImage.sprite = icon;
+            SyncCooldownSprite(icon);
+        }
 
         if (_button != null)
         {
@@ -70,6 +78,34 @@ public class BuffIcon : MonoBehaviour
             _button.interactable = !dimmed;
     }
 
+    /// <summary>设置冷却显示</summary>
+    /// <param name="fillAmount">填充量 0=就绪 1=满冷却</param>
+    /// <param name="countdown">倒计时文本，null/空则隐藏</param>
+    /// <param name="visible">是否显示冷却层</param>
+    public void SetCooldown(float fillAmount, string countdown, bool visible)
+    {
+        if (_cooldownDim != null)
+            _cooldownDim.gameObject.SetActive(visible);
+        if (_cooldownFill != null)
+        {
+            _cooldownFill.gameObject.SetActive(visible);
+            if (visible) _cooldownFill.fillAmount = fillAmount;
+        }
+        if (_countdownText != null)
+        {
+            _countdownText.gameObject.SetActive(visible && !string.IsNullOrEmpty(countdown));
+            if (!string.IsNullOrEmpty(countdown))
+                _countdownText.text = countdown;
+        }
+    }
+
+    /// <summary>同步冷却蒙层精灵（图标变更时调用）</summary>
+    public void SyncCooldownSprite(Sprite sprite)
+    {
+        if (_cooldownDim != null) _cooldownDim.sprite = sprite;
+        if (_cooldownFill != null) _cooldownFill.sprite = sprite;
+    }
+
     /// <summary>清空图标数据并隐藏</summary>
     public void ResetSlot()
     {
@@ -79,6 +115,7 @@ public class BuffIcon : MonoBehaviour
         if (_iconImage != null) _iconImage.sprite = null;
         if (_frameImage != null) { _frameImage.sprite = null; _frameImage.enabled = false; }
         if (_badgeText != null) _badgeText.text = "";
+        SetCooldown(0f, null, false);
         if (_button != null)
         {
             _button.onClick.RemoveAllListeners();
