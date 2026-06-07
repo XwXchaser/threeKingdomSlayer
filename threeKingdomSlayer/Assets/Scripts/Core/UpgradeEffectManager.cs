@@ -95,13 +95,23 @@ public class UpgradeEffectManager : MonoBehaviour
             _appliedUpgrades[def.upgradeId] = newLevel;
             SyncToPlayerState(def, newLevel);
 
-            if (PassiveTriggerModule.Instance != null)
-                PassiveTriggerModule.Instance.Register(def, newLevel);
+            if (def.effectType == "passive_timed_aoe")
+            {
+                if (TimedPassiveModule.Instance != null)
+                    TimedPassiveModule.Instance.Register(def, newLevel);
+                else
+                    Debug.LogWarning("[UpgradeEffectManager] TimedPassiveModule 未找到");
+            }
             else
-                Debug.LogWarning("[UpgradeEffectManager] PassiveTriggerModule 未找到");
+            {
+                if (PassiveTriggerModule.Instance != null)
+                    PassiveTriggerModule.Instance.Register(def, newLevel);
+                else
+                    Debug.LogWarning("[UpgradeEffectManager] PassiveTriggerModule 未找到");
+            }
 
             OnUpgradeApplied?.Invoke(def, newLevel);
-            Debug.Log($"[UpgradeEffectManager] 应用被动 {def.displayName} Lv.{newLevel} threshold={def.triggerParam}");
+            Debug.Log($"[UpgradeEffectManager] 应用被动 {def.displayName} Lv.{newLevel} effectType={def.effectType}");
             return;
         }
 
@@ -178,17 +188,26 @@ public class UpgradeEffectManager : MonoBehaviour
 
         if (def.category == UpgradeCategory.Passive)
         {
-            int triggerParam;
-
-            if (def.effectType == "passive_return_wave")
+            // 定时AOE：从 timedAoeLevels 读取下一级配置
+            if (def.effectType == "passive_timed_aoe")
             {
+                if (def.timedAoeLevels != null && nextLevel <= def.timedAoeLevels.Count)
+                {
+                    var cfg = def.timedAoeLevels[nextLevel - 1];
+                    desc = desc.Replace("{0}", cfg.intervalSeconds.ToString("F1"));
+                    desc = desc.Replace("{1}", cfg.damage.ToString());
+                }
+            }
+            else if (def.effectType == "passive_return_wave")
+            {
+                int triggerParam;
                 triggerParam = def.intValue > 0 ? def.intValue : 4;
                 desc = desc.Replace("{0}", triggerParam.ToString());
                 desc = desc.Replace("{1}", (def.floatValue * 100f).ToString("F0"));
             }
             else if (def.effectType == "passive_chain_bounce")
             {
-                triggerParam = def.intValue > 0 ? def.intValue : 6;
+                int triggerParam = def.intValue > 0 ? def.intValue : 6;
                 int maxBounces = def.secondaryIntValue > 0 ? def.secondaryIntValue : 3;
                 desc = desc.Replace("{0}", triggerParam.ToString());
                 desc = desc.Replace("{1}", maxBounces.ToString());
@@ -196,7 +215,7 @@ public class UpgradeEffectManager : MonoBehaviour
             }
             else
             {
-                def.GetPhantomConfig(nextLevel, out triggerParam, out var steps);
+                def.GetPhantomConfig(nextLevel, out int triggerParam, out var steps);
                 desc = desc.Replace("{0}", triggerParam.ToString());
                 desc = desc.Replace("{1}", (steps?.Count ?? 0).ToString());
                 if (steps != null && steps.Count > 0)
@@ -266,6 +285,7 @@ public class UpgradeEffectManager : MonoBehaviour
 
         // 清空被动攻击模块
         PassiveTriggerModule.Instance?.ResetAll();
+        TimedPassiveModule.Instance?.ResetAll();
 
         // 清空道具库存
         ItemInventory.Instance?.ClearAll();

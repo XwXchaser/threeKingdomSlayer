@@ -255,6 +255,27 @@ public class BuffDisplayPanel : MonoBehaviour
 
     // ── 道具点击 ──
 
+    // ── 计时被动冷却更新 ──
+
+    private void Update()
+    {
+        var module = TimedPassiveModule.Instance;
+        if (module == null) return;
+
+        foreach (var upgradeId in module.RegisteredUpgradeIds)
+        {
+            if (!_upgradeIcons.TryGetValue(upgradeId, out var icon)) continue;
+
+            float timer = module.GetTimer(upgradeId);
+            float interval = module.GetInterval(upgradeId);
+            if (interval <= 0f) continue;
+
+            float fill = timer / interval;
+            string text = timer.ToString("F1");
+            icon.SetCooldown(fill, text, true);
+        }
+    }
+
     private void OnItemIconClicked(BuffIcon icon)
     {
         string gestureId = icon.GestureId;
