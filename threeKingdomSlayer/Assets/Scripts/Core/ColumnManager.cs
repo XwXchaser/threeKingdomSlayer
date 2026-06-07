@@ -169,16 +169,6 @@ public class ColumnManager : MonoBehaviour
                     Debug.Log($"[ColumnManager] 跳过 Dead 敌人: {e.DebugTag}, col={columnIndex}, row={e.rowIndex}");
                     continue;
                 }
-                if (e.state == EnemyState.Launched)
-                {
-                    if (i != writeIdx) column.enemies[writeIdx] = e;
-                    e.targetRow = writeIdx;
-                    e.SilentFillToTargetRow();
-                    Debug.Log($"[ColumnManager] 击飞静默补齐: {e.DebugTag}, col={columnIndex}, listPos={writeIdx}");
-                    writeIdx++;
-                    continue;
-                }
-
                 if (i != writeIdx) column.enemies[writeIdx] = e;
                 e.targetRow = writeIdx;
                 e.ResetMovementState();
@@ -506,6 +496,7 @@ public class ColumnManager : MonoBehaviour
         {
             var e = colEnemies[i];
             if (e.isBoss) continue;
+            if (e.state == EnemyState.Dead) continue;
             if (!hitEnemies.Contains(e)) continue;
             if (e.rowIndex > maxHitRow) maxHitRow = e.rowIndex;
         }
@@ -519,6 +510,7 @@ public class ColumnManager : MonoBehaviour
             {
                 var e = colEnemies[i];
                 if (e.isBoss) continue;
+                if (e.state == EnemyState.Dead) continue;
                 if (e.rowIndex == r && !hitEnemies.Contains(e))
                 {
                     Debug.Log($"[ColumnManager] Push blocked (tail): col={columnIndex}, blocker={e.DebugTag} at row={r}");
@@ -532,12 +524,14 @@ public class ColumnManager : MonoBehaviour
         {
             var e = colEnemies[i];
             if (e.isBoss) continue;
+            if (e.state == EnemyState.Dead) continue;
             if (!hitEnemies.Contains(e)) continue;
             int destRow = e.rowIndex + pushAmount;
             for (int j = 0; j < colEnemies.Count; j++)
             {
                 var other = colEnemies[j];
                 if (other.isBoss) continue;
+                if (other.state == EnemyState.Dead) continue;
                 if (hitEnemies.Contains(other)) continue;
                 if (other.rowIndex == destRow)
                 {
@@ -555,6 +549,7 @@ public class ColumnManager : MonoBehaviour
             {
                 var e = colEnemies[i];
                 if (e.isBoss) continue;
+                if (e.state == EnemyState.Dead) continue;
                 if (!hitEnemies.Contains(e)) continue;
                 int destRow = e.rowIndex + pushAmount;
                 if (destRow >= bossRow)
@@ -609,10 +604,6 @@ public class ColumnManager : MonoBehaviour
 
         Debug.Log($"[ColumnManager] ExecutePush: col={columnIndex}, pushed={pushedEnemies.Count} enemies by {pushAmount} rows");
 
-        // 每个被击退的敌人重检攻击范围
-        foreach (var e in pushedEnemies)
-            e.RecheckAttackRange();
-
         OnColumnsModified?.Invoke();
     }
 
@@ -625,12 +616,17 @@ public class ColumnManager : MonoBehaviour
     {
         if (hitEnemies == null || hitEnemies.Count == 0) return false;
 
+        Debug.Log($"[Displacement] ApplyPushWave: pushAmount={pushAmount}, hitEnemies count={hitEnemies.Count}");
+        foreach (var e in hitEnemies)
+            Debug.Log($"  hitEnemy: {e.DebugTag} col={e.columnIndex} row={e.rowIndex} state={e.state} isBoss={e.isBoss}");
+
         var hitSet = new HashSet<Enemy>(hitEnemies);
         var byColumn = new Dictionary<int, List<Enemy>>();
 
         foreach (var e in hitEnemies)
         {
             if (e.isBoss) continue;
+            if (e.state == EnemyState.Dead) continue;
             if (e.isCFrame && !canInterruptCFrame) continue;
             if (!byColumn.ContainsKey(e.columnIndex))
                 byColumn[e.columnIndex] = new List<Enemy>();
@@ -730,13 +726,6 @@ public class ColumnManager : MonoBehaviour
         if (conflicted.Count > 0)
             ResolveConvergenceConflicts(conflicted, convergenceDamagePercent, movedEnemies);
 
-        // 5. 对所有被移动的敌人重检攻击范围（与 ExecutePush 保持一致）
-        foreach (var e in movedEnemies)
-        {
-            e.CancelAttack();
-            e.RecheckAttackRange();
-        }
-
         OnColumnsModified?.Invoke();
     }
 
@@ -795,18 +784,25 @@ public class ColumnManager : MonoBehaviour
     #endregion
 
     /// <summary>
-    /// 位移效果完成后触发补齐：静默操作不触发链条，由外部统一补齐。
+    /// 位移效果完成后触发补齐：逐列紧凑，每列独立填补空排。
     /// </summary>
     public void PostDisplacementFillUp()
     {
-        FillUpRule rule = StageController.Instance?.GetFillUpRule() ?? FillUpRule.PerColumn;
-        if (rule == FillUpRule.PerRow)
+        Debug.Log("[Displacement] PostDisplacementFillUp → RowBasedFillUp");
+        RowBasedFillUp();
+    }
+
+    /// <summary>
+    /// 逐列紧凑所有列：每列存活敌人向前紧凑，Boss 作为墙壁不可逾越。
+    /// </summary>
+    public void CompactAllColumns()
+    {
+        for (int c = 0; c < columnCount; c++)
         {
-            Debug.Log($"[Displacement] PostDisplacementFillUp → RowBasedFillUp");
-            RowBasedFillUp();
+            int bossRow = GetBossRowInColumn(c);
+            columns[c].CompactColumn(bossRow);
         }
-        // PerColumn 模式不补齐：gap 由下次死亡链自然填补，
-        // TriggerFillForward 会抵消击退间隔且打断 RecheckAttackRange 判定。
+        OnColumnsModified?.Invoke();
     }
 
     /// <summary>
