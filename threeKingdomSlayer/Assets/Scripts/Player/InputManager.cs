@@ -103,6 +103,10 @@ public class InputManager : MonoBehaviour
         if (blockInputFrames > 0)
         {
             blockInputFrames--;
+            if (isTouching)
+            {
+                OnChargeEnded?.Invoke();
+            }
             isTouching = false;
             isLongPress = false;
             isCharged = false;
@@ -196,7 +200,14 @@ public class InputManager : MonoBehaviour
             float swipeDistance = Vector2.Distance(releasePos, touchStartPos);
 
             Debug.Log($"[InputManager] MouseUp frame={Time.frameCount} pressDuration={pressDuration:F3} swipeDistance={swipeDistance:F1}");
-            ProcessGesture(releasePos, pressDuration, swipeDistance);
+            try
+            {
+                ProcessGesture(releasePos, pressDuration, swipeDistance);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[InputManager] ProcessGesture exception: {ex}");
+            }
 
             // 触发蓄力结束事件（在重置状态之前）
             OnChargeEnded?.Invoke();
@@ -275,7 +286,14 @@ public class InputManager : MonoBehaviour
                 {
                     float pressDuration = Time.time - touchStartTime;
                     float swipeDistance = Vector2.Distance(touch.position, touchStartPos);
-                    ProcessGesture(touch.position, pressDuration, swipeDistance);
+                    try
+                    {
+                        ProcessGesture(touch.position, pressDuration, swipeDistance);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogError($"[InputManager] ProcessGesture(touch) exception: {ex}");
+                    }
 
                     // 触发蓄力结束事件（在重置状态之前）
                     OnChargeEnded?.Invoke();

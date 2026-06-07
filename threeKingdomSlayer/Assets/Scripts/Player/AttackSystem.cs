@@ -346,7 +346,12 @@ public class AttackSystem : MonoBehaviour
     /// </summary>
     private void ApplyDisplacementEffects(List<Enemy> targets, AttackType attackType, bool canInterruptCFrame)
     {
-        if (UpgradeEffectManager.Instance == null || columnManager == null) return;
+        if (UpgradeEffectManager.Instance == null)
+        {
+            Debug.LogWarning("[Displacement] UpgradeEffectManager.Instance is null, skip displacement");
+            return;
+        }
+        if (columnManager == null) return;
 
         int pushDist = UpgradeEffectManager.Instance.GetPushWaveDistance();
         int convergence = UpgradeEffectManager.Instance.GetConvergenceStep();

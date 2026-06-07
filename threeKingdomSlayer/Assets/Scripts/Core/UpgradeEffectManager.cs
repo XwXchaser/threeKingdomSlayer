@@ -155,6 +155,17 @@ public class UpgradeEffectManager : MonoBehaviour
     public int GetConvergenceStep() => _convergenceStep;
     public float GetConvergenceDamagePercent() => _convergenceDamagePercent;
 
+    #region Debug Setters
+
+    public void DebugSetPushWave(int distance) => _pushWaveDistance = distance;
+    public void DebugSetConvergenceWave(int step, float damagePercent)
+    {
+        _convergenceStep = step;
+        if (damagePercent > 0f) _convergenceDamagePercent = damagePercent;
+    }
+
+    #endregion
+
     /// <summary>
     /// 根据描述模板和当前等级生成效果文本
     /// </summary>

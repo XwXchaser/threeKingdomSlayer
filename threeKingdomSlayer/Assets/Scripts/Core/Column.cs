@@ -89,18 +89,7 @@ public class Column
                     Debug.Log($"[Column] 跳过 Dead 敌人: {e.DebugTag}, col={colIndex}, row={e.rowIndex}");
                     continue;
                 }
-                if (e.state == EnemyState.Launched)
-                {
-                    // 击飞敌人留在列中（可被攻击），静默补齐到目标位置，不播放动画
-                    if (i != writeIdx) enemies[writeIdx] = e;
-                    e.targetRow = writeIdx;
-                    e.SilentFillToTargetRow();
-                    Debug.Log($"[Column] 击飞静默补齐: {e.DebugTag}, col={colIndex}, listPos={writeIdx}");
-                    writeIdx++;
-                    continue;
-                }
-
-                // 正常存活敌人：紧凑前移并标记补齐
+                // 存活敌人（含Launched）：紧凑前移并标记补齐
                 // Boss 在 Approaching 状态时不参与补齐（由 BossPause/BossResume 自行控制）
                 if (i != writeIdx) enemies[writeIdx] = e;
                 e.targetRow = writeIdx;
@@ -219,16 +208,6 @@ public class Column
 
             int newRow = row - clearBelow;
 
-            if (e.state == EnemyState.Launched)
-            {
-                if (newRow != row)
-                {
-                    e.targetRow = newRow;
-                    e.SilentFillToTargetRow();
-                }
-                continue;
-            }
-
             if (newRow != row)
             {
                 e.targetRow = newRow;
@@ -260,9 +239,7 @@ public class Column
             Enemy e = enemies[i];
             int row = e.rowIndex;
             bool isClearRow = row < clearRows.Length && clearRows[row];
-            // Launched 敌人可能被第一遍的 SilentFillToTargetRow 移入了 clearRow，
-            // 此时不应将其移除（clearRow 状态已过期，该排现在有敌人）
-            if (e.state == EnemyState.Dead || (isClearRow && e.state != EnemyState.Launched))
+            if (e.state == EnemyState.Dead || isClearRow)
                 continue;
 
             if (i != writeIdx) enemies[writeIdx] = e;
@@ -289,15 +266,6 @@ public class Column
         {
             Enemy e = enemies[i];
             if (e.state == EnemyState.Dead) continue;
-            if (e.state == EnemyState.Launched)
-            {
-                if (i != writeIdx) enemies[writeIdx] = e;
-                e.targetRow = writeIdx;
-                e.SilentFillToTargetRow();
-                writeIdx++;
-                continue;
-            }
-
             if (i != writeIdx) enemies[writeIdx] = e;
             e.targetRow = writeIdx;
             e.ResetMovementState();
@@ -366,6 +334,56 @@ public class Column
                 return true;
         }
         return false;
+    }
+
+    /// <summary>
+    /// 逐列紧凑：将本列存活敌人向前紧凑，填补空排。
+    /// Boss 所在排作为墙壁，身后敌人紧凑到 bossRow+1 及之后，不可越过 Boss。
+    /// </summary>
+    public void CompactColumn(int bossRow)
+    {
+        if (enemies.Count == 0) return;
+
+        int writeIdx = 0;
+        bool bossPassed = false;
+
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            Enemy e = enemies[i];
+            if (e.state == EnemyState.Dead) continue;
+
+            // Boss到达时，writeIdx 对齐到 bossRow，身后敌人从 bossRow+1 起排
+            if (!bossPassed && e.isBoss && bossRow >= 0)
+            {
+                bossPassed = true;
+                if (writeIdx > bossRow)
+                {
+                    Debug.LogWarning($"[Column] CompactColumn: writeIdx={writeIdx} > bossRow={bossRow} in col={columnIndex}");
+                }
+                writeIdx = bossRow;
+            }
+
+            if (i != writeIdx) enemies[writeIdx] = e;
+            e.targetRow = writeIdx;
+
+            if (e.rowIndex != writeIdx)
+            {
+                e.ResetMovementState();
+                if (!(e.isBoss && e.bossState == BossState.Approaching))
+                    e.pendingRushMove = true;
+            }
+
+            writeIdx++;
+
+            // Boss 身后敌人从 bossRow+1 起排
+            if (bossPassed && e.isBoss)
+                writeIdx = bossRow + 1;
+        }
+
+        if (writeIdx < enemies.Count)
+            enemies.RemoveRange(writeIdx, enemies.Count - writeIdx);
+
+        StartRushMoveChain(columnIndex);
     }
 
     #endregion
