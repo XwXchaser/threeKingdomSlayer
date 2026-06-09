@@ -236,6 +236,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 210f5c58b83e4b84ea7221204a8c7a1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  fireEffectPrefab: {fileID: 7080427255057156643, guid: 145d6875cc6c6fd4798603b5d4830fcb, type: 3}
+  arrowEffectPrefab: {fileID: 1707118907136065935, guid: 7d3ceaa069c134f419679af082cb68a5, type: 3}
   _forceTriggerEveryAttack: 0
 --- !u!114 &5137005
 MonoBehaviour:
@@ -262,6 +264,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fireEffectPrefab: {fileID: 7080427255057156643, guid: 145d6875cc6c6fd4798603b5d4830fcb, type: 3}
+  arrowEffectPrefab: {fileID: 1707118907136065935, guid: 7d3ceaa069c134f419679af082cb68a5, type: 3}
 --- !u!1 &8177910
 GameObject:
   m_ObjectHideFlags: 0
@@ -9453,7 +9456,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enablePushWave: 1
   pushDistance: 1
-  enableConvergenceWave: 0
+  enableConvergenceWave: 1
   convergenceStep: 1
   convergenceDamagePercent: 0.1
 --- !u!1 &1812484211

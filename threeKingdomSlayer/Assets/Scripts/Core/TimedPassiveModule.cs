@@ -1,25 +1,28 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 定时被动模块 — 单例
+/// 定时触发模块 — 单例
 ///
-/// 管理 effectType=passive_timed_aoe 的等级与计时器。
-/// 计时器到期时实例化 ShootFireEffect（视觉+伤害一体化），而非自行结算伤害。
+/// 管理计时器驱动的被动技能。计时器到期时（由 UpgradeDefinition.triggerMode=Timed 决定），
+/// 根据 effectType 分发到自包含的效果执行器。
+///
+/// 所有效果类型均由本模块统一分发，不限于火焰/箭雨。
 /// </summary>
 public class TimedPassiveModule : MonoBehaviour
 {
     public static TimedPassiveModule Instance { get; private set; }
 
-    [Header("火焰特效")]
-    [Tooltip("ShootFireEffect 预制体")]
+    [Header("特效预制体")]
     public GameObject fireEffectPrefab;
+    public GameObject arrowEffectPrefab;
 
     private class TimedState
     {
         public UpgradeDefinition definition;
+        public int level;
         public float timer;
-        public TimedAoeLevelConfig config;
     }
 
     private Dictionary<string, TimedState> _states = new Dictionary<string, TimedState>();
@@ -43,30 +46,29 @@ public class TimedPassiveModule : MonoBehaviour
     /// <summary>注册/更新定时被动（由 UpgradeEffectManager 调用）</summary>
     public void Register(UpgradeDefinition def, int level)
     {
-        if (def.timedAoeLevels == null || level > def.timedAoeLevels.Count)
+        float interval = GetIntervalForLevel(def, level);
+        if (interval <= 0f)
         {
-            Debug.LogWarning($"[TimedPassiveModule] {def.upgradeId} 缺少 Lv.{level} 的 timedAoeLevels 配置");
+            Debug.LogWarning($"[TimedPassiveModule] {def.upgradeId} Lv.{level} 配置异常，interval<=0");
             return;
         }
 
-        var cfg = def.timedAoeLevels[level - 1];
-
         if (_states.TryGetValue(def.upgradeId, out var existing))
         {
-            existing.config = cfg;
+            existing.level = level;
             existing.definition = def;
-            // 升级不重置计时器：剩余时间不变，下一轮才用新间隔
         }
         else
         {
             _states[def.upgradeId] = new TimedState
             {
                 definition = def,
-                config = cfg,
-                timer = cfg.intervalSeconds
+                level = level,
+                timer = interval
             };
-            Debug.Log($"[TimedPassiveModule] 注册 {def.displayName} Lv.{level} interval={cfg.intervalSeconds}s damage={cfg.damage} columns=[{string.Join(",", cfg.columns)}]");
         }
+
+        Debug.Log($"[TimedPassiveModule] 注册 {def.displayName} Lv.{level} effectType={def.effectType} interval={interval}s");
     }
 
     public void Unregister(string upgradeId)
@@ -100,8 +102,11 @@ public class TimedPassiveModule : MonoBehaviour
     /// <summary>获取总间隔时间（秒），-1=未注册</summary>
     public float GetInterval(string upgradeId)
     {
-        return _states.TryGetValue(upgradeId, out var s) ? s.config.intervalSeconds : -1f;
+        if (!_states.TryGetValue(upgradeId, out var s)) return -1f;
+        return GetIntervalForLevel(s.definition, s.level);
     }
+
+    // ── Update ──
 
     private void Update()
     {
@@ -111,17 +116,136 @@ public class TimedPassiveModule : MonoBehaviour
             state.timer -= Time.deltaTime;
             if (state.timer <= 0f)
             {
-                state.timer = state.config.intervalSeconds;
-                SpawnFire(state.config.columns, state.config.damage);
+                state.timer = GetIntervalForLevel(state.definition, state.level);
+                SpawnEffect(state);
             }
         }
     }
 
-    private void SpawnFire(List<int> columns, int damage)
+    private void SpawnEffect(TimedState state)
     {
-        if (columns == null || columns.Count == 0 || fireEffectPrefab == null) return;
+        switch (state.definition.effectType)
+        {
+            case "passive_timed_aoe":
+                SpawnFire(state);
+                break;
+            case "passive_timed_arrow":
+                SpawnArrow(state);
+                break;
+            case "passive_phantom_weapon":
+                StartCoroutine(SpawnPhantom(state));
+                break;
+            case "passive_return_wave":
+                StartCoroutine(SpawnReturnWave(state));
+                break;
+            case "passive_chain_bounce":
+                StartCoroutine(SpawnChainBounce(state));
+                break;
+            default:
+                Debug.LogWarning($"[TimedPassiveModule] 未知 effectType: {state.definition.effectType}");
+                break;
+        }
+    }
+
+    private void SpawnFire(TimedState state)
+    {
+        if (state.definition.timedAoeLevels == null || state.level > state.definition.timedAoeLevels.Count) return;
+        var cfg = state.definition.timedAoeLevels[state.level - 1];
+        if (cfg.columns == null || cfg.columns.Count == 0 || fireEffectPrefab == null) return;
 
         var instance = Instantiate(fireEffectPrefab);
-        instance.GetComponent<ShootFireEffect>().Play(columns, damage);
+        instance.GetComponent<ShootFireEffect>().Play(cfg.columns, cfg.damage);
+    }
+
+    private void SpawnArrow(TimedState state)
+    {
+        if (state.definition.timedArrowLevels == null || state.level > state.definition.timedArrowLevels.Count) return;
+        var cfg = state.definition.timedArrowLevels[state.level - 1];
+        if (arrowEffectPrefab == null) return;
+
+        var instance = Instantiate(arrowEffectPrefab);
+        instance.GetComponent<TimedArrowEffect>().Play(cfg.rowCount, cfg.arrowCount, cfg.damage);
+    }
+
+    private static float GetIntervalForLevel(UpgradeDefinition def, int level)
+    {
+        return def.GetTriggerInterval(level);
+    }
+
+    // ══════════════════════════════════════════
+    // 幻影 / 折返波 / 连锁弹射 — 定时触发版本
+    // ══════════════════════════════════════════
+
+    private System.Collections.IEnumerator SpawnPhantom(TimedState state)
+    {
+        if (AttackSystem.Instance == null) yield break;
+
+        var def = state.definition;
+        def.GetPhantomEffectConfig(state.level, out var attackType, out var targetColumn, out var steps);
+
+        if (steps == null || steps.Count == 0) yield break;
+
+        bool slashLeftToRight = targetColumn <= 2;
+
+        for (int i = 0; i < steps.Count; i++)
+        {
+            var step = steps[i];
+            if (i == 0 && step.delaySeconds > 0f)
+                yield return new WaitForSeconds(step.delaySeconds);
+            if (i > 0)
+            {
+                float delay = step.delaySeconds > 0f ? step.delaySeconds : 0.15f;
+                yield return new WaitForSeconds(delay);
+            }
+
+            if (AttackSystem.Instance == null) yield break;
+            AttackSystem.Instance.ExecutePhantomAttack(
+                attackType, targetColumn, slashLeftToRight,
+                step.damageRatio, step.alpha);
+        }
+
+        Debug.Log($"[TimedPassiveModule] 幻影触发: {def.displayName} steps={steps.Count} type={attackType} col={targetColumn}");
+    }
+
+    private System.Collections.IEnumerator SpawnReturnWave(TimedState state)
+    {
+        if (AttackSystem.Instance == null) yield break;
+
+        var def = state.definition;
+        int level = state.level;
+        var waveCfg = (def.returnWaveLevels != null && level <= def.returnWaveLevels.Count)
+            ? def.returnWaveLevels[level - 1]
+            : new ReturnWaveLevelConfig { column = 2, rangeRows = 2, damageRatio = def.floatValue };
+
+        int column = waveCfg.column > 0 ? waveCfg.column : 2;
+        int rangeRows = waveCfg.rangeRows > 0 ? waveCfg.rangeRows : 2;
+        float damageRatio = waveCfg.damageRatio > 0f ? waveCfg.damageRatio : def.floatValue;
+        bool slashLeftToRight = column <= 2;
+
+        AttackSystem.Instance.ExecuteReturnWave(
+            AttackType.Pierce, column, slashLeftToRight,
+            damageRatio, rangeRows);
+
+        Debug.Log($"[TimedPassiveModule] 折返波触发: {def.displayName} col={column} rows={rangeRows} ratio={damageRatio}");
+    }
+
+    private System.Collections.IEnumerator SpawnChainBounce(TimedState state)
+    {
+        if (AttackSystem.Instance == null) yield break;
+
+        var def = state.definition;
+        int level = state.level;
+        var bounceCfg = (def.chainBounceLevels != null && level <= def.chainBounceLevels.Count)
+            ? def.chainBounceLevels[level - 1]
+            : new ChainBounceLevelConfig { column = 2, maxBounces = 3, damageRatio = def.floatValue };
+
+        int column = bounceCfg.column > 0 ? bounceCfg.column : 2;
+        int maxBounces = bounceCfg.maxBounces > 0 ? bounceCfg.maxBounces : 3;
+        float damageRatio = bounceCfg.damageRatio > 0f ? bounceCfg.damageRatio : def.floatValue;
+
+        AttackSystem.Instance.ExecuteChainBounce(
+            AttackType.Pierce, column, damageRatio, maxBounces);
+
+        Debug.Log($"[TimedPassiveModule] 连锁弹射触发: {def.displayName} col={column} maxBounces={maxBounces} ratio={damageRatio}");
     }
 }
