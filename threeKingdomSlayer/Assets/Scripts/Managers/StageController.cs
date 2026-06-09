@@ -139,7 +139,7 @@ public class StageController : MonoBehaviour
         SetState(StageState.InProgress);
 
         // 播放 BGM
-        WwiseAudioManager.Instance?.PlayDefaultBGM();
+        AudioManager.Instance?.PlayDefaultBGM();
 
         // 开始生成波次
         waveSpawner?.StartWaveSpawning();
@@ -201,7 +201,7 @@ public class StageController : MonoBehaviour
         if (currentState != StageState.InProgress) return;
 
         Debug.Log("[StageController] 所有波次已清空，关卡胜利！");
-        WwiseAudioManager.Instance?.StopBGM();
+        AudioManager.Instance?.StopBGM();
         SetState(StageState.Victory);
 
         // 发放通关奖励
@@ -228,7 +228,7 @@ public class StageController : MonoBehaviour
         if (currentState == StageState.Defeat || currentState == StageState.Victory) return;
 
         Debug.Log("[StageController] 玩家阵亡，关卡失败");
-        WwiseAudioManager.Instance?.StopBGM();
+        AudioManager.Instance?.StopBGM();
         SetState(StageState.Defeat);
         OnStageDefeat?.Invoke();
     }
@@ -284,7 +284,7 @@ public class StageController : MonoBehaviour
     /// </summary>
     public void GoToMainMenu()
     {
-        WwiseAudioManager.Instance?.StopBGM();
+        AudioManager.Instance?.StopBGM();
         SettleCoins();
         UnityEngine.SceneManagement.SceneManager.LoadScene(mainMenuSceneName);
     }
