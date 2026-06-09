@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779547549506
-updatedAt: 1781000331102
+updatedAt: 1781013425808
 ---
 
 # three-choice-reward-system
@@ -27,9 +27,9 @@ updatedAt: 1781000331102
 
 ### 架构原则（v2 重构）
 
-- **效果为主，触发为辅**：`effectType` 定义「做什么」，`triggerMode` 定义「何时做」，两者正交。
-- **效果参数始终可见**：Inspector 中效果每级配置不被触发选项卡隐藏。
-- **触发参数内联到效果 box**：触发字段（间隔/阈值）不设独立区域，直接放在每级效果 box 末尾，按选项卡切换显示，切换不丢数据。
+- **效果为主，触发为辅**：`effectType` 定义「做什么」，触发方式由 `category`（`AttackPassive` / `TimedPassive`）决定「何时做」，两者正交。
+- **效果参数始终可见**：Inspector 中效果每级配置不被触发方式影响。
+- **触发参数内联到效果 box**：触发字段（间隔/阈值）不设独立区域，直接放在每级效果 box 末尾，按 category 显示对应字段，切换 category 不丢数据。
 - **效果自包含**：效果执行不再从攻击上下文借用数据（攻击类型、目标列等），所有参数由自身配置提供。
 
 ---
@@ -39,15 +39,10 @@ updatedAt: 1781000331102
 ```csharp
 public enum UpgradeCategory
 {
-    Numeric,   // 数值buff型：伤害/攻速/移速/经验倍率等永久加成
-    Item,      // 道具型：手势触发的一次性/限次道具（大旋风、落雷等）
-    Passive    // 被动攻击型：由 triggerMode 决定触发方式（攻击计数 or 定时）
-}
-
-public enum TriggerMode
-{
-    AttackCount,   // 每 N 次攻击触发 → PassiveTriggerModule
-    Timed          // 每 N 秒触发 → TimedPassiveModule
+    Numeric,       // 数值buff型：伤害/攻速/移速/经验倍率等永久加成
+    Item,          // 道具型：手势触发的一次性/限次道具（大旋风、落雷等）
+    AttackPassive, // 攻击计数被动：每 N 次攻击触发 → PassiveTriggerModule
+    TimedPassive   // 定时被动：每 N 秒触发 → TimedPassiveModule
 }
 ```
 
@@ -60,16 +55,15 @@ UpgradeDefinition
 │   ├─ gestureId="circle"                  → WhirlwindController
 │   └─ gestureId="long_press_swipe_down"   → ExecuteLightning (InputManager)
 │
-└─ category=Passive ─→ 根据 triggerMode 路由:
-    ├─ triggerMode=Timed       → TimedPassiveModule（Update tick 计时）
-    └─ triggerMode=AttackCount → PassiveTriggerModule（监听 OnAttackPerformed 计数）
+└─ category=AttackPassive → PassiveTriggerModule（监听 OnAttackPerformed 计数）
+    category=TimedPassive  → TimedPassiveModule（Update tick 计时）
 ```
 
 | 类型 | 判断条件 | 路由模块 | 效果执行 | 叠加规则 |
 |------|---------|---------|---------|---------|
 | 数值buff | `category == Numeric` | `UpgradeEffectManager` | `ApplyNumericEffect` 加法累加 | 再次获得升级，数值叠加 |
 | 道具型 | `category == Item` | `ItemInventory` | `WhirlwindController` / `InputManager.ExecuteLightning` | 再次获得叠加 useCount |
-| 被动攻击型 | `category == Passive` | `triggerMode == Timed` → `TimedPassiveModule` / else → `PassiveTriggerModule` | 统一效果分发（全效果类型） | 再次获得升级，阈值/间隔按每级配置 |
+| 被动攻击型 | `category == AttackPassive \|\| TimedPassive` | `TimedPassive` → `TimedPassiveModule` / else → `PassiveTriggerModule` | 统一效果分发（全效果类型） | 再次获得升级，阈值/间隔按每级配置 |
 
 ---
 
@@ -84,8 +78,8 @@ public string descriptionTemplate;
 public UpgradeRarity rarity;
 public int maxLevel = 10;
 
-// 触发方式（category=Passive 时生效）
-public TriggerMode triggerMode = TriggerMode.AttackCount;  // 攻击计数 | 定时
+// 触发方式由 category 决定
+// AttackPassive / TimedPassive — 无需额外 triggerMode 字段
 
 // 效果
 public string effectType;           // 效果类型标识
@@ -120,9 +114,9 @@ public List<UpgradePrerequisite> prerequisites;
 [System.Serializable]
 public struct TimedAoeLevelConfig
 {
-    // 触发参数（Inspector 中按 triggerMode 选项卡切换显示）
-    public float intervalSeconds;    // Timed 模式：触发间隔
-    public int triggerThreshold;     // AttackCount 模式：攻击计数阈值
+    // 触发参数（Inspector 中按 category 切换显示）
+    public float intervalSeconds;    // TimedPassive：触发间隔
+    public int triggerThreshold;     // AttackPassive：攻击计数阈值
 
     // 效果参数（始终可见）
     public int damage;
@@ -171,8 +165,8 @@ public struct PhantomLevelConfig
 
 **触发方式与效果解耦**：
 - `effectType` 定义效果行为（喷火/箭雨/幻影/折返波/连锁弹射/…）
-- `triggerMode` 定义触发机制（攻击计数 / 定时）
-- 一个效果 SO 可以自由选择 triggerMode，切换时不丢失数据
+- `category`（`AttackPassive` / `TimedPassive`）定义触发机制
+- 一个效果 SO 可以自由切换 category，切换时不丢失数据
 
 **效果自包含**：
 - 幻影武器自带 `attackType` 和 `targetColumn`，不再从 `_lastAttackType` 等攻击上下文借用
@@ -191,7 +185,7 @@ public struct PhantomLevelConfig
 
 路由逻辑（`UpgradeEffectManager.ApplyUpgrade`）：
 ```csharp
-if (def.triggerMode == TriggerMode.Timed)
+if (def.category == UpgradeCategory.TimedPassive)
     TimedPassiveModule.Instance.Register(def, newLevel);
 else
     PassiveTriggerModule.Instance.Register(def, newLevel);
@@ -228,7 +222,7 @@ public struct TimedAoeLevelConfig
 
 ### 4.4 整合点
 
-- `UpgradeEffectManager.ApplyUpgrade` → `triggerMode` 路由 → `TimedPassiveModule.Register` 或 `PassiveTriggerModule.Register`
+- `UpgradeEffectManager.ApplyUpgrade` → `category` 路由 → `TimedPassiveModule.Register` 或 `PassiveTriggerModule.Register`
 - `UpgradeEffectManager.ResetAll` → 重置两模块
 
 ### 4.5 UI 显示
@@ -240,10 +234,9 @@ public struct TimedAoeLevelConfig
 ### 4.6 Inspector 自定 Editor
 
 `UpgradeDefinitionEditor.cs`（`Assets/Scripts/Editor/`）：
-- **触发方式工具栏**：`[攻击计数 | 定时触发]` 选项卡，位于效果列表上方
+- **category 下拉**：选择 `AttackPassive` 或 `TimedPassive` 决定触发方式
 - **每级效果 box**（始终可见）：根据 `effectType` 显示效果参数（damage / columns / rowCount / attackType 等）
-- **触发字段内联**：每级 box 末尾按选项卡动态追加一行 `间隔(秒)` 或 `阈值(次)`，切换即时生效、数据不丢失
-- 不设独立的触发参数区域，避免视线在两个区域间跳转
+- **触发字段内联**：每级 box 末尾按 category 动态追加一行 `间隔(秒)` 或 `阈值(次)`，切换 category 即时生效、数据不丢失
 
 ---
 
@@ -253,7 +246,7 @@ public struct TimedAoeLevelConfig
 
 | 组件 | 文件 | 状态 |
 |------|------|------|
-| UpgradeCategory / TriggerMode 枚举 | `Assets/Scripts/Core/UpgradeDefinition.cs` | ✅ |
+| UpgradeCategory / TriggerMode 枚举 | `Assets/Scripts/Core/UpgradeDefinition.cs` | ✅ AttackPassive + TimedPassive |
 | 触发-效果解耦数据层 | `Assets/Scripts/Core/UpgradeDefinition.cs` | ✅ 每级配置含双触发参数 |
 | 自定义 Inspector 选项卡 | `Assets/Scripts/Editor/UpgradeDefinitionEditor.cs` | ✅ |
 | PassiveTriggerModule（全效果） | `Assets/Scripts/Core/PassiveTriggerModule.cs` | ✅ 攻击计数触发所有效果类型 |
@@ -277,9 +270,9 @@ public struct TimedAoeLevelConfig
 ## 九、关键设计决策汇总
 
 1. **命名规范**：用 `UpgradeCategory`（Numeric/Item/Passive）+ `TriggerMode`（AttackCount/Timed）统一分类
-2. **效果为主**：effectType 定义效果，triggerMode 定义触发，两者正交
+2. **效果为主**：effectType 定义效果，category（AttackPassive/TimedPassive）定义触发，两者正交
 3. **效果自包含**：不再从攻击上下文借用数据，所有参数由 SO 自身提供
-4. **Inspector 选项卡**：触发字段内联到效果每级 box 内，按 triggerMode 选项卡切换显示，效果字段始终可见，切换不丢数据
+4. **Inspector**：触发字段内联到效果每级 box 内，按 category 显示对应触发字段，效果字段始终可见，切换 category 不丢数据
 5. **数值buff**：加法叠加，再次获得同名升级 = 等级+1
 6. **道具 useCount**：-1 = 无限次，正数 = 使用次数
 7. **大旋风 floatValue**：每秒伤害跳数

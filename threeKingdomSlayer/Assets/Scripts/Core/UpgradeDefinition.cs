@@ -6,8 +6,8 @@ using UnityEngine;
 ///
 /// 架构原则：效果为主，触发为辅。
 /// - 效果（effectType + 每级效果参数）是 SO 的身份核心，始终在 Inspector 中可见。
-/// - 触发方式（triggerMode + 每级触发参数）通过选项卡切换，不污染效果视图。
-/// - 所有字段始终序列化，切换选项卡不会丢失数据。
+/// - 触发方式由 category（AttackPassive / TimedPassive）决定，Inspector 按 category 显示对应触发字段。
+/// - 所有字段始终序列化，切换 category 不会丢失数据。
 /// </summary>
 [CreateAssetMenu(fileName = "UpgradeDefinition", menuName = "一夫当关/升级奖励定义")]
 public class UpgradeDefinition : ScriptableObject
@@ -28,10 +28,6 @@ public class UpgradeDefinition : ScriptableObject
     public UpgradeRarity rarity = UpgradeRarity.Common;
     [Tooltip("最高等级（1-10）")]
     public int maxLevel = 10;
-
-    [Header("触发方式（category=Passive 时生效）")]
-    [Tooltip("选择此效果的触发机制")]
-    public TriggerMode triggerMode = TriggerMode.AttackCount;
 
     [Header("效果")]
     [Tooltip("效果类型: damage_multiplier | attack_speed | stab_range_boost | sweep_range_boost | push_wave | convergence_wave | on_attack_trigger | on_kill_chance | unlock_attack | passive_phantom_weapon | passive_return_wave | passive_chain_bounce | passive_timed_aoe | passive_timed_arrow")]
@@ -200,18 +196,10 @@ public class UpgradeDefinition : ScriptableObject
 /// <summary>升级奖励类型</summary>
 public enum UpgradeCategory
 {
-    Numeric,   // 数值buff型：伤害/攻速/移速/经验倍率等永久加成
-    Item,      // 道具型：手势触发的一次性/限次道具
-    Passive    // 被动攻击型：由 triggerMode 决定触发方式
-}
-
-/// <summary>被动触发方式</summary>
-public enum TriggerMode
-{
-    [Tooltip("每 N 次攻击触发一次")]
-    AttackCount,
-    [Tooltip("每 N 秒触发一次")]
-    Timed
+    Numeric,       // 数值buff型：伤害/攻速/移速/经验倍率等永久加成
+    Item,          // 道具型：手势触发的一次性/限次道具
+    AttackPassive, // 攻击计数被动：每 N 次攻击触发
+    TimedPassive   // 定时被动：每 N 秒触发
 }
 
 public enum UpgradeRarity

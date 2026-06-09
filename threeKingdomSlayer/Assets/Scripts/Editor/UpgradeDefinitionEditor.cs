@@ -6,8 +6,8 @@ using UnityEngine;
 ///
 /// 架构原则：
 /// - 效果为主：effectType + 效果每级参数始终可见
-/// - 触发为辅：triggerMode 通过选项卡切换，仅显示对应触发字段
-/// - 切换选项卡不丢失数据（所有字段始终序列化）
+/// - 触发为辅：category（AttackPassive / TimedPassive）决定触发字段，不丢数据
+/// - 触发字段内联到每级效果 box 末尾
 /// </summary>
 [CustomEditor(typeof(UpgradeDefinition))]
 public class UpgradeDefinitionEditor : Editor
@@ -26,7 +26,6 @@ public class UpgradeDefinitionEditor : Editor
     private SerializedProperty stringValueProp;
     private SerializedProperty baseAttackConfigProp;
     private SerializedProperty iconProp;
-    private SerializedProperty triggerModeProp;
 
     // ── 每级配置列表 ──
     private SerializedProperty phantomLevelsProp;
@@ -41,9 +40,6 @@ public class UpgradeDefinitionEditor : Editor
 
     // ── 其他 ──
     private SerializedProperty prerequisitesProp;
-
-    // ── 选项卡状态 ──
-    private int _triggerTab;
 
     private void OnEnable()
     {
@@ -60,7 +56,6 @@ public class UpgradeDefinitionEditor : Editor
         stringValueProp = serializedObject.FindProperty("stringValue");
         baseAttackConfigProp = serializedObject.FindProperty("baseAttackConfig");
         iconProp = serializedObject.FindProperty("icon");
-        triggerModeProp = serializedObject.FindProperty("triggerMode");
 
         phantomLevelsProp = serializedObject.FindProperty("phantomLevels");
         timedAoeLevelsProp = serializedObject.FindProperty("timedAoeLevels");
@@ -102,9 +97,9 @@ public class UpgradeDefinitionEditor : Editor
         var category = (UpgradeCategory)categoryProp.enumValueIndex;
 
         // ══════════════════════════════════════
-        // 被动攻击型 — 效果 + 触发选项卡
+        // 被动攻击型
         // ══════════════════════════════════════
-        if (category == UpgradeCategory.Passive)
+        if (category == UpgradeCategory.AttackPassive || category == UpgradeCategory.TimedPassive)
         {
             DrawPassiveSection();
         }
@@ -140,60 +135,25 @@ public class UpgradeDefinitionEditor : Editor
         EditorGUILayout.PropertyField(effectTypeProp);
 
         string effectType = effectTypeProp.stringValue;
-        string triggerField = null;
-        string intervalField = null;
+        bool isTimed = categoryProp.enumValueIndex == (int)UpgradeCategory.TimedPassive;
 
-        // 根据 effectType 确定触发字段名，统一传给 DrawEffectLevelList
+        // ── 效果每级配置（效果字段始终可见 + 触发字段按 category 内联）──
         switch (effectType)
         {
             case "passive_phantom_weapon":
-                triggerField = "triggerParam";
-                intervalField = "intervalSeconds";
+                DrawEffectLevelList(phantomLevelsProp, "phantomSteps", true, isTimed, "triggerParam", "intervalSeconds");
                 break;
             case "passive_timed_aoe":
-                triggerField = "triggerThreshold";
-                intervalField = "intervalSeconds";
+                DrawEffectLevelList(timedAoeLevelsProp, "columns", false, isTimed, "triggerThreshold", "intervalSeconds");
                 break;
             case "passive_timed_arrow":
-                triggerField = "triggerThreshold";
-                intervalField = "intervalSeconds";
+                DrawEffectLevelList(timedArrowLevelsProp, null, false, isTimed, "triggerThreshold", "intervalSeconds");
                 break;
             case "passive_return_wave":
-                triggerField = "triggerThreshold";
-                intervalField = "intervalSeconds";
+                DrawEffectLevelList(returnWaveLevelsProp, null, false, isTimed, "triggerThreshold", "intervalSeconds");
                 break;
             case "passive_chain_bounce":
-                triggerField = "triggerThreshold";
-                intervalField = "intervalSeconds";
-                break;
-        }
-
-        // ── 触发方式选项卡（放在效果列表上方，切换即时生效）──
-        EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField("触发方式", EditorStyles.boldLabel, GUILayout.Width(56));
-        _triggerTab = GUILayout.Toolbar(_triggerTab, new[] { "攻击计数", "定时触发" });
-        EditorGUILayout.EndHorizontal();
-        triggerModeProp.enumValueIndex = _triggerTab;
-
-        EditorGUILayout.Space();
-
-        // ── 效果每级配置（效果字段始终可见 + 触发字段按选项卡内联）──
-        switch (effectType)
-        {
-            case "passive_phantom_weapon":
-                DrawEffectLevelList(phantomLevelsProp, "phantomSteps", true, triggerField, intervalField);
-                break;
-            case "passive_timed_aoe":
-                DrawEffectLevelList(timedAoeLevelsProp, "columns", false, triggerField, intervalField);
-                break;
-            case "passive_timed_arrow":
-                DrawEffectLevelList(timedArrowLevelsProp, null, false, triggerField, intervalField);
-                break;
-            case "passive_return_wave":
-                DrawEffectLevelList(returnWaveLevelsProp, null, false, triggerField, intervalField);
-                break;
-            case "passive_chain_bounce":
-                DrawEffectLevelList(chainBounceLevelsProp, null, false, triggerField, intervalField);
+                DrawEffectLevelList(chainBounceLevelsProp, null, false, isTimed, "triggerThreshold", "intervalSeconds");
                 break;
             default:
                 EditorGUILayout.HelpBox($"未知的被动 effectType: {effectType}", MessageType.Warning);
@@ -238,15 +198,14 @@ public class UpgradeDefinitionEditor : Editor
     // 每级列表绘制辅助
     // ══════════════════════════════════════════
 
-    /// <summary>绘制效果每级列表。效果字段始终可见；触发字段按 triggerMode 选项卡内联</summary>
+    /// <summary>绘制效果每级列表。效果字段始终可见；触发字段按 category 内联</summary>
     private void DrawEffectLevelList(SerializedProperty listProp, string nestedListName, bool isPhantom,
-        string triggerFieldName, string intervalFieldName)
+        bool isTimed, string triggerFieldName, string intervalFieldName)
     {
         if (listProp == null) return;
 
         EditorGUILayout.PropertyField(listProp.FindPropertyRelative("Array.size"));
 
-        bool isTimed = triggerModeProp.enumValueIndex == 1;
         string activeTriggerField = isTimed ? intervalFieldName : triggerFieldName;
         string triggerLabel = isTimed ? "间隔(秒)" : "阈值(次)";
 

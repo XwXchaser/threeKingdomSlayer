@@ -82,8 +82,8 @@ public class UpgradeEffectManager : MonoBehaviour
             return;
         }
 
-        // 被动攻击型：根据 triggerMode 路由到对应的触发模块
-        if (def.category == UpgradeCategory.Passive)
+        // 被动攻击型：根据 category 路由到对应的触发模块
+        if (def.category == UpgradeCategory.AttackPassive || def.category == UpgradeCategory.TimedPassive)
         {
             int currentLevel = _appliedUpgrades.TryGetValue(def.upgradeId, out int lv) ? lv : 0;
             int newLevel = currentLevel + 1;
@@ -95,7 +95,7 @@ public class UpgradeEffectManager : MonoBehaviour
             _appliedUpgrades[def.upgradeId] = newLevel;
             SyncToPlayerState(def, newLevel);
 
-            if (def.triggerMode == TriggerMode.Timed)
+            if (def.category == UpgradeCategory.TimedPassive)
             {
                 if (TimedPassiveModule.Instance != null)
                     TimedPassiveModule.Instance.Register(def, newLevel);
@@ -111,7 +111,7 @@ public class UpgradeEffectManager : MonoBehaviour
             }
 
             OnUpgradeApplied?.Invoke(def, newLevel);
-            Debug.Log($"[UpgradeEffectManager] 应用被动 {def.displayName} Lv.{newLevel} triggerMode={def.triggerMode} effectType={def.effectType}");
+            Debug.Log($"[UpgradeEffectManager] 应用被动 {def.displayName} Lv.{newLevel} category={def.category} effectType={def.effectType}");
             return;
         }
 
@@ -186,15 +186,16 @@ public class UpgradeEffectManager : MonoBehaviour
 
         string desc = def.descriptionTemplate;
 
-        if (def.category == UpgradeCategory.Passive)
+        if (def.category == UpgradeCategory.AttackPassive || def.category == UpgradeCategory.TimedPassive)
         {
-            // 定时类被动：从每级配置读取
+            bool isTimed = def.category == UpgradeCategory.TimedPassive;
+            // 被动：从每级配置读取
             if (def.effectType == "passive_timed_aoe")
             {
                 if (def.timedAoeLevels != null && nextLevel <= def.timedAoeLevels.Count)
                 {
                     var cfg = def.timedAoeLevels[nextLevel - 1];
-                    string triggerStr = def.triggerMode == TriggerMode.Timed
+                    string triggerStr = isTimed
                         ? cfg.intervalSeconds.ToString("F1") + "秒"
                         : cfg.triggerThreshold + "次攻击";
                     desc = desc.Replace("{0}", triggerStr);
@@ -206,7 +207,7 @@ public class UpgradeEffectManager : MonoBehaviour
                 if (def.timedArrowLevels != null && nextLevel <= def.timedArrowLevels.Count)
                 {
                     var cfg = def.timedArrowLevels[nextLevel - 1];
-                    string triggerStr = def.triggerMode == TriggerMode.Timed
+                    string triggerStr = isTimed
                         ? cfg.intervalSeconds.ToString("F1") + "秒"
                         : cfg.triggerThreshold + "次攻击";
                     desc = desc.Replace("{0}", triggerStr);
@@ -220,7 +221,7 @@ public class UpgradeEffectManager : MonoBehaviour
                 var cfg = (def.returnWaveLevels != null && nextLevel <= def.returnWaveLevels.Count)
                     ? def.returnWaveLevels[nextLevel - 1]
                     : new ReturnWaveLevelConfig { triggerThreshold = def.intValue, damageRatio = def.floatValue };
-                string triggerStr = def.triggerMode == TriggerMode.Timed
+                string triggerStr = isTimed
                     ? cfg.intervalSeconds.ToString("F1") + "秒"
                     : cfg.triggerThreshold + "次攻击";
                 desc = desc.Replace("{0}", triggerStr);
@@ -231,7 +232,7 @@ public class UpgradeEffectManager : MonoBehaviour
                 var cfg = (def.chainBounceLevels != null && nextLevel <= def.chainBounceLevels.Count)
                     ? def.chainBounceLevels[nextLevel - 1]
                     : new ChainBounceLevelConfig { triggerThreshold = def.intValue, maxBounces = def.secondaryIntValue, damageRatio = def.floatValue };
-                string triggerStr = def.triggerMode == TriggerMode.Timed
+                string triggerStr = isTimed
                     ? cfg.intervalSeconds.ToString("F1") + "秒"
                     : cfg.triggerThreshold + "次攻击";
                 desc = desc.Replace("{0}", triggerStr);
@@ -243,7 +244,7 @@ public class UpgradeEffectManager : MonoBehaviour
                 def.GetPhantomConfig(nextLevel, out int triggerParam, out var steps);
                 float interval = def.phantomLevels != null && nextLevel <= def.phantomLevels.Count
                     ? def.phantomLevels[nextLevel - 1].intervalSeconds : -1f;
-                string triggerStr = def.triggerMode == TriggerMode.Timed && interval > 0f
+                string triggerStr = isTimed && interval > 0f
                     ? interval.ToString("F1") + "秒"
                     : triggerParam + "次攻击";
                 desc = desc.Replace("{0}", triggerStr);
