@@ -43,8 +43,8 @@ public class PauseMenuUI : MonoBehaviour
         {
             volumeSlider.minValue = 0f;
             volumeSlider.maxValue = 1f;
-            volumeSlider.value = WwiseAudioManager.Instance != null
-                ? WwiseAudioManager.Instance.GetMasterVolume()
+            volumeSlider.value = AudioManager.Instance != null
+                ? AudioManager.Instance.GetMasterVolume()
                 : 1f;
             volumeSlider.onValueChanged.AddListener(OnVolumeChanged);
         }
@@ -68,8 +68,8 @@ public class PauseMenuUI : MonoBehaviour
         if (pausePanel != null) pausePanel.SetActive(true);
 
         // 打开面板时同步音量滑动条到当前数据层值
-        if (volumeSlider != null && WwiseAudioManager.Instance != null)
-            volumeSlider.value = WwiseAudioManager.Instance.GetMasterVolume();
+        if (volumeSlider != null && AudioManager.Instance != null)
+            volumeSlider.value = AudioManager.Instance.GetMasterVolume();
         
         try { RefreshSettlementInfo(); }
         catch (System.Exception e) { Debug.LogWarning($"[PauseMenuUI] RefreshSettlementInfo 异常: {e.Message}"); }
@@ -92,7 +92,7 @@ public class PauseMenuUI : MonoBehaviour
 
     private void OnVolumeChanged(float value)
     {
-        WwiseAudioManager.Instance?.SetMasterVolume(value);
+        AudioManager.Instance?.SetMasterVolume(value);
     }
 
     private void RefreshSettlementInfo()

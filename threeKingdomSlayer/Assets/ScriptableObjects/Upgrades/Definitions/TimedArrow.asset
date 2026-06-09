@@ -18,7 +18,7 @@ MonoBehaviour:
   descriptionTemplate: "\u6BCF{0}\u79D2\u5BF9\u6B63\u524D\u65B9{1}\u6392\u7684\u654C\u4EBA\u5C04\u51FA{2}\u6B21\u9020\u6210{3}\u4F24\u5BB3\u7684\u7BAD\u77E2"
   rarity: 0
   maxLevel: 5
-  triggerMode: 1
+  triggerMode: 0
   effectType: passive_timed_arrow
   floatValue: 0
   intValue: 0
