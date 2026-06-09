@@ -203,7 +203,7 @@ public class BuffDisplayPanel : MonoBehaviour
 
             icon.SetFrame(GetLevelFrame(newLevel));
 
-            if (def.category == UpgradeCategory.Passive)
+            if (def.category == UpgradeCategory.AttackPassive || def.category == UpgradeCategory.TimedPassive)
             {
                 // 仅 phantom_weapon 在此设角标，return_wave/chain_bounce 由 OnPassiveRegistered 负责
                 if (def.effectType == "passive_phantom_weapon")

@@ -6,8 +6,7 @@ using UnityEngine;
 /// 攻击计数触发模块 — 单例
 ///
 /// 监听 AttackSystem.OnAttackPerformed，为每个已注册的升级维护独立计数器。
-/// 计数器到达阈值时（由 UpgradeDefinition.triggerMode=AttackCount 决定），
-/// 根据 effectType 分发到自包含的效果执行器。
+/// 计数器到达阈值时，根据 effectType 分发到自包含的效果执行器。
 ///
 /// 效果执行不再依赖攻击上下文（_lastAttackType 等已移除），
 /// 每个效果从自身每级配置读取所需的全部参数。

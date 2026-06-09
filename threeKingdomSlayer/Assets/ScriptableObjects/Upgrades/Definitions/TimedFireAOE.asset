@@ -12,13 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5eab6a0cbf20ec64ba732f894b672d49, type: 3}
   m_Name: TimedFireAOE
   m_EditorClassIdentifier: 
-  category: 2
+  category: 3
   upgradeId: timed_fire_aoe
   displayName: "\u70C8\u7130\u55B7\u5C04"
   descriptionTemplate: "\u6BCF{0}\u79D2\u5BF9\u4E2D\u95F4\u533A\u57DF\u9020\u6210{1}\u70B9\u4F24\u5BB3"
   rarity: 0
   maxLevel: 5
-  triggerMode: 1
   effectType: passive_timed_aoe
   floatValue: 0
   intValue: 0

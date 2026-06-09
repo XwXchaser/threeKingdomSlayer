@@ -5,8 +5,7 @@ using UnityEngine;
 /// <summary>
 /// 定时触发模块 — 单例
 ///
-/// 管理计时器驱动的被动技能。计时器到期时（由 UpgradeDefinition.triggerMode=Timed 决定），
-/// 根据 effectType 分发到自包含的效果执行器。
+/// 管理计时器驱动的被动技能。计时器到期时，根据 effectType 分发到自包含的效果执行器。
 ///
 /// 所有效果类型均由本模块统一分发，不限于火焰/箭雨。
 /// </summary>
