@@ -82,7 +82,7 @@ public class UpgradeEffectManager : MonoBehaviour
             return;
         }
 
-        // 被动攻击型：路由到 PassiveTriggerModule
+        // 被动攻击型：根据 triggerMode 路由到对应的触发模块
         if (def.category == UpgradeCategory.Passive)
         {
             int currentLevel = _appliedUpgrades.TryGetValue(def.upgradeId, out int lv) ? lv : 0;
@@ -95,7 +95,7 @@ public class UpgradeEffectManager : MonoBehaviour
             _appliedUpgrades[def.upgradeId] = newLevel;
             SyncToPlayerState(def, newLevel);
 
-            if (def.effectType == "passive_timed_aoe")
+            if (def.triggerMode == TriggerMode.Timed)
             {
                 if (TimedPassiveModule.Instance != null)
                     TimedPassiveModule.Instance.Register(def, newLevel);
@@ -111,7 +111,7 @@ public class UpgradeEffectManager : MonoBehaviour
             }
 
             OnUpgradeApplied?.Invoke(def, newLevel);
-            Debug.Log($"[UpgradeEffectManager] 应用被动 {def.displayName} Lv.{newLevel} effectType={def.effectType}");
+            Debug.Log($"[UpgradeEffectManager] 应用被动 {def.displayName} Lv.{newLevel} triggerMode={def.triggerMode} effectType={def.effectType}");
             return;
         }
 
@@ -188,35 +188,65 @@ public class UpgradeEffectManager : MonoBehaviour
 
         if (def.category == UpgradeCategory.Passive)
         {
-            // 定时AOE：从 timedAoeLevels 读取下一级配置
+            // 定时类被动：从每级配置读取
             if (def.effectType == "passive_timed_aoe")
             {
                 if (def.timedAoeLevels != null && nextLevel <= def.timedAoeLevels.Count)
                 {
                     var cfg = def.timedAoeLevels[nextLevel - 1];
-                    desc = desc.Replace("{0}", cfg.intervalSeconds.ToString("F1"));
+                    string triggerStr = def.triggerMode == TriggerMode.Timed
+                        ? cfg.intervalSeconds.ToString("F1") + "秒"
+                        : cfg.triggerThreshold + "次攻击";
+                    desc = desc.Replace("{0}", triggerStr);
                     desc = desc.Replace("{1}", cfg.damage.ToString());
+                }
+            }
+            else if (def.effectType == "passive_timed_arrow")
+            {
+                if (def.timedArrowLevels != null && nextLevel <= def.timedArrowLevels.Count)
+                {
+                    var cfg = def.timedArrowLevels[nextLevel - 1];
+                    string triggerStr = def.triggerMode == TriggerMode.Timed
+                        ? cfg.intervalSeconds.ToString("F1") + "秒"
+                        : cfg.triggerThreshold + "次攻击";
+                    desc = desc.Replace("{0}", triggerStr);
+                    desc = desc.Replace("{1}", cfg.rowCount.ToString());
+                    desc = desc.Replace("{2}", cfg.arrowCount.ToString());
+                    desc = desc.Replace("{3}", cfg.damage.ToString());
                 }
             }
             else if (def.effectType == "passive_return_wave")
             {
-                int triggerParam;
-                triggerParam = def.intValue > 0 ? def.intValue : 4;
-                desc = desc.Replace("{0}", triggerParam.ToString());
-                desc = desc.Replace("{1}", (def.floatValue * 100f).ToString("F0"));
+                var cfg = (def.returnWaveLevels != null && nextLevel <= def.returnWaveLevels.Count)
+                    ? def.returnWaveLevels[nextLevel - 1]
+                    : new ReturnWaveLevelConfig { triggerThreshold = def.intValue, damageRatio = def.floatValue };
+                string triggerStr = def.triggerMode == TriggerMode.Timed
+                    ? cfg.intervalSeconds.ToString("F1") + "秒"
+                    : cfg.triggerThreshold + "次攻击";
+                desc = desc.Replace("{0}", triggerStr);
+                desc = desc.Replace("{1}", (cfg.damageRatio * 100f).ToString("F0"));
             }
             else if (def.effectType == "passive_chain_bounce")
             {
-                int triggerParam = def.intValue > 0 ? def.intValue : 6;
-                int maxBounces = def.secondaryIntValue > 0 ? def.secondaryIntValue : 3;
-                desc = desc.Replace("{0}", triggerParam.ToString());
-                desc = desc.Replace("{1}", maxBounces.ToString());
-                desc = desc.Replace("{2}", (def.floatValue * 100f).ToString("F0"));
+                var cfg = (def.chainBounceLevels != null && nextLevel <= def.chainBounceLevels.Count)
+                    ? def.chainBounceLevels[nextLevel - 1]
+                    : new ChainBounceLevelConfig { triggerThreshold = def.intValue, maxBounces = def.secondaryIntValue, damageRatio = def.floatValue };
+                string triggerStr = def.triggerMode == TriggerMode.Timed
+                    ? cfg.intervalSeconds.ToString("F1") + "秒"
+                    : cfg.triggerThreshold + "次攻击";
+                desc = desc.Replace("{0}", triggerStr);
+                desc = desc.Replace("{1}", cfg.maxBounces.ToString());
+                desc = desc.Replace("{2}", (cfg.damageRatio * 100f).ToString("F0"));
             }
             else
             {
                 def.GetPhantomConfig(nextLevel, out int triggerParam, out var steps);
-                desc = desc.Replace("{0}", triggerParam.ToString());
+                float interval = def.phantomLevels != null && nextLevel <= def.phantomLevels.Count
+                    ? def.phantomLevels[nextLevel - 1].intervalSeconds : -1f;
+                string triggerStr = def.triggerMode == TriggerMode.Timed && interval > 0f
+                    ? interval.ToString("F1") + "秒"
+                    : triggerParam + "次攻击";
+                desc = desc.Replace("{0}", triggerStr);
                 desc = desc.Replace("{1}", (steps?.Count ?? 0).ToString());
                 if (steps != null && steps.Count > 0)
                     desc = desc.Replace("{2}", (steps[0].damageRatio * 100f).ToString("F0"));

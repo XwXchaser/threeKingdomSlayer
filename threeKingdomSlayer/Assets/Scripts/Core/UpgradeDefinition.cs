@@ -3,8 +3,11 @@ using UnityEngine;
 
 /// <summary>
 /// 升级奖励定义 - ScriptableObject
-/// 每个三选一奖励选项一个 .asset 文件，包含显示名、效果类型、每级数值、前置条件等。
-/// 策划可在 Inspector 中配置。
+///
+/// 架构原则：效果为主，触发为辅。
+/// - 效果（effectType + 每级效果参数）是 SO 的身份核心，始终在 Inspector 中可见。
+/// - 触发方式（triggerMode + 每级触发参数）通过选项卡切换，不污染效果视图。
+/// - 所有字段始终序列化，切换选项卡不会丢失数据。
 /// </summary>
 [CreateAssetMenu(fileName = "UpgradeDefinition", menuName = "一夫当关/升级奖励定义")]
 public class UpgradeDefinition : ScriptableObject
@@ -26,14 +29,18 @@ public class UpgradeDefinition : ScriptableObject
     [Tooltip("最高等级（1-10）")]
     public int maxLevel = 10;
 
+    [Header("触发方式（category=Passive 时生效）")]
+    [Tooltip("选择此效果的触发机制")]
+    public TriggerMode triggerMode = TriggerMode.AttackCount;
+
     [Header("效果")]
-    [Tooltip("效果类型: damage_multiplier | attack_speed | on_attack_trigger | on_kill_chance | unlock_attack")]
+    [Tooltip("效果类型: damage_multiplier | attack_speed | stab_range_boost | sweep_range_boost | push_wave | convergence_wave | on_attack_trigger | on_kill_chance | unlock_attack | passive_phantom_weapon | passive_return_wave | passive_chain_bounce | passive_timed_aoe | passive_timed_arrow")]
     public string effectType;
-    [Tooltip("每级浮点加成 — 填此处：damage_multiplier/attack_speed/move_speed/exp_multiplier（0.05 = 每级+5%）")]
+    [Tooltip("每级浮点加成 — 仅数值型使用。被动攻击型请使用下方每级配置列表")]
     public float floatValue;
-    [Tooltip("每级整数加成 — 填此处：stab_range_boost 范围排数 / on_attack_trigger 触发次数 / unlock_attack 等")]
+    [Tooltip("每级整数加成 — 仅数值型使用。被动攻击型请使用下方每级配置列表")]
     public int intValue;
-    [Tooltip("每级第二整数加成 — 仅 stab_range_boost 填此处（伤害惩罚%，5 = -5%/级）")]
+    [Tooltip("每级第二整数加成 — 仅数值型使用")]
     public int secondaryIntValue;
     [Tooltip("字符串参数（如on_kill_chance的掉落类型）")]
     public string stringValue;
@@ -46,15 +53,40 @@ public class UpgradeDefinition : ScriptableObject
     [Tooltip("所有类型的升级均需配置图标，供 BuffDisplayPanel 显示")]
     public Sprite icon;
 
-    [Header("被动攻击型（category=Passive 时生效）")]
-    [Tooltip("按等级配置幻影效果。index 0 = Lv1。如果填写了此列表，优先使用；否则回退到下方旧字段")]
+    // ═══════════════════════════════════════════════
+    // 被动攻击型 — 效果每级配置（始终可见，不随触发选项卡切换）
+    // ═══════════════════════════════════════════════
+
+    [Header("幻影武器（effectType=passive_phantom_weapon）")]
+    [Tooltip("按等级配置幻影效果。index 0 = Lv1")]
     public List<PhantomLevelConfig> phantomLevels = new List<PhantomLevelConfig>();
-    [Tooltip("按等级配置定时AOE（effectType=passive_timed_aoe）。index 0 = Lv1")]
+
+    [Header("喷火（effectType=passive_timed_aoe）")]
+    [Tooltip("按等级配置喷火效果。index 0 = Lv1")]
     public List<TimedAoeLevelConfig> timedAoeLevels = new List<TimedAoeLevelConfig>();
-    [Tooltip("[旧版兼容] 触发阈值（每X次攻击触发一次效果）— phantomLevels 有数据时忽略")]
-    public int triggerParam;
-    [Tooltip("[旧版兼容] 幻影攻击列表 — phantomLevels 有数据时忽略")]
-    public List<PhantomStep> phantomSteps = new List<PhantomStep>();
+
+    [Header("箭雨（effectType=passive_timed_arrow）")]
+    [Tooltip("按等级配置箭雨效果。index 0 = Lv1")]
+    public List<TimedArrowLevelConfig> timedArrowLevels = new List<TimedArrowLevelConfig>();
+
+    [Header("折返波（effectType=passive_return_wave）")]
+    [Tooltip("按等级配置折返波效果。index 0 = Lv1")]
+    public List<ReturnWaveLevelConfig> returnWaveLevels = new List<ReturnWaveLevelConfig>();
+
+    [Header("连锁弹射（effectType=passive_chain_bounce）")]
+    [Tooltip("按等级配置连锁弹射效果。index 0 = Lv1")]
+    public List<ChainBounceLevelConfig> chainBounceLevels = new List<ChainBounceLevelConfig>();
+
+    // ═══════════════════════════════════════════════
+    // 旧版兼容字段（Inspector 隐藏，保留序列化数据）
+    // ═══════════════════════════════════════════════
+
+    [HideInInspector] public int triggerParam;
+    [HideInInspector] public List<PhantomStep> phantomSteps = new List<PhantomStep>();
+
+    // ═══════════════════════════════════════════════
+    // 道具型
+    // ═══════════════════════════════════════════════
 
     [Header("道具型（category=Item 时生效）")]
     [Tooltip("获得后可使用的次数，-1=无限次")]
@@ -65,6 +97,8 @@ public class UpgradeDefinition : ScriptableObject
     [Header("前置条件")]
     [Tooltip("需要其他选项达到指定等级后才会进入抽取池")]
     public List<UpgradePrerequisite> prerequisites;
+
+    // ── 辅助方法 ──
 
     /// <summary>获取指定等级的幻影配置。优先使用 phantomLevels，回退到旧字段。</summary>
     public void GetPhantomConfig(int level, out int triggerParam, out List<PhantomStep> steps)
@@ -81,21 +115,212 @@ public class UpgradeDefinition : ScriptableObject
             steps = this.phantomSteps;
         }
     }
+
+    /// <summary>获取指定等级的效果配置（效果自包含，不依赖攻击上下文）</summary>
+    public void GetPhantomEffectConfig(int level, out AttackType attackType, out int targetColumn, out List<PhantomStep> steps)
+    {
+        if (phantomLevels != null && phantomLevels.Count >= level)
+        {
+            var cfg = phantomLevels[level - 1];
+            attackType = cfg.attackType;
+            targetColumn = cfg.targetColumn;
+            steps = cfg.phantomSteps;
+        }
+        else
+        {
+            attackType = AttackType.Pierce;
+            targetColumn = 2;
+            steps = this.phantomSteps;
+        }
+    }
+
+    /// <summary>获取指定等级的定时触发间隔（秒），-1=不适用</summary>
+    public float GetTriggerInterval(int level)
+    {
+        switch (effectType)
+        {
+            case "passive_timed_aoe":
+                if (timedAoeLevels != null && level <= timedAoeLevels.Count)
+                    return timedAoeLevels[level - 1].intervalSeconds;
+                break;
+            case "passive_timed_arrow":
+                if (timedArrowLevels != null && level <= timedArrowLevels.Count)
+                    return timedArrowLevels[level - 1].intervalSeconds;
+                break;
+            case "passive_phantom_weapon":
+                if (phantomLevels != null && level <= phantomLevels.Count)
+                    return phantomLevels[level - 1].intervalSeconds;
+                break;
+            case "passive_return_wave":
+                if (returnWaveLevels != null && level <= returnWaveLevels.Count)
+                    return returnWaveLevels[level - 1].intervalSeconds;
+                break;
+            case "passive_chain_bounce":
+                if (chainBounceLevels != null && level <= chainBounceLevels.Count)
+                    return chainBounceLevels[level - 1].intervalSeconds;
+                break;
+        }
+        return -1f;
+    }
+
+    /// <summary>获取指定等级的攻击计数阈值，-1=不适用</summary>
+    public int GetTriggerThreshold(int level)
+    {
+        switch (effectType)
+        {
+            case "passive_phantom_weapon":
+                if (phantomLevels != null && level <= phantomLevels.Count)
+                    return phantomLevels[level - 1].triggerParam;
+                break;
+            case "passive_return_wave":
+                if (returnWaveLevels != null && level <= returnWaveLevels.Count)
+                    return returnWaveLevels[level - 1].triggerThreshold;
+                break;
+            case "passive_chain_bounce":
+                if (chainBounceLevels != null && level <= chainBounceLevels.Count)
+                    return chainBounceLevels[level - 1].triggerThreshold;
+                break;
+            case "passive_timed_aoe":
+                if (timedAoeLevels != null && level <= timedAoeLevels.Count)
+                    return timedAoeLevels[level - 1].triggerThreshold;
+                break;
+            case "passive_timed_arrow":
+                if (timedArrowLevels != null && level <= timedArrowLevels.Count)
+                    return timedArrowLevels[level - 1].triggerThreshold;
+                break;
+        }
+        return -1;
+    }
 }
 
-/// <summary>
-/// 定时AOE被动（effectType=passive_timed_aoe）每级独立配置
-/// </summary>
+// ═══════════════════════════════════════════════
+// 枚举定义
+// ═══════════════════════════════════════════════
+
+/// <summary>升级奖励类型</summary>
+public enum UpgradeCategory
+{
+    Numeric,   // 数值buff型：伤害/攻速/移速/经验倍率等永久加成
+    Item,      // 道具型：手势触发的一次性/限次道具
+    Passive    // 被动攻击型：由 triggerMode 决定触发方式
+}
+
+/// <summary>被动触发方式</summary>
+public enum TriggerMode
+{
+    [Tooltip("每 N 次攻击触发一次")]
+    AttackCount,
+    [Tooltip("每 N 秒触发一次")]
+    Timed
+}
+
+public enum UpgradeRarity
+{
+    Common,
+    Rare,
+    Legendary
+}
+
+// ═══════════════════════════════════════════════
+// 每级效果配置 struct（触发参数 + 效果参数各自独立）
+// ═══════════════════════════════════════════════
+
+/// <summary>幻影武器每级配置</summary>
+[System.Serializable]
+public struct PhantomLevelConfig
+{
+    [Header("触发参数")]
+    [Tooltip("定时触发间隔（秒）— triggerMode=Timed 时有效")]
+    public float intervalSeconds;
+    [Tooltip("攻击计数阈值（每X次）— triggerMode=AttackCount 时有效")]
+    public int triggerParam;
+
+    [Header("效果参数")]
+    [Tooltip("幻影攻击类型")]
+    public AttackType attackType;
+    [Tooltip("目标列（1=col1, 2=col2, 3=col3）")]
+    public int targetColumn;
+    [Tooltip("该等级的幻影攻击段数列表")]
+    public List<PhantomStep> phantomSteps;
+}
+
+/// <summary>喷火每级配置</summary>
 [System.Serializable]
 public struct TimedAoeLevelConfig
 {
-    [Tooltip("触发间隔（秒）")]
+    [Header("触发参数")]
+    [Tooltip("定时触发间隔（秒）— triggerMode=Timed 时有效")]
     public float intervalSeconds;
+    [Tooltip("攻击计数阈值（每X次）— triggerMode=AttackCount 时有效")]
+    public int triggerThreshold;
+
+    [Header("效果参数")]
     [Tooltip("每次伤害")]
     public int damage;
     [Tooltip("影响的列索引列表: 1=col1, 2=col2, 3=col3")]
     public List<int> columns;
 }
+
+/// <summary>箭雨每级配置</summary>
+[System.Serializable]
+public struct TimedArrowLevelConfig
+{
+    [Header("触发参数")]
+    [Tooltip("定时触发间隔（秒）— triggerMode=Timed 时有效")]
+    public float intervalSeconds;
+    [Tooltip("攻击计数阈值（每X次）— triggerMode=AttackCount 时有效")]
+    public int triggerThreshold;
+
+    [Header("效果参数")]
+    [Tooltip("正前方排数")]
+    public int rowCount;
+    [Tooltip("每个敌人被射箭矢数")]
+    public int arrowCount;
+    [Tooltip("每箭伤害")]
+    public int damage;
+}
+
+/// <summary>折返波每级配置</summary>
+[System.Serializable]
+public struct ReturnWaveLevelConfig
+{
+    [Header("触发参数")]
+    [Tooltip("定时触发间隔（秒）— triggerMode=Timed 时有效")]
+    public float intervalSeconds;
+    [Tooltip("攻击计数阈值（每X次）— triggerMode=AttackCount 时有效")]
+    public int triggerThreshold;
+
+    [Header("效果参数")]
+    [Tooltip("目标列（1=col1, 2=col2, 3=col3）")]
+    public int column;
+    [Tooltip("波覆盖排数")]
+    public int rangeRows;
+    [Tooltip("折返伤害比例（0.5=50%）")]
+    public float damageRatio;
+}
+
+/// <summary>连锁弹射每级配置</summary>
+[System.Serializable]
+public struct ChainBounceLevelConfig
+{
+    [Header("触发参数")]
+    [Tooltip("定时触发间隔（秒）— triggerMode=Timed 时有效")]
+    public float intervalSeconds;
+    [Tooltip("攻击计数阈值（每X次）— triggerMode=AttackCount 时有效")]
+    public int triggerThreshold;
+
+    [Header("效果参数")]
+    [Tooltip("起始列（1=col1, 2=col2, 3=col3）")]
+    public int column;
+    [Tooltip("最大弹射次数")]
+    public int maxBounces;
+    [Tooltip("每次弹射伤害保留比例（0.8=80%）")]
+    public float damageRatio;
+}
+
+// ═══════════════════════════════════════════════
+// 其他辅助类型
+// ═══════════════════════════════════════════════
 
 [System.Serializable]
 public class UpgradePrerequisite
@@ -106,26 +331,7 @@ public class UpgradePrerequisite
     public int requiredLevel = 1;
 }
 
-/// <summary>
-/// 升级奖励类型：数值buff型 | 道具型 | 被动攻击型
-/// </summary>
-public enum UpgradeCategory
-{
-    Numeric,   // 数值buff型：伤害/攻速/移速/经验倍率等永久加成
-    Item,      // 道具型：手势触发的一次性/限次道具（大旋风、落雷等）
-    Passive    // 被动攻击型：每N次攻击自动触发效果
-}
-
-public enum UpgradeRarity
-{
-    Common,
-    Rare,
-    Legendary
-}
-
-/// <summary>
-/// 幻影攻击配置段 — 被动攻击型每段幻影的伤害比例和透明度
-/// </summary>
+/// <summary>幻影攻击配置段 — 伤害比例、透明度、延迟</summary>
 [System.Serializable]
 public struct PhantomStep
 {
@@ -133,19 +339,6 @@ public struct PhantomStep
     public float damageRatio;
     [Tooltip("透明度（0.6=60%）")]
     public float alpha;
-    [Tooltip("该段幻影延迟（秒），0=无延迟。用于错开多段幻影的视觉")]
+    [Tooltip("该段幻影延迟（秒），0=无延迟")]
     public float delaySeconds;
-}
-
-/// <summary>
-/// 被动攻击型按等级配置（index 0 = Lv1）
-/// 每级可独立设置触发阈值和幻影段数
-/// </summary>
-[System.Serializable]
-public struct PhantomLevelConfig
-{
-    [Tooltip("触发阈值（每X次攻击触发一次效果）")]
-    public int triggerParam;
-    [Tooltip("该等级的幻影攻击段数列表")]
-    public List<PhantomStep> phantomSteps;
 }

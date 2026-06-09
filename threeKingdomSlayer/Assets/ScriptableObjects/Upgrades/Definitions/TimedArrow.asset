@@ -10,45 +10,50 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5eab6a0cbf20ec64ba732f894b672d49, type: 3}
-  m_Name: TimedFireAOE
+  m_Name: TimedArrow
   m_EditorClassIdentifier: 
   category: 2
-  upgradeId: timed_fire_aoe
-  displayName: "\u70C8\u7130\u55B7\u5C04"
-  descriptionTemplate: "\u6BCF{0}\u79D2\u5BF9\u4E2D\u95F4\u533A\u57DF\u9020\u6210{1}\u70B9\u4F24\u5BB3"
+  upgradeId: timed_arrow_volley
+  displayName: "\u7BAD\u96E8"
+  descriptionTemplate: "\u6BCF{0}\u79D2\u5BF9\u6B63\u524D\u65B9{1}\u6392\u7684\u654C\u4EBA\u5C04\u51FA{2}\u6B21\u9020\u6210{3}\u4F24\u5BB3\u7684\u7BAD\u77E2"
   rarity: 0
   maxLevel: 5
   triggerMode: 1
-  effectType: passive_timed_aoe
+  effectType: passive_timed_arrow
   floatValue: 0
   intValue: 0
   secondaryIntValue: 0
   stringValue: 
   baseAttackConfig: {fileID: 0}
-  icon: {fileID: 21300000, guid: 76d287ddd73673d4980037e937fdd4ab, type: 3}
+  icon: {fileID: 21300000, guid: bc22156bb31995d4bbf8fa33dc55affe, type: 3}
   phantomLevels: []
-  timedAoeLevels:
+  timedAoeLevels: []
+  timedArrowLevels:
   - intervalSeconds: 3
     triggerThreshold: 0
+    rowCount: 1
+    arrowCount: 3
+    damage: 8
+  - intervalSeconds: 3.5
+    triggerThreshold: 0
+    rowCount: 1
+    arrowCount: 4
     damage: 10
-    columns: 02000000
-  - intervalSeconds: 2.5
+  - intervalSeconds: 4
     triggerThreshold: 0
-    damage: 15
-    columns: 02000000
-  - intervalSeconds: 2
+    rowCount: 2
+    arrowCount: 5
+    damage: 12
+  - intervalSeconds: 4.5
     triggerThreshold: 0
-    damage: 20
-    columns: 02000000
-  - intervalSeconds: 1.5
+    rowCount: 2
+    arrowCount: 6
+    damage: 14
+  - intervalSeconds: 5
     triggerThreshold: 0
-    damage: 30
-    columns: 02000000
-  - intervalSeconds: 1.5
-    triggerThreshold: 0
-    damage: 30
-    columns: 010000000200000003000000
-  timedArrowLevels: []
+    rowCount: 3
+    arrowCount: 7
+    damage: 16
   returnWaveLevels: []
   chainBounceLevels: []
   triggerParam: 0

@@ -22,5 +22,7 @@ MonoBehaviour:
     weight: 10
   - upgrade: {fileID: 11400000, guid: f1b74622f7f7d394cb36dbc89731662a, type: 2}
     weight: 10
+  - upgrade: {fileID: 11400000, guid: dc0cedf370225574297d20b47db525ce, type: 2}
+    weight: 10
   rarePool: []
   legendaryPool: []

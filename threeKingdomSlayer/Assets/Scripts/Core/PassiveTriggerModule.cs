@@ -3,47 +3,38 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 被动攻击型模块 — 单例
+/// 攻击计数触发模块 — 单例
 ///
-/// 监听 AttackSystem.OnAttackPerformed，为每个已注册的被动升级维护独立计数器。
-/// 计数器到达阈值时，按 effectType 分发到对应执行器：
-///   - passive_phantom_weapon: 依次执行 phantomSteps 中配置的幻影攻击
-///   - passive_return_wave:  触发折返波（当前攻击的波到达终点后折返再次命中）
-///   - passive_chain_bounce: 触发连锁弹射（命中敌人后弹射至同行最近敌人）
+/// 监听 AttackSystem.OnAttackPerformed，为每个已注册的升级维护独立计数器。
+/// 计数器到达阈值时（由 UpgradeDefinition.triggerMode=AttackCount 决定），
+/// 根据 effectType 分发到自包含的效果执行器。
+///
+/// 效果执行不再依赖攻击上下文（_lastAttackType 等已移除），
+/// 每个效果从自身每级配置读取所需的全部参数。
 /// </summary>
 public class PassiveTriggerModule : MonoBehaviour
 {
     public static PassiveTriggerModule Instance { get; private set; }
 
-    /// <summary>被动子类型标识，与 UpgradeDefinition.effectType 对齐</summary>
-    public enum PassiveKind
-    {
-        Phantom,     // passive_phantom_weapon — 通用幻影攻击
-        ReturnWave,  // passive_return_wave — 折返波
-        ChainBounce  // passive_chain_bounce — 连锁弹射
-    }
+    [Header("特效预制体")]
+    [Tooltip("喷火特效 prefab（effectType=passive_timed_aoe 被攻击计数触发时使用）")]
+    public GameObject fireEffectPrefab;
+    [Tooltip("箭雨特效 prefab（effectType=passive_timed_arrow 被攻击计数触发时使用）")]
+    public GameObject arrowEffectPrefab;
+
+    [Header("测试开关")]
+    [Tooltip("开启后所有效果每次攻击都触发（忽略配表阈值）")]
+    [SerializeField] private bool _forceTriggerEveryAttack;
 
     private class PassiveState
     {
         public UpgradeDefinition definition;
+        public int level;
         public int currentCount;
         public int threshold;
-        public List<PhantomStep> phantomSteps;
-        public PassiveKind kind;
-        public float damageRatio; // return_wave: 折返伤害比例; chain_bounce: 弹射伤害保留比例
-        public int maxBounces;    // chain_bounce 最大弹射次数
     }
 
-    [Header("测试开关")]
-    [Tooltip("开启后 ReturnWave/ChainBounce 每次攻击都触发（忽略配表的 intValue）")]
-    [SerializeField] private bool _forceTriggerEveryAttack;
-
     private Dictionary<string, PassiveState> _states = new Dictionary<string, PassiveState>();
-
-    // 攻击上下文 — 由 OnAttackPerformed 暂存，供效果执行时使用
-    private AttackType _lastAttackType;
-    private int _lastTargetColumn;
-    private bool _lastSlashLeftToRight;
 
     public System.Action<string, int> OnPassiveRegistered;   // upgradeId, threshold
     public System.Action<string> OnPassiveTriggered;         // upgradeId
@@ -72,10 +63,6 @@ public class PassiveTriggerModule : MonoBehaviour
 
     private void OnAttackPerformed(AttackType attackType, int targetColumn, bool slashLeftToRight)
     {
-        _lastAttackType = attackType;
-        _lastTargetColumn = targetColumn;
-        _lastSlashLeftToRight = slashLeftToRight;
-
         foreach (var kv in _states)
         {
             var state = kv.Value;
@@ -84,44 +71,112 @@ public class PassiveTriggerModule : MonoBehaviour
             if (state.currentCount >= state.threshold)
             {
                 state.currentCount = 0;
-
-                switch (state.kind)
-                {
-                    case PassiveKind.ReturnWave:
-                        StartCoroutine(ExecuteReturnWave(state));
-                        break;
-                    case PassiveKind.ChainBounce:
-                        StartCoroutine(ExecuteChainBounce(state));
-                        break;
-                    default:
-                        StartCoroutine(ExecutePhantoms(state));
-                        break;
-                }
+                DispatchEffect(state);
             }
         }
     }
 
-    private System.Collections.IEnumerator ExecutePhantoms(PassiveState state)
+    /// <summary>根据 effectType 分发到对应效果执行器</summary>
+    private void DispatchEffect(PassiveState state)
+    {
+        switch (state.definition.effectType)
+        {
+            case "passive_phantom_weapon":
+                StartCoroutine(ExecutePhantoms(state));
+                break;
+            case "passive_return_wave":
+                StartCoroutine(ExecuteReturnWave(state));
+                break;
+            case "passive_chain_bounce":
+                StartCoroutine(ExecuteChainBounce(state));
+                break;
+            case "passive_timed_aoe":
+                ExecuteFire(state);
+                break;
+            case "passive_timed_arrow":
+                ExecuteArrow(state);
+                break;
+            default:
+                Debug.LogWarning($"[PassiveTriggerModule] 未知 effectType: {state.definition.effectType}");
+                break;
+        }
+    }
+
+    // ══════════════════════════════════════════
+    // 注册 / 注销
+    // ══════════════════════════════════════════
+
+    public void Register(UpgradeDefinition def, int level)
+    {
+        if (def == null) return;
+
+        int threshold = _forceTriggerEveryAttack ? 1 : def.GetTriggerThreshold(level);
+        if (threshold <= 0)
+        {
+            Debug.LogWarning($"[PassiveTriggerModule] {def.upgradeId} Lv.{level} GetTriggerThreshold 返回 {threshold}，使用 intValue={def.intValue} 兜底");
+            threshold = def.intValue > 0 ? def.intValue : 4;
+        }
+
+        if (_states.TryGetValue(def.upgradeId, out var existing))
+        {
+            existing.threshold = threshold;
+            existing.level = level;
+            existing.definition = def;
+        }
+        else
+        {
+            _states[def.upgradeId] = new PassiveState
+            {
+                definition = def,
+                level = level,
+                currentCount = 0,
+                threshold = threshold
+            };
+        }
+
+        OnPassiveRegistered?.Invoke(def.upgradeId, threshold);
+        Debug.Log($"[PassiveTriggerModule] 注册: {def.displayName} Lv.{level} threshold={threshold} effectType={def.effectType}");
+    }
+
+    public void Unregister(string upgradeId)
+    {
+        _states.Remove(upgradeId);
+    }
+
+    public void ResetAll()
+    {
+        _states.Clear();
+    }
+
+    // ══════════════════════════════════════════
+    // 效果执行器（自包含，不依赖攻击上下文）
+    // ══════════════════════════════════════════
+
+    private IEnumerator ExecutePhantoms(PassiveState state)
     {
         if (AttackSystem.Instance == null)
         {
-            Debug.LogWarning("[PassiveTriggerModule] AttackSystem.Instance is null, 无法执行幻影");
-            yield break;
-        }
-        if (state.phantomSteps == null || state.phantomSteps.Count == 0)
-        {
-            Debug.LogWarning($"[PassiveTriggerModule] {state.definition.displayName} phantomSteps 为空");
+            Debug.LogWarning("[PassiveTriggerModule] AttackSystem.Instance is null");
             yield break;
         }
 
-        for (int i = 0; i < state.phantomSteps.Count; i++)
-        {
-            var step = state.phantomSteps[i];
+        var def = state.definition;
+        def.GetPhantomEffectConfig(state.level, out var attackType, out var targetColumn, out var steps);
 
-            // 首段之前的延迟
+        if (steps == null || steps.Count == 0)
+        {
+            Debug.LogWarning($"[PassiveTriggerModule] {def.displayName} phantomSteps 为空");
+            yield break;
+        }
+
+        // slashLeftToRight 根据列位置推断（col 1-2 向右，col 3 向左）
+        bool slashLeftToRight = targetColumn <= 2;
+
+        for (int i = 0; i < steps.Count; i++)
+        {
+            var step = steps[i];
             if (i == 0 && step.delaySeconds > 0f)
                 yield return new WaitForSeconds(step.delaySeconds);
-            // 段间延迟
             if (i > 0)
             {
                 float delay = step.delaySeconds > 0f ? step.delaySeconds : 0.15f;
@@ -131,127 +186,86 @@ public class PassiveTriggerModule : MonoBehaviour
             if (AttackSystem.Instance == null) yield break;
 
             bool hit = AttackSystem.Instance.ExecutePhantomAttack(
-                _lastAttackType, _lastTargetColumn, _lastSlashLeftToRight,
+                attackType, targetColumn, slashLeftToRight,
                 step.damageRatio, step.alpha);
+
             if (!hit)
-                Debug.LogWarning($"[PassiveTriggerModule] 幻影攻击未命中 (type={_lastAttackType} col={_lastTargetColumn} ratio={step.damageRatio})");
+                Debug.LogWarning($"[PassiveTriggerModule] 幻影未命中 (type={attackType} col={targetColumn} ratio={step.damageRatio})");
         }
 
-        OnPassiveTriggered?.Invoke(state.definition.upgradeId);
-        Debug.Log($"[PassiveTriggerModule] {state.definition.displayName} 触发, 幻影段数={state.phantomSteps.Count}, 攻击类型={_lastAttackType}");
+        OnPassiveTriggered?.Invoke(def.upgradeId);
+        Debug.Log($"[PassiveTriggerModule] 幻影触发: {def.displayName} steps={steps.Count} type={attackType} col={targetColumn}");
     }
 
-    /// <summary>注册被动升级（由 UpgradeEffectManager 调用）</summary>
-    public void Register(UpgradeDefinition def, int level)
-    {
-        if (def == null) return;
-
-        PassiveKind kind = ResolveKind(def.effectType);
-        int triggerParam;
-        List<PhantomStep> steps = null;
-        float damageRatio = def.floatValue;
-        int maxBounces = def.secondaryIntValue > 0 ? def.secondaryIntValue : 3;
-
-        if (kind == PassiveKind.Phantom)
-        {
-            def.GetPhantomConfig(level, out triggerParam, out steps);
-        }
-        else
-        {
-            triggerParam = _forceTriggerEveryAttack ? 1 : def.intValue;
-        }
-
-        if (_states.TryGetValue(def.upgradeId, out var existing))
-        {
-            existing.threshold = triggerParam;
-            existing.phantomSteps = steps;
-            existing.definition = def;
-            existing.kind = kind;
-            existing.damageRatio = damageRatio;
-            existing.maxBounces = maxBounces;
-        }
-        else
-        {
-            _states[def.upgradeId] = new PassiveState
-            {
-                definition = def,
-                currentCount = 0,
-                threshold = triggerParam,
-                phantomSteps = steps,
-                kind = kind,
-                damageRatio = damageRatio,
-                maxBounces = maxBounces
-            };
-        }
-
-        OnPassiveRegistered?.Invoke(def.upgradeId, triggerParam);
-        Debug.Log($"[PassiveTriggerModule] 注册被动: {def.displayName} Lv.{level} kind={kind} threshold={triggerParam}");
-    }
-
-    private static PassiveKind ResolveKind(string effectType)
-    {
-        switch (effectType)
-        {
-            case "passive_return_wave":  return PassiveKind.ReturnWave;
-            case "passive_chain_bounce": return PassiveKind.ChainBounce;
-            default:                     return PassiveKind.Phantom;
-        }
-    }
-
-    /// <summary>折返波：在当前攻击的波到达终点后，折返再次命中路径上所有敌人</summary>
-    private System.Collections.IEnumerator ExecuteReturnWave(PassiveState state)
+    private IEnumerator ExecuteReturnWave(PassiveState state)
     {
         if (AttackSystem.Instance == null) yield break;
 
-        // 折返波仅对 Pierce / Stab 有效
-        if (_lastAttackType != AttackType.Pierce && _lastAttackType != AttackType.Stab)
-        {
-            AttackSystem.Instance.ExecutePhantomAttack(
-                _lastAttackType, _lastTargetColumn, _lastSlashLeftToRight,
-                state.damageRatio, 0.6f);
-            yield break;
-        }
+        var def = state.definition;
+        int level = state.level;
+        var waveCfg = (def.returnWaveLevels != null && level <= def.returnWaveLevels.Count)
+            ? def.returnWaveLevels[level - 1]
+            : new ReturnWaveLevelConfig { column = 2, rangeRows = 2, damageRatio = def.floatValue };
 
-        int rangeRows = state.definition.intValue > 0 ? state.definition.intValue : 2;
+        int column = waveCfg.column > 0 ? waveCfg.column : 2;
+        int rangeRows = waveCfg.rangeRows > 0 ? waveCfg.rangeRows : 2;
+        float damageRatio = waveCfg.damageRatio > 0f ? waveCfg.damageRatio : def.floatValue;
+        bool slashLeftToRight = column <= 2;
+
         bool hit = AttackSystem.Instance.ExecuteReturnWave(
-            _lastAttackType, _lastTargetColumn, _lastSlashLeftToRight,
-            state.damageRatio, rangeRows);
+            AttackType.Pierce, column, slashLeftToRight,
+            damageRatio, rangeRows);
 
-        OnPassiveTriggered?.Invoke(state.definition.upgradeId);
-        Debug.Log($"[PassiveTriggerModule] 折返波触发: {state.definition.displayName} type={_lastAttackType} ratio={state.damageRatio} hit={hit}");
+        OnPassiveTriggered?.Invoke(def.upgradeId);
+        Debug.Log($"[PassiveTriggerModule] 折返波触发: {def.displayName} col={column} rows={rangeRows} ratio={damageRatio} hit={hit}");
     }
 
-    /// <summary>连锁弹射：命中敌人后弹射至同行最近敌人，最多弹射 N 次，每次递减伤害</summary>
-    private System.Collections.IEnumerator ExecuteChainBounce(PassiveState state)
+    private IEnumerator ExecuteChainBounce(PassiveState state)
     {
         if (AttackSystem.Instance == null) yield break;
 
-        // 连锁弹射仅对 Pierce / Stab 有效
-        if (_lastAttackType != AttackType.Pierce && _lastAttackType != AttackType.Stab)
-        {
-            AttackSystem.Instance.ExecutePhantomAttack(
-                _lastAttackType, _lastTargetColumn, _lastSlashLeftToRight,
-                state.damageRatio, 0.6f);
-            yield break;
-        }
+        var def = state.definition;
+        int level = state.level;
+        var bounceCfg = (def.chainBounceLevels != null && level <= def.chainBounceLevels.Count)
+            ? def.chainBounceLevels[level - 1]
+            : new ChainBounceLevelConfig { column = 2, maxBounces = 3, damageRatio = def.floatValue };
+
+        int column = bounceCfg.column > 0 ? bounceCfg.column : 2;
+        int maxBounces = bounceCfg.maxBounces > 0 ? bounceCfg.maxBounces : 3;
+        float damageRatio = bounceCfg.damageRatio > 0f ? bounceCfg.damageRatio : def.floatValue;
 
         bool hit = AttackSystem.Instance.ExecuteChainBounce(
-            _lastAttackType, _lastTargetColumn,
-            state.damageRatio, state.maxBounces);
+            AttackType.Pierce, column, damageRatio, maxBounces);
 
-        OnPassiveTriggered?.Invoke(state.definition.upgradeId);
-        Debug.Log($"[PassiveTriggerModule] 连锁弹射触发: {state.definition.displayName} col={_lastTargetColumn} ratio={state.damageRatio} maxBounces={state.maxBounces} hit={hit}");
+        OnPassiveTriggered?.Invoke(def.upgradeId);
+        Debug.Log($"[PassiveTriggerModule] 连锁弹射触发: {def.displayName} col={column} maxBounces={maxBounces} ratio={damageRatio} hit={hit}");
     }
 
-    /// <summary>注销被动升级</summary>
-    public void Unregister(string upgradeId)
+    private void ExecuteFire(PassiveState state)
     {
-        _states.Remove(upgradeId);
+        var def = state.definition;
+        if (def.timedAoeLevels == null || state.level > def.timedAoeLevels.Count) return;
+        var cfg = def.timedAoeLevels[state.level - 1];
+        if (cfg.columns == null || cfg.columns.Count == 0 || fireEffectPrefab == null) return;
+
+        var instance = Instantiate(fireEffectPrefab);
+        instance.GetComponent<ShootFireEffect>().Play(cfg.columns, cfg.damage);
+
+        OnPassiveTriggered?.Invoke(def.upgradeId);
+        Debug.Log($"[PassiveTriggerModule] 喷火触发: {def.displayName} damage={cfg.damage} cols=[{string.Join(",", cfg.columns)}]");
     }
 
-    /// <summary>重置所有被动状态（新对局）</summary>
-    public void ResetAll()
+    private void ExecuteArrow(PassiveState state)
     {
-        _states.Clear();
+        var def = state.definition;
+        if (def.timedArrowLevels == null || state.level > def.timedArrowLevels.Count) return;
+        var cfg = def.timedArrowLevels[state.level - 1];
+        if (arrowEffectPrefab == null) return;
+
+        var instance = Instantiate(arrowEffectPrefab);
+        instance.GetComponent<TimedArrowEffect>().Play(cfg.rowCount, cfg.arrowCount, cfg.damage);
+
+        OnPassiveTriggered?.Invoke(def.upgradeId);
+        Debug.Log($"[PassiveTriggerModule] 箭雨触发: {def.displayName} rows={cfg.rowCount} arrows={cfg.arrowCount} damage={cfg.damage}");
     }
 }
