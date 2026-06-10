@@ -32,8 +32,10 @@ public enum BossState
 [System.Serializable]
 public struct AttackStep
 {
-    [Tooltip("是否C技（霸体窗口 + CAttack动画trigger）")]
+    [Tooltip("是否C技（霸体窗口 + 红色描边）")]
     public bool isCAttack;
+    [Tooltip("动画Trigger名（空=默认Attack）")]
+    public string animationTrigger;
     [Tooltip("前摇时长（秒）")]
     public float spawnDuration;
     [Tooltip("收招时长（秒）")]
@@ -125,6 +127,25 @@ public class Enemy : MonoBehaviour
     public GameObject bossHealthBarPrefab;
     [System.NonSerialized] public BossState bossState = BossState.None;
     [System.NonSerialized] public SharedHealthGroup sharedHealthGroup;
+    [System.NonSerialized] public bool isSuperArmor;
+
+    [Header("BOSS多阶段")]
+    [Tooltip("各阶段配置（ScriptableObject引用），按 phaseIndex 排序")]
+    public List<BossPhaseData> bossPhases;
+    [System.NonSerialized] public int currentBossPhase = 0;
+    [System.NonSerialized] public bool isPhaseTransitioning;
+    private bool _healthLocked;
+
+    [Header("描边覆盖（0或Color.clear=使用全局默认）")]
+    [SerializeField] private Color outlineColorCOverride = Color.clear;
+    [SerializeField] private Color outlineColorSuperArmorOverride = Color.clear;
+    [SerializeField] private Color outlineColorQTEOverride = Color.clear;
+    [SerializeField] private float outlineWidthCOverride = 0f;
+    [SerializeField] private float outlineWidthSuperArmorOverride = 0f;
+    [SerializeField] private float outlineWidthQTEOverride = 0f;
+
+    [Header("调试")]
+    [SerializeField] private OutlineDebugMode debugForceOutline = OutlineDebugMode.None;
 
     [Header("弱点系统")]
     public float stabDamageMultiplier = 1f;
@@ -169,6 +190,7 @@ public class Enemy : MonoBehaviour
     public bool isAttackDrawPhase;  // 是否处于攻击收招阶段（不可被招架打断）
     public bool isCFrame;           // 是否处于C技起始帧（霸体窗口），仅 Parry/Launch 可打断
     private int _currentAttackStep;  // 攻击序列当前位置
+    private float actionCooldownTimer; // BOSS Idle 调度冷却计时器
     /// <summary> 当前攻击步骤的前摇时长（供 EnemySpriteController 读取） </summary>
     [System.NonSerialized] public float currentStepSpawnDuration;
 
@@ -226,6 +248,10 @@ public class Enemy : MonoBehaviour
     // QTE 控制器缓存
     private QTEController _qteController;
 
+    // 描边效果
+    private SpriteRenderer _spriteRenderer;
+    private MaterialPropertyBlock _propBlock;
+
     // 敌人物体原始缩放值（从预制体读取，用于攻击动画/死亡后还原）
     // 不能硬编码为 Vector3.one，因为不同敌人可能有不同默认缩放（如 0.5）
     private Vector3 originalScale;
@@ -250,6 +276,7 @@ public class Enemy : MonoBehaviour
     private void Awake()
     {
         renderers = GetComponentsInChildren<Renderer>();
+        _spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     /// <summary>
@@ -259,6 +286,7 @@ public class Enemy : MonoBehaviour
     private void OnEnable()
     {
         renderers = GetComponentsInChildren<Renderer>();
+        _spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     /// <summary>
@@ -277,6 +305,11 @@ public class Enemy : MonoBehaviour
         currentPoise = maxPoise;
         state = EnemyState.Idle;
         bossState = BossState.None;
+        isSuperArmor = false;
+        isPhaseTransitioning = false;
+        _healthLocked = false;
+        currentBossPhase = 0;
+        if (_phaseTransitionRoutine != null) { StopCoroutine(_phaseTransitionRoutine); _phaseTransitionRoutine = null; }
         stunTimer = 0f;
         launchTimer = 0f;
         _remainingStunOnLaunch = 0f;
@@ -287,6 +320,7 @@ public class Enemy : MonoBehaviour
         isAttackAnimating = false;
         isAttackDrawPhase = false;
         isCFrame = false;
+        UpdateOutlineState();
         _currentAttackStep = 0;
         moveProgress = 0f;
         isMovingToNextRow = false;
@@ -309,6 +343,13 @@ public class Enemy : MonoBehaviour
         // 缓存 Animator 和 SpriteController 引用
         _animator = GetComponent<Animator>();
         _spriteCtrl = GetComponent<EnemySpriteController>();
+
+        // 订阅 QTE 完成事件（BOSS 由 Idle 调度，QTE 完成后不依赖 QTEController 自管理冷却）
+        if (isBoss)
+        {
+            var qte = GetQTEController();
+            if (qte != null) qte.OnQTEAttackFinished += OnQTEAttackFinished;
+        }
 
         // 缓存 Attack AnimationClip（用于远程 DOTween 时长同步）
         _attackClip = null;
@@ -371,9 +412,13 @@ public class Enemy : MonoBehaviour
                 break;
             case EnemyState.Idle:
             default:
-                // Idle状态下什么都不做，等待外部调用 StartMoving()
-                // 注意：不要在这里自动调用 StartMoving()，否则会导致无限循环
-                // 因为 UpdateMovement() 完成后会设置 state = Idle
+                // BOSS Idle 调度：冷却计时结束后随机选择行动
+                if (isBoss && bossState == BossState.InCombat)
+                {
+                    actionCooldownTimer -= Time.deltaTime;
+                    if (actionCooldownTimer <= 0f)
+                        SelectBossAction();
+                }
                 break;
         }
 
@@ -400,7 +445,8 @@ public class Enemy : MonoBehaviour
                 bossState = BossState.InCombat;
                 Debug.Log($"[Enemy] Boss进入战斗（缓冲结束）: {DebugTag}, col={columnIndex}, row={rowIndex}");
                 OnBossEngaged?.Invoke(this);
-                StartAttacking();
+                // 进入 Idle 调度：等待 actionCooldownTimer 后开始行动
+                SetBossActionCooldown();
             }
         }
 
@@ -420,7 +466,7 @@ public class Enemy : MonoBehaviour
 
     #region 状态切换
 
-     /// <summary>
+    /// <summary>
     /// 开始向前移动（常规移动，基于 moveSpeed 秒数）
     /// BUG FIX: 当 rowIndex == 0 时，敌人已经到达最前排，不应再向前移动。
     /// 如果此时调用 StartMoving()，UpdateWorldPosition() 中 isMovingToNextRow == true 时，
@@ -529,22 +575,6 @@ public class Enemy : MonoBehaviour
     {
         if (state == EnemyState.Dead) return;
 
-        // 若 QTEController 正在等待攻击结束以触发 QTE，不要开始新攻击
-        if (isBoss)
-        {
-            var qte = GetQTEController();
-            if (qte != null && qte.State == QTEState.WaitingForAttackFinish)
-            {
-                // QTE 即将接手，等待 QTE 触发
-                // 但需要检查：如果 QTE 还在等待且当前没有攻击动画，立即通知
-                if (!isAttackAnimating)
-                {
-                    qte.OnEnemyAttackComplete();
-                }
-                return;
-            }
-        }
-
         // Boss 首次进入攻击状态：若尚未进入 InCombat，立即进入并创建血条
         if (isBoss && bossState == BossState.None)
         {
@@ -595,7 +625,12 @@ public class Enemy : MonoBehaviour
             UpdateWorldPosition();
         }
 
+        // 清除霸体状态，描边随之更新
+        isSuperArmor = false;
+        isCFrame = false;
+
         state = EnemyState.Stunned;
+        UpdateOutlineState();
         stunTimer = duration;
         _appliedStunDuration = duration;
         _poiseRecoveryEndTime = Time.time + duration;
@@ -628,6 +663,7 @@ public class Enemy : MonoBehaviour
         isAttackAnimating = false;
         isAttackDrawPhase = false;
         isCFrame = false;
+        UpdateOutlineState();
         isMovingToNextRow = false;
         pendingRushMove = false;
         // BUG FIX: 不重置 targetRow。当 Launch 攻击错开命中时，
@@ -674,8 +710,7 @@ public class Enemy : MonoBehaviour
 
     /// <summary>
     /// 打断当前攻击动作（招架触发）
-    /// 仅在 AttackSpawn 阶段可打断；AttackDraw 收招阶段不可打断，返回 false
-    /// 打断后返回攻击冷却阶段（非眩晕），等待 attackTimer 后重新攻击
+    /// BOSS: 回到 Idle 等待调度；非BOSS: 返回攻击冷却阶段
     /// </summary>
     public bool CancelAttack()
     {
@@ -695,13 +730,21 @@ public class Enemy : MonoBehaviour
         isAttackAnimating = false;
         isAttackDrawPhase = false;
         isCFrame = false;
+        UpdateOutlineState();
 
-        // 重置攻击冷却
-        float totalInterval = (1f / attackSpeed);
-        attackTimer = totalInterval * 0.4f;
-        if (attackTimer < 0.1f) attackTimer = 0.1f;
+        if (isBoss)
+        {
+            state = EnemyState.Idle;
+            SetBossActionCooldown();
+        }
+        else
+        {
+            float totalInterval = (1f / attackSpeed);
+            attackTimer = totalInterval * 0.4f;
+            if (attackTimer < 0.1f) attackTimer = 0.1f;
+        }
 
-        Debug.Log($"[Enemy] 打断攻击成功: {DebugTag}, col={columnIndex}, 返回冷却 {attackTimer:F2}s");
+        Debug.Log($"[Enemy] 打断攻击成功: {DebugTag}, col={columnIndex}");
         return true;
     }
 
@@ -728,7 +771,16 @@ public class Enemy : MonoBehaviour
         isMovingToNextRow = false;
 
         state = EnemyState.QTEAttacking;
+        UpdateOutlineState();
         Debug.Log($"[Enemy] 进入QTE攻击: {DebugTag}");
+    }
+
+    /// <summary>
+    /// QTE 攻击完成回调（状态已在 ExitQTEAttack 中处理）
+    /// </summary>
+    private void OnQTEAttackFinished()
+    {
+        Debug.Log($"[Enemy] QTE攻击完成: {DebugTag}");
     }
 
     /// <summary>
@@ -737,13 +789,25 @@ public class Enemy : MonoBehaviour
     public void ExitQTEAttack()
     {
         if (state != EnemyState.QTEAttacking) return;
-        state = EnemyState.Attacking;
-        // 重置攻击冷却
-        float totalInterval = (1f / attackSpeed);
-        attackTimer = totalInterval * 0.4f;
-        if (attackTimer < 0.1f) attackTimer = 0.1f;
         isAttackAnimating = false;
         isAttackDrawPhase = false;
+        isCFrame = false;
+
+        if (isBoss)
+        {
+            state = EnemyState.Idle;
+            var phase = GetCurrentPhaseData();
+            actionCooldownTimer = phase != null ? phase.postQTECooldown : 3f;
+        }
+        else
+        {
+            state = EnemyState.Attacking;
+            float totalInterval = (1f / attackSpeed);
+            attackTimer = totalInterval * 0.4f;
+            if (attackTimer < 0.1f) attackTimer = 0.1f;
+        }
+
+        UpdateOutlineState();
         Debug.Log($"[Enemy] 退出QTE攻击: {DebugTag}");
     }
 
@@ -780,7 +844,7 @@ public class Enemy : MonoBehaviour
             // Boss 就位后锁定位置，不参与补齐前移
             if (isBoss && (bossState == BossState.InCombat || _bossEngageTimer > 0f))
             {
-                StartAttacking();
+                SetBossActionCooldown();
             }
             else if (pendingRushMove)
             {
@@ -850,7 +914,7 @@ public class Enemy : MonoBehaviour
             if (isBoss && (bossState == BossState.InCombat || _bossEngageTimer > 0f))
             {
                 Debug.Log($"[Enemy] Boss落地锁定位置: {DebugTag}, col={columnIndex}, row={rowIndex}");
-                StartAttacking();
+                SetBossActionCooldown();
                 return;
             }
 
@@ -1208,7 +1272,9 @@ public class Enemy : MonoBehaviour
         isAttackAnimating = true;
         isAttackDrawPhase = false;
         isCFrame = isCAttack;
-        _animator?.SetTrigger(isCAttack ? "CAttack" : "Attack");
+        UpdateOutlineState();
+        string trigger = string.IsNullOrEmpty(step.animationTrigger) ? "Attack" : step.animationTrigger;
+        _animator?.SetTrigger(trigger);
 
         Vector3 startPos = transform.localPosition;
         Vector3 startScale = transform.localScale;
@@ -1248,6 +1314,7 @@ public class Enemy : MonoBehaviour
                 PerformAttack();
                 isAttackDrawPhase = true; // 进入收招阶段，此后不可被招架打断
                 isCFrame = false;          // 伤害帧结束霸体窗口
+                UpdateOutlineState();
             });
 
             // AttackDraw：后退到原位 + 翻转回正（不可被招架打断）
@@ -1256,23 +1323,26 @@ public class Enemy : MonoBehaviour
                 _attackTween.Join(transform.DOScaleX(startScale.x, drawDuration).SetEase(Ease.InQuad));
         }
 
-        // 收招完成 → 进入冷却阶段
+        // 收招完成
         _attackTween.OnComplete(() =>
         {
             _attackTween = null;
             isAttackAnimating = false;
             isAttackDrawPhase = false;
             isCFrame = false;
+            UpdateOutlineState();
 
-            float cooldown = totalInterval * 0.4f + extraCooldown;
-            if (cooldown < 0.1f) cooldown = 0.1f;
-            attackTimer = cooldown;
-
-            // 通知 QTEController 攻击完成（若 QTE 正在等待攻击结束）
             if (isBoss)
             {
-                var qte = GetQTEController();
-                if (qte != null) qte.OnEnemyAttackComplete();
+                // BOSS: 回到 Idle，由调度器选择下一个行动
+                state = EnemyState.Idle;
+                SetBossActionCooldown();
+            }
+            else
+            {
+                float cooldown = totalInterval * 0.4f + extraCooldown;
+                if (cooldown < 0.1f) cooldown = 0.1f;
+                attackTimer = cooldown;
             }
 
             // 攻击结束，Animator 直接回到 Idle（不用 SetTrigger）
@@ -1293,20 +1363,42 @@ public class Enemy : MonoBehaviour
     {
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
-        if (state == EnemyState.QTEAttacking) return; // QTE攻击期间不受伤害打断
+        if (isPhaseTransitioning) return; // 转阶段无敌
 
-        // ----- 攻击打断逻辑（必须在 sharedHealthGroup 之前，确保共享血量敌人也能被打断） -----
-        // 仅在 AttackSpawn 阶段可打断（AttackDraw 收招阶段不可打断）
+        // 锁血检查
+        if (_healthLocked) return;
+
+        // 转阶段血量阈值检查（在扣血前判断）
+        if (isBoss && bossPhases != null && currentBossPhase < bossPhases.Count - 1)
+        {
+            var nextPhase = bossPhases[currentBossPhase + 1];
+            if (nextPhase != null)
+            {
+                float hpPercent = currentHealth / maxHealth;
+                float dmgMultiplier = GetDamageMultiplier(damageType);
+                float dmgPercent = (damage * dmgMultiplier) / maxHealth;
+                if (hpPercent - dmgPercent <= nextPhase.triggerHealthPercent)
+                {
+                    currentHealth = nextPhase.triggerHealthPercent * maxHealth;
+                    EnterPhaseTransition(nextPhase);
+                    return;
+                }
+            }
+        }
+
+        // ----- 攻击打断逻辑 -----
+        // QTEAttacking: 不可被任何攻击打断（伤害照常结算）
+        // Attacking + AttackDraw: 不可打断
+        // Attacking + CFrame/SuperArmor: 仅Parry/Launch(canInterruptCFrame)可打断
+        // Attacking + 普通窗口: 任何攻击可打断
         if (state == EnemyState.Attacking && isAttackAnimating && !isAttackDrawPhase)
         {
-            if (isCFrame && !canInterruptCFrame)
+            if (!isSuperArmor && !isCFrame)
             {
-                // C技霸体窗口 + 非 Parry/Launch 伤害 → 弹刀反馈，不打断
-                PlayClankEffect();
+                CancelAttack();
             }
-            else
+            else if (canInterruptCFrame)
             {
-                // 普通攻击 或 C技+Parry/Launch → 打断
                 CancelAttack();
             }
         }
@@ -1438,31 +1530,7 @@ public class Enemy : MonoBehaviour
         _hitFlashRoutine = null;
     }
 
-    /// <summary>
-    /// 弹刀反馈：玩家攻击C技霸体敌人时的视觉/触觉反馈
-    /// 红色闪烁 + 水平抖动（区别于普通受击的白色闪白 + 缩放抖动）
-    /// </summary>
-    private void PlayClankEffect()
-    {
-        // 红色闪烁
-        if (flashMaterials != null)
-        {
-            foreach (var mat in flashMaterials)
-            {
-                if (mat != null) mat.color = new Color(1f, 0.3f, 0.15f); // 橙红
-            }
-        }
-        hitFlashTimer = 0.12f; // 比普通受击更短
 
-        // 水平抖动（区别于普通受击的缩放抖动）
-        string clankId = $"clank_{GetInstanceID()}";
-        DOTween.Kill(clankId);
-        transform.DOPunchPosition(new Vector3(0.15f, 0f, 0f), 0.12f, 4, 0.5f)
-            .SetTarget(transform)
-            .SetId(clankId);
-
-        Debug.Log($"[Enemy] 弹刀: {DebugTag}, C技霸体阻挡");
-    }
 
     /// <summary>
     /// 创建材质实例（用于闪白效果）
@@ -1505,13 +1573,15 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
-    /// 受到架势（Poise）伤害
+    /// 受到架势（Poise）伤害 — 仅 Parry 在敌人 Attacking 态时调用
     /// Poise 不会自动回复；归零时触发 STUN，STUN 结束后重置 Poise 到满值
     /// </summary>
     public bool TakePoiseDamage(float poiseDamage)
     {
         if (state == EnemyState.Dead) return false;
-        if (state == EnemyState.Stunned) return false; // 眩晕期间免疫架势伤害
+        if (state == EnemyState.Stunned) return false;
+        // 仅 Attacking 态可被 Parry 削韧
+        if (state != EnemyState.Attacking) return false;
         if (isBoss && bossState != BossState.InCombat) return false;
 
         currentPoise -= poiseDamage;
@@ -1527,33 +1597,36 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
-    /// 招架后检查血量百分比阈值，若低于阈值则眩晕
-    /// 取 healthPercent 最小（最严格）的匹配阈值，避免重复眩晕
+    /// QTE 专用 Poise 伤害 — 仅 QTEController 在 QTEAttacking 态时调用
+    /// interruptibleOnStun=true: Poise归零→触发Stun→QTEController中止QTE
+    /// interruptibleOnStun=false: Poise归零→播放受击硬直动画，Poise重置，QTE继续
     /// </summary>
-    public void CheckParryStunThresholds()
+    public bool TakeQTEPoiseDamage(float poiseDamage, bool interruptibleOnStun)
     {
-        if (state == EnemyState.Dead || state == EnemyState.Stunned || state == EnemyState.Launched) return;
-        // 仅 Boss 敌人才会因血量百分比触发招架眩晕
-        if (!isBoss) return;
-        if (parryStunThresholds == null || parryStunThresholds.Length == 0) return;
+        if (state == EnemyState.Dead) return false;
+        if (state != EnemyState.QTEAttacking) return false;
 
-        float healthPercent = currentHealth / maxHealth;
+        currentPoise -= poiseDamage;
+        OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
 
-        float bestHealthPercent = float.MaxValue;
-        float bestStunDuration = 0f;
-        foreach (var t in parryStunThresholds)
+        if (currentPoise <= 0f)
         {
-            if (healthPercent < t.healthPercent && t.healthPercent < bestHealthPercent)
+            currentPoise = 0f;
+            if (interruptibleOnStun)
             {
-                bestHealthPercent = t.healthPercent;
-                bestStunDuration = t.stunDuration;
+                Stun(stunDuration);
+                return true;
+            }
+            else
+            {
+                // QTE 继续：仅播放受击硬直，不改变状态
+                currentPoise = maxPoise;
+                OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
+                _animator?.SetTrigger("Hit");
+                return false;
             }
         }
-
-        if (bestStunDuration > 0f)
-        {
-            Stun(bestStunDuration);
-        }
+        return false;
     }
 
     /// <summary>
@@ -1563,12 +1636,12 @@ public class Enemy : MonoBehaviour
     {
         switch (damageType)
         {
-            case DamageType.Stab:   return stabDamageMultiplier;
-            case DamageType.Slash:  return slashDamageMultiplier;
+            case DamageType.Stab: return stabDamageMultiplier;
+            case DamageType.Slash: return slashDamageMultiplier;
             case DamageType.Pierce: return pierceDamageMultiplier;
-            case DamageType.Sweep:  return sweepDamageMultiplier;
+            case DamageType.Sweep: return sweepDamageMultiplier;
             case DamageType.Launch: return launchDamageMultiplier;
-            case DamageType.Poise:  return poiseDamageMultiplier;
+            case DamageType.Poise: return poiseDamageMultiplier;
             default: return 1f;
         }
     }
@@ -1587,6 +1660,7 @@ public class Enemy : MonoBehaviour
         if (state == EnemyState.Dead) return;
         bool wasLaunched = (state == EnemyState.Launched);
         state = EnemyState.Dead;
+        UpdateOutlineState();
         _animator?.SetTrigger("Dead");
 
         // BUG FIX: 取消正在执行的攻击 DOTween 动画
@@ -2250,6 +2324,257 @@ public class Enemy : MonoBehaviour
 
     #endregion
 
+    #region 描边系统
+
+    public enum OutlineDebugMode { None, CAttack, SuperArmor, QTE }
+
+    private const float OUTLINE_WIDTH_DEFAULT = 8f;
+    private static readonly Color OUTLINE_COLOR_C_DEFAULT = Color.red;
+    private static readonly Color OUTLINE_COLOR_SUPER_ARMOR_DEFAULT = new Color(1f, 0.5f, 0f); // 橙色
+    private static readonly Color OUTLINE_COLOR_QTE_DEFAULT = new Color(0.2f, 0.4f, 1f);        // 蓝色
+
+    void UpdateOutlineState()
+    {
+        if (_spriteRenderer == null) return;
+        if (_propBlock == null) _propBlock = new MaterialPropertyBlock();
+        _spriteRenderer.GetPropertyBlock(_propBlock);
+
+        // 死亡或转阶段时不显示描边
+        if (state == EnemyState.Dead || isPhaseTransitioning)
+        {
+            _propBlock.SetFloat("_OutlineEnabled", 0f);
+            _spriteRenderer.SetPropertyBlock(_propBlock);
+            return;
+        }
+
+        // 调试强制描边
+        if (debugForceOutline != OutlineDebugMode.None)
+        {
+            ApplyDebugOutline();
+            return;
+        }
+
+        if (isSuperArmor)
+        {
+            Color c = outlineColorSuperArmorOverride != Color.clear
+                ? outlineColorSuperArmorOverride : OUTLINE_COLOR_SUPER_ARMOR_DEFAULT;
+            float w = outlineWidthSuperArmorOverride > 0f ? outlineWidthSuperArmorOverride : OUTLINE_WIDTH_DEFAULT;
+            _propBlock.SetColor("_OutlineColor", c);
+            _propBlock.SetFloat("_OutlineWidth", w);
+            _propBlock.SetFloat("_OutlineEnabled", 1f);
+        }
+        else if (isCFrame && state == EnemyState.Attacking)
+        {
+            Color c = outlineColorCOverride != Color.clear
+                ? outlineColorCOverride : OUTLINE_COLOR_C_DEFAULT;
+            float w = outlineWidthCOverride > 0f ? outlineWidthCOverride : OUTLINE_WIDTH_DEFAULT;
+            _propBlock.SetColor("_OutlineColor", c);
+            _propBlock.SetFloat("_OutlineWidth", w);
+            _propBlock.SetFloat("_OutlineEnabled", 1f);
+        }
+        else if (state == EnemyState.QTEAttacking)
+        {
+            Color c = outlineColorQTEOverride != Color.clear
+                ? outlineColorQTEOverride : OUTLINE_COLOR_QTE_DEFAULT;
+            float w = outlineWidthQTEOverride > 0f ? outlineWidthQTEOverride : OUTLINE_WIDTH_DEFAULT;
+            _propBlock.SetColor("_OutlineColor", c);
+            _propBlock.SetFloat("_OutlineWidth", w);
+            _propBlock.SetFloat("_OutlineEnabled", 1f);
+        }
+        else
+        {
+            _propBlock.SetFloat("_OutlineEnabled", 0f);
+        }
+
+        _spriteRenderer.SetPropertyBlock(_propBlock);
+    }
+
+    void ApplyDebugOutline()
+    {
+        Color c; float w;
+        switch (debugForceOutline)
+        {
+            case OutlineDebugMode.CAttack:
+                c = outlineColorCOverride != Color.clear ? outlineColorCOverride : OUTLINE_COLOR_C_DEFAULT;
+                w = outlineWidthCOverride > 0f ? outlineWidthCOverride : OUTLINE_WIDTH_DEFAULT;
+                break;
+            case OutlineDebugMode.SuperArmor:
+                c = outlineColorSuperArmorOverride != Color.clear ? outlineColorSuperArmorOverride : OUTLINE_COLOR_SUPER_ARMOR_DEFAULT;
+                w = outlineWidthSuperArmorOverride > 0f ? outlineWidthSuperArmorOverride : OUTLINE_WIDTH_DEFAULT;
+                break;
+            case OutlineDebugMode.QTE:
+                c = outlineColorQTEOverride != Color.clear ? outlineColorQTEOverride : OUTLINE_COLOR_QTE_DEFAULT;
+                w = outlineWidthQTEOverride > 0f ? outlineWidthQTEOverride : OUTLINE_WIDTH_DEFAULT;
+                break;
+            default: return;
+        }
+        _propBlock.SetColor("_OutlineColor", c);
+        _propBlock.SetFloat("_OutlineWidth", w);
+        _propBlock.SetFloat("_OutlineEnabled", 1f);
+        _spriteRenderer.SetPropertyBlock(_propBlock);
+    }
+
+    #endregion
+
+    #region BOSS多阶段系统
+
+    private Coroutine _phaseTransitionRoutine;
+
+    /// <summary>
+    /// 获取当前阶段的 BossPhaseData
+    /// </summary>
+    private BossPhaseData GetCurrentPhaseData()
+    {
+        if (!isBoss || bossPhases == null || bossPhases.Count == 0) return null;
+        if (currentBossPhase < 0 || currentBossPhase >= bossPhases.Count) return null;
+        return bossPhases[currentBossPhase];
+    }
+
+    /// <summary>
+    /// 设置 BOSS Idle 行动冷却计时器（从当前阶段的 actionInterval 随机取值）
+    /// </summary>
+    private void SetBossActionCooldown()
+    {
+        var phase = GetCurrentPhaseData();
+        if (phase != null)
+            actionCooldownTimer = Random.Range(phase.actionInterval.x, phase.actionInterval.y);
+        else
+            actionCooldownTimer = Random.Range(0.3f, 1f);
+    }
+
+    /// <summary>
+    /// BOSS Idle 调度：加权随机选择下一个行动（Attack/CAttack/QTE）
+    /// </summary>
+    private void SelectBossAction()
+    {
+        if (state != EnemyState.Idle) return;
+        var phase = GetCurrentPhaseData();
+        if (phase == null)
+        {
+            StartAttacking();
+            return;
+        }
+
+        float totalWeight = phase.normalAttackWeight + phase.cAttackWeight + phase.qteWeight;
+        if (totalWeight <= 0f)
+        {
+            StartAttacking();
+            return;
+        }
+
+        float roll = Random.Range(0f, totalWeight);
+
+        if (roll < phase.normalAttackWeight)
+        {
+            // 普通攻击
+            StartAttacking();
+        }
+        else if (roll < phase.normalAttackWeight + phase.cAttackWeight)
+        {
+            // C技
+            StartAttacking();
+        }
+        else
+        {
+            // QTE
+            var qte = GetQTEController();
+            if (qte != null && qte.TriggerQTEAttack())
+            {
+                // QTE 成功触发，QTEController 内部调用 EnterQTEAttack()
+                // 冷却在 ExitQTEAttack() 中设置
+                return;
+            }
+            // QTE 触发失败（序列耗尽/眩晕等），回 Idle 等冷却
+            SetBossActionCooldown();
+        }
+    }
+
+    private void EnterPhaseTransition(BossPhaseData nextPhase)
+    {
+        _healthLocked = true;
+        isPhaseTransitioning = true;
+
+        Debug.Log($"[Enemy] BOSS转阶段: {DebugTag}, phase={currentBossPhase} → {nextPhase.phaseIndex} ({nextPhase.phaseName})");
+
+        // 打断当前攻击
+        if (_attackTween != null && _attackTween.IsActive())
+        {
+            _attackTween.Kill();
+            _attackTween = null;
+        }
+        transform.DOKill(false);
+        isAttackAnimating = false;
+        isAttackDrawPhase = false;
+        isCFrame = false;
+        UpdateOutlineState();
+
+        if (_phaseTransitionRoutine != null)
+            StopCoroutine(_phaseTransitionRoutine);
+        _phaseTransitionRoutine = StartCoroutine(PhaseTransitionSequence(nextPhase));
+    }
+
+    private System.Collections.IEnumerator PhaseTransitionSequence(BossPhaseData nextPhase)
+    {
+        // 若处于击飞状态：等待落地
+        while (state == EnemyState.Launched)
+        {
+            yield return null;
+        }
+
+        // 设置无敌：切换到 Idle 状态
+        state = EnemyState.Idle;
+
+        // 播放转阶段动画
+        if (_animator != null && !string.IsNullOrEmpty(nextPhase.transitionTriggerName))
+        {
+            _animator.SetTrigger(nextPhase.transitionTriggerName);
+            yield return new WaitForSeconds(nextPhase.transitionDuration);
+        }
+
+        CompletePhaseTransition(nextPhase);
+    }
+
+    private void CompletePhaseTransition(BossPhaseData nextPhase)
+    {
+        int newPhaseIndex = nextPhase.phaseIndex;
+
+        // 应用新阶段配置
+        if (nextPhase.attackSequence != null && nextPhase.attackSequence.Count > 0)
+            attackSequence = nextPhase.attackSequence;
+
+        stabDamageMultiplier = nextPhase.stabDamageMultiplier;
+        slashDamageMultiplier = nextPhase.slashDamageMultiplier;
+        pierceDamageMultiplier = nextPhase.pierceDamageMultiplier;
+        sweepDamageMultiplier = nextPhase.sweepDamageMultiplier;
+        launchDamageMultiplier = nextPhase.launchDamageMultiplier;
+        poiseDamageMultiplier = nextPhase.poiseDamageMultiplier;
+
+        isSuperArmor = nextPhase.isSuperArmor;
+
+        // 切换 QTE 数据
+        if (nextPhase.qteData != null)
+        {
+            var qte = GetQTEController();
+            if (qte != null)
+                qte.SwitchQteData(nextPhase.qteData);
+        }
+
+        currentBossPhase = newPhaseIndex;
+        _healthLocked = false;
+        isPhaseTransitioning = false;
+        _currentAttackStep = 0;
+        state = EnemyState.Idle;
+        isAttackAnimating = false;
+        isAttackDrawPhase = false;
+        SetBossActionCooldown();
+
+        UpdateOutlineState();
+
+        Debug.Log($"[Enemy] BOSS转阶段完成: {DebugTag}, phase={currentBossPhase} ({nextPhase.phaseName}), superArmor={isSuperArmor}");
+    }
+
+    #endregion
+
     #region 对象池
 
     private void OnDisable()
@@ -2269,6 +2594,11 @@ public class Enemy : MonoBehaviour
         currentHealth = 0f;
         currentPoise = 0f;
         initialized = false;
+        isSuperArmor = false;
+        isPhaseTransitioning = false;
+        _healthLocked = false;
+        currentBossPhase = 0;
+        if (_phaseTransitionRoutine != null) { StopCoroutine(_phaseTransitionRoutine); _phaseTransitionRoutine = null; }
         // 清理 Boss 分阶段推进订阅
         if (_onColumnsModifiedHandler != null)
         {
@@ -2276,6 +2606,12 @@ public class Enemy : MonoBehaviour
             if (cm != null)
                 cm.OnColumnsModified -= _onColumnsModifiedHandler;
             _onColumnsModifiedHandler = null;
+        }
+        // 清理 QTE 完成事件订阅
+        if (isBoss)
+        {
+            var qte = GetQTEController();
+            if (qte != null) qte.OnQTEAttackFinished -= OnQTEAttackFinished;
         }
         bossState = BossState.None;
         sharedHealthGroup = null;

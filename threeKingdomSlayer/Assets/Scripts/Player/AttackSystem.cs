@@ -211,8 +211,6 @@ public class AttackSystem : MonoBehaviour
             AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
                 onHit: (enemy) =>
                 {
-                    enemy.TakePoiseDamage(cfg.poiseDamage);
-
                     bool canLaunch = enemy.CanBeLaunched();
                     // 概率击飞：非 CanBeLaunched 时按概率强制进入 Stun 后再 Launch
                     if (!canLaunch && probLaunchActive)
@@ -273,9 +271,7 @@ public class AttackSystem : MonoBehaviour
         {
             // TakeDamage 内部处理打断逻辑（canInterruptCFrame=true 可打断C技霸体）
             enemy.TakeDamage(finalDmg, cfg.damageType, canInterruptCFrame: true);
-            if (enemy.isBoss)
-                enemy.TakePoiseDamage(cfg.poiseDamage);
-            enemy.CheckParryStunThresholds();
+            enemy.TakePoiseDamage(cfg.poiseDamage);
         }
 
         Debug.Log($"[AttackSystem] 招架 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 目标数:{targets.Count}");
@@ -477,7 +473,6 @@ public class AttackSystem : MonoBehaviour
                     AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
                         onHit: (enemy) =>
                         {
-                            enemy.TakePoiseDamage(cfg.poiseDamage * damageRatio);
                             bool canLaunch = enemy.CanBeLaunched();
                             if (!canLaunch && probLaunchActive && Random.value < 0.3f)
                             {

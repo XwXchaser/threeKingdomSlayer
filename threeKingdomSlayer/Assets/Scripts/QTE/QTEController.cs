@@ -3,8 +3,8 @@ using UnityEngine;
 using DG.Tweening;
 
 /// <summary>
-/// QTE 状态机
-/// Idle → CoolingDown → WaitingForAttackFinish → PerformingQTEAttack → QTEJudging → QTECompleted → CoolingDown
+/// QTE 状态机（由 Enemy 的 Idle 调度触发，不再自行管理冷却）
+/// Idle → PerformingQTEAttack → QTEJudging → QTECompleted → Idle
 ///
 /// QTE 阶段概念：
 ///   - PerformingQTEAttack: 等待 QTE 阶段开始（飞行物到达 / 动画前摇结束）
@@ -14,8 +14,6 @@ using DG.Tweening;
 public enum QTEState
 {
     Idle,
-    CoolingDown,
-    WaitingForAttackFinish,
     PerformingQTEAttack,
     QTEJudging,
     QTECompleted
@@ -52,7 +50,7 @@ public class QTEController : MonoBehaviour
     [SerializeField] private QTEState _state = QTEState.Idle;
 
     private int _currentAttackIndex;
-    private float _qteTimer;              // 攻击开始后的通用计时器
+    private float _performingTimer;       // Performing 阶段的累计时间（用于动画前摇）
     private bool _qtePhaseStarted;        // QTE 阶段是否已开始（飞行物到达 / 动画前摇结束）
     private float _qtePhaseTimer;         // QTE 阶段开始后的计时器（用于 QTE spawn/judge）
     private QTEAttackConfig _currentAttack;
@@ -67,8 +65,10 @@ public class QTEController : MonoBehaviour
     public System.Action OnQTESuccess;         // QTE 判定成功
     public System.Action OnQTEFailure;         // QTE 判定失败
     public System.Action OnQTECompleted;       // 一轮 QTE 攻击结束
+    public System.Action OnQTEAttackFinished;  // QTE 攻击完全结束，通知 Enemy 回到 Idle
 
     public QTEState State => _state;
+    public QTEAttackConfig CurrentAttackConfig => _currentAttack;
 
     private void Awake()
     {
@@ -77,28 +77,17 @@ public class QTEController : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log($"[QTEController] Start: enemy={enemy?.name}, isBoss={enemy?.isBoss}, bossState={enemy?.bossState}, qteData={qteData?.name}, qteAttacksCount={qteData?.qteAttacks?.Count}");
+        Debug.Log($"[QTEController] Start: enemy={enemy?.name}, isBoss={enemy?.isBoss}, qteData={qteData?.name}, qteAttacksCount={qteData?.qteAttacks?.Count}");
         if (enemy != null && enemy.isBoss)
         {
-            enemy.OnBossEngaged += OnBossEngaged;
-            Debug.Log($"[QTEController] 已订阅 OnBossEngaged, bossState={enemy.bossState}");
-            // 若 Boss 在 Start() 之前已进入战斗（如 StartBossPhaseAdvance 在 RegisterEnemy 中
-            // 先于本 Start 触发 OnBossEngaged），补启动 QTE 冷却
-            if (enemy.bossState == BossState.InCombat)
-            {
-                Debug.Log("[QTEController] 补触发 OnBossEngaged（Start时已在InCombat）");
-                OnBossEngaged(enemy);
-            }
-        }
-        else
-        {
-            Debug.LogWarning($"[QTEController] Start跳过: enemy={(enemy==null?"null":"notBoss")}");
+            // 初始化 QTE 攻击索引（由 Enemy 的 Idle 调度决定何时触发 QTE）
+            if (qteData != null && qteData.qteAttacks.Count > 0)
+                _currentAttackIndex = 0;
         }
     }
 
     private void OnDestroy()
     {
-        if (enemy != null) enemy.OnBossEngaged -= OnBossEngaged;
         KillProjectileSequence();
     }
 
@@ -106,11 +95,17 @@ public class QTEController : MonoBehaviour
     {
         if (qteData == null || enemy == null) return;
 
+        // 敌人脱离 QTE 状态（如被打入 Stun），中止 QTE
+        if ((_state == QTEState.PerformingQTEAttack || _state == QTEState.QTEJudging)
+            && enemy.state != EnemyState.QTEAttacking)
+        {
+            Debug.Log($"[QTEController] 敌人脱离QTE状态({enemy.state})，中止QTE");
+            AbortQTE();
+            return;
+        }
+
         switch (_state)
         {
-            case QTEState.CoolingDown:
-                UpdateCooldown();
-                break;
             case QTEState.PerformingQTEAttack:
                 UpdatePerforming();
                 break;
@@ -122,63 +117,46 @@ public class QTEController : MonoBehaviour
 
     #region 状态切换
 
-    private void OnBossEngaged(Enemy boss)
+    /// <summary>
+    /// 切换 QTE 数据（用于 BOSS 转阶段时更换 QTE 配置）
+    /// 重置攻击索引，回到 Idle 状态
+    /// </summary>
+    public void SwitchQteData(BossQTEData newData)
     {
-        Debug.Log($"[QTEController] OnBossEngaged: qteData={qteData?.name}, attacksCount={qteData?.qteAttacks?.Count}");
-        if (qteData == null || qteData.qteAttacks.Count == 0)
-        {
-            Debug.LogWarning("[QTEController] OnBossEngaged 跳过: qteData为空或无qteAttacks");
-            return;
-        }
+        qteData = newData;
         _currentAttackIndex = 0;
-        Debug.Log($"[QTEController] 开始QTE冷却: firstQTECooldown={qteData.firstQTECooldown}s");
-        StartCooldown(qteData.firstQTECooldown);
+        _state = QTEState.Idle;
+        _activeQTEs.Clear();
+        Debug.Log($"[QTEController] 切换QTE数据: {newData?.name}, state={_state}");
     }
 
-    private void StartCooldown(float duration)
+    /// <summary>
+    /// 触发下一轮 QTE 攻击（由 Enemy 的 Idle 调度调用）
+    /// 返回 false 表示当前无法触发（QTE 序列已耗尽、敌人在眩晕/击飞中等）
+    /// </summary>
+    public bool TriggerQTEAttack()
     {
-        Debug.Log($"[QTEController] StartCooldown: {duration}s, 状态 {_state} → CoolingDown");
-        _state = QTEState.CoolingDown;
-        _qteTimer = duration;
-    }
+        Debug.Log($"[QTEController] TriggerQTEAttack: attackIndex={_currentAttackIndex}, totalAttacks={qteData?.qteAttacks?.Count}");
+        if (qteData == null || qteData.qteAttacks.Count == 0) return false;
 
-    private void UpdateCooldown()
-    {
-        _qteTimer -= Time.deltaTime;
-        if (_qteTimer <= 0f)
+        // 眩晕/击飞期间禁止触发QTE
+        if (enemy.state == EnemyState.Stunned || enemy.state == EnemyState.Launched)
         {
-            Debug.Log($"[QTEController] 冷却结束, isAttackAnimating={enemy.isAttackAnimating}");
-            if (enemy.isAttackAnimating)
-            {
-                Debug.Log("[QTEController] 等待当前攻击完成...");
-                _state = QTEState.WaitingForAttackFinish;
-            }
-            else
-            {
-                Debug.Log("[QTEController] 触发QTE攻击");
-                TriggerQTEAttack();
-            }
+            Debug.Log($"[QTEController] 敌人在眩晕/击飞状态({enemy.state})，跳过QTE");
+            return false;
         }
-    }
 
-    public void OnEnemyAttackComplete()
-    {
-        Debug.Log($"[QTEController] OnEnemyAttackComplete: state={_state}");
-        if (_state == QTEState.WaitingForAttackFinish)
+        // QTE 序列已耗尽（非循环模式）
+        if (_currentAttackIndex >= qteData.qteAttacks.Count)
         {
-            Debug.Log("[QTEController] 攻击完成，触发QTE攻击");
-            TriggerQTEAttack();
+            Debug.Log("[QTEController] QTE序列已耗尽");
+            return false;
         }
-    }
 
-    private void TriggerQTEAttack()
-    {
-        Debug.Log($"[QTEController] TriggerQTEAttack: attackIndex={_currentAttackIndex}, totalAttacks={qteData.qteAttacks.Count}");
-        if (qteData == null || qteData.qteAttacks.Count == 0) return;
         _currentAttack = qteData.qteAttacks[_currentAttackIndex];
         Debug.Log($"[QTEController] 当前攻击: {_currentAttack?.name}, slots={_currentAttack?.qteSlots?.Count}");
         _state = QTEState.PerformingQTEAttack;
-        _qteTimer = 0f;
+        _performingTimer = 0f;
         _qtePhaseStarted = false;
         _qtePhaseTimer = 0f;
         _activeQTEs.Clear();
@@ -202,6 +180,7 @@ public class QTEController : MonoBehaviour
         StartQTEAnimation();
         SpawnProjectile();
         OnQTETriggered?.Invoke();
+        return true;
     }
 
     private void SpawnProjectile()
@@ -288,12 +267,12 @@ public class QTEController : MonoBehaviour
 
     private void UpdatePerforming()
     {
-        _qteTimer += Time.deltaTime;
+        _performingTimer += Time.deltaTime;
 
         if (!_qtePhaseStarted)
         {
             // 无飞行物时，等待动画前摇结束后开始 QTE 阶段
-            if (_activeProjectile == null && _qteTimer >= _currentAttack.animationLeadTime)
+            if (_activeProjectile == null && _performingTimer >= _currentAttack.animationLeadTime)
                 StartQTEPhase();
             // 有飞行物：等待 OnProjectileReachedTarget 回调
             return;
@@ -537,8 +516,8 @@ public class QTEController : MonoBehaviour
 
     private void OnQTESuccessSingle(QTEInstance qte)
     {
-        if (enemy != null)
-            enemy.TakePoiseDamage(qte.config.poiseDamage);
+        if (enemy != null && _currentAttack != null)
+            enemy.TakeQTEPoiseDamage(qte.config.poiseDamage, _currentAttack.interruptibleOnStun);
 
         if (UltimateSystem.Instance != null)
             UltimateSystem.Instance.AddEnergy(qte.config.ultimateEnergyGain);
@@ -557,6 +536,31 @@ public class QTEController : MonoBehaviour
     #endregion
 
     #region QTE 攻击收尾
+
+    /// <summary>
+    /// 中止 QTE（敌人被打入 Stun/Launch 等非 QTEAttacking 状态）
+    /// </summary>
+    private void AbortQTE()
+    {
+        // 清理飞行物
+        if (_activeProjectile != null)
+        {
+            var proj = _activeProjectile.GetComponent<QTEProjectile>();
+            if (proj != null) proj.ContinuePassThrough(0.5f, null);
+            else Destroy(_activeProjectile);
+            _activeProjectile = null;
+        }
+
+        StopQTEAnimation();
+
+        if (qteDisplay != null)
+            qteDisplay.ClearAllIndicators();
+
+        _activeQTEs.Clear();
+        _state = QTEState.Idle;
+        OnQTEAttackFinished?.Invoke();
+        Debug.Log("[QTEController] QTE已中止");
+    }
 
     private void CompleteQTEAttack()
     {
@@ -611,13 +615,14 @@ public class QTEController : MonoBehaviour
             {
                 _state = QTEState.Idle;
                 OnQTECompleted?.Invoke();
+                OnQTEAttackFinished?.Invoke();
                 return;
             }
         }
 
-        float cooldown = _currentAttack != null ? _currentAttack.cooldownAfterQTE : qteData.baseQTECooldown;
-        StartCooldown(cooldown);
+        _state = QTEState.Idle;
         OnQTECompleted?.Invoke();
+        OnQTEAttackFinished?.Invoke();
     }
 
     #endregion

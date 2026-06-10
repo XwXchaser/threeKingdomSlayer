@@ -169,6 +169,7 @@ Transform:
   - {fileID: 607903097}
   - {fileID: 504026496}
   - {fileID: 1078917952}
+  - {fileID: 1593080085}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5137000
@@ -8307,12 +8308,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1593080083}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 5136999}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!82 &1593080086
 AudioSource:
@@ -9613,7 +9614,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1809121295}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c092aa791d152ec4f930c9ecccedc33a, type: 3}
+  m_Script: {fileID: 11500000, guid: e9fedf50717ef4f4888e9b2276a05cf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   enablePushWave: 1
@@ -11568,4 +11569,3 @@ SceneRoots:
   - {fileID: 707156182}
   - {fileID: 1388805521}
   - {fileID: 806637284}
-  - {fileID: 1593080085}

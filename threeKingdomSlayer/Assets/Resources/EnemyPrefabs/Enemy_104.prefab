@@ -57,12 +57,26 @@ MonoBehaviour:
   attackSpeed: 0.2
   attackDamage: 10
   attackRange: 1
-  attackSpawnDuration: 2
-  attackDrawDuration: 1
-  useAttackFlip: 0
   moveSpeed: 0.3
-  cAttackProbability: 0
-  cAttackSpawnDuration: 0.6
+  attackSequence:
+  - isCAttack: 0
+    animationTrigger: 
+    spawnDuration: 0.6
+    drawDuration: 0.4
+    extraCooldown: 0
+    useFlip: 0
+  - isCAttack: 1
+    animationTrigger: 
+    spawnDuration: 0.8
+    drawDuration: 0.5
+    extraCooldown: 0.2
+    useFlip: 0
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileXOffset: 0
   shareHealthWithAdjacent: 0
   maxPoise: 200
   stunDuration: 5
@@ -78,6 +92,17 @@ MonoBehaviour:
   gemSprite: {fileID: 0}
   isBoss: 1
   bossHealthBarPrefab: {fileID: 3365436119990249603, guid: 9a1fc4950f5206a4bb1f8a56c5ef9c61, type: 3}
+  bossPhases:
+  - {fileID: 11400000, guid: 33e32411381c8be4db000afef3545d45, type: 2}
+  - {fileID: 11400000, guid: b2fdbfe73b7f858428c1fcf02b93c785, type: 2}
+  - {fileID: 11400000, guid: c7a65195a628dd84698e8766810f8f61, type: 2}
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
   stabDamageMultiplier: 1
   slashDamageMultiplier: 1
   pierceDamageMultiplier: 1
@@ -119,7 +144,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: f39efea07db45cd4ca7325f3d232b155, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
