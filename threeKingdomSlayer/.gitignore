@@ -1,13 +1,5 @@
 .apk
 
-# Wwise 工程 — 临时文件
-threeKingdomSlayer_WwiseProject/.cache/
-threeKingdomSlayer_WwiseProject/Originals/
-threeKingdomSlayer_WwiseProject/.backup/
-threeKingdomSlayer_WwiseProject/WwiseProfiler/
-
-# Wwise — 用户本地配置
-Assets/Wwise/LauncherInfo.json
 
 # Unity 临时文件
 [Dd]ebug/

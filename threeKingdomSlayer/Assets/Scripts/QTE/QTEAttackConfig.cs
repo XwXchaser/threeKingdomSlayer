@@ -41,6 +41,10 @@ public class QTEAttackConfig : ScriptableObject
     [Tooltip("飞行物目标位置的 Z 轴偏移（相对于第一排敌人位置）")]
     public float projectileTargetZ = -2f;
 
+    [Header("打断")]
+    [Tooltip("QTE 攻击是否可被 stun 打断")]
+    public bool interruptibleOnStun = true;
+
     [Header("冷却")]
     [Tooltip("QTE 攻击结束后的冷却时间（秒）")]
     public float cooldownAfterQTE = 3f;
