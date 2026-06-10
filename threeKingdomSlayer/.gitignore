@@ -11,6 +11,7 @@ Assets/Wwise/LauncherInfo.json
 
 # Unity 临时文件
 [Dd]ebug/
+!Assets/Scripts/Debug/
 [Bb]uild/
 [Oo]bj/
 [Tt]emp/
