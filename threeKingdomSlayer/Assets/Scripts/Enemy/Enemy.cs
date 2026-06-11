@@ -634,6 +634,10 @@ public class Enemy : MonoBehaviour
         stunTimer = duration;
         _appliedStunDuration = duration;
         _poiseRecoveryEndTime = Time.time + duration;
+
+        // BOSS: 播放眩晕动画
+        if (isBoss)
+            _animator?.Play("Stun", 0, 0f);
     }
 
     /// <summary>
