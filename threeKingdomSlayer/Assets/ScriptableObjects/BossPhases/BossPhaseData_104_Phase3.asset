@@ -17,18 +17,23 @@ MonoBehaviour:
   triggerHealthPercent: 0.3
   attackSequence:
   - isCAttack: 0
-    animationTrigger: 
+    animationTrigger: Attack
     spawnDuration: 0.6
     drawDuration: 0.4
     extraCooldown: 0
     useFlip: 0
   - isCAttack: 1
-    animationTrigger: 
+    animationTrigger: CAttack
     spawnDuration: 0.8
     drawDuration: 0.5
     extraCooldown: 0.2
     useFlip: 0
-  qteData: {fileID: 11400000, guid: 6812898a4865fa14aa4f2f901f749c5e, type: 2}
+  qteData: {fileID: 11400000, guid: 5ada192070798544493fdeb047be0da8, type: 2}
+  normalAttackWeight: 1
+  cAttackWeight: 1
+  qteWeight: 0.5
+  actionInterval: {x: 0.3, y: 1}
+  postQTECooldown: 5
   isSuperArmor: 1
   stabDamageMultiplier: 1
   slashDamageMultiplier: 1
@@ -36,5 +41,5 @@ MonoBehaviour:
   sweepDamageMultiplier: 1
   launchDamageMultiplier: 1
   poiseDamageMultiplier: 1
-  transitionTriggerName: 
+  transitionTriggerName: Phase3
   transitionDuration: 1.5

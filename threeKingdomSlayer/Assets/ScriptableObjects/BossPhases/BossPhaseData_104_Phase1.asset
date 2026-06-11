@@ -17,18 +17,23 @@ MonoBehaviour:
   triggerHealthPercent: 1
   attackSequence:
   - isCAttack: 0
-    animationTrigger: 
+    animationTrigger: Attack
     spawnDuration: 0.6
     drawDuration: 0.4
     extraCooldown: 0
     useFlip: 0
   - isCAttack: 1
-    animationTrigger: 
+    animationTrigger: CAttack
     spawnDuration: 0.8
     drawDuration: 0.5
     extraCooldown: 0.2
     useFlip: 0
-  qteData: {fileID: 11400000, guid: 6812898a4865fa14aa4f2f901f749c5e, type: 2}
+  qteData: {fileID: 11400000, guid: d124e686222d19848827f89c01e30150, type: 2}
+  normalAttackWeight: 1
+  cAttackWeight: 1
+  qteWeight: 0.5
+  actionInterval: {x: 0.3, y: 1}
+  postQTECooldown: 5
   isSuperArmor: 0
   stabDamageMultiplier: 1
   slashDamageMultiplier: 1
