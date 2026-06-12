@@ -32,8 +32,13 @@ public class Column
     /// </summary>
     public Enemy GetEnemyAtRow(int rowIndex)
     {
-        if (rowIndex >= 0 && rowIndex < enemies.Count)
-            return enemies[rowIndex];
+        // BUG FIX: 不能使用 enemies[rowIndex] 列表索引——compact/fill-up/push 后
+        // 列表位置 ≠ rowIndex。必须按 enemy.rowIndex 遍历查找。
+        foreach (var e in enemies)
+        {
+            if (e.rowIndex == rowIndex)
+                return e;
+        }
         return null;
     }
 
@@ -183,12 +188,15 @@ public class Column
     /// 注意：使用 enemy.rowIndex 而非列表位置判断排归属。
     /// RemoveEnemy(skipChain=true) 后列表位置已变化，rowIndex 才是真实排号。
     /// </summary>
-    public void CompactByClearRows(bool[] clearRows)
+    public void CompactByClearRows(bool[] clearRows, int? pushedToRow = null)
     {
         // 第一遍：计算每个存活的敌人应该移动到的新排号
         // targetRow = rowIndex - 低于该排的已清空排数
         // 这与 PerColumn 的 writeIdx 不同：writeIdx 是顺序紧凑（0,1,2...），
         // 而 row-based 会保留排与排之间的空隙（仅压缩掉已清空的排）
+        //
+        // pushedToRow: 位移效果推入的目标排。该排敌人不参与紧凑（防止击退被补齐抵消），
+        // 但更后排的敌人可越过它们填补前方的空排。
         for (int i = 0; i < enemies.Count; i++)
         {
             Enemy e = enemies[i];
@@ -199,7 +207,12 @@ public class Column
             if (e.state == EnemyState.Dead || isClearRow)
                 continue;
 
+            // 被推入排的敌人不参与紧凑，防止击退效果被补齐抵消
+            if (pushedToRow.HasValue && row == pushedToRow.Value)
+                continue;
+
             // 统计低于 row 的已清空排数
+            // 若 pushedToRow 在下方且非空（有被推入的敌人占据），后排敌人仍可越过它填补前方空排
             int clearBelow = 0;
             for (int r = 0; r < row && r < clearRows.Length; r++)
             {
@@ -339,50 +352,77 @@ public class Column
     /// <summary>
     /// 逐列紧凑：将本列存活敌人向前紧凑，填补空排。
     /// Boss 所在排作为墙壁，身后敌人紧凑到 bossRow+1 及之后，不可越过 Boss。
+    /// rangeStart/rangeEnd（含）分段紧凑：波区 [rangeStart, rangeEnd] 从 rangeStart 起排，
+    /// 后方 [rangeEnd+1, ...] 从 rangeEnd+1 起排独立紧凑，互不跨越。默认 -1 表示全列。
     /// </summary>
-    public void CompactColumn(int bossRow)
+    public void CompactColumn(int bossRow, int rangeStart = -1, int rangeEnd = -1)
     {
         if (enemies.Count == 0) return;
 
-        int writeIdx = 0;
-        bool bossPassed = false;
+        var compacted = new List<Enemy>();
+        int targetRow = 0;
+        bool bossPlaced = false;
+        bool hasRange = rangeStart >= 0 && rangeEnd >= 0;
+        bool passedRangeEnd = false;
+
+        if (hasRange) targetRow = rangeStart;
+
+        // DEBUG: 打印入参和当前列状态
+        Debug.Log($"[CompactColumn] col={columnIndex} bossRow={bossRow} range=[{rangeStart},{rangeEnd}] hasRange={hasRange} list=[{string.Join(",", enemies.ConvertAll(e => $"{e.name}@{e.rowIndex}"))}]");
 
         for (int i = 0; i < enemies.Count; i++)
         {
             Enemy e = enemies[i];
             if (e.state == EnemyState.Dead) continue;
 
-            // Boss到达时，writeIdx 对齐到 bossRow，身后敌人从 bossRow+1 起排
-            if (!bossPassed && e.isBoss && bossRow >= 0)
+            // 波区前方敌人保持原位
+            if (hasRange && e.rowIndex < rangeStart)
             {
-                bossPassed = true;
-                if (writeIdx > bossRow)
-                {
-                    Debug.LogWarning($"[Column] CompactColumn: writeIdx={writeIdx} > bossRow={bossRow} in col={columnIndex}");
-                }
-                writeIdx = bossRow;
+                Debug.Log($"[CompactColumn]   {e.name} row={e.rowIndex} → skip (before range)");
+                compacted.Add(e);
+                continue;
             }
 
-            if (i != writeIdx) enemies[writeIdx] = e;
-            e.targetRow = writeIdx;
+            // 进入波区后方：切换为后方独立紧凑，重置 boss 墙状态
+            if (hasRange && e.rowIndex > rangeEnd && !passedRangeEnd)
+            {
+                passedRangeEnd = true;
+                targetRow = rangeEnd + 1;
+                bossPlaced = false;
+                Debug.Log($"[CompactColumn]   → passedRangeEnd, targetRow reset to {targetRow}");
+            }
 
-            if (e.rowIndex != writeIdx)
+            // Boss 到达：固定在 bossRow，身后敌人从 bossRow+1 起排
+            if (!bossPlaced && e.isBoss && bossRow >= 0)
+            {
+                bossPlaced = true;
+                if (targetRow > bossRow)
+                {
+                    Debug.LogWarning($"[Column] CompactColumn: targetRow={targetRow} > bossRow={bossRow} in col={columnIndex}");
+                }
+                targetRow = bossRow;
+            }
+
+            e.targetRow = targetRow;
+            Debug.Log($"[CompactColumn]   {e.name} row={e.rowIndex} → targetRow={targetRow} bossPlaced={bossPlaced} passedRangeEnd={passedRangeEnd}");
+
+            if (e.rowIndex != targetRow)
             {
                 e.ResetMovementState();
                 if (!(e.isBoss && e.bossState == BossState.Approaching))
                     e.pendingRushMove = true;
             }
 
-            writeIdx++;
+            compacted.Add(e);
+            targetRow++;
 
             // Boss 身后敌人从 bossRow+1 起排
-            if (bossPassed && e.isBoss)
-                writeIdx = bossRow + 1;
+            if (bossPlaced && e.isBoss)
+                targetRow = bossRow + 1;
         }
 
-        if (writeIdx < enemies.Count)
-            enemies.RemoveRange(writeIdx, enemies.Count - writeIdx);
-
+        enemies.Clear();
+        enemies.AddRange(compacted);
         StartRushMoveChain(columnIndex);
     }
 

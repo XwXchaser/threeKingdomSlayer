@@ -1,5 +1,95 @@
 # 开发日志
 
+## 2026-06-07 — 海浪技能系统 + 道具池 + Wave BUG修复
+
+### 概述
+实现海浪（Wave）主动技能：逐排推进海浪特效，命中敌人造成伤害+击退。新增道具池（ItemPoolConfig）系统统一管理道具掉落权重。修复两个 Wave 核心 BUG。
+
+### 新增内容
+
+**海浪技能系统** (4 个文件)
+- `WaveManager.cs` — 海浪编排器，`TriggerWave(startRow, endRow, damage)` 逐排错开生成海浪，海浪结束后触发逐排补齐
+- `WaveEffectPlayer.cs` — 单排海浪动画播放器，5帧 wave1→2→3→2→1 序列，帧3判定伤害+击退
+- `WaveEffect.prefab` — 海浪预制体（wave1/2/3 精灵子对象）
+- `Wave.asset` — 海浪技能定义（UpgradeDefinition, gestureId=wave, effectType=wave, floatValue=伤害, intValue=起始排, secondaryIntValue=结束排）
+
+**道具池系统** (3 个文件)
+- `ItemPoolConfig.cs` — ScriptableObject，定义道具掉落权重列表（UpgradeDefinition + weight）
+- `ItemPoolConfig.asset` — 默认道具池配置
+- `ItemTestHelper.cs` — 调试工具，强制触发指定道具效果
+
+**其他**
+- `ArrowRainEffect.prefab` — 替换旧 `TimedArrowEffect.prefab`
+- `icon_31item_wave.png` — 海浪道具图标
+
+### Wave BUG 修复
+
+| Bug | 修复 |
+|---|---|
+| **紧凑不维持阵型** | `WaveManager.WaveSequence()` 中将 `CompactAllColumns` 替换为 `RowBasedFillUp()`。逐排补齐只压缩跨所有列完全清空的排，保留排对齐 |
+| **同排敌人伤害不一致** | `WaveEffectPlayer.DoHitCheck()` 中 `GetEnemyAt(col, row)` 改为遍历列中全部敌人按 `rowIndex` 筛选。修复 push 后同排多敌人时只命中第一个的漏检问题 |
+
+### 核心代码改动
+
+**Column.cs**
+- `GetEnemyAtRow`: BUG FIX — 改用 `enemy.rowIndex` 遍历查找，而非列表索引（push/compact 后列表位置≠排号）
+- `CompactByClearRows`: 新增 `pushedToRow` 参数，防止击退被补齐抵消
+- `CompactColumn`: 新增 `rangeStart/rangeEnd` 分段紧凑（波区/后方独立紧凑，Boss墙壁）
+
+**ColumnManager.cs**
+- `RemoveEnemyFromColumn`: 新增 `skipChain` 参数，PerRow 模式下由 RowBasedFillUp 统一处理
+- `RowBasedFillUp` / `PostDisplacementFillUp`: 新增 `pushedToRow` 参数
+- `CompactAllColumns`: 新增 `rangeStart/rangeEnd` 参数
+
+**Enemy.cs**
+- 新增 `OnDeathAnimComplete` 事件（Boss 死亡锦囊触发时机）
+- `TakeDamage`: 新增 `isParryInterrupt` 参数；Boss 阶段切换伤害预测修正（含 launched 倍率、hp=0 直接死亡）；Boss/非Boss 攻击打断逻辑拆分
+- `Die`: QTE 演出中死亡时清理 QTE 状态
+
+**UpgradeChoiceManager.cs** — 集成 `itemPoolConfig`，道具选择从道具池权重抽取
+**BuffDisplayPanel.cs** — 新增 wave 手势点击处理
+**StageController.cs** — 道具系统集成
+**UpgradeDefinitionEditor.cs** — 新增 `triggerParam` 字段支持
+
+### 平衡调整
+| 变更 | 说明 |
+|---|---|
+| Zhangfei_Parry damage 5→1, poise 50→10 | 招架伤害和架势大幅下调 |
+| Zhangfei_Sweep damage 8→5, range 2→5 | 横扫伤害下调，范围扩大至全屏 |
+| Enemy_104 maxHealth 500→200 | Boss 血量下调 |
+| testStage 新增 wave 1+2 | 增加测试波次 |
+
+### 涉及文件
+- `Assets/Scripts/Effect/WaveManager.cs` — 新增
+- `Assets/Scripts/Effect/WaveEffectPlayer.cs` — 新增
+- `Assets/Prefabs/Effects/WaveEffect.prefab` — 新增
+- `Assets/ScriptableObjects/Upgrades/Definitions/Wave.asset` — 新增
+- `Assets/Scripts/Core/ItemPoolConfig.cs` — 新增
+- `Assets/ScriptableObjects/Upgrades/ItemPoolConfig.asset` — 新增
+- `Assets/Scripts/DebugTools/ItemTestHelper.cs` — 新增
+- `Assets/Prefabs/Effects/ArrowRainEffect.prefab` — 新增
+- `Assets/Prefabs/Effects/TimedArrowEffect.prefab` — 删除
+- `Assets/Scripts/Core/Column.cs` — GetEnemyAtRow/CompactByClearRows/CompactColumn 改进
+- `Assets/Scripts/Core/ColumnManager.cs` — RowBasedFillUp/CompactAllColumns/RemoveEnemyFromColumn 改进
+- `Assets/Scripts/Enemy/Enemy.cs` — TakeDamage/Die/OnDeathAnimComplete 改进
+- `Assets/Scripts/Core/UpgradeChoiceManager.cs` — 道具池集成
+- `Assets/Scripts/UI/BuffDisplayPanel.cs` — wave 手势
+- `Assets/Scripts/Managers/StageController.cs` — 道具系统集成
+- `Assets/Scripts/Managers/EnemyManager.cs` — 死亡回调
+- `Assets/Scripts/Player/AttackSystem.cs` — 小改
+- `Assets/Scripts/QTE/QTEController.cs` — 小改
+- `Assets/Scripts/Wave/WaveSpawner.cs` — 小改
+- `Assets/Scripts/Editor/UpgradeDefinitionEditor.cs` — triggerParam
+- `Assets/Scenes/Battle.scene` — WaveManager 组件+道具池引用
+- `Assets/Resources/StageConfigs/testStage.asset` — 测试波次扩展
+- `Assets/Resources/EnemyPrefabs/Enemy_104.prefab` — Boss 血量下调
+- `Assets/Prefabs/UI/Skills/Zhangfei_Parry.asset` — 平衡调整
+- `Assets/Prefabs/UI/Skills/Zhangfei_Sweep.asset` — 平衡调整
+- `Locus/knowledge/design/attack-interrupt-system.md` — 更新
+- `Locus/knowledge/design/boss-mechanics.md` — 更新
+
+---
+
 ## 2026-05-17 — BOSS QTE 攻击系统
 
 ### 概述

@@ -164,6 +164,10 @@ public class WaveSpawner : MonoBehaviour
     /// </summary>
     private IEnumerator WaitForWaveClearAndNotify()
     {
+        // BUG FIX: 捕获当前波次索引为局部变量，避免 OnWaveCompleted 回调同步调用
+        // SpawnNextWave() 修改 currentWaveIndex 后，旧协程的 final check 读到新值导致误判胜利
+        int capturedWaveIndex = currentWaveIndex;
+
         // 等待直到所有敌人都死亡
         while (enemyManager != null && !enemyManager.IsAllEnemiesDead)
         {
@@ -172,12 +176,13 @@ public class WaveSpawner : MonoBehaviour
 
         // 波次已清空
         isWaveComplete = true;
-        OnWaveCompleted?.Invoke(currentWaveIndex);
+        OnWaveCompleted?.Invoke(capturedWaveIndex);
 
-        Debug.Log($"[WaveSpawner] 第 {currentWaveIndex + 1} 波已清空");
+        Debug.Log($"[WaveSpawner] 第 {capturedWaveIndex + 1} 波已清空");
 
         // 检查是否所有波次已完成（最后一波清空后触发胜利）
-        if (currentWaveIndex >= ResolvedStageConfig.waves.Count - 1)
+        // 必须用 capturedWaveIndex 而非 currentWaveIndex
+        if (capturedWaveIndex >= ResolvedStageConfig.waves.Count - 1)
         {
             isAllWavesCompleted = true;
             OnAllWavesCompleted?.Invoke();

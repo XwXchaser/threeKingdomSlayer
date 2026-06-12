@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6dfeeaba9f1d5b849adc1b58e07ce57f, type: 3}
+  m_Name: ItemPoolConfig
+  m_EditorClassIdentifier: 
+  commonWeight: 0.7
+  rareWeight: 0.2
+  legendaryWeight: 0.1
+  commonPool:
+  - upgrade: {fileID: 11400000, guid: c5d04c63b5fcce14a813db0c2f8770b3, type: 2}
+    weight: 10
+  rarePool: []
+  legendaryPool: []

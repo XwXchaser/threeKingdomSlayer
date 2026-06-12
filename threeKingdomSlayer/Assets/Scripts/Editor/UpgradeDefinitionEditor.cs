@@ -186,6 +186,7 @@ public class UpgradeDefinitionEditor : Editor
         EditorGUILayout.PropertyField(effectTypeProp);
         EditorGUILayout.PropertyField(floatValueProp);
         EditorGUILayout.PropertyField(intValueProp);
+        EditorGUILayout.PropertyField(secondaryIntValueProp);
         EditorGUILayout.PropertyField(baseAttackConfigProp);
 
         EditorGUILayout.Space();

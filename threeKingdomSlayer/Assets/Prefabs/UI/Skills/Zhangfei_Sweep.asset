@@ -15,9 +15,9 @@ MonoBehaviour:
   id: 4
   attackType: 3
   damageType: 3
-  damage: 8
+  damage: 5
   poiseDamage: 0
-  rangeRows: 2
+  rangeRows: 5
   cooldown: 5
   launchDuration: 0.2
   attackWavePrefab: {fileID: 5586448634090008248, guid: 3e7c2ba9889d0d8498227914332b7adc, type: 3}

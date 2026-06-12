@@ -185,11 +185,41 @@ public class StageController : MonoBehaviour
     #region 事件回调
 
     /// <summary>
-    /// 单波清空 → 自动生成下一波
+    /// 单波清空 → 若有待处理的三选一（升级/道具），等待选择完成再生成下一波
     /// </summary>
     private void OnWaveCleared(int waveIndex)
     {
+        var ucm = UpgradeChoiceManager.Instance;
+        if (ucm != null && ucm.IsChoosing)
+        {
+            Debug.Log($"[StageController] 第{waveIndex + 1}波清空，有待处理选择，暂缓下一波");
+            ucm.OnAllChoicesDone += OnChoicesDoneSpawnNextWave;
+            return;
+        }
+
         Debug.Log($"[StageController] 第{waveIndex + 1}波清空，自动开始下一波");
+        waveSpawner?.SpawnNextWave();
+    }
+
+    private void OnChoicesDoneSpawnNextWave()
+    {
+        var ucm = UpgradeChoiceManager.Instance;
+        if (ucm != null)
+            ucm.OnAllChoicesDone -= OnChoicesDoneSpawnNextWave;
+
+        // 先触发补齐移动（Boss死亡时跳过了rush chain，现在补偿）
+        var cm = FindObjectOfType<ColumnManager>();
+        if (cm != null)
+        {
+            FillUpRule rule = GetFillUpRule();
+            if (rule == FillUpRule.PerRow)
+                cm.RowBasedFillUp();
+            else
+                for (int i = 0; i < cm.columnCount; i++)
+                    cm.TriggerFillForward(i);
+        }
+
+        Debug.Log("[StageController] 所有选择完成，开始下一波");
         waveSpawner?.SpawnNextWave();
     }
 
@@ -226,6 +256,11 @@ public class StageController : MonoBehaviour
     private void OnPlayerDefeated()
     {
         if (currentState == StageState.Defeat || currentState == StageState.Victory) return;
+
+        // 取消待处理的选择完成回调（玩家已死，不再生成下一波）
+        var ucm = UpgradeChoiceManager.Instance;
+        if (ucm != null)
+            ucm.OnAllChoicesDone -= OnChoicesDoneSpawnNextWave;
 
         Debug.Log("[StageController] 玩家阵亡，关卡失败");
         AudioManager.Instance?.StopBGM();
