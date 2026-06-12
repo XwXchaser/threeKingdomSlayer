@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3025363037497703854}
   m_Layer: 0
   m_HasEditorInfo: 1
-  m_Name: TimedArrowEffect
+  m_Name: ArrowRainEffect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

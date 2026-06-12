@@ -52,7 +52,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: boss
   enemyId: 104
-  maxHealth: 500
+  maxHealth: 200
   occupySlots: 1
   attackSpeed: 0.2
   attackDamage: 10

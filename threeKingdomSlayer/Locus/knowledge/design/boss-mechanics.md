@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779004290012
-updatedAt: 1779093673412
+updatedAt: 1781161542828
 ---
 
 # boss-mechanics
@@ -73,13 +73,25 @@ BOSS 进入眩晕有**两条路径**：
 
 ### 3.1 对 BOSS 的招架规则
 
-与普通敌人的核心区别：
+Boss 攻击打断规则遵循 `design/attack-interrupt-system.md` 第3.2节：
+
+| Boss窗口 | 打断条件 |
+|-----------|---------|
+| 普通窗口（非CFrame非SuperArmor）| 所有攻击可打断 |
+| CFrame（C技霸体）| **仅 Parry** 可打断 + 削Poise |
+| SuperArmor（Phase霸体）| **仅 Parry** 可打断 + 削Poise |
+| AttackDraw（收招）| 不可打断 |
+
+**核心原则**：不存在玩家用 Parry 无法打断的 Boss 攻击。Launch（挑飞）仅在普通窗口可打断Boss攻击，CFrame/SuperArmor窗口下无效。
+
+**与普通敌人的核心区别**：
 
 | 场景 | 普通敌人 | BOSS |
 |------|---------|------|
-| BOSS 正在 AttackSpawn（前摇可打断） | 架势伤害≥maxPoise 时打断 | **无条件打断** + 造成架势伤害 |
-| BOSS 正在 AttackDraw（收招不可打断） | 仅造成伤害 | 仅造成伤害 |
-| BOSS 不在攻击动画中 | 仅造成伤害 | 仅造成伤害 + 检查血量阈值眩晕 |
+| 普通窗口 AttackSpawn | 任何攻击打断 | 任何攻击打断 |
+| CFrame/SuperArmor AttackSpawn | Parry/Launch 打断 | **仅 Parry** 打断 + 削Poise |
+| AttackDraw（收招） | 不可打断 | 不可打断 |
+| 不在攻击动画中 | 仅造成伤害 | 仅造成伤害 + 检查血量阈值眩晕 |
 
 ### 3.2 招架血量阈值（`parryStunThresholds`）
 

@@ -538,9 +538,9 @@ public class QTEController : MonoBehaviour
     #region QTE 攻击收尾
 
     /// <summary>
-    /// 中止 QTE（敌人被打入 Stun/Launch 等非 QTEAttacking 状态）
+    /// 中止 QTE（敌人被打入 Stun/Launch/Dead 等非 QTEAttacking 状态）
     /// </summary>
-    private void AbortQTE()
+    public void AbortQTE()
     {
         // 清理飞行物
         if (_activeProjectile != null)

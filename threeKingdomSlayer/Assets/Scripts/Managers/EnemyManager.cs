@@ -109,12 +109,22 @@ public class EnemyManager : MonoBehaviour
     {
         if (enemy == null) return;
 
-        allAliveEnemies.Remove(enemy);
         enemy.OnDeath -= OnEnemyDied;
         enemy.OnBossEngaged -= HandleBossEngaged;
 
+        // Boss: 推迟存活列表移除，等锦囊三选一完成后再触发波次结束检测
+        // 非Boss: 立即移除并检测
+        if (!enemy.isBoss)
+        {
+            allAliveEnemies.Remove(enemy);
+        }
+
         // 从列中移除
-        columnManager?.RemoveEnemyFromColumn(enemy.columnIndex, enemy);
+        // Boss: 跳过补齐链，等三选一完成后再触发补齐移动（由StageController处理）
+        if (enemy.isBoss)
+            columnManager?.RemoveEnemyFromColumn(enemy.columnIndex, enemy, skipChain: true);
+        else
+            columnManager?.RemoveEnemyFromColumn(enemy.columnIndex, enemy);
 
         // 触发事件（必须在 ReturnEnemy 之前）
         OnAnyEnemyDied?.Invoke(enemy);
@@ -134,10 +144,16 @@ public class EnemyManager : MonoBehaviour
         // 注意：不再在此处调用 EnemyPool.Instance?.ReturnEnemy(enemy)
         // 对象回收由 Enemy.DeathBounceAndFall() 协程在死亡动画播完后处理
 
-        // 检查是否所有敌人都死亡
+        // 检查是否所有敌人都死亡（Boss 尚未移除，此检查对 Boss 波次无效）
         if (allAliveEnemies.Count == 0)
         {
             OnAllEnemiesDied?.Invoke();
+        }
+
+        // Boss死亡 → 等待死亡动画播完 → 掉落锦囊（触发物品三选一）
+        if (enemy.isBoss && UpgradeChoiceManager.Instance != null)
+        {
+            enemy.OnDeathAnimComplete += HandleBossDeathAnimComplete;
         }
     }
 
@@ -168,6 +184,26 @@ public class EnemyManager : MonoBehaviour
     private void HandleBossEngaged(Enemy boss)
     {
         OnBossEngaged?.Invoke(boss);
+    }
+
+    /// <summary>
+    /// Boss死亡动画播放完毕 → 掉落锦囊（触发物品三选一）
+    /// </summary>
+    private void HandleBossDeathAnimComplete(Enemy boss)
+    {
+        boss.OnDeathAnimComplete -= HandleBossDeathAnimComplete;
+
+        // 推迟的存活列表移除：此时锦囊即将弹出，再触发波次结束检测
+        allAliveEnemies.Remove(boss);
+
+        if (UpgradeChoiceManager.Instance != null)
+            UpgradeChoiceManager.Instance.TriggerItemChoice();
+
+        // 锦囊入队后检查波次是否全清（若全清且无后续波次，在 TriggerItemChoice 中已判通关拦截）
+        if (allAliveEnemies.Count == 0)
+        {
+            OnAllEnemiesDied?.Invoke();
+        }
     }
 
     #region 查询接口

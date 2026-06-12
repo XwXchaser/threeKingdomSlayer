@@ -269,8 +269,8 @@ public class AttackSystem : MonoBehaviour
 
         foreach (var enemy in targets)
         {
-            // TakeDamage 内部处理打断逻辑（canInterruptCFrame=true 可打断C技霸体）
-            enemy.TakeDamage(finalDmg, cfg.damageType, canInterruptCFrame: true);
+            // TakeDamage 内部处理打断逻辑（Parry 始终可打断Boss，非Boss可打断C技霸体）
+            enemy.TakeDamage(finalDmg, cfg.damageType, canInterruptCFrame: true, isParryInterrupt: true);
             enemy.TakePoiseDamage(cfg.poiseDamage);
         }
 

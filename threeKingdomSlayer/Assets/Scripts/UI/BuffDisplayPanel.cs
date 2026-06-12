@@ -302,5 +302,10 @@ public class BuffDisplayPanel : MonoBehaviour
             if (UpgradeEffectManager.Instance != null)
                 UpgradeEffectManager.Instance.AddDamageBonus(def.floatValue);
         }
+        else if (gestureId == "wave")
+        {
+            if (WaveManager.Instance != null)
+                WaveManager.Instance.TriggerWave(def.intValue, def.secondaryIntValue, Mathf.RoundToInt(def.floatValue));
+        }
     }
 }

@@ -264,6 +264,7 @@ public class Enemy : MonoBehaviour
 
     // 事件
     public System.Action<Enemy> OnDeath;
+    public System.Action<Enemy> OnDeathAnimComplete; // 死亡动画播放完毕（Boss锦囊触发时机）
     public System.Action<Enemy> OnDamageTaken;
     public System.Action<Enemy, float, float> OnHealthChanged; // enemy, current, max
     public System.Action<Enemy, float, float> OnPoiseChanged;  // enemy, current, max
@@ -1363,7 +1364,7 @@ public class Enemy : MonoBehaviour
     /// <summary>
     /// 受到伤害
     /// </summary>
-    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false)
+    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false)
     {
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
@@ -1380,10 +1381,21 @@ public class Enemy : MonoBehaviour
             {
                 float hpPercent = currentHealth / maxHealth;
                 float dmgMultiplier = GetDamageMultiplier(damageType);
-                float dmgPercent = (damage * dmgMultiplier) / maxHealth;
+                // BUG FIX: 预测伤害需包含 launchedDamageTakenMultiplier，
+                // 否则击飞状态下实际伤害 > 预测值，可能一击打穿阈值直接致死
+                float predictedDmg = damage * dmgMultiplier;
+                if (state == EnemyState.Launched)
+                    predictedDmg *= launchedDamageTakenMultiplier;
+                float dmgPercent = predictedDmg / maxHealth;
                 if (hpPercent - dmgPercent <= nextPhase.triggerHealthPercent)
                 {
                     currentHealth = nextPhase.triggerHealthPercent * maxHealth;
+                    // BUG FIX: 若 triggerHealthPercent=0 导致 hp=0，直接死亡而非转阶段
+                    if (currentHealth <= 0f)
+                    {
+                        Die();
+                        return;
+                    }
                     EnterPhaseTransition(nextPhase);
                     return;
                 }
@@ -1391,19 +1403,26 @@ public class Enemy : MonoBehaviour
         }
 
         // ----- 攻击打断逻辑 -----
-        // QTEAttacking: 不可被任何攻击打断（伤害照常结算）
+        // QTEAttacking: 不可被任何攻击打断（独立状态，不进入此分支）
         // Attacking + AttackDraw: 不可打断
-        // Attacking + CFrame/SuperArmor: 仅Parry/Launch(canInterruptCFrame)可打断
-        // Attacking + 普通窗口: 任何攻击可打断
+        // Boss:  普通窗口（无霸体/CFrame）→ 所有攻击可打断
+        //        霸体/CFrame → 仅 Parry 可打断
+        // 非Boss: 普通窗口任何攻击可打断; CFrame/SuperArmor 仅 canInterruptCFrame 可打断
         if (state == EnemyState.Attacking && isAttackAnimating && !isAttackDrawPhase)
         {
-            if (!isSuperArmor && !isCFrame)
+            if (isBoss)
             {
-                CancelAttack();
+                if (!isSuperArmor && !isCFrame)
+                    CancelAttack();
+                else if (isParryInterrupt)
+                    CancelAttack();
             }
-            else if (canInterruptCFrame)
+            else
             {
-                CancelAttack();
+                if (!isSuperArmor && !isCFrame)
+                    CancelAttack();
+                else if (canInterruptCFrame)
+                    CancelAttack();
             }
         }
 
@@ -1657,11 +1676,19 @@ public class Enemy : MonoBehaviour
     ///   2. 取消正在执行的攻击 DOTween 动画
     ///   3. 立即触发 OnDeath 事件 → EnemyManager 计入击杀、判断通关
     ///   4. 启动死亡动效协程 DeathBounceAndFall()（弹起+旋转+掉落，纯视觉）
-    ///   5. 协程结束后回收到对象池
+    ///   5. 协程结束后触发 OnDeathAnimComplete → Boss 锦囊等
+    ///   6. 回收到对象池
     /// </summary>
     public void Die()
     {
         if (state == EnemyState.Dead) return;
+
+        // QTE 演出中死亡：立即清理 QTE 状态（飞行物/指示器/输入拦截）
+        if (state == EnemyState.QTEAttacking)
+        {
+            GetQTEController()?.AbortQTE();
+        }
+
         bool wasLaunched = (state == EnemyState.Launched);
         state = EnemyState.Dead;
         UpdateOutlineState();
@@ -1751,6 +1778,9 @@ public class Enemy : MonoBehaviour
         transform.localScale = originalScale;
         transform.localRotation = Quaternion.identity;
 
+        // 死亡动画结束 → 触发事件（Boss锦囊等）
+        OnDeathAnimComplete?.Invoke(this);
+
         // 死亡动效结束后回收到对象池
         EnemyPool.Instance?.ReturnEnemy(this);
     }
@@ -1787,6 +1817,9 @@ public class Enemy : MonoBehaviour
 
         transform.localScale = originalScale;
         transform.localRotation = Quaternion.identity;
+
+        // 死亡动画结束 → 触发事件
+        OnDeathAnimComplete?.Invoke(this);
 
         EnemyPool.Instance?.ReturnEnemy(this);
     }
@@ -2358,7 +2391,17 @@ public class Enemy : MonoBehaviour
             return;
         }
 
-        if (isSuperArmor)
+        // QTE 描边优先级最高（覆盖霸体/CFrame描边）
+        if (state == EnemyState.QTEAttacking)
+        {
+            Color c = outlineColorQTEOverride != Color.clear
+                ? outlineColorQTEOverride : OUTLINE_COLOR_QTE_DEFAULT;
+            float w = outlineWidthQTEOverride > 0f ? outlineWidthQTEOverride : OUTLINE_WIDTH_DEFAULT;
+            _propBlock.SetColor("_OutlineColor", c);
+            _propBlock.SetFloat("_OutlineWidth", w);
+            _propBlock.SetFloat("_OutlineEnabled", 1f);
+        }
+        else if (isSuperArmor)
         {
             Color c = outlineColorSuperArmorOverride != Color.clear
                 ? outlineColorSuperArmorOverride : OUTLINE_COLOR_SUPER_ARMOR_DEFAULT;
@@ -2372,15 +2415,6 @@ public class Enemy : MonoBehaviour
             Color c = outlineColorCOverride != Color.clear
                 ? outlineColorCOverride : OUTLINE_COLOR_C_DEFAULT;
             float w = outlineWidthCOverride > 0f ? outlineWidthCOverride : OUTLINE_WIDTH_DEFAULT;
-            _propBlock.SetColor("_OutlineColor", c);
-            _propBlock.SetFloat("_OutlineWidth", w);
-            _propBlock.SetFloat("_OutlineEnabled", 1f);
-        }
-        else if (state == EnemyState.QTEAttacking)
-        {
-            Color c = outlineColorQTEOverride != Color.clear
-                ? outlineColorQTEOverride : OUTLINE_COLOR_QTE_DEFAULT;
-            float w = outlineWidthQTEOverride > 0f ? outlineWidthQTEOverride : OUTLINE_WIDTH_DEFAULT;
             _propBlock.SetColor("_OutlineColor", c);
             _propBlock.SetFloat("_OutlineWidth", w);
             _propBlock.SetFloat("_OutlineEnabled", 1f);
@@ -2495,6 +2529,12 @@ public class Enemy : MonoBehaviour
 
     private void EnterPhaseTransition(BossPhaseData nextPhase)
     {
+        // BUG FIX: 转阶段时若处于 QTE 中，清理 QTE 状态（同 Die）
+        if (state == EnemyState.QTEAttacking)
+        {
+            GetQTEController()?.AbortQTE();
+        }
+
         _healthLocked = true;
         isPhaseTransitioning = true;
 

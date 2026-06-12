@@ -16,8 +16,10 @@ public class UpgradeChoiceManager : MonoBehaviour
 {
     public static UpgradeChoiceManager Instance { get; private set; }
 
-    [Header("配置")]
+    [Header("常规池")]
     public UpgradePoolConfig poolConfig;
+    [Header("物品池（Boss锦囊）")]
+    public ItemPoolConfig itemPoolConfig;
     [Tooltip("弹窗 Prefab（运行时动态生成/销毁，不在场景中预置）")]
     public GameObject popupPrefab;
     [Tooltip("选项数量（默认 3，可扩展为 4 选 1 / 5 选 1）")]
@@ -28,8 +30,14 @@ public class UpgradeChoiceManager : MonoBehaviour
     // ── 运行时状态 ──
     private bool _isChoosing;
     private int _pendingLevelUps;
+    private int _pendingItemChoices;
+    private bool _isShowingItemChoice;
     private List<UpgradeDefinition> _currentChoices;
     private UpgradeChoicePopup _activePopup;
+
+    // 排队：按触发时间先后
+    private enum PendingType { LevelUp, Item }
+    private Queue<PendingType> _pendingQueue = new Queue<PendingType>();
 
     // ── 事件（供 UI 订阅）──
     public System.Action<List<UpgradeDefinition>> OnChoicesReady;
@@ -66,12 +74,38 @@ public class UpgradeChoiceManager : MonoBehaviour
     private void OnPlayerLevelUp(int newLevel)
     {
         _pendingLevelUps++;
+        _pendingQueue.Enqueue(PendingType.LevelUp);
+        if (!_isChoosing)
+            StartChoiceFlow();
+    }
+
+    /// <summary>
+    /// Boss死亡掉落锦囊，触发物品三选一。
+    /// 由 EnemyManager 调用。
+    /// </summary>
+    public void TriggerItemChoice()
+    {
+        // 通关/战败后不再弹出
+        if (StageController.Instance != null && !StageController.Instance.IsStageInProgress)
+            return;
+
+        _pendingItemChoices++;
+        _pendingQueue.Enqueue(PendingType.Item);
         if (!_isChoosing)
             StartChoiceFlow();
     }
 
     private void StartChoiceFlow()
     {
+        // 通关后不再弹出
+        if (StageController.Instance != null && !StageController.Instance.IsStageInProgress)
+        {
+            _pendingLevelUps = 0;
+            _pendingItemChoices = 0;
+            _pendingQueue.Clear();
+            return;
+        }
+
         _isChoosing = true;
         if (pauseGameDuringChoice)
             Time.timeScale = 0f;
@@ -80,7 +114,34 @@ public class UpgradeChoiceManager : MonoBehaviour
 
     private void ShowNextChoice()
     {
-        _currentChoices = DrawChoices();
+        // 从队列取下一个待处理的类型
+        if (_pendingQueue.Count == 0)
+        {
+            // 安全回退：无队列但有计数器时
+            if (_pendingLevelUps > 0)
+                _pendingQueue.Enqueue(PendingType.LevelUp);
+            else if (_pendingItemChoices > 0)
+                _pendingQueue.Enqueue(PendingType.Item);
+            else
+            {
+                FinishAllChoices();
+                return;
+            }
+        }
+
+        var nextType = _pendingQueue.Dequeue();
+        _isShowingItemChoice = (nextType == PendingType.Item);
+
+        if (_isShowingItemChoice)
+        {
+            _pendingItemChoices--;
+            _currentChoices = DrawItemChoices();
+        }
+        else
+        {
+            _pendingLevelUps--;
+            _currentChoices = DrawChoices();
+        }
 
         // 动态生成弹窗（不在场景中预置）
         if (_activePopup == null)
@@ -102,42 +163,49 @@ public class UpgradeChoiceManager : MonoBehaviour
 
     public void ConfirmChoice(UpgradeDefinition selected)
     {
-        Debug.Log($"[UpgradeChoiceManager] ConfirmChoice frame={Time.frameCount} timeScale={Time.timeScale} upgradeId={selected?.upgradeId} pendingBefore={_pendingLevelUps}");
+        Debug.Log($"[UpgradeChoiceManager] ConfirmChoice frame={Time.frameCount} timeScale={Time.timeScale} upgradeId={selected?.upgradeId} isItem={_isShowingItemChoice} pendingLevelUps={_pendingLevelUps} pendingItems={_pendingItemChoices} queue={_pendingQueue.Count}");
         if (!_isChoosing || _currentChoices == null) return;
         if (!_currentChoices.Contains(selected)) return;
 
         UpgradeEffectManager.Instance.ApplyUpgrade(selected);
         OnChoiceSelected?.Invoke(selected);
 
-        _pendingLevelUps--;
-
-        if (_pendingLevelUps > 0)
+        // 检查是否还有待处理的选择
+        if (_pendingQueue.Count > 0 || _pendingLevelUps > 0 || _pendingItemChoices > 0)
         {
-            Debug.Log($"[UpgradeChoiceManager] 还有 {_pendingLevelUps} 次待选择，刷新弹窗");
+            Debug.Log($"[UpgradeChoiceManager] 还有待处理选择，刷新弹窗 (queue={_pendingQueue.Count} lv={_pendingLevelUps} item={_pendingItemChoices})");
             ShowNextChoice();
         }
         else
         {
-            Debug.Log($"[UpgradeChoiceManager] 全部选择完成，恢复 timeScale=1 (frame={Time.frameCount})");
-            _isChoosing = false;
-            _currentChoices = null;
-
-            if (_activePopup != null)
-            {
-                var popup = _activePopup;
-                _activePopup = null;
-                popup.Dismiss(() => { });
-            }
-
-            if (pauseGameDuringChoice)
-            {
-                Time.timeScale = 1f;
-                // 屏蔽接下来2帧的输入，防止选择选项的点击被误判为攻击手势
-                if (InputManager.Instance != null)
-                    InputManager.Instance.blockInputFrames = 2;
-            }
-            OnAllChoicesDone?.Invoke();
+            FinishAllChoices();
         }
+    }
+
+    private void FinishAllChoices()
+    {
+        Debug.Log($"[UpgradeChoiceManager] 全部选择完成，恢复 timeScale=1 (frame={Time.frameCount})");
+        _isChoosing = false;
+        _currentChoices = null;
+        _isShowingItemChoice = false;
+        _pendingLevelUps = 0;
+        _pendingItemChoices = 0;
+        _pendingQueue.Clear();
+
+        if (_activePopup != null)
+        {
+            var popup = _activePopup;
+            _activePopup = null;
+            popup.Dismiss(() => { });
+        }
+
+        if (pauseGameDuringChoice)
+        {
+            Time.timeScale = 1f;
+            if (InputManager.Instance != null)
+                InputManager.Instance.blockInputFrames = 2;
+        }
+        OnAllChoicesDone?.Invoke();
     }
 
     // ── 随机抽取 ──
@@ -191,7 +259,7 @@ public class UpgradeChoiceManager : MonoBehaviour
         return results;
     }
 
-    /// <summary>收集所有满足前置条件且未满级的候选项</summary>
+    /// <summary>收集所有满足前置条件且未满级的候选项（排除Item类）</summary>
     private List<EligibleEntry> CollectEligible()
     {
         var candidates = new List<EligibleEntry>();
@@ -208,10 +276,94 @@ public class UpgradeChoiceManager : MonoBehaviour
         {
             var wu = pool[i];
             if (wu.upgrade == null) continue;
+            // 排除 Item 类（物品走独立池）
+            if (wu.upgrade.category == UpgradeCategory.Item) continue;
             if (!PrerequisitesMet(wu.upgrade)) continue;
             if (UpgradeEffectManager.Instance.GetUpgradeLevel(wu.upgrade.upgradeId) >= wu.upgrade.maxLevel) continue;
             result.Add(new EligibleEntry { upgrade = wu.upgrade, weight = wu.weight, rarity = rarity });
         }
+    }
+
+    /// <summary>从物品池抽取候选项</summary>
+    private List<UpgradeDefinition> DrawItemChoices()
+    {
+        if (itemPoolConfig == null)
+        {
+            Debug.LogWarning("[UpgradeChoiceManager] itemPoolConfig 未配置");
+            return new List<UpgradeDefinition>();
+        }
+
+        var candidates = CollectItemEligible();
+        if (candidates.Count == 0)
+        {
+            Debug.LogWarning("[UpgradeChoiceManager] 物品池无可用候选项");
+            return new List<UpgradeDefinition>();
+        }
+
+        var results = new List<UpgradeDefinition>();
+        var usedIds = new HashSet<string>();
+
+        for (int i = 0; i < choiceCount && usedIds.Count < candidates.Count; i++)
+        {
+            UpgradeRarity targetRarity = RollItemRarity();
+
+            var rarityCandidates = new List<EligibleEntry>();
+            for (int j = 0; j < candidates.Count; j++)
+            {
+                var c = candidates[j];
+                if (c.rarity == targetRarity && !usedIds.Contains(c.upgrade.upgradeId))
+                    rarityCandidates.Add(c);
+            }
+
+            if (rarityCandidates.Count == 0)
+            {
+                for (int j = 0; j < candidates.Count; j++)
+                {
+                    var c = candidates[j];
+                    if (!usedIds.Contains(c.upgrade.upgradeId))
+                        rarityCandidates.Add(c);
+                }
+            }
+
+            if (rarityCandidates.Count == 0) break;
+
+            var picked = WeightedPick(rarityCandidates);
+            results.Add(picked.upgrade);
+            usedIds.Add(picked.upgrade.upgradeId);
+        }
+
+        return results;
+    }
+
+    private List<EligibleEntry> CollectItemEligible()
+    {
+        var candidates = new List<EligibleEntry>();
+        CollectFromItemPool(candidates, itemPoolConfig.commonPool, UpgradeRarity.Common);
+        CollectFromItemPool(candidates, itemPoolConfig.rarePool, UpgradeRarity.Rare);
+        CollectFromItemPool(candidates, itemPoolConfig.legendaryPool, UpgradeRarity.Legendary);
+        return candidates;
+    }
+
+    private void CollectFromItemPool(List<EligibleEntry> result, List<WeightedUpgrade> pool, UpgradeRarity rarity)
+    {
+        if (pool == null) return;
+        for (int i = 0; i < pool.Count; i++)
+        {
+            var wu = pool[i];
+            if (wu.upgrade == null) continue;
+            if (!PrerequisitesMet(wu.upgrade)) continue;
+            if (UpgradeEffectManager.Instance.GetUpgradeLevel(wu.upgrade.upgradeId) >= wu.upgrade.maxLevel) continue;
+            result.Add(new EligibleEntry { upgrade = wu.upgrade, weight = wu.weight, rarity = rarity });
+        }
+    }
+
+    private UpgradeRarity RollItemRarity()
+    {
+        float total = itemPoolConfig.commonWeight + itemPoolConfig.rareWeight + itemPoolConfig.legendaryWeight;
+        float roll = Random.value * total;
+        if (roll < itemPoolConfig.commonWeight) return UpgradeRarity.Common;
+        if (roll < itemPoolConfig.commonWeight + itemPoolConfig.rareWeight) return UpgradeRarity.Rare;
+        return UpgradeRarity.Legendary;
     }
 
     private bool PrerequisitesMet(UpgradeDefinition def)

@@ -84,7 +84,7 @@ public class ColumnManager : MonoBehaviour
     /// <summary>
     /// 从指定列移除敌人
     /// </summary>
-    public void RemoveEnemyFromColumn(int columnIndex, Enemy enemy)
+    public void RemoveEnemyFromColumn(int columnIndex, Enemy enemy, bool skipChain = false)
     {
         if (!IsValidColumn(columnIndex)) return;
 
@@ -97,9 +97,18 @@ public class ColumnManager : MonoBehaviour
         }
         else
         {
-            columns[columnIndex].RemoveEnemy(enemy);
+            columns[columnIndex].RemoveEnemy(enemy, skipChain);
         }
         OnColumnsModified?.Invoke();
+    }
+
+    /// <summary>
+    /// 对指定列触发补齐前移（Boss死亡延迟补齐用）
+    /// </summary>
+    public void TriggerFillForward(int columnIndex)
+    {
+        if (!IsValidColumn(columnIndex)) return;
+        columns[columnIndex].TriggerFillForward();
     }
 
     /// <summary>
@@ -383,7 +392,7 @@ public class ColumnManager : MonoBehaviour
     /// RemoveEnemy(skipChain=true) 移除阵亡敌人后列表位置会变化，
     /// 但存活敌人保留原有 rowIndex，列表位置不再反映真实排号。
     /// </summary>
-    public void RowBasedFillUp()
+    public void RowBasedFillUp(int? pushedToRow = null)
     {
         // 1. 收集所有存活（非 Dead、非 Launched）敌人所在的排号
         int maxRow = 0;
@@ -410,10 +419,10 @@ public class ColumnManager : MonoBehaviour
                 Debug.Log($"[ColumnManager] RowBasedFillUp: 第{r}排已清空");
         }
 
-        // 3. 各列按 clearRows 压缩
+        // 3. 各列按 clearRows 压缩，传入 pushedToRow 防止击退被补齐抵消
         for (int c = 0; c < columnCount; c++)
         {
-            columns[c].CompactByClearRows(clearRows);
+            columns[c].CompactByClearRows(clearRows, pushedToRow);
         }
     }
 
@@ -785,22 +794,24 @@ public class ColumnManager : MonoBehaviour
 
     /// <summary>
     /// 位移效果完成后触发补齐：逐列紧凑，每列独立填补空排。
+    /// pushedToRow: 位移目标排（被推入的排），该排敌人不参与紧凑，避免击退被补齐抵消。
     /// </summary>
-    public void PostDisplacementFillUp()
+    public void PostDisplacementFillUp(int? pushedToRow = null)
     {
-        Debug.Log("[Displacement] PostDisplacementFillUp → RowBasedFillUp");
-        RowBasedFillUp();
+        Debug.Log($"[Displacement] PostDisplacementFillUp pushedToRow={pushedToRow?.ToString() ?? "null"} → RowBasedFillUp");
+        RowBasedFillUp(pushedToRow);
     }
 
     /// <summary>
     /// 逐列紧凑所有列：每列存活敌人向前紧凑，Boss 作为墙壁不可逾越。
+    /// rangeStart/rangeEnd 限定紧凑范围，默认 -1 表示全列。
     /// </summary>
-    public void CompactAllColumns()
+    public void CompactAllColumns(int rangeStart = -1, int rangeEnd = -1)
     {
         for (int c = 0; c < columnCount; c++)
         {
             int bossRow = GetBossRowInColumn(c);
-            columns[c].CompactColumn(bossRow);
+            columns[c].CompactColumn(bossRow, rangeStart, rangeEnd);
         }
         OnColumnsModified?.Invoke();
     }
