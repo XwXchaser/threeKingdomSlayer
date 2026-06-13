@@ -21,4 +21,5 @@ MonoBehaviour:
   projectilePrefab: {fileID: 0}
   projectileFlightTime: 0.8
   projectileTargetZ: -2
-  cooldownAfterQTE: 5
+  interruptibleOnStun: 1
+  cooldownAfterQTE: 3

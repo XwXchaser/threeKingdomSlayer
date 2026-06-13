@@ -111,6 +111,17 @@ public class BattleHUD : MonoBehaviour
         if (_heroHUD == null)
             Debug.LogError("[BattleHUD] heroHUDPrefab 上未找到 HeroHUD 组件");
 
+        // 将 QTE frame 注入 QTEDisplay（老虎机动画区域）
+        if (_heroHUD.qteIndicatorArea != null)
+        {
+            var qteDisplay = FindObjectOfType<QTEDisplay>();
+            if (qteDisplay != null)
+            {
+                qteDisplay.qteFrameRect = _heroHUD.qteFrameRect;
+                qteDisplay.qteIndicatorArea = _heroHUD.qteIndicatorArea;
+            }
+        }
+
         // 将 ExpBar Slider 和 Canvas 引用传给 ExpGemManager 和 HealthPotionManager
         if (ExpGemManager.Instance != null)
         {

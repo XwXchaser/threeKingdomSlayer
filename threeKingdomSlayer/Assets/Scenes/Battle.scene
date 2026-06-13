@@ -2035,6 +2035,7 @@ GameObject:
   - component: {fileID: 275758063}
   - component: {fileID: 275758068}
   - component: {fileID: 275758070}
+  - component: {fileID: 275758071}
   m_Layer: 5
   m_HasEditorInfo: 1
   m_Name: BattleHUD(Canvas)
@@ -2200,6 +2201,30 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &275758071
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 275758062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e2bfbe084f151844b06b2fc225b75e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  qteFrameRect: {fileID: 0}
+  qteIndicatorArea: {fileID: 0}
+  slideInDuration: 0.25
+  slideOutDuration: 0.3
+  slideInOffsetY: 200
+  flashDuration: 0.3
+  flashScale: 1.3
+  defaultClickIndicatorPrefab: {fileID: 4020735676731632093, guid: 1e6630f00b8ec814683df17726170700, type: 3}
+  defaultSwipeIndicatorPrefab: {fileID: 3166970949203987014, guid: dfc0e9f6df46cbd4f9c6de1373017a8f, type: 3}
+  successEffectPrefab: {fileID: 0}
+  failureEffectPrefab: {fileID: 0}
+  resultEffectDuration: 0.5
 --- !u!1 &325014485
 GameObject:
   m_ObjectHideFlags: 0
@@ -5647,7 +5672,6 @@ GameObject:
   - component: {fileID: 1066807474}
   - component: {fileID: 1066807473}
   - component: {fileID: 1066807472}
-  - component: {fileID: 1066807476}
   m_Layer: 5
   m_HasEditorInfo: 1
   m_Name: Canvas
@@ -5740,24 +5764,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &1066807476
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1066807471}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8e2bfbe084f151844b06b2fc225b75e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  indicatorParent: {fileID: 325014486}
-  defaultClickIndicatorPrefab: {fileID: 0}
-  defaultSwipeIndicatorPrefab: {fileID: 0}
-  successEffectPrefab: {fileID: 0}
-  failureEffectPrefab: {fileID: 0}
-  resultEffectDuration: 0.5
 --- !u!1 &1076254553
 GameObject:
   m_ObjectHideFlags: 0
@@ -11291,6 +11297,10 @@ PrefabInstance:
     - target: {fileID: 5803661486634337744, guid: 65a5eceb10c30c746aeaf5f937a45434, type: 3}
       propertyPath: m_Name
       value: wave
+      objectReference: {fileID: 0}
+    - target: {fileID: 5803661486634337744, guid: 65a5eceb10c30c746aeaf5f937a45434, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7105389542756575229, guid: 65a5eceb10c30c746aeaf5f937a45434, type: 3}
       propertyPath: m_LocalPosition.x

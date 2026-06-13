@@ -1,16 +1,33 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using DG.Tweening;
 
 /// <summary>
 /// QTE 显示管理器 — 挂载到 Canvas
-/// 管理 QTE 视觉 prefab 的生成/销毁、预警动画、成功/失败特效
+/// 老虎机风格 QTE 动画：图案下滑入场 → 填充 0→1 → 放大闪白 → 判定 → 下滑退场
 /// </summary>
 public class QTEDisplay : MonoBehaviour
 {
-    [Header("指示器设置")]
-    [Tooltip("QTE 指示器的父节点（Canvas 下的 RectTransform）")]
-    public RectTransform indicatorParent;
+    [Header("老虎机框架")]
+    [Tooltip("QTE 判定框 RectTransform（含 RectMask2D），运行时由 BattleHUD 注入")]
+    public RectTransform qteFrameRect;
+    [Tooltip("QTE 指示器生成区域（QTEFrame 下的空节点），运行时由 BattleHUD 注入")]
+    public RectTransform qteIndicatorArea;
+
+    [Header("老虎机动画参数")]
+    [Tooltip("入场下滑时长（秒）")]
+    public float slideInDuration = 0.25f;
+    [Tooltip("退场下滑时长（秒）")]
+    public float slideOutDuration = 0.3f;
+    [Tooltip("入场起始偏移（像素，frame 上方）")]
+    public float slideInOffsetY = 200f;
+    [Tooltip("放大闪白总时长（秒）")]
+    public float flashDuration = 0.3f;
+    [Tooltip("放大闪白峰值 scale")]
+    public float flashScale = 1.3f;
+
+    [Header("默认指示器")]
     [Tooltip("QTE 指示器默认 prefab（当 QTEConfig 未指定时使用）")]
     public GameObject defaultClickIndicatorPrefab;
     public GameObject defaultSwipeIndicatorPrefab;
@@ -23,25 +40,43 @@ public class QTEDisplay : MonoBehaviour
     [Tooltip("结果特效持续时间")]
     public float resultEffectDuration = 0.5f;
 
-    // 活跃的指示器
-    private List<GameObject> _activeIndicators = new List<GameObject>();
+    /// <summary>
+    /// 活跃指示器状态
+    /// </summary>
+    private class IndicatorState
+    {
+        public GameObject gameObject;
+        public Image fillImage;        // 填充层 Image（Filled 类型，上层）
+        public Image ghostImage;       // 底图层 Image（Simple 类型，半透明）
+        public Sequence animationSeq;
+        public bool fillComplete;
+    }
+
+    private List<IndicatorState> _activeStates = new List<IndicatorState>();
+    private RectTransform _fallbackParent;
 
     private void Awake()
     {
-        if (indicatorParent == null)
-        {
-            var canvas = GetComponent<Canvas>();
-            if (canvas != null)
-            {
-                indicatorParent = canvas.GetComponent<RectTransform>();
-            }
-        }
+        var canvas = GetComponent<Canvas>();
+        if (canvas != null)
+            _fallbackParent = canvas.GetComponent<RectTransform>();
     }
 
+    private RectTransform GetIndicatorParent()
+    {
+        if (qteIndicatorArea != null) return qteIndicatorArea;
+        return _fallbackParent;
+    }
+
+    // ═══════════════════════════════════════════
+    //  新 API — 老虎机动画
+    // ═══════════════════════════════════════════
+
     /// <summary>
-    /// 生成 QTE 指示器
+    /// 启动 QTE 指示器老虎机动画（替代旧 SpawnIndicator）
+    /// 序列：半透明底图下滑入场 → 填充层 0→1 覆盖 → 放大闪白 → 等待判定 → 下滑退场
     /// </summary>
-    public GameObject SpawnIndicator(QTEConfig config)
+    public GameObject StartQTEIndicator(QTEConfig config)
     {
         GameObject prefab = config.qteIndicatorPrefab != null
             ? config.qteIndicatorPrefab
@@ -49,66 +84,237 @@ public class QTEDisplay : MonoBehaviour
 
         if (prefab == null) return null;
 
-        GameObject indicator = Instantiate(prefab, indicatorParent);
+        var parent = GetIndicatorParent();
+        GameObject indicator = Instantiate(prefab, parent);
         var rt = indicator.GetComponent<RectTransform>();
+
+        var state = new IndicatorState();
+        state.gameObject = indicator;
+
+        // 获取 prefab 上的 Image 作为填充层
+        state.fillImage = indicator.GetComponent<Image>();
+        if (state.fillImage == null)
+            state.fillImage = indicator.GetComponentInChildren<Image>();
+
+        // 设置指示器尺寸、位置和缩放
+        float posX = 0f, posY = 0f;
         if (rt != null)
         {
-            rt.anchorMin = config.screenPosition;
-            rt.anchorMax = config.screenPosition;
-            rt.anchoredPosition = Vector2.zero;
+            rt.localScale = Vector3.one;
             rt.sizeDelta = config.indicatorSize;
+
+            float frameW = qteFrameRect != null ? qteFrameRect.rect.width : 600f;
+            float frameH = qteFrameRect != null ? qteFrameRect.rect.height : 150f;
+            posX = (config.screenPosition.x - 0.5f) * frameW;
+            posY = (config.screenPosition.y - 0.5f) * frameH;
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(posX, posY);
         }
 
-        // 预警动画：缩放脉冲
-        if (config.warningDuration > 0f)
+        // ── 创建底图层（ghost）──
+        // 与填充层同 sprite，Type=Simple 始终满，alpha≈0.7 半透明
+        if (state.fillImage != null && state.fillImage.sprite != null)
         {
-            indicator.transform.localScale = Vector3.zero;
-            indicator.transform.DOScale(1f, config.warningDuration).SetEase(Ease.OutBack);
+            var ghostGo = new GameObject("Ghost", typeof(RectTransform), typeof(Image));
+            ghostGo.transform.SetParent(indicator.transform, false);
+            var ghostRt = ghostGo.GetComponent<RectTransform>();
+            ghostRt.anchorMin = Vector2.zero;
+            ghostRt.anchorMax = Vector2.one;
+            ghostRt.sizeDelta = Vector2.zero;
+            ghostRt.anchoredPosition = Vector2.zero;
+            var ghostImg = ghostGo.GetComponent<Image>();
+            ghostImg.sprite = state.fillImage.sprite;
+            ghostImg.type = Image.Type.Simple;
+            ghostImg.preserveAspect = state.fillImage.preserveAspect;
+            ghostImg.color = new Color(1f, 1f, 1f, 0.7f);
+            ghostImg.raycastTarget = false;
+            state.ghostImage = ghostImg;
         }
 
-        _activeIndicators.Add(indicator);
+        // 填充层：fillAmount 立即归零，Type 保持 Filled
+        if (state.fillImage != null)
+        {
+            state.fillImage.fillAmount = 0f;
+            state.fillImage.color = new Color(1f, 1f, 1f, 1f);
+            state.fillImage.raycastTarget = true;
+        }
+
+        // 初始位置：frame 上方（X不变，Y上移）
+        float targetY = rt != null ? rt.anchoredPosition.y : 0f;
+        if (rt != null)
+            rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, slideInOffsetY);
+
+        // ── 构建老虎机 Sequence ──
+        var seq = DOTween.Sequence();
+        seq.SetId($"qte_{indicator.GetInstanceID()}");
+        seq.SetAutoKill(false);
+
+        // 1. 下滑入场（仅位移，无 fade：底图半透明始终可见，填充层从 0 开始不可见）
+        if (rt != null)
+            seq.Append(rt.DOAnchorPosY(targetY, slideInDuration).SetEase(Ease.OutCubic));
+
+        // 2. 填充 0→1（填充层覆盖在半透明底图上）
+        if (state.fillImage != null && config.warningDuration > 0f)
+        {
+            seq.Append(state.fillImage.DOFillAmount(1f, config.warningDuration).SetEase(Ease.Linear));
+            seq.AppendCallback(() => state.fillComplete = true);
+        }
+        else
+        {
+            seq.AppendCallback(() => state.fillComplete = true);
+        }
+
+        // 3. 放大闪白（进入判定窗口）
+        if (state.fillImage != null && flashDuration > 0f)
+        {
+            seq.Append(indicator.transform.DOPunchScale(
+                Vector3.one * (flashScale - 1f), flashDuration, 1, 0f));
+        }
+
+        state.animationSeq = seq;
+        _activeStates.Add(state);
+        Debug.Log($"[QTEDisplay] StartQTEIndicator: type={config.qteType}, targetPos=({posX:F0},{posY:F0}), size={config.indicatorSize}");
         return indicator;
     }
 
     /// <summary>
-    /// 显示 QTE 判定结果特效
+    /// 判定窗口开始 — 若填充尚未完成，Kill sequence 后手动填满并触发放大闪白
     /// </summary>
-    public void ShowQTEResult(GameObject indicator, bool success)
+    public void OnJudgmentStart(GameObject indicator)
     {
-        if (success && successEffectPrefab != null)
+        var state = FindState(indicator);
+        if (state == null || state.fillComplete) return;
+
+        state.fillComplete = true;
+
+        // Kill 动画 sequence，避免与手动 flash 冲突
+        if (state.animationSeq != null && state.animationSeq.IsActive())
+            state.animationSeq.Kill();
+
+        if (state.fillImage != null)
         {
-            var effect = Instantiate(successEffectPrefab, indicator.transform.position, Quaternion.identity, indicatorParent);
-            Destroy(effect, resultEffectDuration);
-        }
-        else if (!success && failureEffectPrefab != null)
-        {
-            var effect = Instantiate(failureEffectPrefab, indicator.transform.position, Quaternion.identity, indicatorParent);
-            Destroy(effect, resultEffectDuration);
+            DOTween.Kill(state.fillImage);
+            state.fillImage.fillAmount = 1f;
         }
 
-        // 指示器缩小消失
-        indicator.transform.DOScale(0f, 0.2f).SetEase(Ease.InBack)
-            .OnComplete(() =>
-            {
-                _activeIndicators.Remove(indicator);
-                Destroy(indicator);
-            });
+        // 放大闪白
+        if (flashDuration > 0f)
+        {
+            indicator.transform.localScale = Vector3.one;
+            indicator.transform.DOPunchScale(
+                Vector3.one * (flashScale - 1f), flashDuration, 1, 0f);
+        }
     }
 
     /// <summary>
-    /// 清除所有活跃的 QTE 指示器
+    /// 判定结果退场动画（替代旧 ShowQTEResult）
+    /// </summary>
+    public void ResolveIndicator(GameObject indicator, bool success)
+    {
+        var state = FindState(indicator);
+        if (state == null) return;
+
+        if (state.animationSeq != null && state.animationSeq.IsActive())
+            state.animationSeq.Kill();
+        indicator.transform.DOKill(true);
+
+        // 结果特效
+        var effectParent = GetIndicatorParent();
+        if (success && successEffectPrefab != null)
+        {
+            var e = Instantiate(successEffectPrefab, indicator.transform.position, Quaternion.identity, effectParent);
+            Destroy(e, resultEffectDuration);
+        }
+        else if (!success && failureEffectPrefab != null)
+        {
+            var e = Instantiate(failureEffectPrefab, indicator.transform.position, Quaternion.identity, effectParent);
+            Destroy(e, resultEffectDuration);
+        }
+
+        SlideOutAndDestroy(state);
+    }
+
+    /// <summary>
+    /// 提前取消（提早输入）— 无特效直接下滑消失
+    /// </summary>
+    public void CancelIndicatorEarly(GameObject indicator)
+    {
+        var state = FindState(indicator);
+        if (state == null) return;
+
+        if (state.animationSeq != null && state.animationSeq.IsActive())
+            state.animationSeq.Kill();
+        indicator.transform.DOKill(true);
+
+        SlideOutAndDestroy(state);
+    }
+
+    /// <summary>
+    /// 清除所有活跃指示器（AbortQTE 时调用）
     /// </summary>
     public void ClearAllIndicators()
     {
-        foreach (var indicator in _activeIndicators)
+        foreach (var state in _activeStates)
         {
-            if (indicator != null)
+            if (state == null) continue;
+            if (state.gameObject != null)
             {
-                indicator.transform.DOKill();
-                Destroy(indicator);
+                if (state.animationSeq != null && state.animationSeq.IsActive())
+                    state.animationSeq.Kill();
+                state.gameObject.transform.DOKill();
+                Destroy(state.gameObject);
             }
         }
-        _activeIndicators.Clear();
+        _activeStates.Clear();
+    }
+
+    // ═══════════════════════════════════════════
+    //  旧 API（保持兼容）
+    // ═══════════════════════════════════════════
+
+    public GameObject SpawnIndicator(QTEConfig config)
+    {
+        return StartQTEIndicator(config);
+    }
+
+    public void ShowQTEResult(GameObject indicator, bool success)
+    {
+        ResolveIndicator(indicator, success);
+    }
+
+    // ═══════════════════════════════════════════
+    //  内部
+    // ═══════════════════════════════════════════
+
+    private void SlideOutAndDestroy(IndicatorState state)
+    {
+        _activeStates.Remove(state);
+        var go = state.gameObject;
+        if (go == null) return;
+
+        var rt = go.GetComponent<RectTransform>();
+        float endY = -(150f * 0.5f + slideInOffsetY);
+        if (qteFrameRect != null)
+            endY = -(qteFrameRect.rect.height * 0.5f + slideInOffsetY);
+
+        var cg = go.AddComponent<CanvasGroup>();
+        var seq = DOTween.Sequence();
+        seq.SetId($"qte_out_{go.GetInstanceID()}");
+        if (rt != null)
+            seq.Join(rt.DOAnchorPosY(endY, slideOutDuration).SetEase(Ease.InCubic));
+        seq.Join(cg.DOFade(0f, slideOutDuration));
+        seq.OnComplete(() => Destroy(go));
+    }
+
+    private IndicatorState FindState(GameObject indicator)
+    {
+        for (int i = _activeStates.Count - 1; i >= 0; i--)
+        {
+            if (_activeStates[i] != null && _activeStates[i].gameObject == indicator)
+                return _activeStates[i];
+        }
+        return null;
     }
 
     private GameObject GetDefaultPrefab(QTEType type)

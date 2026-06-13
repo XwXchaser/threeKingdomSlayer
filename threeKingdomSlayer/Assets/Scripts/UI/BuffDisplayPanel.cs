@@ -270,7 +270,7 @@ public class BuffDisplayPanel : MonoBehaviour
             float interval = module.GetInterval(upgradeId);
             if (interval <= 0f) continue;
 
-            float fill = timer / interval;
+            float fill = 1f - (timer / interval);
             string text = timer.ToString("F1");
             icon.SetCooldown(fill, text, true);
         }

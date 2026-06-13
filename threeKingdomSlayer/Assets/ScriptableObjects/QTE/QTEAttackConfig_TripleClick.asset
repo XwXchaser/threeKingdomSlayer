@@ -19,9 +19,11 @@ MonoBehaviour:
     delay: 0.3
   - config: {fileID: 11400000, guid: 932420813484b2240bf4aca739e434bf, type: 2}
     delay: 0.6
-  bossAttackAnimation: QTEAttack
+  qteAnimationClip: {fileID: 0}
+  animationDuration: 0
   animationLeadTime: 0.3
   projectilePrefab: {fileID: 0}
   projectileFlightTime: 0.8
   projectileTargetZ: -2
-  cooldownAfterQTE: 5
+  interruptibleOnStun: 1
+  cooldownAfterQTE: 3

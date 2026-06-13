@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: QTEConfig_Swipe
   m_EditorClassIdentifier: 
   qteType: 1
-  warningDuration: 0.5
-  judgeWindow: 2
+  warningDuration: 2
+  judgeWindow: 3
   swipeDirection: 0
   swipeAngleTolerance: 60
   swipeMinSpeed: 200
@@ -23,4 +23,4 @@ MonoBehaviour:
   failureDamage: 20
   qteIndicatorPrefab: {fileID: 3166970949203987014, guid: dfc0e9f6df46cbd4f9c6de1373017a8f, type: 3}
   screenPosition: {x: 0.5, y: 0.55}
-  indicatorSize: {x: 800, y: 200}
+  indicatorSize: {x: 400, y: 80}

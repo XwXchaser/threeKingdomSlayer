@@ -32,6 +32,12 @@ public class HeroHUD : MonoBehaviour
     public Image launchChargeFill;
     public Image parryChargeFill;
 
+    [Header("QTE 老虎机")]
+    [Tooltip("QTE 判定框 RectTransform（含 RectMask2D 裁剪）")]
+    public RectTransform qteFrameRect;
+    [Tooltip("QTE 指示器生成区域（QTEFrame 下的空节点）")]
+    public RectTransform qteIndicatorArea;
+
     // 血量条默认颜色缓存
     private Color _healthBarDefaultColor;
     private bool _healthBarColorSaved;
