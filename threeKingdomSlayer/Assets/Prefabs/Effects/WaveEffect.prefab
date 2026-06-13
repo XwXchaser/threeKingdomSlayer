@@ -316,4 +316,4 @@ MonoBehaviour:
   wave2: {fileID: 5488199713297877545}
   wave3: {fileID: 2560720216744925557}
   frameInterval: 0.1
-  zMoveTotal: 2.5
+  zMoveTotal: 10

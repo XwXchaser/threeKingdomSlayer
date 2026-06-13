@@ -28,6 +28,7 @@ public class QTEInstance
     public GameObject indicator;
     public bool resolved;
     public bool success;
+    public bool judgmentStarted;  // 判定窗口已开始（用于通知 QTEDisplay）
 
     public bool IsInJudgeWindow(float phaseElapsed) => phaseElapsed >= warningEndTime && phaseElapsed <= judgeEndTime;
     public bool IsExpired(float phaseElapsed) => phaseElapsed > judgeEndTime && !resolved;
@@ -287,6 +288,9 @@ public class QTEController : MonoBehaviour
                 SpawnQTEIndicator(qte);
         }
 
+        // 检查判定窗口开始（通知 QTEDisplay 触发放大闪白）
+        CheckJudgmentStart();
+
         // 所有 QTE 已到生成时间 → 进入判定阶段
         bool allReady = true;
         foreach (var qte in _activeQTEs)
@@ -301,6 +305,9 @@ public class QTEController : MonoBehaviour
     private void UpdateJudging()
     {
         _qtePhaseTimer += Time.deltaTime;
+
+        // 检查判定窗口开始（通知 QTEDisplay 触发放大闪白）
+        CheckJudgmentStart();
 
         bool allResolved = true;
         foreach (var qte in _activeQTEs)
@@ -323,27 +330,45 @@ public class QTEController : MonoBehaviour
         get
         {
             // QTE 阶段一旦开始，所有输入均被 QTE 系统拦截，防止误触普通攻击
-            if (_state != QTEState.QTEJudging && _state != QTEState.PerformingQTEAttack) return false;
-            return _qtePhaseStarted;
+            return _state == QTEState.QTEJudging || _state == QTEState.PerformingQTEAttack;
         }
     }
 
     public bool TryQTEClick(Vector2 screenPos)
     {
         if (_state != QTEState.QTEJudging && _state != QTEState.PerformingQTEAttack) return false;
-        if (!_qtePhaseStarted) return false;
+        if (!_qtePhaseStarted)
+        {
+            Debug.Log($"[QTEController] TryQTEClick 拒绝: _qtePhaseStarted=false");
+            return false;
+        }
 
         foreach (var qte in _activeQTEs)
         {
             if (qte.resolved || qte.config.qteType != QTEType.Click) continue;
+
+            // 提早点击 → 失败
+            if (!qte.IsInJudgeWindow(_qtePhaseTimer) && _qtePhaseTimer < qte.warningEndTime)
+            {
+                if (IsClickInQTEArea(screenPos, qte))
+                {
+                    Debug.Log($"[QTEController] 提早点击 → QTE失败 idx={_activeQTEs.IndexOf(qte)}");
+                    ResolveQTE(qte, false, earlyFail: true);
+                    return true;
+                }
+                continue;
+            }
+
             if (!qte.IsInJudgeWindow(_qtePhaseTimer)) continue;
 
             if (IsClickInQTEArea(screenPos, qte))
             {
+                Debug.Log($"[QTEController] 点击QTE成功 idx={_activeQTEs.IndexOf(qte)}");
                 ResolveQTE(qte, true);
                 return true;
             }
         }
+        Debug.Log($"[QTEController] TryQTEClick 未命中任何指示器 screenPos={screenPos}");
         return false;
     }
 
@@ -355,6 +380,19 @@ public class QTEController : MonoBehaviour
         foreach (var qte in _activeQTEs)
         {
             if (qte.resolved || qte.config.qteType != QTEType.Swipe) continue;
+
+            // 提早划动 → 失败（仅检查是否经过区域）
+            if (!qte.IsInJudgeWindow(_qtePhaseTimer) && _qtePhaseTimer < qte.warningEndTime)
+            {
+                Rect? earlyRect = GetIndicatorScreenRect(qte);
+                if (earlyRect != null && LineIntersectsRect(startScreenPos, releaseScreenPos, earlyRect.Value))
+                {
+                    ResolveQTE(qte, false, earlyFail: true);
+                    return true;
+                }
+                continue;
+            }
+
             if (!qte.IsInJudgeWindow(_qtePhaseTimer)) continue;
 
             if (swipeSpeed < qte.config.swipeMinSpeed)
@@ -461,6 +499,23 @@ public class QTEController : MonoBehaviour
         return t >= 0f && t <= 1f && u >= 0f && u <= 1f;
     }
 
+    /// <summary>
+    /// 检查 QTE 判定窗口开始（通知 QTEDisplay 触发放大闪白）
+    /// </summary>
+    private void CheckJudgmentStart()
+    {
+        foreach (var qte in _activeQTEs)
+        {
+            if (qte.resolved || qte.judgmentStarted) continue;
+            if (_qtePhaseTimer >= qte.warningEndTime && qte.indicator != null)
+            {
+                qte.judgmentStarted = true;
+                if (qteDisplay != null)
+                    qteDisplay.OnJudgmentStart(qte.indicator);
+            }
+        }
+    }
+
     private bool IsClickInQTEArea(Vector2 screenPos, QTEInstance qte)
     {
         if (qte.indicator == null) return false;
@@ -493,7 +548,7 @@ public class QTEController : MonoBehaviour
             Debug.LogWarning("[QTEController] SpawnIndicator返回null!");
     }
 
-    private void ResolveQTE(QTEInstance qte, bool success)
+    private void ResolveQTE(QTEInstance qte, bool success, bool earlyFail = false)
     {
         qte.resolved = true;
         qte.success = success;
@@ -510,7 +565,10 @@ public class QTEController : MonoBehaviour
         // 通知 QTEDisplay 播放结果特效
         if (qteDisplay != null && qte.indicator != null)
         {
-            qteDisplay.ShowQTEResult(qte.indicator, success);
+            if (earlyFail)
+                qteDisplay.CancelIndicatorEarly(qte.indicator);
+            else
+                qteDisplay.ShowQTEResult(qte.indicator, success);
         }
     }
 
@@ -527,9 +585,7 @@ public class QTEController : MonoBehaviour
 
     private void OnQTEFailureSingle(QTEInstance qte)
     {
-        if (PlayerState.Instance != null)
-            PlayerState.Instance.TakeDamage(qte.config.failureDamage);
-
+        // 失败伤害延迟到 CompleteQTEAttack 时应用，匹配动画时间点
         OnQTEFailure?.Invoke();
     }
 
@@ -566,12 +622,21 @@ public class QTEController : MonoBehaviour
     {
         _state = QTEState.QTECompleted;
 
-        // 检查是否有 QTE 失败
+        // 收集 QTE 失败伤害（延迟到此时匹配动画时间点）
+        float totalFailureDamage = 0f;
         bool anyFailed = false;
         foreach (var qte in _activeQTEs)
         {
             if (qte.resolved && !qte.success)
-            { anyFailed = true; break; }
+            {
+                anyFailed = true;
+                totalFailureDamage += qte.config.failureDamage;
+            }
+        }
+        if (totalFailureDamage > 0f && PlayerState.Instance != null)
+        {
+            PlayerState.Instance.TakeDamage(totalFailureDamage);
+            Debug.Log($"[QTEController] QTE失败伤害: {totalFailureDamage:F0}");
         }
 
         // 飞行物处理

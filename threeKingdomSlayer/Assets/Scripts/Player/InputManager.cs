@@ -577,7 +577,8 @@ public class InputManager : MonoBehaviour
             }
         }
 
-        return false;
+        // QTE 活跃时消费所有输入，防止落到普通攻击
+        return true;
     }
 
     #endregion

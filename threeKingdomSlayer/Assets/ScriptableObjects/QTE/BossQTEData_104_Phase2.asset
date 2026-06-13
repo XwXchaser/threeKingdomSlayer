@@ -13,8 +13,7 @@ MonoBehaviour:
   m_Name: BossQTEData_104_Phase2
   m_EditorClassIdentifier: 
   qteAttacks:
-  - {fileID: 11400000, guid: 12530cf767edb0546bd9d2bbf0aba881, type: 2}
   - {fileID: 11400000, guid: f8e67221317f170408587e0081f61814, type: 2}
   loopAttacks: 1
-  firstQTECooldown: 5
-  baseQTECooldown: 5
+  firstQTECooldown: 1
+  baseQTECooldown: 3
