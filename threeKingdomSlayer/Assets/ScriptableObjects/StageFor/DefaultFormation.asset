@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   formationPreset: {fileID: 0}
   manualRowHalfWidths:
+  - 2.5
   - 3
   - 3.5
   - 4
   - 4.5
-  - 5
   formationMaxSpread: 4
   formationMinSpread: 0.5
   formationPowerCurve: 1.2
@@ -29,5 +29,5 @@ MonoBehaviour:
   - 0.8
   - 0.75
   - 0.5
-  - 0.2
+  - 0.3
   maxVisibleRows: 5
