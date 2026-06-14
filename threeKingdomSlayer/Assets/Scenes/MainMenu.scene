@@ -853,6 +853,7 @@ GameObject:
   - component: {fileID: 891565940}
   - component: {fileID: 891565939}
   - component: {fileID: 891565943}
+  - component: {fileID: 891565944}
   m_Layer: 5
   m_HasEditorInfo: 1
   m_Name: Canvas
@@ -968,6 +969,18 @@ MonoBehaviour:
   coinText: {fileID: 1902378607}
   stageConfigManager: {fileID: 1931903700}
   cameraManager: {fileID: 653455772}
+--- !u!114 &891565944
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 891565938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 789d00d3b4e90ca44b06b3d692d9495c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &986189354
 GameObject:
   m_ObjectHideFlags: 0
@@ -1195,7 +1208,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: -341.7, y: 55.100006}
+  m_AnchoredPosition: {x: -341.7, y: 55.099976}
   m_SizeDelta: {x: 160, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1535994062
@@ -1406,7 +1419,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 244.2}
+  m_AnchoredPosition: {x: 0, y: 244.20001}
   m_SizeDelta: {x: 160, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1902378606
@@ -1576,7 +1589,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   stages:
-  - {fileID: 11400000, guid: 81048452505b7774591dba212d695a8e, type: 2}
+  - {fileID: 11400000, guid: 7c238cf987295554ca9a26f55726b94d, type: 2}
 --- !u!4 &1931903701
 Transform:
   m_ObjectHideFlags: 0

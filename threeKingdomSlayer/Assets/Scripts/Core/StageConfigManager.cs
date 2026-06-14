@@ -20,6 +20,9 @@ public class StageConfigManager : MonoBehaviour
             return;
         }
         Instance = this;
+
+        // Android 默认 30 FPS，显式设为目标帧率
+        Application.targetFrameRate = 60;
     }
 
     private void OnDestroy()

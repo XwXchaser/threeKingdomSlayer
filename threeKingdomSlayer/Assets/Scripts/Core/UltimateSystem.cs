@@ -127,6 +127,7 @@ public class UltimateSystem : MonoBehaviour
             if (effect != null)
             {
                 effect.Execute();
+                Handheld.Vibrate();
             }
             else
             {

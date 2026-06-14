@@ -80,7 +80,7 @@ public class Column
         {
             enemies.RemoveAt(index);
             int colIndex = enemy.columnIndex;
-            Debug.Log($"[Column] RemoveEnemy: column={colIndex}, deadIndex={index}, remaining={enemies.Count}, skipChain={skipChain}");
+            DebugLog.Info($"[Column] RemoveEnemy: column={colIndex}, deadIndex={index}, remaining={enemies.Count}, skipChain={skipChain}");
 
             if (skipChain) return;
 
@@ -91,7 +91,7 @@ public class Column
                 Enemy e = enemies[i];
                 if (e.state == EnemyState.Dead)
                 {
-                    Debug.Log($"[Column] 跳过 Dead 敌人: {e.DebugTag}, col={colIndex}, row={e.rowIndex}");
+                    DebugLog.Info($"[Column] 跳过 Dead 敌人: {e.DebugTag}, col={colIndex}, row={e.rowIndex}");
                     continue;
                 }
                 // 存活敌人（含Launched）：紧凑前移并标记补齐
@@ -109,11 +109,11 @@ public class Column
                 {
                     // 攻击动画中：保留状态，仅标记 targetRow/pendingRushMove
                     // 由攻击动画 OnComplete 中的 TryStartRushMove 自然衔接
-                    Debug.Log($"[Column] 标记补齐（保留攻击动画）: {e.DebugTag}, col={colIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
+                    DebugLog.Info($"[Column] 标记补齐（保留攻击动画）: {e.DebugTag}, col={colIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
                 }
                 if (!(e.isBoss && e.bossState == BossState.Approaching))
                     e.pendingRushMove = true;
-                Debug.Log($"[Column] 标记补齐移动: {e.DebugTag}, col={colIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
+                DebugLog.Info($"[Column] 标记补齐移动: {e.DebugTag}, col={colIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
                 writeIdx++;
             }
 
@@ -137,7 +137,7 @@ public class Column
             {
                 enemies[i].OnRushMoveComplete += OnColumnRushMoveComplete;
                 enemies[i].TryStartRushMove();
-                Debug.Log($"[Column] 启动链式补齐: {enemies[i].DebugTag}, col={colIndex}, row={enemies[i].rowIndex}");
+                DebugLog.Info($"[Column] 启动链式补齐: {enemies[i].DebugTag}, col={colIndex}, row={enemies[i].rowIndex}");
                 return;
             }
         }
@@ -157,7 +157,7 @@ public class Column
             {
                 enemies[i].OnRushMoveComplete += OnColumnRushMoveComplete;
                 enemies[i].TryStartRushMove();
-                Debug.Log($"[Column] 链式触发下一个: {enemies[i].DebugTag}, col={columnIndex}, row={enemies[i].rowIndex}");
+                DebugLog.Info($"[Column] 链式触发下一个: {enemies[i].DebugTag}, col={columnIndex}, row={enemies[i].rowIndex}");
                 return;
             }
         }
@@ -177,7 +177,7 @@ public class Column
         // 前方敌人与落地敌人目标排不同，可并发移动，互不阻塞。
         enemy.OnRushMoveComplete += OnColumnRushMoveComplete;
         enemy.TryStartRushMove();
-        Debug.Log($"[Column] 击飞落地启动链式: {enemy.DebugTag}, col={columnIndex}, row={enemy.rowIndex}");
+        DebugLog.Info($"[Column] 击飞落地启动链式: {enemy.DebugTag}, col={columnIndex}, row={enemy.rowIndex}");
     }
 
     /// <summary>
@@ -233,14 +233,14 @@ public class Column
                 {
                     if (!(e.isBoss && e.bossState == BossState.Approaching))
                         e.pendingRushMove = true;
-                    Debug.Log($"[Column] RowBased 标记补齐（保留状态）: {e.DebugTag}, col={columnIndex}, curRow={row}, targetRow={newRow}, state={e.state} isAttackAnimating={e.isAttackAnimating}");
+                    DebugLog.Info($"[Column] RowBased 标记补齐（保留状态）: {e.DebugTag}, col={columnIndex}, curRow={row}, targetRow={newRow}, state={e.state} isAttackAnimating={e.isAttackAnimating}");
                 }
                 else
                 {
                     e.ResetMovementState();
                     if (!(e.isBoss && e.bossState == BossState.Approaching))
                         e.pendingRushMove = true;
-                    Debug.Log($"[Column] RowBased 标记补齐: {e.DebugTag}, col={columnIndex}, curRow={row}, targetRow={newRow}");
+                    DebugLog.Info($"[Column] RowBased 标记补齐: {e.DebugTag}, col={columnIndex}, curRow={row}, targetRow={newRow}");
                 }
             }
         }
@@ -330,9 +330,9 @@ public class Column
         }
         // 防御性检测：若插入位置前后存在同 rowIndex 的敌人，记录警告
         if (insertIdx < enemies.Count && enemies[insertIdx].rowIndex == enemy.rowIndex)
-            Debug.LogWarning($"[Column] InsertEnemySorted OVERLAP: {enemy.DebugTag} row={enemy.rowIndex} collides with {enemies[insertIdx].DebugTag} at same row in col={columnIndex}");
+            DebugLog.Warning($"[Column] InsertEnemySorted OVERLAP: {enemy.DebugTag} row={enemy.rowIndex} collides with {enemies[insertIdx].DebugTag} at same row in col={columnIndex}");
         else if (insertIdx > 0 && enemies[insertIdx - 1].rowIndex == enemy.rowIndex)
-            Debug.LogWarning($"[Column] InsertEnemySorted OVERLAP: {enemy.DebugTag} row={enemy.rowIndex} collides with {enemies[insertIdx - 1].DebugTag} at same row in col={columnIndex}");
+            DebugLog.Warning($"[Column] InsertEnemySorted OVERLAP: {enemy.DebugTag} row={enemy.rowIndex} collides with {enemies[insertIdx - 1].DebugTag} at same row in col={columnIndex}");
         enemies.Insert(insertIdx, enemy);
     }
 
@@ -368,7 +368,7 @@ public class Column
         if (hasRange) targetRow = rangeStart;
 
         // DEBUG: 打印入参和当前列状态
-        Debug.Log($"[CompactColumn] col={columnIndex} bossRow={bossRow} range=[{rangeStart},{rangeEnd}] hasRange={hasRange} list=[{string.Join(",", enemies.ConvertAll(e => $"{e.name}@{e.rowIndex}"))}]");
+        DebugLog.Info($"[CompactColumn] col={columnIndex} bossRow={bossRow} range=[{rangeStart},{rangeEnd}] hasRange={hasRange} list=[{string.Join(",", enemies.ConvertAll(e => $"{e.name}@{e.rowIndex}"))}]");
 
         for (int i = 0; i < enemies.Count; i++)
         {
@@ -378,7 +378,7 @@ public class Column
             // 波区前方敌人保持原位
             if (hasRange && e.rowIndex < rangeStart)
             {
-                Debug.Log($"[CompactColumn]   {e.name} row={e.rowIndex} → skip (before range)");
+                DebugLog.Info($"[CompactColumn]   {e.name} row={e.rowIndex} → skip (before range)");
                 compacted.Add(e);
                 continue;
             }
@@ -389,7 +389,7 @@ public class Column
                 passedRangeEnd = true;
                 targetRow = rangeEnd + 1;
                 bossPlaced = false;
-                Debug.Log($"[CompactColumn]   → passedRangeEnd, targetRow reset to {targetRow}");
+                DebugLog.Info($"[CompactColumn]   → passedRangeEnd, targetRow reset to {targetRow}");
             }
 
             // Boss 到达：固定在 bossRow，身后敌人从 bossRow+1 起排
@@ -398,13 +398,13 @@ public class Column
                 bossPlaced = true;
                 if (targetRow > bossRow)
                 {
-                    Debug.LogWarning($"[Column] CompactColumn: targetRow={targetRow} > bossRow={bossRow} in col={columnIndex}");
+                    DebugLog.Warning($"[Column] CompactColumn: targetRow={targetRow} > bossRow={bossRow} in col={columnIndex}");
                 }
                 targetRow = bossRow;
             }
 
             e.targetRow = targetRow;
-            Debug.Log($"[CompactColumn]   {e.name} row={e.rowIndex} → targetRow={targetRow} bossPlaced={bossPlaced} passedRangeEnd={passedRangeEnd}");
+            DebugLog.Info($"[CompactColumn]   {e.name} row={e.rowIndex} → targetRow={targetRow} bossPlaced={bossPlaced} passedRangeEnd={passedRangeEnd}");
 
             if (e.rowIndex != targetRow)
             {

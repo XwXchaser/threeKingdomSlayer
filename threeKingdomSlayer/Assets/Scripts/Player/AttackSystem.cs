@@ -89,6 +89,7 @@ public class AttackSystem : MonoBehaviour
         {
             playerState.StartCooldown(attackType);
             UltimateSystem.Instance?.AddEnergyForAttack(attackType);
+            Handheld.Vibrate();
 
             // 仅五种有效攻击类型触发被动计数（排除 Parry 和 Ultimate）
             if (attackType != AttackType.Parry && attackType != AttackType.Ultimate)

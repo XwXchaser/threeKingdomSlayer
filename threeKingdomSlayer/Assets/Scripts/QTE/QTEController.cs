@@ -78,7 +78,7 @@ public class QTEController : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log($"[QTEController] Start: enemy={enemy?.name}, isBoss={enemy?.isBoss}, qteData={qteData?.name}, qteAttacksCount={qteData?.qteAttacks?.Count}");
+        DebugLog.Info($"[QTEController] Start: enemy={enemy?.name}, isBoss={enemy?.isBoss}, qteData={qteData?.name}, qteAttacksCount={qteData?.qteAttacks?.Count}");
         if (enemy != null && enemy.isBoss)
         {
             // 初始化 QTE 攻击索引（由 Enemy 的 Idle 调度决定何时触发 QTE）
@@ -100,7 +100,7 @@ public class QTEController : MonoBehaviour
         if ((_state == QTEState.PerformingQTEAttack || _state == QTEState.QTEJudging)
             && enemy.state != EnemyState.QTEAttacking)
         {
-            Debug.Log($"[QTEController] 敌人脱离QTE状态({enemy.state})，中止QTE");
+            DebugLog.Info($"[QTEController] 敌人脱离QTE状态({enemy.state})，中止QTE");
             AbortQTE();
             return;
         }
@@ -128,7 +128,7 @@ public class QTEController : MonoBehaviour
         _currentAttackIndex = 0;
         _state = QTEState.Idle;
         _activeQTEs.Clear();
-        Debug.Log($"[QTEController] 切换QTE数据: {newData?.name}, state={_state}");
+        DebugLog.Info($"[QTEController] 切换QTE数据: {newData?.name}, state={_state}");
     }
 
     /// <summary>
@@ -137,25 +137,25 @@ public class QTEController : MonoBehaviour
     /// </summary>
     public bool TriggerQTEAttack()
     {
-        Debug.Log($"[QTEController] TriggerQTEAttack: attackIndex={_currentAttackIndex}, totalAttacks={qteData?.qteAttacks?.Count}");
+        DebugLog.Info($"[QTEController] TriggerQTEAttack: attackIndex={_currentAttackIndex}, totalAttacks={qteData?.qteAttacks?.Count}");
         if (qteData == null || qteData.qteAttacks.Count == 0) return false;
 
         // 眩晕/击飞期间禁止触发QTE
         if (enemy.state == EnemyState.Stunned || enemy.state == EnemyState.Launched)
         {
-            Debug.Log($"[QTEController] 敌人在眩晕/击飞状态({enemy.state})，跳过QTE");
+            DebugLog.Info($"[QTEController] 敌人在眩晕/击飞状态({enemy.state})，跳过QTE");
             return false;
         }
 
         // QTE 序列已耗尽（非循环模式）
         if (_currentAttackIndex >= qteData.qteAttacks.Count)
         {
-            Debug.Log("[QTEController] QTE序列已耗尽");
+            DebugLog.Info("[QTEController] QTE序列已耗尽");
             return false;
         }
 
         _currentAttack = qteData.qteAttacks[_currentAttackIndex];
-        Debug.Log($"[QTEController] 当前攻击: {_currentAttack?.name}, slots={_currentAttack?.qteSlots?.Count}");
+        DebugLog.Info($"[QTEController] 当前攻击: {_currentAttack?.name}, slots={_currentAttack?.qteSlots?.Count}");
         _state = QTEState.PerformingQTEAttack;
         _performingTimer = 0f;
         _qtePhaseStarted = false;
@@ -339,7 +339,7 @@ public class QTEController : MonoBehaviour
         if (_state != QTEState.QTEJudging && _state != QTEState.PerformingQTEAttack) return false;
         if (!_qtePhaseStarted)
         {
-            Debug.Log($"[QTEController] TryQTEClick 拒绝: _qtePhaseStarted=false");
+            DebugLog.Info($"[QTEController] TryQTEClick 拒绝: _qtePhaseStarted=false");
             return false;
         }
 
@@ -352,7 +352,7 @@ public class QTEController : MonoBehaviour
             {
                 if (IsClickInQTEArea(screenPos, qte))
                 {
-                    Debug.Log($"[QTEController] 提早点击 → QTE失败 idx={_activeQTEs.IndexOf(qte)}");
+                    DebugLog.Info($"[QTEController] 提早点击 → QTE失败 idx={_activeQTEs.IndexOf(qte)}");
                     ResolveQTE(qte, false, earlyFail: true);
                     return true;
                 }
@@ -363,12 +363,12 @@ public class QTEController : MonoBehaviour
 
             if (IsClickInQTEArea(screenPos, qte))
             {
-                Debug.Log($"[QTEController] 点击QTE成功 idx={_activeQTEs.IndexOf(qte)}");
+                DebugLog.Info($"[QTEController] 点击QTE成功 idx={_activeQTEs.IndexOf(qte)}");
                 ResolveQTE(qte, true);
                 return true;
             }
         }
-        Debug.Log($"[QTEController] TryQTEClick 未命中任何指示器 screenPos={screenPos}");
+        DebugLog.Info($"[QTEController] TryQTEClick 未命中任何指示器 screenPos={screenPos}");
         return false;
     }
 
@@ -397,7 +397,7 @@ public class QTEController : MonoBehaviour
 
             if (swipeSpeed < qte.config.swipeMinSpeed)
             {
-                Debug.Log($"[QTEController] 划动速度不足: {swipeSpeed:F0} < {qte.config.swipeMinSpeed}");
+                DebugLog.Info($"[QTEController] 划动速度不足: {swipeSpeed:F0} < {qte.config.swipeMinSpeed}");
                 continue;
             }
 
@@ -420,7 +420,7 @@ public class QTEController : MonoBehaviour
             }
             else
             {
-                Debug.Log($"[QTEController] 划动角度偏差过大: {diff:F1}° > {qte.config.swipeAngleTolerance}° (目标{qte.config.swipeDirection}°)");
+                DebugLog.Info($"[QTEController] 划动角度偏差过大: {diff:F1}° > {qte.config.swipeAngleTolerance}° (目标{qte.config.swipeDirection}°)");
             }
         }
         return false;
@@ -538,12 +538,12 @@ public class QTEController : MonoBehaviour
                 Debug.LogWarning("[QTEController] 未找到 QTEDisplay");
                 return;
             }
-            Debug.Log($"[QTEController] 找到 QTEDisplay: {qteDisplay.gameObject.name}");
+            DebugLog.Info($"[QTEController] 找到 QTEDisplay: {qteDisplay.gameObject.name}");
         }
-        Debug.Log($"[QTEController] 生成指示器: type={qte.config.qteType}, prefab={qte.config.qteIndicatorPrefab?.name}, pos={qte.config.screenPosition}");
+        DebugLog.Info($"[QTEController] 生成指示器: type={qte.config.qteType}, prefab={qte.config.qteIndicatorPrefab?.name}, pos={qte.config.screenPosition}");
         qte.indicator = qteDisplay.SpawnIndicator(qte.config);
         if (qte.indicator != null)
-            Debug.Log($"[QTEController] 指示器已生成: {qte.indicator.name}, active={qte.indicator.activeSelf}, parent={qte.indicator.transform.parent?.name}");
+            DebugLog.Info($"[QTEController] 指示器已生成: {qte.indicator.name}, active={qte.indicator.activeSelf}, parent={qte.indicator.transform.parent?.name}");
         else
             Debug.LogWarning("[QTEController] SpawnIndicator返回null!");
     }
@@ -581,6 +581,7 @@ public class QTEController : MonoBehaviour
             UltimateSystem.Instance.AddEnergy(qte.config.ultimateEnergyGain);
 
         OnQTESuccess?.Invoke();
+        Handheld.Vibrate();
     }
 
     private void OnQTEFailureSingle(QTEInstance qte)
@@ -615,7 +616,7 @@ public class QTEController : MonoBehaviour
         _activeQTEs.Clear();
         _state = QTEState.Idle;
         OnQTEAttackFinished?.Invoke();
-        Debug.Log("[QTEController] QTE已中止");
+        DebugLog.Info("[QTEController] QTE已中止");
     }
 
     private void CompleteQTEAttack()
@@ -636,7 +637,8 @@ public class QTEController : MonoBehaviour
         if (totalFailureDamage > 0f && PlayerState.Instance != null)
         {
             PlayerState.Instance.TakeDamage(totalFailureDamage);
-            Debug.Log($"[QTEController] QTE失败伤害: {totalFailureDamage:F0}");
+            Handheld.Vibrate();
+            DebugLog.Info($"[QTEController] QTE失败伤害: {totalFailureDamage:F0}");
         }
 
         // 飞行物处理

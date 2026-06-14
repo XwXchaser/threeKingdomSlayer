@@ -14,6 +14,18 @@ public class ColumnManager : MonoBehaviour
     // 5列敌人列表
     private Column[] columns;
 
+    // 位移系统复用容器（避免每帧 new 分配导致 GC）
+    private readonly List<Enemy> _pushWorkList = new List<Enemy>();
+    private readonly HashSet<Enemy> _pushHitSet = new HashSet<Enemy>();
+    private readonly Dictionary<int, List<Enemy>> _pushByColumn = new Dictionary<int, List<Enemy>>();
+    private readonly Dictionary<Enemy, int> _convOriginalRows = new Dictionary<Enemy, int>();
+    private readonly List<(Enemy enemy, int targetCol, int targetRow)> _convTargets = new List<(Enemy, int, int)>();
+    private readonly Dictionary<(int col, int row), List<Enemy>> _convGroups = new Dictionary<(int, int), List<Enemy>>();
+
+    // GC 优化：范围查询复用列表 + RowBasedFillUp 复用 HashSet
+    private readonly List<Enemy> _rangeQueryList = new List<Enemy>();
+    private readonly HashSet<int> _occupiedRowsSet = new HashSet<int>();
+
     /// <summary>
     /// 列结构变化事件（RemoveEnemy / UpdateEnemyRow 后触发）
     /// Boss 用此事件检测前排是否清空以恢复推进
@@ -151,7 +163,7 @@ public class ColumnManager : MonoBehaviour
         if (rule == FillUpRule.PerRow)
         {
             // 逐排补齐：自然移动后不触发逐列链，由 RowBasedFillUp 统一处理
-            Debug.Log($"[ColumnManager] UpdateEnemyRow (PerRow): col={columnIndex}, {enemy.DebugTag}, 触发 RowBasedFillUp");
+            DebugLog.Info($"[ColumnManager] UpdateEnemyRow (PerRow): col={columnIndex}, {enemy.DebugTag}, 触发 RowBasedFillUp");
             RowBasedFillUp();
             OnColumnsModified?.Invoke();
             return;
@@ -159,13 +171,13 @@ public class ColumnManager : MonoBehaviour
 
         Column column = columns[columnIndex];
         int currentIndex = column.enemies.IndexOf(enemy);
-        Debug.Log($"[ColumnManager] UpdateEnemyRow: col={columnIndex}, {enemy.DebugTag}, currentIndex={currentIndex}, count={column.enemies.Count}");
+        DebugLog.Info($"[ColumnManager] UpdateEnemyRow: col={columnIndex}, {enemy.DebugTag}, currentIndex={currentIndex}, count={column.enemies.Count}");
         if (currentIndex > 0)
         {
             // 将敌人前移一位
             column.enemies.RemoveAt(currentIndex);
             column.enemies.Insert(currentIndex - 1, enemy);
-            Debug.Log($"[ColumnManager] 重排列顺序：{enemy.DebugTag}, from={currentIndex}→{currentIndex - 1}");
+            DebugLog.Info($"[ColumnManager] 重排列顺序：{enemy.DebugTag}, from={currentIndex}→{currentIndex - 1}");
 
             // 紧凑排列：Launched 保留原位不参与补齐，Dead 跳过并清理，存活敌人向前补齐
             int writeIdx = currentIndex;
@@ -175,7 +187,7 @@ public class ColumnManager : MonoBehaviour
                 Enemy e = column.enemies[i];
                 if (e.state == EnemyState.Dead)
                 {
-                    Debug.Log($"[ColumnManager] 跳过 Dead 敌人: {e.DebugTag}, col={columnIndex}, row={e.rowIndex}");
+                    DebugLog.Info($"[ColumnManager] 跳过 Dead 敌人: {e.DebugTag}, col={columnIndex}, row={e.rowIndex}");
                     continue;
                 }
                 if (i != writeIdx) column.enemies[writeIdx] = e;
@@ -187,7 +199,7 @@ public class ColumnManager : MonoBehaviour
                     e.pendingRushMove = true;
                     anyPendingRush = true;
                 }
-                Debug.Log($"[ColumnManager] 标记补齐移动: {e.DebugTag}, col={columnIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
+                DebugLog.Info($"[ColumnManager] 标记补齐移动: {e.DebugTag}, col={columnIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
                 writeIdx++;
             }
 
@@ -204,7 +216,7 @@ public class ColumnManager : MonoBehaviour
                     {
                         column.enemies[i].OnRushMoveComplete += OnColumnManagerRushComplete;
                         column.enemies[i].TryStartRushMove();
-                        Debug.Log($"[ColumnManager] 启动链式补齐: {column.enemies[i].DebugTag}, col={columnIndex}");
+                        DebugLog.Info($"[ColumnManager] 启动链式补齐: {column.enemies[i].DebugTag}, col={columnIndex}");
                         break;
                     }
                 }
@@ -310,12 +322,20 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public List<Enemy> GetAllEnemiesInRange(int rangeRows)
     {
-        List<Enemy> result = new List<Enemy>();
+        // 复用列表，内联查询避免 GetEnemiesInRange 的中间分配
+        _rangeQueryList.Clear();
         for (int i = 0; i < columnCount; i++)
         {
-            result.AddRange(GetEnemiesInRange(i, rangeRows));
+            if (!IsValidColumn(i)) continue;
+            var col = columns[i];
+            for (int j = 0; j < col.enemies.Count; j++)
+            {
+                var e = col.enemies[j];
+                if (e.rowIndex < rangeRows || (e.isBoss && e.bossState == BossState.InCombat))
+                    _rangeQueryList.Add(e);
+            }
         }
-        return result;
+        return _rangeQueryList;
     }
 
     /// <summary>
@@ -396,7 +416,8 @@ public class ColumnManager : MonoBehaviour
     {
         // 1. 收集所有存活（非 Dead、非 Launched）敌人所在的排号
         int maxRow = 0;
-        var occupiedRows = new System.Collections.Generic.HashSet<int>();
+        _occupiedRowsSet.Clear();
+        var occupiedRows = _occupiedRowsSet;
         for (int c = 0; c < columnCount; c++)
         {
             foreach (var e in columns[c].enemies)
@@ -416,7 +437,7 @@ public class ColumnManager : MonoBehaviour
         {
             clearRows[r] = !occupiedRows.Contains(r);
             if (clearRows[r])
-                Debug.Log($"[ColumnManager] RowBasedFillUp: 第{r}排已清空");
+                DebugLog.Info($"[ColumnManager] RowBasedFillUp: 第{r}排已清空");
         }
 
         // 3. 各列按 clearRows 压缩，传入 pushedToRow 防止击退被补齐抵消
@@ -442,7 +463,7 @@ public class ColumnManager : MonoBehaviour
 
         if (columns[targetCol].IsRowOccupied(targetRow, enemy))
         {
-            Debug.Log($"[ColumnManager] MoveEnemyToColumnAtRow blocked: {enemy.DebugTag} → col={targetCol} row={targetRow} occupied");
+            DebugLog.Info($"[ColumnManager] MoveEnemyToColumnAtRow blocked: {enemy.DebugTag} → col={targetCol} row={targetRow} occupied");
             return false;
         }
 
@@ -451,7 +472,7 @@ public class ColumnManager : MonoBehaviour
         enemy.SetRowIndex(targetRow);
         columns[targetCol].InsertEnemySorted(enemy);
 
-        Debug.Log($"[ColumnManager] MoveEnemyToColumnAtRow: {enemy.DebugTag} col {srcCol}→{targetCol}, row={targetRow}");
+        DebugLog.Info($"[ColumnManager] MoveEnemyToColumnAtRow: {enemy.DebugTag} col {srcCol}→{targetCol}, row={targetRow}");
         return true;
     }
 
@@ -470,7 +491,7 @@ public class ColumnManager : MonoBehaviour
         enemy.SetRowIndex(newRow);
         columns[targetCol].AddEnemy(enemy);
 
-        Debug.Log($"[ColumnManager] MoveEnemyToColumnEnd: {enemy.DebugTag} col {srcCol}→{targetCol}, newRow={newRow}");
+        DebugLog.Info($"[ColumnManager] MoveEnemyToColumnEnd: {enemy.DebugTag} col {srcCol}→{targetCol}, newRow={newRow}");
     }
 
     /// <summary>
@@ -522,7 +543,7 @@ public class ColumnManager : MonoBehaviour
                 if (e.state == EnemyState.Dead) continue;
                 if (e.rowIndex == r && !hitEnemies.Contains(e))
                 {
-                    Debug.Log($"[ColumnManager] Push blocked (tail): col={columnIndex}, blocker={e.DebugTag} at row={r}");
+                    DebugLog.Info($"[ColumnManager] Push blocked (tail): col={columnIndex}, blocker={e.DebugTag} at row={r}");
                     return false;
                 }
             }
@@ -544,7 +565,7 @@ public class ColumnManager : MonoBehaviour
                 if (hitEnemies.Contains(other)) continue;
                 if (other.rowIndex == destRow)
                 {
-                    Debug.Log($"[ColumnManager] Push blocked (overlap): col={columnIndex}, {e.DebugTag}→row{destRow} occupied by {other.DebugTag}");
+                    DebugLog.Info($"[ColumnManager] Push blocked (overlap): col={columnIndex}, {e.DebugTag}→row{destRow} occupied by {other.DebugTag}");
                     return false;
                 }
             }
@@ -563,7 +584,7 @@ public class ColumnManager : MonoBehaviour
                 int destRow = e.rowIndex + pushAmount;
                 if (destRow >= bossRow)
                 {
-                    Debug.Log($"[ColumnManager] Push blocked (boss wall): col={columnIndex}, {e.DebugTag}→row{destRow} >= bossRow={bossRow}");
+                    DebugLog.Info($"[ColumnManager] Push blocked (boss wall): col={columnIndex}, {e.DebugTag}→row{destRow} >= bossRow={bossRow}");
                     return false;
                 }
             }
@@ -588,7 +609,8 @@ public class ColumnManager : MonoBehaviour
             col.RemoveEnemySilent(e);
 
         // 更新 rowIndex，钳制上限为 bossRow-1（BOSS排是不可逾越的墙壁）
-        var pushedEnemies = new List<Enemy>();
+        _pushWorkList.Clear();
+        var pushedEnemies = _pushWorkList;
         foreach (var e in columnHitEnemies)
         {
             int oldRow = e.rowIndex;
@@ -596,11 +618,11 @@ public class ColumnManager : MonoBehaviour
             if (bossRow >= 0 && newRow >= bossRow)
             {
                 newRow = bossRow - 1;
-                Debug.Log($"[Displacement] ExecutePush {e.DebugTag}: row {oldRow}→{newRow} (clamped by boss wall at row {bossRow})");
+                DebugLog.Info($"[Displacement] ExecutePush {e.DebugTag}: row {oldRow}→{newRow} (clamped by boss wall at row {bossRow})");
             }
             else
             {
-                Debug.Log($"[Displacement] ExecutePush {e.DebugTag}: row {oldRow}→{newRow}");
+                DebugLog.Info($"[Displacement] ExecutePush {e.DebugTag}: row {oldRow}→{newRow}");
             }
             e.SetRowIndex(newRow);
             pushedEnemies.Add(e);
@@ -611,7 +633,7 @@ public class ColumnManager : MonoBehaviour
         foreach (var e in pushedEnemies)
             col.InsertEnemySorted(e);
 
-        Debug.Log($"[ColumnManager] ExecutePush: col={columnIndex}, pushed={pushedEnemies.Count} enemies by {pushAmount} rows");
+        DebugLog.Info($"[ColumnManager] ExecutePush: col={columnIndex}, pushed={pushedEnemies.Count} enemies by {pushAmount} rows");
 
         OnColumnsModified?.Invoke();
     }
@@ -625,12 +647,16 @@ public class ColumnManager : MonoBehaviour
     {
         if (hitEnemies == null || hitEnemies.Count == 0) return false;
 
-        Debug.Log($"[Displacement] ApplyPushWave: pushAmount={pushAmount}, hitEnemies count={hitEnemies.Count}");
+        DebugLog.Info($"[Displacement] ApplyPushWave: pushAmount={pushAmount}, hitEnemies count={hitEnemies.Count}");
         foreach (var e in hitEnemies)
-            Debug.Log($"  hitEnemy: {e.DebugTag} col={e.columnIndex} row={e.rowIndex} state={e.state} isBoss={e.isBoss}");
+            DebugLog.Info($"  hitEnemy: {e.DebugTag} col={e.columnIndex} row={e.rowIndex} state={e.state} isBoss={e.isBoss}");
 
-        var hitSet = new HashSet<Enemy>(hitEnemies);
-        var byColumn = new Dictionary<int, List<Enemy>>();
+        _pushHitSet.Clear();
+        _pushHitSet.UnionWith(hitEnemies);
+        var hitSet = _pushHitSet;
+
+        _pushByColumn.Clear();
+        var byColumn = _pushByColumn;
 
         foreach (var e in hitEnemies)
         {
@@ -638,8 +664,15 @@ public class ColumnManager : MonoBehaviour
             if (e.state == EnemyState.Dead) continue;
             if (e.isCFrame && !canInterruptCFrame) continue;
             if (!byColumn.ContainsKey(e.columnIndex))
-                byColumn[e.columnIndex] = new List<Enemy>();
-            byColumn[e.columnIndex].Add(e);
+            {
+                var newList = new List<Enemy>();
+                byColumn[e.columnIndex] = newList;
+                newList.Add(e);
+            }
+            else
+            {
+                byColumn[e.columnIndex].Add(e);
+            }
         }
 
         bool anyPushed = false;
@@ -647,7 +680,7 @@ public class ColumnManager : MonoBehaviour
         {
             int col = kv.Key;
             bool canPush = CanPushColumn(col, pushAmount, hitSet);
-            Debug.Log($"[Displacement] PushWave col={col}: canPush={canPush}, hitCount={kv.Value.Count}");
+            DebugLog.Info($"[Displacement] PushWave col={col}: canPush={canPush}, hitCount={kv.Value.Count}");
             if (canPush)
             {
                 ExecutePush(col, pushAmount, kv.Value);
@@ -668,17 +701,19 @@ public class ColumnManager : MonoBehaviour
         if (hitEnemies == null || hitEnemies.Count == 0) return;
 
         // 快照原始 rowIndex，防止被前置击退效果修改
-        var originalRows = new Dictionary<Enemy, int>();
+        _convOriginalRows.Clear();
+        var originalRows = _convOriginalRows;
         foreach (var e in hitEnemies)
         {
             if (e.state == EnemyState.Dead || e.isBoss) continue;
             if (e.isCFrame && !canInterruptCFrame) continue;
             originalRows[e] = e.rowIndex;
-            Debug.Log($"[Displacement] Conv snapshot {e.DebugTag}: curCol={e.columnIndex} curRow={e.rowIndex}");
+            DebugLog.Info($"[Displacement] Conv snapshot {e.DebugTag}: curCol={e.columnIndex} curRow={e.rowIndex}");
         }
 
         // 1. 计算每个敌人的目标列（向 col=2 靠近 step 步）
-        var targets = new List<(Enemy enemy, int targetCol, int targetRow)>();
+        _convTargets.Clear();
+        var targets = _convTargets;
         foreach (var e in hitEnemies)
         {
             if (e.state == EnemyState.Dead || e.isBoss) continue;
@@ -689,11 +724,12 @@ public class ColumnManager : MonoBehaviour
             else if (curCol > 2) targetCol = Mathf.Max(curCol - step, 2);
 
             targets.Add((e, targetCol, originalRows[e]));
-            Debug.Log($"[Displacement] Conv target {e.DebugTag}: ({curCol},{originalRows[e]})→({targetCol},{originalRows[e]})");
+            DebugLog.Info($"[Displacement] Conv target {e.DebugTag}: ({curCol},{originalRows[e]})→({targetCol},{originalRows[e]})");
         }
 
         // 2. 按 (targetCol, targetRow) 分组，检测冲突
-        var groups = new Dictionary<(int col, int row), List<Enemy>>();
+        _convGroups.Clear();
+        var groups = _convGroups;
         foreach (var (enemy, targetCol, targetRow) in targets)
         {
             var key = (targetCol, targetRow);
@@ -707,25 +743,25 @@ public class ColumnManager : MonoBehaviour
         var movedEnemies = new List<Enemy>();
         foreach (var kv in groups)
         {
-            Debug.Log($"[Displacement] Conv group ({kv.Key.col},{kv.Key.row}): count={kv.Value.Count}");
+            DebugLog.Info($"[Displacement] Conv group ({kv.Key.col},{kv.Key.row}): count={kv.Value.Count}");
             if (kv.Value.Count == 1)
             {
                 var enemy = kv.Value[0];
                 bool existingOccupied = columns[kv.Key.col].IsRowOccupied(kv.Key.row, enemy);
                 if (!existingOccupied)
                 {
-                    Debug.Log($"[Displacement] Conv MOVE {enemy.DebugTag} → col={kv.Key.col} row={kv.Key.row}");
+                    DebugLog.Info($"[Displacement] Conv MOVE {enemy.DebugTag} → col={kv.Key.col} row={kv.Key.row}");
                     MoveEnemyToColumnAtRow(enemy, kv.Key.col, kv.Key.row);
                     movedEnemies.Add(enemy);
                 }
                 else
                 {
-                    Debug.Log($"[Displacement] Conv BLOCKED {enemy.DebugTag} → col={kv.Key.col} row={kv.Key.row} (occupied)");
+                    DebugLog.Info($"[Displacement] Conv BLOCKED {enemy.DebugTag} → col={kv.Key.col} row={kv.Key.row} (occupied)");
                 }
             }
             else
             {
-                Debug.Log($"[Displacement] Conv CONFLICT: {kv.Value.Count} enemies → col={kv.Key.col} row={kv.Key.row}");
+                DebugLog.Info($"[Displacement] Conv CONFLICT: {kv.Value.Count} enemies → col={kv.Key.col} row={kv.Key.row}");
                 foreach (var e in kv.Value)
                     conflicted.Add((e, kv.Key.row));
             }
@@ -745,7 +781,7 @@ public class ColumnManager : MonoBehaviour
     private void ResolveConvergenceConflicts(List<(Enemy enemy, int targetRow)> conflicted, float damagePercent,
         List<Enemy> movedEnemies)
     {
-        Debug.Log($"[Displacement] ResolveConvergenceConflicts: {conflicted.Count} conflicted enemies");
+        DebugLog.Info($"[Displacement] ResolveConvergenceConflicts: {conflicted.Count} conflicted enemies");
 
         // 施加聚拢伤害
         foreach (var (e, _) in conflicted)
@@ -755,7 +791,7 @@ public class ColumnManager : MonoBehaviour
             {
                 float dmg = e.maxHealth * damagePercent;
                 e.TakeDamage(dmg, DamageType.Convergence);
-                Debug.Log($"[Displacement] Convergence damage: {e.DebugTag} takes {dmg} ({damagePercent:P0} HP)");
+                DebugLog.Info($"[Displacement] Convergence damage: {e.DebugTag} takes {dmg} ({damagePercent:P0} HP)");
             }
         }
 
@@ -769,7 +805,7 @@ public class ColumnManager : MonoBehaviour
 
             if (!columns[spillCol].IsRowOccupied(targetRow, e))
             {
-                Debug.Log($"[Displacement] Conv spill {e.DebugTag} → col={spillCol} row={targetRow}");
+                DebugLog.Info($"[Displacement] Conv spill {e.DebugTag} → col={spillCol} row={targetRow}");
                 MoveEnemyToColumnAtRow(e, spillCol, targetRow);
                 movedEnemies.Add(e);
             }
@@ -778,13 +814,13 @@ public class ColumnManager : MonoBehaviour
                 int outerCol = spillCol == 1 ? 0 : 4;
                 if (!columns[outerCol].IsRowOccupied(targetRow, e))
                 {
-                    Debug.Log($"[Displacement] Conv spill {e.DebugTag} → outer col={outerCol} row={targetRow}");
+                    DebugLog.Info($"[Displacement] Conv spill {e.DebugTag} → outer col={outerCol} row={targetRow}");
                     MoveEnemyToColumnAtRow(e, outerCol, targetRow);
                     movedEnemies.Add(e);
                 }
                 else
                 {
-                    Debug.Log($"[Displacement] Conv spill {e.DebugTag} BLOCKED at col={spillCol}/{outerCol} row={targetRow}");
+                    DebugLog.Info($"[Displacement] Conv spill {e.DebugTag} BLOCKED at col={spillCol}/{outerCol} row={targetRow}");
                 }
             }
         }
@@ -798,7 +834,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public void PostDisplacementFillUp(int? pushedToRow = null)
     {
-        Debug.Log($"[Displacement] PostDisplacementFillUp pushedToRow={pushedToRow?.ToString() ?? "null"} → RowBasedFillUp");
+        DebugLog.Info($"[Displacement] PostDisplacementFillUp pushedToRow={pushedToRow?.ToString() ?? "null"} → RowBasedFillUp");
         RowBasedFillUp(pushedToRow);
     }
 

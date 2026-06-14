@@ -46,6 +46,10 @@ public class PlayerState : MonoBehaviour
     // Buff 系统
     private Dictionary<BuffType, float> buffTimers = new Dictionary<BuffType, float>();
 
+    // GC 优化：复用容器，避免每帧 new
+    private readonly List<AttackType> _cooldownKeysCache = new List<AttackType>();
+    private readonly List<BuffType> _expiredBuffsCache = new List<BuffType>();
+
     // 减伤Buff
     private float damageReductionPercent;
     private float damageReductionTimer;
@@ -97,29 +101,30 @@ public class PlayerState : MonoBehaviour
 
     private void Update()
     {
-        // 更新冷却计时器
-        var keys = new List<AttackType>(cooldownTimers.Keys);
-        for (int i = 0; i < keys.Count; i++)
+        // 更新冷却计时器（复用缓存列表，避免每帧 new List 分配）
+        _cooldownKeysCache.Clear();
+        _cooldownKeysCache.AddRange(cooldownTimers.Keys);
+        for (int i = 0; i < _cooldownKeysCache.Count; i++)
         {
-            var type = keys[i];
+            var type = _cooldownKeysCache[i];
             if (cooldownTimers[type] > 0)
                 cooldownTimers[type] -= Time.deltaTime;
         }
 
         if (damageReductionTimer > 0) damageReductionTimer -= Time.deltaTime;
 
-        // 更新 Buff 计时器
-        var expired = new List<BuffType>();
+        // 更新 Buff 计时器（复用缓存列表）
+        _expiredBuffsCache.Clear();
         foreach (var kv in buffTimers)
         {
             if (kv.Value > 0f)
             {
                 buffTimers[kv.Key] -= Time.deltaTime;
                 if (buffTimers[kv.Key] <= 0f)
-                    expired.Add(kv.Key);
+                    _expiredBuffsCache.Add(kv.Key);
             }
         }
-        foreach (var t in expired)
+        foreach (var t in _expiredBuffsCache)
             buffTimers.Remove(t);
     }
 
@@ -173,6 +178,7 @@ public class PlayerState : MonoBehaviour
 
         currentHealth -= finalDamage;
         OnHealthChanged?.Invoke(currentHealth, heroConfig != null ? heroConfig.maxHealth : 500f);
+        Handheld.Vibrate();
 
         Debug.Log($"[PlayerState] 受到伤害: {damage}(原始) -> {finalDamage}(最终), 剩余生命: {currentHealth}");
 

@@ -68,6 +68,9 @@ public class Enemy : MonoBehaviour
     /// </summary>
     public string DebugTag => $"#{instanceId}({enemyId})";
 
+    // GC 优化：默认排透明度系数，避免每帧 new float[]
+    private static readonly float[] DefaultRowAlphaFactors = { 1.0f, 0.8f, 0.6f, 0.4f, 0.2f };
+
     [Header("战斗属性")]
     public float maxHealth = 100f;
     public int occupySlots = 1;
@@ -432,7 +435,7 @@ public class Enemy : MonoBehaviour
             if (rushMoveDelayTimer <= 0f)
             {
                 // 延迟结束，尝试再次开始补齐移动
-                Debug.Log($"[Enemy] 补齐延迟结束，尝试继续补齐: {DebugTag}, col={columnIndex}, row={rowIndex}");
+                DebugLog.Info($"[Enemy] 补齐延迟结束，尝试继续补齐: {DebugTag}, col={columnIndex}, row={rowIndex}");
                 TryStartRushMove();
             }
         }
@@ -444,7 +447,7 @@ public class Enemy : MonoBehaviour
             if (_bossEngageTimer <= 0f)
             {
                 bossState = BossState.InCombat;
-                Debug.Log($"[Enemy] Boss进入战斗（缓冲结束）: {DebugTag}, col={columnIndex}, row={rowIndex}");
+                DebugLog.Info($"[Enemy] Boss进入战斗（缓冲结束）: {DebugTag}, col={columnIndex}, row={rowIndex}");
                 OnBossEngaged?.Invoke(this);
                 // 进入 Idle 调度：等待 actionCooldownTimer 后开始行动
                 SetBossActionCooldown();
@@ -457,7 +460,7 @@ public class Enemy : MonoBehaviour
             hitFlashTimer -= Time.deltaTime;
             if (hitFlashTimer <= 0f)
             {
-                Debug.Log($"[Enemy] 闪白结束: {DebugTag}");
+                DebugLog.Info($"[Enemy] 闪白结束: {DebugTag}");
             }
         }
 
@@ -495,7 +498,7 @@ public class Enemy : MonoBehaviour
         // 逐排补齐模式：非补齐移动时，检查前方整排是否已完全清空
         if (!isRush && StageController.Instance?.GetFillUpRule() == FillUpRule.PerRow && !IsFrontRowClear())
         {
-            Debug.Log($"[Enemy] PerRow 模式等待前排清空: {DebugTag}, col={columnIndex}, row={rowIndex}");
+            DebugLog.Info($"[Enemy] PerRow 模式等待前排清空: {DebugTag}, col={columnIndex}, row={rowIndex}");
             return;
         }
 
@@ -525,7 +528,7 @@ public class Enemy : MonoBehaviour
         }
 
         isRushMove = isRush;
-        Debug.Log($"[Enemy] StartMoving: {DebugTag}, col={columnIndex}, row={rowIndex}, targetRow={rowIndex - 1}, isRush={isRush}");
+        DebugLog.Info($"[Enemy] StartMoving: {DebugTag}, col={columnIndex}, row={rowIndex}, targetRow={rowIndex - 1}, isRush={isRush}");
         state = EnemyState.Moving;
         isMovingToNextRow = true;
         moveProgress = 0f;
@@ -580,7 +583,7 @@ public class Enemy : MonoBehaviour
         if (isBoss && bossState == BossState.None)
         {
             bossState = BossState.InCombat;
-            Debug.Log($"[Enemy] Boss直接进入战斗(rowIndex={rowIndex}): {DebugTag}, col={columnIndex}");
+            DebugLog.Info($"[Enemy] Boss直接进入战斗(rowIndex={rowIndex}): {DebugTag}, col={columnIndex}");
             OnBossEngaged?.Invoke(this);
         }
 
@@ -684,7 +687,7 @@ public class Enemy : MonoBehaviour
         currentLaunchYHeight = Random.Range(launchYHeightMin, launchYHeightMax);
         launchVelocityY = Mathf.Sqrt(2f * launchGravity * currentLaunchYHeight);
 
-        Debug.Log($"[Enemy] 挑飞: {DebugTag}, duration={launchDuration:F2}s, v0={launchVelocityY:F2}");
+        DebugLog.Info($"[Enemy] 挑飞: {DebugTag}, duration={launchDuration:F2}s, v0={launchVelocityY:F2}");
     }
 
     /// <summary>
@@ -698,7 +701,7 @@ public class Enemy : MonoBehaviour
         launchVelocityY = launchReboundVelocity;
         // 再击飞：重新播放 Rise 动画
         _animator?.Play("Launched_Rise", 0, 0f);
-        Debug.Log($"[Enemy] 延长浮空: {DebugTag}, +{extendTime:F2}s, 剩余={launchTimer:F2}s, 反弹速度={launchReboundVelocity:F2}");
+        DebugLog.Info($"[Enemy] 延长浮空: {DebugTag}, +{extendTime:F2}s, 剩余={launchTimer:F2}s, 反弹速度={launchReboundVelocity:F2}");
     }
 
     /// <summary>
@@ -749,7 +752,7 @@ public class Enemy : MonoBehaviour
             if (attackTimer < 0.1f) attackTimer = 0.1f;
         }
 
-        Debug.Log($"[Enemy] 打断攻击成功: {DebugTag}, col={columnIndex}");
+        DebugLog.Info($"[Enemy] 打断攻击成功: {DebugTag}, col={columnIndex}");
         return true;
     }
 
@@ -777,7 +780,7 @@ public class Enemy : MonoBehaviour
 
         state = EnemyState.QTEAttacking;
         UpdateOutlineState();
-        Debug.Log($"[Enemy] 进入QTE攻击: {DebugTag}");
+        DebugLog.Info($"[Enemy] 进入QTE攻击: {DebugTag}");
     }
 
     /// <summary>
@@ -785,7 +788,7 @@ public class Enemy : MonoBehaviour
     /// </summary>
     private void OnQTEAttackFinished()
     {
-        Debug.Log($"[Enemy] QTE攻击完成: {DebugTag}");
+        DebugLog.Info($"[Enemy] QTE攻击完成: {DebugTag}");
     }
 
     /// <summary>
@@ -813,7 +816,7 @@ public class Enemy : MonoBehaviour
         }
 
         UpdateOutlineState();
-        Debug.Log($"[Enemy] 退出QTE攻击: {DebugTag}");
+        DebugLog.Info($"[Enemy] 退出QTE攻击: {DebugTag}");
     }
 
     /// <summary>
@@ -918,7 +921,7 @@ public class Enemy : MonoBehaviour
             // Boss 就位后（战斗中或缓冲中）锁定位置，不参与补齐前移
             if (isBoss && (bossState == BossState.InCombat || _bossEngageTimer > 0f))
             {
-                Debug.Log($"[Enemy] Boss落地锁定位置: {DebugTag}, col={columnIndex}, row={rowIndex}");
+                DebugLog.Info($"[Enemy] Boss落地锁定位置: {DebugTag}, col={columnIndex}, row={rowIndex}");
                 SetBossActionCooldown();
                 return;
             }
@@ -953,7 +956,7 @@ public class Enemy : MonoBehaviour
                     }
                     if (frontOccupied)
                     {
-                        Debug.Log($"[Enemy] 落地后前方被占据，等待补齐: {DebugTag}, col={columnIndex}, row={rowIndex}, frontRow={frontRow}");
+                        DebugLog.Info($"[Enemy] 落地后前方被占据，等待补齐: {DebugTag}, col={columnIndex}, row={rowIndex}, frontRow={frontRow}");
                     }
                     else
                     {
@@ -1001,7 +1004,7 @@ public class Enemy : MonoBehaviour
         if (moveProgress >= 1f)
         {
             bool wasRush = isRushMove;
-            Debug.Log($"[Enemy] 移动完成: {DebugTag}, col={columnIndex}, oldRow={rowIndex}, newRow={rowIndex - 1}, isRush={wasRush}");
+            DebugLog.Info($"[Enemy] 移动完成: {DebugTag}, col={columnIndex}, oldRow={rowIndex}, newRow={rowIndex - 1}, isRush={wasRush}");
             moveProgress = 0f;
             isMovingToNextRow = false;
             isRushMove = false;
@@ -1022,7 +1025,7 @@ public class Enemy : MonoBehaviour
             // BUG FIX: 防止 rowIndex 变为负数
             if (rowIndex < 0) rowIndex = 0;
             if (rowIndex != oldRowForLog)
-                Debug.Log($"[RowTrace] {DebugTag} row {oldRowForLog}→{rowIndex} | caller=UpdateMovement(moveComplete)");
+                DebugLog.Info($"[RowTrace] {DebugTag} row {oldRowForLog}→{rowIndex} | caller=UpdateMovement(moveComplete)");
 
             // Rush 重叠检查：如果目标行已被同列其他敌人占据，回退放弃，等死亡链自然补齐
             if (wasRush)
@@ -1033,7 +1036,7 @@ public class Enemy : MonoBehaviour
                     rowIndex++;
                     state = EnemyState.Idle;
                     UpdateWorldPosition();
-                    Debug.Log($"[Enemy] Rush 目标行被占用，放弃补齐等待死亡链: {DebugTag}, col={columnIndex}, row={rowIndex}");
+                    DebugLog.Info($"[Enemy] Rush 目标行被占用，放弃补齐等待死亡链: {DebugTag}, col={columnIndex}, row={rowIndex}");
                     return;
                 }
             }
@@ -1064,7 +1067,7 @@ public class Enemy : MonoBehaviour
                     }
                     if (!sameRow)
                     {
-                        Debug.Log($"[Enemy] 补齐移动导致解散共享血量组: {DebugTag}, row={rowIndex}");
+                        DebugLog.Info($"[Enemy] 补齐移动导致解散共享血量组: {DebugTag}, row={rowIndex}");
                         sharedHealthGroup.Disband();
                     }
                 }
@@ -1102,7 +1105,7 @@ public class Enemy : MonoBehaviour
                     }
                     if (delay > 0f)
                     {
-                        Debug.Log($"[Enemy] 补齐移动完成（等待延迟继续补齐）: {DebugTag}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}, delay={delay:F2}s");
+                        DebugLog.Info($"[Enemy] 补齐移动完成（等待延迟继续补齐）: {DebugTag}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}, delay={delay:F2}s");
                         state = EnemyState.Idle;
                         pendingRushMove = true;
                         rushMoveDelayTimer = delay;
@@ -1110,7 +1113,7 @@ public class Enemy : MonoBehaviour
                     else
                     {
                         // 无延迟，立即继续补齐
-                        Debug.Log($"[Enemy] 补齐移动完成（立即继续补齐）: {DebugTag}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
+                        DebugLog.Info($"[Enemy] 补齐移动完成（立即继续补齐）: {DebugTag}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
                         state = EnemyState.Idle;
                         pendingRushMove = true;
                         TryStartRushMove();
@@ -1119,7 +1122,7 @@ public class Enemy : MonoBehaviour
                 else if (reachedAttackRange)
                 {
                     // 已到达目标位置且在攻击范围内，开始攻击
-                    Debug.Log($"[Enemy] 补齐移动完成（到达目标位置+攻击范围）: {DebugTag}, col={columnIndex}, row={rowIndex}");
+                    DebugLog.Info($"[Enemy] 补齐移动完成（到达目标位置+攻击范围）: {DebugTag}, col={columnIndex}, row={rowIndex}");
                     pendingRushMove = false;
                     targetRow = -1;
                     StartAttacking();
@@ -1127,7 +1130,7 @@ public class Enemy : MonoBehaviour
                 else
                 {
                     // 已到达目标位置但不在攻击范围内，停止补齐
-                    Debug.Log($"[Enemy] 补齐移动完成（到达目标位置，停止补齐）: {DebugTag}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
+                    DebugLog.Info($"[Enemy] 补齐移动完成（到达目标位置，停止补齐）: {DebugTag}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
                     state = EnemyState.Idle;
                     pendingRushMove = false;
                     targetRow = -1;
@@ -1140,7 +1143,7 @@ public class Enemy : MonoBehaviour
                 if (!rushMoveChainTriggered)
                 {
                     rushMoveChainTriggered = true;
-                    Debug.Log($"[Enemy] 补齐移动完全完成（触发链式）: {DebugTag}, col={columnIndex}, row={rowIndex}");
+                    DebugLog.Info($"[Enemy] 补齐移动完全完成（触发链式）: {DebugTag}, col={columnIndex}, row={rowIndex}");
                     OnRushMoveComplete?.Invoke(this);
 
                     // Boss 分阶段推进：到达第2排(rowIndex=1)，启动缓冲计时器
@@ -1155,7 +1158,7 @@ public class Enemy : MonoBehaviour
                         }
                         // 1秒无敌缓冲，为出场动画预留时间
                         _bossEngageTimer = 1f;
-                        Debug.Log($"[Enemy] Boss到达应战排，启动缓冲计时器: {DebugTag}, col={columnIndex}, row={rowIndex}");
+                        DebugLog.Info($"[Enemy] Boss到达应战排，启动缓冲计时器: {DebugTag}, col={columnIndex}, row={rowIndex}");
                     }
                 }
             }
@@ -1167,7 +1170,7 @@ public class Enemy : MonoBehaviour
                     StartAttacking();
                 }
                 EnemyManager.Instance?.OnEnemyMovedForward(this);
-                Debug.Log($"[Enemy] 自然移动完成，触发 UpdateEnemyRow: {DebugTag}, col={columnIndex}");
+                DebugLog.Info($"[Enemy] 自然移动完成，触发 UpdateEnemyRow: {DebugTag}, col={columnIndex}");
             }
         }
 
@@ -1226,7 +1229,7 @@ public class Enemy : MonoBehaviour
     {
         if (projectilePrefab == null)
         {
-            Debug.LogWarning($"[Enemy] {DebugTag} isRanged=true 但 projectilePrefab 为空");
+            DebugLog.Warning($"[Enemy] {DebugTag} isRanged=true 但 projectilePrefab 为空");
             return;
         }
 
@@ -1242,7 +1245,7 @@ public class Enemy : MonoBehaviour
 
         proj.Launch(startPos, endZ, endX, attackDamage, projectileArcHeight, projectileFlyDuration);
 
-        Debug.Log($"[Enemy] {DebugTag} 发射飞行物: start=({startPos.x:F1},{startPos.y:F1},{startPos.z:F1}) endZ={endZ:F1} endX={endX:F1}");
+        DebugLog.Info($"[Enemy] {DebugTag} 发射飞行物: start=({startPos.x:F1},{startPos.y:F1},{startPos.z:F1}) endZ={endZ:F1} endX={endX:F1}");
     }
 
     /// <summary>
@@ -1257,7 +1260,7 @@ public class Enemy : MonoBehaviour
     {
         if (attackSequence == null || attackSequence.Count == 0)
         {
-            Debug.LogWarning("[Enemy] attackSequence 为空，跳过攻击");
+            DebugLog.Warning("[Enemy] attackSequence 为空，跳过攻击");
             return;
         }
 
@@ -1440,7 +1443,7 @@ public class Enemy : MonoBehaviour
         float multiplier = GetDamageMultiplier(damageType);
         float finalDamage = damage * multiplier;
 
-        Debug.Log($"[Enemy] TakeDamage: {DebugTag}, col={columnIndex}, raw={damage:F1}, mult={multiplier:F2}, final={finalDamage:F1}, hp={currentHealth:F1}→{currentHealth - finalDamage:F1}");
+        DebugLog.Info($"[Enemy] TakeDamage: {DebugTag}, col={columnIndex}, raw={damage:F1}, mult={multiplier:F2}, final={finalDamage:F1}, hp={currentHealth:F1}→{currentHealth - finalDamage:F1}");
 
         currentHealth -= finalDamage;
         OnDamageTaken?.Invoke(this);
@@ -1470,7 +1473,7 @@ public class Enemy : MonoBehaviour
 
         // 触发受伤闪白效果（非致命伤通过 Update 循环过渡恢复）
         hitFlashTimer = HIT_FLASH_DURATION;
-        Debug.Log($"[Enemy] 触发闪白: {DebugTag}, duration={HIT_FLASH_DURATION}");
+        DebugLog.Info($"[Enemy] 触发闪白: {DebugTag}, duration={HIT_FLASH_DURATION}");
 
         // DOTween: 受击大小抖动效果（与闪白同步触发）
         string punchId = $"punch_{GetInstanceID()}";
@@ -1889,7 +1892,7 @@ public class Enemy : MonoBehaviour
         float currentY = transform.localPosition.y;
         transform.localPosition = new Vector3(xPos, currentY, zPos);
 
-        Debug.Log($"[Enemy] 击飞静默补齐: {DebugTag}, col={columnIndex}, row={oldRow}→{rowIndex}, pos=({xPos:F2},{currentY:F2},{zPos:F2})");
+        DebugLog.Info($"[Enemy] 击飞静默补齐: {DebugTag}, col={columnIndex}, row={oldRow}→{rowIndex}, pos=({xPos:F2},{currentY:F2},{zPos:F2})");
     }
 
     /// <summary>
@@ -1921,7 +1924,7 @@ public class Enemy : MonoBehaviour
                         {
                             _onColumnsModifiedHandler = OnColumnsModifiedForBoss;
                             cm.OnColumnsModified += _onColumnsModifiedHandler;
-                            Debug.Log($"[Enemy] Boss等待前方排清空(row={rowIndex - 1}): {DebugTag}, col={columnIndex}");
+                            DebugLog.Info($"[Enemy] Boss等待前方排清空(row={rowIndex - 1}): {DebugTag}, col={columnIndex}");
                         }
                         return false; // 不清除 pendingRushMove，等待重试
                     }
@@ -2005,7 +2008,7 @@ public class Enemy : MonoBehaviour
         var st = new System.Diagnostics.StackTrace(1, true);
         var frame = st.GetFrame(0);
         string caller = frame != null ? $"{frame.GetMethod().DeclaringType?.Name}.{frame.GetMethod().Name}:{frame.GetFileLineNumber()}" : "?";
-        Debug.Log($"[RowTrace] {DebugTag} row {oldRow}→{row} | caller={caller}");
+        DebugLog.Info($"[RowTrace] {DebugTag} row {oldRow}→{row} | caller={caller}");
     }
 
     /// <summary>
@@ -2159,17 +2162,8 @@ public class Enemy : MonoBehaviour
     {
         // 从StageController获取透明度配置
         // 默认：第0排=1.0, 第1排=0.8, 第2排=0.6, 第3排=0.4, 第4排=0.2, 第5排+=0
-        float[] factors = null;
-        if (StageController.Instance != null)
-        {
-            factors = StageController.Instance.GetRowAlphaFactors();
-        }
-
-        if (factors == null)
-        {
-            factors = new float[] { 1.0f, 0.8f, 0.6f, 0.4f, 0.2f };
-        }
-
+        float[] factors = StageController.Instance?.GetRowAlphaFactors()
+                          ?? DefaultRowAlphaFactors;
         if (row < factors.Length)
             return factors[row];
         return 0f;
@@ -2193,14 +2187,14 @@ public class Enemy : MonoBehaviour
         if (rowIndex <= 1)
         {
             bossState = BossState.InCombat;
-            Debug.Log($"[Enemy] Boss直接进入战斗(rowIndex={rowIndex}): {DebugTag}, col={columnIndex}");
+            DebugLog.Info($"[Enemy] Boss直接进入战斗(rowIndex={rowIndex}): {DebugTag}, col={columnIndex}");
             OnBossEngaged?.Invoke(this);
             return;
         }
 
         // BOSS 在后方：参与正常补齐链，TryStartRushMove 中的跨列检查保证
         // BOSS 仅在整排前方清空时才前进。到达 rowIndex=2 时触发 BossPause。
-        Debug.Log($"[Enemy] Boss加入补齐链(rowIndex={rowIndex}): {DebugTag}, col={columnIndex}");
+        DebugLog.Info($"[Enemy] Boss加入补齐链(rowIndex={rowIndex}): {DebugTag}, col={columnIndex}");
     }
 
     /// <summary>
@@ -2288,7 +2282,7 @@ public class Enemy : MonoBehaviour
         }
 
         float alpha = GetAlphaForRow(rowIndex);
-        Debug.Log($"[Enemy] Boss暂停在第3排: {DebugTag}, col={columnIndex}, rowIndex={rowIndex}, pos={transform.localPosition}, alpha={alpha}, active={gameObject.activeSelf}, rendererEnabled={GetComponent<SpriteRenderer>()?.enabled}, 等待前两排清空");
+        DebugLog.Info($"[Enemy] Boss暂停在第3排: {DebugTag}, col={columnIndex}, rowIndex={rowIndex}, pos={transform.localPosition}, alpha={alpha}, active={gameObject.activeSelf}, rendererEnabled={GetComponent<SpriteRenderer>()?.enabled}, 等待前两排清空");
     }
 
     /// <summary>
@@ -2333,7 +2327,7 @@ public class Enemy : MonoBehaviour
                     cm.OnColumnsModified -= _onColumnsModifiedHandler;
                     _onColumnsModifiedHandler = null;
                 }
-                Debug.Log($"[Enemy] Boss前方排已清空，重试补齐: {DebugTag}, col={columnIndex}, row={rowIndex}");
+                DebugLog.Info($"[Enemy] Boss前方排已清空，重试补齐: {DebugTag}, col={columnIndex}, row={rowIndex}");
                 TryStartRushMove();
             }
         }
@@ -2352,7 +2346,7 @@ public class Enemy : MonoBehaviour
             _onColumnsModifiedHandler = null;
         }
 
-        Debug.Log($"[Enemy] Boss恢复推进: {DebugTag}, col={columnIndex}, 从第3排→第2排");
+        DebugLog.Info($"[Enemy] Boss恢复推进: {DebugTag}, col={columnIndex}, 从第3排→第2排");
 
         targetRow = 1;
         pendingRushMove = true;
@@ -2538,7 +2532,7 @@ public class Enemy : MonoBehaviour
         _healthLocked = true;
         isPhaseTransitioning = true;
 
-        Debug.Log($"[Enemy] BOSS转阶段: {DebugTag}, phase={currentBossPhase} → {nextPhase.phaseIndex} ({nextPhase.phaseName})");
+        DebugLog.Info($"[Enemy] BOSS转阶段: {DebugTag}, phase={currentBossPhase} → {nextPhase.phaseIndex} ({nextPhase.phaseName})");
 
         // 打断当前攻击
         if (_attackTween != null && _attackTween.IsActive())
@@ -2614,7 +2608,7 @@ public class Enemy : MonoBehaviour
 
         UpdateOutlineState();
 
-        Debug.Log($"[Enemy] BOSS转阶段完成: {DebugTag}, phase={currentBossPhase} ({nextPhase.phaseName}), superArmor={isSuperArmor}");
+        DebugLog.Info($"[Enemy] BOSS转阶段完成: {DebugTag}, phase={currentBossPhase} ({nextPhase.phaseName}), superArmor={isSuperArmor}");
     }
 
     #endregion
