@@ -84,6 +84,7 @@ public class CameraManager : MonoBehaviour
     private System.Collections.IEnumerator DepartureRoutine()
     {
         isRunning = true;
+        enabled = true; // 确保 OnRenderImage 可用
         Debug.Log("[CameraManager] Departure 开始");
 
         Vector2 origAnchored = background.anchoredPosition;
@@ -119,6 +120,7 @@ public class CameraManager : MonoBehaviour
     private System.Collections.IEnumerator ArrivalRoutine()
     {
         isRunning = true;
+        enabled = true; // 确保 OnRenderImage 可用
         Debug.Log("[CameraManager] Arrival 开始");
 
         // 以当前 scale 为起点，targetScale 为终点
@@ -143,6 +145,7 @@ public class CameraManager : MonoBehaviour
         background.localScale = endScale;
         background.anchoredPosition = endAnchored;
         SetBlur(0f);
+        enabled = false; // 模糊结束后禁用组件，跳过 OnRenderImage 调用
 
         isRunning = false;
         Debug.Log("[CameraManager] Arrival 完成");

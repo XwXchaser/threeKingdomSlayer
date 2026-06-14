@@ -27,6 +27,9 @@ public class BattleHUD : MonoBehaviour
     public Slider expSlider;
     public TMP_Text expLevelText;
 
+    // GC 优化：缓存所有攻击类型数组，避免每帧 new[]
+    private static readonly AttackType[] AllAttackTypes = { AttackType.Stab, AttackType.Slash, AttackType.Pierce, AttackType.Sweep, AttackType.Launch, AttackType.Parry };
+
     [Header("Boss 血条")]
     [Tooltip("BossHealthBar 模板 Prefab（BattleHUD 动态实例化）")]
     public GameObject bossHealthBarPrefab;
@@ -221,16 +224,14 @@ public class BattleHUD : MonoBehaviour
     private void UpdateCooldownUI()
     {
         if (_heroHUD == null || PlayerState.Instance == null) return;
-        var types = new[] { AttackType.Stab, AttackType.Slash, AttackType.Pierce, AttackType.Sweep, AttackType.Launch, AttackType.Parry };
-        foreach (var t in types)
+        foreach (var t in AllAttackTypes)
             _heroHUD.SetCooldown(t, PlayerState.Instance.GetCooldownProgress(t));
     }
 
     private void UpdateCooldownFillUI()
     {
         if (_heroHUD == null || PlayerState.Instance == null) return;
-        var types = new[] { AttackType.Stab, AttackType.Slash, AttackType.Pierce, AttackType.Sweep, AttackType.Launch, AttackType.Parry };
-        foreach (var t in types)
+        foreach (var t in AllAttackTypes)
             _heroHUD.SetChargeFill(t, 1f - PlayerState.Instance.GetCooldownProgress(t));
     }
 

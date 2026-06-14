@@ -67,6 +67,10 @@ public class InputManager : MonoBehaviour
             return;
         }
         Instance = this;
+
+        // DPI 自适应：高 DPI 屏幕增加滑动阈值，避免误触发
+        float dpi = Screen.dpi > 0f ? Screen.dpi : 160f;
+        swipeThreshold = Mathf.Clamp(swipeThreshold * (dpi / 160f), 50f, 150f);
     }
 
     private void OnDestroy()
@@ -114,7 +118,7 @@ public class InputManager : MonoBehaviour
             return;
         }
 
-        // Debug.Log($"[InputManager] Update frame={Time.frameCount} timeScale={Time.timeScale} isTouching={isTouching} mouseDown={Input.GetMouseButtonDown(0)} mouseUp={Input.GetMouseButtonUp(0)} mouseHeld={Input.GetMouseButton(0)} touchCount={Input.touchCount}"); // COMMENTED: too verbose
+        // DebugLog.Info($"[InputManager] Update frame={Time.frameCount} timeScale={Time.timeScale} isTouching={isTouching} mouseDown={Input.GetMouseButtonDown(0)} mouseUp={Input.GetMouseButtonUp(0)} mouseHeld={Input.GetMouseButton(0)} touchCount={Input.touchCount}"); // COMMENTED: too verbose
 
         // BUG FIX: 鼠标和触摸输入互斥
         // 如果有触摸输入，则跳过鼠标输入（避免在触摸屏设备上双重触发）
@@ -148,7 +152,7 @@ public class InputManager : MonoBehaviour
         {
             // UI 之上的点击不处理游戏输入（QTE 活跃时除外：QTE 指示器本身是 UI 元素）
             bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
-            Debug.Log($"[InputManager] MouseDown frame={Time.frameCount} overUI={overUI}");
+            DebugLog.Info($"[InputManager] MouseDown frame={Time.frameCount} overUI={overUI}");
             if (overUI && !IsAnyQTEActive())
                 return;
 
@@ -199,7 +203,7 @@ public class InputManager : MonoBehaviour
             float pressDuration = Time.time - touchStartTime;
             float swipeDistance = Vector2.Distance(releasePos, touchStartPos);
 
-            Debug.Log($"[InputManager] MouseUp frame={Time.frameCount} pressDuration={pressDuration:F3} swipeDistance={swipeDistance:F1}");
+            DebugLog.Info($"[InputManager] MouseUp frame={Time.frameCount} pressDuration={pressDuration:F3} swipeDistance={swipeDistance:F1}");
             try
             {
                 ProcessGesture(releasePos, pressDuration, swipeDistance);
@@ -320,7 +324,7 @@ public class InputManager : MonoBehaviour
     /// </summary>
     private void ProcessGesture(Vector2 releasePos, float pressDuration, float swipeDistance)
     {
-        Debug.Log($"[InputManager] ProcessGesture frame={Time.frameCount} pressDuration={pressDuration:F3} swipeDistance={swipeDistance:F1} skillInputEnabled={skillInputEnabled}");
+        DebugLog.Info($"[InputManager] ProcessGesture frame={Time.frameCount} pressDuration={pressDuration:F3} swipeDistance={swipeDistance:F1} skillInputEnabled={skillInputEnabled}");
         if (!skillInputEnabled) return;
 
         bool isSwiped = swipeDistance >= swipeThreshold;
@@ -452,7 +456,7 @@ public class InputManager : MonoBehaviour
         var enemies = EnemyManager.Instance?.GetAllAliveEnemies();
         if (enemies == null || enemies.Count == 0)
         {
-            Debug.Log("[InputManager] 落雷：无存活敌人");
+            DebugLog.Info("[InputManager] 落雷：无存活敌人");
             return;
         }
 
@@ -477,7 +481,7 @@ public class InputManager : MonoBehaviour
             hitCount++;
         }
 
-        Debug.Log($"[InputManager] 落雷 baseDmg={baseDmg:F0} hit={hitCount}");
+        DebugLog.Info($"[InputManager] 落雷 baseDmg={baseDmg:F0} hit={hitCount}");
     }
 
     #region 屏幕坐标映射
@@ -564,7 +568,7 @@ public class InputManager : MonoBehaviour
             float swipeSpeed = swipeDistance / Mathf.Max(pressDuration, 0.001f);
             if (_cachedQTEController.TryQTESwipe(touchStartPos, direction, swipeSpeed, releasePos))
             {
-                Debug.Log($"[InputManager] QTE 划动成功 speed={swipeSpeed:F0}");
+                DebugLog.Info($"[InputManager] QTE 划动成功 speed={swipeSpeed:F0}");
                 return true;
             }
         }
@@ -572,7 +576,7 @@ public class InputManager : MonoBehaviour
         {
             if (_cachedQTEController.TryQTEClick(releasePos))
             {
-                Debug.Log("[InputManager] QTE 点击成功");
+                DebugLog.Info("[InputManager] QTE 点击成功");
                 return true;
             }
         }
