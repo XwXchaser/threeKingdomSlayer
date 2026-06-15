@@ -23,4 +23,4 @@ MonoBehaviour:
   failureDamage: 15
   qteIndicatorPrefab: {fileID: 4020735676731632093, guid: 1e6630f00b8ec814683df17726170700, type: 3}
   screenPosition: {x: 0.3, y: 0.6}
-  indicatorSize: {x: 130, y: 130}
+  indicatorSize: {x: 208, y: 208}

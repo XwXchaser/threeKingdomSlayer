@@ -20,13 +20,6 @@ public class BattleHUD : MonoBehaviour
     [Header("铜钱")]
     public TMP_Text coinText;
 
-    [Header("波次")]
-    public TMP_Text waveText;
-
-    [Header("经验条")]
-    public Slider expSlider;
-    public TMP_Text expLevelText;
-
     // GC 优化：缓存所有攻击类型数组，避免每帧 new[]
     private static readonly AttackType[] AllAttackTypes = { AttackType.Stab, AttackType.Slash, AttackType.Pierce, AttackType.Sweep, AttackType.Launch, AttackType.Parry };
 
@@ -76,7 +69,6 @@ public class BattleHUD : MonoBehaviour
             PlayerState.Instance.OnReviveCountChanged += UpdateRevives;
             PlayerState.Instance.OnKillCountChanged += UpdateKillCount;
             PlayerState.Instance.OnCoinChanged += UpdateCoins;
-            PlayerState.Instance.OnWaveChanged += UpdateWave;
             PlayerState.Instance.OnStageStateChanged += OnStageStateChanged;
             PlayerState.Instance.OnExpChanged += UpdateExpBar;
             PlayerState.Instance.OnLevelUp += UpdateExpLevel;
@@ -128,12 +120,28 @@ public class BattleHUD : MonoBehaviour
         // 将 ExpBar Slider 和 Canvas 引用传给 ExpGemManager 和 HealthPotionManager
         if (ExpGemManager.Instance != null)
         {
-            ExpGemManager.Instance.expSlider = expSlider;
+            ExpGemManager.Instance.expSlider = _heroHUD.expSlider;
             ExpGemManager.Instance.gemParent = (RectTransform)transform;
         }
         if (HealthPotionManager.Instance != null)
         {
             HealthPotionManager.Instance.gemParent = (RectTransform)transform;
+        }
+
+        // 注入依赖到 StageProgressBar（避免时序问题）
+        if (_heroHUD.stageProgressBar != null)
+        {
+            var sc = StageController.Instance?.stageConfig;
+            var ws = WaveSpawner.Instance;
+            Debug.Log("[BattleHUD] StageProgressBar 注入: stageConfig=" + (sc != null ? sc.name : "NULL") + " waveSpawner=" + (ws != null ? ws.name : "NULL"));
+            if (sc != null && ws != null)
+                _heroHUD.stageProgressBar.Initialize(sc, ws);
+            else
+                Debug.LogWarning("[BattleHUD] StageProgressBar 注入失败：sc或ws为null");
+        }
+        else
+        {
+            Debug.LogWarning("[BattleHUD] _heroHUD.stageProgressBar 为 null！");
         }
     }
 
@@ -161,7 +169,6 @@ public class BattleHUD : MonoBehaviour
             PlayerState.Instance.OnReviveCountChanged -= UpdateRevives;
             PlayerState.Instance.OnKillCountChanged -= UpdateKillCount;
             PlayerState.Instance.OnCoinChanged -= UpdateCoins;
-            PlayerState.Instance.OnWaveChanged -= UpdateWave;
             PlayerState.Instance.OnStageStateChanged -= OnStageStateChanged;
             PlayerState.Instance.OnExpChanged -= UpdateExpBar;
             PlayerState.Instance.OnLevelUp -= UpdateExpLevel;
@@ -197,28 +204,19 @@ public class BattleHUD : MonoBehaviour
             coinText.text = $"铜钱: {count}";
     }
 
-    private void UpdateWave(int wave)
-    {
-        if (waveText != null)
-        {
-            int totalWaves = WaveSpawner.Instance != null ? WaveSpawner.Instance.TotalWaves : 0;
-            waveText.text = $"波次: {wave}/{totalWaves}";
-        }
-    }
-
     private void UpdateExpBar(float currentExp, float requiredExp)
     {
-        if (expSlider != null)
+        if (_heroHUD != null && _heroHUD.expSlider != null)
         {
-            expSlider.maxValue = requiredExp > 0 ? requiredExp : 1f;
-            expSlider.value = Mathf.Min(currentExp, expSlider.maxValue);
+            _heroHUD.expSlider.maxValue = requiredExp > 0 ? requiredExp : 1f;
+            _heroHUD.expSlider.value = Mathf.Min(currentExp, _heroHUD.expSlider.maxValue);
         }
     }
 
     private void UpdateExpLevel(int level)
     {
-        if (expLevelText != null)
-            expLevelText.text = $"Lv.{level}";
+        if (_heroHUD != null && _heroHUD.expLevelText != null)
+            _heroHUD.expLevelText.text = $"Lv.{level}";
     }
 
     private void UpdateCooldownUI()

@@ -38,6 +38,14 @@ public class HeroHUD : MonoBehaviour
     [Tooltip("QTE 指示器生成区域（QTEFrame 下的空节点）")]
     public RectTransform qteIndicatorArea;
 
+    [Header("经验条")]
+    public Slider expSlider;
+    public TMP_Text expLevelText;
+
+    [Header("关卡进度")]
+    [Tooltip("关卡进度条组件（与 QTEFrame 互斥显示）")]
+    public StageProgressBar stageProgressBar;
+
     // 血量条默认颜色缓存
     private Color _healthBarDefaultColor;
     private bool _healthBarColorSaved;

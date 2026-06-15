@@ -178,7 +178,8 @@ public class PlayerState : MonoBehaviour
 
         currentHealth -= finalDamage;
         OnHealthChanged?.Invoke(currentHealth, heroConfig != null ? heroConfig.maxHealth : 500f);
-        Handheld.Vibrate();
+        // 受击震动已暂时关闭（安卓端不合适），后续在其他功能情景中重新启用
+        // Handheld.Vibrate();
 
         Debug.Log($"[PlayerState] 受到伤害: {damage}(原始) -> {finalDamage}(最终), 剩余生命: {currentHealth}");
 

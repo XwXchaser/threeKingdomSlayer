@@ -52,7 +52,14 @@ public class QTEDisplay : MonoBehaviour
         public bool fillComplete;
     }
 
+    private class DyingIndicator
+    {
+        public GameObject gameObject;
+        public Sequence sequence;
+    }
+
     private List<IndicatorState> _activeStates = new List<IndicatorState>();
+    private List<DyingIndicator> _dyingIndicators = new List<DyingIndicator>();
     private RectTransform _fallbackParent;
 
     private void Awake()
@@ -174,7 +181,7 @@ public class QTEDisplay : MonoBehaviour
 
         state.animationSeq = seq;
         _activeStates.Add(state);
-        Debug.Log($"[QTEDisplay] StartQTEIndicator: type={config.qteType}, targetPos=({posX:F0},{posY:F0}), size={config.indicatorSize}");
+        Debug.Log($"[QTE_DIAG] StartQTEIndicator: id={indicator.GetInstanceID()}, type={config.qteType}, activeCount={_activeStates.Count}, dyingCount={_dyingIndicators.Count}");
         return indicator;
     }
 
@@ -255,6 +262,9 @@ public class QTEDisplay : MonoBehaviour
     /// </summary>
     public void ClearAllIndicators()
     {
+        Debug.Log($"[QTE_DIAG] ClearAllIndicators: activeCount={_activeStates.Count}, dyingCount={_dyingIndicators.Count}");
+
+        // 清理活跃指示器
         foreach (var state in _activeStates)
         {
             if (state == null) continue;
@@ -267,6 +277,17 @@ public class QTEDisplay : MonoBehaviour
             }
         }
         _activeStates.Clear();
+
+        // 清理正在下滑退场的指示器（提前失败时已从 _activeStates 移除但动画尚未完成）
+        for (int i = _dyingIndicators.Count - 1; i >= 0; i--)
+        {
+            var di = _dyingIndicators[i];
+            if (di.sequence != null && di.sequence.IsActive())
+                di.sequence.Kill();
+            if (di.gameObject != null)
+                Destroy(di.gameObject);
+        }
+        _dyingIndicators.Clear();
     }
 
     // ═══════════════════════════════════════════
@@ -293,6 +314,8 @@ public class QTEDisplay : MonoBehaviour
         var go = state.gameObject;
         if (go == null) return;
 
+        Debug.Log($"[QTE_DIAG] SlideOutAndDestroy: id={go.GetInstanceID()}, activeRemaining={_activeStates.Count}, dyingCount={_dyingIndicators.Count}");
+
         var rt = go.GetComponent<RectTransform>();
         float endY = -(150f * 0.5f + slideInOffsetY);
         if (qteFrameRect != null)
@@ -304,7 +327,19 @@ public class QTEDisplay : MonoBehaviour
         if (rt != null)
             seq.Join(rt.DOAnchorPosY(endY, slideOutDuration).SetEase(Ease.InCubic));
         seq.Join(cg.DOFade(0f, slideOutDuration));
-        seq.OnComplete(() => Destroy(go));
+
+        var di = new DyingIndicator { gameObject = go, sequence = seq };
+        _dyingIndicators.Add(di);
+
+        seq.OnComplete(() =>
+        {
+            _dyingIndicators.Remove(di);
+            if (go != null)
+            {
+                Debug.Log($"[QTE_DIAG] SlideOutComplete: id={go.GetInstanceID()}, dyingRemaining={_dyingIndicators.Count}");
+                Destroy(go);
+            }
+        });
     }
 
     private IndicatorState FindState(GameObject indicator)

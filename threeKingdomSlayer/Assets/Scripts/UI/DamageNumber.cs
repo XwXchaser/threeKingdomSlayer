@@ -24,6 +24,7 @@ public class DamageNumber : MonoBehaviour
     [System.NonSerialized] public System.Action<DamageNumber> OnReturnToPool;
 
     private Sequence animSeq;
+    private Coroutine _safetyTimeoutRoutine;
 
     private void Awake()
     {
@@ -77,19 +78,20 @@ public class DamageNumber : MonoBehaviour
         Vector3 endPos = worldPos + new Vector3(0f, floatUpDistance, 0f);
 
         // DOTween 动画：向上漂浮 + 透明度淡出
+        int instanceId = GetInstanceID();
         animSeq = DOTween.Sequence();
         animSeq.SetTarget(transform);
-        animSeq.SetId("damageNumber");
+        animSeq.SetId($"damageNumber_{instanceId}");
 
         animSeq.Join(transform.DOMove(endPos, duration).SetEase(Ease.OutQuad));
         animSeq.Join(tmp.DOFade(0f, duration).SetEase(Ease.InQuad));
 
-        animSeq.OnComplete(() =>
-        {
-            animSeq = null;
-            gameObject.SetActive(false);
-            OnReturnToPool?.Invoke(this);
-        });
+        animSeq.OnComplete(OnAnimationComplete);
+
+        // 安全超时兜底：2 倍动画时长后强制回收
+        if (_safetyTimeoutRoutine != null)
+            StopCoroutine(_safetyTimeoutRoutine);
+        _safetyTimeoutRoutine = StartCoroutine(SafetyTimeout(duration * 2f));
     }
 
     /// <summary>
@@ -101,6 +103,12 @@ public class DamageNumber : MonoBehaviour
         {
             animSeq.Kill();
             animSeq = null;
+        }
+
+        if (_safetyTimeoutRoutine != null)
+        {
+            StopCoroutine(_safetyTimeoutRoutine);
+            _safetyTimeoutRoutine = null;
         }
 
         Color c = tmp.color;
@@ -117,5 +125,36 @@ public class DamageNumber : MonoBehaviour
             animSeq.Kill();
             animSeq = null;
         }
+        if (_safetyTimeoutRoutine != null)
+        {
+            StopCoroutine(_safetyTimeoutRoutine);
+            _safetyTimeoutRoutine = null;
+        }
+    }
+
+    private void OnAnimationComplete()
+    {
+        animSeq = null;
+        if (_safetyTimeoutRoutine != null)
+        {
+            StopCoroutine(_safetyTimeoutRoutine);
+            _safetyTimeoutRoutine = null;
+        }
+        gameObject.SetActive(false);
+        OnReturnToPool?.Invoke(this);
+    }
+
+    private System.Collections.IEnumerator SafetyTimeout(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        Debug.LogWarning($"[DamageNumber] 安全超时强制回收 instanceId={GetInstanceID()}");
+        if (animSeq != null && animSeq.IsActive())
+        {
+            animSeq.Kill();
+            animSeq = null;
+        }
+        _safetyTimeoutRoutine = null;
+        gameObject.SetActive(false);
+        OnReturnToPool?.Invoke(this);
     }
 }
