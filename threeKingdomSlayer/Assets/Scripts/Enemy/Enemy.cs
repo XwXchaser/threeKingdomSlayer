@@ -158,6 +158,13 @@ public class Enemy : MonoBehaviour
     public float launchDamageMultiplier = 1f;
     public float poiseDamageMultiplier = 1f;
 
+    // 原始值快照（池复用 / 多波次重置时恢复 prefab 默认值）
+    private List<AttackStep> _originalAttackSequence;
+    private float _originalStabMult, _originalSlashMult, _originalPierceMult;
+    private float _originalSweepMult, _originalLaunchMult, _originalPoiseMult;
+    private bool _originalIsSuperArmor;
+    private BossQTEData _originalQteData;
+
     [Header("招架血量眩晕阈值")]
     public ParryStunThreshold[] parryStunThresholds;
 
@@ -281,6 +288,36 @@ public class Enemy : MonoBehaviour
     {
         renderers = GetComponentsInChildren<Renderer>();
         _spriteRenderer = GetComponent<SpriteRenderer>();
+
+        // 快照 prefab 原始值，供池复用 / 多波次重置
+        SnapshotOriginalValues();
+    }
+
+    private void SnapshotOriginalValues()
+    {
+        _originalAttackSequence = attackSequence != null ? new List<AttackStep>(attackSequence) : null;
+        _originalStabMult = stabDamageMultiplier;
+        _originalSlashMult = slashDamageMultiplier;
+        _originalPierceMult = pierceDamageMultiplier;
+        _originalSweepMult = sweepDamageMultiplier;
+        _originalLaunchMult = launchDamageMultiplier;
+        _originalPoiseMult = poiseDamageMultiplier;
+        _originalIsSuperArmor = isSuperArmor;
+        var qte = GetComponent<QTEController>();
+        _originalQteData = qte != null ? qte.qteData : null;
+    }
+
+    private void RestoreOriginalValues()
+    {
+        if (_originalAttackSequence != null)
+            attackSequence = new List<AttackStep>(_originalAttackSequence);
+        stabDamageMultiplier = _originalStabMult;
+        slashDamageMultiplier = _originalSlashMult;
+        pierceDamageMultiplier = _originalPierceMult;
+        sweepDamageMultiplier = _originalSweepMult;
+        launchDamageMultiplier = _originalLaunchMult;
+        poiseDamageMultiplier = _originalPoiseMult;
+        isSuperArmor = _originalIsSuperArmor;
     }
 
     /// <summary>
@@ -326,6 +363,9 @@ public class Enemy : MonoBehaviour
         isCFrame = false;
         UpdateOutlineState();
         _currentAttackStep = 0;
+
+        // 恢复转阶段覆写的字段为 prefab 原始值
+        RestoreOriginalValues();
         moveProgress = 0f;
         isMovingToNextRow = false;
         isRushMove = false;
@@ -334,6 +374,7 @@ public class Enemy : MonoBehaviour
         rushMoveDelayTimer = 0f;
         rushMoveChainTriggered = false;
         targetRow = -1;
+        actionCooldownTimer = 0f;
         bounceYOffset = 0f;
         _attackTween = null;
         // 创建材质实例（用于闪白效果）
@@ -354,6 +395,12 @@ public class Enemy : MonoBehaviour
             var qte = GetQTEController();
             if (qte != null) qte.OnQTEAttackFinished += OnQTEAttackFinished;
         }
+
+        // 恢复 QTE 数据（QTEController 的 qteData 可能在转阶段时被 SwitchQteData 覆写）
+        // 始终调用 SwitchQteData，即使 _originalQteData 为 null（prefab 无 QTE 但转阶段获得了）
+        var qteCtrl = GetQTEController();
+        if (qteCtrl != null)
+            qteCtrl.SwitchQteData(_originalQteData);
 
         // 缓存 Attack AnimationClip（用于远程 DOTween 时长同步）
         _attackClip = null;
@@ -623,6 +670,7 @@ public class Enemy : MonoBehaviour
                 }
             }
             DOTween.Kill(transform, false);
+            transform.localScale = originalScale;
             isMovingToNextRow = false;
             isRushMove = false;
             moveProgress = 0f;

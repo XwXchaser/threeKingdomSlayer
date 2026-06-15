@@ -18,13 +18,13 @@ MonoBehaviour:
   attackSequence:
   - isCAttack: 0
     animationTrigger: Attack
-    spawnDuration: 0.6
+    spawnDuration: 0.78
     drawDuration: 0.4
     extraCooldown: 0
     useFlip: 0
   - isCAttack: 1
     animationTrigger: CAttack
-    spawnDuration: 0.8
+    spawnDuration: 1
     drawDuration: 0.5
     extraCooldown: 0.2
     useFlip: 0

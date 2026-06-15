@@ -127,7 +127,7 @@ public class UltimateSystem : MonoBehaviour
             if (effect != null)
             {
                 effect.Execute();
-                Handheld.Vibrate();
+                // Handheld.Vibrate(); // 安卓端攻击震动暂关闭
             }
             else
             {

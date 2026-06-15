@@ -111,7 +111,8 @@ public class Column
                     // 由攻击动画 OnComplete 中的 TryStartRushMove 自然衔接
                     DebugLog.Info($"[Column] 标记补齐（保留攻击动画）: {e.DebugTag}, col={colIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
                 }
-                if (!(e.isBoss && e.bossState == BossState.Approaching))
+                // Boss 不参与列补齐链，移动由自身状态机控制
+                if (!e.isBoss)
                     e.pendingRushMove = true;
                 DebugLog.Info($"[Column] 标记补齐移动: {e.DebugTag}, col={colIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
                 writeIdx++;
@@ -409,7 +410,8 @@ public class Column
             if (e.rowIndex != targetRow)
             {
                 e.ResetMovementState();
-                if (!(e.isBoss && e.bossState == BossState.Approaching))
+                // Boss 不参与列补齐链，移动由自身状态机控制
+                if (!e.isBoss)
                     e.pendingRushMove = true;
             }
 

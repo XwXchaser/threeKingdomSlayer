@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779004290012
-updatedAt: 1781161542828
+updatedAt: 1781513138081
 ---
 
 # boss-mechanics
@@ -131,8 +131,8 @@ Boss 补齐时检查的是**整排**（所有 5 列）而非仅本列：`IsRowCl
 
 ### 4.3 列阵中的特殊处理
 
-- `BossState.Approaching` 期间，Column.RemoveEnemy() / ColumnManager.UpdateEnemyRow() 的列内紧凑前移**跳过 BOSS**，由分阶段推进系统独立控制
-- BOSS 进入 `InCombat` 或缓冲中后，落地/眩晕恢复后**锁定位置**，不参与补齐前移
+- BOSS **完全不参与列补齐链**：`Column.RemoveEnemy()` 和 `Column.CompactColumn()` 对 `isBoss` 敌人跳过 `pendingRushMove` 标记，BOSS 移动完全由自身状态机（`BossPause`/`BossResume`/`TryStartRushMove`）控制
+- BOSS 进入 `InCombat` 或缓冲中后，眩晕恢复后直接 `SetBossActionCooldown()`，不处理 `pendingRushMove`
 - BOSS 缓冲期间（`_bossEngageTimer > 0`）无敌，免疫伤害
 
 ---

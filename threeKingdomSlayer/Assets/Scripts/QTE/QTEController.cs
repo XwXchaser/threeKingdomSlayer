@@ -160,6 +160,12 @@ public class QTEController : MonoBehaviour
         _performingTimer = 0f;
         _qtePhaseStarted = false;
         _qtePhaseTimer = 0f;
+
+        // 清除上一轮可能残留的指示器（防御性清理，防止重叠）
+        DebugLog.Info($"[QTE_DIAG] TriggerQTEAttack: clearing indicators before new attack, attackIndex={_currentAttackIndex}");
+        if (qteDisplay != null)
+            qteDisplay.ClearAllIndicators();
+
         _activeQTEs.Clear();
 
         // 创建 QTE 实例（spawnTime/warningEndTime/judgeEndTime 相对于 QTE 阶段开始）
@@ -550,6 +556,7 @@ public class QTEController : MonoBehaviour
 
     private void ResolveQTE(QTEInstance qte, bool success, bool earlyFail = false)
     {
+        DebugLog.Info($"[QTE_DIAG] ResolveQTE: success={success}, earlyFail={earlyFail}, indicatorId={qte.indicator?.GetInstanceID()}, remainingUnresolved={_activeQTEs.FindAll(q => !q.resolved).Count}");
         qte.resolved = true;
         qte.success = success;
 
@@ -581,7 +588,7 @@ public class QTEController : MonoBehaviour
             UltimateSystem.Instance.AddEnergy(qte.config.ultimateEnergyGain);
 
         OnQTESuccess?.Invoke();
-        Handheld.Vibrate();
+        // Handheld.Vibrate(); // 安卓端攻击震动暂关闭
     }
 
     private void OnQTEFailureSingle(QTEInstance qte)
@@ -610,6 +617,7 @@ public class QTEController : MonoBehaviour
 
         StopQTEAnimation();
 
+        DebugLog.Info("[QTE_DIAG] AbortQTE: clearing indicators");
         if (qteDisplay != null)
             qteDisplay.ClearAllIndicators();
 
@@ -637,7 +645,7 @@ public class QTEController : MonoBehaviour
         if (totalFailureDamage > 0f && PlayerState.Instance != null)
         {
             PlayerState.Instance.TakeDamage(totalFailureDamage);
-            Handheld.Vibrate();
+            // Handheld.Vibrate(); // 安卓端攻击震动暂关闭
             DebugLog.Info($"[QTEController] QTE失败伤害: {totalFailureDamage:F0}");
         }
 
@@ -669,6 +677,7 @@ public class QTEController : MonoBehaviour
         StopQTEAnimation();
 
         // 清理指示器
+        DebugLog.Info($"[QTE_DIAG] CompleteQTEAttack: clearing indicators, attackIndex={_currentAttackIndex}");
         if (qteDisplay != null)
             qteDisplay.ClearAllIndicators();
 
