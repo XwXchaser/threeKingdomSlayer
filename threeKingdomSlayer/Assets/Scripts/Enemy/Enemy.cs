@@ -786,6 +786,7 @@ public class Enemy : MonoBehaviour
         isAttackAnimating = false;
         isAttackDrawPhase = false;
         isCFrame = false;
+        _animator?.Play("Idle", 0, 0f);
         UpdateOutlineState();
 
         if (isBoss)
@@ -1527,9 +1528,18 @@ public class Enemy : MonoBehaviour
         string punchId = $"punch_{GetInstanceID()}";
         DOTween.Kill(punchId);
         transform.localScale = originalScale;
-        transform.DOPunchScale(new Vector3(0.2f, 0.2f, 0.2f), 0.15f, 8, 0.5f)
-            .SetTarget(transform)
-            .SetId(punchId);
+        if (isSuperArmor)
+        {
+            transform.DOPunchScale(new Vector3(0.1f, 0.1f, 0.1f), 0.1f, 5, 0.5f)
+                .SetTarget(transform)
+                .SetId(punchId);
+        }
+        else
+        {
+            transform.DOPunchScale(new Vector3(0.2f, 0.2f, 0.2f), 0.15f, 8, 0.5f)
+                .SetTarget(transform)
+                .SetId(punchId);
+        }
 
         // 击飞状态下被攻击延长浮空时间
         if (state == EnemyState.Launched && launchedHitExtendDuration > 0f)
@@ -1574,9 +1584,18 @@ public class Enemy : MonoBehaviour
         string punchId = $"punch_{GetInstanceID()}";
         DOTween.Kill(punchId);
         transform.localScale = originalScale;
-        transform.DOPunchScale(new Vector3(0.2f, 0.2f, 0.2f), 0.15f, 8, 0.5f)
-            .SetTarget(transform)
-            .SetId(punchId);
+        if (isSuperArmor)
+        {
+            transform.DOPunchScale(new Vector3(0.1f, 0.1f, 0.1f), 0.1f, 5, 0.5f)
+                .SetTarget(transform)
+                .SetId(punchId);
+        }
+        else
+        {
+            transform.DOPunchScale(new Vector3(0.2f, 0.2f, 0.2f), 0.15f, 8, 0.5f)
+                .SetTarget(transform)
+                .SetId(punchId);
+        }
     }
 
     /// <summary>
@@ -1596,11 +1615,12 @@ public class Enemy : MonoBehaviour
         if (state != EnemyState.Launched
             && state != EnemyState.Dead
             && state != EnemyState.QTEAttacking
-            && !isCFrame)
+            && !isCFrame
+            && !isSuperArmor)
         {
             _animator?.SetTrigger("Hit");
         }
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(0.4f);
         _hitFlashRoutine = null;
     }
 

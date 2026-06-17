@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1781067207076
-updatedAt: 1781106265395
+updatedAt: 1781711544862
 ---
 
 # boss-overhaul
@@ -103,6 +103,27 @@ transitionTriggerName, transitionDuration
 - 死亡或转阶段中不显示描边
 
 全局默认 + 每个Enemy可覆盖（颜色/宽度独立调整）。
+
+---
+
+## BOSS 动画资源部署
+
+### Idle 动画
+- `Boss_104_Idle.anim`：双帧循环 `BOSS_idle1.png` → `BOSS_idle2.png`（0.6s/帧，1.2s 总长）
+- 原始 `BOSS_idle.png` 不再使用
+
+### HitFlash 动画
+- `Boss_104_HitFlash.anim`：4帧序列 `BOSS_hitted1-4.png`（0.1s/帧，0.4s 总长，不循环）
+- `HitFlashRoutine` 等待时间同步调整为 0.4s
+
+### SuperArmor 受击反馈规则
+SuperArmor（阶段级霸体）受击时：
+- **阻断**受击动画（`HitFlashRoutine` 加 `!isSuperArmor` 守卫）—— 霸体不应呈现痛苦摇摆
+- **保留**白闪反馈（瞬时 + 持续）—— 击中确认，玩家需要
+- **减弱**抖动（`DOPunchScale` 从 0.2/0.15s/8 降为 0.1/0.1s/5）—— 不破坏霸体印象但保留打击感
+
+### CancelAttack Animator 复位
+`CancelAttack()` 中新增 `_animator?.Play("Idle", 0, 0f)`。此前 Animator 回 Idle 依赖 HitFlash 链路的副作用（Hit 触发→HitFlash 状态→自动回 Idle），`!isSuperArmor` 守卫暴露了该隐式依赖。现改为显式复位，与 `PlayAttackAnimationTween` OnComplete 的 `Play("Idle")` 对称。
 
 ---
 
