@@ -18,7 +18,7 @@ MonoBehaviour:
   swipeDirection: 90
   swipeAngleTolerance: 25
   swipeMinSpeed: 500
-  poiseDamage: 20
+  poiseDamage: 0
   ultimateEnergyGain: 10
   failureDamage: 15
   qteIndicatorPrefab: {fileID: 4020735676731632093, guid: 1e6630f00b8ec814683df17726170700, type: 3}

@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b648c1d8b5c84f47933bcd8f5fd3656, type: 3}
-  m_Name: QTEAttackConfig_TripleClick
+  m_Name: QTEAttackConfig_TripleStab
   m_EditorClassIdentifier: 
   qteSlots:
   - config: {fileID: 11400000, guid: be6ca857b041f2f4581e686f8607aaaa, type: 2}
@@ -21,9 +21,21 @@ MonoBehaviour:
     delay: 0.6
   qteAnimationClip: {fileID: 0}
   animationDuration: 0
-  animationLeadTime: 0.3
+  animationLeadTime: 0.45
+  animationStartClip: {fileID: 7400000, guid: dd983500b5442aa4cbd195bfe000ed46, type: 2}
+  animationLoopClip: {fileID: 7400000, guid: ceeeb18b105bca54f874c1e51db5066a, type: 2}
+  animationEndClip: {fileID: 7400000, guid: 23d635a3ea67f904a99673b9b4fb99ab, type: 2}
   projectilePrefab: {fileID: 0}
   projectileFlightTime: 0.8
   projectileTargetZ: -2
-  interruptibleOnStun: 1
-  cooldownAfterQTE: 3
+  arrowPrefab: {fileID: 1380601310174306327, guid: 949279caa1d1b7d4dbfaaf3dacf411df, type: 3}
+  arrowsPerWave: 7
+  arrowArcHeight: 6
+  arrowSpawnOffsetZ: 1
+  arrowSpreadX: 4
+  arrowFlightTime: 1.5
+  arrowPitchAngle: 20
+  isDefensiveQTE: 1
+  fixedQteDuration: 4.5
+  interruptibleOnStun: 0
+  cooldownAfterQTE: 4

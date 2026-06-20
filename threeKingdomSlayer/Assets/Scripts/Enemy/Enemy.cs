@@ -96,6 +96,8 @@ public class Enemy : MonoBehaviour
     public float projectileZTargetOffset = 5f;
     [Tooltip("飞行物目标 X 偏移（相对敌人当前位置 X）")]
     public float projectileXOffset = 0f;
+    [Tooltip("全局箭矢飞行参数配置，为空则用默认值")]
+    public ArrowGlobalConfig arrowConfig;
 
     [Header("共享血量")]
     [Tooltip("与同行相邻同ID敌人共享血量")]
@@ -1292,7 +1294,9 @@ public class Enemy : MonoBehaviour
         float endZ = camZ + projectileZTargetOffset;
         float endX = startPos.x + projectileXOffset;
 
-        proj.Launch(startPos, endZ, endX, attackDamage, projectileArcHeight, projectileFlyDuration);
+        float pitchAngle = arrowConfig != null ? arrowConfig.GetPitchAngleForRow(rowIndex) : 12f;
+        float descentRatio = arrowConfig != null ? arrowConfig.descentPitchRatio : 0.75f;
+        proj.Launch(startPos, endZ, endX, attackDamage, projectileArcHeight, projectileFlyDuration, pitchAngle, descentRatio);
 
         DebugLog.Info($"[Enemy] {DebugTag} 发射飞行物: start=({startPos.x:F1},{startPos.y:F1},{startPos.z:F1}) endZ={endZ:F1} endX={endX:F1}");
     }
