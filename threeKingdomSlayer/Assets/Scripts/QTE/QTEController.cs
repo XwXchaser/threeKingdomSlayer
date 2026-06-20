@@ -4,11 +4,12 @@ using DG.Tweening;
 
 /// <summary>
 /// QTE 状态机（由 Enemy 的 Idle 调度触发，不再自行管理冷却）
-/// Idle → PerformingQTEAttack → QTEJudging → QTECompleted → Idle
+/// Idle → PerformingQTEAttack → QTEJudging → QTEEnding → QTECompleted → Idle
 ///
 /// QTE 阶段概念：
 ///   - PerformingQTEAttack: 等待 QTE 阶段开始（飞行物到达 / 动画前摇结束）
-///   - QTE 阶段开始后，slot delay 相对于阶段开始计时
+///   - QTEJudging: 判定阶段，按 slot 时序持续到 max(slot.judgeEndTime)
+///   - QTEEnding: 播放结束动画，等待动画播完后真正完成
 ///   - 全部 QTE 成功 → 销毁飞行物；任一失败 → 飞行物穿过摄像机
 /// </summary>
 public enum QTEState
@@ -16,6 +17,7 @@ public enum QTEState
     Idle,
     PerformingQTEAttack,
     QTEJudging,
+    QTEEnding,
     QTECompleted
 }
 
@@ -42,6 +44,7 @@ public class QTEController : MonoBehaviour
 {
     [Header("配置")]
     public BossQTEData qteData;
+    public ArrowGlobalConfig arrowConfig;
 
     [Header("组件引用")]
     public Enemy enemy;
@@ -54,9 +57,16 @@ public class QTEController : MonoBehaviour
     private float _performingTimer;       // Performing 阶段的累计时间（用于动画前摇）
     private bool _qtePhaseStarted;        // QTE 阶段是否已开始（飞行物到达 / 动画前摇结束）
     private float _qtePhaseTimer;         // QTE 阶段开始后的计时器（用于 QTE spawn/judge）
+    private float _fixedEndTimer;         // 固定时长结束倒计时（fixedQteDuration > 0 时使用）
+    private float _effectiveJudgeDuration; // 计算得出的实际判定阶段时长 = max(slot.judgeEndTime)
+    private float _endAnimTimer;           // 结束动画播放计时器
     private QTEAttackConfig _currentAttack;
     private List<QTEInstance> _activeQTEs = new List<QTEInstance>();
     private GameObject _activeProjectile;
+
+    // 箭矢波追踪（多段防御型 QTE）：slotIndex → 该波所有箭矢
+    private Dictionary<int, List<EnemyProjectile>> _arrowWaves = new Dictionary<int, List<EnemyProjectile>>();
+    private bool _arrowWavesSpawned;
 
     // QTE 动画
     private Animator _animator;
@@ -97,7 +107,7 @@ public class QTEController : MonoBehaviour
         if (qteData == null || enemy == null) return;
 
         // 敌人脱离 QTE 状态（如被打入 Stun），中止 QTE
-        if ((_state == QTEState.PerformingQTEAttack || _state == QTEState.QTEJudging)
+        if ((_state == QTEState.PerformingQTEAttack || _state == QTEState.QTEJudging || _state == QTEState.QTEEnding)
             && enemy.state != EnemyState.QTEAttacking)
         {
             DebugLog.Info($"[QTEController] 敌人脱离QTE状态({enemy.state})，中止QTE");
@@ -112,6 +122,9 @@ public class QTEController : MonoBehaviour
                 break;
             case QTEState.QTEJudging:
                 UpdateJudging();
+                break;
+            case QTEState.QTEEnding:
+                UpdateEnding();
                 break;
         }
     }
@@ -183,9 +196,29 @@ public class QTEController : MonoBehaviour
             });
         }
 
+        // 初始化箭矢波追踪
+        _arrowWaves.Clear();
+        _arrowWavesSpawned = false;
+        _fixedEndTimer = -1f;
+
+        // 计算实际判定阶段时长 = max(slot.judgeEndTime)，fixedQteDuration 作为保底下限
+        _effectiveJudgeDuration = 0f;
+        foreach (var qte in _activeQTEs)
+        {
+            if (qte.judgeEndTime > _effectiveJudgeDuration)
+                _effectiveJudgeDuration = qte.judgeEndTime;
+        }
+        if (_currentAttack.fixedQteDuration > _effectiveJudgeDuration)
+            _effectiveJudgeDuration = _currentAttack.fixedQteDuration;
+        _endAnimTimer = -1f;
+
         enemy.EnterQTEAttack();
         StartQTEAnimation();
-        SpawnProjectile();
+
+        // 多段防御型 QTE：不生成传统飞行物，改用箭矢波
+        if (!(_currentAttack.UseMultiPhaseAnimation && _currentAttack.isDefensiveQTE && _currentAttack.arrowPrefab != null))
+            SpawnProjectile();
+
         OnQTETriggered?.Invoke();
         return true;
     }
@@ -246,24 +279,140 @@ public class QTEController : MonoBehaviour
             DOTween.Kill(_activeProjectile);
     }
 
+    #region 箭矢波（多段防御型 QTE）
+
+    private void SpawnArrowWaveForSlot(int slotIndex)
+    {
+        if (_currentAttack == null || _currentAttack.arrowPrefab == null) return;
+        if (_arrowWaves.ContainsKey(slotIndex)) return;
+        if (slotIndex < 0 || slotIndex >= _activeQTEs.Count) return;
+
+        var qte = _activeQTEs[slotIndex];
+        if (qte.config == null) return;
+
+        float row5Z = GetRow5ZPosition();
+        float spawnZ = row5Z + _currentAttack.arrowSpawnOffsetZ;
+        float offsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
+        float targetZ = offsetZ + _currentAttack.projectileTargetZ;
+        float playerX = PlayerState.Instance != null ? PlayerState.Instance.transform.position.x : 0f;
+
+        var wave = new List<EnemyProjectile>();
+        int count = _currentAttack.arrowsPerWave;
+        float baseDmg = qte.config.failureDamage > 0f ? qte.config.failureDamage : qte.config.poiseDamage;
+        float dmgPerArrow = baseDmg / count;
+
+        // 从全局配置读取参数，未配置则用默认值
+        float jitter = arrowConfig != null ? arrowConfig.randomPositionJitter : 0.3f;
+        float flightVar = arrowConfig != null ? arrowConfig.randomFlightVariation : 0.1f;
+        float arcVar = arrowConfig != null ? arrowConfig.randomArcVariation : 0.15f;
+        float staggerMax = arrowConfig != null ? arrowConfig.staggerMax : 0.12f;
+        float pitchAngle = arrowConfig != null ? arrowConfig.GetPitchAngleForRow(5) : 20f;
+        float descentRatio = arrowConfig != null ? arrowConfig.descentPitchRatio : 0.75f;
+
+        for (int i = 0; i < count; i++)
+        {
+            float xOffset = count > 1 ? Mathf.Lerp(-_currentAttack.arrowSpreadX * 0.5f, _currentAttack.arrowSpreadX * 0.5f, (float)i / (count - 1)) : 0f;
+            float spawnX = playerX + xOffset + Random.Range(-jitter, jitter);
+            float spawnY = 1.5f + Random.Range(-jitter * 0.67f, jitter);
+            float spawnZJitter = Random.Range(-jitter * 0.67f, jitter * 0.67f);
+            Vector3 spawnPos = new Vector3(spawnX, spawnY, spawnZ + spawnZJitter);
+
+            float flightTime = (qte.config.warningDuration + qte.config.judgeWindow) * Random.Range(1f - flightVar, 1f + flightVar);
+            float arcH = _currentAttack.arrowArcHeight * Random.Range(1f - arcVar, 1f + arcVar);
+            float stagger = Random.Range(0f, staggerMax);
+
+            var arrowObj = Instantiate(_currentAttack.arrowPrefab, spawnPos, Quaternion.identity);
+            var projectile = arrowObj.GetComponent<EnemyProjectile>();
+            if (projectile != null)
+            {
+                if (stagger > 0.001f)
+                {
+                    float d = dmgPerArrow;
+                    float tz = targetZ;
+                    float sx = spawnX;
+                    EnemyProjectile p = projectile;
+                    float dr = descentRatio;
+                    DOVirtual.DelayedCall(stagger, () =>
+                    {
+                        if (p != null) p.Launch(spawnPos, tz, sx, d, arcH, flightTime, pitchAngle, dr);
+                    });
+                }
+                else
+                {
+                    projectile.Launch(spawnPos, targetZ, spawnX, dmgPerArrow, arcH, flightTime, pitchAngle, descentRatio);
+                }
+            }
+            wave.Add(projectile);
+        }
+
+        _arrowWaves[slotIndex] = wave;
+        _arrowWavesSpawned = true;
+    }
+
+    private void DeflectArrowWave(int slotIndex)
+    {
+        if (!_arrowWaves.TryGetValue(slotIndex, out var wave)) return;
+        foreach (var p in wave)
+        {
+            if (p != null) p.Deflect();
+        }
+        _arrowWaves.Remove(slotIndex);
+    }
+
+    private void ClearAllArrowWaves()
+    {
+        foreach (var kv in _arrowWaves)
+        {
+            foreach (var p in kv.Value)
+            {
+                if (p != null) Destroy(p.gameObject);
+            }
+        }
+        _arrowWaves.Clear();
+    }
+
+    private float GetRow5ZPosition()
+    {
+        float offsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
+        float rowSpacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
+        int maxRow = StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() - 1 : 4;
+        // 使用与 Enemy.GetRowZ 一致的公式: (maxRow - row) * (-spacing) + offset
+        return (maxRow - 5) * (-rowSpacing) + offsetZ;
+    }
+
+    #endregion
+
     #region QTE 动画
 
     private void StartQTEAnimation()
     {
-        if (_currentAttack == null || _currentAttack.qteAnimationClip == null)
-            return;
-
+        if (_currentAttack == null) return;
         if (_animator == null)
             _animator = GetComponent<Animator>();
         if (_animator == null) return;
 
-        _animator.SetTrigger("QTEAttack");
+        if (_currentAttack.UseMultiPhaseAnimation)
+        {
+            _animator.SetTrigger("QTETripleStab");
+        }
+        else if (_currentAttack.qteAnimationClip != null)
+        {
+            _animator.SetTrigger("QTEAttack");
+        }
     }
 
     private void StopQTEAnimation()
     {
-        if (_animator != null)
+        if (_animator == null) return;
+
+        if (_currentAttack != null && _currentAttack.UseMultiPhaseAnimation)
+        {
+            _animator.SetTrigger("QTEEnd");
+        }
+        else
+        {
             _animator.Play("Idle");
+        }
     }
 
     #endregion
@@ -279,7 +428,13 @@ public class QTEController : MonoBehaviour
         if (!_qtePhaseStarted)
         {
             // 无飞行物时，等待动画前摇结束后开始 QTE 阶段
-            if (_activeProjectile == null && _performingTimer >= _currentAttack.animationLeadTime)
+            bool hasProjectile = _activeProjectile != null;
+            // 多段动画模式：等待 Start 动画播完（动画前摇）
+            bool multiPhaseReady = _currentAttack.UseMultiPhaseAnimation && _performingTimer >= _currentAttack.animationLeadTime;
+            // 单段动画模式：无飞行物 + 前摇结束
+            bool singlePhaseReady = !_currentAttack.UseMultiPhaseAnimation && !hasProjectile && _performingTimer >= _currentAttack.animationLeadTime;
+
+            if (multiPhaseReady || singlePhaseReady)
                 StartQTEPhase();
             // 有飞行物：等待 OnProjectileReachedTarget 回调
             return;
@@ -287,11 +442,15 @@ public class QTEController : MonoBehaviour
 
         _qtePhaseTimer += Time.deltaTime;
 
-        // 按 phase-relative 时间生成指示器
+        // 按 phase-relative 时间生成指示器 + 箭矢波
         foreach (var qte in _activeQTEs)
         {
             if (qte.indicator == null && _qtePhaseTimer >= qte.spawnTime)
+            {
                 SpawnQTEIndicator(qte);
+                // 生成该 slot 对应的箭矢波
+                SpawnArrowWaveForSlot(_activeQTEs.IndexOf(qte));
+            }
         }
 
         // 检查判定窗口开始（通知 QTEDisplay 触发放大闪白）
@@ -305,30 +464,69 @@ public class QTEController : MonoBehaviour
             { allReady = false; break; }
         }
         if (allReady)
+        {
             _state = QTEState.QTEJudging;
+        }
     }
 
     private void UpdateJudging()
     {
         _qtePhaseTimer += Time.deltaTime;
 
+        // 判定阶段到期：强制结束，未 resolve 的 slot 视为失败，进入结束动画阶段
+        if (_qtePhaseTimer >= _effectiveJudgeDuration)
+        {
+            foreach (var qte in _activeQTEs)
+            {
+                if (!qte.resolved)
+                    ResolveQTE(qte, false);
+            }
+            StartQTEEndingPhase();
+            return;
+        }
+
         // 检查判定窗口开始（通知 QTEDisplay 触发放大闪白）
         CheckJudgmentStart();
 
-        bool allResolved = true;
+        // 检查到期的 slot 并自动失败
         foreach (var qte in _activeQTEs)
         {
-            if (!qte.resolved)
-            {
-                if (qte.IsExpired(_qtePhaseTimer))
-                    ResolveQTE(qte, false);
-                else
-                    allResolved = false;
-            }
+            if (!qte.resolved && qte.IsExpired(_qtePhaseTimer))
+                ResolveQTE(qte, false);
+        }
+    }
+
+    private void StartQTEEndingPhase()
+    {
+        _state = QTEState.QTEEnding;
+        StopQTEAnimation();
+        _endAnimTimer = 0f;
+
+        // 计算结束动画时长
+        float endClipLength = _currentAttack != null && _currentAttack.animationEndClip != null
+            ? _currentAttack.animationEndClip.length : 0f;
+
+        if (endClipLength <= 0f)
+        {
+            // 无结束动画，直接完成
+            CompleteQTEAttack();
+            return;
         }
 
-        if (allResolved)
+        // 多段动画模式已由 StopQTEAnimation 触发 QTEEnd trigger，等待动画播完
+    }
+
+    private void UpdateEnding()
+    {
+        _endAnimTimer += Time.deltaTime;
+
+        float endClipLength = _currentAttack != null && _currentAttack.animationEndClip != null
+            ? _currentAttack.animationEndClip.length : 0f;
+
+        if (_endAnimTimer >= endClipLength)
+        {
             CompleteQTEAttack();
+        }
     }
 
     public bool IsQTEActive
@@ -336,7 +534,7 @@ public class QTEController : MonoBehaviour
         get
         {
             // QTE 阶段一旦开始，所有输入均被 QTE 系统拦截，防止误触普通攻击
-            return _state == QTEState.QTEJudging || _state == QTEState.PerformingQTEAttack;
+            return _state == QTEState.QTEJudging || _state == QTEState.PerformingQTEAttack || _state == QTEState.QTEEnding;
         }
     }
 
@@ -581,8 +779,16 @@ public class QTEController : MonoBehaviour
 
     private void OnQTESuccessSingle(QTEInstance qte)
     {
-        if (enemy != null && _currentAttack != null)
-            enemy.TakeQTEPoiseDamage(qte.config.poiseDamage, _currentAttack.interruptibleOnStun);
+        // 防御型 QTE：弹反该 slot 对应的箭矢波，不造成 poise 伤害
+        if (_currentAttack != null && _currentAttack.isDefensiveQTE)
+        {
+            DeflectArrowWave(_activeQTEs.IndexOf(qte));
+        }
+        else
+        {
+            if (enemy != null && _currentAttack != null)
+                enemy.TakeQTEPoiseDamage(qte.config.poiseDamage, _currentAttack.interruptibleOnStun);
+        }
 
         if (UltimateSystem.Instance != null)
             UltimateSystem.Instance.AddEnergy(qte.config.ultimateEnergyGain);
@@ -593,7 +799,8 @@ public class QTEController : MonoBehaviour
 
     private void OnQTEFailureSingle(QTEInstance qte)
     {
-        // 失败伤害延迟到 CompleteQTEAttack 时应用，匹配动画时间点
+        // 防御型 QTE：箭矢波继续飞行（已在飞行中，无需额外操作）
+        // 非防御型：失败伤害延迟到 CompleteQTEAttack 时应用
         OnQTEFailure?.Invoke();
     }
 
@@ -615,6 +822,9 @@ public class QTEController : MonoBehaviour
             _activeProjectile = null;
         }
 
+        // 清理箭矢波
+        ClearAllArrowWaves();
+
         StopQTEAnimation();
 
         DebugLog.Info("[QTE_DIAG] AbortQTE: clearing indicators");
@@ -631,43 +841,45 @@ public class QTEController : MonoBehaviour
     {
         _state = QTEState.QTECompleted;
 
-        // 收集 QTE 失败伤害（延迟到此时匹配动画时间点）
-        float totalFailureDamage = 0f;
-        bool anyFailed = false;
-        foreach (var qte in _activeQTEs)
-        {
-            if (qte.resolved && !qte.success)
-            {
-                anyFailed = true;
-                totalFailureDamage += qte.config.failureDamage;
-            }
-        }
-        if (totalFailureDamage > 0f && PlayerState.Instance != null)
-        {
-            PlayerState.Instance.TakeDamage(totalFailureDamage);
-            // Handheld.Vibrate(); // 安卓端攻击震动暂关闭
-            DebugLog.Info($"[QTEController] QTE失败伤害: {totalFailureDamage:F0}");
-        }
+        bool isDefensive = _currentAttack != null && _currentAttack.isDefensiveQTE;
 
-        // 飞行物处理
-        if (_activeProjectile != null)
+        // 收集 QTE 失败伤害（非防御型才在此汇总，防御型由箭矢 OnArrival 处理）
+        if (!isDefensive)
         {
-            var proj = _activeProjectile.GetComponent<QTEProjectile>();
-            if (anyFailed && proj != null)
+            float totalFailureDamage = 0f;
+            bool anyFailed = false;
+            foreach (var qte in _activeQTEs)
             {
-                // 任一失败 → 飞行物穿过摄像机
-                proj.ContinuePassThrough(0.8f, null);
+                if (qte.resolved && !qte.success)
+                {
+                    anyFailed = true;
+                    totalFailureDamage += qte.config.failureDamage;
+                }
             }
-            else if (proj != null)
+            if (totalFailureDamage > 0f && PlayerState.Instance != null)
             {
-                // 全部成功 → 销毁飞行物
-                proj.DestroyOnSuccess();
+                PlayerState.Instance.TakeDamage(totalFailureDamage);
+                DebugLog.Info($"[QTEController] QTE失败伤害: {totalFailureDamage:F0}");
             }
-            else
+
+            // 飞行物处理
+            if (_activeProjectile != null)
             {
-                Destroy(_activeProjectile);
+                var proj = _activeProjectile.GetComponent<QTEProjectile>();
+                if (anyFailed && proj != null)
+                {
+                    proj.ContinuePassThrough(0.8f, null);
+                }
+                else if (proj != null)
+                {
+                    proj.DestroyOnSuccess();
+                }
+                else
+                {
+                    Destroy(_activeProjectile);
+                }
+                _activeProjectile = null;
             }
-            _activeProjectile = null;
         }
 
         // 通知敌人恢复

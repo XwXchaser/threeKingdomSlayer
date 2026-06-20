@@ -17,6 +17,7 @@ public class EnemyProjectile : MonoBehaviour
     private Sequence _flyTween;
     private Sequence _deflectTween;
     private bool _arrived;
+    private SpriteRenderer _spriteRenderer;
 
     /// <summary>
     /// 发射箭矢
@@ -27,7 +28,8 @@ public class EnemyProjectile : MonoBehaviour
     /// <param name="dmg">伤害值</param>
     /// <param name="arcH">抛物线最高点高度</param>
     /// <param name="duration">飞行时长</param>
-    public void Launch(Vector3 startPos, float endZ, float endX, float dmg, float arcH, float duration)
+    /// <param name="pitchAngle">箭矢上升段最大俯仰角（度），下降段自动取反</param>
+    public void Launch(Vector3 startPos, float endZ, float endX, float dmg, float arcH, float duration, float pitchAngle = 12f, float descentPitchRatio = 0.75f)
     {
         _startPos = startPos;
         _endPos = new Vector3(endX, startPos.y, endZ);
@@ -38,6 +40,8 @@ public class EnemyProjectile : MonoBehaviour
 
         transform.position = startPos;
         gameObject.SetActive(true);
+        if (_spriteRenderer == null) _spriteRenderer = GetComponent<SpriteRenderer>();
+        if (_spriteRenderer != null) { var c = _spriteRenderer.color; c.a = 1f; _spriteRenderer.color = c; }
 
         // DOTween 抛物线: Z/X 线性插值, Y 用两个 Ease 做抛物线（总时长=duration）
         _flyTween = DOTween.Sequence();
@@ -50,11 +54,12 @@ public class EnemyProjectile : MonoBehaviour
                 .Append(transform.DOMoveY(peakY, halfDuration).SetEase(Ease.OutQuad))
                 .Append(transform.DOMoveY(startPos.y, halfDuration).SetEase(Ease.InQuad)));
 
-        // X轴俯仰（模拟重力）+ Z轴自旋（模拟空气动力学）
+        // 箭矢沿抛物线切线方向俯仰：上升段上仰，下降段下俯（角度可配置）
+        float descentAngle = pitchAngle * descentPitchRatio;
         _flyTween.Join(
             DOTween.Sequence()
-                .Append(transform.DORotate(new Vector3(-25, 0, 7.5f), halfDuration, RotateMode.Fast).SetEase(Ease.OutQuad))
-                .Append(transform.DORotate(new Vector3(30, 0, 15), halfDuration, RotateMode.Fast).SetEase(Ease.InQuad)));
+                .Append(transform.DORotate(new Vector3(pitchAngle, 0, 7.5f), halfDuration, RotateMode.Fast).SetEase(Ease.OutQuad))
+                .Append(transform.DORotate(new Vector3(-descentAngle, 0, 15), halfDuration, RotateMode.Fast).SetEase(Ease.InQuad)));
 
         _flyTween.OnComplete(OnArrival);
     }
@@ -70,17 +75,23 @@ public class EnemyProjectile : MonoBehaviour
         _flyTween?.Kill();
         _flyTween = null;
 
-        // 三轴随机旋转 + 随机坠落（模拟死亡坠落效果）
-        float rx = Random.Range(-300f, 300f);
-        float ry = Random.Range(-200f, 200f);
-        float rz = Random.Range(500f, 900f);
-        float fallY = transform.position.y - Random.Range(3f, 6f);
-        float driftX = transform.position.x + Random.Range(-1f, 1f);
+        // 快速旋转 + 坠落 + 0.3s 淡出消失
+        float rx = Random.Range(-500f, 500f);
+        float ry = Random.Range(-400f, 400f);
+        float rz = Random.Range(700f, 1200f);
+        float fallY = transform.position.y - Random.Range(2f, 4f);
+        float driftX = transform.position.x + Random.Range(-0.5f, 0.5f);
 
         _deflectTween = DOTween.Sequence();
-        _deflectTween.Join(transform.DORotate(new Vector3(rx, ry, rz), 1.5f, RotateMode.LocalAxisAdd).SetEase(Ease.OutQuad));
-        _deflectTween.Join(transform.DOMoveY(fallY, 1.5f).SetEase(Ease.InQuad));
-        _deflectTween.Join(transform.DOMoveX(driftX, 1.5f).SetEase(Ease.OutQuad));
+        _deflectTween.Join(transform.DORotate(new Vector3(rx, ry, rz), 0.6f, RotateMode.LocalAxisAdd).SetEase(Ease.OutQuad));
+        _deflectTween.Join(transform.DOMoveY(fallY, 0.6f).SetEase(Ease.InQuad));
+        _deflectTween.Join(transform.DOMoveX(driftX, 0.6f).SetEase(Ease.OutQuad));
+
+        // 0.3s 内 alpha → 0
+        if (_spriteRenderer == null) _spriteRenderer = GetComponent<SpriteRenderer>();
+        if (_spriteRenderer != null)
+            _deflectTween.Join(_spriteRenderer.DOFade(0f, 0.3f).SetEase(Ease.OutQuad));
+
         _deflectTween.OnComplete(() =>
         {
             ReturnToPool();
