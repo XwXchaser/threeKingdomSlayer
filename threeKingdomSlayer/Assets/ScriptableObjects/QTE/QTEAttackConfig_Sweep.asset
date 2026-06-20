@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b648c1d8b5c84f47933bcd8f5fd3656, type: 3}
+  m_Name: QTEAttackConfig_Sweep
+  m_EditorClassIdentifier: 
+  qteSlots:
+  - config: {fileID: 11400000, guid: 59e7883ec6be9ab4585965f2e1fd0623, type: 2}
+    delay: 0
+  qteAnimationClip: {fileID: 0}
+  animationDuration: 0
+  animationLeadTime: 1.4166666
+  animationStartClip: {fileID: 7400000, guid: 6cf641168c8929540b8409b7dec55315, type: 2}
+  animationLoopClip: {fileID: 7400000, guid: 1a022eae864f15f44ab5636711fdddc3, type: 2}
+  animationEndClip: {fileID: 0}
+  animationBlockedClip: {fileID: 7400000, guid: 5d902c3a6aa01524782df74b2afe2d7f, type: 2}
+  animationFollowUpClip: {fileID: 7400000, guid: 9710ca10eecab224b9ccdcf9f83669ab, type: 2}
+  projectilePrefab: {fileID: 0}
+  projectileFlightTime: 0.8
+  projectileTargetZ: -2
+  arrowPrefab: {fileID: 0}
+  arrowsPerWave: 5
+  arrowArcHeight: 3
+  arrowSpawnOffsetZ: 1
+  arrowSpreadX: 3
+  arrowFlightTime: 1.5
+  isDefensiveQTE: 0
+  fixedQteDuration: 0
+  interruptibleOnStun: 0
+  cooldownAfterQTE: 3
