@@ -36,10 +36,16 @@ public class QTEAttackConfig : ScriptableObject
     [Header("BOSS 演出（多段模式，设置后优先于单段 qteAnimationClip）")]
     [Tooltip("QTE 开始阶段播放的动画（单次）")]
     public AnimationClip animationStartClip;
-    [Tooltip("QTE 判定阶段循环播放的动画")]
+    [Tooltip("QTE 判定阶段播放的动画（非循环、单次）")]
     public AnimationClip animationLoopClip;
     [Tooltip("QTE 结束阶段播放的动画（单次）")]
     public AnimationClip animationEndClip;
+
+    [Header("BOSS 演出（结果分支·Sweep 型，blocked/followUp 均非 null 时启用）")]
+    [Tooltip("格挡成功动画")]
+    public AnimationClip animationBlockedClip;
+    [Tooltip("格挡失败/超时动画")]
+    public AnimationClip animationFollowUpClip;
 
     [Header("飞行物（可选）")]
     [Tooltip("飞行物 prefab（如箭矢、能量弹），为空则无飞行物")]
@@ -81,6 +87,11 @@ public class QTEAttackConfig : ScriptableObject
     /// 是否使用多段动画模式（start/loop/end）
     /// </summary>
     public bool UseMultiPhaseAnimation => animationStartClip != null && animationLoopClip != null && animationEndClip != null;
+
+    /// <summary>
+    /// 是否使用结果分支动画（Sweep 型：start/happen → blocked 或 followUp）
+    /// </summary>
+    public bool UseBranchedAnimation => animationStartClip != null && animationLoopClip != null && animationBlockedClip != null && animationFollowUpClip != null;
 
     /// <summary>
     /// 本次 QTE 攻击的总持续时间（最晚出现的 QTE 的 delay + warning + judgeWindow）
