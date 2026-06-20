@@ -77,8 +77,9 @@ MonoBehaviour:
   projectileFlyDuration: 1
   projectileZTargetOffset: 5
   projectileXOffset: 0
+  arrowConfig: {fileID: 0}
   shareHealthWithAdjacent: 0
-  maxPoise: 200
+  maxPoise: 20
   stunDuration: 5
   launchDuration: 5
   launchGravity: 20
@@ -229,6 +230,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   qteData: {fileID: 11400000, guid: 6812898a4865fa14aa4f2f901f749c5e, type: 2}
+  arrowConfig: {fileID: 0}
   enemy: {fileID: 0}
   qteDisplay: {fileID: 0}
   _state: 0
