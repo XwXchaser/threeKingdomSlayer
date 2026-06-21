@@ -395,6 +395,10 @@ public class QTEController : MonoBehaviour
         {
             _animator.SetTrigger("QTETripleStab");
         }
+        else if (_currentAttack.UseBranchedAnimation)
+        {
+            _animator.SetTrigger("QTESweep");
+        }
         else if (_currentAttack.qteAnimationClip != null)
         {
             _animator.SetTrigger("QTEAttack");
@@ -405,7 +409,7 @@ public class QTEController : MonoBehaviour
     {
         if (_animator == null) return;
 
-        if (_currentAttack != null && _currentAttack.UseMultiPhaseAnimation)
+        if (_currentAttack != null && (_currentAttack.UseMultiPhaseAnimation || _currentAttack.UseBranchedAnimation))
         {
             _animator.SetTrigger("QTEEnd");
         }
@@ -474,7 +478,11 @@ public class QTEController : MonoBehaviour
         _qtePhaseTimer += Time.deltaTime;
 
         // 判定阶段到期：强制结束，未 resolve 的 slot 视为失败，进入结束动画阶段
-        if (_qtePhaseTimer >= _effectiveJudgeDuration)
+        // Sweep 模式：使用 animationLoopClip 时长驱动，保证动画完整播放
+        float judgeDuration = (_currentAttack != null && _currentAttack.UseBranchedAnimation && _currentAttack.animationLoopClip != null)
+            ? _currentAttack.animationLoopClip.length
+            : _effectiveJudgeDuration;
+        if (_qtePhaseTimer >= judgeDuration)
         {
             foreach (var qte in _activeQTEs)
             {
@@ -499,29 +507,66 @@ public class QTEController : MonoBehaviour
     private void StartQTEEndingPhase()
     {
         _state = QTEState.QTEEnding;
-        StopQTEAnimation();
         _endAnimTimer = 0f;
 
-        // 计算结束动画时长
-        float endClipLength = _currentAttack != null && _currentAttack.animationEndClip != null
-            ? _currentAttack.animationEndClip.length : 0f;
+        // 判断玩家是否格挡成功（所有 slot 成功 = 格挡成功）
+        bool playerBlocked = true;
+        foreach (var qte in _activeQTEs)
+        {
+            if (!qte.resolved || !qte.success) { playerBlocked = false; break; }
+        }
+
+        float endClipLength = 0f;
+
+        if (_currentAttack != null && _currentAttack.UseBranchedAnimation)
+        {
+            // Sweep 模式：根据结果发 QTEBlocked 或 QTEFollowUp
+            if (_animator == null) _animator = GetComponent<Animator>();
+            if (_animator != null)
+            {
+                if (playerBlocked)
+                {
+                    _animator.SetTrigger("QTEBlocked");
+                }
+                else
+                {
+                    _animator.SetTrigger("QTEFollowUp");
+                }
+                // 结果分支由 Animator 多段序列驱动，AnimationEvent 主导，branchedResultDuration 兜底
+                endClipLength = _currentAttack.branchedResultDuration > 0f ? _currentAttack.branchedResultDuration : float.MaxValue;
+            }
+        }
+        else
+        {
+            StopQTEAnimation();
+            endClipLength = _currentAttack != null && _currentAttack.animationEndClip != null
+                ? _currentAttack.animationEndClip.length : 0f;
+        }
 
         if (endClipLength <= 0f)
         {
-            // 无结束动画，直接完成
             CompleteQTEAttack();
             return;
         }
-
-        // 多段动画模式已由 StopQTEAnimation 触发 QTEEnd trigger，等待动画播完
     }
 
     private void UpdateEnding()
     {
         _endAnimTimer += Time.deltaTime;
 
-        float endClipLength = _currentAttack != null && _currentAttack.animationEndClip != null
-            ? _currentAttack.animationEndClip.length : 0f;
+        float endClipLength;
+        if (_currentAttack != null && _currentAttack.UseBranchedAnimation)
+        {
+            // 分支动画模式：动画链由 AnimationEvent 主导，branchedResultDuration 兜底
+            endClipLength = _currentAttack.branchedResultDuration > 0f
+                ? _currentAttack.branchedResultDuration
+                : float.MaxValue;
+        }
+        else
+        {
+            endClipLength = _currentAttack != null && _currentAttack.animationEndClip != null
+                ? _currentAttack.animationEndClip.length : 0f;
+        }
 
         if (_endAnimTimer >= endClipLength)
         {
@@ -794,6 +839,10 @@ public class QTEController : MonoBehaviour
             UltimateSystem.Instance.AddEnergy(qte.config.ultimateEnergyGain);
 
         OnQTESuccess?.Invoke();
+
+        // QTE 格挡成功音效
+        AudioManager.Instance?.PostEvent("QTE_Block");
+
         // Handheld.Vibrate(); // 安卓端攻击震动暂关闭
     }
 
@@ -802,6 +851,22 @@ public class QTEController : MonoBehaviour
         // 防御型 QTE：箭矢波继续飞行（已在飞行中，无需额外操作）
         // 非防御型：失败伤害延迟到 CompleteQTEAttack 时应用
         OnQTEFailure?.Invoke();
+    }
+
+    #endregion
+
+    #region Sweep 动画回调
+
+    /// <summary>
+    /// 由 End2 AnimationEvent 回调，通知 QTE 结果动画播放完毕
+    /// </summary>
+    public void OnSweepResultAnimationEnd()
+    {
+        if (_state == QTEState.QTEEnding)
+        {
+            DebugLog.Info("[QTEController] OnSweepResultAnimationEnd → CompleteQTEAttack");
+            CompleteQTEAttack();
+        }
     }
 
     #endregion

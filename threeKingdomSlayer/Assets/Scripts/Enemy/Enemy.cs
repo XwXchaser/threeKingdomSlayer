@@ -404,6 +404,14 @@ public class Enemy : MonoBehaviour
         if (qteCtrl != null)
             qteCtrl.SwitchQteData(_originalQteData);
 
+        // 应用当前阶段的 QTE 数据（覆盖 prefab 默认值，确保初始阶段走正确的 QTE 配置）
+        if (isBoss)
+        {
+            var currentPhase = GetCurrentPhaseData();
+            if (currentPhase?.qteData != null)
+                qteCtrl.SwitchQteData(currentPhase.qteData);
+        }
+
         // 缓存 Attack AnimationClip（用于远程 DOTween 时长同步）
         _attackClip = null;
         if (_animator != null && _animator.runtimeAnimatorController != null)
@@ -1720,7 +1728,9 @@ public class Enemy : MonoBehaviour
                 // QTE 继续：仅播放受击硬直，不改变状态
                 currentPoise = maxPoise;
                 OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
-                _animator?.SetTrigger("Hit");
+                // 分支动画模式（如 Sweep）的结果动画已包含受击反馈，跳过 Hit trigger
+                if (GetQTEController()?.CurrentAttackConfig?.UseBranchedAnimation != true)
+                    _animator?.SetTrigger("Hit");
                 return false;
             }
         }
