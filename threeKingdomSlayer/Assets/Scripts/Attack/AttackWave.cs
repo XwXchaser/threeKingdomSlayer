@@ -32,6 +32,12 @@ public class AttackWave : MonoBehaviour
     private bool _shouldReturnWave;
     private float _returnDamageMultiplier = 0.5f;
     private bool _isReturning;
+    private float _creationTime;
+    private int _instanceId;
+    private bool _travelCompleted;
+    public static int AliveCount { get; private set; }
+    public float CreationTime => _creationTime;
+    public DamageType DamageType => damageType;
 
     private const float StabStagger = 0.03f;
     private const float SlashStagger = 0.05f;
@@ -143,6 +149,9 @@ public class AttackWave : MonoBehaviour
         }
 
         AttackWave wave = obj.AddComponent<AttackWave>();
+        wave._creationTime = Time.unscaledTime;
+        wave._instanceId = obj.GetInstanceID();
+        AliveCount++;
         wave.mat = material;
         wave.damage = damage;
         wave.damageType = damageType;
@@ -254,6 +263,7 @@ public class AttackWave : MonoBehaviour
         // DOTween 序列：前行 → (return_wave折返 | stab收回 | 贯穿淡出)
         travelSeq = DOTween.Sequence();
         travelSeq.SetTarget(transform);
+        travelSeq.SetUpdate(true);
 
         var thrust = transform.DOMoveZ(endTravelZ, thrustTime).SetEase(Ease.OutQuad);
         if (!isStab || _shouldReturnWave)
@@ -305,8 +315,19 @@ public class AttackWave : MonoBehaviour
             }
         }
 
+        travelSeq.OnKill(() =>
+        {
+            if (!_travelCompleted)
+            {
+                Debug.Log($"[AttackWave] OnKill (premature): id={_instanceId}, name={gameObject.name}, damageType={damageType}, mode=Travel, frame={Time.frameCount}");
+                travelSeq = null;
+                Destroy(gameObject);
+            }
+        });
+
         travelSeq.OnComplete(() =>
         {
+            _travelCompleted = true;
             travelSeq = null;
             Destroy(gameObject);
         });
@@ -367,7 +388,8 @@ public class AttackWave : MonoBehaviour
     {
         if (mode == WaveMode.Fixed)
         {
-            elapsed += Time.deltaTime;
+            // 使用 unscaledDeltaTime 确保 timeScale=0（升级选择弹窗）时也能完成动画并自毁
+            elapsed += Time.unscaledDeltaTime;
             UpdateFixed();
         }
     }
@@ -418,6 +440,9 @@ public class AttackWave : MonoBehaviour
 
     private void OnDestroy()
     {
+        AliveCount--;
+        float alive = Time.unscaledTime - _creationTime;
+        Debug.Log($"[AttackWave] OnDestroy: {gameObject.name}, mode={mode}, alive={alive:F2}s, frame={Time.frameCount}");
         if (travelSeq != null && travelSeq.IsActive())
             travelSeq.Kill();
         travelSeq = null;

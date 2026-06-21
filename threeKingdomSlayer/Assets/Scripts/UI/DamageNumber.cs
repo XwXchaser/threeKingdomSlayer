@@ -77,10 +77,11 @@ public class DamageNumber : MonoBehaviour
         // 上飘终点
         Vector3 endPos = worldPos + new Vector3(0f, floatUpDistance, 0f);
 
-        // DOTween 动画：向上漂浮 + 透明度淡出
+        // DOTween 动画：向上漂浮 + 透明度淡出（SetUpdate 无视 timeScale 暂停）
         int instanceId = GetInstanceID();
         animSeq = DOTween.Sequence();
         animSeq.SetTarget(transform);
+        animSeq.SetUpdate(true);
         animSeq.SetId($"damageNumber_{instanceId}");
 
         animSeq.Join(transform.DOMove(endPos, duration).SetEase(Ease.OutQuad));
@@ -91,7 +92,7 @@ public class DamageNumber : MonoBehaviour
         // 安全超时兜底：2 倍动画时长后强制回收
         if (_safetyTimeoutRoutine != null)
             StopCoroutine(_safetyTimeoutRoutine);
-        _safetyTimeoutRoutine = StartCoroutine(SafetyTimeout(duration * 2f));
+        _safetyTimeoutRoutine = StartCoroutine(SafetyTimeoutRealtime(duration * 2f));
     }
 
     /// <summary>
@@ -144,9 +145,9 @@ public class DamageNumber : MonoBehaviour
         OnReturnToPool?.Invoke(this);
     }
 
-    private System.Collections.IEnumerator SafetyTimeout(float delay)
+    private System.Collections.IEnumerator SafetyTimeoutRealtime(float delay)
     {
-        yield return new WaitForSeconds(delay);
+        yield return new WaitForSecondsRealtime(delay);
         Debug.LogWarning($"[DamageNumber] 安全超时强制回收 instanceId={GetInstanceID()}");
         if (animSeq != null && animSeq.IsActive())
         {

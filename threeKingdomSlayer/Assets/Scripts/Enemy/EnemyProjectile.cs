@@ -18,6 +18,7 @@ public class EnemyProjectile : MonoBehaviour
     private Sequence _deflectTween;
     private bool _arrived;
     private SpriteRenderer _spriteRenderer;
+    private Coroutine _safetyTimeout;
 
     /// <summary>
     /// 发射箭矢
@@ -36,7 +37,10 @@ public class EnemyProjectile : MonoBehaviour
         damage = dmg;
         arcHeight = arcH;
         flyDuration = duration;
-        _arrived = false;
+        // 不重置 _arrived：若此前已被 Deflect() 设为 true（stagger 延迟箭矢已在预警期被弹反），
+        // 保留标志以阻止后续 OnArrival 造成二次伤害
+        if (!_arrived)
+            _arrived = false;
 
         transform.position = startPos;
         gameObject.SetActive(true);
@@ -62,6 +66,9 @@ public class EnemyProjectile : MonoBehaviour
                 .Append(transform.DORotate(new Vector3(-descentAngle, 0, 15), halfDuration, RotateMode.Fast).SetEase(Ease.InQuad)));
 
         _flyTween.OnComplete(OnArrival);
+
+        if (_safetyTimeout != null) StopCoroutine(_safetyTimeout);
+        _safetyTimeout = StartCoroutine(SafetyTimeout(duration + 3f));
     }
 
     /// <summary>
@@ -116,14 +123,35 @@ public class EnemyProjectile : MonoBehaviour
         _flyTween = null;
         _deflectTween = null;
 
-        // 简单销毁（后续可改为对象池）
+        if (_safetyTimeout != null)
+        {
+            StopCoroutine(_safetyTimeout);
+            _safetyTimeout = null;
+        }
+
         Destroy(gameObject);
+    }
+
+    private System.Collections.IEnumerator SafetyTimeout(float delay)
+    {
+        yield return new WaitForSecondsRealtime(delay);
+        Debug.LogWarning($"[EnemyProjectile] 安全超时强制销毁");
+        if (_safetyTimeout != null)
+        {
+            _safetyTimeout = null;
+            ReturnToPool();
+        }
     }
 
     private void OnDestroy()
     {
         _flyTween?.Kill();
         _deflectTween?.Kill();
+        if (_safetyTimeout != null)
+        {
+            StopCoroutine(_safetyTimeout);
+            _safetyTimeout = null;
+        }
     }
 
     /// <summary>

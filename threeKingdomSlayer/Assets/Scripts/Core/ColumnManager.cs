@@ -461,6 +461,19 @@ public class ColumnManager : MonoBehaviour
         if (!IsValidColumn(targetCol)) return false;
         int srcCol = enemy.columnIndex;
 
+        // BOSS墙壁：目标列若存在BOSS，目标排不得超过BOSS排
+        int bossRow = GetBossRowInColumn(targetCol);
+        if (bossRow >= 0 && targetRow >= bossRow)
+        {
+            targetRow = bossRow - 1;
+            if (targetRow < 0)
+            {
+                DebugLog.Info($"[ColumnManager] MoveEnemyToColumnAtRow blocked (boss wall full): {enemy.DebugTag} → col={targetCol}, bossRow={bossRow}");
+                return false;
+            }
+            DebugLog.Info($"[ColumnManager] MoveEnemyToColumnAtRow clamped by boss wall: {enemy.DebugTag} → col={targetCol} row={targetRow} (bossRow={bossRow})");
+        }
+
         if (columns[targetCol].IsRowOccupied(targetRow, enemy))
         {
             DebugLog.Info($"[ColumnManager] MoveEnemyToColumnAtRow blocked: {enemy.DebugTag} → col={targetCol} row={targetRow} occupied");
@@ -634,6 +647,12 @@ public class ColumnManager : MonoBehaviour
             col.InsertEnemySorted(e);
 
         DebugLog.Info($"[ColumnManager] ExecutePush: col={columnIndex}, pushed={pushedEnemies.Count} enemies by {pushAmount} rows");
+
+        // 被击退后重新检查攻击范围：若超出范围则取消攻击并冲回前线
+        foreach (var e in pushedEnemies)
+        {
+            e.RecheckAttackRange();
+        }
 
         OnColumnsModified?.Invoke();
     }

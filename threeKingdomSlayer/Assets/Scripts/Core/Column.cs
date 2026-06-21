@@ -198,6 +198,19 @@ public class Column
         //
         // pushedToRow: 位移效果推入的目标排。该排敌人不参与紧凑（防止击退被补齐抵消），
         // 但更后排的敌人可越过它们填补前方的空排。
+
+        // BOSS 墙壁：找到本列 BOSS 所在排，BOSS 不参与压缩，身后敌人不可跨越 BOSS
+        int bossRow = -1;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            Enemy e = enemies[i];
+            if (e != null && e.isBoss && e.state != EnemyState.Dead)
+            {
+                bossRow = e.rowIndex;
+                break;
+            }
+        }
+
         for (int i = 0; i < enemies.Count; i++)
         {
             Enemy e = enemies[i];
@@ -213,14 +226,18 @@ public class Column
                 continue;
 
             // 统计低于 row 的已清空排数
-            // 若 pushedToRow 在下方且非空（有被推入的敌人占据），后排敌人仍可越过它填补前方空排
+            // 若 BOSS 存在且敌人在 BOSS 身后，只统计 BOSS 之后的空排（不可跨越 BOSS 墙壁）
             int clearBelow = 0;
-            for (int r = 0; r < row && r < clearRows.Length; r++)
+            int scanStart = (bossRow >= 0 && row > bossRow) ? bossRow : 0;
+            for (int r = scanStart; r < row && r < clearRows.Length; r++)
             {
                 if (clearRows[r]) clearBelow++;
             }
 
             int newRow = row - clearBelow;
+            // 确保 BOSS 身后的敌人不会因压缩而落到 BOSS 之前（BOSS 自身正常前移不受影响）
+            if (bossRow >= 0 && !e.isBoss && row > bossRow && newRow <= bossRow)
+                newRow = bossRow + 1;
 
             if (newRow != row)
             {

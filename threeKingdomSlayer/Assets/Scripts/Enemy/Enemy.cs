@@ -173,6 +173,8 @@ public class Enemy : MonoBehaviour
     [System.NonSerialized] public EnemyState state = EnemyState.Idle;
     [System.NonSerialized] public float currentHealth;
     [System.NonSerialized] public float currentPoise;
+    /// <summary>QTE成功破防后延迟进入Stun，等QTE动画播完</summary>
+    [System.NonSerialized] public bool deferredStun;
     /// <summary> 眩晕恢复进度 (0→1)，基于实际时间，不受状态切换影响 </summary>
     public float stunRecoveryProgress
     {
@@ -657,6 +659,7 @@ public class Enemy : MonoBehaviour
     public void Stun(float duration)
     {
         if (state == EnemyState.Dead) return;
+        if (state == EnemyState.Stunned) return;
         // 击飞状态下不允许进入眩晕，否则敌人会冻结在半空
         // 但需要重置 Poise（相当于击飞中破防不触发眩晕，只重置架势）
         if (state == EnemyState.Launched)
@@ -823,6 +826,9 @@ public class Enemy : MonoBehaviour
     {
         if (state == EnemyState.Dead) return;
 
+        // 清理上一轮延迟Stun标记
+        deferredStun = false;
+
         // 中断当前攻击动画
         if (_attackTween != null && _attackTween.IsActive())
         {
@@ -855,23 +861,38 @@ public class Enemy : MonoBehaviour
     /// </summary>
     public void ExitQTEAttack()
     {
-        if (state != EnemyState.QTEAttacking) return;
-        isAttackAnimating = false;
-        isAttackDrawPhase = false;
-        isCFrame = false;
-
-        if (isBoss)
+        // 动画标记清理仅在 QTEAttacking 态执行
+        if (state == EnemyState.QTEAttacking)
         {
-            state = EnemyState.Idle;
-            var phase = GetCurrentPhaseData();
-            actionCooldownTimer = phase != null ? phase.postQTECooldown : 3f;
+            isAttackAnimating = false;
+            isAttackDrawPhase = false;
+            isCFrame = false;
         }
-        else
+
+        // 状态恢复和冷却设置：即使 AbortQTE 导致 state 提前变化也要执行
+        if (state == EnemyState.QTEAttacking || state == EnemyState.Idle || state == EnemyState.Attacking)
         {
-            state = EnemyState.Attacking;
-            float totalInterval = (1f / attackSpeed);
-            attackTimer = totalInterval * 0.4f;
-            if (attackTimer < 0.1f) attackTimer = 0.1f;
+            if (isBoss)
+            {
+                state = EnemyState.Idle;
+                var phase = GetCurrentPhaseData();
+                actionCooldownTimer = phase != null ? phase.postQTECooldown : 3f;
+            }
+            else
+            {
+                state = EnemyState.Attacking;
+                float totalInterval = (1f / attackSpeed);
+                attackTimer = totalInterval * 0.4f;
+                if (attackTimer < 0.1f) attackTimer = 0.1f;
+            }
+        }
+
+        // 延迟Stun：QTE期间poise归零，等动画播完再进入Stun
+        if (deferredStun)
+        {
+            deferredStun = false;
+            DebugLog.Info($"[Enemy] QTE结束执行延迟Stun: {DebugTag}");
+            Stun(stunDuration);
         }
 
         UpdateOutlineState();
@@ -1433,6 +1454,7 @@ public class Enemy : MonoBehaviour
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
         if (isPhaseTransitioning) return; // 转阶段无敌
+        if (state == EnemyState.QTEAttacking) return; // QTE期间无敌，不可受击
 
         // 锁血检查
         if (_healthLocked) return;
@@ -1720,7 +1742,14 @@ public class Enemy : MonoBehaviour
             currentPoise = 0f;
             if (interruptibleOnStun)
             {
-                Stun(stunDuration);
+                // 延迟Stun：等QTE动画播完再进入Stun，避免截断block动画和音效
+                if (!deferredStun)
+                {
+                    deferredStun = true;
+                    currentPoise = maxPoise;
+                    OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
+                    DebugLog.Info($"[Enemy] QTE破防延迟Stun: {DebugTag}");
+                }
                 return true;
             }
             else
@@ -1728,9 +1757,8 @@ public class Enemy : MonoBehaviour
                 // QTE 继续：仅播放受击硬直，不改变状态
                 currentPoise = maxPoise;
                 OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
-                // 分支动画模式（如 Sweep）的结果动画已包含受击反馈，跳过 Hit trigger
-                if (GetQTEController()?.CurrentAttackConfig?.UseBranchedAnimation != true)
-                    _animator?.SetTrigger("Hit");
+                // QTE期间禁止发Hit trigger：Any State→HitFlash会劫持QTE动画状态机
+                // 导致后续QTEBlocked/QTEFollowUp trigger被忽略
                 return false;
             }
         }
@@ -1995,6 +2023,13 @@ public class Enemy : MonoBehaviour
         switch (state)
         {
             case EnemyState.Idle:
+                // BOSS 已在应战排(row<=1)，不再参与补齐前移
+                if (isBoss && rowIndex <= 1)
+                {
+                    pendingRushMove = false;
+                    return false;
+                }
+
                 // BOSS 补齐规则：前方一整排（所有列）必须清空才前进，而非仅看本列
                 if (isBoss && bossState == BossState.None && rowIndex > 2)
                 {
@@ -2242,6 +2277,11 @@ public class Enemy : MonoBehaviour
     /// </summary>
     private float GetAlphaForRow(int row)
     {
+        // 在攻击范围内的敌人始终全不透明，提高辨识度
+        int atkRange = (int)Mathf.Max(1, attackRange);
+        if (row < atkRange)
+            return 1f;
+
         // 从StageController获取透明度配置
         // 默认：第0排=1.0, 第1排=0.8, 第2排=0.6, 第3排=0.4, 第4排=0.2, 第5排+=0
         float[] factors = StageController.Instance?.GetRowAlphaFactors()

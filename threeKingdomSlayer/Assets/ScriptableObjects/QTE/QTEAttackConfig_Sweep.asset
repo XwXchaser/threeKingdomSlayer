@@ -35,5 +35,5 @@ MonoBehaviour:
   arrowFlightTime: 1.5
   isDefensiveQTE: 0
   fixedQteDuration: 0
-  interruptibleOnStun: 0
+  interruptibleOnStun: 1
   cooldownAfterQTE: 3

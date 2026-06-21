@@ -24,6 +24,7 @@ public class AudioManager : MonoBehaviour
 
     [Header("QTE 格挡 SFX — 随机二选一")]
     [SerializeField] private AudioClip[] _qteBlockClips;
+    [SerializeField, Range(0f, 4f)] private float _qteBlockVolume = 1.5f;
 
     private AudioSource _bgmMainSource;
     private AudioSource _bgmEnvSource;
@@ -43,6 +44,7 @@ public class AudioManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         CreateAudioSources();
+        PreloadAllClips();
         SceneManager.sceneUnloaded += OnSceneUnloaded;
         ApplySavedVolume();
     }
@@ -82,6 +84,40 @@ public class AudioManager : MonoBehaviour
         _sfxSource.spatialBlend = 0f;
     }
 
+    /// <summary>
+    /// 预加载所有音频剪辑数据，避免 PlayOneShot 时因 Unloaded 静默失败
+    /// </summary>
+    private void PreloadAllClips()
+    {
+        // BGM
+        PreloadClip(_bgmMain);
+        PreloadClip(_bgmEnv);
+        // 攻击语音
+        PreloadClipArray(_attackVoices);
+        // 攻击刀剑音
+        PreloadClipArray(_attackTiles);
+        // 格挡
+        PreloadClip(_parryClip);
+        // QTE 格挡
+        PreloadClipArray(_qteBlockClips);
+    }
+
+    private void PreloadClip(AudioClip clip)
+    {
+        if (clip != null && clip.loadType == AudioClipLoadType.DecompressOnLoad && clip.loadState == AudioDataLoadState.Unloaded)
+        {
+            clip.LoadAudioData();
+            Debug.Log($"[AudioManager] Preloading clip: {clip.name}");
+        }
+    }
+
+    private void PreloadClipArray(AudioClip[] clips)
+    {
+        if (clips == null) return;
+        foreach (var clip in clips)
+            PreloadClip(clip);
+    }
+
     private void OnDestroy()
     {
         if (Instance == this)
@@ -101,15 +137,16 @@ public class AudioManager : MonoBehaviour
 
     public void PlayDefaultBGM()
     {
+        EnsureAudioSources();
         StopBGM();
 
-        if (_bgmMain != null)
+        if (_bgmMain != null && _bgmMainSource != null)
         {
             _bgmMainSource.clip = _bgmMain;
             _bgmMainSource.Play();
         }
 
-        if (_bgmEnv != null)
+        if (_bgmEnv != null && _bgmEnvSource != null)
         {
             _bgmEnvSource.clip = _bgmEnv;
             _bgmEnvSource.Play();
@@ -126,8 +163,15 @@ public class AudioManager : MonoBehaviour
 
     #region SFX
 
+    private void EnsureAudioSources()
+    {
+        if (_sfxSource == null || _bgmMainSource == null || _bgmEnvSource == null)
+            CreateAudioSources();
+    }
+
     public void PostEvent(string eventName)
     {
+        EnsureAudioSources();
         switch (eventName)
         {
             case "Player_Attack":
@@ -138,22 +182,23 @@ public class AudioManager : MonoBehaviour
                 PlayOneShot(_parryClip);
                 break;
             case "QTE_Block":
-                PlayRandom(_qteBlockClips);
+                PlayRandom(_qteBlockClips, _qteBlockVolume);
                 break;
         }
     }
 
-    private void PlayRandom(AudioClip[] clips)
+    private void PlayRandom(AudioClip[] clips, float volumeScale = 1f)
     {
         if (clips == null || clips.Length == 0) return;
         int idx = Random.Range(0, clips.Length);
-        PlayOneShot(clips[idx]);
+        PlayOneShot(clips[idx], volumeScale);
     }
 
-    private void PlayOneShot(AudioClip clip)
+    private void PlayOneShot(AudioClip clip, float volumeScale = 1f)
     {
         if (clip == null) return;
-        _sfxSource.PlayOneShot(clip);
+        if (_sfxSource == null) return;
+        _sfxSource.PlayOneShot(clip, volumeScale);
     }
 
     #endregion

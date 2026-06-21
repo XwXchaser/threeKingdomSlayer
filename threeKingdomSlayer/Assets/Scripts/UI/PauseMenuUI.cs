@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using TMPro;
+using DG.Tweening;
 
 /// <summary>
 /// 暂停菜单UI — 暂停按钮 + 暂停弹窗（继续/返回主菜单 + 当前结算奖励预览）
@@ -74,6 +75,7 @@ public class PauseMenuUI : MonoBehaviour
         try { RefreshSettlementInfo(); }
         catch (System.Exception e) { Debug.LogWarning($"[PauseMenuUI] RefreshSettlementInfo 异常: {e.Message}"); }
         
+        DOTween.PauseAll();
         Time.timeScale = 0f;
     }
 
@@ -81,12 +83,14 @@ public class PauseMenuUI : MonoBehaviour
     {
         _isPaused = false;
         Time.timeScale = 1f;
+        DOTween.PlayAll();
         if (pausePanel != null) pausePanel.SetActive(false);
     }
 
     private void OnMainMenuClicked()
     {
         Time.timeScale = 1f;
+        DOTween.PlayAll();
         StageController.Instance?.GoToMainMenu();
     }
 

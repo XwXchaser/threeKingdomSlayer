@@ -271,9 +271,10 @@ public class AttackSystem : MonoBehaviour
 
         foreach (var enemy in targets)
         {
-            // TakeDamage 内部处理打断逻辑（Parry 始终可打断Boss，非Boss可打断C技霸体）
-            enemy.TakeDamage(finalDmg, cfg.damageType, canInterruptCFrame: true, isParryInterrupt: true);
+            // BUG FIX: 先削韧再扣血。TakeDamage 的打断逻辑会 CancelAttack → state=Idle，
+            // 导致 TakePoiseDamage 的 state==Attacking 检查失败，Boss 永远无法被招架破势。
             enemy.TakePoiseDamage(cfg.poiseDamage);
+            enemy.TakeDamage(finalDmg, cfg.damageType, canInterruptCFrame: true, isParryInterrupt: true);
         }
 
         Debug.Log($"[AttackSystem] 招架 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 目标数:{targets.Count}");

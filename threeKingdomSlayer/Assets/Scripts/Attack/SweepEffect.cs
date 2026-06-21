@@ -26,6 +26,12 @@ public class SweepEffect : MonoBehaviour
     private Color waveColor;
     private Color? damageNumberColor;
     private Sequence seq;
+    private float _creationTime;
+    private int _instanceId;
+    private bool _completed;
+    public static int AliveCount { get; private set; }
+    public float CreationTime => _creationTime;
+    public DamageType DamageType => damageType;
 
     public static void Create(Vector3 centerPos, DamageType damageType, float damage,
         List<Enemy> targets, bool leftToRight, float halfWidth, float fanAngle, float duration,
@@ -97,6 +103,9 @@ public class SweepEffect : MonoBehaviour
         }
 
         SweepEffect effect = obj.AddComponent<SweepEffect>();
+        effect._creationTime = Time.unscaledTime;
+        effect._instanceId = obj.GetInstanceID();
+        AliveCount++;
         effect.mat = material;
         effect.waveColor = color;
         effect.damage = damage;
@@ -124,6 +133,7 @@ public class SweepEffect : MonoBehaviour
         // 主序列：X 移动 + Z 旋转
         effect.seq = DOTween.Sequence();
         effect.seq.SetTarget(obj.transform);
+        effect.seq.SetUpdate(true);
 
         var move = obj.transform.DOMoveX(endX, duration).SetEase(Ease.InOutQuad);
         move.OnUpdate(effect.CheckHitThresholds);
@@ -154,8 +164,19 @@ public class SweepEffect : MonoBehaviour
             effect.seq.Append(material.DOFade(0f, 0.25f).SetEase(Ease.InQuad));
         }
 
+        effect.seq.OnKill(() =>
+        {
+            if (!effect._completed)
+            {
+                Debug.Log($"[SweepEffect] OnKill (premature): id={effect._instanceId}, name={effect.gameObject.name}, damageType={effect.damageType}, frame={Time.frameCount}");
+                effect.seq = null;
+                Destroy(effect.gameObject);
+            }
+        });
+
         effect.seq.OnComplete(() =>
         {
+            effect._completed = true;
             effect.seq = null;
             Destroy(effect.gameObject);
         });
@@ -194,6 +215,9 @@ public class SweepEffect : MonoBehaviour
 
     private void OnDestroy()
     {
+        AliveCount--;
+        float alive = Time.unscaledTime - _creationTime;
+        Debug.Log($"[SweepEffect] OnDestroy: {gameObject.name}, alive={alive:F2}s, frame={Time.frameCount}");
         if (seq != null && seq.IsActive())
             seq.Kill();
         seq = null;

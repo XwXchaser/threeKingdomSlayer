@@ -15,7 +15,7 @@ public class InputManager : MonoBehaviour
     [Tooltip("最小蓄力时间（秒）：所有蓄力攻击（横扫、斩击、穿刺、挑飞）必须按住鼠标达到此时长后，手势判定才生效。\n" +
              "未达到前，任何划动/点击仅触发普通攻击（戳击/斩击）或无操作。")]
     public float minChargeTime = 0.5f;       // 最小蓄力时间（秒）
-    public float swipeThreshold = 50f;       // 滑动判定最小距离（像素）
+    public float swipeThreshold = 30f;       // 滑动判定最小距离（像素）
     [Tooltip("垂直角度阈值（度）：划动方向与垂直轴夹角小于此值时判定为挑飞。范围0~90")]
     public float verticalSwipeThreshold = 30f;
     [Tooltip("水平角度阈值（度）：划动方向与水平轴夹角小于此值时判定为横扫。范围0~90")]
@@ -70,7 +70,7 @@ public class InputManager : MonoBehaviour
 
         // DPI 自适应：高 DPI 屏幕增加滑动阈值，避免误触发
         float dpi = Screen.dpi > 0f ? Screen.dpi : 160f;
-        swipeThreshold = Mathf.Clamp(swipeThreshold * (dpi / 160f), 50f, 150f);
+        swipeThreshold = Mathf.Clamp(swipeThreshold * (dpi / 160f), 30f, 150f);
     }
 
     private void OnDestroy()

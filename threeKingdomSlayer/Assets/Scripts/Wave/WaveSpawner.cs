@@ -38,6 +38,7 @@ public class WaveSpawner : MonoBehaviour
     private bool isSpawning;
     private bool isWaveComplete;
     private bool isAllWavesCompleted;
+    private float _nextSnapshotTime;
 
     // 事件
     public System.Action<int> OnWaveStarted;       // waveIndex
@@ -67,6 +68,18 @@ public class WaveSpawner : MonoBehaviour
         if (enemyPool == null) enemyPool = FindObjectOfType<EnemyPool>();
         if (columnManager == null) columnManager = FindObjectOfType<ColumnManager>();
         if (enemyManager == null) enemyManager = FindObjectOfType<EnemyManager>();
+    }
+
+    private void Update()
+    {
+        if (Time.unscaledTime >= _nextSnapshotTime)
+        {
+            _nextSnapshotTime = Time.unscaledTime + 5f;
+            int waveAlive = AttackWave.AliveCount;
+            int sweepAlive = SweepEffect.AliveCount;
+            if (waveAlive > 0 || sweepAlive > 0)
+                Debug.Log($"[EffectLeak] AttackWave alive={waveAlive}, SweepEffect alive={sweepAlive}, frame={Time.frameCount}");
+        }
     }
 
     /// <summary>
@@ -106,6 +119,9 @@ public class WaveSpawner : MonoBehaviour
         WaveConfig wave = ResolvedStageConfig.waves[currentWaveIndex];
         isSpawning = true;
         isWaveComplete = false;
+
+        // 清理上一波残留特效，避免与 BOSS 入场动画重叠
+        CleanupLingeringEffects();
 
         // 通知波次开始
         OnWaveStarted?.Invoke(currentWaveIndex);
@@ -274,6 +290,54 @@ public class WaveSpawner : MonoBehaviour
     /// 获取总波次数
     /// </summary>
     public int TotalWaves => ResolvedStageConfig != null ? ResolvedStageConfig.waves.Count : 0;
+
+    /// <summary>
+    /// 清理上一波残留特效（AttackWave + DamageNumber），避免与 BOSS 入场动画重叠
+    /// </summary>
+    public void CleanupLingeringEffects()
+    {
+        // 销毁所有活跃的攻击波特效
+        var activeWaves = FindObjectsOfType<AttackWave>();
+        foreach (var w in activeWaves)
+        {
+            if (w != null && w.gameObject != null)
+            {
+                float survival = Time.unscaledTime - w.CreationTime;
+                Debug.Log($"[WaveSpawner] Cleanup lingering AttackWave: name={w.gameObject.name}, id={w.gameObject.GetInstanceID()}, damageType={w.DamageType}, survival={survival:F2}s, frame={Time.frameCount}");
+                Destroy(w.gameObject);
+            }
+        }
+        if (activeWaves.Length > 0)
+            Debug.Log($"[WaveSpawner] 清理了 {activeWaves.Length} 个残留攻击波");
+
+        // 销毁所有活跃的斩击特效
+        var activeSweeps = FindObjectsOfType<SweepEffect>();
+        foreach (var s in activeSweeps)
+        {
+            if (s != null && s.gameObject != null)
+            {
+                float survival = Time.unscaledTime - s.CreationTime;
+                Debug.Log($"[WaveSpawner] Cleanup lingering SweepEffect: name={s.gameObject.name}, id={s.gameObject.GetInstanceID()}, damageType={s.DamageType}, survival={survival:F2}s, frame={Time.frameCount}");
+                Destroy(s.gameObject);
+            }
+        }
+        if (activeSweeps.Length > 0)
+            Debug.Log($"[WaveSpawner] 清理了 {activeSweeps.Length} 个残留斩击");
+
+        // 回收所有活跃的伤害跳字
+        var activeDNs = FindObjectsOfType<DamageNumber>();
+        int cleaned = 0;
+        foreach (var dn in activeDNs)
+        {
+            if (dn != null && dn.gameObject != null && dn.gameObject.activeSelf && dn.OnReturnToPool != null)
+            {
+                dn.ResetNumber();
+                cleaned++;
+            }
+        }
+        if (cleaned > 0)
+            Debug.Log($"[WaveSpawner] 清理了 {cleaned} 个残留伤害跳字");
+    }
 
     #region 共享血量组
 

@@ -196,6 +196,9 @@ public class EnemyManager : MonoBehaviour
         // 推迟的存活列表移除：此时锦囊即将弹出，再触发波次结束检测
         allAliveEnemies.Remove(boss);
 
+        // 清理残留特效，避免三选一弹窗时仍有攻击波/跳字
+        WaveSpawner.Instance?.CleanupLingeringEffects();
+
         if (UpgradeChoiceManager.Instance != null)
             UpgradeChoiceManager.Instance.TriggerItemChoice();
 
