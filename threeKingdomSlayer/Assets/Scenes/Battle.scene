@@ -7211,6 +7211,10 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 2e6cb950d2d2b5140a558d01a4c4e604, type: 3}
   - {fileID: 8300000, guid: 8ba920345b1d94a49a6631625e7bf732, type: 3}
   _parryClip: {fileID: 8300000, guid: b13be8012bbaec043915bda8d0289564, type: 3}
+  _qteBlockClips:
+  - {fileID: 8300000, guid: f3e0f5e8d6efa8c40a80d5ce83964f8d, type: 3}
+  - {fileID: 8300000, guid: 17fc96aaf44d86749929bab776d78bd1, type: 3}
+  _qteBlockVolume: 2.96
 --- !u!4 &1593080085
 Transform:
   m_ObjectHideFlags: 0

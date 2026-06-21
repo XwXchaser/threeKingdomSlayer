@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779004290012
-updatedAt: 1781513138081
+updatedAt: 1782063955741
 ---
 
 # boss-mechanics
@@ -22,7 +22,7 @@ BOSS 机制玩法设计文档 — 涵盖 BOSS 身份标识、架势/眩晕、招
 
 ## 概述
 
-BOSS 是普通敌人的变体，与普通敌人共享同一套 `Enemy` MonoBehaviour 框架（`Assets/Scripts/Enemy/Enemy.cs`，约 1770 行），通过 `isBoss = true` 标志启用额外行为。核心差异化体现在：架势→眩晕循环、招架血量阈值触发、分阶段推进、跨列清空规则、专属血条 UI 五个方面。
+BOSS 是普通敌人的变体，与普通敌人共享同一套 `Enemy` MonoBehaviour 框架（`Assets/Scripts/Enemy/Enemy.cs`，约 2800+ 行），通过 `isBoss = true` 标志启用额外行为。核心差异化体现在：架势→眩晕循环、招架血量阈值触发、分阶段推进、跨列清空规则、专属血条 UI 五个方面。
 
 ---
 
@@ -106,7 +106,7 @@ public struct ParryStunThreshold
 
 - 配置在 Enemy 预制体上，可设多个阈值（如 75%=0.5s, 50%=1s, 25%=2s）
 - 招架命中后自动检查，取 **healthPercent 最小**的匹配项（即最严格的阈值）
-- 典型的 “BOSS 残血时招架更有效” 设计
+- 典型的 "BOSS 残血时招架更有效" 设计
 
 ---
 
@@ -118,8 +118,7 @@ public struct ParryStunThreshold
 波次生成 → BOSS 出现在后方排（rowIndex ≥ 3）
          → 参与正常补齐链（逐个向前移动）
          → 到达 rowIndex = 2（第3排）：BossPause()
-              ├─ 停止移动，订阅 OnColumnsModified 事件
-              ├─ 等待前两排（row 0, 1）跨所有列清空
+              ├─ 停止移动，等待前两排（row 0, 1）跨所有列清空
               └─ 前两排全清 → BossResume()
          → 移动到 rowIndex = 1（第2排）：启动 1 秒无敌缓冲
          → 缓冲结束：BossState.InCombat，开始攻击
@@ -132,6 +131,7 @@ Boss 补齐时检查的是**整排**（所有 5 列）而非仅本列：`IsRowCl
 ### 4.3 列阵中的特殊处理
 
 - BOSS **完全不参与列补齐链**：`Column.RemoveEnemy()` 和 `Column.CompactColumn()` 对 `isBoss` 敌人跳过 `pendingRushMove` 标记，BOSS 移动完全由自身状态机（`BossPause`/`BossResume`/`TryStartRushMove`）控制
+- **row≤1 守卫**（已实现）：`TryStartRushMove` 在 `EnemyState.Idle` 下检查：若 `isBoss && rowIndex ≤ 1`，直接跳过补齐前移（`pendingRushMove = false; return false`），确保 Boss 不会从 row=1 冲到 row=0
 - BOSS 进入 `InCombat` 或缓冲中后，眩晕恢复后直接 `SetBossActionCooldown()`，不处理 `pendingRushMove`
 - BOSS 缓冲期间（`_bossEngageTimer > 0`）无敌，免疫伤害
 
@@ -236,7 +236,29 @@ BOSS 共享完整击飞系统：
 
 ---
 
-## 10. BOSS 死亡
+## 10. 视觉规则
+
+### 10.1 敌人透明度（`GetAlphaForRow`）
+
+`Enemy.GetAlphaForRow()` 控制各排敌人的透明度，实现远近层次感。两组规则叠加：
+
+**基础规则**（所有敌人）：
+| 排位 | alpha |
+|------|-------|
+| row 0 | 1.00 |
+| row 1 | 0.75 |
+| row 2 | 0.60 |
+| row ≥ 3 | 0.45 |
+
+**攻击范围覆盖**（已实现）：处于 attackRange 内的敌人强制 alpha=1.0，提高辨识度。逻辑：`int atkRange = (int)Mathf.Max(1, attackRange); if (row < atkRange) return 1f;`
+
+### 10.2 闪白/弹刀反馈
+
+见 `design/attack-interrupt-system.md` 第4节。
+
+---
+
+## 11. BOSS 死亡
 
 - 死亡动效：弹起 + 随机旋转 + 重力掉落（协程）
 - 击飞中死亡：从当前空中位置直接旋转坠落（更大角度）
@@ -245,7 +267,7 @@ BOSS 共享完整击飞系统：
 
 ---
 
-## 11. 可配置参数汇总
+## 12. 可配置参数汇总
 
 ### Enemy 组件（直接序列化在预制体上）
 
@@ -275,7 +297,7 @@ cooldown, energyCost, damage, berserkDuration, berserkStabCooldown, berserkDamag
 
 ---
 
-## 12. 架构关系图
+## 13. 架构关系图
 
 ```
 StageConfig (ScriptableObject)
@@ -283,7 +305,7 @@ StageConfig (ScriptableObject)
        └→ WaveSpawner 实例化 Enemy Prefab
             └→ Enemy.isBoss = true 时触发 BOSS 逻辑
 
-Enemy (MonoBehaviour, ~1770行)
+Enemy (MonoBehaviour, ~2800行)
   ├─ BossState: None → Approaching → InCombat
   ├─ Column / ColumnManager (列阵规则，Approaching 时跳过)
   ├─ BattleHUD.OnBossEngaged → BossHealthUI 实例化
@@ -296,7 +318,7 @@ UltimateSystem
 
 ---
 
-## 13. 已有扩展点与后续方向
+## 14. 已有扩展点与后续方向
 
 ### 已预留但未启用的机制
 
@@ -313,3 +335,12 @@ UltimateSystem
 6. **环境交互**：BOSS 出场时触发场景变化（摄像机动画、粒子特效）
 7. **BOSS 专属攻击技能**：扩展 `Enemy.UpdateAttack()` 支持多种攻击模式切换
 8. **架势系统深化**：不同 BOSS 有不同的架势恢复规则（如受特定攻击才减架势）
+
+---
+
+## 更新记录
+
+| 日期 | 内容 |
+|------|------|
+| 2025-01 | 初始版本 |
+| 2025-07 | 补充 row≤1 守卫规则（4.3节）+ 透明度/攻击范围覆盖规则（10节） |

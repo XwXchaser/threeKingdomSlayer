@@ -168,7 +168,7 @@ public class QTEController : MonoBehaviour
         }
 
         _currentAttack = qteData.qteAttacks[_currentAttackIndex];
-        DebugLog.Info($"[QTEController] 当前攻击: {_currentAttack?.name}, slots={_currentAttack?.qteSlots?.Count}");
+        DebugLog.Info($"[QTEController] 当前攻击: {_currentAttack?.name}, slots={_currentAttack?.qteSlots?.Count}, useMultiPhase={_currentAttack?.UseMultiPhaseAnimation}, useBranched={_currentAttack?.UseBranchedAnimation}");
         _state = QTEState.PerformingQTEAttack;
         _performingTimer = 0f;
         _qtePhaseStarted = false;
@@ -386,22 +386,66 @@ public class QTEController : MonoBehaviour
 
     private void StartQTEAnimation()
     {
-        if (_currentAttack == null) return;
+        if (_currentAttack == null)
+        {
+            DebugLog.Info("[QTEController] StartQTEAnimation: _currentAttack 为 null, 跳过");
+            return;
+        }
         if (_animator == null)
             _animator = GetComponent<Animator>();
-        if (_animator == null) return;
+        if (_animator == null)
+        {
+            DebugLog.Info("[QTEController] StartQTEAnimation: Animator 组件缺失, 跳过");
+            return;
+        }
+
+        // 强制启用 Animator（防止上一轮 QTEEnd 后 Animator 被意外禁用）
+        if (!_animator.enabled)
+        {
+            DebugLog.Info("[QTEController] StartQTEAnimation: Animator 被禁用，重新启用");
+            _animator.enabled = true;
+        }
+
+        DebugLog.Info($"[QTEController] StartQTEAnimation: attackIndex={_currentAttackIndex}, enabled={_animator.enabled}, goActive={_animator.gameObject.activeInHierarchy}, currentState={_animator.GetCurrentAnimatorStateInfo(0).shortNameHash}");
+
+        // 清除所有 QTE 相关 trigger 防止状态机残留
+        _animator.ResetTrigger("QTETripleStab");
+        _animator.ResetTrigger("QTESweep");
+        _animator.ResetTrigger("QTEAttack");
+        _animator.ResetTrigger("QTEEnd");
+        _animator.ResetTrigger("QTEBlocked");
+        _animator.ResetTrigger("QTEFollowUp");
+
+        // 强制回到Idle确保Animator从干净状态开始
+        _animator.Play("Idle", 0, 0f);
+        // BUG FIX: 某些Unity版本 Play+Update(0) 不完全重置，额外做一次
+        _animator.Update(0f);
+        _animator.Play("Idle", 0, 0f);
+
+        var curState = _animator.GetCurrentAnimatorStateInfo(0);
+        DebugLog.Info($"[QTEController] StartQTEAnimation: 重置后状态 IsName(Idle)={curState.IsName("Idle")}, shortNameHash={curState.shortNameHash}");
 
         if (_currentAttack.UseMultiPhaseAnimation)
         {
             _animator.SetTrigger("QTETripleStab");
+            DebugLog.Info("[QTEController] 设置 QTETripleStab trigger");
         }
         else if (_currentAttack.UseBranchedAnimation)
         {
             _animator.SetTrigger("QTESweep");
+            DebugLog.Info("[QTEController] 设置 QTESweep trigger");
+            // 验证 trigger 是否被设置
+            var nextState = _animator.GetCurrentAnimatorStateInfo(0);
+            DebugLog.Info($"[QTEController] SetTrigger后状态: IsName(Idle)={nextState.IsName("Idle")}, shortNameHash={nextState.shortNameHash}");
         }
         else if (_currentAttack.qteAnimationClip != null)
         {
             _animator.SetTrigger("QTEAttack");
+            DebugLog.Info("[QTEController] 设置 QTEAttack trigger");
+        }
+        else
+        {
+            DebugLog.Info("[QTEController] StartQTEAnimation: 无匹配动画类型");
         }
     }
 
@@ -478,10 +522,16 @@ public class QTEController : MonoBehaviour
         _qtePhaseTimer += Time.deltaTime;
 
         // 判定阶段到期：强制结束，未 resolve 的 slot 视为失败，进入结束动画阶段
-        // Sweep 模式：使用 animationLoopClip 时长驱动，保证动画完整播放
-        float judgeDuration = (_currentAttack != null && _currentAttack.UseBranchedAnimation && _currentAttack.animationLoopClip != null)
-            ? _currentAttack.animationLoopClip.length
-            : _effectiveJudgeDuration;
+        // Sweep/Branched 模式：使用 max(animationLoopClip时长, effectiveJudgeDuration) 保证玩家有足够反应时间
+        float judgeDuration;
+        if (_currentAttack != null && _currentAttack.UseBranchedAnimation && _currentAttack.animationLoopClip != null)
+        {
+            judgeDuration = Mathf.Max(_currentAttack.animationLoopClip.length, _effectiveJudgeDuration);
+        }
+        else
+        {
+            judgeDuration = _effectiveJudgeDuration;
+        }
         if (_qtePhaseTimer >= judgeDuration)
         {
             foreach (var qte in _activeQTEs)
@@ -497,10 +547,15 @@ public class QTEController : MonoBehaviour
         CheckJudgmentStart();
 
         // 检查到期的 slot 并自动失败
-        foreach (var qte in _activeQTEs)
+        // Sweep模式由 animationLoopClip 驱动整体判定时长，跳过per-slot自动过期
+        // 否则 slot judgeEndTime 可能短于动画长度 → 动画未播完就自动失败 → 误伤玩家
+        if (!(_currentAttack != null && _currentAttack.UseBranchedAnimation))
         {
-            if (!qte.resolved && qte.IsExpired(_qtePhaseTimer))
-                ResolveQTE(qte, false);
+            foreach (var qte in _activeQTEs)
+            {
+                if (!qte.resolved && qte.IsExpired(_qtePhaseTimer))
+                    ResolveQTE(qte, false);
+            }
         }
     }
 
@@ -661,15 +716,19 @@ public class QTEController : MonoBehaviour
             float swipeAngle = Mathf.Atan2(swipeDirection.y, swipeDirection.x) * Mathf.Rad2Deg;
             if (swipeAngle < 0f) swipeAngle += 360f;
 
+            // 双向匹配：接受目标方向及其反方向（用户可能从指示器两侧划入）
             float diff = Mathf.Abs(Mathf.DeltaAngle(swipeAngle, targetAngle));
-            if (diff <= qte.config.swipeAngleTolerance)
+            float diffOpposite = Mathf.Abs(Mathf.DeltaAngle(swipeAngle, targetAngle + 180f));
+            float bestDiff = Mathf.Min(diff, diffOpposite);
+            if (bestDiff <= qte.config.swipeAngleTolerance)
             {
+                DebugLog.Info($"[QTEController] 划动匹配成功: angle={swipeAngle:F1}° target={targetAngle}° diff={bestDiff:F1}° tol={qte.config.swipeAngleTolerance}°");
                 ResolveQTE(qte, true);
                 return true;
             }
             else
             {
-                DebugLog.Info($"[QTEController] 划动角度偏差过大: {diff:F1}° > {qte.config.swipeAngleTolerance}° (目标{qte.config.swipeDirection}°)");
+                DebugLog.Info($"[QTEController] 划动角度偏差过大: bestDiff={bestDiff:F1}° > tol={qte.config.swipeAngleTolerance}° (swipe={swipeAngle:F1}° target={targetAngle}°)");
             }
         }
         return false;
@@ -841,7 +900,10 @@ public class QTEController : MonoBehaviour
         OnQTESuccess?.Invoke();
 
         // QTE 格挡成功音效
-        AudioManager.Instance?.PostEvent("QTE_Block");
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PostEvent("QTE_Block");
+        else
+            DebugLog.Info("[QTEController] AudioManager.Instance 为 null，跳过 QTE_Block 音效");
 
         // Handheld.Vibrate(); // 安卓端攻击震动暂关闭
     }
@@ -898,6 +960,10 @@ public class QTEController : MonoBehaviour
 
         _activeQTEs.Clear();
         _state = QTEState.Idle;
+
+        // BUG FIX: AbortQTE 需要确保 BOSS 设置冷却并回到 Idle，否则下一帧立即重新触发 QTE
+        enemy.ExitQTEAttack();
+
         OnQTEAttackFinished?.Invoke();
         DebugLog.Info("[QTEController] QTE已中止");
     }

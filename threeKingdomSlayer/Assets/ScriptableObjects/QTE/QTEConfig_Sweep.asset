@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: QTEConfig_Sweep
   m_EditorClassIdentifier: 
   qteType: 1
-  warningDuration: 0.5
-  judgeWindow: 1
+  warningDuration: 0.8
+  judgeWindow: 2
   swipeDirection: 180
-  swipeAngleTolerance: 60
-  swipeMinSpeed: 200
+  swipeAngleTolerance: 180
+  swipeMinSpeed: 50
   poiseDamage: 40
   ultimateEnergyGain: 20
   failureDamage: 20

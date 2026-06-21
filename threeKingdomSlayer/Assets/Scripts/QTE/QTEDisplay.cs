@@ -180,6 +180,7 @@ public class QTEDisplay : MonoBehaviour
         }
 
         state.animationSeq = seq;
+        seq.SetUpdate(true); // timeScale-independent
         _activeStates.Add(state);
         Debug.Log($"[QTE_DIAG] StartQTEIndicator: id={indicator.GetInstanceID()}, type={config.qteType}, activeCount={_activeStates.Count}, dyingCount={_dyingIndicators.Count}");
         return indicator;
@@ -226,17 +227,17 @@ public class QTEDisplay : MonoBehaviour
             state.animationSeq.Kill();
         indicator.transform.DOKill(true);
 
-        // 结果特效
+        // 结果特效（使用 unscaledTime 自毁协程，确保 timeScale=0 时也能清理）
         var effectParent = GetIndicatorParent();
         if (success && successEffectPrefab != null)
         {
             var e = Instantiate(successEffectPrefab, indicator.transform.position, Quaternion.identity, effectParent);
-            Destroy(e, resultEffectDuration);
+            StartCoroutine(DestroyAfterUnscaled(e, resultEffectDuration));
         }
         else if (!success && failureEffectPrefab != null)
         {
             var e = Instantiate(failureEffectPrefab, indicator.transform.position, Quaternion.identity, effectParent);
-            Destroy(e, resultEffectDuration);
+            StartCoroutine(DestroyAfterUnscaled(e, resultEffectDuration));
         }
 
         SlideOutAndDestroy(state);
@@ -324,6 +325,7 @@ public class QTEDisplay : MonoBehaviour
         var cg = go.AddComponent<CanvasGroup>();
         var seq = DOTween.Sequence();
         seq.SetId($"qte_out_{go.GetInstanceID()}");
+        seq.SetUpdate(true); // timeScale-independent: 升级弹窗暂停时也能完成清理
         if (rt != null)
             seq.Join(rt.DOAnchorPosY(endY, slideOutDuration).SetEase(Ease.InCubic));
         seq.Join(cg.DOFade(0f, slideOutDuration));
@@ -360,5 +362,11 @@ public class QTEDisplay : MonoBehaviour
             case QTEType.Swipe: return defaultSwipeIndicatorPrefab;
         }
         return null;
+    }
+
+    private System.Collections.IEnumerator DestroyAfterUnscaled(GameObject obj, float delay)
+    {
+        yield return new WaitForSecondsRealtime(delay);
+        if (obj != null) Destroy(obj);
     }
 }

@@ -33,7 +33,7 @@ MonoBehaviour:
   cAttackWeight: 1
   qteWeight: 1
   actionInterval: {x: 0.3, y: 1}
-  postQTECooldown: 0
+  postQTECooldown: 5
   isSuperArmor: 0
   stabDamageMultiplier: 1
   slashDamageMultiplier: 1
