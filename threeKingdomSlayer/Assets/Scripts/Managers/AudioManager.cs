@@ -22,6 +22,9 @@ public class AudioManager : MonoBehaviour
     [Header("格挡 SFX")]
     [SerializeField] private AudioClip _parryClip;
 
+    [Header("QTE 格挡 SFX — 随机二选一")]
+    [SerializeField] private AudioClip[] _qteBlockClips;
+
     private AudioSource _bgmMainSource;
     private AudioSource _bgmEnvSource;
     private AudioSource _sfxSource;
@@ -133,6 +136,9 @@ public class AudioManager : MonoBehaviour
                 break;
             case "Player_Parry":
                 PlayOneShot(_parryClip);
+                break;
+            case "QTE_Block":
+                PlayRandom(_qteBlockClips);
                 break;
         }
     }

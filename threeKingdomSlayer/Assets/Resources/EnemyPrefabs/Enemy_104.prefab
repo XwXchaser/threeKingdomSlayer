@@ -95,8 +95,6 @@ MonoBehaviour:
   bossHealthBarPrefab: {fileID: 3365436119990249603, guid: 9a1fc4950f5206a4bb1f8a56c5ef9c61, type: 3}
   bossPhases:
   - {fileID: 11400000, guid: 33e32411381c8be4db000afef3545d45, type: 2}
-  - {fileID: 11400000, guid: b2fdbfe73b7f858428c1fcf02b93c785, type: 2}
-  - {fileID: 11400000, guid: c7a65195a628dd84698e8766810f8f61, type: 2}
   outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
   outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
   outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}

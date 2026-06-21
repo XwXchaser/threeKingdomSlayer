@@ -23,6 +23,7 @@ MonoBehaviour:
   animationEndClip: {fileID: 0}
   animationBlockedClip: {fileID: 7400000, guid: 5d902c3a6aa01524782df74b2afe2d7f, type: 2}
   animationFollowUpClip: {fileID: 7400000, guid: 9710ca10eecab224b9ccdcf9f83669ab, type: 2}
+  branchedResultDuration: 1.4
   projectilePrefab: {fileID: 0}
   projectileFlightTime: 0.8
   projectileTargetZ: -2

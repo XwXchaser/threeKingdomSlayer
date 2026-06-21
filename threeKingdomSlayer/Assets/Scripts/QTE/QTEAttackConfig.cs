@@ -46,6 +46,8 @@ public class QTEAttackConfig : ScriptableObject
     public AnimationClip animationBlockedClip;
     [Tooltip("格挡失败/超时动画")]
     public AnimationClip animationFollowUpClip;
+    [Tooltip("结果分支动画总时长（秒），用于兜底计时，0=完全依赖AnimationEvent")]
+    public float branchedResultDuration;
 
     [Header("飞行物（可选）")]
     [Tooltip("飞行物 prefab（如箭矢、能量弹），为空则无飞行物")]
