@@ -91,9 +91,14 @@ public class QTEAttackConfig : ScriptableObject
     public bool UseMultiPhaseAnimation => animationStartClip != null && animationLoopClip != null && animationEndClip != null;
 
     /// <summary>
-    /// 是否使用结果分支动画（Sweep 型：start/happen → blocked 或 followUp）
+    /// 是否使用结果分支动画（Sweep 型：start/happen → blocked 或 hit）
     /// </summary>
-    public bool UseBranchedAnimation => animationStartClip != null && animationLoopClip != null && animationBlockedClip != null && animationFollowUpClip != null;
+    public bool UseBranchedAnimation => animationStartClip != null && animationLoopClip != null && animationBlockedClip != null;
+
+    /// <summary>
+    /// 有效前摇时间：优先从 animationStartClip 时长自动推导，无 Start clip 则回退到序列化值
+    /// </summary>
+    public float EffectiveLeadTime => animationStartClip != null ? animationStartClip.length : animationLeadTime;
 
     /// <summary>
     /// 本次 QTE 攻击的总持续时间（最晚出现的 QTE 的 delay + warning + judgeWindow）

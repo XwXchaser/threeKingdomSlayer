@@ -70,6 +70,7 @@ public class QTEController : MonoBehaviour
 
     // QTE 动画
     private Animator _animator;
+    private bool _judgingSpeedApplied;   // Branched 模式下是否已对 Happen 应用慢放速度
 
     // 事件
     public System.Action OnQTETriggered;       // QTE 攻击触发
@@ -200,6 +201,7 @@ public class QTEController : MonoBehaviour
         _arrowWaves.Clear();
         _arrowWavesSpawned = false;
         _fixedEndTimer = -1f;
+        _judgingSpeedApplied = false;  // Branched 慢放标记重置
 
         // 计算实际判定阶段时长 = max(slot.judgeEndTime)，fixedQteDuration 作为保底下限
         _effectiveJudgeDuration = 0f;
@@ -414,7 +416,7 @@ public class QTEController : MonoBehaviour
         _animator.ResetTrigger("QTEAttack");
         _animator.ResetTrigger("QTEEnd");
         _animator.ResetTrigger("QTEBlocked");
-        _animator.ResetTrigger("QTEFollowUp");
+        _animator.ResetTrigger("QTEHit");
 
         // 强制回到Idle确保Animator从干净状态开始
         _animator.Play("Idle", 0, 0f);
@@ -452,6 +454,7 @@ public class QTEController : MonoBehaviour
     private void StopQTEAnimation()
     {
         if (_animator == null) return;
+        _animator.speed = 1f;  // 恢复默认速度
 
         if (_currentAttack != null && (_currentAttack.UseMultiPhaseAnimation || _currentAttack.UseBranchedAnimation))
         {
@@ -478,9 +481,9 @@ public class QTEController : MonoBehaviour
             // 无飞行物时，等待动画前摇结束后开始 QTE 阶段
             bool hasProjectile = _activeProjectile != null;
             // 多段动画模式：等待 Start 动画播完（动画前摇）
-            bool multiPhaseReady = _currentAttack.UseMultiPhaseAnimation && _performingTimer >= _currentAttack.animationLeadTime;
+            bool multiPhaseReady = _currentAttack.UseMultiPhaseAnimation && _performingTimer >= _currentAttack.EffectiveLeadTime;
             // 单段动画模式：无飞行物 + 前摇结束
-            bool singlePhaseReady = !_currentAttack.UseMultiPhaseAnimation && !hasProjectile && _performingTimer >= _currentAttack.animationLeadTime;
+            bool singlePhaseReady = !_currentAttack.UseMultiPhaseAnimation && !hasProjectile && _performingTimer >= _currentAttack.EffectiveLeadTime;
 
             if (multiPhaseReady || singlePhaseReady)
                 StartQTEPhase();
@@ -521,17 +524,30 @@ public class QTEController : MonoBehaviour
     {
         _qtePhaseTimer += Time.deltaTime;
 
+        // Branched 模式：首个判定帧将 Happen 动画慢放以覆盖整个 QTE 窗口
+        if (!_judgingSpeedApplied && _currentAttack != null && _currentAttack.UseBranchedAnimation && _animator != null)
+        {
+            _judgingSpeedApplied = true;
+            float happenLength = _currentAttack.animationLoopClip != null ? _currentAttack.animationLoopClip.length : 0.5f;
+            float window = _effectiveJudgeDuration > 0f ? _effectiveJudgeDuration : happenLength;
+            float slowSpeed = happenLength / window;
+            _animator.speed = Mathf.Clamp(slowSpeed, 0.05f, 1f);
+        }
+
+        // 所有 slot 已 resolved → 立即进入结束阶段，不等 judgeDuration 到期
+        bool allResolved = true;
+        foreach (var qte in _activeQTEs)
+        {
+            if (!qte.resolved) { allResolved = false; break; }
+        }
+        if (allResolved)
+        {
+            StartQTEEndingPhase();
+            return;
+        }
+
         // 判定阶段到期：强制结束，未 resolve 的 slot 视为失败，进入结束动画阶段
-        // Sweep/Branched 模式：使用 max(animationLoopClip时长, effectiveJudgeDuration) 保证玩家有足够反应时间
-        float judgeDuration;
-        if (_currentAttack != null && _currentAttack.UseBranchedAnimation && _currentAttack.animationLoopClip != null)
-        {
-            judgeDuration = Mathf.Max(_currentAttack.animationLoopClip.length, _effectiveJudgeDuration);
-        }
-        else
-        {
-            judgeDuration = _effectiveJudgeDuration;
-        }
+        float judgeDuration = _effectiveJudgeDuration;
         if (_qtePhaseTimer >= judgeDuration)
         {
             foreach (var qte in _activeQTEs)
@@ -546,9 +562,7 @@ public class QTEController : MonoBehaviour
         // 检查判定窗口开始（通知 QTEDisplay 触发放大闪白）
         CheckJudgmentStart();
 
-        // 检查到期的 slot 并自动失败
-        // Sweep模式由 animationLoopClip 驱动整体判定时长，跳过per-slot自动过期
-        // 否则 slot judgeEndTime 可能短于动画长度 → 动画未播完就自动失败 → 误伤玩家
+        // 检查到期的 slot 并自动失败（Branched 模式跳过 per-slot 过期）
         if (!(_currentAttack != null && _currentAttack.UseBranchedAnimation))
         {
             foreach (var qte in _activeQTEs)
@@ -575,24 +589,29 @@ public class QTEController : MonoBehaviour
 
         if (_currentAttack != null && _currentAttack.UseBranchedAnimation)
         {
-            // Sweep 模式：根据结果发 QTEBlocked 或 QTEFollowUp
             if (_animator == null) _animator = GetComponent<Animator>();
             if (_animator != null)
             {
                 if (playerBlocked)
                 {
-                    _animator.SetTrigger("QTEBlocked");
+                    // 加速播完剩余 Happen 帧，然后切到 Blocked
+                    _animator.speed = 3f;
+                    float accelerateWindow = 0.12f; // ~3-4 帧的加速时间
+                    StartCoroutine(TriggerBlockedAfterAcceleration(accelerateWindow));
                 }
                 else
                 {
-                    _animator.SetTrigger("QTEFollowUp");
+                    // 失败：立即切到 Hit
+                    _animator.speed = 1f;
+                    _animator.SetTrigger("QTEHit");
                 }
-                // 结果分支由 Animator 多段序列驱动，AnimationEvent 主导，branchedResultDuration 兜底
                 endClipLength = _currentAttack.branchedResultDuration > 0f ? _currentAttack.branchedResultDuration : float.MaxValue;
             }
         }
         else
         {
+            // 非 Branched 模式恢复速度
+            if (_animator != null) _animator.speed = 1f;
             StopQTEAnimation();
             endClipLength = _currentAttack != null && _currentAttack.animationEndClip != null
                 ? _currentAttack.animationEndClip.length : 0f;
@@ -602,6 +621,16 @@ public class QTEController : MonoBehaviour
         {
             CompleteQTEAttack();
             return;
+        }
+    }
+
+    private System.Collections.IEnumerator TriggerBlockedAfterAcceleration(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (_animator != null)
+        {
+            _animator.SetTrigger("QTEBlocked");
+            _animator.speed = 1f;
         }
     }
 
