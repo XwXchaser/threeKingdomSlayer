@@ -21,6 +21,7 @@ public class ColumnManager : MonoBehaviour
     private readonly Dictionary<Enemy, int> _convOriginalRows = new Dictionary<Enemy, int>();
     private readonly List<(Enemy enemy, int targetCol, int targetRow)> _convTargets = new List<(Enemy, int, int)>();
     private readonly Dictionary<(int col, int row), List<Enemy>> _convGroups = new Dictionary<(int, int), List<Enemy>>();
+    private readonly Dictionary<int, List<Enemy>> _rowEnemies = new Dictionary<int, List<Enemy>>();
 
     // GC 优化：范围查询复用列表 + RowBasedFillUp 复用 HashSet
     private readonly List<Enemy> _rangeQueryList = new List<Enemy>();
@@ -710,139 +711,118 @@ public class ColumnManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 方向推（Slash 专属）：将击中敌人按行分组，朝 slash 方向推移 step 列。
+    /// 同行多敌人自动分散到不同列，不重叠。
+    /// </summary>
+    public bool ApplyDirectionalPush(List<Enemy> hitEnemies, int step, bool pushRight, bool canInterruptCFrame = false)
+    {
+        if (hitEnemies == null || hitEnemies.Count == 0) return false;
+        if (step <= 0) return false;
+
+        DebugLog.Info($"[Displacement] ApplyDirectionalPush: step={step} pushRight={pushRight} hitCount={hitEnemies.Count}");
+
+        _rowEnemies.Clear();
+        foreach (var e in hitEnemies)
+        {
+            if (e.state == EnemyState.Dead || e.isBoss) continue;
+            if (e.isCFrame && !canInterruptCFrame) continue;
+            if (!_rowEnemies.ContainsKey(e.rowIndex))
+                _rowEnemies[e.rowIndex] = new List<Enemy>();
+            _rowEnemies[e.rowIndex].Add(e);
+        }
+
+        bool anyMoved = false;
+        int dir = pushRight ? 1 : -1;
+
+        foreach (var kv in _rowEnemies)
+        {
+            int row = kv.Key;
+            var enemies = kv.Value;
+
+            // 沿推方向排序：推右→最右优先，推左→最左优先
+            if (pushRight)
+                enemies.Sort((a, b) => b.columnIndex.CompareTo(a.columnIndex));
+            else
+                enemies.Sort((a, b) => a.columnIndex.CompareTo(b.columnIndex));
+
+            foreach (var enemy in enemies)
+            {
+                int idealCol = pushRight
+                    ? Mathf.Min(enemy.columnIndex + step, 4)
+                    : Mathf.Max(enemy.columnIndex - step, 0);
+
+                // 尝试理想列，被占则沿推方向找下一个可用列
+                int tryCol = idealCol;
+                while (tryCol >= 0 && tryCol <= 4)
+                {
+                    if (MoveEnemyToColumnAtRow(enemy, tryCol, row))
+                    {
+                        anyMoved = true;
+                        break;
+                    }
+                    tryCol += dir;
+                }
+            }
+        }
+
+        if (anyMoved) OnColumnsModified?.Invoke();
+        return anyMoved;
+    }
+
+    /// <summary>
     /// 聚拢波完整逻辑：将击中敌人向 col=2 移动 step 列。
     /// 冲突裁决：仅多敌人争同一位置时 → 各承受 convergenceDamagePercent% HP 伤害 → 重新分配到 col=1/col=3 末尾。
-    /// 单敌人受阻原地不动。BOSS 不参与位移。
-    /// 使用原始 rowIndex 快照计算目标位置，防止前置效果（击退）修改 rowIndex 导致错位。
+    /// 按行分组，从 col=2 向外分配槽位，始终朝中心聚拢不越界。
+    /// convergenceDamagePercent 保留签名兼容，新算法无冲突故不施加伤害。
     /// </summary>
     public void ApplyConvergenceWave(List<Enemy> hitEnemies, int step, float convergenceDamagePercent, bool canInterruptCFrame = false)
     {
         if (hitEnemies == null || hitEnemies.Count == 0) return;
+        if (step <= 0) return;
 
-        // 快照原始 rowIndex，防止被前置击退效果修改
-        _convOriginalRows.Clear();
-        var originalRows = _convOriginalRows;
+        DebugLog.Info($"[Displacement] ApplyConvergenceWave: step={step} hitCount={hitEnemies.Count}");
+
+        _rowEnemies.Clear();
         foreach (var e in hitEnemies)
         {
             if (e.state == EnemyState.Dead || e.isBoss) continue;
             if (e.isCFrame && !canInterruptCFrame) continue;
-            originalRows[e] = e.rowIndex;
-            DebugLog.Info($"[Displacement] Conv snapshot {e.DebugTag}: curCol={e.columnIndex} curRow={e.rowIndex}");
+            if (!_rowEnemies.ContainsKey(e.rowIndex))
+                _rowEnemies[e.rowIndex] = new List<Enemy>();
+            _rowEnemies[e.rowIndex].Add(e);
         }
 
-        // 1. 计算每个敌人的目标列（向 col=2 靠近 step 步）
-        _convTargets.Clear();
-        var targets = _convTargets;
-        foreach (var e in hitEnemies)
-        {
-            if (e.state == EnemyState.Dead || e.isBoss) continue;
-            if (e.isCFrame && !canInterruptCFrame) continue;
-            int curCol = e.columnIndex;
-            int targetCol = curCol;
-            if (curCol < 2) targetCol = Mathf.Min(curCol + step, 2);
-            else if (curCol > 2) targetCol = Mathf.Max(curCol - step, 2);
+        // 槽位优先级：从中心 col=2 向外
+        int[] prioritySlots = { 2, 1, 3, 0, 4 };
 
-            targets.Add((e, targetCol, originalRows[e]));
-            DebugLog.Info($"[Displacement] Conv target {e.DebugTag}: ({curCol},{originalRows[e]})→({targetCol},{originalRows[e]})");
-        }
-
-        // 2. 按 (targetCol, targetRow) 分组，检测冲突
-        _convGroups.Clear();
-        var groups = _convGroups;
-        foreach (var (enemy, targetCol, targetRow) in targets)
+        foreach (var kv in _rowEnemies)
         {
-            var key = (targetCol, targetRow);
-            if (!groups.ContainsKey(key))
-                groups[key] = new List<Enemy>();
-            groups[key].Add(enemy);
-        }
+            int row = kv.Key;
+            var enemies = kv.Value;
+            int N = enemies.Count;
 
-        // 3. 处理分组：单敌人无冲突直接移动，单敌人被占原地不动，多敌人进入冲突裁决
-        var conflicted = new List<(Enemy enemy, int targetRow)>();
-        var movedEnemies = new List<Enemy>();
-        foreach (var kv in groups)
-        {
-            DebugLog.Info($"[Displacement] Conv group ({kv.Key.col},{kv.Key.row}): count={kv.Value.Count}");
-            if (kv.Value.Count == 1)
+            // 取 N 个最靠近中心的槽位
+            var slots = new List<int>(N);
+            for (int i = 0; i < N && i < prioritySlots.Length; i++)
+                slots.Add(prioritySlots[i]);
+
+            // 按距 col=2 由近到远排序（近者优先分配近槽）
+            enemies.Sort((a, b) => Mathf.Abs(a.columnIndex - 2).CompareTo(Mathf.Abs(b.columnIndex - 2)));
+
+            for (int i = 0; i < enemies.Count && i < slots.Count; i++)
             {
-                var enemy = kv.Value[0];
-                bool existingOccupied = columns[kv.Key.col].IsRowOccupied(kv.Key.row, enemy);
-                if (!existingOccupied)
+                var enemy = enemies[i];
+                int slot = slots[i];
+                int dist = Mathf.Abs(enemy.columnIndex - slot);
+                if (dist > 0 && dist <= step)
                 {
-                    DebugLog.Info($"[Displacement] Conv MOVE {enemy.DebugTag} → col={kv.Key.col} row={kv.Key.row}");
-                    MoveEnemyToColumnAtRow(enemy, kv.Key.col, kv.Key.row);
-                    movedEnemies.Add(enemy);
-                }
-                else
-                {
-                    DebugLog.Info($"[Displacement] Conv BLOCKED {enemy.DebugTag} → col={kv.Key.col} row={kv.Key.row} (occupied)");
+                    DebugLog.Info($"[Displacement] Conv MOVE {enemy.DebugTag} col {enemy.columnIndex}→{slot} row={row}");
+                    MoveEnemyToColumnAtRow(enemy, slot, row);
                 }
             }
-            else
-            {
-                DebugLog.Info($"[Displacement] Conv CONFLICT: {kv.Value.Count} enemies → col={kv.Key.col} row={kv.Key.row}");
-                foreach (var e in kv.Value)
-                    conflicted.Add((e, kv.Key.row));
-            }
         }
-
-        // 4. 冲突裁决：多敌人争同一位置 → 伤害 + 重新分配到 col=1/3 的目标排位
-        if (conflicted.Count > 0)
-            ResolveConvergenceConflicts(conflicted, convergenceDamagePercent, movedEnemies);
 
         OnColumnsModified?.Invoke();
-    }
-
-    /// <summary>
-    /// 聚拢冲突裁决：冲突敌人各承受 %HP 伤害（BOSS 除外），
-    /// 重新分配到 col=1/col=3 的目标排位，若被占则外溢 col=0/col=4。
-    /// </summary>
-    private void ResolveConvergenceConflicts(List<(Enemy enemy, int targetRow)> conflicted, float damagePercent,
-        List<Enemy> movedEnemies)
-    {
-        DebugLog.Info($"[Displacement] ResolveConvergenceConflicts: {conflicted.Count} conflicted enemies");
-
-        // 施加聚拢伤害
-        foreach (var (e, _) in conflicted)
-        {
-            if (e.state == EnemyState.Dead || e.isBoss) continue;
-            if (damagePercent > 0f)
-            {
-                float dmg = e.maxHealth * damagePercent;
-                e.TakeDamage(dmg, DamageType.Convergence);
-                DebugLog.Info($"[Displacement] Convergence damage: {e.DebugTag} takes {dmg} ({damagePercent:P0} HP)");
-            }
-        }
-
-        // 重新分配到 col=1/3 目标排位（非队尾）
-        for (int i = 0; i < conflicted.Count; i++)
-        {
-            var (e, targetRow) = conflicted[i];
-            if (e.state == EnemyState.Dead) continue;
-
-            int spillCol = (i % 2 == 0) ? 1 : 3;
-
-            if (!columns[spillCol].IsRowOccupied(targetRow, e))
-            {
-                DebugLog.Info($"[Displacement] Conv spill {e.DebugTag} → col={spillCol} row={targetRow}");
-                MoveEnemyToColumnAtRow(e, spillCol, targetRow);
-                movedEnemies.Add(e);
-            }
-            else
-            {
-                int outerCol = spillCol == 1 ? 0 : 4;
-                if (!columns[outerCol].IsRowOccupied(targetRow, e))
-                {
-                    DebugLog.Info($"[Displacement] Conv spill {e.DebugTag} → outer col={outerCol} row={targetRow}");
-                    MoveEnemyToColumnAtRow(e, outerCol, targetRow);
-                    movedEnemies.Add(e);
-                }
-                else
-                {
-                    DebugLog.Info($"[Displacement] Conv spill {e.DebugTag} BLOCKED at col={spillCol}/{outerCol} row={targetRow}");
-                }
-            }
-        }
     }
 
     #endregion

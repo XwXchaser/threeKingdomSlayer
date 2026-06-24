@@ -33,6 +33,11 @@ public class AttackSystem : MonoBehaviour
     [Tooltip("弹射连线用的Chain预制体（回退方案）")]
     [SerializeField] private GameObject _chainBouncePrefab;
 
+    [Header("攻击冷却模式")]
+    [Tooltip("勾选→动作锁定模式（攻击动画期间锁定所有攻击输入）。\n取消→独立CD模式（每招独立冷却，可交替连打）。\n独立CD模式保留作为未来可能的奖励效果（如技能移除动作硬直）。")]
+    public bool useActionBasedCooldown = false;
+    private float _actionLockTimer;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -49,6 +54,12 @@ public class AttackSystem : MonoBehaviour
         {
             Instance = null;
         }
+    }
+
+    private void Update()
+    {
+        if (_actionLockTimer > 0f)
+            _actionLockTimer -= Time.deltaTime;
     }
 
     private void Start()
@@ -68,10 +79,18 @@ public class AttackSystem : MonoBehaviour
         if (playerState == null) return false;
         if (playerState.stageState != StageState.InProgress) return false;
 
-        if (!playerState.IsAttackReady(attackType))
+        // 冷却检查：新模式（动作锁定）→ 全局锁；旧模式 → 独立技能CD
+        if (useActionBasedCooldown)
         {
-            Debug.Log($"[AttackSystem] {attackType} 冷却中");
-            return false;
+            if (_actionLockTimer > 0f) return false;
+        }
+        else
+        {
+            if (!playerState.IsAttackReady(attackType))
+            {
+                Debug.Log($"[AttackSystem] {attackType} 冷却中");
+                return false;
+            }
         }
 
         bool hitAny = false;
@@ -87,7 +106,21 @@ public class AttackSystem : MonoBehaviour
 
         if (hitAny)
         {
-            playerState.StartCooldown(attackType);
+            // 触发冷却：新模式 → 动作锁定（受攻速缩放）；旧模式 → 独立技能CD
+            if (useActionBasedCooldown)
+            {
+                var cfg = GetConfig(attackType);
+                float baseDuration = cfg != null && cfg.actionDuration > 0f ? cfg.actionDuration : (cfg != null ? cfg.cooldown : 0.3f);
+                // 确保动作锁至少覆盖视觉特效的完整时长，避免 prefab 未消失即可发起下一次攻击
+                float visualMin = GetVisualEffectMinDuration(attackType, cfg);
+                baseDuration = Mathf.Max(baseDuration, visualMin);
+                float speedMult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetAttackSpeedMultiplier() : 1f;
+                _actionLockTimer = baseDuration / Mathf.Max(speedMult, 0.01f);
+            }
+            else
+            {
+                playerState.StartCooldown(attackType);
+            }
             UltimateSystem.Instance?.AddEnergyForAttack(attackType);
             // 攻击震动已暂时关闭（安卓端不合适），后续在其他功能情景中重新启用
             // Handheld.Vibrate();
@@ -130,7 +163,7 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
-        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Stab, canInterruptCFrame: false);
+        if (targets.Count > 0) ApplyStabPushWave(targets);
         return targets.Count > 0;
     }
 
@@ -147,14 +180,15 @@ public class AttackSystem : MonoBehaviour
             Vector3 wavePos = GetWavePosition(targets, -1);
             wavePos.y = targets[0].transform.position.y + cfg.slashSpawnYOffset;
             wavePos.z = targets[0].transform.position.z + cfg.slashSpawnZOffset;
+            bool hasTargets = targets.Count > 0;
             SweepEffect.Create(wavePos, cfg.damageType, finalDmg, targets, leftToRight,
                 cfg.slashSweepHalfWidth, cfg.slashSweepAngle, cfg.slashSweepDuration,
-                prefab: cfg.attackWavePrefab);
+                prefab: cfg.attackWavePrefab,
+                onAllHit: hasTargets ? () => ApplySlashDirectionalPush(targets, leftToRight) : null);
             AudioManager.Instance?.PostEvent("Player_Attack");
         }
 
         Debug.Log($"[AttackSystem] 斩击 方向:{(leftToRight ? "L→R" : "R→L")} 伤害:{finalDmg} 目标数:{targets.Count}");
-        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Slash, canInterruptCFrame: false);
         return targets.Count > 0;
     }
 
@@ -173,7 +207,6 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
-        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Pierce, canInterruptCFrame: false);
         return targets.Count > 0;
     }
 
@@ -192,7 +225,6 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 横扫 伤害:{finalDmg} 目标数:{targets.Count}");
-        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Sweep, canInterruptCFrame: false);
         return targets.Count > 0;
     }
 
@@ -233,7 +265,6 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 挑飞 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 击飞时间:{cfg.launchDuration}s 目标数:{targets.Count}");
-        if (targets.Count > 0) ApplyDisplacementEffects(targets, AttackType.Launch, canInterruptCFrame: true);
         return targets.Count > 0;
     }
 
@@ -340,43 +371,38 @@ public class AttackSystem : MonoBehaviour
         return 1f;
     }
 
-    /// <summary>
-    /// 在成功攻击后应用位移效果（push_wave / convergence_wave）
-    /// </summary>
-    private void ApplyDisplacementEffects(List<Enemy> targets, AttackType attackType, bool canInterruptCFrame)
+    /// <summary>Stab 击退波</summary>
+    private void ApplyStabPushWave(List<Enemy> targets)
     {
-        if (UpgradeEffectManager.Instance == null)
-        {
-            Debug.LogWarning("[Displacement] UpgradeEffectManager.Instance is null, skip displacement");
-            return;
-        }
-        if (columnManager == null) return;
-
+        if (UpgradeEffectManager.Instance == null || columnManager == null) return;
         int pushDist = UpgradeEffectManager.Instance.GetPushWaveDistance();
-        int convergence = UpgradeEffectManager.Instance.GetConvergenceStep();
+        if (pushDist <= 0) return;
 
-        Debug.Log($"[Displacement] === START atkType={attackType} push={pushDist} conv={convergence} targets={targets.Count} canInterruptCFrame={canInterruptCFrame} ===");
+        Debug.Log($"[Displacement] Stab PushWave dist={pushDist} targets={targets.Count}");
         Debug.Log(columnManager.DumpColumns());
 
-        if (pushDist > 0)
-        {
-            columnManager.ApplyPushWave(targets, pushDist, canInterruptCFrame);
-            Debug.Log($"[Displacement] after PUSH:");
-            Debug.Log(columnManager.DumpColumns());
-        }
-
-        if (convergence > 0)
-        {
-            float dmgPct = UpgradeEffectManager.Instance.GetConvergenceDamagePercent();
-            columnManager.ApplyConvergenceWave(targets, convergence, dmgPct, canInterruptCFrame);
-            Debug.Log($"[Displacement] after CONVERGENCE:");
-            Debug.Log(columnManager.DumpColumns());
-        }
-
+        columnManager.ApplyPushWave(targets, pushDist, canInterruptCFrame: false);
         columnManager.PostDisplacementFillUp();
-        Debug.Log($"[Displacement] after FILLUP:");
+
+        Debug.Log($"[Displacement] after Stab PushWave:");
         Debug.Log(columnManager.DumpColumns());
-        Debug.Log($"[Displacement] === END ===");
+    }
+
+    /// <summary>Slash 方向推</summary>
+    private void ApplySlashDirectionalPush(List<Enemy> targets, bool leftToRight)
+    {
+        if (UpgradeEffectManager.Instance == null || columnManager == null) return;
+        int step = UpgradeEffectManager.Instance.GetDirectionalPushStep();
+        if (step <= 0) return;
+
+        Debug.Log($"[Displacement] Slash DirectionalPush step={step} dir={(leftToRight ? "L→R" : "R→L")} targets={targets.Count}");
+        Debug.Log(columnManager.DumpColumns());
+
+        columnManager.ApplyDirectionalPush(targets, step, leftToRight, canInterruptCFrame: false);
+        columnManager.PostDisplacementFillUp();
+
+        Debug.Log($"[Displacement] after Slash DirectionalPush:");
+        Debug.Log(columnManager.DumpColumns());
     }
 
     public float GetAttackDamage(AttackType attackType)
@@ -755,6 +781,28 @@ public class AttackSystem : MonoBehaviour
         _unlockedAttacks.Clear();
         _unlockedAttackLevels.Clear();
         _unlockedFloatValues.Clear();
+    }
+
+    /// <summary>
+    /// 返回各攻击类型视觉特效的最短持续时长（秒）。
+    /// 用于动作锁定模式确保 prefab 播放完毕前不会发起下一次攻击。
+    /// </summary>
+    private float GetVisualEffectMinDuration(AttackType attackType, AttackSkillConfig cfg)
+    {
+        return attackType switch
+        {
+            // Slash/Sweep: SweepEffect sweep + interval + fade
+            AttackType.Slash => (cfg != null ? cfg.slashSweepDuration : 0.25f) + 0.28f,
+            AttackType.Sweep => (cfg != null ? cfg.slashSweepDuration : 0.25f) + 0.28f,
+            // Stab: AttackWave thrust(0.2s) + retract(0.3s)
+            AttackType.Stab => 0.5f,
+            // Pierce: AttackWave travel + interval + fade（取典型值）
+            AttackType.Pierce => 0.6f,
+            // Launch: AttackWave Fixed mode（maxDelay + 0.3s，取典型值）
+            AttackType.Launch => 0.5f,
+            // Parry: 无视觉特效
+            _ => 0f
+        };
     }
 
     #endregion

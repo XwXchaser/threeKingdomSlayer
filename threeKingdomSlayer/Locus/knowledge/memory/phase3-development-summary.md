@@ -10,7 +10,7 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1779520344306
-updatedAt: 1780503422924
+updatedAt: 1782308986966
 ---
 
 # phase3-development-summary
@@ -35,7 +35,19 @@ Remove temporary context, one-off tasks, and unsupported guesses
 
 **修复**: Rush 重叠时不再设置重试，直接放弃。该敌人留在当前排位等待前方敌人死亡后由死亡链自然补齐。
 
-### Bug: C技霸体敌人被普攻位移
+### 位移效果架构重构 — 按攻击类型拆分 (2025-08-11)
+
+**状态**: ✅ 已完成
+
+**变更**:
+- 删除 `ApplyDisplacementEffects(AttackType switch 路由)`
+- `ExecuteStab` → `ApplyStabPushWave` → `ColumnManager.ApplyPushWave`
+- `ExecuteSlash` → `ApplySlashDirectionalPush` → `ColumnManager.ApplyDirectionalPush`（新方法，按行分组朝 slash 方向推，不重叠）
+- `ExecutePierce/Sweep/Launch` → 不再触发位移
+- `ApplyConvergenceWave` 重写为按行槽位分配（始终朝 col=2，不越界），删除 `ResolveConvergenceConflicts`
+- `UpgradeEffectManager` 新增 `_directionalPushStep`
+- `DisplacementDebugTool` 新增 DirectionalPush 字段
+- 位移执行顺序：每个攻击类型独立调用位移方法 → 各自 `PostDisplacementFillUp`
 
 **状态**: ✅ 已修复 (2025-08-10)
 

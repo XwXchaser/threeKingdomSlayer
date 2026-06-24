@@ -19,6 +19,7 @@ MonoBehaviour:
   poiseDamage: 0
   rangeRows: 2
   cooldown: 0.2
+  actionDuration: 0.45
   launchDuration: 0.2
   attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
   stabSpawnYOffset: -0.6

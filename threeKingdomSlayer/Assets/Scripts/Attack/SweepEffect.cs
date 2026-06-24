@@ -18,6 +18,8 @@ public class SweepEffect : MonoBehaviour
     private float damage;
     private DamageType damageType;
     private System.Action<Enemy> onHit;
+    private System.Action onAllHit;
+    private bool _onAllHitInvoked;
     private bool canInterruptCFrame;
     private List<TargetEntry> targets = new List<TargetEntry>();
     private int nextIndex;
@@ -37,7 +39,7 @@ public class SweepEffect : MonoBehaviour
         List<Enemy> targets, bool leftToRight, float halfWidth, float fanAngle, float duration,
         System.Action<Enemy> onHit = null, GameObject prefab = null, float? alphaOverride = null,
         Color? damageNumberColor = null, bool canInterruptCFrame = false,
-        Material materialOverride = null)
+        Material materialOverride = null, System.Action onAllHit = null)
     {
         if (targets == null || targets.Count == 0) return;
 
@@ -114,6 +116,7 @@ public class SweepEffect : MonoBehaviour
         effect.leftToRight = leftToRight;
         effect.damageNumberColor = damageNumberColor;
         effect.canInterruptCFrame = canInterruptCFrame;
+        effect.onAllHit = onAllHit;
 
         // 按 X 排序：L→R 升序，R→L 降序
         List<Enemy> sorted = new List<Enemy>(targets);
@@ -176,6 +179,11 @@ public class SweepEffect : MonoBehaviour
 
         effect.seq.OnComplete(() =>
         {
+            if (!effect._onAllHitInvoked)
+            {
+                effect._onAllHitInvoked = true;
+                effect.onAllHit?.Invoke();
+            }
             effect._completed = true;
             effect.seq = null;
             Destroy(effect.gameObject);
@@ -201,6 +209,12 @@ public class SweepEffect : MonoBehaviour
                 HitTarget(targets[nextIndex].enemy);
                 nextIndex++;
             }
+        }
+
+        if (!_onAllHitInvoked && nextIndex >= targets.Count)
+        {
+            _onAllHitInvoked = true;
+            onAllHit?.Invoke();
         }
     }
 
