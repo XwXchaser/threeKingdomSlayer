@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1780824594062
-updatedAt: 1780824594063
+updatedAt: 1782308975501
 ---
 
 # push-back-compaction
@@ -52,13 +52,53 @@ updatedAt: 1780824594063
 
 ---
 
+## 方向推（Directional Push）机制 — Slash 专属
+
+### 规则
+
+- 按行分组，同行敌人朝 slash 方向推移 step 列
+- 推右（L→R）：col+step，推左（R→L）：col-step
+- 同行多敌人自动分散到不同列（沿推方向依次尝试，被占则找下一列）
+- 不越界 [0,4]
+
+### 示例
+
+row=0 敌人 col=[0,1,2]，step=1，推右：col=0→1，col=1→2，col=2→3（分散到不同列）
+
+---
+
+## 聚拢波（Convergence Wave）机制 — 独立效果
+
+### 规则
+
+- 按行分组，从中心 col=2 向外分配槽位 [2, 1, 3, 0, 4]
+- 同行 N 个敌人分配 N 个最靠中心的槽位
+- 离中心最近的敌人分配最近槽位
+- 每个敌人最多移动 step 列（不是一次性到位，需多次触发）
+- 始终朝 col=2 聚拢，绝不越界
+
+### 示例
+
+row=0 敌人 col=[0,1,2,3,4]，step=2，N=5：槽位=[2,1,3,0,4]
+- col=2→2（已在中心）
+- col=1→1（已靠近）
+- col=3→3（已靠近）
+- col=0→0（step=2，到不了槽位 0…已在 col=0，不动）
+- col=4→4（同理）
+
+再次触发 step=2 后 col=0 可抵达 col=2，逐步收敛。
+
+---
+
 ## 执行顺序
 
 ```
-ApplyDisplacementEffects:
-  1. ApplyPushWave    — 击退（各列独立，阻塞则跳过该列）
-  2. ApplyConvergenceWave — 聚拢（使用 originalRows 快照，不受 Push 影响）
-  3. CompactAllColumns — 逐列紧凑（所有位移的最终结果）
+旧：ApplyDisplacementEffects 集中路由（AttackType switch 分发）
+
+新（按攻击类型独立调用）：
+  ExecuteStab  → ApplyStabPushWave → ApplyPushWave + PostDisplacementFillUp
+  ExecuteSlash → ApplySlashDirectionalPush → ApplyDirectionalPush + PostDisplacementFillUp
+  ExecutePierce / Sweep / Launch → 不触发位移效果
 ```
 
 ---

@@ -26,6 +26,7 @@ public class UpgradeEffectManager : MonoBehaviour
     private int _pushWaveDistance;
     private int _convergenceStep;
     private float _convergenceDamagePercent = 0.1f;
+    private int _directionalPushStep;
 
     // ── 已应用升级追踪 (upgradeId → level) ──
     private Dictionary<string, int> _appliedUpgrades = new Dictionary<string, int>();
@@ -164,6 +165,7 @@ public class UpgradeEffectManager : MonoBehaviour
     public int GetPushWaveDistance() => _pushWaveDistance;
     public int GetConvergenceStep() => _convergenceStep;
     public float GetConvergenceDamagePercent() => _convergenceDamagePercent;
+    public int GetDirectionalPushStep() => _directionalPushStep;
 
     #region Debug Setters
 
@@ -173,6 +175,7 @@ public class UpgradeEffectManager : MonoBehaviour
         _convergenceStep = step;
         if (damagePercent > 0f) _convergenceDamagePercent = damagePercent;
     }
+    public void DebugSetDirectionalPush(int step) => _directionalPushStep = step;
 
     #endregion
 
@@ -313,6 +316,7 @@ public class UpgradeEffectManager : MonoBehaviour
         _pushWaveDistance = 0;
         _convergenceStep = 0;
         _convergenceDamagePercent = 0.1f;
+        _directionalPushStep = 0;
 
         // 清空被动攻击模块
         PassiveTriggerModule.Instance?.ResetAll();

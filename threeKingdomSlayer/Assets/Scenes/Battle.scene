@@ -8445,6 +8445,7 @@ MonoBehaviour:
   _returnWavePrefab: {fileID: 1696509926255576402, guid: 8d45dcaf9eddb404882cd74d73471000, type: 3}
   _chainBounceVisualPrefab: {fileID: 5155658655490824707, guid: 35cd492da5108c14d9770fcb69e856e5, type: 3}
   _chainBouncePrefab: {fileID: 6047275720404681381, guid: e5859ea2ae076734dbfd60135c133a81, type: 3}
+  useActionBasedCooldown: 1
 --- !u!114 &1809121298
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8459,7 +8460,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enablePushWave: 1
   pushDistance: 1
-  enableConvergenceWave: 1
+  enableDirectionalPush: 1
+  directionalPushStep: 1
+  enableConvergenceWave: 0
   convergenceStep: 1
   convergenceDamagePercent: 0.1
 --- !u!114 &1809121299

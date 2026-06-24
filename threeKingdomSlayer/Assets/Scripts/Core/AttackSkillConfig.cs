@@ -23,8 +23,10 @@ public class AttackSkillConfig : ScriptableObject
     [Header("范围与冷却")]
     [Tooltip("影响排数")]
     public int rangeRows = 1;
-    [Tooltip("冷却时间（秒）")]
+    [Tooltip("冷却时间（秒）— 旧模式：独立技能CD")]
     public float cooldown = 0.5f;
+    [Tooltip("攻击动作时长（秒）— 新模式：动作锁定。攻速会缩放此值。应与该攻击的动画/特效总时长匹配，让玩家感知到'因为还在挥刀所以不能做其他动作'")]
+    public float actionDuration = 0.3f;
 
     [Header("挑飞特殊参数")]
     [Tooltip("挑飞持续时间（秒），仅 Launch 有效")]
