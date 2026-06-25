@@ -39,7 +39,7 @@ public class SweepEffect : MonoBehaviour
         List<Enemy> targets, bool leftToRight, float halfWidth, float fanAngle, float duration,
         System.Action<Enemy> onHit = null, GameObject prefab = null, float? alphaOverride = null,
         Color? damageNumberColor = null, bool canInterruptCFrame = false,
-        Material materialOverride = null, System.Action onAllHit = null)
+        Material materialOverride = null, System.Action onAllHit = null, float targetDuration = -1f)
     {
         if (targets == null || targets.Count == 0) return;
 
@@ -131,7 +131,7 @@ public class SweepEffect : MonoBehaviour
         // 缩放淡入
         Vector3 targetScale = obj.transform.localScale;
         obj.transform.localScale = Vector3.zero;
-        obj.transform.DOScale(targetScale, 0.05f).SetEase(Ease.OutQuad);
+        var scaleIn = obj.transform.DOScale(targetScale, 0.05f).SetEase(Ease.OutQuad);
 
         // 主序列：X 移动 + Z 旋转
         effect.seq = DOTween.Sequence();
@@ -173,6 +173,7 @@ public class SweepEffect : MonoBehaviour
             {
                 Debug.Log($"[SweepEffect] OnKill (premature): id={effect._instanceId}, name={effect.gameObject.name}, damageType={effect.damageType}, frame={Time.frameCount}");
                 effect.seq = null;
+                scaleIn.Kill();
                 Destroy(effect.gameObject);
             }
         });
@@ -186,8 +187,17 @@ public class SweepEffect : MonoBehaviour
             }
             effect._completed = true;
             effect.seq = null;
+            scaleIn.Kill();
             Destroy(effect.gameObject);
         });
+
+        // 特效时长拉伸/压缩以匹配cooldown（限制最大缩放防极端值）
+        if (targetDuration > 0f)
+        {
+            float naturalDuration = effect.seq.Duration();
+            if (naturalDuration > 0f)
+                effect.seq.timeScale = Mathf.Clamp(naturalDuration / targetDuration, 0.1f, 10f);
+        }
     }
 
     private void CheckHitThresholds()

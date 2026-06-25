@@ -689,6 +689,20 @@ public class Enemy : MonoBehaviour
             moveProgress = 0f;
             UpdateWorldPosition();
         }
+        // 眩晕时清理攻击状态，Kill 攻击动画避免 OnComplete 覆盖 Stun 状态
+        else if (state == EnemyState.Attacking)
+        {
+            if (_attackTween != null && _attackTween.IsActive())
+            {
+                _attackTween.Kill();
+                _attackTween = null;
+            }
+            transform.DOKill(false);
+            transform.localScale = originalScale;
+            isAttackAnimating = false;
+            isAttackDrawPhase = false;
+            UpdateWorldPosition();
+        }
 
         // 清除霸体状态，描边随之更新
         isSuperArmor = false;
@@ -699,6 +713,9 @@ public class Enemy : MonoBehaviour
         stunTimer = duration;
         _appliedStunDuration = duration;
         _poiseRecoveryEndTime = Time.time + duration;
+
+        // 受击闪白：0.3秒 hitted sprite，然后自然回到 idle（Stun 视觉）
+        GetComponent<EnemySpriteController>()?.TriggerHitFlash();
 
         // BOSS: 播放眩晕动画
         if (isBoss)
@@ -767,14 +784,17 @@ public class Enemy : MonoBehaviour
 
     /// <summary>
     /// 检查敌人当前是否可被击飞（挑飞）
-    /// 基础条件：处于 Stunned 状态
+    /// Boss：必须 poise 归零进入 Stun 后才能被 Launch
+    /// 普通敌人：currentPoise < poiseDamage 即可击飞，无需 Stun 前置
     /// ForceLaunch Buff：始终可击飞
     /// </summary>
-    public bool CanBeLaunched()
+    public bool CanBeLaunched(float poiseDamage = 0f)
     {
         if (PlayerState.Instance != null && PlayerState.Instance.HasBuff(BuffType.ForceLaunch))
             return true;
-        return state == EnemyState.Stunned;
+        if (isBoss)
+            return state == EnemyState.Stunned;
+        return currentPoise <= poiseDamage;
     }
 
     /// <summary>
@@ -987,7 +1007,11 @@ public class Enemy : MonoBehaviour
             {
                 float remaining = _remainingStunOnLaunch;
                 _remainingStunOnLaunch = 0f;
+                // 保存原始 _appliedStunDuration，Stun() 会将其覆盖为 remaining
+                // 导致 stunRecoveryProgress 分母畸变，进度条从中间跳回 0%
+                float savedAppliedDuration = _appliedStunDuration;
                 Stun(remaining);
+                _appliedStunDuration = savedAppliedDuration;
                 return;
             }
 
@@ -1424,21 +1448,29 @@ public class Enemy : MonoBehaviour
 
             if (isBoss)
             {
-                // BOSS: 回到 Idle，由调度器选择下一个行动
-                state = EnemyState.Idle;
-                SetBossActionCooldown();
+                // 若已被 Stun/Launch 打断，不覆盖状态
+                if (state != EnemyState.Stunned && state != EnemyState.Launched)
+                {
+                    state = EnemyState.Idle;
+                    SetBossActionCooldown();
+                }
             }
             else
             {
-                float cooldown = totalInterval * 0.4f + extraCooldown;
-                if (cooldown < 0.1f) cooldown = 0.1f;
-                attackTimer = cooldown;
+                if (state != EnemyState.Stunned && state != EnemyState.Launched)
+                {
+                    float cooldown = totalInterval * 0.4f + extraCooldown;
+                    if (cooldown < 0.1f) cooldown = 0.1f;
+                    attackTimer = cooldown;
+                }
             }
 
-            // 攻击结束，Animator 直接回到 Idle（不用 SetTrigger）
-            _animator?.Play("Idle", 0, 0f);
-
-            TryStartRushMove();
+            // 未被 Stun/Launch 打断时，Animator 回到 Idle
+            if (state != EnemyState.Stunned && state != EnemyState.Launched)
+            {
+                _animator?.Play("Idle", 0, 0f);
+                TryStartRushMove();
+            }
         });
     }
 
@@ -1454,7 +1486,6 @@ public class Enemy : MonoBehaviour
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
         if (isPhaseTransitioning) return; // 转阶段无敌
-        if (state == EnemyState.QTEAttacking) return; // QTE期间无敌，不可受击
 
         // 锁血检查
         if (_healthLocked) return;
@@ -1708,8 +1739,9 @@ public class Enemy : MonoBehaviour
     {
         if (state == EnemyState.Dead) return false;
         if (state == EnemyState.Stunned) return false;
-        // 仅 Attacking 态可被 Parry 削韧
+        // 仅 Attacking 态可被 Parry 削韧（AttackDraw 准备阶段不可削韧）
         if (state != EnemyState.Attacking) return false;
+        if (isAttackDrawPhase) return false;
         if (isBoss && bossState != BossState.InCombat) return false;
 
         currentPoise -= poiseDamage;

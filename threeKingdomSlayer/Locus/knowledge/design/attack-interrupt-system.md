@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779896984696
-updatedAt: 1781161442642
+updatedAt: 1782380276250
 ---
 
 # attack-interrupt-system
@@ -96,7 +96,9 @@ Boss 的攻击打断规则与非Boss不同，核心原则：**Parry始终可打�
 
 ### 3.5 Level 3 — QTE攻击（BOSS专属）
 - `state == EnemyState.QTEAttacking`
-- `TakeDamage()` 首行直接 return，完全跳过伤害和打断
+- `TakeDamage()` 可正常造成 HP 伤害，但不会触发打断（不播 HitFlash 动画，保留闪白+Scale 效果）
+- 玩家在 QTE期间可正常发动攻击，但攻击动作未结束时无法与 QTE 指示器交互（`IsActionPlaying` 守卫）
+- QTE提前输入不再判定失败，未命中指示器的手势穿透为普通攻击
 - 由 `QTEController` 驱动，独立于普通攻击状态机
 
 ## 4. 霸体（Super Armor）设计

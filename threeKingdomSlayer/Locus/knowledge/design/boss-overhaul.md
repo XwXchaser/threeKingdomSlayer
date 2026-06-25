@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1781067207076
-updatedAt: 1781711544862
+updatedAt: 1782380329459
 ---
 
 # boss-overhaul
@@ -135,3 +135,17 @@ SuperArmor（阶段级霸体）受击时：
 
 ### 各阶段独立QTE数据
 架构已支持（BossPhaseData.qteData），待为各阶段创建独立QTE配置资产。
+
+---
+
+## 近期变更
+
+| 日期 | 内容 |
+|------|------|
+| 2025-07 | Phase 5: Poise伤害规则重构 + 弹刀移除 |
+| 2025-07 | QTE攻击期间BOSS不再无敌，可正常造成HP伤害 |
+| 2025-07 | QTE提前输入不再判定失败，未命中穿透为普通攻击 |
+| 2025-07 | 攻击动作未结束时禁止QTE交互（IsActionPlaying守卫） |
+| 2025-07 | BOSS免疫位移规则强化：PushWave跳过BOSS时不触发PostDisplacementFillUp |
+| 2025-07 | Column.CompactByClearRows增加QTEAttacking状态守卫，防止压缩重置状态 |
+| 2025-07 | 击飞落地恢复Stun时保留_appliedStunDuration，修复poise进度条跳变 |
