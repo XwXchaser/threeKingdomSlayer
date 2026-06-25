@@ -21,12 +21,17 @@ MonoBehaviour:
   cooldown: 0.5
   actionDuration: 0.2
   launchDuration: 0
-  attackWavePrefab: {fileID: 0}
+  attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
   stabSpawnYOffset: 1.5
   stabSpawnZOffset: 0.5
-  slashSweepHalfWidth: 5
-  slashSweepAngle: 50
+  slashSweepHalfWidth: 3
+  slashSweepAngle: 45
   slashSweepDuration: 0.25
   slashSpawnYOffset: 1.5
   slashSpawnZOffset: 0.5
+  parrySweepAngle: 100
+  parrySweepDuration: 0.25
+  parrySpawnYOffset: 1.5
+  parrySpawnZOffset: 0
+  parryAngleVariance: 15
   ultimateEnergyGain: 5

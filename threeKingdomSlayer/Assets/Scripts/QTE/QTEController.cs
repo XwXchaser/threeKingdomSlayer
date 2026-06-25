@@ -327,6 +327,7 @@ public class QTEController : MonoBehaviour
             var projectile = arrowObj.GetComponent<EnemyProjectile>();
             if (projectile != null)
             {
+                projectile.isQTEProjectile = true;
                 if (stagger > 0.001f)
                 {
                     float d = dmgPerArrow;
