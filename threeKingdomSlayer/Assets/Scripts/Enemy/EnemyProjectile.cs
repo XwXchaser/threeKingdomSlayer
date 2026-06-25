@@ -12,6 +12,9 @@ public class EnemyProjectile : MonoBehaviour
     public float arcHeight = 3f;
     public float flyDuration = 1f;
 
+    [Tooltip("QTE 飞行物标记：设为 true 则不会被常规 Parry 反弹")]
+    public bool isQTEProjectile;
+
     private Vector3 _startPos;
     private Vector3 _endPos;
     private Sequence _flyTween;

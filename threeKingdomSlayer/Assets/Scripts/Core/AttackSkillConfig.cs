@@ -54,6 +54,23 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("生成位置 Z 偏移（相对敌人中心）")]
     public float slashSpawnZOffset = 0.5f;
 
+    [Header("招架扫掠")]
+    [Tooltip("Z 轴旋转幅度（度，默认 100）。枪尾从起始角扫到起始角+此值")]
+    [Range(30f, 180f)]
+    public float parrySweepAngle = 100f;
+    [Tooltip("扫掠持续时长（秒，默认 0.25）")]
+    [Range(0.1f, 0.5f)]
+    public float parrySweepDuration = 0.25f;
+    [Tooltip("生成位置 X 偏移（相对玩家位置）")]
+    public float parrySpawnXOffset = 0f;
+    [Tooltip("生成位置 Y 偏移（相对玩家位置）")]
+    public float parrySpawnYOffset = 1.5f;
+    [Tooltip("生成位置 Z 偏移（相对玩家位置）")]
+    public float parrySpawnZOffset = 0f;
+    [Tooltip("每次招架 Z 起始角随机偏移范围（度，默认 15）")]
+    [Range(0f, 30f)]
+    public float parryAngleVariance = 15f;
+
     [Header("大招")]
     [Tooltip("命中时获得能量（非大招技能有效）")]
     public int ultimateEnergyGain = 10;

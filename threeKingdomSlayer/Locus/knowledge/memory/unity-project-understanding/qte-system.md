@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779287256500
-updatedAt: 1782380329483
+updatedAt: 1782392213066
 ---
 
 # qte-system
@@ -48,4 +48,9 @@ QTE 系统由 `QTEController`（挂载在 Boss prefab 上）、`QTEDisplay`（�
 ## Known Fix: Parry/Swipe 无法命中 BOSS (2024)
 - **根因**: `ColumnManager.GetEnemiesInRange(rangeRows)` 仅按 rowIndex < rangeRows 过滤，BOSS 位于后排时被排除
 - **修复**: 新增条件 `|| (e.isBoss && e.bossState == BossState.InCombat)` 始终包含已应战的 BOSS
+
+## QTE 飞行物保护 (2025)
+- `EnemyProjectile.isQTEProjectile`: QTE 箭矢标记，由 `QTEController` 在 `SpawnArrowWave()` 创建时设为 `true`
+- `AttackSystem.ExecuteParry()`: 遍历 `FindObjectsOfType<EnemyProjectile>()` 时跳过 `isQTEProjectile` 为 true 的飞行物
+- QTE 箭矢走独立的 `QTEController.DeflectArrowWave()` 反弹通道，不经过常规 Parry
 <!-- locus:body:end -->

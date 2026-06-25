@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 /// <summary>
 /// 攻击系统
@@ -286,7 +287,7 @@ public class AttackSystem : MonoBehaviour
         bool deflectedAny = false;
         foreach (var p in projectiles)
         {
-            if (p == null) continue;
+            if (p == null || p.isQTEProjectile) continue;
             float dist = Vector3.Distance(p.GetWorldPosition(), playerPos);
             if (dist <= parryProjectileRange)
             {
@@ -298,6 +299,7 @@ public class AttackSystem : MonoBehaviour
         if (deflectedAny)
         {
             AudioManager.Instance?.PostEvent("Player_Parry");
+            PlayParryVisual(cfg, playerPos);
             return true;
         }
 
@@ -317,7 +319,89 @@ public class AttackSystem : MonoBehaviour
 
         Debug.Log($"[AttackSystem] 招架 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 目标数:{targets.Count}");
         AudioManager.Instance?.PostEvent("Player_Parry");
+
+        PlayParryVisual(cfg, playerPos);
+
         return true;
+    }
+
+    /// <summary>
+    /// 招架视觉特效：Stab prefab 以 (54,270,zStart) 朝向做纯 Z 轴旋转至 (54,270,zEnd)，
+    /// 表现枪尾从下往上挑的格挡动作。zStart 每次有随机偏差。
+    /// 生成位置以玩家为基准 + Inspector 偏移参数，而非跟随敌人。
+    /// </summary>
+    private void PlayParryVisual(AttackSkillConfig cfg, Vector3 playerPos)
+    {
+        Vector3 spawnPos = new Vector3(playerPos.x + cfg.parrySpawnXOffset, playerPos.y + cfg.parrySpawnYOffset, playerPos.z + cfg.parrySpawnZOffset);
+
+        // Z 起始角 45° ± 随机偏移，终点 = 起点 + sweepAngle
+        float variance = Mathf.Clamp(cfg.parryAngleVariance, 0f, 30f);
+        float zStart = 45f + Random.Range(-variance, variance);
+        float zEnd = zStart + cfg.parrySweepAngle;
+        float duration = Mathf.Max(cfg.parrySweepDuration, 0.1f);
+
+        Vector3 startEuler = new Vector3(54f, 270f, zStart);
+        Vector3 endEuler = new Vector3(54f, 270f, zEnd);
+
+        // 实例化 prefab 或 Quad fallback
+        GameObject obj;
+        Material mat;
+        Color parryColor = new Color(0.9f, 0.9f, 0.9f, 0.85f);
+
+        if (cfg.attackWavePrefab != null)
+        {
+            obj = Instantiate(cfg.attackWavePrefab, spawnPos, Quaternion.Euler(startEuler));
+            obj.name = "Parry_Visual";
+            Renderer r = obj.GetComponentInChildren<Renderer>();
+            if (r != null) { mat = r.material; mat.color = parryColor; }
+            else { mat = null; }
+        }
+        else
+        {
+            obj = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            obj.name = "Parry_Visual";
+            obj.transform.position = spawnPos;
+            obj.transform.rotation = Quaternion.Euler(startEuler);
+            obj.transform.localScale = Vector3.zero;
+            mat = new Material(Shader.Find("Sprites/Default"));
+            mat.color = parryColor;
+            obj.GetComponent<Renderer>().material = mat;
+        }
+
+        Vector3 targetScale = obj.transform.localScale == Vector3.zero
+            ? new Vector3(5f, 1.5f, 1f)
+            : obj.transform.localScale;
+
+        // DOTween 序列：scale-in → 纯 Z 轴旋转（枪尾上挑）→ 淡出销毁
+        var scaleIn = obj.transform.DOScale(targetScale, 0.05f).SetEase(Ease.OutQuad);
+
+        var seq = DOTween.Sequence();
+        seq.SetTarget(obj.transform);
+        seq.SetUpdate(true);
+
+        var rotate = obj.transform.DORotate(endEuler, duration, RotateMode.Fast).SetEase(Ease.InOutQuad);
+        seq.Append(rotate);
+
+        seq.AppendInterval(0.03f);
+        if (mat != null)
+            seq.Append(mat.DOFade(0f, 0.15f).SetEase(Ease.InQuad));
+
+        bool completed = false;
+        seq.OnKill(() =>
+        {
+            if (!completed)
+            {
+                scaleIn.Kill();
+                Destroy(obj);
+            }
+        });
+
+        seq.OnComplete(() =>
+        {
+            completed = true;
+            scaleIn.Kill();
+            Destroy(obj);
+        });
     }
 
     #endregion
