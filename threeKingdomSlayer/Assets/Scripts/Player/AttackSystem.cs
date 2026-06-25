@@ -38,6 +38,11 @@ public class AttackSystem : MonoBehaviour
     public bool useActionBasedCooldown = false;
     private float _actionLockTimer;
 
+    /// <summary>
+    /// 当前是否处于攻击动作播放中（动作锁定计时器未结束）
+    /// </summary>
+    public bool IsActionPlaying => _actionLockTimer > 0f;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -106,16 +111,13 @@ public class AttackSystem : MonoBehaviour
 
         if (hitAny)
         {
-            // 触发冷却：新模式 → 动作锁定（受攻速缩放）；旧模式 → 独立技能CD
+            // 触发冷却：新模式 → 动作锁定（cooldown为唯一权威值，受攻速缩放）；旧模式 → 独立技能CD
             if (useActionBasedCooldown)
             {
                 var cfg = GetConfig(attackType);
-                float baseDuration = cfg != null && cfg.actionDuration > 0f ? cfg.actionDuration : (cfg != null ? cfg.cooldown : 0.3f);
-                // 确保动作锁至少覆盖视觉特效的完整时长，避免 prefab 未消失即可发起下一次攻击
-                float visualMin = GetVisualEffectMinDuration(attackType, cfg);
-                baseDuration = Mathf.Max(baseDuration, visualMin);
+                float cooldown = cfg != null ? cfg.cooldown : 0.3f;
                 float speedMult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetAttackSpeedMultiplier() : 1f;
-                _actionLockTimer = baseDuration / Mathf.Max(speedMult, 0.01f);
+                _actionLockTimer = cooldown / Mathf.Max(speedMult, 0.01f);
             }
             else
             {
@@ -151,14 +153,15 @@ public class AttackSystem : MonoBehaviour
         float finalDmg = GetFinalDamage(cfg) * GetStabPierceDamagePenalty();
         int effectiveRows = GetEffectiveRangeRows(cfg);
         List<Enemy> targets = columnManager.GetEnemiesInRange(columnIndex, effectiveRows);
-        // Stab 严格按 rangeRows 过滤，且只命中应战 Boss（排除未应战 Boss 导致 wave 位置错误）
-        targets = targets.FindAll(e => e.rowIndex < effectiveRows && (!e.isBoss || e.bossState == BossState.InCombat));
+        // Stab 只命中应战 Boss（排除未应战 Boss 导致 wave 位置错误）
+        targets = targets.FindAll(e => !e.isBoss || e.bossState == BossState.InCombat);
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, columnIndex);
             wavePos.y = targets[0].transform.position.y + cfg.stabSpawnYOffset;
             AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
-                prefab: cfg.attackWavePrefab, zOffset: cfg.stabSpawnZOffset);
+                prefab: cfg.attackWavePrefab, zOffset: cfg.stabSpawnZOffset,
+                targetDuration: GetVisualTargetDuration(cfg));
             AudioManager.Instance?.PostEvent("Player_Attack");
         }
 
@@ -184,7 +187,8 @@ public class AttackSystem : MonoBehaviour
             SweepEffect.Create(wavePos, cfg.damageType, finalDmg, targets, leftToRight,
                 cfg.slashSweepHalfWidth, cfg.slashSweepAngle, cfg.slashSweepDuration,
                 prefab: cfg.attackWavePrefab,
-                onAllHit: hasTargets ? () => ApplySlashDirectionalPush(targets, leftToRight) : null);
+                onAllHit: hasTargets ? () => ApplySlashDirectionalPush(targets, leftToRight) : null,
+                targetDuration: GetVisualTargetDuration(cfg));
             AudioManager.Instance?.PostEvent("Player_Attack");
         }
 
@@ -203,7 +207,8 @@ public class AttackSystem : MonoBehaviour
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, columnIndex);
-            AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab);
+            AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab,
+                targetDuration: GetVisualTargetDuration(cfg));
         }
 
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -221,7 +226,8 @@ public class AttackSystem : MonoBehaviour
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, -1);
-            AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab);
+            AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab,
+                targetDuration: GetVisualTargetDuration(cfg));
         }
 
         Debug.Log($"[AttackSystem] 横扫 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -245,7 +251,7 @@ public class AttackSystem : MonoBehaviour
             AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
                 onHit: (enemy) =>
                 {
-                    bool canLaunch = enemy.CanBeLaunched();
+                    bool canLaunch = enemy.CanBeLaunched(cfg.poiseDamage);
                     // 概率击飞：非 CanBeLaunched 时按概率强制进入 Stun 后再 Launch
                     if (!canLaunch && probLaunchActive)
                     {
@@ -261,7 +267,8 @@ public class AttackSystem : MonoBehaviour
                         enemy.Launch();
                 },
                 prefab: cfg.attackWavePrefab,
-                canInterruptCFrame: true);
+                canInterruptCFrame: true,
+                targetDuration: GetVisualTargetDuration(cfg));
         }
 
         Debug.Log($"[AttackSystem] 挑飞 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 击飞时间:{cfg.launchDuration}s 目标数:{targets.Count}");
@@ -372,6 +379,11 @@ public class AttackSystem : MonoBehaviour
     }
 
     /// <summary>Stab 击退波</summary>
+    /// <remarks>
+    /// BOSS 免疫位移（ApplyPushWave 内部过滤 isBoss），因此仅在有敌人被实际推动时才执行列填充。
+    /// 无条件调用 PostDisplacementFillUp 会导致 BOSS 被意外压缩（ResetMovementState → Idle），
+    /// 若此时 BOSS 处于 QTEAttacking 状态将中止 QTE。
+    /// </remarks>
     private void ApplyStabPushWave(List<Enemy> targets)
     {
         if (UpgradeEffectManager.Instance == null || columnManager == null) return;
@@ -381,14 +393,20 @@ public class AttackSystem : MonoBehaviour
         Debug.Log($"[Displacement] Stab PushWave dist={pushDist} targets={targets.Count}");
         Debug.Log(columnManager.DumpColumns());
 
-        columnManager.ApplyPushWave(targets, pushDist, canInterruptCFrame: false);
-        columnManager.PostDisplacementFillUp();
+        bool anyPushed = columnManager.ApplyPushWave(targets, pushDist, canInterruptCFrame: false);
+        // 仅在实际有敌人被推动时才执行列填充（BOSS 免疫位移，无推动则无需填充）
+        if (anyPushed)
+            columnManager.PostDisplacementFillUp();
 
         Debug.Log($"[Displacement] after Stab PushWave:");
         Debug.Log(columnManager.DumpColumns());
     }
 
     /// <summary>Slash 方向推</summary>
+    /// <remarks>
+    /// BOSS 免疫位移（ApplyDirectionalPush 内部过滤 isBoss），仅在有敌人被实际推动时才执行列填充。
+    /// 同 ApplyStabPushWave 的 BOSS 保护逻辑。
+    /// </remarks>
     private void ApplySlashDirectionalPush(List<Enemy> targets, bool leftToRight)
     {
         if (UpgradeEffectManager.Instance == null || columnManager == null) return;
@@ -398,8 +416,10 @@ public class AttackSystem : MonoBehaviour
         Debug.Log($"[Displacement] Slash DirectionalPush step={step} dir={(leftToRight ? "L→R" : "R→L")} targets={targets.Count}");
         Debug.Log(columnManager.DumpColumns());
 
-        columnManager.ApplyDirectionalPush(targets, step, leftToRight, canInterruptCFrame: false);
-        columnManager.PostDisplacementFillUp();
+        bool anyMoved = columnManager.ApplyDirectionalPush(targets, step, leftToRight, canInterruptCFrame: false);
+        // 仅在实际有敌人被推动时才执行列填充（BOSS 免疫位移）
+        if (anyMoved)
+            columnManager.PostDisplacementFillUp();
 
         Debug.Log($"[Displacement] after Slash DirectionalPush:");
         Debug.Log(columnManager.DumpColumns());
@@ -434,7 +454,7 @@ public class AttackSystem : MonoBehaviour
                 if (targetColumn < 0) return false;
                 int effectiveRows = GetEffectiveRangeRows(cfg);
                 var targets = columnManager.GetEnemiesInRange(targetColumn, effectiveRows);
-                targets = targets.FindAll(e => e.rowIndex < effectiveRows && (!e.isBoss || e.bossState == BossState.InCombat));
+                targets = targets.FindAll(e => !e.isBoss || e.bossState == BossState.InCombat);
                 finalDmg *= GetStabPierceDamagePenalty();
                 if (targets.Count > 0)
                 {
@@ -502,7 +522,7 @@ public class AttackSystem : MonoBehaviour
                     AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
                         onHit: (enemy) =>
                         {
-                            bool canLaunch = enemy.CanBeLaunched();
+                            bool canLaunch = enemy.CanBeLaunched(cfg.poiseDamage);
                             if (!canLaunch && probLaunchActive && Random.value < 0.3f)
                             {
                                 enemy.Stun(cfg.launchDuration * 0.5f);
@@ -545,7 +565,7 @@ public class AttackSystem : MonoBehaviour
             var colTargets = columnManager.GetEnemiesInRange(col, rangeRows);
             foreach (var e in colTargets)
             {
-                if (e.rowIndex < rangeRows && (!e.isBoss || e.bossState == BossState.InCombat))
+                if (!e.isBoss || e.bossState == BossState.InCombat)
                     targets.Add(e);
             }
         }
@@ -582,7 +602,7 @@ public class AttackSystem : MonoBehaviour
 
         int effectiveRows = GetEffectiveRangeRows(cfg);
         var initialTargets = columnManager.GetEnemiesInRange(targetColumn, effectiveRows);
-        initialTargets = initialTargets.FindAll(e => e.rowIndex < effectiveRows && (!e.isBoss || e.bossState == BossState.InCombat));
+        initialTargets = initialTargets.FindAll(e => !e.isBoss || e.bossState == BossState.InCombat);
         if (initialTargets.Count == 0) return false;
 
         float baseDamage = GetFinalDamage(cfg) * GetStabPierceDamagePenalty();
@@ -701,7 +721,7 @@ public class AttackSystem : MonoBehaviour
 
         int effectiveRows = GetEffectiveRangeRows(cfg);
         List<Enemy> targets = columnManager.GetEnemiesInRange(columnIndex, effectiveRows);
-        targets = targets.FindAll(e => e.rowIndex < effectiveRows && (!e.isBoss || e.bossState == BossState.InCombat));
+        targets = targets.FindAll(e => !e.isBoss || e.bossState == BossState.InCombat);
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, columnIndex);
@@ -784,25 +804,14 @@ public class AttackSystem : MonoBehaviour
     }
 
     /// <summary>
-    /// 返回各攻击类型视觉特效的最短持续时长（秒）。
-    /// 用于动作锁定模式确保 prefab 播放完毕前不会发起下一次攻击。
+    /// 获取特效目标时长（秒）。action-based模式下=cooldown/攻速，旧模式返回-1（自然时长）。
+    /// 特效通过timeScale拉伸/压缩匹配此时长，确保视觉与锁定同步结束。
     /// </summary>
-    private float GetVisualEffectMinDuration(AttackType attackType, AttackSkillConfig cfg)
+    private float GetVisualTargetDuration(AttackSkillConfig cfg)
     {
-        return attackType switch
-        {
-            // Slash/Sweep: SweepEffect sweep + interval + fade
-            AttackType.Slash => (cfg != null ? cfg.slashSweepDuration : 0.25f) + 0.28f,
-            AttackType.Sweep => (cfg != null ? cfg.slashSweepDuration : 0.25f) + 0.28f,
-            // Stab: AttackWave thrust(0.2s) + retract(0.3s)
-            AttackType.Stab => 0.5f,
-            // Pierce: AttackWave travel + interval + fade（取典型值）
-            AttackType.Pierce => 0.6f,
-            // Launch: AttackWave Fixed mode（maxDelay + 0.3s，取典型值）
-            AttackType.Launch => 0.5f,
-            // Parry: 无视觉特效
-            _ => 0f
-        };
+        if (!useActionBasedCooldown || cfg == null) return -1f;
+        float speedMult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetAttackSpeedMultiplier() : 1f;
+        return cfg.cooldown / Mathf.Max(speedMult, 0.01f);
     }
 
     #endregion

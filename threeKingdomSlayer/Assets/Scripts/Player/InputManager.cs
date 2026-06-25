@@ -329,9 +329,15 @@ public class InputManager : MonoBehaviour
 
         bool isSwiped = swipeDistance >= swipeThreshold;
 
-        // QTE 优先级检测：QTE 窗口内优先匹配 QTE（窗口短暂且后果重大）
-        if (TryConsumeQTEInput(releasePos, isSwiped, swipeDistance, pressDuration))
-            return;
+        // QTE活跃时：动作冷却中丢弃手势；空闲时QTE优先，无匹配则攻击
+        bool qteActive = IsAnyQTEActive();
+        if (qteActive)
+        {
+            if (attackSystem != null && attackSystem.IsActionPlaying)
+                return;
+            if (TryConsumeQTEInput(releasePos, isSwiped, swipeDistance, pressDuration))
+                return;
+        }
 
 
         if (pressDuration >= minChargeTime)
@@ -581,8 +587,7 @@ public class InputManager : MonoBehaviour
             }
         }
 
-        // QTE 活跃时消费所有输入，防止落到普通攻击
-        return true;
+        return false;
     }
 
     #endregion

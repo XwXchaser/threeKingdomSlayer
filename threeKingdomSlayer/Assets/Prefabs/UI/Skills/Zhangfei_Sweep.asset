@@ -18,7 +18,7 @@ MonoBehaviour:
   damage: 5
   poiseDamage: 0
   rangeRows: 5
-  cooldown: 5
+  cooldown: 1
   actionDuration: 0.55
   launchDuration: 0.2
   attackWavePrefab: {fileID: 5586448634090008248, guid: 3e7c2ba9889d0d8498227914332b7adc, type: 3}

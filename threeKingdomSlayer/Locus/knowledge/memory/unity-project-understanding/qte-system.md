@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779287256500
-updatedAt: 1779287256502
+updatedAt: 1782380329483
 ---
 
 # qte-system
@@ -29,6 +29,17 @@ QTE 系统由 `QTEController`（挂载在 Boss prefab 上）、`QTEDisplay`（�
 - Canvas 是 `ScreenSpaceCamera` 模式，render camera 必须正确设置
 - `RectTransformUtility.RectangleContainsScreenPoint` 和 `GetWorldCorners` 需要传入 camera 参数才能在 ScreenSpaceCamera 模式下正确工作
 - QTE 指示器 prefab 位于 `Assets/Prefabs/QTE/`，config 位于 `Assets/ScriptableObjects/QTE/`
+
+## QTE 输入交互规则 (2025-07)
+- QTE期间BOSS可受伤害（不再无敌），HitFlash动画不播但闪白+Scale效果保留
+- QTE提前输入不再判定为失败 → 未命中指示器的手势穿透为普通攻击
+- 攻击动作冷却期间禁止QTE交互（`AttackSystem.IsActionPlaying` 守卫）
+- `TryConsumeQTEInput` 兜底返回 `false`（未命中时不消费输入，允许穿透）
+
+## BOSS 免疫位移规则 (2025-07)
+- BOSS始终免疫PushWave/DirectionalPush位移（`ApplyPushWave`/`ApplyDirectionalPush` 内部过滤 `isBoss`）
+- PushWave调用处仅在有敌人被实际推动时才执行 `PostDisplacementFillUp`，防止无条件填充触发BOSS状态重置
+- `Column.CompactByClearRows` 守卫列表包含 `QTEAttacking`，防止压缩时 `ResetMovementState` 中止QTE
 
 ## Known Fix: QTE 无法交互 (2024)
 - **根因**: Canvas 为 ScreenSpaceCamera 模式，`IsClickInQTEArea` 调用 `RectTransformUtility.RectangleContainsScreenPoint(rt, screenPos)` 未传 camera，始终返回 false

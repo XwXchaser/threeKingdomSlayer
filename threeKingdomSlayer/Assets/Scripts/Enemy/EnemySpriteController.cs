@@ -124,9 +124,10 @@ public class EnemySpriteController : MonoBehaviour
     /// </summary>
     public void TriggerHitFlash()
     {
-        // Idle / Moving 总是允许；Attacking 仅在冷却阶段（非动画中）允许
+        // Idle / Moving / Stunned 总是允许；Attacking 仅在冷却阶段（非动画中）允许
         bool canHitFlash = enemy.state == EnemyState.Idle
                         || enemy.state == EnemyState.Moving
+                        || enemy.state == EnemyState.Stunned
                         || (enemy.state == EnemyState.Attacking && !enemy.isAttackAnimating);
 
         if (canHitFlash)

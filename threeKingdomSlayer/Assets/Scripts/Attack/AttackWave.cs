@@ -35,6 +35,7 @@ public class AttackWave : MonoBehaviour
     private float _creationTime;
     private int _instanceId;
     private bool _travelCompleted;
+    private float _targetDuration = -1f;
     public static int AliveCount { get; private set; }
     public float CreationTime => _creationTime;
     public DamageType DamageType => damageType;
@@ -53,11 +54,11 @@ public class AttackWave : MonoBehaviour
     public static AttackWave Create(Vector3 position, DamageType damageType, float damage,
         List<Enemy> targets, System.Action<Enemy> onHit = null, GameObject prefab = null, float zOffset = 0f,
         float? alphaOverride = null, Color? damageNumberColor = null, bool canInterruptCFrame = false,
-        Material materialOverride = null)
+        Material materialOverride = null, float targetDuration = -1f)
     {
         return CreateInternal(position, damageType, damage, targets, onHit, prefab, zOffset,
             alphaOverride, damageNumberColor, canInterruptCFrame, materialOverride,
-            shouldReturnWave: false, returnDamageMultiplier: 0.5f);
+            shouldReturnWave: false, returnDamageMultiplier: 0.5f, targetDuration: targetDuration);
     }
 
     /// <summary>
@@ -67,19 +68,19 @@ public class AttackWave : MonoBehaviour
         List<Enemy> targets, float returnDamageMultiplier,
         System.Action<Enemy> onHit = null, GameObject prefab = null, float zOffset = 0f,
         float? alphaOverride = null, Color? damageNumberColor = null, bool canInterruptCFrame = false,
-        Material materialOverride = null, Color? colorOverride = null)
+        Material materialOverride = null, Color? colorOverride = null, float targetDuration = -1f)
     {
         return CreateInternal(position, damageType, damage, targets, onHit, prefab, zOffset,
             alphaOverride, damageNumberColor, canInterruptCFrame, materialOverride,
             shouldReturnWave: true, returnDamageMultiplier: returnDamageMultiplier,
-            colorOverride: colorOverride);
+            colorOverride: colorOverride, targetDuration: targetDuration);
     }
 
     private static AttackWave CreateInternal(Vector3 position, DamageType damageType, float damage,
         List<Enemy> targets, System.Action<Enemy> onHit, GameObject prefab, float zOffset,
         float? alphaOverride, Color? damageNumberColor, bool canInterruptCFrame,
         Material materialOverride, bool shouldReturnWave, float returnDamageMultiplier,
-        Color? colorOverride = null)
+        Color? colorOverride = null, float targetDuration = -1f)
     {
         GameObject obj;
         Material material = null;
@@ -161,6 +162,7 @@ public class AttackWave : MonoBehaviour
         wave.canInterruptCFrame = canInterruptCFrame;
         wave._shouldReturnWave = shouldReturnWave;
         wave._returnDamageMultiplier = returnDamageMultiplier;
+        wave._targetDuration = targetDuration;
 
         if (prefab != null)
             wave.targetScale = obj.transform.localScale;
@@ -251,7 +253,7 @@ public class AttackWave : MonoBehaviour
 
         // 缩放淡入
         transform.localScale = Vector3.zero;
-        transform.DOScale(targetScale, 0.06f).SetEase(Ease.OutQuad).SetTarget(transform);
+        var scaleIn = transform.DOScale(targetScale, 0.06f).SetEase(Ease.OutQuad);
 
         // 戳击：刺出前立即命中所有目标（刺击范围只有1排，视觉上刺到最近敌人前方即返回）
         if (isStab)
@@ -321,6 +323,7 @@ public class AttackWave : MonoBehaviour
             {
                 Debug.Log($"[AttackWave] OnKill (premature): id={_instanceId}, name={gameObject.name}, damageType={damageType}, mode=Travel, frame={Time.frameCount}");
                 travelSeq = null;
+                scaleIn.Kill();
                 Destroy(gameObject);
             }
         });
@@ -329,8 +332,17 @@ public class AttackWave : MonoBehaviour
         {
             _travelCompleted = true;
             travelSeq = null;
+            scaleIn.Kill();
             Destroy(gameObject);
         });
+
+        // 特效时长拉伸/压缩以匹配cooldown（限制最大缩放防极端值）
+        if (_targetDuration > 0f)
+        {
+            float naturalDuration = travelSeq.Duration();
+            if (naturalDuration > 0f)
+                travelSeq.timeScale = Mathf.Clamp(naturalDuration / _targetDuration, 0.1f, 10f);
+        }
     }
 
     private void CheckHitThresholds()
@@ -382,14 +394,19 @@ public class AttackWave : MonoBehaviour
 
         lifetime = maxDelay + 0.3f;
         fadeStartTime = maxDelay + 0.05f;
+
+        // 特效时长拉伸/压缩以匹配cooldown（Fixed模式通过缩放elapsed实现，限制最大缩放防极端值）
+        if (_targetDuration > 0f && lifetime > 0f)
+            _fixedTimeScale = Mathf.Clamp(lifetime / _targetDuration, 0.1f, 10f);
     }
+
+    private float _fixedTimeScale = 1f;
 
     private void Update()
     {
         if (mode == WaveMode.Fixed)
         {
-            // 使用 unscaledDeltaTime 确保 timeScale=0（升级选择弹窗）时也能完成动画并自毁
-            elapsed += Time.unscaledDeltaTime;
+            elapsed += Time.unscaledDeltaTime * _fixedTimeScale;
             UpdateFixed();
         }
     }

@@ -680,18 +680,6 @@ public class QTEController : MonoBehaviour
         {
             if (qte.resolved || qte.config.qteType != QTEType.Click) continue;
 
-            // 提早点击 → 失败
-            if (!qte.IsInJudgeWindow(_qtePhaseTimer) && _qtePhaseTimer < qte.warningEndTime)
-            {
-                if (IsClickInQTEArea(screenPos, qte))
-                {
-                    DebugLog.Info($"[QTEController] 提早点击 → QTE失败 idx={_activeQTEs.IndexOf(qte)}");
-                    ResolveQTE(qte, false, earlyFail: true);
-                    return true;
-                }
-                continue;
-            }
-
             if (!qte.IsInJudgeWindow(_qtePhaseTimer)) continue;
 
             if (IsClickInQTEArea(screenPos, qte))
@@ -713,18 +701,6 @@ public class QTEController : MonoBehaviour
         foreach (var qte in _activeQTEs)
         {
             if (qte.resolved || qte.config.qteType != QTEType.Swipe) continue;
-
-            // 提早划动 → 失败（仅检查是否经过区域）
-            if (!qte.IsInJudgeWindow(_qtePhaseTimer) && _qtePhaseTimer < qte.warningEndTime)
-            {
-                Rect? earlyRect = GetIndicatorScreenRect(qte);
-                if (earlyRect != null && LineIntersectsRect(startScreenPos, releaseScreenPos, earlyRect.Value))
-                {
-                    ResolveQTE(qte, false, earlyFail: true);
-                    return true;
-                }
-                continue;
-            }
 
             if (!qte.IsInJudgeWindow(_qtePhaseTimer)) continue;
 
