@@ -129,6 +129,14 @@ public class SweepEffect : MonoBehaviour
         foreach (var enemy in sorted)
             effect.targets.Add(new TargetEntry { enemy = enemy, xThreshold = enemy.transform.position.x });
 
+        // L→R 时翻转 prefab X 使枪头朝向运动方向（必须在归零前做）
+        if (leftToRight)
+        {
+            Vector3 s = obj.transform.localScale;
+            s.x = -Mathf.Abs(s.x);
+            obj.transform.localScale = s;
+        }
+
         // 缩放淡入
         Vector3 targetScale = obj.transform.localScale;
         obj.transform.localScale = Vector3.zero;
@@ -147,15 +155,6 @@ public class SweepEffect : MonoBehaviour
         Vector3 initEuler = obj.transform.eulerAngles;
         obj.transform.eulerAngles = new Vector3(initEuler.x, initEuler.y, initEuler.z + startAngle);
 
-        // R→L 时翻转 prefab X 使头部（刀尖）始终朝向运动方向
-        if (!leftToRight)
-        {
-            Vector3 s = obj.transform.localScale;
-            s.x = -Mathf.Abs(s.x);
-            obj.transform.localScale = s;
-            targetScale = s;
-        }
-
         Vector3 targetEuler = new Vector3(initEuler.x, initEuler.y, initEuler.z + endAngle);
         var rotate = obj.transform.DORotate(targetEuler, duration, RotateMode.Fast)
             .SetEase(Ease.InOutQuad);
@@ -169,13 +168,17 @@ public class SweepEffect : MonoBehaviour
             if (sr != null)
             {
                 Sprite orig = sr.sprite;
-                float frameT = duration / 3f;
+                float t1 = duration * 0.10f;
+                float t2 = duration * 0.20f;
+                float t3 = duration * 0.70f;
+                // Scale.x 已在 R→L 时翻转了整个 prefab，sprite 无需再用 flipX
                 effect.seq.Insert(0, DOTween.Sequence()
-                    .AppendCallback(() => { sr.sprite = orig; sr.flipX = !leftToRight; })
-                    .AppendInterval(frameT)
-                    .AppendCallback(() => { sr.sprite = rotateSprite1; sr.flipX = !leftToRight; })
-                    .AppendInterval(frameT)
-                    .AppendCallback(() => { sr.sprite = rotateSprite2; sr.flipX = !leftToRight; }));
+                    .AppendCallback(() => sr.sprite = orig)
+                    .AppendInterval(t1)
+                    .AppendCallback(() => sr.sprite = rotateSprite1)
+                    .AppendInterval(t2)
+                    .AppendCallback(() => sr.sprite = rotateSprite2)
+                    .AppendInterval(t3));
             }
         }
 

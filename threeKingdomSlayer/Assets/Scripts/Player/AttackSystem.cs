@@ -187,9 +187,8 @@ public class AttackSystem : MonoBehaviour
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(effectiveRows);
         if (targets.Count > 0)
         {
-            Vector3 wavePos = GetWavePosition(targets, -1);
-            wavePos.y = targets[0].transform.position.y + cfg.slashSpawnYOffset;
-            wavePos.z = targets[0].transform.position.z + cfg.slashSpawnZOffset;
+            Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
+            Vector3 wavePos = new Vector3(0, playerPos.y + cfg.slashSpawnYOffset, playerPos.z + cfg.slashSpawnZOffset);
             bool hasTargets = targets.Count > 0;
             SweepEffect.Create(wavePos, cfg.damageType, finalDmg, targets, leftToRight,
                 cfg.slashSweepHalfWidth, cfg.slashSweepAngle, cfg.slashSweepDuration,
@@ -660,9 +659,8 @@ public class AttackSystem : MonoBehaviour
                 finalDmg *= GetSweepDamagePenalty();
                 if (targets.Count > 0)
                 {
-                    Vector3 wavePos = GetWavePosition(targets, -1);
-                    wavePos.y = targets[0].transform.position.y + cfg.slashSpawnYOffset;
-                    wavePos.z = targets[0].transform.position.z + cfg.slashSpawnZOffset;
+                    Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
+                    Vector3 wavePos = new Vector3(0, playerPos.y + cfg.slashSpawnYOffset, playerPos.z + cfg.slashSpawnZOffset);
                     SweepEffect.Create(wavePos, cfg.damageType, finalDmg, targets, slashLeftToRight,
                         cfg.slashSweepHalfWidth, cfg.slashSweepAngle, cfg.slashSweepDuration,
                         prefab: cfg.attackWavePrefab, alphaOverride: alpha,
