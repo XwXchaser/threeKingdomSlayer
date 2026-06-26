@@ -16,6 +16,7 @@ public class TimedPassiveModule : MonoBehaviour
     [Header("特效预制体")]
     public GameObject fireEffectPrefab;
     public GameObject arrowEffectPrefab;
+    public GameObject cycloneEffectPrefab;
 
     private class TimedState
     {
@@ -140,6 +141,9 @@ public class TimedPassiveModule : MonoBehaviour
             case "passive_chain_bounce":
                 StartCoroutine(SpawnChainBounce(state));
                 break;
+            case "passive_timed_cyclone":
+                SpawnCyclone(state);
+                break;
             default:
                 Debug.LogWarning($"[TimedPassiveModule] 未知 effectType: {state.definition.effectType}");
                 break;
@@ -246,5 +250,53 @@ public class TimedPassiveModule : MonoBehaviour
             AttackType.Pierce, column, damageRatio, maxBounces);
 
         Debug.Log($"[TimedPassiveModule] 连锁弹射触发: {def.displayName} col={column} maxBounces={maxBounces} ratio={damageRatio}");
+    }
+
+    // ══════════════════════════════════════════
+    // 旋风 — 定时触发版本
+    // ══════════════════════════════════════════
+
+    private void SpawnCyclone(TimedState state)
+    {
+        var def = state.definition;
+        if (def.cycloneLevels == null || state.level > def.cycloneLevels.Count) return;
+        var cfg = def.cycloneLevels[state.level - 1];
+        if (cycloneEffectPrefab == null) return;
+
+        var cm = AttackSystem.Instance?.columnManager;
+        if (cm == null) return;
+
+        // 收集所有可击飞的敌人
+        var candidates = new System.Collections.Generic.List<Enemy>();
+        foreach (var enemy in cm.GetAllEnemies())
+        {
+            if (enemy != null && enemy.state != EnemyState.Dead && enemy.CanBeLaunched(float.MaxValue))
+                candidates.Add(enemy);
+        }
+
+        if (candidates.Count == 0) return;
+
+        // 随机选取 cfg.enemyCount 个
+        int pickCount = Mathf.Min(cfg.enemyCount, candidates.Count);
+        for (int i = 0; i < pickCount; i++)
+        {
+            int r = Random.Range(i, candidates.Count);
+            var temp = candidates[i];
+            candidates[i] = candidates[r];
+            candidates[r] = temp;
+        }
+
+        for (int i = 0; i < pickCount; i++)
+        {
+            var enemy = candidates[i];
+            var instance = Instantiate(cycloneEffectPrefab);
+            var fx = instance.GetComponent<CycloneEffect>();
+            if (fx != null)
+                fx.Setup(enemy, cfg.damage, cfg.landingDamagePercent, cfg.knockupDuration);
+            else
+                Debug.LogWarning("[TimedPassiveModule] CycloneEffect prefab 缺少 CycloneEffect 组件");
+        }
+
+        Debug.Log($"[TimedPassiveModule] 旋风触发: {def.displayName} 选取 {pickCount}/{candidates.Count} 个敌人");
     }
 }

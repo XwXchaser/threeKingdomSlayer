@@ -117,6 +117,9 @@ public class Enemy : MonoBehaviour
     public float launchYHeightMin = 1.5f;
     public float launchYHeightMax = 4.5f;
     [Range(1f, 5f)] public float launchedDamageTakenMultiplier = 1.5f;
+
+    /// <summary>击飞落地回调（参数：落地敌人）</summary>
+    [System.NonSerialized] public System.Action<Enemy> OnLaunchedLanded;
     [Tooltip("空中被击中时延长浮空的时间（秒）")]
     public float launchedHitExtendDuration = 0.5f;
 
@@ -723,10 +726,18 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
-    /// 挑飞：打断当前攻击动作（类似招架），将敌人击飞
+    /// 挑飞：打断当前攻击动作（类似招架），将敌人击飞（使用敌人自身默认击飞时长）
     /// 若已处于击飞状态则忽略（延长由 TakeDamage 处理）
     /// </summary>
     public void Launch()
+    {
+        Launch(launchDuration);
+    }
+
+    /// <summary>
+    /// 挑飞：使用自定义击飞时长（供旋风等技能覆盖默认时长）
+    /// </summary>
+    public void Launch(float customDuration)
     {
         if (state == EnemyState.Dead) return;
         if (state == EnemyState.Launched) return;
@@ -735,8 +746,6 @@ public class Enemy : MonoBehaviour
         _remainingStunOnLaunch = (state == EnemyState.Stunned && stunTimer > 0f) ? stunTimer : 0f;
 
         // 清理所有 DOTween 动效（攻击动画、受击抖动等）
-        // BUG FIX: 移除 DOTween.Kill("punchScale") 和 DOTween.Kill("rushBounce")，
-        // 它们是全局 Kill，会误杀其他敌人的 tween。transform.DOKill(false) 已足够清理本对象。
         transform.DOKill(false);
         DOTween.Kill(transform, false);
         if (_attackTween != null && _attackTween.IsActive())
@@ -752,21 +761,22 @@ public class Enemy : MonoBehaviour
         UpdateOutlineState();
         isMovingToNextRow = false;
         pendingRushMove = false;
-        // BUG FIX: 不重置 targetRow。当 Launch 攻击错开命中时，
-        // RemoveEnemy() 可能在 Launch() 之前设置 targetRow（前方敌人先死），
-        // 若此处重置为 -1，落地后 UpdateLaunch() 不会触发补齐，导致链式前移中断。
 
         state = EnemyState.Launched;
-        // 清除 TakeDamage 阶段遗留的 Hit trigger，避免落地切 Idle 后被捕获跳转 HitFlash
         _animator?.ResetTrigger("Hit");
         _animator?.Play("Launched_Rise", 0, 0f);
-        launchTimer = launchDuration;
+        launchTimer = customDuration;
         launchStartLocalPos = transform.localPosition;
         currentLaunchYHeight = Random.Range(launchYHeightMin, launchYHeightMax);
         launchVelocityY = Mathf.Sqrt(2f * launchGravity * currentLaunchYHeight);
 
-        DebugLog.Info($"[Enemy] 挑飞: {DebugTag}, duration={launchDuration:F2}s, v0={launchVelocityY:F2}");
+        DebugLog.Info($"[Enemy] 挑飞: {DebugTag}, duration={customDuration:F2}s, v0={launchVelocityY:F2}");
     }
+
+    // ── 击飞状态查询（供 CycloneEffect 等外部读取）──
+    public Vector3 LaunchStartLocalPos => launchStartLocalPos;
+    public float CurrentLaunchYHeight => currentLaunchYHeight;
+    public bool IsLaunchRising => launchVelocityY > 0f;
 
     /// <summary>
     /// 延长浮空时间（被攻击命中时调用）
@@ -1000,6 +1010,9 @@ public class Enemy : MonoBehaviour
             // 先退出击飞状态，再根据情况决定后续行为
             state = EnemyState.Idle;
             _animator?.Play("Idle", 0, 0f);
+
+            // 通知击飞落地（供 CycloneEffect 等监听落地伤害）
+            OnLaunchedLanded?.Invoke(this);
 
             // BUG FIX: 挑飞打断了眩晕，落地后恢复剩余的眩晕时间
             // 避免 BOSS 在眩晕未结束时落地立即攻击

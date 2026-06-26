@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1778764012219
-updatedAt: 1780766272005
+updatedAt: 1782490275055
 ---
 
 # project-mistake-note
@@ -18,6 +18,13 @@ updatedAt: 1780766272005
 更新至 2025-08-10 — 新增 BuffIcon raycastTarget=False 导致 UI 点击穿透
 
 <!-- locus:body:start -->
+### 自定义Editor中新增struct List字段不显示 Inspector 配置 ✅ 已修复（2025-06-27）
+- 症状：`UpgradeDefinitionEditor` 中新加的 `DrawCycloneSection()` 已验证代码路径和数据均正确（`cycloneLevels` 5个元素、`effectType` 匹配、`FindProperty` 非null），但 Inspector 中不显示 Lv.1–Lv.5 配置
+- 根因：Editor 脚本与源文件虽时间戳同步，但 Unity 未触发 domain reload / 重新编译，导致 Inspector 使用了旧版 Editor DLL（旧版无 `case "passive_timed_cyclone"` 分支）
+- 修复：强制 `unity_recompile` 后恢复正常
+- 预防规则：**新增 `[CustomEditor]` 分支或修改 Editor 脚本后，若 Inspector 不生效，先执行 `unity_recompile` 排除 DLL 过期问题，不要先怀疑代码逻辑**
+- 文件：`Assets/Scripts/Editor/UpgradeDefinitionEditor.cs` (DrawCycloneSection)
+
 ### BuffIcon raycastTarget=False 导致 UI 点击穿透 ✅ 已修复（2025-08-10）
 - 症状：点击血包 BuffIcon 时 `overUI=False`，InputManager 将点击降级为游戏 stab 攻击，血包无法使用
 - 根因：BuffIcon 的 `Icon` / `Frame` 子级 Image 的 `raycastTarget` 在 Inspector 中设为 `false`。GraphicRaycaster 扫描时跳过这些 Graphic，`IsPointerOverGameObject()` 返回 `false`

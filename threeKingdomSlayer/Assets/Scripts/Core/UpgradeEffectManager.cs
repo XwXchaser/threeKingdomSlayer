@@ -219,6 +219,16 @@ public class UpgradeEffectManager : MonoBehaviour
                     desc = desc.Replace("{3}", cfg.damage.ToString());
                 }
             }
+            else if (def.effectType == "passive_timed_cyclone")
+            {
+                if (def.cycloneLevels != null && nextLevel <= def.cycloneLevels.Count)
+                {
+                    var cfg = def.cycloneLevels[nextLevel - 1];
+                    desc = desc.Replace("{0}", cfg.intervalSeconds.ToString("F1") + "秒");
+                    desc = desc.Replace("{1}", cfg.enemyCount.ToString());
+                    desc = desc.Replace("{2}", cfg.knockupDuration.ToString("F1") + "秒");
+                }
+            }
             else if (def.effectType == "passive_return_wave")
             {
                 var cfg = (def.returnWaveLevels != null && nextLevel <= def.returnWaveLevels.Count)
