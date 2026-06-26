@@ -740,7 +740,16 @@ public class Enemy : MonoBehaviour
     public void Launch(float customDuration)
     {
         if (state == EnemyState.Dead) return;
-        if (state == EnemyState.Launched) return;
+        if (state == EnemyState.Launched)
+        {
+            // 重新击飞：保持原始地面基准，仅重置击飞参数（供 Cyclone 等技能对已击飞敌人再次触发）
+            launchTimer = customDuration;
+            currentLaunchYHeight = Random.Range(launchYHeightMin, launchYHeightMax);
+            launchVelocityY = Mathf.Sqrt(2f * launchGravity * currentLaunchYHeight);
+            _animator?.Play("Launched_Rise", 0, 0f);
+            DebugLog.Info($"[Enemy] 重新击飞: {DebugTag}, duration={customDuration:F2}s, v0={launchVelocityY:F2}");
+            return;
+        }
 
         // 保存被中断的眩晕剩余时间，落地后恢复
         _remainingStunOnLaunch = (state == EnemyState.Stunned && stunTimer > 0f) ? stunTimer : 0f;

@@ -64,7 +64,7 @@ public class SweepEffect : MonoBehaviour
         else
         {
             color = GetSlashColor(damageType);
-            color.a = alphaOverride ?? 0.85f;
+            color.a = alphaOverride ?? 1.0f;
         }
 
         if (prefab != null)
@@ -79,8 +79,8 @@ public class SweepEffect : MonoBehaviour
             }
             else
             {
-                color = Color.Lerp(color, Color.white, 0.5f);
-                color.a = alphaOverride ?? 0.85f;
+                // 正常路径：保持原图颜色和透明度
+                color = Color.white;
                 Renderer r = obj.GetComponentInChildren<Renderer>();
                 if (r != null) { material = r.material; material.color = color; }
             }
