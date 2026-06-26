@@ -354,7 +354,7 @@ public class AttackSystem : MonoBehaviour
 
         GameObject obj;
         Material mat;
-        Color launchColor = new Color(1f, 0.85f, 0.3f, 0.9f);
+        Color launchColor = Color.white;
 
         if (cfg.attackWavePrefab != null)
         {
@@ -448,7 +448,7 @@ public class AttackSystem : MonoBehaviour
         // 实例化 prefab 或 Quad fallback
         GameObject obj;
         Material mat;
-        Color parryColor = new Color(0.9f, 0.9f, 0.9f, 0.85f);
+        Color parryColor = Color.white;
 
         if (cfg.attackWavePrefab != null)
         {

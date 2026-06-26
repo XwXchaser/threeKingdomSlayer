@@ -1,4 +1,5 @@
 using UnityEngine;
+using DG.Tweening;
 
 /// <summary>
 /// 旋风效果 — 定时被动触发时每个受影响敌人脚下生成一个实例。
@@ -21,6 +22,9 @@ public class CycloneEffect : MonoBehaviour
     [Header("循环帧切换间隔")]
     public float loopFrameInterval = 0.15f;
 
+    [Header("淡出")]
+    public float fadeOutDuration = 0.25f;
+
     private Enemy _target;
     private int _damage;
     private float _landingDamagePercent;
@@ -31,6 +35,7 @@ public class CycloneEffect : MonoBehaviour
     private float _loopTimer;
     private int _loopFrameIndex; // 0=cyclone5, 1=cyclone6
     private bool _landed;
+    private bool _fadingOut;
 
     public void Setup(Enemy target, int damage, float landingDamagePercent, float knockupDuration)
     {
@@ -74,23 +79,23 @@ public class CycloneEffect : MonoBehaviour
 
     private void Update()
     {
-        // 敌人失效或已落地 → 清理
+        // 敌人失效或已落地 → 淡出
         if (_target == null || _landed)
         {
-            Destroy(gameObject);
+            StartFadeOut();
             return;
         }
 
         if (_target.state == EnemyState.Dead)
         {
-            Destroy(gameObject);
+            StartFadeOut();
             return;
         }
 
-        // 敌人不在击飞状态（可能被其他逻辑提前落地）→ 清理
+        // 敌人不在击飞状态（可能被其他逻辑提前落地）→ 淡出
         if (_target.state != EnemyState.Launched)
         {
-            Destroy(gameObject);
+            StartFadeOut();
             return;
         }
 
@@ -146,7 +151,18 @@ public class CycloneEffect : MonoBehaviour
         if (_target != null)
             _target.OnLaunchedLanded -= OnTargetLanded;
 
-        Destroy(gameObject);
+        StartFadeOut();
+    }
+
+    private void StartFadeOut()
+    {
+        if (_fadingOut) return;
+        _fadingOut = true;
+
+        if (_sr != null)
+            _sr.DOFade(0f, fadeOutDuration).OnComplete(() => Destroy(gameObject));
+        else
+            Destroy(gameObject);
     }
 
     private void OnDestroy()

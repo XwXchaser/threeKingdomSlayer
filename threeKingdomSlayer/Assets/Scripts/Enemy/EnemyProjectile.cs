@@ -20,7 +20,7 @@ public class EnemyProjectile : MonoBehaviour
     private Sequence _flyTween;
     private Sequence _deflectTween;
     private bool _arrived;
-    private SpriteRenderer _spriteRenderer;
+    private SpriteRenderer[] _spriteRenderers;
     private Coroutine _safetyTimeout;
 
     /// <summary>
@@ -47,8 +47,14 @@ public class EnemyProjectile : MonoBehaviour
 
         transform.position = startPos;
         gameObject.SetActive(true);
-        if (_spriteRenderer == null) _spriteRenderer = GetComponent<SpriteRenderer>();
-        if (_spriteRenderer != null) { var c = _spriteRenderer.color; c.a = 1f; _spriteRenderer.color = c; }
+        _spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        if (_spriteRenderers != null)
+        {
+            foreach (var sr in _spriteRenderers)
+            {
+                var c = sr.color; c.a = 1f; sr.color = c;
+            }
+        }
 
         // DOTween 抛物线: Z/X 线性插值, Y 用两个 Ease 做抛物线（总时长=duration）
         _flyTween = DOTween.Sequence();
@@ -97,10 +103,12 @@ public class EnemyProjectile : MonoBehaviour
         _deflectTween.Join(transform.DOMoveY(fallY, 0.6f).SetEase(Ease.InQuad));
         _deflectTween.Join(transform.DOMoveX(driftX, 0.6f).SetEase(Ease.OutQuad));
 
-        // 0.3s 内 alpha → 0
-        if (_spriteRenderer == null) _spriteRenderer = GetComponent<SpriteRenderer>();
-        if (_spriteRenderer != null)
-            _deflectTween.Join(_spriteRenderer.DOFade(0f, 0.3f).SetEase(Ease.OutQuad));
+        // 并行淡出（旋转/坠落期间同步淡出，含所有子级 SpriteRenderer）
+        if (_spriteRenderers != null)
+        {
+            foreach (var sr in _spriteRenderers)
+                _deflectTween.Join(sr.DOFade(0f, 0.35f).SetEase(Ease.OutQuad));
+        }
 
         _deflectTween.OnComplete(() =>
         {
@@ -132,7 +140,18 @@ public class EnemyProjectile : MonoBehaviour
             _safetyTimeout = null;
         }
 
-        Destroy(gameObject);
+        // 非 Deflect 路径（OnArrival / SafetyTimeout）：补充淡出
+        // Deflect 路径已在 _deflectTween 中并行淡出，此处 alpha 已为 0，直接销毁
+        if (_spriteRenderers != null && _spriteRenderers.Length > 0 && _spriteRenderers[0].color.a > 0.05f && gameObject.activeInHierarchy)
+        {
+            for (int i = 0; i < _spriteRenderers.Length; i++)
+            {
+                var t = _spriteRenderers[i].DOFade(0f, 0.25f);
+                if (i == 0) t.OnComplete(() => Destroy(gameObject));
+            }
+        }
+        else
+            Destroy(gameObject);
     }
 
     private System.Collections.IEnumerator SafetyTimeout(float delay)

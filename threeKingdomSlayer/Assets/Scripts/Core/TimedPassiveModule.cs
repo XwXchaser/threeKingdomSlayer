@@ -270,7 +270,8 @@ public class TimedPassiveModule : MonoBehaviour
         var candidates = new System.Collections.Generic.List<Enemy>();
         foreach (var enemy in cm.GetAllEnemies())
         {
-            if (enemy != null && enemy.state != EnemyState.Dead && enemy.CanBeLaunched(float.MaxValue))
+            if (enemy != null && enemy.state != EnemyState.Dead &&
+                (enemy.state == EnemyState.Launched || enemy.CanBeLaunched(float.MaxValue)))
                 candidates.Add(enemy);
         }
 
