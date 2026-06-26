@@ -30,7 +30,7 @@ public class UpgradeDefinition : ScriptableObject
     public int maxLevel = 10;
 
     [Header("效果")]
-    [Tooltip("效果类型: damage_multiplier | attack_speed | stab_range_boost | sweep_range_boost | push_wave | convergence_wave | on_attack_trigger | on_kill_chance | unlock_attack | passive_phantom_weapon | passive_return_wave | passive_chain_bounce | passive_timed_aoe | passive_timed_arrow")]
+    [Tooltip("效果类型: damage_multiplier | attack_speed | stab_range_boost | sweep_range_boost | push_wave | convergence_wave | on_attack_trigger | on_kill_chance | unlock_attack | passive_phantom_weapon | passive_return_wave | passive_chain_bounce | passive_timed_aoe | passive_timed_arrow | passive_timed_cyclone")]
     public string effectType;
     [Tooltip("每级浮点加成 — 仅数值型使用。被动攻击型请使用下方每级配置列表")]
     public float floatValue;
@@ -72,6 +72,10 @@ public class UpgradeDefinition : ScriptableObject
     [Header("连锁弹射（effectType=passive_chain_bounce）")]
     [Tooltip("按等级配置连锁弹射效果。index 0 = Lv1")]
     public List<ChainBounceLevelConfig> chainBounceLevels = new List<ChainBounceLevelConfig>();
+
+    [Header("旋风（effectType=passive_timed_cyclone）")]
+    [Tooltip("按等级配置旋风效果。index 0 = Lv1")]
+    public List<CycloneLevelConfig> cycloneLevels = new List<CycloneLevelConfig>();
 
     // ═══════════════════════════════════════════════
     // 旧版兼容字段（Inspector 隐藏，保留序列化数据）
@@ -154,6 +158,10 @@ public class UpgradeDefinition : ScriptableObject
             case "passive_chain_bounce":
                 if (chainBounceLevels != null && level <= chainBounceLevels.Count)
                     return chainBounceLevels[level - 1].intervalSeconds;
+                break;
+            case "passive_timed_cyclone":
+                if (cycloneLevels != null && level <= cycloneLevels.Count)
+                    return cycloneLevels[level - 1].intervalSeconds;
                 break;
         }
         return -1f;
@@ -304,6 +312,25 @@ public struct ChainBounceLevelConfig
     public int maxBounces;
     [Tooltip("每次弹射伤害保留比例（0.8=80%）")]
     public float damageRatio;
+}
+
+/// <summary>旋风每级配置</summary>
+[System.Serializable]
+public struct CycloneLevelConfig
+{
+    [Header("触发参数")]
+    [Tooltip("定时触发间隔（秒）")]
+    public float intervalSeconds;
+
+    [Header("效果参数")]
+    [Tooltip("随机选取敌人数")]
+    public int enemyCount;
+    [Tooltip("击飞持续秒数")]
+    public float knockupDuration;
+    [Tooltip("击飞伤害")]
+    public int damage;
+    [Tooltip("落地伤害百分比（0=未解锁, 0.5=50%）")]
+    public float landingDamagePercent;
 }
 
 // ═══════════════════════════════════════════════

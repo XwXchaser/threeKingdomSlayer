@@ -33,6 +33,7 @@ public class UpgradeDefinitionEditor : Editor
     private SerializedProperty timedArrowLevelsProp;
     private SerializedProperty returnWaveLevelsProp;
     private SerializedProperty chainBounceLevelsProp;
+    private SerializedProperty cycloneLevelsProp;
 
     // ── 道具型 ──
     private SerializedProperty useCountProp;
@@ -62,6 +63,7 @@ public class UpgradeDefinitionEditor : Editor
         timedArrowLevelsProp = serializedObject.FindProperty("timedArrowLevels");
         returnWaveLevelsProp = serializedObject.FindProperty("returnWaveLevels");
         chainBounceLevelsProp = serializedObject.FindProperty("chainBounceLevels");
+        cycloneLevelsProp = serializedObject.FindProperty("cycloneLevels");
 
         useCountProp = serializedObject.FindProperty("useCount");
         gestureIdProp = serializedObject.FindProperty("gestureId");
@@ -155,9 +157,39 @@ public class UpgradeDefinitionEditor : Editor
             case "passive_chain_bounce":
                 DrawEffectLevelList(chainBounceLevelsProp, null, false, isTimed, "triggerThreshold", "intervalSeconds");
                 break;
+            case "passive_timed_cyclone":
+                DrawCycloneSection();
+                break;
             default:
                 EditorGUILayout.HelpBox($"未知的被动 effectType: {effectType}", MessageType.Warning);
                 break;
+        }
+    }
+
+    // ══════════════════════════════════════════
+    // 旋风绘制
+    // ══════════════════════════════════════════
+
+    private void DrawCycloneSection()
+    {
+        if (cycloneLevelsProp == null) return;
+
+        EditorGUILayout.PropertyField(cycloneLevelsProp.FindPropertyRelative("Array.size"));
+
+        for (int i = 0; i < cycloneLevelsProp.arraySize; i++)
+        {
+            var elem = cycloneLevelsProp.GetArrayElementAtIndex(i);
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField($"Lv.{i + 1}", EditorStyles.miniBoldLabel);
+
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("intervalSeconds"), new GUIContent("间隔(秒)"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("enemyCount"), new GUIContent("敌人数"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("knockupDuration"), new GUIContent("击飞时长(秒)"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("damage"), new GUIContent("击飞伤害"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("landingDamagePercent"), new GUIContent("落地伤害%"));
+
+            EditorGUILayout.EndVertical();
         }
     }
 
