@@ -1318,31 +1318,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4702271959420381270, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.45922917
+      value: 0.70205927
       objectReference: {fileID: 0}
     - target: {fileID: 4702271959420381270, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.055478904
+      value: 0.47176942
       objectReference: {fileID: 0}
     - target: {fileID: 4702271959420381270, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.704927
+      value: 0.5267197
       objectReference: {fileID: 0}
     - target: {fileID: 4702271959420381270, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.5376882
+      value: 0.08433699
       objectReference: {fileID: 0}
     - target: {fileID: 4702271959420381270, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 54
+      value: 35
       objectReference: {fileID: 0}
     - target: {fileID: 4702271959420381270, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 270
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 4702271959420381270, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 45
+      value: 48.7
       objectReference: {fileID: 0}
     - target: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
       propertyPath: m_Name
@@ -8514,6 +8514,8 @@ MonoBehaviour:
   _returnWavePrefab: {fileID: 1696509926255576402, guid: 8d45dcaf9eddb404882cd74d73471000, type: 3}
   _chainBounceVisualPrefab: {fileID: 5155658655490824707, guid: 35cd492da5108c14d9770fcb69e856e5, type: 3}
   _chainBouncePrefab: {fileID: 6047275720404681381, guid: e5859ea2ae076734dbfd60135c133a81, type: 3}
+  _stabRotate1Sprite: {fileID: 21300000, guid: c3b681405b0dde84581ec1d0fd4bfc26, type: 3}
+  _stabRotate2Sprite: {fileID: 21300000, guid: 510b65bb3ae606848905fe73c9061811, type: 3}
   useActionBasedCooldown: 1
 --- !u!114 &1809121298
 MonoBehaviour:

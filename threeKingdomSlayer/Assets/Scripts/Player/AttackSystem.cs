@@ -34,6 +34,12 @@ public class AttackSystem : MonoBehaviour
     [Tooltip("弹射连线用的Chain预制体（回退方案）")]
     [SerializeField] private GameObject _chainBouncePrefab;
 
+    [Header("Stab动画帧")]
+    [Tooltip("戳击旋转帧1（stab_rotate1，从左往右朝向）")]
+    [SerializeField] private Sprite _stabRotate1Sprite;
+    [Tooltip("戳击旋转帧2（stab_rotate2，从左往右朝向）")]
+    [SerializeField] private Sprite _stabRotate2Sprite;
+
     [Header("攻击冷却模式")]
     [Tooltip("勾选→动作锁定模式（攻击动画期间锁定所有攻击输入）。\n取消→独立CD模式（每招独立冷却，可交替连打）。\n独立CD模式保留作为未来可能的奖励效果（如技能移除动作硬直）。")]
     public bool useActionBasedCooldown = false;
@@ -189,7 +195,8 @@ public class AttackSystem : MonoBehaviour
                 cfg.slashSweepHalfWidth, cfg.slashSweepAngle, cfg.slashSweepDuration,
                 prefab: cfg.attackWavePrefab,
                 onAllHit: hasTargets ? () => ApplySlashDirectionalPush(targets, leftToRight) : null,
-                targetDuration: GetVisualTargetDuration(cfg));
+                targetDuration: GetVisualTargetDuration(cfg),
+                rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite);
             AudioManager.Instance?.PostEvent("Player_Attack");
         }
 
@@ -273,6 +280,10 @@ public class AttackSystem : MonoBehaviour
         }
 
         Debug.Log($"[AttackSystem] 挑飞 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 击飞时间:{cfg.launchDuration}s 目标数:{targets.Count}");
+
+        Vector3 playerLaunchPos = playerState != null ? playerState.transform.position : transform.position;
+        PlayLaunchVisual(cfg, playerLaunchPos);
+
         return targets.Count > 0;
     }
 
@@ -323,6 +334,98 @@ public class AttackSystem : MonoBehaviour
         PlayParryVisual(cfg, playerPos);
 
         return true;
+    }
+
+    /// <summary>
+    /// 挑飞视觉特效：Stab prefab 以 (35,90,zStart) 朝向做纯 Z 轴旋转至 (35,90,zEnd)，
+    /// 表现枪头从低往高上挑的攻击动作（Y=90 使枪头低位，与 Parry 的 Y=270 枪尾低位相反）。
+    /// zStart 每次有随机偏差。生成位置以玩家为基准 + Inspector 偏移参数。
+    /// </summary>
+    private void PlayLaunchVisual(AttackSkillConfig cfg, Vector3 playerPos)
+    {
+        Vector3 spawnPos = new Vector3(playerPos.x + cfg.launchSpawnXOffset, playerPos.y + cfg.launchSpawnYOffset, playerPos.z + cfg.launchSpawnZOffset);
+
+        float variance = Mathf.Clamp(cfg.launchAngleVariance, 0f, 30f);
+        float zStart = 140f + Random.Range(-variance, variance);
+        float zEnd = zStart - cfg.launchFlickAngle;
+        float duration = Mathf.Max(cfg.launchFlickDuration, 0.1f);
+
+        Vector3 startEuler = new Vector3(35f, 90f, zStart);
+        Vector3 endEuler = new Vector3(35f, 90f, zEnd);
+
+        GameObject obj;
+        Material mat;
+        Color launchColor = new Color(1f, 0.85f, 0.3f, 0.9f);
+
+        if (cfg.attackWavePrefab != null)
+        {
+            obj = Instantiate(cfg.attackWavePrefab, spawnPos, Quaternion.Euler(startEuler));
+            obj.name = "Launch_Visual";
+            Renderer r = obj.GetComponentInChildren<Renderer>();
+            if (r != null) { mat = r.material; mat.color = launchColor; }
+            else { mat = null; }
+        }
+        else
+        {
+            obj = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            obj.name = "Launch_Visual";
+            obj.transform.position = spawnPos;
+            obj.transform.rotation = Quaternion.Euler(startEuler);
+            obj.transform.localScale = Vector3.zero;
+            mat = new Material(Shader.Find("Sprites/Default"));
+            mat.color = launchColor;
+            obj.GetComponent<Renderer>().material = mat;
+        }
+
+        Vector3 targetScale = obj.transform.localScale == Vector3.zero
+            ? new Vector3(5f, 1.5f, 1f)
+            : obj.transform.localScale;
+
+        var scaleIn = obj.transform.DOScale(targetScale, 0.05f).SetEase(Ease.OutQuad);
+
+        var seq = DOTween.Sequence();
+        seq.SetTarget(obj.transform);
+        seq.SetUpdate(true);
+
+        var rotate = obj.transform.DORotate(endEuler, duration, RotateMode.Fast).SetEase(Ease.InOutQuad);
+        seq.Append(rotate);
+        var moveUp = obj.transform.DOMoveY(spawnPos.y + cfg.launchRiseHeight, duration).SetEase(Ease.OutQuad);
+        seq.Join(moveUp);
+
+        // Stab sprite 三帧动画：stab → rotate1 → rotate2
+        SpriteRenderer sr = obj.GetComponentInChildren<SpriteRenderer>();
+        if (sr != null && _stabRotate1Sprite != null && _stabRotate2Sprite != null)
+        {
+            Sprite orig = sr.sprite;
+            float frameT = duration / 3f;
+            seq.Insert(0, DOTween.Sequence()
+                .AppendCallback(() => sr.sprite = orig)
+                .AppendInterval(frameT)
+                .AppendCallback(() => sr.sprite = _stabRotate1Sprite)
+                .AppendInterval(frameT)
+                .AppendCallback(() => sr.sprite = _stabRotate2Sprite));
+        }
+
+        seq.AppendInterval(0.03f);
+        if (mat != null)
+            seq.Append(mat.DOFade(0f, 0.15f).SetEase(Ease.InQuad));
+
+        bool completed = false;
+        seq.OnKill(() =>
+        {
+            if (!completed)
+            {
+                scaleIn.Kill();
+                Destroy(obj);
+            }
+        });
+
+        seq.OnComplete(() =>
+        {
+            completed = true;
+            scaleIn.Kill();
+            Destroy(obj);
+        });
     }
 
     /// <summary>
