@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1782387109895
-updatedAt: 1782392200123
+updatedAt: 1782468531869
 ---
 
 # parry-visual-design
@@ -84,57 +84,52 @@ Visual total: ~0.43s < cooldown 0.50s ✓
 
 ---
 
-## 四、涉及文件
+## 四、Launch 挑飞视觉（对称实现）
+
+Launch 与 Parry 形成攻防对称：
+
+| | Parry | Launch |
+|---|---|---|
+| 语义 | 防御格挡 | 攻击上挑 |
+| 运动端 | 枪尾上挑 | 枪头上挑 |
+| X/Y 轴 | (54, 270) | (35, 90) — 180°翻转 |
+| Z 旋转 | 45°→145°（+100°） | 140°→40°（-90°） |
+| 位移 | 无 | Y 上升 launchRiseHeight(1.0) |
+| 时长 | 0.25s | 0.20s |
+| 颜色 | 白 | 暖金 (1.0, 0.85, 0.3) |
+| 位置 | 玩家身前 | 玩家身前 |
+
+### Launch Config 字段
+
+| 字段 | 默认 | 说明 |
+|------|------|------|
+| `launchFlickAngle` | 90 | Z 旋转幅度 |
+| `launchFlickDuration` | 0.20 | 上挑时长 |
+| `launchSpawnX/Y/ZOffset` | 0 / 1.5 / 0 | 生成位置偏移 |
+| `launchAngleVariance` | 15 | Z 起始角随机偏差 |
+| `launchRiseHeight` | 1.0 | Y 轴上升高度 |
+
+---
+
+## 五、stab_rotate 三帧动画
+
+Launch 和 Slash 使用 stab_rotate1/2 素材做 flipbook 动画：
+
+- 帧序：stab → rotate1 → rotate2（各 1/3 duration）
+- AttackSystem 挂载 `_stabRotate1Sprite` / `_stabRotate2Sprite` 引用
+- PlayLaunchVisual 和 SweepEffect.Create 中通过 seq.Insert 插入 sprite 切换
+- Slash R→L 时 flipX 翻转素材，使枪头朝向运动方向
+
+---
+
+## 六、涉及文件
 
 | 文件 | 改动 |
 |------|------|
-| `Assets/Scripts/Core/AttackSkillConfig.cs` | 新增 6 个 parry 字段（`[Header("招架扫掠")]`）|
-| `Assets/Scripts/Player/AttackSystem.cs` | `PlayParryVisual()` 纯旋转 DOTween；`ExecuteParry()` 两分支都播视觉 + 跳过 QTE 飞行物 |
-| `Assets/Scripts/Enemy/EnemyProjectile.cs` | 新增 `isQTEProjectile` 标记 |
-| `Assets/Scripts/QTE/QTEController.cs` | 创建 QTE 箭矢时设 `isQTEProjectile = true` |
-| `Assets/Prefabs/UI/Skills/Zhangfei_Parry.asset` | 设置 6 个 parry 参数 |
-
----
-
-## 五、潜在问题
-
-### 5.1 attackWavePrefab GUID 已损坏
-
-GUID `3ebe15c25c9ebda4fb9cd0b5ea7df39c` 在所有 Zhangfei skill config 中均损坏。Parry/Slash/Stab 均 fallback 到 Quad。Quad 无方向性，枪尾/枪尖区分暂不适用。
-
-### 5.2 Z 旋转方向感
-
-Quad 是对称矩形，旋转时两种方向看起来一样。当 prefab 恢复后，需要用非对称 sprite 区分头尾。
-
-### 5.3 连续 Parry
-
-Parry cooldown 0.50s，visual ~0.43s。连续 Parry 时前一个 visual 会自然销毁，不会残留。OnKill 兜底。
-
-### 5.4 反弹飞行物也有视觉
-
-两个分支都调用 `PlayParryVisual(cfg, playerPos)`，反弹箭矢时同样在玩家身前播放格挡特效。
-
-### 5.5 QTE 飞行物不被 Parry 反弹
-
-`EnemyProjectile.isQTEProjectile` 标记由 `QTEController` 在创建 QTE 箭矢时设为 `true`。`ExecuteParry()` 的 `FindObjectsOfType<EnemyProjectile>()` 遍历中跳过 QTE 飞行物。QTE 箭矢由独立的 `QTEController.DeflectArrowWave()` 系统处理。
-
-### 5.6 无 Animator
-
-Player 无 Animator 组件，所有动作表现均为 DOTween 特效驱动。Parry 的 `actionDuration=0.20s` 在视觉系统中无直接用途，锁定由 `cooldown=0.50s` 控制。
-
-### 5.7 Time.timeScale
-
-`seq.SetUpdate(true)` 忽略 timeScale，三选一暂停期间不受影响。
-
----
-
-## 六、测试清单
-
-- [ ] 单次 Parry：白色 Quad 在**玩家位置**做 Z 轴旋转（45°→145°），不位移
-- [ ] 多次 Parry：每次起始角度有可见偏差（±15°）
-- [ ] 连续 Parry：快速连续执行，无特效残留
-- [ ] 反弹普通飞行物：同时播放格挡视觉
-- [ ] 无目标：不播放特效
-- [ ] QTE 箭矢：Parry 不反弹 QTE 飞行物，箭矢正常飞向玩家
-- [ ] 三选一暂停：不影响（暂停期间不能触发攻击）
-- [ ] Inspector：Zhangfei_Parry.asset 中 6 个 parry 参数可调
+| `Assets/Scripts/Core/AttackSkillConfig.cs` | Parry 6 字段 + Launch 7 字段 |
+| `Assets/Scripts/Player/AttackSystem.cs` | `PlayParryVisual()` + `PlayLaunchVisual()` + sprite 引用 |
+| `Assets/Scripts/Attack/SweepEffect.cs` | `Create()` 新增 rotate sprite 参数 + flipX |
+| `Assets/Scripts/Enemy/EnemyProjectile.cs` | `isQTEProjectile` 标记 |
+| `Assets/Scripts/QTE/QTEController.cs` | QTE 箭矢设 `isQTEProjectile = true` |
+| `Assets/Prefabs/UI/Skills/Zhangfei_Parry.asset` | 6 个 parry 参数 |
+| `Assets/Prefabs/UI/Skills/Zhangfei_Launch.asset` | 7 个 launch 参数 + attackWavePrefab |

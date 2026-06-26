@@ -39,7 +39,8 @@ public class SweepEffect : MonoBehaviour
         List<Enemy> targets, bool leftToRight, float halfWidth, float fanAngle, float duration,
         System.Action<Enemy> onHit = null, GameObject prefab = null, float? alphaOverride = null,
         Color? damageNumberColor = null, bool canInterruptCFrame = false,
-        Material materialOverride = null, System.Action onAllHit = null, float targetDuration = -1f)
+        Material materialOverride = null, System.Action onAllHit = null, float targetDuration = -1f,
+        Sprite rotateSprite1 = null, Sprite rotateSprite2 = null)
     {
         if (targets == null || targets.Count == 0) return;
 
@@ -159,6 +160,24 @@ public class SweepEffect : MonoBehaviour
         var rotate = obj.transform.DORotate(targetEuler, duration, RotateMode.Fast)
             .SetEase(Ease.InOutQuad);
         effect.seq.Join(rotate);
+
+        // Stab sprite 三帧动画：stab → rotate1 → rotate2（时长均分）
+        // R→L 时 flipX 翻转素材，使枪头朝向运动方向
+        if (rotateSprite1 != null && rotateSprite2 != null)
+        {
+            SpriteRenderer sr = obj.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null)
+            {
+                Sprite orig = sr.sprite;
+                float frameT = duration / 3f;
+                effect.seq.Insert(0, DOTween.Sequence()
+                    .AppendCallback(() => { sr.sprite = orig; sr.flipX = !leftToRight; })
+                    .AppendInterval(frameT)
+                    .AppendCallback(() => { sr.sprite = rotateSprite1; sr.flipX = !leftToRight; })
+                    .AppendInterval(frameT)
+                    .AppendCallback(() => { sr.sprite = rotateSprite2; sr.flipX = !leftToRight; }));
+            }
+        }
 
         // 淡出
         if (material != null)

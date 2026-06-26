@@ -31,7 +31,15 @@ MonoBehaviour:
   slashSpawnZOffset: 0.5
   parrySweepAngle: 100
   parrySweepDuration: 0.25
+  parrySpawnXOffset: 0
   parrySpawnYOffset: 1.5
-  parrySpawnZOffset: 0
+  parrySpawnZOffset: -6
   parryAngleVariance: 15
+  launchFlickAngle: 90
+  launchFlickDuration: 0.2
+  launchSpawnXOffset: 0
+  launchSpawnYOffset: 1.5
+  launchSpawnZOffset: 0
+  launchAngleVariance: 15
+  launchRiseHeight: 1
   ultimateEnergyGain: 5

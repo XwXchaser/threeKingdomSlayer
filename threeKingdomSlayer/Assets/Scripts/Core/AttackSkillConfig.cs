@@ -71,6 +71,25 @@ public class AttackSkillConfig : ScriptableObject
     [Range(0f, 30f)]
     public float parryAngleVariance = 15f;
 
+    [Header("挑飞上挑")]
+    [Tooltip("Z 轴旋转幅度（度，默认 90）。枪头从低到高上挑")]
+    [Range(30f, 180f)]
+    public float launchFlickAngle = 90f;
+    [Tooltip("上挑持续时长（秒，默认 0.20）")]
+    [Range(0.1f, 0.5f)]
+    public float launchFlickDuration = 0.20f;
+    [Tooltip("生成位置 X 偏移（相对玩家位置）")]
+    public float launchSpawnXOffset = 0f;
+    [Tooltip("生成位置 Y 偏移（相对玩家位置）")]
+    public float launchSpawnYOffset = 1.5f;
+    [Tooltip("生成位置 Z 偏移（相对玩家位置）")]
+    public float launchSpawnZOffset = 0f;
+    [Tooltip("每次上挑 Z 起始角随机偏移范围（度，默认 15）")]
+    [Range(0f, 30f)]
+    public float launchAngleVariance = 15f;
+    [Tooltip("上挑时世界 Y 轴上升高度（默认 1.0）")]
+    public float launchRiseHeight = 1.0f;
+
     [Header("大招")]
     [Tooltip("命中时获得能量（非大招技能有效）")]
     public int ultimateEnergyGain = 10;
