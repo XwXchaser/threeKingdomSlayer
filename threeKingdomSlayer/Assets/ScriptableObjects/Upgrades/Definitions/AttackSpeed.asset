@@ -19,11 +19,35 @@ MonoBehaviour:
   rarity: 0
   maxLevel: 10
   effectType: attack_speed
+  numericLevels:
+  - floatValue: 0.15
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.15
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.15
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.15
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.15
+    intValue: 0
+    secondaryIntValue: 0
   floatValue: 0.15
   intValue: 0
+  secondaryIntValue: 0
   stringValue: 
   baseAttackConfig: {fileID: 0}
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: ecd20ccd51fed4f4e88bbc8005eefba7, type: 3}
+  phantomLevels: []
+  timedAoeLevels: []
+  timedArrowLevels: []
+  returnWaveLevels: []
+  chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

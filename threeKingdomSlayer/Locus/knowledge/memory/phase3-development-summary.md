@@ -10,7 +10,7 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1779520344306
-updatedAt: 1782308986966
+updatedAt: 1782576168513
 ---
 
 # phase3-development-summary
@@ -25,6 +25,32 @@ Remove temporary context, one-off tasks, and unsupported guesses
 <!-- locus:maintain-rules:end -->
 
 <!-- locus:body:start -->
+# 第三期局内成长系统（经验三选一）开发状态
+
+## 最新更新 (2025-12)
+
+### 攻速效果 BuffIcon 百分比显示 + 图标部署
+
+**状态**: ✅ 已完成
+
+**变更**:
+- `BuffIcon.cs` 新增 `_percentText` 字段 + `SetPercentText()` 方法，用于右上角显示累计加成百分比
+- `BuffIcon.prefab` 新增 `PercentText` 子对象：右上角锚定、金色 10pt 粗体、默认隐藏
+- `UpgradeEffectManager.cs` 新增 `GetAttackSpeedBonusPercent()` → `(speedMult-1)*100`
+- `BuffDisplayPanel.cs` `OnUpgradeApplied` 中 `attack_speed` 分支调用 `icon.SetPercentText($"+{pct:F0}%")`
+- `UpgradePoolConfig` 加入 AttackSpeed（commonPool，权重 10）
+- 部署四个图标：地刺→icon_31_spikeTrap、旋风→icon_31_cyclone、箭矢齐射→icon_31_tripleArrow、疾风→icon_31_longer
+
+**攻速效果数据流**:
+- 动作模式：`_actionLockTimer = cooldown / speedMult`，视效 timeScale 同步
+- 旧独立CD模式：攻速不生效（保留为未来"移除动作硬直"奖励）
+- 每级 `numericLevels.floatValue` 独立可配，默认 10 级 × 0.15
+- 累计显示：Lv.1→+15%、Lv.5→+75%
+
+---
+
+## 历史记录
+
 ### Bug: Rush 重叠检测导致无限重试循环
 
 **状态**: ✅ 已修复 (2025-08-09)
@@ -48,6 +74,8 @@ Remove temporary context, one-off tasks, and unsupported guesses
 - `UpgradeEffectManager` 新增 `_directionalPushStep`
 - `DisplacementDebugTool` 新增 DirectionalPush 字段
 - 位移执行顺序：每个攻击类型独立调用位移方法 → 各自 `PostDisplacementFillUp`
+
+### Bug: C技霸体位移
 
 **状态**: ✅ 已修复 (2025-08-10)
 

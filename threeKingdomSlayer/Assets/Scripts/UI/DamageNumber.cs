@@ -16,8 +16,9 @@ public class DamageNumber : MonoBehaviour
     [SerializeField] private float floatUpDistance = 2f;     // 上飘距离
     [SerializeField] private float duration = 0.8f;           // 动画时长
     [SerializeField] private float fontSize = 3f;             // 字体大小
-    [SerializeField] private float outlineWidth = 0.35f;      // 描边宽度
-    [SerializeField] private Color textColor = Color.red;     // 文字颜色
+    [SerializeField] private float outlineWidth = 0.2f;       // 描边宽度（0=无描边）
+    [SerializeField] private float boldWeight = 0.75f;        // 粗体权重
+    [SerializeField] private Color textColor = Color.white;   // 文字颜色（默认白色）
     [SerializeField] private Color outlineColor = Color.black; // 描边颜色
 
     // 对象池引用（由 DamageNumberManager 设置）
@@ -36,16 +37,11 @@ public class DamageNumber : MonoBehaviour
             tmp = gameObject.AddComponent<TextMeshPro>();
         }
 
-        // 初始化 TextMeshPro 属性
+        // 初始化 TextMeshPro 基本属性（颜色/描边在 Show() 中按需设置）
         tmp.fontSize = fontSize;
-        tmp.color = textColor;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.fontStyle = FontStyles.Bold;
-
-        // 启用描边
-        tmp.fontMaterial.EnableKeyword("OUTLINE_ON");
-        tmp.outlineWidth = outlineWidth;
-        tmp.outlineColor = outlineColor;
+        tmp.text = "";
     }
 
     /// <summary>
@@ -59,13 +55,30 @@ public class DamageNumber : MonoBehaviour
         gameObject.SetActive(true);
         transform.position = worldPos;
 
-        // 使用覆盖颜色或默认颜色
-        Color displayColor = colorOverride ?? textColor;
-        displayColor.a = 1f;
-        tmp.color = displayColor;
-
         // 设置伤害数值（取整显示）
         tmp.text = Mathf.RoundToInt(damage).ToString();
+
+        Color displayColor = colorOverride ?? textColor;
+        displayColor.a = 1f;
+
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.outlineWidth = 0f;
+        tmp.color = displayColor;
+
+        // tmp.color 可能触发材质重置，在之后强制覆盖材质属性
+        Material mat = tmp.fontMaterial;
+        mat.SetColor("_FaceColor", Color.white);
+        mat.SetFloat("_WeightBold", boldWeight);
+        mat.SetColor("_OutlineColor", outlineColor);
+        if (outlineWidth > 0f)
+        {
+            mat.EnableKeyword("OUTLINE_ON");
+            mat.SetFloat("_OutlineWidth", outlineWidth);
+        }
+        else
+        {
+            mat.DisableKeyword("OUTLINE_ON");
+        }
 
         // 终止可能正在播放的动画
         if (animSeq != null && animSeq.IsActive())
@@ -85,7 +98,7 @@ public class DamageNumber : MonoBehaviour
         animSeq.SetId($"damageNumber_{instanceId}");
 
         animSeq.Join(transform.DOMove(endPos, duration).SetEase(Ease.OutQuad));
-        animSeq.Join(tmp.DOFade(0f, duration).SetEase(Ease.InQuad));
+        animSeq.Join(DOTween.To(() => tmp.color.a, x => { var c = tmp.color; c.a = x; tmp.color = c; }, 0f, duration).SetEase(Ease.InQuad));
 
         animSeq.OnComplete(OnAnimationComplete);
 

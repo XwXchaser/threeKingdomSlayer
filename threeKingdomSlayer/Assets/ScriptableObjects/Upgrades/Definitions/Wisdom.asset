@@ -19,12 +19,35 @@ MonoBehaviour:
   rarity: 0
   maxLevel: 5
   effectType: exp_multiplier
+  numericLevels:
+  - floatValue: 0.05
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.05
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.05
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.05
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.05
+    intValue: 0
+    secondaryIntValue: 0
   floatValue: 0.05
   intValue: 0
   secondaryIntValue: 0
   stringValue: 
   baseAttackConfig: {fileID: 0}
   icon: {fileID: 21300000, guid: 90f4b312ac57622428a286fdafa9e8f0, type: 3}
+  phantomLevels: []
+  timedAoeLevels: []
+  timedArrowLevels: []
+  returnWaveLevels: []
+  chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

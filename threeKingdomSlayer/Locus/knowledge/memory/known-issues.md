@@ -9,13 +9,13 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1782017132257
-updatedAt: 1782017132258
+updatedAt: 1782555747772
 ---
 
 # known-issues
 
 ## Summary
-记录当前已知的 5 个待修复问题：QTE 受击打断、连续 QTE 无动画、特效残留、BOSS 墙壁、敌人超范围攻击。
+记录特效层级排序问题（SpikeTrap 已修复，Cyclone 待修复）
 
 <!-- locus:body:start -->
 # 已知问题
@@ -40,4 +40,9 @@ updatedAt: 1782017132258
 ## 5. 被击退超出攻击范围的敌人仍在超范围攻击
 - **现象**: 如 101 敌人被击退到 row4 BOSS 身后时，直接在 row4 开始攻击且不会补齐
 - **重现**: 经常反复出现
+
+## 6. Cyclone / SpikeTrap 等特效遮挡前方敌人
+- **现象**: CycloneEffect 和 SpikeTrapController 的特效 SpriteRenderer 没有设置 sortingOrder，会遮挡 row=0 前方敌人
+- **已修复**: SpikeTrapController 已添加 `sortingOrder = 50 - (int)(worldPosition.z * 10f)` 公式
+- **待修复**: CycloneEffect 未设置 sortingOrder，存在同样层级问题
 <!-- locus:body:end -->

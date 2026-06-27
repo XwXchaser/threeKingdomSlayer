@@ -19,12 +19,13 @@ MonoBehaviour:
   rarity: 1
   maxLevel: 5
   effectType: passive_arrow_volley
+  numericLevels: []
   floatValue: 0
   intValue: 5
   secondaryIntValue: 0
   stringValue: 
   baseAttackConfig: {fileID: 0}
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 966561ef2820f9e489159d1d5aeb80aa, type: 3}
   phantomLevels: []
   timedAoeLevels: []
   timedArrowLevels: []

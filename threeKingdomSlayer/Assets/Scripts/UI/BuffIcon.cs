@@ -13,6 +13,9 @@ public class BuffIcon : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _badgeText;
     [SerializeField] private Button _button;
 
+    [Header("右上角百分比（数值型累计加成）")]
+    [SerializeField] private TextMeshProUGUI _percentText;
+
     [Header("冷却显示（计时被动专用）")]
     [SerializeField] private Image _cooldownDim;
     [SerializeField] private Image _cooldownFill;
@@ -58,6 +61,14 @@ public class BuffIcon : MonoBehaviour
     {
         if (_badgeText != null)
             _badgeText.text = text;
+    }
+
+    /// <summary>设置右上角百分比文本（null/空则隐藏）</summary>
+    public void SetPercentText(string text)
+    {
+        if (_percentText == null) return;
+        _percentText.text = text;
+        _percentText.gameObject.SetActive(!string.IsNullOrEmpty(text));
     }
 
     public void SetFrame(Sprite sprite)
@@ -115,6 +126,7 @@ public class BuffIcon : MonoBehaviour
         if (_iconImage != null) _iconImage.sprite = null;
         if (_frameImage != null) { _frameImage.sprite = null; _frameImage.enabled = false; }
         if (_badgeText != null) _badgeText.text = "";
+        SetPercentText(null);
         SetCooldown(0f, null, false);
         if (_button != null)
         {

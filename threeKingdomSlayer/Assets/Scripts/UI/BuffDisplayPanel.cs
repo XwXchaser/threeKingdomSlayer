@@ -216,6 +216,12 @@ public class BuffDisplayPanel : MonoBehaviour
             else
             {
                 icon.SetBadge($"Lv.{newLevel}");
+                // 攻速：右上角显示累计百分比
+                if (def.effectType == "attack_speed" && UpgradeEffectManager.Instance != null)
+                {
+                    float pct = UpgradeEffectManager.Instance.GetAttackSpeedBonusPercent();
+                    icon.SetPercentText($"+{pct:F0}%");
+                }
             }
         }
     }

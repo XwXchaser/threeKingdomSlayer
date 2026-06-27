@@ -19,6 +19,22 @@ MonoBehaviour:
   rarity: 0
   maxLevel: 5
   effectType: push_wave
+  numericLevels:
+  - floatValue: 0
+    intValue: 1
+    secondaryIntValue: 0
+  - floatValue: 0
+    intValue: 1
+    secondaryIntValue: 0
+  - floatValue: 0
+    intValue: 1
+    secondaryIntValue: 0
+  - floatValue: 0
+    intValue: 1
+    secondaryIntValue: 0
+  - floatValue: 0
+    intValue: 1
+    secondaryIntValue: 0
   floatValue: 0
   intValue: 1
   secondaryIntValue: 0
@@ -26,6 +42,12 @@ MonoBehaviour:
   baseAttackConfig: {fileID: 0}
   icon: {fileID: 0}
   phantomLevels: []
+  timedAoeLevels: []
+  timedArrowLevels: []
+  returnWaveLevels: []
+  chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

@@ -20,12 +20,35 @@ MonoBehaviour:
   rarity: 1
   maxLevel: 5
   effectType: on_kill_chance
+  numericLevels:
+  - floatValue: 10
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 10
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 10
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 10
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 10
+    intValue: 0
+    secondaryIntValue: 0
   floatValue: 10
   intValue: 0
   secondaryIntValue: 0
   stringValue: Coin
   baseAttackConfig: {fileID: 0}
   icon: {fileID: 21300000, guid: 873085b440e94d74893cd55c7875fea8, type: 3}
+  phantomLevels: []
+  timedAoeLevels: []
+  timedArrowLevels: []
+  returnWaveLevels: []
+  chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

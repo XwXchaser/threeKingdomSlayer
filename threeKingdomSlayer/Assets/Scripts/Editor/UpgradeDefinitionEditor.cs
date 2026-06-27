@@ -20,6 +20,7 @@ public class UpgradeDefinitionEditor : Editor
     private SerializedProperty rarityProp;
     private SerializedProperty maxLevelProp;
     private SerializedProperty effectTypeProp;
+    private SerializedProperty numericLevelsProp;
     private SerializedProperty floatValueProp;
     private SerializedProperty intValueProp;
     private SerializedProperty secondaryIntValueProp;
@@ -52,6 +53,7 @@ public class UpgradeDefinitionEditor : Editor
         rarityProp = serializedObject.FindProperty("rarity");
         maxLevelProp = serializedObject.FindProperty("maxLevel");
         effectTypeProp = serializedObject.FindProperty("effectType");
+        numericLevelsProp = serializedObject.FindProperty("numericLevels");
         floatValueProp = serializedObject.FindProperty("floatValue");
         intValueProp = serializedObject.FindProperty("intValue");
         secondaryIntValueProp = serializedObject.FindProperty("secondaryIntValue");
@@ -232,11 +234,62 @@ public class UpgradeDefinitionEditor : Editor
     {
         EditorGUILayout.LabelField("效果", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(effectTypeProp);
-        EditorGUILayout.PropertyField(floatValueProp);
-        EditorGUILayout.PropertyField(intValueProp);
-        EditorGUILayout.PropertyField(secondaryIntValueProp);
-        EditorGUILayout.PropertyField(stringValueProp);
-        EditorGUILayout.PropertyField(baseAttackConfigProp);
+
+        if (numericLevelsProp == null) return;
+
+        EditorGUILayout.PropertyField(numericLevelsProp.FindPropertyRelative("Array.size"), new GUIContent("等级数"));
+
+        string effectType = effectTypeProp.stringValue;
+
+        for (int i = 0; i < numericLevelsProp.arraySize; i++)
+        {
+            var elem = numericLevelsProp.GetArrayElementAtIndex(i);
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField($"Lv.{i + 1}", EditorStyles.miniBoldLabel);
+
+            if (effectType == "spike_trap")
+            {
+                EditorGUILayout.PropertyField(elem.FindPropertyRelative("floatValue"), new GUIContent("伤害"));
+                EditorGUILayout.PropertyField(elem.FindPropertyRelative("intValue"), new GUIContent("行 (row)"));
+                EditorGUILayout.PropertyField(elem.FindPropertyRelative("secondaryIntValue"), new GUIContent("列 (col)"));
+            }
+            else if (effectType == "stab_range_boost" || effectType == "sweep_range_boost")
+            {
+                EditorGUILayout.PropertyField(elem.FindPropertyRelative("intValue"), new GUIContent("范围加成"));
+                EditorGUILayout.PropertyField(elem.FindPropertyRelative("secondaryIntValue"), new GUIContent("伤害惩罚(%)"));
+            }
+            else if (effectType == "push_wave" || effectType == "convergence_wave")
+            {
+                EditorGUILayout.PropertyField(elem.FindPropertyRelative("intValue"), new GUIContent("排数/格数"));
+                EditorGUILayout.PropertyField(elem.FindPropertyRelative("floatValue"), new GUIContent("百分比"));
+            }
+            else if (effectType == "exp_multiplier")
+            {
+                EditorGUILayout.PropertyField(elem.FindPropertyRelative("floatValue"), new GUIContent("经验倍率增量"));
+            }
+            else if (effectType == "damage_multiplier")
+            {
+                EditorGUILayout.PropertyField(elem.FindPropertyRelative("floatValue"), new GUIContent("伤害倍率增量"));
+            }
+            else if (effectType == "attack_speed")
+            {
+                EditorGUILayout.PropertyField(elem.FindPropertyRelative("floatValue"), new GUIContent("攻速增量"));
+            }
+            else if (effectType == "move_speed")
+            {
+                EditorGUILayout.PropertyField(elem.FindPropertyRelative("floatValue"), new GUIContent("移速增量"));
+            }
+            else
+            {
+                // 默认显示三个通用字段
+                EditorGUILayout.PropertyField(elem.FindPropertyRelative("floatValue"));
+                EditorGUILayout.PropertyField(elem.FindPropertyRelative("intValue"));
+                EditorGUILayout.PropertyField(elem.FindPropertyRelative("secondaryIntValue"));
+            }
+
+            EditorGUILayout.EndVertical();
+        }
     }
 
     // ══════════════════════════════════════════
