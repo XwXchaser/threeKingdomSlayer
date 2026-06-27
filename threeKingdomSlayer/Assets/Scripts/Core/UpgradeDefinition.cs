@@ -77,6 +77,10 @@ public class UpgradeDefinition : ScriptableObject
     [Tooltip("按等级配置旋风效果。index 0 = Lv1")]
     public List<CycloneLevelConfig> cycloneLevels = new List<CycloneLevelConfig>();
 
+    [Header("箭矢齐射（effectType=passive_arrow_volley）")]
+    [Tooltip("按等级配置箭矢齐射效果。index 0 = Lv1")]
+    public List<ArrowVolleyLevelConfig> arrowVolleyLevels = new List<ArrowVolleyLevelConfig>();
+
     // ═══════════════════════════════════════════════
     // 旧版兼容字段（Inspector 隐藏，保留序列化数据）
     // ═══════════════════════════════════════════════
@@ -191,6 +195,10 @@ public class UpgradeDefinition : ScriptableObject
             case "passive_timed_arrow":
                 if (timedArrowLevels != null && level <= timedArrowLevels.Count)
                     return timedArrowLevels[level - 1].triggerThreshold;
+                break;
+            case "passive_arrow_volley":
+                if (arrowVolleyLevels != null && level <= arrowVolleyLevels.Count)
+                    return arrowVolleyLevels[level - 1].triggerThreshold;
                 break;
         }
         return -1;
@@ -331,6 +339,23 @@ public struct CycloneLevelConfig
     public int damage;
     [Tooltip("落地伤害百分比（0=未解锁, 0.5=50%）")]
     public float landingDamagePercent;
+}
+
+/// <summary>箭矢齐射每级配置</summary>
+[System.Serializable]
+public struct ArrowVolleyLevelConfig
+{
+    [Header("触发参数")]
+    [Tooltip("攻击计数阈值（每X次）")]
+    public int triggerThreshold;
+
+    [Header("效果参数")]
+    [Tooltip("瞄准最近的敌人数")]
+    public int targetCount;
+    [Tooltip("每敌发射箭矢数")]
+    public int arrowCount;
+    [Tooltip("每箭基础伤害（走数值管线）")]
+    public int baseDamage;
 }
 
 // ═══════════════════════════════════════════════

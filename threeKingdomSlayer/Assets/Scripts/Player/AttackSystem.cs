@@ -14,6 +14,9 @@ public class AttackSystem : MonoBehaviour
     /// <summary>攻击执行事件（仅 Slash/Sweep/Stab/Pierce/Launch 五种有效攻击触发）</summary>
     public System.Action<AttackType, int, bool> OnAttackPerformed; // attackType, targetColumn, slashLeftToRight
 
+    /// <summary>Stab攻击最后一个命中的敌人（供被动效果查询目标）</summary>
+    public Enemy LastStabTargetEnemy { get; private set; }
+
     [Header("组件引用")]
     public ColumnManager columnManager;
     public PlayerState playerState;
@@ -162,6 +165,7 @@ public class AttackSystem : MonoBehaviour
         List<Enemy> targets = columnManager.GetEnemiesInRange(columnIndex, effectiveRows);
         // Stab 只命中应战 Boss（排除未应战 Boss 导致 wave 位置错误）
         targets = targets.FindAll(e => !e.isBoss || e.bossState == BossState.InCombat);
+        LastStabTargetEnemy = targets.Count > 0 ? targets[0] : null;
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, columnIndex);
