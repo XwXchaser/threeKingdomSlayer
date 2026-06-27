@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5eab6a0cbf20ec64ba732f894b672d49, type: 3}
   m_Name: OnAttackStab
   m_EditorClassIdentifier: 
+  category: 0
   upgradeId: on_attack_stab
   displayName: "\u8FDE\u523A"
   descriptionTemplate: "\u6BCF {0} \u6B21\u653B\u51FB\u89E6\u53D1\u4E00\u6B21 {1}%
@@ -19,8 +20,37 @@ MonoBehaviour:
   rarity: 1
   maxLevel: 5
   effectType: on_attack_trigger
+  numericLevels:
+  - floatValue: 40
+    intValue: 5
+    secondaryIntValue: 0
+  - floatValue: 40
+    intValue: 5
+    secondaryIntValue: 0
+  - floatValue: 40
+    intValue: 5
+    secondaryIntValue: 0
+  - floatValue: 40
+    intValue: 5
+    secondaryIntValue: 0
+  - floatValue: 40
+    intValue: 5
+    secondaryIntValue: 0
   floatValue: 40
   intValue: 5
+  secondaryIntValue: 0
   stringValue: Stab
   baseAttackConfig: {fileID: 0}
+  icon: {fileID: 0}
+  phantomLevels: []
+  timedAoeLevels: []
+  timedArrowLevels: []
+  returnWaveLevels: []
+  chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
+  triggerParam: 0
+  phantomSteps: []
+  useCount: 1
+  gestureId: 
   prerequisites: []

@@ -19,12 +19,35 @@ MonoBehaviour:
   rarity: 1
   maxLevel: 5
   effectType: sweep_range_boost
+  numericLevels:
+  - floatValue: 0
+    intValue: 1
+    secondaryIntValue: 5
+  - floatValue: 0
+    intValue: 1
+    secondaryIntValue: 5
+  - floatValue: 0
+    intValue: 1
+    secondaryIntValue: 5
+  - floatValue: 0
+    intValue: 1
+    secondaryIntValue: 5
+  - floatValue: 0
+    intValue: 1
+    secondaryIntValue: 5
   floatValue: 0
   intValue: 1
   secondaryIntValue: 5
   stringValue: 
   baseAttackConfig: {fileID: 0}
   icon: {fileID: 21300000, guid: 01af8b8bf5132ed499740f1e3af39d0f, type: 3}
+  phantomLevels: []
+  timedAoeLevels: []
+  timedArrowLevels: []
+  returnWaveLevels: []
+  chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

@@ -156,6 +156,8 @@ public class UpgradeEffectManager : MonoBehaviour
         Debug.Log($"[UpgradeEffectManager] 伤害加成 +{amount:P0} → 当前倍率 {_damageMultiplier:P0}");
     }
     public float GetAttackSpeedMultiplier() => _attackSpeedMultiplier;
+    /// <summary>攻速累计加成百分比（如 1.45 → 45）</summary>
+    public float GetAttackSpeedBonusPercent() => (_attackSpeedMultiplier - 1f) * 100f;
     public float GetMoveSpeedMultiplier() => _moveSpeedMultiplier;
     public float GetExpMultiplier() => _expMultiplier;
     public int GetStabRangeBonus() => _stabRangeBonus;
@@ -268,21 +270,28 @@ public class UpgradeEffectManager : MonoBehaviour
         }
         else if (def.effectType == "stab_range_boost" || def.effectType == "sweep_range_boost")
         {
-            desc = desc.Replace("{0}", (def.intValue * nextLevel).ToString());
-            desc = desc.Replace("{1}", (def.secondaryIntValue * nextLevel).ToString());
+            var cfg = def.GetNumericConfig(nextLevel);
+            desc = desc.Replace("{0}", cfg.intValue.ToString());
+            desc = desc.Replace("{1}", cfg.secondaryIntValue.ToString());
         }
         else if (def.effectType == "push_wave" || def.effectType == "convergence_wave")
         {
-            // {0}=intValue*level (格数/排数), {1}=floatValue*100 (百分比)
-            desc = desc.Replace("{0}", (def.intValue * nextLevel).ToString());
-            desc = desc.Replace("{1}", (def.floatValue * 100f).ToString("F0"));
+            var cfg = def.GetNumericConfig(nextLevel);
+            desc = desc.Replace("{0}", cfg.intValue.ToString());
+            desc = desc.Replace("{1}", (cfg.floatValue * 100f).ToString("F0"));
+        }
+        else if (def.effectType == "spike_trap")
+        {
+            var cfg = def.GetNumericConfig(nextLevel);
+            desc = desc.Replace("{0}", cfg.floatValue.ToString("F0"));
+            desc = desc.Replace("{1}", cfg.intValue.ToString());
+            desc = desc.Replace("{2}", cfg.secondaryIntValue.ToString());
         }
         else
         {
-            float nextValue = def.floatValue * nextLevel;
-            int nextIntValue = def.intValue * nextLevel;
-            desc = desc.Replace("{0}", (nextValue * 100f).ToString("F0"));
-            desc = desc.Replace("{1}", nextIntValue.ToString());
+            var cfg = def.GetNumericConfig(nextLevel);
+            desc = desc.Replace("{0}", (cfg.floatValue * 100f).ToString("F0"));
+            desc = desc.Replace("{1}", cfg.intValue.ToString());
         }
 
         return desc;
@@ -328,6 +337,8 @@ public class UpgradeEffectManager : MonoBehaviour
         _convergenceDamagePercent = 0.1f;
         _directionalPushStep = 0;
 
+        SpikeTrapController.Instance?.ResetAll();
+
         // 清空被动攻击模块
         PassiveTriggerModule.Instance?.ResetAll();
         TimedPassiveModule.Instance?.ResetAll();
@@ -340,37 +351,47 @@ public class UpgradeEffectManager : MonoBehaviour
 
     private void ApplyNumericEffect(UpgradeDefinition def, int level)
     {
+        var cfg = def.GetNumericConfig(level);
+
         switch (def.effectType)
         {
             case "damage_multiplier":
-                _damageMultiplier += def.floatValue;
+                _damageMultiplier += cfg.floatValue;
                 break;
             case "attack_speed":
-                _attackSpeedMultiplier += def.floatValue;
+                _attackSpeedMultiplier += cfg.floatValue;
                 break;
             case "move_speed":
-                _moveSpeedMultiplier += def.floatValue;
+                _moveSpeedMultiplier += cfg.floatValue;
                 break;
             case "exp_multiplier":
-                _expMultiplier += def.floatValue;
+                _expMultiplier += cfg.floatValue;
                 break;
             case "stab_range_boost":
-                _stabRangeBonus += def.intValue;
-                _stabDamagePenalty += def.secondaryIntValue * 0.01f;
+                _stabRangeBonus += cfg.intValue;
+                _stabDamagePenalty += cfg.secondaryIntValue * 0.01f;
                 break;
             case "sweep_range_boost":
-                _sweepRangeBonus += def.intValue;
-                _sweepDamagePenalty += def.secondaryIntValue * 0.01f;
+                _sweepRangeBonus += cfg.intValue;
+                _sweepDamagePenalty += cfg.secondaryIntValue * 0.01f;
                 break;
             case "push_wave":
-                _pushWaveDistance += def.intValue;
+                _pushWaveDistance += cfg.intValue;
                 break;
             case "convergence_wave":
-                _convergenceStep += def.intValue;
-                if (def.floatValue > 0f) _convergenceDamagePercent = def.floatValue;
+                _convergenceStep += cfg.intValue;
+                if (cfg.floatValue > 0f) _convergenceDamagePercent = cfg.floatValue;
                 break;
             case "unlock_attack":
-                // 数值叠加由注册的 UnlockAttackExecutor 处理
+                break;
+            case "spike_trap":
+                if (SpikeTrapController.Instance != null)
+                {
+                    if (level == 1)
+                        SpikeTrapController.Instance.Initialize(cfg.intValue, cfg.secondaryIntValue, cfg.floatValue);
+                    else
+                        SpikeTrapController.Instance.SetDamage(cfg.floatValue);
+                }
                 break;
         }
     }

@@ -19,12 +19,50 @@ MonoBehaviour:
   rarity: 0
   maxLevel: 10
   effectType: damage_multiplier
+  numericLevels:
+  - floatValue: 0.05
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.05
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.05
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.05
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.05
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.05
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.05
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.05
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.05
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.05
+    intValue: 0
+    secondaryIntValue: 0
   floatValue: 0.05
   intValue: 0
   secondaryIntValue: 0
   stringValue: 
   baseAttackConfig: {fileID: 0}
   icon: {fileID: 21300000, guid: 9f0a3363135405c45b8e651efad6a3aa, type: 3}
+  phantomLevels: []
+  timedAoeLevels: []
+  timedArrowLevels: []
+  returnWaveLevels: []
+  chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

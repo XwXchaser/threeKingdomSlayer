@@ -30,13 +30,19 @@ public class UpgradeDefinition : ScriptableObject
     public int maxLevel = 10;
 
     [Header("效果")]
-    [Tooltip("效果类型: damage_multiplier | attack_speed | stab_range_boost | sweep_range_boost | push_wave | convergence_wave | on_attack_trigger | on_kill_chance | unlock_attack | passive_phantom_weapon | passive_return_wave | passive_chain_bounce | passive_timed_aoe | passive_timed_arrow | passive_timed_cyclone")]
+    [Tooltip("效果类型: damage_multiplier | attack_speed | stab_range_boost | sweep_range_boost | push_wave | convergence_wave | spike_trap | on_attack_trigger | on_kill_chance | unlock_attack | passive_phantom_weapon | passive_return_wave | passive_chain_bounce | passive_timed_aoe | passive_timed_arrow | passive_timed_cyclone")]
     public string effectType;
-    [Tooltip("每级浮点加成 — 仅数值型使用。被动攻击型请使用下方每级配置列表")]
+
+    [Header("数值型 — 每级效果配置（effectType 匹配时使用，index 0 = Lv1）")]
+    [Tooltip("按等级配置数值效果。index 0 = Lv1。每级数值独立填写，无需一致。")]
+    public List<NumericLevelConfig> numericLevels = new List<NumericLevelConfig>();
+
+    [Header("旧版兼容（迁移前保留，numericLevels 为空时回退使用）")]
+    [Tooltip("每级浮点加成 — 仅数值型使用。已弃用，请使用 numericLevels")]
     public float floatValue;
-    [Tooltip("每级整数加成 — 仅数值型使用。被动攻击型请使用下方每级配置列表")]
+    [Tooltip("每级整数加成 — 仅数值型使用。已弃用，请使用 numericLevels")]
     public int intValue;
-    [Tooltip("每级第二整数加成 — 仅数值型使用")]
+    [Tooltip("每级第二整数加成 — 仅数值型使用。已弃用，请使用 numericLevels")]
     public int secondaryIntValue;
     [Tooltip("字符串参数（如on_kill_chance的掉落类型）")]
     public string stringValue;
@@ -87,6 +93,22 @@ public class UpgradeDefinition : ScriptableObject
 
     [HideInInspector] public int triggerParam;
     [HideInInspector] public List<PhantomStep> phantomSteps = new List<PhantomStep>();
+
+    // ── 辅助方法 ──
+
+    /// <summary>获取指定等级的数值配置。优先 numericLevels，回退到旧版字段 × level。</summary>
+    public NumericLevelConfig GetNumericConfig(int level)
+    {
+        if (numericLevels != null && numericLevels.Count >= level)
+            return numericLevels[level - 1];
+        // 回退：旧版字段 × level
+        return new NumericLevelConfig
+        {
+            floatValue = this.floatValue * level,
+            intValue = this.intValue * level,
+            secondaryIntValue = this.secondaryIntValue * level
+        };
+    }
 
     // ═══════════════════════════════════════════════
     // 道具型
@@ -339,6 +361,18 @@ public struct CycloneLevelConfig
     public int damage;
     [Tooltip("落地伤害百分比（0=未解锁, 0.5=50%）")]
     public float landingDamagePercent;
+}
+
+/// <summary>数值型每级配置</summary>
+[System.Serializable]
+public struct NumericLevelConfig
+{
+    [Tooltip("浮点值（伤害倍率增量、攻速增量、百分比等）")]
+    public float floatValue;
+    [Tooltip("整数值（排数、列数、格数等）")]
+    public int intValue;
+    [Tooltip("第二整数值（伤害惩罚、col等）")]
+    public int secondaryIntValue;
 }
 
 /// <summary>箭矢齐射每级配置</summary>

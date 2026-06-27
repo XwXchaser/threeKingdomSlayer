@@ -1023,6 +1023,9 @@ public class Enemy : MonoBehaviour
             // 通知击飞落地（供 CycloneEffect 等监听落地伤害）
             OnLaunchedLanded?.Invoke(this);
 
+            // 地刺检测：击飞落地后触发
+            SpikeTrapController.Instance?.CheckAndTrigger(this);
+
             // BUG FIX: 挑飞打断了眩晕，落地后恢复剩余的眩晕时间
             // 避免 BOSS 在眩晕未结束时落地立即攻击
             if (_remainingStunOnLaunch > 0f)
@@ -1147,6 +1150,9 @@ public class Enemy : MonoBehaviour
             // 移动完成：rowIndex 前进一排
             int oldRowForLog = rowIndex;
             rowIndex--;
+
+            // 地刺检测：补齐到达新位置时触发
+            SpikeTrapController.Instance?.CheckAndTrigger(this);
 
             // BUG FIX: 防止 rowIndex 变为负数
             if (rowIndex < 0) rowIndex = 0;
@@ -2152,6 +2158,12 @@ public class Enemy : MonoBehaviour
                 // Boss 等待恢复
                 return false;
 
+            case EnemyState.Moving:
+                // 正在移动中（如被 RecheckAttackRange 启动的 Rush），
+                // 保持 pendingRushMove 标记以便列补齐链订阅 OnRushMoveComplete，
+                // 移动完成后链式回调自然触发。不启动新移动以免干扰当前移动。
+                return true;
+
             default:
                 return false;
         }
@@ -2206,6 +2218,8 @@ public class Enemy : MonoBehaviour
                 state = EnemyState.Idle;
             // 设置 targetRow 为攻击范围最前排，确保 Rush 到位后能进入攻击
             targetRow = atkRange - 1;
+            // 标记 pendingRushMove，确保列补齐链（RemoveEnemy）能订阅 OnRushMoveComplete
+            pendingRushMove = true;
             StartMoving(isRush: true);
         }
     }

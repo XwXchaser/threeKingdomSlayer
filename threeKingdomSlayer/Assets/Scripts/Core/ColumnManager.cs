@@ -487,6 +487,10 @@ public class ColumnManager : MonoBehaviour
         columns[targetCol].InsertEnemySorted(enemy);
 
         DebugLog.Info($"[ColumnManager] MoveEnemyToColumnAtRow: {enemy.DebugTag} col {srcCol}→{targetCol}, row={targetRow}");
+
+        // 地刺检测：跨列/跨排移动后检查是否踩中
+        SpikeTrapController.Instance?.CheckAndTrigger(enemy);
+
         return true;
     }
 
@@ -648,6 +652,10 @@ public class ColumnManager : MonoBehaviour
             col.InsertEnemySorted(e);
 
         DebugLog.Info($"[ColumnManager] ExecutePush: col={columnIndex}, pushed={pushedEnemies.Count} enemies by {pushAmount} rows");
+
+        // 地刺检测：Push 后检查被推敌人是否踩中
+        foreach (var e in pushedEnemies)
+            SpikeTrapController.Instance?.CheckAndTrigger(e);
 
         // 被击退后重新检查攻击范围：若超出范围则取消攻击并冲回前线
         foreach (var e in pushedEnemies)
