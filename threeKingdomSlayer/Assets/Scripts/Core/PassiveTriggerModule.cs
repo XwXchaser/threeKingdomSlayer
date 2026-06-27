@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 /// <summary>
 /// 攻击计数触发模块 — 单例
@@ -20,6 +21,10 @@ public class PassiveTriggerModule : MonoBehaviour
     public GameObject fireEffectPrefab;
     [Tooltip("箭雨特效 prefab（effectType=passive_timed_arrow 被攻击计数触发时使用）")]
     public GameObject arrowEffectPrefab;
+    [Tooltip("箭矢齐射精灵模板（effectType=passive_arrow_volley）")]
+    [SerializeField] private SpriteRenderer _arrowVolleyTemplate;
+    [Tooltip("箭矢齐射 Z 轴出生位置")]
+    public float arrowVolleySpawnZ = 1.5f;
 
     [Header("测试开关")]
     [Tooltip("开启后所有效果每次攻击都触发（忽略配表阈值）")]
@@ -34,6 +39,7 @@ public class PassiveTriggerModule : MonoBehaviour
     }
 
     private Dictionary<string, PassiveState> _states = new Dictionary<string, PassiveState>();
+    private AttackType _currentAttackType;  // 当前触发攻击类型，供 ExecuteArrowVolley 等上下文依赖效果使用
 
     public System.Action<string, int> OnPassiveRegistered;   // upgradeId, threshold
     public System.Action<string> OnPassiveTriggered;         // upgradeId
@@ -62,6 +68,7 @@ public class PassiveTriggerModule : MonoBehaviour
 
     private void OnAttackPerformed(AttackType attackType, int targetColumn, bool slashLeftToRight)
     {
+        _currentAttackType = attackType;
         foreach (var kv in _states)
         {
             var state = kv.Value;
@@ -94,6 +101,9 @@ public class PassiveTriggerModule : MonoBehaviour
                 break;
             case "passive_timed_arrow":
                 ExecuteArrow(state);
+                break;
+            case "passive_arrow_volley":
+                StartCoroutine(ExecuteArrowVolley(state));
                 break;
             default:
                 Debug.LogWarning($"[PassiveTriggerModule] 未知 effectType: {state.definition.effectType}");
@@ -266,5 +276,184 @@ public class PassiveTriggerModule : MonoBehaviour
 
         OnPassiveTriggered?.Invoke(def.upgradeId);
         Debug.Log($"[PassiveTriggerModule] 箭雨触发: {def.displayName} rows={cfg.rowCount} arrows={cfg.arrowCount} damage={cfg.damage}");
+    }
+
+    private IEnumerator ExecuteArrowVolley(PassiveState state)
+    {
+        var def = state.definition;
+        if (def.arrowVolleyLevels == null || state.level > def.arrowVolleyLevels.Count) yield break;
+        var cfg = def.arrowVolleyLevels[state.level - 1];
+        if (_arrowVolleyTemplate == null)
+        {
+            Debug.LogWarning("[PassiveTriggerModule] _arrowVolleyTemplate 未配置");
+            yield break;
+        }
+
+        var cm = AttackSystem.Instance?.columnManager;
+        if (cm == null) yield break;
+
+        // 收集所有存活敌人，按 row 升序分组
+        var allEnemies = cm.GetAllEnemies();
+        allEnemies.RemoveAll(e => e == null || e.state == EnemyState.Dead);
+        if (allEnemies.Count == 0) yield break;
+
+        allEnemies.Sort((a, b) => a.rowIndex.CompareTo(b.rowIndex));
+
+        var selected = new List<Enemy>();
+
+        // Stab 攻击时优先锁定 Stab 目标
+        if (_currentAttackType == AttackType.Stab)
+        {
+            var stabTarget = AttackSystem.Instance.LastStabTargetEnemy;
+            if (stabTarget != null && stabTarget.state != EnemyState.Dead)
+            {
+                selected.Add(stabTarget);
+                allEnemies.Remove(stabTarget);
+            }
+        }
+
+        // 从最近排开始补齐剩余目标
+        int needed = cfg.targetCount - selected.Count;
+        if (needed > 0)
+        {
+            // 按 row 分组，逐排随机选取
+            var byRow = new Dictionary<int, List<Enemy>>();
+            foreach (var e in allEnemies)
+            {
+                int row = e.rowIndex;
+                if (!byRow.ContainsKey(row))
+                    byRow[row] = new List<Enemy>();
+                byRow[row].Add(e);
+            }
+
+            var sortedRows = new List<int>(byRow.Keys);
+            sortedRows.Sort();
+
+            foreach (int row in sortedRows)
+            {
+                var candidates = byRow[row];
+                // 随机打乱
+                for (int i = candidates.Count - 1; i > 0; i--)
+                {
+                    int j = Random.Range(0, i + 1);
+                    var tmp = candidates[i];
+                    candidates[i] = candidates[j];
+                    candidates[j] = tmp;
+                }
+
+                int take = Mathf.Min(needed, candidates.Count);
+                selected.AddRange(candidates.GetRange(0, take));
+                needed -= take;
+                if (needed <= 0) break;
+            }
+        }
+
+        if (selected.Count == 0) yield break;
+
+        // 计算最终伤害
+        float mult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetDamageMultiplier() : 1f;
+        int finalDamage = Mathf.RoundToInt(cfg.baseDamage * mult);
+
+        // 获取玩家位置
+        Vector3 playerPos = AttackSystem.Instance.playerState != null
+            ? AttackSystem.Instance.playerState.transform.position
+            : AttackSystem.Instance.transform.position;
+
+        // 在 spawnWindow 内均匀发射所有箭矢
+        int totalArrows = selected.Count * cfg.arrowCount;
+        float spawnWindow = 0.5f;
+        float interval = totalArrows > 1 ? spawnWindow / (totalArrows - 1) : 0f;
+
+        int arrowIndex = 0;
+        foreach (var enemy in selected)
+        {
+            for (int i = 0; i < cfg.arrowCount; i++)
+            {
+                float delay = interval * arrowIndex;
+                arrowIndex++;
+                StartCoroutine(FireArrow(enemy, playerPos, finalDamage, delay));
+            }
+        }
+
+        OnPassiveTriggered?.Invoke(def.upgradeId);
+        Debug.Log($"[PassiveTriggerModule] 箭矢齐射: {def.displayName} targets={selected.Count} arrows={cfg.arrowCount} dmg={finalDamage}");
+    }
+
+    private IEnumerator FireArrow(Enemy target, Vector3 playerPos, int damage, float delay)
+    {
+        // 提前捕获目标位置，防止 delay 期间目标死亡导致位置丢失
+        Vector3 targetPos;
+        if (target != null && target.state != EnemyState.Dead)
+        {
+            targetPos = target.transform.position;
+        }
+        else
+        {
+            // 目标已无效，射向玩家前方默认距离（依然需要射出箭矢）
+            targetPos = playerPos + Vector3.forward * 5f;
+        }
+
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
+
+        if (_arrowVolleyTemplate == null) yield break;
+
+        var arrow = Instantiate(_arrowVolleyTemplate, transform);
+        arrow.gameObject.SetActive(true);
+        var sr = arrow.GetComponent<SpriteRenderer>();
+        if (sr == null) { Destroy(arrow.gameObject); yield break; }
+        sr.color = Color.white;
+
+        // 出发位置：玩家前方偏上
+        Vector3 startPos = new Vector3(
+            playerPos.x + Random.Range(-0.15f, 0.15f),
+            playerPos.y + 0.8f,
+            arrowVolleySpawnZ
+        );
+        arrow.transform.position = startPos;
+
+        float flyDuration = 0.22f;
+        bool _completed = false;
+
+        var seq = DOTween.Sequence();
+        seq.Join(arrow.transform.DOMove(targetPos, flyDuration).SetEase(Ease.Linear));
+
+        // 飞行途中检测命中
+        bool hasHit = false;
+        seq.Join(DOTween.To(
+            () => 0f,
+            v =>
+            {
+                if (!hasHit && arrow != null && target != null && target.state != EnemyState.Dead)
+                {
+                    float dist = Vector3.Distance(arrow.transform.position, targetPos);
+                    if (dist < 0.4f)
+                    {
+                        hasHit = true;
+                        target.TakeDamage(damage, DamageType.Pierce);
+                    }
+                }
+            },
+            1f, flyDuration).SetEase(Ease.Linear));
+
+        // 淡出
+        if (sr != null)
+            seq.Append(sr.DOFade(0f, 0.08f));
+
+        seq.OnComplete(() =>
+        {
+            _completed = true;
+            seq = null;
+            if (arrow != null) Destroy(arrow.gameObject);
+        });
+
+        seq.OnKill(() =>
+        {
+            if (!_completed)
+            {
+                seq = null;
+                if (arrow != null) Destroy(arrow.gameObject);
+            }
+        });
     }
 }

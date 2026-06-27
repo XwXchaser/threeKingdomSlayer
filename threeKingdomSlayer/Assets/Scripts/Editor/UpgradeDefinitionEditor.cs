@@ -34,6 +34,7 @@ public class UpgradeDefinitionEditor : Editor
     private SerializedProperty returnWaveLevelsProp;
     private SerializedProperty chainBounceLevelsProp;
     private SerializedProperty cycloneLevelsProp;
+    private SerializedProperty arrowVolleyLevelsProp;
 
     // ── 道具型 ──
     private SerializedProperty useCountProp;
@@ -64,6 +65,7 @@ public class UpgradeDefinitionEditor : Editor
         returnWaveLevelsProp = serializedObject.FindProperty("returnWaveLevels");
         chainBounceLevelsProp = serializedObject.FindProperty("chainBounceLevels");
         cycloneLevelsProp = serializedObject.FindProperty("cycloneLevels");
+        arrowVolleyLevelsProp = serializedObject.FindProperty("arrowVolleyLevels");
 
         useCountProp = serializedObject.FindProperty("useCount");
         gestureIdProp = serializedObject.FindProperty("gestureId");
@@ -160,9 +162,38 @@ public class UpgradeDefinitionEditor : Editor
             case "passive_timed_cyclone":
                 DrawCycloneSection();
                 break;
+            case "passive_arrow_volley":
+                DrawArrowVolleySection();
+                break;
             default:
                 EditorGUILayout.HelpBox($"未知的被动 effectType: {effectType}", MessageType.Warning);
                 break;
+        }
+    }
+
+    // ══════════════════════════════════════════
+    // 箭矢齐射绘制
+    // ══════════════════════════════════════════
+
+    private void DrawArrowVolleySection()
+    {
+        if (arrowVolleyLevelsProp == null) return;
+
+        EditorGUILayout.PropertyField(arrowVolleyLevelsProp.FindPropertyRelative("Array.size"));
+
+        for (int i = 0; i < arrowVolleyLevelsProp.arraySize; i++)
+        {
+            var elem = arrowVolleyLevelsProp.GetArrayElementAtIndex(i);
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField($"Lv.{i + 1}", EditorStyles.miniBoldLabel);
+
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("triggerThreshold"), new GUIContent("阈值(次)"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("targetCount"), new GUIContent("敌人数"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("arrowCount"), new GUIContent("每敌箭矢数"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("baseDamage"), new GUIContent("基础伤害"));
+
+            EditorGUILayout.EndVertical();
         }
     }
 
