@@ -173,7 +173,7 @@ public class EnemyManager : MonoBehaviour
     {
         if (enemy == null) return;
         float damage = enemy.attackDamage;
-        PlayerState.Instance?.TakeDamage(damage);
+        PlayerState.Instance?.TakeDamage(damage, enemy);
     }
 
     #endregion

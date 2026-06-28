@@ -1377,7 +1377,7 @@ public class Enemy : MonoBehaviour
 
         float pitchAngle = arrowConfig != null ? arrowConfig.GetPitchAngleForRow(rowIndex) : 12f;
         float descentRatio = arrowConfig != null ? arrowConfig.descentPitchRatio : 0.75f;
-        proj.Launch(startPos, endZ, endX, attackDamage, projectileArcHeight, projectileFlyDuration, pitchAngle, descentRatio);
+        proj.Launch(startPos, endZ, endX, attackDamage, projectileArcHeight, projectileFlyDuration, this, pitchAngle, descentRatio);
 
         DebugLog.Info($"[Enemy] {DebugTag} 发射飞行物: start=({startPos.x:F1},{startPos.y:F1},{startPos.z:F1}) endZ={endZ:F1} endX={endX:F1}");
     }

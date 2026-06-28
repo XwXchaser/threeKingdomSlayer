@@ -30,7 +30,7 @@ public class UpgradeDefinition : ScriptableObject
     public int maxLevel = 10;
 
     [Header("效果")]
-    [Tooltip("效果类型: damage_multiplier | attack_speed | stab_range_boost | sweep_range_boost | push_wave | convergence_wave | spike_trap | on_attack_trigger | on_kill_chance | unlock_attack | passive_phantom_weapon | passive_return_wave | passive_chain_bounce | passive_timed_aoe | passive_timed_arrow | passive_timed_cyclone")]
+    [Tooltip("效果类型: damage_multiplier | attack_speed | stab_range_boost | sweep_range_boost | push_wave | convergence_wave | spike_trap | charge_damage_reduction | charge_reflect_shield | charge_shockwave | on_attack_trigger | on_kill_chance | unlock_attack | passive_phantom_weapon | passive_return_wave | passive_chain_bounce | passive_timed_aoe | passive_timed_arrow | passive_timed_cyclone")]
     public string effectType;
 
     [Header("数值型 — 每级效果配置（effectType 匹配时使用，index 0 = Lv1）")]
@@ -86,6 +86,14 @@ public class UpgradeDefinition : ScriptableObject
     [Header("箭矢齐射（effectType=passive_arrow_volley）")]
     [Tooltip("按等级配置箭矢齐射效果。index 0 = Lv1")]
     public List<ArrowVolleyLevelConfig> arrowVolleyLevels = new List<ArrowVolleyLevelConfig>();
+
+    [Header("反伤盾（effectType=charge_reflect_shield）")]
+    [Tooltip("按等级配置反伤盾效果。index 0 = Lv1")]
+    public List<ReflectShieldLevelConfig> reflectShieldLevels = new List<ReflectShieldLevelConfig>();
+
+    [Header("冲击波（effectType=charge_shockwave）")]
+    [Tooltip("按等级配置冲击波效果。index 0 = Lv1")]
+    public List<ChargeShockwaveLevelConfig> chargeShockwaveLevels = new List<ChargeShockwaveLevelConfig>();
 
     // ═══════════════════════════════════════════════
     // 旧版兼容字段（Inspector 隐藏，保留序列化数据）
@@ -188,6 +196,10 @@ public class UpgradeDefinition : ScriptableObject
             case "passive_timed_cyclone":
                 if (cycloneLevels != null && level <= cycloneLevels.Count)
                     return cycloneLevels[level - 1].intervalSeconds;
+                break;
+            case "charge_shockwave":
+                if (chargeShockwaveLevels != null && level <= chargeShockwaveLevels.Count)
+                    return chargeShockwaveLevels[level - 1].intervalSeconds;
                 break;
         }
         return -1f;
@@ -390,6 +402,38 @@ public struct ArrowVolleyLevelConfig
     public int arrowCount;
     [Tooltip("每箭基础伤害（走数值管线）")]
     public int baseDamage;
+}
+
+/// <summary>反伤盾每级配置</summary>
+[System.Serializable]
+public struct ReflectShieldLevelConfig
+{
+    [Header("触发参数")]
+    [Tooltip("获得护盾的间隔时间（秒）")]
+    public float intervalSeconds;
+
+    [Header("效果参数")]
+    [Tooltip("反弹伤害百分比（0.5=50%）")]
+    public float reflectPercent;
+}
+
+/// <summary>冲击波每级配置</summary>
+[System.Serializable]
+public struct ChargeShockwaveLevelConfig
+{
+    [Header("触发参数")]
+    [Tooltip("攒波间隔时间（秒）")]
+    public float intervalSeconds;
+
+    [Header("效果参数")]
+    [Tooltip("每次攒的波数")]
+    public int shockwaveCount;
+    [Tooltip("射程排数")]
+    public int rangeRows;
+    [Tooltip("每段基础伤害")]
+    public int baseDamage;
+    [Tooltip("每层伤害加成（0.15=15%）")]
+    public float stackDamageBonus;
 }
 
 // ═══════════════════════════════════════════════

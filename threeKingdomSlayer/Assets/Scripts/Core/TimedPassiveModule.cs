@@ -27,6 +27,9 @@ public class TimedPassiveModule : MonoBehaviour
 
     private Dictionary<string, TimedState> _states = new Dictionary<string, TimedState>();
 
+    // 蓄力冲击波：每计时器 tick 积攒层数（不立即生成），蓄力攻击时统一释放
+    private Dictionary<string, int> _shockwaveLayers = new Dictionary<string, int>();
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -79,6 +82,7 @@ public class TimedPassiveModule : MonoBehaviour
     public void ResetAll()
     {
         _states.Clear();
+        _shockwaveLayers.Clear();
     }
 
     // ── 冷却显示 API ──
@@ -110,6 +114,8 @@ public class TimedPassiveModule : MonoBehaviour
 
     private void Update()
     {
+        bool isCharging = PlayerState.Instance != null && PlayerState.Instance.IsCharging;
+
         foreach (var kv in _states)
         {
             var state = kv.Value;
@@ -118,6 +124,20 @@ public class TimedPassiveModule : MonoBehaviour
             {
                 state.timer = GetIntervalForLevel(state.definition, state.level);
                 SpawnEffect(state);
+            }
+        }
+
+        // 蓄力冲击波：非蓄力时层数上限为 1（仅保留最近一次 tick）
+        if (!isCharging)
+        {
+            foreach (var kv in _states)
+            {
+                if (kv.Value.definition.effectType == "charge_shockwave"
+                    && _shockwaveLayers.TryGetValue(kv.Key, out int layers)
+                    && layers > 1)
+                {
+                    _shockwaveLayers[kv.Key] = 1;
+                }
             }
         }
     }
@@ -143,6 +163,9 @@ public class TimedPassiveModule : MonoBehaviour
                 break;
             case "passive_timed_cyclone":
                 SpawnCyclone(state);
+                break;
+            case "charge_shockwave":
+                AccumulateShockwave(state);
                 break;
             default:
                 Debug.LogWarning($"[TimedPassiveModule] 未知 effectType: {state.definition.effectType}");
@@ -300,4 +323,50 @@ public class TimedPassiveModule : MonoBehaviour
 
         Debug.Log($"[TimedPassiveModule] 旋风触发: {def.displayName} 选取 {pickCount}/{candidates.Count} 个敌人");
     }
+
+    // ══════════════════════════════════════════
+    // 蓄力冲击波 — 队列型（timer→层数，攻击时释放）
+    // ══════════════════════════════════════════
+
+    private void AccumulateShockwave(TimedState state)
+    {
+        string id = state.definition.upgradeId;
+        if (!_shockwaveLayers.ContainsKey(id))
+            _shockwaveLayers[id] = 0;
+        _shockwaveLayers[id] += 1;
+        Debug.Log($"[TimedPassiveModule] 冲击波层数+1: {state.definition.displayName} 当前 {_shockwaveLayers[id]} 层");
+    }
+
+    /// <summary>消耗所有蓄力冲击波层数，返回 (upgradeId, 总层数, 每级配置)</summary>
+    public List<ShockwaveConsumeResult> ConsumeAllShockwaves()
+    {
+        var results = new List<ShockwaveConsumeResult>();
+        foreach (var kv in _states)
+        {
+            if (kv.Value.definition.effectType != "charge_shockwave") continue;
+            if (!_shockwaveLayers.TryGetValue(kv.Key, out int layers) || layers <= 0) continue;
+
+            var def = kv.Value.definition;
+            int level = kv.Value.level;
+            if (def.chargeShockwaveLevels == null || level > def.chargeShockwaveLevels.Count) continue;
+
+            var cfg = def.chargeShockwaveLevels[level - 1];
+            results.Add(new ShockwaveConsumeResult
+            {
+                upgradeId = kv.Key,
+                layers = layers,
+                config = cfg
+            });
+            _shockwaveLayers.Remove(kv.Key);
+        }
+        return results;
+    }
+}
+
+/// <summary>蓄力冲击波消耗结果</summary>
+public struct ShockwaveConsumeResult
+{
+    public string upgradeId;
+    public int layers;
+    public ChargeShockwaveLevelConfig config;
 }

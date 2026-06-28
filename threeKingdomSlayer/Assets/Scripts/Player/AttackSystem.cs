@@ -218,6 +218,7 @@ public class AttackSystem : MonoBehaviour
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, columnIndex);
+            ReleaseChargeShockwaves(targets, wavePos);
             AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab,
                 targetDuration: GetVisualTargetDuration(cfg));
         }
@@ -237,6 +238,7 @@ public class AttackSystem : MonoBehaviour
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, -1);
+            ReleaseChargeShockwaves(targets, wavePos);
             AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab,
                 targetDuration: GetVisualTargetDuration(cfg));
         }
@@ -255,6 +257,8 @@ public class AttackSystem : MonoBehaviour
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, -1);
+
+            ReleaseChargeShockwaves(targets, wavePos);
 
             // 概率击飞 Buff：每次攻击时判定一次（对所有目标生效）
             bool probLaunchActive = playerState != null && playerState.HasBuff(BuffType.ProbabilityLaunch);
@@ -536,6 +540,35 @@ public class AttackSystem : MonoBehaviour
         if (cfg == null) return 0f;
         float mult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetDamageMultiplier() : 1f;
         return cfg.damage * mult;
+    }
+
+    /// <summary>释放蓄力冲击波（蓄力攻击时调用，必须在伤害前）</summary>
+    private void ReleaseChargeShockwaves(List<Enemy> targets, Vector3 wavePos)
+    {
+        if (playerState == null || !playerState.IsCharging) return;
+        if (TimedPassiveModule.Instance == null) return;
+
+        var results = TimedPassiveModule.Instance.ConsumeAllShockwaves();
+        if (results.Count == 0) return;
+
+        var sweepCfg = GetConfig(AttackType.Sweep);
+        GameObject wavePrefab = sweepCfg?.attackWavePrefab;
+
+        foreach (var r in results)
+        {
+            int wavesPerTick = r.config.shockwaveCount;
+            for (int layer = 0; layer < r.layers; layer++)
+            {
+                float damageMult = 1f + layer * r.config.stackDamageBonus;
+                int dmg = Mathf.RoundToInt(r.config.baseDamage * damageMult);
+                for (int w = 0; w < wavesPerTick; w++)
+                {
+                    AttackWave.Create(wavePos, DamageType.Sweep, dmg, targets,
+                        prefab: wavePrefab);
+                }
+            }
+            Debug.Log($"[AttackSystem] 蓄力冲击波释放: {r.upgradeId} {r.layers}层×{wavesPerTick}波 baseDmg={r.config.baseDamage}");
+        }
     }
 
     /// <summary>获取有效攻击排数（含延长等加成）</summary>

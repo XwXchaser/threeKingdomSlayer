@@ -15,6 +15,8 @@ public class EnemyProjectile : MonoBehaviour
     [Tooltip("QTE 飞行物标记：设为 true 则不会被常规 Parry 反弹")]
     public bool isQTEProjectile;
 
+    private Enemy _sourceEnemy;
+
     private Vector3 _startPos;
     private Vector3 _endPos;
     private Sequence _flyTween;
@@ -33,11 +35,12 @@ public class EnemyProjectile : MonoBehaviour
     /// <param name="arcH">抛物线最高点高度</param>
     /// <param name="duration">飞行时长</param>
     /// <param name="pitchAngle">箭矢上升段最大俯仰角（度），下降段自动取反</param>
-    public void Launch(Vector3 startPos, float endZ, float endX, float dmg, float arcH, float duration, float pitchAngle = 12f, float descentPitchRatio = 0.75f)
+    public void Launch(Vector3 startPos, float endZ, float endX, float dmg, float arcH, float duration, Enemy source = null, float pitchAngle = 12f, float descentPitchRatio = 0.75f)
     {
         _startPos = startPos;
         _endPos = new Vector3(endX, startPos.y, endZ);
         damage = dmg;
+        _sourceEnemy = source;
         arcHeight = arcH;
         flyDuration = duration;
         // 不重置 _arrived：若此前已被 Deflect() 设为 true（stagger 延迟箭矢已在预警期被弹反），
@@ -122,7 +125,7 @@ public class EnemyProjectile : MonoBehaviour
         _arrived = true;
 
         // 玩家受到伤害
-        PlayerState.Instance?.TakeDamage(damage);
+        PlayerState.Instance?.TakeDamage(damage, _sourceEnemy);
 
         ReturnToPool();
     }
