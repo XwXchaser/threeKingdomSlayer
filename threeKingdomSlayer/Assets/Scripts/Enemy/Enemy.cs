@@ -170,6 +170,10 @@ public class Enemy : MonoBehaviour
     private bool _originalIsSuperArmor;
     private BossQTEData _originalQteData;
 
+    // 波次强化用的原始值缓存（prefab 出厂值，Awake 时捕获一次）
+    private float _prefabMaxHealth;
+    private Color _prefabColor = Color.white;
+
     [Header("招架血量眩晕阈值")]
     public ParryStunThreshold[] parryStunThresholds;
 
@@ -268,6 +272,7 @@ public class Enemy : MonoBehaviour
     // 描边效果
     private SpriteRenderer _spriteRenderer;
     private MaterialPropertyBlock _propBlock;
+    private MaterialPropertyBlock _tintPropBlock; // 波次染色，独立于描边 _propBlock
 
     // 敌人物体原始缩放值（从预制体读取，用于攻击动画/死亡后还原）
     // 不能硬编码为 Vector3.one，因为不同敌人可能有不同默认缩放（如 0.5）
@@ -298,6 +303,13 @@ public class Enemy : MonoBehaviour
 
         // 快照 prefab 原始值，供池复用 / 多波次重置
         SnapshotOriginalValues();
+
+        // 缓存 prefab 原始值，供波次强化（ApplyWaveScaling）使用
+        _prefabMaxHealth = maxHealth;
+        if (_spriteRenderer != null)
+            _prefabColor = _spriteRenderer.color;
+        else if (renderers != null && renderers.Length > 0)
+            _prefabColor = renderers[0].sharedMaterial.color;
     }
 
     private void SnapshotOriginalValues()
@@ -441,6 +453,44 @@ public class Enemy : MonoBehaviour
         if (rowIndex < atkRange)
         {
             StartAttacking();
+        }
+    }
+
+    /// <summary>
+    /// 应用波次敌人强化（血量倍率 + 颜色叠加）
+    /// 在 Initialize() 之后、共享血量组创建之前调用
+    /// 始终基于 _prefab* 原始值计算，不累积
+    /// </summary>
+    public void ApplyWaveScaling(float hpMult, Color tint)
+    {
+        if (_prefabMaxHealth <= 0f) return;
+
+        maxHealth = _prefabMaxHealth * hpMult;
+        currentHealth = maxHealth;
+
+        // 白色 tint = 无变化；忽略 alpha 通道避免与行透明度(GetAlphaForRow)冲突
+        if (tint == Color.white) return;
+
+        Color finalColor = _prefabColor * tint;
+        finalColor.a = 1f;
+
+        // SpriteRenderer: 直接设 .color，不创建材质实例
+        if (_spriteRenderer != null)
+        {
+            _spriteRenderer.color = finalColor;
+        }
+
+        // MeshRenderer: 使用独立 MaterialPropertyBlock 设 _Color，避免与描边 _propBlock 冲突
+        if (renderers == null || renderers.Length == 0) return;
+
+        if (_tintPropBlock == null)
+            _tintPropBlock = new MaterialPropertyBlock();
+        _tintPropBlock.SetColor("_Color", finalColor);
+
+        foreach (var r in renderers)
+        {
+            if (r is SpriteRenderer) continue; // 已处理
+            r.SetPropertyBlock(_tintPropBlock);
         }
     }
 

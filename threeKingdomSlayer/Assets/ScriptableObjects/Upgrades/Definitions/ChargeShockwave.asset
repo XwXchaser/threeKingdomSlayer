@@ -25,7 +25,7 @@ MonoBehaviour:
   secondaryIntValue: 0
   stringValue: 
   baseAttackConfig: {fileID: 0}
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: e9568ffe84e6c504eaf9d57a82668680, type: 3}
   phantomLevels: []
   timedAoeLevels: []
   timedArrowLevels: []
@@ -35,31 +35,36 @@ MonoBehaviour:
   arrowVolleyLevels: []
   reflectShieldLevels: []
   chargeShockwaveLevels:
-  - intervalSeconds: 8
+  - intervalSeconds: 5
     shockwaveCount: 1
     rangeRows: 2
     baseDamage: 15
     stackDamageBonus: 0.1
+    waveDelay: 0.1
   - intervalSeconds: 7
     shockwaveCount: 1
     rangeRows: 2
     baseDamage: 20
-    stackDamageBonus: 0.12
+    stackDamageBonus: 0.15
+    waveDelay: 0.1
   - intervalSeconds: 6
     shockwaveCount: 2
     rangeRows: 3
     baseDamage: 25
-    stackDamageBonus: 0.15
+    stackDamageBonus: 0.2
+    waveDelay: 0.1
   - intervalSeconds: 5
     shockwaveCount: 2
     rangeRows: 3
     baseDamage: 30
-    stackDamageBonus: 0.18
+    stackDamageBonus: 0.3
+    waveDelay: 0.1
   - intervalSeconds: 4
     shockwaveCount: 3
     rangeRows: 3
     baseDamage: 35
-    stackDamageBonus: 0.2
+    stackDamageBonus: 0.3
+    waveDelay: 0.1
   triggerParam: 0
   phantomSteps: []
   useCount: 1

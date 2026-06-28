@@ -59,6 +59,10 @@ public class PlayerState : MonoBehaviour
     /// <summary>玩家当前是否处于蓄力状态（供 TimedPassiveModule / AttackSystem 查询）</summary>
     public bool IsCharging => _isCharging;
 
+    // 蓄力就绪（pressDuration >= minChargeTime），反伤盾在此窗口内才可触发
+    private bool _isChargeReady;
+    public bool IsChargeReady => _isChargeReady;
+
     // 无敌标记（狂怒大招等）
     [System.NonSerialized] public bool isInvincible;
 
@@ -97,6 +101,7 @@ public class PlayerState : MonoBehaviour
         if (InputManager.Instance != null)
         {
             InputManager.Instance.OnChargeBegan -= OnChargeBegan;
+            InputManager.Instance.OnChargeUpdated -= OnChargeUpdated;
             InputManager.Instance.OnChargeEnded -= OnChargeEnded;
         }
     }
@@ -113,6 +118,7 @@ public class PlayerState : MonoBehaviour
         if (InputManager.Instance != null)
         {
             InputManager.Instance.OnChargeBegan += OnChargeBegan;
+            InputManager.Instance.OnChargeUpdated += OnChargeUpdated;
             InputManager.Instance.OnChargeEnded += OnChargeEnded;
         }
 
@@ -194,8 +200,8 @@ public class PlayerState : MonoBehaviour
 
         float originalDamage = damage;
 
-        // 反伤盾：蓄力时受到伤害且来源有效 → 基于原始伤害反弹，先于减伤
-        if (_isCharging && source != null && UpgradeEffectManager.Instance != null)
+        // 反伤盾：蓄力就绪后受到伤害且来源有效 → 基于原始伤害反弹，先于减伤
+        if (_isChargeReady && source != null && UpgradeEffectManager.Instance != null)
         {
             float reflectPercent = UpgradeEffectManager.Instance.TryConsumeReflectShield();
             if (reflectPercent > 0f)
@@ -476,11 +482,18 @@ public class PlayerState : MonoBehaviour
     private void OnChargeBegan(Vector2 pos)
     {
         _isCharging = true;
+        _isChargeReady = false;
+    }
+
+    private void OnChargeUpdated(Vector2 pos, float progress)
+    {
+        _isChargeReady = progress >= 1f;
     }
 
     private void OnChargeEnded()
     {
         _isCharging = false;
+        _isChargeReady = false;
     }
 
     #endregion

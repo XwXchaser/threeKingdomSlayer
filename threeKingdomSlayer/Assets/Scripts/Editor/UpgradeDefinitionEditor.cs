@@ -349,7 +349,8 @@ public class UpgradeDefinitionEditor : Editor
             EditorGUILayout.PropertyField(elem.FindPropertyRelative("shockwaveCount"), new GUIContent("每次波数"));
             EditorGUILayout.PropertyField(elem.FindPropertyRelative("rangeRows"), new GUIContent("射程排数"));
             EditorGUILayout.PropertyField(elem.FindPropertyRelative("baseDamage"), new GUIContent("基础伤害"));
-            EditorGUILayout.PropertyField(elem.FindPropertyRelative("stackDamageBonus"), new GUIContent("每层增伤%"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("stackDamageBonus"), new GUIContent("每层增伤(小数)"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("waveDelay"), new GUIContent("波间延迟(秒)"));
 
             EditorGUILayout.EndVertical();
         }

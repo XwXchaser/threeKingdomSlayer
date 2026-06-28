@@ -43,6 +43,7 @@ public class UpgradeEffectManager : MonoBehaviour
 
     // ── 升级事件 ──
     public System.Action<UpgradeDefinition, int> OnUpgradeApplied; // (def, newLevel)
+    public System.Action OnReflectShieldConsumed; // 反伤盾被消耗时触发（供 ThornArmorEffect）
 
     private void Awake()
     {
@@ -192,8 +193,21 @@ public class UpgradeEffectManager : MonoBehaviour
     /// <summary>蓄力减伤比例（0~1），仅在玩家处于蓄力状态时由 PlayerState 查询</summary>
     public float GetChargeDamageReduction() => _chargeDamageReduction;
 
+    /// <summary>反伤盾伤害反弹比例（0~1）</summary>
+    public float GetReflectShieldPercent() => _reflectShieldPercent;
+
     /// <summary>是否持有反伤盾</summary>
     public bool GetHasReflectShield() => _hasReflectShield;
+
+    /// <summary>反伤盾冷却进度，返回 (fill 0→1, 剩余秒数)。无盾或未获得升级返回 (-1, 0)</summary>
+    public (float fill, float remaining) GetReflectShieldCooldown()
+    {
+        if (_reflectShieldInterval <= 0f) return (-1f, 0f);
+        if (_hasReflectShield) return (0f, 0f); // 盾存在，冷却为 0
+        float remaining = Mathf.Max(_reflectShieldCooldown, 0f);
+        float fill = 1f - (remaining / _reflectShieldInterval);
+        return (fill, remaining);
+    }
 
     /// <summary>尝试消耗反伤盾。返回反弹比例（0~1），无盾返回 -1</summary>
     public float TryConsumeReflectShield()
@@ -201,6 +215,7 @@ public class UpgradeEffectManager : MonoBehaviour
         if (!_hasReflectShield || _reflectShieldPercent <= 0f) return -1f;
         _hasReflectShield = false;
         _reflectShieldCooldown = _reflectShieldInterval;
+        OnReflectShieldConsumed?.Invoke();
         return _reflectShieldPercent;
     }
 
@@ -289,6 +304,17 @@ public class UpgradeEffectManager : MonoBehaviour
                 desc = desc.Replace("{1}", cfg.maxBounces.ToString());
                 desc = desc.Replace("{2}", (cfg.damageRatio * 100f).ToString("F0"));
             }
+            else if (def.effectType == "charge_shockwave")
+            {
+                var swCfg = def.chargeShockwaveLevels != null && nextLevel <= def.chargeShockwaveLevels.Count
+                    ? def.chargeShockwaveLevels[nextLevel - 1]
+                    : new ChargeShockwaveLevelConfig();
+                desc = desc.Replace("{0}", swCfg.intervalSeconds.ToString("F1"));
+                desc = desc.Replace("{1}", swCfg.shockwaveCount.ToString());
+                desc = desc.Replace("{2}", swCfg.rangeRows.ToString());
+                desc = desc.Replace("{3}", swCfg.baseDamage.ToString());
+                desc = desc.Replace("{4}", (swCfg.stackDamageBonus * 100f).ToString("F0"));
+            }
             else
             {
                 def.GetPhantomConfig(nextLevel, out int triggerParam, out var steps);
@@ -333,18 +359,7 @@ public class UpgradeEffectManager : MonoBehaviour
                 ? def.reflectShieldLevels[nextLevel - 1]
                 : new ReflectShieldLevelConfig();
             desc = desc.Replace("{0}", rsCfg.intervalSeconds.ToString("F1"));
-            desc = desc.Replace("{1}", (rsCfg.reflectPercent * 100f).ToString("F0"));
-        }
-        else if (def.effectType == "charge_shockwave")
-        {
-            var swCfg = def.chargeShockwaveLevels != null && nextLevel <= def.chargeShockwaveLevels.Count
-                ? def.chargeShockwaveLevels[nextLevel - 1]
-                : new ChargeShockwaveLevelConfig();
-            desc = desc.Replace("{0}", swCfg.intervalSeconds.ToString("F1"));
-            desc = desc.Replace("{1}", swCfg.shockwaveCount.ToString());
-            desc = desc.Replace("{2}", swCfg.rangeRows.ToString());
-            desc = desc.Replace("{3}", swCfg.baseDamage.ToString());
-            desc = desc.Replace("{4}", (swCfg.stackDamageBonus * 100f).ToString("F0"));
+            desc = desc.Replace("{1}", rsCfg.reflectPercent.ToString("F0"));
         }
         else
         {
@@ -457,7 +472,7 @@ public class UpgradeEffectManager : MonoBehaviour
                 {
                     var rsCfg = def.reflectShieldLevels[level - 1];
                     _reflectShieldInterval = rsCfg.intervalSeconds;
-                    _reflectShieldPercent = rsCfg.reflectPercent;
+                    _reflectShieldPercent = rsCfg.reflectPercent / 100f; // 配置值为百分比（10=10%），运行时转换为比值
                     _reflectShieldCooldown = rsCfg.intervalSeconds;
                     _hasReflectShield = true; // 首次获得立即给盾
                 }

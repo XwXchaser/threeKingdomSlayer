@@ -103,7 +103,7 @@ public class BuffDisplayPanel : MonoBehaviour
             if (from == null || to == null) continue;
 
             to.Setup(from.IconSprite, from.UpgradeId, from.Category, from.GestureId);
-            to.SetBadge(from.BadgeText);
+            to.SetBadgeNumber(from.BadgeNumber);
             to.SetFrame(_skillFrame);
             to.OnClicked -= OnItemIconClicked;
             to.OnClicked += OnItemIconClicked;
@@ -155,7 +155,8 @@ public class BuffDisplayPanel : MonoBehaviour
     private void UpdatePotionSlot(int count)
     {
         if (_potionSlot == null) return;
-        _potionSlot.SetBadge(count.ToString());
+        Debug.Log($"[NUMDBG] UpdatePotionSlot count={count}");
+        _potionSlot.SetBadgeNumber(count);
         _potionSlot.SetDimmed(count <= 0);
     }
 
@@ -186,7 +187,7 @@ public class BuffDisplayPanel : MonoBehaviour
             }
 
             int uses = ItemInventory.Instance != null ? ItemInventory.Instance.GetRemainingUses(def.gestureId) : def.useCount;
-            icon.SetBadge(uses == -1 ? "∞" : uses.ToString());
+            icon.SetBadgeNumber(uses);
         }
         else
         {
@@ -203,24 +204,26 @@ public class BuffDisplayPanel : MonoBehaviour
 
             icon.SetFrame(GetLevelFrame(newLevel));
 
-            if (def.category == UpgradeCategory.AttackPassive || def.category == UpgradeCategory.TimedPassive)
+            if (def.category != UpgradeCategory.AttackPassive && def.category != UpgradeCategory.TimedPassive)
             {
-                // 仅 phantom_weapon 在此设角标，return_wave/chain_bounce 由 OnPassiveRegistered 负责
-                if (def.effectType == "passive_phantom_weapon")
-                {
-                    def.GetPhantomConfig(newLevel, out int threshold, out _);
-                    icon.SetBadge(threshold.ToString());
-                }
-                // else: OnPassiveRegistered 已正确设置阈值角标
-            }
-            else
-            {
-                icon.SetBadge($"Lv.{newLevel}");
+                var uem = UpgradeEffectManager.Instance;
                 // 攻速：右上角显示累计百分比
-                if (def.effectType == "attack_speed" && UpgradeEffectManager.Instance != null)
+                if (def.effectType == "attack_speed" && uem != null)
                 {
-                    float pct = UpgradeEffectManager.Instance.GetAttackSpeedBonusPercent();
-                    icon.SetPercentText($"+{pct:F0}%");
+                    int pct = Mathf.RoundToInt(uem.GetAttackSpeedBonusPercent());
+                    icon.SetPercentNumber(pct);
+                }
+                // 蓄力减伤：右上角显示百分比
+                else if (def.effectType == "charge_damage_reduction")
+                {
+                    int pct = Mathf.RoundToInt(uem.GetChargeDamageReduction() * 100f);
+                    icon.SetPercentNumber(pct);
+                }
+                // 反伤盾：右上角显示反弹百分比
+                else if (def.effectType == "charge_reflect_shield")
+                {
+                    int pct = Mathf.RoundToInt(uem.GetReflectShieldPercent() * 100f);
+                    icon.SetPercentNumber(pct);
                 }
             }
         }
@@ -243,14 +246,16 @@ public class BuffDisplayPanel : MonoBehaviour
         }
         else
         {
-            icon.SetBadge(remainingUses == -1 ? "∞" : remainingUses.ToString());
+            icon.SetBadgeNumber(remainingUses);
         }
     }
 
     private void OnPassiveRegistered(string upgradeId, int threshold)
     {
         if (_upgradeIcons.TryGetValue(upgradeId, out var icon))
-            icon.SetBadge(threshold.ToString());
+        {
+            // 不再显示等级和攻击计数
+        }
     }
 
     private Sprite GetLevelFrame(int level)
@@ -261,24 +266,49 @@ public class BuffDisplayPanel : MonoBehaviour
 
     // ── 道具点击 ──
 
-    // ── 计时被动冷却更新 ──
+        // ── 计时被动冷却更新 ──
 
     private void Update()
     {
-        var module = TimedPassiveModule.Instance;
-        if (module == null) return;
-
-        foreach (var upgradeId in module.RegisteredUpgradeIds)
+        var timedModule = TimedPassiveModule.Instance;
+        if (timedModule != null)
         {
-            if (!_upgradeIcons.TryGetValue(upgradeId, out var icon)) continue;
+            foreach (var upgradeId in timedModule.RegisteredUpgradeIds)
+            {
+                if (!_upgradeIcons.TryGetValue(upgradeId, out var icon)) continue;
 
-            float timer = module.GetTimer(upgradeId);
-            float interval = module.GetInterval(upgradeId);
-            if (interval <= 0f) continue;
+                float timer = timedModule.GetTimer(upgradeId);
+                float interval = timedModule.GetInterval(upgradeId);
+                if (interval <= 0f) continue;
 
-            float fill = 1f - (timer / interval);
-            string text = timer.ToString("F1");
-            icon.SetCooldown(fill, text, true);
+                float fill = 1f - (timer / interval);
+                icon.SetCooldown(fill, null, true);
+                icon.SetCountdownNumber(Mathf.CeilToInt(timer));
+            }
+        }
+
+        // 反伤盾：右上角显示百分比/倒计时
+        var uem = UpgradeEffectManager.Instance;
+        if (uem != null && _upgradeIcons.TryGetValue("charge_reflect_shield", out var shieldIcon))
+        {
+            var (fill, remaining) = uem.GetReflectShieldCooldown();
+            if (fill >= 0f)
+            {
+                if (uem.GetHasReflectShield())
+                {
+                    shieldIcon.SetCooldown(0f, null, false);
+                    int pct = Mathf.RoundToInt(uem.GetReflectShieldPercent() * 100f);
+                    shieldIcon.SetPercentNumber(pct);
+                }
+                else
+                {
+                    shieldIcon.SetCooldown(fill, null, remaining > 0f);
+                    if (remaining > 0f)
+                        shieldIcon.SetCountdownNumber(Mathf.CeilToInt(remaining));
+                    else
+                        shieldIcon.ClearTopRightNumber();
+                }
+            }
         }
     }
 
