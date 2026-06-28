@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 /// <summary>
 /// BuffDisplayPanel 中的单个图标 — 数值型/被动型/道具型通用。
@@ -10,22 +9,23 @@ public class BuffIcon : MonoBehaviour
 {
     [SerializeField] private Image _iconImage;
     [SerializeField] private Image _frameImage;
-    [SerializeField] private TextMeshProUGUI _badgeText;
     [SerializeField] private Button _button;
 
-    [Header("右上角百分比（数值型累计加成）")]
-    [SerializeField] private TextMeshProUGUI _percentText;
+    [Header("右上角精灵数字显示")]
+    [SerializeField] private SpriteNumberDisplay _spriteNumberDisplay;
+
+    [Header("底部角标精灵数字")]
+    [SerializeField] private SpriteNumberDisplay _badgeNumberDisplay;
 
     [Header("冷却显示（计时被动专用）")]
     [SerializeField] private Image _cooldownDim;
     [SerializeField] private Image _cooldownFill;
-    [SerializeField] private TextMeshProUGUI _countdownText;
 
     public string UpgradeId { get; private set; }
     public string GestureId { get; private set; }
     public UpgradeCategory Category { get; private set; }
     public Sprite IconSprite => _iconImage != null ? _iconImage.sprite : null;
-    public string BadgeText => _badgeText != null ? _badgeText.text : "";
+    public int BadgeNumber { get; private set; }
 
     public System.Action<BuffIcon> OnClicked;
 
@@ -57,18 +57,45 @@ public class BuffIcon : MonoBehaviour
         }
     }
 
-    public void SetBadge(string text)
+    /// <summary>设置底部角标数字（道具次数/血包数量）</summary>
+    public void SetBadgeNumber(int value)
     {
-        if (_badgeText != null)
-            _badgeText.text = text;
+        BadgeNumber = value;
+        if (value < 0)
+            _badgeNumberDisplay?.Clear();
+        else
+            _badgeNumberDisplay?.ShowNumber(value);
     }
 
-    /// <summary>设置右上角百分比文本（null/空则隐藏）</summary>
-    public void SetPercentText(string text)
+    /// <summary>清除底部角标</summary>
+    public void ClearBadgeNumber()
     {
-        if (_percentText == null) return;
-        _percentText.text = text;
-        _percentText.gameObject.SetActive(!string.IsNullOrEmpty(text));
+        BadgeNumber = 0;
+        _badgeNumberDisplay?.Clear();
+    }
+
+    /// <summary>右上角显示百分比数字（精灵）</summary>
+    public void SetPercentNumber(int value)
+    {
+        _spriteNumberDisplay?.ShowPercent(value);
+    }
+
+    /// <summary>右上角显示倒计时秒数（精灵）</summary>
+    public void SetCountdownNumber(int seconds)
+    {
+        _spriteNumberDisplay?.ShowCountdown(seconds);
+    }
+
+    /// <summary>右上角显示纯数字（精灵）</summary>
+    public void SetTopRightNumber(int value)
+    {
+        _spriteNumberDisplay?.ShowNumber(value);
+    }
+
+    /// <summary>清除右上角数字显示</summary>
+    public void ClearTopRightNumber()
+    {
+        _spriteNumberDisplay?.Clear();
     }
 
     public void SetFrame(Sprite sprite)
@@ -102,12 +129,7 @@ public class BuffIcon : MonoBehaviour
             _cooldownFill.gameObject.SetActive(visible);
             if (visible) _cooldownFill.fillAmount = fillAmount;
         }
-        if (_countdownText != null)
-        {
-            _countdownText.gameObject.SetActive(visible && !string.IsNullOrEmpty(countdown));
-            if (!string.IsNullOrEmpty(countdown))
-                _countdownText.text = countdown;
-        }
+
     }
 
     /// <summary>同步冷却蒙层精灵（图标变更时调用）</summary>
@@ -125,8 +147,8 @@ public class BuffIcon : MonoBehaviour
         Category = UpgradeCategory.Numeric;
         if (_iconImage != null) _iconImage.sprite = null;
         if (_frameImage != null) { _frameImage.sprite = null; _frameImage.enabled = false; }
-        if (_badgeText != null) _badgeText.text = "";
-        SetPercentText(null);
+        if (_badgeNumberDisplay != null) _badgeNumberDisplay.Clear();
+        ClearTopRightNumber();
         SetCooldown(0f, null, false);
         if (_button != null)
         {

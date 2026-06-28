@@ -18,7 +18,7 @@ MonoBehaviour:
   damage: 5
   poiseDamage: 0
   rangeRows: 5
-  cooldown: 1
+  cooldown: 2
   actionDuration: 0.55
   launchDuration: 0.2
   attackWavePrefab: {fileID: 5586448634090008248, guid: 3e7c2ba9889d0d8498227914332b7adc, type: 3}
@@ -29,4 +29,17 @@ MonoBehaviour:
   slashSweepDuration: 0.25
   slashSpawnYOffset: 1.5
   slashSpawnZOffset: 0.5
+  parrySweepAngle: 100
+  parrySweepDuration: 0.25
+  parrySpawnXOffset: 0
+  parrySpawnYOffset: 1.5
+  parrySpawnZOffset: 0
+  parryAngleVariance: 15
+  launchFlickAngle: 90
+  launchFlickDuration: 0.2
+  launchSpawnXOffset: 0
+  launchSpawnYOffset: 1.5
+  launchSpawnZOffset: 0
+  launchAngleVariance: 15
+  launchRiseHeight: 1
   ultimateEnergyGain: 12

@@ -203,6 +203,32 @@ public class StageConfigEditor : Editor
             }
             EditorGUILayout.EndHorizontal();
 
+            // 波次敌人强化
+            SerializedProperty hpMultProp = wave.FindPropertyRelative("healthMultiplier");
+            SerializedProperty tintProp = wave.FindPropertyRelative("waveTintColor");
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("血量倍率", GUILayout.Width(60));
+            hpMultProp.floatValue = EditorGUILayout.Slider(hpMultProp.floatValue, 0.1f, 5f, GUILayout.Width(140));
+            GUILayout.Space(10);
+            EditorGUILayout.LabelField("染色", GUILayout.Width(30));
+            tintProp.colorValue = EditorGUILayout.ColorField(tintProp.colorValue, GUILayout.Width(60));
+            EditorGUILayout.EndHorizontal();
+
+            // 动态补齐（本波次独立配置）
+            SerializedProperty dynamicRushProp = wave.FindPropertyRelative("enableDynamicRush");
+            SerializedProperty rushDelayProp = wave.FindPropertyRelative("rushMoveDelay");
+            SerializedProperty rushDelayMinProp = wave.FindPropertyRelative("rushMoveDelayMin");
+            EditorGUILayout.BeginHorizontal();
+            dynamicRushProp.boolValue = EditorGUILayout.ToggleLeft("动态补齐加速", dynamicRushProp.boolValue, GUILayout.Width(100));
+            if (dynamicRushProp.boolValue)
+            {
+                EditorGUILayout.LabelField("延迟", GUILayout.Width(30));
+                rushDelayProp.floatValue = EditorGUILayout.FloatField(rushDelayProp.floatValue, GUILayout.Width(50));
+                EditorGUILayout.LabelField("最低", GUILayout.Width(30));
+                rushDelayMinProp.floatValue = EditorGUILayout.FloatField(rushDelayMinProp.floatValue, GUILayout.Width(50));
+            }
+            EditorGUILayout.EndHorizontal();
+
             // 列标头（仅当有排时显示）
             if (rowsProp.arraySize > 0)
             {

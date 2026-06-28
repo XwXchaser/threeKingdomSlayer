@@ -261,6 +261,11 @@ public class WaveSpawner : MonoBehaviour
             Debug.Log($"[WaveSpawner] 生成敌人 id={enemyId} → 列{i} 排{rowIndex} (fillRule={fillRule})");
             enemy.Initialize(i, rowIndex);
 
+            // 应用波次敌人强化（血量倍率 + 颜色叠加）
+            WaveConfig currentWave = ResolvedStageConfig?.waves[currentWaveIndex];
+            if (currentWave != null)
+                enemy.ApplyWaveScaling(currentWave.healthMultiplier, currentWave.waveTintColor);
+
             // 注册到管理器
             enemyManager?.RegisterEnemy(enemy);
         }

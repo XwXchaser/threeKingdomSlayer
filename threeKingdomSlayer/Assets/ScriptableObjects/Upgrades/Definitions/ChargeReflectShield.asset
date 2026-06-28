@@ -34,16 +34,17 @@ MonoBehaviour:
   cycloneLevels: []
   arrowVolleyLevels: []
   reflectShieldLevels:
-  - intervalSeconds: 12
-    reflectPercent: 0.2
-  - intervalSeconds: 10
-    reflectPercent: 0.25
-  - intervalSeconds: 9
-    reflectPercent: 0.3
-  - intervalSeconds: 7
-    reflectPercent: 0.35
-  - intervalSeconds: 6
-    reflectPercent: 0.4
+  - intervalSeconds: 5
+    reflectPercent: 100
+  - intervalSeconds: 5
+    reflectPercent: 200
+  - intervalSeconds: 3
+    reflectPercent: 300
+  - intervalSeconds: 2
+    reflectPercent: 400
+  - intervalSeconds: 2
+    reflectPercent: 500
+  chargeShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

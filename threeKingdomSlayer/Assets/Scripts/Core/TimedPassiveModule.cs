@@ -119,25 +119,20 @@ public class TimedPassiveModule : MonoBehaviour
         foreach (var kv in _states)
         {
             var state = kv.Value;
+
+            // 蓄力冲击波：仅在 layers==0 或蓄力时走 timer
+            if (state.definition.effectType == "charge_shockwave")
+            {
+                int layers = _shockwaveLayers.TryGetValue(kv.Key, out int l) ? l : 0;
+                bool shouldTick = layers == 0 || isCharging;
+                if (!shouldTick) continue;
+            }
+
             state.timer -= Time.deltaTime;
             if (state.timer <= 0f)
             {
                 state.timer = GetIntervalForLevel(state.definition, state.level);
                 SpawnEffect(state);
-            }
-        }
-
-        // 蓄力冲击波：非蓄力时层数上限为 1（仅保留最近一次 tick）
-        if (!isCharging)
-        {
-            foreach (var kv in _states)
-            {
-                if (kv.Value.definition.effectType == "charge_shockwave"
-                    && _shockwaveLayers.TryGetValue(kv.Key, out int layers)
-                    && layers > 1)
-                {
-                    _shockwaveLayers[kv.Key] = 1;
-                }
             }
         }
     }

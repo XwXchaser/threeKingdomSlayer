@@ -218,7 +218,7 @@ public class AttackSystem : MonoBehaviour
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, columnIndex);
-            ReleaseChargeShockwaves(targets, wavePos);
+            StartCoroutine(ReleaseChargeShockwaves());
             AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab,
                 targetDuration: GetVisualTargetDuration(cfg));
         }
@@ -238,7 +238,7 @@ public class AttackSystem : MonoBehaviour
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, -1);
-            ReleaseChargeShockwaves(targets, wavePos);
+            StartCoroutine(ReleaseChargeShockwaves());
             AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab,
                 targetDuration: GetVisualTargetDuration(cfg));
         }
@@ -258,11 +258,13 @@ public class AttackSystem : MonoBehaviour
         {
             Vector3 wavePos = GetWavePosition(targets, -1);
 
-            ReleaseChargeShockwaves(targets, wavePos);
+            StartCoroutine(ReleaseChargeShockwaves());
 
             // 概率击飞 Buff：每次攻击时判定一次（对所有目标生效）
             bool probLaunchActive = playerState != null && playerState.HasBuff(BuffType.ProbabilityLaunch);
 
+            // Launch 攻击不使用 Stab.prefab 作为视觉（避免与 Pierce 混淆），
+            // prefab=null 时 AttackWave 用纯色 Quad，不影响伤害和击飞逻辑
             AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
                 onHit: (enemy) =>
                 {
@@ -281,7 +283,8 @@ public class AttackSystem : MonoBehaviour
                     if (canLaunch)
                         enemy.Launch();
                 },
-                prefab: cfg.attackWavePrefab,
+                prefab: null,
+                alphaOverride: 0f,
                 canInterruptCFrame: true,
                 targetDuration: GetVisualTargetDuration(cfg));
         }
@@ -344,12 +347,14 @@ public class AttackSystem : MonoBehaviour
     }
 
     /// <summary>
-    /// 挑飞视觉特效：Stab prefab 以 (35,90,zStart) 朝向做纯 Z 轴旋转至 (35,90,zEnd)，
-    /// 表现枪头从低往高上挑的攻击动作（Y=90 使枪头低位，与 Parry 的 Y=270 枪尾低位相反）。
-    /// zStart 每次有随机偏差。生成位置以玩家为基准 + Inspector 偏移参数。
+    /// 挑飞视觉特效：使用专用 stab_rotate 精灵创建独立视觉，
+    /// 以 (35,90,zStart) 朝向做纯 Z 轴旋转至 (35,90,zEnd)，
+    /// 表现枪头从低往高上挑的攻击动作。
     /// </summary>
     private void PlayLaunchVisual(AttackSkillConfig cfg, Vector3 playerPos)
     {
+        if (_stabRotate1Sprite == null) return;
+
         Vector3 spawnPos = new Vector3(playerPos.x + cfg.launchSpawnXOffset, playerPos.y + cfg.launchSpawnYOffset, playerPos.z + cfg.launchSpawnZOffset);
 
         float variance = Mathf.Clamp(cfg.launchAngleVariance, 0f, 30f);
@@ -360,33 +365,25 @@ public class AttackSystem : MonoBehaviour
         Vector3 startEuler = new Vector3(35f, 90f, zStart);
         Vector3 endEuler = new Vector3(35f, 90f, zEnd);
 
-        GameObject obj;
-        Material mat;
-        Color launchColor = Color.white;
+        var obj = new GameObject("Launch_Visual");
+        obj.transform.position = spawnPos;
+        obj.transform.rotation = Quaternion.Euler(startEuler);
 
-        if (cfg.attackWavePrefab != null)
-        {
-            obj = Instantiate(cfg.attackWavePrefab, spawnPos, Quaternion.Euler(startEuler));
-            obj.name = "Launch_Visual";
-            Renderer r = obj.GetComponentInChildren<Renderer>();
-            if (r != null) { mat = r.material; mat.color = launchColor; }
-            else { mat = null; }
-        }
-        else
-        {
-            obj = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            obj.name = "Launch_Visual";
-            obj.transform.position = spawnPos;
-            obj.transform.rotation = Quaternion.Euler(startEuler);
-            obj.transform.localScale = Vector3.zero;
-            mat = new Material(Shader.Find("Sprites/Default"));
-            mat.color = launchColor;
-            obj.GetComponent<Renderer>().material = mat;
-        }
+        var sr = obj.AddComponent<SpriteRenderer>();
+        sr.sprite = _stabRotate1Sprite;
+        sr.sortingOrder = 10;
+        Material mat = new Material(Shader.Find("Sprites/Default"));
+        mat.color = Color.white;
+        sr.material = mat;
 
-        Vector3 targetScale = obj.transform.localScale == Vector3.zero
-            ? new Vector3(5f, 1.5f, 1f)
-            : obj.transform.localScale;
+        // 根据精灵尺寸计算初始 scale
+        float basePixelsPerUnit = _stabRotate1Sprite.pixelsPerUnit;
+        float basePixelSize = Mathf.Max(_stabRotate1Sprite.rect.width, _stabRotate1Sprite.rect.height);
+        float baseWorldSize = basePixelSize / basePixelsPerUnit;
+        float targetWorldSize = 5f;
+        float scale = baseWorldSize > 0.001f ? targetWorldSize / baseWorldSize : 1f;
+        Vector3 targetScale = Vector3.one * scale;
+        obj.transform.localScale = Vector3.zero;
 
         var scaleIn = obj.transform.DOScale(targetScale, 0.05f).SetEase(Ease.OutQuad);
 
@@ -399,23 +396,18 @@ public class AttackSystem : MonoBehaviour
         var moveUp = obj.transform.DOMoveY(spawnPos.y + cfg.launchRiseHeight, duration).SetEase(Ease.OutQuad);
         seq.Join(moveUp);
 
-        // Stab sprite 三帧动画：stab → rotate1 → rotate2
-        SpriteRenderer sr = obj.GetComponentInChildren<SpriteRenderer>();
-        if (sr != null && _stabRotate1Sprite != null && _stabRotate2Sprite != null)
+        // Stab rotate 双帧动画：rotate1 → rotate2
+        if (_stabRotate2Sprite != null)
         {
-            Sprite orig = sr.sprite;
-            float frameT = duration / 3f;
+            float frameT = duration / 2f;
             seq.Insert(0, DOTween.Sequence()
-                .AppendCallback(() => sr.sprite = orig)
-                .AppendInterval(frameT)
                 .AppendCallback(() => sr.sprite = _stabRotate1Sprite)
                 .AppendInterval(frameT)
                 .AppendCallback(() => sr.sprite = _stabRotate2Sprite));
         }
 
         seq.AppendInterval(0.03f);
-        if (mat != null)
-            seq.Append(mat.DOFade(0f, 0.15f).SetEase(Ease.InQuad));
+        seq.Append(mat.DOFade(0f, 0.15f).SetEase(Ease.InQuad));
 
         bool completed = false;
         seq.OnKill(() =>
@@ -543,13 +535,14 @@ public class AttackSystem : MonoBehaviour
     }
 
     /// <summary>释放蓄力冲击波（蓄力攻击时调用，必须在伤害前）</summary>
-    private void ReleaseChargeShockwaves(List<Enemy> targets, Vector3 wavePos)
+    private System.Collections.IEnumerator ReleaseChargeShockwaves()
     {
-        if (playerState == null || !playerState.IsCharging) return;
-        if (TimedPassiveModule.Instance == null) return;
+        if (playerState == null || !playerState.IsCharging) yield break;
+        if (TimedPassiveModule.Instance == null) yield break;
+        if (columnManager == null) yield break;
 
         var results = TimedPassiveModule.Instance.ConsumeAllShockwaves();
-        if (results.Count == 0) return;
+        if (results.Count == 0) yield break;
 
         var sweepCfg = GetConfig(AttackType.Sweep);
         GameObject wavePrefab = sweepCfg?.attackWavePrefab;
@@ -557,6 +550,10 @@ public class AttackSystem : MonoBehaviour
         foreach (var r in results)
         {
             int wavesPerTick = r.config.shockwaveCount;
+            int rows = r.config.rangeRows;
+            var targets = columnManager.GetAllEnemiesInRange(rows);
+            Vector3 wavePos = GetWavePosition(targets, -1);
+
             for (int layer = 0; layer < r.layers; layer++)
             {
                 float damageMult = 1f + layer * r.config.stackDamageBonus;
@@ -565,9 +562,11 @@ public class AttackSystem : MonoBehaviour
                 {
                     AttackWave.Create(wavePos, DamageType.Sweep, dmg, targets,
                         prefab: wavePrefab);
+                    if (r.config.waveDelay > 0f)
+                        yield return new WaitForSeconds(r.config.waveDelay);
                 }
             }
-            Debug.Log($"[AttackSystem] 蓄力冲击波释放: {r.upgradeId} {r.layers}层×{wavesPerTick}波 baseDmg={r.config.baseDamage}");
+            Debug.Log($"[AttackSystem] 蓄力冲击波释放: {r.upgradeId} {r.layers}层×{wavesPerTick}波 rows={rows} baseDmg={r.config.baseDamage} delay={r.config.waveDelay}");
         }
     }
 

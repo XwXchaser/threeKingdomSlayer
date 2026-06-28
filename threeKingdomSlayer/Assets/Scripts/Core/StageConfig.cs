@@ -37,6 +37,13 @@ public class WaveConfig
     [Tooltip("此波包含的所有排，按顺序从远到近生成")]
     public List<RowConfig> rows = new List<RowConfig>();
 
+    [Header("波次敌人强化")]
+    [Tooltip("血量倍率，1.0 = 100% = 不变")]
+    public float healthMultiplier = 1f;
+
+    [Tooltip("敌人颜色叠加，白色(1,1,1) = 不变")]
+    public Color waveTintColor = Color.white;
+
     [Header("补齐延迟（本波次独立配置）")]
     [Tooltip("启用动态补齐：存活敌人越少，补齐延迟越短（用于后期割草加速）")]
     public bool enableDynamicRush = false;

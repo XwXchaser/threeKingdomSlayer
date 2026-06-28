@@ -413,7 +413,7 @@ public struct ReflectShieldLevelConfig
     public float intervalSeconds;
 
     [Header("效果参数")]
-    [Tooltip("反弹伤害百分比（0.5=50%）")]
+    [Tooltip("反弹伤害百分比（10=10%）")]
     public float reflectPercent;
 }
 
@@ -428,12 +428,14 @@ public struct ChargeShockwaveLevelConfig
     [Header("效果参数")]
     [Tooltip("每次攒的波数")]
     public int shockwaveCount;
-    [Tooltip("射程排数")]
+    [Tooltip("冲击波覆盖排数")]
     public int rangeRows;
     [Tooltip("每段基础伤害")]
     public int baseDamage;
     [Tooltip("每层伤害加成（0.15=15%）")]
     public float stackDamageBonus;
+    [Tooltip("每道冲击波之间的延迟（秒），防止同时打出")]
+    public float waveDelay;
 }
 
 // ═══════════════════════════════════════════════
