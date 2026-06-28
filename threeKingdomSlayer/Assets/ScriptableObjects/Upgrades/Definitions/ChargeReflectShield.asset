@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5eab6a0cbf20ec64ba732f894b672d49, type: 3}
+  m_Name: ChargeReflectShield
+  m_EditorClassIdentifier: 
+  category: 0
+  upgradeId: charge_reflect_shield
+  displayName: "\u94C1\u58C1\xB7\u53CD\u4F24"
+  descriptionTemplate: "\u6BCF{0}\u79D2\u83B7\u5F971\u5C42\u53CD\u4F24\u76FE\uFF0C\u84C4\u529B\u53D7\u4F24\u65F6\u53CD\u5F39{1}%\u4F24\u5BB3"
+  rarity: 0
+  maxLevel: 5
+  effectType: charge_reflect_shield
+  numericLevels: []
+  floatValue: 0
+  intValue: 0
+  secondaryIntValue: 0
+  stringValue: 
+  baseAttackConfig: {fileID: 0}
+  icon: {fileID: 21300000, guid: fb5e1247221c09647a66763aff8541e1, type: 3}
+  phantomLevels: []
+  timedAoeLevels: []
+  timedArrowLevels: []
+  returnWaveLevels: []
+  chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
+  reflectShieldLevels:
+  - intervalSeconds: 12
+    reflectPercent: 0.2
+  - intervalSeconds: 10
+    reflectPercent: 0.25
+  - intervalSeconds: 9
+    reflectPercent: 0.3
+  - intervalSeconds: 7
+    reflectPercent: 0.35
+  - intervalSeconds: 6
+    reflectPercent: 0.4
+  triggerParam: 0
+  phantomSteps: []
+  useCount: 1
+  gestureId: 
+  prerequisites: []

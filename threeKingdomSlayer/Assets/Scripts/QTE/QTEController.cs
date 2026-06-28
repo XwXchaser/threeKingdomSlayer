@@ -337,12 +337,12 @@ public class QTEController : MonoBehaviour
                     float dr = descentRatio;
                     DOVirtual.DelayedCall(stagger, () =>
                     {
-                        if (p != null) p.Launch(spawnPos, tz, sx, d, arcH, flightTime, pitchAngle, dr);
+                        if (p != null) p.Launch(spawnPos, tz, sx, d, arcH, flightTime, null, pitchAngle, dr);
                     });
                 }
                 else
                 {
-                    projectile.Launch(spawnPos, targetZ, spawnX, dmgPerArrow, arcH, flightTime, pitchAngle, descentRatio);
+                    projectile.Launch(spawnPos, targetZ, spawnX, dmgPerArrow, arcH, flightTime, null, pitchAngle, descentRatio);
                 }
             }
             wave.Add(projectile);

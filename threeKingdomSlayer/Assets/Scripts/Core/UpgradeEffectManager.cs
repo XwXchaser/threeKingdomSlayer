@@ -27,6 +27,13 @@ public class UpgradeEffectManager : MonoBehaviour
     private int _convergenceStep;
     private float _convergenceDamagePercent = 0.1f;
     private int _directionalPushStep;
+    private float _chargeDamageReduction;
+
+    // 反伤盾（由 charge_reflect_shield 管理）
+    private bool _hasReflectShield;
+    private float _reflectShieldCooldown;
+    private float _reflectShieldInterval;
+    private float _reflectShieldPercent;
 
     // ── 已应用升级追踪 (upgradeId → level) ──
     private Dictionary<string, int> _appliedUpgrades = new Dictionary<string, int>();
@@ -51,6 +58,19 @@ public class UpgradeEffectManager : MonoBehaviour
     {
         if (Instance == this)
             Instance = null;
+    }
+
+    private void Update()
+    {
+        // 反伤盾计时器：盾存在时停转，消耗后才重新计时
+        if (_reflectShieldInterval <= 0f) return;
+        if (_hasReflectShield) return;
+        _reflectShieldCooldown -= Time.deltaTime;
+        if (_reflectShieldCooldown <= 0f)
+        {
+            _hasReflectShield = true;
+            _reflectShieldCooldown = _reflectShieldInterval;
+        }
     }
 
     /// <summary>注册行为型效果执行器</summary>
@@ -169,6 +189,21 @@ public class UpgradeEffectManager : MonoBehaviour
     public float GetConvergenceDamagePercent() => _convergenceDamagePercent;
     public int GetDirectionalPushStep() => _directionalPushStep;
 
+    /// <summary>蓄力减伤比例（0~1），仅在玩家处于蓄力状态时由 PlayerState 查询</summary>
+    public float GetChargeDamageReduction() => _chargeDamageReduction;
+
+    /// <summary>是否持有反伤盾</summary>
+    public bool GetHasReflectShield() => _hasReflectShield;
+
+    /// <summary>尝试消耗反伤盾。返回反弹比例（0~1），无盾返回 -1</summary>
+    public float TryConsumeReflectShield()
+    {
+        if (!_hasReflectShield || _reflectShieldPercent <= 0f) return -1f;
+        _hasReflectShield = false;
+        _reflectShieldCooldown = _reflectShieldInterval;
+        return _reflectShieldPercent;
+    }
+
     #region Debug Setters
 
     public void DebugSetPushWave(int distance) => _pushWaveDistance = distance;
@@ -280,12 +315,36 @@ public class UpgradeEffectManager : MonoBehaviour
             desc = desc.Replace("{0}", cfg.intValue.ToString());
             desc = desc.Replace("{1}", (cfg.floatValue * 100f).ToString("F0"));
         }
+        else if (def.effectType == "charge_damage_reduction")
+        {
+            var cfg = def.GetNumericConfig(nextLevel);
+            desc = desc.Replace("{0}", (cfg.floatValue * 100f).ToString("F0"));
+        }
         else if (def.effectType == "spike_trap")
         {
             var cfg = def.GetNumericConfig(nextLevel);
             desc = desc.Replace("{0}", cfg.floatValue.ToString("F0"));
             desc = desc.Replace("{1}", cfg.intValue.ToString());
             desc = desc.Replace("{2}", cfg.secondaryIntValue.ToString());
+        }
+        else if (def.effectType == "charge_reflect_shield")
+        {
+            var rsCfg = def.reflectShieldLevels != null && nextLevel <= def.reflectShieldLevels.Count
+                ? def.reflectShieldLevels[nextLevel - 1]
+                : new ReflectShieldLevelConfig();
+            desc = desc.Replace("{0}", rsCfg.intervalSeconds.ToString("F1"));
+            desc = desc.Replace("{1}", (rsCfg.reflectPercent * 100f).ToString("F0"));
+        }
+        else if (def.effectType == "charge_shockwave")
+        {
+            var swCfg = def.chargeShockwaveLevels != null && nextLevel <= def.chargeShockwaveLevels.Count
+                ? def.chargeShockwaveLevels[nextLevel - 1]
+                : new ChargeShockwaveLevelConfig();
+            desc = desc.Replace("{0}", swCfg.intervalSeconds.ToString("F1"));
+            desc = desc.Replace("{1}", swCfg.shockwaveCount.ToString());
+            desc = desc.Replace("{2}", swCfg.rangeRows.ToString());
+            desc = desc.Replace("{3}", swCfg.baseDamage.ToString());
+            desc = desc.Replace("{4}", (swCfg.stackDamageBonus * 100f).ToString("F0"));
         }
         else
         {
@@ -336,6 +395,12 @@ public class UpgradeEffectManager : MonoBehaviour
         _convergenceStep = 0;
         _convergenceDamagePercent = 0.1f;
         _directionalPushStep = 0;
+        _chargeDamageReduction = 0f;
+
+        _hasReflectShield = false;
+        _reflectShieldCooldown = 0f;
+        _reflectShieldInterval = 0f;
+        _reflectShieldPercent = 0f;
 
         SpikeTrapController.Instance?.ResetAll();
 
@@ -383,6 +448,19 @@ public class UpgradeEffectManager : MonoBehaviour
                 if (cfg.floatValue > 0f) _convergenceDamagePercent = cfg.floatValue;
                 break;
             case "unlock_attack":
+                break;
+            case "charge_damage_reduction":
+                _chargeDamageReduction += cfg.floatValue;
+                break;
+            case "charge_reflect_shield":
+                if (def.reflectShieldLevels != null && level <= def.reflectShieldLevels.Count)
+                {
+                    var rsCfg = def.reflectShieldLevels[level - 1];
+                    _reflectShieldInterval = rsCfg.intervalSeconds;
+                    _reflectShieldPercent = rsCfg.reflectPercent;
+                    _reflectShieldCooldown = rsCfg.intervalSeconds;
+                    _hasReflectShield = true; // 首次获得立即给盾
+                }
                 break;
             case "spike_trap":
                 if (SpikeTrapController.Instance != null)

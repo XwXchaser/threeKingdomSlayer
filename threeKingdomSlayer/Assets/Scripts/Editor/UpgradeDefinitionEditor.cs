@@ -36,6 +36,8 @@ public class UpgradeDefinitionEditor : Editor
     private SerializedProperty chainBounceLevelsProp;
     private SerializedProperty cycloneLevelsProp;
     private SerializedProperty arrowVolleyLevelsProp;
+    private SerializedProperty reflectShieldLevelsProp;
+    private SerializedProperty chargeShockwaveLevelsProp;
 
     // ── 道具型 ──
     private SerializedProperty useCountProp;
@@ -68,6 +70,8 @@ public class UpgradeDefinitionEditor : Editor
         chainBounceLevelsProp = serializedObject.FindProperty("chainBounceLevels");
         cycloneLevelsProp = serializedObject.FindProperty("cycloneLevels");
         arrowVolleyLevelsProp = serializedObject.FindProperty("arrowVolleyLevels");
+        reflectShieldLevelsProp = serializedObject.FindProperty("reflectShieldLevels");
+        chargeShockwaveLevelsProp = serializedObject.FindProperty("chargeShockwaveLevels");
 
         useCountProp = serializedObject.FindProperty("useCount");
         gestureIdProp = serializedObject.FindProperty("gestureId");
@@ -167,6 +171,9 @@ public class UpgradeDefinitionEditor : Editor
             case "passive_arrow_volley":
                 DrawArrowVolleySection();
                 break;
+            case "charge_shockwave":
+                DrawChargeShockwaveSection();
+                break;
             default:
                 EditorGUILayout.HelpBox($"未知的被动 effectType: {effectType}", MessageType.Warning);
                 break;
@@ -235,6 +242,16 @@ public class UpgradeDefinitionEditor : Editor
         EditorGUILayout.LabelField("效果", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(effectTypeProp);
 
+        string effectType = effectTypeProp.stringValue;
+
+        if (effectType == "charge_reflect_shield")
+            DrawReflectShieldSection();
+        else
+            DrawNumericLevelsSection();
+    }
+
+    private void DrawNumericLevelsSection()
+    {
         if (numericLevelsProp == null) return;
 
         EditorGUILayout.PropertyField(numericLevelsProp.FindPropertyRelative("Array.size"), new GUIContent("等级数"));
@@ -282,11 +299,57 @@ public class UpgradeDefinitionEditor : Editor
             }
             else
             {
-                // 默认显示三个通用字段
                 EditorGUILayout.PropertyField(elem.FindPropertyRelative("floatValue"));
                 EditorGUILayout.PropertyField(elem.FindPropertyRelative("intValue"));
                 EditorGUILayout.PropertyField(elem.FindPropertyRelative("secondaryIntValue"));
             }
+
+            EditorGUILayout.EndVertical();
+        }
+    }
+
+    private void DrawReflectShieldSection()
+    {
+        if (reflectShieldLevelsProp == null) return;
+
+        EditorGUILayout.PropertyField(reflectShieldLevelsProp.FindPropertyRelative("Array.size"), new GUIContent("等级数"));
+
+        for (int i = 0; i < reflectShieldLevelsProp.arraySize; i++)
+        {
+            var elem = reflectShieldLevelsProp.GetArrayElementAtIndex(i);
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField($"Lv.{i + 1}", EditorStyles.miniBoldLabel);
+
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("intervalSeconds"), new GUIContent("间隔(秒)"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("reflectPercent"), new GUIContent("反弹比例(%)"));
+
+            EditorGUILayout.EndVertical();
+        }
+    }
+
+    // ══════════════════════════════════════════
+    // 蓄力冲击波绘制
+    // ══════════════════════════════════════════
+
+    private void DrawChargeShockwaveSection()
+    {
+        if (chargeShockwaveLevelsProp == null) return;
+
+        EditorGUILayout.PropertyField(chargeShockwaveLevelsProp.FindPropertyRelative("Array.size"));
+
+        for (int i = 0; i < chargeShockwaveLevelsProp.arraySize; i++)
+        {
+            var elem = chargeShockwaveLevelsProp.GetArrayElementAtIndex(i);
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField($"Lv.{i + 1}", EditorStyles.miniBoldLabel);
+
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("intervalSeconds"), new GUIContent("间隔(秒)"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("shockwaveCount"), new GUIContent("每次波数"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("rangeRows"), new GUIContent("射程排数"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("baseDamage"), new GUIContent("基础伤害"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("stackDamageBonus"), new GUIContent("每层增伤%"));
 
             EditorGUILayout.EndVertical();
         }

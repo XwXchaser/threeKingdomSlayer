@@ -54,6 +54,11 @@ public class PlayerState : MonoBehaviour
     private float damageReductionPercent;
     private float damageReductionTimer;
 
+    // 蓄力减伤（由 UpgradeEffectManager 提供数值，InputManager.OnChargeBegan/Ended 控制开关）
+    private bool _isCharging;
+    /// <summary>玩家当前是否处于蓄力状态（供 TimedPassiveModule / AttackSystem 查询）</summary>
+    public bool IsCharging => _isCharging;
+
     // 无敌标记（狂怒大招等）
     [System.NonSerialized] public bool isInvincible;
 
@@ -87,6 +92,13 @@ public class PlayerState : MonoBehaviour
         {
             Instance = null;
         }
+
+        // 蓄力减伤：取消订阅
+        if (InputManager.Instance != null)
+        {
+            InputManager.Instance.OnChargeBegan -= OnChargeBegan;
+            InputManager.Instance.OnChargeEnded -= OnChargeEnded;
+        }
     }
 
     private void Start()
@@ -96,6 +108,14 @@ public class PlayerState : MonoBehaviour
             Debug.LogError("[PlayerState] heroConfig 未赋值！将使用默认值运行，部分功能可能受限");
             // 不 return，允许游戏在无配置时继续运行（使用默认值）
         }
+
+        // 蓄力减伤：订阅 InputManager 的蓄力事件
+        if (InputManager.Instance != null)
+        {
+            InputManager.Instance.OnChargeBegan += OnChargeBegan;
+            InputManager.Instance.OnChargeEnded += OnChargeEnded;
+        }
+
         ResetPlayer();
     }
 
@@ -147,6 +167,8 @@ public class PlayerState : MonoBehaviour
         acquiredUpgrades.Clear();
         UpgradeEffectManager.Instance?.ResetAll();
 
+        _isCharging = false;
+
         cooldownTimers.Clear();
         damageReductionPercent = 0f;
         damageReductionTimer = 0f;
@@ -165,15 +187,37 @@ public class PlayerState : MonoBehaviour
     /// <summary>
     /// 玩家受到伤害
     /// </summary>
-    public void TakeDamage(float damage)
+    public void TakeDamage(float damage, Enemy source = null)
     {
         if (stageState == StageState.Defeat || stageState == StageState.Victory) return;
         if (isInvincible) return;
 
-        float finalDamage = damage;
+        float originalDamage = damage;
+
+        // 反伤盾：蓄力时受到伤害且来源有效 → 基于原始伤害反弹，先于减伤
+        if (_isCharging && source != null && UpgradeEffectManager.Instance != null)
+        {
+            float reflectPercent = UpgradeEffectManager.Instance.TryConsumeReflectShield();
+            if (reflectPercent > 0f)
+            {
+                float reflectDamage = originalDamage * reflectPercent;
+                source.TakeDamage(reflectDamage, damageNumberColor: new Color(0.7f, 0.2f, 1f));
+                DebugLog.Info($"[PlayerState] 反伤盾触发: 反弹 {reflectDamage:F0} 伤害 (原始 {originalDamage:F0} × {reflectPercent:P0})");
+            }
+        }
+
+        float finalDamage = originalDamage;
         if (damageReductionTimer > 0f)
         {
-            finalDamage = damage * (1f - damageReductionPercent);
+            finalDamage = originalDamage * (1f - damageReductionPercent);
+        }
+
+        // 蓄力减伤（与招架减伤乘法叠加）
+        if (_isCharging && UpgradeEffectManager.Instance != null)
+        {
+            float chargeReduction = UpgradeEffectManager.Instance.GetChargeDamageReduction();
+            if (chargeReduction > 0f)
+                finalDamage *= (1f - chargeReduction);
         }
 
         currentHealth -= finalDamage;
@@ -181,7 +225,7 @@ public class PlayerState : MonoBehaviour
         // 受击震动已暂时关闭（安卓端不合适），后续在其他功能情景中重新启用
         // Handheld.Vibrate();
 
-        Debug.Log($"[PlayerState] 受到伤害: {damage}(原始) -> {finalDamage}(最终), 剩余生命: {currentHealth}");
+        Debug.Log($"[PlayerState] 受到伤害: {originalDamage}(原始) -> {finalDamage}(最终), 剩余生命: {currentHealth}");
 
         if (currentHealth <= 0f)
         {
@@ -423,6 +467,20 @@ public class PlayerState : MonoBehaviour
     {
         damageReductionPercent = percent;
         damageReductionTimer = duration;
+    }
+
+    #endregion
+
+    #region 蓄力减伤事件
+
+    private void OnChargeBegan(Vector2 pos)
+    {
+        _isCharging = true;
+    }
+
+    private void OnChargeEnded()
+    {
+        _isCharging = false;
     }
 
     #endregion
