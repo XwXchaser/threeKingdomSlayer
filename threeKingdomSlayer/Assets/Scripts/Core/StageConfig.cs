@@ -41,6 +41,12 @@ public class WaveConfig
     [Tooltip("血量倍率，1.0 = 100% = 不变")]
     public float healthMultiplier = 1f;
 
+    [Tooltip("攻击速度倍率，>1 敌人攻击更频繁")]
+    public float attackSpeedMultiplier = 1f;
+
+    [Tooltip("伤害倍率，>1 玩家承伤更高")]
+    public float damageMultiplier = 1f;
+
     [Tooltip("敌人颜色叠加，白色(1,1,1) = 不变")]
     public Color waveTintColor = Color.white;
 

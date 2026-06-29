@@ -43,6 +43,7 @@ public class BattleHUD : MonoBehaviour
 
     // 运行时实例化的英雄 HUD
     private HeroHUD _heroHUD;
+    private int _lastShieldAmount;
 
     // Boss 血条池
     private List<BossHealthUI> _activeBossBars = new List<BossHealthUI>();
@@ -159,6 +160,23 @@ public class BattleHUD : MonoBehaviour
             UpdateCooldownUI();
             UpdateCooldownFillUI();
         }
+
+        // 护盾值轮询（护盾授予/消耗不触发 OnHealthChanged）
+        if (_heroHUD != null && PlayerState.Instance != null)
+        {
+            int shield = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetReflectShieldAmount() : 0;
+            if (shield != _lastShieldAmount)
+            {
+                _lastShieldAmount = shield;
+                float hp = PlayerState.Instance.currentHealth;
+                float maxHp = PlayerState.Instance.heroConfig != null ? PlayerState.Instance.heroConfig.maxHealth : 100f;
+                _heroHUD.SetHealth(hp, maxHp, shield);
+                if (shield > 0)
+                    _heroHUD.SetShieldFillActive(true);
+                else
+                    _heroHUD.SetShieldFillActive(false);
+            }
+        }
     }
 
     private void OnDestroy()
@@ -184,7 +202,16 @@ public class BattleHUD : MonoBehaviour
 
     private void UpdateHealth(float current, float max)
     {
-        _heroHUD?.SetHealth(current, max);
+        int shield = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetReflectShieldAmount() : 0;
+        if (shield != _lastShieldAmount)
+        {
+            if (shield > 0)
+                _heroHUD?.SetShieldFillActive(true);
+            else
+                _heroHUD?.SetShieldFillActive(false);
+        }
+        _lastShieldAmount = shield;
+        _heroHUD?.SetHealth(current, max, shield);
     }
 
     private void UpdateRevives(int count)

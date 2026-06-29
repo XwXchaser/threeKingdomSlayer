@@ -157,6 +157,18 @@ public class PassiveTriggerModule : MonoBehaviour
         _states.Clear();
     }
 
+    /// <summary>获取已注册被动的当前攻击计数，未注册返回 -1</summary>
+    public int GetCurrentCount(string upgradeId)
+    {
+        return _states.TryGetValue(upgradeId, out var s) ? s.currentCount : -1;
+    }
+
+    /// <summary>获取已注册被动的触发阈值，未注册返回 -1</summary>
+    public int GetThreshold(string upgradeId)
+    {
+        return _states.TryGetValue(upgradeId, out var s) ? s.threshold : -1;
+    }
+
     // ══════════════════════════════════════════
     // 效果执行器（自包含，不依赖攻击上下文）
     // ══════════════════════════════════════════

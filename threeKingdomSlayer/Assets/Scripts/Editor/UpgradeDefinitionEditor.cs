@@ -321,8 +321,17 @@ public class UpgradeDefinitionEditor : Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField($"Lv.{i + 1}", EditorStyles.miniBoldLabel);
 
-            EditorGUILayout.PropertyField(elem.FindPropertyRelative("intervalSeconds"), new GUIContent("间隔(秒)"));
-            EditorGUILayout.PropertyField(elem.FindPropertyRelative("reflectPercent"), new GUIContent("反弹比例(%)"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("intervalSeconds"), new GUIContent("CD间隔(秒)"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("shieldAmount"), new GUIContent("护盾值"));
+
+            var enableBonusProp = elem.FindPropertyRelative("enableBonus");
+            EditorGUILayout.PropertyField(enableBonusProp, new GUIContent("启用额外效果"));
+            if (enableBonusProp.boolValue)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.PropertyField(elem.FindPropertyRelative("bonusReflectPercent"), new GUIContent("反伤加成(%)"));
+                EditorGUI.indentLevel--;
+            }
 
             EditorGUILayout.EndVertical();
         }

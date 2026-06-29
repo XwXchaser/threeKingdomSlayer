@@ -12,6 +12,8 @@ public class HeroHUD : MonoBehaviour
     [Header("生命值")]
     public Slider healthSlider;
     public TMP_Text healthText;
+    [Tooltip("护盾状态下替换血条 Fill 的精灵（留空则不改动）")]
+    public Sprite shieldFillSprite;
 
     [Header("复活次数")]
     public TMP_Text reviveText;
@@ -49,10 +51,12 @@ public class HeroHUD : MonoBehaviour
     // 血量条默认颜色缓存
     private Color _healthBarDefaultColor;
     private bool _healthBarColorSaved;
+    private Sprite _defaultFillSprite;
+    private bool _defaultFillSpriteCached;
 
     #region 公共接口
 
-    public void SetHealth(float current, float max)
+    public void SetHealth(float current, float max, int shieldAmount = 0)
     {
         if (healthSlider != null)
         {
@@ -60,7 +64,12 @@ public class HeroHUD : MonoBehaviour
             healthSlider.value = current;
         }
         if (healthText != null)
-            healthText.text = $"{Mathf.CeilToInt(current)}/{Mathf.CeilToInt(max)}";
+        {
+            if (shieldAmount > 0)
+                healthText.text = $"{Mathf.CeilToInt(current)}+({shieldAmount})/{Mathf.CeilToInt(max)}";
+            else
+                healthText.text = $"{Mathf.CeilToInt(current)}/{Mathf.CeilToInt(max)}";
+        }
     }
 
     public void SetReviveCount(int count)
@@ -93,6 +102,22 @@ public class HeroHUD : MonoBehaviour
     {
         if (_healthBarColorSaved)
             SetHealthBarColor(_healthBarDefaultColor);
+    }
+
+    /// <summary>
+    /// 切换血条 Fill 精灵为护盾版本 / 恢复默认
+    /// </summary>
+    public void SetShieldFillActive(bool active)
+    {
+        if (healthSlider == null || healthSlider.fillRect == null || shieldFillSprite == null) return;
+        var img = healthSlider.fillRect.GetComponent<Image>();
+        if (img == null) return;
+        if (!_defaultFillSpriteCached)
+        {
+            _defaultFillSprite = img.sprite;
+            _defaultFillSpriteCached = true;
+        }
+        img.sprite = active ? shieldFillSprite : _defaultFillSprite;
     }
 
     /// <summary>

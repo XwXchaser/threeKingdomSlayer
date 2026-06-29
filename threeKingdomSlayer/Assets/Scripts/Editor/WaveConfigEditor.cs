@@ -205,6 +205,8 @@ public class StageConfigEditor : Editor
 
             // 波次敌人强化
             SerializedProperty hpMultProp = wave.FindPropertyRelative("healthMultiplier");
+            SerializedProperty atkSpdMultProp = wave.FindPropertyRelative("attackSpeedMultiplier");
+            SerializedProperty dmgMultProp = wave.FindPropertyRelative("damageMultiplier");
             SerializedProperty tintProp = wave.FindPropertyRelative("waveTintColor");
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("血量倍率", GUILayout.Width(60));
@@ -212,6 +214,13 @@ public class StageConfigEditor : Editor
             GUILayout.Space(10);
             EditorGUILayout.LabelField("染色", GUILayout.Width(30));
             tintProp.colorValue = EditorGUILayout.ColorField(tintProp.colorValue, GUILayout.Width(60));
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("攻速倍率", GUILayout.Width(60));
+            atkSpdMultProp.floatValue = EditorGUILayout.Slider(atkSpdMultProp.floatValue, 0.1f, 3f, GUILayout.Width(140));
+            GUILayout.Space(10);
+            EditorGUILayout.LabelField("伤害倍率", GUILayout.Width(60));
+            dmgMultProp.floatValue = EditorGUILayout.Slider(dmgMultProp.floatValue, 0.1f, 5f, GUILayout.Width(140));
             EditorGUILayout.EndHorizontal();
 
             // 动态补齐（本波次独立配置）

@@ -122,7 +122,8 @@ public class ThornArmorEffect : MonoBehaviour
 
     private void OnChargeBegan(Vector2 pos)
     {
-        if (!ShieldExists()) return;
+        // 不再在此处检查 ShieldExists()，避免与 PlayerState.OnChargeBegan 的 TryGrantShield 竞态。
+        // 盾的存在性推迟到 OnChargeUpdated 中判定。
         _isCharging = true;
         _chargeProgress = 0f;
     }
@@ -130,14 +131,10 @@ public class ThornArmorEffect : MonoBehaviour
     private void OnChargeUpdated(Vector2 pos, float progress)
     {
         _chargeProgress = progress;
-        // Idle → Starting: 进度达阈值且盾存在
-        if (_state == State.Idle && _isCharging && progress >= appearThreshold)
+        // Idle → Starting: 进度达阈值且盾存在。不 bail out，持续等待 PlayerState 授予护盾
+        if (_state == State.Idle && _isCharging && progress >= appearThreshold && ShieldExists())
         {
-            if (ShieldExists())
-                TransitionTo(State.Starting);
-            else
-                _isCharging = false;
-            return;
+            TransitionTo(State.Starting);
         }
         // Starting → Looping: 蓄力满且盾仍在
         if (_state == State.Starting && progress >= 1f)
@@ -152,8 +149,9 @@ public class ThornArmorEffect : MonoBehaviour
     private void OnChargeEnded()
     {
         _isCharging = false;
+        // 离开蓄力 → 护盾消失，播放破碎动画
         if (_state == State.Starting || _state == State.Looping)
-            TransitionTo(State.Idle);
+            TransitionTo(State.Losing);
     }
 
     private void OnShieldConsumed()
@@ -213,8 +211,8 @@ public class ThornArmorEffect : MonoBehaviour
             _sr = _visualRoot.GetComponent<SpriteRenderer>();
             if (_sr == null)
                 _sr = _visualRoot.AddComponent<SpriteRenderer>();
-            if (_sr.material == null || _sr.material.shader.name != "Unlit/Transparent")
-                _sr.material = new Material(Shader.Find("Unlit/Transparent"));
+            if (_sr.sharedMaterial == null || _sr.sharedMaterial.shader.name != "Unlit/Transparent")
+                _sr.sharedMaterial = new Material(Shader.Find("Unlit/Transparent"));
             _sr.sortingOrder = 10;
             _visualRoot.transform.localPosition = localOffset;
             _visualRoot.SetActive(false);
@@ -227,7 +225,7 @@ public class ThornArmorEffect : MonoBehaviour
 
         _sr = _visualRoot.AddComponent<SpriteRenderer>();
         _sr.sortingOrder = 10;
-        _sr.material = new Material(Shader.Find("Unlit/Transparent"));
+        _sr.sharedMaterial = new Material(Shader.Find("Unlit/Transparent"));
 
         _visualRoot.SetActive(false);
     }

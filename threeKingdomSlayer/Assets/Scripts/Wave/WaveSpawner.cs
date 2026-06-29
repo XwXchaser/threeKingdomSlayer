@@ -264,7 +264,8 @@ public class WaveSpawner : MonoBehaviour
             // 应用波次敌人强化（血量倍率 + 颜色叠加）
             WaveConfig currentWave = ResolvedStageConfig?.waves[currentWaveIndex];
             if (currentWave != null)
-                enemy.ApplyWaveScaling(currentWave.healthMultiplier, currentWave.waveTintColor);
+                enemy.ApplyWaveScaling(currentWave.healthMultiplier, currentWave.waveTintColor,
+                    currentWave.attackSpeedMultiplier, currentWave.damageMultiplier);
 
             // 注册到管理器
             enemyManager?.RegisterEnemy(enemy);

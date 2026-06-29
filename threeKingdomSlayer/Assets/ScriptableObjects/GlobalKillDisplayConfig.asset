@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GlobalKillDisplayConfig
   m_EditorClassIdentifier: 
   entries:
-  - killThreshold: 3
+  - killThreshold: 50
     displaySprite: {fileID: 21300000, guid: bc08f4c1075c7ef4bad982164a08d6b5, type: 3}
     displayDuration: 2
     displaySize: {x: 512, y: 256}
