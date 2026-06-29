@@ -409,12 +409,18 @@ public struct ArrowVolleyLevelConfig
 public struct ReflectShieldLevelConfig
 {
     [Header("触发参数")]
-    [Tooltip("获得护盾的间隔时间（秒）")]
+    [Tooltip("获得护盾的间隔时间（秒）。CD 冷却完毕后，进入蓄力时获得护盾")]
     public float intervalSeconds;
 
     [Header("效果参数")]
-    [Tooltip("反弹伤害百分比（10=10%）")]
-    public float reflectPercent;
+    [Tooltip("护盾值（反伤总量）")]
+    public int shieldAmount;
+
+    [Header("额外效果")]
+    [Tooltip("勾选后启用额外反伤倍率加成")]
+    public bool enableBonus;
+    [Tooltip("反伤伤害加成百分比（10=10%），实际反伤 = 吸收伤害 × (1 + bonus/100)")]
+    public float bonusReflectPercent;
 }
 
 /// <summary>冲击波每级配置</summary>

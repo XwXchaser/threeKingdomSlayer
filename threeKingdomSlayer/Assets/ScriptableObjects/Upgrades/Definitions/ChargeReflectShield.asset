@@ -15,7 +15,7 @@ MonoBehaviour:
   category: 0
   upgradeId: charge_reflect_shield
   displayName: "\u94C1\u58C1\xB7\u53CD\u4F24"
-  descriptionTemplate: "\u6BCF{0}\u79D2\u83B7\u5F971\u5C42\u53CD\u4F24\u76FE\uFF0C\u84C4\u529B\u53D7\u4F24\u65F6\u53CD\u5F39{1}%\u4F24\u5BB3"
+  descriptionTemplate: "\u6BCF{0}\u79D2\u8FDB\u5165\u84C4\u529B\u540E\u83B7\u5F97\u80FD\u53CD\u5F39{1}\u70B9\u4F24\u5BB3\u7684\u62A4\u76FE{2}"
   rarity: 0
   maxLevel: 5
   effectType: charge_reflect_shield
@@ -35,15 +35,25 @@ MonoBehaviour:
   arrowVolleyLevels: []
   reflectShieldLevels:
   - intervalSeconds: 5
-    reflectPercent: 100
+    shieldAmount: 20
+    enableBonus: 0
+    bonusReflectPercent: 0
   - intervalSeconds: 5
-    reflectPercent: 200
+    shieldAmount: 100
+    enableBonus: 0
+    bonusReflectPercent: 0
+  - intervalSeconds: 5
+    shieldAmount: 150
+    enableBonus: 1
+    bonusReflectPercent: 20
   - intervalSeconds: 3
-    reflectPercent: 300
+    shieldAmount: 200
+    enableBonus: 1
+    bonusReflectPercent: 30
   - intervalSeconds: 2
-    reflectPercent: 400
-  - intervalSeconds: 2
-    reflectPercent: 500
+    shieldAmount: 200
+    enableBonus: 1
+    bonusReflectPercent: 50
   chargeShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []

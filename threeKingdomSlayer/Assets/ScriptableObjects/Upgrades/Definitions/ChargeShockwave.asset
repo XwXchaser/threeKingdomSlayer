@@ -40,31 +40,31 @@ MonoBehaviour:
     rangeRows: 2
     baseDamage: 15
     stackDamageBonus: 0.1
-    waveDelay: 0.1
+    waveDelay: 0.5
   - intervalSeconds: 7
     shockwaveCount: 1
     rangeRows: 2
     baseDamage: 20
-    stackDamageBonus: 0.15
-    waveDelay: 0.1
+    stackDamageBonus: 0.2
+    waveDelay: 0.5
   - intervalSeconds: 6
     shockwaveCount: 2
     rangeRows: 3
     baseDamage: 25
-    stackDamageBonus: 0.2
-    waveDelay: 0.1
+    stackDamageBonus: 0.45
+    waveDelay: 0.5
   - intervalSeconds: 5
     shockwaveCount: 2
     rangeRows: 3
     baseDamage: 30
-    stackDamageBonus: 0.3
-    waveDelay: 0.1
+    stackDamageBonus: 0.5
+    waveDelay: 0.5
   - intervalSeconds: 4
     shockwaveCount: 3
     rangeRows: 3
     baseDamage: 35
-    stackDamageBonus: 0.3
-    waveDelay: 0.1
+    stackDamageBonus: 0.8
+    waveDelay: 0.5
   triggerParam: 0
   phantomSteps: []
   useCount: 1

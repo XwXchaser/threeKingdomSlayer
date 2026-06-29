@@ -63,6 +63,12 @@ public class PlayerState : MonoBehaviour
     private bool _isChargeReady;
     public bool IsChargeReady => _isChargeReady;
 
+    // 本次蓄力是否已授予护盾（防止 OnChargeUpdated 重复授予）
+    private bool _shieldGrantedThisCharge;
+    [Tooltip("蓄力进度阈值（0~1），达到后授予反伤盾，与 ThornArmorEffect.appearThreshold 保持一致")]
+    [Range(0f, 1f)]
+    public float shieldGrantProgress = 0.3f;
+
     // 无敌标记（狂怒大招等）
     [System.NonSerialized] public bool isInvincible;
 
@@ -200,15 +206,17 @@ public class PlayerState : MonoBehaviour
 
         float originalDamage = damage;
 
-        // 反伤盾：蓄力就绪后受到伤害且来源有效 → 基于原始伤害反弹，先于减伤
+        // 反伤盾：蓄力期间受到伤害且来源有效 → 吸收伤害并反弹
         if (_isChargeReady && source != null && UpgradeEffectManager.Instance != null)
         {
-            float reflectPercent = UpgradeEffectManager.Instance.TryConsumeReflectShield();
-            if (reflectPercent > 0f)
+            float reflectDamage = UpgradeEffectManager.Instance.AbsorbDamage(originalDamage);
+            if (reflectDamage > 0f)
             {
-                float reflectDamage = originalDamage * reflectPercent;
                 source.TakeDamage(reflectDamage, damageNumberColor: new Color(0.7f, 0.2f, 1f));
-                DebugLog.Info($"[PlayerState] 反伤盾触发: 反弹 {reflectDamage:F0} 伤害 (原始 {originalDamage:F0} × {reflectPercent:P0})");
+                DebugLog.Info($"[PlayerState] 反伤盾触发: 反弹 {reflectDamage:F0} 伤害 (原始 {originalDamage:F0})");
+                // 护盾仍存在 → 完全吸收本次伤害，玩家不扣血
+                if (UpgradeEffectManager.Instance.GetHasReflectShield())
+                    return;
             }
         }
 
@@ -483,17 +491,34 @@ public class PlayerState : MonoBehaviour
     {
         _isCharging = true;
         _isChargeReady = false;
+        _shieldGrantedThisCharge = false;
+        if (UpgradeEffectManager.Instance != null)
+        {
+            UpgradeEffectManager.Instance.SetCharging(true);
+        }
     }
 
     private void OnChargeUpdated(Vector2 pos, float progress)
     {
         _isChargeReady = progress >= 1f;
+
+        // 蓄力进度达到阈值时授予护盾（仅一次），避免短按消耗 CD
+        if (!_shieldGrantedThisCharge && progress >= shieldGrantProgress)
+        {
+            _shieldGrantedThisCharge = true;
+            UpgradeEffectManager.Instance?.TryGrantShield();
+        }
     }
 
     private void OnChargeEnded()
     {
         _isCharging = false;
         _isChargeReady = false;
+        if (UpgradeEffectManager.Instance != null)
+        {
+            UpgradeEffectManager.Instance.SetCharging(false);
+            UpgradeEffectManager.Instance.ClearShield();
+        }
     }
 
     #endregion

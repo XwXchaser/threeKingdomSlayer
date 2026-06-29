@@ -69,6 +69,13 @@ public class TimedPassiveModule : MonoBehaviour
                 level = level,
                 timer = interval
             };
+
+            // 蓄力冲击波：首次获得立即给 1 层
+            if (def.effectType == "charge_shockwave")
+            {
+                _shockwaveLayers[def.upgradeId] = 1;
+                Debug.Log($"[TimedPassiveModule] {def.displayName} 首次获得，立即授予 1 层");
+            }
         }
 
         Debug.Log($"[TimedPassiveModule] 注册 {def.displayName} Lv.{level} effectType={def.effectType} interval={interval}s");

@@ -172,6 +172,8 @@ public class Enemy : MonoBehaviour
 
     // 波次强化用的原始值缓存（prefab 出厂值，Awake 时捕获一次）
     private float _prefabMaxHealth;
+    private float _prefabAttackSpeed;
+    private float _prefabAttackDamage;
     private Color _prefabColor = Color.white;
 
     [Header("招架血量眩晕阈值")]
@@ -306,6 +308,8 @@ public class Enemy : MonoBehaviour
 
         // 缓存 prefab 原始值，供波次强化（ApplyWaveScaling）使用
         _prefabMaxHealth = maxHealth;
+        _prefabAttackSpeed = attackSpeed;
+        _prefabAttackDamage = attackDamage;
         if (_spriteRenderer != null)
             _prefabColor = _spriteRenderer.color;
         else if (renderers != null && renderers.Length > 0)
@@ -457,16 +461,19 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
-    /// 应用波次敌人强化（血量倍率 + 颜色叠加）
+    /// 应用波次敌人强化（血量 / 攻速 / 伤害倍率 + 颜色叠加）
     /// 在 Initialize() 之后、共享血量组创建之前调用
     /// 始终基于 _prefab* 原始值计算，不累积
     /// </summary>
-    public void ApplyWaveScaling(float hpMult, Color tint)
+    public void ApplyWaveScaling(float hpMult, Color tint, float atkSpdMult = 1f, float dmgMult = 1f)
     {
         if (_prefabMaxHealth <= 0f) return;
 
         maxHealth = _prefabMaxHealth * hpMult;
         currentHealth = maxHealth;
+
+        attackSpeed = _prefabAttackSpeed * atkSpdMult;
+        attackDamage = _prefabAttackDamage * dmgMult;
 
         // 白色 tint = 无变化；忽略 alpha 通道避免与行透明度(GetAlphaForRow)冲突
         if (tint == Color.white) return;

@@ -17,7 +17,7 @@ MonoBehaviour:
   damageType: 3
   damage: 5
   poiseDamage: 0
-  rangeRows: 5
+  rangeRows: 3
   cooldown: 2
   actionDuration: 0.55
   launchDuration: 0.2

@@ -21,7 +21,22 @@ public class UpgradeCard : MonoBehaviour
     {
         _upgradeDef = def;
         if (nameText != null)
-            nameText.text = def.displayName;
+        {
+            string name = def.displayName;
+            int currentLevel = UpgradeEffectManager.Instance != null
+                ? UpgradeEffectManager.Instance.GetUpgradeLevel(def.upgradeId) : 0;
+            int nextLevel = currentLevel + 1;
+
+            string levelSuffix;
+            if (currentLevel == 0)
+                levelSuffix = "新获得";
+            else if (nextLevel == def.maxLevel)
+                levelSuffix = $"Lv.{currentLevel} → Lv.MAX";
+            else
+                levelSuffix = $"Lv.{currentLevel} → Lv.{nextLevel}";
+
+            nameText.text = $"{name}  {levelSuffix}";
+        }
         if (descriptionText != null)
             descriptionText.text = UpgradeEffectManager.Instance != null
                 ? UpgradeEffectManager.Instance.GetDescription(def)

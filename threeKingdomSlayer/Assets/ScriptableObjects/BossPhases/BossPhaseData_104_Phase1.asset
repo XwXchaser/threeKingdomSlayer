@@ -18,13 +18,13 @@ MonoBehaviour:
   attackSequence:
   - isCAttack: 0
     animationTrigger: Attack
-    spawnDuration: 0.78
+    spawnDuration: 1
     drawDuration: 0.4
     extraCooldown: 0
     useFlip: 0
   - isCAttack: 1
     animationTrigger: CAttack
-    spawnDuration: 1
+    spawnDuration: 1.5
     drawDuration: 0.5
     extraCooldown: 0.2
     useFlip: 0
@@ -32,7 +32,7 @@ MonoBehaviour:
   normalAttackWeight: 1
   cAttackWeight: 1
   qteWeight: 1
-  actionInterval: {x: 0.3, y: 1}
+  actionInterval: {x: 1.5, y: 1.5}
   postQTECooldown: 5
   isSuperArmor: 0
   stabDamageMultiplier: 1

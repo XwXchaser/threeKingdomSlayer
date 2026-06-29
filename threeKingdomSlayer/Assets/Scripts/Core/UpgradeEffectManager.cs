@@ -30,10 +30,13 @@ public class UpgradeEffectManager : MonoBehaviour
     private float _chargeDamageReduction;
 
     // 反伤盾（由 charge_reflect_shield 管理）
-    private bool _hasReflectShield;
-    private float _reflectShieldCooldown;
-    private float _reflectShieldInterval;
-    private float _reflectShieldPercent;
+    private int _reflectShieldAmount;        // 当前护盾剩余值，0 = 无护盾
+    private int _reflectShieldMaxAmount;     // 护盾最大值
+    private float _reflectShieldCooldown;    // CD 计时器
+    private float _reflectShieldInterval;    // CD 间隔
+    private float _bonusReflectPercent;      // 反伤倍率加成（0~1）
+    private bool _reflectShieldReady;        // CD 冷却完毕，等待进入蓄力
+    private bool _isCharging;
 
     // ── 已应用升级追踪 (upgradeId → level) ──
     private Dictionary<string, int> _appliedUpgrades = new Dictionary<string, int>();
@@ -63,14 +66,15 @@ public class UpgradeEffectManager : MonoBehaviour
 
     private void Update()
     {
-        // 反伤盾计时器：盾存在时停转，消耗后才重新计时
+        // 反伤盾 CD 计时器：蓄力期间暂停，非蓄力且未就绪时跑
         if (_reflectShieldInterval <= 0f) return;
-        if (_hasReflectShield) return;
+        if (_reflectShieldReady) return;
+        if (_isCharging) return;
         _reflectShieldCooldown -= Time.deltaTime;
         if (_reflectShieldCooldown <= 0f)
         {
-            _hasReflectShield = true;
-            _reflectShieldCooldown = _reflectShieldInterval;
+            _reflectShieldReady = true;
+            _reflectShieldCooldown = 0f;
         }
     }
 
@@ -193,30 +197,64 @@ public class UpgradeEffectManager : MonoBehaviour
     /// <summary>蓄力减伤比例（0~1），仅在玩家处于蓄力状态时由 PlayerState 查询</summary>
     public float GetChargeDamageReduction() => _chargeDamageReduction;
 
-    /// <summary>反伤盾伤害反弹比例（0~1）</summary>
-    public float GetReflectShieldPercent() => _reflectShieldPercent;
+    /// <summary>反伤盾当前剩余值（0=无盾）</summary>
+    public int GetReflectShieldAmount() => _reflectShieldAmount;
 
     /// <summary>是否持有反伤盾</summary>
-    public bool GetHasReflectShield() => _hasReflectShield;
+    public bool GetHasReflectShield() => _reflectShieldAmount > 0;
 
-    /// <summary>反伤盾冷却进度，返回 (fill 0→1, 剩余秒数)。无盾或未获得升级返回 (-1, 0)</summary>
+    /// <summary>反伤倍率加成（0~1）</summary>
+    public float GetBonusReflectPercent() => _bonusReflectPercent;
+
+    /// <summary>反伤盾冷却进度，返回 (fill 0→1, 剩余秒数)。未获得升级返回 (-1, 0)</summary>
     public (float fill, float remaining) GetReflectShieldCooldown()
     {
         if (_reflectShieldInterval <= 0f) return (-1f, 0f);
-        if (_hasReflectShield) return (0f, 0f); // 盾存在，冷却为 0
+        if (_reflectShieldReady) return (1f, 0f); // CD 就绪
         float remaining = Mathf.Max(_reflectShieldCooldown, 0f);
         float fill = 1f - (remaining / _reflectShieldInterval);
         return (fill, remaining);
     }
 
-    /// <summary>尝试消耗反伤盾。返回反弹比例（0~1），无盾返回 -1</summary>
-    public float TryConsumeReflectShield()
+    /// <summary>通知蓄力状态变化（由 PlayerState 调用）</summary>
+    public void SetCharging(bool charging)
     {
-        if (!_hasReflectShield || _reflectShieldPercent <= 0f) return -1f;
-        _hasReflectShield = false;
+        _isCharging = charging;
+    }
+
+    /// <summary>尝试授予护盾。CD 就绪且进入蓄力时调用。返回授予的护盾值，0 表示未就绪</summary>
+    public int TryGrantShield()
+    {
+        if (!_reflectShieldReady || _reflectShieldMaxAmount <= 0) return 0;
+        _reflectShieldReady = false;
+        _reflectShieldAmount = _reflectShieldMaxAmount;
         _reflectShieldCooldown = _reflectShieldInterval;
-        OnReflectShieldConsumed?.Invoke();
-        return _reflectShieldPercent;
+        return _reflectShieldAmount;
+    }
+
+    /// <summary>吸收伤害并返回反伤值。返回 0 表示无护盾</summary>
+    public float AbsorbDamage(float damage)
+    {
+        if (_reflectShieldAmount <= 0) return 0f;
+        int absorbed = Mathf.Min(_reflectShieldAmount, Mathf.CeilToInt(damage));
+        _reflectShieldAmount -= absorbed;
+        float reflect = damage * (1f + _bonusReflectPercent);
+        if (_reflectShieldAmount <= 0)
+        {
+            _reflectShieldAmount = 0;
+            OnReflectShieldConsumed?.Invoke();
+        }
+        return reflect;
+    }
+
+    /// <summary>清空护盾（离开蓄力时调用）</summary>
+    public void ClearShield()
+    {
+        if (_reflectShieldAmount > 0)
+        {
+            _reflectShieldAmount = 0;
+            OnReflectShieldConsumed?.Invoke();
+        }
     }
 
     #region Debug Setters
@@ -292,6 +330,15 @@ public class UpgradeEffectManager : MonoBehaviour
                 desc = desc.Replace("{0}", triggerStr);
                 desc = desc.Replace("{1}", (cfg.damageRatio * 100f).ToString("F0"));
             }
+            else if (def.effectType == "passive_arrow_volley")
+            {
+                var cfg = (def.arrowVolleyLevels != null && nextLevel <= def.arrowVolleyLevels.Count)
+                    ? def.arrowVolleyLevels[nextLevel - 1]
+                    : new ArrowVolleyLevelConfig { triggerThreshold = def.intValue, targetCount = def.secondaryIntValue, arrowCount = 3 };
+                desc = desc.Replace("{0}", cfg.triggerThreshold + "次攻击");
+                desc = desc.Replace("{1}", cfg.targetCount.ToString());
+                desc = desc.Replace("{2}", cfg.arrowCount.ToString());
+            }
             else if (def.effectType == "passive_chain_bounce")
             {
                 var cfg = (def.chainBounceLevels != null && nextLevel <= def.chainBounceLevels.Count)
@@ -359,7 +406,11 @@ public class UpgradeEffectManager : MonoBehaviour
                 ? def.reflectShieldLevels[nextLevel - 1]
                 : new ReflectShieldLevelConfig();
             desc = desc.Replace("{0}", rsCfg.intervalSeconds.ToString("F1"));
-            desc = desc.Replace("{1}", rsCfg.reflectPercent.ToString("F0"));
+            desc = desc.Replace("{1}", rsCfg.shieldAmount.ToString());
+            if (rsCfg.enableBonus)
+                desc = desc.Replace("{2}", $"，反伤伤害+{rsCfg.bonusReflectPercent.ToString("F0")}%");
+            else
+                desc = desc.Replace("{2}", "");
         }
         else
         {
@@ -412,10 +463,13 @@ public class UpgradeEffectManager : MonoBehaviour
         _directionalPushStep = 0;
         _chargeDamageReduction = 0f;
 
-        _hasReflectShield = false;
+        _reflectShieldAmount = 0;
+        _reflectShieldMaxAmount = 0;
         _reflectShieldCooldown = 0f;
         _reflectShieldInterval = 0f;
-        _reflectShieldPercent = 0f;
+        _bonusReflectPercent = 0f;
+        _reflectShieldReady = false;
+        _isCharging = false;
 
         SpikeTrapController.Instance?.ResetAll();
 
@@ -472,9 +526,11 @@ public class UpgradeEffectManager : MonoBehaviour
                 {
                     var rsCfg = def.reflectShieldLevels[level - 1];
                     _reflectShieldInterval = rsCfg.intervalSeconds;
-                    _reflectShieldPercent = rsCfg.reflectPercent / 100f; // 配置值为百分比（10=10%），运行时转换为比值
-                    _reflectShieldCooldown = rsCfg.intervalSeconds;
-                    _hasReflectShield = true; // 首次获得立即给盾
+                    _reflectShieldMaxAmount = rsCfg.shieldAmount;
+                    if (rsCfg.enableBonus)
+                        _bonusReflectPercent = rsCfg.bonusReflectPercent / 100f;
+                    _reflectShieldReady = true; // 首次获得/升级立即就绪
+                    _reflectShieldCooldown = 0f;
                 }
                 break;
             case "spike_trap":

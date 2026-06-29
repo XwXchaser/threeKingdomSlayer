@@ -219,11 +219,10 @@ public class BuffDisplayPanel : MonoBehaviour
                     int pct = Mathf.RoundToInt(uem.GetChargeDamageReduction() * 100f);
                     icon.SetPercentNumber(pct);
                 }
-                // 反伤盾：右上角显示反弹百分比
+                // 反伤盾：右上角显示护盾值
                 else if (def.effectType == "charge_reflect_shield")
                 {
-                    int pct = Mathf.RoundToInt(uem.GetReflectShieldPercent() * 100f);
-                    icon.SetPercentNumber(pct);
+                    // 初始不显示数字，由 Update 动态更新
                 }
             }
         }
@@ -287,7 +286,7 @@ public class BuffDisplayPanel : MonoBehaviour
             }
         }
 
-        // 反伤盾：右上角显示百分比/倒计时
+        // 反伤盾：显示护盾值 / CD 倒计时
         var uem = UpgradeEffectManager.Instance;
         if (uem != null && _upgradeIcons.TryGetValue("charge_reflect_shield", out var shieldIcon))
         {
@@ -296,18 +295,34 @@ public class BuffDisplayPanel : MonoBehaviour
             {
                 if (uem.GetHasReflectShield())
                 {
+                    // 护盾存在：清除右上角数字（血量栏已显示护盾值）
                     shieldIcon.SetCooldown(0f, null, false);
-                    int pct = Mathf.RoundToInt(uem.GetReflectShieldPercent() * 100f);
-                    shieldIcon.SetPercentNumber(pct);
+                    shieldIcon.ClearTopRightNumber();
                 }
                 else
                 {
+                    // CD 中：显示填充环和倒计时
                     shieldIcon.SetCooldown(fill, null, remaining > 0f);
                     if (remaining > 0f)
                         shieldIcon.SetCountdownNumber(Mathf.CeilToInt(remaining));
                     else
                         shieldIcon.ClearTopRightNumber();
                 }
+            }
+        }
+
+        // 箭矢齐射：显示触发剩余攻击次数
+        var ptm = PassiveTriggerModule.Instance;
+        if (ptm != null && _upgradeIcons.TryGetValue("arrow_volley", out var volleyIcon))
+        {
+            int threshold = ptm.GetThreshold("arrow_volley");
+            int current = ptm.GetCurrentCount("arrow_volley");
+            if (threshold > 0)
+            {
+                int remaining = threshold - current;
+                float fill = (float)current / threshold;
+                volleyIcon.SetCooldown(fill, null, true);
+                volleyIcon.SetTopRightNumber(remaining);
             }
         }
     }
