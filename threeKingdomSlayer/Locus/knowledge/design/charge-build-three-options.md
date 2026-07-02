@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1782579234286
-updatedAt: 1782619177668
+updatedAt: 1782990177846
 ---
 
 # charge-build-three-options
@@ -108,7 +108,7 @@ updatedAt: 1782619177668
 - 数值来源: `numericLevels.floatValue`（每级独立可配）
 - 减伤在 `TakeDamage` 中应用，与 parry 减伤叠加
 - 蓄力标志来源: `InputManager.OnChargeBegan / OnChargeEnded`
-- 蓄力标志在 `pressDuration >= minChargeTime` 时才立起（非按下瞬间）
+- 蓄力标志在 `pressDuration >= minChargeTime` 时才立起（非按下瞬间），当前 minChargeTime=1s
 
 ### 反伤盾
 

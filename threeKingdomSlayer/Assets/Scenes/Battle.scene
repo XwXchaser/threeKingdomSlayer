@@ -4060,6 +4060,7 @@ GameObject:
   - component: {fileID: 864291162}
   - component: {fileID: 864291163}
   - component: {fileID: 864291164}
+  - component: {fileID: 864291165}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Player
@@ -4128,6 +4129,33 @@ MonoBehaviour:
   appearThreshold: 0.3
   loopInterval: 0.3
   loseDuration: 0.4
+--- !u!114 &864291165
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 864291161}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 305991ad8d6a84d42904500182f2fe14, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  stabPrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
+  chargeSprite1: {fileID: 21300000, guid: 984052f310698e044aaed42a589b8d4d, type: 3}
+  chargeSprite2: {fileID: 21300000, guid: 4b47b505ef92503469dbdd4fc4b09aef, type: 3}
+  readySprite: {fileID: 21300000, guid: 84506bc43e354de43b778286bc4571df, type: 3}
+  loopSprite1: {fileID: 21300000, guid: 065c9d18dbd00604989df36fba4077dc, type: 3}
+  loopSprite2: {fileID: 21300000, guid: e169fa064f2234847a51eb1d845cf773, type: 3}
+  spawnYOffset: 0
+  spawnZOffset: -3.6
+  halfWidth: 3
+  maxAngle: 45
+  visualScale: {x: 0.1, y: 0.1, z: 0.1}
+  appearThreshold: 0.3
+  readyDuration: 0.2
+  loopInterval: 0.3
+  fadeOutDuration: 0.25
 --- !u!1 &868065446
 GameObject:
   m_ObjectHideFlags: 0
@@ -4632,7 +4660,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   longPressDuration: 1
-  minChargeTime: 0.5
+  minChargeTime: 1
   swipeThreshold: 50
   verticalSwipeThreshold: 30
   horizontalSwipeThreshold: 30
