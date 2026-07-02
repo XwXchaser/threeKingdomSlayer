@@ -9,13 +9,13 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1778764012219
-updatedAt: 1782549167866
+updatedAt: 1782984198038
 ---
 
 # project-mistake-note
 
 ## Summary
-更新至 2025-08-10 — 新增 BuffIcon raycastTarget=False 导致 UI 点击穿透
+更新至 2025-12 — 新增 Inspector 参数位置描述不清规则
 
 <!-- locus:body:start -->
 ### 自定义Editor中新增struct List字段不显示 Inspector 配置 ✅ 已修复（2025-06-27）
@@ -54,9 +54,15 @@ updatedAt: 1782549167866
 - 修复：默认 alpha → 1.0f，移除 Lerp 洗白，prefab 路径统一 `Color.white`
 - 预防规则：**对精灵 prefab 应用材质颜色会做乘法混合，要显示原图必须用 `Color.white`。不要在无 prefab 的 quad 和精灵 prefab 间共用同一套颜色逻辑**
 - 文件：`AttackWave.cs`, `SweepEffect.cs`, `AttackSystem.cs` (PlayLaunchVisual/PlayParryVisual)
+
+### Enemy Launch 后 Hit trigger 竞态导致落地播放 HitFlash ✅ 已修复（2025-12）
 - 症状：Enemy_101 击飞落地后播放 HitFlash 动画而非直接回到 Idle
 - 根因：`AttackWave.HitTarget()` 先调 `TakeDamage()`（设置 Hit trigger，此时 state 仍为 Stunned 而非 Launched），再调 `Launch()`。`Launch()` 的 `_animator.Play("Launched_Rise")` 不会清除已设置的 Hit trigger。落地切回 Idle 后，Idle→HitFlash 过渡（HasExitTime=False, If=Hit）立即捕获该遗留 trigger
 - 修复：`Enemy.Launch()` 中 `_animator.Play("Launched_Rise")` 之前加 `_animator.ResetTrigger("Hit")`
 - 预防规则：**动画状态切换前清理可能竞态的 trigger**，尤其是 `TakeDamage` 和 `Launch` 这种同一帧内先后调用的场景
 - 文件：`Assets/Scripts/Enemy/Enemy.cs` (Launch)
+
+### Inspector 参数位置描述不清导致用户找不到配置位置 ✅ 规则纠正（2025-12）
+- 症状：告知用户"在 Inspector 中调整 visualScale"但未说明是哪个 GameObject 的哪个组件，用户无法定位
+- 预防规则：**每当提示用户在 Inspector 中调整参数时，必须完整指明路径：Hierarchy 中选中哪个 GameObject → Inspector 中找到哪个组件 → 调整哪个字段。例："在 Hierarchy 中选中 `Player`，然后在 Inspector 中找 `ChargeStabVisual` 组件，调整 `Visual Scale` 字段"。不能只说"在 Inspector 调整 X"**
 <!-- locus:body:end -->
