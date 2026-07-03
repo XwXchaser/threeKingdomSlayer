@@ -94,7 +94,7 @@ public class AttackSystem : MonoBehaviour
         if (playerState == null) return false;
         if (playerState.stageState != StageState.InProgress) return false;
 
-        // 冷却检查：新模式（动作锁定）→ 全局锁；旧模式 → 独立技能CD
+        // 冷却检查：动作锁定模式 → 全局锁（时长=cooldown，特效timeScale同步拉伸）
         if (useActionBasedCooldown)
         {
             if (_actionLockTimer > 0f) return false;
@@ -121,7 +121,7 @@ public class AttackSystem : MonoBehaviour
 
         if (hitAny)
         {
-            // 触发冷却：新模式 → 动作锁定（cooldown为唯一权威值，受攻速缩放）；旧模式 → 独立技能CD
+            // 触发冷却：动作锁定模式 → 全局锁=cooldown/攻速（特效timeScale同步拉伸）
             if (useActionBasedCooldown)
             {
                 var cfg = GetConfig(attackType);
@@ -292,7 +292,7 @@ public class AttackSystem : MonoBehaviour
         Debug.Log($"[AttackSystem] 挑飞 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 击飞时间:{cfg.launchDuration}s 目标数:{targets.Count}");
 
         Vector3 playerLaunchPos = playerState != null ? playerState.transform.position : transform.position;
-        PlayLaunchVisual(cfg, playerLaunchPos);
+        PlayLaunchVisual(cfg, playerLaunchPos, GetVisualTargetDuration(cfg));
 
         return targets.Count > 0;
     }
@@ -320,7 +320,7 @@ public class AttackSystem : MonoBehaviour
         if (deflectedAny)
         {
             AudioManager.Instance?.PostEvent("Player_Parry");
-            PlayParryVisual(cfg, playerPos);
+            PlayParryVisual(cfg, playerPos, GetVisualTargetDuration(cfg));
             return true;
         }
 
@@ -341,7 +341,7 @@ public class AttackSystem : MonoBehaviour
         Debug.Log($"[AttackSystem] 招架 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 目标数:{targets.Count}");
         AudioManager.Instance?.PostEvent("Player_Parry");
 
-        PlayParryVisual(cfg, playerPos);
+        PlayParryVisual(cfg, playerPos, GetVisualTargetDuration(cfg));
 
         return true;
     }
@@ -351,7 +351,7 @@ public class AttackSystem : MonoBehaviour
     /// 以 (35,90,zStart) 朝向做纯 Z 轴旋转至 (35,90,zEnd)，
     /// 表现枪头从低往高上挑的攻击动作。
     /// </summary>
-    private void PlayLaunchVisual(AttackSkillConfig cfg, Vector3 playerPos)
+    private void PlayLaunchVisual(AttackSkillConfig cfg, Vector3 playerPos, float targetDuration = -1f)
     {
         if (_stabRotate1Sprite == null) return;
 
@@ -409,6 +409,18 @@ public class AttackSystem : MonoBehaviour
         seq.AppendInterval(0.03f);
         seq.Append(mat.DOFade(0f, 0.15f).SetEase(Ease.InQuad));
 
+        // 特效时长拉伸/压缩以匹配cooldown（限制最大缩放防极端值）
+        if (targetDuration > 0f)
+        {
+            float naturalDuration = duration + 0.03f + 0.15f;
+            if (naturalDuration > 0f)
+            {
+                float ts = Mathf.Clamp(naturalDuration / targetDuration, 0.1f, 10f);
+                seq.timeScale = ts;
+                scaleIn.timeScale = ts;
+            }
+        }
+
         bool completed = false;
         seq.OnKill(() =>
         {
@@ -432,7 +444,7 @@ public class AttackSystem : MonoBehaviour
     /// 表现枪尾从下往上挑的格挡动作。zStart 每次有随机偏差。
     /// 生成位置以玩家为基准 + Inspector 偏移参数，而非跟随敌人。
     /// </summary>
-    private void PlayParryVisual(AttackSkillConfig cfg, Vector3 playerPos)
+    private void PlayParryVisual(AttackSkillConfig cfg, Vector3 playerPos, float targetDuration = -1f)
     {
         Vector3 spawnPos = new Vector3(playerPos.x + cfg.parrySpawnXOffset, playerPos.y + cfg.parrySpawnYOffset, playerPos.z + cfg.parrySpawnZOffset);
 
@@ -487,6 +499,18 @@ public class AttackSystem : MonoBehaviour
         seq.AppendInterval(0.03f);
         if (mat != null)
             seq.Append(mat.DOFade(0f, 0.15f).SetEase(Ease.InQuad));
+
+        // 特效时长拉伸/压缩以匹配cooldown（限制最大缩放防极端值）
+        if (targetDuration > 0f)
+        {
+            float naturalDuration = seq.Duration();
+            if (naturalDuration > 0f)
+            {
+                float ts = Mathf.Clamp(naturalDuration / targetDuration, 0.1f, 10f);
+                seq.timeScale = ts;
+                scaleIn.timeScale = ts;
+            }
+        }
 
         bool completed = false;
         seq.OnKill(() =>
@@ -638,10 +662,18 @@ public class AttackSystem : MonoBehaviour
         Debug.Log($"[Displacement] Slash DirectionalPush step={step} dir={(leftToRight ? "L→R" : "R→L")} targets={targets.Count}");
         Debug.Log(columnManager.DumpColumns());
 
-        bool anyMoved = columnManager.ApplyDirectionalPush(targets, step, leftToRight, canInterruptCFrame: false);
+        var movedEnemies = new List<Enemy>();
+        bool anyMoved = columnManager.ApplyDirectionalPush(targets, step, leftToRight, canInterruptCFrame: false, movedEnemies: movedEnemies);
+
         // 仅在实际有敌人被推动时才执行列填充（BOSS 免疫位移）
         if (anyMoved)
             columnManager.PostDisplacementFillUp();
+
+        // 位移旋转表现（仅实际发生位移的敌人，放 FillUp 后避免 StartMoving 的 DOTween.Kill 误杀 tilt）
+        foreach (var enemy in movedEnemies)
+        {
+            enemy.ApplyDisplacementTilt(leftToRight);
+        }
 
         Debug.Log($"[Displacement] after Slash DirectionalPush:");
         Debug.Log(columnManager.DumpColumns());

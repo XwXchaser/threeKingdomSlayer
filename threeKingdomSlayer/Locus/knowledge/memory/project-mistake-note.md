@@ -9,13 +9,13 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1778764012219
-updatedAt: 1782984198038
+updatedAt: 1783093076327
 ---
 
 # project-mistake-note
 
 ## Summary
-更新至 2025-12 — 新增 Inspector 参数位置描述不清规则
+更新至 2025-12 — 新增 RecheckAttackRange 覆写 Launched 状态规则
 
 <!-- locus:body:start -->
 ### 自定义Editor中新增struct List字段不显示 Inspector 配置 ✅ 已修复（2025-06-27）
@@ -61,6 +61,13 @@ updatedAt: 1782984198038
 - 修复：`Enemy.Launch()` 中 `_animator.Play("Launched_Rise")` 之前加 `_animator.ResetTrigger("Hit")`
 - 预防规则：**动画状态切换前清理可能竞态的 trigger**，尤其是 `TakeDamage` 和 `Launch` 这种同一帧内先后调用的场景
 - 文件：`Assets/Scripts/Enemy/Enemy.cs` (Launch)
+
+### Stab PushWave → RecheckAttackRange 覆写 Launched 状态导致浮空敌人瞬间落地 ✅ 已修复（2025-12）
+- 症状：Launch 击飞敌人后，Stab 攻击浮空敌人时敌人被瞬间击退到后排并落地，无法维持浮空状态进行连段。Slash/Pierce/Sweep 无此问题
+- 根因：Stab 的位移链 `ApplyStabPushWave` → `ExecutePush` → `RecheckAttackRange()` 无条件覆写 `state`：`rowIndex >= atkRange` 分支将 `Launched` 覆写为 `Idle` 再 `StartMoving` → `Moving`，`UpdateLaunch` 物理循环检测到 state 不再是 `Launched` 后立即停止，敌人落地。Slash 的 `ApplyDirectionalPush` → `MoveEnemyToColumnAtRow` 不调用 `RecheckAttackRange`，故不受影响
+- 修复：`Enemy.RecheckAttackRange()` 顶部加 `if (state == EnemyState.Launched) return;`，浮空敌人位移后留在新位置继续浮空直到自然落地
+- 预防规则：**任何可能被位移系统调用的状态变更方法（尤其是 `RecheckAttackRange`）必须显式守卫特殊状态（`Launched`、`Stunned` 等），不应假设当前 state 一定是常规战斗状态。所有新位移方法若内部调用 `RecheckAttackRange` 将自动受此守卫保护**
+- 文件：`Assets/Scripts/Enemy/Enemy.cs` (RecheckAttackRange)
 
 ### Inspector 参数位置描述不清导致用户找不到配置位置 ✅ 规则纠正（2025-12）
 - 症状：告知用户"在 Inspector 中调整 visualScale"但未说明是哪个 GameObject 的哪个组件，用户无法定位

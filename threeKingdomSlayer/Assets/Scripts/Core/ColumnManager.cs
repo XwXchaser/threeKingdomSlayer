@@ -722,7 +722,7 @@ public class ColumnManager : MonoBehaviour
     /// 方向推（Slash 专属）：将击中敌人按行分组，朝 slash 方向推移 step 列。
     /// 同行多敌人自动分散到不同列，不重叠。
     /// </summary>
-    public bool ApplyDirectionalPush(List<Enemy> hitEnemies, int step, bool pushRight, bool canInterruptCFrame = false)
+    public bool ApplyDirectionalPush(List<Enemy> hitEnemies, int step, bool pushRight, bool canInterruptCFrame = false, List<Enemy> movedEnemies = null)
     {
         if (hitEnemies == null || hitEnemies.Count == 0) return false;
         if (step <= 0) return false;
@@ -755,6 +755,7 @@ public class ColumnManager : MonoBehaviour
 
             foreach (var enemy in enemies)
             {
+                int originalCol = enemy.columnIndex;
                 int idealCol = pushRight
                     ? Mathf.Min(enemy.columnIndex + step, 4)
                     : Mathf.Max(enemy.columnIndex - step, 0);
@@ -766,6 +767,8 @@ public class ColumnManager : MonoBehaviour
                     if (MoveEnemyToColumnAtRow(enemy, tryCol, row))
                     {
                         anyMoved = true;
+                        if (tryCol != originalCol)
+                            movedEnemies?.Add(enemy);
                         break;
                     }
                     tryCol += dir;
