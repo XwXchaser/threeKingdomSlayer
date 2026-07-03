@@ -46,6 +46,22 @@ public class QTEController : MonoBehaviour
     public BossQTEData qteData;
     public ArrowGlobalConfig arrowConfig;
 
+    [Header("格挡表现")]
+    [Tooltip("格挡成功时生成的矛 prefab（stab_prefab）")]
+    public GameObject stabBlockEffectPrefab;
+    [Tooltip("格挡精灵帧：stab")]
+    public Sprite stabBlockSprite;
+    [Tooltip("格挡精灵帧：stab_rotate1")]
+    public Sprite stabBlockRotateSprite1;
+    [Tooltip("格挡精灵帧：stab_rotate2")]
+    public Sprite stabBlockRotateSprite2;
+    [Tooltip("格挡动画总时长（秒）")]
+    public float stabBlockDuration = 0.5f;
+    [Tooltip("格挡效果在摄像机前方距离")]
+    public float stabBlockDistance = 3f;
+    [Tooltip("格挡效果缩放")]
+    public Vector3 stabBlockScale = new Vector3(0.15f, 0.15f, 0.15f);
+
     [Header("组件引用")]
     public Enemy enemy;
     public QTEDisplay qteDisplay;
@@ -337,12 +353,12 @@ public class QTEController : MonoBehaviour
                     float dr = descentRatio;
                     DOVirtual.DelayedCall(stagger, () =>
                     {
-                        if (p != null) p.Launch(spawnPos, tz, sx, d, arcH, flightTime, null, pitchAngle, dr);
+                        if (p != null) p.Launch(spawnPos, tz, sx, d, arcH, flightTime, null, pitchAngle, dr, _currentAttack.arrowTargetY);
                     });
                 }
                 else
                 {
-                    projectile.Launch(spawnPos, targetZ, spawnX, dmgPerArrow, arcH, flightTime, null, pitchAngle, descentRatio);
+                    projectile.Launch(spawnPos, targetZ, spawnX, dmgPerArrow, arcH, flightTime, null, pitchAngle, descentRatio, _currentAttack.arrowTargetY);
                 }
             }
             wave.Add(projectile);
@@ -893,6 +909,7 @@ public class QTEController : MonoBehaviour
         if (_currentAttack != null && _currentAttack.isDefensiveQTE)
         {
             DeflectArrowWave(_activeQTEs.IndexOf(qte));
+            PlayBlockVisual();
         }
         else
         {
@@ -935,6 +952,65 @@ public class QTEController : MonoBehaviour
             DebugLog.Info("[QTEController] OnSweepResultAnimationEnd → CompleteQTEAttack");
             CompleteQTEAttack();
         }
+    }
+
+    #endregion
+
+    #region 格挡表现
+
+    /// <summary>
+    /// 播放 QTE 格挡成功表现：矛从下方举起并旋转格挡箭矢
+    /// 以摄像机为父节点：X 轴 90°→0°（举起）+ Z 轴 0°→360°（自转）+ 三帧精灵切换
+    /// </summary>
+    private void PlayBlockVisual()
+    {
+        if (stabBlockEffectPrefab == null) return;
+
+        var cam = Camera.main;
+        if (cam == null) return;
+
+        // 父节点：负责 X 轴旋转（举起动作）
+        var parent = new GameObject("QTE_BlockVFX");
+        parent.transform.SetParent(cam.transform, false);
+        parent.transform.localPosition = new Vector3(0f, 0f, stabBlockDistance);
+        parent.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+
+        // 子节点：实例化矛 prefab，负责 Z 轴自转
+        var visual = Instantiate(stabBlockEffectPrefab, parent.transform);
+        visual.transform.localPosition = Vector3.zero;
+        visual.transform.localScale = stabBlockScale;
+        visual.transform.localRotation = Quaternion.identity;
+
+        var sr = visual.GetComponentInChildren<SpriteRenderer>();
+        if (sr == null) sr = visual.GetComponent<SpriteRenderer>();
+        if (sr != null && stabBlockSprite != null)
+            sr.sprite = stabBlockSprite;
+
+        float duration = stabBlockDuration;
+
+        // X 轴：90° → 0°
+        parent.transform.DOLocalRotate(new Vector3(0f, 0f, 0f), duration).SetEase(Ease.InOutQuad);
+
+        // Z 轴：0° → 360° 自转
+        visual.transform.DOLocalRotate(new Vector3(0f, 0f, 360f), duration, RotateMode.FastBeyond360).SetEase(Ease.Linear);
+
+        // 三帧精灵均匀切换
+        if (sr != null && stabBlockRotateSprite1 != null && stabBlockRotateSprite2 != null)
+        {
+            float third = duration / 3f;
+            var spriteSeq = DOTween.Sequence();
+            spriteSeq.SetTarget(visual);
+            spriteSeq.AppendInterval(third);
+            spriteSeq.AppendCallback(() => { if (sr != null) sr.sprite = stabBlockRotateSprite1; });
+            spriteSeq.AppendInterval(third);
+            spriteSeq.AppendCallback(() => { if (sr != null) sr.sprite = stabBlockRotateSprite2; });
+        }
+
+        // 动画结束后销毁
+        DOVirtual.DelayedCall(duration + 0.05f, () =>
+        {
+            if (parent != null) Destroy(parent);
+        });
     }
 
     #endregion

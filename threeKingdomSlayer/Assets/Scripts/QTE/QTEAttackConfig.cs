@@ -70,6 +70,8 @@ public class QTEAttackConfig : ScriptableObject
     public float arrowSpreadX = 3f;
     [Tooltip("箭矢飞行时间（秒），必须与 QTE warningDuration 对齐")]
     public float arrowFlightTime = 1.5f;
+    [Tooltip("箭矢到达时 Y 坐标（世界空间），调整箭矢下坠终点使伤害触发位置更贴近玩家")]
+    public float arrowTargetY = 0f;
 
     [Header("QTE 模式")]
     [Tooltip("防御型 QTE：成功不造成 poise 伤害，箭矢命中才是威胁")]

@@ -35,10 +35,11 @@ public class EnemyProjectile : MonoBehaviour
     /// <param name="arcH">抛物线最高点高度</param>
     /// <param name="duration">飞行时长</param>
     /// <param name="pitchAngle">箭矢上升段最大俯仰角（度），下降段自动取反</param>
-    public void Launch(Vector3 startPos, float endZ, float endX, float dmg, float arcH, float duration, Enemy source = null, float pitchAngle = 12f, float descentPitchRatio = 0.75f)
+    public void Launch(Vector3 startPos, float endZ, float endX, float dmg, float arcH, float duration, Enemy source = null, float pitchAngle = 12f, float descentPitchRatio = 0.75f, float endY = float.MinValue)
     {
         _startPos = startPos;
-        _endPos = new Vector3(endX, startPos.y, endZ);
+        float targetY = endY > float.MinValue + 1f ? endY : startPos.y;
+        _endPos = new Vector3(endX, targetY, endZ);
         damage = dmg;
         _sourceEnemy = source;
         arcHeight = arcH;
@@ -68,7 +69,7 @@ public class EnemyProjectile : MonoBehaviour
         _flyTween.Join(
             DOTween.Sequence()
                 .Append(transform.DOMoveY(peakY, halfDuration).SetEase(Ease.OutQuad))
-                .Append(transform.DOMoveY(startPos.y, halfDuration).SetEase(Ease.InQuad)));
+                .Append(transform.DOMoveY(targetY, halfDuration).SetEase(Ease.InQuad)));
 
         // 箭矢沿抛物线切线方向俯仰：上升段上仰，下降段下俯（角度可配置）
         float descentAngle = pitchAngle * descentPitchRatio;

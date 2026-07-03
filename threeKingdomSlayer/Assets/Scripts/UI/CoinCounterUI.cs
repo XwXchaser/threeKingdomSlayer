@@ -32,9 +32,15 @@ public class CoinCounterUI : MonoBehaviour
 
     private RectTransform iconRect;
     private RectTransform totalTextRect;
+    private float _uiScale;
 
     private void Start()
     {
+        _uiScale = UIResolutionHelper.UIScale;
+        floatTextFontSize *= _uiScale;
+        floatTextRectSize *= _uiScale;
+        floatUpDistance *= _uiScale;
+
         if (PlayerState.Instance != null)
             PlayerState.Instance.OnCoinGained += OnCoinGained;
 
@@ -108,7 +114,7 @@ public class CoinCounterUI : MonoBehaviour
         if (floatTextAnchor != null)
             rect.localPosition = floatTextAnchor.localPosition;
         else if (totalTextRect != null)
-            rect.localPosition = totalTextRect.localPosition + new Vector3(30f, 25f, 0f);
+            rect.localPosition = totalTextRect.localPosition + new Vector3(30f * _uiScale, 25f * _uiScale, 0f);
 
         var startPos = rect.localPosition;
         var seq = DOTween.Sequence();
