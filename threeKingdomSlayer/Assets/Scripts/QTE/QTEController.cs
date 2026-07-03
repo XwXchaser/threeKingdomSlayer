@@ -59,8 +59,12 @@ public class QTEController : MonoBehaviour
     public float stabBlockDuration = 0.5f;
     [Tooltip("格挡效果在摄像机前方距离")]
     public float stabBlockDistance = 3f;
+    [Tooltip("格挡效果摄像机空间 X 偏移")]
+    public float stabBlockOffsetX = 0f;
+    [Tooltip("格挡效果起始位置（负值=从下方扫入，正值=从上方扫入）")]
+    public float stabBlockOffsetY = -1.5f;
     [Tooltip("格挡效果缩放")]
-    public Vector3 stabBlockScale = new Vector3(0.15f, 0.15f, 0.15f);
+    public Vector3 stabBlockScale = new Vector3(0.05f, 0.05f, 0.05f);
 
     [Header("组件引用")]
     public Enemy enemy;
@@ -335,9 +339,11 @@ public class QTEController : MonoBehaviour
             float spawnZJitter = Random.Range(-jitter * 0.67f, jitter * 0.67f);
             Vector3 spawnPos = new Vector3(spawnX, spawnY, spawnZ + spawnZJitter);
 
-            float flightTime = (qte.config.warningDuration + qte.config.judgeWindow) * Random.Range(1f - flightVar, 1f + flightVar);
-            float arcH = _currentAttack.arrowArcHeight * Random.Range(1f - arcVar, 1f + arcVar);
+            // 飞行时间基于 slot 的 judgeEndTime 反推，确保箭矢在判定窗口结束时到达
             float stagger = Random.Range(0f, staggerMax);
+            float timeUntilJudgeEnd = qte.judgeEndTime - _qtePhaseTimer;
+            float flightTime = Mathf.Max(timeUntilJudgeEnd * Random.Range(1f - flightVar, 1f + flightVar) - stagger, 0.3f);
+            float arcH = _currentAttack.arrowArcHeight * Random.Range(1f - arcVar, 1f + arcVar);
 
             var arrowObj = Instantiate(_currentAttack.arrowPrefab, spawnPos, Quaternion.identity);
             var projectile = arrowObj.GetComponent<EnemyProjectile>();
@@ -959,8 +965,8 @@ public class QTEController : MonoBehaviour
     #region 格挡表现
 
     /// <summary>
-    /// 播放 QTE 格挡成功表现：矛从下方举起并旋转格挡箭矢
-    /// 以摄像机为父节点：X 轴 90°→0°（举起）+ Z 轴 0°→360°（自转）+ 三帧精灵切换
+    /// 播放 QTE 格挡成功表现：矛从下方弧形扫入屏幕中央，同时自转
+    /// Pivot 在摄像机中心负责公转（X: 90°→0°），Spear 偏移在 Pivot 下负责自转（Z: 0°→360°）
     /// </summary>
     private void PlayBlockVisual()
     {
@@ -969,15 +975,15 @@ public class QTEController : MonoBehaviour
         var cam = Camera.main;
         if (cam == null) return;
 
-        // 父节点：负责 X 轴旋转（举起动作）
-        var parent = new GameObject("QTE_BlockVFX");
-        parent.transform.SetParent(cam.transform, false);
-        parent.transform.localPosition = new Vector3(0f, 0f, stabBlockDistance);
-        parent.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+        // Pivot：挂在摄像机中心，负责公转（绕摄像机 X 轴从下方扫入）
+        var pivot = new GameObject("QTE_BlockVFX_Pivot");
+        pivot.transform.SetParent(cam.transform, false);
+        pivot.transform.localPosition = new Vector3(0f, 0f, stabBlockDistance);
+        pivot.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
 
-        // 子节点：实例化矛 prefab，负责 Z 轴自转
-        var visual = Instantiate(stabBlockEffectPrefab, parent.transform);
-        visual.transform.localPosition = Vector3.zero;
+        // Spear：偏移在 Pivot 下，stabBlockOffsetY 映射到 localZ（Pivot 旋转后将变为摄像机 Y 偏移）
+        var visual = Instantiate(stabBlockEffectPrefab, pivot.transform);
+        visual.transform.localPosition = new Vector3(stabBlockOffsetX, 0f, -stabBlockOffsetY);
         visual.transform.localScale = stabBlockScale;
         visual.transform.localRotation = Quaternion.identity;
 
@@ -988,11 +994,11 @@ public class QTEController : MonoBehaviour
 
         float duration = stabBlockDuration;
 
-        // X 轴：90° → 0°
-        parent.transform.DOLocalRotate(new Vector3(0f, 0f, 0f), duration).SetEase(Ease.InOutQuad);
+        // 公转：Pivot X 90° → 0°，Spear 从下方弧形扫入摄像机中心
+        pivot.transform.DOLocalRotate(new Vector3(0f, 0f, 0f), duration).SetEase(Ease.InOutQuad);
 
-        // Z 轴：0° → 360° 自转
-        visual.transform.DOLocalRotate(new Vector3(0f, 0f, 360f), duration, RotateMode.FastBeyond360).SetEase(Ease.Linear);
+        // 自转：Spear Z 0° → 900°
+        visual.transform.DOLocalRotate(new Vector3(0f, 0f, 900f), duration, RotateMode.FastBeyond360).SetEase(Ease.Linear);
 
         // 三帧精灵均匀切换
         if (sr != null && stabBlockRotateSprite1 != null && stabBlockRotateSprite2 != null)
@@ -1006,10 +1012,19 @@ public class QTEController : MonoBehaviour
             spriteSeq.AppendCallback(() => { if (sr != null) sr.sprite = stabBlockRotateSprite2; });
         }
 
+        // 末尾20% fadeout
+        if (sr != null)
+        {
+            DOVirtual.DelayedCall(duration * 0.8f, () =>
+            {
+                if (sr != null) sr.DOFade(0f, duration * 0.2f);
+            });
+        }
+
         // 动画结束后销毁
         DOVirtual.DelayedCall(duration + 0.05f, () =>
         {
-            if (parent != null) Destroy(parent);
+            if (pivot != null) Destroy(pivot);
         });
     }
 
