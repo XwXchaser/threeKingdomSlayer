@@ -289,8 +289,8 @@ public class UpgradeEffectManager : MonoBehaviour
                 {
                     var cfg = def.timedAoeLevels[nextLevel - 1];
                     string triggerStr = isTimed
-                        ? cfg.intervalSeconds.ToString("F1") + "秒"
-                        : cfg.triggerThreshold + "次攻击";
+                        ? cfg.intervalSeconds.ToString("F1")
+                        : cfg.triggerThreshold.ToString();
                     desc = desc.Replace("{0}", triggerStr);
                     desc = desc.Replace("{1}", cfg.damage.ToString());
                 }
@@ -301,8 +301,8 @@ public class UpgradeEffectManager : MonoBehaviour
                 {
                     var cfg = def.timedArrowLevels[nextLevel - 1];
                     string triggerStr = isTimed
-                        ? cfg.intervalSeconds.ToString("F1") + "秒"
-                        : cfg.triggerThreshold + "次攻击";
+                        ? cfg.intervalSeconds.ToString("F1")
+                        : cfg.triggerThreshold.ToString();
                     desc = desc.Replace("{0}", triggerStr);
                     desc = desc.Replace("{1}", cfg.rowCount.ToString());
                     desc = desc.Replace("{2}", cfg.arrowCount.ToString());
@@ -314,9 +314,9 @@ public class UpgradeEffectManager : MonoBehaviour
                 if (def.cycloneLevels != null && nextLevel <= def.cycloneLevels.Count)
                 {
                     var cfg = def.cycloneLevels[nextLevel - 1];
-                    desc = desc.Replace("{0}", cfg.intervalSeconds.ToString("F1") + "秒");
+                    desc = desc.Replace("{0}", cfg.intervalSeconds.ToString("F1"));
                     desc = desc.Replace("{1}", cfg.enemyCount.ToString());
-                    desc = desc.Replace("{2}", cfg.knockupDuration.ToString("F1") + "秒");
+                    desc = desc.Replace("{2}", cfg.knockupDuration.ToString("F1"));
                 }
             }
             else if (def.effectType == "passive_return_wave")
@@ -325,8 +325,8 @@ public class UpgradeEffectManager : MonoBehaviour
                     ? def.returnWaveLevels[nextLevel - 1]
                     : new ReturnWaveLevelConfig { triggerThreshold = def.intValue, damageRatio = def.floatValue };
                 string triggerStr = isTimed
-                    ? cfg.intervalSeconds.ToString("F1") + "秒"
-                    : cfg.triggerThreshold + "次攻击";
+                    ? cfg.intervalSeconds.ToString("F1")
+                    : cfg.triggerThreshold.ToString();
                 desc = desc.Replace("{0}", triggerStr);
                 desc = desc.Replace("{1}", (cfg.damageRatio * 100f).ToString("F0"));
             }
@@ -335,7 +335,7 @@ public class UpgradeEffectManager : MonoBehaviour
                 var cfg = (def.arrowVolleyLevels != null && nextLevel <= def.arrowVolleyLevels.Count)
                     ? def.arrowVolleyLevels[nextLevel - 1]
                     : new ArrowVolleyLevelConfig { triggerThreshold = def.intValue, targetCount = def.secondaryIntValue, arrowCount = 3 };
-                desc = desc.Replace("{0}", cfg.triggerThreshold + "次攻击");
+                desc = desc.Replace("{0}", cfg.triggerThreshold.ToString());
                 desc = desc.Replace("{1}", cfg.targetCount.ToString());
                 desc = desc.Replace("{2}", cfg.arrowCount.ToString());
             }
@@ -345,8 +345,8 @@ public class UpgradeEffectManager : MonoBehaviour
                     ? def.chainBounceLevels[nextLevel - 1]
                     : new ChainBounceLevelConfig { triggerThreshold = def.intValue, maxBounces = def.secondaryIntValue, damageRatio = def.floatValue };
                 string triggerStr = isTimed
-                    ? cfg.intervalSeconds.ToString("F1") + "秒"
-                    : cfg.triggerThreshold + "次攻击";
+                    ? cfg.intervalSeconds.ToString("F1")
+                    : cfg.triggerThreshold.ToString();
                 desc = desc.Replace("{0}", triggerStr);
                 desc = desc.Replace("{1}", cfg.maxBounces.ToString());
                 desc = desc.Replace("{2}", (cfg.damageRatio * 100f).ToString("F0"));
@@ -368,8 +368,8 @@ public class UpgradeEffectManager : MonoBehaviour
                 float interval = def.phantomLevels != null && nextLevel <= def.phantomLevels.Count
                     ? def.phantomLevels[nextLevel - 1].intervalSeconds : -1f;
                 string triggerStr = isTimed && interval > 0f
-                    ? interval.ToString("F1") + "秒"
-                    : triggerParam + "次攻击";
+                    ? interval.ToString("F1")
+                    : triggerParam.ToString();
                 desc = desc.Replace("{0}", triggerStr);
                 desc = desc.Replace("{1}", (steps?.Count ?? 0).ToString());
                 if (steps != null && steps.Count > 0)

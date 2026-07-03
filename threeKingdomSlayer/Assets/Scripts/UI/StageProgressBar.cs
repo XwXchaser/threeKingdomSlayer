@@ -68,6 +68,7 @@ public class StageProgressBar : MonoBehaviour
     private WaveSpawner _waveSpawner;
     private StageConfig _stageConfig;
     private bool _initialized;
+    private float _uiScale;
 
     // 共享纹理
     private static Texture2D _circleTex;
@@ -78,6 +79,13 @@ public class StageProgressBar : MonoBehaviour
         if (!Application.isPlaying) return; // Edit Mode 预览由 OnEnable 处理
 
         EnsureTextures();
+
+        _uiScale = UIResolutionHelper.UIScale;
+        dotSpacing *= _uiScale;
+        lineThickness *= _uiScale;
+        dotDiameter = Mathf.Max(1, Mathf.RoundToInt(dotDiameter * _uiScale));
+        playerDotDiameter = Mathf.Max(1, Mathf.RoundToInt(playerDotDiameter * _uiScale));
+
         var go = gameObject;
         go.layer = LayerMask.NameToLayer("UI");
         go.AddComponent<RectMask2D>();
@@ -118,6 +126,7 @@ public class StageProgressBar : MonoBehaviour
         else
         {
             var frameGo = new GameObject("Frame", typeof(RectTransform), typeof(Image));
+            if (!Application.isPlaying) frameGo.hideFlags = HideFlags.DontSave;
             frameGo.transform.SetParent(transform, false);
             _frameImage = frameGo.GetComponent<Image>();
             var frameRt = frameGo.GetComponent<RectTransform>();
@@ -148,6 +157,7 @@ public class StageProgressBar : MonoBehaviour
         else
         {
             var contentGo = new GameObject("Content", typeof(RectTransform));
+            if (!Application.isPlaying) contentGo.hideFlags = HideFlags.DontSave;
             contentGo.transform.SetParent(transform, false);
             _contentRect = contentGo.GetComponent<RectTransform>();
             _contentRect.anchorMin = new Vector2(0f, 0.5f);
@@ -666,8 +676,13 @@ public class StageProgressBar : MonoBehaviour
         foreach (var m in masks)
             if ((m.hideFlags & PreviewFlags) != 0) DestroyImmediate(m);
 
-        // 仅清理 Content 内带 PreviewFlags 的叶子节点，保留 Frame/Content
-        if (_contentRect != null)
+        // 清理 Content 及其子节点，以及 Frame（仅 DontSave 标记的临时对象）
+        if (_contentRect != null && (_contentRect.hideFlags & HideFlags.DontSave) != 0)
+        {
+            DestroyImmediate(_contentRect.gameObject);
+            _contentRect = null;
+        }
+        else if (_contentRect != null)
         {
             for (int i = _contentRect.childCount - 1; i >= 0; i--)
             {
@@ -676,6 +691,13 @@ public class StageProgressBar : MonoBehaviour
                     DestroyImmediate(child.gameObject);
             }
         }
+
+        if (_frameImage != null && (_frameImage.hideFlags & HideFlags.DontSave) != 0)
+        {
+            DestroyImmediate(_frameImage.gameObject);
+            _frameImage = null;
+        }
+
         _lineImage = null;
         _playerDotImage = null;
         _playerDotRect = null;

@@ -15,7 +15,7 @@ MonoBehaviour:
   category: 3
   upgradeId: cyclone
   displayName: "\u65CB\u98CE"
-  descriptionTemplate: "\u6BCF{0}\u968F\u673A\u51FB\u98DE{1}\u4E2A\u654C\u4EBA{2}"
+  descriptionTemplate: "\u6BCF{0}\u79D2\u968F\u673A\u51FB\u98DE{1}\u4E2A\u654C\u4EBA{2}\u79D2"
   rarity: 1
   maxLevel: 5
   effectType: passive_timed_cyclone
@@ -58,6 +58,8 @@ MonoBehaviour:
     damage: 0
     landingDamagePercent: 20
   arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

@@ -20,6 +20,10 @@ Library/
 .DS_Store
 Thumbs.db
 
+# TJAIGraph 运行时缓存
+Assets/TJAIGraph/Tmp/
+Assets/TJAIGraph/Tmp.meta
+
 # 项目临时文件
 *.tmp
 *.log

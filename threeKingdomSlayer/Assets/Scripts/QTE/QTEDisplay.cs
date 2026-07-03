@@ -61,9 +61,13 @@ public class QTEDisplay : MonoBehaviour
     private List<IndicatorState> _activeStates = new List<IndicatorState>();
     private List<DyingIndicator> _dyingIndicators = new List<DyingIndicator>();
     private RectTransform _fallbackParent;
+    private float _uiScale;
 
     private void Awake()
     {
+        _uiScale = UIResolutionHelper.UIScale;
+        slideInOffsetY *= _uiScale;
+
         var canvas = GetComponent<Canvas>();
         if (canvas != null)
             _fallbackParent = canvas.GetComponent<RectTransform>();
@@ -110,8 +114,8 @@ public class QTEDisplay : MonoBehaviour
             rt.localScale = Vector3.one;
             rt.sizeDelta = config.indicatorSize;
 
-            float frameW = qteFrameRect != null ? qteFrameRect.rect.width : 600f;
-            float frameH = qteFrameRect != null ? qteFrameRect.rect.height : 150f;
+            float frameW = qteFrameRect != null ? qteFrameRect.rect.width : 600f * _uiScale;
+            float frameH = qteFrameRect != null ? qteFrameRect.rect.height : 150f * _uiScale;
             posX = (config.screenPosition.x - 0.5f) * frameW;
             posY = (config.screenPosition.y - 0.5f) * frameH;
             rt.anchorMin = new Vector2(0.5f, 0.5f);
@@ -318,7 +322,7 @@ public class QTEDisplay : MonoBehaviour
         Debug.Log($"[QTE_DIAG] SlideOutAndDestroy: id={go.GetInstanceID()}, activeRemaining={_activeStates.Count}, dyingCount={_dyingIndicators.Count}");
 
         var rt = go.GetComponent<RectTransform>();
-        float endY = -(150f * 0.5f + slideInOffsetY);
+        float endY = -(150f * _uiScale * 0.5f + slideInOffsetY);
         if (qteFrameRect != null)
             endY = -(qteFrameRect.rect.height * 0.5f + slideInOffsetY);
 

@@ -23,6 +23,7 @@ public class MainMenuUI : MonoBehaviour
     public CameraManager cameraManager;
 
     private GameObject stageGrid;
+    private float _uiScale;
 
     private void Start()
     {
@@ -43,6 +44,8 @@ public class MainMenuUI : MonoBehaviour
 
     private void CreateStageGrid()
     {
+        _uiScale = UIResolutionHelper.UIScale;
+
         stageGrid = new GameObject("StageGrid", typeof(RectTransform));
         var rt = stageGrid.GetComponent<RectTransform>();
         rt.SetParent(transform, false);
@@ -52,8 +55,8 @@ public class MainMenuUI : MonoBehaviour
         rt.offsetMax = Vector2.zero;
 
         var grid = stageGrid.AddComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(200, 80);
-        grid.spacing = new Vector2(12, 12);
+        grid.cellSize = new Vector2(200f * _uiScale, 80f * _uiScale);
+        grid.spacing = new Vector2(12f * _uiScale, 12f * _uiScale);
         grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
         grid.startAxis = GridLayoutGroup.Axis.Horizontal;
         grid.childAlignment = TextAnchor.UpperCenter;
@@ -106,7 +109,7 @@ public class MainMenuUI : MonoBehaviour
         string status = unlocked ? (SaveManager.IsStageCleared(cfg.stageId) ? "[已通关]" : "[可挑战]") : "[未解锁]";
         txt.text = cfg.stageName + "\n" + status;
         txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        txt.fontSize = 16;
+        txt.fontSize = Mathf.RoundToInt(16 * _uiScale);
         txt.alignment = TextAnchor.MiddleCenter;
         txt.color = unlocked ? Color.white : new Color(0.5f, 0.5f, 0.5f);
 

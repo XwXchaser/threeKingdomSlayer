@@ -49,7 +49,7 @@ public class CameraManager : MonoBehaviour
 
     private void Start()
     {
-        if (IsArriving || autoPlayOnStart)
+        if ((IsArriving || autoPlayOnStart) && background != null)
         {
             IsArriving = false;
             StartCoroutine(ArrivalRoutine());
