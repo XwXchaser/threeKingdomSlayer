@@ -1774,7 +1774,28 @@ public class Enemy : MonoBehaviour
         _hitFlashRoutine = null;
     }
 
+    /// <summary>
+    /// 位移旋转表现：敌人被左右位移时 Z 轴倾斜后回正。
+    /// 纯视觉效果，不影响游戏状态。
+    /// </summary>
+    public void ApplyDisplacementTilt(bool pushRight)
+    {
+        if (state == EnemyState.Dead) return;
 
+        string tiltId = $"displacementTilt_{GetInstanceID()}";
+        DOTween.Kill(tiltId);
+
+        float targetAngle = pushRight ? -45f : 45f;
+        float tiltInDuration = 0.08f;
+        float tiltOutDuration = 0.22f;
+
+        var seq = DOTween.Sequence();
+        seq.Append(transform.DOLocalRotate(new Vector3(0f, 0f, targetAngle), tiltInDuration).SetEase(Ease.OutQuad));
+        seq.Append(transform.DOLocalRotate(Vector3.zero, tiltOutDuration).SetEase(Ease.InOutQuad));
+        seq.SetTarget(transform);
+        seq.SetId(tiltId);
+        seq.OnKill(() => transform.localRotation = Quaternion.identity);
+    }
 
     /// <summary>
     /// 创建材质实例（用于闪白效果）
@@ -1923,6 +1944,9 @@ public class Enemy : MonoBehaviour
         state = EnemyState.Dead;
         UpdateOutlineState();
         _animator?.SetTrigger("Dead");
+
+        // 中断位移旋转 tween，避免与死亡旋转叠加
+        DOTween.Kill($"displacementTilt_{GetInstanceID()}");
 
         // BUG FIX: 取消正在执行的攻击 DOTween 动画
         // 若敌人在攻击动画中被秒杀，立即中断攻击动作（前移+翻转），直接进入死亡状态
@@ -2257,6 +2281,7 @@ public class Enemy : MonoBehaviour
     public void RecheckAttackRange()
     {
         if (state == EnemyState.Dead) return;
+        if (state == EnemyState.Launched) return;
         int atkRange = (int)Mathf.Max(1, attackRange);
 
         if (rowIndex < atkRange)

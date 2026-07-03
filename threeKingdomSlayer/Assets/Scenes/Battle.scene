@@ -8063,7 +8063,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enablePushWave: 1
-  pushDistance: 1
+  pushDistance: 2
   enableDirectionalPush: 1
   directionalPushStep: 1
   enableConvergenceWave: 0
