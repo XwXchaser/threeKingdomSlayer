@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1780824594062
-updatedAt: 1782308975501
+updatedAt: 1783353581789
 ---
 
 # push-back-compaction
@@ -35,13 +35,14 @@ updatedAt: 1782308975501
 
 - 从列表中移除命中敌人 → 更新 rowIndex → 按 rowIndex 升序重新插入
 - 新 rowIndex 上限为 bossRow-1（Boss 是不可逾越的墙壁）
-- **不触发 RecheckAttackRange**：击退后敌人留在新位置，不 rush 回攻击范围
+- **不触发 RecheckAttackRange**：RecheckAttackRange 改为在 `PostDisplacementFillUp`（CompactByClearRows）之后由调用方执行，防止 CompactByClearRows 覆写 targetRow
 
 ### 3. 逐列紧凑（CompactColumn）
 
 - 所有位移完成后统一执行一次 CompactAllColumns
 - 每列独立紧凑：存活敌人按 writeIdx 顺序分配 row 0,1,2...
 - Boss 在紧凑时视为墙壁：身后敌人紧凑到 bossRow+1，不能越过 Boss
+- Boss 自身跳过紧凑（`if (e.isBoss) continue`），不会被 CompactByClearRows 改变 targetRow
 - Launched 敌人与普通存活敌人同等对待，占据其排位，参与紧凑
 
 ### 4. Launched 敌人规则（重要变更）
@@ -96,7 +97,7 @@ row=0 敌人 col=[0,1,2,3,4]，step=2，N=5：槽位=[2,1,3,0,4]
 旧：ApplyDisplacementEffects 集中路由（AttackType switch 分发）
 
 新（按攻击类型独立调用）：
-  ExecuteStab  → ApplyStabPushWave → ApplyPushWave + PostDisplacementFillUp
+  ExecuteStab  → ApplyStabPushWave → ApplyPushWave → PostDisplacementFillUp → RecheckPushedEnemiesAttackRange
   ExecuteSlash → ApplySlashDirectionalPush → ApplyDirectionalPush + PostDisplacementFillUp
   ExecutePierce / Sweep / Launch → 不触发位移效果
 ```

@@ -9,13 +9,13 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1778764012219
-updatedAt: 1783093076327
+updatedAt: 1783353599193
 ---
 
 # project-mistake-note
 
 ## Summary
-更新至 2025-12 — 新增 RecheckAttackRange 覆写 Launched 状态规则
+更新至 2025-12 — 新增 RecheckAttackRange 被 CompactByClearRows 覆写规则
 
 <!-- locus:body:start -->
 ### 自定义Editor中新增struct List字段不显示 Inspector 配置 ✅ 已修复（2025-06-27）
@@ -61,6 +61,13 @@ updatedAt: 1783093076327
 - 修复：`Enemy.Launch()` 中 `_animator.Play("Launched_Rise")` 之前加 `_animator.ResetTrigger("Hit")`
 - 预防规则：**动画状态切换前清理可能竞态的 trigger**，尤其是 `TakeDamage` 和 `Launch` 这种同一帧内先后调用的场景
 - 文件：`Assets/Scripts/Enemy/Enemy.cs` (Launch)
+
+### Stab PushWave RecheckAttackRange 被 CompactByClearRows 覆写导致击退后不补齐 ✅ 已修复（2025-12）
+- 症状：Stab PushWave 击退敌人后，第一个被击退的敌人不 rush 回攻击范围（row 0），留在被击退的位置
+- 根因：`ExecutePush` 中调用 `RecheckAttackRange` 设置了 targetRow，但后续 `PostDisplacementFillUp` → `CompactByClearRows` 按列紧凑重新分配 targetRow，覆写了 RecheckAttackRange 的结果
+- 修复：将 RecheckAttackRange 移到 PostDisplacementFillUp 之后执行：`ApplyPushWave` → `PostDisplacementFillUp` → `RecheckPushedEnemiesAttackRange`。同时 `CompactByClearRows` 中 Boss 跳过（`if (e.isBoss) continue`）
+- 预防规则：**位移系统中任何在紧凑（CompactByClearRows）之前设置的 targetRow 都会被紧凑覆写。需要基于攻击范围重新计算 targetRow 的逻辑必须在紧凑之后执行**
+- 文件：`ColumnManager.cs` (ExecutePush / ApplyPushWave / RecheckPushedEnemiesAttackRange), `AttackSystem.cs` (ApplyStabPushWave), `Column.cs` (CompactByClearRows)
 
 ### Stab PushWave → RecheckAttackRange 覆写 Launched 状态导致浮空敌人瞬间落地 ✅ 已修复（2025-12）
 - 症状：Launch 击飞敌人后，Stab 攻击浮空敌人时敌人被瞬间击退到后排并落地，无法维持浮空状态进行连段。Slash/Pierce/Sweep 无此问题

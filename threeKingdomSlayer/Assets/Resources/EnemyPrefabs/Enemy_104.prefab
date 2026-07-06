@@ -58,6 +58,7 @@ MonoBehaviour:
   attackDamage: 10
   attackRange: 2
   moveSpeed: 0.3
+  visualYOffset: 0.344
   attackSequence:
   - isCAttack: 0
     animationTrigger: 

@@ -10,7 +10,7 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1779520344306
-updatedAt: 1782576168513
+updatedAt: 1783353588887
 ---
 
 # phase3-development-summary
@@ -50,6 +50,22 @@ Remove temporary context, one-off tasks, and unsupported guesses
 ---
 
 ## 历史记录
+
+### Bug: PushWave RecheckAttackRange 被 CompactByClearRows 覆写 → 击退后敌人不回到攻击范围
+
+**状态**: ✅ 已修复 (2025-12)
+
+**现象**: Stab PushWave 击退敌人后，第一个被击退的敌人不会 rush 回到攻击范围（row 0），而是留在被击退的位置。
+
+**根因**: `ExecutePush` 中调用 `RecheckAttackRange` 设置了正确的 targetRow，但随后的 `PostDisplacementFillUp` → `CompactByClearRows` 重新分配 targetRow（按列紧凑），覆写了 RecheckAttackRange 的结果。
+
+**修复**:
+1. `ExecutePush` 中移除 `RecheckAttackRange` 调用
+2. `ApplyPushWave` 新增 `pushedEnemiesOut` 参数，收集被推动的敌人列表
+3. `ApplyStabPushWave` 中调整执行顺序：`ApplyPushWave` → `PostDisplacementFillUp` → `RecheckPushedEnemiesAttackRange`
+4. `CompactByClearRows` 中 Boss 跳过（`if (e.isBoss) continue`），防止 Boss 被紧凑改变 targetRow
+
+**文件**: `ColumnManager.cs`, `AttackSystem.cs`, `Column.cs`
 
 ### Bug: Rush 重叠检测导致无限重试循环
 
