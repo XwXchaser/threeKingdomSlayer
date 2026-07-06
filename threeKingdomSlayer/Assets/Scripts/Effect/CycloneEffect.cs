@@ -25,6 +25,10 @@ public class CycloneEffect : MonoBehaviour
     [Header("淡出")]
     public float fadeOutDuration = 0.25f;
 
+    [Header("视觉偏移")]
+    [Tooltip("精灵 Y 轴偏移量，用于补偿精灵锚点不在底部导致的浮空")]
+    public float yOffset = 0f;
+
     private Enemy _target;
     private int _damage;
     private float _landingDamagePercent;
@@ -47,7 +51,7 @@ public class CycloneEffect : MonoBehaviour
         {
             // 固定在地面位置（敌人脚下初始位置）
             Vector3 pos = _target.transform.position;
-            pos.y = 0f;
+            pos.y = yOffset;
             transform.position = pos;
 
             // 击飞伤害

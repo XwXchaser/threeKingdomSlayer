@@ -221,6 +221,9 @@ public class Column
             if (e.state == EnemyState.Dead || isClearRow)
                 continue;
 
+            // BOSS 不参与紧凑——BOSS 前进由独立的 IsRowClearForBoss + BossPause 系统管控
+            if (e.isBoss) continue;
+
             // 被推入排的敌人不参与紧凑，防止击退效果被补齐抵消
             if (pushedToRow.HasValue && row == pushedToRow.Value)
                 continue;

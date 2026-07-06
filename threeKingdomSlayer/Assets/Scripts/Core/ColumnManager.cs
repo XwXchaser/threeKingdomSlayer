@@ -657,11 +657,8 @@ public class ColumnManager : MonoBehaviour
         foreach (var e in pushedEnemies)
             SpikeTrapController.Instance?.CheckAndTrigger(e);
 
-        // 被击退后重新检查攻击范围：若超出范围则取消攻击并冲回前线
-        foreach (var e in pushedEnemies)
-        {
-            e.RecheckAttackRange();
-        }
+        // 注意：RecheckAttackRange 已移至 PostDisplacementFillUp 之后执行，
+        // 确保 CompactByClearRows 的 targetRow 计算完成后，再由 RecheckAttackRange 设置最终 targetRow。
 
         OnColumnsModified?.Invoke();
     }
@@ -671,7 +668,8 @@ public class ColumnManager : MonoBehaviour
     /// BOSS 免疫击退。
     /// 返回 true 表示至少有一列成功执行了击退。
     /// </summary>
-    public bool ApplyPushWave(List<Enemy> hitEnemies, int pushAmount, bool canInterruptCFrame = false)
+    /// <param name="pushedEnemiesOut">收集实际被推的敌人，供调用方在 PostDisplacementFillUp 后调用 RecheckAttackRange</param>
+    public bool ApplyPushWave(List<Enemy> hitEnemies, int pushAmount, bool canInterruptCFrame = false, List<Enemy> pushedEnemiesOut = null)
     {
         if (hitEnemies == null || hitEnemies.Count == 0) return false;
 
@@ -712,6 +710,7 @@ public class ColumnManager : MonoBehaviour
             if (canPush)
             {
                 ExecutePush(col, pushAmount, kv.Value);
+                pushedEnemiesOut?.AddRange(kv.Value);
                 anyPushed = true;
             }
         }
@@ -887,6 +886,20 @@ public class ColumnManager : MonoBehaviour
             sb.Append("\n");
         }
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// 位移 + 列填充完成后，对被推敌人重检攻击范围。
+    /// 必须在 PostDisplacementFillUp 之后调用，确保 CompactByClearRows 的 targetRow
+    /// 已计算完毕，再由 RecheckAttackRange 设置最终 targetRow（覆盖 compact 的排号）。
+    /// </summary>
+    public void RecheckPushedEnemiesAttackRange(List<Enemy> pushedEnemies)
+    {
+        if (pushedEnemies == null || pushedEnemies.Count == 0) return;
+        foreach (var e in pushedEnemies)
+        {
+            e.RecheckAttackRange();
+        }
     }
 
     #region 工具方法

@@ -15,6 +15,7 @@ public class SpikeTrapController : MonoBehaviour
 
     [Header("位置与缩放")]
     [SerializeField] private float zOffset = 0f;
+    [SerializeField] private float yOffset = 0f;
     [SerializeField] private float visualScale = 1f;
 
     private int _spikeRow;
@@ -166,6 +167,6 @@ public class SpikeTrapController : MonoBehaviour
             zPos = (maxRow - row) * (-rowSpacing) + offsetZ;
         }
 
-        return new Vector3(xPos, 0f, zPos + zOffset);
+        return new Vector3(xPos, yOffset, zPos + zOffset);
     }
 }

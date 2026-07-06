@@ -639,10 +639,14 @@ public class AttackSystem : MonoBehaviour
         Debug.Log($"[Displacement] Stab PushWave dist={pushDist} targets={targets.Count}");
         Debug.Log(columnManager.DumpColumns());
 
-        bool anyPushed = columnManager.ApplyPushWave(targets, pushDist, canInterruptCFrame: false);
+        var pushedEnemies = new List<Enemy>();
+        bool anyPushed = columnManager.ApplyPushWave(targets, pushDist, canInterruptCFrame: false, pushedEnemiesOut: pushedEnemies);
         // 仅在实际有敌人被推动时才执行列填充（BOSS 免疫位移，无推动则无需填充）
         if (anyPushed)
+        {
             columnManager.PostDisplacementFillUp();
+            columnManager.RecheckPushedEnemiesAttackRange(pushedEnemies);
+        }
 
         Debug.Log($"[Displacement] after Stab PushWave:");
         Debug.Log(columnManager.DumpColumns());

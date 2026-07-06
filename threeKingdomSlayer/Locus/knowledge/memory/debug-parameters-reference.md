@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1780552342158
-updatedAt: 1780552342159
+updatedAt: 1783355416463
 ---
 
 # debug-parameters-reference
@@ -79,6 +79,7 @@ updatedAt: 1780552342159
 | `attackDamage` | float | 10 | 攻击伤害 |
 | `attackRange` | float | 1 | 攻击范围 |
 | `moveSpeed` | float | 1 | 移动速度 |
+| `visualYOffset` | float | 0 | 精灵Y轴偏移（补偿锚点不在底部），半高=精灵高/PPU/2 |
 
 ### 攻击序列
 
@@ -198,7 +199,31 @@ updatedAt: 1780552342159
 
 ---
 
-## 7. 管理器参数
+## 7. 特效视觉参数
+
+### CycloneEffect
+
+**文件**: `Assets/Scripts/Effect/CycloneEffect.cs`
+**配置**: `Assets/Prefabs/Effects/CycloneEffect.prefab` → Inspector
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `yOffset` | float | 0 | 生成位置Y轴偏移（补偿精灵锚点不在底部） |
+
+### SpikeTrapController
+
+**文件**: `Assets/Scripts/Core/SpikeTrapController.cs`
+**配置**: Battle.scene → `Manager` GameObject → Inspector
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `yOffset` | float | 0 | 视觉Y轴偏移（补偿精灵锚点不在底部） |
+| `zOffset` | float | 0 | 视觉Z轴微调 |
+| `visualScale` | float | 1 | 整体缩放 |
+
+---
+
+## 8. 管理器参数
 
 ### StageController
 
@@ -235,7 +260,7 @@ updatedAt: 1780552342159
 
 ---
 
-## 8. UI/HUD 参数 (BattleHUD / Combo / KillReward)
+## 9. UI/HUD 参数 (BattleHUD / Combo / KillReward)
 
 ### BattleHUD
 
@@ -271,7 +296,7 @@ updatedAt: 1780552342159
 
 ---
 
-## 9. QTE系统 (QTEController)
+## 10. QTE系统 (QTEController)
 
 **文件**: `Assets/Scripts/QTE/QTEController.cs`
 
@@ -282,7 +307,7 @@ updatedAt: 1780552342159
 
 ---
 
-## 10. 被动技能/测试开关 (PassiveTriggerModule)
+## 11. 被动技能/测试开关 (PassiveTriggerModule)
 
 **文件**: `Assets/Scripts/Passive/PassiveTriggerModule.cs`
 
@@ -292,7 +317,7 @@ updatedAt: 1780552342159
 
 ---
 
-## 11. Editor 调试块 (UNITY_EDITOR)
+## 12. Editor 调试块 (UNITY_EDITOR)
 
 散落在各文件中的 `#if UNITY_EDITOR` 块，通常用于：
 - 绘制 Gizmos（攻击范围、移动路线等）
