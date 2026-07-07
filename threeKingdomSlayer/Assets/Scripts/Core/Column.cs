@@ -305,7 +305,9 @@ public class Column
             if (i != writeIdx) enemies[writeIdx] = e;
             e.targetRow = writeIdx;
             e.ResetMovementState();
-            e.pendingRushMove = true;
+            // Boss 不参与列补齐链，与 RemoveEnemy / CompactColumn 保持一致
+            if (!e.isBoss)
+                e.pendingRushMove = true;
             writeIdx++;
         }
 
@@ -313,6 +315,19 @@ public class Column
             enemies.RemoveRange(writeIdx, enemies.Count - writeIdx);
 
         StartRushMoveChain(columnIndex);
+
+        // Boss 独立补齐入口：Boss 不参与列链，需在普通敌人链启动后自行前移
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            if (enemies[i].isBoss && enemies[i].bossState == BossState.None)
+            {
+                // targetRow=0 确保 Boss 持续前移直到攻击范围，而非停在当前 compact 位置
+                enemies[i].targetRow = 0;
+                enemies[i].StartFillForwardDelay(0.5f);
+                DebugLog.Info($"[Column] 触发Boss独立补齐: {enemies[i].DebugTag}, col={columnIndex}, row={enemies[i].rowIndex}");
+                break;
+            }
+        }
     }
 
     /// <summary>
