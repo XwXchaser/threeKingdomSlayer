@@ -10,13 +10,13 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1779520344306
-updatedAt: 1783353588887
+updatedAt: 1783412888361
 ---
 
 # phase3-development-summary
 
 ## Summary
-第三期局内成长系统（经验三选一）开发状态 + 位移效果三选一BUG修复（击退波/聚拢波/回旋波/连锁弹射）+ 被动特效prefab部署 + 补齐打断攻击BUG修复 + C技霸体位移BUG修复 + BOSS墙壁保护 + RowBasedFillUp打断BOSS Rush修复 (2025-08-10)
+第三期局内成长系统（经验三选一）开发状态 + 位移效果三选一BUG修复（击退波/聚拢波/回旋波/连锁弹射）+ 被动特效prefab部署 + 补齐打断攻击BUG修复 + C技霸体位移BUG修复 + BOSS墙壁保护 + RowBasedFillUp打断BOSS Rush修复 + Boss初始wave spawn不补齐死锁修复 (2025-12-19)
 
 <!-- locus:maintain-rules:start -->
 Keep only durable and reusable project memory

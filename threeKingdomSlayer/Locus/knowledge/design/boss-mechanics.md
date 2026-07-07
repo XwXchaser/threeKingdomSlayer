@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779004290012
-updatedAt: 1782063955741
+updatedAt: 1783412881246
 ---
 
 # boss-mechanics
@@ -130,7 +130,8 @@ Boss 补齐时检查的是**整排**（所有 5 列）而非仅本列：`IsRowCl
 
 ### 4.3 列阵中的特殊处理
 
-- BOSS **完全不参与列补齐链**：`Column.RemoveEnemy()` 和 `Column.CompactColumn()` 对 `isBoss` 敌人跳过 `pendingRushMove` 标记，BOSS 移动完全由自身状态机（`BossPause`/`BossResume`/`TryStartRushMove`）控制
+- BOSS **完全不参与列补齐链**：`Column.RemoveEnemy()`、`Column.CompactColumn()`、`Column.CompactByClearRows()` 和 `Column.TriggerFillForward()` 均对 `isBoss` 敌人跳过 `pendingRushMove` 标记，BOSS 移动完全由自身状态机（`BossPause`/`BossResume`/`TryStartRushMove`）控制
+- **初始 wave spawn 的 Boss 独立补齐**：`TriggerFillForward` 在列链启动后，通过 `StartFillForwardDelay(0.5f)` 触发 Boss 独立补齐，`targetRow=0` 确保持续前移直到攻击范围。`TryStartRushMove` 在 `IsRowClearForBoss` 失败时同时设置 `rushMoveDelayTimer=0.3f` 作为定时器兜底，防止 rush 补齐链中 `OnColumnsModified` 不触发导致的死锁
 - **row≤1 守卫**（已实现）：`TryStartRushMove` 在 `EnemyState.Idle` 下检查：若 `isBoss && rowIndex ≤ 1`，直接跳过补齐前移（`pendingRushMove = false; return false`），确保 Boss 不会从 row=1 冲到 row=0
 - BOSS 进入 `InCombat` 或缓冲中后，眩晕恢复后直接 `SetBossActionCooldown()`，不处理 `pendingRushMove`
 - BOSS 缓冲期间（`_bossEngageTimer > 0`）无敌，免疫伤害
@@ -344,3 +345,4 @@ UltimateSystem
 |------|------|
 | 2025-01 | 初始版本 |
 | 2025-07 | 补充 row≤1 守卫规则（4.3节）+ 透明度/攻击范围覆盖规则（10节） |
+| 2025-12 | 修复 Boss 初始 wave spawn 不补齐死锁：TriggerFillForward 添加 Boss 守卫 + timer 兜底 |
