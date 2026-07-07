@@ -18,6 +18,12 @@ public class SpikeTrapController : MonoBehaviour
     [SerializeField] private float yOffset = 0f;
     [SerializeField] private float visualScale = 1f;
 
+    [Header("遮挡描边")]
+    [SerializeField] private Material outlineMaterial;
+    [SerializeField] private Color outlineColor = new Color(0.85f, 0.85f, 0.85f, 1f);
+    [SerializeField] private float outlineWidth = 2f;
+    [SerializeField] private int outlineSortingOrder = 100;
+
     private int _spikeRow;
     private int _spikeCol;
     private float _damagePerPass;
@@ -25,6 +31,8 @@ public class SpikeTrapController : MonoBehaviour
     private GameObject _baseChild;
     private GameObject _hitChild;
     private SpriteRenderer _hitSr;
+    private GameObject _outlineGo;
+    private SpriteRenderer _outlineSr;
     private bool _animating;
     private HashSet<Enemy> _triggeredThisFrame = new HashSet<Enemy>();
 
@@ -47,6 +55,7 @@ public class SpikeTrapController : MonoBehaviour
     private void LateUpdate()
     {
         _triggeredThisFrame.Clear();
+        UpdateOutlineOverlay();
     }
 
     public bool IsActive => _visualGo != null;
@@ -86,6 +95,8 @@ public class SpikeTrapController : MonoBehaviour
             _baseChild = null;
             _hitChild = null;
             _hitSr = null;
+            _outlineGo = null;
+            _outlineSr = null;
         }
         _damagePerPass = 0f;
         _triggeredThisFrame.Clear();
@@ -118,9 +129,15 @@ public class SpikeTrapController : MonoBehaviour
         _hitChild = CreateChild("Hit", hitSprite, hitOrder);
         _hitSr = _hitChild.GetComponent<SpriteRenderer>();
         _hitChild.SetActive(false);
+
+        _outlineGo = CreateChild("OutlineOverlay", baseSprite, outlineSortingOrder, outlineMaterial);
+        _outlineSr = _outlineGo.GetComponent<SpriteRenderer>();
+        _outlineSr.sharedMaterial.SetColor("_OutlineColor", outlineColor);
+        _outlineSr.sharedMaterial.SetFloat("_OutlineWidth", outlineWidth);
+        _outlineGo.SetActive(false);
     }
 
-    private GameObject CreateChild(string name, Sprite sprite, int order)
+    private GameObject CreateChild(string name, Sprite sprite, int order, Material mat = null)
     {
         var go = new GameObject(name);
         go.transform.SetParent(_visualGo.transform, worldPositionStays: false);
@@ -129,6 +146,8 @@ public class SpikeTrapController : MonoBehaviour
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = sprite;
         sr.sortingOrder = order;
+        if (mat != null)
+            sr.sharedMaterial = mat;
         return go;
     }
 
@@ -168,5 +187,20 @@ public class SpikeTrapController : MonoBehaviour
         }
 
         return new Vector3(xPos, yOffset, zPos + zOffset);
+    }
+
+    private void UpdateOutlineOverlay()
+    {
+        if (_outlineGo == null) return;
+
+        bool occluded = false;
+        var cm = EnemyManager.Instance?.columnManager;
+        if (cm != null)
+        {
+            var blocker = cm.GetEnemyAt(_spikeCol, 0);
+            occluded = blocker != null && blocker.state != EnemyState.Dead;
+        }
+
+        _outlineGo.SetActive(occluded);
     }
 }

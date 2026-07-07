@@ -2140,6 +2140,16 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
+    /// 启动 Boss 独立补齐延迟：延迟后通过 Update 的 rushMoveDelayTimer 机制重试 TryStartRushMove。
+    /// 由 Column.TriggerFillForward 在列链启动后调用，确保 Boss 不参与列补齐链。
+    /// </summary>
+    public void StartFillForwardDelay(float delay)
+    {
+        pendingRushMove = true;
+        rushMoveDelayTimer = delay;
+    }
+
+    /// <summary>
     /// 击飞中的敌人静默补齐：直接更新 rowIndex 和 X/Z 位置，保留当前 Y（击飞高度）。
     /// 不播放 DOTween 弹跳动画，不触发补齐链。
     /// 由 Column 在 RemoveEnemy / CompactByClearRows / TriggerFillForward 中调用。
@@ -2205,14 +2215,16 @@ public class Enemy : MonoBehaviour
                 {
                     if (!IsRowClearForBoss(rowIndex - 1))
                     {
-                        // 前方排仍有存活敌人，订阅列修改事件等待重试
+                        // 前方排仍有存活敌人，订阅列修改事件 + 定时器双重保障
                         var cm = EnemyManager.Instance?.columnManager;
                         if (cm != null && _onColumnsModifiedHandler == null)
                         {
                             _onColumnsModifiedHandler = OnColumnsModifiedForBoss;
                             cm.OnColumnsModified += _onColumnsModifiedHandler;
-                            DebugLog.Info($"[Enemy] Boss等待前方排清空(row={rowIndex - 1}): {DebugTag}, col={columnIndex}");
                         }
+                        // 定时器兜底：防止 rush 补齐链中 OnColumnsModified 不触发（rush 移动不走 UpdateEnemyRow）
+                        rushMoveDelayTimer = 0.3f;
+                        DebugLog.Info($"[Enemy] Boss等待前方排清空(row={rowIndex - 1}): {DebugTag}, col={columnIndex}");
                         return false; // 不清除 pendingRushMove，等待重试
                     }
                     // 前方排已清空，取消等待订阅（如有）
