@@ -52,7 +52,12 @@ public class CycloneEffect : MonoBehaviour
             // 固定在地面位置（敌人脚下初始位置）
             Vector3 pos = _target.transform.position;
             pos.y = yOffset;
+            pos.z -= 0.2f; // Z 略微前移，靠透视相机深度排序自然排到敌人身前
             transform.position = pos;
+
+            _sr.sortingOrder = 0;
+
+            DebugLog.Info($"[CycloneEffect] target={_target.DebugTag} row={_target.rowIndex} z={pos.z:F2}");
 
             // 击飞伤害
             _target.TakeDamage(_damage);

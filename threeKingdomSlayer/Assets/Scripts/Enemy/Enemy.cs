@@ -1116,9 +1116,10 @@ public class Enemy : MonoBehaviour
             if (targetRow >= 0 && rowIndex > targetRow)
             {
                 pendingRushMove = true;
-                var col = EnemyManager.Instance?.columnManager?.GetColumn(columnIndex);
+                var cm = EnemyManager.Instance?.columnManager;
+                var col = cm?.GetColumn(columnIndex);
                 if (col != null)
-                    col.StartRushFromLaunched(this);
+                    col.StartRushFromLaunched(this, cm != null ? () => cm.OnColumnsModified?.Invoke() : null);
                 else
                     TryStartRushMove();
             }
@@ -1131,22 +1132,23 @@ public class Enemy : MonoBehaviour
                 }
                 else
                 {
+                    // 三铁律：击飞 ≠ 死亡。Launched 敌人仍占据排位。
+                    // 使用跨列整排检查代替逐列检查，只有前一排全部死亡才是真正的空排。
                     int frontRow = rowIndex - 1;
                     bool frontOccupied = false;
-                    var col = EnemyManager.Instance?.columnManager?.GetColumn(columnIndex);
-                    if (col != null && frontRow >= 0 && frontRow < col.enemies.Count)
+                    if (frontRow >= 0)
                     {
-                        Enemy front = col.enemies[frontRow];
-                        if (front != null && front != this && front.state != EnemyState.Dead)
-                            frontOccupied = true;
+                        var cm = EnemyManager.Instance?.columnManager;
+                        frontOccupied = cm != null && !cm.IsRowFullyVacated(frontRow);
                     }
                     if (frontOccupied)
                     {
-                        DebugLog.Info($"[Enemy] 落地后前方被占据，等待补齐: {DebugTag}, col={columnIndex}, row={rowIndex}, frontRow={frontRow}");
+                        DebugLog.Info($"[Enemy] 落地后前方整排未清空，等待: {DebugTag}, col={columnIndex}, row={rowIndex}, frontRow={frontRow}");
                     }
                     else
                     {
-                        StartMoving();
+                        // 使用 rush 移动：击飞落地后前移不应触发行军波次
+                        StartMoving(true);
                     }
                 }
             }
@@ -2198,9 +2200,13 @@ public class Enemy : MonoBehaviour
                 // 动画阶段：等待动画完成，由 UpdateAttack() 调用 TryStartRushMove
                 return false;
 
-            case EnemyState.Stunned:
             case EnemyState.Launched:
-                // 普通敌人没有眩晕设计，不应被眩晕/击飞阻塞补齐移动
+                // 击飞期间不打断补齐：保留 pendingRushMove 和 targetRow，
+                // 落地后由 UpdateLaunch 检查 targetRow 并触发 StartRushFromLaunched
+                return false;
+
+            case EnemyState.Stunned:
+                // 普通敌人没有眩晕设计，不应被眩晕阻塞补齐移动
                 if (!isBoss)
                 {
                     state = EnemyState.Idle;
@@ -2268,16 +2274,15 @@ public class Enemy : MonoBehaviour
         }
         else
         {
-            // 被推离攻击范围 → 取消攻击，重新前进
+            // 被推离攻击范围 → 取消攻击，标记补齐等待。
+            // 实际 Rush 移动由 ColumnManager 的紧凑链统一调度（含延迟），此处不单独启动。
             CancelAttack();
-            // 重置状态为Idle后调用StartMoving（Moving已做保护）
             if (state != EnemyState.Moving && state != EnemyState.Idle)
                 state = EnemyState.Idle;
             // 设置 targetRow 为攻击范围最前排，确保 Rush 到位后能进入攻击
             targetRow = atkRange - 1;
-            // 标记 pendingRushMove，确保列补齐链（RemoveEnemy）能订阅 OnRushMoveComplete
+            // 标记 pendingRushMove，确保列补齐链能订阅 OnRushMoveComplete
             pendingRushMove = true;
-            StartMoving(isRush: true);
         }
     }
 
