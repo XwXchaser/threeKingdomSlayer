@@ -28,11 +28,21 @@ public class ComboDisplayUI : MonoBehaviour
     public float scaleAmplitude = 1.3f;
     public float scaleDuration = 0.15f;
 
+    [Header("间距适配")]
+    [Tooltip("参考分辨率宽度")]
+    [SerializeField] private float _referenceWidth = 1080f;
+    [Tooltip("'连'字与第一位数字在参考分辨率下的间距（px）")]
+    [SerializeField] private float _referenceGap = 41f;
+
     private List<DigitSlot> _digitPool = new List<DigitSlot>();
     private int _lastCombo;
     private bool _visible;
     private Coroutine _scaleRoutine;
     private Vector3 _baseScale;
+    private RectTransform _lianRect;
+    private RectTransform _digitParentRect;
+    private RectTransform _parentRect;
+    private float _lastParentWidth;
 
     private class DigitSlot
     {
@@ -44,6 +54,9 @@ public class ComboDisplayUI : MonoBehaviour
     private void Awake()
     {
         _baseScale = transform.localScale;
+        _parentRect = transform as RectTransform;
+        _lianRect = (lianStaticImage != null ? lianStaticImage : lianFillImage)?.GetComponent<RectTransform>();
+        _digitParentRect = digitParent as RectTransform;
         SetVisible(false);
     }
 
@@ -51,6 +64,7 @@ public class ComboDisplayUI : MonoBehaviour
     {
         if (ComboManager.Instance != null)
             ComboManager.Instance.OnComboUpdated += OnComboUpdated;
+        AdjustSpacing();
     }
 
     private void OnDestroy()
@@ -61,6 +75,10 @@ public class ComboDisplayUI : MonoBehaviour
 
     private void Update()
     {
+        // 分辨率变化时重新调整间距
+        if (_parentRect != null && _parentRect.rect.width != _lastParentWidth)
+            AdjustSpacing();
+
         var cm = ComboManager.Instance;
         if (cm == null || !_visible) return;
 
@@ -189,6 +207,33 @@ public class ComboDisplayUI : MonoBehaviour
             value /= 10;
         }
         return list;
+    }
+
+    /// <summary>
+    /// 按当前 Canvas 宽度缩放 "连"字与数字之间的间距，保证不同屏幕比例下视觉一致。
+    /// </summary>
+    private void AdjustSpacing()
+    {
+        if (_lianRect == null || _digitParentRect == null || _parentRect == null) return;
+
+        float parentWidth = _parentRect.rect.width;
+        _lastParentWidth = parentWidth;
+
+        float ratio = parentWidth / _referenceWidth;
+        float targetGap = _referenceGap * ratio;
+
+        // "连"字右边缘（锚定左上角，x 相对于左边缘）
+        float lianRightEdge = _lianRect.anchoredPosition.x
+            + _lianRect.sizeDelta.x * (1f - _lianRect.pivot.x);
+
+        // DigitParent 锚定中心 (0.5, 0.5)，pivot (0, 0.5)
+        // digitLeftEdge = parentWidth/2 + anchoredPosition.x
+        // 目标: digitLeftEdge = lianRightEdge + targetGap
+        float targetX = lianRightEdge + targetGap - parentWidth * 0.5f;
+
+        var pos = _digitParentRect.anchoredPosition;
+        pos.x = targetX;
+        _digitParentRect.anchoredPosition = pos;
     }
 
     private void PlayScaleAnimation()

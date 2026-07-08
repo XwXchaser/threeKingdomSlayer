@@ -57,22 +57,9 @@ public class Column
     }
 
     /// <summary>
-    /// 移除指定敌人（通常是最前排死亡）
-    /// 移除敌人后，后方所有敌人标记 pendingRushMove = true，
-    /// 更新排索引 SetRowIndex(i+1)，然后链式触发补齐移动。
-    ///
-    /// 链式补齐改进：
-    ///   - SetRowIndex(i+1)：后方敌人排索引设为新列表位置+1，
-    ///     补齐移动完成后 rowIndex-- = 列表位置，不会与其他敌人重合。
-    ///   - 链式触发：第一个敌人补齐移动完全完成(moveProgress>=1.0)时，
-    ///     通过 OnRushMoveComplete 事件启动下一个敌人。
-    ///     必须等待前一敌人完全补齐完毕，后一敌人才能开始补齐。
-    ///
-    /// Problem 3 修复（补齐延迟）：
-    ///   - 补齐移动完成后若还需继续前进，启动延迟计时器，
-    ///     延迟结束后再开始下一次补齐移动。
+    /// 移除指定敌人。仅从列表中删除，不做紧凑或补齐。
+    /// 补齐由 ColumnManager 统一调度（波次行军或击退后紧凑）。
     /// </summary>
-    /// <param name="skipChain">true=仅移除敌人，不压缩列表、不启动链（逐排补齐时由 ColumnManager 统一处理）</param>
     public void RemoveEnemy(Enemy enemy, bool skipChain = false)
     {
         int index = enemies.IndexOf(enemy);
@@ -80,103 +67,62 @@ public class Column
         {
             enemies.RemoveAt(index);
             int colIndex = enemy.columnIndex;
-            DebugLog.Info($"[Column] RemoveEnemy: column={colIndex}, deadIndex={index}, remaining={enemies.Count}, skipChain={skipChain}");
-
-            if (skipChain) return;
-
-            // 紧凑排列存活敌人，Dead 跳过并移除，Launched 保留在原位不参与补齐
-            int writeIdx = 0;
-            for (int i = 0; i < enemies.Count; i++)
-            {
-                Enemy e = enemies[i];
-                if (e.state == EnemyState.Dead)
-                {
-                    DebugLog.Info($"[Column] 跳过 Dead 敌人: {e.DebugTag}, col={colIndex}, row={e.rowIndex}");
-                    continue;
-                }
-                // 存活敌人（含Launched）：紧凑前移并标记补齐
-                // Boss 在 Approaching 状态时不参与补齐（由 BossPause/BossResume 自行控制）
-                if (i != writeIdx) enemies[writeIdx] = e;
-                e.targetRow = writeIdx;
-
-                // 仅当敌人需要移动时才重置状态；正在攻击动画中的敌人不打断
-                bool needsMove = e.rowIndex != writeIdx;
-                if (needsMove && !e.isAttackAnimating)
-                {
-                    e.ResetMovementState();
-                }
-                else if (needsMove && e.isAttackAnimating)
-                {
-                    // 攻击动画中：保留状态，仅标记 targetRow/pendingRushMove
-                    // 由攻击动画 OnComplete 中的 TryStartRushMove 自然衔接
-                    DebugLog.Info($"[Column] 标记补齐（保留攻击动画）: {e.DebugTag}, col={colIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
-                }
-                // Boss 不参与列补齐链，移动由自身状态机控制
-                if (!e.isBoss)
-                    e.pendingRushMove = true;
-                DebugLog.Info($"[Column] 标记补齐移动: {e.DebugTag}, col={colIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
-                writeIdx++;
-            }
-
-            // 移除 Dead 敌人留下的空洞
-            if (writeIdx < enemies.Count)
-                enemies.RemoveRange(writeIdx, enemies.Count - writeIdx);
-
-            // 启动链式补齐：从第一个 pendingRushMove 的敌人开始
-            StartRushMoveChain(colIndex);
+            DebugLog.Info($"[Column] RemoveEnemy: column={colIndex}, deadIndex={index}, remaining={enemies.Count}");
         }
     }
 
     /// <summary>
-    /// 从列表中第一个 pendingRushMove=true 的敌人开始链式补齐
+    /// 从列表中第一个 pendingRushMove=true 的敌人开始链式补齐。
+    /// 链结束后调用 onChainEnd 回调。
     /// </summary>
-    private void StartRushMoveChain(int colIndex)
+    public void StartRushMoveChain(int colIndex, System.Action onChainEnd = null)
+    {
+        _chainEndHandler = onChainEnd;
+        TryAdvanceChain();
+    }
+
+    private System.Action _chainEndHandler;
+
+    private void TryAdvanceChain()
     {
         for (int i = 0; i < enemies.Count; i++)
         {
             if (enemies[i].pendingRushMove)
             {
-                enemies[i].OnRushMoveComplete += OnColumnRushMoveComplete;
+                enemies[i].OnRushMoveComplete += OnChainRushComplete;
                 enemies[i].TryStartRushMove();
-                DebugLog.Info($"[Column] 启动链式补齐: {enemies[i].DebugTag}, col={colIndex}, row={enemies[i].rowIndex}");
+                DebugLog.Info($"[Column] 启动链式补齐: {enemies[i].DebugTag}, col={columnIndex}, row={enemies[i].rowIndex}");
                 return;
             }
         }
+
+        // 链结束：通知 ColumnManager
+        DebugLog.Info($"[Column] 链结束: col={columnIndex}");
+        var handler = _chainEndHandler;
+        _chainEndHandler = null;
+        handler?.Invoke();
     }
 
-    /// <summary>
-    /// 链式补齐回调：当前敌人补齐完成后，启动下一个 pendingRushMove 的敌人
-    /// </summary>
-    private void OnColumnRushMoveComplete(Enemy enemy)
+    private void OnChainRushComplete(Enemy enemy)
     {
-        enemy.OnRushMoveComplete -= OnColumnRushMoveComplete;
-
-        int idx = enemies.IndexOf(enemy);
-        for (int i = idx + 1; i < enemies.Count; i++)
-        {
-            if (enemies[i].pendingRushMove)
-            {
-                enemies[i].OnRushMoveComplete += OnColumnRushMoveComplete;
-                enemies[i].TryStartRushMove();
-                DebugLog.Info($"[Column] 链式触发下一个: {enemies[i].DebugTag}, col={columnIndex}, row={enemies[i].rowIndex}");
-                return;
-            }
-        }
+        enemy.OnRushMoveComplete -= OnChainRushComplete;
+        TryAdvanceChain();
     }
 
     /// <summary>
-    /// 从击飞落地敌人启动链式补齐
-    /// 击飞敌人落地后需要前移时，必须通过此方法而非直接 TryStartRushMove()，
-    /// 以确保 OnRushMoveComplete 被正确订阅，链式触发不会中断。
+    /// 从击飞落地敌人启动链式补齐。
+    /// 若当前无活跃链则启动新链，链结束后通知 ColumnManager。
     /// </summary>
-    public void StartRushFromLaunched(Enemy enemy)
+    public void StartRushFromLaunched(Enemy enemy, System.Action onChainEnd = null)
     {
         int idx = enemies.IndexOf(enemy);
         if (idx < 0 || !enemy.pendingRushMove) return;
 
-        // 落地后立即开始补齐，不等待前方敌人移动完成。
-        // 前方敌人与落地敌人目标排不同，可并发移动，互不阻塞。
-        enemy.OnRushMoveComplete += OnColumnRushMoveComplete;
+        // 若当前无活跃链，设置回调
+        if (_chainEndHandler == null)
+            _chainEndHandler = onChainEnd;
+
+        enemy.OnRushMoveComplete += OnChainRushComplete;
         enemy.TryStartRushMove();
         DebugLog.Info($"[Column] 击飞落地启动链式: {enemy.DebugTag}, col={columnIndex}, row={enemy.rowIndex}");
     }
@@ -285,13 +231,12 @@ public class Column
         if (writeIdx < enemies.Count)
             enemies.RemoveRange(writeIdx, enemies.Count - writeIdx);
 
-        StartRushMoveChain(columnIndex);
+        // 链式补齐由 ColumnManager 统一启动，此处不再调用 StartRushMoveChain
     }
 
     /// <summary>
     /// 触发补齐前移：将列中所有存活敌人向列表前方补齐。
-    /// 用于波次生成后的初始前移——敌人 spawn 在靠后排，需要逐步前进到攻击位置。
-    /// 逻辑与 RemoveEnemy 的存活敌人重排相同，但不移除任何敌人。
+    /// 保留供外部调用，主流程走 ColumnManager.StartWaveMarch。
     /// </summary>
     public void TriggerFillForward()
     {
@@ -305,7 +250,8 @@ public class Column
             if (i != writeIdx) enemies[writeIdx] = e;
             e.targetRow = writeIdx;
             e.ResetMovementState();
-            e.pendingRushMove = true;
+            if (!e.isBoss)
+                e.pendingRushMove = true;
             writeIdx++;
         }
 
@@ -313,6 +259,23 @@ public class Column
             enemies.RemoveRange(writeIdx, enemies.Count - writeIdx);
 
         StartRushMoveChain(columnIndex);
+    }
+
+    /// <summary>
+    /// Boss 独立补齐入口：Boss 不参与列链，需在普通敌人链启动后自行前移。
+    /// </summary>
+    public void TriggerBossFillForward()
+    {
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            if (enemies[i].isBoss && enemies[i].bossState == BossState.None)
+            {
+                enemies[i].targetRow = 0;
+                enemies[i].StartFillForwardDelay(0.5f);
+                DebugLog.Info($"[Column] 触发Boss独立补齐: {enemies[i].DebugTag}, col={columnIndex}, row={enemies[i].rowIndex}");
+                break;
+            }
+        }
     }
 
     /// <summary>
@@ -324,6 +287,18 @@ public class Column
     /// 该列是否为空
     /// </summary>
     public bool IsEmpty => enemies.Count == 0;
+
+    /// <summary>
+    /// 是否有待补齐的敌人（pendingRushMove=true）
+    /// </summary>
+    public bool HasPendingRushEnemies()
+    {
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            if (enemies[i].pendingRushMove) return true;
+        }
+        return false;
+    }
 
     #region 位移辅助方法
 
@@ -447,7 +422,7 @@ public class Column
 
         enemies.Clear();
         enemies.AddRange(compacted);
-        StartRushMoveChain(columnIndex);
+        // 链式补齐由 ColumnManager 统一启动，此处不再调用 StartRushMoveChain
     }
 
     #endregion

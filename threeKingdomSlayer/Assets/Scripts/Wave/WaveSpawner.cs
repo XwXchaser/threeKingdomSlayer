@@ -155,21 +155,15 @@ public class WaveSpawner : MonoBehaviour
         // 所以组会安全度过补齐期，补齐完成后所有成员在同一排自然不会被解散。
         CreateSharedHealthGroups();
 
-        // 波次生成完成后，触发初始前移
+        // 波次生成完成后，PerRow 检测清空排并压缩
         if (fillRule == FillUpRule.PerRow)
-        {
-            // PerRow: 逐排补齐——检测清空排并压缩
             columnManager.RowBasedFillUp();
-        }
-        else
-        {
-            for (int c = 0; c < 5; c++)
-            {
-                var col = columnManager.GetColumn(c);
-                if (col != null && col.enemies.Count > 0)
-                    col.TriggerFillForward();
-            }
-        }
+
+        // 启动波次行军：跨列整排推进，敌人从生成排向 row=0 前进
+        columnManager.StartWaveMarch();
+
+        // Boss 独立补齐：波次行军跳过 Boss，需单独触发
+        columnManager.TriggerAllBossFillForward();
 
         // 启动协程等待当前波次所有敌人死亡
         StartCoroutine(WaitForWaveClearAndNotify());

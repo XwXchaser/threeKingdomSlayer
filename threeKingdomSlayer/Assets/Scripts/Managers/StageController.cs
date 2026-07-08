@@ -207,16 +207,17 @@ public class StageController : MonoBehaviour
         if (ucm != null)
             ucm.OnAllChoicesDone -= OnChoicesDoneSpawnNextWave;
 
-        // 先触发补齐移动（Boss死亡时跳过了rush chain，现在补偿）
+        // 选择完成后补偿补齐并启动波次行军
         var cm = FindObjectOfType<ColumnManager>();
         if (cm != null)
         {
             FillUpRule rule = GetFillUpRule();
             if (rule == FillUpRule.PerRow)
                 cm.RowBasedFillUp();
-            else
-                for (int i = 0; i < cm.columnCount; i++)
-                    cm.TriggerFillForward(i);
+            cm.StartWaveMarch();
+
+            // Boss 独立补齐：波次行军跳过 Boss，需单独触发
+            cm.TriggerAllBossFillForward();
         }
 
         Debug.Log("[StageController] 所有选择完成，开始下一波");

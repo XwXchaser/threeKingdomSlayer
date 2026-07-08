@@ -1428,6 +1428,8 @@ MonoBehaviour:
   digitParent: {fileID: 1976231732}
   scaleAmplitude: 1.2
   scaleDuration: 0.15
+  _referenceWidth: 1080
+  _referenceGap: 41
 --- !u!1 &177377893
 GameObject:
   m_ObjectHideFlags: 0

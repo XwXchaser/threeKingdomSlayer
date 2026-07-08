@@ -9,13 +9,13 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1778764012219
-updatedAt: 1783483240424
+updatedAt: 1783497897934
 ---
 
 # project-mistake-note
 
 ## Summary
-更新至 2025-12 — 新增 Inspector 参数位置描述不清规则
+更新至 2025-12 — 新增 Cyclone 遮挡修复：战斗 2.5D 排序应优先用 Z 偏移，不要用高 sortingOrder 覆盖跨排深度
 
 <!-- locus:body:start -->
 ### 自定义Editor中新增struct List字段不显示 Inspector 配置 ✅ 已修复（2025-06-27）
@@ -69,7 +69,53 @@ updatedAt: 1783483240424
 - 预防规则：**位移系统中任何在紧凑（CompactByClearRows）之前设置的 targetRow 都会被紧凑覆写。需要基于攻击范围重新计算 targetRow 的逻辑必须在紧凑之后执行**
 - 文件：`ColumnManager.cs` (ExecutePush / ApplyPushWave / RecheckPushedEnemiesAttackRange), `AttackSystem.cs` (ApplyStabPushWave), `Column.cs` (CompactByClearRows)
 
+### Stab PushWave → RecheckAttackRange 覆写 Launched 状态导致浮空敌人瞬间落地 ✅ 已修复（2025-12）
+- 症状：Launch 击飞敌人后，Stab 攻击浮空敌人时敌人被瞬间击退到后排并落地，无法维持浮空状态进行连段。Slash/Pierce/Sweep 无此问题
+- 根因：Stab 的位移链 `ApplyStabPushWave` → `ExecutePush` → `RecheckAttackRange()` 无条件覆写 `state`：`rowIndex >= atkRange` 分支将 `Launched` 覆写为 `Idle` 再 `StartMoving` → `Moving`，`UpdateLaunch` 物理循环检测到 state 不再是 `Launched` 后立即停止，敌人落地。Slash 的 `ApplyDirectionalPush` → `MoveEnemyToColumnAtRow` 不调用 `RecheckAttackRange`，故不受影响
+- 修复：`Enemy.RecheckAttackRange()` 顶部加 `if (state == EnemyState.Launched) return;`，浮空敌人位移后留在新位置继续浮空直到自然落地
+- 预防规则：**任何可能被位移系统调用的状态变更方法（尤其是 `RecheckAttackRange`）必须显式守卫特殊状态（`Launched`、`Stunned` 等），不应假设当前 state 一定是常规战斗状态。所有新位移方法若内部调用 `RecheckAttackRange` 将自动受此守卫保护**
+- 文件：`Assets/Scripts/Enemy/Enemy.cs` (RecheckAttackRange)
+
+### PerColumn 击退补齐延迟位置错误导致距离=1 无延迟 ✅ 已修复（2025-01）
+- 症状：击退距离=1 时，敌人被击退后立刻播放 Rush 补齐动画返回原位，无可见延迟
+- 根因（两层）：
+  1. 第一层：0.35s 延迟放在 `OnCompactionChainComplete`（紧凑链完成 → 波次行军之间），但玩家的 Rush 补齐感知发生在**紧凑链阶段**（`StartAllCompactionChains`）。修复：将 `Invoke` 移到 `RowBasedFillUp` 和 `StartAllCompactionChains` 之间
+  2. 第二层（真正根因）：`RecheckAttackRange`（由 `RecheckPushedEnemiesAttackRange` 调用）在 `else` 分支中调用了 `StartMoving(isRush: true)`，**完全绕过了延迟**。修复：从 `RecheckAttackRange` 的 `else` 分支移除 `StartMoving`，仅设置 `targetRow` + `pendingRushMove`，由延迟后的紧凑链统一启动 Rush
+- 预防规则：**任何在补齐流程中可能被调用的方法，如果内部会 `StartMoving`，必须确认它不会绕过 ColumnManager 的延迟/链调度**
+- 文件：`ColumnManager.cs` (PostDisplacementFillUp), `Enemy.cs` (RecheckAttackRange)
+
+### Boss 补齐入口 TriggerAllBossFillForward 零调用者导致 Boss 永远不补齐 ✅ 已修复（2025-01）
+- 症状：Boss 停在远处不向前补齐，始终不与玩家交战
+- 根因：PerColumn 重构时，Boss 补齐触发代码从 `Column.TriggerFillForward()` 内联提取为独立方法 `Column.TriggerBossFillForward()`，由 `ColumnManager.TriggerAllBossFillForward()` 统一调用。但重构废弃 `TriggerFillForward` 的原有调用点后，`TriggerAllBossFillForward()` 未被任何代码调用（零调用者）。Boss 永远得不到 `pendingRushMove=true`
+- 修复：在 `WaveSpawner.SpawnNextWave()` 和 `StageController.OnChoicesDoneSpawnNextWave()` 中 `StartWaveMarch()` 之后添加 `TriggerAllBossFillForward()` 调用
+- 预防规则：**提取方法到新入口时，必须同步确认所有调用点已正确迁移。废弃旧入口前 grep 确认无遗漏调用者**
+- 文件：`ColumnManager.cs` (TriggerAllBossFillForward), `WaveSpawner.cs` (SpawnNextWave), `StageController.cs` (OnChoicesDoneSpawnNextWave)
+
+### PerColumn 多排秒杀后 _pendingWaveEnemies 死锁导致后排永不补齐 ✅ 已修复（2025-01）
+- 症状：玩家同时击杀多排敌人后，后排敌人原地不动永不补齐
+- 根因：波次行军期间，已阵亡的敌人从 `_pendingWaveEnemies` 中移除但未触发 `OnWaveEnemyRushComplete`，导致 `_pendingWaveEnemies.Count` 永远不为 0，`_isWaveMarching` 永久为 true。后续 `StartWaveMarch()` 因 `_isWaveMarching` 守卫直接 return，波次行军彻底死锁
+- 修复：`RemoveEnemyFromColumn` 中检测被移除敌人是否在 `_pendingWaveEnemies` 中，若在则清理订阅并重置 `_isWaveMarching` / `_currentWaveSourceRow`
+- 预防规则：**任何持有敌人引用的状态集合（HashSet/List），在敌人死亡移除时必须清理该集合中的引用，否则状态机可能永久卡死**
+- 文件：`ColumnManager.cs` (RemoveEnemyFromColumn)
+
+### PerRow 单排秒杀后无补齐：RemoveEnemyFromColumn 缺少 StartWaveMarch + _pendingWaveEnemies 清理 ✅ 已修复（2025-01）
+- 症状：PerRow 模式下，单一排敌人被一次性全部击杀后，后排敌人不向前补齐
+- 根因（两层）：
+  1. PerRow 分支只调用 `RowBasedFillUp()`（数据模型压缩，设置 targetRow + pendingRushMove），但从未调用 `StartWaveMarch()` 启动实际 Rush 移动。`CompactByClearRows` 注释明确写了"链式补齐由 ColumnManager 统一启动"，但 ColumnManager 的 PerRow 分支没有启动
+  2. PerRow 分支缺少 `_pendingWaveEnemies` 清理（与坑点8相同模式），若死亡敌人正在波次行军中会导致 `_isWaveMarching` 死锁
+- 修复：将 `_pendingWaveEnemies` 清理和 `RemoveEnemy` 提取到两个分支共用，PerRow 分支在 `RowBasedFillUp()` 后调用 `StartWaveMarch()`，与 PerColumn 分支结构对齐
+- 预防规则：**修改 PerColumn 分支的死锁/补齐修复时，必须同步检查 PerRow 分支是否需要相同修复。两个分支共享 `_pendingWaveEnemies`、`_isWaveMarching` 等状态，但触发补齐的方式不同**
+- 文件：`ColumnManager.cs` (RemoveEnemyFromColumn)
+
 ### Inspector 参数位置描述不清导致用户找不到配置位置 ✅ 规则纠正（2025-12）
 - 症状：告知用户"在 Inspector 中调整 visualScale"但未说明是哪个 GameObject 的哪个组件，用户无法定位
 - 预防规则：**每当提示用户在 Inspector 中调整参数时，必须完整指明路径：Hierarchy 中选中哪个 GameObject → Inspector 中找到哪个组件 → 调整哪个字段。例："在 Hierarchy 中选中 `Player`，然后在 Inspector 中找 `ChargeStabVisual` 组件，调整 `Visual Scale` 字段"。不能只说"在 Inspector 调整 X"**
+
+### Cyclone 遮挡修复误用 sortingOrder 导致跨排遮挡 ✅ 已修复（2025-12）
+- 症状：CycloneEffect 生效时会错误遮挡敌人；先尝试用 `sortingOrder = 50 - z * 10`，又降到 `10 - z`，但 row=0/1 等靠前排仍有遮挡异常
+- 根因：项目战斗场景是透视相机 + Z 深度的 2.5D 排序体系，敌人和地面特效主要保持 `sortingOrder=0`，通过 Z 位置决定前后关系。给 Cyclone 设置全局高于敌人的 sortingOrder 会绕过 Z 深度，让后排 Cyclone 也压到前排敌人之上
+- 正确修复：Cyclone 保持 `_sr.sortingOrder = 0`，生成位置使用目标敌人脚下坐标并 `pos.z -= 0.2f`，像 SpikeTrap 的 `zOffset=-0.2` 一样靠 Z 轻微前移显示在目标敌人身前，同时保留跨排深度关系
+- 调试辅助：临时/保留 `DebugLog.Info($"[CycloneEffect] target={_target.DebugTag} row={_target.rowIndex} z={pos.z:F2}")` 可确认生成 row 和 Z
+- 预防规则：**在本项目战斗内修复敌人/地面特效遮挡时，优先检查现有 2.5D Z 排序体系；不要先用大 sortingOrder 覆盖。只有纯 overlay/描边/UI 类视觉才适合高 sortingOrder**
+- 文件：`Assets/Scripts/Effect/CycloneEffect.cs` (Setup), `Assets/Scripts/Core/SpikeTrapController.cs` (zOffset / baseOrder=0)
 <!-- locus:body:end -->

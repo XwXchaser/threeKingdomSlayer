@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1782017132257
-updatedAt: 1782555747772
+updatedAt: 1783497897955
 ---
 
 # known-issues
@@ -41,8 +41,9 @@ updatedAt: 1782555747772
 - **现象**: 如 101 敌人被击退到 row4 BOSS 身后时，直接在 row4 开始攻击且不会补齐
 - **重现**: 经常反复出现
 
-## 6. Cyclone / SpikeTrap 等特效遮挡前方敌人
-- **现象**: CycloneEffect 和 SpikeTrapController 的特效 SpriteRenderer 没有设置 sortingOrder，会遮挡 row=0 前方敌人
-- **已修复**: SpikeTrapController 已添加 `sortingOrder = 50 - (int)(worldPosition.z * 10f)` 公式
-- **待修复**: CycloneEffect 未设置 sortingOrder，存在同样层级问题
+## 6. Cyclone / SpikeTrap 等特效遮挡前方敌人 ✅ 已修复
+- **现象**: CycloneEffect 生效时会错误遮���敌人；最初误判为缺少高 sortingOrder
+- **实际根因**: 战斗场景依赖透视相机 + Z 位置做 2.5D 深度排序。给 Cyclone 设置高 sortingOrder 会绕过 Z 深度，导致后排特效压住前排敌人
+- **修复**: CycloneEffect 保持 `sortingOrder = 0`，生成时 `pos.z -= 0.2f`，与 SpikeTrap 的 Z 前移思路一致，让目标行内显示在敌人身前，同时保留跨排前后关系
+- **规则**: 战斗内敌人/地面特效遮挡优先用 Z 偏移，不要用高 sortingOrder；高 sortingOrder 只用于 overlay/描边/UI 类视觉
 <!-- locus:body:end -->

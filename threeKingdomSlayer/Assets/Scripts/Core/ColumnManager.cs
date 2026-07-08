@@ -27,6 +27,18 @@ public class ColumnManager : MonoBehaviour
     private readonly List<Enemy> _rangeQueryList = new List<Enemy>();
     private readonly HashSet<int> _occupiedRowsSet = new HashSet<int>();
 
+    // 波次行军状态（规则1/2）
+    private bool _isWaveMarching = false;
+    private int _currentWaveSourceRow = -1;
+    private readonly HashSet<Enemy> _pendingWaveEnemies = new HashSet<Enemy>();
+
+    // 击退后紧凑链计数器
+    private int _compactionColumnsRemaining = 0;
+
+    // 击退后 RowBasedFillUp 完成到紧凑链启动之间的延迟（秒），
+    // 让敌人停留在击退后的位置一段时间再 Rush 补齐。
+    private const float compactionStartDelay = 0.35f;
+
     /// <summary>
     /// 列结构变化事件（RemoveEnemy / UpdateEnemyRow 后触发）
     /// Boss 用此事件检测前排是否清空以恢复推进
@@ -102,26 +114,52 @@ public class ColumnManager : MonoBehaviour
         if (!IsValidColumn(columnIndex)) return;
 
         FillUpRule rule = StageController.Instance?.GetFillUpRule() ?? FillUpRule.PerColumn;
+        columns[columnIndex].RemoveEnemy(enemy, skipChain: true);
+
+        // 若该敌人正在波次行军中（例：多排秒杀场景），清理 pending 状态防止 _pendingWaveEnemies 死锁
+        if (_pendingWaveEnemies.Remove(enemy))
+        {
+            enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
+            if (_pendingWaveEnemies.Count == 0)
+            {
+                _isWaveMarching = false;
+                _currentWaveSourceRow = -1;
+            }
+        }
+
         if (rule == FillUpRule.PerRow)
         {
-            // 逐排补齐：仅移除敌人，不触发逐列链，由 RowBasedFillUp 统一处理
-            columns[columnIndex].RemoveEnemy(enemy, skipChain: true);
+            // PerRow：逐排补齐（数据模型压缩），再启动跨列整排行军（规则1/2）
             RowBasedFillUp();
+            StartWaveMarch();
         }
         else
         {
-            columns[columnIndex].RemoveEnemy(enemy, skipChain);
+            // PerColumn：仅移除敌人，保留缺口。整排空出后由 StartWaveMarch 统一推进（规则2）。
+            StartWaveMarch();
         }
         OnColumnsModified?.Invoke();
     }
 
     /// <summary>
-    /// 对指定列触发补齐前移（Boss死亡延迟补齐用）
+    /// 触发补齐前移（Boss死亡延迟补齐用）。
+    /// 委托给 Column.TriggerFillForward，由调用方自行控制。
     /// </summary>
     public void TriggerFillForward(int columnIndex)
     {
         if (!IsValidColumn(columnIndex)) return;
         columns[columnIndex].TriggerFillForward();
+        OnColumnsModified?.Invoke();
+    }
+
+    /// <summary>
+    /// 扫描所有列，触发 Boss 独立补齐（StartWaveMarch 跳过 Boss，需单独调用）。
+    /// 波次生成后和选择完成后调用。
+    /// </summary>
+    public void TriggerAllBossFillForward()
+    {
+        for (int i = 0; i < columnCount; i++)
+            columns[i].TriggerBossFillForward();
     }
 
     /// <summary>
@@ -149,12 +187,8 @@ public class ColumnManager : MonoBehaviour
     #region 更新敌人位置
 
     /// <summary>
-    /// 更新敌人在列中的排索引（前进后调用）
-    /// 仅在非补齐移动（自然移动、眩晕/挑飞后恢复）完成后调用。
-    /// 补齐移动（死亡触发）由 Column.RemoveEnemy() 独立处理。
-    ///
-    /// 击飞敌人保留在列中（可被攻击），不参与补齐，不阻塞后方敌人填充前方空位。
-    /// Dead 敌人跳过并清理。存活敌人紧凑排列，链式触发补齐。
+    /// 更新敌人在列中的排索引（前进后调用）。
+    /// PerColumn: 直接触发波次行军检查。PerRow: 触发 RowBasedFillUp。
     /// </summary>
     public void UpdateEnemyRow(int columnIndex, Enemy enemy)
     {
@@ -163,87 +197,15 @@ public class ColumnManager : MonoBehaviour
         FillUpRule rule = StageController.Instance?.GetFillUpRule() ?? FillUpRule.PerColumn;
         if (rule == FillUpRule.PerRow)
         {
-            // 逐排补齐：自然移动后不触发逐列链，由 RowBasedFillUp 统一处理
             DebugLog.Info($"[ColumnManager] UpdateEnemyRow (PerRow): col={columnIndex}, {enemy.DebugTag}, 触发 RowBasedFillUp");
             RowBasedFillUp();
             OnColumnsModified?.Invoke();
             return;
         }
 
-        Column column = columns[columnIndex];
-        int currentIndex = column.enemies.IndexOf(enemy);
-        DebugLog.Info($"[ColumnManager] UpdateEnemyRow: col={columnIndex}, {enemy.DebugTag}, currentIndex={currentIndex}, count={column.enemies.Count}");
-        if (currentIndex > 0)
-        {
-            // 将敌人前移一位
-            column.enemies.RemoveAt(currentIndex);
-            column.enemies.Insert(currentIndex - 1, enemy);
-            DebugLog.Info($"[ColumnManager] 重排列顺序：{enemy.DebugTag}, from={currentIndex}→{currentIndex - 1}");
-
-            // 紧凑排列：Launched 保留原位不参与补齐，Dead 跳过并清理，存活敌人向前补齐
-            int writeIdx = currentIndex;
-            bool anyPendingRush = false;
-            for (int i = currentIndex; i < column.enemies.Count; i++)
-            {
-                Enemy e = column.enemies[i];
-                if (e.state == EnemyState.Dead)
-                {
-                    DebugLog.Info($"[ColumnManager] 跳过 Dead 敌人: {e.DebugTag}, col={columnIndex}, row={e.rowIndex}");
-                    continue;
-                }
-                if (i != writeIdx) column.enemies[writeIdx] = e;
-                e.targetRow = writeIdx;
-                e.ResetMovementState();
-                // Boss 在 Approaching 阶段不参与列内补齐，由分阶段推进系统控制
-                if (!(e.isBoss && e.bossState == BossState.Approaching))
-                {
-                    e.pendingRushMove = true;
-                    anyPendingRush = true;
-                }
-                DebugLog.Info($"[ColumnManager] 标记补齐移动: {e.DebugTag}, col={columnIndex}, curRow={e.rowIndex}, targetRow={writeIdx}");
-                writeIdx++;
-            }
-
-            // 移除 Dead 敌人留下的空洞
-            if (writeIdx < column.enemies.Count)
-                column.enemies.RemoveRange(writeIdx, column.enemies.Count - writeIdx);
-
-            // 链式触发：从第一个 pendingRushMove 的存活敌人开始
-            if (anyPendingRush)
-            {
-                for (int i = currentIndex; i < column.enemies.Count; i++)
-                {
-                    if (column.enemies[i].pendingRushMove)
-                    {
-                        column.enemies[i].OnRushMoveComplete += OnColumnManagerRushComplete;
-                        column.enemies[i].TryStartRushMove();
-                        DebugLog.Info($"[ColumnManager] 启动链式补齐: {column.enemies[i].DebugTag}, col={columnIndex}");
-                        break;
-                    }
-                }
-            }
-
-            OnColumnsModified?.Invoke();
-        }
-    }
-
-    /// <summary>
-    /// ColumnManager 补齐链回调：当前敌人补齐完成后，启动下一个 pendingRushMove 的存活敌人
-    /// </summary>
-    private void OnColumnManagerRushComplete(Enemy completed)
-    {
-        completed.OnRushMoveComplete -= OnColumnManagerRushComplete;
-        Column column = columns[completed.columnIndex];
-        int idx = column.enemies.IndexOf(completed);
-        for (int i = idx + 1; i < column.enemies.Count; i++)
-        {
-            if (column.enemies[i].pendingRushMove)
-            {
-                column.enemies[i].OnRushMoveComplete += OnColumnManagerRushComplete;
-                column.enemies[i].TryStartRushMove();
-                return;
-            }
-        }
+        // PerColumn: 自然移动后只通知观察者
+        DebugLog.Info($"[ColumnManager] UpdateEnemyRow (PerColumn): col={columnIndex}, {enemy.DebugTag}");
+        OnColumnsModified?.Invoke();
     }
 
     #endregion
@@ -402,10 +364,181 @@ public class ColumnManager : MonoBehaviour
 
     #endregion
 
+    #region 波次行军（规则1/2）
+
+    /// <summary>
+    /// 跨列波次行军：找到最前排的空排，将该排后的整排敌人一起前移一排。
+    /// 所有列同排敌人同步移动，保持阵型。完成后级联检查下一排。
+    /// </summary>
+    public void StartWaveMarch()
+    {
+        if (_isWaveMarching) return;
+
+        int maxRow = GetMaxOccupiedRow();
+        for (int r = 0; r < maxRow; r++)
+        {
+            if (IsRowFullyVacated(r) && !IsRowFullyVacated(r + 1))
+            {
+                BeginWaveStep(r + 1, r);
+                return;
+            }
+        }
+    }
+
+    private void BeginWaveStep(int sourceRow, int targetRow)
+    {
+        _pendingWaveEnemies.Clear();
+
+        int target = Mathf.Max(0, targetRow);
+
+        for (int c = 0; c < columnCount; c++)
+        {
+            foreach (var e in columns[c].enemies)
+            {
+                if (e == null || e.state == EnemyState.Dead) continue;
+                if (e.isBoss) continue;
+                if (e.state == EnemyState.Launched || e.state == EnemyState.Stunned) continue;
+                if (e.rowIndex != sourceRow) continue;
+
+                e.targetRow = target;
+                e.pendingRushMove = true;
+                e.ResetMovementState();
+                e.OnRushMoveComplete += OnWaveEnemyRushComplete;
+                _pendingWaveEnemies.Add(e);
+            }
+        }
+
+        // 该排仅有 Boss 或无可行军敌人：不启动行军，让调用方决定下一步
+        if (_pendingWaveEnemies.Count == 0)
+        {
+            DebugLog.Info($"[ColumnManager] BeginWaveStep: sourceRow={sourceRow} 无可行军敌人，跳过");
+            return;
+        }
+
+        _isWaveMarching = true;
+        _currentWaveSourceRow = sourceRow;
+
+        // 所有同排敌人同时启动 rush move
+        foreach (var e in _pendingWaveEnemies)
+        {
+            e.TryStartRushMove();
+        }
+    }
+
+    private void OnWaveEnemyRushComplete(Enemy enemy)
+    {
+        enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
+        _pendingWaveEnemies.Remove(enemy);
+
+        if (_pendingWaveEnemies.Count == 0)
+        {
+            _isWaveMarching = false;
+            int justVacated = _currentWaveSourceRow;
+            _currentWaveSourceRow = -1;
+
+            // 级联：当前排前移后，该排空出，若后排有非Boss敌人则继续行军
+            if (!IsRowFullyVacated(justVacated + 1))
+            {
+                BeginWaveStep(justVacated + 1, justVacated);
+                // BeginWaveStep 可能因该排仅有 Boss 而跳过；若未启动则走 StartWaveMarch 继续级联
+                if (!_isWaveMarching)
+                    StartWaveMarch();
+            }
+            else
+            {
+                // 后排已空，检查是否还有更远的空排需要处理
+                StartWaveMarch();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 中止波次行军：取消所有待处理敌人的 rush 订阅，清除状态。
+    /// 用于击退开始前保存现场。
+    /// </summary>
+    public void AbortWaveMarch()
+    {
+        CancelInvoke(nameof(StartWaveMarch));
+        CancelInvoke(nameof(StartAllCompactionChains));
+        foreach (var e in _pendingWaveEnemies)
+        {
+            e.OnRushMoveComplete -= OnWaveEnemyRushComplete;
+        }
+        _pendingWaveEnemies.Clear();
+        _isWaveMarching = false;
+        _currentWaveSourceRow = -1;
+    }
+
+    /// <summary>
+    /// 检查指定排是否在所有列均无存活（非 Dead）的敌人。
+    /// Launched 敌人仍占据排位——击飞不等于空出。
+    /// </summary>
+    public bool IsRowFullyVacated(int row)
+    {
+        for (int c = 0; c < columnCount; c++)
+        {
+            foreach (var e in columns[c].enemies)
+            {
+                if (e == null) continue;
+                if (e.state == EnemyState.Dead) continue;
+                if (e.rowIndex == row) return false;
+            }
+        }
+        return true;
+    }
+
+    private int GetMaxOccupiedRow()
+    {
+        int max = 0;
+        for (int c = 0; c < columnCount; c++)
+        {
+            foreach (var e in columns[c].enemies)
+            {
+                if (e == null || e.state == EnemyState.Dead) continue;
+                if (e.rowIndex > max) max = e.rowIndex;
+            }
+        }
+        return max;
+    }
+
+    /// <summary>
+    /// 击退后列内紧凑完成后的回调：所有列链结束后启动波次行军。
+    /// </summary>
+    private void OnCompactionChainComplete()
+    {
+        _compactionColumnsRemaining--;
+        if (_compactionColumnsRemaining <= 0)
+        {
+            _compactionColumnsRemaining = 0;
+            OnColumnsModified?.Invoke();
+            StartWaveMarch();
+        }
+    }
+
+    /// <summary>
+    /// 为所有列启动紧凑后的链式补齐，所有列链结束后自动调用 StartWaveMarch。
+    /// </summary>
+    private void StartAllCompactionChains()
+    {
+        _compactionColumnsRemaining = 0;
+        for (int c = 0; c < columnCount; c++)
+        {
+            if (columns[c].HasPendingRushEnemies())
+            {
+                _compactionColumnsRemaining++;
+                columns[c].StartRushMoveChain(c, OnCompactionChainComplete);
+            }
+        }
+        if (_compactionColumnsRemaining == 0)
+            OnColumnsModified?.Invoke();
+    }
+
+    #endregion
+
     #region 逐排补齐（Row-Based Fill-Up）
 
     /// <summary>
-    /// 逐排补齐：扫描所有列中存活敌人的 rowIndex（非 Dead、非 Launched），
+    /// 逐排补齐：扫描所有列中存活敌人的 rowIndex（非 Dead），
     /// 找出已完全清空的行，然后将各列敌人向清空行压缩。
     /// 在 PerRow 模式下，任何列结构变化后都应调用此方法。
     ///
@@ -415,7 +548,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public void RowBasedFillUp(int? pushedToRow = null)
     {
-        // 1. 收集所有存活（非 Dead、非 Launched）敌人所在的排号
+        // 1. 收集所有存活（非 Dead）敌人所在的排号
         int maxRow = 0;
         _occupiedRowsSet.Clear();
         var occupiedRows = _occupiedRowsSet;
@@ -836,13 +969,22 @@ public class ColumnManager : MonoBehaviour
     #endregion
 
     /// <summary>
-    /// 位移效果完成后触发补齐：逐列紧凑，每列独立填补空排。
+    /// 位移效果完成后触发补齐：中止波次行军 → 逐列紧凑 → 启动链式补齐 → 链结束后自动 StartWaveMarch。
     /// pushedToRow: 位移目标排（被推入的排），该排敌人不参与紧凑，避免击退被补齐抵消。
     /// </summary>
     public void PostDisplacementFillUp(int? pushedToRow = null)
     {
-        DebugLog.Info($"[Displacement] PostDisplacementFillUp pushedToRow={pushedToRow?.ToString() ?? "null"} → RowBasedFillUp");
+        DebugLog.Info($"[Displacement] PostDisplacementFillUp pushedToRow={pushedToRow?.ToString() ?? "null"}");
+
+        // 规则3：中止当前波次行军，防止推进与击退冲突
+        AbortWaveMarch();
+
+        // 逐列紧凑（CompactByClearRows 不再内部启动链）
         RowBasedFillUp(pushedToRow);
+
+        // 延迟后启动紧凑链：让敌人停留在击退后的位置一段时间再 Rush，
+        // 避免短距离击退后即刻补齐导致玩家感知不到击退效果。
+        Invoke(nameof(StartAllCompactionChains), compactionStartDelay);
     }
 
     /// <summary>
