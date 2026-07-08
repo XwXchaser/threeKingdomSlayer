@@ -79,10 +79,6 @@ public class Enemy : MonoBehaviour
     public float attackRange = 1f;
     public float moveSpeed = 1f;
 
-    [Header("视觉偏移")]
-    [Tooltip("精灵 Y 轴偏移量，用于补偿精灵锚点不在底部导致的脚底不对齐。半高 = 精灵高度(px) / PPU / 2")]
-    public float visualYOffset = 0f;
-
     [Header("攻击序列")]
     [Tooltip("攻击序列（按顺序循环执行每步攻击）")]
     public List<AttackStep> attackSequence;
@@ -550,25 +546,16 @@ public class Enemy : MonoBehaviour
         }
 
         // BUG FIX: 补齐移动延迟计时器（Problem 3）
-        // 延迟结束后分两种情况：
-        //   pendingRushMove=true  → 继续补齐（尚未到达 targetRow）
-        //   pendingRushMove=false → 补齐已完成，延迟后开始攻击（到达 targetRow 的过渡停顿）
+        // 当敌人完成一次补齐移动后，如果还需要继续补齐（rowIndex >= attackRange），
+        // 会启动延迟计时器，等待 rushMoveDelay 秒后再开始下一次补齐移动。
         if (rushMoveDelayTimer > 0f)
         {
             rushMoveDelayTimer -= Time.deltaTime;
             if (rushMoveDelayTimer <= 0f)
             {
-                if (pendingRushMove)
-                {
-                    DebugLog.Info($"[Enemy] 补齐延迟结束，尝试继续补齐: {DebugTag}, col={columnIndex}, row={rowIndex}");
-                    TryStartRushMove();
-                }
-                else
-                {
-                    DebugLog.Info($"[Enemy] 补齐延迟结束，开始攻击: {DebugTag}, col={columnIndex}, row={rowIndex}");
-                    if (state == EnemyState.Idle)
-                        StartAttacking();
-                }
+                // 延迟结束，尝试再次开始补齐移动
+                DebugLog.Info($"[Enemy] 补齐延迟结束，尝试继续补齐: {DebugTag}, col={columnIndex}, row={rowIndex}");
+                TryStartRushMove();
             }
         }
 
@@ -1323,27 +1310,11 @@ public class Enemy : MonoBehaviour
                 }
                 else if (reachedAttackRange)
                 {
-                    // 已到达目标位置且在攻击范围内。
-                    // 与"继续补齐"分支对称：添加 rushMoveDelay 过渡停顿，
-                    // 避免单步补齐（如 push=1）无延迟直接攻击造成"光速"感。
-                    float delay = 0f;
-                    if (StageController.Instance != null)
-                        delay = StageController.Instance.GetRushMoveDelay();
-
+                    // 已到达目标位置且在攻击范围内，开始攻击
+                    DebugLog.Info($"[Enemy] 补齐移动完成（到达目标位置+攻击范围）: {DebugTag}, col={columnIndex}, row={rowIndex}");
                     pendingRushMove = false;
                     targetRow = -1;
-
-                    if (delay > 0f)
-                    {
-                        DebugLog.Info($"[Enemy] 补齐移动完成（到达目标位置，等待延迟后攻击）: {DebugTag}, col={columnIndex}, row={rowIndex}, delay={delay:F2}s");
-                        state = EnemyState.Idle;
-                        rushMoveDelayTimer = delay;
-                    }
-                    else
-                    {
-                        DebugLog.Info($"[Enemy] 补齐移动完成（到达目标位置+攻击范围）: {DebugTag}, col={columnIndex}, row={rowIndex}");
-                        StartAttacking();
-                    }
+                    StartAttacking();
                 }
                 else
                 {
@@ -1803,28 +1774,7 @@ public class Enemy : MonoBehaviour
         _hitFlashRoutine = null;
     }
 
-    /// <summary>
-    /// 位移旋转表现：敌人被左右位移时 Z 轴倾斜后回正。
-    /// 纯视觉效果，不影响游戏状态。
-    /// </summary>
-    public void ApplyDisplacementTilt(bool pushRight)
-    {
-        if (state == EnemyState.Dead) return;
 
-        string tiltId = $"displacementTilt_{GetInstanceID()}";
-        DOTween.Kill(tiltId);
-
-        float targetAngle = pushRight ? -45f : 45f;
-        float tiltInDuration = 0.08f;
-        float tiltOutDuration = 0.22f;
-
-        var seq = DOTween.Sequence();
-        seq.Append(transform.DOLocalRotate(new Vector3(0f, 0f, targetAngle), tiltInDuration).SetEase(Ease.OutQuad));
-        seq.Append(transform.DOLocalRotate(Vector3.zero, tiltOutDuration).SetEase(Ease.InOutQuad));
-        seq.SetTarget(transform);
-        seq.SetId(tiltId);
-        seq.OnKill(() => transform.localRotation = Quaternion.identity);
-    }
 
     /// <summary>
     /// 创建材质实例（用于闪白效果）
@@ -1973,9 +1923,6 @@ public class Enemy : MonoBehaviour
         state = EnemyState.Dead;
         UpdateOutlineState();
         _animator?.SetTrigger("Dead");
-
-        // 中断位移旋转 tween，避免与死亡旋转叠加
-        DOTween.Kill($"displacementTilt_{GetInstanceID()}");
 
         // BUG FIX: 取消正在执行的攻击 DOTween 动画
         // 若敌人在攻击动画中被秒杀，立即中断攻击动作（前移+翻转），直接进入死亡状态
@@ -2310,7 +2257,6 @@ public class Enemy : MonoBehaviour
     public void RecheckAttackRange()
     {
         if (state == EnemyState.Dead) return;
-        if (state == EnemyState.Launched) return;
         int atkRange = (int)Mathf.Max(1, attackRange);
 
         if (rowIndex < atkRange)
@@ -2420,7 +2366,7 @@ public class Enemy : MonoBehaviour
         // 你可以在场景中创建一个空的 Enemies GameObject 作为父节点，
         // 然后调整父节点的 Transform Position 来整体移动所有敌人的位置
         // DOTween: 前进补齐时 Y 轴弹跳由 bounceYOffset 驱动（非补齐移动时 bounceYOffset = 0）
-        transform.localPosition = new Vector3(xPos, bounceYOffset + visualYOffset, zPos);
+        transform.localPosition = new Vector3(xPos, bounceYOffset, zPos);
     }
 
     /// <summary>

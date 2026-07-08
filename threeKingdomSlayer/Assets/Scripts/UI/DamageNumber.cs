@@ -1,11 +1,11 @@
 using UnityEngine;
 using TMPro;
+using DG.Tweening;
 
 /// <summary>
 /// 伤害跳字
 /// 受击后在敌人右侧弹出红色带黑色描边的伤害数字，
-/// 向上飘动并逐渐淡出，完成后回收到对象池。
-/// 使用自驱动 Update() 动画，不依赖 DOTween，避免 Sequence 池耗尽。
+/// 向上飘动并逐渐淡出，完成后回收到对象池
 /// </summary>
 public class DamageNumber : MonoBehaviour
 {
@@ -24,11 +24,7 @@ public class DamageNumber : MonoBehaviour
     // 对象池引用（由 DamageNumberManager 设置）
     [System.NonSerialized] public System.Action<DamageNumber> OnReturnToPool;
 
-    private Vector3 _startPos;
-    private Vector3 _endPos;
-    private Color _startColor;
-    private float _elapsed;
-    private bool _isAnimating;
+    private Sequence animSeq;
     private Coroutine _safetyTimeoutRoutine;
 
     private void Awake()
@@ -51,6 +47,8 @@ public class DamageNumber : MonoBehaviour
     /// <summary>
     /// 在指定世界坐标位置显示伤害数字
     /// </summary>
+    /// <param name="worldPos">世界坐标位置</param>
+    /// <param name="damage">伤害数值</param>
     public void Show(Vector3 worldPos, float damage, Color? colorOverride = null)
     {
         // 重新激活对象
@@ -82,12 +80,27 @@ public class DamageNumber : MonoBehaviour
             mat.DisableKeyword("OUTLINE_ON");
         }
 
-        // 启动自驱动动画
-        _startPos = worldPos;
-        _endPos = worldPos + new Vector3(0f, floatUpDistance, 0f);
-        _startColor = displayColor;
-        _elapsed = 0f;
-        _isAnimating = true;
+        // 终止可能正在播放的动画
+        if (animSeq != null && animSeq.IsActive())
+        {
+            animSeq.Kill();
+            animSeq = null;
+        }
+
+        // 上飘终点
+        Vector3 endPos = worldPos + new Vector3(0f, floatUpDistance, 0f);
+
+        // DOTween 动画：向上漂浮 + 透明度淡出（SetUpdate 无视 timeScale 暂停）
+        int instanceId = GetInstanceID();
+        animSeq = DOTween.Sequence();
+        animSeq.SetTarget(transform);
+        animSeq.SetUpdate(true);
+        animSeq.SetId($"damageNumber_{instanceId}");
+
+        animSeq.Join(transform.DOMove(endPos, duration).SetEase(Ease.OutQuad));
+        animSeq.Join(DOTween.To(() => tmp.color.a, x => { var c = tmp.color; c.a = x; tmp.color = c; }, 0f, duration).SetEase(Ease.InQuad));
+
+        animSeq.OnComplete(OnAnimationComplete);
 
         // 安全超时兜底：2 倍动画时长后强制回收
         if (_safetyTimeoutRoutine != null)
@@ -95,36 +108,16 @@ public class DamageNumber : MonoBehaviour
         _safetyTimeoutRoutine = StartCoroutine(SafetyTimeoutRealtime(duration * 2f));
     }
 
-    private void Update()
-    {
-        if (!_isAnimating) return;
-
-        _elapsed += Time.unscaledDeltaTime;
-        float t = Mathf.Clamp01(_elapsed / duration);
-
-        // 上飘：OutQuad 等价 — t*(2-t)，先快后慢
-        float moveT = t * (2f - t);
-        transform.position = Vector3.Lerp(_startPos, _endPos, moveT);
-
-        // 淡出：InQuad 等价 — t²，先慢后快
-        float alpha = 1f - t * t;
-        Color c = tmp.color;
-        c.a = _startColor.a * alpha;
-        tmp.color = c;
-
-        if (t >= 1f)
-        {
-            _isAnimating = false;
-            OnAnimationComplete();
-        }
-    }
-
     /// <summary>
     /// 重置状态（对象池回收时调用）
     /// </summary>
     public void ResetNumber()
     {
-        _isAnimating = false;
+        if (animSeq != null && animSeq.IsActive())
+        {
+            animSeq.Kill();
+            animSeq = null;
+        }
 
         if (_safetyTimeoutRoutine != null)
         {
@@ -141,7 +134,11 @@ public class DamageNumber : MonoBehaviour
 
     private void OnDestroy()
     {
-        _isAnimating = false;
+        if (animSeq != null && animSeq.IsActive())
+        {
+            animSeq.Kill();
+            animSeq = null;
+        }
         if (_safetyTimeoutRoutine != null)
         {
             StopCoroutine(_safetyTimeoutRoutine);
@@ -151,7 +148,7 @@ public class DamageNumber : MonoBehaviour
 
     private void OnAnimationComplete()
     {
-        _isAnimating = false;
+        animSeq = null;
         if (_safetyTimeoutRoutine != null)
         {
             StopCoroutine(_safetyTimeoutRoutine);
@@ -165,11 +162,12 @@ public class DamageNumber : MonoBehaviour
     {
         yield return new WaitForSecondsRealtime(delay);
         Debug.LogWarning($"[DamageNumber] 安全超时强制回收 instanceId={GetInstanceID()}");
-        _isAnimating = false;
-        if (_safetyTimeoutRoutine != null)
+        if (animSeq != null && animSeq.IsActive())
         {
-            _safetyTimeoutRoutine = null;
+            animSeq.Kill();
+            animSeq = null;
         }
+        _safetyTimeoutRoutine = null;
         gameObject.SetActive(false);
         OnReturnToPool?.Invoke(this);
     }
