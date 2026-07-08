@@ -9,13 +9,13 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1778764012219
-updatedAt: 1783353599193
+updatedAt: 1783483240424
 ---
 
 # project-mistake-note
 
 ## Summary
-更新至 2025-12 — 新增 RecheckAttackRange 被 CompactByClearRows 覆写规则
+更新至 2025-12 — 新增 Inspector 参数位置描述不清规则
 
 <!-- locus:body:start -->
 ### 自定义Editor中新增struct List字段不显示 Inspector 配置 ✅ 已修复（2025-06-27）
@@ -68,13 +68,6 @@ updatedAt: 1783353599193
 - 修复：将 RecheckAttackRange 移到 PostDisplacementFillUp 之后执行：`ApplyPushWave` → `PostDisplacementFillUp` → `RecheckPushedEnemiesAttackRange`。同时 `CompactByClearRows` 中 Boss 跳过（`if (e.isBoss) continue`）
 - 预防规则：**位移系统中任何在紧凑（CompactByClearRows）之前设置的 targetRow 都会被紧凑覆写。需要基于攻击范围重新计算 targetRow 的逻辑必须在紧凑之后执行**
 - 文件：`ColumnManager.cs` (ExecutePush / ApplyPushWave / RecheckPushedEnemiesAttackRange), `AttackSystem.cs` (ApplyStabPushWave), `Column.cs` (CompactByClearRows)
-
-### Stab PushWave → RecheckAttackRange 覆写 Launched 状态导致浮空敌人瞬间落地 ✅ 已修复（2025-12）
-- 症状：Launch 击飞敌人后，Stab 攻击浮空敌人时敌人被瞬间击退到后排并落地，无法维持浮空状态进行连段。Slash/Pierce/Sweep 无此问题
-- 根因：Stab 的位移链 `ApplyStabPushWave` → `ExecutePush` → `RecheckAttackRange()` 无条件覆写 `state`：`rowIndex >= atkRange` 分支将 `Launched` 覆写为 `Idle` 再 `StartMoving` → `Moving`，`UpdateLaunch` 物理循环检测到 state 不再是 `Launched` 后立即停止，敌人落地。Slash 的 `ApplyDirectionalPush` → `MoveEnemyToColumnAtRow` 不调用 `RecheckAttackRange`，故不受影响
-- 修复：`Enemy.RecheckAttackRange()` 顶部加 `if (state == EnemyState.Launched) return;`，浮空敌人位移后留在新位置继续浮空直到自然落地
-- 预防规则：**任何可能被位移系统调用的状态变更方法（尤其是 `RecheckAttackRange`）必须显式守卫特殊状态（`Launched`、`Stunned` 等），不应假设当前 state 一定是常规战斗状态。所有新位移方法若内部调用 `RecheckAttackRange` 将自动受此守卫保护**
-- 文件：`Assets/Scripts/Enemy/Enemy.cs` (RecheckAttackRange)
 
 ### Inspector 参数位置描述不清导致用户找不到配置位置 ✅ 规则纠正（2025-12）
 - 症状：告知用户"在 Inspector 中调整 visualScale"但未说明是哪个 GameObject 的哪个组件，用户无法定位

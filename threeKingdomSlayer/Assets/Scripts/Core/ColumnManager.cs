@@ -657,8 +657,11 @@ public class ColumnManager : MonoBehaviour
         foreach (var e in pushedEnemies)
             SpikeTrapController.Instance?.CheckAndTrigger(e);
 
-        // 注意：RecheckAttackRange 已移至 PostDisplacementFillUp 之后执行，
-        // 确保 CompactByClearRows 的 targetRow 计算完成后，再由 RecheckAttackRange 设置最终 targetRow。
+        // 被击退后重新检查攻击范围：若超出范围则取消攻击并冲回前线
+        foreach (var e in pushedEnemies)
+        {
+            e.RecheckAttackRange();
+        }
 
         OnColumnsModified?.Invoke();
     }
@@ -668,8 +671,7 @@ public class ColumnManager : MonoBehaviour
     /// BOSS 免疫击退。
     /// 返回 true 表示至少有一列成功执行了击退。
     /// </summary>
-    /// <param name="pushedEnemiesOut">收集实际被推的敌人，供调用方在 PostDisplacementFillUp 后调用 RecheckAttackRange</param>
-    public bool ApplyPushWave(List<Enemy> hitEnemies, int pushAmount, bool canInterruptCFrame = false, List<Enemy> pushedEnemiesOut = null)
+    public bool ApplyPushWave(List<Enemy> hitEnemies, int pushAmount, bool canInterruptCFrame = false)
     {
         if (hitEnemies == null || hitEnemies.Count == 0) return false;
 
@@ -710,7 +712,6 @@ public class ColumnManager : MonoBehaviour
             if (canPush)
             {
                 ExecutePush(col, pushAmount, kv.Value);
-                pushedEnemiesOut?.AddRange(kv.Value);
                 anyPushed = true;
             }
         }
@@ -721,7 +722,7 @@ public class ColumnManager : MonoBehaviour
     /// 方向推（Slash 专属）：将击中敌人按行分组，朝 slash 方向推移 step 列。
     /// 同行多敌人自动分散到不同列，不重叠。
     /// </summary>
-    public bool ApplyDirectionalPush(List<Enemy> hitEnemies, int step, bool pushRight, bool canInterruptCFrame = false, List<Enemy> movedEnemies = null)
+    public bool ApplyDirectionalPush(List<Enemy> hitEnemies, int step, bool pushRight, bool canInterruptCFrame = false)
     {
         if (hitEnemies == null || hitEnemies.Count == 0) return false;
         if (step <= 0) return false;
@@ -754,7 +755,6 @@ public class ColumnManager : MonoBehaviour
 
             foreach (var enemy in enemies)
             {
-                int originalCol = enemy.columnIndex;
                 int idealCol = pushRight
                     ? Mathf.Min(enemy.columnIndex + step, 4)
                     : Mathf.Max(enemy.columnIndex - step, 0);
@@ -766,8 +766,6 @@ public class ColumnManager : MonoBehaviour
                     if (MoveEnemyToColumnAtRow(enemy, tryCol, row))
                     {
                         anyMoved = true;
-                        if (tryCol != originalCol)
-                            movedEnemies?.Add(enemy);
                         break;
                     }
                     tryCol += dir;
@@ -886,20 +884,6 @@ public class ColumnManager : MonoBehaviour
             sb.Append("\n");
         }
         return sb.ToString();
-    }
-
-    /// <summary>
-    /// 位移 + 列填充完成后，对被推敌人重检攻击范围。
-    /// 必须在 PostDisplacementFillUp 之后调用，确保 CompactByClearRows 的 targetRow
-    /// 已计算完毕，再由 RecheckAttackRange 设置最终 targetRow（覆盖 compact 的排号）。
-    /// </summary>
-    public void RecheckPushedEnemiesAttackRange(List<Enemy> pushedEnemies)
-    {
-        if (pushedEnemies == null || pushedEnemies.Count == 0) return;
-        foreach (var e in pushedEnemies)
-        {
-            e.RecheckAttackRange();
-        }
     }
 
     #region 工具方法
