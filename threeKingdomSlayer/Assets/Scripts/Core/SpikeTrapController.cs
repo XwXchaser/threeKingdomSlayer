@@ -130,11 +130,19 @@ public class SpikeTrapController : MonoBehaviour
         _hitSr = _hitChild.GetComponent<SpriteRenderer>();
         _hitChild.SetActive(false);
 
-        _outlineGo = CreateChild("OutlineOverlay", baseSprite, outlineSortingOrder, outlineMaterial);
-        _outlineSr = _outlineGo.GetComponent<SpriteRenderer>();
-        _outlineSr.sharedMaterial.SetColor("_OutlineColor", outlineColor);
-        _outlineSr.sharedMaterial.SetFloat("_OutlineWidth", outlineWidth);
-        _outlineGo.SetActive(false);
+        if (outlineMaterial != null)
+        {
+            _outlineGo = CreateChild("OutlineOverlay", baseSprite, outlineSortingOrder, outlineMaterial);
+            _outlineSr = _outlineGo.GetComponent<SpriteRenderer>();
+            _outlineSr.sharedMaterial.SetColor("_OutlineColor", outlineColor);
+            _outlineSr.sharedMaterial.SetFloat("_OutlineWidth", outlineWidth);
+            _outlineGo.SetActive(false);
+        }
+        else
+        {
+            _outlineGo = null;
+            _outlineSr = null;
+        }
     }
 
     private GameObject CreateChild(string name, Sprite sprite, int order, Material mat = null)
@@ -195,10 +203,21 @@ public class SpikeTrapController : MonoBehaviour
 
         bool occluded = false;
         var cm = EnemyManager.Instance?.columnManager;
-        if (cm != null)
+        if (cm != null && _spikeRow > 0)
         {
-            var blocker = cm.GetEnemyAt(_spikeCol, 0);
-            occluded = blocker != null && blocker.state != EnemyState.Dead;
+            var enemies = cm.GetEnemiesInColumn(_spikeCol);
+            if (enemies != null)
+            {
+                for (int i = 0; i < enemies.Count; i++)
+                {
+                    var enemy = enemies[i];
+                    if (enemy != null && enemy.state != EnemyState.Dead && enemy.rowIndex < _spikeRow)
+                    {
+                        occluded = true;
+                        break;
+                    }
+                }
+            }
         }
 
         _outlineGo.SetActive(occluded);

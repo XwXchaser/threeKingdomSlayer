@@ -2125,6 +2125,24 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
+    /// Boss 延迟补齐：等待 delay 秒后尝试开始前移。
+    /// 由 Column.TriggerBossFillForward 调用。
+    /// </summary>
+    public void StartFillForwardDelay(float delay)
+    {
+        ResetMovementState();
+        pendingRushMove = true;
+        StartCoroutine(FillForwardDelayRoutine(delay));
+    }
+
+    private System.Collections.IEnumerator FillForwardDelayRoutine(float delay)
+    {
+        yield return new UnityEngine.WaitForSeconds(delay);
+        if (state == EnemyState.Dead) yield break;
+        TryStartRushMove();
+    }
+
+    /// <summary>
     /// 尝试开始补齐移动（链式触发）
     /// 根据当前状态决定是否立即开始移动：
     ///   - Idle：直接开始移动（或攻击，若已到最前排）
