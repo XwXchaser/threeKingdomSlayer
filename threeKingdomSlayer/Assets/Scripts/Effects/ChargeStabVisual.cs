@@ -25,6 +25,12 @@ public class ChargeStabVisual : MonoBehaviour
 
     [Header("旋转角度 (度)")]
     public float maxAngle = 60f;
+    [Tooltip("手指上下移动带来的最大 X 轴俯仰角。以蓄力视觉刚出现时的指尖位置为 0，向上为负。")]
+    public float maxPitchAngle = 10f;
+    [Tooltip("手指向下移动带来的最大 X 轴俯仰角。以蓄力视觉刚出现时的指尖位置为 0，向下为正。")]
+    public float maxDownPitchAngle = 20f;
+    [Tooltip("手指在跟随平面内上下移动多少世界单位时达到最大俯仰角。")]
+    public float verticalTiltHalfHeight = 2f;
 
     [Header("缩放")]
     public Vector3 visualScale = new Vector3(0.1f, 0.1f, 0.1f);
@@ -52,6 +58,8 @@ public class ChargeStabVisual : MonoBehaviour
 
     private float _fadeTimer;
     private bool _isFadingOut;
+    private bool _hasPitchBaseline;
+    private Vector3 _pitchBaselineWorldPos;
 
     private void Start()
     {
@@ -125,6 +133,7 @@ public class ChargeStabVisual : MonoBehaviour
         _isCharged = false;
         _readyShown = false;
         _isFadingOut = false;
+        _hasPitchBaseline = false;
     }
 
     private void OnChargeUpdated(Vector2 screenPos, float progress)
@@ -136,7 +145,7 @@ public class ChargeStabVisual : MonoBehaviour
             if (!_hasAppeared)
             {
                 _hasAppeared = true;
-                CreateChargeVisual();
+                CreateChargeVisual(screenPos);
             }
 
             UpdatePosition(screenPos);
@@ -163,7 +172,7 @@ public class ChargeStabVisual : MonoBehaviour
         }
     }
 
-    private void CreateChargeVisual()
+    private void CreateChargeVisual(Vector2 screenPos)
     {
         if (stabPrefab == null)
         {
@@ -186,6 +195,37 @@ public class ChargeStabVisual : MonoBehaviour
 
         _visualInstance.transform.localScale = visualScale;
         _visualInstance.transform.SetParent(null); // 世界空间独立
+
+        if (TryGetPointerWorldPosition(screenPos, out Vector3 worldPos))
+        {
+            _pitchBaselineWorldPos = worldPos;
+            _hasPitchBaseline = true;
+        }
+    }
+
+    public bool TryGetCurrentVisualPose(out Vector3 position, out Quaternion rotation, out Vector3 scale)
+    {
+        if (_visualInstance == null)
+        {
+            position = default;
+            rotation = default;
+            scale = default;
+            return false;
+        }
+
+        position = _visualInstance.transform.position;
+        rotation = _visualInstance.transform.rotation;
+        scale = _visualInstance.transform.localScale;
+        return true;
+    }
+
+    public void SuppressFadeAndDestroy()
+    {
+        CancelInvoke();
+        _isActive = false;
+        _isCharged = false;
+        _readyShown = false;
+        DestroyChargeVisual();
     }
 
     private void DestroyChargeVisual()
@@ -198,37 +238,58 @@ public class ChargeStabVisual : MonoBehaviour
         }
         _hasAppeared = false;
         _isFadingOut = false;
+        _hasPitchBaseline = false;
+    }
+
+    private Vector3 GetFollowPlaneAnchor()
+    {
+        Vector3 playerPos = transform.position;
+        return playerPos + _mainCam.transform.up * spawnYOffset + Vector3.forward * spawnZOffset;
+    }
+
+    private bool TryGetPointerWorldPosition(Vector2 screenPos, out Vector3 worldPos)
+    {
+        worldPos = default;
+        if (_mainCam == null) return false;
+
+        Plane followPlane = new Plane(_mainCam.transform.forward, GetFollowPlaneAnchor());
+        Ray ray = _mainCam.ScreenPointToRay(screenPos);
+        if (!followPlane.Raycast(ray, out float distance)) return false;
+
+        worldPos = ray.GetPoint(distance);
+        return true;
     }
 
     private void UpdatePosition(Vector2 screenPos)
     {
         if (_mainCam == null || _visualInstance == null) return;
+        if (!TryGetPointerWorldPosition(screenPos, out Vector3 worldPos)) return;
 
         Vector3 playerPos = transform.position;
-        float worldZ = playerPos.z + spawnZOffset;
-
-        Vector3 worldPos = _mainCam.ScreenToWorldPoint(
-            new Vector3(screenPos.x, screenPos.y, Mathf.Abs(worldZ - _mainCam.transform.position.z)));
-
         float clampedX = Mathf.Clamp(worldPos.x, playerPos.x - halfWidth, playerPos.x + halfWidth);
-        _visualInstance.transform.position = new Vector3(clampedX, playerPos.y + spawnYOffset, worldZ);
+        _visualInstance.transform.position = new Vector3(clampedX, worldPos.y, worldPos.z);
     }
 
     private void UpdateRotation(Vector2 screenPos)
     {
         if (_mainCam == null || _visualInstance == null) return;
+        if (!TryGetPointerWorldPosition(screenPos, out Vector3 worldPos)) return;
 
         Vector3 playerPos = transform.position;
-        float worldZ = playerPos.z + spawnZOffset;
-
-        Vector3 worldPos = _mainCam.ScreenToWorldPoint(
-            new Vector3(screenPos.x, screenPos.y, Mathf.Abs(worldZ - _mainCam.transform.position.z)));
-
         float offsetX = Mathf.Clamp(worldPos.x - playerPos.x, -halfWidth, halfWidth);
-        float zRot = (offsetX / halfWidth) * maxAngle;
+        float zRot = halfWidth > 0.001f ? (offsetX / halfWidth) * maxAngle : 0f;
+        float xPitch = 0f;
+        if (_hasPitchBaseline && verticalTiltHalfHeight > 0.001f)
+        {
+            float verticalOffset = Vector3.Dot(worldPos - _pitchBaselineWorldPos, _mainCam.transform.up);
+            if (verticalOffset < 0f)
+                xPitch = Mathf.Clamp01(-verticalOffset / verticalTiltHalfHeight) * maxDownPitchAngle;
+            else
+                xPitch = -Mathf.Clamp01(verticalOffset / verticalTiltHalfHeight) * maxPitchAngle;
+        }
 
-        // Stab.prefab 基础旋转为 (90, 0, 0)，在此基础上叠加 Z 旋转
-        _visualInstance.transform.rotation = Quaternion.Euler(90f, 0f, -zRot);
+        // Stab.prefab 基础旋转为 (90, 0, 0)。X 俯仰只根据出现后的上下移动叠加。
+        _visualInstance.transform.rotation = Quaternion.Euler(90f + xPitch, 0f, -zRot);
     }
 
     private void UpdateSprite(float progress)
