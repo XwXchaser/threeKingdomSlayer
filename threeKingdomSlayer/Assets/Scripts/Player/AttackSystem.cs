@@ -43,10 +43,19 @@ public class AttackSystem : MonoBehaviour
     [Tooltip("戳击旋转帧2（stab_rotate2，从左往右朝向）")]
     [SerializeField] private Sprite _stabRotate2Sprite;
 
+    [Header("Launch动画帧")]
+    [Tooltip("Launch帧1：stab_charge2")]
+    [SerializeField] private Sprite _launchSprite1;
+    [Tooltip("Launch帧2：stab_charge1")]
+    [SerializeField] private Sprite _launchSprite2;
+    [Tooltip("Launch帧3：stab")]
+    [SerializeField] private Sprite _launchSprite3;
+
     [Header("攻击冷却模式")]
     [Tooltip("勾选→动作锁定模式（攻击动画期间锁定所有攻击输入）。\n取消→独立CD模式（每招独立冷却，可交替连打）。\n独立CD模式保留作为未来可能的奖励效果（如技能移除动作硬直）。")]
     public bool useActionBasedCooldown = false;
     private float _actionLockTimer;
+    private ChargeStabVisual _chargeStabVisual;
 
     /// <summary>
     /// 当前是否处于攻击动作播放中（动作锁定计时器未结束）
@@ -83,6 +92,8 @@ public class AttackSystem : MonoBehaviour
             columnManager = FindObjectOfType<ColumnManager>();
         if (playerState == null)
             playerState = FindObjectOfType<PlayerState>();
+        if (_chargeStabVisual == null)
+            _chargeStabVisual = FindObjectOfType<ChargeStabVisual>();
     }
 
     /// <summary>
@@ -353,39 +364,55 @@ public class AttackSystem : MonoBehaviour
     /// </summary>
     private void PlayLaunchVisual(AttackSkillConfig cfg, Vector3 playerPos)
     {
-        if (_stabRotate1Sprite == null) return;
-
-        Vector3 spawnPos = new Vector3(playerPos.x + cfg.launchSpawnXOffset, playerPos.y + cfg.launchSpawnYOffset, playerPos.z + cfg.launchSpawnZOffset);
+        if (_launchSprite1 == null) return;
 
         float variance = Mathf.Clamp(cfg.launchAngleVariance, 0f, 30f);
         float zStart = 140f + Random.Range(-variance, variance);
         float zEnd = zStart - cfg.launchFlickAngle;
         float duration = Mathf.Max(cfg.launchFlickDuration, 0.1f);
 
-        Vector3 startEuler = new Vector3(35f, 90f, zStart);
+        Vector3 spawnPos = new Vector3(playerPos.x + cfg.launchSpawnXOffset, playerPos.y + cfg.launchSpawnYOffset, playerPos.z + cfg.launchSpawnZOffset);
+        Quaternion startRotation = Quaternion.Euler(35f, 90f, zStart);
         Vector3 endEuler = new Vector3(35f, 90f, zEnd);
+
+        Vector3 chargePos = default;
+        Quaternion chargeRot = default;
+        Vector3 chargeScale = default;
+        bool useChargePose = _chargeStabVisual != null
+            && _chargeStabVisual.TryGetCurrentVisualPose(out chargePos, out chargeRot, out chargeScale);
+        Vector3 targetScale;
+        if (useChargePose)
+        {
+            spawnPos = chargePos;
+            startRotation = chargeRot;
+            endEuler = chargeRot.eulerAngles + new Vector3(-cfg.launchFlickAngle, 0f, 0f);
+            targetScale = chargeScale;
+            _chargeStabVisual.SuppressFadeAndDestroy();
+        }
+        else
+        {
+            float basePixelsPerUnit = _launchSprite1.pixelsPerUnit;
+            float basePixelSize = Mathf.Max(_launchSprite1.rect.width, _launchSprite1.rect.height);
+            float baseWorldSize = basePixelSize / basePixelsPerUnit;
+            float targetWorldSize = 5f;
+            float scale = baseWorldSize > 0.001f ? targetWorldSize / baseWorldSize : 1f;
+            targetScale = Vector3.one * scale;
+        }
 
         var obj = new GameObject("Launch_Visual");
         obj.transform.position = spawnPos;
-        obj.transform.rotation = Quaternion.Euler(startEuler);
+        obj.transform.rotation = startRotation;
 
         var sr = obj.AddComponent<SpriteRenderer>();
-        sr.sprite = _stabRotate1Sprite;
-        sr.sortingOrder = 10;
+        sr.sprite = _launchSprite1;
         Material mat = new Material(Shader.Find("Sprites/Default"));
         mat.color = Color.white;
         sr.material = mat;
 
-        // 根据精灵尺寸计算初始 scale
-        float basePixelsPerUnit = _stabRotate1Sprite.pixelsPerUnit;
-        float basePixelSize = Mathf.Max(_stabRotate1Sprite.rect.width, _stabRotate1Sprite.rect.height);
-        float baseWorldSize = basePixelSize / basePixelsPerUnit;
-        float targetWorldSize = 5f;
-        float scale = baseWorldSize > 0.001f ? targetWorldSize / baseWorldSize : 1f;
-        Vector3 targetScale = Vector3.one * scale;
-        obj.transform.localScale = Vector3.zero;
-
-        var scaleIn = obj.transform.DOScale(targetScale, 0.05f).SetEase(Ease.OutQuad);
+        obj.transform.localScale = useChargePose ? targetScale : Vector3.zero;
+        Tween scaleIn = null;
+        if (!useChargePose)
+            scaleIn = obj.transform.DOScale(targetScale, 0.05f).SetEase(Ease.OutQuad);
 
         var seq = DOTween.Sequence();
         seq.SetTarget(obj.transform);
@@ -396,15 +423,13 @@ public class AttackSystem : MonoBehaviour
         var moveUp = obj.transform.DOMoveY(spawnPos.y + cfg.launchRiseHeight, duration).SetEase(Ease.OutQuad);
         seq.Join(moveUp);
 
-        // Stab rotate 双帧动画：rotate1 → rotate2
-        if (_stabRotate2Sprite != null)
-        {
-            float frameT = duration / 2f;
-            seq.Insert(0, DOTween.Sequence()
-                .AppendCallback(() => sr.sprite = _stabRotate1Sprite)
-                .AppendInterval(frameT)
-                .AppendCallback(() => sr.sprite = _stabRotate2Sprite));
-        }
+        // Launch 三帧动画：stab_charge2 → stab_charge1 → stab
+        float frameT = duration / 3f;
+        seq.Insert(0, DOTween.Sequence()
+            .AppendInterval(frameT)
+            .AppendCallback(() => sr.sprite = _launchSprite2)
+            .AppendInterval(frameT)
+            .AppendCallback(() => sr.sprite = _launchSprite3));
 
         seq.AppendInterval(0.03f);
         seq.Append(mat.DOFade(0f, 0.15f).SetEase(Ease.InQuad));
@@ -414,7 +439,7 @@ public class AttackSystem : MonoBehaviour
         {
             if (!completed)
             {
-                scaleIn.Kill();
+                scaleIn?.Kill();
                 Destroy(obj);
             }
         });
@@ -422,7 +447,7 @@ public class AttackSystem : MonoBehaviour
         seq.OnComplete(() =>
         {
             completed = true;
-            scaleIn.Kill();
+            scaleIn?.Kill();
             Destroy(obj);
         });
     }

@@ -4158,6 +4158,9 @@ MonoBehaviour:
   spawnZOffset: -3.6
   halfWidth: 3
   maxAngle: 45
+  maxPitchAngle: 10
+  maxDownPitchAngle: 20
+  verticalTiltHalfHeight: 2
   visualScale: {x: 0.1, y: 0.1, z: 0.1}
   appearThreshold: 0.3
   readyDuration: 0.2
@@ -8056,6 +8059,9 @@ MonoBehaviour:
   _chainBouncePrefab: {fileID: 6047275720404681381, guid: e5859ea2ae076734dbfd60135c133a81, type: 3}
   _stabRotate1Sprite: {fileID: 21300000, guid: c3b681405b0dde84581ec1d0fd4bfc26, type: 3}
   _stabRotate2Sprite: {fileID: 21300000, guid: 510b65bb3ae606848905fe73c9061811, type: 3}
+  _launchSprite1: {fileID: 21300000, guid: 4b47b505ef92503469dbdd4fc4b09aef, type: 3}
+  _launchSprite2: {fileID: 21300000, guid: 984052f310698e044aaed42a589b8d4d, type: 3}
+  _launchSprite3: {fileID: 21300000, guid: 25af535c82ad6084fbc774e85e15666c, type: 3}
   useActionBasedCooldown: 1
 --- !u!114 &1809121298
 MonoBehaviour:
