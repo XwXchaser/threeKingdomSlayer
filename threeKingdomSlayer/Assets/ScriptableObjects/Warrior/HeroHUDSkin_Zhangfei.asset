@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca114984104f6234dac532fb5eff2ac7, type: 3}
+  m_Name: HeroHUDSkin_Zhangfei
+  m_EditorClassIdentifier: 
+  healthBottomSprite: {fileID: 21300000, guid: cae58ae3cf227794389bff49dc614465, type: 3}
+  healthFillSprite: {fileID: 21300000, guid: f0ca4dc8d16f28947947609783af857c, type: 3}
+  healthFrameSprite: {fileID: 21300000, guid: e43b5e1a3347d004e9b7d1355f7d504a, type: 3}
+  shieldFillSprite: {fileID: 21300000, guid: aaa758c4f01e1c640a29382b64ca1ab8, type: 3}
+  ultimateBaseSprite: {fileID: 21300000, guid: ecbfe105e2c014443aff23877096bc1f, type: 3}
+  ultimateFillSprite: {fileID: 21300000, guid: 676a27f4773321d45b9d5bd12a029fb0, type: 3}
+  portraitSprite: {fileID: 21300000, guid: e40d2452b5b7213459cf3468cb41dc2e, type: 3}
+  readyFireStartSprite: {fileID: 21300000, guid: 99dafb785b98c1b4c80d58717215ca92, type: 3}
+  readyFireLoopSprites:
+  - {fileID: 21300000, guid: ec78aa9fc2247f740829a315657444e2, type: 3}
+  - {fileID: 21300000, guid: 8b0911361e0607c4798afe53ec9e7ea4, type: 3}
+  - {fileID: 21300000, guid: 733c36e215f2cbf47b83eec1c397e4d6, type: 3}
+  - {fileID: 21300000, guid: 3a283c8dedaba574288a53f233796e3b, type: 3}
+  readyFireFps: 10
+  stabIcon: {fileID: 21300000, guid: 25af535c82ad6084fbc774e85e15666c, type: 3}
+  stabChargeSprite: {fileID: 21300000, guid: 84506bc43e354de43b778286bc4571df, type: 3}
+  slashIcon: {fileID: 21300000, guid: c47aa9ca1a6e118489bf01e49919a5d1, type: 3}
+  slashChargeSprite: {fileID: 0}
+  pierceIcon: {fileID: 21300000, guid: 679ab60fb36ec7e44afe462a65531b6f, type: 3}
+  pierceChargeSprite: {fileID: 0}
+  sweepIcon: {fileID: 21300000, guid: 088d698984c78354592aedeee7dad06b, type: 3}
+  sweepChargeSprite: {fileID: 0}
+  launchIcon: {fileID: 21300000, guid: 25af535c82ad6084fbc774e85e15666c, type: 3}
+  launchChargeSprite: {fileID: 0}
+  parryIcon: {fileID: 21300000, guid: c47aa9ca1a6e118489bf01e49919a5d1, type: 3}
+  parryChargeSprite: {fileID: 0}
+  extraUIPrefabs: []

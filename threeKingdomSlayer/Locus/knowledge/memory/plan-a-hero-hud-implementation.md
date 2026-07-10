@@ -9,42 +9,23 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1778769385905
-updatedAt: 1778769788777
+updatedAt: 1783672643049
 ---
 
 # plan-a-hero-hud-implementation
 
 ## Summary
-Plan A 英雄 HUD Prefab 提取实现记录：架构、文件清单、已知问题、陷阱和测试要点
+Hero HUD 当前架构：Battle 场景常驻可视化 HeroHUDRoot + 每角色 HeroHUDSkin + 可选 extraUIPrefabs；旧 heroHUDPrefab 仅作兜底。
 
 <!-- locus:body:start -->
-# Plan A: HeroHUD Prefab 实现记录
-
-## 架构
-- `HeroHUD.cs` — 挂载在英雄 HUD Prefab 根节点，持有 healthSlider, healthText, reviveText, 6组cooldown Image + chargeFill Image
-- `BattleHUD.cs` — 战斗时通过 `HeroConfig.heroHUDPrefab` 实例化 HeroHUD，通过 `heroHUDParent` Transform 定位父容器
-- `HeroConfig.heroHUDPrefab` — `GameObject` 字段，指向英雄 HUD Prefab
-
-## 文件清单
-- `Assets/Scripts/UI/HeroHUD.cs` — 新建
-- `Assets/Scripts/UI/BattleHUD.cs` — 重写，移除英雄专属字段，新增 heroHUDParent/waveText/coinText/bossHealthBarPrefab/bossBarsParent
-- `Assets/Scripts/Core/HeroConfig.cs` — 新增 heroHUDPrefab 字段
-- `Assets/Scripts/Enemy/Enemy.cs` — 新增 bossHealthBarPrefab 字段（可空）
-- `Assets/Scripts/Core/UltimateEffect_Berserk.cs` — 改用 BattleHUD.SetHealthBarColor/ResetHealthBarColor
-- `Assets/Prefabs/UI/HeroHUD_Zhangfei.prefab` — 张飞 HUD Prefab，含 Health(Slider), Health(TMP), 6个cooldown Image + 子Image
-- `Assets/Scenes/Battle.scene` — BattleHUD 下移除英雄子节点，新增 HeroHUDParent + WaveText，接线 coinText/waveText/heroHUDParent
-- `Assets/ScriptableObjects/Warrior/Hero_Zhangfei.asset` — heroHUDPrefab 已赋值
-
-## 已知问题
-- 重构后存在缩放问题和未赋值问题（待后续修复）
-- bossHealthBarPrefab/bossBarsParent 是新增字段，当前 NULL（需等 BossHealthUI Prefab 创建后接线）
-
-## 关键陷阱
-- **禁止手动编辑 Unity YAML 后拼接 SceneRoots 之后的内容** — SceneRoots 必须是 YAML 文件的最后一个文档，否则场景解析失败（0 root objects）
-- 通过 Editor API（DestroyImmediate/Instantiate/SerializedObject）操作场景，避免 YAML 手工编辑
-
-## 测试要点
-- 进入战斗后 HeroHUD 正确实例化
-- 血量、冷却、充能 UI 更新正确
-- Boss 血条功能（需等 BossHealthUI Prefab 创建后测试）
+## 2025-12 更新：场景常驻 HUD + Skin
+- 推荐运行入口改为 `BattleHUD.sceneHeroHUD`，当前绑定 `Assets/Scenes/Battle.scene/BattleHUD(Canvas)/HeroHUDParent/HeroHUDRoot`，可在场景中直接可视化调整布局。
+- `HeroConfig.hudSkin` 是每角色 HUD 视觉配置入口；`HeroConfig.heroHUDPrefab` 保留为旧方案/兜底。
+- `HeroHUD.ApplySkin(HeroHUDSkin)` 替换血条、护盾、大招头像/底图/填充、技能图标，并把 `extraUIPrefabs` 实例化到 `HeroHUD.extraUIRoot`。
+- `Assets/ScriptableObjects/Warrior/HeroHUDSkin_Zhangfei.asset` 已绑定张飞素材：`zhangfei_head`、`zhangfei_filler_base`、`zhangfei_filler_main` 等。
+- `Assets/Prefabs/UI/HeroHUD_Zhangfei.prefab` 根节点已移除 Canvas/CanvasScaler/GraphicRaycaster 并重置 scale=1，避免 prefab 预览与运行时布局不一致或缩放为 0 不显示。
+- 大招充满火焰特效的最终挂点应放在 `Assets/Scenes/Battle.scene/BattleHUD(Canvas)/HeroHUDParent/HeroHUDRoot/Health(Slider)/UltPortraitButton/ReadyFireEffect`，作为 `UltPortraitButton` 的子物体，并位于 `UltBase`、`UltFill`、`Head` 之前渲染，才能稳定显示在头像背后。
+- `UltimateButtonUI` 只负责大招 ready 状态触发（`OnEnergyChanged` / `OnReady` / `OnActivated`），实际火焰视觉由 `UIReadyFireEffect` 驱动；角色差异继续通过 `HeroHUDSkin.readyFireStartSprite` / `readyFireLoopSprites` / `readyFireFps` 下发。
+- 当前张飞 HUD 先复用 `HeroHUDSkin_Zhangfei.asset` 中已有 burn 火焰帧；后续若更换专用像素火焰素材，只需替换 skin 引用，不需要改代码或场景结构。
+- `UIReadyFireEffect` 现已收敛为 HUD 版单团火焰：以单个 `Image` 做帧循环 + alpha/scale pulse + 轻微 jitter，并提供 `localOffset` / `sizeScale` 作为围绕头像微调的位置与尺寸入口。
 <!-- locus:body:end -->

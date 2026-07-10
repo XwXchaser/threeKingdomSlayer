@@ -105,7 +105,7 @@ public class StageProgressBar : MonoBehaviour
         {
             _editModePreviewDirty = false;
 #if UNITY_EDITOR
-            DestroyEditModePreview();
+            ScheduleDestroyEditModePreview();
 #endif
         }
     }
@@ -666,6 +666,15 @@ public class StageProgressBar : MonoBehaviour
         {
             if (this != null && !Application.isPlaying && gameObject.activeInHierarchy)
                 RebuildEditModePreview();
+        };
+    }
+
+    private void ScheduleDestroyEditModePreview()
+    {
+        UnityEditor.EditorApplication.delayCall += () =>
+        {
+            if (this != null && !Application.isPlaying)
+                DestroyEditModePreview();
         };
     }
 
