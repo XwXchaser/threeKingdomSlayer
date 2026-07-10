@@ -12,8 +12,10 @@ public class HeroConfig : ScriptableObject
     public string heroName = "赵云";
     public int heroId;
 
-    [Header("UI Prefab")]
-    [Tooltip("英雄 HUD Prefab（每个武将拥有独立的 HUD 布局和素材）")]
+    [Header("UI")]
+    [Tooltip("英雄 HUD 皮肤（推荐）：同一套场景HUD布局，根据武将替换素材与扩展UI")]
+    public HeroHUDSkin hudSkin;
+    [Tooltip("英雄 HUD Prefab（旧方案/兜底）：未配置场景HUD时使用")]
     public GameObject heroHUDPrefab;
 
     [Header("基础属性")]

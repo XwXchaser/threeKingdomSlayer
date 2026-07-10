@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
 
 /// <summary>
 /// 英雄 HUD — 独立 Prefab，每个武将可拥有不同的布局和素材。
@@ -12,8 +13,19 @@ public class HeroHUD : MonoBehaviour
     [Header("生命值")]
     public Slider healthSlider;
     public TMP_Text healthText;
+    public Image healthBottomImage;
+    public Image healthFrameImage;
     [Tooltip("护盾状态下替换血条 Fill 的精灵（留空则不改动）")]
     public Sprite shieldFillSprite;
+
+    [Header("大招头像")]
+    public Image ultimateBaseImage;
+    public Image ultimateFillImage;
+    public Image portraitImage;
+    public UltimateButtonUI ultimateButtonUI;
+
+    [Header("扩展UI")]
+    public Transform extraUIRoot;
 
     [Header("复活次数")]
     public TMP_Text reviveText;
@@ -53,8 +65,48 @@ public class HeroHUD : MonoBehaviour
     private bool _healthBarColorSaved;
     private Sprite _defaultFillSprite;
     private bool _defaultFillSpriteCached;
+    private readonly List<GameObject> _extraUIInstances = new List<GameObject>();
 
     #region 公共接口
+
+    public void ApplySkin(HeroHUDSkin skin)
+    {
+        ClearExtraUI();
+        if (skin == null) return;
+
+        SetImageSprite(healthBottomImage, skin.healthBottomSprite);
+        SetImageSprite(GetHealthFillImage(), skin.healthFillSprite);
+        SetImageSprite(healthFrameImage, skin.healthFrameSprite);
+        if (skin.shieldFillSprite != null)
+        {
+            shieldFillSprite = skin.shieldFillSprite;
+            _defaultFillSpriteCached = false;
+        }
+
+        SetImageSprite(ultimateBaseImage, skin.ultimateBaseSprite);
+        SetImageSprite(ultimateFillImage, skin.ultimateFillSprite);
+        SetImageSprite(portraitImage, skin.portraitSprite);
+        if (ultimateButtonUI != null)
+            ultimateButtonUI.ApplyReadyEffectSkin(skin.readyFireStartSprite, skin.readyFireLoopSprites, skin.readyFireFps);
+
+        SetSkillSprites(stabCooldownImage, stabChargeFill, skin.stabIcon, skin.stabChargeSprite);
+        SetSkillSprites(slashCooldownImage, slashChargeFill, skin.slashIcon, skin.slashChargeSprite);
+        SetSkillSprites(pierceCooldownImage, pierceChargeFill, skin.pierceIcon, skin.pierceChargeSprite);
+        SetSkillSprites(sweepCooldownImage, sweepChargeFill, skin.sweepIcon, skin.sweepChargeSprite);
+        SetSkillSprites(launchCooldownImage, launchChargeFill, skin.launchIcon, skin.launchChargeSprite);
+        SetSkillSprites(parryCooldownImage, parryChargeFill, skin.parryIcon, skin.parryChargeSprite);
+
+        var parent = extraUIRoot != null ? extraUIRoot : transform;
+        if (skin.extraUIPrefabs != null)
+        {
+            for (int i = 0; i < skin.extraUIPrefabs.Length; i++)
+            {
+                var prefab = skin.extraUIPrefabs[i];
+                if (prefab == null) continue;
+                _extraUIInstances.Add(Instantiate(prefab, parent));
+            }
+        }
+    }
 
     public void SetHealth(float current, float max, int shieldAmount = 0)
     {
@@ -146,6 +198,34 @@ public class HeroHUD : MonoBehaviour
     #endregion
 
     #region 内部
+
+    private Image GetHealthFillImage()
+    {
+        if (healthSlider == null || healthSlider.fillRect == null) return null;
+        return healthSlider.fillRect.GetComponent<Image>();
+    }
+
+    private void SetImageSprite(Image image, Sprite sprite)
+    {
+        if (image != null && sprite != null)
+            image.sprite = sprite;
+    }
+
+    private void SetSkillSprites(Image icon, Image chargeFill, Sprite iconSprite, Sprite chargeSprite)
+    {
+        SetImageSprite(icon, iconSprite);
+        SetImageSprite(chargeFill, chargeSprite != null ? chargeSprite : iconSprite);
+    }
+
+    private void ClearExtraUI()
+    {
+        for (int i = 0; i < _extraUIInstances.Count; i++)
+        {
+            if (_extraUIInstances[i] != null)
+                Destroy(_extraUIInstances[i]);
+        }
+        _extraUIInstances.Clear();
+    }
 
     private Image GetCooldownImage(AttackType type)
     {

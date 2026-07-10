@@ -24,9 +24,31 @@ public class UltimateButtonUI : MonoBehaviour
     [Range(0f, 1f)] public float inactiveAlpha = 0.4f;
     [Tooltip("充满时的高亮颜色叠加")]
     public Color readyColor = Color.white;
+    [Tooltip("未充满时是否整体变暗。头像合并大招按钮时关闭，保持头像和底图常驻可见")]
+    public bool dimWhenInactive = true;
+
+    [Header("充满特效")]
+    public GameObject readyEffectRoot;
+    public Image readyEffectImage;
+    public UIReadyFireEffect readyEffectEmitter;
+    public Sprite readyFireStartSprite;
+    public Sprite[] readyFireLoopSprites;
+    public float readyFireFps = 10f;
 
     private CanvasGroup canvasGroup;
+    private CanvasGroup readyEffectCanvasGroup;
+    private UltimateSystem subscribedUltimateSystem;
     private Color iconOriginalColor;
+
+    private void OnValidate()
+    {
+        ConfigureReadyEffectImage();
+    }
+
+    private void OnEnable()
+    {
+        TryBindUltimateSystem();
+    }
 
     private void Start()
     {
@@ -46,6 +68,17 @@ public class UltimateButtonUI : MonoBehaviour
             if (textTrans != null)
                 energyText = textTrans.GetComponent<TMP_Text>();
         }
+        if (readyEffectRoot == null)
+        {
+            var effectTrans = transform.Find("ReadyFireEffect");
+            if (effectTrans != null)
+                readyEffectRoot = effectTrans.gameObject;
+        }
+        if (readyEffectImage == null && readyEffectRoot != null)
+            readyEffectImage = readyEffectRoot.GetComponent<Image>();
+        if (readyEffectEmitter == null && readyEffectRoot != null)
+            readyEffectEmitter = readyEffectRoot.GetComponent<UIReadyFireEffect>();
+        ConfigureReadyEffectImage();
 
         canvasGroup = GetComponent<CanvasGroup>();
         if (canvasGroup == null && ultimateButton != null)
@@ -54,16 +87,8 @@ public class UltimateButtonUI : MonoBehaviour
         if (buttonIconImage != null)
             iconOriginalColor = buttonIconImage.color;
 
-        // 订阅事件
-        if (UltimateSystem.Instance != null)
-        {
-            UltimateSystem.Instance.OnEnergyChanged += OnEnergyChanged;
-            UltimateSystem.Instance.OnUltimateReady += OnReady;
-            UltimateSystem.Instance.OnUltimateActivated += OnActivated;
-        }
-
-        // 初始状态
-        OnEnergyChanged(0f);
+        TryBindUltimateSystem();
+        SyncFromUltimateSystem();
 
         if (ultimateButton != null)
         {
@@ -79,16 +104,34 @@ public class UltimateButtonUI : MonoBehaviour
             fillImage.fillOrigin = 0; // Bottom
             fillImage.fillAmount = 0f;
         }
+
+        SyncFromUltimateSystem();
+    }
+
+    private void Update()
+    {
+        TryBindUltimateSystem();
+    }
+
+    public void ApplyReadyEffectSkin(Sprite startSprite, Sprite[] loopSprites, float fps)
+    {
+        readyFireStartSprite = startSprite;
+        readyFireLoopSprites = loopSprites;
+        readyFireFps = fps > 0f ? fps : readyFireFps;
+
+        if (readyEffectImage != null)
+            readyEffectImage.sprite = readyFireStartSprite != null ? readyFireStartSprite : GetFirstLoopSprite();
+        readyEffectEmitter?.ApplySprites(readyFireStartSprite, readyFireLoopSprites, readyFireFps);
+    }
+
+    private void OnDisable()
+    {
+        UnbindUltimateSystem();
     }
 
     private void OnDestroy()
     {
-        if (UltimateSystem.Instance != null)
-        {
-            UltimateSystem.Instance.OnEnergyChanged -= OnEnergyChanged;
-            UltimateSystem.Instance.OnUltimateReady -= OnReady;
-            UltimateSystem.Instance.OnUltimateActivated -= OnActivated;
-        }
+        UnbindUltimateSystem();
 
         if (ultimateButton != null)
         {
@@ -108,35 +151,128 @@ public class UltimateButtonUI : MonoBehaviour
             energyText.text = $"{UltimateSystem.Instance.CurrentEnergy}/{UltimateSystem.Instance.maxUltimateEnergy}";
         }
 
-        // 未充满时半透明
         bool ready = UltimateSystem.Instance != null && UltimateSystem.Instance.IsReady;
         UpdateVisualState(ready);
+        if (ready)
+            ShowReadyEffect();
+        else
+            HideReadyEffect();
     }
 
     private void OnReady()
     {
         UpdateVisualState(true);
+        ShowReadyEffect();
     }
 
     private void OnActivated()
     {
         UpdateVisualState(false);
+        HideReadyEffect();
     }
 
     private void UpdateVisualState(bool ready)
     {
-        float targetAlpha = ready ? 1f : inactiveAlpha;
-
-        if (canvasGroup != null)
-            canvasGroup.alpha = targetAlpha;
-
-        if (buttonIconImage != null)
+        if (dimWhenInactive)
         {
-            buttonIconImage.color = ready ? readyColor : iconOriginalColor * inactiveAlpha;
+            float targetAlpha = ready ? 1f : inactiveAlpha;
+
+            if (canvasGroup != null)
+                canvasGroup.alpha = targetAlpha;
+
+            if (buttonIconImage != null)
+                buttonIconImage.color = ready ? readyColor : iconOriginalColor * targetAlpha;
         }
 
         if (ultimateButton != null)
             ultimateButton.interactable = ready;
+    }
+
+    private void TryBindUltimateSystem()
+    {
+        if (subscribedUltimateSystem != null || UltimateSystem.Instance == null)
+            return;
+
+        subscribedUltimateSystem = UltimateSystem.Instance;
+        subscribedUltimateSystem.OnEnergyChanged += OnEnergyChanged;
+        subscribedUltimateSystem.OnUltimateReady += OnReady;
+        subscribedUltimateSystem.OnUltimateActivated += OnActivated;
+        SyncFromUltimateSystem();
+    }
+
+    private void UnbindUltimateSystem()
+    {
+        if (subscribedUltimateSystem == null)
+            return;
+
+        subscribedUltimateSystem.OnEnergyChanged -= OnEnergyChanged;
+        subscribedUltimateSystem.OnUltimateReady -= OnReady;
+        subscribedUltimateSystem.OnUltimateActivated -= OnActivated;
+        subscribedUltimateSystem = null;
+    }
+
+    private void SyncFromUltimateSystem()
+    {
+        if (UltimateSystem.Instance != null)
+            OnEnergyChanged(UltimateSystem.Instance.EnergyPercent);
+        else
+            OnEnergyChanged(0f);
+    }
+
+    private void ConfigureReadyEffectImage()
+    {
+        ConfigureReadyEffectTarget(readyEffectRoot, readyEffectImage, ref readyEffectCanvasGroup, ref readyEffectEmitter);
+    }
+
+    private void ConfigureReadyEffectTarget(GameObject root, Image image, ref CanvasGroup targetCanvasGroup, ref UIReadyFireEffect emitter)
+    {
+        if (root != null)
+        {
+            root.SetActive(true);
+            targetCanvasGroup = root.GetComponent<CanvasGroup>();
+            if (targetCanvasGroup == null)
+                targetCanvasGroup = root.AddComponent<CanvasGroup>();
+            if (emitter == null)
+                emitter = root.GetComponent<UIReadyFireEffect>();
+            if (emitter == null)
+                emitter = root.AddComponent<UIReadyFireEffect>();
+            emitter.ApplySprites(readyFireStartSprite, readyFireLoopSprites, readyFireFps);
+            emitter.SetVisible(false);
+        }
+
+        if (image == null)
+            return;
+
+        image.enabled = true;
+        image.raycastTarget = false;
+        image.maskable = false;
+        if (image.sprite == null)
+            image.sprite = readyFireStartSprite != null ? readyFireStartSprite : GetFirstLoopSprite();
+    }
+
+    private void HideReadyEffect()
+    {
+        readyEffectEmitter?.Stop(true);
+        if (readyEffectCanvasGroup != null)
+            readyEffectCanvasGroup.alpha = 0f;
+    }
+
+    private void ShowReadyEffect()
+    {
+        if (readyEffectRoot == null || readyEffectImage == null)
+            return;
+
+        ConfigureReadyEffectImage();
+        readyEffectEmitter?.Play();
+        if (readyEffectCanvasGroup != null)
+            readyEffectCanvasGroup.alpha = 1f;
+        if (readyEffectImage != null)
+            readyEffectImage.sprite = readyFireStartSprite != null ? readyFireStartSprite : GetFirstLoopSprite();
+    }
+
+    private Sprite GetFirstLoopSprite()
+    {
+        return readyFireLoopSprites != null && readyFireLoopSprites.Length > 0 ? readyFireLoopSprites[0] : null;
     }
 
     private void OnButtonClick()

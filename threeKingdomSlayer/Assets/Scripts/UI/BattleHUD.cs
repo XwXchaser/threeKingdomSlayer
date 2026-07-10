@@ -10,8 +10,10 @@ using DG.Tweening;
 /// </summary>
 public class BattleHUD : MonoBehaviour
 {
-    [Header("英雄 HUD（运行时实例化）")]
-    [Tooltip("英雄 HUD 的父容器 Transform（通常为 BattleHUD Canvas 下的空节点）")]
+    [Header("英雄 HUD")]
+    [Tooltip("场景中常驻、可直接可视化调整的英雄 HUD。优先使用它；为空时才使用 HeroConfig.heroHUDPrefab 旧方案实例化。")]
+    public HeroHUD sceneHeroHUD;
+    [Tooltip("英雄 HUD 的父容器 Transform（旧 Prefab 兜底实例化时使用）")]
     public Transform heroHUDParent;
 
     [Header("连杀计数")]
@@ -41,7 +43,7 @@ public class BattleHUD : MonoBehaviour
     [Tooltip("通关印章 Prefab（victory.prefab），世界空间 SpriteRenderer")]
     public GameObject victoryStampPrefab;
 
-    // 运行时实例化的英雄 HUD
+    // 当前使用的英雄 HUD（优先场景常驻 HUD，旧方案才运行时实例化）
     private HeroHUD _heroHUD;
     private int _lastShieldAmount;
 
@@ -89,23 +91,34 @@ public class BattleHUD : MonoBehaviour
     {
         if (PlayerState.Instance == null || PlayerState.Instance.heroConfig == null)
         {
-            Debug.LogError("[BattleHUD] 无法实例化 HeroHUD：PlayerState 或 heroConfig 为空");
+            Debug.LogError("[BattleHUD] 无法初始化 HeroHUD：PlayerState 或 heroConfig 为空");
             return;
         }
 
-        var prefab = PlayerState.Instance.heroConfig.heroHUDPrefab;
-        if (prefab == null)
-        {
-            Debug.LogWarning("[BattleHUD] heroHUDPrefab 未配置，跳过 HeroHUD 实例化");
-            return;
-        }
-
-        var parent = heroHUDParent != null ? heroHUDParent : transform;
-        var go = Instantiate(prefab, parent);
-        _heroHUD = go.GetComponent<HeroHUD>();
+        var heroConfig = PlayerState.Instance.heroConfig;
+        _heroHUD = sceneHeroHUD;
 
         if (_heroHUD == null)
-            Debug.LogError("[BattleHUD] heroHUDPrefab 上未找到 HeroHUD 组件");
+        {
+            var prefab = heroConfig.heroHUDPrefab;
+            if (prefab == null)
+            {
+                Debug.LogWarning("[BattleHUD] sceneHeroHUD 与 heroHUDPrefab 均未配置，跳过 HeroHUD 初始化");
+                return;
+            }
+
+            var parent = heroHUDParent != null ? heroHUDParent : transform;
+            var go = Instantiate(prefab, parent);
+            _heroHUD = go.GetComponent<HeroHUD>();
+        }
+
+        if (_heroHUD == null)
+        {
+            Debug.LogError("[BattleHUD] HeroHUD 组件未找到");
+            return;
+        }
+
+        _heroHUD.ApplySkin(heroConfig.hudSkin);
 
         // 将 QTE frame 注入 QTEDisplay（老虎机动画区域）
         if (_heroHUD.qteIndicatorArea != null)
