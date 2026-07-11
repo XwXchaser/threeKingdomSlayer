@@ -19,12 +19,12 @@ MonoBehaviour:
   ultimateBaseSprite: {fileID: 21300000, guid: ecbfe105e2c014443aff23877096bc1f, type: 3}
   ultimateFillSprite: {fileID: 21300000, guid: 676a27f4773321d45b9d5bd12a029fb0, type: 3}
   portraitSprite: {fileID: 21300000, guid: e40d2452b5b7213459cf3468cb41dc2e, type: 3}
-  readyFireStartSprite: {fileID: 21300000, guid: 99dafb785b98c1b4c80d58717215ca92, type: 3}
+  readyFireStartSprite: {fileID: 21300000, guid: 03748289f5b4a3a42a6c6b01c365dcbe, type: 3}
   readyFireLoopSprites:
-  - {fileID: 21300000, guid: ec78aa9fc2247f740829a315657444e2, type: 3}
-  - {fileID: 21300000, guid: 8b0911361e0607c4798afe53ec9e7ea4, type: 3}
-  - {fileID: 21300000, guid: 733c36e215f2cbf47b83eec1c397e4d6, type: 3}
-  - {fileID: 21300000, guid: 3a283c8dedaba574288a53f233796e3b, type: 3}
+  - {fileID: 21300000, guid: 70e7fabdc1a7ab94b9bda6a92b03e26f, type: 3}
+  - {fileID: 21300000, guid: 905af29363f39744c8b47847aadf2e7b, type: 3}
+  - {fileID: 21300000, guid: fbd1cb9bb90aea840a1b487d901d520e, type: 3}
+  - {fileID: 21300000, guid: 20395fd36cfe02b428c918f486ef7c45, type: 3}
   readyFireFps: 10
   stabIcon: {fileID: 21300000, guid: 25af535c82ad6084fbc774e85e15666c, type: 3}
   stabChargeSprite: {fileID: 21300000, guid: 84506bc43e354de43b778286bc4571df, type: 3}
