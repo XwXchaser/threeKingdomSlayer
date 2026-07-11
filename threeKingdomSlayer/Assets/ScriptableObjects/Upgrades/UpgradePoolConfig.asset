@@ -19,13 +19,13 @@ MonoBehaviour:
   - upgrade: {fileID: 11400000, guid: f1b74622f7f7d394cb36dbc89731662a, type: 2}
     weight: 10
   - upgrade: {fileID: 11400000, guid: dc0cedf370225574297d20b47db525ce, type: 2}
-    weight: 10
-  - upgrade: {fileID: 11400000, guid: e349c115a168417458d397e2fd4e9b8c, type: 2}
     weight: 9000
+  - upgrade: {fileID: 11400000, guid: e349c115a168417458d397e2fd4e9b8c, type: 2}
+    weight: 10
   - upgrade: {fileID: 11400000, guid: 99cb5a0f1a541db4db3016f39b7a3a21, type: 2}
     weight: 10
   - upgrade: {fileID: 11400000, guid: b731a9b5aa98a9642aef75a97e456691, type: 2}
-    weight: 9000
+    weight: 10
   - upgrade: {fileID: 11400000, guid: 2b9a84ee93ab1eb40ba4ecabf6a72606, type: 2}
     weight: 10
   - upgrade: {fileID: 11400000, guid: 6c85c67f02251b745a264f2f6057f27d, type: 2}
