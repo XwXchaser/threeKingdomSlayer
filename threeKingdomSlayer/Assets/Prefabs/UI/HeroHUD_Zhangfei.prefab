@@ -2115,6 +2115,12 @@ MonoBehaviour:
   inactiveAlpha: 0.4
   readyColor: {r: 1, g: 1, b: 1, a: 1}
   dimWhenInactive: 0
+  readyEffectRoot: {fileID: 0}
+  readyEffectImage: {fileID: 0}
+  readyEffectEmitter: {fileID: 0}
+  readyFireStartSprite: {fileID: 0}
+  readyFireLoopSprites: []
+  readyFireFps: 10
 --- !u!1 &5928229105611511721
 GameObject:
   m_ObjectHideFlags: 0
@@ -2601,6 +2607,7 @@ MonoBehaviour:
   ultimateBaseImage: {fileID: 7458923297365539977}
   ultimateFillImage: {fileID: 7100040410348319224}
   portraitImage: {fileID: 7838934049913766527}
+  ultimateButtonUI: {fileID: 0}
   extraUIRoot: {fileID: 6844546322955673004}
   reviveText: {fileID: 0}
   stabCooldownImage: {fileID: 209572638579097601}
@@ -2784,6 +2791,7 @@ GameObject:
   - component: {fileID: 3875044766348390762}
   - component: {fileID: 3288897854510813708}
   - component: {fileID: 7100040410348319224}
+  - component: {fileID: 7196766260727646147}
   m_Layer: 5
   m_HasEditorInfo: 1
   m_Name: UltFill
@@ -2849,3 +2857,18 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7196766260727646147
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9141800816617755648}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ead893a12f4e442418514167f1122f6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pulseSpeed: 2
+  bottomMinAlpha: 0.8
+  topMinAlpha: 0.05

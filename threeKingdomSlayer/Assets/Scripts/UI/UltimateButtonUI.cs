@@ -39,6 +39,8 @@ public class UltimateButtonUI : MonoBehaviour
     private CanvasGroup readyEffectCanvasGroup;
     private UltimateSystem subscribedUltimateSystem;
     private Color iconOriginalColor;
+    private UIReadyVerticalPulse fillReadyPulse;
+    private bool _isReady;
 
     private void OnValidate()
     {
@@ -103,6 +105,7 @@ public class UltimateButtonUI : MonoBehaviour
             fillImage.fillMethod = Image.FillMethod.Vertical;
             fillImage.fillOrigin = 0; // Bottom
             fillImage.fillAmount = 0f;
+            fillReadyPulse = fillImage.GetComponent<UIReadyVerticalPulse>();
         }
 
         SyncFromUltimateSystem();
@@ -154,19 +157,28 @@ public class UltimateButtonUI : MonoBehaviour
         bool ready = UltimateSystem.Instance != null && UltimateSystem.Instance.IsReady;
         UpdateVisualState(ready);
         if (ready)
+        {
             ShowReadyEffect();
+        }
         else
+        {
             HideReadyEffect();
+            fillReadyPulse?.SetPlaying(false);
+        }
     }
 
     private void OnReady()
     {
+        _isReady = true;
+        fillReadyPulse?.SetPlaying(true);
         UpdateVisualState(true);
         ShowReadyEffect();
     }
 
     private void OnActivated()
     {
+        _isReady = false;
+        fillReadyPulse?.SetPlaying(false);
         UpdateVisualState(false);
         HideReadyEffect();
     }
