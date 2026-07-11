@@ -17,6 +17,10 @@ public class UIReadyFireEffect : MonoBehaviour
     [Header("Layout")]
     public Vector2 localOffset;
     public float sizeScale = 1f;
+    [SerializeField] private Vector2 _designSize = new Vector2(300, 300);
+
+    [Header("Editor")]
+    [SerializeField] private bool _editorPreview;
 
     [Header("Jitter")]
     public Vector2 jitterAmplitude = new Vector2(1.5f, 2f);
@@ -64,8 +68,29 @@ public class UIReadyFireEffect : MonoBehaviour
     {
         if (_root == null)
             _root = transform as RectTransform;
-        if (_root != null)
-            ApplyStaticLayout();
+        if (_root == null)
+            return;
+        _root.anchoredPosition = Vector2.zero + localOffset;
+        if (!Application.isPlaying)
+        {
+            if (_editorPreview)
+            {
+                EnsureImage();
+                if (_image != null && startSprite != null)
+                    _image.sprite = startSprite;
+                if (_canvasGroup == null)
+                    _canvasGroup = GetComponent<CanvasGroup>();
+                if (_canvasGroup != null)
+                    _canvasGroup.alpha = 1f;
+            }
+            else
+            {
+                if (_canvasGroup == null)
+                    _canvasGroup = GetComponent<CanvasGroup>();
+                if (_canvasGroup != null)
+                    _canvasGroup.alpha = 0f;
+            }
+        }
     }
 
     private void Update()
@@ -190,7 +215,7 @@ public class UIReadyFireEffect : MonoBehaviour
         if (_root == null)
             return;
         _baseAnchoredPosition = Vector2.zero;
-        _baseSizeDelta = _root.sizeDelta;
+        _baseSizeDelta = _designSize;
         _baseScale = Vector3.one;
         ApplyStaticLayout();
     }

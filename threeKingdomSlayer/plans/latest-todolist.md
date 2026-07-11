@@ -1,7 +1,7 @@
 # 最新待办清单
 
 ## 0. 图像生成能力
-- [x] `gpt-image-generation` Skill 已部署，无需额外部署或调试。
+- [x] `gpt-image-generation` Skill 已部署并完成实际调用验证；通过 `curl` 可正常生成，测试图输出至 `C:/Users/Administrator/Downloads/gpt-image-2-test.png`。
 - 使用前确认环境变量 `MUSK_API_KEY` 可用；测试图默认输出至 `C:/Users/steam/Pictures/gptGen/`，需导入项目的素材明确输出至 `Assets/...`。
 
 ## 1. TimedArrow（timearrow）实际生效验收
@@ -11,11 +11,12 @@
 - [ ] 验收伤害：每箭原始穿刺伤害为 `max(1, damage / 4)`，按落点半径结算；确认阵型偏移、Boss 战斗状态及重叠落点叠伤均符合预期。
 - 依据：`Assets/Scripts/Core/TimedPassiveModule.cs`、`Assets/Scripts/Effect/TimedArrowEffect.cs`、`Assets/ScriptableObjects/Upgrades/Definitions/TimedArrow.asset`。
 
-## 2. 大招充能完成头像框火焰
-- [ ] 在 `UltPortraitButton/ReadyFireEffect` 调整火焰的相对位置、尺寸、透明度、循环帧率与抖动效果，确保位于头像框后方且不遮挡头像。
-- [ ] 保持 `ReadyFireEffect` 在 `UltBase`、`UltFill`、`Head` 之前的 sibling order；不改动 `UltimateButtonUI` 的充能事件链路。
-- [ ] 充满大招时验证显示、释放大招时验证隐藏/重置；若目标位置不可见，先使用居中调试节点隔离验证渲染链路，完成后移除。
-- 依据：`Assets/Scenes/Battle.scene`、`Assets/Scripts/UI/UltimateButtonUI.cs`、`Assets/Scripts/UI/UIReadyFireEffect.cs`、`Assets/ScriptableObjects/Warrior/HeroHUDSkin_Zhangfei.asset`。
+## 2. 大招充能完成头像框火焰与 UltFill 就绪反馈
+- [x] `ReadyFireEffect` 已完成位置、尺寸、透明度、循环帧率与抖动效果调整，并保持在头像框背景层。
+- [x] `UltFill` 已完成就绪状态的底弱顶强渐变脉冲；大招释放后停止并恢复正常填充表现。
+- [x] 已在 Battle 实机流程验收：充满时显示/闪烁，释放时隐藏/重置；多次充能循环尺寸稳定。
+- 修改：`Assets/Scenes/Battle.scene`、`Assets/Prefabs/UI/HeroHUD_Zhangfei.prefab`、`Assets/Scripts/UI/UltimateButtonUI.cs`、`Assets/Scripts/UI/UIReadyFireEffect.cs`、`Assets/Scripts/UI/UIReadyVerticalPulse.cs`。
+- 最终参数：ReadyFireEffect localOffset=(0,85)、sizeScale=1.1；UltFill pulseSpeed=2、bottomMinAlpha=0.8、topMinAlpha=0.25。
 
 ## 3. 敌人受击音效
 - [ ] 确定并导入专用敌人受击音频资源；当前项目没有该资源或对应 `AudioManager` 事件。
