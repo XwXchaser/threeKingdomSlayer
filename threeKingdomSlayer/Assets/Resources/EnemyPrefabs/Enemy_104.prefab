@@ -58,7 +58,7 @@ MonoBehaviour:
   attackDamage: 10
   attackRange: 2
   moveSpeed: 0.3
-  visualYOffset: 0.344
+  visualYOffset: 0.36
   attackSequence:
   - isCAttack: 0
     animationTrigger: 
@@ -77,6 +77,8 @@ MonoBehaviour:
   projectileArcHeight: 3
   projectileFlyDuration: 1
   projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
   projectileXOffset: 0
   arrowConfig: {fileID: 0}
   shareHealthWithAdjacent: 0

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using DG.Tweening;
 
 /// <summary>
@@ -54,7 +55,14 @@ public class AttackSystem : MonoBehaviour
     [Header("攻击冷却模式")]
     [Tooltip("勾选→动作锁定模式（攻击动画期间锁定所有攻击输入）。\n取消→独立CD模式（每招独立冷却，可交替连打）。\n独立CD模式保留作为未来可能的奖励效果（如技能移除动作硬直）。")]
     public bool useActionBasedCooldown = false;
+
+    [Header("Stab 射出内收角")]
+    [Tooltip("启用时使用下方五列内收角覆盖；关闭时根据当前前排阵型自动计算。数值直接作为 StabRay 容器的 Yaw：当前镜头下增大绝对值会让视觉更内收。子 Prefab 不会再叠加此角度。")]
+    [SerializeField] private bool useStabRayAngleOverrides;
+    [FormerlySerializedAs("stabRayYawOverrides")]
+    [SerializeField] private float[] stabRayInwardAngleOverrides = { -30f, -15f, 0f, 15f, 30f };
     private float _actionLockTimer;
+    private float _stabVisualTimer;
     private ChargeStabVisual _chargeStabVisual;
 
     /// <summary>
@@ -84,6 +92,8 @@ public class AttackSystem : MonoBehaviour
     {
         if (_actionLockTimer > 0f)
             _actionLockTimer -= Time.deltaTime;
+        if (_stabVisualTimer > 0f)
+            _stabVisualTimer -= Time.deltaTime;
     }
 
     private void Start()
@@ -104,6 +114,9 @@ public class AttackSystem : MonoBehaviour
     {
         if (playerState == null) return false;
         if (playerState.stageState != StageState.InProgress) return false;
+
+        if (attackType == AttackType.Stab && _stabVisualTimer > 0f)
+            return false;
 
         // 冷却检查：新模式（动作锁定）→ 全局锁；旧模式 → 独立技能CD
         if (useActionBasedCooldown)
@@ -144,13 +157,21 @@ public class AttackSystem : MonoBehaviour
             {
                 playerState.StartCooldown(attackType);
             }
-            UltimateSystem.Instance?.AddEnergyForAttack(attackType);
-            // 攻击震动已暂时关闭（安卓端不合适），后续在其他功能情景中重新启用
-            // Handheld.Vibrate();
 
-            // 仅五种有效攻击类型触发被动计数（排除 Parry 和 Ultimate）
-            if (attackType != AttackType.Parry && attackType != AttackType.Ultimate)
-                OnAttackPerformed?.Invoke(attackType, targetColumn, slashLeftToRight);
+            if (attackType == AttackType.Stab)
+            {
+                var stabConfig = GetConfig(AttackType.Stab);
+                float stabDuration = GetAttackDuration(stabConfig);
+                _stabVisualTimer = stabDuration;
+            }
+
+            // Stab 与 Slash 的资源结算由实际首次命中时触发；空挥只消耗动作锁定/冷却。
+            if (attackType != AttackType.Stab && attackType != AttackType.Slash)
+            {
+                UltimateSystem.Instance?.AddEnergyForAttack(attackType);
+                if (attackType != AttackType.Parry && attackType != AttackType.Ultimate)
+                    OnAttackPerformed?.Invoke(attackType, targetColumn, slashLeftToRight);
+            }
 
             return true;
         }
@@ -161,6 +182,17 @@ public class AttackSystem : MonoBehaviour
 
     #region 攻击类型实现
 
+    private float GetStabRayYaw(int columnIndex, float baseLength)
+    {
+        if (useStabRayAngleOverrides && stabRayInwardAngleOverrides != null && columnIndex < stabRayInwardAngleOverrides.Length)
+            return stabRayInwardAngleOverrides[columnIndex];
+
+        float columnOffset = StageController.Instance != null
+            ? StageController.Instance.GetFormationOffset(columnIndex, 0)
+            : (columnIndex - 2) * 2f;
+        return Mathf.Atan2(columnOffset, baseLength * 2f) * Mathf.Rad2Deg;
+    }
+
     private AttackSkillConfig GetConfig(AttackType type)
     {
         return playerState?.heroConfig?.GetSkillConfig(type);
@@ -169,27 +201,40 @@ public class AttackSystem : MonoBehaviour
     private bool ExecuteStab(int columnIndex)
     {
         var cfg = GetConfig(AttackType.Stab);
-        if (cfg == null || columnIndex < 0 || columnManager == null) return false;
+        if (cfg == null || columnIndex < 0 || columnManager == null || cfg.attackWavePrefab == null) return false;
 
         float finalDmg = GetFinalDamage(cfg) * GetStabPierceDamagePenalty();
         int effectiveRows = GetEffectiveRangeRows(cfg);
-        List<Enemy> targets = columnManager.GetEnemiesInRange(columnIndex, effectiveRows);
-        // Stab 只命中应战 Boss（排除未应战 Boss 导致 wave 位置错误）
-        targets = targets.FindAll(e => !e.isBoss || e.bossState == BossState.InCombat);
-        LastStabTargetEnemy = targets.Count > 0 ? targets[0] : null;
-        if (targets.Count > 0)
-        {
-            Vector3 wavePos = GetWavePosition(targets, columnIndex);
-            wavePos.y = targets[0].transform.position.y + cfg.stabSpawnYOffset;
-            AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
-                prefab: cfg.attackWavePrefab, zOffset: cfg.stabSpawnZOffset,
-                targetDuration: GetVisualTargetDuration(cfg));
-            AudioManager.Instance?.PostEvent("Player_Attack");
-        }
+        Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
+        float spacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
+        Vector3 startPosition = new Vector3(playerPos.x, playerPos.y + cfg.stabSpawnYOffset, -5.5f);
+        float yaw = GetStabRayYaw(columnIndex, spacing);
+        Vector3 rayDirection = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+        float baseLength = spacing * 2f;
+        float rayLength = baseLength + (effectiveRows - 1) * spacing;
+        Vector3 targetPosition = startPosition + rayDirection * rayLength;
+        var hitTargets = new List<Enemy>();
 
-        Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
-        if (targets.Count > 0) ApplyStabPushWave(targets);
-        return targets.Count > 0;
+        LastStabTargetEnemy = null;
+        StabSweepEffect.Create(cfg.attackWavePrefab, startPosition, targetPosition, columnIndex, effectiveRows,
+            finalDmg, cfg.damageType, columnManager,
+            enemy =>
+            {
+                if (LastStabTargetEnemy == null)
+                    LastStabTargetEnemy = enemy;
+                hitTargets.Add(enemy);
+            },
+            () =>
+            {
+                UltimateSystem.Instance?.AddEnergyForAttack(AttackType.Stab);
+                OnAttackPerformed?.Invoke(AttackType.Stab, columnIndex, true);
+            },
+            () => ApplyStabPushWave(hitTargets),
+            GetAttackDuration(cfg));
+        AudioManager.Instance?.PostEvent("Player_Attack");
+
+        Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 射程:{effectiveRows}");
+        return true;
     }
 
     private bool ExecuteSlash(bool leftToRight)
@@ -200,22 +245,26 @@ public class AttackSystem : MonoBehaviour
         float finalDmg = GetFinalDamage(cfg) * GetSweepDamagePenalty();
         int effectiveRows = GetEffectiveSweepRangeRows(cfg);
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(effectiveRows);
-        if (targets.Count > 0)
-        {
-            Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
-            Vector3 wavePos = new Vector3(0, playerPos.y + cfg.slashSpawnYOffset, playerPos.z + cfg.slashSpawnZOffset);
-            bool hasTargets = targets.Count > 0;
-            SweepEffect.Create(wavePos, cfg.damageType, finalDmg, targets, leftToRight,
-                cfg.slashSweepHalfWidth, cfg.slashSweepAngle, cfg.slashSweepDuration,
-                prefab: cfg.attackWavePrefab,
-                onAllHit: hasTargets ? () => ApplySlashDirectionalPush(targets, leftToRight) : null,
-                targetDuration: GetVisualTargetDuration(cfg),
-                rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite);
-            AudioManager.Instance?.PostEvent("Player_Attack");
-        }
+        Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
+        Vector3 wavePos = new Vector3(0, playerPos.y + cfg.slashSpawnYOffset, playerPos.z + cfg.slashSpawnZOffset);
+        var hitTargets = new List<Enemy>();
+
+        SweepEffect.Create(wavePos, cfg.damageType, finalDmg, targets, leftToRight,
+            cfg.slashSweepHalfWidth, cfg.slashSweepAngle, cfg.slashSweepDuration,
+            prefab: cfg.attackWavePrefab,
+            onHit: enemy => hitTargets.Add(enemy),
+            onFirstHit: () =>
+            {
+                UltimateSystem.Instance?.AddEnergyForAttack(AttackType.Slash);
+                OnAttackPerformed?.Invoke(AttackType.Slash, -1, leftToRight);
+            },
+            onAllHit: () => ApplySlashDirectionalPush(hitTargets, leftToRight),
+            targetDuration: GetAttackDuration(cfg),
+            rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite);
+        AudioManager.Instance?.PostEvent("Player_Attack");
 
         Debug.Log($"[AttackSystem] 斩击 方向:{(leftToRight ? "L→R" : "R→L")} 伤害:{finalDmg} 目标数:{targets.Count}");
-        return targets.Count > 0;
+        return true;
     }
 
     private bool ExecutePierce(int columnIndex)
@@ -229,6 +278,7 @@ public class AttackSystem : MonoBehaviour
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, columnIndex);
+            ReleaseChargeHitShockwave();
             StartCoroutine(ReleaseChargeShockwaves());
             AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab,
                 targetDuration: GetVisualTargetDuration(cfg));
@@ -249,6 +299,7 @@ public class AttackSystem : MonoBehaviour
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, -1);
+            ReleaseChargeHitShockwave();
             StartCoroutine(ReleaseChargeShockwaves());
             AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab,
                 targetDuration: GetVisualTargetDuration(cfg));
@@ -269,6 +320,7 @@ public class AttackSystem : MonoBehaviour
         {
             Vector3 wavePos = GetWavePosition(targets, -1);
 
+            ReleaseChargeHitShockwave();
             StartCoroutine(ReleaseChargeShockwaves());
 
             // 概率击飞 Buff：每次攻击时判定一次（对所有目标生效）
@@ -416,7 +468,7 @@ public class AttackSystem : MonoBehaviour
 
         var seq = DOTween.Sequence();
         seq.SetTarget(obj.transform);
-        seq.SetUpdate(true);
+        seq.SetUpdate(UpdateType.Normal, false);
 
         var rotate = obj.transform.DORotate(endEuler, duration, RotateMode.Fast).SetEase(Ease.InOutQuad);
         seq.Append(rotate);
@@ -504,7 +556,7 @@ public class AttackSystem : MonoBehaviour
 
         var seq = DOTween.Sequence();
         seq.SetTarget(obj.transform);
-        seq.SetUpdate(true);
+        seq.SetUpdate(UpdateType.Normal, false);
 
         var rotate = obj.transform.DORotate(endEuler, duration, RotateMode.Fast).SetEase(Ease.InOutQuad);
         seq.Append(rotate);
@@ -557,6 +609,27 @@ public class AttackSystem : MonoBehaviour
         if (cfg == null) return 0f;
         float mult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetDamageMultiplier() : 1f;
         return cfg.damage * mult;
+    }
+
+    /// <summary>释放蓄力受击增伤冲击波，每次蓄力攻击释放后清空累计。</summary>
+    private void ReleaseChargeHitShockwave()
+    {
+        if (playerState == null || !playerState.IsCharging) return;
+        var uem = UpgradeEffectManager.Instance;
+        if (uem == null || columnManager == null) return;
+        if (!uem.ConsumeChargeHitShockwave(out var cfg, out float bonusPercent)) return;
+
+        var targets = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
+        if (targets.Count == 0) return;
+        var slashCfg = GetConfig(AttackType.Slash);
+        GameObject prefab = slashCfg != null ? slashCfg.attackWavePrefab : null;
+        Vector3 wavePos = GetWavePosition(targets, -1);
+        int damage = Mathf.RoundToInt(cfg.baseDamage * (1f + bonusPercent));
+
+        for (int i = 0; i < cfg.shockwaveCount; i++)
+            AttackWave.Create(wavePos, DamageType.Slash, damage, targets, prefab: prefab);
+
+        Debug.Log($"[AttackSystem] 受击冲击波释放: {cfg.shockwaveCount}波 rows={cfg.rangeRows} damage={damage} bonus={bonusPercent:P0}");
     }
 
     /// <summary>释放蓄力冲击波（蓄力攻击时调用，必须在伤害前）</summary>
@@ -1053,6 +1126,13 @@ public class AttackSystem : MonoBehaviour
     /// 获取特效目标时长（秒）。action-based模式下=cooldown/攻速，旧模式返回-1（自然时长）。
     /// 特效通过timeScale拉伸/压缩匹配此时长，确保视觉与锁定同步结束。
     /// </summary>
+    private float GetAttackDuration(AttackSkillConfig cfg)
+    {
+        if (cfg == null) return 0.5f;
+        float speedMult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetAttackSpeedMultiplier() : 1f;
+        return cfg.actionDuration / Mathf.Max(speedMult, 0.01f);
+    }
+
     private float GetVisualTargetDuration(AttackSkillConfig cfg)
     {
         if (!useActionBasedCooldown || cfg == null) return -1f;

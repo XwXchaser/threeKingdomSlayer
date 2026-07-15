@@ -35,10 +35,12 @@ public class BuffIcon : MonoBehaviour
         Category = category;
         GestureId = gestureId;
 
-        if (_iconImage != null && icon != null)
+        if (_iconImage != null)
         {
             _iconImage.sprite = icon;
-            SyncCooldownSprite(icon);
+            _iconImage.enabled = icon != null;
+            if (icon != null)
+                SyncCooldownSprite(icon);
         }
 
         if (_button != null)
@@ -116,6 +118,12 @@ public class BuffIcon : MonoBehaviour
             _button.interactable = !dimmed;
     }
 
+    public void SetInteractable(bool interactable)
+    {
+        if (_button != null)
+            _button.interactable = interactable;
+    }
+
     /// <summary>设置冷却显示</summary>
     /// <param name="fillAmount">填充量 0=就绪 1=满冷却</param>
     /// <param name="countdown">倒计时文本，null/空则隐藏</param>
@@ -139,13 +147,42 @@ public class BuffIcon : MonoBehaviour
         if (_cooldownFill != null) _cooldownFill.sprite = sprite;
     }
 
+    public void ShowEmpty(Sprite frame)
+    {
+        UpgradeId = null;
+        GestureId = null;
+        Category = UpgradeCategory.Item;
+        if (_iconImage != null)
+        {
+            _iconImage.sprite = null;
+            _iconImage.enabled = false;
+            _iconImage.color = Color.white;
+            _iconImage.raycastTarget = false;
+        }
+        SetFrame(frame);
+        ClearBadgeNumber();
+        ClearTopRightNumber();
+        SetCooldown(0f, null, false);
+        if (_button != null)
+        {
+            _button.onClick.RemoveAllListeners();
+            _button.interactable = false;
+        }
+        OnClicked = null;
+        gameObject.SetActive(true);
+    }
+
     /// <summary>清空图标数据并隐藏</summary>
     public void ResetSlot()
     {
         UpgradeId = null;
         GestureId = null;
         Category = UpgradeCategory.Numeric;
-        if (_iconImage != null) _iconImage.sprite = null;
+        if (_iconImage != null)
+        {
+            _iconImage.sprite = null;
+            _iconImage.enabled = false;
+        }
         if (_frameImage != null) { _frameImage.sprite = null; _frameImage.enabled = false; }
         if (_badgeNumberDisplay != null) _badgeNumberDisplay.Clear();
         ClearTopRightNumber();

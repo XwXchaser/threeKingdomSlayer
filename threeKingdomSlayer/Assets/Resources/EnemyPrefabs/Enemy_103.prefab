@@ -51,7 +51,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: "\u957F\u67AA\u5175"
   enemyId: 103
-  maxHealth: 100
+  maxHealth: 30
   occupySlots: 1
   attackSpeed: 0.2
   attackDamage: 15
@@ -69,6 +69,8 @@ MonoBehaviour:
   projectileArcHeight: 3
   projectileFlyDuration: 1
   projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
   projectileXOffset: 0
   arrowConfig: {fileID: 0}
   shareHealthWithAdjacent: 0

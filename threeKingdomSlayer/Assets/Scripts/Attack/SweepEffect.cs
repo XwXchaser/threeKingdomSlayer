@@ -18,6 +18,8 @@ public class SweepEffect : MonoBehaviour
     private float damage;
     private DamageType damageType;
     private System.Action<Enemy> onHit;
+    private System.Action onFirstHit;
+    private bool _hasHit;
     private System.Action onAllHit;
     private bool _onAllHitInvoked;
     private bool canInterruptCFrame;
@@ -39,11 +41,9 @@ public class SweepEffect : MonoBehaviour
         List<Enemy> targets, bool leftToRight, float halfWidth, float fanAngle, float duration,
         System.Action<Enemy> onHit = null, GameObject prefab = null, float? alphaOverride = null,
         Color? damageNumberColor = null, bool canInterruptCFrame = false,
-        Material materialOverride = null, System.Action onAllHit = null, float targetDuration = -1f,
+        Material materialOverride = null, System.Action onFirstHit = null, System.Action onAllHit = null, float targetDuration = -1f,
         Sprite rotateSprite1 = null, Sprite rotateSprite2 = null)
     {
-        if (targets == null || targets.Count == 0) return;
-
         float startX = leftToRight ? -halfWidth : halfWidth;
         float endX = leftToRight ? halfWidth : -halfWidth;
         float startAngle = leftToRight ? fanAngle : -fanAngle;
@@ -114,6 +114,7 @@ public class SweepEffect : MonoBehaviour
         effect.damage = damage;
         effect.damageType = damageType;
         effect.onHit = onHit;
+        effect.onFirstHit = onFirstHit;
         effect.leftToRight = leftToRight;
         effect.damageNumberColor = damageNumberColor;
         effect.canInterruptCFrame = canInterruptCFrame;
@@ -145,7 +146,7 @@ public class SweepEffect : MonoBehaviour
         // 主序列：X 移动 + Z 旋转
         effect.seq = DOTween.Sequence();
         effect.seq.SetTarget(obj.transform);
-        effect.seq.SetUpdate(true);
+        effect.seq.SetUpdate(UpdateType.Normal, false);
 
         var move = obj.transform.DOMoveX(endX, duration).SetEase(Ease.InOutQuad);
         move.OnUpdate(effect.CheckHitThresholds);
@@ -254,7 +255,11 @@ public class SweepEffect : MonoBehaviour
     {
         if (enemy != null && enemy.state != EnemyState.Dead)
         {
+            bool isFirstHit = !_hasHit;
+            _hasHit = true;
             enemy.TakeDamage(damage, damageType, damageNumberColor, canInterruptCFrame);
+            if (isFirstHit)
+                onFirstHit?.Invoke();
             onHit?.Invoke(enemy);
         }
     }

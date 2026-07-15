@@ -75,7 +75,6 @@ public class PauseMenuUI : MonoBehaviour
         try { RefreshSettlementInfo(); }
         catch (System.Exception e) { Debug.LogWarning($"[PauseMenuUI] RefreshSettlementInfo 异常: {e.Message}"); }
         
-        DOTween.PauseAll();
         Time.timeScale = 0f;
     }
 
@@ -83,14 +82,12 @@ public class PauseMenuUI : MonoBehaviour
     {
         _isPaused = false;
         Time.timeScale = 1f;
-        DOTween.PlayAll();
         if (pausePanel != null) pausePanel.SetActive(false);
     }
 
     private void OnMainMenuClicked()
     {
         Time.timeScale = 1f;
-        DOTween.PlayAll();
         StageController.Instance?.GoToMainMenu();
     }
 

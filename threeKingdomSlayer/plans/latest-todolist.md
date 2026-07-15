@@ -1,5 +1,44 @@
 # 最新待办清单
 
+## 本周目标（进行中）
+
+### 1. 角色与 Boss 演出补齐
+- [ ] 将进度 UI 栏扩展为角色对话入口。
+- [ ] 制作可双面展示的 3D 看板：正面显示进度节点，反面显示对话与 QTE。
+- [ ] 对话触发时，看板以自身中心沿本地 X 轴翻转 180°；结束后恢复正面。
+- [ ] 补齐角色演出与 Boss 演出，并在 Battle 实机流程验收。
+
+### 2. 箭矢与飞射物表现优化
+- [ ] 优化箭矢及其他飞射物的视觉、轨迹、命中反馈与预警表现。
+- [x] Stab 已改为武器枪尖扫过实际敌人位置时结算伤害，支持无敌人时空挥；空挥消耗动作锁定/冷却，不产生能量或攻击被动。
+- [ ] 在普通战斗、QTE 与 Boss 场景分别验收，避免影响现有伤害和时序逻辑。
+
+### 3. Boss 设计、显示与难度
+- [ ] 补全 Boss 设计内容及对应战斗演出。
+- [ ] 优化 Boss 的 UI/场景显示。
+- [ ] 调整 Boss 难度配置，并记录最终配置与实测结果。
+
+### 4. 20–30 分钟测试关卡
+- [ ] 制作一条目标时长 20–30 分钟的测试关卡。
+- [ ] 按难度递进配置敌人、波次、Boss 与奖励节奏。
+- [ ] 记录通关时长、玩家等级/技能成长、压力峰值和卡点，作为后续平衡依据。
+
+### 5. “染色”敌人图片崩坏 Bug
+- [x] 已定位并修复：对象池复用时，白色波次跳过写色导致上波 tint 残留；每次回收销毁 Renderer 正在使用的材质实例也可能使材质失效并出现白图/崩坏。
+- [x] 修复：每波显式写入基准色×波次色（白色也恢复）；材质实例改为对象生命周期内稳定持有，仅在 `OnDestroy` 销毁。
+- [x] 编辑器回归：`Enemy_1` 染红 → 回收 → 白色波复用，颜色恢复白色；脚本重新编译通过。
+- [ ] 待 Battle/TestStage 实机覆盖：连续对象池复用、受击闪白、描边及 `Enemy_1/101/102/103/104/105`。
+
+### 6. 技能组与美术素材
+- [ ] 优化技能组配置与可选技能组合。
+- [ ] 制作更多技能图标与技能表现美术素材，并完成导入和游戏内验证。
+
+## 本周完成记录
+- 每项完成后记录：修改文件/资产、最终参数、验证场景、实测结果、遗留问题。
+- 状态标记：`[ ]` 未开始、`[-]` 进行中、`[x]` 已完成、`[!]` 阻塞。
+
+## 历史待办
+
 ## 0. 图像生成能力
 - [x] `gpt-image-generation` Skill 已部署并完成实际调用验证；通过 `curl` 可正常生成，测试图输出至 `C:/Users/Administrator/Downloads/gpt-image-2-test.png`。
 - 使用前确认环境变量 `MUSK_API_KEY` 可用；测试图默认输出至 `C:/Users/steam/Pictures/gptGen/`，需导入项目的素材明确输出至 `Assets/...`。
@@ -19,10 +58,11 @@
 - 最终参数：ReadyFireEffect localOffset=(0,85)、sizeScale=1.1；UltFill pulseSpeed=2、bottomMinAlpha=0.8、topMinAlpha=0.25。
 
 ## 3. 敌人受击音效
-- [ ] 确定并导入专用敌人受击音频资源；当前项目没有该资源或对应 `AudioManager` 事件。
-- [ ] 在统一伤害流程添加一次性受击播放，覆盖普通敌人并处理 `SharedHealthGroup`，避免同次伤害重复播放或漏播。
-- [ ] 明确并验收致死命中、群体伤害、高频多段伤害、Boss 与共享血量敌人的播放策略。
-- 依据：`Assets/Scripts/Enemy/Enemy.cs`、`Assets/Scripts/Enemy/SharedHealthGroup.cs`、`Assets/Scripts/Managers/AudioManager.cs`、`Assets/Scenes/Battle.scene`。
+- [x] 已导入并配置 `Assets/SFX/enemy/enemy_hitted1.wav`、`Assets/SFX/enemy/enemy_hitted2.wav`。
+- [x] 已接入 `AudioManager` 的全局 `Enemy_Hit` 事件：0.14 秒全局冷却、双音频防连续重复。
+- [x] 已在普通敌人和 `SharedHealthGroup` 的有效扣血后触发；Boss 不播放、共享血量整组每次伤害仅一声、致死命中播放。
+- [x] 已在 Battle 实机听感验收，高频攻击下效果可接受。
+- 修改：`Assets/Scripts/Enemy/Enemy.cs`、`Assets/Scripts/Enemy/SharedHealthGroup.cs`、`Assets/Scripts/Managers/AudioManager.cs`、`Assets/Scenes/Battle.scene`。
 
 ## 4. 玩家升级经验与关卡难度节奏
 - [ ] 先确定目标体验指标：每局目标等级/升级次数、每次升级的预期击杀或战斗时长、各波压力曲线、通关目标时长。

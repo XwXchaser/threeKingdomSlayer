@@ -17,6 +17,16 @@ public class ArrowGlobalConfig : ScriptableObject
     [Tooltip("下降段俯仰角 = 上升段 × 此比例")]
     public float descentPitchRatio = 0.75f;
 
+    [Header("按排飞行倍率")]
+    [Tooltip("飞行时长倍率：索引0=最前排；未配置或值≤0时使用1。")]
+    public float[] perRowFlightDurationMultipliers = { 1f, 1f, 1f, 1f, 1f };
+    [Tooltip("弧高倍率：索引0=最前排；未配置或值≤0时使用1。")]
+    public float[] perRowArcHeightMultipliers = { 1f, 1f, 1f, 1f, 1f };
+
+    [Header("箭矢朝向")]
+    [Tooltip("箭矢下落阶段允许的最大俯角（度）；仅限制视觉旋转，不改变抛物线轨迹。")]
+    [Range(0f, 89f)] public float maxDescentPitch = 35f;
+
     [Header("随机化")]
     [Tooltip("生成位置 XZ 随机偏移量")]
     public float randomPositionJitter = 0.3f;
@@ -26,6 +36,23 @@ public class ArrowGlobalConfig : ScriptableObject
     public float randomArcVariation = 0.15f;
     [Tooltip("错开发射最大延迟（秒）")]
     public float staggerMax = 0.12f;
+
+    public float GetFlightDurationMultiplierForRow(int row)
+    {
+        return GetRowMultiplier(perRowFlightDurationMultipliers, row);
+    }
+
+    public float GetArcHeightMultiplierForRow(int row)
+    {
+        return GetRowMultiplier(perRowArcHeightMultipliers, row);
+    }
+
+    private static float GetRowMultiplier(float[] multipliers, int row)
+    {
+        if (multipliers == null || multipliers.Length == 0) return 1f;
+        float value = multipliers[Mathf.Clamp(row, 0, multipliers.Length - 1)];
+        return value > 0f ? value : 1f;
+    }
 
     /// <summary>
     /// 获取指定排的俯仰角，未配置则回退到 defaultPitchAngle

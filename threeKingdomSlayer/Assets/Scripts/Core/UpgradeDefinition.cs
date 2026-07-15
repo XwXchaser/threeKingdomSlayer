@@ -95,6 +95,10 @@ public class UpgradeDefinition : ScriptableObject
     [Tooltip("按等级配置冲击波效果。index 0 = Lv1")]
     public List<ChargeShockwaveLevelConfig> chargeShockwaveLevels = new List<ChargeShockwaveLevelConfig>();
 
+    [Header("受击冲击波（effectType=charge_hit_shockwave）")]
+    [Tooltip("按等级配置蓄力受击增伤冲击波。index 0 = Lv1")]
+    public List<ChargeHitShockwaveLevelConfig> chargeHitShockwaveLevels = new List<ChargeHitShockwaveLevelConfig>();
+
     // ═══════════════════════════════════════════════
     // 旧版兼容字段（Inspector 隐藏，保留序列化数据）
     // ═══════════════════════════════════════════════
@@ -125,8 +129,11 @@ public class UpgradeDefinition : ScriptableObject
     [Header("道具型（category=Item 时生效）")]
     [Tooltip("获得后可使用的次数，-1=无限次")]
     public int useCount = 1;
-    [Tooltip("触发手势: circle(画圈) | long_press_swipe_down(长按下滑)")]
+    [Tooltip("道具动作标识，用于库存和执行分发")]
     public string gestureId;
+
+    [Header("持续旋风道具（effectType=item_cyclone）")]
+    public CycloneItemConfig cycloneItemConfig;
 
     [Header("前置条件")]
     [Tooltip("需要其他选项达到指定等级后才会进入抽取池")]
@@ -375,6 +382,26 @@ public struct CycloneLevelConfig
     public float landingDamagePercent;
 }
 
+/// <summary>持续旋风道具配置</summary>
+[System.Serializable]
+public struct CycloneItemConfig
+{
+    [Tooltip("道具生效的总持续时间（秒）")]
+    [Min(0.01f)] public float durationSeconds;
+    [Tooltip("重新查询前排敌人的间隔（秒）")]
+    [Min(0.01f)] public float intervalSeconds;
+    [Tooltip("每次使用后的冷却时间（秒）")]
+    [Min(0f)] public float cooldownSeconds;
+    [Tooltip("影响玩家前方排数")]
+    [Min(1)] public int rowCount;
+
+    [Header("局外成长扩展（当前默认无伤害）")]
+    [Tooltip("旋风生成时的伤害")]
+    [Min(0)] public int initialDamage;
+    [Tooltip("落地伤害相对初始伤害的比例（0.5=50%）")]
+    [Min(0f)] public float landingDamagePercent;
+}
+
 /// <summary>数值型每级配置</summary>
 [System.Serializable]
 public struct NumericLevelConfig
@@ -442,6 +469,20 @@ public struct ChargeShockwaveLevelConfig
     public float stackDamageBonus;
     [Tooltip("每道冲击波之间的延迟（秒），防止同时打出")]
     public float waveDelay;
+}
+
+/// <summary>蓄力受击增伤冲击波每级配置</summary>
+[System.Serializable]
+public struct ChargeHitShockwaveLevelConfig
+{
+    [Tooltip("蓄力攻击附带的冲击波数量")]
+    public int shockwaveCount;
+    [Tooltip("每道冲击波基础伤害")]
+    public int baseDamage;
+    [Tooltip("冲击波覆盖排数")]
+    public int rangeRows;
+    [Tooltip("蓄力期间每次实际掉血增加的伤害比例（0.15=15%）")]
+    public float damageBonusPerHit;
 }
 
 // ═══════════════════════════════════════════════

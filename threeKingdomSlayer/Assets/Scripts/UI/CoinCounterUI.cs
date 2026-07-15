@@ -79,7 +79,7 @@ public class CoinCounterUI : MonoBehaviour
         {
             totalTextRect.DOKill();
             totalTextRect.localScale = Vector3.one;
-            totalTextRect.DOPunchScale(Vector3.one * totalPunchScale, totalPunchDuration, 2, 0.5f);
+            totalTextRect.DOPunchScale(Vector3.one * totalPunchScale, totalPunchDuration, 2, 0.5f).SetUpdate(UpdateType.Normal, true);
         }
 
         SpawnFloatText(amount);
@@ -117,7 +117,7 @@ public class CoinCounterUI : MonoBehaviour
             rect.localPosition = totalTextRect.localPosition + new Vector3(30f * _uiScale, 25f * _uiScale, 0f);
 
         var startPos = rect.localPosition;
-        var seq = DOTween.Sequence();
+        var seq = DOTween.Sequence().SetUpdate(UpdateType.Normal, true);
         seq.Join(rect.DOLocalMove(startPos + new Vector3(0f, floatUpDistance, 0f), floatDuration).SetEase(Ease.OutQuad));
         seq.Join(text.DOFade(0f, floatDuration).SetEase(Ease.InQuad));
         seq.OnComplete(() => Destroy(go));

@@ -180,7 +180,7 @@ public class KillRewardUI : MonoBehaviour
         rewardPopup.SetActive(true);
         if (_popupCanvasGroup != null) _popupCanvasGroup.alpha = 1f;
 
-        _popupSequence = DOTween.Sequence();
+        _popupSequence = DOTween.Sequence().SetUpdate(UpdateType.Normal, true);
         _popupSequence.Append(rewardPopup.transform.DOScale(1f, popupFadeDuration).SetEase(popupScaleEase));
         _popupSequence.AppendInterval(popupDuration);
         _popupSequence.Append(rewardPopup.transform.DOScale(0f, popupFadeDuration).SetEase(Ease.InBack));

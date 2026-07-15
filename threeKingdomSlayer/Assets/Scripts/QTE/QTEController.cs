@@ -250,6 +250,7 @@ public class QTEController : MonoBehaviour
         if (_currentAttack.projectilePrefab == null) return;
 
         _activeProjectile = Instantiate(_currentAttack.projectilePrefab);
+        EnemyProjectileVisualPriority.Apply(_activeProjectile);
         _activeProjectile.transform.position = enemy.transform.position;
 
         var projectile = _activeProjectile.GetComponent<QTEProjectile>();
@@ -264,6 +265,7 @@ public class QTEController : MonoBehaviour
             Vector3 targetPos = GetProjectileTargetPosition();
             _activeProjectile.transform.DOMove(targetPos, _currentAttack.projectileFlightTime)
                 .SetEase(Ease.Linear)
+                .SetUpdate(UpdateType.Normal, false)
                 .OnComplete(() =>
                 {
                     OnProjectileReachedTarget();
@@ -346,12 +348,14 @@ public class QTEController : MonoBehaviour
             float arcH = _currentAttack.arrowArcHeight * Random.Range(1f - arcVar, 1f + arcVar);
 
             var arrowObj = Instantiate(_currentAttack.arrowPrefab, spawnPos, Quaternion.identity);
+            EnemyProjectileVisualPriority.Apply(arrowObj);
             var projectile = arrowObj.GetComponent<EnemyProjectile>();
             if (projectile != null)
             {
                 projectile.isQTEProjectile = true;
                 if (stagger > 0.001f)
                 {
+                    arrowObj.SetActive(false);
                     float d = dmgPerArrow;
                     float tz = targetZ;
                     float sx = spawnX;
@@ -359,7 +363,11 @@ public class QTEController : MonoBehaviour
                     float dr = descentRatio;
                     DOVirtual.DelayedCall(stagger, () =>
                     {
-                        if (p != null) p.Launch(spawnPos, tz, sx, d, arcH, flightTime, null, pitchAngle, dr, _currentAttack.arrowTargetY);
+                        if (p != null)
+                        {
+                            p.gameObject.SetActive(true);
+                            p.Launch(spawnPos, tz, sx, d, arcH, flightTime, null, pitchAngle, dr, _currentAttack.arrowTargetY);
+                        }
                     });
                 }
                 else
@@ -995,16 +1003,16 @@ public class QTEController : MonoBehaviour
         float duration = stabBlockDuration;
 
         // 公转：Pivot X 90° → 0°，Spear 从下方弧形扫入摄像机中心
-        pivot.transform.DOLocalRotate(new Vector3(0f, 0f, 0f), duration).SetEase(Ease.InOutQuad);
+        pivot.transform.DOLocalRotate(new Vector3(0f, 0f, 0f), duration).SetEase(Ease.InOutQuad).SetUpdate(UpdateType.Normal, false);
 
         // 自转：Spear Z 0° → 900°
-        visual.transform.DOLocalRotate(new Vector3(0f, 0f, 900f), duration, RotateMode.FastBeyond360).SetEase(Ease.Linear);
+        visual.transform.DOLocalRotate(new Vector3(0f, 0f, 900f), duration, RotateMode.FastBeyond360).SetEase(Ease.Linear).SetUpdate(UpdateType.Normal, false);
 
         // 三帧精灵均匀切换
         if (sr != null && stabBlockRotateSprite1 != null && stabBlockRotateSprite2 != null)
         {
             float third = duration / 3f;
-            var spriteSeq = DOTween.Sequence();
+            var spriteSeq = DOTween.Sequence().SetUpdate(UpdateType.Normal, false);
             spriteSeq.SetTarget(visual);
             spriteSeq.AppendInterval(third);
             spriteSeq.AppendCallback(() => { if (sr != null) sr.sprite = stabBlockRotateSprite1; });
@@ -1017,15 +1025,15 @@ public class QTEController : MonoBehaviour
         {
             DOVirtual.DelayedCall(duration * 0.8f, () =>
             {
-                if (sr != null) sr.DOFade(0f, duration * 0.2f);
-            });
+                if (sr != null) sr.DOFade(0f, duration * 0.2f).SetUpdate(UpdateType.Normal, false);
+            }).SetUpdate(UpdateType.Normal, false);
         }
 
         // 动画结束后销毁
         DOVirtual.DelayedCall(duration + 0.05f, () =>
         {
             if (pivot != null) Destroy(pivot);
-        });
+        }).SetUpdate(UpdateType.Normal, false);
     }
 
     #endregion

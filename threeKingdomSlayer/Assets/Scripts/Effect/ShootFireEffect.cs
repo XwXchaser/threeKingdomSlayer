@@ -162,17 +162,17 @@ public class ShootFireEffect : MonoBehaviour
         float fadeInEnd = Mathf.Min(alphaFadeInTime, particleLifetime * 0.3f);
         float fadeOutStart = particleLifetime * 0.4f;
 
-        var fadeSeq = DOTween.Sequence();
+        var fadeSeq = DOTween.Sequence().SetUpdate(UpdateType.Normal, false);
         fadeSeq.Append(sr.DOFade(alphaPeak, fadeInEnd).SetEase(Ease.OutQuad));
         fadeSeq.AppendInterval(fadeOutStart - fadeInEnd);
         fadeSeq.Append(sr.DOFade(0f, particleLifetime - fadeOutStart).SetEase(Ease.InQuad));
         fadeSeq.SetTarget(p);
 
         // 缩放：持续放大
-        p.transform.DOScale(endScale, particleLifetime).SetEase(Ease.OutQuad).SetTarget(p);
+        p.transform.DOScale(endScale, particleLifetime).SetEase(Ease.OutQuad).SetTarget(p).SetUpdate(UpdateType.Normal, false);
 
         // 颜色：白黄 → 橙红
-        var colorSeq = DOTween.Sequence();
+        var colorSeq = DOTween.Sequence().SetUpdate(UpdateType.Normal, false);
         colorSeq.Append(sr.DOColor(new Color(1f, 0.85f, 0.2f, 1f), particleLifetime * 0.5f));
         colorSeq.Append(sr.DOColor(new Color(0.8f, 0.3f, 0.05f, 1f), particleLifetime * 0.5f));
         colorSeq.SetTarget(p);
@@ -188,7 +188,8 @@ public class ShootFireEffect : MonoBehaviour
                 // Z越大（越远）order越小，穿过敌人后不再覆盖
                 srRef.sortingOrder = 50 - (int)(p.transform.position.z * 10f);
             })
-            .SetTarget(p);
+            .SetTarget(p)
+            .SetUpdate(UpdateType.Normal, false);
 
         // 清理
         Destroy(p, particleLifetime + 0.1f);

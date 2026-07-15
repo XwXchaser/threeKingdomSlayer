@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1783355398219
-updatedAt: 1783355398221
+updatedAt: 1783924582556
 ---
 
 # visual-yoffset-system
@@ -18,12 +18,6 @@ updatedAt: 1783355398221
 精灵锚点不统一的视觉补偿方案：通过 Inspector 可配的 Y 偏移字段，让不同尺寸的立于地面角色和特效的脚底对齐，避免每个精灵都去 Sprite Editor 改锚点。
 
 ## Content
-## 背景
-
-项目中所有精灵锚点默认在中心 `(0.5, 0.5)`。不同尺寸的角色（32×32 vs 87×110）在同一 Y=0 平面上时，脚底位置不一致。
-
-Sprite Editor 批量改锚点到底部是最彻底的方案，但会导致所有引用精灵的 GameObject 视觉偏移，需要大面积排查补偿逻辑。当前选择方案 B：不改锚点，在需要脚底对齐的组件上加 Y 偏移字段。
-
 ## 实现
 
 三个组件各加了一个 `[SerializeField]` Y 偏移字段：
@@ -33,6 +27,7 @@ Sprite Editor 批量改锚点到底部是最彻底的方案，但会导致所有
 - 应用：`UpdateWorldPosition()` 中 `transform.localPosition = new Vector3(xPos, bounceYOffset + visualYOffset, zPos)`
 - 默认值：0
 - 配置：在每个 Enemy Prefab 的 Inspector 上配
+- 已于 2026-07-08 在提交 `4220292` 的整批回退中被意外删除；2026-07-09 已仅恢复此独立功能，未带回 PushWave 等其它被回退逻辑。
 
 ### CycloneEffect.cs — `yOffset`
 - 位置：`[Header("视觉偏移")]` 下，紧接 `fadeOutDuration`
@@ -65,3 +60,8 @@ visualYOffset = spriteHeight(px) / PPU / 2
 - `Assets/Scripts/Enemy/Enemy.cs` — UpdateWorldPosition
 - `Assets/Scripts/Effect/CycloneEffect.cs` — Setup
 - `Assets/Scripts/Core/SpikeTrapController.cs` — GetLocalPosition
+
+## 当前 Enemy 配置
+
+- `Enemy_104.prefab`: `visualYOffset = 0.34`
+- `Enemy_1`, `Enemy_101`, `Enemy_102`, `Enemy_103`, `Enemy_105`: `visualYOffset = 0`

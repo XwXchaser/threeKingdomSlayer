@@ -20,6 +20,10 @@ public class ItemTestHelper : MonoBehaviour
         [Min(1)] public int count;
     }
 
+    [Header("测试规则")]
+    [Tooltip("模拟局外解锁同类道具堆叠能力。仅在本局注入道具前应用。")]
+    public bool enableSameTypeStacking;
+
     [Header("测试道具列表")]
     public List<TestItemEntry> testItems = new List<TestItemEntry>();
 
@@ -34,6 +38,8 @@ public class ItemTestHelper : MonoBehaviour
         if (ps == null || ps.stageState != StageState.InProgress) return;
 
         _applied = true;
+        if (ItemInventory.Instance != null)
+            ItemInventory.Instance.SetSameTypeStackingForNextRun(enableSameTypeStacking);
 
         foreach (var entry in testItems)
         {

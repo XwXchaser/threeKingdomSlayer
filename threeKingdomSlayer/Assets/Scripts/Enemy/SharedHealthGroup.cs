@@ -82,6 +82,7 @@ public class SharedHealthGroup
         float finalDamage = rawDamage * multiplier;
 
         currentHealth -= finalDamage;
+        AudioManager.Instance?.PostEvent("Enemy_Hit");
 
         // 受伤跳字
         if (hitMember != null && DamageNumberManager.Instance != null)

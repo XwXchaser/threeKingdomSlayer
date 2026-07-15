@@ -353,6 +353,7 @@ public class UpgradeChoiceManager : MonoBehaviour
             if (wu.upgrade == null) continue;
             if (!PrerequisitesMet(wu.upgrade)) continue;
             if (UpgradeEffectManager.Instance.GetUpgradeLevel(wu.upgrade.upgradeId) >= wu.upgrade.maxLevel) continue;
+            if (ItemInventory.Instance == null || !ItemInventory.Instance.CanAdd(wu.upgrade)) continue;
             result.Add(new EligibleEntry { upgrade = wu.upgrade, weight = wu.weight, rarity = rarity });
         }
     }

@@ -79,6 +79,10 @@ public class Enemy : MonoBehaviour
     public float attackRange = 1f;
     public float moveSpeed = 1f;
 
+    [Header("视觉偏移")]
+    [Tooltip("精灵 Y 轴偏移量，用于补偿精灵锚点不在底部导致的脚底不对齐。半高 = 精灵高度(px) / PPU / 2")]
+    public float visualYOffset = 0f;
+
     [Header("攻击序列")]
     [Tooltip("攻击序列（按顺序循环执行每步攻击）")]
     public List<AttackStep> attackSequence;
@@ -94,8 +98,16 @@ public class Enemy : MonoBehaviour
     public float projectileFlyDuration = 1f;
     [Tooltip("飞行物目标 Z 偏移（相对主摄像机 Z，越大越过摄像机越远）")]
     public float projectileZTargetOffset = 5f;
-    [Tooltip("飞行物目标 X 偏移（相对敌人当前位置 X）")]
+    [Tooltip("飞行物目标 X 中心（世界坐标）")]
+    public float projectileLandingXCenter = 0f;
+    [Tooltip("飞行物落点相对目标中心的随机半宽")]
+    [Min(0f)] public float projectileLandingXSpread = 0f;
+    [Tooltip("飞行物目标 X 偏移（相对敌人当前位置 X）；仅在落点随机范围为 0 时使用")]
     public float projectileXOffset = 0f;
+    [Tooltip("启用时按敌人所在列使用固定落点 X，不使用随机散布。")]
+    public bool useFixedProjectileLandingX;
+    [Tooltip("固定落点 X：索引 0~4 对应敌人列 0~4。")]
+    public float[] fixedProjectileLandingXByColumn = { -2f, -1f, 0f, 1f, 2f };
     [Tooltip("全局箭矢飞行参数配置，为空则用默认值")]
     public ArrowGlobalConfig arrowConfig;
 
@@ -264,6 +276,8 @@ public class Enemy : MonoBehaviour
 
     // DOTween: 当前攻击动画序列（用于在 Die() 中取消正在执行的攻击动作）
     private Sequence _attackTween;
+    private Tween _hitScaleTween;
+    private float _hitScaleMultiplier = 1f;
 
     // Animator HitFlash 协程引用
     private Coroutine _hitFlashRoutine;
@@ -276,9 +290,10 @@ public class Enemy : MonoBehaviour
     private MaterialPropertyBlock _propBlock;
     private MaterialPropertyBlock _tintPropBlock; // 波次染色，独立于描边 _propBlock
 
-    // 敌人物体原始缩放值（从预制体读取，用于攻击动画/死亡后还原）
-    // 不能硬编码为 Vector3.one，因为不同敌人可能有不同默认缩放（如 0.5）
+    // 敌人物体原始缩放与旋转值（从预制体读取，用于对象池复用还原）
+    // 不能硬编码为 Vector3.one / Quaternion.identity，因为预制体可能有自定义初始姿态。
     private Vector3 originalScale;
+    private Quaternion originalRotation;
 
     // 血条UI缓存
     private EnemyHealthBar cachedHealthBar;
@@ -305,6 +320,8 @@ public class Enemy : MonoBehaviour
 
         // 快照 prefab 原始值，供池复用 / 多波次重置
         SnapshotOriginalValues();
+        originalScale = transform.localScale;
+        originalRotation = transform.localRotation;
 
         // 缓存 prefab 原始值，供波次强化（ApplyWaveScaling）使用
         _prefabMaxHealth = maxHealth;
@@ -400,9 +417,11 @@ public class Enemy : MonoBehaviour
         actionCooldownTimer = 0f;
         bounceYOffset = 0f;
         _attackTween = null;
-        // 创建材质实例（用于闪白效果）
-        // 通过 renderer.material 创建实例，避免 MaterialPropertyBlock 在对象禁用时不生效
+        transform.localScale = originalScale;
+        transform.localRotation = originalRotation;
+        // 创建或恢复每个 Renderer 的专属材质实例，并恢复对象池残留的视觉状态。
         CreateFlashMaterials();
+        ResetWaveTint();
 
         initialized = true;
 
@@ -447,8 +466,7 @@ public class Enemy : MonoBehaviour
             }
         }
 
-        // 保存原始缩放值，用于攻击动画/死亡后的还原
-        originalScale = transform.localScale;
+        // 原始姿态仅在 Awake 从预制体快照；不能在池复用时用残留动画状态覆盖。
 
         UpdateWorldPosition();
 
@@ -475,17 +493,12 @@ public class Enemy : MonoBehaviour
         attackSpeed = _prefabAttackSpeed * atkSpdMult;
         attackDamage = _prefabAttackDamage * dmgMult;
 
-        // 白色 tint = 无变化；忽略 alpha 通道避免与行透明度(GetAlphaForRow)冲突
-        if (tint == Color.white) return;
-
         Color finalColor = _prefabColor * tint;
-        finalColor.a = 1f;
+        finalColor.a = _prefabColor.a;
 
-        // SpriteRenderer: 直接设 .color，不创建材质实例
+        // 每波都显式写入（包括白色），避免对象池复用保留上一波染色。
         if (_spriteRenderer != null)
-        {
             _spriteRenderer.color = finalColor;
-        }
 
         // MeshRenderer: 使用独立 MaterialPropertyBlock 设 _Color，避免与描边 _propBlock 冲突
         if (renderers == null || renderers.Length == 0) return;
@@ -812,6 +825,7 @@ public class Enemy : MonoBehaviour
         _remainingStunOnLaunch = (state == EnemyState.Stunned && stunTimer > 0f) ? stunTimer : 0f;
 
         // 清理所有 DOTween 动效（攻击动画、受击抖动等）
+        StopHitScaleFeedback();
         transform.DOKill(false);
         DOTween.Kill(transform, false);
         if (_attackTween != null && _attackTween.IsActive())
@@ -1432,11 +1446,20 @@ public class Enemy : MonoBehaviour
         Vector3 startPos = transform.position;
         float camZ = Camera.main != null ? Camera.main.transform.position.z : 0f;
         float endZ = camZ + projectileZTargetOffset;
-        float endX = startPos.x + projectileXOffset;
+        float endX = useFixedProjectileLandingX && fixedProjectileLandingXByColumn != null &&
+            columnIndex >= 0 && columnIndex < fixedProjectileLandingXByColumn.Length
+            ? fixedProjectileLandingXByColumn[columnIndex]
+            : projectileLandingXSpread > 0f
+                ? projectileLandingXCenter + Random.Range(-projectileLandingXSpread, projectileLandingXSpread)
+                : startPos.x + projectileXOffset;
 
         float pitchAngle = arrowConfig != null ? arrowConfig.GetPitchAngleForRow(rowIndex) : 12f;
         float descentRatio = arrowConfig != null ? arrowConfig.descentPitchRatio : 0.75f;
-        proj.Launch(startPos, endZ, endX, attackDamage, projectileArcHeight, projectileFlyDuration, this, pitchAngle, descentRatio);
+        float durationMultiplier = arrowConfig != null ? arrowConfig.GetFlightDurationMultiplierForRow(rowIndex) : 1f;
+        float arcHeightMultiplier = arrowConfig != null ? arrowConfig.GetArcHeightMultiplierForRow(rowIndex) : 1f;
+        float maxDescentPitch = arrowConfig != null ? arrowConfig.maxDescentPitch : 89f;
+        proj.Launch(startPos, endZ, endX, attackDamage, projectileArcHeight * arcHeightMultiplier,
+            projectileFlyDuration * durationMultiplier, this, pitchAngle, descentRatio, maxDescentPitch: maxDescentPitch);
 
         DebugLog.Info($"[Enemy] {DebugTag} 发射飞行物: start=({startPos.x:F1},{startPos.y:F1},{startPos.z:F1}) endZ={endZ:F1} endX={endX:F1}");
     }
@@ -1483,7 +1506,7 @@ public class Enemy : MonoBehaviour
         float totalInterval = (1f / attackSpeed);
         float forwardDistance = 0.5f;
 
-        _attackTween = DOTween.Sequence();
+        _attackTween = DOTween.Sequence().SetUpdate(UpdateType.Normal, false);
         _attackTween.SetTarget(transform);
         _attackTween.SetId("attackAnim");
 
@@ -1647,6 +1670,8 @@ public class Enemy : MonoBehaviour
         DebugLog.Info($"[Enemy] TakeDamage: {DebugTag}, col={columnIndex}, raw={damage:F1}, mult={multiplier:F2}, final={finalDamage:F1}, hp={currentHealth:F1}→{currentHealth - finalDamage:F1}");
 
         currentHealth -= finalDamage;
+        if (!isBoss)
+            AudioManager.Instance?.PostEvent("Enemy_Hit");
         OnDamageTaken?.Invoke(this);
         OnHealthChanged?.Invoke(this, currentHealth, maxHealth);
 
@@ -1677,21 +1702,7 @@ public class Enemy : MonoBehaviour
         DebugLog.Info($"[Enemy] 触发闪白: {DebugTag}, duration={HIT_FLASH_DURATION}");
 
         // DOTween: 受击大小抖动效果（与闪白同步触发）
-        string punchId = $"punch_{GetInstanceID()}";
-        DOTween.Kill(punchId);
-        transform.localScale = originalScale;
-        if (isSuperArmor)
-        {
-            transform.DOPunchScale(new Vector3(0.1f, 0.1f, 0.1f), 0.1f, 5, 0.5f)
-                .SetTarget(transform)
-                .SetId(punchId);
-        }
-        else
-        {
-            transform.DOPunchScale(new Vector3(0.2f, 0.2f, 0.2f), 0.15f, 8, 0.5f)
-                .SetTarget(transform)
-                .SetId(punchId);
-        }
+        RestartHitScaleFeedback();
 
         // 击飞状态下被攻击延长浮空时间
         if (state == EnemyState.Launched && launchedHitExtendDuration > 0f)
@@ -1733,21 +1744,60 @@ public class Enemy : MonoBehaviour
 
         hitFlashTimer = HIT_FLASH_DURATION;
 
-        string punchId = $"punch_{GetInstanceID()}";
-        DOTween.Kill(punchId);
-        transform.localScale = originalScale;
-        if (isSuperArmor)
+        RestartHitScaleFeedback();
+    }
+
+    private void RestartHitScaleFeedback()
+    {
+        StopHitScaleFeedback();
+
+        float peakMultiplier = isSuperArmor ? 1.1f : 1.2f;
+        float expandDuration = isSuperArmor ? 0.04f : 0.06f;
+        float recoverDuration = isSuperArmor ? 0.06f : 0.09f;
+
+        Sequence sequence = DOTween.Sequence().SetTarget(transform);
+        sequence.Append(DOTween.To(
+            () => _hitScaleMultiplier,
+            ApplyHitScaleMultiplier,
+            peakMultiplier,
+            expandDuration).SetEase(Ease.OutQuad));
+        sequence.Append(DOTween.To(
+            () => _hitScaleMultiplier,
+            ApplyHitScaleMultiplier,
+            1f,
+            recoverDuration).SetEase(Ease.InQuad));
+
+        _hitScaleTween = sequence;
+        sequence.OnComplete(() =>
         {
-            transform.DOPunchScale(new Vector3(0.1f, 0.1f, 0.1f), 0.1f, 5, 0.5f)
-                .SetTarget(transform)
-                .SetId(punchId);
-        }
-        else
-        {
-            transform.DOPunchScale(new Vector3(0.2f, 0.2f, 0.2f), 0.15f, 8, 0.5f)
-                .SetTarget(transform)
-                .SetId(punchId);
-        }
+            if (_hitScaleTween != sequence) return;
+            _hitScaleTween = null;
+            _hitScaleMultiplier = 1f;
+            ApplyHitScaleMultiplier(1f);
+        });
+    }
+
+    private void StopHitScaleFeedback()
+    {
+        if (_hitScaleTween != null && _hitScaleTween.IsActive())
+            _hitScaleTween.Kill(false);
+
+        _hitScaleTween = null;
+        _hitScaleMultiplier = 1f;
+        ApplyHitScaleMultiplier(1f);
+    }
+
+    private void ApplyHitScaleMultiplier(float multiplier)
+    {
+        _hitScaleMultiplier = multiplier;
+        if (originalScale == Vector3.zero) return;
+
+        float currentX = transform.localScale.x;
+        float xSign = currentX < 0f ? -1f : 1f;
+        transform.localScale = new Vector3(
+            Mathf.Abs(originalScale.x) * xSign * multiplier,
+            originalScale.y * multiplier,
+            originalScale.z * multiplier);
     }
 
     /// <summary>
@@ -1779,43 +1829,60 @@ public class Enemy : MonoBehaviour
 
 
     /// <summary>
-    /// 创建材质实例（用于闪白效果）
-    /// 通过 renderer.material 创建实例，确保修改 color 不会影响其他敌人。
-    /// 在 Initialize() 中调用，在 ResetEnemy() 中销毁。
+    /// 创建或恢复每个 Renderer 的专属材质实例。
+    /// 对象池复用时保留实例，避免销毁后 Renderer 持有失效材质。
     /// </summary>
     private void CreateFlashMaterials()
     {
-        // 先销毁旧的材质实例
-        DestroyFlashMaterials();
-
         if (renderers == null || renderers.Length == 0) return;
 
-        flashMaterials = new Material[renderers.Length];
+        if (flashMaterials == null || flashMaterials.Length != renderers.Length)
+        {
+            DestroyFlashMaterials();
+            flashMaterials = new Material[renderers.Length];
+        }
+
         for (int i = 0; i < renderers.Length; i++)
         {
-            // renderer.material 会创建材质实例（自动实例化 sharedMaterial）
-            flashMaterials[i] = renderers[i].material;
-            // 初始颜色设为白色（精灵原始颜色）
+            var renderer = renderers[i];
+            if (renderer == null) continue;
+
+            if (flashMaterials[i] == null)
+                flashMaterials[i] = new Material(renderer.sharedMaterial);
+
+            if (renderer.sharedMaterial != flashMaterials[i])
+                renderer.material = flashMaterials[i];
+
             flashMaterials[i].color = Color.white;
         }
     }
 
+    private void ResetWaveTint()
+    {
+        if (_spriteRenderer != null)
+            _spriteRenderer.color = _prefabColor;
+
+        if (renderers == null) return;
+        foreach (var renderer in renderers)
+        {
+            if (renderer != null && !(renderer is SpriteRenderer))
+                renderer.SetPropertyBlock(null);
+        }
+    }
+
     /// <summary>
-    /// 销毁材质实例
+    /// 销毁每个 Renderer 的专属材质实例（仅在对象最终销毁时调用）。
     /// </summary>
     private void DestroyFlashMaterials()
     {
-        if (flashMaterials != null)
+        if (flashMaterials == null) return;
+
+        foreach (var mat in flashMaterials)
         {
-            foreach (var mat in flashMaterials)
-            {
-                if (mat != null)
-                {
-                    Object.Destroy(mat);
-                }
-            }
-            flashMaterials = null;
+            if (mat != null)
+                Object.Destroy(mat);
         }
+        flashMaterials = null;
     }
 
     /// <summary>
@@ -1922,6 +1989,7 @@ public class Enemy : MonoBehaviour
         }
 
         bool wasLaunched = (state == EnemyState.Launched);
+        StopHitScaleFeedback();
         state = EnemyState.Dead;
         UpdateOutlineState();
         _animator?.SetTrigger("Dead");
@@ -2389,7 +2457,7 @@ public class Enemy : MonoBehaviour
         // 你可以在场景中创建一个空的 Enemies GameObject 作为父节点，
         // 然后调整父节点的 Transform Position 来整体移动所有敌人的位置
         // DOTween: 前进补齐时 Y 轴弹跳由 bounceYOffset 驱动（非补齐移动时 bounceYOffset = 0）
-        transform.localPosition = new Vector3(xPos, bounceYOffset, zPos);
+        transform.localPosition = new Vector3(xPos, bounceYOffset + visualYOffset, zPos);
     }
 
     /// <summary>
@@ -2574,10 +2642,9 @@ public class Enemy : MonoBehaviour
             {
                 var col = cm.GetColumn(c);
                 if (col == null) continue;
-                for (int r = 0; r <= 1 && r < col.enemies.Count; r++)
+                foreach (var e in col.enemies)
                 {
-                    var e = col.enemies[r];
-                    if (e != null && e != this && e.state != EnemyState.Dead)
+                    if (e != null && e != this && e.state != EnemyState.Dead && e.rowIndex <= 1)
                         return;
                 }
             }
@@ -2885,8 +2952,14 @@ public class Enemy : MonoBehaviour
 
     #region 对象池
 
+    private void OnDestroy()
+    {
+        DestroyFlashMaterials();
+    }
+
     private void OnDisable()
     {
+        StopHitScaleFeedback();
         initialized = false;
     }
 
@@ -2895,8 +2968,12 @@ public class Enemy : MonoBehaviour
     /// </summary>
     public void ResetEnemy()
     {
+        StopHitScaleFeedback();
+
         // 终止所有活跃的 DOTween 动画（完成当前值后跳转到最终值）
         transform.DOKill(true);
+        transform.localScale = originalScale;
+        transform.localRotation = originalRotation;
 
         state = EnemyState.Dead;
         currentHealth = 0f;
@@ -2929,8 +3006,7 @@ public class Enemy : MonoBehaviour
         OnHealthChanged = null;
         OnPoiseChanged = null;
         OnBossEngaged = null;
-        // 销毁材质实例，避免内存泄漏
-        DestroyFlashMaterials();
+        ResetWaveTint();
         gameObject.SetActive(false);
     }
 

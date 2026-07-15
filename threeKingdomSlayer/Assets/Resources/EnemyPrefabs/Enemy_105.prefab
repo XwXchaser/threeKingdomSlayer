@@ -169,7 +169,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: "\u5F13\u7BAD\u624B"
   enemyId: 105
-  maxHealth: 80
+  maxHealth: 16
   occupySlots: 1
   attackSpeed: 0.3
   attackDamage: 5
@@ -177,6 +177,7 @@ MonoBehaviour:
   moveSpeed: 0.2
   attackSequence:
   - isCAttack: 0
+    animationTrigger: 
     spawnDuration: 2
     drawDuration: 1.5
     extraCooldown: 0
@@ -186,7 +187,10 @@ MonoBehaviour:
   projectileArcHeight: 3
   projectileFlyDuration: 1
   projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 1.2
   projectileXOffset: 0
+  arrowConfig: {fileID: 0}
   shareHealthWithAdjacent: 0
   maxPoise: 40
   stunDuration: 2
@@ -202,9 +206,14 @@ MonoBehaviour:
   gemSprite: {fileID: 21300000, guid: 9615f3c03352d4a4684e7679ae7c28cc, type: 3}
   isBoss: 0
   bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
   outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
   outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
-  outlineWidthOverride: 0
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
   stabDamageMultiplier: 1
   slashDamageMultiplier: 1
   pierceDamageMultiplier: 1

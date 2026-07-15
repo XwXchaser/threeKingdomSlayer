@@ -26,12 +26,18 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip[] _qteBlockClips;
     [SerializeField, Range(0f, 4f)] private float _qteBlockVolume = 1.5f;
 
+    [Header("普通敌人受击语音")]
+    [SerializeField] private AudioClip[] _enemyHitClips;
+    [SerializeField, Min(0f)] private float _enemyHitCooldown = 0.14f;
+
     private AudioSource _bgmMainSource;
     private AudioSource _bgmEnvSource;
     private AudioSource _sfxSource;
 
     private const string VOLUME_KEY = "master_volume";
     private float _masterVolume = 1f;
+    private float _nextEnemyHitTime;
+    private int _lastEnemyHitIndex = -1;
 
     private void Awake()
     {
@@ -100,6 +106,8 @@ public class AudioManager : MonoBehaviour
         PreloadClip(_parryClip);
         // QTE 格挡
         PreloadClipArray(_qteBlockClips);
+        // 普通敌人受击语音
+        PreloadClipArray(_enemyHitClips);
     }
 
     private void PreloadClip(AudioClip clip)
@@ -184,6 +192,9 @@ public class AudioManager : MonoBehaviour
             case "QTE_Block":
                 PlayRandom(_qteBlockClips, _qteBlockVolume);
                 break;
+            case "Enemy_Hit":
+                PlayEnemyHit();
+                break;
         }
     }
 
@@ -192,6 +203,20 @@ public class AudioManager : MonoBehaviour
         if (clips == null || clips.Length == 0) return;
         int idx = Random.Range(0, clips.Length);
         PlayOneShot(clips[idx], volumeScale);
+    }
+
+    private void PlayEnemyHit()
+    {
+        if (_enemyHitClips == null || _enemyHitClips.Length == 0) return;
+        if (Time.time < _nextEnemyHitTime) return;
+
+        int index = Random.Range(0, _enemyHitClips.Length);
+        if (_enemyHitClips.Length > 1 && index == _lastEnemyHitIndex)
+            index = (index + Random.Range(1, _enemyHitClips.Length)) % _enemyHitClips.Length;
+
+        _lastEnemyHitIndex = index;
+        _nextEnemyHitTime = Time.time + _enemyHitCooldown;
+        PlayOneShot(_enemyHitClips[index]);
     }
 
     private void PlayOneShot(AudioClip clip, float volumeScale = 1f)

@@ -127,7 +127,7 @@ public class BossHealthUI : MonoBehaviour
 
         if (canvasGroup != null)
         {
-            canvasGroup.DOFade(0f, 0.5f).OnComplete(() => Destroy(gameObject));
+            canvasGroup.DOFade(0f, 0.5f).SetUpdate(UpdateType.Normal, true).OnComplete(() => Destroy(gameObject));
         }
         else
         {

@@ -19,10 +19,15 @@ public class EnemyProjectile : MonoBehaviour
 
     private Vector3 _startPos;
     private Vector3 _endPos;
-    private Sequence _flyTween;
+    private Tween _flightProgressTween;
     private Sequence _deflectTween;
     private bool _arrived;
+    private float _flightProgress;
+    private float _maxDescentPitch;
+    private bool _isDisposing;
     private SpriteRenderer[] _spriteRenderers;
+    private Transform[] _visualTransforms;
+    private Quaternion[] _visualLocalRotations;
     private Coroutine _safetyTimeout;
 
     /// <summary>
@@ -35,7 +40,7 @@ public class EnemyProjectile : MonoBehaviour
     /// <param name="arcH">抛物线最高点高度</param>
     /// <param name="duration">飞行时长</param>
     /// <param name="pitchAngle">箭矢上升段最大俯仰角（度），下降段自动取反</param>
-    public void Launch(Vector3 startPos, float endZ, float endX, float dmg, float arcH, float duration, Enemy source = null, float pitchAngle = 12f, float descentPitchRatio = 0.75f, float endY = float.MinValue)
+    public void Launch(Vector3 startPos, float endZ, float endX, float dmg, float arcH, float duration, Enemy source = null, float pitchAngle = 12f, float descentPitchRatio = 0.75f, float endY = float.MinValue, float maxDescentPitch = 89f)
     {
         _startPos = startPos;
         float targetY = endY > float.MinValue + 1f ? endY : startPos.y;
@@ -44,14 +49,19 @@ public class EnemyProjectile : MonoBehaviour
         _sourceEnemy = source;
         arcHeight = arcH;
         flyDuration = duration;
-        // 不重置 _arrived：若此前已被 Deflect() 设为 true（stagger 延迟箭矢已在预警期被弹反），
-        // 保留标志以阻止后续 OnArrival 造成二次伤害
-        if (!_arrived)
-            _arrived = false;
+        _maxDescentPitch = maxDescentPitch;
+        _arrived = false;
+        _isDisposing = false;
+        _flightProgressTween?.Kill();
+        _deflectTween?.Kill();
+        _flightProgress = 0f;
 
         transform.position = startPos;
         gameObject.SetActive(true);
         _spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        CacheVisualTransforms();
+        ApplyVisualForwardFlip();
+        EnemyProjectileVisualPriority.Apply(gameObject);
         if (_spriteRenderers != null)
         {
             foreach (var sr in _spriteRenderers)
@@ -60,25 +70,12 @@ public class EnemyProjectile : MonoBehaviour
             }
         }
 
-        // DOTween 抛物线: Z/X 线性插值, Y 用两个 Ease 做抛物线（总时长=duration）
-        _flyTween = DOTween.Sequence();
-        _flyTween.Append(transform.DOMoveX(endX, duration).SetEase(Ease.Linear));
-        _flyTween.Join(transform.DOMoveZ(endZ, duration).SetEase(Ease.Linear));
-        float peakY = startPos.y + arcH;
-        float halfDuration = duration * 0.5f;
-        _flyTween.Join(
-            DOTween.Sequence()
-                .Append(transform.DOMoveY(peakY, halfDuration).SetEase(Ease.OutQuad))
-                .Append(transform.DOMoveY(targetY, halfDuration).SetEase(Ease.InQuad)));
-
-        // 箭矢沿抛物线切线方向俯仰：上升段上仰，下降段下俯（角度可配置）
-        float descentAngle = pitchAngle * descentPitchRatio;
-        _flyTween.Join(
-            DOTween.Sequence()
-                .Append(transform.DORotate(new Vector3(pitchAngle, 0, 7.5f), halfDuration, RotateMode.Fast).SetEase(Ease.OutQuad))
-                .Append(transform.DORotate(new Vector3(-descentAngle, 0, 15), halfDuration, RotateMode.Fast).SetEase(Ease.InQuad)));
-
-        _flyTween.OnComplete(OnArrival);
+        _flightProgressTween = DOTween.To(() => _flightProgress, value =>
+        {
+            _flightProgress = value;
+            UpdateFlight();
+        }, 1f, duration).SetEase(Ease.Linear).SetUpdate(UpdateType.Normal, false);
+        _flightProgressTween.OnComplete(OnArrival);
 
         if (_safetyTimeout != null) StopCoroutine(_safetyTimeout);
         _safetyTimeout = StartCoroutine(SafetyTimeout(duration + 3f));
@@ -89,11 +86,17 @@ public class EnemyProjectile : MonoBehaviour
     /// </summary>
     public void Deflect()
     {
+        if (!gameObject.activeSelf)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         if (_arrived) return;
 
         _arrived = true; // 阻止 OnArrival 再次触发
-        _flyTween?.Kill();
-        _flyTween = null;
+        _flightProgressTween?.Kill();
+        _flightProgressTween = null;
 
         // 快速旋转 + 坠落 + 0.3s 淡出消失
         float rx = Random.Range(-500f, 500f);
@@ -102,7 +105,7 @@ public class EnemyProjectile : MonoBehaviour
         float fallY = transform.position.y - Random.Range(2f, 4f);
         float driftX = transform.position.x + Random.Range(-0.5f, 0.5f);
 
-        _deflectTween = DOTween.Sequence();
+        _deflectTween = DOTween.Sequence().SetUpdate(UpdateType.Normal, false);
         _deflectTween.Join(transform.DORotate(new Vector3(rx, ry, rz), 0.6f, RotateMode.LocalAxisAdd).SetEase(Ease.OutQuad));
         _deflectTween.Join(transform.DOMoveY(fallY, 0.6f).SetEase(Ease.InQuad));
         _deflectTween.Join(transform.DOMoveX(driftX, 0.6f).SetEase(Ease.OutQuad));
@@ -116,7 +119,7 @@ public class EnemyProjectile : MonoBehaviour
 
         _deflectTween.OnComplete(() =>
         {
-            ReturnToPool();
+            DisposeProjectile();
         });
     }
 
@@ -128,14 +131,36 @@ public class EnemyProjectile : MonoBehaviour
         // 玩家受到伤害
         PlayerState.Instance?.TakeDamage(damage, _sourceEnemy);
 
-        ReturnToPool();
+        DisposeProjectile();
     }
 
-    private void ReturnToPool()
+    private void CacheVisualTransforms()
     {
-        _flyTween?.Kill();
+        if (_visualTransforms != null) return;
+
+        _visualTransforms = new Transform[_spriteRenderers.Length];
+        _visualLocalRotations = new Quaternion[_spriteRenderers.Length];
+        for (int i = 0; i < _spriteRenderers.Length; i++)
+        {
+            _visualTransforms[i] = _spriteRenderers[i].transform;
+            _visualLocalRotations[i] = _visualTransforms[i].localRotation;
+        }
+    }
+
+    private void ApplyVisualForwardFlip()
+    {
+        for (int i = 0; i < _visualTransforms.Length; i++)
+            _visualTransforms[i].localRotation = _visualLocalRotations[i] * Quaternion.Euler(0f, 0f, 180f);
+    }
+
+    private void DisposeProjectile()
+    {
+        if (_isDisposing) return;
+        _isDisposing = true;
+
+        _flightProgressTween?.Kill();
         _deflectTween?.Kill();
-        _flyTween = null;
+        _flightProgressTween = null;
         _deflectTween = null;
 
         if (_safetyTimeout != null)
@@ -144,34 +169,60 @@ public class EnemyProjectile : MonoBehaviour
             _safetyTimeout = null;
         }
 
-        // 非 Deflect 路径（OnArrival / SafetyTimeout）：补充淡出
-        // Deflect 路径已在 _deflectTween 中并行淡出，此处 alpha 已为 0，直接销毁
         if (_spriteRenderers != null && _spriteRenderers.Length > 0 && _spriteRenderers[0].color.a > 0.05f && gameObject.activeInHierarchy)
         {
+            var fade = DOTween.Sequence().SetUpdate(UpdateType.Normal, false);
             for (int i = 0; i < _spriteRenderers.Length; i++)
-            {
-                var t = _spriteRenderers[i].DOFade(0f, 0.25f);
-                if (i == 0) t.OnComplete(() => Destroy(gameObject));
-            }
+                fade.Join(_spriteRenderers[i].DOFade(0f, 0.25f).SetEase(Ease.InQuad));
+            fade.OnComplete(() => Destroy(gameObject));
+            fade.OnKill(() => Destroy(gameObject));
+            return;
         }
-        else
-            Destroy(gameObject);
+
+        Destroy(gameObject);
+    }
+
+    private void UpdateFlight()
+    {
+        Vector3 position = EvaluatePosition(_flightProgress);
+        Vector3 nextPosition = EvaluatePosition(Mathf.Min(_flightProgress + 0.01f, 1f));
+        transform.position = position;
+
+        Vector3 velocity = nextPosition - position;
+        if (velocity.sqrMagnitude > 0.0001f)
+        {
+            float horizontalDistance = new Vector2(velocity.x, velocity.z).magnitude;
+            float pitch = Mathf.Atan2(-velocity.y, horizontalDistance) * Mathf.Rad2Deg;
+            pitch = Mathf.Clamp(pitch, -_maxDescentPitch, _maxDescentPitch);
+            Vector3 horizontalDirection = new Vector3(velocity.x, 0f, velocity.z).normalized;
+            transform.rotation = Quaternion.LookRotation(horizontalDirection, Vector3.up) * Quaternion.Euler(pitch, 0f, 0f);
+        }
+    }
+
+    private Vector3 EvaluatePosition(float progress)
+    {
+        Vector3 position = Vector3.Lerp(_startPos, _endPos, progress);
+        float arcFactor = progress <= 0.5f
+            ? 1f - Mathf.Pow(1f - progress * 2f, 2f)
+            : 1f - Mathf.Pow((progress - 0.5f) * 2f, 2f);
+        position.y += arcHeight * arcFactor;
+        return position;
     }
 
     private System.Collections.IEnumerator SafetyTimeout(float delay)
     {
-        yield return new WaitForSecondsRealtime(delay);
+        yield return new WaitForSeconds(delay);
         Debug.LogWarning($"[EnemyProjectile] 安全超时强制销毁");
         if (_safetyTimeout != null)
         {
             _safetyTimeout = null;
-            ReturnToPool();
+            DisposeProjectile();
         }
     }
 
     private void OnDestroy()
     {
-        _flyTween?.Kill();
+        _flightProgressTween?.Kill();
         _deflectTween?.Kill();
         if (_safetyTimeout != null)
         {

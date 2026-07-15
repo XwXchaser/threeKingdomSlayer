@@ -44,7 +44,9 @@ public class HealthPotionManager : MonoBehaviour
     private float _currentDropRate;
     private int _potionCount;
 
-    public int PotionCount => _potionCount;
+    public int PotionCount => ItemInventory.Instance != null
+        ? ItemInventory.Instance.GetRemainingUses(ItemInventory.HealthPotionGestureId)
+        : 0;
 
     /// <summary>血包数量变化事件</summary>
     public System.Action<int> OnPotionCountChanged;
@@ -84,10 +86,11 @@ public class HealthPotionManager : MonoBehaviour
     /// <summary>尝试使用一个血包。成功返回 true。</summary>
     public bool TryUsePotion()
     {
-        if (_potionCount <= 0) return false;
-        if (PlayerState.Instance == null) return false;
+        if (PotionCount <= 0) return false;
+        if (PlayerState.Instance == null || ItemInventory.Instance == null) return false;
+        if (!ItemInventory.Instance.TryConsume(ItemInventory.HealthPotionGestureId)) return false;
 
-        _potionCount--;
+        _potionCount = PotionCount;
         OnPotionCountChanged?.Invoke(_potionCount);
 
         PlayerState.Instance.Heal(healAmount);
@@ -97,7 +100,8 @@ public class HealthPotionManager : MonoBehaviour
     private void OnEnemyDied(Enemy enemy)
     {
         if (enemy == null) return;
-        if (_potionCount >= maxStack) return; // 已达上限，不投骰
+        if (PotionCount >= maxStack) return; // 已达上限，不投骰
+        if (ItemInventory.Instance == null || !ItemInventory.Instance.CanAddPotion()) return;
         if (gemParent == null) return;
 
         float roll = Random.value;
@@ -162,7 +166,10 @@ public class HealthPotionManager : MonoBehaviour
         if (gem != null)
             Destroy(gem.gameObject);
 
-        _potionCount = Mathf.Min(_potionCount + 1, maxStack);
-        OnPotionCountChanged?.Invoke(_potionCount);
+        if (ItemInventory.Instance != null && ItemInventory.Instance.AddPotion(potionDefinition, maxStack))
+        {
+            _potionCount = PotionCount;
+            OnPotionCountChanged?.Invoke(_potionCount);
+        }
     }
 }

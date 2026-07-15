@@ -18,5 +18,9 @@ MonoBehaviour:
   commonPool:
   - upgrade: {fileID: 11400000, guid: c5d04c63b5fcce14a813db0c2f8770b3, type: 2}
     weight: 10
+  - upgrade: {fileID: 11400000, guid: acf58ad3d6667cc478c580abc5370a69, type: 2}
+    weight: 10
+  - upgrade: {fileID: 11400000, guid: f8dfd43dcfb8c5942bcc338bae504417, type: 2}
+    weight: 10
   rarePool: []
   legendaryPool: []

@@ -23,14 +23,11 @@ public class BuffDisplayPanel : MonoBehaviour
 
     // upgradeId → slot（ColumnA）
     private Dictionary<string, BuffIcon> _upgradeIcons = new Dictionary<string, BuffIcon>();
-    // gestureId → slot（ColumnB）
-    private Dictionary<string, BuffIcon> _itemIcons = new Dictionary<string, BuffIcon>();
+    // entryId → slot（ColumnB）
+    private readonly Dictionary<int, BuffIcon> _itemIcons = new Dictionary<int, BuffIcon>();
+    private readonly Dictionary<BuffIcon, int> _iconEntryIds = new Dictionary<BuffIcon, int>();
 
     private CanvasGroup _canvasGroup;
-    private int _columnBUsedCount;
-
-    private const string POTION_GESTURE_ID = "health_potion";
-    private BuffIcon _potionSlot;
 
     private void Start()
     {
@@ -46,12 +43,15 @@ public class BuffDisplayPanel : MonoBehaviour
         foreach (var slot in _columnBSlots)
             if (slot != null) slot.gameObject.SetActive(false);
 
-        InitializePotionSlot();
+        InitializeItemSlots();
 
         if (UpgradeEffectManager.Instance != null)
             UpgradeEffectManager.Instance.OnUpgradeApplied += OnUpgradeApplied;
         if (ItemInventory.Instance != null)
-            ItemInventory.Instance.OnItemChanged += OnItemChanged;
+        {
+            ItemInventory.Instance.OnInventoryChanged += RefreshItemSlots;
+            RefreshItemSlots();
+        }
         if (PassiveTriggerModule.Instance != null)
             PassiveTriggerModule.Instance.OnPassiveRegistered += OnPassiveRegistered;
     }
@@ -61,16 +61,81 @@ public class BuffDisplayPanel : MonoBehaviour
         if (UpgradeEffectManager.Instance != null)
             UpgradeEffectManager.Instance.OnUpgradeApplied -= OnUpgradeApplied;
         if (ItemInventory.Instance != null)
-            ItemInventory.Instance.OnItemChanged -= OnItemChanged;
+            ItemInventory.Instance.OnInventoryChanged -= RefreshItemSlots;
         if (PassiveTriggerModule.Instance != null)
             PassiveTriggerModule.Instance.OnPassiveRegistered -= OnPassiveRegistered;
-        if (_potionSlot != null)
-            _potionSlot.OnClicked -= OnPotionClicked;
-        if (HealthPotionManager.Instance != null)
-            HealthPotionManager.Instance.OnPotionCountChanged -= OnPotionCountChanged;
     }
 
-    // ── 槽位分配 ──
+    private void InitializeItemSlots()
+    {
+        int capacity = ItemInventory.Instance != null ? ItemInventory.Instance.Capacity : 2;
+        for (int i = 0; i < _columnBSlots.Count; i++)
+        {
+            var slot = _columnBSlots[i];
+            if (slot == null) continue;
+            slot.OnClicked -= OnItemIconClicked;
+            if (i < capacity)
+            {
+                slot.ShowEmpty(_skillFrame);
+                slot.gameObject.SetActive(true);
+            }
+            else
+            {
+                slot.ResetSlot();
+            }
+        }
+    }
+
+    private void RefreshItemSlots()
+    {
+        _itemIcons.Clear();
+        _iconEntryIds.Clear();
+        int capacity = ItemInventory.Instance != null ? ItemInventory.Instance.Capacity : 0;
+        var entries = ItemInventory.Instance != null ? ItemInventory.Instance.Entries : null;
+        bool potionTargetAssigned = false;
+
+        for (int i = 0; i < _columnBSlots.Count; i++)
+        {
+            var slot = _columnBSlots[i];
+            if (slot == null) continue;
+            slot.OnClicked -= OnItemIconClicked;
+            if (i >= capacity)
+            {
+                slot.ResetSlot();
+                continue;
+            }
+            if (entries == null || i >= entries.Count)
+            {
+                slot.ShowEmpty(_skillFrame);
+                if (!potionTargetAssigned && HealthPotionManager.Instance != null)
+                {
+                    HealthPotionManager.Instance.targetSlot = slot.GetComponent<RectTransform>();
+                    potionTargetAssigned = true;
+                }
+                continue;
+            }
+
+            var entry = entries[i];
+            var def = entry.definition;
+            slot.Setup(def != null ? def.icon : null, def != null ? def.upgradeId : null,
+                UpgradeCategory.Item, entry.GestureId);
+            slot.SetFrame(_skillFrame);
+            if (entry.remainingUses > 1)
+                slot.SetBadgeNumber(entry.remainingUses);
+            else
+                slot.ClearBadgeNumber();
+            slot.OnClicked += OnItemIconClicked;
+            slot.gameObject.SetActive(true);
+            _itemIcons[entry.id] = slot;
+            _iconEntryIds[slot] = entry.id;
+
+            if (entry.isPotion && HealthPotionManager.Instance != null)
+            {
+                HealthPotionManager.Instance.targetSlot = slot.GetComponent<RectTransform>();
+                potionTargetAssigned = true;
+            }
+        }
+    }
 
     private BuffIcon ClaimColumnASlot()
     {
@@ -81,113 +146,14 @@ public class BuffDisplayPanel : MonoBehaviour
         return null;
     }
 
-    private BuffIcon ClaimColumnBSlot()
-    {
-        if (_columnBUsedCount >= _columnBSlots.Count)
-        {
-            Debug.LogWarning("[BuffDisplayPanel] ColumnB 槽位已满");
-            return null;
-        }
-        return _columnBSlots[_columnBUsedCount++];
-    }
-
-    /// <summary>ColumnB 槽位前移补位：将 removedIndex 之后的已用槽依次前移。永不触碰血包槽位(index 0)。</summary>
-    private void CompactColumnB(int removedIndex)
-    {
-        if (removedIndex < 1) return; // 血包槽位不可移除
-
-        for (int i = removedIndex; i < _columnBUsedCount - 1; i++)
-        {
-            var from = _columnBSlots[i + 1];
-            var to = _columnBSlots[i];
-            if (from == null || to == null) continue;
-
-            to.Setup(from.IconSprite, from.UpgradeId, from.Category, from.GestureId);
-            to.SetBadgeNumber(from.BadgeNumber);
-            to.SetFrame(_skillFrame);
-            to.OnClicked -= OnItemIconClicked;
-            to.OnClicked += OnItemIconClicked;
-            to.gameObject.SetActive(true);
-
-            if (!string.IsNullOrEmpty(from.GestureId))
-                _itemIcons[from.GestureId] = to;
-
-            from.ResetSlot();
-        }
-
-        var last = _columnBSlots[_columnBUsedCount - 1];
-        if (last != null) last.ResetSlot();
-        _columnBUsedCount--;
-        if (_columnBUsedCount < 1) _columnBUsedCount = 1;
-    }
-
-    // ── 血包槽位 ──
-
-    private void InitializePotionSlot()
-    {
-        var manager = HealthPotionManager.Instance;
-        if (manager == null || _columnBSlots.Count == 0) return;
-
-        _potionSlot = _columnBSlots[0];
-        if (_potionSlot == null) return;
-
-        var def = manager.potionDefinition;
-        if (def != null)
-        {
-            _potionSlot.Setup(def.icon, def.upgradeId, UpgradeCategory.Item, POTION_GESTURE_ID);
-            _potionSlot.SetFrame(_skillFrame);
-        }
-
-        _potionSlot.OnClicked += OnPotionClicked;
-        _potionSlot.gameObject.SetActive(true);
-        _columnBUsedCount = 1;
-
-        manager.targetSlot = _potionSlot.GetComponent<RectTransform>();
-        manager.OnPotionCountChanged += OnPotionCountChanged;
-        UpdatePotionSlot(manager.PotionCount);
-    }
-
-    private void OnPotionCountChanged(int count)
-    {
-        UpdatePotionSlot(count);
-    }
-
-    private void UpdatePotionSlot(int count)
-    {
-        if (_potionSlot == null) return;
-        Debug.Log($"[NUMDBG] UpdatePotionSlot count={count}");
-        _potionSlot.SetBadgeNumber(count);
-        _potionSlot.SetDimmed(count <= 0);
-    }
-
-    private void OnPotionClicked(BuffIcon icon)
-    {
-        HealthPotionManager.Instance?.TryUsePotion();
-    }
-
     // ── 事件回调 ──
 
     private void OnUpgradeApplied(UpgradeDefinition def, int newLevel)
     {
         if (def.category == UpgradeCategory.Item)
         {
-            // 快速修复：如果 alpha 曾被外部重置，确保 Item 型奖励到达时面板可见
             if (_canvasGroup != null) _canvasGroup.alpha = 1f;
-
-            if (!_itemIcons.TryGetValue(def.gestureId, out var icon))
-            {
-                icon = ClaimColumnBSlot();
-                if (icon == null) return;
-
-                icon.Setup(def.icon, def.upgradeId, UpgradeCategory.Item, def.gestureId);
-                icon.SetFrame(_skillFrame);
-                icon.OnClicked += OnItemIconClicked;
-                icon.gameObject.SetActive(true);
-                _itemIcons[def.gestureId] = icon;
-            }
-
-            int uses = ItemInventory.Instance != null ? ItemInventory.Instance.GetRemainingUses(def.gestureId) : def.useCount;
-            icon.SetBadgeNumber(uses);
+            RefreshItemSlots();
         }
         else
         {
@@ -228,27 +194,6 @@ public class BuffDisplayPanel : MonoBehaviour
         }
     }
 
-    private void OnItemChanged(string gestureId, int remainingUses, bool wasRemoved)
-    {
-        if (!_itemIcons.TryGetValue(gestureId, out var icon)) return;
-
-        if (wasRemoved)
-        {
-            icon.OnClicked -= OnItemIconClicked;
-            int index = _columnBSlots.IndexOf(icon);
-            if (index >= 0)
-            {
-                icon.ResetSlot();
-                _itemIcons.Remove(gestureId);
-                CompactColumnB(index);
-            }
-        }
-        else
-        {
-            icon.SetBadgeNumber(remainingUses);
-        }
-    }
-
     private void OnPassiveRegistered(string upgradeId, int threshold)
     {
         if (_upgradeIcons.TryGetValue(upgradeId, out var icon))
@@ -286,6 +231,22 @@ public class BuffDisplayPanel : MonoBehaviour
             }
         }
 
+        var cycloneItem = CycloneItemController.Instance;
+        if (cycloneItem != null)
+        {
+            foreach (var pair in _itemIcons)
+            {
+                var entry = ItemInventory.Instance != null ? ItemInventory.Instance.GetEntry(pair.Key) : null;
+                if (entry == null || entry.GestureId != "item_cyclone") continue;
+                var cycloneItemIcon = pair.Value;
+                bool coolingDown = cycloneItem.IsOnCooldown;
+                cycloneItemIcon.SetCooldown(cycloneItem.CooldownFill, null, coolingDown);
+                cycloneItemIcon.SetInteractable(!coolingDown);
+                if (coolingDown) cycloneItemIcon.SetCountdownNumber(Mathf.CeilToInt(cycloneItem.CooldownRemaining));
+                else cycloneItemIcon.ClearTopRightNumber();
+            }
+        }
+
         // 反伤盾：显示护盾值 / CD 倒计时
         var uem = UpgradeEffectManager.Instance;
         if (uem != null && _upgradeIcons.TryGetValue("charge_reflect_shield", out var shieldIcon))
@@ -311,6 +272,13 @@ public class BuffDisplayPanel : MonoBehaviour
             }
         }
 
+        // 受击冲击波：右上角实时显示本次蓄力累计增伤
+        if (uem != null && _upgradeIcons.TryGetValue("charge_hit_shockwave", out var hitWaveIcon))
+        {
+            int percent = Mathf.RoundToInt(uem.GetChargeHitShockwaveBonusPercent() * 100f);
+            hitWaveIcon.SetPercentNumber(percent);
+        }
+
         // 箭矢齐射：显示触发剩余攻击次数
         var ptm = PassiveTriggerModule.Instance;
         if (ptm != null && _upgradeIcons.TryGetValue("arrow_volley", out var volleyIcon))
@@ -329,14 +297,27 @@ public class BuffDisplayPanel : MonoBehaviour
 
     private void OnItemIconClicked(BuffIcon icon)
     {
-        string gestureId = icon.GestureId;
-        if (string.IsNullOrEmpty(gestureId)) return;
-        if (ItemInventory.Instance == null) return;
-
-        var def = ItemInventory.Instance.GetDefinition(gestureId);
+        if (!_iconEntryIds.TryGetValue(icon, out int entryId)) return;
+        var entry = ItemInventory.Instance.GetEntry(entryId);
+        if (entry == null) return;
+        string gestureId = entry.GestureId;
+        var def = entry.definition;
+        if (entry.isPotion)
+        {
+            HealthPotionManager.Instance?.TryUsePotion();
+            return;
+        }
         if (def == null) return;
 
-        if (!ItemInventory.Instance.TryConsume(gestureId)) return;
+        if (gestureId == "item_cyclone")
+        {
+            if (CycloneItemController.Instance != null &&
+                CycloneItemController.Instance.TryActivate(def))
+                ItemInventory.Instance.TryConsumeEntry(entryId);
+            return;
+        }
+
+        if (!ItemInventory.Instance.TryConsumeEntry(entryId)) return;
 
         if (gestureId == "circle")
         {

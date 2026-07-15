@@ -28,6 +28,9 @@ public class UpgradeEffectManager : MonoBehaviour
     private float _convergenceDamagePercent = 0.1f;
     private int _directionalPushStep;
     private float _chargeDamageReduction;
+    private UpgradeDefinition _chargeHitShockwaveDefinition;
+    private int _chargeHitShockwaveLevel;
+    private int _chargeHitShockwaveHitCount;
 
     // 反伤盾（由 charge_reflect_shield 管理）
     private int _reflectShieldAmount;        // 当前护盾剩余值，0 = 无护盾
@@ -98,10 +101,12 @@ public class UpgradeEffectManager : MonoBehaviour
         // 道具型：路由到 ItemInventory
         if (!string.IsNullOrEmpty(def.gestureId))
         {
-            if (ItemInventory.Instance != null)
-                ItemInventory.Instance.AddItem(def);
-            else
+            if (ItemInventory.Instance == null)
+            {
                 Debug.LogWarning("[UpgradeEffectManager] ItemInventory 未找到，道具无法添加");
+                return;
+            }
+            if (!ItemInventory.Instance.AddItem(def)) return;
 
             SyncToPlayerState(def, 0); // level=0 标记为道具型（PlayerState 中不追踪等级）
             OnUpgradeApplied?.Invoke(def, 0);
@@ -127,6 +132,11 @@ public class UpgradeEffectManager : MonoBehaviour
                     TimedPassiveModule.Instance.Register(def, newLevel);
                 else
                     Debug.LogWarning("[UpgradeEffectManager] TimedPassiveModule 未找到");
+            }
+            else if (def.effectType == "charge_hit_shockwave")
+            {
+                _chargeHitShockwaveDefinition = def;
+                _chargeHitShockwaveLevel = newLevel;
             }
             else
             {
@@ -173,6 +183,43 @@ public class UpgradeEffectManager : MonoBehaviour
     // ── 数值查询接口 ──
 
     public float GetDamageMultiplier() => _damageMultiplier;
+
+    public void RegisterChargeHitShockwaveHit()
+    {
+        if (_chargeHitShockwaveDefinition != null && _chargeHitShockwaveLevel > 0)
+            _chargeHitShockwaveHitCount++;
+    }
+
+    public float GetChargeHitShockwaveBonusPercent()
+    {
+        if (!TryGetChargeHitShockwaveConfig(out var cfg)) return 0f;
+        return _chargeHitShockwaveHitCount * cfg.damageBonusPerHit;
+    }
+
+    public bool ConsumeChargeHitShockwave(out ChargeHitShockwaveLevelConfig config, out float damageBonusPercent)
+    {
+        if (!TryGetChargeHitShockwaveConfig(out config))
+        {
+            damageBonusPercent = 0f;
+            return false;
+        }
+        damageBonusPercent = _chargeHitShockwaveHitCount * config.damageBonusPerHit;
+        _chargeHitShockwaveHitCount = 0;
+        return true;
+    }
+
+    private bool TryGetChargeHitShockwaveConfig(out ChargeHitShockwaveLevelConfig config)
+    {
+        if (_chargeHitShockwaveDefinition != null && _chargeHitShockwaveLevel > 0 &&
+            _chargeHitShockwaveDefinition.chargeHitShockwaveLevels != null &&
+            _chargeHitShockwaveLevel <= _chargeHitShockwaveDefinition.chargeHitShockwaveLevels.Count)
+        {
+            config = _chargeHitShockwaveDefinition.chargeHitShockwaveLevels[_chargeHitShockwaveLevel - 1];
+            return true;
+        }
+        config = default;
+        return false;
+    }
 
     /// <summary>叠加伤害倍率（供道具型测试等直接调用）</summary>
     public void AddDamageBonus(float amount)
@@ -306,7 +353,7 @@ public class UpgradeEffectManager : MonoBehaviour
                     desc = desc.Replace("{0}", triggerStr);
                     desc = desc.Replace("{1}", cfg.rowCount.ToString());
                     desc = desc.Replace("{2}", cfg.arrowCount.ToString());
-                    desc = desc.Replace("{3}", cfg.damage.ToString());
+                    desc = desc.Replace("{3}", Mathf.Max(1, cfg.damage / 4).ToString());
                 }
             }
             else if (def.effectType == "passive_timed_cyclone")
@@ -362,6 +409,16 @@ public class UpgradeEffectManager : MonoBehaviour
                 desc = desc.Replace("{3}", swCfg.baseDamage.ToString());
                 desc = desc.Replace("{4}", (swCfg.stackDamageBonus * 100f).ToString("F0"));
             }
+            else if (def.effectType == "charge_hit_shockwave")
+            {
+                var cfg = def.chargeHitShockwaveLevels != null && nextLevel <= def.chargeHitShockwaveLevels.Count
+                    ? def.chargeHitShockwaveLevels[nextLevel - 1]
+                    : new ChargeHitShockwaveLevelConfig();
+                desc = desc.Replace("{0}", cfg.shockwaveCount.ToString());
+                desc = desc.Replace("{1}", cfg.baseDamage.ToString());
+                desc = desc.Replace("{2}", cfg.rangeRows.ToString());
+                desc = desc.Replace("{3}", (cfg.damageBonusPerHit * 100f).ToString("F0"));
+            }
             else
             {
                 def.GetPhantomConfig(nextLevel, out int triggerParam, out var steps);
@@ -375,6 +432,13 @@ public class UpgradeEffectManager : MonoBehaviour
                 if (steps != null && steps.Count > 0)
                     desc = desc.Replace("{2}", (steps[0].damageRatio * 100f).ToString("F0"));
             }
+        }
+        else if (def.effectType == "item_cyclone")
+        {
+            var cfg = def.cycloneItemConfig;
+            desc = desc.Replace("{0}", cfg.durationSeconds.ToString("F1"));
+            desc = desc.Replace("{1}", cfg.intervalSeconds.ToString("F1"));
+            desc = desc.Replace("{2}", cfg.rowCount.ToString());
         }
         else if (def.effectType == "stab_range_boost" || def.effectType == "sweep_range_boost")
         {
@@ -462,6 +526,9 @@ public class UpgradeEffectManager : MonoBehaviour
         _convergenceDamagePercent = 0.1f;
         _directionalPushStep = 0;
         _chargeDamageReduction = 0f;
+        _chargeHitShockwaveDefinition = null;
+        _chargeHitShockwaveLevel = 0;
+        _chargeHitShockwaveHitCount = 0;
 
         _reflectShieldAmount = 0;
         _reflectShieldMaxAmount = 0;
@@ -471,6 +538,7 @@ public class UpgradeEffectManager : MonoBehaviour
         _reflectShieldReady = false;
         _isCharging = false;
 
+        CycloneItemController.Instance?.ResetAll();
         SpikeTrapController.Instance?.ResetAll();
 
         // 清空被动攻击模块
