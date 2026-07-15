@@ -48,18 +48,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   arrowTemplate: {fileID: 8297545452430159477}
   arrowBaseRotation: {x: -40, y: 0, z: 0}
-  spawnWindow: 1.5
+  volleyInterval: 0.5
+  visualArrowsPerVolley: 12
+  volleyJitter: 0.035
   spreadX: 2
   spreadZ: 0.8
   startBehindPlayer: -5
+  startDepth: 2
+  startWidthPadding: 0.2
   startY: 8
+  startYJitter: 0.6
   arcHeight: 2.5
   flyDuration: 0.8
+  flyDurationJitter: 0.1
   fadeOutDuration: 0.12
-  xJitter: 1.5
-  rotJitter: 5
+  xJitter: 0.6
+  rotJitter: 0
   pitchStartMult: 0.03
   pitchEndMult: 0.1
+  arrowTipDistance: 0.2
+  impactContactHeight: 0.7
+  enemyBodyContactOffset: 1
+  impactMovementTolerance: 0.6
+  impactPenetrationDistance: 0.45
+  impactPenetrationDuration: 0.12
+  impactRadius: 0.75
   playerTransform: {fileID: 0}
 --- !u!1 &6800087286669286054
 GameObject:

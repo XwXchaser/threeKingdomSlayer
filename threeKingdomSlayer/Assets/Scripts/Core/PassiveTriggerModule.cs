@@ -427,7 +427,7 @@ public class PassiveTriggerModule : MonoBehaviour
         float flyDuration = 0.22f;
         bool _completed = false;
 
-        var seq = DOTween.Sequence();
+        var seq = DOTween.Sequence().SetUpdate(UpdateType.Normal, false);
         seq.Join(arrow.transform.DOMove(targetPos, flyDuration).SetEase(Ease.Linear));
 
         // 飞行途中检测命中

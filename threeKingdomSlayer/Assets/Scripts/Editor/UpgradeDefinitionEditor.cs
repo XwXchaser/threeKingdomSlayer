@@ -38,10 +38,12 @@ public class UpgradeDefinitionEditor : Editor
     private SerializedProperty arrowVolleyLevelsProp;
     private SerializedProperty reflectShieldLevelsProp;
     private SerializedProperty chargeShockwaveLevelsProp;
+    private SerializedProperty chargeHitShockwaveLevelsProp;
 
     // ── 道具型 ──
     private SerializedProperty useCountProp;
     private SerializedProperty gestureIdProp;
+    private SerializedProperty cycloneItemConfigProp;
 
     // ── 其他 ──
     private SerializedProperty prerequisitesProp;
@@ -72,9 +74,11 @@ public class UpgradeDefinitionEditor : Editor
         arrowVolleyLevelsProp = serializedObject.FindProperty("arrowVolleyLevels");
         reflectShieldLevelsProp = serializedObject.FindProperty("reflectShieldLevels");
         chargeShockwaveLevelsProp = serializedObject.FindProperty("chargeShockwaveLevels");
+        chargeHitShockwaveLevelsProp = serializedObject.FindProperty("chargeHitShockwaveLevels");
 
         useCountProp = serializedObject.FindProperty("useCount");
         gestureIdProp = serializedObject.FindProperty("gestureId");
+        cycloneItemConfigProp = serializedObject.FindProperty("cycloneItemConfig");
         prerequisitesProp = serializedObject.FindProperty("prerequisites");
     }
 
@@ -173,6 +177,9 @@ public class UpgradeDefinitionEditor : Editor
                 break;
             case "charge_shockwave":
                 DrawChargeShockwaveSection();
+                break;
+            case "charge_hit_shockwave":
+                DrawChargeHitShockwaveSection();
                 break;
             default:
                 EditorGUILayout.HelpBox($"未知的被动 effectType: {effectType}", MessageType.Warning);
@@ -365,6 +372,23 @@ public class UpgradeDefinitionEditor : Editor
         }
     }
 
+    private void DrawChargeHitShockwaveSection()
+    {
+        if (chargeHitShockwaveLevelsProp == null) return;
+        EditorGUILayout.PropertyField(chargeHitShockwaveLevelsProp.FindPropertyRelative("Array.size"));
+        for (int i = 0; i < chargeHitShockwaveLevelsProp.arraySize; i++)
+        {
+            var elem = chargeHitShockwaveLevelsProp.GetArrayElementAtIndex(i);
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField($"Lv.{i + 1}", EditorStyles.miniBoldLabel);
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("shockwaveCount"), new GUIContent("冲击波数量"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("baseDamage"), new GUIContent("基础伤害"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("rangeRows"), new GUIContent("范围排数"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("damageBonusPerHit"), new GUIContent("每次受击增伤(小数)"));
+            EditorGUILayout.EndVertical();
+        }
+    }
+
     // ══════════════════════════════════════════
     // 道具型绘制
     // ══════════════════════════════════════════
@@ -373,10 +397,15 @@ public class UpgradeDefinitionEditor : Editor
     {
         EditorGUILayout.LabelField("效果", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(effectTypeProp);
-        EditorGUILayout.PropertyField(floatValueProp);
-        EditorGUILayout.PropertyField(intValueProp);
-        EditorGUILayout.PropertyField(secondaryIntValueProp);
-        EditorGUILayout.PropertyField(baseAttackConfigProp);
+        if (effectTypeProp.stringValue == "item_cyclone")
+            EditorGUILayout.PropertyField(cycloneItemConfigProp, true);
+        else
+        {
+            EditorGUILayout.PropertyField(floatValueProp);
+            EditorGUILayout.PropertyField(intValueProp);
+            EditorGUILayout.PropertyField(secondaryIntValueProp);
+            EditorGUILayout.PropertyField(baseAttackConfigProp);
+        }
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("道具参数", EditorStyles.boldLabel);

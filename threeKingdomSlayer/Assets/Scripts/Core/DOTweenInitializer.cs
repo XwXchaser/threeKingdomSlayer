@@ -10,9 +10,8 @@ public static class DOTweenInitializer
     private static void Initialize()
     {
         DOTween.SetTweensCapacity(500, 100);
-        // 全局设置：所有 DOTween 动画默认不受 Time.timeScale 影响
-        // 防止 UpgradeChoiceManager 设 timeScale=0 时特效/弹丸残留
-        // 暂停菜单通过 DOTween.PauseAll()/PlayAll() 单独控制
-        DOTween.defaultTimeScaleIndependent = true;
+        // 战斗 Tween 默认使用游戏时间，确保升级弹窗和暂停菜单冻结战斗逻辑。
+        // 需要在暂停期间运行的 UI 动画必须在调用处显式 SetUpdate(UpdateType.Normal, true)。
+        DOTween.defaultTimeScaleIndependent = false;
     }
 }

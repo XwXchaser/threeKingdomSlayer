@@ -63,18 +63,24 @@ public class TimedPassiveModule : MonoBehaviour
         }
         else
         {
-            _states[def.upgradeId] = new TimedState
+            var newState = new TimedState
             {
                 definition = def,
                 level = level,
                 timer = interval
             };
+            _states[def.upgradeId] = newState;
 
-            // 蓄力冲击波：首次获得立即给 1 层
+            // 队列型效果首次获得时授予一层；其他定时效果立即释放一次。
             if (def.effectType == "charge_shockwave")
             {
                 _shockwaveLayers[def.upgradeId] = 1;
                 Debug.Log($"[TimedPassiveModule] {def.displayName} 首次获得，立即授予 1 层");
+            }
+            else
+            {
+                SpawnEffect(newState);
+                Debug.Log($"[TimedPassiveModule] {def.displayName} 首次获得，立即触发 1 次");
             }
         }
 

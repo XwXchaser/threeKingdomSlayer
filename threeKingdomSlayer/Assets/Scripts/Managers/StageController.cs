@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -36,6 +37,12 @@ public class StageController : MonoBehaviour
     public System.Action<StageState> OnStageStateChanged;
     public System.Action OnStageVictory;
     public System.Action OnStageDefeat;
+
+    private void OnEnable()
+    {
+        if (Instance == null)
+            Instance = this;
+    }
 
     private void Awake()
     {
@@ -152,7 +159,7 @@ public class StageController : MonoBehaviour
     {
         if (stageConfig == null || enemyPool == null) return;
 
-        // 遍历所有波次，收集所有用到的敌人ID
+        var enemyIds = new HashSet<int>();
         foreach (var wave in stageConfig.waves)
         {
             foreach (var row in wave.rows)
@@ -160,12 +167,13 @@ public class StageController : MonoBehaviour
                 foreach (int enemyId in row.enemyIds)
                 {
                     if (enemyId > 0)
-                    {
-                        enemyPool.PrewarmPool(enemyId, enemyPool.defaultPoolSize);
-                    }
+                        enemyIds.Add(enemyId);
                 }
             }
         }
+
+        foreach (int enemyId in enemyIds)
+            enemyPool.PrewarmPool(enemyId, enemyPool.defaultPoolSize);
     }
 
     /// <summary>
@@ -234,6 +242,7 @@ public class StageController : MonoBehaviour
         Debug.Log("[StageController] 所有波次已清空，关卡胜利！");
         AudioManager.Instance?.StopBGM();
         SetState(StageState.Victory);
+        ClearEnemyProjectiles();
 
         // 发放通关奖励
         if (stageConfig != null)
@@ -266,7 +275,21 @@ public class StageController : MonoBehaviour
         Debug.Log("[StageController] 玩家阵亡，关卡失败");
         AudioManager.Instance?.StopBGM();
         SetState(StageState.Defeat);
+        ClearEnemyProjectiles();
         OnStageDefeat?.Invoke();
+    }
+
+    private void ClearEnemyProjectiles()
+    {
+        var projectiles = Resources.FindObjectsOfTypeAll<EnemyProjectile>();
+        for (int i = 0; i < projectiles.Length; i++)
+        {
+            if (projectiles[i].gameObject.scene.IsValid())
+            {
+                projectiles[i].gameObject.SetActive(false);
+                Destroy(projectiles[i].gameObject);
+            }
+        }
     }
 
     /// <summary>

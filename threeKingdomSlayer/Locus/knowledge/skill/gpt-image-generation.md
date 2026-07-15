@@ -13,7 +13,7 @@ skillSurface: command
 commandTrigger: /gpt-image
 argumentHint: <prompt> [--image path ...] [--size 1024x1024|1024x1536|1536x1024] [--quality low|medium|high] [--out path]
 createdAt: 1783568914335
-updatedAt: 1783570948392
+updatedAt: 1783873168941
 ---
 
 # gpt-image-generation
@@ -335,6 +335,29 @@ C:/Users/steam/Pictures/gptGen/result.png
 ```
 
 避免 `\` 被转义。
+
+### curl -o 下载的文件是 JSON 而不是图片
+
+原因：API 可能返回 `b64_json` 而非 `url`，`curl -o` 直接把 JSON 写入了目标文件。
+
+诊断：用 `xxd 文件路径 | head -1` 检查文件头，若以 `{` 开头则是 JSON。
+
+处理：用 Python 解码 base64：
+
+```python
+import json, base64, pathlib
+raw = pathlib.Path('目标路径').read_text()
+data = json.loads(raw)
+b64 = data['data'][0]['b64_json']
+png = base64.b64decode(b64)
+pathlib.Path('目标路径').write_bytes(png)
+```
+
+### Windows 代理导致 Python requests 失败
+
+原因：Windows 系统代理配置可能干扰 `requests` 库连接 `api.muskapis.com`。
+
+处理：Python 方式 — 设置 `os.environ['NO_PROXY'] = '*'` 或使用 `session.trust_env = False`。更简单的方式：直接用 `curl --noproxy '*'` 替代 Python requests。
 
 ### 生成图不符合预期
 

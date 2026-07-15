@@ -1,118 +1,127 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 道具库存 — 单例
-///
-/// 管理道具型升级奖励（gestureId != null）的获得、消耗、次数追踪。
-/// gestureId 作为唯一键：一个手势只对应一种道具，多次获得同一道具叠加使用次数。
-/// 
-/// useCount=-1 表示无限次，TryConsume 永远返回 true 但不扣减。
-/// </summary>
+/// <summary>道具库存：按槽位保存道具份数，可在开局前选择是否允许同类堆叠。</summary>
 public class ItemInventory : MonoBehaviour
 {
+    public sealed class ItemEntry
+    {
+        public int id;
+        public UpgradeDefinition definition;
+        public int remainingUses;
+        public bool isPotion;
+        public string GestureId => isPotion ? HealthPotionGestureId : definition != null ? definition.gestureId : null;
+    }
+
+    public const string HealthPotionGestureId = "health_potion";
     public static ItemInventory Instance { get; private set; }
 
-    private Dictionary<string, ItemStock> _items = new Dictionary<string, ItemStock>();
+    [Header("局外能力测试")]
+    [Tooltip("仅在开始对局前配置。开启后，同类道具合并到同一槽位。")]
+    [SerializeField] private bool allowSameTypeStacking;
 
-    /// <summary>道具变更事件：(gestureId, remainingUses, wasRemoved)</summary>
-    public System.Action<string, int, bool> OnItemChanged;
+    private readonly List<ItemEntry> _entries = new List<ItemEntry>();
+    private int _nextEntryId = 1;
+
+    public System.Action OnInventoryChanged;
+    public IReadOnlyList<ItemEntry> Entries => _entries;
+    public bool AllowSameTypeStacking => allowSameTypeStacking;
+    public int Capacity => PlayerState.Instance != null && PlayerState.Instance.heroConfig != null
+        ? Mathf.Max(0, PlayerState.Instance.heroConfig.itemSlotCount)
+        : 2;
+    public bool HasFreeSlot => _entries.Count < Capacity;
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
     }
 
-    private void OnDestroy()
+    private void OnDestroy() { if (Instance == this) Instance = null; }
+
+    public void SetSameTypeStackingForNextRun(bool enabled)
     {
-        if (Instance == this)
-            Instance = null;
+        if (_entries.Count > 0) { Debug.LogWarning("[ItemInventory] 对局内不支持切换同类堆叠规则"); return; }
+        allowSameTypeStacking = enabled;
     }
 
-    /// <summary>添加/叠加道具（由 UpgradeEffectManager.ApplyUpgrade 调用）</summary>
-    public void AddItem(UpgradeDefinition def)
+    public bool CanAdd(UpgradeDefinition def)
     {
-        if (_items.TryGetValue(def.gestureId, out var stock))
-        {
-            // 无限次道具保持无限
-            if (stock.remainingUses >= 0 && def.useCount >= 0)
-                stock.remainingUses += def.useCount;
-            else
-                stock.remainingUses = -1; // 任一方无限 → 无限
-
-            _items[def.gestureId] = stock;
-        }
-        else
-        {
-            _items[def.gestureId] = new ItemStock { definition = def, remainingUses = def.useCount };
-        }
-
-        OnItemChanged?.Invoke(def.gestureId, _items[def.gestureId].remainingUses, false);
-        Debug.Log($"[ItemInventory] 获得 {def.displayName} gestureId={def.gestureId} uses={_items[def.gestureId].remainingUses}");
+        if (def == null || string.IsNullOrEmpty(def.gestureId)) return false;
+        return HasFreeSlot || (allowSameTypeStacking && FindFirst(def.gestureId) != null);
     }
 
-    /// <summary>尝试消耗一次道具。无限次(-1)永远返回true但不扣减。</summary>
-    public bool TryConsume(string gestureId)
+    public bool AddItem(UpgradeDefinition def)
     {
-        if (!_items.TryGetValue(gestureId, out var stock))
-            return false;
-
-        if (stock.remainingUses == -1)
-        {
-            OnItemChanged?.Invoke(gestureId, -1, false);
-            return true;
-        }
-
-        if (stock.remainingUses <= 0)
-            return false;
-
-        stock.remainingUses--;
-        bool removed = stock.remainingUses <= 0;
-
-        if (removed)
-            _items.Remove(gestureId);
-        else
-            _items[gestureId] = stock;
-
-        OnItemChanged?.Invoke(gestureId, removed ? 0 : stock.remainingUses, removed);
-        Debug.Log($"[ItemInventory] 消耗 {gestureId} remaining={stock.remainingUses} removed={removed}");
+        if (!CanAdd(def)) { Debug.LogWarning($"[ItemInventory] 道具栏已满，无法获得 {def?.displayName}"); return false; }
+        var entry = allowSameTypeStacking ? FindFirst(def.gestureId) : null;
+        if (entry != null) entry.remainingUses = MergeUses(entry.remainingUses, def.useCount);
+        else { entry = new ItemEntry { id = _nextEntryId++, definition = def, remainingUses = def.useCount }; _entries.Add(entry); }
+        OnInventoryChanged?.Invoke();
         return true;
     }
 
-    /// <summary>检查是否拥有指定手势的道具</summary>
-    public bool HasItem(string gestureId)
+    public bool CanAddPotion() => HasFreeSlot || FindFirst(HealthPotionGestureId) != null;
+
+    public bool AddPotion(UpgradeDefinition definition, int maxStack)
     {
-        return _items.TryGetValue(gestureId, out var s) && s.remainingUses != 0;
+        var entry = FindFirst(HealthPotionGestureId);
+        if (entry == null)
+        {
+            if (!HasFreeSlot) return false;
+            entry = new ItemEntry { id = _nextEntryId++, definition = definition, isPotion = true };
+            _entries.Add(entry);
+        }
+        if (entry.remainingUses >= maxStack) return false;
+        entry.remainingUses++;
+        OnInventoryChanged?.Invoke();
+        return true;
     }
 
-    /// <summary>获取道具剩余次数（-1=无限，0=不存在）</summary>
+    public bool TryConsume(string gestureId) { var entry = FindFirst(gestureId); return entry != null && TryConsumeEntry(entry.id); }
+
+    public bool TryConsumeEntry(int entryId)
+    {
+        var entry = FindById(entryId);
+        if (entry == null || entry.remainingUses == 0) return false;
+        if (entry.remainingUses < 0) return true;
+        entry.remainingUses--;
+        if (entry.remainingUses <= 0) _entries.Remove(entry);
+        OnInventoryChanged?.Invoke();
+        return true;
+    }
+
+    public bool HasItem(string gestureId) => FindFirst(gestureId) != null;
+
     public int GetRemainingUses(string gestureId)
     {
-        return _items.TryGetValue(gestureId, out var s) ? s.remainingUses : 0;
+        int total = 0;
+        for (int i = 0; i < _entries.Count; i++)
+        {
+            var entry = _entries[i];
+            if (entry.GestureId != gestureId) continue;
+            if (entry.remainingUses < 0) return -1;
+            total += entry.remainingUses;
+        }
+        return total;
     }
 
-    /// <summary>获取道具定义（供 Whirlwind/Lightning 执行器读取参数）</summary>
-    public UpgradeDefinition GetDefinition(string gestureId)
+    public UpgradeDefinition GetDefinition(string gestureId) => FindFirst(gestureId)?.definition;
+    public ItemEntry GetEntry(int entryId) => FindById(entryId);
+
+    public void ClearAll() { _entries.Clear(); _nextEntryId = 1; OnInventoryChanged?.Invoke(); }
+
+    private ItemEntry FindFirst(string gestureId)
     {
-        return _items.TryGetValue(gestureId, out var s) ? s.definition : null;
+        for (int i = 0; i < _entries.Count; i++) if (_entries[i].GestureId == gestureId) return _entries[i];
+        return null;
     }
 
-    /// <summary>清空所有道具（新对局重置）</summary>
-    public void ClearAll()
+    private ItemEntry FindById(int entryId)
     {
-        foreach (var kv in _items)
-            OnItemChanged?.Invoke(kv.Key, 0, true);
-        _items.Clear();
+        for (int i = 0; i < _entries.Count; i++) if (_entries[i].id == entryId) return _entries[i];
+        return null;
     }
 
-    private struct ItemStock
-    {
-        public UpgradeDefinition definition;
-        public int remainingUses;
-    }
+    private static int MergeUses(int current, int added) => current < 0 || added < 0 ? -1 : current + added;
 }

@@ -59,8 +59,9 @@ public class CycloneEffect : MonoBehaviour
 
             DebugLog.Info($"[CycloneEffect] target={_target.DebugTag} row={_target.rowIndex} z={pos.z:F2}");
 
-            // 击飞伤害
-            _target.TakeDamage(_damage);
+            // 击飞伤害（纯控制效果传 0 时不触发受击反馈）
+            if (_damage > 0)
+                _target.TakeDamage(_damage);
 
             // 击飞（自定义时长）
             _target.Launch(knockupDuration);
@@ -169,7 +170,7 @@ public class CycloneEffect : MonoBehaviour
         _fadingOut = true;
 
         if (_sr != null)
-            _sr.DOFade(0f, fadeOutDuration).OnComplete(() => Destroy(gameObject));
+            _sr.DOFade(0f, fadeOutDuration).SetUpdate(UpdateType.Normal, false).OnComplete(() => Destroy(gameObject));
         else
             Destroy(gameObject);
     }

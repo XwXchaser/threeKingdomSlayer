@@ -22,6 +22,7 @@ public class HeroConfig : ScriptableObject
     public float maxHealth = 500f;
     public int reviveCount = 3;
     public float reviveHealthPercent = 0.5f;
+    [Min(0)] public int itemSlotCount = 2;
 
     [Header("技能配置")]
     [Tooltip("装配的技能列表。每个 AttackType 对应一个技能配置，策划可拖拽不同的 .asset 来定制武将。")]

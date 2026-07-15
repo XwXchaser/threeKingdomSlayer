@@ -23,7 +23,47 @@ MonoBehaviour:
     - enemyIds: 6500000000000000650000000000000065000000
     - enemyIds: 0000000065000000650000006500000000000000
     - enemyIds: 6500000000000000650000006500000000000000
+    - enemyIds: 6a0000006a0000006a0000006a0000006a000000
+    - enemyIds: 0000000000000000650000000000000000000000
+    - enemyIds: 0000000000000000650000000000000000000000
+    - enemyIds: 0000000000000000650000000000000000000000
+    - enemyIds: 0000000000000000650000000000000000000000
+    healthMultiplier: 1
+    attackSpeedMultiplier: 1
+    damageMultiplier: 1
+    waveTintColor: {r: 1, g: 1, b: 1, a: 1}
+    enableDynamicRush: 0
+    rushMoveDelay: 0.2
+    rushMoveDelayMin: 0.02
+  - waveId: 1
+    isBossWave: 1
+    rows:
     - enemyIds: 6500000000000000650000000000000065000000
+    - enemyIds: 0000000065000000650000006500000000000000
+    - enemyIds: 6500000000000000650000000000000065000000
+    - enemyIds: 0000000065000000650000006500000000000000
+    - enemyIds: 6500000000000000650000006500000000000000
+    - enemyIds: 6900000000000000690000000000000065000000
+    - enemyIds: 0000000000000000650000000000000000000000
+    - enemyIds: 0000000000000000650000000000000000000000
+    - enemyIds: 0000000000000000650000000000000000000000
+    - enemyIds: 0000000000000000650000000000000000000000
+    healthMultiplier: 1
+    attackSpeedMultiplier: 1
+    damageMultiplier: 1
+    waveTintColor: {r: 0.9496855, g: 0.48678842, b: 0.48678842, a: 1}
+    enableDynamicRush: 0
+    rushMoveDelay: 0.2
+    rushMoveDelayMin: 0.02
+  - waveId: 2
+    isBossWave: 1
+    rows:
+    - enemyIds: 6500000000000000650000000000000065000000
+    - enemyIds: 0000000065000000650000006500000000000000
+    - enemyIds: 6500000000000000650000000000000065000000
+    - enemyIds: 0000000065000000650000006500000000000000
+    - enemyIds: 6500000000000000650000006500000000000000
+    - enemyIds: 6900000000000000690000000000000065000000
     - enemyIds: 0000000000000000650000000000000000000000
     - enemyIds: 0000000000000000650000000000000000000000
     - enemyIds: 0000000000000000650000000000000000000000
@@ -31,7 +71,7 @@ MonoBehaviour:
     healthMultiplier: 1
     attackSpeedMultiplier: 1
     damageMultiplier: 1
-    waveTintColor: {r: 1, g: 1, b: 1, a: 1}
+    waveTintColor: {r: 1, g: 0.03459108, b: 0.03459108, a: 1}
     enableDynamicRush: 0
     rushMoveDelay: 0.2
     rushMoveDelayMin: 0.02
@@ -40,20 +80,10 @@ MonoBehaviour:
     rewards:
     - rewardType: 0
       rewardAmount: 30
-  - killThreshold: 10
-    rewards:
-    - rewardType: 1
-      rewardAmount: 20
   - killThreshold: 20
     rewards:
     - rewardType: 0
       rewardAmount: 50
-    - rewardType: 1
-      rewardAmount: 25
-  - killThreshold: 35
-    rewards:
-    - rewardType: 1
-      rewardAmount: 40
   - killThreshold: 50
     rewards:
     - rewardType: 0

@@ -67,7 +67,8 @@ public class PlayerHitFeedback : MonoBehaviour
         hittedImage.color = Color.white;
         _hittedTween = hittedImage.DOFade(0f, hittedFadeDuration)
             .SetDelay(hittedDuration)
-            .SetEase(Ease.OutCubic);
+            .SetEase(Ease.OutCubic)
+            .SetUpdate(UpdateType.Normal, true);
     }
 
     private void ShakeCamera()
@@ -76,6 +77,6 @@ public class PlayerHitFeedback : MonoBehaviour
         if (cam == null) return;
 
         cam.transform.DOKill(true);
-        cam.transform.DOShakePosition(shakeDuration, shakeIntensity, shakeVibrato);
+        cam.transform.DOShakePosition(shakeDuration, shakeIntensity, shakeVibrato).SetUpdate(UpdateType.Normal, false);
     }
 }

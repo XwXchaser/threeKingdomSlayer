@@ -56,7 +56,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: ac24e8dd9bebcca4d892aee45760ec57, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -98,6 +98,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1534049512222060048}
   - component: {fileID: 8992155908837462141}
+  - component: {fileID: 738743102544959855}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: arrow
@@ -138,6 +139,19 @@ MonoBehaviour:
   damage: 0
   arcHeight: 3
   flyDuration: 1
+  isQTEProjectile: 0
+--- !u!114 &738743102544959855
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1380601310174306327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92c12b62efd17a341a0d4a2f73243796, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8841846626063541476
 GameObject:
   m_ObjectHideFlags: 0
@@ -194,7 +208,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: ac24e8dd9bebcca4d892aee45760ec57, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

@@ -15,10 +15,11 @@ MonoBehaviour:
   category: 3
   upgradeId: timed_arrow_volley
   displayName: "\u7BAD\u96E8"
-  descriptionTemplate: "\u6BCF{0}\u79D2\u5BF9\u6B63\u524D\u65B9{1}\u6392\u7684\u654C\u4EBA\u5C04\u51FA{2}\u6B21\u9020\u6210{3}\u4F24\u5BB3\u7684\u7BAD\u77E2"
+  descriptionTemplate: "\u6BCF{0}\u79D2\u5BF9\u6B63\u524D\u65B9{1}\u6392\u654C\u4EBA\u5C04\u51FA{2}\u6CE2\u7BAD\u96E8\uFF0C\u6BCF\u652F\u7BAD\u9020\u6210{3}\u4F24\u5BB3"
   rarity: 0
   maxLevel: 5
   effectType: passive_timed_arrow
+  numericLevels: []
   floatValue: 0
   intValue: 0
   secondaryIntValue: 0
@@ -55,6 +56,10 @@ MonoBehaviour:
     damage: 16
   returnWaveLevels: []
   chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

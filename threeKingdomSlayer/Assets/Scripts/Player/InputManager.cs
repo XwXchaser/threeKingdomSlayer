@@ -388,7 +388,7 @@ public class InputManager : MonoBehaviour
     /// </summary>
     private void ProcessTapGesture(Vector2 position)
     {
-        int column = GetColumnFromScreenPosition(position);
+        int column = GetStabColumnFromScreenPosition(position);
         if (column >= 0)
         {
             bool executed = attackSystem?.TryExecuteAttack(AttackType.Stab, column) ?? false;
@@ -491,6 +491,12 @@ public class InputManager : MonoBehaviour
     }
 
     #region 屏幕坐标映射
+
+    private int GetStabColumnFromScreenPosition(Vector2 screenPos)
+    {
+        int targetedColumn = GetColumnFromScreenPosition(screenPos);
+        return targetedColumn >= 0 ? targetedColumn : FallbackGetColumn(screenPos);
+    }
 
     /// <summary>
     /// 根据屏幕X坐标映射到列索引（0~4）

@@ -235,6 +235,8 @@ public class PlayerState : MonoBehaviour
         }
 
         currentHealth -= finalDamage;
+        if (_isCharging && finalDamage > 0f && UpgradeEffectManager.Instance != null)
+            UpgradeEffectManager.Instance.RegisterChargeHitShockwaveHit();
         OnHealthChanged?.Invoke(currentHealth, heroConfig != null ? heroConfig.maxHealth : 500f);
         // 受击震动已暂时关闭（安卓端不合适），后续在其他功能情景中重新启用
         // Handheld.Vibrate();
