@@ -1240,8 +1240,12 @@ public class Enemy : MonoBehaviour
                 {
                     rowIndex++;
                     state = EnemyState.Idle;
+                    pendingRushMove = false;
+                    targetRow = -1;
                     UpdateWorldPosition();
-                    DebugLog.Info($"[Enemy] Rush 目标行被占用，放弃补齐等待死亡链: {DebugTag}, col={columnIndex}, row={rowIndex}");
+                    DebugLog.Info($"[Enemy] Rush 目标行被占用，放弃本次补齐: {DebugTag}, col={columnIndex}, row={rowIndex}");
+                    // 本次补齐未前移，但必须释放波次/列链等待者；后续列变化会重新评估补齐。
+                    OnRushMoveComplete?.Invoke(this);
                     return;
                 }
             }
@@ -1453,13 +1457,11 @@ public class Enemy : MonoBehaviour
                 ? projectileLandingXCenter + Random.Range(-projectileLandingXSpread, projectileLandingXSpread)
                 : startPos.x + projectileXOffset;
 
-        float pitchAngle = arrowConfig != null ? arrowConfig.GetPitchAngleForRow(rowIndex) : 12f;
-        float descentRatio = arrowConfig != null ? arrowConfig.descentPitchRatio : 0.75f;
         float durationMultiplier = arrowConfig != null ? arrowConfig.GetFlightDurationMultiplierForRow(rowIndex) : 1f;
         float arcHeightMultiplier = arrowConfig != null ? arrowConfig.GetArcHeightMultiplierForRow(rowIndex) : 1f;
         float maxDescentPitch = arrowConfig != null ? arrowConfig.maxDescentPitch : 89f;
         proj.Launch(startPos, endZ, endX, attackDamage, projectileArcHeight * arcHeightMultiplier,
-            projectileFlyDuration * durationMultiplier, this, pitchAngle, descentRatio, maxDescentPitch: maxDescentPitch);
+            projectileFlyDuration * durationMultiplier, this, maxDescentPitch: maxDescentPitch);
 
         DebugLog.Info($"[Enemy] {DebugTag} 发射飞行物: start=({startPos.x:F1},{startPos.y:F1},{startPos.z:F1}) endZ={endZ:F1} endX={endX:F1}");
     }

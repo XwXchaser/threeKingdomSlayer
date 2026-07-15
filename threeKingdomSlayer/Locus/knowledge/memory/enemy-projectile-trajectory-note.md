@@ -9,19 +9,17 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1784088905696
-updatedAt: 1784088905698
+updatedAt: 1784126444815
 ---
 
 # enemy-projectile-trajectory-note
 
 ## Summary
-Enemy arrow trajectory/facing and cleanup lifecycle rules.
+Boss TripleStab QTE 箭矢的统一追踪与销毁规则。
 
 <!-- locus:body:start -->
-### Enemy projectile single-trajectory rule
-- `EnemyProjectile` now drives flight with one scalar DOTween progress value and one trajectory evaluator: XZ interpolate from source to the existing randomized landing X/Z; Y uses the arc curve.
-- Root rotation derives each update from the next trajectory position minus current position, so trajectory and facing share one source and the arrow cannot switch to a conflicting absolute rotation on descent.
-- Existing `Enemy.SpawnProjectile()` source position and `projectileLandingXCenter ± projectileLandingXSpread` are retained, preserving per-archer lateral spread.
-- Cleanup ownership is centralized in `DisposeProjectile()`: it stops flight/deflect tweens and timeout, fades all child SpriteRenderers once, then destroys the object from either fade completion or kill. Arrival and safety timeout use this path; Deflect kills flight then uses its own fall/fade before the same disposal path.
-- Files: `Assets/Scripts/Enemy/EnemyProjectile.cs`, `Assets/Scripts/Enemy/Enemy.cs`.
+## Boss QTE 箭矢生命周期
+- `QTEController` 以 `_arrowWaves` 统一拥有所有 TripleStab 箭矢；成功 Deflect 后不得立即从该集合移除，因为箭仍在坠落淡出，QTE 完成时需能统一强制销毁。
+- stagger 发射的 `DOVirtual.DelayedCall` 必须保存 Tween 句柄；`ClearAllArrowWaves()` 先 Kill 并清空这些延迟，再销毁所有追踪箭矢。
+- 所有退出边界都使用同一清理入口：新 QTE 开始、正常完成、Abort、切换 QTE 数据、控制器 OnDestroy。
 <!-- locus:body:end -->

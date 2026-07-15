@@ -7,16 +7,6 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "ArrowGlobalConfig", menuName = "Config/Arrow Global Config")]
 public class ArrowGlobalConfig : ScriptableObject
 {
-    [Header("俯仰角（按排）")]
-    [Tooltip("默认俯仰角（度），perRow 未配置时回退到此值")]
-    public float defaultPitchAngle = 12f;
-    [Tooltip("按排俯仰角：索引0=最前排(row0)，索引5=最后排(row5)，-1表示使用defaultPitchAngle")]
-    public float[] perRowPitchAngles = new float[6] { -1f, -1f, -1f, -1f, -1f, 20f };
-
-    [Header("俯仰角比例")]
-    [Tooltip("下降段俯仰角 = 上升段 × 此比例")]
-    public float descentPitchRatio = 0.75f;
-
     [Header("按排飞行倍率")]
     [Tooltip("飞行时长倍率：索引0=最前排；未配置或值≤0时使用1。")]
     public float[] perRowFlightDurationMultipliers = { 1f, 1f, 1f, 1f, 1f };
@@ -52,18 +42,5 @@ public class ArrowGlobalConfig : ScriptableObject
         if (multipliers == null || multipliers.Length == 0) return 1f;
         float value = multipliers[Mathf.Clamp(row, 0, multipliers.Length - 1)];
         return value > 0f ? value : 1f;
-    }
-
-    /// <summary>
-    /// 获取指定排的俯仰角，未配置则回退到 defaultPitchAngle
-    /// </summary>
-    public float GetPitchAngleForRow(int row)
-    {
-        if (perRowPitchAngles != null && row >= 0 && row < perRowPitchAngles.Length)
-        {
-            float v = perRowPitchAngles[row];
-            if (v >= 0f) return v;
-        }
-        return defaultPitchAngle;
     }
 }

@@ -402,7 +402,10 @@ public class ColumnManager : MonoBehaviour
 
                 e.targetRow = target;
                 e.pendingRushMove = true;
-                e.ResetMovementState();
+                // 攻击动作不可打断：攻击完成回调会调用 TryStartRushMove。
+                // 冷却或其他可移动状态仍按原逻辑重置并立即补齐。
+                if (!e.isAttackAnimating)
+                    e.ResetMovementState();
                 e.OnRushMoveComplete += OnWaveEnemyRushComplete;
                 _pendingWaveEnemies.Add(e);
             }

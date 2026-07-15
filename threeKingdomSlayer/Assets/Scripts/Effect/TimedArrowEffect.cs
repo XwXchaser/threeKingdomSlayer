@@ -50,6 +50,9 @@ public class TimedArrowEffect : MonoBehaviour
     [Tooltip("飞行时间随机浮动比例")]
     [Range(0f, 0.3f)] public float flyDurationJitter = 0.1f;
 
+    [Tooltip("箭雨下落阶段允许的最大俯角（度）；仅限制视觉旋转，不改变轨迹。")]
+    [Range(0f, 89f)] public float maxDescentPitch = 35f;
+
     [Header("淡出")]
     [Tooltip("到达后淡出时间")]
     public float fadeOutDuration = 0.12f;
@@ -98,6 +101,7 @@ public class TimedArrowEffect : MonoBehaviour
     private float _impactContactHeight;
     private float _enemyBodyContactOffset;
     private float _impactMovementTolerance;
+    private float _maxDescentPitch;
 
     public void Play(int rowCount, int arrowCount, int damage)
     {
@@ -114,6 +118,7 @@ public class TimedArrowEffect : MonoBehaviour
         _impactContactHeight = Mathf.Max(0f, impactContactHeight);
         _enemyBodyContactOffset = Mathf.Max(0f, enemyBodyContactOffset);
         _impactMovementTolerance = Mathf.Max(0f, impactMovementTolerance);
+        _maxDescentPitch = maxDescentPitch;
 
         var cm = AttackSystem.Instance?.columnManager;
         if (cm == null)
@@ -226,13 +231,18 @@ public class TimedArrowEffect : MonoBehaviour
             arrowGO.transform.position = position;
 
             Vector3 visualTangent = new Vector3(
-                0f,
+                delta.x,
                 delta.y + 4f * _arcHeight * (1f - 2f * progress),
                 delta.z);
             if (visualTangent.sqrMagnitude <= 0.0001f) return;
 
             Vector3 flightDirection = visualTangent.normalized;
-            arrowGO.transform.rotation = Quaternion.LookRotation(flightDirection, Vector3.up) * axisCorrection * rollOffset;
+            float horizontalDistance = new Vector2(flightDirection.x, flightDirection.z).magnitude;
+            float pitch = Mathf.Atan2(-flightDirection.y, horizontalDistance) * Mathf.Rad2Deg;
+            pitch = Mathf.Clamp(pitch, -_maxDescentPitch, _maxDescentPitch);
+            Vector3 horizontalDirection = new Vector3(flightDirection.x, 0f, flightDirection.z).normalized;
+            arrowGO.transform.rotation = Quaternion.LookRotation(horizontalDirection, Vector3.up)
+                * Quaternion.Euler(pitch, 0f, 0f) * axisCorrection * rollOffset;
 
             if (dealsDamage && !damageApplied && flightDirection.y < 0f)
             {
