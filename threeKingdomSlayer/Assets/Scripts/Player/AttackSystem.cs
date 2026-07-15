@@ -205,18 +205,32 @@ public class AttackSystem : MonoBehaviour
 
         float finalDmg = GetFinalDamage(cfg) * GetStabPierceDamagePenalty();
         int effectiveRows = GetEffectiveRangeRows(cfg);
+        int visualRangeRows = effectiveRows;
+        var targetColumn = columnManager.GetColumn(columnIndex);
+        if (targetColumn != null)
+        {
+            for (int i = 0; i < targetColumn.enemies.Count; i++)
+            {
+                var enemy = targetColumn.enemies[i];
+                if (enemy != null && enemy.isBoss && enemy.bossState == BossState.InCombat)
+                {
+                    visualRangeRows = Mathf.Max(visualRangeRows, enemy.rowIndex + 1);
+                    break;
+                }
+            }
+        }
         Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
         float spacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
         Vector3 startPosition = new Vector3(playerPos.x, playerPos.y + cfg.stabSpawnYOffset, -5.5f);
         float yaw = GetStabRayYaw(columnIndex, spacing);
         Vector3 rayDirection = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
         float baseLength = spacing * 2f;
-        float rayLength = baseLength + (effectiveRows - 1) * spacing;
+        float rayLength = baseLength + (visualRangeRows - 1) * spacing;
         Vector3 targetPosition = startPosition + rayDirection * rayLength;
         var hitTargets = new List<Enemy>();
 
         LastStabTargetEnemy = null;
-        StabSweepEffect.Create(cfg.attackWavePrefab, startPosition, targetPosition, columnIndex, effectiveRows,
+        StabSweepEffect.Create(cfg.attackWavePrefab, startPosition, targetPosition, columnIndex, effectiveRows, visualRangeRows,
             finalDmg, cfg.damageType, columnManager,
             enemy =>
             {
@@ -233,7 +247,7 @@ public class AttackSystem : MonoBehaviour
             GetAttackDuration(cfg));
         AudioManager.Instance?.PostEvent("Player_Attack");
 
-        Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 射程:{effectiveRows}");
+        Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 射程:{effectiveRows} 视觉射程:{visualRangeRows}");
         return true;
     }
 

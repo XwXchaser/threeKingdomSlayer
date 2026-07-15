@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1783434126515
-updatedAt: 1783495270046
+updatedAt: 1784124635818
 ---
 
 # percolumn-fillup-rules
@@ -110,3 +110,9 @@ Boss 有独立的补齐规则（`BossPause`/`BossResume`/`IsRowClearForBoss`）�
 - 根因：PerRow 分支只调用 `RowBasedFillUp()`（数据压缩），未调用 `StartWaveMarch()`（启动移动），且缺少 `_pendingWaveEnemies` 清理（与坑点8同模式）
 - 修复：将 `_pendingWaveEnemies` 清理和 `RemoveEnemy` 提取到两个分支共用，PerRow 分支在 `RowBasedFillUp()` 后调用 `StartWaveMarch()`
 - 教训：**修改 PerColumn 分支时，必须同步检查 PerRow 分支是否需要相同修复**
+
+### 坑点10：波次补齐中断攻击动作（2025-01）
+- 症状：105/106 等远程敌人在蓄力或射箭时，前方整排空出会被立即打断并补位。
+- 根因：`ColumnManager.BeginWaveStep()` 无条件调用 `ResetMovementState()`，其会 Kill `_attackTween`。
+- 修复：对 `isAttackAnimating` 敌人仅标记 `targetRow` 和 `pendingRushMove`；攻击的正常完成回调再调用 `TryStartRushMove()`。攻击冷却仍允许取消并补齐；眩晕、击飞、死亡等打断沿既有状态路径处理。
+- 教训：波次补齐只能延后攻击动作结束后的移动，不能取消已经开始的攻击表现或命中。

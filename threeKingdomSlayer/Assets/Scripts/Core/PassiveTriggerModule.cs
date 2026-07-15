@@ -393,17 +393,12 @@ public class PassiveTriggerModule : MonoBehaviour
 
     private IEnumerator FireArrow(Enemy target, Vector3 playerPos, int damage, float delay)
     {
-        // 提前捕获目标位置，防止 delay 期间目标死亡导致位置丢失
+        // 提前捕获目标网格位置
         Vector3 targetPos;
         if (target != null && target.state != EnemyState.Dead)
-        {
             targetPos = target.transform.position;
-        }
         else
-        {
-            // 目标已无效，射向玩家前方默认距离（依然需要射出箭矢）
             targetPos = playerPos + Vector3.forward * 5f;
-        }
 
         if (delay > 0f)
             yield return new WaitForSeconds(delay);
@@ -424,14 +419,19 @@ public class PassiveTriggerModule : MonoBehaviour
         );
         arrow.transform.position = startPos;
 
+        // 单射线朝向：箭矢沿 startPos → targetPos 直线飞行
+        Vector3 direction = (targetPos - startPos).normalized;
+        Quaternion axisCorrection = Quaternion.Euler(-90f, 0f, 0f);
+        arrow.transform.rotation = Quaternion.LookRotation(direction, Vector3.up) * axisCorrection;
+
         float flyDuration = 0.22f;
-        bool _completed = false;
+        bool completed = false;
+        bool hasHit = false;
 
         var seq = DOTween.Sequence().SetUpdate(UpdateType.Normal, false);
-        seq.Join(arrow.transform.DOMove(targetPos, flyDuration).SetEase(Ease.Linear));
+        seq.Append(arrow.transform.DOMove(targetPos, flyDuration).SetEase(Ease.Linear));
 
         // 飞行途中检测命中
-        bool hasHit = false;
         seq.Join(DOTween.To(
             () => 0f,
             v =>
@@ -454,14 +454,14 @@ public class PassiveTriggerModule : MonoBehaviour
 
         seq.OnComplete(() =>
         {
-            _completed = true;
+            completed = true;
             seq = null;
             if (arrow != null) Destroy(arrow.gameObject);
         });
 
         seq.OnKill(() =>
         {
-            if (!_completed)
+            if (!completed)
             {
                 seq = null;
                 if (arrow != null) Destroy(arrow.gameObject);

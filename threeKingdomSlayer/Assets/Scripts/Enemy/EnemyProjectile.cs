@@ -39,8 +39,8 @@ public class EnemyProjectile : MonoBehaviour
     /// <param name="dmg">伤害值</param>
     /// <param name="arcH">抛物线最高点高度</param>
     /// <param name="duration">飞行时长</param>
-    /// <param name="pitchAngle">箭矢上升段最大俯仰角（度），下降段自动取反</param>
-    public void Launch(Vector3 startPos, float endZ, float endX, float dmg, float arcH, float duration, Enemy source = null, float pitchAngle = 12f, float descentPitchRatio = 0.75f, float endY = float.MinValue, float maxDescentPitch = 89f)
+    /// <param name="maxDescentPitch">下落段俯角上限（度）</param>
+    public void Launch(Vector3 startPos, float endZ, float endX, float dmg, float arcH, float duration, Enemy source = null, float endY = float.MinValue, float maxDescentPitch = 89f)
     {
         _startPos = startPos;
         float targetY = endY > float.MinValue + 1f ? endY : startPos.y;

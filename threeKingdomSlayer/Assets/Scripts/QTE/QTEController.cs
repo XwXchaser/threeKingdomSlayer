@@ -85,7 +85,8 @@ public class QTEController : MonoBehaviour
     private GameObject _activeProjectile;
 
     // 箭矢波追踪（多段防御型 QTE）：slotIndex → 该波所有箭矢
-    private Dictionary<int, List<EnemyProjectile>> _arrowWaves = new Dictionary<int, List<EnemyProjectile>>();
+    private readonly Dictionary<int, List<EnemyProjectile>> _arrowWaves = new Dictionary<int, List<EnemyProjectile>>();
+    private readonly List<Tween> _arrowLaunchDelays = new List<Tween>();
     private bool _arrowWavesSpawned;
 
     // QTE 动画
@@ -121,6 +122,7 @@ public class QTEController : MonoBehaviour
     private void OnDestroy()
     {
         KillProjectileSequence();
+        ClearAllArrowWaves();
     }
 
     private void Update()
@@ -158,6 +160,7 @@ public class QTEController : MonoBehaviour
     /// </summary>
     public void SwitchQteData(BossQTEData newData)
     {
+        ClearAllArrowWaves();
         qteData = newData;
         _currentAttackIndex = 0;
         _state = QTEState.Idle;
@@ -217,8 +220,8 @@ public class QTEController : MonoBehaviour
             });
         }
 
-        // 初始化箭矢波追踪
-        _arrowWaves.Clear();
+        // 清理上一轮残余箭矢波
+        ClearAllArrowWaves();
         _arrowWavesSpawned = false;
         _fixedEndTimer = -1f;
         _judgingSpeedApplied = false;  // Branched 慢放标记重置
@@ -330,8 +333,7 @@ public class QTEController : MonoBehaviour
         float flightVar = arrowConfig != null ? arrowConfig.randomFlightVariation : 0.1f;
         float arcVar = arrowConfig != null ? arrowConfig.randomArcVariation : 0.15f;
         float staggerMax = arrowConfig != null ? arrowConfig.staggerMax : 0.12f;
-        float pitchAngle = arrowConfig != null ? arrowConfig.GetPitchAngleForRow(5) : 20f;
-        float descentRatio = arrowConfig != null ? arrowConfig.descentPitchRatio : 0.75f;
+        float maxDescentPitch = arrowConfig != null ? arrowConfig.maxDescentPitch : 89f;
 
         for (int i = 0; i < count; i++)
         {
@@ -360,19 +362,23 @@ public class QTEController : MonoBehaviour
                     float tz = targetZ;
                     float sx = spawnX;
                     EnemyProjectile p = projectile;
-                    float dr = descentRatio;
-                    DOVirtual.DelayedCall(stagger, () =>
+                    Tween launchDelay = null;
+                    launchDelay = DOVirtual.DelayedCall(stagger, () =>
                     {
+                        _arrowLaunchDelays.Remove(launchDelay);
                         if (p != null)
                         {
                             p.gameObject.SetActive(true);
-                            p.Launch(spawnPos, tz, sx, d, arcH, flightTime, null, pitchAngle, dr, _currentAttack.arrowTargetY);
+                            p.Launch(spawnPos, tz, sx, d, arcH, flightTime, null,
+                                _currentAttack.arrowTargetY, maxDescentPitch);
                         }
                     });
+                    _arrowLaunchDelays.Add(launchDelay);
                 }
                 else
                 {
-                    projectile.Launch(spawnPos, targetZ, spawnX, dmgPerArrow, arcH, flightTime, null, pitchAngle, descentRatio, _currentAttack.arrowTargetY);
+                    projectile.Launch(spawnPos, targetZ, spawnX, dmgPerArrow, arcH, flightTime, null,
+                        _currentAttack.arrowTargetY, maxDescentPitch);
                 }
             }
             wave.Add(projectile);
@@ -389,11 +395,17 @@ public class QTEController : MonoBehaviour
         {
             if (p != null) p.Deflect();
         }
-        _arrowWaves.Remove(slotIndex);
     }
 
     private void ClearAllArrowWaves()
     {
+        for (int i = 0; i < _arrowLaunchDelays.Count; i++)
+        {
+            if (_arrowLaunchDelays[i] != null && _arrowLaunchDelays[i].IsActive())
+                _arrowLaunchDelays[i].Kill();
+        }
+        _arrowLaunchDelays.Clear();
+
         foreach (var kv in _arrowWaves)
         {
             foreach (var p in kv.Value)
@@ -1117,6 +1129,9 @@ public class QTEController : MonoBehaviour
                 _activeProjectile = null;
             }
         }
+
+        // 清理残余箭矢波（防御型 QTE：已 Deflect 的已完成，未到达的需强制销毁）
+        ClearAllArrowWaves();
 
         // 通知敌人恢复
         enemy.ExitQTEAttack();

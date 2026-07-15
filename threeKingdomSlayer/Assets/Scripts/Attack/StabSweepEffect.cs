@@ -13,6 +13,7 @@ public sealed class StabSweepEffect : MonoBehaviour
     private ColumnManager _columnManager;
     private int _column;
     private int _rangeRows;
+    private int _visualRangeRows;
     private float _damage;
     private DamageType _damageType;
     private readonly HashSet<Enemy> _hitEnemies = new HashSet<Enemy>();
@@ -26,7 +27,7 @@ public sealed class StabSweepEffect : MonoBehaviour
     private Sequence _sequence;
     private bool _hitAny;
 
-    public static void Create(GameObject prefab, Vector3 startPosition, Vector3 targetPosition, int column, int rangeRows,
+    public static void Create(GameObject prefab, Vector3 startPosition, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows,
         float damage, DamageType damageType, ColumnManager columnManager,
         Action<Enemy> onHit, Action onFirstHit, Action onComplete, float targetDuration = -1f)
     {
@@ -43,16 +44,17 @@ public sealed class StabSweepEffect : MonoBehaviour
             visual.transform.localPosition = Vector3.back * (visualLength * 0.5f);
         }
 
-        ray.AddComponent<StabSweepEffect>().Initialize(visual, targetPosition, column, rangeRows, damage, damageType,
+        ray.AddComponent<StabSweepEffect>().Initialize(visual, targetPosition, column, rangeRows, visualRangeRows, damage, damageType,
             columnManager, onHit, onFirstHit, onComplete, targetDuration);
     }
 
-    private void Initialize(GameObject visual, Vector3 targetPosition, int column, int rangeRows, float damage,
+    private void Initialize(GameObject visual, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows, float damage,
         DamageType damageType, ColumnManager columnManager, Action<Enemy> onHit, Action onFirstHit,
         Action onComplete, float targetDuration)
     {
         _column = column;
         _rangeRows = rangeRows;
+        _visualRangeRows = visualRangeRows;
         _damage = damage;
         _damageType = damageType;
         _columnManager = columnManager;
@@ -96,12 +98,15 @@ public sealed class StabSweepEffect : MonoBehaviour
         for (int i = 0; i < column.enemies.Count; i++)
         {
             var enemy = column.enemies[i];
-            if (enemy == null || enemy.state == EnemyState.Dead || enemy.rowIndex >= _rangeRows || _hitEnemies.Contains(enemy))
+            if (enemy == null || enemy.state == EnemyState.Dead || _hitEnemies.Contains(enemy))
                 continue;
-            if (enemy.isBoss && enemy.bossState != BossState.InCombat)
+            bool isCombatBoss = enemy.isBoss && enemy.bossState == BossState.InCombat;
+            if (enemy.rowIndex >= _rangeRows && !isCombatBoss)
+                continue;
+            if (enemy.isBoss && !isCombatBoss)
                 continue;
 
-            float enemyDistance = (enemy.rowIndex + 1) * _rayLength / _rangeRows;
+            float enemyDistance = (enemy.rowIndex + 1) * _rayLength / _visualRangeRows;
             if (tipDistance < enemyDistance - HitDistanceTolerance)
                 continue;
 
