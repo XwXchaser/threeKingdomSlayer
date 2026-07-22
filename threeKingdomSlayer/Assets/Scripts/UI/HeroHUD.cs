@@ -48,9 +48,23 @@ public class HeroHUD : MonoBehaviour
 
     [Header("QTE 老虎机")]
     [Tooltip("QTE 判定框 RectTransform（含 RectMask2D 裁剪）")]
+    public HeroHUDFlipCard flipCard;
     public RectTransform qteFrameRect;
     [Tooltip("QTE 指示器生成区域（QTEFrame 下的空节点）")]
     public RectTransform qteIndicatorArea;
+
+    [Header("对话")]
+    public HeroHUDDialogue dialogue;
+    public Sprite PortraitSprite => portraitImage != null ? portraitImage.sprite : null;
+
+    /// <summary>
+    /// 触发对话看板翻转，显示台词。战斗事件（Boss出场、阶段切换等）调用此方法。
+    /// </summary>
+    public void ShowDialogue(DialogueData data)
+    {
+        if (data == null) return;
+        Debug.LogWarning("[HeroHUD] 旧 DialogueData 已弃用，请改用 DialogueManager.Trigger(eventId)");
+    }
 
     [Header("经验条")]
     public Slider expSlider;
@@ -65,7 +79,44 @@ public class HeroHUD : MonoBehaviour
     private bool _healthBarColorSaved;
     private Sprite _defaultFillSprite;
     private bool _defaultFillSpriteCached;
+    private Canvas _hudForegroundCanvas;
     private readonly List<GameObject> _extraUIInstances = new List<GameObject>();
+
+    #region 公共接口
+
+    private void OnEnable()
+    {
+        EnsurePortraitForegroundLayer();
+    }
+
+    private void Start()
+    {
+        EnsurePortraitForegroundLayer();
+    }
+
+    private void Update()
+    {
+        if (_hudForegroundCanvas != null)
+            _hudForegroundCanvas.enabled = true;
+    }
+
+    private void EnsurePortraitForegroundLayer()
+    {
+        var hudRoot = transform.Find("HudCard");
+        if (hudRoot == null) return;
+
+        _hudForegroundCanvas = hudRoot.GetComponent<Canvas>();
+        if (_hudForegroundCanvas == null)
+            _hudForegroundCanvas = hudRoot.gameObject.AddComponent<Canvas>();
+
+        _hudForegroundCanvas.overrideSorting = true;
+        _hudForegroundCanvas.sortingOrder = 21;
+
+        if (hudRoot.GetComponent<UnityEngine.UI.GraphicRaycaster>() == null)
+            hudRoot.gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+    }
+
+    #endregion
 
     #region 公共接口
 

@@ -16,8 +16,9 @@ MonoBehaviour:
   upgradeId: charge_reflect_shield
   displayName: "\u94C1\u58C1\xB7\u53CD\u4F24"
   descriptionTemplate: "\u6BCF{0}\u79D2\u8FDB\u5165\u84C4\u529B\u540E\u83B7\u5F97\u80FD\u53CD\u5F39{1}\u70B9\u4F24\u5BB3\u7684\u62A4\u76FE{2}"
+  extraDescriptionTemplate: 
   rarity: 0
-  maxLevel: 5
+  maxLevel: 10
   effectType: charge_reflect_shield
   numericLevels: []
   floatValue: 0
@@ -54,9 +55,37 @@ MonoBehaviour:
     shieldAmount: 200
     enableBonus: 1
     bonusReflectPercent: 50
+  - intervalSeconds: 2
+    shieldAmount: 250
+    enableBonus: 1
+    bonusReflectPercent: 60
+  - intervalSeconds: 1.5
+    shieldAmount: 300
+    enableBonus: 1
+    bonusReflectPercent: 70
+  - intervalSeconds: 1.5
+    shieldAmount: 350
+    enableBonus: 1
+    bonusReflectPercent: 80
+  - intervalSeconds: 1
+    shieldAmount: 400
+    enableBonus: 1
+    bonusReflectPercent: 90
+  - intervalSeconds: 1
+    shieldAmount: 500
+    enableBonus: 1
+    bonusReflectPercent: 100
   chargeShockwaveLevels: []
+  chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
   gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
   prerequisites: []

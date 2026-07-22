@@ -219,6 +219,7 @@ public class Enemy : MonoBehaviour
     private Vector3 launchStartLocalPos; // 挑飞起始位置
     private float currentLaunchYHeight;   // 本次挑飞的随机 Y 高度（仅用于初速度计算）
     private float _remainingStunOnLaunch;  // 挑飞时被中断的眩晕剩余时间（落地后恢复）
+    private int _launchExtendCount;         // 当前浮空内 ExtendLaunch 次数（落地/重Launch 重置）
     private float attackTimer;      // 攻击冷却计时器（攻击动画结束后开始冷却）
     private float attackAnimTimer;  // 攻击动画计时器（攻击动作执行时间）
     public bool isAttackAnimating; // 是否正在播放攻击动画（AttackSpawn 或 AttackDraw）
@@ -308,6 +309,7 @@ public class Enemy : MonoBehaviour
     public System.Action<Enemy, float, float> OnHealthChanged; // enemy, current, max
     public System.Action<Enemy, float, float> OnPoiseChanged;  // enemy, current, max
     public System.Action<Enemy> OnBossEngaged;                  // Boss 到达应战排
+    public System.Action<Enemy, int> OnBossPhaseChanged;
 
     // Boss 分阶段推进
     private System.Action _onColumnsModifiedHandler;
@@ -816,6 +818,7 @@ public class Enemy : MonoBehaviour
             launchTimer = customDuration;
             currentLaunchYHeight = Random.Range(launchYHeightMin, launchYHeightMax);
             launchVelocityY = Mathf.Sqrt(2f * launchGravity * currentLaunchYHeight);
+            _launchExtendCount = 0;
             _animator?.Play("Launched_Rise", 0, 0f);
             DebugLog.Info($"[Enemy] 重新击飞: {DebugTag}, duration={customDuration:F2}s, v0={launchVelocityY:F2}");
             return;
@@ -849,6 +852,7 @@ public class Enemy : MonoBehaviour
         launchStartLocalPos = transform.localPosition;
         currentLaunchYHeight = Random.Range(launchYHeightMin, launchYHeightMax);
         launchVelocityY = Mathf.Sqrt(2f * launchGravity * currentLaunchYHeight);
+        _launchExtendCount = 0;
 
         DebugLog.Info($"[Enemy] 挑飞: {DebugTag}, duration={customDuration:F2}s, v0={launchVelocityY:F2}");
     }
@@ -861,15 +865,23 @@ public class Enemy : MonoBehaviour
     /// <summary>
     /// 延长浮空时间（被攻击命中时调用）
     /// 从当前位置叠加反弹速度，产生"颠球"效果
+    /// 连续延长时间逐次衰减：0.50/0.40/0.30/0.20/0.15s（第5次起为下限）
     /// </summary>
     public void ExtendLaunch(float extendTime)
     {
         if (state != EnemyState.Launched) return;
-        launchTimer += extendTime;
+
+        // 衰减表：按已延长次数递减
+        float[] decayTable = { 0.50f, 0.40f, 0.30f, 0.20f, 0.15f };
+        float actualExtend = _launchExtendCount < decayTable.Length
+            ? decayTable[_launchExtendCount]
+            : decayTable[decayTable.Length - 1];
+        _launchExtendCount++;
+
+        launchTimer += actualExtend;
         launchVelocityY = launchReboundVelocity;
-        // 再击飞：重新播放 Rise 动画
         _animator?.Play("Launched_Rise", 0, 0f);
-        DebugLog.Info($"[Enemy] 延长浮空: {DebugTag}, +{extendTime:F2}s, 剩余={launchTimer:F2}s, 反弹速度={launchReboundVelocity:F2}");
+        DebugLog.Info($"[Enemy] 延长浮空: {DebugTag}, +{actualExtend:F2}s (base={extendTime:F2}, count={_launchExtendCount}), 剩余={launchTimer:F2}s");
     }
 
     /// <summary>
@@ -1593,7 +1605,7 @@ public class Enemy : MonoBehaviour
     /// <summary>
     /// 受到伤害
     /// </summary>
-    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false)
+    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true)
     {
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
@@ -1674,11 +1686,12 @@ public class Enemy : MonoBehaviour
         currentHealth -= finalDamage;
         if (!isBoss)
             AudioManager.Instance?.PostEvent("Enemy_Hit");
-        OnDamageTaken?.Invoke(this);
+        if (countsForCombo)
+            OnDamageTaken?.Invoke(this);
         OnHealthChanged?.Invoke(this, currentHealth, maxHealth);
 
         // 受伤跳字
-        if (DamageNumberManager.Instance != null)
+        if (finalDamage > 0f && DamageNumberManager.Instance != null)
         {
             DamageNumberManager.Instance.Spawn(transform.position, finalDamage, damageNumberColor);
         }
@@ -2937,6 +2950,7 @@ public class Enemy : MonoBehaviour
         }
 
         currentBossPhase = newPhaseIndex;
+        OnBossPhaseChanged?.Invoke(this, currentBossPhase);
         _healthLocked = false;
         isPhaseTransitioning = false;
         _currentAttackStep = 0;
@@ -3008,6 +3022,7 @@ public class Enemy : MonoBehaviour
         OnHealthChanged = null;
         OnPoiseChanged = null;
         OnBossEngaged = null;
+        OnBossPhaseChanged = null;
         ResetWaveTint();
         gameObject.SetActive(false);
     }

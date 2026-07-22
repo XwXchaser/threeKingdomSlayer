@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1fb869d51545818448543f85c93f5855, type: 3}
+  m_Name: DialogueDatabase
+  m_EditorClassIdentifier: 
+  events:
+  - {fileID: 11400000, guid: 04196aedce32193498232f651f42cff1, type: 2}
+  - {fileID: 11400000, guid: 50804ca8ea499b54ca1cc898f89eb270, type: 2}
+  - {fileID: 11400000, guid: 6f588be55eea7f54ebcde3bab784c10f, type: 2}
+  - {fileID: 11400000, guid: a750e36c2f4a5bd4dbcebd033c15790f, type: 2}

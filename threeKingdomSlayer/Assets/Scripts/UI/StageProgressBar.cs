@@ -18,6 +18,8 @@ public class StageProgressBar : MonoBehaviour
     public float lineThickness = 6f;
     [Tooltip("节点圆点直径（像素）")]
     public int dotDiameter = 20;
+    [Tooltip("节点交替的 Y 轴偏移（像素），用于形成轻微起伏的路线")]
+    public float nodeVerticalOffset = 14f;
     [Tooltip("玩家点直径（像素），比节点大以区分")]
     public int playerDotDiameter = 28;
     [Tooltip("窗口可见节点数（固定 4 个）")]
@@ -40,19 +42,26 @@ public class StageProgressBar : MonoBehaviour
     public RectTransform qteFrameRect;
 
     [Header("美术素材")]
-    [Tooltip("行走线（可选，留空使用程序化白线）")]
+    [Tooltip("行走线（未完成路段）")]
     public Sprite lineSprite;
+    [Tooltip("已完成路段")]
+    public Sprite completedLineSprite;
     [Tooltip("进度条外框（可选）")]
     public Sprite frameSprite;
-    [Tooltip("玩家位置指示器（可选，留空使用程序化绿点）")]
+    [Tooltip("玩家位置指示器")]
     public Sprite playerDotSprite;
-    [Tooltip("关卡节点（可选，留空使用程序化红点）")]
+    [Tooltip("普通关卡节点")]
     public Sprite nodeSprite;
+    [Tooltip("Boss 关卡节点")]
+    public Sprite bossNodeSprite;
 
     // 运行时引用
     private RectTransform _contentRect;
     private float _contentOriginX; // Content 初始 X 偏移，首次从 prefab 读取，后续滚动以此为基准
     private Image _lineImage;
+    private Image _completedLineImage;
+    private readonly List<Image> _uncompletedSegmentImages = new List<Image>();
+    private readonly List<Image> _completedSegmentImages = new List<Image>();
     private Image _frameImage;
     private Image _playerDotImage;
     private RectTransform _playerDotRect;
@@ -83,6 +92,7 @@ public class StageProgressBar : MonoBehaviour
         _uiScale = UIResolutionHelper.UIScale;
         dotSpacing *= _uiScale;
         lineThickness *= _uiScale;
+        nodeVerticalOffset *= _uiScale;
         dotDiameter = Mathf.Max(1, Mathf.RoundToInt(dotDiameter * _uiScale));
         playerDotDiameter = Mathf.Max(1, Mathf.RoundToInt(playerDotDiameter * _uiScale));
 
@@ -90,24 +100,36 @@ public class StageProgressBar : MonoBehaviour
         go.layer = LayerMask.NameToLayer("UI");
         go.AddComponent<RectMask2D>();
         BuildVisuals();
-        go.SetActive(false);
+    }
+
+    private void Start()
+    {
+        // BattleHUD 通常会在这里前完成依赖注入；若它的 Start 顺序靠后，
+        // OnEnable 会在本帧后再次尝试，避免进度条永久未初始化。
+        TryInitializeFromScene();
     }
 
     private void OnEnable()
     {
         if (!Application.isPlaying)
+        {
             _editModePreviewDirty = true;
+            return;
+        }
+
+        if (_initialized)
+            gameObject.SetActive(true);
+        else
+            TryInitializeFromScene();
     }
 
-    private void OnDisable()
+    private void TryInitializeFromScene()
     {
-        if (!Application.isPlaying)
-        {
-            _editModePreviewDirty = false;
-#if UNITY_EDITOR
-            ScheduleDestroyEditModePreview();
-#endif
-        }
+        if (_initialized) return;
+        var stageConfig = StageController.Instance?.stageConfig;
+        var waveSpawner = WaveSpawner.Instance;
+        if (stageConfig != null && waveSpawner != null)
+            Initialize(stageConfig, waveSpawner);
     }
 
     /// <summary>
@@ -167,28 +189,22 @@ public class StageProgressBar : MonoBehaviour
             _contentOriginX = 0f;
         }
 
-        // 行走线（总是重建）
-        var lineGo = new GameObject("Line", typeof(RectTransform), typeof(Image));
-        lineGo.transform.SetParent(_contentRect, false);
-        _lineImage = lineGo.GetComponent<Image>();
-        if (lineSprite != null)
+        // 运行时重新建立 Content 内的动态节点，避免继承 Prefab 预览残留。
+        for (int i = _contentRect.childCount - 1; i >= 0; i--)
         {
-            _lineImage.sprite = lineSprite;
-            _lineImage.type = Image.Type.Sliced;
+            var child = _contentRect.GetChild(i).gameObject;
+            if (Application.isPlaying)
+                Destroy(child);
+            else
+                DestroyImmediate(child);
         }
-        else
-        {
-            _lineImage.sprite = Sprite.Create(_whiteTex, new Rect(0, 0, 4, 4), Vector2.one * 0.5f);
-            _lineImage.type = Image.Type.Sliced;
-        }
-        _lineImage.color = lineColor;
-        _lineImage.raycastTarget = false;
-        var lineRt = lineGo.GetComponent<RectTransform>();
-        lineRt.anchorMin = new Vector2(0f, 0.5f);
-        lineRt.anchorMax = new Vector2(0f, 0.5f);
-        lineRt.pivot = new Vector2(0f, 0.5f);
-        lineRt.anchoredPosition = Vector2.zero;
-        lineRt.sizeDelta = new Vector2(0f, lineThickness);
+        _nodeDots.Clear();
+        _uncompletedSegmentImages.Clear();
+        _completedSegmentImages.Clear();
+
+        // 保留旧字段引用供初始化检查兼容；实际显示按节点逐段创建。
+        _lineImage = null;
+        _completedLineImage = null;
 
         // PlayerDot（总是重建）
         var pdGo = new GameObject("PlayerDot", typeof(RectTransform), typeof(Image));
@@ -225,12 +241,7 @@ public class StageProgressBar : MonoBehaviour
 
         // 销毁 Frame / Content（Content 销毁会连带销毁 Line / PlayerDot / Node_*）
         if (_frameImage != null) { DestroyImmediate(_frameImage.gameObject); _frameImage = null; }
-        if (_contentRect != null) { DestroyImmediate(_contentRect.gameObject); _contentRect = null; _lineImage = null; _playerDotImage = null; _playerDotRect = null; }
-    }
-
-    private void Start()
-    {
-        // 初始化交由 BattleHUD 调用 Initialize()，避免时序问题
+        if (_contentRect != null) { DestroyImmediate(_contentRect.gameObject); _contentRect = null; _lineImage = null; _completedLineImage = null; _playerDotImage = null; _playerDotRect = null; }
     }
 
     /// <summary>
@@ -256,6 +267,11 @@ public class StageProgressBar : MonoBehaviour
 
         _totalWaves = _stageConfig.waves.Count;
         if (_totalWaves <= 0) return;
+
+        // This object can be inactive while its parent flip face is hidden, so Awake may not
+        // have built its cached visuals before BattleHUD injects the stage dependencies.
+        if (_contentRect == null || _playerDotRect == null)
+            BuildVisuals();
 
         LayoutContent();
 
@@ -375,23 +391,21 @@ public class StageProgressBar : MonoBehaviour
     private void AnimatePlayerTo(int targetIndex)
     {
         _playerDotIndex = Mathf.Clamp(targetIndex, 0, _totalWaves);
-        float targetX = _playerDotIndex * dotSpacing;
         _playerDotRect.DOKill();
-        _playerDotRect.DOAnchorPosX(targetX, moveDuration).SetEase(Ease.OutCubic);
+        _playerDotRect.DOAnchorPos(GetNodePosition(_playerDotIndex), moveDuration).SetEase(Ease.OutCubic)
+            .OnComplete(UpdateNodeAppearance);
     }
 
     private void SnapPlayerToPosition()
     {
-        float targetX = _playerDotIndex * dotSpacing;
-        _playerDotRect.anchoredPosition = new Vector2(targetX, _playerDotRect.anchoredPosition.y);
+        _playerDotRect.anchoredPosition = GetNodePosition(_playerDotIndex);
         UpdateContentPosition();
         UpdateNodeAppearance();
     }
 
     private void UpdatePlayerDotPosition()
     {
-        float targetX = _playerDotIndex * dotSpacing;
-        _playerDotRect.anchoredPosition = new Vector2(targetX, _playerDotRect.anchoredPosition.y);
+        _playerDotRect.anchoredPosition = GetNodePosition(_playerDotIndex);
     }
 
     // ═══════════════════════════════════════════
@@ -405,14 +419,11 @@ public class StageProgressBar : MonoBehaviour
             if (nd != null) Destroy(nd);
         _nodeDots.Clear();
 
-        // Content 宽度：容纳所有概念节点（totalWaves + 1 个点：起点 + 每个波次后一个点）
         int totalDots = _totalWaves + 1; // dot 0=起点, dot N=终点
         float contentWidth = (_totalWaves) * dotSpacing + dotSpacing; // 留一个间距余量
-        _contentRect.sizeDelta = new Vector2(contentWidth, lineThickness);
+        _contentRect.sizeDelta = new Vector2(contentWidth, lineThickness + nodeVerticalOffset * 2f);
 
-        // 白线宽度
-        var lineRt = _lineImage.GetComponent<RectTransform>();
-        lineRt.sizeDelta = new Vector2(contentWidth, lineThickness);
+        CreateSegments(totalDots);
 
         // 创建所有节点
         for (int i = 0; i < totalDots; i++)
@@ -420,6 +431,8 @@ public class StageProgressBar : MonoBehaviour
             var go = CreateNodeDot(i);
             _nodeDots.Add(go);
         }
+
+        CenterContentOnBoard();
 
         // 窗口初始位置
         _windowStartIndex = 0;
@@ -437,18 +450,78 @@ public class StageProgressBar : MonoBehaviour
         go.transform.SetParent(_contentRect, false);
 
         var img = go.GetComponent<Image>();
-        img.sprite = Sprite.Create(_circleTex, new Rect(0, 0, 64, 64), Vector2.one * 0.5f);
-        img.color = nodeColor;
+        bool isBossNode = _stageConfig != null
+            && dotIndex > 0
+            && dotIndex - 1 < _stageConfig.waves.Count
+            && _stageConfig.waves[dotIndex - 1].isBossWave;
+        img.sprite = isBossNode && bossNodeSprite != null ? bossNodeSprite : nodeSprite;
+        if (img.sprite == null)
+            img.sprite = Sprite.Create(_circleTex, new Rect(0, 0, 64, 64), Vector2.one * 0.5f);
+        img.preserveAspect = true;
+        img.color = (nodeSprite != null || (isBossNode && bossNodeSprite != null)) ? Color.white : nodeColor;
         img.raycastTarget = false;
 
         var rt = go.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(0f, 0.5f);
         rt.anchorMax = new Vector2(0f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta = new Vector2(dotDiameter, dotDiameter);
-        rt.anchoredPosition = new Vector2(dotIndex * dotSpacing, 0f);
+        float size = isBossNode ? dotDiameter * 2.1f : dotDiameter * 1.6f;
+        rt.sizeDelta = new Vector2(size, size);
+        rt.anchoredPosition = GetNodePosition(dotIndex);
 
         return go;
+    }
+
+    private Vector2 GetNodePosition(int dotIndex)
+    {
+        float y = dotIndex % 2 == 0 ? -nodeVerticalOffset : nodeVerticalOffset;
+        return new Vector2(dotIndex * dotSpacing, y);
+    }
+
+    private void CreateSegments(int totalDots)
+    {
+        for (int i = 0; i < totalDots - 1; i++)
+        {
+            var start = GetNodePosition(i);
+            var end = GetNodePosition(i + 1);
+            var uncompleted = CreateSegmentImage($"UncompletedSegment_{i}", lineSprite, lineColor, start, end);
+            var completed = CreateSegmentImage($"CompletedSegment_{i}", completedLineSprite != null ? completedLineSprite : lineSprite, completedLineSprite != null ? Color.white : new Color(1f, 0.78f, 0.18f, 1f), start, end);
+            _uncompletedSegmentImages.Add(uncompleted);
+            _completedSegmentImages.Add(completed);
+        }
+    }
+
+    private Image CreateSegmentImage(string name, Sprite sprite, Color fallbackColor, Vector2 start, Vector2 end)
+    {
+        var go = new GameObject(name, typeof(RectTransform), typeof(Image));
+        go.transform.SetParent(_contentRect, false);
+        var image = go.GetComponent<Image>();
+        image.sprite = sprite != null ? sprite : Sprite.Create(_whiteTex, new Rect(0, 0, 4, 4), Vector2.one * 0.5f);
+        image.type = sprite != null ? Image.Type.Simple : Image.Type.Sliced;
+        image.preserveAspect = false;
+        image.color = sprite != null ? Color.white : fallbackColor;
+        image.raycastTarget = false;
+
+        var rt = go.GetComponent<RectTransform>();
+        Vector2 delta = end - start;
+        float length = delta.magnitude;
+        rt.anchorMin = new Vector2(0f, 0.5f);
+        rt.anchorMax = new Vector2(0f, 0.5f);
+        rt.pivot = new Vector2(0f, 0.5f);
+        rt.anchoredPosition = start;
+        rt.sizeDelta = new Vector2(length, lineThickness);
+        rt.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
+        return image;
+    }
+
+    private void CenterContentOnBoard()
+    {
+        if (_contentRect == null) return;
+
+        float firstWindowWidth = (visibleDots - 1) * dotSpacing;
+        float boardWidth = ((RectTransform)transform).rect.width;
+        _contentOriginX = (boardWidth - firstWindowWidth) * 0.5f;
+        _contentRect.anchoredPosition = new Vector2(_contentOriginX, _contentRect.anchoredPosition.y);
     }
 
     private void UpdateContentPosition()
@@ -459,18 +532,21 @@ public class StageProgressBar : MonoBehaviour
 
     private void UpdateNodeAppearance()
     {
-        // 所有节点默认红色，超出总波次的终点节点可以变成灰色
+        for (int i = 0; i < _completedSegmentImages.Count; i++)
+        {
+            bool completed = i < _playerDotIndex;
+            _uncompletedSegmentImages[i].gameObject.SetActive(!completed);
+            _completedSegmentImages[i].gameObject.SetActive(completed);
+        }
+
         for (int i = 0; i < _nodeDots.Count; i++)
         {
             var img = _nodeDots[i].GetComponent<Image>();
-            if (img != null)
-            {
-                // 已通过的节点变暗，未通过的保持红色
-                if (i < _playerDotIndex)
-                    img.color = new Color(nodeColor.r * 0.4f, nodeColor.g * 0.4f, nodeColor.b * 0.4f, 0.5f);
-                else
-                    img.color = nodeColor;
-            }
+            if (img == null) continue;
+
+            img.color = i < _playerDotIndex
+                ? new Color(0.52f, 0.52f, 0.52f, 0.72f)
+                : Color.white;
         }
     }
 
@@ -509,10 +585,13 @@ public class StageProgressBar : MonoBehaviour
         gameObject.SetActive(visible);
     }
 
-    // ═══════════════════════════════════════════
-    //  BOSS 交战/死亡 → 切换 UI
-    // ═══════════════════════════════════════════
+    public System.Action OnBossTransitionComplete;
 
+    private void OnBossTransitionCompleted()
+    {
+        SetVisible(false);
+        OnBossTransitionComplete?.Invoke();
+    }
     private void OnBossEngaged(Enemy boss)
     {
         if (!_initialized) return;
@@ -545,11 +624,10 @@ public class StageProgressBar : MonoBehaviour
         if (nextIndex < _windowStartIndex + visibleDots)
         {
             _playerDotIndex = nextIndex;
-            float targetX = _playerDotIndex * dotSpacing;
             _playerDotRect.DOKill();
-            _playerDotRect.DOAnchorPosX(targetX, moveDuration)
+            _playerDotRect.DOAnchorPos(GetNodePosition(_playerDotIndex), moveDuration)
                 .SetEase(Ease.OutCubic)
-                .OnComplete(() => SetVisible(false));
+                .OnComplete(OnBossTransitionCompleted);
             UpdateNodeAppearance();
             return;
         }
@@ -559,11 +637,10 @@ public class StageProgressBar : MonoBehaviour
         {
             // 最后一组
             _playerDotIndex = nextIndex;
-            float targetX = _playerDotIndex * dotSpacing;
             _playerDotRect.DOKill();
-            _playerDotRect.DOAnchorPosX(targetX, moveDuration)
+            _playerDotRect.DOAnchorPos(GetNodePosition(_playerDotIndex), moveDuration)
                 .SetEase(Ease.OutCubic)
-                .OnComplete(() => SetVisible(false));
+                .OnComplete(OnBossTransitionCompleted);
             UpdateNodeAppearance();
             return;
         }
@@ -583,7 +660,7 @@ public class StageProgressBar : MonoBehaviour
             UpdateNodeAppearance();
         });
         seq.AppendInterval(moveDuration);
-        seq.AppendCallback(() => SetVisible(false));
+        seq.AppendCallback(OnBossTransitionCompleted);
     }
 
     private void OnBossDeath(Enemy boss)
@@ -715,11 +792,18 @@ public class StageProgressBar : MonoBehaviour
 
     private void RebuildEditModePreview()
     {
+        if (this == null || gameObject == null) return;
+
         DestroyEditModePreview();
+        if (this == null || gameObject == null) return;
         EnsureTextures();
 
-        var mask = gameObject.AddComponent<RectMask2D>();
-        mask.hideFlags = PreviewFlags;
+        var mask = GetComponent<RectMask2D>();
+        if (mask == null)
+        {
+            mask = gameObject.AddComponent<RectMask2D>();
+            mask.hideFlags = PreviewFlags;
+        }
 
         BuildVisuals();
 
@@ -727,28 +811,21 @@ public class StageProgressBar : MonoBehaviour
         if (_contentRect != null)
             MarkChildrenOnly(_contentRect, PreviewFlags);
 
-        // 预览线宽 = visibleDots * dotSpacing
-        if (_lineImage != null)
-            _lineImage.GetComponent<RectTransform>().sizeDelta = new Vector2(visibleDots * dotSpacing, lineThickness);
-
-        // 创建 visibleDots 个节点
+        // 预览节点与连接路段
         if (_contentRect != null)
         {
+            for (int i = 0; i < visibleDots - 1; i++)
+            {
+                var start = GetNodePosition(i);
+                var end = GetNodePosition(i + 1);
+                var segment = CreateSegmentImage($"UncompletedSegment_{i}", lineSprite, lineColor, start, end);
+                segment.gameObject.hideFlags = PreviewFlags;
+            }
+
             for (int i = 0; i < visibleDots; i++)
             {
-                var dotGo = new GameObject($"Node_{i}", typeof(RectTransform), typeof(Image));
+                var dotGo = CreateNodeDot(i);
                 dotGo.hideFlags = PreviewFlags;
-                dotGo.transform.SetParent(_contentRect, false);
-                var dotImg = dotGo.GetComponent<Image>();
-                dotImg.sprite = Sprite.Create(_circleTex, new Rect(0, 0, 64, 64), Vector2.one * 0.5f);
-                dotImg.color = nodeColor;
-                dotImg.raycastTarget = false;
-                var dotRt = dotGo.GetComponent<RectTransform>();
-                dotRt.anchorMin = new Vector2(0f, 0.5f);
-                dotRt.anchorMax = new Vector2(0f, 0.5f);
-                dotRt.pivot = new Vector2(0.5f, 0.5f);
-                dotRt.sizeDelta = new Vector2(dotDiameter, dotDiameter);
-                dotRt.anchoredPosition = new Vector2(i * dotSpacing, 0f);
             }
         }
 

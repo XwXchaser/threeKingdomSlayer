@@ -41,6 +41,8 @@ public class AttackSkillConfig : ScriptableObject
     public float stabSpawnYOffset = 1.5f;
     [Tooltip("生成位置 Z 偏移（相对敌人中心）")]
     public float stabSpawnZOffset = 0.5f;
+    [Tooltip("仅戳刺视觉沿攻击方向额外前伸的世界距离，不影响命中、伤害或射程")]
+    public float stabVisualReachOffset = 0.5f;
 
     [Header("斩击扇形扫掠")]
     [Tooltip("扫掠半宽（X 轴范围，默认 5）")]

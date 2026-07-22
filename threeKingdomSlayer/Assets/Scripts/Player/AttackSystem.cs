@@ -61,6 +61,10 @@ public class AttackSystem : MonoBehaviour
     [SerializeField] private bool useStabRayAngleOverrides;
     [FormerlySerializedAs("stabRayYawOverrides")]
     [SerializeField] private float[] stabRayInwardAngleOverrides = { -30f, -15f, 0f, 15f, 30f };
+
+    [Header("Stab 视觉起点偏移")]
+    [Tooltip("仅改变五列 Stab 视觉的世界 X 起点；按左到右排列，不影响命中射线、伤害、范围或击退。")]
+    [SerializeField] private float[] stabVisualStartXOffsets = { -1f, -0.5f, 0f, 0.5f, 1f };
     private float _actionLockTimer;
     private float _stabVisualTimer;
     private ChargeStabVisual _chargeStabVisual;
@@ -193,6 +197,13 @@ public class AttackSystem : MonoBehaviour
         return Mathf.Atan2(columnOffset, baseLength * 2f) * Mathf.Rad2Deg;
     }
 
+    private float GetStabVisualStartXOffset(int columnIndex)
+    {
+        if (stabVisualStartXOffsets != null && columnIndex >= 0 && columnIndex < stabVisualStartXOffsets.Length)
+            return stabVisualStartXOffsets[columnIndex];
+        return 0f;
+    }
+
     private AttackSkillConfig GetConfig(AttackType type)
     {
         return playerState?.heroConfig?.GetSkillConfig(type);
@@ -206,6 +217,9 @@ public class AttackSystem : MonoBehaviour
         float finalDmg = GetFinalDamage(cfg) * GetStabPierceDamagePenalty();
         int effectiveRows = GetEffectiveRangeRows(cfg);
         int visualRangeRows = effectiveRows;
+        Enemy coveredBoss = columnManager.GetCombatBossCoveringColumn(columnIndex);
+        if (coveredBoss != null)
+            visualRangeRows = Mathf.Max(visualRangeRows, coveredBoss.rowIndex + 1);
         var targetColumn = columnManager.GetColumn(columnIndex);
         if (targetColumn != null)
         {
@@ -231,19 +245,33 @@ public class AttackSystem : MonoBehaviour
 
         LastStabTargetEnemy = null;
         StabSweepEffect.Create(cfg.attackWavePrefab, startPosition, targetPosition, columnIndex, effectiveRows, visualRangeRows,
-            finalDmg, cfg.damageType, columnManager,
+            finalDmg, cfg.damageType, columnManager, coveredBoss,
             enemy =>
             {
                 if (LastStabTargetEnemy == null)
                     LastStabTargetEnemy = enemy;
                 hitTargets.Add(enemy);
+                // 位移与伤害同帧结算
+                if (UpgradeEffectManager.Instance != null && columnManager != null)
+                {
+                    int pushDist = UpgradeEffectManager.Instance.GetPushWaveDistance();
+                    if (pushDist > 0)
+                        columnManager.ApplyPushWave(new List<Enemy> { enemy }, pushDist, canInterruptCFrame: false);
+                }
             },
             () =>
             {
                 UltimateSystem.Instance?.AddEnergyForAttack(AttackType.Stab);
                 OnAttackPerformed?.Invoke(AttackType.Stab, columnIndex, true);
             },
-            () => ApplyStabPushWave(hitTargets),
+            () =>
+            {
+                if (hitTargets.Count > 0 && UpgradeEffectManager.Instance != null && columnManager != null
+                    && UpgradeEffectManager.Instance.GetPushWaveDistance() > 0)
+                    columnManager.PostDisplacementFillUp();
+            },
+            cfg.stabVisualReachOffset,
+            GetStabVisualStartXOffset(columnIndex),
             GetAttackDuration(cfg));
         AudioManager.Instance?.PostEvent("Player_Attack");
 
@@ -417,9 +445,7 @@ public class AttackSystem : MonoBehaviour
 
         Debug.Log($"[AttackSystem] 招架 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 目标数:{targets.Count}");
         AudioManager.Instance?.PostEvent("Player_Parry");
-
         PlayParryVisual(cfg, playerPos);
-
         return true;
     }
 

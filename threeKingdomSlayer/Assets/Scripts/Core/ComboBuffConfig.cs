@@ -26,7 +26,7 @@ public class ComboBuffTrigger
 public class ComboBuffConfig : ScriptableObject
 {
     [Header("连击重置")]
-    [Tooltip("未命中敌人多少秒后连击归零")]
+    [Tooltip("基础重置窗口（高连击时 ComboManager 动态压缩，参见 GetEffectiveResetDelay）")]
     public float resetDelay = 3f;
 
     [Header("计数模式")]

@@ -19,6 +19,8 @@ public class UpgradeEffectManager : MonoBehaviour
     private float _attackSpeedMultiplier = 1f;
     private float _moveSpeedMultiplier = 1f;
     private float _expMultiplier = 1f;
+    private float _itemDropRateBonus; // 道具掉落率加成（小数，0.1=+10%）
+    private float _itemDamageBonus;   // 道具伤害加成（小数，0.15=+15%）
     private int _stabRangeBonus;
     private float _stabDamagePenalty;
     private int _sweepRangeBonus;
@@ -104,6 +106,22 @@ public class UpgradeEffectManager : MonoBehaviour
             if (ItemInventory.Instance == null)
             {
                 Debug.LogWarning("[UpgradeEffectManager] ItemInventory 未找到，道具无法添加");
+                return;
+            }
+            if (!ItemInventory.Instance.CanAdd(def))
+            {
+                // 道具栏满 → 弹出弃置弹窗
+                var entries = new List<ItemInventory.ItemEntry>(ItemInventory.Instance.Entries);
+                ItemDiscardPopup.Show(entries, def, discardIndex =>
+                {
+                    if (discardIndex >= 0)
+                    {
+                        ItemInventory.Instance.DiscardEntry(discardIndex);
+                        ItemInventory.Instance.AddItem(def);
+                        SyncToPlayerState(def, 0);
+                        OnUpgradeApplied?.Invoke(def, 0);
+                    }
+                });
                 return;
             }
             if (!ItemInventory.Instance.AddItem(def)) return;
@@ -232,6 +250,8 @@ public class UpgradeEffectManager : MonoBehaviour
     public float GetAttackSpeedBonusPercent() => (_attackSpeedMultiplier - 1f) * 100f;
     public float GetMoveSpeedMultiplier() => _moveSpeedMultiplier;
     public float GetExpMultiplier() => _expMultiplier;
+    public float GetItemDropRateBonus() => _itemDropRateBonus;
+    public float GetItemDamageBonus() => _itemDamageBonus;
     public int GetStabRangeBonus() => _stabRangeBonus;
     public float GetStabDamagePenalty() => _stabDamagePenalty;
     public int GetSweepRangeBonus() => _sweepRangeBonus;
@@ -324,7 +344,9 @@ public class UpgradeEffectManager : MonoBehaviour
         int level = _appliedUpgrades.TryGetValue(def.upgradeId, out int lv) ? lv : 0;
         int nextLevel = level + 1;
 
-        string desc = def.descriptionTemplate;
+        string desc = string.IsNullOrEmpty(def.extraDescriptionTemplate)
+            ? def.descriptionTemplate
+            : def.descriptionTemplate + "\n" + def.extraDescriptionTemplate;
 
         if (def.category == UpgradeCategory.AttackPassive || def.category == UpgradeCategory.TimedPassive)
         {
@@ -476,6 +498,11 @@ public class UpgradeEffectManager : MonoBehaviour
             else
                 desc = desc.Replace("{2}", "");
         }
+        else if (def.effectType == "heal")
+        {
+            var cfg = def.GetNumericConfig(nextLevel);
+            desc = desc.Replace("{0}", cfg.floatValue.ToString("F0"));
+        }
         else
         {
             var cfg = def.GetNumericConfig(nextLevel);
@@ -517,6 +544,8 @@ public class UpgradeEffectManager : MonoBehaviour
         _attackSpeedMultiplier = 1f;
         _moveSpeedMultiplier = 1f;
         _expMultiplier = 1f;
+        _itemDropRateBonus = 0f;
+        _itemDamageBonus = 0f;
         _stabRangeBonus = 0;
         _stabDamagePenalty = 0f;
         _sweepRangeBonus = 0;
@@ -568,6 +597,12 @@ public class UpgradeEffectManager : MonoBehaviour
                 break;
             case "exp_multiplier":
                 _expMultiplier += cfg.floatValue;
+                break;
+            case "item_drop_rate":
+                _itemDropRateBonus += cfg.floatValue;
+                break;
+            case "item_damage_bonus":
+                _itemDamageBonus += cfg.floatValue;
                 break;
             case "stab_range_boost":
                 _stabRangeBonus += cfg.intValue;

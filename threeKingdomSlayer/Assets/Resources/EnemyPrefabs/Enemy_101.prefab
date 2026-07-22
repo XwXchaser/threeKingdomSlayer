@@ -54,9 +54,10 @@ MonoBehaviour:
   maxHealth: 16
   occupySlots: 1
   attackSpeed: 0.08
-  attackDamage: 2
+  attackDamage: 10
   attackRange: 1
   moveSpeed: 0.3
+  visualYOffset: 0
   attackSequence:
   - isCAttack: 0
     animationTrigger: 
@@ -69,7 +70,16 @@ MonoBehaviour:
   projectileArcHeight: 3
   projectileFlyDuration: 1
   projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
   projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
   arrowConfig: {fileID: 0}
   shareHealthWithAdjacent: 0
   maxPoise: 50

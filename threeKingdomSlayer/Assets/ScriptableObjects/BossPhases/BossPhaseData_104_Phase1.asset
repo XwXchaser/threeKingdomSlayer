@@ -31,8 +31,8 @@ MonoBehaviour:
   qteData: {fileID: 11400000, guid: d124e686222d19848827f89c01e30150, type: 2}
   normalAttackWeight: 1
   cAttackWeight: 1
-  qteWeight: 1
-  actionInterval: {x: 1.5, y: 1.5}
+  qteWeight: 2
+  actionInterval: {x: 0.3, y: 1}
   postQTECooldown: 5
   isSuperArmor: 0
   stabDamageMultiplier: 1

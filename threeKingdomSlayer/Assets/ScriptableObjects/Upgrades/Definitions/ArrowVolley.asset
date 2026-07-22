@@ -16,8 +16,9 @@ MonoBehaviour:
   upgradeId: arrow_volley
   displayName: "\u7BAD\u77E2\u9F50\u5C04"
   descriptionTemplate: "\u6BCF{0}\u6B21\u653B\u51FB\u5411\u6700\u8FD1\u7684{1}\u4E2A\u654C\u4EBA\u5C04\u51FA{2}\u652F\u7BAD\u77E2"
+  extraDescriptionTemplate: 
   rarity: 1
-  maxLevel: 5
+  maxLevel: 10
   effectType: passive_arrow_volley
   numericLevels: []
   floatValue: 0
@@ -53,10 +54,38 @@ MonoBehaviour:
     targetCount: 3
     arrowCount: 6
     baseDamage: 16
+  - triggerThreshold: 3
+    targetCount: 3
+    arrowCount: 7
+    baseDamage: 18
+  - triggerThreshold: 2
+    targetCount: 3
+    arrowCount: 8
+    baseDamage: 20
+  - triggerThreshold: 2
+    targetCount: 4
+    arrowCount: 9
+    baseDamage: 24
+  - triggerThreshold: 2
+    targetCount: 4
+    arrowCount: 10
+    baseDamage: 28
+  - triggerThreshold: 1
+    targetCount: 5
+    arrowCount: 12
+    baseDamage: 32
   reflectShieldLevels: []
   chargeShockwaveLevels: []
+  chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
   gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
   prerequisites: []

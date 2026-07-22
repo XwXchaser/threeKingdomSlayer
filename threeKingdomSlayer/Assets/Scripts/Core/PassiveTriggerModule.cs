@@ -43,6 +43,7 @@ public class PassiveTriggerModule : MonoBehaviour
 
     public System.Action<string, int> OnPassiveRegistered;   // upgradeId, threshold
     public System.Action<string> OnPassiveTriggered;         // upgradeId
+    public IEnumerable<string> RegisteredUpgradeIds => _states.Keys;
 
     private void Awake()
     {

@@ -249,6 +249,34 @@ public class ColumnManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Returns the living InCombat Boss whose horizontal footprint covers the requested column.
+    /// Bosses remain stored in their center column; coverage only changes attack targeting.
+    /// </summary>
+    public Enemy GetCombatBossCoveringColumn(int columnIndex)
+    {
+        if (!IsValidColumn(columnIndex)) return null;
+
+        for (int centerColumn = 0; centerColumn < columnCount; centerColumn++)
+        {
+            var enemies = columns[centerColumn].enemies;
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                var enemy = enemies[i];
+                if (enemy == null || !enemy.isBoss || enemy.state == EnemyState.Dead || enemy.bossState != BossState.InCombat)
+                    continue;
+
+                int footprint = Mathf.Clamp(enemy.occupySlots, 1, columnCount);
+                int left = Mathf.Clamp(enemy.columnIndex - footprint / 2, 0, columnCount - footprint);
+                int right = left + footprint - 1;
+                if (columnIndex >= left && columnIndex <= right)
+                    return enemy;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// 获取所有列的所有敌人（用于遍历攻击）
     /// </summary>
     public List<Enemy> GetAllEnemies()

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
@@ -77,6 +78,8 @@ public class BattleHUD : MonoBehaviour
             PlayerState.Instance.OnLevelUp += UpdateExpLevel;
         }
 
+        StartCoroutine(SyncPlayerStateNextFrame());
+
         if (!_bossEventSubscribed && EnemyManager.Instance != null)
         {
             EnemyManager.Instance.OnBossEngaged += OnBossEngaged;
@@ -85,6 +88,29 @@ public class BattleHUD : MonoBehaviour
 
         if (victoryPanel != null) victoryPanel.SetActive(false);
         if (defeatPanel != null) defeatPanel.SetActive(false);
+    }
+
+    private IEnumerator SyncPlayerStateNextFrame()
+    {
+        yield return null;
+        SyncCurrentPlayerState();
+    }
+
+    private void SyncCurrentPlayerState()
+    {
+        if (PlayerState.Instance == null || PlayerState.Instance.heroConfig == null) return;
+
+        UpdateHealth(PlayerState.Instance.currentHealth, PlayerState.Instance.heroConfig.maxHealth);
+        UpdateRevives(PlayerState.Instance.currentRevives);
+        UpdateKillCount(PlayerState.Instance.killCount);
+        UpdateCoins(PlayerState.Instance.coinCount);
+
+        float requiredExp = 1f;
+        var curve = PlayerState.Instance.expCurveConfig;
+        if (curve != null && curve.expRequiredPerLevel != null && PlayerState.Instance.currentLevel < curve.expRequiredPerLevel.Count)
+            requiredExp = curve.expRequiredPerLevel[PlayerState.Instance.currentLevel];
+        UpdateExpBar(PlayerState.Instance.currentExp, requiredExp);
+        UpdateExpLevel(PlayerState.Instance.currentLevel);
     }
 
     private void InstantiateHeroHUD()
@@ -161,6 +187,9 @@ public class BattleHUD : MonoBehaviour
 
     private void Update()
     {
+        if (_heroHUD != null && _heroHUD.healthSlider != null && _heroHUD.healthSlider.maxValue <= 1f && PlayerState.Instance != null)
+            SyncCurrentPlayerState();
+
         if (!_bossEventSubscribed && EnemyManager.Instance != null)
         {
             EnemyManager.Instance.OnBossEngaged += OnBossEngaged;

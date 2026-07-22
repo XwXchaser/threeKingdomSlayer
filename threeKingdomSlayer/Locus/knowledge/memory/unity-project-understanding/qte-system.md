@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779287256500
-updatedAt: 1782392213066
+updatedAt: 1784362683575
 ---
 
 # qte-system
@@ -53,4 +53,11 @@ QTE 系统由 `QTEController`（挂载在 Boss prefab 上）、`QTEDisplay`（�
 - `EnemyProjectile.isQTEProjectile`: QTE 箭矢标记，由 `QTEController` 在 `SpawnArrowWave()` 创建时设为 `true`
 - `AttackSystem.ExecuteParry()`: 遍历 `FindObjectsOfType<EnemyProjectile>()` 时跳过 `isQTEProjectile` 为 true 的飞行物
 - QTE 箭矢走独立的 `QTEController.DeflectArrowWave()` 反弹通道，不经过常规 Parry
+
+## Single-Slot Sequential QTE (2026-07)
+- `QTEController` now processes `QTEAttackConfig.qteSlots` as a sequential queue. Only `_currentQTEIndex` is instantiated and evaluated; after a resolved slot, the next slot starts after its own `QTESlot.delay` interval.
+- `QTEConfig.screenPosition` is no longer used by `QTEDisplay` for battle QTE layout. Indicators always enter and stop at the center of `HeroHUD/QTEFrame`; the legacy field remains serialized for compatibility.
+- Arrow waves are spawned only when their current slot appears, so defensive TripleStab waves no longer overlap before the player reaches later prompts.
+- Verified in Play Mode against Boss 104 TripleStab: one indicator at a time; three programmatic valid clicks advanced indices 0→1→2→3 and returned the controller to Idle.
+- `QTESlot.delay` inspector text now means first-slot initial delay / later-slot post-resolution interval, rather than an absolute attack-relative spawn time.
 <!-- locus:body:end -->

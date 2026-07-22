@@ -10,7 +10,7 @@ public struct QTESlot
 {
     [Tooltip("QTE 配置")]
     public QTEConfig config;
-    [Tooltip("延迟出现时间（秒）：QTE 攻击开始后，此 QTE 相对于攻击开始的延迟")]
+    [Tooltip("首段出现延迟；后续段表示上一段结算后到下一段出现的间隔（秒）")]
     public float delay;
 }
 

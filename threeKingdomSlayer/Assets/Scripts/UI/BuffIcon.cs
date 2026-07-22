@@ -21,6 +21,16 @@ public class BuffIcon : MonoBehaviour
     [SerializeField] private Image _cooldownDim;
     [SerializeField] private Image _cooldownFill;
 
+    [Header("道具就绪光效")]
+    [SerializeField] private float _readyGlowSpeed = 1.2f;
+    [SerializeField, Range(0f, 1f)] private float _readyGlowMinAlpha = 0.35f;
+    [SerializeField, Range(0f, 1f)] private float _readyGlowMaxAlpha = 0.95f;
+    [SerializeField] private float _readyGlowPadding = 10f;
+
+    private Image _readyGlow;
+    private Outline _readyGlowOutline;
+    private bool _showReadyGlow;
+
     public string UpgradeId { get; private set; }
     public string GestureId { get; private set; }
     public UpgradeCategory Category { get; private set; }
@@ -51,10 +61,12 @@ public class BuffIcon : MonoBehaviour
                 _button.interactable = true;
                 _button.onClick.AddListener(() => OnClicked?.Invoke(this));
                 if (_iconImage != null) _iconImage.raycastTarget = true;
+                SetReadyGlow(icon != null);
             }
             else
             {
                 _button.interactable = false;
+                SetReadyGlow(false);
             }
         }
     }
@@ -100,6 +112,68 @@ public class BuffIcon : MonoBehaviour
         _spriteNumberDisplay?.Clear();
     }
 
+    private void Update()
+    {
+        if (!_showReadyGlow || _readyGlow == null) return;
+        float wave = Mathf.Sin(Time.unscaledTime * _readyGlowSpeed * Mathf.PI * 2f) * 0.5f + 0.5f;
+        var color = _readyGlow.color;
+        color.a = Mathf.Lerp(_readyGlowMinAlpha, _readyGlowMaxAlpha, wave);
+        _readyGlow.color = color;
+        if (_readyGlowOutline != null)
+        {
+            var outlineColor = _readyGlowOutline.effectColor;
+            outlineColor.a = color.a;
+            _readyGlowOutline.effectColor = outlineColor;
+        }
+    }
+
+    private void SetReadyGlow(bool visible)
+    {
+        _showReadyGlow = visible;
+        if (!visible)
+        {
+            if (_readyGlow != null) _readyGlow.gameObject.SetActive(false);
+            return;
+        }
+
+        if (_iconImage == null || _iconImage.sprite == null) return;
+        if (_readyGlow == null)
+        {
+            var go = new GameObject("ReadyGlow", typeof(RectTransform), typeof(Image));
+            go.transform.SetParent(transform, false);
+            _readyGlow = go.GetComponent<Image>();
+            _readyGlow.raycastTarget = false;
+            _readyGlow.maskable = false;
+            _readyGlowOutline = go.AddComponent<Outline>();
+            _readyGlowOutline.effectColor = Color.white;
+            _readyGlowOutline.effectDistance = new Vector2(4f, -4f);
+            _readyGlowOutline.useGraphicAlpha = true;
+            var rt = _readyGlow.rectTransform;
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.one * -_readyGlowPadding;
+            rt.offsetMax = Vector2.one * _readyGlowPadding;
+            _readyGlow.transform.SetSiblingIndex(GetReadyGlowSiblingIndex());
+        }
+
+        _readyGlow.sprite = _iconImage.sprite;
+        _readyGlow.type = _iconImage.type;
+        _readyGlow.preserveAspect = _iconImage.preserveAspect;
+        _readyGlow.color = new Color(1f, 1f, 1f, _readyGlowMinAlpha);
+        _readyGlow.transform.SetSiblingIndex(GetReadyGlowSiblingIndex());
+        _readyGlow.gameObject.SetActive(true);
+    }
+
+    private int GetReadyGlowSiblingIndex()
+    {
+        int numberIndex = transform.childCount;
+        if (_spriteNumberDisplay != null)
+            numberIndex = Mathf.Min(numberIndex, _spriteNumberDisplay.transform.GetSiblingIndex());
+        if (_badgeNumberDisplay != null)
+            numberIndex = Mathf.Min(numberIndex, _badgeNumberDisplay.transform.GetSiblingIndex());
+        return Mathf.Max(0, numberIndex - 1);
+    }
+
     public void SetFrame(Sprite sprite)
     {
         if (_frameImage != null)
@@ -107,6 +181,8 @@ public class BuffIcon : MonoBehaviour
             _frameImage.sprite = sprite;
             _frameImage.enabled = sprite != null;
         }
+        if (_showReadyGlow)
+            SetReadyGlow(_iconImage != null && _iconImage.sprite != null);
     }
 
     /// <summary>设置半透明状态（用于未持有的道具槽位显示）</summary>
@@ -137,7 +213,8 @@ public class BuffIcon : MonoBehaviour
             _cooldownFill.gameObject.SetActive(visible);
             if (visible) _cooldownFill.fillAmount = fillAmount;
         }
-
+        if (Category == UpgradeCategory.Item)
+            SetReadyGlow(!visible);
     }
 
     /// <summary>同步冷却蒙层精灵（图标变更时调用）</summary>
@@ -160,6 +237,7 @@ public class BuffIcon : MonoBehaviour
             _iconImage.raycastTarget = false;
         }
         SetFrame(frame);
+        SetReadyGlow(false);
         ClearBadgeNumber();
         ClearTopRightNumber();
         SetCooldown(0f, null, false);
@@ -184,6 +262,7 @@ public class BuffIcon : MonoBehaviour
             _iconImage.enabled = false;
         }
         if (_frameImage != null) { _frameImage.sprite = null; _frameImage.enabled = false; }
+        SetReadyGlow(false);
         if (_badgeNumberDisplay != null) _badgeNumberDisplay.Clear();
         ClearTopRightNumber();
         SetCooldown(0f, null, false);

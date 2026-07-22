@@ -78,7 +78,13 @@ public class ItemInventory : MonoBehaviour
         return true;
     }
 
-    public bool TryConsume(string gestureId) { var entry = FindFirst(gestureId); return entry != null && TryConsumeEntry(entry.id); }
+    public bool TryConsume(string gestureId)
+    {
+        var entry = FindFirst(gestureId);
+        if (entry != null && TryConsumeEntry(entry.id)) return true;
+        // 也尝试按索引查找（兼容弃置弹窗通过 index 定位后的场景）
+        return false;
+    }
 
     public bool TryConsumeEntry(int entryId)
     {
@@ -108,6 +114,15 @@ public class ItemInventory : MonoBehaviour
 
     public UpgradeDefinition GetDefinition(string gestureId) => FindFirst(gestureId)?.definition;
     public ItemEntry GetEntry(int entryId) => FindById(entryId);
+
+    /// <summary>按索引丢弃道具（0-based），供弃置弹窗使用。</summary>
+    public bool DiscardEntry(int index)
+    {
+        if (index < 0 || index >= _entries.Count) return false;
+        _entries.RemoveAt(index);
+        OnInventoryChanged?.Invoke();
+        return true;
+    }
 
     public void ClearAll() { _entries.Clear(); _nextEntryId = 1; OnInventoryChanged?.Invoke(); }
 

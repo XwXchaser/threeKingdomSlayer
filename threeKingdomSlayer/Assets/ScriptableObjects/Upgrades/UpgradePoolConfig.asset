@@ -21,18 +21,22 @@ MonoBehaviour:
   - upgrade: {fileID: 11400000, guid: dc0cedf370225574297d20b47db525ce, type: 2}
     weight: 10
   - upgrade: {fileID: 11400000, guid: e349c115a168417458d397e2fd4e9b8c, type: 2}
-    weight: 10
+    weight: 15
   - upgrade: {fileID: 11400000, guid: 99cb5a0f1a541db4db3016f39b7a3a21, type: 2}
-    weight: 10
+    weight: 8
   - upgrade: {fileID: 11400000, guid: 2b9a84ee93ab1eb40ba4ecabf6a72606, type: 2}
-    weight: 10
+    weight: 15
   - upgrade: {fileID: 11400000, guid: 6c85c67f02251b745a264f2f6057f27d, type: 2}
-    weight: 10
+    weight: 12
   - upgrade: {fileID: 11400000, guid: f97b886fd435d3f4e8832f7188f953d9, type: 2}
     weight: 10
   - upgrade: {fileID: 11400000, guid: 4f8408a000a49ad47b01f58b8f8fbb09, type: 2}
     weight: 10
   - upgrade: {fileID: 11400000, guid: 0e968b19ca0b1fe4e8d9cc72b814bfef, type: 2}
     weight: 10
+  - upgrade: {fileID: 11400000, guid: 810784d3604ab674b9952b8f79c21f06, type: 2}
+    weight: 8
+  - upgrade: {fileID: 11400000, guid: 6ae10de45f8beaf4bbf7a1fbc3dd1f77, type: 2}
+    weight: 8
   rarePool: []
   legendaryPool: []

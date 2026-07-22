@@ -93,7 +93,7 @@ public class CameraManager : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < duration)
         {
-            elapsed += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime;
             float t = elapsed / duration;
             float easeT = t * t;
 
@@ -132,7 +132,7 @@ public class CameraManager : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < duration)
         {
-            elapsed += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime;
             float t = elapsed / duration;
             float easeT = 1f - (1f - t) * (1f - t);
 

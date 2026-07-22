@@ -16,8 +16,9 @@ MonoBehaviour:
   upgradeId: charge_hit_shockwave
   displayName: "\u94C1\u58C1\xB7\u9707\u8361"
   descriptionTemplate: "\u84C4\u529B\u653B\u51FB\u4F1A\u9644\u5E26{0}\u9053\u57FA\u7840\u4F24\u5BB3\u4E3A{1}\u8303\u56F4\u4E3A{2}\u6392\u7684\u51B2\u51FB\u6CE2\uFF0C\u84C4\u529B\u65F6\u6BCF\u53D7\u52301\u6B21\u4F24\u5BB3\uFF0C\u8FD9\u9053\u51B2\u51FB\u6CE2\u4F24\u5BB3+{3}%"
+  extraDescriptionTemplate: 
   rarity: 0
-  maxLevel: 5
+  maxLevel: 10
   effectType: charge_hit_shockwave
   numericLevels: []
   floatValue: 0
@@ -25,7 +26,7 @@ MonoBehaviour:
   secondaryIntValue: 0
   stringValue: 
   baseAttackConfig: {fileID: 0}
-  icon: {fileID: 21300000, guid: c47aa9ca1a6e118489bf01e49919a5d1, type: 3}
+  icon: {fileID: 21300000, guid: e0da69c5235c7af44a9482bcec2a4210, type: 3}
   phantomLevels: []
   timedAoeLevels: []
   timedArrowLevels: []
@@ -56,6 +57,26 @@ MonoBehaviour:
     baseDamage: 25
     rangeRows: 3
     damageBonusPerHit: 0.25
+  - shockwaveCount: 3
+    baseDamage: 30
+    rangeRows: 3
+    damageBonusPerHit: 0.3
+  - shockwaveCount: 4
+    baseDamage: 35
+    rangeRows: 4
+    damageBonusPerHit: 0.35
+  - shockwaveCount: 4
+    baseDamage: 40
+    rangeRows: 4
+    damageBonusPerHit: 0.4
+  - shockwaveCount: 5
+    baseDamage: 50
+    rangeRows: 4
+    damageBonusPerHit: 0.45
+  - shockwaveCount: 5
+    baseDamage: 60
+    rangeRows: 5
+    damageBonusPerHit: 0.5
   triggerParam: 0
   phantomSteps: []
   useCount: 1

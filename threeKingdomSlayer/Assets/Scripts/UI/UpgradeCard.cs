@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -14,12 +15,27 @@ public class UpgradeCard : MonoBehaviour
     public TextMeshProUGUI nameText;
     public TextMeshProUGUI descriptionText;
     public Button button;
+    [Header("选中状态")]
+    [SerializeField] private Image selectedGlowImage;
+    [SerializeField] private float selectedLift = 16f;
 
     private UpgradeDefinition _upgradeDef;
+    private Action<UpgradeCard> _onClicked;
+    private Vector2 _baseAnchoredPosition;
+    private bool _hasBasePosition;
 
-    public void Setup(UpgradeDefinition def)
+    public UpgradeDefinition Definition => _upgradeDef;
+
+    public void Setup(UpgradeDefinition def, Action<UpgradeCard> onClicked = null)
     {
         _upgradeDef = def;
+        _onClicked = onClicked;
+        if (!_hasBasePosition)
+        {
+            _baseAnchoredPosition = ((RectTransform)transform).anchoredPosition;
+            _hasBasePosition = true;
+        }
+        SetSelected(false);
         if (nameText != null)
         {
             string name = def.displayName;
@@ -31,11 +47,11 @@ public class UpgradeCard : MonoBehaviour
             if (currentLevel == 0)
                 levelSuffix = "新获得";
             else if (nextLevel == def.maxLevel)
-                levelSuffix = $"Lv.{currentLevel} → Lv.MAX";
+                levelSuffix = $"Lv.{currentLevel} → MAX";
             else
-                levelSuffix = $"Lv.{currentLevel} → Lv.{nextLevel}";
+                levelSuffix = $"Lv.{currentLevel} → {nextLevel}";
 
-            nameText.text = $"{name}  {levelSuffix}";
+            nameText.text = $"{name}\n<size=70%>{levelSuffix}</size>";
         }
         if (descriptionText != null)
             descriptionText.text = UpgradeEffectManager.Instance != null
@@ -50,11 +66,24 @@ public class UpgradeCard : MonoBehaviour
         }
     }
 
+    public void SetSelectedGlow(Image glow)
+    {
+        selectedGlowImage = glow;
+        selectedGlowImage.gameObject.SetActive(false);
+    }
+
+    public void SetSelected(bool selected)
+    {
+        if (selectedGlowImage != null)
+            selectedGlowImage.gameObject.SetActive(selected);
+        if (_hasBasePosition)
+            ((RectTransform)transform).anchoredPosition = _baseAnchoredPosition + (selected ? Vector2.up * selectedLift : Vector2.zero);
+    }
+
     private void OnClicked()
     {
         Debug.Log($"[UpgradeCard] OnClicked frame={Time.frameCount} timeScale={Time.timeScale} upgradeId={_upgradeDef?.upgradeId}");
-        if (_upgradeDef != null && UpgradeChoiceManager.Instance != null)
-            UpgradeChoiceManager.Instance.ConfirmChoice(_upgradeDef);
+        _onClicked?.Invoke(this);
     }
 
 }

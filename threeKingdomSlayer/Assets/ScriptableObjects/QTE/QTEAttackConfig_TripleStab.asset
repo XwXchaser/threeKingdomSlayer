@@ -33,7 +33,7 @@ MonoBehaviour:
   projectileTargetZ: -5
   arrowPrefab: {fileID: 1380601310174306327, guid: 949279caa1d1b7d4dbfaaf3dacf411df, type: 3}
   arrowsPerWave: 7
-  arrowArcHeight: 6
+  arrowArcHeight: 2.5
   arrowSpawnOffsetZ: 1
   arrowSpreadX: 4
   arrowFlightTime: 1.5

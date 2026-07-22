@@ -25,15 +25,26 @@ public class MainMenuUI : MonoBehaviour
     private GameObject stageGrid;
     private float _uiScale;
 
-    private void Start()
+    private void RefreshStageConfigs()
     {
-        // 从场景中的 StageConfigManager 获取关卡列表（唯一来源，不自动扫描 Resources）
         if (stageConfigManager == null)
-            stageConfigManager = FindObjectOfType<StageConfigManager>();
+            stageConfigManager = UnityEngine.Object.FindObjectOfType<StageConfigManager>();
+
         if (stageConfigManager != null && stageConfigManager.stages.Count > 0)
             stageConfigs = new List<StageConfig>(stageConfigManager.stages);
         else
             Debug.LogWarning("[MainMenuUI] 未找到 StageConfigManager 或关卡列表为空，请将 StageConfigManager 添加到场景并配置关卡");
+    }
+
+    private void Awake()
+    {
+        // MainMenuUI 与 StageConfigManager 的 Awake 顺序并不保证；在 Start 时再读取关卡列表。
+        RefreshStageConfigs();
+    }
+
+    private void Start()
+    {
+        RefreshStageConfigs();
 
         UpdateCoinDisplay();
         CreateStageGrid();

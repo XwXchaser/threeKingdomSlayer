@@ -152,9 +152,11 @@ public class InputManager : MonoBehaviour
         {
             // UI 之上的点击不处理游戏输入（QTE 活跃时除外：QTE 指示器本身是 UI 元素）
             bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
-            DebugLog.Info($"[InputManager] MouseDown frame={Time.frameCount} overUI={overUI}");
             if (overUI && !IsAnyQTEActive())
+            {
+                isTouching = false;
                 return;
+            }
 
             touchStartPos = Input.mousePosition;
             touchStartTime = Time.time;
@@ -238,7 +240,10 @@ public class InputManager : MonoBehaviour
             case TouchPhase.Began:
                 // UI 之上的触摸不处理游戏输入（QTE 活跃时除外：QTE 指示器本身是 UI 元素）
                 if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject(touch.fingerId) && !IsAnyQTEActive())
+                {
+                    isTouching = false;
                     break;
+                }
 
                 touchStartPos = touch.position;
                 touchStartTime = Time.time;

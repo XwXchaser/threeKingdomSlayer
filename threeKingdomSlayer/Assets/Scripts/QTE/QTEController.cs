@@ -73,6 +73,8 @@ public class QTEController : MonoBehaviour
     [Header("运行时状态")]
     [SerializeField] private QTEState _state = QTEState.Idle;
 
+    private int _currentQTEIndex;
+    private float _nextQTEStartTime;
     private int _currentAttackIndex;
     private float _performingTimer;       // Performing 阶段的累计时间（用于动画前摇）
     private bool _qtePhaseStarted;        // QTE 阶段是否已开始（飞行物到达 / 动画前摇结束）
@@ -204,8 +206,10 @@ public class QTEController : MonoBehaviour
             qteDisplay.ClearAllIndicators();
 
         _activeQTEs.Clear();
+        _currentQTEIndex = 0;
+        _nextQTEStartTime = 0f;
 
-        // 创建 QTE 实例（spawnTime/warningEndTime/judgeEndTime 相对于 QTE 阶段开始）
+        // 创建 QTE 实例（顺序队列；delay 表示上一段结束后到下一段出现的间隔）
         foreach (var slot in _currentAttack.qteSlots)
         {
             if (slot.config == null) continue;
@@ -213,8 +217,8 @@ public class QTEController : MonoBehaviour
             {
                 config = slot.config,
                 spawnTime = slot.delay,
-                warningEndTime = slot.delay + slot.config.warningDuration,
-                judgeEndTime = slot.delay + slot.config.warningDuration + slot.config.judgeWindow,
+                warningEndTime = 0f,
+                judgeEndTime = 0f,
                 resolved = false,
                 success = false
             });
@@ -226,21 +230,15 @@ public class QTEController : MonoBehaviour
         _fixedEndTimer = -1f;
         _judgingSpeedApplied = false;  // Branched 慢放标记重置
 
-        // 计算实际判定阶段时长 = max(slot.judgeEndTime)，fixedQteDuration 作为保底下限
+        // 顺序单槽模式不再预先计算三个并列slot的总时长；每段按自身警示/判定结束。
         _effectiveJudgeDuration = 0f;
-        foreach (var qte in _activeQTEs)
-        {
-            if (qte.judgeEndTime > _effectiveJudgeDuration)
-                _effectiveJudgeDuration = qte.judgeEndTime;
-        }
-        if (_currentAttack.fixedQteDuration > _effectiveJudgeDuration)
-            _effectiveJudgeDuration = _currentAttack.fixedQteDuration;
         _endAnimTimer = -1f;
 
         enemy.EnterQTEAttack();
         StartQTEAnimation();
 
-        // 多段防御型 QTE：不生成传统飞行物，改用箭矢波
+        // 防御型 QTE：在每个指示器生成时发射对应箭矢波。
+        // 箭矢飞行覆盖“指示器入场 + judgeWindow”，避免在前摇期间提前飞完。
         if (!(_currentAttack.UseMultiPhaseAnimation && _currentAttack.isDefensiveQTE && _currentAttack.arrowPrefab != null))
             SpawnProjectile();
 
@@ -298,6 +296,8 @@ public class QTEController : MonoBehaviour
         if (_qtePhaseStarted) return;
         _qtePhaseStarted = true;
         _qtePhaseTimer = 0f;
+        _currentQTEIndex = 0;
+        _nextQTEStartTime = _activeQTEs.Count > 0 ? _activeQTEs[0].spawnTime : 0f;
     }
 
     private void KillProjectileSequence()
@@ -308,7 +308,7 @@ public class QTEController : MonoBehaviour
 
     #region 箭矢波（多段防御型 QTE）
 
-    private void SpawnArrowWaveForSlot(int slotIndex)
+    private void SpawnArrowWaveForSlot(int slotIndex, float overrideFlightTime = -1f)
     {
         if (_currentAttack == null || _currentAttack.arrowPrefab == null) return;
         if (_arrowWaves.ContainsKey(slotIndex)) return;
@@ -328,12 +328,27 @@ public class QTEController : MonoBehaviour
         float baseDmg = qte.config.failureDamage > 0f ? qte.config.failureDamage : qte.config.poiseDamage;
         float dmgPerArrow = baseDmg / count;
 
-        // 从全局配置读取参数，未配置则用默认值
         float jitter = arrowConfig != null ? arrowConfig.randomPositionJitter : 0.3f;
-        float flightVar = arrowConfig != null ? arrowConfig.randomFlightVariation : 0.1f;
         float arcVar = arrowConfig != null ? arrowConfig.randomArcVariation : 0.15f;
         float staggerMax = arrowConfig != null ? arrowConfig.staggerMax : 0.12f;
         float maxDescentPitch = arrowConfig != null ? arrowConfig.maxDescentPitch : 89f;
+
+        // 计算飞行时间：优先使用显式传入值，否则从 warningEndTime 反推
+        float baseFlightTime;
+        if (overrideFlightTime >= 0f)
+        {
+            baseFlightTime = overrideFlightTime;
+        }
+        else
+        {
+            float timeUntilWarningEnd = qte.warningEndTime - _qtePhaseTimer;
+            baseFlightTime = Mathf.Max(timeUntilWarningEnd, 0.25f);
+        }
+
+        // 弧高钳制到可见范围（配置值可能过大，此处做视觉补偿）
+        float arcHeightCap = 3.5f;
+        float rawArcH = _currentAttack.arrowArcHeight;
+        float arcH = Mathf.Min(rawArcH, arcHeightCap) * Random.Range(1f - arcVar, 1f + arcVar);
 
         for (int i = 0; i < count; i++)
         {
@@ -343,11 +358,9 @@ public class QTEController : MonoBehaviour
             float spawnZJitter = Random.Range(-jitter * 0.67f, jitter * 0.67f);
             Vector3 spawnPos = new Vector3(spawnX, spawnY, spawnZ + spawnZJitter);
 
-            // 飞行时间基于 slot 的 judgeEndTime 反推，确保箭矢在判定窗口结束时到达
+            // 仅保留发射错峰；所有箭矢按同一绝对到达时刻计算飞行时间。
             float stagger = Random.Range(0f, staggerMax);
-            float timeUntilJudgeEnd = qte.judgeEndTime - _qtePhaseTimer;
-            float flightTime = Mathf.Max(timeUntilJudgeEnd * Random.Range(1f - flightVar, 1f + flightVar) - stagger, 0.3f);
-            float arcH = _currentAttack.arrowArcHeight * Random.Range(1f - arcVar, 1f + arcVar);
+            float flightTime = Mathf.Max(baseFlightTime - stagger, 0.2f);
 
             var arrowObj = Instantiate(_currentAttack.arrowPrefab, spawnPos, Quaternion.identity);
             EnemyProjectileVisualPriority.Apply(arrowObj);
@@ -361,6 +374,8 @@ public class QTEController : MonoBehaviour
                     float d = dmgPerArrow;
                     float tz = targetZ;
                     float sx = spawnX;
+                    float ah = arcH;
+                    float ft = flightTime;
                     EnemyProjectile p = projectile;
                     Tween launchDelay = null;
                     launchDelay = DOVirtual.DelayedCall(stagger, () =>
@@ -369,7 +384,7 @@ public class QTEController : MonoBehaviour
                         if (p != null)
                         {
                             p.gameObject.SetActive(true);
-                            p.Launch(spawnPos, tz, sx, d, arcH, flightTime, null,
+                            p.Launch(spawnPos, tz, sx, d, ah, ft, null,
                                 _currentAttack.arrowTargetY, maxDescentPitch);
                         }
                     });
@@ -521,44 +536,33 @@ public class QTEController : MonoBehaviour
 
         if (!_qtePhaseStarted)
         {
-            // 无飞行物时，等待动画前摇结束后开始 QTE 阶段
             bool hasProjectile = _activeProjectile != null;
-            // 多段动画模式：等待 Start 动画播完（动画前摇）
             bool multiPhaseReady = _currentAttack.UseMultiPhaseAnimation && _performingTimer >= _currentAttack.EffectiveLeadTime;
-            // 单段动画模式：无飞行物 + 前摇结束
             bool singlePhaseReady = !_currentAttack.UseMultiPhaseAnimation && !hasProjectile && _performingTimer >= _currentAttack.EffectiveLeadTime;
-
             if (multiPhaseReady || singlePhaseReady)
                 StartQTEPhase();
-            // 有飞行物：等待 OnProjectileReachedTarget 回调
             return;
         }
 
         _qtePhaseTimer += Time.deltaTime;
-
-        // 按 phase-relative 时间生成指示器 + 箭矢波
-        foreach (var qte in _activeQTEs)
+        if (_currentQTEIndex >= _activeQTEs.Count)
         {
-            if (qte.indicator == null && _qtePhaseTimer >= qte.spawnTime)
-            {
-                SpawnQTEIndicator(qte);
-                // 生成该 slot 对应的箭矢波
-                SpawnArrowWaveForSlot(_activeQTEs.IndexOf(qte));
-            }
+            StartQTEEndingPhase();
+            return;
         }
 
-        // 检查判定窗口开始（通知 QTEDisplay 触发放大闪白）
-        CheckJudgmentStart();
+        var qte = _activeQTEs[_currentQTEIndex];
+        if (qte.indicator == null && _qtePhaseTimer >= _nextQTEStartTime)
+        {
+            // 图案一开始出现就进入判定窗口；滑入只是判定窗口内的视觉入场。
+            qte.warningEndTime = _qtePhaseTimer;
+            qte.judgeEndTime = qte.warningEndTime + qte.config.judgeWindow;
+            SpawnQTEIndicator(qte);
 
-        // 所有 QTE 已到生成时间 → 进入判定阶段
-        bool allReady = true;
-        foreach (var qte in _activeQTEs)
-        {
-            if (qte.indicator == null && _qtePhaseTimer < qte.spawnTime)
-            { allReady = false; break; }
-        }
-        if (allReady)
-        {
+            // 箭矢与当前段同时开始飞行，并在判定窗口结束时到达玩家。
+            // 这样玩家完整拥有 judgeWindow 的可见反应时间。
+            SpawnArrowWaveForSlot(_currentQTEIndex, qte.config.judgeWindow);
+            qte.judgmentStarted = true;
             _state = QTEState.QTEJudging;
         }
     }
@@ -566,54 +570,23 @@ public class QTEController : MonoBehaviour
     private void UpdateJudging()
     {
         _qtePhaseTimer += Time.deltaTime;
+        if (_currentQTEIndex >= _activeQTEs.Count)
+        {
+            StartQTEEndingPhase();
+            return;
+        }
 
-        // Branched 模式：首个判定帧将 Happen 动画慢放以覆盖整个 QTE 窗口
-        if (!_judgingSpeedApplied && _currentAttack != null && _currentAttack.UseBranchedAnimation && _animator != null)
+        var qte = _activeQTEs[_currentQTEIndex];
+        if (!_judgingSpeedApplied && _currentAttack != null && _currentAttack.UseBranchedAnimation && _animator != null && qte.judgmentStarted)
         {
             _judgingSpeedApplied = true;
             float happenLength = _currentAttack.animationLoopClip != null ? _currentAttack.animationLoopClip.length : 0.5f;
-            float window = _effectiveJudgeDuration > 0f ? _effectiveJudgeDuration : happenLength;
-            float slowSpeed = happenLength / window;
-            _animator.speed = Mathf.Clamp(slowSpeed, 0.05f, 1f);
+            _animator.speed = Mathf.Clamp(happenLength / qte.config.judgeWindow, 0.05f, 1f);
         }
 
-        // 所有 slot 已 resolved → 立即进入结束阶段，不等 judgeDuration 到期
-        bool allResolved = true;
-        foreach (var qte in _activeQTEs)
-        {
-            if (!qte.resolved) { allResolved = false; break; }
-        }
-        if (allResolved)
-        {
-            StartQTEEndingPhase();
-            return;
-        }
-
-        // 判定阶段到期：强制结束，未 resolve 的 slot 视为失败，进入结束动画阶段
-        float judgeDuration = _effectiveJudgeDuration;
-        if (_qtePhaseTimer >= judgeDuration)
-        {
-            foreach (var qte in _activeQTEs)
-            {
-                if (!qte.resolved)
-                    ResolveQTE(qte, false);
-            }
-            StartQTEEndingPhase();
-            return;
-        }
-
-        // 检查判定窗口开始（通知 QTEDisplay 触发放大闪白）
         CheckJudgmentStart();
-
-        // 检查到期的 slot 并自动失败（Branched 模式跳过 per-slot 过期）
-        if (!(_currentAttack != null && _currentAttack.UseBranchedAnimation))
-        {
-            foreach (var qte in _activeQTEs)
-            {
-                if (!qte.resolved && qte.IsExpired(_qtePhaseTimer))
-                    ResolveQTE(qte, false);
-            }
-        }
+        if (!qte.resolved && qte.IsExpired(_qtePhaseTimer))
+            ResolveQTE(qte, false);
     }
 
     private void StartQTEEndingPhase()
@@ -719,20 +692,17 @@ public class QTEController : MonoBehaviour
             return false;
         }
 
-        foreach (var qte in _activeQTEs)
+        var qte = _activeQTEs[_currentQTEIndex];
+        if (qte.resolved || qte.config.qteType != QTEType.Click) return false;
+        if (!qte.IsInJudgeWindow(_qtePhaseTimer)) return false;
+
+        if (IsClickInQTEArea(screenPos, qte))
         {
-            if (qte.resolved || qte.config.qteType != QTEType.Click) continue;
-
-            if (!qte.IsInJudgeWindow(_qtePhaseTimer)) continue;
-
-            if (IsClickInQTEArea(screenPos, qte))
-            {
-                DebugLog.Info($"[QTEController] 点击QTE成功 idx={_activeQTEs.IndexOf(qte)}");
-                ResolveQTE(qte, true);
-                return true;
-            }
+            DebugLog.Info($"[QTEController] 点击QTE成功 idx={_currentQTEIndex}");
+            ResolveQTE(qte, true);
+            return true;
         }
-        DebugLog.Info($"[QTEController] TryQTEClick 未命中任何指示器 screenPos={screenPos}");
+        DebugLog.Info($"[QTEController] TryQTEClick 未命中当前指示器 screenPos={screenPos}");
         return false;
     }
 
@@ -741,45 +711,33 @@ public class QTEController : MonoBehaviour
         if (_state != QTEState.QTEJudging && _state != QTEState.PerformingQTEAttack) return false;
         if (!_qtePhaseStarted) return false;
 
-        foreach (var qte in _activeQTEs)
+        var qte = _activeQTEs[_currentQTEIndex];
+        if (qte.resolved || qte.config.qteType != QTEType.Swipe) return false;
+        if (!qte.IsInJudgeWindow(_qtePhaseTimer)) return false;
+        Rect? indicatorRect = GetIndicatorScreenRect(qte);
+        if (indicatorRect == null || !LineIntersectsRect(startScreenPos, releaseScreenPos, indicatorRect.Value))
+            return false;
+
+        if (swipeSpeed < qte.config.swipeMinSpeed)
         {
-            if (qte.resolved || qte.config.qteType != QTEType.Swipe) continue;
-
-            if (!qte.IsInJudgeWindow(_qtePhaseTimer)) continue;
-
-            if (swipeSpeed < qte.config.swipeMinSpeed)
-            {
-                DebugLog.Info($"[QTEController] 划动速度不足: {swipeSpeed:F0} < {qte.config.swipeMinSpeed}");
-                continue;
-            }
-
-            // 检查划动是否经过指示器区域
-            Rect? indicatorRect = GetIndicatorScreenRect(qte);
-            if (indicatorRect == null) continue;
-
-            if (!LineIntersectsRect(startScreenPos, releaseScreenPos, indicatorRect.Value))
-                continue;
-
-            float targetAngle = qte.config.swipeDirection;
-            float swipeAngle = Mathf.Atan2(swipeDirection.y, swipeDirection.x) * Mathf.Rad2Deg;
-            if (swipeAngle < 0f) swipeAngle += 360f;
-
-            // 双向匹配：接受目标方向及其反方向（用户可能从指示器两侧划入）
-            float diff = Mathf.Abs(Mathf.DeltaAngle(swipeAngle, targetAngle));
-            float diffOpposite = Mathf.Abs(Mathf.DeltaAngle(swipeAngle, targetAngle + 180f));
-            float bestDiff = Mathf.Min(diff, diffOpposite);
-            if (bestDiff <= qte.config.swipeAngleTolerance)
-            {
-                DebugLog.Info($"[QTEController] 划动匹配成功: angle={swipeAngle:F1}° target={targetAngle}° diff={bestDiff:F1}° tol={qte.config.swipeAngleTolerance}°");
-                ResolveQTE(qte, true);
-                return true;
-            }
-            else
-            {
-                DebugLog.Info($"[QTEController] 划动角度偏差过大: bestDiff={bestDiff:F1}° > tol={qte.config.swipeAngleTolerance}° (swipe={swipeAngle:F1}° target={targetAngle}°)");
-            }
+            DebugLog.Info($"[QTEController] 划动速度不足: {swipeSpeed:F0} < {qte.config.swipeMinSpeed}");
+            return false;
         }
-        return false;
+
+        float targetAngle = qte.config.swipeDirection;
+        float swipeAngle = Mathf.Atan2(swipeDirection.y, swipeDirection.x) * Mathf.Rad2Deg;
+        if (swipeAngle < 0f) swipeAngle += 360f;
+        float bestDiff = Mathf.Min(Mathf.Abs(Mathf.DeltaAngle(swipeAngle, targetAngle)), Mathf.Abs(Mathf.DeltaAngle(swipeAngle, targetAngle + 180f)));
+        if (bestDiff > qte.config.swipeAngleTolerance)
+        {
+            DebugLog.Info($"[QTEController] 划动角度偏差过大: bestDiff={bestDiff:F1}° > tol={qte.config.swipeAngleTolerance}°");
+            return false;
+        }
+
+        DebugLog.Info($"[QTEController] 划动匹配成功: idx={_currentQTEIndex}");
+        PlaySwipeInputVisual(qte);
+        ResolveQTE(qte, true);
+        return true;
     }
 
     private Camera _qteCanvasCamera;
@@ -856,7 +814,7 @@ public class QTEController : MonoBehaviour
     }
 
     /// <summary>
-    /// 检查 QTE 判定窗口开始（通知 QTEDisplay 触发放大闪白）
+    /// 检查 QTE 判定窗口开始（标记 judgmentStarted，指示器落位后自动进入判定）
     /// </summary>
     private void CheckJudgmentStart()
     {
@@ -866,8 +824,6 @@ public class QTEController : MonoBehaviour
             if (_qtePhaseTimer >= qte.warningEndTime && qte.indicator != null)
             {
                 qte.judgmentStarted = true;
-                if (qteDisplay != null)
-                    qteDisplay.OnJudgmentStart(qte.indicator);
             }
         }
     }
@@ -904,9 +860,9 @@ public class QTEController : MonoBehaviour
             Debug.LogWarning("[QTEController] SpawnIndicator返回null!");
     }
 
-    private void ResolveQTE(QTEInstance qte, bool success, bool earlyFail = false)
+    private void ResolveQTE(QTEInstance qte, bool success)
     {
-        DebugLog.Info($"[QTE_DIAG] ResolveQTE: success={success}, earlyFail={earlyFail}, indicatorId={qte.indicator?.GetInstanceID()}, remainingUnresolved={_activeQTEs.FindAll(q => !q.resolved).Count}");
+        DebugLog.Info($"[QTE_DIAG] ResolveQTE: success={success}, indicatorId={qte.indicator?.GetInstanceID()}, remainingUnresolved={_activeQTEs.FindAll(q => !q.resolved).Count}");
         qte.resolved = true;
         qte.success = success;
 
@@ -917,15 +873,27 @@ public class QTEController : MonoBehaviour
         else
         {
             OnQTEFailureSingle(qte);
+            if (_currentAttack != null && !_currentAttack.isDefensiveQTE && PlayerState.Instance != null)
+            {
+                PlayerState.Instance.TakeDamage(qte.config.failureDamage);
+                DebugLog.Info($"[QTEController] QTE失败伤害即时结算: {qte.config.failureDamage:F0}");
+            }
+            if (qteDisplay != null && qte.indicator != null)
+                qteDisplay.FlashIndicatorFailure(qte.indicator);
         }
 
         // 通知 QTEDisplay 播放结果特效
         if (qteDisplay != null && qte.indicator != null)
+            qteDisplay.ShowQTEResult(qte.indicator, success);
+
+        if (_currentQTEIndex < _activeQTEs.Count && _activeQTEs[_currentQTEIndex] == qte)
         {
-            if (earlyFail)
-                qteDisplay.CancelIndicatorEarly(qte.indicator);
-            else
-                qteDisplay.ShowQTEResult(qte.indicator, success);
+            _currentQTEIndex++;
+            if (_currentQTEIndex < _activeQTEs.Count)
+            {
+                _nextQTEStartTime = _qtePhaseTimer + _activeQTEs[_currentQTEIndex].spawnTime;
+                _state = QTEState.PerformingQTEAttack;
+            }
         }
     }
 
@@ -985,8 +953,42 @@ public class QTEController : MonoBehaviour
     #region 格挡表现
 
     /// <summary>
-    /// 播放 QTE 格挡成功表现：矛从下方弧形扫入屏幕中央，同时自转
-    /// Pivot 在摄像机中心负责公转（X: 90°→0°），Spear 偏移在 Pivot 下负责自转（Z: 0°→360°）
+    /// 玩家 Swipe QTE 输入识别后的固定倾角挥动反馈。
+    /// </summary>
+    private static readonly List<Enemy> EmptySwipeVisualTargets = new List<Enemy>(0);
+
+    private void PlaySwipeInputVisual(QTEInstance qte)
+    {
+        if (qte == null || qte.config == null) return;
+
+        var player = PlayerState.Instance;
+        var slashConfig = player != null && player.heroConfig != null
+            ? player.heroConfig.GetSkillConfig(AttackType.Slash)
+            : null;
+        if (player == null || slashConfig == null || slashConfig.attackWavePrefab == null) return;
+
+        // SweepEffect 对 leftToRight 的视觉朝向与 QTE 图案的填充方向相反，故取反。
+        bool leftToRight = Mathf.Abs(Mathf.DeltaAngle(qte.config.swipeDirection, 0f)) > 90f;
+        const float indicatorTilt = 32.65f;
+        float angleOffset = indicatorTilt;
+
+        Vector3 playerPos = player.transform.position;
+        Vector3 center = new Vector3(0f, playerPos.y + slashConfig.slashSpawnYOffset, playerPos.z + slashConfig.slashSpawnZOffset);
+
+        // 完全走正式 Slash 的 SweepEffect 管线；空目标列表确保它只播放视觉。
+        SweepEffect.Create(center, slashConfig.damageType, 0f, EmptySwipeVisualTargets, leftToRight,
+            slashConfig.slashSweepHalfWidth, slashConfig.slashSweepAngle, slashConfig.slashSweepDuration,
+            prefab: slashConfig.attackWavePrefab,
+            rotateSprite1: stabBlockRotateSprite1,
+            rotateSprite2: stabBlockRotateSprite2,
+            angleOffset: angleOffset,
+            movementTilt: indicatorTilt,
+            additionalWeaponRotation: 20f);
+    }
+
+    /// <summary>
+    /// 播放 QTE 格挡成功表现：矛从下方弧形扫入屏幕中央，同时自转。
+    /// Pivot 在摄像机中心负责公转，Spear 偏移在 Pivot 下负责自转。
     /// </summary>
     private void PlayBlockVisual()
     {
@@ -1091,43 +1093,18 @@ public class QTEController : MonoBehaviour
 
         bool isDefensive = _currentAttack != null && _currentAttack.isDefensiveQTE;
 
-        // 收集 QTE 失败伤害（非防御型才在此汇总，防御型由箭矢 OnArrival 处理）
-        if (!isDefensive)
+        // 非防御型 QTE 的失败伤害已在 ResolveQTE 失败瞬间结算；收尾仅处理飞行物。
+        if (!isDefensive && _activeProjectile != null)
         {
-            float totalFailureDamage = 0f;
-            bool anyFailed = false;
-            foreach (var qte in _activeQTEs)
-            {
-                if (qte.resolved && !qte.success)
-                {
-                    anyFailed = true;
-                    totalFailureDamage += qte.config.failureDamage;
-                }
-            }
-            if (totalFailureDamage > 0f && PlayerState.Instance != null)
-            {
-                PlayerState.Instance.TakeDamage(totalFailureDamage);
-                DebugLog.Info($"[QTEController] QTE失败伤害: {totalFailureDamage:F0}");
-            }
-
-            // 飞行物处理
-            if (_activeProjectile != null)
-            {
-                var proj = _activeProjectile.GetComponent<QTEProjectile>();
-                if (anyFailed && proj != null)
-                {
-                    proj.ContinuePassThrough(0.8f, null);
-                }
-                else if (proj != null)
-                {
-                    proj.DestroyOnSuccess();
-                }
-                else
-                {
-                    Destroy(_activeProjectile);
-                }
-                _activeProjectile = null;
-            }
+            bool anyFailed = _activeQTEs.Exists(qte => qte.resolved && !qte.success);
+            var proj = _activeProjectile.GetComponent<QTEProjectile>();
+            if (anyFailed && proj != null)
+                proj.ContinuePassThrough(0.8f, null);
+            else if (proj != null)
+                proj.DestroyOnSuccess();
+            else
+                Destroy(_activeProjectile);
+            _activeProjectile = null;
         }
 
         // 清理残余箭矢波（防御型 QTE：已 Deflect 的已完成，未到达的需强制销毁）

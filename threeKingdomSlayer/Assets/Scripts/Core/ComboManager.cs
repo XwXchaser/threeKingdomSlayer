@@ -22,7 +22,7 @@ public class ComboManager : MonoBehaviour
         {
             if (config == null || _currentCombo <= 0) return 0f;
             float elapsed = Time.time - _lastHitTime;
-            return Mathf.Clamp01(1f - elapsed / config.resetDelay);
+            return Mathf.Clamp01(1f - elapsed / GetEffectiveResetDelay());
         }
     }
 
@@ -73,10 +73,22 @@ public class ComboManager : MonoBehaviour
     {
         if (config == null || _currentCombo <= 0) return;
 
-        if (Time.time - _lastHitTime >= config.resetDelay)
+        if (Time.time - _lastHitTime >= GetEffectiveResetDelay())
         {
             ResetCombo();
         }
+    }
+
+    /// <summary>按当前连击层级计算有效重置窗口</summary>
+    private float GetEffectiveResetDelay()
+    {
+        if (config == null) return 3f;
+        float baseDelay = config.resetDelay;
+        if (_currentCombo < 10) return baseDelay;
+        if (_currentCombo < 20) return 2.5f;
+        if (_currentCombo < 30) return 2.0f;
+        if (_currentCombo < 40) return 1.7f;
+        return 1.5f;
     }
 
     /// <summary>为敌人注册受击回调</summary>
