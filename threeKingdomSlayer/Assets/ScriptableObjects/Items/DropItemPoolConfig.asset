@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5861b49cb1a81f34da9ee1ce1d0b3801, type: 3}
+  m_Name: DropItemPoolConfig
+  m_EditorClassIdentifier: 
+  baseDropChance: 0.1
+  pool:
+  - item: {fileID: 11400000, guid: f8dfd43dcfb8c5942bcc338bae504417, type: 2}
+    weight: 10
+  - item: {fileID: 11400000, guid: d2970e753c26ade4dadee6f52e5d3a89, type: 2}
+    weight: 5
+  - item: {fileID: 11400000, guid: 0669232f6308ab341bec6079a6f34cd0, type: 2}
+    weight: 5
+  - item: {fileID: 11400000, guid: 8b7cece3bb9ea04468b277f70db3561a, type: 2}
+    weight: 3

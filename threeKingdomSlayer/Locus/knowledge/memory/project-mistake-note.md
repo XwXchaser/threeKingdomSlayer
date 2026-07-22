@@ -10,7 +10,7 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1778764012219
-updatedAt: 1783787131044
+updatedAt: 1784356340282
 ---
 
 # project-mistake-note
@@ -93,5 +93,12 @@ updatedAt: 1783787131044
 - 根因：`ReadyFireEffect` 初期挂在 `Health(Slider)` 下，和 `UltPortraitButton` 是平级关系，只能靠外部 offset 对齐头像；一旦头像布局、尺寸、层级发生变化，特效就可能偏离头像、被遮挡，或虽然存在但不在预期区域
 - 修复：将火焰节点迁入 `UltPortraitButton` 内部，作为头像按钮的子物体，并放在 `UltBase` / `UltFill` / `Head` 之前渲染；位置和尺寸改为在头像局部空间内调整
 - 预防规则：**所有“附着在某个 UI 元素上”的持续特效，都应优先挂在该 UI 元素内部，而不是挂在外部父节点后靠 anchoredPosition/offset 对齐。只要需求是“跟着某个 UI 元素走并稳定处于其前后层级”，就必须优先保证层级归属正确，再谈参数微调**
-- 文件：`Assets/Scenes/Battle.scene`, `Assets/Scripts/UI/UltimateButtonUI.cs`, `Assets/Scripts/UI/UIReadyFireEffect.cs`
+
+
+### 已隐藏的UI也可能跳过Awake，不能假定运行时缓存已建立 ✅ 已修复（2026-07）
+- 症状：`StageProgressBar` 在 `BattleHUD.Start` 调用 `Initialize` 时，`_contentRect` 为 null，导致 `LayoutContent` 空引用。
+- 根因：进度条位于翻牌正面；Prefab初始时该节点处于 inactive，生命周期未执行 `Awake` 中的 `BuildVisuals()`，但 `BattleHUD` 仍可直接调用 `Initialize`。
+- 修复：`Initialize` 在 `LayoutContent` 前检查 `_contentRect`、`_lineImage`、`_playerDotRect`，缺失时显式执行 `BuildVisuals()`。
+- 预防规则：**对位于初始隐藏面板中的UI，公共初始化入口必须自行确保必需的缓存/子节点已建立；不能只依赖 Awake/OnEnable 的时序。**
+- 文件：`Assets/Scripts/UI/StageProgressBar.cs`
 <!-- locus:body:end -->

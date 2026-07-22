@@ -102,11 +102,20 @@ public class StageController : MonoBehaviour
             playerState.OnStageStateChanged += OnPlayerStageStateChanged;
         }
 
-        // 自动开始关卡（Battle场景加载后直接进入战斗）
-        // 注意：延迟一帧执行，确保所有组件都已初始化完毕
-        // 例如 EnemyPool 在 Awake 中注册预制体，StartStage 中 PrewarmEnemyPools 需要用到
+        // 域重载或上一局暂停状态可能保留 timeScale=0；必须在安排首局启动前恢复，
+        // 否则 Invoke 的缩放时间永远不会到达，关卡会停在 None。
+        Time.timeScale = 1f;
+
+        // 自动开始关卡：协程使用 unscaled 时间，避免其他 Start 在同帧暂停时让启动永久卡住。
         Debug.Log("[StageController] 场景加载完成，自动开始关卡");
-        Invoke(nameof(StartStage), 0.1f);
+        StartCoroutine(StartStageNextFrame());
+    }
+
+    private IEnumerator StartStageNextFrame()
+    {
+        yield return null;
+        Time.timeScale = 1f;
+        StartStage();
     }
 
     #region 关卡流程

@@ -12,6 +12,10 @@ public class EnemyManager : MonoBehaviour
     [Header("列管理")]
     public ColumnManager columnManager;
 
+    [Header("道具掉落")]
+    [Tooltip("击杀掉落道具池配置")]
+    public DropItemPoolConfig dropItemPoolConfig;
+
     [Header("共享血量")]
     [Tooltip("共享血量敌人之间的连接特效 Prefab")]
     public GameObject sharedHealthChainPrefab;
@@ -129,6 +133,9 @@ public class EnemyManager : MonoBehaviour
         // 触发事件（必须在 ReturnEnemy 之前）
         OnAnyEnemyDied?.Invoke(enemy);
 
+        // 击杀充能：按 HeroConfig 的普通敌人/Boss数值结算。
+        UltimateSystem.Instance?.AddEnergyForKill(enemy.isBoss);
+
         // 经验值流转：击杀 → 生成经验宝石飞向经验条
         if (ExpGemManager.Instance != null)
         {
@@ -140,6 +147,9 @@ public class EnemyManager : MonoBehaviour
             float expMult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetExpMultiplier() : 1f;
             PlayerState.Instance?.AddExp(enemy.expReward * expMult); // 回退：直接加经验
         }
+
+        // 道具掉落判定
+        TryDropItem(enemy);
 
         // 注意：不再在此处调用 EnemyPool.Instance?.ReturnEnemy(enemy)
         // 对象回收由 Enemy.DeathBounceAndFall() 协程在死亡动画播完后处理
@@ -154,6 +164,51 @@ public class EnemyManager : MonoBehaviour
         if (enemy.isBoss && UpgradeChoiceManager.Instance != null)
         {
             enemy.OnDeathAnimComplete += HandleBossDeathAnimComplete;
+        }
+    }
+
+    /// <summary>击杀掉落道具判定</summary>
+    private void TryDropItem(Enemy enemy)
+    {
+        if (dropItemPoolConfig == null || dropItemPoolConfig.pool.Count == 0) return;
+        if (ItemInventory.Instance == null) return;
+
+        float dropChance = dropItemPoolConfig.baseDropChance;
+        var uem = UpgradeEffectManager.Instance;
+        if (uem != null) dropChance *= (1f + uem.GetItemDropRateBonus());
+
+        if (Random.value >= dropChance) return;
+
+        // 加权随机抽取
+        float totalWeight = 0f;
+        for (int i = 0; i < dropItemPoolConfig.pool.Count; i++)
+            totalWeight += dropItemPoolConfig.pool[i].weight;
+        float roll = Random.value * totalWeight;
+        float cumulative = 0f;
+        UpgradeDefinition picked = null;
+        for (int i = 0; i < dropItemPoolConfig.pool.Count; i++)
+        {
+            cumulative += dropItemPoolConfig.pool[i].weight;
+            if (roll <= cumulative) { picked = dropItemPoolConfig.pool[i].item; break; }
+        }
+        if (picked == null) return;
+
+        // 尝试添加，满则弹出弃置弹窗
+        if (ItemInventory.Instance.CanAdd(picked))
+        {
+            ItemInventory.Instance.AddItem(picked);
+        }
+        else
+        {
+            var entries = new List<ItemInventory.ItemEntry>(ItemInventory.Instance.Entries);
+            ItemDiscardPopup.Show(entries, picked, discardIndex =>
+            {
+                if (discardIndex >= 0)
+                {
+                    ItemInventory.Instance.DiscardEntry(discardIndex);
+                    ItemInventory.Instance.AddItem(picked);
+                }
+            });
         }
     }
 

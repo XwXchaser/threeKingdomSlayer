@@ -65,16 +65,16 @@ Shader "Custom/SpikeTrapOutline"
 
             fixed4 SpriteOutlineFrag(v2f IN) : SV_Target
             {
-                fixed alpha = tex2D(_MainTex, IN.texcoord).a;
+                float alpha = tex2D(_MainTex, IN.texcoord).a;
 
                 float2 offset = _MainTex_TexelSize.xy * _OutlineWidth;
-                fixed n = tex2D(_MainTex, IN.texcoord + float2(0, offset.y)).a;
-                fixed s = tex2D(_MainTex, IN.texcoord + float2(0, -offset.y)).a;
-                fixed e = tex2D(_MainTex, IN.texcoord + float2(offset.x, 0)).a;
-                fixed w = tex2D(_MainTex, IN.texcoord + float2(-offset.x, 0)).a;
+                float n = tex2D(_MainTex, IN.texcoord + float2(0, offset.y)).a;
+                float s = tex2D(_MainTex, IN.texcoord + float2(0, -offset.y)).a;
+                float e = tex2D(_MainTex, IN.texcoord + float2(offset.x, 0)).a;
+                float w = tex2D(_MainTex, IN.texcoord + float2(-offset.x, 0)).a;
 
-                fixed neighborMax = max(max(n, s), max(e, w));
-                fixed isOutline = step(alpha, 0.1) * step(0.5, neighborMax);
+                float neighborMax = max(max(n, s), max(e, w));
+                float isOutline = step(alpha, 0.1) * step(0.5, neighborMax);
 
                 clip(isOutline - 0.5);
                 return fixed4(_OutlineColor.rgb, isOutline) * IN.color;

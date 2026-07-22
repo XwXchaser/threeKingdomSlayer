@@ -71,6 +71,13 @@ public class UltimateSystem : MonoBehaviour
         AddEnergy(cfg.ultimateEnergyGain);
     }
 
+    public void AddEnergyForKill(bool isBoss)
+    {
+        var hero = PlayerState.Instance?.heroConfig;
+        if (hero == null) return;
+        AddEnergy(isBoss ? hero.ultimateEnergyPerBossKill : hero.ultimateEnergyPerEnemyKill);
+    }
+
     /// <summary>
     /// 直接增加指定能量值
     /// </summary>

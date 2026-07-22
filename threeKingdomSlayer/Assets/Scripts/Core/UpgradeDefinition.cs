@@ -23,6 +23,9 @@ public class UpgradeDefinition : ScriptableObject
     public string displayName;
     [Tooltip("效果描述模板，{0}=数值，如「造成伤害提升 {0}%」")]
     public string descriptionTemplate;
+    [Tooltip("补充效果描述；支持与主描述相同的 {0}、{1} 占位符。留空则不显示。")]
+    [TextArea(1, 3)]
+    public string extraDescriptionTemplate;
 
     [Header("稀有度与等级")]
     public UpgradeRarity rarity = UpgradeRarity.Common;

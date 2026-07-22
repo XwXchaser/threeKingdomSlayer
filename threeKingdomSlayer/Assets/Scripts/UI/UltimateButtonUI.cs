@@ -289,7 +289,7 @@ public class UltimateButtonUI : MonoBehaviour
 
     private void OnButtonClick()
     {
-        if (Time.timeScale == 0f) return; // 暂停时不触发大招
+        if (Time.timeScale == 0f || (DialogueManager.Instance != null && DialogueManager.Instance.IsInteractionBlocked)) return;
         UltimateSystem.Instance?.ActivateUltimate();
     }
 }

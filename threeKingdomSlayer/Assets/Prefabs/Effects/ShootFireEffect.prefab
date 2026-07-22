@@ -65,3 +65,9 @@ MonoBehaviour:
   fireStartZ: -2
   fireEndZ: 15
   zTravelSpeed: 20
+  sweepAngle: 35
+  sweepCycles: 3
+  sweepDuration: 0.9
+  sweepShotInterval: 0.02
+  sweepProjectileDuration: 0.45
+  sweepHitRadius: 0.8

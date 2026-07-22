@@ -25,6 +25,7 @@ public class BuffDisplayPanel : MonoBehaviour
     private Dictionary<string, BuffIcon> _upgradeIcons = new Dictionary<string, BuffIcon>();
     // entryId → slot（ColumnB）
     private readonly Dictionary<int, BuffIcon> _itemIcons = new Dictionary<int, BuffIcon>();
+    private readonly Dictionary<int, BuffIcon> _itemSlotAssignments = new Dictionary<int, BuffIcon>();
     private readonly Dictionary<BuffIcon, int> _iconEntryIds = new Dictionary<BuffIcon, int>();
 
     private CanvasGroup _canvasGroup;
@@ -93,29 +94,55 @@ public class BuffDisplayPanel : MonoBehaviour
         int capacity = ItemInventory.Instance != null ? ItemInventory.Instance.Capacity : 0;
         var entries = ItemInventory.Instance != null ? ItemInventory.Instance.Entries : null;
         bool potionTargetAssigned = false;
+        var activeEntryIds = new HashSet<int>();
+        if (entries != null)
+        {
+            for (int i = 0; i < entries.Count; i++)
+                activeEntryIds.Add(entries[i].id);
+        }
 
+        var staleAssignments = new List<int>();
+        foreach (var pair in _itemSlotAssignments)
+        {
+            if (!activeEntryIds.Contains(pair.Key))
+                staleAssignments.Add(pair.Key);
+        }
+        foreach (int entryId in staleAssignments)
+            _itemSlotAssignments.Remove(entryId);
+
+        var occupiedSlots = new HashSet<BuffIcon>();
         for (int i = 0; i < _columnBSlots.Count; i++)
         {
             var slot = _columnBSlots[i];
             if (slot == null) continue;
             slot.OnClicked -= OnItemIconClicked;
+            slot.ShowEmpty(_skillFrame);
             if (i >= capacity)
-            {
                 slot.ResetSlot();
-                continue;
-            }
-            if (entries == null || i >= entries.Count)
+        }
+
+        if (entries == null) return;
+
+        for (int i = 0; i < entries.Count; i++)
+        {
+            var entry = entries[i];
+            if (!_itemSlotAssignments.TryGetValue(entry.id, out var slot) || slot == null || !_columnBSlots.Contains(slot))
             {
-                slot.ShowEmpty(_skillFrame);
-                if (!potionTargetAssigned && HealthPotionManager.Instance != null)
+                slot = null;
+                for (int j = 0; j < capacity && j < _columnBSlots.Count; j++)
                 {
-                    HealthPotionManager.Instance.targetSlot = slot.GetComponent<RectTransform>();
-                    potionTargetAssigned = true;
+                    var candidate = _columnBSlots[j];
+                    if (candidate != null && !occupiedSlots.Contains(candidate))
+                    {
+                        slot = candidate;
+                        break;
+                    }
                 }
-                continue;
+                if (slot == null) continue;
+                _itemSlotAssignments[entry.id] = slot;
             }
 
-            var entry = entries[i];
+            occupiedSlots.Add(slot);
             var def = entry.definition;
             slot.Setup(def != null ? def.icon : null, def != null ? def.upgradeId : null,
                 UpgradeCategory.Item, entry.GestureId);
@@ -133,6 +160,19 @@ public class BuffDisplayPanel : MonoBehaviour
             {
                 HealthPotionManager.Instance.targetSlot = slot.GetComponent<RectTransform>();
                 potionTargetAssigned = true;
+            }
+        }
+
+        if (!potionTargetAssigned && HealthPotionManager.Instance != null)
+        {
+            for (int i = 0; i < capacity && i < _columnBSlots.Count; i++)
+            {
+                var slot = _columnBSlots[i];
+                if (slot != null && !occupiedSlots.Contains(slot))
+                {
+                    HealthPotionManager.Instance.targetSlot = slot.GetComponent<RectTransform>();
+                    break;
+                }
             }
         }
     }
@@ -169,36 +209,61 @@ public class BuffDisplayPanel : MonoBehaviour
             }
 
             icon.SetFrame(GetLevelFrame(newLevel));
+            RefreshNumericValue(icon, def, UpgradeEffectManager.Instance);
+        }
+    }
 
-            if (def.category != UpgradeCategory.AttackPassive && def.category != UpgradeCategory.TimedPassive)
-            {
-                var uem = UpgradeEffectManager.Instance;
-                // 攻速：右上角显示累计百分比
-                if (def.effectType == "attack_speed" && uem != null)
-                {
-                    int pct = Mathf.RoundToInt(uem.GetAttackSpeedBonusPercent());
-                    icon.SetPercentNumber(pct);
-                }
-                // 蓄力减伤：右上角显示百分比
-                else if (def.effectType == "charge_damage_reduction")
-                {
-                    int pct = Mathf.RoundToInt(uem.GetChargeDamageReduction() * 100f);
-                    icon.SetPercentNumber(pct);
-                }
-                // 反伤盾：右上角显示护盾值
-                else if (def.effectType == "charge_reflect_shield")
-                {
-                    // 初始不显示数字，由 Update 动态更新
-                }
-            }
+    private void RefreshNumericValue(BuffIcon icon, UpgradeDefinition definition, UpgradeEffectManager uem)
+    {
+        if (icon == null || definition == null || uem == null) return;
+
+        switch (definition.effectType)
+        {
+            case "attack_speed":
+                icon.SetPercentNumber(Mathf.RoundToInt(uem.GetAttackSpeedBonusPercent()));
+                break;
+            case "damage_multiplier":
+                icon.SetPercentNumber(Mathf.RoundToInt((uem.GetDamageMultiplier() - 1f) * 100f));
+                break;
+            case "exp_multiplier":
+                icon.SetPercentNumber(Mathf.RoundToInt((uem.GetExpMultiplier() - 1f) * 100f));
+                break;
+            case "item_drop_rate":
+                icon.SetPercentNumber(Mathf.RoundToInt(uem.GetItemDropRateBonus() * 100f));
+                break;
+            case "item_damage_bonus":
+                icon.SetPercentNumber(Mathf.RoundToInt(uem.GetItemDamageBonus() * 100f));
+                break;
+            case "charge_damage_reduction":
+                icon.SetPercentNumber(Mathf.RoundToInt(uem.GetChargeDamageReduction() * 100f));
+                break;
+            case "stab_range_boost":
+                icon.SetTopRightNumber(uem.GetStabRangeBonus());
+                break;
+            case "sweep_range_boost":
+                icon.SetTopRightNumber(uem.GetSweepRangeBonus());
+                break;
+            case "push_wave":
+                icon.SetTopRightNumber(uem.GetPushWaveDistance());
+                break;
+            case "convergence_wave":
+                icon.SetTopRightNumber(uem.GetConvergenceStep());
+                break;
+            case "charge_reflect_shield":
+                icon.ClearTopRightNumber();
+                break;
+            default:
+                icon.ClearTopRightNumber();
+                break;
         }
     }
 
     private void OnPassiveRegistered(string upgradeId, int threshold)
     {
-        if (_upgradeIcons.TryGetValue(upgradeId, out var icon))
+        if (_upgradeIcons.TryGetValue(upgradeId, out var icon) && threshold > 0)
         {
-            // 不再显示等级和攻击计数
+            icon.SetCooldown(0f, null, true);
+            icon.SetTopRightNumber(threshold);
         }
     }
 
@@ -279,24 +344,25 @@ public class BuffDisplayPanel : MonoBehaviour
             hitWaveIcon.SetPercentNumber(percent);
         }
 
-        // 箭矢齐射：显示触发剩余攻击次数
+        // 攻击计数被动：显示距下一次触发的剩余攻击次数。
         var ptm = PassiveTriggerModule.Instance;
-        if (ptm != null && _upgradeIcons.TryGetValue("arrow_volley", out var volleyIcon))
+        if (ptm != null)
         {
-            int threshold = ptm.GetThreshold("arrow_volley");
-            int current = ptm.GetCurrentCount("arrow_volley");
-            if (threshold > 0)
+            foreach (var upgradeId in ptm.RegisteredUpgradeIds)
             {
-                int remaining = threshold - current;
-                float fill = (float)current / threshold;
-                volleyIcon.SetCooldown(fill, null, true);
-                volleyIcon.SetTopRightNumber(remaining);
+                if (!_upgradeIcons.TryGetValue(upgradeId, out var icon)) continue;
+                int threshold = ptm.GetThreshold(upgradeId);
+                if (threshold <= 0) continue;
+                int current = ptm.GetCurrentCount(upgradeId);
+                icon.SetCooldown((float)current / threshold, null, true);
+                icon.SetTopRightNumber(Mathf.Max(0, threshold - current));
             }
         }
     }
 
     private void OnItemIconClicked(BuffIcon icon)
     {
+        if (DialogueManager.Instance != null && DialogueManager.Instance.IsInteractionBlocked) return;
         if (!_iconEntryIds.TryGetValue(icon, out int entryId)) return;
         var entry = ItemInventory.Instance.GetEntry(entryId);
         if (entry == null) return;
@@ -338,6 +404,11 @@ public class BuffDisplayPanel : MonoBehaviour
         {
             if (WaveManager.Instance != null)
                 WaveManager.Instance.TriggerWave(def.intValue, def.secondaryIntValue, Mathf.RoundToInt(def.floatValue));
+        }
+        else if (gestureId == "arrow_rain" || gestureId == "fire_snake" || gestureId == "phantom_weapon_item")
+        {
+            if (ItemEffectRunner.Instance != null)
+                ItemEffectRunner.Instance.TryActivate(def);
         }
     }
 }

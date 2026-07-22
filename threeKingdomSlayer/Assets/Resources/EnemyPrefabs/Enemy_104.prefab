@@ -53,7 +53,7 @@ MonoBehaviour:
   enemyName: boss
   enemyId: 104
   maxHealth: 500
-  occupySlots: 1
+  occupySlots: 5
   attackSpeed: 0.2
   attackDamage: 10
   attackRange: 2
@@ -89,7 +89,7 @@ MonoBehaviour:
   - 2
   arrowConfig: {fileID: 0}
   shareHealthWithAdjacent: 0
-  maxPoise: 20
+  maxPoise: 100
   stunDuration: 5
   launchDuration: 5
   launchGravity: 20

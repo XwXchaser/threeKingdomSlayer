@@ -42,14 +42,19 @@ public class SweepEffect : MonoBehaviour
         System.Action<Enemy> onHit = null, GameObject prefab = null, float? alphaOverride = null,
         Color? damageNumberColor = null, bool canInterruptCFrame = false,
         Material materialOverride = null, System.Action onFirstHit = null, System.Action onAllHit = null, float targetDuration = -1f,
-        Sprite rotateSprite1 = null, Sprite rotateSprite2 = null)
+        Sprite rotateSprite1 = null, Sprite rotateSprite2 = null, float angleOffset = 0f, float movementTilt = 0f,
+        float additionalWeaponRotation = 0f)
     {
         float startX = leftToRight ? -halfWidth : halfWidth;
         float endX = leftToRight ? halfWidth : -halfWidth;
-        float startAngle = leftToRight ? fanAngle : -fanAngle;
-        float endAngle = leftToRight ? -fanAngle : fanAngle;
+        float startAngle = (leftToRight ? fanAngle : -fanAngle) + angleOffset;
+        float endAngle = (leftToRight ? -fanAngle : fanAngle) + angleOffset + additionalWeaponRotation;
 
-        Vector3 spawnPos = new Vector3(startX, centerPos.y, centerPos.z);
+        Vector3 localStart = new Vector3(startX, 0f, 0f);
+        Vector3 localEnd = new Vector3(endX, 0f, 0f);
+        Quaternion pathRotation = Quaternion.Euler(0f, 0f, movementTilt);
+        Vector3 spawnPos = centerPos + pathRotation * localStart;
+        Vector3 endPos = centerPos + pathRotation * localEnd;
         GameObject obj;
         Material material = null;
         Color color;
@@ -148,7 +153,7 @@ public class SweepEffect : MonoBehaviour
         effect.seq.SetTarget(obj.transform);
         effect.seq.SetUpdate(UpdateType.Normal, false);
 
-        var move = obj.transform.DOMoveX(endX, duration).SetEase(Ease.InOutQuad);
+        var move = obj.transform.DOMove(endPos, duration).SetEase(Ease.InOutQuad);
         move.OnUpdate(effect.CheckHitThresholds);
         effect.seq.Append(move);
 
@@ -222,6 +227,7 @@ public class SweepEffect : MonoBehaviour
                 effect.seq.timeScale = Mathf.Clamp(naturalDuration / targetDuration, 0.1f, 10f);
         }
     }
+
 
     private void CheckHitThresholds()
     {

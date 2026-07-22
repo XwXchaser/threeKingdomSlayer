@@ -86,9 +86,9 @@ public class TimedArrowEffect : MonoBehaviour
     [Header("玩家位置")]
     public Transform playerTransform;
 
-    private const int ArrowsPerVolley = 4;
-
-    private int _damage;
+    private int _damageArrowCount;
+    private float _damage;
+    private float _volleyInterval;
     private float _flyDuration;
     private float _fadeOutDuration;
     private float _startY;
@@ -103,9 +103,12 @@ public class TimedArrowEffect : MonoBehaviour
     private float _impactMovementTolerance;
     private float _maxDescentPitch;
 
-    public void Play(int rowCount, int arrowCount, int damage)
+    public void Play(int rowCount, int arrowCount, float damage, int damageArrowCount = 4,
+        int visualArrowCount = -1, float volleyIntervalOverride = -1f)
     {
-        _damage = Mathf.Max(1, damage / ArrowsPerVolley);
+        _damageArrowCount = Mathf.Max(1, damageArrowCount);
+        _damage = Mathf.Max(1f, damage / _damageArrowCount);
+        _volleyInterval = volleyIntervalOverride >= 0f ? volleyIntervalOverride : volleyInterval;
         _flyDuration = flyDuration;
         _fadeOutDuration = fadeOutDuration;
         _startY = startY;
@@ -134,7 +137,9 @@ public class TimedArrowEffect : MonoBehaviour
         int clampedRows = Mathf.Max(1, rowCount);
         int totalVolleys = Mathf.Max(1, arrowCount);
         Vector3 playerPos = GetArrowStartOrigin();
-        float interval = Mathf.Max(0f, volleyInterval);
+        int requestedVisualArrows = visualArrowCount > 0 ? visualArrowCount : visualArrowsPerVolley;
+        int visualCount = Mathf.Max(_damageArrowCount, requestedVisualArrows);
+        float interval = Mathf.Max(0f, _volleyInterval);
         float totalVolleySpan = (totalVolleys - 1) * interval;
 
         Vector3 battlefieldOffset = GetBattlefieldWorldOffset(cm);
@@ -144,13 +149,12 @@ public class TimedArrowEffect : MonoBehaviour
         for (int volleyIndex = 0; volleyIndex < totalVolleys; volleyIndex++)
         {
             float volleyDelay = volleyIndex * interval;
-            int visualArrowCount = Mathf.Max(ArrowsPerVolley, visualArrowsPerVolley);
-            for (int arrowIndex = 0; arrowIndex < visualArrowCount; arrowIndex++)
+            for (int arrowIndex = 0; arrowIndex < visualCount; arrowIndex++)
             {
                 Vector3 targetPos = GetTargetAreaPosition(cm, battlefieldOffset, clampedRows);
                 float delay = volleyDelay + Random.Range(0f, Mathf.Max(0f, volleyJitter));
                 Vector3 startPos = GetStartPosition(playerPos, targetPos.x, minX - widthPadding, maxX + widthPadding, volleyIndex, totalVolleys);
-                StartCoroutine(SpawnArrowWithDelay(targetPos, startPos, delay, arrowIndex < ArrowsPerVolley));
+                StartCoroutine(SpawnArrowWithDelay(targetPos, startPos, delay, arrowIndex < _damageArrowCount));
             }
         }
 

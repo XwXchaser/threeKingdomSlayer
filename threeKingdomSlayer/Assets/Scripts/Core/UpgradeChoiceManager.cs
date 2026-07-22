@@ -20,8 +20,10 @@ public class UpgradeChoiceManager : MonoBehaviour
     public UpgradePoolConfig poolConfig;
     [Header("物品池（Boss锦囊）")]
     public ItemPoolConfig itemPoolConfig;
-    [Tooltip("弹窗 Prefab（运行时动态生成/销毁，不在场景中预置）")]
+    [Tooltip("三选一升级弹窗 Prefab（运行时动态生成/销毁）")]
     public GameObject popupPrefab;
+    [Tooltip("道具栏满时的弃置弹窗 Prefab（运行时动态生成/销毁）")]
+    public GameObject discardPopupPrefab;
     [Tooltip("选项数量（默认 3，可扩展为 4 选 1 / 5 选 1）")]
     public int choiceCount = 3;
     [Tooltip("弹窗期间是否暂停游戏")]
@@ -199,7 +201,7 @@ public class UpgradeChoiceManager : MonoBehaviour
             popup.Dismiss(() => { });
         }
 
-        if (pauseGameDuringChoice)
+        if (pauseGameDuringChoice && !ItemDiscardPopup.IsShowing)
         {
             Time.timeScale = 1f;
             if (InputManager.Instance != null)
@@ -353,7 +355,6 @@ public class UpgradeChoiceManager : MonoBehaviour
             if (wu.upgrade == null) continue;
             if (!PrerequisitesMet(wu.upgrade)) continue;
             if (UpgradeEffectManager.Instance.GetUpgradeLevel(wu.upgrade.upgradeId) >= wu.upgrade.maxLevel) continue;
-            if (ItemInventory.Instance == null || !ItemInventory.Instance.CanAdd(wu.upgrade)) continue;
             result.Add(new EligibleEntry { upgrade = wu.upgrade, weight = wu.weight, rarity = rarity });
         }
     }

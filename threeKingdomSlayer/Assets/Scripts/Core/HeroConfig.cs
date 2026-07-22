@@ -32,6 +32,12 @@ public class HeroConfig : ScriptableObject
     [Tooltip("大招技能配置（独立于普通技能体系）")]
     public UltimateSkillConfig ultimateSkillConfig;
 
+    [Header("大招充能")]
+    [Tooltip("击杀普通敌人获得的大招能量")]
+    [Min(0)] public int ultimateEnergyPerEnemyKill = 5;
+    [Tooltip("击杀 Boss 获得的大招能量")]
+    [Min(0)] public int ultimateEnergyPerBossKill = 25;
+
     [Header("伤害加成")]
     [Range(0f, 2f)]
     public float damageBonusPercent = 0f;

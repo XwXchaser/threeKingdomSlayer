@@ -55,13 +55,30 @@ public class ShootFireEffect : MonoBehaviour
     public float fireEndZ = 15f;
     public float zTravelSpeed = 20f;
 
+    [Header("扇形扫射")]
+    [Tooltip("喷口左右摆动的最大角度")]
+    [Range(0f, 89f)] public float sweepAngle = 35f;
+    [Tooltip("喷口从左到右再回到左的扫射次数")]
+    [Min(0.1f)] public float sweepCycles = 1f;
+    [Tooltip("持续喷射时长")]
+    [Min(0.05f)] public float sweepDuration = 0.9f;
+    [Tooltip("火焰发射间隔")]
+    [Min(0.01f)] public float sweepShotInterval = 0.05f;
+    [Tooltip("每股火焰的飞行时长")]
+    [Min(0.05f)] public float sweepProjectileDuration = 0.45f;
+    [Tooltip("单股火焰命中的水平半径")]
+    [Min(0.1f)] public float sweepHitRadius = 0.8f;
+    [Tooltip("同一敌人被连续火焰再次命中的最短间隔")]
+    [Min(0.01f)] public float sweepHitInterval = 0.2f;
+
     // ── 运行时 ──
     private HashSet<Enemy> _hitEnemies = new HashSet<Enemy>();
+    private readonly Dictionary<Enemy, float> _lastSweepHitTimes = new Dictionary<Enemy, float>();
     private List<Enemy> _sortedEnemies;
     private float _zStart, _zEnd;
     private float _centerX, _halfWidth;
     private int _damage;
-    public void Play(List<int> columns, int damage)
+    public void Play(List<int> columns, int damage, int maxRows = -1)
     {
         _damage = damage;
 
@@ -72,16 +89,16 @@ public class ShootFireEffect : MonoBehaviour
             return;
         }
 
-        int maxRows = StageController.Instance != null
-            ? StageController.Instance.GetMaxVisibleRows()
-            : 5;
+        int visibleRows = maxRows > 0
+            ? maxRows
+            : StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
 
         // 收集受影响列所有存活敌人（去重）
         var seen = new HashSet<Enemy>();
         _sortedEnemies = new List<Enemy>();
         foreach (int col in columns)
         {
-            var list = cm.GetEnemiesInRange(col, maxRows);
+            var list = cm.GetEnemiesInRange(col, visibleRows);
             for (int i = 0; i < list.Count; i++)
             {
                 var e = list[i];
@@ -113,6 +130,119 @@ public class ShootFireEffect : MonoBehaviour
 
         // 自毁：等所有粒子生命周期结束
         Destroy(gameObject, burstDuration + particleLifetime + 0.5f);
+    }
+
+    public void PlaySweep(List<int> columns, int damage, int maxRows = -1, float startZOffset = 0f)
+    {
+        _damage = damage;
+        var cm = AttackSystem.Instance?.columnManager;
+        if (cm == null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        int visibleRows = maxRows > 0
+            ? maxRows
+            : StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
+        _hitEnemies.Clear();
+        _lastSweepHitTimes.Clear();
+        var seen = new HashSet<Enemy>();
+        _sortedEnemies = new List<Enemy>();
+        foreach (int col in columns)
+        {
+            var list = cm.GetEnemiesInRange(col, visibleRows);
+            for (int i = 0; i < list.Count; i++)
+            {
+                var enemy = list[i];
+                if (enemy != null && enemy.state != EnemyState.Dead && seen.Add(enemy))
+                    _sortedEnemies.Add(enemy);
+            }
+        }
+
+        if (_sortedEnemies.Count == 0)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        _zStart = fireStartZ + startZOffset;
+        _zEnd = fireEndZ;
+        _centerX = GetCenterX(columns);
+        transform.position = Vector3.zero;
+        StartCoroutine(SweepRoutine());
+        Destroy(gameObject, sweepDuration + sweepProjectileDuration + particleLifetime + 0.5f);
+    }
+
+    private IEnumerator SweepRoutine()
+    {
+        float elapsed = 0f;
+        while (elapsed < sweepDuration)
+        {
+            float progress = elapsed / sweepDuration;
+            float angle = Mathf.Sin(progress * sweepCycles * Mathf.PI * 2f - Mathf.PI * 0.5f) * sweepAngle;
+            SpawnSweepFire(angle);
+            elapsed += sweepShotInterval;
+            yield return new WaitForSeconds(sweepShotInterval);
+        }
+    }
+
+    private void SpawnSweepFire(float angle)
+    {
+        if (fireSprites == null || fireSprites.Length == 0) return;
+
+        var particle = new GameObject("SweepFireParticle");
+        particle.transform.SetParent(transform);
+        Vector3 start = new Vector3(_centerX, 0f, _zStart);
+        particle.transform.position = start;
+
+        float radians = angle * Mathf.Deg2Rad;
+        Vector3 direction = new Vector3(Mathf.Sin(radians), 0f, Mathf.Cos(radians));
+        float travelDistance = (_zEnd - _zStart) / Mathf.Max(0.1f, direction.z);
+        Vector3 end = start + direction * travelDistance;
+
+        var spriteRenderer = particle.AddComponent<SpriteRenderer>();
+        spriteRenderer.sprite = fireSprites[Random.Range(0, fireSprites.Length)];
+        spriteRenderer.sortingOrder = 50;
+        spriteRenderer.color = new Color(1f, 0.85f, 0.2f, 0f);
+        particle.transform.localScale = Vector3.one * scaleNearMax * globalScale;
+        particle.transform.localRotation = Quaternion.Euler(0f, 0f, -angle + Random.Range(-rotJitter, rotJitter));
+
+        float fadeIn = Mathf.Min(alphaFadeInTime, sweepProjectileDuration * 0.3f);
+        var fade = DOTween.Sequence().SetTarget(particle).SetUpdate(UpdateType.Normal, false);
+        fade.Append(spriteRenderer.DOFade(alphaPeak, fadeIn));
+        fade.AppendInterval(Mathf.Max(0f, sweepProjectileDuration - fadeIn * 2f));
+        fade.Append(spriteRenderer.DOFade(0f, fadeIn));
+        fade.OnComplete(() => Destroy(particle));
+
+        particle.transform.DOMove(end, sweepProjectileDuration)
+            .SetEase(Ease.Linear)
+            .SetTarget(particle)
+            .SetUpdate(UpdateType.Normal, false)
+            .OnUpdate(() =>
+            {
+                CheckSweepHit(particle.transform.position);
+                spriteRenderer.sortingOrder = 50 - (int)(particle.transform.position.z * 10f);
+            });
+    }
+
+    private void CheckSweepHit(Vector3 firePosition)
+    {
+        float radiusSqr = sweepHitRadius * sweepHitRadius;
+        for (int i = 0; i < _sortedEnemies.Count; i++)
+        {
+            var enemy = _sortedEnemies[i];
+            if (enemy == null || enemy.state == EnemyState.Dead) continue;
+            if (_lastSweepHitTimes.TryGetValue(enemy, out float lastHitTime)
+                && Time.time - lastHitTime < sweepHitInterval) continue;
+
+            Vector3 delta = enemy.transform.position - firePosition;
+            delta.y = 0f;
+            if (delta.sqrMagnitude > radiusSqr) continue;
+
+            _lastSweepHitTimes[enemy] = Time.time;
+            enemy.TakeDamage(_damage, DamageType.Pierce);
+        }
     }
 
     private IEnumerator SpawnRoutine()

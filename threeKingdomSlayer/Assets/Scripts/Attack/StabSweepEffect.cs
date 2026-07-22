@@ -8,7 +8,7 @@ public sealed class StabSweepEffect : MonoBehaviour
     private const float ThrustDuration = 0.2f;
     private const float RetractDuration = 0.3f;
     private const float HitDistanceTolerance = 0.35f;
-    private const int SortingOrderAboveEnemies = 10;
+    private const int SortingOrderWithEnemies = 0;
 
     private ColumnManager _columnManager;
     private int _column;
@@ -18,6 +18,7 @@ public sealed class StabSweepEffect : MonoBehaviour
     private DamageType _damageType;
     private readonly HashSet<Enemy> _hitEnemies = new HashSet<Enemy>();
     private readonly List<Enemy> _hitCandidates = new List<Enemy>();
+    private Enemy _coveredBossTarget;
     private Action<Enemy> _onHit;
     private Action _onFirstHit;
     private Action _onComplete;
@@ -28,28 +29,29 @@ public sealed class StabSweepEffect : MonoBehaviour
     private bool _hitAny;
 
     public static void Create(GameObject prefab, Vector3 startPosition, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows,
-        float damage, DamageType damageType, ColumnManager columnManager,
-        Action<Enemy> onHit, Action onFirstHit, Action onComplete, float targetDuration = -1f)
+        float damage, DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget,
+        Action<Enemy> onHit, Action onFirstHit, Action onComplete, float visualReachOffset, float visualStartXOffset, float targetDuration = -1f)
     {
         var ray = new GameObject("StabRay");
         ray.transform.position = startPosition;
+        ray.transform.rotation = Quaternion.LookRotation((targetPosition - startPosition).normalized, Vector3.up);
 
         var visual = Instantiate(prefab, ray.transform);
         visual.name = "StabVisual";
-        visual.transform.localPosition = Vector3.zero;
         var spriteRenderer = visual.GetComponentInChildren<SpriteRenderer>();
         if (spriteRenderer != null)
         {
             float visualLength = spriteRenderer.sprite.bounds.size.y * visual.transform.localScale.y;
-            visual.transform.localPosition = Vector3.back * (visualLength * 0.5f);
+            visual.transform.localPosition = Vector3.back * (visualLength * 0.5f - visualReachOffset);
         }
+        visual.transform.position += Vector3.right * visualStartXOffset;
 
         ray.AddComponent<StabSweepEffect>().Initialize(visual, targetPosition, column, rangeRows, visualRangeRows, damage, damageType,
-            columnManager, onHit, onFirstHit, onComplete, targetDuration);
+            columnManager, coveredBossTarget, onHit, onFirstHit, onComplete, targetDuration);
     }
 
     private void Initialize(GameObject visual, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows, float damage,
-        DamageType damageType, ColumnManager columnManager, Action<Enemy> onHit, Action onFirstHit,
+        DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget, Action<Enemy> onHit, Action onFirstHit,
         Action onComplete, float targetDuration)
     {
         _column = column;
@@ -58,13 +60,14 @@ public sealed class StabSweepEffect : MonoBehaviour
         _damage = damage;
         _damageType = damageType;
         _columnManager = columnManager;
+        _coveredBossTarget = coveredBossTarget;
         _onHit = onHit;
         _onFirstHit = onFirstHit;
         _onComplete = onComplete;
 
         var renderer = visual.GetComponentInChildren<SpriteRenderer>();
         if (renderer != null)
-            renderer.sortingOrder = SortingOrderAboveEnemies;
+            renderer.sortingOrder = SortingOrderWithEnemies;
 
         _rayOrigin = transform.position;
         _rayDirection = (targetPosition - _rayOrigin).normalized;
@@ -74,13 +77,10 @@ public sealed class StabSweepEffect : MonoBehaviour
         _sequence = DOTween.Sequence().SetTarget(transform);
         _sequence.Append(transform.DOMove(targetPosition, ThrustDuration * durationScale).SetEase(Ease.OutQuad).OnUpdate(CheckHits));
         _sequence.AppendCallback(CheckHits);
+        _sequence.AppendCallback(() => _onComplete?.Invoke());
         _sequence.Append(transform.DOMove(_rayOrigin, RetractDuration * durationScale).SetEase(Ease.InQuad));
         _sequence.OnKill(() => Destroy(gameObject));
-        _sequence.OnComplete(() =>
-        {
-            _onComplete?.Invoke();
-            Destroy(gameObject);
-        });
+        _sequence.OnComplete(() => Destroy(gameObject));
     }
 
     private void OnDestroy()
@@ -111,6 +111,15 @@ public sealed class StabSweepEffect : MonoBehaviour
                 continue;
 
             _hitCandidates.Add(enemy);
+        }
+
+        if (_coveredBossTarget != null
+            && _coveredBossTarget.state != EnemyState.Dead
+            && !_hitEnemies.Contains(_coveredBossTarget))
+        {
+            float bossDistance = _rayLength;
+            if (tipDistance >= bossDistance - HitDistanceTolerance)
+                _hitCandidates.Add(_coveredBossTarget);
         }
 
         for (int i = 0; i < _hitCandidates.Count; i++)

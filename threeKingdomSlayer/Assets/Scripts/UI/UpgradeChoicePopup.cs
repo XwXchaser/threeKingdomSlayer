@@ -21,6 +21,7 @@ public class UpgradeChoicePopup : MonoBehaviour
     public float fadeOutDuration = 0.15f;
 
     private UpgradeCard[] _cards;
+    private UpgradeCard _selectedCard;
 
     private void Awake()
     {
@@ -29,12 +30,15 @@ public class UpgradeChoicePopup : MonoBehaviour
 
     public void ShowChoices(List<UpgradeDefinition> choices)
     {
+        if (_cards == null)
+            _cards = new[] { card1, card2, card3 };
+        _selectedCard = null;
         for (int i = 0; i < _cards.Length; i++)
         {
             if (i < choices.Count && choices[i] != null)
             {
                 _cards[i].gameObject.SetActive(true);
-                _cards[i].Setup(choices[i]);
+                _cards[i].Setup(choices[i], OnCardClicked);
             }
             else
             {
@@ -42,6 +46,21 @@ public class UpgradeChoicePopup : MonoBehaviour
             }
         }
         FadeIn();
+    }
+
+    private void OnCardClicked(UpgradeCard card)
+    {
+        if (card == null) return;
+        if (_selectedCard == card)
+        {
+            UpgradeChoiceManager.Instance?.ConfirmChoice(card.Definition);
+            return;
+        }
+
+        if (_selectedCard != null)
+            _selectedCard.SetSelected(false);
+        _selectedCard = card;
+        _selectedCard.SetSelected(true);
     }
 
     public void Dismiss(Action onDone)

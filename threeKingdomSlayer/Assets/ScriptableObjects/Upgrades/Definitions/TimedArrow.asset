@@ -16,8 +16,9 @@ MonoBehaviour:
   upgradeId: timed_arrow_volley
   displayName: "\u7BAD\u96E8"
   descriptionTemplate: "\u6BCF{0}\u79D2\u5BF9\u6B63\u524D\u65B9{1}\u6392\u654C\u4EBA\u5C04\u51FA{2}\u6CE2\u7BAD\u96E8\uFF0C\u6BCF\u652F\u7BAD\u9020\u6210{3}\u4F24\u5BB3"
+  extraDescriptionTemplate: 
   rarity: 0
-  maxLevel: 5
+  maxLevel: 10
   effectType: passive_timed_arrow
   numericLevels: []
   floatValue: 0
@@ -54,14 +55,47 @@ MonoBehaviour:
     rowCount: 3
     arrowCount: 7
     damage: 16
+  - intervalSeconds: 4.5
+    triggerThreshold: 0
+    rowCount: 3
+    arrowCount: 8
+    damage: 18
+  - intervalSeconds: 4
+    triggerThreshold: 0
+    rowCount: 4
+    arrowCount: 9
+    damage: 20
+  - intervalSeconds: 3.5
+    triggerThreshold: 0
+    rowCount: 4
+    arrowCount: 10
+    damage: 22
+  - intervalSeconds: 3
+    triggerThreshold: 0
+    rowCount: 5
+    arrowCount: 11
+    damage: 25
+  - intervalSeconds: 2.5
+    triggerThreshold: 0
+    rowCount: 5
+    arrowCount: 12
+    damage: 28
   returnWaveLevels: []
   chainBounceLevels: []
   cycloneLevels: []
   arrowVolleyLevels: []
   reflectShieldLevels: []
   chargeShockwaveLevels: []
+  chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
   gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
   prerequisites: []

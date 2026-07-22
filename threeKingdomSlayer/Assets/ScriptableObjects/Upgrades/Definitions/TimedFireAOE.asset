@@ -16,8 +16,9 @@ MonoBehaviour:
   upgradeId: timed_fire_aoe
   displayName: "\u70C8\u7130\u55B7\u5C04"
   descriptionTemplate: "\u6BCF{0}\u79D2\u5BF9\u4E2D\u95F4\u533A\u57DF\u9020\u6210{1}\u70B9\u4F24\u5BB3"
+  extraDescriptionTemplate: 
   rarity: 0
-  maxLevel: 5
+  maxLevel: 10
   effectType: passive_timed_aoe
   numericLevels: []
   floatValue: 0
@@ -48,13 +49,43 @@ MonoBehaviour:
     triggerThreshold: 0
     damage: 30
     columns: 010000000200000003000000
+  - intervalSeconds: 1.2
+    triggerThreshold: 0
+    damage: 35
+    columns: 010000000200000003000000
+  - intervalSeconds: 1.2
+    triggerThreshold: 0
+    damage: 40
+    columns: 0000000001000000020000000300000004000000
+  - intervalSeconds: 1
+    triggerThreshold: 0
+    damage: 45
+    columns: 0000000001000000020000000300000004000000
+  - intervalSeconds: 1
+    triggerThreshold: 0
+    damage: 50
+    columns: 0000000001000000020000000300000004000000
+  - intervalSeconds: 0.8
+    triggerThreshold: 0
+    damage: 60
+    columns: 0000000001000000020000000300000004000000
   timedArrowLevels: []
   returnWaveLevels: []
   chainBounceLevels: []
   cycloneLevels: []
   arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
   gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
   prerequisites: []

@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5eab6a0cbf20ec64ba732f894b672d49, type: 3}
+  m_Name: Item_FireSnake
+  m_EditorClassIdentifier: 
+  category: 1
+  upgradeId: fire_snake
+  displayName: "\u706B\u86C7\u673A\u5173"
+  descriptionTemplate: "\u5411\u524D\u65B9\u55B7\u51FA\u706B\u7130\uFF0C\u5BF9{0}\u6392\u654C\u4EBA\u55B7\u51FA\u706B\u7130"
+  extraDescriptionTemplate: 
+  rarity: 0
+  maxLevel: 1
+  effectType: fire_snake
+  numericLevels: []
+  floatValue: 0
+  intValue: 0
+  secondaryIntValue: 0
+  stringValue: 
+  baseAttackConfig: {fileID: 0}
+  icon: {fileID: 21300000, guid: c147c1254c1f1f64bbfc884ac55ce23f, type: 3}
+  phantomLevels: []
+  timedAoeLevels: []
+  timedArrowLevels: []
+  returnWaveLevels: []
+  chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeHitShockwaveLevels: []
+  triggerParam: 0
+  phantomSteps: []
+  useCount: 1
+  gestureId: fire_snake
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
+  prerequisites: []

@@ -14,6 +14,7 @@ public class SaveData
     [Obsolete("使用 props.GetPropAmount(PropType.Coin) 替代")]
     public int coinCount;
     public bool tutorialCompleted;
+    public List<string> completedTutorialDialogueIds = new List<string>();
 
     /// <summary>
     /// 获取铜钱数量（优先从 props 列表读取，兼容旧存档的 coinCount 字段）
