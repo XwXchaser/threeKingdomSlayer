@@ -201,13 +201,10 @@ public class EnemyManager : MonoBehaviour
         else
         {
             var entries = new List<ItemInventory.ItemEntry>(ItemInventory.Instance.Entries);
-            ItemDiscardPopup.Show(entries, picked, discardIndex =>
+            ItemDiscardPopup.Show(entries, picked, result =>
             {
-                if (discardIndex >= 0)
-                {
-                    ItemInventory.Instance.DiscardEntry(discardIndex);
+                if (!result.DiscardNew && ItemInventory.Instance.DiscardEntryById(result.EntryId))
                     ItemInventory.Instance.AddItem(picked);
-                }
             });
         }
     }
