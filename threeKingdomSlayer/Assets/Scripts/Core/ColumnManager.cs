@@ -34,6 +34,9 @@ public class ColumnManager : MonoBehaviour
 
     // 击退后紧凑链计数器
     private int _compactionColumnsRemaining = 0;
+    private int _compactionGeneration = 0;
+    private bool _isCompactionPending = false;
+    private bool _isCompactionActive = false;
 
     // 击退后 RowBasedFillUp 完成到紧凑链启动之间的延迟（秒），
     // 让敌人停留在击退后的位置一段时间再 Rush 补齐。
@@ -116,7 +119,6 @@ public class ColumnManager : MonoBehaviour
         FillUpRule rule = StageController.Instance?.GetFillUpRule() ?? FillUpRule.PerColumn;
         columns[columnIndex].RemoveEnemy(enemy, skipChain: true);
 
-        // 若该敌人正在波次行军中（例：多排秒杀场景），清理 pending 状态防止 _pendingWaveEnemies 死锁
         if (_pendingWaveEnemies.Remove(enemy))
         {
             enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
@@ -126,6 +128,8 @@ public class ColumnManager : MonoBehaviour
                 _currentWaveSourceRow = -1;
             }
         }
+
+        columns[columnIndex].ResumeRushMoveChain();
 
         if (rule == FillUpRule.PerRow)
         {
@@ -400,7 +404,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public void StartWaveMarch()
     {
-        if (_isWaveMarching) return;
+        if (_isWaveMarching || _isCompactionPending || _isCompactionActive) return;
 
         int maxRow = GetMaxOccupiedRow();
         for (int r = 0; r < maxRow; r++)
@@ -532,36 +536,57 @@ public class ColumnManager : MonoBehaviour
         return max;
     }
 
-    /// <summary>
-    /// 击退后列内紧凑完成后的回调：所有列链结束后启动波次行军。
-    /// </summary>
-    private void OnCompactionChainComplete()
+    private void CancelCompactionChains()
     {
+        CancelInvoke(nameof(StartAllCompactionChains));
+        _compactionGeneration++;
+        _compactionColumnsRemaining = 0;
+        _isCompactionPending = false;
+        _isCompactionActive = false;
+        for (int c = 0; c < columnCount; c++)
+            columns[c].CancelRushMoveChain();
+    }
+
+    private void OnCompactionChainComplete(int generation)
+    {
+        if (generation != _compactionGeneration || !_isCompactionActive)
+            return;
+
         _compactionColumnsRemaining--;
         if (_compactionColumnsRemaining <= 0)
         {
             _compactionColumnsRemaining = 0;
+            _isCompactionActive = false;
             OnColumnsModified?.Invoke();
             StartWaveMarch();
         }
     }
 
-    /// <summary>
-    /// 为所有列启动紧凑后的链式补齐，所有列链结束后自动调用 StartWaveMarch。
-    /// </summary>
     private void StartAllCompactionChains()
     {
+        if (!_isCompactionPending)
+            return;
+
+        _isCompactionPending = false;
+        _isCompactionActive = true;
         _compactionColumnsRemaining = 0;
+        int generation = _compactionGeneration;
+
         for (int c = 0; c < columnCount; c++)
         {
             if (columns[c].HasPendingRushEnemies())
             {
                 _compactionColumnsRemaining++;
-                columns[c].StartRushMoveChain(c, OnCompactionChainComplete);
+                columns[c].StartRushMoveChain(c, () => OnCompactionChainComplete(generation));
             }
         }
+
         if (_compactionColumnsRemaining == 0)
+        {
+            _isCompactionActive = false;
             OnColumnsModified?.Invoke();
+            StartWaveMarch();
+        }
     }
 
     #endregion
@@ -1007,14 +1032,12 @@ public class ColumnManager : MonoBehaviour
     {
         DebugLog.Info($"[Displacement] PostDisplacementFillUp pushedToRow={pushedToRow?.ToString() ?? "null"}");
 
-        // 规则3：中止当前波次行军，防止推进与击退冲突
         AbortWaveMarch();
+        CancelCompactionChains();
 
-        // 逐列紧凑（CompactByClearRows 不再内部启动链）
         RowBasedFillUp(pushedToRow);
 
-        // 延迟后启动紧凑链：让敌人停留在击退后的位置一段时间再 Rush，
-        // 避免短距离击退后即刻补齐导致玩家感知不到击退效果。
+        _isCompactionPending = true;
         Invoke(nameof(StartAllCompactionChains), compactionStartDelay);
     }
 
