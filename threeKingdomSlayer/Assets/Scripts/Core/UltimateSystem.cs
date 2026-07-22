@@ -105,6 +105,10 @@ public class UltimateSystem : MonoBehaviour
 
     public void ActivateUltimate()
     {
+        var qte = FindObjectOfType<QTEController>();
+        if (qte != null && qte.IsStrictInputActive)
+            return;
+
         if (!IsReady)
         {
             Debug.LogWarning("[UltimateSystem] 大招未充能完毕，无法激活");
