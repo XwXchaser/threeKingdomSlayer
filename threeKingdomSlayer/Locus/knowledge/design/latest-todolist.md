@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1783762854937
-updatedAt: 1784711264835
+updatedAt: 1784720730748
 ---
 
 # latest-todolist
@@ -19,6 +19,23 @@ updatedAt: 1784711264835
 
 ## Content
 # 最新待办清单
+
+## P0：当前严重 BUG（修复前必须重新核对现状）
+
+### [!] BUG1：敌人补齐链可能永久卡死
+- 现象：死亡、方向位移和攻击状态交叠后，部分列不再补齐；日志中其他列出现“链结束”，阻塞列没有结束。
+- 当前分析：`Column.StartRushMoveChain` 会订阅当前 `pendingRushMove` 敌人并等待 `OnRushMoveComplete`。若该敌人正在攻击，移动会延后；若等待期间死亡或攻击 Tween 被取消，则可能永远不发送完成事件，`_compactionColumnsRemaining` 无法归零。
+- 并发风险：`PostDisplacementFillUp` 延迟启动列紧凑链期间，新的死亡又可启动 `StartWaveMarch`；两个协调器可能同时处理同一批 `pendingRushMove` 敌人。现有死亡清理仅覆盖 `_pendingWaveEnemies`，未覆盖 `Column` 列链。
+- 重点文件：`Assets/Scripts/Core/Column.cs`、`Assets/Scripts/Core/ColumnManager.cs`、`Assets/Scripts/Enemy/Enemy.cs`。
+- 修复要求：先设计列链取消/死亡释放/协调器互斥方案，再修改；覆盖攻击中死亡、多目标秒杀、连续 Slash/Stab 位移、延迟紧凑重入回归。
+
+### [x] BUG2：弃选 UI 排布、叠加表达与道具点击穿透（已验收）
+- 已完成：弃选弹窗使用独立 Prefab；支持最多 5 个已持有道具 + 1 个新获得道具；列表从固定顶部 Y 向下紧密排列，新获得道具置顶。
+- 已完成：第一次点击选中高亮，第二次点击同一卡确认；叠加道具显示持有数量并按稳定 `entryId` 整组丢弃。
+- 已完成：标题静态放入 Prefab 并绑定项目中文字体；移除运行时创建标题和居中扩张布局。
+- 已完成：为独立 `BuffDisplayPanel` Canvas 添加 `GraphicRaycaster`，修复道具点击穿透为 Stab。
+- 验收：用户已确认修复通过。美术素材后续可独立替换，不影响当前结构与交互。
+- 修改范围：`Assets/Prefabs/UI/ItemDiscardPopup.prefab`、`Assets/Scenes/Battle.scene`、`Assets/Scripts/UI/ItemDiscardPopup.cs`、`Assets/Scripts/Core/ItemInventory.cs`、`Assets/Scripts/Core/UpgradeEffectManager.cs`、`Assets/Scripts/Managers/EnemyManager.cs`。
 
 ## 本周目标（进行中）
 

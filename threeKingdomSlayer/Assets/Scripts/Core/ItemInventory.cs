@@ -115,11 +115,12 @@ public class ItemInventory : MonoBehaviour
     public UpgradeDefinition GetDefinition(string gestureId) => FindFirst(gestureId)?.definition;
     public ItemEntry GetEntry(int entryId) => FindById(entryId);
 
-    /// <summary>按索引丢弃道具（0-based），供弃置弹窗使用。</summary>
-    public bool DiscardEntry(int index)
+    /// <summary>按稳定 entryId 整组丢弃道具。</summary>
+    public bool DiscardEntryById(int entryId)
     {
-        if (index < 0 || index >= _entries.Count) return false;
-        _entries.RemoveAt(index);
+        var entry = FindById(entryId);
+        if (entry == null) return false;
+        _entries.Remove(entry);
         OnInventoryChanged?.Invoke();
         return true;
     }

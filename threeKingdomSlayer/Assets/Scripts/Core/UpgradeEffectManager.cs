@@ -112,11 +112,10 @@ public class UpgradeEffectManager : MonoBehaviour
             {
                 // 道具栏满 → 弹出弃置弹窗
                 var entries = new List<ItemInventory.ItemEntry>(ItemInventory.Instance.Entries);
-                ItemDiscardPopup.Show(entries, def, discardIndex =>
+                ItemDiscardPopup.Show(entries, def, result =>
                 {
-                    if (discardIndex >= 0)
+                    if (!result.DiscardNew && ItemInventory.Instance.DiscardEntryById(result.EntryId))
                     {
-                        ItemInventory.Instance.DiscardEntry(discardIndex);
                         ItemInventory.Instance.AddItem(def);
                         SyncToPlayerState(def, 0);
                         OnUpgradeApplied?.Invoke(def, 0);

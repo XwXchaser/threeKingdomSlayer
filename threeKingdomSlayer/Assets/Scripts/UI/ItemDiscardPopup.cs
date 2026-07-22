@@ -11,24 +11,42 @@ using TMPro;
 /// </summary>
 public class ItemDiscardPopup : MonoBehaviour
 {
+    public readonly struct Result
+    {
+        public bool DiscardNew { get; }
+        public int EntryId { get; }
+
+        private Result(bool discardNew, int entryId)
+        {
+            DiscardNew = discardNew;
+            EntryId = entryId;
+        }
+
+        public static Result NewItem() => new Result(true, -1);
+        public static Result Existing(int entryId) => new Result(false, entryId);
+    }
+
     public static ItemDiscardPopup Instance { get; private set; }
     public static bool IsShowing => Instance != null;
 
     private CanvasGroup _canvasGroup;
-    private Action<int> _onComplete;
+    private Action<Result> _onComplete;
+    private UpgradeCard _selectedCard;
     private bool _completed;
+
+    private readonly List<UpgradeCard> _cards = new List<UpgradeCard>(6);
+    private readonly Dictionary<UpgradeCard, Outline> _selectionOutlines = new Dictionary<UpgradeCard, Outline>();
 
     private const float FadeDuration = 0.2f;
     private const string OuterFramePath = "UI/ItemDiscard/item_discard_popup_outer_frame_v2";
     private const string DiscardCardPath = "UI/ItemDiscard/item_discard_card";
     private const string NewItemCardPath = "UI/ItemDiscard/item_get_card";
 
-    /// <summary>回调 -1 表示丢弃新获得的道具；0 及以上表示丢弃对应库存索引。</summary>
-    public static void Show(List<ItemInventory.ItemEntry> entries, UpgradeDefinition newItem, Action<int> onComplete)
+    public static void Show(List<ItemInventory.ItemEntry> entries, UpgradeDefinition newItem, Action<Result> onComplete)
     {
         if (Instance != null)
         {
-            onComplete?.Invoke(-1);
+            onComplete?.Invoke(Result.NewItem());
             return;
         }
 
@@ -36,7 +54,7 @@ public class ItemDiscardPopup : MonoBehaviour
         if (choiceManager == null || choiceManager.discardPopupPrefab == null)
         {
             Debug.LogWarning("[ItemDiscardPopup] discardPopupPrefab 未配置，丢弃新道具");
-            onComplete?.Invoke(-1);
+            onComplete?.Invoke(Result.NewItem());
             return;
         }
 
@@ -46,7 +64,7 @@ public class ItemDiscardPopup : MonoBehaviour
         popup.BuildUI(entries, newItem, onComplete);
     }
 
-    private void BuildUI(List<ItemInventory.ItemEntry> entries, UpgradeDefinition newItem, Action<int> onComplete)
+    private void BuildUI(List<ItemInventory.ItemEntry> entries, UpgradeDefinition newItem, Action<Result> onComplete)
     {
         _onComplete = onComplete;
         _canvasGroup = GetComponent<CanvasGroup>();
@@ -57,43 +75,61 @@ public class ItemDiscardPopup : MonoBehaviour
         Time.timeScale = 0f;
 
         var choicePopup = GetComponent<UpgradeChoicePopup>();
-        if (choicePopup == null)
+        var template = choicePopup != null ? choicePopup.card1 : null;
+        if (template == null)
         {
-            Complete(-1);
+            Complete(Result.NewItem());
             return;
         }
 
-        var cards = new[] { choicePopup.card1, choicePopup.card2, choicePopup.card3 };
-        ApplyDiscardFrame();
-        AddTitle(cards[0] != null ? cards[0].transform.parent : transform);
-        SetupCard(cards[0], newItem, "新获得", -1, true);
-
-        for (int i = 1; i < cards.Length; i++)
+        var content = template.transform.parent as RectTransform;
+        if (content == null)
         {
-            int entryIndex = i - 1;
-            if (entryIndex < entries.Count)
-                SetupCard(cards[i], entries[entryIndex].definition, "点击弃置", entryIndex, false);
-            else if (cards[i] != null)
-                cards[i].gameObject.SetActive(false);
+            Complete(Result.NewItem());
+            return;
         }
 
+        ApplyDiscardFrame();
+        DisableLegacyCards(choicePopup, template);
+        template.gameObject.SetActive(false);
+
+        if (newItem != null)
+        {
+            var card = CreateCard(template, content);
+            SetupCard(card, newItem, "新获得", true, Result.NewItem());
+        }
+
+        int existingCount = Mathf.Min(entries.Count, 5);
+        for (int i = 0; i < existingCount; i++)
+        {
+            var entry = entries[i];
+            if (entry == null || entry.definition == null) continue;
+            var card = CreateCard(template, content);
+            string count = entry.remainingUses < 0 ? "∞" : entry.remainingUses.ToString();
+            SetupCard(card, entry.definition, $"持有 ×{count}", false, Result.Existing(entry.id));
+        }
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(content);
         _canvasGroup.DOFade(1f, FadeDuration).SetUpdate(true);
     }
 
-    private void AddTitle(Transform content)
+    private static void DisableLegacyCards(UpgradeChoicePopup choicePopup, UpgradeCard template)
     {
-        var titleGo = CreateUIObject("DiscardTitle", content);
-        var titleRect = titleGo.GetComponent<RectTransform>();
-        titleRect.anchorMin = new Vector2(0.5f, 1f);
-        titleRect.anchorMax = new Vector2(0.5f, 1f);
-        titleRect.pivot = new Vector2(0.5f, 1f);
-        titleRect.anchoredPosition = new Vector2(0f, 42f);
-        titleRect.sizeDelta = new Vector2(720f, 64f);
-        var title = titleGo.AddComponent<TextMeshProUGUI>();
-        title.text = "请选择弃置的道具";
-        title.fontSize = 30f;
-        title.color = Color.white;
-        title.alignment = TextAlignmentOptions.Center;
+        if (choicePopup == null) return;
+        if (choicePopup.card2 != null && choicePopup.card2 != template)
+            choicePopup.card2.gameObject.SetActive(false);
+        if (choicePopup.card3 != null && choicePopup.card3 != template)
+            choicePopup.card3.gameObject.SetActive(false);
+    }
+
+    private UpgradeCard CreateCard(UpgradeCard template, RectTransform content)
+    {
+        var card = Instantiate(template, content);
+        card.name = $"DiscardOption{_cards.Count + 1}";
+        card.gameObject.SetActive(true);
+        card.transform.localScale = Vector3.one;
+        _cards.Add(card);
+        return card;
     }
 
     private void ApplyDiscardFrame()
@@ -108,19 +144,16 @@ public class ItemDiscardPopup : MonoBehaviour
         }
     }
 
-    private void SetupCard(UpgradeCard card, UpgradeDefinition definition, string label, int discardIndex, bool isNewItem)
+    private void SetupCard(UpgradeCard card, UpgradeDefinition definition, string label, bool isNewItem, Result result)
     {
-        if (card == null || definition == null) return;
-
-        card.gameObject.SetActive(true);
         card.Setup(definition);
-        SetUpgradeCardChromeVisible(card.transform, false);
         var cardSprite = Resources.Load<Sprite>(isNewItem ? NewItemCardPath : DiscardCardPath);
         if (cardSprite != null && card.backgroundImage != null)
         {
             card.backgroundImage.sprite = cardSprite;
             card.backgroundImage.type = Image.Type.Simple;
-            card.backgroundImage.preserveAspect = true;
+            card.backgroundImage.preserveAspect = false;
+            card.backgroundImage.color = Color.white;
         }
         if (card.nameText != null)
             card.nameText.text = $"{label} · {definition.displayName}";
@@ -131,21 +164,37 @@ public class ItemDiscardPopup : MonoBehaviour
             card.iconImage.sprite = definition.icon;
             card.iconImage.enabled = definition.icon != null;
         }
+
+        var outline = card.GetComponent<Outline>();
+        if (outline == null)
+            outline = card.gameObject.AddComponent<Outline>();
+        outline.effectColor = new Color(1f, 0.78f, 0.2f, 1f);
+        outline.effectDistance = new Vector2(5f, -5f);
+        outline.useGraphicAlpha = true;
+        outline.enabled = false;
+        _selectionOutlines[card] = outline;
+
         if (card.button != null)
         {
             card.button.onClick.RemoveAllListeners();
-            card.button.onClick.AddListener(() => Complete(discardIndex));
+            card.button.onClick.AddListener(() => OnCardClicked(card, result));
         }
     }
 
-    private static void SetUpgradeCardChromeVisible(Transform card, bool visible)
+    private void OnCardClicked(UpgradeCard card, Result result)
     {
-        var namePlate = card.Find("NamePlate");
-        if (namePlate != null) namePlate.gameObject.SetActive(visible);
-        var descriptionBox = card.Find("DescriptionBox");
-        if (descriptionBox != null) descriptionBox.gameObject.SetActive(visible);
-        var selectedGlow = card.Find("SelectedGlow");
-        if (selectedGlow != null) selectedGlow.gameObject.SetActive(false);
+        if (_selectedCard == card)
+        {
+            Complete(result);
+            return;
+        }
+
+        if (_selectedCard != null && _selectionOutlines.TryGetValue(_selectedCard, out var previousOutline))
+            previousOutline.enabled = false;
+
+        _selectedCard = card;
+        if (_selectionOutlines.TryGetValue(card, out var outline))
+            outline.enabled = true;
     }
 
     private static string GetItemDescription(UpgradeDefinition definition)
@@ -170,7 +219,7 @@ public class ItemDiscardPopup : MonoBehaviour
         }
     }
 
-    private void Complete(int discardIndex)
+    private void Complete(Result result)
     {
         if (_completed) return;
         _completed = true;
@@ -184,7 +233,7 @@ public class ItemDiscardPopup : MonoBehaviour
             if (InputManager.Instance != null)
                 InputManager.Instance.blockInputFrames = 2;
             Destroy(gameObject);
-            callback?.Invoke(discardIndex);
+            callback?.Invoke(result);
         });
     }
 
@@ -197,24 +246,4 @@ public class ItemDiscardPopup : MonoBehaviour
                 Time.timeScale = 1f;
         }
     }
-
-    // ── UI 工具方法 ──
-
-    private static GameObject CreateUIObject(string name, Transform parent)
-    {
-        var go = new GameObject(name, typeof(RectTransform));
-        go.transform.SetParent(parent, false);
-        return go;
-    }
-
-    private static TextMeshProUGUI CreateTMPro(string name, Transform parent, string text, int fontSize)
-    {
-        var go = CreateUIObject(name, parent);
-        var tmp = go.AddComponent<TextMeshProUGUI>();
-        tmp.text = text;
-        tmp.fontSize = fontSize;
-        tmp.color = Color.white;
-        return tmp;
-    }
-
 }
