@@ -363,6 +363,8 @@ public class BuffDisplayPanel : MonoBehaviour
     private void OnItemIconClicked(BuffIcon icon)
     {
         if (DialogueManager.Instance != null && DialogueManager.Instance.IsInteractionBlocked) return;
+        var qte = FindObjectOfType<QTEController>();
+        if (qte != null && qte.IsStrictInputActive) return;
         if (!_iconEntryIds.TryGetValue(icon, out int entryId)) return;
         var entry = ItemInventory.Instance.GetEntry(entryId);
         if (entry == null) return;

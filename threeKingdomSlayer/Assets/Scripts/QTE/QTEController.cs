@@ -104,6 +104,7 @@ public class QTEController : MonoBehaviour
 
     public QTEState State => _state;
     public QTEAttackConfig CurrentAttackConfig => _currentAttack;
+    public bool IsStrictInputActive => _state == QTEState.PerformingQTEAttack || _state == QTEState.QTEJudging;
 
     private void Awake()
     {
@@ -681,6 +682,49 @@ public class QTEController : MonoBehaviour
             // QTE 阶段一旦开始，所有输入均被 QTE 系统拦截，防止误触普通攻击
             return _state == QTEState.QTEJudging || _state == QTEState.PerformingQTEAttack || _state == QTEState.QTEEnding;
         }
+    }
+
+    public bool TryStrictInput(Vector2 startScreenPos, Vector2 releaseScreenPos, bool isSwiped, float swipeDistance, float pressDuration)
+    {
+        if (!IsStrictInputActive || _currentQTEIndex >= _activeQTEs.Count)
+            return false;
+
+        var qte = _activeQTEs[_currentQTEIndex];
+        if (qte.resolved) return false;
+
+        if (!_qtePhaseStarted)
+        {
+            if (MatchesQTEGestureType(qte.config, isSwiped))
+            {
+                DebugLog.Info($"[QTEController] 严格模式提前输入失败 idx={_currentQTEIndex}");
+                ResolveQTE(qte, false);
+            }
+            return true;
+        }
+
+        bool success = false;
+        if (isSwiped)
+        {
+            Vector2 direction = releaseScreenPos - startScreenPos;
+            float swipeSpeed = swipeDistance / Mathf.Max(pressDuration, 0.001f);
+            success = TryQTESwipe(startScreenPos, direction, swipeSpeed, releaseScreenPos);
+        }
+        else
+        {
+            success = TryQTEClick(releaseScreenPos);
+        }
+
+        if (!success && !qte.resolved)
+        {
+            DebugLog.Info($"[QTEController] 严格模式错误输入失败 idx={_currentQTEIndex}");
+            ResolveQTE(qte, false);
+        }
+        return true;
+    }
+
+    private static bool MatchesQTEGestureType(QTEConfig config, bool isSwiped)
+    {
+        return config != null && (config.qteType == QTEType.Swipe) == isSwiped;
     }
 
     public bool TryQTEClick(Vector2 screenPos)

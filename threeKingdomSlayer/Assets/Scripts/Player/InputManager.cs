@@ -334,17 +334,12 @@ public class InputManager : MonoBehaviour
 
         bool isSwiped = swipeDistance >= swipeThreshold;
 
-        // QTE活跃时：动作冷却中丢弃手势；空闲时QTE优先，无匹配则攻击
-        bool qteActive = IsAnyQTEActive();
-        if (qteActive)
-        {
-            if (attackSystem != null && attackSystem.IsActionPlaying)
-                return;
-            if (TryConsumeQTEInput(releasePos, isSwiped, swipeDistance, pressDuration))
-                return;
-        }
+        // QTE V2：QTE 攻击开始至结束期间，手势只交给严格 QTE 判定，绝不穿透为普通攻击。
+        if (TryConsumeStrictQTEInput(releasePos, isSwiped, swipeDistance, pressDuration))
+            return;
 
-
+        if (IsAnyQTEActive())
+            return;
         if (pressDuration >= minChargeTime)
         {
             // 蓄力已满 → 蓄力攻击判定
@@ -566,6 +561,16 @@ public class InputManager : MonoBehaviour
         if (_cachedQTEController == null)
             _cachedQTEController = FindObjectOfType<QTEController>();
         return _cachedQTEController != null && _cachedQTEController.IsQTEActive;
+    }
+
+    private bool TryConsumeStrictQTEInput(Vector2 releasePos, bool isSwiped, float swipeDistance, float pressDuration)
+    {
+        if (_cachedQTEController == null)
+            _cachedQTEController = FindObjectOfType<QTEController>();
+        if (_cachedQTEController == null || !_cachedQTEController.IsStrictInputActive)
+            return false;
+
+        return _cachedQTEController.TryStrictInput(touchStartPos, releasePos, isSwiped, swipeDistance, pressDuration);
     }
 
     /// <summary>
