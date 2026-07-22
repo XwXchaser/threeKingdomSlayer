@@ -69,6 +69,21 @@ public class Column
             int colIndex = enemy.columnIndex;
             DebugLog.Info($"[Column] RemoveEnemy: column={colIndex}, deadIndex={index}, remaining={enemies.Count}");
         }
+
+        if (_chainWaitingEnemy == enemy)
+        {
+            enemy.OnRushMoveComplete -= OnChainRushComplete;
+            _chainWaitingEnemy = null;
+            DebugLog.Info($"[Column] 列链等待者已移除: {enemy.DebugTag}, col={columnIndex}");
+            if (!skipChain)
+                TryAdvanceChain();
+        }
+    }
+
+    public void ResumeRushMoveChain()
+    {
+        if (_chainEndHandler != null && _chainWaitingEnemy == null)
+            TryAdvanceChain();
     }
 
     /// <summary>
@@ -77,26 +92,43 @@ public class Column
     /// </summary>
     public void StartRushMoveChain(int colIndex, System.Action onChainEnd = null)
     {
+        CancelRushMoveChain();
         _chainEndHandler = onChainEnd;
         TryAdvanceChain();
     }
 
     private System.Action _chainEndHandler;
+    private Enemy _chainWaitingEnemy;
+
+    public void CancelRushMoveChain()
+    {
+        if (_chainWaitingEnemy != null)
+        {
+            _chainWaitingEnemy.OnRushMoveComplete -= OnChainRushComplete;
+            _chainWaitingEnemy = null;
+        }
+        _chainEndHandler = null;
+    }
 
     private void TryAdvanceChain()
     {
+        if (_chainWaitingEnemy != null)
+            return;
+
         for (int i = 0; i < enemies.Count; i++)
         {
-            if (enemies[i].pendingRushMove)
+            Enemy enemy = enemies[i];
+            if (enemy != null && enemy.state != EnemyState.Dead && enemy.pendingRushMove)
             {
-                enemies[i].OnRushMoveComplete += OnChainRushComplete;
-                enemies[i].TryStartRushMove();
-                DebugLog.Info($"[Column] 启动链式补齐: {enemies[i].DebugTag}, col={columnIndex}, row={enemies[i].rowIndex}");
+                _chainWaitingEnemy = enemy;
+                enemy.OnRushMoveComplete -= OnChainRushComplete;
+                enemy.OnRushMoveComplete += OnChainRushComplete;
+                enemy.TryStartRushMove();
+                DebugLog.Info($"[Column] 启动链式补齐: {enemy.DebugTag}, col={columnIndex}, row={enemy.rowIndex}");
                 return;
             }
         }
 
-        // 链结束：通知 ColumnManager
         DebugLog.Info($"[Column] 链结束: col={columnIndex}");
         var handler = _chainEndHandler;
         _chainEndHandler = null;
@@ -106,6 +138,10 @@ public class Column
     private void OnChainRushComplete(Enemy enemy)
     {
         enemy.OnRushMoveComplete -= OnChainRushComplete;
+        if (_chainWaitingEnemy != enemy)
+            return;
+
+        _chainWaitingEnemy = null;
         TryAdvanceChain();
     }
 
@@ -118,10 +154,14 @@ public class Column
         int idx = enemies.IndexOf(enemy);
         if (idx < 0 || !enemy.pendingRushMove) return;
 
-        // 若当前无活跃链，设置回调
+        if (_chainWaitingEnemy != null)
+            return;
+
         if (_chainEndHandler == null)
             _chainEndHandler = onChainEnd;
 
+        _chainWaitingEnemy = enemy;
+        enemy.OnRushMoveComplete -= OnChainRushComplete;
         enemy.OnRushMoveComplete += OnChainRushComplete;
         enemy.TryStartRushMove();
         DebugLog.Info($"[Column] 击飞落地启动链式: {enemy.DebugTag}, col={columnIndex}, row={enemy.rowIndex}");
