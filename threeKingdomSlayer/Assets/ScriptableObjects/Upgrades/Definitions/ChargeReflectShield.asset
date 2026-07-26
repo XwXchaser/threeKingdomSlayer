@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   category: 0
   upgradeId: charge_reflect_shield
-  displayName: "\u94C1\u58C1\xB7\u53CD\u4F24"
+  displayName: "\u53CD\u4F24"
   descriptionTemplate: "\u6BCF{0}\u79D2\u8FDB\u5165\u84C4\u529B\u540E\u83B7\u5F97\u80FD\u53CD\u5F39{1}\u70B9\u4F24\u5BB3\u7684\u62A4\u76FE{2}"
   extraDescriptionTemplate: 
   rarity: 0

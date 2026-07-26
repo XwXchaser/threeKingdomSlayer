@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   qteType: 1
   warningDuration: 2
-  judgeWindow: 3
+  judgeWindow: 1.2
   swipeDirection: 0
   swipeAngleTolerance: 60
   swipeMinSpeed: 200

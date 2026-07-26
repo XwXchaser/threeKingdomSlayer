@@ -5,188 +5,103 @@ path: push-back-compaction.md
 title: push-back-compaction
 inheritInjectMode: true
 summaryEnabled: false
+summaryCache: 击退机制权威版：记录被击退者原槽位，完成后仅其自身回位；其他敌人不因击退补齐。
 commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1780824594062
-updatedAt: 1783353581789
+updatedAt: 1784945213469
 ---
 
 # push-back-compaction
 
 ## Content
-# 击退（Push Wave）机制设计
+# 击退机制（权威版）
 
-## 概述
+## 核心结论
 
-击退效果（push_wave）将命中敌人向后推移 pushAmount 排，推移后通过逐列紧凑使敌人阵型保持紧密。
+击退是“被命中敌人后移并回到自己原槽”的局部事务，不是压实阵型的触发器。未受击敌人绝不因为击退而改变 row。
 
----
+## 1. 击退前记录
 
-## 规则
+每次击退必须为每个实际被推动的敌人记录：
 
-### 1. 栈式阻塞检测（CanPushColumn）
+- 敌人实例；
+- 原始 column；
+- 原始 row；
+- 目标 row；
+- 本次位移 generation。
 
-- **规则1（尾部阻塞）**：最深命中敌人身后的 [maxHitRow+1, maxHitRow+pushAmount] 区间存在非命中敌人 → 整列阻塞，不执行击退
-- **规则2（重叠检测）**：每个命中敌人的目标排 (rowIndex+pushAmount) 被非命中敌人占据 → 整列阻塞
-- **规则3（Boss墙壁）**：任何命中敌人的目标排 ≥ Boss 所在排 → 整列阻塞。Boss 免疫击退，不参与判断，不阻塞判断
+不能只记录“受保护敌人集合”，因为回位需要精确原槽，而不是寻找任意前方空位。
 
-### 2. 击退执行（ExecutePush）
+## 2. 合法性检查
 
-- 从列表中移除命中敌人 → 更新 rowIndex → 按 rowIndex 升序重新插入
-- 新 rowIndex 上限为 bossRow-1（Boss 是不可逾越的墙壁）
-- **不触发 RecheckAttackRange**：RecheckAttackRange 改为在 `PostDisplacementFillUp`（CompactByClearRows）之后由调用方执行，防止 CompactByClearRows 覆写 targetRow
+- 目标槽不得被未参与本次击退的存活敌人占据。
+- 尾部阻塞时击退失败，不能把阻塞者连锁向后推，除非效果另有明确规则。
+- 不得越过或进入Boss墙。
+- 同一列同一row不能出现两个活跃敌人。
 
-### 3. 逐列紧凑（CompactColumn）
+## 3. 攻击打断
 
-- 所有位移完成后统一执行一次 CompactAllColumns
-- 每列独立紧凑：存活敌人按 writeIdx 顺序分配 row 0,1,2...
-- Boss 在紧凑时视为墙壁：身后敌人紧凑到 bossRow+1，不能越过 Boss
-- Boss 自身跳过紧凑（`if (e.isBoss) continue`），不会被 CompactByClearRows 改变 targetRow
-- Launched 敌人与普通存活敌人同等对待，占据其排位，参与紧凑
+伤害和击退是同次命中结算：
 
-### 4. Launched 敌人规则（重要变更）
+- 敌人正在可打断攻击前摇，且没有霸体/CFrame：攻击先被打断，箭矢或伤害不产生。
+- 飞射物已经生成：飞射物继续独立飞行，不再受敌人后续位移影响。
+- 收招或其他不可打断阶段按攻击系统既有规则处理。
+- 未被本次攻击命中的敌人，即使有合法补齐订单，也不能因击退流程被强行中断攻击。
 
-- **Launched 敌人占位不视为空排**：与 Idle/Stunned 敌人走同一补齐分支
-- 删除了所有 `if (e.state == EnemyState.Launched) { SilentFillToTargetRow(); continue; }` 特殊分支
-- 击飞落地后由 TryStartRushMove 自然衔接补齐
+## 4. 击退执行与停顿
 
----
+- 仅移动实际被击退者。
+- 击退者在目标排停留配置时长，用于表现控制效果。
+- 停顿期间未受击敌人保持原位。
+- 不执行 `CompactAllColumns`、`RowBasedFillUp` 或任何列内压实。
 
-## 方向推（Directional Push）机制 — Slash 专属
+## 5. 击退回位
 
-### 规则
+停顿结束后，只检查被击退者自己的原槽：
 
-- 按行分组，同行敌人朝 slash 方向推移 step 列
-- 推右（L→R）：col+step，推左（R→L）：col-step
-- 同行多敌人自动分散到不同列（沿推方向依次尝试，被占则找下一列）
-- 不越界 [0,4]
+- 原槽未被占用且路径合法：被击退者返回原槽。
+- 原槽暂不可用：保持等待并在拓扑变化后重试，或按后续明确设计处理。
+- 禁止改为“最近前方空位”。
+- 禁止让后方未受击敌人填入原槽。
+- 多个被击退者分别返回各自记录的原槽，不共享、不传递空位。
 
-### 示例
+## 6. 与普通补齐的关系
 
-row=0 敌人 col=[0,1,2]，step=1，推右：col=0→1，col=1→2，col=2→3（分散到不同列）
+- 击退回位本身不会触发普通补齐。
+- 只有独立发生的“整排全部清空”事件才可请求跨列普通补齐。
+- 若击退发生时已有合法普通补齐事务，应暂停并保存该事务；击退完成后恢复原事务，而不是重新扫描并把击退造成的临时槽位当成整排清空。
 
----
+## 7. 横向位移不是击退
 
-## 聚拢波（Convergence Wave）机制 — 独立效果
+方向推、聚拢等只改变 column：
 
-### 规则
+- 只移动命中者；
+- 使用该效果自己的目标槽和冲突裁决；
+- 不做向前回位；
+- 不移动其他敌人；
+- 不触发普通补齐。
 
-- 按行分组，从中心 col=2 向外分配槽位 [2, 1, 3, 0, 4]
-- 同行 N 个敌人分配 N 个最靠中心的槽位
-- 离中心最近的敌人分配最近槽位
-- 每个敌人最多移动 step 列（不是一次性到位，需多次触发）
-- 始终朝 col=2 聚拢，绝不越界
+## 8. 案例
 
-### 示例
+### 单敌人
 
-row=0 敌人 col=[0,1,2,3,4]，step=2，N=5：槽位=[2,1,3,0,4]
-- col=2→2（已在中心）
-- col=1→1（已靠近）
-- col=3→3（已靠近）
-- col=0→0（step=2，到不了槽位 0…已在 col=0，不动）
-- col=4→4（同理）
+`A(row0,col0)` 被推1格至 `row1,col0`，`E(row2,col0)` 未受击：
 
-再次触发 step=2 后 col=0 可抵达 col=2，逐步收敛。
+1. A攻击若处于可打断阶段则被打断。
+2. A移动到row1并停顿。
+3. A返回自己的原槽row0。
+4. E始终保持row2。
 
----
+### 目标被占据
 
-## 执行顺序
+A准备从row0推到row1，而row1已有未命中敌人：击退失败，所有敌人保持原位。
 
-```
-旧：ApplyDisplacementEffects 集中路由（AttackType switch 分发）
+### 两名同时击退
 
-新（按攻击类型独立调用）：
-  ExecuteStab  → ApplyStabPushWave → ApplyPushWave → PostDisplacementFillUp → RecheckPushedEnemiesAttackRange
-  ExecuteSlash → ApplySlashDirectionalPush → ApplyDirectionalPush + PostDisplacementFillUp
-  ExecutePierce / Sweep / Launch → 不触发位移效果
-```
+同列A(row0)、B(row1)都参与同一次向后1格且目标合法：A→row1、B→row2；停顿后A、B分别回到各自原槽。未命中的C不移动。
 
----
+## 当前代码偏差（待修复）
 
-## 案例对比
-
-### 案例1：单敌人击退
-
-初始：A(row=1,col=2), B(row=2,col=0), C(row=2,col=1), D(row=2,col=3), E(row=2,col=4)
-
-```
-     col0 col1 col2 col3 col4
-row0  -    -    -    -    -
-row1  -    -    A    -    -
-row2  B    C    -    D    E
-```
-
-A 被击退1次(pushAmount=1)：
-
-**改动前**：ExecutePush → A.rowIndex=2 → RecheckAttackRange(A rush回row=0) → RowBasedFillUp(全体紧凑到row=0)。结果5敌人都在row=0，但 A rush 过程中可能与其他敌人动画冲突。
-
-**改动后**：ExecutePush → A.rowIndex=2 → CompactAllColumns(逐列紧凑到row=0)。结果5敌人都在row=0，无 rush 冲突。
-
-```
-改动后:
-row0  B    C    A    D    E
-```
-
-### 案例2：不同列不同排位击退
-
-初始：B(row=0,col=0), A(row=1,col=2), C(row=2,col=1), D(row=2,col=3), E(row=2,col=4)
-
-```
-     col0 col1 col2 col3 col4
-row0  B    -    -    -    -
-row1  -    -    A    -    -
-row2  -    C    -    D    E
-```
-
-A 被击退1次：
-
-ExecutePush：A.rowIndex=1→2
-```
-row0  B    -    -    -    -
-row1  -    -    -    -    -
-row2  -    C    A    D    E
-```
-
-**改动前 RowBasedFillUp**：clearRows[1]=true，row2 敌人各减1→row=1。B 留在 row=0，其余在 row=1 → 产生不对齐的排布。
-
-**改动后 CompactAllColumns**：每列独立紧凑
-```
-row0  B    C    A    D    E
-```
-所有敌人紧凑到 row=0，更密集。
-
-### 案例3：Boss墙壁
-
-初始：A(row=0,col=2), Boss(row=2,col=2), C(row=3,col=2)
-
-```
-     col0 col1 col2 col3 col4
-row0  -    -    A    -    -
-row1  -    -    -    -    -
-row2  -    -   Boss  -    -
-row3  -    -    C    -    -
-```
-
-A 被击退1次：CanPushColumn 规则3 → A 目标排 row=1 < bossRow=2 → 通过。
-
-ExecutePush：A.rowIndex=0→1
-```
-row0  -    -    -    -    -
-row1  -    -    A    -    -
-row2  -    -   Boss  -    -
-row3  -    -    C    -    -
-```
-
-CompactAllColumns（col=2）：A→row=0, Boss→row=1(不越过), C→row=2(紧贴Boss身后)
-```
-row0  -    -    A    -    -
-row1  -    -   Boss  -    -
-row2  -    -    C    -    -
-```
-
-### 案例4：击退阻塞
-
-初始：A(row=1,col=2), B(row=2,col=2)
-
-A 被击退1次，B 未命中：CanPushColumn 规则2 → A目标排 row=2 被 B 占据 → 阻塞，不执行击退。
+当前实现仍会对全部列准备Compaction目标，并用 `GetNearestOpenRowAhead` 代替精确原槽回位；这是错误实现，不能作为规则依据。

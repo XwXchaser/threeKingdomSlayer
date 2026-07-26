@@ -16,6 +16,22 @@ public enum EnemyState
     QTEAttacking  // BOSS QTE 攻击演出中
 }
 
+public enum RushMoveStartResult
+{
+    Started,
+    AlreadyRushing,
+    Deferred,
+    Rejected
+}
+
+public enum RushMoveOrderOwner
+{
+    None,
+    WaveMarch,
+    PushReturn,
+    Boss
+}
+
 /// <summary>
 /// Boss 推进状态枚举
 /// </summary>
@@ -230,36 +246,20 @@ public class Enemy : MonoBehaviour
     /// <summary> 当前攻击步骤的前摇时长（供 EnemySpriteController 读取） </summary>
     [System.NonSerialized] public float currentStepSpawnDuration;
 
-    // 补齐移动链式触发
-    // pendingRushMove = true 表示该敌人已标记为需要向前补齐，
-    // TryStartRushMove() 会根据当前状态决定何时开始移动。
-    // 链式触发：补齐移动完全完成（moveProgress >= 1.0）时，
-    // OnRushMoveComplete 事件通知列管理器启动下一个敌人。
-    // 必须等待前一敌人完全补齐完毕，后一敌人才能开始补齐。
-    public bool pendingRushMove; // 标记需要向前补齐
-    public System.Action<Enemy> OnRushMoveComplete; // 补齐移动完成事件（移动完全结束时触发）
+    // Rush movement is scheduler-owned. pendingRushMove/targetRow remain public for
+    // serialization/API compatibility, but normal-enemy orders are assigned through
+    // AssignRushMoveOrder so callbacks can be validated by owner and generation.
+    public bool pendingRushMove;
+    public int targetRow = -1;
+    public System.Action<Enemy, RushMoveOrderOwner, int> OnRushMoveComplete;
+    private RushMoveOrderOwner _rushMoveOrderOwner = RushMoveOrderOwner.None;
+    private int _rushMoveOrderGeneration;
     private float moveProgress; // 0~1, 当前排内移动进度
     private bool isMovingToNextRow;
 
-    // 标记当前移动是否为"补齐移动"（由 RemoveEnemy/UpdateEnemyRow 触发）。
-    // 补齐移动完成后不触发 UpdateEnemyRow()，避免无限循环。
     private bool isRushMove;
-
-    // BUG FIX: 新增补齐延迟计时器（Problem 3）
-    // 补齐移动完成后，若判定需继续补齐（rowIndex >= attackRange），
-    // 先等待 rushMoveDelay 秒再开始下一次补齐移动。
-    // 这样可以将 rushMoveSpeed 设置得更快（单次移动更迅速），
-    // 而整体补齐速度通过 rushMoveDelay 来调节，达到"快移动+停顿"的效果。
     private float rushMoveDelayTimer;
-    // OnRushMoveComplete 是否已触发（避免在同一个移动过程中重复触发）
     private bool rushMoveChainTriggered;
-    // 敌人此次补齐的目标排位置（即列表位置）
-    // 由 Column.RemoveEnemy() / ColumnManager.UpdateEnemyRow() 设置：
-    // SetRowIndex(i+1) 后设置 targetRow = i
-    // 在补齐移动完成的延迟循环中，检查 rowIndex <= targetRow 时停止补齐，
-    // 防止多个敌人在 delay 循环中全部汇聚到 row=0。
-    // targetRow = -1 表示未设置（非补齐移动），此时沿用旧行为。
-    public int targetRow = -1;
     private Renderer[] renderers;
     // 材质实例数组（用于闪白效果）
     // 通过 renderer.material 创建实例，避免 MaterialPropertyBlock 在对象禁用时不生效的问题。
@@ -412,7 +412,8 @@ public class Enemy : MonoBehaviour
         isMovingToNextRow = false;
         isRushMove = false;
         pendingRushMove = false;
-        // BUG FIX: 初始化重置新字段
+        _rushMoveOrderOwner = RushMoveOrderOwner.None;
+        _rushMoveOrderGeneration = 0;
         rushMoveDelayTimer = 0f;
         rushMoveChainTriggered = false;
         targetRow = -1;
@@ -560,18 +561,12 @@ public class Enemy : MonoBehaviour
                 break;
         }
 
-        // BUG FIX: 补齐移动延迟计时器（Problem 3）
-        // 当敌人完成一次补齐移动后，如果还需要继续补齐（rowIndex >= attackRange），
-        // 会启动延迟计时器，等待 rushMoveDelay 秒后再开始下一次补齐移动。
+        // Only an already assigned scheduler order may resume after its delay.
         if (rushMoveDelayTimer > 0f)
         {
             rushMoveDelayTimer -= Time.deltaTime;
-            if (rushMoveDelayTimer <= 0f)
-            {
-                // 延迟结束，尝试再次开始补齐移动
-                DebugLog.Info($"[Enemy] 补齐延迟结束，尝试继续补齐: {DebugTag}, col={columnIndex}, row={rowIndex}");
+            if (rushMoveDelayTimer <= 0f && HasRushMoveOrder)
                 TryStartRushMove();
-            }
         }
 
         // Boss 应战缓冲计时器：到达应战排后短暂无敌（给出场动画留时间）
@@ -628,6 +623,8 @@ public class Enemy : MonoBehaviour
     public void StartMoving(bool isRush = false)
     {
         if (state == EnemyState.Dead) return;
+        if (!isBoss && !isRush) return;
+        if (isRush && !HasRushMoveOrder) return;
 
         // 逐排补齐模式：非补齐移动时，检查前方整排是否已完全清空
         if (!isRush && StageController.Instance?.GetFillUpRule() == FillUpRule.PerRow && !IsFrontRowClear())
@@ -648,7 +645,10 @@ public class Enemy : MonoBehaviour
         // 补齐移动：如果已在目标位置或之前，不需要移动，恢复攻击
         if (isRush && targetRow >= 0 && rowIndex <= targetRow)
         {
-            StartAttacking();
+            if (rowIndex < atkRange)
+                StartAttacking();
+            else
+                state = EnemyState.Idle;
             return;
         }
 
@@ -748,7 +748,7 @@ public class Enemy : MonoBehaviour
         // 若正在补齐移动，恢复 pendingRushMove 标记，确保眩晕结束后链式补齐能继续
         if (state == EnemyState.Moving)
         {
-            if (isRushMove)
+            if (isRushMove && HasRushMoveOrder)
             {
                 pendingRushMove = true;
                 if (_animator != null)
@@ -843,7 +843,7 @@ public class Enemy : MonoBehaviour
         isCFrame = false;
         UpdateOutlineState();
         isMovingToNextRow = false;
-        pendingRushMove = false;
+        pendingRushMove = HasRushMoveOrder;
 
         state = EnemyState.Launched;
         _animator?.ResetTrigger("Hit");
@@ -1018,6 +1018,8 @@ public class Enemy : MonoBehaviour
         }
 
         UpdateOutlineState();
+        if (HasRushMoveOrder && state != EnemyState.Stunned && state != EnemyState.Launched)
+            TryStartRushMove();
         DebugLog.Info($"[Enemy] 退出QTE攻击: {DebugTag}");
     }
 
@@ -1051,19 +1053,18 @@ public class Enemy : MonoBehaviour
             state = EnemyState.Idle;
             _animator?.Play("Idle", 0, 0f);
 
-            // Boss 就位后锁定位置，不参与补齐前移
+            // Normal enemies never autonomously move after stun recovery.
             if (isBoss && (bossState == BossState.InCombat || _bossEngageTimer > 0f))
             {
                 SetBossActionCooldown();
             }
-            else if (pendingRushMove)
+            else if (HasRushMoveOrder)
             {
-                // 眩晕前被标记了补齐移动，恢复后继续 Rush 链
                 TryStartRushMove();
             }
             else
             {
-                StartMoving();
+                EnemyManager.Instance?.columnManager?.StartWaveMarch();
             }
         }
     }
@@ -1123,60 +1124,18 @@ public class Enemy : MonoBehaviour
                 return;
             }
 
-            // 逐排补齐：落地后触发 RowBasedFillUp（Launched→Idle 可能改变清空行状态）
-            if (StageController.Instance?.GetFillUpRule() == FillUpRule.PerRow)
+            // Landing never creates movement. It may only resume an existing scheduler order.
+            if (HasRushMoveOrder)
             {
-                var cm = EnemyManager.Instance?.columnManager;
-                if (cm != null) cm.RowBasedFillUp();
-            }
-
-            // Boss 就位后（战斗中或缓冲中）锁定位置，不参与补齐前移
-            if (isBoss && (bossState == BossState.InCombat || _bossEngageTimer > 0f))
-            {
-                DebugLog.Info($"[Enemy] Boss落地锁定位置: {DebugTag}, col={columnIndex}, row={rowIndex}");
-                SetBossActionCooldown();
-                return;
-            }
-
-            // 如果 targetRow 被 Column 设置（前方死敌产生空位），则补齐前移
-            if (targetRow >= 0 && rowIndex > targetRow)
-            {
-                pendingRushMove = true;
-                var cm = EnemyManager.Instance?.columnManager;
-                var col = cm?.GetColumn(columnIndex);
-                if (col != null)
-                    col.StartRushFromLaunched(this, cm != null ? () => cm.OnColumnsModified?.Invoke() : null);
-                else
-                    TryStartRushMove();
+                TryStartRushMove();
             }
             else
             {
                 int atkRange = (int)Mathf.Max(1, attackRange);
                 if (rowIndex < atkRange)
-                {
                     StartAttacking();
-                }
                 else
-                {
-                    // 三铁律：击飞 ≠ 死亡。Launched 敌人仍占据排位。
-                    // 使用跨列整排检查代替逐列检查，只有前一排全部死亡才是真正的空排。
-                    int frontRow = rowIndex - 1;
-                    bool frontOccupied = false;
-                    if (frontRow >= 0)
-                    {
-                        var cm = EnemyManager.Instance?.columnManager;
-                        frontOccupied = cm != null && !cm.IsRowFullyVacated(frontRow);
-                    }
-                    if (frontOccupied)
-                    {
-                        DebugLog.Info($"[Enemy] 落地后前方整排未清空，等待: {DebugTag}, col={columnIndex}, row={rowIndex}, frontRow={frontRow}");
-                    }
-                    else
-                    {
-                        // 使用 rush 移动：击飞落地后前移不应触发行军波次
-                        StartMoving(true);
-                    }
-                }
+                    EnemyManager.Instance?.columnManager?.StartWaveMarch();
             }
             return;
         }
@@ -1244,7 +1203,7 @@ public class Enemy : MonoBehaviour
             if (rowIndex != oldRowForLog)
                 DebugLog.Info($"[RowTrace] {DebugTag} row {oldRowForLog}→{rowIndex} | caller=UpdateMovement(moveComplete)");
 
-            // Rush 重叠检查：如果目标行已被同列其他敌人占据，回退放弃，等死亡链自然补齐
+            // Rush completion belongs to the exact scheduler order that started this step.
             if (wasRush)
             {
                 var col = EnemyManager.Instance?.columnManager?.GetColumn(columnIndex);
@@ -1252,12 +1211,8 @@ public class Enemy : MonoBehaviour
                 {
                     rowIndex++;
                     state = EnemyState.Idle;
-                    pendingRushMove = false;
-                    targetRow = -1;
                     UpdateWorldPosition();
-                    DebugLog.Info($"[Enemy] Rush 目标行被占用，放弃本次补齐: {DebugTag}, col={columnIndex}, row={rowIndex}");
-                    // 本次补齐未前移，但必须释放波次/列链等待者；后续列变化会重新评估补齐。
-                    OnRushMoveComplete?.Invoke(this);
+                    CompleteRushMoveOrder();
                     return;
                 }
             }
@@ -1299,11 +1254,8 @@ public class Enemy : MonoBehaviour
             {
                 BossPause();
                 OnColumnsModifiedForBoss(); // 立即检查前两排是否已空，防止漏检
-                if (!rushMoveChainTriggered)
-                {
-                    rushMoveChainTriggered = true;
-                    OnRushMoveComplete?.Invoke(this);
-                }
+                if (HasRushMoveOrder)
+                    CompleteRushMoveOrder();
                 return;
             }
 
@@ -1313,73 +1265,39 @@ public class Enemy : MonoBehaviour
 
             if (wasRush)
             {
-                // BUG FIX: 补齐移动优先级高于攻击。即使当前行已在攻击范围内，
-                // 只要尚未到达目标位置（targetRow），就必须继续向前补齐。
-                // 先检查是否需要继续补齐，然后再判断是否开始攻击。
-                if (targetRow >= 0 && rowIndex > targetRow)
+                if (!HasRushMoveOrder)
                 {
-                    // 尚未到达目标位置（列表位置），继续补齐
-                    float delay = 0f;
-                    if (StageController.Instance != null)
-                    {
-                        delay = StageController.Instance.GetRushMoveDelay();
-                    }
-                    if (delay > 0f)
-                    {
-                        DebugLog.Info($"[Enemy] 补齐移动完成（等待延迟继续补齐）: {DebugTag}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}, delay={delay:F2}s");
-                        state = EnemyState.Idle;
-                        pendingRushMove = true;
-                        rushMoveDelayTimer = delay;
-                    }
-                    else
-                    {
-                        // 无延迟，立即继续补齐
-                        DebugLog.Info($"[Enemy] 补齐移动完成（立即继续补齐）: {DebugTag}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
-                        state = EnemyState.Idle;
-                        pendingRushMove = true;
-                        TryStartRushMove();
-                    }
+                    state = EnemyState.Idle;
                 }
-                else if (reachedAttackRange)
+                else if (targetRow >= 0 && rowIndex > targetRow)
                 {
-                    // 已到达目标位置且在攻击范围内，开始攻击
-                    DebugLog.Info($"[Enemy] 补齐移动完成（到达目标位置+攻击范围）: {DebugTag}, col={columnIndex}, row={rowIndex}");
-                    pendingRushMove = false;
-                    targetRow = -1;
-                    StartAttacking();
+                    // Multi-row scheduler orders, including exact-slot push return, resume after the configured delay.
+                    state = EnemyState.Idle;
+                    pendingRushMove = true;
+                    float delay = StageController.Instance?.GetRushMoveDelay() ?? 0f;
+                    if (delay > 0f)
+                        rushMoveDelayTimer = delay;
+                    else
+                        TryStartRushMove();
                 }
                 else
                 {
-                    // 已到达目标位置但不在攻击范围内，停止补齐
-                    DebugLog.Info($"[Enemy] 补齐移动完成（到达目标位置，停止补齐）: {DebugTag}, col={columnIndex}, row={rowIndex}, targetRow={targetRow}");
-                    state = EnemyState.Idle;
-                    pendingRushMove = false;
-                    targetRow = -1;
-                }
+                    if (reachedAttackRange)
+                        StartAttacking();
+                    else
+                        state = EnemyState.Idle;
 
-                // BUG FIX: 链式触发移至移动完全完成后，而非移动中期。
-                // 必须等待前一敌人完全补齐完毕（moveProgress >= 1.0），
-                // 后一敌人才能开始补齐。这样符合"逐个向前补齐"的行为。
-                // 使用 rushMoveChainTriggered 避免在同一个移动过程中重复触发。
-                if (!rushMoveChainTriggered)
-                {
-                    rushMoveChainTriggered = true;
-                    DebugLog.Info($"[Enemy] 补齐移动完全完成（触发链式）: {DebugTag}, col={columnIndex}, row={rowIndex}");
-                    OnRushMoveComplete?.Invoke(this);
+                    CompleteRushMoveOrder();
 
-                    // Boss 分阶段推进：到达第2排(rowIndex=1)，启动缓冲计时器
                     if (isBoss && rowIndex <= 1 && (bossState == BossState.Approaching || bossState == BossState.None))
                     {
-                        // 取消列监听，防止 OnColumnsModifiedForBoss 误触发 BossResume
                         var cm = EnemyManager.Instance?.columnManager;
                         if (cm != null && _onColumnsModifiedHandler != null)
                         {
                             cm.OnColumnsModified -= _onColumnsModifiedHandler;
                             _onColumnsModifiedHandler = null;
                         }
-                        // 1秒无敌缓冲，为出场动画预留时间
                         _bossEngageTimer = 1f;
-                        DebugLog.Info($"[Enemy] Boss到达应战排，启动缓冲计时器: {DebugTag}, col={columnIndex}, row={rowIndex}");
                     }
                 }
             }
@@ -1389,6 +1307,10 @@ public class Enemy : MonoBehaviour
                 if (reachedAttackRange)
                 {
                     StartAttacking();
+                }
+                else
+                {
+                    state = EnemyState.Idle;
                 }
                 EnemyManager.Instance?.OnEnemyMovedForward(this);
                 DebugLog.Info($"[Enemy] 自然移动完成，触发 UpdateEnemyRow: {DebugTag}, col={columnIndex}");
@@ -1583,17 +1505,33 @@ public class Enemy : MonoBehaviour
             {
                 if (state != EnemyState.Stunned && state != EnemyState.Launched)
                 {
-                    float cooldown = totalInterval * 0.4f + extraCooldown;
-                    if (cooldown < 0.1f) cooldown = 0.1f;
-                    attackTimer = cooldown;
+                    int atkRange = (int)Mathf.Max(1, attackRange);
+                    if (HasRushMoveOrder)
+                    {
+                        float cooldown = totalInterval * 0.4f + extraCooldown;
+                        if (cooldown < 0.1f) cooldown = 0.1f;
+                        attackTimer = cooldown;
+                    }
+                    else if (rowIndex < atkRange)
+                    {
+                        state = EnemyState.Attacking;
+                        float cooldown = totalInterval * 0.4f + extraCooldown;
+                        if (cooldown < 0.1f) cooldown = 0.1f;
+                        attackTimer = cooldown;
+                    }
+                    else
+                    {
+                        state = EnemyState.Idle;
+                    }
                 }
             }
 
-            // 未被 Stun/Launch 打断时，Animator 回到 Idle
+            // Attack completion may only resume an already owned order.
             if (state != EnemyState.Stunned && state != EnemyState.Launched)
             {
                 _animator?.Play("Idle", 0, 0f);
-                TryStartRushMove();
+                if (HasRushMoveOrder)
+                    TryStartRushMove();
             }
         });
     }
@@ -1605,7 +1543,7 @@ public class Enemy : MonoBehaviour
     /// <summary>
     /// 受到伤害
     /// </summary>
-    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true)
+    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true, bool canInterruptAttack = true, bool triggerHitAnimation = true)
     {
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
@@ -1649,7 +1587,7 @@ public class Enemy : MonoBehaviour
         // Boss:  普通窗口（无霸体/CFrame）→ 所有攻击可打断
         //        霸体/CFrame → 仅 Parry 可打断
         // 非Boss: 普通窗口任何攻击可打断; CFrame/SuperArmor 仅 canInterruptCFrame 可打断
-        if (state == EnemyState.Attacking && isAttackAnimating && !isAttackDrawPhase)
+        if (canInterruptAttack && state == EnemyState.Attacking && isAttackAnimating && !isAttackDrawPhase)
         {
             if (isBoss)
             {
@@ -1669,7 +1607,7 @@ public class Enemy : MonoBehaviour
 
         if (sharedHealthGroup != null)
         {
-            sharedHealthGroup.TakeDamage(damage, damageType, this);
+            sharedHealthGroup.TakeDamage(damage, damageType, this, damageNumberColor, triggerHitAnimation);
             return;
         }
 
@@ -1706,18 +1644,21 @@ public class Enemy : MonoBehaviour
             cachedHealthBar.Show(currentHealth / maxHealth);
         }
 
-        // BUG FIX: 同步应用闪白（立即设置颜色，不依赖 Update 循环）
-        ApplyHitFlashImmediate();
+        if (triggerHitAnimation)
+        {
+            // BUG FIX: 同步应用闪白（立即设置颜色，不依赖 Update 循环）
+            ApplyHitFlashImmediate();
 
-        // 触发受伤精灵闪烁（仅 Idle/Moving 状态，持续 0.3 秒）
-        TriggerHitFlash();
+            // 触发受伤精灵闪烁（仅 Idle/Moving 状态，持续 0.3 秒）
+            TriggerHitFlash();
 
-        // 触发受伤闪白效果（非致命伤通过 Update 循环过渡恢复）
-        hitFlashTimer = HIT_FLASH_DURATION;
-        DebugLog.Info($"[Enemy] 触发闪白: {DebugTag}, duration={HIT_FLASH_DURATION}");
+            // 触发受伤闪白效果（非致命伤通过 Update 循环过渡恢复）
+            hitFlashTimer = HIT_FLASH_DURATION;
+            DebugLog.Info($"[Enemy] 触发闪白: {DebugTag}, duration={HIT_FLASH_DURATION}");
 
-        // DOTween: 受击大小抖动效果（与闪白同步触发）
-        RestartHitScaleFeedback();
+            // DOTween: 受击大小抖动效果（与闪白同步触发）
+            RestartHitScaleFeedback();
+        }
 
         // 击飞状态下被攻击延长浮空时间
         if (state == EnemyState.Launched && launchedHitExtendDuration > 0f)
@@ -1997,6 +1938,8 @@ public class Enemy : MonoBehaviour
     {
         if (state == EnemyState.Dead) return;
 
+        EnemyManager.Instance?.columnManager?.CancelPushReturnForEnemy(this, "cancel-dead");
+
         // QTE 演出中死亡：立即清理 QTE 状态（飞行物/指示器/输入拦截）
         if (state == EnemyState.QTEAttacking)
         {
@@ -2214,7 +2157,10 @@ public class Enemy : MonoBehaviour
     public void StartFillForwardDelay(float delay)
     {
         ResetMovementState();
-        pendingRushMove = true;
+        int savedTargetRow = targetRow;
+        int generation = _rushMoveOrderGeneration + 1;
+        CancelRushMoveOrder(resetActiveMovement: true);
+        AssignRushMoveOrder(RushMoveOrderOwner.Boss, generation, savedTargetRow);
         StartCoroutine(FillForwardDelayRoutine(delay));
     }
 
@@ -2225,6 +2171,105 @@ public class Enemy : MonoBehaviour
         TryStartRushMove();
     }
 
+    public bool IsRushMovementActive => state == EnemyState.Moving && isMovingToNextRow && isRushMove;
+    public bool HasRushMoveOrder => _rushMoveOrderOwner != RushMoveOrderOwner.None;
+    public RushMoveOrderOwner RushMoveOrderOwner => _rushMoveOrderOwner;
+    public int RushMoveOrderGeneration => _rushMoveOrderGeneration;
+    public bool IsRushMoveReady => HasRushMoveOrder
+        && state != EnemyState.Dead
+        && state != EnemyState.Launched
+        && state != EnemyState.Stunned
+        && state != EnemyState.QTEAttacking
+        && !isAttackAnimating
+        && !(state == EnemyState.Moving && !IsRushMovementActive)
+        && rushMoveDelayTimer <= 0f;
+
+    public bool AssignRushMoveOrder(RushMoveOrderOwner owner, int generation, int orderTargetRow)
+    {
+        if (owner == RushMoveOrderOwner.None || generation <= 0 || state == EnemyState.Dead)
+            return false;
+
+        if (isBoss && owner != RushMoveOrderOwner.Boss)
+            return false;
+        if (!isBoss && owner == RushMoveOrderOwner.Boss)
+            return false;
+
+        if (HasRushMoveOrder && !IsRushMoveOrder(owner, generation))
+            return false;
+
+        _rushMoveOrderOwner = owner;
+        _rushMoveOrderGeneration = generation;
+        targetRow = orderTargetRow;
+        pendingRushMove = rowIndex > orderTargetRow;
+        rushMoveDelayTimer = 0f;
+        rushMoveChainTriggered = false;
+        return true;
+    }
+
+    public bool IsRushMoveOrder(RushMoveOrderOwner owner, int generation)
+    {
+        return _rushMoveOrderOwner == owner && _rushMoveOrderGeneration == generation;
+    }
+
+    public void CancelRushMoveOrder(RushMoveOrderOwner owner, int generation, bool resetActiveMovement = false)
+    {
+        if (!IsRushMoveOrder(owner, generation)) return;
+
+        if (resetActiveMovement && IsRushMovementActive)
+            ResetRushMovementToCurrentRow();
+
+        ClearRushMoveOrder();
+    }
+
+    public void CancelRushMoveOrder(bool resetActiveMovement = false)
+    {
+        if (!HasRushMoveOrder) return;
+
+        if (resetActiveMovement && IsRushMovementActive)
+            ResetRushMovementToCurrentRow();
+
+        ClearRushMoveOrder();
+    }
+
+    private void ResetRushMovementToCurrentRow()
+    {
+        DOTween.Kill(transform, false);
+        if (_animator != null)
+        {
+            _animator.speed = 1f;
+            _animator.ResetTrigger("Walk");
+            _animator.Play("Idle", 0, 0f);
+        }
+        bounceYOffset = 0f;
+        isMovingToNextRow = false;
+        isRushMove = false;
+        moveProgress = 0f;
+        if (state == EnemyState.Moving)
+            state = EnemyState.Idle;
+        UpdateWorldPosition();
+    }
+
+    private void ClearRushMoveOrder()
+    {
+        _rushMoveOrderOwner = RushMoveOrderOwner.None;
+        _rushMoveOrderGeneration = 0;
+        pendingRushMove = false;
+        targetRow = -1;
+        rushMoveDelayTimer = 0f;
+        rushMoveChainTriggered = false;
+    }
+
+    private void CompleteRushMoveOrder()
+    {
+        if (!HasRushMoveOrder || rushMoveChainTriggered) return;
+
+        RushMoveOrderOwner owner = _rushMoveOrderOwner;
+        int generation = _rushMoveOrderGeneration;
+        rushMoveChainTriggered = true;
+        ClearRushMoveOrder();
+        OnRushMoveComplete?.Invoke(this, owner, generation);
+    }
+
     /// <summary>
     /// 尝试开始补齐移动（链式触发）
     /// 根据当前状态决定是否立即开始移动：
@@ -2233,21 +2278,24 @@ public class Enemy : MonoBehaviour
     ///   - Attacking（动画阶段）：等待动画完成，由 UpdateAttack() 调用
     ///   - Stunned/Launched：等待恢复
     ///
-    /// 返回值：true 表示已处理（开始移动或立即触发链式完成），false 表示等待下次尝试
+    /// 返回值用于调度器判断：只有 Started / AlreadyRushing 会产生未来的 Rush 完成回调。
     /// </summary>
-    public bool TryStartRushMove()
+    public RushMoveStartResult TryStartRushMove()
     {
-        if (!pendingRushMove || state == EnemyState.Dead)
-            return false;
+        if (!HasRushMoveOrder || !pendingRushMove || state == EnemyState.Dead)
+            return RushMoveStartResult.Rejected;
 
         switch (state)
         {
             case EnemyState.Idle:
+                if (rushMoveDelayTimer > 0f)
+                    return RushMoveStartResult.Deferred;
+
                 // BOSS 已在应战排(row<=1)，不再参与补齐前移
                 if (isBoss && rowIndex <= 1)
                 {
-                    pendingRushMove = false;
-                    return false;
+                    CompleteRushMoveOrder();
+                    return RushMoveStartResult.Rejected;
                 }
 
                 // BOSS 补齐规则：前方一整排（所有列）必须清空才前进，而非仅看本列
@@ -2255,7 +2303,6 @@ public class Enemy : MonoBehaviour
                 {
                     if (!IsRowClearForBoss(rowIndex - 1))
                     {
-                        // 前方排仍有存活敌人，订阅列修改事件等待重试
                         var cm = EnemyManager.Instance?.columnManager;
                         if (cm != null && _onColumnsModifiedHandler == null)
                         {
@@ -2263,9 +2310,8 @@ public class Enemy : MonoBehaviour
                             cm.OnColumnsModified += _onColumnsModifiedHandler;
                             DebugLog.Info($"[Enemy] Boss等待前方排清空(row={rowIndex - 1}): {DebugTag}, col={columnIndex}");
                         }
-                        return false; // 不清除 pendingRushMove，等待重试
+                        return RushMoveStartResult.Deferred;
                     }
-                    // 前方排已清空，取消等待订阅（如有）
                     if (_onColumnsModifiedHandler != null)
                     {
                         var cm2 = EnemyManager.Instance?.columnManager;
@@ -2274,62 +2320,41 @@ public class Enemy : MonoBehaviour
                         _onColumnsModifiedHandler = null;
                     }
                 }
-                pendingRushMove = false;
+                pendingRushMove = true;
                 StartMoving(true);
-                // 如果 state 未变为 Moving（例如 rowIndex=0 直接进入攻击），
-                // 立即触发链式完成，让下一个敌人开始补齐
                 if (state != EnemyState.Moving)
                 {
-                    OnRushMoveComplete?.Invoke(this);
+                    CompleteRushMoveOrder();
+                    return RushMoveStartResult.Rejected;
                 }
-                return true;
+                return RushMoveStartResult.Started;
 
             case EnemyState.Attacking:
                 if (!isAttackAnimating)
                 {
-                    // 冷却阶段：中断攻击，但等待 rushMoveDelay 后再开始补齐
-                    // 不立即 StartMoving，避免跳过补齐延迟计时器
                     ResetMovementState();
                     pendingRushMove = true;
-                    float delay = StageController.Instance?.GetRushMoveDelay() ?? 0f;
-                    if (delay > 0f)
-                        rushMoveDelayTimer = delay;
-                    else
-                        StartMoving(true);
-                    return true;
+                    StartMoving(true);
+                    if (IsRushMovementActive)
+                        return RushMoveStartResult.Started;
+                    CompleteRushMoveOrder();
+                    return RushMoveStartResult.Rejected;
                 }
-                // 动画阶段：等待动画完成，由 UpdateAttack() 调用 TryStartRushMove
-                return false;
+                return RushMoveStartResult.Deferred;
 
             case EnemyState.Launched:
-                // 击飞期间不打断补齐：保留 pendingRushMove 和 targetRow，
-                // 落地后由 UpdateLaunch 检查 targetRow 并触发 StartRushFromLaunched
-                return false;
+                return RushMoveStartResult.Deferred;
 
             case EnemyState.Stunned:
-                // 普通敌人没有眩晕设计，不应被眩晕阻塞补齐移动
-                if (!isBoss)
-                {
-                    state = EnemyState.Idle;
-                    pendingRushMove = false;
-                    StartMoving(true);
-                    if (state != EnemyState.Moving)
-                    {
-                        OnRushMoveComplete?.Invoke(this);
-                    }
-                    return true;
-                }
-                // Boss 等待恢复
-                return false;
+                return RushMoveStartResult.Deferred;
 
             case EnemyState.Moving:
-                // 正在移动中（如被 RecheckAttackRange 启动的 Rush），
-                // 保持 pendingRushMove 标记以便列补齐链订阅 OnRushMoveComplete，
-                // 移动完成后链式回调自然触发。不启动新移动以免干扰当前移动。
-                return true;
+                return IsRushMovementActive
+                    ? RushMoveStartResult.AlreadyRushing
+                    : RushMoveStartResult.Deferred;
 
             default:
-                return false;
+                return RushMoveStartResult.Deferred;
         }
     }
 
@@ -2359,31 +2384,28 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
-    /// 位移后重检攻击范围：被推离攻击范围则重新前进，反之恢复攻击
+    /// Re-evaluate attack state after displacement without scheduling movement.
+    /// An active attack animation is allowed to finish; outside range, a normal enemy waits Idle for ColumnManager.
     /// </summary>
     public void RecheckAttackRange()
     {
         if (state == EnemyState.Dead) return;
-        int atkRange = (int)Mathf.Max(1, attackRange);
 
+        int atkRange = (int)Mathf.Max(1, attackRange);
         if (rowIndex < atkRange)
         {
-            // 在攻击范围内 → 直接攻击
-            if (state == EnemyState.Attacking) return; // 已在攻击中
-            CancelAttack();
-            StartAttacking();
+            if (state == EnemyState.Idle)
+                StartAttacking();
+            return;
         }
-        else
+
+        if (isBoss || isAttackAnimating || state == EnemyState.Launched || state == EnemyState.Stunned || state == EnemyState.QTEAttacking)
+            return;
+
+        if (state == EnemyState.Attacking)
         {
-            // 被推离攻击范围 → 取消攻击，标记补齐等待。
-            // 实际 Rush 移动由 ColumnManager 的紧凑链统一调度（含延迟），此处不单独启动。
-            CancelAttack();
-            if (state != EnemyState.Moving && state != EnemyState.Idle)
-                state = EnemyState.Idle;
-            // 设置 targetRow 为攻击范围最前排，确保 Rush 到位后能进入攻击
-            targetRow = atkRange - 1;
-            // 标记 pendingRushMove，确保列补齐链能订阅 OnRushMoveComplete
-            pendingRushMove = true;
+            state = EnemyState.Idle;
+            _animator?.Play("Idle", 0, 0f);
         }
     }
 
@@ -2592,8 +2614,7 @@ public class Enemy : MonoBehaviour
     {
         bossState = BossState.Approaching;
         state = EnemyState.Idle;
-        pendingRushMove = false;
-        targetRow = -1;
+        CancelRushMoveOrder(resetActiveMovement: true);
 
         // 停止 DOTween
         transform.DOKill(false);
@@ -2700,8 +2721,9 @@ public class Enemy : MonoBehaviour
 
         DebugLog.Info($"[Enemy] Boss恢复推进: {DebugTag}, col={columnIndex}, 从第3排→第2排");
 
-        targetRow = 1;
-        pendingRushMove = true;
+        int generation = _rushMoveOrderGeneration + 1;
+        CancelRushMoveOrder(resetActiveMovement: true);
+        AssignRushMoveOrder(RushMoveOrderOwner.Boss, generation, 1);
         TryStartRushMove();
     }
 
@@ -2975,6 +2997,7 @@ public class Enemy : MonoBehaviour
 
     private void OnDisable()
     {
+        EnemyManager.Instance?.columnManager?.CancelPushReturnForEnemy(this, "cancel-reset");
         StopHitScaleFeedback();
         initialized = false;
     }
@@ -2984,6 +3007,7 @@ public class Enemy : MonoBehaviour
     /// </summary>
     public void ResetEnemy()
     {
+        EnemyManager.Instance?.columnManager?.CancelPushReturnForEnemy(this, "cancel-reset");
         StopHitScaleFeedback();
 
         // 终止所有活跃的 DOTween 动画（完成当前值后跳转到最终值）
@@ -3017,6 +3041,13 @@ public class Enemy : MonoBehaviour
         bossState = BossState.None;
         sharedHealthGroup = null;
 
+        _rushMoveOrderOwner = RushMoveOrderOwner.None;
+        _rushMoveOrderGeneration = 0;
+        pendingRushMove = false;
+        targetRow = -1;
+        rushMoveDelayTimer = 0f;
+        rushMoveChainTriggered = false;
+        OnRushMoveComplete = null;
         OnDeath = null;
         OnDamageTaken = null;
         OnHealthChanged = null;

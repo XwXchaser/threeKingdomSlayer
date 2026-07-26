@@ -370,9 +370,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   backgroundImage: {fileID: 2797879343043197580}
+  iconFrameImage: {fileID: 0}
   iconImage: {fileID: 7108065040341967617}
   nameText: {fileID: 4311799879071400538}
   descriptionText: {fileID: 8474547127931342366}
+  levelStatusText: {fileID: 0}
+  passiveTagImage: {fileID: 0}
+  activeTagImage: {fileID: 0}
+  activeSkillFrameSprite: {fileID: 0}
   button: {fileID: 462401007819868575}
   selectedGlowImage: {fileID: 0}
   selectedLift: 16
@@ -527,9 +532,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   backgroundImage: {fileID: 2775971958572820625}
+  iconFrameImage: {fileID: 0}
   iconImage: {fileID: 1283294691439390605}
   nameText: {fileID: 2422713831538217866}
   descriptionText: {fileID: 2185217261417272568}
+  levelStatusText: {fileID: 0}
+  passiveTagImage: {fileID: 0}
+  activeTagImage: {fileID: 0}
+  activeSkillFrameSprite: {fileID: 0}
   button: {fileID: 6083057298900111543}
   selectedGlowImage: {fileID: 0}
   selectedLift: 16
@@ -645,7 +655,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_enableWordWrapping: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 1
+  m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
@@ -857,7 +867,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_enableWordWrapping: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 1
+  m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
@@ -1033,9 +1043,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   backgroundImage: {fileID: 8944728875702875321}
+  iconFrameImage: {fileID: 0}
   iconImage: {fileID: 537912593880011792}
   nameText: {fileID: 265260590221095363}
   descriptionText: {fileID: 4327766278717300060}
+  levelStatusText: {fileID: 0}
+  passiveTagImage: {fileID: 0}
+  activeTagImage: {fileID: 0}
+  activeSkillFrameSprite: {fileID: 0}
   button: {fileID: 3677422745955133732}
   selectedGlowImage: {fileID: 0}
   selectedLift: 16
@@ -1324,7 +1339,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_enableWordWrapping: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 1
+  m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
@@ -1704,7 +1719,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_enableWordWrapping: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 1
+  m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
@@ -1916,7 +1931,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_enableWordWrapping: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 1
+  m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
@@ -2052,7 +2067,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_enableWordWrapping: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 1
+  m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
@@ -2188,7 +2203,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_enableWordWrapping: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 1
+  m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1

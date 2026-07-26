@@ -334,12 +334,18 @@ public class InputManager : MonoBehaviour
 
         bool isSwiped = swipeDistance >= swipeThreshold;
 
-        // QTE V2：QTE 攻击开始至结束期间，手势只交给严格 QTE 判定，绝不穿透为普通攻击。
+        // Strict 模式消费所有战斗手势；Legacy 保留“QTE优先，未命中穿透为攻击”的既有规则。
         if (TryConsumeStrictQTEInput(releasePos, isSwiped, swipeDistance, pressDuration))
             return;
 
-        if (IsAnyQTEActive())
-            return;
+        bool qteActive = IsAnyQTEActive();
+        if (qteActive)
+        {
+            if (attackSystem != null && attackSystem.IsActionPlaying)
+                return;
+            if (TryConsumeQTEInput(releasePos, isSwiped, swipeDistance, pressDuration))
+                return;
+        }
         if (pressDuration >= minChargeTime)
         {
             // 蓄力已满 → 蓄力攻击判定

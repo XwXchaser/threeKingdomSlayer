@@ -10,12 +10,10 @@ public class ComboBuffTrigger
 {
     /// <summary>触发所需连击数</summary>
     public int comboThreshold;
-    /// <summary>Buff 标识（同 buffId 只刷新时间不叠加）</summary>
+    /// <summary>Buff 标识（相同 buffId 的不同阈值叠加为同一 Buff）</summary>
     public string buffId;
-    /// <summary>Buff 持续时间（秒）</summary>
-    public float duration;
-    /// <summary>属性修正列表</summary>
-    public List<StatModifier> modifiers;
+    /// <summary>此档位的单个属性修正</summary>
+    public StatModifier modifier;
 }
 
 /// <summary>

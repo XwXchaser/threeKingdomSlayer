@@ -13,6 +13,7 @@ public class SpriteNumberDisplay : MonoBehaviour
 
     [Header("符号精灵")]
     [SerializeField] private Sprite _percentSprite;
+    [SerializeField] private Sprite _plusSprite;
 
     [Header("显示比例（整体缩放）")]
     [SerializeField] private float _displayScale = 1f;
@@ -69,6 +70,20 @@ public class SpriteNumberDisplay : MonoBehaviour
         HideExcess();
     }
 
+    /// <summary>显示带正号的百分比：+value%</summary>
+    public void ShowSignedPercent(int value)
+    {
+        var digits = GetDigits(Mathf.Abs(value));
+        int needed = digits.Count + 2;
+        EnsurePool(needed);
+        SetPlusSymbol(0);
+        for (int i = 0; i < digits.Count; i++)
+            SetDigit(i + 1, digits[i]);
+        SetPercentSymbol(digits.Count + 1);
+        _activeCount = needed;
+        HideExcess();
+    }
+
     /// <summary>显示倒计时（整数秒，最小值 0）</summary>
     public void ShowCountdown(int seconds)
     {
@@ -121,6 +136,13 @@ public class SpriteNumberDisplay : MonoBehaviour
     {
         if (digit >= 0 && digit <= 9 && _digitSprites[digit] != null)
             _digitPool[index].sprite = _digitSprites[digit];
+        _digitPool[index].gameObject.SetActive(true);
+    }
+
+    private void SetPlusSymbol(int index)
+    {
+        if (_plusSprite != null)
+            _digitPool[index].sprite = _plusSprite;
         _digitPool[index].gameObject.SetActive(true);
     }
 

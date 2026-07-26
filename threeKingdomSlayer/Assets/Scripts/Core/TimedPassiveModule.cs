@@ -90,6 +90,7 @@ public class TimedPassiveModule : MonoBehaviour
     public void Unregister(string upgradeId)
     {
         _states.Remove(upgradeId);
+        _shockwaveLayers.Remove(upgradeId);
     }
 
     public void ResetAll()
@@ -185,10 +186,13 @@ public class TimedPassiveModule : MonoBehaviour
     {
         if (state.definition.timedAoeLevels == null || state.level > state.definition.timedAoeLevels.Count) return;
         var cfg = state.definition.timedAoeLevels[state.level - 1];
-        if (cfg.columns == null || cfg.columns.Count == 0 || fireEffectPrefab == null) return;
+        if (fireEffectPrefab == null) return;
 
+        // 照抄火蛇机关：始终全 5 列，限制 3 排，Z 偏移 -2
+        var cols = new List<int> { 0, 1, 2, 3, 4 };
         var instance = Instantiate(fireEffectPrefab);
-        instance.GetComponent<ShootFireEffect>().Play(cfg.columns, cfg.damage);
+        var effect = instance.GetComponent<ShootFireEffect>();
+        effect.PlaySweep(cols, cfg.damage, maxRows: 3, startZOffset: -2f, cfg.burnDamagePerSecond, cfg.burnDurationSeconds);
     }
 
     private void SpawnArrow(TimedState state)

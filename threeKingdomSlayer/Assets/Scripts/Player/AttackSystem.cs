@@ -242,6 +242,7 @@ public class AttackSystem : MonoBehaviour
         float rayLength = baseLength + (visualRangeRows - 1) * spacing;
         Vector3 targetPosition = startPosition + rayDirection * rayLength;
         var hitTargets = new List<Enemy>();
+        var pushedTargets = new List<Enemy>();
 
         LastStabTargetEnemy = null;
         StabSweepEffect.Create(cfg.attackWavePrefab, startPosition, targetPosition, columnIndex, effectiveRows, visualRangeRows,
@@ -256,7 +257,7 @@ public class AttackSystem : MonoBehaviour
                 {
                     int pushDist = UpgradeEffectManager.Instance.GetPushWaveDistance();
                     if (pushDist > 0)
-                        columnManager.ApplyPushWave(new List<Enemy> { enemy }, pushDist, canInterruptCFrame: false);
+                        columnManager.ApplyPushWave(new List<Enemy> { enemy }, pushDist, canInterruptCFrame: false, pushedEnemies: pushedTargets);
                 }
             },
             () =>
@@ -266,9 +267,8 @@ public class AttackSystem : MonoBehaviour
             },
             () =>
             {
-                if (hitTargets.Count > 0 && UpgradeEffectManager.Instance != null && columnManager != null
-                    && UpgradeEffectManager.Instance.GetPushWaveDistance() > 0)
-                    columnManager.PostDisplacementFillUp();
+                if (pushedTargets.Count > 0)
+                    columnManager.PostDisplacementFillUp(pushedTargets);
             },
             cfg.stabVisualReachOffset,
             GetStabVisualStartXOffset(columnIndex),
@@ -322,6 +322,7 @@ public class AttackSystem : MonoBehaviour
             Vector3 wavePos = GetWavePosition(targets, columnIndex);
             ReleaseChargeHitShockwave();
             StartCoroutine(ReleaseChargeShockwaves());
+            StartCoroutine(ReleaseChargeAttackShockwaves());
             AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab,
                 targetDuration: GetVisualTargetDuration(cfg));
         }
@@ -343,6 +344,7 @@ public class AttackSystem : MonoBehaviour
             Vector3 wavePos = GetWavePosition(targets, -1);
             ReleaseChargeHitShockwave();
             StartCoroutine(ReleaseChargeShockwaves());
+            StartCoroutine(ReleaseChargeAttackShockwaves());
             AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab,
                 targetDuration: GetVisualTargetDuration(cfg));
         }
@@ -708,6 +710,35 @@ public class AttackSystem : MonoBehaviour
         }
     }
 
+    /// <summary>释放主动冲击波：玩家点击叠加层数，下一次蓄力攻击时每层释放一道</summary>
+    private System.Collections.IEnumerator ReleaseChargeAttackShockwaves()
+    {
+        if (playerState == null || !playerState.IsCharging) yield break;
+        if (ActiveSkillRunner.Instance == null || columnManager == null) yield break;
+
+        var results = ActiveSkillRunner.Instance.ConsumeAllChargeAttackShockwaves();
+        if (results.Count == 0) yield break;
+
+        var sweepCfg = GetConfig(AttackType.Sweep);
+        GameObject wavePrefab = sweepCfg?.attackWavePrefab;
+
+        foreach (var r in results)
+        {
+            var targets = columnManager.GetAllEnemiesInRange(r.config.rangeRows);
+            Vector3 wavePos = GetWavePosition(targets, -1);
+
+            for (int layer = 0; layer < r.layers; layer++)
+            {
+                AttackWave.Create(wavePos, DamageType.Sweep, r.config.damage, targets,
+                    prefab: wavePrefab);
+                if (layer + 1 < r.layers)
+                    yield return null;
+            }
+
+            Debug.Log($"[AttackSystem] 主动冲击波释放: {r.upgradeId} {r.layers}层 rows={r.config.rangeRows} damage={r.config.damage}");
+        }
+    }
+
     /// <summary>获取有效攻击排数（含延长等加成）</summary>
     private int GetEffectiveRangeRows(AttackSkillConfig cfg)
     {
@@ -753,20 +784,17 @@ public class AttackSystem : MonoBehaviour
         Debug.Log($"[Displacement] Stab PushWave dist={pushDist} targets={targets.Count}");
         Debug.Log(columnManager.DumpColumns());
 
-        bool anyPushed = columnManager.ApplyPushWave(targets, pushDist, canInterruptCFrame: false);
+        var pushedTargets = new List<Enemy>();
+        bool anyPushed = columnManager.ApplyPushWave(targets, pushDist, canInterruptCFrame: false, pushedEnemies: pushedTargets);
         // 仅在实际有敌人被推动时才执行列填充（BOSS 免疫位移，无推动则无需填充）
         if (anyPushed)
-            columnManager.PostDisplacementFillUp();
+            columnManager.PostDisplacementFillUp(pushedTargets);
 
         Debug.Log($"[Displacement] after Stab PushWave:");
         Debug.Log(columnManager.DumpColumns());
     }
 
-    /// <summary>Slash 方向推</summary>
-    /// <remarks>
-    /// BOSS 免疫位移（ApplyDirectionalPush 内部过滤 isBoss），仅在有敌人被实际推动时才执行列填充。
-    /// 同 ApplyStabPushWave 的 BOSS 保护逻辑。
-    /// </remarks>
+    /// <summary>Slash horizontal directional push. It changes only hit enemies' columns and never enters backward-push return/fill.</summary>
     private void ApplySlashDirectionalPush(List<Enemy> targets, bool leftToRight)
     {
         if (UpgradeEffectManager.Instance == null || columnManager == null) return;
@@ -776,10 +804,7 @@ public class AttackSystem : MonoBehaviour
         Debug.Log($"[Displacement] Slash DirectionalPush step={step} dir={(leftToRight ? "L→R" : "R→L")} targets={targets.Count}");
         Debug.Log(columnManager.DumpColumns());
 
-        bool anyMoved = columnManager.ApplyDirectionalPush(targets, step, leftToRight, canInterruptCFrame: false);
-        // 仅在实际有敌人被推动时才执行列填充（BOSS 免疫位移）
-        if (anyMoved)
-            columnManager.PostDisplacementFillUp();
+        columnManager.ApplyDirectionalPush(targets, step, leftToRight, canInterruptCFrame: false);
 
         Debug.Log($"[Displacement] after Slash DirectionalPush:");
         Debug.Log(columnManager.DumpColumns());

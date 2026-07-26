@@ -10,7 +10,7 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1778764012219
-updatedAt: 1784356340282
+updatedAt: 1784951717351
 ---
 
 # project-mistake-note
@@ -101,4 +101,13 @@ updatedAt: 1784356340282
 - 修复：`Initialize` 在 `LayoutContent` 前检查 `_contentRect`、`_lineImage`、`_playerDotRect`，缺失时显式执行 `BuildVisuals()`。
 - 预防规则：**对位于初始隐藏面板中的UI，公共初始化入口必须自行确保必需的缓存/子节点已建立；不能只依赖 Awake/OnEnable 的时序。**
 - 文件：`Assets/Scripts/UI/StageProgressBar.cs`
+
+### 攻击范围不能过滤整排补齐订单 ✅ 已修复
+- 症状：105远程敌人位于自身攻击范围内时，即使前方整排已经清空，攻击结束后仍停在远处持续射箭，不执行补齐。
+- 日志证据：同一105持续出现“发射飞行物”，但整排清空后始终没有对应的 `StartMoving`；近战101可正常补齐。
+- 根因：`ColumnManager.BeginWaveStep()` 使用 `rowIndex < attackRange` 跳过订单创建。105的 `attackRange=3`，因此在row2就被永久排除；而攻击结束逻辑只能恢复已有订单，不能补建订单。
+- 修复：删除 WaveMarch 订单创建阶段的攻击范围过滤。整排清空后，源排所有合格普通敌人统一获得订单；攻击动画中的敌人完成当前攻击后再执行订单。
+- 预防规则：**攻击范围只决定攻击/等待状态，不能参与合法整排补齐需求的判定，更不能阻止调度器创建订单。先创建订单，再由敌人状态决定执行时机。**
+- 验证：Unity完整重编译成功；用户回归测试暂未发现问题。
+- 文件：`Assets/Scripts/Core/ColumnManager.cs`、`Assets/Scripts/Enemy/Enemy.cs`
 <!-- locus:body:end -->

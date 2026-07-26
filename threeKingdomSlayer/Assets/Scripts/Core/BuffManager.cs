@@ -33,6 +33,7 @@ public class BuffManager : MonoBehaviour
             return;
         }
         Instance = this;
+        UpgradeEffectManager.Instance?.RegisterBuffAppliers();
     }
 
     private void OnDestroy()
@@ -57,44 +58,75 @@ public class BuffManager : MonoBehaviour
     public void RegisterApplier(string statId, IStatModifierApplier applier)
     {
         _appliers[statId] = applier;
+        for (int i = 0; i < _activeBuffs.Count; i++)
+        {
+            var modifiers = _activeBuffs[i].modifiers;
+            if (modifiers == null) continue;
+            for (int j = 0; j < modifiers.Count; j++)
+            {
+                if (modifiers[j] != null && modifiers[j].statId == statId)
+                    applier.ApplyModifier(modifiers[j]);
+            }
+        }
     }
 
     /// <summary>注销 statId 的应用器</summary>
-    public void UnregisterApplier(string statId)
+    public void UnregisterApplier(string statId, IStatModifierApplier applier)
     {
-        _appliers.Remove(statId);
+        if (_appliers.TryGetValue(statId, out var registered) && registered == applier)
+            _appliers.Remove(statId);
+    }
+
+    public void AddBuff(string buffId, float duration, StatModifier modifier)
+    {
+        AddBuff(buffId, duration, modifier != null ? new List<StatModifier> { modifier } : null);
     }
 
     /// <summary>
-    /// 添加 Buff。同 buffId 只刷新 endTime，不叠加。
+    /// 添加 Buff。不同 buffId 独立存在；相同 buffId 将新的修正叠加到已有 Buff。
     /// </summary>
     public void AddBuff(string buffId, float duration, List<StatModifier> modifiers)
     {
-        // 刷新已有的同 buffId Buff
         for (int i = 0; i < _activeBuffs.Count; i++)
         {
-            if (_activeBuffs[i].buffId == buffId)
+            if (_activeBuffs[i].buffId != buffId) continue;
+
+            var active = _activeBuffs[i];
+            active.endTime = duration > 0f ? Time.time + duration : 0f;
+            if (modifiers == null) return;
+            if (active.modifiers == null)
+                active.modifiers = new List<StatModifier>();
+
+            foreach (var modifier in modifiers)
             {
-                _activeBuffs[i].endTime = duration > 0f ? Time.time + duration : 0f;
-                return;
+                active.modifiers.Add(modifier);
+                ApplyModifierToApplier(modifier);
             }
+            return;
         }
 
-        // 新建 Buff
         var buff = new ActiveBuff
         {
             buffId = buffId,
             endTime = duration > 0f ? Time.time + duration : 0f,
-            modifiers = modifiers
+            modifiers = modifiers != null ? new List<StatModifier>(modifiers) : new List<StatModifier>()
         };
         _activeBuffs.Add(buff);
 
-        // 立刻应用修正
-        if (modifiers != null)
+        foreach (var modifier in buff.modifiers)
+            ApplyModifierToApplier(modifier);
+    }
+
+    public bool RemoveBuff(string buffId)
+    {
+        bool removed = false;
+        for (int i = _activeBuffs.Count - 1; i >= 0; i--)
         {
-            foreach (var m in modifiers)
-                ApplyModifierToApplier(m);
+            if (_activeBuffs[i].buffId != buffId) continue;
+            RemoveBuffAt(i);
+            removed = true;
         }
+        return removed;
     }
 
     /// <summary>获取当前激活的 Buff 列表（供 UI 读取）</summary>

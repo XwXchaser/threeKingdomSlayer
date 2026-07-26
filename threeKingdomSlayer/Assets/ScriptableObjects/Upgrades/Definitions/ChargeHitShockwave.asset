@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   category: 2
   upgradeId: charge_hit_shockwave
-  displayName: "\u94C1\u58C1\xB7\u9707\u8361"
+  displayName: "\u9707\u8361"
   descriptionTemplate: "\u84C4\u529B\u653B\u51FB\u4F1A\u9644\u5E26{0}\u9053\u57FA\u7840\u4F24\u5BB3\u4E3A{1}\u8303\u56F4\u4E3A{2}\u6392\u7684\u51B2\u51FB\u6CE2\uFF0C\u84C4\u529B\u65F6\u6BCF\u53D7\u52301\u6B21\u4F24\u5BB3\uFF0C\u8FD9\u9053\u51B2\u51FB\u6CE2\u4F24\u5BB3+{3}%"
   extraDescriptionTemplate: 
   rarity: 0

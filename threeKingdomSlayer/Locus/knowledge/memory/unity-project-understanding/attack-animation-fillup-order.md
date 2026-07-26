@@ -9,18 +9,39 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1784124647579
-updatedAt: 1784125212440
+updatedAt: 1784951738256
 ---
 
 # attack-animation-fillup-order
 
 ## Summary
-波次补齐与攻击动作的先后规则。
+补齐、攻击和位移的调度边界；同时记录当前代码与权威规则的已知偏差。
 
 <!-- locus:body:start -->
-## 波次补齐不得中断攻击动作
-- `ColumnManager.BeginWaveStep()` 为波次补齐标记敌人的 `targetRow` / `pendingRushMove` 时，若 `isAttackAnimating=true`，不得调用 `ResetMovementState()`；后者会 Kill `_attackTween`，导致远程敌人蓄力/发射表现和攻击被取消。
-- 正常攻击结束的回调已调用 `TryStartRushMove()`，可自然接入波次 `_pendingWaveEnemies` 屏障；整排后续行军继续等待该敌人完成补位。
-- 仅攻击动画阶段延后补齐；攻击冷却可照旧被补齐打断。眩晕、击飞、死亡继续使用原有中断/恢复/移除链路。
-- Rush 移动因目标排已被占用而回退时，必须清除本次 `pendingRushMove` / `targetRow` 并触发 `OnRushMoveComplete`；否则 `ColumnManager._pendingWaveEnemies` 或列链会永久等待。该敌人未前移，后续列结构变化仍会重新评估补齐。
+## 权威调度边界
+
+- 普通补齐只由整排清空触发；单列空槽和击退临时空槽不能创建普通补齐订单。
+- 击退前必须记录被击退者的精确原槽；停顿后只由该敌人返回原槽。未受击敌人不移动。
+- 横向位移只改变命中者的column，不执行向前rejoin。
+- 攻击范围只决定攻击/等待，不创建移动。
+- 受到命中的无霸体敌人在可打断攻击阶段会被打断；已经生成的飞射物独立继续。
+- 未被命中的攻击中敌人若已有合法普通补齐订单，应等待攻击结束后重新校验订单，而不是被强制打断。
+- `ColumnManager` 是订单唯一创建者；订单使用owner、generation和精确目标槽。
+
+## 当前实现入口
+
+- `ColumnManager.StartWaveMarch` 扫描全局空排并创建跨列 WaveMarch 步骤；`BeginWaveStep` 不再按 `attackRange` 排除源排成员。
+- 合法步骤中的攻击动画敌人先保留订单并等待；`Enemy.PlayAttackAnimationTween` 完成回调通过 `TryStartRushMove` 恢复已有订单。
+- `ColumnManager.ExecutePush` 在修改 row 前注册或续期 `PushReturnTransaction`；连续击退保留第一次 `(column,row)` 原点。
+- `ColumnManager.PostDisplacementFillUp(IEnumerable<Enemy>)` 只为实际被后推的敌人开启 0.35 秒后回位；不扫描或移动其他敌人。
+- `RushMoveOrderOwner.PushReturn` 每次只在下一排空闲时前进一步，最终只在精确原槽完成；阻塞时由 `ColumnManager.Update` 和拓扑变化继续重试。击退前已有的 WaveMarch 步骤会保存成员和目标槽，回位结束后重新校验该原订单；仅真实拓扑变化才允许重新扫描。
+- `Enemy.Die`、`Enemy.OnDisable`、`Enemy.ResetEnemy` 与列移除/清空路径会取消击退事务，generation 使旧完成回调失效。
+- `AttackSystem.ApplySlashDirectionalPush` 不再调用 `PostDisplacementFillUp`；`WaveManager` 仍聚合后推目标后统一开启回位。
+- 旧 `PrepareDisplacementCompaction`、`RowBasedFillUp`、`CompactAllColumns` 兼容入口为 inert，运行时后推路径不再使用 compaction/rejoin。
+
+## 已验证缺陷
+
+- 105远程敌人曾因 `BeginWaveStep` 的 `rowIndex < attackRange` 过滤而拿不到 WaveMarch 订单，表现为前排清空后仍持续远程攻击。
+- 修复原则是删除订单创建阶段的攻击范围过滤，而不是让 `Enemy` 在攻击结束时自行创建移动；这样保持 `ColumnManager` 的唯一调度所有权。
+- Unity完整重编译成功，用户回归测试暂未发现问题。
 <!-- locus:body:end -->

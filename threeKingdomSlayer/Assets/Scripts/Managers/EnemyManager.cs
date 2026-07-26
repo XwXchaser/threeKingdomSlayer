@@ -170,6 +170,9 @@ public class EnemyManager : MonoBehaviour
     /// <summary>击杀掉落道具判定</summary>
     private void TryDropItem(Enemy enemy)
     {
+        // V1 才存在普通敌人道具掉落；V2 主动技能只从升级/Boss三选一获得。
+        if (ActiveSkillInventory.Instance != null && ActiveSkillInventory.Instance.UsesActiveSkills)
+            return;
         if (dropItemPoolConfig == null || dropItemPoolConfig.pool.Count == 0) return;
         if (ItemInventory.Instance == null) return;
 
