@@ -74,7 +74,7 @@ public class SharedHealthGroup
     /// <summary>
     /// 受到伤害 — 扣除共享池HP，池归零时全部死亡
     /// </summary>
-    public void TakeDamage(float rawDamage, DamageType damageType, Enemy hitMember)
+    public void TakeDamage(float rawDamage, DamageType damageType, Enemy hitMember, Color? damageNumberColor = null, bool triggerHitAnimation = true)
     {
         if (members.Count == 0) return;
 
@@ -86,14 +86,15 @@ public class SharedHealthGroup
 
         // 受伤跳字
         if (hitMember != null && DamageNumberManager.Instance != null)
-            DamageNumberManager.Instance.Spawn(hitMember.transform.position, finalDamage);
+            DamageNumberManager.Instance.Spawn(hitMember.transform.position, finalDamage, damageNumberColor);
 
         // 触发受伤闪白 + 血条更新（对所有成员）
         foreach (var m in members)
         {
             if (m == null || m.state == EnemyState.Dead) continue;
 
-            m.ApplyDamageFeedback();
+            if (triggerHitAnimation)
+                m.ApplyDamageFeedback();
 
             // 更新血条
             var bar = m.GetComponent<EnemyHealthBar>();

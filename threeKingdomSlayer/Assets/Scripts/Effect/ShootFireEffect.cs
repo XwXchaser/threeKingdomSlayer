@@ -72,16 +72,19 @@ public class ShootFireEffect : MonoBehaviour
     [Min(0.01f)] public float sweepHitInterval = 0.2f;
 
     // ── 运行时 ──
-    private HashSet<Enemy> _hitEnemies = new HashSet<Enemy>();
+    private readonly HashSet<Enemy> _hitEnemies = new HashSet<Enemy>();
     private readonly Dictionary<Enemy, float> _lastSweepHitTimes = new Dictionary<Enemy, float>();
-    private List<Enemy> _sortedEnemies;
+    private readonly List<Enemy> _liveTargets = new List<Enemy>();
+    private List<int> _columns;
+    private int _visibleRows;
     private float _zStart, _zEnd;
     private float _centerX, _halfWidth;
     private int _damage;
-    public void Play(List<int> columns, int damage, int maxRows = -1)
+    private int _burnDps;
+    private float _burnDuration;
+    private bool _critIfBurning;
+    public void Play(List<int> columns, int damage, int maxRows = -1, int burnDps = 0, float burnDuration = 0f, bool critIfBurning = false)
     {
-        _damage = damage;
-
         var cm = AttackSystem.Instance?.columnManager;
         if (cm == null)
         {
@@ -89,83 +92,37 @@ public class ShootFireEffect : MonoBehaviour
             return;
         }
 
-        int visibleRows = maxRows > 0
-            ? maxRows
-            : StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
-
-        // 收集受影响列所有存活敌人（去重）
-        var seen = new HashSet<Enemy>();
-        _sortedEnemies = new List<Enemy>();
-        foreach (int col in columns)
-        {
-            var list = cm.GetEnemiesInRange(col, visibleRows);
-            for (int i = 0; i < list.Count; i++)
-            {
-                var e = list[i];
-                if (e == null || e.state == EnemyState.Dead) continue;
-                if (seen.Add(e))
-                    _sortedEnemies.Add(e);
-            }
-        }
-
-        if (_sortedEnemies.Count == 0)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        _zStart = fireStartZ;
-        _zEnd = fireEndZ;
-
-        // 按Z升序排序
-        _sortedEnemies.Sort((a, b) => a.transform.position.z.CompareTo(b.transform.position.z));
-
-        // X范围
-        _centerX = GetCenterX(columns);
-        _halfWidth = GetHalfWidth(columns);
-
-        transform.position = Vector3.zero;
-
-        StartCoroutine(SpawnRoutine());
-
-        // 自毁：等所有粒子生命周期结束
-        Destroy(gameObject, burstDuration + particleLifetime + 0.5f);
-    }
-
-    public void PlaySweep(List<int> columns, int damage, int maxRows = -1, float startZOffset = 0f)
-    {
         _damage = damage;
-        var cm = AttackSystem.Instance?.columnManager;
-        if (cm == null)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        int visibleRows = maxRows > 0
+        _burnDps = burnDps;
+        _burnDuration = burnDuration;
+        _critIfBurning = critIfBurning;
+        _columns = new List<int>(columns);
+        _visibleRows = maxRows > 0
             ? maxRows
             : StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
         _hitEnemies.Clear();
-        _lastSweepHitTimes.Clear();
-        var seen = new HashSet<Enemy>();
-        _sortedEnemies = new List<Enemy>();
-        foreach (int col in columns)
-        {
-            var list = cm.GetEnemiesInRange(col, visibleRows);
-            for (int i = 0; i < list.Count; i++)
-            {
-                var enemy = list[i];
-                if (enemy != null && enemy.state != EnemyState.Dead && seen.Add(enemy))
-                    _sortedEnemies.Add(enemy);
-            }
-        }
+        _zStart = fireStartZ;
+        _zEnd = fireEndZ;
+        _centerX = GetCenterX(_columns);
+        _halfWidth = GetHalfWidth(_columns);
+        transform.position = Vector3.zero;
 
-        if (_sortedEnemies.Count == 0)
+        StartCoroutine(SpawnRoutine());
+        Destroy(gameObject, burstDuration + particleLifetime + 0.5f);
+    }
+
+    public void PlaySweep(List<int> columns, int damage, int maxRows = -1, float startZOffset = 0f, int burnDps = 0, float burnDuration = 0f)
+    {
+        _damage = damage;
+        _burnDps = burnDps;
+        _burnDuration = burnDuration;
+        if (AttackSystem.Instance?.columnManager == null)
         {
             Destroy(gameObject);
             return;
         }
 
+        _lastSweepHitTimes.Clear();
         _zStart = fireStartZ + startZOffset;
         _zEnd = fireEndZ;
         _centerX = GetCenterX(columns);
@@ -228,10 +185,14 @@ public class ShootFireEffect : MonoBehaviour
 
     private void CheckSweepHit(Vector3 firePosition)
     {
+        var cm = AttackSystem.Instance?.columnManager;
+        if (cm == null) return;
+
         float radiusSqr = sweepHitRadius * sweepHitRadius;
-        for (int i = 0; i < _sortedEnemies.Count; i++)
+        var allEnemies = cm.GetAllEnemies();
+        for (int i = 0; i < allEnemies.Count; i++)
         {
-            var enemy = _sortedEnemies[i];
+            var enemy = allEnemies[i];
             if (enemy == null || enemy.state == EnemyState.Dead) continue;
             if (_lastSweepHitTimes.TryGetValue(enemy, out float lastHitTime)
                 && Time.time - lastHitTime < sweepHitInterval) continue;
@@ -241,7 +202,12 @@ public class ShootFireEffect : MonoBehaviour
             if (delta.sqrMagnitude > radiusSqr) continue;
 
             _lastSweepHitTimes[enemy] = Time.time;
-            enemy.TakeDamage(_damage, DamageType.Pierce);
+            int finalDamage = _damage;
+            if (_critIfBurning && UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.IsBurning(enemy))
+                finalDamage *= 2;
+            enemy.TakeDamage(finalDamage, DamageType.Pierce);
+            if (_burnDps > 0 && UpgradeEffectManager.Instance != null)
+                UpgradeEffectManager.Instance.ApplyBurn(enemy, _burnDps, _burnDuration);
         }
     }
 
@@ -327,17 +293,34 @@ public class ShootFireEffect : MonoBehaviour
 
     private void CheckHit(GameObject particle)
     {
-        for (int i = 0; i < _sortedEnemies.Count; i++)
-        {
-            var enemy = _sortedEnemies[i];
-            if (enemy == null || enemy.state == EnemyState.Dead) continue;
-            if (_hitEnemies.Contains(enemy)) continue;
+        var cm = AttackSystem.Instance?.columnManager;
+        if (cm == null || _columns == null) return;
 
-            if (particle.transform.position.z >= enemy.transform.position.z)
+        _liveTargets.Clear();
+        for (int columnIndex = 0; columnIndex < _columns.Count; columnIndex++)
+        {
+            var targets = cm.GetEnemiesInRange(_columns[columnIndex], _visibleRows);
+            for (int i = 0; i < targets.Count; i++)
             {
-                _hitEnemies.Add(enemy);
-                enemy.TakeDamage(_damage, DamageType.Pierce);
+                var enemy = targets[i];
+                if (enemy == null || enemy.state == EnemyState.Dead || _hitEnemies.Contains(enemy)) continue;
+                if (!_liveTargets.Contains(enemy))
+                    _liveTargets.Add(enemy);
             }
+        }
+
+        for (int i = 0; i < _liveTargets.Count; i++)
+        {
+            var enemy = _liveTargets[i];
+            if (particle.transform.position.z < enemy.transform.position.z) continue;
+
+            _hitEnemies.Add(enemy);
+            int finalDamage = _damage;
+            if (_critIfBurning && UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.IsBurning(enemy))
+                finalDamage *= 2;
+            enemy.TakeDamage(finalDamage, DamageType.Pierce);
+            if (_burnDps > 0 && UpgradeEffectManager.Instance != null)
+                UpgradeEffectManager.Instance.ApplyBurn(enemy, _burnDps, _burnDuration);
         }
     }
 

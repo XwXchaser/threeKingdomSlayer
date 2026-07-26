@@ -98,6 +98,10 @@ public class UpgradeDefinition : ScriptableObject
     [Tooltip("按等级配置冲击波效果。index 0 = Lv1")]
     public List<ChargeShockwaveLevelConfig> chargeShockwaveLevels = new List<ChargeShockwaveLevelConfig>();
 
+    [Header("蓄力攻击冲击波（effectType=charge_attack_shockwave）")]
+    [Tooltip("按等级配置蓄力攻击冲击波效果。index 0 = Lv1")]
+    public List<ChargeAttackShockwaveLevelConfig> chargeAttackShockwaveLevels = new List<ChargeAttackShockwaveLevelConfig>();
+
     [Header("受击冲击波（effectType=charge_hit_shockwave）")]
     [Tooltip("按等级配置蓄力受击增伤冲击波。index 0 = Lv1")]
     public List<ChargeHitShockwaveLevelConfig> chargeHitShockwaveLevels = new List<ChargeHitShockwaveLevelConfig>();
@@ -257,9 +261,10 @@ public class UpgradeDefinition : ScriptableObject
 public enum UpgradeCategory
 {
     Numeric,       // 数值buff型：伤害/攻速/移速/经验倍率等永久加成
-    Item,          // 道具型：手势触发的一次性/限次道具
+    Item,          // V1 道具型：手势触发的一次性/限次道具
     AttackPassive, // 攻击计数被动：每 N 次攻击触发
-    TimedPassive   // 定时被动：每 N 秒触发
+    TimedPassive,  // 定时被动：每 N 秒触发
+    ActiveSkill    // V2 主动技能：永久占槽、可升级、使用后进入独立冷却
 }
 
 public enum UpgradeRarity
@@ -307,6 +312,11 @@ public struct TimedAoeLevelConfig
     public int damage;
     [Tooltip("影响的列索引列表: 1=col1, 2=col2, 3=col3")]
     public List<int> columns;
+    [Header("灼烧")]
+    [Tooltip("灼烧每秒伤害，0=不启用灼烧")]
+    public int burnDamagePerSecond;
+    [Tooltip("灼烧持续时间（秒）")]
+    public float burnDurationSeconds;
 }
 
 /// <summary>箭雨每级配置</summary>
@@ -472,6 +482,16 @@ public struct ChargeShockwaveLevelConfig
     public float stackDamageBonus;
     [Tooltip("每道冲击波之间的延迟（秒），防止同时打出")]
     public float waveDelay;
+}
+
+/// <summary>主动蓄力冲击波每级配置</summary>
+[System.Serializable]
+public struct ChargeAttackShockwaveLevelConfig
+{
+    [Tooltip("冲击波覆盖排数")]
+    public int rangeRows;
+    [Tooltip("每道冲击波伤害")]
+    public int damage;
 }
 
 /// <summary>蓄力受击增伤冲击波每级配置</summary>

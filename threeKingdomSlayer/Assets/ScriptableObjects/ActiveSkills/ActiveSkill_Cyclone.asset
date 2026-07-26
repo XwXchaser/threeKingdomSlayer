@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9bf2b0c688767c4792fda72a76ca5ac, type: 3}
+  m_Name: ActiveSkill_Cyclone
+  m_EditorClassIdentifier: 
+  category: 4
+  upgradeId: active_cyclone
+  displayName: "\u65CB\u98CE"
+  descriptionTemplate: "\u51B7\u5374{0}\u79D2\uFF0C\u968F\u673A\u51FB\u98DE{1}\u4E2A\u654C\u4EBA{2}\u79D2"
+  extraDescriptionTemplate: 
+  rarity: 2
+  maxLevel: 5
+  effectType: 
+  numericLevels: []
+  floatValue: 0
+  intValue: 0
+  secondaryIntValue: 0
+  stringValue: 
+  baseAttackConfig: {fileID: 0}
+  icon: {fileID: 21300000, guid: abc906ce8c23eee429af4b40ef11d513, type: 3}
+  phantomLevels: []
+  timedAoeLevels: []
+  timedArrowLevels: []
+  returnWaveLevels: []
+  chainBounceLevels: []
+  cycloneLevels:
+  - intervalSeconds: 2
+    enemyCount: 3
+    knockupDuration: 2
+    damage: 0
+    landingDamagePercent: 0
+  - intervalSeconds: 5
+    enemyCount: 5
+    knockupDuration: 2.2
+    damage: 0
+    landingDamagePercent: 0
+  - intervalSeconds: 8
+    enemyCount: 3
+    knockupDuration: 2.5
+    damage: 0
+    landingDamagePercent: 0
+  - intervalSeconds: 7
+    enemyCount: 3
+    knockupDuration: 2.5
+    damage: 0
+    landingDamagePercent: 10
+  - intervalSeconds: 6
+    enemyCount: 4
+    knockupDuration: 3
+    damage: 0
+    landingDamagePercent: 20
+  arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeHitShockwaveLevels: []
+  triggerParam: 0
+  phantomSteps: []
+  useCount: 1
+  gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
+  prerequisites: []
+  activeEffectType: 2
+  cooldownLevels:
+  - 15
+  - 14
+  - 13
+  - 12
+  - 10

@@ -14,6 +14,7 @@ public class ComboManager : MonoBehaviour
 
     /// <summary>当前连击数（只读）</summary>
     public int CurrentCombo => _currentCombo;
+    public bool IsFrozen => _isFrozen;
 
     /// <summary>连击重置进度 1→0（1=刚命中, 0=即将归零）</summary>
     public float ComboResetProgress
@@ -21,7 +22,8 @@ public class ComboManager : MonoBehaviour
         get
         {
             if (config == null || _currentCombo <= 0) return 0f;
-            float elapsed = Time.time - _lastHitTime;
+            float now = _isFrozen ? _freezeStartedAt : Time.time;
+            float elapsed = now - _lastHitTime;
             return Mathf.Clamp01(1f - elapsed / GetEffectiveResetDelay());
         }
     }
@@ -30,8 +32,11 @@ public class ComboManager : MonoBehaviour
     private int _currentCombo;
     private float _lastHitTime;
     private int _lastHitFrame;
+    private bool _isFrozen;
+    private float _freezeStartedAt;
     private HashSet<int> _hitEnemiesThisFrame = new HashSet<int>();
     private HashSet<int> _triggeredThresholds = new HashSet<int>();
+    private HashSet<string> _activeComboBuffIds = new HashSet<string>();
 
     // 事件
     public System.Action<int> OnComboUpdated;
@@ -71,7 +76,7 @@ public class ComboManager : MonoBehaviour
 
     private void Update()
     {
-        if (config == null || _currentCombo <= 0) return;
+        if (_isFrozen || config == null || _currentCombo <= 0) return;
 
         if (Time.time - _lastHitTime >= GetEffectiveResetDelay())
         {
@@ -101,14 +106,34 @@ public class ComboManager : MonoBehaviour
     /// <summary>重置连击数（关卡开始、断连时调用）</summary>
     public void ResetCombo()
     {
+        if (BuffManager.Instance != null)
+        {
+            foreach (var buffId in _activeComboBuffIds)
+                BuffManager.Instance.RemoveBuff(buffId);
+        }
+        _activeComboBuffIds.Clear();
         _currentCombo = 0;
         _triggeredThresholds.Clear();
         OnComboUpdated?.Invoke(0);
     }
 
+    public void Freeze()
+    {
+        if (_isFrozen) return;
+        _isFrozen = true;
+        _freezeStartedAt = Time.time;
+    }
+
+    public void Resume()
+    {
+        if (!_isFrozen) return;
+        _lastHitTime += Time.time - _freezeStartedAt;
+        _isFrozen = false;
+    }
+
     private void OnEnemyDamaged(Enemy enemy)
     {
-        if (config == null) return;
+        if (_isFrozen || config == null) return;
 
         int increment;
         if (config.hitIncrementMode == HitIncrementMode.PerEnemy)
@@ -155,7 +180,8 @@ public class ComboManager : MonoBehaviour
     {
         if (BuffManager.Instance != null)
         {
-            BuffManager.Instance.AddBuff(trigger.buffId, trigger.duration, trigger.modifiers);
+            BuffManager.Instance.AddBuff(trigger.buffId, 0f, trigger.modifier);
+            _activeComboBuffIds.Add(trigger.buffId);
         }
         OnComboTrigger?.Invoke(trigger.buffId);
         Debug.Log($"[ComboManager] 连击 {trigger.comboThreshold} 触发 Buff: {trigger.buffId}");

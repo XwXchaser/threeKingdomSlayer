@@ -52,6 +52,8 @@ public class HeroHUD : MonoBehaviour
     public RectTransform qteFrameRect;
     [Tooltip("QTE 指示器生成区域（QTEFrame 下的空节点）")]
     public RectTransform qteIndicatorArea;
+    [Tooltip("严格 QTE 模式进入提示")]
+    public TMP_Text strictModePrompt;
 
     [Header("对话")]
     public HeroHUDDialogue dialogue;

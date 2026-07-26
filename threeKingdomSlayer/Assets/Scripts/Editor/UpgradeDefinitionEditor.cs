@@ -38,6 +38,7 @@ public class UpgradeDefinitionEditor : Editor
     private SerializedProperty arrowVolleyLevelsProp;
     private SerializedProperty reflectShieldLevelsProp;
     private SerializedProperty chargeShockwaveLevelsProp;
+    private SerializedProperty chargeAttackShockwaveLevelsProp;
     private SerializedProperty chargeHitShockwaveLevelsProp;
 
     // ── 道具型 ──
@@ -130,6 +131,11 @@ public class UpgradeDefinitionEditor : Editor
         else if (category == UpgradeCategory.Item)
         {
             DrawItemSection();
+        }
+        else if (category == UpgradeCategory.ActiveSkill)
+        {
+            EditorGUILayout.HelpBox("主动技能请创建 ActiveSkillDefinition 资产，并配置独立冷却与每级效果。", MessageType.Info);
+            DrawPassiveSection();
         }
 
         EditorGUILayout.Space();

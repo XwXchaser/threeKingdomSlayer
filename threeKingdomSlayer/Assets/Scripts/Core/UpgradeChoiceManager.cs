@@ -18,8 +18,10 @@ public class UpgradeChoiceManager : MonoBehaviour
 
     [Header("常规池")]
     public UpgradePoolConfig poolConfig;
-    [Header("物品池（Boss锦囊）")]
+    [Header("物品池（Boss锦囊，仅V1）")]
     public ItemPoolConfig itemPoolConfig;
+    [Header("主动技能池（V2）")]
+    public ActiveSkillPoolConfig activeSkillPoolConfig;
     [Tooltip("三选一升级弹窗 Prefab（运行时动态生成/销毁）")]
     public GameObject popupPrefab;
     [Tooltip("道具栏满时的弃置弹窗 Prefab（运行时动态生成/销毁）")]
@@ -48,6 +50,14 @@ public class UpgradeChoiceManager : MonoBehaviour
 
     public bool IsChoosing => _isChoosing;
     public int PendingLevelUps => _pendingLevelUps;
+
+    private int GetCurrentLevel(UpgradeDefinition definition)
+    {
+        if (definition == null) return 0;
+        if (definition.category == UpgradeCategory.ActiveSkill)
+            return ActiveSkillInventory.Instance != null ? ActiveSkillInventory.Instance.GetLevel(definition.upgradeId) : 0;
+        return UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetUpgradeLevel(definition.upgradeId) : 0;
+    }
 
     private void Awake()
     {
@@ -80,6 +90,8 @@ public class UpgradeChoiceManager : MonoBehaviour
         if (!_isChoosing)
             StartChoiceFlow();
     }
+
+    private static bool UsesActiveSkillRules => ActiveSkillInventory.Instance != null && ActiveSkillInventory.Instance.UsesActiveSkills;
 
     /// <summary>
     /// Boss死亡掉落锦囊，触发物品三选一。
@@ -137,12 +149,23 @@ public class UpgradeChoiceManager : MonoBehaviour
         if (_isShowingItemChoice)
         {
             _pendingItemChoices--;
-            _currentChoices = DrawItemChoices();
+            _currentChoices = UsesActiveSkillRules ? DrawBossActiveSkillChoices() : DrawItemChoices();
         }
         else
         {
             _pendingLevelUps--;
             _currentChoices = DrawChoices();
+            if (UsesActiveSkillRules && (_currentChoices == null || _currentChoices.Count == 0))
+                _currentChoices = DrawBossActiveSkillChoices();
+        }
+
+        if (_currentChoices == null || _currentChoices.Count == 0)
+        {
+            if (_pendingQueue.Count > 0 || _pendingLevelUps > 0 || _pendingItemChoices > 0)
+                ShowNextChoice();
+            else
+                FinishAllChoices();
+            return;
         }
 
         // 动态生成弹窗（不在场景中预置）
@@ -261,13 +284,15 @@ public class UpgradeChoiceManager : MonoBehaviour
         return results;
     }
 
-    /// <summary>收集所有满足前置条件且未满级的候选项（排除Item类）</summary>
+    /// <summary>收集所有满足前置条件且未满级的候选项；V2 同时合并主动技能池。</summary>
     private List<EligibleEntry> CollectEligible()
     {
         var candidates = new List<EligibleEntry>();
         CollectFromPool(candidates, poolConfig.commonPool, UpgradeRarity.Common);
         CollectFromPool(candidates, poolConfig.rarePool, UpgradeRarity.Rare);
         CollectFromPool(candidates, poolConfig.legendaryPool, UpgradeRarity.Legendary);
+        if (UsesActiveSkillRules)
+            CollectActiveSkills(candidates, includeCommon: true);
         return candidates;
     }
 
@@ -278,10 +303,10 @@ public class UpgradeChoiceManager : MonoBehaviour
         {
             var wu = pool[i];
             if (wu.upgrade == null) continue;
-            // 排除 Item 类（物品走独立池）
-            if (wu.upgrade.category == UpgradeCategory.Item) continue;
+            // V1 Item 与 V2 ActiveSkill 均由各自独立池处理
+            if (wu.upgrade.category == UpgradeCategory.Item || wu.upgrade.category == UpgradeCategory.ActiveSkill) continue;
             if (!PrerequisitesMet(wu.upgrade)) continue;
-            if (UpgradeEffectManager.Instance.GetUpgradeLevel(wu.upgrade.upgradeId) >= wu.upgrade.maxLevel) continue;
+            if (GetCurrentLevel(wu.upgrade) >= wu.upgrade.maxLevel) continue;
             result.Add(new EligibleEntry { upgrade = wu.upgrade, weight = wu.weight, rarity = rarity });
         }
     }
@@ -354,7 +379,7 @@ public class UpgradeChoiceManager : MonoBehaviour
             var wu = pool[i];
             if (wu.upgrade == null) continue;
             if (!PrerequisitesMet(wu.upgrade)) continue;
-            if (UpgradeEffectManager.Instance.GetUpgradeLevel(wu.upgrade.upgradeId) >= wu.upgrade.maxLevel) continue;
+            if (GetCurrentLevel(wu.upgrade) >= wu.upgrade.maxLevel) continue;
             result.Add(new EligibleEntry { upgrade = wu.upgrade, weight = wu.weight, rarity = rarity });
         }
     }
@@ -370,15 +395,66 @@ public class UpgradeChoiceManager : MonoBehaviour
 
     private bool PrerequisitesMet(UpgradeDefinition def)
     {
+        if (def == null) return false;
         if (def.prerequisites == null || def.prerequisites.Count == 0) return true;
         for (int i = 0; i < def.prerequisites.Count; i++)
         {
             var prereq = def.prerequisites[i];
             if (prereq.requiredUpgrade == null) continue;
-            if (UpgradeEffectManager.Instance.GetUpgradeLevel(prereq.requiredUpgrade.upgradeId) < prereq.requiredLevel)
+            if (GetCurrentLevel(prereq.requiredUpgrade) < prereq.requiredLevel)
                 return false;
         }
         return true;
+    }
+
+    private List<UpgradeDefinition> DrawBossActiveSkillChoices()
+    {
+        var candidates = new List<EligibleEntry>();
+        CollectActiveSkills(candidates, includeCommon: false);
+        return DrawFromEligible(candidates);
+    }
+
+    private void CollectActiveSkills(List<EligibleEntry> result, bool includeCommon)
+    {
+        if (activeSkillPoolConfig == null || ActiveSkillInventory.Instance == null) return;
+        if (includeCommon)
+            CollectFromActiveSkillPool(result, activeSkillPoolConfig.commonPool, UpgradeRarity.Common);
+        CollectFromActiveSkillPool(result, activeSkillPoolConfig.rarePool, UpgradeRarity.Rare);
+        CollectFromActiveSkillPool(result, activeSkillPoolConfig.legendaryPool, UpgradeRarity.Legendary);
+    }
+
+    private void CollectFromActiveSkillPool(List<EligibleEntry> result, List<WeightedActiveSkill> pool, UpgradeRarity rarity)
+    {
+        if (pool == null) return;
+        for (int i = 0; i < pool.Count; i++)
+        {
+            var weighted = pool[i];
+            var skill = weighted.skill;
+            if (skill == null || skill.category != UpgradeCategory.ActiveSkill) continue;
+            var inventory = ActiveSkillInventory.Instance;
+            if (inventory == null || !inventory.CanAcquire(skill)) continue;
+            result.Add(new EligibleEntry { upgrade = skill, weight = Mathf.Max(1, weighted.weight), rarity = rarity });
+        }
+    }
+
+    private List<UpgradeDefinition> DrawFromEligible(List<EligibleEntry> candidates)
+    {
+        var results = new List<UpgradeDefinition>();
+        if (candidates == null || candidates.Count == 0) return results;
+
+        var usedIds = new HashSet<string>();
+        for (int i = 0; i < choiceCount && usedIds.Count < candidates.Count; i++)
+        {
+            var remaining = new List<EligibleEntry>();
+            for (int j = 0; j < candidates.Count; j++)
+                if (!usedIds.Contains(candidates[j].upgrade.upgradeId))
+                    remaining.Add(candidates[j]);
+            if (remaining.Count == 0) break;
+            var picked = WeightedPick(remaining);
+            results.Add(picked.upgrade);
+            usedIds.Add(picked.upgrade.upgradeId);
+        }
+        return results;
     }
 
     /// <summary>按稀有度权重随机选择稀有度</summary>

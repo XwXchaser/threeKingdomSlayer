@@ -18,29 +18,46 @@ public class ColumnManager : MonoBehaviour
     private readonly List<Enemy> _pushWorkList = new List<Enemy>();
     private readonly HashSet<Enemy> _pushHitSet = new HashSet<Enemy>();
     private readonly Dictionary<int, List<Enemy>> _pushByColumn = new Dictionary<int, List<Enemy>>();
-    private readonly Dictionary<Enemy, int> _convOriginalRows = new Dictionary<Enemy, int>();
-    private readonly List<(Enemy enemy, int targetCol, int targetRow)> _convTargets = new List<(Enemy, int, int)>();
-    private readonly Dictionary<(int col, int row), List<Enemy>> _convGroups = new Dictionary<(int, int), List<Enemy>>();
     private readonly Dictionary<int, List<Enemy>> _rowEnemies = new Dictionary<int, List<Enemy>>();
 
-    // GC 优化：范围查询复用列表 + RowBasedFillUp 复用 HashSet
+    // GC 优化：范围查询复用列表
     private readonly List<Enemy> _rangeQueryList = new List<Enemy>();
-    private readonly HashSet<int> _occupiedRowsSet = new HashSet<int>();
 
-    // 波次行军状态（规则1/2）
-    private bool _isWaveMarching = false;
+    // Wave march has a preparing barrier and one exact generation per row step.
+    private bool _isWaveMarching;
+    private bool _isWavePreparing;
     private int _currentWaveSourceRow = -1;
+    private int _currentWaveTargetRow = -1;
+    private int _waveGeneration;
+    private bool _waveMarchRequestedWhilePushReturn;
+    private bool _topologyChangedWhilePushReturn;
+    private bool _hasPausedWaveStep;
+    private int _pausedWaveSourceRow = -1;
+    private int _pausedWaveTargetRow = -1;
+    private readonly List<Enemy> _pausedWaveEnemies = new List<Enemy>();
+    private readonly List<Enemy> _preparingWaveEnemies = new List<Enemy>();
     private readonly HashSet<Enemy> _pendingWaveEnemies = new HashSet<Enemy>();
 
-    // 击退后紧凑链计数器
-    private int _compactionColumnsRemaining = 0;
-    private int _compactionGeneration = 0;
-    private bool _isCompactionPending = false;
-    private bool _isCompactionActive = false;
+    private sealed class PushReturnTransaction
+    {
+        public Enemy enemy;
+        public int originalColumn;
+        public int originalRow;
+        public int displacedColumn;
+        public int displacedRow;
+        public int generation;
+        public int orderId;
+        public float returnDueTime;
+        public bool scheduled;
+        public int lastBlockedRow = int.MinValue;
+    }
 
-    // 击退后 RowBasedFillUp 完成到紧凑链启动之间的延迟（秒），
-    // 让敌人停留在击退后的位置一段时间再 Rush 补齐。
-    private const float compactionStartDelay = 0.35f;
+    private const float pushReturnDelay = 0.35f;
+    private bool _suppressPushReturnResume;
+    private readonly Dictionary<Enemy, PushReturnTransaction> _pushReturnTransactions = new Dictionary<Enemy, PushReturnTransaction>();
+    private readonly List<PushReturnTransaction> _pushReturnWorkList = new List<PushReturnTransaction>();
+    private int _pushReturnGeneration;
+    private int _pushReturnOrderId;
 
     /// <summary>
     /// 列结构变化事件（RemoveEnemy / UpdateEnemyRow 后触发）
@@ -53,9 +70,38 @@ public class ColumnManager : MonoBehaviour
         InitializeColumns();
     }
 
-    /// <summary>
-    /// 初始化5列
-    /// </summary>
+    private void Update()
+    {
+        UpdatePushReturns();
+
+        if (!_isWavePreparing) return;
+
+        for (int i = _preparingWaveEnemies.Count - 1; i >= 0; i--)
+        {
+            var enemy = _preparingWaveEnemies[i];
+            if (enemy == null || enemy.state == EnemyState.Dead || !enemy.IsRushMoveOrder(RushMoveOrderOwner.WaveMarch, _waveGeneration))
+            {
+                if (enemy != null)
+                    enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
+                _preparingWaveEnemies.RemoveAt(i);
+                continue;
+            }
+            if (!enemy.IsRushMoveReady)
+                return;
+        }
+
+        if (_preparingWaveEnemies.Count == 0)
+        {
+            _isWavePreparing = false;
+            _currentWaveSourceRow = -1;
+            _currentWaveTargetRow = -1;
+            StartWaveMarch();
+            return;
+        }
+
+        StartPreparedWaveStep();
+    }
+
     private void InitializeColumns()
     {
         columns = new Column[columnCount];
@@ -116,32 +162,14 @@ public class ColumnManager : MonoBehaviour
     {
         if (!IsValidColumn(columnIndex)) return;
 
-        FillUpRule rule = StageController.Instance?.GetFillUpRule() ?? FillUpRule.PerColumn;
         columns[columnIndex].RemoveEnemy(enemy, skipChain: true);
-
-        if (_pendingWaveEnemies.Remove(enemy))
-        {
-            enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
-            if (_pendingWaveEnemies.Count == 0)
-            {
-                _isWaveMarching = false;
-                _currentWaveSourceRow = -1;
-            }
-        }
-
+        ReleaseEnemyFromSchedulers(enemy, columnIndex);
         columns[columnIndex].ResumeRushMoveChain();
 
-        if (rule == FillUpRule.PerRow)
-        {
-            // PerRow：逐排补齐（数据模型压缩），再启动跨列整排行军（规则1/2）
-            RowBasedFillUp();
-            StartWaveMarch();
-        }
-        else
-        {
-            // PerColumn：仅移除敌人，保留缺口。整排空出后由 StartWaveMarch 统一推进（规则2）。
-            StartWaveMarch();
-        }
+        // Ordinary death only changes topology; wave march decides whether a cross-column row may advance.
+        Debug.Log($"[WaveMarch] RemoveEnemyFromColumn col={columnIndex} enemy={enemy.DebugTag} → StartWaveMarch");
+        StartWaveMarch();
+        NotifyPushReturnTopologyChanged();
         OnColumnsModified?.Invoke();
     }
 
@@ -171,10 +199,16 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public void ClearAllColumns()
     {
+        AbortWaveMarch();
+        CancelAllPushReturns();
+        _waveMarchRequestedWhilePushReturn = false;
+        _topologyChangedWhilePushReturn = false;
+        _hasPausedWaveStep = false;
+        _pausedWaveSourceRow = -1;
+        _pausedWaveTargetRow = -1;
+        _pausedWaveEnemies.Clear();
         for (int i = 0; i < columnCount; i++)
-        {
             columns[i].enemies.Clear();
-        }
     }
 
     /// <summary>
@@ -183,6 +217,8 @@ public class ColumnManager : MonoBehaviour
     public void ClearColumn(int columnIndex)
     {
         if (!IsValidColumn(columnIndex)) return;
+        for (int i = columns[columnIndex].enemies.Count - 1; i >= 0; i--)
+            CancelPushReturn(columns[columnIndex].enemies[i], "cancel-reset");
         columns[columnIndex].enemies.Clear();
     }
 
@@ -191,25 +227,15 @@ public class ColumnManager : MonoBehaviour
     #region 更新敌人位置
 
     /// <summary>
-    /// 更新敌人在列中的排索引（前进后调用）。
-    /// PerColumn: 直接触发波次行军检查。PerRow: 触发 RowBasedFillUp。
+    /// A normal movement/landing topology change only requests a wave rescan.
     /// </summary>
     public void UpdateEnemyRow(int columnIndex, Enemy enemy)
     {
         if (!IsValidColumn(columnIndex)) return;
 
-        FillUpRule rule = StageController.Instance?.GetFillUpRule() ?? FillUpRule.PerColumn;
-        if (rule == FillUpRule.PerRow)
-        {
-            DebugLog.Info($"[ColumnManager] UpdateEnemyRow (PerRow): col={columnIndex}, {enemy.DebugTag}, 触发 RowBasedFillUp");
-            RowBasedFillUp();
-            OnColumnsModified?.Invoke();
-            return;
-        }
-
-        // PerColumn: 自然移动后只通知观察者
-        DebugLog.Info($"[ColumnManager] UpdateEnemyRow (PerColumn): col={columnIndex}, {enemy.DebugTag}");
+        NotifyPushReturnTopologyChanged();
         OnColumnsModified?.Invoke();
+        StartWaveMarch();
     }
 
     #endregion
@@ -399,109 +425,214 @@ public class ColumnManager : MonoBehaviour
     #region 波次行军（规则1/2）
 
     /// <summary>
-    /// 跨列波次行军：找到最前排的空排，将该排后的整排敌人一起前移一排。
-    /// 所有列同排敌人同步移动，保持阵型。完成后级联检查下一排。
+    /// Cross-column wave march. The source row is prepared first; Update waits for every
+    /// eligible member, then starts all one-row moves in the same frame.
     /// </summary>
     public void StartWaveMarch()
     {
-        if (_isWaveMarching || _isCompactionPending || _isCompactionActive) return;
+        if (_pushReturnTransactions.Count > 0)
+        {
+            _waveMarchRequestedWhilePushReturn = true;
+            _topologyChangedWhilePushReturn = true;
+            Debug.Log($"[WaveMarch] StartWaveMarch deferred: pushReturnTx={_pushReturnTransactions.Count}");
+            return;
+        }
+        if (_isWaveMarching || _isWavePreparing)
+        {
+            Debug.Log($"[WaveMarch] StartWaveMarch blocked: _isWaveMarching={_isWaveMarching} _isWavePreparing={_isWavePreparing} srcRow={_currentWaveSourceRow} tgtRow={_currentWaveTargetRow}");
+            return;
+        }
 
         int maxRow = GetMaxOccupiedRow();
         for (int r = 0; r < maxRow; r++)
         {
             if (IsRowFullyVacated(r) && !IsRowFullyVacated(r + 1))
             {
+                Debug.Log($"[WaveMarch] StartWaveMarch → BeginWaveStep srcRow={r + 1} tgtRow={r}");
                 BeginWaveStep(r + 1, r);
                 return;
             }
         }
     }
 
-    private void BeginWaveStep(int sourceRow, int targetRow)
+    private void BeginWaveStep(int sourceRow, int targetRow, IList<Enemy> restrictedEnemies = null)
     {
+        _waveGeneration++;
+        if (_waveGeneration <= 0) _waveGeneration = 1;
+        _currentWaveSourceRow = sourceRow;
+        _currentWaveTargetRow = Mathf.Max(0, targetRow);
+        _preparingWaveEnemies.Clear();
         _pendingWaveEnemies.Clear();
-
-        int target = Mathf.Max(0, targetRow);
 
         for (int c = 0; c < columnCount; c++)
         {
-            foreach (var e in columns[c].enemies)
+            foreach (var enemy in columns[c].enemies)
             {
-                if (e == null || e.state == EnemyState.Dead) continue;
-                if (e.isBoss) continue;
-                if (e.state == EnemyState.Launched || e.state == EnemyState.Stunned) continue;
-                if (e.rowIndex != sourceRow) continue;
+                if (enemy == null || enemy.isBoss || enemy.state == EnemyState.Dead || enemy.rowIndex != sourceRow)
+                    continue;
+                if (restrictedEnemies != null && !restrictedEnemies.Contains(enemy))
+                    continue;
 
-                e.targetRow = target;
-                e.pendingRushMove = true;
-                // 攻击动作不可打断：攻击完成回调会调用 TryStartRushMove。
-                // 冷却或其他可移动状态仍按原逻辑重置并立即补齐。
-                if (!e.isAttackAnimating)
-                    e.ResetMovementState();
-                e.OnRushMoveComplete += OnWaveEnemyRushComplete;
-                _pendingWaveEnemies.Add(e);
+                if (_pushReturnTransactions.ContainsKey(enemy))
+                    continue;
+
+                if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, _waveGeneration, _currentWaveTargetRow))
+                    continue;
+
+                enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
+                enemy.OnRushMoveComplete += OnWaveEnemyRushComplete;
+                _preparingWaveEnemies.Add(enemy);
             }
         }
 
-        // 该排仅有 Boss 或无可行军敌人：不启动行军，让调用方决定下一步
-        if (_pendingWaveEnemies.Count == 0)
+        if (_preparingWaveEnemies.Count == 0)
         {
-            DebugLog.Info($"[ColumnManager] BeginWaveStep: sourceRow={sourceRow} 无可行军敌人，跳过");
+            Debug.Log($"[WaveMarch] BeginWaveStep srcRow={sourceRow} tgtRow={targetRow}: NO enemies eligible (all boss/dead/rush-order-rejected)");
+            _currentWaveSourceRow = -1;
+            _currentWaveTargetRow = -1;
             return;
         }
 
-        _isWaveMarching = true;
-        _currentWaveSourceRow = sourceRow;
-
-        // 所有同排敌人同时启动 rush move
-        foreach (var e in _pendingWaveEnemies)
-        {
-            e.TryStartRushMove();
-        }
+        _isWavePreparing = true;
     }
 
-    private void OnWaveEnemyRushComplete(Enemy enemy)
+    private void StartPreparedWaveStep()
     {
-        enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
-        _pendingWaveEnemies.Remove(enemy);
+        int generation = _waveGeneration;
+        _isWavePreparing = false;
+        _isWaveMarching = true;
+        _pendingWaveEnemies.Clear();
+
+        for (int i = 0; i < _preparingWaveEnemies.Count; i++)
+        {
+            var enemy = _preparingWaveEnemies[i];
+            if (enemy == null || enemy.state == EnemyState.Dead)
+                continue;
+            if (!enemy.IsRushMoveOrder(RushMoveOrderOwner.WaveMarch, generation))
+                continue;
+            _pendingWaveEnemies.Add(enemy);
+        }
+        _preparingWaveEnemies.Clear();
+
+        foreach (var enemy in _pendingWaveEnemies)
+            enemy.TryStartRushMove();
 
         if (_pendingWaveEnemies.Count == 0)
-        {
-            _isWaveMarching = false;
-            int justVacated = _currentWaveSourceRow;
-            _currentWaveSourceRow = -1;
+            CompleteWaveStep(generation);
+    }
 
-            // 级联：当前排前移后，该排空出，若后排有非Boss敌人则继续行军
-            if (!IsRowFullyVacated(justVacated + 1))
-            {
-                BeginWaveStep(justVacated + 1, justVacated);
-                // BeginWaveStep 可能因该排仅有 Boss 而跳过；若未启动则走 StartWaveMarch 继续级联
-                if (!_isWaveMarching)
-                    StartWaveMarch();
-            }
-            else
-            {
-                // 后排已空，检查是否还有更远的空排需要处理
-                StartWaveMarch();
-            }
-        }
+    private void OnWaveEnemyRushComplete(Enemy enemy, RushMoveOrderOwner owner, int generation)
+    {
+        if (owner != RushMoveOrderOwner.WaveMarch || generation != _waveGeneration)
+            return;
+
+        enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
+        _pendingWaveEnemies.Remove(enemy);
+        if (_pendingWaveEnemies.Count == 0)
+            CompleteWaveStep(generation);
+    }
+
+    private void CompleteWaveStep(int generation)
+    {
+        if (generation != _waveGeneration) return;
+
+        _isWaveMarching = false;
+        _isWavePreparing = false;
+        _currentWaveSourceRow = -1;
+        _currentWaveTargetRow = -1;
+        _pendingWaveEnemies.Clear();
+        _preparingWaveEnemies.Clear();
+        Debug.Log($"[WaveMarch] CompleteWaveStep gen={generation} → chain StartWaveMarch");
+        StartWaveMarch();
     }
 
     /// <summary>
-    /// 中止波次行军：取消所有待处理敌人的 rush 订阅，清除状态。
-    /// 用于击退开始前保存现场。
+    /// Captures the exact current wave order before the first push transaction so temporary holes
+    /// cannot be reinterpreted. After all returns finish, only the captured members/target are revalidated.
     /// </summary>
-    public void AbortWaveMarch()
+    private void CapturePausedWaveStep()
     {
-        CancelInvoke(nameof(StartWaveMarch));
-        CancelInvoke(nameof(StartAllCompactionChains));
-        foreach (var e in _pendingWaveEnemies)
+        if (!_isWaveMarching && !_isWavePreparing)
+            return;
+
+        _hasPausedWaveStep = true;
+        _pausedWaveSourceRow = _currentWaveSourceRow;
+        _pausedWaveTargetRow = _currentWaveTargetRow;
+        _pausedWaveEnemies.Clear();
+
+        for (int i = 0; i < _preparingWaveEnemies.Count; i++)
         {
-            e.OnRushMoveComplete -= OnWaveEnemyRushComplete;
+            var enemy = _preparingWaveEnemies[i];
+            if (enemy != null && !_pausedWaveEnemies.Contains(enemy))
+                _pausedWaveEnemies.Add(enemy);
         }
+        foreach (var enemy in _pendingWaveEnemies)
+        {
+            if (enemy != null && !_pausedWaveEnemies.Contains(enemy))
+                _pausedWaveEnemies.Add(enemy);
+        }
+    }
+
+    private void AbortWaveMarch(bool preserveForPushReturn = false)
+    {
+        if (preserveForPushReturn)
+            CapturePausedWaveStep();
+
+        CancelInvoke(nameof(StartWaveMarch));
+        _waveGeneration++;
+
+        for (int i = 0; i < _preparingWaveEnemies.Count; i++)
+        {
+            var enemy = _preparingWaveEnemies[i];
+            if (enemy == null) continue;
+            enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
+            enemy.CancelRushMoveOrder(resetActiveMovement: true);
+        }
+        foreach (var enemy in _pendingWaveEnemies)
+        {
+            if (enemy == null) continue;
+            enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
+            enemy.CancelRushMoveOrder(resetActiveMovement: true);
+        }
+
+        _preparingWaveEnemies.Clear();
         _pendingWaveEnemies.Clear();
+        _isWavePreparing = false;
         _isWaveMarching = false;
         _currentWaveSourceRow = -1;
+        _currentWaveTargetRow = -1;
+    }
+
+    private void ReleaseEnemyFromSchedulers(Enemy enemy, int sourceColumn)
+    {
+        if (enemy == null) return;
+
+        ReleaseEnemyFromMovementSchedulers(enemy, sourceColumn);
+        CancelPushReturn(enemy, enemy.state == EnemyState.Dead ? "cancel-dead" : "cancel-removed");
+    }
+
+    private void ReleaseEnemyFromMovementSchedulers(Enemy enemy, int sourceColumn)
+    {
+        if (enemy == null) return;
+
+        bool wasWaveMember = _pendingWaveEnemies.Remove(enemy);
+        if (_preparingWaveEnemies.Remove(enemy))
+            wasWaveMember = true;
+        if (wasWaveMember)
+            enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
+
+        if (IsValidColumn(sourceColumn))
+            columns[sourceColumn].ReleaseRushMoveOwnership(enemy);
+
+        enemy.CancelRushMoveOrder(resetActiveMovement: true);
+
+        if (wasWaveMember && _pendingWaveEnemies.Count == 0 && _preparingWaveEnemies.Count == 0)
+        {
+            _isWavePreparing = false;
+            _isWaveMarching = false;
+            _currentWaveSourceRow = -1;
+            _currentWaveTargetRow = -1;
+        }
     }
 
     /// <summary>
@@ -536,105 +667,273 @@ public class ColumnManager : MonoBehaviour
         return max;
     }
 
-    private void CancelCompactionChains()
-    {
-        CancelInvoke(nameof(StartAllCompactionChains));
-        _compactionGeneration++;
-        _compactionColumnsRemaining = 0;
-        _isCompactionPending = false;
-        _isCompactionActive = false;
-        for (int c = 0; c < columnCount; c++)
-            columns[c].CancelRushMoveChain();
-    }
-
-    private void OnCompactionChainComplete(int generation)
-    {
-        if (generation != _compactionGeneration || !_isCompactionActive)
-            return;
-
-        _compactionColumnsRemaining--;
-        if (_compactionColumnsRemaining <= 0)
-        {
-            _compactionColumnsRemaining = 0;
-            _isCompactionActive = false;
-            OnColumnsModified?.Invoke();
-            StartWaveMarch();
-        }
-    }
-
-    private void StartAllCompactionChains()
-    {
-        if (!_isCompactionPending)
-            return;
-
-        _isCompactionPending = false;
-        _isCompactionActive = true;
-        _compactionColumnsRemaining = 0;
-        int generation = _compactionGeneration;
-
-        for (int c = 0; c < columnCount; c++)
-        {
-            if (columns[c].HasPendingRushEnemies())
-            {
-                _compactionColumnsRemaining++;
-                columns[c].StartRushMoveChain(c, () => OnCompactionChainComplete(generation));
-            }
-        }
-
-        if (_compactionColumnsRemaining == 0)
-        {
-            _isCompactionActive = false;
-            OnColumnsModified?.Invoke();
-            StartWaveMarch();
-        }
-    }
-
     #endregion
 
-    #region 逐排补齐（Row-Based Fill-Up）
+    #region 精确击退回位
 
     /// <summary>
-    /// 逐排补齐：扫描所有列中存活敌人的 rowIndex（非 Dead），
-    /// 找出已完全清空的行，然后将各列敌人向清空行压缩。
-    /// 在 PerRow 模式下，任何列结构变化后都应调用此方法。
-    ///
-    /// 注意：使用 enemy.rowIndex 而非列表位置判断排归属。
-    /// RemoveEnemy(skipChain=true) 移除阵亡敌人后列表位置会变化，
-    /// 但存活敌人保留原有 rowIndex，列表位置不再反映真实排号。
+    /// Exact-slot backward-push returns. Only registered pushed enemies are considered;
+    /// no scan may create a return for an unrelated enemy.
     /// </summary>
-    public void RowBasedFillUp(int? pushedToRow = null)
+    private int NextPushReturnGeneration()
     {
-        // 1. 收集所有存活（非 Dead）敌人所在的排号
-        int maxRow = 0;
-        _occupiedRowsSet.Clear();
-        var occupiedRows = _occupiedRowsSet;
-        for (int c = 0; c < columnCount; c++)
+        _pushReturnGeneration++;
+        if (_pushReturnGeneration <= 0) _pushReturnGeneration = 1;
+        return _pushReturnGeneration;
+    }
+
+    private int NextPushReturnOrderId()
+    {
+        _pushReturnOrderId++;
+        if (_pushReturnOrderId <= 0) _pushReturnOrderId = 1;
+        return _pushReturnOrderId;
+    }
+
+    private void RegisterPushReturn(Enemy enemy, int originalColumn, int originalRow, int displacedRow)
+    {
+        if (_pushReturnTransactions.TryGetValue(enemy, out var transaction))
         {
-            foreach (var e in columns[c].enemies)
+            enemy.OnRushMoveComplete -= OnPushReturnStepComplete;
+            enemy.CancelRushMoveOrder(RushMoveOrderOwner.PushReturn, transaction.generation, resetActiveMovement: true);
+
+            transaction.displacedColumn = enemy.columnIndex;
+            transaction.displacedRow = displacedRow;
+            transaction.generation = NextPushReturnGeneration();
+            transaction.orderId = NextPushReturnOrderId();
+            transaction.returnDueTime = Time.time + pushReturnDelay;
+            transaction.scheduled = false;
+            transaction.lastBlockedRow = int.MinValue;
+            DebugLog.Info($"[PushReturn] reschedule {enemy.DebugTag} origin=({transaction.originalColumn},{transaction.originalRow}) target=({originalColumn},{displacedRow}) gen={transaction.generation} order={transaction.orderId}");
+            return;
+        }
+
+        if (_pushReturnTransactions.Count == 0)
+        {
+            AbortWaveMarch(preserveForPushReturn: true);
+            _topologyChangedWhilePushReturn = false;
+        }
+
+        int generation = NextPushReturnGeneration();
+        int orderId = NextPushReturnOrderId();
+
+        transaction = new PushReturnTransaction
+        {
+            enemy = enemy,
+            originalColumn = originalColumn,
+            originalRow = originalRow,
+            displacedColumn = originalColumn,
+            displacedRow = displacedRow,
+            generation = generation,
+            orderId = orderId,
+            returnDueTime = Time.time + pushReturnDelay,
+            scheduled = false
+        };
+        _pushReturnTransactions.Add(enemy, transaction);
+        DebugLog.Info($"[PushReturn] register {enemy.DebugTag} origin=({originalColumn},{originalRow}) target=({originalColumn},{displacedRow}) gen={transaction.generation} order={transaction.orderId}");
+    }
+
+    private void UpdatePushReturns()
+    {
+        if (_pushReturnTransactions.Count == 0)
+            return;
+
+        _pushReturnWorkList.Clear();
+        foreach (var transaction in _pushReturnTransactions.Values)
+            _pushReturnWorkList.Add(transaction);
+
+        for (int i = 0; i < _pushReturnWorkList.Count; i++)
+        {
+            var transaction = _pushReturnWorkList[i];
+            var enemy = transaction.enemy;
+            if (enemy == null || enemy.state == EnemyState.Dead || !enemy.gameObject.activeInHierarchy)
             {
-                if (e == null) continue;
-                if (e.state == EnemyState.Dead) continue;
-                // Launched 敌人仍占据其排位置——击飞≠空位，后排不应因此前移
-                int r = e.rowIndex;
-                if (r > maxRow) maxRow = r;
-                occupiedRows.Add(r);
+                CancelPushReturn(enemy, "cancel-dead");
+                continue;
             }
+            if (!transaction.scheduled || Time.time < transaction.returnDueTime)
+                continue;
+            if (enemy.IsRushMoveOrder(RushMoveOrderOwner.PushReturn, transaction.generation))
+                continue;
+            if (enemy.HasRushMoveOrder)
+                continue;
+
+            TrySchedulePushReturnStep(transaction);
+        }
+    }
+
+    private void TrySchedulePushReturnStep(PushReturnTransaction transaction)
+    {
+        var enemy = transaction.enemy;
+        if (enemy.columnIndex != transaction.originalColumn)
+        {
+            LogPushReturnBlocked(transaction, enemy.rowIndex);
+            return;
         }
 
-        // 2. 确定哪些排已完全清空（跨所有列无存活敌人）
-        bool[] clearRows = new bool[maxRow + 1];
-        for (int r = 0; r <= maxRow; r++)
+        if (enemy.rowIndex == transaction.originalRow)
         {
-            clearRows[r] = !occupiedRows.Contains(r);
-            if (clearRows[r])
-                DebugLog.Info($"[ColumnManager] RowBasedFillUp: 第{r}排已清空");
+            CompletePushReturn(transaction);
+            return;
         }
 
-        // 3. 各列按 clearRows 压缩，传入 pushedToRow 防止击退被补齐抵消
-        for (int c = 0; c < columnCount; c++)
+        if (enemy.rowIndex < transaction.originalRow)
         {
-            columns[c].CompactByClearRows(clearRows, pushedToRow);
+            LogPushReturnBlocked(transaction, enemy.rowIndex);
+            return;
         }
+
+        int nextRow = enemy.rowIndex - 1;
+        var column = columns[transaction.originalColumn];
+        if (column.IsRowOccupied(nextRow, enemy))
+        {
+            LogPushReturnBlocked(transaction, nextRow);
+            return;
+        }
+
+        if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.PushReturn, transaction.generation, nextRow))
+        {
+            LogPushReturnBlocked(transaction, nextRow);
+            return;
+        }
+
+        enemy.OnRushMoveComplete -= OnPushReturnStepComplete;
+        enemy.OnRushMoveComplete += OnPushReturnStepComplete;
+        var result = enemy.TryStartRushMove();
+        if (result == RushMoveStartResult.Rejected)
+        {
+            enemy.OnRushMoveComplete -= OnPushReturnStepComplete;
+            enemy.CancelRushMoveOrder(RushMoveOrderOwner.PushReturn, transaction.generation, resetActiveMovement: true);
+            LogPushReturnBlocked(transaction, nextRow);
+            return;
+        }
+
+        transaction.lastBlockedRow = int.MinValue;
+        DebugLog.Info($"[PushReturn] step {enemy.DebugTag} row={enemy.rowIndex}→{nextRow} origin=({transaction.originalColumn},{transaction.originalRow}) gen={transaction.generation} order={transaction.orderId}");
+    }
+
+    private void OnPushReturnStepComplete(Enemy enemy, RushMoveOrderOwner owner, int generation)
+    {
+        if (owner != RushMoveOrderOwner.PushReturn)
+            return;
+
+        enemy.OnRushMoveComplete -= OnPushReturnStepComplete;
+        if (!_pushReturnTransactions.TryGetValue(enemy, out var transaction) || transaction.generation != generation)
+            return;
+
+        if (enemy.columnIndex == transaction.originalColumn && enemy.rowIndex == transaction.originalRow)
+        {
+            CompletePushReturn(transaction);
+            return;
+        }
+
+        transaction.lastBlockedRow = int.MinValue;
+    }
+
+    private void CompletePushReturn(PushReturnTransaction transaction)
+    {
+        var enemy = transaction.enemy;
+        if (enemy != null)
+        {
+            enemy.OnRushMoveComplete -= OnPushReturnStepComplete;
+            enemy.RecheckAttackRange();
+            DebugLog.Info($"[PushReturn] complete {enemy.DebugTag} origin=({transaction.originalColumn},{transaction.originalRow}) gen={transaction.generation} order={transaction.orderId}");
+        }
+        _pushReturnTransactions.Remove(enemy);
+        TryResumePausedWaveAfterPushReturns();
+    }
+
+    private void TryResumePausedWaveAfterPushReturns()
+    {
+        if (_pushReturnTransactions.Count > 0)
+            return;
+
+        if (_hasPausedWaveStep)
+        {
+            int sourceRow = _pausedWaveSourceRow;
+            int targetRow = _pausedWaveTargetRow;
+            _hasPausedWaveStep = false;
+            _pausedWaveSourceRow = -1;
+            _pausedWaveTargetRow = -1;
+
+            if (IsRowFullyVacated(targetRow))
+            {
+                BeginWaveStep(sourceRow, targetRow, _pausedWaveEnemies);
+                _pausedWaveEnemies.Clear();
+                if (_isWavePreparing)
+                    return;
+            }
+
+            _pausedWaveEnemies.Clear();
+        }
+
+        if (_waveMarchRequestedWhilePushReturn)
+        {
+            bool mayRescan = _topologyChangedWhilePushReturn;
+            _waveMarchRequestedWhilePushReturn = false;
+            _topologyChangedWhilePushReturn = false;
+            if (mayRescan)
+                StartWaveMarch();
+        }
+    }
+
+    private void LogPushReturnBlocked(PushReturnTransaction transaction, int blockedRow)
+    {
+        if (transaction.lastBlockedRow == blockedRow)
+            return;
+
+        transaction.lastBlockedRow = blockedRow;
+        DebugLog.Info($"[PushReturn] blocked {transaction.enemy.DebugTag} origin=({transaction.originalColumn},{transaction.originalRow}) current=({transaction.enemy.columnIndex},{transaction.enemy.rowIndex}) blockedRow={blockedRow} gen={transaction.generation} order={transaction.orderId}");
+    }
+
+    private void CancelPushReturn(Enemy enemy, string reason)
+    {
+        if (enemy == null || !_pushReturnTransactions.TryGetValue(enemy, out var transaction))
+            return;
+
+        string logReason = enemy.state == EnemyState.Dead ? "cancel-dead" : reason;
+        enemy.OnRushMoveComplete -= OnPushReturnStepComplete;
+        enemy.CancelRushMoveOrder(RushMoveOrderOwner.PushReturn, transaction.generation, resetActiveMovement: true);
+        _pushReturnTransactions.Remove(enemy);
+        DebugLog.Info($"[PushReturn] {logReason} {enemy.DebugTag} origin=({transaction.originalColumn},{transaction.originalRow}) gen={transaction.generation} order={transaction.orderId}");
+        if (!_suppressPushReturnResume)
+            TryResumePausedWaveAfterPushReturns();
+    }
+
+    public void CancelPushReturnForEnemy(Enemy enemy, string reason = "cancel-reset")
+    {
+        CancelPushReturn(enemy, reason);
+    }
+
+    public void NotifyPushReturnTopologyChanged()
+    {
+        foreach (var transaction in _pushReturnTransactions.Values)
+            transaction.lastBlockedRow = int.MinValue;
+    }
+
+    private void CancelAllPushReturns()
+    {
+        _waveMarchRequestedWhilePushReturn = false;
+        _topologyChangedWhilePushReturn = false;
+        _hasPausedWaveStep = false;
+        _pausedWaveSourceRow = -1;
+        _pausedWaveTargetRow = -1;
+        _pausedWaveEnemies.Clear();
+        _suppressPushReturnResume = true;
+        _pushReturnWorkList.Clear();
+        foreach (var transaction in _pushReturnTransactions.Values)
+            _pushReturnWorkList.Add(transaction);
+        for (int i = 0; i < _pushReturnWorkList.Count; i++)
+            CancelPushReturn(_pushReturnWorkList[i].enemy, "cancel-reset");
+        _pushReturnWorkList.Clear();
+        _suppressPushReturnResume = false;
+    }
+
+    /// <summary>
+    /// Legacy row-based compaction entry. It is intentionally inert; ordinary fill is scheduled by StartWaveMarch.
+    /// </summary>
+    public void RowBasedFillUp(ISet<Enemy> protectedEnemies = null)
+    {
+        DebugLog.Warning("[ColumnManager] RowBasedFillUp ignored: legacy compaction is disabled");
     }
 
     #endregion
@@ -670,6 +969,7 @@ public class ColumnManager : MonoBehaviour
             return false;
         }
 
+        ReleaseEnemyFromSchedulers(enemy, srcCol);
         columns[srcCol].RemoveEnemySilent(enemy);
         enemy.columnIndex = targetCol;
         enemy.SetRowIndex(targetRow);
@@ -692,6 +992,7 @@ public class ColumnManager : MonoBehaviour
         int srcCol = enemy.columnIndex;
         if (srcCol == targetCol) return;
 
+        ReleaseEnemyFromSchedulers(enemy, srcCol);
         columns[srcCol].RemoveEnemySilent(enemy);
         int newRow = columns[targetCol].enemies.Count;
         enemy.columnIndex = targetCol;
@@ -725,6 +1026,7 @@ public class ColumnManager : MonoBehaviour
     public bool CanPushColumn(int columnIndex, int pushAmount, HashSet<Enemy> hitEnemies)
     {
         if (!IsValidColumn(columnIndex)) return false;
+        if (pushAmount <= 0) return false;
 
         var colEnemies = columns[columnIndex].enemies;
         int maxHitRow = -1;
@@ -800,59 +1102,106 @@ public class ColumnManager : MonoBehaviour
         return true;
     }
 
+    private bool CanPushEnemyFromCurrentRow(int columnIndex, Enemy enemy, int pushAmount, List<Enemy> columnHitEnemies)
+    {
+        if (!_pushReturnTransactions.TryGetValue(enemy, out var existing))
+            return true;
+        if (existing.originalColumn != columnIndex)
+            return false;
+
+        int destinationRow = enemy.rowIndex + pushAmount;
+        int bossRow = GetBossRowInColumn(columnIndex);
+        if (bossRow >= 0 && destinationRow >= bossRow)
+            return false;
+
+        var occupant = columns[columnIndex].GetEnemyAtRow(destinationRow);
+        return occupant == null || occupant == enemy || columnHitEnemies.Contains(occupant);
+    }
+
     /// <summary>
     /// 对单列执行击退：将该列中被击中的敌人向后移动 pushAmount 排。
     /// 预条件：已通过 CanPushColumn 检查。
     /// </summary>
-    public void ExecutePush(int columnIndex, int pushAmount, List<Enemy> columnHitEnemies)
+    public bool ExecutePush(int columnIndex, int pushAmount, List<Enemy> columnHitEnemies)
     {
-        if (!IsValidColumn(columnIndex) || columnHitEnemies.Count == 0) return;
+        if (!IsValidColumn(columnIndex) || columnHitEnemies == null || columnHitEnemies.Count == 0)
+            return false;
+        if (pushAmount <= 0)
+            return false;
 
         var col = columns[columnIndex];
-        int bossRow = GetBossRowInColumn(columnIndex);
-
-        // 从列表中移除所有被击中的敌人
-        foreach (var e in columnHitEnemies)
-            col.RemoveEnemySilent(e);
-
-        // 更新 rowIndex，钳制上限为 bossRow-1（BOSS排是不可逾越的墙壁）
         _pushWorkList.Clear();
-        var pushedEnemies = _pushWorkList;
-        foreach (var e in columnHitEnemies)
+
+        for (int i = 0; i < columnHitEnemies.Count; i++)
         {
-            int oldRow = e.rowIndex;
+            var enemy = columnHitEnemies[i];
+            if (enemy == null || enemy.state == EnemyState.Dead || enemy.columnIndex != columnIndex)
+                continue;
+
+            if (!CanPushEnemyFromCurrentRow(columnIndex, enemy, pushAmount, columnHitEnemies))
+            {
+                DebugLog.Info($"[PushReturn] blocked {enemy.DebugTag} current=({columnIndex},{enemy.rowIndex}) additionalPush={pushAmount} existingReturnPreserved");
+                return false;
+            }
+        }
+
+        for (int i = 0; i < columnHitEnemies.Count; i++)
+        {
+            var enemy = columnHitEnemies[i];
+            if (enemy == null || enemy.state == EnemyState.Dead || enemy.columnIndex != columnIndex)
+                continue;
+
+            bool hadExistingReturn = _pushReturnTransactions.TryGetValue(enemy, out var existing);
+            int firstOriginColumn = hadExistingReturn ? existing.originalColumn : columnIndex;
+            int firstOriginRow = hadExistingReturn ? existing.originalRow : enemy.rowIndex;
+            RegisterPushReturn(enemy, firstOriginColumn, firstOriginRow, enemy.rowIndex + pushAmount);
+            ReleaseEnemyFromMovementSchedulers(enemy, columnIndex);
+            _pushWorkList.Add(enemy);
+        }
+
+        if (_pushWorkList.Count == 0)
+            return false;
+
+        // Stack push must be evaluated from back to front so already-hit enemies may occupy each other's source slots.
+        _pushWorkList.Sort((a, b) => b.rowIndex.CompareTo(a.rowIndex));
+        int movedCount = 0;
+        for (int i = 0; i < _pushWorkList.Count; i++)
+        {
+            var enemy = _pushWorkList[i];
+            int oldRow = enemy.rowIndex;
             int newRow = oldRow + pushAmount;
-            if (bossRow >= 0 && newRow >= bossRow)
+            var occupant = col.GetEnemyAtRow(newRow);
+            if (occupant != null && occupant != enemy)
             {
-                newRow = bossRow - 1;
-                DebugLog.Info($"[Displacement] ExecutePush {e.DebugTag}: row {oldRow}→{newRow} (clamped by boss wall at row {bossRow})");
+                DebugLog.Info($"[PushReturn] blocked {enemy.DebugTag} target=({columnIndex},{newRow}) occupied={occupant.DebugTag}");
+                CancelPushReturn(enemy, "cancel-blocked-push");
+                continue;
             }
-            else
+            col.RemoveEnemySilent(enemy);
+            enemy.SetRowIndex(newRow);
+            col.InsertEnemySorted(enemy);
+            movedCount++;
+
+            if (_pushReturnTransactions.TryGetValue(enemy, out var transaction))
             {
-                DebugLog.Info($"[Displacement] ExecutePush {e.DebugTag}: row {oldRow}→{newRow}");
+                transaction.displacedColumn = columnIndex;
+                transaction.displacedRow = newRow;
             }
-            e.SetRowIndex(newRow);
-            pushedEnemies.Add(e);
+
+            DebugLog.Info($"[Displacement] ExecutePush {enemy.DebugTag}: row {oldRow}→{newRow}");
         }
 
-        // 按 rowIndex 升序重新插入
-        pushedEnemies.Sort((a, b) => a.rowIndex.CompareTo(b.rowIndex));
-        foreach (var e in pushedEnemies)
-            col.InsertEnemySorted(e);
-
-        DebugLog.Info($"[ColumnManager] ExecutePush: col={columnIndex}, pushed={pushedEnemies.Count} enemies by {pushAmount} rows");
-
-        // 地刺检测：Push 后检查被推敌人是否踩中
-        foreach (var e in pushedEnemies)
-            SpikeTrapController.Instance?.CheckAndTrigger(e);
-
-        // 被击退后重新检查攻击范围：若超出范围则取消攻击并冲回前线
-        foreach (var e in pushedEnemies)
+        for (int i = 0; i < _pushWorkList.Count; i++)
         {
-            e.RecheckAttackRange();
+            var enemy = _pushWorkList[i];
+            if (!_pushReturnTransactions.ContainsKey(enemy))
+                continue;
+            SpikeTrapController.Instance?.CheckAndTrigger(enemy);
+            enemy.RecheckAttackRange();
         }
 
-        OnColumnsModified?.Invoke();
+        DebugLog.Info($"[ColumnManager] ExecutePush: col={columnIndex}, pushed={movedCount} enemies by {pushAmount} rows");
+        return movedCount > 0;
     }
 
     /// <summary>
@@ -860,13 +1209,17 @@ public class ColumnManager : MonoBehaviour
     /// BOSS 免疫击退。
     /// 返回 true 表示至少有一列成功执行了击退。
     /// </summary>
-    public bool ApplyPushWave(List<Enemy> hitEnemies, int pushAmount, bool canInterruptCFrame = false)
+    public bool ApplyPushWave(List<Enemy> hitEnemies, int pushAmount, bool canInterruptCFrame = false, List<Enemy> pushedEnemies = null)
     {
         if (hitEnemies == null || hitEnemies.Count == 0) return false;
+        if (pushAmount <= 0) return false;
 
         DebugLog.Info($"[Displacement] ApplyPushWave: pushAmount={pushAmount}, hitEnemies count={hitEnemies.Count}");
         foreach (var e in hitEnemies)
+        {
+            if (e == null) continue;
             DebugLog.Info($"  hitEnemy: {e.DebugTag} col={e.columnIndex} row={e.rowIndex} state={e.state} isBoss={e.isBoss}");
+        }
 
         _pushHitSet.Clear();
         _pushHitSet.UnionWith(hitEnemies);
@@ -877,6 +1230,7 @@ public class ColumnManager : MonoBehaviour
 
         foreach (var e in hitEnemies)
         {
+            if (e == null) continue;
             if (e.isBoss) continue;
             if (e.state == EnemyState.Dead) continue;
             if (e.isCFrame && !canInterruptCFrame) continue;
@@ -898,9 +1252,17 @@ public class ColumnManager : MonoBehaviour
             int col = kv.Key;
             bool canPush = CanPushColumn(col, pushAmount, hitSet);
             DebugLog.Info($"[Displacement] PushWave col={col}: canPush={canPush}, hitCount={kv.Value.Count}");
-            if (canPush)
+            if (canPush && ExecutePush(col, pushAmount, kv.Value))
             {
-                ExecutePush(col, pushAmount, kv.Value);
+                if (pushedEnemies != null)
+                {
+                    for (int i = 0; i < kv.Value.Count; i++)
+                    {
+                        var enemy = kv.Value[i];
+                        if (enemy != null && _pushReturnTransactions.ContainsKey(enemy))
+                            pushedEnemies.Add(enemy);
+                    }
+                }
                 anyPushed = true;
             }
         }
@@ -911,7 +1273,7 @@ public class ColumnManager : MonoBehaviour
     /// 方向推（Slash 专属）：将击中敌人按行分组，朝 slash 方向推移 step 列。
     /// 同行多敌人自动分散到不同列，不重叠。
     /// </summary>
-    public bool ApplyDirectionalPush(List<Enemy> hitEnemies, int step, bool pushRight, bool canInterruptCFrame = false)
+    public bool ApplyDirectionalPush(List<Enemy> hitEnemies, int step, bool pushRight, bool canInterruptCFrame = false, List<Enemy> movedEnemies = null)
     {
         if (hitEnemies == null || hitEnemies.Count == 0) return false;
         if (step <= 0) return false;
@@ -952,8 +1314,11 @@ public class ColumnManager : MonoBehaviour
                 int tryCol = idealCol;
                 while (tryCol >= 0 && tryCol <= 4)
                 {
+                    bool changesColumn = tryCol != enemy.columnIndex;
                     if (MoveEnemyToColumnAtRow(enemy, tryCol, row))
                     {
+                        if (changesColumn)
+                            movedEnemies?.Add(enemy);
                         anyMoved = true;
                         break;
                     }
@@ -962,7 +1327,7 @@ public class ColumnManager : MonoBehaviour
             }
         }
 
-        if (anyMoved) OnColumnsModified?.Invoke();
+        // Horizontal displacement changes only hit enemies' columns. It does not publish row-topology changes.
         return anyMoved;
     }
 
@@ -1019,40 +1384,43 @@ public class ColumnManager : MonoBehaviour
             }
         }
 
-        OnColumnsModified?.Invoke();
+        // Convergence is horizontal-only and must not publish row-topology changes.
     }
 
     #endregion
 
     /// <summary>
-    /// 位移效果完成后触发补齐：中止波次行军 → 逐列紧凑 → 启动链式补齐 → 链结束后自动 StartWaveMarch。
-    /// pushedToRow: 位移目标排（被推入的排），该排敌人不参与紧凑，避免击退被补齐抵消。
+    /// Arms exact-slot returns for enemies that were actually pushed backward.
+    /// Complete only after this same enemy reaches its exact first origin; no other enemy is moved.
     /// </summary>
-    public void PostDisplacementFillUp(int? pushedToRow = null)
+    public void PostDisplacementFillUp(IEnumerable<Enemy> pushedEnemies)
     {
-        DebugLog.Info($"[Displacement] PostDisplacementFillUp pushedToRow={pushedToRow?.ToString() ?? "null"}");
+        if (pushedEnemies == null) return;
 
-        AbortWaveMarch();
-        CancelCompactionChains();
-
-        RowBasedFillUp(pushedToRow);
-
-        _isCompactionPending = true;
-        Invoke(nameof(StartAllCompactionChains), compactionStartDelay);
+        foreach (var enemy in pushedEnemies)
+        {
+            if (enemy == null || enemy.state == EnemyState.Dead)
+                continue;
+            if (_pushReturnTransactions.TryGetValue(enemy, out var transaction))
+                transaction.scheduled = true;
+        }
     }
 
     /// <summary>
-    /// 逐列紧凑所有列：每列存活敌人向前紧凑，Boss 作为墙壁不可逾越。
-    /// rangeStart/rangeEnd 限定紧凑范围，默认 -1 表示全列。
+    /// Legacy no-argument entry retained for API compatibility. It cannot create return orders
+    /// because exact origins are registered only by ExecutePush.
+    /// </summary>
+    public void PostDisplacementFillUp()
+    {
+    }
+
+    /// <summary>
+    /// Legacy manual compaction entry retained for compatibility. It is intentionally inert;
+    /// normal fill is owned exclusively by StartWaveMarch.
     /// </summary>
     public void CompactAllColumns(int rangeStart = -1, int rangeEnd = -1)
     {
-        for (int c = 0; c < columnCount; c++)
-        {
-            int bossRow = GetBossRowInColumn(c);
-            columns[c].CompactColumn(bossRow, rangeStart, rangeEnd);
-        }
-        OnColumnsModified?.Invoke();
+        DebugLog.Warning("[ColumnManager] CompactAllColumns ignored: legacy displacement compaction is disabled");
     }
 
     /// <summary>

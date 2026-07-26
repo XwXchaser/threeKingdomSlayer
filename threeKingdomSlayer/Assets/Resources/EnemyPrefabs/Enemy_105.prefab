@@ -169,12 +169,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: "\u5F13\u7BAD\u624B"
   enemyId: 105
-  maxHealth: 16
+  maxHealth: 8
   occupySlots: 1
   attackSpeed: 0.3
   attackDamage: 5
   attackRange: 3
   moveSpeed: 0.2
+  visualYOffset: 0
   attackSequence:
   - isCAttack: 0
     animationTrigger: 
@@ -190,6 +191,13 @@ MonoBehaviour:
   projectileLandingXCenter: 0
   projectileLandingXSpread: 1.2
   projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
   arrowConfig: {fileID: 0}
   shareHealthWithAdjacent: 0
   maxPoise: 40

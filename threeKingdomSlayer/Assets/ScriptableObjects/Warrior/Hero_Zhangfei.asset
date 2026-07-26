@@ -19,7 +19,7 @@ MonoBehaviour:
   maxHealth: 100
   reviveCount: 0
   reviveHealthPercent: 0.5
-  itemSlotCount: 2
+  itemSlotCount: 4
   skillConfigs:
   - {fileID: 11400000, guid: be0d2cd0d81581742ad3b5d189204f52, type: 2}
   - {fileID: 11400000, guid: c4862b3d5d44d2543af3deae939e5053, type: 2}

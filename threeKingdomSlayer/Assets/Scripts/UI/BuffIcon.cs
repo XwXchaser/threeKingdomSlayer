@@ -56,7 +56,7 @@ public class BuffIcon : MonoBehaviour
         if (_button != null)
         {
             _button.onClick.RemoveAllListeners();
-            if (category == UpgradeCategory.Item)
+            if (category == UpgradeCategory.Item || category == UpgradeCategory.ActiveSkill)
             {
                 _button.interactable = true;
                 _button.onClick.AddListener(() => OnClicked?.Invoke(this));
@@ -198,6 +198,8 @@ public class BuffIcon : MonoBehaviour
     {
         if (_button != null)
             _button.interactable = interactable;
+        if (Category == UpgradeCategory.Item || Category == UpgradeCategory.ActiveSkill)
+            SetReadyGlow(interactable && _iconImage != null && _iconImage.sprite != null);
     }
 
     /// <summary>设置冷却显示</summary>
@@ -213,7 +215,7 @@ public class BuffIcon : MonoBehaviour
             _cooldownFill.gameObject.SetActive(visible);
             if (visible) _cooldownFill.fillAmount = fillAmount;
         }
-        if (Category == UpgradeCategory.Item)
+        if (Category == UpgradeCategory.Item || Category == UpgradeCategory.ActiveSkill)
             SetReadyGlow(!visible);
     }
 

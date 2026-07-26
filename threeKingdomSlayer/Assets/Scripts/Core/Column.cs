@@ -58,7 +58,7 @@ public class Column
 
     /// <summary>
     /// 移除指定敌人。仅从列表中删除，不做紧凑或补齐。
-    /// 补齐由 ColumnManager 统一调度（波次行军或击退后紧凑）。
+    /// 普通补齐与击退回位均由 ColumnManager 的独立调度器负责。
     /// </summary>
     public void RemoveEnemy(Enemy enemy, bool skipChain = false)
     {
@@ -87,27 +87,52 @@ public class Column
     }
 
     /// <summary>
-    /// 从列表中第一个 pendingRushMove=true 的敌人开始链式补齐。
-    /// 链结束后调用 onChainEnd 回调。
+    /// Runs one owned displacement chain. Every member is assigned the same owner/generation,
+    /// and stale completion callbacks are ignored.
     /// </summary>
-    public void StartRushMoveChain(int colIndex, System.Action onChainEnd = null)
+    public void StartRushMoveChain(RushMoveOrderOwner owner, int generation, System.Action onChainEnd = null)
     {
         CancelRushMoveChain();
+        _chainOwner = owner;
+        _chainGeneration = generation;
         _chainEndHandler = onChainEnd;
         TryAdvanceChain();
     }
 
     private System.Action _chainEndHandler;
     private Enemy _chainWaitingEnemy;
+    private RushMoveOrderOwner _chainOwner = RushMoveOrderOwner.None;
+    private int _chainGeneration;
 
-    public void CancelRushMoveChain()
+    public void ReleaseRushMoveOwnership(Enemy enemy)
+    {
+        if (_chainWaitingEnemy != enemy) return;
+
+        enemy.OnRushMoveComplete -= OnChainRushComplete;
+        _chainWaitingEnemy = null;
+    }
+
+    public void CancelRushMoveChain(bool cancelOwnedMovement = false)
     {
         if (_chainWaitingEnemy != null)
         {
             _chainWaitingEnemy.OnRushMoveComplete -= OnChainRushComplete;
             _chainWaitingEnemy = null;
         }
+
+        if (cancelOwnedMovement && _chainOwner != RushMoveOrderOwner.None)
+        {
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                var enemy = enemies[i];
+                if (enemy != null)
+                    enemy.CancelRushMoveOrder(_chainOwner, _chainGeneration, resetActiveMovement: true);
+            }
+        }
+
         _chainEndHandler = null;
+        _chainOwner = RushMoveOrderOwner.None;
+        _chainGeneration = 0;
     }
 
     private void TryAdvanceChain()
@@ -118,27 +143,52 @@ public class Column
         for (int i = 0; i < enemies.Count; i++)
         {
             Enemy enemy = enemies[i];
-            if (enemy != null && enemy.state != EnemyState.Dead && enemy.pendingRushMove)
+            if (enemy == null || enemy.isBoss || enemy.state == EnemyState.Dead)
+                continue;
+            if (!enemy.IsRushMoveOrder(_chainOwner, _chainGeneration))
+                continue;
+            if (!enemy.IsRushMoveReady)
             {
                 _chainWaitingEnemy = enemy;
                 enemy.OnRushMoveComplete -= OnChainRushComplete;
                 enemy.OnRushMoveComplete += OnChainRushComplete;
-                enemy.TryStartRushMove();
-                DebugLog.Info($"[Column] 启动链式补齐: {enemy.DebugTag}, col={columnIndex}, row={enemy.rowIndex}");
+                var deferredResult = enemy.TryStartRushMove();
+                if (deferredResult == RushMoveStartResult.Rejected)
+                {
+                    enemy.OnRushMoveComplete -= OnChainRushComplete;
+                    enemy.CancelRushMoveOrder(_chainOwner, _chainGeneration);
+                    _chainWaitingEnemy = null;
+                    continue;
+                }
                 return;
             }
+
+            _chainWaitingEnemy = enemy;
+            enemy.OnRushMoveComplete -= OnChainRushComplete;
+            enemy.OnRushMoveComplete += OnChainRushComplete;
+            var result = enemy.TryStartRushMove();
+            if (result == RushMoveStartResult.Rejected)
+            {
+                enemy.OnRushMoveComplete -= OnChainRushComplete;
+                enemy.CancelRushMoveOrder(_chainOwner, _chainGeneration);
+                _chainWaitingEnemy = null;
+                continue;
+            }
+
+            return;
         }
 
-        DebugLog.Info($"[Column] 链结束: col={columnIndex}");
         var handler = _chainEndHandler;
         _chainEndHandler = null;
+        _chainOwner = RushMoveOrderOwner.None;
+        _chainGeneration = 0;
         handler?.Invoke();
     }
 
-    private void OnChainRushComplete(Enemy enemy)
+    private void OnChainRushComplete(Enemy enemy, RushMoveOrderOwner owner, int generation)
     {
         enemy.OnRushMoveComplete -= OnChainRushComplete;
-        if (_chainWaitingEnemy != enemy)
+        if (_chainWaitingEnemy != enemy || owner != _chainOwner || generation != _chainGeneration)
             return;
 
         _chainWaitingEnemy = null;
@@ -146,159 +196,35 @@ public class Column
     }
 
     /// <summary>
-    /// 从击飞落地敌人启动链式补齐。
-    /// 若当前无活跃链则启动新链，链结束后通知 ColumnManager。
+    /// Landing no longer starts a new column chain. Existing owned orders resume through Enemy.TryStartRushMove.
     /// </summary>
     public void StartRushFromLaunched(Enemy enemy, System.Action onChainEnd = null)
     {
-        int idx = enemies.IndexOf(enemy);
-        if (idx < 0 || !enemy.pendingRushMove) return;
-
-        if (_chainWaitingEnemy != null)
-            return;
+        if (enemy == null || !enemy.IsRushMoveOrder(_chainOwner, _chainGeneration)) return;
+        if (_chainWaitingEnemy != null && _chainWaitingEnemy != enemy) return;
 
         if (_chainEndHandler == null)
             _chainEndHandler = onChainEnd;
-
         _chainWaitingEnemy = enemy;
         enemy.OnRushMoveComplete -= OnChainRushComplete;
         enemy.OnRushMoveComplete += OnChainRushComplete;
         enemy.TryStartRushMove();
-        DebugLog.Info($"[Column] 击飞落地启动链式: {enemy.DebugTag}, col={columnIndex}, row={enemy.rowIndex}");
     }
 
     /// <summary>
-    /// 逐排补齐：根据 clearRows 压缩本列敌人列表。
-    /// clearRows[r]=true 表示第 r 排（跨所有列）已清空，该排的敌人都应移除/跳过。
-    /// 压缩后标记需要前移的敌人并启动链式补齐。
-    ///
-    /// 注意：使用 enemy.rowIndex 而非列表位置判断排归属。
-    /// RemoveEnemy(skipChain=true) 后列表位置已变化，rowIndex 才是真实排号。
+    /// Legacy row-compaction API retained for compatibility. Ordinary WaveMarch is owned by ColumnManager.
     /// </summary>
-    public void CompactByClearRows(bool[] clearRows, int? pushedToRow = null)
+    public void CompactByClearRows(bool[] clearRows, ISet<Enemy> protectedEnemies = null)
     {
-        // 第一遍：计算每个存活的敌人应该移动到的新排号
-        // targetRow = rowIndex - 低于该排的已清空排数
-        // 这与 PerColumn 的 writeIdx 不同：writeIdx 是顺序紧凑（0,1,2...），
-        // 而 row-based 会保留排与排之间的空隙（仅压缩掉已清空的排）
-        //
-        // pushedToRow: 位移效果推入的目标排。该排敌人不参与紧凑（防止击退被补齐抵消），
-        // 但更后排的敌人可越过它们填补前方的空排。
-
-        // BOSS 墙壁：找到本列 BOSS 所在排，BOSS 不参与压缩，身后敌人不可跨越 BOSS
-        int bossRow = -1;
-        for (int i = 0; i < enemies.Count; i++)
-        {
-            Enemy e = enemies[i];
-            if (e != null && e.isBoss && e.state != EnemyState.Dead)
-            {
-                bossRow = e.rowIndex;
-                break;
-            }
-        }
-
-        for (int i = 0; i < enemies.Count; i++)
-        {
-            Enemy e = enemies[i];
-            if (e == null) continue;
-            int row = e.rowIndex;
-
-            bool isClearRow = row < clearRows.Length && clearRows[row];
-            if (e.state == EnemyState.Dead || isClearRow)
-                continue;
-
-            // BOSS 不参与紧凑——BOSS 前进由独立的 IsRowClearForBoss + BossPause 系统管控
-            if (e.isBoss) continue;
-
-            // 被推入排的敌人不参与紧凑，防止击退效果被补齐抵消
-            if (pushedToRow.HasValue && row == pushedToRow.Value)
-                continue;
-
-            // 统计低于 row 的已清空排数
-            // 若 BOSS 存在且敌人在 BOSS 身后，只统计 BOSS 之后的空排（不可跨越 BOSS 墙壁）
-            int clearBelow = 0;
-            int scanStart = (bossRow >= 0 && row > bossRow) ? bossRow : 0;
-            for (int r = scanStart; r < row && r < clearRows.Length; r++)
-            {
-                if (clearRows[r]) clearBelow++;
-            }
-
-            int newRow = row - clearBelow;
-            // 确保 BOSS 身后的敌人不会因压缩而落到 BOSS 之前（BOSS 自身正常前移不受影响）
-            if (bossRow >= 0 && !e.isBoss && row > bossRow && newRow <= bossRow)
-                newRow = bossRow + 1;
-
-            if (newRow != row)
-            {
-                e.targetRow = newRow;
-                // BUG FIX: 不重置特殊状态敌人。
-                // ResetMovementState 会 Kill DOTween 动画 + 重置 state → Idle，
-                // 导致晕眩/攻击动作/正在进行的补齐移动/QTE攻击被意外打断。
-                // BOSS 免疫位移但可能因无条件 PostDisplacementFillUp 进入此分支，
-                // 若处于 QTEAttacking 被重置将导致 QTE 中止。
-                // 对于这些状态，仅设置 targetRow 和 pendingRushMove，
-                // 由 TryStartRushMove 等待状态恢复后再开始补齐移动。
-                if (e.state == EnemyState.Stunned || e.state == EnemyState.Launched || e.state == EnemyState.QTEAttacking || e.isAttackAnimating || e.state == EnemyState.Moving)
-                {
-                    if (!(e.isBoss && e.bossState == BossState.Approaching))
-                        e.pendingRushMove = true;
-                    DebugLog.Info($"[Column] RowBased 标记补齐（保留状态）: {e.DebugTag}, col={columnIndex}, curRow={row}, targetRow={newRow}, state={e.state} isAttackAnimating={e.isAttackAnimating}");
-                }
-                else
-                {
-                    e.ResetMovementState();
-                    if (!(e.isBoss && e.bossState == BossState.Approaching))
-                        e.pendingRushMove = true;
-                    DebugLog.Info($"[Column] RowBased 标记补齐: {e.DebugTag}, col={columnIndex}, curRow={row}, targetRow={newRow}");
-                }
-            }
-        }
-
-        // 第二遍：从列表中移除 Dead 和 clearRow 的敌人
-        int writeIdx = 0;
-        for (int i = 0; i < enemies.Count; i++)
-        {
-            Enemy e = enemies[i];
-            int row = e.rowIndex;
-            bool isClearRow = row < clearRows.Length && clearRows[row];
-            if (e.state == EnemyState.Dead || isClearRow)
-                continue;
-
-            if (i != writeIdx) enemies[writeIdx] = e;
-            writeIdx++;
-        }
-
-        if (writeIdx < enemies.Count)
-            enemies.RemoveRange(writeIdx, enemies.Count - writeIdx);
-
-        // 链式补齐由 ColumnManager 统一启动，此处不再调用 StartRushMoveChain
+        DebugLog.Warning($"[Column] CompactByClearRows ignored: legacy compaction is disabled, col={columnIndex}");
     }
 
     /// <summary>
-    /// 触发补齐前移：将列中所有存活敌人向列表前方补齐。
-    /// 保留供外部调用，主流程走 ColumnManager.StartWaveMarch。
+    /// Legacy entry retained for API compatibility. Normal-enemy scheduling is owned by ColumnManager.
     /// </summary>
     public void TriggerFillForward()
     {
-        if (enemies.Count == 0) return;
-
-        int writeIdx = 0;
-        for (int i = 0; i < enemies.Count; i++)
-        {
-            Enemy e = enemies[i];
-            if (e.state == EnemyState.Dead) continue;
-            if (i != writeIdx) enemies[writeIdx] = e;
-            e.targetRow = writeIdx;
-            e.ResetMovementState();
-            if (!e.isBoss)
-                e.pendingRushMove = true;
-            writeIdx++;
-        }
-
-        if (writeIdx < enemies.Count)
-            enemies.RemoveRange(writeIdx, enemies.Count - writeIdx);
-
-        StartRushMoveChain(columnIndex);
+        DebugLog.Warning($"[Column] TriggerFillForward ignored for normal enemies: col={columnIndex}");
     }
 
     /// <summary>
@@ -335,7 +261,8 @@ public class Column
     {
         for (int i = 0; i < enemies.Count; i++)
         {
-            if (enemies[i].pendingRushMove) return true;
+            var enemy = enemies[i];
+            if (!enemy.isBoss && enemy.HasRushMoveOrder) return true;
         }
         return false;
     }
@@ -388,81 +315,20 @@ public class Column
     }
 
     /// <summary>
-    /// 逐列紧凑：将本列存活敌人向前紧凑，填补空排。
-    /// Boss 所在排作为墙壁，身后敌人紧凑到 bossRow+1 及之后，不可越过 Boss。
-    /// rangeStart/rangeEnd（含）分段紧凑：波区 [rangeStart, rangeEnd] 从 rangeStart 起排，
-    /// 后方 [rangeEnd+1, ...] 从 rangeEnd+1 起排独立紧凑，互不跨越。默认 -1 表示全列。
+    /// Legacy displacement-compaction API retained for compatibility. Backward push is now
+    /// handled by ColumnManager exact-slot PushReturn transactions, so this method is inert.
+    /// </summary>
+    public void PrepareDisplacementCompaction(ISet<Enemy> protectedEnemies)
+    {
+        DebugLog.Warning($"[Column] PrepareDisplacementCompaction ignored: legacy displacement compaction is disabled, col={columnIndex}");
+    }
+
+    /// <summary>
+    /// Legacy manual column-compaction API retained for compatibility. It is intentionally inert.
     /// </summary>
     public void CompactColumn(int bossRow, int rangeStart = -1, int rangeEnd = -1)
     {
-        if (enemies.Count == 0) return;
-
-        var compacted = new List<Enemy>();
-        int targetRow = 0;
-        bool bossPlaced = false;
-        bool hasRange = rangeStart >= 0 && rangeEnd >= 0;
-        bool passedRangeEnd = false;
-
-        if (hasRange) targetRow = rangeStart;
-
-        // DEBUG: 打印入参和当前列状态
-        DebugLog.Info($"[CompactColumn] col={columnIndex} bossRow={bossRow} range=[{rangeStart},{rangeEnd}] hasRange={hasRange} list=[{string.Join(",", enemies.ConvertAll(e => $"{e.name}@{e.rowIndex}"))}]");
-
-        for (int i = 0; i < enemies.Count; i++)
-        {
-            Enemy e = enemies[i];
-            if (e.state == EnemyState.Dead) continue;
-
-            // 波区前方敌人保持原位
-            if (hasRange && e.rowIndex < rangeStart)
-            {
-                DebugLog.Info($"[CompactColumn]   {e.name} row={e.rowIndex} → skip (before range)");
-                compacted.Add(e);
-                continue;
-            }
-
-            // 进入波区后方：切换为后方独立紧凑，重置 boss 墙状态
-            if (hasRange && e.rowIndex > rangeEnd && !passedRangeEnd)
-            {
-                passedRangeEnd = true;
-                targetRow = rangeEnd + 1;
-                bossPlaced = false;
-                DebugLog.Info($"[CompactColumn]   → passedRangeEnd, targetRow reset to {targetRow}");
-            }
-
-            // Boss 到达：固定在 bossRow，身后敌人从 bossRow+1 起排
-            if (!bossPlaced && e.isBoss && bossRow >= 0)
-            {
-                bossPlaced = true;
-                if (targetRow > bossRow)
-                {
-                    DebugLog.Warning($"[Column] CompactColumn: targetRow={targetRow} > bossRow={bossRow} in col={columnIndex}");
-                }
-                targetRow = bossRow;
-            }
-
-            e.targetRow = targetRow;
-            DebugLog.Info($"[CompactColumn]   {e.name} row={e.rowIndex} → targetRow={targetRow} bossPlaced={bossPlaced} passedRangeEnd={passedRangeEnd}");
-
-            if (e.rowIndex != targetRow)
-            {
-                e.ResetMovementState();
-                // Boss 不参与列补齐链，移动由自身状态机控制
-                if (!e.isBoss)
-                    e.pendingRushMove = true;
-            }
-
-            compacted.Add(e);
-            targetRow++;
-
-            // Boss 身后敌人从 bossRow+1 起排
-            if (bossPlaced && e.isBoss)
-                targetRow = bossRow + 1;
-        }
-
-        enemies.Clear();
-        enemies.AddRange(compacted);
-        // 链式补齐由 ColumnManager 统一启动，此处不再调用 StartRushMoveChain
+        DebugLog.Warning($"[Column] CompactColumn ignored: legacy compaction is disabled, col={columnIndex}");
     }
 
     #endregion

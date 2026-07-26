@@ -16,7 +16,7 @@ MonoBehaviour:
   upgradeId: timed_fire_aoe
   displayName: "\u70C8\u7130\u55B7\u5C04"
   descriptionTemplate: "\u6BCF{0}\u79D2\u5BF9\u4E2D\u95F4\u533A\u57DF\u9020\u6210{1}\u70B9\u4F24\u5BB3"
-  extraDescriptionTemplate: 
+  extraDescriptionTemplate: "\u707C\u70E7\uFF1A\u6BCF\u79D2\u9020\u6210{2}\u7684\u707C\u70E7\u4F24\u5BB3\uFF0C\u6301\u7EED{3}\u79D2"
   rarity: 0
   maxLevel: 10
   effectType: passive_timed_aoe
@@ -26,49 +26,69 @@ MonoBehaviour:
   secondaryIntValue: 0
   stringValue: 
   baseAttackConfig: {fileID: 0}
-  icon: {fileID: 21300000, guid: ddca02e6e8040c948a9908a5c48c4b57, type: 3}
+  icon: {fileID: 21300000, guid: c147c1254c1f1f64bbfc884ac55ce23f, type: 3}
   phantomLevels: []
   timedAoeLevels:
   - intervalSeconds: 3
     triggerThreshold: 0
-    damage: 10
+    damage: 2
     columns: 02000000
+    burnDamagePerSecond: 1
+    burnDurationSeconds: 2
   - intervalSeconds: 2.5
     triggerThreshold: 0
-    damage: 15
+    damage: 2
     columns: 02000000
+    burnDamagePerSecond: 1
+    burnDurationSeconds: 2
   - intervalSeconds: 2
     triggerThreshold: 0
-    damage: 20
+    damage: 2
     columns: 02000000
+    burnDamagePerSecond: 1
+    burnDurationSeconds: 2
   - intervalSeconds: 1.5
     triggerThreshold: 0
-    damage: 30
+    damage: 2
     columns: 02000000
+    burnDamagePerSecond: 1
+    burnDurationSeconds: 2
   - intervalSeconds: 1.5
     triggerThreshold: 0
-    damage: 30
+    damage: 2
     columns: 010000000200000003000000
+    burnDamagePerSecond: 1
+    burnDurationSeconds: 2
   - intervalSeconds: 1.2
     triggerThreshold: 0
-    damage: 35
+    damage: 2
     columns: 010000000200000003000000
+    burnDamagePerSecond: 1
+    burnDurationSeconds: 3
   - intervalSeconds: 1.2
     triggerThreshold: 0
-    damage: 40
+    damage: 2
     columns: 0000000001000000020000000300000004000000
+    burnDamagePerSecond: 1
+    burnDurationSeconds: 3
   - intervalSeconds: 1
     triggerThreshold: 0
-    damage: 45
+    damage: 2
     columns: 0000000001000000020000000300000004000000
+    burnDamagePerSecond: 1
+    burnDurationSeconds: 3
   - intervalSeconds: 1
     triggerThreshold: 0
-    damage: 50
+    damage: 2
     columns: 0000000001000000020000000300000004000000
+    burnDamagePerSecond: 1
+    burnDurationSeconds: 3
   - intervalSeconds: 0.8
     triggerThreshold: 0
-    damage: 60
+    damage: 2
     columns: 0000000001000000020000000300000004000000
+    burnDamagePerSecond: 1
+    burnDurationSeconds: 3
   timedArrowLevels: []
   returnWaveLevels: []
   chainBounceLevels: []

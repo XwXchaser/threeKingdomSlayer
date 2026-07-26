@@ -29,6 +29,8 @@ public class BuffDisplayPanel : MonoBehaviour
     private readonly Dictionary<BuffIcon, int> _iconEntryIds = new Dictionary<BuffIcon, int>();
 
     private CanvasGroup _canvasGroup;
+    private bool _qteDimmed;
+    private bool _columnBVisible = true;
 
     private void Start()
     {
@@ -49,10 +51,13 @@ public class BuffDisplayPanel : MonoBehaviour
         if (UpgradeEffectManager.Instance != null)
             UpgradeEffectManager.Instance.OnUpgradeApplied += OnUpgradeApplied;
         if (ItemInventory.Instance != null)
-        {
             ItemInventory.Instance.OnInventoryChanged += RefreshItemSlots;
-            RefreshItemSlots();
+        if (ActiveSkillInventory.Instance != null)
+        {
+            ActiveSkillInventory.Instance.OnSkillsChanged += RefreshItemSlots;
+            ActiveSkillInventory.Instance.OnCooldownsChanged += RefreshActiveSkillCooldowns;
         }
+        RefreshItemSlots();
         if (PassiveTriggerModule.Instance != null)
             PassiveTriggerModule.Instance.OnPassiveRegistered += OnPassiveRegistered;
     }
@@ -63,12 +68,18 @@ public class BuffDisplayPanel : MonoBehaviour
             UpgradeEffectManager.Instance.OnUpgradeApplied -= OnUpgradeApplied;
         if (ItemInventory.Instance != null)
             ItemInventory.Instance.OnInventoryChanged -= RefreshItemSlots;
+        if (ActiveSkillInventory.Instance != null)
+        {
+            ActiveSkillInventory.Instance.OnSkillsChanged -= RefreshItemSlots;
+            ActiveSkillInventory.Instance.OnCooldownsChanged -= RefreshActiveSkillCooldowns;
+        }
         if (PassiveTriggerModule.Instance != null)
             PassiveTriggerModule.Instance.OnPassiveRegistered -= OnPassiveRegistered;
     }
 
     private void InitializeItemSlots()
     {
+        if (!_columnBVisible) return;
         int capacity = ItemInventory.Instance != null ? ItemInventory.Instance.Capacity : 2;
         for (int i = 0; i < _columnBSlots.Count; i++)
         {
@@ -89,6 +100,12 @@ public class BuffDisplayPanel : MonoBehaviour
 
     private void RefreshItemSlots()
     {
+        if (!_columnBVisible) return;
+        if (ActiveSkillInventory.Instance != null && ActiveSkillInventory.Instance.UsesActiveSkills)
+        {
+            RefreshActiveSkillSlots();
+            return;
+        }
         _itemIcons.Clear();
         _iconEntryIds.Clear();
         int capacity = ItemInventory.Instance != null ? ItemInventory.Instance.Capacity : 0;
@@ -156,14 +173,14 @@ public class BuffDisplayPanel : MonoBehaviour
             _itemIcons[entry.id] = slot;
             _iconEntryIds[slot] = entry.id;
 
-            if (entry.isPotion && HealthPotionManager.Instance != null)
+            if (entry.isPotion && HealthPotionManager.Instance != null && HealthPotionManager.Instance.IsEnabledForCurrentRules)
             {
                 HealthPotionManager.Instance.targetSlot = slot.GetComponent<RectTransform>();
                 potionTargetAssigned = true;
             }
         }
 
-        if (!potionTargetAssigned && HealthPotionManager.Instance != null)
+        if (!potionTargetAssigned && HealthPotionManager.Instance != null && HealthPotionManager.Instance.IsEnabledForCurrentRules)
         {
             for (int i = 0; i < capacity && i < _columnBSlots.Count; i++)
             {
@@ -174,6 +191,69 @@ public class BuffDisplayPanel : MonoBehaviour
                     break;
                 }
             }
+        }
+    }
+
+    private void RefreshActiveSkillSlots()
+    {
+        _itemIcons.Clear();
+        _iconEntryIds.Clear();
+        _itemSlotAssignments.Clear();
+
+        var inventory = ActiveSkillInventory.Instance;
+        int capacity = inventory != null ? inventory.Capacity : 0;
+        for (int i = 0; i < _columnBSlots.Count; i++)
+        {
+            var slot = _columnBSlots[i];
+            if (slot == null) continue;
+            slot.OnClicked -= OnItemIconClicked;
+            if (i < capacity)
+            {
+                slot.ShowEmpty(_skillFrame);
+                slot.gameObject.SetActive(true);
+            }
+            else
+            {
+                slot.ResetSlot();
+            }
+        }
+
+        if (inventory == null) return;
+        var entries = inventory.Entries;
+        for (int i = 0; i < entries.Count && i < capacity && i < _columnBSlots.Count; i++)
+        {
+            var entry = entries[i];
+            var slot = _columnBSlots[i];
+            if (slot == null || entry.definition == null) continue;
+            slot.Setup(entry.definition.icon, entry.definition.upgradeId, UpgradeCategory.ActiveSkill, entry.definition.upgradeId);
+            slot.SetFrame(_skillFrame);
+            slot.ClearBadgeNumber();
+            slot.OnClicked += OnItemIconClicked;
+            slot.gameObject.SetActive(true);
+            _itemIcons[entry.id] = slot;
+            _iconEntryIds[slot] = entry.id;
+        }
+        RefreshActiveSkillCooldowns();
+    }
+
+    private void RefreshActiveSkillCooldowns()
+    {
+        var inventory = ActiveSkillInventory.Instance;
+        if (inventory == null || !inventory.UsesActiveSkills) return;
+        foreach (var pair in _itemIcons)
+        {
+            var entry = inventory.GetEntry(pair.Key);
+            if (entry == null) continue;
+            bool coolingDown = entry.cooldownRemaining > 0f;
+            float fill = entry.cooldownDuration > 0f
+                ? 1f - Mathf.Clamp01(entry.cooldownRemaining / entry.cooldownDuration)
+                : 0f;
+            pair.Value.SetCooldown(fill, null, coolingDown);
+            pair.Value.SetInteractable(!coolingDown && !_qteDimmed);
+            if (coolingDown)
+                pair.Value.SetCountdownNumber(Mathf.CeilToInt(entry.cooldownRemaining));
+            else
+                pair.Value.ClearTopRightNumber();
         }
     }
 
@@ -190,7 +270,7 @@ public class BuffDisplayPanel : MonoBehaviour
 
     private void OnUpgradeApplied(UpgradeDefinition def, int newLevel)
     {
-        if (def.category == UpgradeCategory.Item)
+        if (def.category == UpgradeCategory.Item || def.category == UpgradeCategory.ActiveSkill)
         {
             if (_canvasGroup != null) _canvasGroup.alpha = 1f;
             RefreshItemSlots();
@@ -251,6 +331,9 @@ public class BuffDisplayPanel : MonoBehaviour
                 break;
             case "charge_reflect_shield":
                 icon.ClearTopRightNumber();
+                break;
+            case "cooldown_reduction":
+                icon.SetPercentNumber(Mathf.RoundToInt(uem.GetActiveSkillCDReduction() * 100f));
                 break;
             default:
                 icon.ClearTopRightNumber();
@@ -360,12 +443,62 @@ public class BuffDisplayPanel : MonoBehaviour
         }
     }
 
+    public void SetQTEInputLocked(bool locked)
+    {
+        _qteDimmed = locked;
+        if (_canvasGroup == null) return;
+        if (!_columnBVisible)
+        {
+            _canvasGroup.alpha = 1f;
+            _canvasGroup.blocksRaycasts = true;
+            _canvasGroup.interactable = true;
+            return;
+        }
+        _canvasGroup.alpha = locked ? 0.4f : 1f;
+        _canvasGroup.blocksRaycasts = !locked;
+        _canvasGroup.interactable = !locked;
+        RefreshActiveSkillCooldowns();
+    }
+
+    /// <summary>V3 版本切换：控制 ColumnB（道具栏）可见性。ColumnA 始终保留。</summary>
+    public void SetColumnBVisible(bool visible)
+    {
+        _columnBVisible = visible;
+        foreach (var slot in _columnBSlots)
+        {
+            if (slot != null)
+                slot.gameObject.SetActive(visible && slot.IconSprite != null);
+        }
+        // 清空状态时同时清理内部映射
+        if (!visible)
+        {
+            _itemIcons.Clear();
+            _iconEntryIds.Clear();
+            _itemSlotAssignments.Clear();
+            foreach (var slot in _columnBSlots)
+            {
+                if (slot != null)
+                    slot.ResetSlot();
+            }
+        }
+        else
+        {
+            RefreshItemSlots();
+        }
+    }
+
     private void OnItemIconClicked(BuffIcon icon)
     {
+        if (_qteDimmed) return;
         if (DialogueManager.Instance != null && DialogueManager.Instance.IsInteractionBlocked) return;
-        var qte = FindObjectOfType<QTEController>();
-        if (qte != null && qte.IsStrictInputActive) return;
         if (!_iconEntryIds.TryGetValue(icon, out int entryId)) return;
+
+        if (ActiveSkillInventory.Instance != null && ActiveSkillInventory.Instance.UsesActiveSkills)
+        {
+            ActiveSkillInventory.Instance.TryActivate(entryId);
+            return;
+        }
+
         var entry = ItemInventory.Instance.GetEntry(entryId);
         if (entry == null) return;
         string gestureId = entry.GestureId;

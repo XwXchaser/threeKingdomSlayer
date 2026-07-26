@@ -27,12 +27,14 @@ public class WaveEffectPlayer : MonoBehaviour
     private int _damage;
     private float _zStep;
     private HashSet<Enemy> _hitEnemies;
+    private List<Enemy> _pushedEnemies;
 
-    public void Play(Vector3 startPos, int targetRow, int damage, HashSet<Enemy> hitEnemies)
+    public void Play(Vector3 startPos, int targetRow, int damage, HashSet<Enemy> hitEnemies, List<Enemy> pushedEnemies)
     {
         _targetRow = targetRow;
         _damage = damage;
         _hitEnemies = hitEnemies;
+        _pushedEnemies = pushedEnemies;
         _zStep = zMoveTotal / 5f; // 5段移动（5帧切换之间）
 
         transform.position = startPos;
@@ -116,7 +118,7 @@ public class WaveEffectPlayer : MonoBehaviour
         // 轻微击退（视觉效果）
         if (hitEnemies.Count > 0)
         {
-            cm.ApplyPushWave(hitEnemies, 1);
+            cm.ApplyPushWave(hitEnemies, 1, pushedEnemies: _pushedEnemies);
         }
     }
 }

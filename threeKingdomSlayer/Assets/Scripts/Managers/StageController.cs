@@ -224,13 +224,10 @@ public class StageController : MonoBehaviour
         if (ucm != null)
             ucm.OnAllChoicesDone -= OnChoicesDoneSpawnNextWave;
 
-        // 选择完成后补偿补齐并启动波次行军
+        // Choice completion only resumes the cross-column scheduler.
         var cm = FindObjectOfType<ColumnManager>();
         if (cm != null)
         {
-            FillUpRule rule = GetFillUpRule();
-            if (rule == FillUpRule.PerRow)
-                cm.RowBasedFillUp();
             cm.StartWaveMarch();
 
             // Boss 独立补齐：波次行军跳过 Boss，需单独触发

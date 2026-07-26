@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9bf2b0c688767c4792fda72a76ca5ac, type: 3}
+  m_Name: ActiveSkill_ArrowRain
+  m_EditorClassIdentifier: 
+  category: 4
+  upgradeId: active_arrow_rain
+  displayName: "\u7BAD\u96E8"
+  descriptionTemplate: "\u51B7\u5374{0}\u79D2\uFF0C\u5BF9\u524D\u65B9{1}\u6392\u5C04\u51FA{2}\u6CE2\u7BAD\u96E8\uFF0C\u9020\u6210{3}\u70B9\u4F24\u5BB3"
+  extraDescriptionTemplate: 
+  rarity: 1
+  maxLevel: 5
+  effectType: 
+  numericLevels: []
+  floatValue: 0
+  intValue: 0
+  secondaryIntValue: 0
+  stringValue: 
+  baseAttackConfig: {fileID: 0}
+  icon: {fileID: 21300000, guid: bc22156bb31995d4bbf8fa33dc55affe, type: 3}
+  phantomLevels: []
+  timedAoeLevels: []
+  timedArrowLevels:
+  - intervalSeconds: 3
+    triggerThreshold: 0
+    rowCount: 1
+    arrowCount: 3
+    damage: 8
+  - intervalSeconds: 3.5
+    triggerThreshold: 0
+    rowCount: 1
+    arrowCount: 4
+    damage: 10
+  - intervalSeconds: 4
+    triggerThreshold: 0
+    rowCount: 2
+    arrowCount: 5
+    damage: 12
+  - intervalSeconds: 4.5
+    triggerThreshold: 0
+    rowCount: 2
+    arrowCount: 6
+    damage: 14
+  - intervalSeconds: 5
+    triggerThreshold: 0
+    rowCount: 3
+    arrowCount: 7
+    damage: 16
+  returnWaveLevels: []
+  chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeHitShockwaveLevels: []
+  triggerParam: 0
+  phantomSteps: []
+  useCount: 1
+  gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
+  prerequisites: []
+  activeEffectType: 1
+  cooldownLevels:
+  - 14
+  - 13
+  - 12
+  - 11
+  - 10

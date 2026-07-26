@@ -15,10 +15,9 @@ MonoBehaviour:
   resetDelay: 3
   hitIncrementMode: 0
   triggers:
-  - comboThreshold: 10
-    buffId: combo_atk_10
-    duration: 5
-    modifiers:
-    - statId: atk
+  - comboThreshold: 20
+    buffId: combo_damage
+    modifier:
+      statId: atk
       type: 1
-      value: 0.5
+      value: 0.1

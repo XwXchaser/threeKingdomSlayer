@@ -30,6 +30,7 @@ public class WaveManager : MonoBehaviour
     private float _rowSpacing;
     private float _formationZ;
     private HashSet<Enemy> _waveHitEnemies = new HashSet<Enemy>();
+    private readonly List<Enemy> _wavePushedEnemies = new List<Enemy>();
 
     private void Awake()
     {
@@ -92,6 +93,7 @@ public class WaveManager : MonoBehaviour
     private IEnumerator WaveSequence(int startRow, int endRow, int damage)
     {
         _waveHitEnemies.Clear();
+        _wavePushedEnemies.Clear();
         var delay = new WaitForSeconds(rowStaggerDelay);
 
         for (int row = startRow; row <= endRow; row++)
@@ -100,7 +102,7 @@ public class WaveManager : MonoBehaviour
             yield return delay;
         }
 
-        // 等待所有海浪动画完成（5帧 × frameInterval），然后逐列紧凑
+        // Backward-push effects are aggregated so only actually pushed enemies arm exact-slot returns.
         if (wavePrefab != null)
         {
             var player = wavePrefab.GetComponent<WaveEffectPlayer>();
@@ -111,8 +113,8 @@ public class WaveManager : MonoBehaviour
             }
         }
 
-        // Wave 后的补齐：逐排补齐维持阵型
-        AttackSystem.Instance?.columnManager?.RowBasedFillUp();
+        if (_wavePushedEnemies.Count > 0)
+            AttackSystem.Instance?.columnManager?.PostDisplacementFillUp(_wavePushedEnemies);
     }
 
     private void SpawnWaveForRow(int row, int damage)
@@ -124,7 +126,7 @@ public class WaveManager : MonoBehaviour
         var player = go.GetComponent<WaveEffectPlayer>();
         if (player != null)
         {
-            player.Play(spawnPos, row, damage, _waveHitEnemies);
+            player.Play(spawnPos, row, damage, _waveHitEnemies, _wavePushedEnemies);
         }
         else
         {

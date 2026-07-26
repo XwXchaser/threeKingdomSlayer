@@ -9,110 +9,105 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1783434126515
-updatedAt: 1784124635818
+updatedAt: 1784951717383
 ---
 
 # percolumn-fillup-rules
 
 ## Summary
-PerColumn 补齐规则：三条铁律、实现约束及9个已修复坑点（最新：坑点9 PerRow 分支缺少 StartWaveMarch 调用）
+补齐规则权威版：普通补齐只由整排清空触发；击退仅移动并回位被击退者，绝不触发未受击敌人的列内紧凑。
 
 ## Content
-# PerColumn 补齐规则
+# 补齐规则（权威版）
 
-## 三条铁律
+## 术语
 
-### 规则1：波次行军
-波次生成后，所有敌人按配置排列向 row=0 推进。行军是**跨列整排**的——同一排的所有列敌人一起前进，阵型不变。
+- **普通补齐 / 波次行军**：由整排清空触发的跨列移动。
+- **击退**：被命中敌人沿 row 增大的方向后移。
+- **击退回位**：被击退者在停顿后返回自己因击退留下的原槽位。它不是普通补齐，也不是列内紧凑。
+- **横向位移**：敌人只改变 column；除非另有明确设计，不附带 row 方向的回位或补齐。
 
-### 规则2：整排空出才补齐
-仅当某排**所有列**的敌人全部空出（死亡或已前移，不包括 Launched），后排才整体前移一排。若某排仍有至少一个存活（非 Launched）敌人，后方排不前进。阵型空隙得以保留。
+## 规则1：普通补齐只由整排清空触发
 
-- "空出"的定义：该排所有列均无存活（非 Dead）且非 Launched 的敌人。
-- 死亡是规则2的自然结果——全部死亡即整排空出。
-- 攻击范围决定敌人何时停止行军进入攻击，与补齐规则无关。
-- 行军终点为 row=0（最前排）。
+仅当某排在全部列中都没有存活且占位的敌人时，后方排才整体向前移动一排。
 
-### 规则3：仅击退触发列内紧凑
-仅当敌人受到"击退"效果时，触发**列内**紧凑（`CompactByClearRows` / `CompactColumn`）。紧凑完成后，回到规则1/2的波次行军。
+- 同一源排中需要移动的敌人由 `ColumnManager` 统一调度。
+- 某排仍有任意存活敌人时，该排不算清空，后方排不因局部空槽前进。
+- 单列死亡、单列空槽、击退留下的槽位，都不能触发未受影响敌人补位。
+- `Launched` 敌人仍占据原排，不能把该排判空。
+- 攻击范围只决定敌人在当前排攻击还是等待，不会自行创建移动。
 
-- 击退效果：`ApplyPushWave`、`ApplyDirectionalPush` 等位移技能。
-- 击退 → `PostDisplacementFillUp` → `RowBasedFillUp` → 各列紧凑 → 各列 Rush 链 → 链全部结束后启动波次行军。
+## 规则2：敌人是否执行已存在的普通补齐订单
 
-## Boss 排除
-Boss 有独立的补齐规则（`BossPause`/`BossResume`/`IsRowClearForBoss`），不在以上三条规则讨论范围内。
+当整排清空已经产生合法补齐需求后，对各敌人分别判断：
 
-## 击退与补齐的防重叠
-当前击退机制已有防重叠保护：
-1. `CanPushColumn` 三规则检查（尾部阻塞、目标排占用、Boss 墙壁）确保击退前目标位置无敌人。
-2. `pushedToRow` 参数在 `CompactByClearRows` 中保护被推敌人不被立即紧凑回来。
-3. `InsertEnemySorted` 有重叠检测（Warning 级别）。
+- 未进入攻击范围：执行该排的补齐订单。
+- 已进入攻击范围且前方条件不要求移动：留在原位攻击。
+- 正在攻击动画中：先等待当前攻击结束，再重新确认该补齐订单及目标槽仍然有效。
+- 攻击冷却中：可结束冷却并执行合法补齐订单。
+- 眩晕、击飞、QTE等不可移动状态：状态结束后只恢复仍有效的既有订单，不得自行创建订单。
 
-重构后需确保：击退紧凑完成后启动的是**跨列波次行军**而非各列独立推进，避免不同列以不同速度前进导致重叠。
+这不是“整排阵型优先”和“攻击范围优先”的冲突：是否存在补齐需求由整排规则决定；敌人何时执行合法订单由其战斗状态决定。
 
-## 实现约束
-- 旧 `Column` 层 per-column 链式自推进（`OnColumnRushMoveComplete` 末尾的自动重启逻辑，Column.cs:166-188）必须删除。
-- `Column.StartRushMoveChain` 保留为底层机制，但链结束回调改为通知 `ColumnManager`，由 `ColumnManager` 统一决策下一步。
-- `ColumnManager` 新增波次行军协调器：`StartWaveMarch`、`AbortWaveMarch`、`OnWaveMarchRushComplete`。
-- `Column.RemoveEnemy` 不再做 compact（移除列表压缩逻辑），仅移除敌人。
-- `Column.TriggerFillForward` 废弃，由 `ColumnManager.StartWaveMarch` 替代。
-- `WaveSpawner` 波次生成后调用 `ColumnManager.StartWaveMarch()` 而非逐列 `TriggerFillForward`。
+## 规则3：击退只影响被击退者
 
----
+击退不得触发列内压实，也不得让未受击敌人移动。
 
-## 本次对话发现的坑点 (2025-01)
+流程：
 
-### 坑点1: TriggerFillForward 自循环导致刷波阵型全毁
-- 症状：刷波时敌人从 row=2+ 被循环推进到 row=0，阵型完全破坏
-- 根因：`TriggerFillForward` 的链回调 `OnFillForwardChainComplete` 自递归调用自身，刷波调用点（只需前进1排）和死亡压实后调用点（需要循环填补）语义不同
-- 教训：**不要用一个自循环方法同时服务「单步前移」和「循环填补」两种语义**
+1. 记录每个被击退者的原始 `(column,row)` 槽位。
+2. 检查目标槽、尾部阻塞和Boss墙；任一条件不合法则对应击退失败。
+3. 命中结算：若敌人正在可打断攻击阶段且无霸体/CFrame，则先打断攻击；已经生成的飞射物继续独立飞行。
+4. 被击退者移动到目标排并短暂停留。
+5. 停顿结束后，只由该被击退者尝试返回自己记录的原槽位。
+6. 原槽位仍合法且未被占用时回位；若暂不可回位，则保留等待或重新评估，不得把空位传递给其他敌人。
+7. 未受击敌人保持原位。击退事务本身不得无条件启动全局普通补齐。
 
-### 坑点2: 移除前移调用而不提供替代 → 敌人永远不前进
-- 症状：敌人出生在 row=2+ 后永远不向前移动，永远打不到
-- 根因：刷波后敌人需要某种机制向前推进到攻击范围。`CompactColumn` 只在死亡时压实空隙，不处理初始推进
-- 教训：**移除前移调用时必须同时提供替代的推进机制**
+示例：`A(row0,col0)` 被推到 `row1,col0`，`E(row2,col0)` 未受击。正确结果是A回到原来的 `row0,col0`，E始终不动。
 
-### 坑点3: StartWaveMarch 已实现但无调用点
-- `ColumnManager.StartWaveMarch()` 及 `BeginWaveStep`、`OnWaveEnemyRushComplete` 级联逻辑已完整实现
-- 但当前代码库中**无任何地方调用 `StartWaveMarch()`**
-- 设计文档规定刷波后和击退紧凑后应调用它
+## 规则4：横向位移与击退分离
 
-### 坑点4: Boss 被 TriggerFillForward 推到前排过早进入 InCombat
-- 旧版 `TriggerFillForward` 设置 `targetRow = 0` 强制 Boss 冲到最前排
-- Boss 到达 row ≤ 1 后触发应战缓冲计时器 → InCombat → 可被伤害
-- 根因：Boss 不应参与普通敌人的补齐/行军链
+`ApplyDirectionalPush`、聚拢等改变 column 的效果不是向后击退：
 
-### 坑点5: 设计文档与用户指令的矛盾
-- 本文档规定：波次行军是跨列整排的（StartWaveMarch），TriggerFillForward 已废弃
-- 用户近期指令：每列独立，不跨列
-- 这两个要求在当前实现中互斥——需要用户明确选择
+- 只移动实际命中的敌人。
+- 不触发其他敌人的 row 补齐。
+- 不应共用“向前一排 rejoin”逻辑。
+- 目标槽必须防重叠；冲突按该位移效果自己的裁决规则处理。
 
-### 坑点6: 击退后紧凑延迟位置错误 —— 距离=1 时无可见延迟（2025-01）
-- 症状：击退距离=1，敌人被击退后立刻 Rush 回原位，无停顿
-- 根因（两层）：
-  1. `compactionWaveMarchDelay` 放在 `OnCompactionChainComplete` → `StartWaveMarch` 之间，但 Rush 补齐动画发生在紧凑链阶段（`StartAllCompactionChains`）。修复：将 `Invoke` 移到 `RowBasedFillUp` 之后
-  2. `RecheckAttackRange`（由 `RecheckPushedEnemiesAttackRange` 调用）内部调用 `StartMoving(isRush: true)`，完全绕过了延迟。修复：移除 `RecheckAttackRange` else 分支的 `StartMoving`，仅设置 `targetRow` + `pendingRushMove`
-- 教训：**补齐流程中任何方法若内部会 `StartMoving`，必须确认它不会绕过 ColumnManager 的延迟/链调度**
+## Boss
 
-### 坑点7: Boss 补齐入口 TriggerAllBossFillForward 零调用者（2025-01）
-- 症状：Boss 在远处不向前补齐
-- 根因：重构时将 Boss 补齐触发从 `TriggerFillForward` 提取为独立方法 `TriggerBossFillForward`，但废弃旧入口后未为 `TriggerAllBossFillForward` 添加新调用点
-- 教训：**提取方法到新入口时，grep 确认新入口有调用者，旧入口的每个调用点都已迁移**
+Boss使用独立推进规则，不参与普通敌人的击退回位和补齐订单。
 
-### 坑点8: 多排秒杀后 _pendingWaveEnemies 死锁（2025-01）
-- 症状：同时击杀多排敌人后，后排原地不动永不补齐
-- 根因：阵亡敌人仍在 `_pendingWaveEnemies` 中，`OnWaveEnemyRushComplete` 永不触发 → `_pendingWaveEnemies.Count` 永远 > 0 → `_isWaveMarching` 永久 true → `StartWaveMarch` 死锁
-- 修复：`RemoveEnemyFromColumn` 中清理死亡敌人出 `_pendingWaveEnemies`，并重置标记
-- 教训：**任何持有敌人引用的集合，在敌人死亡时都必须同步清理，否则状态机永久卡死**
+## 调度约束
 
-### 坑点9: PerRow 分支缺少 StartWaveMarch 调用和 _pendingWaveEnemies 清理（2025-01）
-- 症状：PerRow 模式下单一排敌人被一次性击杀后，后排敌人不补齐
-- 根因：PerRow 分支只调用 `RowBasedFillUp()`（数据压缩），未调用 `StartWaveMarch()`（启动移动），且缺少 `_pendingWaveEnemies` 清理（与坑点8同模式）
-- 修复：将 `_pendingWaveEnemies` 清理和 `RemoveEnemy` 提取到两个分支共用，PerRow 分支在 `RowBasedFillUp()` 后调用 `StartWaveMarch()`
-- 教训：**修改 PerColumn 分支时，必须同步检查 PerRow 分支是否需要相同修复**
+- `ColumnManager` 是普通补齐和击退回位订单的唯一创建者。
+- 订单必须带 owner、generation 和精确目标槽；旧回调不能推进新订单。
+- 禁止把 `pendingRushMove` / `targetRow` 当作跨系统共享消息总线。
+- 禁止敌人根据攻击范围、计时器、眩晕恢复或落地自行创建移动。
+- 普通补齐、击退回位、横向位移、Boss推进必须使用不同调度语义。
 
-### 坑点10：波次补齐中断攻击动作（2025-01）
-- 症状：105/106 等远程敌人在蓄力或射箭时，前方整排空出会被立即打断并补位。
-- 根因：`ColumnManager.BeginWaveStep()` 无条件调用 `ResetMovementState()`，其会 Kill `_attackTween`。
-- 修复：对 `isAttackAnimating` 敌人仅标记 `targetRow` 和 `pendingRushMove`；攻击的正常完成回调再调用 `TryStartRushMove()`。攻击冷却仍允许取消并补齐；眩晕、击飞、死亡等打断沿既有状态路径处理。
-- 教训：波次补齐只能延后攻击动作结束后的移动，不能取消已经开始的攻击表现或命中。
+## 已废弃的错误描述
+
+以下旧规则全部作废：
+
+- “仅击退触发列内紧凑”。
+- “击退后按列把所有存活敌人压到 row 0,1,2…”。
+- “被击退者回位后，空位继续传递给后��未受击敌人”。
+- “击退结束后无条件调用 `StartWaveMarch()`”。
+- “攻击中的敌人一律不能被伤害打断”。
+- “横向位移与向后击退共用 rejoin”。
+
+## 当前实现校验
+
+- `ColumnManager.StartWaveMarch()` 仅在检测到全局空排且后一排有存活占位敌人时创建 WaveMarch 步骤。
+- `BeginWaveStep()` 不得按 `attackRange` 过滤源排成员；合法整排补齐需求一旦成立，源排所有合格普通敌人都应获得同 owner/generation/目标排的订单。
+- 攻击动画中的敌人保留订单并等待收招；攻击结束回调只恢复已有订单，不负责创建订单。
+- 攻击冷却、眩晕恢复、击飞落地和QTE结束只能执行已有订单，不能自行推导补齐需求。
+- 击退回位使用精确原槽事务；旧列压实兼容入口保持 inert，不能作为普通补齐入口。
+
+## 本次缺陷与修复
+
+- 症状：105远程敌人在row2已处于 `attackRange=3` 内，前方整排清空后仍持续远程攻击，攻击结束也不补齐。
+- 根因：旧实现于 `BeginWaveStep()` 使用 `rowIndex < attackRange` 跳过订单创建，导致105从未获得 WaveMarch 订单；`Enemy` 的攻击完成回调遵守所有权规则，只会恢复已有订单。
+- 修复：移除订单创建阶段的攻击范围过滤。现在攻击范围不再否决整排补齐需求，攻击中的敌人会完成当前攻击后执行已持有订单。
+- 验证：Unity完整重编译成功；用户回归测试暂未发现问题。

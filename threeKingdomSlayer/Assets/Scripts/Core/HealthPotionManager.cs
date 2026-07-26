@@ -83,6 +83,8 @@ public class HealthPotionManager : MonoBehaviour
         OnPotionCountChanged?.Invoke(0);
     }
 
+    public bool IsEnabledForCurrentRules => ActiveSkillInventory.Instance == null || !ActiveSkillInventory.Instance.UsesActiveSkills;
+
     /// <summary>尝试使用一个血包。成功返回 true。</summary>
     public bool TryUsePotion()
     {
@@ -99,6 +101,7 @@ public class HealthPotionManager : MonoBehaviour
 
     private void OnEnemyDied(Enemy enemy)
     {
+        if (ActiveSkillInventory.Instance != null && ActiveSkillInventory.Instance.UsesActiveSkills) return;
         if (enemy == null) return;
         if (PotionCount >= maxStack) return; // 已达上限，不投骰
         if (ItemInventory.Instance == null || !ItemInventory.Instance.CanAddPotion()) return;

@@ -21,6 +21,12 @@ public enum QTEState
     QTECompleted
 }
 
+public enum QTEInputRule
+{
+    LegacyPassThrough,
+    Strict
+}
+
 public class QTEInstance
 {
     public QTEConfig config;
@@ -31,6 +37,8 @@ public class QTEInstance
     public bool resolved;
     public bool success;
     public bool judgmentStarted;  // 判定窗口已开始（用于通知 QTEDisplay）
+    public bool earlyInputFailed; // Strict 输入已锁定失败，但等待该段攻击演出完成后再结算
+    public bool failureFeedbackShown; // 失败图案和指示器退场已即时播放
 
     public bool IsInJudgeWindow(float phaseElapsed) => phaseElapsed >= warningEndTime && phaseElapsed <= judgeEndTime;
     public bool IsExpired(float phaseElapsed) => phaseElapsed > judgeEndTime && !resolved;
@@ -45,6 +53,9 @@ public class QTEController : MonoBehaviour
     [Header("配置")]
     public BossQTEData qteData;
     public ArrowGlobalConfig arrowConfig;
+
+    [Header("输入规则")]
+    [SerializeField] private QTEInputRule _inputRule = QTEInputRule.LegacyPassThrough;
 
     [Header("格挡表现")]
     [Tooltip("格挡成功时生成的矛 prefab（stab_prefab）")]
@@ -85,6 +96,7 @@ public class QTEController : MonoBehaviour
     private QTEAttackConfig _currentAttack;
     private List<QTEInstance> _activeQTEs = new List<QTEInstance>();
     private GameObject _activeProjectile;
+    private int _qteGeneration;
 
     // 箭矢波追踪（多段防御型 QTE）：slotIndex → 该波所有箭矢
     private readonly Dictionary<int, List<EnemyProjectile>> _arrowWaves = new Dictionary<int, List<EnemyProjectile>>();
@@ -94,6 +106,8 @@ public class QTEController : MonoBehaviour
     // QTE 动画
     private Animator _animator;
     private bool _judgingSpeedApplied;   // Branched 模式下是否已对 Happen 应用慢放速度
+    private bool _strictInputLockApplied;
+    private bool _failureDamagePending;
 
     // 事件
     public System.Action OnQTETriggered;       // QTE 攻击触发
@@ -104,7 +118,18 @@ public class QTEController : MonoBehaviour
 
     public QTEState State => _state;
     public QTEAttackConfig CurrentAttackConfig => _currentAttack;
-    public bool IsStrictInputActive => _state == QTEState.PerformingQTEAttack || _state == QTEState.QTEJudging;
+    public QTEInputRule InputRule => _inputRule;
+    public bool UsesStrictInputRule => _inputRule == QTEInputRule.Strict;
+    public bool IsStrictInputActive => UsesStrictInputRule && IsQTEActive;
+
+    public void SetInputRule(QTEInputRule inputRule)
+    {
+        if (_inputRule == inputRule) return;
+        SetStrictInputLock(false);
+        _inputRule = inputRule;
+        if (UsesStrictInputRule && IsQTEActive)
+            SetStrictInputLock(true);
+    }
 
     private void Awake()
     {
@@ -122,10 +147,34 @@ public class QTEController : MonoBehaviour
         }
     }
 
+    private void OnDisable()
+    {
+        if (_state == QTEState.Idle && !_strictInputLockApplied) return;
+        CleanupDisabledQTE();
+    }
+
     private void OnDestroy()
     {
+        CleanupDisabledQTE();
+    }
+
+    private void CleanupDisabledQTE()
+    {
+        _qteGeneration++;
+        SetStrictInputLock(false);
         KillProjectileSequence();
+        if (_activeProjectile != null)
+        {
+            Destroy(_activeProjectile);
+            _activeProjectile = null;
+        }
         ClearAllArrowWaves();
+        if (_animator != null) _animator.speed = 1f;
+        if (qteDisplay != null) qteDisplay.ClearAllIndicators();
+        _activeQTEs.Clear();
+        _currentAttack = null;
+        _qtePhaseStarted = false;
+        _state = QTEState.Idle;
     }
 
     private void Update()
@@ -163,12 +212,34 @@ public class QTEController : MonoBehaviour
     /// </summary>
     public void SwitchQteData(BossQTEData newData)
     {
-        ClearAllArrowWaves();
+        if (IsQTEActive && enemy != null && enemy.state == EnemyState.QTEAttacking)
+            AbortQTE();
+        else
+            CleanupInactiveQTE();
+
         qteData = newData;
         _currentAttackIndex = 0;
-        _state = QTEState.Idle;
-        _activeQTEs.Clear();
         DebugLog.Info($"[QTEController] 切换QTE数据: {newData?.name}, state={_state}");
+    }
+
+    private void CleanupInactiveQTE()
+    {
+        _qteGeneration++;
+        SetStrictInputLock(false);
+        KillProjectileSequence();
+        if (_activeProjectile != null)
+        {
+            Destroy(_activeProjectile);
+            _activeProjectile = null;
+        }
+        ClearAllArrowWaves();
+        if (_animator != null) _animator.speed = 1f;
+        if (qteDisplay != null) qteDisplay.ClearAllIndicators();
+        _activeQTEs.Clear();
+        _currentAttack = null;
+        _currentQTEIndex = 0;
+        _qtePhaseStarted = false;
+        _state = QTEState.Idle;
     }
 
     /// <summary>
@@ -195,6 +266,7 @@ public class QTEController : MonoBehaviour
         }
 
         _currentAttack = qteData.qteAttacks[_currentAttackIndex];
+        _qteGeneration++;
         DebugLog.Info($"[QTEController] 当前攻击: {_currentAttack?.name}, slots={_currentAttack?.qteSlots?.Count}, useMultiPhase={_currentAttack?.UseMultiPhaseAnimation}, useBranched={_currentAttack?.UseBranchedAnimation}");
         _state = QTEState.PerformingQTEAttack;
         _performingTimer = 0f;
@@ -229,6 +301,7 @@ public class QTEController : MonoBehaviour
         ClearAllArrowWaves();
         _arrowWavesSpawned = false;
         _fixedEndTimer = -1f;
+        _failureDamagePending = false;
         _judgingSpeedApplied = false;  // Branched 慢放标记重置
 
         // 顺序单槽模式不再预先计算三个并列slot的总时长；每段按自身警示/判定结束。
@@ -244,7 +317,32 @@ public class QTEController : MonoBehaviour
             SpawnProjectile();
 
         OnQTETriggered?.Invoke();
+        if (UsesStrictInputRule)
+        {
+            if (qteDisplay == null)
+                qteDisplay = UnityEngine.Object.FindObjectOfType<QTEDisplay>();
+            qteDisplay?.ShowStrictModePrompt();
+        }
+        SetStrictInputLock(true);
         return true;
+    }
+
+    private void SetStrictInputLock(bool locked)
+    {
+        if (_inputRule != QTEInputRule.Strict || _strictInputLockApplied == locked) return;
+        _strictInputLockApplied = locked;
+        if (locked)
+            ComboManager.Instance?.Freeze();
+        else
+            ComboManager.Instance?.Resume();
+        SetBuffDisplayLocked(locked);
+    }
+
+    private static void SetBuffDisplayLocked(bool locked)
+    {
+        var panels = FindObjectsOfType<BuffDisplayPanel>();
+        for (int i = 0; i < panels.Length; i++)
+            panels[i].SetQTEInputLocked(locked);
     }
 
     private void SpawnProjectile()
@@ -255,26 +353,29 @@ public class QTEController : MonoBehaviour
         EnemyProjectileVisualPriority.Apply(_activeProjectile);
         _activeProjectile.transform.position = enemy.transform.position;
 
-        var projectile = _activeProjectile.GetComponent<QTEProjectile>();
+        int generation = _qteGeneration;
+        var spawnedProjectile = _activeProjectile;
+        var projectile = spawnedProjectile.GetComponent<QTEProjectile>();
         if (projectile != null)
         {
             Vector3 targetPos = GetProjectileTargetPosition();
-            projectile.Initialize(_currentAttack.projectileFlightTime, targetPos, OnProjectileReachedTarget);
+            projectile.Initialize(_currentAttack.projectileFlightTime, targetPos, () => OnProjectileReachedTarget(generation));
         }
         else
         {
             // 无 QTEProjectile 组件的普通 prefab：直接飞过去
             Vector3 targetPos = GetProjectileTargetPosition();
-            _activeProjectile.transform.DOMove(targetPos, _currentAttack.projectileFlightTime)
+            spawnedProjectile.transform.DOMove(targetPos, _currentAttack.projectileFlightTime)
                 .SetEase(Ease.Linear)
                 .SetUpdate(UpdateType.Normal, false)
                 .OnComplete(() =>
                 {
-                    OnProjectileReachedTarget();
-                    if (_activeProjectile != null)
+                    OnProjectileReachedTarget(generation);
+                    if (spawnedProjectile != null)
                     {
-                        Destroy(_activeProjectile);
-                        _activeProjectile = null;
+                        Destroy(spawnedProjectile);
+                        if (_activeProjectile == spawnedProjectile)
+                            _activeProjectile = null;
                     }
                 });
         }
@@ -287,8 +388,9 @@ public class QTEController : MonoBehaviour
         return new Vector3(0, 1.5f, zPos);
     }
 
-    private void OnProjectileReachedTarget()
+    private void OnProjectileReachedTarget(int generation)
     {
+        if (generation != _qteGeneration || !IsQTEActive) return;
         StartQTEPhase();
     }
 
@@ -297,8 +399,31 @@ public class QTEController : MonoBehaviour
         if (_qtePhaseStarted) return;
         _qtePhaseStarted = true;
         _qtePhaseTimer = 0f;
-        _currentQTEIndex = 0;
-        _nextQTEStartTime = _activeQTEs.Count > 0 ? _activeQTEs[0].spawnTime : 0f;
+        _fixedEndTimer = _currentAttack != null && _currentAttack.fixedQteDuration > 0f
+            ? _currentAttack.fixedQteDuration
+            : -1f;
+        _nextQTEStartTime = _currentQTEIndex < _activeQTEs.Count
+            ? _activeQTEs[_currentQTEIndex].spawnTime
+            : 0f;
+    }
+
+    private bool CanEndQTEPhase()
+    {
+        if (_fixedEndTimer >= 0f && _qtePhaseTimer < _fixedEndTimer)
+            return false;
+
+        if (_currentAttack == null || !_currentAttack.isDefensiveQTE)
+            return true;
+
+        foreach (var wave in _arrowWaves.Values)
+        {
+            for (int i = 0; i < wave.Count; i++)
+            {
+                if (wave[i] != null)
+                    return false;
+            }
+        }
+        return _arrowLaunchDelays.Count == 0;
     }
 
     private void KillProjectileSequence()
@@ -548,23 +673,40 @@ public class QTEController : MonoBehaviour
         _qtePhaseTimer += Time.deltaTime;
         if (_currentQTEIndex >= _activeQTEs.Count)
         {
-            StartQTEEndingPhase();
+            if (CanEndQTEPhase())
+                StartQTEEndingPhase();
             return;
         }
 
         var qte = _activeQTEs[_currentQTEIndex];
         if (qte.indicator == null && _qtePhaseTimer >= _nextQTEStartTime)
         {
-            // 图案一开始出现就进入判定窗口；滑入只是判定窗口内的视觉入场。
-            qte.warningEndTime = _qtePhaseTimer;
-            qte.judgeEndTime = qte.warningEndTime + qte.config.judgeWindow;
-            SpawnQTEIndicator(qte);
+            if (!qte.earlyInputFailed)
+                SpawnQTEIndicator(qte);
 
-            // 箭矢与当前段同时开始飞行，并在判定窗口结束时到达玩家。
-            // 这样玩家完整拥有 judgeWindow 的可见反应时间。
-            SpawnArrowWaveForSlot(_currentQTEIndex, qte.config.judgeWindow);
-            qte.judgmentStarted = true;
+            if (UsesStrictInputRule && qteDisplay != null)
+            {
+                // 落位前仅用于阶段2失败的预计结束时刻；实际落位时会以真实时刻重设完整窗口。
+                qte.warningEndTime = _qtePhaseTimer + qteDisplay.slideInDuration;
+                qte.judgeEndTime = qte.warningEndTime + qte.config.judgeWindow;
+                qte.judgmentStarted = false;
+            }
+            else
+            {
+                // V1 保持图案生成即进入判定。
+                qte.warningEndTime = _qtePhaseTimer;
+                qte.judgeEndTime = qte.warningEndTime + qte.config.judgeWindow;
+                qte.judgmentStarted = true;
+            }
+
+            // 严格模式的箭矢飞行覆盖图案入场和完整判定窗口。
+            SpawnArrowWaveForSlot(_currentQTEIndex, qte.judgeEndTime - _qtePhaseTimer);
             _state = QTEState.QTEJudging;
+
+            if (qte.earlyInputFailed)
+            {
+                DebugLog.Info($"[QTEController] 提前失败段按原时序演出 idx={_currentQTEIndex}, end={qte.judgeEndTime:F2}");
+            }
         }
     }
 
@@ -573,11 +715,14 @@ public class QTEController : MonoBehaviour
         _qtePhaseTimer += Time.deltaTime;
         if (_currentQTEIndex >= _activeQTEs.Count)
         {
-            StartQTEEndingPhase();
+            if (CanEndQTEPhase())
+                StartQTEEndingPhase();
             return;
         }
 
         var qte = _activeQTEs[_currentQTEIndex];
+        TryOpenStrictJudgmentWindow(qte);
+
         if (!_judgingSpeedApplied && _currentAttack != null && _currentAttack.UseBranchedAnimation && _animator != null && qte.judgmentStarted)
         {
             _judgingSpeedApplied = true;
@@ -586,6 +731,12 @@ public class QTEController : MonoBehaviour
         }
 
         CheckJudgmentStart();
+        if (qte.earlyInputFailed)
+        {
+            if (_qtePhaseTimer > qte.judgeEndTime)
+                ResolveQTE(qte, false);
+            return;
+        }
         if (!qte.resolved && qte.IsExpired(_qtePhaseTimer))
             ResolveQTE(qte, false);
     }
@@ -607,23 +758,26 @@ public class QTEController : MonoBehaviour
         if (_currentAttack != null && _currentAttack.UseBranchedAnimation)
         {
             if (_animator == null) _animator = GetComponent<Animator>();
-            if (_animator != null)
+            if (_animator == null)
             {
-                if (playerBlocked)
-                {
-                    // 加速播完剩余 Happen 帧，然后切到 Blocked
-                    _animator.speed = 3f;
-                    float accelerateWindow = 0.12f; // ~3-4 帧的加速时间
-                    StartCoroutine(TriggerBlockedAfterAcceleration(accelerateWindow));
-                }
-                else
-                {
-                    // 失败：立即切到 Hit
-                    _animator.speed = 1f;
-                    _animator.SetTrigger("QTEHit");
-                }
-                endClipLength = _currentAttack.branchedResultDuration > 0f ? _currentAttack.branchedResultDuration : float.MaxValue;
+                CompleteQTEAttack();
+                return;
             }
+
+            if (playerBlocked)
+            {
+                // 加速播完剩余 Happen 帧，然后切到 Blocked
+                _animator.speed = 3f;
+                float accelerateWindow = 0.12f; // ~3-4 帧的加速时间
+                StartCoroutine(TriggerBlockedAfterAcceleration(accelerateWindow, _qteGeneration));
+            }
+            else
+            {
+                // 失败：立即切到 Hit
+                _animator.speed = 1f;
+                _animator.SetTrigger("QTEHit");
+            }
+            endClipLength = _currentAttack.branchedResultDuration > 0f ? _currentAttack.branchedResultDuration : float.MaxValue;
         }
         else
         {
@@ -639,11 +793,14 @@ public class QTEController : MonoBehaviour
             CompleteQTEAttack();
             return;
         }
+
+        DebugLog.Info($"[QTEController] 进入QTE收尾: resultDuration={endClipLength:F2}");
     }
 
-    private System.Collections.IEnumerator TriggerBlockedAfterAcceleration(float delay)
+    private System.Collections.IEnumerator TriggerBlockedAfterAcceleration(float delay, int generation)
     {
         yield return new WaitForSeconds(delay);
+        if (generation != _qteGeneration || _state != QTEState.QTEEnding) yield break;
         if (_animator != null)
         {
             _animator.SetTrigger("QTEBlocked");
@@ -671,8 +828,23 @@ public class QTEController : MonoBehaviour
 
         if (_endAnimTimer >= endClipLength)
         {
+            DebugLog.Info($"[QTEController] QTE收尾兜底完成: elapsed={_endAnimTimer:F2}");
             CompleteQTEAttack();
         }
+    }
+
+    private bool TryOpenStrictJudgmentWindow(QTEInstance qte)
+    {
+        if (!UsesStrictInputRule || qte == null || qte.judgmentStarted || qte.indicator == null || qteDisplay == null)
+            return qte != null && qte.judgmentStarted;
+        if (!qteDisplay.HasLanded(qte.indicator))
+            return false;
+
+        qte.warningEndTime = _qtePhaseTimer;
+        qte.judgeEndTime = _qtePhaseTimer + qte.config.judgeWindow;
+        qte.judgmentStarted = true;
+        DebugLog.Info($"[QTEController] 严格模式图案落位，开始判定 idx={_currentQTEIndex}, end={qte.judgeEndTime:F2}");
+        return true;
     }
 
     public bool IsQTEActive
@@ -686,21 +858,28 @@ public class QTEController : MonoBehaviour
 
     public bool TryStrictInput(Vector2 startScreenPos, Vector2 releaseScreenPos, bool isSwiped, float swipeDistance, float pressDuration)
     {
-        if (!IsStrictInputActive || _currentQTEIndex >= _activeQTEs.Count)
+        // Strict 模式在整个 QTE 生命周期内吞掉战斗手势；收尾或已结算时不再回退为普通攻击。
+        if (!IsStrictInputActive)
             return false;
+        if (_currentQTEIndex >= _activeQTEs.Count)
+            return true;
 
         var qte = _activeQTEs[_currentQTEIndex];
-        if (qte.resolved) return false;
+        if (qte.resolved || qte.earlyInputFailed) return true;
 
-        if (!_qtePhaseStarted)
+        if (!_qtePhaseStarted || qte.indicator == null)
+            return true;
+
+        if (!qte.judgmentStarted && !TryOpenStrictJudgmentWindow(qte))
         {
-            if (MatchesQTEGestureType(qte.config, isSwiped))
-            {
-                DebugLog.Info($"[QTEController] 严格模式提前输入失败 idx={_currentQTEIndex}");
-                ResolveQTE(qte, false);
-            }
+            qte.earlyInputFailed = true;
+            DebugLog.Info($"[QTEController] 严格模式图案入场期间输入失败 idx={_currentQTEIndex}");
+            ShowImmediateFailureFeedback(qte);
             return true;
         }
+
+        if (!qte.IsInJudgeWindow(_qtePhaseTimer))
+            return true;
 
         bool success = false;
         if (isSwiped)
@@ -716,8 +895,9 @@ public class QTEController : MonoBehaviour
 
         if (!success && !qte.resolved)
         {
-            DebugLog.Info($"[QTEController] 严格模式错误输入失败 idx={_currentQTEIndex}");
-            ResolveQTE(qte, false);
+            DebugLog.Info($"[QTEController] 严格模式错误输入锁定失败 idx={_currentQTEIndex}");
+            qte.earlyInputFailed = true;
+            ShowImmediateFailureFeedback(qte);
         }
         return true;
     }
@@ -725,6 +905,27 @@ public class QTEController : MonoBehaviour
     private static bool MatchesQTEGestureType(QTEConfig config, bool isSwiped)
     {
         return config != null && (config.qteType == QTEType.Swipe) == isSwiped;
+    }
+
+    private void ShowImmediateFailureFeedback(QTEInstance qte)
+    {
+        if (qte == null || qte.failureFeedbackShown) return;
+        qte.failureFeedbackShown = true;
+
+        if (qteDisplay == null)
+            qteDisplay = UnityEngine.Object.FindObjectOfType<QTEDisplay>();
+        if (qteDisplay == null) return;
+
+        if (qte.indicator != null)
+        {
+            qteDisplay.FlashIndicatorFailure(qte.indicator);
+            qteDisplay.ShowQTEResult(qte.indicator, false);
+            qte.indicator = null;
+        }
+        else
+        {
+            qteDisplay.ShowResultFeedback(false);
+        }
     }
 
     public bool TryQTEClick(Vector2 screenPos)
@@ -862,12 +1063,13 @@ public class QTEController : MonoBehaviour
     /// </summary>
     private void CheckJudgmentStart()
     {
-        foreach (var qte in _activeQTEs)
+        if (!UsesStrictInputRule)
         {
-            if (qte.resolved || qte.judgmentStarted) continue;
-            if (_qtePhaseTimer >= qte.warningEndTime && qte.indicator != null)
+            foreach (var qte in _activeQTEs)
             {
-                qte.judgmentStarted = true;
+                if (qte.resolved || qte.judgmentStarted) continue;
+                if (_qtePhaseTimer >= qte.warningEndTime && qte.indicator != null)
+                    qte.judgmentStarted = true;
             }
         }
     }
@@ -888,7 +1090,7 @@ public class QTEController : MonoBehaviour
     {
         if (qteDisplay == null)
         {
-            qteDisplay = FindObjectOfType<QTEDisplay>();
+            qteDisplay = UnityEngine.Object.FindObjectOfType<QTEDisplay>();
             if (qteDisplay == null)
             {
                 Debug.LogWarning("[QTEController] 未找到 QTEDisplay");
@@ -917,17 +1119,14 @@ public class QTEController : MonoBehaviour
         else
         {
             OnQTEFailureSingle(qte);
-            if (_currentAttack != null && !_currentAttack.isDefensiveQTE && PlayerState.Instance != null)
-            {
-                PlayerState.Instance.TakeDamage(qte.config.failureDamage);
-                DebugLog.Info($"[QTEController] QTE失败伤害即时结算: {qte.config.failureDamage:F0}");
-            }
+            if (_currentAttack != null && !_currentAttack.isDefensiveQTE)
+                _failureDamagePending = true;
             if (qteDisplay != null && qte.indicator != null)
                 qteDisplay.FlashIndicatorFailure(qte.indicator);
         }
 
-        // 通知 QTEDisplay 播放结果特效
-        if (qteDisplay != null && qte.indicator != null)
+        // 通知 QTEDisplay 播放结果特效；提前/错误输入已即时播放失败反馈时不重复。
+        if (qteDisplay != null && qte.indicator != null && !qte.failureFeedbackShown)
             qteDisplay.ShowQTEResult(qte.indicator, success);
 
         if (_currentQTEIndex < _activeQTEs.Count && _activeQTEs[_currentQTEIndex] == qte)
@@ -980,6 +1179,25 @@ public class QTEController : MonoBehaviour
 
     #region Sweep 动画回调
 
+    public void OnSweepFailureHit()
+    {
+        if (_state != QTEState.QTEEnding) return;
+        ApplyPendingFailureDamage();
+    }
+
+    private void ApplyPendingFailureDamage()
+    {
+        if (!_failureDamagePending) return;
+
+        _failureDamagePending = false;
+        float damage = _activeQTEs.Find(qte => qte.resolved && !qte.success)?.config.failureDamage ?? 0f;
+        if (damage > 0f && PlayerState.Instance != null)
+        {
+            PlayerState.Instance.TakeDamage(damage);
+            DebugLog.Info($"[QTEController] QTE失败伤害结算: {damage:F0}");
+        }
+    }
+
     /// <summary>
     /// 由 End2 AnimationEvent 回调，通知 QTE 结果动画播放完毕
     /// </summary>
@@ -987,6 +1205,7 @@ public class QTEController : MonoBehaviour
     {
         if (_state == QTEState.QTEEnding)
         {
+            ApplyPendingFailureDamage();
             DebugLog.Info("[QTEController] OnSweepResultAnimationEnd → CompleteQTEAttack");
             CompleteQTEAttack();
         }
@@ -1103,6 +1322,7 @@ public class QTEController : MonoBehaviour
     /// </summary>
     public void AbortQTE()
     {
+        _qteGeneration++;
         // 清理飞行物
         if (_activeProjectile != null)
         {
@@ -1123,6 +1343,7 @@ public class QTEController : MonoBehaviour
 
         _activeQTEs.Clear();
         _state = QTEState.Idle;
+        SetStrictInputLock(false);
 
         // BUG FIX: AbortQTE 需要确保 BOSS 设置冷却并回到 Idle，否则下一帧立即重新触发 QTE
         enemy.ExitQTEAttack();
@@ -1133,6 +1354,8 @@ public class QTEController : MonoBehaviour
 
     private void CompleteQTEAttack()
     {
+        ApplyPendingFailureDamage();
+        SetStrictInputLock(false);
         _state = QTEState.QTECompleted;
 
         bool isDefensive = _currentAttack != null && _currentAttack.isDefensiveQTE;

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using DG.Tweening;
 
 /// <summary>
@@ -37,6 +38,21 @@ public class QTEDisplay : MonoBehaviour
     [Tooltip("结果特效持续时间")]
     public float resultEffectDuration = 0.5f;
 
+    [Header("结果反馈")]
+    [Tooltip("QTE 成功结果图")]
+    public Sprite successResultSprite;
+    [Tooltip("QTE 失败结果图")]
+    public Sprite failureResultSprite;
+    [Tooltip("结果图显示总时长（秒）")]
+    [SerializeField] private float resultFeedbackDuration = 0.42f;
+    [Tooltip("结果图在 QTE 图案右侧的偏移（像素）")]
+    [SerializeField] private float resultFeedbackOffsetX = 175f;
+
+    [Header("严格模式提示")]
+    [SerializeField] private TMP_Text _strictModePrompt;
+    [SerializeField] private float _strictModePromptDuration = 0.45f;
+    private Tween _strictModePromptTween;
+
     private class IndicatorState
     {
         public GameObject gameObject;
@@ -56,6 +72,8 @@ public class QTEDisplay : MonoBehaviour
     private List<DyingIndicator> _dyingIndicators = new List<DyingIndicator>();
     private RectTransform _fallbackParent;
     private float _uiScale;
+    private GameObject _resultFeedback;
+    private Tween _resultFeedbackTween;
 
     private void Awake()
     {
@@ -83,11 +101,26 @@ public class QTEDisplay : MonoBehaviour
 
         qteFrameRect = heroHud.qteFrameRect;
         qteIndicatorArea = heroHud.qteIndicatorArea;
+        if (_strictModePrompt == null)
+            _strictModePrompt = heroHud.strictModePrompt;
     }
 
     // ═══════════════════════════════════════════
     //  公开 API
     // ═══════════════════════════════════════════
+
+    public void ShowStrictModePrompt()
+    {
+        EnsureHeroHudReferences();
+        if (_strictModePrompt == null) return;
+
+        _strictModePromptTween?.Kill();
+        _strictModePrompt.gameObject.SetActive(true);
+        _strictModePrompt.alpha = 1f;
+        _strictModePromptTween = _strictModePrompt.DOFade(0f, _strictModePromptDuration)
+            .SetUpdate(true)
+            .OnComplete(() => _strictModePrompt.gameObject.SetActive(false));
+    }
 
     /// <summary>
     /// 生成 QTE 指示器：入场动画后即进入判定状态（不再有填充预警）
@@ -212,6 +245,12 @@ public class QTEDisplay : MonoBehaviour
     /// </summary>
     public void ClearAllIndicators()
     {
+        _resultFeedbackTween?.Kill();
+        _resultFeedbackTween = null;
+        if (_resultFeedback != null)
+            Destroy(_resultFeedback);
+        _resultFeedback = null;
+
         Debug.Log($"[QTE_DIAG] ClearAllIndicators: activeCount={_activeStates.Count}, dyingCount={_dyingIndicators.Count}");
 
         foreach (var state in _activeStates)
@@ -251,7 +290,55 @@ public class QTEDisplay : MonoBehaviour
 
     public void ShowQTEResult(GameObject indicator, bool success)
     {
+        ShowResultFeedback(success);
         ResolveIndicator(indicator, success);
+    }
+
+    public void ShowResultFeedback(bool success)
+    {
+        var sprite = success ? successResultSprite : failureResultSprite;
+        if (sprite == null) return;
+
+        _resultFeedbackTween?.Kill();
+        if (_resultFeedback != null)
+            Destroy(_resultFeedback);
+
+        var parent = GetIndicatorParent();
+        if (parent == null) return;
+
+        _resultFeedback = new GameObject("QTE_ResultFeedback", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup));
+        _resultFeedback.transform.SetParent(parent, false);
+
+        var rt = _resultFeedback.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        float displayScale = _uiScale > 0.01f ? _uiScale : 1f;
+        rt.anchoredPosition = new Vector2(resultFeedbackOffsetX * displayScale, 0f);
+        rt.sizeDelta = new Vector2(510f * displayScale, 255f * displayScale);
+        rt.localScale = Vector3.one;
+
+        var image = _resultFeedback.GetComponent<Image>();
+        image.sprite = sprite;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+
+        var group = _resultFeedback.GetComponent<CanvasGroup>();
+        group.alpha = 0f;
+        float holdDuration = Mathf.Max(0f, resultFeedbackDuration - 0.20f);
+        _resultFeedbackTween = DOTween.Sequence()
+            .SetUpdate(true)
+            .Append(group.DOFade(1f, 0.08f))
+            .Join(rt.DOScale(1f, 0.08f).SetEase(Ease.OutBack))
+            .AppendInterval(holdDuration)
+            .Append(group.DOFade(0f, 0.12f))
+            .OnComplete(() =>
+            {
+                if (_resultFeedback != null)
+                    Destroy(_resultFeedback);
+                _resultFeedback = null;
+                _resultFeedbackTween = null;
+            });
     }
 
     // ═══════════════════════════════════════════
