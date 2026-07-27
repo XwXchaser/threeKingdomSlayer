@@ -21,19 +21,19 @@ MonoBehaviour:
   maxLevel: 5
   effectType: cooldown_reduction
   numericLevels:
-  - floatValue: 0.2
+  - floatValue: 0.08
     intValue: 0
     secondaryIntValue: 0
-  - floatValue: 0.2
+  - floatValue: 0.1
     intValue: 0
     secondaryIntValue: 0
-  - floatValue: 0.2
+  - floatValue: 0.1
     intValue: 0
     secondaryIntValue: 0
-  - floatValue: 0.2
+  - floatValue: 0.12
     intValue: 0
     secondaryIntValue: 0
-  - floatValue: 0.2
+  - floatValue: 0.12
     intValue: 0
     secondaryIntValue: 0
   floatValue: 0.12
@@ -51,6 +51,8 @@ MonoBehaviour:
   arrowVolleyLevels: []
   reflectShieldLevels: []
   chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
   chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []

@@ -33,34 +33,36 @@ MonoBehaviour:
   - intervalSeconds: 3
     triggerThreshold: 0
     rowCount: 1
-    arrowCount: 3
+    arrowCount: 4
     damage: 8
-  - intervalSeconds: 3.5
+  - intervalSeconds: 3
     triggerThreshold: 0
     rowCount: 1
-    arrowCount: 4
-    damage: 10
-  - intervalSeconds: 4
-    triggerThreshold: 0
-    rowCount: 2
     arrowCount: 5
     damage: 12
-  - intervalSeconds: 4.5
+  - intervalSeconds: 2
     triggerThreshold: 0
     rowCount: 2
     arrowCount: 6
-    damage: 14
-  - intervalSeconds: 5
+    damage: 16
+  - intervalSeconds: 2
+    triggerThreshold: 0
+    rowCount: 2
+    arrowCount: 7
+    damage: 20
+  - intervalSeconds: 2
     triggerThreshold: 0
     rowCount: 3
-    arrowCount: 7
-    damage: 16
+    arrowCount: 8
+    damage: 25
   returnWaveLevels: []
   chainBounceLevels: []
   cycloneLevels: []
   arrowVolleyLevels: []
   reflectShieldLevels: []
   chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
   chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []

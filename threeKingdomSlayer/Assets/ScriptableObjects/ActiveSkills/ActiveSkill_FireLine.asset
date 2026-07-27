@@ -31,31 +31,31 @@ MonoBehaviour:
   timedAoeLevels:
   - intervalSeconds: 0
     triggerThreshold: 0
-    damage: 2
-    columns: 02000000
+    damage: 15
+    columns: 0100000002000000
     burnDamagePerSecond: 0
     burnDurationSeconds: 0
   - intervalSeconds: 0
     triggerThreshold: 0
-    damage: 2
-    columns: 02000000
+    damage: 22
+    columns: 0100000002000000
     burnDamagePerSecond: 0
     burnDurationSeconds: 0
   - intervalSeconds: 0
     triggerThreshold: 0
-    damage: 2
-    columns: 02000000
-    burnDamagePerSecond: 0
-    burnDurationSeconds: 0
-  - intervalSeconds: 0
-    triggerThreshold: 0
-    damage: 2
+    damage: 30
     columns: 010000000200000003000000
     burnDamagePerSecond: 0
     burnDurationSeconds: 0
   - intervalSeconds: 0
     triggerThreshold: 0
-    damage: 2
+    damage: 40
+    columns: 010000000200000003000000
+    burnDamagePerSecond: 0
+    burnDurationSeconds: 0
+  - intervalSeconds: 0
+    triggerThreshold: 0
+    damage: 55
     columns: 010000000200000003000000
     burnDamagePerSecond: 0
     burnDurationSeconds: 0
@@ -66,6 +66,8 @@ MonoBehaviour:
   arrowVolleyLevels: []
   reflectShieldLevels: []
   chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
   chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []
@@ -81,8 +83,8 @@ MonoBehaviour:
   prerequisites: []
   activeEffectType: 3
   cooldownLevels:
-  - 5
-  - 4.5
-  - 4
-  - 3.5
-  - 3
+  - 20
+  - 18
+  - 16
+  - 14
+  - 12

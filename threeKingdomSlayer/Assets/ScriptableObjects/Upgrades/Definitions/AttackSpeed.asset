@@ -16,23 +16,24 @@ MonoBehaviour:
   upgradeId: attack_speed
   displayName: "\u75BE\u98CE"
   descriptionTemplate: "\u653B\u51FB\u901F\u5EA6\u63D0\u5347 {0}%"
+  extraDescriptionTemplate: 
   rarity: 0
-  maxLevel: 10
+  maxLevel: 5
   effectType: attack_speed
   numericLevels:
-  - floatValue: 0.15
+  - floatValue: 0.1
     intValue: 0
     secondaryIntValue: 0
-  - floatValue: 0.15
+  - floatValue: 0.12
     intValue: 0
     secondaryIntValue: 0
-  - floatValue: 0.15
+  - floatValue: 0.14
     intValue: 0
     secondaryIntValue: 0
-  - floatValue: 0.15
+  - floatValue: 0.16
     intValue: 0
     secondaryIntValue: 0
-  - floatValue: 0.15
+  - floatValue: 0.18
     intValue: 0
     secondaryIntValue: 0
   floatValue: 0.15
@@ -48,8 +49,20 @@ MonoBehaviour:
   chainBounceLevels: []
   cycloneLevels: []
   arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
+  chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
   gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
   prerequisites: []

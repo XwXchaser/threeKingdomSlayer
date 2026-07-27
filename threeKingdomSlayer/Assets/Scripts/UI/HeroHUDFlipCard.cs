@@ -22,22 +22,21 @@ public sealed class HeroHUDFlipCard : MonoBehaviour
     private bool _bossCombatActive;
     private FlipReason _backReason;
     private float _rotationX;
-    private QTEController _qteController;
-    private System.Action _onQteTriggered;
-    private System.Action _onQteFinished;
+    private bool _qteActivitySubscribed;
     private System.Action<Enemy> _onBossEngaged;
     private System.Action<Enemy> _onEnemyDied;
     private bool _bossEventsSubscribed;
 
     private void Start()
     {
-        _rotationX = _card != null ? _card.localEulerAngles.x : 0f;
+        _rotationX = _card != null ? NormalizeRotation(_card.localEulerAngles.x) : 0f;
         if (_stageProgressBar == null)
             _stageProgressBar = GetComponentInChildren<StageProgressBar>(true);
-        if (_stageProgressBar != null && _displayVersion != DisplayVersion.V3)
+        if (_stageProgressBar != null && _displayVersion != DisplayVersion.V3 && !UsesV2QTEOnlyFlip())
             _stageProgressBar.OnBossTransitionComplete += EnterBossCombat;
         TrySubscribeBossEvents();
         ApplyDisplayVersion();
+        OnQTEActivityChanged(QTEActivityHub.IsActive);
     }
 
     public void SetDisplayVersion(DisplayVersion version)
@@ -47,7 +46,7 @@ public sealed class HeroHUDFlipCard : MonoBehaviour
 
         if (_stageProgressBar != null)
             _stageProgressBar.OnBossTransitionComplete -= EnterBossCombat;
-        if (version != DisplayVersion.V3 && _stageProgressBar != null)
+        if (version != DisplayVersion.V3 && _stageProgressBar != null && !UsesV2QTEOnlyFlip())
             _stageProgressBar.OnBossTransitionComplete += EnterBossCombat;
 
         // V3 切回 V1_V2 时，如果当前在 QTE 翻牌状态，先翻回正面
@@ -79,21 +78,33 @@ public sealed class HeroHUDFlipCard : MonoBehaviour
     private void Update()
     {
         TrySubscribeBossEvents();
-
-        if (_qteController != null) return;
-
-        _qteController = UnityEngine.Object.FindObjectOfType<QTEController>();
-        if (_qteController == null) return;
-
-        _onQteTriggered = () => ShowBack(FlipReason.QTE);
-        _onQteFinished = () => ShowFront(FlipReason.QTE);
-        _qteController.OnQTETriggered += _onQteTriggered;
-        _qteController.OnQTEAttackFinished += _onQteFinished;
     }
 
+    private void OnEnable()
+    {
+        if (_qteActivitySubscribed) return;
+        QTEActivityHub.OnActivityChanged += OnQTEActivityChanged;
+        _qteActivitySubscribed = true;
+        OnQTEActivityChanged(QTEActivityHub.IsActive);
+    }
+
+    private void OnQTEActivityChanged(bool active)
+    {
+        if (!UsesV2QTEOnlyFlip()) return;
+        if (active)
+            ShowBack(FlipReason.QTE);
+        else
+            ShowFront(FlipReason.QTE);
+    }
+
+    private static bool UsesV2QTEOnlyFlip()
+    {
+        return ActiveSkillInventory.Instance != null && ActiveSkillInventory.Instance.UsesActiveSkills;
+    }
 
     public void EnterBossCombat()
     {
+        if (UsesV2QTEOnlyFlip()) return;
         _bossCombatActive = true;
         if (_displayVersion == DisplayVersion.V3) return;
         _backReason = FlipReason.BossCombat;
@@ -102,6 +113,7 @@ public sealed class HeroHUDFlipCard : MonoBehaviour
 
     public void ExitBossCombat()
     {
+        if (UsesV2QTEOnlyFlip()) return;
         _bossCombatActive = false;
         if (_displayVersion == DisplayVersion.V3) return;
         if (_backReason == FlipReason.BossCombat)
@@ -141,7 +153,7 @@ public sealed class HeroHUDFlipCard : MonoBehaviour
 
     private void TrySubscribeBossEvents()
     {
-        if (_bossEventsSubscribed || EnemyManager.Instance == null) return;
+        if (UsesV2QTEOnlyFlip() || _bossEventsSubscribed || EnemyManager.Instance == null) return;
 
         _onBossEngaged = boss =>
         {
@@ -166,7 +178,7 @@ public sealed class HeroHUDFlipCard : MonoBehaviour
     {
         if (_card == null || _frontFace == null || _backFace == null)
             return;
-        if (_showingBack == showBack)
+        if (_showingBack == showBack && _flipTween == null)
         {
             SetVisibleSide(showBack);
             return;
@@ -174,14 +186,56 @@ public sealed class HeroHUDFlipCard : MonoBehaviour
 
         _showingBack = showBack;
         _flipTween?.Kill();
+        _flipTween = null;
 
-        float targetX = showBack ? _rotationX + 180f : _rotationX + 180f;
+        float currentX = _card.localEulerAngles.x;
+        SetVisibleSide(IsBackRotation(currentX));
+        float currentNormalized = NormalizeRotation(currentX);
+        float targetNormalized = showBack ? 180f : 0f;
+        float delta = Mathf.DeltaAngle(currentNormalized, targetNormalized);
+        float targetX = currentX + delta;
         _rotationX = targetX;
+
+        if (Mathf.Abs(delta) <= 0.1f)
+        {
+            _card.localRotation = Quaternion.Euler(targetX, 0f, 0f);
+            SetVisibleSide(showBack);
+            return;
+        }
+
+        float startDistance = Mathf.Abs(Mathf.DeltaAngle(currentNormalized, targetNormalized));
+        float middleDistance = startDistance * 0.5f;
+        bool sideChanged = false;
         var sequence = DOTween.Sequence().SetTarget(this).SetUpdate(true);
         _flipTween = sequence;
-        sequence.Append(_card.DOLocalRotate(new Vector3(targetX, 0f, 0f), _flipDuration, RotateMode.FastBeyond360)
-            .SetEase(Ease.InOutQuad));
-        sequence.InsertCallback(_flipDuration * 0.5f, () => SetVisibleSide(showBack));
+        sequence.Append(_card.DOLocalRotate(new Vector3(targetX, 0f, 0f), _flipDuration, RotateMode.Fast)
+            .SetEase(Ease.InOutQuad)
+            .OnUpdate(() =>
+            {
+                if (sideChanged) return;
+                float remaining = Mathf.Abs(Mathf.DeltaAngle(NormalizeRotation(_card.localEulerAngles.x), targetNormalized));
+                if (remaining <= middleDistance)
+                {
+                    sideChanged = true;
+                    SetVisibleSide(showBack);
+                }
+            }));
+        sequence.OnComplete(() =>
+        {
+            SetVisibleSide(showBack);
+            _flipTween = null;
+        });
+    }
+
+    private static float NormalizeRotation(float angle)
+    {
+        return Mathf.Repeat(angle, 360f);
+    }
+
+    private static bool IsBackRotation(float angle)
+    {
+        float normalized = NormalizeRotation(angle);
+        return normalized >= 90f && normalized < 270f;
     }
 
     private void SetVisibleSide(bool showBack)
@@ -194,17 +248,23 @@ public sealed class HeroHUDFlipCard : MonoBehaviour
         _backFace.interactable = showBack;
     }
 
+    private void OnDisable()
+    {
+        if (!_qteActivitySubscribed) return;
+        QTEActivityHub.OnActivityChanged -= OnQTEActivityChanged;
+        _qteActivitySubscribed = false;
+    }
+
     private void OnDestroy()
     {
-        if (_qteController != null)
-        {
-            if (_onQteTriggered != null)
-                _qteController.OnQTETriggered -= _onQteTriggered;
-            if (_onQteFinished != null)
-                _qteController.OnQTEAttackFinished -= _onQteFinished;
-        }
+        OnDisable();
         if (_stageProgressBar != null)
             _stageProgressBar.OnBossTransitionComplete -= EnterBossCombat;
+        if (_bossEventsSubscribed && EnemyManager.Instance != null)
+        {
+            EnemyManager.Instance.OnBossEngaged -= _onBossEngaged;
+            EnemyManager.Instance.OnAnyEnemyDied -= _onEnemyDied;
+        }
         _flipTween?.Kill();
     }
 }

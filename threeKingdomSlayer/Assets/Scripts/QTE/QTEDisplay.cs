@@ -58,6 +58,7 @@ public class QTEDisplay : MonoBehaviour
         public GameObject gameObject;
         public Image indicatorImage;
         public Tween animationTween;
+        public Tween colorTween;
         public bool landed;           // 指示器已落位（入场完成）
     }
 
@@ -207,9 +208,12 @@ public class QTEDisplay : MonoBehaviour
         var state = FindState(indicator);
         if (state == null || state.indicatorImage == null) return;
 
+        state.colorTween?.Kill();
+        state.colorTween = null;
         state.indicatorImage.DOKill();
         state.indicatorImage.color = Color.white;
-        state.indicatorImage.DOColor(new Color(1f, 0.22f, 0.22f, 1f), 0.08f)
+        state.colorTween = state.indicatorImage.DOColor(new Color(1f, 0.22f, 0.22f, 1f), 0.08f)
+            .SetTarget(state.gameObject)
             .SetUpdate(true);
     }
 
@@ -223,7 +227,12 @@ public class QTEDisplay : MonoBehaviour
 
         if (state.animationTween != null && state.animationTween.IsActive())
             state.animationTween.Kill();
-        indicator.transform.DOKill(true);
+        if (state.colorTween != null && state.colorTween.IsActive())
+            state.colorTween.Kill();
+        if (state.indicatorImage != null)
+            state.indicatorImage.DOKill();
+        DOTween.Kill(indicator);
+        indicator.transform.DOKill();
 
         var effectParent = GetIndicatorParent();
         if (success && successEffectPrefab != null)
@@ -248,7 +257,15 @@ public class QTEDisplay : MonoBehaviour
         _resultFeedbackTween?.Kill();
         _resultFeedbackTween = null;
         if (_resultFeedback != null)
+        {
+            DOTween.Kill(_resultFeedback);
+            _resultFeedback.transform.DOKill();
+            var resultImage = _resultFeedback.GetComponent<Image>();
+            if (resultImage != null) resultImage.DOKill();
+            var resultGroup = _resultFeedback.GetComponent<CanvasGroup>();
+            if (resultGroup != null) resultGroup.DOKill();
             Destroy(_resultFeedback);
+        }
         _resultFeedback = null;
 
         Debug.Log($"[QTE_DIAG] ClearAllIndicators: activeCount={_activeStates.Count}, dyingCount={_dyingIndicators.Count}");
@@ -260,6 +277,11 @@ public class QTEDisplay : MonoBehaviour
             {
                 if (state.animationTween != null && state.animationTween.IsActive())
                     state.animationTween.Kill();
+                if (state.colorTween != null && state.colorTween.IsActive())
+                    state.colorTween.Kill();
+                if (state.indicatorImage != null)
+                    state.indicatorImage.DOKill();
+                DOTween.Kill(state.gameObject);
                 state.gameObject.transform.DOKill();
                 Destroy(state.gameObject);
             }
@@ -274,7 +296,15 @@ public class QTEDisplay : MonoBehaviour
             if (di.fadeTween != null && di.fadeTween.IsActive())
                 di.fadeTween.Kill();
             if (di.gameObject != null)
+            {
+                DOTween.Kill(di.gameObject);
+                di.gameObject.transform.DOKill();
+                var image = di.gameObject.GetComponentInChildren<Image>();
+                if (image != null) image.DOKill();
+                var group = di.gameObject.GetComponent<CanvasGroup>();
+                if (group != null) group.DOKill();
                 Destroy(di.gameObject);
+            }
         }
         _dyingIndicators.Clear();
     }
@@ -301,7 +331,15 @@ public class QTEDisplay : MonoBehaviour
 
         _resultFeedbackTween?.Kill();
         if (_resultFeedback != null)
+        {
+            DOTween.Kill(_resultFeedback);
+            _resultFeedback.transform.DOKill();
+            var existingImage = _resultFeedback.GetComponent<Image>();
+            if (existingImage != null) existingImage.DOKill();
+            var existingGroup = _resultFeedback.GetComponent<CanvasGroup>();
+            if (existingGroup != null) existingGroup.DOKill();
             Destroy(_resultFeedback);
+        }
 
         var parent = GetIndicatorParent();
         if (parent == null) return;
@@ -366,8 +404,8 @@ public class QTEDisplay : MonoBehaviour
         _dyingIndicators.Add(di);
 
         if (rt != null)
-            di.moveTween = rt.DOAnchorPosY(endY, slideOutDuration).SetEase(Ease.InCubic).SetUpdate(true);
-        di.fadeTween = canvasGroup.DOFade(0f, slideOutDuration).SetUpdate(true).OnComplete(() =>
+            di.moveTween = rt.DOAnchorPosY(endY, slideOutDuration).SetEase(Ease.InCubic).SetTarget(go).SetUpdate(true);
+        di.fadeTween = canvasGroup.DOFade(0f, slideOutDuration).SetTarget(go).SetUpdate(true).OnComplete(() =>
         {
             _dyingIndicators.Remove(di);
             if (go != null)

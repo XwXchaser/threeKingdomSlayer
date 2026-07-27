@@ -214,7 +214,7 @@ public class AttackSystem : MonoBehaviour
         var cfg = GetConfig(AttackType.Stab);
         if (cfg == null || columnIndex < 0 || columnManager == null || cfg.attackWavePrefab == null) return false;
 
-        float finalDmg = GetFinalDamage(cfg) * GetStabPierceDamagePenalty();
+        float finalDmg = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
         int effectiveRows = GetEffectiveRangeRows(cfg);
         int visualRangeRows = effectiveRows;
         Enemy coveredBoss = columnManager.GetCombatBossCoveringColumn(columnIndex);
@@ -284,8 +284,8 @@ public class AttackSystem : MonoBehaviour
         var cfg = GetConfig(AttackType.Slash);
         if (cfg == null || columnManager == null) return false;
 
-        float finalDmg = GetFinalDamage(cfg) * GetSweepDamagePenalty();
-        int effectiveRows = GetEffectiveSweepRangeRows(cfg);
+        float finalDmg = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
+        int effectiveRows = GetEffectiveRangeRows(cfg);
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(effectiveRows);
         Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
         Vector3 wavePos = new Vector3(0, playerPos.y + cfg.slashSpawnYOffset, playerPos.z + cfg.slashSpawnZOffset);
@@ -314,7 +314,7 @@ public class AttackSystem : MonoBehaviour
         var cfg = GetConfig(AttackType.Pierce);
         if (cfg == null || columnIndex < 0 || columnManager == null) return false;
 
-        float finalDmg = GetFinalDamage(cfg) * GetStabPierceDamagePenalty();
+        float finalDmg = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
         int effectiveRows = GetEffectiveRangeRows(cfg);
         List<Enemy> targets = columnManager.GetEnemiesInRange(columnIndex, effectiveRows);
         if (targets.Count > 0)
@@ -336,8 +336,8 @@ public class AttackSystem : MonoBehaviour
         var cfg = GetConfig(AttackType.Sweep);
         if (cfg == null || columnManager == null) return false;
 
-        float finalDmg = GetFinalDamage(cfg) * GetSweepDamagePenalty();
-        int effectiveRows = GetEffectiveSweepRangeRows(cfg);
+        float finalDmg = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
+        int effectiveRows = GetEffectiveRangeRows(cfg);
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(effectiveRows);
         if (targets.Count > 0)
         {
@@ -739,33 +739,18 @@ public class AttackSystem : MonoBehaviour
         }
     }
 
-    /// <summary>获取有效攻击排数（含延长等加成）</summary>
+    /// <summary>获取有效攻击排数（含拔苗助长等加成）</summary>
     private int GetEffectiveRangeRows(AttackSkillConfig cfg)
     {
-        int bonus = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetStabRangeBonus() : 0;
+        int bonus = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetAttackRangeBonus() : 0;
         return cfg.rangeRows + bonus;
     }
 
-    /// <summary>获取有效横扫范围（含波长加成）</summary>
-    private int GetEffectiveSweepRangeRows(AttackSkillConfig cfg)
-    {
-        int bonus = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetSweepRangeBonus() : 0;
-        return cfg.rangeRows + bonus;
-    }
-
-    /// <summary>获取戳击/穿刺伤害惩罚倍率（延长副作用）</summary>
-    private float GetStabPierceDamagePenalty()
+    /// <summary>获取攻击范围惩罚倍率（拔苗助长副作用）</summary>
+    private float GetAttackRangeDamagePenalty()
     {
         if (UpgradeEffectManager.Instance != null)
-            return 1f - UpgradeEffectManager.Instance.GetStabDamagePenalty();
-        return 1f;
-    }
-
-    /// <summary>获取横扫/斩击伤害惩罚倍率（波长副作用）</summary>
-    private float GetSweepDamagePenalty()
-    {
-        if (UpgradeEffectManager.Instance != null)
-            return 1f - UpgradeEffectManager.Instance.GetSweepDamagePenalty();
+            return 1f - UpgradeEffectManager.Instance.GetAttackDamagePenalty();
         return 1f;
     }
 
@@ -840,7 +825,7 @@ public class AttackSystem : MonoBehaviour
                 int effectiveRows = GetEffectiveRangeRows(cfg);
                 var targets = columnManager.GetEnemiesInRange(targetColumn, effectiveRows);
                 targets = targets.FindAll(e => !e.isBoss || e.bossState == BossState.InCombat);
-                finalDmg *= GetStabPierceDamagePenalty();
+                finalDmg *= GetAttackRangeDamagePenalty();
                 if (targets.Count > 0)
                 {
                     Vector3 wavePos = GetWavePosition(targets, targetColumn);
@@ -853,9 +838,9 @@ public class AttackSystem : MonoBehaviour
             }
             case AttackType.Slash:
             {
-                int effectiveRows = GetEffectiveSweepRangeRows(cfg);
+                int effectiveRows = GetEffectiveRangeRows(cfg);
                 var targets = columnManager.GetAllEnemiesInRange(effectiveRows);
-                finalDmg *= GetSweepDamagePenalty();
+                finalDmg *= GetAttackRangeDamagePenalty();
                 if (targets.Count > 0)
                 {
                     Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
@@ -872,7 +857,7 @@ public class AttackSystem : MonoBehaviour
                 if (targetColumn < 0) return false;
                 int effectiveRows = GetEffectiveRangeRows(cfg);
                 var targets = columnManager.GetEnemiesInRange(targetColumn, effectiveRows);
-                finalDmg *= GetStabPierceDamagePenalty();
+                finalDmg *= GetAttackRangeDamagePenalty();
                 if (targets.Count > 0)
                 {
                     Vector3 wavePos = GetWavePosition(targets, targetColumn);
@@ -884,9 +869,9 @@ public class AttackSystem : MonoBehaviour
             }
             case AttackType.Sweep:
             {
-                int effectiveRows = GetEffectiveSweepRangeRows(cfg);
+                int effectiveRows = GetEffectiveRangeRows(cfg);
                 var targets = columnManager.GetAllEnemiesInRange(effectiveRows);
-                finalDmg *= GetSweepDamagePenalty();
+                finalDmg *= GetAttackRangeDamagePenalty();
                 if (targets.Count > 0)
                 {
                     Vector3 wavePos = GetWavePosition(targets, -1);
@@ -956,7 +941,7 @@ public class AttackSystem : MonoBehaviour
 
         if (targets.Count == 0) return false;
 
-        float finalDmg = GetFinalDamage(cfg) * GetStabPierceDamagePenalty();
+        float finalDmg = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
         Vector3 wavePos = GetWavePosition(targets, targetColumn);
         Color waveColor = new Color(0.2f, 0.7f, 1f); // 青蓝色回旋镖
         float alpha = 0.85f;
@@ -989,7 +974,7 @@ public class AttackSystem : MonoBehaviour
         initialTargets = initialTargets.FindAll(e => !e.isBoss || e.bossState == BossState.InCombat);
         if (initialTargets.Count == 0) return false;
 
-        float baseDamage = GetFinalDamage(cfg) * GetStabPierceDamagePenalty();
+        float baseDamage = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
         int totalBounces = 0;
 
         foreach (var startEnemy in initialTargets)
@@ -1110,7 +1095,7 @@ public class AttackSystem : MonoBehaviour
         {
             Vector3 wavePos = GetWavePosition(targets, columnIndex);
             wavePos.y = targets[0].transform.position.y + cfg.stabSpawnYOffset;
-            AttackWave.Create(wavePos, cfg.damageType, damage * GetStabPierceDamagePenalty(), targets,
+            AttackWave.Create(wavePos, cfg.damageType, damage * GetAttackRangeDamagePenalty(), targets,
                 prefab: cfg.attackWavePrefab, zOffset: cfg.stabSpawnZOffset);
         }
 

@@ -18,7 +18,7 @@ MonoBehaviour:
   descriptionTemplate: "\u6BCF{0}\u79D2\u5BF9\u4E2D\u95F4\u533A\u57DF\u9020\u6210{1}\u70B9\u4F24\u5BB3"
   extraDescriptionTemplate: "\u707C\u70E7\uFF1A\u6BCF\u79D2\u9020\u6210{2}\u7684\u707C\u70E7\u4F24\u5BB3\uFF0C\u6301\u7EED{3}\u79D2"
   rarity: 0
-  maxLevel: 10
+  maxLevel: 5
   effectType: passive_timed_aoe
   numericLevels: []
   floatValue: 0
@@ -31,64 +31,34 @@ MonoBehaviour:
   timedAoeLevels:
   - intervalSeconds: 3
     triggerThreshold: 0
-    damage: 2
+    damage: 5
     columns: 02000000
-    burnDamagePerSecond: 1
+    burnDamagePerSecond: 2
     burnDurationSeconds: 2
   - intervalSeconds: 2.5
     triggerThreshold: 0
-    damage: 2
+    damage: 8
     columns: 02000000
-    burnDamagePerSecond: 1
-    burnDurationSeconds: 2
+    burnDamagePerSecond: 3
+    burnDurationSeconds: 2.5
   - intervalSeconds: 2
     triggerThreshold: 0
-    damage: 2
-    columns: 02000000
-    burnDamagePerSecond: 1
-    burnDurationSeconds: 2
+    damage: 12
+    columns: 0100000002000000
+    burnDamagePerSecond: 4
+    burnDurationSeconds: 3
   - intervalSeconds: 1.5
     triggerThreshold: 0
-    damage: 2
-    columns: 02000000
-    burnDamagePerSecond: 1
-    burnDurationSeconds: 2
-  - intervalSeconds: 1.5
-    triggerThreshold: 0
-    damage: 2
-    columns: 010000000200000003000000
-    burnDamagePerSecond: 1
-    burnDurationSeconds: 2
-  - intervalSeconds: 1.2
-    triggerThreshold: 0
-    damage: 2
-    columns: 010000000200000003000000
-    burnDamagePerSecond: 1
+    damage: 16
+    columns: 0100000002000000
+    burnDamagePerSecond: 5
     burnDurationSeconds: 3
   - intervalSeconds: 1.2
     triggerThreshold: 0
-    damage: 2
-    columns: 0000000001000000020000000300000004000000
-    burnDamagePerSecond: 1
-    burnDurationSeconds: 3
-  - intervalSeconds: 1
-    triggerThreshold: 0
-    damage: 2
-    columns: 0000000001000000020000000300000004000000
-    burnDamagePerSecond: 1
-    burnDurationSeconds: 3
-  - intervalSeconds: 1
-    triggerThreshold: 0
-    damage: 2
-    columns: 0000000001000000020000000300000004000000
-    burnDamagePerSecond: 1
-    burnDurationSeconds: 3
-  - intervalSeconds: 0.8
-    triggerThreshold: 0
-    damage: 2
-    columns: 0000000001000000020000000300000004000000
-    burnDamagePerSecond: 1
-    burnDurationSeconds: 3
+    damage: 20
+    columns: 010000000200000003000000
+    burnDamagePerSecond: 6
+    burnDurationSeconds: 3.5
   timedArrowLevels: []
   returnWaveLevels: []
   chainBounceLevels: []
@@ -96,6 +66,8 @@ MonoBehaviour:
   arrowVolleyLevels: []
   reflectShieldLevels: []
   chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
   chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []

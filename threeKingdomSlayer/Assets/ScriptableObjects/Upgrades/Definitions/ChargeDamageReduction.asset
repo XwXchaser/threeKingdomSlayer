@@ -18,37 +18,22 @@ MonoBehaviour:
   descriptionTemplate: "\u84C4\u529B\u65F6\u83B7\u5F97 {0}% \u51CF\u4F24"
   extraDescriptionTemplate: 
   rarity: 0
-  maxLevel: 10
+  maxLevel: 5
   effectType: charge_damage_reduction
   numericLevels:
-  - floatValue: 0.1
+  - floatValue: 0.15
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.13
+    intValue: 0
+    secondaryIntValue: 0
+  - floatValue: 0.12
     intValue: 0
     secondaryIntValue: 0
   - floatValue: 0.1
     intValue: 0
     secondaryIntValue: 0
   - floatValue: 0.1
-    intValue: 0
-    secondaryIntValue: 0
-  - floatValue: 0.1
-    intValue: 0
-    secondaryIntValue: 0
-  - floatValue: 0.1
-    intValue: 0
-    secondaryIntValue: 0
-  - floatValue: 0.08
-    intValue: 0
-    secondaryIntValue: 0
-  - floatValue: 0.08
-    intValue: 0
-    secondaryIntValue: 0
-  - floatValue: 0.07
-    intValue: 0
-    secondaryIntValue: 0
-  - floatValue: 0.07
-    intValue: 0
-    secondaryIntValue: 0
-  - floatValue: 0.05
     intValue: 0
     secondaryIntValue: 0
   floatValue: 0
@@ -66,6 +51,8 @@ MonoBehaviour:
   arrowVolleyLevels: []
   reflectShieldLevels: []
   chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
   chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []

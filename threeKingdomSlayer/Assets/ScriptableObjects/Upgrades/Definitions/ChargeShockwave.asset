@@ -18,7 +18,7 @@ MonoBehaviour:
   descriptionTemplate: "\u6BCF{0}\u79D2\u79EF\u6512{1}\u9053\u5C04\u7A0B{2}\u6392\u9020\u6210{3}\u70B9\u4F24\u5BB3\u7684\u51B2\u51FB\u6CE2\uFF0C\u5728\u84C4\u529B\u653B\u51FB\u65F6\u4E00\u5E76\u91CA\u653E\u3002\u53EF\u5728\u84C4\u529B\u65F6\u53E0\u52A0\uFF0C\u6BCF\u5C42\u4F24\u5BB3+{4}%"
   extraDescriptionTemplate: 
   rarity: 0
-  maxLevel: 10
+  maxLevel: 5
   effectType: charge_shockwave
   numericLevels: []
   floatValue: 0
@@ -42,60 +42,32 @@ MonoBehaviour:
     baseDamage: 15
     stackDamageBonus: 0.1
     waveDelay: 0.5
-  - intervalSeconds: 7
+  - intervalSeconds: 4
     shockwaveCount: 1
     rangeRows: 2
-    baseDamage: 20
-    stackDamageBonus: 0.2
+    baseDamage: 22
+    stackDamageBonus: 0.12
     waveDelay: 0.5
-  - intervalSeconds: 6
-    shockwaveCount: 2
-    rangeRows: 3
-    baseDamage: 25
-    stackDamageBonus: 0.45
-    waveDelay: 0.5
-  - intervalSeconds: 5
+  - intervalSeconds: 3.5
     shockwaveCount: 2
     rangeRows: 3
     baseDamage: 30
-    stackDamageBonus: 0.5
-    waveDelay: 0.5
-  - intervalSeconds: 4
-    shockwaveCount: 3
-    rangeRows: 3
-    baseDamage: 35
-    stackDamageBonus: 0.8
-    waveDelay: 0.5
-  - intervalSeconds: 3.5
-    shockwaveCount: 3
-    rangeRows: 3
-    baseDamage: 40
-    stackDamageBonus: 1
+    stackDamageBonus: 0.15
     waveDelay: 0.4
   - intervalSeconds: 3
-    shockwaveCount: 4
+    shockwaveCount: 2
     rangeRows: 4
-    baseDamage: 45
-    stackDamageBonus: 1.2
-    waveDelay: 0.4
+    baseDamage: 40
+    stackDamageBonus: 0.18
+    waveDelay: 0.3
   - intervalSeconds: 2.5
-    shockwaveCount: 4
-    rangeRows: 4
-    baseDamage: 50
-    stackDamageBonus: 1.5
-    waveDelay: 0.3
-  - intervalSeconds: 2
-    shockwaveCount: 5
-    rangeRows: 4
-    baseDamage: 60
-    stackDamageBonus: 1.8
-    waveDelay: 0.3
-  - intervalSeconds: 1.5
-    shockwaveCount: 5
+    shockwaveCount: 3
     rangeRows: 5
-    baseDamage: 70
-    stackDamageBonus: 2
+    baseDamage: 50
+    stackDamageBonus: 0.2
     waveDelay: 0.2
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
   chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []

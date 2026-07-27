@@ -108,6 +108,7 @@ public class QTEController : MonoBehaviour
     private bool _judgingSpeedApplied;   // Branched 模式下是否已对 Happen 应用慢放速度
     private bool _strictInputLockApplied;
     private bool _failureDamagePending;
+    private bool _activityRegistered;
 
     // 事件
     public System.Action OnQTETriggered;       // QTE 攻击触发
@@ -147,6 +148,20 @@ public class QTEController : MonoBehaviour
         }
     }
 
+    private void RegisterQTEActivity()
+    {
+        if (_activityRegistered) return;
+        _activityRegistered = true;
+        QTEActivityHub.Begin(this);
+    }
+
+    private void UnregisterQTEActivity()
+    {
+        if (!_activityRegistered) return;
+        _activityRegistered = false;
+        QTEActivityHub.End(this);
+    }
+
     private void OnDisable()
     {
         if (_state == QTEState.Idle && !_strictInputLockApplied) return;
@@ -160,6 +175,7 @@ public class QTEController : MonoBehaviour
 
     private void CleanupDisabledQTE()
     {
+        UnregisterQTEActivity();
         _qteGeneration++;
         SetStrictInputLock(false);
         KillProjectileSequence();
@@ -224,6 +240,7 @@ public class QTEController : MonoBehaviour
 
     private void CleanupInactiveQTE()
     {
+        UnregisterQTEActivity();
         _qteGeneration++;
         SetStrictInputLock(false);
         KillProjectileSequence();
@@ -269,6 +286,7 @@ public class QTEController : MonoBehaviour
         _qteGeneration++;
         DebugLog.Info($"[QTEController] 当前攻击: {_currentAttack?.name}, slots={_currentAttack?.qteSlots?.Count}, useMultiPhase={_currentAttack?.UseMultiPhaseAnimation}, useBranched={_currentAttack?.UseBranchedAnimation}");
         _state = QTEState.PerformingQTEAttack;
+        RegisterQTEActivity();
         _performingTimer = 0f;
         _qtePhaseStarted = false;
         _qtePhaseTimer = 0f;
@@ -1322,6 +1340,7 @@ public class QTEController : MonoBehaviour
     /// </summary>
     public void AbortQTE()
     {
+        UnregisterQTEActivity();
         _qteGeneration++;
         // 清理飞行物
         if (_activeProjectile != null)
@@ -1354,6 +1373,7 @@ public class QTEController : MonoBehaviour
 
     private void CompleteQTEAttack()
     {
+        UnregisterQTEActivity();
         ApplyPendingFailureDamage();
         SetStrictInputLock(false);
         _state = QTEState.QTECompleted;

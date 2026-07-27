@@ -60,6 +60,8 @@ public class UpgradeCard : MonoBehaviour
                 levelStatusText.text = "新获得";
             else if (currentLevel >= def.maxLevel)
                 levelStatusText.text = "Lv.Max";
+            else if (currentLevel + 1 >= def.maxLevel)
+                levelStatusText.text = $"Lv.{currentLevel} → Lv.Max";
             else
                 levelStatusText.text = $"Lv.{currentLevel} → Lv.{currentLevel + 1}";
         }
