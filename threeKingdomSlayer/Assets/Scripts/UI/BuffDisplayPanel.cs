@@ -318,10 +318,9 @@ public class BuffDisplayPanel : MonoBehaviour
                 icon.SetPercentNumber(Mathf.RoundToInt(uem.GetChargeDamageReduction() * 100f));
                 break;
             case "stab_range_boost":
-                icon.SetTopRightNumber(uem.GetStabRangeBonus());
-                break;
             case "sweep_range_boost":
-                icon.SetTopRightNumber(uem.GetSweepRangeBonus());
+            case "attack_range_boost":
+                icon.SetTopRightNumber(uem.GetAttackRangeBonus());
                 break;
             case "push_wave":
                 icon.SetTopRightNumber(uem.GetPushWaveDistance());

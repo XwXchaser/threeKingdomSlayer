@@ -25,14 +25,16 @@ public class WaveEffectPlayer : MonoBehaviour
 
     private int _targetRow;
     private int _damage;
+    private float _bossPoiseDamagePercent;
     private float _zStep;
     private HashSet<Enemy> _hitEnemies;
     private List<Enemy> _pushedEnemies;
 
-    public void Play(Vector3 startPos, int targetRow, int damage, HashSet<Enemy> hitEnemies, List<Enemy> pushedEnemies)
+    public void Play(Vector3 startPos, int targetRow, int damage, float bossPoiseDamagePercent, HashSet<Enemy> hitEnemies, List<Enemy> pushedEnemies)
     {
         _targetRow = targetRow;
         _damage = damage;
+        _bossPoiseDamagePercent = bossPoiseDamagePercent;
         _hitEnemies = hitEnemies;
         _pushedEnemies = pushedEnemies;
         _zStep = zMoveTotal / 5f; // 5段移动（5帧切换之间）
@@ -105,20 +107,20 @@ public class WaveEffectPlayer : MonoBehaviour
             }
         }
 
-        // 伤害（去重：同一波次序列中已被命中的敌人跳过）
+        // 伤害与击退去重：同一次海浪序列中，每个敌人最多命中、后推一次。
+        var pushTargets = new List<Enemy>();
         foreach (var enemy in hitEnemies)
         {
-            if (!_hitEnemies.Contains(enemy))
-            {
-                enemy.TakeDamage(_damage, DamageType.Slash);
-                _hitEnemies.Add(enemy);
-            }
+            if (_hitEnemies.Contains(enemy)) continue;
+
+            enemy.TakeDamage(_damage, DamageType.Slash);
+            if (enemy.isBoss && enemy.state != EnemyState.Stunned)
+                enemy.TakeActiveDisplacementPoiseDamage(_bossPoiseDamagePercent);
+            _hitEnemies.Add(enemy);
+            pushTargets.Add(enemy);
         }
 
-        // 轻微击退（视觉效果）
-        if (hitEnemies.Count > 0)
-        {
-            cm.ApplyPushWave(hitEnemies, 1, pushedEnemies: _pushedEnemies);
-        }
+        if (pushTargets.Count > 0)
+            cm.ApplyPushWave(pushTargets, 1, pushedEnemies: _pushedEnemies);
     }
 }

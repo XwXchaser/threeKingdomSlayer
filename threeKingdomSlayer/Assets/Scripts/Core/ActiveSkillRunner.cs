@@ -19,6 +19,7 @@ public class ActiveSkillRunner : MonoBehaviour
     [SerializeField] private GameObject _fireEffectPrefab;
     [SerializeField] private GameObject _arrowEffectPrefab;
     [SerializeField] private GameObject _cycloneEffectPrefab;
+    [SerializeField] private WaveManager _waveManager;
 
     private readonly List<Enemy> _cycloneCandidates = new List<Enemy>();
     private readonly Dictionary<string, int> _chargeAttackShockwaveLayers = new Dictionary<string, int>();
@@ -55,6 +56,8 @@ public class ActiveSkillRunner : MonoBehaviour
                 return ActivateCyclone(definition, level);
             case ActiveSkillEffectType.ChargeAttackShockwave:
                 return ActivateChargeAttackShockwave(definition, level);
+            case ActiveSkillEffectType.Wave:
+                return ActivateWave(definition, level);
             default:
                 return false;
         }
@@ -147,32 +150,29 @@ public class ActiveSkillRunner : MonoBehaviour
 
     private bool ActivateCyclone(ActiveSkillDefinition definition, int level)
     {
-        if (definition.cycloneLevels == null || level > definition.cycloneLevels.Count)
+        if (definition.waveLevels == null || level > definition.waveLevels.Count)
             return false;
-        var cfg = definition.cycloneLevels[level - 1];
-        var prefab = _cycloneEffectPrefab != null ? _cycloneEffectPrefab : TimedPassiveModule.Instance?.cycloneEffectPrefab;
+        var cfg = definition.waveLevels[level - 1];
         var columnManager = AttackSystem.Instance?.columnManager;
-        if (prefab == null || columnManager == null) return false;
+        var prefab = _cycloneEffectPrefab != null ? _cycloneEffectPrefab : TimedPassiveModule.Instance?.cycloneEffectPrefab;
+        if (columnManager == null || prefab == null || cfg.rangeRows <= 0)
+            return false;
 
-        _cycloneCandidates.Clear();
-        var enemies = columnManager.GetAllEnemies();
+        var enemies = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
         for (int i = 0; i < enemies.Count; i++)
         {
             var enemy = enemies[i];
-            if (enemy == null || enemy.state == EnemyState.Dead || enemy.state == EnemyState.QTEAttacking || enemy.isPhaseTransitioning)
+            if (enemy == null || enemy.state == EnemyState.Dead || enemy.isPhaseTransitioning)
                 continue;
-            if (enemy.state == EnemyState.Launched || enemy.CanBeLaunched(float.MaxValue))
-                _cycloneCandidates.Add(enemy);
-        }
-        if (_cycloneCandidates.Count == 0) return false;
 
-        int pickCount = Mathf.Min(Mathf.Max(1, cfg.enemyCount), _cycloneCandidates.Count);
-        for (int i = 0; i < pickCount; i++)
-        {
-            int randomIndex = Random.Range(i, _cycloneCandidates.Count);
-            var selected = _cycloneCandidates[randomIndex];
-            _cycloneCandidates[randomIndex] = _cycloneCandidates[i];
-            _cycloneCandidates[i] = selected;
+            if (enemy.isBoss && enemy.state != EnemyState.Stunned)
+            {
+                enemy.TakeActiveDisplacementPoiseDamage(cfg.bossPoiseDamagePercent);
+                continue;
+            }
+
+            if (enemy.state == EnemyState.QTEAttacking || !enemy.CanBeLaunched(float.MaxValue))
+                continue;
 
             var instance = Instantiate(prefab);
             var effect = instance.GetComponent<CycloneEffect>();
@@ -181,8 +181,22 @@ public class ActiveSkillRunner : MonoBehaviour
                 Destroy(instance);
                 continue;
             }
-            effect.Setup(selected, Mathf.Max(0, cfg.damage), Mathf.Max(0f, cfg.landingDamagePercent), cfg.knockupDuration);
+            effect.Setup(enemy, cfg.damage, 0f, enemy.launchDuration);
         }
+        return true;
+    }
+
+    private bool ActivateWave(ActiveSkillDefinition definition, int level)
+    {
+        if (definition.waveLevels == null || level > definition.waveLevels.Count)
+            return false;
+
+        var cfg = definition.waveLevels[level - 1];
+        var waveManager = _waveManager != null ? _waveManager : WaveManager.Instance;
+        if (waveManager == null || cfg.rangeRows <= 0 || cfg.damage < 0)
+            return false;
+
+        waveManager.TriggerWave(0, cfg.rangeRows - 1, cfg.damage, cfg.bossPoiseDamagePercent);
         return true;
     }
 

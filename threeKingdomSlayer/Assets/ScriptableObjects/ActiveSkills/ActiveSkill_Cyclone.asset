@@ -15,7 +15,7 @@ MonoBehaviour:
   category: 4
   upgradeId: active_cyclone
   displayName: "\u65CB\u98CE"
-  descriptionTemplate: "\u51B7\u5374{0}\u79D2\uFF0C\u968F\u673A\u51FB\u98DE{1}\u4E2A\u654C\u4EBA{2}\u79D2"
+  descriptionTemplate: "\u5439\u98DE{0}\u6392\u7684\u654C\u4EBA\uFF1B\u672A\u7729\u6655\u7684Boss\u6539\u4E3A\u524A\u51CF{2}%\u6700\u5927\u67B6\u52BF\u3002\u51B7\u5374\u65F6\u95F4{1}\u79D2"
   extraDescriptionTemplate: 
   rarity: 2
   maxLevel: 5
@@ -32,35 +32,27 @@ MonoBehaviour:
   timedArrowLevels: []
   returnWaveLevels: []
   chainBounceLevels: []
-  cycloneLevels:
-  - intervalSeconds: 2
-    enemyCount: 3
-    knockupDuration: 2
-    damage: 0
-    landingDamagePercent: 0
-  - intervalSeconds: 5
-    enemyCount: 5
-    knockupDuration: 2.2
-    damage: 0
-    landingDamagePercent: 0
-  - intervalSeconds: 8
-    enemyCount: 3
-    knockupDuration: 2.5
-    damage: 0
-    landingDamagePercent: 0
-  - intervalSeconds: 7
-    enemyCount: 3
-    knockupDuration: 2.5
-    damage: 0
-    landingDamagePercent: 10
-  - intervalSeconds: 6
-    enemyCount: 4
-    knockupDuration: 3
-    damage: 0
-    landingDamagePercent: 20
+  cycloneLevels: []
   arrowVolleyLevels: []
   reflectShieldLevels: []
   chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels:
+  - rangeRows: 1
+    damage: 0
+    bossPoiseDamagePercent: 0.12
+  - rangeRows: 1
+    damage: 0
+    bossPoiseDamagePercent: 0.14
+  - rangeRows: 2
+    damage: 0
+    bossPoiseDamagePercent: 0.16
+  - rangeRows: 2
+    damage: 0
+    bossPoiseDamagePercent: 0.18
+  - rangeRows: 3
+    damage: 0
+    bossPoiseDamagePercent: 0.2
   chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []
@@ -76,8 +68,8 @@ MonoBehaviour:
   prerequisites: []
   activeEffectType: 2
   cooldownLevels:
-  - 15
-  - 14
-  - 13
-  - 12
   - 10
+  - 9
+  - 8
+  - 7
+  - 6

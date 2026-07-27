@@ -41,6 +41,9 @@ public class WaveConfig
     [Tooltip("血量倍率，1.0 = 100% = 不变")]
     public float healthMultiplier = 1f;
 
+    [Tooltip("Boss 专属血量倍率（仅对 isBoss=true 的敌人生效），0 表示使用通用 healthMultiplier")]
+    public float bossHealthMultiplier = 0f;
+
     [Tooltip("攻击速度倍率，>1 敌人攻击更频繁")]
     public float attackSpeedMultiplier = 1f;
 

@@ -16,23 +16,24 @@ MonoBehaviour:
   upgradeId: exp_boost
   displayName: "\u667A\u6167"
   descriptionTemplate: "\u83B7\u5F97\u7ECF\u9A8C\u63D0\u5347 +{0}%"
+  extraDescriptionTemplate: 
   rarity: 0
   maxLevel: 5
   effectType: exp_multiplier
   numericLevels:
-  - floatValue: 0.05
+  - floatValue: 0.08
     intValue: 0
     secondaryIntValue: 0
-  - floatValue: 0.05
+  - floatValue: 0.1
     intValue: 0
     secondaryIntValue: 0
-  - floatValue: 0.05
+  - floatValue: 0.12
     intValue: 0
     secondaryIntValue: 0
-  - floatValue: 0.05
+  - floatValue: 0.12
     intValue: 0
     secondaryIntValue: 0
-  - floatValue: 0.05
+  - floatValue: 0.12
     intValue: 0
     secondaryIntValue: 0
   floatValue: 0.05
@@ -48,8 +49,20 @@ MonoBehaviour:
   chainBounceLevels: []
   cycloneLevels: []
   arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
+  chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
   gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
   prerequisites: []

@@ -390,6 +390,7 @@ public class Enemy : MonoBehaviour
         bossState = BossState.None;
         isSuperArmor = false;
         isPhaseTransitioning = false;
+        deferredStun = false;
         _healthLocked = false;
         currentBossPhase = 0;
         if (_phaseTransitionRoutine != null) { StopCoroutine(_phaseTransitionRoutine); _phaseTransitionRoutine = null; }
@@ -486,11 +487,12 @@ public class Enemy : MonoBehaviour
     /// 在 Initialize() 之后、共享血量组创建之前调用
     /// 始终基于 _prefab* 原始值计算，不累积
     /// </summary>
-    public void ApplyWaveScaling(float hpMult, Color tint, float atkSpdMult = 1f, float dmgMult = 1f)
+    public void ApplyWaveScaling(float hpMult, Color tint, float atkSpdMult = 1f, float dmgMult = 1f, float bossHpMult = 0f)
     {
         if (_prefabMaxHealth <= 0f) return;
 
-        maxHealth = _prefabMaxHealth * hpMult;
+        float effectiveHpMult = (isBoss && bossHpMult > 0f) ? bossHpMult : hpMult;
+        maxHealth = _prefabMaxHealth * effectiveHpMult;
         currentHealth = maxHealth;
 
         attackSpeed = _prefabAttackSpeed * atkSpdMult;
@@ -1839,6 +1841,32 @@ public class Enemy : MonoBehaviour
                 Object.Destroy(mat);
         }
         flashMaterials = null;
+    }
+
+    /// <summary>
+    /// V2 位移主动技能对未眩晕 Boss 造成最大架势百分比伤害。
+    /// QTE 中破势延迟到 QTE 完整结束；转阶段中不结算。
+    /// </summary>
+    public bool TakeActiveDisplacementPoiseDamage(float maxPoisePercent)
+    {
+        if (!isBoss || maxPoisePercent <= 0f) return false;
+        if (state == EnemyState.Dead || state == EnemyState.Stunned || state == EnemyState.Launched) return false;
+        if (bossState != BossState.InCombat || isPhaseTransitioning) return false;
+
+        currentPoise = Mathf.Max(0f, currentPoise - maxPoise * Mathf.Clamp01(maxPoisePercent));
+        OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
+
+        if (currentPoise > 0f) return false;
+
+        if (state == EnemyState.QTEAttacking)
+        {
+            deferredStun = true;
+            DebugLog.Info($"[Enemy] 主动位移破势延迟Stun: {DebugTag}");
+            return true;
+        }
+
+        Stun(stunDuration);
+        return true;
     }
 
     /// <summary>

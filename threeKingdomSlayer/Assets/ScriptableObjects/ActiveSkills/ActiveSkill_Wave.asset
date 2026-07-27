@@ -9,30 +9,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5eab6a0cbf20ec64ba732f894b672d49, type: 3}
-  m_Name: SweepRangeBoost
+  m_Script: {fileID: 11500000, guid: e9bf2b0c688767c4792fda72a76ca5ac, type: 3}
+  m_Name: ActiveSkill_Wave
   m_EditorClassIdentifier: 
-  category: 0
-  upgradeId: sweep_range_boost
-  displayName: "\u6CE2\u957F"
-  descriptionTemplate: "\u653B\u51FB\u8303\u56F4\u63D0\u5347{0}\u683C\uFF0C\u8BE5\u63D0\u5347\u8303\u56F4\u7684\u653B\u51FB\u4F24\u5BB3-{1}%"
+  category: 4
+  upgradeId: active_wave
+  displayName: "\u6D77\u6D6A"
+  descriptionTemplate: "\u53EC\u5524\u6D77\u6D6A\u63A8\u8FDB\uFF0C\u5BF9\u524D\u65B9{0}\u6392\u654C\u4EBA\u9020\u6210{1}\u70B9\u4F24\u5BB3\u5E76\u51FB\u90001\u6392\u3002\u672A\u7729\u6655\u7684Boss\u6539\u4E3A\u524A\u51CF{3}%\u6700\u5927\u67B6\u52BF\u3002\u51B7\u5374{2}\u79D2"
   extraDescriptionTemplate: 
   rarity: 1
-  maxLevel: 2
-  effectType: sweep_range_boost
-  numericLevels:
-  - floatValue: 0
-    intValue: 1
-    secondaryIntValue: 5
-  - floatValue: 0
-    intValue: 2
-    secondaryIntValue: 3
+  maxLevel: 3
+  effectType: 
+  numericLevels: []
   floatValue: 0
-  intValue: 1
-  secondaryIntValue: 5
+  intValue: 0
+  secondaryIntValue: 0
   stringValue: 
   baseAttackConfig: {fileID: 0}
-  icon: {fileID: 21300000, guid: 01af8b8bf5132ed499740f1e3af39d0f, type: 3}
+  icon: {fileID: 21300000, guid: c90d7a13a419ee340b2888761a07e5f4, type: 3}
   phantomLevels: []
   timedAoeLevels: []
   timedArrowLevels: []
@@ -43,7 +37,16 @@ MonoBehaviour:
   reflectShieldLevels: []
   chargeShockwaveLevels: []
   chargeAttackShockwaveLevels: []
-  waveLevels: []
+  waveLevels:
+  - rangeRows: 1
+    damage: 8
+    bossPoiseDamagePercent: 0.08
+  - rangeRows: 2
+    damage: 10
+    bossPoiseDamagePercent: 0.1
+  - rangeRows: 3
+    damage: 12
+    bossPoiseDamagePercent: 0.12
   chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []
@@ -57,3 +60,8 @@ MonoBehaviour:
     initialDamage: 0
     landingDamagePercent: 0
   prerequisites: []
+  activeEffectType: 5
+  cooldownLevels:
+  - 10
+  - 8
+  - 6

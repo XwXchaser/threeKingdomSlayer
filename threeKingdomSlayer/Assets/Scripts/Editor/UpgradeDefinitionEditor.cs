@@ -284,7 +284,7 @@ public class UpgradeDefinitionEditor : Editor
                 EditorGUILayout.PropertyField(elem.FindPropertyRelative("intValue"), new GUIContent("行 (row)"));
                 EditorGUILayout.PropertyField(elem.FindPropertyRelative("secondaryIntValue"), new GUIContent("列 (col)"));
             }
-            else if (effectType == "stab_range_boost" || effectType == "sweep_range_boost")
+            else if (effectType == "stab_range_boost" || effectType == "sweep_range_boost" || effectType == "attack_range_boost")
             {
                 EditorGUILayout.PropertyField(elem.FindPropertyRelative("intValue"), new GUIContent("范围加成"));
                 EditorGUILayout.PropertyField(elem.FindPropertyRelative("secondaryIntValue"), new GUIContent("伤害惩罚(%)"));

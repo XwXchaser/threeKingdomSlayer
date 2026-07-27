@@ -12,15 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f73b071e5f3162e408a3cd537c38cbd9, type: 3}
   m_Name: ActiveSkillPoolConfig
   m_EditorClassIdentifier: 
-  commonWeight: 0.35
-  rareWeight: 0.6
+  commonWeight: 0.1
+  rareWeight: 0.85
   legendaryWeight: 0.05
-  commonPool:
-  - skill: {fileID: 11400000, guid: 3d742db6482ccbf499661fe2c1de51c1, type: 2}
-    weight: 10
+  commonPool: []
+  rarePool:
   - skill: {fileID: 11400000, guid: 6c0f2f4854ee0244daeac817f4cb828a, type: 2}
     weight: 100
-  rarePool:
   - skill: {fileID: 11400000, guid: 3cf32a208431f6e49b67da6c3603831c, type: 2}
-    weight: 1000
-  legendaryPool: []
+    weight: 100
+  - skill: {fileID: 11400000, guid: 894de3689a6692f41be5c5cf47b960a3, type: 2}
+    weight: 100
+  - skill: {fileID: 11400000, guid: 6d5a56942b0b68a488b7dd0d90501abb, type: 2}
+    weight: 100
+  legendaryPool:
+  - skill: {fileID: 11400000, guid: ad8f6c8edfab32b4d83f251559d240d7, type: 2}
+    weight: 100

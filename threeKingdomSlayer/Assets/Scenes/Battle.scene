@@ -292,6 +292,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   wavePrefab: {fileID: 5803661486634337744, guid: 65a5eceb10c30c746aeaf5f937a45434, type: 3}
+  cycloneWavePrefab: {fileID: 0}
   rowStaggerDelay: 0.15
   waveYOffset: 0.5
   waveStartZOffset: -1
@@ -373,6 +374,7 @@ MonoBehaviour:
   _fireEffectPrefab: {fileID: 7080427255057156643, guid: 145d6875cc6c6fd4798603b5d4830fcb, type: 3}
   _arrowEffectPrefab: {fileID: 1707118907136065935, guid: 7d3ceaa069c134f419679af082cb68a5, type: 3}
   _cycloneEffectPrefab: {fileID: 3409137233646897394, guid: cc817a47c8a9d8b47820f0677fe9f041, type: 3}
+  _waveManager: {fileID: 0}
 --- !u!114 &5137012
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4731,7 +4733,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e87331f1d4f79964bad6a8fb7b30b577, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stageConfig: {fileID: 11400000, guid: d7f6e66ff74c61f44959cd74514c5156, type: 2}
+  stageConfig: {fileID: 11400000, guid: 81048452505b7774591dba212d695a8e, type: 2}
   waveSpawner: {fileID: 1221163314}
   enemyManager: {fileID: 598331925}
   playerState: {fileID: 1878310418}
@@ -11952,7 +11954,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   heroConfig: {fileID: 11400000, guid: 6a50843ddffb1fa43af2e2a34d5d2432, type: 2}
-  expCurveConfig: {fileID: 11400000, guid: 056ebc3219eaa314c890fd8ecce9eb59, type: 2}
+  expCurveConfig: {fileID: 11400000, guid: 9cdb0e82b7b5e1c47b39ab0e0ee0c3c1, type: 2}
   shieldGrantProgress: 0.3
 --- !u!4 &1878310419
 Transform:

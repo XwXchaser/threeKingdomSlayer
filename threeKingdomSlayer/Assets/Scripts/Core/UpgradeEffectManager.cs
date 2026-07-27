@@ -25,10 +25,8 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
     private float _buffExpBonus;
     private float _itemDropRateBonus; // 道具掉落率加成（小数，0.1=+10%）
     private float _itemDamageBonus;   // 道具伤害加成（小数，0.15=+15%）
-    private int _stabRangeBonus;
-    private float _stabDamagePenalty;
-    private int _sweepRangeBonus;
-    private float _sweepDamagePenalty;
+    private int _attackRangeBonus;
+    private float _attackDamagePenalty;
     private int _pushWaveDistance;
     private int _convergenceStep;
     private float _convergenceDamagePercent = 0.1f;
@@ -417,10 +415,13 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
     public float GetAttackSpeedBonusPercent() => (GetAttackSpeedMultiplier() - 1f) * 100f;
     public float GetItemDropRateBonus() => _itemDropRateBonus;
     public float GetItemDamageBonus() => _itemDamageBonus;
-    public int GetStabRangeBonus() => _stabRangeBonus;
-    public float GetStabDamagePenalty() => _stabDamagePenalty;
-    public int GetSweepRangeBonus() => _sweepRangeBonus;
-    public float GetSweepDamagePenalty() => _sweepDamagePenalty;
+    public int GetAttackRangeBonus() => _attackRangeBonus;
+    public float GetAttackDamagePenalty() => _attackDamagePenalty;
+    // 保留旧接口兼容（后续清理）
+    public int GetStabRangeBonus() => _attackRangeBonus;
+    public float GetStabDamagePenalty() => _attackDamagePenalty;
+    public int GetSweepRangeBonus() => _attackRangeBonus;
+    public float GetSweepDamagePenalty() => _attackDamagePenalty;
     public int GetPushWaveDistance() => _pushWaveDistance;
     public int GetConvergenceStep() => _convergenceStep;
     public float GetConvergenceDamagePercent() => _convergenceDamagePercent;
@@ -540,12 +541,12 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
                 desc = desc.Replace("{2}", cfg.arrowCount.ToString());
                 desc = desc.Replace("{3}", cfg.damage.ToString());
             }
-            else if (activeSkill.activeEffectType == ActiveSkillEffectType.Cyclone && activeSkill.cycloneLevels != null && nextLevel <= activeSkill.cycloneLevels.Count)
+            else if (activeSkill.activeEffectType == ActiveSkillEffectType.Cyclone && activeSkill.waveLevels != null && nextLevel <= activeSkill.waveLevels.Count)
             {
-                var cfg = activeSkill.cycloneLevels[nextLevel - 1];
-                desc = desc.Replace("{0}", activeSkill.GetCooldown(nextLevel).ToString("F1"));
-                desc = desc.Replace("{1}", cfg.enemyCount.ToString());
-                desc = desc.Replace("{2}", cfg.knockupDuration.ToString("F1"));
+                var cfg = activeSkill.waveLevels[nextLevel - 1];
+                desc = desc.Replace("{0}", cfg.rangeRows.ToString());
+                desc = desc.Replace("{1}", activeSkill.GetCooldown(nextLevel).ToString("F1"));
+                desc = desc.Replace("{2}", (cfg.bossPoiseDamagePercent * 100f).ToString("0"));
             }
             else if (activeSkill.activeEffectType == ActiveSkillEffectType.ChargeAttackShockwave && activeSkill.chargeAttackShockwaveLevels != null && nextLevel <= activeSkill.chargeAttackShockwaveLevels.Count)
             {
@@ -553,6 +554,14 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
                 desc = desc.Replace("{0}", cfg.rangeRows.ToString());
                 desc = desc.Replace("{1}", cfg.damage.ToString());
                 desc = desc.Replace("{2}", activeSkill.GetCooldown(nextLevel).ToString("F1"));
+            }
+            else if (activeSkill.activeEffectType == ActiveSkillEffectType.Wave && activeSkill.waveLevels != null && nextLevel <= activeSkill.waveLevels.Count)
+            {
+                var cfg = activeSkill.waveLevels[nextLevel - 1];
+                desc = desc.Replace("{0}", cfg.rangeRows.ToString());
+                desc = desc.Replace("{1}", cfg.damage.ToString());
+                desc = desc.Replace("{2}", activeSkill.GetCooldown(nextLevel).ToString("F1"));
+                desc = desc.Replace("{3}", (cfg.bossPoiseDamagePercent * 100f).ToString("0"));
             }
         }
         else if (def.category == UpgradeCategory.AttackPassive || def.category == UpgradeCategory.TimedPassive)
@@ -671,7 +680,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
             desc = desc.Replace("{1}", cfg.intervalSeconds.ToString("F1"));
             desc = desc.Replace("{2}", cfg.rowCount.ToString());
         }
-        else if (def.effectType == "stab_range_boost" || def.effectType == "sweep_range_boost")
+        else if (def.effectType == "stab_range_boost" || def.effectType == "sweep_range_boost" || def.effectType == "attack_range_boost")
         {
             var cfg = def.GetNumericConfig(nextLevel);
             desc = desc.Replace("{0}", cfg.intValue.ToString());
@@ -759,10 +768,8 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
         _buffExpBonus = 0f;
         _itemDropRateBonus = 0f;
         _itemDamageBonus = 0f;
-        _stabRangeBonus = 0;
-        _stabDamagePenalty = 0f;
-        _sweepRangeBonus = 0;
-        _sweepDamagePenalty = 0f;
+        _attackRangeBonus = 0;
+        _attackDamagePenalty = 0f;
         _pushWaveDistance = 0;
         _convergenceStep = 0;
         _convergenceDamagePercent = 0.1f;
@@ -822,12 +829,10 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
                 _itemDamageBonus += cfg.floatValue;
                 break;
             case "stab_range_boost":
-                _stabRangeBonus += cfg.intValue;
-                _stabDamagePenalty += cfg.secondaryIntValue * 0.01f;
-                break;
             case "sweep_range_boost":
-                _sweepRangeBonus += cfg.intValue;
-                _sweepDamagePenalty += cfg.secondaryIntValue * 0.01f;
+            case "attack_range_boost":
+                _attackRangeBonus += cfg.intValue;
+                _attackDamagePenalty += cfg.secondaryIntValue * 0.01f;
                 break;
             case "push_wave":
                 _pushWaveDistance += cfg.intValue;

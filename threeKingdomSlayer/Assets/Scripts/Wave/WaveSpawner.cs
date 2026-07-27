@@ -255,7 +255,8 @@ public class WaveSpawner : MonoBehaviour
             WaveConfig currentWave = ResolvedStageConfig?.waves[currentWaveIndex];
             if (currentWave != null)
                 enemy.ApplyWaveScaling(currentWave.healthMultiplier, currentWave.waveTintColor,
-                    currentWave.attackSpeedMultiplier, currentWave.damageMultiplier);
+                    currentWave.attackSpeedMultiplier, currentWave.damageMultiplier,
+                    currentWave.bossHealthMultiplier);
 
             // 注册到管理器
             enemyManager?.RegisterEnemy(enemy);

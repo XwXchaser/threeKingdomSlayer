@@ -16,6 +16,9 @@ public class WaveManager : MonoBehaviour
     [Header("海浪预制体")]
     public GameObject wavePrefab;
 
+    [Header("旋风预制体（用于主动技能旋风）")]
+    public GameObject cycloneWavePrefab;
+
     [Header("编排参数")]
     [Tooltip("每排海浪之间的错开延迟（秒）")]
     public float rowStaggerDelay = 0.15f;
@@ -29,8 +32,6 @@ public class WaveManager : MonoBehaviour
     private int _maxRow;
     private float _rowSpacing;
     private float _formationZ;
-    private HashSet<Enemy> _waveHitEnemies = new HashSet<Enemy>();
-    private readonly List<Enemy> _wavePushedEnemies = new List<Enemy>();
 
     private void Awake()
     {
@@ -66,19 +67,29 @@ public class WaveManager : MonoBehaviour
     /// <summary>
     /// 触发海浪效果
     /// </summary>
-    /// <param name="startRow">起始排（最前排=0）</param>
-    /// <param name="endRow">结束排（含）</param>
-    /// <param name="damage">伤害值</param>
     public void TriggerWave(int startRow, int endRow, int damage)
     {
-        if (wavePrefab == null)
+        TriggerWave(startRow, endRow, damage, 0f, wavePrefab);
+    }
+
+    public void TriggerWave(int startRow, int endRow, int damage, float bossPoiseDamagePercent)
+    {
+        TriggerWave(startRow, endRow, damage, bossPoiseDamagePercent, wavePrefab);
+    }
+
+    /// <summary>
+    /// 触发海浪效果（使用自定义预制体）
+    /// </summary>
+    public void TriggerWave(int startRow, int endRow, int damage, float bossPoiseDamagePercent, GameObject overridePrefab)
+    {
+        if (overridePrefab == null)
         {
-            Debug.LogWarning("[WaveManager] wavePrefab 未配置");
+            Debug.LogWarning("[WaveManager] overridePrefab 未配置");
             return;
         }
 
         CacheFormationParams();
-        StartCoroutine(WaveSequence(startRow, endRow, damage));
+        StartCoroutine(WaveSequence(startRow, endRow, damage, bossPoiseDamagePercent, overridePrefab));
     }
 
     /// <summary>
@@ -87,25 +98,25 @@ public class WaveManager : MonoBehaviour
     public void TriggerWave(int damage)
     {
         CacheFormationParams();
-        TriggerWave(0, _maxRow, damage);
+        TriggerWave(0, _maxRow, damage, 0f, wavePrefab);
     }
 
-    private IEnumerator WaveSequence(int startRow, int endRow, int damage)
+    private IEnumerator WaveSequence(int startRow, int endRow, int damage, float bossPoiseDamagePercent, GameObject prefab)
     {
-        _waveHitEnemies.Clear();
-        _wavePushedEnemies.Clear();
+        var hitEnemies = new HashSet<Enemy>();
+        var pushedEnemies = new List<Enemy>();
         var delay = new WaitForSeconds(rowStaggerDelay);
 
         for (int row = startRow; row <= endRow; row++)
         {
-            SpawnWaveForRow(row, damage);
+            SpawnWaveForRow(row, damage, bossPoiseDamagePercent, hitEnemies, pushedEnemies, prefab);
             yield return delay;
         }
 
         // Backward-push effects are aggregated so only actually pushed enemies arm exact-slot returns.
-        if (wavePrefab != null)
+        if (prefab != null)
         {
-            var player = wavePrefab.GetComponent<WaveEffectPlayer>();
+            var player = prefab.GetComponent<WaveEffectPlayer>();
             if (player != null)
             {
                 float waveDuration = player.frameInterval * 5f;
@@ -113,20 +124,20 @@ public class WaveManager : MonoBehaviour
             }
         }
 
-        if (_wavePushedEnemies.Count > 0)
-            AttackSystem.Instance?.columnManager?.PostDisplacementFillUp(_wavePushedEnemies);
+        if (pushedEnemies.Count > 0)
+            AttackSystem.Instance?.columnManager?.PostDisplacementFillUp(pushedEnemies);
     }
 
-    private void SpawnWaveForRow(int row, int damage)
+    private void SpawnWaveForRow(int row, int damage, float bossPoiseDamagePercent, HashSet<Enemy> hitEnemies, List<Enemy> pushedEnemies, GameObject prefab)
     {
         float rowZ = GetRowZ(row);
         Vector3 spawnPos = new Vector3(0f, waveYOffset, rowZ + waveStartZOffset);
 
-        var go = Instantiate(wavePrefab, spawnPos, Quaternion.identity);
+        var go = Instantiate(prefab, spawnPos, Quaternion.identity);
         var player = go.GetComponent<WaveEffectPlayer>();
         if (player != null)
         {
-            player.Play(spawnPos, row, damage, _waveHitEnemies, _wavePushedEnemies);
+            player.Play(spawnPos, row, damage, bossPoiseDamagePercent, hitEnemies, pushedEnemies);
         }
         else
         {

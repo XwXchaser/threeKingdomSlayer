@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: 5100236280932012696}
   m_Layer: 0
   m_HasEditorInfo: 1
-  m_Name: Enemy_104
+  m_Name: Enemy_107
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -50,8 +50,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemyName: boss
-  enemyId: 104
+  enemyName: boss_wave3
+  enemyId: 107
   maxHealth: 500
   occupySlots: 5
   attackSpeed: 0.2
@@ -105,8 +105,6 @@ MonoBehaviour:
   bossHealthBarPrefab: {fileID: 3365436119990249603, guid: 9a1fc4950f5206a4bb1f8a56c5ef9c61, type: 3}
   bossPhases:
   - {fileID: 11400000, guid: 33e32411381c8be4db000afef3545d45, type: 2}
-  - {fileID: 11400000, guid: b2fdbfe73b7f858428c1fcf02b93c785, type: 2}
-  - {fileID: 11400000, guid: c7a65195a628dd84698e8766810f8f61, type: 2}
   outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
   outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
   outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}

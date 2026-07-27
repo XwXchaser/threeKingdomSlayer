@@ -16,38 +16,24 @@ MonoBehaviour:
   upgradeId: spike_trap
   displayName: "\u5730\u523A"
   descriptionTemplate: "\u5728({1},{2})\u4F4D\u7F6E\u751F\u6210\u5730\u523A\uFF0C\u654C\u4EBA\u7ECF\u8FC7\u65F6\u9020\u6210{0}\u70B9\u4F24\u5BB3"
+  extraDescriptionTemplate: 
   rarity: 0
-  maxLevel: 10
+  maxLevel: 5
   effectType: spike_trap
   numericLevels:
-  - floatValue: 15
+  - floatValue: 20
     intValue: 1
     secondaryIntValue: 2
-  - floatValue: 30
+  - floatValue: 35
     intValue: 1
     secondaryIntValue: 2
-  - floatValue: 45
+  - floatValue: 55
     intValue: 1
     secondaryIntValue: 2
-  - floatValue: 60
+  - floatValue: 80
     intValue: 1
     secondaryIntValue: 2
-  - floatValue: 75
-    intValue: 1
-    secondaryIntValue: 2
-  - floatValue: 90
-    intValue: 1
-    secondaryIntValue: 2
-  - floatValue: 105
-    intValue: 1
-    secondaryIntValue: 2
-  - floatValue: 120
-    intValue: 1
-    secondaryIntValue: 2
-  - floatValue: 135
-    intValue: 1
-    secondaryIntValue: 2
-  - floatValue: 150
+  - floatValue: 110
     intValue: 1
     secondaryIntValue: 2
   floatValue: 15
@@ -63,8 +49,20 @@ MonoBehaviour:
   chainBounceLevels: []
   cycloneLevels: []
   arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
+  chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
   gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
   prerequisites: []

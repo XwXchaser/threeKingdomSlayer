@@ -10,29 +10,29 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5eab6a0cbf20ec64ba732f894b672d49, type: 3}
-  m_Name: SweepRangeBoost
+  m_Name: Bamiaozhuzhang
   m_EditorClassIdentifier: 
   category: 0
-  upgradeId: sweep_range_boost
-  displayName: "\u6CE2\u957F"
-  descriptionTemplate: "\u653B\u51FB\u8303\u56F4\u63D0\u5347{0}\u683C\uFF0C\u8BE5\u63D0\u5347\u8303\u56F4\u7684\u653B\u51FB\u4F24\u5BB3-{1}%"
+  upgradeId: attack_range_boost
+  displayName: "\u62D4\u82D7\u52A9\u957F"
+  descriptionTemplate: "\u653B\u51FB\u8DDD\u79BB\u63D0\u5347{0}\u683C\uFF0C\u8BE5\u63D0\u5347\u8303\u56F4\u7684\u653B\u51FB\u4F24\u5BB3-{1}%"
   extraDescriptionTemplate: 
   rarity: 1
   maxLevel: 2
-  effectType: sweep_range_boost
+  effectType: attack_range_boost
   numericLevels:
   - floatValue: 0
     intValue: 1
-    secondaryIntValue: 5
+    secondaryIntValue: 10
   - floatValue: 0
     intValue: 2
-    secondaryIntValue: 3
+    secondaryIntValue: 7
   floatValue: 0
-  intValue: 1
-  secondaryIntValue: 5
+  intValue: 0
+  secondaryIntValue: 0
   stringValue: 
   baseAttackConfig: {fileID: 0}
-  icon: {fileID: 21300000, guid: 01af8b8bf5132ed499740f1e3af39d0f, type: 3}
+  icon: {fileID: 21300000, guid: ecd20ccd51fed4f4e88bbc8005eefba7, type: 3}
   phantomLevels: []
   timedAoeLevels: []
   timedArrowLevels: []

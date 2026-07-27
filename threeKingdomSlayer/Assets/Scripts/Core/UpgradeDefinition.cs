@@ -102,6 +102,10 @@ public class UpgradeDefinition : ScriptableObject
     [Tooltip("按等级配置蓄力攻击冲击波效果。index 0 = Lv1")]
     public List<ChargeAttackShockwaveLevelConfig> chargeAttackShockwaveLevels = new List<ChargeAttackShockwaveLevelConfig>();
 
+    [Header("主动海浪（ActiveSkillEffectType=Wave）")]
+    [Tooltip("按等级配置主动海浪效果。index 0 = Lv1")]
+    public List<ActiveWaveLevelConfig> waveLevels = new List<ActiveWaveLevelConfig>();
+
     [Header("受击冲击波（effectType=charge_hit_shockwave）")]
     [Tooltip("按等级配置蓄力受击增伤冲击波。index 0 = Lv1")]
     public List<ChargeHitShockwaveLevelConfig> chargeHitShockwaveLevels = new List<ChargeHitShockwaveLevelConfig>();
@@ -492,6 +496,18 @@ public struct ChargeAttackShockwaveLevelConfig
     public int rangeRows;
     [Tooltip("每道冲击波伤害")]
     public int damage;
+}
+
+/// <summary>主动海浪每级配置</summary>
+[System.Serializable]
+public struct ActiveWaveLevelConfig
+{
+    [Tooltip("海浪覆盖前方排数")]
+    public int rangeRows;
+    [Tooltip("每名敌人伤害")]
+    public int damage;
+    [Tooltip("未眩晕 Boss 受到的最大架势百分比伤害（0.08=8%）")]
+    [Range(0f, 1f)] public float bossPoiseDamagePercent;
 }
 
 /// <summary>蓄力受击增伤冲击波每级配置</summary>

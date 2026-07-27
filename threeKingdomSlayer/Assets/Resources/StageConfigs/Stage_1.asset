@@ -21,8 +21,9 @@ MonoBehaviour:
     - enemyIds: 6500000000000000650000000000000065000000
     - enemyIds: 0000000065000000650000006500000000000000
     - enemyIds: 6500000000000000650000000000000065000000
-    - enemyIds: 0000000000000000680000000000000000000000
+    - enemyIds: 00000000000000006b0000000000000000000000
     healthMultiplier: 1
+    bossHealthMultiplier: 0
     attackSpeedMultiplier: 1
     damageMultiplier: 1
     waveTintColor: {r: 1, g: 1, b: 1, a: 1}
@@ -43,6 +44,7 @@ MonoBehaviour:
     - enemyIds: 0000000000000000650000000000000000000000
     - enemyIds: 0000000000000000650000000000000000000000
     healthMultiplier: 1
+    bossHealthMultiplier: 0
     attackSpeedMultiplier: 1
     damageMultiplier: 1
     waveTintColor: {r: 0.9496855, g: 0.48678842, b: 0.48678842, a: 1}
@@ -63,6 +65,7 @@ MonoBehaviour:
     - enemyIds: 0000000000000000650000000000000000000000
     - enemyIds: 0000000000000000680000000000000000000000
     healthMultiplier: 1
+    bossHealthMultiplier: 0
     attackSpeedMultiplier: 1
     damageMultiplier: 1
     waveTintColor: {r: 1, g: 0.03459108, b: 0.03459108, a: 1}

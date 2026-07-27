@@ -18,25 +18,17 @@ MonoBehaviour:
   descriptionTemplate: "\u6233\u51FB\u7C7B\uFF08Stab\u3001Pierce\uFF09\u83B7\u5F97
     {0} \u6392\u653B\u51FB\u8303\u56F4\u63D0\u5347\uFF0C\u8BE5\u63D0\u5347\u8303\u56F4\u7684\u653B\u51FB\u4F24\u5BB3
     -{1}%"
+  extraDescriptionTemplate: 
   rarity: 1
-  maxLevel: 5
+  maxLevel: 2
   effectType: stab_range_boost
   numericLevels:
   - floatValue: 0
     intValue: 1
     secondaryIntValue: 5
   - floatValue: 0
-    intValue: 1
-    secondaryIntValue: 5
-  - floatValue: 0
-    intValue: 1
-    secondaryIntValue: 5
-  - floatValue: 0
-    intValue: 1
-    secondaryIntValue: 5
-  - floatValue: 0
-    intValue: 1
-    secondaryIntValue: 5
+    intValue: 2
+    secondaryIntValue: 3
   floatValue: 0
   intValue: 1
   secondaryIntValue: 5
@@ -50,8 +42,20 @@ MonoBehaviour:
   chainBounceLevels: []
   cycloneLevels: []
   arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
+  chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
   gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
   prerequisites: []
