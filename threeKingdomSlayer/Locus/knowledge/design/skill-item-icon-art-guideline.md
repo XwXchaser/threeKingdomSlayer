@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1784213775718
-updatedAt: 1784213775719
+updatedAt: 1785305929148
 ---
 
 # skill-item-icon-art-guideline
@@ -42,12 +42,12 @@ updatedAt: 1784213775719
 
 ## 2. 现有画风拆解
 
-### 2.1 线条与渲染
+### 2.1 像素街机线条与渲染
 
-- 采用 **复古 2D 手游 / 三国题材插画**，不是纯像素风，也不是厚涂写实。
-- 主体使用偏深的棕黑、深蓝黑或墨色描边；关键外轮廓必须比内部细节更清楚。
-- 上色为高对比块面：暗部明确、边缘高光清晰、局部有金属反光或元素亮边。
-- 可使用少量颗粒、速度线、冲击星芒、飞溅碎屑增强动势；不可让它们压过主体。
+- 采用 **三国像素街机风格**：低分辨率像素画感、硬边轮廓、有限色阶；不是平滑赛璐璐插画，也不是厚涂写实。
+- 主体使用偏深的棕黑、深蓝黑或墨色**像素描边**；关键外轮廓必须比内部细节更清楚。
+- 上色使用高对比、清晰分阶的像素块面：暗部明确、边缘高光清晰；避免平滑渐变、空气笔刷、柔焦和细密写实纹理。
+- 可使用少量像素化火星、速度线、冲击星芒、飞溅碎屑增强动势；不可让它们压过主体。
 - 透明区域边缘应干净，避免发灰、白边、半透明杂点和背景残留。
 
 ### 2.2 构图规律
@@ -154,8 +154,8 @@ updatedAt: 1784213775719
 - Alpha Is Transparency：开启。
 - Mip Maps：关闭（UI 小图不需要）。
 - Wrap Mode：`Clamp`。
-- Filter Mode：以现有项目设置为准；若保留当前手绘缩略图质感，优先 Bilinear；不要混用导致部分图标像素化、部分模糊。
-- Compression：优先保证描边、火焰边缘与透明 Alpha 干净；移动端根据实际包体和显示效果再压缩。
+- Filter Mode：`Point (no filter)`，保持像素边缘清晰；禁止 Bilinear/Trilinear 将像素画模糊。
+- Compression：优先保证像素描边、有限色阶和透明 Alpha 干净；避免造成色阶抖动、边缘发灰或像素糊化。
 - Pivot：中心（除非图标后续要用作世界空间特效，不适用于本规范）。
 
 ### 5.3 UI 适配检查
@@ -175,21 +175,21 @@ updatedAt: 1784213775719
 ### 6.1 通用正向模板
 
 ```text
-single mobile game skill icon, square 1:1 composition, isolated on transparent background,
+single pixel art mobile game skill icon, square 1:1 composition, isolated on transparent background,
 classic Three Kingdoms Chinese bronze mechanism and cold-weapon aesthetic,
-retro 2D mobile game illustration, crisp dark ink outline, bold readable silhouette,
-high-contrast cel shading, polished gold-bronze metal details, controlled particle accents,
+retro pixel arcade game illustration, crisp dark pixel outline, limited color palette, hard pixel edges,
+bold readable silhouette, high-contrast pixel shading, polished gold-bronze metal details, controlled pixel particle accents,
 [技能主体与效果描述], centered composition with safe padding,
-no text, no letters, no numbers, no UI frame, no border, no character portrait, no scenery
+no text, no letters, no numbers, no UI frame, no border, no character portrait, no scenery, no smooth gradients, no painterly rendering
 ```
 
 中文版本：
 
 ```text
-三国题材复古手游技能图标，1:1 方形构图，透明背景，主体居中并保留安全边距，
-深色墨线描边，清晰剪影，高对比赛璐璐明暗，青铜/木制机关与冷兵器质感，
-[技能主体与效果描述]，少量速度线或粒子加强动势，
-不要文字、不要数字、不要 UI 外框、不要按钮、不要角色头像、不要场景背景、不要白底
+三国像素街机风格手游技能图标，1:1 方形构图，透明背景，主体居中并保留安全边距，
+低分辨率像素画、硬边像素轮廓、有限色阶、深色像素描边、清晰剪影、高对比像素分阶明暗，
+青铜/木制机关与冷兵器质感，[技能主体与效果描述]，少量像素速度线或粒子加强动势，
+不要文字、不要数字、不要 UI 外框、不要按钮、不要角色头像、不要场景背景、不要白底、不要平滑渐变、不要赛璐璐插画或厚涂
 ```
 
 ### 6.2 图生图/风格参考工作流

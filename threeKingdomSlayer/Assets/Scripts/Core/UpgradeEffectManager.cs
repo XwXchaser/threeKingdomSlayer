@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 /// <summary>
@@ -37,15 +38,43 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
     private int _chargeHitShockwaveHitCount;
     private float _activeSkillCDReduction;
 
-    // 灼烧系统
-    private readonly Dictionary<Enemy, BurnState> _burnStates = new Dictionary<Enemy, BurnState>();
-    private readonly List<Enemy> _burnRemovalList = new List<Enemy>();
-    private readonly List<KeyValuePair<Enemy, BurnState>> _burnUpdateBuffer = new List<KeyValuePair<Enemy, BurnState>>();
-    public struct BurnState
+    // DoT系统：伤害配置均表示完整持续时间内的总伤害。
+    private const float BurnTickInterval = 1f;
+    private const float DiseaseTickInterval = 0.5f;
+
+    private readonly Dictionary<Enemy, DotState> _burnStates = new Dictionary<Enemy, DotState>();
+    private readonly Dictionary<Enemy, DiseaseState> _diseaseStates = new Dictionary<Enemy, DiseaseState>();
+    private readonly List<Enemy> _dotRemovalList = new List<Enemy>();
+    private readonly List<KeyValuePair<Enemy, DotState>> _burnUpdateBuffer = new List<KeyValuePair<Enemy, DotState>>();
+    private readonly List<KeyValuePair<Enemy, DiseaseState>> _diseaseUpdateBuffer = new List<KeyValuePair<Enemy, DiseaseState>>();
+
+    public struct DotState
     {
-        public float remainingTime;
-        public int damagePerSecond;
+        public int damagePerTick;
+        public int totalTicks;
+        public int ticksRemaining;
         public float tickTimer;
+    }
+
+    public struct DiseaseState
+    {
+        public int totalDamagePerLayer;
+        public int durationSeconds;
+        public int damagePerTick;
+        public int layers;
+        public int totalTicks;
+        public int ticksRemaining;
+        public float tickTimer;
+        public bool smartSpread;
+    }
+
+    public struct DotStatus
+    {
+        public bool isBurning;
+        public float burnProgress;
+        public bool isDiseased;
+        public float diseaseProgress;
+        public int diseaseLayers;
     }
 
     // 反伤盾（由 charge_reflect_shield 管理）
@@ -120,13 +149,22 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
         }
     }
 
+    private static bool IsDotPaused(Enemy enemy)
+    {
+        return enemy != null && enemy.isBoss &&
+            (enemy.bossState != BossState.InCombat || enemy.state == EnemyState.QTEAttacking || enemy.isPhaseTransitioning);
+    }
+
     private void TickBurnDamage()
     {
-        if (_burnStates.Count == 0) return;
-        float dt = Time.deltaTime;
+        TickBurnStates();
+        TickDiseaseStates();
+    }
 
-        // 用 CopyTo 快照 key 数组，最小化 Dictionary 枚举窗口，防止 DOTween OnUpdate
-        // 回调在同一个 Update 帧内通过 ApplyBurn 写入 _burnStates 导致 Collection was modified
+    private void TickBurnStates()
+    {
+        if (_burnStates.Count == 0) return;
+
         _burnUpdateBuffer.Clear();
         var keys = new Enemy[_burnStates.Count];
         _burnStates.Keys.CopyTo(keys, 0);
@@ -134,63 +172,266 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
         {
             var enemy = keys[i];
             if (enemy != null && _burnStates.TryGetValue(enemy, out var state))
-                _burnUpdateBuffer.Add(new KeyValuePair<Enemy, BurnState>(enemy, state));
+                _burnUpdateBuffer.Add(new KeyValuePair<Enemy, DotState>(enemy, state));
         }
 
-        _burnRemovalList.Clear();
+        _dotRemovalList.Clear();
+        float dt = Time.deltaTime;
         for (int i = 0; i < _burnUpdateBuffer.Count; i++)
         {
             var enemy = _burnUpdateBuffer[i].Key;
+            var state = _burnUpdateBuffer[i].Value;
             if (enemy == null || enemy.state == EnemyState.Dead)
             {
-                _burnRemovalList.Add(enemy);
+                _dotRemovalList.Add(enemy);
                 continue;
             }
-            var state = _burnUpdateBuffer[i].Value;
-            state.remainingTime -= dt;
+
+            if (IsDotPaused(enemy))
+            {
+                _burnStates[enemy] = state;
+                continue;
+            }
+
             state.tickTimer -= dt;
             if (state.tickTimer <= 0f)
             {
-                enemy.TakeDamage(state.damagePerSecond, DamageType.Pierce, Color.red, canInterruptAttack: false, triggerHitAnimation: false);
-                state.tickTimer += 1f;
+                enemy.TakeDamage(state.damagePerTick, DamageType.Pierce, Color.red, countsForCombo: false, canInterruptAttack: false, triggerHitAnimation: false, ignoreDamageModifiers: true);
+                state.ticksRemaining--;
+                state.tickTimer += BurnTickInterval;
             }
-            if (state.remainingTime <= 0f)
-                _burnRemovalList.Add(enemy);
+
+            if (enemy.state == EnemyState.Dead || state.ticksRemaining <= 0)
+                _dotRemovalList.Add(enemy);
             else
                 _burnStates[enemy] = state;
         }
-        foreach (var enemy in _burnRemovalList)
-            _burnStates.Remove(enemy);
+
+        for (int i = 0; i < _dotRemovalList.Count; i++)
+            _burnStates.Remove(_dotRemovalList[i]);
     }
 
-    /// <summary>施加灼烧</summary>
-    public void ApplyBurn(Enemy enemy, int burnDps, float burnDuration)
+    private void TickDiseaseStates()
     {
-        if (enemy == null || burnDps <= 0 || burnDuration <= 0f) return;
+        if (_diseaseStates.Count == 0) return;
+
+        _diseaseUpdateBuffer.Clear();
+        var keys = new Enemy[_diseaseStates.Count];
+        _diseaseStates.Keys.CopyTo(keys, 0);
+        for (int i = 0; i < keys.Length; i++)
+        {
+            var enemy = keys[i];
+            if (enemy != null && _diseaseStates.TryGetValue(enemy, out var state))
+                _diseaseUpdateBuffer.Add(new KeyValuePair<Enemy, DiseaseState>(enemy, state));
+        }
+
+        _dotRemovalList.Clear();
+        float dt = Time.deltaTime;
+        for (int i = 0; i < _diseaseUpdateBuffer.Count; i++)
+        {
+            var enemy = _diseaseUpdateBuffer[i].Key;
+            var state = _diseaseUpdateBuffer[i].Value;
+            if (enemy == null || enemy.state == EnemyState.Dead)
+            {
+                _dotRemovalList.Add(enemy);
+                continue;
+            }
+
+            if (IsDotPaused(enemy))
+            {
+                _diseaseStates[enemy] = state;
+                continue;
+            }
+
+            state.tickTimer -= dt;
+            if (state.tickTimer <= 0f)
+            {
+                int tickDmg = state.damagePerTick * state.layers;
+                DebugLog.Info($"[Disease] Tick: {enemy.DebugTag} dmg={tickDmg} remaining={state.ticksRemaining}");
+                enemy.TakeDamage(tickDmg, DamageType.Pierce, new Color(0.72f, 0.28f, 0.9f), countsForCombo: false, canInterruptAttack: false, triggerHitAnimation: false, ignoreDamageModifiers: true);
+                state.ticksRemaining--;
+                state.tickTimer += DiseaseTickInterval;
+            }
+
+            if (enemy.state == EnemyState.Dead || state.ticksRemaining <= 0)
+                _dotRemovalList.Add(enemy);
+            else
+                _diseaseStates[enemy] = state;
+        }
+
+        for (int i = 0; i < _dotRemovalList.Count; i++)
+        {
+            var enemy = _dotRemovalList[i];
+            _diseaseStates.Remove(enemy);
+            if (enemy != null)
+                enemy.OnDying -= HandleDiseasedEnemyDeath;
+        }
+    }
+
+    /// <summary>施加灼烧，总伤害在持续时间内按固定跳字间隔结算。</summary>
+    public void ApplyBurn(Enemy enemy, int totalDamage, float burnDuration)
+    {
+        int tickCount = Mathf.Max(1, Mathf.CeilToInt(burnDuration / BurnTickInterval));
+        int damagePerTick = totalDamage / tickCount;
+        if (enemy == null || damagePerTick <= 0 || burnDuration <= 0f) return;
+
         if (_burnStates.TryGetValue(enemy, out var existing))
         {
-            // 刷新持续时间和最高 DPS
-            existing.remainingTime = Mathf.Max(existing.remainingTime, burnDuration);
-            if (burnDps > existing.damagePerSecond)
-                existing.damagePerSecond = burnDps;
-            existing.tickTimer = 0f; // 立即 tick 一次
+            existing.totalTicks = tickCount;
+            existing.ticksRemaining = tickCount;
+            existing.damagePerTick = Mathf.Max(existing.damagePerTick, damagePerTick);
+            existing.tickTimer = BurnTickInterval;
             _burnStates[enemy] = existing;
+            return;
+        }
+
+        _burnStates[enemy] = new DotState
+        {
+            damagePerTick = damagePerTick,
+            totalTicks = tickCount,
+            ticksRemaining = tickCount,
+            tickTimer = BurnTickInterval
+        };
+    }
+
+    public void ApplyDisease(Enemy enemy, int totalDamage, int durationSeconds, int layers = 1, bool addToExistingLayers = true, bool smartSpread = false)
+    {
+        int tickCount = Mathf.Max(1, Mathf.CeilToInt(durationSeconds / DiseaseTickInterval));
+        int damagePerTick = Mathf.Max(1, totalDamage / tickCount);
+        if (enemy == null || enemy.state == EnemyState.Dead || durationSeconds <= 0 || layers <= 0) return;
+
+        if (_diseaseStates.TryGetValue(enemy, out var existing))
+        {
+            existing.layers = addToExistingLayers
+                ? existing.layers + layers
+                : Mathf.Max(existing.layers, layers);
+            existing.totalDamagePerLayer = Mathf.Max(existing.totalDamagePerLayer, totalDamage);
+            existing.durationSeconds = Mathf.Max(existing.durationSeconds, durationSeconds);
+            existing.damagePerTick = Mathf.Max(existing.damagePerTick, damagePerTick);
+            existing.totalTicks = tickCount;
+            existing.ticksRemaining = tickCount;
+            existing.tickTimer = DiseaseTickInterval;
+            existing.smartSpread = existing.smartSpread || smartSpread;
+            _diseaseStates[enemy] = existing;
+            return;
+        }
+
+        _diseaseStates[enemy] = new DiseaseState
+        {
+            totalDamagePerLayer = totalDamage,
+            durationSeconds = durationSeconds,
+            damagePerTick = damagePerTick,
+            layers = layers,
+            totalTicks = tickCount,
+            ticksRemaining = tickCount,
+            tickTimer = DiseaseTickInterval,
+            smartSpread = smartSpread
+        };
+        enemy.OnDying += HandleDiseasedEnemyDeath;
+        DebugLog.Info($"[Disease] ApplyDisease: {enemy.DebugTag} totalDmg={totalDamage} ticks={tickCount} dmgPerTick={damagePerTick} layers={layers} smartSpread={smartSpread}");
+    }
+
+    private void HandleDiseasedEnemyDeath(Enemy enemy)
+    {
+        if (enemy == null || !_diseaseStates.TryGetValue(enemy, out var state)) return;
+
+        int column = enemy.columnIndex;
+        int row = enemy.rowIndex;
+        _diseaseStates.Remove(enemy);
+        enemy.OnDying -= HandleDiseasedEnemyDeath;
+
+        if (enemy.isBoss) return;
+
+        var columnManager = AttackSystem.Instance?.columnManager;
+        if (columnManager == null) return;
+
+        if (state.smartSpread)
+        {
+            Enemy target = SelectDiseaseSpreadTarget(columnManager, column, row);
+            if (target != null)
+                ApplyDisease(target, state.totalDamagePerLayer, state.durationSeconds, state.layers, addToExistingLayers: false, smartSpread: true);
         }
         else
         {
-            _burnStates[enemy] = new BurnState
-            {
-                remainingTime = burnDuration,
-                damagePerSecond = burnDps,
-                tickTimer = 0f
-            };
+            // 全相邻传播：左、右、后
+            SpreadToIfValid(columnManager.GetEnemyAt(column - 1, row), state);
+            SpreadToIfValid(columnManager.GetEnemyAt(column + 1, row), state);
+            SpreadToIfValid(columnManager.GetEnemyAt(column, row + 1), state);
         }
+    }
+
+    private void SpreadToIfValid(Enemy target, DiseaseState state)
+    {
+        if (target != null && !target.isBoss && target.state != EnemyState.Dead)
+            ApplyDisease(target, state.totalDamagePerLayer, state.durationSeconds, state.layers, addToExistingLayers: false, smartSpread: state.smartSpread);
+    }
+
+    private static Enemy SelectDiseaseSpreadTarget(ColumnManager columnManager, int column, int row)
+    {
+        // 优先同行（左右），其次后排；同行内选最近，后排内选最近
+        Enemy closestSameRow = null;
+        int closestSameRowDist = int.MaxValue;
+        Enemy closestOtherRow = null;
+        int closestOtherRowDist = int.MaxValue;
+        var allEnemies = columnManager.GetAllEnemies();
+        if (allEnemies == null) { DebugLog.Info("[DiseaseSpread] GetAllEnemies返回null"); return null; }
+
+        DebugLog.Info($"[DiseaseSpread] 扫描{allEnemies.Count}个敌人，源位置(col={column},row={row})");
+        for (int i = 0; i < allEnemies.Count; i++)
+        {
+            var e = allEnemies[i];
+            if (e == null) continue;
+            if (e.isBoss || e.state == EnemyState.Dead) continue;
+            if (e.columnIndex == column && e.rowIndex == row) continue;
+            int colDist = Mathf.Abs(e.columnIndex - column);
+            int rowDist = Mathf.Abs(e.rowIndex - row);
+            int dist = colDist + rowDist;
+            bool sameRow = e.rowIndex == row;
+            DebugLog.Info($"[DiseaseSpread] 候选: {e.DebugTag} col={e.columnIndex} row={e.rowIndex} dist={dist} sameRow={sameRow}");
+            if (sameRow)
+            {
+                if (dist < closestSameRowDist) { closestSameRowDist = dist; closestSameRow = e; }
+            }
+            else
+            {
+                if (dist < closestOtherRowDist) { closestOtherRowDist = dist; closestOtherRow = e; }
+            }
+        }
+        var result = closestSameRow ?? closestOtherRow;
+        DebugLog.Info($"[DiseaseSpread] 结果: {(result != null ? result.DebugTag : "null")} sameRow={closestSameRow != null} pickedSameRowDist={closestSameRowDist} pickedOtherRowDist={closestOtherRowDist}");
+        return result;
+    }
+
+    public DotStatus GetDotStatus(Enemy enemy)
+    {
+        if (enemy == null || enemy.state == EnemyState.Dead)
+            return default;
+
+        var status = new DotStatus();
+        if (_burnStates.TryGetValue(enemy, out var burn))
+        {
+            status.isBurning = burn.ticksRemaining > 0;
+            status.burnProgress = status.isBurning
+                ? Mathf.Clamp01((burn.ticksRemaining - 1 + Mathf.Clamp01(burn.tickTimer / BurnTickInterval)) / Mathf.Max(1f, burn.totalTicks))
+                : 0f;
+        }
+
+        if (_diseaseStates.TryGetValue(enemy, out var disease))
+        {
+            status.isDiseased = disease.ticksRemaining > 0;
+            status.diseaseProgress = status.isDiseased
+                ? Mathf.Clamp01((disease.ticksRemaining - 1 + Mathf.Clamp01(disease.tickTimer / DiseaseTickInterval)) / Mathf.Max(1f, disease.totalTicks))
+                : 0f;
+            status.diseaseLayers = status.isDiseased ? disease.layers : 0;
+        }
+
+        return status;
     }
 
     /// <summary>检查敌人是否处于灼烧状态</summary>
     public bool IsBurning(Enemy enemy)
     {
-        return enemy != null && _burnStates.TryGetValue(enemy, out var state) && state.remainingTime > 0f;
+        return enemy != null && _burnStates.TryGetValue(enemy, out var state) && state.ticksRemaining > 0;
     }
 
     /// <summary>注册行为型效果执行器</summary>
@@ -326,6 +567,9 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
     {
         return _appliedUpgrades.TryGetValue(upgradeId, out int lv) ? lv : 0;
     }
+
+    /// <summary>当前已获得的被动技能数量（Numeric + AttackPassive + TimedPassive）</summary>
+    public int PassiveUpgradeCount => _appliedUpgrades.Count;
 
     // ── 数值查询接口 ──
 
@@ -508,15 +752,75 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
     /// </summary>
     public string GetDescription(UpgradeDefinition def)
     {
-        int level = def.category == UpgradeCategory.ActiveSkill && ActiveSkillInventory.Instance != null
-            ? ActiveSkillInventory.Instance.GetLevel(def.upgradeId)
-            : (_appliedUpgrades.TryGetValue(def.upgradeId, out int lv) ? lv : 0);
-        int nextLevel = level + 1;
+        int level = GetDisplayLevel(def);
+        return AppendFeatureDescriptions(GetDescriptionForLevel(def, level + 1), def, level + 1, false, level);
+    }
 
+    public string GetUpgradePreviewDescription(UpgradeDefinition def)
+    {
+        int currentLevel = GetDisplayLevel(def);
+        int nextLevel = currentLevel + 1;
+        string nextDescription = GetDescriptionForLevel(def, nextLevel);
+        if (currentLevel <= 0)
+            return AppendFeatureDescriptions(nextDescription, def, nextLevel, false, 0);
+
+        string currentDescription = GetDescriptionForLevel(def, currentLevel);
+        string comparison = BuildDescriptionComparison(currentDescription, nextDescription);
+        return AppendFeatureDescriptions(comparison, def, nextLevel, true, currentLevel);
+    }
+
+    private int GetDisplayLevel(UpgradeDefinition def)
+    {
+        return def.category == UpgradeCategory.ActiveSkill && ActiveSkillInventory.Instance != null
+            ? ActiveSkillInventory.Instance.GetLevel(def.upgradeId)
+            : (_appliedUpgrades.TryGetValue(def.upgradeId, out int level) ? level : 0);
+    }
+
+    private static string AppendFeatureDescriptions(string description, UpgradeDefinition def, int level, bool highlightNew, int currentLevel)
+    {
+        if (def.levelFeatureDescriptions == null) return description;
+
+        int upperBound = Mathf.Min(level, def.levelFeatureDescriptions.Count);
+        for (int i = 0; i < upperBound; i++)
+        {
+            string feature = def.levelFeatureDescriptions[i];
+            if (string.IsNullOrEmpty(feature)) continue;
+
+            bool isNewFeature = highlightNew && i >= currentLevel;
+            description += "\n" + (isNewFeature ? "<color=#F5C542>" + feature + "</color>" : feature);
+        }
+        return description;
+    }
+
+    private static string BuildDescriptionComparison(string currentDescription, string nextDescription)
+    {
+        var currentNumbers = Regex.Matches(currentDescription, @"\d+(?:\.\d+)?");
+        var nextNumbers = Regex.Matches(nextDescription, @"\d+(?:\.\d+)?");
+        if (currentNumbers.Count == 0 || currentNumbers.Count != nextNumbers.Count)
+            return nextDescription;
+
+        int numberIndex = 0;
+        return Regex.Replace(nextDescription, @"\d+(?:\.\d+)?", match =>
+        {
+            string currentValue = currentNumbers[numberIndex].Value;
+            string nextValue = match.Value;
+            numberIndex++;
+            return currentValue != nextValue
+                ? currentValue + " → <color=#F5C542>" + nextValue + "</color>"
+                : nextValue;
+        });
+    }
+
+    private string GetDescriptionForLevel(UpgradeDefinition def, int nextLevel)
+    {
         string desc = string.IsNullOrEmpty(def.extraDescriptionTemplate)
             ? def.descriptionTemplate
             : def.descriptionTemplate + "\n" + def.extraDescriptionTemplate;
+        return FormatDescriptionForLevel(def, desc, nextLevel);
+    }
 
+    private string FormatDescriptionForLevel(UpgradeDefinition def, string desc, int nextLevel)
+    {
         if (def.category == UpgradeCategory.ActiveSkill && def is ActiveSkillDefinition activeSkill)
         {
             if (activeSkill.activeEffectType == ActiveSkillEffectType.FireAoe && activeSkill.timedAoeLevels != null && nextLevel <= activeSkill.timedAoeLevels.Count)
@@ -547,6 +851,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
                 desc = desc.Replace("{0}", cfg.rangeRows.ToString());
                 desc = desc.Replace("{1}", activeSkill.GetCooldown(nextLevel).ToString("F1"));
                 desc = desc.Replace("{2}", (cfg.bossPoiseDamagePercent * 100f).ToString("0"));
+                desc = desc.Replace("{3}", cfg.landingDamage.ToString());
             }
             else if (activeSkill.activeEffectType == ActiveSkillEffectType.ChargeAttackShockwave && activeSkill.chargeAttackShockwaveLevels != null && nextLevel <= activeSkill.chargeAttackShockwaveLevels.Count)
             {
@@ -555,13 +860,17 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
                 desc = desc.Replace("{1}", cfg.damage.ToString());
                 desc = desc.Replace("{2}", activeSkill.GetCooldown(nextLevel).ToString("F1"));
             }
+            else if (activeSkill.activeEffectType == ActiveSkillEffectType.Disease && activeSkill.diseaseLevels != null && nextLevel <= activeSkill.diseaseLevels.Count)
+            {
+                var cfg = activeSkill.diseaseLevels[nextLevel - 1];
+                desc = desc.Replace("{0}", cfg.totalDamage.ToString());
+            }
             else if (activeSkill.activeEffectType == ActiveSkillEffectType.Wave && activeSkill.waveLevels != null && nextLevel <= activeSkill.waveLevels.Count)
             {
                 var cfg = activeSkill.waveLevels[nextLevel - 1];
                 desc = desc.Replace("{0}", cfg.rangeRows.ToString());
-                desc = desc.Replace("{1}", cfg.damage.ToString());
-                desc = desc.Replace("{2}", activeSkill.GetCooldown(nextLevel).ToString("F1"));
-                desc = desc.Replace("{3}", (cfg.bossPoiseDamagePercent * 100f).ToString("0"));
+                desc = desc.Replace("{1}", activeSkill.GetCooldown(nextLevel).ToString("F1"));
+                desc = desc.Replace("{2}", (cfg.bossPoiseDamagePercent * 100f).ToString("0"));
             }
         }
         else if (def.category == UpgradeCategory.AttackPassive || def.category == UpgradeCategory.TimedPassive)
@@ -573,13 +882,10 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
                 if (def.timedAoeLevels != null && nextLevel <= def.timedAoeLevels.Count)
                 {
                     var cfg = def.timedAoeLevels[nextLevel - 1];
-                    string triggerStr = isTimed
-                        ? cfg.intervalSeconds.ToString("F1")
-                        : cfg.triggerThreshold.ToString();
-                    desc = desc.Replace("{0}", triggerStr);
                     desc = desc.Replace("{1}", cfg.damage.ToString());
-                    desc = desc.Replace("{2}", cfg.burnDamagePerSecond.ToString());
+                    desc = desc.Replace("{2}", cfg.burnTotalDamage.ToString());
                     desc = desc.Replace("{3}", cfg.burnDurationSeconds.ToString("F1"));
+                    desc = desc.Replace("{4}", cfg.rangeRows.ToString());
                 }
             }
             else if (def.effectType == "passive_timed_arrow")
@@ -643,7 +949,6 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
                 var swCfg = def.chargeShockwaveLevels != null && nextLevel <= def.chargeShockwaveLevels.Count
                     ? def.chargeShockwaveLevels[nextLevel - 1]
                     : new ChargeShockwaveLevelConfig();
-                desc = desc.Replace("{0}", swCfg.intervalSeconds.ToString("F1"));
                 desc = desc.Replace("{1}", swCfg.shockwaveCount.ToString());
                 desc = desc.Replace("{2}", swCfg.rangeRows.ToString());
                 desc = desc.Replace("{3}", swCfg.baseDamage.ToString());
@@ -682,19 +987,19 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
         }
         else if (def.effectType == "stab_range_boost" || def.effectType == "sweep_range_boost" || def.effectType == "attack_range_boost")
         {
-            var cfg = def.GetNumericConfig(nextLevel);
+            var cfg = GetDisplayNumericConfig(def, nextLevel);
             desc = desc.Replace("{0}", cfg.intValue.ToString());
             desc = desc.Replace("{1}", cfg.secondaryIntValue.ToString());
         }
         else if (def.effectType == "push_wave" || def.effectType == "convergence_wave")
         {
-            var cfg = def.GetNumericConfig(nextLevel);
+            var cfg = GetDisplayNumericConfig(def, nextLevel);
             desc = desc.Replace("{0}", cfg.intValue.ToString());
             desc = desc.Replace("{1}", (cfg.floatValue * 100f).ToString("F0"));
         }
         else if (def.effectType == "charge_damage_reduction")
         {
-            var cfg = def.GetNumericConfig(nextLevel);
+            var cfg = GetDisplayNumericConfig(def, nextLevel);
             desc = desc.Replace("{0}", (cfg.floatValue * 100f).ToString("F0"));
         }
         else if (def.effectType == "spike_trap")
@@ -729,6 +1034,26 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
         }
 
         return desc;
+    }
+
+    private static NumericLevelConfig GetCumulativeNumericConfig(UpgradeDefinition def, int level)
+    {
+        var total = new NumericLevelConfig();
+        for (int i = 1; i <= level; i++)
+        {
+            var config = def.GetNumericConfig(i);
+            total.floatValue += config.floatValue;
+            total.intValue += config.intValue;
+            total.secondaryIntValue += config.secondaryIntValue;
+        }
+        return total;
+    }
+
+    private static NumericLevelConfig GetDisplayNumericConfig(UpgradeDefinition def, int level)
+    {
+        return def.effectType == "attack_range_boost"
+            ? def.GetNumericConfig(level)
+            : GetCumulativeNumericConfig(def, level);
     }
 
     private void SyncToPlayerState(UpgradeDefinition def, int level)
@@ -789,6 +1114,15 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
         _isCharging = false;
 
         _burnStates.Clear();
+        _dotRemovalList.Clear();
+        _burnUpdateBuffer.Clear();
+        _diseaseUpdateBuffer.Clear();
+        foreach (var enemy in _diseaseStates.Keys)
+        {
+            if (enemy != null)
+                enemy.OnDying -= HandleDiseasedEnemyDeath;
+        }
+        _diseaseStates.Clear();
 
         CycloneItemController.Instance?.ResetAll();
         SpikeTrapController.Instance?.ResetAll();
@@ -830,9 +1164,12 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
                 break;
             case "stab_range_boost":
             case "sweep_range_boost":
-            case "attack_range_boost":
                 _attackRangeBonus += cfg.intValue;
                 _attackDamagePenalty += cfg.secondaryIntValue * 0.01f;
+                break;
+            case "attack_range_boost":
+                _attackRangeBonus = cfg.intValue;
+                _attackDamagePenalty = cfg.secondaryIntValue * 0.01f;
                 break;
             case "push_wave":
                 _pushWaveDistance += cfg.intValue;

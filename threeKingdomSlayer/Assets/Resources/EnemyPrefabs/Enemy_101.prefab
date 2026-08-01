@@ -53,7 +53,7 @@ MonoBehaviour:
   enemyId: 101
   maxHealth: 16
   occupySlots: 1
-  attackSpeed: 0.08
+  attackSpeed: 0.5
   attackDamage: 10
   attackRange: 1
   moveSpeed: 0.3
@@ -208,7 +208,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e52db6f433200c4b9725bbce745a570, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  barWidth: 1.8
+  barWidth: 1
   barHeight: 0.2
   yOffset: 0
   displayDuration: 2

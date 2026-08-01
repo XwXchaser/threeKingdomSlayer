@@ -15,8 +15,9 @@ MonoBehaviour:
   category: 4
   upgradeId: active_arrow_rain
   displayName: "\u7BAD\u96E8"
-  descriptionTemplate: "\u51B7\u5374{0}\u79D2\uFF0C\u5BF9\u524D\u65B9{1}\u6392\u5C04\u51FA{2}\u6CE2\u7BAD\u96E8\uFF0C\u9020\u6210{3}\u70B9\u4F24\u5BB3"
+  descriptionTemplate: "\u5BF9\u524D\u65B9{1}\u6392\u5C04\u51FA{2}\u6CE2\u7BAD\u96E8\uFF0C\u9020\u6210{3}\u70B9\u4F24\u5BB3"
   extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
   rarity: 1
   maxLevel: 5
   effectType: 
@@ -30,31 +31,31 @@ MonoBehaviour:
   phantomLevels: []
   timedAoeLevels: []
   timedArrowLevels:
-  - intervalSeconds: 3
+  - intervalSeconds: 0
     triggerThreshold: 0
     rowCount: 1
     arrowCount: 4
-    damage: 8
-  - intervalSeconds: 3
-    triggerThreshold: 0
-    rowCount: 1
-    arrowCount: 5
     damage: 12
-  - intervalSeconds: 2
+  - intervalSeconds: 0
     triggerThreshold: 0
     rowCount: 2
-    arrowCount: 6
+    arrowCount: 5
     damage: 16
-  - intervalSeconds: 2
-    triggerThreshold: 0
-    rowCount: 2
-    arrowCount: 7
-    damage: 20
-  - intervalSeconds: 2
+  - intervalSeconds: 0
     triggerThreshold: 0
     rowCount: 3
+    arrowCount: 6
+    damage: 20
+  - intervalSeconds: 0
+    triggerThreshold: 0
+    rowCount: 4
+    arrowCount: 7
+    damage: 24
+  - intervalSeconds: 0
+    triggerThreshold: 0
+    rowCount: 5
     arrowCount: 8
-    damage: 25
+    damage: 28
   returnWaveLevels: []
   chainBounceLevels: []
   cycloneLevels: []
@@ -64,6 +65,7 @@ MonoBehaviour:
   chargeAttackShockwaveLevels: []
   waveLevels: []
   chargeHitShockwaveLevels: []
+  diseaseLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
@@ -78,8 +80,8 @@ MonoBehaviour:
   prerequisites: []
   activeEffectType: 1
   cooldownLevels:
+  - 20
+  - 18
+  - 16
   - 14
-  - 13
   - 12
-  - 11
-  - 10

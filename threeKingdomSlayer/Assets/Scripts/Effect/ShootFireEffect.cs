@@ -79,11 +79,13 @@ public class ShootFireEffect : MonoBehaviour
     private int _visibleRows;
     private float _zStart, _zEnd;
     private float _centerX, _halfWidth;
+    private float _sweepTravelDuration;
+    private int _sweepRangeRows;
     private int _damage;
-    private int _burnDps;
+    private int _burnTotalDamage;
     private float _burnDuration;
     private bool _critIfBurning;
-    public void Play(List<int> columns, int damage, int maxRows = -1, int burnDps = 0, float burnDuration = 0f, bool critIfBurning = false)
+    public void Play(List<int> columns, int damage, int maxRows = -1, int burnTotalDamage = 0, float burnDuration = 0f, bool critIfBurning = false)
     {
         var cm = AttackSystem.Instance?.columnManager;
         if (cm == null)
@@ -93,7 +95,7 @@ public class ShootFireEffect : MonoBehaviour
         }
 
         _damage = damage;
-        _burnDps = burnDps;
+        _burnTotalDamage = burnTotalDamage;
         _burnDuration = burnDuration;
         _critIfBurning = critIfBurning;
         _columns = new List<int>(columns);
@@ -111,10 +113,10 @@ public class ShootFireEffect : MonoBehaviour
         Destroy(gameObject, burstDuration + particleLifetime + 0.5f);
     }
 
-    public void PlaySweep(List<int> columns, int damage, int maxRows = -1, float startZOffset = 0f, int burnDps = 0, float burnDuration = 0f)
+    public void PlaySweep(List<int> columns, int damage, int maxRows = -1, float startZOffset = 0f, int burnTotalDamage = 0, float burnDuration = 0f)
     {
         _damage = damage;
-        _burnDps = burnDps;
+        _burnTotalDamage = burnTotalDamage;
         _burnDuration = burnDuration;
         if (AttackSystem.Instance?.columnManager == null)
         {
@@ -123,12 +125,50 @@ public class ShootFireEffect : MonoBehaviour
         }
 
         _lastSweepHitTimes.Clear();
+        _sweepRangeRows = maxRows > 0
+            ? maxRows
+            : StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
         _zStart = fireStartZ + startZOffset;
-        _zEnd = fireEndZ;
+        _zEnd = GetSweepEndZ(_sweepRangeRows);
+        float baseDistance = Mathf.Max(0.01f, fireEndZ - _zStart);
+        float travelSpeed = baseDistance / Mathf.Max(0.05f, sweepProjectileDuration);
+        _sweepTravelDuration = Mathf.Max(0.05f, (_zEnd - _zStart) / travelSpeed);
         _centerX = GetCenterX(columns);
         transform.position = Vector3.zero;
         StartCoroutine(SweepRoutine());
-        Destroy(gameObject, sweepDuration + sweepProjectileDuration + particleLifetime + 0.5f);
+        Destroy(gameObject, sweepDuration + _sweepTravelDuration + particleLifetime + 0.5f);
+    }
+
+    private float GetSweepEndZ(int rangeRows)
+    {
+        int visibleRows = StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
+        int clampedRows = Mathf.Clamp(rangeRows, 1, visibleRows);
+        float rowSpacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
+        float formationOffsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
+        int targetRow = clampedRows - 1;
+        float targetRowZ = (visibleRows - 1 - targetRow) * (-rowSpacing) + formationOffsetZ;
+        float enemiesRootZ = GetEnemyRootWorldZ();
+        return enemiesRootZ + targetRowZ + sweepHitRadius;
+    }
+
+    private static float GetEnemyRootWorldZ()
+    {
+        var columnManager = AttackSystem.Instance?.columnManager;
+        var enemies = columnManager?.GetAllEnemies();
+        if (enemies != null)
+        {
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                var enemy = enemies[i];
+                if (enemy != null && enemy.transform.parent != null)
+                    return enemy.transform.parent.position.z;
+            }
+        }
+
+        var pool = EnemyPool.Instance != null ? EnemyPool.Instance : Object.FindObjectOfType<EnemyPool>();
+        if (pool == null) return 0f;
+        Transform enemyRoot = pool.enemiesRoot != null ? pool.enemiesRoot : pool.poolRoot;
+        return enemyRoot != null ? enemyRoot.position.z : 0f;
     }
 
     private IEnumerator SweepRoutine()
@@ -165,14 +205,14 @@ public class ShootFireEffect : MonoBehaviour
         particle.transform.localScale = Vector3.one * scaleNearMax * globalScale;
         particle.transform.localRotation = Quaternion.Euler(0f, 0f, -angle + Random.Range(-rotJitter, rotJitter));
 
-        float fadeIn = Mathf.Min(alphaFadeInTime, sweepProjectileDuration * 0.3f);
+        float fadeIn = Mathf.Min(alphaFadeInTime, _sweepTravelDuration * 0.3f);
         var fade = DOTween.Sequence().SetTarget(particle).SetUpdate(UpdateType.Normal, false);
         fade.Append(spriteRenderer.DOFade(alphaPeak, fadeIn));
-        fade.AppendInterval(Mathf.Max(0f, sweepProjectileDuration - fadeIn * 2f));
+        fade.AppendInterval(Mathf.Max(0f, _sweepTravelDuration - fadeIn * 2f));
         fade.Append(spriteRenderer.DOFade(0f, fadeIn));
         fade.OnComplete(() => Destroy(particle));
 
-        particle.transform.DOMove(end, sweepProjectileDuration)
+        particle.transform.DOMove(end, _sweepTravelDuration)
             .SetEase(Ease.Linear)
             .SetTarget(particle)
             .SetUpdate(UpdateType.Normal, false)
@@ -194,6 +234,7 @@ public class ShootFireEffect : MonoBehaviour
         {
             var enemy = allEnemies[i];
             if (enemy == null || enemy.state == EnemyState.Dead) continue;
+            if (!enemy.isBoss && (enemy.rowIndex < 0 || enemy.rowIndex >= _sweepRangeRows)) continue;
             if (_lastSweepHitTimes.TryGetValue(enemy, out float lastHitTime)
                 && Time.time - lastHitTime < sweepHitInterval) continue;
 
@@ -206,8 +247,8 @@ public class ShootFireEffect : MonoBehaviour
             if (_critIfBurning && UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.IsBurning(enemy))
                 finalDamage *= 2;
             enemy.TakeDamage(finalDamage, DamageType.Pierce);
-            if (_burnDps > 0 && UpgradeEffectManager.Instance != null)
-                UpgradeEffectManager.Instance.ApplyBurn(enemy, _burnDps, _burnDuration);
+            if (_burnTotalDamage > 0 && UpgradeEffectManager.Instance != null)
+                UpgradeEffectManager.Instance.ApplyBurn(enemy, _burnTotalDamage, _burnDuration);
         }
     }
 
@@ -319,8 +360,8 @@ public class ShootFireEffect : MonoBehaviour
             if (_critIfBurning && UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.IsBurning(enemy))
                 finalDamage *= 2;
             enemy.TakeDamage(finalDamage, DamageType.Pierce);
-            if (_burnDps > 0 && UpgradeEffectManager.Instance != null)
-                UpgradeEffectManager.Instance.ApplyBurn(enemy, _burnDps, _burnDuration);
+            if (_burnTotalDamage > 0 && UpgradeEffectManager.Instance != null)
+                UpgradeEffectManager.Instance.ApplyBurn(enemy, _burnTotalDamage, _burnDuration);
         }
     }
 

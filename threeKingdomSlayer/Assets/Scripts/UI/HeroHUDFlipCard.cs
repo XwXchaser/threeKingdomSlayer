@@ -23,6 +23,7 @@ public sealed class HeroHUDFlipCard : MonoBehaviour
     private FlipReason _backReason;
     private float _rotationX;
     private bool _qteActivitySubscribed;
+    private bool _lastObservedQteActivity;
     private System.Action<Enemy> _onBossEngaged;
     private System.Action<Enemy> _onEnemyDied;
     private bool _bossEventsSubscribed;
@@ -36,7 +37,7 @@ public sealed class HeroHUDFlipCard : MonoBehaviour
             _stageProgressBar.OnBossTransitionComplete += EnterBossCombat;
         TrySubscribeBossEvents();
         ApplyDisplayVersion();
-        OnQTEActivityChanged(QTEActivityHub.IsActive);
+        SubscribeQTEActivity();
     }
 
     public void SetDisplayVersion(DisplayVersion version)
@@ -78,19 +79,32 @@ public sealed class HeroHUDFlipCard : MonoBehaviour
     private void Update()
     {
         TrySubscribeBossEvents();
+        if (!UsesV2QTEOnlyFlip()) return;
+
+        bool active = QTEActivityHub.IsActive;
+        if (active != _lastObservedQteActivity)
+            OnQTEActivityChanged(active);
     }
 
-    private void OnEnable()
+    private void SubscribeQTEActivity()
     {
-        if (_qteActivitySubscribed) return;
-        QTEActivityHub.OnActivityChanged += OnQTEActivityChanged;
+        Debug.Log($"[QTE_FLIP_DIAG] HUD Subscribe name={name}#{GetInstanceID()} enabled={enabled} active={gameObject.activeInHierarchy} usesV2={UsesV2QTEOnlyFlip()}");
+        QTEActivityHub.Subscribe(OnQTEActivityChanged);
         _qteActivitySubscribed = true;
         OnQTEActivityChanged(QTEActivityHub.IsActive);
     }
 
+    private void OnEnable()
+    {
+        SubscribeQTEActivity();
+    }
+
     private void OnQTEActivityChanged(bool active)
     {
-        if (!UsesV2QTEOnlyFlip()) return;
+        _lastObservedQteActivity = active;
+        bool usesV2 = UsesV2QTEOnlyFlip();
+        Debug.Log($"[QTE_FLIP_DIAG] HUD ActivityChanged active={active} usesV2={usesV2} showingBack={_showingBack} reason={_backReason} cardRot={(_card != null ? _card.localEulerAngles.x : -1f):F2} frontA={(_frontFace != null ? _frontFace.alpha : -1f):F1} backA={(_backFace != null ? _backFace.alpha : -1f):F1}");
+        if (!usesV2) return;
         if (active)
             ShowBack(FlipReason.QTE);
         else
@@ -176,6 +190,7 @@ public sealed class HeroHUDFlipCard : MonoBehaviour
 
     private void SetSide(bool showBack)
     {
+        Debug.Log($"[QTE_FLIP_DIAG] HUD SetSide request showBack={showBack} showingBack={_showingBack} tweenActive={_flipTween != null} card={(_card != null)} front={(_frontFace != null)} back={(_backFace != null)}");
         if (_card == null || _frontFace == null || _backFace == null)
             return;
         if (_showingBack == showBack && _flipTween == null)
@@ -184,27 +199,37 @@ public sealed class HeroHUDFlipCard : MonoBehaviour
             return;
         }
 
+        bool hadActiveTween = _flipTween != null;
+        bool oldShowingBack = _showingBack;
         _showingBack = showBack;
         _flipTween?.Kill();
         _flipTween = null;
 
         float currentX = _card.localEulerAngles.x;
-        SetVisibleSide(IsBackRotation(currentX));
-        float currentNormalized = NormalizeRotation(currentX);
-        float targetNormalized = showBack ? 180f : 0f;
-        float delta = Mathf.DeltaAngle(currentNormalized, targetNormalized);
-        float targetX = currentX + delta;
+        // 若旧翻转Tween被反向请求打断，先快照到旧目标角度，确保旧目标面短暂可见
+        if (hadActiveTween && oldShowingBack != showBack)
+        {
+            float snapToX = oldShowingBack ? 180f : 0f;
+            _card.localRotation = Quaternion.Euler(snapToX, 0f, 0f);
+            currentX = snapToX;
+            SetVisibleSide(oldShowingBack);
+            Debug.Log($"[QTE_FLIP_DIAG] HUD SetSide snap-reverse oldTarget={oldShowingBack} newTarget={showBack} snapX={snapToX:F1}");
+        }
+        else
+        {
+            SetVisibleSide(IsBackRotation(currentX));
+        }
+
+        float targetX = showBack ? 180f : 0f;
         _rotationX = targetX;
 
-        if (Mathf.Abs(delta) <= 0.1f)
+        if (Mathf.Abs(Mathf.DeltaAngle(currentX, targetX)) <= 0.1f)
         {
             _card.localRotation = Quaternion.Euler(targetX, 0f, 0f);
             SetVisibleSide(showBack);
             return;
         }
 
-        float startDistance = Mathf.Abs(Mathf.DeltaAngle(currentNormalized, targetNormalized));
-        float middleDistance = startDistance * 0.5f;
         bool sideChanged = false;
         var sequence = DOTween.Sequence().SetTarget(this).SetUpdate(true);
         _flipTween = sequence;
@@ -212,17 +237,17 @@ public sealed class HeroHUDFlipCard : MonoBehaviour
             .SetEase(Ease.InOutQuad)
             .OnUpdate(() =>
             {
-                if (sideChanged) return;
-                float remaining = Mathf.Abs(Mathf.DeltaAngle(NormalizeRotation(_card.localEulerAngles.x), targetNormalized));
-                if (remaining <= middleDistance)
-                {
-                    sideChanged = true;
-                    SetVisibleSide(showBack);
-                }
+                if (sideChanged || _flipTween == null || _flipTween.ElapsedPercentage() < 0.5f) return;
+
+                sideChanged = true;
+                Debug.Log($"[QTE_FLIP_DIAG] HUD Flip midpoint showBack={showBack} rot={_card.localEulerAngles.x:F2}");
+                SetVisibleSide(showBack);
             }));
         sequence.OnComplete(() =>
         {
+            _card.localRotation = Quaternion.Euler(targetX, 0f, 0f);
             SetVisibleSide(showBack);
+            Debug.Log($"[QTE_FLIP_DIAG] HUD Flip complete showBack={showBack} rot={_card.localEulerAngles.x:F2} frontA={_frontFace.alpha:F1} backA={_backFace.alpha:F1}");
             _flipTween = null;
         });
     }
@@ -251,7 +276,7 @@ public sealed class HeroHUDFlipCard : MonoBehaviour
     private void OnDisable()
     {
         if (!_qteActivitySubscribed) return;
-        QTEActivityHub.OnActivityChanged -= OnQTEActivityChanged;
+        QTEActivityHub.Unsubscribe(OnQTEActivityChanged);
         _qteActivitySubscribed = false;
     }
 

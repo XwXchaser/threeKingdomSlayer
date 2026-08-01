@@ -27,17 +27,39 @@ public class WaveEffectPlayer : MonoBehaviour
     private int _damage;
     private float _bossPoiseDamagePercent;
     private float _zStep;
+    private Enemy _bossOnlyTarget;
+    private bool _bossOnly;
     private HashSet<Enemy> _hitEnemies;
+    private HashSet<Enemy> _immediateHitEnemies;
     private List<Enemy> _pushedEnemies;
 
-    public void Play(Vector3 startPos, int targetRow, int damage, float bossPoiseDamagePercent, HashSet<Enemy> hitEnemies, List<Enemy> pushedEnemies)
+    public void Play(Vector3 startPos, int targetRow, int damage, float bossPoiseDamagePercent, HashSet<Enemy> hitEnemies, HashSet<Enemy> immediateHitEnemies, List<Enemy> pushedEnemies)
     {
         _targetRow = targetRow;
         _damage = damage;
+        _bossOnly = false;
+        _bossOnlyTarget = null;
         _bossPoiseDamagePercent = bossPoiseDamagePercent;
         _hitEnemies = hitEnemies;
+        _immediateHitEnemies = immediateHitEnemies;
         _pushedEnemies = pushedEnemies;
         _zStep = zMoveTotal / 5f; // 5段移动（5帧切换之间）
+
+        transform.position = startPos;
+        StartCoroutine(WaveRoutine());
+    }
+
+    public void PlayBossOnly(Vector3 startPos, Enemy boss, int damage, float bossPoiseDamagePercent, HashSet<Enemy> hitEnemies, HashSet<Enemy> immediateHitEnemies)
+    {
+        _targetRow = boss != null ? boss.rowIndex : -1;
+        _damage = damage;
+        _bossPoiseDamagePercent = bossPoiseDamagePercent;
+        _bossOnlyTarget = boss;
+        _bossOnly = true;
+        _hitEnemies = hitEnemies;
+        _immediateHitEnemies = immediateHitEnemies;
+        _pushedEnemies = null;
+        _zStep = zMoveTotal / 5f;
 
         transform.position = startPos;
         StartCoroutine(WaveRoutine());
@@ -89,8 +111,30 @@ public class WaveEffectPlayer : MonoBehaviour
         transform.position += Vector3.forward * _zStep;
     }
 
+    private void HitBossOnly()
+    {
+        var boss = _bossOnlyTarget;
+        if (boss == null || _hitEnemies == null || _hitEnemies.Contains(boss)) return;
+        if (!boss.isBoss || boss.bossState != BossState.InCombat || boss.state == EnemyState.Dead || boss.isPhaseTransitioning) return;
+
+        bool hitImmediately = _immediateHitEnemies != null && _immediateHitEnemies.Contains(boss);
+        if (!hitImmediately)
+        {
+            boss.ApplyActiveDisplacementHit();
+            if (boss.state != EnemyState.Stunned)
+                boss.TakeActiveDisplacementPoiseDamage(_bossPoiseDamagePercent);
+        }
+        _hitEnemies.Add(boss);
+    }
+
     private void DoHitCheck()
     {
+        if (_bossOnly)
+        {
+            HitBossOnly();
+            return;
+        }
+
         var cm = AttackSystem.Instance?.columnManager;
         if (cm == null) return;
 
@@ -102,8 +146,9 @@ public class WaveEffectPlayer : MonoBehaviour
             if (colEnemies == null) continue;
             foreach (var enemy in colEnemies)
             {
-                if (enemy.rowIndex == _targetRow && enemy.state != EnemyState.Dead)
-                    hitEnemies.Add(enemy);
+                if (enemy.rowIndex != _targetRow || enemy.state == EnemyState.Dead) continue;
+                if (enemy.isBoss && enemy.bossState != BossState.InCombat) continue;
+                hitEnemies.Add(enemy);
             }
         }
 
@@ -113,14 +158,27 @@ public class WaveEffectPlayer : MonoBehaviour
         {
             if (_hitEnemies.Contains(enemy)) continue;
 
-            enemy.TakeDamage(_damage, DamageType.Slash);
-            if (enemy.isBoss && enemy.state != EnemyState.Stunned)
-                enemy.TakeActiveDisplacementPoiseDamage(_bossPoiseDamagePercent);
+            bool hitImmediately = _immediateHitEnemies != null && _immediateHitEnemies.Contains(enemy);
+            if (!hitImmediately)
+            {
+                if (enemy.isBoss)
+                {
+                    enemy.ApplyActiveDisplacementHit();
+                    if (enemy.state != EnemyState.Stunned)
+                        enemy.TakeActiveDisplacementPoiseDamage(_bossPoiseDamagePercent);
+                }
+                else
+                {
+                    enemy.ApplyActiveDisplacementHit();
+                }
+            }
+
+            if (!enemy.isBoss)
+                pushTargets.Add(enemy);
             _hitEnemies.Add(enemy);
-            pushTargets.Add(enemy);
         }
 
         if (pushTargets.Count > 0)
-            cm.ApplyPushWave(pushTargets, 1, pushedEnemies: _pushedEnemies);
+            cm.ApplyPushWave(pushTargets, 1, canInterruptCFrame: true, pushedEnemies: _pushedEnemies);
     }
 }

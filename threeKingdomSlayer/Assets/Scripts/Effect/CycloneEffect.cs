@@ -31,7 +31,7 @@ public class CycloneEffect : MonoBehaviour
 
     private Enemy _target;
     private int _damage;
-    private float _landingDamagePercent;
+    private int _landingDamage;
     private SpriteRenderer _sr;
 
     private Sprite[] _allFrames; // index 0-5 = cyclone1-6
@@ -39,13 +39,16 @@ public class CycloneEffect : MonoBehaviour
     private float _loopTimer;
     private int _loopFrameIndex; // 0=cyclone5, 1=cyclone6
     private bool _landed;
+    private bool _visualOnly;
+    private float _visualOnlyTimer;
+    private int _visualOnlyFrame;
     private bool _fadingOut;
 
-    public void Setup(Enemy target, int damage, float landingDamagePercent, float knockupDuration)
+    public void Setup(Enemy target, int damage, int landingDamage, float knockupDuration)
     {
         _target = target;
         _damage = damage;
-        _landingDamagePercent = landingDamagePercent;
+        _landingDamage = landingDamage;
 
         if (_target != null)
         {
@@ -71,6 +74,27 @@ public class CycloneEffect : MonoBehaviour
         }
     }
 
+    public void PlayGroundVisual(Enemy target)
+    {
+        _target = target;
+        _visualOnly = true;
+        _visualOnlyTimer = 0f;
+        _visualOnlyFrame = 0;
+        PositionAtTarget();
+        if (_sr != null && cyclone1 != null)
+            _sr.sprite = cyclone1;
+    }
+
+    private void PositionAtTarget()
+    {
+        if (_target == null) return;
+        Vector3 pos = _target.transform.position;
+        pos.y = yOffset;
+        pos.z -= 0.2f;
+        transform.position = pos;
+        if (_sr != null) _sr.sortingOrder = 0;
+    }
+
     private void Awake()
     {
         _sr = GetComponent<SpriteRenderer>();
@@ -89,6 +113,12 @@ public class CycloneEffect : MonoBehaviour
 
     private void Update()
     {
+        if (_visualOnly)
+        {
+            UpdateGroundVisual();
+            return;
+        }
+
         // 敌人失效或已落地 → 淡出
         if (_target == null || _landed)
         {
@@ -110,6 +140,30 @@ public class CycloneEffect : MonoBehaviour
         }
 
         UpdateAnimation();
+    }
+
+    private void UpdateGroundVisual()
+    {
+        if (_target == null || _target.state == EnemyState.Dead || _target.isPhaseTransitioning)
+        {
+            StartFadeOut();
+            return;
+        }
+
+        PositionAtTarget();
+        _visualOnlyTimer += Time.deltaTime;
+        if (_visualOnlyTimer >= loopFrameInterval)
+        {
+            _visualOnlyTimer -= loopFrameInterval;
+            _visualOnlyFrame++;
+            if (_visualOnlyFrame >= _allFrames.Length)
+            {
+                StartFadeOut();
+                return;
+            }
+            if (_sr != null)
+                _sr.sprite = _allFrames[_visualOnlyFrame];
+        }
     }
 
     private void UpdateAnimation()
@@ -150,11 +204,9 @@ public class CycloneEffect : MonoBehaviour
         _landed = true;
 
         // 落地伤害
-        if (_landingDamagePercent > 0f && _target != null && _target.state != EnemyState.Dead)
+        if (_landingDamage > 0 && _target != null && _target.state != EnemyState.Dead)
         {
-            int landingDmg = Mathf.RoundToInt(_damage * _landingDamagePercent);
-            if (landingDmg > 0)
-                _target.TakeDamage(landingDmg);
+            _target.TakeDamage(_landingDamage);
         }
 
         // 取消监听

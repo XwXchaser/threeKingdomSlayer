@@ -260,7 +260,7 @@ public sealed class CombatDataTableWindow : EditorWindow
                 DrawField(level, upgrade, "cooldownSeconds", "冷却");
                 DrawField(level, upgrade, "rowCount", "排数");
                 DrawField(level, upgrade, "initialDamage", "伤害");
-                DrawField(level, upgrade, "landingDamagePercent", "落地%");
+                DrawField(level, upgrade, "landingDamage", "落地伤害");
                 break;
             default:
                 DrawField(level, upgrade, "floatValue", "浮点");

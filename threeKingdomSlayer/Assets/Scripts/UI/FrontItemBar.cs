@@ -15,6 +15,7 @@ public class FrontItemBar : MonoBehaviour
     private readonly Dictionary<int, BuffIcon> _itemIcons = new Dictionary<int, BuffIcon>();
     private readonly Dictionary<int, BuffIcon> _itemSlotAssignments = new Dictionary<int, BuffIcon>();
     private readonly Dictionary<BuffIcon, int> _iconEntryIds = new Dictionary<BuffIcon, int>();
+    private readonly Dictionary<int, bool> _cooldownStates = new Dictionary<int, bool>();
 
     private CanvasGroup _canvasGroup;
     private bool _qteDimmed;
@@ -221,6 +222,7 @@ public class FrontItemBar : MonoBehaviour
             if (i < capacity)
             {
                 slot.ShowEmpty(_skillFrame);
+                slot.SetActiveSlotStyle(true);
                 slot.gameObject.SetActive(true);
             }
             else
@@ -265,6 +267,13 @@ public class FrontItemBar : MonoBehaviour
                 pair.Value.SetCountdownNumber(Mathf.CeilToInt(entry.cooldownRemaining));
             else
                 pair.Value.ClearTopRightNumber();
+
+            bool hadPrev = _cooldownStates.TryGetValue(pair.Key, out bool wasCoolingDown);
+            if (!hadPrev || wasCoolingDown != coolingDown)
+            {
+                _cooldownStates[pair.Key] = coolingDown;
+                pair.Value.SetActiveButtonPressed(coolingDown);
+            }
         }
     }
 

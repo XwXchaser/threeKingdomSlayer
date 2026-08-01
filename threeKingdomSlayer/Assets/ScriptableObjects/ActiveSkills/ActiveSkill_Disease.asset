@@ -1,0 +1,82 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9bf2b0c688767c4792fda72a76ca5ac, type: 3}
+  m_Name: ActiveSkill_Disease
+  m_EditorClassIdentifier: 
+  category: 4
+  upgradeId: active_disease
+  displayName: "\u67D3\u75C5"
+  descriptionTemplate: "\u4E0B\u4E00\u6B21\u6233\u51FB\u4F7F\u654C\u4EBA\u67D3\u75C5\uFF0C\u57284\u79D2\u5185\u6301\u7EED\u9020\u6210\u5171{0}\u70B9\u4F24\u5BB3\uFF0C\u76EE\u6807\u6B7B\u4EA1\u65F6\u5411{1}\u4F20\u64AD\uFF0C\u5E76\u91CD\u7F6E\u6301\u7EED\u65F6\u95F4\u3002"
+  extraDescriptionTemplate: 
+  levelFeatureDescriptions:
+  - 
+  - "\u4F20\u64AD\u6539\u4E3A\u5411\u6700\u8FD1\u7684\u654C\u4EBA\uFF08\u4EC51\u4E2A\uFF09"
+  - 
+  - 
+  - 
+  rarity: 1
+  maxLevel: 5
+  effectType: 
+  numericLevels: []
+  floatValue: 0
+  intValue: 0
+  secondaryIntValue: 0
+  stringValue: 
+  baseAttackConfig: {fileID: 0}
+  icon: {fileID: 21300000, guid: 6a2cd83cc827a424b965664ca19a79c1, type: 3}
+  phantomLevels: []
+  timedAoeLevels: []
+  timedArrowLevels: []
+  returnWaveLevels: []
+  chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
+  chargeHitShockwaveLevels: []
+  diseaseLevels:
+  - totalDamage: 8
+    durationSeconds: 4
+    smartSpread: 0
+  - totalDamage: 16
+    durationSeconds: 4
+    smartSpread: 0
+  - totalDamage: 20
+    durationSeconds: 5
+    smartSpread: 1
+  - totalDamage: 30
+    durationSeconds: 5
+    smartSpread: 1
+  - totalDamage: 36
+    durationSeconds: 6
+    smartSpread: 1
+  triggerParam: 0
+  phantomSteps: []
+  useCount: 1
+  gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
+  prerequisites: []
+  activeEffectType: 6
+  cooldownLevels:
+  - 6
+  - 5
+  - 5
+  - 4
+  - 3

@@ -57,6 +57,7 @@ MonoBehaviour:
   attackDamage: 15
   attackRange: 1
   moveSpeed: 0.2
+  visualYOffset: 0
   attackSequence:
   - isCAttack: 1
     animationTrigger: CAttack
@@ -72,6 +73,13 @@ MonoBehaviour:
   projectileLandingXCenter: 0
   projectileLandingXSpread: 0
   projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
   arrowConfig: {fileID: 0}
   shareHealthWithAdjacent: 0
   maxPoise: 50
@@ -200,7 +208,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e52db6f433200c4b9725bbce745a570, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  barWidth: 1.8
+  barWidth: 1
   barHeight: 0.2
   yOffset: 0
   displayDuration: 2

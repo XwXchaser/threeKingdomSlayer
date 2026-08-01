@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 
 /// <summary>
 /// 敌人血条UI — 受击时短暂显示百分比血条（无文字）
@@ -28,6 +29,9 @@ public class EnemyHealthBar : MonoBehaviour
     private MeshRenderer bgRenderer;
     private MeshRenderer fillRenderer;
     private Material fillMaterialInstance;
+    private StatusBarVisual _diseaseBar;
+    private StatusBarVisual _burnBar;
+    private TextMeshPro _diseaseLayersText;
     private float hideTimer;
     private bool created;
     private Vector3 fillOriginPos;
@@ -35,7 +39,19 @@ public class EnemyHealthBar : MonoBehaviour
     private float _cachedYOffset;
     private Transform _enemyTransform;
 
+    private sealed class StatusBarVisual
+    {
+        public GameObject root;
+        public Transform fillTransform;
+        public Material fillMaterial;
+        public Vector3 fillOrigin;
+        public float fullWidth;
+    }
+
     private static Material _barMaterial;
+    private const float StatusBarHeightMultiplier = 0.55f;
+    private const float StatusBarGap = 0f;
+    private const int StatusSortingOrder = 200;
 
     private void Awake()
     {
@@ -80,6 +96,7 @@ public class EnemyHealthBar : MonoBehaviour
         bgMf.sharedMesh = quad;
         bgRenderer = bgGo.AddComponent<MeshRenderer>();
         bgRenderer.sharedMaterial = _barMaterial;
+        bgRenderer.sortingOrder = StatusSortingOrder;
         bgRenderer.material.color = new Color(0.05f, 0.05f, 0.05f, 0.75f);
 
         // 填充 — 左对齐，通过 position + scale 控制宽度
@@ -95,11 +112,68 @@ public class EnemyHealthBar : MonoBehaviour
         fillMaterialInstance.mainTexture = Texture2D.whiteTexture;
         fillMaterialInstance.color = highColor;
         fillRenderer.material = fillMaterialInstance;
+        fillRenderer.sortingOrder = StatusSortingOrder + 1;
 
         fillOriginPos = fillGo.transform.localPosition;
         fillFullWidth = barWidth;
 
+        _diseaseBar = CreateStatusBar(quad, "DiseaseBar", new Color(0.72f, 0.28f, 0.9f));
+        _burnBar = CreateStatusBar(quad, "BurnBar", new Color(0.9f, 0.15f, 0.15f));
+        CreateDiseaseLayersText();
+
         barRoot.SetActive(false);
+    }
+
+    private StatusBarVisual CreateStatusBar(Mesh quad, string name, Color color)
+    {
+        float height = barHeight * StatusBarHeightMultiplier;
+        var root = new GameObject(name);
+        root.transform.SetParent(barRoot.transform, false);
+
+        var background = new GameObject("Background");
+        background.transform.SetParent(root.transform, false);
+        background.transform.localScale = new Vector3(barWidth, height, 1f);
+        var bgFilter = background.AddComponent<MeshFilter>();
+        bgFilter.sharedMesh = quad;
+        var bgRenderer = background.AddComponent<MeshRenderer>();
+        bgRenderer.sharedMaterial = _barMaterial;
+        bgRenderer.material.color = new Color(0.04f, 0.04f, 0.04f, 0.8f);
+        bgRenderer.sortingOrder = StatusSortingOrder + 2;
+
+        var fill = new GameObject("Fill");
+        fill.transform.SetParent(root.transform, false);
+        var fillFilter = fill.AddComponent<MeshFilter>();
+        fillFilter.sharedMesh = quad;
+        var fillRenderer = fill.AddComponent<MeshRenderer>();
+        var material = new Material(_barMaterial);
+        material.color = color;
+        fillRenderer.material = material;
+        fillRenderer.sortingOrder = StatusSortingOrder + 3;
+        fill.transform.localPosition = new Vector3(-barWidth * 0.5f, 0f, -0.01f);
+        fill.transform.localScale = new Vector3(barWidth, height, 1f);
+        root.SetActive(false);
+
+        return new StatusBarVisual
+        {
+            root = root,
+            fillTransform = fill.transform,
+            fillMaterial = material,
+            fillOrigin = fill.transform.localPosition,
+            fullWidth = barWidth
+        };
+    }
+
+    private void CreateDiseaseLayersText()
+    {
+        var go = new GameObject("DiseaseLayers", typeof(TextMeshPro));
+        go.transform.SetParent(barRoot.transform, false);
+        _diseaseLayersText = go.GetComponent<TextMeshPro>();
+        _diseaseLayersText.fontSize = 3.5f;
+        _diseaseLayersText.fontStyle = FontStyles.Bold;
+        _diseaseLayersText.color = new Color(0.82f, 0.55f, 1f);
+        _diseaseLayersText.alignment = TextAlignmentOptions.Right;
+        _diseaseLayersText.sortingOrder = StatusSortingOrder + 4;
+        go.SetActive(false);
     }
 
     private static Mesh CreateQuadMesh()
@@ -125,6 +199,7 @@ public class EnemyHealthBar : MonoBehaviour
         hideTimer = displayDuration;
 
         barRoot.SetActive(true);
+        UpdateDotVisuals();
 
         // 填充宽度 = barWidth * percent，左对齐：pos.x = fillOriginPos.x + fillWidth * 0.5f
         var fillWidth = fillFullWidth * percent;
@@ -141,6 +216,66 @@ public class EnemyHealthBar : MonoBehaviour
             fillRenderer.material = fillMaterialInstance;
         }
         fillMaterialInstance.color = Color.Lerp(lowColor, highColor, t);
+    }
+
+    public void ShowDotStatus()
+    {
+        EnsureCreated();
+        barRoot.SetActive(true);
+        UpdateDotVisuals();
+    }
+
+    private bool UpdateDotVisuals()
+    {
+        var status = UpgradeEffectManager.Instance != null
+            ? UpgradeEffectManager.Instance.GetDotStatus(GetComponent<Enemy>())
+            : default;
+
+        float statusHeight = barHeight * StatusBarHeightMultiplier;
+        float diseaseY = -(barHeight * 0.5f + StatusBarGap + statusHeight * 0.5f);
+        bool hasDisease = status.isDiseased;
+        bool hasBurn = status.isBurning;
+
+        if (_diseaseBar != null)
+        {
+            _diseaseBar.root.SetActive(hasDisease);
+            if (hasDisease)
+                SetStatusBarFill(_diseaseBar, status.diseaseProgress, diseaseY, statusHeight);
+        }
+
+        if (_burnBar != null)
+        {
+            _burnBar.root.SetActive(hasBurn);
+            if (hasBurn)
+            {
+                float burnY = hasDisease
+                    ? diseaseY - statusHeight - StatusBarGap
+                    : diseaseY;
+                SetStatusBarFill(_burnBar, status.burnProgress, burnY, statusHeight);
+            }
+        }
+
+        if (_diseaseLayersText != null)
+        {
+            _diseaseLayersText.gameObject.SetActive(hasDisease);
+            if (hasDisease)
+            {
+                _diseaseLayersText.text = status.diseaseLayers.ToString();
+                _diseaseLayersText.transform.localPosition = new Vector3(-barWidth * 0.5f - 0.08f, diseaseY, -0.02f);
+            }
+        }
+
+        return hasDisease || hasBurn;
+    }
+
+    private static void SetStatusBarFill(StatusBarVisual bar, float progress, float y, float height)
+    {
+        float width = bar.fullWidth * Mathf.Clamp01(progress);
+        var position = bar.fillOrigin;
+        position.x = bar.fillOrigin.x + width * 0.5f;
+        bar.fillTransform.localPosition = position;
+        bar.fillTransform.localScale = new Vector3(width, height, 1f);
+        bar.root.transform.localPosition = new Vector3(0f, y, 0f);
     }
 
     /// <summary>
@@ -161,15 +296,18 @@ public class EnemyHealthBar : MonoBehaviour
     private void Update()
     {
         if (!created) return;
-        if (hideTimer <= 0f) return;
 
-        hideTimer -= Time.deltaTime;
-        if (hideTimer <= 0f)
+        bool hasDot = UpdateDotVisuals();
+        if (hideTimer <= 0f && !hasDot)
         {
             barRoot.SetActive(false);
             return;
         }
 
+        if (hideTimer > 0f)
+            hideTimer = Mathf.Max(0f, hideTimer - Time.deltaTime);
+
+        barRoot.SetActive(true);
         // 每帧跟随敌人位置（独立于敌人旋转/缩放）
         barRoot.transform.position = GetHeadWorldPosition();
     }

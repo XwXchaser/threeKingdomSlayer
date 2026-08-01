@@ -89,7 +89,8 @@ public class WaveManager : MonoBehaviour
         }
 
         CacheFormationParams();
-        StartCoroutine(WaveSequence(startRow, endRow, damage, bossPoiseDamagePercent, overridePrefab));
+        var immediateHits = ApplyImmediateActiveHits(startRow, endRow, bossPoiseDamagePercent);
+        StartCoroutine(WaveSequence(startRow, endRow, damage, bossPoiseDamagePercent, immediateHits, overridePrefab));
     }
 
     /// <summary>
@@ -101,16 +102,47 @@ public class WaveManager : MonoBehaviour
         TriggerWave(0, _maxRow, damage, 0f, wavePrefab);
     }
 
-    private IEnumerator WaveSequence(int startRow, int endRow, int damage, float bossPoiseDamagePercent, GameObject prefab)
+    private HashSet<Enemy> ApplyImmediateActiveHits(int startRow, int endRow, float bossPoiseDamagePercent)
     {
         var hitEnemies = new HashSet<Enemy>();
+        var enemies = EnemyManager.Instance != null ? EnemyManager.Instance.GetAllAliveEnemies() : null;
+        if (enemies == null) return hitEnemies;
+
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            var enemy = enemies[i];
+            if (enemy == null || enemy.state == EnemyState.Dead || enemy.isPhaseTransitioning) continue;
+            if (enemy.isBoss && enemy.bossState != BossState.InCombat) continue;
+            if (!enemy.isBoss && (enemy.rowIndex < startRow || enemy.rowIndex > endRow)) continue;
+
+            if (!enemy.ApplyActiveDisplacementHit()) continue;
+            if (enemy.isBoss && enemy.state != EnemyState.Stunned)
+                enemy.TakeActiveDisplacementPoiseDamage(bossPoiseDamagePercent);
+            hitEnemies.Add(enemy);
+        }
+        return hitEnemies;
+    }
+
+    private IEnumerator WaveSequence(int startRow, int endRow, int damage, float bossPoiseDamagePercent, HashSet<Enemy> immediateHits, GameObject prefab)
+    {
+        var hitEnemies = new HashSet<Enemy>();
+        var immediateHitEnemies = immediateHits ?? new HashSet<Enemy>();
         var pushedEnemies = new List<Enemy>();
+        var combatBosses = SnapshotCombatBosses();
         var delay = new WaitForSeconds(rowStaggerDelay);
 
         for (int row = startRow; row <= endRow; row++)
         {
-            SpawnWaveForRow(row, damage, bossPoiseDamagePercent, hitEnemies, pushedEnemies, prefab);
+            SpawnWaveForRow(row, damage, bossPoiseDamagePercent, hitEnemies, immediateHitEnemies, pushedEnemies, prefab);
             yield return delay;
+        }
+
+        for (int i = 0; i < combatBosses.Count; i++)
+        {
+            var boss = combatBosses[i];
+            if (boss == null || hitEnemies.Contains(boss)) continue;
+            if (boss.rowIndex >= startRow && boss.rowIndex <= endRow) continue;
+            SpawnBossWave(boss, damage, bossPoiseDamagePercent, hitEnemies, immediateHitEnemies, prefab);
         }
 
         // Backward-push effects are aggregated so only actually pushed enemies arm exact-slot returns.
@@ -128,7 +160,35 @@ public class WaveManager : MonoBehaviour
             AttackSystem.Instance?.columnManager?.PostDisplacementFillUp(pushedEnemies);
     }
 
-    private void SpawnWaveForRow(int row, int damage, float bossPoiseDamagePercent, HashSet<Enemy> hitEnemies, List<Enemy> pushedEnemies, GameObject prefab)
+    private List<Enemy> SnapshotCombatBosses()
+    {
+        var combatBosses = new List<Enemy>();
+        var enemies = EnemyManager.Instance != null ? EnemyManager.Instance.GetAllAliveEnemies() : null;
+        if (enemies == null) return combatBosses;
+
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            var enemy = enemies[i];
+            if (enemy != null && enemy.isBoss && enemy.bossState == BossState.InCombat)
+                combatBosses.Add(enemy);
+        }
+        return combatBosses;
+    }
+
+    private void SpawnBossWave(Enemy boss, int damage, float bossPoiseDamagePercent, HashSet<Enemy> hitEnemies, HashSet<Enemy> immediateHitEnemies, GameObject prefab)
+    {
+        if (boss == null || boss.state == EnemyState.Dead || boss.isPhaseTransitioning) return;
+
+        Vector3 spawnPos = new Vector3(0f, waveYOffset, GetRowZ(boss.rowIndex) + waveStartZOffset);
+        var go = Instantiate(prefab, spawnPos, Quaternion.identity);
+        var player = go.GetComponent<WaveEffectPlayer>();
+        if (player != null)
+            player.PlayBossOnly(spawnPos, boss, damage, bossPoiseDamagePercent, hitEnemies, immediateHitEnemies);
+        else
+            Destroy(go);
+    }
+
+    private void SpawnWaveForRow(int row, int damage, float bossPoiseDamagePercent, HashSet<Enemy> hitEnemies, HashSet<Enemy> immediateHitEnemies, List<Enemy> pushedEnemies, GameObject prefab)
     {
         float rowZ = GetRowZ(row);
         Vector3 spawnPos = new Vector3(0f, waveYOffset, rowZ + waveStartZOffset);
@@ -137,7 +197,7 @@ public class WaveManager : MonoBehaviour
         var player = go.GetComponent<WaveEffectPlayer>();
         if (player != null)
         {
-            player.Play(spawnPos, row, damage, bossPoiseDamagePercent, hitEnemies, pushedEnemies);
+            player.Play(spawnPos, row, damage, bossPoiseDamagePercent, hitEnemies, immediateHitEnemies, pushedEnemies);
         }
         else
         {

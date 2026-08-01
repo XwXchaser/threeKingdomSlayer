@@ -13,6 +13,7 @@ public class ActiveSkillDefinitionEditor : Editor
         EditorGUILayout.PropertyField(serializedObject.FindProperty("displayName"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("descriptionTemplate"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("extraDescriptionTemplate"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("levelFeatureDescriptions"), true);
         EditorGUILayout.PropertyField(serializedObject.FindProperty("icon"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("rarity"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("maxLevel"));
@@ -40,6 +41,9 @@ public class ActiveSkillDefinitionEditor : Editor
             case ActiveSkillEffectType.ChargeAttackShockwave:
                 DrawChargeAttackShockwaveLevels(serializedObject.FindProperty("chargeAttackShockwaveLevels"));
                 break;
+            case ActiveSkillEffectType.Disease:
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("diseaseLevels"), true);
+                break;
         }
 
         serializedObject.ApplyModifiedProperties();
@@ -58,6 +62,7 @@ public class ActiveSkillDefinitionEditor : Editor
             EditorGUILayout.PropertyField(level.FindPropertyRelative("rangeRows"), new GUIContent("范围排数"));
             EditorGUILayout.PropertyField(level.FindPropertyRelative("damage"), new GUIContent("伤害"));
             EditorGUILayout.PropertyField(level.FindPropertyRelative("bossPoiseDamagePercent"), new GUIContent("Boss最大架势削减比例"));
+            EditorGUILayout.PropertyField(level.FindPropertyRelative("landingDamage"), new GUIContent("落地伤害（仅Cyclone）"));
             EditorGUILayout.EndVertical();
         }
     }

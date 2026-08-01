@@ -10,7 +10,7 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1778764012219
-updatedAt: 1784951717351
+updatedAt: 1785506058416
 ---
 
 # project-mistake-note
@@ -25,6 +25,14 @@ updatedAt: 1784951717351
 <!-- locus:maintain-rules:end -->
 
 <!-- locus:body:start -->
+### 主动位移受击与Boss QTE翻牌存在跨系统时序竞争 ✅ 已验收
+- 症状：Boss在QTE前受到海浪或旋风后，QTE图案仍可交互，但HUD正面未及时翻走并遮挡图案；无位移主动命中时翻牌正常。
+- 根因：位移主动的零伤害命中会触发Boss受击动画反馈；该状态与随后启动的QTE动画及HUD翻牌Tween发生紧邻时序竞争，QTE活动可能在翻牌Tween尚未推进时结束并请求反向翻转。
+- 修复：QTE活动改由全局Hub同步并保留轮询兜底；HUD反向打断翻转时先快照至旧目标面，再执行新方向翻转；位移主动对QTE态、转阶段及非交战Boss维持保护。
+- 预防规则：**跨系统状态切换必须分别清理动画Trigger、Transform反馈Tween和UI Tween；逻辑活动正确不代表视觉状态已完成。反向请求到来时必须定义旧视觉状态的收敛结果，不能只Kill旧Tween。**
+- 验证：海浪/旋风打断霸体、零伤害Combo与随后Boss QTE翻牌均由用户验收。
+- 文件：`Assets/Scripts/Enemy/Enemy.cs`、`Assets/Scripts/QTE/QTEActivityHub.cs`、`Assets/Scripts/QTE/QTEController.cs`、`Assets/Scripts/UI/HeroHUDFlipCard.cs`
+
 ### TimedArrow：只调整命中高度，无法修复“箭仍飞到脚底” ✅ 已修复（2026-03）
 - 症状：增大提前命中值后，伤害可能已经提前结算，但箭矢视觉仍飞到敌人脚底才消失。
 - 根因：伤害判定与飞行 Tween 生命周期相互独立；修改判定阈值不会自动停止或销毁视觉。
@@ -110,4 +118,20 @@ updatedAt: 1784951717351
 - 预防规则：**攻击范围只决定攻击/等待状态，不能参与合法整排补齐需求的判定，更不能阻止调度器创建订单。先创建订单，再由敌人状态决定执行时机。**
 - 验证：Unity完整重编译成功；用户回归测试暂未发现问题。
 - 文件：`Assets/Scripts/Core/ColumnManager.cs`、`Assets/Scripts/Enemy/Enemy.cs`
+
+### 位移打断 WaveMarch 步进后集合泄漏导致永久死锁 ⚠️ 待修复（2026）
+- 症状：波次中途（尤其Boss波）敌人停止补齐，场上残留普通敌人与Boss均卡住不动，只剩 QTE 相关日志空转直至强制关闭。
+- 日志证据（用户提供，最后一次 WaveMarch 之后）：
+  ```
+  [WaveMarch] StartWaveMarch blocked: _isWaveMarching=True _isWavePreparing=False srcRow=2 tgtRow=1
+  ```
+  之后仅有 `[Displacement] Slash DirectionalPush` / `[PushReturn] register|step|complete` / `[Enemy] TakeDamage` / QTE 日志，**再无 `[WaveMarch] StartWaveMarch → BeginWaveStep` 或 `CompleteWaveStep`**。
+- 根因（代码确认）：
+  1. `ColumnManager.ExecutePush`（Stab击退）第 1158 行与 `MoveEnemyToColumnAtRow`（Slash横向推）第 972 行都调用 `ReleaseEnemyFromMovementSchedulers(enemy, srcCol)`。
+  2. 该函数（614-636行）执行 `_pendingWaveEnemies.Remove(enemy)` 并把该敌的 `OnRushMoveComplete -= OnWaveEnemyRushComplete`（618-622行），随后 `CancelRushMoveOrder`。
+  3. **关键缺陷**：它只在 `wasWaveMember && _pendingWaveEnemies.Count == 0 && _preparingWaveEnemies.Count == 0` 时才把 `_isWaveMarching=false`（629-635行）。若同一 WaveMarch 步进还有其他敌人仍在 pending/preparing，flag 保持 `True`，而被击退/横推的敌人已从 pending 移除并解绑回调。
+  4. 结果：`srcRow=N→tgtRow=N-1` 的步进剩余成员永远等不到被移除者的完成回调 → `CompleteWaveStep` 永不触发 → `_isWaveMarching` 永久 `True` → 之后所有 `StartWaveMarch` 全部 `blocked`，补齐链彻底冻结，Boss 也等不到前方清空，关卡无法通关。
+- 与既有坑点区别：mistake-note 中“攻击范围过滤补齐订单”是**订单未创建**；本次是**订单已创建、行军中被打断后清理/恢复不完整**，属同类“补齐冻结”的另一种根因。
+- 修复方向（待实施）：`ReleaseEnemyFromMovementSchedulers` 移除成员后，若 `_isWaveMarching` 仍为 True 但 pending/preparing 已空，应立即补发 `CompleteWaveStep` 或重新 `StartWaveMarch`；或让被击退成员释放时对该排重新发起补齐。具体方案需在修复前与用户确认。
+- 文件：`Assets/Scripts/Core/ColumnManager.cs`
 <!-- locus:body:end -->

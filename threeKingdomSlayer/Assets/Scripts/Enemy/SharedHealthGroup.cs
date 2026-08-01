@@ -74,11 +74,11 @@ public class SharedHealthGroup
     /// <summary>
     /// 受到伤害 — 扣除共享池HP，池归零时全部死亡
     /// </summary>
-    public void TakeDamage(float rawDamage, DamageType damageType, Enemy hitMember, Color? damageNumberColor = null, bool triggerHitAnimation = true)
+    public void TakeDamage(float rawDamage, DamageType damageType, Enemy hitMember, Color? damageNumberColor = null, bool triggerHitAnimation = true, bool countsForCombo = true, bool canInterruptAttack = true, bool ignoreDamageModifiers = false)
     {
         if (members.Count == 0) return;
 
-        float multiplier = hitMember != null ? hitMember.GetDamageMultiplier(damageType) : 1f;
+        float multiplier = hitMember != null && !ignoreDamageModifiers ? hitMember.GetDamageMultiplier(damageType) : 1f;
         float finalDamage = rawDamage * multiplier;
 
         currentHealth -= finalDamage;
@@ -87,6 +87,9 @@ public class SharedHealthGroup
         // 受伤跳字
         if (hitMember != null && DamageNumberManager.Instance != null)
             DamageNumberManager.Instance.Spawn(hitMember.transform.position, finalDamage, damageNumberColor);
+
+        if (countsForCombo && hitMember != null)
+            hitMember.OnDamageTaken?.Invoke(hitMember);
 
         // 触发受伤闪白 + 血条更新（对所有成员）
         foreach (var m in members)

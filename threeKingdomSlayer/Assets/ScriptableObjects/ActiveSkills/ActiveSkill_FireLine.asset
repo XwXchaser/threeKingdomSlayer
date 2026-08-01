@@ -15,8 +15,9 @@ MonoBehaviour:
   category: 4
   upgradeId: active_fire_line
   displayName: "\u706B\u9F99\u820C"
-  descriptionTemplate: "\u51B7\u5374{0}\u79D2\uFF0C\u5BF9\u524D\u65B9\u76F4\u7EBF\u9020\u6210{1}\u70B9\u4F24\u5BB3\uFF0C\u82E5\u654C\u4EBA\u5904\u4E8E\u707C\u70E7\u72B6\u6001\u5219\u66B4\u51FB\uFF08200%\u4F24\u5BB3\uFF09"
+  descriptionTemplate: "\u5BF9\u524D\u65B9\u76F4\u7EBF\u9020\u6210{1}\u70B9\u4F24\u5BB3\uFF0C\u82E5\u654C\u4EBA\u5904\u4E8E\u707C\u70E7\u72B6\u6001\u5219\u66B4\u51FB\uFF08200%\u4F24\u5BB3\uFF09"
   extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
   rarity: 1
   maxLevel: 5
   effectType: 
@@ -31,33 +32,38 @@ MonoBehaviour:
   timedAoeLevels:
   - intervalSeconds: 0
     triggerThreshold: 0
+    rangeRows: 5
+    damage: 10
+    columns: 02000000
+    burnTotalDamage: 0
+    burnDurationSeconds: 0
+  - intervalSeconds: 0
+    triggerThreshold: 0
+    rangeRows: 5
     damage: 15
-    columns: 0100000002000000
-    burnDamagePerSecond: 0
+    columns: 02000000
+    burnTotalDamage: 0
     burnDurationSeconds: 0
   - intervalSeconds: 0
     triggerThreshold: 0
+    rangeRows: 5
     damage: 22
-    columns: 0100000002000000
-    burnDamagePerSecond: 0
+    columns: 02000000
+    burnTotalDamage: 0
     burnDurationSeconds: 0
   - intervalSeconds: 0
     triggerThreshold: 0
+    rangeRows: 5
     damage: 30
-    columns: 010000000200000003000000
-    burnDamagePerSecond: 0
+    columns: 02000000
+    burnTotalDamage: 0
     burnDurationSeconds: 0
   - intervalSeconds: 0
     triggerThreshold: 0
+    rangeRows: 5
     damage: 40
-    columns: 010000000200000003000000
-    burnDamagePerSecond: 0
-    burnDurationSeconds: 0
-  - intervalSeconds: 0
-    triggerThreshold: 0
-    damage: 55
-    columns: 010000000200000003000000
-    burnDamagePerSecond: 0
+    columns: 02000000
+    burnTotalDamage: 0
     burnDurationSeconds: 0
   timedArrowLevels: []
   returnWaveLevels: []
@@ -69,6 +75,7 @@ MonoBehaviour:
   chargeAttackShockwaveLevels: []
   waveLevels: []
   chargeHitShockwaveLevels: []
+  diseaseLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

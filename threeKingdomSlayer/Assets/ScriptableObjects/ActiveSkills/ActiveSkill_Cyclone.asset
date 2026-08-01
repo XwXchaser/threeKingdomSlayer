@@ -15,9 +15,15 @@ MonoBehaviour:
   category: 4
   upgradeId: active_cyclone
   displayName: "\u65CB\u98CE"
-  descriptionTemplate: "\u5439\u98DE{0}\u6392\u7684\u654C\u4EBA\uFF1B\u672A\u7729\u6655\u7684Boss\u6539\u4E3A\u524A\u51CF{2}%\u6700\u5927\u67B6\u52BF\u3002\u51B7\u5374\u65F6\u95F4{1}\u79D2"
+  descriptionTemplate: "\u5439\u98DE{0}\u6392\u7684\u654C\u4EBA\uFF1B\u5BF9\u672A\u7729\u6655\u7684Boss\u6539\u4E3A\u524A\u51CF{2}%\u6700\u5927\u67B6\u52BF\u5E76\u6253\u65AD\u653B\u51FB\u3002"
   extraDescriptionTemplate: 
-  rarity: 2
+  levelFeatureDescriptions:
+  - 
+  - "\u65CB\u98CE\u843D\u5730\u65F6\u9020\u62108\u70B9\u989D\u5916\u4F24\u5BB3"
+  - "\u65CB\u98CE\u843D\u5730\u65F6\u9020\u621010\u70B9\u989D\u5916\u4F24\u5BB3"
+  - "\u65CB\u98CE\u843D\u5730\u65F6\u9020\u621013\u70B9\u989D\u5916\u4F24\u5BB3"
+  - "\u65CB\u98CE\u843D\u5730\u65F6\u9020\u621016\u70B9\u989D\u5916\u4F24\u5BB3"
+  rarity: 1
   maxLevel: 5
   effectType: 
   numericLevels: []
@@ -41,19 +47,25 @@ MonoBehaviour:
   - rangeRows: 1
     damage: 0
     bossPoiseDamagePercent: 0.12
+    landingDamage: 0
   - rangeRows: 1
     damage: 0
     bossPoiseDamagePercent: 0.14
+    landingDamage: 8
   - rangeRows: 2
     damage: 0
     bossPoiseDamagePercent: 0.16
+    landingDamage: 10
   - rangeRows: 2
     damage: 0
     bossPoiseDamagePercent: 0.18
+    landingDamage: 13
   - rangeRows: 3
     damage: 0
     bossPoiseDamagePercent: 0.2
+    landingDamage: 16
   chargeHitShockwaveLevels: []
+  diseaseLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

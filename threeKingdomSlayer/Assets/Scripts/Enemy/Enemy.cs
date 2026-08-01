@@ -230,6 +230,10 @@ public class Enemy : MonoBehaviour
     private float stunTimer;
     private float _appliedStunDuration; // 实际应用的眩晕时长（用于 UI 恢复进度）
     private float _poiseRecoveryEndTime; // 架势恢复完成的时间点（Time.time + duration）
+    private bool _isStunExiting;
+    private bool _resumeStunAfterLaunch;
+    private Coroutine _stunExitRoutine;
+    private const float BOSS_STUN_END_DURATION = 0.9f;
     private float launchTimer;
     private float launchVelocityY;     // 当前Y轴速度
     private Vector3 launchStartLocalPos; // 挑飞起始位置
@@ -303,6 +307,7 @@ public class Enemy : MonoBehaviour
     private AnimationClip _attackClip; // 缓存的 Attack clip（用于同步 DOTween 与 Animator 时长）
 
     // 事件
+    public System.Action<Enemy> OnDying;
     public System.Action<Enemy> OnDeath;
     public System.Action<Enemy> OnDeathAnimComplete; // 死亡动画播放完毕（Boss锦囊触发时机）
     public System.Action<Enemy> OnDamageTaken;
@@ -395,6 +400,13 @@ public class Enemy : MonoBehaviour
         currentBossPhase = 0;
         if (_phaseTransitionRoutine != null) { StopCoroutine(_phaseTransitionRoutine); _phaseTransitionRoutine = null; }
         stunTimer = 0f;
+        _isStunExiting = false;
+        _resumeStunAfterLaunch = false;
+        if (_stunExitRoutine != null)
+        {
+            StopCoroutine(_stunExitRoutine);
+            _stunExitRoutine = null;
+        }
         launchTimer = 0f;
         _remainingStunOnLaunch = 0f;
         // BUG FIX: attackTimer 初始化为一个正数，避免第一次进入 UpdateAttack() 时
@@ -578,7 +590,7 @@ public class Enemy : MonoBehaviour
             if (_bossEngageTimer <= 0f)
             {
                 bossState = BossState.InCombat;
-                DebugLog.Info($"[Enemy] Boss进入战斗（缓冲结束）: {DebugTag}, col={columnIndex}, row={rowIndex}");
+                DebugLog.Info($"[BOSS_ADVANCE] Boss进入战斗（缓冲结束）: {DebugTag}, col={columnIndex}, row={rowIndex}");
                 OnBossEngaged?.Invoke(this);
                 // 进入 Idle 调度：等待 actionCooldownTimer 后开始行动
                 SetBossActionCooldown();
@@ -790,13 +802,28 @@ public class Enemy : MonoBehaviour
         stunTimer = duration;
         _appliedStunDuration = duration;
         _poiseRecoveryEndTime = Time.time + duration;
+        _isStunExiting = false;
+        _resumeStunAfterLaunch = false;
+        if (_stunExitRoutine != null)
+        {
+            StopCoroutine(_stunExitRoutine);
+            _stunExitRoutine = null;
+        }
 
-        // 受击闪白：0.3秒 hitted sprite，然后自然回到 idle（Stun 视觉）
-        GetComponent<EnemySpriteController>()?.TriggerHitFlash();
-
-        // BOSS: 播放眩晕动画
         if (isBoss)
-            _animator?.Play("Stun", 0, 0f);
+        {
+            if (_hitFlashRoutine != null)
+            {
+                StopCoroutine(_hitFlashRoutine);
+                _hitFlashRoutine = null;
+            }
+            _animator?.ResetTrigger("Hit");
+            _animator?.Play("StunStart", 0, 0f);
+        }
+        else
+        {
+            GetComponent<EnemySpriteController>()?.TriggerHitFlash();
+        }
     }
 
     /// <summary>
@@ -828,6 +855,13 @@ public class Enemy : MonoBehaviour
 
         // 保存被中断的眩晕剩余时间，落地后恢复
         _remainingStunOnLaunch = (state == EnemyState.Stunned && stunTimer > 0f) ? stunTimer : 0f;
+        _resumeStunAfterLaunch = state == EnemyState.Stunned || _isStunExiting;
+        if (_stunExitRoutine != null)
+        {
+            StopCoroutine(_stunExitRoutine);
+            _stunExitRoutine = null;
+        }
+        _isStunExiting = false;
 
         // 清理所有 DOTween 动效（攻击动画、受击抖动等）
         StopHitScaleFeedback();
@@ -1041,33 +1075,56 @@ public class Enemy : MonoBehaviour
 
     private void UpdateStun()
     {
+        if (_isStunExiting) return;
+
         stunTimer -= Time.deltaTime;
         if (stunTimer <= 0f)
+            BeginStunExit();
+    }
+
+    private void BeginStunExit()
+    {
+        currentPoise = maxPoise;
+        _poiseRecoveryEndTime = 0f;
+        OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
+
+        if (!isBoss)
         {
-            // STUN 结束后重置 Poise，开始新一周期的削韧循环
-            currentPoise = maxPoise;
-            _poiseRecoveryEndTime = 0f;
-            OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
+            CompleteStunExit();
+            return;
+        }
 
-            // BUG FIX: 必须先从 Stunned 状态退出，否则 TryStartRushMove 检测到
-            // state==Stunned 会直接返回 false，而 StartMoving 也可能因 PerRow 前排检查
-            // 等原因提前返回不改变状态，导致敌人永久卡在 Stunned 状态
-            state = EnemyState.Idle;
-            _animator?.Play("Idle", 0, 0f);
+        _isStunExiting = true;
+        _animator?.Play("StunEnd", 0, 0f);
+        _stunExitRoutine = StartCoroutine(CompleteBossStunExitAfterAnimation());
+    }
 
-            // Normal enemies never autonomously move after stun recovery.
-            if (isBoss && (bossState == BossState.InCombat || _bossEngageTimer > 0f))
-            {
-                SetBossActionCooldown();
-            }
-            else if (HasRushMoveOrder)
-            {
-                TryStartRushMove();
-            }
-            else
-            {
-                EnemyManager.Instance?.columnManager?.StartWaveMarch();
-            }
+    private System.Collections.IEnumerator CompleteBossStunExitAfterAnimation()
+    {
+        yield return new WaitForSeconds(BOSS_STUN_END_DURATION);
+        _stunExitRoutine = null;
+        _isStunExiting = false;
+        if (state != EnemyState.Dead)
+            CompleteStunExit();
+    }
+
+    private void CompleteStunExit()
+    {
+        state = EnemyState.Idle;
+        _animator?.Play("Idle", 0, 0f);
+
+        // Normal enemies never autonomously move after stun recovery.
+        if (isBoss && (bossState == BossState.InCombat || _bossEngageTimer > 0f))
+        {
+            SetBossActionCooldown();
+        }
+        else if (HasRushMoveOrder)
+        {
+            TryStartRushMove();
+        }
+        else
+        {
+            EnemyManager.Instance?.columnManager?.StartWaveMarch();
         }
     }
 
@@ -1104,7 +1161,6 @@ public class Enemy : MonoBehaviour
 
             // 先退出击飞状态，再根据情况决定后续行为
             state = EnemyState.Idle;
-            _animator?.Play("Idle", 0, 0f);
 
             // 通知击飞落地（供 CycloneEffect 等监听落地伤害）
             OnLaunchedLanded?.Invoke(this);
@@ -1112,19 +1168,27 @@ public class Enemy : MonoBehaviour
             // 地刺检测：击飞落地后触发
             SpikeTrapController.Instance?.CheckAndTrigger(this);
 
-            // BUG FIX: 挑飞打断了眩晕，落地后恢复剩余的眩晕时间
-            // 避免 BOSS 在眩晕未结束时落地立即攻击
             if (_remainingStunOnLaunch > 0f)
             {
-                float remaining = _remainingStunOnLaunch;
+                state = EnemyState.Stunned;
+                stunTimer = _remainingStunOnLaunch;
                 _remainingStunOnLaunch = 0f;
-                // 保存原始 _appliedStunDuration，Stun() 会将其覆盖为 remaining
-                // 导致 stunRecoveryProgress 分母畸变，进度条从中间跳回 0%
-                float savedAppliedDuration = _appliedStunDuration;
-                Stun(remaining);
-                _appliedStunDuration = savedAppliedDuration;
+                _isStunExiting = false;
+                _resumeStunAfterLaunch = false;
+                UpdateOutlineState();
+                if (isBoss)
+                    _animator?.Play("StunLoop", 0, 0f);
                 return;
             }
+
+            if (_resumeStunAfterLaunch)
+            {
+                _resumeStunAfterLaunch = false;
+                BeginStunExit();
+                return;
+            }
+
+            _animator?.Play("Idle", 0, 0f);
 
             // Landing never creates movement. It may only resume an existing scheduler order.
             if (HasRushMoveOrder)
@@ -1255,9 +1319,11 @@ public class Enemy : MonoBehaviour
             if (isBoss && rowIndex == 2 && bossState == BossState.None)
             {
                 BossPause();
-                OnColumnsModifiedForBoss(); // 立即检查前两排是否已空，防止漏检
+                // 先清理旧的补齐指令，再检查是否可以恢复推进。
+                // BossResume 会分配新的 rush order，必须先清理旧 order 防止被误完成。
                 if (HasRushMoveOrder)
                     CompleteRushMoveOrder();
+                OnColumnsModifiedForBoss(); // 立即检查前两排是否已空，防止漏检
                 return;
             }
 
@@ -1300,6 +1366,7 @@ public class Enemy : MonoBehaviour
                             _onColumnsModifiedHandler = null;
                         }
                         _bossEngageTimer = 1f;
+                        DebugLog.Info($"[BOSS_ADVANCE] Boss到达应战排, 设置engageTimer=1s: {DebugTag}, col={columnIndex}, rowIndex={rowIndex}, bossState={bossState}");
                     }
                 }
             }
@@ -1545,7 +1612,7 @@ public class Enemy : MonoBehaviour
     /// <summary>
     /// 受到伤害
     /// </summary>
-    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true, bool canInterruptAttack = true, bool triggerHitAnimation = true)
+    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true, bool canInterruptAttack = true, bool triggerHitAnimation = true, bool ignoreDamageModifiers = false)
     {
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
@@ -1561,7 +1628,7 @@ public class Enemy : MonoBehaviour
             if (nextPhase != null)
             {
                 float hpPercent = currentHealth / maxHealth;
-                float dmgMultiplier = GetDamageMultiplier(damageType);
+                float dmgMultiplier = ignoreDamageModifiers ? 1f : GetDamageMultiplier(damageType);
                 // BUG FIX: 预测伤害需包含 launchedDamageTakenMultiplier，
                 // 否则击飞状态下实际伤害 > 预测值，可能一击打穿阈值直接致死
                 float predictedDmg = damage * dmgMultiplier;
@@ -1609,7 +1676,7 @@ public class Enemy : MonoBehaviour
 
         if (sharedHealthGroup != null)
         {
-            sharedHealthGroup.TakeDamage(damage, damageType, this, damageNumberColor, triggerHitAnimation);
+            sharedHealthGroup.TakeDamage(damage, damageType, this, damageNumberColor, triggerHitAnimation, countsForCombo, canInterruptAttack, ignoreDamageModifiers);
             return;
         }
 
@@ -1618,7 +1685,7 @@ public class Enemy : MonoBehaviour
             damage *= launchedDamageTakenMultiplier;
 
         // 应用弱点倍率
-        float multiplier = GetDamageMultiplier(damageType);
+        float multiplier = ignoreDamageModifiers ? 1f : GetDamageMultiplier(damageType);
         float finalDamage = damage * multiplier;
 
         DebugLog.Info($"[Enemy] TakeDamage: {DebugTag}, col={columnIndex}, raw={damage:F1}, mult={multiplier:F2}, final={finalDamage:F1}, hp={currentHealth:F1}→{currentHealth - finalDamage:F1}");
@@ -1651,15 +1718,30 @@ public class Enemy : MonoBehaviour
             // BUG FIX: 同步应用闪白（立即设置颜色，不依赖 Update 循环）
             ApplyHitFlashImmediate();
 
-            // 触发受伤精灵闪烁（仅 Idle/Moving 状态，持续 0.3 秒）
-            TriggerHitFlash();
-
             // 触发受伤闪白效果（非致命伤通过 Update 循环过渡恢复）
             hitFlashTimer = HIT_FLASH_DURATION;
             DebugLog.Info($"[Enemy] 触发闪白: {DebugTag}, duration={HIT_FLASH_DURATION}");
 
             // DOTween: 受击大小抖动效果（与闪白同步触发）
             RestartHitScaleFeedback();
+
+            if (isBoss && state == EnemyState.Stunned)
+            {
+                if (!_isStunExiting)
+                {
+                    if (_hitFlashRoutine != null)
+                    {
+                        StopCoroutine(_hitFlashRoutine);
+                        _hitFlashRoutine = null;
+                    }
+                    _animator?.ResetTrigger("Hit");
+                    _animator?.Play("StunHit", 0, 0f);
+                }
+            }
+            else
+            {
+                TriggerHitFlash();
+            }
         }
 
         // 击飞状态下被攻击延长浮空时间
@@ -1698,7 +1780,23 @@ public class Enemy : MonoBehaviour
 
         ApplyHitFlashImmediate();
 
-        TriggerHitFlash();
+        if (isBoss && state == EnemyState.Stunned)
+        {
+            if (!_isStunExiting)
+            {
+                if (_hitFlashRoutine != null)
+                {
+                    StopCoroutine(_hitFlashRoutine);
+                    _hitFlashRoutine = null;
+                }
+                _animator?.ResetTrigger("Hit");
+                _animator?.Play("StunHit", 0, 0f);
+            }
+        }
+        else
+        {
+            TriggerHitFlash();
+        }
 
         hitFlashTimer = HIT_FLASH_DURATION;
 
@@ -1775,6 +1873,7 @@ public class Enemy : MonoBehaviour
         if (state != EnemyState.Launched
             && state != EnemyState.Dead
             && state != EnemyState.QTEAttacking
+            && state != EnemyState.Stunned
             && !isCFrame
             && !isSuperArmor)
         {
@@ -1841,6 +1940,28 @@ public class Enemy : MonoBehaviour
                 Object.Destroy(mat);
         }
         flashMaterials = null;
+    }
+
+    /// <summary>
+    /// 位移主动的零伤害强控命中：打断攻击前摇（含CFrame/SuperArmor），
+    /// 不扣HP、不生成伤害数字，计入Combo，并强制播放受击动画与反馈。
+    /// QTE、收招、转阶段及非交战Boss不受影响。
+    /// </summary>
+    public bool ApplyActiveDisplacementHit()
+    {
+        if (state == EnemyState.Dead || state == EnemyState.QTEAttacking || isPhaseTransitioning) return false;
+        if (isBoss && bossState != BossState.InCombat) return false;
+        if (state == EnemyState.Attacking && isAttackDrawPhase) return false;
+
+        if (state == EnemyState.Attacking && isAttackAnimating)
+            CancelAttack();
+
+        ApplyHitFlashImmediate();
+        hitFlashTimer = HIT_FLASH_DURATION;
+        RestartHitScaleFeedback();
+        _animator?.SetTrigger("Hit");
+        OnDamageTaken?.Invoke(this);
+        return true;
     }
 
     /// <summary>
@@ -1975,6 +2096,7 @@ public class Enemy : MonoBehaviour
         }
 
         bool wasLaunched = (state == EnemyState.Launched);
+        OnDying?.Invoke(this);
         StopHitScaleFeedback();
         state = EnemyState.Dead;
         UpdateOutlineState();
@@ -2322,6 +2444,7 @@ public class Enemy : MonoBehaviour
                 // BOSS 已在应战排(row<=1)，不再参与补齐前移
                 if (isBoss && rowIndex <= 1)
                 {
+                    DebugLog.Info($"[BOSS_ADVANCE] Boss已在应战排(rowIndex={rowIndex}), 拒绝补齐: {DebugTag}, bossState={bossState}");
                     CompleteRushMoveOrder();
                     return RushMoveStartResult.Rejected;
                 }
@@ -2597,7 +2720,7 @@ public class Enemy : MonoBehaviour
 
         // BOSS 在后方：参与正常补齐链，TryStartRushMove 中的跨列检查保证
         // BOSS 仅在整排前方清空时才前进。到达 rowIndex=2 时触发 BossPause。
-        DebugLog.Info($"[Enemy] Boss加入补齐链(rowIndex={rowIndex}): {DebugTag}, col={columnIndex}");
+        DebugLog.Info($"[BOSS_ADVANCE] Boss加入补齐链(rowIndex={rowIndex}): {DebugTag}, col={columnIndex}, 等待TriggerBossFillForward");
     }
 
     /// <summary>
@@ -2684,7 +2807,7 @@ public class Enemy : MonoBehaviour
         }
 
         float alpha = GetAlphaForRow(rowIndex);
-        DebugLog.Info($"[Enemy] Boss暂停在第3排: {DebugTag}, col={columnIndex}, rowIndex={rowIndex}, pos={transform.localPosition}, alpha={alpha}, active={gameObject.activeSelf}, rendererEnabled={GetComponent<SpriteRenderer>()?.enabled}, 等待前两排清空");
+        DebugLog.Info($"[BOSS_ADVANCE] Boss暂停在第3排: {DebugTag}, col={columnIndex}, rowIndex={rowIndex}, alpha={alpha}, 等待前两排清空");
     }
 
     /// <summary>
@@ -2709,10 +2832,14 @@ public class Enemy : MonoBehaviour
                 foreach (var e in col.enemies)
                 {
                     if (e != null && e != this && e.state != EnemyState.Dead && e.rowIndex <= 1)
+                    {
+                        DebugLog.Info($"[BOSS_ADVANCE] Boss前两排仍有敌人，继续等待: {DebugTag}, blockingEnemy={e.DebugTag}, blockingRow={e.rowIndex}");
                         return;
+                    }
                 }
             }
 
+            DebugLog.Info($"[BOSS_ADVANCE] Boss前两排已清空，调用BossResume: {DebugTag}");
             BossResume();
             return;
         }
@@ -2747,7 +2874,7 @@ public class Enemy : MonoBehaviour
             _onColumnsModifiedHandler = null;
         }
 
-        DebugLog.Info($"[Enemy] Boss恢复推进: {DebugTag}, col={columnIndex}, 从第3排→第2排");
+        DebugLog.Info($"[BOSS_ADVANCE] Boss恢复推进: {DebugTag}, col={columnIndex}, 从第3排→第2排");
 
         int generation = _rushMoveOrderGeneration + 1;
         CancelRushMoveOrder(resetActiveMovement: true);
@@ -2955,10 +3082,19 @@ public class Enemy : MonoBehaviour
 
     private System.Collections.IEnumerator PhaseTransitionSequence(BossPhaseData nextPhase)
     {
-        // 若处于击飞状态：等待落地
         while (state == EnemyState.Launched)
         {
             yield return null;
+        }
+
+        // 转阶段会结束当前眩晕；无敌已在 EnterPhaseTransition 生效，先完整播放眩晕收招。
+        if (state == EnemyState.Stunned)
+        {
+            BeginStunExit();
+            while (_isStunExiting || state == EnemyState.Launched)
+            {
+                yield return null;
+            }
         }
 
         // 设置无敌：切换到 Idle 状态
@@ -3050,6 +3186,9 @@ public class Enemy : MonoBehaviour
         isSuperArmor = false;
         isPhaseTransitioning = false;
         _healthLocked = false;
+        _isStunExiting = false;
+        _resumeStunAfterLaunch = false;
+        if (_stunExitRoutine != null) { StopCoroutine(_stunExitRoutine); _stunExitRoutine = null; }
         currentBossPhase = 0;
         if (_phaseTransitionRoutine != null) { StopCoroutine(_phaseTransitionRoutine); _phaseTransitionRoutine = null; }
         // 清理 Boss 分阶段推进订阅
@@ -3076,6 +3215,7 @@ public class Enemy : MonoBehaviour
         rushMoveDelayTimer = 0f;
         rushMoveChainTriggered = false;
         OnRushMoveComplete = null;
+        OnDying = null;
         OnDeath = null;
         OnDamageTaken = null;
         OnHealthChanged = null;

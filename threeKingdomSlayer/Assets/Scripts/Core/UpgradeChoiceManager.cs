@@ -237,7 +237,8 @@ public class UpgradeChoiceManager : MonoBehaviour
 
     private List<UpgradeDefinition> DrawChoices()
     {
-        if (poolConfig == null)
+        bool v2 = UsesActiveSkillRules && activeSkillPoolConfig != null;
+        if (!v2 && poolConfig == null)
         {
             Debug.LogWarning("[UpgradeChoiceManager] poolConfig 未配置");
             return new List<UpgradeDefinition>();
@@ -284,16 +285,51 @@ public class UpgradeChoiceManager : MonoBehaviour
         return results;
     }
 
-    /// <summary>收集所有满足前置条件且未满级的候选项；V2 同时合并主动技能池。</summary>
+    /// <summary>收集所有满足前置条件且未满级的候选项；V2 从 activeSkillPoolConfig 读取全池。</summary>
     private List<EligibleEntry> CollectEligible()
     {
         var candidates = new List<EligibleEntry>();
-        CollectFromPool(candidates, poolConfig.commonPool, UpgradeRarity.Common);
-        CollectFromPool(candidates, poolConfig.rarePool, UpgradeRarity.Rare);
-        CollectFromPool(candidates, poolConfig.legendaryPool, UpgradeRarity.Legendary);
-        if (UsesActiveSkillRules)
-            CollectActiveSkills(candidates, includeCommon: true);
+        if (UsesActiveSkillRules && activeSkillPoolConfig != null)
+        {
+            CollectFromUnifiedPool(candidates, activeSkillPoolConfig.commonPool, UpgradeRarity.Common);
+            CollectFromUnifiedPool(candidates, activeSkillPoolConfig.rarePool, UpgradeRarity.Rare);
+            CollectFromUnifiedPool(candidates, activeSkillPoolConfig.legendaryPool, UpgradeRarity.Legendary);
+        }
+        else
+        {
+            CollectFromPool(candidates, poolConfig.commonPool, UpgradeRarity.Common);
+            CollectFromPool(candidates, poolConfig.rarePool, UpgradeRarity.Rare);
+            CollectFromPool(candidates, poolConfig.legendaryPool, UpgradeRarity.Legendary);
+        }
         return candidates;
+    }
+
+    /// <summary>V2 统一池收集：主动技能走 CanAcquire，其余走前置条件+槽位检查。</summary>
+    private void CollectFromUnifiedPool(List<EligibleEntry> result, List<WeightedUpgrade> pool, UpgradeRarity rarity)
+    {
+        if (pool == null) return;
+        for (int i = 0; i < pool.Count; i++)
+        {
+            var wu = pool[i];
+            if (wu.upgrade == null) continue;
+            if (wu.upgrade.category == UpgradeCategory.Item) continue;
+
+            if (wu.upgrade.category == UpgradeCategory.ActiveSkill)
+            {
+                var inventory = ActiveSkillInventory.Instance;
+                if (inventory == null || !inventory.CanAcquire(wu.upgrade as ActiveSkillDefinition)) continue;
+            }
+            else
+            {
+                if (!PrerequisitesMet(wu.upgrade)) continue;
+                int currentLevel = GetCurrentLevel(wu.upgrade);
+                if (currentLevel >= wu.upgrade.maxLevel) continue;
+                if (currentLevel == 0 && UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.PassiveUpgradeCount >= 6)
+                    continue;
+            }
+
+            result.Add(new EligibleEntry { upgrade = wu.upgrade, weight = Mathf.Max(1, wu.weight), rarity = rarity });
+        }
     }
 
     private void CollectFromPool(List<EligibleEntry> result, List<WeightedUpgrade> pool, UpgradeRarity rarity)
@@ -306,7 +342,11 @@ public class UpgradeChoiceManager : MonoBehaviour
             // V1 Item 与 V2 ActiveSkill 均由各自独立池处理
             if (wu.upgrade.category == UpgradeCategory.Item || wu.upgrade.category == UpgradeCategory.ActiveSkill) continue;
             if (!PrerequisitesMet(wu.upgrade)) continue;
-            if (GetCurrentLevel(wu.upgrade) >= wu.upgrade.maxLevel) continue;
+            int currentLevel = GetCurrentLevel(wu.upgrade);
+            if (currentLevel >= wu.upgrade.maxLevel) continue;
+            // 被动技能上限 6 个：已满时只允许升级已有技能，不允许获得新技能
+            if (currentLevel == 0 && UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.PassiveUpgradeCount >= 6)
+                continue;
             result.Add(new EligibleEntry { upgrade = wu.upgrade, weight = wu.weight, rarity = rarity });
         }
     }
@@ -418,22 +458,23 @@ public class UpgradeChoiceManager : MonoBehaviour
     {
         if (activeSkillPoolConfig == null || ActiveSkillInventory.Instance == null) return;
         if (includeCommon)
-            CollectFromActiveSkillPool(result, activeSkillPoolConfig.commonPool, UpgradeRarity.Common);
-        CollectFromActiveSkillPool(result, activeSkillPoolConfig.rarePool, UpgradeRarity.Rare);
-        CollectFromActiveSkillPool(result, activeSkillPoolConfig.legendaryPool, UpgradeRarity.Legendary);
+            CollectActiveSkillEntries(result, activeSkillPoolConfig.commonPool, UpgradeRarity.Common);
+        CollectActiveSkillEntries(result, activeSkillPoolConfig.rarePool, UpgradeRarity.Rare);
+        CollectActiveSkillEntries(result, activeSkillPoolConfig.legendaryPool, UpgradeRarity.Legendary);
     }
 
-    private void CollectFromActiveSkillPool(List<EligibleEntry> result, List<WeightedActiveSkill> pool, UpgradeRarity rarity)
+    private void CollectActiveSkillEntries(List<EligibleEntry> result, List<WeightedUpgrade> pool, UpgradeRarity rarity)
     {
         if (pool == null) return;
         for (int i = 0; i < pool.Count; i++)
         {
-            var weighted = pool[i];
-            var skill = weighted.skill;
-            if (skill == null || skill.category != UpgradeCategory.ActiveSkill) continue;
+            var wu = pool[i];
+            if (wu.upgrade == null || wu.upgrade.category != UpgradeCategory.ActiveSkill) continue;
+            var skill = wu.upgrade as ActiveSkillDefinition;
+            if (skill == null) continue;
             var inventory = ActiveSkillInventory.Instance;
             if (inventory == null || !inventory.CanAcquire(skill)) continue;
-            result.Add(new EligibleEntry { upgrade = skill, weight = Mathf.Max(1, weighted.weight), rarity = rarity });
+            result.Add(new EligibleEntry { upgrade = skill, weight = Mathf.Max(1, wu.weight), rarity = rarity });
         }
     }
 
@@ -460,10 +501,14 @@ public class UpgradeChoiceManager : MonoBehaviour
     /// <summary>按稀有度权重随机选择稀有度</summary>
     private UpgradeRarity RollRarity()
     {
-        float total = poolConfig.commonWeight + poolConfig.rareWeight + poolConfig.legendaryWeight;
+        bool v2 = UsesActiveSkillRules && activeSkillPoolConfig != null;
+        float commonW = v2 ? activeSkillPoolConfig.commonWeight : poolConfig.commonWeight;
+        float rareW = v2 ? activeSkillPoolConfig.rareWeight : poolConfig.rareWeight;
+        float legendaryW = v2 ? activeSkillPoolConfig.legendaryWeight : poolConfig.legendaryWeight;
+        float total = commonW + rareW + legendaryW;
         float roll = Random.value * total;
-        if (roll < poolConfig.commonWeight) return UpgradeRarity.Common;
-        if (roll < poolConfig.commonWeight + poolConfig.rareWeight) return UpgradeRarity.Rare;
+        if (roll < commonW) return UpgradeRarity.Common;
+        if (roll < commonW + rareW) return UpgradeRarity.Rare;
         return UpgradeRarity.Legendary;
     }
 

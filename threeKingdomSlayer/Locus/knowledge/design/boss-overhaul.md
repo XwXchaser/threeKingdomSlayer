@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1781067207076
-updatedAt: 1782380329459
+updatedAt: 1785399370019
 ---
 
 # boss-overhaul
@@ -121,6 +121,11 @@ SuperArmor（阶段级霸体）受击时：
 - **阻断**受击动画（`HitFlashRoutine` 加 `!isSuperArmor` 守卫）—— 霸体不应呈现痛苦摇摆
 - **保留**白闪反馈（瞬时 + 持续）—— 击中确认，玩家需要
 - **减弱**抖动（`DOPunchScale` 从 0.2/0.15s/8 降为 0.1/0.1s/5）—— 不破坏霸体印象但保留打击感
+
+### Boss Stun 动画资源部署
+- `Boss_104.controller` 已使用 `BOSS_weak_*` 资源新增四段状态：`StunStart`（weak_start1-3，0.3s）→ `StunLoop`（weak_loop1-3，循环）→ `StunHit`（weak_hitted1-3，0.3s）→ `StunLoop`；`StunEnd`（weak_end1-3，0.3s）由代码在眩晕计时结束时直接播放。
+- `Enemy` 中 Boss 进入 Stun 播放 Start；眩晕中的常规 `TakeDamage`（非 DOT、非击飞/死亡/QTE/霸体路径）播放 StunHit；正常结束先完整播放 End，再恢复 Idle 调度。
+- Start、Loop、Hit、End 均可由击飞打断。击飞中仍计眩晕：若落地时仍有剩余则直接恢复 Loop；若已结束或 End 被打断则落地播放完整 End，随后才恢复 Idle。转阶段锁血无敌与 Stun 独立；若 Stun 中触发转阶段，先播放 End，再播放 Phase2/Phase3 转场。
 
 ### CancelAttack Animator 复位
 `CancelAttack()` 中新增 `_animator?.Play("Idle", 0, 0f)`。此前 Animator 回 Idle 依赖 HitFlash 链路的副作用（Hit 触发→HitFlash 状态→自动回 Idle），`!isSuperArmor` 守卫暴露了该隐式依赖。现改为显式复位，与 `PlayAttackAnimationTween` OnComplete 的 `Play("Idle")` 对称。

@@ -18,6 +18,10 @@ public class TimedPassiveModule : MonoBehaviour
     public GameObject arrowEffectPrefab;
     public GameObject cycloneEffectPrefab;
 
+    [Header("蛇形喷射")]
+    [Tooltip("相对火焰Prefab起点的Z偏移。Prefab基础起点为-2，设置-4时最终起点为-6。")]
+    public float fireSweepStartZOffset = -4f;
+
     private class TimedState
     {
         public UpgradeDefinition definition;
@@ -188,11 +192,13 @@ public class TimedPassiveModule : MonoBehaviour
         var cfg = state.definition.timedAoeLevels[state.level - 1];
         if (fireEffectPrefab == null) return;
 
-        // 照抄火蛇机关：始终全 5 列，限制 3 排，Z 偏移 -2
-        var cols = new List<int> { 0, 1, 2, 3, 4 };
+        // 使用资产配置的列数，不再硬编码全5列
+        var cols = cfg.columns != null && cfg.columns.Count > 0
+            ? cfg.columns
+            : new List<int> { 0, 1, 2, 3, 4 };
         var instance = Instantiate(fireEffectPrefab);
         var effect = instance.GetComponent<ShootFireEffect>();
-        effect.PlaySweep(cols, cfg.damage, maxRows: 3, startZOffset: -2f, cfg.burnDamagePerSecond, cfg.burnDurationSeconds);
+        effect.PlaySweep(cols, cfg.damage, cfg.rangeRows, fireSweepStartZOffset, cfg.burnTotalDamage, cfg.burnDurationSeconds);
     }
 
     private void SpawnArrow(TimedState state)
@@ -328,7 +334,7 @@ public class TimedPassiveModule : MonoBehaviour
             var instance = Instantiate(cycloneEffectPrefab);
             var fx = instance.GetComponent<CycloneEffect>();
             if (fx != null)
-                fx.Setup(enemy, cfg.damage, cfg.landingDamagePercent, cfg.knockupDuration);
+                fx.Setup(enemy, cfg.damage, cfg.landingDamage, cfg.knockupDuration);
             else
                 Debug.LogWarning("[TimedPassiveModule] CycloneEffect prefab 缺少 CycloneEffect 组件");
         }

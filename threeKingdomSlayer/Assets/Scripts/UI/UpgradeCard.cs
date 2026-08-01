@@ -15,6 +15,7 @@ public class UpgradeCard : MonoBehaviour
     public Image iconImage;
     public TextMeshProUGUI nameText;
     public TextMeshProUGUI descriptionText;
+    public TextMeshProUGUI cooldownText;
     public TextMeshProUGUI levelStatusText;
     public Image passiveTagImage;
     public Image activeTagImage;
@@ -50,7 +51,7 @@ public class UpgradeCard : MonoBehaviour
         }
         if (descriptionText != null)
             descriptionText.text = UpgradeEffectManager.Instance != null
-                ? UpgradeEffectManager.Instance.GetDescription(def)
+                ? UpgradeEffectManager.Instance.GetUpgradePreviewDescription(def)
                 : def.descriptionTemplate;
 
         int currentLevel = GetCurrentLevel(def);
@@ -67,6 +68,20 @@ public class UpgradeCard : MonoBehaviour
         }
 
         bool isActiveSkill = def.category == UpgradeCategory.ActiveSkill;
+        if (cooldownText != null)
+        {
+            float nextCooldown = GetDisplayCooldown(def, currentLevel + 1);
+            bool hasCooldown = nextCooldown > 0f;
+            cooldownText.gameObject.SetActive(hasCooldown);
+            if (hasCooldown)
+            {
+                float currentCooldown = currentLevel > 0 ? GetDisplayCooldown(def, currentLevel) : 0f;
+                string cooldownValue = currentLevel > 0 && !Mathf.Approximately(currentCooldown, nextCooldown)
+                    ? $"{currentCooldown:0} → <b><color=#F5C542>{nextCooldown:0}</color></b>"
+                    : $"<b><color=#F5C542>{nextCooldown:0}</color></b>";
+                cooldownText.text = $"冷却时间 {cooldownValue} 秒";
+            }
+        }
         if (activeTagImage != null)
             activeTagImage.gameObject.SetActive(isActiveSkill);
         if (passiveTagImage != null)
@@ -83,6 +98,16 @@ public class UpgradeCard : MonoBehaviour
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(OnClicked);
         }
+    }
+
+    private static float GetDisplayCooldown(UpgradeDefinition def, int level)
+    {
+        if (def is ActiveSkillDefinition activeSkill)
+            return activeSkill.GetCooldown(level);
+
+        return def.category == UpgradeCategory.TimedPassive
+            ? def.GetTriggerInterval(level)
+            : 0f;
     }
 
     private static int GetCurrentLevel(UpgradeDefinition def)

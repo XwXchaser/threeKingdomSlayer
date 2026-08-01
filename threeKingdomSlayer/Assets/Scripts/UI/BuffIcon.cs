@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 /// <summary>
 /// BuffDisplayPanel 中的单个图标 — 数值型/被动型/道具型通用。
@@ -31,6 +32,17 @@ public class BuffIcon : MonoBehaviour
     private Outline _readyGlowOutline;
     private bool _showReadyGlow;
 
+    [Header("主动技能按钮")]
+    [SerializeField] private Image _activeButtonFrame;
+    [SerializeField] private RectTransform _activeButtonFace;
+    [SerializeField] private float _activeButtonPressedOffset = 8f;
+    [SerializeField] private float _activeButtonReturnDuration = 0.12f;
+
+    private Vector2 _activeButtonRestPosition;
+    private bool _activeButtonPositionCached;
+    private bool _activeButtonPressed;
+    private Tween _activeButtonTween;
+
     public string UpgradeId { get; private set; }
     public string GestureId { get; private set; }
     public UpgradeCategory Category { get; private set; }
@@ -53,6 +65,9 @@ public class BuffIcon : MonoBehaviour
                 SyncCooldownSprite(icon);
         }
 
+        bool isActive = category == UpgradeCategory.ActiveSkill;
+        ApplyActiveButtonStyle(isActive);
+
         if (_button != null)
         {
             _button.onClick.RemoveAllListeners();
@@ -69,6 +84,22 @@ public class BuffIcon : MonoBehaviour
                 SetReadyGlow(false);
             }
         }
+    }
+
+    private void ApplyActiveButtonStyle(bool isActiveSkill)
+    {
+        if (_frameImage != null)
+            _frameImage.gameObject.SetActive(!isActiveSkill);
+        if (_activeButtonFrame != null)
+            _activeButtonFrame.gameObject.SetActive(isActiveSkill);
+        if (_activeButtonFace != null)
+            _activeButtonFace.gameObject.SetActive(isActiveSkill);
+    }
+
+    /// <summary>强制切换槽位样式（供 FrontItemBar 在初始化空槽位时调用）</summary>
+    public void SetActiveSlotStyle(bool isActiveSkill)
+    {
+        ApplyActiveButtonStyle(isActiveSkill);
     }
 
     /// <summary>设置底部角标数字（道具次数/血包数量）</summary>
@@ -140,7 +171,6 @@ public class BuffIcon : MonoBehaviour
         if (_readyGlow == null)
         {
             var go = new GameObject("ReadyGlow", typeof(RectTransform), typeof(Image));
-            go.transform.SetParent(transform, false);
             _readyGlow = go.GetComponent<Image>();
             _readyGlow.raycastTarget = false;
             _readyGlow.maskable = false;
@@ -148,13 +178,25 @@ public class BuffIcon : MonoBehaviour
             _readyGlowOutline.effectColor = Color.white;
             _readyGlowOutline.effectDistance = new Vector2(4f, -4f);
             _readyGlowOutline.useGraphicAlpha = true;
-            var rt = _readyGlow.rectTransform;
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.offsetMin = Vector2.one * -_readyGlowPadding;
-            rt.offsetMax = Vector2.one * _readyGlowPadding;
-            _readyGlow.transform.SetSiblingIndex(GetReadyGlowSiblingIndex());
         }
+
+        Transform glowParent = Category == UpgradeCategory.ActiveSkill && _activeButtonFace != null
+            ? _activeButtonFace
+            : transform;
+        if (_readyGlow.transform.parent != glowParent)
+            _readyGlow.transform.SetParent(glowParent, false);
+
+        var glowRect = _readyGlow.rectTransform;
+        if (_iconImage != null)
+        {
+            var iconRect = _iconImage.rectTransform;
+            glowRect.anchorMin = iconRect.anchorMin;
+            glowRect.anchorMax = iconRect.anchorMax;
+            glowRect.pivot = iconRect.pivot;
+            glowRect.anchoredPosition = iconRect.anchoredPosition;
+            glowRect.sizeDelta = iconRect.sizeDelta;
+        }
+        _readyGlow.transform.SetSiblingIndex(GetReadyGlowSiblingIndex());
 
         _readyGlow.sprite = _iconImage.sprite;
         _readyGlow.type = _iconImage.type;
@@ -166,6 +208,9 @@ public class BuffIcon : MonoBehaviour
 
     private int GetReadyGlowSiblingIndex()
     {
+        if (Category == UpgradeCategory.ActiveSkill && _iconImage != null)
+            return _iconImage.transform.GetSiblingIndex();
+
         int numberIndex = transform.childCount;
         if (_spriteNumberDisplay != null)
             numberIndex = Mathf.Min(numberIndex, _spriteNumberDisplay.transform.GetSiblingIndex());
@@ -231,6 +276,7 @@ public class BuffIcon : MonoBehaviour
         UpgradeId = null;
         GestureId = null;
         Category = UpgradeCategory.Item;
+        ApplyActiveButtonStyle(false);
         if (_iconImage != null)
         {
             _iconImage.sprite = null;
@@ -250,6 +296,30 @@ public class BuffIcon : MonoBehaviour
         }
         OnClicked = null;
         gameObject.SetActive(true);
+    }
+
+    public void SetActiveButtonPressed(bool pressed)
+    {
+        if (_activeButtonFace == null) return;
+        if (_activeButtonPressed == pressed) return;
+        _activeButtonPressed = pressed;
+
+        if (!_activeButtonPositionCached)
+        {
+            _activeButtonRestPosition = _activeButtonFace.anchoredPosition;
+            _activeButtonPositionCached = true;
+        }
+
+        _activeButtonTween?.Kill();
+        if (pressed)
+        {
+            _activeButtonFace.anchoredPosition = _activeButtonRestPosition + new Vector2(0f, -_activeButtonPressedOffset);
+        }
+        else
+        {
+            _activeButtonTween = _activeButtonFace.DOAnchorPos(_activeButtonRestPosition, _activeButtonReturnDuration)
+                .SetEase(Ease.OutBack);
+        }
     }
 
     /// <summary>清空图标数据并隐藏</summary>
