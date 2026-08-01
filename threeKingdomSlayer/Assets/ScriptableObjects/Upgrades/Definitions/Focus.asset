@@ -17,6 +17,7 @@ MonoBehaviour:
   displayName: "\u4E13\u6CE8"
   descriptionTemplate: "\u4E3B\u52A8\u6280\u80FD\u51B7\u5374\u65F6\u95F4\u51CF\u5C11{0}%"
   extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
   rarity: 0
   maxLevel: 5
   effectType: cooldown_reduction
@@ -41,7 +42,7 @@ MonoBehaviour:
   secondaryIntValue: 0
   stringValue: 
   baseAttackConfig: {fileID: 0}
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 1f214588280e70e4aab8bd60badefb35, type: 3}
   phantomLevels: []
   timedAoeLevels: []
   timedArrowLevels: []
@@ -54,6 +55,7 @@ MonoBehaviour:
   chargeAttackShockwaveLevels: []
   waveLevels: []
   chargeHitShockwaveLevels: []
+  diseaseLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

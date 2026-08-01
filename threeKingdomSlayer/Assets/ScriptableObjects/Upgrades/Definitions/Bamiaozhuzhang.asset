@@ -17,6 +17,7 @@ MonoBehaviour:
   displayName: "\u62D4\u82D7\u52A9\u957F"
   descriptionTemplate: "\u653B\u51FB\u8DDD\u79BB\u63D0\u5347{0}\u683C\uFF0C\u8BE5\u63D0\u5347\u8303\u56F4\u7684\u653B\u51FB\u4F24\u5BB3-{1}%"
   extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
   rarity: 1
   maxLevel: 2
   effectType: attack_range_boost
@@ -32,7 +33,7 @@ MonoBehaviour:
   secondaryIntValue: 0
   stringValue: 
   baseAttackConfig: {fileID: 0}
-  icon: {fileID: 21300000, guid: ecd20ccd51fed4f4e88bbc8005eefba7, type: 3}
+  icon: {fileID: 21300000, guid: cf57d0d542e88e04488cdfc0f7d79e66, type: 3}
   phantomLevels: []
   timedAoeLevels: []
   timedArrowLevels: []
@@ -45,6 +46,7 @@ MonoBehaviour:
   chargeAttackShockwaveLevels: []
   waveLevels: []
   chargeHitShockwaveLevels: []
+  diseaseLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

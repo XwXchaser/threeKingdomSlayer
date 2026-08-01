@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// 升级奖励定义 - ScriptableObject
@@ -26,6 +27,9 @@ public class UpgradeDefinition : ScriptableObject
     [Tooltip("补充效果描述；支持与主描述相同的 {0}、{1} 占位符。留空则不显示。")]
     [TextArea(1, 3)]
     public string extraDescriptionTemplate;
+    [Tooltip("各等级首次新增的机制说明。index 0=Lv1；留空表示该等级无新增机制。升级预览中新增文本以金色显示。")]
+    [TextArea(1, 3)]
+    public List<string> levelFeatureDescriptions = new List<string>();
 
     [Header("稀有度与等级")]
     public UpgradeRarity rarity = UpgradeRarity.Common;
@@ -109,6 +113,10 @@ public class UpgradeDefinition : ScriptableObject
     [Header("受击冲击波（effectType=charge_hit_shockwave）")]
     [Tooltip("按等级配置蓄力受击增伤冲击波。index 0 = Lv1")]
     public List<ChargeHitShockwaveLevelConfig> chargeHitShockwaveLevels = new List<ChargeHitShockwaveLevelConfig>();
+
+    [Header("主动疾病（ActiveSkillEffectType=Disease）")]
+    [Tooltip("按等级配置主动疾病效果。index 0 = Lv1")]
+    public List<DiseaseLevelConfig> diseaseLevels = new List<DiseaseLevelConfig>();
 
     // ═══════════════════════════════════════════════
     // 旧版兼容字段（Inspector 隐藏，保留序列化数据）
@@ -312,13 +320,16 @@ public struct TimedAoeLevelConfig
     public int triggerThreshold;
 
     [Header("效果参数")]
+    [Tooltip("前方射程排数（扇扫模式使用）")]
+    [Min(1)] public int rangeRows;
     [Tooltip("每次伤害")]
     public int damage;
     [Tooltip("影响的列索引列表: 1=col1, 2=col2, 3=col3")]
     public List<int> columns;
     [Header("灼烧")]
-    [Tooltip("灼烧每秒伤害，0=不启用灼烧")]
-    public int burnDamagePerSecond;
+    [Tooltip("每次火焰附加的灼烧总伤害")]
+    [FormerlySerializedAs("burnDamagePerSecond")]
+    public int burnTotalDamage;
     [Tooltip("灼烧持续时间（秒）")]
     public float burnDurationSeconds;
 }
@@ -395,8 +406,8 @@ public struct CycloneLevelConfig
     public float knockupDuration;
     [Tooltip("击飞伤害")]
     public int damage;
-    [Tooltip("落地伤害百分比（0=未解锁, 0.5=50%）")]
-    public float landingDamagePercent;
+    [Tooltip("落地伤害绝对值（0=未解锁）")]
+    public int landingDamage;
 }
 
 /// <summary>持续旋风道具配置</summary>
@@ -508,6 +519,20 @@ public struct ActiveWaveLevelConfig
     public int damage;
     [Tooltip("未眩晕 Boss 受到的最大架势百分比伤害（0.08=8%）")]
     [Range(0f, 1f)] public float bossPoiseDamagePercent;
+    [Tooltip("落地伤害绝对值（0=未解锁），仅 Cyclone 使用")]
+    public int landingDamage;
+}
+
+/// <summary>主动疾病每级配置</summary>
+[System.Serializable]
+public struct DiseaseLevelConfig
+{
+    [Tooltip("疾病完整持续时间内的总伤害")]
+    public int totalDamage;
+    [Tooltip("疾病持续时间（秒）")]
+    public int durationSeconds;
+    [Tooltip("智能传播（仅1个敌人，优先两侧）")]
+    public bool smartSpread;
 }
 
 /// <summary>蓄力受击增伤冲击波每级配置</summary>

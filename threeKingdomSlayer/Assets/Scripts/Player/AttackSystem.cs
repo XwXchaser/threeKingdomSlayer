@@ -260,6 +260,10 @@ public class AttackSystem : MonoBehaviour
                         columnManager.ApplyPushWave(new List<Enemy> { enemy }, pushDist, canInterruptCFrame: false, pushedEnemies: pushedTargets);
                 }
             },
+            enemy =>
+            {
+                ActiveSkillRunner.Instance?.ConsumeArmedDisease(enemy);
+            },
             () =>
             {
                 UltimateSystem.Instance?.AddEnergyForAttack(AttackType.Stab);

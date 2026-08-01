@@ -120,7 +120,7 @@ public class CycloneItemController : MonoBehaviour
             effect.Setup(
                 enemy,
                 Mathf.Max(0, _config.initialDamage),
-                Mathf.Max(0f, _config.landingDamagePercent),
+                Mathf.Max(0, (int)_config.landingDamagePercent),
                 enemy.launchDuration);
         }
     }

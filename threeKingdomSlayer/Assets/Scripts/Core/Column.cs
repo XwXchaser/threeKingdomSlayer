@@ -238,7 +238,7 @@ public class Column
             {
                 enemies[i].targetRow = 0;
                 enemies[i].StartFillForwardDelay(0.5f);
-                DebugLog.Info($"[Column] 触发Boss独立补齐: {enemies[i].DebugTag}, col={columnIndex}, row={enemies[i].rowIndex}");
+                DebugLog.Info($"[BOSS_ADVANCE] 触发Boss独立补齐: {enemies[i].DebugTag}, col={columnIndex}, row={enemies[i].rowIndex}");
                 break;
             }
         }

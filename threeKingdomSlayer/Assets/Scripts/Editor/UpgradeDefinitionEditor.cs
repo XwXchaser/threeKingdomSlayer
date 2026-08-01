@@ -17,6 +17,7 @@ public class UpgradeDefinitionEditor : Editor
     private SerializedProperty upgradeIdProp;
     private SerializedProperty displayNameProp;
     private SerializedProperty descriptionTemplateProp;
+    private SerializedProperty levelFeatureDescriptionsProp;
     private SerializedProperty rarityProp;
     private SerializedProperty maxLevelProp;
     private SerializedProperty effectTypeProp;
@@ -55,6 +56,7 @@ public class UpgradeDefinitionEditor : Editor
         upgradeIdProp = serializedObject.FindProperty("upgradeId");
         displayNameProp = serializedObject.FindProperty("displayName");
         descriptionTemplateProp = serializedObject.FindProperty("descriptionTemplate");
+        levelFeatureDescriptionsProp = serializedObject.FindProperty("levelFeatureDescriptions");
         rarityProp = serializedObject.FindProperty("rarity");
         maxLevelProp = serializedObject.FindProperty("maxLevel");
         effectTypeProp = serializedObject.FindProperty("effectType");
@@ -98,6 +100,7 @@ public class UpgradeDefinitionEditor : Editor
         EditorGUILayout.LabelField("显示", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(displayNameProp);
         EditorGUILayout.PropertyField(descriptionTemplateProp);
+        EditorGUILayout.PropertyField(levelFeatureDescriptionsProp, true);
         EditorGUILayout.PropertyField(iconProp);
 
         EditorGUILayout.Space();
@@ -240,7 +243,7 @@ public class UpgradeDefinitionEditor : Editor
             EditorGUILayout.PropertyField(elem.FindPropertyRelative("enemyCount"), new GUIContent("敌人数"));
             EditorGUILayout.PropertyField(elem.FindPropertyRelative("knockupDuration"), new GUIContent("击飞时长(秒)"));
             EditorGUILayout.PropertyField(elem.FindPropertyRelative("damage"), new GUIContent("击飞伤害"));
-            EditorGUILayout.PropertyField(elem.FindPropertyRelative("landingDamagePercent"), new GUIContent("落地伤害%"));
+            EditorGUILayout.PropertyField(elem.FindPropertyRelative("landingDamage"), new GUIContent("落地伤害"));
 
             EditorGUILayout.EndVertical();
         }
@@ -449,6 +452,9 @@ public class UpgradeDefinitionEditor : Editor
             }
             else if (nestedListName == "columns")
             {
+                var rangeRows = elem.FindPropertyRelative("rangeRows");
+                if (rangeRows != null)
+                    EditorGUILayout.PropertyField(rangeRows, new GUIContent("射程排数"));
                 EditorGUILayout.PropertyField(elem.FindPropertyRelative("damage"));
                 EditorGUILayout.PropertyField(elem.FindPropertyRelative("columns"));
             }

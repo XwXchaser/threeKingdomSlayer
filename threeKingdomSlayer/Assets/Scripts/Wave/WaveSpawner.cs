@@ -21,7 +21,7 @@ public class WaveSpawner : MonoBehaviour
     /// <summary>
     /// 运行时解析关卡配置：优先用自身序列化字段，留空则从 StageController 读取
     /// </summary>
-    private StageConfig ResolvedStageConfig
+    public StageConfig ResolvedStageConfig
     {
         get
         {
@@ -159,6 +159,7 @@ public class WaveSpawner : MonoBehaviour
         columnManager.StartWaveMarch();
 
         // Boss 独立补齐：波次行军跳过 Boss，需单独触发
+        DebugLog.Info("[BOSS_ADVANCE] WaveSpawner 调用TriggerAllBossFillForward (wave=" + (currentWaveIndex + 1) + ")");
         columnManager.TriggerAllBossFillForward();
 
         // 启动协程等待当前波次所有敌人死亡

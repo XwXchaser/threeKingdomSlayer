@@ -96,6 +96,7 @@ public class QTEController : MonoBehaviour
     private QTEAttackConfig _currentAttack;
     private List<QTEInstance> _activeQTEs = new List<QTEInstance>();
     private GameObject _activeProjectile;
+    private bool _completionStarted;
     private int _qteGeneration;
 
     // 箭矢波追踪（多段防御型 QTE）：slotIndex → 该波所有箭矢
@@ -150,6 +151,7 @@ public class QTEController : MonoBehaviour
 
     private void RegisterQTEActivity()
     {
+        Debug.Log($"[QTE_FLIP_DIAG] Controller Register request name={name}#{GetInstanceID()} registered={_activityRegistered} state={_state}");
         if (_activityRegistered) return;
         _activityRegistered = true;
         QTEActivityHub.Begin(this);
@@ -157,6 +159,7 @@ public class QTEController : MonoBehaviour
 
     private void UnregisterQTEActivity()
     {
+        Debug.Log($"[QTE_FLIP_DIAG] Controller Unregister request name={name}#{GetInstanceID()} registered={_activityRegistered} state={_state}");
         if (!_activityRegistered) return;
         _activityRegistered = false;
         QTEActivityHub.End(this);
@@ -283,6 +286,7 @@ public class QTEController : MonoBehaviour
         }
 
         _currentAttack = qteData.qteAttacks[_currentAttackIndex];
+        _completionStarted = false;
         _qteGeneration++;
         DebugLog.Info($"[QTEController] 当前攻击: {_currentAttack?.name}, slots={_currentAttack?.qteSlots?.Count}, useMultiPhase={_currentAttack?.UseMultiPhaseAnimation}, useBranched={_currentAttack?.UseBranchedAnimation}");
         _state = QTEState.PerformingQTEAttack;
@@ -1373,6 +1377,13 @@ public class QTEController : MonoBehaviour
 
     private void CompleteQTEAttack()
     {
+        if (_completionStarted)
+        {
+            Debug.Log($"[QTE_FLIP_DIAG] CompleteQTEAttack ignored duplicate state={_state}");
+            return;
+        }
+
+        _completionStarted = true;
         UnregisterQTEActivity();
         ApplyPendingFailureDamage();
         SetStrictInputLock(false);

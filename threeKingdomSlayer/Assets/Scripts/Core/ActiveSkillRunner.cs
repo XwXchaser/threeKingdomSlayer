@@ -22,7 +22,12 @@ public class ActiveSkillRunner : MonoBehaviour
     [SerializeField] private WaveManager _waveManager;
 
     private readonly List<Enemy> _cycloneCandidates = new List<Enemy>();
+    private readonly HashSet<Enemy> _cycloneCandidateSet = new HashSet<Enemy>();
+    private readonly List<Enemy> _activeBossSnapshot = new List<Enemy>();
     private readonly Dictionary<string, int> _chargeAttackShockwaveLayers = new Dictionary<string, int>();
+    private ActiveSkillDefinition _armedDiseaseDefinition;
+    private int _armedDiseaseLevel;
+    private int _armedDiseaseLayers;
 
     private void Awake()
     {
@@ -58,6 +63,8 @@ public class ActiveSkillRunner : MonoBehaviour
                 return ActivateChargeAttackShockwave(definition, level);
             case ActiveSkillEffectType.Wave:
                 return ActivateWave(definition, level);
+            case ActiveSkillEffectType.Disease:
+                return ActivateDisease(definition, level);
             default:
                 return false;
         }
@@ -116,7 +123,7 @@ public class ActiveSkillRunner : MonoBehaviour
             return false;
         }
 
-        Debug.Log($"[ActiveSkillRunner] ActivateFireLine: spawning effect, columns=[{string.Join(",", cfg.columns)}], damage={cfg.damage}, critIfBurning");
+        Debug.Log($"[ActiveSkillRunner] ActivateFireLine: spawning effect, columns=[{string.Join(",", cfg.columns)}], damage={cfg.damage}, critIfBurning={level >= 3}");
         var instance = Instantiate(prefab);
         var effect = instance.GetComponent<ShootFireEffect>();
         if (effect == null)
@@ -125,7 +132,7 @@ public class ActiveSkillRunner : MonoBehaviour
             Destroy(instance);
             return false;
         }
-        effect.Play(cfg.columns, cfg.damage, -1, 0, 0f, true);
+        effect.Play(cfg.columns, cfg.damage, -1, 0, 0f, level >= 3);
         return true;
     }
 
@@ -158,22 +165,59 @@ public class ActiveSkillRunner : MonoBehaviour
         if (columnManager == null || prefab == null || cfg.rangeRows <= 0)
             return false;
 
+        _cycloneCandidates.Clear();
+        _cycloneCandidateSet.Clear();
         var enemies = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
         for (int i = 0; i < enemies.Count; i++)
         {
             var enemy = enemies[i];
+            if (enemy != null && _cycloneCandidateSet.Add(enemy))
+                _cycloneCandidates.Add(enemy);
+        }
+
+        _activeBossSnapshot.Clear();
+        var aliveEnemies = EnemyManager.Instance != null ? EnemyManager.Instance.GetAllAliveEnemies() : null;
+        if (aliveEnemies != null)
+        {
+            for (int i = 0; i < aliveEnemies.Count; i++)
+            {
+                var enemy = aliveEnemies[i];
+                if (enemy != null && enemy.isBoss && enemy.bossState == BossState.InCombat)
+                    _activeBossSnapshot.Add(enemy);
+            }
+        }
+
+        for (int i = 0; i < _activeBossSnapshot.Count; i++)
+        {
+            var enemy = _activeBossSnapshot[i];
+            if (_cycloneCandidateSet.Add(enemy))
+                _cycloneCandidates.Add(enemy);
+        }
+
+        for (int i = 0; i < _cycloneCandidates.Count; i++)
+        {
+            var enemy = _cycloneCandidates[i];
             if (enemy == null || enemy.state == EnemyState.Dead || enemy.isPhaseTransitioning)
                 continue;
 
             if (enemy.isBoss && enemy.state != EnemyState.Stunned)
             {
+                enemy.ApplyActiveDisplacementHit();
                 enemy.TakeActiveDisplacementPoiseDamage(cfg.bossPoiseDamagePercent);
+
+                var visualInstance = Instantiate(prefab);
+                var groundEffect = visualInstance.GetComponent<CycloneEffect>();
+                if (groundEffect != null)
+                    groundEffect.PlayGroundVisual(enemy);
+                else
+                    Destroy(visualInstance);
                 continue;
             }
 
+            enemy.ApplyActiveDisplacementHit();
+
             if (enemy.state == EnemyState.QTEAttacking || !enemy.CanBeLaunched(float.MaxValue))
                 continue;
-
             var instance = Instantiate(prefab);
             var effect = instance.GetComponent<CycloneEffect>();
             if (effect == null)
@@ -181,7 +225,7 @@ public class ActiveSkillRunner : MonoBehaviour
                 Destroy(instance);
                 continue;
             }
-            effect.Setup(enemy, cfg.damage, 0f, enemy.launchDuration);
+            effect.Setup(enemy, cfg.damage, cfg.landingDamage, enemy.launchDuration);
         }
         return true;
     }
@@ -198,6 +242,35 @@ public class ActiveSkillRunner : MonoBehaviour
 
         waveManager.TriggerWave(0, cfg.rangeRows - 1, cfg.damage, cfg.bossPoiseDamagePercent);
         return true;
+    }
+
+    private bool ActivateDisease(ActiveSkillDefinition definition, int level)
+    {
+        if (definition.diseaseLevels == null || level > definition.diseaseLevels.Count)
+            return false;
+
+        var config = definition.diseaseLevels[level - 1];
+        if (config.totalDamage <= 0 || config.durationSeconds <= 0)
+            return false;
+
+        _armedDiseaseDefinition = definition;
+        _armedDiseaseLevel = level;
+        _armedDiseaseLayers++;
+        Debug.Log($"[ActiveSkillRunner] 染病已武装: {definition.displayName} Lv.{level}, layers={_armedDiseaseLayers}");
+        return true;
+    }
+
+    public void ConsumeArmedDisease(Enemy enemy)
+    {
+        if (_armedDiseaseDefinition == null || enemy == null)
+            return;
+
+        var config = _armedDiseaseDefinition.diseaseLevels[_armedDiseaseLevel - 1];
+        UpgradeEffectManager.Instance?.ApplyDisease(enemy, config.totalDamage, config.durationSeconds, _armedDiseaseLayers, smartSpread: config.smartSpread);
+        Debug.Log($"[ActiveSkillRunner] 染病附着: {enemy.DebugTag}, totalDamage={config.totalDamage}, duration={config.durationSeconds}s, layers={_armedDiseaseLayers}");
+        _armedDiseaseDefinition = null;
+        _armedDiseaseLevel = 0;
+        _armedDiseaseLayers = 0;
     }
 
     private bool ActivateChargeAttackShockwave(ActiveSkillDefinition definition, int level)
@@ -248,6 +321,9 @@ public class ActiveSkillRunner : MonoBehaviour
     public void ResetAll()
     {
         _chargeAttackShockwaveLayers.Clear();
+        _armedDiseaseDefinition = null;
+        _armedDiseaseLevel = 0;
+        _armedDiseaseLayers = 0;
     }
 }
 

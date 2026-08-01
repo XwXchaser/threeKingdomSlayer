@@ -148,7 +148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e52db6f433200c4b9725bbce745a570, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  barWidth: 1.8
+  barWidth: 1
   barHeight: 0.2
   yOffset: 0
   displayDuration: 2
@@ -175,8 +175,10 @@ MonoBehaviour:
   attackDamage: 10
   attackRange: 1
   moveSpeed: 0.3
+  visualYOffset: 0
   attackSequence:
   - isCAttack: 0
+    animationTrigger: 
     spawnDuration: 0.5
     drawDuration: 0.3
     extraCooldown: 0
@@ -186,7 +188,17 @@ MonoBehaviour:
   projectileArcHeight: 3
   projectileFlyDuration: 1
   projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
   projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
   shareHealthWithAdjacent: 0
   maxPoise: 50
   stunDuration: 5
@@ -202,9 +214,14 @@ MonoBehaviour:
   gemSprite: {fileID: 21300000, guid: 2e772d8bfecbfcf439ca5f880db84321, type: 3}
   isBoss: 0
   bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
   outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
   outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
-  outlineWidthOverride: 0
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
   stabDamageMultiplier: 1
   slashDamageMultiplier: 1
   pierceDamageMultiplier: 1

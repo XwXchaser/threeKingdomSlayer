@@ -231,6 +231,7 @@ public class StageController : MonoBehaviour
             cm.StartWaveMarch();
 
             // Boss 独立补齐：波次行军跳过 Boss，需单独触发
+            DebugLog.Info("[BOSS_ADVANCE] StageController 调用TriggerAllBossFillForward");
             cm.TriggerAllBossFillForward();
         }
 

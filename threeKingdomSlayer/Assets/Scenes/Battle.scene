@@ -279,6 +279,7 @@ MonoBehaviour:
   fireEffectPrefab: {fileID: 7080427255057156643, guid: 145d6875cc6c6fd4798603b5d4830fcb, type: 3}
   arrowEffectPrefab: {fileID: 1707118907136065935, guid: 7d3ceaa069c134f419679af082cb68a5, type: 3}
   cycloneEffectPrefab: {fileID: 3409137233646897394, guid: cc817a47c8a9d8b47820f0677fe9f041, type: 3}
+  fireSweepStartZOffset: -4
 --- !u!114 &5137007
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4733,7 +4734,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e87331f1d4f79964bad6a8fb7b30b577, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stageConfig: {fileID: 11400000, guid: 81048452505b7774591dba212d695a8e, type: 2}
+  stageConfig: {fileID: 11400000, guid: d7f6e66ff74c61f44959cd74514c5156, type: 2}
   waveSpawner: {fileID: 1221163314}
   enemyManager: {fileID: 598331925}
   playerState: {fileID: 1878310418}
@@ -5191,6 +5192,10 @@ MonoBehaviour:
   _readyGlowMinAlpha: 0.35
   _readyGlowMaxAlpha: 0.95
   _readyGlowPadding: 10
+  _activeButtonFrame: {fileID: 0}
+  _activeButtonFace: {fileID: 0}
+  _activeButtonPressedOffset: 8
+  _activeButtonReturnDuration: 0.12
 --- !u!114 &797006126
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7465,6 +7470,10 @@ MonoBehaviour:
   _readyGlowMinAlpha: 0.35
   _readyGlowMaxAlpha: 0.95
   _readyGlowPadding: 10
+  _activeButtonFrame: {fileID: 0}
+  _activeButtonFace: {fileID: 0}
+  _activeButtonPressedOffset: 8
+  _activeButtonReturnDuration: 0.12
 --- !u!114 &1164519881
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11117,7 +11126,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7925397096526044308, guid: 16f0844e7d3a1bb45a8ed55b8ad2adc4, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 48
+      value: 77
       objectReference: {fileID: 0}
     - target: {fileID: 7974586438746567504, guid: 16f0844e7d3a1bb45a8ed55b8ad2adc4, type: 3}
       propertyPath: m_Name
@@ -11177,7 +11186,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8199796113283894839, guid: 16f0844e7d3a1bb45a8ed55b8ad2adc4, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -25
+      value: -35
       objectReference: {fileID: 0}
     - target: {fileID: 8199796113283894839, guid: 16f0844e7d3a1bb45a8ed55b8ad2adc4, type: 3}
       propertyPath: m_ConstrainProportionsScale
@@ -11767,11 +11776,11 @@ MonoBehaviour:
   useActionBasedCooldown: 1
   useStabRayAngleOverrides: 1
   stabRayInwardAngleOverrides:
-  - -16
-  - -8
+  - -13
+  - -7
   - 0
-  - 8
-  - 16
+  - 7
+  - 13
   stabVisualStartXOffsets:
   - -1
   - -0.5

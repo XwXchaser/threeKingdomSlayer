@@ -12,6 +12,9 @@ public class BossHealthUI : MonoBehaviour
     [Header("UI 元件")]
     public Image healthFill;
     public Image poiseFill;
+    public Image diseaseFill;
+    public Image burnFill;
+    public TMP_Text diseaseLayersText;
     public TMP_Text bossNameText;
     public CanvasGroup canvasGroup;
 
@@ -107,6 +110,8 @@ public class BossHealthUI : MonoBehaviour
             }
         }
 
+        UpdateDotStatus();
+
         // 每秒输出一次诊断日志
         _frameCounter++;
         if (_frameCounter % 60 == 0)
@@ -115,6 +120,69 @@ public class BossHealthUI : MonoBehaviour
                       $"poise={_boss.currentPoise:F0}/{_maxPoise:F0} fill={poiseFill?.fillAmount:F3}, " +
                       $"bossState={_boss.bossState}, EnemyState={_boss.state}");
         }
+    }
+
+    private void UpdateDotStatus()
+    {
+        var status = UpgradeEffectManager.Instance != null
+            ? UpgradeEffectManager.Instance.GetDotStatus(_boss)
+            : default;
+
+        LayoutDotBars(status.isDiseased, status.isBurning);
+
+        if (diseaseFill != null)
+        {
+            diseaseFill.gameObject.SetActive(status.isDiseased);
+            if (status.isDiseased)
+                diseaseFill.fillAmount = status.diseaseProgress;
+        }
+
+        if (burnFill != null)
+        {
+            burnFill.gameObject.SetActive(status.isBurning);
+            if (status.isBurning)
+                burnFill.fillAmount = status.burnProgress;
+        }
+
+        if (diseaseLayersText != null)
+        {
+            diseaseLayersText.gameObject.SetActive(status.isDiseased);
+            if (status.isDiseased)
+                diseaseLayersText.text = status.diseaseLayers.ToString();
+        }
+    }
+
+    private void LayoutDotBars(bool hasDisease, bool hasBurn)
+    {
+        if (poiseFill == null) return;
+
+        var poiseRect = poiseFill.rectTransform;
+        float rowHeight = poiseRect.rect.height;
+        if (rowHeight <= 0f) return;
+
+        Vector2 firstRowPosition = poiseRect.anchoredPosition + Vector2.down * rowHeight;
+        LayoutDotBar(diseaseFill, firstRowPosition);
+        LayoutDotBar(burnFill, hasDisease ? firstRowPosition + Vector2.down * rowHeight : firstRowPosition);
+
+        if (diseaseLayersText != null && hasDisease)
+        {
+            var textRect = diseaseLayersText.rectTransform;
+            textRect.anchoredPosition = new Vector2(
+                firstRowPosition.x - poiseRect.rect.width * 0.5f - 6f,
+                firstRowPosition.y);
+        }
+    }
+
+    private static void LayoutDotBar(Image bar, Vector2 anchoredPosition)
+    {
+        if (bar == null) return;
+
+        var rect = bar.rectTransform;
+        rect.anchorMin = new Vector2(0f, 0f);
+        rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.sizeDelta = new Vector2(292f, -22f);
+        rect.anchoredPosition = anchoredPosition;
     }
 
     private void OnBossDeath(Enemy enemy)

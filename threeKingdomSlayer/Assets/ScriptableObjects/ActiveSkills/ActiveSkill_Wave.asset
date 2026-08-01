@@ -15,8 +15,9 @@ MonoBehaviour:
   category: 4
   upgradeId: active_wave
   displayName: "\u6D77\u6D6A"
-  descriptionTemplate: "\u53EC\u5524\u6D77\u6D6A\u63A8\u8FDB\uFF0C\u5BF9\u524D\u65B9{0}\u6392\u654C\u4EBA\u9020\u6210{1}\u70B9\u4F24\u5BB3\u5E76\u51FB\u90001\u6392\u3002\u672A\u7729\u6655\u7684Boss\u6539\u4E3A\u524A\u51CF{3}%\u6700\u5927\u67B6\u52BF\u3002\u51B7\u5374{2}\u79D2"
+  descriptionTemplate: "\u53EC\u5524\u6D77\u6D6A\u63A8\u8FDB\uFF0C\u51FB\u9000\u524D\u65B9{0}\u6392\u654C\u4EBA1\u6392\uFF1B\u5BF9\u672A\u7729\u6655\u7684Boss\u6539\u4E3A\u524A\u51CF{2}%\u6700\u5927\u67B6\u52BF\u5E76\u6253\u65AD\u653B\u51FB\u3002"
   extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
   rarity: 1
   maxLevel: 3
   effectType: 
@@ -39,15 +40,19 @@ MonoBehaviour:
   chargeAttackShockwaveLevels: []
   waveLevels:
   - rangeRows: 1
-    damage: 8
+    damage: 0
     bossPoiseDamagePercent: 0.08
+    landingDamage: 0
   - rangeRows: 2
-    damage: 10
+    damage: 0
     bossPoiseDamagePercent: 0.1
+    landingDamage: 0
   - rangeRows: 3
-    damage: 12
+    damage: 0
     bossPoiseDamagePercent: 0.12
+    landingDamage: 0
   chargeHitShockwaveLevels: []
+  diseaseLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

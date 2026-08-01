@@ -15,7 +15,7 @@ MonoBehaviour:
   category: 4
   upgradeId: active_fire_aoe
   displayName: "\u70C8\u7130\u55B7\u5C04"
-  descriptionTemplate: "\u51B7\u5374{0}\u79D2\uFF0C\u5BF9{2}\u5217\u533A\u57DF\u9020\u6210{1}\u70B9\u4F24\u5BB3"
+  descriptionTemplate: "\u5BF9{2}\u5217\u533A\u57DF\u9020\u6210{1}\u70B9\u4F24\u5BB3"
   extraDescriptionTemplate: 
   rarity: 1
   maxLevel: 5
@@ -33,22 +33,32 @@ MonoBehaviour:
     triggerThreshold: 0
     damage: 10
     columns: 02000000
+    burnDamagePerSecond: 0
+    burnDurationSeconds: 0
   - intervalSeconds: 2.5
     triggerThreshold: 0
     damage: 15
     columns: 02000000
+    burnDamagePerSecond: 0
+    burnDurationSeconds: 0
   - intervalSeconds: 2
     triggerThreshold: 0
     damage: 20
     columns: 02000000
+    burnDamagePerSecond: 0
+    burnDurationSeconds: 0
   - intervalSeconds: 1.5
     triggerThreshold: 0
     damage: 30
     columns: 02000000
+    burnDamagePerSecond: 0
+    burnDurationSeconds: 0
   - intervalSeconds: 1.5
     triggerThreshold: 0
     damage: 30
     columns: 010000000200000003000000
+    burnDamagePerSecond: 0
+    burnDurationSeconds: 0
   timedArrowLevels: []
   returnWaveLevels: []
   chainBounceLevels: []
@@ -56,6 +66,8 @@ MonoBehaviour:
   arrowVolleyLevels: []
   reflectShieldLevels: []
   chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
   chargeHitShockwaveLevels: []
   triggerParam: 0
   phantomSteps: []

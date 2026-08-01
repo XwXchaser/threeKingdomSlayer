@@ -20,6 +20,7 @@ public sealed class StabSweepEffect : MonoBehaviour
     private readonly List<Enemy> _hitCandidates = new List<Enemy>();
     private Enemy _coveredBossTarget;
     private Action<Enemy> _onHit;
+    private Action<Enemy> _onFirstHitBeforeDamage;
     private Action _onFirstHit;
     private Action _onComplete;
     private Vector3 _rayOrigin;
@@ -30,7 +31,7 @@ public sealed class StabSweepEffect : MonoBehaviour
 
     public static void Create(GameObject prefab, Vector3 startPosition, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows,
         float damage, DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget,
-        Action<Enemy> onHit, Action onFirstHit, Action onComplete, float visualReachOffset, float visualStartXOffset, float targetDuration = -1f)
+        Action<Enemy> onHit, Action<Enemy> onFirstHitBeforeDamage, Action onFirstHit, Action onComplete, float visualReachOffset, float visualStartXOffset, float targetDuration = -1f)
     {
         var ray = new GameObject("StabRay");
         ray.transform.position = startPosition;
@@ -47,11 +48,11 @@ public sealed class StabSweepEffect : MonoBehaviour
         visual.transform.position += Vector3.right * visualStartXOffset;
 
         ray.AddComponent<StabSweepEffect>().Initialize(visual, targetPosition, column, rangeRows, visualRangeRows, damage, damageType,
-            columnManager, coveredBossTarget, onHit, onFirstHit, onComplete, targetDuration);
+            columnManager, coveredBossTarget, onHit, onFirstHitBeforeDamage, onFirstHit, onComplete, targetDuration);
     }
 
     private void Initialize(GameObject visual, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows, float damage,
-        DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget, Action<Enemy> onHit, Action onFirstHit,
+        DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget, Action<Enemy> onHit, Action<Enemy> onFirstHitBeforeDamage, Action onFirstHit,
         Action onComplete, float targetDuration)
     {
         _column = column;
@@ -62,6 +63,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         _columnManager = columnManager;
         _coveredBossTarget = coveredBossTarget;
         _onHit = onHit;
+        _onFirstHitBeforeDamage = onFirstHitBeforeDamage;
         _onFirstHit = onFirstHit;
         _onComplete = onComplete;
 
@@ -122,6 +124,7 @@ public sealed class StabSweepEffect : MonoBehaviour
                 _hitCandidates.Add(_coveredBossTarget);
         }
 
+        _hitCandidates.Sort((a, b) => a.rowIndex.CompareTo(b.rowIndex));
         for (int i = 0; i < _hitCandidates.Count; i++)
         {
             var enemy = _hitCandidates[i];
@@ -129,6 +132,8 @@ public sealed class StabSweepEffect : MonoBehaviour
                 continue;
 
             _hitEnemies.Add(enemy);
+            if (!_hitAny)
+                _onFirstHitBeforeDamage?.Invoke(enemy);
             enemy.TakeDamage(_damage, _damageType);
             if (!_hitAny)
             {

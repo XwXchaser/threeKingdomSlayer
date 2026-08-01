@@ -4,20 +4,17 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "ActiveSkillPoolConfig", menuName = "一夫当关/主动技能奖励池配置")]
 public class ActiveSkillPoolConfig : ScriptableObject
 {
-    [Header("普通升级三选一权重")]
-    public float commonWeight = 0.8f;
-    public float rareWeight = 0.15f;
+    [Header("稀有度出现权重")]
+    public float commonWeight = 0.60f;
+    public float rareWeight = 0.35f;
     public float legendaryWeight = 0.05f;
 
-    [Header("主动技能池")]
-    public List<WeightedActiveSkill> commonPool = new List<WeightedActiveSkill>();
-    public List<WeightedActiveSkill> rarePool = new List<WeightedActiveSkill>();
-    public List<WeightedActiveSkill> legendaryPool = new List<WeightedActiveSkill>();
-}
+    [Header("普通池")]
+    public List<WeightedUpgrade> commonPool = new List<WeightedUpgrade>();
 
-[System.Serializable]
-public class WeightedActiveSkill
-{
-    public ActiveSkillDefinition skill;
-    [Min(1)] public int weight = 1;
+    [Header("稀有池")]
+    public List<WeightedUpgrade> rarePool = new List<WeightedUpgrade>();
+
+    [Header("传说池")]
+    public List<WeightedUpgrade> legendaryPool = new List<WeightedUpgrade>();
 }
