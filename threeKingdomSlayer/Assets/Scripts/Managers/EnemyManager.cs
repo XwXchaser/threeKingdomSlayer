@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// 敌人管理器 - 单例
@@ -23,6 +24,14 @@ public class EnemyManager : MonoBehaviour
     public Vector3 chainScale = Vector3.one;
     [Tooltip("铁链Y轴偏移")]
     public float chainYOffset = 0f;
+
+    [Header("Boss 包子回血")]
+    [Tooltip("Boss死亡时回复生命值")]
+    public float bossHealAmount = 20f;
+    [Tooltip("包子图标（留空则使用 HealthPotionManager 的图标）")]
+    public Sprite bossBunSprite;
+    [Tooltip("宝石飞行速度（屏幕空间像素/秒）")]
+    public float bossBunSpeed = 1200f;
 
     // 所有存活敌人的列表（用于遍历）
     private List<Enemy> allAliveEnemies = new List<Enemy>();
@@ -228,6 +237,7 @@ public class EnemyManager : MonoBehaviour
     {
         if (enemy == null) return;
         float damage = enemy.attackDamage;
+        Debug.Log($"[EnemyManager] OnEnemyAttackPlayer: enemy={enemy.DebugTag} damage={damage} playerState={PlayerState.Instance != null}");
         PlayerState.Instance?.TakeDamage(damage, enemy);
     }
 
@@ -247,6 +257,9 @@ public class EnemyManager : MonoBehaviour
     private void HandleBossDeathAnimComplete(Enemy boss)
     {
         boss.OnDeathAnimComplete -= HandleBossDeathAnimComplete;
+
+        // Boss死亡掉落包子回血
+        SpawnBossBun(boss);
 
         // 推迟的存活列表移除：此时锦囊即将弹出，再触发波次结束检测
         allAliveEnemies.Remove(boss);
@@ -377,4 +390,45 @@ public class EnemyManager : MonoBehaviour
     }
 
     #endregion
+
+    private void SpawnBossBun(Enemy boss)
+    {
+        var gemMgr = ExpGemManager.Instance;
+        if (gemMgr == null || gemMgr.gemPrefab == null || gemMgr.gemParent == null) return;
+
+        Sprite bunSprite = bossBunSprite;
+        if (bunSprite == null)
+            bunSprite = HealthPotionManager.Instance?.potionDefinition?.icon;
+        if (bunSprite == null) return;
+
+        var go = Instantiate(gemMgr.gemPrefab, gemMgr.gemParent);
+        go.transform.SetAsLastSibling();
+
+        var gem = go.GetComponent<ExpGem>();
+        if (gem == null) gem = go.AddComponent<ExpGem>();
+
+        gem.SetVisual(bunSprite, Color.white);
+
+        var rt = go.GetComponent<RectTransform>();
+        if (rt != null && Camera.main != null)
+            rt.position = Camera.main.WorldToScreenPoint(boss.transform.position);
+
+        var img = go.GetComponent<Image>();
+        if (img != null) img.raycastTarget = false;
+
+        Vector3 targetPos;
+        if (PlayerState.Instance != null && Camera.main != null)
+            targetPos = Camera.main.WorldToScreenPoint(PlayerState.Instance.transform.position);
+        else
+            targetPos = new Vector3(Screen.width * 0.5f, Screen.height * 0.6f, 0f);
+
+        gem.expAmount = 0f;
+        gem.speed = bossBunSpeed;
+        gem.targetPosition = targetPos;
+        gem.onArrived = (g) =>
+        {
+            PlayerState.Instance?.Heal(bossHealAmount);
+            if (g != null) Destroy(g.gameObject);
+        };
+    }
 }

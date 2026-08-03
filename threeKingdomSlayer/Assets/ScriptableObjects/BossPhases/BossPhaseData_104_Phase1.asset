@@ -22,12 +22,16 @@ MonoBehaviour:
     drawDuration: 0.4
     extraCooldown: 0
     useFlip: 0
+    parryWindowDuration: 0.3
+    parryWindowGrace: 0.1
   - isCAttack: 1
     animationTrigger: CAttack
     spawnDuration: 1.5
     drawDuration: 0.5
     extraCooldown: 0.2
     useFlip: 0
+    parryWindowDuration: 0.3
+    parryWindowGrace: 0.1
   qteData: {fileID: 11400000, guid: d124e686222d19848827f89c01e30150, type: 2}
   normalAttackWeight: 1
   cAttackWeight: 1

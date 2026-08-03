@@ -105,11 +105,18 @@ public class EnemySpriteController : MonoBehaviour
 
         if (!enemy.isAttackDrawPhase)
         {
-            // AttackSpawn 阶段：前半 attack1，后半 attack2
-            float elapsed = Time.time - attackStartTime;
-            float spawnDur = enemy.currentStepSpawnDuration;
-            float halfSpawn = spawnDur * 0.5f;
-            spriteRenderer.sprite = elapsed < halfSpawn ? attack1Sprite : attack2Sprite;
+            // 蓄力帧（AttackSpawn）→ 停顿（Parry 窗口，attack2 悬停姿态）→ 发生帧
+            // 窗口起点 = 蓄力完成时刻；窗口内显示 attack2（即将出手），蓄力中显示 attack1
+            if (enemy.IsParryWindowActive)
+            {
+                // Parry 窗口（停顿）期间：attack2 = 即将出手的悬停姿态
+                spriteRenderer.sprite = attack2Sprite;
+            }
+            else
+            {
+                // 蓄力帧阶段：attack1（前摇）
+                spriteRenderer.sprite = attack1Sprite;
+            }
         }
         else
         {

@@ -67,15 +67,62 @@ public class WaveTimer : MonoBehaviour
         float elapsed = Time.time - _waveStartTime;
         string bossTag = _isBossWave ? " [BOSS]" : "";
 
+        string timeInfo;
         if (_isBossWave && _bossDied)
         {
             float bossElapsed = _bossDieTime - _waveStartTime;
-            Debug.Log($"[WaveTimer] Wave{waveIndex + 1}{bossTag} 完成 | 总耗时={elapsed:F1}s | Boss击杀={bossElapsed:F1}s");
+            timeInfo = $"总耗时={elapsed:F1}s | Boss击杀={bossElapsed:F1}s";
         }
         else
         {
-            Debug.Log($"[WaveTimer] Wave{waveIndex + 1}{bossTag} 完成 | 耗时={elapsed:F1}s");
+            timeInfo = $"耗时={elapsed:F1}s";
         }
+
+        Debug.Log($"[WaveTimer] Wave{waveIndex + 1}{bossTag} 完成 | {timeInfo} | {GetPlayerBuildString()}");
+    }
+
+    private static string GetPlayerBuildString()
+    {
+        var ps = PlayerState.Instance;
+        int lv = ps != null ? ps.currentLevel : -1;
+        float xp = ps != null ? ps.currentExp : 0f;
+        int xpNeed = ps != null ? ps.GetExpRequiredForNextLevel() : -1;
+
+        var parts = new System.Text.StringBuilder();
+        parts.Append($"Lv={lv}");
+        if (xpNeed > 0)
+            parts.Append($" XP={xp:F0}/{xpNeed}");
+
+        // 被动
+        var passives = new System.Collections.Generic.List<string>();
+        if (ps != null && ps.acquiredUpgrades != null)
+        {
+            foreach (var u in ps.acquiredUpgrades)
+            {
+                if (u.currentLevel <= 0) continue;
+                // 过滤掉主动技能（它们在 ActiveSkillInventory 中）
+                if (u.definition != null && u.definition.category == UpgradeCategory.ActiveSkill) continue;
+                passives.Add($"{u.definition.displayName}Lv{u.currentLevel}");
+            }
+        }
+        if (passives.Count > 0)
+            parts.Append($" | 被动: {string.Join(" ", passives)}");
+
+        // 主动
+        var actives = new System.Collections.Generic.List<string>();
+        var inv = ActiveSkillInventory.Instance;
+        if (inv != null)
+        {
+            foreach (var e in inv.Entries)
+            {
+                if (e.definition == null) continue;
+                actives.Add($"{e.definition.displayName}Lv{e.level}");
+            }
+        }
+        if (actives.Count > 0)
+            parts.Append($" | 主动: {string.Join(" ", actives)}");
+
+        return parts.ToString();
     }
 
     private void OnAnyEnemyDied(Enemy enemy)

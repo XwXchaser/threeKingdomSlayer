@@ -24,10 +24,10 @@ MonoBehaviour:
   numericLevels:
   - floatValue: 0
     intValue: 1
-    secondaryIntValue: 10
+    secondaryIntValue: 30
   - floatValue: 0
     intValue: 2
-    secondaryIntValue: 7
+    secondaryIntValue: 25
   floatValue: 0
   intValue: 0
   secondaryIntValue: 0

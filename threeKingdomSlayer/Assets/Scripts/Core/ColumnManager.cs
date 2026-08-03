@@ -632,6 +632,13 @@ public class ColumnManager : MonoBehaviour
             _isWaveMarching = false;
             _currentWaveSourceRow = -1;
             _currentWaveTargetRow = -1;
+            // 修复（WaveMarch死锁）：WaveMarch 步进成员被位移（横推/击退/移除）打断且集合清空后，
+            // 必须补发一次全局补齐扫描。此前只复位 flag 不重扫，导致补齐链永久暂停：
+            // 横推清空集合后无人重扫；随后 Stab 击退触发 RegisterPushReturn 时因 flag 已 false
+            // 而 AbortWaveMarch 不保存 paused，PushReturn 完成后无从恢复 → 永久死锁。
+            // StartWaveMarch 自带 PushReturn 感知：有挂起事务时 deferred 并置
+            // _waveMarchRequestedWhilePushReturn=true，由 TryResumePausedWaveAfterPushReturns 恢复。
+            StartWaveMarch();
         }
     }
 
