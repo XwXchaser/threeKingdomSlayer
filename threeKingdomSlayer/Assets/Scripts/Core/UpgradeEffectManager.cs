@@ -247,7 +247,8 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
             if (state.tickTimer <= 0f)
             {
                 int tickDmg = state.damagePerTick * state.layers;
-                DebugLog.Info($"[Disease] Tick: {enemy.DebugTag} dmg={tickDmg} remaining={state.ticksRemaining}");
+                float hpBefore = enemy.currentHealth;
+                Debug.Log($"[Disease] Tick: {enemy.DebugTag} dmg={tickDmg} hpBefore={hpBefore:F1} remaining={state.ticksRemaining} layers={state.layers}");
                 enemy.TakeDamage(tickDmg, DamageType.Pierce, new Color(0.72f, 0.28f, 0.9f), countsForCombo: false, canInterruptAttack: false, triggerHitAnimation: false, ignoreDamageModifiers: true);
                 state.ticksRemaining--;
                 state.tickTimer += DiseaseTickInterval;
@@ -302,6 +303,8 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
 
         if (_diseaseStates.TryGetValue(enemy, out var existing))
         {
+            int oldLayers = existing.layers;
+            int oldTotalDmg = existing.totalDamagePerLayer;
             existing.layers = addToExistingLayers
                 ? existing.layers + layers
                 : Mathf.Max(existing.layers, layers);
@@ -313,6 +316,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
             existing.tickTimer = DiseaseTickInterval;
             existing.smartSpread = existing.smartSpread || smartSpread;
             _diseaseStates[enemy] = existing;
+            Debug.Log($"[Disease] ApplyDisease UPDATE: {enemy.DebugTag} oldLayers={oldLayers}→{existing.layers} oldTotalDmg={oldTotalDmg}→{existing.totalDamagePerLayer} dmgPerTick={existing.damagePerTick} addToExisting={addToExistingLayers}");
             return;
         }
 
@@ -328,12 +332,18 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
             smartSpread = smartSpread
         };
         enemy.OnDying += HandleDiseasedEnemyDeath;
-        DebugLog.Info($"[Disease] ApplyDisease: {enemy.DebugTag} totalDmg={totalDamage} ticks={tickCount} dmgPerTick={damagePerTick} layers={layers} smartSpread={smartSpread}");
+        Debug.Log($"[Disease] ApplyDisease NEW: {enemy.DebugTag} totalDmg={totalDamage} ticks={tickCount} dmgPerTick={damagePerTick} layers={layers} smartSpread={smartSpread}");
     }
 
     private void HandleDiseasedEnemyDeath(Enemy enemy)
     {
-        if (enemy == null || !_diseaseStates.TryGetValue(enemy, out var state)) return;
+        if (enemy == null || !_diseaseStates.TryGetValue(enemy, out var state))
+        {
+            Debug.Log($"[Disease] HandleDiseasedEnemyDeath SKIP: enemy={enemy?.DebugTag} stateFound={enemy != null && _diseaseStates.ContainsKey(enemy)}");
+            return;
+        }
+
+        Debug.Log($"[Disease] HandleDiseasedEnemyDeath: {enemy.DebugTag} totalDmgPerLayer={state.totalDamagePerLayer} duration={state.durationSeconds} layers={state.layers} dmgPerTick={state.damagePerTick} ticksRemaining={state.ticksRemaining} smartSpread={state.smartSpread}");
 
         int column = enemy.columnIndex;
         int row = enemy.rowIndex;
@@ -353,10 +363,20 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
         }
         else
         {
-            // 全相邻传播：左、右、后
-            SpreadToIfValid(columnManager.GetEnemyAt(column - 1, row), state);
-            SpreadToIfValid(columnManager.GetEnemyAt(column + 1, row), state);
-            SpreadToIfValid(columnManager.GetEnemyAt(column, row + 1), state);
+            // 非智能传播：左右有则随机选一，否则选后
+            var left = columnManager.GetEnemyAt(column - 1, row);
+            var right = columnManager.GetEnemyAt(column + 1, row);
+            bool leftValid = left != null && !left.isBoss && left.state != EnemyState.Dead;
+            bool rightValid = right != null && !right.isBoss && right.state != EnemyState.Dead;
+
+            if (leftValid && rightValid)
+                SpreadToIfValid(Random.value < 0.5f ? left : right, state);
+            else if (leftValid)
+                SpreadToIfValid(left, state);
+            else if (rightValid)
+                SpreadToIfValid(right, state);
+            else
+                SpreadToIfValid(columnManager.GetEnemyAt(column, row + 1), state);
         }
     }
 

@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8697f60c87200ab4ebfc938f297600d8, type: 3}
+  m_Name: Stage_BossRushTest
+  m_EditorClassIdentifier: 
+  stageId: 100
+  stageName: "BUG\u6D4B\u8BD5-\u7EAFBossRush"
+  waves:
+  - waveId: 0
+    isBossWave: 1
+    rows:
+    - enemyIds: 00000000000000006c0000000000000000000000
+    healthMultiplier: 1
+    bossHealthMultiplier: 1
+    attackSpeedMultiplier: 1
+    damageMultiplier: 1
+    waveTintColor: {r: 1, g: 1, b: 1, a: 1}
+    enableDynamicRush: 0
+    rushMoveDelay: 0.2
+    rushMoveDelayMin: 0.02
+  killMilestones: []
+  clearCoinReward: 0
+  formationConfig: {fileID: 0}
+  fillUpRule: 1
+  rushMoveDelay: 0.2

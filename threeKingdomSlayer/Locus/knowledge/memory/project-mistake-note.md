@@ -10,7 +10,7 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1778764012219
-updatedAt: 1785506058416
+updatedAt: 1785591792511
 ---
 
 # project-mistake-note
@@ -119,7 +119,7 @@ updatedAt: 1785506058416
 - 验证：Unity完整重编译成功；用户回归测试暂未发现问题。
 - 文件：`Assets/Scripts/Core/ColumnManager.cs`、`Assets/Scripts/Enemy/Enemy.cs`
 
-### 位移打断 WaveMarch 步进后集合泄漏导致永久死锁 ⚠️ 待修复（2026）
+### 位移打断 WaveMarch 步进后集合泄漏导致永久死锁 ✅ 已修复（2026）
 - 症状：波次中途（尤其Boss波）敌人停止补齐，场上残留普通敌人与Boss均卡住不动，只剩 QTE 相关日志空转直至强制关闭。
 - 日志证据（用户提供，最后一次 WaveMarch 之后）：
   ```
@@ -132,6 +132,25 @@ updatedAt: 1785506058416
   3. **关键缺陷**：它只在 `wasWaveMember && _pendingWaveEnemies.Count == 0 && _preparingWaveEnemies.Count == 0` 时才把 `_isWaveMarching=false`（629-635行）。若同一 WaveMarch 步进还有其他敌人仍在 pending/preparing，flag 保持 `True`，而被击退/横推的敌人已从 pending 移除并解绑回调。
   4. 结果：`srcRow=N→tgtRow=N-1` 的步进剩余成员永远等不到被移除者的完成回调 → `CompleteWaveStep` 永不触发 → `_isWaveMarching` 永久 `True` → 之后所有 `StartWaveMarch` 全部 `blocked`，补齐链彻底冻结，Boss 也等不到前方清空，关卡无法通关。
 - 与既有坑点区别：mistake-note 中“攻击范围过滤补齐订单”是**订单未创建**；本次是**订单已创建、行军中被打断后清理/恢复不完整**，属同类“补齐冻结”的另一种根因。
-- 修复方向（待实施）：`ReleaseEnemyFromMovementSchedulers` 移除成员后，若 `_isWaveMarching` 仍为 True 但 pending/preparing 已空，应立即补发 `CompleteWaveStep` 或重新 `StartWaveMarch`；或让被击退成员释放时对该排重新发起补齐。具体方案需在修复前与用户确认。
+- 修复：`ReleaseEnemyFromMovementSchedulers` 在 `wasWaveMember` 且 `_pendingWaveEnemies/_preparingWaveEnemies` 均清空时，**补发 `StartWaveMarch()`** 重新扫描空排（而不是只清 `_isWaveMarching` flag）。`StartWaveMarch` 自带 PushReturn 感知：有挂起事务时 deferred 并置 `_waveMarchRequestedWhilePushReturn=true`，由 `TryResumePausedWaveAfterPushReturns` 在事务结束后恢复，链路闭环。
+- 预防规则：**调度器成员被外部位移（击退/横推/移除）打断时，集合清空后必须补发一次全局重扫，不能只复位状态 flag；恢复入口应复用调度器自身（StartWaveMarch/CompleteWaveStep），避免“状态已清但无人重新调度”的半死锁。**
+- 验证：Unity完整重编译成功；使用专用测试关卡 `Stage_WaveMarchBugTest.asset`（Boss远排 + 5排101）验证，用户已验收。
 - 文件：`Assets/Scripts/Core/ColumnManager.cs`
+
+### Boss 到达应战排(row<=1)时补齐拒绝分支不触发应战 → 纯BossRush卡死 ✅ 已修复（2026）
+- 症状：Boss 单独部署在最前排（如纯BossRush关卡，Boss 位于 rows[0]→row2）或推进到 row1 时，不进入 InCombat、不出现血条、不攻击，玩家攻击无伤害，关卡卡死。
+- 日志证据：
+  ```
+  [WaveSpawner] 生成敌人 id=108 → 列2 排2
+  [BOSS_ADVANCE] Boss加入补齐链(rowIndex=2) ... 等待TriggerBossFillForward
+  [Enemy] StartMoving: #1(108), col=2, row=2, targetRow=1, isRush=True
+  [Enemy] 移动完成: #1(108), col=2, oldRow=2, newRow=1
+  [BOSS_ADVANCE] Boss已在应战排(rowIndex=1), 拒绝补齐: #1(108), bossState=None
+  ```
+  此后 bossState 恒为 None，无 `[BOSS_ADVANCE] Boss进入战斗` 日志。
+- 根因（代码确认）：`Enemy.TryStartRushMove`（Enemy.cs:2445-2450）中 `isBoss && rowIndex <= 1` 分支**只执行 `CompleteRushMoveOrder()` 并返回 Rejected，不触发 InCombat**。正常 Boss 从远排推进时会先到 row2 触发 `BossPause` 等前方清空再 `BossResume`，进入 row1 前 bossState 已是 Approaching，走 `UpdateMovement` 的 engageTimer 路径应战；但当 Boss 初始就在 row2 或补齐链直接推到 row1 时，走的是 TryStartRushMove 的补齐拒绝路径，应战逻辑从未执行。
+- 修复：`TryStartRushMove` 的“Boss已在应战排”分支在 `bossState == None` 时显式进入 InCombat：置 `bossState=BossState.InCombat`、触发 `OnBossEngaged`、调用 `SetBossActionCooldown()`。
+- 预防规则：**凡“到达应战条件但拒绝某行为”的分支，都必须显式把状态推进到 InCombat，不能依赖其他路径（如 engageTimer）兜底；单点部署/极近部署会绕过既有前置流程。纯BossRush 关卡属于合法需求，Boss 应支持任意前排起始位。**
+- 验证：新增 `Stage_BossRushTest.asset`（仅108在最前排），用户已验收 Boss 正常应战。
+- 文件：`Assets/Scripts/Enemy/Enemy.cs`
 <!-- locus:body:end -->

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
 /// <summary>
@@ -297,6 +298,7 @@ public class EnemyPool : MonoBehaviour
             {
                 if (enemy != null && enemy.gameObject != null)
                 {
+                    DOTween.Kill(enemy.transform, true);
                     Destroy(enemy.gameObject);
                 }
             }

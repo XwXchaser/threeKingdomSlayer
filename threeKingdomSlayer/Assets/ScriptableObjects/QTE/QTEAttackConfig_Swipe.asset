@@ -18,8 +18,23 @@ MonoBehaviour:
   qteAnimationClip: {fileID: 7400000, guid: a83e84d8d7554a740b81f6bb9f3093f2, type: 2}
   animationDuration: 1.5
   animationLeadTime: 0.3
+  animationStartClip: {fileID: 0}
+  animationLoopClip: {fileID: 0}
+  animationEndClip: {fileID: 7400000, guid: a83e84d8d7554a740b81f6bb9f3093f2, type: 2}
+  animationBlockedClip: {fileID: 0}
+  animationFollowUpClip: {fileID: 0}
+  branchedResultDuration: 0
   projectilePrefab: {fileID: 0}
   projectileFlightTime: 0.8
   projectileTargetZ: -2
+  arrowPrefab: {fileID: 0}
+  arrowsPerWave: 5
+  arrowArcHeight: 3
+  arrowSpawnOffsetZ: 1
+  arrowSpreadX: 3
+  arrowFlightTime: 1.5
+  arrowTargetY: 0
+  isDefensiveQTE: 0
+  fixedQteDuration: 0
   interruptibleOnStun: 1
   cooldownAfterQTE: 3

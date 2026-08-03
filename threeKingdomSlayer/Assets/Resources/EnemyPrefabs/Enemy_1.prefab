@@ -183,6 +183,8 @@ MonoBehaviour:
     drawDuration: 0.3
     extraCooldown: 0
     useFlip: 0
+    parryWindowDuration: 0.3
+    parryWindowGrace: 0.1
   isRanged: 0
   projectilePrefab: {fileID: 0}
   projectileArcHeight: 3

@@ -205,6 +205,7 @@ public class QTEController : MonoBehaviour
             && enemy.state != EnemyState.QTEAttacking)
         {
             DebugLog.Info($"[QTEController] 敌人脱离QTE状态({enemy.state})，中止QTE");
+            Debug.Log($"[QTE_FLIP_DIAG] Abort triggered: _state={_state} enemy.state={enemy.state} frame={Time.frameCount}");
             AbortQTE();
             return;
         }
@@ -624,6 +625,13 @@ public class QTEController : MonoBehaviour
         _animator.ResetTrigger("QTEBlocked");
         _animator.ResetTrigger("QTEHit");
 
+        // 清除基础攻击/受击 trigger，防止 Parry 等残留的 Hit trigger 劫持 QTE 转换
+        // （AnyState → HitFlash 优先级高于 Idle → QTE_*，会导致 Boss 播受击动画而非 QTE 动画）
+        _animator.ResetTrigger("Hit");
+        _animator.ResetTrigger("Walk");
+        _animator.ResetTrigger("Attack");
+        _animator.ResetTrigger("CAttack");
+
         // 强制回到Idle确保Animator从干净状态开始
         _animator.Play("Idle", 0, 0f);
         // BUG FIX: 某些Unity版本 Play+Update(0) 不完全重置，额外做一次
@@ -806,8 +814,11 @@ public class QTEController : MonoBehaviour
             // 非 Branched 模式恢复速度
             if (_animator != null) _animator.speed = 1f;
             StopQTEAnimation();
+            // BUG FIX: 单段模式未配置 animationEndClip 时回退 animationDuration，
+            // 否则 endClipLength=0 导致 QTE 判定一结束就立即 CompleteQTEAttack，Boss 挥击演出被瞬间打断
             endClipLength = _currentAttack != null && _currentAttack.animationEndClip != null
-                ? _currentAttack.animationEndClip.length : 0f;
+                ? _currentAttack.animationEndClip.length
+                : (_currentAttack != null ? _currentAttack.animationDuration : 0f);
         }
 
         if (endClipLength <= 0f)
@@ -844,8 +855,11 @@ public class QTEController : MonoBehaviour
         }
         else
         {
+            // BUG FIX: 单段模式未配置 animationEndClip 时回退 animationDuration，
+            // 与 StartQTEEndingPhase 保持一致，避免收尾时长不一致导致 QTE 判定结束立即完成
             endClipLength = _currentAttack != null && _currentAttack.animationEndClip != null
-                ? _currentAttack.animationEndClip.length : 0f;
+                ? _currentAttack.animationEndClip.length
+                : (_currentAttack != null ? _currentAttack.animationDuration : 0f);
         }
 
         if (_endAnimTimer >= endClipLength)
