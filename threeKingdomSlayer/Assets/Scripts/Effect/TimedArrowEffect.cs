@@ -332,7 +332,8 @@ public class TimedArrowEffect : MonoBehaviour
             if (dx * dx + dz * dz <= radiusSqr)
             {
                 hitAny = true;
-                enemy.TakeDamage(_damage, DamageType.Pierce);
+                enemy.TakeDamage(_damage, DamageType.Pierce,
+                    feedbackSource: HitFeedbackSource.Passive, feedbackStrength: HitFeedbackStrength.Light);
             }
         }
 
@@ -345,7 +346,8 @@ public class TimedArrowEffect : MonoBehaviour
         {
             var enemy = enemies[i];
             if (CanDamage(enemy))
-                enemy.TakeDamage(_damage, DamageType.Pierce);
+                enemy.TakeDamage(_damage, DamageType.Pierce,
+                    feedbackSource: HitFeedbackSource.Passive, feedbackStrength: HitFeedbackStrength.Light);
         }
     }
 

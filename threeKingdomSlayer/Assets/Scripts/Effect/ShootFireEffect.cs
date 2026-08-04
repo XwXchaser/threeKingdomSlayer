@@ -246,7 +246,8 @@ public class ShootFireEffect : MonoBehaviour
             int finalDamage = _damage;
             if (_critIfBurning && UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.IsBurning(enemy))
                 finalDamage *= 2;
-            enemy.TakeDamage(finalDamage, DamageType.Pierce);
+            enemy.TakeDamage(finalDamage, DamageType.Pierce,
+                feedbackSource: HitFeedbackSource.Passive, feedbackStrength: HitFeedbackStrength.Light);
             if (_burnTotalDamage > 0 && UpgradeEffectManager.Instance != null)
                 UpgradeEffectManager.Instance.ApplyBurn(enemy, _burnTotalDamage, _burnDuration);
         }
@@ -359,7 +360,8 @@ public class ShootFireEffect : MonoBehaviour
             int finalDamage = _damage;
             if (_critIfBurning && UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.IsBurning(enemy))
                 finalDamage *= 2;
-            enemy.TakeDamage(finalDamage, DamageType.Pierce);
+            enemy.TakeDamage(finalDamage, DamageType.Pierce,
+                feedbackSource: HitFeedbackSource.Passive, feedbackStrength: HitFeedbackStrength.Light);
             if (_burnTotalDamage > 0 && UpgradeEffectManager.Instance != null)
                 UpgradeEffectManager.Instance.ApplyBurn(enemy, _burnTotalDamage, _burnDuration);
         }

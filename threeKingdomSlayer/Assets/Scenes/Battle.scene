@@ -147,6 +147,7 @@ GameObject:
   - component: {fileID: 5137012}
   - component: {fileID: 5137011}
   - component: {fileID: 5137013}
+  - component: {fileID: 5137014}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Manager
@@ -402,6 +403,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 636573f9af62adb4a976e09c91a1c8ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &5137014
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5136998}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14e1d912a52838f4e925a406ecb390a3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  initialPoolSize: 12
+  bodyYOffset: 0.8
+  cameraDepthOffset: 0.05
+  standardSize: 0.32
+  standardRayLength: 0.42
+  standardDuration: 0.1
+  heavySize: 0.48
+  heavyRayLength: 0.68
+  heavyDuration: 0.14
+  stabColor: {r: 1, g: 0.85, b: 0.28, a: 1}
+  slashColor: {r: 0.45, g: 0.82, b: 1, a: 1}
+  pierceColor: {r: 0.35, g: 1, b: 0.68, a: 1}
+  heavyColor: {r: 1, g: 0.62, b: 0.18, a: 1}
 --- !u!1 &6885100
 GameObject:
   m_ObjectHideFlags: 0
@@ -1740,6 +1766,7 @@ GameObject:
   - component: {fileID: 145927964}
   - component: {fileID: 145927963}
   - component: {fileID: 145927965}
+  - component: {fileID: 145927966}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Main Camera
@@ -1809,7 +1836,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 145927958}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.1564345, y: 0, z: 0, w: 0.98768836}
+  m_LocalRotation: {x: 0.15643448, y: 0, z: 0, w: 0.98768836}
   m_LocalPosition: {x: 0, y: 3, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1868,6 +1895,28 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 145927958}
   m_Enabled: 1
+--- !u!114 &145927966
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 145927958}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de97d9d3a33207d4097eb36e9d1b0bd6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  standardDuration: 0.07
+  standardIntensity: 0.012
+  heavyDuration: 0.11
+  heavyIntensity: 0.035
+  playerDamageDuration: 0.15
+  playerDamageIntensity: 0.07
+  requestCooldown: 0.04
+  standardVibrato: 10
+  heavyVibrato: 14
+  worldBackground: {fileID: 149835881}
 --- !u!1 &147321613
 GameObject:
   m_ObjectHideFlags: 0
@@ -5985,9 +6034,6 @@ MonoBehaviour:
   hittedImage: {fileID: 1795500804}
   hittedDuration: 0.3
   hittedFadeDuration: 0.1
-  shakeDuration: 0.2
-  shakeIntensity: 0.3
-  shakeVibrato: 20
 --- !u!114 &864291164
 MonoBehaviour:
   m_ObjectHideFlags: 0

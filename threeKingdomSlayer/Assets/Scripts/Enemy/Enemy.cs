@@ -309,6 +309,8 @@ public class Enemy : MonoBehaviour
     // DOTween: 当前攻击动画序列（用于在 Die() 中取消正在执行的攻击动作）
     private Sequence _attackTween;
     private Tween _hitScaleTween;
+    private float _hitStopRemaining;
+    private bool _hitStopAnimatorWasEnabled;
     private float _hitScaleMultiplier = 1f;
 
     // Animator HitFlash 协程引用
@@ -566,6 +568,8 @@ public class Enemy : MonoBehaviour
     {
         if (!initialized || state == EnemyState.Dead) return;
 
+        UpdateHitStop();
+
         // 架势时间恢复到期（独立于状态，击飞中也会继续计时）
         if (_poiseRecoveryEndTime > 0f && Time.time >= _poiseRecoveryEndTime)
         {
@@ -723,6 +727,7 @@ public class Enemy : MonoBehaviour
         if (isRush)
         {
             DOTween.Kill(transform, false); // 终止之前可能残留的弹跳动画
+            StopHitScaleFeedback();
             transform.localScale = originalScale; // 重置被 DOPunchScale 打断后的残留 scale
             float moveDuration = moveSpeed;
             float bounceHeight = 0.5f; // 弹跳峰值高度
@@ -800,6 +805,7 @@ public class Enemy : MonoBehaviour
                 }
             }
             DOTween.Kill(transform, false);
+            StopHitScaleFeedback();
             transform.localScale = originalScale;
             isMovingToNextRow = false;
             isRushMove = false;
@@ -815,6 +821,7 @@ public class Enemy : MonoBehaviour
                 _attackTween = null;
             }
             transform.DOKill(false);
+            StopHitScaleFeedback();
             transform.localScale = originalScale;
             isAttackAnimating = false;
             isAttackDrawPhase = false;
@@ -974,6 +981,7 @@ public class Enemy : MonoBehaviour
         // 全阶段可打断：AttackDraw / AttackSpawn / 冷却阶段均可打断
         // 清理 DOTween 残留（修复形变不恢复问题）
         transform.DOKill(false);
+        StopHitScaleFeedback();
 
         if (_attackTween != null && _attackTween.IsActive())
         {
@@ -1022,6 +1030,7 @@ public class Enemy : MonoBehaviour
             _attackTween = null;
         }
         transform.DOKill(false);
+        StopHitScaleFeedback();
         UpdateWorldPosition();
         transform.localScale = originalScale;
         isAttackAnimating = false;
@@ -1659,7 +1668,7 @@ private void SpawnProjectile()
     /// <summary>
     /// 受到伤害
     /// </summary>
-    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true, bool canInterruptAttack = true, bool triggerHitAnimation = true, bool ignoreDamageModifiers = false)
+    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true, bool canInterruptAttack = true, bool triggerHitAnimation = true, bool ignoreDamageModifiers = false, HitFeedbackSource feedbackSource = HitFeedbackSource.BasicAttack, HitFeedbackStrength? feedbackStrength = null)
     {
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
@@ -1736,7 +1745,7 @@ private void SpawnProjectile()
 
         if (sharedHealthGroup != null)
         {
-            sharedHealthGroup.TakeDamage(damage, damageType, this, damageNumberColor, triggerHitAnimation, countsForCombo, canInterruptAttack, ignoreDamageModifiers);
+            sharedHealthGroup.TakeDamage(damage, damageType, this, damageNumberColor, triggerHitAnimation, countsForCombo, canInterruptAttack, ignoreDamageModifiers, feedbackSource, feedbackStrength);
             return;
         }
 
@@ -1765,6 +1774,10 @@ private void SpawnProjectile()
 
         if (!isBoss)
             AudioManager.Instance?.PostEvent("Enemy_Hit");
+        HitFeedbackStrength resolvedFeedbackStrength = feedbackStrength
+            ?? HitFeedbackManager.ResolveStrength(damageType, feedbackSource, finalDamage, false);
+        HitFeedbackManager.Trigger(HitFeedbackManager.CreateDamageContext(this, damageType,
+            feedbackSource, resolvedFeedbackStrength, finalDamage, false));
         if (countsForCombo)
             OnDamageTaken?.Invoke(this);
         OnHealthChanged?.Invoke(this, currentHealth, maxHealth);
@@ -1772,7 +1785,7 @@ private void SpawnProjectile()
         // 受伤跳字
         if (finalDamage > 0f && DamageNumberManager.Instance != null)
         {
-            DamageNumberManager.Instance.Spawn(transform.position, finalDamage, damageNumberColor);
+            DamageNumberManager.Instance.Spawn(transform.position, finalDamage, damageNumberColor, resolvedFeedbackStrength);
         }
 
         // 血条显示（非BOSS、未死亡时显示）
@@ -1795,7 +1808,7 @@ private void SpawnProjectile()
             DebugLog.Info($"[Enemy] 触发闪白: {DebugTag}, duration={HIT_FLASH_DURATION}");
 
             // DOTween: 受击大小抖动效果（与闪白同步触发）
-            RestartHitScaleFeedback();
+            RestartHitScaleFeedback(resolvedFeedbackStrength);
 
             if (isBoss && state == EnemyState.Stunned)
             {
@@ -1846,7 +1859,7 @@ private void SpawnProjectile()
     /// <summary>
     /// 受伤视觉反馈（闪白+抖动），不修改HP，供 SharedHealthGroup 调用
     /// </summary>
-    public void ApplyDamageFeedback()
+    public void ApplyDamageFeedback(HitFeedbackStrength feedbackStrength = HitFeedbackStrength.Standard)
     {
         if (state == EnemyState.Dead) return;
 
@@ -1872,16 +1885,61 @@ private void SpawnProjectile()
 
         hitFlashTimer = HIT_FLASH_DURATION;
 
-        RestartHitScaleFeedback();
+        RestartHitScaleFeedback(feedbackStrength);
     }
 
-    private void RestartHitScaleFeedback()
+    public void ApplyHitStop(float duration)
+    {
+        if (duration <= 0f || state == EnemyState.Dead) return;
+
+        if (_hitStopRemaining <= 0f)
+        {
+            _hitStopAnimatorWasEnabled = _animator != null && _animator.enabled;
+            if (_animator != null)
+                _animator.enabled = false;
+            if (HitFeedbackManager.EnableDebugLogs)
+                Debug.Log($"[HitFeedback] Freeze enemy={DebugTag} requested={duration:F3}s animator={_animator != null} animatorWasEnabled={_hitStopAnimatorWasEnabled} frame={Time.frameCount}");
+        }
+
+        _hitStopRemaining = Mathf.Max(_hitStopRemaining, duration);
+    }
+
+    private void UpdateHitStop()
+    {
+        if (_hitStopRemaining <= 0f) return;
+        _hitStopRemaining -= Time.unscaledDeltaTime;
+        if (_hitStopRemaining > 0f) return;
+
+        _hitStopRemaining = 0f;
+        if (state != EnemyState.Dead && _animator != null && _hitStopAnimatorWasEnabled)
+            _animator.enabled = true;
+        if (HitFeedbackManager.EnableDebugLogs)
+            Debug.Log($"[HitFeedback] Resume enemy={DebugTag} frame={Time.frameCount}");
+        _hitStopAnimatorWasEnabled = false;
+    }
+
+    private void StopHitStop()
+    {
+        _hitStopRemaining = 0f;
+        if (_animator != null && _hitStopAnimatorWasEnabled)
+            _animator.enabled = true;
+        _hitStopAnimatorWasEnabled = false;
+    }
+
+    private void RestartHitScaleFeedback(HitFeedbackStrength feedbackStrength = HitFeedbackStrength.Standard)
     {
         StopHitScaleFeedback();
 
-        float peakMultiplier = isSuperArmor ? 1.1f : 1.2f;
-        float expandDuration = isSuperArmor ? 0.04f : 0.06f;
-        float recoverDuration = isSuperArmor ? 0.06f : 0.09f;
+        float basePeak = feedbackStrength switch
+        {
+            HitFeedbackStrength.Light => 1.1f,
+            HitFeedbackStrength.Heavy => 1.28f,
+            _ => 1.2f
+        };
+        float durationScale = feedbackStrength == HitFeedbackStrength.Heavy ? 1.15f : 1f;
+        float peakMultiplier = isSuperArmor ? Mathf.Min(basePeak, 1.1f) : basePeak;
+        float expandDuration = (isSuperArmor ? 0.04f : 0.06f) * durationScale;
+        float recoverDuration = (isSuperArmor ? 0.06f : 0.09f) * durationScale;
 
         Sequence sequence = DOTween.Sequence().SetTarget(transform);
         sequence.Append(DOTween.To(
@@ -1896,21 +1954,26 @@ private void SpawnProjectile()
             recoverDuration).SetEase(Ease.InQuad));
 
         _hitScaleTween = sequence;
-        sequence.OnComplete(() =>
-        {
-            if (_hitScaleTween != sequence) return;
-            _hitScaleTween = null;
-            _hitScaleMultiplier = 1f;
-            ApplyHitScaleMultiplier(1f);
-        });
+        sequence.OnComplete(() => FinishHitScaleFeedback(sequence));
+        sequence.OnKill(() => FinishHitScaleFeedback(sequence));
+    }
+
+    private void FinishHitScaleFeedback(Tween owner)
+    {
+        if (_hitScaleTween != owner) return;
+
+        _hitScaleTween = null;
+        _hitScaleMultiplier = 1f;
+        ApplyHitScaleMultiplier(1f);
     }
 
     private void StopHitScaleFeedback()
     {
-        if (_hitScaleTween != null && _hitScaleTween.IsActive())
-            _hitScaleTween.Kill(false);
-
+        Tween activeTween = _hitScaleTween;
         _hitScaleTween = null;
+        if (activeTween != null && activeTween.IsActive())
+            activeTween.Kill(false);
+
         _hitScaleMultiplier = 1f;
         ApplyHitScaleMultiplier(1f);
     }
@@ -2031,8 +2094,10 @@ private void SpawnProjectile()
 
         ApplyHitFlashImmediate();
         hitFlashTimer = HIT_FLASH_DURATION;
-        RestartHitScaleFeedback();
+        RestartHitScaleFeedback(HitFeedbackStrength.Heavy);
         _animator?.SetTrigger("Hit");
+        HitFeedbackManager.Trigger(new HitFeedbackContext(this, DamageType.Poise,
+            HitFeedbackSource.Displacement, HitFeedbackStrength.Heavy, 0f, false, true, transform.position));
         OnDamageTaken?.Invoke(this);
         return true;
     }
@@ -2173,6 +2238,7 @@ private void SpawnProjectile()
 
         bool wasLaunched = (state == EnemyState.Launched);
         OnDying?.Invoke(this);
+        StopHitStop();
         StopHitScaleFeedback();
         state = EnemyState.Dead;
         UpdateOutlineState();
@@ -2463,6 +2529,7 @@ private void SpawnProjectile()
     private void ResetRushMovementToCurrentRow()
     {
         DOTween.Kill(transform, false);
+        StopHitScaleFeedback();
         if (_animator != null)
         {
             _animator.speed = 1f;
@@ -2853,7 +2920,7 @@ private void SpawnProjectile()
         state = EnemyState.Idle;
         CancelRushMoveOrder(resetActiveMovement: true);
 
-        // 停止 DOTween
+        StopHitScaleFeedback();
         transform.DOKill(false);
         UpdateWorldPosition();
         transform.localScale = originalScale;
@@ -3156,6 +3223,7 @@ private void SpawnProjectile()
             _attackTween = null;
         }
         transform.DOKill(false);
+        StopHitScaleFeedback();
         isAttackAnimating = false;
         isAttackDrawPhase = false;
         isCFrame = false;
@@ -3248,6 +3316,7 @@ private void SpawnProjectile()
     private void OnDisable()
     {
         EnemyManager.Instance?.columnManager?.CancelPushReturnForEnemy(this, "cancel-reset");
+        StopHitStop();
         StopHitScaleFeedback();
         initialized = false;
     }
@@ -3258,6 +3327,7 @@ private void SpawnProjectile()
     public void ResetEnemy()
     {
         EnemyManager.Instance?.columnManager?.CancelPushReturnForEnemy(this, "cancel-reset");
+        StopHitStop();
         StopHitScaleFeedback();
 
         // 终止所有活跃的 DOTween 动画（完成当前值后跳转到最终值）

@@ -7,6 +7,18 @@ public sealed class StabSweepEffect : MonoBehaviour
 {
     private const float ThrustDuration = 0.2f;
     private const float RetractDuration = 0.3f;
+    private const float WindupRatio = 0.12f;
+    private const float ThrustRatio = 0.32f;
+    private const float PenetrationRatio = 0.08f;
+    private const float RetractRatio = 0.48f;
+    private const float WindupDistance = 0.25f;
+    private const float PenetrationDistance = 0.2f;
+    private const float WindupLengthScale = 0.94f;
+    private const float WindupWidthScale = 1.06f;
+    private const float ThrustLengthScale = 1.1f;
+    private const float ThrustWidthScale = 0.9f;
+    private const float ImpactLengthScale = 1.16f;
+    private const float ImpactWidthScale = 0.84f;
     private const float HitDistanceTolerance = 0.35f;
     private const int SortingOrderWithEnemies = 0;
 
@@ -26,7 +38,11 @@ public sealed class StabSweepEffect : MonoBehaviour
     private Vector3 _rayOrigin;
     private Vector3 _rayDirection;
     private float _rayLength;
+    private Vector3 _visualBaseLocalPosition;
+    private Vector3 _visualBaseLocalScale;
+    private Transform _visualTransform;
     private Sequence _sequence;
+    private Coroutine _hitStopRoutine;
     private bool _hitAny;
 
     public static void Create(GameObject prefab, Vector3 startPosition, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows,
@@ -71,23 +87,74 @@ public sealed class StabSweepEffect : MonoBehaviour
         if (renderer != null)
             renderer.sortingOrder = SortingOrderWithEnemies;
 
+        _visualTransform = visual.transform;
+        _visualBaseLocalPosition = _visualTransform.localPosition;
+        _visualBaseLocalScale = _visualTransform.localScale;
+
         _rayOrigin = transform.position;
         _rayDirection = (targetPosition - _rayOrigin).normalized;
         _rayLength = Vector3.Distance(_rayOrigin, targetPosition);
         transform.rotation = Quaternion.LookRotation(_rayDirection, Vector3.up);
-        float durationScale = targetDuration > 0f ? targetDuration / (ThrustDuration + RetractDuration) : 1f;
+
+        float totalDuration = targetDuration > 0f ? targetDuration : ThrustDuration + RetractDuration;
+        float windupDuration = totalDuration * WindupRatio;
+        float thrustDuration = totalDuration * ThrustRatio;
+        float penetrationDuration = totalDuration * PenetrationRatio;
+        float retractDuration = totalDuration * RetractRatio;
+        Vector3 windupPosition = _rayOrigin - _rayDirection * WindupDistance;
+        Vector3 penetrationPosition = targetPosition + _rayDirection * PenetrationDistance;
+        Vector3 windupScale = GetVisualScale(WindupWidthScale, WindupLengthScale);
+        Vector3 thrustScale = GetVisualScale(ThrustWidthScale, ThrustLengthScale);
+        Vector3 impactScale = GetVisualScale(ImpactWidthScale, ImpactLengthScale);
+
         _sequence = DOTween.Sequence().SetTarget(transform);
-        _sequence.Append(transform.DOMove(targetPosition, ThrustDuration * durationScale).SetEase(Ease.OutQuad).OnUpdate(CheckHits));
+        _sequence.Append(transform.DOMove(windupPosition, windupDuration).SetEase(Ease.OutQuad));
+        _sequence.Join(_visualTransform.DOScale(windupScale, windupDuration).SetEase(Ease.OutQuad));
+        _sequence.Append(transform.DOMove(targetPosition, thrustDuration).SetEase(Ease.InCubic).OnUpdate(CheckHits));
+        _sequence.Join(_visualTransform.DOScale(thrustScale, thrustDuration).SetEase(Ease.InCubic));
         _sequence.AppendCallback(CheckHits);
         _sequence.AppendCallback(() => _onComplete?.Invoke());
-        _sequence.Append(transform.DOMove(_rayOrigin, RetractDuration * durationScale).SetEase(Ease.InQuad));
+        _sequence.Append(transform.DOMove(penetrationPosition, penetrationDuration).SetEase(Ease.OutQuad).OnUpdate(CheckHits));
+        _sequence.Join(_visualTransform.DOScale(impactScale, penetrationDuration).SetEase(Ease.OutQuad));
+        _sequence.Append(transform.DOMove(_rayOrigin, retractDuration).SetEase(Ease.OutCubic));
+        _sequence.Join(_visualTransform.DOScale(_visualBaseLocalScale, retractDuration).SetEase(Ease.OutCubic));
         _sequence.OnKill(() => Destroy(gameObject));
         _sequence.OnComplete(() => Destroy(gameObject));
     }
 
+    private Vector3 GetVisualScale(float widthMultiplier, float lengthMultiplier)
+    {
+        return new Vector3(
+            _visualBaseLocalScale.x * widthMultiplier,
+            _visualBaseLocalScale.y * lengthMultiplier,
+            _visualBaseLocalScale.z);
+    }
+
     private void OnDestroy()
     {
+        if (_hitStopRoutine != null)
+        {
+            StopCoroutine(_hitStopRoutine);
+            _hitStopRoutine = null;
+        }
         _sequence?.Kill();
+    }
+
+    private void PauseSequenceForHitStop(HitFeedbackStrength feedbackStrength)
+    {
+        if (_sequence == null || !_sequence.IsActive()) return;
+        if (_hitStopRoutine != null)
+            StopCoroutine(_hitStopRoutine);
+        _hitStopRoutine = StartCoroutine(HitStopRoutine(HitFeedbackManager.GetHitStopDuration(feedbackStrength)));
+    }
+
+    private System.Collections.IEnumerator HitStopRoutine(float duration)
+    {
+        _sequence.Pause();
+        yield return new WaitForSecondsRealtime(duration);
+        if (_sequence != null && _sequence.IsActive())
+            _sequence.Play();
+        _hitStopRoutine = null;
     }
 
     private void CheckHits()
@@ -134,7 +201,10 @@ public sealed class StabSweepEffect : MonoBehaviour
             _hitEnemies.Add(enemy);
             if (!_hitAny)
                 _onFirstHitBeforeDamage?.Invoke(enemy);
-            enemy.TakeDamage(_damage, _damageType);
+            HitFeedbackStrength feedbackStrength = _hitAny ? HitFeedbackStrength.Light : HitFeedbackStrength.Standard;
+            enemy.TakeDamage(_damage, _damageType, feedbackStrength: feedbackStrength);
+            if (!_hitAny)
+                PauseSequenceForHitStop(feedbackStrength);
             if (!_hitAny)
             {
                 _hitAny = true;

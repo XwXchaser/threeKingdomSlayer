@@ -306,7 +306,8 @@ public class AttackSystem : MonoBehaviour
             },
             onAllHit: () => ApplySlashDirectionalPush(hitTargets, leftToRight),
             targetDuration: GetAttackDuration(cfg),
-            rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite);
+            rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite,
+            useEnhancedSlashMotion: true);
         AudioManager.Instance?.PostEvent("Player_Attack");
 
         Debug.Log($"[AttackSystem] 斩击 方向:{(leftToRight ? "L→R" : "R→L")} 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -446,7 +447,8 @@ public class AttackSystem : MonoBehaviour
             // BUG FIX: 先削韧再扣血。TakeDamage 的打断逻辑会 CancelAttack → state=Idle，
             // 导致 TakePoiseDamage 的 state==Attacking 检查失败，Boss 永远无法被招架破势。
             enemy.TakePoiseDamage(cfg.poiseDamage);
-            enemy.TakeDamage(finalDmg, cfg.damageType, canInterruptCFrame: true, isParryInterrupt: true);
+            enemy.TakeDamage(finalDmg, cfg.damageType, canInterruptCFrame: true, isParryInterrupt: true,
+                feedbackStrength: HitFeedbackStrength.Heavy);
         }
 
         Debug.Log($"[AttackSystem] 招架 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 目标数:{targets.Count}");
@@ -994,7 +996,8 @@ public class AttackSystem : MonoBehaviour
                 if (next == null) break;
 
                 // 直接造成弹射伤害
-                next.TakeDamage(bounceDamage, cfg.damageType);
+                next.TakeDamage(bounceDamage, cfg.damageType,
+                    feedbackSource: HitFeedbackSource.Passive, feedbackStrength: HitFeedbackStrength.Light);
 
                 // 连锁闪电视觉：LineRenderer连接 current → next
                 StartCoroutine(CreateChainVisual(current, next));

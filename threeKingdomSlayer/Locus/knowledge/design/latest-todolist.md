@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1783762854937
-updatedAt: 1785747608114
+updatedAt: 1785816925786
 ---
 
 # latest-todolist
@@ -28,8 +28,10 @@ updatedAt: 1785747608114
 - 待用户验收：暂停菜单三档音量独立调节、退出重进后的设置恢复。
 
 ### 2. 视觉与动效表现增强
-- [ ] 制作命中卡肉停顿效果。
-- [ ] 增强命中时的视觉表现。
+- [-] 首批命中反馈已实现：统一命中来源/强度上下文；局部 Animator 卡肉；现有闪白、受击缩放与伤害数字按强度分级；DoT 不触发卡肉。
+- [ ] Battle 实机验收：Stab、Slash、Pierce、Launch、Parry、海浪/旋风、共享血量与连续箭雨/火焰的反馈节奏。
+- [ ] 命中特效（火花/斩痕等）暂缓，等待明确美术素材；接入前先在屏幕中心 Debug Target 验证可见性，再迁移到敌人命中位置。
+- [ ] 卡肉调试日志当前开启：`[HitFeedback] Trigger/Freeze/Resume`；确认用户验收后再关闭或改为可配置开关。
 
 ## 已修复、待持续验收的 Bug
 

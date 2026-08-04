@@ -64,7 +64,8 @@ public class CycloneEffect : MonoBehaviour
 
             // 击飞伤害（纯控制效果传 0 时不触发受击反馈）
             if (_damage > 0)
-                _target.TakeDamage(_damage);
+                _target.TakeDamage(_damage, feedbackSource: HitFeedbackSource.ActiveSkill,
+                    feedbackStrength: HitFeedbackStrength.Heavy);
 
             // 击飞（自定义时长）
             _target.Launch(knockupDuration);
@@ -206,7 +207,8 @@ public class CycloneEffect : MonoBehaviour
         // 落地伤害
         if (_landingDamage > 0 && _target != null && _target.state != EnemyState.Dead)
         {
-            _target.TakeDamage(_landingDamage);
+            _target.TakeDamage(_landingDamage, feedbackSource: HitFeedbackSource.ActiveSkill,
+                feedbackStrength: HitFeedbackStrength.Heavy);
         }
 
         // 取消监听

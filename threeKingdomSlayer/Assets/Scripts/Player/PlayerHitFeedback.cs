@@ -13,11 +13,6 @@ public class PlayerHitFeedback : MonoBehaviour
     [SerializeField] private float hittedDuration = 0.3f;
     [SerializeField] private float hittedFadeDuration = 0.1f;
 
-    [Header("镜头抖动")]
-    [SerializeField] private float shakeDuration = 0.2f;
-    [SerializeField] private float shakeIntensity = 0.3f;
-    [SerializeField] private int shakeVibrato = 20;
-
     private float _lastHealth;
     private Tween _hittedTween;
 
@@ -73,10 +68,6 @@ public class PlayerHitFeedback : MonoBehaviour
 
     private void ShakeCamera()
     {
-        var cam = Camera.main;
-        if (cam == null) return;
-
-        cam.transform.DOKill(true);
-        cam.transform.DOShakePosition(shakeDuration, shakeIntensity, shakeVibrato).SetUpdate(UpdateType.Normal, false);
+        CameraFeedbackController.Instance?.RequestPlayerDamage();
     }
 }
