@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1783434126515
-updatedAt: 1784951717383
+updatedAt: 1785744490572
 ---
 
 # percolumn-fillup-rules
@@ -105,9 +105,20 @@ Boss使用独立推进规则，不参与普通敌人的击退回位和补齐订�
 - 攻击冷却、眩晕恢复、击飞落地和QTE结束只能执行已有订单，不能自行推导补齐需求。
 - 击退回位使用精确原槽事务；旧列压实兼容入口保持 inert，不能作为普通补齐入口。
 
-## 本次缺陷与修复
+## 历史缺陷与修复
+
+### 缺陷1：105 远程敌人攻击范围过滤导致永远不补齐 (已修复)
 
 - 症状：105远程敌人在row2已处于 `attackRange=3` 内，前方整排清空后仍持续远程攻击，攻击结束也不补齐。
 - 根因：旧实现于 `BeginWaveStep()` 使用 `rowIndex < attackRange` 跳过订单创建，导致105从未获得 WaveMarch 订单；`Enemy` 的攻击完成回调遵守所有权规则，只会恢复已有订单。
 - 修复：移除订单创建阶段的攻击范围过滤。现在攻击范围不再否决整排补齐需求，攻击中的敌人会完成当前攻击后执行已持有订单。
 - 验证：Unity完整重编译成功；用户回归测试暂未发现问题。
+
+### 缺陷2：行军中被击退导致单兵永久卡死 (已修复)
+
+- 症状：一排105敌人行军过程中，某列敌人被击退→同行军批次的其他列到达目标排后，该列敌人停在原排进入 Idle，既不补齐也不攻击，造成永久堵塞。击杀该敌人后后排恢复补齐。101（射程1）无此问题。
+- 根因：行军阶段（marching）被 `AbortWaveMarch` 中断，已到达目标排的友军占据 targetRow，导致 `TryResumePausedWaveAfterPushReturns` 中 `IsRowFullyVacated(targetRow)` 为 false，暂存波次被直接丢弃，未到达的敌人永远丢失 WaveMarch 订单。同时该敌人经 `ResetRushMovementToCurrentRow` 进入 Idle 状态，在攻击范围内却无任何触发器恢复攻击或补齐。
+- 伤害类型（主动/被动技能均可触发）：只要伤害路径触发击退位移（`ExecutePush` → `RegisterPushReturn`），就会触发此路径。
+- 101 不受影响的原因：101 `attackRange=1`，在 row≥1 时不在攻击范围内，不会进入「攻击→OnComplete→开始行军」路径，因此不存在行军中途被击退打断的场景。
+- 修复：移除 `TryResumePausedWaveAfterPushReturns` 中 `if (IsRowFullyVacated(targetRow))` 前置条件，让 `BeginWaveStep` 无条件执行恢复。`BeginWaveStep` 内部已有每敌人校验（`rowIndex != sourceRow` 过滤已到达者、`_pushReturnTransactions` 过滤 push return 中者、`AssignRushMoveOrder` 拒绝不合法者），不会对已到达敌人重复发放订单。
+- 验证：Unity 完整重编译成功；待用户黑盒回归测试。

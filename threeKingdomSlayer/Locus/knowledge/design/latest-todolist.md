@@ -9,16 +9,27 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1783762854937
-updatedAt: 1785298836054
+updatedAt: 1785747608114
 ---
 
 # latest-todolist
 
 ## Summary
-本周待办：角色/Boss双面看板、飞射物验收、Boss设计与难度、20–30分钟测试关、数值配置总表、技能组与美术。染色敌人崩坏已修复；对象池第二阶段待评审。
+本周主要目标：音频系统改造（音效/背景音乐独立音量控制）；增强战斗视觉与动效（命中卡肉停顿与命中视觉效果）。其余待办保留。
 
 ## Content
-# 最新待办清单
+## 本周主要目标（新增）
+
+### 1. 音频系统改造
+- [x] 将音效与背景音乐分离，支持分别调整音量。
+- [x] 已升级为 AudioMixer 三档控制：总音量 / 背景音乐 / 音效；暂停菜单接入三个 Slider，并完成运行时路由、存档恢复与编译验证。
+- [x] 修复 Mixer 快照首帧覆盖存档音量：延后一帧重应用；敌人受击音效播放倍率调整为 80%。
+- 修改：`Assets/Audio/ThreeKingdomSlayerAudioMixer.mixer`、`Assets/Scripts/Managers/AudioManager.cs`、`Assets/Scripts/UI/PauseMenuUI.cs`、`Assets/Scenes/Battle.scene`。
+- 待用户验收：暂停菜单三档音量独立调节、退出重进后的设置恢复。
+
+### 2. 视觉与动效表现增强
+- [ ] 制作命中卡肉停顿效果。
+- [ ] 增强命中时的视觉表现。
 
 ## 已修复、待持续验收的 Bug
 
