@@ -443,7 +443,8 @@ public class PassiveTriggerModule : MonoBehaviour
                     if (dist < 0.4f)
                     {
                         hasHit = true;
-                        target.TakeDamage(damage, DamageType.Pierce);
+                        target.TakeDamage(damage, DamageType.Pierce,
+                            feedbackSource: HitFeedbackSource.Passive, feedbackStrength: HitFeedbackStrength.Light);
                     }
                 }
             },

@@ -10,7 +10,7 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1778764012219
-updatedAt: 1785591792511
+updatedAt: 1785841169762
 ---
 
 # project-mistake-note
@@ -61,11 +61,11 @@ updatedAt: 1785591792511
 - 预防规则：**需要近似垂直下落时，随机端点必须相关；先定目标，再围绕目标生成起点。**
 - 文件：`Assets/Scripts/Effect/TimedArrowEffect.cs`
 
-### 高频受击缩放不能基于当前 Scale 相对叠加 ✅ 已修复（2026-03）
-- 症状：敌人被箭雨连续命中后体型持续变大。
-- 根因：新受击 Tween 从已放大的当前 Scale 继续计算，多个相对缩放反馈发生累积。
-- 修复：每次反馈先停止旧 Tween、恢复缓存的原始 Scale，再播放固定目标倍率并回归原值；禁用、死亡、击飞和对象池回收时统一清理。
-- 预防规则：**高频可重入反馈必须从缓存基准值重新开始，不能以当前 Transform 做相对叠加。**
+### 高频受击缩放不能基于当前 Scale 相对叠加 ✅ 已修复
+- 症状：敌人被箭雨连续命中后体型持续变大，或在状态切换/对象池回收边界偶发停留在放大状态。
+- 根因：新受击 Tween 从已放大的当前 Scale 继续计算会累积；同时受击缩放、攻击翻面 `DOScaleX`、补齐弹跳、死亡/击飞清理共用 Enemy 根 Transform。外部路径宽泛 Kill 根 Transform Tween 时，原受击序列没有 `OnKill` 归一化收尾。
+- 修复：每次反馈先停止旧 Tween、从 `originalScale` 基准重启；受击序列增加 owner 校验的 `OnComplete` 与 `OnKill`，两条路径统一恢复 `_hitScaleMultiplier=1` 与 Scale；状态切换、补齐、QTE、眩晕、击飞、Boss阶段、死亡、OnDisable、对象池 Reset 前统一调用 `StopHitScaleFeedback()`。
+- 当前仍保留根 Transform 共用的历史结构；后续若继续扩展受击视觉，优先将 squash/stretch 移到视觉子节点，避免与逻辑移动/攻击翻面争夺根 Transform。
 - 文件：`Assets/Scripts/Enemy/Enemy.cs`
 
 ### C# 默认值不会迁移 Prefab 已序列化字段 ✅ 已处理（2026-03）

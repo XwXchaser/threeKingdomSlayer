@@ -196,7 +196,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
             state.tickTimer -= dt;
             if (state.tickTimer <= 0f)
             {
-                enemy.TakeDamage(state.damagePerTick, DamageType.Pierce, Color.red, countsForCombo: false, canInterruptAttack: false, triggerHitAnimation: false, ignoreDamageModifiers: true);
+                enemy.TakeDamage(state.damagePerTick, DamageType.Pierce, Color.red, countsForCombo: false, canInterruptAttack: false, triggerHitAnimation: false, ignoreDamageModifiers: true, feedbackSource: HitFeedbackSource.Dot, feedbackStrength: HitFeedbackStrength.None);
                 state.ticksRemaining--;
                 state.tickTimer += BurnTickInterval;
             }
@@ -249,7 +249,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
                 int tickDmg = state.damagePerTick * state.layers;
                 float hpBefore = enemy.currentHealth;
                 Debug.Log($"[Disease] Tick: {enemy.DebugTag} dmg={tickDmg} hpBefore={hpBefore:F1} remaining={state.ticksRemaining} layers={state.layers}");
-                enemy.TakeDamage(tickDmg, DamageType.Pierce, new Color(0.72f, 0.28f, 0.9f), countsForCombo: false, canInterruptAttack: false, triggerHitAnimation: false, ignoreDamageModifiers: true);
+                enemy.TakeDamage(tickDmg, DamageType.Pierce, new Color(0.72f, 0.28f, 0.9f), countsForCombo: false, canInterruptAttack: false, triggerHitAnimation: false, ignoreDamageModifiers: true, feedbackSource: HitFeedbackSource.Dot, feedbackStrength: HitFeedbackStrength.None);
                 state.ticksRemaining--;
                 state.tickTimer += DiseaseTickInterval;
             }

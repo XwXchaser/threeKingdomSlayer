@@ -37,7 +37,8 @@ public class UltimateEffect_AllEnemyDamage : UltimateEffect
         {
             if (enemy != null && enemy.state != EnemyState.Dead)
             {
-                enemy.TakeDamage(damageAmount, damageType);
+                enemy.TakeDamage(damageAmount, damageType,
+                    feedbackSource: HitFeedbackSource.Ultimate, feedbackStrength: HitFeedbackStrength.Heavy);
             }
         }
 

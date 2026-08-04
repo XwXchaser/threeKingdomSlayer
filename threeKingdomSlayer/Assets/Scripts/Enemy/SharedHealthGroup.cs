@@ -74,7 +74,7 @@ public class SharedHealthGroup
     /// <summary>
     /// 受到伤害 — 扣除共享池HP，池归零时全部死亡
     /// </summary>
-    public void TakeDamage(float rawDamage, DamageType damageType, Enemy hitMember, Color? damageNumberColor = null, bool triggerHitAnimation = true, bool countsForCombo = true, bool canInterruptAttack = true, bool ignoreDamageModifiers = false)
+    public void TakeDamage(float rawDamage, DamageType damageType, Enemy hitMember, Color? damageNumberColor = null, bool triggerHitAnimation = true, bool countsForCombo = true, bool canInterruptAttack = true, bool ignoreDamageModifiers = false, HitFeedbackSource feedbackSource = HitFeedbackSource.BasicAttack, HitFeedbackStrength? feedbackStrength = null)
     {
         if (members.Count == 0) return;
 
@@ -86,7 +86,8 @@ public class SharedHealthGroup
 
         // 受伤跳字
         if (hitMember != null && DamageNumberManager.Instance != null)
-            DamageNumberManager.Instance.Spawn(hitMember.transform.position, finalDamage, damageNumberColor);
+            DamageNumberManager.Instance.Spawn(hitMember.transform.position, finalDamage, damageNumberColor,
+                feedbackStrength ?? HitFeedbackManager.ResolveStrength(damageType, feedbackSource, finalDamage, true));
 
         if (countsForCombo && hitMember != null)
             hitMember.OnDamageTaken?.Invoke(hitMember);
@@ -97,7 +98,11 @@ public class SharedHealthGroup
             if (m == null || m.state == EnemyState.Dead) continue;
 
             if (triggerHitAnimation)
-                m.ApplyDamageFeedback();
+            {
+                HitFeedbackStrength memberStrength = feedbackStrength
+                    ?? HitFeedbackManager.ResolveStrength(damageType, feedbackSource, finalDamage, true);
+                m.ApplyDamageFeedback(memberStrength);
+            }
 
             // 更新血条
             var bar = m.GetComponent<EnemyHealthBar>();
@@ -110,6 +115,11 @@ public class SharedHealthGroup
         {
             if (m != null) m.currentHealth = Mathf.Max(0, currentHealth);
         }
+
+        HitFeedbackStrength resolvedFeedbackStrength = feedbackStrength
+            ?? HitFeedbackManager.ResolveStrength(damageType, feedbackSource, finalDamage, true);
+        HitFeedbackManager.Trigger(HitFeedbackManager.CreateDamageContext(hitMember, damageType,
+            feedbackSource, resolvedFeedbackStrength, finalDamage, true));
 
         if (currentHealth <= 0f)
         {

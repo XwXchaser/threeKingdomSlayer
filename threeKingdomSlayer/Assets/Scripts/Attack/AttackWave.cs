@@ -29,6 +29,7 @@ public class AttackWave : MonoBehaviour
     private Color? damageNumberColor;
 
     private Sequence travelSeq;
+    private Coroutine _hitStopRoutine;
     private bool _shouldReturnWave;
     private float _returnDamageMultiplier = 0.5f;
     private bool _isReturning;
@@ -449,13 +450,41 @@ public class AttackWave : MonoBehaviour
         if (enemy != null && enemy.state != EnemyState.Dead)
         {
             float hitDamage = _isReturning ? damage * _returnDamageMultiplier : damage;
-            enemy.TakeDamage(hitDamage, damageType, damageNumberColor, canInterruptCFrame);
+            HitFeedbackStrength strength = damageType == DamageType.Launch
+                ? HitFeedbackStrength.Heavy
+                : nextIndex == 0 ? HitFeedbackStrength.Standard : HitFeedbackStrength.Light;
+            enemy.TakeDamage(hitDamage, damageType, damageNumberColor, canInterruptCFrame,
+                feedbackStrength: strength);
+            if (strength >= HitFeedbackStrength.Standard)
+                PauseTravelForHitStop(strength);
             onHit?.Invoke(enemy);
         }
     }
 
+    private void PauseTravelForHitStop(HitFeedbackStrength feedbackStrength)
+    {
+        if (travelSeq == null || !travelSeq.IsActive()) return;
+        if (_hitStopRoutine != null)
+            StopCoroutine(_hitStopRoutine);
+        _hitStopRoutine = StartCoroutine(HitStopRoutine(HitFeedbackManager.GetHitStopDuration(feedbackStrength)));
+    }
+
+    private System.Collections.IEnumerator HitStopRoutine(float duration)
+    {
+        travelSeq.Pause();
+        yield return new WaitForSecondsRealtime(duration);
+        if (travelSeq != null && travelSeq.IsActive())
+            travelSeq.Play();
+        _hitStopRoutine = null;
+    }
+
     private void OnDestroy()
     {
+        if (_hitStopRoutine != null)
+        {
+            StopCoroutine(_hitStopRoutine);
+            _hitStopRoutine = null;
+        }
         AliveCount--;
         float alive = Time.unscaledTime - _creationTime;
         Debug.Log($"[AttackWave] OnDestroy: {gameObject.name}, mode={mode}, alive={alive:F2}s, frame={Time.frameCount}");

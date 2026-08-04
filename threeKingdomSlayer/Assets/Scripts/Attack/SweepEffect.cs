@@ -30,6 +30,7 @@ public class SweepEffect : MonoBehaviour
     private Color waveColor;
     private Color? damageNumberColor;
     private Sequence seq;
+    private Coroutine _hitStopRoutine;
     private float _creationTime;
     private int _instanceId;
     private bool _completed;
@@ -43,7 +44,7 @@ public class SweepEffect : MonoBehaviour
         Color? damageNumberColor = null, bool canInterruptCFrame = false,
         Material materialOverride = null, System.Action onFirstHit = null, System.Action onAllHit = null, float targetDuration = -1f,
         Sprite rotateSprite1 = null, Sprite rotateSprite2 = null, float angleOffset = 0f, float movementTilt = 0f,
-        float additionalWeaponRotation = 0f)
+        float additionalWeaponRotation = 0f, bool useEnhancedSlashMotion = false)
     {
         float startX = leftToRight ? -halfWidth : halfWidth;
         float endX = leftToRight ? halfWidth : -halfWidth;
@@ -110,6 +111,27 @@ public class SweepEffect : MonoBehaviour
             }
         }
 
+        // L→R 时翻转 prefab X 使枪头朝向运动方向（必须在视觉分层前做）
+        if (leftToRight)
+        {
+            Vector3 s = obj.transform.localScale;
+            s.x = -Mathf.Abs(s.x);
+            obj.transform.localScale = s;
+        }
+
+        Transform visualTransform = obj.transform;
+        if (useEnhancedSlashMotion)
+        {
+            GameObject visualObject = obj;
+            var motionRoot = new GameObject($"SlashMotion_{damageType}");
+            motionRoot.transform.SetPositionAndRotation(visualObject.transform.position, visualObject.transform.rotation);
+            motionRoot.transform.localScale = Vector3.one;
+            visualObject.transform.SetParent(motionRoot.transform, true);
+            visualObject.name = "SlashVisual";
+            obj = motionRoot;
+            visualTransform = visualObject.transform;
+        }
+
         SweepEffect effect = obj.AddComponent<SweepEffect>();
         effect._creationTime = Time.unscaledTime;
         effect._instanceId = obj.GetInstanceID();
@@ -135,64 +157,85 @@ public class SweepEffect : MonoBehaviour
         foreach (var enemy in sorted)
             effect.targets.Add(new TargetEntry { enemy = enemy, xThreshold = enemy.transform.position.x });
 
-        // L→R 时翻转 prefab X 使枪头朝向运动方向（必须在归零前做）
-        if (leftToRight)
-        {
-            Vector3 s = obj.transform.localScale;
-            s.x = -Mathf.Abs(s.x);
-            obj.transform.localScale = s;
-        }
+        Vector3 targetScale = useEnhancedSlashMotion ? visualTransform.localScale : obj.transform.localScale;
+        if (useEnhancedSlashMotion)
+            visualTransform.localScale = Vector3.zero;
+        else
+            obj.transform.localScale = Vector3.zero;
+        float scaleInDuration = useEnhancedSlashMotion ? 0.02f : 0.05f;
+        Tween scaleIn = useEnhancedSlashMotion
+            ? visualTransform.DOScale(targetScale, scaleInDuration).SetEase(Ease.OutQuad)
+            : obj.transform.DOScale(targetScale, scaleInDuration).SetEase(Ease.OutQuad);
 
-        // 缩放淡入
-        Vector3 targetScale = obj.transform.localScale;
-        obj.transform.localScale = Vector3.zero;
-        var scaleIn = obj.transform.DOScale(targetScale, 0.05f).SetEase(Ease.OutQuad);
+        Vector3 initEuler = obj.transform.eulerAngles;
+        obj.transform.eulerAngles = new Vector3(initEuler.x, initEuler.y, initEuler.z + startAngle);
+        Vector3 targetEuler = new Vector3(initEuler.x, initEuler.y, initEuler.z + endAngle);
 
-        // 主序列：X 移动 + Z 旋转
         effect.seq = DOTween.Sequence();
         effect.seq.SetTarget(obj.transform);
         effect.seq.SetUpdate(UpdateType.Normal, false);
 
-        var move = obj.transform.DOMove(endPos, duration).SetEase(Ease.InOutQuad);
-        move.OnUpdate(effect.CheckHitThresholds);
-        effect.seq.Append(move);
-
-        // 设置起始旋转姿态（挥刀起点角度）
-        Vector3 initEuler = obj.transform.eulerAngles;
-        obj.transform.eulerAngles = new Vector3(initEuler.x, initEuler.y, initEuler.z + startAngle);
-
-        Vector3 targetEuler = new Vector3(initEuler.x, initEuler.y, initEuler.z + endAngle);
-        var rotate = obj.transform.DORotate(targetEuler, duration, RotateMode.Fast)
-            .SetEase(Ease.InOutQuad);
-        effect.seq.Join(rotate);
-
-        // Stab sprite 三帧动画：stab → rotate1 → rotate2（时长均分）
-        // R→L 时 flipX 翻转素材，使枪头朝向运动方向
-        if (rotateSprite1 != null && rotateSprite2 != null)
+        float spriteTimelineOffset = 0f;
+        float spriteSwingDuration = duration;
+        if (useEnhancedSlashMotion)
         {
-            SpriteRenderer sr = obj.GetComponentInChildren<SpriteRenderer>();
-            if (sr != null)
+            float totalDuration = targetDuration > 0f ? targetDuration : 0.5f;
+            float durationScale = totalDuration / 0.5f;
+            float catchUpDuration = 0.02f * durationScale;
+            float inertiaDuration = 0.06f * durationScale;
+            float fadeDuration = 0.09f * durationScale;
+            float swingDuration = Mathf.Max(0.1f, totalDuration - inertiaDuration - fadeDuration);
+            Vector3 visualBasePosition = visualTransform.localPosition;
+            float windupOffset = leftToRight ? -0.18f : 0.18f;
+            float inertiaOffset = leftToRight ? 0.12f : -0.12f;
+            visualTransform.localPosition = visualBasePosition + Vector3.right * windupOffset;
+
+            var move = obj.transform.DOMove(endPos, swingDuration).SetEase(Ease.InOutCubic);
+            move.OnUpdate(effect.CheckHitThresholds);
+            effect.seq.Append(move);
+            effect.seq.Join(obj.transform.DORotate(targetEuler, swingDuration, RotateMode.Fast)
+                .SetEase(Ease.InOutCubic));
+            effect.seq.Insert(0f, visualTransform.DOLocalMove(visualBasePosition, catchUpDuration)
+                .SetEase(Ease.OutQuad));
+
+            effect.seq.Append(visualTransform.DOLocalMove(
+                visualBasePosition + Vector3.right * inertiaOffset, inertiaDuration)
+                .SetEase(Ease.OutCubic));
+
+            if (material != null)
+                effect.seq.Append(material.DOFade(0f, fadeDuration).SetEase(Ease.InQuad));
+            else
+                effect.seq.AppendInterval(fadeDuration);
+
+            spriteTimelineOffset = 0f;
+            spriteSwingDuration = swingDuration;
+        }
+        else
+        {
+            var move = obj.transform.DOMove(endPos, duration).SetEase(Ease.InOutQuad);
+            move.OnUpdate(effect.CheckHitThresholds);
+            effect.seq.Append(move);
+            effect.seq.Join(obj.transform.DORotate(targetEuler, duration, RotateMode.Fast)
+                .SetEase(Ease.InOutQuad));
+
+            if (material != null)
             {
-                Sprite orig = sr.sprite;
-                float t1 = duration * 0.10f;
-                float t2 = duration * 0.20f;
-                float t3 = duration * 0.70f;
-                // Scale.x 已在 R→L 时翻转了整个 prefab，sprite 无需再用 flipX
-                effect.seq.Insert(0, DOTween.Sequence()
-                    .AppendCallback(() => sr.sprite = orig)
-                    .AppendInterval(t1)
-                    .AppendCallback(() => sr.sprite = rotateSprite1)
-                    .AppendInterval(t2)
-                    .AppendCallback(() => sr.sprite = rotateSprite2)
-                    .AppendInterval(t3));
+                effect.seq.AppendInterval(0.03f);
+                effect.seq.Append(material.DOFade(0f, 0.25f).SetEase(Ease.InQuad));
             }
         }
 
-        // 淡出
-        if (material != null)
+        // Stab sprite 三帧动画：stab → rotate1 → rotate2
+        if (rotateSprite1 != null && rotateSprite2 != null)
         {
-            effect.seq.AppendInterval(0.03f);
-            effect.seq.Append(material.DOFade(0f, 0.25f).SetEase(Ease.InQuad));
+            SpriteRenderer sr = visualTransform.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null)
+            {
+                Sprite orig = sr.sprite;
+                effect.seq.InsertCallback(0f, () => sr.sprite = orig);
+                effect.seq.InsertCallback(spriteTimelineOffset + spriteSwingDuration * 0.10f, () => sr.sprite = rotateSprite1);
+                effect.seq.InsertCallback(spriteTimelineOffset + spriteSwingDuration * 0.30f, () => sr.sprite = rotateSprite2);
+            }
         }
 
         effect.seq.OnKill(() =>
@@ -219,8 +262,8 @@ public class SweepEffect : MonoBehaviour
             Destroy(effect.gameObject);
         });
 
-        // 特效时长拉伸/压缩以匹配cooldown（限制最大缩放防极端值）
-        if (targetDuration > 0f)
+        // Enhanced Slash already builds its exact target-duration timeline; legacy callers keep timeScale matching.
+        if (!useEnhancedSlashMotion && targetDuration > 0f)
         {
             float naturalDuration = effect.seq.Duration();
             if (naturalDuration > 0f)
@@ -263,15 +306,40 @@ public class SweepEffect : MonoBehaviour
         {
             bool isFirstHit = !_hasHit;
             _hasHit = true;
-            enemy.TakeDamage(damage, damageType, damageNumberColor, canInterruptCFrame);
+            enemy.TakeDamage(damage, damageType, damageNumberColor, canInterruptCFrame,
+                feedbackStrength: isFirstHit ? HitFeedbackStrength.Standard : HitFeedbackStrength.Light);
+            if (isFirstHit)
+                PauseSequenceForHitStop(HitFeedbackStrength.Standard);
             if (isFirstHit)
                 onFirstHit?.Invoke();
             onHit?.Invoke(enemy);
         }
     }
 
+    private void PauseSequenceForHitStop(HitFeedbackStrength feedbackStrength)
+    {
+        if (seq == null || !seq.IsActive()) return;
+        if (_hitStopRoutine != null)
+            StopCoroutine(_hitStopRoutine);
+        _hitStopRoutine = StartCoroutine(HitStopRoutine(HitFeedbackManager.GetHitStopDuration(feedbackStrength)));
+    }
+
+    private System.Collections.IEnumerator HitStopRoutine(float duration)
+    {
+        seq.Pause();
+        yield return new WaitForSecondsRealtime(duration);
+        if (seq != null && seq.IsActive())
+            seq.Play();
+        _hitStopRoutine = null;
+    }
+
     private void OnDestroy()
     {
+        if (_hitStopRoutine != null)
+        {
+            StopCoroutine(_hitStopRoutine);
+            _hitStopRoutine = null;
+        }
         AliveCount--;
         float alive = Time.unscaledTime - _creationTime;
         Debug.Log($"[SweepEffect] OnDestroy: {gameObject.name}, alive={alive:F2}s, frame={Time.frameCount}");
