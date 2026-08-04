@@ -424,10 +424,16 @@ MonoBehaviour:
   heavySize: 0.48
   heavyRayLength: 0.68
   heavyDuration: 0.14
-  stabColor: {r: 1, g: 0.85, b: 0.28, a: 1}
-  slashColor: {r: 0.45, g: 0.82, b: 1, a: 1}
-  pierceColor: {r: 0.35, g: 1, b: 0.68, a: 1}
-  heavyColor: {r: 1, g: 0.62, b: 0.18, a: 1}
+  slashLength: 1.35
+  slashWidth: 0.14
+  slashDuration: 0.16
+  slashAngle: 12
+  stabColor: {r: 1, g: 0.78, b: 0.16, a: 1}
+  slashColor: {r: 1, g: 0.68, b: 0.1, a: 1}
+  slashCoreColor: {r: 1, g: 0.96, b: 0.72, a: 1}
+  slashShadowColor: {r: 0.9, g: 0.28, b: 0.03, a: 1}
+  pierceColor: {r: 1, g: 0.86, b: 0.32, a: 1}
+  heavyColor: {r: 1, g: 0.48, b: 0.06, a: 1}
 --- !u!1 &6885100
 GameObject:
   m_ObjectHideFlags: 0

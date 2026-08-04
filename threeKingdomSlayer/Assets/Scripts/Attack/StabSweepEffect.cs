@@ -202,7 +202,9 @@ public sealed class StabSweepEffect : MonoBehaviour
             if (!_hitAny)
                 _onFirstHitBeforeDamage?.Invoke(enemy);
             HitFeedbackStrength feedbackStrength = _hitAny ? HitFeedbackStrength.Light : HitFeedbackStrength.Standard;
-            enemy.TakeDamage(_damage, _damageType, feedbackStrength: feedbackStrength);
+            Vector3 impactPosition = transform.position + Vector3.up * 0.8f;
+            enemy.TakeDamage(_damage, _damageType, feedbackStrength: feedbackStrength,
+                impactPosition: impactPosition, impactDirection: _rayDirection);
             if (!_hitAny)
                 PauseSequenceForHitStop(feedbackStrength);
             if (!_hitAny)
