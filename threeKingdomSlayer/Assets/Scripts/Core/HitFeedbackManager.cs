@@ -29,11 +29,13 @@ public readonly struct HitFeedbackContext
     public readonly float damage;
     public readonly bool isSharedHealth;
     public readonly bool causesDisplacement;
+    public readonly bool hasImpactPosition;
     public readonly Vector3 worldPosition;
+    public readonly Vector3 impactDirection;
 
     public HitFeedbackContext(Enemy enemy, DamageType damageType, HitFeedbackSource source,
         HitFeedbackStrength strength, float damage, bool isSharedHealth, bool causesDisplacement,
-        Vector3 worldPosition)
+        Vector3 worldPosition, Vector3 impactDirection = default, bool hasImpactPosition = false)
     {
         this.enemy = enemy;
         this.damageType = damageType;
@@ -42,7 +44,9 @@ public readonly struct HitFeedbackContext
         this.damage = damage;
         this.isSharedHealth = isSharedHealth;
         this.causesDisplacement = causesDisplacement;
+        this.hasImpactPosition = hasImpactPosition;
         this.worldPosition = worldPosition;
+        this.impactDirection = impactDirection;
     }
 }
 
@@ -55,11 +59,13 @@ public static class HitFeedbackManager
     private const float HeavyHitStopDuration = 0.14f;
 
     public static HitFeedbackContext CreateDamageContext(Enemy enemy, DamageType damageType,
-        HitFeedbackSource source, HitFeedbackStrength strength, float damage, bool isSharedHealth = false)
+        HitFeedbackSource source, HitFeedbackStrength strength, float damage, bool isSharedHealth = false,
+        Vector3? impactPosition = null, Vector3 impactDirection = default)
     {
         bool causesDisplacement = damageType == DamageType.Launch || source == HitFeedbackSource.Displacement;
         return new HitFeedbackContext(enemy, damageType, source, strength, damage, isSharedHealth,
-            causesDisplacement, enemy != null ? enemy.transform.position : Vector3.zero);
+            causesDisplacement, impactPosition ?? (enemy != null ? enemy.transform.position : Vector3.zero),
+            impactDirection, impactPosition.HasValue);
     }
 
     public static float GetHitStopDuration(HitFeedbackStrength strength)

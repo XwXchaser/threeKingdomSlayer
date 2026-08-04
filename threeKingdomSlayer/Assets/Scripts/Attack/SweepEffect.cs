@@ -306,8 +306,12 @@ public class SweepEffect : MonoBehaviour
         {
             bool isFirstHit = !_hasHit;
             _hasHit = true;
+            Vector3 impactDirection = leftToRight ? Vector3.right : Vector3.left;
+            Vector3 impactPosition = new Vector3(transform.position.x, enemy.transform.position.y + 0.8f,
+                enemy.transform.position.z);
             enemy.TakeDamage(damage, damageType, damageNumberColor, canInterruptCFrame,
-                feedbackStrength: isFirstHit ? HitFeedbackStrength.Standard : HitFeedbackStrength.Light);
+                feedbackStrength: isFirstHit ? HitFeedbackStrength.Standard : HitFeedbackStrength.Light,
+                impactPosition: impactPosition, impactDirection: impactDirection);
             if (isFirstHit)
                 PauseSequenceForHitStop(HitFeedbackStrength.Standard);
             if (isFirstHit)
