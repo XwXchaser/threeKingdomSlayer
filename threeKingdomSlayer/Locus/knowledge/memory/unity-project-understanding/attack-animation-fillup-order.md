@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1784124647579
-updatedAt: 1784951738256
+updatedAt: 1785744490606
 ---
 
 # attack-animation-fillup-order
@@ -38,10 +38,15 @@ updatedAt: 1784951738256
 - `Enemy.Die`、`Enemy.OnDisable`、`Enemy.ResetEnemy` 与列移除/清空路径会取消击退事务，generation 使旧完成回调失效。
 - `AttackSystem.ApplySlashDirectionalPush` 不再调用 `PostDisplacementFillUp`；`WaveManager` 仍聚合后推目标后统一开启回位。
 - 旧 `PrepareDisplacementCompaction`、`RowBasedFillUp`、`CompactAllColumns` 兼容入口为 inert，运行时后推路径不再使用 compaction/rejoin。
+- `TryResumePausedWaveAfterPushReturns` 不再检查 `IsRowFullyVacated(targetRow)`，无条件恢复暂存波次。`BeginWaveStep` 内部每敌人校验（rowIndex 过滤、pushReturnTransactions 过滤、AssignRushMoveOrder 拒绝）已足够避免重复发放订单。
 
 ## 已验证缺陷
 
+### 缺陷1：105 攻击范围过滤 (已修复)
 - 105远程敌人曾因 `BeginWaveStep` 的 `rowIndex < attackRange` 过滤而拿不到 WaveMarch 订单，表现为前排清空后仍持续远程攻击。
 - 修复原则是删除订单创建阶段的攻击范围过滤，而不是让 `Enemy` 在攻击结束时自行创建移动；这样保持 `ColumnManager` 的唯一调度所有权。
-- Unity完整重编译成功，用户回归测试暂未发现问题。
+
+### 缺陷2：行军中被击退导致单兵永久卡死 (已修复)
+- 行军阶段被 `AbortWaveMarch` 中断，`TryResumePausedWaveAfterPushReturns` 因 `IsRowFullyVacated(targetRow)=false` 丢弃暂存波次→丢失 WaveMarch 订单→Idle 状态永久不恢复。
+- 修复：移除 `IsRowFullyVacated` 前置条件，无条件恢复暂存波次。
 <!-- locus:body:end -->

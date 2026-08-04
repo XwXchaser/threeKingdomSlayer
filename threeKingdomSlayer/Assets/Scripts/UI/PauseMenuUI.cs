@@ -19,7 +19,9 @@ public class PauseMenuUI : MonoBehaviour
     public UnityEngine.UI.Button mainMenuButton;
 
     [Header("音量")]
-    public UnityEngine.UI.Slider volumeSlider;
+    public UnityEngine.UI.Slider masterVolumeSlider;
+    public UnityEngine.UI.Slider bgmVolumeSlider;
+    public UnityEngine.UI.Slider sfxVolumeSlider;
 
     [Header("结算信息")]
     public TMP_Text coinEarnedText;
@@ -40,15 +42,9 @@ public class PauseMenuUI : MonoBehaviour
         if (pausePanel != null)
             pausePanel.SetActive(false);
 
-        if (volumeSlider != null)
-        {
-            volumeSlider.minValue = 0f;
-            volumeSlider.maxValue = 1f;
-            volumeSlider.value = AudioManager.Instance != null
-                ? AudioManager.Instance.GetMasterVolume()
-                : 1f;
-            volumeSlider.onValueChanged.AddListener(OnVolumeChanged);
-        }
+        ConfigureVolumeSlider(masterVolumeSlider, AudioManager.Instance != null ? AudioManager.Instance.GetMasterVolume() : 1f, OnMasterVolumeChanged);
+        ConfigureVolumeSlider(bgmVolumeSlider, AudioManager.Instance != null ? AudioManager.Instance.GetBgmVolume() : 1f, OnBgmVolumeChanged);
+        ConfigureVolumeSlider(sfxVolumeSlider, AudioManager.Instance != null ? AudioManager.Instance.GetSfxVolume() : 1f, OnSfxVolumeChanged);
     }
 
     private void OnDestroy()
@@ -56,7 +52,9 @@ public class PauseMenuUI : MonoBehaviour
         if (pauseButton != null) pauseButton.onClick.RemoveListener(OnPauseClicked);
         if (continueButton != null) continueButton.onClick.RemoveListener(OnContinueClicked);
         if (mainMenuButton != null) mainMenuButton.onClick.RemoveListener(OnMainMenuClicked);
-        if (volumeSlider != null) volumeSlider.onValueChanged.RemoveListener(OnVolumeChanged);
+        if (masterVolumeSlider != null) masterVolumeSlider.onValueChanged.RemoveListener(OnMasterVolumeChanged);
+        if (bgmVolumeSlider != null) bgmVolumeSlider.onValueChanged.RemoveListener(OnBgmVolumeChanged);
+        if (sfxVolumeSlider != null) sfxVolumeSlider.onValueChanged.RemoveListener(OnSfxVolumeChanged);
     }
 
     private void OnPauseClicked()
@@ -68,9 +66,7 @@ public class PauseMenuUI : MonoBehaviour
         // 先显示面板再暂停（SetActive 必须在 timeScale=0 之前，且不能放在可能抛异常的代码之后）
         if (pausePanel != null) pausePanel.SetActive(true);
 
-        // 打开面板时同步音量滑动条到当前数据层值
-        if (volumeSlider != null && AudioManager.Instance != null)
-            volumeSlider.value = AudioManager.Instance.GetMasterVolume();
+        SyncVolumeSliders();
         
         try { RefreshSettlementInfo(); }
         catch (System.Exception e) { Debug.LogWarning($"[PauseMenuUI] RefreshSettlementInfo 异常: {e.Message}"); }
@@ -91,9 +87,37 @@ public class PauseMenuUI : MonoBehaviour
         StageController.Instance?.GoToMainMenu();
     }
 
-    private void OnVolumeChanged(float value)
+    private void ConfigureVolumeSlider(UnityEngine.UI.Slider slider, float value, UnityEngine.Events.UnityAction<float> callback)
+    {
+        if (slider == null) return;
+        slider.minValue = 0f;
+        slider.maxValue = 1f;
+        slider.SetValueWithoutNotify(value);
+        slider.onValueChanged.AddListener(callback);
+    }
+
+    private void SyncVolumeSliders()
+    {
+        var audio = AudioManager.Instance;
+        if (audio == null) return;
+        if (masterVolumeSlider != null) masterVolumeSlider.SetValueWithoutNotify(audio.GetMasterVolume());
+        if (bgmVolumeSlider != null) bgmVolumeSlider.SetValueWithoutNotify(audio.GetBgmVolume());
+        if (sfxVolumeSlider != null) sfxVolumeSlider.SetValueWithoutNotify(audio.GetSfxVolume());
+    }
+
+    private void OnMasterVolumeChanged(float value)
     {
         AudioManager.Instance?.SetMasterVolume(value);
+    }
+
+    private void OnBgmVolumeChanged(float value)
+    {
+        AudioManager.Instance?.SetBgmVolume(value);
+    }
+
+    private void OnSfxVolumeChanged(float value)
+    {
+        AudioManager.Instance?.SetSfxVolume(value);
     }
 
     private void RefreshSettlementInfo()

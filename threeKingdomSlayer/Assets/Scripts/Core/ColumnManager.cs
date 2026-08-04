@@ -862,15 +862,10 @@ public class ColumnManager : MonoBehaviour
             _pausedWaveSourceRow = -1;
             _pausedWaveTargetRow = -1;
 
-            if (IsRowFullyVacated(targetRow))
-            {
-                BeginWaveStep(sourceRow, targetRow, _pausedWaveEnemies);
-                _pausedWaveEnemies.Clear();
-                if (_isWavePreparing)
-                    return;
-            }
-
+            BeginWaveStep(sourceRow, targetRow, _pausedWaveEnemies);
             _pausedWaveEnemies.Clear();
+            if (_isWavePreparing)
+                return;
         }
 
         if (_waveMarchRequestedWhilePushReturn)

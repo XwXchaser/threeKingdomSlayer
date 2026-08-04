@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1780763484954
-updatedAt: 1781010584204
+updatedAt: 1785747598130
 ---
 
 # wwise-audio-status
@@ -21,7 +21,7 @@ updatedAt: 1781010584204
 ## 音频系统（已迁移至 Unity 原生）
 
 **迁移完成日期**: 2025-07-09  
-**技术栈**: Unity AudioSource + AudioListener.volume（Wwise 已完全移除）
+**技术栈**: Unity AudioSource + AudioMixer（Wwise 已完全移除）
 
 ### 迁移关键问题与修复
 
@@ -46,11 +46,13 @@ updatedAt: 1781010584204
 
 ```
 Assets/Scripts/Managers/AudioManager.cs  — 单例，DontDestroyOnLoad
-├─ BGM: 2 个 AudioSource（_bgmMainSource + _bgmEnvSource），双层叠加循环
-├─ SFX: 1 个 AudioSource（PlayOneShot）
-├─ 音量: AudioListener.volume + PlayerPrefs(key: "master_volume")
+├─ Mixer: Assets/Audio/ThreeKingdomSlayerAudioMixer.mixer
+│  └─ Master → BGM（双层 BGM）/ SFX（PlayOneShot）
+├─ 音量: Mixer 暴露 MasterVolume / BGMVolume / SFXVolume；PlayerPrefs 为 master_volume / bgm_volume / sfx_volume
 └─ 场景切换: Battle unload 时自动 StopBGM
 ```
+
+AudioListener.volume 在初始化时固定为 1，避免与 Mixer 总线重复衰减。暂停面板的总音量、背景音乐、音效三个 Slider 分别调用 `SetMasterVolume`、`SetBgmVolume`、`SetSfxVolume`；Slider 的 0~1 值经对数换算为 -80~0 dB。旧存档缺少 BGM/SFX 键时默认均为 1。Unity 的 AudioMixer 快照会在首帧覆盖 Awake 写入的参数，因此 `AudioManager.Start()` 会延后一帧再次应用已存档音量。
 
 ### AudioManager 序列化字段
 
@@ -62,7 +64,7 @@ Assets/Scripts/Managers/AudioManager.cs  — 单例，DontDestroyOnLoad
 | `_attackTiles` | AudioClip[] | slash / stab（随机二选一, DecompressOnLoad） |
 | `_parryClip` | AudioClip | parry (DecompressOnLoad) |
 
-### API（兼容旧 Wwise 调用方）
+### API
 
 | 方法 | 调用方 |
 |------|--------|
@@ -70,15 +72,16 @@ Assets/Scripts/Managers/AudioManager.cs  — 单例，DontDestroyOnLoad
 | `StopBGM()` | StageController（胜利/失败/主菜单） |
 | `PostEvent("Player_Attack")` | AttackSystem.ExecuteStab/ExecuteSlash |
 | `PostEvent("Player_Parry")` | AttackSystem.ExecuteParry |
-| `SetMasterVolume(0~1)` | PauseMenuUI.OnVolumeChanged |
-| `GetMasterVolume()` | PauseMenuUI.Start/OnPauseClicked |
+| `SetMasterVolume/GetMasterVolume` | PauseMenuUI |
+| `SetBgmVolume/GetBgmVolume` | PauseMenuUI |
+| `SetSfxVolume/GetSfxVolume` | PauseMenuUI |
 
 ### 播放逻辑
 
 - **BGM**: 两轨同时 Play()，各 loop=true，无 FadeIn
 - **Player_Attack**: 随机一条人声 + 随机一种刀剑音，PlayOneShot 叠加
 - **Player_Parry**: 单次 PlayOneShot
-- **音量**: AudioListener.volume 0~1，Scene 卸载时持久化到 PlayerPrefs
+- **音量**: AudioMixer 的 Master / BGM / SFX 三档独立控制，参数与 Slider 值持久化。
 
 ### Scene 中的 GameObject
 
@@ -87,8 +90,9 @@ Assets/Scripts/Managers/AudioManager.cs  — 单例，DontDestroyOnLoad
 
 ### 待做
 
-- [ ] 敌人受击 SFX
+- [x] 敌人受击 SFX：已接入 `Enemy_Hit` 事件，随机音频池、0.14 秒全局冷却与连续重复规避均已实现；播放倍率固定为 0.8。
 - [ ] UI 点击 SFX
 - [ ] Pierce/Sweep/Launch 攻击 SFX
 - [ ] PCM WAV → OGG 压缩（目前约 14MB 未压缩）
+- [x] BGM/SFX 独立音量控制：已落地 AudioMixer 三档（总/BGM/SFX）及暂停菜单三 Slider。
 <!-- locus:body:end -->

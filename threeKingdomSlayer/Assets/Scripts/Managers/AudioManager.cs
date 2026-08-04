@@ -1,13 +1,17 @@
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Unity 原生音频管理器 — 单例
-/// 替代 WwiseAudioManager，使用 AudioSource + AudioListener.volume
+/// 使用 AudioSource + AudioMixer 管理 BGM、音效和总音量
 /// </summary>
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance { get; private set; }
+
+    [Header("Audio Mixer")]
+    [SerializeField] private AudioMixer _audioMixer;
 
     [Header("BGM — 双层叠加")]
     [SerializeField] private AudioClip _bgmMain;
@@ -34,8 +38,18 @@ public class AudioManager : MonoBehaviour
     private AudioSource _bgmEnvSource;
     private AudioSource _sfxSource;
 
-    private const string VOLUME_KEY = "master_volume";
+    private const string MASTER_VOLUME_KEY = "master_volume";
+    private const string BGM_VOLUME_KEY = "bgm_volume";
+    private const string SFX_VOLUME_KEY = "sfx_volume";
+    private const string MASTER_VOLUME_PARAMETER = "MasterVolume";
+    private const string BGM_VOLUME_PARAMETER = "BGMVolume";
+    private const string SFX_VOLUME_PARAMETER = "SFXVolume";
+    private const float ENEMY_HIT_VOLUME = 0.8f;
+    private const float MIN_VOLUME_DB = -80f;
+
     private float _masterVolume = 1f;
+    private float _bgmVolume = 1f;
+    private float _sfxVolume = 1f;
     private float _nextEnemyHitTime;
     private int _lastEnemyHitIndex = -1;
 
@@ -55,19 +69,23 @@ public class AudioManager : MonoBehaviour
         ApplySavedVolume();
     }
 
+    private System.Collections.IEnumerator Start()
+    {
+        yield return null;
+        ApplySavedVolume();
+    }
+
     private void CreateAudioSources()
     {
         var sources = GetComponents<AudioSource>();
         if (sources.Length >= 3)
         {
-            // 使用场景中预置的 AudioSource（按挂载顺序: BGM_Main, BGM_Env, SFX）
             _bgmMainSource = sources[0];
             _bgmEnvSource = sources[1];
             _sfxSource = sources[2];
         }
         else
         {
-            // 回退：运行时创建
             while (sources.Length < 3)
             {
                 gameObject.AddComponent<AudioSource>();
@@ -88,25 +106,32 @@ public class AudioManager : MonoBehaviour
 
         _sfxSource.playOnAwake = false;
         _sfxSource.spatialBlend = 0f;
+
+        ApplyAudioMixerRouting();
     }
 
-    /// <summary>
-    /// 预加载所有音频剪辑数据，避免 PlayOneShot 时因 Unloaded 静默失败
-    /// </summary>
+    private void ApplyAudioMixerRouting()
+    {
+        if (_audioMixer == null) return;
+        var bgmGroups = _audioMixer.FindMatchingGroups("BGM");
+        var sfxGroups = _audioMixer.FindMatchingGroups("SFX");
+        if (bgmGroups.Length > 0)
+        {
+            _bgmMainSource.outputAudioMixerGroup = bgmGroups[0];
+            _bgmEnvSource.outputAudioMixerGroup = bgmGroups[0];
+        }
+        if (sfxGroups.Length > 0)
+            _sfxSource.outputAudioMixerGroup = sfxGroups[0];
+    }
+
     private void PreloadAllClips()
     {
-        // BGM
         PreloadClip(_bgmMain);
         PreloadClip(_bgmEnv);
-        // 攻击语音
         PreloadClipArray(_attackVoices);
-        // 攻击刀剑音
         PreloadClipArray(_attackTiles);
-        // 格挡
         PreloadClip(_parryClip);
-        // QTE 格挡
         PreloadClipArray(_qteBlockClips);
-        // 普通敌人受击语音
         PreloadClipArray(_enemyHitClips);
     }
 
@@ -163,8 +188,8 @@ public class AudioManager : MonoBehaviour
 
     public void StopBGM()
     {
-        _bgmMainSource.Stop();
-        _bgmEnvSource.Stop();
+        if (_bgmMainSource != null) _bgmMainSource.Stop();
+        if (_bgmEnvSource != null) _bgmEnvSource.Stop();
     }
 
     #endregion
@@ -216,13 +241,12 @@ public class AudioManager : MonoBehaviour
 
         _lastEnemyHitIndex = index;
         _nextEnemyHitTime = Time.time + _enemyHitCooldown;
-        PlayOneShot(_enemyHitClips[index]);
+        PlayOneShot(_enemyHitClips[index], ENEMY_HIT_VOLUME);
     }
 
     private void PlayOneShot(AudioClip clip, float volumeScale = 1f)
     {
-        if (clip == null) return;
-        if (_sfxSource == null) return;
+        if (clip == null || _sfxSource == null) return;
         _sfxSource.PlayOneShot(clip, volumeScale);
     }
 
@@ -233,20 +257,47 @@ public class AudioManager : MonoBehaviour
     public void SetMasterVolume(float normalized)
     {
         _masterVolume = Mathf.Clamp01(normalized);
-        AudioListener.volume = _masterVolume;
-        PlayerPrefs.SetFloat(VOLUME_KEY, _masterVolume);
+        ApplyMixerVolume(MASTER_VOLUME_PARAMETER, _masterVolume);
+        PlayerPrefs.SetFloat(MASTER_VOLUME_KEY, _masterVolume);
         PlayerPrefs.Save();
     }
 
-    public float GetMasterVolume()
+    public void SetBgmVolume(float normalized)
     {
-        return _masterVolume;
+        _bgmVolume = Mathf.Clamp01(normalized);
+        ApplyMixerVolume(BGM_VOLUME_PARAMETER, _bgmVolume);
+        PlayerPrefs.SetFloat(BGM_VOLUME_KEY, _bgmVolume);
+        PlayerPrefs.Save();
     }
+
+    public void SetSfxVolume(float normalized)
+    {
+        _sfxVolume = Mathf.Clamp01(normalized);
+        ApplyMixerVolume(SFX_VOLUME_PARAMETER, _sfxVolume);
+        PlayerPrefs.SetFloat(SFX_VOLUME_KEY, _sfxVolume);
+        PlayerPrefs.Save();
+    }
+
+    public float GetMasterVolume() => _masterVolume;
+    public float GetBgmVolume() => _bgmVolume;
+    public float GetSfxVolume() => _sfxVolume;
 
     public void ApplySavedVolume()
     {
-        float saved = PlayerPrefs.GetFloat(VOLUME_KEY, 1f);
-        SetMasterVolume(saved);
+        _masterVolume = PlayerPrefs.GetFloat(MASTER_VOLUME_KEY, 1f);
+        _bgmVolume = PlayerPrefs.GetFloat(BGM_VOLUME_KEY, 1f);
+        _sfxVolume = PlayerPrefs.GetFloat(SFX_VOLUME_KEY, 1f);
+        ApplyMixerVolume(MASTER_VOLUME_PARAMETER, _masterVolume);
+        ApplyMixerVolume(BGM_VOLUME_PARAMETER, _bgmVolume);
+        ApplyMixerVolume(SFX_VOLUME_PARAMETER, _sfxVolume);
+        AudioListener.volume = 1f;
+    }
+
+    private void ApplyMixerVolume(string parameter, float normalized)
+    {
+        if (_audioMixer == null) return;
+        float db = normalized <= 0.0001f ? MIN_VOLUME_DB : Mathf.Log10(normalized) * 20f;
+        _audioMixer.SetFloat(parameter, db);
     }
 
     #endregion
