@@ -1772,7 +1772,7 @@ private void SpawnProjectile()
             }
         }
 
-        if (!isBoss)
+        if (!isBoss && feedbackSource != HitFeedbackSource.Dot)
             AudioManager.Instance?.PostEvent("Enemy_Hit");
         HitFeedbackStrength resolvedFeedbackStrength = feedbackStrength
             ?? HitFeedbackManager.ResolveStrength(damageType, feedbackSource, finalDamage, false);

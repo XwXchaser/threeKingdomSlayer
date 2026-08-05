@@ -28,7 +28,7 @@ MonoBehaviour:
   slashSweepHalfWidth: 3
   slashSweepAngle: 60
   slashSweepDuration: 0.4
-  slashSpawnYOffset: 0
+  slashSpawnYOffset: -0.3
   slashSpawnZOffset: -3.6
   parrySweepAngle: 100
   parrySweepDuration: 0.25

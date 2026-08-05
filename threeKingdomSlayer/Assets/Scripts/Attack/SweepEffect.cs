@@ -28,6 +28,8 @@ public class SweepEffect : MonoBehaviour
     private bool leftToRight;
     private Material mat;
     private WeaponMotionBlurController motionBlur;
+    private Transform visualTransform;
+    private Transform visualPathTransform;
     private Color waveColor;
     private Color? damageNumberColor;
     private Sequence seq;
@@ -45,12 +47,13 @@ public class SweepEffect : MonoBehaviour
         Color? damageNumberColor = null, bool canInterruptCFrame = false,
         Material materialOverride = null, System.Action onFirstHit = null, System.Action onAllHit = null, float targetDuration = -1f,
         Sprite rotateSprite1 = null, Sprite rotateSprite2 = null, float angleOffset = 0f, float movementTilt = 0f,
-        float additionalWeaponRotation = 0f, bool useEnhancedSlashMotion = false)
+        float additionalWeaponRotation = 0f, bool useEnhancedSlashMotion = false, float visualPathTilt = 0f)
     {
         float startX = leftToRight ? -halfWidth : halfWidth;
         float endX = leftToRight ? halfWidth : -halfWidth;
-        float startAngle = (leftToRight ? fanAngle : -fanAngle) + angleOffset;
-        float endAngle = (leftToRight ? -fanAngle : fanAngle) + angleOffset + additionalWeaponRotation;
+        float visualTiltOffset = useEnhancedSlashMotion ? visualPathTilt : 0f;
+        float startAngle = (leftToRight ? fanAngle : -fanAngle) + angleOffset + visualTiltOffset;
+        float endAngle = (leftToRight ? -fanAngle : fanAngle) + angleOffset + additionalWeaponRotation + visualTiltOffset;
 
         Vector3 localStart = new Vector3(startX, 0f, 0f);
         Vector3 localEnd = new Vector3(endX, 0f, 0f);
@@ -121,21 +124,28 @@ public class SweepEffect : MonoBehaviour
         }
 
         Transform visualTransform = obj.transform;
+        Transform visualPathTransform = null;
         if (useEnhancedSlashMotion)
         {
             GameObject visualObject = obj;
             var motionRoot = new GameObject($"SlashMotion_{damageType}");
             motionRoot.transform.SetPositionAndRotation(visualObject.transform.position, visualObject.transform.rotation);
             motionRoot.transform.localScale = Vector3.one;
-            visualObject.transform.SetParent(motionRoot.transform, true);
+            var visualPath = new GameObject($"SlashVisualPath_{damageType}");
+            visualPath.transform.SetParent(motionRoot.transform, false);
+            visualPath.transform.SetPositionAndRotation(visualObject.transform.position, visualObject.transform.rotation);
+            visualObject.transform.SetParent(visualPath.transform, true);
             visualObject.name = "SlashVisual";
             obj = motionRoot;
+            visualPathTransform = visualPath.transform;
             visualTransform = visualObject.transform;
         }
 
         SweepEffect effect = obj.AddComponent<SweepEffect>();
         effect._creationTime = Time.unscaledTime;
         effect._instanceId = obj.GetInstanceID();
+        effect.visualTransform = visualTransform;
+        effect.visualPathTransform = visualPathTransform;
         AliveCount++;
         effect.mat = material;
         effect.waveColor = color;
@@ -172,8 +182,8 @@ public class SweepEffect : MonoBehaviour
             obj.transform.localScale = Vector3.zero;
         float scaleInDuration = useEnhancedSlashMotion ? 0.02f : 0.05f;
         Tween scaleIn = useEnhancedSlashMotion
-            ? visualTransform.DOScale(targetScale, scaleInDuration).SetEase(Ease.OutQuad)
-            : obj.transform.DOScale(targetScale, scaleInDuration).SetEase(Ease.OutQuad);
+            ? visualTransform.DOScale(targetScale, scaleInDuration).SetTarget(visualTransform).SetEase(Ease.OutQuad)
+            : obj.transform.DOScale(targetScale, scaleInDuration).SetTarget(obj.transform).SetEase(Ease.OutQuad);
 
         Vector3 initEuler = obj.transform.eulerAngles;
         obj.transform.eulerAngles = new Vector3(initEuler.x, initEuler.y, initEuler.z + startAngle);
@@ -198,6 +208,22 @@ public class SweepEffect : MonoBehaviour
             float inertiaOffset = leftToRight ? 0.12f : -0.12f;
             visualTransform.localPosition = visualBasePosition + Vector3.right * windupOffset;
 
+            float visualTiltRadians = visualPathTilt * Mathf.Deg2Rad;
+            float visualHeight = halfWidth * Mathf.Tan(visualTiltRadians);
+            Debug.Log($"[SlashTilt] Sweep leftToRight={leftToRight} tilt={visualPathTilt:F2} visualHeight={visualHeight:F2} visualPath={visualPathTransform.name}");
+            float currentVisualHeight = -visualHeight;
+            Vector3 worldUpInVisualPathParent = visualPathTransform.parent.InverseTransformDirection(Vector3.up).normalized;
+            var visualPathMove = DOTween.To(
+                () => currentVisualHeight,
+                value =>
+                {
+                    currentVisualHeight = value;
+                    visualPathTransform.localPosition = worldUpInVisualPathParent * value;
+                },
+                visualHeight,
+                swingDuration).SetEase(Ease.InOutCubic);
+            visualPathTransform.localPosition = worldUpInVisualPathParent * -visualHeight;
+
             var move = obj.transform.DOMove(endPos, swingDuration).SetEase(Ease.InOutCubic);
             move.OnUpdate(() =>
             {
@@ -205,6 +231,7 @@ public class SweepEffect : MonoBehaviour
                 effect.CheckHitThresholds();
             });
             effect.seq.Append(move);
+            effect.seq.Join(visualPathMove);
             effect.seq.Join(obj.transform.DORotate(targetEuler, swingDuration, RotateMode.Fast)
                 .SetEase(Ease.InOutCubic));
             effect.seq.Insert(0f, DOTween.To(
@@ -380,6 +407,11 @@ public class SweepEffect : MonoBehaviour
             StopCoroutine(_hitStopRoutine);
             _hitStopRoutine = null;
         }
+        if (visualTransform != null)
+            visualTransform.DOKill();
+        if (visualPathTransform != null)
+            visualPathTransform.DOKill();
+        transform.DOKill();
         motionBlur?.Dispose();
         AliveCount--;
         float alive = Time.unscaledTime - _creationTime;

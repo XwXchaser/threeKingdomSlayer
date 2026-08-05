@@ -24,8 +24,8 @@ public sealed class StabSweepEffect : MonoBehaviour
     private const float HitCompressWidth = 1.07f;
     private const float HitBounceLength = 1.04f;
     private const float HitBounceWidth = 0.97f;
-    private const float SpeedFrameStartRatio = 0.34f;
-    private const float SpeedFrameEndRatio = 0.82f;
+    private const float SpeedFrameStartRatio = 0.15f;
+    private const float SpeedFrameEndRatio = 1.0f;
     private const float HitDistanceTolerance = 0.35f;
     private const int SortingOrderWithEnemies = 0;
 
@@ -99,22 +99,31 @@ public sealed class StabSweepEffect : MonoBehaviour
         if (renderer != null)
             renderer.sortingOrder = SortingOrderWithEnemies;
 
-        _motionBlur = renderer != null
-            ? new WeaponMotionBlurController(renderer, 0.4f, 0.02f, 32f)
-            : null;
-
         _visualTransform = visual.transform;
         _visualBaseLocalPosition = _visualTransform.localPosition;
         _visualBaseLocalScale = _visualTransform.localScale;
+        Quaternion visualBaseLocalRotation = _visualTransform.localRotation;
+        Matrix4x4 visualWorldMatrix = _visualTransform.localToWorldMatrix;
 
         var sr2 = visual.GetComponentInChildren<SpriteRenderer>();
         _halfBaseSpriteLength = sr2 != null ? sr2.sprite.bounds.size.y * _visualBaseLocalScale.y * 0.5f : 0f;
 
         _deformRoot = new GameObject("DeformRoot").transform;
         _deformRoot.SetParent(transform, false);
+        _deformRoot.localPosition = _visualBaseLocalPosition;
+        _deformRoot.localRotation = visualBaseLocalRotation;
+        _deformRoot.localScale = _visualBaseLocalScale;
         _visualTransform.SetParent(_deformRoot, false);
-        _visualTransform.localPosition = _visualBaseLocalPosition;
+        _visualTransform.localPosition = Vector3.zero;
+        _visualTransform.localRotation = Quaternion.identity;
         _visualTransform.localScale = Vector3.one;
+
+        if (!ApproximatelyEqual(visualWorldMatrix, _visualTransform.localToWorldMatrix))
+            Debug.LogError("[StabSweepEffect] DeformRoot hierarchy migration changed the visual world transform");
+
+        _motionBlur = renderer != null
+            ? new WeaponMotionBlurController(renderer, 0.4f, 0.02f, 32f)
+            : null;
 
         _rayOrigin = transform.position;
         _rayDirection = (targetPosition - _rayOrigin).normalized;
@@ -133,11 +142,11 @@ public sealed class StabSweepEffect : MonoBehaviour
         Sprite baseSprite = renderer != null ? renderer.sprite : null;
         _sequence = DOTween.Sequence().SetTarget(transform);
         _sequence.Append(transform.DOMove(windupPosition, windupDuration).SetEase(Ease.OutQuad));
-        _sequence.Join(_deformRoot.DOScale(windupScale, windupDuration).SetEase(Ease.OutQuad));
+        _sequence.Join(_deformRoot.DOScale(GetVisualScale(WindupWidthScale, WindupLengthScale), windupDuration).SetEase(Ease.OutQuad));
         _sequence.Append(transform.DOMove(targetPosition, thrustDuration).SetEase(Ease.InCubic)
             .OnStart(() => _motionBlur?.SetStrength(28f))
             .OnUpdate(CheckHits));
-        _sequence.Join(_deformRoot.DOScale(thrustScale, thrustDuration).SetEase(Ease.InCubic));
+        _sequence.Join(_deformRoot.DOScale(GetVisualScale(ThrustWidthScale, ThrustLengthScale), thrustDuration).SetEase(Ease.InCubic));
         if (renderer != null && baseSprite != null && speedSprite != null)
         {
             float speedFrameStart = windupDuration + thrustDuration * SpeedFrameStartRatio;
@@ -159,8 +168,16 @@ public sealed class StabSweepEffect : MonoBehaviour
         _sequence.Append(transform.DOMove(_rayOrigin, retractDuration).SetEase(Ease.OutCubic)
             .OnStart(() => _motionBlur?.SetStrength(0f)));
         _sequence.Join(_deformRoot.DOScale(_visualBaseLocalScale, retractDuration).SetEase(Ease.OutCubic));
-        _sequence.OnKill(() => Destroy(gameObject));
-        _sequence.OnComplete(() => Destroy(gameObject));
+        _sequence.OnKill(() =>
+        {
+            _visualTransform?.DOKill();
+            Destroy(gameObject);
+        });
+        _sequence.OnComplete(() =>
+        {
+            _visualTransform?.DOKill();
+            Destroy(gameObject);
+        });
     }
 
     private void RestoreBaseSprite(SpriteRenderer renderer, Sprite baseSprite)
@@ -168,8 +185,17 @@ public sealed class StabSweepEffect : MonoBehaviour
         if (renderer == null) return;
         renderer.sprite = baseSprite;
         _usingSpeedSprite = false;
-        _visualTransform.localPosition = _visualBaseLocalPosition;
+        _visualTransform.localPosition = Vector3.zero;
         _visualTransform.localScale = Vector3.one;
+    }
+
+    private static bool ApproximatelyEqual(Matrix4x4 a, Matrix4x4 b)
+    {
+        for (int row = 0; row < 4; row++)
+            for (int column = 0; column < 4; column++)
+                if (Mathf.Abs(a[row, column] - b[row, column]) > 0.0001f)
+                    return false;
+        return true;
     }
 
     private Vector3 GetVisualScale(float widthMultiplier, float lengthMultiplier)
@@ -183,9 +209,9 @@ public sealed class StabSweepEffect : MonoBehaviour
     private void LateUpdate()
     {
         if (_deformRoot == null) return;
-        float scaleDelta = _deformRoot.localScale.y - 1f;
-        _visualTransform.localPosition = _visualBaseLocalPosition
-            + Vector3.forward * _halfBaseSpriteLength * scaleDelta;
+        float lengthDelta = _deformRoot.localScale.y - _visualBaseLocalScale.y;
+        _deformRoot.localPosition = _visualBaseLocalPosition
+            + Vector3.up * (_halfBaseSpriteLength * lengthDelta / Mathf.Max(_visualBaseLocalScale.y, 0.0001f));
     }
 
     private void TriggerHitPulse()
@@ -198,11 +224,14 @@ public sealed class StabSweepEffect : MonoBehaviour
     private System.Collections.IEnumerator HitPulseRoutine()
     {
         _visualTransform.DOKill();
-        _visualTransform.DOScale(new Vector3(HitCompressWidth, HitCompressLength, 1f), 0.02f).SetEase(Ease.OutQuad);
+        _visualTransform.DOScale(new Vector3(HitCompressWidth, HitCompressLength, 1f), 0.02f)
+            .SetTarget(_visualTransform).SetEase(Ease.OutQuad);
         yield return new WaitForSeconds(0.02f);
-        _visualTransform.DOScale(new Vector3(HitBounceWidth, HitBounceLength, 1f), 0.05f).SetEase(Ease.OutBack);
+        _visualTransform.DOScale(new Vector3(HitBounceWidth, HitBounceLength, 1f), 0.05f)
+            .SetTarget(_visualTransform).SetEase(Ease.OutBack);
         yield return new WaitForSeconds(0.05f);
-        _visualTransform.DOScale(Vector3.one, 0.06f).SetEase(Ease.OutQuad);
+        _visualTransform.DOScale(Vector3.one, 0.06f)
+            .SetTarget(_visualTransform).SetEase(Ease.OutQuad);
         _hitDeformationRoutine = null;
     }
 
@@ -226,6 +255,8 @@ public sealed class StabSweepEffect : MonoBehaviour
             StopCoroutine(_hitDeformationRoutine);
             _hitDeformationRoutine = null;
         }
+        if (_visualTransform != null)
+            _visualTransform.DOKill();
         _motionBlur?.Dispose();
         _sequence?.Kill();
     }

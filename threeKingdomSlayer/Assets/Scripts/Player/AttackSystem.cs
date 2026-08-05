@@ -116,7 +116,7 @@ public class AttackSystem : MonoBehaviour
     /// 尝试执行攻击
     /// BUG FIX: 只有实际命中至少一个敌人时，才触发冷却和消耗
     /// </summary>
-    public bool TryExecuteAttack(AttackType attackType, int targetColumn = -1, bool slashLeftToRight = true)
+    public bool TryExecuteAttack(AttackType attackType, int targetColumn = -1, bool slashLeftToRight = true, float slashVisualTilt = 0f)
     {
         if (playerState == null) return false;
         if (playerState.stageState != StageState.InProgress) return false;
@@ -142,7 +142,7 @@ public class AttackSystem : MonoBehaviour
         switch (attackType)
         {
             case AttackType.Stab:   hitAny = ExecuteStab(targetColumn); break;
-            case AttackType.Slash:  hitAny = ExecuteSlash(slashLeftToRight); break;
+            case AttackType.Slash:  hitAny = ExecuteSlash(slashLeftToRight, slashVisualTilt); break;
             case AttackType.Pierce: hitAny = ExecutePierce(targetColumn); break;
             case AttackType.Sweep:  hitAny = ExecuteSweep(); break;
             case AttackType.Launch: hitAny = ExecuteLaunch(); break;
@@ -285,7 +285,7 @@ public class AttackSystem : MonoBehaviour
         return true;
     }
 
-    private bool ExecuteSlash(bool leftToRight)
+    private bool ExecuteSlash(bool leftToRight, float visualTilt)
     {
         var cfg = GetConfig(AttackType.Slash);
         if (cfg == null || columnManager == null) return false;
@@ -297,6 +297,7 @@ public class AttackSystem : MonoBehaviour
         Vector3 wavePos = new Vector3(0, playerPos.y + cfg.slashSpawnYOffset, playerPos.z + cfg.slashSpawnZOffset);
         var hitTargets = new List<Enemy>();
 
+        Debug.Log($"[SlashTilt] AttackSystem leftToRight={leftToRight} tilt={visualTilt:F2} movementTilt={visualTilt:F2}");
         SweepEffect.Create(wavePos, cfg.damageType, finalDmg, targets, leftToRight,
             cfg.slashSweepHalfWidth, cfg.slashSweepAngle, cfg.slashSweepDuration,
             prefab: cfg.attackWavePrefab,
@@ -309,6 +310,7 @@ public class AttackSystem : MonoBehaviour
             onAllHit: () => ApplySlashDirectionalPush(hitTargets, leftToRight),
             targetDuration: GetAttackDuration(cfg),
             rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite,
+            visualPathTilt: visualTilt,
             useEnhancedSlashMotion: true);
         AudioManager.Instance?.PostEvent("Player_Attack");
 

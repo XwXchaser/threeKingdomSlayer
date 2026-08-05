@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1785815668360
-updatedAt: 1785833345626
+updatedAt: 1785945938505
 ---
 
 # hit-feedback-system
@@ -25,7 +25,8 @@ updatedAt: 1785833345626
 - Hit Stop 采用局部表现暂停，不修改全局 `Time.timeScale`：受击敌人 Animator 暂停；Stab/Slash/AttackWave 的本体攻击视觉在首个标准/重命中时同步暂停，避免出现“敌人停了但武器继续走”而无法感知卡肉。对象池回收、死亡和禁用时清理。
 - 现有受击缩放按 Light/Standard/Heavy 分级，始终从原始 Scale 重启；伤害数字按强度缩放，Heavy 增加短促放大。
 - DoT 显式为 None，不触发卡肉；幻影/被动/道具/箭雨/火焰为轻反馈；Parry、Launch、旋风、终极技能为重反馈；基础攻击首击标准、后续轻反馈。
-- 当前卡肉时长已增强为 Light 45ms / Standard 90ms / Heavy 140ms；Standard 命中运行时约 90ms 后恢复。用于让单目标基础命中更接近 Slash 多目标连续命中的体感。
+- `Enemy.TakeDamage` 与 `SharedHealthGroup.TakeDamage` 的敌人受击音效都必须检查 `feedbackSource != HitFeedbackSource.Dot`；DoT 仍可扣血和更新血条，但不播放 `Enemy_Hit`。
+- 仅在 `Enemy.TakeDamage` 入口屏蔽是不够的，共享血量路径会直接在 `SharedHealthGroup` 内播放音效；两条路径必须同时处理。
 
 ## 后续注意
 
