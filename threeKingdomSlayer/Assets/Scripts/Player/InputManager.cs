@@ -10,6 +10,9 @@ public class InputManager : MonoBehaviour
 {
     public static InputManager Instance { get; private set; }
 
+    private const float SlashSlopeDeadZone = 0.08f;
+    private const float SlashMaxVisualTilt = 15f;
+
     [Header("手势参数")]
     public float longPressDuration = 0.3f;   // 长按判定时间（秒）
     [Tooltip("最小蓄力时间（秒）：所有蓄力攻击（横扫、斩击、穿刺、挑飞）必须按住鼠标达到此时长后，手势判定才生效。\n" +
@@ -377,7 +380,9 @@ public class InputManager : MonoBehaviour
                 {
                     // 快速滑动 → 斩击
                     bool slashLeftToRight = swipeDirection.x > 0;
-                    bool executed = attackSystem?.TryExecuteAttack(AttackType.Slash, -1, slashLeftToRight) ?? false;
+                    float slashVisualTilt = GetSlashVisualTilt(swipeDirection);
+                    Debug.Log($"[SlashTilt] Input quick dir={swipeDirection} leftToRight={slashLeftToRight} tilt={slashVisualTilt:F2}");
+                    bool executed = attackSystem?.TryExecuteAttack(AttackType.Slash, -1, slashLeftToRight, slashVisualTilt) ?? false;
                     if (executed) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
                 }
             }
@@ -456,8 +461,21 @@ public class InputManager : MonoBehaviour
 
         // 对角线划动 → 斩击（兜底）
         bool slashLeftToRight = direction.x > 0;
-        bool defaultExecuted = attackSystem?.TryExecuteAttack(AttackType.Slash, -1, slashLeftToRight) ?? false;
+        float slashVisualTilt = GetSlashVisualTilt(direction);
+        Debug.Log($"[SlashTilt] Input charged dir={direction} leftToRight={slashLeftToRight} tilt={slashVisualTilt:F2}");
+        bool defaultExecuted = attackSystem?.TryExecuteAttack(AttackType.Slash, -1, slashLeftToRight, slashVisualTilt) ?? false;
         if (defaultExecuted) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
+    }
+
+    private float GetSlashVisualTilt(Vector2 direction)
+    {
+        float horizontal = Mathf.Abs(direction.x);
+        if (horizontal < 0.001f)
+            return 0f;
+        float slope = direction.y / horizontal;
+        if (Mathf.Abs(slope) <= SlashSlopeDeadZone)
+            return 0f;
+        return Mathf.Clamp(Mathf.Atan(slope) * Mathf.Rad2Deg, -SlashMaxVisualTilt, SlashMaxVisualTilt);
     }
 
     #endregion
