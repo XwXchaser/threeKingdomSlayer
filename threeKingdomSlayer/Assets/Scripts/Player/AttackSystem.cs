@@ -39,6 +39,8 @@ public class AttackSystem : MonoBehaviour
     [SerializeField] private GameObject _chainBouncePrefab;
 
     [Header("Stab动画帧")]
+    [Tooltip("普通 Stab 高速中间帧（仅用于 Stab，不影响 Slash）")]
+    [SerializeField] private Sprite _stabSpeedSprite;
     [Tooltip("戳击旋转帧1（stab_rotate1，从左往右朝向）")]
     [SerializeField] private Sprite _stabRotate1Sprite;
     [Tooltip("戳击旋转帧2（stab_rotate2，从左往右朝向）")]
@@ -245,7 +247,7 @@ public class AttackSystem : MonoBehaviour
         var pushedTargets = new List<Enemy>();
 
         LastStabTargetEnemy = null;
-        StabSweepEffect.Create(cfg.attackWavePrefab, startPosition, targetPosition, columnIndex, effectiveRows, visualRangeRows,
+        StabSweepEffect.Create(cfg.attackWavePrefab, _stabSpeedSprite, startPosition, targetPosition, columnIndex, effectiveRows, visualRangeRows,
             finalDmg, cfg.damageType, columnManager, coveredBoss,
             enemy =>
             {

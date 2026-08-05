@@ -708,7 +708,7 @@ public class ColumnManager : MonoBehaviour
             transaction.generation = NextPushReturnGeneration();
             transaction.orderId = NextPushReturnOrderId();
             transaction.returnDueTime = Time.time + pushReturnDelay;
-            transaction.scheduled = false;
+            transaction.scheduled = true;
             transaction.lastBlockedRow = int.MinValue;
             DebugLog.Info($"[PushReturn] reschedule {enemy.DebugTag} origin=({transaction.originalColumn},{transaction.originalRow}) target=({originalColumn},{displacedRow}) gen={transaction.generation} order={transaction.orderId}");
             return;
@@ -733,7 +733,7 @@ public class ColumnManager : MonoBehaviour
             generation = generation,
             orderId = orderId,
             returnDueTime = Time.time + pushReturnDelay,
-            scheduled = false
+            scheduled = true
         };
         _pushReturnTransactions.Add(enemy, transaction);
         DebugLog.Info($"[PushReturn] register {enemy.DebugTag} origin=({originalColumn},{originalRow}) target=({originalColumn},{displacedRow}) gen={transaction.generation} order={transaction.orderId}");
@@ -866,6 +866,11 @@ public class ColumnManager : MonoBehaviour
             _pausedWaveEnemies.Clear();
             if (_isWavePreparing)
                 return;
+
+            // The captured members may all have died or become invalid while the push return
+            // transaction was active. Re-scan the current topology instead of dropping the chain.
+            Debug.Log($"[WaveMarch] Resume paused step produced no preparing members → rescan current topology");
+            StartWaveMarch();
         }
 
         if (_waveMarchRequestedWhilePushReturn)

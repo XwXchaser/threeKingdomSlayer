@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1783762854937
-updatedAt: 1785816925786
+updatedAt: 1785900682136
 ---
 
 # latest-todolist
@@ -19,6 +19,20 @@ updatedAt: 1785816925786
 
 ## Content
 ## 本周主要目标（新增）
+
+### P0：Stab / Slash 高速运动表现（用户确认，待实现）
+- [ ] **对象级方向性像素动态模糊 Shader（替代残影方案）**：仅为 Stab / 普通 Slash 的武器 SpriteRenderer 使用专用 BIRP Sprite Shader；沿瞬时速度方向对当前 Sprite 做 3–5 次离散 UV 采样，形成当前轮廓的方向性拖伸，而不是复制多个清晰残影。
+  - Shader 保持透明 Sprite、SpriteAtlas、Renderer Color、翻转与原始 alpha；使用 Point 风格离散采样，不做高斯软化。采样偏移按纹理 texel 量化，使边缘保持街机像素硬度。
+  - 参数建议：`_MotionDirectionUV`、`_MotionStrengthPixels`、`_MotionWeight`；用 `MaterialPropertyBlock` 每帧驱动，避免实例化材质和 GC。原材质/属性必须在 Complete、Kill、OnDestroy 统一恢复。
+  - Stab：在 `StabSweepEffect` 的加速刺入阶段，根据 StabRay 当前/上一帧世界位置计算速度；投影到武器 Sprite 的局部/UV 方向，仅刺入和短穿入阶段启用，蓄势、回收与 Hit Stop 时衰减至 0。不得改变枪尖接触点、射线或命中时序。
+  - Slash：仅普通 Slash 的 enhanced-motion 路径启用；根据逻辑根平移速度 + 旋转角速度估算屏幕切线方向和强度。需要避免把整根长枪沿错误 UV 轴糊成色块，强度设上限并在首击 Hit Stop 时固定当前值或快速收束。
+  - 建议首版固定 5 taps，中心权重最高，尾向偏移多于前向偏移；最大拖伸控制在约 3–6 个源纹理像素。若移动设备开销明显，可退为 3 taps，但不切换回残影方案。
+  - 不使用 `Assets/Shaders/BlurEffect.shader`：该 Shader 是屏幕/RenderTexture 高斯模糊，不支持 SpriteAtlas、每对象速度方向，也会产生软糊观感。
+- [ ] **Slash 跟手斜率**：将输入手势的归一化斜率传入 `AttackSystem` / `SweepEffect`，在不改变 Slash 左右方向、X 阈值命中和范围的前提下，仅调整视觉路径的 `movementTilt` / 角度偏移。
+  - 快速非蓄力 Slash 当前只传左右布尔值，应额外传递 `swipeDirection.y / abs(swipeDirection.x)` 或屏幕角度，并限制在约 `±15°`，使用死区和 Clamp，避免轻微手抖造成角度跳变。
+  - 蓄力手势中的水平划动仍属于 Sweep；只有判定为 Slash 的斜划手势消费斜率。
+  - 视觉根可倾斜，命中仍由既有逻辑根 X 穿越目标阈值驱动；不得使用旋转后 Sprite bounds 决定命中。
+- 合理性：现有 Stab / Slash 已有独立视觉 Transform、DOTween OnUpdate 和阶段时序，能提供速度数据；对象级 Shader 不影响背景/UI，且比残影更准确表达“当前武器高速运动中的动态模糊”。
 
 ### 1. 音频系统改造
 - [x] 将音效与背景音乐分离，支持分别调整音量。

@@ -27,6 +27,7 @@ public class SweepEffect : MonoBehaviour
     private int nextIndex;
     private bool leftToRight;
     private Material mat;
+    private WeaponMotionBlurController motionBlur;
     private Color waveColor;
     private Color? damageNumberColor;
     private Sequence seq;
@@ -146,6 +147,13 @@ public class SweepEffect : MonoBehaviour
         effect.damageNumberColor = damageNumberColor;
         effect.canInterruptCFrame = canInterruptCFrame;
         effect.onAllHit = onAllHit;
+        if (useEnhancedSlashMotion)
+        {
+            var blurRenderer = visualTransform.GetComponentInChildren<SpriteRenderer>();
+            effect.motionBlur = blurRenderer != null
+                ? new WeaponMotionBlurController(blurRenderer, 0.45f, 0.04f, 36f)
+                : null;
+        }
 
         // 按 X 排序：L→R 升序，R→L 降序
         List<Enemy> sorted = new List<Enemy>(targets);
@@ -191,13 +199,28 @@ public class SweepEffect : MonoBehaviour
             visualTransform.localPosition = visualBasePosition + Vector3.right * windupOffset;
 
             var move = obj.transform.DOMove(endPos, swingDuration).SetEase(Ease.InOutCubic);
-            move.OnUpdate(effect.CheckHitThresholds);
+            move.OnUpdate(() =>
+            {
+                effect.UpdateMotionBlur(1f);
+                effect.CheckHitThresholds();
+            });
             effect.seq.Append(move);
             effect.seq.Join(obj.transform.DORotate(targetEuler, swingDuration, RotateMode.Fast)
                 .SetEase(Ease.InOutCubic));
+            effect.seq.Insert(0f, DOTween.To(
+                () => 0f,
+                value => effect.motionBlur?.SetStrength(value),
+                30f,
+                swingDuration * 0.22f).SetEase(Ease.OutQuad));
+            effect.seq.Insert(swingDuration * 0.72f, DOTween.To(
+                () => 30f,
+                value => effect.motionBlur?.SetStrength(value),
+                0f,
+                swingDuration * 0.28f).SetEase(Ease.InQuad));
             effect.seq.Insert(0f, visualTransform.DOLocalMove(visualBasePosition, catchUpDuration)
                 .SetEase(Ease.OutQuad));
 
+            effect.motionBlur?.SetStrength(0f);
             effect.seq.Append(visualTransform.DOLocalMove(
                 visualBasePosition + Vector3.right * inertiaOffset, inertiaDuration)
                 .SetEase(Ease.OutCubic));
@@ -213,7 +236,11 @@ public class SweepEffect : MonoBehaviour
         else
         {
             var move = obj.transform.DOMove(endPos, duration).SetEase(Ease.InOutQuad);
-            move.OnUpdate(effect.CheckHitThresholds);
+            move.OnUpdate(() =>
+            {
+                effect.UpdateMotionBlur(1f);
+                effect.CheckHitThresholds();
+            });
             effect.seq.Append(move);
             effect.seq.Join(obj.transform.DORotate(targetEuler, duration, RotateMode.Fast)
                 .SetEase(Ease.InOutQuad));
@@ -271,6 +298,15 @@ public class SweepEffect : MonoBehaviour
         }
     }
 
+
+    private void UpdateMotionBlur(float multiplier)
+    {
+        if (motionBlur == null)
+            return;
+        Vector3 fallbackDirection = leftToRight ? Vector3.right : Vector3.left;
+        motionBlur.UpdateMotion(transform.position, transform.eulerAngles.z,
+            fallbackDirection, multiplier, 12f, Time.deltaTime);
+    }
 
     private void CheckHitThresholds()
     {
@@ -344,6 +380,7 @@ public class SweepEffect : MonoBehaviour
             StopCoroutine(_hitStopRoutine);
             _hitStopRoutine = null;
         }
+        motionBlur?.Dispose();
         AliveCount--;
         float alive = Time.unscaledTime - _creationTime;
         Debug.Log($"[SweepEffect] OnDestroy: {gameObject.name}, alive={alive:F2}s, frame={Time.frameCount}");
