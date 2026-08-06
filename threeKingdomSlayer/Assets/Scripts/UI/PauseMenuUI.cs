@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 using TMPro;
 using DG.Tweening;
@@ -22,11 +20,9 @@ public class PauseMenuUI : MonoBehaviour
     public UnityEngine.UI.Slider masterVolumeSlider;
     public UnityEngine.UI.Slider bgmVolumeSlider;
     public UnityEngine.UI.Slider sfxVolumeSlider;
-
-    [Header("结算信息")]
-    public TMP_Text coinEarnedText;
-    public TMP_Text killCountText;
-    public TMP_Text milestoneText;
+    public TMP_Text masterVolumeValueText;
+    public TMP_Text bgmVolumeValueText;
+    public TMP_Text sfxVolumeValueText;
 
     private bool _isPaused;
 
@@ -45,6 +41,7 @@ public class PauseMenuUI : MonoBehaviour
         ConfigureVolumeSlider(masterVolumeSlider, AudioManager.Instance != null ? AudioManager.Instance.GetMasterVolume() : 1f, OnMasterVolumeChanged);
         ConfigureVolumeSlider(bgmVolumeSlider, AudioManager.Instance != null ? AudioManager.Instance.GetBgmVolume() : 1f, OnBgmVolumeChanged);
         ConfigureVolumeSlider(sfxVolumeSlider, AudioManager.Instance != null ? AudioManager.Instance.GetSfxVolume() : 1f, OnSfxVolumeChanged);
+        RefreshVolumeValueTexts();
     }
 
     private void OnDestroy()
@@ -67,10 +64,7 @@ public class PauseMenuUI : MonoBehaviour
         if (pausePanel != null) pausePanel.SetActive(true);
 
         SyncVolumeSliders();
-        
-        try { RefreshSettlementInfo(); }
-        catch (System.Exception e) { Debug.LogWarning($"[PauseMenuUI] RefreshSettlementInfo 异常: {e.Message}"); }
-        
+        RefreshVolumeValueTexts();
         Time.timeScale = 0f;
     }
 
@@ -108,47 +102,31 @@ public class PauseMenuUI : MonoBehaviour
     private void OnMasterVolumeChanged(float value)
     {
         AudioManager.Instance?.SetMasterVolume(value);
+        UpdateVolumeValueText(masterVolumeValueText, value);
     }
 
     private void OnBgmVolumeChanged(float value)
     {
         AudioManager.Instance?.SetBgmVolume(value);
+        UpdateVolumeValueText(bgmVolumeValueText, value);
     }
 
     private void OnSfxVolumeChanged(float value)
     {
         AudioManager.Instance?.SetSfxVolume(value);
+        UpdateVolumeValueText(sfxVolumeValueText, value);
     }
 
-    private void RefreshSettlementInfo()
+    private void RefreshVolumeValueTexts()
     {
-        var ps = PlayerState.Instance;
-        var km = FindObjectOfType<KillRewardManager>();
+        UpdateVolumeValueText(masterVolumeValueText, masterVolumeSlider != null ? masterVolumeSlider.value : 0f);
+        UpdateVolumeValueText(bgmVolumeValueText, bgmVolumeSlider != null ? bgmVolumeSlider.value : 0f);
+        UpdateVolumeValueText(sfxVolumeValueText, sfxVolumeSlider != null ? sfxVolumeSlider.value : 0f);
+    }
 
-        int kills = ps != null ? ps.killCount : 0;
-        int coins = ps != null ? ps.coinCount : 0;
-
-        if (killCountText != null)
-            killCountText.text = $"击杀数: {kills}";
-
-        if (coinEarnedText != null)
-            coinEarnedText.text = $"获得铜钱: {coins}";
-
-        if (milestoneText != null && km != null)
-        {
-            var milestones = km.CurrentMilestones;
-            var earned = km.GetEarnedThresholds();
-            if (milestones != null && milestones.Count > 0)
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine("已达成里程碑:");
-                foreach (var t in earned)
-                    sb.AppendLine($"  · 击杀 {t}");
-                int next = milestones.GetNextThreshold(kills);
-                if (next > 0)
-                    sb.AppendLine($"下一目标: {next}");
-                milestoneText.text = sb.ToString();
-            }
-        }
+    private static void UpdateVolumeValueText(TMP_Text text, float value)
+    {
+        if (text != null)
+            text.text = $"{Mathf.RoundToInt(value * 100f)}%";
     }
 }
