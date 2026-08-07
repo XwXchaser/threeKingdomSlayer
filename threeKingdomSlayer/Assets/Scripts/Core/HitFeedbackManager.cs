@@ -9,7 +9,8 @@ public enum HitFeedbackSource
     Phantom,
     Dot,
     Ultimate,
-    Displacement
+    Displacement,
+    SpikeTrap
 }
 
 public enum HitFeedbackStrength
@@ -93,7 +94,8 @@ public static class HitFeedbackManager
 
         context.enemy.ApplyHitStop(duration);
         CameraFeedbackController.Instance?.RequestHit(context);
-        PixelHitEffectManager.Instance?.RequestHit(context);
+        if (context.source != HitFeedbackSource.SpikeTrap)
+            PixelHitEffectManager.Instance?.RequestHit(context);
     }
 
     public static HitFeedbackStrength ResolveStrength(DamageType damageType,
