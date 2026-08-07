@@ -10,7 +10,7 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1778764012219
-updatedAt: 1786007270533
+updatedAt: 1786096686958
 ---
 
 # project-mistake-note
@@ -37,4 +37,9 @@ updatedAt: 1786007270533
   3. 任何不对称程序化 Sprite 都必须显式验证左右两侧的图案朝向，不能只验证位置轨迹或旋转数值。
 - 预防规则：**特效方向至少拆成“世界方向、相机屏幕方向、特效局部方向”三种语义；确定一个渲染坐标系后，运动、旋转、分叉和图案镜像必须共用同一方向基准。需要从起点飞到命中点时，根节点固定在命中点，移动独立的视觉子树，避免视觉动画与逻辑对象互相争夺 Transform。实现后必须通过运行时左右对照检查 Sprite 图案，而不能仅凭代码认为已镜像。**
 - 文件：`Assets/Scripts/Attack/SweepEffect.cs`、`Assets/Scripts/Core/HitFeedbackManager.cs`、`Assets/Scripts/Core/PixelHitEffectManager.cs`、`Assets/Scripts/Enemy/Enemy.cs`、`Assets/Scripts/Enemy/SharedHealthGroup.cs`
+
+### Slash 旋转角与左右镜像必须分离
+- 错误做法：判断左向后直接将局部方向取反，再用取反后的向量计算 `Atan2`；左右 Slash 会得到相同旋转角。
+- 正确做法：保留局部方向的 X 符号，用 `Atan2(y, Abs(x))` 计算斜向倾角，再将左右符号独立用于 `SpriteRenderer.flipX`。这样旋转负责“斜角”，镜像负责“左右造型”。
+- 经验：任何方向性命中特效都要把“角度”和“镜像”作为两个独立输出，先做数学验证，再做左右运行时对照验收。
 <!-- locus:body:end -->

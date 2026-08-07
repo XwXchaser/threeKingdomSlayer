@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1786083739901
-updatedAt: 1786083739902
+updatedAt: 1786096664381
 ---
 
 # procedural-pixel-vfx-guide
@@ -145,4 +145,9 @@ white:    RGB(255, 253, 224)  暖白核心
 ### 坑 8：AI 生图不能替代程序化特效实现
 - 用户明确要求「用参考图、不用 AI 生成替代图」时，不要再调用 gpt-image Skill
 - 参考图只用于造型参考，实现必须走代码
+
+### 坑 9：Slash 旋转角与左右镜像必须分离
+- 错误做法：判断左向后直接将局部方向取反，再用取反后的向量计算 `Atan2`；左右 Slash 会得到相同旋转角。
+- 正确做法：保留局部方向的 X 符号，用 `Atan2(y, Abs(x))` 计算斜向倾角，再将左右符号独立用于 `SpriteRenderer.flipX`。这样旋转负责“斜角”，镜像负责“左右造型”。
+- 经验：任何方向性命中特效都要把“角度”和“镜像”作为两个独立输出，先做数学验证，再做左右运行时对照验收。
 <!-- locus:body:end -->

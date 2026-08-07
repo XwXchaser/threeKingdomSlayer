@@ -51,9 +51,10 @@ public sealed class PixelHitEffectManager : MonoBehaviour
     private Sprite _sparkLongSprite;
     private Sprite _sparkForkSprite;
     private Sprite _sparkChipSprite;
-    private Sprite _slashFrameStart;
-    private Sprite _slashFrameFull;
-    private Sprite _slashFrameBreak;
+    private Sprite[] _slashFrames;
+    private int _slashVariantIndex;
+    private const int SlashVariantCount = 4;
+    private const int SlashFramesPerVariant = 3;
     private const int StabVariantCount = 4;
     private const int StabFramesPerVariant = 3;
 
@@ -102,12 +103,14 @@ public sealed class PixelHitEffectManager : MonoBehaviour
             Destroy(_sparkForkSprite);
         if (_sparkChipSprite != null)
             Destroy(_sparkChipSprite);
-        if (_slashFrameStart != null)
-            Destroy(_slashFrameStart);
-        if (_slashFrameFull != null)
-            Destroy(_slashFrameFull);
-        if (_slashFrameBreak != null)
-            Destroy(_slashFrameBreak);
+        if (_slashFrames != null)
+        {
+            for (int i = 0; i < _slashFrames.Length; i++)
+            {
+                if (_slashFrames[i] != null)
+                    Destroy(_slashFrames[i]);
+            }
+        }
         if (_stabFrames != null)
         {
             for (int i = 0; i < _stabFrames.Length; i++)
@@ -164,11 +167,7 @@ public sealed class PixelHitEffectManager : MonoBehaviour
         if (context.damageType == DamageType.Slash)
         {
             bool fullSlash = context.strength >= HitFeedbackStrength.Standard;
-            BuildSlashEffect(instance, context.impactDirection, slashColor,
-                (heavy ? slashLength * 1.2f : slashLength) * (fullSlash ? 1f : 0.72f),
-                (heavy ? slashWidth * 1.2f : slashWidth) * (fullSlash ? 1f : 0.82f),
-                (heavy ? slashDuration * 1.15f : slashDuration) * (fullSlash ? 1f : 0.78f),
-                fullSlash ? 4 : 2);
+            BuildSlashEffect(instance, context.impactDirection, heavy, fullSlash);
         }
         else if (context.damageType == DamageType.Stab)
         {
@@ -370,103 +369,85 @@ public sealed class PixelHitEffectManager : MonoBehaviour
         }
     }
 
-    private void BuildSlashEffect(EffectInstance instance, Vector3 impactDirection, Color edgeColor,
-        float length, float width, float duration, int sparkCount)
+    private void BuildSlashEffect(EffectInstance instance, Vector3 impactDirection, bool heavy, bool fullSlash)
     {
-        Vector3 localDirection = instance.root.transform.InverseTransformDirection(impactDirection.normalized);
+        int variant = _slashVariantIndex++ % SlashVariantCount;
+        int frameBase = variant * SlashFramesPerVariant;
+        int seed = unchecked(instance.root.GetInstanceID() * 613 ^ Time.frameCount * 47);
+        var random = new System.Random(seed);
+        float Next(float min, float max) => min + (float)random.NextDouble() * (max - min);
+
+        Vector3 localDirection = instance.root.transform.InverseTransformDirection(impactDirection);
         localDirection.z = 0f;
+        if (localDirection.sqrMagnitude < 0.0001f)
+            localDirection = Vector3.right;
         localDirection.Normalize();
-        float travelSign = localDirection.x >= 0f ? 1f : -1f;
-        float tilt = Mathf.Atan2(localDirection.y, Mathf.Abs(localDirection.x)) * Mathf.Rad2Deg;
-        float angle = travelSign * (slashAngle + tilt);
-        Vector3 travel = Quaternion.Euler(0f, 0f, angle) * new Vector3(travelSign, 0f, 0f);
-        Vector3 upward = Quaternion.Euler(0f, 0f, angle) * Vector3.up;
-        float entryLength = length * 0.15f;
-        float frame = duration / 4f;
+
+        bool mirror = localDirection.x < 0f;
+        float tilt = Mathf.Atan2(localDirection.y, Mathf.Max(Mathf.Abs(localDirection.x), 0.0001f)) * Mathf.Rad2Deg;
+        float angle = tilt + Next(-3f, 3f);
+        float scale = 3f * (heavy ? 1.2f : 1f) * (fullSlash ? 1f : 0.74f) * Next(0.97f, 1.03f);
+        float duration = (heavy ? 0.22f : 0.18f) * (fullSlash ? 1f : 0.82f);
+        float contactEnd = duration * 0.18f;
+        float burstEnd = duration * 0.58f;
+        float holdEnd = duration * 0.76f;
 
         instance.center.enabled = true;
-        instance.center.color = slashShadowColor;
+        instance.center.sprite = _slashFrames[frameBase];
+        instance.center.flipX = mirror;
+        instance.center.color = Color.white;
+        instance.center.transform.localPosition = Vector3.zero;
         instance.center.transform.localRotation = Quaternion.Euler(0f, 0f, angle);
-        SetSlashSpriteFrame(instance.center, _slashFrameStart, travelSign,
-            length * 0.28f, width * 0.7f, -travel * entryLength * 0.45f);
-        instance.sequence.AppendInterval(frame);
-        instance.sequence.AppendCallback(() =>
-        {
-            instance.center.color = edgeColor;
-            SetSlashSpriteFrame(instance.center, _slashFrameFull, travelSign,
-                length * 0.62f, width * 1.2f, -travel * entryLength * 0.5f);
-        });
-        instance.sequence.AppendInterval(frame * 1.5f);
-        instance.sequence.AppendCallback(() =>
-        {
-            instance.center.color = slashCoreColor;
-            SetSlashSpriteFrame(instance.center, _slashFrameBreak, travelSign,
-                length * 0.42f, width * 0.85f, -travel * entryLength * 0.15f);
-        });
-        instance.sequence.AppendInterval(frame * 0.9f);
-        instance.sequence.AppendCallback(() => instance.center.enabled = false);
+        instance.center.transform.localScale = Vector3.one * (scale * 0.28f);
 
+        instance.sequence.Insert(0f, instance.center.transform.DOScale(Vector3.one * (scale * 0.56f), contactEnd)
+            .SetEase(Ease.OutCubic));
+        instance.sequence.InsertCallback(contactEnd, () =>
+        {
+            instance.center.sprite = _slashFrames[frameBase + 1];
+            instance.center.transform.localScale = Vector3.one * (scale * 0.64f);
+        });
+        instance.sequence.Insert(contactEnd, instance.center.transform.DOScale(Vector3.one * scale, burstEnd - contactEnd)
+            .SetEase(Ease.OutBack, 1.1f));
+        instance.sequence.InsertCallback(burstEnd, () =>
+        {
+            instance.center.sprite = _slashFrames[frameBase + 2];
+            instance.center.transform.localScale = Vector3.one * scale;
+        });
+        instance.sequence.Insert(holdEnd, instance.center.transform.DOScale(Vector3.one * (scale * 0.9f), duration - holdEnd)
+            .SetEase(Ease.InQuad));
+        instance.sequence.InsertCallback(duration, () => instance.center.enabled = false);
+
+        int debrisCount = fullSlash ? (heavy ? 6 : 5) : 3;
+        float mainAngle = angle * Mathf.Deg2Rad;
+        Vector3 axis = new Vector3(Mathf.Cos(mainAngle), Mathf.Sin(mainAngle), 0f);
+        Vector3 perpendicular = new Vector3(-axis.y, axis.x, 0f);
         for (int i = 0; i < instance.rays.Length; i++)
         {
-            var spark = instance.rays[i];
-            bool visible = i < sparkCount;
-            spark.enabled = visible;
-            if (!visible)
+            SpriteRenderer debris = instance.rays[i];
+            debris.enabled = i < debrisCount;
+            if (!debris.enabled)
                 continue;
 
-            spark.sprite = i switch
-            {
-                0 => _sparkLongSprite,
-                1 => _sparkForkSprite,
-                _ => _sparkChipSprite
-            };
-            spark.color = i switch
-            {
-                0 => slashCoreColor,
-                1 => edgeColor,
-                2 => slashCoreColor,
-                _ => slashShadowColor
-            };
-            float side = i % 2 == 0 ? -1f : 1f;
-            float sparkScale = i switch
-            {
-                0 => length * 0.42f,
-                1 => length * 0.34f,
-                _ => length * 0.22f
-            };
-            Vector3 step0 = -travel * length * 0.28f + upward * side * width * 0.1f;
-            Vector3 step1 = travel * length * (0.32f + (i % 2) * 0.06f) + upward * side * width * 0.72f;
-            Vector3 step2 = travel * length * (0.68f + (i % 2) * 0.12f) + upward * side * width * 1.55f;
+            float sign = i % 2 == 0 ? 1f : -1f;
+            Vector3 direction = i < 2 ? axis * sign : (axis * sign * 0.7f + perpendicular * (i % 3 == 0 ? 0.72f : -0.62f)).normalized;
+            float startRadius = scale * Next(0.55f, 0.78f);
+            float travel = scale * Next(0.25f, 0.5f);
+            float length = scale * Next(0.09f, 0.16f);
+            float width = length * Next(0.35f, 0.58f);
+            float delay = burstEnd * Next(0.72f, 0.9f);
 
-            spark.transform.localRotation = Quaternion.Euler(0f, 0f, angle + side * travelSign * (i < 2 ? 10f : 18f));
-            spark.flipX = travelSign < 0f;
-            spark.transform.localPosition = step0;
-            spark.transform.localScale = new Vector3(sparkScale * 0.55f, width * (i < 2 ? 0.22f : 0.16f), 1f);
-            instance.sequence.Insert(0f,
-                spark.transform.DOScale(new Vector3(sparkScale, width * (i < 2 ? 0.38f : 0.26f), 1f), frame * 0.55f)
-                    .SetEase(Ease.OutBack));
-            instance.sequence.Insert(frame * 0.55f,
-                spark.transform.DOLocalMove(step1, frame * 0.7f).SetEase(Ease.OutCubic));
-            instance.sequence.Insert(frame * 1.25f,
-                spark.transform.DOLocalMove(step2, frame * 0.85f).SetEase(Ease.OutCubic));
-            instance.sequence.Insert(frame * 2.25f,
-                spark.transform.DOScale(new Vector3(sparkScale * 0.45f, width * 0.2f, 1f), frame * 0.75f)
-                    .SetEase(Ease.InQuad));
+            debris.sprite = i % 3 == 0 ? _sparkLongSprite : _sparkChipSprite;
+            debris.color = i % 2 == 0 ? new Color(0.72f, 0.1f, 0.02f, 1f) : new Color(0.3f, 0.055f, 0.018f, 1f);
+            debris.flipX = Next(0f, 1f) > 0.5f;
+            debris.transform.localPosition = direction * startRadius;
+            debris.transform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg + Next(-18f, 18f));
+            debris.transform.localScale = Vector3.zero;
+
+            instance.sequence.Insert(delay, debris.transform.DOScale(new Vector3(length, width, 1f), duration * 0.14f).SetEase(Ease.OutCubic));
+            instance.sequence.Insert(delay, debris.transform.DOLocalMove(direction * (startRadius + travel), duration - delay).SetEase(Ease.OutCubic));
+            instance.sequence.Insert(holdEnd, debris.transform.DOScale(Vector3.zero, duration - holdEnd).SetEase(Ease.InQuad));
         }
-    }
-
-    private static void SetSlashSpriteFrame(SpriteRenderer renderer, Sprite sprite,
-        float travelSign, float length, float height, Vector3 position)
-    {
-        renderer.sprite = sprite;
-        renderer.transform.localPosition = position;
-        Vector3 boundsSize = sprite.bounds.size;
-        float scaleX = boundsSize.x > 0f ? length / boundsSize.x : 1f;
-        float scaleY = boundsSize.y > 0f ? height / boundsSize.y : 1f;
-        renderer.transform.localScale = new Vector3(
-            travelSign < 0f ? -scaleX : scaleX,
-            scaleY,
-            1f);
     }
     private float GetScreenAngle(Vector3 worldDirection)
     {
@@ -589,36 +570,106 @@ public sealed class PixelHitEffectManager : MonoBehaviour
     }
     private void CreateSlashSprites()
     {
-        _slashFrameStart = CreatePatternSprite("SlashStart", new[]
+        _slashFrames = new Sprite[SlashVariantCount * SlashFramesPerVariant];
+        for (int variant = 0; variant < SlashVariantCount; variant++)
         {
-            "0000001000",
-            "0000011100",
-            "0000111000",
-            "0000010000",
-            "0000000000"
-        });
-        _slashFrameFull = CreatePatternSprite("SlashFull", new[]
-        {
-            "0000010000000000",
-            "0000111000000000",
-            "0001111110000000",
-            "0011111111100000",
-            "0111111111111000",
-            "0011111111100000",
-            "0001111110000000",
-            "0000111000000000"
-        });
-        _slashFrameBreak = CreatePatternSprite("SlashBreak", new[]
-        {
-            "1000000000000000",
-            "0110000000000000",
-            "0011110000000000",
-            "0000111111000000",
-            "0000001111111000",
-            "0000000011110000",
-            "0000000000100000"
-        });
+            _slashFrames[variant * SlashFramesPerVariant] = CreateSlashFrameSprite(variant, 0);
+            _slashFrames[variant * SlashFramesPerVariant + 1] = CreateSlashFrameSprite(variant, 1);
+            _slashFrames[variant * SlashFramesPerVariant + 2] = CreateSlashFrameSprite(variant, 2);
+        }
     }
+
+    private Sprite CreateSlashFrameSprite(int variant, int frame)
+    {
+        const int size = 80;
+        const float pixelsPerUnit = 30f;
+        int center = size / 2;
+        var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            filterMode = FilterMode.Point,
+            wrapMode = TextureWrapMode.Clamp,
+            name = $"PixelHitEffect_Slash_{variant}_{frame}_Texture"
+        };
+        var pixels = new Color32[size * size];
+        var random = new System.Random(49157 + variant * 6311);
+        Color32 outline = new Color32(53, 16, 8, 255);
+        Color32 darkRed = new Color32(145, 24, 8, 255);
+        Color32 red = new Color32(213, 42, 8, 255);
+        Color32 orange = new Color32(255, 101, 7, 255);
+        Color32 yellow = new Color32(255, 211, 16, 255);
+        Color32 white = new Color32(255, 253, 224, 255);
+        float mainAngle = 34f + (float)(random.NextDouble() * 2f - 1f) * 3f;
+        float[] mainDirections = { mainAngle, mainAngle + 180f };
+        float[] mainLengths = { 1.02f + (float)random.NextDouble() * 0.08f, 0.92f + (float)random.NextDouble() * 0.12f };
+        float[] shortDirections =
+        {
+            mainAngle + 66f + (float)(random.NextDouble() * 2f - 1f) * 9f,
+            mainAngle + 104f + (float)(random.NextDouble() * 2f - 1f) * 10f,
+            mainAngle + 238f + (float)(random.NextDouble() * 2f - 1f) * 9f,
+            mainAngle + 286f + (float)(random.NextDouble() * 2f - 1f) * 10f,
+            mainAngle + 150f + (float)(random.NextDouble() * 2f - 1f) * 8f
+        };
+        float[] shortLengths = { 0.45f, 0.32f, 0.38f, 0.25f, 0.3f };
+        float expansion = frame == 0 ? 0.35f : frame == 1 ? 0.82f : 1f;
+        float coreRadius = frame == 0 ? 3.1f : 5.8f * expansion;
+        DrawSolidBurstCore(pixels, size, center, coreRadius + 1.6f, outline);
+        DrawSolidBurstCore(pixels, size, center, coreRadius, frame == 0 ? yellow : orange);
+        DrawSolidBurstCore(pixels, size, center, coreRadius * 0.72f, white);
+
+        float[] allDirections = new float[7];
+        float[] allLengths = new float[7];
+        allDirections[0] = mainDirections[0];
+        allDirections[1] = mainDirections[1];
+        allLengths[0] = mainLengths[0];
+        allLengths[1] = mainLengths[1];
+        for (int i = 0; i < shortDirections.Length; i++)
+        {
+            allDirections[i + 2] = shortDirections[i];
+            allLengths[i + 2] = shortLengths[i] * (0.94f + (float)random.NextDouble() * 0.12f);
+        }
+
+        float outer = 27f * expansion;
+        DrawBurstLayer(pixels, size, center, allDirections, allLengths, 5f * expansion, outer, 3.7f, outline);
+        DrawBurstLayer(pixels, size, center, allDirections, allLengths, 4.4f * expansion, outer * 0.91f, 3.1f, darkRed);
+        DrawBurstLayer(pixels, size, center, allDirections, allLengths, 3.8f * expansion, outer * 0.82f, 2.7f, red);
+        DrawBurstLayer(pixels, size, center, allDirections, allLengths, 3.1f * expansion, outer * 0.7f, 2.2f, orange);
+        DrawBurstLayer(pixels, size, center, allDirections, allLengths, 2.5f * expansion, outer * 0.55f, 1.7f, yellow);
+        DrawBurstLayer(pixels, size, center, mainDirections, new[] { mainLengths[0], mainLengths[1] },
+            2.1f * expansion, outer * 0.48f, 1.25f, white);
+
+        if (frame == 2)
+            DrawSlashDebris(pixels, size, center, mainAngle, outline, darkRed, random);
+
+        texture.SetPixels32(pixels);
+        texture.Apply(false, true);
+        _generatedTextures.Add(texture);
+        var sprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), Vector2.one * 0.5f, pixelsPerUnit);
+        sprite.name = $"PixelHitEffect_Slash_{variant}_{frame}";
+        return sprite;
+    }
+
+    private static void DrawSlashDebris(Color32[] pixels, int size, int center, float mainAngle,
+        Color32 outline, Color32 darkRed, System.Random random)
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            float directionAngle = mainAngle + (i % 2 == 0 ? 0f : 180f) + (float)(random.NextDouble() * 2f - 1f) * 22f;
+            float radians = directionAngle * Mathf.Deg2Rad;
+            Vector2 direction = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
+            Vector2 perpendicular = new Vector2(-direction.y, direction.x);
+            Vector2 position = Vector2.one * center + direction * (29f + (float)random.NextDouble() * 5f);
+            int length = 3 + random.Next(0, 4);
+            int width = 1 + random.Next(0, 2);
+            Color32 color = i % 2 == 0 ? outline : darkRed;
+            for (int step = 0; step < length; step++)
+            {
+                Vector2 p = position + direction * step;
+                for (int side = -width; side <= width; side++)
+                    SetPixel(pixels, size, Mathf.RoundToInt(p.x + perpendicular.x * side), Mathf.RoundToInt(p.y + perpendicular.y * side), color);
+            }
+        }
+    }
+
     private void CreateStabSprites()
     {
         _stabFrames = new Sprite[StabVariantCount * StabFramesPerVariant];
