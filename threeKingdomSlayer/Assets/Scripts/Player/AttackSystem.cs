@@ -278,6 +278,8 @@ public class AttackSystem : MonoBehaviour
             },
             cfg.stabVisualReachOffset,
             GetStabVisualStartXOffset(columnIndex),
+            cfg.stabVisualTargetRandomRadius,
+            baseLength,
             GetAttackDuration(cfg));
         AudioManager.Instance?.PostEvent("Player_Attack");
 

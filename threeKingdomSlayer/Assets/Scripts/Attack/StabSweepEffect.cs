@@ -47,7 +47,9 @@ public sealed class StabSweepEffect : MonoBehaviour
     private float _rayLength;
     private Vector3 _visualBaseLocalPosition;
     private Vector3 _visualBaseLocalScale;
+    private Vector3 _visualTargetOffsetLocal;
     private Transform _visualTransform;
+    private Transform _visualOffsetRoot;
     private Transform _deformRoot;
     private WeaponMotionBlurController _motionBlur;
     private Sequence _sequence;
@@ -59,11 +61,14 @@ public sealed class StabSweepEffect : MonoBehaviour
 
     public static void Create(GameObject prefab, Sprite speedSprite, Vector3 startPosition, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows,
         float damage, DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget,
-        Action<Enemy> onHit, Action<Enemy> onFirstHitBeforeDamage, Action onFirstHit, Action onComplete, float visualReachOffset, float visualStartXOffset, float targetDuration = -1f)
+        Action<Enemy> onHit, Action<Enemy> onFirstHitBeforeDamage, Action onFirstHit, Action onComplete,
+        float visualReachOffset, float visualStartXOffset, float visualTargetRandomRadius, float baseRayLength,
+        float targetDuration = -1f)
     {
         var ray = new GameObject("StabRay");
         ray.transform.position = startPosition;
-        ray.transform.rotation = Quaternion.LookRotation((targetPosition - startPosition).normalized, Vector3.up);
+        Vector3 rayVector = targetPosition - startPosition;
+        ray.transform.rotation = Quaternion.LookRotation(rayVector.normalized, Vector3.up);
 
         var visual = Instantiate(prefab, ray.transform);
         visual.name = "StabVisual";
@@ -76,12 +81,13 @@ public sealed class StabSweepEffect : MonoBehaviour
         visual.transform.position += Vector3.right * visualStartXOffset;
 
         ray.AddComponent<StabSweepEffect>().Initialize(visual, speedSprite, targetPosition, column, rangeRows, visualRangeRows, damage, damageType,
-            columnManager, coveredBossTarget, onHit, onFirstHitBeforeDamage, onFirstHit, onComplete, targetDuration);
+            columnManager, coveredBossTarget, onHit, onFirstHitBeforeDamage, onFirstHit, onComplete, targetDuration,
+            visualTargetRandomRadius, baseRayLength);
     }
 
     private void Initialize(GameObject visual, Sprite speedSprite, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows, float damage,
         DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget, Action<Enemy> onHit, Action<Enemy> onFirstHitBeforeDamage, Action onFirstHit,
-        Action onComplete, float targetDuration)
+        Action onComplete, float targetDuration, float visualTargetRandomRadius, float baseRayLength)
     {
         _column = column;
         _rangeRows = rangeRows;
@@ -109,7 +115,12 @@ public sealed class StabSweepEffect : MonoBehaviour
         _halfBaseSpriteLength = sr2 != null ? sr2.sprite.bounds.size.y * _visualBaseLocalScale.y * 0.5f : 0f;
 
         _deformRoot = new GameObject("DeformRoot").transform;
-        _deformRoot.SetParent(transform, false);
+        _visualOffsetRoot = new GameObject("VisualOffsetRoot").transform;
+        _visualOffsetRoot.SetParent(transform, false);
+        _visualOffsetRoot.localPosition = Vector3.zero;
+        _visualOffsetRoot.localRotation = Quaternion.identity;
+        _visualOffsetRoot.localScale = Vector3.one;
+        _deformRoot.SetParent(_visualOffsetRoot, false);
         _deformRoot.localPosition = _visualBaseLocalPosition;
         _deformRoot.localRotation = visualBaseLocalRotation;
         _deformRoot.localScale = _visualBaseLocalScale;
@@ -129,6 +140,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         _rayDirection = (targetPosition - _rayOrigin).normalized;
         _rayLength = Vector3.Distance(_rayOrigin, targetPosition);
         transform.rotation = Quaternion.LookRotation(_rayDirection, Vector3.up);
+        _visualTargetOffsetLocal = CreateVisualTargetOffset(visualTargetRandomRadius, baseRayLength);
 
         float totalDuration = targetDuration > 0f ? targetDuration : ThrustDuration + RetractDuration;
         float windupDuration = totalDuration * WindupRatio;
@@ -146,6 +158,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         _sequence.Append(transform.DOMove(targetPosition, thrustDuration).SetEase(Ease.InCubic)
             .OnStart(() => _motionBlur?.SetStrength(28f))
             .OnUpdate(CheckHits));
+        _sequence.Join(_visualOffsetRoot.DOLocalMove(_visualTargetOffsetLocal, thrustDuration).SetEase(Ease.OutCubic));
         _sequence.Join(_deformRoot.DOScale(GetVisualScale(ThrustWidthScale, ThrustLengthScale), thrustDuration).SetEase(Ease.InCubic));
         if (renderer != null && baseSprite != null && speedSprite != null)
         {
@@ -167,6 +180,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         _sequence.Join(_deformRoot.DOScale(_visualBaseLocalScale, penetrationDuration).SetEase(Ease.OutQuad));
         _sequence.Append(transform.DOMove(_rayOrigin, retractDuration).SetEase(Ease.OutCubic)
             .OnStart(() => _motionBlur?.SetStrength(0f)));
+        _sequence.Join(_visualOffsetRoot.DOLocalMove(Vector3.zero, retractDuration).SetEase(Ease.OutCubic));
         _sequence.Join(_deformRoot.DOScale(_visualBaseLocalScale, retractDuration).SetEase(Ease.OutCubic));
         _sequence.OnKill(() =>
         {
@@ -187,6 +201,21 @@ public sealed class StabSweepEffect : MonoBehaviour
         _usingSpeedSprite = false;
         _visualTransform.localPosition = Vector3.zero;
         _visualTransform.localScale = Vector3.one;
+    }
+
+    private Vector3 CreateVisualTargetOffset(float baseRadius, float baseRayLength)
+    {
+        if (baseRadius <= 0f || baseRayLength <= 0f || Camera.main == null)
+            return Vector3.zero;
+
+        float rangeScale = _rayLength / baseRayLength;
+        float radius = baseRadius * Mathf.Sqrt(Mathf.Max(rangeScale, 0f));
+        radius = Mathf.Clamp(radius, baseRadius * 0.5f, baseRadius * 1.5f);
+        float angle = UnityEngine.Random.value * Mathf.PI * 2f;
+        float distance = radius * Mathf.Sqrt(UnityEngine.Random.value);
+        Vector3 offsetWorld = Camera.main.transform.right * (Mathf.Cos(angle) * distance)
+            + Camera.main.transform.up * (Mathf.Sin(angle) * distance);
+        return transform.InverseTransformVector(offsetWorld);
     }
 
     private static bool ApproximatelyEqual(Matrix4x4 a, Matrix4x4 b)

@@ -54,7 +54,7 @@ MonoBehaviour:
   maxHealth: 16
   occupySlots: 1
   attackSpeed: 0.5
-  attackDamage: 10
+  attackDamage: 3
   attackRange: 1
   moveSpeed: 0.3
   visualYOffset: 0
@@ -65,8 +65,6 @@ MonoBehaviour:
     drawDuration: 1
     extraCooldown: 0
     useFlip: 0
-    parryWindowDuration: 1
-    parryWindowGrace: 0.1
   isRanged: 0
   projectilePrefab: {fileID: 0}
   projectileArcHeight: 3
