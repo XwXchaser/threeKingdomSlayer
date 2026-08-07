@@ -8,23 +8,23 @@ public sealed class StabSweepEffect : MonoBehaviour
     private const float ThrustDuration = 0.2f;
     private const float RetractDuration = 0.3f;
     private const float WindupRatio = 0.12f;
-    private const float ThrustRatio = 0.32f;
+    private const float ThrustRatio = 0.28f;
     private const float PenetrationRatio = 0.08f;
-    private const float RetractRatio = 0.48f;
-    private const float WindupDistance = 0.25f;
-    private const float PenetrationDistance = 0.2f;
-    // 蓄力：轻微压缩，长度0.96、宽度1.04
-    private const float WindupLengthScale = 0.96f;
-    private const float WindupWidthScale = 1.04f;
-    // 高速刺出：拉伸，长度1.10、宽度0.92
-    private const float ThrustLengthScale = 1.10f;
-    private const float ThrustWidthScale = 0.92f;
-    // 首次命中：瞬间压缩到长度0.97、宽度1.07，回弹至长度1.04、宽度0.97
-    private const float HitCompressLength = 0.97f;
-    private const float HitCompressWidth = 1.07f;
-    private const float HitBounceLength = 1.04f;
-    private const float HitBounceWidth = 0.97f;
-    private const float SpeedFrameStartRatio = 0.15f;
+    private const float RetractRatio = 0.52f;
+    private const float WindupDistance = 0.4f;
+    private const float PenetrationDistance = 0.32f;
+    // 蓄力：更明显压缩，长度0.92、宽度1.08
+    private const float WindupLengthScale = 0.92f;
+    private const float WindupWidthScale = 1.08f;
+    // 高速刺出：更明显拉伸，长度1.18、宽度0.86
+    private const float ThrustLengthScale = 1.18f;
+    private const float ThrustWidthScale = 0.86f;
+    // 首次命中：更明显压缩到长度0.90、宽度1.15，回弹至长度1.10、宽度0.92
+    private const float HitCompressLength = 0.90f;
+    private const float HitCompressWidth = 1.15f;
+    private const float HitBounceLength = 1.10f;
+    private const float HitBounceWidth = 0.92f;
+    private const float SpeedFrameStartRatio = 0.1f;
     private const float SpeedFrameEndRatio = 1.0f;
     private const float HitDistanceTolerance = 0.35f;
     private const int SortingOrderWithEnemies = 0;
@@ -278,6 +278,16 @@ public sealed class StabSweepEffect : MonoBehaviour
         _hitStopRoutine = null;
     }
 
+    private Vector3 GetVisualTipPosition()
+    {
+        Vector3 visualPosition = _deformRoot != null ? _deformRoot.position : transform.position;
+        float lengthScale = _deformRoot != null
+            ? _deformRoot.localScale.y / Mathf.Max(_visualBaseLocalScale.y, 0.0001f)
+            : 1f;
+        visualPosition += _rayDirection * (_halfBaseSpriteLength * lengthScale);
+        return visualPosition;
+    }
+
     private void CheckHits()
     {
         var column = _columnManager?.GetColumn(_column);
@@ -323,7 +333,7 @@ public sealed class StabSweepEffect : MonoBehaviour
             if (!_hitAny)
                 _onFirstHitBeforeDamage?.Invoke(enemy);
             HitFeedbackStrength feedbackStrength = _hitAny ? HitFeedbackStrength.Light : HitFeedbackStrength.Standard;
-            Vector3 impactPosition = transform.position + Vector3.up * 0.8f;
+            Vector3 impactPosition = GetVisualTipPosition();
             enemy.TakeDamage(_damage, _damageType, feedbackStrength: feedbackStrength,
                 impactPosition: impactPosition, impactDirection: _rayDirection);
             if (!_hitAny)

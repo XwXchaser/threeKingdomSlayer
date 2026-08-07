@@ -418,16 +418,16 @@ MonoBehaviour:
   initialPoolSize: 12
   bodyYOffset: 0.8
   cameraDepthOffset: 0.05
-  standardSize: 0.32
-  standardRayLength: 0.42
-  standardDuration: 0.1
-  heavySize: 0.48
-  heavyRayLength: 0.68
-  heavyDuration: 0.14
-  slashLength: 1.35
-  slashWidth: 0.14
-  slashDuration: 0.16
-  slashAngle: 12
+  standardSize: 0.5
+  standardRayLength: 0.68
+  standardDuration: 0.13
+  heavySize: 0.68
+  heavyRayLength: 0.95
+  heavyDuration: 0.17
+  slashLength: 1.75
+  slashWidth: 0.19
+  slashDuration: 0.18
+  slashAngle: 15
   stabColor: {r: 1, g: 0.78, b: 0.16, a: 1}
   slashColor: {r: 1, g: 0.68, b: 0.1, a: 1}
   slashCoreColor: {r: 1, g: 0.96, b: 0.72, a: 1}
