@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1786083739901
-updatedAt: 1786096664381
+updatedAt: 1786103457351
 ---
 
 # procedural-pixel-vfx-guide
@@ -48,7 +48,7 @@ white:    RGB(255, 253, 224)  暖白核心
 ## 形状设计
 
 ### 尖刺布局
-- 13 个不规则方向角（不是均匀 360°/N），制造爆炸的不规则感
+- 13 个不规则方向角（不是均匀 360°/N 等分），制造爆炸的不规则感
 - 方向角：`3°, 18°, 47°, 72°, 109°, 128°, 171°, 198°, 226°, 252°, 287°, 316°, 344°`
 - 每条尖刺有独立 baseLength（0.83 / 0.98 / 1.15 三档），再加 ±7% 随机扰动
 - 每个 variant 的尖刺角度额外 ±5.5° 小偏移
@@ -90,17 +90,16 @@ white:    RGB(255, 253, 224)  暖白核心
 碎屑在 burstEnd 后延迟 76%-94% 出现，向外散射后淡出。
 
 **时序参数**：
-- 普通：duration=0.45s, peakScale=1.344
-- 重击：duration=0.52s, peakScale=1.536
-- 当前时长偏慢用于验收；正式游戏可缩短到 0.18-0.25s
+- 普通：当前验收值 `duration=0.28s`、峰值基础倍率 `2.4×1.344`
+- 重击：当前验收值 `duration=0.34s`、峰值基础倍率 `2.4×1.536`
+- Slash 普通完整命中约 `0.18s`，Stab 已缩短到接近其短促节奏
 
 ## 随机化控制
 
 - 整体缩放 ±3%（`Next(0.97f, 1.03f)`）
 - 整体旋转 ±5°
-- 尖刺角度 per variant ±5.5°
-- 尖刺长度 per variant ±7%
-- 碎屑位置/大小 per variant 独立随机
+- 尖刺角度 per variant ±4.5°
+- 尖刺长度按主刺/侧刺分级并加 ±6% 随机
 - 核心形状、颜色分层、中心位置保持稳定
 
 ## 像素美术约束（来自 skill-item-icon-art-guideline）
@@ -122,16 +121,16 @@ white:    RGB(255, 253, 224)  暖白核心
 - 修复：新增 `DrawSolidBurstCore()`，在所有放射层之前填充中心
 
 ### 坑 3：太规则，不像爆炸
-- 原因：14 个均匀分布的放射尖刺（360°/14 等分）
-- 修复：改为 13 个不规则角度 + 每根不同 baseLength + per-variant 微小扰动
+- 原因：放射方向过多且均匀，颜色层叠后形成刺团
+- 修复：减少方向数量，使用分级长短和不规则角度，同时缩短外扩半径；中心核心必须保持主视觉占比
 
 ### 坑 4：PPU 导致特效太小
 - 初始 PPU=44 → 改为 30
 - 如果还不够大，继续降低 PPU 或增大 peakScale
 
 ### 坑 5：太快无法验收
-- 初始 duration=0.17s → 延长到 0.45s/0.52s
-- 验收通过后应回调到 0.2-0.25s
+- 初始 duration=0.17s → 曾延长到 0.45s/0.52s 便于验收
+- 验收后 Stab 回调到 `0.28s/0.34s`，使其与 Slash 的短促节奏接近
 
 ### 坑 6：Slash 左右镜像坐标混淆（来自 mistake-note）
 - 特效方向拆为三种语义：世界方向、相机屏幕方向、特效局部方向
@@ -140,7 +139,7 @@ white:    RGB(255, 253, 224)  暖白核心
 
 ### 坑 7：DOTween Tween 目标已被 Destroy
 - MirrorReferenceException：Transform 已被销毁但 DOTween 仍在尝试设置 localScale
-- 预防：回收前调用 `sequence.Kill(false)`；`ReturnToPool` 用 owner 校验收敛；创建 Sequence 时用 `.SetTarget()` 绑定生命周期
+- 预防：回收前调用 `sequence.Kill(false)`；ReturnToPool 用 owner 校验收敛；创建 Sequence 时用 `.SetTarget()` 绑定生命周期
 
 ### 坑 8：AI 生图不能替代程序化特效实现
 - 用户明确要求「用参考图、不用 AI 生成替代图」时，不要再调用 gpt-image Skill
@@ -150,4 +149,9 @@ white:    RGB(255, 253, 224)  暖白核心
 - 错误做法：判断左向后直接将局部方向取反，再用取反后的向量计算 `Atan2`；左右 Slash 会得到相同旋转角。
 - 正确做法：保留局部方向的 X 符号，用 `Atan2(y, Abs(x))` 计算斜向倾角，再将左右符号独立用于 `SpriteRenderer.flipX`。这样旋转负责“斜角”，镜像负责“左右造型”。
 - 经验：任何方向性命中特效都要把“角度”和“镜像”作为两个独立输出，先做数学验证，再做左右运行时对照验收。
+
+### 坑 10：程序化 Sprite 内嵌碎片与运行时碎片必须先区分来源
+- 症状：关闭 `BuildStabEffect()` 的 `instance.rays` 后，Stab 画面上的外围碎片仍存在。
+- 根因：Stab 的碎片是 `CreateStabFrameSprite()` 最终帧调用 `DrawStabDebris()` 直接写入 Texture2D 的像素，不属于运行时 `SpriteRenderer` 碎片。
+- 规则：修改“图片内部”的视觉元素前，先追踪它是 Texture2D 像素生成、运行时 SpriteRenderer，还是 Prefab 子物体；只修改其真实来源。对于当前 Stab，短时长下保留内嵌碎片的观感已验收。
 <!-- locus:body:end -->

@@ -10,7 +10,7 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1778764012219
-updatedAt: 1786096686958
+updatedAt: 1786103290906
 ---
 
 # project-mistake-note
@@ -42,4 +42,9 @@ updatedAt: 1786096686958
 - 错误做法：判断左向后直接将局部方向取反，再用取反后的向量计算 `Atan2`；左右 Slash 会得到相同旋转角。
 - 正确做法：保留局部方向的 X 符号，用 `Atan2(y, Abs(x))` 计算斜向倾角，再将左右符号独立用于 `SpriteRenderer.flipX`。这样旋转负责“斜角”，镜像负责“左右造型”。
 - 经验：任何方向性命中特效都要把“角度”和“镜像”作为两个独立输出，先做数学验证，再做左右运行时对照验收。
+
+### 程序化 Sprite 内嵌碎片与运行时碎片必须先区分来源
+- 症状：关闭 `BuildStabEffect()` 的 `instance.rays` 后，Stab 画面上的外围碎片仍存在。
+- 根因：Stab 的碎片是 `CreateStabFrameSprite()` 最终帧调用 `DrawStabDebris()` 直接写入 Texture2D 的像素，不属于运行时 `SpriteRenderer` 碎片。
+- 规则：修改“图片内部”的视觉元素前，先追踪它是 Texture2D 像素生成、运行时 SpriteRenderer，还是 Prefab 子物体；只修改其真实来源。对于当前 Stab，短时长下保留内嵌碎片的观感已验收。
 <!-- locus:body:end -->
