@@ -10,7 +10,7 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1778764012219
-updatedAt: 1785841169762
+updatedAt: 1786007270533
 ---
 
 # project-mistake-note
@@ -25,132 +25,16 @@ updatedAt: 1785841169762
 <!-- locus:maintain-rules:end -->
 
 <!-- locus:body:start -->
-### 主动位移受击与Boss QTE翻牌存在跨系统时序竞争 ✅ 已验收
-- 症状：Boss在QTE前受到海浪或旋风后，QTE图案仍可交互，但HUD正面未及时翻走并遮挡图案；无位移主动命中时翻牌正常。
-- 根因：位移主动的零伤害命中会触发Boss受击动画反馈；该状态与随后启动的QTE动画及HUD翻牌Tween发生紧邻时序竞争，QTE活动可能在翻牌Tween尚未推进时结束并请求反向翻转。
-- 修复：QTE活动改由全局Hub同步并保留轮询兜底；HUD反向打断翻转时先快照至旧目标面，再执行新方向翻转；位移主动对QTE态、转阶段及非交战Boss维持保护。
-- 预防规则：**跨系统状态切换必须分别清理动画Trigger、Transform反馈Tween和UI Tween；逻辑活动正确不代表视觉状态已完成。反向请求到来时必须定义旧视觉状态的收敛结果，不能只Kill旧Tween。**
-- 验证：海浪/旋风打断霸体、零伤害Combo与随后Boss QTE翻牌均由用户验收。
-- 文件：`Assets/Scripts/Enemy/Enemy.cs`、`Assets/Scripts/QTE/QTEActivityHub.cs`、`Assets/Scripts/QTE/QTEController.cs`、`Assets/Scripts/UI/HeroHUDFlipCard.cs`
-
-### TimedArrow：只调整命中高度，无法修复“箭仍飞到脚底” ✅ 已修复（2026-03）
-- 症状：增大提前命中值后，伤害可能已经提前结算，但箭矢视觉仍飞到敌人脚底才消失。
-- 根因：伤害判定与飞行 Tween 生命周期相互独立；修改判定阈值不会自动停止或销毁视觉。
-- 修复：命中时暂停飞行 Tween，播放短距离穿入和所有子 SpriteRenderer 的淡出，并在 Complete/Kill 两条路径统一销毁。
-- 预防规则：**投射物的命中结算与命中视觉结束必须分阶段设计；调判定参数前先确认视觉 Tween 是否响应命中状态。**
-- 文件：`Assets/Scripts/Effect/TimedArrowEffect.cs`
-
-### DOTween 状态切换必须覆盖所有清理路径 ✅ 已修复（2026-03）
-- 症状：命中箭偶发没有及时消失，或根 Sprite 已淡出但子 Sprite 仍可见。
-- 根因：只处理根 SpriteRenderer，且原飞行 Tween、新命中序列和 GameObject 的清理所有权不明确。
-- 修复：缓存所有子 SpriteRenderer；命中序列的 `OnComplete` 与 `OnKill` 均停止原 Tween 并销毁箭矢。
-- 预防规则：**替换 Tween 状态时要明确旧 Tween、新 Tween、对象三者所有权；完成、Kill、外部销毁必须收敛到相同结果。**
-- 文件：`Assets/Scripts/Effect/TimedArrowEffect.cs`
-
-### 阵型技能的水平命中与垂直命中应采用不同坐标语义 ✅ 已修复（2026-03）
-- 症状：敌人因攻击动画稍微位移就落空；敌人被击飞后，箭矢仍按地面高度触发。
-- 根因：瞬时世界位置同时承担阵型覆盖和身体接触点，无法兼顾稳定格位与实时高度。
-- 修复：XZ 使用稳定阵型格坐标并加入移动容差；Y 使用敌人实时世界高度、身体偏移和提前接触高度。
-- 预防规则：**阵型范围技能应拆分坐标语义：XZ 保持格位稳定，Y 跟随实时 Transform。**
-- 文件：`Assets/Scripts/Effect/TimedArrowEffect.cs`
-
-### 起点与落点独立随机会造成箭矢横跨屏幕 ✅ 已修复（2026-03）
-- 症状：从屏幕左上出现的箭矢可能飞向右侧，轨迹不像从上方落下。
-- 根因：起点 X 和落点 X 独立采样，横向差值可能接近整个战场宽度；调整旋转无法修复轨迹本身。
-- 修复：先生成目标 X，再围绕目标 X 施加有限的起点抖动，并约束斜视画面中的视觉朝向。
-- 预防规则：**需要近似垂直下落时，随机端点必须相关；先定目标，再围绕目标生成起点。**
-- 文件：`Assets/Scripts/Effect/TimedArrowEffect.cs`
-
-### 高频受击缩放不能基于当前 Scale 相对叠加 ✅ 已修复
-- 症状：敌人被箭雨连续命中后体型持续变大，或在状态切换/对象池回收边界偶发停留在放大状态。
-- 根因：新受击 Tween 从已放大的当前 Scale 继续计算会累积；同时受击缩放、攻击翻面 `DOScaleX`、补齐弹跳、死亡/击飞清理共用 Enemy 根 Transform。外部路径宽泛 Kill 根 Transform Tween 时，原受击序列没有 `OnKill` 归一化收尾。
-- 修复：每次反馈先停止旧 Tween、从 `originalScale` 基准重启；受击序列增加 owner 校验的 `OnComplete` 与 `OnKill`，两条路径统一恢复 `_hitScaleMultiplier=1` 与 Scale；状态切换、补齐、QTE、眩晕、击飞、Boss阶段、死亡、OnDisable、对象池 Reset 前统一调用 `StopHitScaleFeedback()`。
-- 当前仍保留根 Transform 共用的历史结构；后续若继续扩展受击视觉，优先将 squash/stretch 移到视觉子节点，避免与逻辑移动/攻击翻面争夺根 Transform。
-- 文件：`Assets/Scripts/Enemy/Enemy.cs`
-
-### C# 默认值不会迁移 Prefab 已序列化字段 ✅ 已处理（2026-03）
-- 症状：发射字段改为 `volleyInterval` 后，只改代码默认值不能保证 Prefab 使用新参数。
-- 根因：Unity 已序列化值不会因脚本字段默认值变化而自动更新；字段删除或替换还需要重新编译和保存资产。
-- 修复：执行脚本重编译，通过 Unity API 明确写入 Prefab，再用 YAML 工具复核实际值。
-- 预防规则：**序列化字段新增、删除或语义改变后，必须执行“重编译 → Unity API 写资产 → YAML/Inspector 复核”。**
-- 文件：`Assets/Scripts/Effect/TimedArrowEffect.cs`、`Assets/Prefabs/Effects/ArrowRainEffect.prefab`
-
-### 视觉箭数量与伤害载体数量必须解耦 ✅ 已处理（2026-03）
-- 症状：直接把每波箭数从4增加到8，会令伤害和命中次数同步翻倍。
-- 根因：视觉实例与伤害实例共用同一生成循环和命中逻辑。
-- 修复：每波生成8支箭，其中固定4支参与伤害判定，其余4支只播放飞行、落地和淡出。
-- 预防规则：**表现密度和数值载体应在生成入口显式区分；不要在结算后再补偿总伤害。**
-- 文件：`Assets/Scripts/Effect/TimedArrowEffect.cs`
-
-### Time 被动首次触发必须区分即时型与叠层型 ✅ 已处理（2026-03）
-- 症状：若所有 Time 类型首次获得都直接释放，蓄力冲击波会破坏队列语义，甚至同时授层和释放。
-- 根因：`TimedPassiveModule` 同时管理普通即时效果和 `charge_shockwave` 计时叠层效果。
-- 修复：普通 Time 效果首次注册时立即调用现有 `SpawnEffect()`，然后开始完整周期；`charge_shockwave` 只立即授予1层。升级已有技能不免费触发，也不重置剩余时间。
-- 预防规则：**修改统一计时框架前必须枚举各 effectType 的触发语义；即时型、叠层型和消费型不能仅因共用 timer 而采用相同策略。**
-- 文件：`Assets/Scripts/Core/TimedPassiveModule.cs`
-
-### UI新特效难以在目标位置验证时，先在屏幕中心做 debug target 独立验证渲染链路 ✅ 已验证（2025-01）
-- 症状：给头像背后加火焰特效，多次调整后完全不可见，无法判断是渲染问题还是逻辑问题
-- 根因：特效直接挂在目标位置（头像旁）时，可能被遮挡、alpha=0、CanvasGroup 隐藏、sibling order 错误等多重因素同时影响，无法逐一排查
-- 修复：在屏幕中心放置一个独立的 debug target（ReadyFireEffect_Debug），先确认该 target 可见、粒子系统/帧动画正常工作，再回迁到目标位置
-- 预防规则：**当 UI 新特效在目标位置反复不可见时，不要盲目调整参数。先在屏幕中心创建一个独立 debug target 验证渲染/逻辑链路完整，确认可见后再迁移到目标位置并调整参数。验证完成后务必移除 debug target**
-- 文件：`Assets/Scripts/UI/UIReadyFireEffect.cs`, `Assets/Scripts/UI/UltimateButtonUI.cs`, `Assets/Scenes/Battle.scene`
-
-### HUD 头像火焰特效挂在外部平级节点，运行时容易“逻辑已触发但看起来没生成” ✅ 已修复（2025-12）
-- 症状：大招充能满后逻辑已触发，甚至中心调试 target 可见，但头像位置始终观测不到火焰，容易误判为特效逻辑失效
-- 根因：`ReadyFireEffect` 初期挂在 `Health(Slider)` 下，和 `UltPortraitButton` 是平级关系，只能靠外部 offset 对齐头像；一旦头像布局、尺寸、层级发生变化，特效就可能偏离头像、被遮挡，或虽然存在但不在预期区域
-- 修复：将火焰节点迁入 `UltPortraitButton` 内部，作为头像按钮的子物体，并放在 `UltBase` / `UltFill` / `Head` 之前渲染；位置和尺寸改为在头像局部空间内调整
-- 预防规则：**所有“附着在某个 UI 元素上”的持续特效，都应优先挂在该 UI 元素内部，而不是挂在外部父节点后靠 anchoredPosition/offset 对齐。只要需求是“跟着某个 UI 元素走并稳定处于其前后层级”，就必须优先保证层级归属正确，再谈参数微调**
-
-
-### 已隐藏的UI也可能跳过Awake，不能假定运行时缓存已建立 ✅ 已修复（2026-07）
-- 症状：`StageProgressBar` 在 `BattleHUD.Start` 调用 `Initialize` 时，`_contentRect` 为 null，导致 `LayoutContent` 空引用。
-- 根因：进度条位于翻牌正面；Prefab初始时该节点处于 inactive，生命周期未执行 `Awake` 中的 `BuildVisuals()`，但 `BattleHUD` 仍可直接调用 `Initialize`。
-- 修复：`Initialize` 在 `LayoutContent` 前检查 `_contentRect`、`_lineImage`、`_playerDotRect`，缺失时显式执行 `BuildVisuals()`。
-- 预防规则：**对位于初始隐藏面板中的UI，公共初始化入口必须自行确保必需的缓存/子节点已建立；不能只依赖 Awake/OnEnable 的时序。**
-- 文件：`Assets/Scripts/UI/StageProgressBar.cs`
-
-### 攻击范围不能过滤整排补齐订单 ✅ 已修复
-- 症状：105远程敌人位于自身攻击范围内时，即使前方整排已经清空，攻击结束后仍停在远处持续射箭，不执行补齐。
-- 日志证据：同一105持续出现“发射飞行物”，但整排清空后始终没有对应的 `StartMoving`；近战101可正常补齐。
-- 根因：`ColumnManager.BeginWaveStep()` 使用 `rowIndex < attackRange` 跳过订单创建。105的 `attackRange=3`，因此在row2就被永久排除；而攻击结束逻辑只能恢复已有订单，不能补建订单。
-- 修复：删除 WaveMarch 订单创建阶段的攻击范围过滤。整排清空后，源排所有合格普通敌人统一获得订单；攻击动画中的敌人完成当前攻击后再执行订单。
-- 预防规则：**攻击范围只决定攻击/等待状态，不能参与合法整排补齐需求的判定，更不能阻止调度器创建订单。先创建订单，再由敌人状态决定执行时机。**
-- 验证：Unity完整重编译成功；用户回归测试暂未发现问题。
-- 文件：`Assets/Scripts/Core/ColumnManager.cs`、`Assets/Scripts/Enemy/Enemy.cs`
-
-### 位移打断 WaveMarch 步进后集合泄漏导致永久死锁 ✅ 已修复（2026）
-- 症状：波次中途（尤其Boss波）敌人停止补齐，场上残留普通敌人与Boss均卡住不动，只剩 QTE 相关日志空转直至强制关闭。
-- 日志证据（用户提供，最后一次 WaveMarch 之后）：
-  ```
-  [WaveMarch] StartWaveMarch blocked: _isWaveMarching=True _isWavePreparing=False srcRow=2 tgtRow=1
-  ```
-  之后仅有 `[Displacement] Slash DirectionalPush` / `[PushReturn] register|step|complete` / `[Enemy] TakeDamage` / QTE 日志，**再无 `[WaveMarch] StartWaveMarch → BeginWaveStep` 或 `CompleteWaveStep`**。
-- 根因（代码确认）：
-  1. `ColumnManager.ExecutePush`（Stab击退）第 1158 行与 `MoveEnemyToColumnAtRow`（Slash横向推）第 972 行都调用 `ReleaseEnemyFromMovementSchedulers(enemy, srcCol)`。
-  2. 该函数（614-636行）执行 `_pendingWaveEnemies.Remove(enemy)` 并把该敌的 `OnRushMoveComplete -= OnWaveEnemyRushComplete`（618-622行），随后 `CancelRushMoveOrder`。
-  3. **关键缺陷**：它只在 `wasWaveMember && _pendingWaveEnemies.Count == 0 && _preparingWaveEnemies.Count == 0` 时才把 `_isWaveMarching=false`（629-635行）。若同一 WaveMarch 步进还有其他敌人仍在 pending/preparing，flag 保持 `True`，而被击退/横推的敌人已从 pending 移除并解绑回调。
-  4. 结果：`srcRow=N→tgtRow=N-1` 的步进剩余成员永远等不到被移除者的完成回调 → `CompleteWaveStep` 永不触发 → `_isWaveMarching` 永久 `True` → 之后所有 `StartWaveMarch` 全部 `blocked`，补齐链彻底冻结，Boss 也等不到前方清空，关卡无法通关。
-- 与既有坑点区别：mistake-note 中“攻击范围过滤补齐订单”是**订单未创建**；本次是**订单已创建、行军中被打断后清理/恢复不完整**，属同类“补齐冻结”的另一种根因。
-- 修复：`ReleaseEnemyFromMovementSchedulers` 在 `wasWaveMember` 且 `_pendingWaveEnemies/_preparingWaveEnemies` 均清空时，**补发 `StartWaveMarch()`** 重新扫描空排（而不是只清 `_isWaveMarching` flag）。`StartWaveMarch` 自带 PushReturn 感知：有挂起事务时 deferred 并置 `_waveMarchRequestedWhilePushReturn=true`，由 `TryResumePausedWaveAfterPushReturns` 在事务结束后恢复，链路闭环。
-- 预防规则：**调度器成员被外部位移（击退/横推/移除）打断时，集合清空后必须补发一次全局重扫，不能只复位状态 flag；恢复入口应复用调度器自身（StartWaveMarch/CompleteWaveStep），避免“状态已清但无人重新调度”的半死锁。**
-- 验证：Unity完整重编译成功；使用专用测试关卡 `Stage_WaveMarchBugTest.asset`（Boss远排 + 5排101）验证，用户已验收。
-- 文件：`Assets/Scripts/Core/ColumnManager.cs`
-
-### Boss 到达应战排(row<=1)时补齐拒绝分支不触发应战 → 纯BossRush卡死 ✅ 已修复（2026）
-- 症状：Boss 单独部署在最前排（如纯BossRush关卡，Boss 位于 rows[0]→row2）或推进到 row1 时，不进入 InCombat、不出现血条、不攻击，玩家攻击无伤害，关卡卡死。
-- 日志证据：
-  ```
-  [WaveSpawner] 生成敌人 id=108 → 列2 排2
-  [BOSS_ADVANCE] Boss加入补齐链(rowIndex=2) ... 等待TriggerBossFillForward
-  [Enemy] StartMoving: #1(108), col=2, row=2, targetRow=1, isRush=True
-  [Enemy] 移动完成: #1(108), col=2, oldRow=2, newRow=1
-  [BOSS_ADVANCE] Boss已在应战排(rowIndex=1), 拒绝补齐: #1(108), bossState=None
-  ```
-  此后 bossState 恒为 None，无 `[BOSS_ADVANCE] Boss进入战斗` 日志。
-- 根因（代码确认）：`Enemy.TryStartRushMove`（Enemy.cs:2445-2450）中 `isBoss && rowIndex <= 1` 分支**只执行 `CompleteRushMoveOrder()` 并返回 Rejected，不触发 InCombat**。正常 Boss 从远排推进时会先到 row2 触发 `BossPause` 等前方清空再 `BossResume`，进入 row1 前 bossState 已是 Approaching，走 `UpdateMovement` 的 engageTimer 路径应战；但当 Boss 初始就在 row2 或补齐链直接推到 row1 时，走的是 TryStartRushMove 的补齐拒绝路径，应战逻辑从未执行。
-- 修复：`TryStartRushMove` 的“Boss已在应战排”分支在 `bossState == None` 时显式进入 InCombat：置 `bossState=BossState.InCombat`、触发 `OnBossEngaged`、调用 `SetBossActionCooldown()`。
-- 预防规则：**凡“到达应战条件但拒绝某行为”的分支，都必须显式把状态推进到 InCombat，不能依赖其他路径（如 engageTimer）兜底；单点部署/极近部署会绕过既有前置流程。纯BossRush 关卡属于合法需求，Boss 应支持任意前排起始位。**
-- 验证：新增 `Stage_BossRushTest.asset`（仅108在最前排），用户已验收 Boss 正常应战。
-- 文件：`Assets/Scripts/Enemy/Enemy.cs`
+### Slash命中特效左右镜像与视觉偏移必须分离坐标语义 ✅ 已修复
+- 症状：Slash 左右方向的火星移动方向可以镜像，但火星造型仍保持同一朝向；尝试把命中特效根节点移动到视觉起点后，偏移效果不明显，甚至容易影响命中表现。
+- 根因：
+  1. 命中特效根节点同时承担世界位置、相机朝向和子节点局部坐标。相机采用 `Quaternion.LookRotation(-Camera.main.transform.forward, Camera.main.transform.up)` 后，根节点局部 X 与世界 X 可能相反，不能直接把世界左右符号与局部旋转/`flipX` 混用。
+  2. 火星的位移、旋转、分叉角度和 Sprite 图案镜像分别使用了不同方向基准，导致“运动镜像但造型不镜像”。
+  3. 将根节点从起点移动到命中点会让所有子特效一起移动；如果同时再让子火星从命中点反向起步，两个动画会互相抵消，视觉上看不出偏移。
+- 修复：
+  1. 逻辑命中根节点固定在真实 `impactPosition`，新增 `VisualRoot` 作为纯视觉内容父节点；只有 `VisualRoot` 从视觉起点飞向命中点，不改变伤害、命中时机、位移或卡肉。
+  2. Slash 方向先转换为命中特效根节点的局部方向，再由同一个 `travelSign` 同时驱动旋转、移动、分叉角度和 SpriteRenderer.flipX；不要分别从世界 X、相机屏幕 X 和局部 X 推导不同符号。
+  3. 任何不对称程序化 Sprite 都必须显式验证左右两侧的图案朝向，不能只验证位置轨迹或旋转数值。
+- 预防规则：**特效方向至少拆成“世界方向、相机屏幕方向、特效局部方向”三种语义；确定一个渲染坐标系后，运动、旋转、分叉和图案镜像必须共用同一方向基准。需要从起点飞到命中点时，根节点固定在命中点，移动独立的视觉子树，避免视觉动画与逻辑对象互相争夺 Transform。实现后必须通过运行时左右对照检查 Sprite 图案，而不能仅凭代码认为已镜像。**
+- 文件：`Assets/Scripts/Attack/SweepEffect.cs`、`Assets/Scripts/Core/HitFeedbackManager.cs`、`Assets/Scripts/Core/PixelHitEffectManager.cs`、`Assets/Scripts/Enemy/Enemy.cs`、`Assets/Scripts/Enemy/SharedHealthGroup.cs`
 <!-- locus:body:end -->

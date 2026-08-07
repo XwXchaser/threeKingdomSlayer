@@ -30,6 +30,7 @@ public class SweepEffect : MonoBehaviour
     private WeaponMotionBlurController motionBlur;
     private Transform visualTransform;
     private Transform visualPathTransform;
+    private float visualPathTilt;
     private Color waveColor;
     private Color? damageNumberColor;
     private Sequence seq;
@@ -146,6 +147,7 @@ public class SweepEffect : MonoBehaviour
         effect._instanceId = obj.GetInstanceID();
         effect.visualTransform = visualTransform;
         effect.visualPathTransform = visualPathTransform;
+        effect.visualPathTilt = useEnhancedSlashMotion ? visualPathTilt : 0f;
         AliveCount++;
         effect.mat = material;
         effect.waveColor = color;
@@ -163,6 +165,8 @@ public class SweepEffect : MonoBehaviour
             effect.motionBlur = blurRenderer != null
                 ? new WeaponMotionBlurController(blurRenderer, 0.45f, 0.04f, 36f)
                 : null;
+            float trailLifetime = targetDuration > 0f ? targetDuration : duration;
+            PixelHitEffectManager.Instance?.AttachSlashTrail(visualTransform, leftToRight, visualPathTilt, trailLifetime);
         }
 
         // 按 X 排序：L→R 升序，R→L 降序
@@ -370,6 +374,8 @@ public class SweepEffect : MonoBehaviour
             bool isFirstHit = !_hasHit;
             _hasHit = true;
             Vector3 impactDirection = leftToRight ? Vector3.right : Vector3.left;
+            if (visualPathTilt != 0f)
+                impactDirection = Quaternion.Euler(0f, 0f, visualPathTilt) * impactDirection;
             Vector3 impactPosition = new Vector3(transform.position.x, enemy.transform.position.y + 0.8f,
                 enemy.transform.position.z);
             enemy.TakeDamage(damage, damageType, damageNumberColor, canInterruptCFrame,

@@ -7,6 +7,7 @@ public sealed class PixelHitEffectManager : MonoBehaviour
     private sealed class EffectInstance
     {
         public GameObject root;
+        public Transform visualRoot;
         public SpriteRenderer center;
         public SpriteRenderer[] rays;
         public Sequence sequence;
@@ -53,6 +54,12 @@ public sealed class PixelHitEffectManager : MonoBehaviour
     private Sprite _slashFrameStart;
     private Sprite _slashFrameFull;
     private Sprite _slashFrameBreak;
+    private const int StabVariantCount = 4;
+    private const int StabFramesPerVariant = 3;
+
+    private Sprite[] _stabFrames;
+    private int _stabVariantIndex;
+    private readonly List<Texture2D> _generatedTextures = new List<Texture2D>();
     private Transform _poolRoot;
 
     private void Awake()
@@ -67,6 +74,7 @@ public sealed class PixelHitEffectManager : MonoBehaviour
         CreatePixelSprite();
         CreateSparkSprites();
         CreateSlashSprites();
+        CreateStabSprites();
         var root = new GameObject("PixelHitEffectPool");
         root.transform.SetParent(transform, false);
         _poolRoot = root.transform;
@@ -100,6 +108,20 @@ public sealed class PixelHitEffectManager : MonoBehaviour
             Destroy(_slashFrameFull);
         if (_slashFrameBreak != null)
             Destroy(_slashFrameBreak);
+        if (_stabFrames != null)
+        {
+            for (int i = 0; i < _stabFrames.Length; i++)
+            {
+                if (_stabFrames[i] != null)
+                    Destroy(_stabFrames[i]);
+            }
+        }
+        for (int i = 0; i < _generatedTextures.Count; i++)
+        {
+            if (_generatedTextures[i] != null)
+                Destroy(_generatedTextures[i]);
+        }
+        _generatedTextures.Clear();
     }
 
     public void RequestHit(HitFeedbackContext context)
@@ -121,14 +143,16 @@ public sealed class PixelHitEffectManager : MonoBehaviour
         if (previous != null && previous.IsActive())
             previous.Kill(false);
         instance.root.SetActive(true);
-        instance.root.transform.position = context.hasImpactPosition
+        Vector3 impactWorldPosition = context.hasImpactPosition
             ? context.worldPosition
             : context.worldPosition + Vector3.up * bodyYOffset;
+        instance.root.transform.position = impactWorldPosition;
         if (Camera.main != null)
             instance.root.transform.position += Camera.main.transform.forward * cameraDepthOffset;
         instance.root.transform.rotation = Camera.main != null
             ? Quaternion.LookRotation(-Camera.main.transform.forward, Camera.main.transform.up)
             : Quaternion.identity;
+        instance.visualRoot.localPosition = Vector3.zero;
 
         bool heavy = context.strength == HitFeedbackStrength.Heavy;
         float size = heavy ? heavySize : standardSize;
@@ -146,6 +170,10 @@ public sealed class PixelHitEffectManager : MonoBehaviour
                 (heavy ? slashDuration * 1.15f : slashDuration) * (fullSlash ? 1f : 0.78f),
                 fullSlash ? 4 : 2);
         }
+        else if (context.damageType == DamageType.Stab)
+        {
+            BuildStabEffect(instance, context.impactDirection, heavy);
+        }
         else
         {
             BuildDirectionalBurst(instance, context.impactDirection, color, size, rayLength, duration);
@@ -154,6 +182,145 @@ public sealed class PixelHitEffectManager : MonoBehaviour
         var sequence = instance.sequence;
         sequence.OnComplete(() => ReturnToPool(instance, sequence));
         sequence.OnKill(() => ReturnToPool(instance, sequence));
+    }
+
+    public void AttachSlashTrail(Transform carrier, bool leftToRight, float visualTilt, float lifetime)
+    {
+        if (carrier == null)
+            return;
+
+        var trailRoot = new GameObject("SlashSparkTrail");
+        trailRoot.transform.SetParent(carrier, false);
+        Vector3 worldDirection = Quaternion.Euler(0f, 0f, visualTilt)
+            * (leftToRight ? Vector3.right : Vector3.left);
+        Vector3 localDirection = carrier.InverseTransformDirection(worldDirection).normalized;
+        localDirection.z = 0f;
+        localDirection.Normalize();
+        Vector3 perpendicular = new Vector3(-localDirection.y, localDirection.x, 0f);
+        float travelSign = localDirection.x >= 0f ? 1f : -1f;
+        float duration = Mathf.Clamp(lifetime * 0.42f, 0.14f, 0.24f);
+        var trailSequence = DOTween.Sequence().SetTarget(trailRoot.transform).SetUpdate(UpdateType.Normal, false);
+        trailSequence.SetLink(trailRoot, LinkBehaviour.KillOnDestroy);
+
+        for (int i = 0; i < 3; i++)
+        {
+            var sparkObject = new GameObject($"TrailSpark_{i}");
+            sparkObject.transform.SetParent(trailRoot.transform, false);
+            var renderer = sparkObject.AddComponent<SpriteRenderer>();
+            ConfigureRenderer(renderer);
+            renderer.sprite = i == 0 ? _sparkLongSprite : i == 1 ? _sparkForkSprite : _sparkChipSprite;
+            renderer.color = i == 1 ? slashColor : slashCoreColor;
+            renderer.flipX = travelSign < 0f;
+
+            float side = i == 0 ? -1f : i == 1 ? 1f : -1f;
+            float startOffset = 0.12f + i * 0.06f;
+            float endOffset = 0.48f + i * 0.08f;
+            Vector3 start = -localDirection * startOffset + perpendicular * side * 0.04f;
+            Vector3 end = localDirection * endOffset + perpendicular * side * (0.12f + i * 0.04f);
+            float scale = i == 0 ? 0.26f : i == 1 ? 0.21f : 0.16f;
+            sparkObject.transform.localPosition = start;
+            sparkObject.transform.localRotation = Quaternion.Euler(0f, 0f,
+                Mathf.Atan2(localDirection.y, localDirection.x) * Mathf.Rad2Deg + side * 16f);
+            sparkObject.transform.localScale = new Vector3(scale * 0.45f, 0.06f, 1f);
+
+            var sequence = DOTween.Sequence().SetTarget(sparkObject.transform).SetUpdate(UpdateType.Normal, false);
+            sequence.AppendInterval(i * 0.025f);
+            sequence.Append(sparkObject.transform.DOScale(new Vector3(scale, 0.12f, 1f), duration * 0.18f).SetEase(Ease.OutBack));
+            sequence.Join(sparkObject.transform.DOLocalMove(end, duration * 0.82f).SetEase(Ease.OutCubic));
+            sequence.Append(sparkObject.transform.DOScale(Vector3.zero, duration * 0.22f).SetEase(Ease.InQuad));
+            trailSequence.Join(sequence);
+        }
+
+        trailSequence.AppendInterval(duration + 0.05f);
+        trailSequence.OnComplete(() =>
+        {
+            if (trailRoot != null)
+                Destroy(trailRoot);
+        });
+        trailSequence.OnKill(() =>
+        {
+            if (trailRoot != null)
+                Destroy(trailRoot);
+        });
+    }
+
+    private void BuildStabEffect(EffectInstance instance, Vector3 impactDirection, bool heavy)
+    {
+        int variant = _stabVariantIndex++ % StabVariantCount;
+        int frameBase = variant * StabFramesPerVariant;
+        int seed = unchecked(instance.root.GetInstanceID() * 397 ^ Time.frameCount * 31);
+        var random = new System.Random(seed);
+        float Next(float min, float max) => min + (float)random.NextDouble() * (max - min);
+
+        float duration = heavy ? 0.52f : 0.45f;
+        float peakScale = (heavy ? 1.536f : 1.344f) * Next(0.97f, 1.03f);
+        float rotation = Next(-5f, 5f);
+        float contactEnd = duration * 0.14f;
+        float burstEnd = duration * 0.54f;
+        float holdEnd = duration * 0.72f;
+
+        instance.center.enabled = true;
+        instance.center.sprite = _stabFrames[frameBase];
+        instance.center.color = Color.white;
+        instance.center.transform.localPosition = Vector3.zero;
+        instance.center.transform.localRotation = Quaternion.Euler(0f, 0f, rotation);
+        instance.center.transform.localScale = Vector3.one * (peakScale * 0.34f);
+
+        instance.sequence.Insert(0f,
+            instance.center.transform.DOScale(Vector3.one * (peakScale * 0.58f), contactEnd)
+                .SetEase(Ease.OutCubic));
+        instance.sequence.InsertCallback(contactEnd, () =>
+        {
+            instance.center.sprite = _stabFrames[frameBase + 1];
+            instance.center.transform.localScale = Vector3.one * (peakScale * 0.64f);
+        });
+        instance.sequence.Insert(contactEnd,
+            instance.center.transform.DOScale(Vector3.one * peakScale, burstEnd - contactEnd)
+                .SetEase(Ease.OutBack, 1.15f));
+        instance.sequence.InsertCallback(burstEnd, () =>
+        {
+            instance.center.sprite = _stabFrames[frameBase + 2];
+            instance.center.transform.localScale = Vector3.one * peakScale;
+        });
+        instance.sequence.Insert(holdEnd,
+            instance.center.transform.DOScale(Vector3.one * (peakScale * 0.9f), duration - holdEnd)
+                .SetEase(Ease.InQuad));
+        instance.sequence.InsertCallback(duration, () => instance.center.enabled = false);
+
+        int debrisCount = heavy ? 6 : 5;
+        for (int i = 0; i < instance.rays.Length; i++)
+        {
+            SpriteRenderer debris = instance.rays[i];
+            debris.enabled = i < debrisCount;
+            if (!debris.enabled)
+                continue;
+
+            float angle = i * (360f / debrisCount) + Next(-24f, 24f);
+            Vector3 direction = Quaternion.Euler(0f, 0f, angle) * Vector3.up;
+            float startRadius = peakScale * Next(0.72f, 0.92f);
+            float travel = peakScale * Next(0.42f, 0.72f);
+            float length = peakScale * Next(0.11f, 0.18f);
+            float width = length * Next(0.35f, 0.58f);
+
+            debris.sprite = i % 3 == 0 ? _sparkLongSprite : _sparkChipSprite;
+            debris.color = i % 2 == 0
+                ? new Color(0.72f, 0.1f, 0.02f, 1f)
+                : new Color(0.3f, 0.055f, 0.018f, 1f);
+            debris.flipX = Next(0f, 1f) > 0.5f;
+            debris.transform.localPosition = direction * startRadius;
+            debris.transform.localRotation = Quaternion.Euler(0f, 0f, angle - 90f + Next(-18f, 18f));
+            debris.transform.localScale = Vector3.zero;
+
+            float delay = burstEnd * Next(0.76f, 0.94f);
+            instance.sequence.Insert(delay,
+                debris.transform.DOScale(new Vector3(length, width, 1f), duration * 0.12f)
+                    .SetEase(Ease.OutCubic));
+            instance.sequence.Insert(delay,
+                debris.transform.DOLocalMove(direction * (startRadius + travel), duration - delay)
+                    .SetEase(Ease.OutCubic));
+            instance.sequence.Insert(holdEnd,
+                debris.transform.DOScale(Vector3.zero, duration - holdEnd).SetEase(Ease.InQuad));
+        }
     }
 
     private void BuildDirectionalBurst(EffectInstance instance, Vector3 impactDirection, Color color,
@@ -167,12 +334,16 @@ public sealed class PixelHitEffectManager : MonoBehaviour
         instance.center.transform.localRotation = Quaternion.Euler(0f, 0f, angleOffset + 45f);
         instance.center.transform.localScale = new Vector3(size * 0.45f, size * 0.7f, 1f);
 
+        const int rayCount = 4;
         for (int i = 0; i < instance.rays.Length; i++)
         {
+            var ray = instance.rays[i];
+            ray.enabled = i < rayCount;
+            if (!ray.enabled)
+                continue;
+
             float angle = angleOffset + i * 90f;
             Vector3 direction = Quaternion.Euler(0f, 0f, angle) * Vector3.up;
-            var ray = instance.rays[i];
-            ray.enabled = true;
             ray.sprite = _pixelSprite;
             ray.color = color;
             ray.transform.localRotation = Quaternion.Euler(0f, 0f, -angle);
@@ -185,7 +356,7 @@ public sealed class PixelHitEffectManager : MonoBehaviour
         instance.sequence.Insert(duration * 0.3f,
             instance.center.transform.DOScale(Vector3.zero, duration * 0.7f).SetEase(Ease.InQuad));
 
-        for (int i = 0; i < instance.rays.Length; i++)
+        for (int i = 0; i < rayCount; i++)
         {
             float angle = angleOffset + i * 90f;
             Vector3 direction = Quaternion.Euler(0f, 0f, angle) * Vector3.up;
@@ -202,10 +373,12 @@ public sealed class PixelHitEffectManager : MonoBehaviour
     private void BuildSlashEffect(EffectInstance instance, Vector3 impactDirection, Color edgeColor,
         float length, float width, float duration, int sparkCount)
     {
-        float travelSign = impactDirection.sqrMagnitude < 0.0001f
-            ? 1f
-            : (instance.root.transform.InverseTransformDirection(impactDirection.normalized).x >= 0f ? 1f : -1f);
-        float angle = travelSign > 0f ? slashAngle : -slashAngle;
+        Vector3 localDirection = instance.root.transform.InverseTransformDirection(impactDirection.normalized);
+        localDirection.z = 0f;
+        localDirection.Normalize();
+        float travelSign = localDirection.x >= 0f ? 1f : -1f;
+        float tilt = Mathf.Atan2(localDirection.y, Mathf.Abs(localDirection.x)) * Mathf.Rad2Deg;
+        float angle = travelSign * (slashAngle + tilt);
         Vector3 travel = Quaternion.Euler(0f, 0f, angle) * new Vector3(travelSign, 0f, 0f);
         Vector3 upward = Quaternion.Euler(0f, 0f, angle) * Vector3.up;
         float entryLength = length * 0.15f;
@@ -261,17 +434,24 @@ public sealed class PixelHitEffectManager : MonoBehaviour
                 1 => length * 0.34f,
                 _ => length * 0.22f
             };
-            Vector3 step0 = travel * length * (0.18f + i * 0.025f) + upward * side * width * 0.2f;
-            Vector3 step1 = travel * length * (0.42f + (i % 2) * 0.08f) + upward * side * width * 0.8f;
+            Vector3 step0 = -travel * length * 0.28f + upward * side * width * 0.1f;
+            Vector3 step1 = travel * length * (0.32f + (i % 2) * 0.06f) + upward * side * width * 0.72f;
             Vector3 step2 = travel * length * (0.68f + (i % 2) * 0.12f) + upward * side * width * 1.55f;
 
-            spark.transform.localRotation = Quaternion.Euler(0f, 0f, angle + side * (i < 2 ? 10f : 18f));
+            spark.transform.localRotation = Quaternion.Euler(0f, 0f, angle + side * travelSign * (i < 2 ? 10f : 18f));
+            spark.flipX = travelSign < 0f;
             spark.transform.localPosition = step0;
-            spark.transform.localScale = new Vector3(sparkScale, width * (i < 2 ? 0.38f : 0.26f), 1f);
-            instance.sequence.InsertCallback(frame, () => spark.transform.localPosition = step1);
-            instance.sequence.InsertCallback(frame * 2f, () => spark.transform.localPosition = step2);
-            instance.sequence.InsertCallback(frame * 3f, () =>
-                spark.transform.localScale = new Vector3(sparkScale * 0.45f, width * 0.2f, 1f));
+            spark.transform.localScale = new Vector3(sparkScale * 0.55f, width * (i < 2 ? 0.22f : 0.16f), 1f);
+            instance.sequence.Insert(0f,
+                spark.transform.DOScale(new Vector3(sparkScale, width * (i < 2 ? 0.38f : 0.26f), 1f), frame * 0.55f)
+                    .SetEase(Ease.OutBack));
+            instance.sequence.Insert(frame * 0.55f,
+                spark.transform.DOLocalMove(step1, frame * 0.7f).SetEase(Ease.OutCubic));
+            instance.sequence.Insert(frame * 1.25f,
+                spark.transform.DOLocalMove(step2, frame * 0.85f).SetEase(Ease.OutCubic));
+            instance.sequence.Insert(frame * 2.25f,
+                spark.transform.DOScale(new Vector3(sparkScale * 0.45f, width * 0.2f, 1f), frame * 0.75f)
+                    .SetEase(Ease.InQuad));
         }
     }
 
@@ -315,20 +495,24 @@ public sealed class PixelHitEffectManager : MonoBehaviour
 
         var centerObject = new GameObject("Center");
         centerObject.transform.SetParent(root.transform, false);
+        var visualRootObject = new GameObject("VisualRoot");
+        visualRootObject.transform.SetParent(root.transform, false);
+        var visualRoot = visualRootObject.transform;
+        centerObject.transform.SetParent(visualRoot, false);
         var center = centerObject.AddComponent<SpriteRenderer>();
         ConfigureRenderer(center);
 
-        var rays = new SpriteRenderer[4];
+        var rays = new SpriteRenderer[12];
         for (int i = 0; i < rays.Length; i++)
         {
             var rayObject = new GameObject($"Ray_{i}");
-            rayObject.transform.SetParent(root.transform, false);
+            rayObject.transform.SetParent(visualRoot, false);
             rays[i] = rayObject.AddComponent<SpriteRenderer>();
             ConfigureRenderer(rays[i]);
         }
 
         root.SetActive(false);
-        return new EffectInstance { root = root, center = center, rays = rays };
+        return new EffectInstance { root = root, visualRoot = visualRoot, center = center, rays = rays };
     }
 
     private void ConfigureRenderer(SpriteRenderer renderer)
@@ -435,6 +619,214 @@ public sealed class PixelHitEffectManager : MonoBehaviour
             "0000000000100000"
         });
     }
+    private void CreateStabSprites()
+    {
+        _stabFrames = new Sprite[StabVariantCount * StabFramesPerVariant];
+        for (int variant = 0; variant < StabVariantCount; variant++)
+        {
+            _stabFrames[variant * StabFramesPerVariant] = CreateStabFrameSprite(variant, 0);
+            _stabFrames[variant * StabFramesPerVariant + 1] = CreateStabFrameSprite(variant, 1);
+            _stabFrames[variant * StabFramesPerVariant + 2] = CreateStabFrameSprite(variant, 2);
+        }
+    }
+
+    private Sprite CreateStabFrameSprite(int variant, int frame)
+    {
+        const int size = 64;
+        const float pixelsPerUnit = 30f;
+        int center = size / 2;
+        var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            filterMode = FilterMode.Point,
+            wrapMode = TextureWrapMode.Clamp,
+            name = $"PixelHitEffect_Stab_{variant}_{frame}_Texture"
+        };
+        var pixels = new Color32[size * size];
+        var random = new System.Random(92821 + variant * 7919);
+        Color32 outline = new Color32(53, 16, 8, 255);
+        Color32 darkRed = new Color32(145, 24, 8, 255);
+        Color32 red = new Color32(213, 42, 8, 255);
+        Color32 orange = new Color32(255, 101, 7, 255);
+        Color32 yellow = new Color32(255, 211, 16, 255);
+        Color32 white = new Color32(255, 253, 224, 255);
+
+        float[] directions =
+        {
+            3f, 18f, 47f, 72f, 109f, 128f, 171f,
+            198f, 226f, 252f, 287f, 316f, 344f
+        };
+        var lengths = new float[directions.Length];
+        for (int i = 0; i < directions.Length; i++)
+        {
+            directions[i] += ((float)random.NextDouble() * 2f - 1f) * 5.5f;
+            float baseLength = i switch
+            {
+                0 or 4 or 7 or 10 => 1.15f,
+                2 or 6 or 9 or 12 => 0.83f,
+                _ => 0.98f
+            };
+            lengths[i] = baseLength * (0.93f + (float)random.NextDouble() * 0.14f);
+        }
+
+        if (frame == 0)
+        {
+            DrawSolidBurstCore(pixels, size, center, 3.8f, outline);
+            DrawSolidBurstCore(pixels, size, center, 2.8f, white);
+            DrawBurstLayer(pixels, size, center, directions, lengths, 2.5f, 13f, 3.2f, outline);
+            DrawBurstLayer(pixels, size, center, directions, lengths, 1.8f, 9f, 3.4f, white);
+        }
+        else
+        {
+            float expansion = frame == 1 ? 0.78f : 1f;
+            DrawSolidBurstCore(pixels, size, center, 9.5f * expansion, outline);
+            DrawSolidBurstCore(pixels, size, center, 8.1f * expansion, darkRed);
+            DrawSolidBurstCore(pixels, size, center, 6.9f * expansion, orange);
+            DrawSolidBurstCore(pixels, size, center, 5.9f * expansion, yellow);
+            DrawSolidBurstCore(pixels, size, center, 4.8f * expansion, white);
+            DrawBurstLayer(pixels, size, center, directions, lengths,
+                8.5f * expansion, 30f * expansion, 3.1f, outline);
+            DrawBurstLayer(pixels, size, center, directions, lengths,
+                7.8f * expansion, 27.5f * expansion, 3.2f, darkRed);
+            DrawBurstLayer(pixels, size, center, directions, lengths,
+                7f * expansion, 24.5f * expansion, 3.3f, red);
+            DrawBurstLayer(pixels, size, center, directions, lengths,
+                6.1f * expansion, 20.5f * expansion, 3.4f, orange);
+            DrawBurstLayer(pixels, size, center, directions, lengths,
+                5.2f * expansion, 15.5f * expansion, 3.7f, yellow);
+            DrawBurstLayer(pixels, size, center, directions, lengths,
+                4.6f * expansion, 10.5f * expansion, 4f, white);
+        }
+
+        if (frame == 2)
+            DrawDebris(pixels, size, center, directions, outline, darkRed, random);
+
+        texture.SetPixels32(pixels);
+        texture.Apply(false, true);
+        _generatedTextures.Add(texture);
+        var sprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), Vector2.one * 0.5f, pixelsPerUnit);
+        sprite.name = $"PixelHitEffect_Stab_{variant}_{frame}";
+        return sprite;
+    }
+
+    private static void DrawSolidBurstCore(Color32[] pixels, int size, int center, float radius, Color32 color)
+    {
+        int limit = Mathf.CeilToInt(radius);
+        for (int y = -limit; y <= limit; y++)
+        {
+            for (int x = -limit; x <= limit; x++)
+            {
+                float normalizedX = Mathf.Abs(x) / Mathf.Max(radius, 0.01f);
+                float normalizedY = Mathf.Abs(y) / Mathf.Max(radius, 0.01f);
+                float diamond = normalizedX + normalizedY;
+                float square = Mathf.Max(normalizedX, normalizedY);
+                if (diamond <= 1.28f && square <= 1f)
+                    SetPixel(pixels, size, center + x, center + y, color);
+            }
+        }
+    }
+
+    private static void DrawBurstLayer(Color32[] pixels, int size, int center, float[] directions,
+        float[] lengths, float innerRadius, float outerRadius, float width, Color32 color)
+    {
+        for (int i = 0; i < directions.Length; i++)
+        {
+            float radians = directions[i] * Mathf.Deg2Rad;
+            Vector2 direction = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
+            Vector2 perpendicular = new Vector2(-direction.y, direction.x);
+            float length = Mathf.Lerp(innerRadius, outerRadius, lengths[i]);
+            int steps = Mathf.CeilToInt(length - innerRadius);
+            for (int step = 0; step <= steps; step++)
+            {
+                float distance = innerRadius + step;
+                float taper = 1f - Mathf.Clamp01((distance - innerRadius) / Mathf.Max(1f, length - innerRadius));
+                float halfWidth = Mathf.Max(0.5f, width * taper);
+                int sideLimit = Mathf.CeilToInt(halfWidth);
+                for (int side = -sideLimit; side <= sideLimit; side++)
+                {
+                    if (Mathf.Abs(side) > halfWidth)
+                        continue;
+                    Vector2 position = Vector2.one * center + direction * distance + perpendicular * side;
+                    SetPixel(pixels, size, Mathf.RoundToInt(position.x), Mathf.RoundToInt(position.y), color);
+                }
+            }
+        }
+    }
+
+    private static void DrawDebris(Color32[] pixels, int size, int center, float[] directions,
+        Color32 outline, Color32 darkRed, System.Random random)
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            int directionIndex = (i * 3 + 1) % directions.Length;
+            float angle = (directions[directionIndex] + 10f) * Mathf.Deg2Rad;
+            Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            Vector2 position = Vector2.one * center + direction * (31f + (float)random.NextDouble() * 5f);
+            int length = 3 + random.Next(0, 4);
+            int width = 1 + random.Next(0, 2);
+            Color32 color = i % 2 == 0 ? outline : darkRed;
+            for (int step = 0; step < length; step++)
+            {
+                Vector2 p = position + direction * step;
+                for (int side = -width; side <= width; side++)
+                {
+                    Vector2 perpendicular = new Vector2(-direction.y, direction.x);
+                    SetPixel(pixels, size, Mathf.RoundToInt(p.x + perpendicular.x * side),
+                        Mathf.RoundToInt(p.y + perpendicular.y * side), color);
+                }
+            }
+        }
+    }
+
+    private static void DrawRadialLayer(Color32[] pixels, int size, int center, float[] directions,
+        float[] lengths, float maxLength, float baseHalfWidth, Color32 color)
+    {
+        for (int i = 0; i < directions.Length; i++)
+        {
+            float radians = directions[i] * Mathf.Deg2Rad;
+            Vector2 direction = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
+            Vector2 perpendicular = new Vector2(-direction.y, direction.x);
+            float length = maxLength * lengths[i];
+            float start = i % 2 == 0 ? 4f : 6f;
+            int steps = Mathf.CeilToInt(length - start);
+            for (int step = 0; step <= steps; step++)
+            {
+                float distance = start + step;
+                float normalized = Mathf.Clamp01(distance / length);
+                float halfWidth = Mathf.Max(0.55f, baseHalfWidth * Mathf.Pow(1f - normalized, 0.72f));
+                int widthSteps = Mathf.CeilToInt(halfWidth);
+                for (int side = -widthSteps; side <= widthSteps; side++)
+                {
+                    if (Mathf.Abs(side) > halfWidth)
+                        continue;
+                    Vector2 position = Vector2.one * center + direction * distance + perpendicular * side;
+                    SetPixel(pixels, size, Mathf.RoundToInt(position.x), Mathf.RoundToInt(position.y), color);
+                }
+            }
+        }
+    }
+
+    private static void DrawPixelDisc(Color32[] pixels, int size, int centerX, int centerY,
+        float radius, Color32 color)
+    {
+        int limit = Mathf.CeilToInt(radius);
+        float radiusSquared = radius * radius;
+        for (int y = -limit; y <= limit; y++)
+        {
+            for (int x = -limit; x <= limit; x++)
+            {
+                if (x * x + y * y <= radiusSquared)
+                    SetPixel(pixels, size, centerX + x, centerY + y, color);
+            }
+        }
+    }
+
+    private static void SetPixel(Color32[] pixels, int size, int x, int y, Color32 color)
+    {
+        if (x < 0 || x >= size || y < 0 || y >= size)
+            return;
+        pixels[y * size + x] = color;
+    }
+
     private Color GetDamageTypeColor(DamageType damageType)
     {
         return damageType switch
