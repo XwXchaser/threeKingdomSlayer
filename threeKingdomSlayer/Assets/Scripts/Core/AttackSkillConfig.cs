@@ -43,6 +43,9 @@ public class AttackSkillConfig : ScriptableObject
     public float stabSpawnZOffset = 0.5f;
     [Tooltip("仅戳刺视觉沿攻击方向额外前伸的世界距离，不影响命中、伤害或射程")]
     public float stabVisualReachOffset = 0.5f;
+    [Tooltip("Stab 视觉终点在面向相机的圆盘内随机偏移的基础半径；会随视觉射程缓慢缩放，不影响命中、伤害或射程")]
+    [Min(0f)]
+    public float stabVisualTargetRandomRadius = 0.12f;
 
     [Header("斩击扇形扫掠")]
     [Tooltip("扫掠半宽（X 轴范围，默认 5）")]
