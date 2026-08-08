@@ -135,6 +135,14 @@ public class TimedArrowEffect : MonoBehaviour
             arrowTemplate.gameObject.SetActive(false);
 
         int clampedRows = Mathf.Max(1, rowCount);
+
+        // Boss 固定在第二排，若 rowCount 覆盖不到则扩展目标区域到 Boss 排
+        for (int col = 0; col < cm.columnCount; col++)
+        {
+            var boss = cm.GetCombatBossCoveringColumn(col);
+            if (boss != null && boss.rowIndex + 1 > clampedRows)
+                clampedRows = boss.rowIndex + 1;
+        }
         int totalVolleys = Mathf.Max(1, arrowCount);
         Vector3 playerPos = GetArrowStartOrigin();
         int requestedVisualArrows = visualArrowCount > 0 ? visualArrowCount : visualArrowsPerVolley;
