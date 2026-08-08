@@ -521,6 +521,8 @@ public struct ActiveWaveLevelConfig
     [Range(0f, 1f)] public float bossPoiseDamagePercent;
     [Tooltip("落地伤害绝对值（0=未解锁），仅 Cyclone 使用")]
     public int landingDamage;
+    [Tooltip("旋风区域持续时间（秒），仅 Cyclone 使用")]
+    [Min(0.01f)] public float cycloneDuration;
 }
 
 /// <summary>主动疾病每级配置</summary>

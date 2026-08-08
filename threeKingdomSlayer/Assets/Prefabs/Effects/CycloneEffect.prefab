@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5745850116485671678}
   - component: {fileID: 2836293281921603319}
   - component: {fileID: 5672981987745659964}
+  - component: {fileID: -3838100231770950141}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: CycloneEffect
@@ -108,3 +109,18 @@ MonoBehaviour:
   cyclone5: {fileID: 21300000, guid: 11ceaad9908896f4c8a0a941a4a34496, type: 3}
   cyclone6: {fileID: 21300000, guid: e4e6d61a2211bff4eb6267d9d2849b5e, type: 3}
   loopFrameInterval: 0.15
+  fadeOutDuration: 0.25
+  yOffset: 0
+--- !u!114 &-3838100231770950141
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3409137233646897394}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 008896161221a974ab607e92471aabb9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  zoneScaleMultiplier: 2.2

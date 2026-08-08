@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1784887044900
-updatedAt: 1785501682207
+updatedAt: 1786165254989
 ---
 
 # active-skill-v2-runtime
@@ -33,5 +33,10 @@ V1限次道具与V2主动技能在项目中的实现入口、资产路径、池�
 - 数值设计基准（用户定义）：染病Lv1 = CD6s / 持续4s / 总伤10 作为1.0强度单位，裸DPS≈1.67；当前资产数值不具参照意义，后续数值重设计以此基准推导。
 - 染病机制成长：仅「基础传播（死亡传染相邻格）」与「智能传播（优先最近同行敌）」两种传播形态；智能传播应自Lv3起出现，Lv1/Lv2为纯数值成长。禁止「传播范围+1格」「同时传播多个目标」等未设计机制。
 - 火龙舌列数固定为中心一列，不可随等级成长或配置多列。
-- 箭雨定位为长CD、范围广（最多5排）、高伤害的清屏技能（用户已确认：长CD）。
+- 目标选取规则：主动 Cyclone 已改为区域型；按 `waveLevels.rangeRows` 每排生成一个位于该排 `col=2` 的大型旋风区域。区域生成不依赖敌人存在，生成时立即扫描该排已有敌人，持续期间继续扫描同排新出现/进入的敌人。
+- 区域持续时间由 `ActiveWaveLevelConfig.cycloneDuration` 配置，当前 `ActiveSkill_Cyclone.asset` 五级均为 2 秒；它与敌人被吹飞时长分离。
+- 同一敌人在同一个区域生命周期内只触发一次；不设置重新触发间隔。
+- 区域视觉使用 `CycloneEffect.PlayZoneVisual`：按 `cyclone1→6` 展开，之后循环 `cyclone5↔6`，区域结束后淡出。
+- 区域控制与敌人跟随视觉已解耦：主动区域不再为被击飞敌人实例化第二个 `CycloneEffect`，避免敌人脚下重复出现旋风；区域负责触发伤害、击飞和落地伤害，`CycloneEffect` 的目标跟随模式保留给其他旧路径。
+- 区域实现：`Assets/Scripts/Effect/CycloneZone.cs`；区域组件挂载于 `Assets/Prefabs/Effects/CycloneEffect.prefab`。
 <!-- locus:body:end -->

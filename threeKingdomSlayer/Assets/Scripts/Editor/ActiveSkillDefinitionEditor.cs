@@ -63,6 +63,7 @@ public class ActiveSkillDefinitionEditor : Editor
             EditorGUILayout.PropertyField(level.FindPropertyRelative("damage"), new GUIContent("伤害"));
             EditorGUILayout.PropertyField(level.FindPropertyRelative("bossPoiseDamagePercent"), new GUIContent("Boss最大架势削减比例"));
             EditorGUILayout.PropertyField(level.FindPropertyRelative("landingDamage"), new GUIContent("落地伤害（仅Cyclone）"));
+            EditorGUILayout.PropertyField(level.FindPropertyRelative("cycloneDuration"), new GUIContent("旋风持续时间"));
             EditorGUILayout.EndVertical();
         }
     }
