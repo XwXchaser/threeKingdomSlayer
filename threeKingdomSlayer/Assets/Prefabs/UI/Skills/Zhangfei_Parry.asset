@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 6
   attackType: 5
-  damageType: 0
+  damageType: 5
   damage: 0
   poiseDamage: 10
   rangeRows: 1
@@ -24,6 +24,8 @@ MonoBehaviour:
   attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
   stabSpawnYOffset: 1.5
   stabSpawnZOffset: 0.5
+  stabVisualReachOffset: 0.5
+  stabVisualTargetRandomRadius: 0.12
   slashSweepHalfWidth: 3
   slashSweepAngle: 45
   slashSweepDuration: 0.25

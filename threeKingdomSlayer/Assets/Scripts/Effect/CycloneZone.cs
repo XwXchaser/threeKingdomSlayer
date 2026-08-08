@@ -154,7 +154,7 @@ public sealed class CycloneZone : MonoBehaviour
             return;
 
         if (_damage > 0)
-            enemy.TakeDamage(_damage, feedbackSource: HitFeedbackSource.ActiveSkill,
+            enemy.TakeDamage(_damage, DamageType.Sweep, feedbackSource: HitFeedbackSource.ActiveSkill,
                 feedbackStrength: HitFeedbackStrength.Heavy);
         enemy.Launch(_knockupDuration);
 
@@ -172,7 +172,7 @@ public sealed class CycloneZone : MonoBehaviour
 
         enemy.OnLaunchedLanded -= OnEnemyLanded;
         if (enemy.state != EnemyState.Dead)
-            enemy.TakeDamage(_landingDamage, feedbackSource: HitFeedbackSource.ActiveSkill,
+            enemy.TakeDamage(_landingDamage, DamageType.Sweep, feedbackSource: HitFeedbackSource.ActiveSkill,
                 feedbackStrength: HitFeedbackStrength.Heavy);
         TryFinish();
     }
