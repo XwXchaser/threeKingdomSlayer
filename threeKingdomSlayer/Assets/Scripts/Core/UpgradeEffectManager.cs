@@ -47,6 +47,33 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
     private readonly List<Enemy> _dotRemovalList = new List<Enemy>();
     private readonly List<KeyValuePair<Enemy, DotState>> _burnUpdateBuffer = new List<KeyValuePair<Enemy, DotState>>();
     private readonly List<KeyValuePair<Enemy, DiseaseState>> _diseaseUpdateBuffer = new List<KeyValuePair<Enemy, DiseaseState>>();
+    private readonly Dictionary<Enemy, DiseaseBubbleEffect> _diseaseVisuals = new Dictionary<Enemy, DiseaseBubbleEffect>();
+
+    private void StopDiseaseVisual(Enemy enemy)
+    {
+        if (enemy == null || !_diseaseVisuals.TryGetValue(enemy, out var visual))
+            return;
+        _diseaseVisuals.Remove(enemy);
+        if (visual != null)
+            visual.StopEmission();
+    }
+
+    private void EnsureDiseaseVisual(Enemy enemy)
+    {
+        if (enemy == null)
+            return;
+        if (_diseaseVisuals.TryGetValue(enemy, out var existing) && existing != null)
+        {
+            existing.StartEmission();
+            return;
+        }
+
+        var visualObject = new GameObject("DiseaseBubbleEffect");
+        visualObject.transform.SetParent(enemy.transform, false);
+        var visual = visualObject.AddComponent<DiseaseBubbleEffect>();
+        visual.StartEmission();
+        _diseaseVisuals[enemy] = visual;
+    }
 
     public struct DotState
     {
@@ -255,7 +282,10 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
             }
 
             if (enemy.state == EnemyState.Dead || state.ticksRemaining <= 0)
+            {
                 _dotRemovalList.Add(enemy);
+                StopDiseaseVisual(enemy);
+            }
             else
                 _diseaseStates[enemy] = state;
         }
@@ -316,6 +346,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
             existing.tickTimer = DiseaseTickInterval;
             existing.smartSpread = existing.smartSpread || smartSpread;
             _diseaseStates[enemy] = existing;
+            EnsureDiseaseVisual(enemy);
             Debug.Log($"[Disease] ApplyDisease UPDATE: {enemy.DebugTag} oldLayers={oldLayers}→{existing.layers} oldTotalDmg={oldTotalDmg}→{existing.totalDamagePerLayer} dmgPerTick={existing.damagePerTick} addToExisting={addToExistingLayers}");
             return;
         }
@@ -331,6 +362,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
             tickTimer = DiseaseTickInterval,
             smartSpread = smartSpread
         };
+        EnsureDiseaseVisual(enemy);
         enemy.OnDying += HandleDiseasedEnemyDeath;
         Debug.Log($"[Disease] ApplyDisease NEW: {enemy.DebugTag} totalDmg={totalDamage} ticks={tickCount} dmgPerTick={damagePerTick} layers={layers} smartSpread={smartSpread}");
     }
@@ -347,6 +379,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
 
         int column = enemy.columnIndex;
         int row = enemy.rowIndex;
+        StopDiseaseVisual(enemy);
         _diseaseStates.Remove(enemy);
         enemy.OnDying -= HandleDiseasedEnemyDeath;
 
@@ -1143,6 +1176,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
                 enemy.OnDying -= HandleDiseasedEnemyDeath;
         }
         _diseaseStates.Clear();
+        _diseaseVisuals.Clear();
 
         CycloneItemController.Instance?.ResetAll();
         SpikeTrapController.Instance?.ResetAll();

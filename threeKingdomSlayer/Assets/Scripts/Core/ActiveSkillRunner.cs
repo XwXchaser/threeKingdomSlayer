@@ -224,17 +224,18 @@ public class ActiveSkillRunner : MonoBehaviour
         return true;
     }
 
-    public void ConsumeArmedDisease(Enemy enemy)
+    public bool ConsumeArmedDisease(Enemy enemy)
     {
-        if (_armedDiseaseDefinition == null || enemy == null)
-            return;
+        if (_armedDiseaseDefinition == null || enemy == null || UpgradeEffectManager.Instance == null)
+            return false;
 
         var config = _armedDiseaseDefinition.diseaseLevels[_armedDiseaseLevel - 1];
-        UpgradeEffectManager.Instance?.ApplyDisease(enemy, config.totalDamage, config.durationSeconds, _armedDiseaseLayers, smartSpread: config.smartSpread);
+        UpgradeEffectManager.Instance.ApplyDisease(enemy, config.totalDamage, config.durationSeconds, _armedDiseaseLayers, smartSpread: config.smartSpread);
         Debug.Log($"[ActiveSkillRunner] 染病附着: {enemy.DebugTag}, totalDamage={config.totalDamage}, duration={config.durationSeconds}s, layers={_armedDiseaseLayers}");
         _armedDiseaseDefinition = null;
         _armedDiseaseLevel = 0;
         _armedDiseaseLayers = 0;
+        return true;
     }
 
     private bool ActivateChargeAttackShockwave(ActiveSkillDefinition definition, int level)
