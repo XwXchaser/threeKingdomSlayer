@@ -21,9 +21,6 @@ public class ActiveSkillRunner : MonoBehaviour
     [SerializeField] private GameObject _cycloneEffectPrefab;
     [SerializeField] private WaveManager _waveManager;
 
-    private readonly List<Enemy> _cycloneCandidates = new List<Enemy>();
-    private readonly HashSet<Enemy> _cycloneCandidateSet = new HashSet<Enemy>();
-    private readonly List<Enemy> _activeBossSnapshot = new List<Enemy>();
     private readonly Dictionary<string, int> _chargeAttackShockwaveLayers = new Dictionary<string, int>();
     private ActiveSkillDefinition _armedDiseaseDefinition;
     private int _armedDiseaseLevel;
@@ -166,18 +163,32 @@ public class ActiveSkillRunner : MonoBehaviour
             return false;
 
         float zoneDuration = cfg.cycloneDuration > 0f ? cfg.cycloneDuration : 2f;
-        for (int row = 0; row < cfg.rangeRows; row++)
+
+        void SpawnZone(int row)
         {
             var instance = Instantiate(prefab);
             var zone = instance.GetComponent<CycloneZone>();
             if (zone == null)
             {
                 Destroy(instance);
-                continue;
+                return;
             }
-
             zone.Setup(columnManager, row, cfg.damage, cfg.landingDamage,
                 cfg.bossPoiseDamagePercent, 1.2f, zoneDuration);
+        }
+
+        for (int row = 0; row < cfg.rangeRows; row++)
+            SpawnZone(row);
+
+        // Boss 固定在第二排，若 rangeRows 覆盖不到则额外创建 Boss 排 Zone
+        for (int col = 0; col < columnManager.columnCount; col++)
+        {
+            var boss = columnManager.GetCombatBossCoveringColumn(col);
+            if (boss != null && boss.rowIndex >= cfg.rangeRows)
+            {
+                SpawnZone(boss.rowIndex);
+                break; // 一个 Boss 排 Zone 即可覆盖所有列
+            }
         }
 
         return true;
