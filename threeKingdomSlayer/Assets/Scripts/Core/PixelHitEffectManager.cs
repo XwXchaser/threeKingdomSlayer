@@ -60,6 +60,10 @@ public sealed class PixelHitEffectManager : MonoBehaviour
 
     private Sprite[] _stabFrames;
     private int _stabVariantIndex;
+    private Sprite[] _diseaseStabFrames;
+    private int _diseaseStabVariantIndex;
+    private const int DiseaseStabVariantCount = 4;
+    private const int DiseaseStabFramesPerVariant = 3;
     private readonly List<Texture2D> _generatedTextures = new List<Texture2D>();
     private Transform _poolRoot;
 
@@ -76,6 +80,7 @@ public sealed class PixelHitEffectManager : MonoBehaviour
         CreateSparkSprites();
         CreateSlashSprites();
         CreateStabSprites();
+        CreateDiseaseStabSprites();
         var root = new GameObject("PixelHitEffectPool");
         root.transform.SetParent(transform, false);
         _poolRoot = root.transform;
@@ -117,6 +122,14 @@ public sealed class PixelHitEffectManager : MonoBehaviour
             {
                 if (_stabFrames[i] != null)
                     Destroy(_stabFrames[i]);
+            }
+        }
+        if (_diseaseStabFrames != null)
+        {
+            for (int i = 0; i < _diseaseStabFrames.Length; i++)
+            {
+                if (_diseaseStabFrames[i] != null)
+                    Destroy(_diseaseStabFrames[i]);
             }
         }
         for (int i = 0; i < _generatedTextures.Count; i++)
@@ -164,7 +177,11 @@ public sealed class PixelHitEffectManager : MonoBehaviour
         Color color = heavy ? heavyColor : GetDamageTypeColor(context.damageType);
 
         instance.sequence = DOTween.Sequence().SetTarget(instance.root).SetUpdate(UpdateType.Normal, true);
-        if (context.damageType == DamageType.Slash)
+        if (context.isDiseaseStabHit && context.damageType == DamageType.Stab)
+        {
+            BuildDiseaseStabEffect(instance, heavy);
+        }
+        else if (context.damageType == DamageType.Slash)
         {
             bool fullSlash = context.strength >= HitFeedbackStrength.Standard;
             BuildSlashEffect(instance, context.impactDirection, heavy, fullSlash);
@@ -638,6 +655,246 @@ public sealed class PixelHitEffectManager : MonoBehaviour
         }
     }
 
+    private void CreateDiseaseStabSprites()
+    {
+        _diseaseStabFrames = new Sprite[DiseaseStabVariantCount * DiseaseStabFramesPerVariant];
+        for (int variant = 0; variant < DiseaseStabVariantCount; variant++)
+        {
+            for (int frame = 0; frame < DiseaseStabFramesPerVariant; frame++)
+                _diseaseStabFrames[variant * DiseaseStabFramesPerVariant + frame] = CreateDiseaseStabFrameSprite(variant, frame);
+        }
+    }
+
+    private Sprite CreateDiseaseStabFrameSprite(int variant, int frame)
+    {
+        const int size = 80;
+        const float pixelsPerUnit = 30f;
+        int center = size / 2;
+        var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            filterMode = FilterMode.Point,
+            wrapMode = TextureWrapMode.Clamp,
+            name = $"PixelHitEffect_DiseaseStab_{variant}_{frame}_Texture"
+        };
+        var pixels = new Color32[size * size];
+        var random = new System.Random(31871 + variant * 5779);
+        Color32 outline = new Color32(28, 8, 49, 255);
+        Color32 darkPurple = new Color32(67, 16, 112, 255);
+        Color32 purple = new Color32(126, 37, 190, 255);
+        Color32 brightPurple = new Color32(190, 75, 241, 255);
+        Color32 palePurple = new Color32(231, 190, 255, 255);
+        Color32 white = new Color32(255, 253, 240, 255);
+
+        Vector2[] lobeOffsets;
+        float[] lobeSizes;
+        if (frame == 0)
+        {
+            lobeOffsets = new[]
+            {
+                new Vector2(-6f, 2f), new Vector2(-1f, 7f), new Vector2(7f, 4f),
+                new Vector2(4f, -5f), new Vector2(-5f, -6f), new Vector2(1f, -1f)
+            };
+            lobeSizes = new[] { 8f, 6.5f, 9f, 5.5f, 7f, 4.5f };
+        }
+        else if (frame == 1)
+        {
+            lobeOffsets = new[]
+            {
+                new Vector2(-13f, 6f), new Vector2(-6f, 14f), new Vector2(6f, 12f),
+                new Vector2(15f, 4f), new Vector2(11f, -7f), new Vector2(2f, -15f),
+                new Vector2(-9f, -12f), new Vector2(-17f, -2f), new Vector2(1f, 2f),
+                new Vector2(-3f, 7f), new Vector2(8f, -2f)
+            };
+            lobeSizes = new[] { 8.5f, 7f, 10.5f, 7f, 9f, 6.5f, 8f, 6.5f, 6f, 5f, 4.5f };
+        }
+        else
+        {
+            lobeOffsets = new[]
+            {
+                new Vector2(-12f, 4f), new Vector2(-5f, 12f), new Vector2(8f, 9f),
+                new Vector2(14f, -1f), new Vector2(5f, -11f), new Vector2(-7f, -13f),
+                new Vector2(-16f, -4f), new Vector2(-1f, 1f)
+            };
+            lobeSizes = new[] { 6.5f, 7f, 7.5f, 6f, 7f, 5.5f, 6f, 4f };
+        }
+
+        float scale = frame == 0 ? 0.76f : frame == 1 ? 1f : 0.84f;
+        for (int i = 0; i < lobeOffsets.Length; i++)
+        {
+            float sizeFactor = lobeSizes[i] * scale * (0.86f + (float)random.NextDouble() * 0.22f);
+            Vector2 offset = lobeOffsets[i] * scale;
+            bool largeLobe = lobeSizes[i] >= 7f;
+            if (largeLobe)
+                DrawDiseaseBlob(pixels, size, center, offset, sizeFactor + 0.9f, sizeFactor * 0.82f + 0.9f, 0.28f, purple, 17 + variant * 31 + i);
+            DrawDiseaseBlob(pixels, size, center, offset + new Vector2(1f, 1f), sizeFactor * 0.68f, sizeFactor * 0.54f, 0.3f, brightPurple, 117 + variant * 31 + i);
+        }
+
+        int smallBlobCount = frame == 1 ? 18 : 11;
+        for (int i = 0; i < smallBlobCount; i++)
+        {
+            float angle = (i * 151f + variant * 41f) * Mathf.Deg2Rad;
+            float distance = (frame == 1 ? 11f : 9f) + (float)random.NextDouble() * 13f;
+            Vector2 offset = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * distance * scale;
+            float blobSize = (1.8f + (float)random.NextDouble() * 3.4f) * scale;
+            DrawDiseaseBlob(pixels, size, center, offset, blobSize, blobSize * 0.68f, 0.34f,
+                random.Next(2) == 0 ? purple : brightPurple, 217 + variant * 17 + i);
+        }
+
+        float coreScale = frame == 0 ? 0.66f : frame == 1 ? 1.1f : 0.86f;
+        DrawDiseasePixelCloud(pixels, size, center, new Vector2(0f, 0f), 16f * coreScale, 13f * coreScale, brightPurple, 401 + variant);
+        DrawDiseasePixelCloud(pixels, size, center, new Vector2(-1f, 1f), 14.8f * coreScale, 12f * coreScale, palePurple, 421 + variant);
+        DrawDiseasePixelCloud(pixels, size, center, new Vector2(-1f, 1f), 12.8f * coreScale, 10.4f * coreScale, white, 441 + variant);
+        DrawDiseaseGrain(pixels, size, center, lobeOffsets, lobeSizes, scale, frame, variant, darkPurple, purple, brightPurple, palePurple);
+
+        if (frame == 2)
+        {
+            DrawPixelDisc(pixels, size, center - 19, center + 14, 2.5f, darkPurple);
+            DrawPixelDisc(pixels, size, center + 19, center + 8, 2f, purple);
+            DrawPixelDisc(pixels, size, center + 13, center - 18, 2.5f, darkPurple);
+            DrawPixelDisc(pixels, size, center - 5, center + 22, 1.5f, brightPurple);
+            DrawPixelDisc(pixels, size, center + 22, center - 5, 1.5f, purple);
+        }
+
+        texture.SetPixels32(pixels);
+        texture.Apply(false, true);
+        _generatedTextures.Add(texture);
+        var sprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), Vector2.one * 0.5f, pixelsPerUnit);
+        sprite.name = $"PixelHitEffect_DiseaseStab_{variant}_{frame}";
+        return sprite;
+    }
+
+    private static void DrawDiseasePixelCloud(Color32[] pixels, int size, int center, Vector2 offset,
+        float radiusX, float radiusY, Color32 color, int seed)
+    {
+        int minX = Mathf.FloorToInt(center + offset.x - radiusX);
+        int maxX = Mathf.CeilToInt(center + offset.x + radiusX);
+        int minY = Mathf.FloorToInt(center + offset.y - radiusY);
+        int maxY = Mathf.CeilToInt(center + offset.y + radiusY);
+        for (int y = minY; y <= maxY; y++)
+        {
+            for (int x = minX; x <= maxX; x++)
+            {
+                float nx = (x - center - offset.x) / Mathf.Max(radiusX, 0.01f);
+                float ny = (y - center - offset.y) / Mathf.Max(radiusY, 0.01f);
+                float steppedX = Mathf.Round(nx * 4f) / 4f;
+                float steppedY = Mathf.Round(ny * 4f) / 4f;
+                float grain = Mathf.Sin((x + seed) * 1.37f) * Mathf.Cos((y - seed) * 1.11f) * 0.1f;
+                if (steppedX * steppedX + steppedY * steppedY <= 1f + grain)
+                    SetPixel(pixels, size, x, y, color);
+            }
+        }
+    }
+    private static void DrawDiseaseBlob(Color32[] pixels, int size, int center, Vector2 offset,
+        float radiusX, float radiusY, float irregularity, Color32 color, int seed)
+    {
+        int minX = Mathf.FloorToInt(center + offset.x - radiusX - 2f);
+        int maxX = Mathf.CeilToInt(center + offset.x + radiusX + 2f);
+        int minY = Mathf.FloorToInt(center + offset.y - radiusY - 2f);
+        int maxY = Mathf.CeilToInt(center + offset.y + radiusY + 2f);
+        for (int y = minY; y <= maxY; y++)
+        {
+            for (int x = minX; x <= maxX; x++)
+            {
+                float nx = (x - center - offset.x) / Mathf.Max(radiusX, 0.01f);
+                float ny = (y - center - offset.y) / Mathf.Max(radiusY, 0.01f);
+                float wave = Mathf.Sin((x + seed) * 0.72f) * Mathf.Cos((y - seed) * 0.61f) * irregularity;
+                if (nx * nx + ny * ny <= 1f + wave)
+                    SetPixel(pixels, size, x, y, color);
+            }
+        }
+    }
+
+    private static void DrawDiseaseGrain(Color32[] pixels, int size, int center, Vector2[] lobeOffsets,
+        float[] lobeSizes, float scale, int frame, int variant, Color32 darkPurple,
+        Color32 purple, Color32 brightPurple, Color32 palePurple)
+    {
+        var random = new System.Random(8123 + variant * 997 + frame * 131);
+        int count = frame == 1 ? 44 : 30;
+        for (int i = 0; i < count; i++)
+        {
+            int lobe = random.Next(lobeOffsets.Length);
+            Vector2 basePosition = lobeOffsets[lobe] * scale;
+            Vector2 jitter = new Vector2(
+                ((float)random.NextDouble() * 2f - 1f) * lobeSizes[lobe] * scale * 0.62f,
+                ((float)random.NextDouble() * 2f - 1f) * lobeSizes[lobe] * scale * 0.62f);
+            int x = Mathf.RoundToInt(center + basePosition.x + jitter.x);
+            int y = Mathf.RoundToInt(center + basePosition.y + jitter.y);
+            float distance = Vector2.Distance(new Vector2(center, center), new Vector2(x, y));
+            if (distance < 7f * scale || distance > 25f * scale)
+                continue;
+            int grainSize = random.Next(1, frame == 1 ? 4 : 3);
+            Color32 color = random.Next(5) switch
+            {
+                0 => darkPurple,
+                1 => purple,
+                2 => purple,
+                3 => brightPurple,
+                _ => palePurple
+            };
+            DrawPixelBlock(pixels, size, x, y, grainSize, color);
+        }
+    }
+
+    private static void DrawPixelBlock(Color32[] pixels, int size, int centerX, int centerY,
+        int blockSize, Color32 color)
+    {
+        for (int y = 0; y < blockSize; y++)
+        {
+            for (int x = 0; x < blockSize; x++)
+            {
+                if ((x + y) % 3 != 2 || blockSize == 1)
+                    SetPixel(pixels, size, centerX + x, centerY + y, color);
+            }
+        }
+    }
+    private static void DrawSolidBurstCoreAt(Color32[] pixels, int size, Vector2 center, float radius, Color32 color)
+    {
+        int limit = Mathf.CeilToInt(radius);
+        for (int y = -limit; y <= limit; y++)
+        {
+            for (int x = -limit; x <= limit; x++)
+            {
+                if (x * x + y * y <= radius * radius)
+                    SetPixel(pixels, size, Mathf.RoundToInt(center.x + x), Mathf.RoundToInt(center.y + y), color);
+            }
+        }
+    }
+
+    private void BuildDiseaseStabEffect(EffectInstance instance, bool heavy)
+    {
+        int variant = _diseaseStabVariantIndex++ % DiseaseStabVariantCount;
+        int frameBase = variant * DiseaseStabFramesPerVariant;
+        float duration = heavy ? 0.26f : 0.21f;
+        float peakScale = (heavy ? 2.65f : 2.35f) * (0.98f + (variant % 3) * 0.015f);
+        float contactEnd = duration * 0.18f;
+        float burstEnd = duration * 0.58f;
+        float holdEnd = duration * 0.7f;
+
+        instance.center.enabled = true;
+        instance.center.sprite = _diseaseStabFrames[frameBase];
+        instance.center.flipX = false;
+        instance.center.color = Color.white;
+        instance.center.transform.localPosition = Vector3.zero;
+        instance.center.transform.localRotation = Quaternion.identity;
+        instance.center.transform.localScale = Vector3.one * (peakScale * 0.38f);
+        instance.sequence.Insert(0f, instance.center.transform.DOScale(Vector3.one * (peakScale * 0.62f), contactEnd).SetEase(Ease.OutCubic));
+        instance.sequence.InsertCallback(contactEnd, () =>
+        {
+            instance.center.sprite = _diseaseStabFrames[frameBase + 1];
+            instance.center.transform.localScale = Vector3.one * (peakScale * 0.7f);
+        });
+        instance.sequence.Insert(contactEnd, instance.center.transform.DOScale(Vector3.one * peakScale, burstEnd - contactEnd).SetEase(Ease.OutBack, 1.08f));
+        instance.sequence.InsertCallback(burstEnd, () =>
+        {
+            instance.center.sprite = _diseaseStabFrames[frameBase + 2];
+            instance.center.transform.localScale = Vector3.one * peakScale;
+        });
+        instance.sequence.Insert(holdEnd, instance.center.transform.DOScale(Vector3.one * (peakScale * 0.82f), duration - holdEnd).SetEase(Ease.InQuad));
+        instance.sequence.InsertCallback(duration, () => instance.center.enabled = false);
+        for (int i = 0; i < instance.rays.Length; i++)
+            instance.rays[i].enabled = false;
+    }
+
     private void CreateStabSprites()
     {
         _stabFrames = new Sprite[StabVariantCount * StabFramesPerVariant];
@@ -759,6 +1016,55 @@ public sealed class PixelHitEffectManager : MonoBehaviour
                 float diamond = normalizedX + normalizedY;
                 float square = Mathf.Max(normalizedX, normalizedY);
                 if (diamond <= 1.28f && square <= 1f)
+                    SetPixel(pixels, size, center + x, center + y, color);
+            }
+        }
+    }
+
+    private static void DrawDiseaseCloudLayer(Color32[] pixels, int size, int center,
+        float[] lobeAngles, float[] lobeRadii, float radius, Color32 color)
+    {
+        int limit = Mathf.CeilToInt(radius + 1.5f);
+        float radiusSq = (radius + 1.5f) * (radius + 1.5f);
+        int lobeCount = lobeAngles.Length;
+        for (int y = -limit; y <= limit; y++)
+        {
+            for (int x = -limit; x <= limit; x++)
+            {
+                float distSq = x * x + y * y;
+                if (distSq > radiusSq)
+                    continue;
+                float dist = Mathf.Sqrt(distSq);
+                float angle;
+                if (dist < 0.5f)
+                {
+                    SetPixel(pixels, size, center + x, center + y, color);
+                    continue;
+                }
+                angle = Mathf.Atan2(y, x) * Mathf.Rad2Deg;
+                if (angle < 0f) angle += 360f;
+
+                int next = 0;
+                for (int i = 0; i < lobeCount; i++)
+                {
+                    if (lobeAngles[i] >= angle) { next = i; break; }
+                }
+                int prev = next == 0 ? lobeCount - 1 : next - 1;
+                float anglePrev = lobeAngles[prev];
+                float angleNext = lobeAngles[next];
+                if (next == 0 && angle < lobeAngles[0])
+                {
+                    prev = lobeCount - 1;
+                    anglePrev = lobeAngles[prev] - 360f;
+                }
+                if (prev == lobeCount - 1 && angle >= lobeAngles[lobeCount - 1])
+                {
+                    next = 0;
+                    angleNext = lobeAngles[0] + 360f;
+                }
+                float t = (angle - anglePrev) / (angleNext - anglePrev);
+                float boundary = Mathf.Lerp(lobeRadii[prev], lobeRadii[next], t) * radius;
+                if (dist <= boundary)
                     SetPixel(pixels, size, center + x, center + y, color);
             }
         }

@@ -39,7 +39,7 @@ public sealed class StabSweepEffect : MonoBehaviour
     private readonly List<Enemy> _hitCandidates = new List<Enemy>();
     private Enemy _coveredBossTarget;
     private Action<Enemy> _onHit;
-    private Action<Enemy> _onFirstHitBeforeDamage;
+    private Func<Enemy, bool> _onFirstHitBeforeDamage;
     private Action _onFirstHit;
     private Action _onComplete;
     private Vector3 _rayOrigin;
@@ -61,7 +61,7 @@ public sealed class StabSweepEffect : MonoBehaviour
 
     public static void Create(GameObject prefab, Sprite speedSprite, Vector3 startPosition, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows,
         float damage, DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget,
-        Action<Enemy> onHit, Action<Enemy> onFirstHitBeforeDamage, Action onFirstHit, Action onComplete,
+        Action<Enemy> onHit, Func<Enemy, bool> onFirstHitBeforeDamage, Action onFirstHit, Action onComplete,
         float visualReachOffset, float visualStartXOffset, float visualTargetRandomRadius, float baseRayLength,
         float targetDuration = -1f)
     {
@@ -86,7 +86,8 @@ public sealed class StabSweepEffect : MonoBehaviour
     }
 
     private void Initialize(GameObject visual, Sprite speedSprite, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows, float damage,
-        DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget, Action<Enemy> onHit, Action<Enemy> onFirstHitBeforeDamage, Action onFirstHit,
+        DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget,
+        Action<Enemy> onHit, Func<Enemy, bool> onFirstHitBeforeDamage, Action onFirstHit,
         Action onComplete, float targetDuration, float visualTargetRandomRadius, float baseRayLength)
     {
         _column = column;
@@ -359,12 +360,14 @@ public sealed class StabSweepEffect : MonoBehaviour
                 continue;
 
             _hitEnemies.Add(enemy);
+            bool diseaseStabHit = false;
             if (!_hitAny)
-                _onFirstHitBeforeDamage?.Invoke(enemy);
+                diseaseStabHit = _onFirstHitBeforeDamage?.Invoke(enemy) == true;
             HitFeedbackStrength feedbackStrength = _hitAny ? HitFeedbackStrength.Light : HitFeedbackStrength.Standard;
             Vector3 impactPosition = GetVisualTipPosition();
             enemy.TakeDamage(_damage, _damageType, feedbackStrength: feedbackStrength,
-                impactPosition: impactPosition, impactDirection: _rayDirection);
+                impactPosition: impactPosition, impactDirection: _rayDirection,
+                diseaseStabHit: diseaseStabHit);
             if (!_hitAny)
                 PauseSequenceForHitStop(feedbackStrength);
             if (!_hitAny)

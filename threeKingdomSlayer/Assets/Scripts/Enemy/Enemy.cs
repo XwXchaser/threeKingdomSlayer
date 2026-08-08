@@ -1668,7 +1668,7 @@ private void SpawnProjectile()
     /// <summary>
     /// 受到伤害
     /// </summary>
-    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true, bool canInterruptAttack = true, bool triggerHitAnimation = true, bool ignoreDamageModifiers = false, HitFeedbackSource feedbackSource = HitFeedbackSource.BasicAttack, HitFeedbackStrength? feedbackStrength = null, Vector3? impactPosition = null, Vector3 impactDirection = default)
+    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true, bool canInterruptAttack = true, bool triggerHitAnimation = true, bool ignoreDamageModifiers = false, HitFeedbackSource feedbackSource = HitFeedbackSource.BasicAttack, HitFeedbackStrength? feedbackStrength = null, Vector3? impactPosition = null, Vector3 impactDirection = default, bool diseaseStabHit = false)
     {
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
@@ -1745,7 +1745,7 @@ private void SpawnProjectile()
 
         if (sharedHealthGroup != null)
         {
-            sharedHealthGroup.TakeDamage(damage, damageType, this, damageNumberColor, triggerHitAnimation, countsForCombo, canInterruptAttack, ignoreDamageModifiers, feedbackSource, feedbackStrength, impactPosition, impactDirection);
+            sharedHealthGroup.TakeDamage(damage, damageType, this, damageNumberColor, triggerHitAnimation, countsForCombo, canInterruptAttack, ignoreDamageModifiers, feedbackSource, feedbackStrength, impactPosition, impactDirection, diseaseStabHit);
             return;
         }
 
@@ -1777,7 +1777,7 @@ private void SpawnProjectile()
         HitFeedbackStrength resolvedFeedbackStrength = feedbackStrength
             ?? HitFeedbackManager.ResolveStrength(damageType, feedbackSource, finalDamage, false);
         HitFeedbackManager.Trigger(HitFeedbackManager.CreateDamageContext(this, damageType,
-            feedbackSource, resolvedFeedbackStrength, finalDamage, false, impactPosition, impactDirection));
+            feedbackSource, resolvedFeedbackStrength, finalDamage, false, impactPosition, impactDirection, diseaseStabHit));
         if (countsForCombo)
             OnDamageTaken?.Invoke(this);
         OnHealthChanged?.Invoke(this, currentHealth, maxHealth);
