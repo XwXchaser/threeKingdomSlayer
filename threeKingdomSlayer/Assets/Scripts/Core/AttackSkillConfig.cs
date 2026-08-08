@@ -12,7 +12,7 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("技能编号，唯一标识")]
     public int id;
     public AttackType attackType;
-    public DamageType damageType = DamageType.Stab;
+    public DamageType damageType = DamageType.Sweep;
 
     [Header("伤害")]
     [Tooltip("基础伤害")]
