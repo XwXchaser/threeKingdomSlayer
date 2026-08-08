@@ -10,7 +10,7 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1778764012219
-updatedAt: 1786165370483
+updatedAt: 1786179800186
 ---
 
 # project-mistake-note
@@ -25,6 +25,20 @@ updatedAt: 1786165370483
 <!-- locus:maintain-rules:end -->
 
 <!-- locus:body:start -->
+### 按住划动检测必须使用速度门控独立计时，不能用初次按下时间 ✅ 已修复
+- 症状：按住屏幕后快速划动无法触发 Slash/Parry，只有松手才触发（退回旧逻辑）。
+- 根因：
+  1. Touch 处理器用 `segmentStartTime`（初次按下时间）计算划动耗时，用户按住停留后再划动时该值早已超过 `maxSwipeDuration`(0.25s)，所有划动都被过滤。
+  2. 鼠标和触摸使用两套不同的划动检测代码，修复鼠标后触摸仍未同步。
+  3. 招式触发后的 `ResetSegment` 未重置 `isSwipeTracking`，残留的追踪状态在下个分段立即超时。
+- 修复：
+  1. 提取共享方法 `TryDetectHoldSwipe`，鼠标和触摸统一走速度门控追踪。
+  2. 仅在瞬时速度 >= `minSwipeSpeed` 后才开始独立计时和累积距离，不使用 `segmentStartTime`。
+  3. `ResetSegment`/`CancelChargeAndResetSegment` 重置 `isSwipeTracking`。
+  4. `TouchPhase.Began` 初始化 `isSwipeTracking`、`lastFramePos`、`lastFrameTime`。
+- 预防规则：**划动检测的计时起点必须是速度达标的那一刻，不是手指初次按下的那一刻。鼠标和触摸的划动逻辑必须共用同一方法，不允许分叉实现。ResetSegment 系列方法必须重置所有追踪状态字段。**
+- 文件：`Assets/Scripts/Player/InputManager.cs`
+
 ### Slash命中特效左右镜像与视觉偏移必须分离坐标语义 ✅ 已修复
 - 症状：Slash 左右方向的火星移动方向可以镜像，但火星造型仍保持同一朝向；尝试把命中特效根节点移动到视觉起点后，偏移效果不明显，甚至容易影响命中表现。
 - 根因：
