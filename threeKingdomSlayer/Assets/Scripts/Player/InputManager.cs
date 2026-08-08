@@ -19,6 +19,16 @@ public class InputManager : MonoBehaviour
              "未达到前，任何划动/点击仅触发普通攻击（戳击/斩击）或无操作。")]
     public float minChargeTime = 0.5f;       // 最小蓄力时间（秒）
     public float swipeThreshold = 30f;       // 滑动判定最小距离（像素）
+    [Tooltip("有效滑动必须在此时间内完成，超时的缓慢移动不会触发招式。")]
+    public float maxSwipeDuration = 0.25f;
+    [Tooltip("手指离开此死区后才开始统计滑动耗时。")]
+    public float swipeStartDeadZone = 8f;
+    [Tooltip("有效滑动的最低平均速度（像素/秒）。")]
+    public float minSwipeSpeed = 180f;
+    [Tooltip("一次招式触发后的最短重新识别间隔（秒）。")]
+    public float swipeRearmDelay = 0.1f;
+    [Tooltip("停留蓄力允许的轻微移动范围（像素）。")]
+    public float chargeMovementTolerance = 20f;
     [Tooltip("垂直角度阈值（度）：划动方向与垂直轴夹角小于此值时判定为挑飞。范围0~90")]
     public float verticalSwipeThreshold = 30f;
     [Tooltip("水平角度阈值（度）：划动方向与水平轴夹角小于此值时判定为横扫。范围0~90")]
@@ -38,12 +48,25 @@ public class InputManager : MonoBehaviour
     // 触摸状态
     private Vector2 touchStartPos;
     private float touchStartTime;
+    private Vector2 segmentStartPos;
+    private float segmentStartTime;
     private bool isTouching;
     private bool isLongPress;
-    private bool isCharged;     // 蓄力是否已满（pressDuration >= minChargeTime）
+    private bool isCharged;     // 当前分段蓄力是否已满
     private bool isSwiping;
+    private bool hasTriggeredDuringHold;
     private int currentTouchId = -1;
     private Vector2 currentPointerPos; // 当前指针位置（鼠标/触摸），用于蓄力指示器
+
+    // 防连触发
+    private float lastGestureTime = float.MinValue;
+
+    // 速度门控追踪：仅在瞬时速度达标后才开始计时和累积距离
+    private Vector2 swipeTrackStartPos;
+    private float swipeTrackStartTime;
+    private bool isSwipeTracking;
+    private Vector2 lastFramePos;
+    private float lastFrameTime;
 
     // 事件
     public System.Action<AttackType, int> OnAttackExecuted; // attackType, targetColumn
@@ -101,6 +124,7 @@ public class InputManager : MonoBehaviour
                 isLongPress = false;
                 isCharged = false;
                 isSwiping = false;
+                hasTriggeredDuringHold = false;
                 OnChargeEnded?.Invoke();
             }
             return;
@@ -118,6 +142,7 @@ public class InputManager : MonoBehaviour
             isLongPress = false;
             isCharged = false;
             isSwiping = false;
+            hasTriggeredDuringHold = false;
             return;
         }
 
@@ -135,14 +160,24 @@ public class InputManager : MonoBehaviour
             HandleMouseInput();
         }
 
-        // 每帧更新蓄力进度（鼠标/触摸通用）
+        // 每帧更新当前分段的蓄力状态与进度。
         if (isTouching)
         {
-            float pressDuration = Time.time - touchStartTime;
-            float chargeProgress = Mathf.Clamp01(pressDuration / minChargeTime);
-            OnChargeUpdated?.Invoke(currentPointerPos, chargeProgress);
+            float segmentDuration = Time.time - segmentStartTime;
+            float distanceFromSegmentStart = Vector2.Distance(currentPointerPos, segmentStartPos);
 
-            // 大旋风自动运转中（点击 BuffIcon 激活，已在 WhirlwindController.Update 自驱动）
+            if (!isLongPress && segmentDuration >= longPressDuration
+                && distanceFromSegmentStart <= chargeMovementTolerance)
+            {
+                isLongPress = true;
+            }
+
+            if (isLongPress)
+            {
+                float chargeProgress = Mathf.Clamp01(segmentDuration / minChargeTime);
+                isCharged = chargeProgress >= 1f;
+                OnChargeUpdated?.Invoke(currentPointerPos, chargeProgress);
+            }
         }
     }
 
@@ -163,10 +198,17 @@ public class InputManager : MonoBehaviour
 
             touchStartPos = Input.mousePosition;
             touchStartTime = Time.time;
+            segmentStartPos = touchStartPos;
+            segmentStartTime = touchStartTime;
             isTouching = true;
             isLongPress = false;
+            isCharged = false;
             isSwiping = false;
+            hasTriggeredDuringHold = false;
+            isSwipeTracking = false;
             currentPointerPos = Input.mousePosition;
+            lastFramePos = Input.mousePosition;
+            lastFrameTime = Time.time;
 
             // 触发蓄力开始事件
             OnChargeBegan?.Invoke(currentPointerPos);
@@ -175,30 +217,8 @@ public class InputManager : MonoBehaviour
         // 鼠标按住
         if (isTouching && Input.GetMouseButton(0))
         {
-            // 更新当前指针位置（供蓄力指示器跟随鼠标）
             currentPointerPos = Input.mousePosition;
-
-            float pressDuration = Time.time - touchStartTime;
-            Vector2 currentPos = (Vector2)Input.mousePosition;
-            float swipeDistance = Vector2.Distance(currentPos, touchStartPos);
-
-            // 检测长按
-            if (!isLongPress && pressDuration >= longPressDuration && swipeDistance < swipeThreshold)
-            {
-                isLongPress = true;
-            }
-
-            // 检测蓄力完成（pressDuration >= minChargeTime）
-            if (!isCharged && pressDuration >= minChargeTime)
-            {
-                isCharged = true;
-            }
-
-            // 检测滑动
-            if (!isSwiping && swipeDistance >= swipeThreshold)
-            {
-                isSwiping = true;
-            }
+            TryDetectHoldSwipe(currentPointerPos);
         }
 
         // 鼠标松开
@@ -225,6 +245,7 @@ public class InputManager : MonoBehaviour
             isLongPress = false;
             isCharged = false;
             isSwiping = false;
+            hasTriggeredDuringHold = false;
         }
     }
 
@@ -248,13 +269,20 @@ public class InputManager : MonoBehaviour
                     break;
                 }
 
-                touchStartPos = touch.position;
-                touchStartTime = Time.time;
-                currentTouchId = touch.fingerId;
-                isTouching = true;
-                isLongPress = false;
-                isSwiping = false;
-                currentPointerPos = touch.position;
+            touchStartPos = touch.position;
+            touchStartTime = Time.time;
+            segmentStartPos = touchStartPos;
+            segmentStartTime = touchStartTime;
+            currentTouchId = touch.fingerId;
+            isTouching = true;
+            isLongPress = false;
+            isCharged = false;
+            isSwiping = false;
+            hasTriggeredDuringHold = false;
+            isSwipeTracking = false;
+            currentPointerPos = touch.position;
+            lastFramePos = touch.position;
+            lastFrameTime = Time.time;
 
                 // 触发蓄力开始事件
                 OnChargeBegan?.Invoke(currentPointerPos);
@@ -263,25 +291,8 @@ public class InputManager : MonoBehaviour
             case TouchPhase.Moved:
                 if (isTouching)
                 {
-                    float pressDuration = Time.time - touchStartTime;
-                    float swipeDistance = Vector2.Distance(touch.position, touchStartPos);
-
-                    if (!isLongPress && pressDuration >= longPressDuration && swipeDistance < swipeThreshold)
-                    {
-                        isLongPress = true;
-                    }
-
-                    if (!isCharged && pressDuration >= minChargeTime)
-                    {
-                        isCharged = true;
-                    }
-
-                    if (!isSwiping && swipeDistance >= swipeThreshold)
-                    {
-                        isSwiping = true;
-                    }
-
                     currentPointerPos = touch.position;
+                    TryDetectHoldSwipe(touch.position);
                 }
                 break;
 
@@ -314,6 +325,7 @@ public class InputManager : MonoBehaviour
                     isLongPress = false;
                     isCharged = false;
                     isSwiping = false;
+                    hasTriggeredDuringHold = false;
                     currentTouchId = -1;
                 }
                 break;
@@ -330,68 +342,153 @@ public class InputManager : MonoBehaviour
     /// - pressDuration >= minChargeTime：蓄力已满，允许判定蓄力攻击（穿刺/横扫/挑飞/斩击）
     /// - pressDuration <  minChargeTime：未达到最小蓄力时间，仅触发普通攻击（戳击/斩击），不触发蓄力攻击
     /// </summary>
+    private bool TryConsumeLiveGesture(Vector2 direction, Vector2 releasePos, float segmentDuration, float swipeDistance)
+    {
+        bool isSwiped = swipeDistance >= swipeThreshold;
+        if (TryConsumeStrictQTEInput(releasePos, true, swipeDistance, segmentDuration))
+            return true;
+        if (IsAnyQTEActive() && TryConsumeQTEInput(releasePos, true, swipeDistance, segmentDuration))
+            return true;
+        if (!skillInputEnabled)
+            return true;
+
+        bool executed;
+        if (isLongPress && isCharged)
+        {
+            ProcessSwipeGesture(direction, releasePos);
+            executed = true;
+        }
+        else
+        {
+            float angleToVertical = Vector2.Angle(direction, Vector2.up);
+            if (angleToVertical < verticalSwipeThreshold)
+            {
+                executed = attackSystem?.TryExecuteAttack(AttackType.Parry) ?? false;
+                if (executed) OnAttackExecuted?.Invoke(AttackType.Parry, -1);
+            }
+            else
+            {
+                bool slashLeftToRight = direction.x > 0f;
+                float slashVisualTilt = GetSlashVisualTilt(direction);
+                executed = attackSystem?.TryExecuteAttack(AttackType.Slash, -1, slashLeftToRight, slashVisualTilt) ?? false;
+                if (executed) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
+            }
+        }
+
+        if (executed)
+        {
+            hasTriggeredDuringHold = true;
+            lastGestureTime = Time.time;
+        }
+        return executed;
+    }
+
+    /// <summary>
+    /// 按住期间的速度门控划动检测（鼠标和触摸共用）。
+    /// 仅在瞬时速度达标后才开始累积距离和计时，避免慢速移动被误判。
+    /// </summary>
+    /// <returns>true 表示触发了招式并已重置分段</returns>
+    private bool TryDetectHoldSwipe(Vector2 currentPos)
+    {
+        float segmentDuration = Time.time - segmentStartTime;
+        float segmentDistance = Vector2.Distance(currentPos, segmentStartPos);
+
+        // 瞬时速度
+        float frameDelta = Vector2.Distance(currentPos, lastFramePos);
+        float frameTime = Time.time - lastFrameTime;
+        float instantSpeed = frameTime > 0.0001f ? frameDelta / frameTime : 0f;
+        lastFramePos = currentPos;
+        lastFrameTime = Time.time;
+
+        // 速度达标且过了重新识别间隔 → 开始追踪
+        if (!isSwipeTracking && instantSpeed >= minSwipeSpeed
+            && Time.time - lastGestureTime >= swipeRearmDelay)
+        {
+            isSwipeTracking = true;
+            swipeTrackStartPos = currentPos;
+            swipeTrackStartTime = Time.time;
+        }
+
+        if (isSwipeTracking)
+        {
+            float trackDist = Vector2.Distance(currentPos, swipeTrackStartPos);
+            float trackDur = Time.time - swipeTrackStartTime;
+
+            if (trackDist >= swipeThreshold && trackDur <= maxSwipeDuration)
+            {
+                Vector2 direction = currentPos - swipeTrackStartPos;
+                DebugLog.Info($"[InputManager] Hold swipe VALID dist={trackDist:F0} dur={trackDur:F3} instantSpeed={instantSpeed:F0}");
+                if (TryConsumeLiveGesture(direction, currentPos, segmentDuration, trackDist))
+                {
+                    ResetSegment(currentPos);
+                    lastFramePos = currentPos;
+                    lastFrameTime = Time.time;
+                    return true;
+                }
+            }
+
+            // 超时或速度骤降 → 放弃本次追踪
+            if (trackDur > maxSwipeDuration || instantSpeed < minSwipeSpeed * 0.5f)
+            {
+                isSwipeTracking = false;
+            }
+        }
+
+        // 蓄力条件检查
+        if (!isLongPress && segmentDuration >= longPressDuration
+            && segmentDistance <= chargeMovementTolerance)
+            isLongPress = true;
+        if (isLongPress)
+            isCharged = segmentDuration >= minChargeTime;
+
+        return false;
+    }
+
+    private void ResetSegment(Vector2 position)
+    {
+        OnChargeEnded?.Invoke();
+        segmentStartPos = position;
+        segmentStartTime = Time.time;
+        isLongPress = false;
+        isCharged = false;
+        isSwiping = false;
+        isSwipeTracking = false;
+        OnChargeBegan?.Invoke(position);
+    }
+    private void CancelChargeAndResetSegment(Vector2 position)
+    {
+        OnChargeEnded?.Invoke();
+        segmentStartPos = position;
+        segmentStartTime = Time.time;
+        isLongPress = false;
+        isCharged = false;
+        isSwiping = false;
+        isSwipeTracking = false;
+        OnChargeBegan?.Invoke(position);
+    }
     private void ProcessGesture(Vector2 releasePos, float pressDuration, float swipeDistance)
     {
-        DebugLog.Info($"[InputManager] ProcessGesture frame={Time.frameCount} pressDuration={pressDuration:F3} swipeDistance={swipeDistance:F1} skillInputEnabled={skillInputEnabled}");
         if (!skillInputEnabled) return;
 
         bool isSwiped = swipeDistance >= swipeThreshold;
-
-        // Strict 模式消费所有战斗手势；Legacy 保留“QTE优先，未命中穿透为攻击”的既有规则。
         if (TryConsumeStrictQTEInput(releasePos, isSwiped, swipeDistance, pressDuration))
             return;
 
-        bool qteActive = IsAnyQTEActive();
-        if (qteActive)
+        if (IsAnyQTEActive())
         {
             if (attackSystem != null && attackSystem.IsActionPlaying)
                 return;
             if (TryConsumeQTEInput(releasePos, isSwiped, swipeDistance, pressDuration))
                 return;
         }
-        if (pressDuration >= minChargeTime)
-        {
-            // 蓄力已满 → 蓄力攻击判定
-            if (isSwiped)
-            {
-                Vector2 swipeDirection = releasePos - touchStartPos;
-                ProcessSwipeGesture(swipeDirection, releasePos);
-            }
-            else
-            {
-                // 长按后松开（无滑动） → 穿刺
-                ProcessLongPressGesture(releasePos);
-            }
-        }
-        else
-        {
-            // 未达到最小蓄力时间 → 仅触发普通攻击
-            if (isSwiped)
-            {
-                Vector2 swipeDirection = releasePos - touchStartPos;
-                float angleToVertical = Vector2.Angle(swipeDirection, Vector2.up);
-                if (angleToVertical < verticalSwipeThreshold)
-                {
-                    // 无蓄力垂直划动 → 招架
-                    bool executed = attackSystem?.TryExecuteAttack(AttackType.Parry) ?? false;
-                    if (executed) OnAttackExecuted?.Invoke(AttackType.Parry, -1);
-                }
-                else
-                {
-                    // 快速滑动 → 斩击
-                    bool slashLeftToRight = swipeDirection.x > 0;
-                    float slashVisualTilt = GetSlashVisualTilt(swipeDirection);
-                    Debug.Log($"[SlashTilt] Input quick dir={swipeDirection} leftToRight={slashLeftToRight} tilt={slashVisualTilt:F2}");
-                    bool executed = attackSystem?.TryExecuteAttack(AttackType.Slash, -1, slashLeftToRight, slashVisualTilt) ?? false;
-                    if (executed) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
-                }
-            }
-            else
-            {
-                // 快速点击 → 戳击
-                ProcessTapGesture(releasePos);
-            }
-        }
+
+        if (hasTriggeredDuringHold)
+            return;
+
+        if (isLongPress && isCharged)
+            ProcessLongPressGesture(releasePos);
+        else if (!isSwiped)
+            ProcessTapGesture(releasePos);
     }
 
     /// <summary>
