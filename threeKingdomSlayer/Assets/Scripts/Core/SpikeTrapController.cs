@@ -81,7 +81,7 @@ public class SpikeTrapController : MonoBehaviour
         if (!_triggeredThisFrame.Add(enemy)) return;
 
         if (_animating)
-            enemy.TakeDamage(_damagePerPass, DamageType.Stab, new Color(1f, 0.6f, 0f), feedbackSource: HitFeedbackSource.SpikeTrap);
+            enemy.TakeDamage(_damagePerPass, DamageType.Pierce, new Color(1f, 0.6f, 0f), feedbackSource: HitFeedbackSource.SpikeTrap);
         else
             StartCoroutine(TriggerAnimation(enemy));
     }
@@ -169,7 +169,7 @@ public class SpikeTrapController : MonoBehaviour
         yield return new WaitForSeconds(hitDuration);
 
         if (enemy != null && enemy.state != EnemyState.Dead)
-            enemy.TakeDamage(_damagePerPass, DamageType.Stab, new Color(1f, 0.6f, 0f), feedbackSource: HitFeedbackSource.SpikeTrap);
+            enemy.TakeDamage(_damagePerPass, DamageType.Pierce, new Color(1f, 0.6f, 0f), feedbackSource: HitFeedbackSource.SpikeTrap);
 
         yield return new WaitForSeconds(0.1f);
 
