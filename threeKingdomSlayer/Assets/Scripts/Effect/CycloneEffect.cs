@@ -42,7 +42,14 @@ public class CycloneEffect : MonoBehaviour
     private bool _visualOnly;
     private float _visualOnlyTimer;
     private int _visualOnlyFrame;
+    private bool _zoneVisual;
+    private float _zoneElapsed;
+    private float _zoneFrameTimer;
+    private float _zoneOpeningDuration;
+    private int _zoneFrameIndex;
     private bool _fadingOut;
+    private bool _destroyOnFadeComplete;
+    private bool _zoneFadeCompleted;
 
     public void Setup(Enemy target, int damage, int landingDamage, float knockupDuration)
     {
@@ -75,10 +82,38 @@ public class CycloneEffect : MonoBehaviour
         }
     }
 
+    public void PlayZoneVisual(float duration)
+    {
+        _target = null;
+        _visualOnly = false;
+        _zoneVisual = true;
+        _zoneElapsed = 0f;
+        _zoneFrameTimer = 0f;
+        _zoneOpeningDuration = Mathf.Min(0.75f, Mathf.Max(0.01f, duration * 0.35f));
+        _zoneFrameIndex = 0;
+        _fadingOut = false;
+        if (_sr != null)
+        {
+            _sr.color = Color.white;
+            _sr.sprite = cyclone1;
+        }
+    }
+
+    public bool ZoneVisualFadeCompleted => !_zoneVisual && _fadingOut;
+
+    public void StopZoneVisual()
+    {
+        if (!_zoneVisual)
+            return;
+        _zoneVisual = false;
+        StartFadeOut();
+    }
+
     public void PlayGroundVisual(Enemy target)
     {
         _target = target;
         _visualOnly = true;
+        _zoneVisual = false;
         _visualOnlyTimer = 0f;
         _visualOnlyFrame = 0;
         PositionAtTarget();
@@ -114,6 +149,12 @@ public class CycloneEffect : MonoBehaviour
 
     private void Update()
     {
+        if (_zoneVisual)
+        {
+            UpdateZoneVisual();
+            return;
+        }
+
         if (_visualOnly)
         {
             UpdateGroundVisual();
@@ -141,6 +182,30 @@ public class CycloneEffect : MonoBehaviour
         }
 
         UpdateAnimation();
+    }
+
+    private void UpdateZoneVisual()
+    {
+        if (_sr == null || _allFrames == null)
+            return;
+
+        _zoneElapsed += Time.deltaTime;
+        if (_zoneElapsed >= _zoneOpeningDuration)
+        {
+            _zoneFrameTimer -= Time.deltaTime;
+            if (_zoneFrameTimer <= 0f)
+            {
+                _zoneFrameTimer = loopFrameInterval;
+                _zoneFrameIndex = _zoneFrameIndex == 0 ? 1 : 0;
+                _sr.sprite = _allFrames[4 + _zoneFrameIndex];
+            }
+        }
+        else
+        {
+            float progress = Mathf.Clamp01(_zoneElapsed / _zoneOpeningDuration);
+            _zoneFrameIndex = Mathf.Min(Mathf.FloorToInt(progress * 6f), 5);
+            _sr.sprite = _allFrames[_zoneFrameIndex];
+        }
     }
 
     private void UpdateGroundVisual()
@@ -218,14 +283,19 @@ public class CycloneEffect : MonoBehaviour
         StartFadeOut();
     }
 
-    private void StartFadeOut()
+    private void StartFadeOut(bool destroyOnComplete = true)
     {
         if (_fadingOut) return;
         _fadingOut = true;
+        _destroyOnFadeComplete = destroyOnComplete;
 
         if (_sr != null)
-            _sr.DOFade(0f, fadeOutDuration).SetUpdate(UpdateType.Normal, false).OnComplete(() => Destroy(gameObject));
-        else
+        {
+            var tween = _sr.DOFade(0f, fadeOutDuration).SetUpdate(UpdateType.Normal, false);
+            if (destroyOnComplete)
+                tween.OnComplete(() => Destroy(gameObject));
+        }
+        else if (destroyOnComplete)
             Destroy(gameObject);
     }
 

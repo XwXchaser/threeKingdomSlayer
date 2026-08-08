@@ -10,7 +10,7 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1778764012219
-updatedAt: 1786103290906
+updatedAt: 1786165370483
 ---
 
 # project-mistake-note
@@ -43,8 +43,9 @@ updatedAt: 1786103290906
 - 正确做法：保留局部方向的 X 符号，用 `Atan2(y, Abs(x))` 计算斜向倾角，再将左右符号独立用于 `SpriteRenderer.flipX`。这样旋转负责“斜角”，镜像负责“左右造型”。
 - 经验：任何方向性命中特效都要把“角度”和“镜像”作为两个独立输出，先做数学验证，再做左右运行时对照验收。
 
-### 程序化 Sprite 内嵌碎片与运行时碎片必须先区分来源
-- 症状：关闭 `BuildStabEffect()` 的 `instance.rays` 后，Stab 画面上的外围碎片仍存在。
-- 根因：Stab 的碎片是 `CreateStabFrameSprite()` 最终帧调用 `DrawStabDebris()` 直接写入 Texture2D 的像素，不属于运行时 `SpriteRenderer` 碎片。
-- 规则：修改“图片内部”的视觉元素前，先追踪它是 Texture2D 像素生成、运行时 SpriteRenderer，还是 Prefab 子物体；只修改其真实来源。对于当前 Stab，短时长下保留内嵌碎片的观感已验收。
+### Cyclone 主动技能区域解耦规则
+- 当前主动 Cyclone 不是“对现有敌人逐个生成特效”，而是按 `waveLevels.rangeRows` 每排创建一个区域对象 `CycloneZone`，位置为该排 `col=2` 中心。
+- 区域生成与敌人存在解耦：生成时立即扫描已有敌人，生命周期内继续扫描同排新出现/进入的敌人；同一敌人在该区域生命周期内只触发一次，不使用重新触发间隔。
+- 区域生命周期由 `ActiveWaveLevelConfig.cycloneDuration` 独立控制，当前各级为 2 秒；不能与敌人击飞时长混用。
+- 区域 Prefab 同时带 `CycloneZone` 与 `CycloneEffect` 时，`CycloneZone` 负责区域检测、伤害、Launch、落地伤害和生命周期；不得再次实例化同一 Prefab 给被击飞敌人，否则会在敌人脚下重复出现旋风。
 <!-- locus:body:end -->

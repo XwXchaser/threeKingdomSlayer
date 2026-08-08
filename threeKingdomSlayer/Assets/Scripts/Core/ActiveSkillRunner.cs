@@ -165,68 +165,21 @@ public class ActiveSkillRunner : MonoBehaviour
         if (columnManager == null || prefab == null || cfg.rangeRows <= 0)
             return false;
 
-        _cycloneCandidates.Clear();
-        _cycloneCandidateSet.Clear();
-        var enemies = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
-        for (int i = 0; i < enemies.Count; i++)
+        float zoneDuration = cfg.cycloneDuration > 0f ? cfg.cycloneDuration : 2f;
+        for (int row = 0; row < cfg.rangeRows; row++)
         {
-            var enemy = enemies[i];
-            if (enemy != null && _cycloneCandidateSet.Add(enemy))
-                _cycloneCandidates.Add(enemy);
-        }
-
-        _activeBossSnapshot.Clear();
-        var aliveEnemies = EnemyManager.Instance != null ? EnemyManager.Instance.GetAllAliveEnemies() : null;
-        if (aliveEnemies != null)
-        {
-            for (int i = 0; i < aliveEnemies.Count; i++)
-            {
-                var enemy = aliveEnemies[i];
-                if (enemy != null && enemy.isBoss && enemy.bossState == BossState.InCombat)
-                    _activeBossSnapshot.Add(enemy);
-            }
-        }
-
-        for (int i = 0; i < _activeBossSnapshot.Count; i++)
-        {
-            var enemy = _activeBossSnapshot[i];
-            if (_cycloneCandidateSet.Add(enemy))
-                _cycloneCandidates.Add(enemy);
-        }
-
-        for (int i = 0; i < _cycloneCandidates.Count; i++)
-        {
-            var enemy = _cycloneCandidates[i];
-            if (enemy == null || enemy.state == EnemyState.Dead || enemy.isPhaseTransitioning)
-                continue;
-
-            if (enemy.isBoss && enemy.state != EnemyState.Stunned)
-            {
-                enemy.ApplyActiveDisplacementHit();
-                enemy.TakeActiveDisplacementPoiseDamage(cfg.bossPoiseDamagePercent);
-
-                var visualInstance = Instantiate(prefab);
-                var groundEffect = visualInstance.GetComponent<CycloneEffect>();
-                if (groundEffect != null)
-                    groundEffect.PlayGroundVisual(enemy);
-                else
-                    Destroy(visualInstance);
-                continue;
-            }
-
-            enemy.ApplyActiveDisplacementHit();
-
-            if (enemy.state == EnemyState.QTEAttacking || !enemy.CanBeLaunched(float.MaxValue))
-                continue;
             var instance = Instantiate(prefab);
-            var effect = instance.GetComponent<CycloneEffect>();
-            if (effect == null)
+            var zone = instance.GetComponent<CycloneZone>();
+            if (zone == null)
             {
                 Destroy(instance);
                 continue;
             }
-            effect.Setup(enemy, cfg.damage, cfg.landingDamage, enemy.launchDuration);
+
+            zone.Setup(columnManager, row, cfg.damage, cfg.landingDamage,
+                cfg.bossPoiseDamagePercent, 1.2f, zoneDuration);
         }
+
         return true;
     }
 
