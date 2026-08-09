@@ -150,7 +150,8 @@ public class ChargeStabVisual : MonoBehaviour
 
             UpdatePosition(screenPos);
             UpdateRotation(screenPos);
-            UpdateSprite(progress);
+            float visualProgress = Mathf.InverseLerp(GetChargeBeginProgress(), 1f, progress);
+            UpdateSprite(visualProgress);
         }
     }
 
@@ -298,9 +299,7 @@ public class ChargeStabVisual : MonoBehaviour
 
         if (progress < 1f)
         {
-            // 蓄力中：根据进度切换 charge1/2
-            float mappedProgress = (progress - appearThreshold) / (1f - appearThreshold);
-            _sr.sprite = mappedProgress < 0.65f ? chargeSprite1 : chargeSprite2;
+            _sr.sprite = progress < 0.65f ? chargeSprite1 : chargeSprite2;
         }
         else if (!_readyShown)
         {
@@ -331,5 +330,13 @@ public class ChargeStabVisual : MonoBehaviour
             c.a = alpha;
             _sr.color = c;
         }
+    }
+
+    private float GetChargeBeginProgress()
+    {
+        if (InputManager.Instance == null) return 0f;
+        float minCharge = InputManager.Instance.minChargeTime;
+        if (minCharge <= 0f) return 0f;
+        return InputManager.Instance.longPressDuration / minCharge;
     }
 }

@@ -7400,9 +7400,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 12bc2e31bc62b9f49859005b5d309191, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  longPressDuration: 1
+  longPressDuration: 0.3
   minChargeTime: 1
   swipeThreshold: 50
+  maxSwipeDuration: 0.25
+  swipeStartDeadZone: 8
+  minSwipeSpeed: 180
+  swipeRearmDelay: 0.1
+  chargeMovementTolerance: 20
   verticalSwipeThreshold: 30
   horizontalSwipeThreshold: 30
   swipeDownAngleThreshold: 30
