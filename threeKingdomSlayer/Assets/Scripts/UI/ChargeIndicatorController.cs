@@ -31,7 +31,8 @@ public class ChargeIndicatorController : MonoBehaviour
 
     private void Start()
     {
-        parentCanvas = GetComponentInParent<Canvas>();
+        // 跳过自身 Canvas，取父级 BattleHUD Canvas
+        parentCanvas = transform.parent?.GetComponentInParent<Canvas>();
 
         if (indicatorRoot != null)
             indicatorRoot.gameObject.SetActive(false);
@@ -100,8 +101,8 @@ public class ChargeIndicatorController : MonoBehaviour
 
             UpdatePosition(screenPos);
 
-            // 将 progress (appearThreshold→1) 映射到 fillAmount (0→1)
-            float fillAmount = Mathf.Clamp01((progress - appearThreshold) / (1f - appearThreshold));
+            // 将 progress 归一化：蓄力实际开始时 fill=0，蓄满时 fill=1
+            float fillAmount = Mathf.InverseLerp(GetChargeBeginProgress(), 1f, progress);
             if (chargeFillImage != null)
                 chargeFillImage.fillAmount = fillAmount;
 
@@ -111,6 +112,14 @@ public class ChargeIndicatorController : MonoBehaviour
                 if (chargeSpinImage != null) chargeSpinImage.gameObject.SetActive(true);
             }
         }
+    }
+
+    private float GetChargeBeginProgress()
+    {
+        if (InputManager.Instance == null) return 0f;
+        float minCharge = InputManager.Instance.minChargeTime;
+        if (minCharge <= 0f) return 0f;
+        return InputManager.Instance.longPressDuration / minCharge;
     }
 
     private void OnChargeEnded()
