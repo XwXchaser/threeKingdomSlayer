@@ -11786,6 +11786,12 @@ MonoBehaviour:
   - {fileID: 8300000, guid: d408c62ff9a66f74188ae7d13a4117bd, type: 3}
   - {fileID: 8300000, guid: e9d70c333ce22b54cb8e010baa21f2d0, type: 3}
   _enemyHitCooldown: 0.14
+  _slashHitClips:
+  - {fileID: 8300000, guid: 08a7a8dc2d94a4244a324a3b226c1c63, type: 3}
+  - {fileID: 8300000, guid: 470f8dd55025e3f4c8a0c6a6d819c994, type: 3}
+  _stabHitClips:
+  - {fileID: 8300000, guid: 9348cb33f157271488bcf5818a09248e, type: 3}
+  - {fileID: 8300000, guid: 143e9962cafe7f14595059074ba54814, type: 3}
 --- !u!4 &1593080085
 Transform:
   m_ObjectHideFlags: 0
