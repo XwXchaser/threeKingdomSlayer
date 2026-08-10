@@ -34,6 +34,10 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip[] _enemyHitClips;
     [SerializeField, Min(0f)] private float _enemyHitCooldown = 0.14f;
 
+    [Header("基础攻击命中 SFX — 随机二选一")]
+    [SerializeField] private AudioClip[] _slashHitClips;
+    [SerializeField] private AudioClip[] _stabHitClips;
+
     private AudioSource _bgmMainSource;
     private AudioSource _bgmEnvSource;
     private AudioSource _sfxSource;
@@ -44,6 +48,9 @@ public class AudioManager : MonoBehaviour
     private const string MASTER_VOLUME_PARAMETER = "MasterVolume";
     private const string BGM_VOLUME_PARAMETER = "BGMVolume";
     private const string SFX_VOLUME_PARAMETER = "SFXVolume";
+    private const float ATTACK_VOICE_VOLUME = 0.5f;
+    private const float SLASH_HIT_VOLUME = 1.25f;
+    private const float STAB_HIT_VOLUME = 1.25f;
     private const float ENEMY_HIT_VOLUME = 0.8f;
     private const float MIN_VOLUME_DB = -80f;
 
@@ -52,6 +59,8 @@ public class AudioManager : MonoBehaviour
     private float _sfxVolume = 1f;
     private float _nextEnemyHitTime;
     private int _lastEnemyHitIndex = -1;
+    private int _lastSlashHitIndex = -1;
+    private int _lastStabHitIndex = -1;
 
     private void Awake()
     {
@@ -133,6 +142,8 @@ public class AudioManager : MonoBehaviour
         PreloadClip(_parryClip);
         PreloadClipArray(_qteBlockClips);
         PreloadClipArray(_enemyHitClips);
+        PreloadClipArray(_slashHitClips);
+        PreloadClipArray(_stabHitClips);
     }
 
     private void PreloadClip(AudioClip clip)
@@ -208,7 +219,7 @@ public class AudioManager : MonoBehaviour
         switch (eventName)
         {
             case "Player_Attack":
-                PlayRandom(_attackVoices);
+                PlayRandom(_attackVoices, ATTACK_VOICE_VOLUME);
                 PlayRandom(_attackTiles);
                 break;
             case "Player_Parry":
@@ -220,6 +231,12 @@ public class AudioManager : MonoBehaviour
             case "Enemy_Hit":
                 PlayEnemyHit();
                 break;
+            case "Slash_Hit":
+                PlayRandom(_slashHitClips, SLASH_HIT_VOLUME, ref _lastSlashHitIndex);
+                break;
+            case "Stab_Hit":
+                PlayRandom(_stabHitClips, STAB_HIT_VOLUME, ref _lastStabHitIndex);
+                break;
         }
     }
 
@@ -228,6 +245,16 @@ public class AudioManager : MonoBehaviour
         if (clips == null || clips.Length == 0) return;
         int idx = Random.Range(0, clips.Length);
         PlayOneShot(clips[idx], volumeScale);
+    }
+
+    private void PlayRandom(AudioClip[] clips, float volumeScale, ref int lastIndex)
+    {
+        if (clips == null || clips.Length == 0) return;
+        int index = Random.Range(0, clips.Length);
+        if (clips.Length > 1 && index == lastIndex)
+            index = (index + Random.Range(1, clips.Length)) % clips.Length;
+        lastIndex = index;
+        PlayOneShot(clips[index], volumeScale);
     }
 
     private void PlayEnemyHit()
@@ -242,6 +269,18 @@ public class AudioManager : MonoBehaviour
         _lastEnemyHitIndex = index;
         _nextEnemyHitTime = Time.time + _enemyHitCooldown;
         PlayOneShot(_enemyHitClips[index], ENEMY_HIT_VOLUME);
+    }
+
+    public void PlaySlashHit()
+    {
+        EnsureAudioSources();
+        PlayRandom(_slashHitClips, 1f, ref _lastSlashHitIndex);
+    }
+
+    public void PlayStabHit()
+    {
+        EnsureAudioSources();
+        PlayRandom(_stabHitClips, 1f, ref _lastStabHitIndex);
     }
 
     private void PlayOneShot(AudioClip clip, float volumeScale = 1f)

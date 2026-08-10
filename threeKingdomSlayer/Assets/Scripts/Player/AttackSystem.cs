@@ -265,6 +265,7 @@ public class AttackSystem : MonoBehaviour
             enemy => ActiveSkillRunner.Instance?.ConsumeArmedDisease(enemy) ?? false,
             () =>
             {
+                AudioManager.Instance?.PostEvent("Stab_Hit");
                 UltimateSystem.Instance?.AddEnergyForAttack(AttackType.Stab);
                 OnAttackPerformed?.Invoke(AttackType.Stab, columnIndex, true);
             },
@@ -303,6 +304,7 @@ public class AttackSystem : MonoBehaviour
             onHit: enemy => hitTargets.Add(enemy),
             onFirstHit: () =>
             {
+                AudioManager.Instance?.PostEvent("Slash_Hit");
                 UltimateSystem.Instance?.AddEnergyForAttack(AttackType.Slash);
                 OnAttackPerformed?.Invoke(AttackType.Slash, -1, leftToRight);
             },

@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1782990177886
-updatedAt: 1783593969263
+updatedAt: 1786266789255
 ---
 
 # charge-stab-visual
@@ -81,10 +81,17 @@ Launch 释放 → AttackSystem 读取当前蓄力视觉位置/旋转/缩放 → 
 | _launchSprite3 | Launch 帧3：stab |
 
 ## 关键同步参数
+- `longPressDuration = 0.3s` (Battle.scene InputManager)
 - `minChargeTime = 1s` (InputManager / Battle.scene)
-- `appearThreshold = 0.3` → 视觉在约 0.3s 出现，同时记录 pitch baseline
+- 蓄力有效窗口：`longPressDuration` → `minChargeTime`，归一化进度 = `InverseLerp(longPressDuration/minChargeTime, 1, rawProgress)`
+- `appearThreshold = 0.3` → 指示器在 rawProgress 达 0.3 时出现；`ChargeStabVisual` 在 rawProgress 达 `longPressDuration/minChargeTime` 时出现
 - `maxPitchAngle` 默认 10°（向上），`maxDownPitchAngle` 默认 20°（向下），`verticalTiltHalfHeight` 默认 2 世界单位
 - Launch 三帧均分 `launchFlickDuration`（默认 0.20s），每帧约 0.067s
+
+## 蓄力进度归一化 (2024 fix)
+- `ChargeIndicatorController.GetChargeBeginProgress()`: 返回 `longPressDuration / minChargeTime`，fillAmount = `InverseLerp(beginProgress, 1, rawProgress)`
+- `ChargeStabVisual.GetChargeBeginProgress()`: 同上，OnChargeUpdated 将 rawProgress 归一化后再传 UpdateSprite；UpdateSprite 内不再做 appearThreshold 二次映射
+- **ChargeIndicatorController parentCanvas 修复**: `Start()` 使用 `transform.parent?.GetComponentInParent<Canvas>()` 跳过自身 Canvas 获取父级 BattleHUD Canvas，确保 UpdatePosition 坐标转换正确
 
 ## 精灵资源
 - `Assets/Sprites/zhangfei/stab_charge1.png` ~ `stab_charge_loop2.png` (5 张, 512x512)

@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1780763484954
-updatedAt: 1785747598130
+updatedAt: 1786280812030
 ---
 
 # wwise-audio-status
@@ -63,6 +63,8 @@ AudioListener.volume 在初始化时固定为 1，避免与 Mixer 总线重复�
 | `_attackVoices` | AudioClip[] | playerattackvoice1/2/3（随机三选一, DecompressOnLoad） |
 | `_attackTiles` | AudioClip[] | slash / stab（随机二选一, DecompressOnLoad） |
 | `_parryClip` | AudioClip | parry (DecompressOnLoad) |
+| `_slashHitClips` | AudioClip[] | slash_hit1/2（Slash 首次实际命中随机二选一, DecompressOnLoad） |
+| `_stabHitClips` | AudioClip[] | stab_hit1/2（Stab 首次实际命中随机二选一, DecompressOnLoad） |
 
 ### API
 
@@ -71,6 +73,8 @@ AudioListener.volume 在初始化时固定为 1，避免与 Mixer 总线重复�
 | `PlayDefaultBGM()` | StageController.StartStage |
 | `StopBGM()` | StageController（胜利/失败/主菜单） |
 | `PostEvent("Player_Attack")` | AttackSystem.ExecuteStab/ExecuteSlash |
+| `PostEvent("Slash_Hit")` | AttackSystem → Slash 首次实际命中回调 |
+| `PostEvent("Stab_Hit")` | AttackSystem → Stab 首次实际命中回调 |
 | `PostEvent("Player_Parry")` | AttackSystem.ExecuteParry |
 | `SetMasterVolume/GetMasterVolume` | PauseMenuUI |
 | `SetBgmVolume/GetBgmVolume` | PauseMenuUI |
@@ -80,6 +84,7 @@ AudioListener.volume 在初始化时固定为 1，避免与 Mixer 总线重复�
 
 - **BGM**: 两轨同时 Play()，各 loop=true，无 FadeIn
 - **Player_Attack**: 随机一条人声 + 随机一种刀剑音，PlayOneShot 叠加
+- **Slash_Hit / Stab_Hit**: 分别随机播放对应的两条命中 SFX；仅在本次 Slash/Stab 第一次实际命中敌人时触发，空挥不播放；同时避免同一攻击类型连续重复同一条音频
 - **Player_Parry**: 单次 PlayOneShot
 - **音量**: AudioMixer 的 Master / BGM / SFX 三档独立控制，参数与 Slider 值持久化。
 
@@ -92,7 +97,7 @@ AudioListener.volume 在初始化时固定为 1，避免与 Mixer 总线重复�
 
 - [x] 敌人受击 SFX：已接入 `Enemy_Hit` 事件，随机音频池、0.14 秒全局冷却与连续重复规避均已实现；播放倍率固定为 0.8。
 - [ ] UI 点击 SFX
-- [ ] Pierce/Sweep/Launch 攻击 SFX
+- [x] 基础 Slash/Stab 命中 SFX：分别接入 `slash_hit1/2` 与 `stab_hit1/2`，仅首次实际命中播放；Pierce/Sweep/Launch 仍待单独设计
 - [ ] PCM WAV → OGG 压缩（目前约 14MB 未压缩）
 - [x] BGM/SFX 独立音量控制：已落地 AudioMixer 三档（总/BGM/SFX）及暂停菜单三 Slider。
 <!-- locus:body:end -->
