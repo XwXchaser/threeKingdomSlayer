@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1784124647579
-updatedAt: 1785744490606
+updatedAt: 1786343471341
 ---
 
 # attack-animation-fillup-order
@@ -32,6 +32,7 @@ updatedAt: 1785744490606
 
 - `ColumnManager.StartWaveMarch` 扫描全局空排并创建跨列 WaveMarch 步骤；`BeginWaveStep` 不再按 `attackRange` 排除源排成员。
 - 合法步骤中的攻击动画敌人先保留订单并等待；`Enemy.PlayAttackAnimationTween` 完成回调通过 `TryStartRushMove` 恢复已有订单。
+- `Enemy.UpdateAttack` 在 HitStop 或 HitFlash 有效期间暂停攻击冷却，避免受击动画与 Attack Trigger 竞争；反馈结束后继续原冷却。
 - `ColumnManager.ExecutePush` 在修改 row 前注册或续期 `PushReturnTransaction`；连续击退保留第一次 `(column,row)` 原点。
 - `ColumnManager.PostDisplacementFillUp(IEnumerable<Enemy>)` 只为实际被后推的敌人开启 0.35 秒后回位；不扫描或移动其他敌人。
 - `RushMoveOrderOwner.PushReturn` 每次只在下一排空闲时前进一步，最终只在精确原槽完成；阻塞时由 `ColumnManager.Update` 和拓扑变化继续重试。击退前已有的 WaveMarch 步骤会保存成员和目标槽，回位结束后重新校验该原订单；仅真实拓扑变化才允许重新扫描。
@@ -49,4 +50,8 @@ updatedAt: 1785744490606
 ### 缺陷2：行军中被击退导致单兵永久卡死 (已修复)
 - 行军阶段被 `AbortWaveMarch` 中断，`TryResumePausedWaveAfterPushReturns` 因 `IsRowFullyVacated(targetRow)=false` 丢弃暂存波次→丢失 WaveMarch 订单→Idle 状态永久不恢复。
 - 修复：移除 `IsRowFullyVacated` 前置条件，无条件恢复暂存波次。
+
+### 缺陷3：受击后攻击伤害存在但动画缺失 (已修复)
+- HitStop 禁用 Animator 时仍设置 Hit Trigger，且攻击冷却继续推进；恢复 Animator 的同一帧触发 Attack 后，HitFlash 抢占视觉，但 DOTween 仍在之后结算伤害。
+- 修复：HitStop/HitFlash 期间暂停 `UpdateAttack` 的冷却推进，反馈结束后再启动攻击；用户复测暂未复发。
 <!-- locus:body:end -->

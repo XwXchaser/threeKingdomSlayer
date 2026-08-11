@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1785815668360
-updatedAt: 1785945938505
+updatedAt: 1786343471259
 ---
 
 # hit-feedback-system
@@ -27,6 +27,13 @@ updatedAt: 1785945938505
 - DoT 显式为 None，不触发卡肉；幻影/被动/道具/箭雨/火焰为轻反馈；Parry、Launch、旋风、终极技能为重反馈；基础攻击首击标准、后续轻反馈。
 - `Enemy.TakeDamage` 与 `SharedHealthGroup.TakeDamage` 的敌人受击音效都必须检查 `feedbackSource != HitFeedbackSource.Dot`；DoT 仍可扣血和更新血条，但不播放 `Enemy_Hit`。
 - 仅在 `Enemy.TakeDamage` 入口屏蔽是不够的，共享血量路径会直接在 `SharedHealthGroup` 内播放音效；两条路径必须同时处理。
+
+## 已修复：受击后攻击动画丢失
+
+- 根因：敌人在攻击冷却态受击时，HitStop 禁用 Animator，但 `Hit` Trigger 已设置且攻击冷却仍继续；Animator 恢复的同一帧又触发 `Attack`，最终 HitFlash 抢占动画，而 DOTween 独立执行 `PerformAttack`，表现为攻击动画缺失但伤害存在。
+- 修复：`Enemy.UpdateAttack` 在 `_hitStopRemaining > 0` 或 `_hitFlashRoutine != null` 时暂停攻击冷却；受击反馈完整结束后才允许启动攻击。
+- 保留仅异常时输出的 `[ATTACK_ANIM_DIAG] TriggerNotEntered` 与 `DamageWithoutAttackAnimation` 警告，用于监测复发。
+- 用户已复测开局受击场景，暂未再次出现该问题。
 
 ## 后续注意
 

@@ -1468,6 +1468,10 @@ public class Enemy : MonoBehaviour
         }
         else
         {
+            // 受击停顿/受击动画期间不推进攻击冷却，避免 Hit 与 Attack Trigger 竞争。
+            if (_hitStopRemaining > 0f || _hitFlashRoutine != null)
+                return;
+
             // 阶段1：攻击冷却
             // BUG FIX: 冷却期间如果标记了需要补齐，先执行补齐再攻击
             if (pendingRushMove)
@@ -1487,10 +1491,33 @@ public class Enemy : MonoBehaviour
 
     private void PerformAttack()
     {
+        if (_animator != null)
+        {
+            AnimatorStateInfo current = _animator.GetCurrentAnimatorStateInfo(0);
+            if (!current.IsName("Attack") && !current.IsName("CAttack"))
+            {
+                Debug.LogWarning($"[ATTACK_ANIM_DIAG] DamageWithoutAttackAnimation enemy={DebugTag} frame={Time.frameCount} state={state} animatorEnabled={_animator.enabled} currentHash={current.fullPathHash} currentTime={current.normalizedTime:F3} hitStop={_hitStopRemaining:F3}");
+            }
+        }
+
         // 通知玩家受到伤害
         // 由EnemyManager转发给PlayerState
         DebugLog.Info($"[Enemy] {DebugTag} PerformAttack 触发, attackDamage={attackDamage}");
         EnemyManager.Instance?.OnEnemyAttackPlayer(this);
+    }
+
+    private System.Collections.IEnumerator TraceAttackAnimatorEntry(string expectedState, int attackStartFrame)
+    {
+        yield return new WaitForSecondsRealtime(0.12f);
+        if (_animator == null || state != EnemyState.Attacking || !isAttackAnimating)
+            yield break;
+
+        AnimatorStateInfo current = _animator.GetCurrentAnimatorStateInfo(0);
+        AnimatorStateInfo next = _animator.GetNextAnimatorStateInfo(0);
+        if (!current.IsName(expectedState) && !next.IsName(expectedState))
+        {
+            Debug.LogWarning($"[ATTACK_ANIM_DIAG] TriggerNotEntered enemy={DebugTag} startFrame={attackStartFrame} frame={Time.frameCount} expected={expectedState} animatorEnabled={_animator.enabled} inTransition={_animator.IsInTransition(0)} currentHash={current.fullPathHash} currentTime={current.normalizedTime:F3} nextHash={next.fullPathHash} hitStop={_hitStopRemaining:F3} hitFlashActive={_hitFlashRoutine != null}");
+        }
     }
 
 private void SpawnProjectile()
@@ -1559,7 +1586,9 @@ private void SpawnProjectile()
         isCFrame = isCAttack;
         UpdateOutlineState();
         string trigger = string.IsNullOrEmpty(step.animationTrigger) ? "Attack" : step.animationTrigger;
+        int attackStartFrame = Time.frameCount;
         _animator?.SetTrigger(trigger);
+        StartCoroutine(TraceAttackAnimatorEntry(trigger, attackStartFrame));
 
         Vector3 startPos = transform.localPosition;
         Vector3 startScale = transform.localScale;
@@ -3310,6 +3339,9 @@ private void SpawnProjectile()
 
     private void OnDestroy()
     {
+        _attackTween?.Kill(false);
+        _attackTween = null;
+        transform.DOKill(false);
         DestroyFlashMaterials();
     }
 
