@@ -26,6 +26,8 @@ public class ColumnManager : MonoBehaviour
     // Wave march has a preparing barrier and one exact generation per row step.
     private bool _isWaveMarching;
     private bool _isWavePreparing;
+    private bool _currentWaveContinuousRun;
+    private bool _useRowMarchPlanner;
     private int _currentWaveSourceRow = -1;
     private int _currentWaveTargetRow = -1;
     private int _waveGeneration;
@@ -37,6 +39,18 @@ public class ColumnManager : MonoBehaviour
     private readonly List<Enemy> _pausedWaveEnemies = new List<Enemy>();
     private readonly List<Enemy> _preparingWaveEnemies = new List<Enemy>();
     private readonly HashSet<Enemy> _pendingWaveEnemies = new HashSet<Enemy>();
+    private readonly Dictionary<Enemy, int> _plannedWaveTargetRows = new Dictionary<Enemy, int>();
+    private readonly Dictionary<Enemy, int> _activeWaveTargetRows = new Dictionary<Enemy, int>();
+    private readonly HashSet<long> _activeWaveTargetSlots = new HashSet<long>();
+    private readonly Dictionary<int, int> _plannedRowTargets = new Dictionary<int, int>();
+    private readonly HashSet<int> _occupiedWaveRows = new HashSet<int>();
+    private readonly HashSet<int> _hardBarrierRows = new HashSet<int>();
+    private readonly HashSet<int> _explicitEmptyGateRows = new HashSet<int>();
+    private readonly HashSet<int> _openedEmptyGateRows = new HashSet<int>();
+    private readonly Dictionary<int, int> _emptyGateBlockerRows = new Dictionary<int, int>();
+    private readonly Dictionary<Enemy, int> _waveEnemyConfiguredRows = new Dictionary<Enemy, int>();
+    private readonly HashSet<long> _plannedWaveTargetSlots = new HashSet<long>();
+    private int _waveLayoutGeneration;
 
     private sealed class PushReturnTransaction
     {
@@ -201,6 +215,7 @@ public class ColumnManager : MonoBehaviour
     {
         AbortWaveMarch();
         CancelAllPushReturns();
+        ClearWaveRowLayout();
         _waveMarchRequestedWhilePushReturn = false;
         _topologyChangedWhilePushReturn = false;
         _hasPausedWaveStep = false;
@@ -422,6 +437,100 @@ public class ColumnManager : MonoBehaviour
 
     #endregion
 
+    public void ConfigureWaveRowLayout(IList<RowConfig> rows, int rowOffset)
+    {
+        _waveLayoutGeneration++;
+        _useRowMarchPlanner = true;
+        _explicitEmptyGateRows.Clear();
+        _openedEmptyGateRows.Clear();
+        _emptyGateBlockerRows.Clear();
+        _waveEnemyConfiguredRows.Clear();
+
+        if (rows == null)
+            return;
+
+        int lastNonEmptyRuntimeRow = -1;
+        for (int i = 0; i < rows.Count; i++)
+        {
+            int runtimeRow = i + rowOffset;
+            var row = rows[i];
+            if (row != null && row.IsExplicitEmptyGate)
+            {
+                _explicitEmptyGateRows.Add(runtimeRow);
+                _emptyGateBlockerRows[runtimeRow] = lastNonEmptyRuntimeRow;
+            }
+            else
+            {
+                lastNonEmptyRuntimeRow = runtimeRow;
+            }
+        }
+    }
+
+    public void ClearWaveRowLayout()
+    {
+        _waveLayoutGeneration++;
+        _useRowMarchPlanner = false;
+        _explicitEmptyGateRows.Clear();
+        _openedEmptyGateRows.Clear();
+        _emptyGateBlockerRows.Clear();
+        _waveEnemyConfiguredRows.Clear();
+    }
+
+    public bool IsExplicitEmptyGateRow(int row)
+    {
+        return _explicitEmptyGateRows.Contains(row);
+    }
+
+    public void RegisterWaveEnemy(Enemy enemy, int configuredRow)
+    {
+        if (enemy == null)
+            return;
+        _waveEnemyConfiguredRows[enemy] = configuredRow;
+    }
+
+    public void UnregisterWaveEnemy(Enemy enemy)
+    {
+        if (enemy != null)
+            _waveEnemyConfiguredRows.Remove(enemy);
+    }
+
+    public bool IsEmptyGateOpen(int row)
+    {
+        if (_openedEmptyGateRows.Contains(row))
+            return true;
+        if (!_emptyGateBlockerRows.TryGetValue(row, out int blockerRow))
+            return true;
+        if (blockerRow < 0)
+        {
+            _openedEmptyGateRows.Add(row);
+            return true;
+        }
+
+        foreach (var pair in _waveEnemyConfiguredRows)
+        {
+            var enemy = pair.Key;
+            if (enemy == null || enemy.state == EnemyState.Dead)
+                continue;
+            if (pair.Value <= blockerRow)
+                return false;
+        }
+
+        _openedEmptyGateRows.Add(row);
+        return true;
+    }
+
+    public bool IsContinuousWaveTargetReserved(Enemy enemy, int column, int row)
+    {
+        if (enemy != null && _activeWaveTargetRows.TryGetValue(enemy, out int ownTargetRow) && ownTargetRow == row)
+            return false;
+        return _activeWaveTargetSlots.Contains(((long)column << 32) ^ (uint)row);
+    }
+
+    public bool CanAdvanceIntoRow(int row)
+    {
+        return !IsExplicitEmptyGateRow(row) || IsEmptyGateOpen(row);
+    }
+
     #region 波次行军（规则1/2）
 
     /// <summary>
@@ -439,11 +548,26 @@ public class ColumnManager : MonoBehaviour
         }
         if (_isWaveMarching || _isWavePreparing)
         {
+            if (_useRowMarchPlanner)
+                _topologyChangedWhilePushReturn = true;
             Debug.Log($"[WaveMarch] StartWaveMarch blocked: _isWaveMarching={_isWaveMarching} _isWavePreparing={_isWavePreparing} srcRow={_currentWaveSourceRow} tgtRow={_currentWaveTargetRow}");
             return;
         }
 
+        if (_useRowMarchPlanner && _topologyChangedWhilePushReturn)
+            _topologyChangedWhilePushReturn = false;
+
         int maxRow = GetMaxOccupiedRow();
+        if (_useRowMarchPlanner)
+        {
+            if (TryBuildWaveMarchPlan(maxRow))
+            {
+                Debug.Log($"[WaveMarch] StartWaveMarch → BeginWavePlan rows={_plannedRowTargets.Count} enemies={_plannedWaveTargetRows.Count}");
+                BeginWaveStep();
+            }
+            return;
+        }
+
         for (int r = 0; r < maxRow; r++)
         {
             if (IsRowFullyVacated(r) && !IsRowFullyVacated(r + 1))
@@ -455,12 +579,109 @@ public class ColumnManager : MonoBehaviour
         }
     }
 
-    private void BeginWaveStep(int sourceRow, int targetRow, IList<Enemy> restrictedEnemies = null)
+    private bool TryBuildWaveMarchPlan(int maxRow)
+    {
+        _plannedWaveTargetRows.Clear();
+        _plannedRowTargets.Clear();
+        _plannedWaveTargetSlots.Clear();
+        _occupiedWaveRows.Clear();
+        _hardBarrierRows.Clear();
+
+        for (int row = 0; row <= maxRow; row++)
+        {
+            if (!IsRowFullyVacated(row))
+                _occupiedWaveRows.Add(row);
+            if (IsExplicitEmptyGateRow(row) && !IsEmptyGateOpen(row))
+                _hardBarrierRows.Add(row);
+        }
+
+        int nextTargetRow = 0;
+        int firstSourceRow = -1;
+        for (int sourceRow = 0; sourceRow <= maxRow; sourceRow++)
+        {
+            if (_hardBarrierRows.Contains(sourceRow))
+            {
+                nextTargetRow = sourceRow + 1;
+                continue;
+            }
+            if (!_occupiedWaveRows.Contains(sourceRow))
+                continue;
+
+            if (sourceRow > nextTargetRow)
+            {
+                if (firstSourceRow < 0)
+                    firstSourceRow = sourceRow;
+                _plannedRowTargets[sourceRow] = nextTargetRow;
+            }
+            nextTargetRow++;
+        }
+
+        if (firstSourceRow < 0)
+            return false;
+
+        for (int c = 0; c < columnCount; c++)
+        {
+            foreach (var enemy in columns[c].enemies)
+            {
+                if (enemy == null || enemy.isBoss || enemy.state == EnemyState.Dead)
+                    continue;
+                if (!_plannedRowTargets.TryGetValue(enemy.rowIndex, out int targetRow))
+                    continue;
+                if (_pushReturnTransactions.ContainsKey(enemy))
+                    continue;
+                _plannedWaveTargetRows[enemy] = targetRow;
+                long slotKey = ((long)enemy.columnIndex << 32) ^ (uint)targetRow;
+                if (!_plannedWaveTargetSlots.Add(slotKey))
+                    _plannedWaveTargetRows.Remove(enemy);
+            }
+        }
+
+        return _plannedWaveTargetRows.Count > 0;
+    }
+
+    private void BeginWaveStep()
+    {
+        _waveGeneration++;
+        if (_waveGeneration <= 0) _waveGeneration = 1;
+        _currentWaveSourceRow = -1;
+        _currentWaveTargetRow = -1;
+        _currentWaveContinuousRun = true;
+        _preparingWaveEnemies.Clear();
+        _pendingWaveEnemies.Clear();
+        _activeWaveTargetRows.Clear();
+        _activeWaveTargetSlots.Clear();
+
+        foreach (var pair in _plannedWaveTargetRows)
+        {
+            var enemy = pair.Key;
+            if (enemy == null || enemy.state == EnemyState.Dead)
+                continue;
+            if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, _waveGeneration, pair.Value, RushMoveMode.ContinuousEmptyRun))
+                continue;
+
+            enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
+            enemy.OnRushMoveComplete += OnWaveEnemyRushComplete;
+            _preparingWaveEnemies.Add(enemy);
+            _activeWaveTargetRows[enemy] = pair.Value;
+            _activeWaveTargetSlots.Add(((long)enemy.columnIndex << 32) ^ (uint)pair.Value);
+        }
+
+        _plannedWaveTargetRows.Clear();
+        _plannedRowTargets.Clear();
+        _plannedWaveTargetSlots.Clear();
+        if (_preparingWaveEnemies.Count == 0)
+            return;
+
+        _isWavePreparing = true;
+    }
+
+    private void BeginWaveStep(int sourceRow, int targetRow, IList<Enemy> restrictedEnemies = null, bool continuousRun = false)
     {
         _waveGeneration++;
         if (_waveGeneration <= 0) _waveGeneration = 1;
         _currentWaveSourceRow = sourceRow;
         _currentWaveTargetRow = Mathf.Max(0, targetRow);
+        _currentWaveContinuousRun = continuousRun;
         _preparingWaveEnemies.Clear();
         _pendingWaveEnemies.Clear();
 
@@ -476,7 +697,8 @@ public class ColumnManager : MonoBehaviour
                 if (_pushReturnTransactions.ContainsKey(enemy))
                     continue;
 
-                if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, _waveGeneration, _currentWaveTargetRow))
+                if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, _waveGeneration, _currentWaveTargetRow,
+                    continuousRun ? RushMoveMode.ContinuousEmptyRun : RushMoveMode.Step))
                     continue;
 
                 enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
@@ -538,10 +760,13 @@ public class ColumnManager : MonoBehaviour
 
         _isWaveMarching = false;
         _isWavePreparing = false;
+        _currentWaveContinuousRun = false;
         _currentWaveSourceRow = -1;
         _currentWaveTargetRow = -1;
         _pendingWaveEnemies.Clear();
         _preparingWaveEnemies.Clear();
+        _activeWaveTargetRows.Clear();
+        _activeWaveTargetSlots.Clear();
         Debug.Log($"[WaveMarch] CompleteWaveStep gen={generation} → chain StartWaveMarch");
         StartWaveMarch();
     }
@@ -597,6 +822,11 @@ public class ColumnManager : MonoBehaviour
 
         _preparingWaveEnemies.Clear();
         _pendingWaveEnemies.Clear();
+        _plannedWaveTargetRows.Clear();
+        _plannedRowTargets.Clear();
+        _plannedWaveTargetSlots.Clear();
+        _activeWaveTargetRows.Clear();
+        _activeWaveTargetSlots.Clear();
         _isWavePreparing = false;
         _isWaveMarching = false;
         _currentWaveSourceRow = -1;
@@ -616,6 +846,8 @@ public class ColumnManager : MonoBehaviour
         if (enemy == null) return;
 
         bool wasWaveMember = _pendingWaveEnemies.Remove(enemy);
+        if (_activeWaveTargetRows.Remove(enemy, out int activeTargetRow))
+            _activeWaveTargetSlots.Remove(((long)sourceColumn << 32) ^ (uint)activeTargetRow);
         if (_preparingWaveEnemies.Remove(enemy))
             wasWaveMember = true;
         if (wasWaveMember)
@@ -632,6 +864,11 @@ public class ColumnManager : MonoBehaviour
             _isWaveMarching = false;
             _currentWaveSourceRow = -1;
             _currentWaveTargetRow = -1;
+            if (_useRowMarchPlanner)
+            {
+                StartWaveMarch();
+                return;
+            }
             // 修复（WaveMarch死锁）：WaveMarch 步进成员被位移（横推/击退/移除）打断且集合清空后，
             // 必须补发一次全局补齐扫描。此前只复位 flag 不重扫，导致补齐链永久暂停：
             // 横推清空集合后无人重扫；随后 Stab 击退触发 RegisterPushReturn 时因 flag 已 false

@@ -24,6 +24,12 @@ public enum RushMoveStartResult
     Rejected
 }
 
+public enum RushMoveMode
+{
+    Step,
+    ContinuousEmptyRun
+}
+
 public enum RushMoveOrderOwner
 {
     None,
@@ -284,10 +290,12 @@ public class Enemy : MonoBehaviour
     public System.Action<Enemy, RushMoveOrderOwner, int> OnRushMoveComplete;
     private RushMoveOrderOwner _rushMoveOrderOwner = RushMoveOrderOwner.None;
     private int _rushMoveOrderGeneration;
+    private RushMoveMode _rushMoveMode = RushMoveMode.Step;
     private float moveProgress; // 0~1, 当前排内移动进度
     private bool isMovingToNextRow;
 
     private bool isRushMove;
+    private const float continuousRushMoveDuration = 0.2f;
     private float rushMoveDelayTimer;
     private bool rushMoveChainTriggered;
     private Renderer[] renderers;
@@ -457,6 +465,7 @@ public class Enemy : MonoBehaviour
         pendingRushMove = false;
         _rushMoveOrderOwner = RushMoveOrderOwner.None;
         _rushMoveOrderGeneration = 0;
+        _rushMoveMode = RushMoveMode.Step;
         rushMoveDelayTimer = 0f;
         rushMoveChainTriggered = false;
         targetRow = -1;
@@ -1331,13 +1340,22 @@ public class Enemy : MonoBehaviour
             if (wasRush)
             {
                 var col = EnemyManager.Instance?.columnManager?.GetColumn(columnIndex);
-                if (col != null && col.IsRowOccupied(rowIndex, this))
+                if (col != null)
                 {
-                    rowIndex++;
-                    state = EnemyState.Idle;
-                    UpdateWorldPosition();
-                    CompleteRushMoveOrder();
-                    return;
+                    bool occupied = col.IsRowOccupied(rowIndex, this);
+                    if (_rushMoveMode == RushMoveMode.ContinuousEmptyRun)
+                    {
+                        var manager = EnemyManager.Instance?.columnManager;
+                        occupied = occupied && manager != null && manager.IsContinuousWaveTargetReserved(this, columnIndex, rowIndex);
+                    }
+                    if (occupied)
+                    {
+                        rowIndex++;
+                        state = EnemyState.Idle;
+                        UpdateWorldPosition();
+                        CompleteRushMoveOrder();
+                        return;
+                    }
                 }
             }
 
@@ -1397,10 +1415,24 @@ public class Enemy : MonoBehaviour
                 }
                 else if (targetRow >= 0 && rowIndex > targetRow)
                 {
+                    if (_rushMoveMode == RushMoveMode.ContinuousEmptyRun)
+                    {
+                        int nextRow = rowIndex - 1;
+                        var columnManager = EnemyManager.Instance?.columnManager;
+                        if (columnManager != null && !columnManager.CanAdvanceIntoRow(nextRow))
+                        {
+                            state = EnemyState.Idle;
+                            CompleteRushMoveOrder();
+                            return;
+                        }
+                    }
+
                     // Multi-row scheduler orders, including exact-slot push return, resume after the configured delay.
                     state = EnemyState.Idle;
                     pendingRushMove = true;
-                    float delay = StageController.Instance?.GetRushMoveDelay() ?? 0f;
+                    float delay = _rushMoveMode == RushMoveMode.ContinuousEmptyRun
+                        ? 0f
+                        : StageController.Instance?.GetRushMoveDelay() ?? 0f;
                     if (delay > 0f)
                         rushMoveDelayTimer = delay;
                     else
@@ -2508,7 +2540,7 @@ private void SpawnProjectile()
         && !(state == EnemyState.Moving && !IsRushMovementActive)
         && rushMoveDelayTimer <= 0f;
 
-    public bool AssignRushMoveOrder(RushMoveOrderOwner owner, int generation, int orderTargetRow)
+    public bool AssignRushMoveOrder(RushMoveOrderOwner owner, int generation, int orderTargetRow, RushMoveMode mode = RushMoveMode.Step)
     {
         if (owner == RushMoveOrderOwner.None || generation <= 0 || state == EnemyState.Dead)
             return false;
@@ -2523,6 +2555,7 @@ private void SpawnProjectile()
 
         _rushMoveOrderOwner = owner;
         _rushMoveOrderGeneration = generation;
+        _rushMoveMode = mode;
         targetRow = orderTargetRow;
         pendingRushMove = rowIndex > orderTargetRow;
         rushMoveDelayTimer = 0f;
@@ -2578,6 +2611,7 @@ private void SpawnProjectile()
     {
         _rushMoveOrderOwner = RushMoveOrderOwner.None;
         _rushMoveOrderGeneration = 0;
+        _rushMoveMode = RushMoveMode.Step;
         pendingRushMove = false;
         targetRow = -1;
         rushMoveDelayTimer = 0f;
@@ -2634,6 +2668,17 @@ private void SpawnProjectile()
                 // BOSS 补齐规则：前方一整排（所有列）必须清空才前进，而非仅看本列
                 if (isBoss && bossState == BossState.None && rowIndex > 2)
                 {
+                    var gateManager = EnemyManager.Instance?.columnManager;
+                    if (gateManager != null && !gateManager.CanAdvanceIntoRow(rowIndex - 1))
+                    {
+                        if (_onColumnsModifiedHandler == null)
+                        {
+                            _onColumnsModifiedHandler = OnColumnsModifiedForBoss;
+                            gateManager.OnColumnsModified += _onColumnsModifiedHandler;
+                        }
+                        return RushMoveStartResult.Deferred;
+                    }
+
                     if (!IsRowClearForBoss(rowIndex - 1))
                     {
                         var cm = EnemyManager.Instance?.columnManager;
@@ -3398,6 +3443,7 @@ private void SpawnProjectile()
 
         _rushMoveOrderOwner = RushMoveOrderOwner.None;
         _rushMoveOrderGeneration = 0;
+        _rushMoveMode = RushMoveMode.Step;
         pendingRushMove = false;
         targetRow = -1;
         rushMoveDelayTimer = 0f;

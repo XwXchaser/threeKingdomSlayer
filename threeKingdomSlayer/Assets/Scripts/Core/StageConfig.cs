@@ -24,6 +24,23 @@ public class RowConfig
 {
     [Tooltip("该排的敌人ID列表，每个ID对应一个站位。敌人实际占用的列数由 EnemyConfig.occupySlots 决定")]
     public int[] enemyIds = new int[5]; // 长度决定该排有多少个敌人站位
+
+    public bool IsExplicitEmptyGate
+    {
+        get
+        {
+            if (enemyIds == null || enemyIds.Length != 5)
+                return false;
+
+            for (int i = 0; i < enemyIds.Length; i++)
+            {
+                if (enemyIds[i] != 0)
+                    return false;
+            }
+
+            return true;
+        }
+    }
 }
 
 /// <summary>
