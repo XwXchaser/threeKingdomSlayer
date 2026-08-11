@@ -133,6 +133,7 @@ public class WaveSpawner : MonoBehaviour
         FillUpRule fillRule = ResolvedStageConfig?.fillUpRule ?? FillUpRule.PerColumn;
         if (fillRule == FillUpRule.PerRow)
         {
+            columnManager.ConfigureWaveRowLayout(wave.rows, 2);
             // PerRow: 每排使用顺序递增的排号，确保 rowIndex 正确对应配置中的排位
             int rowIdx = 0;
             foreach (RowConfig row in wave.rows)
@@ -142,6 +143,7 @@ public class WaveSpawner : MonoBehaviour
         }
         else
         {
+            columnManager.ClearWaveRowLayout();
             foreach (RowConfig row in wave.rows)
             {
                 SpawnRow(row, fillRule);
@@ -261,6 +263,7 @@ public class WaveSpawner : MonoBehaviour
 
             // 注册到管理器
             enemyManager?.RegisterEnemy(enemy);
+            columnManager?.RegisterWaveEnemy(enemy, rowIndex);
         }
     }
 
