@@ -158,6 +158,8 @@ public class AttackSystem : MonoBehaviour
                 float cooldown = cfg != null ? cfg.cooldown : 0.3f;
                 float speedMult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetAttackSpeedMultiplier() : 1f;
                 _actionLockTimer = cooldown / Mathf.Max(speedMult, 0.01f);
+                if (attackType == AttackType.Launch)
+                    _actionLockTimer = Mathf.Max(_actionLockTimer, LaunchVisualEffect.GetObservationDuration(cfg));
             }
             else
             {
@@ -370,47 +372,40 @@ public class AttackSystem : MonoBehaviour
 
         float finalDmg = GetFinalDamage(cfg);
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
+        Vector3 playerLaunchPos = playerState != null ? playerState.transform.position : transform.position;
         if (targets.Count > 0)
         {
-            Vector3 wavePos = GetWavePosition(targets, -1);
-
             ReleaseChargeHitShockwave();
             StartCoroutine(ReleaseChargeShockwaves());
 
-            // 概率击飞 Buff：每次攻击时判定一次（对所有目标生效）
             bool probLaunchActive = playerState != null && playerState.HasBuff(BuffType.ProbabilityLaunch);
-
-            // Launch 攻击不使用 Stab.prefab 作为视觉（避免与 Pierce 混淆），
-            // prefab=null 时 AttackWave 用纯色 Quad，不影响伤害和击飞逻辑
-            AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
-                onHit: (enemy) =>
-                {
-                    bool canLaunch = enemy.CanBeLaunched(cfg.poiseDamage);
-                    // 概率击飞：非 CanBeLaunched 时按概率强制进入 Stun 后再 Launch
-                    if (!canLaunch && probLaunchActive)
+            Vector3 wavePos = GetWavePosition(targets, -1);
+            PlayLaunchVisual(cfg, playerLaunchPos, () =>
+            {
+                AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
+                    onHit: enemy =>
                     {
-                        // 默认 30% 概率触发
-                        if (Random.value < 0.3f)
+                        bool canLaunch = enemy.CanBeLaunched(cfg.poiseDamage);
+                        if (!canLaunch && probLaunchActive && Random.value < 0.3f)
                         {
                             enemy.Stun(cfg.launchDuration * 0.5f);
                             canLaunch = true;
                         }
-                    }
-
-                    if (canLaunch)
-                        enemy.Launch();
-                },
-                prefab: null,
-                alphaOverride: 0f,
-                canInterruptCFrame: true,
-                targetDuration: GetVisualTargetDuration(cfg));
+                        if (canLaunch)
+                            enemy.Launch();
+                    },
+                    prefab: null,
+                    alphaOverride: 0f,
+                    canInterruptCFrame: true,
+                    targetDuration: GetVisualTargetDuration(cfg));
+            });
+        }
+        else
+        {
+            PlayLaunchVisual(cfg, playerLaunchPos, null);
         }
 
         Debug.Log($"[AttackSystem] 挑飞 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 击飞时间:{cfg.launchDuration}s 目标数:{targets.Count}");
-
-        Vector3 playerLaunchPos = playerState != null ? playerState.transform.position : transform.position;
-        PlayLaunchVisual(cfg, playerLaunchPos);
-
         return targets.Count > 0;
     }
 
@@ -419,7 +414,6 @@ public class AttackSystem : MonoBehaviour
         var cfg = GetConfig(AttackType.Parry);
         if (cfg == null) return false;
 
-        // 优先：扫描附近的远程飞行物并反弹
         var projectiles = FindObjectsOfType<EnemyProjectile>();
         Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
         bool deflectedAny = false;
@@ -449,8 +443,6 @@ public class AttackSystem : MonoBehaviour
 
         foreach (var enemy in targets)
         {
-            // BUG FIX: 先削韧再扣血。TakeDamage 的打断逻辑会 CancelAttack → state=Idle，
-            // 导致 TakePoiseDamage 的 state==Attacking 检查失败，Boss 永远无法被招架破势。
             enemy.TakePoiseDamage(cfg.poiseDamage);
             enemy.TakeDamage(finalDmg, cfg.damageType, canInterruptCFrame: true, isParryInterrupt: true,
                 feedbackStrength: HitFeedbackStrength.Heavy);
@@ -467,173 +459,18 @@ public class AttackSystem : MonoBehaviour
     /// 以 (35,90,zStart) 朝向做纯 Z 轴旋转至 (35,90,zEnd)，
     /// 表现枪头从低往高上挑的攻击动作。
     /// </summary>
-    private void PlayLaunchVisual(AttackSkillConfig cfg, Vector3 playerPos)
+    private void PlayLaunchVisual(AttackSkillConfig cfg, Vector3 playerPos, System.Action onImpact)
     {
-        if (_launchSprite1 == null) return;
-
-        float variance = Mathf.Clamp(cfg.launchAngleVariance, 0f, 30f);
-        float zStart = 140f + Random.Range(-variance, variance);
-        float zEnd = zStart - cfg.launchFlickAngle;
-        float duration = Mathf.Max(cfg.launchFlickDuration, 0.1f);
-
-        Vector3 spawnPos = new Vector3(playerPos.x + cfg.launchSpawnXOffset, playerPos.y + cfg.launchSpawnYOffset, playerPos.z + cfg.launchSpawnZOffset);
-        Quaternion startRotation = Quaternion.Euler(35f, 90f, zStart);
-        Vector3 endEuler = new Vector3(35f, 90f, zEnd);
-
-        Vector3 chargePos = default;
-        Quaternion chargeRot = default;
-        Vector3 chargeScale = default;
-        bool useChargePose = _chargeStabVisual != null
-            && _chargeStabVisual.TryGetCurrentVisualPose(out chargePos, out chargeRot, out chargeScale);
-        Vector3 targetScale;
-        if (useChargePose)
-        {
-            spawnPos = chargePos;
-            startRotation = chargeRot;
-            endEuler = chargeRot.eulerAngles + new Vector3(-cfg.launchFlickAngle, 0f, 0f);
-            targetScale = chargeScale;
-            _chargeStabVisual.SuppressFadeAndDestroy();
-        }
-        else
-        {
-            float basePixelsPerUnit = _launchSprite1.pixelsPerUnit;
-            float basePixelSize = Mathf.Max(_launchSprite1.rect.width, _launchSprite1.rect.height);
-            float baseWorldSize = basePixelSize / basePixelsPerUnit;
-            float targetWorldSize = 5f;
-            float scale = baseWorldSize > 0.001f ? targetWorldSize / baseWorldSize : 1f;
-            targetScale = Vector3.one * scale;
-        }
-
-        var obj = new GameObject("Launch_Visual");
-        obj.transform.position = spawnPos;
-        obj.transform.rotation = startRotation;
-
-        var sr = obj.AddComponent<SpriteRenderer>();
-        sr.sprite = _launchSprite1;
-        Material mat = new Material(Shader.Find("Sprites/Default"));
-        mat.color = Color.white;
-        sr.material = mat;
-
-        obj.transform.localScale = useChargePose ? targetScale : Vector3.zero;
-        Tween scaleIn = null;
-        if (!useChargePose)
-            scaleIn = obj.transform.DOScale(targetScale, 0.05f).SetEase(Ease.OutQuad);
-
-        var seq = DOTween.Sequence();
-        seq.SetTarget(obj.transform);
-        seq.SetUpdate(UpdateType.Normal, false);
-
-        var rotate = obj.transform.DORotate(endEuler, duration, RotateMode.Fast).SetEase(Ease.InOutQuad);
-        seq.Append(rotate);
-        var moveUp = obj.transform.DOMoveY(spawnPos.y + cfg.launchRiseHeight, duration).SetEase(Ease.OutQuad);
-        seq.Join(moveUp);
-
-        // Launch 三帧动画：stab_charge2 → stab_charge1 → stab
-        float frameT = duration / 3f;
-        seq.Insert(0, DOTween.Sequence()
-            .AppendInterval(frameT)
-            .AppendCallback(() => sr.sprite = _launchSprite2)
-            .AppendInterval(frameT)
-            .AppendCallback(() => sr.sprite = _launchSprite3));
-
-        seq.AppendInterval(0.03f);
-        seq.Append(mat.DOFade(0f, 0.15f).SetEase(Ease.InQuad));
-
-        bool completed = false;
-        seq.OnKill(() =>
-        {
-            if (!completed)
-            {
-                scaleIn?.Kill();
-                Destroy(obj);
-            }
-        });
-
-        seq.OnComplete(() =>
-        {
-            completed = true;
-            scaleIn?.Kill();
-            Destroy(obj);
-        });
+        LaunchVisualEffect.Create(_launchSprite1, _launchSprite2, _launchSprite3, cfg, playerPos,
+            _chargeStabVisual, LaunchVisualEffect.ObservationScale, onImpact);
     }
 
     /// <summary>
-    /// 招架视觉特效：Stab prefab 以 (54,270,zStart) 朝向做纯 Z 轴旋转至 (54,270,zEnd)，
-    /// 表现枪尾从下往上挑的格挡动作。zStart 每次有随机偏差。
-    /// 生成位置以玩家为基准 + Inspector 偏移参数，而非跟随敌人。
+    /// 招架视觉由独立效果组件负责；战斗判定与敌人状态流程保持不变。
     /// </summary>
     private void PlayParryVisual(AttackSkillConfig cfg, Vector3 playerPos)
     {
-        Vector3 spawnPos = new Vector3(playerPos.x + cfg.parrySpawnXOffset, playerPos.y + cfg.parrySpawnYOffset, playerPos.z + cfg.parrySpawnZOffset);
-
-        // Z 起始角 45° ± 随机偏移，终点 = 起点 + sweepAngle
-        float variance = Mathf.Clamp(cfg.parryAngleVariance, 0f, 30f);
-        float zStart = 45f + Random.Range(-variance, variance);
-        float zEnd = zStart + cfg.parrySweepAngle;
-        float duration = Mathf.Max(cfg.parrySweepDuration, 0.1f);
-
-        Vector3 startEuler = new Vector3(54f, 270f, zStart);
-        Vector3 endEuler = new Vector3(54f, 270f, zEnd);
-
-        // 实例化 prefab 或 Quad fallback
-        GameObject obj;
-        Material mat;
-        Color parryColor = Color.white;
-
-        if (cfg.attackWavePrefab != null)
-        {
-            obj = Instantiate(cfg.attackWavePrefab, spawnPos, Quaternion.Euler(startEuler));
-            obj.name = "Parry_Visual";
-            Renderer r = obj.GetComponentInChildren<Renderer>();
-            if (r != null) { mat = r.material; mat.color = parryColor; }
-            else { mat = null; }
-        }
-        else
-        {
-            obj = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            obj.name = "Parry_Visual";
-            obj.transform.position = spawnPos;
-            obj.transform.rotation = Quaternion.Euler(startEuler);
-            obj.transform.localScale = Vector3.zero;
-            mat = new Material(Shader.Find("Sprites/Default"));
-            mat.color = parryColor;
-            obj.GetComponent<Renderer>().material = mat;
-        }
-
-        Vector3 targetScale = obj.transform.localScale == Vector3.zero
-            ? new Vector3(5f, 1.5f, 1f)
-            : obj.transform.localScale;
-
-        // DOTween 序列：scale-in → 纯 Z 轴旋转（枪尾上挑）→ 淡出销毁
-        var scaleIn = obj.transform.DOScale(targetScale, 0.05f).SetEase(Ease.OutQuad);
-
-        var seq = DOTween.Sequence();
-        seq.SetTarget(obj.transform);
-        seq.SetUpdate(UpdateType.Normal, false);
-
-        var rotate = obj.transform.DORotate(endEuler, duration, RotateMode.Fast).SetEase(Ease.InOutQuad);
-        seq.Append(rotate);
-
-        seq.AppendInterval(0.03f);
-        if (mat != null)
-            seq.Append(mat.DOFade(0f, 0.15f).SetEase(Ease.InQuad));
-
-        bool completed = false;
-        seq.OnKill(() =>
-        {
-            if (!completed)
-            {
-                scaleIn.Kill();
-                Destroy(obj);
-            }
-        });
-
-        seq.OnComplete(() =>
-        {
-            completed = true;
-            scaleIn.Kill();
-            Destroy(obj);
-        });
+        ParryVisualEffect.Create(cfg.attackWavePrefab, playerPos, cfg);
     }
 
     #endregion

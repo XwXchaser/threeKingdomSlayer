@@ -10,7 +10,7 @@ readOnly: false
 aiMaintained: true
 explicitMaintenanceRules: true
 createdAt: 1778764012219
-updatedAt: 1786179800186
+updatedAt: 1786525556475
 ---
 
 # project-mistake-note
@@ -25,41 +25,29 @@ updatedAt: 1786179800186
 <!-- locus:maintain-rules:end -->
 
 <!-- locus:body:start -->
-### 按住划动检测必须使用速度门控独立计时，不能用初次按下时间 ✅ 已修复
-- 症状：按住屏幕后快速划动无法触发 Slash/Parry，只有松手才触发（退回旧逻辑）。
-- 根因：
-  1. Touch 处理器用 `segmentStartTime`（初次按下时间）计算划动耗时，用户按住停留后再划动时该值早已超过 `maxSwipeDuration`(0.25s)，所有划动都被过滤。
-  2. 鼠标和触摸使用两套不同的划动检测代码，修复鼠标后触摸仍未同步。
-  3. 招式触发后的 `ResetSegment` 未重置 `isSwipeTracking`，残留的追踪状态在下个分段立即超时。
+### Parry 架势规则误恢复导致普通敌人连续招架后停止攻击 ✅ 已修复
+- 症状：连续 Parry 普通敌人多次后，敌人架势从 50 逐步降到 0，进入 `Stunned`；眩晕结束后普通敌人回到 `Idle`，位于 row=0 时没有移动事件重新调用 `StartAttacking()`，之后不再攻击。
+- 根因：`Enemy.TakePoiseDamage()` 只检查 `state == Attacking` 和 `isAttackDrawPhase`，没有限制 `isBoss`，导致已经停用的"普通敌人架势/眩晕"机制重新生效；同时没有要求 `isAttackAnimating`，所以普通敌人在攻击冷却阶段也能被 Parry 持续削架势。
 - 修复：
-  1. 提取共享方法 `TryDetectHoldSwipe`，鼠标和触摸统一走速度门控追踪。
-  2. 仅在瞬时速度 >= `minSwipeSpeed` 后才开始独立计时和累积距离，不使用 `segmentStartTime`。
-  3. `ResetSegment`/`CancelChargeAndResetSegment` 重置 `isSwipeTracking`。
-  4. `TouchPhase.Began` 初始化 `isSwipeTracking`、`lastFramePos`、`lastFrameTime`。
-- 预防规则：**划动检测的计时起点必须是速度达标的那一刻，不是手指初次按下的那一刻。鼠标和触摸的划动逻辑必须共用同一方法，不允许分叉实现。ResetSegment 系列方法必须重置所有追踪状态字段。**
-- 文件：`Assets/Scripts/Player/InputManager.cs`
+  1. `TakePoiseDamage()` 首先拒绝非 Boss；
+  2. 仅在 Boss `InCombat`、`state == Attacking`、`isAttackAnimating == true` 且不处于 `AttackDraw` 时削架势；
+  3. 普通敌人保留原有 Parry 攻击打断，但不再因 Parry 累计架势或进入 Stunned。
+- 预防规则：**架势/眩晕是 Boss 专属机制，任何通用 Enemy 方法都必须明确区分 `isBoss`；Parry 架势伤害必须要求实际攻击动画前摇状态，不能只依赖 `state == Attacking`，因为该状态覆盖攻击冷却阶段。**
+- 文件：`Assets/Scripts/Enemy/Enemy.cs`
 
-### Slash命中特效左右镜像与视觉偏移必须分离坐标语义 ✅ 已修复
-- 症状：Slash 左右方向的火星移动方向可以镜像，但火星造型仍保持同一朝向；尝试把命中特效根节点移动到视觉起点后，偏移效果不明显，甚至容易影响命中表现。
-- 根因：
-  1. 命中特效根节点同时承担世界位置、相机朝向和子节点局部坐标。相机采用 `Quaternion.LookRotation(-Camera.main.transform.forward, Camera.main.transform.up)` 后，根节点局部 X 与世界 X 可能相反，不能直接把世界左右符号与局部旋转/`flipX` 混用。
-  2. 火星的位移、旋转、分叉角度和 Sprite 图案镜像分别使用了不同方向基准，导致“运动镜像但造型不镜像”。
-  3. 将根节点从起点移动到命中点会让所有子特效一起移动；如果同时再让子火星从命中点反向起步，两个动画会互相抵消，视觉上看不出偏移。
+### PlayLaunchVisual 变量声明顺序错误导致编译失败 ✅ 已修复
+- 症状：`windupDistance`、`sideRatio`、`riseDistance` 在声明前被使用（CS0841），导致 `PlayLaunchVisual` 无法编译。
+- 根因：重构枪尾支点模型时，将变量计算行放在 camera 向量行之后，但 windupPos/apexPos 计算仍未迁移，留在声明前引用。
+- 修复：将 `windupDistance`/`sideRatio`/`riseDistance` 声明移到 camera 向量和轨迹计算之前。
+- 文件：`Assets/Scripts/Player/AttackSystem.cs`
+
+### Launch 蓄势偶发诡异绕转 ✅ 已修复并验收
+- 症状：Launch 发动时，接管蓄力武器 pose 后，Windup 阶段低概率出现不符合既定动作的绕远或翻转；连续测试后修复版本暂未复现。
+- 根因：目标姿态先通过 `.eulerAngles` 拆成欧拉角，再交给 `DOLocalRotate(..., RotateMode.Fast)` 插值。实时蓄力 pose 可能接近欧拉角环绕或非唯一表示区间，同一四元数会被拆成差异很大的欧拉角组合；随机倾角完整参与 Windup 又放大了异常。
 - 修复：
-  1. 逻辑命中根节点固定在真实 `impactPosition`，新增 `VisualRoot` 作为纯视觉内容父节点；只有 `VisualRoot` 从视觉起点飞向命中点，不改变伤害、命中时机、位移或卡肉。
-  2. Slash 方向先转换为命中特效根节点的局部方向，再由同一个 `travelSign` 同时驱动旋转、移动、分叉角度和 SpriteRenderer.flipX；不要分别从世界 X、相机屏幕 X 和局部 X 推导不同符号。
-  3. 任何不对称程序化 Sprite 都必须显式验证左右两侧的图案朝向，不能只验证位置轨迹或旋转数值。
-- 预防规则：**特效方向至少拆成“世界方向、相机屏幕方向、特效局部方向”三种语义；确定一个渲染坐标系后，运动、旋转、分叉和图案镜像必须共用同一方向基准。需要从起点飞到命中点时，根节点固定在命中点，移动独立的视觉子树，避免视觉动画与逻辑对象互相争夺 Transform。实现后必须通过运行时左右对照检查 Sprite 图案，而不能仅凭代码认为已镜像。**
-- 文件：`Assets/Scripts/Attack/SweepEffect.cs`、`Assets/Scripts/Core/HitFeedbackManager.cs`、`Assets/Scripts/Core/PixelHitEffectManager.cs`、`Assets/Scripts/Enemy/Enemy.cs`、`Assets/Scripts/Enemy/SharedHealthGroup.cs`
-
-### Slash 旋转角与左右镜像必须分离
-- 错误做法：判断左向后直接将局部方向取反，再用取反后的向量计算 `Atan2`；左右 Slash 会得到相同旋转角。
-- 正确做法：保留局部方向的 X 符号，用 `Atan2(y, Abs(x))` 计算斜向倾角，再将左右符号独立用于 `SpriteRenderer.flipX`。这样旋转负责“斜角”，镜像负责“左右造型”。
-- 经验：任何方向性命中特效都要把“角度”和“镜像”作为两个独立输出，先做数学验证，再做左右运行时对照验收。
-
-### Cyclone 主动技能区域解耦规则
-- 当前主动 Cyclone 不是“对现有敌人逐个生成特效”，而是按 `waveLevels.rangeRows` 每排创建一个区域对象 `CycloneZone`，位置为该排 `col=2` 中心。
-- 区域生成与敌人存在解耦：生成时立即扫描已有敌人，生命周期内继续扫描同排新出现/进入的敌人；同一敌人在该区域生命周期内只触发一次，不使用重新触发间隔。
-- 区域生命周期由 `ActiveWaveLevelConfig.cycloneDuration` 独立控制，当前各级为 2 秒；不能与敌人击飞时长混用。
-- 区域 Prefab 同时带 `CycloneZone` 与 `CycloneEffect` 时，`CycloneZone` 负责区域检测、伤害、Launch、落地伤害和生命周期；不得再次实例化同一 Prefab 给被击飞敌人，否则会在敌人脚下重复出现旋风。
+  1. Windup 改为自定义 DOTween 进度，由 `Quaternion.SlerpUnclamped(startRotation, windupRotation, t)` 直接插值；
+  2. Windup 位移与旋转由同一进度同步驱动；
+  3. 随机倾角在 Windup 仅应用 12%，完整随机倾角延后到上挑终态。
+- 预防规则：**从实时世界 pose 接管的武器动画不得将目标 Quaternion 转为 Euler 后做 Tween；跨对象/跨坐标系旋转衔接优先使用 Quaternion Slerp，并限制随机姿态在过渡前段的参与量。**
+- 文件：`Assets/Scripts/Effects/LaunchVisualEffect.cs`
 <!-- locus:body:end -->

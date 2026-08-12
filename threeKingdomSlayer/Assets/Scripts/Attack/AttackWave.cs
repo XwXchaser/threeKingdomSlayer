@@ -454,7 +454,10 @@ public class AttackWave : MonoBehaviour
                 ? HitFeedbackStrength.Heavy
                 : nextIndex == 0 ? HitFeedbackStrength.Standard : HitFeedbackStrength.Light;
             enemy.TakeDamage(hitDamage, damageType, damageNumberColor, canInterruptCFrame,
-                feedbackStrength: strength);
+                feedbackStrength: strength,
+                impactDirection: damageType == DamageType.Launch
+                    ? (Camera.main != null ? Camera.main.transform.up : Vector3.up)
+                    : default);
             if (strength >= HitFeedbackStrength.Standard)
                 PauseTravelForHitStop(strength);
             onHit?.Invoke(enemy);

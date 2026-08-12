@@ -2197,12 +2197,12 @@ private void SpawnProjectile()
     /// </summary>
     public bool TakePoiseDamage(float poiseDamage)
     {
+        if (!isBoss) return false;
         if (state == EnemyState.Dead) return false;
         if (state == EnemyState.Stunned) return false;
-        // 仅 Attacking 态可被 Parry 削韧（AttackDraw 准备阶段不可削韧）
         if (state != EnemyState.Attacking) return false;
-        if (isAttackDrawPhase) return false;
-        if (isBoss && bossState != BossState.InCombat) return false;
+        if (!isAttackAnimating || isAttackDrawPhase) return false;
+        if (bossState != BossState.InCombat) return false;
 
         currentPoise -= poiseDamage;
         OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);

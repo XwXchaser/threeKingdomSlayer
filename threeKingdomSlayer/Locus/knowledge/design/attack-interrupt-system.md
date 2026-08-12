@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779896984696
-updatedAt: 1782380276250
+updatedAt: 1786456206776
 ---
 
 # attack-interrupt-system
@@ -233,3 +233,10 @@ AttackSystem
 - Parry 命中 Boss SuperArmor → 应打断攻击 + 削Poise
 - Boss 普通窗口：所有攻击可打断
 - 非Boss CFrame：Launch 仍可打断（行为不变）
+
+## 10. Parry 架势边界修复（已实现）
+
+- 普通敌人不参与 Parry 架势累计，不会因连续 Parry 进入 `Stunned`；Parry 对普通敌人的攻击打断规则保持不变。
+- Boss 仅在 `BossState.InCombat`、`state == Attacking`、`isAttackAnimating == true` 且不处于 `AttackDraw` 时受到 Parry 架势伤害。
+- `state == Attacking` 同时覆盖攻击冷却与攻击动画，不能单独作为架势伤害窗口；必须额外检查 `isAttackAnimating`。
+- 修复原因：旧实现允许普通敌人累计架势并在归零后进入 Boss 专属眩晕流程，眩晕结束落入 `Idle` 后可能永久失去攻击调度。
