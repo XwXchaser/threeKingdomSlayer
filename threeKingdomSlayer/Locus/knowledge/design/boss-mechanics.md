@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1779004290012
-updatedAt: 1783412881246
+updatedAt: 1786456224378
 ---
 
 # boss-mechanics
@@ -63,9 +63,13 @@ BOSS 进入眩晕有**两条路径**：
 - BOSS 进入战斗后（`InCombat`），眩晕恢复后**不参与列内补齐**，原地恢复攻击
 - 架势恢复进度通过 `stunRecoveryProgress`（0→1 时间比例）驱动 UI 动画，不受状态切换影响
 
-### 2.4 击飞中架势破碎
+### 2.4 架势机制边界
 
-若 BOSS 在击飞（Launched）状态下架势归零，只重置架势值，不触发眩晕（避免冻结在半空）。
+- 架势与眩晕是 Boss 专属机制；普通敌人不累计 Parry 架势，不因 Parry 归零进入 `Stunned`。
+- Boss 架势伤害只在实际攻击动画前摇阶段生效：`BossState.InCombat`、`state == Attacking`、`isAttackAnimating == true` 且 `isAttackDrawPhase == false`。
+- 不能仅使用 `state == Attacking` 作为 Parry 架势窗口，因为该状态也覆盖攻击冷却阶段。
+
+
 
 ---
 

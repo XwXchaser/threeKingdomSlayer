@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1785846924403
-updatedAt: 1786082148152
+updatedAt: 1786525618288
 ---
 
 # pixel-hit-effect-runtime
@@ -20,21 +20,27 @@ updatedAt: 1786082148152
 <!-- locus:body:start -->
 ## 当前实现
 - `Assets/Scripts/Core/PixelHitEffectManager.cs` 由 `HitFeedbackManager.Trigger` 统一调用，仅对 Standard/Heavy 且非 DoT 命中生成纯表现特效，不参与伤害、命中或位移判定。
-- 管理器挂在 `Assets/Scenes/Battle.scene` 的 `Manager`，使用预创建实例对象池；每个实例由 1 个中心 SpriteRenderer 和 12 个射线 SpriteRenderer 组成。普通方向爆发和 Slash 仅启用所需的前 4 个/指定数量射线，避免对象池扩容后残留渲染。
-- Sprite 在运行时通过 Texture2D 创建，使用 Point Filter 和 Clamp；Stab 命中特效使用 4 个变体、每个变体 3 帧的完整程序化像素 Sprite，而不是用独立色块拼装。形状以 `stab_hit_effect_concept_v3.png` 为参考：中心向四周爆发、错落长短尖刺、深棕轮廓、暗红/红色外缘、橙色中层、黄色内层和白色实心核心。
-- Stab 每次命中轮换变体，并对局部尖刺角度/长度、整体缩放和旋转增加小范围受控随机；核心布局和中心位置保持稳定。爆发末帧额外包含少量红/棕碎屑。
-- Stab 动画当前使用接触→展开→保持→衰减的慢速验收时序，普通约 0.45 秒、重击约 0.52 秒；程序化 Sprite 的 PPU 已从 44 调为 30，使视觉尺寸放大。
-- 实例以 `Quaternion.LookRotation(-Camera.main.transform.forward, Camera.main.transform.up)` 面向相机，并沿相机 forward 偏移少量深度；渲染保持 Default Sorting Layer，sortingOrder=1。
-- DOTween 使用 unscaled update，驱动中心程序化 Sprite 的阶段切换/缩放和碎屑扩散；Sequence 的 OnComplete/OnKill 都通过 owner 校验收敛到统一回收，避免旧序列误回收复用实例。
+- 管理器挂在 `Assets/Scenes/Battle.scene` 的 `Manager`，使用预创建实例对象池；每个实例由 1 个中心 SpriteRenderer 和 12 个射线 SpriteRenderer 组成。所有构建分支必须显式关闭未使用 Renderer，避免对象池复用残留。
+- Sprite 在运行时通过 Texture2D 创建，使用 Point Filter 和 Clamp。Stab、Slash 使用多变体三帧程序化像素 Sprite，而非连续缩放的纯色 Quad。
+- 实例面向相机并沿 camera forward 偏移少量深度；命中特效保持 Default Sorting Layer、`sortingOrder=1`。
+- DOTween 使用 unscaled update；Sequence 的 OnComplete/OnKill 通过 owner 校验统一回收到对象池。
+
+## Launch 专属命中特效
+- `DamageType.Launch` 在 `Play()` 中进入 `BuildLaunchEffect`，不再使用通用四向爆裂。
+- Launch 复用 Slash 三帧程序化像素爆裂主体，整体尺寸约 4.8 基准并带约 ±32° 的短时受控旋转。
+- 最终验收版本关闭所有额外 ray renderer，仅保留三帧像素主体；此前拉伸十字射线会产生无像素块感的连续“面条”纹理，已移除。
+- `AttackWave.HitTarget` 在 Launch 时向 `Enemy.TakeDamage` 传入相机上方向，供命中特效确定挑飞朝向。
+- Launch 武器自身使用 `sortingOrder=2`，因此武器位于命中特效亮核之上，避免中心爆裂遮住枪身。
 
 ## 已验证
-- `PixelHitEffectManager.cs` 无代码诊断错误/警告；Unity domain reload 编译成功。
-- 已在编辑器中直接生成并读取慢速验收用 3 帧 Stab 程序化 Sprite 预览，文件位于 `Library/Locus/tmp/stab-refactor-v2-frame-0.png` 至 `stab-refactor-v2-frame-2.png`。预览确认中心已填充，不再是透明空心；尺寸和不规则放射轮廓已增强。
+- `PixelHitEffectManager.cs` 与 Launch 相关代码无编译错误，Unity domain reload 成功。
+- Launch 专属命中特效完成多轮视觉调整：移除黄色外围装饰、暗红十字延伸以及最终全部拉伸射线，仅保留放大的 Slash 像素主体。
 
 ## 调优约束
 - 新特效不可反向驱动伤害时机或位移。
-- 新视觉不可只依赖 `enemy.transform.position` 冒充武器接触点；需要由攻击执行路径提供接触位置与方向。
-- Stab、Slash、Pierce 后续应采用不同形状，而不只是换色；保留同一对象池和程序化像素 Sprite 的实现方式。
-- 修改对象池射线数量后，所有使用射线的构建方法必须显式关闭未使用 Renderer，避免旧状态残留。
-- 程序化形状调整必须以 `C:/Users/steam/Pictures/gptGen/stab_hit_effect_concept_v3.png` 为唯一造型参考，不能自行生成替代参考图。
+- 新视觉不可只依赖 `enemy.transform.position` 冒充武器接触点；攻击路径应提供接触位置与方向。当前 Launch 已提供方向，接触位置仍使用 Enemy 默认 body offset。
+- Stab、Slash、Launch 应采用可辨识的不同轮廓与节奏，而不只是换色；保留同一对象池和程序化像素 Sprite 的实现方式。
+- 修改对象池射线数量或使用方式后，所有构建方法必须显式关闭未使用 Renderer。
+- 不要通过极窄 SpriteRenderer 长条的连续缩放模拟像素爆裂；高速移动时会呈现平滑“面条”而不是离散像素块。优先使用完整程序化 Sprite 帧或短促块状碎片。
+- 程序化 Stab 形状调整仍以 `C:/Users/steam/Pictures/gptGen/stab_hit_effect_concept_v3.png` 为参考，不能自行生成替代参考图。
 <!-- locus:body:end -->

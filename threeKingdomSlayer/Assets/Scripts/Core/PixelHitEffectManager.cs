@@ -181,6 +181,10 @@ public sealed class PixelHitEffectManager : MonoBehaviour
         {
             BuildDiseaseStabEffect(instance, heavy);
         }
+        else if (context.damageType == DamageType.Launch)
+        {
+            BuildLaunchEffect(instance, context.impactDirection, heavy);
+        }
         else if (context.damageType == DamageType.Slash)
         {
             bool fullSlash = context.strength >= HitFeedbackStrength.Standard;
@@ -352,6 +356,61 @@ public sealed class PixelHitEffectManager : MonoBehaviour
             instance.sequence.Insert(duration * 0.3f,
                 ray.transform.DOScaleY(0f, duration * 0.7f).SetEase(Ease.InQuad));
         }
+    }
+
+    private void BuildLaunchEffect(EffectInstance instance, Vector3 impactDirection, bool heavy)
+    {
+        int variant = _slashVariantIndex++ % SlashVariantCount;
+        int frameBase = variant * SlashFramesPerVariant;
+        int seed = unchecked(instance.root.GetInstanceID() * 719 ^ Time.frameCount * 53);
+        var random = new System.Random(seed);
+        float Next(float min, float max) => min + (float)random.NextDouble() * (max - min);
+
+        Vector3 localDirection = instance.root.transform.InverseTransformDirection(impactDirection);
+        localDirection.z = 0f;
+        if (localDirection.sqrMagnitude < 0.0001f)
+            localDirection = Vector3.up;
+        localDirection.Normalize();
+
+        float angle = Mathf.Atan2(localDirection.y, localDirection.x) * Mathf.Rad2Deg + Next(-8f, 8f);
+        float scale = 4.8f * (heavy ? 1.08f : 1f) * Next(0.96f, 1.04f);
+        float duration = heavy ? 0.30f : 0.25f;
+        float contactEnd = duration * 0.16f;
+        float burstEnd = duration * 0.58f;
+        float holdEnd = duration * 0.74f;
+
+        instance.visualRoot.localRotation = Quaternion.identity;
+        instance.center.enabled = true;
+        instance.center.sprite = _slashFrames[frameBase];
+        instance.center.flipX = false;
+        instance.center.color = Color.white;
+        instance.center.transform.localPosition = Vector3.zero;
+        instance.center.transform.localRotation = Quaternion.Euler(0f, 0f, angle);
+        instance.center.transform.localScale = Vector3.one * (scale * 0.22f);
+
+        instance.sequence.Insert(0f, instance.center.transform.DOScale(Vector3.one * (scale * 0.58f), contactEnd)
+            .SetEase(Ease.OutCubic));
+        instance.sequence.InsertCallback(contactEnd, () =>
+        {
+            instance.center.sprite = _slashFrames[frameBase + 1];
+            instance.center.transform.localScale = Vector3.one * (scale * 0.66f);
+        });
+        instance.sequence.Insert(contactEnd, instance.center.transform.DOScale(Vector3.one * scale, burstEnd - contactEnd)
+            .SetEase(Ease.OutBack, 1.2f));
+        instance.sequence.InsertCallback(burstEnd, () =>
+        {
+            instance.center.sprite = _slashFrames[frameBase + 2];
+            instance.center.transform.localScale = Vector3.one * scale;
+        });
+        instance.sequence.Insert(0f, instance.visualRoot.DOLocalRotate(new Vector3(0f, 0f, Next(-32f, 32f)), duration)
+            .SetEase(Ease.OutCubic));
+        instance.sequence.Insert(holdEnd, instance.center.transform.DOScale(Vector3.one * (scale * 0.82f), duration - holdEnd)
+            .SetEase(Ease.InQuad));
+        instance.sequence.InsertCallback(duration, () => instance.center.enabled = false);
+
+        // Launch 仅保留放大的 Slash 像素爆裂主体，避免拉伸射线形成连续“面条”感。
+        for (int i = 0; i < instance.rays.Length; i++)
+            instance.rays[i].enabled = false;
     }
 
     private void BuildSlashEffect(EffectInstance instance, Vector3 impactDirection, bool heavy, bool fullSlash)

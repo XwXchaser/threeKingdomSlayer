@@ -83,6 +83,15 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("上挑持续时长（秒，默认 0.20）")]
     [Range(0.1f, 0.5f)]
     public float launchFlickDuration = 0.20f;
+    [Tooltip("上挑前下压蓄势时长；不改变攻击判定，仅影响视觉分段。")]
+    [Range(0.03f, 0.25f)]
+    public float launchWindupDuration = 0.10f;
+    [Tooltip("上挑前向下蓄势的视觉距离。")]
+    [Min(0f)]
+    public float launchWindupDistance = 0.42f;
+    [Tooltip("根据蓄力位置相对玩家左右偏移追加的上挑侧倾角。")]
+    [Range(0f, 30f)]
+    public float launchSideTilt = 12f;
     [Tooltip("生成位置 X 偏移（相对玩家位置）")]
     public float launchSpawnXOffset = 0f;
     [Tooltip("生成位置 Y 偏移（相对玩家位置）")]

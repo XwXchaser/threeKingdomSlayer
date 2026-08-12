@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1782990177886
-updatedAt: 1786266789255
+updatedAt: 1786525556438
 ---
 
 # charge-stab-visual
@@ -21,85 +21,53 @@ updatedAt: 1786266789255
 # Charge Stab Visual System
 
 ## Overview
-蓄力时在世界空间显示 Stab 武器精灵。视觉中心跟随指尖投射到玩家附近的相机平行平面；X 轴位置仍以玩家为中心按 `halfWidth` clamp；左右移动驱动 Z 轴 roll；上下移动只在视觉出现后按相对出现点驱动轻微 X 轴 pitch（向上与向下可分别配置上限）。纯前端表现，不触发任何攻击逻辑。
+蓄力时在世界空间显示 Stab 武器精灵。视觉中心跟随指尖投射到玩家附近的相机平行平面；X 轴位置按 `halfWidth` clamp；左右移动驱动 Z 轴 roll；上下移动按出现后的相对位置驱动 X 轴 pitch。Launch 释放时读取并接管蓄力视觉的实时位置、旋转和缩放。
 
-Launch 释放时接管蓄力视觉的实时 pose（位置/旋转/缩放），从该姿态直接播放上挑动画，播放 stab_charge2→stab_charge1→stab 三帧收束序列。
+## Launch 视觉架构（已验收）
+- `Assets/Scripts/Effects/LaunchVisualEffect.cs` 独立管理 Launch 视觉生命周期；`AttackSystem` 只提供三帧 Sprite、技能配置和命中回调。
+- 层级为 `Root(握持支点位移) → Pivot(枪身旋转) → Weapon(Sprite 偏移)`；支点从枪尾向枪身中心回收 40%。
+- 动作阶段为 Windup（后撤下旋）→ Thrust（分段贝塞尔弧线上挑）→ Hold（短暂停留）→ Retract（反向采样同一弧线快速回手并淡出）。不存在额外的命中后二次上挑。
+- Thrust 在时间轴 48% 触发 impact 回调，`AttackSystem` 此时才创建透明 Launch AttackWave 并结算伤害/击飞，保证枪身与敌人起飞方向同步。
+- 位移与旋转错峰：命中前位移先启动，旋转短暂滞后后追上；命中后自然减速到最高点。
+- 左右蓄力位置通过 `sideRatio` 驱动轨迹侧移与侧倾；每次 Launch 额外产生约 8.25°–15° 的随机左右终态倾角，蓄势阶段只应用该随机量的 12%。
+- Windup 使用 `Quaternion.SlerpUnclamped` 直接插值四元数，避免欧拉角跨 0°/360° 时偶发绕转或翻转。
+- `WeaponMotionBlurController.UpdateMotionWorld` 用世界空间位移和 `Quaternion.Angle` 计算线速度/角速度；Launch 使用较高模糊响应与 56px 上限。
+- 当前 `ObservationScale = 1.5f`，动作锁通过 `GetObservationDuration()` 至少覆盖完整 Launch 视觉时长。
+- Launch 武器 `sortingOrder = 2`，命中特效为 `sortingOrder = 1`，枪身显示在特效中心亮核之上。
 
-## Key File
-- `Assets/Scripts/Effects/ChargeStabVisual.cs` — MonoBehaviour，挂载在 `Player` GameObject
-- `Assets/Scripts/Player/AttackSystem.cs` — Launch 视觉释放时读取并接管蓄力视觉 pose
+## Launch 命中特效
+- `PixelHitEffectManager.BuildLaunchEffect` 复用 Slash 的三帧程序化像素爆裂主体，整体尺寸更大并带受控旋转。
+- 不使用拉伸射线或十字延伸，避免连续细长纹理产生“面条”感；对象池中的所有 ray renderer 在 Launch 分支显式关闭。
+- `AttackWave` 为 Launch 命中反馈传入相机上方向，特效朝向与挑飞方向一致。
 
 ## 行为流程
 ```
-按下 → 0~30% 隐藏
-     → 30%: Stab.prefab 实例化，世界空间出现
-       - 出现瞬间记录 pitch baseline（指尖在跟随平面上的位置）
-       - 位置: 屏幕指尖 raycast 到相机 forward 法线平面，视觉中心跟随该点
-       - X: clamp 到 playerX ± halfWidth，保留原左右范围限制
-       - Y/Z: 不再锁定为 playerY/playerZ 固定偏移，而由指尖平面命中点决定
-       - Z 旋转: 手指左右偏移映射到 ±maxAngle
-       - X 俯仰: 只按出现后上下相对位移计算，向下为正、向上为负；向下最大 maxDownPitchAngle，向上最大 maxPitchAngle
-       - 精灵: charge1 (30%~80%映射) → charge2 (80%~100%映射)
-     → 100%: ready 精灵停留 readyDuration 秒
-     → 100%+: loop1 ↔ loop2 每 loopInterval 秒交替
-松手 → 非 Launch 时 fadeOutDuration 秒渐隐 → Destroy
-Launch 释放 → AttackSystem 读取当前蓄力视觉位置/旋转/缩放 → SuppressFadeAndDestroy 立即销毁蓄力视觉
-            → Launch_Visual 从该 pose 播放三帧序列(stab_charge2→stab_charge1→stab) + 旋转上挑
+蓄力出现 → 跟随指尖位置/旋转
+Launch 释放 → TryGetCurrentVisualPose 读取实时 pose
+            → SuppressFadeAndDestroy 销毁旧蓄力视觉
+            → LaunchVisualEffect 从该 pose 后撤下旋
+            → 分段贝塞尔弧线上挑；48% 时结算伤害/击飞
+            → 到达最高点后反向采样弧线快速收招并淡出
 ```
 
 ## ChargeStabVisual API
 | 方法 | 说明 |
 |------|------|
 | `TryGetCurrentVisualPose(out pos, out rot, out scale)` | 读取当前蓄力视觉实例的世界位置/旋转/缩放，无实例返回 false |
-| `SuppressFadeAndDestroy()` | 跳过渐隐直接销毁蓄力视觉（Launch 接管用） |
+| `SuppressFadeAndDestroy()` | 跳过渐隐直接销毁蓄力视觉，供 Launch 接管 |
 
-## Inspector 可调参数
-| 参数 | 说明 |
-|------|------|
-| stabPrefab | Stab.prefab，视觉基底 prefab |
-| chargeSprite1/2 | 蓄力中精灵 |
-| readySprite | 蓄满精灵 |
-| loopSprite1/2 | 满蓄循环精灵 |
-| spawnYOffset | 跟随平面锚点沿相机 up 的偏移 |
-| spawnZOffset | 跟随平面锚点沿世界 Z 的偏移 |
-| halfWidth | X 轴移动半宽 |
-| maxAngle | 左右移动产生的 Z 轴 roll 最大角度 |
-| maxPitchAngle | 向上移动产生的 X 轴 pitch 最大角度，出现瞬间为 0 |
-| maxDownPitchAngle | 向下移动产生的 X 轴 pitch 最大角度，出现瞬间为 0 |
-| verticalTiltHalfHeight | 上下移动多少世界单位达到最大 pitch |
-| visualScale | 视觉缩放 |
-| appearThreshold | 出现阈值（进度比例） |
-| readyDuration | ready 精灵停留时长 |
-| loopInterval | loop 交替间隔 |
-| fadeOutDuration | 渐隐时长 |
-
-## AttackSystem Launch 字段
-| 字段 | 说明 |
-|------|------|
-| _launchSprite1 | Launch 帧1：stab_charge2 |
-| _launchSprite2 | Launch 帧2：stab_charge1 |
-| _launchSprite3 | Launch 帧3：stab |
-
-## 关键同步参数
-- `longPressDuration = 0.3s` (Battle.scene InputManager)
-- `minChargeTime = 1s` (InputManager / Battle.scene)
-- 蓄力有效窗口：`longPressDuration` → `minChargeTime`，归一化进度 = `InverseLerp(longPressDuration/minChargeTime, 1, rawProgress)`
-- `appearThreshold = 0.3` → 指示器在 rawProgress 达 0.3 时出现；`ChargeStabVisual` 在 rawProgress 达 `longPressDuration/minChargeTime` 时出现
-- `maxPitchAngle` 默认 10°（向上），`maxDownPitchAngle` 默认 20°（向下），`verticalTiltHalfHeight` 默认 2 世界单位
-- Launch 三帧均分 `launchFlickDuration`（默认 0.20s），每帧约 0.067s
-
-## 蓄力进度归一化 (2024 fix)
-- `ChargeIndicatorController.GetChargeBeginProgress()`: 返回 `longPressDuration / minChargeTime`，fillAmount = `InverseLerp(beginProgress, 1, rawProgress)`
-- `ChargeStabVisual.GetChargeBeginProgress()`: 同上，OnChargeUpdated 将 rawProgress 归一化后再传 UpdateSprite；UpdateSprite 内不再做 appearThreshold 二次映射
-- **ChargeIndicatorController parentCanvas 修复**: `Start()` 使用 `transform.parent?.GetComponentInParent<Canvas>()` 跳过自身 Canvas 获取父级 BattleHUD Canvas，确保 UpdatePosition 坐标转换正确
-
-## 精灵资源
-- `Assets/Sprites/zhangfei/stab_charge1.png` ~ `stab_charge_loop2.png` (5 张, 512x512)
-- `Assets/Sprites/zhangfei/stab.png` — Launch 第3帧
+## 关键文件与资产
+- `Assets/Scripts/Effects/ChargeStabVisual.cs` — 蓄力世界空间视觉与实时 pose API
+- `Assets/Scripts/Effects/LaunchVisualEffect.cs` — Launch 动作时间线、弧线、旋转、收招和模糊
+- `Assets/Scripts/Effects/WeaponMotionBlurController.cs` — 武器方向性像素模糊
+- `Assets/Scripts/Player/AttackSystem.cs` — Launch 执行入口与命中回调
+- `Assets/Scripts/Core/PixelHitEffectManager.cs` — Launch 专属命中特效
+- `Assets/Prefabs/UI/Skills/Zhangfei_Launch.asset` — `launchFlickDuration=0.25`、`launchWindupDuration=0.13`、`launchWindupDistance=0.42`、`launchSideTilt=12`、`launchAngleVariance=15`
+- `Assets/Sprites/zhangfei/stab_charge1.png`、`stab_charge2.png`、`stab.png` — Launch 三帧 Sprite
 
 ## 注意
-- `Stab.prefab` 基础旋转为 `(90,0,0)`，代码只叠加运行时 pitch/roll，不改 prefab pivot。
-- 遵守项目 2.5D 深度规则：不要为该视觉使用高 sortingOrder 覆盖 Z 深度。
-- Launch 无蓄力视觉时保留原固定玩家 offset + scale-in fallback。
-- Launch 精灵序列：`stab_charge2` → `stab_charge1` → `stab`（三帧均分 duration），替换了旧的 `stab_rotate1` → `stab_rotate2`。AttackSystem 新增 `_launchSprite1/2/3` 字段，`_stabRotate1Sprite`/`_stabRotate2Sprite` 仍保留给 Slash 的 SweepEffect。
+- 不要将蓄势目标四���数转成 Euler 后交给 `DOLocalRotate`；实时蓄力 pose 可能位于欧拉角奇异/环绕区间，必须直接进行四元数插值。
+- 随机倾角应主要体现在上挑终态，不能在 Windup 阶段完整应用，否则会破坏既定蓄势语言。
+- Launch 视觉、伤害与击飞通过 impact 回调同步，但视觉不得反向依赖敌人状态或 AttackWave 生命周期。
+- 无蓄力视觉时仍保留固定玩家 offset 与自动缩放 fallback。
 <!-- locus:body:end -->

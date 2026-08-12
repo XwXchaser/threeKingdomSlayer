@@ -17,6 +17,7 @@ public sealed class WeaponMotionBlurController
 
     private Vector3 _lastPosition;
     private float _lastAngle;
+    private Quaternion _lastRotation;
     private bool _hasSample;
     private bool _disposed;
 
@@ -111,6 +112,65 @@ public sealed class WeaponMotionBlurController
 
         _materialInstance.SetVector(MotionDirectionId, new Vector4(directionUv.x, directionUv.y, 0f, 0f));
         _materialInstance.SetFloat(MotionStrengthId, strength);
+    }
+
+    public void UpdateMotionWorld(Vector3 worldPosition, Quaternion worldRotation,
+        Vector3 fallbackWorldDirection, float strengthMultiplier = 1f, float fallbackSpeed = 0f,
+        float deltaTimeOverride = -1f)
+    {
+        if (!IsValid)
+            return;
+
+        if (!_hasSample)
+        {
+            ResetSampleWorld(worldPosition, worldRotation);
+            return;
+        }
+
+        float deltaTime = deltaTimeOverride > 0f ? deltaTimeOverride : Time.deltaTime;
+        Vector3 delta = worldPosition - _lastPosition;
+        float angleDelta = Quaternion.Angle(_lastRotation, worldRotation);
+        _lastPosition = worldPosition;
+        _lastRotation = worldRotation;
+
+        if (deltaTime <= 0.00001f)
+            return;
+
+        Vector3 motionDirection = delta.sqrMagnitude > 0.000001f
+            ? delta.normalized
+            : fallbackWorldDirection.normalized;
+        if (motionDirection.sqrMagnitude < 0.0001f)
+        {
+            SetStrength(0f);
+            return;
+        }
+
+        Vector3 localX = _renderer.transform.localToWorldMatrix.MultiplyVector(Vector3.right).normalized;
+        Vector3 localY = _renderer.transform.localToWorldMatrix.MultiplyVector(Vector3.up).normalized;
+        Vector2 directionUv = new Vector2(
+            Vector3.Dot(motionDirection, localX),
+            Vector3.Dot(motionDirection, localY));
+        if (directionUv.sqrMagnitude < 0.0001f)
+            directionUv = Vector2.right;
+        else
+            directionUv.Normalize();
+
+        float linearSpeed = delta.magnitude / deltaTime;
+        float angularSpeed = angleDelta / deltaTime;
+        float strength = (Mathf.Max(linearSpeed, fallbackSpeed) * _linearStrengthScale
+            + angularSpeed * _angularStrengthScale) * Mathf.Max(0f, strengthMultiplier);
+        strength = Mathf.Clamp(strength, 0f, _maxStrengthPixels);
+
+        _materialInstance.SetVector(MotionDirectionId, new Vector4(directionUv.x, directionUv.y, 0f, 0f));
+        _materialInstance.SetFloat(MotionStrengthId, strength);
+    }
+
+    public void ResetSampleWorld(Vector3 worldPosition, Quaternion worldRotation)
+    {
+        _lastPosition = worldPosition;
+        _lastRotation = worldRotation;
+        _hasSample = true;
+        SetStrength(0f);
     }
 
     public void SetStrength(float strengthPixels)
