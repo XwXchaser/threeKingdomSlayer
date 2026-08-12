@@ -151,13 +151,11 @@ public class AttackSystem : MonoBehaviour
 
         if (hitAny)
         {
-            // 触发冷却：新模式 → 动作锁定（cooldown为唯一权威值，受攻速缩放）；旧模式 → 独立技能CD
+            // 动作锁模式只覆盖玩家自身的出手与收招；离手飞行物拥有独立生命周期。
             if (useActionBasedCooldown)
             {
                 var cfg = GetConfig(attackType);
-                float cooldown = cfg != null ? cfg.cooldown : 0.3f;
-                float speedMult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetAttackSpeedMultiplier() : 1f;
-                _actionLockTimer = cooldown / Mathf.Max(speedMult, 0.01f);
+                _actionLockTimer = GetAttackDuration(cfg);
                 if (attackType == AttackType.Launch)
                     _actionLockTimer = Mathf.Max(_actionLockTimer, LaunchVisualEffect.GetObservationDuration(cfg));
             }
@@ -335,8 +333,14 @@ public class AttackSystem : MonoBehaviour
             ReleaseChargeHitShockwave();
             StartCoroutine(ReleaseChargeShockwaves());
             StartCoroutine(ReleaseChargeAttackShockwaves());
-            AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab,
-                targetDuration: GetVisualTargetDuration(cfg));
+            AttackReleaseTimeline.Create(AttackType.Pierce, GetAttackDuration(cfg), () =>
+            {
+                List<Enemy> aliveTargets = FilterAliveTargets(targets);
+                if (aliveTargets.Count == 0)
+                    return;
+                AttackWave.Create(wavePos, cfg.damageType, finalDmg, aliveTargets,
+                    prefab: cfg.attackWavePrefab);
+            });
         }
 
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -357,12 +361,30 @@ public class AttackSystem : MonoBehaviour
             ReleaseChargeHitShockwave();
             StartCoroutine(ReleaseChargeShockwaves());
             StartCoroutine(ReleaseChargeAttackShockwaves());
-            AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab,
-                targetDuration: GetVisualTargetDuration(cfg));
+            AttackReleaseTimeline.Create(AttackType.Sweep, GetAttackDuration(cfg), () =>
+            {
+                List<Enemy> aliveTargets = FilterAliveTargets(targets);
+                if (aliveTargets.Count == 0)
+                    return;
+                AttackWave.Create(wavePos, cfg.damageType, finalDmg, aliveTargets,
+                    prefab: cfg.attackWavePrefab);
+            });
         }
 
         Debug.Log($"[AttackSystem] 横扫 伤害:{finalDmg} 目标数:{targets.Count}");
         return targets.Count > 0;
+    }
+
+    private static List<Enemy> FilterAliveTargets(List<Enemy> source)
+    {
+        var aliveTargets = new List<Enemy>(source.Count);
+        for (int i = 0; i < source.Count; i++)
+        {
+            Enemy enemy = source[i];
+            if (enemy != null && enemy.state != EnemyState.Dead)
+                aliveTargets.Add(enemy);
+        }
+        return aliveTargets;
     }
 
     private bool ExecuteLaunch()
@@ -396,8 +418,7 @@ public class AttackSystem : MonoBehaviour
                     },
                     prefab: null,
                     alphaOverride: 0f,
-                    canInterruptCFrame: true,
-                    targetDuration: GetVisualTargetDuration(cfg));
+                    canInterruptCFrame: true);
             });
         }
         else
@@ -1021,10 +1042,6 @@ public class AttackSystem : MonoBehaviour
         _unlockedFloatValues.Clear();
     }
 
-    /// <summary>
-    /// 获取特效目标时长（秒）。action-based模式下=cooldown/攻速，旧模式返回-1（自然时长）。
-    /// 特效通过timeScale拉伸/压缩匹配此时长，确保视觉与锁定同步结束。
-    /// </summary>
     private float GetAttackDuration(AttackSkillConfig cfg)
     {
         if (cfg == null) return 0.5f;

@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1785839196682
-updatedAt: 1785839196682
+updatedAt: 1786528929781
 ---
 
 # pierce-attack-runtime
@@ -19,16 +19,24 @@ Pierce currently slides static Stab prefab through one column via AttackWave; re
 
 <!-- locus:body:start -->
 ## Current Pierce construction
-- `AttackSystem.ExecutePierce` snapshots one selected column through `ColumnManager.GetEnemiesInRange`, releases charge-linked shockwaves, then creates an `AttackWave` with the Pierce config.
+- `AttackSystem.ExecutePierce` snapshots one selected column through `ColumnManager.GetEnemiesInRange`, releases charge-linked shockwaves, then schedules a release callback through `Assets/Scripts/Effects/AttackReleaseTimeline.cs`.
+- The release timeline uses `actionDuration` (scaled by attack speed) and invokes Pierce release once at about 42% of the player action. The callback filters dead targets before creating the `AttackWave`.
 - `Zhangfei_Pierce.asset`: damage 20, rangeRows 5, cooldown 3, actionDuration 0.50, prefab `Assets/Prefabs/Stab.prefab`.
-- `AttackWave.SetupTravel` moves the static `stab.png` prefab along world Z at fixed natural speed 8 toward the furthest target plus 3 world units, then pauses 0.05s and fades for 0.35s. The full sequence is time-scaled to the configured visual target duration.
+- `AttackWave.SetupTravel` moves the static `stab.png` prefab along world Z at fixed natural speed 8 toward the furthest target plus 3 world units, then pauses 0.05s and fades for 0.35s. Pierce now receives no cooldown-derived `targetDuration`, so this lifecycle remains independent of the player action lock.
 - Targets are sorted by world Z and damaged when the wave root crosses each target Z threshold. First target gets Standard feedback and pauses the travel sequence; later targets get Light feedback.
-- Current visual does not consume the charge pose or use `stab_charge1/2/ready`, has no dedicated release burst, per-target penetration pose, or distinct recovery. This makes the charged Pierce visually similar to a large static Stab sprite sliding through the column.
+- Pierce still has no dedicated weapon出手 visual; the timeline currently supplies the release boundary only. A dedicated Pierce release visual should replace the timing-only timeline without changing the target snapshot or AttackWave authority.
 
-## Deferred redesign direction
-- Keep the existing target snapshot, Z-threshold order, damage, and charge-shockwave pipeline authoritative.
-- Add an opt-in Pierce-specific visual branch rather than globally changing shared `AttackWave` Travel behavior used by Sweep, return waves, and Phantom attacks.
-- Proposed first phase: charge-ready/charge2 release pose -> charge1 transition -> accelerated `stab` penetration -> first-hit Standard stop and later Light feedback -> short over-penetration hold -> fast fade/recovery.
-- A later phase may add visual-only afterimages/trail, per-row brightness or scale impulses, and a final penetration flash. Visual density must remain decoupled from damage count.
-- If integrating `ChargeStabVisual`, transfer its pose deliberately and preserve cleanup ownership; do not let visual handoff alter Pierce hit timing.
+## Current Sweep construction
+- `AttackSystem.ExecuteSweep` snapshots all targets within the effective rows, releases charge-linked shockwaves, then schedules a release callback through `AttackReleaseTimeline` at about 48% of `actionDuration`.
+- The callback filters dead targets before creating the configured Sweep `AttackWave`; the wave is no longer stretched to `cooldown`.
+- `Zhangfei_Sweep.asset`: damage 5, rangeRows 3, cooldown 2, actionDuration 0.55, prefab `Assets/Prefabs/sweep.prefab`.
+- Sweep still has no dedicated player weapon出手 visual; the timeline currently supplies the release boundary only. A dedicated Sweep release visual should replace the timing-only timeline without changing the target snapshot or AttackWave authority.
+
+## Deferred visual redesign direction
+- Keep the existing target snapshot, damage, row order, hit feedback and charge-shockwave pipeline authoritative.
+- Add opt-in Pierce/Sweep release visual branches rather than globally changing shared `AttackWave` Travel behavior used by Stab, return waves, and Phantom attacks.
+- Pierce target language: charge-ready pose -> small rearward alignment -> explosive straight thrust -> release the piercing body -> fast recovery.
+- Sweep target language: side/rear windup -> broad horizontal weapon sweep -> release the wide wave -> inertia and return.
+- The future visual component owns presentation and release callback only; the detached AttackWave owns flight, per-row hit timing, fade and destruction.
+- Visual density must remain decoupled from damage count. If `ChargeStabVisual` is integrated, transfer its pose deliberately and preserve cleanup ownership.
 <!-- locus:body:end -->
