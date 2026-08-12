@@ -9,7 +9,7 @@ commandEnabled: false
 readOnly: false
 inheritAiConfig: true
 createdAt: 1782310710086
-updatedAt: 1782311628330
+updatedAt: 1786527770769
 ---
 
 # attack-cooldown
@@ -30,63 +30,80 @@ updatedAt: 1782311628330
 
 每招独立冷却计时器。Stab 冷却中仍可 Slash。允许快速交替连打。
 
-**保留原因**：未来可能作为奖励效果——例如技能"移除攻击硬直"，将动作锁定降级为独立CD。
+**保留原因**：未来可能作为奖励效果，例如“移除攻击硬直”，将动作锁定降级为独立技能 CD。
 
-## 模式二：动作锁定（新）
+## 模式二：动作锁定（当前）
 
-每次攻击执行后，全局锁定所有攻击输入。
+每次攻击执行后，全局锁定其他攻击输入，但锁定范围只覆盖玩家本人的出手与收招动作。
 
 ### 设计意图
 
-- 攻击动作时长 = 该攻击的视觉动画/特效总时长
-- 锁定期间玩家无法做任何其他攻击动作（包括 Parry）
-- 玩家自然感知到"因为还在挥刀，所以不能做其他动作"
-- 攻速 buff 直接缩短锁定时长 → 攻速价值线性、即时兑现
+- 玩家动作时长与攻击实体生命周期是两个独立概念。
+- 动作锁只覆盖玩家仍在执行的出手动画、释放关键帧和必要收招。
+- 飞行物在释放关键帧生成后独立飞行、命中和销毁，不继续占用玩家动作锁。
+- 攻速只缩放玩家动作，不应改变已经离手的飞行物速度和生命周期。
+- 锁定期间玩家无法进行其他攻击动作（包括 Parry）。
 
 ### 锁定时长计算
 
 ```
-baseDuration = max(actionDuration, visualEffectMinDuration)
-实际锁定时长 = baseDuration / attackSpeedMultiplier
+实际动作锁 = actionDuration / attackSpeedMultiplier
 ```
 
-- `actionDuration`: 该攻击的基准动画时长（ScriptableObject 配置）
-- `visualEffectMinDuration`: 视觉特效保底时长，由 `GetVisualEffectMinDuration()` 按攻击类型硬编码
-- 使用 `max()` 确保动作锁至少覆盖 prefab 完整播放，避免特效未消失即可发起下一次攻击
+- `actionDuration`：玩家出手动画的基准时长，包括必要的蓄势、释放和收招。
+- `cooldown`：仅作为旧版独立技能 CD 模式的技能冷却值，不得在动作锁模式中替代 `actionDuration`。
+- 飞行物自然时长由飞行距离、速度、命中停顿和消散阶段决定，不参与动作锁计算。
 
-### 各攻击视觉保底时长
+## 组合攻击结构
 
-| 攻击 | visualEffectMinDuration | 对应特效 |
-|------|------------------------|---------|
-| Slash | `slashSweepDuration + 0.28s` | SweepEffect sweep + interval + fade |
-| Sweep | `slashSweepDuration + 0.28s` | 同上 |
-| Stab | 0.5s | AttackWave thrust(0.2s) + retract(0.3s) |
-| Pierce | 0.6s | AttackWave travel + interval + fade |
-| Launch | 0.5s | AttackWave Fixed mode |
-| Parry | 0s | 无视觉特效 |
+当前先实现“出手动画 + 飞行物”的组合形式：
 
-### 各攻击当前配置值
+```
+输入成立
+→ 创建独立出手视觉
+→ 动画释放关键帧生成飞行物
+→ 玩家继续短暂收招
+→ actionDuration 到期后解除动作锁
 
-| 攻击 | actionDuration | cooldown (旧模式) |
-|------|---------------|------------------|
-| Stab | 0.45 | 1.2 |
-| Slash | 0.50 | 1.0 |
-| Pierce | 0.50 | 5.0 |
-| Sweep | 0.55 | 1.5 |
-| Launch | 0.60 | 1.0 |
-| Parry | 0.20 | 0.5 |
+飞行物生成后
+→ 按自身速度与轨迹飞行
+→ 独立执行逐目标命中
+→ 独立淡出和销毁
+```
 
----
+### 当前目标
 
-## 实施
+| 攻击 | 玩家出手动画 | 离手实体 |
+|------|--------------|----------|
+| Pierce | 接管蓄力姿态 → 后收对准 → 爆发直刺 → 快速收枪 | 单列贯穿飞行物 |
+| Sweep | 接管蓄力姿态 → 侧后蓄势 → 大幅横挥 → 惯性回手 | 宽幅横扫波 |
 
-- `AttackSystem._actionLockTimer` 在 Update 中递减
-- `TryExecuteAttack` 入口检查锁状态
-- 命中后根据模式分流：新模式设 `_actionLockTimer`，旧模式调 `PlayerState.StartCooldown`
-- `GetVisualEffectMinDuration()` 返回各攻击类型的视觉保底时长，与 `actionDuration` 取最大值
-- `PlayerState` 旧冷却逻辑完整保留
+后续其他角色允许采用不同组合，例如纯近战、连续投射、延迟生成、召唤物或多段释放；不应把“攻击类型”永久绑定到单一视觉结构。因此出手视觉负责释放时机，飞行物负责离手后的运行，二者通过明确的 release callback 组合。
 
-## 已知限制
+## 当前误区与修正要求
 
-- DOTween 动画时长暂不随攻速缩放。高攻速时锁定时长缩短但视觉特效固定，可能出现锁已解除但视觉仍在播放的轻微不同步（Phase 2 可考虑对 DOTween 序列应用 `timeScale` 同步）
-- 未命中敌人时不消耗冷却（两种模式均保留此规则）
+当前 Pierce/Sweep 存在以下错误耦合：
+
+1. `_actionLockTimer` 使用 `cfg.cooldown / speedMult`，忽略 `actionDuration`。
+2. `GetVisualTargetDuration()` 同样返回 cooldown，并传给 `AttackWave`。
+3. `AttackWave.timeScale` 将整个飞行序列拉伸到 cooldown，导致飞行物时长等于玩家动作锁。
+
+修正后：
+
+- Pierce：动作锁使用 `0.50s / 攻速`；飞行物恢复自然速度与独立生命周期。
+- Sweep：动作锁使用 `0.55s / 攻速`；飞行物恢复自然速度与独立生命周期。
+- 飞行物可以在玩家已能进行下一动作后继续存在并命中目标。
+- 释放关键帧必须由独立出手动画触发，不能在输入成立时立刻生成飞行物。
+
+## 实施约束
+
+- 保留现有目标快照、伤害、逐排命中和蓄力冲击波逻辑作为权威战斗逻辑。
+- 不通过全局修改 `AttackWave` 来假设所有角色都采用同一种组合方式。
+- Pierce 与 Sweep 应分别拥有专用出手视觉组件；组件通过 callback 请求 `AttackSystem` 创建对应飞行物。
+- 飞行物本身不读取玩家动作锁，也不因攻速变化而改变已离手后的速度。
+- 无目标时沿用当前规则：不执行完整攻击消耗。
+
+## 已知后续问题
+
+- HUD 当前仍主要读取 `PlayerState` 独立 CD，需另行统一动作锁模式下的显示来源。
+- Sweep 水平手势当前偏向只稳定识别向右滑动，向左可能落入 Slash；属于独立输入问题，不与本轮视觉职责分离混改。
