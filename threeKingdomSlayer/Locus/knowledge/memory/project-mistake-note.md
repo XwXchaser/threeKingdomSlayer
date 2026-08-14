@@ -34,3 +34,18 @@ maintenanceRules: |-
   3. 随机倾角在 Windup 仅应用 12%，完整随机倾角延后到上挑终态。
 - 预防规则：**从实时世界 pose 接管的武器动画不得将目标 Quaternion 转为 Euler 后做 Tween；跨对象/跨坐标系旋转衔接优先使用 Quaternion Slerp，并限制随机姿态在过渡前段的参与量。**
 - 文件：`Assets/Scripts/Effects/LaunchVisualEffect.cs`
+
+### 蓄力 Pierce 枪尾偏移改造（枪尖锚点）✅ 已完成
+- 需求：蓄力枪尾随射出角产生 X 偏移、枪尖跟手、枪身以射出角射出；入场就位时角度和偏移与跟手一致，且 Pierce 衔接不受影响。
+- 根因：参考的 Stab“枪尾偏移”是**枪尖锚点**结构——枪尖对齐目标列（ray 前方）、枪尾沿枪轴反向延伸（ray 后方），`stabVisualStartXOffsets` 只是额外整体 X 平移。蓄力原本是“绕中心旋转”（枪身中心对齐跟手点、枪尖枪尾对称）。反复误做三种错误，一直没落地：
+  1. 整体平移（`position.x += offset`）→ 枪尖也被平移，枪体整体偏移、离开屏幕；
+  2. 绕中心旋转（原版 `Euler(90,0,-zRot)`）→ 枪尖枪尾对称，像“钻头”；
+  3. 枪身绕枪尖偏转（枪尾额外偏移）→ 偏移量一大枪身就 360° 翻转。
+- 修复：改为枪尖锚点 `position = tip - axis * halfLength`（`halfLength = _weaponLength * 0.5`，`_weaponLength = _sr.bounds.size.y` 缓存世界枪长）。枪尖严格跟手，枪尾偏移 = `-axis.x * 枪长`，完全由射出角（`maxAngle → zRot → axis.x`）决定，不做额外平移；`maxAngle` 作为可调旋转角，减小即让枪尾偏移变小、枪体留在屏幕内。
+- 入场：`_entryAxis = 枪轴方向`，枪尖沿射出角从后方刺入；枪尾沿枪轴反向自然前进。所谓“自我修正”（枪尾 X 随 entryDistance 变化）其实是“沿射出角前进”的自然表现，不是 bug；之前误把它当 bug 去改入场方向（改成纵深 Z），反而变成“整体平移”。
+- 预防规则：
+  1. **复刻已有视觉功能前先读懂它的锚点结构**（枪尖/枪尾谁对齐目标、谁反向延伸、哪些是额外平移项），不要凭空在“平移/旋转/锚点”里猜。
+  2. **偏移量按“射出角”算，不要按“屏幕位置”算**：用 `axis.x`（枪轴 X 分量），而不是 `normalizedX`（手指位置）。
+  3. **单 Sprite 下枪尾是 Sprite 的一部分**（枪尾 = 枪身 - axis×半枪长），无法独立偏移；要“枪尖跟手 + 枪尾偏移”只能枪尖锚点，偏移由旋转角决定。
+  4. 旋转表示等价性可用 `unity_execute` 验证：`Quaternion.LookRotation(axis, Vector3.up) * Quaternion.Euler(90,0,0)` 与 `Quaternion.Euler(90,0,-z)` 完全等价（angleDelta=0），可放心互换，避免“打竖/打横”。
+- 文件：`Assets/Scripts/Effects/ChargeStabVisual.cs`

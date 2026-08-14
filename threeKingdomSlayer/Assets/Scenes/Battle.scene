@@ -6812,7 +6812,7 @@ MonoBehaviour:
   spawnYOffset: 0
   spawnZOffset: -3.6
   halfWidth: 3
-  maxAngle: 45
+  maxAngle: 20
   maxPitchAngle: 10
   maxDownPitchAngle: 20
   verticalTiltHalfHeight: 2

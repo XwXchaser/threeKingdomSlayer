@@ -54,6 +54,7 @@ public class ChargeStabVisual : MonoBehaviour
 
     private GameObject _visualInstance;
     private SpriteRenderer _sr;
+    private float _weaponLength;
     private Camera _mainCam;
 
     private bool _isActive;
@@ -108,13 +109,11 @@ public class ChargeStabVisual : MonoBehaviour
             Vector3 currentPosition = Vector3.Lerp(windupPosition, _enterTargetPosition, Mathf.SmoothStep(0f, 1f, windupT));
             if (t > 0.3f)
                 currentPosition = Vector3.Lerp(windupPosition, _enterTargetPosition, Mathf.Lerp(0.3f, 1f, Mathf.SmoothStep(0f, 1f, thrustT)));
-            _visualInstance.transform.position = currentPosition;
-            _visualInstance.transform.rotation = _enterTargetRotation;
+            ApplyChargePose(currentPosition);
             if (t >= 1f)
             {
                 _isEntering = false;
-                _visualInstance.transform.position = _enterTargetPosition;
-                _visualInstance.transform.rotation = _enterTargetRotation;
+                ApplyChargePose(_enterTargetPosition);
             }
         }
 
@@ -196,7 +195,6 @@ public class ChargeStabVisual : MonoBehaviour
             else if (!_isFadingOut)
             {
                 UpdatePosition(screenPos);
-                UpdateRotation(screenPos);
             }
 
             float visualProgress = Mathf.InverseLerp(GetChargeBeginProgress(), 1f, progress);
@@ -250,6 +248,7 @@ public class ChargeStabVisual : MonoBehaviour
 
         _visualInstance.transform.localScale = visualScale;
         _visualInstance.transform.SetParent(null); // 世界空间独立
+        _weaponLength = _sr.bounds.size.y; // 世界枪长
 
         if (TryGetPointerWorldPosition(screenPos, out Vector3 worldPos))
         {
@@ -264,9 +263,7 @@ public class ChargeStabVisual : MonoBehaviour
             _enterTargetRotation = CalculateFollowRotation(targetPosition);
             _entryAxis = _enterTargetRotation * Vector3.up;
             _enterStartPosition = _enterTargetPosition - _entryAxis * entryDistance;
-            _enterStartRotation = _enterTargetRotation;
-            _visualInstance.transform.position = _enterStartPosition;
-            _visualInstance.transform.rotation = _enterStartRotation;
+            ApplyChargePose(_enterStartPosition);
             _enterTimer = 0f;
             _isEntering = true;
         }
@@ -355,6 +352,24 @@ public class ChargeStabVisual : MonoBehaviour
         _visualInstance.transform.rotation = _enterStartRotation;
     }
 
+    /// <summary>
+    /// 以枪尖为锚点定位整把枪（复刻 Stab 的射出角结构）：
+    /// 枪尖对齐 tipPosition（跟手），枪尾沿枪轴反向延伸。
+    /// 枪尾偏移完全由射出角（maxAngle → zRot → axis.x）决定，不做额外平移。
+    /// </summary>
+    private void ApplyChargePose(Vector3 tipPosition)
+    {
+        if (_visualInstance == null || _sr == null) return;
+
+        Quaternion rotation = CalculateFollowRotation(tipPosition);
+        Vector3 axis = rotation * Vector3.up;
+        float halfLength = _weaponLength > 0.001f ? _weaponLength * 0.5f : 0f;
+
+        _visualInstance.transform.position = tipPosition - axis * halfLength;
+        _visualInstance.transform.rotation = rotation;
+        _visualInstance.transform.localScale = visualScale;
+    }
+
     private Vector3 ClampFollowPosition(Vector3 worldPosition)
     {
         Vector3 playerPos = transform.position;
@@ -411,15 +426,7 @@ public class ChargeStabVisual : MonoBehaviour
         if (_mainCam == null || _visualInstance == null) return;
         if (!TryGetPointerWorldPosition(screenPos, out Vector3 worldPos)) return;
 
-        _visualInstance.transform.position = ClampFollowPosition(worldPos);
-    }
-
-    private void UpdateRotation(Vector2 screenPos)
-    {
-        if (_mainCam == null || _visualInstance == null) return;
-        if (!TryGetPointerWorldPosition(screenPos, out Vector3 worldPos)) return;
-
-        _visualInstance.transform.rotation = CalculateFollowRotation(worldPos);
+        ApplyChargePose(ClampFollowPosition(worldPos));
     }
 
     private void UpdateSprite(float progress)
