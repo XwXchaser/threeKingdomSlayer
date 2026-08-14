@@ -1,23 +1,10 @@
 ---
 id: kd_aba0a0d1-a8f3-4a21-8629-4d3958798b56
-type: design
-path: in-run-build-archetypes.md
-title: in-run-build-archetypes
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1783789128014
-updatedAt: 1785228004202
+injectMode: inherit
+summary: 当前局内三选一以蓄力流和位移流为两条主要构筑路线，并明确哪些异常配置属于有意保留。
+aiMaintained: inherit
 ---
 
-# in-run-build-archetypes
-
-## Summary
-当前局内三选一以蓄力流和位移流为两条主要构筑路线，并明确哪些异常配置属于有意保留。
-
-## Content
 # 局内三选一构筑主轴（V2当前基线）
 
 ## 核心构筑

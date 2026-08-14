@@ -1,23 +1,10 @@
 ---
 id: kd_b30bbb29-64fa-4982-8f1a-5044011a151e
-type: design
-path: non-boss-combat-enrichment.md
-title: non-boss-combat-enrichment
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1782385532422
-updatedAt: 1782385532423
+injectMode: inherit
+summary: 非Boss战斗体验丰富化分析文档：系统关联全景图、已发现断裂点、三层改进方案、优先级排序，供后续开发决策参考。
+aiMaintained: inherit
 ---
 
-# non-boss-combat-enrichment
-
-## Summary
-非Boss战斗体验丰富化分析文档：系统关联全景图、已发现断裂点、三层改进方案、优先级排序，供后续开发决策参考。
-
-## Content
 # 非Boss战斗体验丰富化分析
 
 ## 概述

@@ -1,17 +1,9 @@
 ---
 id: kd_b45c2927-6f30-4348-9953-583d6ad951ee
-type: skill
-path: use-architecture-constraints.md
-title: use-architecture-constraints
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: true
-readOnly: false
-inheritAiConfig: true
+injectMode: inherit
+aiMaintained: inherit
 skillEnabled: true
 skillSurface: command
-createdAt: 1778741886611
-updatedAt: 1778741886612
 ---
 
 # use-architecture-constraints

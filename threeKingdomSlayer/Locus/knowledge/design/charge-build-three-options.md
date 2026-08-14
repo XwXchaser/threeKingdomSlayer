@@ -1,23 +1,10 @@
 ---
 id: kd_cbd967f3-a57a-4000-8fb9-a14f5914a012
-type: design
-path: charge-build-three-options.md
-title: charge-build-three-options
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1782579234286
-updatedAt: 1782990177846
+injectMode: inherit
+summary: 蓄力Build三选一设计文档：蓄力减伤(Numeric)、顺序调转(AttackPassive)、冲击波跟随(TimedPassive)的设计目的、技术难点、管线细节与改动清单
+aiMaintained: inherit
 ---
 
-# charge-build-three-options
-
-## Summary
-蓄力Build三选一设计文档：蓄力减伤(Numeric)、顺序调转(AttackPassive)、冲击波跟随(TimedPassive)的设计目的、技术难点、管线细节与改动清单
-
-## Content
 # 蓄力 Build 三选一设计
 
 > **已实现**: 蓄力减伤 ✅ | 反伤盾 ✅ | 冲击波跟随 ✅ | 顺序调转 ⏳

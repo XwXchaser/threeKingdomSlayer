@@ -1,23 +1,10 @@
 ---
 id: kd_f354dc78-27d8-4095-8abf-794f7f9b9cee
-type: memory
-path: procedural-pixel-vfx-guide.md
-title: procedural-pixel-vfx-guide
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1786083739901
-updatedAt: 1786210021363
+injectMode: inherit
+summary: 程序化像素命中特效的完整制作经验：颜色分层、不规则尖刺布局、帧动画结构、DOTween 时序、随机化控制、像素美术约束，以及 8 条踩坑记录（多 SpriteRenderer 拼装、中心空心、造型过规则、PPU 尺寸、动画过快、坐标混淆、DOTween 生命周期、AI 生图误用）。
+aiMaintained: inherit
 ---
 
-# procedural-pixel-vfx-guide
-
-## Summary
-程序化像素命中特效的完整制作经验：颜色分层、不规则尖刺布局、帧动画结构、DOTween 时序、随机化控制、像素美术约束，以及 8 条踩坑记录（多 SpriteRenderer 拼装、中心空心、造型过规则、PPU 尺寸、动画过快、坐标混淆、DOTween 生命周期、AI 生图误用）。
-
-<!-- locus:body:start -->
 ## 整体架构
 
 程序化像素命中特效的核心思路：**在 Awake 时用 Texture2D 逐像素生成 Sprite，运行时通过单一 SpriteRenderer + DOTween Sequence 播放帧动画**。不使用外部贴图，不拼装多个 GameObject。
@@ -159,4 +146,3 @@ white:    RGB(255, 253, 224)  暖白核心
 - 症状：关闭 `BuildStabEffect()` 的 `instance.rays` 后，Stab 画面上的外围碎片仍存在。
 - 根因：Stab 的碎片是 `CreateStabFrameSprite()` 最终帧调用 `DrawStabDebris()` 直接写入 Texture2D 的像素，不属于运行时 `SpriteRenderer` 碎片。
 - 规则：修改“图片内部”的视觉元素前，先追踪它是 Texture2D 像素生成、运行时 SpriteRenderer，还是 Prefab 子物体；只修改其真实来源。对于当前 Stab，短时长下保留内嵌碎片的观感已验收。
-<!-- locus:body:end -->

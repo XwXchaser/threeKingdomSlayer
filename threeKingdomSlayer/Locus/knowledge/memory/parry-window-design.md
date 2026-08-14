@@ -1,23 +1,10 @@
 ---
 id: kd_a1611e2a-5cae-4c64-9590-033dfb2ee8e5
-type: memory
-path: parry-window-design.md
-title: parry-window-design
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1785606666909
-updatedAt: 1785640298017
+injectMode: inherit
+summary: parry 锁死问题的判定窗口收紧方案（设计讨论中，未实现）
+aiMaintained: inherit
 ---
 
-# parry-window-design
-
-## Summary
-parry 锁死问题的判定窗口收紧方案（设计讨论中，未实现）
-
-<!-- locus:body:start -->
 # Parry 判定窗口方案（开发中，2026）
 
 ## ⚠️ 当前问题（待继续，勿遗忘）
@@ -66,4 +53,3 @@ parry 锁死问题的判定窗口收紧方案（设计讨论中，未实现）
 - 问题1：窗口外 parry 命中攻击中敌人 → 播放受击动画/闪白，但攻击未打断，视觉不同步。
 - 问题2：AttackDraw 收尾帧期间 parry → Hit Trigger 污染 Animator，之后敌人不再攻击。
 - 修复：`TakeDamage` 中 `suppressHitFeedback = isParryInterrupt && !parryGatePassed`；此标志同时应用到 sharedHealthGroup 的 triggerHitAnimation 参数与本地受击动画分支。窗口外/远程 parry 只保留伤害与削韧，不再播放受击表现。
-<!-- locus:body:end -->

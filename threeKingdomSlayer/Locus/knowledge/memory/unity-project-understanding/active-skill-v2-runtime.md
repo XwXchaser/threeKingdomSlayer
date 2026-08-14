@@ -1,23 +1,10 @@
 ---
 id: kd_65f993af-750c-4e93-8ef6-7377cd142e27
-type: memory
-path: unity-project-understanding/active-skill-v2-runtime.md
-title: active-skill-v2-runtime
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1784887044900
-updatedAt: 1786165254989
+injectMode: inherit
+summary: V1限次道具与V2主动技能在项目中的实现入口、资产路径、池路由和UI绑定。
+aiMaintained: inherit
 ---
 
-# active-skill-v2-runtime
-
-## Summary
-V1限次道具与V2主动技能在项目中的实现入口、资产路径、池路由和UI绑定。
-
-<!-- locus:body:start -->
 - V1/V2 版本选择由 `ActiveSkillInventory._ruleVersion` 控制，挂载在 `Assets/Scenes/Battle.scene/Manager`；仅开局前切换。当前场景默认配置为 `V2_ActiveSkill`。
 - V1 保持 `ItemInventory`、`ItemPoolConfig`、`DropItemPoolConfig`、血包与弃置弹窗链路。
 - V2 普通升级与Boss奖励统一读取 `Assets/ScriptableObjects/ActiveSkills/ActiveSkillPoolConfig.asset`；该资产概念上是 V2Pool。普通三选一按池层 0.60/0.35/0.05 抽取；技能资产自身 `rarity` 字段不参与抽取。
@@ -39,4 +26,3 @@ V1限次道具与V2主动技能在项目中的实现入口、资产路径、池�
 - 区域视觉使用 `CycloneEffect.PlayZoneVisual`：按 `cyclone1→6` 展开，之后循环 `cyclone5↔6`，区域结束后淡出。
 - 区域控制与敌人跟随视觉已解耦：主动区域不再为被击飞敌人实例化第二个 `CycloneEffect`，避免敌人脚下重复出现旋风；区域负责触发伤害、击飞和落地伤害，`CycloneEffect` 的目标跟随模式保留给其他旧路径。
 - 区域实现：`Assets/Scripts/Effect/CycloneZone.cs`；区域组件挂载于 `Assets/Prefabs/Effects/CycloneEffect.prefab`。
-<!-- locus:body:end -->

@@ -1,23 +1,10 @@
 ---
 id: kd_d2fd0160-9f84-4843-809c-379b5aa11ee8
-type: design
-path: package-size-optimization.md
-title: package-size-optimization
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1778402393080
-updatedAt: 1778402393081
+injectMode: inherit
+summary: Android包体优化方案 — 当前50MB，目标8-12MB
+aiMaintained: inherit
 ---
 
-# package-size-optimization
-
-## Summary
-Android包体优化方案 — 当前50MB，目标8-12MB
-
-## Content
 # Android 包体优化方案
 
 > 当前包体：~50MB | 目标：~8-12MB | 日期：2025-07

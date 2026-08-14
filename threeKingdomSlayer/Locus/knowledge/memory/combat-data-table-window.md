@@ -1,28 +1,11 @@
 ---
 id: kd_82958919-59f4-477f-848b-d0e0a342ac41
-type: memory
-path: combat-data-table-window.md
-title: combat-data-table-window
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
+injectMode: inherit
+summary: 战斗数值总表 EditorWindow 已覆盖敌人、技能/大招、三选一升级定义与升级池；升级补充说明决定逐级数值表可见字段。
 aiMaintained: true
-explicitMaintenanceRules: true
-createdAt: 1784180326680
-updatedAt: 1784183768672
+maintenanceRules: Keep only durable and reusable project memory
 ---
 
-# combat-data-table-window
-
-## Summary
-战斗数值总表 EditorWindow 已覆盖敌人、技能/大招、三选一升级定义与升级池；升级补充说明决定逐级数值表可见字段。
-
-<!-- locus:maintain-rules:start -->
-Keep only durable and reusable project memory
-<!-- locus:maintain-rules:end -->
-
-<!-- locus:body:start -->
 战斗数值总表已实现：`Assets/Scripts/Editor/CombatDataTableWindow.cs`。
 
 入口：Tools > 三国杀戮 > 战斗数值总表。
@@ -33,4 +16,3 @@ Keep only durable and reusable project memory
 - 升级池：UpgradePoolConfig 的三档稀有度出现权重，以及普通/稀有/传说池的定义引用、单项权重、添加和移除。
 
 已编译验证：7 个敌人、6 个普通技能、1 个大招、25 个升级定义、1 个升级池。
-<!-- locus:body:end -->

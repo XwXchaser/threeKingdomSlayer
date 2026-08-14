@@ -1,23 +1,10 @@
 ---
 id: kd_1e5bda6b-3133-419b-bb0d-44ddfdbe9366
-type: memory
-path: plan-a-hero-hud-implementation.md
-title: plan-a-hero-hud-implementation
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1778769385905
-updatedAt: 1783672643049
+injectMode: inherit
+summary: Hero HUD 当前架构：Battle 场景常驻可视化 HeroHUDRoot + 每角色 HeroHUDSkin + 可选 extraUIPrefabs；旧 heroHUDPrefab 仅作兜底。
+aiMaintained: inherit
 ---
 
-# plan-a-hero-hud-implementation
-
-## Summary
-Hero HUD 当前架构：Battle 场景常驻可视化 HeroHUDRoot + 每角色 HeroHUDSkin + 可选 extraUIPrefabs；旧 heroHUDPrefab 仅作兜底。
-
-<!-- locus:body:start -->
 ## 2025-12 更新：场景常驻 HUD + Skin
 - 推荐运行入口改为 `BattleHUD.sceneHeroHUD`，当前绑定 `Assets/Scenes/Battle.scene/BattleHUD(Canvas)/HeroHUDParent/HeroHUDRoot`，可在场景中直接可视化调整布局。
 - `HeroConfig.hudSkin` 是每角色 HUD 视觉配置入口；`HeroConfig.heroHUDPrefab` 保留为旧方案/兜底。
@@ -28,4 +15,3 @@ Hero HUD 当前架构：Battle 场景常驻可视化 HeroHUDRoot + 每角色 Her
 - `UltimateButtonUI` 只负责大招 ready 状态触发（`OnEnergyChanged` / `OnReady` / `OnActivated`），实际火焰视觉由 `UIReadyFireEffect` 驱动；角色差异继续通过 `HeroHUDSkin.readyFireStartSprite` / `readyFireLoopSprites` / `readyFireFps` 下发。
 - 当前张飞 HUD 先复用 `HeroHUDSkin_Zhangfei.asset` 中已有 burn 火焰帧；后续若更换专用像素火焰素材，只需替换 skin 引用，不需要改代码或场景结构。
 - `UIReadyFireEffect` 现已收敛为 HUD 版单团火焰：以单个 `Image` 做帧循环 + alpha/scale pulse + 轻微 jitter，并提供 `localOffset` / `sizeScale` 作为围绕头像微调的位置与尺寸入口。
-<!-- locus:body:end -->

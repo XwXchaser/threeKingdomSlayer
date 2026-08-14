@@ -1,23 +1,10 @@
 ---
 id: kd_af882051-7c31-436c-8995-455c11b68c2d
-type: memory
-path: ui-dev-patterns.md
-title: ui-dev-patterns
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1781504246030
-updatedAt: 1781504246031
+injectMode: inherit
+summary: 程序化 UI 开发三原则：静态布局归 prefab、动态值用基准偏移、Edit Mode 预览只重建叶子。避免代码覆写设计师手动调整的布局参数。
+aiMaintained: inherit
 ---
 
-# ui-dev-patterns
-
-## Summary
-程序化 UI 开发三原则：静态布局归 prefab、动态值用基准偏移、Edit Mode 预览只重建叶子。避免代码覆写设计师手动调整的布局参数。
-
-<!-- locus:body:start -->
 # 程序化 UI 开发原则
 
 ## 核心问题
@@ -63,4 +50,3 @@ rect.anchoredPosition = new Vector2(_originX - scrollOffset, rect.anchoredPositi
 - `MainMenuUI`：StageGrid 完全用硬编码 anchor 构建
 - `KillRewardUI`：实例化 prefab 后立即覆写其 anchor/position
 - `QTEDisplay`：Ghost 子节点固定全拉伸，无设计师调整入口
-<!-- locus:body:end -->

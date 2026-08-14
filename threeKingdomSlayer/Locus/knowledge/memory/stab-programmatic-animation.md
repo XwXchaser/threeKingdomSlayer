@@ -1,23 +1,10 @@
 ---
 id: kd_27ea3f61-811b-4edc-8db6-9e312373fa37
-type: memory
-path: stab-programmatic-animation.md
-title: stab-programmatic-animation
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1785835591484
-updatedAt: 1785937968903
+injectMode: inherit
+summary: 普通 Stab 已加入程序化蓄势、加速刺入、轻微穿入、缩放形变和回收动画，不复用 Slash 的弯曲帧素材。
+aiMaintained: inherit
 ---
 
-# stab-programmatic-animation
-
-## Summary
-普通 Stab 已加入程序化蓄势、加速刺入、轻微穿入、缩放形变和回收动画，不复用 Slash 的弯曲帧素材。
-
-<!-- locus:body:start -->
 ## 普通 Stab 程序动画增强
 
 - 普通直刺默认使用 `Assets/Prefabs/Stab.prefab` 的 `Assets/Sprites/zhangfei/stab.png`；`stab_rotate1/2` 属于 Slash/Sweep 横扫弯曲形变，不用于普通 Stab。
@@ -43,4 +30,3 @@ updatedAt: 1785937968903
 - 起始阶段保持原 `stab.png`；v13 只在刺出中段出现。
 - v13 使用纯 Sprite 换帧后，不再出现画面顶部的异常巨大 Stab，用户已验收效果不错。
 - 若后续更换或重做 Stab 动画帧，优先在素材侧完成尺寸/Pivot校准，保持运行时代码只负责帧时序。
-<!-- locus:body:end -->

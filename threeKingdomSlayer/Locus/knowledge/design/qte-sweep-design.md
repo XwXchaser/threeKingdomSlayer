@@ -1,23 +1,10 @@
 ---
 id: kd_462cd811-8a63-4ed1-b6e3-0c5e670fe54f
-type: design
-path: qte-sweep-design.md
-title: qte-sweep-design
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1781972967409
-updatedAt: 1782116926213
+injectMode: inherit
+summary: QTE Sweep 完整设计文档：蓄力横斩格挡 QTE，Animator speed 调制同步动画与判定窗口，成功加速收尾切 Blocked，已全部实施完成。
+aiMaintained: inherit
 ---
 
-# qte-sweep-design
-
-## Summary
-QTE Sweep 完整设计文档：蓄力横斩格挡 QTE，Animator speed 调制同步动画与判定窗口，成功加速收尾切 Blocked，已全部实施完成。
-
-## Content
 # QTE Sweep 设计文档
 
 ## 设计意图

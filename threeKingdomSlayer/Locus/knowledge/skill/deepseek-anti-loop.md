@@ -1,18 +1,10 @@
 ---
 id: kd_aeb295d0-6733-4c3b-97ac-18378ffb56c6
-type: skill
-path: deepseek-anti-loop.md
-title: deepseek-anti-loop
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: true
-readOnly: false
-inheritAiConfig: true
+injectMode: inherit
+aiMaintained: inherit
 skillEnabled: true
 skillSurface: command
 commandTrigger: /anti-loop
-createdAt: 1785592695968
-updatedAt: 1785592695968
 ---
 
 # deepseek-anti-loop

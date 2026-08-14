@@ -1,23 +1,10 @@
 ---
 id: kd_5f380275-6449-4752-a084-ff230b75b378
-type: design
-path: attack-cooldown.md
-title: attack-cooldown
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1782310710086
-updatedAt: 1786527770769
+injectMode: inherit
+summary: 攻击冷却双模式设计：独立技能CD（保留）vs 动作锁定（新增），设计意图与实施细节
+aiMaintained: inherit
 ---
 
-# attack-cooldown
-
-## Summary
-攻击冷却双模式设计：独立技能CD（保留）vs 动作锁定（新增），设计意图与实施细节
-
-## Content
 # 攻击冷却双模式设计
 
 ## 概述

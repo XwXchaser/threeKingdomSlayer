@@ -1,23 +1,10 @@
 ---
 id: kd_2cb3f665-80e5-4387-8f66-572ff852e4c6
-type: design
-path: out-of-game-growth-system.md
-title: out-of-game-growth-system
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1779941537514
-updatedAt: 1779941537514
+injectMode: inherit
+summary: 局外成长与 Build 系统设计文档：三层体系（天赋树永久机械解锁 + 战前 Loadout Build 方向 + 铜钱经济闭环），与局内三选一升级形成联动。禁止纯数值伤害提升。
+aiMaintained: inherit
 ---
 
-# out-of-game-growth-system
-
-## Summary
-局外成长与 Build 系统设计文档：三层体系（天赋树永久机械解锁 + 战前 Loadout Build 方向 + 铜钱经济闭环），与局内三选一升级形成联动。禁止纯数值伤害提升。
-
-## Content
 # 局外成长与 Build 系统设计
 
 ## 概述

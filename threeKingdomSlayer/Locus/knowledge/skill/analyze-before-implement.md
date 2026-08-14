@@ -1,17 +1,9 @@
 ---
 id: kd_a6d20422-f158-4be7-8380-fa469d394caf
-type: skill
-path: analyze-before-implement.md
-title: analyze-before-implement
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: true
-readOnly: false
-inheritAiConfig: true
+injectMode: inherit
+aiMaintained: inherit
 skillEnabled: true
 skillSurface: command
-createdAt: 1778137849831
-updatedAt: 1778137849832
 ---
 
 # analyze-before-implement

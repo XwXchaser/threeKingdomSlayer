@@ -1,21 +1,9 @@
 ---
 id: kd_b43ac30e-4b29-4d38-b5da-ec51a24091ef
-type: design
-path: push-back-compaction.md
-title: push-back-compaction
-inheritInjectMode: true
-summaryEnabled: false
-summaryCache: 击退机制权威版：记录被击退者原槽位，完成后仅其自身回位；其他敌人不因击退补齐。
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1780824594062
-updatedAt: 1784945213469
+injectMode: inherit
+aiMaintained: inherit
 ---
 
-# push-back-compaction
-
-## Content
 # 击退机制（权威版）
 
 ## 核心结论

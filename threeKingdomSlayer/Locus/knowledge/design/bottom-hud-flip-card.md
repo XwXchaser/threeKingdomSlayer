@@ -1,23 +1,10 @@
 ---
 id: kd_acd08d41-9288-45eb-860f-6483ef52584e
-type: design
-path: bottom-hud-flip-card.md
-title: bottom-hud-flip-card
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1784129903567
-updatedAt: 1784285649660
+injectMode: inherit
+summary: 底部战斗 HUD 已复用现有素材改为 Overlay 双面翻牌：正面保留战斗 HUD，背面复用 QTEFrame。
+aiMaintained: inherit
 ---
 
-# bottom-hud-flip-card
-
-## Summary
-底部战斗 HUD 已复用现有素材改为 Overlay 双面翻牌：正面保留战斗 HUD，背面复用 QTEFrame。
-
-## Content
 # 底部战斗 HUD 双面看板方案
 
 ## 已实现

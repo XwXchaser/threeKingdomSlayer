@@ -1,23 +1,10 @@
 ---
 id: kd_b50736d7-6834-430f-8e21-e5e780c02a81
-type: memory
-path: unity-project-understanding/attack-animation-fillup-order.md
-title: attack-animation-fillup-order
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1784124647579
-updatedAt: 1786343471341
+injectMode: inherit
+summary: 补齐、攻击和位移的调度边界；同时记录当前代码与权威规则的已知偏差。
+aiMaintained: inherit
 ---
 
-# attack-animation-fillup-order
-
-## Summary
-补齐、攻击和位移的调度边界；同时记录当前代码与权威规则的已知偏差。
-
-<!-- locus:body:start -->
 ## 权威调度边界
 
 - 普通补齐只由整排清空触发；单列空槽和击退临时空槽不能创建普通补齐订单。
@@ -54,4 +41,3 @@ updatedAt: 1786343471341
 ### 缺陷3：受击后攻击伤害存在但动画缺失 (已修复)
 - HitStop 禁用 Animator 时仍设置 Hit Trigger，且攻击冷却继续推进；恢复 Animator 的同一帧触发 Attack 后，HitFlash 抢占视觉，但 DOTween 仍在之后结算伤害。
 - 修复：HitStop/HitFlash 期间暂停 `UpdateAttack` 的冷却推进，反馈结束后再启动攻击；用户复测暂未复发。
-<!-- locus:body:end -->

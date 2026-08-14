@@ -1,23 +1,10 @@
 ---
 id: kd_1c1fd8c8-6bd3-4f1e-84c3-abf354e5d7ac
-type: memory
-path: unity-project-understanding/timed-arrow-targeting.md
-title: timed-arrow-targeting
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1783690176456
-updatedAt: 1783781739753
+injectMode: inherit
+summary: 箭雨固定发射 `4 × arrowCount` 支箭覆盖前方区域；起点 X 关联落点并由 `xJitter`限制横移，视觉朝向锁定 Y/Z 平面，箭尖接触落点平面时提前判伤。
+aiMaintained: inherit
 ---
 
-# timed-arrow-targeting
-
-## Summary
-箭雨固定发射 `4 × arrowCount` 支箭覆盖前方区域；起点 X 关联落点并由 `xJitter`限制横移，视觉朝向锁定 Y/Z 平面，箭尖接触落点平面时提前判伤。
-
-<!-- locus:body:start -->
 # Timed Arrow Targeting
 
 ## Current Behavior
@@ -50,4 +37,3 @@ updatedAt: 1783781739753
 - 起点 X 与落点 X 独立全宽随机会产生跨屏横飞。
 - 完整 3D yaw 在斜视相机和预旋转 Sprite 下会表现为左右歪斜。
 - 等箭矢 Transform 中心到达落点才判伤，会让长且居中 Pivot 的 Sprite 看起来已经扎入敌人后才产生反馈；应使用箭尖接触平面判定。
-<!-- locus:body:end -->

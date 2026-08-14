@@ -67,6 +67,11 @@ public class AttackSystem : MonoBehaviour
     [Header("Stab 视觉起点偏移")]
     [Tooltip("仅改变五列 Stab 视觉的世界 X 起点；按左到右排列，不影响命中射线、伤害、范围或击退。")]
     [SerializeField] private float[] stabVisualStartXOffsets = { -1f, -0.5f, 0f, 0.5f, 1f };
+
+    [Header("Pierce 观察慢放")]
+    [Tooltip("观察用：1=原速，3=1/3速。确认后调回 1。")]
+    [SerializeField] private float pierceTimeScale = 3f;
+
     private float _actionLockTimer;
     private float _stabVisualTimer;
     private ChargeStabVisual _chargeStabVisual;
@@ -327,24 +332,89 @@ public class AttackSystem : MonoBehaviour
         float finalDmg = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
         int effectiveRows = GetEffectiveRangeRows(cfg);
         List<Enemy> targets = columnManager.GetEnemiesInRange(columnIndex, effectiveRows);
-        if (targets.Count > 0)
+        Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
+        float columnX = StageController.Instance != null
+            ? StageController.Instance.GetFormationOffset(columnIndex, 0)
+            : (columnIndex - 2) * 2f;
+        Vector3 wavePos = targets.Count > 0
+            ? GetWavePosition(targets, columnIndex)
+            : new Vector3(columnX, playerPos.y + cfg.stabSpawnYOffset,
+                playerPos.z + cfg.stabSpawnZOffset);
+        const float PierceVisualStartZ = -5.5f;
+        const float PierceFadeDistance = 0.6f;
+        const float PierceOvershootDistance = 1.0f;
+        float rowSpacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
+        float formationOffsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
+        int maxVisibleRows = StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
+        int endRow = Mathf.Clamp(effectiveRows - 1, 0, Mathf.Max(maxVisibleRows - 1, 0));
+        float rangeEndZ = (maxVisibleRows - 1 - endRow) * -rowSpacing + formationOffsetZ;
+        bool travelPositiveZ = rangeEndZ >= PierceVisualStartZ;
+
+        Enemy extendedBoss = null;
+        for (int i = 0; i < targets.Count; i++)
         {
-            Vector3 wavePos = GetWavePosition(targets, columnIndex);
-            ReleaseChargeHitShockwave();
-            StartCoroutine(ReleaseChargeShockwaves());
-            StartCoroutine(ReleaseChargeAttackShockwaves());
-            AttackReleaseTimeline.Create(AttackType.Pierce, GetAttackDuration(cfg), () =>
+            Enemy target = targets[i];
+            if (target != null && target.isBoss && target.bossState == BossState.InCombat)
             {
-                List<Enemy> aliveTargets = FilterAliveTargets(targets);
-                if (aliveTargets.Count == 0)
-                    return;
-                AttackWave.Create(wavePos, cfg.damageType, finalDmg, aliveTargets,
-                    prefab: cfg.attackWavePrefab);
-            });
+                if (extendedBoss == null || Mathf.Abs(target.transform.position.z - PierceVisualStartZ)
+                    > Mathf.Abs(extendedBoss.transform.position.z - PierceVisualStartZ))
+                    extendedBoss = target;
+            }
+        }
+        if (extendedBoss != null)
+        {
+            bool bossPositiveZ = extendedBoss.transform.position.z >= PierceVisualStartZ;
+            if (bossPositiveZ == travelPositiveZ
+                && Mathf.Abs(extendedBoss.transform.position.z - PierceVisualStartZ)
+                > Mathf.Abs(rangeEndZ - PierceVisualStartZ))
+                rangeEndZ = extendedBoss.transform.position.z;
         }
 
+        float direction = travelPositiveZ ? 1f : -1f;
+        float fadeStartZ = rangeEndZ - direction * PierceFadeDistance;
+        float finalEndZ = rangeEndZ + direction * PierceOvershootDistance;
+        Vector3 releasePosition = new Vector3(wavePos.x,
+            playerPos.y + cfg.stabSpawnYOffset,
+            PierceVisualStartZ);
+        Vector3 launchOrigin = releasePosition;
+        Quaternion projectileRotation = Quaternion.Euler(90f, 0f, 0f);
+        Vector3 projectileScale = cfg.attackWavePrefab != null
+            ? cfg.attackWavePrefab.transform.localScale
+            : Vector3.one;
+        Sprite releaseSprite = cfg.attackWavePrefab != null
+            ? cfg.attackWavePrefab.GetComponentInChildren<SpriteRenderer>()?.sprite
+            : null;
+        ReleaseChargeHitShockwave();
+        StartCoroutine(ReleaseChargeShockwaves());
+        StartCoroutine(ReleaseChargeAttackShockwaves());
+        Debug.Log($"[PierceTrace] attack col={columnIndex} targets={targets.Count} wave={wavePos} launchOrigin={launchOrigin}");
+        PierceReleaseVisual.Create(releaseSprite, _chargeStabVisual, releasePosition,
+            projectileRotation, projectileScale, launchOrigin, projectileRotation,
+            projectileScale, GetAttackDuration(cfg) * pierceTimeScale, releaseVisual =>
+        {
+            List<Enemy> aliveTargets = FilterAliveTargets(targets);
+            float rowSpacing = StageController.Instance != null
+                ? StageController.Instance.GetRowSpacing()
+                : 2.5f;
+            float emptyTravelDistance = rowSpacing * Mathf.Max(effectiveRows, 1) + 3f;
+
+            if (releaseVisual == null)
+            {
+                if (aliveTargets.Count > 0)
+                    AttackWave.Create(wavePos, cfg.damageType, finalDmg, aliveTargets,
+                        prefab: cfg.attackWavePrefab);
+                return;
+            }
+
+            GameObject projectileObject = releaseVisual.ProjectileTransform.gameObject;
+            Vector3 flightStart = releaseVisual.FlightStartPosition;
+            releaseVisual.TransferToProjectile(flightStart, projectileRotation, projectileScale);
+            AttackWave.CreatePierceFromVisual(projectileObject, flightStart, finalDmg,
+                aliveTargets, emptyTravelDistance, timeScale: pierceTimeScale);
+        });
+
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
-        return targets.Count > 0;
+        return true;
     }
 
     private bool ExecuteSweep()

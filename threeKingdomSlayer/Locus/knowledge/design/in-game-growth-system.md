@@ -1,23 +1,10 @@
 ---
 id: kd_27ef541b-f3c9-4b70-9c9d-0699fc1bcb0f
-type: design
-path: in-game-growth-system.md
-title: in-game-growth-system
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1779350986798
-updatedAt: 1779512923563
+injectMode: inherit
+summary: 三套局内奖励系统的分期实现计划：总击杀奖励 → 连击奖励 → 经验三选一。第三期详案含等级系统、效果执行架构、连续升级流程、自适应UI、攻击解锁、前置条件系统。
+aiMaintained: inherit
 ---
 
-# in-game-growth-system
-
-## Summary
-三套局内奖励系统的分期实现计划：总击杀奖励 → 连击奖励 → 经验三选一。第三期详案含等级系统、效果执行架构、连续升级流程、自适应UI、攻击解锁、前置条件系统。
-
-## Content
 # 局内成长系统设计
 
 ## 总览

@@ -1,30 +1,14 @@
 ---
 id: kd_4a9116b1-c70a-4de3-8eeb-801deb71c4fe
-type: memory
-path: project-mistake-note.md
-title: project-mistake-note
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
+injectMode: inherit
+summary: 更新至 2026-03 — 新增 TimedArrow 命中与视觉生命周期、随机轨迹、DOTween 清理、受击缩放、序列化迁移、视觉/伤害解耦及 Time 被动类型区分经验
 aiMaintained: true
-explicitMaintenanceRules: true
-createdAt: 1778764012219
-updatedAt: 1786525556475
+maintenanceRules: |-
+  - Keep only durable and reusable project memory
+  - Consolidate duplicates or conflicts into the latest conclusion
+  - Remove temporary context, one-off tasks, and unsupported guesses
 ---
 
-# project-mistake-note
-
-## Summary
-更新至 2026-03 — 新增 TimedArrow 命中与视觉生命周期、随机轨迹、DOTween 清理、受击缩放、序列化迁移、视觉/伤害解耦及 Time 被动类型区分经验
-
-<!-- locus:maintain-rules:start -->
-- Keep only durable and reusable project memory
-- Consolidate duplicates or conflicts into the latest conclusion
-- Remove temporary context, one-off tasks, and unsupported guesses
-<!-- locus:maintain-rules:end -->
-
-<!-- locus:body:start -->
 ### Parry 架势规则误恢复导致普通敌人连续招架后停止攻击 ✅ 已修复
 - 症状：连续 Parry 普通敌人多次后，敌人架势从 50 逐步降到 0，进入 `Stunned`；眩晕结束后普通敌人回到 `Idle`，位于 row=0 时没有移动事件重新调用 `StartAttacking()`，之后不再攻击。
 - 根因：`Enemy.TakePoiseDamage()` 只检查 `state == Attacking` 和 `isAttackDrawPhase`，没有限制 `isBoss`，导致已经停用的"普通敌人架势/眩晕"机制重新生效；同时没有要求 `isAttackAnimating`，所以普通敌人在攻击冷却阶段也能被 Parry 持续削架势。
@@ -50,4 +34,3 @@ updatedAt: 1786525556475
   3. 随机倾角在 Windup 仅应用 12%，完整随机倾角延后到上挑终态。
 - 预防规则：**从实时世界 pose 接管的武器动画不得将目标 Quaternion 转为 Euler 后做 Tween；跨对象/跨坐标系旋转衔接优先使用 Quaternion Slerp，并限制随机姿态在过渡前段的参与量。**
 - 文件：`Assets/Scripts/Effects/LaunchVisualEffect.cs`
-<!-- locus:body:end -->

@@ -1,23 +1,10 @@
 ---
 id: kd_cef5972f-5ef5-40cd-8471-38580aa751e0
-type: memory
-path: hit-feedback-system.md
-title: hit-feedback-system
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1785815668360
-updatedAt: 1786343471259
+injectMode: inherit
+summary: 首批打击反馈已实现：局部 Animator Hit Stop、命中来源/强度上下文、受击缩放与伤害数字分级；DoT 不卡肉。
+aiMaintained: inherit
 ---
 
-# hit-feedback-system
-
-## Summary
-首批打击反馈已实现：局部 Animator Hit Stop、命中来源/强度上下文、受击缩放与伤害数字分级；DoT 不卡肉。
-
-<!-- locus:body:start -->
 ## 已实现的首批打击反馈
 
 - 新增 `Assets/Scripts/Core/HitFeedbackManager.cs`，定义命中来源、反馈强度和命中上下文。
@@ -39,4 +26,3 @@ updatedAt: 1786343471259
 
 - 当前 Hit Stop 仅冻结受击敌人 Animator，攻击波、DOTween 视觉和其他战斗对象仍按既有时间规则运行；后续若需要更强的全局卡肉，应另行设计战斗时间控制器。
 - 命中强度默认主要由调用方显式标注；新增伤害入口必须选择合适的 `HitFeedbackSource` / `HitFeedbackStrength`，不可只靠伤害数值猜测表现等级。
-<!-- locus:body:end -->

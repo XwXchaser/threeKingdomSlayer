@@ -1,23 +1,10 @@
 ---
 id: kd_26d2a809-56c5-4eed-8154-ebff0fdbae91
-type: memory
-path: unity-project-understanding/combat-visual-sorting.md
-title: combat-visual-sorting
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1783930064156
-updatedAt: 1783934284044
+injectMode: inherit
+summary: 当前策略：仅敌方投射物提升至 EnemyProjectiles Sorting Layer；敌人与所有玩家视觉保持 Default/Z 深度排序。已修复 QTE stagger 箭在暂停前未启动却悬空可见，以及胜负终局冻结箭矢不清理的问题。
+aiMaintained: inherit
 ---
 
-# combat-visual-sorting
-
-## Summary
-当前策略：仅敌方投射物提升至 EnemyProjectiles Sorting Layer；敌人与所有玩家视觉保持 Default/Z 深度排序。已修复 QTE stagger 箭在暂停前未启动却悬空可见，以及胜负终局冻结箭矢不清理的问题。
-
-<!-- locus:body:start -->
 ## 敌方投射物优先策略（2026-07-09）
 
 `ProjectSettings/TagManager.asset` 仅新增了 `EnemyProjectiles` Sorting Layer，位于 `Default` 之上。
@@ -51,4 +38,3 @@ updatedAt: 1783934284044
 ### 当前资产
 - `Assets/Prefabs/arrow.prefab` 已挂 `EnemyProjectileVisualPriority`。
 - `EnemyProjectileGlowOutline` 的红光参数不承担遮挡解决职责；其两个子 SpriteRenderer 会统一进入敌方投射物层。
-<!-- locus:body:end -->

@@ -1,20 +1,9 @@
 ---
 id: kd_6dc15d1a-77b7-4a98-a7b2-4bdb38d7d679
-type: memory
-path: unity-project-understanding/qte-system.md
-title: qte-system
-inheritInjectMode: true
-summaryEnabled: false
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1779287256500
-updatedAt: 1784783324983
+injectMode: inherit
+aiMaintained: inherit
 ---
 
-# qte-system
-
-<!-- locus:body:start -->
 # QTE System
 
 ## Overview
@@ -78,4 +67,3 @@ QTE 系统由 `QTEController`（挂载在 Boss prefab 上）、`QTEDisplay`（�
 - 三个点击指示器统一使用 `Assets/Sprites/BatlleHUD/QTE_Stab.png`；测试过程中产生的未追踪旧 Circle Clone 已确认并从运行现场清除。
 - Boss 104 的 `launchDuration` 从 5 秒调整为 1.5 秒，使其正常进入浮空衰减/加速下落阶段。
 - QTE 单段结果使用 `Assets/Sprites/BatlleHUD/QTEResults/QTE_SUCCESS.png` / `QTE_FAIL.png`，显示于 QTEFrame 右侧 `(175, 0)`；当前运行时尺寸为 510×255px，0.08 秒弹入 + 约 0.22 秒停留 + 0.12 秒淡出，不拦截输入并使用 unscaled 时间。
-<!-- locus:body:end -->

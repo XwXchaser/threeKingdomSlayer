@@ -1,20 +1,9 @@
 ---
 id: kd_09680b90-1f07-4c54-adae-2eb875647450
-type: memory
-path: unity-project-understanding/attack-effect-lifecycle.md
-title: attack-effect-lifecycle
-inheritInjectMode: true
-summaryEnabled: false
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1782063968446
-updatedAt: 1782063968446
+injectMode: inherit
+aiMaintained: inherit
 ---
 
-# attack-effect-lifecycle
-
-<!-- locus:body:start -->
 # 攻击特效生命周期诊断工具
 
 ## 概述
@@ -106,4 +95,3 @@ seq.OnComplete(() =>
 
 - 静态计数器 `AliveCount` 在 **Domain Reload 关闭**时不会自动重置，旧运行残留的值可能影响新运行的 snapshot。建议启动后无视前几秒的 snapshot，以第一次 Cleanup 后的值为准。
 - `CleanupLingeringEffects` 使用 `FindObjectsOfType<>`，范围是整个场景。正常情况应该找不到任何对象（因为已自毁）。
-<!-- locus:body:end -->

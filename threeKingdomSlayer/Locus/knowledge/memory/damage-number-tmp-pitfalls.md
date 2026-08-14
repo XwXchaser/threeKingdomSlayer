@@ -1,23 +1,10 @@
 ---
 id: kd_8564ed43-4dc8-461e-944e-03b1884215ce
-type: memory
-path: damage-number-tmp-pitfalls.md
-title: damage-number-tmp-pitfalls
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1782571976505
-updatedAt: 1782571976506
+injectMode: inherit
+summary: DamageNumber TMP 动态创建的常见坑：_FaceColor=black 导致文字全黑、OUTLINE_ON 默认开启、tmp.text 设置顺序影响材质属性、粗体权重配置、colorOverride 传递链。
+aiMaintained: inherit
 ---
 
-# damage-number-tmp-pitfalls
-
-## Summary
-DamageNumber TMP 动态创建的常见坑：_FaceColor=black 导致文字全黑、OUTLINE_ON 默认开启、tmp.text 设置顺序影响材质属性、粗体权重配置、colorOverride 传递链。
-
-<!-- locus:body:start -->
 # DamageNumber TMP 常见问题排查
 
 ## 1. 动态 AddComponent<TMP> 的 _FaceColor=black
@@ -68,4 +55,3 @@ else
 `colorOverride ?? textColor`：null 时走默认 `textColor`，非 null 时覆盖。
 
 注意：`AttackWave.Create()` 的所有调用点都没有传 `damageNumberColor`，导致始终为 null。如需按伤害类型着色，在 `CreateInternal` 中加 `damageNumberColor ??= GetColor(damageType)`。
-<!-- locus:body:end -->

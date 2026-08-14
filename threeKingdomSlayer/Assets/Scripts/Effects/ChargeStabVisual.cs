@@ -359,6 +359,8 @@ public class ChargeStabVisual : MonoBehaviour
     {
         Vector3 playerPos = transform.position;
         worldPosition.x = Mathf.Clamp(worldPosition.x, playerPos.x - halfWidth, playerPos.x + halfWidth);
+        // 固定 Y 高度，与 Slash/Stab 攻击高度一致，避免抬手抬高蓄力武器。
+        worldPosition.y = playerPos.y + spawnYOffset;
         return worldPosition;
     }
 
@@ -367,16 +369,8 @@ public class ChargeStabVisual : MonoBehaviour
         Vector3 playerPos = transform.position;
         float offsetX = Mathf.Clamp(worldPosition.x - playerPos.x, -halfWidth, halfWidth);
         float zRot = halfWidth > 0.001f ? (offsetX / halfWidth) * maxAngle : 0f;
-        float xPitch = 0f;
-        if (_hasPitchBaseline && verticalTiltHalfHeight > 0.001f)
-        {
-            float verticalOffset = Vector3.Dot(worldPosition - _pitchBaselineWorldPos, _mainCam.transform.up);
-            if (verticalOffset < 0f)
-                xPitch = Mathf.Clamp01(-verticalOffset / verticalTiltHalfHeight) * maxDownPitchAngle;
-            else
-                xPitch = -Mathf.Clamp01(verticalOffset / verticalTiltHalfHeight) * maxPitchAngle;
-        }
-        return Quaternion.Euler(90f + xPitch, 0f, -zRot);
+        // Y 已固定，不再随上下移动产生 X 轴俯仰，避免枪尖摇摆。
+        return Quaternion.Euler(90f, 0f, -zRot);
     }
 
     private void DestroyChargeVisual()

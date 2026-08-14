@@ -1,23 +1,10 @@
 ---
 id: kd_22735b7f-c4be-45e1-a804-a8bea3501456
-type: memory
-path: stab-vfx-generation.md
-title: stab-vfx-generation
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1785926047168
-updatedAt: 1785938051436
+injectMode: inherit
+summary: Stab 高速穿刺素材生成的成功约束、失败原因和可复用提示词经验。
+aiMaintained: inherit
 ---
 
-# stab-vfx-generation
-
-## Summary
-Stab 高速穿刺素材生成的成功约束、失败原因和可复用提示词经验。
-
-<!-- locus:body:start -->
 ## Stab 高速穿刺素材生成经验
 
 ### 成功版本
@@ -60,4 +47,3 @@ Stab 高速穿刺素材生成的成功约束、失败原因和可复用提示词
 - 不再强行制作新的极限帧，除非有专业像素画手工绘制或可靠的像素级重映射工具。
 - 如果未来重启该方向，应先制作连续的人工轮廓遮罩，再将原武器像素纹理按轮廓重映射；不要使用矩形切片或让生成模型自由重构。
 - 接入 Unity 前必须先清理生成图背景、确认透明通道、处理尺寸/Pivot，并由用户在实际战斗画面中验收比例。
-<!-- locus:body:end -->

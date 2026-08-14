@@ -1,23 +1,10 @@
 ---
 id: kd_28a19b01-e07f-49cd-9619-cd7c81a4635a
-type: design
-path: visual-yoffset-system.md
-title: visual-yoffset-system
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1783355398219
-updatedAt: 1783924582556
+injectMode: inherit
+summary: 精灵锚点不统一的视觉补偿方案：通过 Inspector 可配的 Y 偏移字段，让不同尺寸的立于地面角色和特效的脚底对齐，避免每个精灵都去 Sprite Editor 改锚点。
+aiMaintained: inherit
 ---
 
-# visual-yoffset-system
-
-## Summary
-精灵锚点不统一的视觉补偿方案：通过 Inspector 可配的 Y 偏移字段，让不同尺寸的立于地面角色和特效的脚底对齐，避免每个精灵都去 Sprite Editor 改锚点。
-
-## Content
 ## 实现
 
 三个组件各加了一个 `[SerializeField]` Y 偏移字段：

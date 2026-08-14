@@ -1,23 +1,10 @@
 ---
 id: kd_c10dc057-dc52-4576-94f9-09869e1c6e5e
-type: design
-path: attack-interrupt-system.md
-title: attack-interrupt-system
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1779896984696
-updatedAt: 1786456206776
+injectMode: inherit
+summary: 敌人攻击打断系统设计文档：三级打断体系（普通攻击/C技/QTE）、霸体机制、与三选一奖励及Parry/Launch的交互关系、实现计划。已完成sharedHealthGroup打断修复和canInterruptCFrame参数传递，待实现P0-P2。
+aiMaintained: inherit
 ---
 
-# attack-interrupt-system
-
-## Summary
-敌人攻击打断系统设计文档：三级打断体系（普通攻击/C技/QTE）、霸体机制、与三选一奖励及Parry/Launch的交互关系、实现计划。已完成sharedHealthGroup打断修复和canInterruptCFrame参数传递，待实现P0-P2。
-
-## Content
 # 攻击打断系统设计
 
 ## 1. 设计目标

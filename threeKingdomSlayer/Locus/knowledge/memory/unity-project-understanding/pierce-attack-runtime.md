@@ -1,42 +1,42 @@
 ---
 id: kd_329ff503-f100-4792-8780-aef00b2b82e1
-type: memory
-path: unity-project-understanding/pierce-attack-runtime.md
-title: pierce-attack-runtime
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1785839196682
-updatedAt: 1786528929781
+injectMode: inherit
+summary: Pierce currently slides static Stab prefab through one column via AttackWave; records deferred charge-release redesign constraints.
+aiMaintained: inherit
 ---
 
-# pierce-attack-runtime
-
-## Summary
-Pierce currently slides static Stab prefab through one column via AttackWave; records deferred charge-release redesign constraints.
-
-<!-- locus:body:start -->
 ## Current Pierce construction
-- `AttackSystem.ExecutePierce` snapshots one selected column through `ColumnManager.GetEnemiesInRange`, releases charge-linked shockwaves, then schedules a release callback through `Assets/Scripts/Effects/AttackReleaseTimeline.cs`.
-- The release timeline uses `actionDuration` (scaled by attack speed) and invokes Pierce release once at about 42% of the player action. The callback filters dead targets before creating the `AttackWave`.
-- `Zhangfei_Pierce.asset`: damage 20, rangeRows 5, cooldown 3, actionDuration 0.50, prefab `Assets/Prefabs/Stab.prefab`.
-- `AttackWave.SetupTravel` moves the static `stab.png` prefab along world Z at fixed natural speed 8 toward the furthest target plus 3 world units, then pauses 0.05s and fades for 0.35s. Pierce now receives no cooldown-derived `targetDuration`, so this lifecycle remains independent of the player action lock.
-- Targets are sorted by world Z and damaged when the wave root crosses each target Z threshold. First target gets Standard feedback and pauses the travel sequence; later targets get Light feedback.
-- Pierce still has no dedicated weapon出手 visual; the timeline currently supplies the release boundary only. A dedicated Pierce release visual should replace the timing-only timeline without changing the target snapshot or AttackWave authority.
+- Pierce empty-cast input must use `InputManager.GetStabColumnFromScreenPosition`, which falls back to a fixed five-column screen mapping. The generic `GetColumnFromScreenPosition` only searches columns with a live front enemy and was the reason empty columns never reached `AttackSystem`, even though `ExecutePierce` itself returned success and supported empty travel.
+- `PierceReleaseVisual` consumes the current `ChargeStabVisual` pose when available. The action is split into Backload (42%), Align (14%), and Release (6%) segments within `actionDuration`: the same weapon starts 0.24 units lower, retracts 2.10 units toward the camera and 0.72 units toward its tail, then rapidly reorients toward the standardized projectile axis and pushes forward into the release point.
+- The projectile axis no longer inherits finger tilt. `AttackSystem` uses a fixed Pierce flight rotation (`Quaternion.Euler(90,0,0)`) for the release alignment and detached projectile, preventing edge columns from being launched off-screen.
+- Axial spin uses `Assets/Scripts/Effects/PierceAxialSpinVisual.cs`: two identical SpriteRenderer planes intersect at 90° under a shared spin pivot. Only the plane that is currently more camera-facing is shown, eliminating the translucent double-image from blended planes while still preventing edge-on disappearance.
+- The release callback filters dead targets, then calls `AttackWave.CreatePierceFromVisual` with the existing release GameObject. No second spear prefab is instantiated: the same visual object is transferred to the projectile start, its render sorting is downgraded back to normal projectile order (`sortingOrder=0`), and `AttackWave` takes over detached flight/damage ownership.
+- `Zhangfei_Pierce.asset` remains damage 20, rangeRows 5, cooldown 3, actionDuration 0.50, prefab `Assets/Prefabs/Stab.prefab` (used as sprite/scale source, not instantiated on the normal handoff path).
+- `AttackWave.SetupTravel` keeps straight-line Z-threshold hit authority and natural distance-based lifetime. Reused Pierce visuals skip the normal scale-in reset; Pierce uses a dedicated speed of 18 world units/s (shared projectiles remain 8) and `Ease.InQuad` for a fast non-sluggish acceleration profile.
+- During flight the same `PierceAxialSpinVisual` accelerates from about 420°/s to 1800°/s. Its core directional blur is deliberately reduced to a 24px cap so the spear silhouette remains readable.
+- `PierceAxialSpinVisual` retains only crossed-plane spear visibility, axial spin and weak 24px-capped core blur. The prior thin 9-block double-helix sleeve and repeated tail-ring implementation were removed because their continuous moving strips read as “noodles” rather than pixel VFX.
+- Flight now adds `Assets/Scripts/Effects/PierceVortexVisual.cs`, based on accepted concept `C:/Users/steam/Pictures/gptGen/pierce_pixel_vortex_fragmented_concept_v3.png`. The first runtime attempt was rejected: it scaled the projectile root from 0.1 to roughly 1 and used overlapping thick-line/disc brush strokes, causing an 8–11× spear enlargement and a black-bordered orange blob.
+- The vortex is generated by `PierceVortexVisual` from a hand-laid flame-claw layout, not a regular ring. Each of 4 frames defines 6–10 asymmetric curved claws (Bézier-bent polar paths with tapering width) plus sparse pixel sparks; each claw is stamped as layered discs (dark outline → red body → orange mid → gold highlight) to read as a pixel flame. Back and front layers are drawn to separate 128×128 point-filtered textures.
+- A dedicated `Pierce_VortexAnchor` child is scaled/rotated so the spear root keeps its prefab scale 0.1; anchor visual scale stays ~4.5→5.3. Rendering is `VortexBack=-1`, spear=0, `VortexFront=1`, mounted perpendicular to the spear axis. A 30px center hole is force-cleared for the weapon channel. Afterimages consume the same frames via `GetBackFrame`/`GetFrontFrame` and use the anchor's world `lossyScale` (fixing the previous 8× oversized ghost). Preview sheets: `Library/Locus/tmp/pierce_vortex_front_sheet.png` / `pierce_vortex_back_sheet.png`.
+- Pierce receives no cooldown-derived `targetDuration`; player action lock and projectile lifetime remain independent.
 
 ## Current Sweep construction
 - `AttackSystem.ExecuteSweep` snapshots all targets within the effective rows, releases charge-linked shockwaves, then schedules a release callback through `AttackReleaseTimeline` at about 48% of `actionDuration`.
-- The callback filters dead targets before creating the configured Sweep `AttackWave`; the wave is no longer stretched to `cooldown`.
+- The callback filters dead targets before creating the configured Sweep `AttackWave`; the wave is not stretched to `cooldown`.
 - `Zhangfei_Sweep.asset`: damage 5, rangeRows 3, cooldown 2, actionDuration 0.55, prefab `Assets/Prefabs/sweep.prefab`.
-- Sweep still has no dedicated player weapon出手 visual; the timeline currently supplies the release boundary only. A dedicated Sweep release visual should replace the timing-only timeline without changing the target snapshot or AttackWave authority.
+- Sweep still has no dedicated player weapon release visual; the timing-only timeline remains until the Sweep visual redesign.
 
-## Deferred visual redesign direction
-- Keep the existing target snapshot, damage, row order, hit feedback and charge-shockwave pipeline authoritative.
-- Add opt-in Pierce/Sweep release visual branches rather than globally changing shared `AttackWave` Travel behavior used by Stab, return waves, and Phantom attacks.
-- Pierce target language: charge-ready pose -> small rearward alignment -> explosive straight thrust -> release the piercing body -> fast recovery.
-- Sweep target language: side/rear windup -> broad horizontal weapon sweep -> release the wide wave -> inertia and return.
-- The future visual component owns presentation and release callback only; the detached AttackWave owns flight, per-row hit timing, fade and destruction.
-- Visual density must remain decoupled from damage count. If `ChargeStabVisual` is integrated, transfer its pose deliberately and preserve cleanup ownership.
-<!-- locus:body:end -->
+## Runtime ownership
+- `PierceReleaseVisual`: player-side backload, axis correction, release callback and one-time ownership transfer.
+- `PierceAxialSpinVisual`: reusable crossed-plane axial visibility and continuous spin state before and after transfer.
+- `AttackWave.CreatePierceFromVisual`: attaches flight/damage ownership to the existing visual object without instantiating a duplicate.
+- `AttackWave`: detached movement, target order, threshold hits, feedback, fade and destruction.
+- `AttackSystem`: target/damage snapshot, charge-linked effects and composition of release visual with detached projectile.
+
+## Constraints
+- The projectile trajectory remains straight; “spiral” means rotation around the spear's own long axis, not a helical world path.
+- The hand-held charge and detached projectile remain the same GameObject/visual hierarchy on the normal path; fallback instantiation is only for missing release visual resources.
+- Do not apply motion blur during the hand-held charge phase. High-speed treatment belongs after ownership transfer.
+- Do not merge the detached projectile lifetime back into action lock or attack speed scaling.
+- Sweep should receive its own release visual rather than reuse Pierce's axial structure.
+- Keep target snapshot, damage, row order and charge-shockwave logic authoritative in `AttackSystem`/`AttackWave`.
