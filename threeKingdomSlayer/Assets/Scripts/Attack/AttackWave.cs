@@ -39,7 +39,7 @@ public class AttackWave : MonoBehaviour
     private float _targetDuration = -1f;
     private PierceAxialSpinVisual _pierceSpinVisual;
     private float _pierceTimeScale = 1f;
-    private float _pierceEndZ;
+    private Vector3 _pierceEndPosition;
     public static int AliveCount { get; private set; }
     public float CreationTime => _creationTime;
     public DamageType DamageType => damageType;
@@ -67,7 +67,7 @@ public class AttackWave : MonoBehaviour
     }
 
     public static AttackWave CreatePierceFromVisual(GameObject visualObject, Vector3 position,
-        float damage, List<Enemy> targets, float emptyTravelDistance, float endZ = float.NaN,
+        float damage, List<Enemy> targets, Vector3 endPosition,
         System.Action<Enemy> onHit = null, Color? damageNumberColor = null,
         bool canInterruptCFrame = false, float timeScale = 1f)
     {
@@ -89,7 +89,7 @@ public class AttackWave : MonoBehaviour
         wave.targetScale = visualObject.transform.localScale;
         wave._pierceSpinVisual = visualObject.GetComponent<PierceAxialSpinVisual>();
         wave._pierceTimeScale = timeScale;
-        wave._pierceEndZ = endZ;
+        wave._pierceEndPosition = endPosition;
 
         var alive = new List<Enemy>();
         for (int i = 0; i < targets.Count; i++)
@@ -102,10 +102,8 @@ public class AttackWave : MonoBehaviour
         wave.mode = WaveMode.Travel;
         if (alive.Count > 0)
             wave.SetupTravel(alive, visualObject.transform.position.z);
-        else if (!float.IsNaN(wave._pierceEndZ))
-            wave.SetupEmptyPierceTravelTo(wave._pierceEndZ);
         else
-            wave.SetupEmptyPierceTravel(Mathf.Max(emptyTravelDistance, EndZOffset));
+            wave.SetupEmptyPierceTravelTo(wave._pierceEndPosition);
         return wave;
     }
 
@@ -277,14 +275,13 @@ public class AttackWave : MonoBehaviour
         });
     }
 
-    private void SetupEmptyPierceTravelTo(float endZ)
+    private void SetupEmptyPierceTravelTo(Vector3 endPosition)
     {
-        float startZ = transform.position.z;
-        float thrustDistance = Mathf.Abs(endZ - startZ);
+        float thrustDistance = Vector3.Distance(transform.position, endPosition);
         float thrustTime = thrustDistance / (PierceProjectileSpeed / _pierceTimeScale);
         _pierceSpinVisual?.SetSpinProfile(thrustTime, 420f, 1800f);
         travelSeq = DOTween.Sequence().SetTarget(transform).SetUpdate(true);
-        travelSeq.Append(transform.DOMoveZ(endZ, thrustTime).SetEase(Ease.OutCubic));
+        travelSeq.Append(transform.DOMove(endPosition, thrustTime).SetEase(Ease.OutCubic));
         travelSeq.AppendCallback(() => _pierceSpinVisual?.BeginEndFade(0.35f));
         travelSeq.AppendInterval(0.35f);
         travelSeq.OnComplete(() => { _travelCompleted = true; travelSeq = null; Destroy(gameObject); });
@@ -317,9 +314,12 @@ public class AttackWave : MonoBehaviour
             endTravelZ = travelPositiveZ ? furthestZ + EndZOffset : furthestZ - EndZOffset;
         }
 
-        if (damageType == DamageType.Pierce && !float.IsNaN(_pierceEndZ))
-            endTravelZ = _pierceEndZ;
+        if (damageType == DamageType.Pierce)
+            endTravelZ = _pierceEndPosition.z;
 
+        float thrustDistance = damageType == DamageType.Pierce
+            ? Vector3.Distance(transform.position, _pierceEndPosition)
+            : Mathf.Abs(startZ - endTravelZ);
         float thrustTime;
         if (isStab)
         {
@@ -327,7 +327,6 @@ public class AttackWave : MonoBehaviour
         }
         else
         {
-            float thrustDistance = Mathf.Abs(startZ - endTravelZ);
             float projectileSpeed = damageType == DamageType.Pierce
                 ? PierceProjectileSpeed / _pierceTimeScale
                 : ProjectileSpeed;
@@ -377,7 +376,9 @@ public class AttackWave : MonoBehaviour
         travelSeq.SetUpdate(true);
 
         Ease thrustEase = damageType == DamageType.Pierce ? Ease.OutCubic : Ease.OutQuad;
-        var thrust = transform.DOMoveZ(endTravelZ, thrustTime).SetEase(thrustEase);
+        Tween thrust = damageType == DamageType.Pierce
+            ? transform.DOMove(_pierceEndPosition, thrustTime).SetEase(thrustEase)
+            : transform.DOMoveZ(endTravelZ, thrustTime).SetEase(thrustEase);
         if (!isStab || _shouldReturnWave)
             thrust.OnUpdate(CheckHitThresholds);
         travelSeq.Append(thrust);

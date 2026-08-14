@@ -348,9 +348,17 @@ public class AttackSystem : MonoBehaviour
         float targetRowZ = (visibleRows - 1 - targetRow) * (-rowSpacing) + formationOffsetZ;
         float enemyRootZ = GetEnemyRootWorldZ();
         float pierceEndZ = enemyRootZ + targetRowZ + 0.8f;
-        Vector3 releasePosition = new Vector3(wavePos.x, playerPos.y + cfg.stabSpawnYOffset, PierceVisualStartZ);
+        float visualStartX = StageController.Instance != null
+            ? StageController.Instance.GetFormationOffset(columnIndex, 0)
+            : columnX;
+        float visualEndX = StageController.Instance != null
+            ? StageController.Instance.GetFormationOffset(columnIndex, targetRow)
+            : columnX;
+        Vector3 releasePosition = new Vector3(visualStartX, playerPos.y + cfg.stabSpawnYOffset, PierceVisualStartZ);
         Vector3 launchOrigin = releasePosition;
-        Quaternion projectileRotation = Quaternion.Euler(90f, 0f, 0f);
+        Vector3 visualEndPosition = new Vector3(visualEndX, releasePosition.y, pierceEndZ);
+        Vector3 visualDirection = (visualEndPosition - launchOrigin).normalized;
+        Quaternion projectileRotation = Quaternion.FromToRotation(Vector3.up, visualDirection);
         Vector3 projectileScale = cfg.attackWavePrefab != null
             ? cfg.attackWavePrefab.transform.localScale
             : Vector3.one;
@@ -360,16 +368,12 @@ public class AttackSystem : MonoBehaviour
         ReleaseChargeHitShockwave();
         StartCoroutine(ReleaseChargeShockwaves());
         StartCoroutine(ReleaseChargeAttackShockwaves());
-        Debug.Log($"[PierceTrace] attack col={columnIndex} targets={targets.Count} wave={wavePos} launchOrigin={launchOrigin} endZ={pierceEndZ:F2}");
+        Debug.Log($"[PierceTrace] attack col={columnIndex} targets={targets.Count} wave={wavePos} launchOrigin={launchOrigin} visualEnd={visualEndPosition} endZ={pierceEndZ:F2}");
         PierceReleaseVisual.Create(releaseSprite, _chargeStabVisual, releasePosition,
             projectileRotation, projectileScale, launchOrigin, projectileRotation,
             projectileScale, GetAttackDuration(cfg) * pierceTimeScale, releaseVisual =>
         {
             List<Enemy> aliveTargets = FilterAliveTargets(targets);
-            float rowSpacing = StageController.Instance != null
-                ? StageController.Instance.GetRowSpacing()
-                : 2.5f;
-            float emptyTravelDistance = rowSpacing * Mathf.Max(effectiveRows, 1) + 3f;
 
             if (releaseVisual == null)
             {
@@ -383,8 +387,7 @@ public class AttackSystem : MonoBehaviour
             Vector3 flightStart = releaseVisual.FlightStartPosition;
             releaseVisual.TransferToProjectile(flightStart, projectileRotation, projectileScale);
             AttackWave.CreatePierceFromVisual(projectileObject, flightStart, finalDmg,
-                aliveTargets, emptyTravelDistance, pierceEndZ,
-                timeScale: pierceTimeScale);
+                aliveTargets, visualEndPosition, timeScale: pierceTimeScale);
         });
 
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
