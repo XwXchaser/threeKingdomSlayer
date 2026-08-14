@@ -341,41 +341,14 @@ public class AttackSystem : MonoBehaviour
             : new Vector3(columnX, playerPos.y + cfg.stabSpawnYOffset,
                 playerPos.z + cfg.stabSpawnZOffset);
         const float PierceVisualStartZ = -5.5f;
-        const float PierceFadeDistance = 0.6f;
-        const float PierceOvershootDistance = 1.0f;
         float rowSpacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
         float formationOffsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
-        int maxVisibleRows = StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
-        int endRow = Mathf.Clamp(effectiveRows - 1, 0, Mathf.Max(maxVisibleRows - 1, 0));
-        float rangeEndZ = (maxVisibleRows - 1 - endRow) * -rowSpacing + formationOffsetZ;
-        bool travelPositiveZ = rangeEndZ >= PierceVisualStartZ;
-
-        Enemy extendedBoss = null;
-        for (int i = 0; i < targets.Count; i++)
-        {
-            Enemy target = targets[i];
-            if (target != null && target.isBoss && target.bossState == BossState.InCombat)
-            {
-                if (extendedBoss == null || Mathf.Abs(target.transform.position.z - PierceVisualStartZ)
-                    > Mathf.Abs(extendedBoss.transform.position.z - PierceVisualStartZ))
-                    extendedBoss = target;
-            }
-        }
-        if (extendedBoss != null)
-        {
-            bool bossPositiveZ = extendedBoss.transform.position.z >= PierceVisualStartZ;
-            if (bossPositiveZ == travelPositiveZ
-                && Mathf.Abs(extendedBoss.transform.position.z - PierceVisualStartZ)
-                > Mathf.Abs(rangeEndZ - PierceVisualStartZ))
-                rangeEndZ = extendedBoss.transform.position.z;
-        }
-
-        float direction = travelPositiveZ ? 1f : -1f;
-        float fadeStartZ = rangeEndZ - direction * PierceFadeDistance;
-        float finalEndZ = rangeEndZ + direction * PierceOvershootDistance;
-        Vector3 releasePosition = new Vector3(wavePos.x,
-            playerPos.y + cfg.stabSpawnYOffset,
-            PierceVisualStartZ);
+        int visibleRows = StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
+        int targetRow = Mathf.Clamp(effectiveRows, 1, visibleRows) - 1;
+        float targetRowZ = (visibleRows - 1 - targetRow) * (-rowSpacing) + formationOffsetZ;
+        float enemyRootZ = GetEnemyRootWorldZ();
+        float pierceEndZ = enemyRootZ + targetRowZ + 0.8f;
+        Vector3 releasePosition = new Vector3(wavePos.x, playerPos.y + cfg.stabSpawnYOffset, PierceVisualStartZ);
         Vector3 launchOrigin = releasePosition;
         Quaternion projectileRotation = Quaternion.Euler(90f, 0f, 0f);
         Vector3 projectileScale = cfg.attackWavePrefab != null
@@ -387,7 +360,7 @@ public class AttackSystem : MonoBehaviour
         ReleaseChargeHitShockwave();
         StartCoroutine(ReleaseChargeShockwaves());
         StartCoroutine(ReleaseChargeAttackShockwaves());
-        Debug.Log($"[PierceTrace] attack col={columnIndex} targets={targets.Count} wave={wavePos} launchOrigin={launchOrigin}");
+        Debug.Log($"[PierceTrace] attack col={columnIndex} targets={targets.Count} wave={wavePos} launchOrigin={launchOrigin} endZ={pierceEndZ:F2}");
         PierceReleaseVisual.Create(releaseSprite, _chargeStabVisual, releasePosition,
             projectileRotation, projectileScale, launchOrigin, projectileRotation,
             projectileScale, GetAttackDuration(cfg) * pierceTimeScale, releaseVisual =>
@@ -410,7 +383,8 @@ public class AttackSystem : MonoBehaviour
             Vector3 flightStart = releaseVisual.FlightStartPosition;
             releaseVisual.TransferToProjectile(flightStart, projectileRotation, projectileScale);
             AttackWave.CreatePierceFromVisual(projectileObject, flightStart, finalDmg,
-                aliveTargets, emptyTravelDistance, timeScale: pierceTimeScale);
+                aliveTargets, emptyTravelDistance, pierceEndZ,
+                timeScale: pierceTimeScale);
         });
 
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -455,6 +429,26 @@ public class AttackSystem : MonoBehaviour
                 aliveTargets.Add(enemy);
         }
         return aliveTargets;
+    }
+
+    private static float GetEnemyRootWorldZ()
+    {
+        var columnManager = Instance != null ? Instance.columnManager : null;
+        var enemies = columnManager != null ? columnManager.GetAllEnemies() : null;
+        if (enemies != null)
+        {
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                var enemy = enemies[i];
+                if (enemy != null && enemy.transform.parent != null)
+                    return enemy.transform.parent.position.z;
+            }
+        }
+
+        var pool = EnemyPool.Instance != null ? EnemyPool.Instance : FindObjectOfType<EnemyPool>();
+        if (pool == null) return 0f;
+        Transform enemyRoot = pool.enemiesRoot != null ? pool.enemiesRoot : pool.poolRoot;
+        return enemyRoot != null ? enemyRoot.position.z : 0f;
     }
 
     private bool ExecuteLaunch()

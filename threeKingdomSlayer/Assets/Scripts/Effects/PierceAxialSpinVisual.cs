@@ -12,6 +12,9 @@ public sealed class PierceAxialSpinVisual : MonoBehaviour
     private float _startSpeed;
     private float _endSpeed;
     private float _fade = 1f;
+    private float _endFadeElapsed;
+    private float _endFadeDuration;
+    private bool _endFading;
     private bool _flightBlurEnabled;
     private Vector3 _flightDirection;
     private WeaponMotionBlurController _blurA;
@@ -89,6 +92,17 @@ public sealed class PierceAxialSpinVisual : MonoBehaviour
         _vortexVisual?.SetFade(_fade);
     }
 
+    public void BeginEndFade(float duration)
+    {
+        if (_endFading)
+            return;
+
+        _endFading = true;
+        _endFadeElapsed = 0f;
+        _endFadeDuration = Mathf.Max(duration, 0.001f);
+        _vortexVisual?.StopAfterimages();
+    }
+
     private void Update()
     {
         if (_spinPivot == null)
@@ -107,6 +121,18 @@ public sealed class PierceAxialSpinVisual : MonoBehaviour
             _blurB?.UpdateMotionWorld(_planeB.transform.position, _planeB.transform.rotation,
                 _flightDirection, blurMultiplier, fallbackSpeed, Time.deltaTime);
         }
+
+        if (_endFading)
+        {
+            _endFadeElapsed += Time.deltaTime;
+            SetFade(1f - Mathf.Clamp01(_endFadeElapsed / _endFadeDuration));
+            if (_endFadeElapsed >= _endFadeDuration)
+            {
+                _blurA?.SetStrength(0f);
+                _blurB?.SetStrength(0f);
+            }
+        }
+
         UpdatePlaneAlpha();
     }
 

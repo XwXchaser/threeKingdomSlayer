@@ -10,9 +10,14 @@ public sealed class PierceVortexAfterimage : MonoBehaviour
     private SpriteRenderer _frontRenderer;
     private float _elapsed;
     private float _rotation;
+    private float _forcedFadeElapsed;
+    private float _forcedFadeDuration;
+    private float _forcedFadeStartAlpha = 1f;
+    private bool _forcedFading;
+    private PierceVortexVisual _owner;
 
     public static void Create(Vector3 position, Quaternion projectileRotation, Vector3 scale,
-        int sourceFrame, float rotation)
+        int sourceFrame, float rotation, PierceVortexVisual owner)
     {
         while (Active.Count >= MaxActive)
         {
@@ -25,8 +30,30 @@ public sealed class PierceVortexAfterimage : MonoBehaviour
         root.transform.SetPositionAndRotation(position, projectileRotation);
         root.transform.localScale = scale * 1.0f;
         var afterimage = root.AddComponent<PierceVortexAfterimage>();
+        afterimage._owner = owner;
         Active.Enqueue(afterimage);
         afterimage.Initialize(sourceFrame, rotation);
+    }
+
+    public bool IsOwnedBy(PierceVortexVisual owner)
+    {
+        return _owner == owner;
+    }
+
+    public void BeginFadeOwned(float duration)
+    {
+        BeginForcedFade(duration);
+    }
+    private void BeginForcedFade(float duration)
+    {
+        if (_forcedFading)
+            return;
+
+        _forcedFading = true;
+        _forcedFadeElapsed = 0f;
+        _forcedFadeDuration = Mathf.Max(duration, 0.001f);
+        _forcedFadeStartAlpha = Mathf.Max(_backRenderer != null ? _backRenderer.color.a : 0f,
+            _frontRenderer != null ? _frontRenderer.color.a : 0f);
     }
 
     private void Initialize(int sourceFrame, float rotation)
@@ -66,10 +93,15 @@ public sealed class PierceVortexAfterimage : MonoBehaviour
         }
 
         float alpha = 1f - progress;
+        if (_forcedFading)
+        {
+            _forcedFadeElapsed += Time.deltaTime;
+            alpha = _forcedFadeStartAlpha * (1f - Mathf.Clamp01(_forcedFadeElapsed / _forcedFadeDuration));
+        }
         _backRenderer.color = new Color(1f, 1f, 1f, alpha * 0.58f);
         _frontRenderer.color = new Color(1f, 1f, 1f, alpha * 0.70f);
 
-        if (progress >= 1f)
+        if (progress >= 1f || (_forcedFading && _forcedFadeElapsed >= _forcedFadeDuration))
             Destroy(gameObject);
     }
 
