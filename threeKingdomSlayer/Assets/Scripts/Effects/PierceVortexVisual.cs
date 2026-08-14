@@ -24,6 +24,7 @@ public sealed class PierceVortexVisual : MonoBehaviour
     private float _afterimageTimer;
     private float _slowRotation;
     private float _fade = 1f;
+    private bool _afterimagesEnabled = true;
 
     // 深色（背景）层配色
     private static readonly Color32 BackOutline = new Color32(26, 8, 6, 255);
@@ -145,6 +146,17 @@ public sealed class PierceVortexVisual : MonoBehaviour
         }
     }
 
+    public void StopAfterimages()
+    {
+        _afterimagesEnabled = false;
+        PierceVortexAfterimage[] afterimages = FindObjectsOfType<PierceVortexAfterimage>();
+        for (int i = 0; i < afterimages.Length; i++)
+        {
+            if (afterimages[i] != null && afterimages[i].IsOwnedBy(this))
+                afterimages[i].BeginFadeOwned(0.12f);
+        }
+    }
+
     private void Initialize()
     {
         EnsureFrames();
@@ -196,11 +208,11 @@ public sealed class PierceVortexVisual : MonoBehaviour
         _anchor.localScale = Vector3.one * scale;
         _anchor.localRotation = Quaternion.Euler(0f, _slowRotation, 0f);
 
-        if (_afterimageTimer <= 0f)
+        if (_afterimageTimer <= 0f && _afterimagesEnabled)
         {
             _afterimageTimer = AfterimageInterval;
             PierceVortexAfterimage.Create(_anchor.position, _anchor.rotation,
-                _anchor.lossyScale, frame, _slowRotation);
+                _anchor.lossyScale, frame, _slowRotation, this);
         }
     }
 

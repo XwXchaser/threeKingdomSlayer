@@ -39,6 +39,7 @@ public class AttackWave : MonoBehaviour
     private float _targetDuration = -1f;
     private PierceAxialSpinVisual _pierceSpinVisual;
     private float _pierceTimeScale = 1f;
+    private float _pierceEndZ;
     public static int AliveCount { get; private set; }
     public float CreationTime => _creationTime;
     public DamageType DamageType => damageType;
@@ -66,7 +67,7 @@ public class AttackWave : MonoBehaviour
     }
 
     public static AttackWave CreatePierceFromVisual(GameObject visualObject, Vector3 position,
-        float damage, List<Enemy> targets, float emptyTravelDistance,
+        float damage, List<Enemy> targets, float emptyTravelDistance, float endZ = float.NaN,
         System.Action<Enemy> onHit = null, Color? damageNumberColor = null,
         bool canInterruptCFrame = false, float timeScale = 1f)
     {
@@ -88,6 +89,7 @@ public class AttackWave : MonoBehaviour
         wave.targetScale = visualObject.transform.localScale;
         wave._pierceSpinVisual = visualObject.GetComponent<PierceAxialSpinVisual>();
         wave._pierceTimeScale = timeScale;
+        wave._pierceEndZ = endZ;
 
         var alive = new List<Enemy>();
         for (int i = 0; i < targets.Count; i++)
@@ -100,6 +102,8 @@ public class AttackWave : MonoBehaviour
         wave.mode = WaveMode.Travel;
         if (alive.Count > 0)
             wave.SetupTravel(alive, visualObject.transform.position.z);
+        else if (!float.IsNaN(wave._pierceEndZ))
+            wave.SetupEmptyPierceTravelTo(wave._pierceEndZ);
         else
             wave.SetupEmptyPierceTravel(Mathf.Max(emptyTravelDistance, EndZOffset));
         return wave;
@@ -255,8 +259,8 @@ public class AttackWave : MonoBehaviour
         travelSeq = DOTween.Sequence().SetTarget(transform).SetUpdate(true);
         travelSeq.Append(transform.DOMoveZ(endZ, thrustTime).SetEase(Ease.OutCubic));
         travelSeq.AppendInterval(0.05f);
-        travelSeq.AppendCallback(() => _pierceSpinVisual?.SetFade(0f));
-        travelSeq.AppendInterval(0.12f);
+        travelSeq.AppendCallback(() => _pierceSpinVisual?.BeginEndFade(0.35f));
+        travelSeq.AppendInterval(0.35f);
         travelSeq.OnKill(() =>
         {
             if (!_travelCompleted)
@@ -273,6 +277,19 @@ public class AttackWave : MonoBehaviour
         });
     }
 
+    private void SetupEmptyPierceTravelTo(float endZ)
+    {
+        float startZ = transform.position.z;
+        float thrustDistance = Mathf.Abs(endZ - startZ);
+        float thrustTime = thrustDistance / (PierceProjectileSpeed / _pierceTimeScale);
+        _pierceSpinVisual?.SetSpinProfile(thrustTime, 420f, 1800f);
+        travelSeq = DOTween.Sequence().SetTarget(transform).SetUpdate(true);
+        travelSeq.Append(transform.DOMoveZ(endZ, thrustTime).SetEase(Ease.OutCubic));
+        travelSeq.AppendCallback(() => _pierceSpinVisual?.BeginEndFade(0.35f));
+        travelSeq.AppendInterval(0.35f);
+        travelSeq.OnComplete(() => { _travelCompleted = true; travelSeq = null; Destroy(gameObject); });
+        travelSeq.OnKill(() => { if (!_travelCompleted) { travelSeq = null; Destroy(gameObject); } });
+    }
     private void SetupTravel(List<Enemy> alive, float startZ)
     {
         // 确定旅行方向：取最远敌人的 Z（离 startZ 最远的那个）
@@ -300,8 +317,8 @@ public class AttackWave : MonoBehaviour
             endTravelZ = travelPositiveZ ? furthestZ + EndZOffset : furthestZ - EndZOffset;
         }
 
-        if (damageType == DamageType.Pierce)
-            Debug.Log($"[PierceTrace] SetupTravel startZ={startZ:F2} closestZ={closestZ:F2} furthestZ={furthestZ:F2} travelPositiveZ={travelPositiveZ} endZ={endTravelZ:F2} targets={alive.Count} x={transform.position.x:F2}");
+        if (damageType == DamageType.Pierce && !float.IsNaN(_pierceEndZ))
+            endTravelZ = _pierceEndZ;
 
         float thrustTime;
         if (isStab)
@@ -403,11 +420,11 @@ public class AttackWave : MonoBehaviour
         else
         {
             // 贯穿后短停顿再淡出
+            travelSeq.AppendInterval(0.05f);
+            if (damageType == DamageType.Pierce)
+                travelSeq.AppendCallback(() => _pierceSpinVisual?.BeginEndFade(0.35f));
             if (mat != null)
-            {
-                travelSeq.AppendInterval(0.05f);
                 travelSeq.Append(mat.DOFade(0f, 0.35f).SetEase(Ease.InQuad));
-            }
         }
 
         travelSeq.OnKill(() =>
