@@ -1,23 +1,10 @@
 ---
 id: kd_5e3205b5-6d89-4fba-9242-51fe0ec7d1eb
-type: memory
-path: prop-system.md
-title: prop-system
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1779348485423
-updatedAt: 1779348485424
+injectMode: inherit
+summary: 道具系统基础架构：PropType 枚举、PropData 结构、SaveData 道具列表、旧档迁移、SaveManager 通用道具 API、StageController 结算规则
+aiMaintained: inherit
 ---
 
-# prop-system
-
-## Summary
-道具系统基础架构：PropType 枚举、PropData 结构、SaveData 道具列表、旧档迁移、SaveManager 通用道具 API、StageController 结算规则
-
-<!-- locus:body:start -->
 ## 道具系统（PropSystem）
 
 ### 文件
@@ -53,4 +40,3 @@ public enum PropType { Coin = 0, /* 后续扩展: Key, Gem, ... */ }
 1. 在 `PropType` 枚举添加新类型
 2. 使用 `SaveManager.SetProp(newType, amount)` 存取
 3. 可选在 `PlayerState` 添加对应的会话计数器
-<!-- locus:body:end -->

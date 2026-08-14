@@ -1,23 +1,10 @@
 ---
 id: kd_10290628-4da5-4830-b7c8-6bb44b2ae599
-type: design
-path: anti-ghost-reference.md
-title: anti-ghost-reference
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1778741794674
-updatedAt: 1778741794675
+injectMode: inherit
+summary: 禁止「幽灵引用」的架构规范：所有运行时数据引用必须从 Inspector 可追踪，禁止 Resources.Load/静态缓存/字符串 ID 查找，数据应直接在 Prefab 或通过 Inspector 拖拽的 ScriptableObject 引用上。
+aiMaintained: inherit
 ---
 
-# anti-ghost-reference
-
-## Summary
-禁止「幽灵引用」的架构规范：所有运行时数据引用必须从 Inspector 可追踪，禁止 Resources.Load/静态缓存/字符串 ID 查找，数据应直接在 Prefab 或通过 Inspector 拖拽的 ScriptableObject 引用上。
-
-## Content
 ## 核心原则
 
 **所有运行时数据引用必须可从 Inspector 追踪到源头，禁止通过 Resources.Load / 静态缓存 / 字符串 ID 查找等间接方式获取配置数据。**

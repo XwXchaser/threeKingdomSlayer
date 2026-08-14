@@ -1,19 +1,11 @@
 ---
 id: kd_e6815137-b73f-41d7-b6ad-d76834c73ab0
-type: skill
-path: gpt-image-generation.md
-title: gpt-image-generation
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: true
-readOnly: false
-inheritAiConfig: true
+injectMode: inherit
+aiMaintained: inherit
 skillEnabled: true
 skillSurface: command
 commandTrigger: /gpt-image
 argumentHint: <prompt> [--image path ...] [--size 1024x1024|1024x1536|1536x1024] [--quality low|medium|high] [--out path]
-createdAt: 1783568914335
-updatedAt: 1785992213009
 ---
 
 # gpt-image-generation

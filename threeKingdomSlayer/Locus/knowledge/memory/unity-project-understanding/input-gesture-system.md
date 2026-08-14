@@ -1,23 +1,10 @@
 ---
 id: kd_e17bd432-53a4-4edb-ad26-f41462946f3c
-type: memory
-path: unity-project-understanding/input-gesture-system.md
-title: input-gesture-system
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1786179760946
-updatedAt: 1786179760946
+injectMode: inherit
+summary: 输入手势系统：按住划动即触发招式，停留蓄力。速度门控追踪核心机制。
+aiMaintained: inherit
 ---
 
-# input-gesture-system
-
-## Summary
-输入手势系统：按住划动即触发招式，停留蓄力。速度门控追踪核心机制。
-
-<!-- locus:body:start -->
 # Input Gesture System
 
 ## Overview
@@ -75,4 +62,3 @@ updatedAt: 1786179760946
 - 鼠标和触摸走同一 `TryDetectHoldSwipe` 方法，修改追踪逻辑时两路自动同步
 - `ResetSegment` 必须重置 `isSwipeTracking`，否则残留的追踪状态会在下一分段立即超时
 - `TouchPhase.Began` 必须初始化 `isSwipeTracking`、`lastFramePos`、`lastFrameTime`
-<!-- locus:body:end -->

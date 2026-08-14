@@ -1,23 +1,10 @@
 ---
 id: kd_7552ac95-7456-4497-9204-ac24173a3b31
-type: design
-path: android-build-checklist.md
-title: android-build-checklist
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1781366098729
-updatedAt: 1781406078726
+injectMode: inherit
+summary: Android 打包前按优先级分阶段检查清单，涵盖帧率、UI适配、性能、包体、输入优化。每次打包复用。
+aiMaintained: inherit
 ---
 
-# android-build-checklist
-
-## Summary
-Android 打包前按优先级分阶段检查清单，涵盖帧率、UI适配、性能、包体、输入优化。每次打包复用。
-
-## Content
 # Android 打包检查清单
 
 > 基于 2026 年全项目评估，按优先级分阶段排列。每次打包前按此清单逐项检查。

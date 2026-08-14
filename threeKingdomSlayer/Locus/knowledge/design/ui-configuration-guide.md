@@ -1,23 +1,10 @@
 ---
 id: kd_b24529ec-012a-4142-a00f-c963a5e24743
-type: design
-path: ui-configuration-guide.md
-title: ui-configuration-guide
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1778816902657
-updatedAt: 1778816902658
+injectMode: inherit
+summary: 战斗 UI 配置教学指南：如何为武将创建 HUD 预制体、配置 HeroConfig、接线 BattleHUD、配置 Boss 血条，以及常见错误排查
+aiMaintained: inherit
 ---
 
-# ui-configuration-guide
-
-## Summary
-战斗 UI 配置教学指南：如何为武将创建 HUD 预制体、配置 HeroConfig、接线 BattleHUD、配置 Boss 血条，以及常见错误排查
-
-## Content
 # 战斗 UI 配置指南
 
 本指南面向不熟悉代码的使用者，说明如何在 Unity 编辑器中为武将配置 HUD、为敌人配置血条，以及 BattleHUD 全局字段的接线方法。

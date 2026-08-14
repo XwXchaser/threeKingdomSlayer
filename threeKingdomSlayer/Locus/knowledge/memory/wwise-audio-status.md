@@ -1,23 +1,10 @@
 ---
 id: kd_a55befda-e494-4213-ad89-daca00cee52a
-type: memory
-path: wwise-audio-status.md
-title: wwise-audio-status
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1780763484954
-updatedAt: 1786280812030
+injectMode: inherit
+summary: 音频系统已从 Wwise 迁移至 Unity 原生 AudioSource + AudioListener.volume。Wwise 已完全移除。迁移中修复了 m_DisableAudio、AudioSource 缺失、preloadAudioData 三个关键问题。
+aiMaintained: inherit
 ---
 
-# wwise-audio-status
-
-## Summary
-音频系统已从 Wwise 迁移至 Unity 原生 AudioSource + AudioListener.volume。Wwise 已完全移除。迁移中修复了 m_DisableAudio、AudioSource 缺失、preloadAudioData 三个关键问题。
-
-<!-- locus:body:start -->
 ## 音频系统（已迁移至 Unity 原生）
 
 **迁移完成日期**: 2025-07-09  
@@ -100,4 +87,3 @@ AudioListener.volume 在初始化时固定为 1，避免与 Mixer 总线重复�
 - [x] 基础 Slash/Stab 命中 SFX：分别接入 `slash_hit1/2` 与 `stab_hit1/2`，仅首次实际命中播放；Pierce/Sweep/Launch 仍待单独设计
 - [ ] PCM WAV → OGG 压缩（目前约 14MB 未压缩）
 - [x] BGM/SFX 独立音量控制：已落地 AudioMixer 三档（总/BGM/SFX）及暂停菜单三 Slider。
-<!-- locus:body:end -->

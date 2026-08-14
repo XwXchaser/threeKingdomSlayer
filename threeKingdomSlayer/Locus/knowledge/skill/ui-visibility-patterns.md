@@ -1,17 +1,9 @@
 ---
 id: kd_9dfc6363-421b-400a-9ca0-727a1f6e55a1
-type: skill
-path: ui-visibility-patterns.md
-title: ui-visibility-patterns
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: true
-readOnly: false
-inheritAiConfig: true
+injectMode: inherit
+aiMaintained: inherit
 skillEnabled: true
 skillSurface: command
-createdAt: 1779437961778
-updatedAt: 1779437961779
 ---
 
 # ui-visibility-patterns

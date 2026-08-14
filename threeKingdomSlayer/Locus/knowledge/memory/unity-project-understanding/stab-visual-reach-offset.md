@@ -1,23 +1,10 @@
 ---
 id: kd_d16786ae-1273-4fe3-b121-e16b0cca4a77
-type: memory
-path: unity-project-understanding/stab-visual-reach-offset.md
-title: stab-visual-reach-offset
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1784641685626
-updatedAt: 1786089457863
+injectMode: inherit
+summary: 'Stab has two visual-only offset mechanisms: (1) a forward reach offset that extends beyond hit range, and (2) a random target disk offset that adds visual variation to the stab endpoint. Both are independent of hit detection, damage, and range.'
+aiMaintained: inherit
 ---
 
-# stab-visual-reach-offset
-
-## Summary
-Stab has two visual-only offset mechanisms: (1) a forward reach offset that extends beyond hit range, and (2) a random target disk offset that adds visual variation to the stab endpoint. Both are independent of hit detection, damage, and range.
-
-<!-- locus:body:start -->
 ## Visual Reach Offset
 
 `AttackSkillConfig.stabVisualReachOffset` controls only the Stab prefab's local forward placement during `StabSweepEffect.Create`.
@@ -66,4 +53,3 @@ StabRay (transform)
 - `float baseRayLength` — the original base ray length for radius scaling
 
 Relevant files: `Assets/Scripts/Core/AttackSkillConfig.cs`, `Assets/Scripts/Attack/StabSweepEffect.cs`, `Assets/Scripts/Player/AttackSystem.cs`, `Assets/Prefabs/UI/Skills/Zhangfei_Stab.asset`.
-<!-- locus:body:end -->

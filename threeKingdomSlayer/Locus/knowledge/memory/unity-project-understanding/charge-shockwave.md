@@ -1,23 +1,10 @@
 ---
 id: kd_60346f80-be29-4b07-bd09-11e68ef8ee8c
-type: memory
-path: unity-project-understanding/charge-shockwave.md
-title: charge-shockwave
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1782654745638
-updatedAt: 1782654745639
+injectMode: inherit
+summary: 'Charge shockwave timed passive skill: stack layers via timer (only when charging or layers==0), release all on charge attack with staggered waveDelay.'
+aiMaintained: inherit
 ---
 
-# charge-shockwave
-
-## Summary
-Charge shockwave timed passive skill: stack layers via timer (only when charging or layers==0), release all on charge attack with staggered waveDelay.
-
-<!-- locus:body:start -->
 # Charge Shockwave System
 
 ## Overview
@@ -65,4 +52,3 @@ On release attack → all layers consumed, timer resets fresh (layers=0)
 | 3  | 6s       | 2     | 3    | 25  | 20%   | 0.1s  |
 | 4  | 5s       | 2     | 3    | 30  | 30%   | 0.1s  |
 | 5  | 4s       | 3     | 3    | 35  | 30%   | 0.1s  |
-<!-- locus:body:end -->

@@ -1,23 +1,10 @@
 ---
 id: kd_05e6039b-c5f9-463c-87f9-59b43da2ce9a
-type: design
-path: percolumn-fillup-rules.md
-title: percolumn-fillup-rules
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1783434126515
-updatedAt: 1786439567938
+injectMode: inherit
+summary: 补齐规则权威版：普通补齐只由整排清空触发；击退仅移动并回位被击退者；配置空排作为波次节奏门，前方仍有敌人时保持空排，前方清空后才允许后方补齐；连续空排开放后由同一事务连续跑完。
+aiMaintained: inherit
 ---
 
-# percolumn-fillup-rules
-
-## Summary
-补齐规则权威版：普通补齐只由整排清空触发；击退仅移动并回位被击退者；配置空排作为波次节奏门，前方仍有敌人时保持空排，前方清空后才允许后方补齐；连续空排开放后由同一事务连续跑完。
-
-## Content
 # 补齐规则（权威版）
 
 ## 术语

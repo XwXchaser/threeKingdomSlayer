@@ -1,17 +1,9 @@
 ---
 id: kd_80c00c82-cd7b-4e9e-b248-eb0cbc043555
-type: skill
-path: unity-ui/overhead-healthbar.md
-title: overhead-healthbar
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: true
-readOnly: false
-inheritAiConfig: true
+injectMode: inherit
+aiMaintained: inherit
 skillEnabled: true
 skillSurface: command
-createdAt: 1778256999897
-updatedAt: 1778256999899
 ---
 
 # overhead-healthbar

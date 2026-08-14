@@ -190,7 +190,7 @@ public sealed class PixelHitEffectManager : MonoBehaviour
             bool fullSlash = context.strength >= HitFeedbackStrength.Standard;
             BuildSlashEffect(instance, context.impactDirection, heavy, fullSlash);
         }
-        else if (context.damageType == DamageType.Stab)
+        else if (context.damageType == DamageType.Stab || context.damageType == DamageType.Pierce)
         {
             BuildStabEffect(instance, context.impactDirection, heavy);
         }

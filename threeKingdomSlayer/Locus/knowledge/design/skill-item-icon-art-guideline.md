@@ -1,23 +1,10 @@
 ---
 id: kd_823a511b-22f8-458f-8d4f-4ab9ea250211
-type: design
-path: skill-item-icon-art-guideline.md
-title: skill-item-icon-art-guideline
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1784213775718
-updatedAt: 1785305929148
+injectMode: inherit
+summary: 基于现有 `31Reward` 图标提炼的技能/道具图标美术规范：包括画风、构图、色彩编码、技术导入、AI 生图模板、验收标准及资产参考。
+aiMaintained: inherit
 ---
 
-# skill-item-icon-art-guideline
-
-## Summary
-基于现有 `31Reward` 图标提炼的技能/道具图标美术规范：包括画风、构图、色彩编码、技术导入、AI 生图模板、验收标准及资产参考。
-
-## Content
 # 技能与道具图标美术制作规范
 
 > 适用范围：局内三选一奖励、Buff 栏、道具栏、技能冷却图标，以及后续同一视觉体系的图标资产。

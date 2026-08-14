@@ -1,17 +1,9 @@
 ---
 id: kd_7627d603-3c45-49c8-ae3a-b8878cb2e6bb
-type: skill
-path: unity-ui-pause-menu.md
-title: unity-ui-pause-menu
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: true
-readOnly: false
-inheritAiConfig: true
+injectMode: inherit
+aiMaintained: inherit
 skillEnabled: true
 skillSurface: command
-createdAt: 1779368595598
-updatedAt: 1779368595598
 ---
 
 # unity-ui-pause-menu

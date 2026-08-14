@@ -1,23 +1,10 @@
 ---
 id: kd_c2de3458-57af-4257-9475-96d4662f67f2
-type: memory
-path: known-issues.md
-title: known-issues
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1782017132257
-updatedAt: 1783497897955
+injectMode: inherit
+summary: 记录特效层级排序问题（SpikeTrap 已修复，Cyclone 待修复）
+aiMaintained: inherit
 ---
 
-# known-issues
-
-## Summary
-记录特效层级排序问题（SpikeTrap 已修复，Cyclone 待修复）
-
-<!-- locus:body:start -->
 # 已知问题
 
 ## 1. QTE 动画期间受道具伤害播放 Hit 动画
@@ -46,4 +33,3 @@ updatedAt: 1783497897955
 - **实际根因**: 战斗场景依赖透视相机 + Z 位置做 2.5D 深度排序。给 Cyclone 设置高 sortingOrder 会绕过 Z 深度，导致后排特效压住前排敌人
 - **修复**: CycloneEffect 保持 `sortingOrder = 0`，生成时 `pos.z -= 0.2f`，与 SpikeTrap 的 Z 前移思路一致，让目标行内显示在敌人身前，同时保留跨排前后关系
 - **规则**: 战斗内敌人/地面特效遮挡优先用 Z 偏移，不要用高 sortingOrder；高 sortingOrder 只用于 overlay/描边/UI 类视觉
-<!-- locus:body:end -->

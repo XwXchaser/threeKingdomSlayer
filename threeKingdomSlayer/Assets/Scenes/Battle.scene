@@ -6820,6 +6820,9 @@ MonoBehaviour:
   appearThreshold: 0.3
   readyDuration: 0.2
   loopInterval: 0.3
+  enterDuration: 0.16
+  exitDuration: 0.13
+  entryDistance: 3.5
   fadeOutDuration: 0.25
 --- !u!1 &868065446
 GameObject:
@@ -14571,6 +14574,7 @@ MonoBehaviour:
   - 0
   - 0.5
   - 1
+  pierceTimeScale: 1
 --- !u!114 &1809121298
 MonoBehaviour:
   m_ObjectHideFlags: 0

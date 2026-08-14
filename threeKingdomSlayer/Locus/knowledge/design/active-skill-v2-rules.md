@@ -1,23 +1,10 @@
 ---
 id: kd_3bee8e5e-dd47-4c40-91f0-5c9e5e4eb8b6
-type: design
-path: active-skill-v2-rules.md
-title: active-skill-v2-rules
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1784885278489
-updatedAt: 1784885278490
+injectMode: inherit
+summary: V1 限次道具与 V2 冷却主动技能的独立规则、获取方式、槽位过滤、UI和 ScriptableObject 资产边界。
+aiMaintained: inherit
 ---
 
-# active-skill-v2-rules
-
-## Summary
-V1 限次道具与 V2 冷却主动技能的独立规则、获取方式、槽位过滤、UI和 ScriptableObject 资产边界。
-
-## Content
 # 主动技能双版本规则
 
 ## 命名

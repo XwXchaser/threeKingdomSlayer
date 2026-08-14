@@ -1,23 +1,10 @@
 ---
 id: kd_d80bbf76-091c-443c-87be-4d853fc77e32
-type: memory
-path: unity-project-understanding/upgrade-choice-ui.md
-title: upgrade-choice-ui
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1784654844063
-updatedAt: 1784705047787
+injectMode: inherit
+summary: UpgradePopup now uses independent three-choice art components, order 100 overlay, and click-select then click-confirm interaction.
+aiMaintained: inherit
 ---
 
-# upgrade-choice-ui
-
-## Summary
-UpgradePopup now uses independent three-choice art components, order 100 overlay, and click-select then click-confirm interaction.
-
-<!-- locus:body:start -->
 Three-choice upgrade popup was rebuilt around independent fixed-size art components rather than 9-slicing:
 
 - Art paths: `Assets/Resources/UI/UpgradeChoice/upgrade_choice_outer_frame_v2.png`, `upgrade_choice_card_backing_v1.png`, `upgrade_choice_name_plate_v1.png`, `upgrade_choice_description_box_v1.png`, `upgrade_choice_card_selected_glow_v1.png`.
@@ -36,4 +23,3 @@ Three-choice upgrade popup was rebuilt around independent fixed-size art compone
 - `Assets/Prefabs/UI/ItemDiscardPopup.prefab` is isolated for the accepted red/blue 1+2 discard composition; it no longer receives three-choice-only NamePlate, DescriptionBox, or SelectedGlow children.
 - Both overlay canvases use order 100; only the card root Image/Button accepts raycasts.
 - Do not mutate static layout at runtime between these modes. `ItemDiscardPopup` only swaps its own visual/data state within its dedicated prefab.
-<!-- locus:body:end -->

@@ -1,23 +1,10 @@
 ---
 id: kd_65412ee0-2f14-4b9d-a598-afdce4337b9a
-type: design
-path: latest-todolist.md
-title: latest-todolist
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1783762854937
-updatedAt: 1785900682136
+injectMode: inherit
+summary: 本周主要目标：音频系统改造（音效/背景音乐独立音量控制）；增强战斗视觉与动效（命中卡肉停顿与命中视觉效果）。其余待办保留。
+aiMaintained: inherit
 ---
 
-# latest-todolist
-
-## Summary
-本周主要目标：音频系统改造（音效/背景音乐独立音量控制）；增强战斗视觉与动效（命中卡肉停顿与命中视觉效果）。其余待办保留。
-
-## Content
 ## 本周主要目标（新增）
 
 ### P0：Stab / Slash 高速运动表现（用户确认，待实现）

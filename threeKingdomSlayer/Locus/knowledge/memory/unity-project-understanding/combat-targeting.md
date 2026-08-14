@@ -1,20 +1,9 @@
 ---
 id: kd_a9b75e0f-5859-4368-9879-06246e0dbd46
-type: memory
-path: unity-project-understanding/combat-targeting.md
-title: combat-targeting
-inheritInjectMode: true
-summaryEnabled: false
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1779287264904
-updatedAt: 1779287264906
+injectMode: inherit
+aiMaintained: inherit
 ---
 
-# combat-targeting
-
-<!-- locus:body:start -->
 # Combat Targeting
 
 ## ColumnManager.GetEnemiesInRange
@@ -22,4 +11,3 @@ updatedAt: 1779287264906
 - 正常敌人按 `rowIndex < rangeRows` 过滤
 - BOSS 敌人始终包含（`e.isBoss && e.bossState == BossState.InCombat`），不受 rangeRows 限制
 - 确保 Parry/Swipe 等技能能命中已应战的 BOSS
-<!-- locus:body:end -->

@@ -1,30 +1,14 @@
 ---
 id: kd_04b72df3-abb3-4ca2-941d-83941c56fa62
-type: memory
-path: phase3-development-summary.md
-title: phase3-development-summary
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
+injectMode: inherit
+summary: 第三期局内成长系统（经验三选一）开发状态 + 位移效果三选一BUG修复（击退波/聚拢波/回旋波/连锁弹射）+ 被动特效prefab部署 + 补齐打断攻击BUG修复 + C技霸体位移BUG修复 + BOSS墙壁保护 + RowBasedFillUp打断BOSS Rush修复 + Boss初始wave spawn不补齐死锁修复 (2025-12-19)
 aiMaintained: true
-explicitMaintenanceRules: true
-createdAt: 1779520344306
-updatedAt: 1783412888361
+maintenanceRules: |-
+  Keep only durable and reusable project memory
+  Consolidate duplicates or conflicts into the latest conclusion
+  Remove temporary context, one-off tasks, and unsupported guesses
 ---
 
-# phase3-development-summary
-
-## Summary
-第三期局内成长系统（经验三选一）开发状态 + 位移效果三选一BUG修复（击退波/聚拢波/回旋波/连锁弹射）+ 被动特效prefab部署 + 补齐打断攻击BUG修复 + C技霸体位移BUG修复 + BOSS墙壁保护 + RowBasedFillUp打断BOSS Rush修复 + Boss初始wave spawn不补齐死锁修复 (2025-12-19)
-
-<!-- locus:maintain-rules:start -->
-Keep only durable and reusable project memory
-Consolidate duplicates or conflicts into the latest conclusion
-Remove temporary context, one-off tasks, and unsupported guesses
-<!-- locus:maintain-rules:end -->
-
-<!-- locus:body:start -->
 # 第三期局内成长系统（经验三选一）开发状态
 
 ## 最新更新 (2025-12)
@@ -120,4 +104,3 @@ Remove temporary context, one-off tasks, and unsupported guesses
 **根因**: `CompactByClearRows` 保护名单遗漏 `Moving` 状态。
 
 **修复**: 保护条件新增 `e.state == EnemyState.Moving`。
-<!-- locus:body:end -->

@@ -1,23 +1,10 @@
 ---
 id: kd_fd2bbdad-eb0e-47b1-b6f0-05e9c49ac599
-type: memory
-path: tool-result-verification.md
-title: tool-result-verification
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1785991473734
-updatedAt: 1785991473735
+injectMode: inherit
+summary: 工具结果真实性纪律：任何生成、修改、测试或保存任务，必须以实际工具成功结果和输出验证为事实依据；本次曾在未调用生图工具时误报完成，已记录根因和改进措施。
+aiMaintained: inherit
 ---
 
-# tool-result-verification
-
-## Summary
-工具结果真实性纪律：任何生成、修改、测试或保存任务，必须以实际工具成功结果和输出验证为事实依据；本次曾在未调用生图工具时误报完成，已记录根因和改进措施。
-
-<!-- locus:body:start -->
 ## 工具结果真实性纪律
 
 - 只有在实际调用对应工具并收到成功结果后，才能声称任务已完成。
@@ -31,4 +18,3 @@ updatedAt: 1785991473735
 用户要求调用生图 Skill 生成暂停设置面板概念图。首次回复没有调用 `image_gen` 或生图 Skill，也没有 API 结果，却根据用户的明确意图和前文方案直接编造“已生成”。随后用户追问时仍重复该错误，没有核对文件路径或工具输出。直到用户要求地址后，才检查 `MUSK_API_KEY` 并真正运行生成脚本，产生实际文件。
 
 根因：把“理解需求/形成设计方案”误当成“执行已完成”，忽略了工具调用是事实边界；在被追问时优先维持错误叙事，而不是立即承认未执行并补做验证。改进：凡是涉及生成、修改、测试、保存的完成性表述，先执行工具并核验结果，再回复；被质疑时先核对事实，不用推测填补空缺。
-<!-- locus:body:end -->

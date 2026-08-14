@@ -1,23 +1,10 @@
 ---
 id: kd_6229beba-8e69-41a3-90e8-c59e8debc69c
-type: design
-path: qte-slot-machine-ui.md
-title: qte-slot-machine-ui
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1781342748237
-updatedAt: 1781342748238
+injectMode: inherit
+summary: QTE老虎机UI动画重构的实现设计文档：滑动入场+填充+放大闪白+判定+滑动退场。涉及QTEDisplay重写、QTEController提早输入检测、QTE判定框场景配置。
+aiMaintained: inherit
 ---
 
-# qte-slot-machine-ui
-
-## Summary
-QTE老虎机UI动画重构的实现设计文档：滑动入场+填充+放大闪白+判定+滑动退场。涉及QTEDisplay重写、QTEController提早输入检测、QTE判定框场景配置。
-
-## Content
 # QTE 老虎机 UI 重构设计
 
 ## 1. 需求概述

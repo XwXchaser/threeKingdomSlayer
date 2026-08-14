@@ -1,23 +1,10 @@
 ---
 id: kd_dbe058ac-9f56-40da-beef-9250628b3aac
-type: memory
-path: unity-project-understanding/pixel-hit-effect-runtime.md
-title: pixel-hit-effect-runtime
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1785846924403
-updatedAt: 1786525618288
+injectMode: inherit
+summary: 程序化像素命中特效的对象池、运行时 Sprite、Billboard、DOTween 生命周期、可见性修复与后续接触点/分技能造型约束。
+aiMaintained: inherit
 ---
 
-# pixel-hit-effect-runtime
-
-## Summary
-程序化像素命中特效的对象池、运行时 Sprite、Billboard、DOTween 生命周期、可见性修复与后续接触点/分技能造型约束。
-
-<!-- locus:body:start -->
 ## 当前实现
 - `Assets/Scripts/Core/PixelHitEffectManager.cs` 由 `HitFeedbackManager.Trigger` 统一调用，仅对 Standard/Heavy 且非 DoT 命中生成纯表现特效，不参与伤害、命中或位移判定。
 - 管理器挂在 `Assets/Scenes/Battle.scene` 的 `Manager`，使用预创建实例对象池；每个实例由 1 个中心 SpriteRenderer 和 12 个射线 SpriteRenderer 组成。所有构建分支必须显式关闭未使用 Renderer，避免对象池复用残留。
@@ -43,4 +30,3 @@ updatedAt: 1786525618288
 - 修改对象池射线数量或使用方式后，所有构建方法必须显式关闭未使用 Renderer。
 - 不要通过极窄 SpriteRenderer 长条的连续缩放模拟像素爆裂；高速移动时会呈现平滑“面条”而不是离散像素块。优先使用完整程序化 Sprite 帧或短促块状碎片。
 - 程序化 Stab 形状调整仍以 `C:/Users/steam/Pictures/gptGen/stab_hit_effect_concept_v3.png` 为参考，不能自行生成替代参考图。
-<!-- locus:body:end -->

@@ -1,23 +1,10 @@
 ---
 id: kd_c3aaf3f5-cbf9-4354-a7ae-12c922b766c9
-type: memory
-path: unity-project-understanding/combo-buff-runtime.md
-title: combo-buff-runtime
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1784785523759
-updatedAt: 1784790235523
+injectMode: inherit
+summary: 连击Buff运行时：ComboManager断连清理、BuffManager同buffId叠加、UpgradeEffectManager属性应用，以及当前20连击伤害+10%配置。
+aiMaintained: inherit
 ---
 
-# combo-buff-runtime
-
-## Summary
-连击Buff运行时：ComboManager断连清理、BuffManager同buffId叠加、UpgradeEffectManager属性应用，以及当前20连击伤害+10%配置。
-
-<!-- locus:body:start -->
 # Combo Buff Runtime
 
 - `Assets/Scripts/Core/ComboManager.cs` 保持原连击计数、断连窗口和冻结规则；达到配置阈值后调用 `BuffManager.AddBuff(..., duration:0)`，并记录本轮触发的 buffId。`ResetCombo()` 会逐个移除这些 Buff。
@@ -28,4 +15,3 @@ updatedAt: 1784790235523
 - `ComboBuffHUD.cs` 按 buffId `combo_damage` 汇总当前 `atk` modifiers，显示累计百分比；`SpriteNumberDisplay.ShowSignedPercent()` 支持 `+value%`。
 - 素材：短剑导入 `Assets/Sprites/BatlleHUD/ComboBuff/combo_red_dagger_pixel.png`；红边白底数字在 `Assets/Sprites/BatlleHUD/ComboBuffNumbers/`（`combo_num_0`–`combo_num_9`、`combo_num_plus`、`combo_num_percent`）。均设为 Sprite、Point、Clamp、无 mipmap。
 - `ComboManager.ComboResetProgress` 在冻结期间以 `_freezeStartedAt` 代替 `Time.time` 计算，因此 QTE Strict 生命周期内 `ComboDisplayUI` 的读条停在进入时的进度；`Resume()` 原有的 `_lastHitTime` 补偿使其结束后从该进度继续。编辑器验证：0.700 → Freeze 0.700 → 等待后 0.700 → Resume 0.700。
-<!-- locus:body:end -->

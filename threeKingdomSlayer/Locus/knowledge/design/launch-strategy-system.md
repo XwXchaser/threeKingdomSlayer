@@ -1,23 +1,10 @@
 ---
 id: kd_ef0164bf-5c2b-4fc7-91ba-0cce6713fb22
-type: design
-path: launch-strategy-system.md
-title: launch-strategy-system
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1782491420757
-updatedAt: 1782491420758
+injectMode: inherit
+summary: 以击飞为核心机制的3选1策略升级体系设计方案，覆盖触发、增强、连锁三个维度共5个升级提案。
+aiMaintained: inherit
 ---
 
-# launch-strategy-system
-
-## Summary
-以击飞为核心机制的3选1策略升级体系设计方案，覆盖触发、增强、连锁三个维度共5个升级提案。
-
-## Content
 # 击飞 3 选 1 策略体系 — 设计方案
 
 ## 概述

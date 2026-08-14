@@ -1,23 +1,10 @@
 ---
 id: kd_6bd23eb4-c8b2-454e-a1dd-a6e8409ac519
-type: design
-path: boss-overhaul.md
-title: boss-overhaul
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1781067207076
-updatedAt: 1785399370019
+injectMode: inherit
+summary: BOSS机制统一重构：打断规则与普通敌人对齐、通用描边Shader、锁血转阶段、多阶段攻击配置。Phase 5 完成Poise规则重构。
+aiMaintained: inherit
 ---
 
-# boss-overhaul
-
-## Summary
-BOSS机制统一重构：打断规则与普通敌人对齐、通用描边Shader、锁血转阶段、多阶段攻击配置。Phase 5 完成Poise规则重构。
-
-## Content
 # BOSS 机制统一重构设计文档
 
 ## 实施进度

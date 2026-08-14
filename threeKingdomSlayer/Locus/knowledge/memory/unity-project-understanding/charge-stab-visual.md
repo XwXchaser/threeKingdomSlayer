@@ -1,23 +1,10 @@
 ---
 id: kd_19d3b3c2-00e3-4913-911d-45d93cffa451
-type: memory
-path: unity-project-understanding/charge-stab-visual.md
-title: charge-stab-visual
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1782990177886
-updatedAt: 1786525556438
+injectMode: inherit
+summary: 蓄力 Stab 前端可视化 + Launch 衔接：指尖平面跟随/左右clamp+Zroll/上下Xpitch，Launch接管pose+三帧精灵序列charge2→charge1→stab
+aiMaintained: inherit
 ---
 
-# charge-stab-visual
-
-## Summary
-蓄力 Stab 前端可视化 + Launch 衔接：指尖平面跟随/左右clamp+Zroll/上下Xpitch，Launch接管pose+三帧精灵序列charge2→charge1→stab
-
-<!-- locus:body:start -->
 # Charge Stab Visual System
 
 ## Overview
@@ -70,4 +57,3 @@ Launch 释放 → TryGetCurrentVisualPose 读取实时 pose
 - 随机倾角应主要体现在上挑终态，不能在 Windup 阶段完整应用，否则会破坏既定蓄势语言。
 - Launch 视觉、伤害与击飞通过 impact 回调同步，但视觉不得反向依赖敌人状态或 AttackWave 生命周期。
 - 无蓄力视觉时仍保留固定玩家 offset 与自动缩放 fallback。
-<!-- locus:body:end -->

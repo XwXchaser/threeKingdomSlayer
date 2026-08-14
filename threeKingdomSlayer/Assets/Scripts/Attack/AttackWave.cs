@@ -37,6 +37,8 @@ public class AttackWave : MonoBehaviour
     private int _instanceId;
     private bool _travelCompleted;
     private float _targetDuration = -1f;
+    private PierceAxialSpinVisual _pierceSpinVisual;
+    private float _pierceTimeScale = 1f;
     public static int AliveCount { get; private set; }
     public float CreationTime => _creationTime;
     public DamageType DamageType => damageType;
@@ -48,6 +50,7 @@ public class AttackWave : MonoBehaviour
     private const float LaunchStagger = 0.04f;
 
     private const float ProjectileSpeed = 8f;
+    private const float PierceProjectileSpeed = 18f;
     private const float StabThrustTime = 0.2f;
     private const float StabRetractTime = 0.3f;
     private const float EndZOffset = 3f;
@@ -60,6 +63,46 @@ public class AttackWave : MonoBehaviour
         return CreateInternal(position, damageType, damage, targets, onHit, prefab, zOffset,
             alphaOverride, damageNumberColor, canInterruptCFrame, materialOverride,
             shouldReturnWave: false, returnDamageMultiplier: 0.5f, targetDuration: targetDuration);
+    }
+
+    public static AttackWave CreatePierceFromVisual(GameObject visualObject, Vector3 position,
+        float damage, List<Enemy> targets, float emptyTravelDistance,
+        System.Action<Enemy> onHit = null, Color? damageNumberColor = null,
+        bool canInterruptCFrame = false, float timeScale = 1f)
+    {
+        if (visualObject == null)
+            return null;
+
+        visualObject.name = "Wave_Pierce";
+        visualObject.transform.position = position;
+        var wave = visualObject.AddComponent<AttackWave>();
+        wave._creationTime = Time.unscaledTime;
+        wave._instanceId = visualObject.GetInstanceID();
+        AliveCount++;
+        wave.damage = damage;
+        wave.damageType = DamageType.Pierce;
+        wave.onHit = onHit;
+        wave.waveColor = Color.white;
+        wave.damageNumberColor = damageNumberColor;
+        wave.canInterruptCFrame = canInterruptCFrame;
+        wave.targetScale = visualObject.transform.localScale;
+        wave._pierceSpinVisual = visualObject.GetComponent<PierceAxialSpinVisual>();
+        wave._pierceTimeScale = timeScale;
+
+        var alive = new List<Enemy>();
+        for (int i = 0; i < targets.Count; i++)
+        {
+            Enemy enemy = targets[i];
+            if (enemy != null && enemy.state != EnemyState.Dead)
+                alive.Add(enemy);
+        }
+
+        wave.mode = WaveMode.Travel;
+        if (alive.Count > 0)
+            wave.SetupTravel(alive, visualObject.transform.position.z);
+        else
+            wave.SetupEmptyPierceTravel(Mathf.Max(emptyTravelDistance, EndZOffset));
+        return wave;
     }
 
     /// <summary>
@@ -202,6 +245,34 @@ public class AttackWave : MonoBehaviour
         return wave;
     }
 
+    private void SetupEmptyPierceTravel(float travelDistance)
+    {
+        float startZ = transform.position.z;
+        float endZ = startZ + travelDistance;
+        float thrustTime = travelDistance / (PierceProjectileSpeed / _pierceTimeScale);
+        _pierceSpinVisual?.SetSpinProfile(thrustTime, 420f, 1800f);
+
+        travelSeq = DOTween.Sequence().SetTarget(transform).SetUpdate(true);
+        travelSeq.Append(transform.DOMoveZ(endZ, thrustTime).SetEase(Ease.OutCubic));
+        travelSeq.AppendInterval(0.05f);
+        travelSeq.AppendCallback(() => _pierceSpinVisual?.SetFade(0f));
+        travelSeq.AppendInterval(0.12f);
+        travelSeq.OnKill(() =>
+        {
+            if (!_travelCompleted)
+            {
+                travelSeq = null;
+                Destroy(gameObject);
+            }
+        });
+        travelSeq.OnComplete(() =>
+        {
+            _travelCompleted = true;
+            travelSeq = null;
+            Destroy(gameObject);
+        });
+    }
+
     private void SetupTravel(List<Enemy> alive, float startZ)
     {
         // 确定旅行方向：取最远敌人的 Z（离 startZ 最远的那个）
@@ -229,6 +300,9 @@ public class AttackWave : MonoBehaviour
             endTravelZ = travelPositiveZ ? furthestZ + EndZOffset : furthestZ - EndZOffset;
         }
 
+        if (damageType == DamageType.Pierce)
+            Debug.Log($"[PierceTrace] SetupTravel startZ={startZ:F2} closestZ={closestZ:F2} furthestZ={furthestZ:F2} travelPositiveZ={travelPositiveZ} endZ={endTravelZ:F2} targets={alive.Count} x={transform.position.x:F2}");
+
         float thrustTime;
         if (isStab)
         {
@@ -237,7 +311,10 @@ public class AttackWave : MonoBehaviour
         else
         {
             float thrustDistance = Mathf.Abs(startZ - endTravelZ);
-            thrustTime = thrustDistance / ProjectileSpeed;
+            float projectileSpeed = damageType == DamageType.Pierce
+                ? PierceProjectileSpeed / _pierceTimeScale
+                : ProjectileSpeed;
+            thrustTime = thrustDistance / projectileSpeed;
         }
 
         // 按旅行途中遇到的顺序排序 zThreshold（+Z 旅行则升序，-Z 则降序）
@@ -251,9 +328,24 @@ public class AttackWave : MonoBehaviour
 
         bool shouldRetract = isStab;
 
-        // 缩放淡入
-        transform.localScale = Vector3.zero;
-        var scaleIn = transform.DOScale(targetScale, 0.06f).SetEase(Ease.OutQuad);
+        // 缩放淡入；Pierce 接管既有出手视觉时保持当前尺度，避免释放帧重新缩放。
+        Tween scaleIn = null;
+        bool reusePierceVisual = damageType == DamageType.Pierce && _pierceSpinVisual != null;
+        if (!reusePierceVisual)
+        {
+            transform.localScale = Vector3.zero;
+            scaleIn = transform.DOScale(targetScale, 0.06f).SetEase(Ease.OutQuad);
+        }
+        if (damageType == DamageType.Pierce)
+        {
+            if (_pierceSpinVisual == null)
+            {
+                SpriteRenderer pierceRenderer = GetComponentInChildren<SpriteRenderer>();
+                if (pierceRenderer != null)
+                    _pierceSpinVisual = PierceAxialSpinVisual.Create(pierceRenderer.transform, pierceRenderer);
+            }
+            _pierceSpinVisual?.SetSpinProfile(thrustTime, 420f, 1800f);
+        }
 
         // 戳击：刺出前立即命中所有目标（刺击范围只有1排，视觉上刺到最近敌人前方即返回）
         if (isStab)
@@ -267,7 +359,8 @@ public class AttackWave : MonoBehaviour
         travelSeq.SetTarget(transform);
         travelSeq.SetUpdate(true);
 
-        var thrust = transform.DOMoveZ(endTravelZ, thrustTime).SetEase(Ease.OutQuad);
+        Ease thrustEase = damageType == DamageType.Pierce ? Ease.OutCubic : Ease.OutQuad;
+        var thrust = transform.DOMoveZ(endTravelZ, thrustTime).SetEase(thrustEase);
         if (!isStab || _shouldReturnWave)
             thrust.OnUpdate(CheckHitThresholds);
         travelSeq.Append(thrust);
@@ -323,7 +416,7 @@ public class AttackWave : MonoBehaviour
             {
                 Debug.Log($"[AttackWave] OnKill (premature): id={_instanceId}, name={gameObject.name}, damageType={damageType}, mode=Travel, frame={Time.frameCount}");
                 travelSeq = null;
-                scaleIn.Kill();
+                scaleIn?.Kill();
                 Destroy(gameObject);
             }
         });
@@ -332,7 +425,7 @@ public class AttackWave : MonoBehaviour
         {
             _travelCompleted = true;
             travelSeq = null;
-            scaleIn.Kill();
+            scaleIn?.Kill();
             Destroy(gameObject);
         });
 
@@ -450,9 +543,13 @@ public class AttackWave : MonoBehaviour
         if (enemy != null && enemy.state != EnemyState.Dead)
         {
             float hitDamage = _isReturning ? damage * _returnDamageMultiplier : damage;
-            HitFeedbackStrength strength = damageType == DamageType.Launch
-                ? HitFeedbackStrength.Heavy
-                : nextIndex == 0 ? HitFeedbackStrength.Standard : HitFeedbackStrength.Light;
+            HitFeedbackStrength strength;
+            if (damageType == DamageType.Launch)
+                strength = HitFeedbackStrength.Heavy;
+            else if (damageType == DamageType.Pierce)
+                strength = HitFeedbackStrength.Standard; // 贯穿每个命中都卡肉
+            else
+                strength = nextIndex == 0 ? HitFeedbackStrength.Standard : HitFeedbackStrength.Light;
             enemy.TakeDamage(hitDamage, damageType, damageNumberColor, canInterruptCFrame,
                 feedbackStrength: strength,
                 impactDirection: damageType == DamageType.Launch

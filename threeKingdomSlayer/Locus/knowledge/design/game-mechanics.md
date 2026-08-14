@@ -1,23 +1,10 @@
 ---
 id: kd_6c6ceb9f-a422-4524-969d-06f8a432857d
-type: design
-path: game-mechanics.md
-title: game-mechanics
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1778730358744
-updatedAt: 1779348459605
+injectMode: inherit
+summary: 三国无双割草游戏的完整机制介绍文档，涵盖攻击系统、大招系统、阵型系统、敌人系统、关卡系统、铜钱经济、配置资产体系和技术架构。供与其他 AI 讨论游戏内容制作时使用。
+aiMaintained: inherit
 ---
 
-# game-mechanics
-
-## Summary
-三国无双割草游戏的完整机制介绍文档，涵盖攻击系统、大招系统、阵型系统、敌人系统、关卡系统、铜钱经济、配置资产体系和技术架构。供与其他 AI 讨论游戏内容制作时使用。
-
-## Content
 ## 7. 铜钱经济（道具系统）
 
 ### 7.1 道具系统

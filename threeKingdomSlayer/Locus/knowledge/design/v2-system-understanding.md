@@ -1,23 +1,10 @@
 ---
 id: kd_8eef08bf-76a1-4af2-8f94-ace7cb327e3c
-type: design
-path: v2-system-understanding.md
-title: v2-system-understanding
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1785058430907
-updatedAt: 1785503431879
+injectMode: inherit
+summary: V2版本系统权威理解：30分钟流程中玩家围绕蓄力流、位移流和火系协同成长，最多持有6被动4主动，约70%进程技能全满后升级转为回血；敌人以101/103/106/105递进教学，104及107/108承担1至3阶段Boss战。海浪/旋风为零HP伤害控制技能，对未Stun Boss按最大Poise百分比削韧。完整数值方案见 design/numerical-balance-draft.md。
+aiMaintained: inherit
 ---
 
-# v2-system-understanding
-
-## Summary
-V2版本系统权威理解：30分钟流程中玩家围绕蓄力流、位移流和火系协同成长，最多持有6被动4主动，约70%进程技能全满后升级转为回血；敌人以101/103/106/105递进教学，104及107/108承担1至3阶段Boss战。海浪/旋风为零HP伤害控制技能，对未Stun Boss按最大Poise百分比削韧。完整数值方案见 design/numerical-balance-draft.md。
-
-## Content
 # V2 版本系统理解
 
 ## 版本开关

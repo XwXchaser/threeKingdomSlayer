@@ -1,23 +1,10 @@
 ---
 id: kd_744aa7d9-8d09-4efb-a832-650e5fe1e011
-type: design
-path: ui-resolution-adaptation.md
-title: ui-resolution-adaptation
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1782725196525
-updatedAt: 1783483240466
+injectMode: inherit
+summary: 竖屏 UI 分辨率适配方案：动态 CanvasScaler Match 调整 + CanvasScaler 补全 + 绝对像素值缩放。记录已完成修改和待修复项。
+aiMaintained: inherit
 ---
 
-# ui-resolution-adaptation
-
-## Summary
-竖屏 UI 分辨率适配方案：动态 CanvasScaler Match 调整 + CanvasScaler 补全 + 绝对像素值缩放。记录已完成修改和待修复项。
-
-## Content
 # UI 竖屏分辨率适配方案
 
 ## 问题背景

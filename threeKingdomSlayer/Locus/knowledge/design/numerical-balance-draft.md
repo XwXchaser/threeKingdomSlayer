@@ -1,23 +1,10 @@
 ---
 id: kd_25755bc7-a7b4-4c43-baff-8e27e8475629
-type: design
-path: numerical-balance-draft.md
-title: numerical-balance-draft
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1784184954225
-updatedAt: 1785666607716
+injectMode: inherit
+summary: 数值平衡设计草案：以30分钟、约42次技能升级、70%进程技能全满为玩家成长目标；先确定蓄力流、位移流与火系协同的技能强度，再倒推101/103/105/106波次和104/107/108 Boss的HP、伤害与阶段配置。海浪/旋风为零HP伤害控制技能，对未Stun Boss按最大Poise百分比削韧。
+aiMaintained: inherit
 ---
 
-# numerical-balance-draft
-
-## Summary
-数值平衡设计草案：以30分钟、约42次技能升级、70%进程技能全满为玩家成长目标；先确定蓄力流、位移流与火系协同的技能强度，再倒推101/103/105/106波次和104/107/108 Boss的HP、伤害与阶段配置。海浪/旋风为零HP伤害控制技能，对未Stun Boss按最大Poise百分比削韧。
-
-## Content
 # V2 数值平衡设计草案
 
 > V2 最终池（14 技能）的 5 级数值重设计。10 级→5 级压缩 + 多维成长原则。

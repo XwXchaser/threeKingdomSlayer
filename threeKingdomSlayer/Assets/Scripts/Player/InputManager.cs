@@ -512,7 +512,7 @@ public class InputManager : MonoBehaviour
     /// </summary>
     private void ProcessLongPressGesture(Vector2 position)
     {
-        int column = GetColumnFromScreenPosition(position);
+        int column = GetStabColumnFromScreenPosition(position);
         if (column >= 0)
         {
             bool executed = attackSystem?.TryExecuteAttack(AttackType.Pierce, column) ?? false;

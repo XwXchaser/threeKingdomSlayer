@@ -1,23 +1,10 @@
 ---
 id: kd_399bc9de-e1f4-4112-89cf-18da8734a4e6
-type: memory
-path: debug-parameters-reference.md
-title: debug-parameters-reference
-inheritInjectMode: true
-summaryEnabled: true
-commandEnabled: false
-readOnly: false
-inheritAiConfig: true
-createdAt: 1780552342158
-updatedAt: 1783355416463
+injectMode: inherit
+summary: 全项目调试参数速查表 — 按模块列出可调参数、类型、默认值、配置文件位置及修改方式，供AI快速定位和验证。
+aiMaintained: inherit
 ---
 
-# debug-parameters-reference
-
-## Summary
-全项目调试参数速查表 — 按模块列出可调参数、类型、默认值、配置文件位置及修改方式，供AI快速定位和验证。
-
-<!-- locus:body:start -->
 # 调试参数速查表
 
 > 用途：快速定位全项目可调参数的位置、默认值、修改方式。  
@@ -343,4 +330,3 @@ updatedAt: 1783355416463
 | 调整波次机制 | `WaveConfig`（每个波次独立配置） |
 | 查看动态补齐硬编码阈值 | `StageController.GetRushMoveDelay()` 代码 |
 | 调整QTE判定窗口 | `QTEController` Inspector |
-<!-- locus:body:end -->
