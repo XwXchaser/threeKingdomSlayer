@@ -97,7 +97,7 @@ public class AttackWave : MonoBehaviour
             float speed = PierceProjectileSpeed / timeScale;
             float interval = indicator.PulseInterval * Mathf.Max(indicator.PulseSpeed, 0.1f) / speed;
             wave._pierceVortexStream = PierceVortexStreamVisual.Create(null,
-                position, endPosition, speed, interval, indicator.PulseScale,
+                position, endPosition, speed, interval, indicator.FlightPulseScale,
                 indicator.PulseAlpha, indicator.PulseSortingOrder, indicator.MaxPulseCount);
         }
 

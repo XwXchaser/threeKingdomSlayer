@@ -38,6 +38,9 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip[] _slashHitClips;
     [SerializeField] private AudioClip[] _stabHitClips;
 
+    [Header("Launch 命中 SFX — 随机二选一")]
+    [SerializeField] private AudioClip[] _launchHitClips;
+
     private AudioSource _bgmMainSource;
     private AudioSource _bgmEnvSource;
     private AudioSource _sfxSource;
@@ -51,6 +54,7 @@ public class AudioManager : MonoBehaviour
     private const float ATTACK_VOICE_VOLUME = 0.5f;
     private const float SLASH_HIT_VOLUME = 1.25f;
     private const float STAB_HIT_VOLUME = 1.25f;
+    private const float LAUNCH_HIT_VOLUME = 1.25f;
     private const float ENEMY_HIT_VOLUME = 0.8f;
     private const float MIN_VOLUME_DB = -80f;
 
@@ -61,6 +65,7 @@ public class AudioManager : MonoBehaviour
     private int _lastEnemyHitIndex = -1;
     private int _lastSlashHitIndex = -1;
     private int _lastStabHitIndex = -1;
+    private int _lastLaunchHitIndex = -1;
 
     private void Awake()
     {
@@ -144,6 +149,7 @@ public class AudioManager : MonoBehaviour
         PreloadClipArray(_enemyHitClips);
         PreloadClipArray(_slashHitClips);
         PreloadClipArray(_stabHitClips);
+        PreloadClipArray(_launchHitClips);
     }
 
     private void PreloadClip(AudioClip clip)
@@ -236,6 +242,9 @@ public class AudioManager : MonoBehaviour
                 break;
             case "Stab_Hit":
                 PlayRandom(_stabHitClips, STAB_HIT_VOLUME, ref _lastStabHitIndex);
+                break;
+            case "Launch_Hit":
+                PlayRandom(_launchHitClips, LAUNCH_HIT_VOLUME, ref _lastLaunchHitIndex);
                 break;
         }
     }

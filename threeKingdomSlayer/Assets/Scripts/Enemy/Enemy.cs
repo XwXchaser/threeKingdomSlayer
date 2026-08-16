@@ -454,6 +454,7 @@ public class Enemy : MonoBehaviour
         isAttackAnimating = false;
         isAttackDrawPhase = false;
         isCFrame = false;
+        _pierceHighlighted = false;
         UpdateOutlineState();
         _currentAttackStep = 0;
 
@@ -578,6 +579,8 @@ public class Enemy : MonoBehaviour
         if (!initialized || state == EnemyState.Dead) return;
 
         UpdateHitStop();
+        if (_pierceHighlighted)
+            UpdateOutlineState();
 
         // 架势时间恢复到期（独立于状态，击飞中也会继续计时）
         if (_poiseRecoveryEndTime > 0f && Time.time >= _poiseRecoveryEndTime)
@@ -3115,16 +3118,43 @@ private void SpawnProjectile()
 
     public enum OutlineDebugMode { None, CAttack, SuperArmor, QTE }
 
+    private bool _pierceHighlighted;
     private const float OUTLINE_WIDTH_DEFAULT = 8f;
+    private const float PIERCE_OUTLINE_WIDTH = 3f;
+    private const float PIERCE_HIGHLIGHT_MIN_STRENGTH = 0.30f;
+    private const float PIERCE_HIGHLIGHT_MAX_STRENGTH = 0.80f;
     private static readonly Color OUTLINE_COLOR_C_DEFAULT = Color.red;
     private static readonly Color OUTLINE_COLOR_SUPER_ARMOR_DEFAULT = new Color(1f, 0.5f, 0f); // 橙色
     private static readonly Color OUTLINE_COLOR_QTE_DEFAULT = new Color(0.2f, 0.4f, 1f);        // 蓝色
+
+    public void SetPierceHighlight(bool highlighted)
+    {
+        if (_pierceHighlighted == highlighted)
+            return;
+
+        _pierceHighlighted = highlighted;
+        UpdateOutlineState();
+    }
 
     void UpdateOutlineState()
     {
         if (_spriteRenderer == null) return;
         if (_propBlock == null) _propBlock = new MaterialPropertyBlock();
         _spriteRenderer.GetPropertyBlock(_propBlock);
+        bool showPierceHighlight = _pierceHighlighted
+            && state != EnemyState.Dead
+            && !isPhaseTransitioning
+            && state != EnemyState.QTEAttacking
+            && !isSuperArmor
+            && !(isCFrame && state == EnemyState.Attacking);
+        float piercePulse = showPierceHighlight
+            ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 14f * Mathf.PI)
+            : 0f;
+        float pierceHighlightStrength = Mathf.Lerp(
+            PIERCE_HIGHLIGHT_MIN_STRENGTH,
+            PIERCE_HIGHLIGHT_MAX_STRENGTH,
+            piercePulse);
+        _propBlock.SetFloat("_PierceHighlightStrength", showPierceHighlight ? pierceHighlightStrength : 0f);
 
         // 死亡或转阶段时不显示描边
         if (state == EnemyState.Dead || isPhaseTransitioning)
@@ -3168,6 +3198,12 @@ private void SpawnProjectile()
             _propBlock.SetColor("_OutlineColor", c);
             _propBlock.SetFloat("_OutlineWidth", w);
             _propBlock.SetFloat("_OutlineEnabled", 1f);
+        }
+        else if (_pierceHighlighted)
+        {
+            _propBlock.SetColor("_OutlineColor", Color.white);
+            _propBlock.SetFloat("_OutlineWidth", PIERCE_OUTLINE_WIDTH);
+            _propBlock.SetFloat("_OutlineEnabled", 0.35f + 0.65f * piercePulse);
         }
         else
         {
@@ -3418,6 +3454,7 @@ private void SpawnProjectile()
         initialized = false;
         isSuperArmor = false;
         isPhaseTransitioning = false;
+        _pierceHighlighted = false;
         _healthLocked = false;
         _isStunExiting = false;
         _resumeStunAfterLaunch = false;
