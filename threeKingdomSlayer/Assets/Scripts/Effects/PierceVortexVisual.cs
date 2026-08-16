@@ -25,6 +25,8 @@ public sealed class PierceVortexVisual : MonoBehaviour
     private float _slowRotation;
     private float _fade = 1f;
     private bool _afterimagesEnabled = true;
+    private float _visualScaleMultiplier = 1f;
+    private bool _useUnscaledTime;
 
     // 深色（背景）层配色
     private static readonly Color32 BackOutline = new Color32(26, 8, 6, 255);
@@ -119,12 +121,16 @@ public sealed class PierceVortexVisual : MonoBehaviour
         },
     };
 
-    public static PierceVortexVisual Create(Transform projectileRoot)
+    public static PierceVortexVisual Create(Transform projectileRoot, bool enableAfterimages = true,
+        float visualScaleMultiplier = 1f, bool useUnscaledTime = false)
     {
         if (projectileRoot == null)
             return null;
 
         var visual = projectileRoot.gameObject.AddComponent<PierceVortexVisual>();
+        visual._afterimagesEnabled = enableAfterimages;
+        visual._visualScaleMultiplier = Mathf.Max(0f, visualScaleMultiplier);
+        visual._useUnscaledTime = useUnscaledTime;
         visual.Initialize();
         return visual;
     }
@@ -186,9 +192,10 @@ public sealed class PierceVortexVisual : MonoBehaviour
 
     private void Update()
     {
-        _elapsed += Time.deltaTime;
-        _afterimageTimer -= Time.deltaTime;
-        _slowRotation += 110f * Time.deltaTime;
+        float deltaTime = _useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+        _elapsed += deltaTime;
+        _afterimageTimer -= deltaTime;
+        _slowRotation += 110f * deltaTime;
 
         int frame = Mathf.FloorToInt(_elapsed / 0.075f) % FrameCount;
         _backRenderer.sprite = _backFrames[frame];
@@ -204,7 +211,7 @@ public sealed class PierceVortexVisual : MonoBehaviour
         }
 
         float speedProgress = Mathf.Clamp01(_elapsed / 0.28f);
-        float scale = Mathf.Lerp(7.0f, 8.0f, speedProgress);
+        float scale = Mathf.Lerp(7.0f, 8.0f, speedProgress) * _visualScaleMultiplier;
         _anchor.localScale = Vector3.one * scale;
         _anchor.localRotation = Quaternion.Euler(0f, _slowRotation, 0f);
 
