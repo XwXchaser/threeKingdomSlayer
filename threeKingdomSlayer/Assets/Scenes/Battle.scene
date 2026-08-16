@@ -6838,7 +6838,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   indicatorColor: {r: 1, g: 0, b: 0, a: 0.5}
-  yOffset: -1.5
+  pathHeight: 0.5
+  headHeight: -1.5
   sortingOrder: -2
   headSortingOrder: -1
   bodyBlockLength: 0.65
@@ -6851,7 +6852,8 @@ MonoBehaviour:
   pulseSpeed: 6
   pulseInterval: 0.25
   pulseEndHoldDuration: 0.08
-  pulseScale: 0.1
+  pulseScale: 0.08
+  flightPulseScale: 0.1
   maxPulseCount: 12
   pulseSortingOrder: 4
 --- !u!1 &868065446
@@ -11867,6 +11869,9 @@ MonoBehaviour:
   _stabHitClips:
   - {fileID: 8300000, guid: 9348cb33f157271488bcf5818a09248e, type: 3}
   - {fileID: 8300000, guid: 143e9962cafe7f14595059074ba54814, type: 3}
+  _launchHitClips:
+  - {fileID: 8300000, guid: 827d3aacea4d7f64883b1ef827e2d3a8, type: 3}
+  - {fileID: 8300000, guid: a791c91095c1ff847bfd56f70ab39bf0, type: 3}
 --- !u!4 &1593080085
 Transform:
   m_ObjectHideFlags: 0

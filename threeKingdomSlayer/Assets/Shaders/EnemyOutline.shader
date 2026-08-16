@@ -9,6 +9,7 @@ Shader "Custom/EnemyOutline"
         _OutlineColor ("Outline Color", Color) = (1, 0, 0, 1)
         _OutlineWidth ("Outline Width", Range(0, 10)) = 2.0
         _OutlineEnabled ("Outline Enabled", Float) = 0
+        _PierceHighlightStrength ("Pierce Highlight Strength", Range(0, 1)) = 0
     }
 
     SubShader
@@ -122,6 +123,7 @@ Shader "Custom/EnemyOutline"
 
             sampler2D _MainTex;
             fixed4 _Color;
+            float _PierceHighlightStrength;
 
             v2f SpriteVert(appdata IN)
             {
@@ -138,6 +140,7 @@ Shader "Custom/EnemyOutline"
             fixed4 SpriteFrag(v2f IN) : SV_Target
             {
                 fixed4 c = tex2D(_MainTex, IN.texcoord) * IN.color;
+                c.rgb = lerp(c.rgb, fixed3(1.0, 0.30, 0.30), _PierceHighlightStrength);
                 c.rgb *= c.a;
                 return c;
             }

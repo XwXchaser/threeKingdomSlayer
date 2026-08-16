@@ -8,11 +8,13 @@ public sealed class PierceAimIndicator : MonoBehaviour
     public float PulseSpeed => pulseSpeed;
     public float PulseInterval => pulseInterval;
     public float PulseScale => pulseScale;
+    public float FlightPulseScale => flightPulseScale;
     public int MaxPulseCount => maxPulseCount;
     public int PulseSortingOrder => pulseSortingOrder;
     [Header("显示")]
     [SerializeField] private Color indicatorColor = new Color(1f, 0f, 0f, 0.5f);
-    [SerializeField] private float yOffset = 0.05f;
+    [SerializeField] private float pathHeight = 0.5f;
+    [SerializeField] private float headHeight = -1.5f;
     [SerializeField] private int sortingOrder = -2;
     [SerializeField] private int headSortingOrder = 6;
 
@@ -42,6 +44,8 @@ public sealed class PierceAimIndicator : MonoBehaviour
     [SerializeField] private float pulseEndHoldDuration = 0.08f;
     [Min(0.01f)]
     [SerializeField] private float pulseScale = 0.1f;
+    [Min(0.01f)]
+    [SerializeField] private float flightPulseScale = 0.1f;
     [Min(1)]
     [SerializeField] private int maxPulseCount = 12;
     [SerializeField] private int pulseSortingOrder = 4;
@@ -57,6 +61,7 @@ public sealed class PierceAimIndicator : MonoBehaviour
 
     private readonly List<Vector3> _pathPoints = new List<Vector3>(8);
     private readonly List<Pulse> _pulses = new List<Pulse>();
+    private readonly List<Enemy> _highlightedEnemies = new List<Enemy>(5);
     private GameObject _visualRoot;
     private MeshFilter _meshFilter;
     private MeshRenderer _meshRenderer;
@@ -144,6 +149,7 @@ public sealed class PierceAimIndicator : MonoBehaviour
 
     private void OnDestroy()
     {
+        ClearEnemyHighlights();
         if (Instance == this)
             Instance = null;
         if (InputManager.Instance != null)
@@ -166,6 +172,7 @@ public sealed class PierceAimIndicator : MonoBehaviour
 
     private void OnDisable()
     {
+        ClearEnemyHighlights();
         SetVisible(false);
     }
 
@@ -174,6 +181,7 @@ public sealed class PierceAimIndicator : MonoBehaviour
         _chargeActive = true;
         _aimReady = false;
         _currentColumn = -1;
+        ClearEnemyHighlights();
         ResetPulse();
         SetVisible(false);
     }
@@ -187,7 +195,7 @@ public sealed class PierceAimIndicator : MonoBehaviour
         }
 
         int column = InputManager.Instance.GetPierceColumnFromScreenPosition(screenPosition);
-        if (!AttackSystem.Instance.TryGetPierceIndicatorPath(column, _pathPoints, out _))
+        if (!AttackSystem.Instance.TryGetPierceIndicatorPath(column, _pathPoints, out int effectiveRows))
         {
             SetVisible(false);
             return;
@@ -196,7 +204,7 @@ public sealed class PierceAimIndicator : MonoBehaviour
         for (int i = 0; i < _pathPoints.Count; i++)
         {
             Vector3 point = _pathPoints[i];
-            point.y = yOffset;
+            point.y = pathHeight;
             _pathPoints[i] = point;
         }
 
@@ -207,6 +215,7 @@ public sealed class PierceAimIndicator : MonoBehaviour
             _pathSignature = signature;
             RebuildMesh(_pathPoints);
             PopulatePulses();
+            UpdateEnemyHighlights(column, effectiveRows);
         }
 
         SetVisible(true);
@@ -218,6 +227,7 @@ public sealed class PierceAimIndicator : MonoBehaviour
         _chargeActive = false;
         _aimReady = false;
         _currentColumn = -1;
+        ClearEnemyHighlights();
         ResetPulse();
         SetVisible(false);
     }
@@ -368,7 +378,9 @@ public sealed class PierceAimIndicator : MonoBehaviour
     private void RebuildHead(List<Vector3> worldPath, float totalLength)
     {
         Vector3 worldTip = worldPath[worldPath.Count - 1];
+        worldTip.y = headHeight;
         Vector3 worldBase = GetPointAtDistance(worldPath, Mathf.Max(0f, totalLength - headLength));
+        worldBase.y = headHeight;
         Camera camera = Camera.main;
         if (camera == null)
         {
@@ -459,6 +471,35 @@ public sealed class PierceAimIndicator : MonoBehaviour
         }
 
         _pulseSpawnTimer = pulseInterval;
+    }
+
+    private void UpdateEnemyHighlights(int column, int rangeRows)
+    {
+        ClearEnemyHighlights();
+        List<Enemy> targets = EnemyManager.Instance?.columnManager?.GetEnemiesInRange(column, rangeRows);
+        if (targets == null)
+            return;
+
+        for (int i = 0; i < targets.Count; i++)
+        {
+            Enemy enemy = targets[i];
+            if (enemy == null || enemy.state == EnemyState.Dead)
+                continue;
+
+            enemy.SetPierceHighlight(true);
+            _highlightedEnemies.Add(enemy);
+        }
+    }
+
+    private void ClearEnemyHighlights()
+    {
+        for (int i = 0; i < _highlightedEnemies.Count; i++)
+        {
+            Enemy enemy = _highlightedEnemies[i];
+            if (enemy != null)
+                enemy.SetPierceHighlight(false);
+        }
+        _highlightedEnemies.Clear();
     }
 
     private void ResetPulse()

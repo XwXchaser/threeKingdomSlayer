@@ -431,6 +431,7 @@ public class AttackSystem : MonoBehaviour
             {
                 if (aliveTargets.Count > 0)
                     AttackWave.Create(wavePos, cfg.damageType, finalDmg, aliveTargets,
+                        onHit: _ => AudioManager.Instance?.PostEvent("Stab_Hit"),
                         prefab: cfg.attackWavePrefab);
                 return;
             }
@@ -439,7 +440,8 @@ public class AttackSystem : MonoBehaviour
             Vector3 flightStart = releaseVisual.FlightStartPosition;
             releaseVisual.TransferToProjectile(flightStart, projectileRotation, projectileScale);
             AttackWave.CreatePierceFromVisual(projectileObject, flightStart, finalDmg,
-                aliveTargets, visualEndPosition, timeScale: pierceTimeScale);
+                aliveTargets, visualEndPosition,
+                onHit: _ => AudioManager.Instance?.PostEvent("Stab_Hit"), timeScale: pierceTimeScale);
         });
 
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -523,9 +525,16 @@ public class AttackSystem : MonoBehaviour
             Vector3 wavePos = GetWavePosition(targets, -1);
             PlayLaunchVisual(cfg, playerLaunchPos, () =>
             {
+                bool launchHitSoundPlayed = false;
                 AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
                     onHit: enemy =>
                     {
+                        if (!launchHitSoundPlayed)
+                        {
+                            launchHitSoundPlayed = true;
+                            AudioManager.Instance?.PostEvent("Launch_Hit");
+                        }
+
                         bool canLaunch = enemy.CanBeLaunched(cfg.poiseDamage);
                         if (!canLaunch && probLaunchActive && Random.value < 0.3f)
                         {
