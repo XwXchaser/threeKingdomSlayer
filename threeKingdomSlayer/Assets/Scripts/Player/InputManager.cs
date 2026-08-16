@@ -613,6 +613,11 @@ public class InputManager : MonoBehaviour
 
     #region 屏幕坐标映射
 
+    public int GetPierceColumnFromScreenPosition(Vector2 screenPos)
+    {
+        return GetStabColumnFromScreenPosition(screenPos);
+    }
+
     private int GetStabColumnFromScreenPosition(Vector2 screenPos)
     {
         int targetedColumn = GetColumnFromScreenPosition(screenPos);

@@ -6726,6 +6726,7 @@ GameObject:
   - component: {fileID: 864291163}
   - component: {fileID: 864291164}
   - component: {fileID: 864291165}
+  - component: {fileID: 864291166}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Player
@@ -6824,6 +6825,34 @@ MonoBehaviour:
   exitDuration: 0.13
   entryDistance: 3.5
   fadeOutDuration: 0.25
+--- !u!114 &864291166
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 864291161}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88e9905b38081ad4f8f95168f347dd3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  indicatorColor: {r: 1, g: 0, b: 0, a: 0.5}
+  yOffset: -1.5
+  sortingOrder: -2
+  headSortingOrder: -1
+  bodyBlockLength: 0.65
+  bodyBlockWidth: 0.5
+  bodyBlockGap: 0.15
+  headLength: 0.85
+  headWidth: 1
+  showPiercePulse: 1
+  pulseAlpha: 0.3
+  pulseSpeed: 6
+  pulseInterval: 0.15
+  pulseScale: 0.1
+  maxPulseCount: 12
+  pulseSortingOrder: 4
 --- !u!1 &868065446
 GameObject:
   m_ObjectHideFlags: 0
