@@ -3,6 +3,13 @@ using UnityEngine;
 
 public sealed class PierceAimIndicator : MonoBehaviour
 {
+    public static PierceAimIndicator Instance { get; private set; }
+    public float PulseAlpha => pulseAlpha;
+    public float PulseSpeed => pulseSpeed;
+    public float PulseInterval => pulseInterval;
+    public float PulseScale => pulseScale;
+    public int MaxPulseCount => maxPulseCount;
+    public int PulseSortingOrder => pulseSortingOrder;
     [Header("显示")]
     [SerializeField] private Color indicatorColor = new Color(1f, 0f, 0f, 0.5f);
     [SerializeField] private float yOffset = 0.05f;
@@ -68,6 +75,12 @@ public sealed class PierceAimIndicator : MonoBehaviour
 
     private void Start()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this);
+            return;
+        }
+        Instance = this;
         CreateVisual();
         SetVisible(false);
 
@@ -131,6 +144,8 @@ public sealed class PierceAimIndicator : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (Instance == this)
+            Instance = null;
         if (InputManager.Instance != null)
         {
             InputManager.Instance.OnChargeBegan -= OnChargeBegan;
@@ -188,11 +203,10 @@ public sealed class PierceAimIndicator : MonoBehaviour
         int signature = CalculatePathSignature(_pathPoints);
         if (column != _currentColumn || signature != _pathSignature)
         {
-            float previousPathLength = _pathLength;
             _currentColumn = column;
             _pathSignature = signature;
             RebuildMesh(_pathPoints);
-            RemapPulseDistances(previousPathLength);
+            PopulatePulses();
         }
 
         SetVisible(true);
@@ -237,7 +251,7 @@ public sealed class PierceAimIndicator : MonoBehaviour
         _headMeshRenderer.sharedMaterial = _material;
     }
 
-    private void SpawnPulse()
+    private Pulse SpawnPulse()
     {
         Pulse pulse = null;
         for (int i = 0; i < _pulses.Count; i++)
@@ -252,7 +266,7 @@ public sealed class PierceAimIndicator : MonoBehaviour
         if (pulse == null)
         {
             if (_pulses.Count >= maxPulseCount)
-                return;
+                return null;
 
             var root = new GameObject("PierceAimIndicator_Pulse");
             root.transform.SetParent(transform, false);
@@ -276,6 +290,7 @@ public sealed class PierceAimIndicator : MonoBehaviour
         pulse.active = true;
         pulse.root.SetActive(true);
         pulse.root.transform.position = _pathPoints[0];
+        return pulse;
     }
 
     private void RebuildMesh(List<Vector3> worldPath)
@@ -420,20 +435,30 @@ public sealed class PierceAimIndicator : MonoBehaviour
         }
     }
 
-    private void RemapPulseDistances(float previousPathLength)
+    private void PopulatePulses()
     {
-        if (previousPathLength <= 0.0001f || _pathLength <= 0.0001f)
+        ResetPulse();
+        if (_pathLength <= 0.001f)
             return;
 
-        float scale = _pathLength / previousPathLength;
-        for (int i = 0; i < _pulses.Count; i++)
+        float spacing = Mathf.Max(pulseSpeed * Mathf.Max(pulseInterval, 0.01f), 0.01f);
+        int count = Mathf.Min(maxPulseCount, Mathf.CeilToInt(_pathLength / spacing));
+        for (int i = 0; i < count; i++)
         {
-            Pulse pulse = _pulses[i];
-            if (!pulse.active)
-                continue;
+            Pulse pulse = SpawnPulse();
+            if (pulse == null)
+                break;
 
-            pulse.distance = Mathf.Min(pulse.distance * scale, _pathLength - 0.001f);
+            pulse.distance = Mathf.Min(i * spacing, _pathLength - 0.001f);
+            Vector3 position = GetPointAtDistance(_pathPoints, pulse.distance);
+            Vector3 ahead = GetPointAtDistance(_pathPoints, Mathf.Min(pulse.distance + 0.1f, _pathLength));
+            Vector3 direction = ahead - position;
+            if (direction.sqrMagnitude > 0.0001f)
+                pulse.root.transform.rotation = Quaternion.FromToRotation(Vector3.up, direction.normalized);
+            pulse.root.transform.position = position;
         }
+
+        _pulseSpawnTimer = pulseInterval;
     }
 
     private void ResetPulse()

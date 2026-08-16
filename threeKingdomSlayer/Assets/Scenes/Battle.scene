@@ -6849,7 +6849,8 @@ MonoBehaviour:
   showPiercePulse: 1
   pulseAlpha: 0.3
   pulseSpeed: 6
-  pulseInterval: 0.15
+  pulseInterval: 0.25
+  pulseEndHoldDuration: 0.08
   pulseScale: 0.1
   maxPulseCount: 12
   pulseSortingOrder: 4
