@@ -358,6 +358,9 @@ public class AttackSystem : MonoBehaviour
             pathPoints.Add(new Vector3(x, y, z));
         }
 
+        if (TryGetPierceVisualPath(columnIndex, out _, out Vector3 visualEndPosition, out _))
+            pathPoints.Add(visualEndPosition);
+
         return true;
     }
 

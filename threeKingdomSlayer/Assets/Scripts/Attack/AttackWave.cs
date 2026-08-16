@@ -38,6 +38,7 @@ public class AttackWave : MonoBehaviour
     private bool _travelCompleted;
     private float _targetDuration = -1f;
     private PierceAxialSpinVisual _pierceSpinVisual;
+    private PierceVortexStreamVisual _pierceVortexStream;
     private float _pierceTimeScale = 1f;
     private Vector3 _pierceEndPosition;
     public static int AliveCount { get; private set; }
@@ -90,6 +91,15 @@ public class AttackWave : MonoBehaviour
         wave._pierceSpinVisual = visualObject.GetComponent<PierceAxialSpinVisual>();
         wave._pierceTimeScale = timeScale;
         wave._pierceEndPosition = endPosition;
+        PierceAimIndicator indicator = PierceAimIndicator.Instance;
+        if (indicator != null)
+        {
+            float speed = PierceProjectileSpeed / timeScale;
+            float interval = indicator.PulseInterval * Mathf.Max(indicator.PulseSpeed, 0.1f) / speed;
+            wave._pierceVortexStream = PierceVortexStreamVisual.Create(null,
+                position, endPosition, speed, interval, indicator.PulseScale,
+                indicator.PulseAlpha, indicator.PulseSortingOrder, indicator.MaxPulseCount);
+        }
 
         var alive = new List<Enemy>();
         for (int i = 0; i < targets.Count; i++)
@@ -257,7 +267,11 @@ public class AttackWave : MonoBehaviour
         travelSeq = DOTween.Sequence().SetTarget(transform).SetUpdate(true);
         travelSeq.Append(transform.DOMoveZ(endZ, thrustTime).SetEase(Ease.OutCubic));
         travelSeq.AppendInterval(0.05f);
-        travelSeq.AppendCallback(() => _pierceSpinVisual?.BeginEndFade(0.35f));
+        travelSeq.AppendCallback(() =>
+        {
+            _pierceVortexStream?.StopEmission();
+            _pierceSpinVisual?.BeginEndFade(0.35f);
+        });
         travelSeq.AppendInterval(0.35f);
         travelSeq.OnKill(() =>
         {
@@ -282,7 +296,11 @@ public class AttackWave : MonoBehaviour
         _pierceSpinVisual?.SetSpinProfile(thrustTime, 420f, 1800f);
         travelSeq = DOTween.Sequence().SetTarget(transform).SetUpdate(true);
         travelSeq.Append(transform.DOMove(endPosition, thrustTime).SetEase(Ease.OutCubic));
-        travelSeq.AppendCallback(() => _pierceSpinVisual?.BeginEndFade(0.35f));
+        travelSeq.AppendCallback(() =>
+        {
+            _pierceVortexStream?.StopEmission();
+            _pierceSpinVisual?.BeginEndFade(0.35f);
+        });
         travelSeq.AppendInterval(0.35f);
         travelSeq.OnComplete(() => { _travelCompleted = true; travelSeq = null; Destroy(gameObject); });
         travelSeq.OnKill(() => { if (!_travelCompleted) { travelSeq = null; Destroy(gameObject); } });
@@ -423,7 +441,10 @@ public class AttackWave : MonoBehaviour
             // 贯穿后短停顿再淡出
             travelSeq.AppendInterval(0.05f);
             if (damageType == DamageType.Pierce)
+            {
+                _pierceVortexStream?.StopEmission();
                 travelSeq.AppendCallback(() => _pierceSpinVisual?.BeginEndFade(0.35f));
+            }
             if (mat != null)
                 travelSeq.Append(mat.DOFade(0f, 0.35f).SetEase(Ease.InQuad));
         }
@@ -598,6 +619,7 @@ public class AttackWave : MonoBehaviour
 
     private void OnDestroy()
     {
+        _pierceVortexStream?.StopEmission();
         if (_hitStopRoutine != null)
         {
             StopCoroutine(_hitStopRoutine);

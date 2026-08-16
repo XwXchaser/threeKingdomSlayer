@@ -135,6 +135,11 @@ public sealed class PierceVortexVisual : MonoBehaviour
         return visual;
     }
 
+    public void SetVisualScaleMultiplier(float multiplier)
+    {
+        _visualScaleMultiplier = Mathf.Max(0f, multiplier);
+    }
+
     public void SetFade(float fade)
     {
         _fade = Mathf.Clamp01(fade);
