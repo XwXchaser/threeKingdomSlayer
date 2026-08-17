@@ -15,3 +15,8 @@ aiMaintained: inherit
 - `UltimateButtonUI` 只负责大招 ready 状态触发（`OnEnergyChanged` / `OnReady` / `OnActivated`），实际火焰视觉由 `UIReadyFireEffect` 驱动；角色差异继续通过 `HeroHUDSkin.readyFireStartSprite` / `readyFireLoopSprites` / `readyFireFps` 下发。
 - 当前张飞 HUD 先复用 `HeroHUDSkin_Zhangfei.asset` 中已有 burn 火焰帧；后续若更换专用像素火焰素材，只需替换 skin 引用，不需要改代码或场景结构。
 - `UIReadyFireEffect` 现已收敛为 HUD 版单团火焰：以单个 `Image` 做帧循环 + alpha/scale pulse + 轻微 jitter，并提供 `localOffset` / `sizeScale` 作为围绕头像微调的位置与尺寸入口。
+
+## 2026-03：失败结算页
+- `Assets/Scenes/Battle.scene/Defeat(panel)` 是场景顶层的独立 `ScreenSpaceOverlay` Canvas，sorting order 为 1000；不可再归入 `BattleHUD(Canvas)`，否则会继承为与 `HudCard` 相同的层级而被角色 HUD 覆盖。
+- 层级固定为 `DarkOverlay`（底层、72% 黑色、拦截空白点击）→ `MainMenuButton` / `RestartButton` → 标题；按钮使用白底黑字，文字关闭 Raycast Target。
+- 两按钮分别绑定 `BattleHUD.OnMainMenuButton` 和 `OnRestartButton`。后者必须先关闭 `defeatPanel`，再调用 `StageController.RestartStage()`，避免新局继续显示失败页。

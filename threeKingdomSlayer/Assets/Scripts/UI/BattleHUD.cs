@@ -459,6 +459,7 @@ public class BattleHUD : MonoBehaviour
 
     public void OnRestartButton()
     {
+        if (defeatPanel != null) defeatPanel.SetActive(false);
         StageController.Instance?.RestartStage();
     }
 
