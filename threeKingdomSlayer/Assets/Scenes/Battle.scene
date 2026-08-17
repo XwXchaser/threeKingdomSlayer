@@ -899,6 +899,114 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 44102431}
   m_CullTransparentMesh: 1
+--- !u!1 &46061342
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 46061344}
+  - component: {fileID: 46061343}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E_101_1_0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &46061343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 46061342}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 1
+  rowIndex: 0
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 0
+  targetRow: -1
+--- !u!4 &46061344
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 46061342}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &73067754
 GameObject:
   m_ObjectHideFlags: 0
@@ -1274,6 +1382,114 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 108503977}
   m_CullTransparentMesh: 1
+--- !u!1 &109720230
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 109720232}
+  - component: {fileID: 109720231}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E_101_0_1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &109720231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 109720230}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 1
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 0
+  targetRow: -1
+--- !u!4 &109720232
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 109720230}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &116308575
 GameObject:
   m_ObjectHideFlags: 0
@@ -2534,6 +2750,142 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1923031560}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &214225562
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 214225563}
+  - component: {fileID: 214225565}
+  - component: {fileID: 214225564}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: Text
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &214225563
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 214225562}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2085749400}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: -8, y: -8}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &214225564
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 214225562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_text: "\u91CD\u65B0\u5F00\u59CB"
+  m_enableAdvanceTextProcess: 0
+  m_isRightToLeft: 0
+  m_fontAsset: {fileID: 11400000, guid: 83ef45830ec08304fa249351a44a36e6, type: 2}
+  m_sharedMaterial: {fileID: -8628567570238980765, guid: 83ef45830ec08304fa249351a44a36e6, type: 2}
+  m_fontSharedMaterials: []
+  m_fontMaterial: {fileID: 0}
+  m_fontMaterials: []
+  m_fontColor32:
+    serializedVersion: 2
+    rgba: 4278190080
+  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
+  m_enableVertexGradient: 0
+  m_colorMode: 3
+  m_fontColorGradient:
+    topLeft: {r: 1, g: 1, b: 1, a: 1}
+    topRight: {r: 1, g: 1, b: 1, a: 1}
+    bottomLeft: {r: 1, g: 1, b: 1, a: 1}
+    bottomRight: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColorGradientPreset: {fileID: 0}
+  m_spriteAsset: {fileID: 0}
+  m_tintAllSprites: 0
+  m_StyleSheet: {fileID: 0}
+  m_TextStyleHashCode: -1183493901
+  m_overrideHtmlColors: 0
+  m_faceColor:
+    serializedVersion: 2
+    rgba: 4294967295
+  m_fontSize: 22
+  m_fontSizeBase: 22
+  m_fontWeight: 400
+  m_enableAutoSizing: 0
+  m_fontSizeMin: 0
+  m_fontSizeMax: 0
+  m_fontStyle: 0
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
+  m_textAlignment: 65535
+  m_characterSpacing: 0
+  m_wordSpacing: 0
+  m_lineSpacing: 0
+  m_lineSpacingMax: 0
+  m_paragraphSpacing: 0
+  m_charWidthMaxAdj: 0
+  m_enableWordWrapping: 0
+  m_wordWrappingRatios: 0.4
+  m_overflowMode: 0
+  m_linkedTextComponent: {fileID: 0}
+  parentLinkedComponent: {fileID: 0}
+  m_enableKerning: 0
+  m_enableExtraPadding: 0
+  checkPaddingRequired: 0
+  m_isRichText: 1
+  m_parseCtrlCharacters: 1
+  m_isOrthographic: 1
+  m_isCullingEnabled: 0
+  m_horizontalMapping: 0
+  m_verticalMapping: 0
+  m_uvLineOffset: 0
+  m_geometrySortingOrder: 0
+  m_IsTextObjectScaleStatic: 0
+  m_VertexBufferAutoSizeReduction: 0
+  m_useMaxVisibleDescender: 1
+  m_pageToDisplay: 1
+  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_isUsingLegacyAnimationComponent: 0
+  m_isVolumetricText: 0
+  m_hasFontAssetChanged: 0
+  m_baseMaterial: {fileID: 0}
+  m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!222 &214225565
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 214225562}
+  m_CullTransparentMesh: 1
 --- !u!1001 &220136265
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3216,7 +3568,6 @@ RectTransform:
   m_Children:
   - {fileID: 2022372498}
   - {fileID: 2147134744}
-  - {fileID: 1311201912}
   - {fileID: 702404871}
   - {fileID: 382638939}
   - {fileID: 1076254554}
@@ -4093,6 +4444,114 @@ MonoBehaviour:
   iconPunchDuration: 0.3
   totalPunchScale: 0.25
   totalPunchDuration: 0.3
+--- !u!1 &401315344
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 401315346}
+  - component: {fileID: 401315345}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E_101_0_1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &401315345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 401315344}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 0
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 0
+  targetRow: -1
+--- !u!4 &401315346
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 401315344}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -4, y: 0, z: -10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &407797582
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5190,6 +5649,114 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7aea244c461bd3543926b5b810bd6df4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &534183175
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 534183177}
+  - component: {fileID: 534183176}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E_101_0_0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &534183176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 534183175}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 0
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 0
+  targetRow: -1
+--- !u!4 &534183177
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 534183175}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &550340276
 GameObject:
   m_ObjectHideFlags: 0
@@ -6300,6 +6867,114 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 791415575}
   m_CullTransparentMesh: 1
+--- !u!1 &794098726
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 794098728}
+  - component: {fileID: 794098727}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &794098727
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 794098726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 0
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 0
+  targetRow: -1
+--- !u!4 &794098728
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 794098726}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &797006123
 GameObject:
   m_ObjectHideFlags: 0
@@ -6968,6 +7643,114 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!1 &886692525
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 886692527}
+  - component: {fileID: 886692526}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &886692526
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 886692525}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 1
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 0
+  targetRow: -1
+--- !u!4 &886692527
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 886692525}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &916776827
 GameObject:
   m_ObjectHideFlags: 0
@@ -7020,7 +7803,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -7036,8 +7819,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4278190080
+  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -7049,7 +7832,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -7080,7 +7863,7 @@ MonoBehaviour:
   checkPaddingRequired: 0
   m_isRichText: 1
   m_parseCtrlCharacters: 1
-  m_isOrthographic: 0
+  m_isOrthographic: 1
   m_isCullingEnabled: 0
   m_horizontalMapping: 0
   m_verticalMapping: 0
@@ -7104,6 +7887,114 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 916776827}
   m_CullTransparentMesh: 1
+--- !u!1 &921725243
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 921725245}
+  - component: {fileID: 921725244}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E_101_0_1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &921725244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 921725243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 1
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 0
+  targetRow: -1
+--- !u!4 &921725245
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 921725243}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &933061103
 GameObject:
   m_ObjectHideFlags: 0
@@ -7141,7 +8032,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.25}
   m_AnchorMax: {x: 0.5, y: 0.25}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -45}
   m_SizeDelta: {x: 240, y: 70}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &933061105
@@ -7165,11 +8056,11 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 0.35, g: 0.3, b: 0.22, a: 1}
-    m_HighlightedColor: {r: 0.5, g: 0.45, b: 0.3, a: 1}
-    m_PressedColor: {r: 0.3, g: 0.25, b: 0.15, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.9, g: 0.9, b: 0.9, a: 1}
+    m_PressedColor: {r: 0.75, g: 0.75, b: 0.75, a: 1}
+    m_SelectedColor: {r: 1, g: 1, b: 1, a: 1}
+    m_DisabledColor: {r: 1, g: 1, b: 1, a: 0.5}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
   m_SpriteState:
@@ -7213,7 +8104,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.35, g: 0.3, b: 0.22, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -7448,6 +8339,114 @@ MonoBehaviour:
   swipeDownAngleThreshold: 30
   attackSystem: {fileID: 1809121297}
   whirlwindController: {fileID: 0}
+--- !u!1 &942982672
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 942982674}
+  - component: {fileID: 942982673}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E_101_0_1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &942982673
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 942982672}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 0
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 0
+  targetRow: -1
+--- !u!4 &942982674
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 942982672}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -4, y: 0, z: -10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &952166475
 GameObject:
   m_ObjectHideFlags: 0
@@ -8989,6 +9988,160 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1099060368}
   m_CullTransparentMesh: 1
+--- !u!1 &1099635154
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1099635156}
+  - component: {fileID: 1099635155}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: PushInvariant
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1099635155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1099635154}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42597e245d918f74f89cf3529325ac28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  columnCount: 5
+--- !u!4 &1099635156
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1099635154}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1107447516
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1107447518}
+  - component: {fileID: 1107447517}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E_101_0_0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1107447517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1107447516}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 0
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 0
+  targetRow: -1
+--- !u!4 &1107447518
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1107447516}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1115154742
 GameObject:
   m_ObjectHideFlags: 0
@@ -9114,6 +10267,82 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!1 &1148401946
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1148401947}
+  - component: {fileID: 1148401949}
+  - component: {fileID: 1148401948}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: DarkOverlay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1148401947
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1148401946}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1311201912}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1148401948
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1148401946}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.72}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1148401949
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1148401946}
+  m_CullTransparentMesh: 1
 --- !u!1 &1149747425
 GameObject:
   m_ObjectHideFlags: 0
@@ -9584,6 +10813,114 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+--- !u!1 &1208784577
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1208784579}
+  - component: {fileID: 1208784578}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1208784578
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1208784577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 3
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 0
+  targetRow: -1
+--- !u!4 &1208784579
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1208784577}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1221163312
 GameObject:
   m_ObjectHideFlags: 0
@@ -9634,6 +10971,114 @@ MonoBehaviour:
   columnManager: {fileID: 1289233715}
   enemyManager: {fileID: 598331925}
   spawnRoot: {fileID: 0}
+--- !u!1 &1227790927
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1227790929}
+  - component: {fileID: 1227790928}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E_101_0_0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1227790928
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1227790927}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 0
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 0
+  targetRow: -1
+--- !u!4 &1227790929
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1227790927}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1256612181
 GameObject:
   m_ObjectHideFlags: 0
@@ -10324,9 +11769,11 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1618962351}
+  - {fileID: 1148401947}
   - {fileID: 933061104}
-  m_Father: {fileID: 275758067}
+  - {fileID: 2085749400}
+  - {fileID: 1618962351}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -10347,7 +11794,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -10397,7 +11844,7 @@ Canvas:
   m_GameObject: {fileID: 1311201911}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 2
+  m_RenderMode: 0
   m_Camera: {fileID: 0}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
@@ -10406,10 +11853,10 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 200
+  m_SortingOrder: 1000
   m_TargetDisplay: 0
 --- !u!1001 &1388805521
 PrefabInstance:
@@ -11504,6 +12951,114 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!1 &1565725671
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1565725673}
+  - component: {fileID: 1565725672}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E_101_0_0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1565725672
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1565725671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 0
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 0
+  targetRow: -1
+--- !u!4 &1565725673
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1565725671}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1569299218
 GameObject:
   m_ObjectHideFlags: 0
@@ -11806,6 +13361,114 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7aea244c461bd3543926b5b810bd6df4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &1570505289
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1570505291}
+  - component: {fileID: 1570505290}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E_101_0_0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1570505290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1570505289}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 0
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 0
+  targetRow: -1
+--- !u!4 &1570505291
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1570505289}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!224 &1570970256 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 8481378672236373500, guid: 16f0844e7d3a1bb45a8ed55b8ad2adc4, type: 3}
@@ -12414,7 +14077,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -12479,6 +14142,114 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -20, y: 24}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &1639479464
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1639479466}
+  - component: {fileID: 1639479465}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E_101_0_3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1639479465
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1639479464}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 3
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 1
+  targetRow: 2
+--- !u!4 &1639479466
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1639479464}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1668499306
 GameObject:
   m_ObjectHideFlags: 0
@@ -13953,6 +15724,114 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0c1ba5372bd4674db7efc152281edbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &1754272112
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1754272114}
+  - component: {fileID: 1754272113}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E_101_0_4
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1754272113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1754272112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 3
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 1
+  targetRow: 0
+--- !u!4 &1754272114
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1754272112}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -4, y: 0, z: -2.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1768546915
 GameObject:
   m_ObjectHideFlags: 0
@@ -14679,6 +16558,114 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 200}
   m_Pivot: {x: 0.5, y: 1}
+--- !u!1 &1839019452
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1839019454}
+  - component: {fileID: 1839019453}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E_101_0_3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1839019453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839019452}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 3
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 1
+  targetRow: 0
+--- !u!4 &1839019454
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839019452}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1857754113
 GameObject:
   m_ObjectHideFlags: 0
@@ -16755,6 +18742,140 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 500, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &2085749399
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 2085749400}
+  - component: {fileID: 2085749403}
+  - component: {fileID: 2085749402}
+  - component: {fileID: 2085749401}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: RestartButton
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &2085749400
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2085749399}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 214225563}
+  m_Father: {fileID: 1311201912}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.25}
+  m_AnchorMax: {x: 0.5, y: 0.25}
+  m_AnchoredPosition: {x: 0, y: 45}
+  m_SizeDelta: {x: 240, y: 70}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2085749401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2085749399}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Navigation:
+    m_Mode: 3
+    m_WrapAround: 0
+    m_SelectOnUp: {fileID: 0}
+    m_SelectOnDown: {fileID: 0}
+    m_SelectOnLeft: {fileID: 0}
+    m_SelectOnRight: {fileID: 0}
+  m_Transition: 1
+  m_Colors:
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.9, g: 0.9, b: 0.9, a: 1}
+    m_PressedColor: {r: 0.75, g: 0.75, b: 0.75, a: 1}
+    m_SelectedColor: {r: 1, g: 1, b: 1, a: 1}
+    m_DisabledColor: {r: 1, g: 1, b: 1, a: 0.5}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  m_SpriteState:
+    m_HighlightedSprite: {fileID: 0}
+    m_PressedSprite: {fileID: 0}
+    m_SelectedSprite: {fileID: 0}
+    m_DisabledSprite: {fileID: 0}
+  m_AnimationTriggers:
+    m_NormalTrigger: Normal
+    m_HighlightedTrigger: Highlighted
+    m_PressedTrigger: Pressed
+    m_SelectedTrigger: Selected
+    m_DisabledTrigger: Disabled
+  m_Interactable: 1
+  m_TargetGraphic: {fileID: 2085749402}
+  m_OnClick:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 275758063}
+        m_TargetAssemblyTypeName: BattleHUD, Assembly-CSharp
+        m_MethodName: OnRestartButton
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &2085749402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2085749399}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &2085749403
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2085749399}
+  m_CullTransparentMesh: 1
 --- !u!1 &2089169539
 GameObject:
   m_ObjectHideFlags: 0
@@ -17144,6 +19265,114 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 20
   m_TargetDisplay: 0
+--- !u!1 &2135115825
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 2135115827}
+  - component: {fileID: 2135115826}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: E_101_0_2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &2135115826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2135115825}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60d69959b361ea04286ec7eac011f46a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: "\u9AB7\u9AC5\u5175"
+  enemyId: 101
+  maxHealth: 100
+  occupySlots: 1
+  attackSpeed: 1
+  attackDamage: 10
+  attackRange: 1
+  moveSpeed: 1
+  visualYOffset: 0
+  attackSequence: []
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  projectileArcHeight: 3
+  projectileFlyDuration: 1
+  projectileZTargetOffset: 5
+  projectileLandingXCenter: 0
+  projectileLandingXSpread: 0
+  projectileXOffset: 0
+  useFixedProjectileLandingX: 0
+  fixedProjectileLandingXByColumn:
+  - -2
+  - -1
+  - 0
+  - 1
+  - 2
+  arrowConfig: {fileID: 0}
+  shareHealthWithAdjacent: 0
+  maxPoise: 50
+  stunDuration: 1.5
+  launchDuration: 2
+  launchGravity: 20
+  launchReboundVelocity: 8
+  launchYHeightMin: 1.5
+  launchYHeightMax: 4.5
+  launchedDamageTakenMultiplier: 1.5
+  launchedHitExtendDuration: 0.5
+  coinReward: 10
+  expReward: 10
+  gemSprite: {fileID: 0}
+  isBoss: 0
+  bossHealthBarPrefab: {fileID: 0}
+  bossPhases: []
+  outlineColorCOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorSuperArmorOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineColorQTEOverride: {r: 0, g: 0, b: 0, a: 0}
+  outlineWidthCOverride: 0
+  outlineWidthSuperArmorOverride: 0
+  outlineWidthQTEOverride: 0
+  debugForceOutline: 0
+  stabDamageMultiplier: 1
+  slashDamageMultiplier: 1
+  pierceDamageMultiplier: 1
+  sweepDamageMultiplier: 1
+  launchDamageMultiplier: 1
+  poiseDamageMultiplier: 1
+  parryStunThresholds: []
+  columnIndex: 0
+  rowIndex: 2
+  isAttackAnimating: 0
+  isAttackDrawPhase: 0
+  isCFrame: 0
+  pendingRushMove: 1
+  targetRow: 0
+--- !u!4 &2135115827
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2135115825}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2146485539 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5517976827506303733, guid: 16f0844e7d3a1bb45a8ed55b8ad2adc4, type: 3}
@@ -17439,3 +19668,22 @@ SceneRoots:
   - {fileID: 1793406372}
   - {fileID: 1985136959}
   - {fileID: 92139205}
+  - {fileID: 1565725673}
+  - {fileID: 942982674}
+  - {fileID: 1754272114}
+  - {fileID: 1570505291}
+  - {fileID: 2135115827}
+  - {fileID: 1107447518}
+  - {fileID: 921725245}
+  - {fileID: 1639479466}
+  - {fileID: 1227790929}
+  - {fileID: 46061344}
+  - {fileID: 109720232}
+  - {fileID: 534183177}
+  - {fileID: 401315346}
+  - {fileID: 1839019454}
+  - {fileID: 1099635156}
+  - {fileID: 794098728}
+  - {fileID: 886692527}
+  - {fileID: 1208784579}
+  - {fileID: 1311201912}
