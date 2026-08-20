@@ -170,19 +170,28 @@ public class StageController : MonoBehaviour
 
         var enemyIds = new HashSet<int>();
         foreach (var wave in stageConfig.waves)
-        {
-            foreach (var row in wave.rows)
-            {
-                foreach (int enemyId in row.enemyIds)
-                {
-                    if (enemyId > 0)
-                        enemyIds.Add(enemyId);
-                }
-            }
-        }
+            CollectEnemyIds(wave, enemyIds);
 
         foreach (int enemyId in enemyIds)
             enemyPool.PrewarmPool(enemyId, enemyPool.defaultPoolSize);
+    }
+
+    private void CollectEnemyIds(WaveConfig wave, HashSet<int> enemyIds)
+    {
+        if (wave == null || wave.rows == null)
+            return;
+
+        foreach (var row in wave.rows)
+        {
+            if (row == null || row.enemyIds == null)
+                continue;
+
+            foreach (int enemyId in row.enemyIds)
+            {
+                if (enemyId > 0 && enemyId != RowConfig.RhythmGateMarker)
+                    enemyIds.Add(enemyId);
+            }
+        }
     }
 
     /// <summary>
@@ -224,13 +233,10 @@ public class StageController : MonoBehaviour
         if (ucm != null)
             ucm.OnAllChoicesDone -= OnChoicesDoneSpawnNextWave;
 
-        // Choice completion only resumes the cross-column scheduler.
+        // Existing scheduler-owned orders resume themselves when choices close.
         var cm = FindObjectOfType<ColumnManager>();
         if (cm != null)
         {
-            cm.StartWaveMarch();
-
-            // Boss 独立补齐：波次行军跳过 Boss，需单独触发
             DebugLog.Info("[BOSS_ADVANCE] StageController 调用TriggerAllBossFillForward");
             cm.TriggerAllBossFillForward();
         }

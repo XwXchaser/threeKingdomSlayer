@@ -42,6 +42,7 @@ public class InputManager : MonoBehaviour
 
     // 技能输入开关（狂怒大招期间关闭）
     [System.NonSerialized] public bool skillInputEnabled = true;
+    [System.NonSerialized] public bool gameplayInputEnabled = true;
     /// <summary>输入屏蔽帧计数器（由 UpgradeChoiceManager 设置，防止选择选项的点击触发攻击）</summary>
     [System.NonSerialized] public int blockInputFrames = 0;
 
@@ -116,7 +117,7 @@ public class InputManager : MonoBehaviour
     private void Update()
     {
         // 暂停时不处理任何输入
-        if (Time.timeScale == 0f)
+        if (!gameplayInputEnabled || Time.timeScale == 0f)
         {
             if (isTouching)
             {
