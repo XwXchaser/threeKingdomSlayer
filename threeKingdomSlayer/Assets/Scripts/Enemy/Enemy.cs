@@ -33,6 +33,7 @@ public enum RushMoveMode
 public enum RushMoveOrderOwner
 {
     None,
+    SpawnEntry,
     WaveMarch,
     PushReturn,
     Boss
@@ -1192,10 +1193,6 @@ public class Enemy : MonoBehaviour
         {
             TryStartRushMove();
         }
-        else
-        {
-            EnemyManager.Instance?.columnManager?.StartWaveMarch();
-        }
     }
 
     /// <summary>
@@ -1270,8 +1267,6 @@ public class Enemy : MonoBehaviour
                 int atkRange = (int)Mathf.Max(1, attackRange);
                 if (rowIndex < atkRange)
                     StartAttacking();
-                else
-                    EnemyManager.Instance?.columnManager?.StartWaveMarch();
             }
             return;
         }
@@ -1349,7 +1344,10 @@ public class Enemy : MonoBehaviour
                     if (_rushMoveMode == RushMoveMode.ContinuousEmptyRun)
                     {
                         var manager = EnemyManager.Instance?.columnManager;
-                        occupied = occupied && manager != null && manager.IsContinuousWaveTargetReserved(this, columnIndex, rowIndex);
+                        if (_rushMoveOrderOwner == RushMoveOrderOwner.SpawnEntry)
+                            occupied = false;
+                        else
+                            occupied = manager == null || !manager.CanContinuousWaveEnterRow(this, columnIndex, rowIndex);
                     }
                     if (occupied)
                     {
@@ -2646,6 +2644,19 @@ private void SpawnProjectile()
     {
         if (!HasRushMoveOrder || !pendingRushMove || state == EnemyState.Dead)
             return RushMoveStartResult.Rejected;
+
+        if (_rushMoveOrderOwner == RushMoveOrderOwner.WaveMarch)
+        {
+            var scheduler = EnemyManager.Instance?.columnManager;
+            if (scheduler != null && !scheduler.CanStartWaveMarchOrder(this, _rushMoveOrderGeneration))
+                return RushMoveStartResult.Deferred;
+        }
+        else if (_rushMoveOrderOwner == RushMoveOrderOwner.SpawnEntry)
+        {
+            var scheduler = EnemyManager.Instance?.columnManager;
+            if (scheduler != null && !scheduler.CanStartSpawnEntryOrder(this, _rushMoveOrderGeneration))
+                return RushMoveStartResult.Deferred;
+        }
 
         switch (state)
         {

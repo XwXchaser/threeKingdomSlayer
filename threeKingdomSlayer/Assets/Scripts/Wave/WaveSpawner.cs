@@ -33,6 +33,8 @@ public class WaveSpawner : MonoBehaviour
     [Header("生成参数")]
     public Transform spawnRoot; // 生成根节点（可选）
 
+    private const int SpawnEntryRowOffset = 2;
+
     // 运行时状态
     private int currentWaveIndex = -1;
     private bool isSpawning;
@@ -131,14 +133,14 @@ public class WaveSpawner : MonoBehaviour
 
         // 生成该波的所有排
         FillUpRule fillRule = ResolvedStageConfig?.fillUpRule ?? FillUpRule.PerColumn;
+        var spawnedNormalEnemies = new List<Enemy>();
         if (fillRule == FillUpRule.PerRow)
         {
-            columnManager.ConfigureWaveRowLayout(wave.rows, 2);
-            // PerRow: 每排使用顺序递增的排号，确保 rowIndex 正确对应配置中的排位
+            columnManager.ConfigureWaveRowLayout(wave.rows, 0);
             int rowIdx = 0;
             foreach (RowConfig row in wave.rows)
             {
-                SpawnRow(row, fillRule, rowIdx++);
+                SpawnRow(row, fillRule, rowIdx++, spawnedNormalEnemies);
             }
         }
         else
@@ -152,13 +154,12 @@ public class WaveSpawner : MonoBehaviour
 
         isSpawning = false;
 
-        // 波次生成完成后，创建共享血量组
-        // 注意：必须在补齐前创建。UpdateMovement 中的解散检查已跳过正在补齐的成员，
-        // 所以组会安全度过补齐期，补齐完成后所有成员在同一排自然不会被解散。
         CreateSharedHealthGroups();
 
-        // Ordinary spawning starts only the cross-column wave scheduler.
-        columnManager.StartWaveMarch();
+        if (fillRule == FillUpRule.PerRow)
+            columnManager.StartSpawnEntry(spawnedNormalEnemies);
+        else
+            columnManager.StartWaveMarch();
 
         // Boss 独立补齐：波次行军跳过 Boss，需单独触发
         DebugLog.Info("[BOSS_ADVANCE] WaveSpawner 调用TriggerAllBossFillForward (wave=" + (currentWaveIndex + 1) + ")");
@@ -206,8 +207,18 @@ public class WaveSpawner : MonoBehaviour
     /// 该排所有敌人共享相同的排索引（rowIndex）。
     /// </summary>
     /// <param name="explicitRowIndex">PerRow 模式下的显式排号（>=0 时直接使用，无需计算）</param>
-    private void SpawnRow(RowConfig row, FillUpRule fillRule = FillUpRule.PerColumn, int explicitRowIndex = -1)
+    private void SpawnRow(RowConfig row, FillUpRule fillRule = FillUpRule.PerColumn, int explicitRowIndex = -1, List<Enemy> spawnedNormalEnemies = null)
     {
+        if (row == null)
+            return;
+
+        if (row.IsRhythmGate)
+        {
+            if (row.HasMixedRhythmGateContent)
+                Debug.LogWarning("[WaveSpawner] 节奏门排包含普通敌人ID；任意999会使整排不生成敌人");
+            return;
+        }
+
         if (row.enemyIds == null || row.enemyIds.Length == 0)
         {
             Debug.LogWarning("[WaveSpawner] RowConfig.enemyIds 为空，跳过");
@@ -218,8 +229,7 @@ public class WaveSpawner : MonoBehaviour
         int rowIndex;
         if (explicitRowIndex >= 0)
         {
-            // PerRow 模式：推后2排，由 RowBasedFillUp 触发逐步前移
-            rowIndex = explicitRowIndex + 2;
+            rowIndex = explicitRowIndex + SpawnEntryRowOffset;
         }
         else
         {
@@ -263,7 +273,10 @@ public class WaveSpawner : MonoBehaviour
 
             // 注册到管理器
             enemyManager?.RegisterEnemy(enemy);
-            columnManager?.RegisterWaveEnemy(enemy, rowIndex);
+            int configuredRow = explicitRowIndex >= 0 ? explicitRowIndex : rowIndex;
+            columnManager?.RegisterWaveEnemy(enemy, configuredRow);
+            if (!enemy.isBoss)
+                spawnedNormalEnemies?.Add(enemy);
         }
     }
 

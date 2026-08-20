@@ -22,23 +22,60 @@ public enum FillUpRule
 [Serializable]
 public class RowConfig
 {
-    [Tooltip("该排的敌人ID列表，每个ID对应一个站位。敌人实际占用的列数由 EnemyConfig.occupySlots 决定")]
+    public const int RhythmGateMarker = 999;
+
+    [Tooltip("该排的敌人ID列表，每个ID对应一个站位。0=空槽；任意位置填999则整排为节奏门，不生成敌人")]
     public int[] enemyIds = new int[5]; // 长度决定该排有多少个敌人站位
 
-    public bool IsExplicitEmptyGate
+    public bool IsRhythmGate
     {
         get
         {
-            if (enemyIds == null || enemyIds.Length != 5)
+            if (enemyIds == null)
                 return false;
 
             for (int i = 0; i < enemyIds.Length; i++)
             {
-                if (enemyIds[i] != 0)
-                    return false;
+                if (enemyIds[i] == RhythmGateMarker)
+                    return true;
             }
 
-            return true;
+            return false;
+        }
+    }
+
+    public bool HasConfiguredEnemies
+    {
+        get
+        {
+            if (IsRhythmGate || enemyIds == null)
+                return false;
+
+            for (int i = 0; i < enemyIds.Length; i++)
+            {
+                if (enemyIds[i] > 0)
+                    return true;
+            }
+
+            return false;
+        }
+    }
+
+    public bool HasMixedRhythmGateContent
+    {
+        get
+        {
+            if (!IsRhythmGate || enemyIds == null)
+                return false;
+
+            for (int i = 0; i < enemyIds.Length; i++)
+            {
+                int enemyId = enemyIds[i];
+                if (enemyId != 0 && enemyId != RhythmGateMarker)
+                    return true;
+            }
+
+            return false;
         }
     }
 }
@@ -124,7 +161,7 @@ public class StageConfig : ScriptableObject
             {
                 if (row == null || row.enemyIds == null) continue;
                 foreach (var eid in row.enemyIds)
-                    if (eid > 0) count++;
+                    if (eid > 0 && eid != RowConfig.RhythmGateMarker) count++;
             }
         }
         return count;

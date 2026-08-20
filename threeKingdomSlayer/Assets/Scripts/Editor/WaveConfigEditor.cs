@@ -262,6 +262,26 @@ public class StageConfigEditor : Editor
                 if (enemyIdsProp.arraySize != 5)
                     enemyIdsProp.arraySize = 5;
 
+                bool isRhythmGate = false;
+                bool hasMixedGateContent = false;
+                for (int c = 0; c < 5; c++)
+                {
+                    int id = enemyIdsProp.GetArrayElementAtIndex(c).intValue;
+                    isRhythmGate |= id == RowConfig.RhythmGateMarker;
+                }
+                if (isRhythmGate)
+                {
+                    for (int c = 0; c < 5; c++)
+                    {
+                        int id = enemyIdsProp.GetArrayElementAtIndex(c).intValue;
+                        if (id != 0 && id != RowConfig.RhythmGateMarker)
+                        {
+                            hasMixedGateContent = true;
+                            break;
+                        }
+                    }
+                }
+
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField($"第{r}排", GUILayout.Width(45));
                 Color oldBg = GUI.backgroundColor;
@@ -273,6 +293,15 @@ public class StageConfigEditor : Editor
                 }
                 GUI.backgroundColor = oldBg;
                 EditorGUILayout.EndHorizontal();
+
+                if (isRhythmGate)
+                {
+                    EditorGUILayout.HelpBox(
+                        hasMixedGateContent
+                            ? "任意格为999时整排是节奏门；本排普通敌人ID不会生成。"
+                            : "节奏门：前方配置敌群清空前，后方不能跨越。",
+                        hasMixedGateContent ? MessageType.Warning : MessageType.Info);
+                }
             }
 
             EditorGUILayout.EndVertical();
