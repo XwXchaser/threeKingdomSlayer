@@ -2,7 +2,7 @@
 id: kd_b30bbb29-64fa-4982-8f1a-5044011a151e
 injectMode: inherit
 summary: 非Boss战斗体验丰富化分析文档：系统关联全景图、已发现断裂点、三层改进方案、优先级排序，供后续开发决策参考。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 非Boss战斗体验丰富化分析

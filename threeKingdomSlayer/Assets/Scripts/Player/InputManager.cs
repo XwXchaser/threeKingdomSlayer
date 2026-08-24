@@ -114,6 +114,19 @@ public class InputManager : MonoBehaviour
             attackSystem = FindObjectOfType<AttackSystem>();
     }
 
+    public void CancelCurrentGesture()
+    {
+        if (isTouching)
+            OnChargeEnded?.Invoke();
+        isTouching = false;
+        isLongPress = false;
+        isCharged = false;
+        isSwiping = false;
+        hasTriggeredDuringHold = false;
+        isSwipeTracking = false;
+        currentTouchId = -1;
+    }
+
     private void Update()
     {
         // 暂停时不处理任何输入

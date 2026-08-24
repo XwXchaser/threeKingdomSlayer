@@ -2,7 +2,7 @@
 id: kd_b6e5ab2f-d5b8-42c9-8008-1581eb503440
 injectMode: inherit
 summary: 'Slash runtime: Stab prefab linear-X/Z-rotation sweep, frame timing, root-X hit thresholds, hit-stop, directional push, and shared QTE/Phantom blast radius. 普通 Slash 现在额外接收输入手势斜率，但只影响视觉路径，不影响命中逻辑。'
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## Current Slash construction

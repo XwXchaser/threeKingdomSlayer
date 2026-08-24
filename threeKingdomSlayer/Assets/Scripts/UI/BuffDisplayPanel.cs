@@ -49,7 +49,10 @@ public class BuffDisplayPanel : MonoBehaviour
         InitializeItemSlots();
 
         if (UpgradeEffectManager.Instance != null)
+        {
             UpgradeEffectManager.Instance.OnUpgradeApplied += OnUpgradeApplied;
+            UpgradeEffectManager.Instance.OnUpgradesReset += ResetUpgradeIcons;
+        }
         if (ItemInventory.Instance != null)
             ItemInventory.Instance.OnInventoryChanged += RefreshItemSlots;
         if (ActiveSkillInventory.Instance != null)
@@ -65,7 +68,10 @@ public class BuffDisplayPanel : MonoBehaviour
     private void OnDestroy()
     {
         if (UpgradeEffectManager.Instance != null)
+        {
             UpgradeEffectManager.Instance.OnUpgradeApplied -= OnUpgradeApplied;
+            UpgradeEffectManager.Instance.OnUpgradesReset -= ResetUpgradeIcons;
+        }
         if (ItemInventory.Instance != null)
             ItemInventory.Instance.OnInventoryChanged -= RefreshItemSlots;
         if (ActiveSkillInventory.Instance != null)
@@ -268,6 +274,16 @@ public class BuffDisplayPanel : MonoBehaviour
 
     // ── 事件回调 ──
 
+    private void ResetUpgradeIcons()
+    {
+        _upgradeIcons.Clear();
+        foreach (var slot in _columnASlots)
+        {
+            if (slot != null)
+                slot.ResetSlot();
+        }
+    }
+
     private void OnUpgradeApplied(UpgradeDefinition def, int newLevel)
     {
         if (def.category == UpgradeCategory.Item || def.category == UpgradeCategory.ActiveSkill)
@@ -362,6 +378,7 @@ public class BuffDisplayPanel : MonoBehaviour
     private void Update()
     {
         var timedModule = TimedPassiveModule.Instance;
+        bool showTimedCooldown = StageController.Instance == null || StageController.Instance.IsRouteCombatActive;
         if (timedModule != null)
         {
             foreach (var upgradeId in timedModule.RegisteredUpgradeIds)
@@ -371,6 +388,13 @@ public class BuffDisplayPanel : MonoBehaviour
                 float timer = timedModule.GetTimer(upgradeId);
                 float interval = timedModule.GetInterval(upgradeId);
                 if (interval <= 0f) continue;
+
+                if (!showTimedCooldown)
+                {
+                    icon.SetCooldown(0f, null, false);
+                    icon.ClearTopRightNumber();
+                    continue;
+                }
 
                 float fill = 1f - (timer / interval);
                 icon.SetCooldown(fill, null, true);

@@ -2,7 +2,7 @@
 id: kd_af882051-7c31-436c-8995-455c11b68c2d
 injectMode: inherit
 summary: 程序化 UI 开发三原则：静态布局归 prefab、动态值用基准偏移、Edit Mode 预览只重建叶子。避免代码覆写设计师手动调整的布局参数。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 程序化 UI 开发原则

@@ -2,7 +2,7 @@
 id: kd_a2c9dc76-e50e-44a4-9726-80ae2ab41b7d
 injectMode: inherit
 summary: 攻击视觉 Tween 访问已销毁 Transform 的根因与清理规则。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 - 症状：攻击视觉对象被销毁后，DOTween 仍在下一帧访问已销毁 Transform，Unity 抛出 MissingReferenceException，可能导致游戏被强制暂停。

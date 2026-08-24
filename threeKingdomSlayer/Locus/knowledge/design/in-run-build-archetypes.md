@@ -2,7 +2,7 @@
 id: kd_aba0a0d1-a8f3-4a21-8629-4d3958798b56
 injectMode: inherit
 summary: 当前局内三选一以蓄力流和位移流为两条主要构筑路线，并明确哪些异常配置属于有意保留。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 局内三选一构筑主轴（V2当前基线）

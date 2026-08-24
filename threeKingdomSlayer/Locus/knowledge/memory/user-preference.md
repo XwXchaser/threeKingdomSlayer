@@ -2,7 +2,7 @@
 id: kd_80a1d38e-bdc4-4777-a6de-ef1f2e026ca9
 injectMode: inherit
 summary: 用户交互偏好：分析指令不可直接实现
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 交互偏好

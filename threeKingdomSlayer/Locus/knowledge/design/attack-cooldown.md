@@ -2,7 +2,7 @@
 id: kd_5f380275-6449-4752-a084-ff230b75b378
 injectMode: inherit
 summary: 攻击冷却双模式设计：独立技能CD（保留）vs 动作锁定（新增），设计意图与实施细节
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 攻击冷却双模式设计

@@ -1,7 +1,7 @@
 ---
 id: kd_80c00c82-cd7b-4e9e-b248-eb0cbc043555
 injectMode: inherit
-aiMaintained: inherit
+aiEditMode: inherit
 skillEnabled: true
 skillSurface: command
 ---

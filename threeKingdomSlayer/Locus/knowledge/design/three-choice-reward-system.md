@@ -2,7 +2,7 @@
 id: kd_88224985-75b2-4921-aff3-d5e2a3b1bd6f
 injectMode: inherit
 summary: 三选一奖励系统的完整技术设计文档。涵盖数值buff型、道具型（大旋风+落雷）、被动攻击型三种类型的分类、数据流、UI布局、手势冲突矩阵、当前实现状态、待修复问题、配置资产清单和关键设计决策。贯穿整个游戏开发周期。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ### 4.5 UI 显示

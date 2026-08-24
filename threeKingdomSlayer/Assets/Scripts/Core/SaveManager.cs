@@ -15,6 +15,7 @@ public class SaveData
     public int coinCount;
     public bool tutorialCompleted;
     public List<string> completedTutorialDialogueIds = new List<string>();
+    public List<RouteStageSaveSnapshot> routeStageSnapshots = new List<RouteStageSaveSnapshot>();
 
     /// <summary>
     /// 获取铜钱数量（优先从 props 列表读取，兼容旧存档的 coinCount 字段）
@@ -38,9 +39,33 @@ public class SaveData
     }
 }
 
-/// <summary>
-/// 存档管理器 — 静态工具类
-/// </summary>
+[Serializable]
+public sealed class RouteStageSaveSnapshot
+{
+    public int stageId;
+    public string currentNodeId;
+    public float currentHealth;
+    public int currentRevives;
+    public int currentLevel;
+    public float currentExp;
+    public List<RouteNodeBattleSaveState> nodeStates = new List<RouteNodeBattleSaveState>();
+    public List<RouteUpgradeSaveState> upgrades = new List<RouteUpgradeSaveState>();
+}
+
+[Serializable]
+public sealed class RouteNodeBattleSaveState
+{
+    public string nodeId;
+    public List<int> completedEntryIndices = new List<int>();
+}
+
+[Serializable]
+public sealed class RouteUpgradeSaveState
+{
+    public string upgradeId;
+    public int level;
+}
+
 public static class SaveManager
 {
     private const string SaveKey = "player_save";
@@ -92,9 +117,40 @@ public static class SaveManager
         PlayerPrefs.Save();
     }
 
-    /// <summary>
-    /// 标记关卡已通关
-    /// </summary>
+    public static RouteStageSaveSnapshot GetRouteStageSnapshot(int stageId)
+    {
+        var data = Load();
+        for (int i = 0; i < data.routeStageSnapshots.Count; i++)
+            if (data.routeStageSnapshots[i] != null && data.routeStageSnapshots[i].stageId == stageId)
+                return data.routeStageSnapshots[i];
+        return null;
+    }
+
+    public static void SaveRouteStageSnapshot(RouteStageSaveSnapshot snapshot)
+    {
+        var data = Load();
+        for (int i = data.routeStageSnapshots.Count - 1; i >= 0; i--)
+            if (data.routeStageSnapshots[i] == null || data.routeStageSnapshots[i].stageId == snapshot.stageId)
+                data.routeStageSnapshots.RemoveAt(i);
+        data.routeStageSnapshots.Add(snapshot);
+        Save(data);
+    }
+
+    public static void ClearRouteStageSnapshot(int stageId)
+    {
+        var data = Load();
+        bool changed = false;
+        for (int i = data.routeStageSnapshots.Count - 1; i >= 0; i--)
+        {
+            if (data.routeStageSnapshots[i] != null && data.routeStageSnapshots[i].stageId == stageId)
+            {
+                data.routeStageSnapshots.RemoveAt(i);
+                changed = true;
+            }
+        }
+        if (changed) Save(data);
+    }
+
     public static void MarkStageCleared(int stageId)
     {
         var data = Load();

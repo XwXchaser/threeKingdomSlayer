@@ -2,7 +2,7 @@
 id: kd_a55befda-e494-4213-ad89-daca00cee52a
 injectMode: inherit
 summary: 音频系统已从 Wwise 迁移至 Unity 原生 AudioSource + AudioListener.volume。Wwise 已完全移除。迁移中修复了 m_DisableAudio、AudioSource 缺失、preloadAudioData 三个关键问题。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 音频系统（已迁移至 Unity 原生）

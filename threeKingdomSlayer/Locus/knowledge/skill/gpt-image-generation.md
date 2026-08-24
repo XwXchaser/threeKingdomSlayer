@@ -1,7 +1,7 @@
 ---
 id: kd_e6815137-b73f-41d7-b6ad-d76834c73ab0
 injectMode: inherit
-aiMaintained: inherit
+aiEditMode: inherit
 skillEnabled: true
 skillSurface: command
 commandTrigger: /gpt-image

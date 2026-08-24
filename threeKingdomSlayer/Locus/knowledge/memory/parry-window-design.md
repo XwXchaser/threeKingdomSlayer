@@ -2,7 +2,7 @@
 id: kd_a1611e2a-5cae-4c64-9590-033dfb2ee8e5
 injectMode: inherit
 summary: parry 锁死问题的判定窗口收紧方案（设计讨论中，未实现）
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # Parry 判定窗口方案（开发中，2026）

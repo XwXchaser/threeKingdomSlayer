@@ -2,7 +2,7 @@
 id: kd_d16786ae-1273-4fe3-b121-e16b0cca4a77
 injectMode: inherit
 summary: 'Stab has two visual-only offset mechanisms: (1) a forward reach offset that extends beyond hit range, and (2) a random target disk offset that adds visual variation to the stab endpoint. Both are independent of hit detection, damage, and range.'
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## Visual Reach Offset

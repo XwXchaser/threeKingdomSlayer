@@ -1,7 +1,7 @@
 ---
 id: kd_b43ac30e-4b29-4d38-b5da-ec51a24091ef
 injectMode: inherit
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 击退机制（权威版）

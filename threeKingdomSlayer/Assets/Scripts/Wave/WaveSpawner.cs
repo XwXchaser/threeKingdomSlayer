@@ -40,6 +40,8 @@ public class WaveSpawner : MonoBehaviour
     private bool isSpawning;
     private bool isWaveComplete;
     private bool isAllWavesCompleted;
+    private int _waveClearNotificationGeneration;
+    private int _lastWaveClearNotificationIndex = -1;
     private float _nextSnapshotTime;
 
     // 事件
@@ -59,17 +61,40 @@ public class WaveSpawner : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (enemyManager != null)
+            enemyManager.OnAllEnemiesDied -= OnAllEnemiesDied;
         if (Instance == this)
-        {
             Instance = null;
-        }
     }
-
     private void Start()
     {
         if (enemyPool == null) enemyPool = FindObjectOfType<EnemyPool>();
         if (columnManager == null) columnManager = FindObjectOfType<ColumnManager>();
         if (enemyManager == null) enemyManager = FindObjectOfType<EnemyManager>();
+        if (enemyManager != null)
+            enemyManager.OnAllEnemiesDied += OnAllEnemiesDied;
+    }
+
+
+    private void OnAllEnemiesDied()
+    {
+        if (currentWaveIndex >= 0 && !isWaveComplete)
+            NotifyWaveCleared(currentWaveIndex);
+    }
+
+    private void NotifyWaveCleared(int waveIndex)
+    {
+        if (isWaveComplete || waveIndex != currentWaveIndex) return;
+        Debug.Log("[WaveDiag] NotifyWaveCleared wave=" + waveIndex + " current=" + currentWaveIndex + " isComplete=" + isWaveComplete + " all=" + isAllWavesCompleted + " listeners=" + (OnAllWavesCompleted != null));
+        isWaveComplete = true;
+        OnWaveCompleted?.Invoke(waveIndex);
+        Debug.Log($"[WaveSpawner] 第 {waveIndex + 1} 波已清空");
+        var cfg = ResolvedStageConfig;
+        if (cfg != null && waveIndex >= cfg.waves.Count - 1)
+        {
+            isAllWavesCompleted = true;
+            OnAllWavesCompleted?.Invoke();
+        }
     }
 
     private void Update()
@@ -184,9 +209,14 @@ public class WaveSpawner : MonoBehaviour
             yield return new WaitForSeconds(0.5f);
         }
 
+        if (enemyManager != null && enemyManager.IsAllEnemiesDead && !isWaveComplete)
+        {
+            NotifyWaveCleared(capturedWaveIndex);
+            yield break;
+        }
+
         // 波次已清空
-        isWaveComplete = true;
-        OnWaveCompleted?.Invoke(capturedWaveIndex);
+        NotifyWaveCleared(capturedWaveIndex);
 
         Debug.Log($"[WaveSpawner] 第 {capturedWaveIndex + 1} 波已清空");
 
@@ -280,14 +310,22 @@ public class WaveSpawner : MonoBehaviour
         }
     }
 
+    public void StopSpawning()
+    {
+        StopAllCoroutines();
+        isSpawning = false;
+        isWaveComplete = false;
+        isAllWavesCompleted = false;
+        currentWaveIndex = -1;
+        _waveClearNotificationGeneration++;
+        _lastWaveClearNotificationIndex = -1;
+    }
     /// <summary>
     /// 获取当前波次索引
     /// </summary>
     public int CurrentWaveIndex => currentWaveIndex;
 
-    /// <summary>
-    /// 是否正在生成
-    /// </summary>
+
     public bool IsSpawning => isSpawning;
 
     /// <summary>

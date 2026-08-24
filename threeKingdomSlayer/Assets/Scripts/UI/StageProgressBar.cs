@@ -98,7 +98,8 @@ public class StageProgressBar : MonoBehaviour
 
         var go = gameObject;
         go.layer = LayerMask.NameToLayer("UI");
-        go.AddComponent<RectMask2D>();
+        if (GetComponent<RectMask2D>() == null)
+            go.AddComponent<RectMask2D>();
         BuildVisuals();
     }
 

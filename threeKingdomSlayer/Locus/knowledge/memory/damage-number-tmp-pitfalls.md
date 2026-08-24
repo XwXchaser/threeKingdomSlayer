@@ -2,7 +2,7 @@
 id: kd_8564ed43-4dc8-461e-944e-03b1884215ce
 injectMode: inherit
 summary: DamageNumber TMP 动态创建的常见坑：_FaceColor=black 导致文字全黑、OUTLINE_ON 默认开启、tmp.text 设置顺序影响材质属性、粗体权重配置、colorOverride 传递链。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # DamageNumber TMP 常见问题排查

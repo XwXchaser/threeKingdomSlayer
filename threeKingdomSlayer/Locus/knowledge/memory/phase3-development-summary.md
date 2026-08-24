@@ -2,7 +2,7 @@
 id: kd_04b72df3-abb3-4ca2-941d-83941c56fa62
 injectMode: inherit
 summary: 第三期局内成长系统（经验三选一）开发状态 + 位移效果三选一BUG修复（击退波/聚拢波/回旋波/连锁弹射）+ 被动特效prefab部署 + 补齐打断攻击BUG修复 + C技霸体位移BUG修复 + BOSS墙壁保护 + RowBasedFillUp打断BOSS Rush修复 + Boss初始wave spawn不补齐死锁修复 (2025-12-19)
-aiMaintained: true
+aiEditMode: auto
 maintenanceRules: |-
   Keep only durable and reusable project memory
   Consolidate duplicates or conflicts into the latest conclusion

@@ -2,7 +2,7 @@
 id: kd_d02820b0-cd2f-4913-86fe-52b54e58fcea
 injectMode: inherit
 summary: 'Verified audit of current combat presentation: enemy feedback exists, but camera/audio/phase/charge/ultimate/wave/combo/hit-point layers are disconnected; prioritized no-new-art improvements.'
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## Presentation audit without new animation assets

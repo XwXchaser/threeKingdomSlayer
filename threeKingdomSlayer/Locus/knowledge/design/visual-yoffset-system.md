@@ -2,7 +2,7 @@
 id: kd_28a19b01-e07f-49cd-9619-cd7c81a4635a
 injectMode: inherit
 summary: 精灵锚点不统一的视觉补偿方案：通过 Inspector 可配的 Y 偏移字段，让不同尺寸的立于地面角色和特效的脚底对齐，避免每个精灵都去 Sprite Editor 改锚点。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 实现

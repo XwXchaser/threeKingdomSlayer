@@ -62,6 +62,7 @@ public class ActiveSkillInventory : MonoBehaviour
 
     private void Update()
     {
+        if (PlayerState.Instance == null || PlayerState.Instance.stageState != StageState.InProgress) return;
         if (!UsesActiveSkills) return;
 
         bool changed = false;
@@ -124,6 +125,8 @@ public class ActiveSkillInventory : MonoBehaviour
 
     public bool TryActivate(int entryId)
     {
+        if (PlayerState.Instance == null || PlayerState.Instance.stageState != StageState.InProgress) return false;
+        if (StageController.Instance != null && StageController.Instance.IsRouteRewardWaiting) return false;
         if (!UsesActiveSkills) return false;
         if (Time.timeScale <= 0f) return false;
         if (DialogueManager.Instance != null && DialogueManager.Instance.IsInteractionBlocked) return false;
@@ -170,6 +173,18 @@ public class ActiveSkillInventory : MonoBehaviour
     }
 
     public bool HasSkill(string upgradeId) => FindByUpgradeId(upgradeId) != null;
+
+    public void ResetCooldowns()
+    {
+        for (int i = 0; i < _entries.Count; i++)
+        {
+            var entry = _entries[i];
+            if (entry == null || entry.definition == null) continue;
+            entry.cooldownRemaining = 0f;
+            entry.cooldownDuration = 0f;
+        }
+        OnCooldownsChanged?.Invoke();
+    }
 
     public void ResetAll()
     {

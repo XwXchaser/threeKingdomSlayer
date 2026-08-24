@@ -41,6 +41,11 @@ public class PlayerHitFeedback : MonoBehaviour
 
     private void OnHealthChanged(float current, float max)
     {
+        if (PlayerState.Instance != null && PlayerState.Instance.stageState != StageState.InProgress)
+        {
+            _lastHealth = current;
+            return;
+        }
         if (current < _lastHealth)
         {
             TriggerHitFeedback();

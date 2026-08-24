@@ -2,7 +2,7 @@
 id: kd_329ff503-f100-4792-8780-aef00b2b82e1
 injectMode: inherit
 summary: Pierce uses a formation-aligned visual flight ray while retaining column/range target authority, with the release-axis correction accepted in runtime validation.
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## Current Pierce construction

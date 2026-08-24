@@ -2,7 +2,7 @@
 id: kd_05e6039b-c5f9-463c-87f9-59b43da2ce9a
 injectMode: inherit
 summary: 补齐规则权威版：普通补齐只由整排清空触发；全零配置排是随逻辑队列推进的空排占位符；999是独立节奏门；击退只移动并精确回位被击退者。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 补齐规则（权威版）

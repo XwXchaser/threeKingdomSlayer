@@ -2,7 +2,7 @@
 id: kd_2cb3f665-80e5-4387-8f66-572ff852e4c6
 injectMode: inherit
 summary: 局外成长与 Build 系统设计文档：三层体系（天赋树永久机械解锁 + 战前 Loadout Build 方向 + 铜钱经济闭环），与局内三选一升级形成联动。禁止纯数值伤害提升。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 局外成长与 Build 系统设计

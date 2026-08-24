@@ -2,7 +2,7 @@
 id: kd_e9071eeb-e037-4bf8-87f1-627e0927e3ee
 injectMode: inherit
 summary: Parry 格挡视觉实现：纯 Z 轴旋转（54,270,45°→145°），以玩家位置为基准生成，反弹飞行物和伤害敌人两个分支都播放视觉。QTE 飞行物通过 isQTEProjectile 标记隔离，不被常规 Parry 反弹。v3 新增 QTE 防御格挡表现（摄像机空间矛举起+自转+三帧精灵）。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # Parry 格挡视觉实现方案（v2 — 纯 Z 轴旋转）

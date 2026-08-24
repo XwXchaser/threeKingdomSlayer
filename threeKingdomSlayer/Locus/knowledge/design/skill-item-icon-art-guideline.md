@@ -2,7 +2,7 @@
 id: kd_823a511b-22f8-458f-8d4f-4ab9ea250211
 injectMode: inherit
 summary: 基于现有 `31Reward` 图标提炼的技能/道具图标美术规范：包括画风、构图、色彩编码、技术导入、AI 生图模板、验收标准及资产参考。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 技能与道具图标美术制作规范

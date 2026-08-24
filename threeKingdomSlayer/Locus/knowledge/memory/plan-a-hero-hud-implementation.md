@@ -2,7 +2,7 @@
 id: kd_1e5bda6b-3133-419b-bb0d-44ddfdbe9366
 injectMode: inherit
 summary: Hero HUD 当前架构：Battle 场景常驻可视化 HeroHUDRoot + 每角色 HeroHUDSkin + 可选 extraUIPrefabs；旧 heroHUDPrefab 仅作兜底。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 2025-12 更新：场景常驻 HUD + Skin

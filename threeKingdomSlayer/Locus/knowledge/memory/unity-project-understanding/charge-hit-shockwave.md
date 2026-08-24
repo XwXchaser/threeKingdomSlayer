@@ -2,7 +2,7 @@
 id: kd_c59a496c-fce5-40ee-87a7-4ebaa34ded0e
 injectMode: inherit
 summary: 'Independent charge-hit shockwave upgrade: actual damage taken while charging increases its next charged-release damage.'
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 - New independent three-choice upgrade asset: `Assets/ScriptableObjects/Upgrades/Definitions/ChargeHitShockwave.asset` (`upgradeId`/`effectType`: `charge_hit_shockwave`, category AttackPassive).

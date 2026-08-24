@@ -2,7 +2,7 @@
 id: kd_6bd23eb4-c8b2-454e-a1dd-a6e8409ac519
 injectMode: inherit
 summary: BOSS机制统一重构：打断规则与普通敌人对齐、通用描边Shader、锁血转阶段、多阶段攻击配置。Phase 5 完成Poise规则重构。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # BOSS 机制统一重构设计文档

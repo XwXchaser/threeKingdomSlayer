@@ -2,7 +2,7 @@
 id: kd_a4d7e047-878e-4a54-9f47-d32bcff7ad82
 injectMode: inherit
 summary: Stab 与 Slash/Sweep 的战斗中 Boss 范围例外保持一致。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 战斗中 Boss 的玩家攻击范围例外

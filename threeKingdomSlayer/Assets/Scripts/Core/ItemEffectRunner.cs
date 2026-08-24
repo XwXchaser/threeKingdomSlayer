@@ -51,6 +51,7 @@ public class ItemEffectRunner : MonoBehaviour
 
     public bool TryActivate(UpgradeDefinition def)
     {
+        if (PlayerState.Instance == null || PlayerState.Instance.stageState != StageState.InProgress) return false;
         if (def == null) return false;
         switch (def.gestureId)
         {

@@ -55,6 +55,7 @@ public class CycloneItemController : MonoBehaviour
 
     public bool TryActivate(UpgradeDefinition definition)
     {
+        if (PlayerState.Instance == null || PlayerState.Instance.stageState != StageState.InProgress) return false;
         if (definition == null || definition.effectType != "item_cyclone" || cycloneEffectPrefab == null || _cooldownRemaining > 0f)
             return false;
 

@@ -1,7 +1,7 @@
 ---
 id: kd_6dc15d1a-77b7-4a98-a7b2-4bdb38d7d679
 injectMode: inherit
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # QTE System

@@ -2,7 +2,7 @@
 id: kd_dbe058ac-9f56-40da-beef-9250628b3aac
 injectMode: inherit
 summary: 程序化像素命中特效的对象池、运行时 Sprite、Billboard、DOTween 生命周期、可见性修复与后续接触点/分技能造型约束。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 当前实现

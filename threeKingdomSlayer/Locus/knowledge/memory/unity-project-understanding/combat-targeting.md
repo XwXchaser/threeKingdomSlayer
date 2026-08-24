@@ -1,7 +1,7 @@
 ---
 id: kd_a9b75e0f-5859-4368-9879-06246e0dbd46
 injectMode: inherit
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # Combat Targeting

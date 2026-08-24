@@ -13,11 +13,18 @@ public class StageController : MonoBehaviour
 
     [Header("关卡配置")]
     public StageConfig stageConfig;
+    public RouteStageConfig routeStageConfig;
+    public RouteStageConfigV2 routeStageConfigV2;
 
     /// <summary>
-    /// 待加载的关卡配置（MainMenu选关后设置，Battle场景 Awake 时读取并清空）
+    /// 待加载的线性关卡配置（MainMenu选关后设置）
     /// </summary>
     public static StageConfig PendingStageConfig;
+
+    /// <summary>
+    /// 待加载的路线关卡配置（MainMenu选关后设置）
+    /// </summary>
+    public static RouteStageConfig PendingRouteStageConfig;
 
     [Header("组件引用")]
     public WaveSpawner waveSpawner;
@@ -32,11 +39,17 @@ public class StageController : MonoBehaviour
     // 运行时状态
     private StageState currentState = StageState.None;
     private bool _coinsSettled;
+    private bool _routeRunInitialized;
+    private bool _routeBattleRuntime;
+    private bool _routeStageSettled;
+    private bool _routeRewardWaiting;
 
     // 事件
     public System.Action<StageState> OnStageStateChanged;
     public System.Action OnStageVictory;
     public System.Action OnStageDefeat;
+    public System.Action OnCombatNodeCleared;
+    public System.Action OnRouteBattleCompleted;
 
     private void OnEnable()
     {
@@ -53,20 +66,40 @@ public class StageController : MonoBehaviour
         }
         Instance = this;
 
-        // 从 MainMenu 传入的关卡配置（静态变量跨场景传递）
-        if (PendingStageConfig != null)
+        // 从 MainMenu 传入的路线或线性关卡配置
+        if (RouteStageV2Launch.PendingConfig != null)
+        {
+            routeStageConfigV2 = RouteStageV2Launch.PendingConfig;
+            Debug.Log("[RouteV2] launch mode=" + (RouteStageV2Launch.StartFromCheckpoint ? "checkpoint" : "new game") + " stage=" + routeStageConfigV2.stageId);
+            RouteStageV2Launch.PendingConfig = null;
+            routeStageConfig = null;
+            stageConfig = null;
+        }
+        else if (PendingRouteStageConfig != null)
+        {
+            routeStageConfig = PendingRouteStageConfig;
+            PendingRouteStageConfig = null;
+            routeStageConfigV2 = null;
+            stageConfig = null;
+        }
+        else if (PendingStageConfig != null)
         {
             stageConfig = PendingStageConfig;
             PendingStageConfig = null;
+            routeStageConfig = null;
         }
 
-        if (stageConfig != null)
+        if (routeStageConfig != null)
         {
-            Debug.Log($"[StageController] 加载关卡: {stageConfig.stageName} (stageId={stageConfig.stageId})");
+            Debug.Log($"[StageController] 加载路线关卡: {routeStageConfig.stageName} (stageId={routeStageConfig.stageId})");
+        }
+        else if (stageConfig != null)
+        {
+            Debug.Log($"[StageController] 加载线性关卡: {stageConfig.stageName} (stageId={stageConfig.stageId})");
         }
         else
         {
-            Debug.LogWarning("[StageController] stageConfig 未设置");
+            Debug.LogWarning("[StageController] 未设置线性或路线关卡配置");
         }
     }
 
@@ -125,13 +158,47 @@ public class StageController : MonoBehaviour
     /// </summary>
     public void StartStage()
     {
-        if (stageConfig == null)
+        if (routeStageConfigV2 != null)
         {
-            Debug.LogError("[StageController] stageConfig 未赋值，无法开始关卡");
+            _routeStageSettled = false;
+            var checkpoint = RouteStageV2Launch.StartFromCheckpoint ? SaveManager.GetRouteStageSnapshot(routeStageConfigV2.stageId) : null;
+            if (checkpoint == null)
+            {
+                Debug.Log("[RouteV2] no checkpoint: resetting full player state");
+                playerState?.ResetPlayer();
+                Debug.Log("[RouteV2] no checkpoint reset result health=" + (playerState != null ? playerState.currentHealth.ToString("F1") : "NULL") + " level=" + (playerState != null ? playerState.currentLevel.ToString() : "NULL") + " upgrades=" + (playerState != null ? playerState.acquiredUpgrades.Count.ToString() : "NULL"));
+            }
+            UltimateSystem.Instance?.ResetEnergy();
+            enemyManager?.ClearAllEnemies();
+            var v2Runtime = FindObjectOfType<RouteStageRuntimeV2>();
+            if (v2Runtime == null)
+            {
+                Debug.LogError("[StageController] V2路线运行时组件缺失");
+                return;
+            }
+            v2Runtime.Begin(routeStageConfigV2);
             return;
         }
 
-        Debug.Log($"[StageController] 开始关卡: {stageConfig.stageName}");
+        if (routeStageConfig != null)
+        {
+            var routeController = RouteProgressionController.Instance;
+            string routeError = string.Empty;
+            if (routeController == null || !routeController.TryInitialize(routeStageConfig, out routeError))
+            {
+                Debug.LogError("[StageController] 路线配置无效: " + routeError);
+                return;
+            }
+            return;
+        }
+
+        if (stageConfig == null)
+        {
+            Debug.LogError("[StageController] 当前节点StageConfig未赋值，无法开始关卡");
+            return;
+        }
+
+        Debug.Log($"[StageController] 开始战斗节点: {stageConfig.stageName}");
 
         // 重置所有状态
         playerState?.ResetPlayer();
@@ -215,6 +282,11 @@ public class StageController : MonoBehaviour
     /// </summary>
     private void OnWaveCleared(int waveIndex)
     {
+        if (routeStageConfig != null && RouteProgressionController.Instance != null)
+        {
+            Debug.Log("[StageController] 路线节点波次清空，路线控制器负责后续流程");
+            return;
+        }
         var ucm = UpgradeChoiceManager.Instance;
         if (ucm != null && ucm.IsChoosing)
         {
@@ -252,22 +324,39 @@ public class StageController : MonoBehaviour
     {
         if (currentState != StageState.InProgress) return;
 
-        Debug.Log("[StageController] 所有波次已清空，关卡胜利！");
+        var runtimeV2 = FindObjectOfType<RouteStageRuntimeV2>();
+        if (_routeBattleRuntime && runtimeV2 != null)
+        {
+            OnRouteBattleCompleted?.Invoke();
+            return;
+        }
+
+        // 路线模式下，当前节点清空交给路线控制器；只有终点节点清空才是整关胜利。
+        if (routeStageConfig != null && RouteProgressionController.Instance != null
+            && RouteProgressionController.Instance.CurrentNode != routeStageConfig.finalNode)
+        {
+            Debug.Log("[StageDiag] OnAllWavesCleared route=" + (routeStageConfig != null ? routeStageConfig.name : "NULL") + " routeInstance=" + (RouteProgressionController.Instance != null ? RouteProgressionController.Instance.name + "#" + RouteProgressionController.Instance.GetInstanceID() : "NULL") + " currentNode=" + (RouteProgressionController.Instance != null && RouteProgressionController.Instance.CurrentNode != null ? RouteProgressionController.Instance.CurrentNode.name : "NULL") + " final=" + (routeStageConfig != null && routeStageConfig.finalNode != null ? routeStageConfig.finalNode.name : "NULL"));
+            Debug.Log("[StageController] 当前路线节点已清空，等待路线控制器推进");
+            OnCombatNodeCleared?.Invoke();
+            return;
+        }
+
+        Debug.Log("[StageController] 最终战斗节点已清空，关卡胜利！");
         AudioManager.Instance?.StopBGM();
         SetState(StageState.Victory);
         ClearEnemyProjectiles();
 
-        // 发放通关奖励
         if (stageConfig != null)
         {
             playerState?.AddCoins(stageConfig.clearCoinReward);
         }
+        if (routeStageConfig != null)
+            playerState?.AddCoins(routeStageConfig.clearCoinReward);
 
-        // 标记通关 + 结算铜钱
-        if (stageConfig != null)
-        {
+        if (routeStageConfig != null)
+            SaveManager.MarkStageCleared(routeStageConfig.stageId);
+        else if (stageConfig != null)
             SaveManager.MarkStageCleared(stageConfig.stageId);
-        }
         SettleCoins();
 
         OnStageVictory?.Invoke();
@@ -279,6 +368,10 @@ public class StageController : MonoBehaviour
     private void OnPlayerDefeated()
     {
         if (currentState == StageState.Defeat || currentState == StageState.Victory) return;
+
+        var v2Runtime = FindObjectOfType<RouteStageRuntimeV2>();
+        if (v2Runtime != null)
+            v2Runtime.HandleStageDefeat();
 
         // 取消待处理的选择完成回调（玩家已死，不再生成下一波）
         var ucm = UpgradeChoiceManager.Instance;
@@ -338,16 +431,36 @@ public class StageController : MonoBehaviour
         StartCoroutine(RestartStageCoroutine());
     }
 
+    public void CleanupRouteStage(bool unloadScene)
+    {
+        var runtimeV2 = FindObjectOfType<RouteStageRuntimeV2>();
+        if (runtimeV2 != null)
+            runtimeV2.CleanupRouteStage(unloadScene);
+    }
+
     private IEnumerator RestartStageCoroutine()
     {
-        // 清理所有敌人
+        Debug.Log("[RouteV2] RestartStage begin checkpointMode=" + RouteStageV2Launch.StartFromCheckpoint + " health=" + (playerState != null ? playerState.currentHealth.ToString("F1") : "NULL") + " level=" + (playerState != null ? playerState.currentLevel.ToString() : "NULL") + " upgrades=" + (playerState != null ? playerState.acquiredUpgrades.Count.ToString() : "NULL"));
         enemyManager?.ClearAllEnemies();
         enemyPool?.ClearAllPools();
+        if (RouteStageV2Launch.StartFromCheckpoint)
+        {
+            playerState?.ResetPlayer();
+            Debug.Log("[RouteV2] cleared death runtime state before checkpoint restore");
+        }
+        CleanupRouteStage(true);
+
+        while (routeStageConfigV2 != null)
+        {
+            var routeScene = UnityEngine.SceneManagement.SceneManager.GetSceneByName(routeStageConfigV2.routeSceneName);
+            if (!routeScene.IsValid() || !routeScene.isLoaded)
+                break;
+            yield return null;
+        }
 
         // 等待一帧确保清理完成
         yield return null;
 
-        // 重新开始
         StartStage();
     }
 
@@ -357,6 +470,7 @@ public class StageController : MonoBehaviour
     public void GoToMainMenu()
     {
         AudioManager.Instance?.StopBGM();
+        CleanupRouteStage(true);
         SettleCoins();
         UnityEngine.SceneManagement.SceneManager.LoadScene(mainMenuSceneName);
     }
@@ -385,6 +499,112 @@ public class StageController : MonoBehaviour
     public void GoToBattleScene()
     {
         UnityEngine.SceneManagement.SceneManager.LoadScene(battleSceneName);
+    }
+
+    public void CompleteRouteStage(int clearReward)
+    {
+        if (!_routeBattleRuntime || _routeStageSettled) return;
+        _routeStageSettled = true;
+        AudioManager.Instance?.StopBGM();
+        SetState(StageState.Victory);
+        ClearEnemyProjectiles();
+        if (clearReward > 0) playerState?.AddCoins(clearReward);
+        if (routeStageConfigV2 != null)
+            SaveManager.MarkStageCleared(routeStageConfigV2.stageId);
+        SettleCoins();
+        OnStageVictory?.Invoke();
+    }
+
+    public void SetCurrentNodeBattleConfig(StageConfig config)
+    {
+        stageConfig = config;
+    }
+
+    public void SetRouteTravelState()
+    {
+        Debug.Log($"[RouteDiag] SetRouteTravelState frame={Time.frameCount} routeCombat={IsRouteCombatActive} burnStates=" + (UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetBurnStateCountForDiagnostics().ToString() : "NULL"));
+        _routeRewardWaiting = false;
+        TimedPassiveModule.Instance?.PrepareForNonCombat();
+        SetState(StageState.Starting);
+    }
+
+    public void SetRouteRewardWaitState()
+    {
+        _routeRewardWaiting = true;
+        StopCombatSystemsForNodeTransition();
+    }
+
+    public bool IsRouteRewardWaiting => _routeRewardWaiting;
+    public bool IsRouteCombatActive => _routeBattleRuntime
+        && currentState == StageState.InProgress
+        && !_routeRewardWaiting;
+
+    public void StartRouteBattle(StageConfig config)
+    {
+        if (config == null) return;
+        Debug.Log($"[RouteDiag] StartRouteBattle frame={Time.frameCount} nodeConfig={config.name} routeCombatBefore={IsRouteCombatActive} burnStates=" + (UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetBurnStateCountForDiagnostics().ToString() : "NULL"));
+        _routeBattleRuntime = true;
+        _routeRewardWaiting = false;
+        routeStageConfig = null;
+        stageConfig = config;
+        StopCombatSystemsForNodeTransition();
+        PrewarmEnemyPools();
+        SetState(StageState.InProgress);
+        AudioManager.Instance?.PlayDefaultBGM();
+        waveSpawner?.StartWaveSpawning();
+        Debug.Log($"[RouteDiag] StartRouteBattle after wave spawn frame={Time.frameCount} routeCombat={IsRouteCombatActive} enemies={AttackSystem.Instance?.columnManager?.GetAllEnemies()?.Count}");
+        TimedPassiveModule.Instance?.TriggerPendingCombatStartEffects();
+    }
+
+    public void StopCombatForRouteTravel()
+    {
+        if (routeStageConfig == null) return;
+        StopCombatSystemsForNodeTransition();
+        SetState(StageState.Starting);
+    }
+
+    public void StartCurrentRouteNode(bool resetPlayer = false)
+    {
+        if (routeStageConfig == null || stageConfig == null) return;
+        StopCombatSystemsForNodeTransition();
+        StartNodeCombat(resetPlayer);
+    }
+
+    private void StopCombatSystemsForNodeTransition()
+    {
+        waveSpawner?.StopSpawning();
+        enemyManager?.ClearAllEnemies();
+        ClearEnemyProjectiles();
+        ComboManager.Instance?.ResetCombo();
+        HealthPotionManager.Instance?.ResetForNewStage();
+        playerState?.ResetCooldownsForNodeTransition();
+        ActiveSkillInventory.Instance?.ResetCooldowns();
+        TimedPassiveModule.Instance?.ResetTimers();
+    }
+
+    private void StartNodeCombat(bool resetPlayer)
+    {
+        if (stageConfig == null) return;
+        if (resetPlayer) playerState?.ResetPlayer();
+        UltimateSystem.Instance?.ResetEnergy();
+        var killRewardManager = FindObjectOfType<KillRewardManager>();
+        killRewardManager?.ResetRewards();
+        PrewarmEnemyPools();
+        SetState(StageState.InProgress);
+        AudioManager.Instance?.PlayDefaultBGM();
+        waveSpawner?.StartWaveSpawning();
+    }
+
+
+
+    public bool IsRouteMode => routeStageConfig != null;
+
+    public RouteStageConfig CurrentRouteStageConfig => routeStageConfig;
+
+    public void CompleteCurrentCombatNode()
+    {
+        if (routeStageConfig == null || CurrentState != StageState.InProgress) return;
+        OnCombatNodeCleared?.Invoke();
     }
 
     #endregion

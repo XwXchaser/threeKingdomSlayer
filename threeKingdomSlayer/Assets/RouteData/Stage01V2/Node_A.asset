@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: Node_A
+  m_EditorClassIdentifier: Assembly-CSharp::RouteNodeConfigV2
+  nodeId: A
+  displayName: A
+  battleEntries:
+  - battleConfig: {fileID: 11400000, guid: 3ec1bbb818d165345aa9e2bc419e8e2c, type: 2}
+    conditionEnabled: 0
+  isFinalNode: 0
+  savePoint: 0
+  outgoingConnections:
+  - choiceSlot: To B
+    targetNode: {fileID: 11400000, guid: f85cbf8a08b97c84f95194b8de4d26fc, type: 2}
+  - choiceSlot: To C
+    targetNode: {fileID: 11400000, guid: 1ec812b69b3d7b24082d699f1cff9587, type: 2}
+  - choiceSlot: To D
+    targetNode: {fileID: 11400000, guid: 4df53a9397bdc00408f7f78528b03aa0, type: 2}

@@ -2,7 +2,7 @@
 id: kd_ee05f31e-c48e-4497-b777-8dc9e4165a03
 injectMode: inherit
 summary: Stab 空挥、枪尖时序命中、递减视觉超程与层级策略。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 - `AttackSystem.ExecuteStab` 现在始终生成 `StabSweepEffect`，所以无目标时也会播放戳击并进入原有动作锁定/冷却。

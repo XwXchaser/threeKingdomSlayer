@@ -2,7 +2,7 @@
 id: kd_d2fd0160-9f84-4843-809c-379b5aa11ee8
 injectMode: inherit
 summary: Android包体优化方案 — 当前50MB，目标8-12MB
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # Android 包体优化方案

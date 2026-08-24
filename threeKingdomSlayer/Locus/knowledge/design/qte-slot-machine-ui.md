@@ -2,7 +2,7 @@
 id: kd_6229beba-8e69-41a3-90e8-c59e8debc69c
 injectMode: inherit
 summary: QTE老虎机UI动画重构的实现设计文档：滑动入场+填充+放大闪白+判定+滑动退场。涉及QTEDisplay重写、QTEController提早输入检测、QTE判定框场景配置。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # QTE 老虎机 UI 重构设计

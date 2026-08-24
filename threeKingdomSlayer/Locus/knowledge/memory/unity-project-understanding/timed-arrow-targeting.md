@@ -2,7 +2,7 @@
 id: kd_1c1fd8c8-6bd3-4f1e-84c3-abf354e5d7ac
 injectMode: inherit
 summary: 箭雨固定发射 `4 × arrowCount` 支箭覆盖前方区域；起点 X 关联落点并由 `xJitter`限制横移，视觉朝向锁定 Y/Z 平面，箭尖接触落点平面时提前判伤。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # Timed Arrow Targeting

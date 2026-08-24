@@ -2,7 +2,7 @@
 id: kd_b6cf4b62-1523-4614-a917-e03794a2eb27
 injectMode: inherit
 summary: 连击 Buff：20连击伤害+10%的首个配置；支持Inspector自定义阈值、通用单属性修正、同buffId叠加、不同buffId独立显示，断连统一移除，图标显示在玩家头像左下方。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 连击 Buff 设计

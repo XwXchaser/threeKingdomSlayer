@@ -1,7 +1,7 @@
 ---
 id: kd_09680b90-1f07-4c54-adae-2eb875647450
 injectMode: inherit
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 攻击特效生命周期诊断工具
