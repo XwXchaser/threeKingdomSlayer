@@ -2,7 +2,7 @@
 id: kd_d80bbf76-091c-443c-87be-4d853fc77e32
 injectMode: inherit
 summary: UpgradePopup now uses independent three-choice art components, order 100 overlay, and click-select then click-confirm interaction.
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 Three-choice upgrade popup was rebuilt around independent fixed-size art components rather than 9-slicing:

@@ -2,7 +2,7 @@
 id: kd_399bc9de-e1f4-4112-89cf-18da8734a4e6
 injectMode: inherit
 summary: 全项目调试参数速查表 — 按模块列出可调参数、类型、默认值、配置文件位置及修改方式，供AI快速定位和验证。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 调试参数速查表

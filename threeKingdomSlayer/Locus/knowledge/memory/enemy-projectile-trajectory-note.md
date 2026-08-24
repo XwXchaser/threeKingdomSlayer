@@ -2,7 +2,7 @@
 id: kd_aece36e4-c1d4-4acb-a0de-f035f5318780
 injectMode: inherit
 summary: Boss TripleStab QTE 箭矢的统一追踪与销毁规则。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## Boss QTE 箭矢生命周期

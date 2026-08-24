@@ -12,6 +12,9 @@ public class StageConfigManager : MonoBehaviour
     [Tooltip("关卡配置列表（按 Inspector 顺序排列）。拖入 StageConfig 资产并排序")]
     public List<StageConfig> stages = new List<StageConfig>();
 
+    [Tooltip("V2场景化路线关卡配置列表。每个配置对应一张RouteStage场景")]
+    public List<RouteStageConfigV2> routeStagesV2 = new List<RouteStageConfigV2>();
+
     private void Awake()
     {
         if (Instance != null && Instance != this)

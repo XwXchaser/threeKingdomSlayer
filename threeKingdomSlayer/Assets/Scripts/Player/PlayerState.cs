@@ -84,6 +84,7 @@ public class PlayerState : MonoBehaviour
     public System.Action<int> OnComboChanged;
     public System.Action<string> OnComboTrigger;
     public System.Action<float, float> OnExpChanged;     // (currentExp, requiredExp)
+    public System.Action<int> OnLevelChanged;             // (currentLevel)
     public System.Action<int> OnLevelUp;                  // (newLevel)
 
     private void Awake()
@@ -384,6 +385,7 @@ public class PlayerState : MonoBehaviour
             currentExp -= required;
             currentLevel++;
             levelUps++;
+            OnLevelChanged?.Invoke(currentLevel);
             OnLevelUp?.Invoke(currentLevel);
         }
 
@@ -397,6 +399,12 @@ public class PlayerState : MonoBehaviour
     #endregion
 
     #region 统计
+
+    public void ResetCooldownsForNodeTransition()
+    {
+        cooldownTimers.Clear();
+    }
+
 
     /// <summary>
     /// 增加击杀数

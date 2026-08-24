@@ -139,6 +139,8 @@ public class ExpGemManager : MonoBehaviour
         }
     }
 
+    public bool IsCollecting => _flyingGems.Count > 0;
+
     /// <summary>清除所有飞行中的宝石（新对局重置）</summary>
     public void ClearAll()
     {

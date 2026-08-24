@@ -2,7 +2,7 @@
 id: kd_cbd967f3-a57a-4000-8fb9-a14f5914a012
 injectMode: inherit
 summary: 蓄力Build三选一设计文档：蓄力减伤(Numeric)、顺序调转(AttackPassive)、冲击波跟随(TimedPassive)的设计目的、技术难点、管线细节与改动清单
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 蓄力 Build 三选一设计

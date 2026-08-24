@@ -2,7 +2,7 @@
 id: kd_fd2bbdad-eb0e-47b1-b6f0-05e9c49ac599
 injectMode: inherit
 summary: 工具结果真实性纪律：任何生成、修改、测试或保存任务，必须以实际工具成功结果和输出验证为事实依据；本次曾在未调用生图工具时误报完成，已记录根因和改进措施。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 工具结果真实性纪律

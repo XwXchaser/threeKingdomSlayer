@@ -2,7 +2,7 @@
 id: kd_ed59dc1a-374b-43d0-b50f-ec83c0fa3c72
 injectMode: inherit
 summary: 普通敌人生命/状态条统一由 EnemyHealthBar.barWidth 控制；当前验收宽度为1.0。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 普通敌人头顶生命条与其运行时生成的灼烧/染病状态条共用 `EnemyHealthBar.barWidth`。不要仅改脚本默认值：各敌人 Prefab 已序列化该字段，必须使用 Unity API 批量写入并复核。

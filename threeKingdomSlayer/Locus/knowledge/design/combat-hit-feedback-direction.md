@@ -2,7 +2,7 @@
 id: kd_835a3457-a00c-42ea-8e56-dcd37c457f2d
 injectMode: inherit
 summary: 动作游戏打击感需要受击者、攻击者/命中点、镜头三层反馈分级协同；优先局部卡肉和可读性，镜头震动按强度限频叠加。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 反馈方向

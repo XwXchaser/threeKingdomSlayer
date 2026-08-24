@@ -2,7 +2,7 @@
 id: kd_3bee8e5e-dd47-4c40-91f0-5c9e5e4eb8b6
 injectMode: inherit
 summary: V1 限次道具与 V2 冷却主动技能的独立规则、获取方式、槽位过滤、UI和 ScriptableObject 资产边界。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 主动技能双版本规则

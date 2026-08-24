@@ -2,7 +2,7 @@
 id: kd_c3aaf3f5-cbf9-4354-a7ae-12c922b766c9
 injectMode: inherit
 summary: 连击Buff运行时：ComboManager断连清理、BuffManager同buffId叠加、UpgradeEffectManager属性应用，以及当前20连击伤害+10%配置。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # Combo Buff Runtime

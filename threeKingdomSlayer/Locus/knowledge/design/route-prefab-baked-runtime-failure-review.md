@@ -1,10 +1,12 @@
 ---
 id: kd_aec42590-df09-4ecc-bb13-39892f781020
 injectMode: inherit
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
-# 路线 Prefab/烘焙运行时方案失败复盘
+# 路线 Prefab/烘焙运行时方案失败复盘（历史记录）
+
+> 当前对话已确认不再在该方案上迁移或打补丁。正式方向改为“Battle 常驻 + CombatNode 独立 Scene 按需加载”；本文只保留失败原因和历史证据。新的配置、场景结构和局内流程以 `route-scene-architecture-v2.md` 为准。
 
 ## 1. 文档目的
 

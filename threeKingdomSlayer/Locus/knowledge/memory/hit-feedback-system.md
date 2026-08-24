@@ -2,7 +2,7 @@
 id: kd_cef5972f-5ef5-40cd-8471-38580aa751e0
 injectMode: inherit
 summary: 首批打击反馈已实现：局部 Animator Hit Stop、命中来源/强度上下文、受击缩放与伤害数字分级；DoT 不卡肉。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 已实现的首批打击反馈

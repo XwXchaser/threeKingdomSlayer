@@ -2,7 +2,7 @@
 id: kd_7d54a1b1-2197-4ca5-a669-343207f9d6d7
 injectMode: inherit
 summary: 底部 HeroHUD 双面翻牌的当前层级、挂点和事件接线。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 底部 HUD 双面看板

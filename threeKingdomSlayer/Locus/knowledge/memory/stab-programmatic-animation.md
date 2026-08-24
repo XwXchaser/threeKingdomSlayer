@@ -2,7 +2,7 @@
 id: kd_27ea3f61-811b-4edc-8db6-9e312373fa37
 injectMode: inherit
 summary: 普通 Stab 已加入程序化蓄势、加速刺入、轻微穿入、缩放形变和回收动画，不复用 Slash 的弯曲帧素材。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 普通 Stab 程序动画增强

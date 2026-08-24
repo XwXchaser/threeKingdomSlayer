@@ -11,6 +11,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Battle.scene
     guid: 10856c7f0af014a459fc7135d0b17bd4
+  - enabled: 1
+    path: Assets/Scenes/RouteStageV2/Stage01_RouteV2.unity
+    guid: a8e9a42e6196c25448a36d4a571f08c3
   m_BuildProfiles: []
   m_configObjects: {}
   m_SlimFeaturesWeixinMiniGame:

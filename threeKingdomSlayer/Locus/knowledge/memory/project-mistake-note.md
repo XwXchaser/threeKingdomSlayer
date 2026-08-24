@@ -2,14 +2,28 @@
 id: kd_4a9116b1-c70a-4de3-8eeb-801deb71c4fe
 injectMode: inherit
 summary: 更新至 2026-03 — 新增 TimedArrow 命中与视觉生命周期、随机轨迹、DOTween 清理、受击缩放、序列化迁移、视觉/伤害解耦及 Time 被动类型区分经验
-aiMaintained: true
+aiEditMode: auto
 maintenanceRules: |-
   - Keep only durable and reusable project memory
   - Consolidate duplicates or conflicts into the latest conclusion
   - Remove temporary context, one-off tasks, and unsupported guesses
 ---
 
-### Parry 架势规则误恢复导致普通敌人连续招架后停止攻击 ✅ 已修复
+### RouteStage V2 存档点规则更新（2026-03）
+- 用户确认：存档点在可存档节点 **Head 到达时立即保存**，不是 Tail。
+- 失败恢复从该节点 Head 开始，重新执行 Head→Combat，并重新执行该节点本次应执行的 BattleEntry；不能因为保存时刻位于 Head 就把当前节点战斗标记为已完成。
+- 例如：A→C，抵达 C Head 保存；C 战斗中失败后，重开从 C Head 开始，而不是 C Tail 或 A。
+- 当前实现曾错误地在 Tail 保存，并在恢复后清空完成条目；后续实现必须以 `route-stage-gameplay-spec.md` 的 Head 存档规则为准。
+
+- 路线结构：`A→B`、`A→C`、`A→D`、`C→B`、`D→B`；B 的 Head 是多个入边共享的唯一目标姿态，每条入边独立拥有 Pivot 和路径。
+- 症状：A→C 报 `target node entry missing: C`，而 A→B、A→D、D→B 正常；移动阶段曾出现先后退再前进。
+- A→C 根因：`CombatNode_C` GameObject 保留，但其 `RouteCombatNodeEntryV2` 组件变成 Missing Script，`sceneEntry.nodes[2]` 同时指向已销毁组件。不要只检查 GameObject 名称或场景 YAML 中是否有 C；必须检查组件类型、有效引用和 `TryGetNode` 结果。最终通过用完整 A 节点结构重建 C，再绑定 C 配置、Head/Combat/Tail、内部路径和 A→C/C→B 连接修复。
+- 移动倒退根因：旋转 `RouteStageRoot` 后又读取已随根节点移动的路径点，并用 `root.position - path[0]` 额外叠加 Delta，造成路径先偏离最终目标再返回。路线根节点最终 Pose 只能由目标锚点对齐计算，不能再叠加路径首尾 Delta。
+- 移动修复：旋转阶段保持 `rotationPivot` 世界位置；旋转完成后直接将根节点移动到目标锚点计算出的最终 Pose，并在结束时一次性校正。路径点当前只作为编辑/校验数据，不能在该实现阶段继续作为独立世界路径源。
+- 场景生命周期经验：Additive RouteStage 场景重入前必须处理同名旧场景，否则旧实例、旧组件引用可能污染运行时。失败回调也必须恢复 `_choosing`，避免输入被锁死后表现为暂停。
+- 预防规则：**场景化路线问题优先对比“正常节点”和“异常节点”的组件实例、数组引用、Script GUID、Asset GUID 和 `TryGetNode`；不要只对比逻辑配置。任何节点重建、脚本丢失或 GUID 变化后，都必须重新保存 SceneEntry 的节点/连接引用并重新加载验证。**
+- 相关文件：`Assets/Scripts/RouteV2/RouteStageRuntimeV2.cs`、`Assets/Scripts/RouteV2/RouteStageSceneEntryV2.cs`、`Assets/Scripts/RouteV2/Editor/RouteStageV2Validator.cs`、`Assets/Scenes/RouteStageV2/Stage01_RouteV2.unity`
+
 - 症状：连续 Parry 普通敌人多次后，敌人架势从 50 逐步降到 0，进入 `Stunned`；眩晕结束后普通敌人回到 `Idle`，位于 row=0 时没有移动事件重新调用 `StartAttacking()`，之后不再攻击。
 - 根因：`Enemy.TakePoiseDamage()` 只检查 `state == Attacking` 和 `isAttackDrawPhase`，没有限制 `isBoss`，导致已经停用的"普通敌人架势/眩晕"机制重新生效；同时没有要求 `isAttackAnimating`，所以普通敌人在攻击冷却阶段也能被 Parry 持续削架势。
 - 修复：
@@ -48,4 +62,13 @@ maintenanceRules: |-
   2. **偏移量按“射出角”算，不要按“屏幕位置”算**：用 `axis.x`（枪轴 X 分量），而不是 `normalizedX`（手指位置）。
   3. **单 Sprite 下枪尾是 Sprite 的一部分**（枪尾 = 枪身 - axis×半枪长），无法独立偏移；要“枪尖跟手 + 枪尾偏移”只能枪尖锚点，偏移由旋转角决定。
   4. 旋转表示等价性可用 `unity_execute` 验证：`Quaternion.LookRotation(axis, Vector3.up) * Quaternion.Euler(90,0,0)` 与 `Quaternion.Euler(90,0,-z)` 完全等价（angleDelta=0），可放心互换，避免“打竖/打横”。
-- 文件：`Assets/Scripts/Effects/ChargeStabVisual.cs`
+### 本轮路线存档与奖励/技能时序经验（2026-03）
+
+- 路线 BattleEntry 清空不能直接推进 Tail：敌人清空、经验宝石飞行、三选一、道具选择和弃置是不同完成条件。必须等待经验宝石全部收集及阻塞 UI 完成后再结束 BattleEntry。
+- 经验宝石在敌人死亡后异步飞向经验条；若提前把 `PlayerState.stageState` 改为 `Starting`，宝石到达时 `PlayerState.AddExp()` 会直接返回，导致升级事件被吞。奖励等待应使用独立门控，不能用非 InProgress 状态阻止经验结算。
+- 快照恢复必须是 replace 语义：先清空 `PlayerState.acquiredUpgrades`、`UpgradeEffectManager`、`ActiveSkillInventory`、道具库存、被动注册表和被动协程，再按快照升级列表重建。被动 UI 还拥有独立 `_upgradeIcons`/槽位缓存，必须通过 reset 事件清空后再重建。
+- 快照中 `currentLevel/currentExp` 已正确保存/恢复，但直接赋值不会刷新 HUD；恢复后应发送仅用于显示的经验/等级同步事件，不能发送 `OnLevelUp`，否则会重复弹三选一。
+- 计时被动在奖励阶段获得时，不能立即触发，也不能开始消耗 timer；进入正式 Combat 后才允许首次触发并进入冷却。当前实现曾通过 pending 集合、`IsRouteCombatActive` 和效果清理进行修补，但日志显示仍可能出现 Head→Combat 残留效果或“无实际效果却进入冷却”，因此该问题只能标记为待观测/待重构。
+- 诊断日志本身会改变 Unity Editor 的帧时序和协程相对顺序；出现“加日志后问题消失”时不能视为修复。应优先使用关键状态变化日志，避免每帧输出造成观测扰动。
+- 效果触发必须区分“调用 SpawnEffect”和“效果实际成功创建”：配置、Prefab、组件或 ColumnManager 缺失时不能提交冷却；失败应保留待触发状态并输出失败原因。
+- 节点切换清理要区分临时战斗效果与永久 Build：清理火焰/箭雨对象、被动协程、DoT、投射物和旧回调，但保留升级等级、主动技能槽位和数值 Build。

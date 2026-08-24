@@ -2,7 +2,7 @@
 id: kd_f354dc78-27d8-4095-8abf-794f7f9b9cee
 injectMode: inherit
 summary: 程序化像素命中特效的完整制作经验：颜色分层、不规则尖刺布局、帧动画结构、DOTween 时序、随机化控制、像素美术约束，以及 8 条踩坑记录（多 SpriteRenderer 拼装、中心空心、造型过规则、PPU 尺寸、动画过快、坐标混淆、DOTween 生命周期、AI 生图误用）。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 整体架构

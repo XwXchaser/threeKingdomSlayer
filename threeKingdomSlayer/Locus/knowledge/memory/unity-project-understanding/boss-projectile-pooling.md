@@ -2,7 +2,7 @@
 id: kd_e6389a40-4ec2-4542-b50f-7425fb079f27
 injectMode: inherit
 summary: P0 Boss 补齐死锁、P1 远程箭视觉落点、P2 对象池重复预热的结构认知与修复结论。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # Boss、远程箭与对象池

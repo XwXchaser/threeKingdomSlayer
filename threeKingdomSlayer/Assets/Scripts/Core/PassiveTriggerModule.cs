@@ -155,7 +155,9 @@ public class PassiveTriggerModule : MonoBehaviour
 
     public void ResetAll()
     {
+        StopAllCoroutines();
         _states.Clear();
+        _currentAttackType = default;
     }
 
     /// <summary>获取已注册被动的当前攻击计数，未注册返回 -1</summary>

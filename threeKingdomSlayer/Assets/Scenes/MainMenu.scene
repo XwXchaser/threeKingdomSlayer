@@ -1657,11 +1657,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd6695c6714979343bc374fa78f85e8b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stages:
-  - {fileID: 11400000, guid: d7f6e66ff74c61f44959cd74514c5156, type: 2}
-  - {fileID: 11400000, guid: 7c238cf987295554ca9a26f55726b94d, type: 2}
-  - {fileID: 11400000, guid: 8d767e973d8aa0b4f96a3f3781db5bd8, type: 2}
-  - {fileID: 11400000, guid: b25cb51bcdeee974f80989c1da92736e, type: 2}
+  stages: []
+  routeStagesV2:
+  - {fileID: 11400000, guid: f778a791580f74242bf5486112cf907a, type: 2}
 --- !u!4 &1931903701
 Transform:
   m_ObjectHideFlags: 0

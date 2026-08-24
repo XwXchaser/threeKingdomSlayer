@@ -2,7 +2,7 @@
 id: kd_acd08d41-9288-45eb-860f-6483ef52584e
 injectMode: inherit
 summary: 底部战斗 HUD 已复用现有素材改为 Overlay 双面翻牌：正面保留战斗 HUD，背面复用 QTEFrame。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 底部战斗 HUD 双面看板方案

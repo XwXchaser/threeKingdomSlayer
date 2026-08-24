@@ -956,6 +956,8 @@ public class ColumnManager : MonoBehaviour
         _activeWaveTargetRows.Clear();
         _activeWaveTargetSlots.Clear();
         StartPendingLogicalLayoutReflow();
+        if (!_useRowMarchPlanner)
+            StartWaveMarch();
     }
 
     /// <summary>

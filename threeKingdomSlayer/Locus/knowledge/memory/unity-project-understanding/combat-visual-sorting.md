@@ -2,7 +2,7 @@
 id: kd_26d2a809-56c5-4eed-8154-ebff0fdbae91
 injectMode: inherit
 summary: 当前策略：仅敌方投射物提升至 EnemyProjectiles Sorting Layer；敌人与所有玩家视觉保持 Default/Z 深度排序。已修复 QTE stagger 箭在暂停前未启动却悬空可见，以及胜负终局冻结箭矢不清理的问题。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 敌方投射物优先策略（2026-07-09）

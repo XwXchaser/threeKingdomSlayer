@@ -2,7 +2,7 @@
 id: kd_5e3205b5-6d89-4fba-9242-51fe0ec7d1eb
 injectMode: inherit
 summary: 道具系统基础架构：PropType 枚举、PropData 结构、SaveData 道具列表、旧档迁移、SaveManager 通用道具 API、StageController 结算规则
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 道具系统（PropSystem）

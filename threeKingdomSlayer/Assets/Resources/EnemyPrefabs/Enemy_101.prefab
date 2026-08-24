@@ -54,7 +54,7 @@ MonoBehaviour:
   maxHealth: 16
   occupySlots: 1
   attackSpeed: 0.5
-  attackDamage: 3
+  attackDamage: 35
   attackRange: 1
   moveSpeed: 0.3
   visualYOffset: 0
@@ -92,7 +92,7 @@ MonoBehaviour:
   launchedDamageTakenMultiplier: 1.5
   launchedHitExtendDuration: 1
   coinReward: 10
-  expReward: 30
+  expReward: 80
   gemSprite: {fileID: 21300000, guid: 2e772d8bfecbfcf439ca5f880db84321, type: 3}
   isBoss: 0
   bossHealthBarPrefab: {fileID: 0}

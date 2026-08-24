@@ -2,7 +2,7 @@
 id: kd_39adfe80-4334-459c-92a3-0953f4b29c8c
 injectMode: inherit
 summary: 敌人波次染色的对象池残留和材质实例生命周期故障：根因、修复与预防规则。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 - 症状：后续染色波的敌人可能在对象池复用后保持错误颜色，或出现白图/崩坏显示。

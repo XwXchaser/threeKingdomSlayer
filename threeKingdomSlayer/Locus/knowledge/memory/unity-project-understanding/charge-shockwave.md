@@ -2,7 +2,7 @@
 id: kd_60346f80-be29-4b07-bd09-11e68ef8ee8c
 injectMode: inherit
 summary: 'Charge shockwave timed passive skill: stack layers via timer (only when charging or layers==0), release all on charge attack with staggered waveDelay.'
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # Charge Shockwave System

@@ -2,7 +2,7 @@
 id: kd_ef0164bf-5c2b-4fc7-91ba-0cce6713fb22
 injectMode: inherit
 summary: 以击飞为核心机制的3选1策略升级体系设计方案，覆盖触发、增强、连锁三个维度共5个升级提案。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 击飞 3 选 1 策略体系 — 设计方案

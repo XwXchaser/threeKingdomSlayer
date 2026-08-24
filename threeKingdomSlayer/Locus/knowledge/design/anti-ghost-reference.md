@@ -2,7 +2,7 @@
 id: kd_10290628-4da5-4830-b7c8-6bb44b2ae599
 injectMode: inherit
 summary: 禁止「幽灵引用」的架构规范：所有运行时数据引用必须从 Inspector 可追踪，禁止 Resources.Load/静态缓存/字符串 ID 查找，数据应直接在 Prefab 或通过 Inspector 拖拽的 ScriptableObject 引用上。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 核心原则

@@ -121,6 +121,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
 
     // ── 升级事件 ──
     public System.Action<UpgradeDefinition, int> OnUpgradeApplied; // (def, newLevel)
+    public System.Action OnUpgradesReset;
     public System.Action OnReflectShieldConsumed; // 反伤盾被消耗时触发（供 ThornArmorEffect）
 
     private void Awake()
@@ -162,6 +163,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
 
     private void Update()
     {
+        if (PlayerState.Instance == null || PlayerState.Instance.stageState != StageState.InProgress) return;
         // 反伤盾 CD 计时器：蓄力期间暂停，非蓄力且未就绪时跑
         TickBurnDamage();
 
@@ -180,6 +182,11 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
     {
         return enemy != null && enemy.isBoss &&
             (enemy.bossState != BossState.InCombat || enemy.state == EnemyState.QTEAttacking || enemy.isPhaseTransitioning);
+    }
+
+    public int GetBurnStateCountForDiagnostics()
+    {
+        return _burnStates.Count;
     }
 
     private void TickBurnDamage()
@@ -223,6 +230,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
             state.tickTimer -= dt;
             if (state.tickTimer <= 0f)
             {
+                Debug.Log($"[RouteDiag] BurnTick frame={Time.frameCount} enemy={enemy.DebugTag} routeCombat=" + (StageController.Instance != null ? StageController.Instance.IsRouteCombatActive.ToString() : "NULL"));
                 enemy.TakeDamage(state.damagePerTick, DamageType.Pierce, Color.red, countsForCombo: false, canInterruptAttack: false, triggerHitAnimation: false, ignoreDamageModifiers: true, feedbackSource: HitFeedbackSource.Dot, feedbackStrength: HitFeedbackStrength.None);
                 state.ticksRemaining--;
                 state.tickTimer += BurnTickInterval;
@@ -273,6 +281,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
             state.tickTimer -= dt;
             if (state.tickTimer <= 0f)
             {
+                Debug.Log($"[RouteDiag] DiseaseTick frame={Time.frameCount} enemy={enemy.DebugTag} routeCombat=" + (StageController.Instance != null ? StageController.Instance.IsRouteCombatActive.ToString() : "NULL"));
                 int tickDmg = state.damagePerTick * state.layers;
                 float hpBefore = enemy.currentHealth;
                 Debug.Log($"[Disease] Tick: {enemy.DebugTag} dmg={tickDmg} hpBefore={hpBefore:F1} remaining={state.ticksRemaining} layers={state.layers}");
@@ -1188,6 +1197,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
         // 清空 V1 道具与 V2 主动技能运行态
         ItemInventory.Instance?.ClearAll();
         ActiveSkillInventory.Instance?.ResetAll();
+        OnUpgradesReset?.Invoke();
     }
 
     // ── 内部 ──

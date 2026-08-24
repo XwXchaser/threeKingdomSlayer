@@ -44,6 +44,7 @@ public class ActiveSkillRunner : MonoBehaviour
 
     public bool TryActivate(ActiveSkillDefinition definition, int level)
     {
+        if (PlayerState.Instance == null || PlayerState.Instance.stageState != StageState.InProgress) return false;
         if (definition == null || level <= 0) return false;
 
         switch (definition.activeEffectType)

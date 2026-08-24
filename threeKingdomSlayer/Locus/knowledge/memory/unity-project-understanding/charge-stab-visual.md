@@ -2,7 +2,7 @@
 id: kd_19d3b3c2-00e3-4913-911d-45d93cffa451
 injectMode: inherit
 summary: 蓄力 Stab 前端可视化 + Launch 衔接：指尖平面跟随/左右clamp+Zroll/上下Xpitch，Launch接管pose+三帧精灵序列charge2→charge1→stab
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # Charge Stab Visual System

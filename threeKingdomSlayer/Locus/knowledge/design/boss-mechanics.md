@@ -2,7 +2,7 @@
 id: kd_e977e93b-23a8-4e08-bcc1-886cebd05c6a
 injectMode: inherit
 summary: BOSS 机制玩法设计文档 — 涵盖 BOSS 身份标识、架势/眩晕、招架、阶段推进、攻击模式、必杀技交互、列阵规则、UI 血条、QTE攻击系统、配置参数等完整系统
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # BOSS 机制玩法设计文档

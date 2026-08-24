@@ -2,7 +2,7 @@
 id: kd_65412ee0-2f14-4b9d-a598-afdce4337b9a
 injectMode: inherit
 summary: 本周主要目标：音频系统改造（音效/背景音乐独立音量控制）；增强战斗视觉与动效（命中卡肉停顿与命中视觉效果）。其余待办保留。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 本周主要目标（新增）
@@ -217,9 +217,21 @@ aiMaintained: inherit
 ## 延后：铁壁·震荡图标
 - [ ] 图标替换暂停，保留当前占位资源；后续统一处理技能图标美术和导入规格。
 
-## 完成记录规范
-- 每项完成后补充修改文件、最终参数、验证场景、实测结果与遗留问题。
-- 所有运行时效果均须在 Battle 实机流程验收；场景、Prefab、配置变更须在 Unity 重连后复核。
+### 场景化路线 V2（当前进度）
+- [x] Battle.scene 旧路线对象已清理；Player、Enemy、Camera、HUD 和战斗管理器保留。
+- [x] 新建 `Assets/Scenes/RouteStageV2/Stage01_RouteV2.unity`，包含 A/B 节点、Head/Combat/Tail、A→B 连接。
+- [x] 新建 V2 配置与场景绑定组件，RouteStage 场景一次加载、节点切换不加载/卸载单个节点。
+- [x] MainMenu 只显示 V2 场景化关卡入口；旧路线入口配置已移除，节点战斗 StageConfig 作为战斗内容保留。
+- [x] V2 核心链路已实测：MainMenu→Battle→RouteStage→Head→Combat→Tail→目标节点→终点结算。
+- [x] 修复初始 Head 错误后退、战斗输入锁定、Victory/Defeat 面板交互、地板遮挡攻击表现。
+- [x] V2 路径采样与 RouteStage 校验工具已建立，当前 Stage01 场景静态校验通过。
+- [ ] P0：多 Tail 汇入同一 Head 的场景拓扑和运行验收。
+- [ ] P1：多来源 Tail→同一 Head 的旋转角/支点/最终 Pose 验收。
+- [ ] **待持续观测：计时被动跨节点首次触发/Head→Combat 时序**：当前保留 `[TimedPassiveDiag]`、`[RouteDiag]` 和 DoT 诊断日志；暂不判定已修复。重点观察 Head→Combat 是否出现 `TimerExpired`/`BurnTick`，`StartRouteBattle` 后首次触发是否成功，以及效果失败时是否错误进入冷却。
 
-## 当前测试待验收
-- [ ] **染病主动技能与DoT共存**：在Battle实测染病的主动冷却、重复施放预存层数、下一次Stab仅附着首个实际命中目标、4秒紫色DoT、死亡时按上下左右相邻1格传播、传播重置持续时间、与灼烧红色DoT共存，以及两种DoT均不打断攻击/不播放受击动画/不计Combo。
+- [ ] **场景化路线 V2：P0 多 Tail 汇入同一 Head**：新增 C/D 节点并分别配置 C→B、D→B；通过独立测试起点分别验证 A→B、C→B、D→B，确认共享 B.Head、连接路径独立、B 可继续连接或作为终点。
+- [ ] **场景化路线 V2：P1 Tail→Head 旋转对齐**：分别验证不同源 Tail 朝向、rotationPivot、先旋转再移动、最终 Head Pose 一致、Player/Camera 不移动。
+- [ ] **场景化路线 V2：路径编辑器增强**：支持任意节点测试起点、路径预览、汇入路径可视化和运行时最终 Pose 误差校验。
+- [ ] **节点胜利演出**：普通节点独立演出，等待 BattleEntry、经验/道具三选一和弃置全部完成后播放；不发放整关奖励、不标记通关、不结束路线。
+- [ ] **路线存档恢复完整验收**：验证失败恢复先执行运行时 ResetAll，再从存档点节点 Head 重新进入；验证已保存的节点/BattleEntry 状态、经验/等级 UI、被动/主动技能列表、临时 DoT 清理和存档点状态不被死亡时运行态污染。MainMenu“继续游戏”不走该恢复路径，而是从最后未完成关卡的 startNode 开始。
+- [ ] **计时被动状态机重构**：将获得、待 Combat 首次触发、效果成功、冷却和失败重试状态分离；当前诊断日志仅用于观测，不视为完成。

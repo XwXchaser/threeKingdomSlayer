@@ -2,7 +2,7 @@
 id: kd_e17bd432-53a4-4edb-ad26-f41462946f3c
 injectMode: inherit
 summary: 输入手势系统：按住划动即触发招式，停留蓄力。速度门控追踪核心机制。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # Input Gesture System

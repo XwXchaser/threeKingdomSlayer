@@ -2,7 +2,7 @@
 id: kd_93075e32-1734-41b2-841e-d892933f617e
 injectMode: inherit
 summary: Current Item inventory capacity, stacking, potion occupancy, UI slot, and cooldown rules.
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 - `HeroConfig.itemSlotCount` defines the total in-run Item capacity for a hero. Zhang Fei is configured with 2.

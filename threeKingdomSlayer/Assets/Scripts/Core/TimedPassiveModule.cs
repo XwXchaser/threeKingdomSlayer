@@ -33,6 +33,8 @@ public class TimedPassiveModule : MonoBehaviour
 
     // 蓄力冲击波：每计时器 tick 积攒层数（不立即生成），蓄力攻击时统一释放
     private Dictionary<string, int> _shockwaveLayers = new Dictionary<string, int>();
+    private readonly HashSet<string> _pendingCombatStartEffects = new HashSet<string>();
+    private bool _suppressImmediateEffects;
 
     private void Awake()
     {
@@ -60,6 +62,11 @@ public class TimedPassiveModule : MonoBehaviour
             return;
         }
 
+        bool suppressImmediate = _suppressImmediateEffects
+            || (StageController.Instance != null && StageController.Instance.IsRouteRewardWaiting)
+            || PlayerState.Instance == null
+            || PlayerState.Instance.stageState != StageState.InProgress;
+
         if (_states.TryGetValue(def.upgradeId, out var existing))
         {
             existing.level = level;
@@ -81,26 +88,91 @@ public class TimedPassiveModule : MonoBehaviour
                 _shockwaveLayers[def.upgradeId] = 1;
                 Debug.Log($"[TimedPassiveModule] {def.displayName} 首次获得，立即授予 1 层");
             }
-            else
+            else if (!suppressImmediate)
             {
                 SpawnEffect(newState);
                 Debug.Log($"[TimedPassiveModule] {def.displayName} 首次获得，立即触发 1 次");
+            }
+            else if (def.effectType != "charge_shockwave")
+            {
+                _pendingCombatStartEffects.Add(def.upgradeId);
             }
         }
 
         Debug.Log($"[TimedPassiveModule] 注册 {def.displayName} Lv.{level} effectType={def.effectType} interval={interval}s");
     }
 
+    public void TriggerPendingCombatStartEffects()
+    {
+        Debug.Log($"[TimedPassiveDiag] TriggerPending count={_pendingCombatStartEffects.Count} frame={Time.frameCount} combat={StageController.Instance?.IsRouteCombatActive} enemies={AttackSystem.Instance?.columnManager?.GetAllEnemies()?.Count}");
+        var pending = new List<string>(_pendingCombatStartEffects);
+        for (int i = 0; i < pending.Count; i++)
+        {
+            if (!_states.TryGetValue(pending[i], out var state))
+            {
+                _pendingCombatStartEffects.Remove(pending[i]);
+                continue;
+            }
+            Debug.Log($"[TimedPassiveDiag] TryFirst id={state.definition.upgradeId} level={state.level} frame={Time.frameCount} combat={StageController.Instance?.IsRouteCombatActive}");
+            if (!TrySpawnEffect(state))
+            {
+                Debug.LogWarning($"[TimedPassiveModule] Combat首次触发失败，保留待触发: {state.definition.displayName}");
+                continue;
+            }
+            state.timer = GetIntervalForLevel(state.definition, state.level);
+            Debug.Log($"[TimedPassiveDiag] FirstSuccess id={state.definition.upgradeId} timer={state.timer} frame={Time.frameCount}");
+            Debug.Log($"[TimedPassiveModule] {state.definition.displayName} Combat开始首次触发 1 次");
+        }
+    }
+
     public void Unregister(string upgradeId)
     {
         _states.Remove(upgradeId);
         _shockwaveLayers.Remove(upgradeId);
+        _pendingCombatStartEffects.Remove(upgradeId);
+    }
+
+    public void SetSuppressImmediateEffects(bool suppress)
+    {
+        _suppressImmediateEffects = suppress;
+    }
+
+    public void PrepareForNonCombat()
+    {
+        ClearActiveEffects();
+        StopAllCoroutines();
+        foreach (var state in _states.Values)
+            state.timer = GetIntervalForLevel(state.definition, state.level);
+        _shockwaveLayers.Clear();
+    }
+
+    public void ResetTimers()
+    {
+        ClearActiveEffects();
+        foreach (var state in _states.Values)
+            state.timer = GetIntervalForLevel(state.definition, state.level);
+        _shockwaveLayers.Clear();
+        StopAllCoroutines();
+    }
+
+    private void ClearActiveEffects()
+    {
+        var fireEffects = Object.FindObjectsOfType<ShootFireEffect>(true);
+        for (int i = 0; i < fireEffects.Length; i++)
+            if (fireEffects[i] != null) Object.Destroy(fireEffects[i].gameObject);
+
+        var arrowEffects = Object.FindObjectsOfType<TimedArrowEffect>(true);
+        for (int i = 0; i < arrowEffects.Length; i++)
+            if (arrowEffects[i] != null) Object.Destroy(arrowEffects[i].gameObject);
     }
 
     public void ResetAll()
     {
+        ClearActiveEffects();
+        StopAllCoroutines();
         _states.Clear();
         _shockwaveLayers.Clear();
+        _pendingCombatStartEffects.Clear();
     }
 
     // ── 冷却显示 API ──
@@ -132,6 +204,9 @@ public class TimedPassiveModule : MonoBehaviour
 
     private void Update()
     {
+        if (StageController.Instance != null && !StageController.Instance.IsRouteCombatActive)
+            return;
+        Debug.Log($"[TimedPassiveDiag] Update active frame={Time.frameCount} routeCombat={StageController.Instance?.IsRouteCombatActive} states={_states.Count}");
         bool isCharging = PlayerState.Instance != null && PlayerState.Instance.IsCharging;
 
         foreach (var kv in _states)
@@ -149,48 +224,38 @@ public class TimedPassiveModule : MonoBehaviour
             state.timer -= Time.deltaTime;
             if (state.timer <= 0f)
             {
-                state.timer = GetIntervalForLevel(state.definition, state.level);
-                SpawnEffect(state);
+                Debug.Log($"[TimedPassiveDiag] TimerExpired id={kv.Key} frame={Time.frameCount} combat={StageController.Instance?.IsRouteCombatActive}");
+                if (TrySpawnEffect(state))
+                    state.timer = GetIntervalForLevel(state.definition, state.level);
             }
+        }
+    }
+
+    private bool TrySpawnEffect(TimedState state)
+    {
+        switch (state.definition.effectType)
+        {
+            case "passive_timed_aoe": return SpawnFire(state);
+            case "passive_timed_arrow": return SpawnArrow(state);
+            case "passive_phantom_weapon": StartCoroutine(SpawnPhantom(state)); return true;
+            case "passive_return_wave": StartCoroutine(SpawnReturnWave(state)); return true;
+            case "passive_chain_bounce": StartCoroutine(SpawnChainBounce(state)); return true;
+            case "passive_timed_cyclone": SpawnCyclone(state); return true;
+            case "charge_shockwave": AccumulateShockwave(state); return true;
+            default: return false;
         }
     }
 
     private void SpawnEffect(TimedState state)
     {
-        switch (state.definition.effectType)
-        {
-            case "passive_timed_aoe":
-                SpawnFire(state);
-                break;
-            case "passive_timed_arrow":
-                SpawnArrow(state);
-                break;
-            case "passive_phantom_weapon":
-                StartCoroutine(SpawnPhantom(state));
-                break;
-            case "passive_return_wave":
-                StartCoroutine(SpawnReturnWave(state));
-                break;
-            case "passive_chain_bounce":
-                StartCoroutine(SpawnChainBounce(state));
-                break;
-            case "passive_timed_cyclone":
-                SpawnCyclone(state);
-                break;
-            case "charge_shockwave":
-                AccumulateShockwave(state);
-                break;
-            default:
-                Debug.LogWarning($"[TimedPassiveModule] 未知 effectType: {state.definition.effectType}");
-                break;
-        }
+        TrySpawnEffect(state);
     }
 
-    private void SpawnFire(TimedState state)
+    private bool SpawnFire(TimedState state)
     {
-        if (state.definition.timedAoeLevels == null || state.level > state.definition.timedAoeLevels.Count) return;
+        if (state.definition.timedAoeLevels == null || state.level > state.definition.timedAoeLevels.Count) return false;
         var cfg = state.definition.timedAoeLevels[state.level - 1];
-        if (fireEffectPrefab == null) return;
+        if (fireEffectPrefab == null || AttackSystem.Instance?.columnManager == null) return false;
 
         // 使用资产配置的列数，不再硬编码全5列
         var cols = cfg.columns != null && cfg.columns.Count > 0
@@ -198,17 +263,30 @@ public class TimedPassiveModule : MonoBehaviour
             : new List<int> { 0, 1, 2, 3, 4 };
         var instance = Instantiate(fireEffectPrefab);
         var effect = instance.GetComponent<ShootFireEffect>();
+        if (effect == null)
+        {
+            Object.Destroy(instance);
+            return false;
+        }
         effect.PlaySweep(cols, cfg.damage, cfg.rangeRows, fireSweepStartZOffset, cfg.burnTotalDamage, cfg.burnDurationSeconds);
+        return true;
     }
 
-    private void SpawnArrow(TimedState state)
+    private bool SpawnArrow(TimedState state)
     {
-        if (state.definition.timedArrowLevels == null || state.level > state.definition.timedArrowLevels.Count) return;
+        if (state.definition.timedArrowLevels == null || state.level > state.definition.timedArrowLevels.Count) return false;
         var cfg = state.definition.timedArrowLevels[state.level - 1];
-        if (arrowEffectPrefab == null) return;
+        if (arrowEffectPrefab == null || AttackSystem.Instance?.columnManager == null) return false;
 
         var instance = Instantiate(arrowEffectPrefab);
-        instance.GetComponent<TimedArrowEffect>().Play(cfg.rowCount, cfg.arrowCount, cfg.damage);
+        var effect = instance.GetComponent<TimedArrowEffect>();
+        if (effect == null)
+        {
+            Object.Destroy(instance);
+            return false;
+        }
+        effect.Play(cfg.rowCount, cfg.arrowCount, cfg.damage);
+        return true;
     }
 
     private static float GetIntervalForLevel(UpgradeDefinition def, int level)

@@ -2,7 +2,7 @@
 id: kd_b50736d7-6834-430f-8e21-e5e780c02a81
 injectMode: inherit
 summary: 补齐、攻击和位移的调度边界；同时记录当前代码与权威规则的已知偏差。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## 权威调度边界

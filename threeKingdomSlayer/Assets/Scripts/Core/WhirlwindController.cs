@@ -45,7 +45,7 @@ public class WhirlwindController : MonoBehaviour
 
     private void Update()
     {
-        if (!IsActive) return;
+        if (!IsActive || PlayerState.Instance == null || PlayerState.Instance.stageState != StageState.InProgress) return;
 
         // 自动倒计时
         _autoTimer -= Time.deltaTime;
@@ -99,6 +99,7 @@ public class WhirlwindController : MonoBehaviour
     public void Deactivate()
     {
         IsActive = false;
+        StopAllCoroutines();
         _activeDef = null;
         Debug.Log("[WhirlwindController] 停用");
     }

@@ -1,10 +1,12 @@
 ---
 id: kd_a9df5837-75e3-4f6e-872f-1b0dedc64c06
 injectMode: inherit
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
-# 路线节点非战斗玩法设计
+# 路线节点非战斗玩法设计（历史文档，V2 已废弃）
+
+> 当前对话已决定完全重构为“Battle 常驻 + CombatNode Scene 按需加载”。本文后续内容保留为历史需求记录，不再作为实现依据；其中独立 JunctionNode、Battle 内 RouteWorldRoot、总览场景/Baker、动态 Prefab 节点、DAG/唯一终点等内容均已失效。当前权威方案见 `route-scene-architecture-v2.md`。
 
 ## 1. 定位
 

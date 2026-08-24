@@ -2,7 +2,7 @@
 id: kd_c3d3d19d-ec61-477e-bb06-72b023da4670
 injectMode: inherit
 summary: 不可变设计约束：位移不重叠、未受位移敌人不因位移移动、普通补齐仅由整排清空统一调度。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 不可变设计约束

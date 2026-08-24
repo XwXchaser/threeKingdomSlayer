@@ -2,7 +2,7 @@
 id: kd_462cd811-8a63-4ed1-b6e3-0c5e670fe54f
 injectMode: inherit
 summary: QTE Sweep 完整设计文档：蓄力横斩格挡 QTE，Animator speed 调制同步动画与判定窗口，成功加速收尾切 Blocked，已全部实施完成。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # QTE Sweep 设计文档

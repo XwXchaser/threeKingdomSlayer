@@ -2,7 +2,7 @@
 id: kd_c10dc057-dc52-4576-94f9-09869e1c6e5e
 injectMode: inherit
 summary: 敌人攻击打断系统设计文档：三级打断体系（普通攻击/C技/QTE）、霸体机制、与三选一奖励及Parry/Launch的交互关系、实现计划。已完成sharedHealthGroup打断修复和canInterruptCFrame参数传递，待实现P0-P2。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 攻击打断系统设计

@@ -2,7 +2,7 @@
 id: kd_20797491-db68-45ab-b536-6efcc6f7dca4
 injectMode: inherit
 summary: Dialogue coordinator, standalone Bubble overlay, art paths, and verified pause/flip isolation.
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # Dialogue UI

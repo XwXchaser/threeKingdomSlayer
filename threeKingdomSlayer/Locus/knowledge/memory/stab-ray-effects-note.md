@@ -2,7 +2,7 @@
 id: kd_c766e336-dafc-4c40-b7c4-86feb546f2b2
 injectMode: inherit
 summary: Stab 与同类伸缩武器的单射线容器实现规则。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ### Stab 等伸缩武器必须由单一射线容器驱动

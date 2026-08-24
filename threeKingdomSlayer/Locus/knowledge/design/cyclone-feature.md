@@ -2,7 +2,7 @@
 id: kd_fb351cd8-3e22-4ce9-902e-7b6b93cee3dc
 injectMode: inherit
 summary: 旋风(Cyclone) TimedPassive 升级功能：周期性随机击飞敌人，配合 cyclone 精灵动画，高级解锁落地伤害。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 旋风 (Cyclone) — 主动区域型旋风

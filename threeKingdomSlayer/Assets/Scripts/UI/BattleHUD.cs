@@ -76,6 +76,7 @@ public class BattleHUD : MonoBehaviour
             PlayerState.Instance.OnStageStateChanged += OnStageStateChanged;
             PlayerState.Instance.OnExpChanged += UpdateExpBar;
             PlayerState.Instance.OnLevelUp += UpdateExpLevel;
+            PlayerState.Instance.OnLevelChanged += UpdateExpLevel;
         }
 
         StartCoroutine(SyncPlayerStateNextFrame());
@@ -232,6 +233,7 @@ public class BattleHUD : MonoBehaviour
             PlayerState.Instance.OnStageStateChanged -= OnStageStateChanged;
             PlayerState.Instance.OnExpChanged -= UpdateExpBar;
             PlayerState.Instance.OnLevelUp -= UpdateExpLevel;
+            PlayerState.Instance.OnLevelChanged -= UpdateExpLevel;
         }
 
         if (EnemyManager.Instance != null)
@@ -321,8 +323,12 @@ public class BattleHUD : MonoBehaviour
 
     private void ShowVictory()
     {
+        InputManager.Instance?.CancelCurrentGesture();
+        if (InputManager.Instance != null) InputManager.Instance.gameplayInputEnabled = false;
+        if (_heroHUD != null) _heroHUD.gameObject.SetActive(true);
         if (victoryPanel != null)
         {
+            victoryPanel.transform.SetAsLastSibling();
             victoryPanel.SetActive(true);
             if (resultCoinText != null && PlayerState.Instance != null)
                 resultCoinText.text = $"获得铜钱: {PlayerState.Instance.coinCount}";
@@ -395,8 +401,23 @@ public class BattleHUD : MonoBehaviour
 
     private void ShowDefeat()
     {
+        InputManager.Instance?.CancelCurrentGesture();
+        if (InputManager.Instance != null) InputManager.Instance.gameplayInputEnabled = false;
+        if (_heroHUD != null) _heroHUD.gameObject.SetActive(true);
         if (defeatPanel != null)
         {
+            var panelRect = defeatPanel.GetComponent<RectTransform>();
+            if (panelRect != null)
+            {
+                panelRect.anchorMin = Vector2.zero;
+                panelRect.anchorMax = Vector2.one;
+                panelRect.anchoredPosition = Vector2.zero;
+                panelRect.sizeDelta = Vector2.zero;
+                panelRect.localScale = Vector3.one;
+            }
+            var panelImage = defeatPanel.GetComponent<Image>();
+            if (panelImage != null) panelImage.color = Color.clear;
+            defeatPanel.transform.SetAsLastSibling();
             defeatPanel.SetActive(true);
             if (resultCoinText != null && PlayerState.Instance != null)
                 resultCoinText.text = $"获得铜钱: {PlayerState.Instance.coinCount}";
@@ -460,6 +481,9 @@ public class BattleHUD : MonoBehaviour
     public void OnRestartButton()
     {
         if (defeatPanel != null) defeatPanel.SetActive(false);
+        if (_heroHUD != null) _heroHUD.gameObject.SetActive(true);
+        SyncCurrentPlayerState();
+        RouteStageV2Launch.StartFromCheckpoint = true;
         StageController.Instance?.RestartStage();
     }
 

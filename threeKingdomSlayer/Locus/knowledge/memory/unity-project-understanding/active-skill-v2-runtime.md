@@ -2,7 +2,7 @@
 id: kd_65f993af-750c-4e93-8ef6-7377cd142e27
 injectMode: inherit
 summary: V1限次道具与V2主动技能在项目中的实现入口、资产路径、池路由和UI绑定。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 - V1/V2 版本选择由 `ActiveSkillInventory._ruleVersion` 控制，挂载在 `Assets/Scenes/Battle.scene/Manager`；仅开局前切换。当前场景默认配置为 `V2_ActiveSkill`。

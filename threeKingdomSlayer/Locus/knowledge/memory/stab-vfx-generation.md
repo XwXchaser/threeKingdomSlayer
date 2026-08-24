@@ -2,7 +2,7 @@
 id: kd_22735b7f-c4be-45e1-a804-a8bea3501456
 injectMode: inherit
 summary: Stab 高速穿刺素材生成的成功约束、失败原因和可复用提示词经验。
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ## Stab 高速穿刺素材生成经验

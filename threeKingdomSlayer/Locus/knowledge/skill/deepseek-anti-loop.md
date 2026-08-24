@@ -1,7 +1,7 @@
 ---
 id: kd_aeb295d0-6733-4c3b-97ac-18378ffb56c6
 injectMode: inherit
-aiMaintained: inherit
+aiEditMode: inherit
 skillEnabled: true
 skillSurface: command
 commandTrigger: /anti-loop

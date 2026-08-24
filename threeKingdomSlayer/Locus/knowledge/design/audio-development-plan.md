@@ -2,7 +2,7 @@
 id: kd_bb60439d-5117-49fd-9789-7cc1a60f4bd8
 injectMode: inherit
 summary: '游戏音频系统从零搭建的完整开发计划。技术栈: Wwise v2025.1.8 + Unity Integration。分6个Phase: 技术栈就绪→Event/State创建→Bank生成→Unity基础设施→Prefab部署→代码挂接→调优。'
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 ### Phase 3: Unity 集成 — 基础设施

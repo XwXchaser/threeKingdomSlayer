@@ -2,7 +2,7 @@
 id: kd_c2de3458-57af-4257-9475-96d4662f67f2
 injectMode: inherit
 summary: 记录特效层级排序问题（SpikeTrap 已修复，Cyclone 待修复）
-aiMaintained: inherit
+aiEditMode: inherit
 ---
 
 # 已知问题

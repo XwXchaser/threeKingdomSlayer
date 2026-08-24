@@ -2,7 +2,7 @@
 id: kd_82958919-59f4-477f-848b-d0e0a342ac41
 injectMode: inherit
 summary: 战斗数值总表 EditorWindow 已覆盖敌人、技能/大招、三选一升级定义与升级池；升级补充说明决定逐级数值表可见字段。
-aiMaintained: true
+aiEditMode: auto
 maintenanceRules: Keep only durable and reusable project memory
 ---
 
