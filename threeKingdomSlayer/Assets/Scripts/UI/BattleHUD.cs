@@ -483,7 +483,7 @@ public class BattleHUD : MonoBehaviour
         if (defeatPanel != null) defeatPanel.SetActive(false);
         if (_heroHUD != null) _heroHUD.gameObject.SetActive(true);
         SyncCurrentPlayerState();
-        RouteStageV2Launch.StartFromCheckpoint = true;
+        FakeRouteLaunch.StartFromCheckpoint = true;
         StageController.Instance?.RestartStage();
     }
 

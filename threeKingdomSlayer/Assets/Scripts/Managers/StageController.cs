@@ -15,6 +15,12 @@ public class StageController : MonoBehaviour
     public StageConfig stageConfig;
     public RouteStageConfig routeStageConfig;
     public RouteStageConfigV2 routeStageConfigV2;
+    public FakeRouteStageConfig fakeRouteStageConfig;
+
+    /// <summary>
+    /// 待加载的假移动路线关卡配置（MainMenu选关后设置）
+    /// </summary>
+    public static FakeRouteStageConfig PendingFakeRouteStageConfig;
 
     /// <summary>
     /// 待加载的线性关卡配置（MainMenu选关后设置）
@@ -67,7 +73,16 @@ public class StageController : MonoBehaviour
         Instance = this;
 
         // 从 MainMenu 传入的路线或线性关卡配置
-        if (RouteStageV2Launch.PendingConfig != null)
+        if (FakeRouteLaunch.PendingConfig != null)
+        {
+            fakeRouteStageConfig = FakeRouteLaunch.PendingConfig;
+            Debug.Log("[FakeRoute] launch stage=" + fakeRouteStageConfig.stageId);
+            FakeRouteLaunch.PendingConfig = null;
+            routeStageConfigV2 = null;
+            routeStageConfig = null;
+            stageConfig = null;
+        }
+        else if (RouteStageV2Launch.PendingConfig != null)
         {
             routeStageConfigV2 = RouteStageV2Launch.PendingConfig;
             Debug.Log("[RouteV2] launch mode=" + (RouteStageV2Launch.StartFromCheckpoint ? "checkpoint" : "new game") + " stage=" + routeStageConfigV2.stageId);
@@ -87,11 +102,17 @@ public class StageController : MonoBehaviour
             stageConfig = PendingStageConfig;
             PendingStageConfig = null;
             routeStageConfig = null;
+            routeStageConfigV2 = null;
+            fakeRouteStageConfig = null;
         }
 
-        if (routeStageConfig != null)
+        if (fakeRouteStageConfig != null)
         {
-            Debug.Log($"[StageController] 加载路线关卡: {routeStageConfig.stageName} (stageId={routeStageConfig.stageId})");
+            Debug.Log($"[StageController] 加载假移动路线关卡: {fakeRouteStageConfig.stageName} (stageId={fakeRouteStageConfig.stageId})");
+        }
+        else if (routeStageConfig != null)
+        {
+            Debug.Log($"[StageController] 加载旧路线关卡: {routeStageConfig.stageName} (stageId={routeStageConfig.stageId})");
         }
         else if (stageConfig != null)
         {
@@ -158,6 +179,22 @@ public class StageController : MonoBehaviour
     /// </summary>
     public void StartStage()
     {
+        if (fakeRouteStageConfig != null)
+        {
+            _routeStageSettled = false;
+            playerState?.ResetPlayer();
+            UltimateSystem.Instance?.ResetEnergy();
+            enemyManager?.ClearAllEnemies();
+            var fakeRuntime = FindObjectOfType<FakeRouteRuntime>();
+            if (fakeRuntime == null)
+            {
+                Debug.LogError("[StageController] 假移动路线运行时组件缺失");
+                return;
+            }
+            fakeRuntime.Begin(fakeRouteStageConfig);
+            return;
+        }
+
         if (routeStageConfigV2 != null)
         {
             _routeStageSettled = false;
@@ -324,6 +361,13 @@ public class StageController : MonoBehaviour
     {
         if (currentState != StageState.InProgress) return;
 
+        var fakeRuntime = FindObjectOfType<FakeRouteRuntime>();
+        if (_routeBattleRuntime && fakeRuntime != null)
+        {
+            OnRouteBattleCompleted?.Invoke();
+            return;
+        }
+
         var runtimeV2 = FindObjectOfType<RouteStageRuntimeV2>();
         if (_routeBattleRuntime && runtimeV2 != null)
         {
@@ -368,6 +412,10 @@ public class StageController : MonoBehaviour
     private void OnPlayerDefeated()
     {
         if (currentState == StageState.Defeat || currentState == StageState.Victory) return;
+
+        var fakeRuntime = FindObjectOfType<FakeRouteRuntime>();
+        if (fakeRuntime != null)
+            fakeRuntime.HandleStageDefeat();
 
         var v2Runtime = FindObjectOfType<RouteStageRuntimeV2>();
         if (v2Runtime != null)
@@ -433,6 +481,10 @@ public class StageController : MonoBehaviour
 
     public void CleanupRouteStage(bool unloadScene)
     {
+        var fakeRuntime = FindObjectOfType<FakeRouteRuntime>();
+        if (fakeRuntime != null)
+            fakeRuntime.HandleStageDefeat();
+
         var runtimeV2 = FindObjectOfType<RouteStageRuntimeV2>();
         if (runtimeV2 != null)
             runtimeV2.CleanupRouteStage(unloadScene);
@@ -440,6 +492,16 @@ public class StageController : MonoBehaviour
 
     private IEnumerator RestartStageCoroutine()
     {
+        if (fakeRouteStageConfig != null)
+        {
+            enemyManager?.ClearAllEnemies();
+            enemyPool?.ClearAllPools();
+            playerState?.ResetPlayer();
+            yield return null;
+            StartStage();
+            yield break;
+        }
+
         Debug.Log("[RouteV2] RestartStage begin checkpointMode=" + RouteStageV2Launch.StartFromCheckpoint + " health=" + (playerState != null ? playerState.currentHealth.ToString("F1") : "NULL") + " level=" + (playerState != null ? playerState.currentLevel.ToString() : "NULL") + " upgrades=" + (playerState != null ? playerState.acquiredUpgrades.Count.ToString() : "NULL"));
         enemyManager?.ClearAllEnemies();
         enemyPool?.ClearAllPools();
@@ -499,6 +561,19 @@ public class StageController : MonoBehaviour
     public void GoToBattleScene()
     {
         UnityEngine.SceneManagement.SceneManager.LoadScene(battleSceneName);
+    }
+
+    public void CompleteFakeRouteStage(int clearReward)
+    {
+        if (fakeRouteStageConfig == null || _routeStageSettled) return;
+        _routeStageSettled = true;
+        AudioManager.Instance?.StopBGM();
+        SetState(StageState.Victory);
+        ClearEnemyProjectiles();
+        if (clearReward > 0) playerState?.AddCoins(clearReward);
+        SaveManager.MarkStageCleared(fakeRouteStageConfig.stageId);
+        SettleCoins();
+        OnStageVictory?.Invoke();
     }
 
     public void CompleteRouteStage(int clearReward)
