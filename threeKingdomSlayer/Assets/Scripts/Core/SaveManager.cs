@@ -16,6 +16,8 @@ public class SaveData
     public bool tutorialCompleted;
     public List<string> completedTutorialDialogueIds = new List<string>();
     public List<RouteStageSaveSnapshot> routeStageSnapshots = new List<RouteStageSaveSnapshot>();
+    public List<FakeRouteStageSaveSnapshot> fakeRouteSnapshots = new List<FakeRouteStageSaveSnapshot>();
+    public int activeFakeRouteStageId = -1;
 
     /// <summary>
     /// 获取铜钱数量（优先从 props 列表读取，兼容旧存档的 coinCount 字段）
@@ -37,6 +39,51 @@ public class SaveData
             coinCount = 0;
         }
     }
+}
+
+[Serializable]
+public sealed class FakeRouteStageSaveSnapshot
+{
+    public int snapshotVersion = 1;
+    public string routeArchitectureId = "fake-route-v1";
+    public string routeId;
+    public int stageId;
+    public int configurationVersion;
+    public string checkpointNodeId;
+    public List<FakeRouteChoiceSaveState> choiceHistory = new List<FakeRouteChoiceSaveState>();
+    public float currentHealth;
+    public int currentRevives;
+    public int currentLevel;
+    public float currentExp;
+    public int currentKillCount;
+    public int currentCoinCount;
+    public int ultimateEnergy;
+    public List<FakeRouteNodeSaveState> nodeStates = new List<FakeRouteNodeSaveState>();
+    public List<RouteUpgradeSaveState> upgrades = new List<RouteUpgradeSaveState>();
+    public List<FakeRouteActiveSkillSaveState> activeSkills = new List<FakeRouteActiveSkillSaveState>();
+}
+
+[Serializable]
+public sealed class FakeRouteChoiceSaveState
+{
+    public string sourceNodeId;
+    public string choiceId;
+    public string targetNodeId;
+}
+
+[Serializable]
+public sealed class FakeRouteActiveSkillSaveState
+{
+    public string upgradeId;
+    public int level;
+}
+
+[Serializable]
+public sealed class FakeRouteNodeSaveState
+{
+    public string nodeId;
+    public bool visited;
+    public List<int> completedEntryIndices = new List<int>();
 }
 
 [Serializable]
@@ -115,6 +162,101 @@ public static class SaveManager
         _cache = null;
         PlayerPrefs.DeleteKey(SaveKey);
         PlayerPrefs.Save();
+    }
+
+    public static void SetActiveFakeRouteStage(int stageId)
+    {
+        var data = Load();
+        if (data.activeFakeRouteStageId != stageId)
+        {
+            data.activeFakeRouteStageId = stageId;
+            Save(data);
+        }
+    }
+
+    public static int GetActiveFakeRouteStageId()
+    {
+        return Load().activeFakeRouteStageId;
+    }
+
+    public static void ClearActiveFakeRouteStage()
+    {
+        var data = Load();
+        if (data.activeFakeRouteStageId != -1)
+        {
+            data.activeFakeRouteStageId = -1;
+            Save(data);
+        }
+    }
+
+    public static FakeRouteStageSaveSnapshot GetFakeRouteSnapshot(string routeId, int stageId)
+    {
+        var data = Load();
+        for (int i = 0; i < data.fakeRouteSnapshots.Count; i++)
+        {
+            var snapshot = data.fakeRouteSnapshots[i];
+            if (snapshot != null && snapshot.routeArchitectureId == "fake-route-v1"
+                && snapshot.routeId == routeId && snapshot.stageId == stageId)
+                return snapshot;
+        }
+        return null;
+    }
+
+    public static void SaveFakeRouteSnapshot(FakeRouteStageSaveSnapshot snapshot)
+    {
+        var data = Load();
+        for (int i = data.fakeRouteSnapshots.Count - 1; i >= 0; i--)
+        {
+            var current = data.fakeRouteSnapshots[i];
+            if (current == null || (current.routeId == snapshot.routeId && current.stageId == snapshot.stageId))
+                data.fakeRouteSnapshots.RemoveAt(i);
+        }
+        data.fakeRouteSnapshots.Add(snapshot);
+        Save(data);
+    }
+
+    public static void ClearFakeRouteSnapshot(string routeId, int stageId)
+    {
+        var data = Load();
+        bool changed = false;
+        for (int i = data.fakeRouteSnapshots.Count - 1; i >= 0; i--)
+        {
+            var snapshot = data.fakeRouteSnapshots[i];
+            if (snapshot != null && snapshot.routeId == routeId && snapshot.stageId == stageId)
+            {
+                data.fakeRouteSnapshots.RemoveAt(i);
+                changed = true;
+            }
+        }
+        if (changed) Save(data);
+    }
+
+    public static FakeRouteStageSaveSnapshot GetFakeRouteSnapshot(int stageId)
+    {
+        var data = Load();
+        for (int i = 0; i < data.fakeRouteSnapshots.Count; i++)
+        {
+            var snapshot = data.fakeRouteSnapshots[i];
+            if (snapshot != null && snapshot.routeArchitectureId == "fake-route-v1" && snapshot.stageId == stageId)
+                return snapshot;
+        }
+        return null;
+    }
+
+    public static void ClearFakeRouteSnapshot(int stageId)
+    {
+        var data = Load();
+        bool changed = false;
+        for (int i = data.fakeRouteSnapshots.Count - 1; i >= 0; i--)
+        {
+            var snapshot = data.fakeRouteSnapshots[i];
+            if (snapshot != null && snapshot.stageId == stageId)
+            {
+                data.fakeRouteSnapshots.RemoveAt(i);
+                changed = true;
+            }
+        }
+        if (changed) Save(data);
     }
 
     public static RouteStageSaveSnapshot GetRouteStageSnapshot(int stageId)

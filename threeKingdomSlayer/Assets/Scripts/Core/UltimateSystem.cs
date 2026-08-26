@@ -103,6 +103,13 @@ public class UltimateSystem : MonoBehaviour
         OnEnergyChanged?.Invoke(0f);
     }
 
+    public void SetEnergyForRouteRestore(int energy)
+    {
+        currentEnergy = Mathf.Clamp(energy, 0, maxUltimateEnergy);
+        OnEnergyChanged?.Invoke(EnergyPercent);
+        if (IsReady) OnUltimateReady?.Invoke();
+    }
+
     public void ActivateUltimate()
     {
         var qte = FindObjectOfType<QTEController>();

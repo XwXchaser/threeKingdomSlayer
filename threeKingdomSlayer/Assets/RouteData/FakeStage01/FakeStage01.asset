@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5308cf2b15845c046885a5aab78c01cd, type: 3}
+  m_Name: FakeStage01
+  m_EditorClassIdentifier: 
+  routeId: fake-stage-01
+  stageId: 1
+  stageName: "Stage01 \u5047\u79FB\u52A8\u5207\u7247"
+  startNode: {fileID: 11400000, guid: e22db4f86b9fb37449f7ff15d2d15838, type: 2}
+  nodes:
+  - {fileID: 11400000, guid: e22db4f86b9fb37449f7ff15d2d15838, type: 2}
+  - {fileID: 11400000, guid: 8f86f42a12d11d44c9606963883fc730, type: 2}
+  - {fileID: 11400000, guid: e6fc879830c4f06469d9050008ced145, type: 2}
+  - {fileID: 11400000, guid: 73ad9c596ea78024d91c6911683f79b1, type: 2}
+  clearCoinReward: 100
