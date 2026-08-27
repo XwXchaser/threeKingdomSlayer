@@ -19,12 +19,17 @@ MonoBehaviour:
     conditionEnabled: 0
   isFinalNode: 0
   savePoint: 0
+  battleBackground: {fileID: 11400000, guid: 258d2ff3fa6c898459a5f3cb52ea2f16, type: 2}
+  routeChoiceTransition: {fileID: 11400000, guid: 556db572f1a66384eb565a0db5ce7487, type: 2}
+  routeChoiceBackground: {fileID: 11400000, guid: 7080453edae7ff94a9d924d7797e2deb, type: 2}
   outgoingChoices:
   - choiceId: to_b
     displayName: "\u524D\u8FDB\uFF1AB"
     targetNode: {fileID: 11400000, guid: 8f86f42a12d11d44c9606963883fc730, type: 2}
+    presentation: {fileID: 11400000, guid: 556db572f1a66384eb565a0db5ce7487, type: 2}
     placeholderDuration: 1
   - choiceId: to_c
     displayName: "\u5DE6\u8F6C\uFF1AC"
     targetNode: {fileID: 11400000, guid: e6fc879830c4f06469d9050008ced145, type: 2}
+    presentation: {fileID: 11400000, guid: 556db572f1a66384eb565a0db5ce7487, type: 2}
     placeholderDuration: 1

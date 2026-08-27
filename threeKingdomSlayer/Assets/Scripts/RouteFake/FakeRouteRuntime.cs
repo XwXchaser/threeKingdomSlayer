@@ -8,6 +8,7 @@ public enum FakeRoutePhase
     EnteringNode,
     Battle,
     WaitingReward,
+    RouteChoiceTransition,
     ChoosingRoute,
     FakeMoving,
     Completed,
@@ -143,6 +144,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         _currentNode = node;
         _visitedNodes.Add(node);
         SetPhase(FakeRoutePhase.EnteringNode);
+        movementPresenter?.SetBattleBackground(node.battleBackground);
         if (node.savePoint && (!_restoredFromCheckpoint || node.nodeId != _restoredCheckpointNodeId))
             SaveCheckpoint();
         yield return RunBattleEntries();
@@ -154,7 +156,8 @@ public sealed class FakeRouteRuntime : MonoBehaviour
             yield break;
         }
 
-        SetPhase(FakeRoutePhase.ChoosingRoute);
+        yield return PlayRouteChoiceTransition(node, _generation);
+        if (Phase == FakeRoutePhase.Defeated) yield break;
     }
 
     private IEnumerator RunBattleEntries()
@@ -173,6 +176,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
             _battleActive = true;
             _battleCleared = false;
             SetPhase(FakeRoutePhase.Battle);
+            movementPresenter?.SetBattleBackground(_currentNode.battleBackground);
             stageController.StartRouteBattle(entry.battleConfig);
             SetGameplayInput(true);
 
@@ -189,6 +193,18 @@ public sealed class FakeRouteRuntime : MonoBehaviour
 
             MarkBattleEntryCompleted(_currentNode, _battleIndex);
             _battleActive = false;
+        }
+    }
+
+    private IEnumerator PlayRouteChoiceTransition(FakeRouteNodeConfig node, int generation)
+    {
+        SetPhase(FakeRoutePhase.RouteChoiceTransition);
+        if (movementPresenter != null)
+            yield return movementPresenter.PlayRouteChoiceTransition(node, () => generation == _generation && Phase == FakeRoutePhase.RouteChoiceTransition);
+        if (generation == _generation && Phase == FakeRoutePhase.RouteChoiceTransition)
+        {
+            movementPresenter?.ShowRouteChoiceBackground(node);
+            SetPhase(FakeRoutePhase.ChoosingRoute);
         }
     }
 
