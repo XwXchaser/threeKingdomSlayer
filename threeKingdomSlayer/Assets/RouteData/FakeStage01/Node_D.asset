@@ -19,4 +19,5 @@ MonoBehaviour:
     conditionEnabled: 0
   isFinalNode: 1
   savePoint: 0
+  battleBackground: {fileID: 11400000, guid: 0ccf07e72bc050d498ed7b3f70e77fe1, type: 2}
   outgoingChoices: []

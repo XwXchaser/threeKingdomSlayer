@@ -40,7 +40,10 @@ FakeRoute 假移动路线已完成可验收的逻辑垂直切片与存档恢复�
 ## 当前已知边界与后续作业
 
 - 正式路线选择 UI 尚未替换当前调试 `OnGUI` 面板；
-- 正式背景移动动画、背景资源、音效和转场尚未接入；
+- 当前已实现节点专属路线选择前转场：奖励流程完成后先播放 `routeChoiceTransition`，完成后切换到 `routeChoiceBackground` 并显示路线选择 UI；
+- `FakeRoutePresentation` 已支持静态图片和视频，并已用于节点 Combat 背景、路线选择画面及路线移动表现；
+- 当前测试使用 `RouteChoiceBlack` 作为路线选择前转场和选择路线后的黑屏过场，使用道路图片作为路线选择画面；
+- 正式视频、最终背景资源、音效和正式路线选择 Canvas UI 仍待接入；
 - 条件系统尚未定义，因此 `conditionEnabled` 仍是临时测试开关；
 - 剧情和剧情选项状态尚未定义或保存；
 - 更复杂的节点阶段状态尚未定义；当前只在安全节点边界保存，不保存假移动或战斗中间状态；
@@ -152,6 +155,8 @@ FakeRouteNodeConfig
 ├─ battleEntries[]
 ├─ isFinalNode
 ├─ savePoint
+├─ battleBackground
+├─ routeChoicePresentation
 └─ outgoingChoices[]
 
 FakeRouteChoiceConfig
@@ -257,16 +262,26 @@ MainMenu 选择路线关卡
 
 ```text
 普通节点战斗完成
-→ 进入 ChoosingRoute
-→ 显示当前节点 outgoingChoices
-→ 玩家点击一个选项
-→ 立即锁定路线选择
+→ 等待奖励、经验、弃置流程完成
+→ 播放当前节点 routeChoicePresentation
+→ 表现完成后显示当前节点 outgoingChoices 和路线选择 UI
+→ 玩家点击一个选项并立即锁定
 → 记录 sourceNode / choiceId / targetNode
 → 清理跨节点战斗短时状态
 → 进入 FakeMoving
 ```
 
 即使只有一个出口，也需要玩家确认，不能自动进入目标节点。
+
+### 6.3.1 路线选择前表现
+
+路线选择前表现由当前节点的 `routeChoicePresentation` 直接引用。它负责把 Combat 画面过渡到可展示路线分叉的画面；纯黑静态图片只是首版占位手法，后续可替换为静态图、视频或 Animator 表现。
+
+该阶段不显示路线选择 UI、不接受路线选择输入、不提交目标节点、不写入新的路线存档。暂停时冻结表现、音频和计时；跳过只完成当前表现并进入路线选择 UI。表现完成后才进入 `ChoosingRoute`，显示当前节点对应的分叉画面和出口选项。
+
+### 6.3.2 路线选择画面
+
+路线选择画面属于当前节点的非战斗表现，不等同于目标节点空间位置。其背景由当前节点的 `routeChoicePresentation` 提供，路线 UI 只读取当前节点的 `outgoingChoices`。每个节点可配置自己的路线选择画面；即使只有一个出口，也必须等待玩家确认。
 
 ### 6.4 假移动
 
@@ -328,6 +343,7 @@ None
 EnteringNode
 Battle
 WaitingReward
+RouteChoiceTransition
 ChoosingRoute
 FakeMoving
 Completed
@@ -340,6 +356,7 @@ Defeated
 EnteringNode
 → Battle
 → WaitingReward
+→ RouteChoiceTransition
 → ChoosingRoute
 → FakeMoving
 → EnteringNode
@@ -793,10 +810,17 @@ D → B
 - 不加载 RouteStage Scene；
 - 不创建或修改 RouteStageRoot；
 - 不计算 Head、Tail、路径或 Pose；
-- 每个路线选项有唯一目标节点和表现引用；
-- 动画结束前不会开始目标节点战斗；
-- 战斗清空不会绕过奖励流程；
-- 动画和旧回调不会重复提交节点；
+- 每个节点可独立配置 Combat 背景和路线选择前/分叉表现；
+- 每个路线选项有唯一目标节点和选择后移动表现引用；
+- 节点战斗结束后先等待奖励流程，再播放路线选择前表现；
+- 路线选择前表现完成或跳过前，不显示路线选择 UI、不接受路线选择输入；
+- 表现完成后才显示当前节点对应的路线分叉画面和 UI；
+- 路线选择锁定后，才播放所选路线移动表现；
+- 移动表现完成前不会提交目标节点或开始目标节点战斗；
+- 目标节点提交后切换其 Combat 背景，再按原顺序触发存档点和目标战斗；
+- 三类表现均可使用静态图片或视频，纯黑只作为可替换占位表现；
+- 所有表现暂停时冻结，跳过只完成当前表现阶段；
+- 表现和旧回调不会重复提交节点或重复推进流程；
 - 失败恢复先 ResetAll，再从最近有效存档点进入；
 - MainMenu Continue 从最后未完成关卡的 startNode 开始；
 - 新旧路线快照不会被静默混用；
@@ -808,8 +832,10 @@ D → B
 ```text
 一个 Battle Unity Scene
 + 一个纯逻辑节点图
++ 节点 Combat 背景
++ 节点路线选择前/分叉表现
++ 路线选项移动过场
 + 玩家路线选择
-+ 背景动画表现
 + 多个 StageConfig 战斗内容
 + 独立版本化的假移动路线快照
 ```

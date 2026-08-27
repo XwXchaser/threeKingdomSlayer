@@ -22,6 +22,9 @@ public sealed class FakeRouteNodeConfig : ScriptableObject
     public List<FakeRouteBattleEntry> battleEntries = new List<FakeRouteBattleEntry>();
     public bool isFinalNode;
     public bool savePoint;
+    public FakeRoutePresentation battleBackground;
+    public FakeRoutePresentation routeChoiceTransition;
+    public FakeRoutePresentation routeChoiceBackground;
     public List<FakeRouteChoiceConfig> outgoingChoices = new List<FakeRouteChoiceConfig>();
 }
 
@@ -38,5 +41,6 @@ public sealed class FakeRouteChoiceConfig
     public string choiceId;
     public string displayName;
     public FakeRouteNodeConfig targetNode;
+    public FakeRoutePresentation presentation;
     public float placeholderDuration = 1f;
 }
