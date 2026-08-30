@@ -102,11 +102,19 @@ public class UltimateEffect_Berserk : UltimateEffect
             hud.ResetHealthBarColor();
     }
 
-    private void OnDestroy()
+    public override void Cancel()
     {
         if (berserkRoutine != null)
+        {
             StopCoroutine(berserkRoutine);
+            berserkRoutine = null;
+        }
         Cleanup();
+    }
+
+    private void OnDestroy()
+    {
+        Cancel();
     }
 
     public override float GetLifetime()

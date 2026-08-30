@@ -50,6 +50,7 @@ public class CycloneEffect : MonoBehaviour
     private bool _fadingOut;
     private bool _destroyOnFadeComplete;
     private bool _zoneFadeCompleted;
+    private Tween _fadeTween;
 
     public void Setup(Enemy target, int damage, int landingDamage, float knockupDuration)
     {
@@ -291,9 +292,9 @@ public class CycloneEffect : MonoBehaviour
 
         if (_sr != null)
         {
-            var tween = _sr.DOFade(0f, fadeOutDuration).SetUpdate(UpdateType.Normal, false);
+            _fadeTween = _sr.DOFade(0f, fadeOutDuration).SetUpdate(UpdateType.Normal, false);
             if (destroyOnComplete)
-                tween.OnComplete(() => Destroy(gameObject));
+                _fadeTween.OnComplete(() => Destroy(gameObject));
         }
         else if (destroyOnComplete)
             Destroy(gameObject);
@@ -301,6 +302,8 @@ public class CycloneEffect : MonoBehaviour
 
     private void OnDestroy()
     {
+        _fadeTween?.Kill(false);
+        _fadeTween = null;
         if (_target != null)
             _target.OnLaunchedLanded -= OnTargetLanded;
     }

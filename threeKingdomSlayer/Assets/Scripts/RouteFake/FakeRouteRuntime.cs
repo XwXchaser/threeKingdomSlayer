@@ -152,12 +152,24 @@ public sealed class FakeRouteRuntime : MonoBehaviour
 
         if (node.isFinalNode)
         {
+            if (HasUncompletedBattleEntry(node))
+            {
+                Debug.LogError("[FakeRoute] 终点节点仍有未完成BattleEntry: " + node.nodeId);
+                SetPhase(FakeRoutePhase.None);
+                yield break;
+            }
             yield return FinishRoute();
             yield break;
         }
 
-        yield return PlayRouteChoiceTransition(node, _generation);
-        if (Phase == FakeRoutePhase.Defeated) yield break;
+        if (node.outgoingChoices == null || node.outgoingChoices.Count == 0)
+        {
+            Debug.LogError("[FakeRoute] 非终点节点没有出口: " + node.nodeId);
+            SetPhase(FakeRoutePhase.None);
+            yield break;
+        }
+
+        SetPhase(FakeRoutePhase.ChoosingRoute);
     }
 
     private IEnumerator RunBattleEntries()
@@ -193,18 +205,8 @@ public sealed class FakeRouteRuntime : MonoBehaviour
 
             MarkBattleEntryCompleted(_currentNode, _battleIndex);
             _battleActive = false;
-        }
-    }
-
-    private IEnumerator PlayRouteChoiceTransition(FakeRouteNodeConfig node, int generation)
-    {
-        SetPhase(FakeRoutePhase.RouteChoiceTransition);
-        if (movementPresenter != null)
-            yield return movementPresenter.PlayRouteChoiceTransition(node, () => generation == _generation && Phase == FakeRoutePhase.RouteChoiceTransition);
-        if (generation == _generation && Phase == FakeRoutePhase.RouteChoiceTransition)
-        {
-            movementPresenter?.ShowRouteChoiceBackground(node);
-            SetPhase(FakeRoutePhase.ChoosingRoute);
+            Debug.Log("[FakeRoute] battle entry completed node=" + _currentNode.nodeId + " index=" + _battleIndex + "; leaving node until next entry");
+            yield break;
         }
     }
 
@@ -244,7 +246,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     private IEnumerator PlayPlaceholderAndEnter(FakeRouteChoiceConfig choice, int generation)
     {
         if (movementPresenter != null)
-            yield return movementPresenter.Play(choice, () => generation == _generation && Phase == FakeRoutePhase.FakeMoving);
+            yield return movementPresenter.Play(choice, () => generation == _generation && Phase == FakeRoutePhase.FakeMoving, () => movementPresenter.PrepareCoveredBackground(choice.targetNode.battleBackground));
         else
         {
             float elapsed = 0f;
@@ -285,6 +287,18 @@ public sealed class FakeRouteRuntime : MonoBehaviour
             }
             if (node.isFinalNode && node.outgoingChoices.Count > 0) { error = "终点节点不能有出口: " + node.nodeId; return false; }
             if (!node.isFinalNode && node.outgoingChoices.Count == 0) { error = "非终点节��没有出口: " + node.nodeId; return false; }
+        }
+        if (routeConfig.nodes != null)
+        {
+            for (int i = 0; i < routeConfig.nodes.Count; i++)
+            {
+                var node = routeConfig.nodes[i];
+                if (node != null && node.isFinalNode && node.battleEntries != null && node.battleEntries.Count != 1)
+                {
+                    error = "Final node must have exactly one BattleEntry: " + node.nodeId;
+                    return false;
+                }
+            }
         }
         if (!ContainsNode(routeConfig.startNode)) { error = "startNode不在nodes列表中"; return false; }
         return true;
@@ -507,6 +521,18 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         if (routeConfig == null || routeConfig.nodes == null) return false;
         for (int i = 0; i < routeConfig.nodes.Count; i++)
             if (routeConfig.nodes[i] == node) return true;
+        return false;
+    }
+
+    private bool HasUncompletedBattleEntry(FakeRouteNodeConfig node)
+    {
+        if (node == null || node.battleEntries == null) return false;
+        for (int i = 0; i < node.battleEntries.Count; i++)
+        {
+            var entry = node.battleEntries[i];
+            if (entry != null && entry.battleConfig != null && !entry.conditionEnabled && !IsBattleEntryCompleted(node, i))
+                return true;
+        }
         return false;
     }
 

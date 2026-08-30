@@ -13,9 +13,16 @@ MonoBehaviour:
   m_Name: BattleRoad
   m_EditorClassIdentifier: 
   mode: 0
-  staticImage: {fileID: 21300000, guid: 4b22b28c47a77a44db87a900c1046ff9, type: 3}
+  staticImage: {fileID: 21300000, guid: 41826bf003291d34daef485d390162a6, type: 3}
   videoClip: {fileID: 0}
   duration: 1
   loop: 0
   skipAllowed: 1
   audioClip: {fileID: 0}
+  chibiImage: {fileID: 0}
+  title: 
+  subtitle: 
+  blackoutInDuration: 0.35
+  blackoutHoldDuration: 0.8
+  blackoutOutDuration: 0.35
+  blackoutColor: {r: 0, g: 0, b: 0, a: 1}

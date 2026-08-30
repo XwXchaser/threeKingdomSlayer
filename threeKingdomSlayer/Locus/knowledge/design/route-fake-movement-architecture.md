@@ -16,39 +16,42 @@ aiEditMode: inherit
 
 ---
 
-### 当前实现阶段（2026-03）
+### 当前实现阶段（历史垂直切片）
 
-FakeRoute 假移动路线已完成可验收的逻辑垂直切片与存档恢复闭环：
+当前 `route-fake-movement` 已完成的是纯逻辑路线的测试切片，不是长坂坡正式拓扑：
 
-- 新建 `Assets/Scripts/RouteFake/` 纯逻辑路线层，不依赖旧空间移动运行器；
 - `Battle.scene` 作为唯一战斗运行场景，节点不是 Unity Scene；
-- 节点只保存逻辑 ID、BattleEntry、终点/存档点属性和出口；
-- 路线选项直接引用目标节点，支持多来源汇入同一目标节点；
-- 当前测试拓扑为 `A → B/C → D`，D 为唯一终点；
-- A/B/C/D 使用不同的普通敌人和混合阵列，已验证节点战斗配置确实随节点切换；
-- 假移动当前使用独立 `FakeMovementPresenter` 的代码占位等待，支持暂停语义和跳过占位表现；
-- FakeRoute 配置包含基础编辑器校验与运行时校验；
-- 节点战斗清空会等待奖励、经验收集和弃置流程后才推进；
-- B/C 作为存档点，目标节点提交后、目标战斗开始前保存快照；
-- 失败恢复先清理当前运行态，再从对应存档点节点重新进入；
-- 快照已保存并验收：节点、BattleEntry、路线选择历史、玩家生命/复活/等级/经验、击杀数、局内铜钱、被动等级、主动技能持有/等级、UT 能量；
-- 主动技能冷却、普通攻击冷却、计时被动剩余时间、敌人、投射物、连击、QTE、临时效果和占位动画进度不保存，恢复时重置；
-- 新旧路线快照已隔离，并通过 `routeArchitectureId`、`snapshotVersion`、`routeId`、`stageId`、`configurationVersion` 校验；
-- MainMenu“继续游戏”不读取失败恢复快照，而是从最后未完成路线关卡的 `startNode` 开始；
-- 上述路线拓扑和快照恢复已由用户实际验收。
+- 当前测试拓扑为 `A → B → Junction → A/C → D`；
+- 该切片允许战斗节点直接拥有出口，且用空 `battleEntries` 节点模拟 Junction；
+- 节点战斗或非战斗内容完成后直接显示当前节点路线选择 UI，并保持当前背景及正在播放的媒体资源；
+- 单一目标也必须停留在 `ChoosingRoute` 等待玩家点击，不能自动进入目标节点；终点节点无出口，不适用此规则；
+- 玩家点击出口后才播放该选项绑定的 `choice.presentation` 位移过场，表现完成后提交目标节点；
+- `FakeStage01` 的 B 节点已作为存档点，目标节点提交后、目标战斗开始前保存快照；失败恢复从该安全节点边界重新进入；
+- 上述实现、存档和表现验收结果保留，但不能作为长坂坡正式关卡的节点模型。
+
+### 正式长坂坡拓扑要求
+
+正式路线必须使用纯逻辑节点，不创建独立 Unity Scene。战斗节点与选择节点均由 `FakeRouteNodeConfig` 表达：
+
+```text
+N1 → J1 → N2/N3
+N2 → N4
+N3 → J3 → N4/N5
+N4 → N6
+N5 → N6
+```
+
+共 6 个战斗节点、2 个选择节点。战斗节点和选择节点均使用统一的 `FakeRouteNodeConfig` 表达。任意非终点节点在内容完成后都进入 `ChoosingRoute`；即使只有一个目标，也必须等待玩家点击，点击后才播放出口位移表现。
 
 ## 当前已知边界与后续作业
 
 - 正式路线选择 UI 尚未替换当前调试 `OnGUI` 面板；
-- 当前已实现节点专属路线选择前转场：奖励流程完成后先播放 `routeChoiceTransition`，完成后切换到 `routeChoiceBackground` 并显示路线选择 UI；
-- `FakeRoutePresentation` 已支持静态图片和视频，并已用于节点 Combat 背景、路线选择画面及路线移动表现；
-- 当前测试使用 `RouteChoiceBlack` 作为路线选择前转场和选择路线后的黑屏过场，使用道路图片作为路线选择画面；
-- 正式视频、最终背景资源、音效和正式路线选择 Canvas UI 仍待接入；
-- 条件系统尚未定义，因此 `conditionEnabled` 仍是临时测试开关；
-- 剧情和剧情选项状态尚未定义或保存；
-- 更复杂的节点阶段状态尚未定义；当前只在安全节点边界保存，不保存假移动或战斗中间状态；
-- 旧 `Route/`、`RouteV2/` 脚本与旧 RouteStage 场景仍保留在工程中，仅确保不被 FakeRoute 新运行时引用；
-- 计时被动跨节点的状态机问题属于既有战斗系统后续事项，不是 FakeRoute 存档闭环已完成的证明。
+- 当前 FakeRoute 节点模型仍是统一切片结构：允许战斗节点直接拥有出口，也允许空 `battleEntries` 节点承担纯非战斗分支语义；
+- 所有非终点节点，包括单一出口节点，内容完成后都必须显示路线选项并等待玩家点击；不得自动移动到目标节点；
+- 路线表现规则已确定：选择前保持当前背景/视频/音频不变，选择后才播放出口 `choice.presentation`，完成后提交目标节点；
+- 正式拓扑为 `N1 → J1 → N2/N3`、`N2 → N4`、`N3 → J3 → N4/N5`、`N4 → N6`、`N5 → N6`；
+- 所有节点仍是 `FakeRouteNodeConfig` 资产，不创建独立 Unity Scene；
+- 旧 `Route/`、`RouteV2/` 脚本与旧 RouteStage 场景仍保留，待新架构确定后再决定迁移或废弃。
 
 ## 可复用开发经验
 
@@ -156,7 +159,6 @@ FakeRouteNodeConfig
 ├─ isFinalNode
 ├─ savePoint
 ├─ battleBackground
-├─ routeChoicePresentation
 └─ outgoingChoices[]
 
 FakeRouteChoiceConfig
@@ -185,12 +187,13 @@ FakeRouteChoiceConfig
 
 - 节点稳定 `nodeId`；
 - 节点展示信息；
-- 有序 BattleEntry；
+- 可选的有序 BattleEntry；
 - 终点属性；
 - 存档点属性；
-- 从当前节点可选的出口。
+- 从当前节点可选的零个、一个或多个出口；
+- 节点进入、离开和路线选择表现。
 
-节点不包含 Head、CombatArea、Tail、场景引用或空间数据。
+节点不包含 Head、CombatArea、Tail、场景引用或空间数据。节点语义由配置组合决定：有未完成 BattleEntry 时执行一次战斗；`battleEntries` 为空或全部完成后进入出口流程；多个出口不要求额外的 JunctionNode 类型。
 
 ### 5.3 BattleEntry
 
@@ -246,52 +249,50 @@ MainMenu 选择路线关卡
 
 ```text
 进入节点
-→ 设置当前节点和当前阶段
-→ 按顺序处理 BattleEntry
-→ 启动 StageConfig 战斗
+→ 查找第一个未完成 BattleEntry
+→ 若存在，启动该条 StageConfig 战斗
 → 战斗清空
 → 等待三选一、Boss 奖励、弃置和经验收集流程结束
 → 标记当前 BattleEntry 完成
-→ 处理下一条 BattleEntry
-→ 所有条目处理完成
+→ 离开当前节点，不在本次进入中启动下一条 Entry
+→ 若不存在未完成 Entry，直接进入出口或终点流程
 ```
 
-战斗清空事件不能直接推进路线选择，必须经过奖励等待阶段。
+再次进入同一节点时，跳过已完成的 BattleEntry，继续挑战第一个未完成条目。战斗清空事件不能直接推进下一条 Entry，也不能直接推进路线选择，必须经过奖励等待阶段。
 
 ### 6.3 路线选择
 
 ```text
-普通节点战斗完成
-→ 等待奖励、经验、弃置流程完成
-→ 播放当前节点 routeChoicePresentation
-→ 表现完成后显示当前节点 outgoingChoices 和路线选择 UI
+节点当前进入内容完成
+→ 若仍有未完成 BattleEntry，本次进入结束，等待后续重新进入
+→ 若 battleEntries 为空或全部完成，直接显示当前节点路线选择 UI
+→ 保持当前 battleBackground 及正在播放的图片、视频和音频
 → 玩家点击一个选项并立即锁定
 → 记录 sourceNode / choiceId / targetNode
 → 清理跨节点战斗短时状态
-→ 进入 FakeMoving
+→ 播放所选 choice.presentation 位移过场
+→ 位移表现完成后提交目标节点
 ```
 
-即使只有一个出口，也需要玩家确认，不能自动进入目标节点。
+节点可以配置零个、一个或多个出口。单出口也必须显示唯一出口确认 UI；多个出口显示路线选择 UI。Combat 节点允许直接连接多个目标节点，不要求通过独立 JunctionNode 转发。终点节点无出口，完成唯一 BattleEntry 后直接进入终点结算。
 
 ### 6.3.1 路线选择前表现
 
-路线选择前表现由当前节点的 `routeChoicePresentation` 直接引用。它负责把 Combat 画面过渡到可展示路线分叉的画面；纯黑静态图片只是首版占位手法，后续可替换为静态图、视频或 Animator 表现。
-
-该阶段不显示路线选择 UI、不接受路线选择输入、不提交目标节点、不写入新的路线存档。暂停时冻结表现、音频和计时；跳过只完成当前表现并进入路线选择 UI。表现完成后才进入 `ChoosingRoute`，显示当前节点对应的分叉画面和出口选项。
+当前版本不播放路线选择前转场，也不切换路线选择背景。`routeChoiceTransition` 和 `routeChoiceBackground` 是保留的旧配置字段，仅为序列化兼容保留，运行时不使用。路线选项 UI 直接叠加在当前节点的 `battleBackground` 上。
 
 ### 6.3.2 路线选择画面
 
-路线选择画面属于当前节点的非战斗表现，不等同于目标节点空间位置。其背景由当前节点的 `routeChoicePresentation` 提供，路线 UI 只读取当前节点的 `outgoingChoices`。每个节点可配置自己的路线选择画面；即使只有一个出口，也必须等待玩家确认。
+路线选择画面属于当前节点的非战斗表现，但不创建或切换目标节点空间背景。UI 只读取当前节点的 `outgoingChoices`；玩家选择前保持当前节点正在显示或播放的背景媒体。即使只有一个出口，也必须等待玩家确认。
 
 ### 6.4 假移动
 
 ```text
 FakeMoving
-→ FakeMovementPresenter 播放该选项绑定的背景动画
-→ 播放转场和音效
+→ FakeMovementPresenter 播放所选出口的 choice.presentation
+→ 播放该出口绑定的转场和音效
 → 动画完成或玩家跳过
 → 只提交一次目标节点
-→ 进入目标节点
+→ 进入目标节点并切换其 battleBackground
 ```
 
 动画只负责视觉表现，不负责：
@@ -810,11 +811,10 @@ D → B
 - 不加载 RouteStage Scene；
 - 不创建或修改 RouteStageRoot；
 - 不计算 Head、Tail、路径或 Pose；
-- 每个节点可独立配置 Combat 背景和路线选择前/分叉表现；
+- 每个节点可配置 Combat 背景和路线选项 UI；路线选择阶段保持当前背景及正在播放的媒体，不切换旧的路线选择背景；
 - 每个路线选项有唯一目标节点和选择后移动表现引用；
-- 节点战斗结束后先等待奖励流程，再播放路线选择前表现；
-- 路线选择前表现完成或跳过前，不显示路线选择 UI、不接受路线选择输入；
-- 表现完成后才显示当前节点对应的路线分叉画面和 UI；
+- 节点战斗结束后先等待奖励流程，再直接显示路线选项 UI；不播放选择前转场；
+- 路线选择 UI 显示后停留在 `ChoosingRoute`，单出口和多出口都必须等待玩家点击；
 - 路线选择锁定后，才播放所选路线移动表现；
 - 移动表现完成前不会提交目标节点或开始目标节点战斗；
 - 目标节点提交后切换其 Combat 背景，再按原顺序触发存档点和目标战斗；
@@ -833,7 +833,7 @@ D → B
 一个 Battle Unity Scene
 + 一个纯逻辑节点图
 + 节点 Combat 背景
-+ 节点路线选择前/分叉表现
++ 当前背景上的路线选项 UI
 + 路线选项移动过场
 + 玩家路线选择
 + 多个 StageConfig 战斗内容

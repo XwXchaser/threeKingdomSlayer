@@ -59,6 +59,10 @@ public class PassiveTriggerModule : MonoBehaviour
     {
         if (Instance == this)
             Instance = null;
+
+        var arrows = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < arrows.Length; i++)
+            DOTween.Kill(arrows[i].gameObject);
     }
 
     private void Start()
@@ -431,7 +435,7 @@ public class PassiveTriggerModule : MonoBehaviour
         bool completed = false;
         bool hasHit = false;
 
-        var seq = DOTween.Sequence().SetUpdate(UpdateType.Normal, false);
+        var seq = DOTween.Sequence().SetTarget(arrow.gameObject).SetUpdate(UpdateType.Normal, false);
         seq.Append(arrow.transform.DOMove(targetPos, flyDuration).SetEase(Ease.Linear));
 
         // 飞行途中检测命中

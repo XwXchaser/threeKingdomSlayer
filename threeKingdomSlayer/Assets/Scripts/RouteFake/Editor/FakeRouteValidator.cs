@@ -23,6 +23,7 @@ public static class FakeRouteValidator
                 if (node == null) { Debug.LogError("[FakeRoute] 空节点: " + path + "#" + n); errors++; continue; }
                 if (string.IsNullOrEmpty(node.nodeId) || !nodeIds.Add(node.nodeId)) { Debug.LogError("[FakeRoute] nodeId为空或重复: " + path + " / " + node.nodeId); errors++; }
                 if (node.isFinalNode && node.outgoingChoices != null && node.outgoingChoices.Count > 0) { Debug.LogError("[FakeRoute] 终点存在出口: " + node.nodeId); errors++; }
+                if (node.isFinalNode && (node.battleEntries == null || node.battleEntries.Count != 1)) { Debug.LogError("[FakeRoute] 终点必须恰好有一个BattleEntry: " + node.nodeId); errors++; }
                 if (!node.isFinalNode && (node.outgoingChoices == null || node.outgoingChoices.Count == 0)) { Debug.LogError("[FakeRoute] 非终点没有出口: " + node.nodeId); errors++; }
                 if (node.battleEntries == null) continue;
                 for (int b = 0; b < node.battleEntries.Count; b++)

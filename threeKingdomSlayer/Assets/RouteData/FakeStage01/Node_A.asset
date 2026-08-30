@@ -17,6 +17,8 @@ MonoBehaviour:
   battleEntries:
   - battleConfig: {fileID: 11400000, guid: 5ee0f479c433ba246bb4cd4889558c1d, type: 2}
     conditionEnabled: 0
+  - battleConfig: {fileID: 11400000, guid: cd2506212b27b1b4d9313e32730d5a02, type: 2}
+    conditionEnabled: 0
   isFinalNode: 0
   savePoint: 0
   battleBackground: {fileID: 11400000, guid: 258d2ff3fa6c898459a5f3cb52ea2f16, type: 2}

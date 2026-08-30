@@ -11,6 +11,8 @@ public abstract class UltimateEffect : MonoBehaviour
     /// </summary>
     public abstract void Execute();
 
+    public virtual void Cancel() { }
+
     /// <summary>
     /// 返回效果持续时间（秒），用于控制特效预制体销毁时机
     /// 默认 2 秒
