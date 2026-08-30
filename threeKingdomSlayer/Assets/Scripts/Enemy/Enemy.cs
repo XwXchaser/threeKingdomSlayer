@@ -2358,8 +2358,7 @@ private void SpawnProjectile()
         Vector3 startPos = transform.localPosition;
 
         // 构建 DOTween 序列
-        Sequence deathSeq = DOTween.Sequence();
-        deathSeq.SetTarget(transform);
+        Sequence deathSeq = DOTween.Sequence().SetTarget(transform).SetUpdate(true);
         deathSeq.SetId("deathAnim");
 
         float jumpHeight = Random.Range(1.5f, 3.0f);   // 弹起高度
@@ -2384,6 +2383,7 @@ private void SpawnProjectile()
         transform.DORotate(randomRotation, totalAnimDuration, RotateMode.LocalAxisAdd)
             .SetEase(Ease.OutQuad)
             .SetTarget(transform)
+            .SetUpdate(true)
             .SetId("deathAnim");
 
         // 等待序列完成
@@ -2410,8 +2410,7 @@ private void SpawnProjectile()
 
         Vector3 startPos = transform.localPosition;
 
-        Sequence deathSeq = DOTween.Sequence();
-        deathSeq.SetTarget(transform);
+        Sequence deathSeq = DOTween.Sequence().SetTarget(transform).SetUpdate(true);
         deathSeq.SetId("deathAnim");
 
         float fallDistance = 20f;
@@ -2436,6 +2435,15 @@ private void SpawnProjectile()
         // 死亡动画结束 → 触发事件
         OnDeathAnimComplete?.Invoke(this);
 
+        EnemyPool.Instance?.ReturnEnemy(this);
+    }
+
+    public void CancelDeathAnimationAndReturnToPool()
+    {
+        if (state != EnemyState.Dead || !gameObject.activeInHierarchy) return;
+
+        StopAllCoroutines();
+        transform.DOKill(false);
         EnemyPool.Instance?.ReturnEnemy(this);
     }
 

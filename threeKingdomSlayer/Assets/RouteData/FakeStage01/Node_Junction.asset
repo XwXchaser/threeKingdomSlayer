@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: Node_Junction
+  m_EditorClassIdentifier: Assembly-CSharp::FakeRouteNodeConfig
+  nodeId: Junction
+  displayName: "\u7EAF\u975E\u6218\u6597\u5206\u53C9"
+  battleEntries: []
+  isFinalNode: 0
+  savePoint: 0
+  battleBackground: {fileID: 11400000, guid: 7080453edae7ff94a9d924d7797e2deb, type: 2}
+  routeChoiceTransition: {fileID: 0}
+  routeChoiceBackground: {fileID: 0}
+  outgoingChoices:
+  - choiceId: junction_to_a
+    displayName: "\u8FD4\u56DE\uFF1AA\uFF08\u7EE7\u7EED\u6311\u6218\uFF09"
+    targetNode: {fileID: 11400000, guid: e22db4f86b9fb37449f7ff15d2d15838, type: 2}
+    presentation: {fileID: 11400000, guid: 556db572f1a66384eb565a0db5ce7487, type: 2}
+    placeholderDuration: 1
+  - choiceId: junction_to_c
+    displayName: "\u524D\u5F80\uFF1AC"
+    targetNode: {fileID: 11400000, guid: e6fc879830c4f06469d9050008ced145, type: 2}
+    presentation: {fileID: 11400000, guid: 556db572f1a66384eb565a0db5ce7487, type: 2}
+    placeholderDuration: 1

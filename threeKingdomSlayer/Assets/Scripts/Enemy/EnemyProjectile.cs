@@ -175,7 +175,6 @@ public class EnemyProjectile : MonoBehaviour
             for (int i = 0; i < _spriteRenderers.Length; i++)
                 fade.Join(_spriteRenderers[i].DOFade(0f, 0.25f).SetEase(Ease.InQuad));
             fade.OnComplete(() => Destroy(gameObject));
-            fade.OnKill(() => Destroy(gameObject));
             return;
         }
 

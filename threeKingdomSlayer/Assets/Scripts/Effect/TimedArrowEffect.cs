@@ -226,12 +226,6 @@ public class TimedArrowEffect : MonoBehaviour
                     flightTween.Kill(false);
                 if (arrowGO != null) Destroy(arrowGO);
             });
-            impactSeq.OnKill(() =>
-            {
-                if (flightTween != null && flightTween.IsActive())
-                    flightTween.Kill(false);
-                if (arrowGO != null) Destroy(arrowGO);
-            });
         };
 
         flightTween = DOTween.To(() => 0f, progress =>
@@ -287,11 +281,15 @@ public class TimedArrowEffect : MonoBehaviour
             {
                 if (arrowGO != null) Destroy(arrowGO);
             });
-            missFade.OnKill(() =>
-            {
-                if (arrowGO != null) Destroy(arrowGO);
-            });
         });
+    }
+
+    private void OnDestroy()
+    {
+        StopAllCoroutines();
+        var arrows = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < arrows.Length; i++)
+            DOTween.Kill(arrows[i]);
     }
 
     private void CollectContactEnemies(Vector3 impactPos, float arrowTipY, Vector3 battlefieldOffset, List<Enemy> results)

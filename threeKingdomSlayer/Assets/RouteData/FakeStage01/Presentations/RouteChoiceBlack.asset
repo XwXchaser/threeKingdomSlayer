@@ -12,10 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69350bb13a1ca524eac6500a01e27cff, type: 3}
   m_Name: RouteChoiceBlack
   m_EditorClassIdentifier: 
-  mode: 0
+  mode: 2
   staticImage: {fileID: 21300000, guid: e76705c5e5e6c8c418e542a9621f7b0a, type: 3}
   videoClip: {fileID: 0}
   duration: 1.2
   loop: 0
   skipAllowed: 1
   audioClip: {fileID: 0}
+  chibiImage: {fileID: 21300000, guid: 015d7ff1ecfbcc248afdba76d800a5bc, type: 3}
+  title: "\u957F\u5742\u5761\xB7\u8840\u8DEF\u7A81\u56F4"
+  subtitle: "\u524D\u5F80\u4E0B\u4E00\u5904\u6218\u573A"
+  blackoutInDuration: 0.35
+  blackoutHoldDuration: 0.8
+  blackoutOutDuration: 0.35
+  blackoutColor: {r: 0, g: 0, b: 0, a: 1}

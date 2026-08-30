@@ -12,13 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5308cf2b15845c046885a5aab78c01cd, type: 3}
   m_Name: FakeStage01
   m_EditorClassIdentifier: 
-  routeId: fake-stage-01
+  routeId: changbanpo-fake-stage-01
   stageId: 1
-  stageName: "Stage01 \u5047\u79FB\u52A8\u5207\u7247"
-  startNode: {fileID: 11400000, guid: e22db4f86b9fb37449f7ff15d2d15838, type: 2}
+  configurationVersion: 5
+  stageName: "\u957F\u5742\u5761\xB7\u8840\u8DEF\u7A81\u56F4\uFF08\u903B\u8F91\u62D3\u6251\u5207\u7247\uFF09"
+  startNode: {fileID: 11400000, guid: a7420b666109d744295fb0797f7c081e, type: 2}
   nodes:
-  - {fileID: 11400000, guid: e22db4f86b9fb37449f7ff15d2d15838, type: 2}
-  - {fileID: 11400000, guid: 8f86f42a12d11d44c9606963883fc730, type: 2}
-  - {fileID: 11400000, guid: e6fc879830c4f06469d9050008ced145, type: 2}
-  - {fileID: 11400000, guid: 73ad9c596ea78024d91c6911683f79b1, type: 2}
+  - {fileID: 11400000, guid: a7420b666109d744295fb0797f7c081e, type: 2}
+  - {fileID: 11400000, guid: 22bf66e17bae03c4f8f1bac90a6717c9, type: 2}
+  - {fileID: 11400000, guid: 69a53754e68c2874d98050ba16a16ea2, type: 2}
+  - {fileID: 11400000, guid: d62b18978beacf4409042184f1e9b4f9, type: 2}
+  - {fileID: 11400000, guid: cb0f7a1b7a9f72f46bbbc9f752ad7691, type: 2}
+  - {fileID: 11400000, guid: 15fec534ca07ed84eb71741e98ea9666, type: 2}
+  - {fileID: 11400000, guid: 86544fba1ba00a848861993a05db8eec, type: 2}
+  - {fileID: 11400000, guid: 15bdd5fa303a06d4fae0d1de9d294b96, type: 2}
   clearCoinReward: 100

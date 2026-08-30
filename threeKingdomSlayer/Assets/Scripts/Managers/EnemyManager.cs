@@ -385,6 +385,14 @@ public class EnemyManager : MonoBehaviour
                 EnemyPool.Instance?.ReturnEnemy(enemy);
             }
         }
+
+        var deadEnemies = FindObjectsOfType<Enemy>();
+        foreach (var enemy in deadEnemies)
+        {
+            if (enemy != null && enemy.state == EnemyState.Dead)
+                enemy.CancelDeathAnimationAndReturnToPool();
+        }
+
         allAliveEnemies.Clear();
         columnManager?.ClearAllColumns();
     }

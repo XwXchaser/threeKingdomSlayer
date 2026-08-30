@@ -305,6 +305,10 @@ public class ShootFireEffect : MonoBehaviour
         fadeSeq.AppendInterval(fadeOutStart - fadeInEnd);
         fadeSeq.Append(sr.DOFade(0f, particleLifetime - fadeOutStart).SetEase(Ease.InQuad));
         fadeSeq.SetTarget(p);
+        fadeSeq.OnComplete(() =>
+        {
+            if (p != null) Destroy(p);
+        });
 
         // 缩放：持续放大
         p.transform.DOScale(endScale, particleLifetime).SetEase(Ease.OutQuad).SetTarget(p).SetUpdate(UpdateType.Normal, false);
@@ -331,6 +335,18 @@ public class ShootFireEffect : MonoBehaviour
 
         // 清理
         Destroy(p, particleLifetime + 0.1f);
+    }
+
+    private void OnDestroy()
+    {
+        StopAllCoroutines();
+        DOTween.Kill(gameObject);
+        var particles = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < particles.Length; i++)
+        {
+            DOTween.Kill(particles[i].gameObject);
+            particles[i].DOKill();
+        }
     }
 
     private void CheckHit(GameObject particle)

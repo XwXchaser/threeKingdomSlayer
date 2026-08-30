@@ -305,6 +305,9 @@ public class StageController : MonoBehaviour
     {
         if (currentState == newState) return; // BUG FIX: 防止重复设置导致循环
 
+        if (newState == StageState.Victory || newState == StageState.Defeat)
+            UltimateSystem.Instance?.CancelUltimate();
+
         currentState = newState;
         OnStageStateChanged?.Invoke(newState);
         playerState?.SetStageState(newState);
@@ -599,14 +602,14 @@ public class StageController : MonoBehaviour
     {
         Debug.Log($"[RouteDiag] SetRouteTravelState frame={Time.frameCount} routeCombat={IsRouteCombatActive} burnStates=" + (UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetBurnStateCountForDiagnostics().ToString() : "NULL"));
         _routeRewardWaiting = false;
-        TimedPassiveModule.Instance?.PrepareForNonCombat();
+        CleanupCombatForRouteTravel();
         SetState(StageState.Starting);
     }
 
     public void SetRouteRewardWaitState()
     {
         _routeRewardWaiting = true;
-        StopCombatSystemsForNodeTransition();
+        EndCombatForRouteReward();
     }
 
     public bool IsRouteRewardWaiting => _routeRewardWaiting;
@@ -622,7 +625,7 @@ public class StageController : MonoBehaviour
         _routeRewardWaiting = false;
         routeStageConfig = null;
         stageConfig = config;
-        StopCombatSystemsForNodeTransition();
+        CleanupCombatForRouteTravel();
         PrewarmEnemyPools();
         SetState(StageState.InProgress);
         AudioManager.Instance?.PlayDefaultBGM();
@@ -634,20 +637,35 @@ public class StageController : MonoBehaviour
     public void StopCombatForRouteTravel()
     {
         if (routeStageConfig == null) return;
-        StopCombatSystemsForNodeTransition();
+        CleanupCombatForRouteTravel();
         SetState(StageState.Starting);
     }
 
     public void StartCurrentRouteNode(bool resetPlayer = false)
     {
         if (routeStageConfig == null || stageConfig == null) return;
-        StopCombatSystemsForNodeTransition();
+        CleanupCombatForRouteTravel();
         StartNodeCombat(resetPlayer);
     }
 
-    private void StopCombatSystemsForNodeTransition()
+    private void EndCombatForRouteReward()
     {
+        UltimateSystem.Instance?.CancelUltimate();
         waveSpawner?.StopSpawning();
+    }
+
+    private void CleanupCombatForRouteTravel()
+    {
+        EndCombatForRouteReward();
+        var attackWaves = FindObjectsOfType<AttackWave>();
+        for (int i = 0; i < attackWaves.Length; i++)
+            if (attackWaves[i] != null) Destroy(attackWaves[i].gameObject);
+        var stabEffects = FindObjectsOfType<StabSweepEffect>();
+        for (int i = 0; i < stabEffects.Length; i++)
+            if (stabEffects[i] != null) Destroy(stabEffects[i].gameObject);
+        var sweepEffects = FindObjectsOfType<SweepEffect>();
+        for (int i = 0; i < sweepEffects.Length; i++)
+            if (sweepEffects[i] != null) Destroy(sweepEffects[i].gameObject);
         enemyManager?.ClearAllEnemies();
         ClearEnemyProjectiles();
         ComboManager.Instance?.ResetCombo();

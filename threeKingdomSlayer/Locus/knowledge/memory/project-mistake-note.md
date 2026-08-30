@@ -9,7 +9,14 @@ maintenanceRules: |-
   - Remove temporary context, one-off tasks, and unsupported guesses
 ---
 
-### RouteStage V2 存档点规则更新（2026-03）
+### DOTween 特效生命周期与战斗结束边界（2026-03）
+- 典型故障：动态火焰/箭雨等子对象被父特效或节点切换销毁后，未终止的 `DOMove` / `DOFade` 仍访问已销毁的 Transform/SpriteRenderer，抛 `MissingReferenceException`；`OnKill` 再次 `Destroy` 还会导致 DOTween 内部回收重入和 `IndexOutOfRangeException`。
+- Tween target 必须可追踪：创建时明确 `SetTarget(dynamicGameObject)` 或 `SetTarget(dynamicTransform)`；销毁时必须以**完全相同的 target**调用 `DOTween.Kill`。`transform.DOKill()` 不能清理 target 设为 GameObject 的 Tween。
+- 动态子对象由父特效管理时，父 `OnDestroy` 必须停止协程并枚举子对象，逐一 Kill 对应 target；自然播放结束仅在 `OnComplete` 销毁，禁止 `OnKill -> Destroy`。
+- 时序边界：三选一仅暂停游戏，所有已开始表现（含 ULT）冻结后恢复；ULT 只在真正结束战斗时取消。路线奖励等待是软结束：停止新刷怪/新战斗逻辑，已开始的死亡动画与普通特效自然结束。只有玩家确认切换节点、重开或回菜单才硬清理残留表现。
+- 新技能验收：必须覆盖“播放中进入三选一”“最后一击进入奖励等待”“玩家确认离开节点”三个场景，并检查 Console 无 MissingReference/DOTween 回收异常。
+
+
 - 用户确认：存档点在可存档节点 **Head 到达时立即保存**，不是 Tail。
 - 失败恢复从该节点 Head 开始，重新执行 Head→Combat，并重新执行该节点本次应执行的 BattleEntry；不能因为保存时刻位于 Head 就把当前节点战斗标记为已完成。
 - 例如：A→C，抵达 C Head 保存；C 战斗中失败后，重开从 C Head 开始，而不是 C Tail 或 A。
