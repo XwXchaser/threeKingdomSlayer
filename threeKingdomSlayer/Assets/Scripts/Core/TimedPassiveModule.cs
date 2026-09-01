@@ -104,7 +104,6 @@ public class TimedPassiveModule : MonoBehaviour
 
     public void TriggerPendingCombatStartEffects()
     {
-        Debug.Log($"[TimedPassiveDiag] TriggerPending count={_pendingCombatStartEffects.Count} frame={Time.frameCount} combat={StageController.Instance?.IsRouteCombatActive} enemies={AttackSystem.Instance?.columnManager?.GetAllEnemies()?.Count}");
         var pending = new List<string>(_pendingCombatStartEffects);
         for (int i = 0; i < pending.Count; i++)
         {
@@ -113,14 +112,12 @@ public class TimedPassiveModule : MonoBehaviour
                 _pendingCombatStartEffects.Remove(pending[i]);
                 continue;
             }
-            Debug.Log($"[TimedPassiveDiag] TryFirst id={state.definition.upgradeId} level={state.level} frame={Time.frameCount} combat={StageController.Instance?.IsRouteCombatActive}");
             if (!TrySpawnEffect(state))
             {
                 Debug.LogWarning($"[TimedPassiveModule] Combat首次触发失败，保留待触发: {state.definition.displayName}");
                 continue;
             }
             state.timer = GetIntervalForLevel(state.definition, state.level);
-            Debug.Log($"[TimedPassiveDiag] FirstSuccess id={state.definition.upgradeId} timer={state.timer} frame={Time.frameCount}");
             Debug.Log($"[TimedPassiveModule] {state.definition.displayName} Combat开始首次触发 1 次");
         }
     }
@@ -206,7 +203,6 @@ public class TimedPassiveModule : MonoBehaviour
     {
         if (StageController.Instance != null && !StageController.Instance.IsRouteCombatActive)
             return;
-        Debug.Log($"[TimedPassiveDiag] Update active frame={Time.frameCount} routeCombat={StageController.Instance?.IsRouteCombatActive} states={_states.Count}");
         bool isCharging = PlayerState.Instance != null && PlayerState.Instance.IsCharging;
 
         foreach (var kv in _states)
@@ -224,7 +220,6 @@ public class TimedPassiveModule : MonoBehaviour
             state.timer -= Time.deltaTime;
             if (state.timer <= 0f)
             {
-                Debug.Log($"[TimedPassiveDiag] TimerExpired id={kv.Key} frame={Time.frameCount} combat={StageController.Instance?.IsRouteCombatActive}");
                 if (TrySpawnEffect(state))
                     state.timer = GetIntervalForLevel(state.definition, state.level);
             }
