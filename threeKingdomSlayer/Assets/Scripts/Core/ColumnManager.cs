@@ -611,6 +611,8 @@ public class ColumnManager : MonoBehaviour
             return;
         enemy.OnRushMoveComplete -= OnSpawnEntryComplete;
         _pendingSpawnEntryEnemies.Remove(enemy);
+        if (_pendingSpawnEntryEnemies.Count == 0)
+            StartPendingLogicalLayoutReflow();
     }
 
     public void UnregisterWaveEnemy(Enemy enemy)
@@ -715,6 +717,8 @@ public class ColumnManager : MonoBehaviour
     private void StartPendingLogicalLayoutReflow()
     {
         if (!_useRowMarchPlanner || !_logicalLayoutDirty)
+            return;
+        if (_isSpawnEntryPreparing || _pendingSpawnEntryEnemies.Count > 0)
             return;
         if (_pushReturnTransactions.Count > 0)
         {
@@ -1039,6 +1043,9 @@ public class ColumnManager : MonoBehaviour
             enemy.OnRushMoveComplete -= OnSpawnEntryComplete;
         if (enemy.RushMoveOrderOwner == RushMoveOrderOwner.SpawnEntry)
             enemy.CancelRushMoveOrder(resetActiveMovement: true);
+
+        if (_pendingSpawnEntryEnemies.Count == 0)
+            StartPendingLogicalLayoutReflow();
 
         ReleaseEnemyFromMovementSchedulers(enemy, sourceColumn);
         CancelPushReturn(enemy, enemy.state == EnemyState.Dead ? "cancel-dead" : "cancel-removed");

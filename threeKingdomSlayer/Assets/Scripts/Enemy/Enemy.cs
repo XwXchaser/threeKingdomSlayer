@@ -1328,6 +1328,8 @@ public class Enemy : MonoBehaviour
 
             // 地刺检测：补齐到达新位置时触发
             SpikeTrapController.Instance?.CheckAndTrigger(this);
+            if (state == EnemyState.Dead)
+                return;
 
             // BUG FIX: 防止 rowIndex 变为负数
             if (rowIndex < 0) rowIndex = 0;

@@ -78,6 +78,13 @@ maintenanceRules: |-
 - 计时被动在奖励阶段获得时，不能立即触发，也不能开始消耗 timer；进入正式 Combat 后才允许首次触发并进入冷却。当前实现曾通过 pending 集合、`IsRouteCombatActive` 和效果清理进行修补，但日志显示仍可能出现 Head→Combat 残留效果或“无实际效果却进入冷却”，因此该问题只能标记为待观测/待重构。
 - 诊断日志本身会改变 Unity Editor 的帧时序和协程相对顺序；出现“加日志后问题消失”时不能视为修复。应优先使用关键状态变化日志，避免每帧输出造成观测扰动。
 - 效果触发必须区分“调用 SpawnEffect”和“效果实际成功创建”：配置、Prefab、组件或 ColumnManager 缺失时不能提交冷却；失败应保留待触发状态并输出失败原因。
+### 已修复：SpawnEntry/地刺同步死亡导致补齐请求丢失
+- 症状：FakeStage01 N3/N4 中，敌人正在初始入场或后续补齐时被地刺击杀，后方敌人停止补齐；纯 0 排会放大现象，但不是规则根因。
+- 根因：SpawnEntry pending 期间发生整排死亡时，逻辑重排请求可能被提前消费；补齐移动完成后的地刺同步死亡还会继续执行死亡对象的移动收尾，破坏调度状态。
+- 修复：SpawnEntry 准备或 pending 期间延迟逻辑重排，最后一个 SpawnEntry 完成/移除后重试 dirty 请求；地刺检测后若敌人已死亡则立即结束当前移动收尾。
+- 验收：用户已完成 FakeStage01 主路线战斗节点验收。
+- 文件：`Assets/Scripts/Core/ColumnManager.cs`、`Assets/Scripts/Enemy/Enemy.cs`
+
 ### FakeRoute 假移动路线阶段总结（2026-03）
 
 - 新方案不是旧 RouteStage 空间移动的简化版，而是独立的纯逻辑路线层：固定 Battle.scene，节点是 ScriptableObject 逻辑关卡，路线选项直接引用目标节点，背景表现与节点提交解耦。
@@ -86,4 +93,14 @@ maintenanceRules: |-
 - 快照恢复采用 replace 语义：先清理运行态，再按快照重建玩家和 Build；恢复从对应存档节点重新进入，不从死亡位置或新节点继续。MainMenu Continue 与失败恢复分离，Continue 从最后未完成路线关卡的 startNode 重新开始，不读取失败快照。
 - FakeRoute 快照与旧 V2 快照隔离，并通过架构标识、快照版本、routeId、stageId、configurationVersion 校验，避免同名节点被静默误恢复。
 - 当前仍未完成：正式路线选择 Canvas UI、真实背景动画/音效/转场、条件系统、剧情状态、更复杂节点阶段/重访规则，以及旧 Route/RouteV2 代码和资产的最终清理。
-- 可复用经验：空间模型废弃后应新建运行器而不是在旧运行器上删函数；路线回调必须用 generation/token 隔离；战斗清空不能等同 BattleEntry 完成，必须等待经验和阻塞奖励；存档边界应落在安全节点提交点；Inspector 直接引用和稳定业务 ID共同保障可追踪和可迁移性。
+- 预防规则：空间技能的伤害逻辑与视觉生命周期必须独立验证；路线转场只清理运行时视觉实例，不得清除局内升级等级。重新进入战斗时若视觉依赖敌人生成后的父节点，不能在刷怪前立即创建，应等待敌人容器可用后再重建，否则会出现“伤害仍生效但地刺不可见”。
+- 文件：`Assets/Scripts/Core/SpikeTrapController.cs`、`Assets/Scripts/Managers/StageController.cs`
+
+### 地刺路线转场视觉生命周期坑点（2026-03）
+- 症状：地刺升级在上一战斗生效；路线移动期间地刺应消失，但下一战斗节点只剩伤害效果，地刺基础视觉没有显示。
+- 根因：地刺视觉重建发生在敌人生成之前，`SpawnVisual()` 找不到敌人的阵型父节点；伤害检测不依赖视觉对象的正确挂载，因此形成“有伤害、无视觉”。
+- 修复：将地刺配置/等级与视觉实例分离；非战斗期间调用 `DeactivateVisual()`，只销毁视觉和停止协程，不清空 `_appliedUpgrades` 或 `PlayerState.acquiredUpgrades`。进入战斗后由 `RequestVisual()` 协程等待敌人容器可用，再挂到敌人阵型父节点生成视觉。
+- 预防规则：**场地技能必须分别验收“逻辑触发”和“视觉显示”；依赖动态敌人层级的视觉不能假设敌人已生成，战斗开始应等待合法父节点后重建。路线转场清理不得复用会清除局内升级的总重置逻辑。**
+- 文件：`Assets/Scripts/Core/SpikeTrapController.cs`、`Assets/Scripts/Managers/StageController.cs`
+
+### FakeRoute 假移动路线阶段总结（2026-03）
