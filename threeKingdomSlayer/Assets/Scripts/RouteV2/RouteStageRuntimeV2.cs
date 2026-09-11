@@ -11,6 +11,7 @@ public sealed class RouteStageRuntimeV2 : MonoBehaviour
     [SerializeField] private float moveDuration = 1.5f;
     [SerializeField] private float rotateDuration = 0.75f;
     [SerializeField] private bool autoStart = true;
+    [SerializeField] private RouteChoicePanel choicePanelPrefab;
     [SerializeField] private bool useTestStartNode;
     [SerializeField] private RouteNodeConfigV2 testStartNode;
 
@@ -172,6 +173,7 @@ public sealed class RouteStageRuntimeV2 : MonoBehaviour
         yield return MoveAnchorToTarget(_currentEntry.tailJunction, battleTargets.tailTarget, _currentEntry.combatArea, _currentEntry.combatToTailPath);
         _running = false;
         _choosing = true;
+        ShowRouteChoice();
         SetGameplayInput(false);
     }
 
@@ -406,25 +408,31 @@ public sealed class RouteStageRuntimeV2 : MonoBehaviour
         return result;
     }
 
-    private void OnGUI()
+    private void ShowRouteChoice()
     {
-        if (!_choosing || _currentNode == null || _currentNode.isFinalNode || _currentNode.outgoingConnections == null) return;
-        SetGameplayInput(false);
-        GUILayout.BeginArea(new Rect(20f, 20f, 360f, 240f), GUI.skin.box);
-        GUILayout.Label("Tail: " + _currentNode.displayName);
+        if (_currentNode == null || _currentNode.outgoingConnections == null) return;
+        var options = new List<RouteChoiceOption>();
         for (int i = 0; i < _currentNode.outgoingConnections.Count; i++)
         {
             var connection = _currentNode.outgoingConnections[i];
             if (connection == null || connection.targetNode == null) continue;
-            if (GUILayout.Button(connection.choiceSlot + " -> " + connection.targetNode.displayName, GUILayout.Height(40f)))
-            {
-                Debug.Log("[RouteV2] route choice clicked: " + _currentNode.nodeId + " -> " + connection.targetNode.nodeId);
-                stageController.SetRouteTravelState();
-                StartCoroutine(TravelTo(connection));
-            }
+            options.Add(new RouteChoiceOption { id = connection.choiceSlot, label = connection.choiceSlot + " → " + connection.targetNode.displayName, layout = connection.layout });
         }
-        GUILayout.EndArea();
+        RouteChoicePanel.Show(choicePanelPrefab, _currentNode.displayName, options, id =>
+        {
+            for (int i = 0; i < _currentNode.outgoingConnections.Count; i++)
+            {
+                var connection = _currentNode.outgoingConnections[i];
+                if (connection != null && connection.choiceSlot == id)
+                {
+                    stageController.SetRouteTravelState();
+                    StartCoroutine(TravelTo(connection));
+                    return;
+                }
+            }
+        });
     }
+
 
     private IEnumerator FinishFinalNode()
     {
@@ -441,6 +449,7 @@ public sealed class RouteStageRuntimeV2 : MonoBehaviour
     {
         if (!_choosing || connection == null || connection.targetNode == null) yield break;
         _choosing = false;
+        RouteChoicePanel.HideCurrent();
         SetGameplayInput(false);
         if (!_sceneEntry.TryGetConnection(_currentNode, connection.targetNode, out var binding))
         {
@@ -477,6 +486,7 @@ public sealed class RouteStageRuntimeV2 : MonoBehaviour
             yield break;
         }
         _choosing = true;
+        ShowRouteChoice();
         SetGameplayInput(false);
     }
 }

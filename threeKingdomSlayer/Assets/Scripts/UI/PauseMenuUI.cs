@@ -57,7 +57,7 @@ public class PauseMenuUI : MonoBehaviour
     private void OnPauseClicked()
     {
         var sc = StageController.Instance;
-        if (sc == null || !sc.IsStageInProgress) return;
+        if (sc == null || sc.IsStageVictory || sc.IsStageDefeat) return;
 
         _isPaused = true;
         // 先显示面板再暂停（SetActive 必须在 timeScale=0 之前，且不能放在可能抛异常的代码之后）

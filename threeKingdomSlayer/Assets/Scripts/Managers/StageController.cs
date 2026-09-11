@@ -309,8 +309,12 @@ public class StageController : MonoBehaviour
             UltimateSystem.Instance?.CancelUltimate();
 
         currentState = newState;
-        OnStageStateChanged?.Invoke(newState);
         playerState?.SetStageState(newState);
+        OnStageStateChanged?.Invoke(newState);
+        if (newState == StageState.InProgress)
+            SpikeTrapController.Instance?.ReactivateVisual();
+        else
+            SpikeTrapController.Instance?.DeactivateVisual();
     }
 
     #endregion
@@ -613,6 +617,8 @@ public class StageController : MonoBehaviour
     }
 
     public bool IsRouteRewardWaiting => _routeRewardWaiting;
+    public bool IsCombatActive => currentState == StageState.InProgress
+        && (!_routeBattleRuntime || !_routeRewardWaiting);
     public bool IsRouteCombatActive => _routeBattleRuntime
         && currentState == StageState.InProgress
         && !_routeRewardWaiting;
@@ -628,6 +634,7 @@ public class StageController : MonoBehaviour
         CleanupCombatForRouteTravel();
         PrewarmEnemyPools();
         SetState(StageState.InProgress);
+        SpikeTrapController.Instance?.ReactivateVisual();
         AudioManager.Instance?.PlayDefaultBGM();
         waveSpawner?.StartWaveSpawning();
         Debug.Log($"[RouteDiag] StartRouteBattle after wave spawn frame={Time.frameCount} routeCombat={IsRouteCombatActive} enemies={AttackSystem.Instance?.columnManager?.GetAllEnemies()?.Count}");
@@ -652,6 +659,7 @@ public class StageController : MonoBehaviour
     {
         UltimateSystem.Instance?.CancelUltimate();
         waveSpawner?.StopSpawning();
+        SpikeTrapController.Instance?.DeactivateVisual();
     }
 
     private void CleanupCombatForRouteTravel()
@@ -684,6 +692,7 @@ public class StageController : MonoBehaviour
         killRewardManager?.ResetRewards();
         PrewarmEnemyPools();
         SetState(StageState.InProgress);
+        SpikeTrapController.Instance?.ReactivateVisual();
         AudioManager.Instance?.PlayDefaultBGM();
         waveSpawner?.StartWaveSpawning();
     }

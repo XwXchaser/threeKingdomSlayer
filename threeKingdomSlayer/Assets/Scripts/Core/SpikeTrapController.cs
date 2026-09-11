@@ -34,6 +34,7 @@ public class SpikeTrapController : MonoBehaviour
     private GameObject _outlineGo;
     private SpriteRenderer _outlineSr;
     private bool _animating;
+    private Coroutine _spawnCoroutine;
     private HashSet<Enemy> _triggeredThisFrame = new HashSet<Enemy>();
 
     private void Awake()
@@ -65,17 +66,82 @@ public class SpikeTrapController : MonoBehaviour
         _spikeRow = row;
         _spikeCol = col;
         _damagePerPass = damage;
-        SpawnVisual();
+        RequestVisual();
     }
+
+    public void ReactivateVisual()
+    {
+        RequestVisual();
+    }
+
+    private void RequestVisual()
+    {
+        if (!CanBeActive || _damagePerPass <= 0f)
+        {
+            DeactivateVisual();
+            return;
+        }
+
+        if (_visualGo != null || _spawnCoroutine != null)
+            return;
+        _spawnCoroutine = StartCoroutine(SpawnVisualWhenReady());
+    }
+
+    private IEnumerator SpawnVisualWhenReady()
+    {
+        while (CanBeActive && _visualGo == null)
+        {
+            var enemies = EnemyManager.Instance?.columnManager?.GetAllEnemies();
+            if (enemies != null && enemies.Count > 0)
+            {
+                for (int i = 0; i < enemies.Count; i++)
+                {
+                    if (enemies[i] != null)
+                    {
+                        SpawnVisual();
+                        _spawnCoroutine = null;
+                        yield break;
+                    }
+                }
+            }
+            yield return null;
+        }
+        _spawnCoroutine = null;
+    }
+
+    public void DeactivateVisual()
+    {
+        if (_spawnCoroutine != null)
+        {
+            StopCoroutine(_spawnCoroutine);
+            _spawnCoroutine = null;
+        }
+        StopAllCoroutines();
+        _animating = false;
+        _triggeredThisFrame.Clear();
+        if (_visualGo != null)
+            Destroy(_visualGo);
+        _visualGo = null;
+        _baseChild = null;
+        _hitChild = null;
+        _hitSr = null;
+        _outlineGo = null;
+        _outlineSr = null;
+    }
+
+    private bool CanBeActive => PlayerState.Instance != null
+        && PlayerState.Instance.stageState == StageState.InProgress
+        && (StageController.Instance == null || StageController.Instance.IsCombatActive);
 
     public void SetDamage(float newDamage)
     {
         _damagePerPass = newDamage;
+        RequestVisual();
     }
 
     public void CheckAndTrigger(Enemy enemy)
     {
-        if (!IsActive) return;
+        if (!IsActive || !CanBeActive) return;
         if (enemy == null || enemy.state == EnemyState.Dead) return;
         if (enemy.columnIndex != _spikeCol || enemy.rowIndex != _spikeRow) return;
         if (!_triggeredThisFrame.Add(enemy)) return;
@@ -88,20 +154,10 @@ public class SpikeTrapController : MonoBehaviour
 
     public void ResetAll()
     {
-        if (_visualGo != null)
-        {
-            Destroy(_visualGo);
-            _visualGo = null;
-            _baseChild = null;
-            _hitChild = null;
-            _hitSr = null;
-            _outlineGo = null;
-            _outlineSr = null;
-        }
+        DeactivateVisual();
+        _spikeRow = 0;
+        _spikeCol = 0;
         _damagePerPass = 0f;
-        _triggeredThisFrame.Clear();
-        _animating = false;
-        StopAllCoroutines();
     }
 
     private void SpawnVisual()
@@ -110,12 +166,22 @@ public class SpikeTrapController : MonoBehaviour
 
         Transform parent = null;
         var enemies = EnemyManager.Instance?.columnManager?.GetAllEnemies();
-        if (enemies != null && enemies.Count > 0 && enemies[0] != null)
-            parent = enemies[0].transform.parent;
+        if (enemies != null && enemies.Count > 0)
+        {
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                if (enemies[i] != null)
+                {
+                    parent = enemies[i].transform.parent;
+                    break;
+                }
+            }
+        }
+        if (parent == null)
+            return;
 
         _visualGo = new GameObject("SpikeTrap_Visual");
-        if (parent != null)
-            _visualGo.transform.SetParent(parent, worldPositionStays: false);
+        _visualGo.transform.SetParent(parent, worldPositionStays: false);
 
         Vector3 localPos = GetLocalPosition(_spikeRow, _spikeCol);
         _visualGo.transform.localPosition = localPos;

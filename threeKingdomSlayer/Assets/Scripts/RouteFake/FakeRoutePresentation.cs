@@ -17,6 +17,7 @@ public sealed class FakeRoutePresentation : ScriptableObject
     [Min(0f)] public float duration;
     public bool loop;
     public bool skipAllowed = true;
+    public bool holdLastFrameAsBackground;
     public AudioClip audioClip;
     public Sprite chibiImage;
     public string title;

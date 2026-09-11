@@ -13,6 +13,7 @@ public sealed class RouteEdgeDefinition
 {
     public RouteDirection direction;
     public RouteNodeDefinition destination;
+    public RouteChoiceLayout layout = new RouteChoiceLayout();
 }
 
 [CreateAssetMenu(fileName = "NewRouteNodeDefinition", menuName = "一夫当关/路线节点配置")]

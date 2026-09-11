@@ -10,21 +10,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 0}
-  m_Name: Node_N3
+  m_Name: RouteNode_FakeStage01_N3
   m_EditorClassIdentifier: Assembly-CSharp::FakeRouteNodeConfig
   nodeId: N3
   displayName: "N3 \u6751\u843D\u641C\u6551"
   battleEntries:
   - battleConfig: {fileID: 11400000, guid: 26f69a0564bfc7042861ef82d807a821, type: 2}
     conditionEnabled: 0
+  entryDialogue: {fileID: 11400000, guid: 90d2f30c058a7a441931ecc297665f6d, type: 2}
   isFinalNode: 0
   savePoint: 0
   battleBackground: {fileID: 11400000, guid: 6c546f8809969c949857cd9a3b8c2b9c, type: 2}
-  routeChoiceTransition: {fileID: 11400000, guid: 556db572f1a66384eb565a0db5ce7487, type: 2}
-  routeChoiceBackground: {fileID: 11400000, guid: 258d2ff3fa6c898459a5f3cb52ea2f16, type: 2}
+  routeChoiceTransition: {fileID: 0}
+  routeChoiceBackground: {fileID: 0}
   outgoingChoices:
   - choiceId: n3_to_j3
-    displayName: "\u62B5\u8FBE\u6751\u843D\u51FA\u53E3\uFF1A\u9009\u62E9\u4E0B\u4E00\u6B65"
+    displayName: "\u8FFD\u8E2A\u8D75\u4E91"
     targetNode: {fileID: 11400000, guid: cb0f7a1b7a9f72f46bbbc9f752ad7691, type: 2}
+    layout:
+      overrideDefault: 1
+      anchoredPosition: {x: 0, y: 0}
+      rotation: 0
     presentation: {fileID: 11400000, guid: 556db572f1a66384eb565a0db5ce7487, type: 2}
-    placeholderDuration: 1
+    placeholderDuration: 0

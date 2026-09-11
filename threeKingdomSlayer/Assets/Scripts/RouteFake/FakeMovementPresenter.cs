@@ -6,8 +6,7 @@ using UnityEngine.UI;
 using TMPro;
 public sealed class FakeMovementPresenter : MonoBehaviour
 {
-    [SerializeField] private bool showDebugPanel = true;
-    [SerializeField] private string debugTitle = "假移动表现";
+    [SerializeField] private Button skipButton;
     [SerializeField] private Camera backgroundCamera;
     [SerializeField] private RawImage backgroundImage;
     [SerializeField] private Image legacyBackgroundImage;
@@ -28,6 +27,10 @@ public sealed class FakeMovementPresenter : MonoBehaviour
     private bool _skipAllowed;
     private bool _loop;
     private bool _coveredBackgroundPrepared;
+    private bool _holdLastFrame;
+    private bool _heldFrameAsBackground;
+    private bool _fastForwarding;
+    private UnityEngine.UI.AspectRatioFitter _videoAspectFitter;
     private Vector2 _blackoutStartPosition;
     private Vector2 _blackoutCenterPosition;
     private Vector2 _blackoutEndPosition;
@@ -36,11 +39,19 @@ public sealed class FakeMovementPresenter : MonoBehaviour
 
     private void Awake()
     {
+        if (skipButton != null)
+            skipButton.gameObject.SetActive(false);
         if (videoPlayer != null)
         {
             videoPlayer.playOnAwake = false;
             videoPlayer.renderMode = VideoRenderMode.RenderTexture;
             videoPlayer.targetTexture = videoRenderTexture;
+            if (audioSource != null)
+            {
+                videoPlayer.audioOutputMode = VideoAudioOutputMode.AudioSource;
+                videoPlayer.EnableAudioTrack(0, true);
+                videoPlayer.SetTargetAudioSource(0, audioSource);
+            }
             videoPlayer.loopPointReached += OnVideoFinished;
         }
         if (chibiOverlay != null && blackoutImage != null)
@@ -61,6 +72,12 @@ public sealed class FakeMovementPresenter : MonoBehaviour
     public void SetBattleBackground(FakeRoutePresentation presentation)
     {
         if (_playing || presentation == null) return;
+        if (_heldFrameAsBackground)
+        {
+            _heldFrameAsBackground = false;
+            _videoPrepared = false;
+            return;
+        }
         if (_coveredBackgroundPrepared)
         {
             _coveredBackgroundPrepared = false;
@@ -90,6 +107,7 @@ public sealed class FakeMovementPresenter : MonoBehaviour
             {
                 backgroundImage.texture = videoRenderTexture;
                 backgroundImage.color = Color.white;
+                ConfigureVideoAspect(presentation.videoClip);
             }
             videoPlayer.Play();
             if (audioSource != null && presentation.audioClip != null)
@@ -104,6 +122,11 @@ public sealed class FakeMovementPresenter : MonoBehaviour
             StopMedia();
             ApplyTexture(presentation.staticImage != null ? presentation.staticImage.texture : null);
         }
+    }
+
+    public IEnumerator PlayOpening(FakeRoutePresentation presentation, Func<bool> canContinue)
+    {
+        yield return PlayPresentation(presentation, "关卡开场", canContinue, false);
     }
 
     public IEnumerator PlayRouteChoiceTransition(FakeRouteNodeConfig node, Func<bool> canContinue)
@@ -134,7 +157,16 @@ public sealed class FakeMovementPresenter : MonoBehaviour
         bool hasVideo = presentation != null && presentation.mode == FakeRoutePresentationMode.Video && presentation.videoClip != null && videoPlayer != null && videoRenderTexture != null && backgroundImage != null;
         _remaining = presentation != null && presentation.duration > 0f ? presentation.duration : hasVideo ? (float)presentation.videoClip.length : allowPlaceholder ? 0f : 0f;
         _videoPrepared = hasVideo;
+        _holdLastFrame = presentation != null && presentation.holdLastFrameAsBackground;
+        _fastForwarding = false;
+        if (videoPlayer != null) videoPlayer.playbackSpeed = 1f;
         _skipAllowed = presentation == null || presentation.skipAllowed;
+        if (skipButton != null)
+        {
+            skipButton.onClick.RemoveAllListeners();
+            skipButton.onClick.AddListener(Skip);
+            skipButton.gameObject.SetActive(_skipAllowed);
+        }
         _loop = presentation != null && presentation.loop;
         if (presentation != null && presentation.mode == FakeRoutePresentationMode.StaticImage)
         {
@@ -150,11 +182,12 @@ public sealed class FakeMovementPresenter : MonoBehaviour
             if (!_skipRequested && canContinue())
             {
                 ApplyTexture(videoRenderTexture);
+                ConfigureVideoAspect(presentation.videoClip);
                 videoPlayer.Play();
                 PlayPresentationAudio(presentation);
             }
         }
-        while (!_skipRequested && (_loop || _remaining > 0f) && canContinue())
+        while (!_skipRequested && (_loop || _remaining > 0f || _fastForwarding) && canContinue())
         {
             if (Time.timeScale > 0f)
             {
@@ -178,6 +211,12 @@ public sealed class FakeMovementPresenter : MonoBehaviour
         _choiceLabel = label;
         _remaining = presentation.blackoutInDuration + presentation.blackoutHoldDuration + presentation.blackoutOutDuration;
         _skipAllowed = presentation.skipAllowed;
+        if (skipButton != null)
+        {
+            skipButton.onClick.RemoveAllListeners();
+            skipButton.onClick.AddListener(Skip);
+            skipButton.gameObject.SetActive(_skipAllowed);
+        }
         _loop = false;
 
         if (chibiOverlay == null || blackoutImage == null)
@@ -269,7 +308,27 @@ public sealed class FakeMovementPresenter : MonoBehaviour
 
     public void Skip()
     {
-        if (_playing && _skipAllowed) _skipRequested = true;
+        if (!_playing || !_skipAllowed) return;
+        if (_videoPrepared && !_loop)
+        {
+            _skipAllowed = false;
+            _fastForwarding = true;
+            if (videoPlayer != null) videoPlayer.playbackSpeed = 12f;
+            if (skipButton != null) skipButton.gameObject.SetActive(false);
+            return;
+        }
+        _skipRequested = true;
+    }
+
+    private void ConfigureVideoAspect(VideoClip clip)
+    {
+        if (backgroundImage == null || clip == null) return;
+        if (_videoAspectFitter == null)
+            _videoAspectFitter = backgroundImage.GetComponent<UnityEngine.UI.AspectRatioFitter>();
+        if (_videoAspectFitter == null)
+            _videoAspectFitter = backgroundImage.gameObject.AddComponent<UnityEngine.UI.AspectRatioFitter>();
+        _videoAspectFitter.aspectMode = UnityEngine.UI.AspectRatioFitter.AspectMode.EnvelopeParent;
+        _videoAspectFitter.aspectRatio = (float)clip.width / clip.height;
     }
 
     private void ApplyTexture(Texture texture)
@@ -288,18 +347,33 @@ public sealed class FakeMovementPresenter : MonoBehaviour
 
     private void OnVideoFinished(VideoPlayer source)
     {
-        if (_playing && !_loop) _remaining = 0f;
+        if (_playing && !_loop)
+        {
+            _remaining = 0f;
+            _fastForwarding = false;
+        }
     }
 
     private void CompletePresentation()
     {
         bool skipped = _skipRequested;
-        StopMedia();
+        bool holdFrame = _videoPrepared && _holdLastFrame && !skipped;
+        if (!holdFrame)
+            StopMedia();
         SetChibiContent(false);
         if (chibiOverlay != null) chibiOverlay.gameObject.SetActive(false);
         _playing = false;
         _skipRequested = false;
         _remaining = 0f;
+        if (skipButton != null)
+            skipButton.gameObject.SetActive(false);
+        _holdLastFrame = false;
+        if (holdFrame)
+        {
+            videoPlayer.Pause();
+            videoPlayer.playbackSpeed = 1f;
+            _heldFrameAsBackground = true;
+        }
         Debug.Log("[FakeRoute] presentation complete choice=" + _choiceLabel + " skipped=" + skipped);
     }
 
@@ -309,12 +383,4 @@ public sealed class FakeMovementPresenter : MonoBehaviour
         if (audioSource != null && audioSource.isPlaying) audioSource.Stop();
     }
 
-    private void OnGUI()
-    {
-        if (!showDebugPanel || !_playing) return;
-        GUILayout.BeginArea(new Rect(20f, 320f, 420f, 130f), GUI.skin.box);
-        GUILayout.Label(debugTitle + "\n" + _choiceLabel + "\n剩余 " + Mathf.Max(0f, _remaining).ToString("F1") + " 秒");
-        if (GUILayout.Button("跳过表现", GUILayout.Height(38f))) Skip();
-        GUILayout.EndArea();
-    }
 }
