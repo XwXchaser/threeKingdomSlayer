@@ -14,12 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   routeId: changbanpo-fake-stage-01
   stageId: 1
-  configurationVersion: 5
+  configurationVersion: 9
   stageName: "\u957F\u5742\u5761\xB7\u8840\u8DEF\u7A81\u56F4\uFF08\u903B\u8F91\u62D3\u6251\u5207\u7247\uFF09"
+  openingPresentation: {fileID: 11400000, guid: 526c3efc19d20de4ba87917cc6738669, type: 2}
   startNode: {fileID: 11400000, guid: a7420b666109d744295fb0797f7c081e, type: 2}
   nodes:
   - {fileID: 11400000, guid: a7420b666109d744295fb0797f7c081e, type: 2}
+  - {fileID: 11400000, guid: 076063071d271f34c9f2fe22379f3989, type: 2}
   - {fileID: 11400000, guid: 22bf66e17bae03c4f8f1bac90a6717c9, type: 2}
+  - {fileID: 11400000, guid: 42fc7f46f59f9d74e9c4eb2098cb876c, type: 2}
   - {fileID: 11400000, guid: 69a53754e68c2874d98050ba16a16ea2, type: 2}
   - {fileID: 11400000, guid: d62b18978beacf4409042184f1e9b4f9, type: 2}
   - {fileID: 11400000, guid: cb0f7a1b7a9f72f46bbbc9f752ad7691, type: 2}

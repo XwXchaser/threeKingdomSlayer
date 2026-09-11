@@ -171,6 +171,54 @@ POST https://api.muskapis.com/v1/images/edits
 - `input_fidelity`
 - `output_format`
 
+## 本项目已验证成功范例（2026-09）
+
+本项目已成功调用 `gpt-image-2`，生成并落盘：
+
+```text
+C:/Users/steam/Pictures/gptGen/enemy_101_dialogue_portrait_v2.png
+```
+
+该次成功流程的可复用要点：
+
+1. **先实际检查前置条件**：用 shell 检查 `MUSK_API_KEY`；不要只假设环境变量存在。此环境的 managed Python 没有安装 `requests`，不能照抄 `requests` 模板后宣称已调用。
+2. **文生图可用标准库 `urllib.request`**：向 `/v1/images/generations` 发送 JSON，`Authorization: Bearer $MUSK_API_KEY`，模型固定 `gpt-image-2`。接口返回可能给 `data[0].url` 或 `data[0].b64_json`，两种都必须处理。
+3. **图生图/多参考必须走 edits 接口**：向 `/v1/images/edits` 发 `multipart/form-data`，每张参考图都使用同名字段 `image[]`；不可把本地路径仅写进 prompt，也不可对 edits 接口发送 JSON。
+4. **参考图职责分配**：第一张放“角色身份/造型”的严格参考，后续图放“头像构图/像素风格/UI语言”参考；prompt 中明确每张图的职责和优先级，禁止模型把 Boss 的华丽元素转移到普通敌人。
+5. **输出路径必须显式指定**：每次使用固定的版本化路径，例如 `C:/Users/steam/Pictures/gptGen/<asset>_v1.png`；脚本先 `mkdir(parents=True, exist_ok=True)`。
+6. **成功不能只看 HTTP 200**：写文件后检查存在、文件大小合理（至少大于 1KB）、PNG 签名 `\x89PNG\r\n\x1a\n`；再用图片读取工具人工检查是否符合美术需求。API 成功不等于美术可用。
+7. **必须在回复中交付真实路径**：未实际调用、未落盘、未验证或没有完整路径时，绝不能说“已生成”。会话附件、prompt 文本或预期效果都不是交付物。
+
+### 本次失败教训
+
+- 内置会话生图附件不等于本项目的 `/gpt-image` 落盘工作流；用户要求本地验收时，必须调用本 Skill 描述的 API 并输出到 `C:/Users/steam/Pictures/gptGen/`。
+- 不要因为工具列表没有名为 `gpt-image-generation` 的原生工具就判断 Skill 不可用。本 Skill 是命令/流程文档，实际执行应按其 API 说明通过 shell/Python 完成。
+- 生成前必须先阅读相关角色精灵、已有头像、UI 框和项目美术文档。只用文字描述会产生题材正确但风格错误的图；例如 Enemy_101 曾被错误生成成写实厚涂成年士兵，不能导入。
+- “透明背景”请求可能返回带可见棋盘格的 RGB 背景或不干净 Alpha；必须视觉检查，未通过时标记为待重做/待抠图，不能直接导入 Unity。
+
+### 无 requests 的标准库调用骨架
+
+```python
+import base64, json, os, pathlib, urllib.request
+
+api_key = os.environ["MUSK_API_KEY"]
+out = pathlib.Path(r"C:/Users/steam/Pictures/gptGen/result.png")
+out.parent.mkdir(parents=True, exist_ok=True)
+request = urllib.request.Request(
+    "https://api.muskapis.com/v1/images/generations",
+    data=json.dumps({"model": "gpt-image-2", "prompt": "...", "size": "1024x1024", "quality": "high", "output_format": "png"}).encode("utf-8"),
+    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+    method="POST")
+with urllib.request.urlopen(request, timeout=300) as response:
+    item = json.load(response)["data"][0]
+if item.get("url"):
+    urllib.request.urlretrieve(item["url"], out)
+else:
+    out.write_bytes(base64.b64decode(item["b64_json"]))
+raw = out.read_bytes()
+assert len(raw) > 1024 and raw.startswith(b"\x89PNG\r\n\x1a\n")
+print(out)
+```
 ## 执行流程
 
 1. 判断任务类型：文生图、单图编辑、多图融合。
@@ -198,7 +246,7 @@ POST https://api.muskapis.com/v1/images/edits
 
 **事实边界规则**：工具调用和验证结果是完成性表述的唯一依据。不要根据上下文推断工具已经执行；被用户追问时，先重新核查工具结果和文件状态。
 
-## Python 模板：���生图
+## Python 模板：文生图（当前环境可用，无 `requests`）
 
 ```python
 import base64
@@ -206,9 +254,8 @@ import json
 import os
 import pathlib
 import sys
+import urllib.error
 import urllib.request
-
-import requests
 
 api_key = os.environ.get("MUSK_API_KEY")
 if not api_key:
@@ -218,90 +265,42 @@ prompt = sys.argv[1]
 out_path = pathlib.Path(sys.argv[2] if len(sys.argv) > 2 else "C:/Users/steam/Pictures/gptGen/gpt-image-result.png")
 out_path.parent.mkdir(parents=True, exist_ok=True)
 
-resp = requests.post(
+request = urllib.request.Request(
     "https://api.muskapis.com/v1/images/generations",
-    headers={"Authorization": f"Bearer {api_key}"},
-    json={
+    data=json.dumps({
         "model": "gpt-image-2",
         "prompt": prompt,
         "size": "1024x1024",
         "quality": "high",
-    },
-    timeout=300,
-)
-resp.raise_for_status()
-item = resp.json()["data"][0]
+        "output_format": "png",
+    }).encode("utf-8"),
+    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+    method="POST")
+
+try:
+    with urllib.request.urlopen(request, timeout=300) as response:
+        item = json.load(response)["data"][0]
+except urllib.error.HTTPError as exc:
+    raise SystemExit(f"HTTP {exc.code}: {exc.read().decode('utf-8', errors='replace')}")
 
 if item.get("url"):
     urllib.request.urlretrieve(item["url"], out_path)
 elif item.get("b64_json"):
     out_path.write_bytes(base64.b64decode(item["b64_json"]))
 else:
-    raise SystemExit(f"No image result found: {resp.text}")
+    raise SystemExit("No image result found")
 
-print(json.dumps({"saved": str(out_path), "url": item.get("url")}, ensure_ascii=False))
+raw = out_path.read_bytes()
+if len(raw) <= 1024 or not raw.startswith(b"\x89PNG\r\n\x1a\n"):
+    raise SystemExit("Output PNG verification failed")
+print(json.dumps({"saved": str(out_path), "bytes": len(raw)}, ensure_ascii=False))
 ```
 
 ## Python 模板：单图编辑 / 多图融合
 
-```python
-import base64
-import json
-import os
-import pathlib
-import sys
-import urllib.request
+本环境没有 `requests`。编辑/多图融合必须以 Python 标准库手工组装 `multipart/form-data`：每张输入图使用同名字段 `image[]`，图片部分包含文件名与 `Content-Type`，并把 `model`、`prompt`、`size`、`quality`、`input_fidelity`、`output_format` 作为普通字段上传到 `/v1/images/edits`。
 
-import requests
-
-api_key = os.environ.get("MUSK_API_KEY")
-if not api_key:
-    raise SystemExit("Missing MUSK_API_KEY")
-
-# Usage: python script.py out.png prompt image1.png [image2.png ...]
-out_path = pathlib.Path(sys.argv[1])
-prompt = sys.argv[2]
-image_paths = sys.argv[3:]
-if not image_paths:
-    raise SystemExit("At least one input image is required")
-out_path.parent.mkdir(parents=True, exist_ok=True)
-
-opened = []
-try:
-    files = []
-    for path in image_paths:
-        f = open(path, "rb")
-        opened.append(f)
-        files.append(("image[]", (pathlib.Path(path).name, f)))
-
-    resp = requests.post(
-        "https://api.muskapis.com/v1/images/edits",
-        headers={"Authorization": f"Bearer {api_key}"},
-        files=files,
-        data={
-            "model": "gpt-image-2",
-            "prompt": prompt,
-            "size": "1024x1024",
-            "quality": "high",
-            "input_fidelity": "high",
-        },
-        timeout=300,
-    )
-    resp.raise_for_status()
-finally:
-    for f in opened:
-        f.close()
-
-item = resp.json()["data"][0]
-if item.get("url"):
-    urllib.request.urlretrieve(item["url"], out_path)
-elif item.get("b64_json"):
-    out_path.write_bytes(base64.b64decode(item["b64_json"]))
-else:
-    raise SystemExit(f"No image result found: {resp.text}")
-
-print(json.dumps({"saved": str(out_path), "url": item.get("url")}, ensure_ascii=False))
-```
+已验证的完整实现应复用本 Skill“本项目已验证成功范例”中所述流程：构造唯一 boundary、写入每个文本和图片 part、以 `urllib.request.Request` 发送请求，随后从 `data[0].url` 或 `data[0].b64_json` 保存到指定路径，并验证 PNG 签名。禁止使用以下当前环境不可用的 `requests.post(..., files=...)` 模板。
 
 ## 可能遇到的问题
 

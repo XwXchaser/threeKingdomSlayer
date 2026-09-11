@@ -22,6 +22,7 @@ public sealed class DialogueManager : MonoBehaviour
     private bool _subscriptionsSet;
 
     public bool IsPlaying => _isPlaying;
+    public bool IsBusy => _isPlaying || _queue.Count > 0;
     public bool IsInteractionBlocked => _isPlaying || _interactionBlockFrames > 0;
 
     public BossDialogueProfile GetBossProfile(int bossId)
@@ -93,6 +94,11 @@ public sealed class DialogueManager : MonoBehaviour
     public bool QueueById(string eventId)
     {
         return QueueEvent(_database != null ? _database.FindById(eventId) : null);
+    }
+
+    public bool QueueEventAndNotify(DialogueEventData dialogueEvent)
+    {
+        return QueueEvent(dialogueEvent);
     }
 
     private bool QueueEvent(DialogueEventData dialogueEvent)

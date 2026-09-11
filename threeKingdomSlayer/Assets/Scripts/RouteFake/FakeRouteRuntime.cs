@@ -22,6 +22,8 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     [SerializeField] private FakeMovementPresenter movementPresenter;
     [SerializeField] private bool autoStart = true;
     [SerializeField] private bool useTestStartNode;
+    [SerializeField] private RouteChoicePanel choicePanelPrefab;
+
     [SerializeField] private FakeRouteNodeConfig testStartNode;
     [SerializeField] private bool showDebugChoicePanel = true;
 
@@ -107,6 +109,11 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     private IEnumerator BeginRouteNextFrame()
     {
         yield return null;
+        if (movementPresenter != null && routeConfig.openingPresentation != null)
+        {
+            SetGameplayInput(false);
+            yield return movementPresenter.PlayOpening(routeConfig.openingPresentation, () => Phase != FakeRoutePhase.Defeated);
+        }
         var startNode = useTestStartNode && testStartNode != null ? testStartNode : routeConfig.startNode;
         if (!useTestStartNode && FakeRouteLaunch.StartFromCheckpoint)
         {
@@ -145,6 +152,8 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         _visitedNodes.Add(node);
         SetPhase(FakeRoutePhase.EnteringNode);
         movementPresenter?.SetBattleBackground(node.battleBackground);
+        yield return PlayEntryDialogue(node.entryDialogue);
+        if (Phase == FakeRoutePhase.Defeated) yield break;
         if (node.savePoint && (!_restoredFromCheckpoint || node.nodeId != _restoredCheckpointNodeId))
             SaveCheckpoint();
         yield return RunBattleEntries();
@@ -170,6 +179,21 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         }
 
         SetPhase(FakeRoutePhase.ChoosingRoute);
+        ShowRouteChoice();
+    }
+
+    private IEnumerator PlayEntryDialogue(DialogueEventData dialogue)
+    {
+        if (dialogue == null || DialogueManager.Instance == null)
+            yield break;
+
+        bool queued = DialogueManager.Instance.QueueEventAndNotify(dialogue);
+        if (!queued)
+            yield break;
+
+        yield return null;
+        while (DialogueManager.Instance.IsBusy && Phase != FakeRoutePhase.Defeated)
+            yield return null;
     }
 
     private IEnumerator RunBattleEntries()
@@ -228,6 +252,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
             {
                 if (choice.targetNode == null || !ContainsNode(choice.targetNode)) return false;
                 SetPhase(FakeRoutePhase.FakeMoving);
+                RouteChoicePanel.HideCurrent();
                 _choiceHistory.Add(new FakeRouteChoiceSaveState
                 {
                     sourceNodeId = _currentNode.nodeId,
@@ -551,21 +576,22 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         completed.Add(index);
     }
 
-    private void OnGUI()
+    private void ShowRouteChoice()
     {
-        if (!showDebugChoicePanel || Phase != FakeRoutePhase.ChoosingRoute || _currentNode == null) return;
-        GUILayout.BeginArea(new Rect(20f, 20f, 420f, 280f), GUI.skin.box);
-        GUILayout.Label("Fake Route Node: " + _currentNode.displayName);
-        if (_currentNode.outgoingChoices != null)
+        if (_currentNode == null || _currentNode.outgoingChoices == null) return;
+        var options = new List<RouteChoiceOption>();
+        for (int i = 0; i < _currentNode.outgoingChoices.Count; i++)
         {
-            for (int i = 0; i < _currentNode.outgoingChoices.Count; i++)
+            var choice = _currentNode.outgoingChoices[i];
+            if (choice == null || choice.targetNode == null) continue;
+            options.Add(new RouteChoiceOption
             {
-                var choice = _currentNode.outgoingChoices[i];
-                if (choice == null || choice.targetNode == null) continue;
-                if (GUILayout.Button(choice.displayName + " -> " + choice.targetNode.displayName, GUILayout.Height(45f)))
-                    TrySelectChoice(choice.choiceId);
-            }
+                id = choice.choiceId,
+                label = choice.displayName + " → " + choice.targetNode.displayName,
+                layout = choice.layout
+            });
         }
-        GUILayout.EndArea();
+        RouteChoicePanel.Show(choicePanelPrefab, _currentNode.displayName, options, id => TrySelectChoice(id));
     }
+
 }

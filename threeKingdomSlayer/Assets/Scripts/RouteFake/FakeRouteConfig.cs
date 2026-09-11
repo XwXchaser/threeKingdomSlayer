@@ -9,6 +9,7 @@ public sealed class FakeRouteStageConfig : ScriptableObject
     public int stageId;
     public int configurationVersion = 1;
     public string stageName = "假移动路线关卡";
+    public FakeRoutePresentation openingPresentation;
     public FakeRouteNodeConfig startNode;
     public List<FakeRouteNodeConfig> nodes = new List<FakeRouteNodeConfig>();
     public int clearCoinReward = 100;
@@ -20,6 +21,7 @@ public sealed class FakeRouteNodeConfig : ScriptableObject
     public string nodeId;
     public string displayName;
     public List<FakeRouteBattleEntry> battleEntries = new List<FakeRouteBattleEntry>();
+    public DialogueEventData entryDialogue;
     public bool isFinalNode;
     public bool savePoint;
     public FakeRoutePresentation battleBackground;
@@ -41,6 +43,7 @@ public sealed class FakeRouteChoiceConfig
     public string choiceId;
     public string displayName;
     public FakeRouteNodeConfig targetNode;
+    public RouteChoiceLayout layout = new RouteChoiceLayout();
     public FakeRoutePresentation presentation;
     public float placeholderDuration = 1f;
 }

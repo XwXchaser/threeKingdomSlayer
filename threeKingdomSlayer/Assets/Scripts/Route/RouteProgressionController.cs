@@ -11,8 +11,8 @@ public sealed class RouteProgressionController : MonoBehaviour
     [SerializeField] private RouteWorldMotion worldMotion;
     [SerializeField] private RouteWorldGraph worldGraph;
     [SerializeField] private StageController stageController;
+    [SerializeField] private RouteChoicePanel choicePanelPrefab;
 
-    public RouteStageConfig RouteStageConfig => routeStageConfig;
     public RouteNodeDefinition CurrentNode { get; private set; }
     public bool IsRouteMode => routeStageConfig != null;
     public bool IsChoosing { get; private set; }
@@ -149,54 +149,28 @@ public sealed class RouteProgressionController : MonoBehaviour
     {
         IsChoosing = true;
         Debug.Log("[RouteDiag] ShowRouteChoice node=" + CurrentNode.name + " edges=" + (CurrentNode.outgoingEdges != null ? CurrentNode.outgoingEdges.Count.ToString() : "NULL"));
-        _choiceRoot = new GameObject("RouteChoiceRuntime", typeof(RectTransform));
-        var canvas = FindObjectsOfType<Canvas>(true).FirstOrDefault(c => c.isRootCanvas && c.renderMode == RenderMode.ScreenSpaceOverlay && c.name == "BattleHUD(Canvas)");
-        if (canvas == null)
-            canvas = FindObjectsOfType<Canvas>(true).FirstOrDefault(c => c.isRootCanvas && c.renderMode == RenderMode.ScreenSpaceOverlay);
-        Debug.Log("[RouteDiag] Canvas=" + (canvas != null ? canvas.name + "#" + canvas.GetInstanceID() : "NULL"));
-        if (canvas == null)
-        {
-            IsChoosing = false;
-            Destroy(_choiceRoot);
-            _choiceRoot = null;
-            return;
-        }
-        _choiceRoot.transform.SetParent(canvas.transform, false);
-        var root = _choiceRoot.GetComponent<RectTransform>();
-        root.anchorMin = new Vector2(0.15f, 0.35f);
-        root.anchorMax = new Vector2(0.85f, 0.65f);
-        root.offsetMin = Vector2.zero;
-        root.offsetMax = Vector2.zero;
-
-        int index = 0;
+        var options = new System.Collections.Generic.List<RouteChoiceOption>();
         foreach (var edge in CurrentNode.outgoingEdges)
         {
             if (edge == null || edge.destination == null) continue;
-            var buttonGo = new GameObject("RouteChoice_" + edge.direction, typeof(RectTransform), typeof(Image), typeof(Button));
-            buttonGo.transform.SetParent(root, false);
-            var buttonRect = buttonGo.GetComponent<RectTransform>();
-            buttonRect.anchorMin = new Vector2(0.1f, 0.5f);
-            buttonRect.anchorMax = new Vector2(0.9f, 0.5f);
-            buttonRect.sizeDelta = new Vector2(0f, 72f);
-            buttonRect.anchoredPosition = new Vector2(0f, index++ * -85f);
-            buttonGo.GetComponent<Image>().color = new Color(0.12f, 0.25f, 0.18f, 0.95f);
-            var textGo = new GameObject("Text", typeof(RectTransform));
-            textGo.transform.SetParent(buttonGo.transform, false);
-            var textRect = textGo.GetComponent<RectTransform>();
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = Vector2.zero;
-            textRect.offsetMax = Vector2.zero;
-            var text = textGo.AddComponent<Text>();
-            text.alignment = TextAnchor.MiddleCenter;
-            text.color = Color.white;
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = 24;
-            text.text = edge.direction + " → " + edge.destination.displayName;
-            var destination = edge.destination;
-            var direction = edge.direction;
-            buttonGo.GetComponent<Button>().onClick.AddListener(() => BeginTravel(destination, direction));
+            options.Add(new RouteChoiceOption
+            {
+                id = edge.direction.ToString(),
+                label = edge.direction + " → " + edge.destination.displayName,
+                layout = edge.layout
+            });
         }
+        RouteChoicePanel.Show(choicePanelPrefab, CurrentNode.displayName, options, id =>
+        {
+            if (System.Enum.TryParse(id, out RouteDirection direction))
+                BeginTravel(direction);
+        });
+    }
+
+    private void BeginTravel(RouteDirection direction)
+    {
+        if (!IsChoosing || !TrySelect(direction, out var destination)) return;
+        BeginTravel(destination, direction);
     }
 
     private void BeginTravel(RouteNodeDefinition destination, RouteDirection direction)
@@ -212,6 +186,7 @@ public sealed class RouteProgressionController : MonoBehaviour
     private void BeginTravelInternal(RouteNodeDefinition destination, RouteDirection direction)
     {
         IsChoosing = false;
+        RouteChoicePanel.HideCurrent();
         if (_choiceRoot != null) Destroy(_choiceRoot);
         if (worldGraph == null)
         {

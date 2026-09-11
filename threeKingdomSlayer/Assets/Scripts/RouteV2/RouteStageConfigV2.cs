@@ -36,4 +36,5 @@ public sealed class RouteConnectionV2
 {
     public string choiceSlot;
     public RouteNodeConfigV2 targetNode;
+    public RouteChoiceLayout layout = new RouteChoiceLayout();
 }

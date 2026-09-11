@@ -10,15 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8697f60c87200ab4ebfc938f297600d8, type: 3}
-  m_Name: C_Battle
+  m_Name: Battle_FakeStage01_N1_1
   m_EditorClassIdentifier: 
   stageId: 1
-  stageName: "C\u6218\u6597\xB75\u5F13\u7BAD\u624B"
+  stageName: "N1 \u5F53\u9633\u4E71\u519B"
   waves:
   - waveId: 0
     isBossWave: 0
     rows:
-    - enemyIds: 6900000069000000690000006900000069000000
+    - enemyIds: 0000000000000000650000000000000000000000
+    - enemyIds: 0000000000000000000000000000000000000000
+    - enemyIds: 0000000000000000000000000000000000000000
+    - enemyIds: 0000000000000000000000000000000000000000
+    - enemyIds: 0000000000000000650000000000000000000000
+    - enemyIds: 0000000000000000000000000000000000000000
+    - enemyIds: 0000000065000000650000000000000000000000
     healthMultiplier: 1
     bossHealthMultiplier: 0
     attackSpeedMultiplier: 1
@@ -30,5 +36,5 @@ MonoBehaviour:
   killMilestones: []
   clearCoinReward: 0
   formationConfig: {fileID: 11400000, guid: f329fc350cf1b54439fcc603e63223ba, type: 2}
-  fillUpRule: 0
+  fillUpRule: 1
   rushMoveDelay: 0.05
