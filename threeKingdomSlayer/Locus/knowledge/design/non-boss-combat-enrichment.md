@@ -290,7 +290,7 @@ aiEditMode: inherit
 | 文档 | 内容 |
 |------|------|
 | `design/in-game-growth-system.md` | 三选一系统第三期详案（等级系统、效果架构、unlock_attack） |
-| `design/three-choice-reward-system.md` | 三选一技术设计（数值buff/道具/被动攻击三种类型） |
+| `design/v2-system-understanding.md` | V2 系统权威理解（三选一类型、UI 显示约定与数值口径） |
 | `design/attack-interrupt-system.md` | 三级打断体系（普通/C技/QTE）+ 霸体机制 |
 | `design/boss-mechanics.md` | BOSS机制完整设计（架势/眩晕/招架/阶段/QTE） |
 | `design/attack-cooldown.md` | 攻击冷却双模式设计 |

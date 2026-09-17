@@ -9,7 +9,23 @@ maintenanceRules: |-
   - Remove temporary context, one-off tasks, and unsupported guesses
 ---
 
-### DOTween 特效生命周期与战斗结束边界（2026-03）
+### FakeRoute J1 村落出口反复误部署（2026-09）
+- 症状：资产检查显示 J1 村落 choice 已指向新建的村落外围节点并绑定视频，但玩家点击画面左侧出口仍直接进入原村落战斗路线，造成“节点和视频没有部署”的实际体验。
+- 根因一：只验证 `choice.targetNode` 和 `presentation`，没有验证 `choice.layout`。J1 两个出口的空间布局与设计语义相反：左侧按钮实际绑定官道路，村落 choice 显示在中央；数组顺序也不能代表左右方向。
+- 根因二：未先对照完整拓扑就把村落外围命名为 `E2`，但 `E2` 已属于 N2 官道路的“辎重受阻”；随后又把“回退错误 E2 命名”误解为删除整个村落外围节点。
+- 根因三：前几次运行测试与 `StageController.StartStage()`/开场协程并发，观察结果被其他路线流程污染；还曾在 Play Mode 直接修改共享 `FakeRouteStageConfig.startNode/openingPresentation`，导致资产被意外保存为测试状态。
+- 正确修复：村落外围使用独立短 ID `EV`；结构为 `J1 → EV → N3`。将左侧布局绑定到 `j1_to_ev`，绑定 `J1toEV` 视频；中央官道绑定 `j1_to_n2 → N2`。恢复 `FakeStage01` 起点 `N1`、开场 `openingToN1`，并递增配置版本。
+- 强制验收规则：
+  1. 文档拓扑：确认节点 ID 未占用、路线语义正确；
+  2. 资产逻辑：确认 `targetNode`、`presentation`、节点是否在 stage.nodes；
+  3. UI 空间：读取运行时 `RouteChoiceButton` 的 ID、文字和 `anchoredPosition`；
+  4. 实际点击：点击目标方向按钮，确认 `TrySelectChoice` 接收正确 ID；
+  5. 媒体与落点：确认 `VideoPlayer.clip/isPlaying`，结束后确认 `CurrentNode`；
+  6. 测试清理：退出 Play Mode 后复查共享 ScriptableObject 未被测试字段污染。
+- 预防规则：**路线出口“引用正确”不等于“玩家点到的方向正确”。任何带方向语义的分支必须同时验证逻辑引用、UI 空间布局和实际点击结果；回退时按改动项精确撤销，不扩大为删除仍被设计要求保留的功能。**
+- 相关文件：`Assets/RouteData/FakeStage01/RouteNode_FakeStage01_J1.asset`、`Assets/RouteData/FakeStage01/RouteNode_FakeStage01_EV.asset`、`Assets/RouteData/FakeStage01/FakeStage01.asset`、`Assets/Scripts/Route/RouteChoicePanel.cs`、`Assets/Scripts/Route/RouteChoiceButton.cs`、`Assets/Scripts/RouteFake/FakeRouteRuntime.cs`
+
+
 - 典型故障：动态火焰/箭雨等子对象被父特效或节点切换销毁后，未终止的 `DOMove` / `DOFade` 仍访问已销毁的 Transform/SpriteRenderer，抛 `MissingReferenceException`；`OnKill` 再次 `Destroy` 还会导致 DOTween 内部回收重入和 `IndexOutOfRangeException`。
 - Tween target 必须可追踪：创建时明确 `SetTarget(dynamicGameObject)` 或 `SetTarget(dynamicTransform)`；销毁时必须以**完全相同的 target**调用 `DOTween.Kill`。`transform.DOKill()` 不能清理 target 设为 GameObject 的 Tween。
 - 动态子对象由父特效管理时，父 `OnDestroy` 必须停止协程并枚举子对象，逐一 Kill 对应 target；自然播放结束仅在 `OnComplete` 销毁，禁止 `OnKill -> Destroy`。

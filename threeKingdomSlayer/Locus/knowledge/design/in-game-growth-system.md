@@ -55,7 +55,7 @@ aiEditMode: inherit
 - `Assets/ScriptableObjects/Combo/ComboBuffConfig.asset` — 10 连击 → combo_atk_10（5秒 50% ATK）
 
 ### Bug 经验
-- SetActive 自引用在 Play Mode 下不可靠（见 `skill/ui-visibility-patterns.md`）
+- SetActive 自引用在 Play Mode 下不可靠（见 `skill/unity-ui/patterns.md`）
 - CanvasGroup 在 Canvas 子节点上可能导致全 Canvas 消失
 - Image 拉伸：`preserveAspect=true` + sizeDelta 匹配 sprite 比例
 

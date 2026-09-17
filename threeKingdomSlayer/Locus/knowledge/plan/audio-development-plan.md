@@ -5,6 +5,10 @@ summary: '游戏音频系统从零搭建的完整开发计划。技术栈: Wwise
 aiEditMode: inherit
 ---
 
+# 音频系统开发计划（Wwise 阶段，已废弃）
+
+> 已废弃：音频系统已于 2025-07-09 迁移至 Unity 原生 `AudioSource` + `AudioMixer`，Wwise 已完全移除，当前权威现状见 `memory/wwise-audio-status.md`。本文仅保留 Wwise 阶段的历史进度记录，不再作为实现依据。
+
 ### Phase 3: Unity 集成 — 基础设施
 
 - [x] 挂载 `AkInitializer` + `AkAudioListener` 到 MainCamera
