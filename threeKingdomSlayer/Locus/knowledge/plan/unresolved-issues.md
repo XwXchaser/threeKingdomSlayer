@@ -1,7 +1,7 @@
 ---
 id: kd_fb96a7e6-c460-4e62-b7ef-d0881d692594
 injectMode: inherit
-summary: 当前 2 个未修复问题：QTE 无法触发、cardPrefab 偶现空引用 — 含调试步骤和关键文件。TODO-2（虚幻武器）已完成。
+summary: 带调试步骤与关键文件的未修复问题 TODO（QTE 无法触发、cardPrefab 空引用、路线计时被动跨节点时序）；现象层清单见 memory/known-issues.md。
 aiEditMode: inherit
 ---
 
@@ -9,6 +9,7 @@ aiEditMode: inherit
 
 > 开启新对话时可直接将此列表作为任务起点。
 > 调试入口统一使用 Play Mode + Console 断点。
+> 现象与根因清单见 `memory/known-issues.md`；本文件只保留带调试步骤的待办。
 
 ---
 

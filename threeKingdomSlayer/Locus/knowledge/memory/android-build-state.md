@@ -2,6 +2,8 @@
 id: kd_7552ac95-7456-4497-9204-ac24173a3b31
 injectMode: inherit
 summary: Android 打包前按优先级分阶段检查清单，涵盖帧率、UI适配、性能、包体、输入优化。每次打包复用。
+skillEnabled: true
+skillSurface: command
 aiEditMode: inherit
 ---
 
