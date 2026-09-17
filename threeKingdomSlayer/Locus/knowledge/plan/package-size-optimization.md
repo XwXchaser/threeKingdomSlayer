@@ -8,6 +8,8 @@ aiEditMode: inherit
 # Android 包体优化方案
 
 > 当前包体：~50MB | 目标：~8-12MB | 日期：2025-07
+>
+> 执行状态：已完成项与核对方式见 `skill/workflows/android-build-checklist.md`；本文只保留方案与预估。
 
 ---
 

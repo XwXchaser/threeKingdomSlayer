@@ -2,6 +2,8 @@
 id: kd_f354dc78-27d8-4095-8abf-794f7f9b9cee
 injectMode: inherit
 summary: 程序化像素命中特效的完整制作经验：颜色分层、不规则尖刺布局、帧动画结构、DOTween 时序、随机化控制、像素美术约束，以及 8 条踩坑记录（多 SpriteRenderer 拼装、中心空心、造型过规则、PPU 尺寸、动画过快、坐标混淆、DOTween 生命周期、AI 生图误用）。
+skillEnabled: true
+skillSurface: command
 aiEditMode: inherit
 ---
 
@@ -137,12 +139,9 @@ white:    RGB(255, 253, 224)  暖白核心
 - 正确做法：保留局部方向的 X 符号，用 `Atan2(y, Abs(x))` 计算斜向倾角，再将左右符号独立用于 `SpriteRenderer.flipX`。这样旋转负责“斜角”，镜像负责“左右造型”。
 - 经验：任何方向性命中特效都要把“角度”和“镜像”作为两个独立输出，先做数学验证，再做左右运行时对照验收。
 
-### 疾病泡泡特效
-- `Assets/Scripts/Effect/DiseaseBubbleEffect.cs` 采用运行时程序化 Texture2D Sprite，不依赖外部 PNG；生成4种80×80变体，PPU=30、FilterMode.Point。
-- 造型结构：深紫断续外轮廓、紫色内弧、下/右侧紫色内腔块面、少量淡紫/白色像素高光；中心并非完全填充，运行时仍会自然淡出。
-- 运行时挂载在染病敌人上，保持左侧偏移 `spawnOffsetX=-1.5`、上方偏移 `spawnOffsetY=4.0`；最多同时存在3个泡泡。
-- 当前验收参数：发射间隔0.32秒，生命周期0.70–0.95秒，上升距离1.5–2.2，缩放1.2–2.0，横向散布±0.9。
-- 经验：冒泡感主要由数量、间隔、上升距离和横向分散决定；泡泡可读性依赖外环高不透明紫色与内腔紫色块面，白色仅作少量高光。生图参考图不可直接替代程序化实现。
-- 症状：关闭 `BuildStabEffect()` 的 `instance.rays` 后，Stab 画面上的外围碎片仍存在。
+### 坑 10：分不清视觉元素来自像素生成、SpriteRenderer 还是 Prefab
+- 症状：关闭 `BuildStabEffect()` 的 `instance.rays` 后，Stab 画面上的外围碎片仍然存在。
 - 根因：Stab 的碎片是 `CreateStabFrameSprite()` 最终帧调用 `DrawStabDebris()` 直接写入 Texture2D 的像素，不属于运行时 `SpriteRenderer` 碎片。
-- 规则：修改“图片内部”的视觉元素前，先追踪它是 Texture2D 像素生成、运行时 SpriteRenderer，还是 Prefab 子物体；只修改其真实来源。对于当前 Stab，短时长下保留内嵌碎片的观感已验收。
+- 规则：修改“图片内部”的视觉元素前，先确认它是 Texture2D 像素生成、运行时 SpriteRenderer，还是 Prefab 子物体，只改真实来源。短时长下保留内嵌碎片的观感已验收。
+
+> 具体效果的实测参数（如疾病泡泡）登记在 `memory/`，不写回本文。

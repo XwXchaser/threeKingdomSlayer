@@ -217,21 +217,30 @@ aiEditMode: inherit
 ## 延后：铁壁·震荡图标
 - [ ] 图标替换暂停，保留当前占位资源；后续统一处理技能图标美术和导入规格。
 
-### 场景化路线 V2（当前进度）
-- [x] Battle.scene 旧路线对象已清理；Player、Enemy、Camera、HUD 和战斗管理器保留。
-- [x] 新建 `Assets/Scenes/RouteStageV2/Stage01_RouteV2.unity`，包含 A/B 节点、Head/Combat/Tail、A→B 连接。
-- [x] 新建 V2 配置与场景绑定组件，RouteStage 场景一次加载、节点切换不加载/卸载单个节点。
-- [x] MainMenu 只显示 V2 场景化关卡入口；旧路线入口配置已移除，节点战斗 StageConfig 作为战斗内容保留。
-- [x] V2 核心链路已实测：MainMenu→Battle→RouteStage→Head→Combat→Tail→目标节点→终点结算。
-- [x] 修复初始 Head 错误后退、战斗输入锁定、Victory/Defeat 面板交互、地板遮挡攻击表现。
-- [x] V2 路径采样与 RouteStage 校验工具已建立，当前 Stage01 场景静态校验通过。
-- [ ] P0：多 Tail 汇入同一 Head 的场景拓扑和运行验收。
-- [ ] P1：多来源 Tail→同一 Head 的旋转角/支点/最终 Pose 验收。
-- [ ] **待持续观测：计时被动跨节点首次触发/Head→Combat 时序**：当前保留 `[TimedPassiveDiag]`、`[RouteDiag]` 和 DoT 诊断日志；暂不判定已修复。重点观察 Head→Combat 是否出现 `TimerExpired`/`BurnTick`，`StartRouteBattle` 后首次触发是否成功，以及效果失败时是否错误进入冷却。
-
-- [ ] **场景化路线 V2：P0 多 Tail 汇入同一 Head**：新增 C/D 节点并分别配置 C→B、D→B；通过独立测试起点分别验证 A→B、C→B、D→B，确认共享 B.Head、连接路径独立、B 可继续连接或作为终点。
-- [ ] **场景化路线 V2：P1 Tail→Head 旋转对齐**：分别验证不同源 Tail 朝向、rotationPivot、先旋转再移动、最终 Head Pose 一致、Player/Camera 不移动。
-- [ ] **场景化路线 V2：路径编辑器增强**：支持任意节点测试起点、路径预览、汇入路径可视化和运行时最终 Pose 误差校验。
-- [ ] **节点胜利演出**：普通节点独立演出，等待 BattleEntry、经验/道具三选一和弃置全部完成后播放；不发放整关奖励、不标记通关、不结束路线。
-- [ ] **路线存档恢复完整验收**：验证失败恢复先执行运行时 ResetAll，再从存档点节点 Head 重新进入；验证已保存的节点/BattleEntry 状态、经验/等级 UI、被动/主动技能列表、临时 DoT 清理和存档点状态不被死亡时运行态污染。MainMenu“继续游戏”不走该恢复路径，而是从最后未完成关卡的 startNode 开始。
-- [ ] **计时被动状态机重构**：将获得、待 Combat 首次触发、效果成功、冷却和失败重试状态分离；当前诊断日志仅用于观测，不视为完成。
+### 假移动路线（当前进度）
+- [x] 新建纯逻辑 FakeRoute 运行层，Battle.scene 作为唯一战斗场景，不加载路线 Unity Scene。
+- [x] 节点战斗垂直切片：节点配置、BattleEntry、路线选择、占位假移动、目标节点战斗和终点结算。
+- [x] 测试拓扑 `A → B/C → D`，D 为唯一终点；B/C 汇入 D 已实际验收。
+- [x] A/B/C/D 使用不同普通敌人阵列，已验证节点战斗配置随节点切换生效。
+- [x] B/C 存档点和 FakeRoute 独立快照。
+- [x] 快照恢复已验收：节点/BattleEntry、路线选择历史、玩家状态、被动/主动技能、UT 能量、击杀数和局内铜钱均正确恢复。
+- [x] 主动技能冷却、普通攻击冷却、计时被动计时、敌人、投射物、连击、QTE、临时效果和占位动画进度不保存，恢复时按规则重置。
+- [x] 快照架构、路线、关卡和配置版本校验；旧 V2 快照不会静默混用。
+- [x] MainMenu 继续游戏按当前未完成路线关卡启动，并从该关卡 startNode 开始，不读取失败恢复快照。
+- [x] 节点战斗结束后直接显示当前节点路线选择 UI，并保持当前战斗背景及正在播放的图片、视频和音频；不切换旧的 `routeChoiceBackground`，不播放旧的 `routeChoiceTransition`。
+- [x] 玩家选择路线后播放所选 `choice.presentation` 位移过场，表现完成后提交目标节点并进入其战斗。
+- [x] `FakeStage01` 已加入纯非战斗分叉节点 `Junction`，并通过 B 存档点支持节点提交后的快照保存与失败恢复验收。
+- [x] 统一 FakeRouteNodeConfig：不拆分 CombatNode/JunctionNode 配置资产；节点通过 battleEntries、outgoingChoices 和终点属性组合表达行为。
+  - 每次进入节点最多挑战一个未完成 BattleEntry；完成后离开当前节点，不自动开始下一条。
+  - 再次进入节点时跳过已完成 BattleEntry，继续挑战第一个未完成条目。
+  - 所有 BattleEntry 完成或 battleEntries 为空后进入统一出口流程。
+  - 任意节点允许零、一个或多个出口；单出口也必须点击确认，多出口显示路线选择。
+  - 空 battleEntries 的节点自然承担 Junction/非战斗节点语义，不建立独立 JunctionNode 运行器。
+  - 终点节点无出口，唯一 BattleEntry 完成后直接进入终点结算。
+- [x] 统一节点模型验收：已验证 Combat → Combat、Combat 多出口、空战斗节点分支及复合节点拓扑；已验证 Entry 不自动连续推进、不重复战斗和奖励；表现完成后才提交目标节点、存档和启动战斗。
+- [x] 单出口节点交互验收：战斗或非战斗节点内容完成后进入 `ChoosingRoute`，单出口也必须点击确认，不会自动移动到目标节点；终点节点除外。
+- [ ] 条件系统及其快照状态。
+- [ ] 剧情/剧情选项数据和快照状态。
+- [ ] 更复杂的节点阶段和重访规则。
+- [ ] 评估清理旧 Route/RouteV2 脚本、旧路线场景和旧校验工具。
+- [ ] 计时被动状态机重构：获得、待 Combat 首次触发、效果成功、冷却和失败重试状态分离。

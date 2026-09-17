@@ -1,6 +1,7 @@
 ---
 id: kd_b45c2927-6f30-4348-9953-583d6ad951ee
 injectMode: inherit
+summary: 新开对话或开发新功能需遵循 anti-ghost-reference 架构规范时使用：给出加载规范、自查幽灵引用、提交前全局扫描的三步做法。
 aiEditMode: inherit
 skillEnabled: true
 skillSurface: command
@@ -8,10 +9,8 @@ skillSurface: command
 
 # use-architecture-constraints
 
-## Summary
 新对话开发时如何加载和使用 anti-ghost-reference 架构规范的实用指南。
 
-## Content
 ## 何时使用
 
 开启新对话、开发新功能时，将此技能的约束注入到对话上下文中。

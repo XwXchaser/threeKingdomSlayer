@@ -138,6 +138,6 @@ aiEditMode: inherit
 | 文件 | 职责 |
 |------|------|
 | `design/in-game-growth-system.md` | 局内三选一架构，含 3.12 扩展接口（预载升级、选项数量扩展） |
-| `design/three-choice-reward-system.md` | 三选一完整技术设计 |
+| `design/v2-system-understanding.md` | V2 系统权威理解（含三选一完整设计） |
 | `design/anti-ghost-reference.md` | 架构规范（所有引用必须 Inspector 可追踪） |
 | `Assets/Scripts/Core/SaveManager.cs` | 存档系统，当前仅存 clearedStageIds + props |

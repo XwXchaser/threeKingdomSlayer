@@ -872,3 +872,14 @@ V2 版本存在两个核心 build 流派，技能之间通过协同强化各自�
 2. 波次具体每行敌人分布待后续在 StageConfig 中逐波配置。
 3. 如果加 102（盾兵 30HP）是否需要调整？当前设计暂不包含。
 4. 智慧是否应在第 1-2 级就进入池？（建议是，越早获得越有价值。）
+
+---
+
+## 7.9 三选一奖励 UI 显示约定
+
+- 图标 + 角标显示触发信息（计时类显示间隔秒数，计数类显示阈值）。
+- **计时被动冷却显示**：图标上叠加 Radial360 顺时针冷却填充 + 右上角倒计时数字
+  - 由 `BuffDisplayPanel.Update()` 每帧驱动，读取 `TimedPassiveModule` 公开 API
+  - **fillAmount 约定**（与 HeroHUD 普通攻击冷却一致）：`0 = 冷却中`、`1 = 就绪`，公式 `fillAmount = 1 - (timer / interval)`
+  - **FillClockwise = true**（顺时针）、**FillOrigin = Bottom(2)**、Image Type = Filled、FillMethod = Radial360
+  - `BuffIcon.CooldownFill` 对应此填充层，`CooldownDim` 为灰色蒙层（仅 visible 切换）
