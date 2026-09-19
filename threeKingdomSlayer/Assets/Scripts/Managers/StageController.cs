@@ -13,6 +13,8 @@ public class StageController : MonoBehaviour
 
     [Header("关卡配置")]
     public StageConfig stageConfig;
+    [Tooltip("Disable only when an external flow explicitly starts combat.")]
+    public bool autoStartStage = true;
     public RouteStageConfig routeStageConfig;
     public RouteStageConfigV2 routeStageConfigV2;
 
@@ -141,7 +143,7 @@ public class StageController : MonoBehaviour
 
         // 自动开始关卡：协程使用 unscaled 时间，避免其他 Start 在同帧暂停时让启动永久卡住。
         Debug.Log("[StageController] 场景加载完成，自动开始关卡");
-        StartCoroutine(StartStageNextFrame());
+        if (autoStartStage) StartCoroutine(StartStageNextFrame());
     }
 
     private IEnumerator StartStageNextFrame()
@@ -324,8 +326,7 @@ public class StageController : MonoBehaviour
     {
         if (currentState != StageState.InProgress) return;
 
-        var runtimeV2 = FindObjectOfType<RouteStageRuntimeV2>();
-        if (_routeBattleRuntime && runtimeV2 != null)
+        if (_routeBattleRuntime)
         {
             OnRouteBattleCompleted?.Invoke();
             return;
@@ -524,14 +525,17 @@ public class StageController : MonoBehaviour
     {
         Debug.Log($"[RouteDiag] SetRouteTravelState frame={Time.frameCount} routeCombat={IsRouteCombatActive} burnStates=" + (UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetBurnStateCountForDiagnostics().ToString() : "NULL"));
         _routeRewardWaiting = false;
+        StopCombatSystemsForNodeTransition();
         TimedPassiveModule.Instance?.PrepareForNonCombat();
+        SpikeTrapController.Instance?.SetRouteVisibility(false);
         SetState(StageState.Starting);
     }
 
     public void SetRouteRewardWaitState()
     {
         _routeRewardWaiting = true;
-        StopCombatSystemsForNodeTransition();
+        // Keep death animation and delayed reward callbacks alive until departure.
+        waveSpawner?.StopSpawning();
     }
 
     public bool IsRouteRewardWaiting => _routeRewardWaiting;
@@ -554,6 +558,7 @@ public class StageController : MonoBehaviour
         waveSpawner?.StartWaveSpawning();
         Debug.Log($"[RouteDiag] StartRouteBattle after wave spawn frame={Time.frameCount} routeCombat={IsRouteCombatActive} enemies={AttackSystem.Instance?.columnManager?.GetAllEnemies()?.Count}");
         TimedPassiveModule.Instance?.TriggerPendingCombatStartEffects();
+        SpikeTrapController.Instance?.SetRouteVisibility(true);
     }
 
     public void StopCombatForRouteTravel()

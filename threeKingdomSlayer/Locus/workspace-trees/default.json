@@ -1,0 +1,426 @@
+{
+  "schemaVersion": 3,
+  "presetId": "default",
+  "name": "Default",
+  "projectId": "unity-293bce2768c5fa7e2c039c6f",
+  "revision": 21,
+  "lastOperationId": "841d7cc8-1af9-47f9-96bd-83d40f8a6b6f",
+  "nodes": [
+    {
+      "nodeId": "resource:knowledge:32ea9f99-4b8d-4ed1-9e16-8f4ed1f7200e",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_3bee8e5e-dd47-4c40-91f0-5c9e5e4eb8b6",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 25
+    },
+    {
+      "nodeId": "resource:knowledge:2e5ffbcc-fc5b-479f-880f-f6eaca0fe41c",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_835a3457-a00c-42ea-8e56-dcd37c457f2d",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 26
+    },
+    {
+      "nodeId": "resource:knowledge:25ef51bb-f824-479c-a790-0a219516d3c8",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_b6cf4b62-1523-4614-a917-e03794a2eb27",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 27
+    },
+    {
+      "nodeId": "resource:knowledge:0fc410db-6e3c-499e-b7c0-2e0405c3078e",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_a9df5837-75e3-4f6e-872f-1b0dedc64c06",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 28
+    },
+    {
+      "nodeId": "resource:knowledge:7305724a-8c64-4694-a336-482b1c691a36",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_4a05f94c-c97a-4aab-8a5c-1538d75ae6ef",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 29
+    },
+    {
+      "nodeId": "resource:knowledge:ef002776-d99b-4fb0-9191-d9e31a2c8a9a",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_aec42590-df09-4ecc-bb13-39892f781020",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 30
+    },
+    {
+      "nodeId": "resource:knowledge:f09a82c6-a4d7-45d8-a746-c08511ac21cd",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_fc1817f0-c03f-43a6-bb88-42e428f07611",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 31
+    },
+    {
+      "nodeId": "resource:knowledge:6af9af67-07bc-49dc-b6f0-60a56053b42e",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_7b0b3fe1-8bf7-4f26-ab3c-5085f77cc015",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 32
+    },
+    {
+      "nodeId": "resource:knowledge:9ef577db-d68c-4311-9f3c-c05d3cf9803b",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_8eef08bf-76a1-4af2-8f94-ace7cb327e3c",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 33
+    },
+    {
+      "nodeId": "resource:system:819e4356-6c9a-4769-ac9f-91b033e557e5",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "system",
+      "resourceId": "newSession",
+      "hidden": false,
+      "position": 0
+    },
+    {
+      "nodeId": "resource:system:05d57603-863d-4f13-962f-537aaaa50c5e",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "system",
+      "resourceId": "knowledge",
+      "hidden": false,
+      "position": 5
+    },
+    {
+      "nodeId": "resource:session:d3d31e19-f952-4581-b224-23f62584fc1d",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "session",
+      "resourceId": "6c8f3bc1-a3aa-45e4-a2f9-151b49d3e34d",
+      "hidden": false,
+      "position": 4
+    },
+    {
+      "nodeId": "resource:system:b14ee954-7035-416c-b0a1-b6fdb821febc",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "system",
+      "resourceId": "collaboration",
+      "hidden": false,
+      "position": 34
+    },
+    {
+      "nodeId": "resource:system:5fea5724-ae05-4bf0-a345-29811c839d59",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "system",
+      "resourceId": "assets",
+      "hidden": false,
+      "position": 35
+    },
+    {
+      "nodeId": "resource:system:6569d829-129e-44f3-b130-b2605e896669",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "system",
+      "resourceId": "views",
+      "hidden": false,
+      "position": 36
+    },
+    {
+      "nodeId": "resource:system:74980b6d-3170-45e7-a338-f1699d8ac93d",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "system",
+      "resourceId": "archived",
+      "hidden": true,
+      "position": 37
+    },
+    {
+      "nodeId": "resource:knowledge:29ff4b83-19e1-4b81-89ba-21ac07b8c599",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_47eaa9f8-1f3b-45d4-a363-10752239b1e5",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 24
+    },
+    {
+      "nodeId": "resource:session:d1fd189c-951d-4d6b-b5cc-bba4f5df309c",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "session",
+      "resourceId": "5a0c54d9-317e-4384-90d0-b4d07a95d1ed",
+      "hidden": false,
+      "position": 3
+    },
+    {
+      "nodeId": "resource:knowledge:b31acfb9-d961-41ac-a251-762498a29e32",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_857e052b-eed5-499e-a5f3-1ccc48ed9627",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 23
+    },
+    {
+      "nodeId": "resource:knowledge:39a03dea-5fe5-4858-a51e-37cf30ce574a",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_4e5d40cf-94fe-48ec-810b-b2d06351bee3",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 21
+    },
+    {
+      "nodeId": "resource:knowledge:7c53e4f3-252d-42f2-b5c4-6005bd183dd0",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_4518874e-fcb2-4448-b3e6-c134e15466ca",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 22
+    },
+    {
+      "nodeId": "resource:knowledge:87a51feb-ea01-4994-a3fa-f73d48f51ef3",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_bb60439d-5117-49fd-9789-7cc1a60f4bd8",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 16
+    },
+    {
+      "nodeId": "resource:knowledge:410f2307-27bd-49ae-ba1f-8499d9f6ae2c",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_88f24d6e-f055-43ca-9efd-25c26dcf7568",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 17
+    },
+    {
+      "nodeId": "resource:knowledge:78976699-bf99-4606-a438-2f6fb19eb4aa",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_ce13d75a-8543-4f9e-b0a0-dd691b6eda64",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 18
+    },
+    {
+      "nodeId": "resource:knowledge:0cb79b46-b22f-47b6-bec4-9d05c3de5c6f",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_65412ee0-2f14-4b9d-a598-afdce4337b9a",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 19
+    },
+    {
+      "nodeId": "resource:knowledge:b3bc93cb-245a-4083-9637-359fca5c34bb",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_d2fd0160-9f84-4843-809c-379b5aa11ee8",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 20
+    },
+    {
+      "nodeId": "resource:knowledge:9d6f1143-3ae2-4aea-84f9-c287077f0020",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_27ef541b-f3c9-4b70-9c9d-0699fc1bcb0f",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 12
+    },
+    {
+      "nodeId": "resource:knowledge:d1226f11-6839-48e7-8d1e-039c4de6fe6f",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_b30bbb29-64fa-4982-8f1a-5044011a151e",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 13
+    },
+    {
+      "nodeId": "resource:knowledge:ca216da5-8f07-435d-aa10-a391dc97b3c7",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_2cb3f665-80e5-4387-8f66-572ff852e4c6",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 14
+    },
+    {
+      "nodeId": "resource:knowledge:15ed639b-bc49-4c38-a457-d4d617fe75f8",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_05e6039b-c5f9-463c-87f9-59b43da2ce9a",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 15
+    },
+    {
+      "nodeId": "resource:knowledge:c8e24159-f050-4279-a198-bc51c2ca9ea0",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_a7a6ad74-a259-4fd0-a8e9-269476883aaa",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 11
+    },
+    {
+      "nodeId": "resource:knowledge:84912355-841d-4e2a-bbdf-a6517a2593e8",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_ba079271-c302-4d4a-9e7b-4af1a2395764",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 10
+    },
+    {
+      "nodeId": "resource:system:5ce6d915-54be-4c01-a465-36a21642d6ae",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "system",
+      "resourceId": "agents",
+      "hidden": false,
+      "position": 38
+    },
+    {
+      "nodeId": "resource:knowledge:cc585995-1756-4126-86d0-552fda98834a",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_557e8789-77a2-4036-abe5-f8da68b81119",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 9
+    },
+    {
+      "nodeId": "resource:knowledge:7ad4aa9f-e147-46f7-8ec7-aed8f2ee5138",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_05fdb97a-d8dc-45f8-9e27-272984b65401",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 8
+    },
+    {
+      "nodeId": "mount:f8cd8096-b28d-4dd8-b8f8-cb30ed9dae34",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "local_file",
+      "resourceId": "path:31a323ffc4685664055514c09cb7ded4e3271f23ff5abc4c1e08793dffb58e33",
+      "folderName": "curved-scroll-development-handoff",
+      "hidden": false,
+      "sourcePath": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Locus\\knowledge\\plan\\curved-scroll-development-handoff.md",
+      "sourceKind": "knowledge",
+      "position": 39
+    },
+    {
+      "nodeId": "resource:session:9f9cb1a8-00bf-4d4a-916b-8c6dae606c1e",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "session",
+      "resourceId": "2bf2d337-7568-420c-8ed3-1f98a2a94203",
+      "hidden": false,
+      "position": 2
+    },
+    {
+      "nodeId": "resource:knowledge:0965a90f-e0de-41f7-a5db-4bfe139fe448",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_a670aea0-16a3-43a7-bfa9-cf93d4626a3d",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 7
+    },
+    {
+      "nodeId": "resource:knowledge:e2975c61-3e18-4030-a8c9-4d9ca6248e4f",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_4906c2d2-cdf3-435c-8ccf-42c66d9e72bd",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 6
+    },
+    {
+      "nodeId": "mount:8f923aea-18cb-43b8-9057-44b8213ee0de",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "local_file",
+      "resourceId": "path:88b4e79f4763876c6eba9fa77a38566bcfc4e0cfa6fedd6dabd0f11e235422d0",
+      "folderName": "blender-mcp-verified-workflow",
+      "hidden": false,
+      "sourcePath": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Locus\\knowledge\\plan\\blender-mcp-verified-workflow.md",
+      "sourceKind": "knowledge",
+      "position": 40
+    },
+    {
+      "nodeId": "mount:32175650-039d-4432-ab52-475b975236de",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "local_file",
+      "resourceId": "path:470d5ddf2b8ca7049fb7642fa5eafcf236450a8ede15b5cea182c1af7b466d61",
+      "folderName": "enemy1-model-production-handoff",
+      "hidden": false,
+      "sourcePath": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Locus\\knowledge\\plan\\enemy1-model-production-handoff.md",
+      "sourceKind": "knowledge",
+      "position": 41
+    },
+    {
+      "nodeId": "resource:session:51e50cc3-a9c3-4782-94b8-20a5de5f820e",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "session",
+      "resourceId": "0972039b-a6eb-40d0-ac6d-b8f345cf4e0d",
+      "hidden": false,
+      "position": 1
+    }
+  ],
+  "itemStates": []
+}

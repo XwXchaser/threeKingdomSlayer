@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af766f21f5bc3bf4294d3aa2577d4751, type: 3}
+  m_Name: ValleyBranchTrial
+  m_EditorClassIdentifier: 
+  routeId: valley-branch-trial
+  stageId: -9100
+  configurationVersion: 1
+  stageName: Valley Branch Trial
+  startNode: {fileID: 11400000, guid: 89df4fee3b918a942ba62ea18907a598, type: 2}
+  nodes:
+  - {fileID: 11400000, guid: 89df4fee3b918a942ba62ea18907a598, type: 2}
+  - {fileID: 11400000, guid: 9e445ada749a08049a1f785f09cf666b, type: 2}
+  - {fileID: 11400000, guid: 547ce387d3ec60e448b11b30b002d8e1, type: 2}
+  - {fileID: 11400000, guid: 2a680e9e83132b04393a4be0feed11c2, type: 2}
+  clearCoinReward: 100

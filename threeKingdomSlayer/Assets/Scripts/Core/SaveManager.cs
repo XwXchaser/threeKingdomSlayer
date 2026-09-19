@@ -16,6 +16,7 @@ public class SaveData
     public bool tutorialCompleted;
     public List<string> completedTutorialDialogueIds = new List<string>();
     public List<RouteStageSaveSnapshot> routeStageSnapshots = new List<RouteStageSaveSnapshot>();
+    public List<FakeRouteStageSaveSnapshot> fakeRouteSnapshots = new List<FakeRouteStageSaveSnapshot>();
 
     /// <summary>
     /// 获取铜钱数量（优先从 props 列表读取，兼容旧存档的 coinCount 字段）
@@ -133,6 +134,59 @@ public static class SaveManager
             if (data.routeStageSnapshots[i] == null || data.routeStageSnapshots[i].stageId == snapshot.stageId)
                 data.routeStageSnapshots.RemoveAt(i);
         data.routeStageSnapshots.Add(snapshot);
+        Save(data);
+    }
+
+    public static FakeRouteStageSaveSnapshot GetFakeRouteSnapshot(string routeId, int stageId)
+    {
+        var data = Load();
+        if (data.fakeRouteSnapshots == null) return null;
+        for (int i = 0; i < data.fakeRouteSnapshots.Count; i++)
+        {
+            var snapshot = data.fakeRouteSnapshots[i];
+            if (snapshot != null && snapshot.routeId == routeId && snapshot.stageId == stageId
+                && snapshot.routeArchitectureId == "fake-route-v1") return snapshot;
+        }
+        return null;
+    }
+
+    public static void SaveFakeRouteSnapshot(FakeRouteStageSaveSnapshot snapshot)
+    {
+        if (snapshot == null || string.IsNullOrEmpty(snapshot.routeId)) return;
+        var data = Load();
+        if (data.fakeRouteSnapshots == null) data.fakeRouteSnapshots = new List<FakeRouteStageSaveSnapshot>();
+        for (int i = data.fakeRouteSnapshots.Count - 1; i >= 0; i--)
+        {
+            var old = data.fakeRouteSnapshots[i];
+            if (old == null || (old.routeId == snapshot.routeId && old.stageId == snapshot.stageId))
+                data.fakeRouteSnapshots.RemoveAt(i);
+        }
+        data.fakeRouteSnapshots.Add(snapshot);
+        Save(data);
+    }
+
+    public static void ClearFakeRouteSnapshot(string routeId, int stageId)
+    {
+        var data = Load();
+        if (data.fakeRouteSnapshots == null) return;
+        bool changed = false;
+        for (int i = data.fakeRouteSnapshots.Count - 1; i >= 0; i--)
+        {
+            var snapshot = data.fakeRouteSnapshots[i];
+            if (snapshot != null && snapshot.routeId == routeId && snapshot.stageId == stageId)
+            {
+                data.fakeRouteSnapshots.RemoveAt(i);
+                changed = true;
+            }
+        }
+        if (changed) Save(data);
+    }
+
+    public static void ClearFakeRouteSnapshots()
+    {
+        var data = Load();
+        if (data.fakeRouteSnapshots == null || data.fakeRouteSnapshots.Count == 0) return;
+        data.fakeRouteSnapshots.Clear();
         Save(data);
     }
 

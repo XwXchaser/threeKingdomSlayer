@@ -58,7 +58,22 @@ public class SpikeTrapController : MonoBehaviour
         UpdateOutlineOverlay();
     }
 
-    public bool IsActive => _visualGo != null;
+    private bool _routeVisible = true;
+
+    public void SetRouteVisibility(bool visible)
+    {
+        _routeVisible = visible;
+        if (!visible)
+        {
+            StopAllCoroutines();
+            _animating = false;
+            _triggeredThisFrame.Clear();
+            if (_hitChild != null) _hitChild.SetActive(false);
+        }
+        if (_visualGo != null) _visualGo.SetActive(visible);
+    }
+
+    public bool IsActive => _visualGo != null && _routeVisible;
 
     public void Initialize(int row, int col, float damage)
     {
@@ -66,6 +81,7 @@ public class SpikeTrapController : MonoBehaviour
         _spikeCol = col;
         _damagePerPass = damage;
         SpawnVisual();
+        if (_visualGo != null) _visualGo.SetActive(_routeVisible);
     }
 
     public void SetDamage(float newDamage)

@@ -1,11 +1,13 @@
 ---
 id: kd_c2de3458-57af-4257-9475-96d4662f67f2
 injectMode: inherit
-summary: 记录特效层级排序问题（SpikeTrap 已修复，Cyclone 待修复）
+summary: 战斗已知问题清单（QTE 被打断、特效残留、BOSS 墙壁、超范围攻击等）与已修复项；带调试步骤的待办见 plan/unresolved-issues.md。
 aiEditMode: inherit
 ---
 
 # 已知问题
+
+> 现象与根因清单；带调试步骤的待办见 `plan/unresolved-issues.md`。
 
 ## 1. QTE 动画期间受道具伤害播放 Hit 动画
 - **现象**: BOSS 在 QTE 动画时若受到道具等其他伤害，会播放受击(hit)动画打断 QTE 动画

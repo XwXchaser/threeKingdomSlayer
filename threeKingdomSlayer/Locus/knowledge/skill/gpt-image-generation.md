@@ -1,6 +1,7 @@
 ---
 id: kd_e6815137-b73f-41d7-b6ad-d76834c73ab0
 injectMode: inherit
+summary: 需要通过 gpt-image-2 接口文生图、图生图或多图融合并落盘交付时使用；只管 API 参数、调用模板与排错，任务编排与透明验收见 workflow。
 aiEditMode: inherit
 skillEnabled: true
 skillSurface: command
@@ -10,10 +11,8 @@ argumentHint: <prompt> [--image path ...] [--size 1024x1024|1024x1536|1536x1024]
 
 # gpt-image-generation
 
-## Summary
-脱离 Unity 使用 gpt-image-2 图像生成接口的 Skill 使用文档：说明调用方式、必需配置、默认输出目录、示例、接口规则和常见问题。
+脱离 Unity 使用 gpt-image-2 图像生成接口的使用文档：说明调用方式、必需配置、默认输出目录、示例、接口规则和常见问题。
 
-## Content
 ## 使用说明
 
 `/gpt-image` 用于脱离 Unity Editor 调用 `gpt-image-2` 图像生成接口。Unity 断开、未启动、或项目不在 Play Mode 都不影响使用。
@@ -171,6 +170,43 @@ POST https://api.muskapis.com/v1/images/edits
 - `input_fidelity`
 - `output_format`
 
+## 配套工作流
+
+完整的任务编排、透明背景验收、失败处理和交付清单请读取：
+
+`skill/workflows/image-asset-generation.md`
+
+本 Skill 仅负责 API 能力、参数规则和调用模板；不会因为读取文档而自动调用 API，必须由当前对话根据用户授权实际执行。
+
+### 能力边界补充：不能只按模型名判断透明支持
+
+本轮实际观察：`gpt-image-2.5-sunburst` 在 `/images/generations` 带 `background=transparent` 成功得到1024×1024 RGBA；同名模型 `/images/edits` 带此参数返回400。编辑去掉该参数可成功，但不保证Alpha，曾输出RGB与伪透明棋盘格；请求的尺寸也必须从图片实测。`gpt-image-2` 在当前令牌下返回无模型访问权限的403。上述是当前服务路径的实测，不是永久能力声明，不能从文生图成功推断参考图编辑支持同一功能。
+
+保身份任务不得静默退回无参考纯文生图。确定分支后再生成，必要时使用参考图编辑＋纯色底后处理并说明边界。API超时未拿到结果ID时，不可把本地查无文件说成已查询服务端；结果与费用未知，需用户确认后才重新提交。透明验收与后处理详见配套工作流。
+
+### 无 requests 的标准库调用骨架
+
+```python
+import base64, json, os, pathlib, urllib.request
+
+api_key = os.environ["MUSK_API_KEY"]
+out = pathlib.Path(r"C:/Users/steam/Pictures/gptGen/result.png")
+out.parent.mkdir(parents=True, exist_ok=True)
+request = urllib.request.Request(
+    "https://api.muskapis.com/v1/images/generations",
+    data=json.dumps({"model": "gpt-image-2", "prompt": "...", "size": "1024x1024", "quality": "high", "output_format": "png"}).encode("utf-8"),
+    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+    method="POST")
+with urllib.request.urlopen(request, timeout=300) as response:
+    item = json.load(response)["data"][0]
+if item.get("url"):
+    urllib.request.urlretrieve(item["url"], out)
+else:
+    out.write_bytes(base64.b64decode(item["b64_json"]))
+raw = out.read_bytes()
+assert len(raw) > 1024 and raw.startswith(b"\x89PNG\r\n\x1a\n")
+print(out)
+```
 ## 执行流程
 
 1. 判断任务类型：文生图、单图编辑、多图融合。
@@ -198,7 +234,7 @@ POST https://api.muskapis.com/v1/images/edits
 
 **事实边界规则**：工具调用和验证结果是完成性表述的唯一依据。不要根据上下文推断工具已经执行；被用户追问时，先重新核查工具结果和文件状态。
 
-## Python 模板：���生图
+## Python 模板：文生图（当前环境可用，无 `requests`）
 
 ```python
 import base64
@@ -206,9 +242,8 @@ import json
 import os
 import pathlib
 import sys
+import urllib.error
 import urllib.request
-
-import requests
 
 api_key = os.environ.get("MUSK_API_KEY")
 if not api_key:
@@ -218,90 +253,42 @@ prompt = sys.argv[1]
 out_path = pathlib.Path(sys.argv[2] if len(sys.argv) > 2 else "C:/Users/steam/Pictures/gptGen/gpt-image-result.png")
 out_path.parent.mkdir(parents=True, exist_ok=True)
 
-resp = requests.post(
+request = urllib.request.Request(
     "https://api.muskapis.com/v1/images/generations",
-    headers={"Authorization": f"Bearer {api_key}"},
-    json={
+    data=json.dumps({
         "model": "gpt-image-2",
         "prompt": prompt,
         "size": "1024x1024",
         "quality": "high",
-    },
-    timeout=300,
-)
-resp.raise_for_status()
-item = resp.json()["data"][0]
+        "output_format": "png",
+    }).encode("utf-8"),
+    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+    method="POST")
+
+try:
+    with urllib.request.urlopen(request, timeout=300) as response:
+        item = json.load(response)["data"][0]
+except urllib.error.HTTPError as exc:
+    raise SystemExit(f"HTTP {exc.code}: {exc.read().decode('utf-8', errors='replace')}")
 
 if item.get("url"):
     urllib.request.urlretrieve(item["url"], out_path)
 elif item.get("b64_json"):
     out_path.write_bytes(base64.b64decode(item["b64_json"]))
 else:
-    raise SystemExit(f"No image result found: {resp.text}")
+    raise SystemExit("No image result found")
 
-print(json.dumps({"saved": str(out_path), "url": item.get("url")}, ensure_ascii=False))
+raw = out_path.read_bytes()
+if len(raw) <= 1024 or not raw.startswith(b"\x89PNG\r\n\x1a\n"):
+    raise SystemExit("Output PNG verification failed")
+print(json.dumps({"saved": str(out_path), "bytes": len(raw)}, ensure_ascii=False))
 ```
 
 ## Python 模板：单图编辑 / 多图融合
 
-```python
-import base64
-import json
-import os
-import pathlib
-import sys
-import urllib.request
+本环境没有 `requests`。编辑/多图融合必须以 Python 标准库手工组装 `multipart/form-data`：每张输入图使用同名字段 `image[]`，图片部分包含文件名与 `Content-Type`，并把 `model`、`prompt`、`size`、`quality`、`input_fidelity`、`output_format` 作为普通字段上传到 `/v1/images/edits`。
 
-import requests
-
-api_key = os.environ.get("MUSK_API_KEY")
-if not api_key:
-    raise SystemExit("Missing MUSK_API_KEY")
-
-# Usage: python script.py out.png prompt image1.png [image2.png ...]
-out_path = pathlib.Path(sys.argv[1])
-prompt = sys.argv[2]
-image_paths = sys.argv[3:]
-if not image_paths:
-    raise SystemExit("At least one input image is required")
-out_path.parent.mkdir(parents=True, exist_ok=True)
-
-opened = []
-try:
-    files = []
-    for path in image_paths:
-        f = open(path, "rb")
-        opened.append(f)
-        files.append(("image[]", (pathlib.Path(path).name, f)))
-
-    resp = requests.post(
-        "https://api.muskapis.com/v1/images/edits",
-        headers={"Authorization": f"Bearer {api_key}"},
-        files=files,
-        data={
-            "model": "gpt-image-2",
-            "prompt": prompt,
-            "size": "1024x1024",
-            "quality": "high",
-            "input_fidelity": "high",
-        },
-        timeout=300,
-    )
-    resp.raise_for_status()
-finally:
-    for f in opened:
-        f.close()
-
-item = resp.json()["data"][0]
-if item.get("url"):
-    urllib.request.urlretrieve(item["url"], out_path)
-elif item.get("b64_json"):
-    out_path.write_bytes(base64.b64decode(item["b64_json"]))
-else:
-    raise SystemExit(f"No image result found: {resp.text}")
-
-print(json.dumps({"saved": str(out_path), "url": item.get("url")}, ensure_ascii=False))
-```
+已验证的透明背景成例与两级验收见 `skill/workflows/image-asset-generation.md`；多图编辑的 multipart 组装按以下规则执行：构造唯一 boundary、写入每个文本和图片 part、以 `urllib.request.Request` 发送请求，随后从 `data[0].url` 或 `data[0].b64_json` 保存到指定路径，并验证 PNG 签名。禁止使用以下当前环境不可用的 `requests.post(..., files=...)` 模板。
 
 ## 可能遇到的问题
 

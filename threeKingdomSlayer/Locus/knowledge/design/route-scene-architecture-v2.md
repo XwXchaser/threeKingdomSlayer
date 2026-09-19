@@ -8,7 +8,7 @@ aiEditMode: inherit
 
 ## 1. 文档定位
 
-本文以当前对话确认的需求为准，覆盖路线关卡的配置边界、Combat 节点场景结构、场景加载和局内流程。
+> 注意：本文描述的是旧的 RouteStage V2 场景化路线方案，不适用于当前 `route-fake-movement`。当前 FakeRoute 的权威规则是：节点均为 `FakeRouteNodeConfig` 逻辑资产，`Battle.scene` 是唯一运行场景，不加载路线 Unity Scene；详见 `route-fake-movement-architecture.md`。
 
 本文不继承旧路线文档中的以下假设：
 

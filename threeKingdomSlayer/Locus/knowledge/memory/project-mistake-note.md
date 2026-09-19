@@ -9,7 +9,30 @@ maintenanceRules: |-
   - Remove temporary context, one-off tasks, and unsupported guesses
 ---
 
-### RouteStage V2 存档点规则更新（2026-03）
+### FakeRoute J1 村落出口反复误部署（2026-09）
+- 症状：资产检查显示 J1 村落 choice 已指向新建的村落外围节点并绑定视频，但玩家点击画面左侧出口仍直接进入原村落战斗路线，造成“节点和视频没有部署”的实际体验。
+- 根因一：只验证 `choice.targetNode` 和 `presentation`，没有验证 `choice.layout`。J1 两个出口的空间布局与设计语义相反：左侧按钮实际绑定官道路，村落 choice 显示在中央；数组顺序也不能代表左右方向。
+- 根因二：未先对照完整拓扑就把村落外围命名为 `E2`，但 `E2` 已属于 N2 官道路的“辎重受阻”；随后又把“回退错误 E2 命名”误解为删除整个村落外围节点。
+- 根因三：前几次运行测试与 `StageController.StartStage()`/开场协程并发，观察结果被其他路线流程污染；还曾在 Play Mode 直接修改共享 `FakeRouteStageConfig.startNode/openingPresentation`，导致资产被意外保存为测试状态。
+- 正确修复：村落外围使用独立短 ID `EV`；结构为 `J1 → EV → N3`。将左侧布局绑定到 `j1_to_ev`，绑定 `J1toEV` 视频；中央官道绑定 `j1_to_n2 → N2`。恢复 `FakeStage01` 起点 `N1`、开场 `openingToN1`，并递增配置版本。
+- 强制验收规则：
+  1. 文档拓扑：确认节点 ID 未占用、路线语义正确；
+  2. 资产逻辑：确认 `targetNode`、`presentation`、节点是否在 stage.nodes；
+  3. UI 空间：读取运行时 `RouteChoiceButton` 的 ID、文字和 `anchoredPosition`；
+  4. 实际点击：点击目标方向按钮，确认 `TrySelectChoice` 接收正确 ID；
+  5. 媒体与落点：确认 `VideoPlayer.clip/isPlaying`，结束后确认 `CurrentNode`；
+  6. 测试清理：退出 Play Mode 后复查共享 ScriptableObject 未被测试字段污染。
+- 预防规则：**路线出口“引用正确”不等于“玩家点到的方向正确”。任何带方向语义的分支必须同时验证逻辑引用、UI 空间布局和实际点击结果；回退时按改动项精确撤销，不扩大为删除仍被设计要求保留的功能。**
+- 相关文件：`Assets/RouteData/FakeStage01/RouteNode_FakeStage01_J1.asset`、`Assets/RouteData/FakeStage01/RouteNode_FakeStage01_EV.asset`、`Assets/RouteData/FakeStage01/FakeStage01.asset`、`Assets/Scripts/Route/RouteChoicePanel.cs`、`Assets/Scripts/Route/RouteChoiceButton.cs`、`Assets/Scripts/RouteFake/FakeRouteRuntime.cs`
+
+
+- 典型故障：动态火焰/箭雨等子对象被父特效或节点切换销毁后，未终止的 `DOMove` / `DOFade` 仍访问已销毁的 Transform/SpriteRenderer，抛 `MissingReferenceException`；`OnKill` 再次 `Destroy` 还会导致 DOTween 内部回收重入和 `IndexOutOfRangeException`。
+- Tween target 必须可追踪：创建时明确 `SetTarget(dynamicGameObject)` 或 `SetTarget(dynamicTransform)`；销毁时必须以**完全相同的 target**调用 `DOTween.Kill`。`transform.DOKill()` 不能清理 target 设为 GameObject 的 Tween。
+- 动态子对象由父特效管理时，父 `OnDestroy` 必须停止协程并枚举子对象，逐一 Kill 对应 target；自然播放结束仅在 `OnComplete` 销毁，禁止 `OnKill -> Destroy`。
+- 时序边界：三选一仅暂停游戏，所有已开始表现（含 ULT）冻结后恢复；ULT 只在真正结束战斗时取消。路线奖励等待是软结束：停止新刷怪/新战斗逻辑，已开始的死亡动画与普通特效自然结束。只有玩家确认切换节点、重开或回菜单才硬清理残留表现。
+- 新技能验收：必须覆盖“播放中进入三选一”“最后一击进入奖励等待”“玩家确认离开节点”三个场景，并检查 Console 无 MissingReference/DOTween 回收异常。
+
+
 - 用户确认：存档点在可存档节点 **Head 到达时立即保存**，不是 Tail。
 - 失败恢复从该节点 Head 开始，重新执行 Head→Combat，并重新执行该节点本次应执行的 BattleEntry；不能因为保存时刻位于 Head 就把当前节点战斗标记为已完成。
 - 例如：A→C，抵达 C Head 保存；C 战斗中失败后，重开从 C Head 开始，而不是 C Tail 或 A。
@@ -71,4 +94,29 @@ maintenanceRules: |-
 - 计时被动在奖励阶段获得时，不能立即触发，也不能开始消耗 timer；进入正式 Combat 后才允许首次触发并进入冷却。当前实现曾通过 pending 集合、`IsRouteCombatActive` 和效果清理进行修补，但日志显示仍可能出现 Head→Combat 残留效果或“无实际效果却进入冷却”，因此该问题只能标记为待观测/待重构。
 - 诊断日志本身会改变 Unity Editor 的帧时序和协程相对顺序；出现“加日志后问题消失”时不能视为修复。应优先使用关键状态变化日志，避免每帧输出造成观测扰动。
 - 效果触发必须区分“调用 SpawnEffect”和“效果实际成功创建”：配置、Prefab、组件或 ColumnManager 缺失时不能提交冷却；失败应保留待触发状态并输出失败原因。
-- 节点切换清理要区分临时战斗效果与永久 Build：清理火焰/箭雨对象、被动协程、DoT、投射物和旧回调，但保留升级等级、主动技能槽位和数值 Build。
+### 已修复：SpawnEntry/地刺同步死亡导致补齐请求丢失
+- 症状：FakeStage01 N3/N4 中，敌人正在初始入场或后续补齐时被地刺击杀，后方敌人停止补齐；纯 0 排会放大现象，但不是规则根因。
+- 根因：SpawnEntry pending 期间发生整排死亡时，逻辑重排请求可能被提前消费；补齐移动完成后的地刺同步死亡还会继续执行死亡对象的移动收尾，破坏调度状态。
+- 修复：SpawnEntry 准备或 pending 期间延迟逻辑重排，最后一个 SpawnEntry 完成/移除后重试 dirty 请求；地刺检测后若敌人已死亡则立即结束当前移动收尾。
+- 验收：用户已完成 FakeStage01 主路线战斗节点验收。
+- 文件：`Assets/Scripts/Core/ColumnManager.cs`、`Assets/Scripts/Enemy/Enemy.cs`
+
+### FakeRoute 假移动路线阶段总结（2026-03）
+
+- 新方案不是旧 RouteStage 空间移动的简化版，而是独立的纯逻辑路线层：固定 Battle.scene，节点是 ScriptableObject 逻辑关卡，路线选项直接引用目标节点，背景表现与节点提交解耦。
+- 已实现并验收 `A → B/C → D` 拓扑、多个来源汇入同一目标节点、节点差异化普通敌人阵列、BattleEntry 清场后的奖励等待、假移动占位表现和终点结算。
+- 已实现并验收 FakeRoute 独立快照：存档节点、已访问节点、BattleEntry 完成状态、路线选择历史、玩家生命/复活/等级/经验、击杀数、局内铜钱、被动和主动技能持有/等级、UT 能量。主动技能/普通攻击冷却、计时被动剩余时间、敌人、投射物、连击、QTE、DoT、临时效果和假移动进度不保存。
+- 快照恢复采用 replace 语义：先清理运行态，再按快照重建玩家和 Build；恢复从对应存档节点重新进入，不从死亡位置或新节点继续。MainMenu Continue 与失败恢复分离，Continue 从最后未完成路线关卡的 startNode 重新开始，不读取失败快照。
+- FakeRoute 快照与旧 V2 快照隔离，并通过架构标识、快照版本、routeId、stageId、configurationVersion 校验，避免同名节点被静默误恢复。
+- 当前仍未完成：正式路线选择 Canvas UI、真实背景动画/音效/转场、条件系统、剧情状态、更复杂节点阶段/重访规则，以及旧 Route/RouteV2 代码和资产的最终清理。
+- 预防规则：空间技能的伤害逻辑与视觉生命周期必须独立验证；路线转场只清理运行时视觉实例，不得清除局内升级等级。重新进入战斗时若视觉依赖敌人生成后的父节点，不能在刷怪前立即创建，应等待敌人容器可用后再重建，否则会出现“伤害仍生效但地刺不可见”。
+- 文件：`Assets/Scripts/Core/SpikeTrapController.cs`、`Assets/Scripts/Managers/StageController.cs`
+
+### 地刺路线转场视觉生命周期坑点（2026-03）
+- 症状：地刺升级在上一战斗生效；路线移动期间地刺应消失，但下一战斗节点只剩伤害效果，地刺基础视觉没有显示。
+- 根因：地刺视觉重建发生在敌人生成之前，`SpawnVisual()` 找不到敌人的阵型父节点；伤害检测不依赖视觉对象的正确挂载，因此形成“有伤害、无视觉”。
+- 修复：将地刺配置/等级与视觉实例分离；非战斗期间调用 `DeactivateVisual()`，只销毁视觉和停止协程，不清空 `_appliedUpgrades` 或 `PlayerState.acquiredUpgrades`。进入战斗后由 `RequestVisual()` 协程等待敌人容器可用，再挂到敌人阵型父节点生成视觉。
+- 预防规则：**场地技能必须分别验收“逻辑触发”和“视觉显示”；依赖动态敌人层级的视觉不能假设敌人已生成，战斗开始应等待合法父节点后重建。路线转场清理不得复用会清除局内升级的总重置逻辑。**
+- 文件：`Assets/Scripts/Core/SpikeTrapController.cs`、`Assets/Scripts/Managers/StageController.cs`
+
+### FakeRoute 假移动路线阶段总结（2026-03）
