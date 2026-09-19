@@ -22,10 +22,19 @@ public class UpgradeChoicePopup : MonoBehaviour
 
     private UpgradeCard[] _cards;
     private UpgradeCard _selectedCard;
+    private Tween _fadeTween;
 
     private void Awake()
     {
         _cards = new[] { card1, card2, card3 };
+    }
+
+    private void OnDestroy()
+    {
+        if (_fadeTween != null && _fadeTween.IsActive())
+            _fadeTween.Kill(false);
+        if (canvasGroup != null)
+            canvasGroup.DOKill(false);
     }
 
     public void ShowChoices(List<UpgradeDefinition> choices)
@@ -75,8 +84,9 @@ public class UpgradeChoicePopup : MonoBehaviour
     private void FadeIn()
     {
         if (canvasGroup == null) return;
+        _fadeTween?.Kill(false);
         canvasGroup.blocksRaycasts = true;
-        canvasGroup.DOFade(1f, fadeInDuration).SetUpdate(true);
+        _fadeTween = canvasGroup.DOFade(1f, fadeInDuration).SetUpdate(true);
     }
 
     private void FadeOut(Action onComplete = null)
@@ -87,7 +97,9 @@ public class UpgradeChoicePopup : MonoBehaviour
             return;
         }
         canvasGroup.blocksRaycasts = false;
+        _fadeTween?.Kill(false);
         var tw = canvasGroup.DOFade(0f, fadeOutDuration).SetUpdate(true);
+        _fadeTween = tw;
         if (onComplete != null)
             tw.OnComplete(() => onComplete());
     }

@@ -2358,7 +2358,7 @@ private void SpawnProjectile()
         Vector3 startPos = transform.localPosition;
 
         // 构建 DOTween 序列
-        Sequence deathSeq = DOTween.Sequence();
+        Sequence deathSeq = DOTween.Sequence().SetUpdate(true);
         deathSeq.SetTarget(transform);
         deathSeq.SetId("deathAnim");
 
@@ -2384,6 +2384,7 @@ private void SpawnProjectile()
         transform.DORotate(randomRotation, totalAnimDuration, RotateMode.LocalAxisAdd)
             .SetEase(Ease.OutQuad)
             .SetTarget(transform)
+            .SetUpdate(true)
             .SetId("deathAnim");
 
         // 等待序列完成
@@ -2410,7 +2411,7 @@ private void SpawnProjectile()
 
         Vector3 startPos = transform.localPosition;
 
-        Sequence deathSeq = DOTween.Sequence();
+        Sequence deathSeq = DOTween.Sequence().SetUpdate(true);
         deathSeq.SetTarget(transform);
         deathSeq.SetId("deathAnim");
 
