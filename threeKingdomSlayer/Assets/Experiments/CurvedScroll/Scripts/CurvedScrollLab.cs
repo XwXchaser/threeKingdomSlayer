@@ -62,7 +62,10 @@ public sealed class CurvedScrollLab : MonoBehaviour
 
     public void Initialize()
     {
-        if (initialized) return;
+        if (initialized && generated != null) return;
+        // Editor preview objects are transient. After a script reload Unity may retain the initialized flag
+        // while discarding its non-serialized runtime references; rebuild them in that case.
+        if (generated == null) initialized = false;
         if (viewCamera == null || groundMaterial == null || spriteMaterial == null || displaySprites == null || displaySprites.Length == 0)
         {
             Debug.LogError("[CurvedScrollLab] Assign camera, materials and display sprites in Inspector.", this);
@@ -70,8 +73,13 @@ public sealed class CurvedScrollLab : MonoBehaviour
             return;
         }
         initialized = true;
-        generated = new GameObject("Runtime visual objects (not saved)").transform;
+        var generatedObject = new GameObject("Runtime visual objects (not saved)");
+        generated = generatedObject.transform;
         generated.SetParent(transform, false);
+        #if UNITY_EDITOR
+        if (!Application.isPlaying) generatedObject.hideFlags = HideFlags.DontSave;
+        #endif
+
         vertices = new Vector3[Rows * Bands * 4];
         colors = new Color[vertices.Length];
         var triangles = new int[Rows * Bands * 6];
@@ -86,6 +94,7 @@ public sealed class CurvedScrollLab : MonoBehaviour
         groundMesh.vertices = vertices;
         groundMesh.triangles = triangles;
         var ground = new GameObject("Subdivided road");
+        ground.hideFlags = HideFlags.DontSave;
         ground.transform.SetParent(generated, false);
         ground.AddComponent<MeshFilter>().sharedMesh = groundMesh;
         var renderer = ground.AddComponent<MeshRenderer>();
@@ -101,6 +110,7 @@ public sealed class CurvedScrollLab : MonoBehaviour
         {
             int index = i % displaySprites.Length;
             var card = new GameObject("Display paper " + i);
+            card.hideFlags = HideFlags.DontSave;
             card.transform.SetParent(generated, false);
             var sr = card.AddComponent<SpriteRenderer>();
             sr.sprite = displaySprites[index]; sr.sharedMaterial = spriteMaterial;
@@ -121,6 +131,7 @@ public sealed class CurvedScrollLab : MonoBehaviour
     void CreateBackdrop()
     {
         backdrop = new GameObject("Static distant silhouettes (placeholder)");
+        backdrop.hideFlags = HideFlags.DontSave;
         backdrop.transform.SetParent(generated, false);
         var v = new Vector3[42]; var c = new Color[42]; var t = new int[120];
         for (int i = 0; i <= 20; i++)

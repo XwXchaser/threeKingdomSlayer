@@ -4,9 +4,14 @@ using UnityEngine;
 /// <summary>Unified node integration test; intentionally does not write production saves.</summary>
 public sealed class ScrollNodeFlowTrial : MonoBehaviour
 {
+    public ScrollWorldAuthoring authoredWorld;
     public FakeRouteStageConfig route;
+    public ScrollWorldSequence worldSequence;
+    [Tooltip("开局先前进到 startNode 的演出。留空则直接从 startNode 内容开始。")]
+    public FakeRouteTravelPresentation openingTravel;
     public StageController stage;
     public CurvedScrollLab lab;
+    public ValleyArtPresentation art;
     public string Phase { get; private set; }
     public FakeRouteNodeConfig Current { get; private set; }
     public bool IsWaitingForChoice => Phase == "Choose route";
@@ -19,10 +24,29 @@ public sealed class ScrollNodeFlowTrial : MonoBehaviour
         yield return null;
         if(!route || !stage || !lab){Phase="Missing references";yield break;}
         if(!FakeRouteGraphValidator.TryValidate(route,out var error)){Phase=error;yield break;}
-        lab.Initialize();lab.enabled=false;lab.paused=true;
+        if (authoredWorld)
+        {
+            lab.enabled=false;lab.paused=true;
+            if (!art) art=lab.GetComponent<ValleyArtPresentation>();
+            if (art) art.enabled=false;
+            authoredWorld.SetDistance(0f);
+        }
+        else
+        {
+            lab.Initialize();lab.enabled=false;lab.paused=true;
+            if (!art) art = lab.GetComponent<ValleyArtPresentation>();
+            if (art && worldSequence) art.SetSequence(worldSequence);
+        }
         stage.OnRouteBattleCompleted+=OnCleared;
         stage.playerState.ResetPlayer();
         stage.SetRouteTravelState();
+        SetInput(false);
+        if (openingTravel)
+        {
+            // 开局先前进：玩家从路线入口沿卷轴前进，抵达后再进入 startNode 内容。
+            Phase = "Opening travel";
+            yield return TravelPresentation(openingTravel);
+        }
         yield return Enter(route.startNode);
     }
     void OnCleared(){cleared=true;}
@@ -30,6 +54,8 @@ public sealed class ScrollNodeFlowTrial : MonoBehaviour
     IEnumerator Enter(FakeRouteNodeConfig node)
     {
         Current=node;visited.Add(node);SetInput(false);
+        // Scene appearance is driven by continuous world distance, not node entry.
+        if (!authoredWorld && !worldSequence && art && node.visualProfile) art.ApplyProfile(node.visualProfile);
         foreach(var dialogue in node.dialogues)
         {
             if(!dialogue)continue;
@@ -74,9 +100,29 @@ public sealed class ScrollNodeFlowTrial : MonoBehaviour
     }
     IEnumerator Travel(FakeRouteChoiceConfig choice)
     {
-        var p=choice.presentation;double origin=lab.Distance;float elapsed=0,duration=Mathf.Max(.1f,p.duration);lab.curvature=p.curveStrength;
-        while(elapsed<duration){elapsed+=Time.deltaTime;lab.SetPresentationDistance(origin+p.travelDistance*Mathf.SmoothStep(0,1,Mathf.Clamp01(elapsed/duration)));yield return null;}
-        lab.SetPresentationDistance(origin+p.travelDistance);yield return Enter(choice.targetNode);
+        yield return TravelPresentation(choice.presentation);
+        yield return Enter(choice.targetNode);
+    }
+    IEnumerator TravelPresentation(FakeRouteTravelPresentation p)
+    {
+        if (!p) yield break;
+        double origin=authoredWorld ? authoredWorld.Distance : lab.Distance;float elapsed=0,duration=Mathf.Max(0.1f,p.duration);
+        if (!worldSequence) lab.curvature=p.curveStrength; // with a sequence the profile owns curvature continuously
+        while(elapsed<duration)
+        {
+            elapsed+=Time.deltaTime;
+            float t=Mathf.Clamp01(elapsed/duration);
+            float curveT = p.speedCurve != null && p.speedCurve.length > 0 ? p.speedCurve.Evaluate(t) : Mathf.SmoothStep(0f,1f,t);
+            SetTravelDistance(origin+p.travelDistance*Mathf.Clamp01(curveT));
+            yield return null;
+        }
+        SetTravelDistance(origin+p.travelDistance);
+    }
+    void SetTravelDistance(double distance)
+    {
+        if (authoredWorld) { authoredWorld.SetDistance((float)distance); return; }
+        lab.SetPresentationDistance(distance);
+        if (worldSequence != null && art != null) art.ApplyWorldDistance((float)lab.Distance, worldSequence);
     }
     void SetInput(bool value){if(InputManager.Instance){InputManager.Instance.gameplayInputEnabled=value;if(!value)InputManager.Instance.CancelCurrentGesture();}}
     void OnGUI()

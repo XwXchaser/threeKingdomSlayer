@@ -17,9 +17,10 @@ MonoBehaviour:
   dialogues: []
   rewards: []
   battleEntries:
-  - battleConfig: {fileID: 11400000, guid: bcb5b2d5dd8e4e64f816011a2a9a2f65, type: 2}
+  - battleConfig: {fileID: 11400000, guid: ce0d96e980357224b8d1748233c49f1c, type: 2}
     conditionEnabled: 0
   completionPolicy: 2
   terminalPolicy: 1
   savePoint: 1
+  visualProfile: {fileID: 11400000, guid: d715ae7aee0a68d4cabcbccdaa0fc318, type: 2}
   outgoingChoices: []

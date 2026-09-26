@@ -17,11 +17,12 @@ MonoBehaviour:
   dialogues: []
   rewards: []
   battleEntries:
-  - battleConfig: {fileID: 11400000, guid: bcb5b2d5dd8e4e64f816011a2a9a2f65, type: 2}
+  - battleConfig: {fileID: 11400000, guid: 969791fd50e608247adf15df88a15e28, type: 2}
     conditionEnabled: 0
   completionPolicy: 1
   terminalPolicy: 0
   savePoint: 1
+  visualProfile: {fileID: 11400000, guid: a448f073c0959ea45866cdffbd39b165, type: 2}
   outgoingChoices:
   - {fileID: 11400000, guid: 10c14e6ae7e70ff449cf31c6d839d057, type: 2}
   - {fileID: 11400000, guid: 08f6997e1af9d98459e7a0abdab1ddbc, type: 2}
