@@ -8,7 +8,59 @@ aiEditMode: inherit
 
 > 本轮后续更新：以下“最新验收状态”优先于后面的历史记录；历史故障保留供追溯。
 
-## 最新验收状态与接续入口
+## 当前接续状态：E12桥前已接入，下一段原地回头
+
+本节优先于下方旧记录，以及旧准备文档中“E12仅平原／N6必在桥上”的假设。当前为交接记录，不自动修改Design或其他路线。
+
+### 已部署与验收边界
+
+- 实际路线：`N3→E3→EW→J3→E4→N4→E11→E12→N6`；最后E12→N6仍为占位转场。N5仍直接到N6，未改为汇入E11。
+- `Assets/RouteData/FakeStage01/FakeStage01.asset`：15节点，configurationVersion=12，起点仍N1。旧版本检查点可能失效。
+- J3→E4、E4→N4、N4夜→晨素材已获用户验收。N4背景覆盖修复后用户明确验收。
+- N4战斗/选择背景均为空；E4toN4与N4_NightToDawn均保留尾帧。N4实际流程：夜景尾帧→战斗→奖励等待→postBattleDialogue→postBattlePresentation夜转晨→保留晨景→显示出口。保留尾帧时不再调用RestoreNodeBackground。
+- N4测试战斗 `Battle_FakeStage01_N4_1.asset`：1波，10个配置排，仅第0排 `[0,101,101,101,0]`，其余9排全零。不是只有1个逻辑排，空排可能影响推进测试。
+- N4→E11与E11→E12素材已用户验收并部署；节点注册、脚本绑定、引用、哈希和尾帧设置验证通过。未执行这两段完整Play Mode黑盒、Skip及存档恢复验收。
+- E11为“下山出口”、E12为“长坂桥前”：均无战斗/奖励、无静态背景，单出口等待点击。视频holdLastFrameAsBackground=true。不要再配置旧静态background覆盖视频环境。
+- 保留的旧出口ID与目标不同：N4的`n4_to_n6`现在指E11；E11的`e11_to_n6`现在指E12。查实际targetNode，不按ID推断。E12出口`e12_to_n6`指N6，标签“回头迎敌（转身演出待接入）”，仍用RouteChoiceBlack。
+
+### 正式视频与任务
+
+| 段落 | 用户验收本地文件（C:/Users/steam/Videos/doubaoVideo/下） | task_id | 项目正式文件（Assets/RouteData/FakeStage01/Presentations/Videos/下） |
+|---|---|---|---|
+| E4→N4 | E4toN4_v2_480p_6s.mp4 | task_f1dcdf8bc0bf46fb86b394876542c68a | E4toN4.mp4 |
+| N4夜→晨 | N4_night_to_dawn_v1_480p_6s.mp4 | task_9eff62a2b1e743958f286c671e58d299 | N4_night_to_dawn_v1.mp4 |
+| N4→E11 | N4toE11_v3_480p_10s.mp4 | task_a58cf732d6e74b50906d9275c5b5faa0 | N4toE11.mp4 |
+| E11→E12 | E11toE12_v1_480p_10s.mp4 | task_23c7b1c0e29a424f878294247165a5a8 | E11toE12.mp4 |
+
+- 以上实际视频均560×752、24fps。6秒版145帧/6.041667秒；10秒版241帧/10.041667秒。
+- N4toE11正式SHA256：`ad67a9c89caf125334d85a07c6e81e32a9a4f100ce3683c4d8b1bfb146eec3f1`。
+- E11toE12正式SHA256：`c9f2b12bc668d2f1c7a971e424e62ce97a524cc077c23a4144bcc00098f18de2`。
+- 最近两段采用单张first_frame锁起点，480p/adaptive/无音频/无水印。目标图只提炼为文字，未上传。费用各0.555022（API未注明币种）；不要再创建这些已有任务。
+- 请求及下载临时记录：`Library/Locus/tmp/n4_to_e11_v3_10s/`、`Library/Locus/tmp/e11_to_e12_v1_10s/`及对应`*_download/`。完整Prompt在request_sanitized.json；临时目录不保证永久存在。
+
+### 下一段：E12→N6，只回头，不移动位置
+
+用户最终要求：E12停在平原土路上，长坂桥在前方，尚未登桥。随后原地回头，面向刚走过的平原来路（曹军方向），不画任何人物或军队。N6场景应由此空间关系反推，不能用旧N6桥上构图污染生成。
+
+1. 从正式 `Assets/RouteData/FakeStage01/Presentations/Videos/E11toE12.mp4` 完整解码提取实际最后一帧，并阅读图像。这才是下段首帧；不能用桥前概念图替代。下载目录内last_frame.png可供核对，但应验证来源。
+2. 先制作原地180°转身后的目标参考图，再让用户验收。机位原地、相对地面高度/焦距不变；桥应转到镜头后方，画面是来路，不应仍在脚下看到木桥。不预设新朝向画面或用左右翻图冒充回头。
+3. 可准备左右90°中途参考确认河岸/桥头/道路连续几何，不能凭转身前单图声称背面空间已确定。
+4. 本段是旋转镜头任务，不能照搬赶路视频“禁止旋转”或“必须前进”的要求；不新增人物/敌军。时长和旋转方向尚未确认，不自动沿用10秒。
+5. 接入时检查N6现存 `battleBackground=N6_Battle`（旧桥上军阵/夕阳图），其与新桥前回头语义冲突，不能恢复成旧背景。N6还有N5入边，直接进入/存档/视频失败的无尾帧边界需说明，不能把N5路径当作已经改好。
+
+### 图像参考与弃用
+
+- 图片目录：`C:/Users/steam/Pictures/gptGen/`。
+- `N4_dawn_to_E11_first_actual.png`：夜→晨真实尾帧，560×752。
+- `N4_to_E11_downhill_target_v2.png`：仅下山中途参考，不是山脚终点。
+- `N4_to_E11_mountain_foot_target_v4.png`：用户验收的低处道路目标概念图。
+- `E11_actual_tail_for_E12.png`：N4toE11正式视频真实尾帧，560×752，SHA256 `7114149ee8a9fba2b13531d18308b921fb8e953dc2ea7c9c404fec5c208b5734`。
+- `E12_plain_road_target_v1.png`：位置错误（仅平原，无桥），否决。
+- `E12_changban_bridge_before_turn_v1.png`：位置错误（已上桥），否决，禁用旧N6参考。
+- `E12_plain_before_changban_bridge_v2.png`：桥前空间参考，但画风偏写实，否决为最终美术。
+- `E12_plain_before_changban_bridge_pixel_v3.png`：重新按原始项目像素画风制作的桥前目标图，1024×1536；仅用作E11toE12文字设计参考，不等于成片尾帧。像素画风应单独用原始美术约束，不能仅使用视频截图逐代生成。
+
+## 历史验收状态与接续入口（以下节点数/版本号以顶部为准）
 
 - 4秒480p版N3→E3视频已完整下载、用户验收、导入并接入路线。正式文件：`Assets/RouteData/FakeStage01/Presentations/Videos/N3toE3.mp4`；表现：`Assets/RouteData/FakeStage01/Presentations/N3toE3.asset`。
 - `E3→EW` 4秒480p视频已完成生成、完整下载、用户验收并部署。正式文件：`Assets/RouteData/FakeStage01/Presentations/Videos/E3toEW.mp4`；表现：`Assets/RouteData/FakeStage01/Presentations/E3toEW.asset`；任务 `task_a553daccef564d35b66602bd9d4308ed`，Unity实际读取约4.04秒。
