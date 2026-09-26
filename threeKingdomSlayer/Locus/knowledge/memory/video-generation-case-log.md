@@ -100,6 +100,7 @@ aiEditMode: inherit
 | N3→E3 | `task_db0f2676cf0541929b2bd94255623daf` | `C:/Users/steam/Videos/doubaoVideo/N3toE3_village_supply_yard_480p_4s.mp4` | 3,145,128 bytes | 用户验收 |
 | E3→EW | `task_a553daccef564d35b66602bd9d4308ed` | `C:/Users/steam/Videos/doubaoVideo/E3toOuterWoods_480p_4s.mp4` | 2,715,939 bytes | 用户验收，随后部署 Unity |
 | EW→J3 | —（用户裁剪拼接） | `Assets/RouteData/FakeStage01/Presentations/Videos/EWtoJ3.mp4` | — | 用户验收；Unity 读取约 7.40 秒；严格首尾帧版本因侧路瞬移被否决 |
+| E12→N6 | —（用户提供视频） | `C:/Users/steam/Videos/doubaoVideo/E12toN6_turn_v1_480p_6s.mp4`；Unity副本：`Assets/RouteData/FakeStage01/Presentations/Videos/E12toN6_turn_v1_480p_6s.mp4` | 2,765,523 bytes（源文件） | 用户验收；已接入 `E12 → N6` 出口 `e12_to_n6`；`E12toN6_Turn.asset` 使用 Video、`holdLastFrameAsBackground=true`；N6 `battleBackground=None`，进入战斗继续使用视频尾帧；未改通用 Presenter 算法 |
 
 - 前两段参数：`seedance-2-fast`、4 秒、480p、adaptive、无音频、无水印；seed 分别为 184729 与 731842。
 - 服务端：两次均 `completion_tokens=39891`、`cost.spend=0.22339`（币种未推断）。
