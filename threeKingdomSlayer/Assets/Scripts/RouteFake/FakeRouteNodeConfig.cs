@@ -15,5 +15,6 @@ public sealed class FakeRouteNodeConfig : ScriptableObject
     public FakeRouteNodeCompletionPolicy completionPolicy = FakeRouteNodeCompletionPolicy.BattleAndReward;
     public FakeRouteTerminalPolicy terminalPolicy = FakeRouteTerminalPolicy.None;
     public bool savePoint = true;
+    public ScrollRouteVisualProfile visualProfile;
     public List<FakeRouteChoiceConfig> outgoingChoices = new List<FakeRouteChoiceConfig>();
 }

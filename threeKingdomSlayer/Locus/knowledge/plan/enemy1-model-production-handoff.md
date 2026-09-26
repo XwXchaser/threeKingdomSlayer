@@ -10,7 +10,9 @@ aiEditMode: inherit
 
 ## 先读结论
 
-用户已认可战场组合概念图，但明确否决本轮全部程序化士兵模型。**v01–v07 全部弃用为建模基础，不在上面继续修补；保留失败记录，不擅自删除。** 本文仅交接后续任务，此轮不再生成模型。
+用户已认可战场组合概念图及后续三视图/角色单图。旧 `enemy1-blender-v01–v07` 全部弃用；随后 `enemy1-model-build-v01–v04` 又连续失败，v04 已重建但渲染暴露严重结构错误。**目前没有合格3D模型、生产骨架或动画交付。保留失败记录，不擅自删除，不以继续同类几何拼装承诺解决质量问题。** 最新用户要求更新文档，本轮不再生成。
+
+**能力边界：二维生图 API 与 Blender Python 桥接已实测可用；没有已连接、已验证可用的图生3D服务，此前所有模型均为脚本建模。** 提及图生3D仅是待评估路线，不得表述成已有功能。
 
 项目根目录：`H:/Project/threeKingdomSlayer/threeKingdomSlayer`。
 分支：`experiment/curved-scroll-travel`。新对话重新核对 Git 与 Blender/Unity 现场，不覆盖既有修改。
@@ -35,7 +37,7 @@ aiEditMode: inherit
 
 以下路径相对项目根；完整绝对路径为上述项目根加表中路径。都是本轮实际落盘文件，不是描述性占位。
 
-### 当前认可的组合概念图（优先级最高）
+### 已认可的战场风格基准（角色建模同时对照下方最新三视图）
 
 `Library/Locus/tmp/enemy1-battlefield-unified-v02/enemy1-battlefield-unified-v02.png`
 
@@ -154,7 +156,7 @@ python H:/CindyData/skills/blender-mcp/scripts/blender_bridge.py exec-file Libra
 
 ### A. 锁定生产方式，而不是再次写占位几何
 
-先实际打开认可场景、清洁角色图、原enemy1图、v07错误图，写出可检查的比例/形体差异。补充正面独立建模稿和必要侧背稿可以减少歧义，但不能随意重设计，也不应不断收费重画已认可正面。
+先实际打开下方最新认可三视图、角色单图和失败 v04 三面渲染，写出可检查的比例/形体差异。三视图已经生成并获认可，不再把失败归因为没有三视图，也不应重复收费重画已认可形象。
 
 可选择：
 - 参考图驱动的专业建模/雕刻：对头、躯干、衣服制作有连续结构的网格；硬甲和武器可以合理分件，不追求全角色单网格。
@@ -164,7 +166,7 @@ python H:/CindyData/skills/blender-mcp/scripts/blender_bridge.py exec-file Libra
 
 ### B. 静态形象验收门槛
 
-- 用相近镜头、屏幕占比、正面/三分之四视角比较，不用相机或灯光遮掩造型。
+- 用相近镜头、屏幕占比比较；必须交付真正的正面、侧面、背面，三分之四视角仅作补充。用同一模型旋转相机，不用灯光或相机隐藏问题。
 - 灰模先看剪影：约三头身只是近似指导，实际以参考头盔顶到下颌/脚底的视觉比例为准。
 - 头盔、肩线、腰身、膝盖、脚尖和武器握点形成一致重心，不再直立机器人姿态。
 - 脸有眼窝与下颌体积，眉眼表达敌意；没有浮球眼睛、外挂长方形嘴。
@@ -179,3 +181,47 @@ python H:/CindyData/skills/blender-mcp/scripts/blender_bridge.py exec-file Libra
 ## 8. 文件耐久性提醒
 
 当前图片/模型均在 `Library/Locus/tmp/`，原始微信图片也在临时目录，清理缓存后可能丢失。本文保留准确引用但没有迁移资产。后续应在选定长期美术源文件目录后归档已认可图、必要请求和对照失败图；不要把废弃FBX误导入正式资产。
+
+## 9. 续轮最新记录（优先于上文历史状态）
+
+### Git 与环境边界
+
+- 用户确认“全部保存并推送”后，项目改动以 `9f4e56f170a898c398586ddfd54bf887c3303e81` 提交并推送至 `origin/experiment/curved-scroll-travel`，已核对远端 SHA 一致，当时工作区干净。
+- 此次推送发生在本节三视图生成和建模之前；本节模型、图片均在被忽略的 Library，不在该提交中。后续文档变更未自动提交/推送。
+- 用户认为卷轴化改造基本完成；不由此推断路线存档等此前未验收项已完成。
+- 最后一次 Blender 保存：`Library/Locus/tmp/enemy1-model-build-v04/enemy1_static_v04.blend`，活动场景 `Enemy1_Rebuild_v04`。下次重新检查未保存状态。
+- 最新 Unity 公告为 disconnected；本轮未改 Unity Prefab、未接入模型。
+
+### 最新参考图（用户回复“很好”，后续再次指定三视图）
+
+- 三视图：`Library/Locus/tmp/enemy1-model-reference-v01/turnaround/enemy1_turnaround_v01.png`，1536×1024，RGB。正面/侧面/背面；侧视持剑遮挡/朝向仍有不一致，不能当完全精确的工程蓝图。
+- 独立角色概念图：`Library/Locus/tmp/enemy1-model-reference-v01/concept/enemy1_concept_v01.png`，1024×1536，RGB。原请求三分之四视角，实际仍偏正面，不能称已获得合格三分之四参考。
+- 两张均真实调用 `gpt-image-2.5-sunburst` 的 `/v1/images/edits`，以认可战场图作为上传参考，high、n=1；生成脚本为 `Library/Locus/tmp/enemy1-model-reference-v01/generate.py`，各输出子目录保存 request.json / response.json。不得盲目重新执行收费请求。
+
+### 五官最终确认
+
+用户最终选择 **立体脸＋专用表情贴图**。脸、鼻、眼窝、下颌应有合理体积；眼睛/眉毛/嘴部表情用专门绘制的贴图。禁止直接裁切概念图的脸贴上去，也不是全部改成实体五官。详见 `memory/enemy1-texture-expression.md`。v04 的外挂脸颊块不符合连续面部结构要求。
+
+### 新一轮失败产物（与旧 enemy1-blender-vNN 严格区分）
+
+| 目录（均相对 Library/Locus/tmp/） | 文件与结果 |
+|---|---|
+| enemy1-model-build-v01 | enemy1_static_v01.blend、front_v01.png、threequarter_v01.png、face_angry_v01.png、verification.json；60网格，4745基础顶点，11370评估三角面。肩甲穿袖、裙摆穿裤腿、拼装感。source_scene_before_build.blend 保存旧现场。 |
+| enemy1-model-build-v02 | enemy1_static_v02.blend、front_v02.png、threequarter_v02.png、verification.json；60网格，13610评估三角面。肩甲变成巨大套筒，比例仍错。before_correction.blend 为修改前现场。 |
+| enemy1-model-build-v03 | enemy1_static_v03.blend、front_v03.png、threequarter_v03.png、face_reference_v03.png；62网格。错误地裁切三视图脸部贴入，出现头盔/衣领污染；肩甲、衣摆仍失败。before_v03.blend 为修改前现场。 |
+| enemy1-model-build-v04 | enemy1_static_v04.blend、front_v04.png、right_v04.png、back_v04.png、face_expression_v04.png、verification.json；36网格，11131评估三角面。新场景从零创建，不复用前三版几何，但胸甲拓扑破损、头身断开、肩袖穿插、侧背严重偏离参考。before_rebuild.blend 保存 v03 现场。 |
+
+以上新模型全部未绑骨骼、未导出FBX。工具成功和面数统计均不是造型验收。v04 的失败是渲染检查后的明确结论，不能作为合格基底继续推进生产。独立场景不代表 blend 中没有旧场景；统计/导出必须按目标集合隔离。
+
+### 已核对动作（不是已制作的新3D动作）
+
+读取 `Assets/Animations/Enemy_101.controller` 得到：Idle 0.6s循环；Walk 0.6s循环；Attack 2.5333s；Dead 0.6333s；HitFlash 0.3s；Launched_Rise 0.5833s；Launched_Fall 0.4833s循环。上述 clip 的 AnimationEvents 均为空。Attack 实际使用 Sprite 引用曲线，不能直接当骨骼动作复用。
+
+`Enemy_101.prefab` 的 attackSequence[0] 为 spawnDuration=2、drawDuration=1、useFlip=false。`Enemy.PlayAttackAnimationTween` 用 DOTween 推进根对象，spawnDuration结束时调用 PerformAttack；保持逻辑根位移归 Unity、模型动画原地播放、Root Motion关闭。2.5333秒 clip 与2+1秒逻辑阶段不完全一致，接入时需按命中时点校准，不能仅照抄总时长。通用 Enemy 代码出现 Stun 状态不代表101 Controller已有这些状态。
+
+此前回答“21根变形骨＋4根辅助”与所列骨架不一致，**不是已核定预算**。精确骨骼表应在静态模型通过后按动作需求重新计算，区分变形骨、挂点及仅Blender使用的IK控制骨；贴图表情无需眼球/眉毛骨。当前没有可验收的新骨架。
+
+### 下一步与能力声明
+
+停止无质量门槛的重复程序化拼装；先确定能达到参考形体的生产方式。专业建模/雕刻或外部图生3D是待选择路线，并非现成已接入能力。若探索外部服务，先核实真实可用接口、权限、成本、上传授权与输出许可，再请求用户确认；不自动上传素材或付费试错，不保证生成即达标。当前最新授权仅更新交接文档。
+

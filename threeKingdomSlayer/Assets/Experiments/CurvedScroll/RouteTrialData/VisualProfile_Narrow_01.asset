@@ -1,0 +1,111 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 693e56ace1734cb4daf7e1b42f1aaa81, type: 3}
+  m_Name: VisualProfile_Narrow_01
+  m_EditorClassIdentifier: 
+  environmentMode: 0
+  showRoad: 1
+  showShoulders: 1
+  roadWidth: 4.4
+  curvature: 0.012
+  terrainMaterial: {fileID: 2100000, guid: b5388460919cb6e4b9144ec4da9ee629, type: 2}
+  groundMaterial: {fileID: 0}
+  background: {fileID: 2800000, guid: 0a555812127ce8a4d9be6ffe5e1e11f4, type: 3}
+  nearSprites:
+  - {fileID: -336017008059998445, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+  - {fileID: -1080163373979822612, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+  - {fileID: 2213221315167152305, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+  - {fileID: 4718642736985709605, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+  middleSprites:
+  - {fileID: -3597727112801000960, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+  - {fileID: -1477885403368150206, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+  - {fileID: -8859027415247317329, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+  - {fileID: 5690570434000612359, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+  - {fileID: 2245957096429175958, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+  - {fileID: 6682334270849596948, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+  - {fileID: -8661792031295128353, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+  - {fileID: 5586946825318410489, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+  shoulderSprites:
+  - {fileID: 6819992505617853276, guid: 199a6a599a57a3341933be334b2c6aca, type: 3}
+  - {fileID: 6285384408905451740, guid: 199a6a599a57a3341933be334b2c6aca, type: 3}
+  - {fileID: 8479163667430555833, guid: 199a6a599a57a3341933be334b2c6aca, type: 3}
+  - {fileID: -1246271909576226235, guid: 199a6a599a57a3341933be334b2c6aca, type: 3}
+  foregroundSprites: []
+  fixedPlacements:
+  - sprite: {fileID: 5690570434000612359, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+    x: -11
+    z: 22
+    scale: 2.25
+    sortingOrder: 0
+    flipX: 0
+    loop: 1
+  - sprite: {fileID: 4718642736985709605, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+    x: -10
+    z: 42
+    scale: 1.8
+    sortingOrder: 0
+    flipX: 1
+    loop: 1
+  - sprite: {fileID: -8859027415247317329, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+    x: 11
+    z: 28
+    scale: 2.15
+    sortingOrder: 0
+    flipX: 1
+    loop: 1
+  - sprite: {fileID: 4718642736985709605, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+    x: 10
+    z: 50
+    scale: 1.9
+    sortingOrder: 0
+    flipX: 0
+    loop: 1
+  - sprite: {fileID: -1477885403368150206, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+    x: -8
+    z: 12
+    scale: 1.25
+    sortingOrder: 1
+    flipX: 0
+    loop: 1
+  - sprite: {fileID: -1477885403368150206, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+    x: 8
+    z: 18
+    scale: 1.25
+    sortingOrder: 1
+    flipX: 1
+    loop: 1
+  - sprite: {fileID: 5690570434000612359, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+    x: -12
+    z: 68
+    scale: 2.4
+    sortingOrder: 0
+    flipX: 0
+    loop: 1
+  - sprite: {fileID: -8859027415247317329, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+    x: 12
+    z: 72
+    scale: 2.35
+    sortingOrder: 0
+    flipX: 1
+    loop: 1
+  placementsUseLocalDistance: 1
+  backgroundLift: 0.4
+  tileSize: 4
+  shoulderLength: 8
+  shoulderWidth: 0.97
+  nearMargin: 2.7
+  middleMargin: 1.1
+  largePropCount: 32
+  smallPropCount: 80
+  largePropScale: 1.15
+  smallPropScale: 0.6
+  roadClearance: 0.35

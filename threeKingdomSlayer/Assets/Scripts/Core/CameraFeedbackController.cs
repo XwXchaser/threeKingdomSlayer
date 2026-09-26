@@ -16,6 +16,10 @@ public sealed class CameraFeedbackController : MonoBehaviour
     [SerializeField] private int standardVibrato = 10;
     [SerializeField] private int heavyVibrato = 14;
     [SerializeField] private RectTransform worldBackground;
+    [Tooltip("敌人受击时的相机旋转震动倍率。1 = 原有表现；0 = 只保留位移型轻微反馈，不产生整屏旋转。")]
+    [SerializeField, Range(0f, 2f)] private float hitRotationScale = 1f;
+    [Tooltip("玩家受击时的相机旋转震动倍率。1 = 原有表现。")]
+    [SerializeField, Range(0f, 2f)] private float playerDamageRotationScale = 1f;
 
     private Sequence _feedbackSequence;
     private float _lastRequestTime = -10f;
@@ -56,6 +60,9 @@ public sealed class CameraFeedbackController : MonoBehaviour
         if (Instance == this)
             Instance = null;
 
+        DOTween.Kill(transform, false);
+        if (worldBackground != null)
+            DOTween.Kill(worldBackground, false);
         if (_feedbackSequence != null && _feedbackSequence.IsActive())
             _feedbackSequence.Kill(false);
         _feedbackSequence = null;
@@ -79,14 +86,15 @@ public sealed class CameraFeedbackController : MonoBehaviour
         PlayFeedback(heavy ? heavyDuration : standardDuration,
             heavy ? heavyIntensity : standardIntensity,
             heavy ? heavyVibrato : standardVibrato,
-            direction);
+            direction,
+            hitRotationScale);
         _activeStrength = context.strength;
     }
 
     public void RequestPlayerDamage()
     {
         _lastRequestTime = Time.unscaledTime;
-        PlayFeedback(playerDamageDuration, playerDamageIntensity, heavyVibrato, Vector3.zero);
+        PlayFeedback(playerDamageDuration, playerDamageIntensity, heavyVibrato, Vector3.zero, playerDamageRotationScale);
         _activeStrength = HitFeedbackStrength.Heavy;
     }
 
@@ -112,7 +120,7 @@ public sealed class CameraFeedbackController : MonoBehaviour
         return new Vector3(-horizontal, -vertical, 0f);
     }
 
-    private void PlayFeedback(float duration, float intensity, int vibrato, Vector3 direction)
+    private void PlayFeedback(float duration, float intensity, int vibrato, Vector3 direction, float rotationScale)
     {
         _feedbackSequence?.Kill(false);
         transform.localPosition = _baseLocalPosition;
@@ -124,7 +132,8 @@ public sealed class CameraFeedbackController : MonoBehaviour
         _feedbackSequence = DOTween.Sequence().SetTarget(transform).SetUpdate(UpdateType.Normal, true);
         _feedbackSequence.Append(transform.DOLocalMove(_baseLocalPosition + offset, duration * 0.35f).SetEase(Ease.OutQuad));
         _feedbackSequence.Append(transform.DOLocalMove(_baseLocalPosition, duration * 0.65f).SetEase(Ease.OutCubic));
-        _feedbackSequence.Join(transform.DOShakeRotation(duration, new Vector3(0f, 0f, intensity * 80f), vibrato, 90f, false).SetEase(Ease.OutQuad));
+        if (rotationScale > 0f)
+            _feedbackSequence.Join(transform.DOShakeRotation(duration, new Vector3(0f, 0f, intensity * 80f * rotationScale), vibrato, 90f, false).SetEase(Ease.OutQuad));
         _feedbackSequence.OnComplete(() =>
         {
             transform.localPosition = _baseLocalPosition;

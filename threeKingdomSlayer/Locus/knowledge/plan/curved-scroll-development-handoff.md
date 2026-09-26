@@ -180,3 +180,149 @@ D_End：真实终点战斗，完成后仅显示Completed (test only)
 当前已跟踪修改包括SaveManager、SpikeTrapController、Enemy、StageController、UpgradeChoicePopup；实验目录和RouteFake目录仍有未跟踪文件。此前还观察到Enemy_101.prefab、DOTweenSettings、ProjectSettings和知识同步改动，未经核对不要覆盖或全仓库提交。
 
 不要继续把旧README里“25敌人”“无真实战斗”“完整恢复已完成”等阶段描述作为当前事实。本文记录的是代码与证据边界；进入新对话后以实际读取为最终依据。
+
+## 11. 连续卷轴场景任务交接（最新）
+
+### 下一对话必须先读
+本节覆盖本轮连续2.5D卷轴场景改造的当前事实。当前用户反馈明确表示：
+
+1. 完成节点后点击“继续前进”仍会出现“场景跳跃”，上一轮修复未解决，不能宣称已修复。
+2. 敌人受击时会出现整个场景/镜头整体震动，需确认是否是错误的全局镜头反馈，当前未验收。
+3. 当前实验功能仍不能视为完成；先修复稳定性和视觉连续性，再继续扩展布局。
+
+### 当前目标与设计方向
+- 卷轴是连续的2.5D面片化场景，不是按节点切换背景或Unity Scene。
+- 玩家沿 presentation distance 前进，实时看到山谷、营地入口、营地内部等环境变化。
+- 节点只负责战斗、对话、奖励和路线出口；节点进入不应直接切景。
+- 战斗坐标、敌人阵型、攻击、QTE和投射物不受卷轴道路宽度与视觉环境影响。
+- 场景由背景、地面、道路、侧景、前景和过渡面片组成；未来可补充素材，但当前优先修引用、布局和生命周期。
+
+### 当前实验入口
+- 场景：`Assets/Experiments/CurvedScroll/FakeRouteDataTrial.unity`
+- 流程组件：`Unified Node Flow Trial/ScrollNodeFlowTrial`
+- 表现组件：`Combat Scroll Environment/ValleyArtPresentation`
+- 卷轴核心：`Assets/Experiments/CurvedScroll/Scripts/CurvedScrollLab.cs`
+- 连续序列：`Assets/Experiments/CurvedScroll/Scripts/ScrollWorldSequence.cs`
+- 预览组件：`Assets/Experiments/CurvedScroll/Scripts/ScrollWorldPreviewTrial.cs`
+- 测试序列：`Assets/Experiments/CurvedScroll/RouteTrialData/ScrollWorldSequence_Trial.asset`
+- 视觉Profile目录：`Assets/Experiments/CurvedScroll/RouteTrialData/`
+
+### 当前连续序列配置
+`ScrollWorldSequence_Trial.asset`已回读确认：
+- `0–60`：Valley，使用 `VisualProfile_Narrow_01`
+- `60–105`：CampApproach，使用 `VisualProfile_StrongholdEntrance`
+- `105–175`：CampInterior，使用 `VisualProfile_StrongholdInterior`
+
+`ScrollNodeFlowTrial.worldSequence`已绑定该序列。`Travel()`仍固定3秒，并在旅行帧调用 `ValleyArtPresentation.ApplyWorldDistance()`。
+
+### 已完成的实现
+- 已创建三份独立多波次单列战斗资产：`NarrowRoadBattle_01~03.asset`及对应窄路阵型。
+- A/B/D节点已分别绑定三份窄路战斗资产；C仍为非战斗对话/奖励节点。
+- 旅行资产duration已统一为3秒；运行代码使用`FixedTravelDuration = 3f`。
+- 已建立`ScrollWorldSequence`和环境区段数据结构。
+- 已建立Valley/CampApproach/CampInterior测试Profile。
+- 已将山谷和营地素材写入固定布局`ScrollPropPlacement`，不再仅依赖随机小物件池。
+- 已加入卷轴预览对象`ScrollWorldPreviewTrial`，Play Mode按F8打开，可拖动距离查看整段序列；尚未完成完整验收。
+- 已为运行时对象销毁增加部分DOTween清理；Unity最近一次完整编译通过。
+
+### 当前已知问题（未解决）
+#### BUG-Scroll-01：点击前进后场景跳跃
+现象：节点战斗/奖励结束后，点击路线前进，场景出现明显跳跃，当前修复后仍复现。
+
+已排查但不能视为解决：
+- 曾发现`TryGetSegment()`原逻辑从前往后返回第一个满足条件的区段，已改为返回最后一个`startDistance <= distance`的区段，并验证距离0/59/60/80/104/105/120/175对应区段正确。
+- 曾移除旅行过程中在50%处调用`ApplyProfile(next.profile)`的逻辑。
+- 曾避免第一次`ApplyWorldDistance`时重新套用当前Profile。
+
+仍需重点排查：
+- `ValleyArtPresentation.ApplyProfile()`是否在其他生命周期/初始执行路径中重设背景、道路、对象池或固定布局。
+- `ApplyWorldDistance()`只对背景和道路宽度做连续插值，但Profile中的道路开关、路肩、固定物件和材质仍不是连续混合。
+- `appliedSegment/appliedProfile`状态与`Start()`初始化顺序是否造成一次旧Profile/新Profile重排。
+- `ScrollNodeFlowTrial.Travel()`结束后`Enter(targetNode)`、`stage.SetRouteTravelState()`和下一战启动是否触发其他场景/背景重置。
+- `CurvedScrollLab.SetPresentationDistance()`与`ValleyArtPresentation.LateUpdate()`是否在同一帧产生距离/布局重复更新。
+- 必须用逐帧日志或断点记录：点击时的lab.Distance、current segment、appliedProfile、roadWidth、background引用、fixedProps数组长度，以及所有ApplyProfile调用来源。
+
+修复标准：点击前进后3秒旅行内不得发生整批布景销毁/创建、背景瞬时替换、道路瞬时重建或距离回退；环境变化必须由连续距离驱动。
+
+#### BUG-Scroll-02：敌人受击时整个场景震动
+现象：敌人受击时观察到整个场景整体震动，当前未确认这是预期的局部命中反馈还是错误的全局镜头反馈。
+
+代码证据：
+- `Assets/Scripts/Core/CameraFeedbackController.cs`的`RequestHit()`会调用`PlayFeedback()`。
+- `PlayFeedback()`对Camera Transform执行`DOLocalMove`和`DOShakeRotation`。
+- `LateUpdate()`又按cameraDelta把`worldBackground`移动`cameraDelta * 135f`，因此背景会被大幅带动。
+- 当前`CameraFeedbackController`仍是全局相机反馈入口，不能直接假设应删除；需要先确认用户要求的是局部受击反馈而非全场景震动。
+
+排查/修复标准：
+- 明确敌人受击是否应只做敌人局部HitStop/缩放/闪白，还是允许极轻微镜头反馈。
+- 若保留镜头反馈，需限制来源、强度、频率和屏幕位移，避免道路、背景、营地布景整体明显跳动。
+- 分离`worldBackground`的视觉视差反馈，不应把背景大倍率移动误认为场景连续卷轴运动。
+- 用无攻击、单次命中、连续命中、DoT四组测试确认：普通受击、重击、DoT是否分别触发镜头和背景位移。
+
+### 相关稳定性问题
+曾观察到DOTween的`MissingReferenceException`和内部`IndexOutOfRangeException`：
+- 销毁后的Transform/SpriteRenderer仍被Tween访问。
+- 相关Console路径包含`CameraFeedbackController.PlayFeedback`、`SpriteRenderer.DOFade`和若干攻击/特效对象。
+- `ValleyArtPresentation.OnDestroy()`与`CameraFeedbackController.OnDestroy()`已增加部分Kill清理，Unity编译通过；但尚未重新进行重复进入/退出Play Mode及完整路线压力验收。
+- 下一对话必须清空Console后重新测试，不能把旧错误与新错误混为一谈。
+
+### 当前待验收情况
+未通过：
+- 点击前进后的场景连续性。
+- Valley→CampApproach→CampInterior的实际视觉过渡。
+- 山谷大型侧景是否形成包围感。
+- 营地固定布局是否规整且中央战斗区无遮挡。
+- 营地背景、营地地面、前景装饰职责是否正确分离；当前`VisualProfile_StrongholdInterior.groundMaterial`仍引用`ValleyGround.mat`，需修正/验收。
+- 敌人受击时是否存在不应有的整体场景震动。
+- 反复进入/退出Play Mode时DOTween错误是否清零。
+- F8整关预览是否不启动战斗且能正确拖动全序列。
+
+已完成但仍需回归：
+- Unity编译。
+- 连续序列资产回读。
+- A节点读取3波、总敌人数6的基础验证。
+- worldSequence场景绑定回读。
+- 分段选择函数的距离映射验证。
+
+### 下一对话推荐执行顺序
+1. 先清空Console并保持Edit Mode，读取当前脚本和场景引用；不要继续生成素材。
+2. 给`ApplyProfile`、`ApplyWorldDistance`、`SetPresentationDistance`、`Enter`、`Travel`增加可关闭的逐帧/调用来源诊断，定位BUG-Scroll-01的真实跳变来源。
+3. 临时禁用固定布局重排、Profile材质/背景替换和节点visualProfile兼容分支，逐项恢复以确定跳跃触发点。
+4. 单独隔离CameraFeedbackController：记录敌人受击时camera localPosition、rotation、worldBackground position和触发来源，定位BUG-Scroll-02。
+5. 修复后先做纯预览距离拖动，再做A→选择前进→3秒旅行→下一战，最后做敌人受击回归。
+6. 只有Console无错误、场景不跳、战斗坐标未变化、用户视觉验收通过后，才继续扩展场景预览和更多环境布局。
+
+### 修改边界
+- 不修改正式`Assets/Scenes/Battle.scene`来替代实验验证。
+- 不删除用户现有未提交改动。
+- 不把节点Profile绑定当作最终连续世界方案。
+- 不把“编译通过”或“分段函数返回正确”表述为视觉问题已修复。
+
+## 12. 可编辑场景重构（2026-09-26，优先于上面的历史状态）
+
+### 用户最新要求
+- 所有部署物件必须是 Hierarchy 中能选择、保存和修改的真实场景对象。
+- Scene 窗口同时展示平铺的整条环境；不接受仅观察某个距离的临时预览。
+- 根组件距离滑条控制 Game 窗口中的实际卷轴效果；编辑结果直接用于游戏。
+
+### 本轮实现
+- 测试场景新增 `Scroll World - Editable Layout`，挂载 `ScrollWorldAuthoring`。
+- `Layout - edit objects here` 下分 `00_Valley`、`01_CampApproach`、`02_CampInterior`，每段包含 Ground、Landmarks、Roadside、Background；148 个带 ScrollWorldItem 的真实可保存对象（142 个侧景、3 个地面、3 个背景）。
+- Profile 仅作为一次性迁移来源。现有场景对象的 Transform/SpriteRenderer/材质是布局权威来源；运行时不再根据 Profile 重建或覆盖布局。不应再次执行导入来覆盖用户手动编辑。
+- Scene 中物件沿世界距离平铺；仅指定 Game 相机渲染时，专用 shader 执行距离偏移、远处下弯与视距裁剪。渲染结束恢复 shader 开关及 bounds，物件 Transform 全程保持平铺位置。
+- ScrollWorldAuthoring 自定义 Inspector：`Game 预览距离` 滑条 0–175，`Scene 聚焦整条平铺路线` 按钮。支持直接移动/缩放/翻转/换图/复制/删除已有场景物件。新增侧景可复制已有物件，保留专用材质和 ScrollWorldItem。
+- 菜单 `Tools/Curved Scroll/Select Editable World` 选中根节点；旧 World Preview 菜单转向该入口，不再生成临时树石。旧 F8 控制已停用。
+- ScrollNodeFlowTrial 绑定 authoredWorld；开局0→20、A→B/C为20→75、B/C→D为75→145，各旅行8秒，退出Play后编辑滑条恢复。旧 Lab/ValleyArt/ScrollDepth 组件保留但禁用，不再生成对象。
+- 一次性迁移侧景时按 sprite 包围盒保留中间通道（不在运行时钳制位置）；原 x=0 的营地主帐篷移至侧面，用户可在 Scene 直接再布局。
+- 文件：ScrollWorldAuthoring.cs、ScrollWorldItem.cs、Editor/ScrollWorldAuthoringEditor.cs、Shaders/AuthoringScroll*.shader、Shaders/ScrollProjection.cginc；生成的永久材质/地面网格位于 `Assets/Experiments/CurvedScroll/Authoring/`。
+
+### 验证与边界
+- 编译通过，三个 shader 无编译消息；采样时 Console error/warn=0。
+- 保存并重开场景：148 个对象、148 注册项，authoredWorld引用保持，旧runtime roots=0，真实布局对象不带DontSave。
+- 临时移动真实侧景做渲染对比，Game截图像素差8297；测试后恢复原位。滑条20→145未改变任何布局Transform；渲染后shader开关归零，bounds全部恢复。
+- Edit Mode Scene平铺与Game在20/75/145的显示均已截图；进入Play不继承编辑滑条75，A战斗距离为20，148对象不重复生成。
+- 隔离调用旅行协程验证20→75和75→145均8.00秒，未改变布局Transform；这不等同完整自然战斗/奖励操作回归。
+- 用户已验收前次首次前进不闪现及清除误保存树石；本轮新布局仍待用户编辑体验与美术验收。
+- 营地当前素材/地面沿用原资产，仍可见原来的地面质感不统一和背景素材职责问题；本轮重点是编辑架构，不宣称营地美术已完善。
+- 尚待后续：完整A→B/C→D战斗/奖励回归、Boss/QTE/主动技能清理、正式存档。不要把隔离演出测试当作完整路线验收。
+
