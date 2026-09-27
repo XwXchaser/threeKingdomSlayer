@@ -3,6 +3,16 @@
 float _ScrollProjectionEnabled, _ScrollDistance, _ScrollNear;
 float4 _ScrollBend;
 float4x4 _ScrollWorldToLocal, _ScrollLocalToWorld;
+float4 _ScrollRoutePivot;
+float _ScrollRouteProjection;
+float3 ProjectRoute(float3 world)
+{
+    if (_ScrollRouteProjection < .5) return world;
+    float3 p = world - _ScrollRoutePivot.xyz;
+    float a = -_ScrollRoutePivot.w * 0.01745329252;
+    float s = sin(a), c = cos(a);
+    return float3(p.x*c - p.z*s, p.y, p.x*s + p.z*c);
+}
 float ScrollDrop(float z)
 {
     float x = max(0, z - _ScrollBend.x);
@@ -12,6 +22,7 @@ float ScrollDrop(float z)
 float3 ProjectScroll(float3 world, float anchor, float rigid)
 {
     if (_ScrollProjectionEnabled < .5) return world;
+    world = ProjectRoute(world);
     float3 p = mul(_ScrollWorldToLocal, float4(world,1)).xyz;
     p.z -= _ScrollDistance;
     p.y -= ScrollDrop(lerp(p.z, anchor - _ScrollDistance, rigid));
