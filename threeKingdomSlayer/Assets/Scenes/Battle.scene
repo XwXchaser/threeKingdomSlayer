@@ -2091,6 +2091,8 @@ MonoBehaviour:
   standardVibrato: 10
   heavyVibrato: 14
   worldBackground: {fileID: 149835881}
+  hitRotationScale: 1
+  playerDamageRotationScale: 1
 --- !u!1 &147321613
 GameObject:
   m_ObjectHideFlags: 0
@@ -5618,6 +5620,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   stageConfig: {fileID: 0}
+  autoStartStage: 0
   routeStageConfig: {fileID: 11400000, guid: d9807631ee47b464c82a64542268044b, type: 2}
   routeStageConfigV2: {fileID: 11400000, guid: f778a791580f74242bf5486112cf907a, type: 2}
   waveSpawner: {fileID: 1221163314}
@@ -12951,6 +12954,68 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1719936447}
   m_CullTransparentMesh: 1
+--- !u!1 &1732934624
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1732934626}
+  - component: {fileID: 1732934625}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: Battle Y Route Host
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1732934625
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1732934624}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de6780ab46034c54ca17b6ccfd6c1f4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  routeSceneName: Assets/Experiments/CurvedScroll/YJunctionSample.unity
+  leftBattleConfig: {fileID: 11400000, guid: bcb5b2d5dd8e4e64f816011a2a9a2f65, type: 2}
+  rightBattleConfig: {fileID: 11400000, guid: bcb5b2d5dd8e4e64f816011a2a9a2f65, type: 2}
+  autoLoadRoute: 1
+  driveRouteInPlay: 0
+  startRightBranch: 0
+  showRouteChoice: 1
+  useSampleBattle: 1
+  stage: {fileID: 681761646}
+  battleCamera: {fileID: 145927960}
+  openingBattleConfig: {fileID: 11400000, guid: bcb5b2d5dd8e4e64f816011a2a9a2f65, type: 2}
+  groundHeight: -1.8
+  enemyFootGroundY: -1.8
+  applyEnemyVisualOffset: 0
+  openingDistance: 18
+  openingDuration: 8
+  branchDuration: 8
+--- !u!4 &1732934626
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1732934624}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1746767416
 GameObject:
   m_ObjectHideFlags: 0
@@ -14015,7 +14080,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1793406370
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15653,7 +15718,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1985290002}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d8ccceccc7d582f4393b0c2a7f4091ef, type: 3}
   m_Name: 
@@ -17100,3 +17165,4 @@ SceneRoots:
   - {fileID: 92139205}
   - {fileID: 745671992}
   - {fileID: 1985290004}
+  - {fileID: 1732934626}

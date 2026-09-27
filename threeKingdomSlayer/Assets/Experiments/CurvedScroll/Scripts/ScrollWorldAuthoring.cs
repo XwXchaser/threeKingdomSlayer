@@ -6,6 +6,11 @@ using UnityEngine;
 public sealed class ScrollWorldAuthoring : MonoBehaviour
 {
     public Camera gameCamera;
+    public ScrollWorldRouteRules routeRules;
+    [Header("Phase3 connection preview")]
+    public ScrollRouteConnection previewConnection;
+    [Range(0f, 1f)] public float previewProgress;
+    public bool previewConnectionInGame = true;
     [Min(1f)] public float totalDistance = 175f;
     [Header("Edit Mode / Game view")]
     public bool previewInGame = true;
@@ -47,11 +52,14 @@ public sealed class ScrollWorldAuthoring : MonoBehaviour
     {
         ResetProjection();
         if (!isActiveAndEnabled || camera != gameCamera || (!Application.isPlaying && !previewInGame)) return;
+        var projection = GetProjection();
         Shader.SetGlobalMatrix("_ScrollWorldToLocal", transform.worldToLocalMatrix);
         Shader.SetGlobalMatrix("_ScrollLocalToWorld", transform.localToWorldMatrix);
-        Shader.SetGlobalFloat("_ScrollDistance", Distance);
+        Shader.SetGlobalFloat("_ScrollDistance", projection.distance);
         Shader.SetGlobalVector("_ScrollBend", new Vector4(bendStart, curvature, transitionLength, viewDistance));
         Shader.SetGlobalFloat("_ScrollNear", nearDistance);
+        Shader.SetGlobalVector("_ScrollRoutePivot", new Vector4(projection.position.x, projection.position.y, projection.position.z, projection.angle));
+        Shader.SetGlobalFloat("_ScrollRouteProjection", projection.active ? 1f : 0f);
         Shader.SetGlobalFloat("_ScrollProjectionEnabled", 1f);
         foreach (var item in items)
             if (item && item.isActiveAndEnabled && item.gameObject.activeInHierarchy) item.PrepareForGame();
@@ -60,6 +68,20 @@ public sealed class ScrollWorldAuthoring : MonoBehaviour
     public void ResetProjection()
     {
         Shader.SetGlobalFloat("_ScrollProjectionEnabled", 0f);
+        Shader.SetGlobalFloat("_ScrollRouteProjection", 0f);
         foreach (var item in items) if (item) item.RestoreBounds();
+    }
+
+    struct ProjectionState { public bool active; public Vector3 position; public float angle; public float distance; }
+    ProjectionState GetProjection()
+    {
+        if (previewConnectionInGame && previewConnection != null)
+        {
+            var sampler = previewConnection.GetComponent<ScrollRoutePathSampler>();
+            if (!sampler) sampler = previewConnection.gameObject.AddComponent<ScrollRoutePathSampler>();
+            var sample = sampler.EvaluateNormalized(previewProgress);
+            return new ProjectionState { active = true, position = sample.position, angle = sample.angle, distance = sample.distance };
+        }
+        return new ProjectionState { active = false, position = transform.position, angle = 0f, distance = Distance };
     }
 }

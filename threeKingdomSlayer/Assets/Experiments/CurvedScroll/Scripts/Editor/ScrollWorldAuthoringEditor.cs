@@ -13,9 +13,20 @@ public sealed class ScrollWorldAuthoringEditor : Editor
         EditorGUILayout.HelpBox("Hierarchy 下的 Layout 是真实保存的场景。直接移动/缩放/复制/删除子物件，Scene 始终平铺。下面的距离条只影响 Game 相机，不改动任何物件 Transform。", MessageType.Info);
         var world = (ScrollWorldAuthoring)target;
         DrawPropertiesExcluding(serializedObject, "m_Script", "previewDistance");
+        if (world.previewConnection != null)
+        {
+            var sampler = world.previewConnection.GetComponent<ScrollRoutePathSampler>();
+            if (!sampler) sampler = world.previewConnection.gameObject.AddComponent<ScrollRoutePathSampler>();
+            EditorGUILayout.LabelField("Connection length", sampler.TotalLength.ToString("F1"));
+        }
         var distance = serializedObject.FindProperty("previewDistance");
         using (new EditorGUI.DisabledScope(Application.isPlaying))
             distance.floatValue = EditorGUILayout.Slider("Game 预览距离", distance.floatValue, 0f, world.totalDistance);
+        if (world.previewConnection != null)
+        {
+            var progress = serializedObject.FindProperty("previewProgress");
+            progress.floatValue = EditorGUILayout.Slider("Connection Progress", progress.floatValue, 0f, 1f);
+        }
         if (serializedObject.ApplyModifiedProperties()) { EditorApplication.QueuePlayerLoopUpdate(); SceneView.RepaintAll(); }
         EditorGUILayout.LabelField("当前显示距离", world.Distance.ToString("F2"));
         if (GUILayout.Button("Scene 聚焦整条平铺路线")) Frame(world);

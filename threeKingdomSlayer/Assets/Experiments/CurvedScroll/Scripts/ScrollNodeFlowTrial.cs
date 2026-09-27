@@ -6,6 +6,7 @@ public sealed class ScrollNodeFlowTrial : MonoBehaviour
 {
     public ScrollWorldAuthoring authoredWorld;
     public FakeRouteStageConfig route;
+    public ScrollWorldRouteRules routeRules;
     public ScrollWorldSequence worldSequence;
     [Tooltip("开局先前进到 startNode 的演出。留空则直接从 startNode 内容开始。")]
     public FakeRouteTravelPresentation openingTravel;

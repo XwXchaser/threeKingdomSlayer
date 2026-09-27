@@ -293,29 +293,160 @@ aiEditMode: inherit
 目标：将当前单一 Z 轴卷轴改为可编辑的真实道路连接系统。玩家选择左/直/右路线后，环境沿对应道路路径连续平移和旋转；玩家、敌人、阵型、攻击、QTE 和投射物继续保持战斗坐标独立。
 
 设计边界：
-- 方向显式配置，不按出口数组顺序推断；首版固定 Left=-45°、Forward=0°、Right=+45°，支持 1/2/3 个出口。
-- 每条 `FakeRouteChoiceConfig` 绑定一个真实连接：路径点、道路宽度、路肩、侧景、入口/合流点和目标节点朝向。
+- 方向角由全局规则统一配置，不按出口数组顺序推断；默认 `Left=-45°`、`Forward=0°`、`Right=+45°`，角度可在一个路线世界规则组件中统一填写调整。所有节点的同名方向读取同一组角度，不允许某个连接单独改成30°或25°。
+- 首个样例采用现有 `A_Start → B_Left/C_Right → D_End`；B/C 最终在 D 前合流。
+- 每条 `FakeRouteChoiceConfig` 绑定一个真实连接：方向类型、路径点、道路宽度、路肩、侧景、入口/合流点和目标节点朝向。连接不保存私有转角字段。
 - Scene 中保存真实 `Connections` 层级；路径点、道路网格、树石、旗帜和背景都可直接编辑。
 - Game 预览使用“连接选择 + 路径进度”而不是全局距离；Scene 保持整条路线平铺。
 - 分支入口保留未选道路从侧后方离开，选中道路连续转入屏幕中心；合流点必须位置和朝向同时匹配，禁止瞬切。
 - 不移动战斗对象；到达节点后锁定道路朝向，再开始节点战斗。
 
-实施阶段：
-- [ ] Phase 1：连接数据模型、路径点、方向/目标朝向、分支/合流校验。
-- [ ] Phase 2：Hierarchy 真实道路组件和 Scene 路径/箭头/节点/敌人阵型可视化。
-- [ ] Phase 3：沿路径采样、道路带状网格、环境物件反向平移旋转和 Game 预览控制。
-- [ ] Phase 4：`ScrollNodeFlowTrial` 选择路线后接入路径旅行，保留奖励确认和目标节点提交时序。
-- [ ] Phase 5：完整路线、暂停/恢复、双击、合流、性能和生命周期回归。
+技术方案：
+- 新增 `ScrollWorldRouteRules`，保存全局 `leftAngle`、`forwardAngle`、`rightAngle`、默认转弯半径、默认道路宽度和合流容差。
+- 新增 `ScrollRouteConnection`，保存 source/target/choice、Direction enum、path points、道路/路肩/装饰引用和起止朝向约束，不保存连接私有 angle。
+- 路径采样按弧长输出位置和切线；路径末端朝向必须等于起点朝向加全局方向角。
+- 同方向连接可以有不同路径长度，但最终朝向必须一致；验证器应检查并报告偏差。
+- `ScrollWorldAuthoring` 预览选择“连接 + progress”；编辑器中仍显示完整平铺路线。
+- `ScrollNodeFlowTrial` 只在旅行阶段读取连接；旅行完成后锁定目标朝向，再进入战斗。
 
-测试用例：
-- [ ] 1/2/3 出口数据校验：Left/Forward/Right 方向与目标引用正确，无空路径点。
-- [ ] 路径编辑保存/重开：移动路径点、道路宽度和侧景后 Scene/Game 均反映修改。
-- [ ] 左/直/右连续转向：无背景瞬切、无反向跳变，目标节点朝向正确。
-- [ ] 合流：不同分支在同一位置和朝向汇合，不产生旋转或距离跳变。
-- [ ] 战斗隔离：玩家、敌人阵型、QTE、投射物和命中坐标不随道路旋转。
-- [ ] 节点流程：选择前不提交目标节点；旅行完成后只进入正确目标节点；奖励/双击/暂停可恢复。
-- [ ] 编辑预览不推进逻辑、不生成临时物件、不污染场景；Play 从配置起点开始。
-- [ ] 重复进入/退出 Play 10 次无重复道路、残留对象、DOTween 或 Console 错误。
-- [ ] 性能：不每帧创建/销毁对象或重建 Mesh，记录路径旅行 CPU/GC 和 Renderer 数量。
+Phase 1 交付边界（只做数据和编辑器结构，不接入运行时转向）：
+- [ ] 新增全局路线角度规则组件，Inspector 可统一调整 Left/Forward/Right。
+- [ ] 新增 Direction enum 和连接数据，不添加连接私有角度字段。
+- [ ] 建立 A→B、A→C、B→D、C→D 的真实 Hierarchy 连接层级和路径点。
+- [ ] Scene 绘制路径线、方向箭头、连接名、节点/战斗标记和目标朝向。
+- [ ] 校验同方向统一角度、路径起终点、合流位置/朝向和目标引用。
+- [ ] 暂不改变现有战斗流程和 Travel 运行时。
 
-- [ ] 用户确认首版固定角度和首个三岔/合流样例后再实现 Phase 1。
+新增测试用例：
+- [ ] 修改全局 Left 角度后，所有 Left 连接同步更新；不存在单连接覆盖值。
+- [ ] 修改 Forward/Right 角度后，所有同方向连接同步更新。
+- [ ] 三叉路方向映射：Left/Forward/Right 使用全局三组角度。
+- [ ] 两出口和单出口只减少连接数量，不改变全局方向规则。
+- [ ] 同方向不同连接长度可不同，但最终朝向必须相同。
+- [ ] 合流 B→D/C→D 位置与朝向误差在容差内才通过校验。
+- [ ] 移动路径点、调整道路宽度和装饰后保存重开，连接引用和全局规则保持。
+- [ ] Phase 1 预览不推进路线状态、不启动战斗、不生成临时对象。
+
+#### Phase3 回退后的真实分支道路重构方案（重新设计，未实现）
+
+上一版 Phase3 的全局 Shader 投影已回退，原因：`previewConnectionInGame` 在 Play Mode 接管了旧距离卷轴；全局 shader 参数作用于所有对象，且 Phase2 临时道路材质产生白色面片。后续不得沿用“全局 shader 直接投影全部场景”的方案。
+
+推荐安全架构：
+- 保留当前 `Scroll World - Editable Layout` 的真实平铺对象和旧直线卷轴作为基线。
+- 每条连接的真实物件放在独立 `ConnectionContent` 父节点下：道路、路肩、背景、树石和旗帜仍是 Hierarchy 可编辑对象。
+- 新增 `ScrollRoutePresentationRig`，只在指定 Game Camera 的 `onPreCull` 阶段临时计算连接采样位置/朝向，并移动该连接的 PresentationRoot；`onPostRender` 立即恢复原 Transform。Scene 窗口和作者布局始终保持平铺，不使用全局 shader。
+- 编辑器 Game 预览和 Play Mode 使用同一套 PresentationRig；编辑器滑条只改变临时显示状态，不标脏场景。
+- 未选择的分支内容不删除、不重建；由连接内容的显隐/渲染层控制。道路材质必须是明确的可见材质，不能使用未配置的白色临时材质。
+- 玩家、敌人、QTE、投射物和战斗根节点不属于 PresentationRoot，永远不随道路转向。
+- 旧直线卷轴继续作为无连接/回退路径；连接未绑定或校验失败时不接管运行时，保持旧功能。
+
+路径坐标约定：
+- Connection path points 使用世界平铺坐标。
+- 采样返回 `position` 和 `tangent`。
+- PresentationRoot 的临时姿态为采样点的逆平移/逆旋转，使选中道路切线对齐 Game 前方。
+- 到达节点时锁定连接末端姿态；战斗开始后不再更新 PresentationRoot。
+- B/C→D 合流必须由两个连接共享同一 merge marker 和目标朝向；误差超规则容差时连接不允许运行。
+
+重新分阶段：
+- [ ] Phase3A：仅实现 PathSampler + PresentationRig + 编辑器 Game 预览；旧 Play 路线默认关闭 Rig。
+- [ ] Phase3B：给每条连接绑定真实 ContentRoot，验证道路、背景和侧景随父节点整体转向。
+- [ ] Phase3C：验证编辑器预览和 Play 的 Transform 恢复，不污染 Scene，不改变战斗坐标。
+- [ ] Phase4：在完整通过 Phase3A-C 后，才把 `ScrollNodeFlowTrial.Choose()` 接入连接旅行。
+
+必须先通过的回归：
+- [ ] 未选择连接时，原有距离20→75→145移动与此前一致。
+- [ ] 关闭/删除连接道路对象不影响旧卷轴显示。
+- [ ] 编辑器预览关闭时，Game 与旧版本一致。
+- [ ] 编辑器预览打开时，只有 Game Camera 临时转向，Scene 平铺 Transform 不变。
+- [ ] Play 进入 A 战斗仍为距离20、敌人生成正常、旧 Lab 不重复生成。
+- [ ] 连接转向只改变环境，不改变 Player/Enemy/QTE/Projectile 世界坐标。
+- [ ] 进入/退出 Play 和编辑器预览10次，无白色面片、重复道路、残留 Transform、材质污染或 Console 错误。
+- [ ] 所有连接道路材质明确引用有效资产；未配置材质的道路默认禁用，而不是显示白色 Mesh。
+
+## 13. 分叉卷轴正式游戏接入（未完成，下一阶段最高优先级）
+
+### 用户确认的最终目标
+- 分叉卷轴必须真正接入现有 Battle 游戏流程，不是独立视觉样例或临时 Additive 验证器。
+- 当前案例只保留两条分支：Left / Right；暂不开发三分支。
+- 必须保留 Edit Mode 的 Scene 平铺观察、Game 窗口预览、Progress/路径预览和节点位置可调整能力。
+- Scene 中调整节点、路径点、战斗锚点和场景物件后，Game 预览与 Play 使用同一套保存数据。
+- 玩家选择 Left/Right 后，游戏内实际沿选中道路移动/转向；抵达后停下并进入真实 Battle 战斗。
+- 玩家/敌人/QTE/投射物战斗坐标不随视觉道路旋转；战斗地面高度必须正确，不能出现人物下沉。
+
+### 当前事实与失败边界
+- Y样例的视觉转向已单独验收，但它不是正式路线系统。
+- `BattleYRouteHost` 曾验证 Battle.scene Additive加载 Y层和 `StartRouteBattle()`，但不等于正式路线选择/奖励/节点流程已接入。
+- 之前没有完成正式 Left/Right UI选择→旅行→抵达→战斗→奖励的完整实机测试，不能再把样例测试当作游戏验收。
+- `YJunctionSample`与 Battle.scene 当前是两套坐标/地面体系，玩家下沉说明没有完成视觉层与战斗层的高度/相机对齐。
+- 未完成前不得扩展三分支、正式存档或更多素材。
+
+### 目标运行架构
+```text
+Battle.scene（唯一战斗宿主）
+├─ Player / Enemy / Manager / StageController / Camera / UI
+├─ RouteBranchRuntime（正式路线流程所有者）
+└─ Additive route visual layer
+   ├─ RouteWorldAuthoring（真实可编辑节点/路径/场景物件）
+   ├─ Left connection content
+   └─ Right connection content
+```
+
+- `RouteBranchRuntime`负责正式路线状态、选择UI、旅行token、暂停/恢复、抵达回调和节点战斗提交。
+- 视觉层只负责选中连接的路径投影和场景表现，不移动 Battle.scene 的玩家、敌人和战斗管理器。
+- `Battle.scene`进入 Play 后加载路线层；Edit Mode 使用同一条路线层以 Additive 方式打开，Scene 和 Game 都可观察。
+- 运行时未加载路线层或连接校验失败时，安全回退旧直线卷轴，不影响原有 Battle。
+- 连接方向只使用全局 Left/Right 角度规则，不允许单连接私有角度。
+
+### 编辑器与预览要求
+- `Tools/Curved Scroll/Open Battle Host`：打开 Battle.scene 并 Additive加载路线层，绑定 Battle Main Camera；Scene中同时可见 Battle宿主和完整平铺路线。
+- 根节点 Inspector 提供：当前连接、Left/Right、Progress、自动播放、显示路径、显示敌人生成标记、显示 Battle Anchor。
+- Scene 中可直接移动：节点锚点、路径点、分支入口、合流点、战斗锚点、道路/背景/树石/营地物件。
+- Game 窗口使用 Battle Main Camera 显示当前 Progress 的实际转向结果；预览不得启动战斗、奖励、visited 或保存。
+- 编辑器预览关闭时，Game必须恢复旧直线卷轴显示；关闭窗口/重开场景不得残留临时Transform、材质或白色占位面片。
+- 修改节点位置后，必须保存并重开验证引用、战斗锚点和 Game 预览仍一致。
+
+### 正式流程实现顺序
+- [ ] 从 Battle.scene 启动正式 `RouteBranchRuntime`，移除 Y样例反向加载 Battle 的临时职责。
+- [ ] 正式路线选择 UI：Left / Right；单出口也等待确认；双击只提交一次。
+- [ ] 选择后锁定连接，按路径位置/切线驱动视觉层，暂停战斗输入和路线按钮。
+- [ ] 抵达节点后锁定视觉朝向，校准 Battle Camera/地面高度，隐藏展示敌人，启动真实 `StageController.StartRouteBattle()`。
+- [ ] 战斗完成→奖励/三选一/经验收集→下一个正式节点状态；不能直接跳过阻塞交互。
+- [ ] 两条分支分别绑定战斗配置，B/C抵达位置与战斗背景/敌人生成标记可在 Scene 调整。
+- [ ] 暂停、恢复、失败、退出Play、重新进入、路线token和旧回调清理。
+- [ ] 最终再删除/停用 `BattleYRouteHost`临时验证器和独立Y样例启动逻辑。
+
+### 必测用例（必须真实操作，不只调用方法）
+- [ ] Edit Mode打开 Battle Host：Scene显示平铺分支、节点、敌人阵型标记；Game显示Battle相机下预览。
+- [ ] 调整A/B/C节点、路径点和战斗锚点，保存重开，Scene/Game/Play引用一致。
+- [ ] Play启动→打开正式路线选择→选择Left→实际移动转向→抵达B→真实敌人生成→完成战斗/奖励。
+- [ ] 重新开始→选择Right→实际移动转向→抵达C→真实敌人生成→完成战斗/奖励。
+- [ ] 左右选择的目标节点、背景、敌人阵列和战斗配置不串线。
+- [ ] 旅行中暂停/恢复；双击路线按钮；退出Play；旧协程/回调不会再次进入节点。
+- [ ] 玩家、敌人、QTE、投射物世界坐标和战斗命中不随视觉转向改变。
+- [ ] 玩家脚底与 Battle 地面一致，左右分支抵达都不下沉、不漂浮。
+- [ ] Game预览拖动Progress不会启动战斗、奖励、visited、存档或改变场景Transform。
+- [ ] 关闭预览/重开场景/重复Play 10次：无重复Additive场景、白色面片、残留对象、材质污染、DOTween错误。
+- [ ] Console 0 error / 0 warning；记录每步截图和节点距离/路径/战斗状态。
+
+### 当前状态
+- [ ] 正式 `RouteBranchRuntime`、正式存档和三分支仍未完成。
+- [ ] B/C→D真实合流仍未完成。
+- [ ] Battle视觉地面与战斗坐标高度仍需最终统一；不要再通过增加 `Enemy.visualYOffset` 修复，当前已撤销错误抬高逻辑。
+
+### 本轮已验收：两分支卷轴样例与Battle宿主接入（2026-09-27）
+- [x] `YJunctionSample.unity`：单一连续地板上的Y形Left/Right道路；Scene可编辑，Game Progress可观察连续转向。
+- [x] Y样例使用Battle Main Camera时，左右路径分别可达-45°/+45°；树石、营地和展示敌人随路线视觉显示；展示敌人无Enemy战斗组件。
+- [x] Battle.scene为唯一战斗宿主；Y样例作为Build Settings中的Additive路线层加载；编辑器菜单 `Tools/Curved Scroll/Open Battle Host` 可联合打开Battle和Y路线层。
+- [x] Battle Host禁用旧RouteStageRuntimeV2与Y样例反向YSampleBattleHost，避免重复管理器。
+- [x] 实际流程已验证：Battle启动→Y路线层→开局移动→真实Battle→奖励/三选一阻塞→Left/Right选择→Progress实际移动→抵达后再次StartRouteBattle生成真实敌人。
+- [x] `Time.timeScale=0`奖励状态下路线仍可用unscaled时间推进；Progress可从0到1；左右共用SmallBattle测试资产；Console 0 error/0 warning。
+- [x] 编辑器场景与布局保存重开正常；Battle Host Additive打开后Scene/Game可联合观察。
+- [x] 撤销错误Enemy抬高逻辑：`applyEnemyVisualOffset=false`，Enemy rootY/visualYOffset恢复原始值。
+- [ ] 人物/敌人脚底与Battle视觉地面最终高度仍待后续单独校准；本轮只确认未再抬高敌人。
+
+### 后续正式化任务
+- [ ] 用正式RouteBranchRuntime替代BattleYRouteHost测试Host，保留节点、奖励、路线token和回调清理。
+- [ ] 接入正式路线选择UI，完成Left/Right完整自然操作回归。
+- [ ] 绑定不同分支战斗配置、战斗背景和Scene敌人生成标记。
+- [ ] 完成B/C→D合流和正式存档，不扩展三分支前不改变两分支规则。
+

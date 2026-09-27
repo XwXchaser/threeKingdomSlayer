@@ -323,6 +323,18 @@ D_End：真实终点战斗，完成后仅显示Completed (test only)
 - Edit Mode Scene平铺与Game在20/75/145的显示均已截图；进入Play不继承编辑滑条75，A战斗距离为20，148对象不重复生成。
 - 隔离调用旅行协程验证20→75和75→145均8.00秒，未改变布局Transform；这不等同完整自然战斗/奖励操作回归。
 - 用户已验收前次首次前进不闪现及清除误保存树石；本轮新布局仍待用户编辑体验与美术验收。
-- 营地当前素材/地面沿用原资产，仍可见原来的地面质感不统一和背景素材职责问题；本轮重点是编辑架构，不宣称营地美术已完善。
+
+### 本轮分叉卷轴与Battle宿主交接（2026-09-27）
+
+- Y形卷轴样例 `Assets/Experiments/CurvedScroll/YJunctionSample.unity` 已验收视觉转向：单一连续地板、Left/Right两分支、Progress拖动、-45°/+45°方向、左右环境与展示敌人均可观察。
+- 当前正式测试结构：`Assets/Scenes/Battle.scene` 是唯一战斗宿主；通过 `BattleYRouteHost` Additive加载Y路线层，绑定Battle Main Camera，禁止Y样例反向加载Battle。
+- 已验证流程：Battle启动→Y层加载→开局移动→真实StageController战斗→奖励/三选一阻塞完成→Left/Right选择→路线Progress实际移动→抵达后再次StartRouteBattle生成真实敌人。`Time.timeScale=0`奖励期间路线使用unscaled时间仍能移动。
+- 已禁用旧 `RouteStageRuntimeV2`，避免重复路由系统；Build Settings已包含Y样例。
+- 展示敌人仅为SpriteRenderer，不挂Enemy脚本；真实敌人由Battle.scene对象池/StageController生成。
+- 最近错误的Enemy visualYOffset抬高逻辑已撤销；当前 `BattleYRouteHost.applyEnemyVisualOffset=false`，Enemy rootY/visualYOffset恢复原始值。视觉地面与Battle战斗地面高度仍需后续最终统一，不得宣称下沉完全解决。
+- Edit Mode工具：`Tools/Curved Scroll/Open Battle Host` 同时打开Battle和Y路线层，Scene/Game可联合观察；`Open Y Junction Sample`用于独立布局编辑。
+- 当前仍是测试Host，不是正式RouteBranchRuntime；B/C→D合流、正式存档、正式节点快照、自然完整左右长流程仍未交付。
+- 安全边界：不要重新启用RouteStageRuntimeV2；不要使用全局Shader接管Battle对象；不要让展示敌人承担战斗逻辑；不要把单次方法调用测试表述为自然操作验收。
+
 - 尚待后续：完整A→B/C→D战斗/奖励回归、Boss/QTE/主动技能清理、正式存档。不要把隔离演出测试当作完整路线验收。
 
