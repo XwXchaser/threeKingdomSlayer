@@ -1,19 +1,16 @@
 ---
 id: kd_aeb295d0-6733-4c3b-97ac-18378ffb56c6
 injectMode: inherit
+summary: 出现工具输出大段重复、读取结果与文件语义不符、或同一文件同工具反复异常时使用：识别疑似死循环、切换读取工具、控制单次调用规模。
 aiEditMode: inherit
 skillEnabled: true
 skillSurface: command
 commandTrigger: /anti-loop
 ---
 
-# deepseek-anti-loop
-
-## Summary
-Deepseek 专用的工具调用防死循环规避策略：识别异常输出、切换读取工具、控制单次调用规模
-
-## Content
 # 工具调用防死循环规避策略（Deepseek 专用）
+
+Deepseek 专用的工具调用防死循环规避策略：识别异常输出、切换读取工具、控制单次调用规模。
 
 > 本 Skill 记录 Deepseek 模型在处理本 Unity 项目时反复出现的「工具输出异常 → 重复读取 → 疑似死循环」问题，以及必须遵守的规避策略。
 > 适用场景：一切需要读取/修改代码、Unity 资产、场景、Prefab、Animator Controller 的工作。

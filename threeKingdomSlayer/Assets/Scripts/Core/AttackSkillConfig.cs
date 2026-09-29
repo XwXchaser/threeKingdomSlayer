@@ -20,6 +20,10 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("架势伤害（Launch/Parry 使用）")]
     public float poiseDamage = 0f;
 
+    [Header("骑兵冲锋克制 / 重攻击声明")]
+    [Tooltip("勾选后，本次攻击命中可以打断骑兵敌人（109）的冲锋。把某种攻击视为“蓄力攻击 / 重攻击”时在这里声明即可，不需要改代码；像斩击这类普攻与蓄力共用的动作由输入分支（isCharged）补充判定。")]
+    public bool interruptsCavalryCharge;
+
     [Header("范围与冷却")]
     [Tooltip("影响排数")]
     public int rangeRows = 1;

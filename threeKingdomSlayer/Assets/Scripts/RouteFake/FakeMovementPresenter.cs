@@ -296,6 +296,19 @@ public sealed class FakeMovementPresenter : MonoBehaviour
         audioSource.Play();
     }
 
+    public void RestoreNodeBackground(FakeRoutePresentation presentation)
+    {
+        _heldFrameAsBackground = false;
+        _coveredBackgroundPrepared = false;
+        _videoPrepared = false;
+        if (presentation != null) ApplyBattleBackground(presentation);
+    }
+
+    public IEnumerator PlayNodePresentation(FakeRoutePresentation presentation, Func<bool> canContinue)
+    {
+        yield return PlayPresentation(presentation, "节点战后演出", canContinue, false);
+    }
+
     public IEnumerator Play(FakeRouteChoiceConfig choice, Func<bool> canContinue, Action onCovered)
     {
         yield return PlayPresentation(choice != null ? choice.presentation : null, choice != null ? choice.displayName : "未知路线", canContinue, true, onCovered);

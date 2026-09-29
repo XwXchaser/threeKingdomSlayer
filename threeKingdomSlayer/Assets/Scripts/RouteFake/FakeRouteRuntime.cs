@@ -182,6 +182,31 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         ShowRouteChoice();
     }
 
+    private IEnumerator PlayPostBattleSequence(FakeRouteNodeConfig node)
+    {
+        if (node == null || (node.postBattleDialogue == null && node.postBattlePresentation == null)) yield break;
+        int generation = _generation;
+        RouteChoicePanel.HideCurrent();
+        SetGameplayInput(false);
+        yield return PlayEntryDialogue(node.postBattleDialogue);
+        if (generation != _generation || Phase == FakeRoutePhase.Defeated) yield break;
+        if (node.postBattlePresentation == null || movementPresenter == null) yield break;
+
+        SetPhase(FakeRoutePhase.EnteringNode);
+        SetGameplayInput(false);
+        stageController?.SetRouteTravelState();
+        yield return movementPresenter.PlayNodePresentation(node.postBattlePresentation,
+            () => generation == _generation && Phase != FakeRoutePhase.Defeated);
+        if (generation == _generation && Phase != FakeRoutePhase.Defeated)
+        {
+            // A held video frame is the node's new environment (e.g. dawn).
+            // Only presentations without frame retention should restore a static background.
+            if (!node.postBattlePresentation.holdLastFrameAsBackground)
+                movementPresenter.RestoreNodeBackground(node.battleBackground);
+            Debug.Log("[FakeRoute] post-battle presentation completed node=" + node.nodeId);
+        }
+    }
+
     private IEnumerator PlayEntryDialogue(DialogueEventData dialogue)
     {
         if (dialogue == null || DialogueManager.Instance == null)
@@ -230,6 +255,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
             MarkBattleEntryCompleted(_currentNode, _battleIndex);
             _battleActive = false;
             Debug.Log("[FakeRoute] battle entry completed node=" + _currentNode.nodeId + " index=" + _battleIndex + "; leaving node until next entry");
+            yield return PlayPostBattleSequence(_currentNode);
             yield break;
         }
     }

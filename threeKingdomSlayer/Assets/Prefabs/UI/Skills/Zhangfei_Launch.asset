@@ -17,6 +17,7 @@ MonoBehaviour:
   damageType: 4
   damage: 2
   poiseDamage: 50
+  interruptsCavalryCharge: 1
   rangeRows: 1
   cooldown: 0.5
   actionDuration: 0.6

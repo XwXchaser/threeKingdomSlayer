@@ -1,13 +1,27 @@
 ---
 id: kd_4a9116b1-c70a-4de3-8eeb-801deb71c4fe
 injectMode: inherit
-summary: 更新至 2026-03 — 新增 TimedArrow 命中与视觉生命周期、随机轨迹、DOTween 清理、受击缩放、序列化迁移、视觉/伤害解耦及 Time 被动类型区分经验
+summary: 更新至 2026-03 — 新增 TimedArrow 命中与视觉生命周期、随机轨迹、DOTween 清理、受击缩放、序列化迁移、视觉/伤害解耦及 Time 被动类型区分经验；另含骑兵109冲锋的打断判定来源与返航代际经验
 aiEditMode: auto
 maintenanceRules: |-
   - Keep only durable and reusable project memory
   - Consolidate duplicates or conflicts into the latest conclusion
   - Remove temporary context, one-off tasks, and unsupported guesses
 ---
+
+### 骑兵 109 冲锋：判定来源与返航代际（2026-09）
+- 症状一：普通点击戳击把正在冲锋的骑兵打断了（规则上只有蓄力攻击能打断）。
+- 根因一：打断标记用 `PlayerState.IsCharging` 实时判定。它只表示“按键按住”，点击松手时仍可能为真，于是普通攻击被当成蓄力攻击。
+- 症状二：改成“本次攻击是否蓄力”的字段标记后，蓄力穿刺又打不断了。
+- 根因二：穿刺/横扫/挑飞的伤害是在释放视觉或时间轴**回调里**才创建攻击波的，回调里再读“本次是否蓄力”时字段已被重置。
+- 症状三：被打断后骑兵停在该排，既不返航也不再冲锋。
+- 根因三：返航协程收了被打断时已失效的代际号，返航第一步就自我中止；而 row0 没有冲锋距离，主循环的 `Tick` 再也不动。
+- 正确修复：标记在**攻击发起瞬间**固化到局部变量并随伤害调用传递；判定来源改为“攻击资产声明 `interruptsCavalryCharge` + 本次输入为蓄力”；返航内部自取当前代际（收招/返航不可打断），并给 `Tick` 加“row0 欠返航则补返航”的自愈。
+- 预防规则：**不要把“按键/输入状态”当作“这次攻击属于哪一类”的判定依据**；延迟结算（视觉回调、飞行物、时间轴）的伤害必须在发起时把标记固化。
+- 预防规则：**状态机的“不可打断阶段”不能复用“可打断阶段”的代际校验**，否则一次打断会连带把后续阶段一起终止；不可打断阶段还应有自愈入口。
+- 预防规则：**不要在代码里维护攻击类型白名单**（本轮删除了 `IsChargeOnlyAttack`）——重命名或新增攻击类型时会静默失效；改为资产声明 + 输入分支。
+- 验证口径：本次先前的临时生成测试没能暴露这两个问题，必须用真实波次（真 `WaveSpawner` → 真 `SpawnEntry`）逐段看日志才能定位。
+- 相关文件：`Assets/Scripts/Enemy/CavalryEnemy.cs`、`Assets/Scripts/Player/AttackSystem.cs`、`Assets/Scripts/Player/InputManager.cs`、`Assets/Prefabs/UI/Skills/Zhangfei_Pierce|Sweep|Launch.asset`
 
 ### FakeRoute J1 村落出口反复误部署（2026-09）
 - 症状：资产检查显示 J1 村落 choice 已指向新建的村落外围节点并绑定视频，但玩家点击画面左侧出口仍直接进入原村落战斗路线，造成“节点和视频没有部署”的实际体验。

@@ -36,11 +36,16 @@ public class EnemySpriteController : MonoBehaviour
     {
         hitTimer = 0f;
         attackAnimating = false;
+        if (enemy != null && enemy.enemyId == 102)
+            return;
         ApplySprite();
     }
 
     private void Update()
     {
+        if (enemy.enemyId == 102)
+            return;
+
         // Dead 优先级最高，立即切换
         if (enemy.state == EnemyState.Dead)
         {
@@ -131,6 +136,9 @@ public class EnemySpriteController : MonoBehaviour
     /// </summary>
     public void TriggerHitFlash()
     {
+        if (enemy.enemyId == 102)
+            return;
+
         // Idle / Moving / Stunned 总是允许；Attacking 仅在冷却阶段（非动画中）允许
         bool canHitFlash = enemy.state == EnemyState.Idle
                         || enemy.state == EnemyState.Moving

@@ -23,6 +23,7 @@ public class SweepEffect : MonoBehaviour
     private System.Action onAllHit;
     private bool _onAllHitInvoked;
     private bool canInterruptCFrame;
+    private bool interruptsCavalryCharge;
     private List<TargetEntry> targets = new List<TargetEntry>();
     private int nextIndex;
     private bool leftToRight;
@@ -48,7 +49,8 @@ public class SweepEffect : MonoBehaviour
         Color? damageNumberColor = null, bool canInterruptCFrame = false,
         Material materialOverride = null, System.Action onFirstHit = null, System.Action onAllHit = null, float targetDuration = -1f,
         Sprite rotateSprite1 = null, Sprite rotateSprite2 = null, float angleOffset = 0f, float movementTilt = 0f,
-        float additionalWeaponRotation = 0f, bool useEnhancedSlashMotion = false, float visualPathTilt = 0f)
+        float additionalWeaponRotation = 0f, bool useEnhancedSlashMotion = false, float visualPathTilt = 0f,
+        bool interruptsCavalryCharge = false)
     {
         float startX = leftToRight ? -halfWidth : halfWidth;
         float endX = leftToRight ? halfWidth : -halfWidth;
@@ -158,6 +160,7 @@ public class SweepEffect : MonoBehaviour
         effect.leftToRight = leftToRight;
         effect.damageNumberColor = damageNumberColor;
         effect.canInterruptCFrame = canInterruptCFrame;
+        effect.interruptsCavalryCharge = interruptsCavalryCharge;
         effect.onAllHit = onAllHit;
         if (useEnhancedSlashMotion)
         {
@@ -379,6 +382,7 @@ public class SweepEffect : MonoBehaviour
             Vector3 impactPosition = new Vector3(transform.position.x, enemy.transform.position.y + 0.8f,
                 enemy.transform.position.z);
             enemy.TakeDamage(damage, damageType, damageNumberColor, canInterruptCFrame,
+                interruptsCavalryCharge: interruptsCavalryCharge,
                 feedbackStrength: isFirstHit ? HitFeedbackStrength.Standard : HitFeedbackStrength.Light,
                 impactPosition: impactPosition, impactDirection: impactDirection);
             if (isFirstHit)

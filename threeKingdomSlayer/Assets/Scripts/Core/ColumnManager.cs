@@ -91,6 +91,53 @@ public class ColumnManager : MonoBehaviour
     private int _pushReturnGeneration;
     private int _pushReturnOrderId;
 
+    // Cavalry owns only its next physical slot. Ordinary WaveMarch/SpawnEntry and push
+    // must respect this reservation; the logical wave row still belongs to the same enemy.
+    private readonly Dictionary<Enemy, long> _cavalryReservedByEnemy = new Dictionary<Enemy, long>();
+    private readonly Dictionary<long, Enemy> _cavalryReservedSlots = new Dictionary<long, Enemy>();
+
+    private static long SlotKey(int column, int row) => ((long)column << 32) ^ (uint)row;
+
+    private Enemy GetCavalryReservationOwner(int column, int row)
+    {
+        _cavalryReservedSlots.TryGetValue(SlotKey(column, row), out var owner);
+        return owner != null && owner.state != EnemyState.Dead ? owner : null;
+    }
+
+    public bool IsCavalrySlotReserved(int column, int row, Enemy exclude = null)
+    {
+        return _cavalryReservedSlots.TryGetValue(SlotKey(column, row), out var owner)
+            && owner != null && owner != exclude && owner.state != EnemyState.Dead;
+    }
+
+    public bool CanCavalryEnterRow(Enemy enemy, int targetRow)
+    {
+        if (enemy == null || !IsValidColumn(enemy.columnIndex) || targetRow < 0 || !CanAdvanceIntoRow(targetRow)) return false;
+        int bossRow = GetBossRowInColumn(enemy.columnIndex);
+        if (!enemy.isBoss && bossRow >= 0 && targetRow >= bossRow) return false;
+        return !columns[enemy.columnIndex].IsRowOccupied(targetRow, enemy)
+            && !IsCavalrySlotReserved(enemy.columnIndex, targetRow, enemy)
+            && !IsContinuousWaveTargetReserved(enemy, enemy.columnIndex, targetRow);
+    }
+
+    public bool TryReserveCavalrySlot(Enemy enemy, int row)
+    {
+        if (enemy == null || !CanCavalryEnterRow(enemy, row)) return false;
+        ReleaseCavalrySlot(enemy);
+        long key = SlotKey(enemy.columnIndex, row);
+        _cavalryReservedSlots[key] = enemy;
+        _cavalryReservedByEnemy[enemy] = key;
+        return true;
+    }
+
+    public void ReleaseCavalrySlot(Enemy enemy)
+    {
+        if (enemy == null || !_cavalryReservedByEnemy.TryGetValue(enemy, out long key)) return;
+        _cavalryReservedByEnemy.Remove(enemy);
+        if (_cavalryReservedSlots.TryGetValue(key, out var owner) && owner == enemy)
+            _cavalryReservedSlots.Remove(key);
+    }
+
     /// <summary>
     /// 列结构变化事件（RemoveEnemy / UpdateEnemyRow 后触发）
     /// Boss 用此事件检测前排是否清空以恢复推进
@@ -222,6 +269,7 @@ public class ColumnManager : MonoBehaviour
             && _waveEnemyLogicalRows.TryGetValue(enemy, out clearedLogicalRow);
 
         columns[columnIndex].RemoveEnemy(enemy, skipChain: true);
+        ReleaseCavalrySlot(enemy);
         ReleaseEnemyFromSchedulers(enemy, columnIndex);
         columns[columnIndex].ResumeRushMoveChain();
 
@@ -260,6 +308,8 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public void ClearAllColumns()
     {
+        _cavalryReservedByEnemy.Clear();
+        _cavalryReservedSlots.Clear();
         AbortWaveMarch();
         CancelAllPushReturns();
         ClearWaveRowLayout();
@@ -284,7 +334,10 @@ public class ColumnManager : MonoBehaviour
     {
         if (!IsValidColumn(columnIndex)) return;
         for (int i = columns[columnIndex].enemies.Count - 1; i >= 0; i--)
+        {
+            ReleaseCavalrySlot(columns[columnIndex].enemies[i]);
             CancelPushReturn(columns[columnIndex].enemies[i], "cancel-reset");
+        }
         columns[columnIndex].enemies.Clear();
     }
 
@@ -549,6 +602,20 @@ public class ColumnManager : MonoBehaviour
         return false;
     }
 
+    /// <summary>Mounted cavalry retains its logical row membership, but only resumes ordinary marching after dismount.</summary>
+    public void RequestCavalryDismountReflow(Enemy enemy)
+    {
+        if (enemy == null || !_useRowMarchPlanner || !_waveEnemyLogicalRows.ContainsKey(enemy)) return;
+        _logicalLayoutDirty = true;
+        StartPendingLogicalLayoutReflow();
+    }
+
+    public bool IsSpawnEntryPending(Enemy enemy) => enemy != null &&
+        (_isSpawnEntryPreparing && _spawnEntryEnemies.Contains(enemy) || _pendingSpawnEntryEnemies.Contains(enemy));
+
+    public bool IsCavalryReadyForCombat(Enemy enemy) => enemy != null &&
+        !IsSpawnEntryPending(enemy) && !enemy.IsRushMoveOrder(RushMoveOrderOwner.SpawnEntry, enemy.RushMoveOrderGeneration);
+
     public void RegisterWaveEnemy(Enemy enemy, int configuredRow)
     {
         if (enemy == null || !_logicalRowsByInitialRow.TryGetValue(configuredRow, out var logicalRow))
@@ -577,8 +644,12 @@ public class ColumnManager : MonoBehaviour
             int targetRow = logicalRow.currentRow;
             if (enemy.rowIndex <= targetRow)
                 continue;
+            enemy.GetComponent<CavalryEnemy>()?.NotifySpawnEntryStarted();
             if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.SpawnEntry, _spawnEntryGeneration, targetRow, RushMoveMode.ContinuousEmptyRun))
+            {
+                enemy.GetComponent<CavalryEnemy>()?.NotifySpawnEntryCompleted();
                 continue;
+            }
 
             enemy.OnRushMoveComplete -= OnSpawnEntryComplete;
             enemy.OnRushMoveComplete += OnSpawnEntryComplete;
@@ -611,6 +682,7 @@ public class ColumnManager : MonoBehaviour
             return;
         enemy.OnRushMoveComplete -= OnSpawnEntryComplete;
         _pendingSpawnEntryEnemies.Remove(enemy);
+        enemy.GetComponent<CavalryEnemy>()?.NotifySpawnEntryCompleted();
         if (_pendingSpawnEntryEnemies.Count == 0)
             StartPendingLogicalLayoutReflow();
     }
@@ -675,6 +747,8 @@ public class ColumnManager : MonoBehaviour
     public bool CanContinuousWaveEnterRow(Enemy enemy, int column, int row)
     {
         if (!IsValidColumn(column))
+            return false;
+        if (IsCavalrySlotReserved(column, row, enemy))
             return false;
 
         var occupant = columns[column].GetEnemyAtRow(row);
@@ -820,6 +894,8 @@ public class ColumnManager : MonoBehaviour
             var logicalRow = pair.Value;
             if (enemy == null || enemy.isBoss || enemy.state == EnemyState.Dead || logicalRow == null || logicalRow.removed)
                 continue;
+            if (enemy.GetComponent<CavalryEnemy>()?.IsMounted == true)
+                continue;
             if (_pushReturnTransactions.ContainsKey(enemy) || enemy.rowIndex <= logicalRow.currentRow)
                 continue;
 
@@ -849,6 +925,9 @@ public class ColumnManager : MonoBehaviour
             var enemy = pair.Key;
             if (enemy == null || enemy.state == EnemyState.Dead)
                 continue;
+            var reservationOwner = GetCavalryReservationOwner(enemy.columnIndex, pair.Value);
+            if (reservationOwner != null && reservationOwner != enemy)
+                reservationOwner.GetComponent<CavalryEnemy>()?.AbortForExternalOrder("WaveMarch目标优先");
             if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, _waveGeneration, pair.Value, RushMoveMode.ContinuousEmptyRun))
                 continue;
 
@@ -883,12 +962,17 @@ public class ColumnManager : MonoBehaviour
             {
                 if (enemy == null || enemy.isBoss || enemy.state == EnemyState.Dead || enemy.rowIndex != sourceRow)
                     continue;
+                if (enemy.GetComponent<CavalryEnemy>()?.IsMounted == true)
+                    continue;
                 if (restrictedEnemies != null && !restrictedEnemies.Contains(enemy))
                     continue;
 
                 if (_pushReturnTransactions.ContainsKey(enemy))
                     continue;
 
+                var reservationOwner = GetCavalryReservationOwner(enemy.columnIndex, _currentWaveTargetRow);
+                if (reservationOwner != null && reservationOwner != enemy)
+                    reservationOwner.GetComponent<CavalryEnemy>()?.AbortForExternalOrder("WaveMarch目标优先");
                 if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, _waveGeneration, _currentWaveTargetRow,
                     continuousRun ? RushMoveMode.ContinuousEmptyRun : RushMoveMode.Step))
                     continue;
@@ -1241,7 +1325,7 @@ public class ColumnManager : MonoBehaviour
 
         int nextRow = enemy.rowIndex - 1;
         var column = columns[transaction.originalColumn];
-        if (column.IsRowOccupied(nextRow, enemy))
+        if (column.IsRowOccupied(nextRow, enemy) || IsCavalrySlotReserved(transaction.originalColumn, nextRow, enemy))
         {
             LogPushReturnBlocked(transaction, nextRow);
             return;
@@ -1444,6 +1528,8 @@ public class ColumnManager : MonoBehaviour
     public bool MoveEnemyToColumnAtRow(Enemy enemy, int targetCol, int targetRow)
     {
         if (!IsValidColumn(targetCol)) return false;
+        // 骑乘骑兵免疫位移（横推/聚拢等）。
+        if (enemy.IsMountedCavalry) return false;
         int srcCol = enemy.columnIndex;
 
         // BOSS墙壁：目标列若存在BOSS，目标排不得超过BOSS排
@@ -1459,12 +1545,13 @@ public class ColumnManager : MonoBehaviour
             DebugLog.Info($"[ColumnManager] MoveEnemyToColumnAtRow clamped by boss wall: {enemy.DebugTag} → col={targetCol} row={targetRow} (bossRow={bossRow})");
         }
 
-        if (columns[targetCol].IsRowOccupied(targetRow, enemy))
+        if (columns[targetCol].IsRowOccupied(targetRow, enemy) || IsCavalrySlotReserved(targetCol, targetRow, enemy))
         {
             DebugLog.Info($"[ColumnManager] MoveEnemyToColumnAtRow blocked: {enemy.DebugTag} → col={targetCol} row={targetRow} occupied");
             return false;
         }
 
+        ReleaseCavalrySlot(enemy);
         ReleaseEnemyFromSchedulers(enemy, srcCol);
         columns[srcCol].RemoveEnemySilent(enemy);
         enemy.columnIndex = targetCol;
@@ -1562,6 +1649,7 @@ public class ColumnManager : MonoBehaviour
             if (e.state == EnemyState.Dead) continue;
             if (!hitEnemies.Contains(e)) continue;
             int destRow = e.rowIndex + pushAmount;
+            if (IsCavalrySlotReserved(columnIndex, destRow, e)) return false;
             for (int j = 0; j < colEnemies.Count; j++)
             {
                 var other = colEnemies[j];
@@ -1606,6 +1694,7 @@ public class ColumnManager : MonoBehaviour
             return false;
 
         int destinationRow = enemy.rowIndex + pushAmount;
+        if (IsCavalrySlotReserved(columnIndex, destinationRow, enemy)) return false;
         int bossRow = GetBossRowInColumn(columnIndex);
         if (bossRow >= 0 && destinationRow >= bossRow)
             return false;
@@ -1631,7 +1720,7 @@ public class ColumnManager : MonoBehaviour
         for (int i = 0; i < columnHitEnemies.Count; i++)
         {
             var enemy = columnHitEnemies[i];
-            if (enemy == null || enemy.state == EnemyState.Dead || enemy.columnIndex != columnIndex)
+            if (enemy == null || enemy.state == EnemyState.Dead || enemy.columnIndex != columnIndex || enemy.IsMountedCavalry)
                 continue;
 
             if (!CanPushEnemyFromCurrentRow(columnIndex, enemy, pushAmount, columnHitEnemies))
@@ -1644,7 +1733,7 @@ public class ColumnManager : MonoBehaviour
         for (int i = 0; i < columnHitEnemies.Count; i++)
         {
             var enemy = columnHitEnemies[i];
-            if (enemy == null || enemy.state == EnemyState.Dead || enemy.columnIndex != columnIndex)
+            if (enemy == null || enemy.state == EnemyState.Dead || enemy.columnIndex != columnIndex || enemy.IsMountedCavalry)
                 continue;
 
             bool hadExistingReturn = _pushReturnTransactions.TryGetValue(enemy, out var existing);
@@ -1728,6 +1817,8 @@ public class ColumnManager : MonoBehaviour
         {
             if (e == null) continue;
             if (e.isBoss) continue;
+            // 骑乘骑兵免疫击退
+            if (e.IsMountedCavalry) continue;
             if (e.state == EnemyState.Dead) continue;
             if (e.isCFrame && !canInterruptCFrame) continue;
             if (!byColumn.ContainsKey(e.columnIndex))

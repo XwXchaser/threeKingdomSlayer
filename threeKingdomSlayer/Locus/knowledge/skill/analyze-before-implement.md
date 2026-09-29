@@ -1,6 +1,7 @@
 ---
 id: kd_a6d20422-f158-4be7-8380-fa469d394caf
 injectMode: inherit
+summary: 当用户要求「分析可行性」「分析一下」「这个能做吗」或评估方案时使用；只做分析与风险评估，不修改代码与资产，等用户明确要求实现后再动手。
 aiEditMode: inherit
 skillEnabled: true
 skillSurface: command
@@ -8,10 +9,8 @@ skillSurface: command
 
 # analyze-before-implement
 
-## Summary
 当用户要求分析可行性时，只分析不实现；等用户确认后再动手。
 
-## Content
 ## 规则
 
 当用户的请求中包含"分析可行性"、"分析一下"、"这个能做吗"等类似表述时：

@@ -54,7 +54,7 @@ MonoBehaviour:
   maxHealth: 16
   occupySlots: 1
   attackSpeed: 0.5
-  attackDamage: 35
+  attackDamage: 3
   attackRange: 1
   moveSpeed: 0.3
   visualYOffset: 0

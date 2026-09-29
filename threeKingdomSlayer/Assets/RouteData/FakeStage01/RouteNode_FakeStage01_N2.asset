@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: f42475edb63a6ca48bf4023e715763a9, type: 3}
   m_Name: RouteNode_FakeStage01_N2
   m_EditorClassIdentifier: Assembly-CSharp::FakeRouteNodeConfig
   nodeId: N2
@@ -18,18 +18,20 @@ MonoBehaviour:
   - battleConfig: {fileID: 11400000, guid: cd2506212b27b1b4d9313e32730d5a02, type: 2}
     conditionEnabled: 0
   entryDialogue: {fileID: 11400000, guid: 74fe5ec0496125e4a865d34c499ed448, type: 2}
+  postBattleDialogue: {fileID: 0}
+  postBattlePresentation: {fileID: 0}
   isFinalNode: 0
   savePoint: 0
-  battleBackground: {fileID: 11400000, guid: 25e42f2ac68d3fe4fa5e473ef9860230, type: 2}
+  battleBackground: {fileID: 0}
   routeChoiceTransition: {fileID: 0}
   routeChoiceBackground: {fileID: 0}
   outgoingChoices:
-  - choiceId: n2_to_n4
-    displayName: "\u8F6C\u5411\u5C71\u9053"
-    targetNode: {fileID: 11400000, guid: 15fec534ca07ed84eb71741e98ea9666, type: 2}
+  - choiceId: n2_to_e2
+    displayName: "\u7ED5\u5C71\u811A\u64A4\u79BB"
+    targetNode: {fileID: 11400000, guid: b7f6034341afa8249b3ff7397ed3b71c, type: 2}
     layout:
       overrideDefault: 1
       anchoredPosition: {x: 0, y: 0}
       rotation: 0
-    presentation: {fileID: 11400000, guid: 556db572f1a66384eb565a0db5ce7487, type: 2}
+    presentation: {fileID: 11400000, guid: 1fd3b5e70b0b11142a50691fe04f9065, type: 2}
     placeholderDuration: 0

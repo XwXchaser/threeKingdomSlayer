@@ -1,11 +1,13 @@
 ---
 id: kd_c2de3458-57af-4257-9475-96d4662f67f2
 injectMode: inherit
-summary: 记录特效层级排序问题（SpikeTrap 已修复，Cyclone 待修复）
+summary: 战斗已知问题清单（QTE 被打断、特效残留、BOSS 墙壁、超范围攻击等）与已修复项；带调试步骤的待办见 plan/unresolved-issues.md。
 aiEditMode: inherit
 ---
 
 # 已知问题
+
+> 现象与根因清单；带调试步骤的待办见 `plan/unresolved-issues.md`。
 
 ## 1. QTE 动画期间受道具伤害播放 Hit 动画
 - **现象**: BOSS 在 QTE 动画时若受到道具等其他伤害，会播放受击(hit)动画打断 QTE 动画
@@ -33,3 +35,10 @@ aiEditMode: inherit
 - **实际根因**: 战斗场景依赖透视相机 + Z 位置做 2.5D 深度排序。给 Cyclone 设置高 sortingOrder 会绕过 Z 深度，导致后排特效压住前排敌人
 - **修复**: CycloneEffect 保持 `sortingOrder = 0`，生成时 `pos.z -= 0.2f`，与 SpikeTrap 的 Z 前移思路一致，让目标行内显示在敌人身前，同时保留跨排前后关系
 - **规则**: 战斗内敌人/地面特效遮挡优先用 Z 偏移，不要用高 sortingOrder；高 sortingOrder 只用于 overlay/描边/UI 类视觉
+
+## 7. 骑兵冲锋被普通攻击打断且打断后卡住 ✅ 已修复
+- **现象**: 点击戳击命中冲锋中的骑兵会打断冲锋（规则上只有蓄力攻击能打断）；被打断后骑兵停在当前排，既不返航也不再冲锋
+- **根因**: ① 打断判定读了 `PlayerState.IsCharging`（按键按住状态），点击攻击时它也可能为真；② 返航协程用了被打断时已失效的代际号，第一步自我中止，而 row0 没有冲锋距离导致主循环不再发起
+- **修复**: 打断判定改为“攻击资产勾选 `interruptsCavalryCharge` + 本次输入为蓄力”并在发起时固化；返航内部自取当前代际，并加 row0 欠返航自愈
+- **规则**: 判定“这次攻击属于哪一类”不要读输入状态；延迟结算的伤害要在发起时固化标记；不可打断阶段不能复用可打断阶段的代际校验
+- **验证**: 真实节点 `Assets/RouteData/FakeStage01/Battle_FakeStage01_N1_1.asset` 全链路，详见 `design/cavalry-enemy.md` 第 13 节
