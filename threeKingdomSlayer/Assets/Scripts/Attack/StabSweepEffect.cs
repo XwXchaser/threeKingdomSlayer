@@ -35,6 +35,7 @@ public sealed class StabSweepEffect : MonoBehaviour
     private int _visualRangeRows;
     private float _damage;
     private DamageType _damageType;
+    private bool _interruptsCavalryCharge;
     private readonly HashSet<Enemy> _hitEnemies = new HashSet<Enemy>();
     private readonly List<Enemy> _hitCandidates = new List<Enemy>();
     private Enemy _coveredBossTarget;
@@ -63,7 +64,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         float damage, DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget,
         Action<Enemy> onHit, Func<Enemy, bool> onFirstHitBeforeDamage, Action onFirstHit, Action onComplete,
         float visualReachOffset, float visualStartXOffset, float visualTargetRandomRadius, float baseRayLength,
-        float targetDuration = -1f)
+        float targetDuration = -1f, bool interruptsCavalryCharge = false)
     {
         var ray = new GameObject("StabRay");
         ray.transform.position = startPosition;
@@ -82,19 +83,21 @@ public sealed class StabSweepEffect : MonoBehaviour
 
         ray.AddComponent<StabSweepEffect>().Initialize(visual, speedSprite, targetPosition, column, rangeRows, visualRangeRows, damage, damageType,
             columnManager, coveredBossTarget, onHit, onFirstHitBeforeDamage, onFirstHit, onComplete, targetDuration,
-            visualTargetRandomRadius, baseRayLength);
+            visualTargetRandomRadius, baseRayLength, interruptsCavalryCharge);
     }
 
     private void Initialize(GameObject visual, Sprite speedSprite, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows, float damage,
         DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget,
         Action<Enemy> onHit, Func<Enemy, bool> onFirstHitBeforeDamage, Action onFirstHit,
-        Action onComplete, float targetDuration, float visualTargetRandomRadius, float baseRayLength)
+        Action onComplete, float targetDuration, float visualTargetRandomRadius, float baseRayLength,
+        bool interruptsCavalryCharge = false)
     {
         _column = column;
         _rangeRows = rangeRows;
         _visualRangeRows = visualRangeRows;
         _damage = damage;
         _damageType = damageType;
+        _interruptsCavalryCharge = interruptsCavalryCharge;
         _columnManager = columnManager;
         _coveredBossTarget = coveredBossTarget;
         _onHit = onHit;
@@ -367,7 +370,7 @@ public sealed class StabSweepEffect : MonoBehaviour
             Vector3 impactPosition = GetVisualTipPosition();
             enemy.TakeDamage(_damage, _damageType, feedbackStrength: feedbackStrength,
                 impactPosition: impactPosition, impactDirection: _rayDirection,
-                diseaseStabHit: diseaseStabHit);
+                diseaseStabHit: diseaseStabHit, interruptsCavalryCharge: _interruptsCavalryCharge);
             if (!_hitAny)
                 PauseSequenceForHitStop(feedbackStrength);
             if (!_hitAny)

@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: f42475edb63a6ca48bf4023e715763a9, type: 3}
   m_Name: Node_D
   m_EditorClassIdentifier: Assembly-CSharp::FakeRouteNodeConfig
   nodeId: D
@@ -17,7 +17,10 @@ MonoBehaviour:
   battleEntries:
   - battleConfig: {fileID: 11400000, guid: 6ae2f4fca477a3741a0f44276d271cdf, type: 2}
     conditionEnabled: 0
+  entryDialogue: {fileID: 0}
   isFinalNode: 1
   savePoint: 0
   battleBackground: {fileID: 11400000, guid: 0ccf07e72bc050d498ed7b3f70e77fe1, type: 2}
+  routeChoiceTransition: {fileID: 0}
+  routeChoiceBackground: {fileID: 0}
   outgoingChoices: []

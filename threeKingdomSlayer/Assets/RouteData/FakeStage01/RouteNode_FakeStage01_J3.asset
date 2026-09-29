@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: f42475edb63a6ca48bf4023e715763a9, type: 3}
   m_Name: RouteNode_FakeStage01_J3
   m_EditorClassIdentifier: Assembly-CSharp::FakeRouteNodeConfig
   nodeId: J3
@@ -24,12 +24,12 @@ MonoBehaviour:
   outgoingChoices:
   - choiceId: j3_to_n4
     displayName: "\u5C71\u9053\u63A5\u5E94"
-    targetNode: {fileID: 11400000, guid: 15fec534ca07ed84eb71741e98ea9666, type: 2}
+    targetNode: {fileID: 11400000, guid: 72c68bf5e7ed06e41b95ac2aa02a937c, type: 2}
     layout:
       overrideDefault: 1
       anchoredPosition: {x: -160, y: 0}
       rotation: -8
-    presentation: {fileID: 11400000, guid: 556db572f1a66384eb565a0db5ce7487, type: 2}
+    presentation: {fileID: 11400000, guid: 93d883a70b80f21409144f5c927c1ab9, type: 2}
     placeholderDuration: 0
   - choiceId: j3_to_n5
     displayName: "\u4FA7\u7FFC\u6270\u654C"

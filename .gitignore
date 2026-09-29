@@ -26,3 +26,7 @@ Thumbs.db
 
 # Locus AI tooling
 threeKingdomSlayer/Packages/com.farlocus.locus/
+threeKingdomSlayer/Locus/workspace-trees/
+
+# 误建文件（Windows 保留名，由 shell 重定向产生）
+threeKingdomSlayer/nul

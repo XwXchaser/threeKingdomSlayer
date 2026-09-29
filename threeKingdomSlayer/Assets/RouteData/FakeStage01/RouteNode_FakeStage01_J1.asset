@@ -9,13 +9,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: f42475edb63a6ca48bf4023e715763a9, type: 3}
   m_Name: RouteNode_FakeStage01_J1
   m_EditorClassIdentifier: Assembly-CSharp::FakeRouteNodeConfig
   nodeId: J1
   displayName: "J1 \u57CE\u90CA\u5C94\u8DEF"
   battleEntries: []
   entryDialogue: {fileID: 11400000, guid: bc2f37a9549bc5b4e8ec6e818091e04a, type: 2}
+  postBattleDialogue: {fileID: 0}
+  postBattlePresentation: {fileID: 0}
   isFinalNode: 0
   savePoint: 0
   battleBackground: {fileID: 11400000, guid: 5ac5279625ba74e40ac24c7d3cabe607, type: 2}
@@ -38,5 +40,5 @@ MonoBehaviour:
       overrideDefault: 1
       anchoredPosition: {x: 60, y: 15}
       rotation: 0
-    presentation: {fileID: 11400000, guid: 556db572f1a66384eb565a0db5ce7487, type: 2}
+    presentation: {fileID: 11400000, guid: c460168d5e905c748a2a2bb4c2e92326, type: 2}
     placeholderDuration: 0

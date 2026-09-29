@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f42475edb63a6ca48bf4023e715763a9, type: 3}
+  m_Name: RouteNode_FakeStage01_E2
+  m_EditorClassIdentifier: 
+  nodeId: E2
+  displayName: "E2 \u8F8E\u91CD\u53D7\u963B"
+  battleEntries: []
+  entryDialogue: {fileID: 0}
+  postBattleDialogue: {fileID: 0}
+  postBattlePresentation: {fileID: 0}
+  isFinalNode: 0
+  savePoint: 0
+  battleBackground: {fileID: 0}
+  routeChoiceTransition: {fileID: 0}
+  routeChoiceBackground: {fileID: 0}
+  outgoingChoices:
+  - choiceId: e2_to_j2
+    displayName: "\u8F6C\u5165\u5C71\u9053"
+    targetNode: {fileID: 11400000, guid: cb0f7a1b7a9f72f46bbbc9f752ad7691, type: 2}
+    layout:
+      overrideDefault: 0
+      anchoredPosition: {x: 0, y: 0}
+      rotation: 0
+    presentation: {fileID: 11400000, guid: 556db572f1a66384eb565a0db5ce7487, type: 2}
+    placeholderDuration: 0

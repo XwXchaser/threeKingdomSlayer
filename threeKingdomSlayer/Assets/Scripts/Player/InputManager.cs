@@ -529,7 +529,7 @@ public class InputManager : MonoBehaviour
         int column = GetStabColumnFromScreenPosition(position);
         if (column >= 0)
         {
-            bool executed = attackSystem?.TryExecuteAttack(AttackType.Pierce, column) ?? false;
+            bool executed = attackSystem?.TryExecuteAttack(AttackType.Pierce, column, chargedAttack: isCharged) ?? false;
             if (executed)
             {
                 OnAttackExecuted?.Invoke(AttackType.Pierce, column);
@@ -556,7 +556,7 @@ public class InputManager : MonoBehaviour
         // 方向与垂直轴夹角 < verticalSwipeThreshold
         if (angleToVertical < verticalSwipeThreshold)
         {
-            bool executed = attackSystem?.TryExecuteAttack(AttackType.Launch) ?? false;
+            bool executed = attackSystem?.TryExecuteAttack(AttackType.Launch, -1, chargedAttack: isCharged) ?? false;
             if (executed) OnAttackExecuted?.Invoke(AttackType.Launch, -1);
             return;
         }
@@ -565,7 +565,7 @@ public class InputManager : MonoBehaviour
         // 方向与水平轴夹角 < horizontalSwipeThreshold
         if (angleToHorizontal < horizontalSwipeThreshold)
         {
-            bool executed = attackSystem?.TryExecuteAttack(AttackType.Sweep) ?? false;
+            bool executed = attackSystem?.TryExecuteAttack(AttackType.Sweep, -1, chargedAttack: isCharged) ?? false;
             if (executed) OnAttackExecuted?.Invoke(AttackType.Sweep, -1);
             return;
         }
@@ -574,7 +574,7 @@ public class InputManager : MonoBehaviour
         bool slashLeftToRight = direction.x > 0;
         float slashVisualTilt = GetSlashVisualTilt(direction);
         Debug.Log($"[SlashTilt] Input charged dir={direction} leftToRight={slashLeftToRight} tilt={slashVisualTilt:F2}");
-        bool defaultExecuted = attackSystem?.TryExecuteAttack(AttackType.Slash, -1, slashLeftToRight, slashVisualTilt) ?? false;
+        bool defaultExecuted = attackSystem?.TryExecuteAttack(AttackType.Slash, -1, slashLeftToRight, slashVisualTilt, chargedAttack: isCharged) ?? false;
         if (defaultExecuted) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
     }
 

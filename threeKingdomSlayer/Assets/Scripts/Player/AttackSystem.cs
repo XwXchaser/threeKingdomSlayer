@@ -121,7 +121,7 @@ public class AttackSystem : MonoBehaviour
     /// 尝试执行攻击
     /// BUG FIX: 只有实际命中至少一个敌人时，才触发冷却和消耗
     /// </summary>
-    public bool TryExecuteAttack(AttackType attackType, int targetColumn = -1, bool slashLeftToRight = true, float slashVisualTilt = 0f)
+    public bool TryExecuteAttack(AttackType attackType, int targetColumn = -1, bool slashLeftToRight = true, float slashVisualTilt = 0f, bool chargedAttack = false)
     {
         if (playerState == null) return false;
         if (playerState.stageState != StageState.InProgress) return false;
@@ -144,6 +144,7 @@ public class AttackSystem : MonoBehaviour
         }
 
         bool hitAny = false;
+        _attackIsCharged = chargedAttack;
         switch (attackType)
         {
             case AttackType.Stab:   hitAny = ExecuteStab(targetColumn); break;
@@ -153,6 +154,7 @@ public class AttackSystem : MonoBehaviour
             case AttackType.Launch: hitAny = ExecuteLaunch(); break;
             case AttackType.Parry:  hitAny = ExecuteParry(); break;
         }
+        _attackIsCharged = false;
 
         if (hitAny)
         {
@@ -222,6 +224,8 @@ public class AttackSystem : MonoBehaviour
         if (cfg == null || columnIndex < 0 || columnManager == null || cfg.attackWavePrefab == null) return false;
 
         float finalDmg = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
+        // 打断标记必须在发起时固化：穿刺等伤害在特效回调里延迟结算。
+        bool chargeInterrupt = InterruptsCavalryCharge(cfg);
         int effectiveRows = GetEffectiveRangeRows(cfg);
         int visualRangeRows = effectiveRows;
         Enemy coveredBoss = columnManager.GetCombatBossCoveringColumn(columnIndex);
@@ -283,7 +287,7 @@ public class AttackSystem : MonoBehaviour
             GetStabVisualStartXOffset(columnIndex),
             cfg.stabVisualTargetRandomRadius,
             baseLength,
-            GetAttackDuration(cfg));
+            GetAttackDuration(cfg), chargeInterrupt);
         AudioManager.Instance?.PostEvent("Player_Attack");
 
         Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 射程:{effectiveRows} 视觉射程:{visualRangeRows}");
@@ -296,6 +300,7 @@ public class AttackSystem : MonoBehaviour
         if (cfg == null || columnManager == null) return false;
 
         float finalDmg = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
+        bool chargeInterrupt = InterruptsCavalryCharge(cfg);
         int effectiveRows = GetEffectiveRangeRows(cfg);
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(effectiveRows);
         Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
@@ -317,7 +322,8 @@ public class AttackSystem : MonoBehaviour
             targetDuration: GetAttackDuration(cfg),
             rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite,
             visualPathTilt: visualTilt,
-            useEnhancedSlashMotion: true);
+            useEnhancedSlashMotion: true,
+            interruptsCavalryCharge: chargeInterrupt);
         AudioManager.Instance?.PostEvent("Player_Attack");
 
         Debug.Log($"[AttackSystem] 斩击 方向:{(leftToRight ? "L→R" : "R→L")} 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -400,6 +406,7 @@ public class AttackSystem : MonoBehaviour
         if (cfg == null || columnIndex < 0 || columnManager == null) return false;
 
         float finalDmg = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
+        bool chargeInterrupt = InterruptsCavalryCharge(cfg);
         int effectiveRows = GetEffectiveRangeRows(cfg);
         List<Enemy> targets = columnManager.GetEnemiesInRange(columnIndex, effectiveRows);
         if (!TryGetPierceVisualPath(columnIndex, out Vector3 releasePosition,
@@ -432,7 +439,8 @@ public class AttackSystem : MonoBehaviour
                 if (aliveTargets.Count > 0)
                     AttackWave.Create(wavePos, cfg.damageType, finalDmg, aliveTargets,
                         onHit: _ => AudioManager.Instance?.PostEvent("Stab_Hit"),
-                        prefab: cfg.attackWavePrefab);
+                        prefab: cfg.attackWavePrefab,
+                        interruptsCavalryCharge: chargeInterrupt);
                 return;
             }
 
@@ -441,7 +449,8 @@ public class AttackSystem : MonoBehaviour
             releaseVisual.TransferToProjectile(flightStart, projectileRotation, projectileScale);
             AttackWave.CreatePierceFromVisual(projectileObject, flightStart, finalDmg,
                 aliveTargets, visualEndPosition,
-                onHit: _ => AudioManager.Instance?.PostEvent("Stab_Hit"), timeScale: pierceTimeScale);
+                onHit: _ => AudioManager.Instance?.PostEvent("Stab_Hit"), timeScale: pierceTimeScale,
+                interruptsCavalryCharge: chargeInterrupt);
         });
 
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -454,6 +463,7 @@ public class AttackSystem : MonoBehaviour
         if (cfg == null || columnManager == null) return false;
 
         float finalDmg = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
+        bool chargeInterrupt = InterruptsCavalryCharge(cfg);
         int effectiveRows = GetEffectiveRangeRows(cfg);
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(effectiveRows);
         if (targets.Count > 0)
@@ -468,7 +478,8 @@ public class AttackSystem : MonoBehaviour
                 if (aliveTargets.Count == 0)
                     return;
                 AttackWave.Create(wavePos, cfg.damageType, finalDmg, aliveTargets,
-                    prefab: cfg.attackWavePrefab);
+                    prefab: cfg.attackWavePrefab,
+                    interruptsCavalryCharge: chargeInterrupt);
             });
         }
 
@@ -514,6 +525,7 @@ public class AttackSystem : MonoBehaviour
         if (cfg == null || columnManager == null) return false;
 
         float finalDmg = GetFinalDamage(cfg);
+        bool chargeInterrupt = InterruptsCavalryCharge(cfg);
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
         Vector3 playerLaunchPos = playerState != null ? playerState.transform.position : transform.position;
         if (targets.Count > 0)
@@ -542,11 +554,15 @@ public class AttackSystem : MonoBehaviour
                             canLaunch = true;
                         }
                         if (canLaunch)
+                        {
+                            enemy.OnPlayerLaunchHit();
                             enemy.Launch();
+                        }
                     },
                     prefab: null,
                     alphaOverride: 0f,
-                    canInterruptCFrame: true);
+                    canInterruptCFrame: true,
+                    interruptsCavalryCharge: chargeInterrupt);
             });
         }
         else
@@ -593,6 +609,7 @@ public class AttackSystem : MonoBehaviour
         foreach (var enemy in targets)
         {
             enemy.TakePoiseDamage(cfg.poiseDamage);
+            // 冲锋暂不可被 Parry 打断：格挡只造成架势/伤害。
             enemy.TakeDamage(finalDmg, cfg.damageType, canInterruptCFrame: true, isParryInterrupt: true,
                 feedbackStrength: HitFeedbackStrength.Heavy);
         }
@@ -642,6 +659,22 @@ public class AttackSystem : MonoBehaviour
         return pos;
     }
 
+    private bool _attackIsCharged;
+
+    /// <summary>
+    /// 本次攻击是否可打断骑兵冲锋（仅用于敌人侧判定，不参与玩家输入窗口/手势判定）。
+    /// 只有两个来源，都不靠代码里的攻击类型白名单：
+    ///   1) 攻击资产勾选了 AttackSkillConfig.interruptsCavalryCharge（把某种攻击视为“蓄力/重攻击”时在数据里声明）；
+    ///   2) 本次输入为蓄力（InputManager.isCharged，经 TryExecuteAttack(..., chargedAttack) 传入），
+    ///      用于斩击这种普通/蓄力共用的动作。
+    /// 将来新增“重攻击”类攻击：勾选该资产，或在新的输入分支传入 chargedAttack，不需要改骑兵代码。
+    /// </summary>
+    private bool InterruptsCavalryCharge(AttackSkillConfig cfg)
+    {
+        if (cfg != null && cfg.interruptsCavalryCharge) return true;
+        return _attackIsCharged;
+    }
+
     /// <summary>获取最终伤害（基础伤害 × 升级倍率）</summary>
     private float GetFinalDamage(AttackSkillConfig cfg)
     {
@@ -666,7 +699,8 @@ public class AttackSystem : MonoBehaviour
         int damage = Mathf.RoundToInt(cfg.baseDamage * (1f + bonusPercent));
 
         for (int i = 0; i < cfg.shockwaveCount; i++)
-            AttackWave.Create(wavePos, DamageType.Slash, damage, targets, prefab: prefab);
+            AttackWave.Create(wavePos, DamageType.Slash, damage, targets, prefab: prefab,
+                interruptsCavalryCharge: true);
 
         Debug.Log($"[AttackSystem] 受击冲击波释放: {cfg.shockwaveCount}波 rows={cfg.rangeRows} damage={damage} bonus={bonusPercent:P0}");
     }
@@ -698,7 +732,7 @@ public class AttackSystem : MonoBehaviour
                 for (int w = 0; w < wavesPerTick; w++)
                 {
                     AttackWave.Create(wavePos, DamageType.Sweep, dmg, targets,
-                        prefab: wavePrefab);
+                        prefab: wavePrefab, interruptsCavalryCharge: true);
                     if (r.config.waveDelay > 0f)
                         yield return new WaitForSeconds(r.config.waveDelay);
                 }
@@ -727,7 +761,7 @@ public class AttackSystem : MonoBehaviour
             for (int layer = 0; layer < r.layers; layer++)
             {
                 AttackWave.Create(wavePos, DamageType.Sweep, r.config.damage, targets,
-                    prefab: wavePrefab);
+                    prefab: wavePrefab, interruptsCavalryCharge: true);
                 if (layer + 1 < r.layers)
                     yield return null;
             }
@@ -895,7 +929,10 @@ public class AttackSystem : MonoBehaviour
                                 canLaunch = true;
                             }
                             if (canLaunch)
+                            {
+                                enemy.OnPlayerLaunchHit();
                                 enemy.Launch();
+                            }
                         },
                         prefab: cfg.attackWavePrefab, alphaOverride: alpha,
                         damageNumberColor: phantomColor,
