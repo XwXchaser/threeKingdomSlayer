@@ -62,6 +62,12 @@ public static class HitFeedbackManager
     private const float StandardHitStopDuration = 0.09f;
     private const float HeavyHitStopDuration = 0.14f;
 
+    /// <summary>
+    /// 卡肉被应用时广播，参数为时长（秒）。
+    /// 只在本次命中实际产生卡肉时触发，因此 DoT 与 HitFeedbackStrength.None 不会广播。
+    /// </summary>
+    public static event System.Action<float> OnHitStopApplied;
+
     public static HitFeedbackContext CreateDamageContext(Enemy enemy, DamageType damageType,
         HitFeedbackSource source, HitFeedbackStrength strength, float damage, bool isSharedHealth = false,
         Vector3? impactPosition = null, Vector3 impactDirection = default, bool isDiseaseStabHit = false)
@@ -94,6 +100,10 @@ public static class HitFeedbackManager
         {
             Debug.Log($"[HitFeedback] Trigger enemy={context.enemy.DebugTag} source={context.source} type={context.damageType} diseaseStab={context.isDiseaseStabHit} strength={context.strength} duration={duration:F3}s shared={context.isSharedHealth} displacement={context.causesDisplacement} frame={Time.frameCount}");
         }
+
+        // 卡肉广播：供招式状态机冻结阶段时钟，保持与视觉序列同步
+        if (duration > 0f)
+            OnHitStopApplied?.Invoke(duration);
 
         context.enemy.ApplyHitStop(duration);
         CameraFeedbackController.Instance?.RequestHit(context);

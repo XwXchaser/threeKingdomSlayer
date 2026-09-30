@@ -187,7 +187,7 @@ Slash 序列：挥砍（总长 - 惯性 - 淡出）→ 惯性 → 淡出
 
 三条约束：
 
-- **窗口起点默认不早于命中窗口结束**，即默认不允许「取消掉还没落地的伤害」；需要时显式放开。
+- **窗口起点默认不早于命中窗口结束**：该约束落在「派生默认值」上；**显式配置的窗口原样生效**。`MoveTableConfig.clampWindowAfterHitWindow` 默认关闭，开启后才连显式窗口一起保守钳制。
 - **最小绝对时长下限**：窗口按百分比随攻速缩放，需保证 ≥ 0.06s，否则高攻速下窗口趋近 0，连招变成不可能。
 - 默认值随节点创建时自动生成，后续可逐招式覆盖；两者共存，不做成「必须手填」。
 
@@ -335,7 +335,9 @@ MoveDefinition（可插入任意位置的招式包）
 - 轴 2：蓄力门开 ↔ 关
 - 轴 3：输入缓冲开 ↔ 关
 
-三个开关的任意组合都要能跑。这样「哪种手感更好」由实机试按决定，而不是靠讨论。
+P1 已提供**轴 3**（`PlayerMoveStateMachine.bufferEnabled`，需配置招式表后生效）；**轴 1 与轴 2 随 P2 的输入模型改动一起提供**。因此 P1 完成后手感与改造前一致，这正是等价性的证据。
+
+三个开关的任意组合都需能跑。这样「哪种手感更好」由实机试按决定，而不是靠讨论。
 
 ### 10.3 工具
 
@@ -384,6 +386,41 @@ MoveDefinition（可插入任意位置的招式包）
 ### 11.4 P1 明确不做
 
 不配置任何边；不新增招式；不改手势识别与蓄力门；不改冷却、伤害与数值；不改输入模型（仍为 A）。
+
+### 11.5 P1 实现状态与实测结果（已完成）
+
+新增（`Assets/Scripts/MoveSystem/`）：
+
+| 文件 | 内容 |
+|------|------|
+| `MoveGesture.cs` | `MoveGesture` 枚举、`GestureInput` 结构、`MoveGestureDefaults`（等价映射 + 滑动方向分类） |
+| `MoveEdge.cs` | 接续边：手势 / 窗口覆盖 / 窗口起止 / 后继节点 |
+| `MoveDefinition.cs` | 招式节点：`moveId`、`AttackSkillConfig` 引用、窗口、`repeatSelf`、边表 |
+| `MoveTableConfig.cs` | 招式表：中立入口、上下文状态表、默认窗口派生 |
+| `PlayerMoveStateMachine.cs` | 直通/招式表两种模式、接续窗口、输入缓冲、阶段时钟、卡肉冻结、调试面板 |
+
+改造：`AttackSystem`（新增 `LastMoveAttackType` / `LastMoveDuration` / `ActionLockRemaining`，`TryExecuteAttack` 新增 `cancelCurrentMove`）、`HitFeedbackManager`（新增 `OnHitStopApplied` 卡肉广播）、`InputManager`（6 个出招点收敛为 `SubmitGesture` + `moveStateMachine` 引用）、`HeroConfig`（新增 `moveTable`）、`Battle.scene`（`Player` 根节点新增状态机并接线，`moveTable` 留空）。
+
+实测结果：
+
+| 用例 | 结果 |
+|------|------|
+| 手势映射逐项核对 | Tap→Stab、Hold→Pierce、竖滑蓄满→Launch、竖滑未蓄满→Parry、横滑蓄满→Sweep、横滑未蓄满→Slash、斜滑→Slash，与改造前分支一致 |
+| 直通模式出招 | 点击 → 执行 Stab，参考时长 0.450s（= actionDuration / 攻速） |
+| 直通模式锁内投递 | 被拒绝，且不产生缓冲（与改造前一致） |
+| 阶段时钟 | 0.15s 后归一时间 0.345（约 1/3），与动作锁同步 |
+| 卡肉冻结 | 注入 0.14s 卡肉，时钟停在 0.345 不动，卡肉剩余正常递减 |
+| 配一条边即生效 | 窗口内点击 → 取消当前收尾直接接后继节点（Stab→Slash） |
+| 输入缓冲 | 窗口未开时进缓冲，窗口打开自动执行 |
+| 无出路输入 | 立即「无匹配边（不响应）」，不占缓冲、节点不变 |
+| 超窗投递 | 「窗口已关闭（不响应）」 |
+| 收尾回中立 | 时钟耗尽后回中立，可从入口重新起步 |
+
+**实现期对设计的三处修正（已同步本文档）**：
+
+1. **`cancelCurrentMove` 是必需的**：动作锁（Stab 0.45s）覆盖了整个接续窗口，不取消当前招式收尾就无法接续。默认 `false`，仅状态机在解析出合法后继时传 `true`，因此在独立 CD 模式下仍保留原有冷却语义。
+2. **`clampWindowAfterHitWindow` 默认改为 `false`**：显式配置优先，保守钳制改为可选（否则策划配的窗口会被静默抬高）。
+3. **无出路的输入不占用缓冲**：先判断该手势在本节点是否存在显式边或默认重复规则，无出路则立即拒绝。
 
 ---
 
@@ -485,7 +522,7 @@ MoveDefinition（可插入任意位置的招式包）
 | 3 | 未蓄满的快速滑动在抬手时不产生任何动作 | `InputManager.ProcessGesture` 只处理「蓄满长按」与「未滑动的点击」 | 滑动输入被静默吞掉，且最可能发生在连招窗口内 |
 | 4 | 点击在抬手才判定 | `ProcessGesture` 调用点位于 `TouchPhase.Ended` | 轻攻击固有延迟，连打节奏发糊 |
 | 5 | 动作锁期间输入被直接丢弃、无缓冲 | `AttackSystem.TryExecuteAttack` 冷却检查早退 | 掉输入；接续窗口的前提缺失 |
-| 6 | Stab 有独立于动作锁的第二道门 | `AttackSystem`：`if (attackType == Stab && _stabVisualTimer > 0f) return false;` | Stab 实际可用间隔 = 视觉时长，与动作锁重复；状态机接管后需统一 |
+| 6 | Stab 有独立于动作锁的第二道门 | `AttackSystem`：`if (attackType == Stab && _stabVisualTimer > 0f) return false;` | Stab 实际可用间隔 = 视觉时长，与动作锁重复。P1 已让 `cancelCurrentMove` 在接续场景同时绕过两道门；**从入口重新起步仍受该门限制**，P2 需统一 |
 | 7 | 一个 `AttackType` 只能有一个配置 | `HeroConfig.GetSkillConfig` 按 `attackType` 唯一匹配 | 无法实现「每下 stab 不一样」；取配置 key 必须换成 `moveId` |
 | 8 | `GetSkillConfig` 有 4 个调用点 | `AttackSystem.GetConfig`、`PlayerState`（冷却时长）、`UltimateSystem`（能量）、`QTEController`（QTE 取 Slash 配置） | 换 key 需一并处理；QTE 绕过输入直接取配置 |
 | 9 | 手势角度边界互相干扰 | `ProcessSwipeGesture` 斜滑为兜底；`design/attack-cooldown.md` 已记录向左横扫不稳 | 连招中 Sweep/Slash/Parry 容易互相误判 |
@@ -499,7 +536,7 @@ MoveDefinition（可插入任意位置的招式包）
 
 | 阶段 | 内容 | 验收 |
 |------|------|------|
-| P1 | 招式状态机 + 接续窗口 + 输入缓冲 + 状态机调试器；不配置任何边 | 回归等价 + 单条边可生效 + 三轴开关可测 |
+| P1 | ✅ 已完成（见 11.5）：招式状态机 + 接续窗口 + 输入缓冲 + 状态机调试面板；未配置任何边 | 回归等价 + 单条边可生效（均已实测） |
 | P2 | 轻攻击按下即出 + 起手取消；蓄力门与滑动手势解耦 | 实机手感对比 |
 | P3 | 上下文状态：招架成功态 + 专属连招 | 格挡成功后可进入专属分支 |
 | P4 | 局外解锁接入边/节点；局内三选一改写边与窗口 | 与天赋树对接 |

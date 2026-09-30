@@ -6986,6 +6986,7 @@ GameObject:
   - component: {fileID: 864291164}
   - component: {fileID: 864291165}
   - component: {fileID: 864291166}
+  - component: {fileID: 864291167}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Player
@@ -7115,6 +7116,23 @@ MonoBehaviour:
   flightPulseScale: 0.1
   maxPulseCount: 12
   pulseSortingOrder: 4
+--- !u!114 &864291167
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 864291161}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92035008308a1de49b280fb03b8f05aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackSystem: {fileID: 1809121297}
+  playerState: {fileID: 1878310418}
+  moveTable: {fileID: 0}
+  bufferEnabled: 1
+  showDebugPanel: 0
 --- !u!1 &868065446
 GameObject:
   m_ObjectHideFlags: 0
@@ -7707,6 +7725,7 @@ MonoBehaviour:
   swipeDownAngleThreshold: 30
   attackSystem: {fileID: 1809121297}
   whirlwindController: {fileID: 0}
+  moveStateMachine: {fileID: 864291167}
 --- !u!1 &952166475
 GameObject:
   m_ObjectHideFlags: 0
@@ -14677,6 +14696,7 @@ MonoBehaviour:
   occupySlots: 1
   attackSpeed: 1
   attackDamage: 10
+  normalFormDamageReductionPercent: 0
   attackRange: 1
   moveSpeed: 1
   visualYOffset: 0
