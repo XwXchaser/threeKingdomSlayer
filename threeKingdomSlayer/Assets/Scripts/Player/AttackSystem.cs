@@ -74,12 +74,94 @@ public class AttackSystem : MonoBehaviour
 
     private float _actionLockTimer;
     private float _stabVisualTimer;
+    private StabSweepEffect _lastStabEffect;
+    private StabStartPose _lastStabPose = StabStartPose.None;
+    private float _lastStabPoseTime;
+    /// <summary>交接姿态的有效期：超过这个间隔就不再用旧姿态起步（避免长时间后再出招时跳到旧位置）</summary>
+    private const float StabPoseHandoffWindow = 0.6f;
     private ChargeStabVisual _chargeStabVisual;
 
     /// <summary>
     /// 当前是否处于攻击动作播放中（动作锁定计时器未结束）
     /// </summary>
     public bool IsActionPlaying => _actionLockTimer > 0f;
+
+    /// <summary>最近一次成功执行招式的攻击类型（供招式状态机同步当前节点）</summary>
+    public AttackType LastMoveAttackType { get; private set; }
+
+    /// <summary>
+    /// 最近一次成功执行招式的参考时长。
+    /// 动作锁模式下等于实际动作锁（含 Launch 观察延长）；独立 CD 模式下为 actionDuration / 攻速。
+    /// </summary>
+    public float LastMoveDuration { get; private set; }
+
+    /// <summary>动作锁剩余时间（0 表示可自由行动）</summary>
+    public float ActionLockRemaining => _actionLockTimer > 0f ? _actionLockTimer : 0f;
+
+    /// <summary>本次招式的蓄力等级（0 = 未蓄力；>=1 为蓄力招式等级）</summary>
+    public int CurrentChargeLevel => _currentChargeLevel;
+
+    /// <summary>最近一次成功执行招式所用的配置资产（招式表节点或武将默认配置）</summary>
+    public AttackSkillConfig LastMoveConfig { get; private set; }
+
+    /// <summary>
+    /// 尝试取消最近一次戳击的起手：仅在其首个命中结算前有效。
+    /// 供「按下即出轻攻击」模型下，滑动在起手阶段改写本次输入使用。
+    /// 取消成功后清除动作锁与戳击视觉门；不触发能量、被动计数与击退波。
+    /// 独立 CD 模式下不提供取消（避免破坏冷却一致性）。
+    /// </summary>
+    public bool TryCancelLightAttackStartup()
+    {
+        if (!useActionBasedCooldown) return false;
+
+        StabSweepEffect effect = _lastStabEffect;
+        _lastStabEffect = null;
+        if (effect == null) return false;
+        if (!effect.TryCancelBeforeHit()) return false;
+
+        _actionLockTimer = 0f;
+        _stabVisualTimer = 0f;
+        LastMoveDuration = 0f;
+        return true;
+    }
+
+    /// <summary>
+    /// 连段蓄力：让当前戳击的枪体停在回收段中途等玩家蓄力（就地在枪体上换蓄力素材帧，
+    /// 不启用蓄力视觉的进出场实例）。仅在招式节点存在「需要蓄力的后续边」时由状态机调用。
+    /// </summary>
+    public void BeginComboChargeHold()
+    {
+        if (_lastStabEffect == null) return;
+        if (_chargeStabVisual == null) _chargeStabVisual = FindObjectOfType<ChargeStabVisual>();
+
+        _lastStabEffect.SetChargeVisualSource(_chargeStabVisual);
+        _lastStabEffect.BeginChargeHold();
+    }
+
+    /// <summary>按住时长（秒）透传给保持中的枪体，驱动「拉回蓄势位」的进度</summary>
+    public void UpdateComboChargeHold(float heldSeconds)
+    {
+        if (_lastStabEffect != null) _lastStabEffect.SetChargeHoldHeldSeconds(heldSeconds);
+    }
+
+    /// <summary>松开/节点切换：没有蓄力招式接手时让枪体恢复回收</summary>
+    public void EndComboChargeHold()
+    {
+        if (_lastStabEffect != null) _lastStabEffect.EndChargeHold();
+    }
+
+    /// <summary>
+    /// 让出枪体：非戳击、非挑飞招式接手时，把当前戳击的枪体立刻收掉
+    /// （无论在蓄力保持中、还是正在自己续完回收），避免同时出现两把枪。
+    /// </summary>
+    private void ReleaseHeldStabVisual()
+    {
+        StabSweepEffect stab = _lastStabEffect;
+        if (stab == null) return;
+
+        stab.AbortAndDestroy();
+        _lastStabEffect = null;
+    }
 
     private void Awake()
     {
@@ -105,6 +187,13 @@ public class AttackSystem : MonoBehaviour
             _actionLockTimer -= Time.deltaTime;
         if (_stabVisualTimer > 0f)
             _stabVisualTimer -= Time.deltaTime;
+
+        // 持续记录当前戳击的姿态：即使特效被外部清理（如路线转场），下一段也能接着走
+        if (_lastStabEffect != null)
+        {
+            _lastStabPose = _lastStabEffect.CapturePose();
+            _lastStabPoseTime = Time.time;
+        }
     }
 
     private void Start()
@@ -120,19 +209,24 @@ public class AttackSystem : MonoBehaviour
     /// <summary>
     /// 尝试执行攻击
     /// BUG FIX: 只有实际命中至少一个敌人时，才触发冷却和消耗
+    /// cancelCurrentMove：由招式状态机在接续窗口内解析出后继招式时传入，
+    /// 表现为「取消当前招式的收尾」直接接下一段；默认 false，行为与改造前一致。
     /// </summary>
-    public bool TryExecuteAttack(AttackType attackType, int targetColumn = -1, bool slashLeftToRight = true, float slashVisualTilt = 0f)
+    public bool TryExecuteAttack(AttackType attackType, int targetColumn = -1, bool slashLeftToRight = true,
+        float slashVisualTilt = 0f, bool chargedAttack = false, bool cancelCurrentMove = false, int chargeLevel = 0,
+        AttackSkillConfig moveConfig = null)
     {
+        _currentChargeLevel = chargeLevel;
         if (playerState == null) return false;
         if (playerState.stageState != StageState.InProgress) return false;
 
-        if (attackType == AttackType.Stab && _stabVisualTimer > 0f)
+        if (!cancelCurrentMove && attackType == AttackType.Stab && _stabVisualTimer > 0f)
             return false;
 
         // 冷却检查：新模式（动作锁定）→ 全局锁；旧模式 → 独立技能CD
         if (useActionBasedCooldown)
         {
-            if (_actionLockTimer > 0f) return false;
+            if (!cancelCurrentMove && _actionLockTimer > 0f) return false;
         }
         else
         {
@@ -143,7 +237,15 @@ public class AttackSystem : MonoBehaviour
             }
         }
 
+        // 招式表解析出的招式资产从这里开始生效（守卫早退时不留下残留）
+        _currentConfigOverride = moveConfig;
+
+        // 蓄力保持中的枪体：非戳击、非挑飞招式接手时先收掉
+        // （戳击的连段交接在 ExecuteStab 内处理；挑飞会先取用蓄势位姿态再自己收掉）
+        if (attackType != AttackType.Stab && attackType != AttackType.Launch) ReleaseHeldStabVisual();
+
         bool hitAny = false;
+        _attackIsCharged = chargedAttack;
         switch (attackType)
         {
             case AttackType.Stab:   hitAny = ExecuteStab(targetColumn); break;
@@ -153,21 +255,30 @@ public class AttackSystem : MonoBehaviour
             case AttackType.Launch: hitAny = ExecuteLaunch(); break;
             case AttackType.Parry:  hitAny = ExecuteParry(); break;
         }
+        _attackIsCharged = false;
 
         if (hitAny)
         {
             // 动作锁模式只覆盖玩家自身的出手与收招；离手飞行物拥有独立生命周期。
+            float moveDuration;
             if (useActionBasedCooldown)
             {
                 var cfg = GetConfig(attackType);
                 _actionLockTimer = GetAttackDuration(cfg);
                 if (attackType == AttackType.Launch)
                     _actionLockTimer = Mathf.Max(_actionLockTimer, LaunchVisualEffect.GetObservationDuration(cfg));
+                moveDuration = _actionLockTimer;
             }
             else
             {
                 playerState.StartCooldown(attackType);
+                moveDuration = GetAttackDuration(GetConfig(attackType));
             }
+
+            // 供招式状态机同步节点时钟：参考时长与实际生效的动作锁一致
+            LastMoveAttackType = attackType;
+            LastMoveDuration = moveDuration;
+            LastMoveConfig = GetConfig(attackType);
 
             if (attackType == AttackType.Stab)
             {
@@ -184,9 +295,11 @@ public class AttackSystem : MonoBehaviour
                     OnAttackPerformed?.Invoke(attackType, targetColumn, slashLeftToRight);
             }
 
+            _currentConfigOverride = null;
             return true;
         }
 
+        _currentConfigOverride = null;
         Debug.Log($"[AttackSystem] {attackType} 未命中任何敌人，不消耗冷却");
         return false;
     }
@@ -211,8 +324,11 @@ public class AttackSystem : MonoBehaviour
         return 0f;
     }
 
+    /// <summary>本招式的配置：招式表解析出的招式资产优先，否则按攻击类型取武将默认配置</summary>
     private AttackSkillConfig GetConfig(AttackType type)
     {
+        if (_currentConfigOverride != null && _currentConfigOverride.attackType == type)
+            return _currentConfigOverride;
         return playerState?.heroConfig?.GetSkillConfig(type);
     }
 
@@ -222,6 +338,8 @@ public class AttackSystem : MonoBehaviour
         if (cfg == null || columnIndex < 0 || columnManager == null || cfg.attackWavePrefab == null) return false;
 
         float finalDmg = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
+        // 打断标记必须在发起时固化：穿刺等伤害在特效回调里延迟结算。
+        bool chargeInterrupt = InterruptsCavalryCharge(cfg);
         int effectiveRows = GetEffectiveRangeRows(cfg);
         int visualRangeRows = effectiveRows;
         Enemy coveredBoss = columnManager.GetCombatBossCoveringColumn(columnIndex);
@@ -244,15 +362,38 @@ public class AttackSystem : MonoBehaviour
         float spacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
         Vector3 startPosition = new Vector3(playerPos.x, playerPos.y + cfg.stabSpawnYOffset, -5.5f);
         float yaw = GetStabRayYaw(columnIndex, spacing);
-        Vector3 rayDirection = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
         float baseLength = spacing * 2f;
         float rayLength = baseLength + (visualRangeRows - 1) * spacing;
-        Vector3 targetPosition = startPosition + rayDirection * rayLength;
+
+        // 枪尾位置自由：只要求枪尖能命中本列。
+        // 射线方向由「自由度很高的枪尾 → 本列目标点」决定，因此自然产生复合角度的斜向刺入，而不是单一轴旋转。
+        Vector3 baseAimDirection = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+        Vector3 targetPosition = startPosition + baseAimDirection * rayLength;
+        Vector3 tailPosition = startPosition
+            + Vector3.right * cfg.stabTailOffsetRight
+            + Vector3.up * cfg.stabTailOffsetUp
+            + Vector3.forward * cfg.stabTailOffsetForward;
+        Vector3 rayDirection = (targetPosition - tailPosition).normalized;
+        Vector3 rayOrigin = tailPosition;
         var hitTargets = new List<Enemy>();
         var pushedTargets = new List<Enemy>();
 
+        // 连段交接：上一段还没结束的戳击交出当前姿态后被立刻结束，避免两把枪重叠
+        StabStartPose startPose = StabStartPose.None;
+        if (_lastStabEffect != null)
+        {
+            startPose = _lastStabEffect.CapturePose();
+            _lastStabEffect.HandOff();
+            _lastStabEffect = null;
+        }
+        else if (_lastStabPose.valid && Time.time - _lastStabPoseTime <= StabPoseHandoffWindow)
+        {
+            // 上一段特效已被外部清理（例如路线转场清特效），仍沿用其末态，避免连段断裂
+            startPose = _lastStabPose;
+        }
+
         LastStabTargetEnemy = null;
-        StabSweepEffect.Create(cfg.attackWavePrefab, _stabSpeedSprite, startPosition, targetPosition, columnIndex, effectiveRows, visualRangeRows,
+        _lastStabEffect = StabSweepEffect.Create(cfg.attackWavePrefab, _stabSpeedSprite, rayOrigin, targetPosition, columnIndex, effectiveRows, visualRangeRows,
             finalDmg, cfg.damageType, columnManager, coveredBoss,
             enemy =>
             {
@@ -283,7 +424,8 @@ public class AttackSystem : MonoBehaviour
             GetStabVisualStartXOffset(columnIndex),
             cfg.stabVisualTargetRandomRadius,
             baseLength,
-            GetAttackDuration(cfg));
+            GetAttackDuration(cfg), chargeInterrupt,
+            StabMotionParams.FromConfig(cfg), startPose, _chargeStabVisual);
         AudioManager.Instance?.PostEvent("Player_Attack");
 
         Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 射程:{effectiveRows} 视觉射程:{visualRangeRows}");
@@ -296,6 +438,7 @@ public class AttackSystem : MonoBehaviour
         if (cfg == null || columnManager == null) return false;
 
         float finalDmg = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
+        bool chargeInterrupt = InterruptsCavalryCharge(cfg);
         int effectiveRows = GetEffectiveRangeRows(cfg);
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(effectiveRows);
         Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
@@ -317,7 +460,8 @@ public class AttackSystem : MonoBehaviour
             targetDuration: GetAttackDuration(cfg),
             rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite,
             visualPathTilt: visualTilt,
-            useEnhancedSlashMotion: true);
+            useEnhancedSlashMotion: true,
+            interruptsCavalryCharge: chargeInterrupt);
         AudioManager.Instance?.PostEvent("Player_Attack");
 
         Debug.Log($"[AttackSystem] 斩击 方向:{(leftToRight ? "L→R" : "R→L")} 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -400,6 +544,7 @@ public class AttackSystem : MonoBehaviour
         if (cfg == null || columnIndex < 0 || columnManager == null) return false;
 
         float finalDmg = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
+        bool chargeInterrupt = InterruptsCavalryCharge(cfg);
         int effectiveRows = GetEffectiveRangeRows(cfg);
         List<Enemy> targets = columnManager.GetEnemiesInRange(columnIndex, effectiveRows);
         if (!TryGetPierceVisualPath(columnIndex, out Vector3 releasePosition,
@@ -432,7 +577,8 @@ public class AttackSystem : MonoBehaviour
                 if (aliveTargets.Count > 0)
                     AttackWave.Create(wavePos, cfg.damageType, finalDmg, aliveTargets,
                         onHit: _ => AudioManager.Instance?.PostEvent("Stab_Hit"),
-                        prefab: cfg.attackWavePrefab);
+                        prefab: cfg.attackWavePrefab,
+                        interruptsCavalryCharge: chargeInterrupt);
                 return;
             }
 
@@ -441,7 +587,8 @@ public class AttackSystem : MonoBehaviour
             releaseVisual.TransferToProjectile(flightStart, projectileRotation, projectileScale);
             AttackWave.CreatePierceFromVisual(projectileObject, flightStart, finalDmg,
                 aliveTargets, visualEndPosition,
-                onHit: _ => AudioManager.Instance?.PostEvent("Stab_Hit"), timeScale: pierceTimeScale);
+                onHit: _ => AudioManager.Instance?.PostEvent("Stab_Hit"), timeScale: pierceTimeScale,
+                interruptsCavalryCharge: chargeInterrupt);
         });
 
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -454,6 +601,7 @@ public class AttackSystem : MonoBehaviour
         if (cfg == null || columnManager == null) return false;
 
         float finalDmg = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
+        bool chargeInterrupt = InterruptsCavalryCharge(cfg);
         int effectiveRows = GetEffectiveRangeRows(cfg);
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(effectiveRows);
         if (targets.Count > 0)
@@ -468,7 +616,8 @@ public class AttackSystem : MonoBehaviour
                 if (aliveTargets.Count == 0)
                     return;
                 AttackWave.Create(wavePos, cfg.damageType, finalDmg, aliveTargets,
-                    prefab: cfg.attackWavePrefab);
+                    prefab: cfg.attackWavePrefab,
+                    interruptsCavalryCharge: chargeInterrupt);
             });
         }
 
@@ -514,8 +663,11 @@ public class AttackSystem : MonoBehaviour
         if (cfg == null || columnManager == null) return false;
 
         float finalDmg = GetFinalDamage(cfg);
+        bool chargeInterrupt = InterruptsCavalryCharge(cfg);
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
         Vector3 playerLaunchPos = playerState != null ? playerState.transform.position : transform.position;
+        // 连段收尾：先铺一层 slash 的扫掠表现（只做观感，不参与判定）
+        if (cfg.launchSweepMode) PlaySweepPresentation(cfg, playerLaunchPos);
         if (targets.Count > 0)
         {
             ReleaseChargeHitShockwave();
@@ -542,11 +694,15 @@ public class AttackSystem : MonoBehaviour
                             canLaunch = true;
                         }
                         if (canLaunch)
+                        {
+                            enemy.OnPlayerLaunchHit();
                             enemy.Launch();
+                        }
                     },
                     prefab: null,
                     alphaOverride: 0f,
-                    canInterruptCFrame: true);
+                    canInterruptCFrame: true,
+                    interruptsCavalryCharge: chargeInterrupt);
             });
         }
         else
@@ -593,6 +749,7 @@ public class AttackSystem : MonoBehaviour
         foreach (var enemy in targets)
         {
             enemy.TakePoiseDamage(cfg.poiseDamage);
+            // 冲锋暂不可被 Parry 打断：格挡只造成架势/伤害。
             enemy.TakeDamage(finalDmg, cfg.damageType, canInterruptCFrame: true, isParryInterrupt: true,
                 feedbackStrength: HitFeedbackStrength.Heavy);
         }
@@ -608,10 +765,48 @@ public class AttackSystem : MonoBehaviour
     /// 以 (35,90,zStart) 朝向做纯 Z 轴旋转至 (35,90,zEnd)，
     /// 表现枪头从低往高上挑的攻击动作。
     /// </summary>
+    private static readonly List<Enemy> NoSweepTargets = new List<Enemy>();
+
+    /// <summary>
+    /// 连段收尾的扫击表现层：只借 slash 的扫掠观感（扇形/拖尾/方向/斜度），
+    /// 目标为空 → 不命中、不伤害、不掉血；伤害与击飞仍由挑飞的 AttackWave 结算。
+    /// </summary>
+    private void PlaySweepPresentation(AttackSkillConfig cfg, Vector3 playerPos)
+    {
+        Vector3 wavePos = new Vector3(0f, playerPos.y + cfg.slashSpawnYOffset,
+            playerPos.z + cfg.slashSpawnZOffset);
+        bool leftToRight = cfg.slashSweepDirection == SlashSweepDirection.LeftToRight;
+
+        SweepEffect.Create(wavePos, cfg.damageType, 0f, NoSweepTargets, leftToRight,
+            cfg.slashSweepHalfWidth, cfg.slashSweepAngle, cfg.slashSweepDuration,
+            prefab: cfg.attackWavePrefab,
+            // 扫掠总时长用 slashSweepDuration（比节点动作锁短），让它一下子掍完，而不是拖满整个收尾
+            targetDuration: cfg.slashSweepDuration,
+            rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite,
+            movementTilt: cfg.slashMovementTiltDegrees,
+            visualPathTilt: cfg.slashOverrideVisualTilt ? cfg.slashVisualTiltDegrees : 0f,
+            useEnhancedSlashMotion: true);
+    }
+
     private void PlayLaunchVisual(AttackSkillConfig cfg, Vector3 playerPos, System.Action onImpact)
     {
+        // 连段终结技：从蓄势位的枪体原地起手（中心/旋转/缩放全部沿用），并把那把枪交掉（避免两把枪）
+        bool hasHoldPose = false;
+        Vector3 holdCenter = default;
+        Quaternion holdRotation = default;
+        Vector3 holdScale = default;
+        StabSweepEffect heldStab = _lastStabEffect;
+        if (heldStab != null && heldStab.IsChargeHeld
+            && heldStab.TryGetChargeHoldPose(out holdCenter, out holdRotation, out holdScale))
+        {
+            hasHoldPose = true;
+            heldStab.ReleaseAfterChargeHold();
+            _lastStabEffect = null;
+        }
+
         LaunchVisualEffect.Create(_launchSprite1, _launchSprite2, _launchSprite3, cfg, playerPos,
-            _chargeStabVisual, LaunchVisualEffect.ObservationScale, onImpact);
+            _chargeStabVisual, LaunchVisualEffect.ObservationScale, onImpact,
+            hasHoldPose, holdCenter, holdRotation, holdScale, cfg.launchSkipWindup && hasHoldPose);
     }
 
     /// <summary>
@@ -642,7 +837,34 @@ public class AttackSystem : MonoBehaviour
         return pos;
     }
 
+    private bool _attackIsCharged;
+    private int _currentChargeLevel;
+    private AttackSkillConfig _currentConfigOverride;
+
+    /// <summary>
+    /// 本次攻击是否可打断骑兵冲锋（仅用于敌人侧判定，不参与玩家输入窗口/手势判定）。
+    /// 只有两个来源，都不靠代码里的攻击类型白名单：
+    ///   1) 攻击资产勾选了 AttackSkillConfig.interruptsCavalryCharge（把某种攻击视为“蓄力/重攻击”时在数据里声明）；
+    ///   2) 本次输入为蓄力（InputManager.isCharged，经 TryExecuteAttack(..., chargedAttack) 传入），
+    ///      用于斩击这种普通/蓄力共用的动作。
+    /// 将来新增“重攻击”类攻击：勾选该资产，或在新的输入分支传入 chargedAttack，不需要改骑兵代码。
+    /// </summary>
+    private bool InterruptsCavalryCharge(AttackSkillConfig cfg)
+    {
+        if (cfg != null && cfg.interruptsCavalryCharge) return true;
+        return _attackIsCharged;
+    }
+
     /// <summary>获取最终伤害（基础伤害 × 升级倍率）</summary>
+    /// <summary>按蓄力等级取伤害倍率；未配置等级表时不影响任何数值</summary>
+    private float GetChargeLevelMultiplier(AttackSkillConfig cfg)
+    {
+        if (_currentChargeLevel < 1 || cfg == null) return 1f;
+        var table = cfg.chargeLevelDamageMultipliers;
+        if (table == null || table.Count == 0) return 1f;
+        return table[Mathf.Clamp(_currentChargeLevel - 1, 0, table.Count - 1)];
+    }
+
     private float GetFinalDamage(AttackSkillConfig cfg)
     {
         if (cfg == null) return 0f;
@@ -666,7 +888,8 @@ public class AttackSystem : MonoBehaviour
         int damage = Mathf.RoundToInt(cfg.baseDamage * (1f + bonusPercent));
 
         for (int i = 0; i < cfg.shockwaveCount; i++)
-            AttackWave.Create(wavePos, DamageType.Slash, damage, targets, prefab: prefab);
+            AttackWave.Create(wavePos, DamageType.Slash, damage, targets, prefab: prefab,
+                interruptsCavalryCharge: true);
 
         Debug.Log($"[AttackSystem] 受击冲击波释放: {cfg.shockwaveCount}波 rows={cfg.rangeRows} damage={damage} bonus={bonusPercent:P0}");
     }
@@ -698,7 +921,7 @@ public class AttackSystem : MonoBehaviour
                 for (int w = 0; w < wavesPerTick; w++)
                 {
                     AttackWave.Create(wavePos, DamageType.Sweep, dmg, targets,
-                        prefab: wavePrefab);
+                        prefab: wavePrefab, interruptsCavalryCharge: true);
                     if (r.config.waveDelay > 0f)
                         yield return new WaitForSeconds(r.config.waveDelay);
                 }
@@ -727,7 +950,7 @@ public class AttackSystem : MonoBehaviour
             for (int layer = 0; layer < r.layers; layer++)
             {
                 AttackWave.Create(wavePos, DamageType.Sweep, r.config.damage, targets,
-                    prefab: wavePrefab);
+                    prefab: wavePrefab, interruptsCavalryCharge: true);
                 if (layer + 1 < r.layers)
                     yield return null;
             }
@@ -895,7 +1118,10 @@ public class AttackSystem : MonoBehaviour
                                 canLaunch = true;
                             }
                             if (canLaunch)
+                            {
+                                enemy.OnPlayerLaunchHit();
                                 enemy.Launch();
+                            }
                         },
                         prefab: cfg.attackWavePrefab, alphaOverride: alpha,
                         damageNumberColor: phantomColor,

@@ -97,6 +97,13 @@ public class ChargeStabVisual : MonoBehaviour
 
     private void Update()
     {
+        // 连段蓄力期间不启用蓄力视觉的进出场实例（标记由招式状态机在按下时置位）
+        if (InputManager.Instance != null && InputManager.Instance.comboChargeActive)
+        {
+            if (_visualInstance != null) SuppressFadeAndDestroy();
+            return;
+        }
+
         if (!_hasAppeared || _visualInstance == null) return;
 
         if (_isEntering)
@@ -178,6 +185,8 @@ public class ChargeStabVisual : MonoBehaviour
     private void OnChargeUpdated(Vector2 screenPos, float progress)
     {
         _lastScreenPos = screenPos;
+        // 连段蓄力不是穿刺蓄力：不启用蓄力视觉的进出场实例
+        if (InputManager.Instance != null && InputManager.Instance.comboChargeActive) return;
         if (!_isActive) return;
 
         if (progress >= appearThreshold)

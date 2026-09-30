@@ -1,0 +1,675 @@
+---
+id: kd_a01d540b-2822-4970-9c21-5fbed6a73304
+injectMode: inherit
+injectAgents:
+- unity
+aiEditMode: inherit
+---
+
+# 连招系统：招式转移图与动作状态机
+
+连招系统的权威设计文档。模型为「招式转移图」（动作状态机），取代早期的「前置段数 × 终结手势」矩阵设想；涵盖三阶段招式、接续窗口、上下文状态、输入模型 A/B 对比、局内外解锁、测试与验收要求。
+
+## 概述
+
+连招系统的定位不是「附加功能」，而是**战斗主干**。当前局内三选一（召唤物、落雷、喷火等）与被动数值过强，玩家的最优解偏向站桩放技能，动作表达被架空。改为招式驱动后：
+
+- 玩家成长的主体 = **出招表能被用出来多少**（节点、边、窗口、属性挂点）
+- 局内三选一 = **改写出招表规则**（属性挂边、窗口放宽、收尾缩短、节点替换），而不是加数值
+- 局外天赋 = **解锁边或节点**，是「高段位招式」的天然门槛
+
+---
+
+## 1. 术语
+
+| 术语 | 含义 | 与现有概念的关系 |
+|------|------|------------------|
+| 连招 / 招式转移图 | 输入序列 → 后继招式的有向图 | 本设计 |
+| 节点 / 招式（Move） | 一个可执行的招式，内部有既有的 起手→命中→收尾 视觉序列 | 对应现有 `AttackSkillConfig`，需扩展 |
+| 边（Edge） | （输入手势 + 有效窗口）→ 后继节点 | 新增 |
+| 伤害判定窗口 | 视觉效果命中目标的时段，由特效组件按时序驱动 | **已存在**（`StabSweepEffect` / `SweepEffect`） |
+| 动作锁 | 玩家不能进行其他动作的时段，等于整条序列长度 | **已存在**（`AttackSystem._actionLockTimer`） |
+| 接续窗口 / 连招输入窗口 | 允许接下一招的时段，锚定在同一条序列的百分比区间上 | **新增**（本设计） |
+| 上下文状态 | 招架成功、击飞等临时状态，替换/追加解析表 | 新增 |
+| **连击（Combo）** | 命中计数与阈值 Buff | `ComboManager` 现有系统，**与本设计无关** |
+| 出招表 | 转移图的策划可读视图（接续表） | Editor 工具 |
+
+命名注意：`Assets/ScriptableObjects/Combo/` 当前已被命中连击的 `ComboBuffConfig` 占用；新资产请另建目录，避免混用。
+
+---
+
+## 2. 现有实现实测基线
+
+（读取自磁盘 YAML 与源码，用于说明问题量级）
+
+| 项目 | 值 | 来源 |
+|------|-----|------|
+| 攻击类型 | `Stab / Slash / Pierce / Sweep / Launch / Parry` + `Ultimate` | `Assets/Scripts/Player/PlayerState.cs` `AttackType` |
+| 输入映射 | 点击→Stab；长按蓄力→Pierce；竖滑→Launch；横滑→Sweep；斜滑→Slash；按住竖滑→Parry | `Assets/Scripts/Player/InputManager.cs` |
+| 点击手势判定时机 | 抬手时（`TouchPhase.Ended`） | `InputManager.cs` `ProcessGesture` 调用点 |
+| 滑动招式前置条件 | 必须先按住蓄力门（场景实测 1.0s，见 2.1） | `InputManager.cs` `TryConsumeLiveGesture` |
+| 未蓄满的快速滑动 | 不产生任何攻击（抬手分支只处理「蓄满长按」与「未滑动的点击」） | `InputManager.cs` `ProcessGesture` |
+| 滑动参数 | 阈值 DPI 自适应（场景实测 50px，钳制 30–150）、须 0.25s 内完成、最低速度 180px/s、重新识别间隔 0.1s | `InputManager.cs` |
+| 动作锁 | Stab `actionDuration` 0.45s、Slash 0.5s；场景中 `useActionBasedCooldown = true`（动作锁为**当前实际运行模式**），锁期间 `TryExecuteAttack` 直接返回 false，**输入被丢弃且无缓冲** | `Assets/Scripts/Player/AttackSystem.cs`、`Zhangfei_Stab/Slash.asset` |
+| 伤害结算方式 | **时间分辨**：由特效组件按视觉时序逐个目标结算，不是一帧全结算 | `Attack/StabSweepEffect.cs` `CheckHits`、`Attack/SweepEffect.cs` `CheckHitThresholds` |
+| 动作锁与序列的关系 | `GetAttackDuration(cfg)` 同时作为 `targetDuration` 传入特效，**动作锁与视觉序列 1:1 对齐** | `AttackSystem.cs` `ExecuteStab` / `ExecuteSlash` |
+| 命中卡肉 | 只暂停特效序列（`seq.Pause()` + `WaitForSecondsRealtime`），**不改 `Time.timeScale`**，因此动作锁会先于视觉走完 | `StabSweepEffect.cs` / `SweepEffect.cs` `PauseSequenceForHitStop` |
+| 招式配置归属 | `HeroConfig.skillConfigs` 与 `AttackSkillConfig`，**同一个 `AttackType` 只能有一个配置** | `Assets/Scripts/Core/HeroConfig.cs` |
+| 现有武将配置 | 仅张飞一个（`Assets/ScriptableObjects/Warrior/Hero_Zhangfei.asset`） | — |
+| 数值观察 | 张飞 Slash 伤害 8，低于 Stab 伤害 20 | `Zhangfei_Slash.asset` / `Zhangfei_Stab.asset` |
+
+### 2.1 实时核实（编辑器内读取，覆盖磁盘默认值）
+
+以下为在 Unity 编辑器内读取**场景实例实际值**的结果；与 C# 字段默认值不一致时，以本节为准。
+
+| 项 | 实测值 | C# 默认值 | 说明 |
+|----|--------|-----------|------|
+| `InputManager.minChargeTime` | **1.0s** | 0.5s | 蓄力门比默认严一倍，连招节奏问题更严重 |
+| `InputManager.longPressDuration` | 0.3s | 0.3s | 一致 |
+| `InputManager.swipeThreshold` | **50px**（DPI 钳制后） | 30px | `Awake` 按 DPI 缩放并钳制到 30–150 |
+| `AttackSystem.useActionBasedCooldown` | **true** | false | 动作锁为当前实际运行模式 |
+| `AttackSystem.parryProjectileRange` | 10 | 4 | 场景覆盖 |
+| `AttackSystem.pierceTimeScale` | 1 | 3 | 观察慢放已调回原速 |
+
+张飞实际装配的招式配置（`Hero_Zhangfei.asset`）：
+
+| 招式 | damage | cooldown（独立CD） | actionDuration | rangeRows |
+|------|--------|--------------------|----------------|-----------|
+| Stab | 20 | 0.3 | 0.45 | 1 |
+| Slash | 8 | 0.65 | 0.50 | 1 |
+| Pierce | 20 | 3.0 | 0.50 | 3 |
+| Sweep | 5 | 2.0 | 0.55 | 3 |
+| Launch | 2 | 0.5 | 0.60 | 1 |
+| Parry | 0 | 0.5 | 0.20 | 1 |
+
+大招配置为 `Zhangfei_BerserkUlt.asset`。这些配置资产放在 `Assets/Prefabs/UI/Skills/`，目录名有误导，里面实际是 `AttackSkillConfig`。
+
+两个数值观察：Slash（8）低于 Stab（20），Launch 只有 2，Parry 为 0 —— 与「段位越深越强」的设计意图明显不符，需在内容阶段一并重做。
+
+**反向依赖已核实**：这 6 个配置资产**只被 `Hero_Zhangfei.asset` 引用**，Prefab / Scene / HUD 均无引用（已用 `AssetDatabase.GetDependencies` 全量扫描 210 个资产确认）。因此「取配置 key 从 `attackType` 改为 `moveId`」只影响 §14 列出的 4 个代码调用点，UI 侧无额外耦合。
+
+**结论**：现状做一次「点击→点击→斜滑」需约 2.7s 以上（两次点击各含抬手延迟，且滑动需额外按住 1.0s），且过程中任何提前输入被静默丢弃。这是连招手感无法成立的直接原因。
+
+---
+
+## 3. 核心模型：招式转移图
+
+```
+节点 = 招式（内部已有 起手 → 命中 → 收尾 的视觉序列）
+边   = （输入手势 + 接续窗口）→ 后继招式
+```
+
+### 3.1 窗口划分：复用已有序列阶段，只新增输入窗口
+
+游戏里存在三个不同的「窗口」，此前文档把它们混称「判定帧」，造成歧义。三者必须分开：
+
+| 窗口 | 层面 | 现状 |
+|------|------|------|
+| 伤害判定窗口 | 命中 | **已存在**，由特效组件按视觉时序驱动 |
+| 动作锁 | 玩家操作 | **已存在**，时长 = 整条序列长度 |
+| 连招输入窗口 | 输入接续 | **不存在**，本设计要新增的就是它 |
+
+**伤害判定窗口已经存在，且已经是时序化的：**
+
+- `StabSweepEffect` 在刺出/穿入阶段按**枪尖推进距离**逐个命中（`CheckHits` 比较枪尖投影距离与敌人排距离，容差 0.35）。
+- `SweepEffect` 在横扫推进过程中按每个敌人的 `xThreshold` 逐个命中（`CheckHitThresholds` 在移动 tween 的 `OnUpdate` 里调用）。
+- 两者均在首次命中时暂停序列做卡肉。
+
+**动作锁与视觉序列已经 1:1 对齐：** `GetAttackDuration(cfg)`（= `actionDuration / 攻速`）既作为动作锁时长，又作为 `targetDuration` 传入特效组件，特效按固定比例切分自己的内部阶段：
+
+```
+Stab 序列： 起手 12% → 刺出 28% → 穿入 8% → 回收 52%
+Slash 序列：挥砍（总长 - 惯性 - 淡出）→ 惯性 → 淡出
+```
+
+因此**不需要把 `actionDuration` 拆成「起手 + 收尾」，也不需要新建判定帧**——起手与收尾在特效序列里早就存在（只是叫 windup/retract）。要新增的只有「连招输入窗口」，且它应锚定到同一条序列的百分比区间上。
+
+### 3.2 边与接续窗口
+
+- 边只在**接续窗口**内有效。窗口以**同一条视觉序列的百分比区间**配置（例如 Stab 的「回收段 10%–80%」），不使用独立秒数。
+- 这样做的三个好处：① 窗口天然与视效同步；② 攻速提升会压缩整条序列，窗口按比例自动跟随；③ 命中卡肉暂停序列时窗口可一起冻结，不会错位。区间需要逐招式慢慢微调，不追求一次到位。
+- 输入到达时的处理顺序：① 当前节点的显式边 → ② 节点的默认重复规则 → ③ **什么都不发生**（不回落出中立招式），当前招式走完收尾回到中立。
+- 窗口内的提前输入进入**输入缓冲**，窗口打开时生效；超出窗口的丢弃。
+
+### 3.3 段数上限与循环
+
+**不设全局上限。** 链长 = 图深度 = 配置的节点数量，由策划决定。代码只提供容器与编辑器校验。
+
+**允许成环**，当前连续 Stab 本质就是一条自环。为保持改造前后行为等价，每个节点默认保留「同手势重复」规则：
+
+- 节点记录 `entryInput`（进入本节点所用的手势）；默认该手势可重复，即 `Stab → Stab → Stab`。
+- 默认重复**只作用于 `entryInput`**，其他输入必须显式配边，避免未解锁的边被自环误命中。
+- 想实现无双式「串尾终止」，在该节点关掉重复开关即可，不需要额外机制。
+
+### 3.4 终止条件
+
+当前节点没有任何可进入的后继时，招式自然收尾回到中立——即「动作状态机一直走下去，直到没有动作进入收尾」。
+
+串尾不需要额外的惩罚机制：关掉重复开关后，末段节点的收尾本身就是终结硬直；若希望「反无脑连打」的力度更强，把末段节点的收尾配长即可。
+
+### 3.5 示例形态（张飞）
+
+| 当前节点 | 有效窗口 | 输入 | 后继 |
+|----------|----------|------|------|
+| 中立 | — | 点击 | 枪突1 |
+| 中立 | — | 斜滑 | 斩击（现 C1） |
+| 枪突1 | 判定后段 ~ 收尾 | 点击 | 枪突2（动作/伤害/位移独立配置） |
+| 枪突1 | 同上 | 斜滑 | 斩·二连 |
+| 枪突1 | 同上 | 竖滑 | 挑·二连 |
+| 枪突2 | 同上 | 点击 | 枪突3 |
+| 枪突2 | 同上 | 斜滑 | 斩·三连 |
+| 枪突3 | — | （无配置） | 收尾 → 中立 |
+| 招架成功态 | 3s | 斜滑 | 招架反击斩 |
+| 招架成功态 | 3s | 点击 | 招架回刺 |
+
+### 3.6 全招式可作前置
+
+任何招式都能作前置（不限于轻攻击），因此每个节点理论上可配置 6 输入 × 6 后继。配置量必须靠工具控制，不能靠手填引用：
+
+- Editor 呈现为**接续表**：每行一个节点，列出其边（输入 / 窗口 / 后继），空 = 不可接续。
+- 校验规则：允许成环（例如显式配置的无限连段），但对「存在不可终止子图」必须警告。
+
+### 3.7 接续窗口的默认派生与手动覆盖
+
+窗口**既可手动配置，也在创建节点时给一个合理默认值**，不强制手填。默认值只作起点，最终以实机手感逐招式微调。
+
+默认派生（按各招式现有特效序列的阶段比例自动计算）：
+
+| 招式 | 现有序列阶段 | 默认窗口 | 依据 |
+|------|--------------|----------|------|
+| Stab | 起手 12% / 刺出 28% / 穿入 8% / 回收 52% | 48%–95% | 命中窗口结束时开窗（枪尖已到位），留 5% 余量避免窗口跨进下一招起手 |
+| Slash | 挥砍 ≈70% / 惯性 ≈12% / 淡出 ≈18% | 65%–92% | 横扫后段开窗，覆盖惯性段，止于淡出中段 |
+| Pierce / Sweep | 出手视觉 + 离手飞行物 | 60%–95% | 通用兜底 |
+| Launch | 蓄势 + 上挑 | 70%–95% | 上挑判定完成后开窗 |
+| Parry | 扫掠 | 60%–95% | 本身是防御动作，窗口主要服务「招架成功态」入口（第 6 节） |
+
+通用兜底公式：起 = 命中窗口结束比例 × 0.8，终 = 95%。
+
+三条约束：
+
+- **窗口起点默认不早于命中窗口结束**：该约束落在「派生默认值」上；**显式配置的窗口原样生效**。`MoveTableConfig.clampWindowAfterHitWindow` 默认关闭，开启后才连显式窗口一起保守钳制。
+- **最小绝对时长下限**：窗口按百分比随攻速缩放，需保证 ≥ 0.06s，否则高攻速下窗口趋近 0，连招变成不可能。
+- 默认值随节点创建时自动生成，后续可逐招式覆盖；两者共存，不做成「必须手填」。
+
+---
+
+## 4. 与真·三国无双 3–5 的对照
+
+| 无双 3–5 | 可学点 | 本项目对应 |
+|----------|--------|------------|
+| 出招表是独立格子，每格一套数据 | 招式即自包含数据包 | `MoveDefinition` |
+| `C_n = (n-1)方 + 蓄力` | 终结技身份由前置决定 | 图上的边 |
+| C 技语义分工（挑空/多段/范围/浮空） | 每格有明确功能定位 | Launch=挑空、Sweep=范围、Slash=斩击、Pierce=贯穿 |
+| 普攻串不循环，收尾硬直后回起始态 | 用动作成本而非数值惩罚无脑连打 | 无配置后继 → 收尾 → 中立 |
+| 高段位 C 技需要武器进化 | 门槛式解锁 | 局外天赋解锁边/节点 |
+| 每段普攻动画/伤害/位移独立 | 才有「每下 stab 不一样」 | 枪突1/2/3 拆为独立节点 |
+| 取消窗口 + 预输入 | 手感命脉 | 接续窗口 + 输入缓冲 |
+| 空挥也推进段数（输入驱动） | 否则面向空列永远连不上 | 段位推进与「命中才消耗冷却」解耦 |
+| 属性只挂特定段位 | 精确的强度分配 | 三选一效果挂边 |
+| （本轮排除）无双槽、跳跃攻击、骑乘、空中连段 | — | 大招能量已存在；空中连段留扩展位 |
+
+注意：无双是双按键、零延迟按钮输入；本项目是手势输入，识别本身有延迟与歧义，因此第 5 节的输入模型是**本项目独有**的设计问题。
+
+---
+
+## 5. 输入模型 A / B
+
+### 5.1 A（抬手判定，现状）
+
+招式发生时刻 = 手指离开屏幕。抬手时才知道这次是点击还是滑动，因此按下瞬间无法出招。
+
+- 轻攻击固有延迟 ≈ 80–150ms（一个完整点击周期）。
+- 连打必须由玩家自行卡节奏，动作锁期间输入被静默丢弃。
+- 优点：手势语义清晰，不需要「先出招再改写」的补救逻辑。
+
+### 5.2 B（按下即出轻攻击 + 起手取消窗口）
+
+招式发生时刻 = 手指按下，立即进入轻攻击起手。
+
+- 起手结束（判定开始）之前，手指移动超过阈值 → 把这次输入**改写**为手势招式，不会留下一记误伤的轻攻击。
+- 未移动 → 起手走完 → 判定 → 收尾，正常出招。
+- 延迟 ≈ 0–16ms，与按钮游戏同级；天然形成「点一下 → 紧接着滑动」的连招节奏，且那一下轻攻击是真实存在的。
+
+### 5.3 三个必须分离的轴
+
+手感问题由三个独立原因造成，A/B 只是其中之一：
+
+| 轴 | 现状 | 影响 |
+|----|------|------|
+| 1. 判定时机 | 抬手 | 轻攻击延迟、连打节奏 |
+| 2. 蓄力门 | 所有滑动招式需按住 1.0s（场景实测） | 终结手势的节奏被打断 |
+| 3. 输入缓冲与取消窗口 | 动作锁期间输入被丢弃 | 连打掉输入、无法提前接招 |
+
+只改轴 1 而保留轴 2，终结手势仍要按住 1.0s，连招节奏依旧断裂。三者需要**独立开关**，以便分别测量手感贡献。
+
+### 5.4 结论
+
+采用 B，但**分两步**：
+
+1. 招式分阶段（起手/判定/收尾）+ 接续窗口 + 输入缓冲。此步在 A 模型下即可运行完整状态机。—— 已实现为「复用既有序列阶段 + 新增输入窗口」（见 11.5）。
+2. 轻攻击改为按下即出 + 起手取消，同时处理蓄力门问题。—— 已实现为两个可开关项（见 11.6）。
+
+---
+
+## 6. 上下文状态
+
+第一版只做**招架成功态**。击飞/空中态不是本期需求，仅保留机制上的可扩展性，不预先设计。
+
+```
+Parry 判定成功
+  → 进入「招架成功态」（持续 N 秒）
+  → 该状态下中立节点的解析表被替换 / 追加
+  → 专属连招的边仅在此状态有效
+  → 超时或受击 → 退出状态
+```
+
+前置需求：
+
+- 需要 `OnParrySuccess` 事件。现有 `ExecuteParry` 在「反弹飞行物」与「打到敌人」两种情况下都返回成功，而「格挡成功」应更严格地指挡住敌方攻击或飞行物，需要区分「招架命中敌人」与「招架住攻击」。
+- 同一机制将来可复用于其他状态（例如击飞），但不在本期范围内。
+
+---
+
+## 7. 数据与配置结构（一层结构，已落地）
+
+一个招式 = 一份 `AttackSkillConfig`，图结构直接写在招式资产上，不再有单独的节点层。
+
+```
+AttackSkillConfig（一招式一资产）
+ ├─ 表现 / 判定 / 范围 / 时长（原有字段）
+ ├─ repeatSelf          是否允许以进入本招式的手势重复本招式
+ ├─ overrideWindow      是否覆盖接续窗口（含起止百分比）
+ └─ moveEdges[]         AttackMoveEdge：手势 + 窗口覆盖 + 后继 AttackSkillConfig
+```
+
+```
+MoveTableConfig（每武将一份）
+ ├─ roots[]             中立态入口：手势 → 招式资产
+ ├─ states[]            上下文状态覆盖（第一版仅预留）
+ └─ 默认窗口参数          clampWindowAfterHitWindow / minWindowSeconds
+```
+
+三条约束：
+
+1. **招式内不含触发条件**：招式不知道自己是第几段，只接收「目标列 / 朝向 / 蓄力等级」。
+2. **与旧结构的关系**：原型曾有独立的 `MoveDefinition` / `MoveEdge` 节点层，用途是「同一招式插到不同位置且各自有不同后继」。经确认本项目不需要该复用能力（每段都是独立动作），因此**合并为一层**，`MoveDefinition` / `MoveEdge` 已删除。
+3. **入口与后续段分工**：只有入口招式需要放进 `HeroConfig.skillConfigs`（`GetSkillConfig(attackType)` 按类型取第一个匹配）；后续段由 `moveEdges` 直接引用，不需要登记。
+   **更正**：取配置从 `attackType` 改为「资产引用」的改造当时并未真正完成——状态机只传了攻击类型，执行层仍然按类型从 `HeroConfig` 取那份默认配置，因此招式资产上新增的参数（角度/力度/自转等）一段时间内根本没生效。真正完成是在后续一轮：状态机把解析出的招式资产传给 `TryExecuteAttack(..., moveConfig)`，`GetConfig` 优先用它。
+
+---
+
+## 8. 局外解锁
+
+- **解锁粒度为边或节点**：天赋节点解锁「某个后继招式可用」。
+- 未解锁时该边不存在；由于默认重复规则只作用于 `entryInput`，该输入既不匹配边也不匹配默认规则 → 什么都不发生，**不需要额外的回落逻辑**，行为天然一致。
+- 需要持久化已解锁的边/节点 id 集合；`SaveData`（`Assets/Scripts/Core/SaveManager.cs`）需新增字段并沿用现有 `MigrateIfNeeded` 迁移模式。
+- 天赋树本身尚未实现（`design/out-of-game-growth-system.md` 中为 P3），因此连招系统必须自带可切换的解锁来源，避免被阻塞。
+
+---
+
+## 9. 局内升级的改写点
+
+| 改写类型 | 说明 |
+|----------|------|
+| 属性挂边 | 「斩·三连附带火」——属性只在该边生效 |
+| 窗口改写 | 接续窗口放宽、收尾缩短 |
+| 节点替换 | 把某条边指向强化版节点 |
+| 新增边 | 解锁新的后继分支 |
+
+与 `design/out-of-game-growth-system.md` 的「禁止纯数值提升」约束一致：改的是机制与规则，不是伤害数字。
+
+---
+
+## 10. 测试、调试与验收
+
+### 10.1 第一步改造（零新内容）如何算「跑通」
+
+不配置任何边时，每个招式退化为「中立 → 招式 → 收尾 → 中立」的单节点图，行为应**与现状等价**。验收判据：
+
+1. **回归等价**：改造前后用同一套脚本化输入回放，记录「触发的招式序列 + 每招命中/伤害/冷却起始时刻」，逐条比对，差异为 0（我们有意变更的项除外）。
+2. **阶段可观测**：调试 HUD 显示当前节点、所处阶段、阶段进度、窗口剩余。能看到「起手 0–0.2s / 判定 0.2–0.3s / 收尾 0.3–0.45s」即为分阶段生效。
+3. **接续表为空时行为不变**：包括连续 Stab 连打（默认自环）在内的现状行为保持一致。
+4. **配置一条边即生效**：例如 `枪突1 --点击--> 枪突2`，能观察到第二下点击接在收尾内且不再是同一个枪突1。
+5. **输入缓冲可观测**：窗口内的提前输入被记录为「已缓冲、窗口打开时执行」，而不是被丢弃。
+
+### 10.2 手感如何验证
+
+手感无法自动化，因此需要**运行时开关**（Inspector 字段或调试热键），可现场切换：
+
+- 轴 1：抬手判定 ↔ 按下即出
+- 轴 2：蓄力门开 ↔ 关
+- 轴 3：输入缓冲开 ↔ 关
+
+开关：**轴 2** `InputManager.swipeChargeMode`、**轴 3** `PlayerMoveStateMachine.bufferEnabled`（需配置招式表后生效）。**轴 1（按下即出轻攻击）已撤回**：它与「起手即蓄力」冲突，改为沿用 V1 的「按下只做起手、松手才结算判定」。
+
+三个开关的任意组合都需能跑。这样「哪种手感更好」由实机试按决定，而不是靠讨论。
+
+### 10.3 工具
+
+- **状态机调试器**：当前节点 / 阶段 / 可用边 / 窗口剩余；支持从任意节点起跑、一键执行任意边。
+- **窗口对齐视图**：在动画/特效时间轴上叠加显示接续窗口区间，供逐招式微调（见 3.2）。
+- **接续表 Editor**：每行一个节点，列出输入 / 窗口 / 后继；空置校验与不可终止子图警告。
+- 项目已有「战斗数值总表 EditorWindow」可扩展承载接续表。
+
+---
+
+## 11. 实现方案（P1：零内容等价改造）
+
+目标：装上状态机、窗口、输入缓冲与调试工具，**不配置任何边**，行为与现状等价。
+
+### 11.1 新增类型
+
+| 类型 | 职责 |
+|------|------|
+| `MoveDefinition`（ScriptableObject） | 招式节点：`moveId`、显示名、`AttackSkillConfig` 引用（复用现有资产）、窗口覆盖、`repeatSelf` 开关、后继边清单 |
+| `MoveEdge`（Serializable） | `gesture`（点击/斜滑/横滑/竖滑/长按）、`windowStart01` / `windowEnd01`、`next`（`MoveDefinition` 引用） |
+| `MoveTableConfig`（ScriptableObject） | 每武将一份：中立态可用的招式（roots）、上下文状态表、默认派生参数 |
+| `PlayerMoveStateMachine`（MonoBehaviour） | 当前节点、阶段时钟、窗口判定、边解析、输入缓冲、默认重复规则；对外提供 `NotifyInput(...)` 与状态事件 |
+| `GestureInput`（struct） | 手势类型 + 目标列 + 朝向 + tilt + charged + 时间戳 |
+
+### 11.2 改造点
+
+| 位置 | 改动 |
+|------|------|
+| `InputManager` | 6 个 `TryExecuteAttack` 调用点全部收敛为「向状态机投递手势」；手势识别逻辑本身不动，保证 P1 等价 |
+| `AttackSystem` | `TryExecuteAttack` 保留为底层执行接口（状态机、QTE、解锁攻击、道具共用），P1 不改其内部分支 |
+| `HeroConfig` | 保留 `GetSkillConfig(attackType)`；新增按 `moveId` 解析的路径 |
+| `PlayerState` | 冷却语义 P1 不动；仅将动作锁剩余暴露给状态机 |
+| 调试面板 | 当前节点 / 阶段百分比 / 窗口区间 / 缓冲内容 |
+
+### 11.3 阶段时钟与卡肉（已确认可改 `HitFeedbackManager`）
+
+现状：动作锁用 `Time.deltaTime` 递减；特效序列是 DOTween，卡肉时被 `seq.Pause()`。
+
+- 状态机阶段进度优先读特效序列进度，读不到时回落到 `actionDuration` 派生。
+- 在 `HitFeedbackManager.Trigger` 增加卡肉广播（唯一入口），供状态机冻结阶段时钟与窗口计时。广播语义：
+  - 带 `duration`（由 `GetHitStopDuration(strength)` 得出）。
+  - `HitFeedbackStrength.None`（DoT 等）不广播，避免持续伤害把连招时钟冻住。
+  - 连续命中可叠加延长（取剩余时间与新时长的较大值）。
+  - 状态机按「当前卡肉剩余时间」冻结阶段时钟；不改变敌人与特效自身的卡肉实现。
+
+### 11.4 P1 明确不做
+
+不配置任何边；不新增招式；不改手势识别与蓄力门；不改冷却、伤害与数值；不改输入模型（仍为 A）。
+
+### 11.5 P1 实现状态与实测结果（已完成）
+
+新增（`Assets/Scripts/MoveSystem/`）：
+
+| 文件 | 内容 |
+|------|------|
+| `MoveGesture.cs` | `MoveGesture` 枚举、`GestureInput` 结构、`MoveGestureDefaults`（等价映射 + 滑动方向分类） |
+| `MoveEdge.cs` | 接续边：手势 / 窗口覆盖 / 窗口起止 / 后继节点 |
+| `MoveDefinition.cs` | 招式节点：`moveId`、`AttackSkillConfig` 引用、窗口、`repeatSelf`、边表 |
+| `MoveTableConfig.cs` | 招式表：中立入口、上下文状态表、默认窗口派生 |
+| `PlayerMoveStateMachine.cs` | 直通/招式表两种模式、接续窗口、输入缓冲、阶段时钟、卡肉冻结、调试面板 |
+
+改造：`AttackSystem`（新增 `LastMoveAttackType` / `LastMoveDuration` / `ActionLockRemaining`，`TryExecuteAttack` 新增 `cancelCurrentMove`）、`HitFeedbackManager`（新增 `OnHitStopApplied` 卡肉广播）、`InputManager`（6 个出招点收敛为 `SubmitGesture` + `moveStateMachine` 引用）、`HeroConfig`（新增 `moveTable`）、`Battle.scene`（`Player` 根节点新增状态机并接线，`moveTable` 留空）。
+
+实测结果：
+
+| 用例 | 结果 |
+|------|------|
+| 手势映射逐项核对 | Tap→Stab、Hold→Pierce、竖滑蓄满→Launch、竖滑未蓄满→Parry、横滑蓄满→Sweep、横滑未蓄满→Slash、斜滑→Slash，与改造前分支一致 |
+| 直通模式出招 | 点击 → 执行 Stab，参考时长 0.450s（= actionDuration / 攻速） |
+| 直通模式锁内投递 | 被拒绝，且不产生缓冲（与改造前一致） |
+| 阶段时钟 | 0.15s 后归一时间 0.345（约 1/3），与动作锁同步 |
+| 卡肉冻结 | 注入 0.14s 卡肉，时钟停在 0.345 不动，卡肉剩余正常递减 |
+| 配一条边即生效 | 窗口内点击 → 取消当前收尾直接接后继节点（Stab→Slash） |
+| 输入缓冲 | 窗口未开时进缓冲，窗口打开自动执行 |
+| 无出路输入 | 立即「无匹配边（不响应）」，不占缓冲、节点不变 |
+| 超窗投递 | 「窗口已关闭（不响应）」 |
+| 收尾回中立 | 时钟耗尽后回中立，可从入口重新起步 |
+
+**实现期对设计的三处修正（已同步本文档）**：
+
+1. **`cancelCurrentMove` 是必需的**：动作锁（Stab 0.45s）覆盖了整个接续窗口，不取消当前招式收尾就无法接续。默认 `false`，仅状态机在解析出合法后继时传 `true`，因此在独立 CD 模式下仍保留原有冷却语义。
+2. **`clampWindowAfterHitWindow` 默认改为 `false`**：显式配置优先，保守钳制改为可选（否则策划配的窗口会被静默抬高）。
+3. **无出路的输入不占用缓冲**：先判断该手势在本节点是否存在显式边或默认重复规则，无出路则立即拒绝。
+
+### 11.6 P2 实现状态与实测结果（已完成）
+
+两个可开关项，默认均为改造前行为：
+
+| 轴 | 字段 | 取值 | 说明 |
+|----|------|------|------|
+| 轴 1 | —（已撤回） | — | 曾实现「按下即出轻攻击 + 起手改写」，因与「起手即蓄力」冲突而撤回；现沿用 V1 的「按下只做起手、松手才结算判定」 |
+| 轴 2 | `InputManager.swipeChargeMode` | `Required` / `UnlockNonVertical` / `Unlocked`（默认 Required） | 滑动对蓄力门的要求 |
+
+配套改动：`StabSweepEffect.Create` 改为返回实例并新增 `TryCancelBeforeHit()`；`AttackSystem` 新增 `TryCancelLightAttackStartup()`；`PlayerMoveStateMachine` 新增 `NotifyExternalReset()`；`GestureInput` 新增 `chargeGateBypassed` 维度。
+
+实测结果：
+
+| 用例 | 结果 |
+|------|------|
+| Required + 未蓄满竖滑（按住期间） | 解析为 Parry（与改造前一致） |
+| Unlocked + 未蓄满竖滑 | 解析为 Launch |
+| UnlockNonVertical + 未蓄满竖滑 | 解析为 Parry（招架入口保住） |
+| UnlockNonVertical + 未蓄满横滑 | 解析为 Sweep |
+| Required + 抬手未蓄满横滑 | 无解析、无执行（与改造前一致） |
+| UnlockNonVertical + 抬手未蓄满横/竖滑 | 解析为 Sweep / Launch |
+| 松手结算回归（撤回后实测） | 0.15s 松手→戳击（0 级）；0.35s 松手→穿刺（1 级）；0.35s 竖滑→挑飞（1 级）；0.15s 横滑（未蓄力）→斩击，与 V1 一致 |
+
+**实现期的重要发现**：
+
+1. **`charged` 与「蓄力门是否解除」必须分开**。第一版只用 `charged` 参与攻击类型解析，导致解除蓄力门后手势虽被放行、解析却仍落到 Parry/Slash。现已新增 `GestureInput.chargeGateBypassed` 维度，`charged` 单独保留其原有语义。
+2. **`charged` 的唯一玩法影响是打断骑兵冲锋**（`_attackIsCharged` 只被 `InterruptsCavalryCharge` 使用），因此快速滑动出招时 `charged=false` 不影响其它逻辑。
+3. **`Unlocked` 档会让招架失去当前入口**，因此同时提供 `UnlockNonVertical` 折中档（横/斜滑免蓄力，竖滑保留分层）。需实机试按后再定档。
+4. **测试前提**：路由转场期间 `InputManager.gameplayInputEnabled=false`，此时按下与滑动都不会出招，必须在真正的战斗节点内验证手感。
+5. **未覆盖**：「已命中后不可改写」需场上有敌人才能验证，本轮无敌人，只验证了「序列结束后不可撤回」。
+
+### 11.7 蓄力分级（P2 第二轮）
+
+设计变更：以前必须按满 `minChargeTime`（场景为 1.0s）才算蓄力就绪；现改为**分级就绪**，一级门槛与蓄力视觉出现时刻一致。
+
+- `InputManager.chargeLevelTimes`（默认 `{0.3, 0.6, 1.0}`，可配）定义各级所需按住时长。
+- 一级门槛 0.3s 与 `ChargeStabVisual.appearThreshold = 0.3` 对齐（`progress = 按住时长 / minChargeTime`），因此**视觉出现即至少一级、即已进入蓄力招式待释放状态**。
+- `CurrentChargeLevel` 按按住时长实时计算（不存状态，避免跨手势残留）；蓄力招式与蓄力门判定统一改用 `CurrentChargeLevel >= 1`。
+- 等级透传：`GestureInput.chargeLevel` → `AttackSystem.CurrentChargeLevel`；`AttackSkillConfig.chargeLevelDamageMultipliers`（默认空 = 不改数值）提供按级缩放伤害的入口。
+
+实测（Play Mode）：0.15s→等级 0→戳击；0.31/0.35s→等级 1→穿刺；0.70s→等级 2；1.20s→等级 3；0.35s 竖滑→挑飞（等级 1）。即不再需要按满 1 秒才能出蓄力招式。
+
+**已处理**：轴 1 的「按下即出」已撤回（见 11.6），因此按住蓄力不会再先出一记戳击；戳击判定仍在松手时结算，与 V1 一致。`AttackSystem.TryCancelLightAttackStartup` 与 `PlayerMoveStateMachine.NotifyExternalReset` 暂无调用方，作为后续「接续取消」的预留接口保留。
+
+### 11.8 一层结构与三段枪突（内容首建，已完成）
+
+- 招式层合并：窗口 / `repeatSelf` / `moveEdges` 直接放在 `AttackSkillConfig`；`MoveDefinition`、`MoveEdge` 删除。
+- `PlayerMoveStateMachine` 的招式表默认从 `PlayerState.heroConfig.moveTable` 读取（显式赋值优先），避免场景与武将两处接线。
+- 新建资产（`Assets/ScriptableObjects/Moves/Zhangfei/`）：
+
+| 资产 | 伤害 | actionDuration | 后继 |
+|------|------|----------------|------|
+| `Zhangfei_Jab1` | 20 | 0.45 | Tap → Jab2 |
+| `Zhangfei_Jab2` | 26 | 0.40 | Tap → Jab3 |
+| `Zhangfei_Jab3` | 34 | 0.60 | 无（串尾） |
+
+- 招式表 `Assets/ScriptableObjects/Moves/MoveTable_Zhangfei.asset`：roots 只配 Tap → Jab1，其余手势回落到默认映射；已挂到 `Hero_Zhangfei.moveTable`。
+
+实测：点击 → Jab1；窗口内（t≈0.68~0.76）再接 → Jab2 → Jab3；第三段任何时刻投递均「无匹配边（不响应）」，节点不变（串尾生效）；早于窗口（t=0.40）的投递只进缓冲，不提前接续。
+
+**窗口取值**：三段都设为 `0.65~0.95`（接续区约 135ms，落在收招后段）。首版曾设为 `0.35~0.95`，实测「下一段出得太快」，后移到收招后段以贴近原来松手出招的节奏。窗口起点就是该段允许被取消的时刻，调大即更晚接续。
+
+**未完成**：三段共用同一套素材（都是原版 Stab 的副本），动作视觉尚未区分；要做到三种不同表现需替换各自的精灵 / 动画帧。
+
+### 11.9 连段视觉第二轮（已完成）
+
+- **修掉两处真 bug**：① 执行层从未使用招式资产（见 §7 更正）；② 交接时用 `Kill` 销毁上一段会连带销毁同帧新建的下一段，改为「隐藏 + 关闭命中，让本体自行跑完销毁」。
+- **新增逐招动作参数**（`AttackSkillConfig`）：枪尾偏移三轴（决定路径朝向，枪尖仍命中本列）、画面内姿态倾角、长轴自转 `stabRollDegrees`、高速帧区间、三档模糊强度。
+- 三段枪突当前数值见 `plan/combo-progress-and-next.md`；下一步任务（三下枪突 → 蓄力上挑）与已识别的时序冲突也在该文件。
+
+---
+
+### 11.10 连段蓄力终结技（三下枪突 → 蓄力上挑，已完成）
+
+需求：点、点、点之后按住蓄力、上划释放收尾（**挑飞效果保留**，动作语言换成「大幅朝左上的扫击」）。本轮确立了几件机制与一套新的动作语言。
+
+| 项 | 做法 |
+|----|------|
+| 边的蓄力维度 | `AttackMoveEdge.minChargeLevel`（0 = 任意）。状态机**三处**都要过滤：`CanResolve`（无出路→不占缓冲）、`GetWindowFor`（同名手势多条边要 continue 而不是 break）、`ResolveFromCurrent`（选后继）；缓冲消费与调试面板同样要带 `chargeLevel` |
+| 窗口放大 | Jab1/2/3 的 `windowEnd01` 0.95→1.0；Jab3 起点 0.65→0.60（对齐回收段起点 0.563）。**只放大窗口不够**：按住 0.3s 的蓄力耗时会超过节点剩余寿命 |
+| 按住宽限（驻留） | 指针按下且本节点存在后继（`HasAnyContinuation`）时，节点时钟推进到「最早的接续窗口起点」就停住，不判定收尾结束；上限 `holdWaitMaxSeconds`（1.2s）防止连点卡住收尾段。**驻留时窗口已开着，已缓冲输入仍必须被消费**，否则「刚蓄满就上划」永远出不来 |
+| 连段蓄力（枪体） | `StabSweepEffect` 接管回收：按下后沿回收路径把枪体拉回 `chargeHoldRetractRatio`（默认 0.75），进度由按住时长（`chargeHoldPullSeconds`）驱动——位移即蓄力条；到位后再向后一顿（`chargeHoldSettleSeconds` / `chargeHoldSettleRatio`）才开始**沿枪身长轴前后**微颤（垂直于枪轴的位移为 0），并叠加预压仰角。未蓄满松手时由效果自己走完回收剩余段（**不要用 DOTween `Goto` seek 序列**，嵌套求值会跳位） |
+| 收尾招式（挑飞 + 扫击表现） | 终结技仍是**挑飞**（击飞 + 3 排 + poise 80），动作语言换成「大幅朝左上的扫击」：`LaunchVisualEffect` 新增 `launchSweepMode`——终点枪尖方向与终点位移直接在相机平面给出（`launchSweepUp` / `Left` / `Forward` / `Rise` / `LeftShift`），不受 `launchFlickAngle` 的 45–70 钳制；扫击模式的旋转改用与位移同一条曲线（去掉挑飞「位移先走、旋转滞后」的错峰），并恢复一小段预备（`launchWindupDuration` 0.06 / `launchWindupDistance` 0.12）做出「压一下→甩出去」的对比。另叠一层 slash 扫掠表现层：`AttackSystem.PlaySweepPresentation` 用 `SweepEffect`（目标为空 = 不命中、不伤害）按 `slashSweepDirection` / `slashMovementTiltDegrees` / `slashVisualTiltDegrees` 扫过，`targetDuration` 用 `slashSweepDuration`（比动作锁短，一下子甩完）。上述字段默认值 = 不改变现有斩击（`ExecuteSlash` 未改动）；非戳击、非挑飞招式接手时 `ReleaseHeldStabVisual()` 立即收掉当前枪体（挑飞要先取姿态，故排除） |
+| 蓄力让位（避免两把枪） | `InputManager.comboChargeActive`（连段蓄力标记：**连招进行中按下即置位**，抬手/复位清空）：`ChargeStabVisual` 与 `PierceAimIndicator` 据此让位（不出现蓄力视觉的进出场实例、不显示穿刺猫准指示器）。**只在节点有蓄力后继时让位是不够的**——否则在 Jab1/Jab2 上按住会同时出现「站桩蓄力（C1）的枪」与「连招的枪」。另：节点切换时手指还按着也会置位；非戳击/非挑飞招式接手时 `AbortAndDestroy()` 立刻清掉当前枪体（含正在自行收尾那把）。连段蓄力只用蓄力素材帧做姿势档位（拉回中 `chargeSprite2`，拉满 `chargeSprite1`），不做帧闪、不跟手 |
+
+实测（Play Mode，状态机级）：拉回后枪体中心 z≈−5.1（原刺出位 z≈+1.9）；抖动纯沿枪轴前后（垂直分量 0.000），且到位后再向后一顿（0.75→0.85）才开始抖；**蓄力让位**：对照组普通蓄力按住 1.25s 正常显示穿刺指示器（可见=True、就绪=True），连段蓄力按住 >1s 可见=False、就绪=False；未蓄力竖滑被拒；蓄力竖滑在窗口开放当帧被消费并解析到终结技（挑飞，动作锁 0.6s）；枪体 0.18s 位移 (−0.34,+0.70,0.01)（左✓ 上✓）；动态曲线：0–0.09s 向下预备、0.09–0.12s 停顿、0.12–0.33s 加速甩出约 5 世界单位（峰值≈15 单位/秒）；蓄势位那把枪已交掉，**可见枪体始终 1 把**；走真实输入层的点击连段回归：Jab1→Jab2→Jab3 正常，中立蓄力松手仍出穿刺；未蓄满松手回收平滑无突跳；驻留超上限后正常收尾；普通斩击的方向/倾斜仍跟手势（回归通过）。
+
+**待改进（本轮实测发现，未实施；详见 `plan/combo-progress-and-next.md` §7.7）**：① 蓄力指示器 `ChargeIndicatorController` 仍会在连段蓄力期间出现（它没像 `ChargeStabVisual` / `PierceAimIndicator` 那样读 `comboChargeActive`）；② 收尾斜率应更「上挑」（正上方偏左），现状 `launchSweepUp/Left = 1/0.7`、`LeftShift 1.8`、扫掠表现层 `halfWidth 4.5 / 路径斜度 −22°` 偏横向；③ 终结技卡肉需要比 `Heavy`（0.14s）更强（新增一档 + 从招式资产透传力度）。
+
+另：本轮曾因“连招蓄力标记在每次按下就置位 + 抬手在该标记下直接 return”把普通点击的抬手吞掉，导致连段接不上；现已修为**只在真的蓄到一级（`CurrentChargeLevel >= 1`）时**才吞抬手。
+
+未验证：打击与击飞手感、镜头反馈、拉回量与微颤的观感（均需实机试按）。
+
+---
+
+## 12. 改造前必须保住的现有功能（回归清单）
+
+原则：状态机只接管「输入的解析与段位推进」，**不接管**下面这些既有职责。重构后逐条回归。
+
+### 12.1 输入层
+
+| 功能 | 证据 |
+|------|------|
+| 六种手势映射（点击 / 长按 / 竖滑 / 横滑 / 斜滑 / 按住竖滑） | `InputManager.ProcessGesture` / `ProcessSwipeGesture` / `TryConsumeLiveGesture` |
+| 蓄力门（0.3s 长按判定、0.5s 蓄力满）与蓄力姿态接管 | `InputManager.longPressDuration` / `minChargeTime`、`ChargeStabVisual` |
+| 蓄力事件链有 **5 个订阅方**，通道不能断 | `ChargeStabVisual` / `PierceAimIndicator` / `ThornArmorEffect` / `PlayerState` / `ChargeIndicatorController` |
+| `OnAttackExecuted` 只有 **1 个订阅方**（蓄力姿态复位） | `InputManager` 事件、`ChargeStabVisual.OnAttackExecuted` |
+| 蓄力减伤护盾（每次蓄力仅一次） | `PlayerState.OnChargeUpdated` → `TryGrantShield` |
+| 三道输入门：`skillInputEnabled` / `gameplayInputEnabled` / `blockInputFrames` | `InputManager.Update` 早退 |
+| UI 之上的触摸不处理 | `EventSystem.IsPointerOverGameObject` |
+| 防连触发与分段重置 | `swipeRearmDelay` / `hasTriggeredDuringHold` / `ResetSegment` / `CancelChargeAndResetSegment` |
+| 屏幕坐标 → 列映射与兜底 | `GetColumnFromScreenPosition` / `FallbackGetColumn` |
+| QTE 优先消费输入（Strict / 普通两套规则） | `TryConsumeStrictQTEInput` / `TryConsumeQTEInput` |
+| Stab 额外的视觉门 | `AttackSystem`：`_stabVisualTimer` |
+
+### 12.2 招式执行与资源结算
+
+| 功能 | 证据 |
+|------|------|
+| 空挥也播特效，但**不消耗冷却、不给能量、不触发被动** | `StabSweepEffect` 无目标也生成；首次命中才 `AddEnergyForAttack` / `OnAttackPerformed` |
+| 首次实际命中才结算能量与被动计数 | `AttackSystem.TryExecuteAttack`、`ExecuteStab` 的 `onFirstHit` |
+| `LastStabTargetEnemy`（被动定位用） | `PassiveTriggerModule` 读取 |
+| 伤害公式：`GetFinalDamage`（× 伤害倍率）与 `GetAttackRangeDamagePenalty`（射程衰减） | `AttackSystem` |
+| 打断参数透传：`interruptsCavalryCharge`（含 `isCharged` 分支）/ `canInterruptCFrame` / `isParryInterrupt` | `InterruptsCavalryCharge`、各 `Execute*` |
+| 位移与补齐通道：戳击击退波、斩击方向性击退、`ApplyPushWave`、`PostDisplacementFillUp` | `AttackSystem.ApplyStabPushWave` / `ApplySlashDirectionalPush` |
+| 幻影攻击 / 折返波 / 连锁弹射 | `ExecutePhantomAttack` / `ExecuteReturnWave` / `ExecuteChainBounce` |
+| 解锁攻击注册表（现无调用方但已实现） | `_unlockedAttacks` / `TryExecuteUnlockedAttack` |
+| 强制戳击接口 | `ForceExecuteStab` |
+
+### 12.3 表现与打击反馈
+
+| 功能 | 证据 |
+|------|------|
+| 每招独立特效组件（序列内命中、卡肉、命中脉冲、运动模糊、拖尾） | `StabSweepEffect` / `SweepEffect` / `AttackWave` / `LaunchVisualEffect` / `ParryVisualEffect` / `PierceReleaseVisual` / `ChargeStabVisual` |
+| 卡肉分级：Light 0.045s / Standard 0.09s / Heavy 0.14s | `HitFeedbackManager` |
+| 卡肉作用域：敌人动画 + 特效序列 + 飞行物；**DoT 不卡肉** | `Enemy.ApplyHitStop`、各特效 `PauseForHitStop`、DoT 用 `HitFeedbackStrength.None` |
+| 镜头与像素特效反馈 | `CameraFeedbackController.RequestHit`、`PixelHitEffectManager.RequestHit` / `AttachSlashTrail` |
+| 音效事件 | `Player_Attack` / `Stab_Hit` / `Slash_Hit` / `Player_Parry` |
+
+### 12.4 系统联动
+
+| 功能 | 证据 |
+|------|------|
+| 大招能量（按招式配置 `ultimateEnergyGain`）与演出期间禁用输入 | `UltimateSystem.AddEnergyForAttack`、`UltimateEffect_Berserk` |
+| 被动触发计数（监听 `OnAttackPerformed`） | `PassiveTriggerModule` |
+| 命中连击与连击 Buff（与攻击类型无关） | `ComboManager` 订阅 `Enemy.OnDamageTaken` |
+| 伤害 / 攻速 / 移速 / 经验倍率 | `BuffManager` + `UpgradeEffectManager.GetDamageMultiplier` / `GetAttackSpeedMultiplier` |
+| 攻速缩放动作时长（因此也缩放整条序列） | `AttackSystem.GetAttackDuration` |
+| 骑兵 109 冲锋打断 | `CavalryEnemy` / `InterruptsCavalryCharge` |
+| BOSS 覆盖列、`bossState`、架势与 CFrame | `ColumnManager.GetCombatBossCoveringColumn`、`TakePoiseDamage` |
+| 列与阵型 API | `GetEnemiesInRange` / `GetAllEnemiesInRange` / `ApplyPushWave` / `PostDisplacementFillUp` |
+| 疾病弹消耗（Stab 命中时） | `ActiveSkillRunner.ConsumeArmedDisease` |
+| 旋风等主动技能与道具 | `WhirlwindController`、`ItemEffectRunner` |
+| QTE 直接取 Slash 配置 | `QTEController` |
+| 路线系统控制输入开关与节点切换重置 | `FakeRouteRuntime` / `RouteStageRuntimeV2` / `ResetCooldownsForNodeTransition` |
+| 武将装配 | `Hero_Zhangfei.asset` 装配 6 个 `AttackSkillConfig`（`Assets/Prefabs/UI/Skills/Zhangfei_*.asset`）+ `Zhangfei_BerserkUlt.asset` |
+
+### 12.5 最容易丢的七条
+
+1. **`OnAttackExecuted` 只有 `ChargeStabVisual` 一个订阅方**，用于蓄力姿态复位。InputManager 改造后若不再派发该事件，蓄力姿态会残留。
+2. **空挥不消耗冷却、不给能量、不触发被动** — 状态机按输入推进段位，但资源结算必须继续按命中。
+3. **蓄力事件链有 5 个订阅方**，改造时不能断链。
+4. **攻速缩放的是整条序列**（动作时长与视觉一起变），不只是动作锁。
+5. **DoT 不卡肉，卡肉也不冻结玩家**；卡肉广播必须带 strength 过滤。
+6. **位移与补齐必须走既有通道**（`ApplyPushWave` / `PostDisplacementFillUp`），不得新建路径。
+7. **QTE 与路线系统的输入门优先级高于状态机**；QTE 期间状态机必须停手并清空缓冲。
+
+---
+
+## 13. 注意事项
+
+- **等价优先**：P1 的目标函数是「零差异」，任何数值或手感变化都视为失败。
+- **计数与结算分离**：段位推进按输入；大招能量、被动 `OnAttackPerformed`、击退与补齐仍按命中（现有 `StabSweepEffect` 空挥不触发能量与被动，这条不能破坏），否则空挥会刷满能量。
+- **位移与补齐走既有通道**：连招段带位移/击退时，必须继续走 `ColumnManager.ApplyPushWave` / `PostDisplacementFillUp`，不得绕开（`design/immutable-constraints.md`）。
+- **打断参数逐段透传**：`canInterruptCFrame`、`interruptsCavalryCharge` 必须逐段传递（`design/attack-interrupt-system.md`）。
+- **引用 Inspector 可追踪**：节点之间用直接引用，禁止字符串 id 查找（`design/anti-ghost-reference.md`）。
+- **状态复位点**：节点切换、死亡/复活、暂停、对话、QTE、大招演出、升级三选一面板期间，状态机停止推进并清空缓冲。
+- **不要复用 `_unlockedAttacks`**：那是局内解锁攻击的死代码，新注册表另起，避免语义混淆。
+- **能量防护**：段数变多后每段都给能量会让连招变成刷能量机器，需要独立配置或按段递减。
+- **窗口下限**：窗口按百分比随攻速缩放，必须有最小绝对时长保护（建议 ≥ 0.06s）。
+- **HUD 数据源**：当前读 `PlayerState` 独立 CD，动作锁模式下显示不准（`design/attack-cooldown.md` 已记录），连招上线后需统一。
+
+---
+
+## 14. 当前坑点（现存实现风险）
+
+| # | 坑点 | 证据 | 影响 |
+|---|------|------|------|
+| 1 | 卡肉只冻结敌人与特效序列，玩家动作锁继续走 | `HitFeedbackManager` 仅 `enemy.ApplyHitStop`；`StabSweepEffect` / `SweepEffect` / `AttackWave` 各自 `seq.Pause()`；全项目只有暂停/对话/三选一动 `Time.timeScale` | 动作锁先于视觉结束；窗口若按绝对秒会错位 |
+| 2 | 所有滑动招式需按住 1.0s（场景实测，C# 默认 0.5s） | `InputManager.TryConsumeLiveGesture` 要求 `isLongPress && isCharged`；`minChargeTime` 被场景覆盖为 1.0 | 终结手势几乎不可能在连招窗口内完成 |
+| 3 | 未蓄满的快速滑动在抬手时不产生任何动作 | `InputManager.ProcessGesture` 只处理「蓄满长按」与「未滑动的点击」 | 滑动输入被静默吞掉，且最可能发生在连招窗口内 |
+| 4 | 点击在抬手才判定 | `ProcessGesture` 调用点位于 `TouchPhase.Ended` | 轻攻击固有延迟，连打节奏发糊 |
+| 5 | 动作锁期间输入被直接丢弃、无缓冲 | `AttackSystem.TryExecuteAttack` 冷却检查早退 | 掉输入；接续窗口的前提缺失 |
+| 6 | Stab 有独立于动作锁的第二道门 | `AttackSystem`：`if (attackType == Stab && _stabVisualTimer > 0f) return false;` | Stab 实际可用间隔 = 视觉时长，与动作锁重复。P1 已让 `cancelCurrentMove` 在接续场景同时绕过两道门；**从入口重新起步仍受该门限制**，P2 需统一 |
+| 7 | 一个 `AttackType` 只能有一个配置 | `HeroConfig.GetSkillConfig` 按 `attackType` 唯一匹配 | 已解决：入口招式仍登记在 `skillConfigs`，后续段用 `moveEdges` 引用，不再受限制（见 11.8） |
+| 8 | `GetSkillConfig` 有 4 个调用点 | `AttackSystem.GetConfig`、`PlayerState`（冷却时长）、`UltimateSystem`（能量）、`QTEController`（QTE 取 Slash 配置） | 换 key 需一并处理；QTE 绕过输入直接取配置 |
+| 9 | 手势角度边界互相干扰 | `ProcessSwipeGesture` 斜滑为兜底；`design/attack-cooldown.md` 已记录向左横扫不稳 | 连招中 Sweep/Slash/Parry 容易互相误判 |
+| 10 | 卡肉会拉长整套连招的实际墙钟时间 | 每段首次命中都暂停序列（Light 0.045s / Standard 0.09s / Heavy 0.14s） | 百分比窗口不受影响，但总时长变长，节奏与数值评估要用实机时间 |
+| 11 | 数值倒挂 | `Zhangfei_Slash.damage = 8` < `Zhangfei_Stab.damage = 20` | 终结技弱于轻攻击，与「段位越深越强」矛盾 |
+| 12 | 新增输入缓冲后无天然上限 | 现状无缓冲，故无此问题 | 连点会堆积，需要「只保留最近一条」策略 |
+
+---
+
+## 15. 分期计划
+
+| 阶段 | 内容 | 验收 |
+|------|------|------|
+| P1 | ✅ 已完成（见 11.5）：招式状态机 + 接续窗口 + 输入缓冲 + 状态机调试面板；未配置任何边 | 回归等价 + 单条边可生效（均已实测） |
+| P2 | ✅ 已完成（见 11.6、11.7）：蓄力门三档解耦；蓄力分级（一级 = 视觉出现）；按下即出已撤回 | 行为已实测；手感对比待你在战斗节点内试按 |
+| P3 | 上下文状态：招架成功态 + 专属连招 | 格挡成功后可进入专属分支 |
+| P4 | 局外解锁接入边/节点；局内三选一改写边与窗口 | 与天赋树对接 |
+| P5 | 进行中：枪突1/2/3 已建资产并接线；三下枪突 → 蓄力横斩收尾已实现（见 11.10）；三段素材视觉、斩·二连/三连等未做 | 内容验收 |
+
+---
+
+## 16. 风险与未决项
+
+**风险**
+
+- 手势识别：滑动在连打中容易与点击、Sweep、Parry 混淆，需要实机调参而非纸面推演。
+- 配置量：全招式可作前置后，节点 × 输入的边组合迅速膨胀，必须依赖接续表工具。
+- 数值倒挂：张飞 Slash 伤害（8）低于 Stab（20），与「段位越深越强」的设计意图相反，需要一并校正。
+- 现有被动/主动过强：若不同步收敛，招表系统上线后仍会被站桩技能绕过。
+
+**未决项**
+
+- 接续窗口的每招式起止百分比：以视效为基准逐招式微调（见 3.2）。
+- 招架成功态的持续时长、可否叠加等细节：推迟到需要时再设计。
+- 阶段时钟与命中卡肉的冻结关系：动作锁与连招窗口是否随卡肉一起暂停（建议暂停，以保持与视觉同步）。
+
+---
+
+## 17. 参考文件
+
+| 文件 | 职责 |
+|------|------|
+| `Assets/Scripts/Player/InputManager.cs` | 手势识别、蓄力门、输入门控 |
+| `Assets/Scripts/Player/AttackSystem.cs` | 招式执行、动作锁、解锁攻击注册表 |
+| `Assets/Scripts/Player/PlayerState.cs` | `AttackType`、独立技能冷却 |
+| `Assets/Scripts/Core/HeroConfig.cs` | 武将技能配置装配 |
+| `Assets/Scripts/Core/AttackSkillConfig.cs` | 招式配置资产 |
+| `Assets/Scripts/Core/ComboManager.cs` | 命中连击（区别于本设计） |
+| `design/attack-cooldown.md` | 出手视觉与飞行物的职责划分 |
+| `design/launch-strategy-system.md` | 击飞与空中连段的既有设想（本设计未纳入，仅作机制可扩展性参考） |
+| `design/out-of-game-growth-system.md` | 局外天赋树与「禁止纯数值」约束 |
+| `design/anti-ghost-reference.md` | 所有引用必须 Inspector 可追踪 |

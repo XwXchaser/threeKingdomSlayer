@@ -16,6 +16,12 @@ public enum EnemyState
     QTEAttacking  // BOSS QTE 攻击演出中
 }
 
+public enum EnemyFormState
+{
+    Normal,
+    Coward
+}
+
 public enum RushMoveStartResult
 {
     Started,
@@ -99,6 +105,9 @@ public class Enemy : MonoBehaviour
     public int occupySlots = 1;
     public float attackSpeed = 1f;
     public float attackDamage = 10f;
+    [Range(0f, 1f)]
+    [Tooltip("普通形态下的伤害减免比例。0.5 = 减伤50%；胆怯形态下不生效。")]
+    public float normalFormDamageReductionPercent = 0f;
     public float attackRange = 1f;
     public float moveSpeed = 1f;
 
@@ -210,12 +219,16 @@ public class Enemy : MonoBehaviour
     private float _prefabMaxHealth;
     private float _prefabAttackSpeed;
     private float _prefabAttackDamage;
+    public float BaseAttackDamage => _prefabAttackDamage;
     private Color _prefabColor = Color.white;
 
     [Header("招架血量眩晕阈值")]
     public ParryStunThreshold[] parryStunThresholds;
 
     [System.NonSerialized] public EnemyState state = EnemyState.Idle;
+    private bool _cowardTransitionPlaying;
+    [System.NonSerialized] public EnemyFormState formState = EnemyFormState.Normal;
+    public bool IsCoward => formState == EnemyFormState.Coward;
     [System.NonSerialized] public float currentHealth;
     [System.NonSerialized] public float currentPoise;
     /// <summary>QTE成功破防后延迟进入Stun，等QTE动画播完</summary>
@@ -342,6 +355,7 @@ public class Enemy : MonoBehaviour
     private EnemyHealthBar cachedHealthBar;
     private Animator _animator;
     private EnemySpriteController _spriteCtrl;
+    private CavalryEnemy _cavalry;
     private AnimationClip _attackClip; // 缓存的 Attack clip（用于同步 DOTween 与 Animator 时长）
 
     // 事件
@@ -424,12 +438,15 @@ public class Enemy : MonoBehaviour
     public void Initialize(int col, int row)
     {
         instanceId = _nextInstanceId++;
+        _cavalry = GetComponent<CavalryEnemy>();
+        _cavalry?.ResetCavalry();
         columnIndex = col;
         rowIndex = row;
 
         currentHealth = maxHealth;
         currentPoise = maxPoise;
         state = EnemyState.Idle;
+        formState = EnemyFormState.Normal;
         bossState = BossState.None;
         isSuperArmor = false;
         isPhaseTransitioning = false;
@@ -487,6 +504,8 @@ public class Enemy : MonoBehaviour
         // 缓存 Animator 和 SpriteController 引用
         _animator = GetComponent<Animator>();
         _spriteCtrl = GetComponent<EnemySpriteController>();
+        _cowardTransitionPlaying = false;
+        PlayIdleVisual();
 
         // 订阅 QTE 完成事件（BOSS 由 Idle 调度，QTE 完成后不依赖 QTEController 自管理冷却）
         if (isBoss)
@@ -610,6 +629,8 @@ public class Enemy : MonoBehaviour
                 break;
             case EnemyState.Idle:
             default:
+                if (_cavalry != null && _cavalry.Tick())
+                    break;
                 // BOSS Idle 调度：冷却计时结束后随机选择行动
                 if (isBoss && bossState == BossState.InCombat)
                 {
@@ -757,6 +778,96 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    public bool EnterCowardFormFromPlayerLaunch()
+    {
+        if (enemyId != 102 || IsCoward || state == EnemyState.Dead)
+            return false;
+        if (_attackTween != null && _attackTween.IsActive())
+        {
+            _attackTween.Kill();
+            _attackTween = null;
+        }
+        transform.DOKill(false);
+        StopHitScaleFeedback();
+        transform.localScale = originalScale;
+        transform.localRotation = originalRotation;
+        formState = EnemyFormState.Coward;
+        _cowardTransitionPlaying = true;
+        isAttackAnimating = false;
+        isAttackDrawPhase = false;
+        isCFrame = false;
+        attackTimer = 0f;
+        _animator?.ResetTrigger("Attack");
+        _animator?.ResetTrigger("Hit");
+        _animator?.Play("CowardTransition", 0, 0f);
+        return true;
+    }
+
+    public bool OnPlayerLaunchHit() => EnterCowardFormFromPlayerLaunch();
+
+    private void PlayIdleVisual() => _animator?.Play(IsCoward ? "CowardIdle" : "Idle", 0, 0f);
+    private void PlayLaunchVisual() => _animator?.Play(IsCoward ? "CowardLaunched" : "Launched_Rise", 0, 0f);
+    private void PlayHitVisual() => _animator?.Play(IsCoward ? "CowardHit" : "HitFlash", 0, 0f);
+    private void PlayDeadVisual() => _animator?.Play(IsCoward ? "CowardDead" : "Dead", 0, 0f);
+
+    public Vector3 GetCavalryRowLocalPosition(int visualRow)
+    {
+        float xPos = StageController.Instance != null
+            ? StageController.Instance.GetFormationOffset(columnIndex, visualRow)
+            : (columnIndex - 2) * 2f;
+        float rowSpacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
+        int maxRow = StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() - 1 : 4;
+        float offsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
+        float zPos = (maxRow - visualRow) * (-rowSpacing) + offsetZ;
+        return new Vector3(xPos, transform.localPosition.y, zPos);
+    }
+
+    public void SetCavalryChargeVisualRow(int visualRow)
+    {
+        transform.localPosition = GetCavalryRowLocalPosition(visualRow);
+    }
+
+    public void RestoreCavalryWorldPosition()
+    {
+        UpdateWorldPosition();
+    }
+
+    /// <summary>骑兵接管期间：保持 Idle，避免当次普通攻击/普通移动介入。</summary>
+    public void EnterCavalryControl()
+    {
+        if (state == EnemyState.Dead || state == EnemyState.Launched) return;
+        isAttackAnimating = false;
+        isAttackDrawPhase = false;
+        isCFrame = false;
+        state = EnemyState.Idle;
+        UpdateOutlineState();
+    }
+
+    /// <summary>骑兵动作结束：恢复 Idle 表现，交还控制权。</summary>
+    public void ExitCavalryControl()
+    {
+        if (state == EnemyState.Dead || state == EnemyState.Launched) return;
+        if (state == EnemyState.Idle)
+            PlayIdleVisual();
+    }
+
+    /// <summary>骑兵命中表现：复用攻击动画（伤害与位移由 CavalryEnemy 负责）。</summary>
+    public void PlayCavalryStrikeVisual()
+    {
+        if (_animator == null) return;
+        _animator.Play("Idle", 0, 0f);
+        _animator.SetTrigger("Attack");
+    }
+
+    public void CancelCavalryAttackOnDismount()
+    {
+        if (state != EnemyState.Attacking) return;
+        CancelAttack();
+        if (state == EnemyState.Attacking)
+            state = EnemyState.Idle;
+        PlayIdleVisual();
+    }
+
     /// <summary>
     /// 开始攻击
     /// BUG FIX: 攻击分为两个阶段：
@@ -771,7 +882,13 @@ public class Enemy : MonoBehaviour
     /// </summary>
     public void StartAttacking()
     {
-        if (state == EnemyState.Dead) return;
+        if (state == EnemyState.Dead || IsCoward) return;
+        // 骑乘期间不做普通攻击：攻击行为全部由 CavalryEnemy 的冲锋循环负责。
+        if (_cavalry != null && _cavalry.IsMounted)
+        {
+            state = EnemyState.Idle;
+            return;
+        }
 
         // Boss 首次进入攻击状态：若尚未进入 InCombat，立即进入并创建血条
         if (isBoss && bossState == BossState.None)
@@ -795,6 +912,8 @@ public class Enemy : MonoBehaviour
     {
         if (state == EnemyState.Dead) return;
         if (state == EnemyState.Stunned) return;
+        // 骑乘期间免疫眩晕；落马后恢复普通受控。
+        if (_cavalry != null && _cavalry.IsMounted) return;
         // 击飞状态下不允许进入眩晕，否则敌人会冻结在半空
         // 但需要重置 Poise（相当于击飞中破防不触发眩晕，只重置架势）
         if (state == EnemyState.Launched)
@@ -889,6 +1008,8 @@ public class Enemy : MonoBehaviour
     public void Launch(float customDuration)
     {
         if (state == EnemyState.Dead) return;
+        if (_cavalry != null && _cavalry.IsMounted)
+            _cavalry.DismountFromLaunch();
         if (state == EnemyState.Launched)
         {
             // 重新击飞：保持原始地面基准，仅重置击飞参数（供 Cyclone 等技能对已击飞敌人再次触发）
@@ -896,7 +1017,7 @@ public class Enemy : MonoBehaviour
             currentLaunchYHeight = Random.Range(launchYHeightMin, launchYHeightMax);
             launchVelocityY = Mathf.Sqrt(2f * launchGravity * currentLaunchYHeight);
             _launchExtendCount = 0;
-            _animator?.Play("Launched_Rise", 0, 0f);
+            PlayLaunchVisual();
             DebugLog.Info($"[Enemy] 重新击飞: {DebugTag}, duration={customDuration:F2}s, v0={launchVelocityY:F2}");
             return;
         }
@@ -931,7 +1052,8 @@ public class Enemy : MonoBehaviour
 
         state = EnemyState.Launched;
         _animator?.ResetTrigger("Hit");
-        _animator?.Play("Launched_Rise", 0, 0f);
+        if (!IsCoward || !_cowardTransitionPlaying)
+            PlayLaunchVisual();
         launchTimer = customDuration;
         launchStartLocalPos = transform.localPosition;
         currentLaunchYHeight = Random.Range(launchYHeightMin, launchYHeightMax);
@@ -964,7 +1086,7 @@ public class Enemy : MonoBehaviour
 
         launchTimer += actualExtend;
         launchVelocityY = launchReboundVelocity;
-        _animator?.Play("Launched_Rise", 0, 0f);
+        PlayLaunchVisual();
         DebugLog.Info($"[Enemy] 延长浮空: {DebugTag}, +{actualExtend:F2}s (base={extendTime:F2}, count={_launchExtendCount}), 剩余={launchTimer:F2}s");
     }
 
@@ -1255,7 +1377,9 @@ public class Enemy : MonoBehaviour
                 return;
             }
 
-            _animator?.Play("Idle", 0, 0f);
+            if (IsCoward)
+                _cowardTransitionPlaying = false;
+            PlayIdleVisual();
 
             // Landing never creates movement. It may only resume an existing scheduler order.
             if (HasRushMoveOrder)
@@ -1319,7 +1443,7 @@ public class Enemy : MonoBehaviour
                 _animator.speed = 1f;
                 _animator.ResetTrigger("Walk");
             }
-            _animator?.Play("Idle", 0, 0f);
+            PlayIdleVisual();
             rushMoveChainTriggered = false; // 重置链式触发标记
 
             // 移动完成：rowIndex 前进一排
@@ -1328,6 +1452,8 @@ public class Enemy : MonoBehaviour
 
             // 地刺检测：补齐到达新位置时触发
             SpikeTrapController.Instance?.CheckAndTrigger(this);
+            if (state == EnemyState.Dead)
+                return;
 
             // BUG FIX: 防止 rowIndex 变为负数
             if (rowIndex < 0) rowIndex = 0;
@@ -1341,11 +1467,12 @@ public class Enemy : MonoBehaviour
                 if (col != null)
                 {
                     bool occupied = col.IsRowOccupied(rowIndex, this);
+                    var manager = EnemyManager.Instance?.columnManager;
+                    occupied |= manager != null && manager.IsCavalrySlotReserved(columnIndex, rowIndex, this);
                     if (_rushMoveMode == RushMoveMode.ContinuousEmptyRun)
                     {
-                        var manager = EnemyManager.Instance?.columnManager;
                         if (_rushMoveOrderOwner == RushMoveOrderOwner.SpawnEntry)
-                            occupied = false;
+                            occupied = manager != null && manager.IsCavalrySlotReserved(columnIndex, rowIndex, this);
                         else
                             occupied = manager == null || !manager.CanContinuousWaveEnterRow(this, columnIndex, rowIndex);
                     }
@@ -1493,6 +1620,18 @@ public class Enemy : MonoBehaviour
     /// </summary>
     private void UpdateAttack()
     {
+        if (IsCoward)
+        {
+            isAttackAnimating = false;
+            isAttackDrawPhase = false;
+            return;
+        }
+        if (_cavalry != null && _cavalry.IsMounted)
+        {
+            state = EnemyState.Idle;
+            return;
+        }
+
         if (isAttackAnimating)
         {
             // 阶段2：DOTween 攻击动画播放中
@@ -1716,7 +1855,7 @@ private void SpawnProjectile()
             // Attack completion may only resume an already owned order.
             if (state != EnemyState.Stunned && state != EnemyState.Launched)
             {
-                _animator?.Play("Idle", 0, 0f);
+                PlayIdleVisual();
                 if (HasRushMoveOrder)
                     TryStartRushMove();
             }
@@ -1730,7 +1869,7 @@ private void SpawnProjectile()
     /// <summary>
     /// 受到伤害
     /// </summary>
-    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true, bool canInterruptAttack = true, bool triggerHitAnimation = true, bool ignoreDamageModifiers = false, HitFeedbackSource feedbackSource = HitFeedbackSource.BasicAttack, HitFeedbackStrength? feedbackStrength = null, Vector3? impactPosition = null, Vector3 impactDirection = default, bool diseaseStabHit = false)
+    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true, bool canInterruptAttack = true, bool triggerHitAnimation = true, bool ignoreDamageModifiers = false, HitFeedbackSource feedbackSource = HitFeedbackSource.BasicAttack, HitFeedbackStrength? feedbackStrength = null, Vector3? impactPosition = null, Vector3 impactDirection = default, bool diseaseStabHit = false, bool interruptsCavalryCharge = false)
     {
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
@@ -1900,6 +2039,12 @@ private void SpawnProjectile()
         if (currentHealth <= 0f)
         {
             Die();
+        }
+        else if (_cavalry != null && interruptsCavalryCharge)
+        {
+            // 只有被标记为“可打断骑兵冲锋”的攻击才会中断冲锋（当前 = 蓄力攻击）。
+            // 普通攻击只造成伤害，不打断；真正击飞走 Launch -> 落马。
+            _cavalry.OnInterruptingHit();
         }
     }
 
@@ -2075,7 +2220,7 @@ private void SpawnProjectile()
             && state != EnemyState.Stunned
             && allowHit)
         {
-            _animator?.SetTrigger("Hit");
+            PlayHitVisual();
         }
         yield return new WaitForSeconds(0.4f);
         _hitFlashRoutine = null;
@@ -2157,7 +2302,7 @@ private void SpawnProjectile()
         ApplyHitFlashImmediate();
         hitFlashTimer = HIT_FLASH_DURATION;
         RestartHitScaleFeedback(HitFeedbackStrength.Heavy);
-        _animator?.SetTrigger("Hit");
+        PlayHitVisual();
         HitFeedbackManager.Trigger(new HitFeedbackContext(this, DamageType.Poise,
             HitFeedbackSource.Displacement, HitFeedbackStrength.Heavy, 0f, false, true, transform.position));
         OnDamageTaken?.Invoke(this);
@@ -2263,16 +2408,23 @@ private void SpawnProjectile()
     /// </summary>
     public float GetDamageMultiplier(DamageType damageType)
     {
+        float multiplier;
         switch (damageType)
         {
-            case DamageType.Stab: return stabDamageMultiplier;
-            case DamageType.Slash: return slashDamageMultiplier;
-            case DamageType.Pierce: return pierceDamageMultiplier;
-            case DamageType.Sweep: return sweepDamageMultiplier;
-            case DamageType.Launch: return launchDamageMultiplier;
-            case DamageType.Poise: return poiseDamageMultiplier;
-            default: return 1f;
+            case DamageType.Stab: multiplier = stabDamageMultiplier; break;
+            case DamageType.Slash: multiplier = slashDamageMultiplier; break;
+            case DamageType.Pierce: multiplier = pierceDamageMultiplier; break;
+            case DamageType.Sweep: multiplier = sweepDamageMultiplier; break;
+            case DamageType.Launch: multiplier = launchDamageMultiplier; break;
+            case DamageType.Poise: multiplier = poiseDamageMultiplier; break;
+            default: multiplier = 1f; break;
         }
+
+        // 盾兵持盾时减伤；被击飞进入胆怯形态后失去该减伤。
+        if (!IsCoward && normalFormDamageReductionPercent > 0f)
+            multiplier *= 1f - Mathf.Clamp01(normalFormDamageReductionPercent);
+
+        return multiplier;
     }
 
     /// <summary>
@@ -2304,7 +2456,7 @@ private void SpawnProjectile()
         StopHitScaleFeedback();
         state = EnemyState.Dead;
         UpdateOutlineState();
-        _animator?.SetTrigger("Dead");
+        PlayDeadVisual();
 
         // BUG FIX: 取消正在执行的攻击 DOTween 动画
         // 若敌人在攻击动画中被秒杀，立即中断攻击动作（前移+翻转），直接进入死亡状态
@@ -2358,8 +2510,7 @@ private void SpawnProjectile()
         Vector3 startPos = transform.localPosition;
 
         // 构建 DOTween 序列
-        Sequence deathSeq = DOTween.Sequence().SetUpdate(true);
-        deathSeq.SetTarget(transform);
+        Sequence deathSeq = DOTween.Sequence().SetTarget(transform).SetUpdate(true);
         deathSeq.SetId("deathAnim");
 
         float jumpHeight = Random.Range(1.5f, 3.0f);   // 弹起高度
@@ -2411,8 +2562,7 @@ private void SpawnProjectile()
 
         Vector3 startPos = transform.localPosition;
 
-        Sequence deathSeq = DOTween.Sequence().SetUpdate(true);
-        deathSeq.SetTarget(transform);
+        Sequence deathSeq = DOTween.Sequence().SetTarget(transform).SetUpdate(true);
         deathSeq.SetId("deathAnim");
 
         float fallDistance = 20f;
@@ -2437,6 +2587,15 @@ private void SpawnProjectile()
         // 死亡动画结束 → 触发事件
         OnDeathAnimComplete?.Invoke(this);
 
+        EnemyPool.Instance?.ReturnEnemy(this);
+    }
+
+    public void CancelDeathAnimationAndReturnToPool()
+    {
+        if (state != EnemyState.Dead || !gameObject.activeInHierarchy) return;
+
+        StopAllCoroutines();
+        transform.DOKill(false);
         EnemyPool.Instance?.ReturnEnemy(this);
     }
 
@@ -2531,6 +2690,8 @@ private void SpawnProjectile()
 
     public bool IsRushMovementActive => state == EnemyState.Moving && isMovingToNextRow && isRushMove;
     public bool HasRushMoveOrder => _rushMoveOrderOwner != RushMoveOrderOwner.None;
+    /// <summary>仍在马上的骑兵：免疫眩晕/击退/位移，且不会发起普通攻击。</summary>
+    public bool IsMountedCavalry => _cavalry != null && _cavalry.IsMounted;
     public RushMoveOrderOwner RushMoveOrderOwner => _rushMoveOrderOwner;
     public int RushMoveOrderGeneration => _rushMoveOrderGeneration;
     public bool IsRushMoveReady => HasRushMoveOrder
@@ -2546,6 +2707,8 @@ private void SpawnProjectile()
     {
         if (owner == RushMoveOrderOwner.None || generation <= 0 || state == EnemyState.Dead)
             return false;
+        if (_cavalry != null && _cavalry.IsSpecialMoveActive)
+            _cavalry.AbortForExternalOrder($"AssignRushMoveOrder:{owner}");
 
         if (isBoss && owner != RushMoveOrderOwner.Boss)
             return false;
@@ -2598,7 +2761,7 @@ private void SpawnProjectile()
         {
             _animator.speed = 1f;
             _animator.ResetTrigger("Walk");
-            _animator.Play("Idle", 0, 0f);
+            PlayIdleVisual();
         }
         bounceYOffset = 0f;
         isMovingToNextRow = false;
@@ -2645,6 +2808,9 @@ private void SpawnProjectile()
     {
         if (!HasRushMoveOrder || !pendingRushMove || state == EnemyState.Dead)
             return RushMoveStartResult.Rejected;
+        if (_rushMoveOrderOwner == RushMoveOrderOwner.WaveMarch &&
+            _cavalry != null && _cavalry.IsMounted)
+            return RushMoveStartResult.Deferred;
 
         if (_rushMoveOrderOwner == RushMoveOrderOwner.WaveMarch)
         {
@@ -2774,6 +2940,8 @@ private void SpawnProjectile()
         var frame = st.GetFrame(0);
         string caller = frame != null ? $"{frame.GetMethod().DeclaringType?.Name}.{frame.GetMethod().Name}:{frame.GetFileLineNumber()}" : "?";
         DebugLog.Info($"[RowTrace] {DebugTag} row {oldRow}→{row} | caller={caller}");
+        if (_cavalry != null)
+            _cavalry.TraceEnemyRowChange(oldRow, row, caller);
     }
 
     /// <summary>
@@ -2783,6 +2951,7 @@ private void SpawnProjectile()
     public void RecheckAttackRange()
     {
         if (state == EnemyState.Dead) return;
+        // 骑乘期间免疫位移：不会被击退/横移，因此不需要在这里取消冲锋。
 
         int atkRange = (int)Mathf.Max(1, attackRange);
         if (rowIndex < atkRange)
@@ -2798,7 +2967,7 @@ private void SpawnProjectile()
         if (state == EnemyState.Attacking)
         {
             state = EnemyState.Idle;
-            _animator?.Play("Idle", 0, 0f);
+            PlayIdleVisual();
         }
     }
 
@@ -3452,6 +3621,7 @@ private void SpawnProjectile()
     public void ResetEnemy()
     {
         EnemyManager.Instance?.columnManager?.CancelPushReturnForEnemy(this, "cancel-reset");
+        _cavalry?.ResetCavalry();
         StopHitStop();
         StopHitScaleFeedback();
 
@@ -3461,6 +3631,8 @@ private void SpawnProjectile()
         transform.localRotation = originalRotation;
 
         state = EnemyState.Dead;
+        formState = EnemyFormState.Normal;
+        _cowardTransitionPlaying = false;
         currentHealth = 0f;
         currentPoise = 0f;
         initialized = false;
