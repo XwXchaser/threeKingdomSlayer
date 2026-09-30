@@ -27,3 +27,11 @@ aiEditMode: inherit
 - 回执只证明“工具被调用”，不证明“变更已持久化”。
 - 批量改动时逐个文件核对，不要抽查一个文件就推断整批成功。
 - 向用户汇报“已修改”之前，先把回读结果作为依据；发现未落盘时重做并再次回读。
+
+## 补充（连招蓄力那一轮）：输入/手感改动必须走输入层验证
+
+- 事故：为了让连招蓄力不让出“站桩蓄力”的表现，把“本次按下属于连招”标记在**每次按下**就置位，又让 `InputManager.ProcessGesture` 在该标记下直接 `return` —— 结果普通点击的**抬手也被吞掉**，连段完全接不上（用户当场发现，而我的自测全绿）。
+- 根因：自测用 `PlayerMoveStateMachine.SubmitInput(...)` 直接投递手势，**绕过了 InputManager 的门**（手势识别、蓄力门、抬手分支、输入开关），而这次 bug 恰恰就在那扇门里。
+- 规矩：输入/手感类改动，验证必须走真实输入层——设好 `isTouching/isLongPress/segmentStartTime` 后调 `InputManager.ProcessGesture(releasePos, pressDuration, swipeDistance)`（抬手）或 `TryDetectHoldSwipe`（按住划动），或索実在 Play Mode 里按；不能只靠 SubmitInput。
+- 具体陷阱：`ProcessGesture` 里新增的“吞掉松手”条件必须绑定到**是否真的蓄力了**（`CurrentChargeLevel >= 1`），不能绑定到“这次按下属于连招”（`comboChargeActive`）——后者会把普通点击一起吞掉。
+- 统计“是否两把枪”要看**可见**枪体（`_visualTransform.gameObject.activeSelf`）；`FindObjectsOfType<StabSweepEffect>()` 会把已交接隐藏、仍在跑时间线的那把也算进来，会出现“看起来 2 把”的假项。
