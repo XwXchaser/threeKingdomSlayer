@@ -30,6 +30,10 @@ MonoBehaviour:
   slashSweepHalfWidth: 5
   slashSweepAngle: 50
   slashSweepDuration: 0.25
+  slashSweepDirection: 0
+  slashMovementTiltDegrees: 0
+  slashOverrideVisualTilt: 0
+  slashVisualTiltDegrees: 0
   slashSpawnYOffset: 1.5
   slashSpawnZOffset: 0.5
   parrySweepAngle: 100
@@ -48,6 +52,13 @@ MonoBehaviour:
   launchSpawnZOffset: 0
   launchAngleVariance: 15
   launchRiseHeight: 1
+  launchSkipWindup: 0
+  launchSweepMode: 0
+  launchSweepUp: 1
+  launchSweepLeft: 0.7
+  launchSweepForward: 0.35
+  launchSweepRise: 1
+  launchSweepLeftShift: 1.8
   ultimateEnergyGain: 10
   chargeLevelDamageMultipliers: []
   stabWindupRatio: 0.2
@@ -68,8 +79,21 @@ MonoBehaviour:
   stabThrustWidthScale: 0.84
   stabMotionBlurScale: 1.35
   stabFirstHitStrength: 3
+  chargeHoldRetractRatio: 0.75
+  chargeHoldPullSeconds: 0.3
+  chargeHoldPitchDegrees: 8
+  chargeHoldSettleSeconds: 0.12
+  chargeHoldSettleRatio: 0.1
+  chargeHoldShakeAmplitude: 0.06
+  chargeHoldShakeFrequency: 14
   repeatSelf: 0
   overrideWindow: 1
-  windowStart01: 0.65
-  windowEnd01: 0.95
-  moveEdges: []
+  windowStart01: 0.6
+  windowEnd01: 1
+  moveEdges:
+  - gesture: 2
+    minChargeLevel: 1
+    overrideWindow: 0
+    windowStart01: 0
+    windowEnd01: 1
+    next: {fileID: 11400000, guid: 3fe76a22f36b7744fb64fb06cf75533a, type: 2}

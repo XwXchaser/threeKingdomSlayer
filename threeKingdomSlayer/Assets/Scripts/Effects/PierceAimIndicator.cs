@@ -188,6 +188,13 @@ public sealed class PierceAimIndicator : MonoBehaviour
 
     private void OnChargeUpdated(Vector2 screenPosition, float progress)
     {
+        // 连段蓄力不是穿刺蓄力：不显示穿刺猫准指示器
+        if (InputManager.Instance != null && InputManager.Instance.comboChargeActive)
+        {
+            SetVisible(false);
+            return;
+        }
+
         if (!_chargeActive || progress < 1f || InputManager.Instance == null || AttackSystem.Instance == null)
         {
             SetVisible(false);

@@ -62,13 +62,41 @@ public sealed class StabSweepEffect : MonoBehaviour
     private bool _usingSpeedSprite;
     private float _halfBaseSpriteLength;
     private Coroutine _hitDeformationRoutine;
+    private ChargeStabVisual _chargeVisual;
+    private SpriteRenderer _renderer;
+    private Sprite _baseSprite;
+    private bool _chargeHoldPending;
+    private bool _chargeHoldActive;
+    private bool _chargeHoldFull;
+    private bool _chargeFrameApplied;
+    private float _chargeHoldFromRatio;
+    private float _chargeHoldRatio;
+    private float _chargeHoldPull;
+    private float _chargeHoldHeldSeconds;
+    private float _chargeHoldShakePhase;
+    private float _chargeAppliedTilt;
+    private bool _chargeRecoverActive;
+    private float _chargeRecoverTime;
+    private float _chargeRecoverDuration;
+    private Vector3 _chargeRecoverFromPosition;
+    private Vector3 _chargeRecoverFromOffset;
+    private float _chargeRecoverFromRoll;
+    private float _retractStartTime;
+    private float _retractDurationCached;
+    private Quaternion _deformBaseRotation;
+    private Vector3 _retractFromPosition;
+    private Vector3 _retractToPosition;
+    private Vector3 _retractFromScale;
+    private Vector3 _retractToScale;
+    private Vector3 _retractFromVisualOffset;
 
     public static StabSweepEffect Create(GameObject prefab, Sprite speedSprite, Vector3 startPosition, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows,
         float damage, DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget,
         Action<Enemy> onHit, Func<Enemy, bool> onFirstHitBeforeDamage, Action onFirstHit, Action onComplete,
         float visualReachOffset, float visualStartXOffset, float visualTargetRandomRadius, float baseRayLength,
         float targetDuration = -1f, bool interruptsCavalryCharge = false,
-        StabMotionParams motion = default, StabStartPose startPose = default)
+        StabMotionParams motion = default, StabStartPose startPose = default,
+        ChargeStabVisual chargeVisual = null)
     {
         var ray = new GameObject("StabRay");
         ray.transform.position = startPosition;
@@ -89,7 +117,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         var effect = ray.AddComponent<StabSweepEffect>();
         effect.Initialize(visual, speedSprite, targetPosition, column, rangeRows, visualRangeRows, damage, damageType,
             columnManager, coveredBossTarget, onHit, onFirstHitBeforeDamage, onFirstHit, onComplete, targetDuration,
-            visualTargetRandomRadius, baseRayLength, interruptsCavalryCharge, motion, startPose);
+            visualTargetRandomRadius, baseRayLength, interruptsCavalryCharge, motion, startPose, chargeVisual);
         return effect;
     }
 
@@ -97,7 +125,8 @@ public sealed class StabSweepEffect : MonoBehaviour
         DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget,
         Action<Enemy> onHit, Func<Enemy, bool> onFirstHitBeforeDamage, Action onFirstHit,
         Action onComplete, float targetDuration, float visualTargetRandomRadius, float baseRayLength,
-        bool interruptsCavalryCharge = false, StabMotionParams motion = default, StabStartPose startPose = default)
+        bool interruptsCavalryCharge = false, StabMotionParams motion = default, StabStartPose startPose = default,
+        ChargeStabVisual chargeVisual = null)
     {
         _column = column;
         _rangeRows = rangeRows;
@@ -113,6 +142,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         _onFirstHitBeforeDamage = onFirstHitBeforeDamage;
         _onFirstHit = onFirstHit;
         _onComplete = onComplete;
+        _chargeVisual = chargeVisual;
 
         var renderer = visual.GetComponentInChildren<SpriteRenderer>();
         if (renderer != null)
@@ -177,6 +207,8 @@ public sealed class StabSweepEffect : MonoBehaviour
         Vector3 windupScale = GetVisualScale(WindupWidthScale, WindupLengthScale);
         Vector3 thrustScale = GetVisualScale(_motion.thrustWidthScale, _motion.thrustLengthScale);
         Sprite baseSprite = renderer != null ? renderer.sprite : null;
+        _renderer = renderer;
+        _baseSprite = baseSprite;
         _sequence = DOTween.Sequence().SetTarget(transform);
         Quaternion aimRotation = Quaternion.LookRotation(_rayDirection, Vector3.up);
         // 画面内姿态倾角：整段保持，作为持枪姿态语言（不改变轨迹）
@@ -225,6 +257,16 @@ public sealed class StabSweepEffect : MonoBehaviour
             _sequence.Join(DOTween.To(() => _motion.rollDegrees, v => ApplyDeformRoll(deformBaseRotation, v), 0f, retractDuration).SetEase(Ease.OutCubic));
         _sequence.Join(_visualOffsetRoot.DOLocalMove(Vector3.zero, retractDuration).SetEase(Ease.OutCubic));
         _sequence.Join(_deformRoot.DOScale(_visualBaseLocalScale, retractDuration).SetEase(Ease.OutCubic));
+        // 连段蓄力：按下后由本组件接管回收，把枪体「拉回蓄势位」，因此记录回收路径两端
+        _retractStartTime = windupDuration + holdDuration + thrustDuration + penetrationDuration;
+        _retractDurationCached = retractDuration;
+        _retractFromPosition = penetrationPosition;
+        _retractToPosition = _rayOrigin;
+        _retractFromScale = _visualBaseLocalScale;   // 回收段起点缩放已是基准（穿入段已还原）
+        _retractToScale = _visualBaseLocalScale;
+        _retractFromVisualOffset = _visualTargetOffsetLocal;
+        _deformBaseRotation = deformBaseRotation;
+        _sequence.InsertCallback(_retractStartTime, TryHoldForCharge);
         _sequence.OnKill(() =>
         {
             _visualTransform?.DOKill();
@@ -283,6 +325,41 @@ public sealed class StabSweepEffect : MonoBehaviour
             _visualBaseLocalScale.x * widthMultiplier,
             _visualBaseLocalScale.y * lengthMultiplier,
             _visualBaseLocalScale.z);
+    }
+
+    private void Update()
+    {
+        if (_chargeRecoverActive)
+        {
+            UpdateChargeRecover();
+            return;
+        }
+
+        if (!_chargeHoldActive) return;
+
+        float held = _chargeHoldHeldSeconds;
+        float pullSeconds = _motion.chargeHoldPullSeconds;
+        _chargeHoldPull = Mathf.Clamp01(held / pullSeconds);
+
+        // 阶段一：拉到蓄势位；阶段二：到位后再向后一顿（表达开始蓄力），之后才开始前后微颤
+        float target = Mathf.Clamp01(_motion.chargeHoldRetractRatio);
+        float ratio = Mathf.Lerp(_chargeHoldFromRatio, target, _chargeHoldPull);
+        float shake = 0f;
+        if (held > pullSeconds)
+        {
+            float settleSeconds = _motion.chargeHoldSettleSeconds;
+            float settle = settleSeconds > 0f
+                ? Mathf.Clamp01((held - pullSeconds) / settleSeconds)
+                : 1f;
+            ratio = Mathf.Lerp(target, target + _motion.chargeHoldSettleRatio, settle);
+            shake = _motion.chargeHoldShakeAmplitude * settle;
+        }
+
+        _chargeHoldRatio = Mathf.Clamp01(ratio);
+        _chargeHoldShakePhase += Time.deltaTime * _motion.chargeHoldShakeFrequency * Mathf.PI * 2f;
+
+        ApplyChargeHoldPose(_chargeHoldRatio, shake);
+        ApplyChargeFrame();
     }
 
     private void LateUpdate()
@@ -367,6 +444,230 @@ public sealed class StabSweepEffect : MonoBehaviour
             _visualTransform.gameObject.SetActive(false);
     }
 
+    /// <summary>蓄力保持中（枪体已被拉回蓄势位）</summary>
+    public bool IsChargeHeld => _chargeHoldActive;
+
+    /// <summary>蓄力素材帧来源：只借用帧做「姿势档位」，不搬蓄力视觉的进出场/跟手/帧闪</summary>
+    public void SetChargeVisualSource(ChargeStabVisual chargeVisual)
+    {
+        _chargeVisual = chargeVisual;
+    }
+
+    /// <summary>
+    /// 连段蓄力：按下后接管枪体的回收，把它沿回收路径拉回蓄势位（位移即蓄力条）。
+    /// 若按下时还没进回收段，则等回收段开始再接（保证第三击已经捅出去）。
+    /// </summary>
+    public void BeginChargeHold()
+    {
+        if (_sequence == null || _chargeHoldActive || !_sequence.IsActive()) return;
+
+        float elapsed = _sequence.Elapsed();
+        if (elapsed < _retractStartTime)
+        {
+            _chargeHoldPending = true;
+            return;
+        }
+
+        StartChargePullback(RatioAt(elapsed));
+    }
+
+    /// <summary>按住时长（秒），驱动拉回进度</summary>
+    public void SetChargeHoldHeldSeconds(float seconds)
+    {
+        _chargeHoldHeldSeconds = Mathf.Max(0f, seconds);
+    }
+
+    /// <summary>结束蓄力保持：没有蓄力招式接手时，由本组件把回收段剩下的部分走完（不 seek 时间线，避免跳位）</summary>
+    public void EndChargeHold()
+    {
+        _chargeHoldPending = false;
+        if (!_chargeHoldActive) return;
+
+        _chargeHoldActive = false;
+        _chargeHoldFull = false;
+        _chargeFrameApplied = false;
+        if (_renderer != null && _baseSprite != null) _renderer.sprite = _baseSprite;
+
+        _chargeRecoverActive = true;
+        _chargeRecoverTime = 0f;
+        _chargeRecoverDuration = _retractDurationCached * (1f - TimeRatioAt(_chargeHoldRatio));
+        _chargeRecoverFromPosition = transform.position;
+        _chargeRecoverFromOffset = _visualOffsetRoot != null ? _visualOffsetRoot.localPosition : Vector3.zero;
+        _chargeRecoverFromRoll = _motion.rollDegrees * (1f - _chargeHoldRatio);
+
+        if (_chargeRecoverDuration <= 0.01f) FinishChargeRecover();
+    }
+
+    /// <summary>续完回收：从蓄势位平滑走到枪尾位并把仰角/自转收回，然后自行销毁</summary>
+    private void UpdateChargeRecover()
+    {
+        _chargeRecoverTime += Time.deltaTime;
+        float p = _chargeRecoverDuration > 0f
+            ? Mathf.Clamp01(_chargeRecoverTime / _chargeRecoverDuration)
+            : 1f;
+        float e = 1f - Mathf.Pow(1f - p, 3f);   // 与回收段同一缓动
+
+        transform.position = Vector3.Lerp(_chargeRecoverFromPosition, _retractToPosition, e);
+        if (_visualOffsetRoot != null)
+        {
+            _visualOffsetRoot.localPosition = Vector3.Lerp(_chargeRecoverFromOffset, Vector3.zero, e);
+            _visualOffsetRoot.localRotation = Quaternion.Euler(0f, 0f,
+                Mathf.Lerp(_chargeAppliedTilt, _motion.visualTiltDegrees, e));
+        }
+        if (_motion.rollDegrees != 0f)
+            ApplyDeformRoll(_deformBaseRotation, Mathf.Lerp(_chargeRecoverFromRoll, 0f, e));
+
+        if (p >= 1f) FinishChargeRecover();
+    }
+
+    private void FinishChargeRecover()
+    {
+        _chargeRecoverActive = false;
+
+        // 旧时间线已无意义（停在那里即可，但要清掉回调，避免它在对象销毁时重复 Destroy）
+        Sequence stale = _sequence;
+        _sequence = null;
+        if (stale != null)
+        {
+            stale.OnKill((DG.Tweening.TweenCallback)null);
+            stale.OnComplete((DG.Tweening.TweenCallback)null);
+            stale.Kill(false);
+        }
+
+        if (_visualTransform != null) _visualTransform.DOKill();
+        Destroy(gameObject);
+    }
+
+    /// <summary>
+    /// 交出蓄势位的枪体姿态：枪体中心 / 世界旋转 / 世界缩放，供上挑原地起手（不产生位移）。
+    /// </summary>
+    public bool TryGetChargeHoldPose(out Vector3 center, out Quaternion rotation, out Vector3 scale)
+    {
+        center = default;
+        rotation = default;
+        scale = default;
+        if (!_chargeHoldActive || _deformRoot == null) return false;
+
+        center = _deformRoot.position;
+        rotation = _deformRoot.rotation;
+        scale = _deformRoot.lossyScale;
+        return true;
+    }
+
+    /// <summary>
+    /// 姿态已被下一招接手：隐藏本段视觉与命中，并让时间线继续跑完自行销毁
+    /// （不能 Kill/Destroy，否则会连带影响同帧新建的下一段）。
+    /// </summary>
+    public void ReleaseAfterChargeHold()
+    {
+        _chargeHoldPending = false;
+        _chargeHoldActive = false;
+        _chargeHoldFull = false;
+        _chargeFrameApplied = false;
+        HandOff();
+        if (_sequence != null && _sequence.IsActive()) _sequence.Play();
+    }
+
+    /// <summary>回收段内的时间比例 → 收回距离比例（OutCubic 效果）</summary>
+    private float RatioAt(float elapsed)
+    {
+        if (_retractDurationCached <= 0f) return 0f;
+        float t = Mathf.Clamp01((elapsed - _retractStartTime) / _retractDurationCached);
+        return 1f - Mathf.Pow(1f - t, 3f);
+    }
+
+    /// <summary>收回距离比例 → 回收段内的时间比例（OutCubic 的逆）</summary>
+    private float TimeRatioAt(float distanceRatio)
+    {
+        return 1f - Mathf.Pow(1f - Mathf.Clamp01(distanceRatio), 1f / 3f);
+    }
+
+    private void TryHoldForCharge()
+    {
+        if (_chargeHoldPending) StartChargePullback(0f);
+    }
+
+    private void StartChargePullback(float fromRatio)
+    {
+        _chargeHoldPending = false;
+        _chargeHoldActive = true;
+        _chargeHoldFromRatio = Mathf.Clamp01(fromRatio);
+        _chargeHoldRatio = _chargeHoldFromRatio;
+        _chargeHoldPull = 0f;
+        _chargeHoldHeldSeconds = 0f;
+        _chargeHoldShakePhase = 0f;
+        _chargeFrameApplied = false;
+
+        // 保持期间不允许卡肉把自己解冻
+        if (_hitStopRoutine != null)
+        {
+            StopCoroutine(_hitStopRoutine);
+            _hitStopRoutine = null;
+        }
+
+        _motionBlur?.SetStrength(0f);
+        _sequence.Pause();
+        ApplyChargeHoldPose(_chargeHoldFromRatio, 0f);
+    }
+
+    /// <summary>按「拉回进度」把枪体摆到蓄势位：位移即蓄力条；到拉满后再向后一顿，随后叠加前后微颤</summary>
+    private void ApplyChargeHoldPose(float ratio, float shake)
+    {
+        if (_deformRoot == null) return;
+
+        float p = Mathf.Clamp01(ratio);
+        Vector3 position = Vector3.Lerp(_retractFromPosition, _retractToPosition, p);
+        _deformRoot.localScale = Vector3.Lerp(_retractFromScale, _retractToScale, p);
+        _visualOffsetRoot.localPosition = Vector3.Lerp(_retractFromVisualOffset, Vector3.zero, p);
+
+        float tilt = _motion.visualTiltDegrees + _motion.chargeHoldPitchDegrees * p;
+        if (shake > 0f)
+        {
+            // 前后抖动：沿枪身长轴顶住（略带一点姿态微摆，避免机械感）
+            float sin = Mathf.Sin(_chargeHoldShakePhase);
+            position += _rayDirection * (sin * shake);
+            tilt += sin * shake * 12f;
+        }
+
+        transform.position = position;
+        _visualOffsetRoot.localRotation = Quaternion.Euler(0f, 0f, tilt);
+        _chargeAppliedTilt = tilt;
+        if (_motion.rollDegrees != 0f)
+            ApplyDeformRoll(_deformBaseRotation, Mathf.Lerp(_motion.rollDegrees, 0f, p));
+    }
+
+    /// <summary>蓄力素材帧只做姿势档位：拉回中用一档，拉满切另一档（不做帧闪）</summary>
+    private void ApplyChargeFrame()
+    {
+        if (_renderer == null || _chargeVisual == null) return;
+
+        bool full = _chargeHoldPull >= 1f;
+        if (_chargeFrameApplied && full == _chargeHoldFull) return;
+
+        _chargeHoldFull = full;
+        _chargeFrameApplied = true;
+        Sprite frame = full ? _chargeVisual.chargeSprite1 : _chargeVisual.chargeSprite2;
+        if (frame != null) _renderer.sprite = frame;
+    }
+
+    /// <summary>
+    /// 被下一招接手 / 需要立刻清掉时调用：隐藏视觉与命中并立即销毁
+    /// （用于避免与下一招的枪体同时存在；与 HandOff 不同，不等时间线跑完）。
+    /// </summary>
+    public void AbortAndDestroy()
+    {
+        _chargeHoldActive = false;
+        _chargeRecoverActive = false;
+        _hitsEnabled = false;
+        if (_hitDeformationRoutine != null)
+        {
+            StopCoroutine(_hitDeformationRoutine);
+            _hitDeformationRoutine = null;
+        }
+        if (_visualTransform != null) _visualTransform.DOKill();
+        Destroy(gameObject);
+    }
+
     /// <summary>
     /// 在首次命中结算前取消本次戳击，用于「按下即出轻攻击」模型下的起手改写。
     /// 返回 false 表示已经命中或序列已结束，不可取消。
@@ -384,6 +685,7 @@ public sealed class StabSweepEffect : MonoBehaviour
 
     private void PauseSequenceForHitStop(HitFeedbackStrength feedbackStrength)
     {
+        if (_chargeHoldActive) return;
         if (_sequence == null || !_sequence.IsActive()) return;
         if (_hitStopRoutine != null)
             StopCoroutine(_hitStopRoutine);
@@ -392,9 +694,10 @@ public sealed class StabSweepEffect : MonoBehaviour
 
     private System.Collections.IEnumerator HitStopRoutine(float duration)
     {
-        _sequence.Pause();
+        if (_sequence != null) _sequence.Pause();
         yield return new WaitForSecondsRealtime(duration);
-        if (_sequence != null && _sequence.IsActive())
+        // 蓄力保持期间不能被卡肉解冻
+        if (!_chargeHoldActive && _sequence != null && _sequence.IsActive())
             _sequence.Play();
         _hitStopRoutine = null;
     }

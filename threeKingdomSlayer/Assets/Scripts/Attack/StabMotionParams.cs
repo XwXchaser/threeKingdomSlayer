@@ -35,6 +35,20 @@ public struct StabMotionParams
     public float blurSpeedFrame;
     public float blurPenetration;
     public HitFeedbackStrength firstHitStrength;
+    /// <summary>连段蓄力：枪体被拉回的回收段位置（0 = 不收回，1 = 完全收回）</summary>
+    public float chargeHoldRetractRatio;
+    /// <summary>连段蓄力：从按下到拉满蓄势位的时长（秒）</summary>
+    public float chargeHoldPullSeconds;
+    /// <summary>连段蓄力：拉回时枪身额外抬起的仰角（度）</summary>
+    public float chargeHoldPitchDegrees;
+    /// <summary>连段蓄力：拉满后再向后一顿的时长（秒）</summary>
+    public float chargeHoldSettleSeconds;
+    /// <summary>连段蓄力：向后一顿的额外回收距离比例</summary>
+    public float chargeHoldSettleRatio;
+    /// <summary>连段蓄力：蓄势位微颤幅度（世界单位）</summary>
+    public float chargeHoldShakeAmplitude;
+    /// <summary>连段蓄力：微颤频率（Hz）</summary>
+    public float chargeHoldShakeFrequency;
 
     public static StabMotionParams Default => new StabMotionParams
     {
@@ -52,7 +66,14 @@ public struct StabMotionParams
         blurThrust = 28f,
         blurSpeedFrame = 14f,
         blurPenetration = 18f,
-        firstHitStrength = HitFeedbackStrength.Standard
+        firstHitStrength = HitFeedbackStrength.Standard,
+        chargeHoldRetractRatio = 0.75f,
+        chargeHoldPullSeconds = 0.3f,
+        chargeHoldPitchDegrees = 8f,
+        chargeHoldSettleSeconds = 0.12f,
+        chargeHoldSettleRatio = 0.1f,
+        chargeHoldShakeAmplitude = 0.06f,
+        chargeHoldShakeFrequency = 14f
     };
 
     /// <summary>从招式资产读取动作参数；未配置的字段回落到默认值</summary>
@@ -76,6 +97,13 @@ public struct StabMotionParams
         if (cfg.stabBlurSpeedFrame > 0f) p.blurSpeedFrame = cfg.stabBlurSpeedFrame;
         if (cfg.stabBlurPenetration > 0f) p.blurPenetration = cfg.stabBlurPenetration;
         p.firstHitStrength = cfg.stabFirstHitStrength;
+        p.chargeHoldRetractRatio = Mathf.Clamp01(cfg.chargeHoldRetractRatio);
+        p.chargeHoldPullSeconds = Mathf.Max(0.05f, cfg.chargeHoldPullSeconds);
+        p.chargeHoldPitchDegrees = cfg.chargeHoldPitchDegrees;
+        p.chargeHoldSettleSeconds = Mathf.Max(0f, cfg.chargeHoldSettleSeconds);
+        p.chargeHoldSettleRatio = Mathf.Clamp01(cfg.chargeHoldSettleRatio);
+        p.chargeHoldShakeAmplitude = Mathf.Max(0f, cfg.chargeHoldShakeAmplitude);
+        p.chargeHoldShakeFrequency = Mathf.Max(1f, cfg.chargeHoldShakeFrequency);
         return p;
     }
 }
