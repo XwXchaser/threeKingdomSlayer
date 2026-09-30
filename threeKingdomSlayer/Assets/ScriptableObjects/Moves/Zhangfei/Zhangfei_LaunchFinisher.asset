@@ -10,45 +10,56 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 98a5aaeb5141a6a40b614df2cddb4ab7, type: 3}
-  m_Name: Zhangfei_Jab1
+  m_Name: Zhangfei_LaunchFinisher
   m_EditorClassIdentifier: 
-  id: 11
-  attackType: 0
-  damageType: 0
-  damage: 20
-  poiseDamage: 0
-  interruptsCavalryCharge: 0
-  rangeRows: 1
+  id: 14
+  attackType: 4
+  damageType: 4
+  damage: 60
+  poiseDamage: 80
+  interruptsCavalryCharge: 1
+  rangeRows: 3
   cooldown: 0.3
-  actionDuration: 0.45
-  launchDuration: 0.2
+  actionDuration: 0.6
+  launchDuration: 1.2
   attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
-  stabSpawnYOffset: -0.6
-  stabSpawnZOffset: -5
-  stabVisualReachOffset: 2
-  stabVisualTargetRandomRadius: 0.5
-  slashSweepHalfWidth: 5
-  slashSweepAngle: 50
-  slashSweepDuration: 0.25
-  slashSpawnYOffset: 1.5
-  slashSpawnZOffset: 0.5
+  stabSpawnYOffset: 1.5
+  stabSpawnZOffset: 0.5
+  stabVisualReachOffset: 0.5
+  stabVisualTargetRandomRadius: 0.12
+  slashSweepHalfWidth: 4.5
+  slashSweepAngle: 110
+  slashSweepDuration: 0.36
+  slashSweepDirection: 2
+  slashMovementTiltDegrees: -22
+  slashOverrideVisualTilt: 1
+  slashVisualTiltDegrees: 20
+  slashSpawnYOffset: -0.3
+  slashSpawnZOffset: -3.6
   parrySweepAngle: 100
   parrySweepDuration: 0.25
   parrySpawnXOffset: 0
   parrySpawnYOffset: 1.5
   parrySpawnZOffset: 0
   parryAngleVariance: 15
-  launchFlickAngle: 90
-  launchFlickDuration: 0.2
-  launchWindupDuration: 0.1
-  launchWindupDistance: 0.42
-  launchSideTilt: 12
+  launchFlickAngle: 70
+  launchFlickDuration: 0.26
+  launchWindupDuration: 0.06
+  launchWindupDistance: 0.12
+  launchSideTilt: 16
   launchSpawnXOffset: 0
   launchSpawnYOffset: 1.5
   launchSpawnZOffset: 0
-  launchAngleVariance: 15
-  launchRiseHeight: 1
-  ultimateEnergyGain: 10
+  launchAngleVariance: 12
+  launchRiseHeight: 1.1
+  launchSkipWindup: 0
+  launchSweepMode: 1
+  launchSweepUp: 1
+  launchSweepLeft: 0.7
+  launchSweepForward: 0.35
+  launchSweepRise: 1
+  launchSweepLeftShift: 1.8
+  ultimateEnergyGain: 8
   chargeLevelDamageMultipliers: []
   stabWindupRatio: 0.12
   stabThrustRatio: 0.28
@@ -67,16 +78,16 @@ MonoBehaviour:
   stabThrustLengthScale: 1.18
   stabThrustWidthScale: 0.86
   stabMotionBlurScale: 1
-  stabFirstHitStrength: 2
-  chargeHoldRetractRatio: 0.2
+  stabFirstHitStrength: 3
+  chargeHoldRetractRatio: 0.75
+  chargeHoldPullSeconds: 0.3
+  chargeHoldPitchDegrees: 8
+  chargeHoldSettleSeconds: 0.12
+  chargeHoldSettleRatio: 0.1
+  chargeHoldShakeAmplitude: 0.06
+  chargeHoldShakeFrequency: 14
   repeatSelf: 0
-  overrideWindow: 1
-  windowStart01: 0.65
+  overrideWindow: 0
+  windowStart01: 0
   windowEnd01: 1
-  moveEdges:
-  - gesture: 0
-    minChargeLevel: 0
-    overrideWindow: 0
-    windowStart01: 0
-    windowEnd01: 1
-    next: {fileID: 11400000, guid: ef4520b16f161fd4b9724dc6c161d525, type: 2}
+  moveEdges: []

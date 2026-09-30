@@ -24,10 +24,13 @@ public sealed class LaunchVisualEffect : MonoBehaviour
     private Action _onImpact;
     private bool _impactInvoked;
     private bool _completed;
+    private bool _sweepMode;
 
     public static void Create(Sprite launchSprite1, Sprite launchSprite2, Sprite launchSprite3,
         AttackSkillConfig config, Vector3 playerPosition, ChargeStabVisual chargeVisual,
-        float durationScale, Action onImpact)
+        float durationScale, Action onImpact,
+        bool hasExplicitPose = false, Vector3 explicitPosition = default, Quaternion explicitRotation = default,
+        Vector3 explicitScale = default, bool skipWindup = false)
     {
         if (launchSprite1 == null)
         {
@@ -37,14 +40,18 @@ public sealed class LaunchVisualEffect : MonoBehaviour
 
         var root = new GameObject("Launch_Visual");
         root.AddComponent<LaunchVisualEffect>().Initialize(launchSprite1, launchSprite2, launchSprite3,
-            config, playerPosition, chargeVisual, Mathf.Max(durationScale, 0.01f), onImpact);
+            config, playerPosition, chargeVisual, Mathf.Max(durationScale, 0.01f), onImpact,
+            hasExplicitPose, explicitPosition, explicitRotation, explicitScale, skipWindup);
     }
 
     private void Initialize(Sprite launchSprite1, Sprite launchSprite2, Sprite launchSprite3,
         AttackSkillConfig config, Vector3 playerPosition, ChargeStabVisual chargeVisual,
-        float durationScale, Action onImpact)
+        float durationScale, Action onImpact,
+        bool hasExplicitPose, Vector3 explicitPosition, Quaternion explicitRotation,
+        Vector3 explicitScale, bool skipWindup)
     {
         _onImpact = onImpact;
+        _sweepMode = config.launchSweepMode;
 
         float variance = Mathf.Clamp(config.launchAngleVariance, 0f, 30f);
         float zStart = 140f + UnityEngine.Random.Range(-variance, variance);
@@ -63,28 +70,34 @@ public sealed class LaunchVisualEffect : MonoBehaviour
             && chargeVisual.TryGetCurrentVisualPose(out chargePosition, out chargeRotation, out chargeScale);
 
         Vector3 targetScale;
-        if (useChargePose)
+        bool hasStartPose = false;
+        if (hasExplicitPose)
+        {
+            // 连段终结技：从上一段保持中的枪体姿态原地起手（位置=枪体中心、缩放=同一世界缩放，不位移）
+            spawnPosition = explicitPosition;
+            startRotation = explicitRotation;
+            targetScale = explicitScale != Vector3.zero ? explicitScale : ComputeDefaultScale(launchSprite1);
+            hasStartPose = true;
+        }
+        else if (useChargePose)
         {
             spawnPosition = chargePosition;
             startRotation = chargeRotation;
             targetScale = chargeScale;
             chargeVisual.SuppressFadeAndDestroy();
+            hasStartPose = true;
         }
         else
         {
-            float basePixelsPerUnit = launchSprite1.pixelsPerUnit;
-            float basePixelSize = Mathf.Max(launchSprite1.rect.width, launchSprite1.rect.height);
-            float baseWorldSize = basePixelSize / basePixelsPerUnit;
-            float scale = baseWorldSize > 0.001f ? 5f / baseWorldSize : 1f;
-            targetScale = Vector3.one * scale;
+            targetScale = ComputeDefaultScale(launchSprite1);
         }
 
         float sideRatio = 0f;
-        if (useChargePose)
+        if (hasStartPose)
         {
             float horizontalRange = chargeVisual != null ? chargeVisual.halfWidth : 3f;
             if (horizontalRange > 0.001f)
-                sideRatio = Mathf.Clamp((chargePosition.x - playerPosition.x) / horizontalRange, -1f, 1f);
+                sideRatio = Mathf.Clamp((spawnPosition.x - playerPosition.x) / horizontalRange, -1f, 1f);
         }
         float sideTilt = sideRatio * config.launchSideTilt;
         float randomTiltMagnitude = UnityEngine.Random.Range(variance * 0.55f, variance);
@@ -106,17 +119,32 @@ public sealed class LaunchVisualEffect : MonoBehaviour
         Vector3 pivotPosition = gunTail + gunUp * pivotFromTail;
         float pivotArmLength = halfLength - pivotFromTail;
 
-        Quaternion windupRotation = startRotation * Quaternion.Euler(32f, 0f,
-            sideTilt * 0.45f + randomTilt * 0.12f);
+        Quaternion windupRotation = skipWindup
+            ? startRotation
+            : startRotation * Quaternion.Euler(32f, 0f, sideTilt * 0.45f + randomTilt * 0.12f);
         Quaternion apexRotation = startRotation * Quaternion.Euler(-flickAngle, 0f, poseTilt);
+        // 左上扫击表现：终点枪尖方向直接在相机平面里给出（不受挑飞角度钳制影响）
+        if (config.launchSweepMode)
+        {
+            Vector3 sweepAxis = cameraUp * config.launchSweepUp
+                + cameraRight * (-config.launchSweepLeft)
+                + cameraForward * config.launchSweepForward;
+            if (sweepAxis.sqrMagnitude > 0.0001f)
+                apexRotation = Quaternion.LookRotation(sweepAxis.normalized, cameraUp) * Quaternion.Euler(90f, 0f, 0f);
+        }
 
         float riseDistance = Mathf.Clamp(config.launchRiseHeight * 0.49f, 0.40f, 0.56f);
         float sideOffset = sideRatio * 0.12f;
         Vector3 windupBack = -cameraRight * Mathf.Sign(Mathf.Abs(sideRatio) > 0.01f ? sideRatio : 1f) * 0.10f;
         Vector3 windupPosition = pivotPosition + cameraDown * config.launchWindupDistance
             + windupBack - cameraRight * sideOffset;
+        // 连段终结技：预备已由蓄力拉回完成，直接从蓄势位起上挑
+        if (skipWindup) windupPosition = pivotPosition;
         Vector3 apexPosition = pivotPosition + cameraUp * riseDistance + cameraForward * 0.18f
             + cameraRight * (sideRatio * 0.18f);
+        if (config.launchSweepMode)
+            apexPosition = pivotPosition + cameraUp * config.launchSweepRise
+                + cameraRight * (-config.launchSweepLeftShift);
         Vector3 impactPosition = Vector3.Lerp(windupPosition, apexPosition, ImpactThrustRatio);
         Vector3 preImpactControl = Vector3.Lerp(windupPosition, impactPosition, 0.42f)
             + cameraDown * 0.10f
@@ -145,9 +173,9 @@ public sealed class LaunchVisualEffect : MonoBehaviour
         renderer.sortingOrder = 2;
         _motionBlur = new WeaponMotionBlurController(renderer, 1.2f, 0.09f, 56f);
 
-        float windupDuration = Mathf.Clamp(config.launchWindupDuration, 0.06f,
+        float windupDuration = skipWindup ? 0f : Mathf.Clamp(config.launchWindupDuration, 0.06f,
             config.launchFlickDuration * 0.56f) * durationScale;
-        float windupPause = Mathf.Min(0.02f, config.launchFlickDuration * 0.08f) * durationScale;
+        float windupPause = skipWindup ? 0f : Mathf.Min(0.02f, config.launchFlickDuration * 0.08f) * durationScale;
         float thrustDuration = Mathf.Max(motionDuration - windupDuration - windupPause, 0.01f);
         float recoveryHoldDuration = RecoveryHoldDuration * durationScale;
         float retractDuration = RecoveryRetractDuration * durationScale;
@@ -176,7 +204,7 @@ public sealed class LaunchVisualEffect : MonoBehaviour
                 thrustProgress = value;
                 transform.position = EvaluateLaunchPath(value, windupPosition, preImpactControl,
                     impactPosition, postImpactControl, apexPosition);
-                pivot.localRotation = EvaluateLaunchRotation(value, windupRotation,
+                pivot.localRotation = EvaluateRotation(value, windupRotation,
                     impactRotation, apexRotation);
                 _motionBlur?.UpdateMotionWorld(weapon.position, weapon.rotation,
                     cameraUp, 1.35f, 20f, Time.deltaTime);
@@ -216,7 +244,7 @@ public sealed class LaunchVisualEffect : MonoBehaviour
                     Mathf.Clamp01(value * 1.18f));
                 transform.position = EvaluateLaunchPath(pathProgress, windupPosition, preImpactControl,
                     impactPosition, postImpactControl, apexPosition);
-                pivot.localRotation = EvaluateLaunchRotation(rotationProgress, windupRotation,
+                pivot.localRotation = EvaluateRotation(rotationProgress, windupRotation,
                     impactRotation, apexRotation);
                 _motionBlur?.UpdateMotionWorld(weapon.position, weapon.rotation,
                     cameraDown, 0.45f, 6f, Time.deltaTime);
@@ -242,6 +270,16 @@ public sealed class LaunchVisualEffect : MonoBehaviour
         });
     }
 
+    private static Vector3 ComputeDefaultScale(Sprite sprite)
+    {
+        if (sprite == null) return Vector3.one;
+        float basePixelsPerUnit = sprite.pixelsPerUnit;
+        float basePixelSize = Mathf.Max(sprite.rect.width, sprite.rect.height);
+        float baseWorldSize = basePixelSize / basePixelsPerUnit;
+        float scale = baseWorldSize > 0.001f ? 5f / baseWorldSize : 1f;
+        return Vector3.one * scale;
+    }
+
     private static Vector3 EvaluateLaunchPath(float progress, Vector3 start,
         Vector3 preImpactControl, Vector3 impact, Vector3 postImpactControl, Vector3 apex)
     {
@@ -256,6 +294,26 @@ public sealed class LaunchVisualEffect : MonoBehaviour
         float postProgress = (progress - ImpactThrustRatio) / (1f - ImpactThrustRatio);
         float easedPostProgress = 1f - Mathf.Pow(1f - postProgress, 2f);
         return EvaluateQuadratic(impact, postImpactControl, apex, easedPostProgress);
+    }
+
+    /// <summary>
+    /// 旋转曲线：挑飞用「位移先走、旋转短暂滞后后追上」的错峰；扫击模式改用与位移同一条曲线，一甩到底。
+    /// </summary>
+    private Quaternion EvaluateRotation(float progress, Quaternion start, Quaternion impact, Quaternion apex)
+    {
+        if (!_sweepMode)
+            return EvaluateLaunchRotation(progress, start, impact, apex);
+
+        float p = Mathf.Clamp01(progress);
+        if (p <= ImpactThrustRatio)
+        {
+            float localProgress = p / ImpactThrustRatio;
+            return Quaternion.SlerpUnclamped(start, impact, localProgress * localProgress);
+        }
+
+        float postProgress = (p - ImpactThrustRatio) / (1f - ImpactThrustRatio);
+        float easedPostProgress = 1f - Mathf.Pow(1f - postProgress, 2f);
+        return Quaternion.SlerpUnclamped(impact, apex, easedPostProgress);
     }
 
     private static Quaternion EvaluateLaunchRotation(float progress, Quaternion start,

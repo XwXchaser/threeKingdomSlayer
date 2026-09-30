@@ -68,12 +68,14 @@ MonoBehaviour:
   stabThrustWidthScale: 0.86
   stabMotionBlurScale: 1.15
   stabFirstHitStrength: 2
+  chargeHoldRetractRatio: 0.2
   repeatSelf: 0
   overrideWindow: 1
   windowStart01: 0.65
-  windowEnd01: 0.95
+  windowEnd01: 1
   moveEdges:
   - gesture: 0
+    minChargeLevel: 0
     overrideWindow: 0
     windowStart01: 0
     windowEnd01: 1

@@ -125,6 +125,44 @@ public class AttackSystem : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// 连段蓄力：让当前戳击的枪体停在回收段中途等玩家蓄力（就地在枪体上换蓄力素材帧，
+    /// 不启用蓄力视觉的进出场实例）。仅在招式节点存在「需要蓄力的后续边」时由状态机调用。
+    /// </summary>
+    public void BeginComboChargeHold()
+    {
+        if (_lastStabEffect == null) return;
+        if (_chargeStabVisual == null) _chargeStabVisual = FindObjectOfType<ChargeStabVisual>();
+
+        _lastStabEffect.SetChargeVisualSource(_chargeStabVisual);
+        _lastStabEffect.BeginChargeHold();
+    }
+
+    /// <summary>按住时长（秒）透传给保持中的枪体，驱动「拉回蓄势位」的进度</summary>
+    public void UpdateComboChargeHold(float heldSeconds)
+    {
+        if (_lastStabEffect != null) _lastStabEffect.SetChargeHoldHeldSeconds(heldSeconds);
+    }
+
+    /// <summary>松开/节点切换：没有蓄力招式接手时让枪体恢复回收</summary>
+    public void EndComboChargeHold()
+    {
+        if (_lastStabEffect != null) _lastStabEffect.EndChargeHold();
+    }
+
+    /// <summary>
+    /// 让出枪体：非戳击、非挑飞招式接手时，把当前戳击的枪体立刻收掉
+    /// （无论在蓄力保持中、还是正在自己续完回收），避免同时出现两把枪。
+    /// </summary>
+    private void ReleaseHeldStabVisual()
+    {
+        StabSweepEffect stab = _lastStabEffect;
+        if (stab == null) return;
+
+        stab.AbortAndDestroy();
+        _lastStabEffect = null;
+    }
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -201,6 +239,10 @@ public class AttackSystem : MonoBehaviour
 
         // 招式表解析出的招式资产从这里开始生效（守卫早退时不留下残留）
         _currentConfigOverride = moveConfig;
+
+        // 蓄力保持中的枪体：非戳击、非挑飞招式接手时先收掉
+        // （戳击的连段交接在 ExecuteStab 内处理；挑飞会先取用蓄势位姿态再自己收掉）
+        if (attackType != AttackType.Stab && attackType != AttackType.Launch) ReleaseHeldStabVisual();
 
         bool hitAny = false;
         _attackIsCharged = chargedAttack;
@@ -383,7 +425,7 @@ public class AttackSystem : MonoBehaviour
             cfg.stabVisualTargetRandomRadius,
             baseLength,
             GetAttackDuration(cfg), chargeInterrupt,
-            StabMotionParams.FromConfig(cfg), startPose);
+            StabMotionParams.FromConfig(cfg), startPose, _chargeStabVisual);
         AudioManager.Instance?.PostEvent("Player_Attack");
 
         Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 射程:{effectiveRows} 视觉射程:{visualRangeRows}");
@@ -624,6 +666,8 @@ public class AttackSystem : MonoBehaviour
         bool chargeInterrupt = InterruptsCavalryCharge(cfg);
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
         Vector3 playerLaunchPos = playerState != null ? playerState.transform.position : transform.position;
+        // 连段收尾：先铺一层 slash 的扫掠表现（只做观感，不参与判定）
+        if (cfg.launchSweepMode) PlaySweepPresentation(cfg, playerLaunchPos);
         if (targets.Count > 0)
         {
             ReleaseChargeHitShockwave();
@@ -721,10 +765,48 @@ public class AttackSystem : MonoBehaviour
     /// 以 (35,90,zStart) 朝向做纯 Z 轴旋转至 (35,90,zEnd)，
     /// 表现枪头从低往高上挑的攻击动作。
     /// </summary>
+    private static readonly List<Enemy> NoSweepTargets = new List<Enemy>();
+
+    /// <summary>
+    /// 连段收尾的扫击表现层：只借 slash 的扫掠观感（扇形/拖尾/方向/斜度），
+    /// 目标为空 → 不命中、不伤害、不掉血；伤害与击飞仍由挑飞的 AttackWave 结算。
+    /// </summary>
+    private void PlaySweepPresentation(AttackSkillConfig cfg, Vector3 playerPos)
+    {
+        Vector3 wavePos = new Vector3(0f, playerPos.y + cfg.slashSpawnYOffset,
+            playerPos.z + cfg.slashSpawnZOffset);
+        bool leftToRight = cfg.slashSweepDirection == SlashSweepDirection.LeftToRight;
+
+        SweepEffect.Create(wavePos, cfg.damageType, 0f, NoSweepTargets, leftToRight,
+            cfg.slashSweepHalfWidth, cfg.slashSweepAngle, cfg.slashSweepDuration,
+            prefab: cfg.attackWavePrefab,
+            // 扫掠总时长用 slashSweepDuration（比节点动作锁短），让它一下子掍完，而不是拖满整个收尾
+            targetDuration: cfg.slashSweepDuration,
+            rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite,
+            movementTilt: cfg.slashMovementTiltDegrees,
+            visualPathTilt: cfg.slashOverrideVisualTilt ? cfg.slashVisualTiltDegrees : 0f,
+            useEnhancedSlashMotion: true);
+    }
+
     private void PlayLaunchVisual(AttackSkillConfig cfg, Vector3 playerPos, System.Action onImpact)
     {
+        // 连段终结技：从蓄势位的枪体原地起手（中心/旋转/缩放全部沿用），并把那把枪交掉（避免两把枪）
+        bool hasHoldPose = false;
+        Vector3 holdCenter = default;
+        Quaternion holdRotation = default;
+        Vector3 holdScale = default;
+        StabSweepEffect heldStab = _lastStabEffect;
+        if (heldStab != null && heldStab.IsChargeHeld
+            && heldStab.TryGetChargeHoldPose(out holdCenter, out holdRotation, out holdScale))
+        {
+            hasHoldPose = true;
+            heldStab.ReleaseAfterChargeHold();
+            _lastStabEffect = null;
+        }
+
         LaunchVisualEffect.Create(_launchSprite1, _launchSprite2, _launchSprite3, cfg, playerPos,
-            _chargeStabVisual, LaunchVisualEffect.ObservationScale, onImpact);
+            _chargeStabVisual, LaunchVisualEffect.ObservationScale, onImpact,
+            hasHoldPose, holdCenter, holdRotation, holdScale, cfg.launchSkipWindup && hasHoldPose);
     }
 
     /// <summary>

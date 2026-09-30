@@ -70,6 +70,23 @@ public class InputManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 指针是否处于「已按下且未被输入门拦下」的状态。
+    /// 供招式状态机判断「按住不放时本段先不结束」的宽限与连段蓄力保持。
+    /// QTE 输入优先级高于连招，QTE 期间不视为连招输入。
+    /// </summary>
+    public bool IsPointerDown => isTouching && gameplayInputEnabled && skillInputEnabled
+        && blockInputFrames <= 0 && Time.timeScale > 0f && !IsAnyQTEActive();
+
+    /// <summary>按住时长（秒）：连段蓄力用它驱动「拉回蓄势位」的进度</summary>
+    public float HoldDurationSeconds => isTouching ? Mathf.Max(0f, Time.time - segmentStartTime) : 0f;
+
+    /// <summary>
+    /// 当前这次按下是否被招式状态机判定为「连段蓄力」（按下时置位，抬手或复位时清空）。
+    /// 连段蓄力不是穿刺蓄力：依附蓄力事件链的附带表现（穿刺瞄准指示器、蓄力视觉进出场）应当让位。
+    /// </summary>
+    [System.NonSerialized] public bool comboChargeActive;
+
     // 技能输入开关（狂怒大招期间关闭）
     [System.NonSerialized] public bool skillInputEnabled = true;
     [System.NonSerialized] public bool gameplayInputEnabled = true;
@@ -175,6 +192,9 @@ public class InputManager : MonoBehaviour
             }
             return;
         }
+
+        // 未按住时连段蓄力标记不允许残留
+        if (!isTouching) comboChargeActive = false;
 
         // 输入屏蔽帧：由 UpgradeChoiceManager 在恢复 timeScale 后设置，防止选择选项的点击触发攻击
         if (blockInputFrames > 0)
@@ -521,6 +541,11 @@ public class InputManager : MonoBehaviour
         }
 
         if (hasTriggeredDuringHold)
+            return;
+
+        // 连招蓄力：本次按下已属于连招，已蓄成的那一下松手不再触发射手招式（站桩蓄力）；
+        // 普通点击（未蓄力）必须照旧放行，否则连段接不上
+        if (comboChargeActive && CurrentChargeLevel >= 1)
             return;
 
         if (CurrentChargeLevel >= 1)

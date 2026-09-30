@@ -59,6 +59,15 @@ public class AttackSkillConfig : ScriptableObject
     public float slashSweepAngle = 50f;
     [Tooltip("扫掠持续时长（秒，默认 0.25）")]
     public float slashSweepDuration = 0.25f;
+    [Tooltip("扫掠方向：跟随手势（默认）/ 强制右到左 / 强制左到右。连段终结技用强制右到左表达「朝左上」")]
+    public SlashSweepDirection slashSweepDirection = SlashSweepDirection.FromGesture;
+    [Tooltip("扫掠路径斜度（度）：让扫掠线左高右低（配合强制右到左即「朝左上」）；0 = 水平")]
+    [Range(-45f, 45f)]
+    public float slashMovementTiltDegrees = 0f;
+    [Tooltip("覆盖手势带来的画面内倾斜角（连段终结技用固定值，与手势无关）")]
+    public bool slashOverrideVisualTilt = false;
+    [Range(-30f, 30f)]
+    public float slashVisualTiltDegrees = 0f;
     [Tooltip("生成位置 Y 偏移（相对敌人中心）")]
     public float slashSpawnYOffset = 1.5f;
     [Tooltip("生成位置 Z 偏移（相对敌人中心）")]
@@ -108,6 +117,21 @@ public class AttackSkillConfig : ScriptableObject
     public float launchAngleVariance = 15f;
     [Tooltip("上挑时世界 Y 轴上升高度（默认 1.0）")]
     public float launchRiseHeight = 1.0f;
+    [Tooltip("挑飞起手跳过预备：直接从当前枪体姿态上挑（连段终结技用，预备已由蓄力拉回完成）")]
+    public bool launchSkipWindup = false;
+    [Header("挑飞・左上扫击表现（保留击飞效果，只改动作语言）")]
+    [Tooltip("开启后挑飞不再是「下压→上挑」，而是从当前握持姿态一记大幅朝左上的扫击；伤害/击飞仍由挑飞结算")]
+    public bool launchSweepMode = false;
+    [Tooltip("扫击终点枪尖方向：屏幕向上的分量")]
+    public float launchSweepUp = 1f;
+    [Tooltip("扫击终点枪尖方向：屏幕向左的分量")]
+    public float launchSweepLeft = 0.7f;
+    [Tooltip("扫击终点枪尖方向：镜头纵深分量")]
+    public float launchSweepForward = 0.35f;
+    [Tooltip("扫击终点位置：向上偏移（世界单位）")]
+    public float launchSweepRise = 1f;
+    [Tooltip("扫击终点位置：向左偏移（世界单位）")]
+    public float launchSweepLeftShift = 1.8f;
 
     [Header("大招")]
     [Tooltip("命中时获得能量（非大招技能有效）")]
@@ -160,6 +184,28 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("首次命中的反馈强度（卡肉分级）")]
     public HitFeedbackStrength stabFirstHitStrength = HitFeedbackStrength.Standard;
 
+    [Header("连段蓄力保持")]
+    [Tooltip("按住蓄力时枪体被拉回到回收段的什么位置（0 = 不收回，1 = 完全收回）。拉回的位移本身就是蓄力条")]
+    [Range(0f, 1f)]
+    public float chargeHoldRetractRatio = 0.75f;
+    [Tooltip("从按下到拉满蓄势位所需的按住时长（秒），应与一级蓄力门槛一致")]
+    [Min(0.05f)]
+    public float chargeHoldPullSeconds = 0.3f;
+    [Tooltip("拉回时枪身额外抬起的仰角（度）：枪尖向上预压，为挑飞蓄势")]
+    public float chargeHoldPitchDegrees = 8f;
+    [Tooltip("拉满蓄势位后，先继续向后一顿的时长（秒）：表达「开始蓄力」，之后才开始微颤")]
+    [Min(0f)]
+    public float chargeHoldSettleSeconds = 0.12f;
+    [Tooltip("向后一顿的额外回收距离比例（相对整段回收距离）")]
+    [Range(0f, 1f)]
+    public float chargeHoldSettleRatio = 0.1f;
+    [Tooltip("蓄势位的微颤幅度（世界单位），沿枪身长轴前后抖动")]
+    [Min(0f)]
+    public float chargeHoldShakeAmplitude = 0.06f;
+    [Tooltip("微颤频率（Hz）")]
+    [Min(1f)]
+    public float chargeHoldShakeFrequency = 14f;
+
     [Header("接续（招式图，一层结构）")]
     [Tooltip("允许用进入本招式的手势重复本招式（Stab→Stab→Stab）。关闭即为串尾终止")]
     public bool repeatSelf = true;
@@ -169,6 +215,36 @@ public class AttackSkillConfig : ScriptableObject
     [Range(0f, 1f)] public float windowEnd01 = 1f;
     [Tooltip("后继输入。留空则该招式为串尾，无法再被取消接续")]
     public List<AttackMoveEdge> moveEdges = new List<AttackMoveEdge>();
+
+    /// <summary>是否存在任何后继（显式边或默认重复）：「按住时本段先不结束」的宽限据此判断</summary>
+    public bool HasAnyContinuation()
+    {
+        if (moveEdges != null)
+        {
+            for (int i = 0; i < moveEdges.Count; i++)
+                if (moveEdges[i] != null && moveEdges[i].next != null) return true;
+        }
+        return repeatSelf;
+    }
+
+    /// <summary>是否存在要求蓄力的后继边：连段中按住时是否让枪体停住等蓄力据此判断</summary>
+    public bool HasChargeContinuation()
+    {
+        if (moveEdges == null) return false;
+        for (int i = 0; i < moveEdges.Count; i++)
+            if (moveEdges[i] != null && moveEdges[i].next != null && moveEdges[i].minChargeLevel >= 1) return true;
+        return false;
+    }
+}
+
+/// <summary>
+/// 横扫方向来源：手势方向（普通斩击）或招式资产强制指定（连段终结技）。
+/// </summary>
+public enum SlashSweepDirection
+{
+    FromGesture = 0,
+    LeftToRight = 1,
+    RightToLeft = 2
 }
 
 /// <summary>
@@ -179,6 +255,9 @@ public class AttackMoveEdge
 {
     [Tooltip("接受的手势")]
     public MoveGesture gesture;
+
+    [Tooltip("最低蓄力等级：0 = 任意输入；1 = 必须达到一级蓄力。未达标时该边不参与匹配（例如未蓄力的竖滑是招架，不会被当成终结技）")]
+    public int minChargeLevel = 0;
 
     [Tooltip("是否覆盖窗口。关闭时使用本招式或按类型派生的默认窗口")]
     public bool overrideWindow = false;
