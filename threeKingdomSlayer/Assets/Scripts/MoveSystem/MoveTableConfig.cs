@@ -24,7 +24,7 @@ public class MoveTableConfig : ScriptableObject
     public float minWindowSeconds = 0.06f;
 
     /// <summary>按手势查找中立态入口，未配置返回 null</summary>
-    public MoveDefinition FindRoot(MoveGesture gesture)
+    public AttackSkillConfig FindRoot(MoveGesture gesture)
     {
         if (roots == null) return null;
         for (int i = 0; i < roots.Count; i++)
@@ -75,7 +75,7 @@ public class MoveTableConfig : ScriptableObject
 public class MoveEntry
 {
     public MoveGesture gesture;
-    public MoveDefinition move;
+    public AttackSkillConfig move;
 }
 
 [System.Serializable]

@@ -21,6 +21,8 @@ public struct GestureInput
 {
     public MoveGesture gesture;
     public bool charged;
+    /// <summary>蓄力等级（0 = 未蓄力；>=1 为蓄力招式等级），由 InputManager 按按住时长判定</summary>
+    public int chargeLevel;
     public int targetColumn;
     public bool slashLeftToRight;
     public float slashVisualTilt;
@@ -30,17 +32,17 @@ public struct GestureInput
 public static class MoveGestureDefaults
 {
     /// <summary>
-    /// P1 等价映射：还原改造前 InputManager 的手势 → 攻击类型分支。
+    /// 手势 → 攻击类型：分叉轴是「是否蓄力」，方向只在蓄力时用于区分是哪一种蓄力招式。
     ///
-    ///   Tap                          → Stab
-    ///   Hold                         → Pierce
-    ///   SwipeVertical  蓄满          → Launch
-    ///   SwipeVertical  未蓄满        → Parry
-    ///   SwipeHorizontal 蓄满         → Sweep
-    ///   SwipeHorizontal 未蓄满       → Slash
-    ///   SwipeDiagonal  任意          → Slash
+    ///   Tap                              → Stab
+    ///   Hold（长按不移动）                  → Pierce
+    ///   竖滑 + 蓄力                        → Launch
+    ///   竖滑 + 未蓄力                      → Parry
+    ///   横滑 + 蓄力                        → Sweep
+    ///   横滑 + 未蓄力                      → Slash
+    ///   斜滑（无论是否蓄力）                  → Slash
     ///
-    /// 「未蓄满的横滑/斜滑落到 Slash」对应改造前按住期间快速划动的分支（未蓄满时非竖滑一律 Slash）。
+    /// 注意：方向不是分叉轴。「未蓄力的横滑/斜滑都落到 Slash」是设计本身，不得改成按方向分叉。
     /// </summary>
     public static AttackType ResolveAttackType(MoveGesture gesture, bool charged)
     {

@@ -7726,6 +7726,10 @@ MonoBehaviour:
   attackSystem: {fileID: 1809121297}
   whirlwindController: {fileID: 0}
   moveStateMachine: {fileID: 864291167}
+  chargeLevelTimes:
+  - 0.3
+  - 0.6
+  - 1
 --- !u!1 &952166475
 GameObject:
   m_ObjectHideFlags: 0

@@ -74,6 +74,7 @@ public class AttackSystem : MonoBehaviour
 
     private float _actionLockTimer;
     private float _stabVisualTimer;
+    private StabSweepEffect _lastStabEffect;
     private ChargeStabVisual _chargeStabVisual;
 
     /// <summary>
@@ -92,6 +93,30 @@ public class AttackSystem : MonoBehaviour
 
     /// <summary>动作锁剩余时间（0 表示可自由行动）</summary>
     public float ActionLockRemaining => _actionLockTimer > 0f ? _actionLockTimer : 0f;
+
+    /// <summary>本次招式的蓄力等级（0 = 未蓄力；>=1 为蓄力招式等级）</summary>
+    public int CurrentChargeLevel => _currentChargeLevel;
+
+    /// <summary>
+    /// 尝试取消最近一次戳击的起手：仅在其首个命中结算前有效。
+    /// 供「按下即出轻攻击」模型下，滑动在起手阶段改写本次输入使用。
+    /// 取消成功后清除动作锁与戳击视觉门；不触发能量、被动计数与击退波。
+    /// 独立 CD 模式下不提供取消（避免破坏冷却一致性）。
+    /// </summary>
+    public bool TryCancelLightAttackStartup()
+    {
+        if (!useActionBasedCooldown) return false;
+
+        StabSweepEffect effect = _lastStabEffect;
+        _lastStabEffect = null;
+        if (effect == null) return false;
+        if (!effect.TryCancelBeforeHit()) return false;
+
+        _actionLockTimer = 0f;
+        _stabVisualTimer = 0f;
+        LastMoveDuration = 0f;
+        return true;
+    }
 
     private void Awake()
     {
@@ -136,8 +161,9 @@ public class AttackSystem : MonoBehaviour
     /// 表现为「取消当前招式的收尾」直接接下一段；默认 false，行为与改造前一致。
     /// </summary>
     public bool TryExecuteAttack(AttackType attackType, int targetColumn = -1, bool slashLeftToRight = true,
-        float slashVisualTilt = 0f, bool chargedAttack = false, bool cancelCurrentMove = false)
+        float slashVisualTilt = 0f, bool chargedAttack = false, bool cancelCurrentMove = false, int chargeLevel = 0)
     {
+        _currentChargeLevel = chargeLevel;
         if (playerState == null) return false;
         if (playerState.stageState != StageState.InProgress) return false;
 
@@ -278,7 +304,7 @@ public class AttackSystem : MonoBehaviour
         var pushedTargets = new List<Enemy>();
 
         LastStabTargetEnemy = null;
-        StabSweepEffect.Create(cfg.attackWavePrefab, _stabSpeedSprite, startPosition, targetPosition, columnIndex, effectiveRows, visualRangeRows,
+        _lastStabEffect = StabSweepEffect.Create(cfg.attackWavePrefab, _stabSpeedSprite, startPosition, targetPosition, columnIndex, effectiveRows, visualRangeRows,
             finalDmg, cfg.damageType, columnManager, coveredBoss,
             enemy =>
             {
@@ -682,6 +708,7 @@ public class AttackSystem : MonoBehaviour
     }
 
     private bool _attackIsCharged;
+    private int _currentChargeLevel;
 
     /// <summary>
     /// 本次攻击是否可打断骑兵冲锋（仅用于敌人侧判定，不参与玩家输入窗口/手势判定）。
@@ -698,6 +725,15 @@ public class AttackSystem : MonoBehaviour
     }
 
     /// <summary>获取最终伤害（基础伤害 × 升级倍率）</summary>
+    /// <summary>按蓄力等级取伤害倍率；未配置等级表时不影响任何数值</summary>
+    private float GetChargeLevelMultiplier(AttackSkillConfig cfg)
+    {
+        if (_currentChargeLevel < 1 || cfg == null) return 1f;
+        var table = cfg.chargeLevelDamageMultipliers;
+        if (table == null || table.Count == 0) return 1f;
+        return table[Mathf.Clamp(_currentChargeLevel - 1, 0, table.Count - 1)];
+    }
+
     private float GetFinalDamage(AttackSkillConfig cfg)
     {
         if (cfg == null) return 0f;
