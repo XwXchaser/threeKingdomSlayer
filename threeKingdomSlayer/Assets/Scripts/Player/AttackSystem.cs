@@ -75,6 +75,10 @@ public class AttackSystem : MonoBehaviour
     private float _actionLockTimer;
     private float _stabVisualTimer;
     private StabSweepEffect _lastStabEffect;
+    private StabStartPose _lastStabPose = StabStartPose.None;
+    private float _lastStabPoseTime;
+    /// <summary>交接姿态的有效期：超过这个间隔就不再用旧姿态起步（避免长时间后再出招时跳到旧位置）</summary>
+    private const float StabPoseHandoffWindow = 0.6f;
     private ChargeStabVisual _chargeStabVisual;
 
     /// <summary>
@@ -96,6 +100,9 @@ public class AttackSystem : MonoBehaviour
 
     /// <summary>本次招式的蓄力等级（0 = 未蓄力；>=1 为蓄力招式等级）</summary>
     public int CurrentChargeLevel => _currentChargeLevel;
+
+    /// <summary>最近一次成功执行招式所用的配置资产（招式表节点或武将默认配置）</summary>
+    public AttackSkillConfig LastMoveConfig { get; private set; }
 
     /// <summary>
     /// 尝试取消最近一次戳击的起手：仅在其首个命中结算前有效。
@@ -142,6 +149,13 @@ public class AttackSystem : MonoBehaviour
             _actionLockTimer -= Time.deltaTime;
         if (_stabVisualTimer > 0f)
             _stabVisualTimer -= Time.deltaTime;
+
+        // 持续记录当前戳击的姿态：即使特效被外部清理（如路线转场），下一段也能接着走
+        if (_lastStabEffect != null)
+        {
+            _lastStabPose = _lastStabEffect.CapturePose();
+            _lastStabPoseTime = Time.time;
+        }
     }
 
     private void Start()
@@ -161,7 +175,8 @@ public class AttackSystem : MonoBehaviour
     /// 表现为「取消当前招式的收尾」直接接下一段；默认 false，行为与改造前一致。
     /// </summary>
     public bool TryExecuteAttack(AttackType attackType, int targetColumn = -1, bool slashLeftToRight = true,
-        float slashVisualTilt = 0f, bool chargedAttack = false, bool cancelCurrentMove = false, int chargeLevel = 0)
+        float slashVisualTilt = 0f, bool chargedAttack = false, bool cancelCurrentMove = false, int chargeLevel = 0,
+        AttackSkillConfig moveConfig = null)
     {
         _currentChargeLevel = chargeLevel;
         if (playerState == null) return false;
@@ -183,6 +198,9 @@ public class AttackSystem : MonoBehaviour
                 return false;
             }
         }
+
+        // 招式表解析出的招式资产从这里开始生效（守卫早退时不留下残留）
+        _currentConfigOverride = moveConfig;
 
         bool hitAny = false;
         _attackIsCharged = chargedAttack;
@@ -218,6 +236,7 @@ public class AttackSystem : MonoBehaviour
             // 供招式状态机同步节点时钟：参考时长与实际生效的动作锁一致
             LastMoveAttackType = attackType;
             LastMoveDuration = moveDuration;
+            LastMoveConfig = GetConfig(attackType);
 
             if (attackType == AttackType.Stab)
             {
@@ -234,9 +253,11 @@ public class AttackSystem : MonoBehaviour
                     OnAttackPerformed?.Invoke(attackType, targetColumn, slashLeftToRight);
             }
 
+            _currentConfigOverride = null;
             return true;
         }
 
+        _currentConfigOverride = null;
         Debug.Log($"[AttackSystem] {attackType} 未命中任何敌人，不消耗冷却");
         return false;
     }
@@ -261,8 +282,11 @@ public class AttackSystem : MonoBehaviour
         return 0f;
     }
 
+    /// <summary>本招式的配置：招式表解析出的招式资产优先，否则按攻击类型取武将默认配置</summary>
     private AttackSkillConfig GetConfig(AttackType type)
     {
+        if (_currentConfigOverride != null && _currentConfigOverride.attackType == type)
+            return _currentConfigOverride;
         return playerState?.heroConfig?.GetSkillConfig(type);
     }
 
@@ -296,15 +320,38 @@ public class AttackSystem : MonoBehaviour
         float spacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
         Vector3 startPosition = new Vector3(playerPos.x, playerPos.y + cfg.stabSpawnYOffset, -5.5f);
         float yaw = GetStabRayYaw(columnIndex, spacing);
-        Vector3 rayDirection = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
         float baseLength = spacing * 2f;
         float rayLength = baseLength + (visualRangeRows - 1) * spacing;
-        Vector3 targetPosition = startPosition + rayDirection * rayLength;
+
+        // 枪尾位置自由：只要求枪尖能命中本列。
+        // 射线方向由「自由度很高的枪尾 → 本列目标点」决定，因此自然产生复合角度的斜向刺入，而不是单一轴旋转。
+        Vector3 baseAimDirection = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+        Vector3 targetPosition = startPosition + baseAimDirection * rayLength;
+        Vector3 tailPosition = startPosition
+            + Vector3.right * cfg.stabTailOffsetRight
+            + Vector3.up * cfg.stabTailOffsetUp
+            + Vector3.forward * cfg.stabTailOffsetForward;
+        Vector3 rayDirection = (targetPosition - tailPosition).normalized;
+        Vector3 rayOrigin = tailPosition;
         var hitTargets = new List<Enemy>();
         var pushedTargets = new List<Enemy>();
 
+        // 连段交接：上一段还没结束的戳击交出当前姿态后被立刻结束，避免两把枪重叠
+        StabStartPose startPose = StabStartPose.None;
+        if (_lastStabEffect != null)
+        {
+            startPose = _lastStabEffect.CapturePose();
+            _lastStabEffect.HandOff();
+            _lastStabEffect = null;
+        }
+        else if (_lastStabPose.valid && Time.time - _lastStabPoseTime <= StabPoseHandoffWindow)
+        {
+            // 上一段特效已被外部清理（例如路线转场清特效），仍沿用其末态，避免连段断裂
+            startPose = _lastStabPose;
+        }
+
         LastStabTargetEnemy = null;
-        _lastStabEffect = StabSweepEffect.Create(cfg.attackWavePrefab, _stabSpeedSprite, startPosition, targetPosition, columnIndex, effectiveRows, visualRangeRows,
+        _lastStabEffect = StabSweepEffect.Create(cfg.attackWavePrefab, _stabSpeedSprite, rayOrigin, targetPosition, columnIndex, effectiveRows, visualRangeRows,
             finalDmg, cfg.damageType, columnManager, coveredBoss,
             enemy =>
             {
@@ -335,7 +382,8 @@ public class AttackSystem : MonoBehaviour
             GetStabVisualStartXOffset(columnIndex),
             cfg.stabVisualTargetRandomRadius,
             baseLength,
-            GetAttackDuration(cfg), chargeInterrupt);
+            GetAttackDuration(cfg), chargeInterrupt,
+            StabMotionParams.FromConfig(cfg), startPose);
         AudioManager.Instance?.PostEvent("Player_Attack");
 
         Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 射程:{effectiveRows} 视觉射程:{visualRangeRows}");
@@ -709,6 +757,7 @@ public class AttackSystem : MonoBehaviour
 
     private bool _attackIsCharged;
     private int _currentChargeLevel;
+    private AttackSkillConfig _currentConfigOverride;
 
     /// <summary>
     /// 本次攻击是否可打断骑兵冲锋（仅用于敌人侧判定，不参与玩家输入窗口/手势判定）。

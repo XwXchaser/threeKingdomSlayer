@@ -117,6 +117,49 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("按蓄力等级缩放伤害，index 0 = 一级。留空表示蓄力等级不改变数值")]
     public List<float> chargeLevelDamageMultipliers = new List<float>();
 
+    [Header("戳击动作（角度与力度）")]
+    [Tooltip("起手占整段的比例。越大越有蓄势感。默认 0.12")]
+    public float stabWindupRatio = 0.12f;
+    [Tooltip("刺出占整段的比例。越小越急。默认 0.28")]
+    public float stabThrustRatio = 0.28f;
+    [Tooltip("穿入占整段的比例。默认 0.08")]
+    public float stabPenetrationRatio = 0.08f;
+    [Tooltip("起手末端停顿（秒），用于做出「蓄势一拍」。默认 0")]
+    public float stabWindupHoldSeconds = 0f;
+    [Header("刺入轨迹（枪尾自由，只要求枪尖命中本列）")]
+    [Tooltip("枪尾相对基准起点的横向偏移（世界单位，正=右）。用于制造斜向刺入")]
+    public float stabTailOffsetRight = 0f;
+    [Tooltip("枪尾相对基准起点的纵向偏移（世界单位，正=上）。正值会形成从上往下刺入（枪尾在上）")]
+    public float stabTailOffsetUp = 0f;
+    [Tooltip("枪尾相对基准起点的前后偏移（世界单位，正=更靠近目标）。负值更靠后，冲刺距离更长")]
+    public float stabTailOffsetForward = 0f;
+    [Range(-20f, 20f)]
+    [Tooltip("画面内姿态倾角（度，绕射线轴）。只影响姿态、不改变轨迹；建议不超过 10")]
+    public float stabVisualTiltDegrees = 0f;
+    [Range(-20f, 20f)]
+    [Tooltip("绕枪身长轴的自转（度）：刺出段由 0 渐变到该值，回收段转回 0。建议 3~8，过大在 2D 精灵上会变薄")]
+    public float stabRollDegrees = 0f;
+    [Range(0f, 1f)]
+    [Tooltip("高速帧在「刺出段」内的起点比例。默认 0.1（对齐第一击的处理）")]
+    public float stabSpeedFrameStart01 = 0.1f;
+    [Range(0f, 1f)]
+    [Tooltip("高速帧在「刺出段」内的终点比例。默认 1.0（对齐第一击的处理）")]
+    public float stabSpeedFrameEnd01 = 1.0f;
+    [Tooltip("刺出开始时的模糊强度。默认 28（对齐第一击的处理）")]
+    public float stabBlurThrust = 28f;
+    [Tooltip("高速帧显示期间的模糊强度。默认 14（对齐第一击的处理）")]
+    public float stabBlurSpeedFrame = 14f;
+    [Tooltip("穿入阶段的模糊强度。默认 18（对齐第一击的处理）")]
+    public float stabBlurPenetration = 18f;
+    [Tooltip("刺出时的枪身长度倍率（力度）。默认 1.18")]
+    public float stabThrustLengthScale = 1.18f;
+    [Tooltip("刺出时的枪身宽度倍率。默认 0.86")]
+    public float stabThrustWidthScale = 0.86f;
+    [Tooltip("运动模糊强度倍率（力度）。默认 1")]
+    public float stabMotionBlurScale = 1f;
+    [Tooltip("首次命中的反馈强度（卡肉分级）")]
+    public HitFeedbackStrength stabFirstHitStrength = HitFeedbackStrength.Standard;
+
     [Header("接续（招式图，一层结构）")]
     [Tooltip("允许用进入本招式的手势重复本招式（Stab→Stab→Stab）。关闭即为串尾终止")]
     public bool repeatSelf = true;
