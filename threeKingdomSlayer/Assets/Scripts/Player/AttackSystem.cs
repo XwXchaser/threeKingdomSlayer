@@ -81,6 +81,18 @@ public class AttackSystem : MonoBehaviour
     /// </summary>
     public bool IsActionPlaying => _actionLockTimer > 0f;
 
+    /// <summary>最近一次成功执行招式的攻击类型（供招式状态机同步当前节点）</summary>
+    public AttackType LastMoveAttackType { get; private set; }
+
+    /// <summary>
+    /// 最近一次成功执行招式的参考时长。
+    /// 动作锁模式下等于实际动作锁（含 Launch 观察延长）；独立 CD 模式下为 actionDuration / 攻速。
+    /// </summary>
+    public float LastMoveDuration { get; private set; }
+
+    /// <summary>动作锁剩余时间（0 表示可自由行动）</summary>
+    public float ActionLockRemaining => _actionLockTimer > 0f ? _actionLockTimer : 0f;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -120,19 +132,22 @@ public class AttackSystem : MonoBehaviour
     /// <summary>
     /// 尝试执行攻击
     /// BUG FIX: 只有实际命中至少一个敌人时，才触发冷却和消耗
+    /// cancelCurrentMove：由招式状态机在接续窗口内解析出后继招式时传入，
+    /// 表现为「取消当前招式的收尾」直接接下一段；默认 false，行为与改造前一致。
     /// </summary>
-    public bool TryExecuteAttack(AttackType attackType, int targetColumn = -1, bool slashLeftToRight = true, float slashVisualTilt = 0f, bool chargedAttack = false)
+    public bool TryExecuteAttack(AttackType attackType, int targetColumn = -1, bool slashLeftToRight = true,
+        float slashVisualTilt = 0f, bool chargedAttack = false, bool cancelCurrentMove = false)
     {
         if (playerState == null) return false;
         if (playerState.stageState != StageState.InProgress) return false;
 
-        if (attackType == AttackType.Stab && _stabVisualTimer > 0f)
+        if (!cancelCurrentMove && attackType == AttackType.Stab && _stabVisualTimer > 0f)
             return false;
 
         // 冷却检查：新模式（动作锁定）→ 全局锁；旧模式 → 独立技能CD
         if (useActionBasedCooldown)
         {
-            if (_actionLockTimer > 0f) return false;
+            if (!cancelCurrentMove && _actionLockTimer > 0f) return false;
         }
         else
         {
@@ -159,17 +174,24 @@ public class AttackSystem : MonoBehaviour
         if (hitAny)
         {
             // 动作锁模式只覆盖玩家自身的出手与收招；离手飞行物拥有独立生命周期。
+            float moveDuration;
             if (useActionBasedCooldown)
             {
                 var cfg = GetConfig(attackType);
                 _actionLockTimer = GetAttackDuration(cfg);
                 if (attackType == AttackType.Launch)
                     _actionLockTimer = Mathf.Max(_actionLockTimer, LaunchVisualEffect.GetObservationDuration(cfg));
+                moveDuration = _actionLockTimer;
             }
             else
             {
                 playerState.StartCooldown(attackType);
+                moveDuration = GetAttackDuration(GetConfig(attackType));
             }
+
+            // 供招式状态机同步节点时钟：参考时长与实际生效的动作锁一致
+            LastMoveAttackType = attackType;
+            LastMoveDuration = moveDuration;
 
             if (attackType == AttackType.Stab)
             {

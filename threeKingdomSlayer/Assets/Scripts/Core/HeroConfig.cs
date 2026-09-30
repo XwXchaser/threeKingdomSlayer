@@ -28,6 +28,10 @@ public class HeroConfig : ScriptableObject
     [Tooltip("装配的技能列表。每个 AttackType 对应一个技能配置，策划可拖拽不同的 .asset 来定制武将。")]
     public List<AttackSkillConfig> skillConfigs = new List<AttackSkillConfig>();
 
+    [Header("招式表")]
+    [Tooltip("招式状态机配置（招式转移图）。留空则使用直通模式，行为与改造前一致。")]
+    public MoveTableConfig moveTable;
+
     [Header("大招配置")]
     [Tooltip("大招技能配置（独立于普通技能体系）")]
     public UltimateSkillConfig ultimateSkillConfig;

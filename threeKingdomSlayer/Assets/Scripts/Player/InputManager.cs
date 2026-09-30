@@ -39,6 +39,8 @@ public class InputManager : MonoBehaviour
     [Header("工具引用")]
     public AttackSystem attackSystem;
     public WhirlwindController whirlwindController;
+    [Tooltip("招式状态机。留空时直接调用 AttackSystem（旧行为）")]
+    public PlayerMoveStateMachine moveStateMachine;
 
     // 技能输入开关（狂怒大招期间关闭）
     [System.NonSerialized] public bool skillInputEnabled = true;
@@ -112,6 +114,8 @@ public class InputManager : MonoBehaviour
     {
         if (attackSystem == null)
             attackSystem = FindObjectOfType<AttackSystem>();
+        if (moveStateMachine == null)
+            moveStateMachine = FindObjectOfType<PlayerMoveStateMachine>();
     }
 
     public void CancelCurrentGesture()
@@ -374,19 +378,9 @@ public class InputManager : MonoBehaviour
         }
         else
         {
-            float angleToVertical = Vector2.Angle(direction, Vector2.up);
-            if (angleToVertical < verticalSwipeThreshold)
-            {
-                executed = attackSystem?.TryExecuteAttack(AttackType.Parry) ?? false;
-                if (executed) OnAttackExecuted?.Invoke(AttackType.Parry, -1);
-            }
-            else
-            {
-                bool slashLeftToRight = direction.x > 0f;
-                float slashVisualTilt = GetSlashVisualTilt(direction);
-                executed = attackSystem?.TryExecuteAttack(AttackType.Slash, -1, slashLeftToRight, slashVisualTilt) ?? false;
-                if (executed) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
-            }
+            // 未蓄满的按住划动：竖滑 → Parry，其余 → Slash（与改造前分支一致）
+            MoveGesture gesture = MoveGestureDefaults.ClassifySwipe(direction, verticalSwipeThreshold, horizontalSwipeThreshold);
+            executed = SubmitGesture(gesture, isCharged, -1, direction.x > 0f, GetSlashVisualTilt(direction));
         }
 
         if (executed)
@@ -506,6 +500,46 @@ public class InputManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 把手势投递给招式状态机；未配置状态机时直接调用 AttackSystem（保持旧行为）。
+    /// 返回是否实际执行了招式；成功后按解析出的攻击类型派发 OnAttackExecuted。
+    /// </summary>
+    private bool SubmitGesture(MoveGesture gesture, bool charged, int targetColumn,
+        bool slashLeftToRight = true, float slashVisualTilt = 0f)
+    {
+        var input = new GestureInput
+        {
+            gesture = gesture,
+            charged = charged,
+            targetColumn = targetColumn,
+            slashLeftToRight = slashLeftToRight,
+            slashVisualTilt = slashVisualTilt,
+            timestamp = Time.time
+        };
+
+        AttackType resolvedType;
+        bool executed;
+        if (moveStateMachine != null)
+        {
+            executed = moveStateMachine.SubmitInput(input, out resolvedType);
+        }
+        else if (attackSystem != null)
+        {
+            resolvedType = MoveGestureDefaults.ResolveAttackType(gesture, charged);
+            executed = attackSystem.TryExecuteAttack(resolvedType, targetColumn,
+                slashLeftToRight, slashVisualTilt, charged);
+        }
+        else
+        {
+            return false;
+        }
+
+        if (executed)
+            OnAttackExecuted?.Invoke(resolvedType, targetColumn);
+
+        return executed;
+    }
+
+    /// <summary>
     /// 处理点击手势 → 戳击
     /// </summary>
     private void ProcessTapGesture(Vector2 position)
@@ -513,11 +547,7 @@ public class InputManager : MonoBehaviour
         int column = GetStabColumnFromScreenPosition(position);
         if (column >= 0)
         {
-            bool executed = attackSystem?.TryExecuteAttack(AttackType.Stab, column) ?? false;
-            if (executed)
-            {
-                OnAttackExecuted?.Invoke(AttackType.Stab, column);
-            }
+            SubmitGesture(MoveGesture.Tap, false, column);
         }
     }
 
@@ -529,11 +559,7 @@ public class InputManager : MonoBehaviour
         int column = GetStabColumnFromScreenPosition(position);
         if (column >= 0)
         {
-            bool executed = attackSystem?.TryExecuteAttack(AttackType.Pierce, column, chargedAttack: isCharged) ?? false;
-            if (executed)
-            {
-                OnAttackExecuted?.Invoke(AttackType.Pierce, column);
-            }
+            SubmitGesture(MoveGesture.Hold, isCharged, column);
         }
     }
 
@@ -556,8 +582,7 @@ public class InputManager : MonoBehaviour
         // 方向与垂直轴夹角 < verticalSwipeThreshold
         if (angleToVertical < verticalSwipeThreshold)
         {
-            bool executed = attackSystem?.TryExecuteAttack(AttackType.Launch, -1, chargedAttack: isCharged) ?? false;
-            if (executed) OnAttackExecuted?.Invoke(AttackType.Launch, -1);
+            SubmitGesture(MoveGesture.SwipeVertical, isCharged, -1);
             return;
         }
 
@@ -565,8 +590,7 @@ public class InputManager : MonoBehaviour
         // 方向与水平轴夹角 < horizontalSwipeThreshold
         if (angleToHorizontal < horizontalSwipeThreshold)
         {
-            bool executed = attackSystem?.TryExecuteAttack(AttackType.Sweep, -1, chargedAttack: isCharged) ?? false;
-            if (executed) OnAttackExecuted?.Invoke(AttackType.Sweep, -1);
+            SubmitGesture(MoveGesture.SwipeHorizontal, isCharged, -1);
             return;
         }
 
@@ -574,8 +598,7 @@ public class InputManager : MonoBehaviour
         bool slashLeftToRight = direction.x > 0;
         float slashVisualTilt = GetSlashVisualTilt(direction);
         Debug.Log($"[SlashTilt] Input charged dir={direction} leftToRight={slashLeftToRight} tilt={slashVisualTilt:F2}");
-        bool defaultExecuted = attackSystem?.TryExecuteAttack(AttackType.Slash, -1, slashLeftToRight, slashVisualTilt, chargedAttack: isCharged) ?? false;
-        if (defaultExecuted) OnAttackExecuted?.Invoke(AttackType.Slash, -1);
+        SubmitGesture(MoveGesture.SwipeDiagonal, isCharged, -1, slashLeftToRight, slashVisualTilt);
     }
 
     private float GetSlashVisualTilt(Vector2 direction)
