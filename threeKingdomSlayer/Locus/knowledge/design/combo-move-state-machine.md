@@ -246,8 +246,8 @@ Slash 序列：挥砍（总长 - 惯性 - 淡出）→ 惯性 → 淡出
 
 采用 B，但**分两步**：
 
-1. 招式分阶段（起手/判定/收尾）+ 接续窗口 + 输入缓冲。此步在 A 模型下即可运行完整状态机。
-2. 轻攻击改为按下即出 + 起手取消，同时处理蓄力门问题。
+1. 招式分阶段（起手/判定/收尾）+ 接续窗口 + 输入缓冲。此步在 A 模型下即可运行完整状态机。—— 已实现为「复用既有序列阶段 + 新增输入窗口」（见 11.5）。
+2. 轻攻击改为按下即出 + 起手取消，同时处理蓄力门问题。—— 已实现为两个可开关项（见 11.6）。
 
 ---
 
@@ -270,26 +270,30 @@ Parry 判定成功
 
 ---
 
-## 7. 数据与配置结构
+## 7. 数据与配置结构（一层结构，已落地）
+
+一个招式 = 一份 `AttackSkillConfig`，图结构直接写在招式资产上，不再有单独的节点层。
 
 ```
-MoveTable（每武将一份）
- ├─ nodes: [MoveDefinition ...]        每个节点自带后继边列表
- ├─ window: 接续窗口起止百分比
- └─ states: 上下文状态 → 解析表覆盖
-
-MoveDefinition（可插入任意位置的招式包）
- ├─ 表现：出手视觉 + 飞行物预制体 + 卡肉 / 镜头 / 音效
- ├─ 判定：伤害 / 削韧 / 范围 / 伤害类型
- ├─ 位移：自身位移或击退
- ├─ 时长：起手 / 判定 / 收尾
- └─ edges: [（输入手势, 窗口, 后继节点）...]
+AttackSkillConfig（一招式一资产）
+ ├─ 表现 / 判定 / 范围 / 时长（原有字段）
+ ├─ repeatSelf          是否允许以进入本招式的手势重复本招式
+ ├─ overrideWindow      是否覆盖接续窗口（含起止百分比）
+ └─ moveEdges[]         AttackMoveEdge：手势 + 窗口覆盖 + 后继 AttackSkillConfig
 ```
 
-两条约束：
+```
+MoveTableConfig（每武将一份）
+ ├─ roots[]             中立态入口：手势 → 招式资产
+ ├─ states[]            上下文状态覆盖（第一版仅预留）
+ └─ 默认窗口参数          clampWindowAfterHitWindow / minWindowSeconds
+```
 
-1. **招式内不含触发条件**。招式不知道自己是第几段，只接收「目标列 / 朝向 / 上下文」。
-2. **必需的结构改动**：现在 `AttackSystem.TryExecuteAttack(attackType)` 用 `switch(attackType)` 硬分发，且 `HeroConfig.GetSkillConfig(attackType)` 按类型取配置——**同一 `AttackType` 只能有一个配置**。要实现「每下 stab 不一样」「同一手势在不同段位不同招式」，取配置的 key 必须从 `attackType` 改为 `moveId`。现有 `_unlockedAttacks`（`Dictionary<string, AttackSkillConfig>`，当前无调用方）是该注册表的雏形，可改造复用。
+三条约束：
+
+1. **招式内不含触发条件**：招式不知道自己是第几段，只接收「目标列 / 朝向 / 蓄力等级」。
+2. **与旧结构的关系**：原型曾有独立的 `MoveDefinition` / `MoveEdge` 节点层，用途是「同一招式插到不同位置且各自有不同后继」。经确认本项目不需要该复用能力（每段都是独立动作），因此**合并为一层**，`MoveDefinition` / `MoveEdge` 已删除。
+3. **入口与后续段分工**：只有入口招式需要放进 `HeroConfig.skillConfigs`（`GetSkillConfig(attackType)` 按类型取第一个匹配）；后续段由 `moveEdges` 直接引用，不需要登记。取配置 key 从 `attackType` 改为资产引用的改造已完成。
 
 ---
 
@@ -335,7 +339,7 @@ MoveDefinition（可插入任意位置的招式包）
 - 轴 2：蓄力门开 ↔ 关
 - 轴 3：输入缓冲开 ↔ 关
 
-P1 已提供**轴 3**（`PlayerMoveStateMachine.bufferEnabled`，需配置招式表后生效）；**轴 1 与轴 2 随 P2 的输入模型改动一起提供**。因此 P1 完成后手感与改造前一致，这正是等价性的证据。
+开关：**轴 2** `InputManager.swipeChargeMode`、**轴 3** `PlayerMoveStateMachine.bufferEnabled`（需配置招式表后生效）。**轴 1（按下即出轻攻击）已撤回**：它与「起手即蓄力」冲突，改为沿用 V1 的「按下只做起手、松手才结算判定」。
 
 三个开关的任意组合都需能跑。这样「哪种手感更好」由实机试按决定，而不是靠讨论。
 
@@ -421,6 +425,70 @@ P1 已提供**轴 3**（`PlayerMoveStateMachine.bufferEnabled`，需配置招式
 1. **`cancelCurrentMove` 是必需的**：动作锁（Stab 0.45s）覆盖了整个接续窗口，不取消当前招式收尾就无法接续。默认 `false`，仅状态机在解析出合法后继时传 `true`，因此在独立 CD 模式下仍保留原有冷却语义。
 2. **`clampWindowAfterHitWindow` 默认改为 `false`**：显式配置优先，保守钳制改为可选（否则策划配的窗口会被静默抬高）。
 3. **无出路的输入不占用缓冲**：先判断该手势在本节点是否存在显式边或默认重复规则，无出路则立即拒绝。
+
+### 11.6 P2 实现状态与实测结果（已完成）
+
+两个可开关项，默认均为改造前行为：
+
+| 轴 | 字段 | 取值 | 说明 |
+|----|------|------|------|
+| 轴 1 | —（已撤回） | — | 曾实现「按下即出轻攻击 + 起手改写」，因与「起手即蓄力」冲突而撤回；现沿用 V1 的「按下只做起手、松手才结算判定」 |
+| 轴 2 | `InputManager.swipeChargeMode` | `Required` / `UnlockNonVertical` / `Unlocked`（默认 Required） | 滑动对蓄力门的要求 |
+
+配套改动：`StabSweepEffect.Create` 改为返回实例并新增 `TryCancelBeforeHit()`；`AttackSystem` 新增 `TryCancelLightAttackStartup()`；`PlayerMoveStateMachine` 新增 `NotifyExternalReset()`；`GestureInput` 新增 `chargeGateBypassed` 维度。
+
+实测结果：
+
+| 用例 | 结果 |
+|------|------|
+| Required + 未蓄满竖滑（按住期间） | 解析为 Parry（与改造前一致） |
+| Unlocked + 未蓄满竖滑 | 解析为 Launch |
+| UnlockNonVertical + 未蓄满竖滑 | 解析为 Parry（招架入口保住） |
+| UnlockNonVertical + 未蓄满横滑 | 解析为 Sweep |
+| Required + 抬手未蓄满横滑 | 无解析、无执行（与改造前一致） |
+| UnlockNonVertical + 抬手未蓄满横/竖滑 | 解析为 Sweep / Launch |
+| 松手结算回归（撤回后实测） | 0.15s 松手→戳击（0 级）；0.35s 松手→穿刺（1 级）；0.35s 竖滑→挑飞（1 级）；0.15s 横滑（未蓄力）→斩击，与 V1 一致 |
+
+**实现期的重要发现**：
+
+1. **`charged` 与「蓄力门是否解除」必须分开**。第一版只用 `charged` 参与攻击类型解析，导致解除蓄力门后手势虽被放行、解析却仍落到 Parry/Slash。现已新增 `GestureInput.chargeGateBypassed` 维度，`charged` 单独保留其原有语义。
+2. **`charged` 的唯一玩法影响是打断骑兵冲锋**（`_attackIsCharged` 只被 `InterruptsCavalryCharge` 使用），因此快速滑动出招时 `charged=false` 不影响其它逻辑。
+3. **`Unlocked` 档会让招架失去当前入口**，因此同时提供 `UnlockNonVertical` 折中档（横/斜滑免蓄力，竖滑保留分层）。需实机试按后再定档。
+4. **测试前提**：路由转场期间 `InputManager.gameplayInputEnabled=false`，此时按下与滑动都不会出招，必须在真正的战斗节点内验证手感。
+5. **未覆盖**：「已命中后不可改写」需场上有敌人才能验证，本轮无敌人，只验证了「序列结束后不可撤回」。
+
+### 11.7 蓄力分级（P2 第二轮）
+
+设计变更：以前必须按满 `minChargeTime`（场景为 1.0s）才算蓄力就绪；现改为**分级就绪**，一级门槛与蓄力视觉出现时刻一致。
+
+- `InputManager.chargeLevelTimes`（默认 `{0.3, 0.6, 1.0}`，可配）定义各级所需按住时长。
+- 一级门槛 0.3s 与 `ChargeStabVisual.appearThreshold = 0.3` 对齐（`progress = 按住时长 / minChargeTime`），因此**视觉出现即至少一级、即已进入蓄力招式待释放状态**。
+- `CurrentChargeLevel` 按按住时长实时计算（不存状态，避免跨手势残留）；蓄力招式与蓄力门判定统一改用 `CurrentChargeLevel >= 1`。
+- 等级透传：`GestureInput.chargeLevel` → `AttackSystem.CurrentChargeLevel`；`AttackSkillConfig.chargeLevelDamageMultipliers`（默认空 = 不改数值）提供按级缩放伤害的入口。
+
+实测（Play Mode）：0.15s→等级 0→戳击；0.31/0.35s→等级 1→穿刺；0.70s→等级 2；1.20s→等级 3；0.35s 竖滑→挑飞（等级 1）。即不再需要按满 1 秒才能出蓄力招式。
+
+**已处理**：轴 1 的「按下即出」已撤回（见 11.6），因此按住蓄力不会再先出一记戳击；戳击判定仍在松手时结算，与 V1 一致。`AttackSystem.TryCancelLightAttackStartup` 与 `PlayerMoveStateMachine.NotifyExternalReset` 暂无调用方，作为后续「接续取消」的预留接口保留。
+
+### 11.8 一层结构与三段枪突（内容首建，已完成）
+
+- 招式层合并：窗口 / `repeatSelf` / `moveEdges` 直接放在 `AttackSkillConfig`；`MoveDefinition`、`MoveEdge` 删除。
+- `PlayerMoveStateMachine` 的招式表默认从 `PlayerState.heroConfig.moveTable` 读取（显式赋值优先），避免场景与武将两处接线。
+- 新建资产（`Assets/ScriptableObjects/Moves/Zhangfei/`）：
+
+| 资产 | 伤害 | actionDuration | 后继 |
+|------|------|----------------|------|
+| `Zhangfei_Jab1` | 20 | 0.45 | Tap → Jab2 |
+| `Zhangfei_Jab2` | 26 | 0.40 | Tap → Jab3 |
+| `Zhangfei_Jab3` | 34 | 0.60 | 无（串尾） |
+
+- 招式表 `Assets/ScriptableObjects/Moves/MoveTable_Zhangfei.asset`：roots 只配 Tap → Jab1，其余手势回落到默认映射；已挂到 `Hero_Zhangfei.moveTable`。
+
+实测：点击 → Jab1；窗口内（t≈0.68~0.76）再接 → Jab2 → Jab3；第三段任何时刻投递均「无匹配边（不响应）」，节点不变（串尾生效）；早于窗口（t=0.40）的投递只进缓冲，不提前接续。
+
+**窗口取值**：三段都设为 `0.65~0.95`（接续区约 135ms，落在收招后段）。首版曾设为 `0.35~0.95`，实测「下一段出得太快」，后移到收招后段以贴近原来松手出招的节奏。窗口起点就是该段允许被取消的时刻，调大即更晚接续。
+
+**未完成**：三段共用同一套素材（都是原版 Stab 的副本），动作视觉尚未区分；要做到三种不同表现需替换各自的精灵 / 动画帧。
 
 ---
 
@@ -523,7 +591,7 @@ P1 已提供**轴 3**（`PlayerMoveStateMachine.bufferEnabled`，需配置招式
 | 4 | 点击在抬手才判定 | `ProcessGesture` 调用点位于 `TouchPhase.Ended` | 轻攻击固有延迟，连打节奏发糊 |
 | 5 | 动作锁期间输入被直接丢弃、无缓冲 | `AttackSystem.TryExecuteAttack` 冷却检查早退 | 掉输入；接续窗口的前提缺失 |
 | 6 | Stab 有独立于动作锁的第二道门 | `AttackSystem`：`if (attackType == Stab && _stabVisualTimer > 0f) return false;` | Stab 实际可用间隔 = 视觉时长，与动作锁重复。P1 已让 `cancelCurrentMove` 在接续场景同时绕过两道门；**从入口重新起步仍受该门限制**，P2 需统一 |
-| 7 | 一个 `AttackType` 只能有一个配置 | `HeroConfig.GetSkillConfig` 按 `attackType` 唯一匹配 | 无法实现「每下 stab 不一样」；取配置 key 必须换成 `moveId` |
+| 7 | 一个 `AttackType` 只能有一个配置 | `HeroConfig.GetSkillConfig` 按 `attackType` 唯一匹配 | 已解决：入口招式仍登记在 `skillConfigs`，后续段用 `moveEdges` 引用，不再受限制（见 11.8） |
 | 8 | `GetSkillConfig` 有 4 个调用点 | `AttackSystem.GetConfig`、`PlayerState`（冷却时长）、`UltimateSystem`（能量）、`QTEController`（QTE 取 Slash 配置） | 换 key 需一并处理；QTE 绕过输入直接取配置 |
 | 9 | 手势角度边界互相干扰 | `ProcessSwipeGesture` 斜滑为兜底；`design/attack-cooldown.md` 已记录向左横扫不稳 | 连招中 Sweep/Slash/Parry 容易互相误判 |
 | 10 | 卡肉会拉长整套连招的实际墙钟时间 | 每段首次命中都暂停序列（Light 0.045s / Standard 0.09s / Heavy 0.14s） | 百分比窗口不受影响，但总时长变长，节奏与数值评估要用实机时间 |
@@ -537,10 +605,10 @@ P1 已提供**轴 3**（`PlayerMoveStateMachine.bufferEnabled`，需配置招式
 | 阶段 | 内容 | 验收 |
 |------|------|------|
 | P1 | ✅ 已完成（见 11.5）：招式状态机 + 接续窗口 + 输入缓冲 + 状态机调试面板；未配置任何边 | 回归等价 + 单条边可生效（均已实测） |
-| P2 | 轻攻击按下即出 + 起手取消；蓄力门与滑动手势解耦 | 实机手感对比 |
+| P2 | ✅ 已完成（见 11.6、11.7）：蓄力门三档解耦；蓄力分级（一级 = 视觉出现）；按下即出已撤回 | 行为已实测；手感对比待你在战斗节点内试按 |
 | P3 | 上下文状态：招架成功态 + 专属连招 | 格挡成功后可进入专属分支 |
 | P4 | 局外解锁接入边/节点；局内三选一改写边与窗口 | 与天赋树对接 |
-| P5 | 新招式与新连段内容生产（枪突1/2/3 差异化、斩·二连/三连等） | 内容验收 |
+| P5 | 进行中：枪突1/2/3 已建资产并接线（数值与窗口已配，视觉待换素材）；斩·二连/三连等未做 | 内容验收 |
 
 ---
 

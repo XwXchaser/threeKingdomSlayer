@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98a5aaeb5141a6a40b614df2cddb4ab7, type: 3}
+  m_Name: Zhangfei_Jab1
+  m_EditorClassIdentifier: 
+  id: 11
+  attackType: 0
+  damageType: 0
+  damage: 20
+  poiseDamage: 0
+  interruptsCavalryCharge: 0
+  rangeRows: 1
+  cooldown: 0.3
+  actionDuration: 0.45
+  launchDuration: 0.2
+  attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
+  stabSpawnYOffset: -0.6
+  stabSpawnZOffset: -5
+  stabVisualReachOffset: 2
+  stabVisualTargetRandomRadius: 0.5
+  slashSweepHalfWidth: 5
+  slashSweepAngle: 50
+  slashSweepDuration: 0.25
+  slashSpawnYOffset: 1.5
+  slashSpawnZOffset: 0.5
+  parrySweepAngle: 100
+  parrySweepDuration: 0.25
+  parrySpawnXOffset: 0
+  parrySpawnYOffset: 1.5
+  parrySpawnZOffset: 0
+  parryAngleVariance: 15
+  launchFlickAngle: 90
+  launchFlickDuration: 0.2
+  launchWindupDuration: 0.1
+  launchWindupDistance: 0.42
+  launchSideTilt: 12
+  launchSpawnXOffset: 0
+  launchSpawnYOffset: 1.5
+  launchSpawnZOffset: 0
+  launchAngleVariance: 15
+  launchRiseHeight: 1
+  ultimateEnergyGain: 10
+  chargeLevelDamageMultipliers: []
+  repeatSelf: 0
+  overrideWindow: 1
+  windowStart01: 0.65
+  windowEnd01: 0.95
+  moveEdges:
+  - gesture: 0
+    overrideWindow: 0
+    windowStart01: 0
+    windowEnd01: 1
+    next: {fileID: 11400000, guid: ef4520b16f161fd4b9724dc6c161d525, type: 2}

@@ -31,7 +31,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
 
     // ---- 运行时状态 ----
     private bool _active;
-    private MoveDefinition _currentMove;
+    private AttackSkillConfig _currentMove;
     private AttackType _currentAttackType;
     private MoveGesture _entryGesture;
     private float _elapsed;
@@ -51,7 +51,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
 
     public bool UsesTable => moveTable != null && moveTable.roots != null && moveTable.roots.Count > 0;
     public bool IsMoveActive => _active;
-    public MoveDefinition CurrentMove => _currentMove;
+    public AttackSkillConfig CurrentMove => _currentMove;
     public AttackType CurrentAttackType => _currentAttackType;
     public MoveGesture EntryGesture => _entryGesture;
     public float NormalizedTime => _duration > 0f ? Mathf.Clamp01(_elapsed / _duration) : 0f;
@@ -64,6 +64,10 @@ public class PlayerMoveStateMachine : MonoBehaviour
     {
         if (attackSystem == null) attackSystem = FindObjectOfType<AttackSystem>();
         if (playerState == null) playerState = FindObjectOfType<PlayerState>();
+
+        // 招式表默认从武将配置上取，避免场景与武将两处接线；显式赋值优先
+        if (moveTable == null && playerState != null && playerState.heroConfig != null)
+            moveTable = playerState.heroConfig.moveTable;
     }
 
     private void OnEnable()
@@ -164,7 +168,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
         }
 
         // 中立态：查入口表；未配置的手势回落到默认攻击类型，保证招式表未填完时仍可游戏
-        MoveDefinition root = moveTable.FindRoot(input.gesture);
+        AttackSkillConfig root = moveTable.FindRoot(input.gesture);
         if (root == null)
             return ExecuteDirect(input, ref resolvedType);
 
@@ -179,7 +183,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
         if (attackSystem == null) return false;
 
         bool executed = attackSystem.TryExecuteAttack(resolvedType,
-            input.targetColumn, input.slashLeftToRight, input.slashVisualTilt, input.charged);
+            input.targetColumn, input.slashLeftToRight, input.slashVisualTilt, input.charged, chargeLevel: input.chargeLevel);
 
         if (!executed)
         {
@@ -192,16 +196,16 @@ public class PlayerMoveStateMachine : MonoBehaviour
         return true;
     }
 
-    private bool ExecuteMove(MoveDefinition move, GestureInput input, out AttackType resolvedType, bool cancelCurrentMove = false)
+    private bool ExecuteMove(AttackSkillConfig move, GestureInput input, out AttackType resolvedType, bool cancelCurrentMove = false)
     {
         resolvedType = move != null
-            ? move.MoveAttackType
+            ? move.attackType
             : MoveGestureDefaults.ResolveAttackType(input.gesture, input.charged);
 
         if (attackSystem == null) return false;
 
         bool executed = attackSystem.TryExecuteAttack(resolvedType,
-            input.targetColumn, input.slashLeftToRight, input.slashVisualTilt, input.charged, cancelCurrentMove);
+            input.targetColumn, input.slashLeftToRight, input.slashVisualTilt, input.charged, cancelCurrentMove, input.chargeLevel);
 
         if (!executed)
         {
@@ -210,11 +214,11 @@ public class PlayerMoveStateMachine : MonoBehaviour
         }
 
         BeginMove(move, resolvedType, input);
-        _lastResolution = move != null ? $"执行 {move.ResolvedName}" : $"执行 {resolvedType}";
+        _lastResolution = move != null ? $"执行 {move.name}" : $"执行 {resolvedType}";
         return true;
     }
 
-    private void BeginMove(MoveDefinition move, AttackType resolvedType, GestureInput input)
+    private void BeginMove(AttackSkillConfig move, AttackType resolvedType, GestureInput input)
     {
         _active = true;
         _currentMove = move;
@@ -226,23 +230,23 @@ public class PlayerMoveStateMachine : MonoBehaviour
 
         // 参考时长取实际生效的动作锁；独立 CD 模式下回落到配置动作时长
         float duration = attackSystem != null ? attackSystem.LastMoveDuration : 0f;
-        if (duration <= 0f && move != null && move.config != null)
-            duration = move.config.actionDuration;
+        if (duration <= 0f && move != null)
+            duration = move.actionDuration;
         _duration = duration;
     }
 
     private bool ResolveFromCurrent(GestureInput input, out AttackType resolvedType)
     {
-        resolvedType = _currentMove != null ? _currentMove.MoveAttackType : _currentAttackType;
+        resolvedType = _currentMove != null ? _currentMove.attackType : _currentAttackType;
 
         bool edgeDeclared = false;
-        MoveDefinition next = null;
+        AttackSkillConfig next = null;
 
-        if (_currentMove != null && _currentMove.edges != null)
+        if (_currentMove != null && _currentMove.moveEdges != null)
         {
-            for (int i = 0; i < _currentMove.edges.Count; i++)
+            for (int i = 0; i < _currentMove.moveEdges.Count; i++)
             {
-                MoveEdge edge = _currentMove.edges[i];
+                AttackMoveEdge edge = _currentMove.moveEdges[i];
                 if (edge == null || edge.gesture != input.gesture) continue;
                 edgeDeclared = true;   // 显式声明即接管：next 为空表示「该输入不转移节点」
                 next = edge.next;
@@ -265,6 +269,15 @@ public class PlayerMoveStateMachine : MonoBehaviour
         return ExecuteMove(next, input, out resolvedType, cancelCurrentMove: true);
     }
 
+    /// <summary>
+    /// 外部原因（例如「按下即出轻攻击」的起手改写）造成当前招式被撤回时调用，回到中立。
+    /// </summary>
+    public void NotifyExternalReset()
+    {
+        ExitToNeutral();
+        _lastResolution = "外部撤回：回到中立";
+    }
+
     private void ExitToNeutral()
     {
         _active = false;
@@ -285,11 +298,11 @@ public class PlayerMoveStateMachine : MonoBehaviour
     {
         if (_currentMove == null) return false;
 
-        if (_currentMove.edges != null)
+        if (_currentMove.moveEdges != null)
         {
-            for (int i = 0; i < _currentMove.edges.Count; i++)
+            for (int i = 0; i < _currentMove.moveEdges.Count; i++)
             {
-                MoveEdge edge = _currentMove.edges[i];
+                AttackMoveEdge edge = _currentMove.moveEdges[i];
                 if (edge == null || edge.gesture != gesture) continue;
                 return edge.next != null;   // 显式声明但未指定后继 → 该输入不转移节点
             }
@@ -299,14 +312,14 @@ public class PlayerMoveStateMachine : MonoBehaviour
         return _currentMove.repeatSelf && gesture == _entryGesture;
     }
 
-    private WindowRange GetWindowFor(MoveDefinition move, AttackType type, MoveGesture gesture)
+    private WindowRange GetWindowFor(AttackSkillConfig move, AttackType type, MoveGesture gesture)
     {
         // 1) 边上的显式窗口
-        if (move != null && move.edges != null)
+        if (move != null && move.moveEdges != null)
         {
-            for (int i = 0; i < move.edges.Count; i++)
+            for (int i = 0; i < move.moveEdges.Count; i++)
             {
-                MoveEdge edge = move.edges[i];
+                AttackMoveEdge edge = move.moveEdges[i];
                 if (edge == null || edge.gesture != gesture) continue;
                 if (edge.overrideWindow)
                     return ClampWindow(new WindowRange(edge.windowStart01, edge.windowEnd01), type);
@@ -356,7 +369,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
         if (!showDebugPanel) return;
 
         string node = _active
-            ? (_currentMove != null ? _currentMove.ResolvedName : _currentAttackType.ToString())
+            ? (_currentMove != null ? _currentMove.name : _currentAttackType.ToString())
             : "中立";
 
         string window = "—";

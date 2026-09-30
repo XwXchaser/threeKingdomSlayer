@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -111,4 +112,38 @@ public class AttackSkillConfig : ScriptableObject
     [Header("大招")]
     [Tooltip("命中时获得能量（非大招技能有效）")]
     public int ultimateEnergyGain = 10;
+
+    [Header("蓄力等级伤害倍率")]
+    [Tooltip("按蓄力等级缩放伤害，index 0 = 一级。留空表示蓄力等级不改变数值")]
+    public List<float> chargeLevelDamageMultipliers = new List<float>();
+
+    [Header("接续（招式图，一层结构）")]
+    [Tooltip("允许用进入本招式的手势重复本招式（Stab→Stab→Stab）。关闭即为串尾终止")]
+    public bool repeatSelf = true;
+    [Tooltip("覆盖本招式的接续窗口。关闭时按攻击类型派生默认窗口")]
+    public bool overrideWindow = false;
+    [Range(0f, 1f)] public float windowStart01 = 0f;
+    [Range(0f, 1f)] public float windowEnd01 = 1f;
+    [Tooltip("后继输入。留空则该招式为串尾，无法再被取消接续")]
+    public List<AttackMoveEdge> moveEdges = new List<AttackMoveEdge>();
+}
+
+/// <summary>
+/// 招式接续边：在某段接续窗口内接受某手势，转移到后继招式。
+/// </summary>
+[System.Serializable]
+public class AttackMoveEdge
+{
+    [Tooltip("接受的手势")]
+    public MoveGesture gesture;
+
+    [Tooltip("是否覆盖窗口。关闭时使用本招式或按类型派生的默认窗口")]
+    public bool overrideWindow = false;
+
+    [Range(0f, 1f)] public float windowStart01 = 0f;
+
+    [Range(0f, 1f)] public float windowEnd01 = 1f;
+
+    [Tooltip("后继招式。留空表示该输入不转移节点")]
+    public AttackSkillConfig next;
 }

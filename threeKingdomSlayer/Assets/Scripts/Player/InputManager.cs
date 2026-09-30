@@ -42,6 +42,34 @@ public class InputManager : MonoBehaviour
     [Tooltip("招式状态机。留空时直接调用 AttackSystem（旧行为）")]
     public PlayerMoveStateMachine moveStateMachine;
 
+    // 输入模型开关已撤回：蓄力与否是唯一分叉轴，方向不作为分叉依据（见设计文档 11.6）
+
+
+    [Header("蓄力分级")]
+    [Tooltip("各级蓄力所需的按住时长（秒，升序）。第一级应与蓄力视觉出现时刻一致（默认 0.3s，即 longPressDuration），继续按住提升等级")]
+    public float[] chargeLevelTimes = { 0.3f, 0.6f, 1.0f };
+
+    /// <summary>
+    /// 当前蓄力等级：0 = 未达一级；>=1 表示蓄力招式已就绪。
+    /// 以「按住时长」实时计算，不存状态，避免跨手势残留。
+    /// </summary>
+    public int CurrentChargeLevel
+    {
+        get
+        {
+            if (!isLongPress) return 0;
+            if (chargeLevelTimes == null || chargeLevelTimes.Length == 0)
+                return isCharged ? 1 : 0;
+            float held = Time.time - segmentStartTime;
+            int level = 0;
+            for (int i = 0; i < chargeLevelTimes.Length; i++)
+            {
+                if (held >= chargeLevelTimes[i]) level = i + 1;
+            }
+            return level;
+        }
+    }
+
     // 技能输入开关（狂怒大招期间关闭）
     [System.NonSerialized] public bool skillInputEnabled = true;
     [System.NonSerialized] public bool gameplayInputEnabled = true;
@@ -371,16 +399,18 @@ public class InputManager : MonoBehaviour
             return true;
 
         bool executed;
-        if (isLongPress && isCharged)
+        MoveGesture directionGesture = MoveGestureDefaults.ClassifySwipe(direction, verticalSwipeThreshold, horizontalSwipeThreshold);
+
+        if (CurrentChargeLevel >= 1)
         {
+            // 蓄力滑动：竖滑 → 挑飞，横滑 → 横扫，斜滑 → 斩击
             ProcessSwipeGesture(direction, releasePos);
             executed = true;
         }
         else
         {
-            // 未蓄满的按住划动：竖滑 → Parry，其余 → Slash（与改造前分支一致）
-            MoveGesture gesture = MoveGestureDefaults.ClassifySwipe(direction, verticalSwipeThreshold, horizontalSwipeThreshold);
-            executed = SubmitGesture(gesture, isCharged, -1, direction.x > 0f, GetSlashVisualTilt(direction));
+            // 未蓄力滑动：竖滑 → 招架，其余 → 斩击
+            executed = SubmitGesture(directionGesture, CurrentChargeLevel, -1, direction.x > 0f, GetSlashVisualTilt(direction));
         }
 
         if (executed)
@@ -493,23 +523,35 @@ public class InputManager : MonoBehaviour
         if (hasTriggeredDuringHold)
             return;
 
-        if (isLongPress && isCharged)
+        if (CurrentChargeLevel >= 1)
+        {
             ProcessLongPressGesture(releasePos);
+        }
+        else if (isSwiped)
+        {
+            // 未蓄力的滑动：与按住期间的未蓄力判定一致（竖滑 → 招架，其余 → 斩击）
+            Vector2 swipeDirection = releasePos - touchStartPos;
+            ProcessSwipeGesture(swipeDirection, releasePos);
+        }
         else if (!isSwiped)
+        {
             ProcessTapGesture(releasePos);
+        }
     }
 
     /// <summary>
     /// 把手势投递给招式状态机；未配置状态机时直接调用 AttackSystem（保持旧行为）。
     /// 返回是否实际执行了招式；成功后按解析出的攻击类型派发 OnAttackExecuted。
     /// </summary>
-    private bool SubmitGesture(MoveGesture gesture, bool charged, int targetColumn,
+    private bool SubmitGesture(MoveGesture gesture, int chargeLevel, int targetColumn,
         bool slashLeftToRight = true, float slashVisualTilt = 0f)
     {
+        bool charged = chargeLevel >= 1;
         var input = new GestureInput
         {
             gesture = gesture,
             charged = charged,
+            chargeLevel = chargeLevel,
             targetColumn = targetColumn,
             slashLeftToRight = slashLeftToRight,
             slashVisualTilt = slashVisualTilt,
@@ -526,7 +568,7 @@ public class InputManager : MonoBehaviour
         {
             resolvedType = MoveGestureDefaults.ResolveAttackType(gesture, charged);
             executed = attackSystem.TryExecuteAttack(resolvedType, targetColumn,
-                slashLeftToRight, slashVisualTilt, charged);
+                slashLeftToRight, slashVisualTilt, charged, chargeLevel: chargeLevel);
         }
         else
         {
@@ -547,7 +589,7 @@ public class InputManager : MonoBehaviour
         int column = GetStabColumnFromScreenPosition(position);
         if (column >= 0)
         {
-            SubmitGesture(MoveGesture.Tap, false, column);
+            SubmitGesture(MoveGesture.Tap, CurrentChargeLevel, column);
         }
     }
 
@@ -559,7 +601,7 @@ public class InputManager : MonoBehaviour
         int column = GetStabColumnFromScreenPosition(position);
         if (column >= 0)
         {
-            SubmitGesture(MoveGesture.Hold, isCharged, column);
+            SubmitGesture(MoveGesture.Hold, CurrentChargeLevel, column);
         }
     }
 
@@ -582,7 +624,7 @@ public class InputManager : MonoBehaviour
         // 方向与垂直轴夹角 < verticalSwipeThreshold
         if (angleToVertical < verticalSwipeThreshold)
         {
-            SubmitGesture(MoveGesture.SwipeVertical, isCharged, -1);
+            SubmitGesture(MoveGesture.SwipeVertical, CurrentChargeLevel, -1);
             return;
         }
 
@@ -590,7 +632,7 @@ public class InputManager : MonoBehaviour
         // 方向与水平轴夹角 < horizontalSwipeThreshold
         if (angleToHorizontal < horizontalSwipeThreshold)
         {
-            SubmitGesture(MoveGesture.SwipeHorizontal, isCharged, -1);
+            SubmitGesture(MoveGesture.SwipeHorizontal, CurrentChargeLevel, -1);
             return;
         }
 
@@ -598,7 +640,7 @@ public class InputManager : MonoBehaviour
         bool slashLeftToRight = direction.x > 0;
         float slashVisualTilt = GetSlashVisualTilt(direction);
         Debug.Log($"[SlashTilt] Input charged dir={direction} leftToRight={slashLeftToRight} tilt={slashVisualTilt:F2}");
-        SubmitGesture(MoveGesture.SwipeDiagonal, isCharged, -1, slashLeftToRight, slashVisualTilt);
+        SubmitGesture(MoveGesture.SwipeDiagonal, CurrentChargeLevel, -1, slashLeftToRight, slashVisualTilt);
     }
 
     private float GetSlashVisualTilt(Vector2 direction)

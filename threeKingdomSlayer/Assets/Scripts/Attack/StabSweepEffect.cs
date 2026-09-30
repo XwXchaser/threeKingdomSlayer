@@ -60,7 +60,7 @@ public sealed class StabSweepEffect : MonoBehaviour
     private float _halfBaseSpriteLength;
     private Coroutine _hitDeformationRoutine;
 
-    public static void Create(GameObject prefab, Sprite speedSprite, Vector3 startPosition, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows,
+    public static StabSweepEffect Create(GameObject prefab, Sprite speedSprite, Vector3 startPosition, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows,
         float damage, DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget,
         Action<Enemy> onHit, Func<Enemy, bool> onFirstHitBeforeDamage, Action onFirstHit, Action onComplete,
         float visualReachOffset, float visualStartXOffset, float visualTargetRandomRadius, float baseRayLength,
@@ -81,9 +81,11 @@ public sealed class StabSweepEffect : MonoBehaviour
         }
         visual.transform.position += Vector3.right * visualStartXOffset;
 
-        ray.AddComponent<StabSweepEffect>().Initialize(visual, speedSprite, targetPosition, column, rangeRows, visualRangeRows, damage, damageType,
+        var effect = ray.AddComponent<StabSweepEffect>();
+        effect.Initialize(visual, speedSprite, targetPosition, column, rangeRows, visualRangeRows, damage, damageType,
             columnManager, coveredBossTarget, onHit, onFirstHitBeforeDamage, onFirstHit, onComplete, targetDuration,
             visualTargetRandomRadius, baseRayLength, interruptsCavalryCharge);
+        return effect;
     }
 
     private void Initialize(GameObject visual, Sprite speedSprite, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows, float damage,
@@ -292,6 +294,21 @@ public sealed class StabSweepEffect : MonoBehaviour
             _visualTransform.DOKill();
         _motionBlur?.Dispose();
         _sequence?.Kill();
+    }
+
+    /// <summary>
+    /// 在首次命中结算前取消本次戳击，用于「按下即出轻攻击」模型下的起手改写。
+    /// 返回 false 表示已经命中或序列已结束，不可取消。
+    /// 取消不会触发能量、被动计数、击退波与收招回调。
+    /// </summary>
+    public bool TryCancelBeforeHit()
+    {
+        if (_hitAny || _sequence == null || !_sequence.IsActive())
+            return false;
+
+        _sequence.Kill();
+        Destroy(gameObject);
+        return true;
     }
 
     private void PauseSequenceForHitStop(HitFeedbackStrength feedbackStrength)
