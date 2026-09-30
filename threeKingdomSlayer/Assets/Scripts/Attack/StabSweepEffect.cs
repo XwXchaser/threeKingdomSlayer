@@ -38,6 +38,9 @@ public sealed class StabSweepEffect : MonoBehaviour
     private bool _interruptsCavalryCharge;
     private readonly HashSet<Enemy> _hitEnemies = new HashSet<Enemy>();
     private readonly List<Enemy> _hitCandidates = new List<Enemy>();
+    private StabMotionParams _motion = StabMotionParams.Default;
+    private StabStartPose _startPose = StabStartPose.None;
+    private bool _hitsEnabled;
     private Enemy _coveredBossTarget;
     private Action<Enemy> _onHit;
     private Func<Enemy, bool> _onFirstHitBeforeDamage;
@@ -64,7 +67,8 @@ public sealed class StabSweepEffect : MonoBehaviour
         float damage, DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget,
         Action<Enemy> onHit, Func<Enemy, bool> onFirstHitBeforeDamage, Action onFirstHit, Action onComplete,
         float visualReachOffset, float visualStartXOffset, float visualTargetRandomRadius, float baseRayLength,
-        float targetDuration = -1f, bool interruptsCavalryCharge = false)
+        float targetDuration = -1f, bool interruptsCavalryCharge = false,
+        StabMotionParams motion = default, StabStartPose startPose = default)
     {
         var ray = new GameObject("StabRay");
         ray.transform.position = startPosition;
@@ -81,10 +85,11 @@ public sealed class StabSweepEffect : MonoBehaviour
         }
         visual.transform.position += Vector3.right * visualStartXOffset;
 
+        if (motion.windupRatio <= 0f) motion = StabMotionParams.Default;
         var effect = ray.AddComponent<StabSweepEffect>();
         effect.Initialize(visual, speedSprite, targetPosition, column, rangeRows, visualRangeRows, damage, damageType,
             columnManager, coveredBossTarget, onHit, onFirstHitBeforeDamage, onFirstHit, onComplete, targetDuration,
-            visualTargetRandomRadius, baseRayLength, interruptsCavalryCharge);
+            visualTargetRandomRadius, baseRayLength, interruptsCavalryCharge, motion, startPose);
         return effect;
     }
 
@@ -92,7 +97,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget,
         Action<Enemy> onHit, Func<Enemy, bool> onFirstHitBeforeDamage, Action onFirstHit,
         Action onComplete, float targetDuration, float visualTargetRandomRadius, float baseRayLength,
-        bool interruptsCavalryCharge = false)
+        bool interruptsCavalryCharge = false, StabMotionParams motion = default, StabStartPose startPose = default)
     {
         _column = column;
         _rangeRows = rangeRows;
@@ -100,6 +105,8 @@ public sealed class StabSweepEffect : MonoBehaviour
         _damage = damage;
         _damageType = damageType;
         _interruptsCavalryCharge = interruptsCavalryCharge;
+        _motion = motion.windupRatio <= 0f ? StabMotionParams.Default : motion;
+        _startPose = startPose;
         _columnManager = columnManager;
         _coveredBossTarget = coveredBossTarget;
         _onHit = onHit;
@@ -148,44 +155,74 @@ public sealed class StabSweepEffect : MonoBehaviour
         transform.rotation = Quaternion.LookRotation(_rayDirection, Vector3.up);
         _visualTargetOffsetLocal = CreateVisualTargetOffset(visualTargetRandomRadius, baseRayLength);
 
+        // 连段交接：从上一段当前姿态起步（位置与朝向在起手阶段过渡到本段目标列）
+        if (_startPose.valid)
+        {
+            transform.position = _startPose.worldPosition;
+            transform.rotation = _startPose.worldRotation;
+            _deformRoot.localScale = GetVisualScale(1f, Mathf.Max(0.1f, _startPose.lengthScale));
+        }
+
+        Quaternion deformBaseRotation = _deformRoot.localRotation;
+
         float totalDuration = targetDuration > 0f ? targetDuration : ThrustDuration + RetractDuration;
-        float windupDuration = totalDuration * WindupRatio;
-        float thrustDuration = totalDuration * ThrustRatio;
-        float penetrationDuration = totalDuration * PenetrationRatio;
-        float retractDuration = totalDuration * RetractRatio;
+        float windupDuration = totalDuration * _motion.windupRatio;
+        float thrustDuration = totalDuration * _motion.thrustRatio;
+        float penetrationDuration = totalDuration * _motion.penetrationRatio;
+        float holdDuration = Mathf.Max(0f, _motion.windupHoldSeconds);
+        float retractDuration = Mathf.Max(0.02f,
+            totalDuration - windupDuration - holdDuration - thrustDuration - penetrationDuration);
         Vector3 windupPosition = _rayOrigin - _rayDirection * WindupDistance;
         Vector3 penetrationPosition = targetPosition + _rayDirection * PenetrationDistance;
         Vector3 windupScale = GetVisualScale(WindupWidthScale, WindupLengthScale);
-        Vector3 thrustScale = GetVisualScale(ThrustWidthScale, ThrustLengthScale);
+        Vector3 thrustScale = GetVisualScale(_motion.thrustWidthScale, _motion.thrustLengthScale);
         Sprite baseSprite = renderer != null ? renderer.sprite : null;
         _sequence = DOTween.Sequence().SetTarget(transform);
+        Quaternion aimRotation = Quaternion.LookRotation(_rayDirection, Vector3.up);
+        // 画面内姿态倾角：整段保持，作为持枪姿态语言（不改变轨迹）
+        if (_motion.visualTiltDegrees != 0f)
+            _visualOffsetRoot.localRotation = Quaternion.Euler(0f, 0f, _motion.visualTiltDegrees);
         _sequence.Append(transform.DOMove(windupPosition, windupDuration).SetEase(Ease.OutQuad));
         _sequence.Join(_deformRoot.DOScale(GetVisualScale(WindupWidthScale, WindupLengthScale), windupDuration).SetEase(Ease.OutQuad));
+        // 交接时从上一段朝向转到本段目标朝向（转向发生在起手阶段，命中前完成）
+        if (_startPose.valid)
+            _sequence.Join(transform.DORotateQuaternion(aimRotation, windupDuration).SetEase(Ease.OutQuad));
+        if (holdDuration > 0f)
+            _sequence.AppendInterval(holdDuration);
+
+        // 命中只能在刺出阶段开始之后生效（交接时起始位置可能已经在敌人前方）
+        _sequence.InsertCallback(windupDuration + holdDuration, () => _hitsEnabled = true);
         _sequence.Append(transform.DOMove(targetPosition, thrustDuration).SetEase(Ease.InCubic)
-            .OnStart(() => _motionBlur?.SetStrength(28f))
+            .OnStart(() => _motionBlur?.SetStrength(_motion.blurThrust * _motion.motionBlurScale))
             .OnUpdate(CheckHits));
+        // 绕枪身长轴自转：刺出段 0 → 设定值
+        if (_motion.rollDegrees != 0f)
+            _sequence.Join(DOTween.To(() => 0f, v => ApplyDeformRoll(deformBaseRotation, v), _motion.rollDegrees, thrustDuration).SetEase(Ease.OutQuad));
         _sequence.Join(_visualOffsetRoot.DOLocalMove(_visualTargetOffsetLocal, thrustDuration).SetEase(Ease.OutCubic));
         _sequence.Join(_deformRoot.DOScale(GetVisualScale(ThrustWidthScale, ThrustLengthScale), thrustDuration).SetEase(Ease.InCubic));
         if (renderer != null && baseSprite != null && speedSprite != null)
         {
-            float speedFrameStart = windupDuration + thrustDuration * SpeedFrameStartRatio;
-            float speedFrameEnd = windupDuration + thrustDuration * SpeedFrameEndRatio;
+            float speedFrameStart = windupDuration + holdDuration + thrustDuration * _motion.speedFrameStart01;
+            float speedFrameEnd = windupDuration + holdDuration + thrustDuration * _motion.speedFrameEnd01;
             _sequence.InsertCallback(speedFrameStart, () =>
             {
                 renderer.sprite = speedSprite;
                 _usingSpeedSprite = true;
-                _motionBlur?.SetStrength(14f);
+                _motionBlur?.SetStrength(_motion.blurSpeedFrame * _motion.motionBlurScale);
             });
             _sequence.InsertCallback(speedFrameEnd, () => RestoreBaseSprite(renderer, baseSprite));
         }
         _sequence.AppendCallback(CheckHits);
         _sequence.AppendCallback(() => _onComplete?.Invoke());
         _sequence.Append(transform.DOMove(penetrationPosition, penetrationDuration).SetEase(Ease.OutQuad)
-            .OnStart(() => _motionBlur?.SetStrength(18f))
+            .OnStart(() => _motionBlur?.SetStrength(_motion.blurPenetration * _motion.motionBlurScale))
             .OnUpdate(CheckHits));
         _sequence.Join(_deformRoot.DOScale(_visualBaseLocalScale, penetrationDuration).SetEase(Ease.OutQuad));
         _sequence.Append(transform.DOMove(_rayOrigin, retractDuration).SetEase(Ease.OutCubic)
             .OnStart(() => _motionBlur?.SetStrength(0f)));
+        // 自转在回收段转回 0，保证每段起步时枪身面朝一致
+        if (_motion.rollDegrees != 0f)
+            _sequence.Join(DOTween.To(() => _motion.rollDegrees, v => ApplyDeformRoll(deformBaseRotation, v), 0f, retractDuration).SetEase(Ease.OutCubic));
         _sequence.Join(_visualOffsetRoot.DOLocalMove(Vector3.zero, retractDuration).SetEase(Ease.OutCubic));
         _sequence.Join(_deformRoot.DOScale(_visualBaseLocalScale, retractDuration).SetEase(Ease.OutCubic));
         _sequence.OnKill(() =>
@@ -198,6 +235,13 @@ public sealed class StabSweepEffect : MonoBehaviour
             _visualTransform?.DOKill();
             Destroy(gameObject);
         });
+    }
+
+    /// <summary>绕枪身长轴的自转：在形变节点的本地 Y（也就是精灵长轴）上叠加角度</summary>
+    private void ApplyDeformRoll(Quaternion baseRotation, float rollDegrees)
+    {
+        if (_deformRoot == null) return;
+        _deformRoot.localRotation = baseRotation * Quaternion.Euler(0f, rollDegrees, 0f);
     }
 
     private void RestoreBaseSprite(SpriteRenderer renderer, Sprite baseSprite)
@@ -296,6 +340,33 @@ public sealed class StabSweepEffect : MonoBehaviour
         _sequence?.Kill();
     }
 
+    /// <summary>取当前姿态，交给下一段当做起点（连段交接）</summary>
+    public StabStartPose CapturePose()
+    {
+        float lengthScale = 1f;
+        if (_deformRoot != null && _visualBaseLocalScale.y > 1e-4f)
+            lengthScale = _deformRoot.localScale.y / _visualBaseLocalScale.y;
+
+        return new StabStartPose
+        {
+            valid = true,
+            worldPosition = transform.position,
+            worldRotation = transform.rotation,
+            lengthScale = lengthScale
+        };
+    }
+
+    /// <summary>
+    /// 连段交接：立刻隐藏本段视觉并关闭命中，避免两把枪重叠。
+    /// 本体时间线继续跑完并在完成时自行销毁，因此不做 Kill/Destroy（那会连带影响同帧新建的下一段）。
+    /// </summary>
+    public void HandOff()
+    {
+        _hitsEnabled = false;
+        if (_visualTransform != null)
+            _visualTransform.gameObject.SetActive(false);
+    }
+
     /// <summary>
     /// 在首次命中结算前取消本次戳击，用于「按下即出轻攻击」模型下的起手改写。
     /// 返回 false 表示已经命中或序列已结束，不可取消。
@@ -340,6 +411,8 @@ public sealed class StabSweepEffect : MonoBehaviour
 
     private void CheckHits()
     {
+        if (!_hitsEnabled) return;
+
         var column = _columnManager?.GetColumn(_column);
         if (column == null) return;
 
@@ -383,7 +456,7 @@ public sealed class StabSweepEffect : MonoBehaviour
             bool diseaseStabHit = false;
             if (!_hitAny)
                 diseaseStabHit = _onFirstHitBeforeDamage?.Invoke(enemy) == true;
-            HitFeedbackStrength feedbackStrength = _hitAny ? HitFeedbackStrength.Light : HitFeedbackStrength.Standard;
+            HitFeedbackStrength feedbackStrength = _hitAny ? HitFeedbackStrength.Light : _motion.firstHitStrength;
             Vector3 impactPosition = GetVisualTipPosition();
             enemy.TakeDamage(_damage, _damageType, feedbackStrength: feedbackStrength,
                 impactPosition: impactPosition, impactDirection: _rayDirection,

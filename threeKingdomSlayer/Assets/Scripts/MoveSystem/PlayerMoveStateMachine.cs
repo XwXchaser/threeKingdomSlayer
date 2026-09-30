@@ -205,7 +205,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
         if (attackSystem == null) return false;
 
         bool executed = attackSystem.TryExecuteAttack(resolvedType,
-            input.targetColumn, input.slashLeftToRight, input.slashVisualTilt, input.charged, cancelCurrentMove, input.chargeLevel);
+            input.targetColumn, input.slashLeftToRight, input.slashVisualTilt, input.charged, cancelCurrentMove, input.chargeLevel, move);
 
         if (!executed)
         {

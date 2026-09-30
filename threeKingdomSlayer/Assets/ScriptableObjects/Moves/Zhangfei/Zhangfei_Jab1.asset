@@ -50,6 +50,24 @@ MonoBehaviour:
   launchRiseHeight: 1
   ultimateEnergyGain: 10
   chargeLevelDamageMultipliers: []
+  stabWindupRatio: 0.12
+  stabThrustRatio: 0.28
+  stabPenetrationRatio: 0.08
+  stabWindupHoldSeconds: 0
+  stabTailOffsetRight: 0
+  stabTailOffsetUp: 0
+  stabTailOffsetForward: 0
+  stabVisualTiltDegrees: 0
+  stabRollDegrees: 0
+  stabSpeedFrameStart01: 0.1
+  stabSpeedFrameEnd01: 1
+  stabBlurThrust: 28
+  stabBlurSpeedFrame: 14
+  stabBlurPenetration: 18
+  stabThrustLengthScale: 1.18
+  stabThrustWidthScale: 0.86
+  stabMotionBlurScale: 1
+  stabFirstHitStrength: 2
   repeatSelf: 0
   overrideWindow: 1
   windowStart01: 0.65

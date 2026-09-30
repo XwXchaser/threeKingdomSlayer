@@ -25,7 +25,7 @@ MonoBehaviour:
   attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
   stabSpawnYOffset: -0.6
   stabSpawnZOffset: -5
-  stabVisualReachOffset: 2.6
+  stabVisualReachOffset: 2.8
   stabVisualTargetRandomRadius: 0.5
   slashSweepHalfWidth: 5
   slashSweepAngle: 50
@@ -50,6 +50,24 @@ MonoBehaviour:
   launchRiseHeight: 1
   ultimateEnergyGain: 10
   chargeLevelDamageMultipliers: []
+  stabWindupRatio: 0.15
+  stabThrustRatio: 0.25
+  stabPenetrationRatio: 0.08
+  stabWindupHoldSeconds: 0
+  stabTailOffsetRight: -0.9
+  stabTailOffsetUp: 0.7
+  stabTailOffsetForward: -0.3
+  stabVisualTiltDegrees: 4
+  stabRollDegrees: -25
+  stabSpeedFrameStart01: 0.1
+  stabSpeedFrameEnd01: 1
+  stabBlurThrust: 28
+  stabBlurSpeedFrame: 14
+  stabBlurPenetration: 18
+  stabThrustLengthScale: 1.22
+  stabThrustWidthScale: 0.86
+  stabMotionBlurScale: 1.15
+  stabFirstHitStrength: 2
   repeatSelf: 0
   overrideWindow: 1
   windowStart01: 0.65
