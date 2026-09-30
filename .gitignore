@@ -30,3 +30,6 @@ threeKingdomSlayer/Locus/workspace-trees/
 
 # 误建文件（Windows 保留名，由 shell 重定向产生）
 threeKingdomSlayer/nul
+
+# Locus 分析器探针（机器本地路径，由 Locus 随功能开关自动创建/删除）
+threeKingdomSlayer/Directory.Build.props
