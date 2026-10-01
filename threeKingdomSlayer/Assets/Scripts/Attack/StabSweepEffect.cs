@@ -728,7 +728,14 @@ public sealed class StabSweepEffect : MonoBehaviour
         transform.position = position;
         // 指向偏摆：绕（近）世界竖直轴把枪身转向手指所指的列；上限来自招式资产
         float yawCap = Mathf.Abs(_motion.chargeHoldYawDegrees);
-        _chargeAppliedYaw = Mathf.Clamp(_chargeAimYawDelta, -yawCap, yawCap);
+        float targetYaw = Mathf.Clamp(_chargeAimYawDelta, -yawCap, yawCap);
+        // 指向偏摆平滑：目标列是按敌人投影量化出来的，直接切会一跳一跳
+        float yawSmooth = _motion.chargeHoldYawSmoothSeconds;
+        if (yawSmooth <= 0f)
+            _chargeAppliedYaw = targetYaw;
+        else
+            _chargeAppliedYaw = Mathf.Lerp(_chargeAppliedYaw, targetYaw,
+                1f - Mathf.Exp(-3f * Time.deltaTime / yawSmooth));
         _visualOffsetRoot.localRotation = Quaternion.Euler(0f, _chargeAppliedYaw, tilt);
         _chargeAppliedTilt = tilt;
         if (_motion.rollDegrees != 0f)

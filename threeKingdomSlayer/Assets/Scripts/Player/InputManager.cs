@@ -429,9 +429,10 @@ public class InputManager : MonoBehaviour
 
         if (CurrentChargeLevel >= 1)
         {
-            // 蓄力滑动：竖滑 → 挑飞，横滑 → 横扫，斜滑 → 斩击
-            ProcessSwipeGesture(direction, releasePos);
-            executed = true;
+            // 蓄力滑动：竖滑 → 挑飞，横滑 → 横扫，斜滑 → 斩击。
+            // 只有真的出招才算「已消费」：否则这次滑动不该重置蓄力分段、也不该吞掉松手。
+            // （连段蓄力时横移换目标列会走到这里，而该节点可能根本没有滑动边）
+            executed = ProcessSwipeGesture(direction, releasePos);
         }
         else
         {
@@ -654,7 +655,7 @@ public class InputManager : MonoBehaviour
     /// - 对角线划动 → 斩击 Slash（兜底）
     /// 不再依赖屏幕区域（Left/Middle/Right），仅通过划动角度识别
     /// </summary>
-    private void ProcessSwipeGesture(Vector2 direction, Vector2 releasePos)
+    private bool ProcessSwipeGesture(Vector2 direction, Vector2 releasePos)
     {
         // 计算方向向量与垂直轴（上方向 = (0,1)）的夹角
         float angleToVertical = Vector2.Angle(direction, Vector2.up);
@@ -664,24 +665,18 @@ public class InputManager : MonoBehaviour
         // 近垂直划动（上/下）→ 挑飞
         // 方向与垂直轴夹角 < verticalSwipeThreshold
         if (angleToVertical < verticalSwipeThreshold)
-        {
-            SubmitGesture(MoveGesture.SwipeVertical, CurrentChargeLevel, -1);
-            return;
-        }
+            return SubmitGesture(MoveGesture.SwipeVertical, CurrentChargeLevel, -1);
 
         // 近水平划动（左/右）→ 横扫
         // 方向与水平轴夹角 < horizontalSwipeThreshold
         if (angleToHorizontal < horizontalSwipeThreshold)
-        {
-            SubmitGesture(MoveGesture.SwipeHorizontal, CurrentChargeLevel, -1);
-            return;
-        }
+            return SubmitGesture(MoveGesture.SwipeHorizontal, CurrentChargeLevel, -1);
 
         // 对角线划动 → 斩击（兜底）
         bool slashLeftToRight = direction.x > 0;
         float slashVisualTilt = GetSlashVisualTilt(direction);
         Debug.Log($"[SlashTilt] Input charged dir={direction} leftToRight={slashLeftToRight} tilt={slashVisualTilt:F2}");
-        SubmitGesture(MoveGesture.SwipeDiagonal, CurrentChargeLevel, -1, slashLeftToRight, slashVisualTilt);
+        return SubmitGesture(MoveGesture.SwipeDiagonal, CurrentChargeLevel, -1, slashLeftToRight, slashVisualTilt);
     }
 
     private float GetSlashVisualTilt(Vector2 direction)

@@ -52,6 +52,8 @@ public struct StabMotionParams
 
     /// <summary>蓄力保持：枪身朝「当前指向列」偏摆的上限（度）。0 = 不偏摆</summary>
     public float chargeHoldYawDegrees;
+    /// <summary>蓄力保持：偏摆的平滑时间（秒），0 = 直接切换</summary>
+    public float chargeHoldYawSmoothSeconds;
     /// <summary>释放：刺出段起点内完成朝向归零所占的比例（0 = 沿用整段起手过渡）</summary>
     public float redirectSnapRatio;
     /// <summary>释放：归零后的过冲角（度，负值 = 朝行进反方向过冲一点）</summary>
@@ -96,6 +98,7 @@ public struct StabMotionParams
         chargeHoldShakeAmplitude = 0.06f,
         chargeHoldShakeFrequency = 14f,
         chargeHoldYawDegrees = 0f,
+        chargeHoldYawSmoothSeconds = 0.12f,
         redirectSnapRatio = 0f,
         redirectOvershootDegrees = -3f,
         shakeAmplitude = 0f,
@@ -136,6 +139,7 @@ public struct StabMotionParams
         p.chargeHoldShakeAmplitude = Mathf.Max(0f, cfg.chargeHoldShakeAmplitude);
         p.chargeHoldShakeFrequency = Mathf.Max(1f, cfg.chargeHoldShakeFrequency);
         p.chargeHoldYawDegrees = cfg.chargeHoldYawDegrees;
+        p.chargeHoldYawSmoothSeconds = Mathf.Max(0f, cfg.chargeHoldYawSmoothSeconds);
         p.redirectSnapRatio = Mathf.Clamp01(cfg.stabRedirectSnapRatio);
         p.redirectOvershootDegrees = cfg.stabRedirectOvershootDegrees;
         p.shakeAmplitude = Mathf.Max(0f, cfg.hitShakeAmplitude);

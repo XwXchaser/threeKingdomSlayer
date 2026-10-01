@@ -210,6 +210,9 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("蓄力保持期间枪身朝目标列的偏摆上限（度）。0 = 不偏摆。写在【当前节点】上（例如 C1 的 Jab1）")]
     [Range(-20f, 20f)]
     public float chargeHoldYawDegrees = 0f;
+    [Tooltip("指向偏摆的平滑时间（秒）：越大越顺滑、越小越跟手。0 = 不做平滑（直接切换）")]
+    [Min(0f)]
+    public float chargeHoldYawSmoothSeconds = 0.12f;
 
     [Header("释放指向（C2 用）")]
     [Tooltip("刺出段起点的多少比例内把蓄力偏摆归零并过冲。0 = 不处理。写在【释放招式】上")]
