@@ -307,3 +307,7 @@ if (comboChargeActive && CurrentChargeLevel >= 1)
    - **已按用户选择（升级加成）实施**：`GetEffectivePushBack` 只在招式 `pushBackRows` 大于 0 时生效，并叠加升级 `push_wave` 的值；新增与攻击类型无关的公共入口 `AttackSystem.ApplyMovePushBack(cfg, enemy, pushedTargets)`，`ExecuteStab` 改用它；死代码 `ApplyStabPushWave` 已删除。
    - 实测：升级=1 时 Jab1 / 直通 Stab 生效击退 = 0（命中后敌人 row 不动，hp 200→180）；C2 生效击退 = 2 格（row 轨迹 0 → 2 → 1 → 0，精确回原槽）；升级=0 / 2 时 C2 分别 1 / 3 格。
    - 注意：`ApplyPushWave` 有栈式阻塞检查，列后方没空位时**整列拒绝**（一格都不推）；所以"加成到 2 格"在拥挤列里可能变成"完全不推"，若手感不对可改回"升级不加成"。
+
+8. **一次按住只出一记蓄力招式（已实施）**：`InputManager` 里"本次按住已经出过招"的标记（`hasTriggeredDuringHold`）现在也参与**蓄力累积** —— 该标记为真时 `CurrentChargeLevel` 恒为 0、`isLongPress` 不再置位，直到抬手重新按下（按下时清除标记）。效果：放出一记蓄力招式后，手指停在原地不会重新蓄力，必须先抬手重按（这就是旧机制，用户反馈"之前并没有这个问题"）。
+   - 实测：出招后仍按住 0.5s → lv=0；重按后按住 0.5s → lv=1；连段（点一下→按住→松手出 C2）不受影响（该链路里标记始终为假）。
+   - 同时修掉的错误信号：`PlayerMoveStateMachine.BeginMove` 以前在"手指按着"时会对**直通招式**（`move == null`，例如站桩蓄力打出的横扫）也把 `comboChargeActive` 置真，导致后续滑动被误判成连段蓄力（不重置）；现在只有招式表节点才置真，且 `ExitToNeutral` 会清掉该标记（站桩蓄力的视觉/语义才能恢复）。

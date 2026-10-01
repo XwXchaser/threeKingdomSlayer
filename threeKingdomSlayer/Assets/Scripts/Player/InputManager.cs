@@ -57,7 +57,7 @@ public class InputManager : MonoBehaviour
     {
         get
         {
-            if (!isLongPress) return 0;
+            if (!isLongPress || hasTriggeredDuringHold) return 0;   // 本次按住已经出过招 → 必须先抬手重按
             if (chargeLevelTimes == null || chargeLevelTimes.Length == 0)
                 return isCharged ? 1 : 0;
             float held = Time.time - segmentStartTime;
@@ -238,7 +238,7 @@ public class InputManager : MonoBehaviour
             // 高速滑动仍由 TryDetectHoldSwipe 的速度门控拦下，不会被这里放行。
             float verticalDrift = Mathf.Abs(currentPointerPos.y - segmentStartPos.y);
 
-            if (!isLongPress && segmentDuration >= longPressDuration
+            if (!isLongPress && !hasTriggeredDuringHold && segmentDuration >= longPressDuration
                 && verticalDrift <= chargeMovementTolerance)
             {
                 isLongPress = true;
@@ -501,8 +501,9 @@ public class InputManager : MonoBehaviour
             }
         }
 
-        // 蓄力条件检查：横向位移视为“指向/改列”，只有纵向抖动受容差限制（与 Update 内一致）
-        if (!isLongPress && segmentDuration >= longPressDuration
+        // 蓄力条件检查：横向位移视为“指向/改列”，只有纵向抖动受容差限制（与 Update 内一致）；
+        // 本次按住已经出过招时不再累积蓄力（必须抬手重按）
+        if (!isLongPress && !hasTriggeredDuringHold && segmentDuration >= longPressDuration
             && verticalDrift <= chargeMovementTolerance)
             isLongPress = true;
         if (isLongPress)

@@ -260,8 +260,10 @@ public class PlayerMoveStateMachine : MonoBehaviour
         _holdWaitUsed = false;
         _holdWaitElapsed = 0f;
 
-        // 节点切换时手指还按着：本次按下仍算连招输入，不让站桩蓄力的表现插进来
-        if (inputManager != null && inputManager.IsPointerDown) inputManager.comboChargeActive = true;
+        // 招式表节点进行中且手指仍按着：这一按属于「连段蓄力」，不让站桩蓄力的表现插进来。
+        // 注意：直通招式（move == null，例如站桩蓄力打出的横扫）不算连段，必须排除，
+        // 否则该标记会一直为真，把后续滑动误判成连段蓄力（导致按住连滑可以一直刷同一个蓄力招式）。
+        if (inputManager != null && inputManager.IsPointerDown && move != null) inputManager.comboChargeActive = true;
 
         if (inputManager != null && inputManager.IsPointerDown && attackSystem != null
             && move != null && move.HasChargeContinuation())
@@ -320,6 +322,8 @@ public class PlayerMoveStateMachine : MonoBehaviour
     {
         if (_comboChargeHeld && attackSystem != null) attackSystem.EndComboChargeHold();
         _comboChargeHeld = false;
+        // 离开节点后这次按住不再属于连段：清掉标记，站桩蓄力的视觉/语义才能恢复
+        if (inputManager != null) inputManager.comboChargeActive = false;
         _isWaiting = false;
         _active = false;
         _currentMove = null;
