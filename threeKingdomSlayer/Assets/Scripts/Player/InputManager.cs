@@ -81,6 +81,9 @@ public class InputManager : MonoBehaviour
     /// <summary>按住时长（秒）：连段蓄力用它驱动「拉回蓄势位」的进度</summary>
     public float HoldDurationSeconds => isTouching ? Mathf.Max(0f, Time.time - segmentStartTime) : 0f;
 
+    /// <summary>当前指针位置对应的戳击目标列（C2 的「指向」用）。未落在有效列上时返回 -1</summary>
+    public int CurrentPointerStabColumn => GetStabColumnFromScreenPosition(currentPointerPos);
+
     /// <summary>
     /// 当前这次按下是否被招式状态机判定为「连段蓄力」（按下时置位，抬手或复位时清空）。
     /// 连段蓄力不是穿刺蓄力：依附蓄力事件链的附带表现（穿刺瞄准指示器、蓄力视觉进出场）应当让位。
@@ -735,7 +738,8 @@ public class InputManager : MonoBehaviour
         return GetStabColumnFromScreenPosition(screenPos);
     }
 
-    private int GetStabColumnFromScreenPosition(Vector2 screenPos)
+    /// <summary>屏幕位置 → 戳击目标列（与松手释放同一套映射：最近列匹配，超过半列宽返回 -1 并有兜底）</summary>
+    public int GetStabColumnFromScreenPosition(Vector2 screenPos)
     {
         int targetedColumn = GetColumnFromScreenPosition(screenPos);
         return targetedColumn >= 0 ? targetedColumn : FallbackGetColumn(screenPos);

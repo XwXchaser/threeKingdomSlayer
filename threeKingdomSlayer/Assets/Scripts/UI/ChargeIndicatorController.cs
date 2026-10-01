@@ -89,6 +89,19 @@ public class ChargeIndicatorController : MonoBehaviour
     {
         if (!isActive) return;
 
+        // 连段蓄力（C1 → C2）不是站桩蓄力：让位给 StabAimMarker，不显示蓄力指示器
+        if (InputManager.Instance != null && InputManager.Instance.comboChargeActive)
+        {
+            if (hasAppeared)
+            {
+                hasAppeared = false;
+                isCharged = false;
+                if (indicatorRoot != null) indicatorRoot.gameObject.SetActive(false);
+                if (chargeSpinImage != null) chargeSpinImage.gameObject.SetActive(false);
+            }
+            return;
+        }
+
         if (progress >= appearThreshold)
         {
             if (!hasAppeared)

@@ -452,7 +452,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
         }
 
         if (pointerDown && _comboChargeHeld && attackSystem != null && inputManager != null)
-            attackSystem.UpdateComboChargeHold(inputManager.HoldDurationSeconds);
+            attackSystem.UpdateComboChargeHold(inputManager.HoldDurationSeconds, inputManager.CurrentPointerStabColumn);
 
         _pointerWasDown = pointerDown;
     }

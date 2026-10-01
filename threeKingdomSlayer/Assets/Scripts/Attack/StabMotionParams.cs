@@ -50,6 +50,27 @@ public struct StabMotionParams
     /// <summary>连段蓄力：微颤频率（Hz）</summary>
     public float chargeHoldShakeFrequency;
 
+    /// <summary>蓄力保持：枪身朝「当前指向列」偏摆的上限（度）。0 = 不偏摆</summary>
+    public float chargeHoldYawDegrees;
+    /// <summary>释放：刺出段起点内完成朝向归零所占的比例（0 = 沿用整段起手过渡）</summary>
+    public float redirectSnapRatio;
+    /// <summary>释放：归零后的过冲角（度，负值 = 朝行进反方向过冲一点）</summary>
+    public float redirectOvershootDegrees;
+    /// <summary>命中震动：沿枪轴的轴向回弹幅度（世界单位）</summary>
+    public float shakeAmplitude;
+    /// <summary>命中震动：垂直于枪轴的抖动幅度（世界单位）</summary>
+    public float shakeLateral;
+    /// <summary>命中震动：绕枪身长轴的滚转幅度（度）</summary>
+    public float shakeRollDegrees;
+    /// <summary>命中震动：枪尖俯仰点头幅度（度）</summary>
+    public float shakePitchDegrees;
+    /// <summary>命中震动：总时长（秒）</summary>
+    public float shakeDuration;
+    /// <summary>命中震动：频率（Hz）</summary>
+    public float shakeFrequency;
+    /// <summary>命中震动：第二排及之后的倍率（第 1 排 = 1）</summary>
+    public float shakeSecondRowScale;
+
     public static StabMotionParams Default => new StabMotionParams
     {
         windupRatio = 0.12f,
@@ -73,7 +94,17 @@ public struct StabMotionParams
         chargeHoldSettleSeconds = 0.12f,
         chargeHoldSettleRatio = 0.1f,
         chargeHoldShakeAmplitude = 0.06f,
-        chargeHoldShakeFrequency = 14f
+        chargeHoldShakeFrequency = 14f,
+        chargeHoldYawDegrees = 0f,
+        redirectSnapRatio = 0f,
+        redirectOvershootDegrees = -3f,
+        shakeAmplitude = 0f,
+        shakeLateral = 0f,
+        shakeRollDegrees = 0f,
+        shakePitchDegrees = 0f,
+        shakeDuration = 0.1f,
+        shakeFrequency = 18f,
+        shakeSecondRowScale = 0.6f
     };
 
     /// <summary>从招式资产读取动作参数；未配置的字段回落到默认值</summary>
@@ -104,6 +135,16 @@ public struct StabMotionParams
         p.chargeHoldSettleRatio = Mathf.Clamp01(cfg.chargeHoldSettleRatio);
         p.chargeHoldShakeAmplitude = Mathf.Max(0f, cfg.chargeHoldShakeAmplitude);
         p.chargeHoldShakeFrequency = Mathf.Max(1f, cfg.chargeHoldShakeFrequency);
+        p.chargeHoldYawDegrees = cfg.chargeHoldYawDegrees;
+        p.redirectSnapRatio = Mathf.Clamp01(cfg.stabRedirectSnapRatio);
+        p.redirectOvershootDegrees = cfg.stabRedirectOvershootDegrees;
+        p.shakeAmplitude = Mathf.Max(0f, cfg.hitShakeAmplitude);
+        p.shakeLateral = Mathf.Max(0f, cfg.hitShakeLateral);
+        p.shakeRollDegrees = Mathf.Max(0f, cfg.hitShakeRollDegrees);
+        p.shakePitchDegrees = Mathf.Max(0f, cfg.hitShakePitchDegrees);
+        p.shakeDuration = Mathf.Max(0f, cfg.hitShakeDuration);
+        p.shakeFrequency = Mathf.Max(0f, cfg.hitShakeFrequency);
+        p.shakeSecondRowScale = Mathf.Clamp01(cfg.hitShakeSecondRowScale);
         return p;
     }
 }

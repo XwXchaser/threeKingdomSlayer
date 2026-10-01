@@ -80,6 +80,8 @@ public class AttackSystem : MonoBehaviour
     /// <summary>交接姿态的有效期：超过这个间隔就不再用旧姿态起步（避免长时间后再出招时跳到旧位置）</summary>
     private const float StabPoseHandoffWindow = 0.6f;
     private ChargeStabVisual _chargeStabVisual;
+    /// <summary>最近一次戳击的目标列：连段蓄力时用它算「当前朝向 → 指向列」的偏摆增量</summary>
+    private int _lastStabColumn = -1;
 
     /// <summary>
     /// 当前是否处于攻击动作播放中（动作锁定计时器未结束）
@@ -138,10 +140,25 @@ public class AttackSystem : MonoBehaviour
         _lastStabEffect.BeginChargeHold();
     }
 
-    /// <summary>按住时长（秒）透传给保持中的枪体，驱动「拉回蓄势位」的进度</summary>
-    public void UpdateComboChargeHold(float heldSeconds)
+    /// <summary>按住时长（秒）透传给保持中的枪体，驱动「拉回蓄势位」的进度；aimColumn = 当前手指指向的列（供指向偏摆）</summary>
+    public void UpdateComboChargeHold(float heldSeconds, int aimColumn = -1)
     {
-        if (_lastStabEffect != null) _lastStabEffect.SetChargeHoldHeldSeconds(heldSeconds);
+        if (_lastStabEffect == null) return;
+        _lastStabEffect.SetChargeHoldHeldSeconds(heldSeconds);
+
+        // 指向偏摆：把「当前枪身朝向（上一段目标列的射线）」与「手指指向列」的差值交给枪体，
+        // 上限由招式资产的 chargeHoldYawDegrees 夹住（0 = 不偏摆）。
+        if (aimColumn >= 0 && _lastStabColumn >= 0 && aimColumn != _lastStabColumn)
+        {
+            float spacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
+            float currentYaw = GetStabRayYaw(_lastStabColumn, spacing);
+            float aimYaw = GetStabRayYaw(aimColumn, spacing);
+            _lastStabEffect.SetChargeAimYawDelta(aimYaw - currentYaw);
+        }
+        else
+        {
+            _lastStabEffect.SetChargeAimYawDelta(0f);
+        }
     }
 
     /// <summary>松开/节点切换：没有蓄力招式接手时让枪体恢复回收</summary>
@@ -336,6 +353,7 @@ public class AttackSystem : MonoBehaviour
     {
         var cfg = GetConfig(AttackType.Stab);
         if (cfg == null || columnIndex < 0 || columnManager == null || cfg.attackWavePrefab == null) return false;
+        _lastStabColumn = columnIndex;
 
         float finalDmg = GetFinalDamage(cfg) * GetAttackRangeDamagePenalty();
         // 打断标记必须在发起时固化：穿刺等伤害在特效回调里延迟结算。

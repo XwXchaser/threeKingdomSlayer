@@ -74,6 +74,17 @@ public sealed class StabSweepEffect : MonoBehaviour
     private float _chargeHoldPull;
     private float _chargeHoldHeldSeconds;
     private float _chargeHoldShakePhase;
+
+    /// <summary>震动专用节点：只承载命中震动偏移，避免与主序列的时间线抢同一 transform</summary>
+    private Transform _shakeRoot;
+    /// <summary>蓄力指向：来自 AttackSystem 的「当前朝向 → 指向列」偏摆增量（度）</summary>
+    private float _chargeAimYawDelta;
+    /// <summary>当前实际施加的偏摆角（度），用于回收段收回</summary>
+    private float _chargeAppliedYaw;
+    // 命中震动：独立 realtime 计时，不受卡肉（seq.Pause）影响
+    private bool _shakeActive;
+    private float _shakeStartRealtime;
+    private float _shakeScale = 1f;
     private float _chargeAppliedTilt;
     private bool _chargeRecoverActive;
     private float _chargeRecoverTime;
@@ -163,7 +174,12 @@ public sealed class StabSweepEffect : MonoBehaviour
         _visualOffsetRoot.localPosition = Vector3.zero;
         _visualOffsetRoot.localRotation = Quaternion.identity;
         _visualOffsetRoot.localScale = Vector3.one;
-        _deformRoot.SetParent(_visualOffsetRoot, false);
+        _shakeRoot = new GameObject("ShakeRoot").transform;
+        _shakeRoot.SetParent(_visualOffsetRoot, false);
+        _shakeRoot.localPosition = Vector3.zero;
+        _shakeRoot.localRotation = Quaternion.identity;
+        _shakeRoot.localScale = Vector3.one;
+        _deformRoot.SetParent(_shakeRoot, false);
         _deformRoot.localPosition = _visualBaseLocalPosition;
         _deformRoot.localRotation = visualBaseLocalRotation;
         _deformRoot.localScale = _visualBaseLocalScale;
@@ -218,7 +234,28 @@ public sealed class StabSweepEffect : MonoBehaviour
         _sequence.Join(_deformRoot.DOScale(GetVisualScale(WindupWidthScale, WindupLengthScale), windupDuration).SetEase(Ease.OutQuad));
         // 交接时从上一段朝向转到本段目标朝向（转向发生在起手阶段，命中前完成）
         if (_startPose.valid)
-            _sequence.Join(transform.DORotateQuaternion(aimRotation, windupDuration).SetEase(Ease.OutQuad));
+        {
+            float snapRatio = Mathf.Clamp01(_motion.redirectSnapRatio);
+            if (snapRatio > 0f && windupDuration > 0.01f)
+            {
+                // 释放指向：先用起手段的一部分「甩」过去并过冲一点，再回正到目标朝向
+                float snapDuration = Mathf.Max(0.01f, windupDuration * snapRatio);
+                float remainDuration = Mathf.Max(0f, windupDuration - snapDuration);
+                float startYaw = _startPose.worldRotation.eulerAngles.y;
+                float travelSign = Mathf.Sign(Mathf.DeltaAngle(startYaw, aimRotation.eulerAngles.y));
+                if (Mathf.Approximately(travelSign, 0f)) travelSign = 1f;
+                Quaternion overshootRotation = aimRotation * Quaternion.Euler(0f, _motion.redirectOvershootDegrees * travelSign, 0f);
+
+                _sequence.Join(transform.DORotateQuaternion(overshootRotation, snapDuration).SetEase(Ease.OutQuad));
+                if (remainDuration > 0.005f)
+                    _sequence.Insert(snapDuration,
+                        transform.DORotateQuaternion(aimRotation, remainDuration).SetEase(Ease.OutCubic));
+            }
+            else
+            {
+                _sequence.Join(transform.DORotateQuaternion(aimRotation, windupDuration).SetEase(Ease.OutQuad));
+            }
+        }
         if (holdDuration > 0f)
             _sequence.AppendInterval(holdDuration);
 
@@ -364,10 +401,68 @@ public sealed class StabSweepEffect : MonoBehaviour
 
     private void LateUpdate()
     {
+        UpdateHitShake();
         if (_deformRoot == null) return;
         float lengthDelta = _deformRoot.localScale.y - _visualBaseLocalScale.y;
         _deformRoot.localPosition = _visualBaseLocalPosition
             + Vector3.up * (_halfBaseSpriteLength * lengthDelta / Mathf.Max(_visualBaseLocalScale.y, 0.0001f));
+    }
+
+    /// <summary>指向偏摆增量（度）：由 AttackSystem 按「当前朝向 → 手指指向列」给出，实际角度被资产上限夹住</summary>
+    public void SetChargeAimYawDelta(float degrees)
+    {
+        _chargeAimYawDelta = degrees;
+    }
+
+    /// <summary>
+    /// 触发命中震动。scale：首排 = 1，第二排起用资产的第二排倍率。
+    /// 用 realtime 独立计时 + 专用震动节点，避免被卡肉（seq.Pause）冻住，也不与主序列抢 transform。
+    /// </summary>
+    private void TriggerHitShake(float scale)
+    {
+        if (_shakeRoot == null) return;
+        if (_motion.shakeDuration <= 0f) return;
+        if (_motion.shakeAmplitude <= 0f && _motion.shakeLateral <= 0f
+            && _motion.shakeRollDegrees <= 0f && _motion.shakePitchDegrees <= 0f) return;
+
+        _shakeActive = true;
+        _shakeStartRealtime = Time.realtimeSinceStartup;
+        _shakeScale = Mathf.Clamp01(scale);
+    }
+
+    private void UpdateHitShake()
+    {
+        if (_shakeRoot == null) return;
+
+        if (!_shakeActive)
+        {
+            if (_shakeRoot.localPosition != Vector3.zero) _shakeRoot.localPosition = Vector3.zero;
+            if (_shakeRoot.localRotation != Quaternion.identity) _shakeRoot.localRotation = Quaternion.identity;
+            return;
+        }
+
+        float duration = Mathf.Max(0.0001f, _motion.shakeDuration);
+        float t = Time.realtimeSinceStartup - _shakeStartRealtime;
+        if (t >= duration)
+        {
+            _shakeActive = false;
+            _shakeRoot.localPosition = Vector3.zero;
+            _shakeRoot.localRotation = Quaternion.identity;
+            return;
+        }
+
+        float decay = 1f - (t / duration);
+        decay *= decay;                                   // 二次衰减：先重后轻
+        float w = Mathf.PI * 2f * Mathf.Max(1f, _motion.shakeFrequency);
+        float axial = Mathf.Sin(t * w) * decay * _shakeScale * _motion.shakeAmplitude;
+        float lateral = Mathf.Sin(t * w * 1.37f) * decay * _shakeScale * _motion.shakeLateral;
+        float vertical = Mathf.Sin(t * w * 0.83f) * decay * _shakeScale * _motion.shakeLateral * 0.6f;
+        float roll = Mathf.Sin(t * w * 1.11f) * decay * _shakeScale * _motion.shakeRollDegrees;
+        float pitch = Mathf.Sin(t * w * 1.23f) * decay * _shakeScale * _motion.shakePitchDegrees;
+
+        // 本地 Z = 枪轴（沿射线前伸）；X = 水平垂直；绕 Z 的旋转 = 长轴滚转
+        _shakeRoot.localPosition = new Vector3(lateral, vertical, axial);
+        _shakeRoot.localRotation = Quaternion.Euler(pitch, 0f, roll);
     }
 
     private void TriggerHitPulse()
@@ -511,7 +606,8 @@ public sealed class StabSweepEffect : MonoBehaviour
         if (_visualOffsetRoot != null)
         {
             _visualOffsetRoot.localPosition = Vector3.Lerp(_chargeRecoverFromOffset, Vector3.zero, e);
-            _visualOffsetRoot.localRotation = Quaternion.Euler(0f, 0f,
+            _visualOffsetRoot.localRotation = Quaternion.Euler(0f,
+                Mathf.Lerp(_chargeAppliedYaw, 0f, e),
                 Mathf.Lerp(_chargeAppliedTilt, _motion.visualTiltDegrees, e));
         }
         if (_motion.rollDegrees != 0f)
@@ -630,7 +726,10 @@ public sealed class StabSweepEffect : MonoBehaviour
         }
 
         transform.position = position;
-        _visualOffsetRoot.localRotation = Quaternion.Euler(0f, 0f, tilt);
+        // 指向偏摆：绕（近）世界竖直轴把枪身转向手指所指的列；上限来自招式资产
+        float yawCap = Mathf.Abs(_motion.chargeHoldYawDegrees);
+        _chargeAppliedYaw = Mathf.Clamp(_chargeAimYawDelta, -yawCap, yawCap);
+        _visualOffsetRoot.localRotation = Quaternion.Euler(0f, _chargeAppliedYaw, tilt);
         _chargeAppliedTilt = tilt;
         if (_motion.rollDegrees != 0f)
             ApplyDeformRoll(_deformBaseRotation, Mathf.Lerp(_motion.rollDegrees, 0f, p));
@@ -760,6 +859,8 @@ public sealed class StabSweepEffect : MonoBehaviour
             if (!_hitAny)
                 diseaseStabHit = _onFirstHitBeforeDamage?.Invoke(enemy) == true;
             HitFeedbackStrength feedbackStrength = _hitAny ? HitFeedbackStrength.Light : _motion.firstHitStrength;
+            // 命中震动：首排 = 1，第二排起按资产倍率；独立计时，不受卡肉暂停影响
+            TriggerHitShake(_hitAny ? _motion.shakeSecondRowScale : 1f);
             Vector3 impactPosition = GetVisualTipPosition();
             enemy.TakeDamage(_damage, _damageType, feedbackStrength: feedbackStrength,
                 impactPosition: impactPosition, impactDirection: _rayDirection,
