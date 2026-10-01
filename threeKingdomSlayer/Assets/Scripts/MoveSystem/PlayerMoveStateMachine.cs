@@ -26,9 +26,9 @@ public class PlayerMoveStateMachine : MonoBehaviour
     [Header("开关")]
     [Tooltip("输入缓冲：接续窗口尚未打开时提前输入的招式会被记住，窗口打开时执行。仅招式表模式生效")]
     public bool bufferEnabled = true;
-    [Tooltip("按住不成时本段先不结束：时钟推进到接续窗口起点就停住，等玩家松手或滑动，避免抬手晚于窗口导致输入被丢")]
+    [Tooltip("按住不成时本段先不结束：时钟推进到接续窗口起点就停住，等玩家松手或滑动，避免抬手晚于窗口导致输入被丢（仅对无蓄力后继的连点生效）")]
     public bool holdWaitEnabled = true;
-    [Tooltip("单次按住最长驻留时间（秒），超过后本段正常收尾，避免连点把收尾段卡住")]
+    [Tooltip("无蓄力后继时单次按住最长驻留时间（秒），超过后本段正常收尾，避免连点把收尾段卡住。有蓄力后继的节点不受此上限约束")]
     public float holdWaitMaxSeconds = 1.2f;
 
     [Header("调试")]
@@ -401,7 +401,11 @@ public class PlayerMoveStateMachine : MonoBehaviour
 
     /// <summary>
     /// 按住不成时本段先不结束：时钟推进到接续窗口起点就停住。
-    /// 返回 true 表示本帧停驻（不推进时钟，也不判定本段收尾结束）；超过驻留上限后不再停驻。
+    /// 返回 true 表示本帧停驻（不推进时钟，也不判定本段收尾结束）。
+    ///
+    /// 驻留上限只用于「无蓄力后继」的连点场景（避免把收尾段卡住）：
+    /// 本段存在「需要蓄力的后继边」时不受上限约束——玩家按多久就该等多久，
+    /// 否则蓄力过头会让本段先行收尾、松手时连招直接丢失。C1→C2 与 C4 两条链共用此语义。
     /// </summary>
     private bool IsWaitingForHold()
     {
@@ -413,11 +417,14 @@ public class PlayerMoveStateMachine : MonoBehaviour
         float parkTime = GetEarliestWindowStart01(_currentMove, _currentAttackType) * _duration;
         if (_elapsed < parkTime) return false;
 
-        _holdWaitElapsed += Time.deltaTime;
-        if (_holdWaitElapsed >= holdWaitMaxSeconds)
+        if (!_currentMove.HasChargeContinuation())
         {
-            _holdWaitUsed = true;   // 本次按住不再驻留，让本段正常收尾
-            return false;
+            _holdWaitElapsed += Time.deltaTime;
+            if (_holdWaitElapsed >= holdWaitMaxSeconds)
+            {
+                _holdWaitUsed = true;   // 本次按住不再驻留，让本段正常收尾
+                return false;
+            }
         }
 
         _isWaiting = true;

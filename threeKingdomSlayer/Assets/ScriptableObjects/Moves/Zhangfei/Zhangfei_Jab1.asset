@@ -79,9 +79,9 @@ MonoBehaviour:
   stabThrustWidthScale: 0.86
   stabMotionBlurScale: 1
   stabFirstHitStrength: 2
-  chargeHoldRetractRatio: 0.75
-  chargeHoldPullSeconds: 0.3
-  chargeHoldPitchDegrees: 8
+  chargeHoldRetractRatio: 0.85
+  chargeHoldPullSeconds: 0.4
+  chargeHoldPitchDegrees: 10
   chargeHoldSettleSeconds: 0.12
   chargeHoldSettleRatio: 0.1
   chargeHoldShakeAmplitude: 0.06

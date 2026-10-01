@@ -738,8 +738,7 @@ public class InputManager : MonoBehaviour
         return GetStabColumnFromScreenPosition(screenPos);
     }
 
-    /// <summary>屏幕位置 → 戳击目标列（与松手释放同一套映射：最近列匹配，超过半列宽返回 -1 并有兜底）</summary>
-    public int GetStabColumnFromScreenPosition(Vector2 screenPos)
+    private int GetStabColumnFromScreenPosition(Vector2 screenPos)
     {
         int targetedColumn = GetColumnFromScreenPosition(screenPos);
         return targetedColumn >= 0 ? targetedColumn : FallbackGetColumn(screenPos);

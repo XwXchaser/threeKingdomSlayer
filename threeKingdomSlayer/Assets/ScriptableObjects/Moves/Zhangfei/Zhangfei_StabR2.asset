@@ -20,7 +20,7 @@ MonoBehaviour:
   interruptsCavalryCharge: 0
   rangeRows: 2
   cooldown: 0.3
-  actionDuration: 0.5
+  actionDuration: 0.66
   launchDuration: 0.2
   attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
   stabSpawnYOffset: -0.6
@@ -61,10 +61,10 @@ MonoBehaviour:
   launchSweepLeftShift: 1.8
   ultimateEnergyGain: 5
   chargeLevelDamageMultipliers: []
-  stabWindupRatio: 0.18
-  stabThrustRatio: 0.26
-  stabPenetrationRatio: 0.08
-  stabWindupHoldSeconds: 0.05
+  stabWindupRatio: 0.26
+  stabThrustRatio: 0.15
+  stabPenetrationRatio: 0.05
+  stabWindupHoldSeconds: 0.08
   stabTailOffsetRight: 0
   stabTailOffsetUp: 0
   stabTailOffsetForward: 0

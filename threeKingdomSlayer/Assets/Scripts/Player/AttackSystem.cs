@@ -526,50 +526,6 @@ public class AttackSystem : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// 生成「戳击指向」指示路径（供 C2 的瞄准标记使用）：起点 + 目标列各排位置 + 视觉终点。
-    /// 与 Pierce 版区别：配置由调用方传入（不写死 Pierce），且不依赖穿刺专用视觉路径。
-    /// </summary>
-    public bool TryGetStabIndicatorPath(AttackSkillConfig cfg, int columnIndex,
-        List<Vector3> pathPoints, out int effectiveRows)
-    {
-        effectiveRows = 0;
-        if (cfg == null || pathPoints == null) return false;
-        pathPoints.Clear();
-        if (columnIndex < 0 || columnIndex >= 5) return false;
-
-        effectiveRows = GetEffectiveRangeRows(cfg);
-        Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
-        float rowSpacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
-        float formationOffsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
-        int visibleRows = StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
-        int targetRow = Mathf.Clamp(effectiveRows, 1, visibleRows) - 1;
-        float enemyRootZ = GetEnemyRootWorldZ();
-        float y = playerPos.y + cfg.stabSpawnYOffset;
-        float startX = StageController.Instance != null
-            ? StageController.Instance.GetFormationOffset(columnIndex, 0)
-            : (columnIndex - 2) * 2f;
-        pathPoints.Add(new Vector3(startX, y, -5.5f));
-
-        for (int row = 0; row <= targetRow; row++)
-        {
-            float x = StageController.Instance != null
-                ? StageController.Instance.GetFormationOffset(columnIndex, row)
-                : startX;
-            float z = enemyRootZ + (visibleRows - 1 - row) * (-rowSpacing) + formationOffsetZ;
-            pathPoints.Add(new Vector3(x, y, z));
-        }
-
-        // 末点：视觉终点（沿本列方向再前伸 stabVisualReachOffset，仅用于表现）
-        Vector3 visualEnd = pathPoints[pathPoints.Count - 1];
-        Vector3 forward = visualEnd - pathPoints[0];
-        forward.y = 0f;
-        if (forward.sqrMagnitude > 0.0001f)
-            visualEnd += forward.normalized * cfg.stabVisualReachOffset;
-        pathPoints.Add(visualEnd);
-        return true;
-    }
-
     public bool TryGetPierceVisualPath(int columnIndex, out Vector3 startPosition,
         out Vector3 endPosition, out int effectiveRows)
     {
