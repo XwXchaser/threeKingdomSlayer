@@ -16,7 +16,8 @@ aiEditMode: confirm
 
 - 来源：`origin/route-fake-movement`，tip `f3d0407`（本机原同名分支停在 `c017a25`，需先 fetch 才能看到新提交）。
 - 本机基线：`experiment/curved-scroll-travel`，两线分叉点 `2846123`。
-- 结果分支与提交：`port/combat-layer-from-video-branch` / `ce7ae446`（101 文件）。
+- 结果分支与提交：`port/combat-layer-from-video-branch` / `07970e5`（102 文件）+ `815ba984`（补齐漏提交的 39 个新增文件）。
+- 提交教训：`git commit -- <pathspec>` **不收录未跟踪的新增文件**，只 `git add` 了知识文档导致 MoveSystem 三脚本、`CavalryEnemy`/`CavalryVisualController`、`StabMotionParams`、`Enemy_109.prefab`、`Moves` 招式资产、`Enemy_102` 走路/胆怯动画组一度只存在于磁盘；已单独补提交。批量移植后必须用 `git status --porcelain | grep '^??'` 复查一次。
 - 只取**战斗层**；来源分支的**视频路线场景层**未合入（见第 3 节）。
 
 ## 2. 已移植内容
