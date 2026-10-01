@@ -246,7 +246,7 @@ public class AttackSkillConfig : ScriptableObject
     public float hitShakeSecondRowScale = 0.6f;
 
     [Header("命中位移")]
-    [Tooltip("本次攻击每命中一个目标时施加的击退排数（0 = 不击退）。走既有 ApplyPushWave / PostDisplacementFillUp 通道")]
+    [Tooltip("本次攻击每命中一个目标时施加的击退排数（0 = 不击退）。与攻击类型无关，任何招式都能配；填了才会击退，并叠加升级「push_wave」的加成。走既有 ApplyPushWave / PostDisplacementFillUp 通道")]
     [Min(0)]
     public int pushBackRows = 0;
 

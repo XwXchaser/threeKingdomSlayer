@@ -303,4 +303,7 @@ if (comboChargeActive && CurrentChargeLevel >= 1)
    - 原因：上一次把「无条件消费」改成按结果判定后，动作锁期间被挡下的滑动不再重置蓄力，于是站桩蓄力下按住连滑会一直出横扫（用户实测反馈）。
    - 实测：站桩蓄力横划 → 消费=True、蓄力被重置、出单次 `Zhangfei_Sweep`、动作锁 0.55s；连段蓄力横划 → 消费=False、蓄力保留、松手出 `Zhangfei_StabR2`。
 
-7. **戳击通用击退待摘除（已分析，未实施）**：当前升级 `push_wave` 的击退**只通过戳击生效**（唯一活口是 `ExecuteStab` 的命中回调 → `GetEffectivePushBack`；`ApplyStabPushWave` 无调用方）。用户要求关闭戳击的通用击退、只保留 C2；并进一步要求把该效果**与攻击类型解耦**。方案：应用层抽公共入口（任意招式按自身 `pushBackRows` 都能推）+ 升级改为「只给已带击退的招式加成」，待用户确认升级的新角色后实施。
+7. **戳击通用击退已关闭：击退改为「招式自带 + 升级加成」（已实施）**：当前升级 `push_wave` 的击退**只通过戳击生效**（唯一活口是 `ExecuteStab` 的命中回调 → `GetEffectivePushBack`；`ApplyStabPushWave` 无调用方）。用户要求关闭戳击的通用击退、只保留 C2；并进一步要求把该效果**与攻击类型解耦**。方案：应用层抽公共入口（任意招式按自身 `pushBackRows` 都能推）+ 升级改为「只给已带击退的招式加成」，待用户确认升级的新角色后实施。
+   - **已按用户选择（升级加成）实施**：`GetEffectivePushBack` 只在招式 `pushBackRows` 大于 0 时生效，并叠加升级 `push_wave` 的值；新增与攻击类型无关的公共入口 `AttackSystem.ApplyMovePushBack(cfg, enemy, pushedTargets)`，`ExecuteStab` 改用它；死代码 `ApplyStabPushWave` 已删除。
+   - 实测：升级=1 时 Jab1 / 直通 Stab 生效击退 = 0（命中后敌人 row 不动，hp 200→180）；C2 生效击退 = 2 格（row 轨迹 0 → 2 → 1 → 0，精确回原槽）；升级=0 / 2 时 C2 分别 1 / 3 格。
+   - 注意：`ApplyPushWave` 有栈式阻塞检查，列后方没空位时**整列拒绝**（一格都不推）；所以"加成到 2 格"在拥挤列里可能变成"完全不推"，若手感不对可改回"升级不加成"。

@@ -82,6 +82,8 @@ public class AttackSystem : MonoBehaviour
     private ChargeStabVisual _chargeStabVisual;
     /// <summary>最近一次戳击的目标列：连段蓄力时用它算「当前朝向 → 指向列」的偏摆增量</summary>
     private int _lastStabColumn = -1;
+    /// <summary>招式自带击退的复用缓冲，避免每次命中都 new List</summary>
+    private readonly List<Enemy> _movePushBuffer = new List<Enemy>(1);
 
     /// <summary>
     /// 当前是否处于攻击动作播放中（动作锁定计时器未结束）
@@ -427,13 +429,8 @@ public class AttackSystem : MonoBehaviour
                 if (LastStabTargetEnemy == null)
                     LastStabTargetEnemy = enemy;
                 hitTargets.Add(enemy);
-                // 位移与伤害同帧结算（击退排数 = 招式自带与升级击退波的较大值）
-                if (columnManager != null)
-                {
-                    int pushDist = GetEffectivePushBack(cfg);
-                    if (pushDist > 0)
-                        columnManager.ApplyPushWave(new List<Enemy> { enemy }, pushDist, canInterruptCFrame: false, pushedEnemies: pushedTargets);
-                }
+                // 位移与伤害同帧结算（招式自带击退 + 升级加成，见 ApplyMovePushBack）
+                ApplyMovePushBack(cfg, enemy, pushedTargets);
             },
             enemy => ActiveSkillRunner.Instance?.ConsumeArmedDisease(enemy) ?? false,
             () =>
@@ -994,15 +991,35 @@ public class AttackSystem : MonoBehaviour
     }
 
     /// <summary>
-    /// 本次命中实际生效的击退排数。
-    /// 规则 A（已定）：招式自带击退与局内升级「击退波」取较大值，避免两者叠加成跨排。
-    /// cfg 传 null 时退化为旧行为（只看升级值），供 ApplyStabPushWave 等非招式入口使用。
+    /// 本次命中实际生效的击退排数（与攻击类型无关，任何招式都能用）。
+    /// 规则（用户已定）：招式自身 pushBackRows 大于 0 才生效，并叠加局内升级「push_wave」的加成；
+    /// 招式没配击退时恒为 0——升级不会凭空给招式加击退（旧行为是升级直接作用于戳击）。
     /// </summary>
     private int GetEffectivePushBack(AttackSkillConfig cfg)
     {
         int movePush = cfg != null ? Mathf.Max(0, cfg.pushBackRows) : 0;
-        int upgradePush = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetPushWaveDistance() : 0;
-        return Mathf.Max(movePush, upgradePush);
+        if (movePush <= 0) return 0;
+
+        int upgradeBonus = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetPushWaveDistance() : 0;
+        return movePush + Mathf.Max(0, upgradeBonus);
+    }
+
+    /// <summary>
+    /// 招式自带的命中击退（公共入口，与攻击类型无关）：按招式配置推命中目标并记录被推者。
+    /// 调用方需在所有命中结束后调用 <c>columnManager.PostDisplacementFillUp(pushedTargets)</c> 收尾。
+    /// 位移全程走既有 ApplyPushWave 通道：不重叠、只影响被命中者、Boss 与骑乘骑兵免疫、最后精确回原槽。
+    /// 当前只有 Stab 路径接了此处（ExecuteStab）；其它招式（穿刺/横扫/挑飞的 AttackWave 路径）需要时再接。
+    /// </summary>
+    public bool ApplyMovePushBack(AttackSkillConfig cfg, Enemy enemy, List<Enemy> pushedTargets)
+    {
+        if (enemy == null || columnManager == null) return false;
+
+        int pushDist = GetEffectivePushBack(cfg);
+        if (pushDist <= 0) return false;
+
+        _movePushBuffer.Clear();
+        _movePushBuffer.Add(enemy);
+        return columnManager.ApplyPushWave(_movePushBuffer, pushDist, canInterruptCFrame: false, pushedEnemies: pushedTargets);
     }
 
     /// <summary>获取攻击范围惩罚倍率（拔苗助长副作用）</summary>
@@ -1011,31 +1028,6 @@ public class AttackSystem : MonoBehaviour
         if (UpgradeEffectManager.Instance != null)
             return 1f - UpgradeEffectManager.Instance.GetAttackDamagePenalty();
         return 1f;
-    }
-
-    /// <summary>Stab 击退波</summary>
-    /// <remarks>
-    /// BOSS 免疫位移（ApplyPushWave 内部过滤 isBoss），因此仅在有敌人被实际推动时才执行列填充。
-    /// 无条件调用 PostDisplacementFillUp 会导致 BOSS 被意外压缩（ResetMovementState → Idle），
-    /// 若此时 BOSS 处于 QTEAttacking 状态将中止 QTE。
-    /// </remarks>
-    private void ApplyStabPushWave(List<Enemy> targets)
-    {
-        if (columnManager == null) return;
-        int pushDist = GetEffectivePushBack(null);
-        if (pushDist <= 0) return;
-
-        Debug.Log($"[Displacement] Stab PushWave dist={pushDist} targets={targets.Count}");
-        Debug.Log(columnManager.DumpColumns());
-
-        var pushedTargets = new List<Enemy>();
-        bool anyPushed = columnManager.ApplyPushWave(targets, pushDist, canInterruptCFrame: false, pushedEnemies: pushedTargets);
-        // 仅在实际有敌人被推动时才执行列填充（BOSS 免疫位移，无推动则无需填充）
-        if (anyPushed)
-            columnManager.PostDisplacementFillUp(pushedTargets);
-
-        Debug.Log($"[Displacement] after Stab PushWave:");
-        Debug.Log(columnManager.DumpColumns());
     }
 
     /// <summary>Slash horizontal directional push. It changes only hit enemies' columns and never enters backward-push return/fill.</summary>
