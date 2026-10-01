@@ -120,7 +120,7 @@ if (comboChargeActive && CurrentChargeLevel >= 1)
 ### 4.1 蓄力阶段（按住第一下 stab 之后）
 
 - **0–0.15s 静止期**：枪体先不动（避免按下即抖）。
-- **枪体**：拉回（`chargeHoldRetractRatio` 0.85）+ 预压（`chargeHoldPitchDegrees` 10°）+ 指向偏摆 `chargeHoldYawDegrees`（朝手指所指列，上限 ±10°）+ 平滑 `chargeHoldYawSmoothSeconds`（0.12s，避免换列时跳变）→ 身体语言读出"要打那边"。
+- **枪体**：拉回（`chargeHoldRetractRatio` 0.85）+ 预压（`chargeHoldPitchDegrees` 10°）+ 指向偏摆 `chargeHoldYawDegrees`（朝手指所指列，上限 ±60°）+ 平滑 `chargeHoldYawSmoothSeconds`（0.12s）→ 身体语言读出"要打那边"。偏摆角按「特效根节点位置 → 目标列第 1 排世界位置」算。
 - **微颤差异化**：C4 为沿枪轴前后抖；本链为沿指向方向的小幅推拉（沿用资产的 0.06 / 14Hz）。
 - **指向标记：已移除（用户实机否决）。** 本节曾设计 `StabAimMarker`（目标列两排菱形 + 流光 + 进度环），用户明确表示这条链**不需要瞄准标记**；组件、场景对象与仅供它使用的 `AttackSystem.TryGetStabIndicatorPath` 已全部删除。
 - **让位关系**：`ChargeStabVisual`、`PierceAimIndicator` 继续让位（现有条件不变）；`ChargeIndicatorController` 已纳入本链让位（顺手修掉 `plan/combo-progress-and-next.md` §7.7-1 的既有问题）。**仍待决定**：`ThornArmorEffect`（反伤盾视觉）没有让位，仅当玩家持有"反伤盾"升级时才会在连段蓄力中亮起。
@@ -214,7 +214,7 @@ if (comboChargeActive && CurrentChargeLevel >= 1)
 | | `moveEdges` | 留空 = 串尾 |
 | 写在 `Zhangfei_Jab1` | 新边：`gesture = Hold`、`minChargeLevel = 1`、`next = Zhangfei_StabR2`、`overrideWindow`（建议 0.55–1.0） | 与 C4 的边写法同构 |
 | | `chargeHoldRetractRatio` / `PullSeconds` / `PitchDegrees` / `Settle*` / `Shake*` | 复用 C4 那套 |
-| | `chargeHoldYawDegrees`（**新增字段**） | 指向偏摆上限，建议 10 |
+| | `chargeHoldYawDegrees`（**新增字段**） | 指向偏摆上限；跨两列几何上约 **44°**，建议 ≥ 45（现值 60 = 不截断） |
 | | `chargeHoldYawSmoothSeconds`（**新增字段**） | 指向偏摆平滑时间，0.12s（0 = 不平滑） |
 | ~~新组件 `StabAimMarker`~~ | 已按用户要求移除（见 §4.1） | — |
 
@@ -290,6 +290,11 @@ if (comboChargeActive && CurrentChargeLevel >= 1)
 3. **C2 动作节奏**：`actionDuration` 0.5 → **0.66**；`stabWindupRatio` 0.18 → **0.26**；`stabWindupHoldSeconds` 0.05 → **0.08**；`stabThrustRatio` 0.26 → **0.15**；`stabPenetrationRatio` 0.08 → **0.05**。实际分段：拉回 0.172s → 蓄势停顿 0.08s → 戳出 0.099s → 穿入 0.033s → 收回 0.276s（戳出:收回 = 1:2.8）。同时 Jab1 蓄力：拉回 0.75 → **0.85**、拉满时长 0.3 → **0.4s**、预压 8° → **10°**。
 
 4. **横移换列不再吞掉松手**：`InputManager.TryConsumeLiveGesture` 以前在蓄力等级 ≥1 时把滑动**无条件当作「已消费」**（`ProcessSwipeGesture(...)` 后直接 `executed = true`），而 `ProcessSwipeGesture` 不看状态机是否真的出招。于是按住蓄力时快速横划（≥50px、0.25s 内）被判成滑动招式 → `ResetSegment` 清掉蓄力分段并置 `hasTriggeredDuringHold` → 松手被 `if (hasTriggeredDuringHold) return;` 吞掉（或降到「未蓄力滑动」而无匹配边）→ 什么都不发生。现在改为 `executed = ProcessSwipeGesture(...)`（该节点没有滑动边就不算消费）；`ProcessSwipeGesture` 改成返回 bool。实测：横划后 `isLongPress=True`、`triggered=False`，松手 `executedCount 1 → 2` 出 `Zhangfei_StabR2`；C4 的「蓄力竖划终结技」不受影响（实测仍出 `Zhangfei_LaunchFinisher`，`triggered=True`）。
-5. **指向偏摆平滑**：新增 `chargeHoldYawSmoothSeconds`（Jab1 = 0.12s），偏摆从「瞬间跳到新角度」改为按时间常数逐步逼近（实测 1.35° → 5.81° → 7.28° → 7.99°），消除换列时的跳变。根因：目标列是按存活敌人屏幕投影量化出来的，边界处会在相邻列之间跳。
+5. **指向偏摆：改成按真实目标点算角 + 平滑 + 放开上限**。
+   - 角度：原先用 `GetStabRayYaw(列)` 的差值，而该函数会优先取**场景里的 per-column 角度覆盖**（实测 col3 = 7°，而几何直指是 21.8°），算出的偏角远小于实际偏角；现在改成「特效根节点位置 → 目标列第 1 排世界位置」的方向角（`Mathf.DeltaAngle` 取差）。
+   - 上限：`chargeHoldYawDegrees` 10° → **60°**（跨两列几何上约 44°，永不截断。用户反馈"转到一定幅度还没够就不转了、与实际目标点不匹配"）。
+   - 平滑：新增 `chargeHoldYawSmoothSeconds`（Jab1 = 0.12s），从"瞬间跳到新角度"改为按时间常数逼近，消除换列时的跳变。
+   - 实测（起点 col3）：指向 col1 = **−18.2°**、col2 = **−8.5°**、col4 = **+20.2°**，均平滑收敛到目标值；回本列 → 0°；松手出招回归通过（`执行 Zhangfei_StabR2`）。
+   - 已知副作用：释放时枪体朝向仍由场景 per-column 覆盖值决定（`GetStabRayYaw`），所以释放瞬间会有一小段回正。若这段回正影响读感，再单独决定是否让本招式的射线也走几何方向。
 
 **仍未定**：`ThornArmorEffect` 是否在连段蓄力中让位（蓄力减伤/反伤盾的授予逻辑在 `PlayerState`，本轮未改动）。

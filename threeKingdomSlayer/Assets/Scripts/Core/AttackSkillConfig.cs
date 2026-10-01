@@ -207,8 +207,8 @@ public class AttackSkillConfig : ScriptableObject
     public float chargeHoldShakeFrequency = 14f;
 
     [Header("蓄力指向（做前置的节点用）")]
-    [Tooltip("蓄力保持期间枪身朝目标列的偏摆上限（度）。0 = 不偏摆。写在【当前节点】上（例如 C1 的 Jab1）")]
-    [Range(-20f, 20f)]
+    [Tooltip("蓄力保持期间枪身朝目标列的偏摆上限（度）。0 = 不偏摆。按几何需要填：相邻列约 11~22°、跨两列约 44°，建议 ≥ 45 才不会截断")]
+    [Range(-90f, 90f)]
     public float chargeHoldYawDegrees = 0f;
     [Tooltip("指向偏摆的平滑时间（秒）：越大越顺滑、越小越跟手。0 = 不做平滑（直接切换）")]
     [Min(0f)]

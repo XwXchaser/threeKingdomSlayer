@@ -146,14 +146,23 @@ public class AttackSystem : MonoBehaviour
         if (_lastStabEffect == null) return;
         _lastStabEffect.SetChargeHoldHeldSeconds(heldSeconds);
 
-        // 指向偏摆：把「当前枪身朝向（上一段目标列的射线）」与「手指指向列」的差值交给枪体，
+        // 指向偏摆：把「枪身当前朝向」转到「目标列第 1 排的位置」，差值交给枪体，
         // 上限由招式资产的 chargeHoldYawDegrees 夹住（0 = 不偏摆）。
-        if (aimColumn >= 0 && _lastStabColumn >= 0 && aimColumn != _lastStabColumn)
+        // 注意：不能用 GetStabRayYaw——它会被场景里的 per-column 角度覆盖影响，算出的角偏小，
+        // 会让枪身“转到一半就停”、和玩家看到的目标点对不上。这里直接用世界坐标算。
+        if (aimColumn >= 0 && aimColumn != _lastStabColumn)
         {
             float spacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
-            float currentYaw = GetStabRayYaw(_lastStabColumn, spacing);
-            float aimYaw = GetStabRayYaw(aimColumn, spacing);
-            _lastStabEffect.SetChargeAimYawDelta(aimYaw - currentYaw);
+            int visibleRows = StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
+            float formationOffsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
+            Vector3 origin = _lastStabEffect.transform.position;
+            float aimX = StageController.Instance != null
+                ? StageController.Instance.GetFormationOffset(aimColumn, 0)
+                : (aimColumn - 2) * 2f;
+            float aimZ = GetEnemyRootWorldZ() + (visibleRows - 1) * (-spacing) + formationOffsetZ;
+            float targetYaw = Mathf.Atan2(aimX - origin.x, aimZ - origin.z) * Mathf.Rad2Deg;
+            float currentYaw = _lastStabEffect.transform.eulerAngles.y;
+            _lastStabEffect.SetChargeAimYawDelta(Mathf.DeltaAngle(currentYaw, targetYaw));
         }
         else
         {

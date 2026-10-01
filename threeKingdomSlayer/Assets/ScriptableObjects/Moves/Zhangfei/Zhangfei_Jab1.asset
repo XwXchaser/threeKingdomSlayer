@@ -86,7 +86,7 @@ MonoBehaviour:
   chargeHoldSettleRatio: 0.1
   chargeHoldShakeAmplitude: 0.06
   chargeHoldShakeFrequency: 14
-  chargeHoldYawDegrees: 10
+  chargeHoldYawDegrees: 60
   chargeHoldYawSmoothSeconds: 0.12
   stabRedirectSnapRatio: 0
   stabRedirectOvershootDegrees: -3
