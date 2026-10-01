@@ -298,3 +298,9 @@ if (comboChargeActive && CurrentChargeLevel >= 1)
    - 已知副作用：释放时枪体朝向仍由场景 per-column 覆盖值决定（`GetStabRayYaw`），所以释放瞬间会有一小段回正。若这段回正影响读感，再单独决定是否让本招式的射线也走几何方向。
 
 **仍未定**：`ThornArmorEffect` 是否在连段蓄力中让位（蓄力减伤/反伤盾的授予逻辑在 `PlayerState`，本轮未改动）。
+
+6. **站桩蓄力恢复「按住连滑不再刷招」**：`InputManager.TryConsumeLiveGesture` 里，蓄力等级 ≥1 的滑动现在**只在连段蓄力（`comboChargeActive`）时按真实结果判定是否「已消费」**；站桩蓄力恢复旧语义（一律算消费 → 重置分段）。
+   - 原因：上一次把「无条件消费」改成按结果判定后，动作锁期间被挡下的滑动不再重置蓄力，于是站桩蓄力下按住连滑会一直出横扫（用户实测反馈）。
+   - 实测：站桩蓄力横划 → 消费=True、蓄力被重置、出单次 `Zhangfei_Sweep`、动作锁 0.55s；连段蓄力横划 → 消费=False、蓄力保留、松手出 `Zhangfei_StabR2`。
+
+7. **戳击通用击退待摘除（已分析，未实施）**：当前升级 `push_wave` 的击退**只通过戳击生效**（唯一活口是 `ExecuteStab` 的命中回调 → `GetEffectivePushBack`；`ApplyStabPushWave` 无调用方）。用户要求关闭戳击的通用击退、只保留 C2；并进一步要求把该效果**与攻击类型解耦**。方案：应用层抽公共入口（任意招式按自身 `pushBackRows` 都能推）+ 升级改为「只给已带击退的招式加成」，待用户确认升级的新角色后实施。

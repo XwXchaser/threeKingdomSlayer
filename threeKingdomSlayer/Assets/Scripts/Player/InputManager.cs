@@ -433,6 +433,8 @@ public class InputManager : MonoBehaviour
             // 只有真的出招才算「已消费」：否则这次滑动不该重置蓄力分段、也不该吞掉松手。
             // （连段蓄力时横移换目标列会走到这里，而该节点可能根本没有滑动边）
             executed = ProcessSwipeGesture(direction, releasePos);
+            // 连段蓄力：未出招不算消费（保留蓄力与松手的机会）；站桩蓄力：一律算消费（旧语义，避免按住连滑反复刷同一个蓄力招式）
+            if (!comboChargeActive) executed = true;
         }
         else
         {
