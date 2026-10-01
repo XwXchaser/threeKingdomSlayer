@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98a5aaeb5141a6a40b614df2cddb4ab7, type: 3}
+  m_Name: Zhangfei_LaunchFinisher
+  m_EditorClassIdentifier: 
+  id: 14
+  attackType: 4
+  damageType: 4
+  damage: 60
+  poiseDamage: 80
+  interruptsCavalryCharge: 1
+  rangeRows: 3
+  cooldown: 0.3
+  actionDuration: 0.6
+  launchDuration: 1.2
+  attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
+  stabSpawnYOffset: 1.5
+  stabSpawnZOffset: 0.5
+  stabVisualReachOffset: 0.5
+  stabVisualTargetRandomRadius: 0.12
+  slashSweepHalfWidth: 4.5
+  slashSweepAngle: 110
+  slashSweepDuration: 0.36
+  slashSweepDirection: 2
+  slashMovementTiltDegrees: -22
+  slashOverrideVisualTilt: 1
+  slashVisualTiltDegrees: 20
+  slashSpawnYOffset: -0.3
+  slashSpawnZOffset: -3.6
+  parrySweepAngle: 100
+  parrySweepDuration: 0.25
+  parrySpawnXOffset: 0
+  parrySpawnYOffset: 1.5
+  parrySpawnZOffset: 0
+  parryAngleVariance: 15
+  launchFlickAngle: 70
+  launchFlickDuration: 0.26
+  launchWindupDuration: 0.06
+  launchWindupDistance: 0.12
+  launchSideTilt: 16
+  launchSpawnXOffset: 0
+  launchSpawnYOffset: 1.5
+  launchSpawnZOffset: 0
+  launchAngleVariance: 12
+  launchRiseHeight: 1.1
+  launchSkipWindup: 0
+  launchSweepMode: 1
+  launchSweepUp: 1
+  launchSweepLeft: 0.7
+  launchSweepForward: 0.35
+  launchSweepRise: 1
+  launchSweepLeftShift: 1.8
+  ultimateEnergyGain: 8
+  chargeLevelDamageMultipliers: []
+  stabWindupRatio: 0.12
+  stabThrustRatio: 0.28
+  stabPenetrationRatio: 0.08
+  stabWindupHoldSeconds: 0
+  stabTailOffsetRight: 0
+  stabTailOffsetUp: 0
+  stabTailOffsetForward: 0
+  stabVisualTiltDegrees: 0
+  stabRollDegrees: 0
+  stabSpeedFrameStart01: 0.1
+  stabSpeedFrameEnd01: 1
+  stabBlurThrust: 28
+  stabBlurSpeedFrame: 14
+  stabBlurPenetration: 18
+  stabThrustLengthScale: 1.18
+  stabThrustWidthScale: 0.86
+  stabMotionBlurScale: 1
+  stabFirstHitStrength: 3
+  chargeHoldRetractRatio: 0.75
+  chargeHoldPullSeconds: 0.3
+  chargeHoldPitchDegrees: 8
+  chargeHoldSettleSeconds: 0.12
+  chargeHoldSettleRatio: 0.1
+  chargeHoldShakeAmplitude: 0.06
+  chargeHoldShakeFrequency: 14
+  repeatSelf: 0
+  overrideWindow: 0
+  windowStart01: 0
+  windowEnd01: 1
+  moveEdges: []

@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9df8f061fc289be45926babbf6581fd4, type: 3}
+  m_Name: MoveTable_Zhangfei
+  m_EditorClassIdentifier: 
+  roots:
+  - gesture: 0
+    move: {fileID: 11400000, guid: edaea2bf7ba162b48bb0cb5c20db21ff, type: 2}
+  states: []
+  clampWindowAfterHitWindow: 0
+  minWindowSeconds: 0.06
