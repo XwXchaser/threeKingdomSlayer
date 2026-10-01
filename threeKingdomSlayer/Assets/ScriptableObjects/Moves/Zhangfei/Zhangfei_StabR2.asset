@@ -10,23 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 98a5aaeb5141a6a40b614df2cddb4ab7, type: 3}
-  m_Name: Zhangfei_Jab1
+  m_Name: Zhangfei_StabR2
   m_EditorClassIdentifier: 
-  id: 11
+  id: 15
   attackType: 0
   damageType: 0
-  damage: 20
+  damage: 35
   poiseDamage: 0
   interruptsCavalryCharge: 0
-  rangeRows: 1
+  rangeRows: 2
   cooldown: 0.3
-  actionDuration: 0.45
+  actionDuration: 0.5
   launchDuration: 0.2
   attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
   stabSpawnYOffset: -0.6
   stabSpawnZOffset: -5
   stabVisualReachOffset: 2
-  stabVisualTargetRandomRadius: 0.5
+  stabVisualTargetRandomRadius: 0.35
   slashSweepHalfWidth: 5
   slashSweepAngle: 50
   slashSweepDuration: 0.25
@@ -59,58 +59,46 @@ MonoBehaviour:
   launchSweepForward: 0.35
   launchSweepRise: 1
   launchSweepLeftShift: 1.8
-  ultimateEnergyGain: 10
+  ultimateEnergyGain: 5
   chargeLevelDamageMultipliers: []
-  stabWindupRatio: 0.12
-  stabThrustRatio: 0.28
+  stabWindupRatio: 0.18
+  stabThrustRatio: 0.26
   stabPenetrationRatio: 0.08
-  stabWindupHoldSeconds: 0
+  stabWindupHoldSeconds: 0.05
   stabTailOffsetRight: 0
   stabTailOffsetUp: 0
   stabTailOffsetForward: 0
   stabVisualTiltDegrees: 0
-  stabRollDegrees: 0
+  stabRollDegrees: 4
   stabSpeedFrameStart01: 0.1
   stabSpeedFrameEnd01: 1
-  stabBlurThrust: 28
-  stabBlurSpeedFrame: 14
-  stabBlurPenetration: 18
-  stabThrustLengthScale: 1.18
-  stabThrustWidthScale: 0.86
-  stabMotionBlurScale: 1
-  stabFirstHitStrength: 2
-  chargeHoldRetractRatio: 0.75
+  stabBlurThrust: 30
+  stabBlurSpeedFrame: 16
+  stabBlurPenetration: 20
+  stabThrustLengthScale: 1.26
+  stabThrustWidthScale: 0.88
+  stabMotionBlurScale: 1.1
+  stabFirstHitStrength: 3
+  chargeHoldRetractRatio: 0
   chargeHoldPullSeconds: 0.3
-  chargeHoldPitchDegrees: 8
-  chargeHoldSettleSeconds: 0.12
-  chargeHoldSettleRatio: 0.1
-  chargeHoldShakeAmplitude: 0.06
+  chargeHoldPitchDegrees: 0
+  chargeHoldSettleSeconds: 0
+  chargeHoldSettleRatio: 0
+  chargeHoldShakeAmplitude: 0
   chargeHoldShakeFrequency: 14
-  chargeHoldYawDegrees: 10
-  stabRedirectSnapRatio: 0
+  chargeHoldYawDegrees: 0
+  stabRedirectSnapRatio: 0.2
   stabRedirectOvershootDegrees: -3
-  hitShakeAmplitude: 0
-  hitShakeLateral: 0
-  hitShakeRollDegrees: 0
-  hitShakePitchDegrees: 0
+  hitShakeAmplitude: 0.06
+  hitShakeLateral: 0.02
+  hitShakeRollDegrees: 3
+  hitShakePitchDegrees: 1.5
   hitShakeDuration: 0.1
   hitShakeFrequency: 18
   hitShakeSecondRowScale: 0.6
-  pushBackRows: 0
+  pushBackRows: 1
   repeatSelf: 0
-  overrideWindow: 1
+  overrideWindow: 0
   windowStart01: 0.65
   windowEnd01: 1
-  moveEdges:
-  - gesture: 0
-    minChargeLevel: 0
-    overrideWindow: 0
-    windowStart01: 0
-    windowEnd01: 1
-    next: {fileID: 11400000, guid: ef4520b16f161fd4b9724dc6c161d525, type: 2}
-  - gesture: 1
-    minChargeLevel: 1
-    overrideWindow: 1
-    windowStart01: 0.55
-    windowEnd01: 1
-    next: {fileID: 11400000, guid: f0d6ad785959ad941b9b51d73a275d01, type: 2}
+  moveEdges: []

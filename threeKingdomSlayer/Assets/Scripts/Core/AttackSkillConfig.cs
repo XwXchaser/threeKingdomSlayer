@@ -206,6 +206,47 @@ public class AttackSkillConfig : ScriptableObject
     [Min(1f)]
     public float chargeHoldShakeFrequency = 14f;
 
+    [Header("蓄力指向（做前置的节点用）")]
+    [Tooltip("蓄力保持期间枪身朝目标列的偏摆上限（度）。0 = 不偏摆。写在【当前节点】上（例如 C1 的 Jab1）")]
+    [Range(-20f, 20f)]
+    public float chargeHoldYawDegrees = 0f;
+
+    [Header("释放指向（C2 用）")]
+    [Tooltip("刺出段起点的多少比例内把蓄力偏摆归零并过冲。0 = 不处理。写在【释放招式】上")]
+    [Range(0f, 1f)]
+    public float stabRedirectSnapRatio = 0f;
+    [Tooltip("归零后的过冲角（度），负值 = 朝指向反方向过冲一点")]
+    [Range(-10f, 0f)]
+    public float stabRedirectOvershootDegrees = -3f;
+
+    [Header("命中震动（C2 用）")]
+    [Tooltip("命中瞬间枪体沿枪轴的回弹幅度（世界单位）。0 = 不震动")]
+    [Min(0f)]
+    public float hitShakeAmplitude = 0f;
+    [Tooltip("命中瞬间垂直于枪轴的抖动幅度（世界单位）")]
+    [Min(0f)]
+    public float hitShakeLateral = 0f;
+    [Tooltip("命中瞬间绕枪身长轴的滚转幅度（度）")]
+    [Min(0f)]
+    public float hitShakeRollDegrees = 0f;
+    [Tooltip("命中瞬间枪尖的俯仰点头幅度（度）")]
+    [Min(0f)]
+    public float hitShakePitchDegrees = 0f;
+    [Tooltip("命中震动总时长（秒）。由独立计时驱动，不挂进会被卡肉暂停的主序列")]
+    [Min(0f)]
+    public float hitShakeDuration = 0.1f;
+    [Tooltip("命中震动频率（Hz）")]
+    [Min(1f)]
+    public float hitShakeFrequency = 18f;
+    [Tooltip("第二排命中的震动倍率（第 1 排 = 1）")]
+    [Range(0f, 1f)]
+    public float hitShakeSecondRowScale = 0.6f;
+
+    [Header("命中位移")]
+    [Tooltip("本次攻击每命中一个目标时施加的击退排数（0 = 不击退）。走既有 ApplyPushWave / PostDisplacementFillUp 通道")]
+    [Min(0)]
+    public int pushBackRows = 0;
+
     [Header("接续（招式图，一层结构）")]
     [Tooltip("允许用进入本招式的手势重复本招式（Stab→Stab→Stab）。关闭即为串尾终止")]
     public bool repeatSelf = true;

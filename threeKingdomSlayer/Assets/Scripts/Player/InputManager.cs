@@ -230,10 +230,13 @@ public class InputManager : MonoBehaviour
         if (isTouching)
         {
             float segmentDuration = Time.time - segmentStartTime;
-            float distanceFromSegmentStart = Vector2.Distance(currentPointerPos, segmentStartPos);
+
+            // 横向位移不再清零蓄力：横向移动 = 改目标列（指向），只有纵向抖动受容差限制。
+            // 高速滑动仍由 TryDetectHoldSwipe 的速度门控拦下，不会被这里放行。
+            float verticalDrift = Mathf.Abs(currentPointerPos.y - segmentStartPos.y);
 
             if (!isLongPress && segmentDuration >= longPressDuration
-                && distanceFromSegmentStart <= chargeMovementTolerance)
+                && verticalDrift <= chargeMovementTolerance)
             {
                 isLongPress = true;
             }
@@ -449,7 +452,7 @@ public class InputManager : MonoBehaviour
     private bool TryDetectHoldSwipe(Vector2 currentPos)
     {
         float segmentDuration = Time.time - segmentStartTime;
-        float segmentDistance = Vector2.Distance(currentPos, segmentStartPos);
+        float verticalDrift = Mathf.Abs(currentPos.y - segmentStartPos.y);
 
         // 瞬时速度
         float frameDelta = Vector2.Distance(currentPos, lastFramePos);
@@ -492,9 +495,9 @@ public class InputManager : MonoBehaviour
             }
         }
 
-        // 蓄力条件检查
+        // 蓄力条件检查：横向位移视为“指向/改列”，只有纵向抖动受容差限制（与 Update 内一致）
         if (!isLongPress && segmentDuration >= longPressDuration
-            && segmentDistance <= chargeMovementTolerance)
+            && verticalDrift <= chargeMovementTolerance)
             isLongPress = true;
         if (isLongPress)
             isCharged = segmentDuration >= minChargeTime;
@@ -544,9 +547,19 @@ public class InputManager : MonoBehaviour
             return;
 
         // 连招蓄力：本次按下已属于连招，已蓄成的那一下松手不再触发射手招式（站桩蓄力）；
-        // 普通点击（未蓄力）必须照旧放行，否则连段接不上
+        // 普通点击（未蓄力）必须照旧放行，否则连段接不上。
+        // 例外：招式仍在进行且该节点配了「松手释放」的边（C2 链）时，把这次松手交给状态机裁定；
+        //       状态机在节点激活分支下无匹配边不会回落直通，因此没有该边的节点行为与改造前一致。
         if (comboChargeActive && CurrentChargeLevel >= 1)
+        {
+            if (moveStateMachine != null && moveStateMachine.IsMoveActive)
+            {
+                int holdColumn = GetStabColumnFromScreenPosition(releasePos);
+                if (holdColumn >= 0)
+                    SubmitGesture(MoveGesture.Hold, CurrentChargeLevel, holdColumn);
+            }
             return;
+        }
 
         if (CurrentChargeLevel >= 1)
         {
