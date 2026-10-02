@@ -141,6 +141,9 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("终结技拖尾（slash 扫掠表现层）的透明度：1 = 与 slash 一样；越小越淡。0 = 完全无拖尾")]
     [Range(0f, 1f)]
     public float slashSweepAlpha = 1f;
+    [Tooltip("终结技整体沿镜头前方（进入画面纵深）前移的距离：起手位与挑出终点一起前移，避免枪体贴着镜头；0 = 不前移")]
+    [Min(0f)]
+    public float launchForwardShift = 0f;
 
     [Header("大招")]
     [Tooltip("命中时获得能量（非大招技能有效）")]
