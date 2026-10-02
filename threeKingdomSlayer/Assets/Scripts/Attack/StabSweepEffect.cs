@@ -872,6 +872,9 @@ public sealed class StabSweepEffect : MonoBehaviour
             enemy.TakeDamage(_damage, _damageType, feedbackStrength: feedbackStrength,
                 impactPosition: impactPosition, impactDirection: _rayDirection,
                 diseaseStabHit: diseaseStabHit, interruptsCavalryCharge: _interruptsCavalryCharge);
+            // 命中瞬间就切回清晰帧：卡肉会把时间线冻在「残影帧」上，看起来像「开始收回还在用 v13」
+            if (!_hitAny && _usingSpeedSprite && _renderer != null && _baseSprite != null)
+                RestoreBaseSprite(_renderer, _baseSprite);
             if (!_hitAny)
                 PauseSequenceForHitStop(feedbackStrength);
             if (!_hitAny)

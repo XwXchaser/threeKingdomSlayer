@@ -17,6 +17,7 @@ MonoBehaviour:
   damageType: 0
   damage: 20
   poiseDamage: 0
+  interruptsCavalryCharge: 0
   rangeRows: 1
   cooldown: 0.3
   actionDuration: 0.45
@@ -29,6 +30,10 @@ MonoBehaviour:
   slashSweepHalfWidth: 5
   slashSweepAngle: 50
   slashSweepDuration: 0.25
+  slashSweepDirection: 0
+  slashMovementTiltDegrees: 0
+  slashOverrideVisualTilt: 0
+  slashVisualTiltDegrees: 0
   slashSpawnYOffset: 1.5
   slashSpawnZOffset: 0.5
   parrySweepAngle: 100
@@ -47,4 +52,57 @@ MonoBehaviour:
   launchSpawnZOffset: 0
   launchAngleVariance: 15
   launchRiseHeight: 1
+  launchSkipWindup: 0
+  launchSweepMode: 0
+  launchSweepUp: 1
+  launchSweepLeft: 0.7
+  launchSweepForward: 0.35
+  launchSweepRise: 1
+  launchSweepLeftShift: 1.8
+  launchPivotFromTailRatio: 0
+  launchSweepRollDegrees: 160
+  slashSweepAlpha: 1
   ultimateEnergyGain: 10
+  chargeLevelDamageMultipliers: []
+  stabWindupRatio: 0.12
+  stabThrustRatio: 0.28
+  stabPenetrationRatio: 0.08
+  stabWindupHoldSeconds: 0
+  stabTailOffsetRight: 0
+  stabTailOffsetUp: 0
+  stabTailOffsetForward: 0
+  stabVisualTiltDegrees: 0
+  stabRollDegrees: 0
+  stabSpeedFrameStart01: 0.1
+  stabSpeedFrameEnd01: 1
+  stabBlurThrust: 28
+  stabBlurSpeedFrame: 14
+  stabBlurPenetration: 18
+  stabThrustLengthScale: 1.18
+  stabThrustWidthScale: 0.86
+  stabMotionBlurScale: 1
+  stabFirstHitStrength: 2
+  chargeHoldRetractRatio: 0.75
+  chargeHoldPullSeconds: 0.3
+  chargeHoldPitchDegrees: 8
+  chargeHoldSettleSeconds: 0.12
+  chargeHoldSettleRatio: 0.1
+  chargeHoldShakeAmplitude: 0.06
+  chargeHoldShakeFrequency: 14
+  chargeHoldYawDegrees: 0
+  chargeHoldYawSmoothSeconds: 0.12
+  stabRedirectSnapRatio: 0
+  stabRedirectOvershootDegrees: -3
+  hitShakeAmplitude: 0
+  hitShakeLateral: 0
+  hitShakeRollDegrees: 0
+  hitShakePitchDegrees: 0
+  hitShakeDuration: 0.1
+  hitShakeFrequency: 18
+  hitShakeSecondRowScale: 0.6
+  pushBackRows: 0
+  repeatSelf: 1
+  overrideWindow: 0
+  windowStart01: 0
+  windowEnd01: 1
+  moveEdges: []

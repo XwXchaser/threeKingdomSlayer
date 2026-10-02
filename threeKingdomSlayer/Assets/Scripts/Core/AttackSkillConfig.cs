@@ -132,6 +132,15 @@ public class AttackSkillConfig : ScriptableObject
     public float launchSweepRise = 1f;
     [Tooltip("扫击终点位置：向左偏移（世界单位）")]
     public float launchSweepLeftShift = 1.8f;
+    [Tooltip("旋转支点距枪尾的比例（相对半枪长）：0 = 正好在枪尾（上挑读感最强）；0.4 = 旧值（约距枪尾 20% 枪长）")]
+    [Range(0f, 1f)]
+    public float launchPivotFromTailRatio = 0f;
+    [Tooltip("刺出期间额外绕屏幕平面法线的旋转幅度（度）。默认 0：像素图不应靠 transform 硬转（会转成背面/糊掉），旋转应由「旋转姿态帧」序列表达（参见 slash 的 stab→rotate1→rotate2）；仅在需要额外姿态时手动加值")]
+    [Range(-220f, 220f)]
+    public float launchSweepRollDegrees = 0f;
+    [Tooltip("终结技拖尾（slash 扫掠表现层）的透明度：1 = 与 slash 一样；越小越淡。0 = 完全无拖尾")]
+    [Range(0f, 1f)]
+    public float slashSweepAlpha = 1f;
 
     [Header("大招")]
     [Tooltip("命中时获得能量（非大招技能有效）")]
@@ -167,7 +176,7 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("高速帧在「刺出段」内的起点比例。默认 0.1（对齐第一击的处理）")]
     public float stabSpeedFrameStart01 = 0.1f;
     [Range(0f, 1f)]
-    [Tooltip("高速帧在「刺出段」内的终点比例。默认 1.0（对齐第一击的处理）")]
+    [Tooltip("高速帧在「刺出段」内的终点比例。默认 1.0：残影覆盖整个刺出段；命中时会立即切回清晰帧")]
     public float stabSpeedFrameEnd01 = 1.0f;
     [Tooltip("刺出开始时的模糊强度。默认 28（对齐第一击的处理）")]
     public float stabBlurThrust = 28f;

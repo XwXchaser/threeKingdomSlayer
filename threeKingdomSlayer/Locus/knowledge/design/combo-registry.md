@@ -54,6 +54,8 @@ aiEditMode: inherit
 | 蓄力指向偏摆 | `chargeHoldYawDegrees` / `chargeHoldYawSmoothSeconds` | `StabSweepEffect`（读**当前节点**） |
 | 命中震动 | `hitShake*` | `StabSweepEffect`（读**释放招式**） |
 | 释放归零过冲 | `stabRedirectSnapRatio` / `stabRedirectOvershootDegrees` | `StabSweepEffect` |
+| 挑飞支点 / 额外自转 | `launchPivotFromTailRatio`（0 = 支点在枪尾）/ `launchSweepRollDegrees`（默认 0，旋转交给帧序列） | `LaunchVisualEffect`（终结技） |
+| 终结技拖尾透明度 | `slashSweepAlpha`（1 = 与 slash 一样；小值 = 淡拖尾） | `AttackSystem.PlaySweepPresentation` → `SweepEffect` |
 | 接续图 | `moveEdges` / `repeatSelf` / `overrideWindow` | `PlayerMoveStateMachine` |
 
 ---
@@ -85,3 +87,16 @@ aiEditMode: inherit
 2. **「站桩蓄力 / 连段蓄力」的判定依据** = 是否有**招式表节点**在跑（`IsMoveActive && CurrentMove != null`），不是"手指是否按着"。
 3. **蓄力等级 ≥1 的滑动**：连段蓄力按实际是否出招判定「已消费」（未出招不重置蓄力、不吞松手）；站桩蓄力一律算消费（防按住连刷）。
 4. **招式自身属性走资产 + 公共入口**，不按攻击类型写死；新增属性时优先放 `AttackSkillConfig`。
+
+### 戳击共用帧规则（本轮定稿）
+
+- 残影帧 `stab_v13` 覆盖**整个「刺出段」**（`stabSpeedFrameEnd01 = 1.0`）—— 不靠缩短窗口来控制。
+- **命中那一刻立刻切回清晰帧 `stab`**（`StabSweepEffect.CheckHits` 首击处）。原因：命中卡肉会把帧序列冻在“枪尖顶住目标”那一下，如果切帧挂在“刺出段结束”上，就会停在残影帧上，看起来像“开始回收还在用残影帧”。
+- 因此：打到之前 = 残影帧；卡肉 / 穿入 / 回收 = 清晰帧。
+
+### 终结技的旋转表达（本轮定稿）
+
+- 支点在**枪尾**（`launchPivotFromTailRatio = 0`）；不要用 transform 去硬转大角度。
+- 旋转姿态由**帧序列**表达：终结技三帧 = `stab_charge2`（起始蓄势姿）→ `stab_rotate1` → `stab_rotate2`，与 slash 的 `stab → rotate1 → rotate2` 同一个道理（像素图不靠 transform 硬转，否则会转成背面/糊掉）。
+- 位移只保留很小的上抬 + 很小的左移；“向左上”的成分交给旋转与帧序，不再用斜向平移+一层 slash 来凑。
+- 拖尾只留一层很淡的 slash 扫挈（`slashSweepAlpha = 0.25`）。

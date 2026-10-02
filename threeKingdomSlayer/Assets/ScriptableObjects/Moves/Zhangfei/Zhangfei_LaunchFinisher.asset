@@ -55,10 +55,13 @@ MonoBehaviour:
   launchSkipWindup: 0
   launchSweepMode: 1
   launchSweepUp: 1
-  launchSweepLeft: 0.7
-  launchSweepForward: 0.35
-  launchSweepRise: 1
-  launchSweepLeftShift: 1.8
+  launchSweepLeft: 0.35
+  launchSweepForward: 0.3
+  launchSweepRise: 0.9
+  launchSweepLeftShift: 0.35
+  launchPivotFromTailRatio: 0
+  launchSweepRollDegrees: 0
+  slashSweepAlpha: 0.25
   ultimateEnergyGain: 8
   chargeLevelDamageMultipliers: []
   stabWindupRatio: 0.12
@@ -86,6 +89,18 @@ MonoBehaviour:
   chargeHoldSettleRatio: 0.1
   chargeHoldShakeAmplitude: 0.06
   chargeHoldShakeFrequency: 14
+  chargeHoldYawDegrees: 0
+  chargeHoldYawSmoothSeconds: 0.12
+  stabRedirectSnapRatio: 0
+  stabRedirectOvershootDegrees: -3
+  hitShakeAmplitude: 0
+  hitShakeLateral: 0
+  hitShakeRollDegrees: 0
+  hitShakePitchDegrees: 0
+  hitShakeDuration: 0.1
+  hitShakeFrequency: 18
+  hitShakeSecondRowScale: 0.6
+  pushBackRows: 0
   repeatSelf: 0
   overrideWindow: 0
   windowStart01: 0

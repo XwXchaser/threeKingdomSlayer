@@ -11,6 +11,18 @@ public sealed class LaunchVisualEffect : MonoBehaviour
     private const float RecoveryRetractDuration = 0.085f;
     private const float RecoveryPathEndRatio = 0.35f;
 
+    /// <summary>
+    /// 刺出/回收期间额外绕「屏幕平面法线」的旋转：参考 Parry 的大幅扫转（220°），
+    /// 但支点在枪尾（见 launchPivotFromTailRatio）—— 两者组合把动作读成「上挑」。
+    /// 幅度 0 = 与改造前完全一致。
+    /// </summary>
+    private Quaternion SweepRollRotation(float progress)
+    {
+        float degrees = _sweepRollDegrees * Mathf.Clamp01(progress);
+        if (Mathf.Approximately(degrees, 0f)) return Quaternion.identity;
+        return Quaternion.Euler(0f, 0f, degrees);
+    }
+
     public static float GetObservationDuration(AttackSkillConfig config)
     {
         if (config == null)
@@ -25,6 +37,8 @@ public sealed class LaunchVisualEffect : MonoBehaviour
     private bool _impactInvoked;
     private bool _completed;
     private bool _sweepMode;
+    /// <summary>刺出/回收期间额外绕屏幕平面法线的旋转幅度（度），来自招式资产（0 = 与改造前一致）</summary>
+    private float _sweepRollDegrees;
 
     public static void Create(Sprite launchSprite1, Sprite launchSprite2, Sprite launchSprite3,
         AttackSkillConfig config, Vector3 playerPosition, ChargeStabVisual chargeVisual,
@@ -52,6 +66,7 @@ public sealed class LaunchVisualEffect : MonoBehaviour
     {
         _onImpact = onImpact;
         _sweepMode = config.launchSweepMode;
+        _sweepRollDegrees = config.launchSweepRollDegrees;
 
         float variance = Mathf.Clamp(config.launchAngleVariance, 0f, 30f);
         float zStart = 140f + UnityEngine.Random.Range(-variance, variance);
@@ -115,7 +130,8 @@ public sealed class LaunchVisualEffect : MonoBehaviour
         float halfLength = spriteHeight * targetScale.y * 0.5f;
         Vector3 gunUp = startRotation * Vector3.up;
         Vector3 gunTail = spawnPosition - gunUp * halfLength;
-        float pivotFromTail = halfLength * 0.40f;
+        // 支点距枪尾的比例：0 = 正好在枪尾（上挑读感最强，用户要求）；旧值 0.4 ≈ 距枪尾 20% 枪长
+        float pivotFromTail = halfLength * Mathf.Clamp(config.launchPivotFromTailRatio, 0f, 1f);
         Vector3 pivotPosition = gunTail + gunUp * pivotFromTail;
         float pivotArmLength = halfLength - pivotFromTail;
 
@@ -205,7 +221,7 @@ public sealed class LaunchVisualEffect : MonoBehaviour
                 transform.position = EvaluateLaunchPath(value, windupPosition, preImpactControl,
                     impactPosition, postImpactControl, apexPosition);
                 pivot.localRotation = EvaluateRotation(value, windupRotation,
-                    impactRotation, apexRotation);
+                    impactRotation, apexRotation) * SweepRollRotation(value);
                 _motionBlur?.UpdateMotionWorld(weapon.position, weapon.rotation,
                     cameraUp, 1.35f, 20f, Time.deltaTime);
             },
@@ -245,7 +261,7 @@ public sealed class LaunchVisualEffect : MonoBehaviour
                 transform.position = EvaluateLaunchPath(pathProgress, windupPosition, preImpactControl,
                     impactPosition, postImpactControl, apexPosition);
                 pivot.localRotation = EvaluateRotation(rotationProgress, windupRotation,
-                    impactRotation, apexRotation);
+                    impactRotation, apexRotation) * SweepRollRotation(rotationProgress);
                 _motionBlur?.UpdateMotionWorld(weapon.position, weapon.rotation,
                     cameraDown, 0.45f, 6f, Time.deltaTime);
             },

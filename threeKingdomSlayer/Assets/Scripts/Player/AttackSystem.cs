@@ -806,6 +806,8 @@ public class AttackSystem : MonoBehaviour
             prefab: cfg.attackWavePrefab,
             // 扫掠总时长用 slashSweepDuration（比节点动作锁短），让它一下子掍完，而不是拖满整个收尾
             targetDuration: cfg.slashSweepDuration,
+            // 终结技只保留一层很淡的拖尾（slashSweepAlpha），不再读成一次 slash
+            alphaOverride: cfg.slashSweepAlpha,
             rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite,
             movementTilt: cfg.slashMovementTiltDegrees,
             visualPathTilt: cfg.slashOverrideVisualTilt ? cfg.slashVisualTiltDegrees : 0f,

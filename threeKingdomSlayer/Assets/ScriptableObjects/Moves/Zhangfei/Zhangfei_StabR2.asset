@@ -59,6 +59,9 @@ MonoBehaviour:
   launchSweepForward: 0.35
   launchSweepRise: 1
   launchSweepLeftShift: 1.8
+  launchPivotFromTailRatio: 0
+  launchSweepRollDegrees: 160
+  slashSweepAlpha: 1
   ultimateEnergyGain: 5
   chargeLevelDamageMultipliers: []
   stabWindupRatio: 0.26
@@ -73,8 +76,8 @@ MonoBehaviour:
   stabSpeedFrameStart01: 0.1
   stabSpeedFrameEnd01: 1
   stabBlurThrust: 30
-  stabBlurSpeedFrame: 16
-  stabBlurPenetration: 20
+  stabBlurSpeedFrame: 14
+  stabBlurPenetration: 18
   stabThrustLengthScale: 1.26
   stabThrustWidthScale: 0.88
   stabMotionBlurScale: 1.1

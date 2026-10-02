@@ -92,10 +92,18 @@ public class SweepEffect : MonoBehaviour
             }
             else
             {
-                // 正常路径：保持原图颜色和透明度
+                // 正常路径：保持原图颜色；只有显式给了 alphaOverride（例：终结技的淡拖尾）才压低透明度
                 color = Color.white;
                 Renderer r = obj.GetComponentInChildren<Renderer>();
                 if (r != null) { material = r.material; material.color = color; }
+                if (alphaOverride.HasValue)
+                {
+                    float a = Mathf.Clamp01(alphaOverride.Value);
+                    foreach (var sr in obj.GetComponentsInChildren<SpriteRenderer>(true))
+                    {
+                        Color c = sr.color; c.a *= a; sr.color = c;
+                    }
+                }
             }
         }
         else
