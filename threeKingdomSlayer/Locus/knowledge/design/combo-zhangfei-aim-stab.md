@@ -207,13 +207,13 @@ if (comboChargeActive && CurrentChargeLevel >= 1)
 | 位置 | 字段 | 说明 / 建议值 |
 |---|---|---|
 | 新资产（`Zhangfei_StabR2`） | `attackType = Stab`、`rangeRows = 2` | 单列前 2 排 |
-| | `damage` / `actionDuration` / `cooldown` | 段位建议 30~40 / 0.45 / 0.3（待定） |
+| | `damage` / `actionDuration` / `cooldown` | 现值 **35 / 0.66 / 0.3**；`id = 22`（已按命名规范从 15 迁到 22）；动作节奏（拉回/戳出/收回）见 §6 |
 | | `attackWavePrefab` | **必须有值**（`ExecuteStab` 缺它直接返回 false） |
 | | `stabThrustLengthScale` / `WidthScale` / `stabBlur*` / `stabRollDegrees` | 重刺档 |
 | | `stabFirstHitStrength` | `Heavy` |
 | | `stabRedirectSnapRatio`（**新增字段**） | 释放前归零 + 过冲的比例，建议 0.2 |
 | | `hitShakeAmplitude` / `hitShakeLateral` / `hitShakeRollDegrees` / `hitShakePitchDegrees` / `hitShakeDuration` / `hitShakeFrequency` / `hitShakeDecay` / `hitShakeSecondRowScale`（**均为新增字段**） | §4.4 命中枪体震动；第二排按倍率减弱 |
-| | `pushBackRows`（**新增字段**） | C2 = **1**（击退 1 格）；与升级击退波的组合规则见 §4.5（暂取较大值） |
+| | `pushBackRows`（**新增字段**） | C2 = **1**（击退 1 格）；升级 `push_wave` 会**加成**（选了升级为 2 格）。规则见 §4.5 与 `design/combo-registry.md` §1.4 |
 | | `interruptsCavalryCharge` / `poiseDamage` / `ultimateEnergyGain` / `chargeLevelDamageMultipliers` | 逐段透传；能量建议低值或 0（避免多段刷能量） |
 | | `moveEdges` | 留空 = 串尾 |
 | 写在 `Zhangfei_Jab1` | 新边：`gesture = Hold`、`minChargeLevel = 1`、`next = Zhangfei_StabR2`、`overrideWindow`（建议 0.55–1.0） | 与 C4 的边写法同构 |
