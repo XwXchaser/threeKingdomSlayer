@@ -134,9 +134,6 @@ public sealed class LaunchVisualEffect : MonoBehaviour
         float pivotFromTail = halfLength * Mathf.Clamp(config.launchPivotFromTailRatio, 0f, 1f);
         Vector3 pivotPosition = gunTail + gunUp * pivotFromTail;
         float pivotArmLength = halfLength - pivotFromTail;
-        // 终结技：整体沿镜头前方前移（进入画面纵深），避免枪体贴着镜头；起手位与挑出终点一起前移
-        if (config.launchForwardShift > 0f)
-            pivotPosition += cameraForward * config.launchForwardShift;
 
         Quaternion windupRotation = skipWindup
             ? startRotation
@@ -164,6 +161,9 @@ public sealed class LaunchVisualEffect : MonoBehaviour
         if (config.launchSweepMode)
             apexPosition = pivotPosition + cameraUp * config.launchSweepRise
                 + cameraRight * (-config.launchSweepLeftShift);
+        // 只在「挑出」过程中前移：起手位（= 蓄势姿）保持不动，挑出终点沿镜头前方进入画面纵深，避免枪体贴着镜头
+        if (config.launchForwardShift > 0f)
+            apexPosition += cameraForward * config.launchForwardShift;
         Vector3 impactPosition = Vector3.Lerp(windupPosition, apexPosition, ImpactThrustRatio);
         Vector3 preImpactControl = Vector3.Lerp(windupPosition, impactPosition, 0.42f)
             + cameraDown * 0.10f

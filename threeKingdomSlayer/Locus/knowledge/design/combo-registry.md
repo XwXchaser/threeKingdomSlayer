@@ -100,5 +100,5 @@ aiEditMode: inherit
 - 支点在**枪尾**（`launchPivotFromTailRatio = 0`）；不要用 transform 去硬转大角度。
 - 旋转姿态由**帧序列**表达：终结技三帧 = `stab_charge2`（起始蓄势姿）→ `stab_rotate1` → `stab_rotate2`，与 slash 的 `stab → rotate1 → rotate2` 同一个道理（像素图不靠 transform 硬转，否则会转成背面/糊掉）。
 - 位移只保留很小的上抬 + 很小的左移；“向左上”的成分交给旋转与帧序，不再用斜向平移+一层 slash 来凑。
-- 深度：整段（起手位与挑出终点）沿镜头前方前移 `launchForwardShift = 0.6`（Battle 相机为透视相机，沿相机前方移动 = 屏幕位置不变、视觉变小），避免枪体贴着镜头。
+- 深度：**起手位保持不动**（与蓄力姿一致），只在「挑出」段沿镜头前方前移 `launchForwardShift = 2.0`（作用在 `apexPosition` 上，见 `LaunchVisualEffect`）。Battle 是透视相机（(0,3,-10)、18° 俯角），沿相机前方移动 = 屏幕位置不变、视觉变小；在枪体深度约 10.1 处，2.0 对应挑出终点约小 16~17%（0.6 只有约 6%，实测不够；3.0 约 23%）。
 - 拖尾只留一层很淡的 slash 扫掠（`slashSweepAlpha = 0.25`）。

@@ -43,7 +43,7 @@ aiEditMode: inherit
 - 三段枪突走 `StabSweepEffect` 时间线（起手 → 刺出 → 穿入 → 回收），逐段动作参数见 §5；长轴自转落在精灵长轴。
 - 连段交接：新段从上一段末态起步（位置/朝向继承），上一段改为隐藏 + 关闭命中，自行跑完销毁（不 Kill，避免销毁级联带走同帧新建的下一段）。
 - 连段蓄力的枪体语言：按下后沿回收路径拉回（**位移即蓄力条**）→ 到位后再向后一顿 → 沿枪身长轴前后微颤；素材帧只做姿势档位（不复用蓄力视觉的进出场/跟手/帧闪）。
-- 收尾（本轮重做）：伤害与击飞仍由挑飞结算，但**动作语言改成“以枪尾为支点的旋转上挑”**——支点 `launchPivotFromTailRatio = 0`（枪尾）；旋转由**帧序列**表达：`stab_charge2` → `stab_rotate1` → `stab_rotate2`（与 slash 的 `stab → rotate1 → rotate2` 同理，像素图不靠 transform 硬转）；幅度不用 transform 凑（`launchSweepRollDegrees = 0`），终点朝向为“上 1 / 左 0.35 / 前 0.3”，位移只剩很小的上抬（Rise 0.9）与很小的左移（LeftShift 0.35）；另保留一层**很淡**的 slash 拖尾（`slashSweepAlpha = 0.25`）；整段动作沿镜头前方前移 `launchForwardShift = 0.6`（起手位与挑出终点一起进入画面纵深），避免枪体贴着镜头。
+- 收尾（本轮重做）：伤害与击飞仍由挑飞结算，但**动作语言改成“以枪尾为支点的旋转上挑”**——支点 `launchPivotFromTailRatio = 0`（枪尾）；旋转由**帧序列**表达：`stab_charge2` → `stab_rotate1` → `stab_rotate2`（与 slash 的 `stab → rotate1 → rotate2` 同理，像素图不靠 transform 硬转）；幅度不用 transform 凑（`launchSweepRollDegrees = 0`），终点朝向为“上 1 / 左 0.35 / 前 0.3”，位移只剩很小的上抬（Rise 0.9）与很小的左移（LeftShift 0.35）；另保留一层**很淡**的 slash 拖尾（`slashSweepAlpha = 0.25`）；整段动作沿镜头前方前移 `launchForwardShift = 2.0`（起手位保持不动，只在挑出段生效，避免起手跳动），避免枪体贴着镜头。
 - 让位：连段蓄力期间 `ChargeStabVisual` / `PierceAimIndicator` / `ChargeIndicatorController` 让位（`ThornArmorEffect` 尚未让位，见 §6）。
 
 ## 5. 参数表（读自资产实测）
@@ -78,7 +78,7 @@ aiEditMode: inherit
 `launchSideTilt 16`、`launchRiseHeight 1.1`、`launchAngleVariance 12`；
 扫掠表现层 `slashSweepHalfWidth/Angle/Direction/MovementTilt/VisualTilt/Duration = 4.5 / 110° / 右→左 / −22° / 20° / 0.36s`。
 
-本轮新增/调整（旋转上挑）：`launchPivotFromTailRatio = 0`（支点在枪尾）、`launchSweepRollDegrees = 0`（不用 transform 硬转）、`launchSweepUp/Left/Forward = 1 / 0.35 / 0.3`、`launchSweepRise/LeftShift = 0.9 / 0.35`、`slashSweepAlpha = 0.25`（淡拖尾）、`launchForwardShift = 0.6`（整体沿镜头前方前移，避免枪体贴镜头）；武器帧（在场景的 `AttackSystem` 上）：`_launchSprite1 = stab_charge2`、`_launchSprite2 = stab_rotate1`、`_launchSprite3 = stab_rotate2`。
+本轮新增/调整（旋转上挑）：`launchPivotFromTailRatio = 0`（支点在枪尾）、`launchSweepRollDegrees = 0`（不用 transform 硬转）、`launchSweepUp/Left/Forward = 1 / 0.35 / 0.3`、`launchSweepRise/LeftShift = 0.9 / 0.35`、`slashSweepAlpha = 0.25`（淡拖尾）、`launchForwardShift = 2.0`（只在挑出段沿镜头前方前移，起手位不动，避免枪体贴镜头）；武器帧（在场景的 `AttackSystem` 上）：`_launchSprite1 = stab_charge2`、`_launchSprite2 = stab_rotate1`、`_launchSprite3 = stab_rotate2`。
 
 ## 6. 待改进（实机发现，未实施）
 
