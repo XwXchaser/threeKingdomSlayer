@@ -6,11 +6,15 @@ injectAgents:
 aiEditMode: inherit
 ---
 
-# 连招新增：stab → 蓄力指向释放（本列前 2 排戳击）
+# 张飞·指向突刺链（stab → 蓄力指向释放 → 本列前 2 排戳击）
 
-**当前状态：设计已定稿，代码与资产尚未实现。** 本轮只产出本文档（用户明确要求"先只落设计文档"）。实现清单见 §7，验收见 §9。
+> **命名**：本链正式名「张飞·指向突刺链」（链文档命名规范见 `design/combo-registry.md`）。
+> 本文档曾用名 `design/stab-charge-aim-release.md`（按连招命名规范更名）。
+> **别名**：口语常称 C1 → C2；C 编号只作对照，不作正式名（registry §1.2）。
 
-相关文档：`design/combo-move-state-machine.md`（招式转移图与状态机权威设计）、`plan/combo-progress-and-next.md`（三段枪突与 C4 的进度与数值）。
+**状态：已实现，并已经实机确认。** 实现清单见 §7，验收见 §9，实机反馈后的修订见 §6。
+
+相关文档：`design/combo-move-state-machine.md`（招式图与状态机总纲；§18 记录了本链与四条共享输入规则）、`design/combo-registry.md`（命名规范 + 连招登记表）、`plan/combo-progress-and-next.md`（连招进度 §9）、`plan/stab-c2-charge-aim-release-impl.md`（实现步骤与回退）。
 
 ---
 

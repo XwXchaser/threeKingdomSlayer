@@ -198,3 +198,13 @@ aiEditMode: inherit
 
 - 代码：`AttackSkillConfig.cs` / `StabMotionParams.cs` / `AttackSystem.cs` / `InputManager.cs` / `ChargeStabVisual.cs` / `LaunchVisualEffect.cs` / `StabSweepEffect.cs` / `PlayerMoveStateMachine.cs`
 - 资产：`Zhangfei_Jab1/2/3.asset`（窗口）、`Zhangfei_LaunchFinisher.asset`（新建）
+
+---
+
+## 9. 新增链：张飞·指向突刺链（stab → 蓄力指向释放）
+
+- 权威文档：`design/combo-zhangfei-aim-stab.md`；命名规范与连招登记表：`design/combo-registry.md`。
+- 玩法：点一下 → 按住蓄力（可横向移动改目标列，枪身朝所指列偏摆）→ 松手 → 在松手所指列打一记 range 2 的单列戳击，命中击退 1 格（选了升级 `push_wave` 后 2 格），然后串尾结束。
+- 资产：`Zhangfei_Jab1`（起步节点，新增 `Hold + minChargeLevel 1` 边与蓄力保持/指向偏摆参数）+ `Zhangfei_StabR2`（指向戳，当前 id 15，建议按规范迁到 22）。
+- 与本文件 §7 的枪突链（别名 C4）共用同一套底层（边 + `minChargeLevel` + 按住驻留 + 枪体交接）。
+- 本轮同时确立了四条共享输入规则（一次按住一记蓄力招式、站桩/连段的判定依据、滑动消费语义、招式属性归属），见 `design/combo-move-state-machine.md` §18。

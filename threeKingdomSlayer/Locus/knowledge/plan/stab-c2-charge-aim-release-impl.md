@@ -8,7 +8,7 @@ aiEditMode: inherit
 
 # C2 实现方案（可执行步骤）
 
-配套设计：`design/stab-charge-aim-release.md`（§4.4 命中震动、§4.5 命中位移）。本文档只讲**怎么改、改哪些文件、每步怎么验、怎么回退**。
+配套设计：`design/combo-zhangfei-aim-stab.md`（原 `design/stab-charge-aim-release.md`，已按连招命名规范更名；§4.4 命中震动、§4.5 命中位移）。命名规范与连招登记表：`design/combo-registry.md`。本文档只讲**怎么改、改哪些文件、每步怎么验、怎么回退**。
 
 **当前状态：M1 + M2 已实现并提交，Step 8（场景接线与让位）也已随 M2 完成；剩余 = 实机验收与调参。**
 提交：`1801c4cf`（M1 机制）、`1ca69299`（M2 表现）。

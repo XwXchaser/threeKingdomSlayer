@@ -673,3 +673,20 @@ MoveTableConfig（每武将一份）
 | `design/launch-strategy-system.md` | 击飞与空中连段的既有设想（本设计未纳入，仅作机制可扩展性参考） |
 | `design/out-of-game-growth-system.md` | 局外天赋树与「禁止纯数值」约束 |
 | `design/anti-ghost-reference.md` | 所有引用必须 Inspector 可追踪 |
+
+---
+
+## 18. 新增链「张飞·指向突刺链」与四条共享输入规则
+
+链文档：`design/combo-zhangfei-aim-stab.md`；命名规范与登记表：`design/combo-registry.md`。
+
+链路：**点一下（枪突-1）→ 按住蓄力（可横向移动改目标列，枪身朝所指列偏摆）→ 松手 → 在松手所指列打一记 range 2 的单列戳击 → 串尾**。资产：`Zhangfei_Jab1`（新增一条 `Hold + minChargeLevel 1` 边）+ `Zhangfei_StabR2`。
+
+本轮同时确立了四条**所有链共享**的规则（改动落在输入层与状态机）：
+
+1. **一次按住只出一记蓄力招式**：`InputManager.hasTriggeredDuringHold`（本次按住已出过招）同时参与蓄力累积——标记为真时 `CurrentChargeLevel` 恒为 0、`isLongPress` 不再置位，直到抬手重按。这恢复了「站桩蓄力放完必须抬手重按」的旧手感。
+2. **「站桩蓄力 / 连段蓄力」的判定依据是「有没有招式表节点在跑」**，不是「手指是否按着」：`PlayerMoveStateMachine.BeginMove` 只在 `move != null`（招式表节点）时置 `comboChargeActive`，`ExitToNeutral` 清掉它。
+3. **蓄力等级 ≥1 的滑动「消费」语义**：连段蓄力按实际是否出招判定（未出招 → 不重置蓄力分段、不吞掉松手）；站桩蓄力一律算消费（重置分段，防按住连刷）。
+4. **招式自身属性不再按攻击类型写死**：命中击退 `pushBackRows` 等参数挂在招式资产上，执行走公共入口 `AttackSystem.ApplyMovePushBack`；升级 `push_wave` 从「直接给戳击加击退」改为「只给已带击退的招式加成」。
+
+> 新增链时先读 `design/combo-registry.md`（命名、`id` 区间、登记表、checklist）。
