@@ -36,6 +36,8 @@ public sealed class StabSweepEffect : MonoBehaviour
     private float _damage;
     private DamageType _damageType;
     private bool _interruptsCavalryCharge;
+    private HitReactionDirection _hitReactionDirection = HitReactionDirection.None;
+    private bool _suppressHitReaction;
     private readonly HashSet<Enemy> _hitEnemies = new HashSet<Enemy>();
     private readonly List<Enemy> _hitCandidates = new List<Enemy>();
     private StabMotionParams _motion = StabMotionParams.Default;
@@ -106,6 +108,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         Action<Enemy> onHit, Func<Enemy, bool> onFirstHitBeforeDamage, Action onFirstHit, Action onComplete,
         float visualReachOffset, float visualStartXOffset, float visualTargetRandomRadius, float baseRayLength,
         float targetDuration = -1f, bool interruptsCavalryCharge = false,
+        HitReactionDirection hitReactionDirection = HitReactionDirection.None, bool suppressHitReaction = false,
         StabMotionParams motion = default, StabStartPose startPose = default,
         ChargeStabVisual chargeVisual = null)
     {
@@ -128,7 +131,8 @@ public sealed class StabSweepEffect : MonoBehaviour
         var effect = ray.AddComponent<StabSweepEffect>();
         effect.Initialize(visual, speedSprite, targetPosition, column, rangeRows, visualRangeRows, damage, damageType,
             columnManager, coveredBossTarget, onHit, onFirstHitBeforeDamage, onFirstHit, onComplete, targetDuration,
-            visualTargetRandomRadius, baseRayLength, interruptsCavalryCharge, motion, startPose, chargeVisual);
+            visualTargetRandomRadius, baseRayLength, interruptsCavalryCharge, hitReactionDirection,
+            suppressHitReaction, motion, startPose, chargeVisual);
         return effect;
     }
 
@@ -136,7 +140,8 @@ public sealed class StabSweepEffect : MonoBehaviour
         DamageType damageType, ColumnManager columnManager, Enemy coveredBossTarget,
         Action<Enemy> onHit, Func<Enemy, bool> onFirstHitBeforeDamage, Action onFirstHit,
         Action onComplete, float targetDuration, float visualTargetRandomRadius, float baseRayLength,
-        bool interruptsCavalryCharge = false, StabMotionParams motion = default, StabStartPose startPose = default,
+        bool interruptsCavalryCharge = false, HitReactionDirection hitReactionDirection = HitReactionDirection.None,
+        bool suppressHitReaction = false, StabMotionParams motion = default, StabStartPose startPose = default,
         ChargeStabVisual chargeVisual = null)
     {
         _column = column;
@@ -145,6 +150,8 @@ public sealed class StabSweepEffect : MonoBehaviour
         _damage = damage;
         _damageType = damageType;
         _interruptsCavalryCharge = interruptsCavalryCharge;
+        _hitReactionDirection = hitReactionDirection;
+        _suppressHitReaction = suppressHitReaction;
         _motion = motion.windupRatio <= 0f ? StabMotionParams.Default : motion;
         _startPose = startPose;
         _columnManager = columnManager;
@@ -870,8 +877,10 @@ public sealed class StabSweepEffect : MonoBehaviour
             TriggerHitShake(_hitAny ? _motion.shakeSecondRowScale : 1f);
             Vector3 impactPosition = GetVisualTipPosition();
             enemy.TakeDamage(_damage, _damageType, feedbackStrength: feedbackStrength,
+                triggerHitAnimation: !_suppressHitReaction,
                 impactPosition: impactPosition, impactDirection: _rayDirection,
-                diseaseStabHit: diseaseStabHit, interruptsCavalryCharge: _interruptsCavalryCharge);
+                diseaseStabHit: diseaseStabHit, interruptsCavalryCharge: _interruptsCavalryCharge,
+                hitReactionDirection: _hitReactionDirection);
             if (!_hitAny)
                 PauseSequenceForHitStop(feedbackStrength);
             if (!_hitAny)

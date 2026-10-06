@@ -11690,6 +11690,8 @@ MonoBehaviour:
   - {fileID: 8300000, guid: f3e0f5e8d6efa8c40a80d5ce83964f8d, type: 3}
   - {fileID: 8300000, guid: 17fc96aaf44d86749929bab776d78bd1, type: 3}
   _qteBlockVolume: 2.96
+  _enemyAttackTelegraphClip: {fileID: 8300000, guid: f3e0f5e8d6efa8c40a80d5ce83964f8d, type: 3}
+  _enemyAttackTelegraphVolume: 0.8
   _enemyHitClips:
   - {fileID: 8300000, guid: d408c62ff9a66f74188ae7d13a4117bd, type: 3}
   - {fileID: 8300000, guid: e9d70c333ce22b54cb8e010baa21f2d0, type: 3}

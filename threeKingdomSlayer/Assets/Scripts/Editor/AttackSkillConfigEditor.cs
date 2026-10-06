@@ -7,6 +7,7 @@ public class AttackSkillConfigEditor : Editor
     private SerializedProperty idProp;
     private SerializedProperty attackTypeProp;
     private SerializedProperty damageTypeProp;
+    private SerializedProperty hitReactionDirectionProp;
     private SerializedProperty damageProp;
     private SerializedProperty poiseDamageProp;
     private SerializedProperty rangeRowsProp;
@@ -27,6 +28,7 @@ public class AttackSkillConfigEditor : Editor
         idProp = serializedObject.FindProperty("id");
         attackTypeProp = serializedObject.FindProperty("attackType");
         damageTypeProp = serializedObject.FindProperty("damageType");
+        hitReactionDirectionProp = serializedObject.FindProperty("hitReactionDirection");
         damageProp = serializedObject.FindProperty("damage");
         poiseDamageProp = serializedObject.FindProperty("poiseDamage");
         rangeRowsProp = serializedObject.FindProperty("rangeRows");
@@ -52,6 +54,7 @@ public class AttackSkillConfigEditor : Editor
         EditorGUILayout.PropertyField(idProp);
         EditorGUILayout.PropertyField(attackTypeProp);
         EditorGUILayout.PropertyField(damageTypeProp);
+        EditorGUILayout.PropertyField(hitReactionDirectionProp);
         EditorGUILayout.Space();
 
         // 伤害

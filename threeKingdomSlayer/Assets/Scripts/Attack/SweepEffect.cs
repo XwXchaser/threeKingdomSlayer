@@ -24,6 +24,8 @@ public class SweepEffect : MonoBehaviour
     private bool _onAllHitInvoked;
     private bool canInterruptCFrame;
     private bool interruptsCavalryCharge;
+    private HitReactionDirection hitReactionDirection = HitReactionDirection.None;
+    private bool suppressHitReaction;
     private List<TargetEntry> targets = new List<TargetEntry>();
     private int nextIndex;
     private bool leftToRight;
@@ -50,7 +52,8 @@ public class SweepEffect : MonoBehaviour
         Material materialOverride = null, System.Action onFirstHit = null, System.Action onAllHit = null, float targetDuration = -1f,
         Sprite rotateSprite1 = null, Sprite rotateSprite2 = null, float angleOffset = 0f, float movementTilt = 0f,
         float additionalWeaponRotation = 0f, bool useEnhancedSlashMotion = false, float visualPathTilt = 0f,
-        bool interruptsCavalryCharge = false)
+        bool interruptsCavalryCharge = false, HitReactionDirection hitReactionDirection = HitReactionDirection.None,
+        bool suppressHitReaction = false)
     {
         float startX = leftToRight ? -halfWidth : halfWidth;
         float endX = leftToRight ? halfWidth : -halfWidth;
@@ -169,6 +172,8 @@ public class SweepEffect : MonoBehaviour
         effect.damageNumberColor = damageNumberColor;
         effect.canInterruptCFrame = canInterruptCFrame;
         effect.interruptsCavalryCharge = interruptsCavalryCharge;
+        effect.hitReactionDirection = hitReactionDirection;
+        effect.suppressHitReaction = suppressHitReaction;
         effect.onAllHit = onAllHit;
         if (useEnhancedSlashMotion)
         {
@@ -392,7 +397,9 @@ public class SweepEffect : MonoBehaviour
             enemy.TakeDamage(damage, damageType, damageNumberColor, canInterruptCFrame,
                 interruptsCavalryCharge: interruptsCavalryCharge,
                 feedbackStrength: isFirstHit ? HitFeedbackStrength.Standard : HitFeedbackStrength.Light,
-                impactPosition: impactPosition, impactDirection: impactDirection);
+                triggerHitAnimation: !suppressHitReaction,
+                impactPosition: impactPosition, impactDirection: impactDirection,
+                hitReactionDirection: hitReactionDirection);
             if (isFirstHit)
                 PauseSequenceForHitStop(HitFeedbackStrength.Standard);
             if (isFirstHit)

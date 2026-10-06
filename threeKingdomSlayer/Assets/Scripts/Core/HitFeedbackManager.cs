@@ -33,12 +33,13 @@ public readonly struct HitFeedbackContext
     public readonly bool hasImpactPosition;
     public readonly Vector3 worldPosition;
     public readonly Vector3 impactDirection;
+    public readonly HitReactionDirection hitReactionDirection;
     public readonly bool isDiseaseStabHit;
 
     public HitFeedbackContext(Enemy enemy, DamageType damageType, HitFeedbackSource source,
         HitFeedbackStrength strength, float damage, bool isSharedHealth, bool causesDisplacement,
         Vector3 worldPosition, Vector3 impactDirection = default, bool hasImpactPosition = false,
-        bool isDiseaseStabHit = false)
+        bool isDiseaseStabHit = false, HitReactionDirection hitReactionDirection = HitReactionDirection.None)
     {
         this.enemy = enemy;
         this.damageType = damageType;
@@ -50,6 +51,7 @@ public readonly struct HitFeedbackContext
         this.hasImpactPosition = hasImpactPosition;
         this.worldPosition = worldPosition;
         this.impactDirection = impactDirection;
+        this.hitReactionDirection = hitReactionDirection;
         this.isDiseaseStabHit = isDiseaseStabHit;
     }
 }
@@ -70,12 +72,13 @@ public static class HitFeedbackManager
 
     public static HitFeedbackContext CreateDamageContext(Enemy enemy, DamageType damageType,
         HitFeedbackSource source, HitFeedbackStrength strength, float damage, bool isSharedHealth = false,
-        Vector3? impactPosition = null, Vector3 impactDirection = default, bool isDiseaseStabHit = false)
+        Vector3? impactPosition = null, Vector3 impactDirection = default, bool isDiseaseStabHit = false,
+        HitReactionDirection hitReactionDirection = HitReactionDirection.None)
     {
         bool causesDisplacement = damageType == DamageType.Launch || source == HitFeedbackSource.Displacement;
         return new HitFeedbackContext(enemy, damageType, source, strength, damage, isSharedHealth,
             causesDisplacement, impactPosition ?? (enemy != null ? enemy.transform.position : Vector3.zero),
-            impactDirection, impactPosition.HasValue, isDiseaseStabHit);
+            impactDirection, impactPosition.HasValue, isDiseaseStabHit, hitReactionDirection);
     }
 
     public static float GetHitStopDuration(HitFeedbackStrength strength)

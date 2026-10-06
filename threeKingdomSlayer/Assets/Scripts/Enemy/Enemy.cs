@@ -13,7 +13,8 @@ public enum EnemyState
     Stunned,
     Launched,
     Dead,
-    QTEAttacking  // BOSS QTE 攻击演出中
+    QTEAttacking,  // BOSS QTE 攻击演出中
+    GettingUp
 }
 
 public enum EnemyFormState
@@ -56,6 +57,24 @@ public enum BossState
 }
 
 /// <summary>
+/// 攻击命中帧声明：出伤（近战）/ 击发（远程）必须与这一帧在屏幕上的时刻一致。
+/// 运行时按 spriteName 匹配「屏幕上真实显示的精灵」，因此对动画重定时、卡肉、变速都成立；
+/// keyIndex 只在编辑器校验器里用于校验/回填（0 基，attack8 = 8）。
+/// </summary>
+[System.Serializable]
+public struct AttackHitFrame
+{
+    [Tooltip("命中帧的精灵名（如 Enemy_1011_attack8）")]
+    public string spriteName;
+    [Tooltip("命中帧在 clip 关键帧中的序号（0 基；仅供编辑器校验/回填）")]
+    public int keyIndex;
+    [Tooltip("该命中帧是否结算一次伤害/发射（多段连击可配多条；false = 只作对齐标记）")]
+    public bool resolve;
+    [Tooltip("该命中帧在攻击 clip 中的时间（秒）；由编辑器校验器自动回填")]
+    public float hitTime;
+}
+
+/// <summary>
 /// 攻击序列中的一步，定义该步的攻击类型和参数
 /// </summary>
 [System.Serializable]
@@ -65,14 +84,16 @@ public struct AttackStep
     public bool isCAttack;
     [Tooltip("动画Trigger名（空=默认Attack）")]
     public string animationTrigger;
-    [Tooltip("前摇时长（秒）")]
+    [Tooltip("兼容字段：未声明命中帧时作为前冲/出伤时长；已声明命中帧时由首个 resolve 命中帧时间替代")]
     public float spawnDuration;
-    [Tooltip("收招时长（秒）")]
+    [Tooltip("收招时长（秒）：声明命中帧时自动改为「clip 剩余时间」，此值仅在未声明命中帧时生效")]
     public float drawDuration;
     [Tooltip("该步攻击后的额外冷却（秒）")]
     public float extraCooldown;
     [Tooltip("攻击时是否左右翻转")]
     public bool useFlip;
+    [Tooltip("命中帧列表（空 = 沿用旧的 spawnDuration 出伤；非空时由 hitFrames 驱动时序）")]
+    public List<AttackHitFrame> hitFrames;
 }
 
 /// <summary>
@@ -330,6 +351,15 @@ public class Enemy : MonoBehaviour
 
     // DOTween: 当前攻击动画序列（用于在 Die() 中取消正在执行的攻击动作）
     private Sequence _attackTween;
+    // 命中帧：声明后出伤时刻由屏幕上的命中帧精灵决定（见 UpdateAttackHitFrames）
+    private readonly List<string> _hitFrameSprites = new List<string>();
+    private readonly List<bool> _hitFrameResolve = new List<bool>();
+    private readonly List<bool> _hitFrameFired = new List<bool>();
+    private bool _hitFrameResolvedOnce;
+    private bool _hitFrameFiredAny;
+    private bool _hitFrameInterrupted;
+    private bool _attackTweenPausedByHitStop;
+    private EnemyAttackTelegraph _attackTelegraph;
     private Tween _hitScaleTween;
     private float _hitStopRemaining;
     private bool _hitStopAnimatorWasEnabled;
@@ -337,6 +367,8 @@ public class Enemy : MonoBehaviour
 
     // Animator HitFlash 协程引用
     private Coroutine _hitFlashRoutine;
+    private Coroutine _getupRoutine;
+    private bool _getupInterrupted;
 
     // QTE 控制器缓存
     private QTEController _qteController;
@@ -374,8 +406,7 @@ public class Enemy : MonoBehaviour
 
     private void Awake()
     {
-        renderers = GetComponentsInChildren<Renderer>();
-        _spriteRenderer = GetComponent<SpriteRenderer>();
+        RefreshRendererCache();
 
         // 快照 prefab 原始值，供池复用 / 多波次重置
         SnapshotOriginalValues();
@@ -425,7 +456,26 @@ public class Enemy : MonoBehaviour
     /// </summary>
     private void OnEnable()
     {
-        renderers = GetComponentsInChildren<Renderer>();
+        RefreshRendererCache();
+    }
+
+    /// <summary>
+    /// 缓存敌人主体 Renderer。
+    /// AttackTelegraph 的 SpriteRenderer 独立管理透明度和材质，不参与敌人主体闪白/波次染色。
+    /// </summary>
+    private void RefreshRendererCache()
+    {
+        var allRenderers = GetComponentsInChildren<Renderer>(true);
+        var filtered = new List<Renderer>(allRenderers.Length);
+        for (int i = 0; i < allRenderers.Length; i++)
+        {
+            var renderer = allRenderers[i];
+            if (renderer == null || renderer.GetComponent<EnemyAttackTelegraph>() != null)
+                continue;
+            filtered.Add(renderer);
+        }
+
+        renderers = filtered.ToArray();
         _spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
@@ -458,6 +508,12 @@ public class Enemy : MonoBehaviour
         stunTimer = 0f;
         _isStunExiting = false;
         _resumeStunAfterLaunch = false;
+        _getupInterrupted = false;
+        if (_getupRoutine != null)
+        {
+            StopCoroutine(_getupRoutine);
+            _getupRoutine = null;
+        }
         if (_stunExitRoutine != null)
         {
             StopCoroutine(_stunExitRoutine);
@@ -475,6 +531,7 @@ public class Enemy : MonoBehaviour
         _pierceHighlighted = false;
         UpdateOutlineState();
         _currentAttackStep = 0;
+        ClearHitFrames();
 
         // 恢复转阶段覆写的字段为 prefab 原始值
         RestoreOriginalValues();
@@ -491,6 +548,8 @@ public class Enemy : MonoBehaviour
         actionCooldownTimer = 0f;
         bounceYOffset = 0f;
         _attackTween = null;
+        _attackTelegraph = GetComponentInChildren<EnemyAttackTelegraph>(true);
+        _attackTelegraph?.StopWarning();
         transform.localScale = originalScale;
         transform.localRotation = originalRotation;
         // 创建或恢复每个 Renderer 的专属材质实例，并恢复对象池残留的视觉状态。
@@ -504,6 +563,7 @@ public class Enemy : MonoBehaviour
         // 缓存 Animator 和 SpriteController 引用
         _animator = GetComponent<Animator>();
         _spriteCtrl = GetComponent<EnemySpriteController>();
+        _attackTelegraph = GetComponentInChildren<EnemyAttackTelegraph>(true);
         _cowardTransitionPlaying = false;
         PlayIdleVisual();
 
@@ -618,6 +678,9 @@ public class Enemy : MonoBehaviour
             case EnemyState.Launched:
                 UpdateLaunch();
                 break;
+            case EnemyState.GettingUp:
+                // 起身由 Animator 状态和 _getupRoutine 驱动；期间不调度攻击或补齐。
+                break;
             case EnemyState.Moving:
                 UpdateMovement();
                 break;
@@ -640,6 +703,10 @@ public class Enemy : MonoBehaviour
                 }
                 break;
         }
+
+        // 命中帧结算：声明命中帧时，出伤时刻由动画帧（屏幕上真实显示的精灵）驱动，与位移 tween 解耦
+        if (state == EnemyState.Attacking)
+            UpdateAttackHitFrames();
 
         // Only an already assigned scheduler order may resume after its delay.
         if (rushMoveDelayTimer > 0f)
@@ -782,6 +849,7 @@ public class Enemy : MonoBehaviour
     {
         if (enemyId != 102 || IsCoward || state == EnemyState.Dead)
             return false;
+        _attackTelegraph?.StopWarning();
         if (_attackTween != null && _attackTween.IsActive())
         {
             _attackTween.Kill();
@@ -807,7 +875,47 @@ public class Enemy : MonoBehaviour
 
     private void PlayIdleVisual() => _animator?.Play(IsCoward ? "CowardIdle" : "Idle", 0, 0f);
     private void PlayLaunchVisual() => _animator?.Play(IsCoward ? "CowardLaunched" : "Launched_Rise", 0, 0f);
-    private void PlayHitVisual() => _animator?.Play(IsCoward ? "CowardHit" : "HitFlash", 0, 0f);
+    private void PlayHitVisual(HitReactionDirection direction)
+    {
+        if (_animator == null)
+            return;
+
+        string stateName = IsCoward
+            ? "CowardHit"
+            : direction switch
+            {
+                HitReactionDirection.Left => "HitLeft",
+                HitReactionDirection.Right => "HitRight",
+                _ => "HitFlash"
+            };
+
+        if (!IsCoward && !_animator.HasState(0, Animator.StringToHash("Base Layer." + stateName)))
+            stateName = "HitFlash";
+
+        _animator.Play(stateName, 0, 0f);
+    }
+    private void PlayGetupVisual() => _animator?.Play(IsCoward ? "CowardGetup" : "Launched_Getup", 0, 0f);
+
+    private static HitReactionDirection ResolveHitReactionDirection(HitReactionDirection requested)
+    {
+        if (requested == HitReactionDirection.Front
+            || requested == HitReactionDirection.Left
+            || requested == HitReactionDirection.Right)
+            return requested;
+
+        return (HitReactionDirection)Random.Range(
+            (int)HitReactionDirection.Front,
+            (int)HitReactionDirection.Right + 1);
+    }
+
+    private bool HasGetupAnimatorState()
+    {
+        if (_animator == null || _animator.runtimeAnimatorController == null)
+            return false;
+
+        return _animator.HasState(0, Animator.StringToHash("Base Layer.Launched_Getup"));
+    }
+
     private void PlayDeadVisual() => _animator?.Play(IsCoward ? "CowardDead" : "Dead", 0, 0f);
 
     public Vector3 GetCavalryRowLocalPosition(int visualRow)
@@ -947,6 +1055,7 @@ public class Enemy : MonoBehaviour
         // 眩晕时清理攻击状态，Kill 攻击动画避免 OnComplete 覆盖 Stun 状态
         else if (state == EnemyState.Attacking)
         {
+            _attackTelegraph?.StopWarning();
             if (_attackTween != null && _attackTween.IsActive())
             {
                 _attackTween.Kill();
@@ -1008,6 +1117,12 @@ public class Enemy : MonoBehaviour
     public void Launch(float customDuration)
     {
         if (state == EnemyState.Dead) return;
+        if (_getupRoutine != null)
+        {
+            StopCoroutine(_getupRoutine);
+            _getupRoutine = null;
+        }
+        _getupInterrupted = false;
         if (_cavalry != null && _cavalry.IsMounted)
             _cavalry.DismountFromLaunch();
         if (state == EnemyState.Launched)
@@ -1033,6 +1148,7 @@ public class Enemy : MonoBehaviour
         _isStunExiting = false;
 
         // 清理所有 DOTween 动效（攻击动画、受击抖动等）
+        _attackTelegraph?.StopWarning();
         StopHitScaleFeedback();
         transform.DOKill(false);
         DOTween.Kill(transform, false);
@@ -1115,6 +1231,7 @@ public class Enemy : MonoBehaviour
 
         // 全阶段可打断：AttackDraw / AttackSpawn / 冷却阶段均可打断
         // 清理 DOTween 残留（修复形变不恢复问题）
+        _attackTelegraph?.StopWarning();
         transform.DOKill(false);
         StopHitScaleFeedback();
 
@@ -1159,6 +1276,7 @@ public class Enemy : MonoBehaviour
         deferredStun = false;
 
         // 中断当前攻击动画
+        _attackTelegraph?.StopWarning();
         if (_attackTween != null && _attackTween.IsActive())
         {
             _attackTween.Kill();
@@ -1351,11 +1469,16 @@ public class Enemy : MonoBehaviour
             // 先退出击飞状态，再根据情况决定后续行为
             state = EnemyState.Idle;
 
-            // 通知击飞落地（供 CycloneEffect 等监听落地伤害）
+            // 通知击飞落地（供 CycloneEffect 等监听落地伤害）。
+            // 回调可能造成死亡，因此后续必须重新检查状态。
             OnLaunchedLanded?.Invoke(this);
+            if (state == EnemyState.Dead)
+                return;
 
             // 地刺检测：击飞落地后触发
             SpikeTrapController.Instance?.CheckAndTrigger(this);
+            if (state == EnemyState.Dead)
+                return;
 
             if (_remainingStunOnLaunch > 0f)
             {
@@ -1379,19 +1502,14 @@ public class Enemy : MonoBehaviour
 
             if (IsCoward)
                 _cowardTransitionPlaying = false;
+
+            if (BeginGetup())
+                return;
+
             PlayIdleVisual();
 
             // Landing never creates movement. It may only resume an existing scheduler order.
-            if (HasRushMoveOrder)
-            {
-                TryStartRushMove();
-            }
-            else
-            {
-                int atkRange = (int)Mathf.Max(1, attackRange);
-                if (rowIndex < atkRange)
-                    StartAttacking();
-            }
+            ResumeAfterGetup();
             return;
         }
 
@@ -1400,6 +1518,60 @@ public class Enemy : MonoBehaviour
             transform.localPosition.x,
             launchStartLocalPos.y + newY,
             transform.localPosition.z);
+    }
+
+    private bool BeginGetup()
+    {
+        if (state != EnemyState.Idle || !HasGetupAnimatorState())
+            return false;
+
+        if (_getupRoutine != null)
+            StopCoroutine(_getupRoutine);
+
+        _getupInterrupted = false;
+        state = EnemyState.GettingUp;
+        isAttackAnimating = false;
+        isAttackDrawPhase = false;
+        isCFrame = false;
+        UpdateOutlineState();
+        PlayGetupVisual();
+        _getupRoutine = StartCoroutine(GetupRoutine());
+        return true;
+    }
+
+    private System.Collections.IEnumerator GetupRoutine()
+    {
+        const float fallbackDuration = 0.6f;
+        float elapsed = 0f;
+        while (state == EnemyState.GettingUp && !_getupInterrupted && elapsed < fallbackDuration)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        _getupRoutine = null;
+        if (state != EnemyState.GettingUp || _getupInterrupted)
+            yield break;
+
+        state = EnemyState.Idle;
+        PlayIdleVisual();
+        ResumeAfterGetup();
+    }
+
+    private void ResumeAfterGetup()
+    {
+        if (state == EnemyState.Dead || state == EnemyState.Launched || state == EnemyState.GettingUp)
+            return;
+
+        if (HasRushMoveOrder)
+        {
+            TryStartRushMove();
+            return;
+        }
+
+        int atkRange = (int)Mathf.Max(1, attackRange);
+        if (rowIndex < atkRange)
+            StartAttacking();
     }
 
     /// <summary>
@@ -1749,9 +1921,43 @@ private void SpawnProjectile()
         float extraCooldown = step.extraCooldown;
         bool useFlip = step.useFlip;
         currentStepSpawnDuration = spawnDuration;
+        float approachDuration = spawnDuration;
+        float firstResolveHitTime = GetFirstResolveHitTime(step);
+        if (firstResolveHitTime >= 0f)
+        {
+            approachDuration = firstResolveHitTime;
+        }
+        float telegraphDuration = Mathf.Min(0.3f, Mathf.Max(0f, approachDuration));
+
+        // ── 命中帧 ─────────────────────────────────────────────────────────────
+        // 声明命中帧后：出伤/击发时刻由「命中帧精灵出现在屏幕上」决定（见 UpdateAttackHitFrames），
+        // 收招时长改为 clip 剩余时间，使整段位移与动画同时结束。
+        SetupHitFrames(step);
+        bool hasDeclaredHitFrames = _hitFrameSprites.Count > 0;
+        float planClipLength = 0f;
+        if (hasDeclaredHitFrames)
+        {
+            string clipTrigger = string.IsNullOrEmpty(step.animationTrigger)
+                ? (isCAttack ? "CAttack" : "Attack")
+                : step.animationTrigger;
+            AnimationClip planClip = AttackHitFrameResolver.ResolveClipForTrigger(
+                _animator != null ? _animator.runtimeAnimatorController : null, clipTrigger);
+            if (planClip != null)
+            {
+                planClipLength = planClip.length;
+                if (planClipLength > approachDuration)
+                    drawDuration = planClipLength - approachDuration;
+            }
+            else
+            {
+                DebugLog.Warning($"[Enemy] {DebugTag} 命中帧已声明但解析不到攻击 clip（trigger={clipTrigger}），沿用 spawnDuration/drawDuration");
+            }
+        }
 
         // 直接切回 Idle（不用 SetTrigger，避免残留 Idle 触发器与 Launch 竞争）
         _animator?.Play("Idle", 0, 0f);
+        // 攻击动画基准速度固定为 1：补齐移动会把 speed 提到 2×（见 StartMoving），残留会让动画与位移/命中错拍
+        if (_animator != null) _animator.speed = 1f;
 
         isAttackAnimating = true;
         isAttackDrawPhase = false;
@@ -1771,48 +1977,74 @@ private void SpawnProjectile()
         _attackTween = DOTween.Sequence().SetUpdate(UpdateType.Normal, false);
         _attackTween.SetTarget(transform);
         _attackTween.SetId("attackAnim");
+        _attackTweenPausedByHitStop = false;
 
-        // 远程攻击：不移动，在 spawnDuration 结束时发射飞行物
+        // 远程攻击：不移动；声明命中帧时由命中帧决定击发时刻
         if (isRanged)
         {
-            // AttackSpawn 结束 → 发射飞行物
-            _attackTween.AppendInterval(spawnDuration);
-            _attackTween.AppendCallback(() =>
+            if (hasDeclaredHitFrames)
             {
-                SpawnProjectile();
-                isAttackDrawPhase = true;
-            });
-            // AttackDraw 阶段：等待到 Animator clip 结束（而非硬编码 drawDuration）
-            float clipLength = _attackClip != null ? _attackClip.length : (spawnDuration + drawDuration);
-            float remainingTime = Mathf.Max(0.1f, clipLength - spawnDuration);
-            _attackTween.AppendInterval(remainingTime);
+                // 击发出现在声明命中帧上（见 UpdateAttackHitFrames），这里只把时长覆盖到 clip 结束
+                float rangedLength = planClipLength > 0f ? planClipLength : (spawnDuration + drawDuration);
+                _attackTween.AppendInterval(Mathf.Max(0.1f, rangedLength));
+            }
+            else
+            {
+                // AttackSpawn 结束 → 发射飞行物
+                _attackTween.AppendInterval(spawnDuration);
+                _attackTween.AppendCallback(() =>
+                {
+                    SpawnProjectile();
+                    isAttackDrawPhase = true;
+                });
+                // AttackDraw 阶段：等待到 Animator clip 结束（而非硬编码 drawDuration）
+                float clipLength = _attackClip != null ? _attackClip.length : (spawnDuration + drawDuration);
+                float remainingTime = Mathf.Max(0.1f, clipLength - spawnDuration);
+                _attackTween.AppendInterval(remainingTime);
+            }
         }
         else
         {
             // 近战：向前 + 翻转（AttackSpawn）
-            _attackTween.Append(transform.DOLocalMoveZ(startPos.z - forwardDistance, spawnDuration).SetEase(Ease.OutQuad));
+            _attackTween.Append(transform.DOLocalMoveZ(startPos.z - forwardDistance, approachDuration).SetEase(Ease.OutQuad));
             if (useFlip)
-                _attackTween.Join(transform.DOScaleX(-startScale.x, spawnDuration).SetEase(Ease.OutQuad));
+                _attackTween.Join(transform.DOScaleX(-startScale.x, approachDuration).SetEase(Ease.OutQuad));
 
-            // AttackSpawn 完成 → 造成伤害，进入 AttackDraw 收招阶段
-            _attackTween.AppendCallback(() =>
+            if (!hasDeclaredHitFrames)
             {
-                PerformAttack();
-                isAttackDrawPhase = true; // 进入收招阶段，此后不可被招架打断
-                isCFrame = false;          // 伤害帧结束霸体窗口
-                UpdateOutlineState();
-            });
+                // AttackSpawn 完成 → 造成伤害，进入 AttackDraw 收招阶段
+                _attackTween.AppendCallback(() =>
+                {
+                    PerformAttack();
+                    isAttackDrawPhase = true; // 进入收招阶段，此后不可被招架打断
+                    isCFrame = false;          // 伤害帧结束霸体窗口
+                    UpdateOutlineState();
+                });
+            }
 
             // AttackDraw：后退到原位 + 翻转回正（不可被招架打断）
+            // 声明命中帧时 drawDuration 已被改写为 clip 剩余时间，整段位移与动画同时结束
             _attackTween.Append(transform.DOLocalMoveZ(startPos.z, drawDuration).SetEase(Ease.InQuad));
             if (useFlip)
                 _attackTween.Join(transform.DOScaleX(startScale.x, drawDuration).SetEase(Ease.InQuad));
         }
 
+        // 预警回调必须在时间线构建完成后再插入：InsertCallback 会把 Sequence 时长撑到该位置，
+        // 若在 Append 之前插入（历史 BUG），后续元素会整体后移，出伤被推到整段动画结束之后。
+        if (_attackTelegraph != null && telegraphDuration > 0f)
+        {
+            float telegraphStart = Mathf.Max(0f, approachDuration - telegraphDuration);
+            _attackTween.InsertCallback(telegraphStart,
+                () => _attackTelegraph?.BeginWarning(telegraphDuration));
+        }
+
         // 收招完成
         _attackTween.OnComplete(() =>
         {
+            _attackTelegraph?.StopWarning();
             _attackTween = null;
+            // 兜底：声明了命中帧却整段都没出现（动画被受击打断或配置写错）
+            ResolvePendingHitFramesOnAttackEnd();
             isAttackAnimating = false;
             isAttackDrawPhase = false;
             isCFrame = false;
@@ -1864,12 +2096,159 @@ private void SpawnProjectile()
 
     #endregion
 
+    #region 命中帧（动画帧 → 出伤）
+
+    /// <summary>
+    /// 读取本步攻击声明的命中帧；无声明时保持空，出伤退回旧 spawnDuration 逻辑。
+    /// </summary>
+    private static float GetFirstResolveHitTime(AttackStep step)
+    {
+        if (step.hitFrames == null)
+            return -1f;
+
+        float first = float.MaxValue;
+        for (int i = 0; i < step.hitFrames.Count; i++)
+        {
+            AttackHitFrame frame = step.hitFrames[i];
+            if (frame.resolve && frame.hitTime > 0.001f && frame.hitTime < first)
+                first = frame.hitTime;
+        }
+        return first == float.MaxValue ? -1f : first;
+    }
+
+    private void SetupHitFrames(AttackStep step)
+    {
+        ClearHitFrames();
+        if (step.hitFrames == null || step.hitFrames.Count == 0) return;
+
+        for (int i = 0; i < step.hitFrames.Count; i++)
+        {
+            AttackHitFrame frame = step.hitFrames[i];
+            if (string.IsNullOrEmpty(frame.spriteName))
+            {
+                DebugLog.Warning($"[Enemy] {DebugTag} 命中帧 #{i}（keyIndex={frame.keyIndex}）未填 spriteName，已忽略；" +
+                                 "运行时按精灵名匹配，请用 Tools/三国杀戮/校验攻击命中帧 回填");
+                continue;
+            }
+            _hitFrameSprites.Add(frame.spriteName);
+            _hitFrameResolve.Add(frame.resolve);
+            _hitFrameFired.Add(false);
+        }
+    }
+
+    private void ClearHitFrames()
+    {
+        _hitFrameSprites.Clear();
+        _hitFrameResolve.Clear();
+        _hitFrameFired.Clear();
+        _hitFrameResolvedOnce = false;
+        _hitFrameFiredAny = false;
+        _hitFrameInterrupted = false;
+    }
+
+    /// <summary>
+    /// 命中帧判定：声明命中帧时，出伤（近战）/ 击发（远程）以「命中帧精灵是否已显示在屏幕上」为准。
+    /// 读的是屏幕上真实显示的精灵，因此卡肉（Animator 被禁用）、暂停、动画变速都自动保持一致。
+    /// </summary>
+    private void UpdateAttackHitFrames()
+    {
+        if (_hitFrameSprites.Count == 0 || _hitFrameFired.Count != _hitFrameSprites.Count) return;
+        if (_spriteRenderer == null) return;
+        if (!HasPendingHitFrame()) return;
+
+        string currentSprite = _spriteRenderer.sprite != null ? _spriteRenderer.sprite.name : null;
+        if (string.IsNullOrEmpty(currentSprite)) return;
+
+        // 打断检测：动画已离开攻击动作（HitFlash/眩晕等）→ 不再按帧结算，交给收尾兜底
+        if (_animator != null && _animator.enabled)
+        {
+            var clipInfos = _animator.GetCurrentAnimatorClipInfo(0);
+            if (clipInfos.Length > 0 && clipInfos[0].clip != null &&
+                !AttackHitFrameResolver.IsAttackClipName(clipInfos[0].clip.name))
+            {
+                _hitFrameInterrupted = true;
+            }
+        }
+
+        for (int i = 0; i < _hitFrameSprites.Count; i++)
+        {
+            if (_hitFrameFired[i]) continue;
+            if (!AttackHitFrameResolver.MatchesSprite(_hitFrameSprites[i], currentSprite)) continue;
+            ResolveHitFrame(i, currentSprite);
+        }
+    }
+
+    private bool HasPendingHitFrame()
+    {
+        for (int i = 0; i < _hitFrameFired.Count; i++)
+            if (!_hitFrameFired[i]) return true;
+        return false;
+    }
+
+    /// <summary>命中帧出现在屏幕上的那一帧：结算伤害/发射，并进入收招阶段。</summary>
+    private void ResolveHitFrame(int index, string currentSprite)
+    {
+        _hitFrameFired[index] = true;
+        _hitFrameFiredAny = true;
+
+        if (!_hitFrameResolvedOnce)
+        {
+            _hitFrameResolvedOnce = true;
+            _attackTelegraph?.StopWarning();
+            isAttackDrawPhase = true; // 命中后进入收招阶段，此后不可被招架打断
+            isCFrame = false;         // 伤害帧结束霸体窗口
+            UpdateOutlineState();
+        }
+
+        bool doResolve = index < _hitFrameResolve.Count && _hitFrameResolve[index];
+        if (doResolve)
+        {
+            if (isRanged)
+                SpawnProjectile();
+            else
+                PerformAttack();
+        }
+
+        DebugLog.Info($"[Enemy] {DebugTag} 命中帧 #{index} 触发: sprite={currentSprite} resolve={doResolve} " +
+                      $"isRanged={isRanged} frame={Time.frameCount} hitStop={_hitStopRemaining:F3}");
+    }
+
+    /// <summary>
+    /// 攻击动作结束时的兜底：声明了命中帧却整段都没出现（动画被受击/HitFlash 打断，或配置写错）。
+    /// 兜底仍结算一次，避免敌人因配置问题变得完全无威胁；配置错误会打印告警。
+    /// </summary>
+    private void ResolvePendingHitFramesOnAttackEnd()
+    {
+        if (_hitFrameSprites.Count == 0 || _hitFrameFiredAny)
+        {
+            ClearHitFrames();
+            return;
+        }
+
+        if (_hitFrameInterrupted)
+            DebugLog.Info($"[Enemy] {DebugTag} 命中帧未出现（攻击动画被打断），按收尾兜底结算一次");
+        else
+            DebugLog.Warning($"[Enemy] {DebugTag} 命中帧未出现（请检查命中帧配置）: sprites=[{string.Join(",", _hitFrameSprites)}]，按收尾兜底结算一次");
+
+        isAttackDrawPhase = true;
+        isCFrame = false;
+        UpdateOutlineState();
+        if (isRanged)
+            SpawnProjectile();
+        else
+            PerformAttack();
+
+        ClearHitFrames();
+    }
+
+    #endregion
+
     #region 伤害系统
 
     /// <summary>
     /// 受到伤害
     /// </summary>
-    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true, bool canInterruptAttack = true, bool triggerHitAnimation = true, bool ignoreDamageModifiers = false, HitFeedbackSource feedbackSource = HitFeedbackSource.BasicAttack, HitFeedbackStrength? feedbackStrength = null, Vector3? impactPosition = null, Vector3 impactDirection = default, bool diseaseStabHit = false, bool interruptsCavalryCharge = false)
+    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true, bool canInterruptAttack = true, bool triggerHitAnimation = true, bool ignoreDamageModifiers = false, HitFeedbackSource feedbackSource = HitFeedbackSource.BasicAttack, HitFeedbackStrength? feedbackStrength = null, Vector3? impactPosition = null, Vector3 impactDirection = default, bool diseaseStabHit = false, bool interruptsCavalryCharge = false, HitReactionDirection hitReactionDirection = HitReactionDirection.None, bool suppressHitReactionAnimation = false)
     {
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
@@ -1944,9 +2323,20 @@ private void SpawnProjectile()
             }
         }
 
+        bool allowHitReactionAnimation = triggerHitAnimation
+            && !suppressHitReactionAnimation
+            && feedbackSource != HitFeedbackSource.Dot
+            && damageType != DamageType.Launch;
+        HitReactionDirection resolvedHitReactionDirection = allowHitReactionAnimation
+            ? ResolveHitReactionDirection(hitReactionDirection)
+            : HitReactionDirection.None;
+
         if (sharedHealthGroup != null)
         {
-            sharedHealthGroup.TakeDamage(damage, damageType, this, damageNumberColor, triggerHitAnimation, countsForCombo, canInterruptAttack, ignoreDamageModifiers, feedbackSource, feedbackStrength, impactPosition, impactDirection, diseaseStabHit);
+            sharedHealthGroup.TakeDamage(damage, damageType, this, damageNumberColor,
+                allowHitReactionAnimation, countsForCombo, canInterruptAttack, ignoreDamageModifiers,
+                feedbackSource, feedbackStrength, impactPosition, impactDirection, diseaseStabHit,
+                resolvedHitReactionDirection, suppressHitReactionAnimation);
             return;
         }
 
@@ -1978,7 +2368,8 @@ private void SpawnProjectile()
         HitFeedbackStrength resolvedFeedbackStrength = feedbackStrength
             ?? HitFeedbackManager.ResolveStrength(damageType, feedbackSource, finalDamage, false);
         HitFeedbackManager.Trigger(HitFeedbackManager.CreateDamageContext(this, damageType,
-            feedbackSource, resolvedFeedbackStrength, finalDamage, false, impactPosition, impactDirection, diseaseStabHit));
+            feedbackSource, resolvedFeedbackStrength, finalDamage, false, impactPosition, impactDirection,
+            diseaseStabHit, resolvedHitReactionDirection));
         if (countsForCombo)
             OnDamageTaken?.Invoke(this);
         OnHealthChanged?.Invoke(this, currentHealth, maxHealth);
@@ -1999,7 +2390,7 @@ private void SpawnProjectile()
             cachedHealthBar.Show(currentHealth / maxHealth);
         }
 
-        if (triggerHitAnimation)
+        if (allowHitReactionAnimation)
         {
             // BUG FIX: 同步应用闪白（立即设置颜色，不依赖 Update 循环）
             ApplyHitFlashImmediate();
@@ -2026,7 +2417,7 @@ private void SpawnProjectile()
             }
             else
             {
-                TriggerHitFlash();
+                TriggerHitFlash(resolvedHitReactionDirection);
             }
         }
 
@@ -2066,7 +2457,9 @@ private void SpawnProjectile()
     /// <summary>
     /// 受伤视觉反馈（闪白+抖动），不修改HP，供 SharedHealthGroup 调用
     /// </summary>
-    public void ApplyDamageFeedback(HitFeedbackStrength feedbackStrength = HitFeedbackStrength.Standard)
+    public void ApplyDamageFeedback(HitFeedbackStrength feedbackStrength = HitFeedbackStrength.Standard,
+        HitReactionDirection hitReactionDirection = HitReactionDirection.None,
+        bool suppressHitReactionAnimation = false)
     {
         if (state == EnemyState.Dead) return;
 
@@ -2085,9 +2478,9 @@ private void SpawnProjectile()
                 _animator?.Play("StunHit", 0, 0f);
             }
         }
-        else
+        else if (!suppressHitReactionAnimation)
         {
-            TriggerHitFlash();
+            TriggerHitFlash(ResolveHitReactionDirection(hitReactionDirection));
         }
 
         hitFlashTimer = HIT_FLASH_DURATION;
@@ -2104,6 +2497,8 @@ private void SpawnProjectile()
             _hitStopAnimatorWasEnabled = _animator != null && _animator.enabled;
             if (_animator != null)
                 _animator.enabled = false;
+            // 卡肉同时冻结攻击位移：否则「精灵冻结、位移/出伤继续」会错拍
+            PauseAttackTweenForHitStop();
             if (HitFeedbackManager.EnableDebugLogs)
                 Debug.Log($"[HitFeedback] Freeze enemy={DebugTag} requested={duration:F3}s animator={_animator != null} animatorWasEnabled={_hitStopAnimatorWasEnabled} frame={Time.frameCount}");
         }
@@ -2120,6 +2515,7 @@ private void SpawnProjectile()
         _hitStopRemaining = 0f;
         if (state != EnemyState.Dead && _animator != null && _hitStopAnimatorWasEnabled)
             _animator.enabled = true;
+        ResumeAttackTweenAfterHitStop();
         if (HitFeedbackManager.EnableDebugLogs)
             Debug.Log($"[HitFeedback] Resume enemy={DebugTag} frame={Time.frameCount}");
         _hitStopAnimatorWasEnabled = false;
@@ -2130,7 +2526,26 @@ private void SpawnProjectile()
         _hitStopRemaining = 0f;
         if (_animator != null && _hitStopAnimatorWasEnabled)
             _animator.enabled = true;
+        ResumeAttackTweenAfterHitStop();
         _hitStopAnimatorWasEnabled = false;
+    }
+
+    /// <summary>卡肉冻结：与 Animator 同时暂停攻击位移（自持标记，不依赖 DOTween 的暂停查询接口）。</summary>
+    private void PauseAttackTweenForHitStop()
+    {
+        if (_attackTweenPausedByHitStop) return;
+        if (_attackTween == null || !_attackTween.IsActive()) return;
+        _attackTween.Pause();
+        _attackTweenPausedByHitStop = true;
+    }
+
+    /// <summary>卡肉解除：只恢复自己暂停过的攻击位移。</summary>
+    private void ResumeAttackTweenAfterHitStop()
+    {
+        if (!_attackTweenPausedByHitStop) return;
+        _attackTweenPausedByHitStop = false;
+        if (_attackTween != null && _attackTween.IsActive())
+            _attackTween.Play();
     }
 
     private void RestartHitScaleFeedback(HitFeedbackStrength feedbackStrength = HitFeedbackStrength.Standard)
@@ -2202,16 +2617,17 @@ private void SpawnProjectile()
     /// 触发受伤精灵闪烁（Animator HitFlash 状态，0.3秒后自动回到 Idle）
     /// C技霸体帧(isCFrame)、击飞(Launched)、死亡(Dead)、QTE攻击中不触发 HitFlash 动画
     /// </summary>
-    private void TriggerHitFlash()
+    private void TriggerHitFlash(HitReactionDirection hitReactionDirection)
     {
         if (_hitFlashRoutine != null)
             StopCoroutine(_hitFlashRoutine);
-        _hitFlashRoutine = StartCoroutine(HitFlashRoutine());
+        _hitFlashRoutine = StartCoroutine(HitFlashRoutine(hitReactionDirection));
     }
 
-    private System.Collections.IEnumerator HitFlashRoutine()
+    private System.Collections.IEnumerator HitFlashRoutine(HitReactionDirection hitReactionDirection)
     {
-        // 守卫：C帧弹刀、击飞、死亡、QTE 不播 HitFlash 动画
+        // 守卫：C帧弹刀、击飞、死亡、QTE 和眩晕不播受击动画；Getup 可被受击替换。
+        bool wasGettingUp = state == EnemyState.GettingUp;
         bool allowHit = !isCFrame && (!isSuperArmor || _allowHitFlashOnce);
         _allowHitFlashOnce = false;
         if (state != EnemyState.Launched
@@ -2220,9 +2636,25 @@ private void SpawnProjectile()
             && state != EnemyState.Stunned
             && allowHit)
         {
-            PlayHitVisual();
+            if (wasGettingUp)
+            {
+                _getupInterrupted = true;
+                if (_getupRoutine != null)
+                {
+                    StopCoroutine(_getupRoutine);
+                    _getupRoutine = null;
+                }
+            }
+            PlayHitVisual(hitReactionDirection);
         }
-        yield return new WaitForSeconds(0.4f);
+        yield return new WaitForSeconds(wasGettingUp ? 0.9f : 0.4f);
+        if (wasGettingUp && state == EnemyState.GettingUp && _getupInterrupted)
+        {
+            _getupInterrupted = false;
+            state = EnemyState.Idle;
+            PlayIdleVisual();
+            ResumeAfterGetup();
+        }
         _hitFlashRoutine = null;
     }
 
@@ -2290,7 +2722,8 @@ private void SpawnProjectile()
     /// 不扣HP、不生成伤害数字，计入Combo，并强制播放受击动画与反馈。
     /// QTE、收招、转阶段及非交战Boss不受影响。
     /// </summary>
-    public bool ApplyActiveDisplacementHit()
+    public bool ApplyActiveDisplacementHit(bool suppressHitReactionAnimation = false,
+        HitReactionDirection hitReactionDirection = HitReactionDirection.None)
     {
         if (state == EnemyState.Dead || state == EnemyState.QTEAttacking || isPhaseTransitioning) return false;
         if (isBoss && bossState != BossState.InCombat) return false;
@@ -2302,9 +2735,14 @@ private void SpawnProjectile()
         ApplyHitFlashImmediate();
         hitFlashTimer = HIT_FLASH_DURATION;
         RestartHitScaleFeedback(HitFeedbackStrength.Heavy);
-        PlayHitVisual();
+        if (!suppressHitReactionAnimation && state != EnemyState.Launched)
+        {
+            hitFlashTimer = HIT_FLASH_DURATION;
+            TriggerHitFlash(ResolveHitReactionDirection(hitReactionDirection));
+        }
         HitFeedbackManager.Trigger(new HitFeedbackContext(this, DamageType.Poise,
-            HitFeedbackSource.Displacement, HitFeedbackStrength.Heavy, 0f, false, true, transform.position));
+            HitFeedbackSource.Displacement, HitFeedbackStrength.Heavy, 0f, false, true, transform.position,
+            hitReactionDirection: hitReactionDirection));
         OnDamageTaken?.Invoke(this);
         return true;
     }
@@ -2462,6 +2900,7 @@ private void SpawnProjectile()
         // 若敌人在攻击动画中被秒杀，立即中断攻击动作（前移+翻转），直接进入死亡状态
         // Kill() 后立即重置位置和缩放：Kill 会留下中断时的中间值（如翻转-0.2），
         // 若不重置，死亡动效期间敌人位置/缩放会是错误的
+        _attackTelegraph?.StopWarning();
         if (_attackTween != null && _attackTween.IsActive())
         {
             _attackTween.Kill();
@@ -3085,6 +3524,8 @@ private void SpawnProjectile()
 
             mat.color = color;
         }
+
+        _attackTelegraph?.SetParentAlpha(hitFlashTimer > 0f ? 1f : alpha);
     }
 
     /// <summary>
@@ -3601,6 +4042,7 @@ private void SpawnProjectile()
 
     private void OnDestroy()
     {
+        _attackTelegraph?.StopWarning();
         _attackTween?.Kill(false);
         _attackTween = null;
         transform.DOKill(false);
@@ -3609,6 +4051,7 @@ private void SpawnProjectile()
 
     private void OnDisable()
     {
+        _attackTelegraph?.StopWarning();
         EnemyManager.Instance?.columnManager?.CancelPushReturnForEnemy(this, "cancel-reset");
         StopHitStop();
         StopHitScaleFeedback();
@@ -3642,6 +4085,8 @@ private void SpawnProjectile()
         _healthLocked = false;
         _isStunExiting = false;
         _resumeStunAfterLaunch = false;
+        _getupInterrupted = false;
+        if (_getupRoutine != null) { StopCoroutine(_getupRoutine); _getupRoutine = null; }
         if (_stunExitRoutine != null) { StopCoroutine(_stunExitRoutine); _stunExitRoutine = null; }
         currentBossPhase = 0;
         if (_phaseTransitionRoutine != null) { StopCoroutine(_phaseTransitionRoutine); _phaseTransitionRoutine = null; }

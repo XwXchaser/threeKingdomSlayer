@@ -74,7 +74,7 @@ public class SharedHealthGroup
     /// <summary>
     /// 受到伤害 — 扣除共享池HP，池归零时全部死亡
     /// </summary>
-    public void TakeDamage(float rawDamage, DamageType damageType, Enemy hitMember, Color? damageNumberColor = null, bool triggerHitAnimation = true, bool countsForCombo = true, bool canInterruptAttack = true, bool ignoreDamageModifiers = false, HitFeedbackSource feedbackSource = HitFeedbackSource.BasicAttack, HitFeedbackStrength? feedbackStrength = null, Vector3? impactPosition = null, Vector3 impactDirection = default, bool diseaseStabHit = false)
+    public void TakeDamage(float rawDamage, DamageType damageType, Enemy hitMember, Color? damageNumberColor = null, bool triggerHitAnimation = true, bool countsForCombo = true, bool canInterruptAttack = true, bool ignoreDamageModifiers = false, HitFeedbackSource feedbackSource = HitFeedbackSource.BasicAttack, HitFeedbackStrength? feedbackStrength = null, Vector3? impactPosition = null, Vector3 impactDirection = default, bool diseaseStabHit = false, HitReactionDirection hitReactionDirection = HitReactionDirection.None, bool suppressHitReactionAnimation = false)
     {
         if (members.Count == 0) return;
 
@@ -102,7 +102,7 @@ public class SharedHealthGroup
             {
                 HitFeedbackStrength memberStrength = feedbackStrength
                     ?? HitFeedbackManager.ResolveStrength(damageType, feedbackSource, finalDamage, true);
-                m.ApplyDamageFeedback(memberStrength);
+                m.ApplyDamageFeedback(memberStrength, hitReactionDirection, suppressHitReactionAnimation);
             }
 
             // 更新血条
@@ -120,7 +120,8 @@ public class SharedHealthGroup
         HitFeedbackStrength resolvedFeedbackStrength = feedbackStrength
             ?? HitFeedbackManager.ResolveStrength(damageType, feedbackSource, finalDamage, true);
         HitFeedbackManager.Trigger(HitFeedbackManager.CreateDamageContext(hitMember, damageType,
-            feedbackSource, resolvedFeedbackStrength, finalDamage, true, impactPosition, impactDirection, diseaseStabHit));
+            feedbackSource, resolvedFeedbackStrength, finalDamage, true, impactPosition, impactDirection,
+            diseaseStabHit, hitReactionDirection));
 
         if (currentHealth <= 0f)
         {

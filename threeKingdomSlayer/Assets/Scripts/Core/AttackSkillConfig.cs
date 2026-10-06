@@ -15,6 +15,10 @@ public class AttackSkillConfig : ScriptableObject
     public AttackType attackType;
     public DamageType damageType = DamageType.Sweep;
 
+    [Header("敌人受击动画")]
+    [Tooltip("命中敌人时的受击动画方向。未指定的攻击使用随机方向；Launch 始终不播放受击动画。")]
+    public HitReactionDirection hitReactionDirection = HitReactionDirection.Random;
+
     [Header("伤害")]
     [Tooltip("基础伤害")]
     public float damage = 30f;

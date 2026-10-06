@@ -19,6 +19,8 @@ public class AttackWave : MonoBehaviour
     private System.Action<Enemy> onHit;
     private bool canInterruptCFrame;
     private bool interruptsCavalryCharge;
+    private HitReactionDirection hitReactionDirection = HitReactionDirection.None;
+    private bool suppressHitReaction;
     private List<TargetEntry> targets = new List<TargetEntry>();
     private float elapsed;
     private int nextIndex;
@@ -61,18 +63,21 @@ public class AttackWave : MonoBehaviour
     public static AttackWave Create(Vector3 position, DamageType damageType, float damage,
         List<Enemy> targets, System.Action<Enemy> onHit = null, GameObject prefab = null, float zOffset = 0f,
         float? alphaOverride = null, Color? damageNumberColor = null, bool canInterruptCFrame = false,
-        Material materialOverride = null, float targetDuration = -1f, bool interruptsCavalryCharge = false)
+        Material materialOverride = null, float targetDuration = -1f, bool interruptsCavalryCharge = false,
+        HitReactionDirection hitReactionDirection = HitReactionDirection.None, bool suppressHitReaction = false)
     {
         return CreateInternal(position, damageType, damage, targets, onHit, prefab, zOffset,
             alphaOverride, damageNumberColor, canInterruptCFrame, materialOverride,
             shouldReturnWave: false, returnDamageMultiplier: 0.5f, targetDuration: targetDuration,
-            interruptsCavalryCharge: interruptsCavalryCharge);
+            interruptsCavalryCharge: interruptsCavalryCharge, hitReactionDirection: hitReactionDirection,
+            suppressHitReaction: suppressHitReaction);
     }
 
     public static AttackWave CreatePierceFromVisual(GameObject visualObject, Vector3 position,
         float damage, List<Enemy> targets, Vector3 endPosition,
         System.Action<Enemy> onHit = null, Color? damageNumberColor = null,
-        bool canInterruptCFrame = false, float timeScale = 1f, bool interruptsCavalryCharge = false)
+        bool canInterruptCFrame = false, float timeScale = 1f, bool interruptsCavalryCharge = false,
+        HitReactionDirection hitReactionDirection = HitReactionDirection.None)
     {
         if (visualObject == null)
             return null;
@@ -90,6 +95,7 @@ public class AttackWave : MonoBehaviour
         wave.damageNumberColor = damageNumberColor;
         wave.canInterruptCFrame = canInterruptCFrame;
         wave.interruptsCavalryCharge = interruptsCavalryCharge;
+        wave.hitReactionDirection = hitReactionDirection;
         wave.targetScale = visualObject.transform.localScale;
         wave._pierceSpinVisual = visualObject.GetComponent<PierceAxialSpinVisual>();
         wave._pierceTimeScale = timeScale;
@@ -127,19 +133,22 @@ public class AttackWave : MonoBehaviour
         List<Enemy> targets, float returnDamageMultiplier,
         System.Action<Enemy> onHit = null, GameObject prefab = null, float zOffset = 0f,
         float? alphaOverride = null, Color? damageNumberColor = null, bool canInterruptCFrame = false,
-        Material materialOverride = null, Color? colorOverride = null, float targetDuration = -1f)
+        Material materialOverride = null, Color? colorOverride = null, float targetDuration = -1f,
+        HitReactionDirection hitReactionDirection = HitReactionDirection.None)
     {
         return CreateInternal(position, damageType, damage, targets, onHit, prefab, zOffset,
             alphaOverride, damageNumberColor, canInterruptCFrame, materialOverride,
             shouldReturnWave: true, returnDamageMultiplier: returnDamageMultiplier,
-            colorOverride: colorOverride, targetDuration: targetDuration);
+            colorOverride: colorOverride, targetDuration: targetDuration,
+            hitReactionDirection: hitReactionDirection);
     }
 
     private static AttackWave CreateInternal(Vector3 position, DamageType damageType, float damage,
         List<Enemy> targets, System.Action<Enemy> onHit, GameObject prefab, float zOffset,
         float? alphaOverride, Color? damageNumberColor, bool canInterruptCFrame,
         Material materialOverride, bool shouldReturnWave, float returnDamageMultiplier,
-        Color? colorOverride = null, float targetDuration = -1f, bool interruptsCavalryCharge = false)
+        Color? colorOverride = null, float targetDuration = -1f, bool interruptsCavalryCharge = false,
+        HitReactionDirection hitReactionDirection = HitReactionDirection.None, bool suppressHitReaction = false)
     {
         GameObject obj;
         Material material = null;
@@ -219,6 +228,8 @@ public class AttackWave : MonoBehaviour
         wave.damageNumberColor = damageNumberColor;
         wave.canInterruptCFrame = canInterruptCFrame;
         wave.interruptsCavalryCharge = interruptsCavalryCharge;
+        wave.hitReactionDirection = hitReactionDirection;
+        wave.suppressHitReaction = suppressHitReaction;
         wave._shouldReturnWave = shouldReturnWave;
         wave._returnDamageMultiplier = returnDamageMultiplier;
         wave._targetDuration = targetDuration;
@@ -596,9 +607,11 @@ public class AttackWave : MonoBehaviour
             enemy.TakeDamage(hitDamage, damageType, damageNumberColor, canInterruptCFrame,
                 interruptsCavalryCharge: interruptsCavalryCharge,
                 feedbackStrength: strength,
+                triggerHitAnimation: !suppressHitReaction,
                 impactDirection: damageType == DamageType.Launch
                     ? (Camera.main != null ? Camera.main.transform.up : Vector3.up)
-                    : default);
+                    : default,
+                hitReactionDirection: hitReactionDirection);
             if (strength >= HitFeedbackStrength.Standard)
                 PauseTravelForHitStop(strength);
             onHit?.Invoke(enemy);

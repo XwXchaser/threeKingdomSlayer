@@ -448,8 +448,8 @@ public class AttackSystem : MonoBehaviour
             GetStabVisualStartXOffset(columnIndex),
             cfg.stabVisualTargetRandomRadius,
             baseLength,
-            GetAttackDuration(cfg), chargeInterrupt,
-            StabMotionParams.FromConfig(cfg), startPose, _chargeStabVisual);
+            GetAttackDuration(cfg), chargeInterrupt, cfg.hitReactionDirection,
+            false, StabMotionParams.FromConfig(cfg), startPose, _chargeStabVisual);
         AudioManager.Instance?.PostEvent("Player_Attack");
 
         Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 射程:{effectiveRows} 视觉射程:{visualRangeRows}");
@@ -482,6 +482,7 @@ public class AttackSystem : MonoBehaviour
             },
             onAllHit: () => ApplySlashDirectionalPush(hitTargets, leftToRight),
             targetDuration: GetAttackDuration(cfg),
+            hitReactionDirection: leftToRight ? HitReactionDirection.Left : HitReactionDirection.Right,
             rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite,
             visualPathTilt: visualTilt,
             useEnhancedSlashMotion: true,
@@ -602,7 +603,8 @@ public class AttackSystem : MonoBehaviour
                     AttackWave.Create(wavePos, cfg.damageType, finalDmg, aliveTargets,
                         onHit: _ => AudioManager.Instance?.PostEvent("Stab_Hit"),
                         prefab: cfg.attackWavePrefab,
-                        interruptsCavalryCharge: chargeInterrupt);
+                        interruptsCavalryCharge: chargeInterrupt,
+                        hitReactionDirection: cfg.hitReactionDirection);
                 return;
             }
 
@@ -612,7 +614,8 @@ public class AttackSystem : MonoBehaviour
             AttackWave.CreatePierceFromVisual(projectileObject, flightStart, finalDmg,
                 aliveTargets, visualEndPosition,
                 onHit: _ => AudioManager.Instance?.PostEvent("Stab_Hit"), timeScale: pierceTimeScale,
-                interruptsCavalryCharge: chargeInterrupt);
+                interruptsCavalryCharge: chargeInterrupt,
+                hitReactionDirection: cfg.hitReactionDirection);
         });
 
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -641,7 +644,8 @@ public class AttackSystem : MonoBehaviour
                     return;
                 AttackWave.Create(wavePos, cfg.damageType, finalDmg, aliveTargets,
                     prefab: cfg.attackWavePrefab,
-                    interruptsCavalryCharge: chargeInterrupt);
+                    interruptsCavalryCharge: chargeInterrupt,
+                    hitReactionDirection: cfg.hitReactionDirection);
             });
         }
 
@@ -726,7 +730,9 @@ public class AttackSystem : MonoBehaviour
                     prefab: null,
                     alphaOverride: 0f,
                     canInterruptCFrame: true,
-                    interruptsCavalryCharge: chargeInterrupt);
+                    interruptsCavalryCharge: chargeInterrupt,
+                    hitReactionDirection: cfg.hitReactionDirection,
+                    suppressHitReaction: true);
             });
         }
         else
@@ -811,7 +817,7 @@ public class AttackSystem : MonoBehaviour
             rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite,
             movementTilt: cfg.slashMovementTiltDegrees,
             visualPathTilt: cfg.slashOverrideVisualTilt ? cfg.slashVisualTiltDegrees : 0f,
-            useEnhancedSlashMotion: true);
+            useEnhancedSlashMotion: true, suppressHitReaction: true);
     }
 
     private void PlayLaunchVisual(AttackSkillConfig cfg, Vector3 playerPos, System.Action onImpact)
@@ -1207,7 +1213,8 @@ public class AttackSystem : MonoBehaviour
 
         AttackWave.CreateReturnWave(wavePos, cfg.damageType, finalDmg, targets, damageRatio,
             prefab: wavePrefab, zOffset: cfg.stabSpawnZOffset,
-            alphaOverride: alpha, damageNumberColor: waveColor, colorOverride: waveColor);
+            alphaOverride: alpha, damageNumberColor: waveColor, colorOverride: waveColor,
+            hitReactionDirection: cfg.hitReactionDirection);
 
         Debug.Log($"[AttackSystem] 回旋镖: type={attackType} dmg={finalDmg} returnRatio={damageRatio} cols=[{colMin},{colMax}] rangeRows={rangeRows} targets={targets.Count}");
         return true;
@@ -1247,7 +1254,8 @@ public class AttackSystem : MonoBehaviour
 
                 // 直接造成弹射伤害
                 next.TakeDamage(bounceDamage, cfg.damageType,
-                    feedbackSource: HitFeedbackSource.Passive, feedbackStrength: HitFeedbackStrength.Light);
+                    feedbackSource: HitFeedbackSource.Passive, feedbackStrength: HitFeedbackStrength.Light,
+                    hitReactionDirection: cfg.hitReactionDirection);
 
                 // 连锁闪电视觉：LineRenderer连接 current → next
                 StartCoroutine(CreateChainVisual(current, next));
@@ -1353,7 +1361,8 @@ public class AttackSystem : MonoBehaviour
             Vector3 wavePos = GetWavePosition(targets, columnIndex);
             wavePos.y = targets[0].transform.position.y + cfg.stabSpawnYOffset;
             AttackWave.Create(wavePos, cfg.damageType, damage * GetAttackRangeDamagePenalty(), targets,
-                prefab: cfg.attackWavePrefab, zOffset: cfg.stabSpawnZOffset);
+                prefab: cfg.attackWavePrefab, zOffset: cfg.stabSpawnZOffset,
+                hitReactionDirection: cfg.hitReactionDirection);
         }
 
         Debug.Log($"[AttackSystem] 强制Stab 列{columnIndex} 伤害:{damage} 目标数:{targets.Count}");
@@ -1406,7 +1415,8 @@ public class AttackSystem : MonoBehaviour
         if (targets.Count > 0)
         {
             Vector3 wavePos = GetWavePosition(targets, targetColumn);
-            AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab);
+            AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets, prefab: cfg.attackWavePrefab,
+                hitReactionDirection: cfg.hitReactionDirection);
         }
 
         Debug.Log($"[AttackSystem] 解锁攻击 {unlockId} Lv.{level} 伤害:{finalDmg} 目标数:{targets.Count}");

@@ -144,18 +144,18 @@ public sealed class CycloneZone : MonoBehaviour
     {
         if (enemy.isBoss && enemy.state != EnemyState.Stunned)
         {
-            enemy.ApplyActiveDisplacementHit();
+            enemy.ApplyActiveDisplacementHit(suppressHitReactionAnimation: true);
             enemy.TakeActiveDisplacementPoiseDamage(_bossPoiseDamagePercent);
             return;
         }
 
-        enemy.ApplyActiveDisplacementHit();
+        enemy.ApplyActiveDisplacementHit(suppressHitReactionAnimation: true);
         if (!enemy.CanBeLaunched(float.MaxValue))
             return;
 
         if (_damage > 0)
             enemy.TakeDamage(_damage, DamageType.Sweep, feedbackSource: HitFeedbackSource.ActiveSkill,
-                feedbackStrength: HitFeedbackStrength.Heavy);
+                feedbackStrength: HitFeedbackStrength.Heavy, suppressHitReactionAnimation: true);
         enemy.Launch(_knockupDuration);
 
         if (_landingDamage > 0)
@@ -173,7 +173,7 @@ public sealed class CycloneZone : MonoBehaviour
         enemy.OnLaunchedLanded -= OnEnemyLanded;
         if (enemy.state != EnemyState.Dead)
             enemy.TakeDamage(_landingDamage, DamageType.Sweep, feedbackSource: HitFeedbackSource.ActiveSkill,
-                feedbackStrength: HitFeedbackStrength.Heavy);
+                feedbackStrength: HitFeedbackStrength.Heavy, suppressHitReactionAnimation: true);
         TryFinish();
     }
 

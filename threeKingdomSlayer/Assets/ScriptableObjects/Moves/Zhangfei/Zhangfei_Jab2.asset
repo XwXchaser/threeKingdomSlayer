@@ -15,6 +15,7 @@ MonoBehaviour:
   id: 12
   attackType: 0
   damageType: 0
+  hitReactionDirection: 3
   damage: 26
   poiseDamage: 0
   interruptsCavalryCharge: 0
@@ -62,6 +63,7 @@ MonoBehaviour:
   launchPivotFromTailRatio: 0
   launchSweepRollDegrees: 160
   slashSweepAlpha: 1
+  launchForwardShift: 0
   ultimateEnergyGain: 10
   chargeLevelDamageMultipliers: []
   stabWindupRatio: 0.15

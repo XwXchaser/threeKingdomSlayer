@@ -30,6 +30,10 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip[] _qteBlockClips;
     [SerializeField, Range(0f, 4f)] private float _qteBlockVolume = 1.5f;
 
+    [Header("敌人攻击预警 SFX")]
+    [SerializeField] private AudioClip _enemyAttackTelegraphClip;
+    [SerializeField, Range(0f, 4f)] private float _enemyAttackTelegraphVolume = 0.8f;
+
     [Header("普通敌人受击语音")]
     [SerializeField] private AudioClip[] _enemyHitClips;
     [SerializeField, Min(0f)] private float _enemyHitCooldown = 0.14f;
@@ -146,6 +150,7 @@ public class AudioManager : MonoBehaviour
         PreloadClipArray(_attackTiles);
         PreloadClip(_parryClip);
         PreloadClipArray(_qteBlockClips);
+        PreloadClip(_enemyAttackTelegraphClip);
         PreloadClipArray(_enemyHitClips);
         PreloadClipArray(_slashHitClips);
         PreloadClipArray(_stabHitClips);
@@ -233,6 +238,9 @@ public class AudioManager : MonoBehaviour
                 break;
             case "QTE_Block":
                 PlayRandom(_qteBlockClips, _qteBlockVolume);
+                break;
+            case "Enemy_AttackTelegraph":
+                PlayOneShot(_enemyAttackTelegraphClip, _enemyAttackTelegraphVolume);
                 break;
             case "Enemy_Hit":
                 PlayEnemyHit();
