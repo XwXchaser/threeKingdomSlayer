@@ -492,12 +492,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cavalryEnemyId: 109
-  chargeHitThreshold: 2
-  chargeDamageMultiplier: 1
-  retreatAfterCharge: 1
-  chargeRangeRows: 5
+  chargeDamage: 8
+  windupDuration: 0.3
+  strikeWindup: 0.18
+  strikeRecover: 0.22
+  strikeLungeDistance: 0.5
+  interruptRecover: 0.2
   chargeCooldown: 1
-  retreatMaxRow: 4
+  spawnEntrySettleDuration: 0.35
 --- !u!114 &5539183438271926435
 MonoBehaviour:
   m_ObjectHideFlags: 0
