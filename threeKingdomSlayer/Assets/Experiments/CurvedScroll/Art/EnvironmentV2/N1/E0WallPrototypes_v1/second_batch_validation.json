@@ -1,0 +1,185 @@
+{
+  "projectFolder": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N1/E0WallPrototypes_v1",
+  "assets": [
+    {
+      "file": "n1_e0_distant_ruined_wall_module_01_v1.png",
+      "role": "distant_ruined_wall",
+      "size": [
+        812,
+        314
+      ],
+      "alpha16BBox": [
+        29,
+        30,
+        784,
+        286
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.08917197452229299
+      ]
+    },
+    {
+      "file": "n1_e0_distant_ruined_wall_module_02_v1.png",
+      "role": "distant_ruined_wall",
+      "size": [
+        742,
+        384
+      ],
+      "alpha16BBox": [
+        28,
+        29,
+        713,
+        355
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.07552083333333333
+      ]
+    },
+    {
+      "file": "n1_e0_distant_ruined_wall_module_03_v1.png",
+      "role": "distant_ruined_wall",
+      "size": [
+        805,
+        316
+      ],
+      "alpha16BBox": [
+        29,
+        29,
+        776,
+        287
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.09177215189873418
+      ]
+    },
+    {
+      "file": "n1_e0_distant_ruined_wall_module_04_v1.png",
+      "role": "distant_ruined_wall",
+      "size": [
+        743,
+        292
+      ],
+      "alpha16BBox": [
+        28,
+        29,
+        715,
+        262
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.10273972602739725
+      ]
+    },
+    {
+      "file": "n1_e0_war_aftermath_prop_01_v1.png",
+      "role": "war_aftermath_prop",
+      "size": [
+        543,
+        453
+      ],
+      "alpha16BBox": [
+        24,
+        24,
+        519,
+        429
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.052980132450331126
+      ]
+    },
+    {
+      "file": "n1_e0_war_aftermath_prop_02_v1.png",
+      "role": "war_aftermath_prop",
+      "size": [
+        588,
+        387
+      ],
+      "alpha16BBox": [
+        24,
+        25,
+        564,
+        363
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.06201550387596899
+      ]
+    },
+    {
+      "file": "n1_e0_war_aftermath_prop_03_v1.png",
+      "role": "war_aftermath_prop",
+      "size": [
+        561,
+        524
+      ],
+      "alpha16BBox": [
+        24,
+        24,
+        537,
+        499
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.04770992366412214
+      ]
+    },
+    {
+      "file": "n1_e0_war_aftermath_prop_04_v1.png",
+      "role": "war_aftermath_prop",
+      "size": [
+        551,
+        531
+      ],
+      "alpha16BBox": [
+        24,
+        24,
+        527,
+        506
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.047080979284369114
+      ]
+    },
+    {
+      "file": "n1_e0_war_aftermath_prop_05_v1.png",
+      "role": "war_aftermath_prop",
+      "size": [
+        588,
+        521
+      ],
+      "alpha16BBox": [
+        24,
+        24,
+        564,
+        497
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.046065259117082535
+      ]
+    },
+    {
+      "file": "n1_e0_war_aftermath_prop_06_v1.png",
+      "role": "war_aftermath_prop",
+      "size": [
+        555,
+        531
+      ],
+      "alpha16BBox": [
+        24,
+        24,
+        530,
+        507
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.04519774011299435
+      ]
+    }
+  ]
+}

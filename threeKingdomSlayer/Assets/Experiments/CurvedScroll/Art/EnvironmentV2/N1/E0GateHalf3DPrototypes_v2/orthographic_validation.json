@@ -1,0 +1,21 @@
+{
+  "front": "gate_front_facade_orthographic_v2.png",
+  "otherModules": [
+    "gate_inner_wall_left_orthographic_v2.png",
+    "gate_inner_wall_right_orthographic_v2.png",
+    "gate_arch_soffit_orthographic_v2.png",
+    "gate_exit_end_wall_orthographic_v2.png"
+  ],
+  "frontDoorSamples": {
+    "465": 0,
+    "546": 0,
+    "626": 0,
+    "706": 0
+  },
+  "frontAlphaBBox": [
+    17,
+    17,
+    1016,
+    786
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "source": "C:\\Users\\Administrator\\Pictures\\gptGen\\n1_e0_gate_orthographic_v1\\gate_front_facade_v1.png",
+  "output": "gate_front_facade_orthographic_v2.png",
+  "size": [
+    1064,
+    835
+  ],
+  "alpha16BBox": [
+    33,
+    33,
+    1032,
+    802
+  ],
+  "doorwayRows": [
+    {
+      "y": 459,
+      "centerAlpha": 251,
+      "centerTransparentRuns": []
+    },
+    {
+      "y": 501,
+      "centerAlpha": 0,
+      "centerTransparentRuns": [
+        [
+          485,
+          580
+        ]
+      ]
+    },
+    {
+      "y": 542,
+      "centerAlpha": 0,
+      "centerTransparentRuns": [
+        [
+          441,
+          624
+        ]
+      ]
+    },
+    {
+      "y": 584,
+      "centerAlpha": 0,
+      "centerTransparentRuns": [
+        [
+          427,
+          637
+        ]
+      ]
+    },
+    {
+      "y": 626,
+      "centerAlpha": 0,
+      "centerTransparentRuns": [
+        [
+          426,
+          638
+        ]
+      ]
+    },
+    {
+      "y": 668,
+      "centerAlpha": 0,
+      "centerTransparentRuns": [
+        [
+          426,
+          639
+        ]
+      ]
+    },
+    {
+      "y": 709,
+      "centerAlpha": 0,
+      "centerTransparentRuns": [
+        [
+          426,
+          638
+        ]
+      ]
+    },
+    {
+      "y": 751,
+      "centerAlpha": 0,
+      "centerTransparentRuns": [
+        [
+          426,
+          638
+        ]
+      ]
+    }
+  ],
+  "note": "Original alpha preserved; no geometric hole painting or triangle mask."
+}

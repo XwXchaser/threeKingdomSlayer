@@ -1,0 +1,132 @@
+{
+  "sourceFolder": "C:\\Users\\Administrator\\Pictures\\gptGen\\n1_e0_wall_prototypes_20261006_v1\\cutout_modules",
+  "projectFolder": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N1/E0WallPrototypes_v1",
+  "assets": [
+    {
+      "file": "n1_e0_wall_module_01_v1.png",
+      "role": "wall_module",
+      "size": [
+        408,
+        236
+      ],
+      "alpha16BBox": [
+        24,
+        24,
+        359,
+        211
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.1059322033898305
+      ]
+    },
+    {
+      "file": "n1_e0_wall_module_02_v1.png",
+      "role": "wall_module",
+      "size": [
+        436,
+        247
+      ],
+      "alpha16BBox": [
+        47,
+        25,
+        387,
+        223
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.09716599190283401
+      ]
+    },
+    {
+      "file": "n1_e0_wall_module_03_v1.png",
+      "role": "wall_module",
+      "size": [
+        374,
+        286
+      ],
+      "alpha16BBox": [
+        47,
+        25,
+        350,
+        262
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.08391608391608392
+      ]
+    },
+    {
+      "file": "n1_e0_wall_module_04_v1.png",
+      "role": "wall_module",
+      "size": [
+        379,
+        320
+      ],
+      "alpha16BBox": [
+        24,
+        25,
+        330,
+        296
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.075
+      ]
+    },
+    {
+      "file": "n1_e0_wall_module_05_v1.png",
+      "role": "wall_module",
+      "size": [
+        432,
+        239
+      ],
+      "alpha16BBox": [
+        47,
+        25,
+        383,
+        214
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.10460251046025104
+      ]
+    },
+    {
+      "file": "n1_e0_wall_module_06_v1.png",
+      "role": "wall_module",
+      "size": [
+        404,
+        256
+      ],
+      "alpha16BBox": [
+        49,
+        25,
+        379,
+        232
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.09375
+      ]
+    },
+    {
+      "file": "n1_e0_broken_open_gate_module_v1.png",
+      "role": "broken_open_gate",
+      "size": [
+        1064,
+        951
+      ],
+      "alpha16BBox": [
+        32,
+        33,
+        1032,
+        919
+      ],
+      "pivotNormalizedBottomCenter": [
+        0.5,
+        0.033648790746582544
+      ]
+    }
+  ]
+}

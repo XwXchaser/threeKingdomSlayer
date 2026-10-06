@@ -23,6 +23,13 @@ public sealed class BattleYRouteHost : MonoBehaviour
     public float openingDistance = 18f;
     public float openingDuration = 8f;
     public float branchDuration = 8f;
+    [Tooltip("Normalized time to traveled distance. Short acceleration, fast travel, long deceleration; endpoints are fixed by the mover.")]
+    public AnimationCurve travelProgressCurve = new AnimationCurve(
+        new Keyframe(0f, 0f, 0f, 0f),
+        new Keyframe(0.1f, 0.1f, 1.6f, 1.6f),
+        new Keyframe(0.4f, 0.65f, 1f, 1f),
+        new Keyframe(0.8f, 0.97f, 0.22f, 0.22f),
+        new Keyframe(1f, 1f, 0f, 0f));
     public string Phase { get; private set; }
     readonly System.Collections.Generic.HashSet<int> groundedEnemies = new System.Collections.Generic.HashSet<int>();
     YScrollSample route;
@@ -71,9 +78,21 @@ public sealed class BattleYRouteHost : MonoBehaviour
     }
     IEnumerator MoveTo(float end,float seconds)
     {
-        float origin=route.progress,elapsed=0;
-        while(elapsed<seconds){elapsed+=Time.deltaTime;route.progress=Mathf.Lerp(origin,end,Mathf.SmoothStep(0,1,Mathf.Clamp01(elapsed/Mathf.Max(.1f,seconds))));yield return null;}
-        route.progress=end;
+        float origin = route.progress, elapsed = 0f, traveled = 0f;
+        float duration = Mathf.Max(0.1f, seconds);
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float time = Mathf.Clamp01(elapsed / duration);
+            float sample = travelProgressCurve != null && travelProgressCurve.length >= 2
+                ? travelProgressCurve.Evaluate(time)
+                : Mathf.SmoothStep(0f, 1f, time);
+            // User tuning cannot reverse travel or overshoot the destination.
+            traveled = Mathf.Max(traveled, Mathf.Clamp01(sample));
+            route.progress = Mathf.Lerp(origin, end, traveled);
+            yield return null;
+        }
+        route.progress = end;
     }
     public void ChooseBranch(bool right)
     {

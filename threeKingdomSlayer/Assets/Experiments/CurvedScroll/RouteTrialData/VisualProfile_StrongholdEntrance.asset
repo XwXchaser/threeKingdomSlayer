@@ -95,14 +95,15 @@ MonoBehaviour:
     sortingOrder: 2
     flipX: 1
     loop: 1
+  placementsUseLocalDistance: 1
   backgroundLift: 0.4
   tileSize: 4
   shoulderLength: 8
   shoulderWidth: 1.1
   nearMargin: 3
   middleMargin: 1.2
-  largePropCount: 0
-  smallPropCount: 0
+  largePropCount: 4
+  smallPropCount: 8
   largePropScale: 1.3
   smallPropScale: 0.65
   roadClearance: 0.35

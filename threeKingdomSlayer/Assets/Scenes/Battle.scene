@@ -13022,13 +13022,64 @@ MonoBehaviour:
   useSampleBattle: 1
   stage: {fileID: 681761646}
   battleCamera: {fileID: 145927960}
-  openingBattleConfig: {fileID: 11400000, guid: bcb5b2d5dd8e4e64f816011a2a9a2f65, type: 2}
+  openingBattleConfig: {fileID: 11400000, guid: 29f11170886998f4ca470b5075e5d3d7, type: 2}
   groundHeight: -1.8
   enemyFootGroundY: -1.8
   applyEnemyVisualOffset: 0
-  openingDistance: 18
-  openingDuration: 8
-  branchDuration: 8
+  openingDistance: 0
+  openingDuration: 3
+  branchDuration: 3
+  travelProgressCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.24167022
+      value: 0.43726504
+      inSlope: 1.9017924
+      outSlope: 1.9017924
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.25863162
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.36665908
+      value: 0.6782924
+      inSlope: 1.4120995
+      outSlope: 1.4120995
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.35188007
+    - serializedVersion: 3
+      time: 0.5916626
+      value: 0.88746023
+      inSlope: 0.65808177
+      outSlope: 0.65808177
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.29592535
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!4 &1732934626
 Transform:
   m_ObjectHideFlags: 0

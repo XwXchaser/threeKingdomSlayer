@@ -1,0 +1,19 @@
+{
+  "created": 1791295885,
+  "data": [
+    {
+      "url": "https://cdn.jd23kjs.work/images/20261006T1411/6521b7ae8e5062771e2dd662764af821de4193dfbda66780cf7fa61d388fd116-1271bc52bd174eb7b5096b7a7876e362.png"
+    }
+  ],
+  "usage": {
+    "input_tokens": 267,
+    "output_tokens": 4198,
+    "total_tokens": 4465,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "input_tokens_details": {
+      "text_tokens": 267
+    }
+  }
+}

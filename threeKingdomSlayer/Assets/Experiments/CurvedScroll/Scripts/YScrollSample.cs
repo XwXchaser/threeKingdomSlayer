@@ -21,7 +21,8 @@ public sealed class YScrollSample : MonoBehaviour
 
     public static Vector3 Evaluate(float distance, float degrees, bool right, out float heading)
     {
-        const float junction=20, radius=18;
+        // Expanded travel test: preserve the original shape while giving each transfer room for readable scenery.
+        const float junction=83.12884f, radius=28.1595573f;
         float a=degrees*Mathf.Deg2Rad, sign=right?1:-1;
         if(distance<=junction){heading=0;return new Vector3(0,0,distance);}
         float curve=Mathf.Min(distance-junction,radius*a);
@@ -31,7 +32,7 @@ public sealed class YScrollSample : MonoBehaviour
         float tail=Mathf.Max(0,distance-junction-radius*a);
         return p+new Vector3(sign*Mathf.Sin(a),0,Mathf.Cos(a))*tail;
     }
-    public float Length => 20+18*turnAngle*Mathf.Deg2Rad+35;
+    public float Length => 160f;
     void OnEnable(){Camera.onPreCull+=Before;Camera.onPostRender+=After;}
     void OnDisable(){Camera.onPreCull-=Before;Camera.onPostRender-=After;Restore();}
     void Update()

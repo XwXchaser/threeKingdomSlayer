@@ -1,0 +1,140 @@
+{
+  "sourceFolder": "C:\\Users\\Administrator\\Pictures\\gptGen\\n1_e0_gate_orthographic_v1",
+  "assets": [
+    {
+      "file": "gate_front_facade_orthographic_v2.png",
+      "source": "gate_front_facade_v1.png",
+      "size": [
+        1064,
+        835
+      ],
+      "alphaBBox": [
+        32,
+        32,
+        1032,
+        803
+      ],
+      "alpha16BBox": [
+        33,
+        33,
+        1032,
+        802
+      ],
+      "centerAlpha": 251,
+      "corners": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "file": "gate_inner_wall_left_orthographic_v2.png",
+      "source": "gate_inner_wall_left_v1.png",
+      "size": [
+        1056,
+        820
+      ],
+      "alphaBBox": [
+        32,
+        32,
+        1024,
+        788
+      ],
+      "alpha16BBox": [
+        33,
+        33,
+        1023,
+        787
+      ],
+      "centerAlpha": 251,
+      "corners": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "file": "gate_inner_wall_right_orthographic_v2.png",
+      "source": "gate_inner_wall_right_v1.png",
+      "size": [
+        1037,
+        850
+      ],
+      "alphaBBox": [
+        32,
+        32,
+        1005,
+        818
+      ],
+      "alpha16BBox": [
+        33,
+        32,
+        1005,
+        818
+      ],
+      "centerAlpha": 251,
+      "corners": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "file": "gate_arch_soffit_orthographic_v2.png",
+      "source": "gate_arch_soffit_v1.png",
+      "size": [
+        1058,
+        321
+      ],
+      "alphaBBox": [
+        32,
+        32,
+        1026,
+        289
+      ],
+      "alpha16BBox": [
+        32,
+        33,
+        1026,
+        289
+      ],
+      "centerAlpha": 251,
+      "corners": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "file": "gate_exit_end_wall_orthographic_v2.png",
+      "source": "gate_exit_end_wall_v1.png",
+      "size": [
+        1026,
+        848
+      ],
+      "alphaBBox": [
+        32,
+        32,
+        994,
+        816
+      ],
+      "alpha16BBox": [
+        33,
+        32,
+        993,
+        815
+      ],
+      "centerAlpha": 0,
+      "corners": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}
