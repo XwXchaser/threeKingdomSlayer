@@ -18,11 +18,11 @@ MonoBehaviour:
   - waveId: 1
     isBossWave: 0
     rows:
-    - enemyIds: 6500000000000000650000000000000065000000
+    - enemyIds: 0000000000000000f30300000000000000000000
     healthMultiplier: 1
     bossHealthMultiplier: 0
     attackSpeedMultiplier: 1
-    damageMultiplier: 0.05
+    damageMultiplier: 0.1
     waveTintColor: {r: 1, g: 1, b: 1, a: 1}
     enableDynamicRush: 0
     rushMoveDelay: 0.2
