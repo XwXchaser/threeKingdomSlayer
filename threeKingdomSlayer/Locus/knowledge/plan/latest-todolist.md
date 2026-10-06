@@ -1,9 +1,26 @@
 ---
 id: kd_65412ee0-2f14-4b9d-a598-afdce4337b9a
 injectMode: inherit
-summary: 本周主要目标：音频系统改造（音效/背景音乐独立音量控制）；增强战斗视觉与动效（命中卡肉停顿与命中视觉效果）。其余待办保留。
+summary: Y分叉最新待办：54株草摇曳获用户确认，接线与自动风动参数已回读；当前Battle/Y均dirty，保存重载收尾、Encounter接入和自然路线战斗回归待完成。
 aiEditMode: inherit
 ---
+
+## 当前场景搭建交接入口（2026-10-01）
+
+- 最新状态先读 `plan/curved-scroll-development-handoff.md` 第14节；工作流为 `memory/y-junction-scene-authoring-workflow.md`，错误复盘为 `memory/project-mistake-note.md`。本文件历史段落不是当前自动执行清单。
+- 当前分支 `port/combat-layer-from-video-branch`（HEAD `07970e52`），场景搭建改动未commit/push；保持Battle宿主 + Additive Y路线层，不覆盖其他战斗层/Enemy/MoveSystem/HTML/Workspace未提交文件。
+- 既有保存基线：三层候选地面、独立天空背景、54株草、建筑脚点及战斗节点镜像布景。草摇曳效果现已由用户确认实现；当前只读核对为54个 `Wind Mesh`、151项scenery、无空项/重复、三份材质自动风动（强度0.28、速度2.1、时间-1），Console error/warning=0。
+- 当前现场覆盖旧dirty=false结论：Battle和Y均dirty=true；Y根位置(0,-1.8,0)、right=false、progress=0.260352、viewCamera=None。本轮仅更新文档，未保存、恢复预览或重载场景；草风动持久化收尾仍需确认，禁止Save All。
+- **当前优先待办**：
+  - [ ] 新会话先绑定编辑器预览相机；当前重开后 `viewCamera=None`，不可靠跨场景保存。不要为绑定而调用会丢Y未保存工作的重开菜单。
+  - [x] 用户确认当前草摇曳效果已实现；保持54株及现有布局，不重新生成或重复部署。
+  - [ ] 草风动保存/重载收尾：先区分用户编辑与临时预览，明确恢复值，只保存授权Y层和草资源；不保存Battle临时dirty状态。
+  - [ ] 截图复查分支后段密度、近景草过亮/过大与草图切片缺陷，按实际Game微调。
+  - [x] 两座瞭望塔、门楼、主帐篷按实际Alpha脚点、路线终点投影和真实Battle视野重新布置；保存重载及Play暂停截图已复看。旧重复 `CommandTent - beside road` 已禁用但保留，最终主观观感待用户验收。
+  - [x] 复用已验收木栅/火盆/军旗，补齐右营地及开局战斗点的左右镜像组；正确裁切的小帐篷/箱子及复用道具位于 `Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/`。旧共享图集未修改。
+  - [ ] 提高Encounter编辑可操作性：目前三份预览引用不驱动Runtime；Host的Opening/Left/Right依旧同为SmallBattle。
+  - [ ] 在最新战斗移植基线上完成自然Left/Right战斗→奖励→旅行回归、暂停/退出/重入与10次生命周期检查。
+- 暂不做：改移动采样/曲率、追加新道路Mesh、正式存档/合流/三分支。此前道路“空带”已证实是背景遮挡，持久道路Mesh只保留为未来有新证据时的备选。
 
 ## 本周主要目标（新增）
 
@@ -247,6 +264,60 @@ aiEditMode: inherit
 
 ### 连续2.5D卷轴场景重构（当前任务）
 
+#### 当前已验收基线（2026-10-02）
+- 用户已确认当前80单位节点间距、3秒移动时长的高速转场观感良好，作为后续卷轴化场景调参基线。
+- 路线采样：`YScrollSample.Length=160`；开场节点到战斗节点距离=`80`；战斗节点到分支节点距离=`80`；左右分支等长。
+- 移动时序：`BattleYRouteHost.openingDuration=3`、`branchDuration=3`；当前等距80单位版本的观感已由用户实机确认；此前2.994秒/2.997秒工具采样仍使用旧414.823长度，不能作为80单位版本的计时证明。
+- 当前路线采样参数：`junction=83.12884`、`radius=28.1595573`、45°时尾段约`54.75470`，转角保持`45°`；`Length`当前固定为`160`用于等距节点测试。
+- 当前旅行曲线由用户调过并保留，关键点为：`(0,0)`、`(0.241670221,0.437265038)`、`(0.4583298,0.770281851)`、`(0.675,0.911040068)`、`(1,1)`。曲线表达“前段快速推进、后段长减速、终点精准停靠”；后续调整必须先保留此基线副本。
+- 地面Shader同步使用当前路线几何：直路中心延伸到`83.12884`，分叉半径`28.1595573`，出口延伸长度`600`；道路/地形覆盖已按当前测试路线保存。
+- 当前景观引用数量=`633`，无空引用/重复引用；这些对象仍是高速移动的临时重复景观测试集，正式拓扑主题化部署待后续完成。
+- 回读保存状态：`Assets/Experiments/CurvedScroll/YJunctionSample.unity`与`Assets/Scenes/Battle.scene`均`dirty=false`；Y根节点恢复`(0,0,0)`，`progress=0.5`、`right=true`、`viewCamera=None`。
+
+#### 本轮用户目标：高速、长距离、剧情化转场
+- [ ] **路线长度扩展为当前约3倍**：当前 Y 样例 `YScrollSample.Length` 约69.1世界单位；目标规格约207世界单位，最终数值以路线几何、道路覆盖和镜头可见范围实测为准。
+  - 不得只修改 `Length` 返回值；直路段、转弯半径、分支尾段、地面道路覆盖、侧景布局、远景背景和终点入口必须同步扩展。
+  - 不修改 `YScrollSample.Evaluate()` 的既有坐标语义，除非先建立新的可配置路线参数并完成采样/战斗回归；当前 `junction=20`、`radius=18`、尾段35是受保护的既有行为基线。
+  - 三倍长度的目标是让节点之间有足够的“移动叙事空间”，不是把同一批树石稀疏拉开。
+- [ ] **移动时间统一缩短为3秒**：开局移动、分支移动和后续正式路线出口转场均以3秒为目标；不要通过降低美术数量或跳过环境段来实现。
+  - 当前 `BattleYRouteHost.openingDuration=8`、`branchDuration=8`，需要迁移为配置化的3秒演出时长；`YScrollSample.duration` 仅保留为孤立样例预览参数，不能成为正式路线唯一时序来源。
+  - 速度提升后必须验证近景掠过速度、对象插值、道路投影、目标节点抵达和战斗启动没有错位；禁止让战斗对象、Battle Camera、Player 或敌人跟随道路移动。
+- [ ] **转场必须有明显的高速移动感**：通过近景大物体快速掠过、中景连续替换/渐变、远景缓慢变化、道路曲率和镜头轻微惯性共同表达，不依赖单纯提高 progress。
+- [ ] **概念先行**：每条正式拓扑边在部署前先制作一张可评审概念图/构图草图，至少包含道路方向、中央安全区、近中远景层、节点语义和转场起止画面；概念图未确认前不批量部署场景对象。
+- [ ] **素材生产闭环**：概念图 → 拆分背景/地面/侧景/前景/事件道具 → 导入并验证透明边界与脚点 → 按距离和层级部署 → Game Camera截图 → 3秒高速播放验收。
+- [ ] **每条边必须有独立环境主题，不得复用同一套树石填满全程**：至少区分黄土战场、战后余烬、官道辎重、燃烧村落、山脚、山道、曹军营垒、桥头等状态。
+
+#### 正式拓扑对应的转场内容清单
+- [ ] **N1 当阳乱军 → E0 战后余烬**：开阔黄土战场逐渐进入战后烟尘；残旗、断枪、翻倒木车、散落盾牌、火星和撤退人流从近景快速掠过；远景保留低矮山脉/残墙。
+- [ ] **E0 → E1 残军集结**：战场边缘出现聚拢的残兵、辎车和伤兵；用短暂开阔区和烟尘降低速度压迫，传达“重新整队”而不是瞬移换图。
+- [ ] **E1 → J1 官道/村落选择**：分岔前必须形成两种可读环境：官道一侧有辎重、宽路和曹军远旗；村落一侧有燃烧民居、破篱笆、倒墙和火光。中央出口保持开放。
+- [ ] **J1 → N2 官道断后**：进入较宽的官道；两侧部署辎车、木箱、低矮断墙、烽火和远景曹军旗阵；不侵入五列五排战斗空间。
+- [ ] **J1 → EV/村落外围 → N3 村落搜救**：实际转入村落侧翼；近景按篱笆、破门、民居边角、火盆、泥路和求救痕迹排列；右侧断石墙作为空间锚点，避免硬切。
+- [ ] **N2 → E2 辎重受阻 → E3 陷车改道**：表现陷泥车轮、散落粮袋、民夫推车和断裂车轴；道路环境由官道逐步过渡到山脚，不直接换背景。
+- [ ] **E3 → E4 山脚急行 → N4 山道救援**：山体/岩壁从远景进入左右中景，色调由黄土转灰蓝；近景树干、岩石和断箭高速掠过；中央保持开阔谷地。
+- [ ] **N3 → E5 安置幸存者 → E6 民居线索 → E7 斥候急报**：村落密度逐渐下降，转为村外空地和树林；保留火光、幸存者聚集点、指向山道的残墙/路标，表达情报推进。
+- [ ] **J2 → E8 战痕引路 → E9 山隘传令 → N4**：马蹄印、血迹、断箭、敌军残骸和赵云撤离痕迹成为连续线索；山壁作为两侧远景，不压入中央战斗区。
+- [ ] **J2 → N5 曹军合围**：环境转入曹军侧翼军阵；远景营垒、暗红军旗、火把、战鼓台和密集军阵横向铺开；近景旗杆必须位于道路边缘，不插入道路中心。
+- [ ] **N4/N5 → E11 撤军讯号 → E12 奔赴桥头 → N6 长坂桥断后**：出现远处撤军旗语、桥头烟尘和撤退人流；道路逐步转换为桥面，桥栏沿左右边缘，水面只在两侧窄条露出，最后进入长坂桥终局战。
+
+#### 每条转场边的制作交付物
+- [ ] 边配置表：`sourceNode`、`targetNode`、出口方向、演出时长（3秒）、目标环境段、起止画面、音乐/环境声、是否允许跳过。
+- [ ] 概念图：起点构图、0.5秒高速状态、中段环境变化、2.5秒目标入口、3秒抵达帧；标出中央安全通道和近中远景层。
+- [ ] 背景素材：远景山体/营垒/村落/桥头等，保证可平铺或可按距离渐变。
+- [ ] 地面素材：道路、泥地、山道、桥面和水面边缘，保证路线长度扩展后无空白接缝。
+- [ ] 中景素材：树群、岩壁、篱笆、营垒、辎车、民居、断墙等，按左右手工布局。
+- [ ] 近景素材：树干、旗杆、碎石、木箱、火盆、断箭、车轮等，用于高速掠过和速度参照。
+- [ ] 事件素材：撤退人流、尘烟、火星、旗语、马蹄/血迹线索、远处赵云/阿斗剪影等；不与战斗对象绑定。
+- [ ] 部署清单：每个对象记录起始距离、结束距离、横向偏移、缩放、排序层、翻转、透明淡入淡出和是否循环。
+- [ ] Game截图与播放录像：至少验证起点、1秒、中段、2秒、终点五个采样帧；确认快速移动不是“整屏瞬换”。
+
+#### 关键保护边界
+- [ ] 不移动 Player、Enemy、Battle Camera、StageController、QTE、投射物和战斗阵型。
+- [ ] 不用道路障碍物解释战斗区缩窄；所有环境阻挡只放在侧边或远景。
+- [ ] 不通过节点瞬间 `ApplyProfile` 切换整套场景；视觉环境必须由 Travel/World Sequence 按距离连续推进。
+- [ ] 不打开、保存或部署 `Assets/Experiments/CurvedScroll/FakeRouteDataTrial.unity`。
+- [ ] 不把新转场美术一次性堆进 `YJunctionSample.unity`；正式拓扑扩展后应迁移到可编辑的 World Sequence/Travel Presentation 数据。
+
 #### 核心理解
 - 卷轴场景是一条连续的、按 presentation distance 推进的 2.5D 面片化环境，不是按节点切换 Unity Scene 或瞬时替换背景。
 - 节点只负责战斗、对话、奖励和路线出口；节点进入不得直接 ApplyProfile 改变场景。
@@ -449,4 +520,137 @@ Battle.scene（唯一战斗宿主）
 - [ ] 接入正式路线选择UI，完成Left/Right完整自然操作回归。
 - [ ] 绑定不同分支战斗配置、战斗背景和Scene敌人生成标记。
 - [ ] 完成B/C→D合流和正式存档，不扩展三分支前不改变两分支规则。
+
+### 场景搭建可操作性重构：路线、战斗节点与敌人出现位置统一（2026-09-27）
+
+#### 明确需求
+- [ ] `YJunctionSample` 不再只是路线视觉样例；它必须成为可编辑的路线与战斗节点 authoring 场景。
+- [ ] 美术人员可以在 Scene 中直接选择、移动和保存：路线节点、分支路径点、战斗区域、玩家进入点、敌人阵型预览点以及环境插片。
+- [ ] 每个可进入战斗的路线节点必须有唯一的 `BattleEncounterAuthoring` 配置，并明确绑定一个或多个 `StageConfig`/BattleEntry。
+- [ ] Scene 中显示的敌人预览必须来自绑定的真实战斗配置/FormationConfig；不能继续使用与真实战斗无关的手工 `Display Enemies - no combat` 作为唯一依据。
+- [ ] 敌人预览只负责编辑显示，不挂 `Enemy`、不接管对象池、不参与伤害；真实敌人仍由 `Battle.scene` 的 `StageController` 生成。
+- [ ] 到达路线节点后，运行时必须读取该节点的战斗配置、Battle Anchor、玩家进入方向和战斗区域参数，再启动真实战斗；不能只调用固定 `StartRouteBattle()` 而忽略场景配置。
+- [ ] 战斗区域、道路环境与战斗坐标职责必须清晰：环境可以随路线视觉转向，Player/Enemy/QTE/Projectile 仍由 Battle 宿主控制，不能被美术层随意移动。
+- [ ] 左路与右路必须分别可配置、可预览、可验证，不能共享同一套无法区分的敌人出现位置或战斗配置。
+- [ ] 任何场景保存都不得把运行时生成的道路、路肩、临时投影对象或预览对象写入 `.unity`；编辑数据必须是 Hierarchy 中真实、可追踪、可保存的对象或明确的 ScriptableObject 引用。
+
+#### 目标场景层级
+```text
+Y Junction - Authoring Root
+├─ Route Visual
+│  ├─ Terrain / Road
+│  ├─ Left Branch Content
+│  └─ Right Branch Content
+├─ Encounter Authoring
+│  ├─ Opening Encounter
+│  │  ├─ Battle Anchor
+│  │  ├─ Player Entry Marker
+│  │  └─ Enemy Spawn Preview
+│  ├─ Left Valley Encounter
+│  │  ├─ Battle Anchor
+│  │  ├─ Player Entry Marker
+│  │  └─ Enemy Spawn Preview
+│  └─ Right Camp Encounter
+│     ├─ Battle Anchor
+│     ├─ Player Entry Marker
+│     └─ Enemy Spawn Preview
+└─ Route Markers
+   ├─ Opening Arrival
+   ├─ Left Arrival
+   └─ Right Arrival
+```
+
+#### 实现方案
+- [x] 新增可序列化的 `BattleEncounterAuthoring` 组件/数据结构，已包含：`nodeId`、`displayName`、`worldDistance`、`StageConfig[] battleConfigs`、`battleAnchor`、`playerEntry`、`battleAreaSize`、预览颜色、波次/标签显示开关和启用开关；暂未接入正式运行时战斗流程。
+- [x] 新增统一的 `BattleEncounterAuthoringEditor`，Inspector 已提供 StageConfig 引用、战斗区域尺寸、玩家进入点、显示波次、预览颜色和定位/聚焦操作；禁止要求美术人员手工填写隐含 fileID 或字符串路径。
+- [ ] 重构 `ScrollBattleSpawnMarker`：从对应 `StageConfig.formationConfig` 和 Wave 数据绘制真实敌人生成预览，支持按波次开关、敌人 ID/行列标签、Battle Anchor、玩家进入点和区域边界显示。
+- [x] 已在 `YJunctionSample` 部署 `Encounter Authoring/Opening Encounter`、`Left Valley Encounter`、`Right Camp Encounter` 三个真实层级；分别绑定 `NarrowRoadBattle_01/02/03`，并创建可移动的 Battle Anchor 与 Player Entry。
+- [ ] 在 `YJunctionSample` 中将现有 `Display Enemies - no combat` 降级为临时兼容展示，不能继续作为正式配置来源。
+- [ ] 扩展 `BattleYRouteHost` 或后续 `RouteBranchRuntime`，按当前路线节点查找对应 Encounter；到达后同步当前 `StageConfig`、Battle Anchor/玩家进入方向和地面契约，再调用 `StageController.StartRouteBattle()`。
+- [ ] 为左路、右路和开局分别绑定可区分的测试战斗资产，至少能在 Scene 中看出阵列差异；禁止继续让左右路线默认共用同一个 `SmallBattle` 作为最终实现。
+- [ ] 明确坐标契约：Encounter 的位置使用路线层世界坐标；Battle Anchor 只作为环境/相机对齐参考；真实战斗对象的位置由 Battle 宿主决定；不得通过运行时批量修改 Enemy `visualYOffset` 掩盖地面高度错误。
+- [ ] 将“编辑器预览”和“Play 运行”共用同一份保存数据，但预览只做临时渲染姿态；在 `onPreCull/onPostRender` 或等价生命周期中恢复 Transform、材质和 shader 状态，禁止预览污染场景。
+- [ ] 补充菜单入口：打开 Battle Host 后自动加载路线层并选中 Authoring Root；提供“显示/隐藏战斗区域”“显示/隐藏敌人预览”“校验所有 Encounter”命令。
+- [ ] 增加验证器：检查节点 ID 唯一、StageConfig 不为空、Battle Anchor/Player Entry 存在、左右分支引用不串线、战斗区域有效、预览敌人数与 Wave 数据一致、路径终点与 Encounter 对齐。
+
+#### 实现边界与暂不做事项
+- [ ] 本阶段只实现两分支 Left/Right，不扩展三分支。
+- [ ] 不把真实 Enemy 预制体放入路线场景，不在路线场景中创建第二套对象池、StageController 或玩家。
+- [ ] 不通过移动 Battle.scene 的 Player、Enemy、Camera Transform 来适配每个美术节点；必须通过明确的 Anchor/坐标适配层解决。
+- [ ] 不继续新增营地/山谷插片，直到战斗区域和敌人生成预览可操作性验收通过。
+- [x] 初始部署：环境V2资源、三层地面候选、独立天空背景和54株草簇已存在；不是整体视觉或完整Play验收。后续优先用Game截图迭代已有布局，不再盲目生成同类草素材。
+
+#### 检测与验收方案
+- [ ] 静态场景检查：打开 `YJunctionSample`，Hierarchy 中能找到 Opening/Left/Right 三个 Encounter；每个 Encounter 可选中、可移动、可保存。
+- [ ] Inspector 检查：每个 Encounter 可直接看到并修改 StageConfig、Battle Anchor、Player Entry、战斗区域尺寸、波次显示和预览开关；不依赖代码改值。
+- [ ] 预览检查：切换每个 Encounter 后，Scene Gizmo 显示战斗区域、玩家进入点、Battle Anchor 和按真实 Wave/FormationConfig 生成的敌人位置标签。
+- [ ] 数据一致性检查：修改 FormationConfig 或 StageConfig 后重新打开场景，预览阵列数量、行列、敌人 ID 与实际配置一致；空 Wave/空行不生成假标记。
+- [ ] 左右隔离检查：左路与右路绑定不同测试 StageConfig，预览敌人数、敌人 ID、背景和 Encounter 名称均不串线。
+- [ ] 保存重开检查：移动 Battle Anchor、Player Entry、路径点和一处建筑，保存、关闭、重开后位置和引用保持；场景文件不出现新增 `Generated Route Road/Shoulder` 或临时预览对象。
+- [ ] 运行检查：Battle Host 启动后进入开局 Encounter；完成奖励并选择 Left/Right 后，沿选中道路抵达对应 Encounter，真实战斗使用该 Encounter 的 StageConfig，而非固定配置。
+- [ ] 生成检查：运行时路线场景中没有 `Enemy` 组件的展示对象；真实敌人数量、行列和敌人 ID 与当前 Encounter 配置一致，战斗仍由 `StageController`/对象池管理。
+- [ ] 坐标检查：路线转向过程中 Player/Enemy/QTE/Projectile 的战斗坐标和命中逻辑不因环境旋转改变；抵达左路/右路后人物脚底与 Battle 地面一致，不下沉、不漂浮。
+- [ ] 生命周期检查：Edit Mode 预览、Play、暂停、恢复、退出 Play、重复打开 Battle Host 各 10 次；无重复 Additive 场景、残留 Transform、材质污染、白色面片、MissingReference、DOTween 或数组越界错误。
+
+### 卷轴场景部署错误复盘与安全实施协议（2026-09-28，必须优先遵守）
+
+#### 已发生且已确认的错误
+- [ ] **错误目标场景**：多次把旧的 `Assets/Experiments/CurvedScroll/FakeRouteDataTrial.unity` 当作当前关卡部署入口；该场景是旧单路线/连续距离实验，不是当前正式分叉宿主。后续不得打开、保存、回退或继续部署它。
+- **本轮已确认的操作错误**：在未确认目标和未保存工作前反复打开/保存旧FakeRoute，出现大量Generated Route Mesh序列化重排；并把真实布局 `Small_13_RockRound` 当残留对象误删。大diff或Mesh名称不能直接证明不移动根因，也不能据此批量删除场景GameObject。
+- **错误整场景回退**：曾执行实验场景 `git restore --source=HEAD`，未保护Editor内存及用户未提交状态；随后用户看到错误的旧实验入口。不能仅凭Git状态断言具体未提交分叉内容已丢失；后续应按明确差异和对象身份局部恢复，不整场景回退。
+- [ ] **错误混淆正式宿主**：分叉道路正式结构是 `Assets/Scenes/Battle.scene` + Additive `Assets/Experiments/CurvedScroll/YJunctionSample.unity`；`BattleYRouteHost` 位于 Battle.scene。不能通过切回 `FakeRouteDataTrial` 判断分叉道路是否丢失。
+- [ ] **错误部署环境材质**：曾把 v2 道路/背景材质部署到 `FakeRouteDataTrial`，不是当前 Y 分叉路线层；之后才在 `YJunctionSample` 的 `Terrain - one mesh, fork painted in terrain` 上建立 `YSampleGround_v2`。
+- [ ] **错误声明 Pivot 已修复**：大型插片实际读取到的 Sprite Pivot 仍接近中心，例如 `Watchtower_v1` 的 pivot 为 `(401,743)`；仅设置导入器字段、没有回读 `Sprite.pivot`、`Sprite.bounds` 和 `Renderer.bounds.min.y`，不能宣称已贴地。
+- [ ] **错误固定坐标布景**：大型插片按任意世界 X/Z 直接放置，没有按开局直路、左/右转弯路径和道路横向偏移布置，造成转弯后道路两侧空、景物偏离或看起来悬空。
+- [ ] **错误背景职责**：天空盒式背景被加入 `YScrollSample.scenery`，与普通树石/建筑一起参与路线投影；背景应是独立远景层，不能被道路曲率、近景裁剪和普通景物淡出接管。
+- [ ] **错误把纹理替换当成分支道路完成**：仅替换 `YSampleGround` 的 `_Road/_Side` 纹理不能证明左右转弯已有连续可见道路；当前 Y 场景是单一网格配合 `YScrollGround.shader` 绘制分叉遮罩，必须先检查网格覆盖、Shader 分叉坐标和相机裁剪，再决定最小修复，不得盲目生成运行时道路。
+- [ ] **错误在未验证移动前继续堆插片**：开局、左转、右转和终点没有逐段截图/运行基线，就继续增加建筑，导致美术问题掩盖了地面投影与移动问题。
+
+- 错误原因更正：本节早期把Generated Route序列化重排、裁剪距离或网格不足直接断言为“不移动/悬空”原因，缺少验证；最新同机位背景开/关证据在下方执行结论与交接第14节，必须优先采用。
+
+#### 当前正式场景边界
+- [ ] 唯一正式运行宿主：`Assets/Scenes/Battle.scene`。
+- [ ] 唯一当前分叉美术/路线层：`Assets/Experiments/CurvedScroll/YJunctionSample.unity`，以 Additive 方式加载。
+- [ ] 当前允许修改：Y 场景中的真实 Hierarchy、Y 场景专用材质、环境素材和与 Y 场景绑定的编辑器数据。
+- [ ] 当前禁止修改：`FakeRouteDataTrial.unity`；除非用户单独授权，不打开、不保存、不回退、不导入其材质。
+- [ ] 当前移动核心冻结：`YScrollSample.Evaluate()`、`YScrollSample` 的路线状态/Progress、Y 路径点与转角、`BattleYRouteHost`、Battle.scene 玩家/敌人/相机/战斗管理器、QTE/投射物坐标。
+- [ ] 不使用 `RouteStageRuntimeV2`；不让 Y 样例反向加载 Battle；不把真实 `Enemy`、对象池或 `StageController` 放进路线层。
+
+#### 完善后的分阶段实施方案
+- [ ] **Phase 0：建立移动基线**。保持 `Battle.scene` 为 Active、Y 场景 Additive 加载；不改任何 Transform/材质/脚本。记录 Progress `0/0.25/0.5/0.75/1` 的 Game 截图、道路覆盖、侧景脚点、当前路线角度和 Console 状态。若基线移动失败，先停在诊断，不部署美术。
+- [ ] **Phase 1：验证分支地面覆盖**。只读检查 Y Terrain 网格 bounds、顶点范围、左右路径采样范围、`YScrollGround.shader` 的分叉距离计算、`_YSEnabled` 投影和相机裁剪。确认左右转弯地面缺失的真实原因后，优先修现有持久化 Y 场景网格/材质；不得在 Play 或 `OnEnable` 中生成并保存道路/路肩。
+- [ ] **Phase 2：持久化道路备用方案**。仅当遮挡、相机绑定、Shader及网格对照确证当前Terrain无法满足并重新确认范围时，才设计持久化Road/Shoulder Mesh。当前道路连续且本轮不需要新道路；不要部署未使用的 `YRouteSurfaceAuthoring` 草稿（含OnEnable重建和UnityEditor依赖）。
+- [ ] **Phase 3：独立天空盒背景**。从 `YScrollSample.scenery` 移除天空背景 Renderer；使用独立背景层/专用背景材质，只承担天空、云、远山和大气雾。背景不参与道路曲率、近景裁剪或景物淡出；Progress/Left/Right 截图确认它稳定且不遮挡战斗。
+- [ ] **Phase 4：路径化两侧景观**。为每条连接建立可编辑的 `ConnectionContent`/景观分组；景物位置由路径采样点、道路横向偏移、层级距离和物体脚点共同确定。开局直路、左路、右路分别布置近景/中景/远景，保留中央战斗通道；不以随机数组索引或任意世界坐标批量撒物件。
+- [ ] **Phase 5：插片贴地验收**。每个新 Sprite 导入后必须回读实际 `Sprite.pivot`、`Sprite.bounds`、`Renderer.bounds.min.y`；底部不透明像素与对应地面高度对齐后，才允许加入路线景观列表。大型建筑、栅栏、旗帜和火盆分别检查脚点、遮挡层和转弯后的姿态。
+- [ ] **Phase 6：分支自然操作回归**。完成开局战斗/奖励后真实选择 Left 和 Right，分别观察旅行、转向、抵达、战斗和奖励；确认道路连续、景物不悬空、中央区域无遮挡，并确认 Battle.scene 战斗坐标未改变。
+
+#### 保存与回退安全协议
+- [ ] 每次改动前记录 Active Scene、Loaded Scenes、Scene dirty 状态、Git status 和目标文件列表；不以“当前看起来是 Battle”替代实际目标确认。
+- [ ] 保存前必须满足：Active Scene=`Battle.scene`；Y 场景已 Additive 加载；`FakeRouteDataTrial` 未加载；Hierarchy 中无运行时生成道路/路肩；无临时预览树石；无 `DontSave` 伪持久化对象。
+- [ ] 任何场景写入只允许明确写入 `YJunctionSample.unity`；素材/材质写入项目 Authoring/Art 目录；禁止通过打开旧场景触发导入或保存。
+- [ ] 禁止对场景使用 `git restore`、整文件覆盖或“保存后再看差异”式试错；需要回退时先保存 `git diff`/对象清单，确认用户未提交改动边界，再做局部恢复。
+- [ ] 每次只做一个可验证变更：地面、背景、单组景观、单个 Pivot 不得混在一次保存中；失败立即停止，不继续堆叠后续美术。
+
+#### 必测检查矩阵
+- [ ] Edit Mode：Progress `0/0.25/0.5/0.75/1` 下道路连续、左右分支覆盖、天空背景稳定、景物脚点贴地。
+- [ ] Play Mode：Battle 启动→开局战斗→奖励阻塞→Left；记录移动时长、Progress、路线角度、道路覆盖和景物位置。
+- [ ] Play Mode：重新启动→开局战斗→奖励阻塞→Right；执行同样记录，不能只调用 `ChooseBranch()` 代替自然操作。
+- [ ] 坐标隔离：旅行前后 Player/Enemy/QTE/Projectile 世界坐标、Battle Camera 和 StageController 坐标不因美术投影变化。
+- [ ] 场景持久化：移动一件景物、保存 Y 场景、关闭重开并重新打开 Battle Host；Transform、Sprite、材质、路径引用保持，Y 场景无运行时生成物。
+- [ ] 生命周期：Edit Mode 预览、Play、暂停、恢复、退出 Play、重复打开 Battle Host 10 次；无单路线场景切入、无重复 Additive、无道路/路肩重建、无材质污染、无白色面片、无 MissingReference/DOTween/数组越界。
+- [ ] 完成标准：以上矩阵全部通过并有截图/日志后，才允许继续增加大型建筑或新的环境素材；“编译通过”“材质已替换”“一次 Progress 调用成功”均不等于路线完成。
+
+#### 当前执行结论（以2026-10-01交接为准）
+- [x] 此前已回读Left/Right五点移动数值，近期草调整未改移动采样；本次交接复核Active Battle + Additive Y、FakeRoute未加载、双方dirty=false、Console error/warning=0。数值基线不是新战斗层下自然Play验收。
+- [x] 已用同机位天空开/关验证：此前地面空带来自透明天空卡片遮挡，而非已证实的道路网格缺失。共享地面/景物Shader的未奏效裁剪/曲率实验已恢复到当前HEAD，无diff；Y Terrain继续使用YSampleTerrain。
+- [x] 已保存三层地面候选 `Assets/Experiments/CurvedScroll/Authoring/YSampleGround_ThreeLayer_Candidate.mat` + `Assets/Experiments/CurvedScroll/Shaders/YGroundThreeLayerCandidate.shader`；Road/Shoulder/Outer=BattleRoad_v2/BattleShoulder_v3_candidate/BattleRoadside_v2。开局和左右候选截图已查看，硬切改善，最终美术观感仍待用户验收，不是实际高度差地面。
+- [x] 独立 `YSkyBackground.shader` 和天空材质已应用；天空不在scenery，1024×1536尺寸保持、UV方向修正，不再覆盖道路。只是2D远背景而不是真cubemap；新增最终天空素材暂不需要。
+- [x] 当前保存54株草（开局20/Left17/Right17），使用独立 `YGrass.mat/YGrass.shader`；降低Y高度、保留X宽度，添加相机朝向及作者Y偏转。保存重开后54草、54列表引用、非零Y偏转54株；高度约0.4836–0.993、绝对偏转7–25°，yaw开/关图差10906像素。
+- [x] 历史草高度/朝向截图已记录；后续建筑布景及风动接入后，当前scenery为151项（天空不计入），54个唯一风动引用，无空项/重复。旧138项不再作为当前计数。
+- [x] 草摇曳效果已由用户确认实现；54株各有一个21顶点/24三角形细分网格，原SpriteRenderer保留但禁用。用户的风动确认不等于全部Progress构图、切片缺陷和自然路线流程已验收。
+- [x] 大建筑脚点、旧帐篷切片与战斗节点镜像布景已在第14节记录修正和保存验证；此处旧“建筑仍待修”结论已过时。整体主观构图仍以用户后续反馈为准。
+- [ ] Edit Mode相机绑定未持久化：交接实查viewCamera=None，Sample Camera disabled。先安全会话绑定，避免将未投影画面错认成不移动或回退。
+- [ ] 新战斗层分支上的自然Left/Right流程、Boss/QTE、奖励和重复Play测试尚未完成。
+- [ ] 场景/新环境资源仍未commit/push；不操作受保护FakeRouteDataTrial和并发战斗移植未提交文件。
 

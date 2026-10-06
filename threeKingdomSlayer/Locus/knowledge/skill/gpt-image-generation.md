@@ -1,21 +1,21 @@
 ---
 id: kd_e6815137-b73f-41d7-b6ad-d76834c73ab0
 injectMode: inherit
-summary: 需要通过 gpt-image-2 接口文生图、图生图或多图融合并落盘交付时使用；只管 API 参数、调用模板与排错，任务编排与透明验收见 workflow。
+summary: 需要通过 GPT Image 接口文生图、图生图、多图融合或语义去背并落盘交付时使用；覆盖模型、质量档位、透明参数、调用模板与排错，任务编排与透明验收见 workflow。
 aiEditMode: inherit
 skillEnabled: true
 skillSurface: command
 commandTrigger: /gpt-image
-argumentHint: <prompt> [--image path ...] [--size 1024x1024|1024x1536|1536x1024] [--quality low|medium|high] [--out path]
+argumentHint: <prompt> [--image path ...] [--size 1024x1024|1024x1536|1536x1024] [--quality low|medium|high|xhigh|max|auto] [--out path]
 ---
 
 # gpt-image-generation
 
-脱离 Unity 使用 gpt-image-2 图像生成接口的使用文档：说明调用方式、必需配置、默认输出目录、示例、接口规则和常见问题。
+脱离 Unity 使用 GPT Image 图像生成接口的使用文档：说明调用方式、模型与质量档位、必需配置、默认输出目录、透明参数、示例、接口规则和常见问题。
 
 ## 使用说明
 
-`/gpt-image` 用于脱离 Unity Editor 调用 `gpt-image-2` 图像生成接口。Unity 断开、未启动、或项目不在 Play Mode 都不影响使用。
+`/gpt-image` 用于脱离 Unity Editor 调用 GPT Image 图像生成接口，当前优先使用 `gpt-image-2.5-sunburst`。Unity 断开、未启动、或项目不在 Play Mode 都不影响使用。
 
 支持三类任务：
 
@@ -26,7 +26,13 @@ argumentHint: <prompt> [--image path ...] [--size 1024x1024|1024x1536|1536x1024]
 默认输出目录：
 
 ```text
-C:/Users/steam/Pictures/gptGen/
+<当前 Windows 用户目录>/Pictures/gptGen/
+```
+
+例如：
+
+```text
+C:/Users/Administrator/Pictures/gptGen/
 ```
 
 如果用户显式提供 `--out`，优先保存到指定路径。
@@ -52,10 +58,11 @@ C:/Users/steam/Pictures/gptGen/
 
 ### 可选
 
-- 输出尺寸：`1024x1024`、`1024x1536`、`1536x1024`
-- 画质：`low`、`medium`、`high`
+- 输出尺寸：`1024x1024`、`1024x1536`、`1536x1024`；当前模型还可按接口能力使用满足约束的自定义尺寸
+- 画质：`low`、`medium`、`high`、`xhigh`、`max`、`auto`
 - 输出路径：通过 `--out` 指定
 - 图生图保真度：`input_fidelity=high` 或 `low`
+- 透明背景：对已验证支持的模型/接口使用 `background=transparent`，并同时使用 `output_format=png` 或 `webp`
 
 ## 如何设置
 
@@ -83,10 +90,10 @@ export MUSK_API_KEY="你的key"
 
 ### 2. 确认默认输出目录
 
-默认保存到：
+默认保存到当前 Windows 用户的 `Pictures/gptGen/` 目录；本次任务按用户指定路径保存到：
 
 ```text
-C:/Users/steam/Pictures/gptGen/
+C:/Users/Administrator/Pictures/gptGen/
 ```
 
 执行时会自动创建目录。若要换目录，在请求里说明，或使用：
@@ -106,19 +113,19 @@ C:/Users/steam/Pictures/gptGen/
 ### 指定输出路径
 
 ```text
-/gpt-image 生成一个像素风铜钱道具图标 --out C:/Users/steam/Pictures/gptGen/coin.png
+/gpt-image 生成一个像素风铜钱道具图标 --out C:/Users/Administrator/Pictures/gptGen/coin.png
 ```
 
 ### 单图编辑
 
 ```text
-/gpt-image 参考 C:/Users/steam/Pictures/input/hero.png，保持人物不变，把背景改成三国战场夕阳氛围 --out C:/Users/steam/Pictures/gptGen/hero_battle.png
+/gpt-image 参考 C:/Users/Administrator/Pictures/input/hero.png，保持人物不变，把背景改成三国战场夕阳氛围 --out C:/Users/Administrator/Pictures/gptGen/hero_battle.png
 ```
 
 ### 多图融合
 
 ```text
-/gpt-image 融合 C:/a.png 和 C:/b.png，把第二张的武器自然加入第一张角色手中，光影统一 --out C:/Users/steam/Pictures/gptGen/fusion.png
+/gpt-image 融合 C:/a.png 和 C:/b.png，把第二张的武器自然加入第一张角色手中，光影统一 --out C:/Users/Administrator/Pictures/gptGen/fusion.png
 ```
 
 ## 接口规则
@@ -135,7 +142,7 @@ POST https://api.muskapis.com/v1/images/generations
 
 必填字段：
 
-- `model`: `gpt-image-2`
+- `model`: 当前优先使用 `gpt-image-2.5-sunburst`；`gpt-image-2.5-flare` 也属于当前 GPT Image 模型，但具体路由/权限须实测
 - `prompt`
 
 常用可选字段：
@@ -157,7 +164,7 @@ POST https://api.muskapis.com/v1/images/edits
 
 必填字段：
 
-- `model`: `gpt-image-2`
+- `model`: 当前优先使用 `gpt-image-2.5-sunburst`；`gpt-image-2.5-flare` 的可用性须按当前路由实测
 - `prompt`
 - `image[]`
 
@@ -168,7 +175,63 @@ POST https://api.muskapis.com/v1/images/edits
 - `size`
 - `quality`
 - `input_fidelity`
+- `background`
 - `output_format`
+- `n`
+
+### 质量档位与透明参数
+
+当前 `gpt-image-2.5-sunburst` 和 `gpt-image-2.5-flare` 文档列出的 `quality` 枚举为：
+
+```text
+low | medium | high | xhigh | max | auto
+```
+
+- `auto` 是模型默认档位，由模型自动选择。
+- `low` 适合草稿，`medium` 适合普通候选，`high` 适合常规最终候选。
+- `xhigh` 和 `max` 是当前 2.5 模型新增的更高质量档位；当前没有文档或实测证据表明存在高于 `max` 的档位。
+- 质量档位不是姿态锁定或角色身份锁定开关。`max` 可能带来更丰富的重绘细节，也可能改变局部轮廓；参考图编辑仍需使用明确的不可改变约束和 `input_fidelity=high`。
+- 早期 GPT Image 模型最高支持到 `high`，不能把 `max` 自动外推给旧模型。
+- `size`、`quality` 和 `background` 在当前文档中支持 `auto`；透明输出应显式设置 `background=transparent`，并使用支持 Alpha 的 `png` 或 `webp`。
+- `input_fidelity` 仅用于编辑/融合任务；它不能替代视觉验收。
+
+### GPT Image 语义去背（复杂灰底/角色边缘）
+
+当原图背景与角色灰色铠甲、剑刃或暗色轮廓相近，传统阈值抠图产生明显脏边时，可以使用 `/v1/images/edits` 单图编辑做语义去背，避免直接否定已验收视频或要求重新生成视频。
+
+已实际验证的单帧参数组合：
+
+```text
+model: gpt-image-2.5-sunburst
+quality: high
+input_fidelity: high
+size: 与原帧相同（本次为 960x960）
+background: transparent
+output_format: png
+image[]: 从视频解码得到的原始 RGB 帧
+```
+
+- 本次 `f000` 测试返回 HTTP 200 和 960×960 RGBA，用户明确认可去背效果；浅色背景上的灰色脏边明显少于先前的手动去背结果。
+- 本测试使用 `high` 而非 `max`；不据此声称 `high` 必然比 `max` 更少重绘。
+- Prompt 必须限定为 `ONLY background removal and alpha-matte cleanup`，要求保留画布、角色位置、绘制比例、剑/手/脚坐标、配色、亮度和高光；禁止换姿态、增强材质和重新构图。
+- 只上传无标注、未抠图的实际帧；不要把含棋盘格的预览或已经有脏边的去背结果作为唯一输入。
+- 同尺寸输出不等于同像素坐标。模型仍可能放大、移位或重绘，`input_fidelity=high` 不构成硬性像素锁定。
+- 用户认可单帧去背质量是成功结论；动画锚点、逐帧比例和循环连续性是另一项验收，不能混为“抠图失败”，也不能自动认为整套动画已经通过。
+- Alpha 最大值 254、没有 Alpha=255，不应直接判为失败。Alpha 253/254 对应约 99.2%/99.6% 不透明度；需要查看主体 Alpha 分布和浅/深底合成效果，而不是把所有小于 255 的像素一概当作明显半透明。真正需要排查的是低 Alpha 主体、外部光晕和边缘污染，不擅自做 Alpha 归一化。
+- 先测试一帧，保存版本化图片、完整 Prompt 和原始响应，获认可后再处理其余帧；不得直接批量收费试错。
+- 原生透明能力随路由变化：同一份提交（`/v1/images/edits` + multipart `image[]` + `background=transparent` + `output_format=png` + 同一参数组 + 逐字相同 Prompt）实测可分别得到原生 RGBA 与 `color_type=2`(RGB)、棋盘格被画进像素两种结果。对失败结果追加“禁止画棋盘格、必须真实 alpha”的 Prompt 条款经验证无效，透明失败应优先换时间/等路由变化重试，而不是堆 Prompt。
+- 该接口是**多后端路由**：实测至少 3 套后端，各有自己的 CDN host、响应字段与 token 记账 — G1（`cdn.jd23kjs.work`、无回显、in 833 / out 4153）、G2（`img.zxai.us`、回显含 `background`、in 870 / out 1683）、B（`r2.52image.xyz`、回显不含 `background`、in 1445–1513 / out 6732）。**G1/G2 都返回原生 RGBA，B 一定返回无 alpha 的 RGB**（累计 G 6/6、B 10/10，无例外）。
+- 已用 PNG 容器证据排除“CDN 事后把 alpha 压平”：好/坏两种输出都带生成器特征辅助 chunk `caBX`（若经中间层重编码该 chunk 会丢失），且坏输出的背景是**带噪声的近白**（边框值集中在 240–254，恰好 255 仅占 4.75%–12.45%）→ 是模型自己画了底，不是透明被填白。
+- B 后端的行为更像**降级回退**（首选后端忙/不可用时顶上）：G/B 会成段交错出现（相隔 32 秒即可能切换），与请求速率无关，失败时仍能出图，只是不执行 `background=transparent`。
+- 实操：请求后先看回显与 token 指纹判断拿到哪套后端；拿到 B 时**不要连发**（同一时段大概率仍是 B），隔一段时间再试。
+- 可用模型可用**免费** `GET https://api.muskapis.com/v1/models` 查询（不生成图、不计费）：当前令牌只列出 `gpt-image-2.5-sunburst` 一个图像模型（其余为 `gpt-5.6-luna`、`gpt-6-astra`、`gpt-6.1-sol`）。请求 `gpt-image-2.5-flare` 返回 **HTTP 403 “This token has no access to model”**，已实测，不要再把它当可用候选。
+- 结论：“透明能力”不取决于模型名，而是取决于**本次落到哪套后端**；同一 `sunburst` 在 G1/G2 上能给出原生 alpha，在 B 上一定不给。
+- 机器验收第一步永远是读 PNG Color Type 或 IHDR：`2`=RGB、`6`=RGBA。查看器或预览图里显示的“透明格子”不能作为透明度证据。
+- 棋盘格判定方法：取背景区域一行的明暗游程看是否周期性交替（本案例约 16/17px），再查背景灰度直方图是否只有两级（本案例 245/254）。命中即判为画入棋盘格，属于二级验收明令禁止的失败模式。
+- 边缘与光晕比对已认可基线而非绝对值：本案例已认可的 f000 为 1px 环亮度比 0.58、2px 0.79、3px 0.86，后续输出只要同量级即可，不能因为不等于 1.0 判不合格。
+- 几何漂移必须记录并与原帧比较：本案例输出相对原帧主体放大 26%–32%、底边下移 93–98px，且不同帧幅度不同；单帧可用不等于动画序列可用。
+
+配套流程和提示词模板见 `skill/workflows/image-asset-generation.md` 的“GPT Image 语义去背”分支；透明帧落地进 Unity 的尺寸/密度约定（PPU 16 全项目统一、按原生像素补边 + 单位 scale 补偿）见同一文档的「透明素材部署进 Unity 的尺寸与密度约定」。一次性文件、数值和验收结论记录在 `memory/video-generation-case-log.md`。
 
 ## 配套工作流
 
@@ -178,11 +241,21 @@ POST https://api.muskapis.com/v1/images/edits
 
 本 Skill 仅负责 API 能力、参数规则和调用模板；不会因为读取文档而自动调用 API，必须由当前对话根据用户授权实际执行。
 
-### 能力边界补充：不能只按模型名判断透明支持
+### 能力边界补充：透明和模型能力必须按本次路由实测
 
-本轮实际观察：`gpt-image-2.5-sunburst` 在 `/images/generations` 带 `background=transparent` 成功得到1024×1024 RGBA；同名模型 `/images/edits` 带此参数返回400。编辑去掉该参数可成功，但不保证Alpha，曾输出RGB与伪透明棋盘格；请求的尺寸也必须从图片实测。`gpt-image-2` 在当前令牌下返回无模型访问权限的403。上述是当前服务路径的实测，不是永久能力声明，不能从文生图成功推断参考图编辑支持同一功能。
+不能只凭模型名、PNG 后缀或历史失败结果判断能力。此前同模型编辑接口曾在 `background=transparent` 下返回 HTTP 400，但本次当前路由已实际验证成功：
 
-保身份任务不得静默退回无参考纯文生图。确定分支后再生成，必要时使用参考图编辑＋纯色底后处理并说明边界。API超时未拿到结果ID时，不可把本地查无文件说成已查询服务端；结果与费用未知，需用户确认后才重新提交。透明验收与后处理详见配套工作流。
+- 模型：`gpt-image-2.5-sunburst`
+- endpoint：`POST /v1/images/edits`
+- 参数：`quality=max`、`input_fidelity=high`、`size=1024x1024`、`output_format=png`、`background=transparent`
+- 结果：HTTP `200`，图片实际为 `1024×1024 RGBA`，PNG Color Type `6`，四角 Alpha 为 `0`
+- 实际结果：`C:/Users/Administrator/Pictures/gptGen/sword_enemy_combat_idle_v4_max_transparent.png`
+
+这证明当前模型、endpoint、令牌和参数组合可以返回原生 Alpha 编辑结果，但不保证其他账号、时间、模型路由或输入图也具有相同能力。每次仍需读取实际 PNG 并检查 Alpha；不要把旧的 HTTP 400 经验或本次成功无条件外推。
+
+本次 v4 还观察到 Alpha 最大值为 `254`，没有 Alpha=`255` 的像素，且大量主体边缘为半透明。它通过了有效 Alpha 的一级检查，但是否适合作为干净 Unity 素材仍要看深色/浅色预览中的光晕、透明度衰减和主体完整性。
+
+`gpt-image-2` 在当前令牌下曾返回无模型访问权限的 `403`；这只是当前令牌/路由观察，不能当作永久能力声明。保身份任务不得静默退回无参考纯文生图。API 超时或结果不明时，不可把本地查无文件说成已查询服务端；结果与费用未知，需用户确认后才重新提交。透明验收与后处理详见配套工作流。
 
 ### 无 requests 的标准库调用骨架
 
@@ -190,11 +263,11 @@ POST https://api.muskapis.com/v1/images/edits
 import base64, json, os, pathlib, urllib.request
 
 api_key = os.environ["MUSK_API_KEY"]
-out = pathlib.Path(r"C:/Users/steam/Pictures/gptGen/result.png")
+out = pathlib.Path.home() / "Pictures" / "gptGen" / "result.png"
 out.parent.mkdir(parents=True, exist_ok=True)
 request = urllib.request.Request(
     "https://api.muskapis.com/v1/images/generations",
-    data=json.dumps({"model": "gpt-image-2", "prompt": "...", "size": "1024x1024", "quality": "high", "output_format": "png"}).encode("utf-8"),
+    data=json.dumps({"model": "gpt-image-2.5-sunburst", "prompt": "...", "size": "1024x1024", "quality": "high", "output_format": "png"}).encode("utf-8"),
     headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
     method="POST")
 with urllib.request.urlopen(request, timeout=300) as response:
@@ -211,7 +284,7 @@ print(out)
 
 1. 判断任务类型：文生图、单图编辑、多图融合。
 2. 检查是否有 `MUSK_API_KEY`。
-3. 没有指定输出路径时，保存到 `C:/Users/steam/Pictures/gptGen/`。
+3. 没有指定输出路径时，保存到当前 Windows 用户的 `Pictures/gptGen/`。
 4. **实际调用生图 Skill/API**：不能把读取本 Skill、写 prompt、准备脚本或描述预期效果当作已经生成。
 5. 接口返回后，读取 `data[0].url` 或 `data[0].b64_json`。
 6. 下载或解码图片到本地。
@@ -250,13 +323,13 @@ if not api_key:
     raise SystemExit("Missing MUSK_API_KEY")
 
 prompt = sys.argv[1]
-out_path = pathlib.Path(sys.argv[2] if len(sys.argv) > 2 else "C:/Users/steam/Pictures/gptGen/gpt-image-result.png")
+out_path = pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else pathlib.Path.home() / "Pictures" / "gptGen" / "gpt-image-result.png"
 out_path.parent.mkdir(parents=True, exist_ok=True)
 
 request = urllib.request.Request(
     "https://api.muskapis.com/v1/images/generations",
     data=json.dumps({
-        "model": "gpt-image-2",
+        "model": "gpt-image-2.5-sunburst",
         "prompt": prompt,
         "size": "1024x1024",
         "quality": "high",
@@ -286,7 +359,7 @@ print(json.dumps({"saved": str(out_path), "bytes": len(raw)}, ensure_ascii=False
 
 ## Python 模板：单图编辑 / 多图融合
 
-本环境没有 `requests`。编辑/多图融合必须以 Python 标准库手工组装 `multipart/form-data`：每张输入图使用同名字段 `image[]`，图片部分包含文件名与 `Content-Type`，并把 `model`、`prompt`、`size`、`quality`、`input_fidelity`、`output_format` 作为普通字段上传到 `/v1/images/edits`。
+本环境没有 `requests`。编辑/多图融合必须以 Python 标准库手工组装 `multipart/form-data`：每张输入图使用同名字段 `image[]`，图片部分包含文件名与 `Content-Type`，并把 `model`、`prompt`、`size`、`quality`、`input_fidelity`、`background`、`output_format`、`n` 作为普通字段上传到 `/v1/images/edits`。透明编辑任务还必须检查响应图片的实际 Alpha，不能只看请求中是否发送了 `background=transparent`。
 
 已验证的透明背景成例与两级验收见 `skill/workflows/image-asset-generation.md`；多图编辑的 multipart 组装按以下规则执行：构造唯一 boundary、写入每个文本和图片 part、以 `urllib.request.Request` 发送请求，随后从 `data[0].url` 或 `data[0].b64_json` 保存到指定路径，并验证 PNG 签名。禁止使用以下当前环境不可用的 `requests.post(..., files=...)` 模板。
 
@@ -327,7 +400,7 @@ print(json.dumps({"saved": str(out_path), "bytes": len(raw)}, ensure_ascii=False
 Windows 路径建议在脚本和 Skill 文档中使用正斜杠：
 
 ```text
-C:/Users/steam/Pictures/gptGen/result.png
+C:/Users/Administrator/Pictures/gptGen/result.png
 ```
 
 避免 `\` 被转义。
@@ -370,4 +443,4 @@ pathlib.Path('目标路径').write_bytes(png)
 - 不要泄露 `MUSK_API_KEY`。
 - 不要把 Key 写进仓库、日志、文档或截图。
 - 远程 URL 可能只是中间产物；需要长期保存时应下载到本地或转存到自己的存储。
-- 若输出要纳入 Unity 项目，再指定保存到 `Assets/...`；普通测试图默认放 `C:/Users/steam/Pictures/gptGen/`。
+- 若输出要纳入 Unity 项目，再指定保存到 `Assets/...`；普通测试图默认放到当前 Windows 用户的 `Pictures/gptGen/`。

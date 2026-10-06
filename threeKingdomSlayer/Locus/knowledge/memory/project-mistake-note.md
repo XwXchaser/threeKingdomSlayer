@@ -1,7 +1,7 @@
 ---
 id: kd_4a9116b1-c70a-4de3-8eeb-801deb71c4fe
 injectMode: inherit
-summary: 更新至 2026-03 — 新增 TimedArrow 命中与视觉生命周期、随机轨迹、DOTween 清理、受击缩放、序列化迁移、视觉/伤害解耦及 Time 被动类型区分经验
+summary: 项目开发错误复盘：含Y分叉卷轴场景目标/回退安全、渲染遮挡与草簇验收，以及路线、战斗、Tween和序列化经验。
 aiEditMode: auto
 maintenanceRules: |-
   - Keep only durable and reusable project memory
@@ -9,7 +9,32 @@ maintenanceRules: |-
   - Remove temporary context, one-off tasks, and unsupported guesses
 ---
 
+### Y 分叉卷轴场景布置错误复盘（2026-09）
+
+- 正式场景边界必须固定为 `Assets/Scenes/Battle.scene`（战斗宿主）+ Additive `Assets/Experiments/CurvedScroll/YJunctionSample.unity`（分叉路线层）。反复把 `FakeRouteDataTrial.unity` 当当前入口导致单路线错觉、运行时生成物写入和用户误以为分叉道路被回退；后续禁止打开、保存、回退或向其部署素材。
+- 多次打开/保存旧 `FakeRouteDataTrial.unity` 而非当前 `Battle.scene + Additive YJunctionSample`，把编辑器带回旧单路线入口；这不等于已提交Y路线资产真的丢失。保存后出现Generated Route Mesh的fileID/序列化大量变动；**不能把Mesh子资产名称当成待删除GameObject，也不能凭大diff断言移动失效根因**。曾误删真实布局 `Small_13_RockRound`；后续按确切身份和差异处理，不按名字包含某片段清理。
+- 曾对实验场景执行整文件 `git restore`，没有先保护Editor内存和未提交工作。具体损失不能从Git status推断；用户反馈应恢复分叉现场时，先确认实际宿主、Loaded Scenes和未保存状态，不自行把HEAD当用户期望版本。
+- 看似“分支地面没铺、景物悬空”应先做同机位背景开/关对照。本轮关闭天空后原道路完整出现，确认是透明天空卡片遮挡；先前“固定远裁剪、曲率、矩形Terrain不够”的结论未经证明。未奏效的共享地面/景物Shader实验已恢复；不要默认重建道路Mesh。
+- 曾把天空背景加入普通 `YScrollSample.scenery`，导致它读取路线投影全局参数并遮挡/制造道路缺口。天空背景应使用独立材质/Shader，不加入景物列表，不参与路线曲率、距离裁剪和景物淡出。
+- 曾把单张竖版概念背景图直接当最终天空盒；背景底部雾和远山与地面、侧景职责冲突。背景只保留天空、云、远山和低对比大气雾，建筑、地面、旗帜和前景必须另做。
+- 曾把两层道路/外侧纹理的高差直接当道路过渡，造成中央浅色道路与外侧深色碎石之间突兀切换。正式地面应拆为中央 Battle Road、Road Shoulder 过渡层、Outer Ground 外侧层；先验证贴图和 Shader，再部署景观。
+- 曾宣称大型插片已设置底部 Pivot，但实际回读 `Watchtower_v1` Pivot 仍为近中心值；只看 Importer 字段不算贴地。每个 Sprite 必须回读 `Sprite.pivot`、`Sprite.bounds`、`Renderer.bounds.min.y`，并在实际 Game 画面验证。
+- 曾按任意固定世界 X/Z 放置大型建筑，未按 Left/Right 路径采样和横向偏移布景，导致转弯后两侧空、物体偏离或悬空。景物必须按路径位置 + 横向偏移 + 近中远层级布置，中央战斗区保留。
+- 曾在移动基线未完成时继续增加插片，导致美术密度问题掩盖移动、投影、相机和地面缺陷。每次必须先验证 Progress `0/0.25/0.5/0.75/1` 的 Left/Right，再修改单一美术层。
+- 诊断期间用 `SendMessage` 触发 Unity `ShouldRunBehaviour` assertion；后续使用受支持预览/API或直接调用方法并区分新旧日志。临时修改progress、right、camera、RT、显隐必须用finally恢复，标记readonly=false。
+- 草簇曾只核对Transform/Pivot便交付、只摆6株就停下、失败时全部删除而不说明；数量、位置和尺寸不能代替真实Game画面验收。逐段截图、适量路缘侵入、保持用户认可密度；不以“中央可读”擅自推导草零侵入，也不因部署失败自动再生素材。
+- 2026-10-01 用户确认当前草的摇曳效果已实现。实现采用独立 `YGrass.shader`、真实高度细分 `GrassWindMeshes`（每株21顶点/24三角形）和自动时间风动；当前Unity现场回读54株、54个唯一 `Wind Mesh` 引用、scenery=151、三份材质强度0.28/速度2.1/`_WindTimeOverride=-1`，Shader supported=true。该用户确认只证明效果已实现，不自动等同于本轮保存、重载、全部路线机位和自然流程均已验收。
+- 曾修改共享 `YScrollScenery.shader` 支持草旋转，超出草范围；已恢复共享Shader。草现使用独立 `Assets/Experiments/CurvedScroll/Shaders/YGrass.shader` 和 `Assets/Experiments/CurvedScroll/Authoring/YGrass.mat`；相机朝向与作者Y偏转需用yaw开/关图证明生效。
+- 重开Y场景后跨场景 `viewCamera` 为None而Sample Camera已关，Edit预览不会投影，不能又误判为回退或移动失效。仅绑定当前会话；运行时由Host绑定。旧菜单会Single重开Battle且仅检查Active dirty，有Y未保存布局时不要调用。
+- 一次合图必须按实际主体范围裁切，不能机械等分。草的矩形bottom pivot/bounds不是alpha脚点；透明padding、邻株残段和剪切需实际图片确认。
+- 这轮进一步确认了“看起来悬浮”必须拆成两类：一类是 Sprite 矩形底边有透明留白，另一类是对象虽然贴地却在当前 Battle 相机的投影范围外。建筑/景观必须同时回读 Alpha 实际主体底边、路径投影后的镜头位置和放大 Game 图，不能只看世界Y或Inspector数值。
+- 营地旧图集 `stronghold_interior_props_cutout_v1.png` 的 `SmallTentA/SmallTentB` 切片同时覆盖上下两排帐篷，导致一个对象出现上下重影/悬空错觉。正确处理是保留源图集，按连通主体裁切新Sprite；不要用继续抬高Transform掩盖错误Rect。
+- 战斗节点景物不能只按“分支末端世界坐标”摆放：必须按终点投影后的战斗镜头范围重新布局，左右侧向镜像、远中近层级分离，中央真实敌人阵型留空。路线根Y应使用Host实际 `groundHeight=-1.8` 做Game/Play检查，但不能保存到Y场景根Transform。
+
+**预防总则**：先锁定移动和正式场景边界，再诊断地面/背景职责，最后按路径部署景观；任何“材质替换成功、编译通过、一次 Progress 调用成功”都不能代替左右分支截图和自然操作验收。流程入口见 `memory/y-junction-scene-authoring-workflow.md`，最新任务状态见 `plan/curved-scroll-development-handoff.md` 第14节。
+
 ### FakeRoute J1 村落出口反复误部署（2026-09）
+
 - 症状：资产检查显示 J1 村落 choice 已指向新建的村落外围节点并绑定视频，但玩家点击画面左侧出口仍直接进入原村落战斗路线，造成“节点和视频没有部署”的实际体验。
 - 根因一：只验证 `choice.targetNode` 和 `presentation`，没有验证 `choice.layout`。J1 两个出口的空间布局与设计语义相反：左侧按钮实际绑定官道路，村落 choice 显示在中央；数组顺序也不能代表左右方向。
 - 根因二：未先对照完整拓扑就把村落外围命名为 `E2`，但 `E2` 已属于 N2 官道路的“辎重受阻”；随后又把“回退错误 E2 命名”误解为删除整个村落外围节点。

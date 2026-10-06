@@ -126,3 +126,163 @@ aiEditMode: inherit
 第二阶段补 T05、T10–T12，未启用预览则 T12 标为不适用并说明。正式路线集成再执行 T15–T16；未实现路径不得标为通过。
 
 最终由用户决定：保留原表现、仅增强旧 V2、为 FakeRoute 增加经批准的实时卷轴 Presenter，或继续视频方向。文档完成不等于实验通过。
+
+## 8. N1 场景美术实施经验与错误边界（2026-10-06）
+
+### 8.1 概念图、部署规格和新画风参考必须分工
+
+三类参考不能混用：
+
+- **N1 概念图**只定义节点气氛、物体类别、空间叙事和远近层次；不能从概念图直接裁切 Sprite、推断 Pivot、推断 PPU 或按概念图物体比例直接部署。
+- **当前已部署 EnvironmentV2 资产**只定义技术接入规格：纹理/透明 Sprite 的尺寸类型、PPU、Filter、Compression、Pivot、脚点和材质接线；旧资产的画风不定义新画风。
+- **新画风指南与 1011 Idle**定义角色/场景的形体、材质、像素色簇、重量和光影语言；不替代 Unity 部署规格。
+
+道路材质与路侧 Sprite 是两种不同生产类型：
+
+```text
+道路 / 肩部 / 外侧地面：RGB Default Texture，可平铺，当前基线 512/1024 方形纹理、PPU100、材质采样
+路侧 / 中景 / 草簇插片：RGBA Sprite，PPU100、Point、Uncompressed、Bottom Pivot、真实 Alpha 脚点
+```
+
+一次生成一张完整场景图不是路侧素材量产方式。应优先一次生成可拆分图集，或生成可复用的单类材质/插片族；每格必须完整入画并单独验收。
+
+### 8.2 城墙远景方案的失败与撤销
+
+曾尝试把城墙作为 N1 战斗时的远景地标，并进一步设想与后续穿越城门共用空间。该方向本轮撤销，原因：
+
+1. `YSkyBackground.shader` 是屏幕空间背景，不读取 `_YSEnabled`、`_YSPose` 或路线距离；将城墙画入天空图不会产生可到达的世界位置。
+2. 将城墙作为普通世界 Sprite 但不加入路线投影时，地面在远处下弯而城墙保持平直，城墙会悬浮。
+3. 将城墙加入普通 `YScrollScenery` 时，又会受距离下弯、深度测试和淡出影响；远处可能被地面遮挡或只露出部分，不能简单靠排序解决。
+4. 透明留白、Sprite Pivot、Transform Y 补偿叠加时，会出现“Bounds 看似对齐、可见像素仍悬空”的假修复。
+5. 将含城墙的合成图挂到 `SpriteRenderer + [PerRendererData] _MainTex` 的天空材质时，Renderer 的 Sprite 纹理可能覆盖材质 `_MainTex`；必须同时检查 SpriteRenderer.sprite 与 Material._MainTex，不能只看材质 Inspector。
+
+当前明确结论：**N1 战斗先不追求城墙可见，也不制作城门穿越系统。** 城墙相关候选素材保留为未部署参考；当前正式 N1 远景恢复为无城墙 `N1_FarBackground_v1`。如果未来重新做城墙，必须先定义真实路线锚点、近远交接和门洞空间结构，不能继续把它当作一张背景图叠上去。
+
+### 8.3 插片贴地的正确验收方式
+
+`Renderer.bounds.min.y` 只代表渲染器几何包围盒，不等于可见 Alpha 底边；未绑定路线相机的 Edit Mode 读数也不能代表运行时投影结果。
+
+正确流程：
+
+1. 从 PNG Alpha bbox 计算真实不透明底边；
+2. 按真实底边设置 Custom/Bottom Pivot；
+3. Transform 初始局部 Y 保持路线父层地面基线，不用 Transform Y 补偿掩盖透明留白；
+4. 运行时由现有 `Y Sample Scenery`/`Y Grass` Shader 统一投影；
+5. 在 Battle Main Camera 的 Game 画面检查可见脚点；
+6. 如果已经按 Alpha 修过 Pivot，禁止再次根据 `Renderer.bounds.min.y` 把 Transform 向上抬，否则会产生双重补偿并重新悬浮。
+
+本轮已验证的错误链：
+
+```text
+固定16px留白估Pivot
+→ 再用Renderer.bounds.min.y抬Transform
+→ 编辑态看似对齐
+→ 运行时投影后可见底边悬空
+```
+
+已撤销第二次 Transform 补偿，保留 Alpha-based Pivot，并以 Game 画面作为最终验收证据。
+
+### 8.4 中景与近景不能按“告示牌”散点部署
+
+N1 概念要求的是：
+
+```text
+天空/远景
+→ 远处战场结构
+→ 两侧中景侧带
+→ 近景路侧插片
+→ 中央连续战斗道路
+```
+
+如果只把几个横向 Sprite 单独放在道路边缘，会形成“告示牌/障碍物”观感，而不是战场环境。中景结构应：
+
+- 放在道路两侧外缘；
+- 通过 z 距离、缩放、左右交错和低对比形成连续侧带；
+- 近、中、远层分别控制；
+- 不把横向结构推进中央战斗区；
+- 先用 Game 画面调比例，再决定是否继续生成素材。
+
+### 8.5 本轮已验证的保护边界
+
+- 正式结构仍是 `Battle.scene` + Additive `YJunctionSample.unity`。
+- 不打开、保存或回退 `Assets/Experiments/CurvedScroll/FakeRouteDataTrial.unity`。
+- 不改 `YScrollSample.Evaluate()`、路径长度、分叉半径、转角、Battle Camera、Player、Enemy 或战斗坐标。
+- 场景清理只禁用 Y 层旧美术对象，不删除共享素材。
+- 正式 `Assets/RouteData/Stage01/N1_Battle.asset` 不因美术预览修改。
+- 测试观察使用独立 `Assets/RouteData/Stage01/N1_ArtPreview_Battle.asset`，不等同正式 Stage01 流程。
+- 所有临时隐藏敌人/UI、临时相机绑定和 progress/right 预览必须在退出 Play 前恢复。
+
+### 8.6 N1 参考图生成成功经验与复用规则（2026-10-07）
+
+本次 N1 布景参考图已按完整的 GPT Image 工作流执行并落盘。该结果可以作为后续卷轴化场景参考图生产的流程基线，但不能把一次成功的 API 调用等同于 Unity 部署完成。
+
+#### 8.6.1 任务类型判断
+
+本次目标不是自由文生图，而是**基于实机截图锁定镜头的多图编辑/融合**：
+
+- 第一张 Unity Game 截图负责绑定摄像机取景、超窄竖屏比例、地平线高度、道路消失点、中央战斗区和左右边缘侵入量；
+- 第二张截图只作为同一场景空间与画面语言的辅助参考；
+- Prompt 中明确禁止模型平均两张图后重新设计镜头，也禁止改成普通 2:3 海报构图；
+- 本地图片必须通过 multipart 的重复 `image[]` 字段上传，不能只在 Prompt 中填写本地路径。
+
+#### 8.6.2 成功请求基线
+
+本次实测成功组合：
+
+```text
+model: gpt-image-2.5-sunburst
+endpoint: POST /v1/images/edits
+quality: high
+input_fidelity: high
+size: 1024x2048
+output_format: png
+image[]: 两张实际 Unity Game 截图
+```
+
+本次结果：HTTP 200，返回图片 URL；输出为 `1024×2048`、约 `1:2` 的 RGB PNG。由于目标是完整不透明场景参考图，不需要 Alpha；不能将本次 RGB 结果套用到透明 Sprite 任务。透明素材仍必须另行使用 `background=transparent`、PNG/WebP，并读取 PNG Color Type 与 Alpha 数值验收。
+
+完整版本化产物保存在当前 Windows 用户目录：
+
+```text
+C:/Users/Administrator/Pictures/gptGen/n1_battlefield_reference_retry_20261007_011121.png
+C:/Users/Administrator/Pictures/gptGen/n1_battlefield_reference_retry_20261007_011121.request.json
+C:/Users/Administrator/Pictures/gptGen/n1_battlefield_reference_retry_20261007_011121.response.json
+```
+
+#### 8.6.3 Prompt 的关键结构
+
+后续卷轴化场景参考图应按以下优先级组织 Prompt，而不是只描述“漂亮的三国战场”：
+
+1. **Reference priority**：说明哪张图绑定镜头，哪张图仅辅助风格/空间；
+2. **不可改变几何**：地平线、道路边界、消失点、中央战斗通道、左右侵入区；
+3. **编辑范围**：只替换环境布景，不改变摄像机、透视、主体位置和画幅；
+4. **场景内容**：再描述远景、中景、近景和色彩；
+5. **严格负面约束**：禁止城门、完整城墙、中央横向障碍、窄走廊、角色、UI、文字和海报式重构。
+
+参考图生成的成功条件不是“细节更多”，而是**构图约束先成立，再评价美术细节**。
+
+#### 8.6.4 机器与视觉验收门槛
+
+每次生成后必须保存请求 JSON、原始响应 JSON 和最终图片，并按顺序验证：
+
+- API HTTP 成功；
+- 请求和响应文件实际落盘；
+- 图片可读取，格式、尺寸、色彩模式与任务目标一致；
+- 完整场景图确认比例和 RGB/RGBA；透明任务额外确认真实 Alpha，不接受查看器棋盘格作为证据；
+- 视觉检查地平线、道路消失点、中央战斗区、左右侵入量、远景主体和禁止物件；
+- 只能称为“已生成”或“可交付候选”的前提是 API、落盘、机器验证和视觉检查全部完成。
+
+#### 8.6.5 对 Unity 部署的约束
+
+这次成功参考图只定义 N1 的镜头构图、空间层次、物体类别和色彩关系，不直接作为最终 Unity 背景贴图，也不直接切成路侧 Sprite。部署必须拆成独立职责：
+
+```text
+远景：天空/远山/尘雾背景，固定或弱视差，不参与地面弯曲；
+道路：连续可平铺的黄土路面与肩部，使用路线表面/地面材质；
+中景：两侧低矮残骸、土堆、木栅和破车，作为 YScrollScenery 插片；
+近景：草、拒马、木桩和少量破旗，作为有真实 Alpha 脚点的 Sprite；
+战斗层：真实敌人、攻击、碰撞、血条和特效，不纳入环境弯曲；
+UI/前景：保持现有 HUD 和玩家表现，不由参考图重绘。
+```
+
+下一步部署应先做一套**不改路线逻辑的 N1 美术预览层**，只在 `Battle.scene` + Additive `YJunctionSample.unity` 的既有结构中替换/补齐远景、道路、中景和近景引用；先以 Game 画面对齐参考图，再决定是否生成更多单类图集或进入正式路线资产。

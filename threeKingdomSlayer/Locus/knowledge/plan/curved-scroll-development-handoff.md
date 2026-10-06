@@ -4,13 +4,17 @@ injectMode: inherit
 injectAgents:
 - unity
 aiEditMode: inherit
+summary: Y分叉最新交接：用户确认54株草摇曳已实现；细分网格与自动风动接线正确，当前Battle和Y均dirty，风动保存重载收尾及自然路线回归待确认。
 ---
 
 # 卷轴向开发交接：当前进度与后续方向
 
 ## 1. 下一对话先读这里
 
-本文件是本次长对话结束时的交接入口。用户已对最后一轮修复回复“已确认”，要求整理进度后在其他对话继续。
+**当前场景搭建以第14节“2026-10-01 当前Y分叉场景交接”为最新入口，覆盖下方旧实验入口说明。**本节下面至第12节的大部分内容记录旧直线卷轴实验，不能用来决定当前部署目标。当前只在 `Assets/Scenes/Battle.scene` + Additive `Assets/Experiments/CurvedScroll/YJunctionSample.unity` 工作；`FakeRouteDataTrial.unity` 不得打开或保存。
+
+### 历史入口（仅保留背景，不是当前操作步骤）
+本文件早期记录用户对当时修复回复“已确认”；这不构成最新草簇、背景或完整战斗流程的最终验收。
 
 - 当前分支：`experiment/curved-scroll-travel`，基于场景向旧 V2 基线。
 - 当前主要测试场景：`Assets/Experiments/CurvedScroll/FakeRouteDataTrial.unity`。
@@ -337,4 +341,78 @@ D_End：真实终点战斗，完成后仅显示Completed (test only)
 - 安全边界：不要重新启用RouteStageRuntimeV2；不要使用全局Shader接管Battle对象；不要让展示敌人承担战斗逻辑；不要把单次方法调用测试表述为自然操作验收。
 
 - 尚待后续：完整A→B/C→D战斗/奖励回归、Boss/QTE/主动技能清理、正式存档。不要把隔离演出测试当作完整路线验收。
+
+## 14. 2026-10-01 当前Y分叉场景交接（新对话先读）
+
+### 当前现场
+- 当前分支已是 `port/combat-layer-from-video-branch`，HEAD 为 `07970e52 feat: 移植视频分支战斗层 — 招式状态机/张飞连招 + 骑兵109与102胆怯形态`。工作区还有视频战斗层和场景搭建未提交文件，禁止全仓库回退、覆盖或清理。
+- Active Scene：`Assets/Scenes/Battle.scene`，Battle dirty=false；Additive 已加载 `Assets/Experiments/CurvedScroll/YJunctionSample.unity`，当前回读 dirty=false。只加载这两个场景，未处于 Play Mode。
+- 最终根节点 `Y Junction - select for preview` 位于 `(0,0,0)`，预览 `progress=0.5`、`right=true`、`turnAngle=45`，`scenery`=151；其中54个是草、引用无空项或重复，天空不在该列表中。
+- `FakeRouteDataTrial.unity` 未加载；严禁打开、保存、回退或向其部署素材。
+- Console 最近回读 error/warning=0。Battle.scene、`YScrollSample.cs`、`BattleYRouteHost.cs`、共享 `YScrollGround.shader/YScrollScenery.shader` 相对当前 HEAD 没有工作区 diff。**分支已包含新的战斗层基线，不能拿旧14c30d0的Battle文件覆盖它。**
+- 场景搭建本轮没有 commit/push；新环境图、材质、YGrass等Shader、Encounter脚本大量为 `??` 未跟踪，Y场景和文档为未提交修改。其他Enemy动画、骑兵/MoveSystem文件、HTML、`Locus/workspace-trees/default.json` 均保留，不在本任务清理范围。
+- `FakeRouteDataTrial.unity` 虽未加载，磁盘仍带此前误编辑的 diff；已明确保留，不继续修复或整文件回退。
+
+### 已落盘的当前场景结果
+- Y Terrain 使用 `Assets/Experiments/CurvedScroll/Authoring/YSampleGround_ThreeLayer_Candidate.mat`：`_Road=BattleRoad_v2`、`_Shoulder=BattleShoulder_v3_candidate`、`_Outer=BattleRoadside_v2`。已拍开局/Left/Right候选图；它改善两侧砂石与中央道路的硬切，但仍是平面三层 Shader，不是真实高低差 Mesh。
+- 天空使用 `YSampleScenerySkybox_v2.mat` + `YSkyBackground.shader`，已从 `YScrollSample.scenery` 移除；不再遮挡道路，竖版图 UV方向已修正。
+- 当前保存54株草簇：`GrassOpeningTrial_00~05` 6株、`GrassPatch_Opening_00~13` 14株、`GrassPatch_Left_00~16` 17株、`GrassPatch_Right_00~16` 17株；均是真实 Hierarchy对象并加入 `YScrollSample.scenery`。前6株虽然名称含Trial，也是当前保留布局，不能按名字当临时对象删除。
+- 草簇使用独立 `Assets/Experiments/CurvedScroll/Authoring/YGrass.mat` + `Assets/Experiments/CurvedScroll/Shaders/YGrass.shader`，不再使用共享树木/建筑材质；保存重开后回读54株、54个 scenery 引用、专用 Shader正确。
+- 草簇当前已压低：回读世界高度约 `0.4836–0.993`；宽度保留；每株有约 ±25° Y旋转。开关对照曾产生10906个变化像素，说明朝向参与渲染。
+- 三个 `BattleEncounterAuthoring` 仍存在并分别引用 `NarrowRoadBattle_01/02/03`，但 `BattleYRouteHost` 实查开局/左/右仍全部为 `SmallBattle`，并且运行时把路线根Y置为-1.8。Encounter预览不是实际生成配置来源，正式运行接入仍是待办。
+- 本轮建筑/节点布景修正：两座瞭望塔已缩至0.4并按左右终点镜像放到远景（终点后27、路侧±6.2）；门楼放到右终点后24、道路中心，主帐篷放到右终点后22、左侧-5.6。仍保留建筑原Sprite中心Pivot，场景Y补偿已扣除16px透明留白，实际Alpha脚点贴地；未修改共享Importer、Shader或移动核心。旧重复 `Right - Camp Encounter/CommandTent - beside road` 已禁用但保留对象。
+- 悬空帐篷根因：旧 `SmallTentA/SmallTentB` 的Rect同时截入上下两排帐篷，旧 `CommandTent` 切片也带邻物残段；单改Y无法修正。保留原图集不动，新增单主体正确裁切的 `SmallTentA_Corrected.png`、`SmallTentB_Corrected.png`、`Crates_Corrected.png`，并导入已验收的 `Palisade_v1.png`、`Banner_v1.png`、`Brazier_v1.png`，统一位于 `Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/`，仅在Y场景部署，无新生图。
+- 左谷战斗节点12个树岩/悬崖按相同路径深度与相反侧向偏移镜像重排；56个旧ValleyProps树石按各自7–17px透明底边修正Y。右营地帐篷、栅栏、旗、火盆、箱子成对布置到可见视野，开局战斗点新增6个镜像木栅/军旗/火盆；54株草布局、比例、朝向和专用Shader未改。
+- `YRouteSurfaceAuthoring.cs`、`YRouteSurface.shader` 为早先误诊时留下的未跟踪草稿，Y场景附着数量=0。现有Terrain已经覆盖分支；不要部署这批草稿。组件含 `OnEnable/OnValidate` 重建及未隔离的 `UnityEditor` 调用，与安全协议相冲突，后续若整理须先核对使用并单独审批删除或修复。
+
+### 8. 当前用户提出的下一轮环境目标（2026-10-02）
+- 用户指出：当前场景装饰普遍偏矮，人物与树/栅栏的比例不可信；整体环境仍稀疏。
+- 设计问题：分叉路口正前方过于空旷，没有山石、城墙或道路标识形成阻挡/引导，无法从画面语义解释为什么道路必须分叉。
+- 下一轮目标：以人物高度为参照重新校准树木、栅栏和关键营地装饰；补足开局直路、分叉口和分支前段的近/中/远景密度；在不侵入战斗通道、不改移动核心的前提下，用自然障碍/地标构成“主路被地形或设施截断，左右绕行”的视觉逻辑。
+- 当前证据：Y场景当前只读回读 scenery=151；主要父节点数量为 `Approach - Valley Road=32`、`Left branch landmarks=30`、`Right branch landmarks=30`、`Left - Valley Encounter=20`、`Opening Roadside Props=14`、`Right - Camp Encounter=12`。场景对象的局部scale中，Opening栅栏约0.62、Roadside树约0.7、分支树约0.9、Palisade约0.28–0.34；这些数值只能作为初始核对，最终以Battle Main Camera下Game画面为准。
+- 实施约束：仅修改Y路线层和其景观对象/资源；保护Battle.scene战斗坐标、Player/Enemy/Camera/StageController、YScrollSample.Evaluate、路径点、转角和草风动系统。不得打开、保存或回退 `Assets/Experiments/CurvedScroll/FakeRouteDataTrial.unity`。
+
+### 资源与验证证据
+- 道路候选参数：`_RoadHalfWidth=2.45`、`_ShoulderWidth=1.5`、`_RoadBlend=1.1`、`_OuterBlend=1.3`；OuterTint=`(1.18,1.11,1.02,1)`。没有启用新的道路Mesh，也没有重写Y移动。
+- 现有草图为 `Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassSmall_v1.png`、`GrassWide_v1.png`、`GrassMedium_v1.png`、`GrassTall_v1.png`；本轮使用前三种，不需要新生图。原图/抠图/请求记录在 `C:/Users/Administrator/Pictures/gptGen/camp_grass_20260928_v1/`。
+- 已验收小物件原始交付在 `C:/Users/Administrator/Pictures/gptGen/camp_props_20260928_v1/`（木栅/军旗/火盆）；大型建筑在 `camp_architecture_20260928_v1/`；环境v2在 `camp_environment_20260928_v2/`；肩部候选在 `camp_environment_20260928_v3/shoulder/`。后续导入前检查真实路径，保留原图，不自动重生成付费请求。
+- 最新前后截图在 `Library/Locus/tmp/grass-yaw/`：`before_opening.png`、`before_left.png`、`before_right.png`、`after_opening.png`、`after_left.png`、`after_right.png`、`after_left_end.png`、`after_right_end.png`。它们是临时验证证据，不是永久美术交付；对象引用和正文事实已经记录，不能只依赖Library保存。
+- 本轮确实查看了开局0、实际开局战斗点 `18/Length≈0.26035`、Left/Right 0.5/0.75/1 的放大Game图。截图预览临时把路线根Y设为Host实际的-1.8，结束恢复0；保持Battle Camera原位。已保存并只重载Y层，回读151景物/54草/无缺失Sprite和材质，两场景dirty=false，Console error/warning=0。
+- 最新可复核图：`Library/Locus/Screenshots/locus_game_20261001_081649_060.png`（开局战斗两侧装饰）；`locus_game_20261001_083756_472.png`/`locus_game_20261001_083921_519.png`（左右0.75）；`locus_game_20261001_084026_548.png`（重载左谷终点）；`locus_game_20261001_084429_691.png`（重载右营地终点）；`locus_game_20261001_085429_632.png`、`locus_game_20261001_085536_394.png`、`locus_game_20261001_085715_743.png`（开局/右营地/左谷Play暂停取景）。这些Library图是临时证据，不是永久美术交付。
+- Play验证边界：Host实际进入开局Battle、主相机正确绑定、路线根Y=-1.8、展示敌人自动隐藏；为了干净截图暂时关闭受击Overlay并在Play暂停时切换route.right/progress查看两分支环境，未推进自然奖励/选择/旅行、未改Battle坐标，退出Play恢复。两次Play进入/退出未发现Console error/warning，但不等于自然完整路线、Boss/QTE或10次生命周期验收。
+
+### 已验证移动基线
+```text
+Left  p=0.00 (0,0,0) angle=0
+Left  p=0.25 (0,0,17.28) angle=0
+Left  p=0.50 (-5.58,0,33.03) angle=-45
+Left  p=0.75 (-17.80,0,45.25) angle=-45
+Left  p=1.00 (-30.02,0,57.48) angle=-45
+Right p=0.00 (0,0,0) angle=0
+Right p=0.25 (0,0,17.28) angle=0
+Right p=0.50 (5.58,0,33.03) angle=45
+Right p=0.75 (17.80,0,45.25) angle=45
+Right p=1.00 (30.02,0,57.48) angle=45
+```
+
+移动核心未改。**交接实查 `YScrollSample.viewCamera=None` 且Sample Camera disabled，Edit Mode下会呈现未投影画面，不能误判为路线丢失。**跨场景拖拽引用不能可靠保存；Play时Host会绑定Battle Main Camera。已加载Battle+Y时直接会话绑定并在渲染后恢复参数即可，不保存Battle。`Tools/Curved Scroll/Open Battle Host` 虽可绑定，但菜单会先Single重开Battle、再Additive开Y，且 `EnsureSaved()` 只检查Active Scene dirty；有Y未保存编辑时不要调用菜单，否则可能丢失布局。持久安全的Editor绑定入口仍待修复。
+
+### 草簇风动当前交接（2026-10-01，用户已确认效果已实现）
+
+- 用户当前确认：现有草已实现可观察的摇曳效果。本结论更新了此前“仅完成草Shader/细分部署、风动尚未完成”的旧描述。
+- 实现文件：`Assets/Experiments/CurvedScroll/Shaders/YGrass.shader`、`Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/`，以及对应的草材质资源。
+- Shader行为：使用真实高度细分网格；根部固定，上部按 `texcoord.y²` 增加弯曲；风动由自动 `_Time.y` 驱动，并按草的作者位置生成相位差；保留Y路线投影与草自身朝向处理。
+- 已记录的部署结果：54株原始草保留为布局源并禁用原 `SpriteRenderer`，每株有一个 `Wind Mesh` 子节点；细分网格为21顶点/24三角形；`YScrollSample.scenery`已从重复的205项修正为151项，其中54项为唯一风动渲染引用；三份风动材质参数为强度0.28、速度2.1、自动时间（`_WindTimeOverride=-1`）。
+- 本轮只读现场核对再次确认上述数量、网格和材质参数；scenery空项=0、重复=0，三份材质Shader supported=true，Console error/warning=0。当前Active为Battle，仅加载Battle+Y，双方dirty=true；Y根位置(0,-1.8,0)、right=false、progress=0.260352、viewCamera=None。这覆盖前面旧交接中的dirty=false和已恢复预览值，不代表已丢失或损坏。
+- 本轮仅写文档，不保存或重开场景。后续持久化收尾应先确认dirty内容及用户并发编辑，恢复经确认的临时预览值，再仅保存授权Y层和草资产并重载回读；禁止Save All或为清理dirty整场景回退。
+- 验收边界：用户确认当前效果已实现，但本轮文档更新没有重新拍摄连续帧，也没有重新加载场景做持久化回读；因此不扩展为“本轮重载后完整验收”。
+- 保护边界：Battle移动核心、战斗坐标、树木、道路和Y路线采样不属于草风动改动范围。`Assets/Experiments/CurvedScroll/FakeRouteDataTrial.unity` 当前在Git中存在未提交修改，禁止在本交接中打开、保存、回退或归因给草风动。
+
+### 下一对话建议顺序
+1. 先读 `Locus/knowledge/memory/y-junction-scene-authoring-workflow.md`、`Locus/knowledge/memory/project-mistake-note.md`、`Locus/knowledge/plan/latest-todolist.md` 的错误复盘协议和本节。
+2. 复核 Active Battle + Additive Y、FakeRoute未加载、Git status、Console=0；不要碰视频战斗层未提交文件。
+3. 用户已确认草摇曳实现，不再自动重复实现或调整草高度。恢复工作时先处理风动持久化收尾，核对并保护双方dirty内容；随后按需要做会话相机绑定和开局/Left/Right/终点画面回归。保留54株、现有布局和路缘侵入，不重新生图或删除草。
+4. 先请用户复核本轮开局/左谷/右营地战斗构图与参考素材的一致性；有新问题继续按真实镜头、Alpha主体和路径位置小组修正。已验收木栅/火盆/军旗与正确裁切帐篷现在有场景引用，不要重复生图或再用旧错误切片。
+5. 当前三层候选及曲率/移动核心保持；实际对照已证明此前道路空带来自天空遮挡，不是矩形网格必然不够。高度差道路Mesh只是曾讨论的备选，不是已授权的下一步必要任务。
+6. 完成 Encounter 数据消费和最新战斗层下Left/Right自然Play回归前，不得宣称分叉正式流程完成。相机重开问题也需后续提供安全的Editor绑定入口。
 
