@@ -58,6 +58,11 @@ public sealed class PixelHitEffectManager : MonoBehaviour
     private const int StabVariantCount = 4;
     private const int StabFramesPerVariant = 3;
 
+    // 用户确认：像素戳击命中特效缩小到当前的 60%，挑飞命中特效缩小到当前的 55%。
+    // Slash 分支保持原尺寸不变。
+    private const float StabImpactScale = 0.60f;
+    private const float LaunchImpactScale = 0.55f;
+
     private Sprite[] _stabFrames;
     private int _stabVariantIndex;
     private Sprite[] _diseaseStabFrames;
@@ -273,7 +278,8 @@ public sealed class PixelHitEffectManager : MonoBehaviour
         float Next(float min, float max) => min + (float)random.NextDouble() * (max - min);
 
         float duration = heavy ? 0.34f : 0.28f;
-        float peakScale = 2.4f * (heavy ? 1.536f : 1.344f) * Next(0.97f, 1.03f);
+        float peakScale = 2.4f * (heavy ? 1.536f : 1.344f)
+            * StabImpactScale * Next(0.97f, 1.03f);
         float rotation = Next(-5f, 5f);
         float contactEnd = duration * 0.14f;
         float burstEnd = duration * 0.54f;
@@ -373,7 +379,8 @@ public sealed class PixelHitEffectManager : MonoBehaviour
         localDirection.Normalize();
 
         float angle = Mathf.Atan2(localDirection.y, localDirection.x) * Mathf.Rad2Deg + Next(-8f, 8f);
-        float scale = 4.8f * (heavy ? 1.08f : 1f) * Next(0.96f, 1.04f);
+        float scale = 4.8f * (heavy ? 1.08f : 1f)
+            * LaunchImpactScale * Next(0.96f, 1.04f);
         float duration = heavy ? 0.30f : 0.25f;
         float contactEnd = duration * 0.16f;
         float burstEnd = duration * 0.58f;
@@ -924,7 +931,8 @@ public sealed class PixelHitEffectManager : MonoBehaviour
         int variant = _diseaseStabVariantIndex++ % DiseaseStabVariantCount;
         int frameBase = variant * DiseaseStabFramesPerVariant;
         float duration = heavy ? 0.26f : 0.21f;
-        float peakScale = (heavy ? 2.65f : 2.35f) * (0.98f + (variant % 3) * 0.015f);
+        float peakScale = (heavy ? 2.65f : 2.35f) * StabImpactScale
+            * (0.98f + (variant % 3) * 0.015f);
         float contactEnd = duration * 0.18f;
         float burstEnd = duration * 0.58f;
         float holdEnd = duration * 0.7f;
