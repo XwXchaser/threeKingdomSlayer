@@ -208,3 +208,5 @@ public struct AttackStep
 - `spawnDuration` 与命中帧时刻的偏差：校验器只提示、不自动改写；逐敌人给帧后需确认。
 - 103 多段连招的整段时长与伤害次数；104/107/108 C 技 trigger（`Boss_104_CAttack` 仍然播不到）。
 - 节奏变化回归（§5 表）。
+- 多攻击动作敌人的预警挂点：当前每个敌人只有一个 `AttackTelegraphAnchor`，多攻击动作需要一个攻击步骤一个挂点；需求已记入 `plan/latest-todolist.md`「敌人攻击预警：多攻击动作挂点」。
+- 命中帧时序已改为「声明命中帧的步骤以首个 `resolve` 命中帧 `hitTime` 为唯一基准」：前冲时长 = `hitTime`、预警 = `hitTime − 0.3s`、收招 = `clip.length − hitTime`、预警在命中帧触发时 `StopWarning()`；`spawnDuration` 仅作未声明命中帧步骤的回退。`AttackHitFrame.hitTime` 由校验器读出后由使用者回填（§3.2 原“spawnDuration 仍为基准”的描述已作废）。

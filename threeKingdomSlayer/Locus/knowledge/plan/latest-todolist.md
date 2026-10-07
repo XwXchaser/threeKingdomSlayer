@@ -7,6 +7,7 @@ aiEditMode: inherit
 
 ## 当前场景搭建交接入口（2026-10-01）
 
+- **2026-10-07 起本文件停用为待办总表**：新增 BUG 与新增需求登记到 `plan/bugs-and-requests.md`；进度以 `plan/october-milestone-plan.md` 为准。本文件仅保留历史记录，不再追加条目。
 - 最新状态先读 `plan/curved-scroll-development-handoff.md` 第14节；工作流为 `memory/y-junction-scene-authoring-workflow.md`，错误复盘为 `memory/project-mistake-note.md`。本文件历史段落不是当前自动执行清单。
 - 当前分支 `port/combat-layer-from-video-branch`（HEAD `07970e52`），场景搭建改动未commit/push；保持Battle宿主 + Additive Y路线层，不覆盖其他战斗层/Enemy/MoveSystem/HTML/Workspace未提交文件。
 - 既有保存基线：三层候选地面、独立天空背景、54株草、建筑脚点及战斗节点镜像布景。草摇曳效果现已由用户确认实现；当前只读核对为54个 `Wind Mesh`、151项scenery、无空项/重复、三份材质自动风动（强度0.28、速度2.1、时间-1），Console error/warning=0。
@@ -21,6 +22,10 @@ aiEditMode: inherit
   - [ ] 提高Encounter编辑可操作性：目前三份预览引用不驱动Runtime；Host的Opening/Left/Right依旧同为SmallBattle。
   - [ ] 在最新战斗移植基线上完成自然Left/Right战斗→奖励→旅行回归、暂停/退出/重入与10次生命周期检查。
 - 暂不做：改移动采样/曲率、追加新道路Mesh、正式存档/合流/三分支。此前道路“空带”已证实是背景遮挡，持久道路Mesh只保留为未来有新证据时的备选。
+
+## 敌人攻击预警：多攻击动作挂点（2026-10-07 已迁出）
+
+该需求已迁至 `plan/bugs-and-requests.md` 的 `REQ-002`，本文件不再维护。
 
 ## 本周主要目标（新增）
 
