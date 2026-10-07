@@ -22,6 +22,9 @@ public class AttackSkillConfigEditor : Editor
     private SerializedProperty slashSpawnYOffsetProp;
     private SerializedProperty slashSpawnZOffsetProp;
     private SerializedProperty ultimateEnergyGainProp;
+    private SerializedProperty releaseParryEnabledProp;
+    private SerializedProperty releaseParryProjectileRangeProp;
+    private SerializedProperty releaseParryRangeRowsProp;
 
     private void OnEnable()
     {
@@ -43,6 +46,9 @@ public class AttackSkillConfigEditor : Editor
         slashSpawnYOffsetProp = serializedObject.FindProperty("slashSpawnYOffset");
         slashSpawnZOffsetProp = serializedObject.FindProperty("slashSpawnZOffset");
         ultimateEnergyGainProp = serializedObject.FindProperty("ultimateEnergyGain");
+        releaseParryEnabledProp = serializedObject.FindProperty("releaseParryEnabled");
+        releaseParryProjectileRangeProp = serializedObject.FindProperty("releaseParryProjectileRange");
+        releaseParryRangeRowsProp = serializedObject.FindProperty("releaseParryRangeRows");
     }
 
     public override void OnInspectorGUI()
@@ -97,6 +103,17 @@ public class AttackSkillConfigEditor : Editor
                 EditorGUILayout.PropertyField(slashSpawnYOffsetProp);
                 EditorGUILayout.PropertyField(slashSpawnZOffsetProp);
                 break;
+        }
+
+        EditorGUILayout.Space();
+
+        // 释放格挡（Parry 式效果，与攻击类型无关，任何招式都能配）
+        EditorGUILayout.LabelField("释放格挡（Parry 式，无视觉）", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(releaseParryEnabledProp);
+        if (releaseParryEnabledProp.boolValue)
+        {
+            EditorGUILayout.PropertyField(releaseParryProjectileRangeProp);
+            EditorGUILayout.PropertyField(releaseParryRangeRowsProp);
         }
 
         EditorGUILayout.Space();

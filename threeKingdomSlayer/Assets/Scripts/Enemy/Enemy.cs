@@ -1265,6 +1265,23 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
+    /// Parry 式攻击打断（只做效果：不造成伤害、不跳字、不触发受击动画/闪白/卡肉）。
+    /// 门控与 TakeDamage 的「Parry 打断」分支等价（即 canInterruptCFrame 与 isParryInterrupt 同时为真）：
+    /// 处于攻击动画中且不在收招段（AttackDraw）的敌人都可被打断，包括 Boss 的霸体/CFrame。
+    /// 与 TakeDamage 的早退保持一致：死亡、Boss 未进入战斗、转阶段无敌、锁血期间都不打断。
+    /// 返回是否真的打断了敌人的攻击。
+    /// </summary>
+    public bool TryInterruptAttackByParry()
+    {
+        if (state == EnemyState.Dead) return false;
+        if (isBoss && bossState != BossState.InCombat) return false;
+        if (isPhaseTransitioning || _healthLocked) return false;
+        if (state != EnemyState.Attacking || !isAttackAnimating || isAttackDrawPhase) return false;
+
+        return CancelAttack();
+    }
+
+    /// <summary>
     /// 进入 QTE 攻击状态（由 QTEController 调用）
     /// 中断当前攻击，切换到 QTEAttacking 状态
     /// </summary>

@@ -26,6 +26,11 @@ public class AttackSystem : MonoBehaviour
     [Tooltip("招架时扫描飞行物的范围半径")]
     public float parryProjectileRange = 4f;
 
+    [Header("终结技·释放格挡（局外解锁项）")]
+    [Tooltip("临时解锁开关：勾选 = 该升级已解锁 —— 终结技释放时附带 Parry 式格挡（反弹飞行物 + 打断正在攻击的敌人），仅机制、无 Parry 视觉。\n" +
+             "正式版本应由局外解锁（天赋树/存档）写入，这里先用编辑器开关代替，避免阻塞内容验证。")]
+    [SerializeField] private bool finisherParryUnlocked = false;
+
     [Header("幻影攻击")]
     [Tooltip("幻影攻击使用的紫色透明材质")]
     [SerializeField] private Material _phantomMaterial;
@@ -104,6 +109,16 @@ public class AttackSystem : MonoBehaviour
 
     /// <summary>本次招式的蓄力等级（0 = 未蓄力；>=1 为蓄力招式等级）</summary>
     public int CurrentChargeLevel => _currentChargeLevel;
+
+    /// <summary>
+    /// 「终结技·释放格挡」是否已解锁。
+    /// 当前由 Inspector 开关代替（局外解锁系统尚未实现）；将来由局外天赋/存档写入这个属性。
+    /// </summary>
+    public bool FinisherParryUnlocked
+    {
+        get => finisherParryUnlocked;
+        set => finisherParryUnlocked = value;
+    }
 
     /// <summary>最近一次成功执行招式所用的配置资产（招式表节点或武将默认配置）</summary>
     public AttackSkillConfig LastMoveConfig { get; private set; }
@@ -696,6 +711,8 @@ public class AttackSystem : MonoBehaviour
         Vector3 playerLaunchPos = playerState != null ? playerState.transform.position : transform.position;
         // 连段收尾：先铺一层 slash 的扫掠表现（只做观感，不参与判定）
         if (cfg.launchSweepMode) PlaySweepPresentation(cfg, playerLaunchPos);
+        // 释放格挡（局外解锁项）：与扫掠表现同一时刻一次性结算
+        ApplyReleaseParryEffect(cfg);
         if (targets.Count > 0)
         {
             ReleaseChargeHitShockwave();
@@ -749,20 +766,8 @@ public class AttackSystem : MonoBehaviour
         var cfg = GetConfig(AttackType.Parry);
         if (cfg == null) return false;
 
-        var projectiles = FindObjectsOfType<EnemyProjectile>();
         Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
-        bool deflectedAny = false;
-        foreach (var p in projectiles)
-        {
-            if (p == null || p.isQTEProjectile) continue;
-            float dist = Vector3.Distance(p.GetWorldPosition(), playerPos);
-            if (dist <= parryProjectileRange)
-            {
-                p.Deflect();
-                deflectedAny = true;
-                Debug.Log($"[AttackSystem] 招架反弹飞行物: dist={dist:F1}");
-            }
-        }
+        bool deflectedAny = DeflectProjectilesNear(playerPos, parryProjectileRange) > 0;
         if (deflectedAny)
         {
             AudioManager.Instance?.PostEvent("Player_Parry");
@@ -788,6 +793,62 @@ public class AttackSystem : MonoBehaviour
         AudioManager.Instance?.PostEvent("Player_Parry");
         PlayParryVisual(cfg, playerPos);
         return true;
+    }
+
+    /// <summary>
+    /// 反弹玩家周围的敌人飞行物（QTE 飞行物除外）。返回反弹数量。
+    /// 招架与「释放格挡」共用同一条通道，避免两处各写一份扫描逻辑。
+    /// </summary>
+    private int DeflectProjectilesNear(Vector3 playerPos, float range)
+    {
+        var projectiles = FindObjectsOfType<EnemyProjectile>();
+        int deflected = 0;
+        foreach (var p in projectiles)
+        {
+            if (p == null || p.isQTEProjectile) continue;
+            float dist = Vector3.Distance(p.GetWorldPosition(), playerPos);
+            if (dist > range) continue;
+
+            p.Deflect();
+            deflected++;
+            Debug.Log($"[AttackSystem] 反弹飞行物: dist={dist:F1} range={range:F1}");
+        }
+        return deflected;
+    }
+
+    /// <summary>
+    /// 释放格挡（Parry 式附加效果：仅机制，不播 Parry 视觉与音效）。
+    /// 释放瞬间一次性结算：反弹范围内飞行物 + 打断正在攻击的敌人。
+    /// 效果由招式资产声明（releaseParryEnabled / 半径 / 排数），是否已解锁由 finisherParryUnlocked 决定。
+    /// 注意：本效果与「是否命中敌人」无关，空挥释放也会生效（飞行物在途时仍能被挡下）。
+    /// </summary>
+    private void ApplyReleaseParryEffect(AttackSkillConfig cfg)
+    {
+        if (cfg == null || !cfg.releaseParryEnabled) return;
+        // 局外解锁门：未解锁时不产生任何效果（当前由编辑器开关代替解锁）
+        if (!finisherParryUnlocked) return;
+
+        Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
+        int deflected = DeflectProjectilesNear(playerPos, cfg.releaseParryProjectileRange);
+        int interrupted = InterruptAttackingEnemies(cfg.releaseParryRangeRows);
+
+        Debug.Log($"[AttackSystem] 释放格挡（{cfg.name}）：反弹飞行物 {deflected} 个，打断攻击敌人 {interrupted} 个");
+    }
+
+    /// <summary>打断正在攻击的敌人（Parry 门控，不对其造成任何伤害）。返回打断数量。</summary>
+    private int InterruptAttackingEnemies(int rangeRows)
+    {
+        if (columnManager == null) return 0;
+
+        List<Enemy> targets = columnManager.GetAllEnemiesInRange(Mathf.Max(1, rangeRows));
+        int interrupted = 0;
+        for (int i = 0; i < targets.Count; i++)
+        {
+            Enemy enemy = targets[i];
+            if (enemy == null) continue;
+            if (enemy.TryInterruptAttackByParry()) interrupted++;
+        }
+        return interrupted;
     }
 
     /// <summary>

@@ -15,6 +15,7 @@ MonoBehaviour:
   id: 14
   attackType: 4
   damageType: 4
+  hitReactionDirection: 1
   damage: 60
   poiseDamage: 80
   interruptsCavalryCharge: 1
@@ -101,6 +102,9 @@ MonoBehaviour:
   hitShakeDuration: 0.1
   hitShakeFrequency: 18
   hitShakeSecondRowScale: 0.6
+  releaseParryEnabled: 1
+  releaseParryProjectileRange: 10
+  releaseParryRangeRows: 1
   pushBackRows: 0
   repeatSelf: 0
   overrideWindow: 0

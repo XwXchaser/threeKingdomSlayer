@@ -261,6 +261,16 @@ public class AttackSkillConfig : ScriptableObject
     [Range(0f, 1f)]
     public float hitShakeSecondRowScale = 0.6f;
 
+    [Header("释放时附带格挡（Parry 式效果，无 Parry 视觉）")]
+    [Tooltip("开启后本招式释放瞬间附带格挡：一次性反弹范围内敌人飞行物 + 打断正在攻击的敌人（Parry 门控，可打断 Boss 霸体/CFrame）。仍需解锁标记为真才生效（AttackSystem.FinisherParryUnlocked，当前由编辑器开关代替局外解锁）")]
+    public bool releaseParryEnabled = false;
+    [Tooltip("反弹飞行物的扫描半径（世界单位）")]
+    [Min(0f)]
+    public float releaseParryProjectileRange = 10f;
+    [Tooltip("打断攻击的敌人扫描排数（1 = 仅前排）。与本招式自身的 rangeRows 无关")]
+    [Min(1)]
+    public int releaseParryRangeRows = 1;
+
     [Header("命中位移")]
     [Tooltip("本次攻击每命中一个目标时施加的击退排数（0 = 不击退）。与攻击类型无关，任何招式都能配；填了才会击退，并叠加升级「push_wave」的加成。走既有 ApplyPushWave / PostDisplacementFillUp 通道")]
     [Min(0)]
