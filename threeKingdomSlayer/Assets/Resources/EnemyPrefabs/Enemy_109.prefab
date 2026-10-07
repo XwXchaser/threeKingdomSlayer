@@ -18,7 +18,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &7309641163362157218
 RectTransform:
   m_ObjectHideFlags: 0
@@ -193,7 +193,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8192652699179111046
 Transform:
   m_ObjectHideFlags: 0
@@ -281,7 +281,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8044702247173761677
 Transform:
   m_ObjectHideFlags: 0
@@ -366,11 +366,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2221974472477629242, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: yOffset
-      value: 7
+      value: 35.277855
       objectReference: {fileID: 0}
     - target: {fileID: 3042528735547855719, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 928306831f01c9e468f98ddde72de2e2, type: 3}
+    - target: {fileID: 3042528735547855719, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: enemyId
@@ -403,6 +407,22 @@ PrefabInstance:
     - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: normalFormDamageReductionPercent
       value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4985420312235204657, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 81afdd8da29bba844a8c235ffa07b915, type: 2}
+    - target: {fileID: 5179401164724824256, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.08316832
+      objectReference: {fileID: 0}
+    - target: {fileID: 5179401164724824256, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.08316832
+      objectReference: {fileID: 0}
+    - target: {fileID: 5179401164724824256, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.08316832
       objectReference: {fileID: 0}
     - target: {fileID: 5179401164724824256, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: m_LocalPosition.x
@@ -443,6 +463,26 @@ PrefabInstance:
     - target: {fileID: 5179401164724824256, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7412376307176555471, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
+      propertyPath: m_Size.x
+      value: 6.032557
+      objectReference: {fileID: 0}
+    - target: {fileID: 7412376307176555471, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
+      propertyPath: m_Size.y
+      value: 15.472222
+      objectReference: {fileID: 0}
+    - target: {fileID: 7412376307176555471, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
+      propertyPath: m_Size.z
+      value: 0.43285713
+      objectReference: {fileID: 0}
+    - target: {fileID: 7412376307176555471, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
+      propertyPath: m_Center.x
+      value: -0.5674779
+      objectReference: {fileID: 0}
+    - target: {fileID: 7412376307176555471, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
+      propertyPath: m_Center.y
+      value: 0.29637945
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -520,6 +560,9 @@ MonoBehaviour:
   riderAnchor: {fileID: 8192652699179111046}
   riderRenderer: {fileID: 5170036098323394168}
   sourceRenderer: {fileID: 6313915206343108835}
+  mountedCombinedAnimatorController: {fileID: 9100000, guid: 81afdd8da29bba844a8c235ffa07b915, type: 2}
+  mountedPlaceholderAnimatorController: {fileID: 9100000, guid: dd82b46f8eda9d344b1cbd2f8d86f54d, type: 2}
+  dismountedAnimatorController: {fileID: 9100000, guid: 1f96cc32fd193494e943b84135b6e49f, type: 2}
   debugLabel: {fileID: 4514936625154281685}
   showDebugState: 1
   mountedRiderOffset: {x: 0, y: 3.5, z: -0.04}
