@@ -121,6 +121,34 @@ alphaIsTransparency = 1，Mipmaps 关闭
 3. 接线（只有装配人动）：把新角色写进测试关卡/正式关卡的 `StageConfig.enemyIds`、按需在 `Enemy.cs` 加公共分支、更新 `StageRegistry.asset`。
 4. 汇合后必须由装配人在**一台机器上打开工程跑 Play Mode**，不能靠 grep 或静态检查宣告完成。
 
+### 双设备日常同步 SOP（单人双设备）
+
+一次性：另一台机器按第 7 节「让另一台机器跟上」迁到重写后的历史，并配置 SmartMerge 驱动。此后每轮往返：
+
+```bash
+# ---- 在 B（提交并上传）----
+cd <项目目录>                  # 建议等 Unity 导入完成，避免刚生成的 .meta 还在写
+git status                     # 确认没有遗留冲突未处理
+git pull --rebase              # 先对齐远程，避免 push 被拒
+git add -A
+git commit -m "feat(敌人1012): ..."
+git push
+
+# ---- 在 A（同步 B 的改动）----
+git fetch origin --prune
+git status -sb                 # 看是否 behind
+git merge --ff-only origin/route-scroll-movement   # 或 git pull --rebase
+# 回到 Unity，让它重新导入被改动的资产
+```
+
+规则：
+
+- 两台设备固定用同一条开发分支（当前 `route-scroll-movement`），不要各自开长分支；单人双设备用 `pull --rebase` 保持线性历史最省事。
+- **禁止 `push --force`**（历史已是共享的）；只有本机尚未推送的提交才能 rebase。
+- 不要在两台机器之间手工拷贝 `Assets/` 目录：`.meta` / GUID 会带出"同名不同 GUID"或"同 GUID 两份资产"，一律走 git。
+- 另一台机器如果还有**基于旧历史的未推送提交**，先导出补丁（`git format-patch`），迁移后再 `git am` 重放；详见第 7 节。
+- 冲突处理：Unity 资产已配 SmartMerge，远距离改动会自动合并；真冲突会标 `UU` 并在输出里给出字段路径，此时用 Locus 的结构化合并或人工裁决。
+
 ### 阶段 3：验收
 
 每个角色与整体各跑一遍：
