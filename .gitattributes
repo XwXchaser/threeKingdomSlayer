@@ -1,0 +1,69 @@
+# 仓库级 Git 属性
+#  背景与决策见 Locus/knowledge/plan/two-character-parallel-production.md 第 7 节
+#
+# 目标：
+#   1) 索引内统一文本行尾（LF）。两台机器的 core.autocrlf 设置不再影响入库内容，
+#      避免同一文件在两侧反复出现"整文件已修改"的假 diff。
+#   2) 大图、音频、插件、构建产物按二进制处理：不做文本 diff、不做行尾转换、不逐行合并。
+#   3) Unity 文本资产（scene / prefab / asset / controller / anim / mat / meta）使用
+#      Tuanjie SmartMerge 做语义合并，而不是按行硬合。
+
+# 默认：让 Git 自动判定文本文件，索引内统一为 LF
+* text=auto
+
+# ---- 二进制：禁用 diff / merge / 行尾转换 ----
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.bmp     binary
+*.tga     binary
+*.tif     binary
+*.tiff    binary
+*.psd     binary
+*.exr     binary
+*.hdr     binary
+*.wav     binary
+*.mp3     binary
+*.ogg     binary
+*.aiff    binary
+*.mp4     binary
+*.mov     binary
+*.webm    binary
+*.bnk     binary
+*.ttf     binary
+*.otf     binary
+*.fbx     binary
+*.obj     binary
+*.blend   binary
+*.dll     binary
+*.so      binary
+*.dylib   binary
+*.a       binary
+*.lib     binary
+*.pdb     binary
+*.apk     binary
+*.aab     binary
+*.zip     binary
+*.7z      binary
+*.pdf     binary
+*.mdb     binary
+*.pyc     binary
+
+# ---- Unity 文本资产：Tuanjie SmartMerge 语义合并 ----
+# 每台机器需要执行一次（路径按本机安装位置调整；本工程为 Tuanjie 2022.3.62t7）：
+#   TOOL="C:/Program Files/Tuanjie/Hub/Editor/2022.3.62t7/Editor/Data/Tools/TuanjieYAMLMerge.exe"
+#   git config merge.tuanjieyamlmerge.name   "Tuanjie SmartMerge"
+#   git config merge.tuanjieyamlmerge.driver "\"$TOOL\" merge -p %O %B %A %A"
+*.unity             merge=tuanjieyamlmerge
+*.scene             merge=tuanjieyamlmerge
+*.mixer             merge=tuanjieyamlmerge
+*.prefab            merge=tuanjieyamlmerge
+*.asset             merge=tuanjieyamlmerge
+*.controller        merge=tuanjieyamlmerge
+*.overridecontroller merge=tuanjieyamlmerge
+*.anim              merge=tuanjieyamlmerge
+*.mat               merge=tuanjieyamlmerge
+*.playable          merge=tuanjieyamlmerge
+*.mask              merge=tuanjieyamlmerge
+*.meta              merge=tuanjieyamlmerge
