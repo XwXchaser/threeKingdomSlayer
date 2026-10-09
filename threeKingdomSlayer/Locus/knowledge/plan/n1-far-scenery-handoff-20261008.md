@@ -8,11 +8,11 @@ aiEditMode: inherit
 
 # N1 远景布景交接（2026-10-08）
 
-> 本文是下一轮 N1 场景工作的可信入口。用户确认当前近景“好了不少”，并要求下一步完善远景内容。本轮仅制作交接文档，没有修改 Unity 场景。
+> 本文是 N1 远景工作的交接入口。第 1–6 节保留最初交接的历史基线；最新状态以第 7 节“远景第一轮调整已保存”为准。
 >
-> 编辑器已在交接前断开。下文中的 Unity 运行时状态均标记为“断开前最后一次实际回读”，新会话必须重新连接并核对，不能把旧状态当作当前 live 状态。
+> 用户已确认中、近景“好了不少”，后续重点为远景的比例、位置和层次关系。新会话必须重新核对 Editor live 状态；本轮保存事实不等于之后的实时状态。
 
-## 1. 断开前可信现场
+## 1. 历史交接现场（远景调整前）
 
 - Git branch：`route-scroll-movement`
 - HEAD：`f8cd9a24`（`docs(知识库): BUG/需求滚动登记入口、N1 与骑兵交接文档、里程碑权威化`）
@@ -44,7 +44,7 @@ aiEditMode: inherit
 - 新草簇使用 `Assets/Experiments/CurvedScroll/Authoring/YGrass.mat`；普通道具使用 `Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_v2.mat`。
 - 断开前最后一张纯场景 Game 截图：`Library/Locus/Screenshots/locus_game_20261007_171546_795.png`（253×505）。该图显示近景车组仍是主视觉，草/碎片/木桩已连接到中景，中央道路保持开阔。
 
-## 3. 当前下一步：只完善远景内容
+## 3. 远景调整前的任务方向
 
 用户最新方向：**近景已好了不少，下一步是完善远景内容。** 不要重新扩大近景土堆或继续往近景叠对象。
 
@@ -102,11 +102,69 @@ YScrollScenery shader 对路线深度执行淡出，约在深度 70–80 之间�
 5. 仅保存 `Assets/Experiments/CurvedScroll/YJunctionSample.unity`，关闭并重载它；Battle 不保存。
 6. 最终记录 Game 截图路径、Y scene dirty=false、Battle dirty=false、Console warning/error 和对象层级结果。
 
-## 6. 当前版本基线
+## 6. 历史版本基线（远景调整前）
 
 - Y scene：`Assets/Experiments/CurvedScroll/YJunctionSample.unity`
 - HEAD：`f8cd9a24`
 - 当前 Y scene SHA-256：`e3a1edf3d5211aef3839e26005954eba596dc91cf9b82fbcc76047f9718b4e75`
 - 当前场景对象名搜索确认：`N1_Transition_*` 8 个，`N1_MidScatter_*` 6 个，`N1_InnerEdge_*` 6 个。
 - Git worktree 中 Y scene 无未提交差异；本交接文档是本次新建的知识库文档。
-- Unity 当前已断开，不能声称重新连接后的状态已经验证。
+- 以上为远景调整前的断开状态，已被第 7 节的新 checkpoint 覆盖。
+
+## 7. 最新 checkpoint：远景第一轮调整已保存（2026-10-08）
+
+用户要求“对比参考图，继续丰富远景内容”。本轮复用现有资源，对 10 个中远景对象做位置/尺度调整，新增 6 个稀疏草簇；未生成新素材。近景破车、小土堆和前轮 20 个组合层对象未调整。全部永久修改通过 Edit Mode Unity API 应用，仅保存 Y scene。
+
+### 已保存的对象参数
+
+所有坐标、Scale 均为 `Opening Roadside Props` 下的 local 值；不是运行时 world 坐标。
+
+| 对象 | Local Position | Local Scale |
+|---|---|---|
+| N1_Mid_Ruins_Left_Far | (-5.60, 0, 32) | (0.78, 0.64, 0.64) |
+| N1_Mid_Ruins_Right_Far | (5.80, 0, 34) | (0.76, 0.62, 0.62) |
+| N1_Mid_Ruins_Left_Far2 | (-6.80, 0, 44) | (0.62, 0.50, 0.50) |
+| N1_Mid_Ruins_Right_Far2 | (6.60, 0, 46) | (0.64, 0.50, 0.50) |
+| N1_Mid_Rampart_Left_Far | (-4.90, 0, 37) | (0.36, 0.36, 0.36) |
+| N1_Mid_Timber_Right_Far | (4.90, 0, 40) | (0.38, 0.34, 0.34) |
+| N1_PalisadeShort_Left_01 | (-5.80, 0, 38) | (0.44, 0.44, 0.44) |
+| N1_PalisadeShort_Right_01 | (5.80, 0, 42) | (0.45, 0.45, 0.45) |
+| N1_SmallBrokenFlag_Left_01 | (-5.70, 0, 34) | (0.44, 0.44, 0.44) |
+| N1_SmallBrokenFlag_Right_01 | (5.80, 0, 38) | (0.40, 0.40, 0.40) |
+
+上述对象继续使用各自原 Sprite 和 `Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_v2.mat`。`SideBand` 的其他对象未改变，不要把本轮描述为已重构所有远景。
+
+新增对象均在 `Assets/Experiments/CurvedScroll/YJunctionSample.unity/Y Junction - select for preview/Opening Roadside Props` 下，使用 `Assets/Experiments/CurvedScroll/Authoring/YGrass.mat`：
+
+| 对象 | Sprite | Local Position | Local Scale |
+|---|---|---|---|
+| N1_FarScatter_GrassSmall_Left_01 | GrassSmall_v1 | (-5.25, 0, 32.5) | (0.22, 0.14, 0.14) |
+| N1_FarScatter_GrassWide_Left_01 | GrassWide_v1 | (-4.85, 0, 39.5) | (0.22, 0.14, 0.14) |
+| N1_FarScatter_GrassSmall_Left_02 | GrassSmall_v1 | (-5.85, 0, 48) | (0.18, 0.12, 0.12) |
+| N1_FarScatter_GrassSmall_Right_01 | GrassSmall_v1 | (5.25, 0, 35) | (0.22, 0.14, 0.14) |
+| N1_FarScatter_GrassWide_Right_01 | GrassWide_v1 | (4.85, 0, 42.5) | (0.21, 0.13, 0.13) |
+| N1_FarScatter_GrassSmall_Right_02 | GrassSmall_v1 | (5.90, 0, 50) | (0.18, 0.12, 0.12) |
+
+Sprite 完整路径分别为 `Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassSmall_v1.png` 和 `Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassWide_v1.png`。全部新增 Renderer 已加入 `YScrollSample.scenery`，Sorting Layer=Default，sortingOrder=0。
+
+### 验证与截图边界
+
+- 本轮基线 Game 截图：`Library/Locus/Screenshots/locus_game_20261008_001717_285.png`。
+- 首次重排离屏图：`Library/Locus/tmp/n1-far-trial-01.png`（1012×2020）。这是首轮试摆的 camera RenderTexture 结果，不是最终保存后截图。
+- 最终 Edit Mode 参数重新应用后、保存前 Play Mode Game 验收图：`Library/Locus/Screenshots/locus_game_20261008_003237_697.png`（253×505）。
+- 保存并重载 Y、再重载 Battle 后的最终纯场景图：`Library/Locus/Screenshots/locus_game_20261008_004908_286.png`（253×505）。该图使用 Battle Main Camera，临时隐藏 Battle HUD/玩家/敌人/特效；临时状态未保存。
+- 画面观察：两侧残垣、木栅、旗帜与草簇位置有错层，中央道路/地平线开口保留。本轮视觉变化较小，尚未获用户远景验收；不能声称已完整复现参考图。
+- 退出 Play Mode 后仅保存并关闭/重载 Y。Battle 未保存，随后重载 Battle 恢复临时状态。
+- 最后一次实际回读：Edit Mode；Active=`Assets/Scenes/Battle.scene`；Battle/Y loaded=true、dirty=false。
+- `scenery=80`；空引用=0；重复引用=0；sortingOrder=0 的 Renderer=80；非零 order=0。
+- `N1 Distant City Wall Landmark` inactive；天空 Sprite 不在 scenery；Edit Mode `viewCamera=None`。
+- Console warning/error=0。未验证完整左右分支行进和战斗回归；本轮不作这些完成性声明。
+
+### 最新磁盘基线与续作重点
+
+- Y scene SHA-256：`596f9f5bc0af83eb5abdbf686c907a8473097d379947e28ea2fc4cb983154707`。保存后重载确认未变化。
+- Y scene 本轮 diff：560 行增加、20 行删除（包含 6 个新对象和引用）。尚未由本轮提交。
+- 当前对象组：Transition=8、MidScatter=6、InnerEdge=6、FarScatter=6。
+- 最终保存后 Battle/Y：loaded=true、dirty=false；Active Scene=`Assets/Scenes/Battle.scene`；Console warning/error=0；`scenery=80`、nullRefs=0、duplicates=0、sorting0=80、sortingNonZero=0。
+- 新会话先读取本节、当前 Git/live 状态和最终参考图；不要重放旧坐标覆盖新修改。
+- 下一步首先由用户评估远景尺度与位置差异，再按真实 Game 构图调整小组。不要继续用增加物件数量代替比例与位置关系；不得扩大近景土堆、开启旧城墙或改变路线/Battle。

@@ -14532,6 +14532,7 @@ MonoBehaviour:
   columnManager: {fileID: 1289233715}
   playerState: {fileID: 1878310418}
   parryProjectileRange: 10
+  finisherParryUnlocked: 0
   _phantomMaterial: {fileID: 2100000, guid: fee439e9b5beeee4e8d78510d42a97ee, type: 2}
   _returnWavePrefab: {fileID: 1696509926255576402, guid: 8d45dcaf9eddb404882cd74d73471000, type: 3}
   _chainBounceVisualPrefab: {fileID: 5155658655490824707, guid: 35cd492da5108c14d9770fcb69e856e5, type: 3}

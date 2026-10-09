@@ -10,19 +10,21 @@ aiEditMode: inherit
 
 ## 0. 当前交接状态
 
-本轮工作已完成到“视觉素材验收 + 原始动作帧准备”，用户要求在其他对话继续后续工作。
+本轮暂停。用户要求把后续工作转移到新的对话；当前对话不再继续修复抠图、导入 Unity 或创建 Animator。
 
 已确认并可继续使用：
 
 - `MountedIdle` 骑乘形象与 6 帧动画已通过用户验收，并已部署到项目；
 - Windup + Charging 视频已通过用户验收；
-- 已从该视频准备 6 帧 Windup 与 6 帧可循环 Charging，用户已验收选帧；
-- 12 张新动作帧目前仍是原始绿幕 RGB PNG，尚未抠图、导入 Unity 或接入正式 Animator；
-- 不重新生成已验收的图片或视频，不重复发起收费任务。
+- 6 帧 Windup 与 6 帧可循环 Charging 已通过用户选帧验收；
+- 12 张原始绿幕帧已保留，输入哈希未变；
+- 本轮生成过 `cutout_batch_v1`、`cutout_batch_v2` 和 `normalized_1108_v1`，但它们都是临时候选，尚未通过最终 Alpha/边缘验收；
+- Windup/Charging 没有导入 `Assets/`，没有创建新的正式 AnimationClip，也没有覆盖 MountedIdle；
+- 不重新生成已验收的图片、视频或选帧，不重复发起收费任务。
 
-最新 Unity Editor 状态：`disconnected`。Editor Log：`H:/Project/threeKingdomSlayer/threeKingdomSlayer/Logs/Editor.log`。断开前最后已知 Active Scene 为 `Assets/Scenes/Battle.scene`；重新连接后必须重新确认 Editor 状态和 Active Scene，不能把旧状态当作当前状态。
+最新 Unity Editor 状态：`editing`。Active Scene：`Assets/Scenes/Battle.scene`。Editor Log：`H:/Project/threeKingdomSlayer/threeKingdomSlayer/Logs/Editor.log`。下一次对话仍必须重新确认状态和 Active Scene，不能把旧状态当作实时状态。
 
-本文件是跨对话恢复用的执行交接文档。它记录已验收事实、已落盘资产、当前接入边界和下一步顺序；不要用旧章节中的历史候选或旧占位结论覆盖本节。
+本文件是跨对话恢复用的执行交接文档。当前状态以本节、`## 5.6` 和 `## 9` 为准；旧章节或运行时 JSON 中残留的 `pending_cutout` 文案不能覆盖本轮实际已生成但未验收的候选状态。
 
 ---
 
@@ -330,17 +332,33 @@ Library/Locus/tmp/cavalry_concept/cavalry_windup_charge_v1_decode/selected_frame
 
 `*_keyed_preview.png` 只是粗略键控预览，不是生产 Alpha，不得直接导入 Unity。
 
-### 5.5 当前未完成边界
+### 5.5 本轮已生成但未验收的抠图候选
 
-以下工作尚未执行：
+本轮已实际执行本地抠图并生成三个阶段的候选。它们都是**临时结果**：不是正式 Sprite，未导入 Unity，也未获得用户视觉验收。
 
-- 12 张动作帧正式抠图；
-- Alpha 边缘、绿边和主体残留检查；
-- 抠图后的统一补边、脚底/根位置归一化；
-- Windup/Charging 正式 Sprite 导入；
-- Windup/Charging AnimationClip 与 Animator 状态接入；
-- Striking、Interrupted、Retreating、骑乘死亡独立素材；
-- 完整真实波次中的视觉切换、攻击时序和落马回归验收。
+1. `cutout_batch_v1`（原始本地配方批处理，12 张 960×960 RGBA）：`cutout_batch_v1/cutout_batch_report.json`；
+2. `cutout_batch_v2`（提高噪声底 + 幽灵清除，`GHOST_ALPHA=0.6 / GHOST_RADIUS=5`，12 张 960×960 RGBA）：`cutout_batch_v2/cutout_batch_v2_report.json`；
+3. `normalized_1108_v1`（按 `(74,120)` 固定补边到 1108×1108，未缩放未裁剪）：`normalized_1108_v1/normalized_1108_report.json`。
+
+已核实的机器结果：
+
+- 12 张原始输入帧哈希未变；
+- 三个阶段各自 12 张输出全部存在，且 SHA-256 与报告匹配；
+- v1/v2 全部为 960×960 RGBA（PNG Color Type 6）；
+- 归一化后全部为 1108×1108，透明区 RGB 全零，固定偏移全部为 `(74,120)`；
+- v2 每帧清除了约 `994–8,731` 个远离主体的低 Alpha 压缩幽灵；
+- 归一化没有改变 Alpha 或任何可见像素，差异只发生在原本已透明、但 RGB 非零的像素。
+
+### 5.6 已发现的抠图算法缺陷（未修复）
+
+本轮只读诊断确认了以下真实缺陷，`cutout_batch_v2` 与 `normalized_1108_v1` 因此不能作为最终素材：
+
+1. **“封闭高光填充”没有生效。** `run_cavalry_local_cutout_calibration_v1.py` 的 `reach_border()` 使用指数跳步（`step = min(step * 2, 512)`），不是严格逐像素洪泛。只读合成测试：被实心边界包围的区域应有 144 个不可达像素，脚本判定为 0，且会跨越实心障碍。所以 v2 报告里的 `holes_filled_px = 0` 不能证明没有封闭高光区域。
+2. **内部浅色/金属区域仍然半透明。** 重新测量 v2 输出：12 帧浅色深层区域（lum 120–215、chroma<45）平均 Alpha 仅约 `0.909–0.943`，大量像素低于 0.99；已验收的 `Enemy_109_MountedIdle1.png` 与 `Enemy_1011_idle1.png` 同口径平均约为 `0.992`。金属与高光区必须 α≈1。
+3. **边缘邻接指标无效。** `metrics()` 中 `neighbor = ero(opaque, 1) & dil(ring, 1)` 经常是空集，`inner_neighbor_comp_gEx` 长期为 `null`，不能用作边缘质量证据。
+4. **报告状态口径错误。** `cutout_batch_v2_report.json` 写了 `"production_cutout_complete": true`，而 review 状态仅且是 `batch_cutout_v2_ready_for_visual_review`；不能把“算法输出完成”当成“生产抠图完成”。
+
+另注意：`Locus/knowledge/skill/workflows/local-green-screen-cutout.md` 明确写过，快速动作源（冲锋属于此类）走本地键控只能作为兜底，局部质量可能达不到已验收基线。下一对话需先修上述缺陷，或按文档的 GPT 语义去背分支先做 1 帧探针后再决定路线。不要把本地 v2 直接当成最终答案。
 
 ---
 
@@ -350,31 +368,32 @@ Library/Locus/tmp/cavalry_concept/cavalry_windup_charge_v1_decode/selected_frame
 
 ### 6.1 先恢复工具与项目状态
 
-1. 重新连接 Unity Editor；
+1. 确认 Unity Editor 连接状态；未连接则重新连接；
 2. 重新确认 Editor 状态、Active Scene、编译状态和 Console；
 3. 检查当前工作树，保留用户已有改动，不清理未知的未跟踪文件；
 4. 回读 `Assets/Resources/EnemyPrefabs/Enemy_109.prefab`、`Assets/Animations/Enemy_109.controller` 与 `Assets/Scripts/Enemy/CavalryVisualController.cs` 的当前状态；
-5. 不把断开前的 Editor 状态或场景状态当作仍然有效。
+5. 不把上一条会话公告中的 Editor 状态或场景状态当作本会话有效状态。
 
-### 6.2 处理已验收的 12 张动作帧
+### 6.2 先修复抠图算法，再做单帧定标
 
-1. 以 `selected_frames_manifest.json` 为唯一源帧清单；
-2. 对 Windup 6 帧和 Charging 6 帧执行正式抠图；
-3. 检查透明 Alpha、绿边、半透明污染、枪尖、马蹄、红色飘带和马尾残留；
-4. 不改动画内容，不重新抽帧，不使用 `*_keyed_preview.png` 作为生产 Alpha；
-5. 统一画布、脚底/根位置、边距和像素尺寸；
-6. 对正常抬蹄造成的包围盒变化与根位置漂移分别验收；
-7. 记录每张最终 PNG 的尺寸、Alpha 范围、主体包围盒和 SHA-256。
+1. 以 `selected_frames_manifest.json` 为唯一源帧清单；输入用 `selected_frames_v1/windup|charging/`，不重新抽帧、不改视频；
+2. 先修 `reach_border()`：改成严格逐像素 flood fill（不得指数跳步、不得跨越实心障碍），恢复真正的 enclosed-hole fill；
+3. 修正 `metrics()` 的 `neighbor` 集合，确保边缘邻接指标返回有效数值；
+4. 把浅色/金属 α≈1 写入硬门槛：浅色核心 α 均值需对齐已验收素材（约 0.99+），并统计 `<0.99` 像素数；
+5. 修复状态口径：用 `algorithm_output_complete / visual_review_pending / deployment_not_ready` 一类独立字段，禁止把算法完成写成生产完成；
+6. 先只处理 f015 一帧，输出白底、深底、8× 边缘和与已验收素材同框对照，交用户定标；
+7. 定标通过后再批量其余 11 帧；批量脚本必须逐帧 checkpoint 可恢复，并读取上一阶段报告中的 `output_path`，禁止猜文件名（本轮归一化脚本第一次正是因此在 f015 报 `FileNotFoundError`）；
+8. 新版本输出到新的版本目录（如 `cutout_batch_v3`），不覆盖 v1/v2。
 
-### 6.3 接入 Windup / Charging
+### 6.3 归一化与 Unity 接入（须在验收之后）
 
-1. 将抠图后的帧导入项目合适的 `Assets/Sprites/Enemy/Enemy109/` 子目录；
-2. 保持 MountedIdle 已验收的导入规范：Point、无 Mipmap、Alpha 启用、统一 PPU 与 Pivot；
-3. 创建 `Enemy_109_Windup.anim`，使用 6 帧连续 Windup，按 `windupDuration = 0.3s` 调整播放速度；
-4. 创建 `Enemy_109_Charging.anim`，使用 `f036 → f038 → f039 → f041 → f042 → f044`，循环播放；
-5. 用 Animator speed 对齐玩法时长，不用动画长度反向改写 `CavalryEnemy` 的时序；
-6. 将 `CavalryVisualController` 的正式路由从“MountedIdle 正式 + 其他骑乘阶段占位”逐步扩展到 Windup/Charging；
-7. 保留旧 101 + 105 占位作为未完成阶段的回退，直到真实战斗验收通过。
+1. Alpha 与视觉验收通过后，再做 `(74,120)` 固定补边到 1108×1108，禁止按包围盒重锚定或缩放；
+2. 检查透明区 RGB 全零；
+3. 将最终帧导入 `Assets/Sprites/Enemy/Enemy109/`；
+4. 保持 MountedIdle 已验收的导入规范：Point、无 Mipmap、Alpha 启用、统一 PPU 与 Pivot；
+5. 创建 `Enemy_109_Windup.anim`（6 帧，按 `windupDuration = 0.3s` 调制速度）与 `Enemy_109_Charging.anim`（`f036 → f038 → f039 → f041 → f042 → f044` 循环）；
+6. 用 Animator speed 对齐玩法时长，不改 `CavalryEnemy` 时序；
+7. 扩展 `CavalryVisualController` 的正式路由；保留旧 101 + 105 占位直到真实战斗验收通过。
 
 ### 6.4 后续动作与真实战斗验收
 
@@ -403,17 +422,19 @@ Windup/Charging 接入后，再按优先级处理：
 - 所有 Unity 结构化资产改动通过 Unity API/Editor 工具完成，不直接改 Unity YAML；
 - 每次素材或脚本改动后先回读文件，再进行下一步；
 - 外部收费任务、Alpha 处理和 Unity 部署分阶段验收，不要把工具成功回执当作用户视觉验收；
+- 不把 `cutout_batch_v1`、`cutout_batch_v2`、`normalized_1108_v1` 导入 Unity，它们未通过内部浅色 Alpha 与边缘验收；
+- 不在 v2 参数上继续堆叠试错；先修 `reach_border()` 与 `metrics()`，再重跑；
 - 保留现有用户改动和未知未跟踪文件，不执行无授权清理。
 
 当前推荐的交接起点是：
 
-> 重新连接 Unity 后，先处理 `selected_frames_manifest.json` 中的 12 张原始绿幕帧；不要回到 Idle 设计或视频生成阶段。
+> 在新对话中先修 `reach_border()` 与 `metrics()`，用 f015 重新做 1 帧定标并交用户验收；不要导入 v1/v2/normalized 候选，不要回到 Idle 设计或视频生成阶段。
 
 ---
 
 ## 8. 相关文件索引
 
-状态优先级：本交接文档中的“当前交接状态”“当前 Unity 接入状态”“已验收视觉生产与动作帧记录”优先于其他历史交接或设计文档。`design/cavalry-enemy-animation.md` 与 `design/cavalry-enemy.md` 中仍可能保留 101 + 105 占位阶段的历史描述；它们分别继续作为动画需求矩阵和机制规则参考，但不能覆盖本文件记录的 MountedIdle 已部署、Windup/Charging 已验收以及 12 帧待抠图状态。
+状态优先级：本交接文档中的“当前交接状态”“当前 Unity 接入状态”“已验收视觉生产与动作帧记录”优先于其他历史交接或设计文档。`design/cavalry-enemy-animation.md` 与 `design/cavalry-enemy.md` 中仍可能保留 101 + 105 占位阶段的历史描述；它们分别继续作为动画需求矩阵和机制规则参考，但不能覆盖本文件记录的 MountedIdle 已部署、Windup/Charging 已验收以及 12 帧抠图候选未通过状态。
 
 ### 机制与动画设计
 
@@ -458,10 +479,27 @@ Windup/Charging 接入后，再按优先级处理：
 - `Library/Locus/tmp/cavalry_concept/cavalry_windup_charge_v1_decode/selected_frames_v1/windup_selected_raw.png`
 - `Library/Locus/tmp/cavalry_concept/cavalry_windup_charge_v1_decode/selected_frames_v1/charging_selected_raw.png`
 
+### 抠图中间产物（未验收，不得导入 Unity）
+
+脚本：
+
+- `Library/Locus/tmp/cavalry_concept/run_cavalry_local_cutout_calibration_v1.py`
+- `Library/Locus/tmp/cavalry_concept/run_cavalry_local_cutout_batch_v1.py`
+- `Library/Locus/tmp/cavalry_concept/run_cavalry_local_cutout_batch_v2.py`
+- `Library/Locus/tmp/cavalry_concept/normalize_cavalry_cutout_batch_v2_to_1108.py`
+
+产物目录（均在 `Library/Locus/tmp/cavalry_concept/cavalry_windup_charge_v1_decode/` 下）：
+
+- `calibration_f015_v1/`（定标帧及报告）
+- `cutout_batch_v1/`（v1 报告及接触表）
+- `cutout_batch_v2/`（v2 报告、白底/深底/Alpha 接触表、4 张 8× 边缘）
+- `normalized_1108_v1/`（1108×1108 候选与报告）
+
 ### 已作废或仅供历史追溯的候选
 
 - `C:/Users/Administrator/Pictures/gptGen/cavalry_lancer_idle_v2.png` 仅为早期失败候选，不得作为新基准；
-- 早期“没有正式 109 骑乘资源”“当前候选未验收”“暂停期间禁止制作动作帧”的表述已被本交接文档前文覆盖，不得按旧语义恢复。
+- 早期“没有正式 109 骑乘资源”“当前候选未验收”“暂停期间禁止制作动作帧”的表述已被本交接文档前文覆盖，不得按旧语义恢复；
+- `cutout_batch_v1` 因低 Alpha 压缩幽灵被 v2 取代；v2 又因内部浅色 Alpha 与算法缺陷被本文件标记为未通过——两者都不得直接部署。
 
 ---
 
@@ -473,10 +511,22 @@ Windup/Charging 接入后，再按优先级处理：
 - Windup + Charging 视频；
 - 6 帧 Windup 与 6 帧可循环 Charging 的选帧方案。
 
+本轮已生成但未验收（不得导入 Unity）：
+
+- `cutout_batch_v1`、`cutout_batch_v2`、`normalized_1108_v1`。
+
+已确认的阻断问题：
+
+- `reach_border()` 不是严格洪泛，封闭高光填充没有生效；
+- 浅色/金属内部 Alpha 约 0.909–0.943，低于已验收素材的约 0.992；
+- 边缘邻接指标长期为 null；
+- 报告状态口径混用了“算法完成”和“生产完成”。
+
 当前仍待完成：
 
-- 12 张原始绿幕帧的正式抠图与 Alpha 验收；
-- 动作帧统一归一化、Unity 导入和 Windup/Charging Animator 接线；
+- 修复上述算法与指标问题，用 f015 重新定标并交用户验收；
+- 批量重抠 12 帧并通过 Alpha/边缘验收；
+- 归一化、Unity 导入和 Windup/Charging Animator 接线；
 - Striking、Interrupted、Retreating、骑乘死亡的正式素材与真实战斗验收。
 
-> 下一次对话从 `selected_frames_manifest.json` 开始：先抠图并检查 Alpha，再接入 Windup/Charging；不要重新生成已经验收的 Idle、视频或选帧。
+> 下一次对话：先修 `reach_border()` 与 `metrics()`，重做 f015 定标；不要导入 v1/v2/normalized，不要重新生成已验收的 Idle、视频或选帧。
