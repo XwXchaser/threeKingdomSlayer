@@ -82,7 +82,9 @@ public sealed class YRouteSurfaceAuthoring : MonoBehaviour
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
         filter.sharedMesh = mesh;
+#if UNITY_EDITOR
         UnityEditor.EditorUtility.SetDirty(mesh);
         UnityEditor.EditorUtility.SetDirty(gameObject);
+#endif
     }
 }
