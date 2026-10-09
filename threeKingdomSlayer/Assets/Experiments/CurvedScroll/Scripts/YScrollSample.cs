@@ -13,16 +13,35 @@ public sealed class YScrollSample : MonoBehaviour
     public bool animate;
     [Min(1)] public float duration = 10;
     public BattleYRouteHost battleHost;
+    [Header("Route visual groups")]
+    public Transform leftBranchVisuals;
+    public Transform rightBranchVisuals;
+    public Transform leftBranchEncounter;
+    public Transform rightBranchEncounter;
+    public Transform junctionVisuals;
+    [Header("Linear story route stops")]
+    public Transform e0StoryStop;
+    public Transform e1StoryStop;
+    public Transform j1StoryStop;
     Bounds[] originalBounds;
     float angle;
     Vector3 position;
     public Vector3 TravelPosition => position;
     public float TravelAngle => angle;
 
+    public const float JunctionDistance = 190f;
+    public const float CurveRadius = 28.1595573f;
+    public const float ExitTailDistance = 54f;
+
+    public static float GetRouteLength(float degrees)
+    {
+        return JunctionDistance + CurveRadius * Mathf.Max(0f, degrees) * Mathf.Deg2Rad + ExitTailDistance;
+    }
+
     public static Vector3 Evaluate(float distance, float degrees, bool right, out float heading)
     {
-        // Expanded travel test: preserve the original shape while giving each transfer room for readable scenery.
-        const float junction=83.12884f, radius=28.1595573f;
+        // The straight N1 -> E0 -> E1 -> J1 story lane ends at the first branch decision.
+        const float junction=JunctionDistance, radius=CurveRadius;
         float a=degrees*Mathf.Deg2Rad, sign=right?1:-1;
         if(distance<=junction){heading=0;return new Vector3(0,0,distance);}
         float curve=Mathf.Min(distance-junction,radius*a);
@@ -32,7 +51,13 @@ public sealed class YScrollSample : MonoBehaviour
         float tail=Mathf.Max(0,distance-junction-radius*a);
         return p+new Vector3(sign*Mathf.Sin(a),0,Mathf.Cos(a))*tail;
     }
-    public float Length => 160f;
+    public float Length => GetRouteLength(turnAngle);
+    public float GetNormalizedProgress(Transform stop)
+    {
+        if (!stop) return 0f;
+        float distance = transform.InverseTransformPoint(stop.position).z;
+        return Mathf.Clamp01(distance / Mathf.Max(0.1f, Length));
+    }
     void OnEnable(){Camera.onPreCull+=Before;Camera.onPostRender+=After;}
     void OnDisable(){Camera.onPreCull-=Before;Camera.onPostRender-=After;Restore();}
     void Update()
@@ -46,6 +71,7 @@ public sealed class YScrollSample : MonoBehaviour
     {
         Restore();
         Shader.SetGlobalFloat("_YSAngle",turnAngle*Mathf.Deg2Rad);
+        Shader.SetGlobalFloat("_YSViewDistance",Length);
         if(cam!=viewCamera)return;
         position=Evaluate(progress*Length,turnAngle,right,out angle);
         Shader.SetGlobalMatrix("_YSToLocal",transform.worldToLocalMatrix);
@@ -65,6 +91,7 @@ public sealed class YScrollSample : MonoBehaviour
     void OnDrawGizmos()
     {
         Shader.SetGlobalFloat("_YSAngle",turnAngle*Mathf.Deg2Rad);
+        Shader.SetGlobalFloat("_YSViewDistance",Length);
         for(int side=0;side<2;side++){
             Gizmos.color=side==0?Color.cyan:Color.yellow;
             Vector3 prev=transform.position;

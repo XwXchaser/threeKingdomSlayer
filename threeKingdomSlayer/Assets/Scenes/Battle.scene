@@ -1937,8 +1937,6 @@ GameObject:
   - component: {fileID: 145927961}
   - component: {fileID: 145927960}
   - component: {fileID: 145927962}
-  - component: {fileID: 145927964}
-  - component: {fileID: 145927963}
   - component: {fileID: 145927965}
   - component: {fileID: 145927966}
   m_Layer: 0
@@ -2037,30 +2035,6 @@ MonoBehaviour:
   nextScene: 
   blurShader: {fileID: 4800000, guid: 30e48207473247b419405ad932c10cca, type: 3}
   autoPlayOnStart: 1
---- !u!114 &145927963
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 145927958}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a007016540c477e409f2c9cfa64a23c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &145927964
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 145927958}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 18e0960af8ce17046bd942e113b91b64, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!81 &145927965
 AudioListener:
   m_ObjectHideFlags: 0
@@ -13018,7 +12992,13 @@ MonoBehaviour:
   autoLoadRoute: 1
   driveRouteInPlay: 0
   startRightBranch: 0
-  showRouteChoice: 1
+  showRouteChoice: 0
+  useStoryStops: 1
+  e0Distance: 0.3381978
+  e1Distance: 0.58620954
+  storyStopDuration: 3
+  storyStopWaiting: 0
+  storyStopLabel: "E0 \u6218\u540E\u4F59\u70EC"
   useSampleBattle: 1
   stage: {fileID: 681761646}
   battleCamera: {fileID: 145927960}

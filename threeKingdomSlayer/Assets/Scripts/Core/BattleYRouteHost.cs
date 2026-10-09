@@ -13,6 +13,11 @@ public sealed class BattleYRouteHost : MonoBehaviour
     public bool driveRouteInPlay;
     public bool startRightBranch;
     public bool showRouteChoice;
+    [Header("Linear story stops before J1")]
+    public bool useStoryStops = true;
+    public float storyStopDuration = 3f;
+    public bool storyStopWaiting;
+    public string storyStopLabel = "E0 战后余烬";
     public bool useSampleBattle = true;
     public StageController stage;
     public Camera battleCamera;
@@ -22,7 +27,7 @@ public sealed class BattleYRouteHost : MonoBehaviour
     public bool applyEnemyVisualOffset = false;
     public float openingDistance = 18f;
     public float openingDuration = 8f;
-    public float branchDuration = 8f;
+    public float branchDuration = 3f;
     [Tooltip("Normalized time to traveled distance. Short acceleration, fast travel, long deceleration; endpoints are fixed by the mover.")]
     public AnimationCurve travelProgressCurve = new AnimationCurve(
         new Keyframe(0f, 0f, 0f, 0f),
@@ -54,6 +59,7 @@ public sealed class BattleYRouteHost : MonoBehaviour
         foreach(var root in scene.GetRootGameObjects())foreach(var c in root.GetComponentsInChildren<Camera>(true))c.enabled=false;
         var reverse=route.GetComponent<YSampleBattleHost>();if(reverse){reverse.StopAllCoroutines();reverse.enabled=false;}
         route.battleHost=this;route.viewCamera=battleCamera;route.animate=false;route.progress=0;route.right=false;
+        storyStopWaiting=false;choiceLocked=false;SetAllBranchVisuals(false);SetJunctionVisuals(false);
         var p=route.transform.position;p.y=groundHeight;route.transform.position=p;
         foreach(var t in route.GetComponentsInChildren<Transform>(true))if(t.name=="Display Enemies - no combat")t.gameObject.SetActive(false);
         stage.OnRouteBattleCompleted+=OnCleared;
@@ -62,6 +68,17 @@ public sealed class BattleYRouteHost : MonoBehaviour
         yield return MoveTo(openingDistance/route.Length,openingDuration);
         yield return Combat(openingBattleConfig);
         if(Phase=="Defeated")yield break;
+        if(useStoryStops)
+        {
+            yield return MoveTo(route.GetNormalizedProgress(route.e0StoryStop), storyStopDuration);
+            Phase="E0 story stop"; storyStopLabel="E0 战后余烬"; storyStopWaiting=true;
+            yield return WaitForStoryStop();
+            yield return MoveTo(route.GetNormalizedProgress(route.e1StoryStop), storyStopDuration);
+            Phase="E1 story stop"; storyStopLabel="E1 残军集结"; storyStopWaiting=true;
+            yield return WaitForStoryStop();
+            yield return MoveTo(route.GetNormalizedProgress(route.j1StoryStop), storyStopDuration);
+            SetJunctionVisuals(true);
+        }
         Phase="Choose route";showRouteChoice=true;
     }
     void OnCleared(){cleared=true;}
@@ -94,10 +111,22 @@ public sealed class BattleYRouteHost : MonoBehaviour
         }
         route.progress = end;
     }
+    IEnumerator WaitForStoryStop()
+    {
+        SetInput(false);
+        while(storyStopWaiting) yield return null;
+    }
+
+    public void ConfirmStoryStop()
+    {
+        if(!storyStopWaiting||Blocking())return;
+        storyStopWaiting=false;
+    }
+
     public void ChooseBranch(bool right)
     {
         if(Phase!="Choose route"||choiceLocked||Blocking())return;
-        choiceLocked=true;showRouteChoice=false;route.right=right;Phase="Branch travel";
+        choiceLocked=true;showRouteChoice=false;route.right=right;SetBranchVisuals(right);Phase="Branch travel";
         StartCoroutine(RunBranch(right));
     }
     IEnumerator RunBranch(bool right)
@@ -108,6 +137,36 @@ public sealed class BattleYRouteHost : MonoBehaviour
     }
     // Legacy sample callback cannot start a second battle; this host alone owns arrival.
     public void StartBranchBattle(bool right) { }
+    void SetAllBranchVisuals(bool active)
+    {
+        if(!route)return;
+        SetBranchGroup(route.leftBranchVisuals,active);
+        SetBranchGroup(route.leftBranchEncounter,active);
+        SetBranchGroup(route.rightBranchVisuals,active);
+        SetBranchGroup(route.rightBranchEncounter,active);
+    }
+    void SetBranchVisuals(bool right)
+    {
+        if(!route)return;
+        SetAllBranchVisuals(false);
+        SetBranchGroup(right?route.rightBranchVisuals:route.leftBranchVisuals,true);
+        SetBranchGroup(right?route.rightBranchEncounter:route.leftBranchEncounter,true);
+    }
+    void SetJunctionVisuals(bool active)
+    {
+        SetBranchGroup(route!=null?route.junctionVisuals:null,active);
+    }
+    void SetBranchGroup(Transform group,bool active)
+    {
+        if(!group)return;
+        group.gameObject.SetActive(active);
+        foreach(var child in group.GetComponentsInChildren<Transform>(true))
+        {
+            if(child==group)continue;
+            if(child.name=="Display Enemies - no combat")child.gameObject.SetActive(false);
+            else child.gameObject.SetActive(active);
+        }
+    }
     void SetInput(bool value){if(InputManager.Instance){InputManager.Instance.gameplayInputEnabled=value;if(!value)InputManager.Instance.CancelCurrentGesture();}}
     void OnDestroy(){if(stage)stage.OnRouteBattleCompleted-=OnCleared;}
     void Update()
@@ -129,7 +188,12 @@ public sealed class BattleYRouteHost : MonoBehaviour
         var old=GUI.matrix;float scale=Mathf.Max(1,Screen.width/540f);GUI.matrix=Matrix4x4.Scale(Vector3.one*scale);
         GUILayout.BeginArea(new Rect(12,12,Screen.width/scale-24,130),GUI.skin.box);
         GUILayout.Label("Y路线 / "+Phase);
-        if(Phase=="Choose route"){GUILayout.BeginHorizontal();if(GUILayout.Button("左路：山谷",GUILayout.Height(60)))ChooseBranch(false);if(GUILayout.Button("右路：营地",GUILayout.Height(60)))ChooseBranch(true);GUILayout.EndHorizontal();}
+        if(storyStopWaiting)
+        {
+            GUILayout.Label(storyStopLabel);
+            if(GUILayout.Button("继续前进",GUILayout.Height(60)))ConfirmStoryStop();
+        }
+        else if(Phase=="Choose route"){GUILayout.BeginHorizontal();if(GUILayout.Button("左路：山谷",GUILayout.Height(60)))ChooseBranch(false);if(GUILayout.Button("右路：营地",GUILayout.Height(60)))ChooseBranch(true);GUILayout.EndHorizontal();}
         GUILayout.EndArea();GUI.matrix=old;
     }
 }
