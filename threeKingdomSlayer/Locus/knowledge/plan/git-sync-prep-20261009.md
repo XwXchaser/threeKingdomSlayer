@@ -95,6 +95,21 @@ git apply --3way --exclude=threeKingdomSlayer/Locus/workspace-trees/default.json
 
 **(2) 唯一需要裁决的差异：`Battle.scene`（见 §5 第 7 条）**
 
+### 3.3 本地提交记录（2026-10-09，**已提交、未 push**）
+
+| # | commit | 消息 | 文件数 |
+|---|---|---|---|
+| ① | `ff8a1eb9` | `art(敌人109): Charging/Windup 12 帧导入 + 场景美术管线文档` | 25 |
+| ② | `d0736b3b` | `feat(E0): E0 外门预览场景 + E0 路线材质/Shader` | 42 |
+| ③ | `656ff29c` | `fix(Y卷轴): Y 路线宿主 story stop 字段与 Battle 场景接线` | 6 |
+| ④ | `6fc233fa` | `docs(知识库): E0/N1 提示词与交接、1011 帧溯源、双设备同步准备` | 15 |
+
+- 合计 `88 files changed, +27924 / -7949`；基准 `836411c0`，当前分支 **ahead 4**，尚未 push。
+- 已核实未入库：`threeKingdomSlayer.apk`、`Enemy1011ArtSource/`（518MB）在 `git ls-files` 中均无匹配。
+- 提交后 `git status` 只剩 `Locus/workspace-trees/default.json`（本机状态，有意不提交），untracked = 0。
+- **未执行 gc**：`.git` 仍为 4.0GB，重写前旧历史仍在本机。
+- 本节（§3.1–§3.3 的迁移与提交记录）由紧随其后的补记提交带入，因此 `git log` 上会出现第 5 个 commit（`docs(知识库): 补记迁移执行结果与本地提交记录`）。
+
 ## 4. 迁移后待提交清单（分类）
 
 **A. 真实工作（应入库）**
@@ -120,15 +135,15 @@ git apply --3way --exclude=threeKingdomSlayer/Locus/workspace-trees/default.json
 ## 5. 待决策项
 
 1. ~~迁移时机~~ → **已决定（方案 A）**：先做工作区整树快照（已完成）→ 更新本文档 → 执行迁移（`--go`，**不带 `--gc`**）。Unity 实测两场景 `dirty=False`，不存在未保存的内存状态会被写回。`Battle.scene` 的 26 行差异按 §1.1 显式裁决，不静默覆盖。
-2. **apk**：确认 234MB 构建产物只需在本机保留、不入库（新历史已移除）。
-3. **旧对象回收**：`gc --prune=now` 会把本机 4.0GB `.git` 里的**重写前旧历史**彻底删掉，而本机没有文档里提到的 926MB 镜像备份。要么先做一次镜像备份（约 4GB，磁盘当前剩 72GB），要么接受旧历史不可恢复。
+2. **apk**：~~确认 234MB 构建产物只需在本机保留、不入库~~ → **已确认、已落实**（新历史已移除；本地保留，4 个提交未包含）。
+3. **旧对象回收**：~~是否先做镜像备份~~ → **本次不执行**（用户确认）；`.git` 仍为 4.0GB，重写前旧历史仍在本机；日后要回收前先做镜像（约 4GB）。
 4. **`Enemy1011ArtSource/` 的忽略规则**：是否把 `Enemy1011ArtSource/` 提升写进**共享 `.gitignore`**（两台机器一致），还是继续只在本机 `.git/info/exclude`。
 5. **本机 Locus 状态文件**：`Locus/workspace-trees/default.json`（以及 `Directory.Build.props`）是否要 `git update-index --skip-worktree` 永久静默，避免每次 `git status` 都出现。
 6. **其它本地分支/stash**：`dev`/`main`/`test`/`experiment/*` 都处于 ahead/behind（同样受历史重写影响），还有 3 条 `main` 上的旧 stash。本次只处理 `route-scroll-movement`；其它分支是否也要迁，请给范围。
 7. **`Battle.scene` 的唯一差异（需你/另一台机器确认）**：合并后本机版相比远端 tip 是 `+7 / -27`。
    - **本机独有**：`BattleYRouteHost` 上的 7 行 story-stop 字段（`showRouteChoice: 0` + `useStoryStops: 1` + `e0Distance` / `e1Distance` / `storyStopDuration` / `storyStopWaiting` / `storyStopLabel: "E0 战后余烬"`），与本地 `BattleYRouteHost.cs`(169 行) 的新逻辑配套。
    - **远端独有**：Main Camera 上多两个 `MonoBehaviour`（fileID `145927963`、`145927964`）及 GameObject 里两行组件引用；它们的脚本 guid `a007016540c477e409f2c9cfa64a23c6`、`18e0960af8ce17046bd942e113b91b64` **在本机 Assets 内无任何 .meta 命中**，而两侧提交树的 Assets 内容完全一致 → 远端版本很可能是**悬空引用**（或对应脚本从未提交）。
-   - 现状：本机版已不含这两个组件，`git status` 干净、Unity 重编译通过、Console 无错误。**请另一台机器确认那两个脚本是否还以未跟踪文件形式存在于那台机器**：若有，先把脚本提交再决定是否把组件加回场景；若无，保持本机版。
+   - 现状：本机版已不含这两个组件，`git status` 干净、Unity 重编译通过、Console 无错误。**已按本机版提交（`656ff29c`）**；仍需另一台机器答复：那两个脚本是否还以未跟踪文件形式存在于那台机器？若有，先把脚本提交再决定是否把组件加回场景；若无，保持本机版。
 8. **根目录 24 个 skip-worktree 遗留条目**（见 §3.2）：保持现状不恢复，还是趁这次整理把它们 `git rm --cached` 从索引清掉（会同时影响另一台机器，建议单独立项）。
 
 ## 6. 参考
