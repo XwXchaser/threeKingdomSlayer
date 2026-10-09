@@ -85,13 +85,22 @@ git apply --3way --exclude=threeKingdomSlayer/Locus/workspace-trees/default.json
 
 ### 3.2 迁移中发现的两件事
 
-**(1) 索引 skip-worktree 遗留（已处理一个）**
+**(1) 仓库根那 25 个“缺失文件”的真因：本仓库开启了 sparse-checkout（已更正）**
 
-`git ls-files -v` 显示本机索引里有 **25 个仓库根目录条目带 `S`（skip-worktree）标志，且这些文件在磁盘上全部不存在**：`_summaries/*`、`plans/*`、`一夫当关*.txt`、`gen_report.py`、`gptPic.html`、`temp_tree.txt`、`BOSS的QTE攻击设计文档.txt`、`__pycache__/gpt_pic.cpython-313.pyc`、根 `.gitignore`。skip-worktree 使 git 既不还原它们、也不把缺失报成删除。
+`git config core.sparseCheckout = true`，`.git/info/sparse-checkout` 的内容是：
 
-- 这些文件在工程目录下有**另一套同名且已被跟踪**的副本（如 `threeKingdomSlayer/_summaries/*`、`threeKingdomSlayer/plans/*`），但两组**内容不同**（抽样比对 blob 不一致）→ 是旧扁平布局的遗留，**建议保持现状、不要“恢复”**，否则仓库根会多出一套冗余副本。
-- **已处理**：`.gitattributes` 也在这一组里，而它是 SmartMerge 的必需配置 → 已 `update-index --no-skip-worktree` + `checkout` 落盘，并确认索引 blob 与远端 tip 完全一致（`bbc4f775…`）。现在 `git check-attr` 正确返回 `Battle.scene`/`.anim` → `merge: tuanjieyamlmerge`。
-- 根 `.gitignore` 缺失意味着它那套 `threeKingdomSlayer/Library/` 之类规则**当前不生效**；但工程目录内的 `threeKingdomSlayer/.gitignore` 已覆盖同样目标（`Library/`、`*.apk`、`*.csproj` 等），实测无副作用。
+```text
+threeKingdomSlayer/*
+!threeKingdomSlayer/Assets/Wwise/
+!threeKingdomSlayer/Assets/StreamingAssets/
+```
+
+即：**工作区只展开 Unity 工程子树**，仓库根目录的已跟踪文件与 `Assets/Wwise/`、`Assets/StreamingAssets/` 都被有意排除在工作区之外。被排除的文件在索引里会带 `S`（skip-worktree）标志，且不出现在 `git status` 里——**这是设计使然，不是损坏、也不是垃圾。**
+
+- **更正**：本文早期版本把它们描述为“旧扁平布局遗留”、并把它归因于手工 skip-worktree，**这个说法不准确，已作废**。真正原因是 sparse-checkout；其中 `_summaries/*`、`plans/*` 等同时在工程目录下有另一套同名且已被跟踪的副本（两组内容不同），那是历史布局痕迹，但**不代表根目录那些条目该删**。
+- **因此：不动这 24 个条目**（根 `.gitignore` + `_summaries/*` + `plans/*` + 3 篇 .txt + `gen_report.py`/`gptPic.html`/`temp_tree.txt`/`__pycache__`）。清理它们只能达到“从索引删除”一个效果，而它们本来就不显示、不占工作区空间；删除反而会让包内容在两台机器上真正消失。
+- **一处有意偏差**：`.gitattributes` 也在这个“工作区外”集合里，但 SmartMerge 的合并驱动必须先定义属性 → 我把它的 skip-worktree 标志清掉并把它落盘（索引 blob 与远端 tip 完全一致 `bbc4f775…`）。现在 `git check-attr` 正确返回 `Battle.scene`/`.anim` → `merge: tuanjieyamlmerge`。副作用：该文件变成 in-cone 普通文件；若以后重新执行 `git sparse-checkout reapply`，它可能又被移出工作区（届时重新落盘即可）。
+- 另：稀疏工作区也解释了为什么 `Logs/`、`UserSettings/`、`Builds/` 等被忽略 —— 根 `.gitignore`（即使文件不在工作区，git 仍能从索引读出规则）与 `threeKingdomSlayer/.gitignore` 共同生效。
 
 **(2) 唯一需要裁决的差异：`Battle.scene`（见 §5 第 7 条）**
 
@@ -145,7 +154,7 @@ git apply --3way --exclude=threeKingdomSlayer/Locus/workspace-trees/default.json
    - **本机独有**：`BattleYRouteHost` 上的 7 行 story-stop 字段（`showRouteChoice: 0` + `useStoryStops: 1` + `e0Distance` / `e1Distance` / `storyStopDuration` / `storyStopWaiting` / `storyStopLabel: "E0 战后余烬"`），与本地 `BattleYRouteHost.cs`(169 行) 的新逻辑配套。
    - **远端独有**：Main Camera 上多两个 `MonoBehaviour`（fileID `145927963`、`145927964`）及 GameObject 里两行组件引用；它们的脚本 guid `a007016540c477e409f2c9cfa64a23c6`、`18e0960af8ce17046bd942e113b91b64` **在本机 Assets 内无任何 .meta 命中**，而两侧提交树的 Assets 内容完全一致 → 远端版本很可能是**悬空引用**（或对应脚本从未提交）。
    - 现状：本机版已不含这两个组件，`git status` 干净、Unity 重编译通过、Console 无错误。**已按本机版提交（`656ff29c`）**；仍需另一台机器答复：那两个脚本是否还以未跟踪文件形式存在于那台机器？若有，先把脚本提交再决定是否把组件加回场景；若无，保持本机版。
-8. **根目录 24 个 skip-worktree 遗留条目**（见 §3.2）：保持现状不恢复，还是趁这次整理把它们 `git rm --cached` 从索引清掉（会同时影响另一台机器，建议单独立项）。
+8. **仓库根 24 个 sparse 工作区外条目**（见 §3.2）：~~清理~~ → **不做**（原判断“遗留垃圾”有误，真因是 sparse-checkout 有意排除；清理等于从包中删除内容，收益为零）。另有 3 篇疑似设计文档（`一夫当关.txt`、`一夫当关（AI）.txt`、`BOSS的QTE攻击设计文档.txt`）同样保持不动。
 9. ~~是否推送~~ → **已推送**（用户批准；fast-forward，无 force；远端 tip 见 `git status -sb`）。后续若要再同步，另一台机器按 `plan/two-device-handoff-20261009.md` §2 的 SOP：`git fetch origin --prune` → `git merge --ff-only origin/route-scroll-movement`（或 `pull --rebase`）。
 
 ## 6. 参考
