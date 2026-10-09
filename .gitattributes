@@ -54,7 +54,12 @@
 # 每台机器需要执行一次（路径按本机安装位置调整；本工程为 Tuanjie 2022.3.62t7）：
 #   TOOL="C:/Program Files/Tuanjie/Hub/Editor/2022.3.62t7/Editor/Data/Tools/TuanjieYAMLMerge.exe"
 #   git config merge.tuanjieyamlmerge.name   "Tuanjie SmartMerge"
-#   git config merge.tuanjieyamlmerge.driver "\"$TOOL\" merge -p %O %B %A %A"
+#   git config merge.tuanjieyamlmerge.driver "\"$TOOL\" merge -p --force %O %B %A %A"
+#
+# --force 是必需的：Git 传给驱动的临时文件名形如 <file>.prefab_BASE_<n>，
+# SmartMerge 按扩展名派发处理器，会因扩展名变成 "prefab_BASE_n" 而直接失败（exit 1）。
+# 加 --force 后不再依赖扩展名派发，实测 .prefab/.scene/.asset/.anim/.controller/.mat 全部可自动合并。
+# 真正同行冲突时仍返回非 0：Git 标记 UU，工具会打印冲突字段路径，此时改用结构化合并或人工裁决。
 *.unity             merge=tuanjieyamlmerge
 *.scene             merge=tuanjieyamlmerge
 *.mixer             merge=tuanjieyamlmerge

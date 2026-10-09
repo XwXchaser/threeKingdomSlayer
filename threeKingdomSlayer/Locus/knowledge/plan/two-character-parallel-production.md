@@ -117,7 +117,7 @@ alphaIsTransparency = 1，Mipmaps 关闭
 ### 阶段 2：汇合（装配人执行）
 
 1. 在 integration 分支合入两人的分支。新增文件基本是净增，Git 不会报冲突；若共用文件被两边都改，按"装配人裁决"处理。
-2. Unity 资产冲突用**结构化合并**而非行级合并：本机可用 Locus 的 merge 能力（`Locus/skills/merge`）做字段/对象级选择；若走原生 Git，需为 `*.unity *.prefab *.asset *.controller *.anim *.mat` 配置 UnityYAMLMerge（当前 git 配置里**没有任何 merge driver**，行级合 YAML 会产出"能合但语义错"的结果）。
+2. Unity 资产冲突用**结构化合并**而非行级合并：本机可用 Locus 的 merge 能力（`Locus/skills/merge`）做字段/对象级选择；仓库根已新增 `.gitattributes`，把 `*.scene *.unity *.prefab *.asset *.controller *.anim *.mat *.meta` 指向 `tuanjieyamlmerge`（Tuanjie 版 SmartMerge），远距离改动可自动合并。**每台机器需一次性配置该驱动，且必须带 `--force`**（原因与命令见第 7 节）；未配置时属性会静默退回行级合并，仍可能产出"能合但语义错"的结果。
 3. 接线（只有装配人动）：把新角色写进测试关卡/正式关卡的 `StageConfig.enemyIds`、按需在 `Enemy.cs` 加公共分支、更新 `StageRegistry.asset`。
 4. 汇合后必须由装配人在**一台机器上打开工程跑 Play Mode**，不能靠 grep 或静态检查宣告完成。
 
@@ -155,11 +155,91 @@ alphaIsTransparency = 1，Mipmaps 关闭
 
 **对两台机器的后果（重要）**
 
-- 所有 commit hash 都已改变：**任何已存在的克隆必须重新克隆**，不能只 `git pull`。第二台机器建议 `git clone --filter=blob:none`（部分克隆），首次克隆与后续拉取只取当前需要的文件。
-- 本机已是部分克隆（`remote.origin.promisor=true`、`partialclonefilter=blob:none`）。
-- 未启用 LFS：LFS 不缩小单次下载体积，但能让大图不参与 pack。若后续启用，应一次性协调完成。
-- 仍未处理（需一次性协调提交）：`.gitattributes` 把 `*.png *.psd *.wav *.mp4 *.ttf` 标为 binary、为 `*.unity *.prefab *.asset *.controller *.anim *.mat` 配置 UnityYAMLMerge、统一 `text=auto eol=lf`（本机 `core.autocrlf=true`，与第二台机器不一致会产生整文件假 diff）。
-- 顺带清理：工作区仍有未跟踪的 `nul`、`Assets/Library.meta`。
+- 所有 commit hash 都已改变：**已存在的克隆不能 `git pull`，只能重新克隆或按下方迁移步骤硬切**。
+- 本机已是部分克隆（`remote.origin.promisor=true`、`partialclonefilter=blob:none`）；第二台机器建议 `git clone --filter=blob:none`，首次克隆与后续拉取只取当前需要的文件。
+
+### 让另一台机器跟上（迁移步骤）
+
+旧克隆自己不会知道历史被重写，直到它 fetch。判定标志：`git fetch` 输出里出现 `+ <旧sha>...<新sha> (forced update)`。此时**任何 `git merge` / `git pull` 都会把旧历史混回来**，只能 reset 或重新克隆。
+
+方案 A（推荐，最干净）：先导出旧克隆里未推送的改动，再重新克隆
+
+```bash
+# 在旧克隆里保存未推送的工作
+git format-patch origin/<branch> -o /path/to/patches   # 未推送的提交
+git diff > /path/to/local-work.patch                   # 未提交的改动
+
+# 重新克隆（可删掉旧目录）
+git clone --filter=blob:none git@github.com:XwXchaser/threeKingdomSlayer.git threeKingdomSlayer
+```
+
+方案 B（原地切换，适用于旧克隆里有必须保留的工作）
+
+```bash
+# 1) 先抢救未推送的工作（旧历史上的提交不会被自动带过来）
+git format-patch --stdout origin/<branch> > unpushed.patch
+git diff > local-work.patch
+
+# 2) fetch 会显示 forced update，这就是历史被重写的信号
+git fetch origin --prune
+
+# 3) 硬切到重写后的历史；不要在旧历史上提交，也不要强推旧历史
+git checkout <branch>
+git reset --hard origin/<branch>
+
+# 4) 丢弃重写前的旧对象（旧克隆里约 500 MB）
+git reflog expire --expire=now --all && git gc --prune=now
+
+# 5) 需要时把第 1 步的补丁重放到新历史
+git am unpushed.patch
+```
+
+**每台机器的一次性本地配置**（git 本地配置不随仓库同步）：
+
+```bash
+TOOL="C:/Program Files/Tuanjie/Hub/Editor/2022.3.62t7/Editor/Data/Tools/TuanjieYAMLMerge.exe"
+git config merge.tuanjieyamlmerge.name   "Tuanjie SmartMerge"
+git config merge.tuanjieyamlmerge.driver "\"$TOOL\" merge -p --force %O %B %A %A"
+```
+
+### 已完成：`.gitattributes`（提交 `bd7866a`）
+
+- `* text=auto`：索引内统一 LF，两台机器的 `core.autocrlf` 不再影响入库内容。已核实索引里 0 个 CRLF 文件，因此**没有产生全量重规范化的改动**。
+- 二进制标记（`binary` = `-diff -merge -text`）：`*.png *.psd *.jpg *.tga *.exr`、`*.wav *.mp3 *.ogg`、`*.mp4 *.mov`、`*.ttf *.otf`、`*.fbx *.obj *.blend`、`*.dll *.so *.pdb *.mdb`、`*.apk *.aab *.zip` 等。
+- Unity 文本资产走 SmartMerge：`*.scene *.unity *.prefab *.asset *.controller *.overridecontroller *.anim *.mat *.mixer *.playable *.mask *.meta`。注意工程场景用的是 `.scene`（3 个）而不是默认的 `.unity`（6 个），两者都已覆盖。
+- 实测属性解析：`Battle.scene` / `Enemy_1011.controller` / `Enemy_1011.prefab` → `merge: tuanjieyamlmerge`、`text: auto`；`BOSS.psd` / `battle_ev.wav` / 字体 ttf → `merge: unset`、`text: unset`。
+
+### SmartMerge 实测结论（含一个必需的 `--force`）
+
+用工程真实资产逐个验证了工具行为，结论如下：
+
+- Tuanjie 的 SmartMerge 是 `TuanjieYAMLMerge.exe`（UnityYAMLMerge 的改名版），位置 `C:/Program Files/Tuanjie/Hub/Editor/2022.3.62t7/Editor/Data/Tools/`。
+- 它**按文件扩展名派发处理器**。Git 传给 merge driver 的临时文件名形如 `<file>.prefab_BASE_<n>`，扩展名变成 `prefab_BASE_n`，工具直接报 `Couldn't locate merge tool to handle extension ...` 并返回 1。**这就是不加 `--force` 时驱动在 Git 里永远失败的原因**（直接调用同名文件反而成功，容易被误判为配置正确）。
+- 加 `--force` 后不再依赖扩展名派发。远距离改动（两侧改不同字段）实测六类全部自动合并、返回 0、双方修改均保留：
+
+  | 类型 | 直接调用 | 经 Git 驱动 |
+  |---|---|---|
+  | `.prefab` | 合并成功 | 合并成功 |
+  | `.scene` | 合并成功 | 合并成功 |
+  | `.asset` | 合并成功 | 合并成功 |
+  | `.controller` | 合并成功 | 合并成功 |
+  | `.anim` | 合并成功 | 未单独跑（同 YAML 格式） |
+  | `.mat` | 合并成功 | 未单独跑（同 YAML 格式） |
+
+- 真正同行冲突时返回 1：Git 将文件标为 `UU`，工具会在输出里列出冲突字段路径（例如 `Left  688460577474092011.GameObject.clashed`），此时改用结构化合并或人工裁决。
+- 官方自带的 `mergespecfile.txt` 里的回退工具（PlasticSCM / Beyond Compare 等）本机都没装，所以未加 `--force` 时任何 Unity 资产合并都会失败；不需要安装这些工具。
+
+### 决定：暂不启用 LFS
+
+- 体积已可控（仓库 402 MB，PNG 历史 236 MB）；拉取成本已由部分克隆覆盖：不检出旧提交就不会下载旧图。
+- GitHub 免费额度是 LFS 存储 1 GB + 每月流量 1 GB。把 552 个 PNG 与 PSD（约 300 MB）迁入 LFS 后，每次新克隆都要走一遍 LFS 流量，两台机器几次重克隆就可能打满，超限会**直接阻塞推送**。
+- 迁移 LFS 等于再做一次历史重写 + 强制推送 + 两台机器重新克隆，不必紧接着再来一轮。
+- 重新考虑的触发条件：PNG/PSD 历史超过约 1.5 GB，或克隆耗时成为日常阻碍。届时步骤：两台机器安装 git-lfs → `.gitattributes` 加 `*.png filter=lfs diff=lfs merge=lfs -text`（PSD 同理）→ `git lfs migrate import --include="*.png,*.psd" --everything` → 强制推送 → 两台机器重新克隆。
+
+### 清理结果
+
+- 已删除误建的 `nul` 文件（34 字节的 shell 重定向残留）。
+- `Assets/Library.meta` 与 `Assets/Library/Locus/**` **未删除**：核查后确认那不是垃圾，而是 Locus 自己的知识索引缓存（`knowledge_index.db`、tantivy 索引、版本标记），正在被当前会话使用；其内部文件已被 `.gitignore` 的 `Library/` 规则忽略，仅文件夹 `.meta` 处于未跟踪。删除没有收益且可能破坏运行中的索引；彻底清理应把该缓存迁到 `<repo>/Library/Locus` 并重开工作区，属 Locus 侧配置调整。
 
 ## 8. 交接文档模板要求
 
@@ -175,6 +255,6 @@ alphaIsTransparency = 1，Mipmaps 关闭
 
 ## 10. 待确认项
 
-1. 第 2 节的 ID 登记表（角色名 + ID + 制作人）。
-2. 是否引入第 7 节末尾的 `.gitattributes` 与 LFS。
-3. 历史重写已于 2026-10-08 完成并强制推送，第二台机器需重新克隆（见第 7 节）。
+1. 第 2 节的 ID 登记表（角色名 + ID + 制作人）：由用户自行登记。
+2. 已完成：`.gitattributes`（`bd7866a`）、`*.apk`/`*.aab` 忽略规则、历史重写与强制推送。LFS 经评估暂不启用，重启条件见第 7 节。
+3. 每台机器仍需执行一次 SmartMerge 驱动配置（命令见第 7 节）；第二台机器按第 7 节「让另一台机器跟上」重新克隆或原地切换。

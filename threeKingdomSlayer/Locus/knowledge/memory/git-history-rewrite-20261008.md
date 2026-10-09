@@ -32,6 +32,14 @@ summary: 2026-10-08 用 git filter-repo 重写仓库历史剔除废弃 Wwise 内
 - 第三方插件二进制（Wwise 的 `.pdb` / `.dSYM` / `.so`）和构建产物（apk）一旦入库，即使后来删除也永久占用历史与克隆时间；这类文件应在首次提交前就写进忽略规则。
 - 两台机器协作时，历史重写必须趁第二台机器首次克隆之前做，并且要确认对方已推送完全部工作。
 
+## 让另一台机器知道并跟上
+
+- 旧克隆收不到通知。信号是 `git fetch` 输出里的 `+ <旧sha>...<新sha> (forced update)`；看到它就说明远程历史被重写，此时 `git pull` / `git merge` 会把旧历史混回来，只能 `git reset --hard origin/<branch>` 或重新克隆。
+- 完整命令（未推送工作的抢救、旧对象回收、每台机器一次性的 Tuanjie SmartMerge 驱动配置）见 `plan/two-character-parallel-production.md` 第 7 节「让另一台机器跟上（迁移步骤）」。
+- 仓库根已新增 `.gitattributes`（提交 `bd7866a`）：索引统一 LF、二进制标记、Unity 文本资产走 Tuanjie SmartMerge。
+- SmartMerge 的驱动命令**必须带 `--force`**：Git 传来的临时文件名会破坏工具按扩展名派发处理器，不加就永远失败（详见 `plan/two-character-parallel-production.md` 第 7 节的实测矩阵）。
+- LFS 经评估暂不启用（GitHub 免费额度与部分克隆已覆盖拉取成本），重启条件见同一节。
+
 ## 相关文档
 
 - `plan/two-character-parallel-production.md`：双角色并行制作契约，第 7 节记录本次重写的实测数据与对两台机器的后果。
