@@ -302,6 +302,130 @@ aiEditMode: inherit
 - 1011 姿态与 Prompt 复用参考：`Locus/knowledge/memory/enemy1011-animation-pose-reference.md`。
 - 当前工程没有独立 Landing Clip；`landing1..6` 作为 Fall 段帧，真实落地后由运行时代码播放 Getup。
 
+### Enemy 109 Striking v1（2026-10-08，用户否决：没有正朝玩家刺击）
+
+- 用户已批准完整 Striking 提示词、首帧与收费规格；本次只创建了 **1 个**视频任务：`task_193cf338cbf846a783ad47296ba7f0ef`。
+- 参数：`seedance-2-fast`、4 秒、720p、1:1、无音频、无水印、seed `-1`；只使用 `first_frame`，无尾帧、无普通 reference_image。
+- 动作：Charging 首姿势 → 一次正面长枪前刺 → 收枪/战马急停 → 正面低枪戒备；不包含返航循环，不强制回 Charging 或 MountedIdle。
+- 首帧：`Library/Locus/tmp/cavalry_concept/cavalry_strike_first_frame_charging1_green_v1_960.png`（已验收 Charging1 内容的 960×960 RGB 绿幕副本）；SHA-256 `df498ba127c9094ae17270221c254d25eeaa4e8c68500fe08560993d39fb5d2c`。
+- 实际提交英文提示词：`Library/Locus/tmp/cavalry_concept/prompt_cavalry_striking_v1.en.txt`；SHA-256 `8f19829bede15932cc7b9641f0246bf28d4ff3bad868ad2fd6e87be2fecc4faf`。中文对照：`Library/Locus/tmp/cavalry_concept/prompt_cavalry_striking_v1.zh.txt`。
+- UTC 09:14:43 创建返回真实 task id 和 `queued`；首轮 12 次限时查询结束时仍为 `generating`，随后第 13 次查询同一 task 返回 `success`，未重复创建任务。API usage：`completion_tokens=87300`、`total_tokens=87300`；cost 原值 `spend=0.48888`（不推断币种）。
+- 成片已下载：`C:/Users/Administrator/Videos/doubaoVideo/cavalry_lancer_striking_v1_720p_4s.mp4`；2,297,494 bytes；SHA-256 `501513c4199cf87aa5450a88ceccddcd508d31b08c5ad64679ae4c560f127b4a`。
+- 技术校验：MP4 顶层包含 `ftyp / uuid / free / mdat / moov`；FFmpeg 完整解码成功，实际 97 帧、960×960、24fps、约 4.04 秒，无音频。
+- 用户验收结论：**不通过**。角色没有形成正朝玩家的纵深刺击；长枪在画面左侧保持横向/斜向展开，未形成“枪尖朝镜头/玩家”的正面命中读感。
+- 抽帧诊断：`Library/Locus/tmp/cavalry_concept/striking_v1_rejected_review/striking_v1_actual_motion_contact_sheet.png`；原视频 SHA-256 未变，未做任何修改。关键问题出现在约 f021–f038（0.83–1.54 秒）刺击段。
+- 当前边界：下载、容器与完整解码校验已完成；视频美术验收已否决。未做去背、选帧或 Unity 部署；原视频保留作失败参考，不得直接进入生产。
+- 修正方向：先制作并验收一张“正面纵深长枪刺击”关键姿势图，再用它约束下一次视频。关键姿势必须让枪尖朝向镜头/玩家、靠近画面中央前方，枪杆大部分沿深度方向缩短/被前端遮挡；持枪手仍在画面左侧，但不能把枪尖继续放在左侧横向展开。
+- 请求/运行记录：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v1.request.json`、`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v1.create_response.json`、`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v1.runtime.json`。
+- 前置 Windup/Charging 12 张透明帧已获用户验收并导入 `Assets/Sprites/Enemy/Enemy109/`，统一 1108×1108、固定补边 (74,120)，导入设置与 MountedIdle 一致（有效 Pivot 为 Center / (554,554)）；动画 Clip、Animator、Prefab 与视觉路由接线仍按用户要求延期。
+
+### Enemy 109 刺击尾帧 v3–v5 与 video v2 准备（2026-10-08）
+
+- 新方向最终确认为：**马体/马头向画面右侧侧身，骑手上身/面甲/视线面向玩家，长枪朝玩家纵深刺击，左手握缰**。单层人马 Sprite 不要求所有部位完全同向。后续收枪、完整回身和背向返航仍另行制作。
+- v3 第一次请求返回 HTTP 401 `token invalid`，无图片；用户修复 API 并另行授权后生成 v3_attempt2，用户因骑手看向马头前方而否决，不能用作视频尾帧。
+- v4 输出：`C:/Users/Administrator/Pictures/gptGen/cavalry_striking_lastframe_v4.png`；整体姿势获认可，但枪杆弯曲，未作为最终终点。
+- v5 输出：`C:/Users/Administrator/Pictures/gptGen/cavalry_striking_lastframe_v5.png`；使用 v4 为唯一编辑参考，只申请修直枪杆的一次请求；用户明确验收。960×960 RGB、PNG Color Type 2、1,105,360 bytes；SHA-256 `fe14eeab03e7cce921c24457d190b1bfe6304125f779bd5f217174a7bc6ed71c`。
+- v5 参数：gpt-image-2.5-sunburst、quality high、input_fidelity high、960x960、PNG、n=1；background 省略。本次 HTTP 200，路由 img.zxai.us；usage in 1741 / out 1683 / total 3424，cost 未返回，不推断金额/币种。
+- v5 请求/响应：`C:/Users/Administrator/Pictures/gptGen/cavalry_striking_lastframe_v5.request.json`、`C:/Users/Administrator/Pictures/gptGen/cavalry_striking_lastframe_v5.response.json`。Runtime：`Library/Locus/tmp/cavalry_concept/cavalry_striking_lastframe_v5.runtime.json`，已更新验收状态。
+- 首尾帧 staging：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v2/first_frame_charging1_960.png` 与 `Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v2/last_frame_striking_v5_960.png`，均 960×960 RGB、逐字节复制原图，未缩放/重定位/统一背景。
+- video v2 Prompt：`Library/Locus/tmp/cavalry_concept/prompt_cavalry_striking_video_v2.en.txt`、`Library/Locus/tmp/cavalry_concept/prompt_cavalry_striking_video_v2.zh.txt`。请求规格：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v2.request-spec.json`。
+- **2026-10-08 准备阶段**：当时未上传/创建；拟定 seedance-2-fast / 4s / 720p / 1:1 / 无音频无水印 / seed=-1，Charging1 first_frame + v5 last_frame，不混普通参考图。2026-10-09 实际创建/下载见下一条目。只做到命中，不收枪、回身或返航。
+- v5 绿幕仍有颜色变化；已验收的是动作图作为视频终点，不是透明/统一背景的 Unity 成品。未做去背、抽生产帧或 Unity 部署。状态与具体边界见 `Locus/knowledge/plan/cavalry-enemy-visual-handoff.md` §10。
+
+### Enemy 109 Striking video v2（2026-10-09，用户否决：举枪指向不是刺击）
+
+- 用户明确批准创建；只创建一次 task `task_49dbbb7612ae42cda74dac3014a406e3`。参数 seedance-2-fast / 4s / 720p / 1:1 / 无音频无水印 / seed=-1；Charging1 first_frame + v5 last_frame，未混普通参考图。
+- 服务端 success；usage completion_tokens/total_tokens=87300；cost 原值 spend=0.48888，不推断币种。UTC 创建 accepted 03:13:04，首次观测 success 03:15:50；该间隔含服务端排队、生成、查询及本地间隔，不称纯推理时间。
+- 下载路径：`C:/Users/Administrator/Videos/doubaoVideo/cavalry_lancer_striking_v2_720p_4s.mp4`，2,772,210 bytes；SHA-256 `54a72b49b4fcb5f1db960f83075f45655d8c31441f8b443ce7f66442cb7cddcf`。
+- MP4 容器 `ftyp/uuid/free/mdat/moov` 全部有效，FFmpeg 完整解码退出码 0；实际 960×960、24fps、97 帧、约 4.04 秒，无音频。
+- 诊断图：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v2/diagnostic_review/motion_contact_sheet.png`。原像素诊断帧与解码报告同目录；这是验收预览，不是生产选帧。
+- 用户明确**验收不通过**：骑兵不是完成转身后刺出一击，而是转身后举起长枪再指向玩家，动作语义错误。约 2.0–2.5s 过头举枪，约 1s 马蹄尘土；正确首尾图不代表中间有真实刺击。保留原视频，不选生产帧、不去背、不部署。
+- Runtime：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v2.runtime.json`；创建/上传、有限查询、分段下载、完整解码均已完成。原 task、v5 和 Charging1 保留，未生成第二个 task、未付费去背、未生产选帧或 Unity 部署。
+
+### Enemy 109 Striking video v3（2026-10-09，用户否决：仍为指向不是刺击）
+
+- 用户在否决 v2 后明确要求发起 v3；只创建一次 task `task_711a9851c69a44a39ccd1a56162dd505`，不重复 v2。
+- 参数仍为 seedance-2-fast / 4s / 720p / 1:1 / 无音频无水印 / seed=-1；复用 Charging1 first_frame + 已验收 v5 last_frame，不使用失败视频作为参考。
+- 新动作约束：先完成马体向右侧身，骑手持续看着玩家、长枪低于头盔；随后右肩驱动、右肘伸展、右手和整把直枪沿轴向玩家纵深前移一次。禁止举枪过头、旋枪瞄准、停顿指向、仅改枪向、不刺出。
+- 英文 Prompt：`Library/Locus/tmp/cavalry_concept/prompt_cavalry_striking_video_v3.en.txt`；SHA-256 `a37e2439dd4b13b184372cb894066c3295e1242ae230fd27186d35cd54a68c2d`。中文对照同名 `.zh.txt`。
+- Runtime：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v3.runtime.json`，当前 `user_rejected_pointing_not_thrust`；task 已 success、下载/解码有效，但视频美术不通过，只创建一次。
+- 成片：`C:/Users/Administrator/Videos/doubaoVideo/cavalry_lancer_striking_v3_720p_4s.mp4`，2,650,016 bytes；SHA-256 `039bb42a90ca3a97bb397384f3496a6bdd5327bb98b48dcaff96b704c282ac13`。MP4 `ftyp/uuid/free/mdat/moov` 结构完整；FFmpeg 全量解码退出码0：960×960、24fps、97帧、约4.04s、无音频。
+- API usage completion_tokens/total_tokens=87300，cost 原值 spend=0.48888，不推断币种。有限查询到 success，同 task 4段 Range 下载；无重复创建。
+- 诊断接触表：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v3/diagnostic_review/motion_contact_sheet.png`；连续出枪段 f045–f053：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v3/diagnostic_review/thrust_consecutive_f045_f053.png`。
+- 用户明确否决：依然没有解决长枪非刺出、只是指向玩家。去掉过头举枪不等于刺击成立；约1–1.9s右向横枪、f048–f050旋枪转到前景的路径是失败样本，不能进入生产。
+- 当前无生产选帧、无去背、无 Unity 部署、无自动再抽卡。v2、v5、Charging1 和本次 v3 原视频均保持不变。
+
+### Enemy 109 Striking video v4 六秒方案（2026-10-09，仅准备，未收费）
+
+- 用户要求重新思考生成词并建议实际视频改为6秒；新请求规格为 seedance-2-fast / **duration_seconds=6** / 720p / 1:1 / 无音频无水印 / seed=-1，不拉长旧4秒视频。
+- 正向动作约束改为：转身阶段完成枪轴对准；转身后沿同轴拉回至右肋弯肘位并短暂可读；随后一次快速沿轴推出到已验收v5。转身时允许调整方向；刺击前必须拉回、命中后禁止拉回，不再全局禁止合法预备动作。
+- 英文：`Library/Locus/tmp/cavalry_concept/prompt_cavalry_striking_video_v4.en.txt`；中文：`Library/Locus/tmp/cavalry_concept/prompt_cavalry_striking_video_v4.zh.txt`；方案：`Library/Locus/tmp/cavalry_concept/brief_cavalry_striking_video_v4.md`；规格：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v4.request-spec.json`。
+- Charging1/v5原图保持；用户随后授权统一绿幕的生成前副本，当前用下面记录的新副本而非旧绿幕输入。未制作中间关键帧，首尾帧API不混第三图；中间预备只文字指导，如果失败考虑验收预备帧后拆段，需另批。
+- 本次未上传、未创建任务、无新费用或Unity修改。拟定输出 `C:/Users/Administrator/Videos/doubaoVideo/cavalry_lancer_striking_v4_720p_6s.mp4`，当前不存在；收费生成仍待用户批准。
+
+### Enemy 109 首尾绿幕与主体色偏检查（2026-10-09，未修改原素材）
+
+- 用户指出首帧与视频绿幕不同、角色变色。实测原Charging f036背景中位RGB(0,159,62)，上传首帧(0,177,64)纯色，v5尾帧(2,182,77)非纯色；v3 f001(0,175,63)→0.25s(0,161,69)→末帧(0,175,74)。v2也变；原YUV背景平面随时间变化，不只是播放器显示问题。
+- 配准材料样本显示主体并非完全RGB恒定：v3 0.25s头盔(58,62,82)→(62,62,82)，红布(186,28,26)→(180,30,31)。马胸形变匹配可信度较低。不能从局部变化证明全身统一调色，不能断言绿幕不一致是单一原因。
+- 已有首帧与正式Charging1深层161025像素平均每通道差<1，说明首帧绿幕合成本身没有把主体整体改色。后续模型重绘/光照和编码因素仍需区分。
+- 诊断：`Library/Locus/tmp/cavalry_concept/cavalry_chroma_color_diagnostic_v1/findings.md`，同目录有材质对照PNG、v2/v3共194帧背景CSV、详细JSON及只读源分析脚本。
+- 建议在6秒v4收费前另存背景一致首尾副本、保留主体RGB和原尺度；不要通过整图调色匹配背景，主体颜色/绿幕稳定分别验收。候选统一绿色及副本处理需用户确认；本轮未统一背景、未去背、未发生成请求或Unity修改。
+
+### Enemy 109 v4统一绿幕生成前准备（2026-10-09，已完成，未创建视频）
+
+- 用户同意先完成v4生成前工作；背景改为同一 `(0,159,62)`，只制作独立RGB副本，不重画角色、不改Unity。
+- First：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v4/prep_green_015962_v1/first_frame_charging1_green_0_159_62.png`，SHA-256 `36374bd36ddf11ff911429134e64d2004195d886b1bc5bf2a8d771934238ac85`。
+- Last：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v4/prep_green_015962_v1/last_frame_striking_v5_green_0_159_62.png`，SHA-256 `eb41bfcfbfb157b9a07ea26a570866826084f2660cc78cadd2916297d9b229c1`。
+- 两图960×960 RGB，未缩放/平移。First从既有RGBA合成，高Alpha主体194074像素RGB逐像素保留；Last保护303246主体像素及内部高光，只有明确背景和窄混合边缘改变。Last的边缘估计仅重铺色键背景，不是生产Alpha。
+- 机器检查、边缘回读后用户已明确验收新副本并批准生成；首尾/前后对照、报告和manifest均在`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v4/prep_green_015962_v1/`。
+- v4六秒中英文Prompt已改为(0,159,62)无色偏/溢色条款；下文记录实际创建和成片。上述“未创建”只代表准备阶段，统一输入不保证输出保色。
+
+### Enemy 109 Striking video v4 六秒（2026-10-09，用户否决：转身后摆枪而非同步刺击）
+
+- 用户验收common-green首尾并批准生成；只创建一次task `task_d666303dd1bb4a3488df82ac341b69ff`，最终success。seedance-2-fast / 6s / 720p / 1:1 / 无音频无水印 / seed=-1，首尾均用统一(0,159,62)新副本，不重用旧绿幕输入。
+- 成片：`C:/Users/Administrator/Videos/doubaoVideo/cavalry_lancer_striking_v4_720p_6s.mp4`，3,094,462 bytes；SHA-256 `cb69bd422af381307034cbc22ef678af65c73d8a54362beba03f3dc9f9fcae7b`。MP4结构有效，FFmpeg全量解码0：960×960、24fps、145帧、约6.04s、无音频。
+- API usage completion_tokens/total_tokens130500，cost原值spend=0.7308，不推断币种。只创建一次；有限查询后同task四Range下载并验证。
+- 诊断：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v4/diagnostic_review/motion_contact_sheet.png`与`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v4/diagnostic_review/weapon_transition_consecutive_f103_f114.png`。只是验收预览。
+- 用户明确否决：转身与刺出应该同时进行，而本版仍然先转身再将枪尖摆正。旧“转身完成→对准→收枪→停顿→刺”结构是错误目标，已废止，不再作为生成/验收规则。
+- 输出绿幕G中位数140–154（目标159），f001(0,154,60)→0.25s(1,144,60)→尾帧(0,150,60)，仍变暗。主体局部样本有小变化，形变/生成重绘因素无法完全排除；统一背景不是保色硬保证。
+- Runtime：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v4.runtime.json`，`user_rejected_sequential_pointing_not_simultaneous_thrust`。保留原视频，无生产选帧、去背、Unity改动或自动再生成。
+
+### Enemy 109 同步旋身刺击 video v5 六秒（2026-10-09，用户已验收）
+
+- 用户明确转身与刺出同时进行，随后要求“请将其加入关键词描述并发起生成”。中英文加入侧转前坐深/夹膝压镫/腰胸压缩/右肩后压/弯肘收手到右肋与整枪回收，释放腰胸肩时马体转向、右手前送/肘伸展同步；旧转完后预备结构失效。
+- 仅创建一次task `task_4207390cad1d4fbc83e0a40607a8ea71`，最终success。seedance-2-fast / 6s / 720p / 1:1 / 无音频无水印 / seed=-1，first_frame+last_frame复用已验收统一(0,159,62)副本，原图哈希不变。
+- 实际文件：`C:/Users/Administrator/Videos/doubaoVideo/cavalry_lancer_striking_v5_720p_6s.mp4`，14,777,507 bytes；SHA-256 `7f65098ce2f0d51c33fe15dc3c188ab17eb4bd69803b16729b220f3c335b1602`。四Range检查ETag和完整长度后拼接，`ftyp/free/mdat/moov`有效；FFmpeg全量解码0，960×960/24fps/145帧/约6.04s/无音频。
+- API usage completion_tokens/total_tokens=130500；cost原值spend=0.7308，不推断币种。2次状态观察和1次仅取URL的GET，无重复创建。下载查询→拼接完成约12.122s，不当作模型推理耗时。
+- Prompt/brief/request-spec在`Library/Locus/tmp/cavalry_concept/`，英文`prompt_cavalry_striking_video_v5.en.txt` SHA-256 `6e4d96e7e6bad72fe0483f9004c898ad9b410d3ebe82f63da93fb55adc05316d`，中文`.zh.txt` SHA-256 `78393eb6610b4d78fc571d54e4d79d38c064062bb28cb27f63b0820ced3a55fa`。节奏建议0–0.3s起始、0.3–1.1s蓄力、1.1–2.4s同步释放、余段命中，不改玩法。
+- 历史预审有疑虑：约1.5–2.75s压胸/低头与抬枪靠肩、约3–3.75s侧转伸臂重叠但仍左摆、约3.25s枪尖出框。随后用户明确“很好，已验收，请根据动作语言和敌人动画需要拆分动画关键帧”；视频已通过，原代理疑虑不覆盖验收，不重做视频。本轮抽帧避开f076–f081出框段。
+- 全145帧四角背景中位G144–153，相比输入159仍暗且时变，f001(0,153,59)、f007(1,147,59)。本轮只统计新背景，没有全材质配准，不证明全身RGB变化或其原因。
+- 诊断目录`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v5/diagnostic_review/`：`motion_contact_sheet.png`、`transition_contact_sheet.png`、`decode_and_color_validation.json`、`background_timeline.csv`、`findings.md`。诊断报告先把终端进度145误读fps，已按输入流24fps更正；145是帧数。
+- Runtime `Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v5.runtime.json`最新为`user_accepted_video_24_raw_keyframes_exported_frame_review_pending`，user_art_verdict=accepted；创建脚本不再执行。下述已完成本地关键帧选择，仍无去背、Unity接线/场景改动或自动新生成。
+
+### Enemy 109 Striking v5 初版12帧（2026-10-09，已被24帧版取代）
+
+- 授权只涉及已验收视频的本地拆帧；无收费API或新增视频任务。145帧完整原尺寸RGB解码，挑选12张f001/f034/f040/f046/f070/f074/f083/f086/f092/f103/f115/f145；源PNG与导出逐字节、哈希一致，未缩放/移位/调色/去背。
+- 交付：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v5/keyframe_selection_v1/selected_frames_v1/`。`striking/`为独立原始PNG，`striking_selected_raw.png`总览、`striking_slow_review.webp`慢放、`striking_timing_0p4s_preview.webp`时序预览，manifest和README同目录。
+- 动作按入口/急停蓄力4帧→同步旋身刺出4帧→命中1帧→惯性收稳3帧；长停顿和f076–f081枪尖出框排除。第9张f092为命中主帧，建议对齐现有0.18s，全部建议0.4s，未接线或改玩法。
+- 12张均960×960 RGB，轮廓无边缘4px接触；最窄左27px/右46px。源视频哈希保持`7f65098ce2f0d51c33fe15dc3c188ab17eb4bd69803b16729b220f3c335b1602`。两个WebP各12帧，末端审阅停留不属于游戏时序。
+- 首帧后续可复用正式Charging1，其余11张待去背授权；1108补边仍未执行。本轮帧序待用户查看，不把视频验收自动等同选帧验收，不反播命中尾段充作收枪/返航。
+- 用户Editor已处playing E0预览；只读确认现有Sprite1108/PPU16/Point/有效Center pivot，未停Play、保存场景、导入或改Animator/Prefab/C#。
+
+### Enemy 109 Striking v5 24帧版（2026-10-09，历史候选；核心段越界）
+
+- 用户认为12帧过少，要求拆出24帧；本地复用已验证解码源，保留原12个动作节点并补12个真实姿势。序列f001/f031/f034/f037/f040/f043/f046/f065/f068/f070/f072/f074/f075/f082/f083/f084/f086/f089/f092/f097/f103/f109/f115/f145，f092为第19张命中。
+- 目录`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v5/keyframe_selection_v1/selected_frames_v2_24/`；独立PNG在`striking/`，总览`striking_24_selected_raw.png`、慢放`striking_24_slow_review.webp`、连续预览`striking_24_sequence_preview.webp`，manifest/README/CSV同目录。
+- 24张不同源PNG，960×960 RGB，源/导出字节和哈希一致；两个WebP均24帧可解码，原12帧及视频哈希保持。f076–f081出框段排除，无插值/缩放/调色/去背。
+- 24帧待用户查看；旧12帧时序不自动套用，预览速度不改玩法。首帧可复用Charging1，其余23张去背、补边和Unity接线未执行；Editor最新editing E0预览，未更改状态/场景，无API。
+
+### Enemy 109 Striking v6 边界控制版与6+6+6关键帧（2026-10-09，技术完成；用户验收待返回）
+
+- 用户判定v5核心f075–f082枪尖越界，不满足本次6+6+6，明确建议重生成控制边界；确认后仅创建一次v6 task `task_1bcb08e0d51d4df8bd09c9388f4b7d4b`。
+- v6文件：`C:/Users/Administrator/Videos/doubaoVideo/cavalry_lancer_striking_v6_720p_6s.mp4`，3,252,977 bytes；SHA-256 `119df1a087a34856c14b104e4a50607fd60cc6967a6ee1c0fb0981dbfadf415b`。MP4/FFmpeg通过，960×960/24fps/145帧/约6.04s/无音频；usage130500，cost原值spend=0.7308。
+- 全片逐帧边界通过：最低L/T/R/B=48/98/70/60px，要求32px；4px边缘前景像素全0，bad frames=0。报告和接触表在`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v6/diagnostic_review/`。
+- 18帧严格按用户分段：pre f055/f059/f063/f067/f071/f074；core damage f075/f076/f078/f080/f081/f082；post-083 f083/f086/f089/f092/f097/f103。PNG与源逐字节/哈希一致，核心段未跳过f076–f081。
+- 交付目录：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v6/keyframes_6plus6plus6_v2/`，含三个分组子目录、`keyframes_18_all.png`、`keyframes_6_core_damage_thrust.png`、`keyframes_18_review.webp`、CSV、manifest和README。无去背/Unity导入/Clip接线或玩法时序改动，帧序等待用户验收。
+
 ### Seedance 路线视频
 
 | 段 | task id | 最终文件 | 大小 | 结论 |
