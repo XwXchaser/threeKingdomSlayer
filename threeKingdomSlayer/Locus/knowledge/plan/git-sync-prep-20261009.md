@@ -95,7 +95,7 @@ git apply --3way --exclude=threeKingdomSlayer/Locus/workspace-trees/default.json
 
 **(2) 唯一需要裁决的差异：`Battle.scene`（见 §5 第 7 条）**
 
-### 3.3 本地提交记录（2026-10-09，**已提交、未 push**）
+### 3.3 本地提交记录（2026-10-09，**已提交并已 push**）
 
 | # | commit | 消息 | 文件数 |
 |---|---|---|---|
@@ -104,7 +104,8 @@ git apply --3way --exclude=threeKingdomSlayer/Locus/workspace-trees/default.json
 | ③ | `656ff29c` | `fix(Y卷轴): Y 路线宿主 story stop 字段与 Battle 场景接线` | 6 |
 | ④ | `6fc233fa` | `docs(知识库): E0/N1 提示词与交接、1011 帧溯源、双设备同步准备` | 15 |
 
-- 合计 `88 files changed, +27924 / -7949`；基准 `836411c0`，当前分支 **ahead 4**，尚未 push。
+- 合计 `88 files changed, +27924 / -7949`；基准 `836411c0`。
+- **已 push**（fast-forward，未使用 force）：`836411c0..554bab76  route-scroll-movement -> route-scroll-movement`；推送后 `git status -sb` 与 `origin/route-scroll-movement` 无 ahead/behind，远端已核实收到 Enemy109/E0/1011 溯源表/本文档，且仍不含 apk 与 `Enemy1011ArtSource/`。（本条推送记录自身由后续一次文档提交带入，同样已推送。）
 - 已核实未入库：`threeKingdomSlayer.apk`、`Enemy1011ArtSource/`（518MB）在 `git ls-files` 中均无匹配。
 - 提交后 `git status` 只剩 `Locus/workspace-trees/default.json`（本机状态，有意不提交），untracked = 0。
 - **未执行 gc**：`.git` 仍为 4.0GB，重写前旧历史仍在本机。
@@ -145,6 +146,7 @@ git apply --3way --exclude=threeKingdomSlayer/Locus/workspace-trees/default.json
    - **远端独有**：Main Camera 上多两个 `MonoBehaviour`（fileID `145927963`、`145927964`）及 GameObject 里两行组件引用；它们的脚本 guid `a007016540c477e409f2c9cfa64a23c6`、`18e0960af8ce17046bd942e113b91b64` **在本机 Assets 内无任何 .meta 命中**，而两侧提交树的 Assets 内容完全一致 → 远端版本很可能是**悬空引用**（或对应脚本从未提交）。
    - 现状：本机版已不含这两个组件，`git status` 干净、Unity 重编译通过、Console 无错误。**已按本机版提交（`656ff29c`）**；仍需另一台机器答复：那两个脚本是否还以未跟踪文件形式存在于那台机器？若有，先把脚本提交再决定是否把组件加回场景；若无，保持本机版。
 8. **根目录 24 个 skip-worktree 遗留条目**（见 §3.2）：保持现状不恢复，还是趁这次整理把它们 `git rm --cached` 从索引清掉（会同时影响另一台机器，建议单独立项）。
+9. ~~是否推送~~ → **已推送**（用户批准；fast-forward，无 force；远端 tip 见 `git status -sb`）。后续若要再同步，另一台机器按 `plan/two-device-handoff-20261009.md` §2 的 SOP：`git fetch origin --prune` → `git merge --ff-only origin/route-scroll-movement`（或 `pull --rebase`）。
 
 ## 6. 参考
 
