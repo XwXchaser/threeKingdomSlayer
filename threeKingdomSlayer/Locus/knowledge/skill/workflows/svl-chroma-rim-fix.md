@@ -30,6 +30,29 @@ summary: 'Sprite Video Lab 抠图工作流从零部署与使用手册（2026-10-
 
 ## 第 1 章 从零部署（新主机照做）
 
+### 1.0 先拿到代码（本手册与脚本都在仓库里）
+
+本工作流的**手册与全部脚本都随仓库分发**（`Locus/knowledge/skill/workflows/svl-chroma-rim-fix.md` 与 `Locus/tools/svl-matting/`），新主机只需拉取仓库。
+
+```bash
+cd <项目目录>                                      # 已有克隆时
+git status                                         # 有未提交改动先 commit/stash
+git pull --rebase origin route-scroll-movement     # 两台机器都用这一条分支
+git log -1 --oneline                               # 应看到 docs(tools): 抠图工作流手册 v2 + 参数化脚本…
+```
+
+还没有克隆时，按 `plan/two-device-handoff-20261009.md` 第 0 节做（**部分克隆**：`git clone --filter=blob:none git@github.com:XwXchaser/threeKingdomSlayer.git`），**不要手工拷贝 `Assets/`**。
+
+拉取后自检：
+
+```bash
+ls Locus/tools/svl-matting/                                  # 应看到 6 个 .py + README.md
+python -m py_compile Locus/tools/svl-matting/*.py             # 语法自检（可选）
+```
+
+> ⚠️ 本机工作用的脚本副本在 `Library/Locus/tmp/svl_run/`，但 **`Library/` 被 .gitignore 忽略、不随仓库同步**；分发位置只有 `Locus/tools/svl-matting/`。
+> ⚠️ **素材与精灵不在仓库里**：`Enemy1011ArtSource/`、`Enemy109ArtSource/`（raw/keyed/已部署参照）与 `Assets/Sprites/...` 下的精灵替换**尚未提交**。要让另一台机器拿到**同样的素材/精灵**，需先在本机提交（素材源目录建议只提交目录结构与 `raw_manifest.json`，帧用 .gitignore 排除），或让那台机器从自己的原始素材重跑一遍。
+
 ### 1.1 前置条件
 
 | 项 | 要求 | 说明 |
