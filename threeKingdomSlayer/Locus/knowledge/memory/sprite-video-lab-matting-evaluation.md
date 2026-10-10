@@ -17,6 +17,8 @@ summary: 'Sprite Video Lab 抠图工作流实测与全量实装记录（最终�
 - 运行时：`E:\sprite-video-lab-models\venv`（**Python 3.10**，Pillow 12.3.0；额外装了 `huggingface_hub` 仅为跑绿仓库自带单元测试）
 - 工作目录：`E:\sprite-video-lab-work`（uploads/jobs/exports/previews）
 - 启动：双击 `E:\sprite-video-lab\start_sprite_video_lab.bat`（自 detach + 开浏览器，127.0.0.1:8894）
+- **盘符无关（2026-10-10 事故教训）**：上面这些 `E:\...` **只是机器 A 的选择，不是要求**。任意盘（**含只有 C 盘的主机**）都能装：把 checkout/venv/工作目录放哪儿都行，只要用 `SPRITE_VIDEO_LAB_PYTHON`（启动器用哪个解释器）/ `SPRITE_VIDEO_LAB_WORK_DIR` / `SPRITE_VIDEO_LAB_ROOT`（脚本用）三个环境变量指过去；可复制步骤见 `skill/workflows/svl-chroma-rim-fix.md` §1.4。
+- **启动器陷阱**：`start_sprite_video_lab.bat` 只在**检测到 `E:\` 存在**时才用 `E:\` 的 venv/工作目录；没有 E 盘时它退到 PATH 里的 `python` —— 若那是 3.13+，服务会因 `cgi` 缺失而起不来。所以新主机**必须先设 `SPRITE_VIDEO_LAB_PYTHON`**。
 - **解释器纪律**：SVL 只能用 3.10（`server.py` 顶层 `import cgi`，3.13+ 已移除）；numpy 度量脚本用系统 3.13。
 - 由 Locus 会话启动的 server 会随工具调用结束被回收 → 批量跑要用"脚本自带 server 生命周期"的写法（见 `Library/Locus/tmp/svl_run/run_all.py`）。
 

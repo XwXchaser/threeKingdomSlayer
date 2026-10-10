@@ -14,6 +14,8 @@ summary: 'Sprite Video Lab 部署与迭代全记录。最终结论（2026-10-10 
 边界：
 - 不改 `Assets/**`；不改 `Library/Locus/tmp/matting_green_screen_v2_CANONICAL.py`；不改既有工作目录里的任何脚本或产物；不向项目 git 提交任何内容。
 - SVL checkout、Python 运行时、模型缓存、工作目录全部落在项目外（E:）。
+
+> **跨机器注意（2026-10-10 追加）**：本文件是**机器 A 的部署记录**，里面的 `E:\...` 路径只是那台机器的选择，**没有一处是必须的**。要在另一台机器（例如只有 C 盘）装：照 `skill/workflows/svl-chroma-rim-fix.md` 第 1 章做 —— 路径任意，用 `SPRITE_VIDEO_LAB_PYTHON` / `SPRITE_VIDEO_LAB_WORK_DIR` / `SPRITE_VIDEO_LAB_ROOT` 指向你的位置即可。
 - 本轮不需要 Unity 编译、不需要 Play Mode、不需要编辑器连接。
 
 ## 预检结论（本机实测）

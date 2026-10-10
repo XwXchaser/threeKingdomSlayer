@@ -61,57 +61,85 @@ python -m py_compile Locus/tools/svl-matting/*.py             # 语法自检（�
 | Python | **3.10**（3.11/3.12 可用；**3.13+ 不可用**） | `server.py` 顶层 `import cgi`，该模块在 3.13 被移除 |
 | git | 任意版本 | 取代码用；也可直接拷目录 |
 | ffmpeg / ffprobe | **可选** | 仅在需要**视频/GIF 输入**或导出**透明 MOV / GIF** 时才要；只处理 PNG 帧序列不需要 |
+| 磁盘 / 路径 | **任意盘，不需要 E:** | 本手册里的 `<SVL_ROOT>` / `<SVL_MODELS>` / `<SVL_WORK>` 都是**占位符**，换成你机器上的真实路径（例：`C:\sprite-video-lab`）。**只有 C 盘也能完全跑通**，见 1.4 的"C 盘单盘示例" |
 
 ### 1.2 取代码
 
 ```powershell
-git clone https://github.com/sparklecatta-lang/sprite-video-lab E:\sprite-video-lab
+# <SVL_ROOT> = 你要放工具的位置，任意盘。例：C:\sprite-video-lab 或 E:\sprite-video-lab
+git clone https://github.com/sparklecatta-lang/sprite-video-lab <SVL_ROOT>
 ```
 若 GitHub 直连不通：换可用的镜像/代理，或直接从有该目录的主机拷贝整个 checkout（见 1.7）。
+
+> **本手册里的 `<SVL_ROOT>` / `<SVL_MODELS>` / `<SVL_WORK>` 都是占位符**，替换成你机器上的真实路径即可；**与磁盘盘符无关，只有 C 盘也能跑**（见 1.4 的 C 盘单盘示例）。
 
 ### 1.3 建运行时
 
 ```powershell
-py -3.10 -m venv E:\sprite-video-lab-models\venv
-E:\sprite-video-lab-models\venv\Scripts\python.exe -m pip install --upgrade pip
-E:\sprite-video-lab-models\venv\Scripts\python.exe -m pip install -r E:\sprite-video-lab\requirements.txt
+py -3.10 -m venv <SVL_MODELS>\venv
+<SVL_MODELS>\venv\Scripts\python.exe -m pip install --upgrade pip
+<SVL_MODELS>\venv\Scripts\python.exe -m pip install -r <SVL_ROOT>\requirements.txt
 # 可选：让仓库自带单元测试全绿（否则 2 个 AI 下载测试会报 ModuleNotFoundError）
-E:\sprite-video-lab-models\venv\Scripts\python.exe -m pip install huggingface_hub
+<SVL_MODELS>\venv\Scripts\python.exe -m pip install huggingface_hub
 ```
-**判据**：`...\venv\Scripts\python.exe -c "import cgi, PIL; print('ok')"` → 输出 `ok`。
+**判据**：`<SVL_MODELS>\venv\Scripts\python.exe -c "import cgi, PIL; print('ok')"` → 输出 `ok`。
 > 基础依赖只有 Pillow；torch 等 AI 依赖**本工作流不需要**，不要装。
 
 ### 1.4 工作目录与启动
 
-约定路径（与启动器默认一致，放在 E: 是为了不占项目盘）：
+**路径全部可自定，不依赖任何特定盘符**（下面用变量表示，换成你的真实路径即可）：
 
-| 用途 | 路径 |
-|---|---|
-| 代码 checkout | `E:\sprite-video-lab` |
-| 运行时（venv） | `E:\sprite-video-lab-models\venv` |
-| 工作目录（上传/任务/预览/导出） | `E:\sprite-video-lab-work` |
-| 端口 | `127.0.0.1:8894` |
+| 用途 | 变量 | 示例（C 盘单盘） |
+|---|---|---|
+| 代码 checkout | `<SVL_ROOT>` | `C:\sprite-video-lab` |
+| 运行时（venv） | `<SVL_MODELS>\venv` | `C:\sprite-video-lab-models\venv` |
+| 工作目录（上传/任务/预览/导出） | `<SVL_WORK>` | `C:\sprite-video-lab-work` |
+| 端口 | — | `127.0.0.1:8894` |
 
-**启动（推荐）**：双击 `E:\sprite-video-lab\start_sprite_video_lab.bat`
-它会：杀掉旧 server → 用 E: 的 venv 起 `server.py --serve` → 打开浏览器。
+> 启动器 `start_sprite_video_lab.bat` 只在**检测到 `E:\` 存在**时才使用 `E:\sprite-video-lab-work` / `E:\sprite-video-lab-models\venv`；**没有 E 盘的机器上它不会用 E 盘**，但也不会自动找到你自建的 venv——所以必须设 `SPRITE_VIDEO_LAB_PYTHON`（下面）。
+
+**启动（推荐）：先设两个环境变量，再双击启动器**
+
+```powershell
+set SPRITE_VIDEO_LAB_PYTHON=<SVL_MODELS>\venv\Scripts\python.exe   # 关键：告诉启动器用哪个 Python（必须 3.10）
+set SPRITE_VIDEO_LAB_WORK_DIR=<SVL_WORK>                            # 可选；不设则用 <SVL_ROOT>\work
+set SPRITE_VIDEO_LAB_ROOT=<SVL_ROOT>                                # 给批量脚本用（第 3 章）；设了就必须指向含 server.py 的目录，否则脚本会直接报错
+```
+> 三个变量的优先级：`SPRITE_VIDEO_LAB_ROOT` 设了就以它为准；不设时脚本按 `E:\sprite-video-lab` → `C:\sprite-video-lab` → 当前目录及其上级 依次探测第一个含 `server.py` 的目录。
+
+双击 `<SVL_ROOT>\start_sprite_video_lab.bat`
+它会：杀掉旧 server → 用 `SPRITE_VIDEO_LAB_PYTHON` 起 `server.py --serve` → 打开浏览器。
+> ⚠️ **不设 `SPRITE_VIDEO_LAB_PYTHON` 时**，启动器会退到 PATH 里的 `python`/`py`——若那是 3.13+，服务会因 `cgi` 缺失而起不来（这是新主机最常见的坑）。
+
+**C 盘单盘示例（可直接照抄）**
+
+```powershell
+py -3.10 -m venv C:\sprite-video-lab-models\venv
+C:\sprite-video-lab-models\venv\Scripts\python.exe -m pip install -r C:\sprite-video-lab\requirements.txt
+set SPRITE_VIDEO_LAB_PYTHON=C:\sprite-video-lab-models\venv\Scripts\python.exe
+set SPRITE_VIDEO_LAB_WORK_DIR=C:\sprite-video-lab-work
+set SPRITE_VIDEO_LAB_ROOT=C:\sprite-video-lab
+cd /d C:\sprite-video-lab
+start_sprite_video_lab.bat
+```
 
 **启动（手动，想看日志时）**：
 ```powershell
-cd /d E:\sprite-video-lab
-set SPRITE_VIDEO_LAB_WORK_DIR=E:\sprite-video-lab-work
-E:\sprite-video-lab-models\venv\Scripts\python.exe server.py --serve --host 127.0.0.1 --port 8894
+cd /d <SVL_ROOT>
+set SPRITE_VIDEO_LAB_WORK_DIR=<SVL_WORK>
+<SVL_MODELS>\venv\Scripts\python.exe server.py --serve --host 127.0.0.1 --port 8894
 ```
 **判据**：浏览器打开 `http://127.0.0.1:8894/`，出现三段式面板，页脚状态为「等待导入素材」。
-> **必须设 `SPRITE_VIDEO_LAB_WORK_DIR`**：不设时 App 会在 `E:\sprite-video-lab\work` 找工具与产物（.bat 已经设好，手动启动要自己设）。
+> 手动启动时可以**不设** `SPRITE_VIDEO_LAB_WORK_DIR`，此时工作目录默认为 `<SVL_ROOT>\work`（能用，只是产物在 checkout 里）。
 
 ### 1.5 首次自检清单
 
 | 检查 | 命令 / 动作 | 期望 |
 |---|---|---|
 | 服务在听 | 浏览器开 `http://127.0.0.1:8894/` | 200 + 三段式页面 |
-| 运行时正确 | 页面里 `runtime-info`（或看启动窗口） | `work_dir = E:\sprite-video-lab-work` |
+| 运行时正确 | 页面里 `runtime-info`（或看启动窗口） | `work_dir` = 你在 1.4 里设的 `<SVL_WORK>`（未设时为 `<SVL_ROOT>\work`） |
 | 无重复实例 | `Get-CimInstance Win32_Process \| Where-Object { $_.Name -like 'python*' -and $_.CommandLine -like '*--serve*' }` | 只有 1 个 |
-| 单测 | `...\venv\Scripts\python.exe -m unittest tests.test_ai_matte_sizing`（在 checkout 下） | 63 passed（装了 huggingface_hub） |
+| 单测 | `<SVL_MODELS>\venv\Scripts\python.exe -m unittest tests.test_ai_matte_sizing`（在 checkout 下） | 63 passed（装了 huggingface_hub） |
 
 ### 1.6 可选组件（本工作流**不需要**）
 
@@ -164,7 +192,7 @@ E:\sprite-video-lab-models\venv\Scripts\python.exe server.py --serve --host 127.
 
 ### 2.4 处理与导出
 
-- 定好参数后：选片段区间 → 点「**开始处理区间**」（写盘到 `E:\sprite-video-lab-work\jobs\<job>\processed\`）。
+- 定好参数后：选片段区间 → 点「**开始处理区间**」（写盘到 `<SVL_WORK>\jobs\<job>\processed\`）。
 - 到第三段「帧检查与导出」：挑帧（全选/奇偶/反选/按选序）→「直接导出」→ 选 **Frames**（PNG 序列 + `frames.json`，记录逐帧时长）。
   （`Spritesheet` 也纯本地；`透明 MOV` / `GIF` 需要 ffmpeg。）
 
@@ -183,27 +211,28 @@ E:\sprite-video-lab-models\venv\Scripts\python.exe server.py --serve --host 127.
 ### 3.2 命令（本项目示例）
 
 ```powershell
+# 先定义两个变量（换成你机器上的真实路径）
+$PY  = "<SVL_MODELS>\venv\Scripts\python.exe"     # 例 C:\sprite-video-lab-models\venv\Scripts\python.exe
+$RUN = "Locus\tools\svl-matting"                 # 通用脚本（随仓库分发）
+
 # 绿幕批量（配方 = Chroma 自动取色 + T + softness16 + halo1 + 半透明转不透明）
-E:\sprite-video-lab-models\venv\Scripts\python.exe Library\Locus\tmp\svl_run\cav_run_B.py
-# 灰底单独标定（先扫容差，再出成品）
-E:\sprite-video-lab-models\venv\Scripts\python.exe Library\Locus\tmp\svl_run\idle_esr_calibrate.py
-# 单点去绿工具（对任意帧目录，不改 alpha，带 --dry-run 与备份）
-E:\sprite-video-lab-models\venv\Scripts\python.exe Library\Locus\tmp\svl_run\green_guarantee.py <目录> --dry-run
-# 按角色整套（自动选容差 + 出报告 + 总览图）
-E:\sprite-video-lab-models\venv\Scripts\python.exe Library\Locus\tmp\svl_run\enemy109_run_workflow.py
-E:\sprite-video-lab-models\venv\Scripts\python.exe Library\Locus\tmp\svl_run\enemy1011_run_new.py
+$PY $RUN\svl_matte_batch.py --src "<某帧目录或素材根>"
+# 容差扫描与推荐
+$PY $RUN\svl_scan_tolerance.py --src "<某动作目录>" --tolerances 55,70,79
+# 单点去绿工具（不改 alpha，带 --dry-run 与备份）
+$PY $RUN\green_guarantee.py <目录> --dry-run
 ```
-> 跑脚本时**同样要设** `SPRITE_VIDEO_LAB_WORK_DIR=E:\sprite-video-lab-work`（否则找不到组件/产物目录）。
+> 跑脚本时按需设 `SPRITE_VIDEO_LAB_ROOT=<SVL_ROOT>`（不设则**自动探测**，见 3.3）与 `SPRITE_VIDEO_LAB_WORK_DIR=<SVL_WORK>`。
 >
 > **解释器**：批量/度量脚本里已内置 `sys.modules.setdefault("cgi", ...)` 兼容处理，**用 3.10 venv 或 3.13+ 都能跑**；但**服务端（`server.py`）必须 3.10**。
 > **依赖**：脚本用 `numpy`（度量）+ `Pillow`；两者都不在 `requirements.txt` 里时要手动装：`pip install numpy pillow`。
 
 #### 3.2.1 通用参数化脚本（推荐，零改代码）
 
-`Library/Locus/tmp/svl_run/svl_*.py`（也随上传包分发）：全部走命令行参数，**不需要改代码**。
+`Locus/tools/svl-matting/svl_*.py`（随仓库分发，受版本控制）：全部走命令行参数，**不需要改代码**。
 
 ```powershell
-$PY  = "E:\sprite-video-lab-models\venv\Scripts\python.exe"
+$PY  = "<SVL_MODELS>\venv\Scripts\python.exe"    # 例 C:\sprite-video-lab-models\venv\Scripts\python.exe
 $RUN = "Locus\tools\svl-matting"      # 随仓库分发（受版本控制）；工作副本在 Library\Locus\tmp\svl_run（gitignore，不入库）
 
 # 批量抠图：整个素材根（每个动作一个输出目录），自动按底材选容差
@@ -226,7 +255,7 @@ $PY $RUN\green_guarantee.py <目录> --dry-run
 要点：
 - `svl_matte_batch.py`：自动按底材选容差（**彩色幕布 79 / 中性底 14**），可用 `--tolerance N` 覆盖、`--keep-semi` 不硬化、`--only A,B` 限动作、`--sheet` 出图、`--report` 指定报告。
 - `svl_deploy_to_unity.py`：**默认干跑**，会打印“逐帧所需偏移及跨度”（即 5.2 的核对法）；`--align-deployed` / `--foot-line N` 处理变位组；替换会自动备份到 **Assets 之外**；新建与替换会自动区分。
-- 共性：`SPRITE_VIDEO_LAB_ROOT`（默认 `E:\sprite-video-lab`）指定 checkout；度量 helper（`ero/dil/reach_border`）**已内联在 `svl_common.py`**，不再依赖任何项目脚本。
+- 共性：`SPRITE_VIDEO_LAB_ROOT` 指定 checkout（**不设则自动探测**：`E:\sprite-video-lab` → `C:\sprite-video-lab` → 当前目录）；度量 helper（`ero/dil/reach_border`）**已内联在 `svl_common.py`**，不再依赖任何项目脚本。
 
 ### 3.3 换素材/换机器要改的常量（仅适用于项目内旧脚本）
 
@@ -379,11 +408,11 @@ $PY $RUN\green_guarantee.py <目录> --dry-run
 ### 7.1 关键路径速查
 
 ```
-E:\sprite-video-lab\                          checkout
-E:\sprite-video-lab-models\venv\               运行时（Python 3.10）
-E:\sprite-video-lab-work\                      工作目录（uploads/jobs/exports/previews）
-http://127.0.0.1:8894/                         网页版
-E:\sprite-video-lab\app\index.html             隐藏参数在第 407–410 行（softness/despill/halo/bifrefnet shrink）
+<SVL_ROOT>\                          checkout（任意盘；例 C:\sprite-video-lab）
+<SVL_MODELS>\venv\                   运行时（Python 3.10；例 C:\sprite-video-lab-models\venv）
+<SVL_WORK>\                          工作目录（uploads/jobs/exports/previews；未设则为 <SVL_ROOT>\work）
+http://127.0.0.1:8894/               网页版
+<SVL_ROOT>\app\index.html             隐藏参数在第 407–410 行（softness/despill/halo/bifrefnet shrink）
 
 素材源（每个角色一份，在 Unity 工程内但不在 Assets 下）：
   Enemy1011ArtSource\03_SelectedFrames\<动作>\   raw / raw_manifest.json / keyed_*/ / deployed_reference

@@ -25,12 +25,13 @@ scripts/
 
 1. **装**：按主文档第 1 章在新主机部署 Sprite Video Lab（**服务端必须 Python 3.10**；ffmpeg 可选；**不要装 Real-ESRGAN**，该工序已弃用）。
    ```powershell
-   set SPRITE_VIDEO_LAB_ROOT=E:\sprite-video-lab          # 脚本据此 import server
-   set SPRITE_VIDEO_LAB_WORK_DIR=E:\sprite-video-lab-work # 服务端/组件用
+   set SPRITE_VIDEO_LAB_ROOT=<SVL_ROOT>       # 含 server.py 的 checkout 目录（任意盘，例 C:\sprite-video-lab）
+   set SPRITE_VIDEO_LAB_WORK_DIR=<SVL_WORK>   # 工作目录（任意盘，例 C:\sprite-video-lab-work）
    ```
+   `<SVL_ROOT>` 不设时脚本会**自动探测**（`E:\sprite-video-lab` → `C:\sprite-video-lab` → 当前目录及其上级）；建议还是显式设，报错更少。
 2. **抠**（也可直接用网页版，见主文档第 2 章）：
    ```powershell
-   $PY  = "E:\sprite-video-lab-models\venv\Scripts\python.exe"
+   $PY  = "<SVL_MODELS>\venv\Scripts\python.exe"   # 例 C:\sprite-video-lab-models\venv\Scripts\python.exe
    $RUN = "Locus\tools\svl-matting"
    $PY $RUN\svl_matte_batch.py --src "<ArtSource>\03_SelectedFrames"      # 全部动作
    $PY $RUN\svl_matte_batch.py --src "<某帧目录>" --label Attack --sheet   # 单个动作 + 总览图

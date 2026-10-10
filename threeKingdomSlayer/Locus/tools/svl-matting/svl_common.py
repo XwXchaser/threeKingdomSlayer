@@ -1,8 +1,11 @@
-"""Shared helpers for the SVL matting scripts (self-contained: no project-specific imports).
+r"""Shared helpers for the SVL matting scripts (self-contained: no project-specific imports).
 
 Configure the Sprite Video Lab checkout with the environment variable
-    SPRITE_VIDEO_LAB_ROOT        (default E:\\sprite-video-lab)
-and, if you use components that need the work dir (Real-ESRGAN etc. - not used by this workflow),
+    SPRITE_VIDEO_LAB_ROOT        (optional; when set it must point at the checkout, i.e. the
+                                  directory containing server.py - a wrong value is an error)
+If it is unset, the checkout is auto-detected in this order:
+    E:\sprite-video-lab, C:\sprite-video-lab, the current directory and its parents.
+Components that need the work dir (Real-ESRGAN etc. - not used by this workflow) read
     SPRITE_VIDEO_LAB_WORK_DIR    (default <checkout>\\work)
 """
 from __future__ import annotations
@@ -71,14 +74,37 @@ def reach_border(mask, iterations: int = 64):
 
 # --- Sprite Video Lab binding -----------------------------------------------------------------
 def svl_root() -> pathlib.Path:
-    return pathlib.Path(os.environ.get("SPRITE_VIDEO_LAB_ROOT", r"E:\sprite-video-lab"))
+    """Locate the Sprite Video Lab checkout (any drive, including C:-only machines).
+
+    SPRITE_VIDEO_LAB_ROOT wins when set, and is then required to hold server.py;
+    otherwise the usual locations are probed in order.
+    """
+    configured = os.environ.get("SPRITE_VIDEO_LAB_ROOT")
+    if configured:
+        root = pathlib.Path(configured)
+        if (root / "server.py").exists():
+            return root
+        raise SystemExit(
+            "SPRITE_VIDEO_LAB_ROOT is set to %s but that directory has no server.py; "
+            "point it at the Sprite Video Lab checkout (the folder that contains server.py)." % root
+        )
+    candidates: list[pathlib.Path] = [pathlib.Path(r"E:\sprite-video-lab"),
+                                      pathlib.Path(r"C:\sprite-video-lab")]
+    cwd = pathlib.Path.cwd().resolve()
+    for base in (cwd, *cwd.parents):
+        candidates += [base, base / "sprite-video-lab"]
+    for candidate in candidates:
+        if (candidate / "server.py").exists():
+            return candidate
+    raise SystemExit(
+        "Sprite Video Lab checkout not found (no server.py in any searched location). "
+        r"Set it explicitly, e.g. set SPRITE_VIDEO_LAB_ROOT=C:\sprite-video-lab"
+    )
 
 
 def load_server():
     sys.modules.setdefault("cgi", types.ModuleType("cgi"))  # server.py imports cgi (gone in 3.13+)
     root = svl_root()
-    if not (root / "server.py").exists():
-        raise SystemExit("Sprite Video Lab checkout not found at %s (set SPRITE_VIDEO_LAB_ROOT)" % root)
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
     import server  # noqa: PLC0415
