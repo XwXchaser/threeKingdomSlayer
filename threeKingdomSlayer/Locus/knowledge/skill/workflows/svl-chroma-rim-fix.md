@@ -151,8 +151,8 @@ set SPRITE_VIDEO_LAB_WORK_DIR=<SVL_WORK>
 1. **本手册**（`Locus/knowledge/skill/workflows/svl-chroma-rim-fix.md`）。
 2. **批量/度量脚本**：**就用仓库里的 `Locus/tools/svl-matting/`**（已提交：`svl_common.py` / `svl_matte_batch.py` / `svl_scan_tolerance.py` / `svl_build_source.py` / `svl_deploy_to_unity.py` / `green_guarantee.py` + `README.md`）。**新主机只要拉这个仓库就有，不需要改代码**。
    ⚠️ 本机的工作副本在 `Library/Locus/tmp/svl_run/`，而 **`Library/` 被 .gitignore 忽略、不会随仓库同步**——所以别把它当成分发位置。项目内旧的一次性脚本（如 `enemy1011_run_new.py`）也在那儿，仅作参考。
-3. **度量脚本的依赖**：脚本里的 `ero/dil/reach_border` 等 helper 是从
-   `Library/Locus/tmp/sword_enemy_attack_front_v1/matting_from_raw_v2.py` 里 **exec 前缀**取用的；另一台机器要么一起拷这个文件，要么用第 4.3 节的替代口径。
+3. **度量脚本的依赖**：度量 helper（`ero/dil/reach_border` 等）**已内联在 `Locus/tools/svl-matting/svl_common.py`**，不依赖任何项目内旧脚本。脚本额外要 `numpy` + `Pillow`（不在基础 venv 里时 `pip install numpy pillow`）。
+4. **SVL 源码怎么到新机（仅 C 盘时）**：若 GitHub 直连不通，直接把机器 A 的整个 `sprite-video-lab` 目录拷过去（只需代码，**别拷 `work/`**）；**venv 不要拷**（`pyvenv.cfg`/Scripts 里写死了绝对路径），到新机用 `py -3.10 -m venv` 重建。
 
 ---
 
