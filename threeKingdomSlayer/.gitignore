@@ -30,6 +30,10 @@ Assets/TJAIGraph/Tmp.meta
 *.tmp
 *.log
 
+# Python 字节码缓存（Locus/tools 下的脚本会产生）
+__pycache__/
+*.py[cod]
+
 # 1011 美术素材总包（约 518MB：原视频/原抽帧/选帧/交付精灵，Unity 不导入）
 # 归档说明与溯源：Locus/knowledge/plan/enemy1011-frame-provenance.md
 Enemy1011ArtSource/

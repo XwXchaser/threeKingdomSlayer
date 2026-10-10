@@ -6,7 +6,7 @@ injectAgents:
 aiEditMode: inherit
 skillEnabled: true
 skillSurface: command
-summary: 'Sprite Video Lab 抠图工作流从零部署与使用手册（2026-10-10 用户验收，含 109 实装）。配方固定为 Chroma + 自动取背景色 + 容差按底材标定（彩色幕布 79 / 中性底 14，或中性底 6+幕布清理） + softness 16 + halo 1 + 只勾半透明像素转不透明；已弃用先做平滑处理（Real-ESRGAN 会重绘细节）与 softness 0。含新主机从零部署与判据、网页版操作、批量脚本清单与要改常量、新角色素材源文件夹约定与 raw 校验、四项目检验收、Unity 入库规格（替换与新建两条路径）与逐角色放置核对法，以及十三类踩坑根因。'
+summary: 'Sprite Video Lab 抠图工作流从零部署与使用手册（2026-10-10 用户验收，含 1021 Idle 4 帧实跑）。配方固定为 Chroma + 自动取背景色 + 容差按底材标定（彩色幕布 70-90 / 中性底 14，或中性底 6+幕布清理） + softness 16 + halo 1 + 只勾半透明像素转不透明；已弃用先做平滑处理（Real-ESRGAN 会重绘细节）与 softness 0。部署全程盘符无关（占位符 <SVL_ROOT>/<SVL_MODELS>/<SVL_WORK>，仅 C 盘可跑），【强制】部署位置先问用户、禁止自动安装 Python/venv/setup_ai_runtime.bat；含拉取工具本体的 git 地址与 HTTPS 443 间歇阻断时改走 SSH、环境变量绕过启动器硬编码的优先级与验证法、服务必须由用户双击启动（agent 起的进程会被回收）、视频抽帧用 ffmpeg 及零安装来源、网页版操作、批量脚本清单、素材源文件夹约定、四项目检验收、Unity 入库规格与逐角色放置核对法，以及踩坑根因表。'
 ---
 
 # Sprite Video Lab 抠图工作流：从零部署与使用手册
@@ -21,23 +21,70 @@ summary: 'Sprite Video Lab 抠图工作流从零部署与使用手册（2026-10-
 ## 第 0 章 适用范围与一句话配方
 
 **适用**：源素材是**纯色平底**（绿幕/蓝幕/深灰/白底），底色均匀（边框环 std ≤ 2）。角色由 AI 视频生成，常带一层「深色/偏绿描边」。
-**不适用**：底不是纯色（真实或 AI 生成的复杂背景）→ 需要语义模型（`BiRefNet`/`CorridorKey`，见第 7.4 节）；需要保留角色本体上的**绿色部件**。
+**不适用**：底不是纯色（真实或 AI 生成的复杂背景）→ 需要语义模型（`BiRefNet`/`CorridorKey`，见第 7.5 节）；需要保留角色本体上的**绿色部件**。
 
 **一句话配方**：`Chroma` → `自动取背景色` → 容差（**按底材标定**）→ 只勾 `半透明像素转不透明`。
 `softness` 保持默认 **16**，`halo` 保持默认 **1**。
 
 ---
 
-## 第 1 章 从零部署（新主机照做）
+## 第 1 章 从零部署（新主机照做；**先问用户，不要自动装**）
 
-### 1.0 先拿到代码（本手册与脚本都在仓库里）
+> **本章铁律（2026-10-10 勘误，用户明确要求）**
+> 1. 抠图内核 `sprite-video-lab` 是**独立的第三方仓库**，不在本项目里；**拉取地址见 1.0.1**。只拉本项目拿不到工具。
+> 2. **装哪个盘、要不要装 Python、要不要建 venv，必须先问用户并得到答复**，再动手。**禁止**自行 `winget install`、自行建 venv、自行跑 `setup_ai_runtime.bat`。
+> 3. **禁止自动安装**第 1.6 节的任何可选组件（torch / Real-ESRGAN / BiRefNet / CorridorKey，动辄 2.5–7 GB）。
+> 4. 服务**必须由用户双击启动**（原因见 1.4 的“agent 起的进程会被回收”）。
 
-本工作流的**手册与全部脚本都随仓库分发**（`Locus/knowledge/skill/workflows/svl-chroma-rim-fix.md` 与 `Locus/tools/svl-matting/`），新主机只需拉取仓库。
+### 1.0 【第一步】先问用户：装哪个盘 / 要不要装 Python
+
+**拿到任务后的第一个动作是向用户提问，不是敲命令。** 至少确认：
+
+| 问题 | 为什么必须问 |
+|---|---|
+| 部署到哪个盘/目录？ | 文档里的 `E:\...` 只是某台主机的选择。**很多机器根本没有 E 盘**，照抄会撞上 1.4 的全部硬编码陷阱 |
+| 本机有没有可用的 Python 3.10？没有的话允不允许我装？ | 装 Python 是**系统级改动**，不应默许。也不要用 3.13/3.14 凑合（见 1.4）|
+| 允许在哪个位置建 venv？ | 与上面同一盘最省事 |
+| 有没有 ffmpeg？（视频输入时） | 没有就可能要装；但**先找剪映自带**（见 1.4.3），往往零安装就能解决 |
+
+> **实测实例（2026-10-10，本机仅 C 盘）**：用户答复“装到 C 盘，动手”后，实际使用
+> `<SVL_ROOT>`=`C:\sprite-video-lab`、`<SVL_MODELS>`=`C:\sprite-video-lab-models`、`<SVL_WORK>`=`C:\sprite-video-lab-work`。
+> 这三个名字**只是为了和启动器的 fallback 一致、便于记忆**，不是硬性要求。
+
+### 1.0.1 工具本体（第三方仓库，唯一权威来源）
+
+```
+https://github.com/sparklecatta-lang/sprite-video-lab
+```
+
+**HTTPS 可能间歇不通**（实测同一地址首次成功、随后连续三次 `Failed to connect to github.com port 443`，`curl` 返回 `000`）；
+但 **SSH(22) 通道通常仍可用**。**先探再选，不要因 HTTPS 失败就断定“拉不下来”或去重下**：
+
+```bash
+# HTTPS 探针
+git ls-remote https://github.com/sparklecatta-lang/sprite-video-lab HEAD
+# SSH 探针（可用则改用它克隆）
+ssh -o ConnectTimeout=12 -T git@github.com
+# SSH 克隆（HTTPS 失败时的替代）
+git clone --depth 1 --progress git@github.com:sparklecatta-lang/sprite-video-lab.git <SVL_ROOT>
+```
+
+拉取后自检：
+
+```bash
+ls <SVL_ROOT>                             # 应看到 server.py / requirements.txt / start_sprite_video_lab.bat / app / tools
+cat <SVL_ROOT>/VERSION                    # 实测 0.2.0（HEAD 01603e8）
+grep -n "^import cgi" <SVL_ROOT>/server.py   # 应为第 4 行；这是必须 3.10 的根据
+```
+
+#### 1.0.2 本项目侧（手册与包装脚本）
+
+本工作流的**手册与全部脚本都随本项目仓库分发**（`Locus/knowledge/skill/workflows/svl-chroma-rim-fix.md` 与 `Locus/tools/svl-matting/`），新主机只需拉取本项目。
 
 ```bash
 cd <项目目录>                                      # 已有克隆时
 git status                                         # 有未提交改动先 commit/stash
-git pull --rebase origin route-scroll-movement     # 两台机器都用这一条分支
+git pull origin route-scroll-movement            # 本分支未设 upstream，必须写全（直接 git pull 会报错）
 git log -1 --oneline                               # 应看到 docs(tools): 抠图工作流手册 v2 + 参数化脚本…
 ```
 
@@ -53,6 +100,21 @@ python -m py_compile Locus/tools/svl-matting/*.py             # 语法自检（�
 > ⚠️ 本机工作用的脚本副本在 `Library/Locus/tmp/svl_run/`，但 **`Library/` 被 .gitignore 忽略、不随仓库同步**；分发位置只有 `Locus/tools/svl-matting/`。
 > ⚠️ **素材与精灵不在仓库里**：`Enemy1011ArtSource/`、`Enemy109ArtSource/`（raw/keyed/已部署参照）与 `Assets/Sprites/...` 下的精灵替换**尚未提交**。要让另一台机器拿到**同样的素材/精灵**，需先在本机提交（素材源目录建议只提交目录结构与 `raw_manifest.json`，帧用 .gitignore 排除），或让那台机器从自己的原始素材重跑一遍。
 
+### 1.0.3 【第一步】先问用户：装哪个盘 / 要不要装 Python
+
+**拿到任务后的第一个动作是向用户提问，不是敲命令。** 至少确认：
+
+| 问题 | 为什么必须问 |
+|---|---|
+| 部署到哪个盘/目录？ | 文档里的 `E:\...` 只是某台主机的选择。**很多机器根本没有 E 盘**，照抄会撞上 1.4 的全部硬编码陷阱 |
+| 本机有没有可用的 Python 3.10？没有的话允不允许我装？ | 装 Python 是**系统级改动**，不应默许。也不要用 3.13/3.14 凑合 |
+| 允许在哪个位置建 venv？ | 与上面同一盘最省事 |
+| 有没有 ffmpeg？（视频输入时） | 没有就可能要装；但**先找剪映自带**（见 1.4.3），往往零安装就能解决 |
+
+> **实测实例（2026-10-10，本机仅 C 盘）**：用户答复“装到 C 盘，动手”后，实际使用
+> `<SVL_ROOT>`=`C:\sprite-video-lab`、`<SVL_MODELS>`=`C:\sprite-video-lab-models`、`<SVL_WORK>`=`C:\sprite-video-lab-work`。
+> 这三个名字**只是为了和启动器的 fallback 一致、便于记忆**，不是硬性要求。
+
 ### 1.1 前置条件
 
 | 项 | 要求 | 说明 |
@@ -60,8 +122,8 @@ python -m py_compile Locus/tools/svl-matting/*.py             # 语法自检（�
 | 操作系统 | Windows | 只在 Windows 上验证过 |
 | Python | **3.10**（3.11/3.12 可用；**3.13+ 不可用**） | `server.py` 顶层 `import cgi`，该模块在 3.13 被移除 |
 | git | 任意版本 | 取代码用；也可直接拷目录 |
-| ffmpeg / ffprobe | **可选** | 仅在需要**视频/GIF 输入**或导出**透明 MOV / GIF** 时才要；只处理 PNG 帧序列不需要 |
-| 磁盘 / 路径 | **任意盘，不需要 E:** | 本手册里的 `<SVL_ROOT>` / `<SVL_MODELS>` / `<SVL_WORK>` 都是**占位符**，换成你机器上的真实路径（例：`C:\sprite-video-lab`）。**只有 C 盘也能完全跑通**，见 1.4 的"C 盘单盘示例" |
+| ffmpeg / ffprobe | **抽帧必需**（视频→PNG）；导出透明 MOV / GIF 也要 | **不在 PATH 上不等于没有**，先看 1.4.3 的零安装来源 |
+| 磁盘 / 路径 | 纯 Chroma 约 **100 MB**；**任意盘，不需要 E:** | 代码 ~9 MB + venv ~87 MB（**AI 路线要再 +2.5–7 GB**，见 1.6）。本手册里的 `<SVL_ROOT>` / `<SVL_MODELS>` / `<SVL_WORK>` 都是**占位符**，换成你机器上的真实路径（例：`C:\sprite-video-lab`）。**只有 C 盘也能完全跑通**，见 1.4 的"C 盘单盘示例" |
 
 ### 1.2 取代码
 
@@ -111,6 +173,61 @@ set SPRITE_VIDEO_LAB_ROOT=<SVL_ROOT>                                # 给批量�
 它会：杀掉旧 server → 用 `SPRITE_VIDEO_LAB_PYTHON` 起 `server.py --serve` → 打开浏览器。
 > ⚠️ **不设 `SPRITE_VIDEO_LAB_PYTHON` 时**，启动器会退到 PATH 里的 `python`/`py`——若那是 3.13+，服务会因 `cgi` 缺失而起不来（这是新主机最常见的坑）。
 
+#### 1.4.1 【强制】服务必须由**用户**双击启动
+
+> ⚠️ **实测限制（2026-10-10）**：agent 的工具调用结束时会**连带回收它拉起的进程**。
+> 无论用 `start` / `&` / 后台任务，agent 起的 server 在工具返回后就死掉（实测 `curl` 回 `000`、端口空闲）。
+> **所以：agent 不要尝试替用户启动服务，把启动交给用户。**
+
+用户启动后，agent 可以做“启后验证”（读的是已存在的进程）：
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8894/          # 期望 200
+curl -s http://127.0.0.1:8894/api/runtime-info | head -c 400
+```
+
+期望 `runtime-info` 里：`python_executable` 指向你建的 3.10 venv，`work_dir` = 你在上面设的 `<SVL_WORK>`，`torch.installed` = **false**（false 是**正确**的）。
+
+#### 1.4.2 环境变量怎么写得可靠
+
+- **不要用 `setx ... "C:\path"`**：实测两次分别写入了**字面引号**（`"C:\..."`）和被 shell 吃掉反斜杠（`C:sprite-video-lab`），两次都是错的。要么用无引号且路径无空格的 `setx`，要么用 Python `winreg` 直接写 HKCU\Environment（最稳，附 WM_SETTINGCHANGE 广播）。
+- **验证必须用新开的 cmd 读**（当前 shell 不会自动刷新）：
+
+```bat
+@echo off
+if not "%SPRITE_VIDEO_LAB_PYTHON%"=="" if exist "%SPRITE_VIDEO_LAB_PYTHON%" (
+  echo LAUNCHER-WOULD-USE: %SPRITE_VIDEO_LAB_PYTHON%
+  "%SPRITE_VIDEO_LAB_PYTHON%" -V
+  "%SPRITE_VIDEO_LAB_PYTHON%" -c "import cgi; print('cgi ok')"
+  goto :done
+)
+echo LAUNCHER-WOULD-FALLTHROUGH-TO: where python  ^<-- BAD
+:done
+```
+
+期望：打印 3.10.x + `cgi ok`，**走不到** `<-- BAD` 那行。
+
+#### 1.4.3 抽帧用的 ffmpeg（视频输入时必需）
+
+**ffmpeg 不在 PATH 上，不等于本机没有。** 实测可用的零安装来源：
+
+| 来源 | 路径形态 | 备注 |
+|---|---|---|
+| 剪映（JianyingPro）自带 | `%LOCALAPPDATA%\JianyingPro\Apps\<ver>\ffmpeg.exe` | 实测可直接抽帧；但该构建 **`--disable-ffprobe`**，没有 ffprobe |
+| 其它剪辑/转码软件 | — | 同样先找找 |
+| 用户显式指定的目录 | 环境变量 `SPRITE_VIDEO_LAB_FFMPEG_DIR` | SVL 自己的解析顺序见 `server.py: resolve_ffmpeg_binary` |
+
+```bash
+# 找一找（很快）
+find "$LOCALAPPDATA/JianyingPro" -name "ffmpeg.exe" 2>/dev/null | head -1
+# 验证能用
+"<found ffmpeg>" -hide_banner -i "<video>" 2>&1 | grep -iE "Duration|Stream"
+# 抽全部帧（不重采样、不缩放）
+"<found ffmpeg>" -hide_banner -v error -i "<video>" -vsync 0 "<out>/clean_raw/f%03d.png"
+```
+
+> 若确实没有 ffmpeg：**先问用户**是否允许安装或由用户指定已有路径；不要自行下载。
+
 **C 盘单盘示例（可直接照抄）**
 
 ```powershell
@@ -141,10 +258,15 @@ set SPRITE_VIDEO_LAB_WORK_DIR=<SVL_WORK>
 | 无重复实例 | `Get-CimInstance Win32_Process \| Where-Object { $_.Name -like 'python*' -and $_.CommandLine -like '*--serve*' }` | 只有 1 个 |
 | 单测 | `<SVL_MODELS>\venv\Scripts\python.exe -m unittest tests.test_ai_matte_sizing`（在 checkout 下） | 63 passed（装了 huggingface_hub） |
 
-### 1.6 可选组件（本工作流**不需要**）
+### 1.6 可选组件（本工作流**不需要**；**禁止自动安装**）
 
 - **Real-ESRGAN（"先做平滑处理"）→ 已弃用**：它是生成式重建，会把角色细节重绘（实测每帧约 8.5 万像素颜色被改），仅在想要"极致干净的边缘"时短期使用。**不要装、不要勾**。
-- **BiRefNet / CorridorKey**：仅在**底不是纯色**时才需要，要额外装 torch（约 2.5 GB）+ 各自权重，且 CorridorKey 有许可边界（见 7.3）。
+- **BiRefNet / CorridorKey**：仅在**底不是纯色**时才需要，要额外装 torch（约 2.5 GB）+ 各自权重，且 CorridorKey 有许可边界（见 7.5）。
+- **`setup_ai_runtime.bat` → 默认不要跑。** 实测（2026-10-10）两个致命问题：
+  1. 它的 `AI_ROOT` 在无 E 盘时 fallback 到 **`<SVL_ROOT>\work\models`**，会建**第二个 venv**，且用的是 `where py` 找到的 **3.14**——**连 `cgi` 都没有，跑不了服务端**。
+  2. `requirements-ai.txt` 里的 `numpy<2` 需要现场编译（实测失败：`Compiler cl cannot compile programs`），后面的 scipy / transformers / opencv 全没装上，但它仍会打印 **“AI runtime is ready”**（**不检查 pip 退出码**）。实测白吃 **约 6.9 GB**。
+  3. 该脚本卡在末尾时会**持续锁住 checkout 目录**（进程 cwd 在那里），导致删目录报“另一个程序正在使用此文件”——需先结束该 `cmd.exe` 进程。
+- **若用户确实需要 AI 路线**：先把 `SPRITE_VIDEO_LAB_AI_MODEL_CACHE` 等变量指到用户同意的位置，并向用户确认磁盘代价后再执行；不要默许。
 
 ### 1.7 从旧机器要带来的东西（可选）
 
@@ -359,7 +481,7 @@ $PY $RUN\green_guarantee.py <目录> --dry-run
 3. `ti.SaveAndReimport()`（18 张约 15–20 秒，单次 `unity_execute` 不要超过 30s，必要时分批）；
 4. 核验：新精灵也是 1108×1108 / PPU 16 / pivot (554,554) / Point / Uncompressed。
 
-> **新建精灵会拿到新的 GUID**（因为此前无人引用，安全）；但**它还没有任何动画 clip 引用它**——接线是另一件事（见 7.3）。
+> **新建精灵会拿到新的 GUID**（因为此前无人引用，安全）；但**它还没有任何动画 clip 引用它**——接线是另一件事（见 7.4）。
 
 ### 5.4 部署后必做的 Unity 验证（分两次 `unity_execute` 调用，单次 ≤30s）
 
@@ -390,9 +512,14 @@ $PY $RUN\green_guarantee.py <目录> --dry-run
 | 产物莫名消失 | UI「清空 WebApp 内部文件」会删 exports/jobs/uploads/previews | 成品另存到项目内目录 |
 | 界面行为诡异/状态不对 | 端口 8894 **重复监听**（两个 server 实例） | 按 1.5 的查询命令查重，只留一个 |
 | App 找不到某组件 / 找不到产物 | 没设 `SPRITE_VIDEO_LAB_WORK_DIR` | 启动前设置（或直接用 .bat） |
-| GitHub 拉不动 / 模型下不来 | 本机直连 github.com 不通（curl 返回 000） | 用镜像/代理取包，手动放到期望目录 |
-| Python 3.13+ 起不来 | `cgi` 模块已被移除 | 用 3.10 |
-| **新建的精灵在游戏里不出现/不动** | 新精灵是新增资产，**没有任何 clip 引用它**（本工作流不接线） | 单独做动画部署（见 7.3） |
+| GitHub 拉不动 | **HTTPS 443 会被间歇阻断**（实测同一地址首次成功、随后连续三次 `Failed to connect to github.com port 443`，`curl` 返回 `000`） | **先探再选**：`git ls-remote <https> HEAD` 对比 `ssh -o ConnectTimeout=12 -T git@github.com`；**SSH(22) 通常仍通**，改用 `git@github.com:...` 克隆即可。不要因 HTTPS 失败就断定拉不下来、也不要重复下载 |
+| Python 3.13+ / 3.14 起不来 | `cgi` 模块已被移除 | 用 **3.10** |
+| **双击 .bat 后服务没起来** | 启动器第 22 行的 E: 探测失效 → 回退到 `where python`，选中了 PATH 上无 `cgi` 的 3.13/3.14 | 设 `SPRITE_VIDEO_LAB_PYTHON` 指向 3.10 venv（见 1.4）|
+| **agent 起的服务马上死掉** | agent 工具调用结束时会回收其拉起的进程树（`start` / `&` / 后台任务都一样）| **服务必须由用户双击启动**；agent 只做“启后验证”（见 1.4.1）|
+| **`setup_ai_runtime.bat` 白吃约 6.9 GB 且装坏了** | ①无 E 盘时 `AI_ROOT` fallback 到 `<SVL_ROOT>\work\models` 且用 3.14（无 `cgi`）；②`numpy<2` 需现场编译失败，但它**不检查 pip 退出码**，仍打印 “AI runtime is ready”；③卡住时会锁住 checkout 目录 | **默认不要跑**（见 1.6）；要跑先征得用户同意并指好目录 |
+| `setx` 写环境变量写坏 | `setx VAR "C:\path"` 会写入**字面引号**；经 shell 转递时反斜杠被吃掉（`C:sprite-video-lab`）| 用 Python `winreg` 写；或用无引号且路径无空格的 `setx`（见 1.4.2）|
+| 视频抽帧没工具 | 本机 PATH 没有 ffmpeg，但**不等于没有** | 先找剪映自带（`%LOCALAPPDATA%\JianyingPro\Apps\<ver>\ffmpeg.exe`，实测可用）；确实没有再问用户（见 1.4.3）|
+| **新建的精灵在游戏里不出现/不动** | 新精灵是新增资产，**没有任何 clip 引用它**（本工作流不接线） | 单独做动画部署（见 7.4） |
 
 ### 附：已弃用的做法（不要重复尝试）
 
@@ -430,18 +557,56 @@ http://127.0.0.1:8894/               网页版
     （本机工作副本在 Library\Locus\tmp\svl_run\，但 Library/ 被 gitignore、不随仓库同步）
 ```
 
-### 7.2 历史：旧的四步链（已被取代，保留作参考）
+### 7.2 本次端到端实例（1021 Idle 4 帧，2026-10-10 用户验收）
+
+**这是本工作流在一台全新主机（仅 C 盘）上跑通的完整链路**，可作为下一次的参照模板。
+
+| 步 | 实际做了什么 | 结果 |
+|---|---|---|
+| 1 | 问用户部署位置 → 答“C 盘” | `<SVL_ROOT>`=`C:\sprite-video-lab`，`<SVL_MODELS>`=`C:\sprite-video-lab-models`，`<SVL_WORK>`=`C:\sprite-video-lab-work` |
+| 2 | HTTPS 克隆失败 → 改 SSH | `git clone git@github.com:sparklecatta-lang/sprite-video-lab.git`，HEAD `01603e8`、VERSION 0.2.0 |
+| 3 | 装 Python 3.10.11 + venv（Pillow 12.3.0 + numpy 2.2.6） | `import cgi` → ok |
+| 4 | 写 4 个环境变量（winreg） | 启动器解析测试：选中 3.10.11 且 `cgi ok`，未走 `where python` 回退 |
+| 5 | **用户双击** `start_sprite_video_lab.bat` | HTTP 200、`work_dir` 正确；`torch.installed=false`（正确） |
+| 6 | 抽帧（剪映自带 ffmpeg，零安装） | 97 帧 `960×960 / 24fps / 4.04s`，完整解码无错 |
+| 7 | 量化选帧（头顶 ymin 作为呼吸信号） | f001=230 → f038–62=208（峰值平台）→ f097=230；**整段即一个完整呼吸周期**，首尾闭合 |
+| 8 | 取 4 帧（四分之一相位） | **f001 / f025 / f049 / f073** |
+| 9 | `svl_scan_tolerance.py` | 绿幕 `(0,172,57)`，彩色幕布，T 不敏感；取 T=79 |
+| 10 | `svl_matte_batch.py --tolerance 79 --sheet` | 4 帧 RGBA 960×960 |
+
+**验收数据（实测）**：
+
+| 指标 | 结果 |
+|---|---|
+| 半透明像素（硬门） | **0** |
+| 幕布残留 / 封闭孔 | 0 / 0 |
+| 被删主体 | 11.4%（1011 基线 10–27%） |
+| 白底可见绿 gEx>8 | 661（1011 基线 ≤2k） |
+| 薄带占比 / 周长面积比 | 0.026 / 0.052（与 1011 同量级） |
+| **脚线漂移（4 帧）** | **0 px**（均为 779；源帧 781） |
+| x 中心跨度 | 1.5 px |
+
+**选帧方法可复用**：用「头顶 ymin（或主体像素数）逐帧曲线」定位呼吸周期与峰值平台，再按四分之一相位取帧；**不要对整段机械等距取帧**。
+
+**产物路径**：
+```
+Library\Locus\tmp\enemy1021_idle_v1_frames\keyed_ui_t79\idle1_f001.png … idle4_f073.png
+Library\Locus\tmp\enemy1021_idle_v1_frames\DELIVERABLE_1021_idle_4frames.png   （上排白底查灰边 / 下排棋盘格查 alpha）
+Library\Locus\tmp\enemy1021_idle_v1_frames\clean_raw\f001.png … f097.png       （原始帧，未裁切）
+```
+
+### 7.3 历史：旧的四步链（已被取代，保留作参考）
 
 2026-10-09 为 1011 设计过一条 `softness=0` + 「描边环替换 / 删源绿 / 中性化 / 硬绿保证」的链，它能把"白底绿像素"做到严格 0，但代价是**被删主体多 1–2 个百分点**（骑兵上甚至是 7.6% vs 4.2%），并且在暗色细结构主体上会被读成"角色被啃掉"。2026-10-10 用户验收后改用本手册的网页版路径。
 详细的迭代过程、每一步的实测数字与四变体对照（A/B/C/D）见 `memory/sprite-video-lab-matting-evaluation.md`。
 
-### 7.3 不在本工作流范围内
+### 7.4 不在本工作流范围内
 
 - **动画 clip / Animator controller 的创建与接线**：本手册只负责“把帧变成透明精灵并入库”，不建 clip、不改 controller。入库后 sprite 是孤立的（未被任何 clip 引用），需要单独做动画部署。
 - **具体已知情况（2026-10-10）**：1011 的 10 个 clip 均已存在；109 只有 `Enemy_109_MountedIdle.anim` 引用了 109 的精灵，`Enemy_109.controller` 里 Attack/Dead/HitFlash/Walk/Launched_* 仍指向 `Enemy_101_*` 的 clip（占位）。
 - 项目里存在与本工作流无关的既有问题：11 个空 sprite 引用（`Boss_104_QTE_Sweep_Start` 2、`Boss_104_QTE_Swipe` 5、`Enemy_102_CowardDead/Hit/Idle/Launched` 各 1）。
 
-### 7.4 非纯色底（可选，未在本流程使用）
+### 7.5 非纯色底（可选，未在本流程使用）
 
 底不是纯色时 Chroma 不适用，可考虑 `BiRefNet`（语义分割）或 `CorridorKey`（绿幕重建+去溢色）：
 - 需额外装 torch（约 2.5 GB）与各自权重；UI 选中时会弹确认后下载。
