@@ -20,6 +20,8 @@ public enum EnemyState
 public enum EnemyFormState
 {
     Normal,
+    /// <summary>盾兵破盾表现期：无盾、减伤已失效、增伤未生效（见 design/enemy-1021-shield-guard.md）</summary>
+    ShieldBroken,
     Coward
 }
 
@@ -388,6 +390,7 @@ public class Enemy : MonoBehaviour
     private Animator _animator;
     private EnemySpriteController _spriteCtrl;
     private CavalryEnemy _cavalry;
+    private ShieldGuardEnemy _shieldGuard;
     private AnimationClip _attackClip; // 缓存的 Attack clip（用于同步 DOTween 与 Animator 时长）
 
     // 事件
@@ -490,6 +493,8 @@ public class Enemy : MonoBehaviour
         instanceId = _nextInstanceId++;
         _cavalry = GetComponent<CavalryEnemy>();
         _cavalry?.ResetCavalry();
+        _shieldGuard = GetComponent<ShieldGuardEnemy>();
+        _shieldGuard?.ResetShieldGuard();
         columnIndex = col;
         rowIndex = row;
 
@@ -849,6 +854,77 @@ public class Enemy : MonoBehaviour
     {
         if (enemyId != 102 || IsCoward || state == EnemyState.Dead)
             return false;
+        EnterCowardFormVisual();
+        return true;
+    }
+
+    /// <summary>
+    /// 盾兵(1021) 破盾后进入胆怯形态。
+    /// 与被挑飞进胆怯(102) 是两条独立入口，102 的判定与行为完全不受影响。
+    /// </summary>
+    public bool EnterCowardFormFromShieldBreak()
+    {
+        if (IsCoward || state == EnemyState.Dead)
+            return false;
+        EnterCowardFormVisual();
+        return true;
+    }
+
+    /// <summary>盾牌被打掉的瞬间：减伤立即失效，进入破盾表现期（播放 ShieldBreak）。</summary>
+    public bool EnterShieldBrokenForm()
+    {
+        if (state == EnemyState.Dead || IsCoward || formState == EnemyFormState.ShieldBroken)
+            return false;
+
+        // 攻击中被打掉盾：先复用既有打断清理（含 DOTween/形变/标志位），保持"非Boss=攻击循环"的既有语义
+        if (state == EnemyState.Attacking)
+            CancelAttack();
+
+        _attackTelegraph?.StopWarning();
+        transform.localScale = originalScale;
+        transform.localRotation = originalRotation;
+        formState = EnemyFormState.ShieldBroken;
+        isAttackAnimating = false;
+        isAttackDrawPhase = false;
+        isCFrame = false;
+        _animator?.ResetTrigger("Attack");
+        _animator?.ResetTrigger("Hit");
+
+        // 站立/移动/眩晕/攻击态播放掉盾动画；被击飞或起身中不抢表现，只标记形态
+        if (state != EnemyState.Launched && state != EnemyState.GettingUp)
+        {
+            if (_animator != null
+                && _animator.HasState(0, Animator.StringToHash("Base Layer.ShieldBreak")))
+            {
+                _animator.Play("ShieldBreak", 0, 0f);
+            }
+        }
+        DebugLog.Info($"[Enemy] 破盾表现期开始: {DebugTag}");
+        return true;
+    }
+
+    /// <summary>掉盾动画播完：进入胆怯（无盾、增伤生效、不再攻击）。</summary>
+    public void CompleteShieldBrokenToCoward()
+    {
+        if (state == EnemyState.Dead || IsCoward)
+            return;
+        if (formState != EnemyFormState.ShieldBroken)
+            return;
+
+        _attackTelegraph?.StopWarning();
+        formState = EnemyFormState.Coward;
+        _cowardTransitionPlaying = false;
+        isAttackAnimating = false;
+        isAttackDrawPhase = false;
+        isCFrame = false;
+        _animator?.ResetTrigger("Attack");
+        _animator?.ResetTrigger("Hit");
+        PlayIdleVisual();
+        DebugLog.Info($"[Enemy] 掉盾动画结束 → 胆怯形态: {DebugTag}");
+    }
+
+    private void EnterCowardFormVisual()
+    {
         _attackTelegraph?.StopWarning();
         if (_attackTween != null && _attackTween.IsActive())
         {
@@ -868,7 +944,6 @@ public class Enemy : MonoBehaviour
         _animator?.ResetTrigger("Attack");
         _animator?.ResetTrigger("Hit");
         _animator?.Play("CowardTransition", 0, 0f);
-        return true;
     }
 
     public bool OnPlayerLaunchHit() => EnterCowardFormFromPlayerLaunch();
@@ -990,7 +1065,7 @@ public class Enemy : MonoBehaviour
     /// </summary>
     public void StartAttacking()
     {
-        if (state == EnemyState.Dead || IsCoward) return;
+        if (state == EnemyState.Dead || IsCoward || formState == EnemyFormState.ShieldBroken) return;
         // 骑乘期间不做普通攻击：攻击行为全部由 CavalryEnemy 的冲锋循环负责。
         if (_cavalry != null && _cavalry.IsMounted)
         {
@@ -1809,7 +1884,7 @@ public class Enemy : MonoBehaviour
     /// </summary>
     private void UpdateAttack()
     {
-        if (IsCoward)
+        if (IsCoward || formState == EnemyFormState.ShieldBroken)
         {
             isAttackAnimating = false;
             isAttackDrawPhase = false;
@@ -2343,7 +2418,8 @@ private void SpawnProjectile()
         bool allowHitReactionAnimation = triggerHitAnimation
             && !suppressHitReactionAnimation
             && feedbackSource != HitFeedbackSource.Dot
-            && damageType != DamageType.Launch;
+            && damageType != DamageType.Launch
+            && formState != EnemyFormState.ShieldBroken; // 破盾表现期：普通受击不打断掉盾动画
         HitReactionDirection resolvedHitReactionDirection = allowHitReactionAnimation
             ? ResolveHitReactionDirection(hitReactionDirection)
             : HitReactionDirection.None;
@@ -2365,6 +2441,17 @@ private void SpawnProjectile()
         float multiplier = ignoreDamageModifiers ? 1f : GetDamageMultiplier(damageType);
         float finalDamage = damage * multiplier;
 
+        // 盾牌判定（盾兵/1021）：固定减伤 / 破盾。DoT 等 ignoreDamageModifiers 伤害整段跳过。
+        bool shieldBlocked = false;
+        bool shieldBrokenNow = false;
+        if (_shieldGuard != null && !ignoreDamageModifiers)
+        {
+            var guardResult = _shieldGuard.ProcessHit(finalDamage, damageType, hitReactionDirection, interruptsCavalryCharge);
+            finalDamage = guardResult.finalDamage;
+            shieldBlocked = guardResult.blocked;
+            shieldBrokenNow = guardResult.broke;
+        }
+
         DebugLog.Info($"[Enemy] TakeDamage: {DebugTag}, col={columnIndex}, raw={damage:F1}, mult={multiplier:F2}, final={finalDamage:F1}, hp={currentHealth:F1}→{currentHealth - finalDamage:F1}");
 
         currentHealth -= finalDamage;
@@ -2384,6 +2471,8 @@ private void SpawnProjectile()
             AudioManager.Instance?.PostEvent("Enemy_Hit");
         HitFeedbackStrength resolvedFeedbackStrength = feedbackStrength
             ?? HitFeedbackManager.ResolveStrength(damageType, feedbackSource, finalDamage, false);
+        if (shieldBlocked)
+            resolvedFeedbackStrength = HitFeedbackStrength.Light; // 格挡：弱化卡肉，避免读成重击
         HitFeedbackManager.Trigger(HitFeedbackManager.CreateDamageContext(this, damageType,
             feedbackSource, resolvedFeedbackStrength, finalDamage, false, impactPosition, impactDirection,
             diseaseStabHit, resolvedHitReactionDirection));
@@ -2394,7 +2483,11 @@ private void SpawnProjectile()
         // 受伤跳字
         if (finalDamage > 0f && DamageNumberManager.Instance != null)
         {
-            DamageNumberManager.Instance.Spawn(transform.position, finalDamage, damageNumberColor, resolvedFeedbackStrength);
+            // 被盾格挡时用专属颜色跳字，让"减伤"可读（否则玩家会读成没打中）
+            Color? resolvedNumberColor = shieldBlocked && _shieldGuard != null
+                ? _shieldGuard.BlockDamageNumberColor
+                : damageNumberColor;
+            DamageNumberManager.Instance.Spawn(transform.position, finalDamage, resolvedNumberColor, resolvedFeedbackStrength);
         }
 
         // 血条显示（非BOSS、未死亡时显示）
@@ -2437,6 +2530,14 @@ private void SpawnProjectile()
                 TriggerHitFlash(resolvedHitReactionDirection);
             }
         }
+
+        // 格挡表现：专属状态覆盖普通受击动画（护盾火花/后仰）
+        if (shieldBlocked && _shieldGuard != null)
+            _shieldGuard.PlayBlockVisual();
+
+        // 破盾：伤害结算完成后再启动表现流程（死亡时不触发）
+        if (shieldBrokenNow && _shieldGuard != null && currentHealth > 0f)
+            _shieldGuard.OnShieldBroken();
 
         // 击飞状态下被攻击延长浮空时间
         if (state == EnemyState.Launched && launchedHitExtendDuration > 0f)
@@ -4082,6 +4183,7 @@ private void SpawnProjectile()
     {
         EnemyManager.Instance?.columnManager?.CancelPushReturnForEnemy(this, "cancel-reset");
         _cavalry?.ResetCavalry();
+        _shieldGuard?.ResetShieldGuard();
         StopHitStop();
         StopHitScaleFeedback();
 

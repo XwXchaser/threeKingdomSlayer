@@ -6,7 +6,7 @@ aiEditMode: inherit
 skillEnabled: true
 skillSurface: command
 commandTrigger: /gpt-image
-argumentHint: <prompt> [--image path ...] [--size 1024x1024|1024x1536|1536x1024] [--quality low|medium|high|xhigh|max|auto] [--out path]
+argumentHint: "<prompt> [--image path ...] [--size 1024x1024|1024x1536|1536x1024] [--quality low|medium|high|xhigh|max|auto (project default: max)] [--out path]"
 ---
 
 # gpt-image-generation
@@ -188,9 +188,9 @@ low | medium | high | xhigh | max | auto
 ```
 
 - `auto` 是模型默认档位，由模型自动选择。
-- `low` 适合草稿，`medium` 适合普通候选，`high` 适合常规最终候选。
-- `xhigh` 和 `max` 是当前 2.5 模型新增的更高质量档位；当前没有文档或实测证据表明存在高于 `max` 的档位。
-- 质量档位不是姿态锁定或角色身份锁定开关。`max` 可能带来更丰富的重绘细节，也可能改变局部轮廓；参考图编辑仍需使用明确的不可改变约束和 `input_fidelity=high`。
+- 当前项目的 GPT Image 请求（文生图、单图编辑、多图融合、去背）一律使用 `quality=max`，包括候选和探针；未经用户明确要求，不降档到 `high`、`medium` 或 `low`。
+- `xhigh` 和 `max` 是当前 2.5 模型较高的质量档位；项目默认固定采用最高已知档 `max`。
+- 质量档位不是姿态锁定或角色身份锁定开关。`max` 可能带来更丰富的重绘细节，也可能改变局部轮廓；参考图编辑仍需使用明确的不可改变约束和 `input_fidelity=high`。`quality=max` 与 `input_fidelity=high` 是两个独立参数，可同时使用。
 - 早期 GPT Image 模型最高支持到 `high`，不能把 `max` 自动外推给旧模型。
 - `size`、`quality` 和 `background` 在当前文档中支持 `auto`；透明输出应显式设置 `background=transparent`，并使用支持 Alpha 的 `png` 或 `webp`。
 - `input_fidelity` 仅用于编辑/融合任务；它不能替代视觉验收。
@@ -199,7 +199,7 @@ low | medium | high | xhigh | max | auto
 
 当原图背景与角色灰色铠甲、剑刃或暗色轮廓相近，传统阈值抠图产生明显脏边时，可以使用 `/v1/images/edits` 单图编辑做语义去背，避免直接否定已验收视频或要求重新生成视频。
 
-已实际验证的单帧参数组合：
+已实际验证的历史单帧参数组合（当时使用 `high`；仅记录历史事实，不作为当前项目默认）：
 
 ```text
 model: gpt-image-2.5-sunburst
@@ -212,7 +212,7 @@ image[]: 从视频解码得到的原始 RGB 帧
 ```
 
 - 本次 `f000` 测试返回 HTTP 200 和 960×960 RGBA，用户明确认可去背效果；浅色背景上的灰色脏边明显少于先前的手动去背结果。
-- 本测试使用 `high` 而非 `max`；不据此声称 `high` 必然比 `max` 更少重绘。
+- 本测试历史上使用 `high`。后续 GPT Image 请求（包括语义去背探针及批处理）使用 `quality=max`；不把历史参数当作降档依据。
 - Prompt 必须限定为 `ONLY background removal and alpha-matte cleanup`，要求保留画布、角色位置、绘制比例、剑/手/脚坐标、配色、亮度和高光；禁止换姿态、增强材质和重新构图。
 - 只上传无标注、未抠图的实际帧；不要把含棋盘格的预览或已经有脏边的去背结果作为唯一输入。
 - 同尺寸输出不等于同像素坐标。模型仍可能放大、移位或重绘，`input_fidelity=high` 不构成硬性像素锁定。
@@ -267,7 +267,7 @@ out = pathlib.Path.home() / "Pictures" / "gptGen" / "result.png"
 out.parent.mkdir(parents=True, exist_ok=True)
 request = urllib.request.Request(
     "https://api.muskapis.com/v1/images/generations",
-    data=json.dumps({"model": "gpt-image-2.5-sunburst", "prompt": "...", "size": "1024x1024", "quality": "high", "output_format": "png"}).encode("utf-8"),
+    data=json.dumps({"model": "gpt-image-2.5-sunburst", "prompt": "...", "size": "1024x1024", "quality": "max", "output_format": "png"}).encode("utf-8"),
     headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
     method="POST")
 with urllib.request.urlopen(request, timeout=300) as response:
@@ -332,7 +332,7 @@ request = urllib.request.Request(
         "model": "gpt-image-2.5-sunburst",
         "prompt": prompt,
         "size": "1024x1024",
-        "quality": "high",
+        "quality": "max",
         "output_format": "png",
     }).encode("utf-8"),
     headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},

@@ -73,10 +73,9 @@ Content-Type: multipart/form-data
 low | medium | high | xhigh | max | auto
 ```
 
-- 草稿或低成本试探使用 `low` / `medium`。
-- 常规最终候选使用 `high`。
-- 需要最高当前模型质量时可试 `xhigh` 或 `max`；`max` 是当前已知最高档位，没有证据表明存在更高档位。
-- 参考图编辑通常同时使用 `input_fidelity=high`，但它只提高参考保真倾向，不能锁死局部重绘。
+- 当前项目对所有 GPT Image 请求统一使用 `quality=max`，包括草稿、候选、去背探针和批处理；未经用户明确要求，不为降低成本或尝试效果而使用 `low`、`medium`、`high` 或 `xhigh`。
+- `max` 是当前已知最高档位，没有证据表明存在更高档位。
+- 参考图编辑同时使用 `input_fidelity=high`；它与 `quality=max` 是独立参数，前者提高参考保真倾向，但不能锁死局部重绘。
 - `max` 可能带来更丰富的细节，也可能重绘更多局部；必须比较角色身份、姿态、边缘和素材可用性，不能只看文件更大。
 
 原生透明请求应同时指定：
@@ -224,7 +223,7 @@ C:/Users/Administrator/Pictures/gptGen/sword_enemy_combat_idle_v4_max_transparen
 
 #### 已验证参数与成功结论
 
-持剑敌军 Idle 的原始视频首帧使用以下组合返回 HTTP `200` 和原生 RGBA PNG，用户明确评价“抠得很好”，认可单帧去背的视觉质量。浅色背景上的灰边较先前手动候选明显改善；这证明语义去背是可采用的分支，不证明每次都优于传统方法。
+持剑敌军 Idle 的原始视频首帧使用以下历史参数组合返回 HTTP `200` 和原生 RGBA PNG，用户明确评价“抠得很好”，认可单帧去背的视觉质量。浅色背景上的灰边较先前手动候选明显改善；这证明语义去背是可采用的分支，不证明每次都优于传统方法。下表仅记录历史实测，当前项目默认档位见上文：所有新请求使用 `quality=max`。
 
 ```text
 model: gpt-image-2.5-sunburst
@@ -237,7 +236,7 @@ output_format: png
 image[]: 未标注、未去背的实际视频 RGB 帧
 ```
 
-本测试没有把 `high` 与 `max` 做对照，不能声称降低质量档位必然消除重绘。一次性输入/输出路径、完整请求与响应、Alpha 数值及位置变化记录在 `memory/video-generation-case-log.md` 的“持剑敌军 v4 Idle 与 GPT Image 单帧去背”条目，工作流只保留可复用规则。
+本测试历史上使用 `high`，没有把 `high` 与 `max` 做对照，不能声称降低质量档位必然消除重绘。按当前项目规则，后续所有 GPT Image 请求统一使用 `quality=max`，并保持 `input_fidelity=high`（编辑/融合时）。一次性输入/输出路径、完整请求与响应、Alpha 数值及位置变化记录在 `memory/video-generation-case-log.md` 的“持剑敌军 v4 Idle 与 GPT Image 单帧去背”条目，工作流只保留可复用规则。
 
 #### 执行规则
 

@@ -140,7 +140,7 @@ Seedance 视频 Skill 没有承诺 Alpha 透明视频，也没有提供透明视
 经用户认可后，再按单独授权范围进行：
 
 1. 保存原视频并提取原始帧，选择清晰的受击极端姿态和恢复节点；保留无文字、未抠图、未裁切的原始 RGB 帧。
-2. 首选逐帧去背；若背景与角色颜色相近且手动/传统抠图在浅色背景上有灰边，可先用 GPT Image `/v1/images/edits` 对一帧做语义去背测试：`gpt-image-2.5-sunburst`、`quality=high`、`input_fidelity=high`、原帧尺寸、`background=transparent`、`output_format=png`。用户认可单帧视觉结果后，才考虑处理其余帧。
+2. 首选逐帧去背；若背景与角色颜色相近且手动/传统抠图在浅色背景上有灰边，可先用 GPT Image `/v1/images/edits` 对一帧做语义去背探针：`gpt-image-2.5-sunburst`、`quality=max`、`input_fidelity=high`、原帧尺寸、`background=transparent`、`output_format=png`。当前项目的 GPT Image 请求（包括探针）统一使用 `quality=max`。用户认可单帧视觉结果后，才考虑处理其余帧。历史案例曾使用 `high`，仅作为当时实际参数记录，不覆盖当前规则。
 3. GPT 去背 Prompt 必须限定为只移除背景和清理 Alpha matte，并锁定原画布、角色位置、绘制比例、脚底、装备、颜色、高光和像素细节；禁止增强、重绘、放大、换姿态和重新构图。
 4. GPT Image 的单帧去背视觉效果与动画一致性分开验收。即使输出画布尺寸相同，模型仍可能放大、移位、改变包围框或重绘角色；比较 Alpha≥128 前景框、脚底坐标、剑尖坐标、角色比例和帧间连续性。未经对齐不得直接替换动画帧。
 5. 逐帧去背或 GPT 去背后都必须检查 Alpha 与装备完整性；不能把棋盘格当透明。浅色/白底预览是暴露灰边的主要验收背景，深色预览只能辅助检查。

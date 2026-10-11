@@ -1,7 +1,7 @@
 ---
 id: kd_b36a0f8e-c80c-4114-824c-e74466d1d189
 injectMode: inherit
-summary: AI 视频/图像素材一次性任务台账：Enemy2 受击、Seedance 路线、持剑敌军 1011（v4 Idle、受击、Attack/Dead/Walk 动作动画）与 GPT Image 单帧去背的文件、参数、费用和验收结论，以及 FakeRoute 部署状态。
+summary: AI视频素材台账：1021 Idle/Walk/Attack/ShieldGuardHit已接入第一关，Walk/Attack/ShieldGuardHit均获用户游戏验收；格挡六帧、0.30秒非循环。后续在其他对话继续，角色部署未明确要求不运行自检。
 aiEditMode: inherit
 ---
 
@@ -442,6 +442,127 @@ aiEditMode: inherit
 - 同一旧视频测速（当次）：代理约 3.2 KiB/s，直连约 16 KiB/s；仅为当次结果。
 - 下载记录：直连首轮 180 秒收到 2,473,984 bytes 后超时并保留 `.part`，用 `--continue-at -` 续传约 89 秒完成余下 671,144 bytes；另一次首轮收到 1,015,808 bytes 后续传完成。
 - 轮询记录：首轮 12 次查询仍为 `generating`，停止的是本地等待而非服务端生成；后续单次查询返回 `success`。不可把本地退出码判成服务端失败，也不可自动再次付费生成。
+
+### Enemy 1021 持盾 Idle 定妆图 v3（用户已验收，尚未动画/部署）
+
+**验收依据：用户在本轮明确确认“idle形象已验收”。** 已验收文件为 `C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3.png`，作为 1021 后续动作的身份、装备、盾形与举盾姿态锚点；本次确认不代表 Idle 视频、循环、透明帧、锚点对齐或 Unity 部署通过。
+
+- **实际文件**：1024×1024、RGB PNG、Color Type 2（无 Alpha）、983,338 bytes；SHA-256 `446d6d558baa7d4a5d6e6fd9bf712c07b99c63a1c4f2e711cc0b28a7564427d0`。保留浅灰底原始生成结果，尚未去背、缩放对齐或导入 `Assets/`。
+- **参数与请求**：`POST https://api.muskapis.com/v1/images/edits`、multipart 两个 `image[]`；`gpt-image-2.5-sunburst`、`quality=max`、`input_fidelity=high`、`size=1024x1024`、`output_format=png`、`n=1`，未请求透明。只提交一次获批英文 Prompt，无自动重试；HTTP 200。请求记录时间为 `2026-10-09T17:17:59.413235+00:00`（UTC）；响应未返回 task id。
+- **完整原词与输入记录**：`C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3.request.json`；Prompt UTF-8 SHA-256 `246e7766ee2b916fdc2070a91d62b9b9a691cdfc43c7f3e8e433ae5b67eec4be`。原始响应为同目录 `enemy1021_shield_hold_v3.response.json`，图片 URL host 为 `r2.52image.xyz`。
+- **人物参考**：`Assets/Sprites/Enemy/Enemy1_1/Enemy_1011_idle1.png`，合成到 `#E6E6E6`、保留 1108×1108 原画布，未去剑或重采样；上传副本为 `Library/Locus/tmp/enemy1021_shield_hold_v3_inputs/01_1011_idle1_lightgray.png`，SHA-256 `67a32329aa33cc53a8b9da38bad1689b344f598b31402afa9fffd3b0e8f36ab1`。
+- **盾牌参考**：`C:/Users/steam/Downloads/微信图片_20260928101134_12_223.png`，取 `(685,575,1024,1120)` 局部，339×545；上传副本为 `Library/Locus/tmp/enemy1021_shield_hold_v3_inputs/02_shield_material_detail.png`，SHA-256 `126d6f6917c669ddf27694b94936dca4c1a011aedfb0de24ff5e4ddfab9b323d`。只借用木材与铁件构造，裁剪排除人物和握持手；原纹章留在参考像素中，由 Prompt 明确禁止继承。临时副本可能被清理，来源与处理方式已记入请求 JSON。
+- **用量与费用**：input 2,487（image 1,865 / text 622）；output 7,024（image 7,024 / text 0）；total 9,511。接口未返回 cost，不推断金额或币种。
+- **已验收形象**：人物以 1011 为基底改剑为盾，沿用其体型、头盔、甲胄、红缨/围巾及冷铁灰、朱红、暖金关系；盾在画面左侧、胸腹前方，持盾手/手指/前臂/握把藏在盾后，画面右侧左手空垂。具体盾高、底部收窄与材质按已验收成图保留，不因早期提示词目标与成图差异自动修图或再生成。
+- **早期版本与当前阶段**：`enemy1021_idle_keypose_v1/v2.png` 与 `enemy1021_shield_hold_v1/v2.png` 属于此前探索，未成为身份锚点；1011+109 参考方案已被本次 1011 主参考 + 用户盾牌局部参考取代。后续 Idle 视频及各项制作/部署需独立授权和验收；本轮仅更新记录，未创建新生成任务或修改代码/Unity 资产。生产交接见 `plan/enemy1021-art-production-handoff.md`。
+
+### Enemy 1021 持盾 Idle 视频 v1（已下载；四帧透明Idle已部署，待最终美术验收）
+
+**授权与结果：用户批准绿幕参考、词和参数后只创建一次任务，随后下载成功。其他AI完成四帧抠图；本次已将四帧Idle部署到Unity并完成运行验证。技术通过不等于用户最终接受循环与画面，其他动作和独立掉盾仍未制作。**
+
+- **Task ID**：`task_e169c149759b4216b75c879672389448`。创建 HTTP 200，初始 `queued`；accepted UTC `2026-10-10T11:03:50.632365+00:00`。
+- **任务状态**：初轮 12 次查询均 `generating`，最后 UTC `2026-10-10T11:05:44.269101+00:00` 后停止自动轮询；用户随后要求下载。下载流程于 UTC `2026-10-10T11:27:15.862758+00:00` 观察到 `success`，未重新创建任务。
+- **实际参考**：`C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3_green_v1.png`，1024×1024 RGB PNG，344,540 bytes，SHA-256 `d398a1eb7cd436f8082c6cf7dd7901e59d4f888e757f48b1ac01823f4adf40de`。只上传一次，同一 URL 分别用作 `first_frame` 和 `last_frame`；没有混入普通 `reference_image`。
+- **绿幕准备**：本地连通背景替换为 `#00B140` / RGB(0,177,64)，未调用生图 API，未重采样、移动或覆盖已验收原图。替换 890,636 个背景像素，保留的 157,940 个像素与源图相同；红缨及部分外缘仍有原灰底混色细浅边，已向用户说明，用户同意继续。它是不透明参考副本，不是透明动画成品。处理报告为 `C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3_green_v1.processing.json`。
+- **规格**：`seedance-2-fast`、请求 4 秒 / 720p / 1:1、无音频、无水印、seed=-1。完整获批英文词已实际提交；Prompt UTF-8 SHA-256 `07e24f1bec3723e9b6e29e171c500e80cada4ee050e2c69fc9869bedefe91678`。目标是局部温和呼吸、双脚和骨盆稳定、盾保持已举盾且持盾手隐藏、副手空垂、无举盾/收盾切换。
+- **持久请求留档**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_idle_v1.request.json`，5,976 bytes；已回读并核对 Prompt、task ID、参考图哈希与实际运行记录一致。不保存 Key 或临时签名 URL。运行记录为 `Library/Locus/tmp/enemy1021_idle_video_v1/runtime.json`；创建脚本为 `Library/Locus/tmp/create_enemy1021_idle_video_v1.py`，其已执行，不要再次运行创建脚本。
+- **实际视频**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_idle_v1.mp4`，2,000,007 bytes；SHA-256 `808593f9cbc5b9132ba7992f5ad62159f77be0ea6e4eb5c2feaa04b0c07fce2f`。H.264，960×960、24fps、97帧、容器时长4.041667秒；首帧PTS=0、末帧PTS=4.000秒，音频流0。MP4顶层 `ftyp/uuid/free/mdat/moov` 和全部97帧解码通过，落盘文件回读长度与哈希匹配；同目录 `.part` 已原子改名，不再存在。
+- **下载与校验留档**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_idle_v1.download.json`；运行清单 `Library/Locus/tmp/enemy1021_idle_video_v1/download_manifest.json`；脚本 `Library/Locus/tmp/download_enemy1021_idle_video_v1.py`。预览接触表 `Library/Locus/tmp/enemy1021_idle_video_v1/contact_sheet.png`，检查帧0/24/48/72/96，原尺寸首尾帧及5张检查帧保留在同任务临时目录。检查帧不是已选生产帧，不能据此声称无缝循环或锚点验收完成。
+- **usage/cost**：completion_tokens=87,300，total_tokens=87,300，`cost.spend=0.48888`；币种未推断。这是现有生成任务的返回值，下载未创建新收费任务。
+- **计时**：原上传约6.020秒，创建请求约3.055秒；本次Range探测与4路分段下载墙钟83.808秒，各段HTTP206、精确范围、总长度与ETag核验通过。下载结束UTC `2026-10-10T11:28:39.672981+00:00`，解码约0.891秒。中间未持续观察服务端，所以不把相隔23分钟的success查询时间称为模型生成耗时。
+- **部署结论**：四帧来源 `Library/Locus/tmp/enemy1021_idle_v1_frames/keyed_ui_t79/idle1_f001.png`、`idle2_f025.png`、`idle3_f049.png`、`idle4_f073.png`；SVL报告显示RGBA、半透明0、幕布残留0。以固定偏移(74,91)零重采样补到1108后部署，Clip为0.96s循环并接入Idle，Prefab scale=0.090161，碰撞盒/血条世界尺寸匹配基准。Play Mode自然生成、四帧循环、旧ShieldVisual清空和对象池复用通过，Console错误0。
+- **Idle 阶段边界**：本段记录当时仅完成 Idle 的部署。Walk 后续已完成六帧制作、部署并由用户验收，见下一项；Attack/Hit/ShieldGuardHit/ShieldBreak 等其余动作和独立掉盾对象仍未完成。
+
+### Enemy 1021 持盾 Walk 视频 v1（六帧已部署，用户确认验收通过）
+
+**最新授权与状态：视频与六帧经用户验收后，已使用现有SVL本地Chroma完成透明处理并部署 Unity；用户明确“已验收确认walk帧已部署”。本次未创建新收费任务。用户同时要求今后部署仅接入第一关及对应动画，完成后通知用户开游戏验收；只有在对话中明确要求时才运行自检。**
+
+- **Task ID**：`task_2d7741be5ad14839b33f12f061c6b606`。创建 HTTP 200，accepted UTC `2026-10-11T02:32:05.621600+00:00`；第11次查询于 UTC `2026-10-11T02:33:49.915782+00:00` 返回 `success`，未重新创建。
+- **规格**：`seedance-2-fast`、请求4秒/720p/1:1、无音频、无水印、seed=-1；完整获批英文词 SHA-256 `e51dc65ba349be6a395c9551ee814eb9ba2c01d533afcf109ffea043a88a3464`。
+- **参考图**：`C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3_green_v1.png`，1024×1024 RGB，344,540 bytes，SHA-256 `d398a1eb7cd436f8082c6cf7dd7901e59d4f888e757f48b1ac01823f4adf40de`；一次上传，同一 URL 作为 `first_frame` 和 `last_frame`。
+- **视频**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_walk_v1.mp4`，2,812,023 bytes；SHA-256 `2d20f36dc068c73c0710971b69c8f1ea8c650e809f787921eee2baef636fbc58`。H.264，960×960、24fps、97帧、容器时长4.041667秒，音频流0；首帧PTS=0、末帧PTS=4.000秒。MP4顶层 `ftyp/uuid/free/mdat/moov` 和全部97帧解码通过，`.part`已原子改名并不存在。
+- **下载留档**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_walk_v1.download.json`；运行清单 `Library/Locus/tmp/enemy1021_walk_video_v1/download_manifest.json`；检查接触表 `Library/Locus/tmp/enemy1021_walk_video_v1/contact_sheet.png`，检查帧0/24/48/72/96。请求留档为 `C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_walk_v1.request.json`；运行记录为 `Library/Locus/tmp/enemy1021_walk_video_v1/runtime.json`。
+- **usage/cost**：completion_tokens=87,300，total_tokens=87,300，`cost.spend=0.48888`；币种未推断。下载未创建新收费任务。
+- **计时**：Range分段下载墙钟23.167秒，四段HTTP206、精确范围、总长度与ETag核验通过；下载完成 UTC `2026-10-11T02:53:56.995255+00:00`，完整解码约0.96秒。
+- **有效帧提取（2026-10-11）**：97张原始RGB帧已解码至 `Library/Locus/tmp/enemy1021_walk_v1_frames/clean_raw/f001.png` 至 `f097.png`；f001对应零基0，f097对应零基96。源帧全为960×960，不裁切、不缩放、不去背。
+- **选帧依据**：下半身固定ROI相似度在滞后约11帧（0.458秒）出现重复低谷；对比中段完整周期f040→f051，排除首尾Idle和相邻重复平台。六帧按顺序为 **f040/f042/f044/f046/f048/f050**（源时间1.625/1.708/1.792/1.875/1.958/2.042秒），覆盖两腿承重、前摆与回收相位。候选PNG字节哈希与对应原始帧一致，未通过逐帧伸缩/平移掩盖动作变化。
+- **候选交付**：`Library/Locus/tmp/enemy1021_walk_v1_frames/selected_v1/walk1_f040.png` 至 `walk6_f050.png`；完整选择与哈希在 `Library/Locus/tmp/enemy1021_walk_v1_frames/selected_frames_v1.json`。接触表 `Library/Locus/tmp/enemy1021_walk_v1_frames/WALK_CANDIDATES_v1_6frames.png`；循环GIF `Library/Locus/tmp/enemy1021_walk_v1_frames/WALK_CANDIDATES_v1_loop_0p6s.gif`。两者只用同一个固定预览ROI放大人物，原始候选保持全画布；GIF按每帧0.1s/循环0.6s为评审候选节奏，不是源视频时序或正式Clip保证。
+- **六帧验收与抠图（2026-10-11）**：用户明确验收六帧并授权抠图；源帧哈希再次核对一致。使用现有 `C:/sprite-video-lab` 与 `C:/sprite-video-lab-models/venv/`，无新安装、无服务启动、无远程生成。自动取背景色，容差扫描70/79/90后取 **T79 / softness16 / halo1 / 半透明转不透明**，不做平滑重绘。
+- **透明结果**：`Library/Locus/tmp/enemy1021_walk_v1_frames/keyed_ui_t79/` 内的 `walk1_f040.png`、`walk2_f042.png`、`walk3_f044.png`、`walk4_f046.png`、`walk5_f048.png`、`walk6_f050.png`，均为960×960 RGBA、Alpha0/255、四角透明。各帧半透明像素/幕布残留/封闭孔均0；白底可见绿gEx>8为434–615，中位536.5；被删主体中位12.845%（幕布族阈值口径，非真实身体损失比例）。距边4px内部RGB平均差最大0.005467，未重绘角色。
+- **几何与预览**：无逐帧缩放/裁切/移动/对齐，源图诊断框与透明轮廓差约1–3px；跑步抬脚/起伏保持原样，不把脚底逐帧拉齐。白底与棋盘格六帧图 `Library/Locus/tmp/enemy1021_walk_v1_frames/WALK_MATTED_v1_6frames_white_alpha.png`；局部对照 `Library/Locus/tmp/enemy1021_walk_v1_frames/WALK_MATTED_v1_edge_checks.png`；抠图后循环GIF `Library/Locus/tmp/enemy1021_walk_v1_frames/WALK_MATTED_v1_loop_0p6s.gif`（0.1s/帧，仅评审节奏）。六帧图、局部图、单帧与GIF已回读附图。
+- **抠图报告**：`Library/Locus/tmp/enemy1021_walk_v1_frames/svl_matte_walk_v1_report.json`；完整Alpha/来源哈希/几何核验 `Library/Locus/tmp/enemy1021_walk_v1_frames/walk_matting_verification_v1.json`。
+- **Unity 部署（2026-10-11）**：六帧按 Idle 相同固定偏移 `(74,91)` 零重采样补至1108×1108，部署为 `Assets/Sprites/Enemy/Enemy1021/Enemy_1021_walk1.png` 至 `Assets/Sprites/Enemy/Enemy1021/Enemy_1021_walk6.png`。`Assets/Animations/Enemy_1021_Walk.anim` 为30fps、0.6秒循环、六个唯一精灵，含旧 `ShieldVisual` 清空键；`Assets/Animations/Enemy_1021.controller` 的 `Walk` motion 已替换，Prefab scale 仍为0.090161。Prefab、Idle Clip及其meta与部署前备份字节一致。
+- **部署留档**：`Library/Locus/tmp/enemy1021_walk_deploy_v1/preparation_report.json`、`Library/Locus/tmp/enemy1021_walk_deploy_v1/asset_verification.json`、`Library/Locus/tmp/enemy1021_walk_deploy_v1/runtime_verification.json`。用户提出新边界前已完成受控对象池实例运行测试：117次采样、六张Walk与四张Idle均可见、两次前进一排及回Idle、同实例回收再取出通过；不代表自然波次调度回归。后续画面自检已停止。
+- **用户验收**：用户确认 Walk 帧部署验收通过；今后动画部署完成即通知用户开游戏检查，未明确要求不进入运行自检，详见 `memory/user-preference.md`。
+
+### Enemy 1021 ShieldGuardHit 格挡关键帧参考图 v1/v2（2026-10-11，均未通过；继续优化）
+
+**授权与状态：用户批准两张格挡关键帧参考图，K1 接触承力与 K2 微小回弹各提交一次，API 返回 HTTP 200，图片已下载并通过 PNG/尺寸核验。用户随后明确验收不通过：角色姿态基本没有变化，仅在盾牌上出现特效，违反动作素材禁止特效的要求。两张均为失败版，不用作后续动作参考；未重新生成，也未进入视频、抠图、对齐或 Unity 部署。**
+
+- **参考图**：`C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3.png`，1024×1024 RGB，SHA-256 `446d6d558baa7d4a5d6e6fd9bf712c07b99c63a1c4f2e711cc0b28a7564427d0`；唯一职责为锁定1021身份、装备、盾牌、比例、配色和画风。
+- **共同参数**：`POST https://api.muskapis.com/v1/images/edits`，multipart 单张 `image[]`；`gpt-image-2.5-sunburst`、`quality=max`、`input_fidelity=high`、`size=1024x1024`、`output_format=png`、`n=1`；每张只提交一次，无自动重试。中英文提示词与完整字段分别保存在两份 `.request.json`。
+- **K1 接触帧**：`C:/Users/steam/Pictures/gptGen/enemy1021_shield_guard_contact_v1.png`，1,098,725 bytes，SHA-256 `56fdbfc3ae9e3f2676199830250e13aeb69799f40416fa0e3ca61bc0dbbaefef`；生成 POST 约115.9秒，下载约3.022秒，usage input/output `893/958`，接口未返回费用；URL host `pre-signed-firefly-prod.s3-accelerate.amazonaws.com`。
+- **K2 回弹帧**：`C:/Users/steam/Pictures/gptGen/enemy1021_shield_guard_rebound_v1.png`，999,232 bytes，SHA-256 `f19f082ed9948df52863024700e11044ee24048b980a03ae4ab510d7eb83ef39`；生成 POST 约122.702秒，下载约3.553秒，usage input/output `1207/8597`，接口未返回费用；URL host `cdn.jd23kjs.work`。
+- **机器核验**：两张均为可读 `1024×1024` PNG、Color Type 2/RGB、文件大小大于1KB；这是符合本次浅灰参考图请求的结果，不是透明 Unity 素材。
+- **v1验收与修订**：用户明确否决v1两图，指出角色姿态没有变化、仅出现盾牌特效，且动作规范不允许特效。按反馈重新设计肩肘承力、盾牌压入/回弹、膝屈与空手补偿，并将火花、闪光、木屑、裂纹、运动线、残影等全部设为禁止；用户审阅修订词后明确要求发起生成。
+- **v2 K1承力压入**：`C:/Users/steam/Pictures/gptGen/enemy1021_shield_guard_contact_v2.png`，1,111,759 bytes，SHA-256 `6dd5400f33134dfbcdfcd0fc7f75fec670560a6ced628a41a24cac3da34e7772`；HTTP200，生成POST约161.104秒，下载约7.386秒，usage input/output `1167/8596`，接口未返回费用；URL host `cdn.jd23kjs.work`。
+- **v2 K2释放回弹**：`C:/Users/steam/Pictures/gptGen/enemy1021_shield_guard_rebound_v2.png`，1,020,121 bytes，SHA-256 `49df3772aa0649236534f176c6f47a87415f8dfb2affda1c1b6b416308343b4e`；HTTP200，生成POST约97.053秒，下载约3.356秒，usage input/output `831/1084`，接口未返回费用；URL host `pre-signed-firefly-prod.s3-accelerate.amazonaws.com`。
+- **v2用户验收结论与下一版动作方向**：用户确认盾牌位移有效，但角色整体肢体姿态仍无足够变化，v2未通过。下一轮先只改K1：保留盾位移，以骨盆为支点令上身向画面右侧轻微倾斜；4–6°作为初始绘制目标，须使头盔/肩部相对骨盆可见右移，结合持盾肩肘收紧和双膝屈曲。躯干仍正面朝向、不后仰，脚底和根位置固定，动作图绝不出现特效。K1验收前不生成K2。新收费Prompt须先交用户审阅并明确批准，尚未再次生成。
+- **请求留档**：v1请求、响应和图片保留在输出旁sidecar及 `Library/Locus/tmp/enemy1021_shield_guard_keyframes_v1/`。v2完整中英文提示词、脱敏响应与核验位于输出旁 `.request.json`、`.response.json`、`.result.json`；配置与脚本位于 `Library/Locus/tmp/enemy1021_shield_guard_keyframes_v2/`。v2仅静态姿态参考，未生成视频、抠图/对齐或Unity部署。
+
+### Enemy 1021 ShieldGuardHit K1 v3（2026-10-11，已生成，待用户验收）
+
+- **用户授权与目标**：用户认可K1 v2的盾位移方向，但认为肢体变化不足，要求上身向画面右侧轻微倾斜。用户审阅完整中英文词与双参考职责后明确批准，只生成K1。获批目标为骨盆支点、上身右倾约8°、头肩胸相对骨盆右移25–35px、脚底与根位置固定、正面朝向、不后仰、无任何特效；这些是提示词目标，不是成图测量结果。
+- **实际输入**：图1 `C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3.png` 锁定身份、Idle基准、装备和构图，SHA-256 `446d6d558baa7d4a5d6e6fd9bf712c07b99c63a1c4f2e711cc0b28a7564427d0`；图2 `C:/Users/steam/Pictures/gptGen/enemy1021_shield_guard_contact_v2.png` 只参考盾臂收紧及盾位移，SHA-256 `6dd5400f33134dfbcdfcd0fc7f75fec670560a6ced628a41a24cac3da34e7772`。两张都是1024×1024 RGB，原图未裁切或处理。
+- **请求与结果**：`POST /v1/images/edits`，multipart两个 `image[]`；`gpt-image-2.5-sunburst`、`quality=max`、`input_fidelity=high`、1024×1024、PNG、`n=1`，英文原词实际提交SHA-256 `aced6647caae55ce3dba14d2d71f373912d1c452d537a8f0d91678bcf8675bde`。仅一次POST，无自动重试，HTTP200；生成请求63.108秒，下载3.150121秒，usage input/output `2662/7024`，total `9686`；没有返回task id或cost，URL host `r2.52image.xyz`。
+- **文件**：`C:/Users/steam/Pictures/gptGen/enemy1021_shield_guard_contact_v3.png`，965,738 bytes，SHA-256 `ec3613fc53e63c38f9ae10b5eabd33054fcbd73529726f9d90eed81ac31b1031`。实际1024×1024 RGB PNG，完整解码和落盘回读哈希一致。下载完成UTC `2026-10-11T12:32:56.382210+00:00`。
+- **视觉与用户反馈**：原图及Idle/v2/v3对照已回读附图。未见火花、木屑、震动线；盾位、盾臂和空手姿态改变。代理曾认为右倾读感偏弱，**用户随后反馈“其实已经很接近了，建议稍稍让其缩脖子表达受到冲击即可”**，因此保留v3整体姿态，不因代理倾角判断再增加侧倾；尚未最终验收。未定量核验倾角/脚底锚点。对照 `Library/Locus/tmp/enemy1021_shield_guard_keyframes_v3/K1_IDLE_V2_V3_REVIEW.png` 为相同完整画布50%最近邻预览，无各图独立裁切、对齐或姿态处理。
+- **v4生成结果**：用户批准只补轻微缩颈后，使用v3作为唯一参考提交一次编辑。`POST /v1/images/edits`，`gpt-image-2.5-sunburst`、`quality=max`、`input_fidelity=high`、1024×1024 PNG，HTTP200；生成请求99.501秒，下载3.749151秒，usage input/output `653/1023`，total `1676`，cost未返回，URL host `pre-signed-firefly-prod.s3-accelerate.amazonaws.com`，无task id。
+- **v4文件**：`C:/Users/steam/Pictures/gptGen/enemy1021_shield_guard_contact_v4.png`，994,135 bytes，SHA-256 `fe6d53654ee1f985f440f835a9e7d0bef35b264f8cbc5d42e0ea399f40ad875d`；实际1024×1024 RGB PNG，完整解码、尺寸和哈希回读通过。
+- **v4视觉与用户反馈**：未见火花、木屑、震动线等特效，缩颈读感比v3明显；但同时带动了头部、肩甲和盾牌/构图，变化大于仅颈肩局部微调的目标。用户随后反馈“很好”，要求用v4思考视频生成词，现已作为获认可的承力姿态参考。K2仍未另行生成。v3/v4对照 `Library/Locus/tmp/enemy1021_shield_guard_keyframes_v4/K1_V3_V4_REVIEW.png`：上排相同完整画布50%预览，下排相同颈肩ROI 100%对照，未对齐或修改原图。
+- **v4留档**：输出旁 `.request.json`、`.response.json`（下载URL脱敏）、`.result.json`；配置和脚本在 `Library/Locus/tmp/enemy1021_shield_guard_keyframes_v4/`，脚本已执行，禁止重跑。
+- **留档与范围**：输出旁 `.request.json`、`.response.json`（下载URL脱敏）、`.result.json`；脚本与配置在 `Library/Locus/tmp/enemy1021_shield_guard_keyframes_v3/`。K1生成脚本已执行，不要重跑。未生成K2 v3、视频、透明帧或Unity资产。
+
+### Enemy 1021 ShieldGuardHit 六秒视频 v1（2026-10-11，透明六帧v3已接入，用户游戏验收通过）
+
+- **授权**：用户认可K1 v4，并审阅完整中英文视频词后明确“时间改为6秒，发起生成”。仅将源视频时长由4改为6，其他提示词与参数保持方案。
+- **Task ID**：`task_e6757d35965a46c389e06bfd86a6d4ae`，创建HTTP200，accepted UTC `2026-10-11T13:25:25.591157+00:00`。仅创建一次，无自动重试。
+- **实际参数**：`seedance-2-fast`，6秒 / 720p / 1:1，无音频、无水印、seed=-1。两张普通 `reference_image`，未混用 `first_frame` / `last_frame`。
+- **实际输入**：图1 `C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3.png` 锁定身份和起止Idle，SHA-256 `446d6d558baa7d4a5d6e6fd9bf712c07b99c63a1c4f2e711cc0b28a7564427d0`；图2 `C:/Users/steam/Pictures/gptGen/enemy1021_shield_guard_contact_v4.png` 锁定缩颈、耸肩及盾位的承力峰值，SHA-256 `fe6d53654ee1f985f440f835a9e7d0bef35b264f8cbc5d42e0ea399f40ad875d`。原图均1024×1024 RGB，未去背、染绿或缩放；上传分别7.282秒和6.661秒，创建请求2.108秒。
+- **动作目标**：约0.5秒接住左侧来力；盾向画面右侧受压、缩颈耸肩、膝屈和空手延迟，随后盾向左回弹、颈肩释放回Idle。提示词仍要求0.25–0.35秒完成受力与恢复，余下保持Idle；固定双脚/根位置/机位，无任何特效。精确时序为请求目标，成片须独立验收。
+- **查询与费用**：首轮12次全部 `generating`，随后查询同一任务UTC `2026-10-11T13:38:48.417507+00:00` 返回 `success`，usage completion/total `130500/130500`、cost `spend=0.7308`（币种未知）。未重新生成。
+- **视频落盘**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_guard_hit_v1_6s.mp4`，2,310,345 bytes，SHA-256 `cefcc521c18651cadc0777a29f44f23b5fb44ccd97ad76290eba2d78692d7e1f`。实际960×960、24fps、145帧、H.264，容器时长6.041667秒、first/last PTS `0/6.0`、音频流0。
+- **下载与核验**：四段Range精确覆盖全文件，每段HTTP206、字节数和ETag核验通过；下载墙钟89.724秒，完成UTC `2026-10-11T13:40:18.140569+00:00`，全部帧解码1.189秒，MP4盒结构 `ftyp/uuid/free/mdat/moov` 完整，落盘哈希独立回读一致，最终 `.part`已改名且不存在。
+- **留档**：完整请求 `C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_guard_hit_v1_6s.request.json`，下载后13,481 bytes，已同步success、usage/cost和报告；英文原词SHA-256 `fc83097a561aee4862ea902d516bb9ee94998d97f06d9213388e4057af87ddf4`未变。下载报告为同目录 `.download.json`，运行/分段记录在 `Library/Locus/tmp/enemy1021_shield_guard_video_v1_6s/runtime.json`、`download_manifest.json`。
+- **视频验收与六帧截取**：用户明确“已验收，请截取有效帧”，要求六帧。145张RGB原始帧已完整解码至 `Library/Locus/tmp/enemy1021_shield_guard_video_v1_6s/frames/clean_raw/`，固定身体ROI差值及逐帧目检定位受力f021..f026和回弹f090..f101；中间f027..f089几乎保持同姿态，不均匀采样整段六秒。
+- **六帧候选**：零基f023/f024/f026/f090/f093/f101，时间0.958/1.000/1.083/3.750/3.875/4.208秒；初次承力→压入→缩颈峰值→回弹→颈肩释放→恢复Idle。目录 `Library/Locus/tmp/enemy1021_shield_guard_video_v1_6s/frames/selected_v1/`，文件 `guard1_f023.png` 至 `guard6_f101.png`。六张源图均960×960 RGB，原始PNG字节与重新解码像素双重核验通过；用户已验收六帧并明确要求开始抠图。源文件未改动，`selected_frames_v1.json` 已记录 `selected_frames_accepted_by_user=true`。
+- **候选交付与留档**：`Library/Locus/tmp/enemy1021_shield_guard_video_v1_6s/frames/GUARD_SELECTED_6_REVIEW_v1.png`、同目录 `GUARD_SELECTED_6_PREVIEW_v1.gif` 已回读附图，选择及哈希记录 `selected_frames_v1.json`。预览使用统一ROI；GIF每帧80ms/一轮480ms只表示候选姿态顺序，不定义源时序或正式Clip。视频与六帧选帧均已验收；透明v3交付后，用户明确“已验收，请接入”，已授权并完成静态接入。
+- **抠图v3（当前交付）**：本地现有SVL Chroma自动取底色，threshold14/softness16/halo1/半透明转不透明；灰底接近甲胄高光，补充底色欧氏距离26、8连通外部背景及逐帧确认的真实空隙清理，并保护内部高光。六张960×960 RGBA位于 `Library/Locus/tmp/enemy1021_shield_guard_video_v1_6s/frames/keyed_gray_v3/`，沿用 `guard1_f023.png` 至 `guard6_f101.png`；原画布与动作位置保留；该透明源目录未裁切、缩放、平移、对齐或重绘，另按既有固定补边规则部署到Assets。无远程生成、安装或新增生成费用。
+- **抠图核验与预览**：六图源/输出哈希回读一致、Alpha仅0/255、透明RGB全0，已识别连通背景及真实空隙泄漏0、距可见轮廓4px的内部RGB改动0。报告 `Library/Locus/tmp/enemy1021_shield_guard_video_v1_6s/frames/guard_matting_verification_gray_v3.json`；白底/棋盘格 `Library/Locus/tmp/enemy1021_shield_guard_video_v1_6s/frames/GUARD_MATTED_6_WHITE_CHECKER_v3.png`、原图/白底/深底细节 `Library/Locus/tmp/enemy1021_shield_guard_video_v1_6s/frames/GUARD_MATTED_SOURCE_WHITE_DARK_DETAILS_v3.png`、GIF `Library/Locus/tmp/enemy1021_shield_guard_video_v1_6s/frames/GUARD_MATTED_6_PREVIEW_v3.gif` 均已回读。GIF80ms/帧仅用于姿态评审，不定义正式Clip。
+- **中间版与验收边界**：`keyed_ui_t14_connectivity_v1/` 与 `keyed_gray_t14_v2/` 因局部近灰高光保护/外部灰边问题被v3替代，试验文件保留。最终透明结果已获用户验收并授权接入；本轮未进入Play Mode或运行自检。
+- **ShieldGuardHit静态接入**：六张透明v3按现有固定 `(74,91)` 偏移零重采样补边至1108×1108，部署为 `Assets/Sprites/Enemy/Enemy1021/Enemy_1021_shieldGuardHit1.png` 至 `Assets/Sprites/Enemy/Enemy1021/Enemy_1021_shieldGuardHit6.png`，源像素保留。导入沿用Idle的Single/PPU16/Point/无压缩/无Mipmaps/Tight/Center；实际Unity导入1024×1024、Sprite PPU14.7870035，与既有动作一致。新建 `Assets/Animations/Enemy_1021_ShieldGuardHit.anim`：30fps、0.30秒非循环，六帧键位0/0.033333/0.066667/0.133333/0.2/0.266667秒，含 `ShieldVisual` null键，无Transform曲线或AnimationEvent。仅替换 `Assets/Animations/Enemy_1021.controller` 的ShieldGuardHit motion，保留exit time 1、duration 0回Idle转场。
+- **接线保存与游戏验收**：Prefab已引用1021控制器与 `blockAnimatorState=ShieldGuardHit`，第一关 `Assets/RouteData/Stage01/N1_ArtPreview_Battle.asset` 已含1021；未修改Prefab、场景、第一关配置、代码或其他动画。报告 `Library/Locus/tmp/enemy1021_shield_guard_deploy_v1/preparation_report.json`、`Library/Locus/tmp/enemy1021_shield_guard_deploy_v1/asset_verification.json` 已回读，补边像素一致、六帧引用完整、Clip/Controller保存及重导入完成。按用户边界，代理未进行Play Mode、动画采样、对象池或画面自检；用户自行开游戏后明确“已验收，更新交接文档准备在其他对话继续任务”，格挡游戏表现验收通过。部署留档已同步 `user_game_acceptance=accepted`、`game_acceptance_pending=false`；后续从 `plan/enemy1021-art-production-handoff.md` 与 `plan/enemy1021-minimal-playable-handoff.md` 继续剩余目标，不重复制作已验收动作。
+
+### Enemy 1021 持盾 Attack 盾撞视频 v1（2026-10-11，素材v2已验收并接入，用户游戏验收通过）
+
+**授权与状态：视频仅生成一次；用户认可盾撞动作但指出整体前移/缩放，确认十二帧后授权抠图和对齐。用户随后明确“已验收，请接入然后等我验收”，现已使用对齐v2补边、导入并接入1021 Attack；用户已完成游戏验收并确认通过。本轮只静态接入，未运行额外自检。后续在其他对话继续1021动画与机制完善。**
+
+- **Task ID**：`task_941e179a2fbd4ee080d0e7c66022469b`；创建 HTTP200，accepted UTC `2026-10-11T06:29:01.914241+00:00`。
+- **规格**：`seedance-2-fast`，4秒/720p/1:1，无音频、无水印、seed=-1。
+- **动作语义**：双膝微屈、右肘收盾蓄势，躯干允许约15–25°小幅侧转；腿腰与右肩带动盾面中上部短促前顶，接触短顿后回收至Idle。双脚原地，镜头固定，盾仍在画面左侧，持盾手隐藏；不加碰撞特效。用户授权此次小幅侧转，不能套用旧模板的“禁止任何躯干转动”。
+- **实际参考**：`C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3_green_v1.png`，1024×1024 RGB，344,540 bytes，SHA-256 `d398a1eb7cd436f8082c6cf7dd7901e59d4f888e757f48b1ac01823f4adf40de`。只上传一次，同一URL作为 `first_frame` 和 `last_frame`，未混普通参考图、未另生关键姿态图。
+- **完整请求留档**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_attack_v1.request.json`；下载前7,857 bytes，下载后已同步 `success`、usage/cost与下载报告路径，原提示词保持不变。负面词追加在 `input.content` 文本中，未使用不支持的 `negative_prompt` 字段；提交文本UTF-8 SHA-256 `fdcb8bff319094b28bc169ea62c3e86fce30b15b28e0af8fb94f9107a014828b`。
+- **轮询记录**：首次查询 UTC `2026-10-11T06:29:03.954831+00:00`，第12次 UTC `2026-10-11T06:30:59.709692+00:00`，全部 `generating`；单次超时20秒、总预算120秒，自动轮询已停止。
+- **运行记录与脚本**：`Library/Locus/tmp/enemy1021_attack_video_v1/runtime.json`；创建脚本 `Library/Locus/tmp/create_enemy1021_attack_video_v1.py` 已执行，勿再次运行。下载脚本 `Library/Locus/tmp/download_enemy1021_attack_video_v1.py` 经curl查询原任务得到success；`Library/Locus/tmp/resume_enemy1021_attack_video_v1.py` 保留前三个完整分段及末段3,327 bytes，只续传缺失615,900 bytes完成下载，未重新生成。
+- **实际成片**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_attack_v1.mp4`，2,476,908 bytes，SHA-256 `ea41b8a47b01b4d9ddea455222d5653f5d93184a4512b5c9ec99e97e0838b404`；H.264、960×960、24fps、97帧、容器时长4.041667秒、末帧PTS4.000秒、音频流0。顶层 `ftyp/uuid/free/mdat/moov` 及全部帧解码通过，最终文件回读哈希一致，`.mp4.part` 已原子改名、不再存在。
+- **下载证据**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_attack_v1.download.json`、`Library/Locus/tmp/enemy1021_attack_video_v1/download_manifest.json`。检查接触表 `Library/Locus/tmp/enemy1021_attack_video_v1/contact_sheet.png` 及0/24/48/72/96检查帧仅用于文件诊断，不是已选生产帧或动作验收结论。
+- **费用与耗时**：上传5.256秒、创建请求2.355秒。原任务返回completion_tokens=87,300、total_tokens=87,300、`cost.spend=0.48888`（币种未知），下载未产生新生成任务。success观察UTC `2026-10-11T06:43:56.565016+00:00`，下载完成UTC `2026-10-11T06:48:25.843527+00:00`。首次Python查询TLS握手超时，换curl成功；Range下载末段超时后续传，续传查询+下载+解码墙钟63.318秒，全部97帧解码约0.980秒。初次下载开始至完成269.278秒含失败与本地恢复准备，不当作纯网络吞吐或模型生成耗时。
+- **帧处理与边界（用户确认12帧后）**：候选帧原始RGB保留于 `Library/Locus/tmp/enemy1021_attack_video_v1/frames/review_candidates_12/`；用户确认12帧后按SVL Chroma T79/softness16/halo1/半透明转不透明处理，报告 `Library/Locus/tmp/enemy1021_attack_video_v1/frames/matting_report_t79.json`。透明未对齐帧位于 `Library/Locus/tmp/enemy1021_attack_video_v1/frames/matted/frames/keyed_ui_t79/`，12帧半透明0、幕布残留0、封闭孔0。
+- **已确认选帧**：零基idx 000/024/032/036/040/048/056/064/072/080/088/096。用户明确要求先选有效帧供验收，再抠图和对齐；这12帧均已获确认，原始RGB字节保留。
+- **尺寸/锚点对齐v2（当前交付）**：用暴露的头盔冠部/眼部实际模板匹配尺寸估算整体倍率，排除被盾遮挡的冠饰；按双靴底接触中点对齐到 `(484.25,780)`。整帧等比缩放，最近邻重采样，保留下蹲/盾前伸/侧身姿态，不按逐帧包围框fit。顶撞阶段源倍率约1.217–1.229，修正比例约0.814–0.822；待机起始帧保持1倍原始抠图像素。输出 `Library/Locus/tmp/enemy1021_attack_video_v1/frames/aligned_v2_960/`，报告 `Library/Locus/tmp/enemy1021_attack_video_v1/frames/alignment_report_v2.json`，v1为已替代的中间版。
+- **核验与评审产物**：`Library/Locus/tmp/enemy1021_attack_video_v1/frames/verification_report_v2.json` 记录12帧960×960 RGBA、Alpha0/255、透明区RGB全0、画布边界完整、底边均780、重新测得脚底中点最大X误差1.75px。接触表 `Library/Locus/tmp/enemy1021_attack_video_v1/frames/ATTACK_ALIGNED_12_WHITE_REVIEW_v2.png`；前后对照 `Library/Locus/tmp/enemy1021_attack_video_v1/frames/ATTACK_ALIGNMENT_BEFORE_AFTER_v2.png`；GIF `Library/Locus/tmp/enemy1021_attack_video_v1/frames/ATTACK_ALIGNMENT_BEFORE_AFTER_v2_preview.gif` 为每帧0.12秒评审预览，不定义游戏时序。正常SVL抠图仍有每帧562–806个gEx>8可见像素；整帧尺度/位置校正无法消除局部透视或重绘变化，仍需用户检查边缘和动作。
+- **Unity接入（素材v2验收后）**：十二张对齐v2帧按固定 `(74,91)` 偏移零重采样补到1108×1108，导入 `Assets/Sprites/Enemy/Enemy1021/Enemy_1021_attack1.png` 至 `Assets/Sprites/Enemy/Enemy1021/Enemy_1021_attack12.png`，导入设置与Idle一致。创建 `Assets/Animations/Enemy_1021_Attack.anim`：30fps、2秒非循环、十二个有效Sprite键，`attack6` 接触姿态在1秒；含旧 `ShieldVisual` 清空键。`Assets/Animations/Enemy_1021.controller` 的Attack motion已替换，原转场保留，Prefab沿用该Controller，第一关 `Assets/RouteData/Stage01/N1_ArtPreview_Battle.asset` 已含1021。
+- **部署留档与边界**：`Library/Locus/tmp/enemy1021_attack_deploy_v1/preparation_report.json` 与 `Library/Locus/tmp/enemy1021_attack_deploy_v1/asset_verification.json` 已回读；补边像素一致、十二个root引用完整、Clip/Controller已保存。没有修改脚本、攻击数值、命中帧声明、Prefab或场景；本轮未进入Play Mode、未做额外运行或画面自检。用户已验收 Attack 通过，后续在其他对话继续。
 
 ## 二、FakeRoute 视频与节点部署状态
 
