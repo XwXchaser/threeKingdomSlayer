@@ -8,6 +8,8 @@ aiEditMode: inherit
 
 # Stab 新画风长枪：三视图进度与制作交接
 
+> **续轮更新（2026-10-12）**：3D 长枪已建模并接入 Unity，戳击路径已切到 3D 枪（但仍未绑骨骼/物理，也未完成完全替换）。后续工作以 `plan/stab-3d-weapon-rigging-handoff.md` 为准。本文保留为三视图/造型阶段的历史记录，其中「尚未部署 3D 长枪」等表述已过期。
+
 ## 1. 当前结论与本轮边界
 
 **最新交付与限制**：用户需要前／左／右／后四张单图及合图。V06单次补左侧已完成，交付 `StabWeaponArtSource/12_AssembledFourViewV06/`：四张384×1024单图、1536×1024无字合图、1856×1440中文标注版及trace。前右后逐字节沿用V5，左侧整体等比对齐，左／右枪尖枪尾高度差0px；所有单图与合图区域逐像素一致。左侧红缨展开和远侧根部遮挡仍待验收。当前入口 `plan/stab-assembled-four-view-v06.md`，校验在交付目录 `delivery_verification.json`。V5五视图及此前评审资料全部保留。
@@ -76,7 +78,7 @@ aiEditMode: inherit
 | 红缨 V02 合图 | `StabWeaponArtSource/05_TasselV02/stab_tassel_orthographic_v02.png`，1536×1024 RGB PNG | 用户批准后单次生成并技术校验，独立红缨完整；侧边距不足，待最终美术验收 |
 | 完整装配三视图 | 尚无对应三视图产物；仅有正面完整母图 | 用户暂缓飘带，草案见 §6，不执行 |
 | 长枪 3D 模型、UV、材质、骨链 | 相关素材目录及 Unity 长枪模型检索未找到交付 | 尚无证据证明完成 |
-| Unity 3D 替换 | `Assets/Prefabs/Stab.prefab` 仍为 `SpriteRenderer + BoxCollider2D` | 尚未部署 3D 长枪 |
+| Unity 3D 替换 | `Assets/Prefabs/Stab.prefab` 仍为 `SpriteRenderer + BoxCollider2D`，仍是 4 类攻击与 QTE 的资产 | **部分部署**：3D 枪 `Assets/Prefabs/FantasySpear3D.prefab` 已建立，5 份 Stab 配置已切换（详情见 `plan/stab-3d-weapon-rigging-handoff.md`）|
 
 历史三视图请求记录记载上轮已批准两组提示词和生成参数；本轮刚性枪体 V02 则是在用户明确回复“请发起生成”后提交，实际只提交一次并返回 HTTP 200。
 
