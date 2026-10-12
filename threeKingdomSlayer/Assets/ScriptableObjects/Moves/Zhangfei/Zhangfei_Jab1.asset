@@ -23,7 +23,7 @@ MonoBehaviour:
   cooldown: 0.3
   actionDuration: 0.45
   launchDuration: 0.2
-  attackWavePrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
+  attackWavePrefab: {fileID: 1326451241060622409, guid: 27d8262bc67b9864ea33c9576052febc, type: 3}
   stabSpawnYOffset: -0.6
   stabSpawnZOffset: -5
   stabVisualReachOffset: 2
@@ -102,6 +102,9 @@ MonoBehaviour:
   hitShakeDuration: 0.1
   hitShakeFrequency: 18
   hitShakeSecondRowScale: 0.6
+  releaseParryEnabled: 0
+  releaseParryProjectileRange: 10
+  releaseParryRangeRows: 1
   pushBackRows: 0
   repeatSelf: 0
   overrideWindow: 1
