@@ -1,0 +1,12 @@
+{
+  "job": "tassel",
+  "stage": "image_verified",
+  "utc_started": "2026-10-11T13:56:38.058125+00:00",
+  "generation_submission_count": 1,
+  "automatic_retry": false,
+  "approved_prompt_sha256": "6ae067ec5d712b2207059c66d8a86ef4b1aaf45d439098b2ac222167fddb86f6",
+  "http_status": 200,
+  "generation_delivered": true,
+  "output_image": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v03/stab_tassel_top_bottom_v03.png",
+  "elapsed_seconds": 93.838
+}

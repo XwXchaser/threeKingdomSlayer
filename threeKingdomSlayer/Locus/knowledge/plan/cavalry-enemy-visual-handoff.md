@@ -10,6 +10,14 @@ aiEditMode: inherit
 
 ## 0. 当前交接状态（2026-10-09 更新）
 
+> ## ⛔ 本节及 §9 的「无去背 / 无 Unity 接线」描述已过时（2026-10-10 推翻）
+>
+> **Enemy 109 的抠图与 Unity 入库已于 2026-10-10 实际完成**：18 张 v6 刺击帧（Attack）已抠图并作为**新精灵**入库，同时 MountedIdle / Windup / Charging 各 6 张被同一次部署重写，共 36 张（18 替换 + 18 新建）。现行配方为 `T=79 / softness 16 / halo 1 / 半透明转不透明`（旧的 `T=100 / softness 0 / 描边环替换` 已作废）。
+>
+> **最新权威起点**：`Locus/knowledge/plan/enemy109-matting-unity-handoff-20261010.md`。
+> 当前唯一主要缺口是 **Attack / Windup / Charging 的动画接线（Clip / controller / prefab）**——素材已在库，动画未建。
+> 本文件与上述文件冲突时，**以 `enemy109-matting-unity-handoff-20261010.md` 为准**。
+
 **最新：v6边界控制版已生成并通过全帧边界检查，18张6+6+6原始关键帧已导出，等待用户动作帧验收。** task `task_1bcb08e0d51d4df8bd09c9388f4b7d4b`；全145帧最低边距48/98/70/60px，要求32px。核心伤害组保留f075/f076/f078/f080/f081/f082；v5及12/24帧保留为历史。详见§10.14。
 
 | 项目 | 实际状态 | 下一会话边界 |

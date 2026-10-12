@@ -1,0 +1,115 @@
+{
+    "new_left_source":  "C:\\Users\\Administrator\\Pictures\\gptGen\\stab_assembled_left_view_v06\\stab_assembled_left_view_v06.png",
+    "normalization":  {
+                          "uniform_scale":  0.6825396825396826,
+                          "offset_x":  -164.27777777777777,
+                          "offset_y":  -3.984126984126984,
+                          "source_size":  [
+                                              1024,
+                                              1536
+                                          ],
+                          "target_size":  [
+                                              384,
+                                              1024
+                                          ],
+                          "target_tip_y":  24,
+                          "target_butt_y":  970,
+                          "target_shaft_center_x":  184.5,
+                          "method":  "Single uniform whole-image scaling plus white canvas placement; no mirror, rotation or component stretching. Only blank canvas is cropped.",
+                          "filter":  "NearestNeighbor"
+                      },
+    "view_order":  [
+                       "front",
+                       "left",
+                       "right",
+                       "back"
+                   ],
+    "cells":  [
+                  {
+                      "view":  "front",
+                      "size":  [
+                                   384,
+                                   1024
+                               ],
+                      "plain_rect":  [
+                                         0,
+                                         0,
+                                         384,
+                                         1024
+                                     ],
+                      "annotated_rect":  [
+                                             40,
+                                             174,
+                                             384,
+                                             1024
+                                         ]
+                  },
+                  {
+                      "view":  "left",
+                      "size":  [
+                                   384,
+                                   1024
+                               ],
+                      "plain_rect":  [
+                                         384,
+                                         0,
+                                         384,
+                                         1024
+                                     ],
+                      "annotated_rect":  [
+                                             504,
+                                             174,
+                                             384,
+                                             1024
+                                         ]
+                  },
+                  {
+                      "view":  "right",
+                      "size":  [
+                                   384,
+                                   1024
+                               ],
+                      "plain_rect":  [
+                                         768,
+                                         0,
+                                         384,
+                                         1024
+                                     ],
+                      "annotated_rect":  [
+                                             968,
+                                             174,
+                                             384,
+                                             1024
+                                         ]
+                  },
+                  {
+                      "view":  "back",
+                      "size":  [
+                                   384,
+                                   1024
+                               ],
+                      "plain_rect":  [
+                                         1152,
+                                         0,
+                                         384,
+                                         1024
+                                     ],
+                      "annotated_rect":  [
+                                             1432,
+                                             174,
+                                             384,
+                                             1024
+                                         ]
+                  }
+              ],
+    "plain_size":  [
+                       1536,
+                       1024
+                   ],
+    "annotated_size":  [
+                           1856,
+                           1440
+                       ],
+    "preserved_v5_images":  true,
+    "no_mirror_or_component_stretching":  true
+}

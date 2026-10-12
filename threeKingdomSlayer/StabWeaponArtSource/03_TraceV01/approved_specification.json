@@ -1,0 +1,55 @@
+{
+  "status": "prepared_for_user_approval_not_submitted",
+  "reference_image": "C:/Users/Administrator/Pictures/gptGen/stab_original_shape_restyle_v01_retry02/stab_original_shape_restyle_v01_retry02.png",
+  "reference_role": "Current accepted weapon identity, proportions, colors, material language and ribbon silhouette. No older Stab versions or character images are uploaded for these views.",
+  "output_directory": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01",
+  "remote_generation_count": 2,
+  "common_parameters": {
+    "model": "gpt-image-2.5-sunburst",
+    "endpoint": "https://api.muskapis.com/v1/images/edits",
+    "size": "1536x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "background": "opaque",
+    "output_format": "png",
+    "n": 1
+  },
+  "transport": "Direct HTTPS; no proxy and no automatic repeated generation after an unknown outcome.",
+  "jobs": [
+    {
+      "name": "body",
+      "prompt_zh": "只参考输入图片中当前已认可的长枪造型，制作不含红缨或飘带的枪体正交三视图。保留尖叶形钢枪头、中央脊线、金绿交叉连接件、短银色连接段、连续红棕直杆和金色几何枪尾。移除全部红色布料，并合理补全原被布料遮挡的枪体；不新增把手、零件或装饰。\n\n输出1536×1024白底图片，分成三个等宽的无边框区域：左区正面，中区右侧面，右区背面。每区只展示一个完整枪体，主体留在本区内，枪尖和枪尾均留边距。三个视角是同一个固定物体的0度、90度、180度正交投影，同尺度，枪尖、连接件和枪尾处于相同高度，不是三种设计。\n\n枪头为有中央脊线的薄双刃钢片，侧面显示真实厚度和削薄刃口；枪杆为圆形直杆，侧背面不得改变长度和直径；连接套及其金绿装饰贴合枪轴连续，背面只补合理的同类结构。保留当前材质和高清像素色簇，使用清楚中性的明暗，不将像素阶梯解释为实体锯齿。不得出现飘带、人物、文字、标签、尺寸线、坐标轴、分隔线、透视、额外局部图或不同尺寸的重复部件。",
+      "prompt_en": "Use only the currently accepted spear in the input image. Produce orthographic front, right and back views of the rigid weapon body WITHOUT any red tassel or ribbon. Preserve its pointed leaf-shaped steel head, central ridge, gold-and-dark-green crossed connector, short silver connection, continuous red-brown pole and angular gold butt ornament. Remove all red cloth and plausibly complete the body it occluded. Add no handle, new component or decoration.\n\nOutput a white 1536x1024 image with three equal-width unbordered regions: front on the left, right side in the center, back on the right. Show one complete body per region, entirely within that region with margin above the tip and below the butt. These are 0, 90 and 180 degree orthographic projections of the SAME fixed object, at identical scale and aligned tip, connector and butt heights, not three designs.\n\nThe head is a thin double-edged steel blade with a central ridge; the side reveals thickness and tapered edges. The pole is round and straight, with unchanged diameter and length in every view. Keep the gold-green connector coherent around its axis; supplement only plausible matching hidden surfaces. Preserve existing materials and high-definition pixel clusters under clear neutral shading. Pixel stair steps are not physical saw teeth. No cloth, character, text, labels, dimension lines, axes, dividers, perspective, detail insets or differently scaled duplicates."
+    },
+    {
+      "name": "ribbon",
+      "prompt_zh": "只提取输入图片中右侧现有的单根朱红飘带，制作独立飘带的正交三视图。保留现有长度、宽窄变化、外展后弯回的轮廓、一个连接根部和一个主要尾端，不缩短，不换造型。完整保留根部红色收束部分，去掉所有枪头、枪套、金属件、枪杆和枪尾。\n\n输出1536×1024白底图片，分成三个等宽的无边框区域：左区正面，中区右侧面，右区背面。三个视角显示同一条固定静止飘带的0度、90度、180度正交投影，根部和尾端高度对齐，同一尺度，只改变观察方向；不得每个视角重新飘出不同姿态。各主体留在自己的区域内，上下留边距。\n\n补定其为一片连续、很薄、带浅折面的柔性布带，有克制的前后起伏，保持现有正面剪影；不是粗绳、实心雕塑或多根粘连物。侧面显示薄片边缘、浅折面和前后深度，不继续画成正面的宽幅轮廓；背面显示相同布带的反面折面和相同根部，不增加缝线、衬里、系带或第二个尾端。使用朱红主面、深红折面和少量橙红高光，保持当前高清像素色簇。不得出现枪体、环扣、人物、文字、骨骼、尺寸线、坐标轴、分隔线、透视、分叉、自交或额外飘带。",
+      "prompt_en": "Extract ONLY the existing single vermilion ribbon on the viewer's right of the input spear. Produce isolated orthographic ribbon views. Preserve its current length, width variation, outward-then-returning curve, one attachment root and one main terminal tip. Do not shorten or redesign it. Include the complete red gathered root, but remove the spearhead, socket, all metal fittings, shaft and butt.\n\nOutput a white 1536x1024 image in three equal-width unbordered regions: front left, right side center, back right. Show 0, 90 and 180 degree orthographic projections of the SAME ribbon in one fixed static pose, at identical scale with aligned root and terminal heights. Only the viewing direction changes. Do not invent a different waving pose for each view. Keep each subject inside its region with margins above and below.\n\nResolve it as one continuous very thin flexible cloth surface with shallow folds and restrained depth variation, preserving the existing front silhouette, not a thick cord, solid sculpture or fused streamers. The side shows its thin edge, shallow folds and depth instead of repeating the broad front silhouette. The back shows the reverse folds and same root, without new seams, lining, ties or another tail. Preserve vermilion planes, deep red folds, restrained orange highlights and current high-definition pixel clusters. No weapon body, clasps, character, text, bones, dimension lines, axes, dividers, perspective, branching, self-crossing or extra ribbon."
+    }
+  ],
+  "negative_zh": "三种不同设计、视角间换姿态或比例、斜透视、3/4视角、多余零件、把手、青龙、盘蛇、额外飘带、粗绳、实心红色雕塑、文字、标签、尺寸线、骨骼、背景场景、分隔线、跨区域裁切主体、光效、残影。",
+  "negative_en": "Three different designs, changed pose or scale between views, perspective, three-quarter view, extra components, handle, coiled dragon or serpent, extra streamers, thick cord, solid red sculpture, text, labels, dimension lines, bones, scenery, dividers, subjects cropped across regions, glow, motion trails.",
+  "export_rules": {
+    "independent_pngs": [
+      "body/front.png",
+      "body/right.png",
+      "body/back.png",
+      "ribbon/front.png",
+      "ribbon/right.png",
+      "ribbon/back.png"
+    ],
+    "each_view_size": "512x1024",
+    "method": "Crop each equal-width region without stretching or independently changing scale/vertical placement. Inspect all subjects for clipping and cross-view consistency before exporting.",
+    "assembled_reference": "assembly_reference.png is an unchanged copy of the accepted input image, not an additional generated view.",
+    "trace_directory": "source_boards/ contains original generated boards, prompts, requests, responses and verification; it is separate from the six independent delivery images.",
+    "acceptance_checks": [
+      "Correct isolated component and correct front/right/back views",
+      "Same scale and aligned key heights within each set",
+      "Consistent geometry, attachments and ribbon pose",
+      "No weapon parts on ribbon images and no cloth on body images",
+      "Complete subject with clean white background",
+      "No unintended redesign or duplicated components"
+    ],
+    "limitations": "Hidden side/back surfaces are proposed completions from a single-view source. Generated views require visual consistency checks; image generation cannot guarantee exact mathematical projections."
+  }
+}

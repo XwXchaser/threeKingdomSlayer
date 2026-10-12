@@ -1,0 +1,31 @@
+{
+  "delivery_root": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01",
+  "generation_count": 2,
+  "http_statuses": {"body": 200, "ribbon": 200},
+  "method": "Each 1536x1024 board cropped into three equal 512x1024 regions. No stretching, resampling, synthetic view rotation or per-view repositioning.",
+  "view_order": ["front", "right", "back"],
+  "independent_images": [
+    "body/front.png",
+    "body/right.png",
+    "body/back.png",
+    "ribbon/front.png",
+    "ribbon/right.png",
+    "ribbon/back.png"
+  ],
+  "each_image_size": [512, 1024],
+  "each_image_format": "RGB PNG",
+  "all_crop_pixels_verified_against_source_board": true,
+  "all_subjects_have_margin_from_crop_edges": true,
+  "all_six_final_files_read_for_visual_review": true,
+  "assembly_reference": "assembly_reference.png",
+  "assembly_reference_source": "C:/Users/Administrator/Pictures/gptGen/stab_original_shape_restyle_v01_retry02/stab_original_shape_restyle_v01_retry02.png",
+  "assembly_reference_is_unchanged_copy": true,
+  "trace_only_directory": "source_boards",
+  "visual_limitations": [
+    "Front and back weapon head have a small shoulder change compared with the assembly reference.",
+    "Ribbon side depth and back folds are inferred design completions from one front reference.",
+    "Ribbon view root/terminal vertical bounds differ by approximately 4/9 pixels, and local folds are not exact projections."
+  ],
+  "user_acceptance_pending": true,
+  "unity_assets_modified": false
+}

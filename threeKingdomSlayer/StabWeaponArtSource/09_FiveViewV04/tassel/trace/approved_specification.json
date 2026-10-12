@@ -1,0 +1,198 @@
+{
+  "status": "prepared_for_user_approval_not_submitted",
+  "authorization": "V03 authorization was used for exactly two failed projection attempts. Revised V04 prompts and new camera-guide references require explicit approval before either additional request.",
+  "remote_generation_count": 0,
+  "planned_generation_count": 2,
+  "previous_failed_archive": "StabWeaponArtSource/07_TopBottomV03_Failed",
+  "handoff_document": "Locus/knowledge/plan/stab-top-bottom-v04-revision.md",
+  "common_parameters": {
+    "model": "gpt-image-2.5-sunburst",
+    "endpoint": "https://api.muskapis.com/v1/images/edits",
+    "size": "1536x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "background": "opaque",
+    "output_format": "png",
+    "n": 1
+  },
+  "coordinate_system": {
+    "positive_y": "toward spear tip / tassel root",
+    "positive_x": "right in front view",
+    "positive_z": "toward front observer",
+    "top": {
+      "view_direction": "-Y",
+      "screen_right": "+X",
+      "screen_up": "-Z"
+    },
+    "bottom": {
+      "view_direction": "+Y",
+      "screen_right": "+X",
+      "screen_up": "+Z"
+    }
+  },
+  "jobs": [
+    {
+      "name": "body",
+      "status": "prepared_for_user_approval_not_submitted",
+      "references": [
+        {
+          "name": "A",
+          "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/StabWeaponArtSource/04_BodyV02/stab_body_orthographic_v02.png",
+          "sha256": "c108a368fbe8a4bc028c214705d243eafa84ffd9b4f66f330242b87d1d7a130b",
+          "role": "Object geometry, pose, thickness and material identity from the unchanged V02 sheet. Do not generate the original three views again."
+        },
+        {
+          "name": "B",
+          "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/StabWeaponArtSource/08_TopBottomV04Preparation/end_on_camera_guide.png",
+          "sha256": "f7bb3c56c54a0da6b366cab76734973ff59b2e35751a4d68fa4f6bbf512b2ed0",
+          "role": "Camera direction only: +/-Y projection collapses Y length, leaving X width and Z depth. Guide block, arrows and text are not target geometry or output."
+        }
+      ],
+      "reference_image": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/StabWeaponArtSource/04_BodyV02/stab_body_orthographic_v02.png",
+      "reference_sha256": "c108a368fbe8a4bc028c214705d243eafa84ffd9b4f66f330242b87d1d7a130b",
+      "reference_user_acceptance": "accepted",
+      "proposed_output_directory": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v04",
+      "proposed_output_image": "stab_body_top_bottom_v04.png",
+      "prompt_zh": "这是沿长枪轴线观察的两个端向正交图。最重要：枪身长度Y完全沿摄像机视线消失，画面只保留X宽度和Z厚度。不能出现长红棕枪杆，不能把枪头、枪套、枪杆、枪尾从上到下串成一把缩短的枪；不能出现斜视、俯视透视或长幅正面。\n\n参考A的三视图只决定同一把枪的造型、厚度和材质：冷银双刃片和中央脊、金绿枪套、圆杆、金色尾鐏。参考B只决定摄像机沿±Y的方向和长度压缩原则，灰色块、文字、箭头均不属于目标，不复制。\n\n左区TOP：从枪尖上方沿−Y正交看向枪尾。右区BOTTOM：从枪尾下方沿+Y正交看向枪尖。顶视画面右为+X、上为−Z；底视画面右为+X、上为+Z。两图都是同一完整物体的X–Z投影，轮廓紧凑。侧面和正面的枪刃都不得重复显示；枪刃在端向中只贡献沿X的宽度和沿Z的脊厚，不出现沿Y的尖叶形全长。枪杆投影为圆形区域并被较近零件正常遮挡，不表现成长条。\n\n用正常遮挡表现银色刃面、金绿连接件和金色尾件可见的端向表面，所有零件同轴重叠，不分拆，不剖切，不透视隐藏零件。同一物体的顶底外轮廓在屏幕上下镜像后应对应，不能变成两个尺寸或两种设计；两侧可见材质和遮挡面可以不同。不新增孔洞、装饰或握套。\n\n生成1536×1024纯白不透明PNG，左TOP、右BOTTOM两个768×1024等宽无边框区域，每区一个投影。两个投影中心对齐、同尺度、可共同放大，四边至少64像素边距。沿用A的高清像素色簇、中性光照和金属体积。最终图不要文字、箭头、标线、轴、边框、人物、红缨或背景；中文解释随后本地添加。",
+      "prompt_en": "Create TWO ORTHOGRAPHIC END-ON views looking directly ALONG the spear's long axis. PRIMARY RULE: the entire Y length collapses into the camera line of sight; only X width and Z depth remain in the picture. No long red-brown pole. Do not arrange head, socket, pole and butt sequentially down the image as a shortened spear. No oblique overhead, perspective or tall front view.\n\nReference A's three views define the SAME spear's identity, thickness and materials: cool silver double-edged blade and central ridge, gold-green socket, round pole, angular gold butt. Reference B defines ONLY the +/-Y camera direction and length-collapse principle. Its grey block, arrows and words are not target geometry and must not be copied.\n\nLeft TOP looks orthographically from above the tip along -Y toward the butt. Right BOTTOM looks from below the butt along +Y toward the tip. Screen-right is +X in both; screen-up is -Z for top and +Z for bottom. Both are compact X-Z projections of the SAME complete object. Do not repeat the front or side blade. The blade contributes only its X width and Z ridge thickness end-on, never its leaf-shaped Y length. The pole projects as a circular region normally occluded by closer components, never a long strip.\n\nShow only visible silver, gold-green and gold end surfaces under normal occlusion, with all components overlapping coaxially. Do not separate, cut away or x-ray parts. Opposite orthographic views of the same opaque object have corresponding external silhouettes after a vertical screen reflection: no different sizes or designs. Visible surfaces, materials and occlusion order may differ. Add no holes, ornaments or grip.\n\nOutput one opaque pure-white 1536x1024 PNG with two equal unbordered 768x1024 regions: TOP left, BOTTOM right, one projection each. Match center and scale; both may share one enlargement. Leave at least 64 pixels on every edge. Retain A's high-definition pixel clusters, neutral lighting and metal volume. No text, arrows, lines, axes, borders, characters, tassels or scenery. Chinese captions will be added locally afterward.",
+      "prompt_zh_sha256": "9db1118e046f1b05f9d9b318a2ed423eb9e31a68e0033c61d03f7fa60f5a6827",
+      "prompt_en_sha256": "ab1856511fa133e17df6fd8d0ca829b30cb82bee12fd664207fe169244a0a179",
+      "negative_zh": "竖长正面、根在上尾在下的全长红缨、长枪杆、枪头枪套枪杆枪尾顺序排列、斜俯视、3/4透视、透视缩短、横放正面、二维旋转、剖切、爆炸图、X光隐藏面、不同姿态、不同轮廓尺寸、额外物体、复制方向图灰色块或箭头、文字、标签、轴、线、边框、人物、场景、阴影、光效。\n\n红缨、布料。",
+      "negative_en": "Tall front view, full-length tassel with root above and terminal below, long shaft, head/socket/pole/butt arranged sequentially, oblique overhead, three-quarter perspective, foreshortened perspective, front laid sideways, 2D rotation, cutaway, exploded diagram, x-ray hidden surfaces, changed pose or silhouette size, extra objects, copied grey guide block or arrows, text, labels, axes, lines, borders, characters, scenery, cast shadow, glow.\n\nTassels, cloth.",
+      "remote_generation_count": 0
+    },
+    {
+      "name": "tassel",
+      "status": "prepared_for_user_approval_not_submitted",
+      "references": [
+        {
+          "name": "A",
+          "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/StabWeaponArtSource/05_TasselV02/stab_tassel_orthographic_v02.png",
+          "sha256": "d5d59dcbad2fb4674c64a6f4be3e167f2ad488852c382d9e4bfa2cd9743373a7",
+          "role": "Object geometry, pose, thickness and material identity from the unchanged V02 sheet. Do not generate the original three views again."
+        },
+        {
+          "name": "B",
+          "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/StabWeaponArtSource/08_TopBottomV04Preparation/end_on_camera_guide.png",
+          "sha256": "f7bb3c56c54a0da6b366cab76734973ff59b2e35751a4d68fa4f6bbf512b2ed0",
+          "role": "Camera direction only: +/-Y projection collapses Y length, leaving X width and Z depth. Guide block, arrows and text are not target geometry or output."
+        }
+      ],
+      "reference_image": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/StabWeaponArtSource/05_TasselV02/stab_tassel_orthographic_v02.png",
+      "reference_sha256": "d5d59dcbad2fb4674c64a6f4be3e167f2ad488852c382d9e4bfa2cd9743373a7",
+      "reference_user_acceptance": "not_yet_recorded",
+      "proposed_output_directory": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v04",
+      "proposed_output_image": "stab_tassel_top_bottom_v04.png",
+      "prompt_zh": "这是沿红缨根部到尾端竖轴观察的两个端向正交图。最重要：Y长度沿摄像机视线完全压缩；画面只保留X横向展开和Z浅深度。不要画根部在上、长尖尾在下的竖长红缨，不重复正面、背面或侧面，不把正面图旋转成横长图，不展平或改造布片。\n\n参考A三视图锁定同一根朱红布缨的单根收束根、连续薄布面、主尖尾、外展回弯姿态和折面。参考B只解释摄像机沿±Y、Y长度消失的观察原则；灰色块、箭头和文字不是目标造型，不复制。仅显示布缨，不出现枪体或金属件。\n\n左TOP从固定根上方沿−Y正交看向尾端；右BOTTOM从尾端下方沿+Y正交看向固定根。画面右均为+X，顶视上为−Z，底视上为+Z。保持原静止姿态，让根部、折面和尾端沿视线叠合，呈现布片实际在X–Z平面的紧凑横向投影。根部和尾端可以有X偏移，但Y不能表现成画面长轴。\n\n用正常遮挡显示连续薄布的浅褶、边缘和可见面；不是粗绳、实体雕塑或分叉流苏。两个投影共同的占据轮廓在屏幕上下镜像后对应，只改变可见折面和遮挡先后，不换风吹姿态、不改长度或布厚。不要新增尾端、环扣或结构。采用朱红面、深红折面和克制橙红高光，沿用A的高清像素色簇。\n\n生成1536×1024纯白不透明PNG，左TOP、右BOTTOM两个768×1024等宽无边框区域，每区一个完整端向投影。同尺度、根部基准可比较、可以成对放大，四边至少64像素余量。中性光照，轮廓完整。不要文字、箭头、标线、轴、边框、人物、枪体、金属、光效或背景；中文解释随后本地添加。",
+      "prompt_en": "Create TWO ORTHOGRAPHIC END-ON views looking directly along the tassel's vertical root-to-terminal axis. PRIMARY RULE: its Y length fully collapses along the camera sight line; only X lateral spread and shallow Z depth remain. Do not draw a tall tassel with root above and long pointed tail below. Do not repeat front, back or side views, rotate a front drawing horizontally, flatten or redesign the cloth.\n\nReference A's three views lock the SAME vermilion tassel: one gathered root, one continuous thin cloth surface, one main terminal, its outward-returning static pose and folds. Reference B explains ONLY the +/-Y camera and the loss of Y length. Its grey block, arrows and words are not target design and must not be copied. Show only the tassel, no weapon or metal parts.\n\nLeft TOP looks orthographically from above the root along -Y toward the terminal. Right BOTTOM looks from below the terminal along +Y toward the root. Screen-right is +X in both; screen-up is -Z for top and +Z for bottom. Preserve the static pose and overlap root, folds and terminal along the sight line to form the compact lateral X-Z footprint of the cloth. Root and terminal may differ in X, but Y cannot appear as the image long axis.\n\nUse normal occlusion to show shallow folds, thin edges and visible cloth surfaces, not a thick rope, solid sculpture or branching streamers. The two occupied outer silhouettes correspond after a vertical screen reflection; only visible folds and occlusion order change. No different wind-blown poses, length or thickness. Add no terminal, clasp or structure. Use vermilion planes, deep-red folds and restrained orange-red highlights with A's high-definition pixel clusters.\n\nOutput one opaque pure-white 1536x1024 PNG with two equal unbordered 768x1024 regions: TOP left, BOTTOM right, exactly one complete end-on view each. Match scale and comparable root datum; both may share one enlargement. Leave at least 64 pixels on every edge. Use neutral light and complete clean silhouettes. No text, arrows, lines, axes, borders, characters, weapon, metal, glow or scenery. Chinese captions will be added locally afterward.",
+      "prompt_zh_sha256": "7c51a364a9b92c84dcbcc9f8d473e699bfa93180b31f3635ada4241da129d039",
+      "prompt_en_sha256": "069d80cb2b8cf413322ac742862f6b8fd104824213f1fa5453edc5cd7dea09da",
+      "negative_zh": "竖长正面、根在上尾在下的全长红缨、长枪杆、枪头枪套枪杆枪尾顺序排列、斜俯视、3/4透视、透视缩短、横放正面、二维旋转、剖切、爆炸图、X光隐藏面、不同姿态、不同轮廓尺寸、额外物体、复制方向图灰色块或箭头、文字、标签、轴、线、边框、人物、场景、阴影、光效。\n\n枪体、金属件。",
+      "negative_en": "Tall front view, full-length tassel with root above and terminal below, long shaft, head/socket/pole/butt arranged sequentially, oblique overhead, three-quarter perspective, foreshortened perspective, front laid sideways, 2D rotation, cutaway, exploded diagram, x-ray hidden surfaces, changed pose or silhouette size, extra objects, copied grey guide block or arrows, text, labels, axes, lines, borders, characters, scenery, cast shadow, glow.\n\nWeapon body, metal parts.",
+      "remote_generation_count": 0
+    }
+  ],
+  "export_rules": {
+    "new_view_order": [
+      "top",
+      "bottom"
+    ],
+    "each_generated_view_size": [
+      768,
+      1024
+    ],
+    "method": "Crop equal-width regions without resampling, retain original three-view sheets. Add all Chinese captions locally.",
+    "main_views": "Native 512x1024 fixed crops; no individual geometry alterations.",
+    "end_views": "May share one common enlarged scale per object, explicitly annotated; never per-view independent scaling."
+  },
+  "layout": {
+    "size": [
+      2560,
+      1760
+    ],
+    "font_family": "Microsoft YaHei",
+    "main_cells": [
+      {
+        "x": 64,
+        "y": 186,
+        "width": 512,
+        "height": 1024
+      },
+      {
+        "x": 656,
+        "y": 186,
+        "width": 512,
+        "height": 1024
+      },
+      {
+        "x": 1248,
+        "y": 186,
+        "width": 512,
+        "height": 1024
+      }
+    ],
+    "new_cells": [
+      {
+        "x": 1840,
+        "y": 186,
+        "width": 640,
+        "height": 380
+      },
+      {
+        "x": 1840,
+        "y": 916,
+        "width": 640,
+        "height": 380
+      }
+    ],
+    "view_labels": [
+      "正面 FRONT",
+      "右侧 RIGHT",
+      "背面 BACK",
+      "顶视 TOP",
+      "底视 BOTTOM"
+    ],
+    "placeholder": "待生成",
+    "placeholder_note": "尚无该视图，本格仅为排版占位",
+    "common_footer": [
+      "坐标：+Y向枪尖／红缨根部；+X为正面右；+Z朝正面观察者。",
+      "顶视沿−Y看：画面右+X，上−Z；底视沿+Y看：画面右+X，上+Z。",
+      "长幅三图保持原像素；端向图可成对放大并标明，不能独立改尺寸。",
+      "端向投影遵循正常遮挡；隐藏面是合理补定，严格对应需同一模型正交渲染。"
+    ],
+    "body": {
+      "title": "长枪本体｜五视图建模说明板",
+      "subtitle": "排版草稿：已验收正／侧／背保持原图，顶／底待生成",
+      "captions": [
+        "锁定全枪轮廓和分段比例：双刃枪头、金绿连接件、红棕直杆与金色尾鐏。",
+        "检查中央刃脊、刃口厚度、圆杆及尾件深度；侧面应比正面窄。",
+        "检查同一刃片的背面与金绿箍绕轴连续关系；零件数量和高度一致。",
+        "从枪尖上方沿−Y看向枪尾，检查刃宽／厚度和连接件端向轮廓；正常遮挡。",
+        "从枪尾下方沿+Y看向枪尖，检查尾鐏截形与同轴装配；不展开后方零件。"
+      ],
+      "datum_note": "顶／底属于X–Z端向投影。端向可成对放大，标注“端向放大”。",
+      "draft_image": "StabWeaponArtSource/06_FiveViewPreparation/body_five_view_draft.png",
+      "final_subtitle": "正／侧／背保留V02原像素；顶／底为新增端向参考，待验收",
+      "final_note": "顶／底采用同一显示倍率；与长幅三图像素尺度不同。新增端向图是二维补定，待形体验收。"
+    },
+    "tassel": {
+      "title": "红缨单体｜五视图建模说明板",
+      "subtitle": "排版草稿：当前正／侧／背为候选参考，顶／底待生成",
+      "captions": [
+        "锁定一个收束根、一片连续布面、一个主尖尾，以及外展后回弯轮廓。",
+        "检查前后起伏、浅折面和薄边；不能把宽正面重复成侧面。",
+        "检查同一布片的反面折面和同一根部；保持长度与静止姿态。",
+        "从固定根上方沿−Y看向尾端，检查布片在X–Z平面的展开与前后起伏。",
+        "从尾端下方沿+Y看向根部，检查同一片布的折面重叠；姿态不变。"
+      ],
+      "datum_note": "薄布叠合可形成投影宽度；不要建成粗绳或实心雕塑。",
+      "draft_image": "StabWeaponArtSource/06_FiveViewPreparation/tassel_five_view_draft.png",
+      "final_subtitle": "正／侧／背保留V02原像素；顶／底为新增端向参考，待验收",
+      "final_note": "顶／底采用同一显示倍率；与长幅三图像素尺度不同。新增端向图是二维补定，待形体验收。"
+    }
+  },
+  "planned_final_directory": "StabWeaponArtSource/09_FiveViewV04",
+  "submission_policy": "After approval, at most one new request for each approved object. No automatic retry or model fallback.",
+  "primary_acceptance": "Y length is absent from image; compact X-Z end projection; opposite silhouettes correspond after vertical screen reflection; no long shaft or full-height tassel.",
+  "limitations": "2D-inferred structure, not mesh-rendered or certified CAD geometry."
+}

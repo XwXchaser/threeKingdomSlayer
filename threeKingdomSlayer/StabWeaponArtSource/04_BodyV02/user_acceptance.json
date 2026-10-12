@@ -1,0 +1,9 @@
+{
+  "status": "user_accepted",
+  "asset": "StabWeaponArtSource/04_BodyV02/stab_body_orthographic_v02.png",
+  "sha256": "c108a368fbe8a4bc028c214705d243eafa84ffd9b4f66f330242b87d1d7a130b",
+  "evidence": "用户针对已交付的刚性长枪V02合图回复：已验收，请制作红缨的三视图。",
+  "scope": "Acceptance applies to the rigid spear V02 reference sheet. It does not declare a mesh, rig, Unity deployment or red tassel sheet accepted.",
+  "generation_trace_policy": "Historical request, verification and archive manifest remain unchanged. This file records the later user acceptance separately.",
+  "next_task": "Locus/knowledge/plan/stab-tassel-three-view-generation-prompts.md"
+}

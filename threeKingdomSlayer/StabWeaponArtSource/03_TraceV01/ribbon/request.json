@@ -1,0 +1,21 @@
+{
+  "job": "ribbon",
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "parameters": {
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "background": "opaque",
+    "output_format": "png",
+    "n": 1,
+    "prompt": "只提取输入图片中右侧现有的单根朱红飘带，制作独立飘带的正交三视图。保留现有长度、宽窄变化、外展后弯回的轮廓、一个连接根部和一个主要尾端，不缩短，不换造型。完整保留根部红色收束部分，去掉所有枪头、枪套、金属件、枪杆和枪尾。\n\n输出1536×1024白底图片，分成三个等宽的无边框区域：左区正面，中区右侧面，右区背面。三个视角显示同一条固定静止飘带的0度、90度、180度正交投影，根部和尾端高度对齐，同一尺度，只改变观察方向；不得每个视角重新飘出不同姿态。各主体留在自己的区域内，上下留边距。\n\n补定其为一片连续、很薄、带浅折面的柔性布带，有克制的前后起伏，保持现有正面剪影；不是粗绳、实心雕塑或多根粘连物。侧面显示薄片边缘、浅折面和前后深度，不继续画成正面的宽幅轮廓；背面显示相同布带的反面折面和相同根部，不增加缝线、衬里、系带或第二个尾端。使用朱红主面、深红折面和少量橙红高光，保持当前高清像素色簇。不得出现枪体、环扣、人物、文字、骨骼、尺寸线、坐标轴、分隔线、透视、分叉、自交或额外飘带。\n\nEnglish version of the same approved brief:\n\nExtract ONLY the existing single vermilion ribbon on the viewer's right of the input spear. Produce isolated orthographic ribbon views. Preserve its current length, width variation, outward-then-returning curve, one attachment root and one main terminal tip. Do not shorten or redesign it. Include the complete red gathered root, but remove the spearhead, socket, all metal fittings, shaft and butt.\n\nOutput a white 1536x1024 image in three equal-width unbordered regions: front left, right side center, back right. Show 0, 90 and 180 degree orthographic projections of the SAME ribbon in one fixed static pose, at identical scale with aligned root and terminal heights. Only the viewing direction changes. Do not invent a different waving pose for each view. Keep each subject inside its region with margins above and below.\n\nResolve it as one continuous very thin flexible cloth surface with shallow folds and restrained depth variation, preserving the existing front silhouette, not a thick cord, solid sculpture or fused streamers. The side shows its thin edge, shallow folds and depth instead of repeating the broad front silhouette. The back shows the reverse folds and same root, without new seams, lining, ties or another tail. Preserve vermilion planes, deep red folds, restrained orange highlights and current high-definition pixel clusters. No weapon body, clasps, character, text, bones, dimension lines, axes, dividers, perspective, branching, self-crossing or extra ribbon.\n\nNegative constraints:\n三种不同设计、视角间换姿态或比例、斜透视、3/4视角、多余零件、把手、青龙、盘蛇、额外飘带、粗绳、实心红色雕塑、文字、标签、尺寸线、骨骼、背景场景、分隔线、跨区域裁切主体、光效、残影。\n\nThree different designs, changed pose or scale between views, perspective, three-quarter view, extra components, handle, coiled dragon or serpent, extra streamers, thick cord, solid red sculpture, text, labels, dimension lines, bones, scenery, dividers, subjects cropped across regions, glow, motion trails."
+  },
+  "reference_image": "C:\\Users\\Administrator\\Pictures\\gptGen\\stab_original_shape_restyle_v01_retry02\\stab_original_shape_restyle_v01_retry02.png",
+  "reference_role": "Current accepted weapon identity, proportions, colors, material language and ribbon silhouette. No older Stab versions or character images are uploaded for these views.",
+  "reference_sha256": "6475df45a489976d0de95f042235d4080e1adf36c18c54f639dbd231ec46c9ae",
+  "output_image": "C:\\Users\\Administrator\\Pictures\\gptGen\\stab_orthographic_refs_v01\\source_boards\\ribbon\\ribbon_board.png",
+  "authorization": "User explicitly approved both bilingual briefs, negative constraints, current reference, max quality and 1536x1024 opaque PNG boards; six independent images exported by unscaled cropping.",
+  "transport": "Direct HTTPS using urllib ProxyHandler({}).",
+  "submission_policy": "Exactly one submission for this job; no automatic retry or model fallback."
+}

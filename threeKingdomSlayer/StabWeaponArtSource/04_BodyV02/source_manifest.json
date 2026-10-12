@@ -1,0 +1,73 @@
+{
+  "generation_submission_count": 1,
+  "archive_source": "C:/Users/Administrator/Pictures/gptGen/stab_body_orthographic_v02",
+  "current_status": "Generated and technically verified; known visual/layout limitations disclosed; final user acceptance pending.",
+  "raw_response_location": "C:/Users/Administrator/Pictures/gptGen/stab_body_orthographic_v02/trace/response.json",
+  "raw_response_archive_policy": "Raw service response retained at source; not duplicated into the project archive.",
+  "copied_file_count": 9,
+  "records": [
+    {
+      "file": "stab_body_orthographic_v02.png",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_orthographic_v02/stab_body_orthographic_v02.png",
+      "bytes": 1127867,
+      "sha256": "c108a368fbe8a4bc028c214705d243eafa84ffd9b4f66f330242b87d1d7a130b",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/approved_specification.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_orthographic_v02/trace/approved_specification.json",
+      "bytes": 8092,
+      "sha256": "cee8d4a850d2d9e14840cbd3b2b5c59bf3e64fafc6530d758539bbfb45db3e86",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/negative_en.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_orthographic_v02/trace/negative_en.txt",
+      "bytes": 519,
+      "sha256": "34b553718be8600a081b83b41581daf19b8b6b81faf5fbd69a02502885957de2",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/negative_zh.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_orthographic_v02/trace/negative_zh.txt",
+      "bytes": 402,
+      "sha256": "64dac82e507e9652a4a2aeb5237a30abeda802e942b7d135838505f01290ae0a",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/prompt_en.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_orthographic_v02/trace/prompt_en.txt",
+      "bytes": 2443,
+      "sha256": "b00cd8148280353d58d1cd11be32f5e9eb6c352e79486f70351195ca4fd7b963",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/prompt_zh.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_orthographic_v02/trace/prompt_zh.txt",
+      "bytes": 2018,
+      "sha256": "23df713554db3745ca742d0f16a225cace84993ae47872bcf16df736805929e1",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/request.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_orthographic_v02/trace/request.json",
+      "bytes": 6760,
+      "sha256": "300b073a959deaf51c72fdf4e0825bcf4cc9dafef5eed22c38aac393710c40f6",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/status.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_orthographic_v02/trace/status.json",
+      "bytes": 457,
+      "sha256": "453464610a496036c2e97ada5e54d4c968ff0a3014af3b55c8b4909dea18a401",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/verification.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_orthographic_v02/trace/verification.json",
+      "bytes": 2386,
+      "sha256": "604c57bdd4ba7075db016586beb9a7c938e464926a69dd7e856ab5e326676f2d",
+      "byte_identical_to_source": true
+    }
+  ]
+}

@@ -36,8 +36,16 @@ public sealed class CavalryEnemy : MonoBehaviour
     [SerializeField, Min(0f)] private float spawnEntrySettleDuration = 0.35f;
 
     public enum CavalryPhase { MountedIdle, Windup, Charging, Striking, Retreating, RetreatBlocked, Dismounted }
+    // 视觉子阶段不新增移动/伤害状态；命中前探与收招共享Striking玩法阶段。
+    public enum AnimationStage { Idle, Windup, Charging, StrikeWindup, StrikeRecover, Interrupted, Retreating, RetreatBlocked, Dismounted }
 
     public CavalryPhase Phase { get; private set; } = CavalryPhase.MountedIdle;
+    public AnimationStage CurrentAnimationStage { get; private set; } = AnimationStage.Idle;
+    public float WindupDuration => windupDuration;
+    public float StrikeWindupDuration => strikeWindup;
+    public float StrikeRecoverDuration => strikeRecover;
+    public float InterruptRecoveryDuration => interruptRecover;
+    public float ChargeCooldown => chargeCooldown;
     public event System.Action<CavalryEnemy> OnStateChanged;
     public string LastReason { get; private set; } = "";
 
@@ -102,6 +110,7 @@ public sealed class CavalryEnemy : MonoBehaviour
         _spawnEntryCompleted = true;
         _spawnEntrySettleUntil = 0f;
         Phase = CavalryPhase.MountedIdle;
+        CurrentAnimationStage = AnimationStage.Idle;
         LastReason = "";
         OnStateChanged?.Invoke(this);
     }
@@ -168,7 +177,7 @@ public sealed class CavalryEnemy : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < windupDuration && !IsStale(generation))
         {
-            elapsed += Time.deltaTime;
+            if (!_enemy.IsHitStopped) elapsed += Time.deltaTime;
             yield return null;
         }
         if (OwnerGone) { StopCycle(); yield break; }
@@ -309,31 +318,37 @@ public sealed class CavalryEnemy : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < strikeWindup)
         {
-            if (OwnerGone) yield break;
+            if (OwnerGone || !_mounted) yield break;
             if (IsStale(generation)) break;
+            if (_enemy.IsHitStopped) { yield return null; continue; }
             elapsed += Time.deltaTime;
             _enemy.transform.localPosition = Vector3.Lerp(origin, lunge, Mathf.Clamp01(elapsed / strikeWindup));
             yield return null;
         }
 
-        if (OwnerGone) yield break;
+        if (OwnerGone || !_mounted) yield break;
         if (IsStale(generation))
         {
+            SetAnimationStage(AnimationStage.Interrupted);
             Diag("STRIKE_INTERRUPTED", target != null ? $"target={target.DebugTag}" : "target=player");
         }
         else if (!_damageCommitted)
         {
+            // 阶段事件先将Animator采样到命中帧，随后仍由玩法提交唯一一次伤害。
+            SetAnimationStage(AnimationStage.StrikeRecover);
             _damageCommitted = true;
             ResolveStrikeDamage(target);
         }
 
         // 无论命中还是被打断，都走完收招再返航
+        Vector3 recoverStart = _enemy.transform.localPosition;
         elapsed = 0f;
         while (elapsed < strikeRecover)
         {
-            if (OwnerGone) yield break;
+            if (OwnerGone || !_mounted) yield break;
+            if (_enemy.IsHitStopped) { yield return null; continue; }
             elapsed += Time.deltaTime;
-            _enemy.transform.localPosition = Vector3.Lerp(lunge, origin, Mathf.Clamp01(elapsed / strikeRecover));
+            _enemy.transform.localPosition = Vector3.Lerp(recoverStart, origin, Mathf.Clamp01(elapsed / strikeRecover));
             yield return null;
         }
         if (!OwnerGone)
@@ -369,6 +384,7 @@ public sealed class CavalryEnemy : MonoBehaviour
         if (_enemy != null && _mounted && _enemy.state != EnemyState.Dead)
         {
             SetPhase(CavalryPhase.Retreating, "冲锋被打断，收招返航");
+            SetAnimationStage(AnimationStage.Interrupted);
             Diag("RECOVERY_RETREAT", $"fromRow={_enemy.rowIndex} origin={_chargeOriginRow}");
             yield return RestoreVisualToRow(interruptRecover);
         }
@@ -500,6 +516,7 @@ public sealed class CavalryEnemy : MonoBehaviour
         {
             if (OwnerGone) yield break;
             if (IsStale(generation)) yield break;
+            if (_enemy.IsHitStopped) { yield return null; continue; }
             elapsed += Time.deltaTime;
             _enemy.transform.localPosition = Vector3.Lerp(start, end, Mathf.Clamp01(elapsed / duration));
             yield return null;
@@ -522,7 +539,8 @@ public sealed class CavalryEnemy : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < duration)
         {
-            if (OwnerGone) yield break;
+            if (OwnerGone || !_mounted) yield break;
+            if (_enemy.IsHitStopped) { yield return null; continue; }
             elapsed += Time.deltaTime;
             _enemy.transform.localPosition = Vector3.Lerp(start, end, Mathf.Clamp01(elapsed / duration));
             yield return null;
@@ -541,6 +559,7 @@ public sealed class CavalryEnemy : MonoBehaviour
         if (!_mounted || _enemy == null || _enemy.state == EnemyState.Dead) return;
         if (!IsCharging || _damageCommitted) return;
         _generation++;   // 让进行中的前摇/位移立即作废
+        SetAnimationStage(AnimationStage.Interrupted);
         Diag("INTERRUPT", $"phase={Phase} row={_enemy.rowIndex}");
     }
 
@@ -624,6 +643,23 @@ public sealed class CavalryEnemy : MonoBehaviour
     {
         Phase = phase;
         LastReason = reason;
+        CurrentAnimationStage = phase switch
+        {
+            CavalryPhase.Windup => AnimationStage.Windup,
+            CavalryPhase.Charging => AnimationStage.Charging,
+            CavalryPhase.Striking => AnimationStage.StrikeWindup,
+            CavalryPhase.Retreating => AnimationStage.Retreating,
+            CavalryPhase.RetreatBlocked => AnimationStage.RetreatBlocked,
+            CavalryPhase.Dismounted => AnimationStage.Dismounted,
+            _ => AnimationStage.Idle
+        };
+        OnStateChanged?.Invoke(this);
+    }
+
+    private void SetAnimationStage(AnimationStage stage)
+    {
+        if (CurrentAnimationStage == stage) return;
+        CurrentAnimationStage = stage;
         OnStateChanged?.Invoke(this);
     }
 

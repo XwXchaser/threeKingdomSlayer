@@ -1,0 +1,33 @@
+{
+  "format": "PNG",
+  "size": [
+    1536,
+    1024
+  ],
+  "mode": "RGB",
+  "png_color_type": 2,
+  "bytes": 1282002,
+  "sha256": "15fddd686807898ae93547d580426d80e286ea9e876614a528d5ff05ee13c154",
+  "all_chunk_crcs_valid": true,
+  "idat_decoded_and_filters_valid": true,
+  "matches_requested_size": true,
+  "version": "V05",
+  "http_status": 200,
+  "output_image": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_five_view_v05/stab_assembled_five_view_v05.png",
+  "references_unchanged": true,
+  "generation_submission_count": 1,
+  "request_to_verified_file_seconds": 115.969,
+  "visual_review_pending": false,
+  "visual_review_record": "trace/visual_review.json",
+  "visual_review_summary": {
+    "five_assembled_weapon_views_present": true,
+    "single_tassel_per_view": true,
+    "main_assembly_readable": true,
+    "complete_subject_extraction_possible": true,
+    "nominal_layout_obeyed": false,
+    "modeling_geometry_passed": false,
+    "reason": "Actual whitespace crops are required; top/bottom depth ratios ~0.72/0.83 differ from side/front ~0.35 and remain review candidates."
+  },
+  "user_acceptance_pending": true,
+  "unity_deployment": "Not performed; no Editor mode, Unity assets or scenes changed."
+}

@@ -112,6 +112,16 @@ gate4/5 仍不过，但**不应强过**：它们是 1011 的"窄描边"经验值
 
 **优先级变更**：`skill/workflows/svl-chroma-rim-fix.md` 已升为**首选**抠图流程；`skill/workflows/local-green-screen-cutout.md` 与 GPT 语义去背降为**备选/对照**（非纯色底或需语义判断时才用）。
 
+### 2026-10-10 18:36 追加：1011 **idle 换回 GPT keyed 版**（用户要求，已执行）
+
+用户目检判定游戏内 1011 idle 「有破洞」，要求换回 keyed 版。核查与结论：
+
+- **当时游戏内（编辑器工作区）的 idle 不是首轮 `keyed_v5`（t100）**，而是第 2 轮灰底专用配方产物（Chroma **T=6 + 中性幕布清理**），存在 `03_SelectedFrames/Idle/keyed_v5/idle_f*_v5.png`（该目录名有误导：首轮 t100 产物被同名覆盖，mtime 00:43）。gid 提交里的 idle = `04_DeliveredSprites/` = **GPT 语义去背**版（✅ 69/69 逐字节一致）。
+- **已把 6 个 idle 精灵换回 GPT keyed 版**（`git checkout` 到 HEAD），Unity 重导入验证：1108×1108 / PPU16 / Point / Uncompressed / pivot 与元设置不变，`Enemy_1011_Idle` 6 键 **0 空引用**；脚线 897–898（第 2 轮版 896，差 ≤2px，无浮空）。备份：`Library/Locus/tmp/backup_1011_idle_round2_<ts>/`。
+- **量化（以 GPT alpha>200 为角色真值，6 帧）**：第 2 轮产物保留角色 **92.84%**（丢 65,072px≈**7.2%**，1388 个连通裂缝，最大 124px）；`keyed_ui_t14` 仅 **81.31%**（丢 169,907px≈**18.7%**，差 2.6 倍）；GPT keyed 0 丢失（代价：~15 万 px/帧半透明羽化 + 2.6 万 px/帧幕布色残留）。
+- **教训**：① 深灰底 idle 的「破洞」不是**封闭孔**（封闭孔普查 = 0，同 109 结论），而是**与外界连通的裂缝/缺口**（暗部角色与幕布颜色太近被一起吃）；② **SVL 配色路线（含 T=6/T=14）搞不定深灰底 idle**，别再用它替换 idle——语义去背才是正解；③ **`keyed_v5/` 目录名不可作为配方依据**（idle 下装的是第 2 轮配方产物）。
+- 工作区仍有 **63 个** 1011 精灵属本地配方产物（round1 51 + round2 walk/getup 等）；绿幕动作的「缺失本体」大得多（attack 24.2 万px/16 帧 vs 提交版 0.85 万），但那是 round1 **故意**删描边绿（源帧 d_src>8）的代价，回退会把绿偏带回来。**用户决定：只回退 idle，其余 63 个保持不动**（2026-10-10 确认）。
+
 ## 部署到 Unity（2026-10-10，已执行）
 
 用户验收 v5 后要求替换 1011 美术素材。已替换 **51 个精灵**（attack 16 / dead 6 / hit 5 / hitLeft 6 / hitRight 6 / landing 6 / rise 6），**只改 PNG 字节、不动 `.meta`** → GUID/pivot/PPU/导入设置不变；Unity 重导入后验证：69 个精灵全部 1108×1108 / pivot (554,554) / ppu 16；**10 个 Enemy_1011 clip、72 个 sprite key、0 空引用**（场景/prefab/clip 未动）。

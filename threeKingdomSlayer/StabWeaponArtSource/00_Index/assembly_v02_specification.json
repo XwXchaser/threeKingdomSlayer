@@ -1,0 +1,44 @@
+{
+  "status": "deferred_user_requested_rigid_body_first",
+  "current_task_specification": "StabWeaponArtSource/00_Index/body_v02_specification.json",
+  "defer_reason": "The user asked to leave ribbons aside and prepare one rigid spear body three-view sheet first. This assembly prompt is historical preparation only and must not be submitted as the current task.",
+  "purpose": "Complete assembled front, right and back reference views of the current new-style Stab spear; preserve the existing design and ribbon length.",
+  "authorization": "This specification is prepared for review only. No approval for this new prompt or remote submission is inferred from historical V01 requests.",
+  "new_remote_generation_count": 0,
+  "handoff_document": "Locus/knowledge/plan/stab-3d-three-view-production-handoff.md",
+  "reference_image": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/StabWeaponArtSource/01_Reference/assembly_reference.png",
+  "reference_sha256": "6475df45a489976d0de95f042235d4080e1adf36c18c54f639dbd231ec46c9ae",
+  "reference_role": "The sole uploaded reference locks weapon identity, complete proportions, ribbon front pose, original attachment root and current materials. V01 boards and 1011 Idle are for manual comparison only and are not uploaded as competing references.",
+  "proposed_output_directory": "C:/Users/Administrator/Pictures/gptGen/stab_assembly_orthographic_v02",
+  "common_parameters": {
+    "model": "gpt-image-2.5-sunburst",
+    "endpoint": "https://api.muskapis.com/v1/images/edits",
+    "size": "1536x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "background": "opaque",
+    "output_format": "png",
+    "n": 1
+  },
+  "prompt_zh": "只使用输入图片作为长枪造型和材质依据，制作这同一杆武器的完整装配正交三视图。所有视角都包含固定枪体和同一条连接在枪上的朱红飘带，保持输入图的整枪长度、枪刃宽度、枪杆直径、各连接段长度、枪尾比例、飘带长度、展开宽度和根部位置。不重新设计，不缩短飘带，不增加部件。\n\n枪体由尖叶形双刃冷钢枪头、中央脊线、金色与深绿交叉连接件、短银色连接段、连续笔直的红棕圆杆和金色几何枪尾构成。正面枪刃边缘应遵从输入图既有轮廓，不能把中段轻微收腰放大成新的大折肩、倒钩或锯齿；像素阶梯仅属于绘制语言，不是实体锯齿。侧面显示真实的刃片厚度、中央脊线和削薄刃口；侧背面只补合理的同类结构，不改变直径、长度或零件数量。没有独立把手、皮革握套或绿色盘蛇。\n\n朱红飘带只有一个收束根部、一片连续柔性主体和一个主要尖尾。根部连接在输入图上部金绿连接件右侧的原位置，固定方式清楚，不悬空，不增加新的环扣。保持正面外展后弯回的姿态，将其解释为带浅折面的薄布片；前后起伏克制，不绕杆，不自交，不增加第二条带或第二个尾端。\n\n所有视角是同一个静止三维物体的正面、右侧面和背面正交投影，只改变观察方向，不改变姿态。侧面应显示飘带真实的薄边、浅折面和前后深度，允许发生合理遮挡，不能把正面的宽布轮廓重复画一遍。背面显示同一固定根部和同一布片的反面；在整体绕轴观察后，它的画面位置应合理转到相反侧，不在每一视图都强制摆在画面右边。\n\n输出一张1536×1024纯白底PNG，分成三个等宽无边框区域：左正面，中右侧面，右背面，每区只展示一把完整的装配长枪。三个视图同尺度、竖直，枪尖、枪尾、连接件、红带根部和红带末端处于相同高度。每把完整轮廓留在本区内，枪尖和枪尾上下均留至少32像素余量。不得独立放大飘带，不得裁断枪尖、枪尾或红带末端。\n\n沿用输入图的高清像素色簇和清楚实体体积：冷银钢刃、深绿连接件、少量暖金属、红棕木杆、朱红布片及深红折面。光照中性、材质分区清晰，轮廓干净。只展示武器；不要人物、手、场景、文字、标签、尺寸线、坐标轴、分隔线、局部放大、透视、3/4视角、光效或运动残影。",
+  "prompt_en": "Use only the input image as the spear's design and material reference. Produce complete assembled orthographic views of this SAME weapon. Every view includes the rigid weapon body and the SAME attached vermilion ribbon. Preserve the reference's total length, blade width, shaft diameter, connector segment lengths, butt proportions, ribbon length, spread and attachment position. Do not redesign, shorten the ribbon or add components.\n\nThe body consists of a pointed leaf-shaped double-edged cool steel head with a central ridge, a gold-and-dark-green crossed connector, a short silver connection, a continuous straight round red-brown pole and an angular gold butt ornament. Match the existing front blade outline in the input: do not exaggerate its subtle waist into new large stepped shoulders, hooks or saw teeth. Pixel stair steps are rendering language, not physical serrations. The side reveals blade thickness, the central ridge and tapered cutting edges. Complete only plausible matching hidden surfaces without changing diameters, lengths or component counts. No separate handle, leather grip sleeve or coiled green serpent.\n\nThe vermilion ribbon has one gathered root, one continuous flexible cloth surface and one main tapered terminal. Attach its root at the original position on the right side of the upper gold-green connector shown in the reference. Make the connection readable, with no floating root or new clasp. Preserve its front outward-then-returning curve. Resolve it as thin cloth with shallow folds and restrained depth variation. No shaft wrapping, self-crossing, second ribbon or extra tail.\n\nAll views are orthographic projections of ONE fixed static three-dimensional object: front, right side and back. Only the viewing direction changes; the pose does not. The side shows the ribbon's thin edge, shallow folds and actual depth, allowing physically reasonable occlusion rather than repeating its broad front silhouette. The back shows the reverse of the SAME surface and the SAME attachment root. Its screen position should move naturally to the opposite side as the assembly is viewed around its axis; do not force it to the screen-right in every view.\n\nOutput one pure-white-background 1536x1024 PNG with three equal-width unbordered regions: front left, right side center and back right. Show one complete assembled spear per region, upright at identical scale, with aligned tip, butt, connector, ribbon-root and ribbon-terminal heights. Keep each entire silhouette inside its own region and leave at least 32 pixels above the tip and below the butt. Do not enlarge the ribbon independently or crop the weapon or ribbon terminal.\n\nPreserve the input's high-definition pixel clusters and readable physical volume: cool silver steel, dark-green connector, restrained warm metal, red-brown wood, vermilion cloth and deep-red folds. Use neutral lighting, clear material separation and clean edges. Show only the weapon. No characters, hands, scenery, text, labels, dimension lines, axes, dividers, detail insets, perspective, three-quarter views, glow or motion trails.",
+  "negative_zh": "三种不同武器、视角间变姿态或比例、新增大折肩或倒钩、实体锯齿、独立把手、皮革握套、盘蛇、删改金绿连接件、额外零件、额外红带、分叉尾端、粗绳、实心红雕塑、悬空根部、绕杆、自交、独立放大飘带、截断、透视、3/4视角、人物、手、背景场景、文字、标签、尺寸线、骨骼、坐标轴、分隔线、局部放大、光效、残影。",
+  "negative_en": "Three different weapons, changed pose or scale between views, new large stepped shoulders or hooks, physical saw teeth, separate handle, leather grip sleeve, coiled serpent, altered or removed gold-green connector, extra components, extra ribbons, branching terminals, thick cord, solid red sculpture, floating root, shaft wrapping, self-crossing, independently enlarged ribbon, cropping, perspective, three-quarter view, characters, hands, scenery, text, labels, dimension lines, bones, axes, dividers, detail insets, glow, motion trails.",
+  "export_rules": {
+    "source_board": "source_boards/assembly_board.png",
+    "independent_pngs": ["assembly/front.png", "assembly/right.png", "assembly/back.png"],
+    "each_view_size": "512x1024",
+    "method": "Crop three equal-width regions without resampling or per-view repositioning. Disclose actual misalignment rather than hide it by independent scaling.",
+    "archive_after_validation": "StabWeaponArtSource/04_AssemblyV02/"
+  },
+  "acceptance_targets": [
+    "Same original weapon design, blade contour, gold-green fitting, butt and ribbon pose",
+    "Matched tip, butt and connector heights in all three views; ribbon-root and terminal height spread target <=2 pixels",
+    "One attached ribbon at the original assembly proportions and root position",
+    "Plausible blade thickness and thin cloth depth with coherent front, side and back occlusion",
+    "At least 32 pixels above tip and below butt; all silhouettes stay in their own region",
+    "Decode PNG and verify crop pixels; record art review and technical checks separately"
+  ],
+  "limitations": "Generated images are 2D modeling references, not a mesh, rig, cloth simulation or certified exact orthographic projection.",
+  "submission_policy": "After explicit approval of this specification, submit at most one edit request into a new output directory. No automatic duplicate generation or model fallback after an unknown outcome."
+}

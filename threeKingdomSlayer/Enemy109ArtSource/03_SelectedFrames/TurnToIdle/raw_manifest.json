@@ -1,0 +1,252 @@
+{
+  "action": "TurnToIdle",
+  "source_video": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_retreat_to_idle_v1_720p_6s.mp4",
+  "source_video_sha256": "c01c129c581e0b95df5fe7d427d15e7d18d47e8b2f6fd7b9077ed92127074b7a",
+  "source_task_id": "task_75f597274c3a4dc28fb978b719692522",
+  "frame_count": 24,
+  "source_frames_user_verdict": "accepted",
+  "source_frame_feedback": "当前这批挑选帧已验收",
+  "color_consistency_issue_separate_from_frame_acceptance": true,
+  "frames": [
+    {
+      "file": "turnToIdle1_f001.png",
+      "ordinal": 1,
+      "source_frame": 1,
+      "group": "01_rear_start",
+      "source_time_seconds": 0.0,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\01_rear_start\\turnToIdle01_srcf001.png",
+      "sha256": "46a5ba18612e47184c514a5cdf1f672ce8a0a020668149ef2a844effbedf0dc3",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle2_f019.png",
+      "ordinal": 2,
+      "source_frame": 19,
+      "group": "01_rear_start",
+      "source_time_seconds": 0.75,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\01_rear_start\\turnToIdle02_srcf019.png",
+      "sha256": "23415ead6ce484c558a5ce3ef5d889af52001093f2d11d668cfcd6481df35f4a",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle3_f024.png",
+      "ordinal": 3,
+      "source_frame": 24,
+      "group": "01_rear_start",
+      "source_time_seconds": 0.958333,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\01_rear_start\\turnToIdle03_srcf024.png",
+      "sha256": "9bc42abfc784807126810ab653cc8964fcda78770026a2ef728fd6fefca66b14",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle4_f029.png",
+      "ordinal": 4,
+      "source_frame": 29,
+      "group": "01_rear_start",
+      "source_time_seconds": 1.166667,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\01_rear_start\\turnToIdle04_srcf029.png",
+      "sha256": "39fd38a321939c559c2f9e38d0260c65fc825d972af580d1c3c3d18344a32e5e",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle5_f034.png",
+      "ordinal": 5,
+      "source_frame": 34,
+      "group": "02_rear_to_left",
+      "source_time_seconds": 1.375,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\02_rear_to_left\\turnToIdle05_srcf034.png",
+      "sha256": "928990ce44a6934ec041130210fe16a61780786fc3c9dfc7b0f4ff6bdefd1a85",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle6_f039.png",
+      "ordinal": 6,
+      "source_frame": 39,
+      "group": "02_rear_to_left",
+      "source_time_seconds": 1.583333,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\02_rear_to_left\\turnToIdle06_srcf039.png",
+      "sha256": "a7e072b8cebac25e96c1337c017b431ed6560d903349ea602fd98c0f4e365e7c",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle7_f044.png",
+      "ordinal": 7,
+      "source_frame": 44,
+      "group": "02_rear_to_left",
+      "source_time_seconds": 1.791667,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\02_rear_to_left\\turnToIdle07_srcf044.png",
+      "sha256": "4d5488f742d0ff97f51f4dc3e0dd7354a66dfd755b3d123115ece5fd8e43642d",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle8_f049.png",
+      "ordinal": 8,
+      "source_frame": 49,
+      "group": "02_rear_to_left",
+      "source_time_seconds": 2.0,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\02_rear_to_left\\turnToIdle08_srcf049.png",
+      "sha256": "5336e20d9aceb5f9f172b9ce8aeb4a4be585f20c42897355207fe486db5ac69b",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle9_f054.png",
+      "ordinal": 9,
+      "source_frame": 54,
+      "group": "02_rear_to_left",
+      "source_time_seconds": 2.208333,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\02_rear_to_left\\turnToIdle09_srcf054.png",
+      "sha256": "d0901fa904c07d33dfbe075cf37ecd49f02805fbd6c1f2a6a871e8eb4022bd35",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle10_f059.png",
+      "ordinal": 10,
+      "source_frame": 59,
+      "group": "02_rear_to_left",
+      "source_time_seconds": 2.416667,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\02_rear_to_left\\turnToIdle10_srcf059.png",
+      "sha256": "2662956e92f8ce8f617b983f571b6a1ee27b58f6851f19bdbbf4503dc63ff25a",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle11_f064.png",
+      "ordinal": 11,
+      "source_frame": 64,
+      "group": "02_rear_to_left",
+      "source_time_seconds": 2.625,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\02_rear_to_left\\turnToIdle11_srcf064.png",
+      "sha256": "4b13485a5e27d468f3f8721619a5bbd81b06f94eb821322b93200c663977b89e",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle12_f069.png",
+      "ordinal": 12,
+      "source_frame": 69,
+      "group": "02_rear_to_left",
+      "source_time_seconds": 2.833333,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\02_rear_to_left\\turnToIdle12_srcf069.png",
+      "sha256": "036be8133f7bc4fb45aab9bad8f86e94ba953863451f17598a61bd091f456d52",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle13_f079.png",
+      "ordinal": 13,
+      "source_frame": 79,
+      "group": "03_left_to_front",
+      "source_time_seconds": 3.25,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\03_left_to_front\\turnToIdle13_srcf079.png",
+      "sha256": "cf126f093c62e2110b9eb539a114774577f5d10b0722eb94317d3e4997938ba8",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle14_f086.png",
+      "ordinal": 14,
+      "source_frame": 86,
+      "group": "03_left_to_front",
+      "source_time_seconds": 3.541667,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\03_left_to_front\\turnToIdle14_srcf086.png",
+      "sha256": "847a92be368f187c827c196bdc6f3512f139b53e8a59ed2c8987bbb72bcf4a0e",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle15_f092.png",
+      "ordinal": 15,
+      "source_frame": 92,
+      "group": "03_left_to_front",
+      "source_time_seconds": 3.791667,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\03_left_to_front\\turnToIdle15_srcf092.png",
+      "sha256": "19025be04f09e0a50907ebf19007cbd8fa3c19cd7d0122738b20198a0f76cb58",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle16_f098.png",
+      "ordinal": 16,
+      "source_frame": 98,
+      "group": "03_left_to_front",
+      "source_time_seconds": 4.041667,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\03_left_to_front\\turnToIdle16_srcf098.png",
+      "sha256": "ad6031a025f3c454283ba3cc7dc2a67a686a72c6e8701e68b4fa409095d4d557",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle17_f103.png",
+      "ordinal": 17,
+      "source_frame": 103,
+      "group": "03_left_to_front",
+      "source_time_seconds": 4.25,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\03_left_to_front\\turnToIdle17_srcf103.png",
+      "sha256": "e3cd68d55c5ddc266c0aa6cd0c16147224317b995dff955b2fd632ce3e8490f9",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle18_f110.png",
+      "ordinal": 18,
+      "source_frame": 110,
+      "group": "03_left_to_front",
+      "source_time_seconds": 4.541667,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\03_left_to_front\\turnToIdle18_srcf110.png",
+      "sha256": "25329f2be96909661d611a60938b18a9d2be287c6879fd154dc4d2ed9d600c8d",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle19_f114.png",
+      "ordinal": 19,
+      "source_frame": 114,
+      "group": "03_left_to_front",
+      "source_time_seconds": 4.708333,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\03_left_to_front\\turnToIdle19_srcf114.png",
+      "sha256": "bc3a0a8f962c48c7e7492a5a751aedf96592ee92664f65d0f186bc25c4103b0b",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle20_f118.png",
+      "ordinal": 20,
+      "source_frame": 118,
+      "group": "03_left_to_front",
+      "source_time_seconds": 4.875,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\03_left_to_front\\turnToIdle20_srcf118.png",
+      "sha256": "9682f1a206283886896cd8ea77ab98cadb89f3bb3ef09e608f3e1d60a7218dd5",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle21_f124.png",
+      "ordinal": 21,
+      "source_frame": 124,
+      "group": "04_front_settle",
+      "source_time_seconds": 5.125,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\04_front_settle\\turnToIdle21_srcf124.png",
+      "sha256": "a347dbfa53ea41b6cdeb37e6ff032f9725638acc1197473761f866c2a254d73b",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle22_f128.png",
+      "ordinal": 22,
+      "source_frame": 128,
+      "group": "04_front_settle",
+      "source_time_seconds": 5.291667,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\04_front_settle\\turnToIdle22_srcf128.png",
+      "sha256": "900d8e9f10b0968de796e4644c1813fbf292d8cca5ad081547f66111b1d79cd9",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle23_f138.png",
+      "ordinal": 23,
+      "source_frame": 138,
+      "group": "04_front_settle",
+      "source_time_seconds": 5.708333,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\04_front_settle\\turnToIdle23_srcf138.png",
+      "sha256": "07f30ecaf60e23fa6ec7dff033cf904c6add7bc336e09038da28ed8ffdac1524",
+      "source_copy_byte_identical": true
+    },
+    {
+      "file": "turnToIdle24_f145.png",
+      "ordinal": 24,
+      "source_frame": 145,
+      "group": "04_front_settle",
+      "source_time_seconds": 6.0,
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_to_idle_v1\\keyframes_v1_24\\04_front_settle\\turnToIdle24_srcf145.png",
+      "sha256": "724132f31399e56eea62150a0baa472532ba983f2dfa891d1817e9c8ef8eb648",
+      "source_copy_byte_identical": true
+    }
+  ]
+}

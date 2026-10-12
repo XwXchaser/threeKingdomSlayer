@@ -1,0 +1,59 @@
+{
+  "passed": true,
+  "verification": "real StrikeRoutine plus controlled visual stages; isolated temporary ColumnManager",
+  "results": [
+    {
+      "test": "real_strike",
+      "hits": 1,
+      "hitSprite": "Enemy_109_Attack12",
+      "tail": "Enemy_109_Attack18",
+      "damage": 32.0,
+      "seconds": 0.413262069
+    },
+    {
+      "test": "blocked_pause",
+      "sprite": "Enemy_109_StrikeToRetreat5",
+      "seconds": 0.1860503,
+      "elapsedBeforeBlock": 0.1621744,
+      "elapsedAfter": 0.1621744,
+      "speed": 0.0
+    },
+    {
+      "test": "resume_to_last_pose",
+      "sprites": [
+        "Enemy_109_StrikeToRetreat1",
+        "Enemy_109_StrikeToRetreat10",
+        "Enemy_109_StrikeToRetreat11",
+        "Enemy_109_StrikeToRetreat2",
+        "Enemy_109_StrikeToRetreat3",
+        "Enemy_109_StrikeToRetreat4",
+        "Enemy_109_StrikeToRetreat5",
+        "Enemy_109_StrikeToRetreat6",
+        "Enemy_109_StrikeToRetreat7",
+        "Enemy_109_StrikeToRetreat8",
+        "Enemy_109_StrikeToRetreat9"
+      ],
+      "last": "Enemy_109_StrikeToRetreat11",
+      "returnDuration": 0.4
+    },
+    {
+      "test": "interrupted_strike",
+      "hits": 0,
+      "damage": 0.0,
+      "state": 1540334097,
+      "sprite": "Enemy_109_StrikeToRetreat11"
+    },
+    {
+      "test": "hit_stop",
+      "frozenSprite": "Enemy_109_StrikeToRetreat1",
+      "timerBefore": 0.0070966,
+      "timerAfter": 0.0139683
+    },
+    {
+      "test": "dismount_pool_reset",
+      "mounted": true,
+      "sprite": "Enemy_109_MountedIdle1",
+      "speed": 1.0
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "parameters": {
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "background": "opaque",
+    "output_format": "png",
+    "n": 1,
+    "prompt": "使用两张输入参考图，制作一张用于游戏3D建模的单根朱红红缨正交三视图合图。参考图A是完整的新画风长枪，只负责锁定红缨在枪套右侧的固定根位置、相对枪体的纵向比例、正面向右外展后向下回弯的整体姿态和当前高清像素材质关系。参考图B是红缨单体正面图，只负责锁定这根红缨本身的轮廓、宽窄变化、布面折线和朱红/深红/橙红色簇。不要混合其他版本的红缨设计。\n\n输出中只显示红缨，不显示枪头、枪套、枪杆、枪尾、金属环扣、人物或场景。红缨必须是一个固定收束根部、一片连续的薄柔性布面、一个主要渐尖尾端。保留参考图A中的根部位置和参考图B中的正面剪影：根部收束，主体向观察者右侧外展，随后向下回弯，宽度沿曲线有设计过的渐变，最后收成一个主要尖尾。不要缩短、拉长、改变方向或增加第二根尾巴。\n\n把它解释为一片可建模的薄布片，带少量连续浅折面和有限前后深度。不是粗绳，不是实心红色雕塑，不是羽毛，不是旗帜，不是披风，不是多根流苏。保持朱红主面、深红暗部和少量橙红高光，以高清像素色簇表达布料体积；不要发光，不要运动残影，不要把像素阶梯画成锯齿或裂口。\n\n制作同一件静止三维红缨的正面、右侧面和背面正交投影，只改变观察方向，不改变姿态、长度、根部位置或比例。输出一张1536×1024纯白底PNG，分成三个等宽无边框区域：左正面、中右侧、右背面。每区只显示一根完整红缨，统一尺度，根部和主尾端高度对齐，距上下左右区域边缘至少32像素。正面显示完整外展后回弯剪影；右侧显示薄边、浅折面和有限厚度，不能重复正面宽度；背面显示同一布片的反面折面和同一固定根部，不能凭空换姿态。\n\n结构清楚、轮廓干净、中性柔和光照、克制高光。不要枪体、金属件、环扣、人物、手、场景、文字、标签、尺寸线、坐标轴、分隔线、透视、3/4视角、局部放大、背景纹理、光效或运动残影。\n\nEnglish version of the same approved brief:\n\nUse the two input reference images to produce one orthographic turnaround sheet of a single vermilion spear tassel for game 3D modeling. Reference A is the complete new-style spear and is used only to lock the tassel's attachment root on the right side of the socket, its vertical proportion relative to the weapon, its overall front pose sweeping outward to the viewer's right and returning downward, and the current high-definition pixel material language. Reference B is the isolated front view of the tassel and is used only to lock this tassel's silhouette, width variation, cloth fold organization and vermilion/deep-red/orange-red color clusters. Do not combine other tassel designs.\n\nShow ONLY the tassel. Do not show the spearhead, socket, shaft, butt, metal clasps, characters or scenery. The tassel must be one gathered fixed root, one continuous thin flexible cloth surface and one main tapered terminal. Preserve Reference A's attachment position and Reference B's front silhouette: a gathered root, a body sweeping outward toward the viewer's right, then curving back downward, with deliberate width variation along the curve and one primary pointed terminal. Do not shorten, lengthen, redirect or add a second tail.\n\nResolve it as a modelable thin cloth surface with a few continuous shallow folds and restrained front-back depth. It is not a thick cord, solid red sculpture, feather, flag, cape or multiple streamers. Preserve vermilion main planes, deep-red shadows and limited orange-red highlights, using high-definition pixel clusters to express cloth volume. No glow, motion trails, physical saw teeth or deep tears.\n\nProduce front, right-side and back orthographic projections of the SAME static three-dimensional tassel. Only the viewing direction changes; pose, length, root position and proportions remain fixed. Output one pure-white-background 1536x1024 PNG divided into three equal-width unbordered regions: front left, right side center and back right. Each region contains one complete tassel at identical scale, with aligned root and main-terminal heights and at least 32 pixels of margin from every region edge. The front shows the complete outward-then-returning silhouette; the right side shows the thin edge, shallow folds and limited thickness rather than repeating the broad front width; the back shows the reverse folds of the same cloth surface and the same fixed root, not an invented new pose.\n\nUse clean readable construction, soft neutral lighting and restrained highlights. No spear body, metal parts, clasps, characters, hands, scenery, text, labels, dimension lines, axes, dividers, perspective, three-quarter view, detail inset, textured background, glow or motion trails.\n\nNegative constraints:\n枪头、枪套、枪杆、枪尾、金属环扣、人物、手、场景、双红缨、多根飘带、分叉尾巴、隐藏第二个尾端、粗绳、实心红雕塑、羽毛、旗帜、披风、蝴蝶结、盘蛇、龙形、深裂口、锯齿裂边、轮廓自交、绕杆、不同姿态、不同长度、不同尺度、透视、3/4视角、独立放大、裁断、文字、标签、尺寸线、坐标轴、分隔线、背景纹理、发光、运动残影。\n\nSpearhead, socket, shaft, butt, metal clasps, characters, hands, scenery, paired red tassels, multiple ribbons, branching tail, hidden second terminal, thick cord, solid red sculpture, feather, flag, cape, bow knot, coiled serpent, dragon form, deep tears, saw-tooth torn edges, self-crossing silhouette, wrapping around a shaft, changed pose, changed length, changed scale, perspective, three-quarter view, independently enlarged view, cropping, text, labels, dimension lines, axes, dividers, textured background, glow, motion trails."
+  },
+  "references": [
+    {
+      "name": "reference_a",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/StabWeaponArtSource/01_Reference/assembly_reference.png",
+      "role": "Locks the tassel identity, attachment root on the socket right side, proportion relative to the weapon, front outward-and-returning pose and current art language. The weapon body must not appear in output.",
+      "sha256": "6475df45a489976d0de95f042235d4080e1adf36c18c54f639dbd231ec46c9ae",
+      "bytes": 1080284
+    },
+    {
+      "name": "reference_b",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/StabWeaponArtSource/02_OrthographicV01/ribbon/front.png",
+      "role": "Locks the isolated tassel front silhouette, gathered root, width changes, fold organization and vermilion/deep-red/orange-red pixel clusters. It does not define the side or back as exact projections.",
+      "sha256": "e9e28892eb093323310391a4a52e0ca157047fd3be2af851e66faf989d5d7090",
+      "bytes": 332663
+    }
+  ],
+  "output_image": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_orthographic_v02/stab_tassel_orthographic_v02.png",
+  "authorization": "User explicitly approved this tassel-only bilingual brief, negative constraints, two reference roles and max-quality 1536x1024 opaque PNG parameters: 批准生成.",
+  "submission_policy": "Exactly one submission, no automatic retry or model fallback.",
+  "transport": "Direct HTTPS with urllib ProxyHandler({})."
+}

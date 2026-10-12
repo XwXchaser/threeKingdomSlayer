@@ -1,0 +1,328 @@
+{
+  "version": "turn-to-idle-alternate-endpoints-v1",
+  "source_video": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_retreat_to_idle_v1_720p_6s.mp4",
+  "source_video_sha256": "c01c129c581e0b95df5fe7d427d15e7d18d47e8b2f6fd7b9077ed92127074b7a",
+  "existing_matte_recipe": {
+    "method": "SVL Chroma",
+    "auto_key_per_frame": true,
+    "threshold": 79,
+    "softness": 16,
+    "halo": 1,
+    "harden": true,
+    "smoothing": false
+  },
+  "accepted_frames_changed": false,
+  "unity_changed": false,
+  "paid_api_calls": 0,
+  "candidates": [
+    {
+      "source_frame": 2,
+      "time_seconds": 0.041667,
+      "source_rgb": {
+        "corners_median_rgb": [
+          0.0,
+          145.0,
+          60.0
+        ],
+        "corners_std_rgb": [
+          1.301,
+          3.148,
+          2.486
+        ]
+      },
+      "bbox": [
+        302,
+        48,
+        702,
+        892
+      ],
+      "margins_LTRB": [
+        302,
+        48,
+        258,
+        67
+      ],
+      "auto_key_rgb": [
+        0,
+        144,
+        60
+      ],
+      "input_sha256": "613808082be697a354602cb2f058d945e8b9a98cd192496069b5d9b197c623f4",
+      "matte_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v1\\turnToIdle_f002_T79.png",
+      "matte_sha256": "64c2bd700dae26a482ed59f0f4fe81a1b391ad1125a13354613aa815bd4d6400",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "visible_pixels": 149517,
+      "color_diagnostics": {
+        "between_f138_and_candidate": {
+          "overlap_pixels": 133966,
+          "mean_abs_rgb": [
+            4.42,
+            -1.992,
+            -4.733
+          ],
+          "median_signed_rgb": [
+            5.0,
+            -1.0,
+            -4.0
+          ]
+        },
+        "candidate_to_existing_idle": {
+          "overlap_pixels": 133853,
+          "mean_abs_rgb": [
+            1.145,
+            -6.659,
+            -2.105
+          ],
+          "median_signed_rgb": [
+            3.0,
+            -5.0,
+            -1.0
+          ]
+        }
+      },
+      "user_frame_verdict": "accepted_source_video_but_candidate_matte_pending",
+      "bbox_xy_exclusive": [
+        302,
+        48,
+        702,
+        893
+      ],
+      "edge4px_foreground": 0
+    },
+    {
+      "source_frame": 140,
+      "time_seconds": 5.791667,
+      "source_rgb": {
+        "corners_median_rgb": [
+          0.0,
+          153.0,
+          58.0
+        ],
+        "corners_std_rgb": [
+          0.5,
+          3.322,
+          2.327
+        ]
+      },
+      "bbox": [
+        240,
+        34,
+        658,
+        894
+      ],
+      "margins_LTRB": [
+        240,
+        33,
+        301,
+        67
+      ],
+      "auto_key_rgb": [
+        2,
+        154,
+        58
+      ],
+      "input_sha256": "dc7d268101d10f6623f01af369e1d48240d6a23c00491ef54fff2dfaf1a8521d",
+      "matte_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v1\\turnToIdle_f140_T79.png",
+      "matte_sha256": "2d5557f9160b15306278dfcdc64474a70be1b8aecb6c518120f449e75c78ba76",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "visible_pixels": 173733,
+      "color_diagnostics": {
+        "between_f138_and_candidate": {
+          "overlap_pixels": 172054,
+          "mean_abs_rgb": [
+            0.002,
+            0.175,
+            -0.079
+          ],
+          "median_signed_rgb": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "candidate_to_existing_idle": {
+          "overlap_pixels": 170787,
+          "mean_abs_rgb": [
+            -4.368,
+            -4.542,
+            2.249
+          ],
+          "median_signed_rgb": [
+            -3.0,
+            -4.0,
+            2.0
+          ]
+        }
+      },
+      "user_frame_verdict": "accepted_source_video_but_candidate_matte_pending",
+      "bbox_xy_exclusive": [
+        240,
+        33,
+        659,
+        893
+      ],
+      "edge4px_foreground": 0
+    },
+    {
+      "source_frame": 141,
+      "time_seconds": 5.833333,
+      "source_rgb": {
+        "corners_median_rgb": [
+          0.0,
+          153.0,
+          58.0
+        ],
+        "corners_std_rgb": [
+          0.459,
+          3.358,
+          2.26
+        ]
+      },
+      "bbox": [
+        240,
+        34,
+        658,
+        894
+      ],
+      "margins_LTRB": [
+        240,
+        33,
+        301,
+        67
+      ],
+      "auto_key_rgb": [
+        2,
+        154,
+        58
+      ],
+      "input_sha256": "c24f0df276a32550e48acb72a2c6090f0729d18761b5eda4cf0226de541cc6b5",
+      "matte_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v1\\turnToIdle_f141_T79.png",
+      "matte_sha256": "9228649e07a130a562ef05e9377dafe422815ea3b22657315fe564823c5a3e36",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "visible_pixels": 173736,
+      "color_diagnostics": {
+        "between_f138_and_candidate": {
+          "overlap_pixels": 171581,
+          "mean_abs_rgb": [
+            -0.116,
+            0.191,
+            -0.22
+          ],
+          "median_signed_rgb": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "candidate_to_existing_idle": {
+          "overlap_pixels": 171009,
+          "mean_abs_rgb": [
+            -4.532,
+            -4.556,
+            2.089
+          ],
+          "median_signed_rgb": [
+            -3.0,
+            -4.0,
+            2.0
+          ]
+        }
+      },
+      "user_frame_verdict": "accepted_source_video_but_candidate_matte_pending",
+      "bbox_xy_exclusive": [
+        240,
+        33,
+        659,
+        893
+      ],
+      "edge4px_foreground": 0
+    },
+    {
+      "source_frame": 144,
+      "time_seconds": 5.958333,
+      "source_rgb": {
+        "corners_median_rgb": [
+          0.0,
+          159.0,
+          57.0
+        ],
+        "corners_std_rgb": [
+          0.187,
+          3.335,
+          2.312
+        ]
+      },
+      "bbox": [
+        240,
+        34,
+        658,
+        894
+      ],
+      "margins_LTRB": [
+        240,
+        33,
+        302,
+        67
+      ],
+      "auto_key_rgb": [
+        0,
+        160,
+        56
+      ],
+      "input_sha256": "49c85f8375d325da6354f46cc22860e66fbd8b7448b75e48175f13a966580a84",
+      "matte_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v1\\turnToIdle_f144_T79.png",
+      "matte_sha256": "fa8ba314b6bc452799fd5782901d81c5fd9aaad01fe8cc72daf872189f984d1c",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "visible_pixels": 173610,
+      "color_diagnostics": {
+        "between_f138_and_candidate": {
+          "overlap_pixels": 170449,
+          "mean_abs_rgb": [
+            0.634,
+            1.321,
+            -1.783
+          ],
+          "median_signed_rgb": [
+            0.0,
+            1.0,
+            -2.0
+          ]
+        },
+        "candidate_to_existing_idle": {
+          "overlap_pixels": 172425,
+          "mean_abs_rgb": [
+            -3.935,
+            -3.475,
+            0.489
+          ],
+          "median_signed_rgb": [
+            -3.0,
+            -3.0,
+            0.0
+          ]
+        }
+      },
+      "user_frame_verdict": "accepted_source_video_but_candidate_matte_pending",
+      "bbox_xy_exclusive": [
+        240,
+        33,
+        658,
+        893
+      ],
+      "edge4px_foreground": 0
+    }
+  ],
+  "note": "This report compares alternative original video frames after the same matte recipe. It does not replace or modify the accepted 24-frame sequence."
+}

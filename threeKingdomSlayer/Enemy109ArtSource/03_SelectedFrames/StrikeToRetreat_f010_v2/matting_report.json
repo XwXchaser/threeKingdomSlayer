@@ -1,0 +1,535 @@
+{
+  "created_utc": "2026-10-11T15:23:19.016736+00:00",
+  "recipe": {
+    "method": "SVL Chroma",
+    "key": "per_frame_auto",
+    "threshold": 79,
+    "softness": 16,
+    "halo": 1,
+    "harden": true,
+    "smoothing": false,
+    "extra_postprocess": false
+  },
+  "probe_report": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\strike_to_retreat_v1\\matting_f010_v2_probe\\probe_report.json",
+  "server_sha256": "d2f8c9d8bd79f2a4fb9962ed454b20441c42c28d3cd6f4c7c9fc8fe61a8a23d8",
+  "frame_count": 11,
+  "source_video_unchanged": true,
+  "original_selected_raw_unchanged": true,
+  "core_pixels": 1359179,
+  "core_deleted_pixels": 0,
+  "core_changed_rgb_pixels": 0,
+  "edge_rgb_recovery_pixels": 14321,
+  "matte_user_verdict": "pending",
+  "unity_imported": true,
+  "deployment_manifest": "Enemy109ArtSource/03_SelectedFrames/StrikeToRetreat_f010_v2/deployment_manifest.json",
+  "paid_api_calls": 0,
+  "preview_frame_order_verified": true,
+  "rows": [
+    {
+      "size": [
+        960,
+        960
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "visible_pixels": 262619,
+      "semi_transparent_pixels": 0,
+      "core_pixels": 165545,
+      "core_deleted_pixels": 0,
+      "core_changed_rgb_pixels": 0,
+      "visible_changed_rgb_pixels": 1078,
+      "screen_leak_pixels": 0,
+      "transparent_hidden_rgb_pixels": 0,
+      "alpha_bbox_xy_exclusive": [
+        51,
+        183,
+        851,
+        891
+      ],
+      "margins_LTRB": [
+        51,
+        183,
+        109,
+        69
+      ],
+      "auto_key_rgb": [
+        5,
+        143,
+        62
+      ],
+      "ordinal": 1,
+      "source_frame": 10,
+      "source_time_seconds": 0.375,
+      "original_selection_ordinal": 2,
+      "source_file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\StrikeToRetreat_v1\\raw\\strikeToRetreat02_f010_t0.375.png",
+      "file": "strikeToRetreat01_f010.png",
+      "raw_sha256": "e521578bd93dec481a39c4c0ebf7aa015a896278b604ddbe640ea3d03d57fad6",
+      "rgba_sha256": "f3d8507e1a5d2345d8335b13a3671de0dbdba33c39816b7477a2458f157a22de",
+      "source_copy_byte_identical": true,
+      "reused_verified_probe": true
+    },
+    {
+      "size": [
+        960,
+        960
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "visible_pixels": 259631,
+      "semi_transparent_pixels": 0,
+      "core_pixels": 160241,
+      "core_deleted_pixels": 0,
+      "core_changed_rgb_pixels": 0,
+      "visible_changed_rgb_pixels": 1447,
+      "screen_leak_pixels": 0,
+      "transparent_hidden_rgb_pixels": 0,
+      "alpha_bbox_xy_exclusive": [
+        47,
+        175,
+        913,
+        889
+      ],
+      "margins_LTRB": [
+        47,
+        175,
+        47,
+        71
+      ],
+      "auto_key_rgb": [
+        6,
+        142,
+        63
+      ],
+      "ordinal": 2,
+      "source_frame": 27,
+      "source_time_seconds": 1.083333,
+      "original_selection_ordinal": 3,
+      "source_file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\StrikeToRetreat_v1\\raw\\strikeToRetreat03_f027_t1.083.png",
+      "file": "strikeToRetreat02_f027.png",
+      "raw_sha256": "35abcfe1a46309136856cd31459a8695d15553ceb676748288620c524b371a67",
+      "rgba_sha256": "cf45b20f4ab7f5abff1c2544fca35e628e3d46033c94865d93566f0fb1f8c6da",
+      "source_copy_byte_identical": true,
+      "reused_verified_probe": true
+    },
+    {
+      "size": [
+        960,
+        960
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "visible_pixels": 259935,
+      "semi_transparent_pixels": 0,
+      "core_pixels": 158402,
+      "core_deleted_pixels": 0,
+      "core_changed_rgb_pixels": 0,
+      "visible_changed_rgb_pixels": 1513,
+      "screen_leak_pixels": 0,
+      "transparent_hidden_rgb_pixels": 0,
+      "alpha_bbox_xy_exclusive": [
+        72,
+        157,
+        906,
+        890
+      ],
+      "margins_LTRB": [
+        72,
+        157,
+        54,
+        70
+      ],
+      "auto_key_rgb": [
+        7,
+        142,
+        64
+      ],
+      "ordinal": 3,
+      "source_frame": 35,
+      "source_time_seconds": 1.416667,
+      "original_selection_ordinal": 4,
+      "source_file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\StrikeToRetreat_v1\\raw\\strikeToRetreat04_f035_t1.417.png",
+      "file": "strikeToRetreat03_f035.png",
+      "raw_sha256": "e06624100a514edd3b2b027f0ef6975630800b9da278b2a1213701bdbbbe474b",
+      "rgba_sha256": "19cad557fcec39911ce5dd79dfd87f750c6ac4a186fd28e5dc093e6c31ee27df",
+      "source_copy_byte_identical": true,
+      "reused_verified_probe": false
+    },
+    {
+      "size": [
+        960,
+        960
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "visible_pixels": 246778,
+      "semi_transparent_pixels": 0,
+      "core_pixels": 150528,
+      "core_deleted_pixels": 0,
+      "core_changed_rgb_pixels": 0,
+      "visible_changed_rgb_pixels": 1524,
+      "screen_leak_pixels": 0,
+      "transparent_hidden_rgb_pixels": 0,
+      "alpha_bbox_xy_exclusive": [
+        56,
+        165,
+        894,
+        891
+      ],
+      "margins_LTRB": [
+        56,
+        165,
+        66,
+        69
+      ],
+      "auto_key_rgb": [
+        6,
+        142,
+        64
+      ],
+      "ordinal": 4,
+      "source_frame": 39,
+      "source_time_seconds": 1.583333,
+      "original_selection_ordinal": 5,
+      "source_file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\StrikeToRetreat_v1\\raw\\strikeToRetreat05_f039_t1.583.png",
+      "file": "strikeToRetreat04_f039.png",
+      "raw_sha256": "48328293902a3b9253157cbee94fab72d0d135d13eb136ab5f55ad9e33519902",
+      "rgba_sha256": "1d4b2493503ab164414151358deb19bacc5d5ee50c4b7d52d396daf7b8111b1c",
+      "source_copy_byte_identical": true,
+      "reused_verified_probe": false
+    },
+    {
+      "size": [
+        960,
+        960
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "visible_pixels": 246457,
+      "semi_transparent_pixels": 0,
+      "core_pixels": 152402,
+      "core_deleted_pixels": 0,
+      "core_changed_rgb_pixels": 0,
+      "visible_changed_rgb_pixels": 1702,
+      "screen_leak_pixels": 0,
+      "transparent_hidden_rgb_pixels": 0,
+      "alpha_bbox_xy_exclusive": [
+        70,
+        165,
+        899,
+        893
+      ],
+      "margins_LTRB": [
+        70,
+        165,
+        61,
+        67
+      ],
+      "auto_key_rgb": [
+        6,
+        142,
+        64
+      ],
+      "ordinal": 5,
+      "source_frame": 43,
+      "source_time_seconds": 1.75,
+      "original_selection_ordinal": 6,
+      "source_file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\StrikeToRetreat_v1\\raw\\strikeToRetreat06_f043_t1.750.png",
+      "file": "strikeToRetreat05_f043.png",
+      "raw_sha256": "f7aeac23bf47633c4bcde493b3f4a09a1d63c49fc5906be554d8a763ac620394",
+      "rgba_sha256": "12395e8addf68a078615a9353c3e41b6a9b2785f07a38ecd9bf83b62539cf1ad",
+      "source_copy_byte_identical": true,
+      "reused_verified_probe": true
+    },
+    {
+      "size": [
+        960,
+        960
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "visible_pixels": 183575,
+      "semi_transparent_pixels": 0,
+      "core_pixels": 109943,
+      "core_deleted_pixels": 0,
+      "core_changed_rgb_pixels": 0,
+      "visible_changed_rgb_pixels": 1270,
+      "screen_leak_pixels": 0,
+      "transparent_hidden_rgb_pixels": 0,
+      "alpha_bbox_xy_exclusive": [
+        225,
+        162,
+        921,
+        893
+      ],
+      "margins_LTRB": [
+        225,
+        162,
+        39,
+        67
+      ],
+      "auto_key_rgb": [
+        5,
+        143,
+        64
+      ],
+      "ordinal": 6,
+      "source_frame": 72,
+      "source_time_seconds": 2.958333,
+      "original_selection_ordinal": 7,
+      "source_file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\StrikeToRetreat_v1\\raw\\strikeToRetreat07_f072_t2.958.png",
+      "file": "strikeToRetreat06_f072.png",
+      "raw_sha256": "79a484ebde494fc0eb8f913a979ac9480691df20cacbb9541f89ead8a530a668",
+      "rgba_sha256": "620c26f39ae1a012f16559d64901c81c6e45787513ac1ea9854dfbcf88d76e4b",
+      "source_copy_byte_identical": true,
+      "reused_verified_probe": true
+    },
+    {
+      "size": [
+        960,
+        960
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "visible_pixels": 174312,
+      "semi_transparent_pixels": 0,
+      "core_pixels": 102577,
+      "core_deleted_pixels": 0,
+      "core_changed_rgb_pixels": 0,
+      "visible_changed_rgb_pixels": 1242,
+      "screen_leak_pixels": 0,
+      "transparent_hidden_rgb_pixels": 0,
+      "alpha_bbox_xy_exclusive": [
+        236,
+        169,
+        886,
+        895
+      ],
+      "margins_LTRB": [
+        236,
+        169,
+        74,
+        65
+      ],
+      "auto_key_rgb": [
+        5,
+        143,
+        64
+      ],
+      "ordinal": 7,
+      "source_frame": 75,
+      "source_time_seconds": 3.083333,
+      "original_selection_ordinal": 8,
+      "source_file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\StrikeToRetreat_v1\\raw\\strikeToRetreat08_f075_t3.083.png",
+      "file": "strikeToRetreat07_f075.png",
+      "raw_sha256": "d1113bd5d567f9137ba9993b0b3d87b9c454b0630d1a4336be9ff15a49d3554c",
+      "rgba_sha256": "7d3f6b271ad3f8cfafd9fdf04cb93bacb1b5a62439dbc16736295a05d4aa390b",
+      "source_copy_byte_identical": true,
+      "reused_verified_probe": false
+    },
+    {
+      "size": [
+        960,
+        960
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "visible_pixels": 165691,
+      "semi_transparent_pixels": 0,
+      "core_pixels": 95733,
+      "core_deleted_pixels": 0,
+      "core_changed_rgb_pixels": 0,
+      "visible_changed_rgb_pixels": 1357,
+      "screen_leak_pixels": 0,
+      "transparent_hidden_rgb_pixels": 0,
+      "alpha_bbox_xy_exclusive": [
+        259,
+        177,
+        831,
+        895
+      ],
+      "margins_LTRB": [
+        259,
+        177,
+        129,
+        65
+      ],
+      "auto_key_rgb": [
+        5,
+        143,
+        64
+      ],
+      "ordinal": 8,
+      "source_frame": 79,
+      "source_time_seconds": 3.25,
+      "original_selection_ordinal": 9,
+      "source_file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\StrikeToRetreat_v1\\raw\\strikeToRetreat09_f079_t3.250.png",
+      "file": "strikeToRetreat08_f079.png",
+      "raw_sha256": "99b6dd2f1ec09efdecaf1616c7e55c8c543d50be5bb4a2d56cc92598cfffa7f2",
+      "rgba_sha256": "0a7de539360b0d9b0efeede1d2be2300cb4ca4447d6daa58b1df40f2791da03e",
+      "source_copy_byte_identical": true,
+      "reused_verified_probe": true
+    },
+    {
+      "size": [
+        960,
+        960
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "visible_pixels": 159524,
+      "semi_transparent_pixels": 0,
+      "core_pixels": 89098,
+      "core_deleted_pixels": 0,
+      "core_changed_rgb_pixels": 0,
+      "visible_changed_rgb_pixels": 1350,
+      "screen_leak_pixels": 0,
+      "transparent_hidden_rgb_pixels": 0,
+      "alpha_bbox_xy_exclusive": [
+        321,
+        55,
+        757,
+        891
+      ],
+      "margins_LTRB": [
+        321,
+        55,
+        203,
+        69
+      ],
+      "auto_key_rgb": [
+        5,
+        142,
+        64
+      ],
+      "ordinal": 9,
+      "source_frame": 87,
+      "source_time_seconds": 3.583333,
+      "original_selection_ordinal": 10,
+      "source_file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\StrikeToRetreat_v1\\raw\\strikeToRetreat10_f087_t3.583.png",
+      "file": "strikeToRetreat09_f087.png",
+      "raw_sha256": "0b1ad871c6a82100347c11df2a74bfe58c2b15af52d94928cadff61b7aa29c3a",
+      "rgba_sha256": "b833c2cb3685915ff1876e8cfb0b1e90536c7251ca6b7a1052ce9f744ccaebeb",
+      "source_copy_byte_identical": true,
+      "reused_verified_probe": false
+    },
+    {
+      "size": [
+        960,
+        960
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "visible_pixels": 147245,
+      "semi_transparent_pixels": 0,
+      "core_pixels": 82548,
+      "core_deleted_pixels": 0,
+      "core_changed_rgb_pixels": 0,
+      "visible_changed_rgb_pixels": 1068,
+      "screen_leak_pixels": 0,
+      "transparent_hidden_rgb_pixels": 0,
+      "alpha_bbox_xy_exclusive": [
+        307,
+        32,
+        667,
+        890
+      ],
+      "margins_LTRB": [
+        307,
+        32,
+        293,
+        70
+      ],
+      "auto_key_rgb": [
+        4,
+        143,
+        63
+      ],
+      "ordinal": 10,
+      "source_frame": 104,
+      "source_time_seconds": 4.291667,
+      "original_selection_ordinal": 11,
+      "source_file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\StrikeToRetreat_v1\\raw\\strikeToRetreat11_f104_t4.292.png",
+      "file": "strikeToRetreat10_f104.png",
+      "raw_sha256": "a1d3abcfe66686a97d648ece96c9762a0d0e44d96378594a44cb5b1557087140",
+      "rgba_sha256": "082b6a987494f90b32d0014e9e1224531b6618e1cf05619a9bb19d1d98ba82e4",
+      "source_copy_byte_identical": true,
+      "reused_verified_probe": true
+    },
+    {
+      "size": [
+        960,
+        960
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "visible_pixels": 144310,
+      "semi_transparent_pixels": 0,
+      "core_pixels": 92162,
+      "core_deleted_pixels": 0,
+      "core_changed_rgb_pixels": 0,
+      "visible_changed_rgb_pixels": 770,
+      "screen_leak_pixels": 0,
+      "transparent_hidden_rgb_pixels": 0,
+      "alpha_bbox_xy_exclusive": [
+        305,
+        56,
+        699,
+        891
+      ],
+      "margins_LTRB": [
+        305,
+        56,
+        261,
+        69
+      ],
+      "auto_key_rgb": [
+        0,
+        150,
+        62
+      ],
+      "ordinal": 11,
+      "source_frame": 145,
+      "source_time_seconds": 6.0,
+      "original_selection_ordinal": 12,
+      "source_file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\StrikeToRetreat_v1\\raw\\strikeToRetreat12_f145_t6.000.png",
+      "file": "strikeToRetreat11_f145.png",
+      "raw_sha256": "00d3238607e53277a80e1f6164e4f3ead66553c71ebeb45561df66cb62a93e20",
+      "rgba_sha256": "dbde383283f01f3a5efd20ec82b2e34cd2aca2af4c8e9e8c7d1514d98e7b0988",
+      "source_copy_byte_identical": true,
+      "reused_verified_probe": true
+    }
+  ]
+}

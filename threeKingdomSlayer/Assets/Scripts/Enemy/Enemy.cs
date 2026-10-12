@@ -362,6 +362,7 @@ public class Enemy : MonoBehaviour
     private EnemyAttackTelegraph _attackTelegraph;
     private Tween _hitScaleTween;
     private float _hitStopRemaining;
+    public bool IsHitStopped => _hitStopRemaining > 0f;
     private bool _hitStopAnimatorWasEnabled;
     private float _hitScaleMultiplier = 1f;
 
@@ -388,6 +389,7 @@ public class Enemy : MonoBehaviour
     private Animator _animator;
     private EnemySpriteController _spriteCtrl;
     private CavalryEnemy _cavalry;
+    private CavalryVisualController _cavalryVisual;
     private AnimationClip _attackClip; // 缓存的 Attack clip（用于同步 DOTween 与 Animator 时长）
 
     // 事件
@@ -489,6 +491,7 @@ public class Enemy : MonoBehaviour
     {
         instanceId = _nextInstanceId++;
         _cavalry = GetComponent<CavalryEnemy>();
+        _cavalryVisual = GetComponent<CavalryVisualController>();
         _cavalry?.ResetCavalry();
         columnIndex = col;
         rowIndex = row;
@@ -873,7 +876,11 @@ public class Enemy : MonoBehaviour
 
     public bool OnPlayerLaunchHit() => EnterCowardFormFromPlayerLaunch();
 
-    private void PlayIdleVisual() => _animator?.Play(IsCoward ? "CowardIdle" : "Idle", 0, 0f);
+    private void PlayIdleVisual()
+    {
+        if (_cavalryVisual != null && _cavalryVisual.TryRefreshMountedAnimation()) return;
+        _animator?.Play(IsCoward ? "CowardIdle" : "Idle", 0, 0f);
+    }
     private void PlayLaunchVisual() => _animator?.Play(IsCoward ? "CowardLaunched" : "Launched_Rise", 0, 0f);
     private void PlayHitVisual(HitReactionDirection direction)
     {
@@ -962,6 +969,7 @@ public class Enemy : MonoBehaviour
     /// <summary>骑兵命中表现：复用攻击动画（伤害与位移由 CavalryEnemy 负责）。</summary>
     public void PlayCavalryStrikeVisual()
     {
+        if (_cavalryVisual != null && _cavalryVisual.TryRefreshMountedAnimation()) return;
         if (_animator == null) return;
         _animator.Play("Idle", 0, 0f);
         _animator.SetTrigger("Attack");
@@ -2636,6 +2644,8 @@ private void SpawnProjectile()
     /// </summary>
     private void TriggerHitFlash(HitReactionDirection hitReactionDirection)
     {
+        // 骑乘合成动作没有正式受击Clip；继续闪白/缩放/卡肉，保留当前阶段，避免显示101步兵。
+        if (_cavalryVisual != null && _cavalryVisual.OwnsMountedAnimator) return;
         if (_hitFlashRoutine != null)
             StopCoroutine(_hitFlashRoutine);
         _hitFlashRoutine = StartCoroutine(HitFlashRoutine(hitReactionDirection));

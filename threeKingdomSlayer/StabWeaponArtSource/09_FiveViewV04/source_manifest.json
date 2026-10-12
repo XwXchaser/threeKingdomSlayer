@@ -1,0 +1,291 @@
+{
+  "status": "review_boards_and_candidate_views_delivered_geometry_not_passed",
+  "copies": [
+    {
+      "file": "body/top_bottom.png",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v04/stab_body_top_bottom_v04.png",
+      "sha256": "7a8906f8dc46ee573a499f2e5549d2129f8fa98c25b57695f2c95d00d6c95175",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/approved_specification.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v04/trace/approved_specification.json",
+      "sha256": "bb96ef6ac4480c2d686b4e782e7fc36bf48681b64dee38d947d6d809308d1450",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/request.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v04/trace/request.json",
+      "sha256": "0d6cc068ed2257b7e969a1bc17ef3e7ce3df49a91f28a3abd7c8772a6973f7c1",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/status.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v04/trace/status.json",
+      "sha256": "49a0e94011c7ab2235cf78d8b8ae9588a54991c556392ffd79e66ed9d54606e0",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/verification.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v04/trace/verification.json",
+      "sha256": "23040f4085132ebf2fd4306bdfc496309703013dca1057c21c5a06a7d1d56c48",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/prompt_zh.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v04/trace/prompt_zh.txt",
+      "sha256": "6ba3de119367ef498bff7e65c4e3da657ffd78a35d4804a3da75572c2ffcf78d",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/prompt_en.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v04/trace/prompt_en.txt",
+      "sha256": "5f9ae6cf0f57feaa3f10968781a3091b1197b05c4ce4b18cbd3e31996d9811e1",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/negative_zh.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v04/trace/negative_zh.txt",
+      "sha256": "31cf88a2da9d51c677f9bbe49652240dd8215c8b2e03ed8ed350ac34ea1d0fbf",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/negative_en.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v04/trace/negative_en.txt",
+      "sha256": "b501d9724df136243e3a8581be765732b192373a3cc31b677052859ab139a087",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/top_bottom.png",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v04/stab_tassel_top_bottom_v04.png",
+      "sha256": "e3264524a6df6f6ea84538bf2ac59ce80d1d2f3d4fb28d3ee1459419bb0f8d66",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/approved_specification.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v04/trace/approved_specification.json",
+      "sha256": "bb96ef6ac4480c2d686b4e782e7fc36bf48681b64dee38d947d6d809308d1450",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/request.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v04/trace/request.json",
+      "sha256": "819977b1c3ee75def36eea9ef12a4505342e6b70ebed327014b557e471adf2da",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/status.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v04/trace/status.json",
+      "sha256": "51159fc905e031154d16250045d2861897462b190641e8017349c3a20247fa3e",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/verification.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v04/trace/verification.json",
+      "sha256": "0864180ef7261e26cd07526f700dc5ca05c842dbe1c2f4f8181c2ec1686871e0",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/prompt_zh.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v04/trace/prompt_zh.txt",
+      "sha256": "c701fb9f87da991f2622c991ae3c025142f026ba11d1b35497222d5695a18200",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/prompt_en.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v04/trace/prompt_en.txt",
+      "sha256": "33844c0d24f7b0ebb2befc2609915ae3a80e8640367083ad7420b7aaff7141d6",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/negative_zh.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v04/trace/negative_zh.txt",
+      "sha256": "754cce7cae34fdabc06b185d78f9dc446bd988eeaa861f42ca8de93642b2d896",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/negative_en.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v04/trace/negative_en.txt",
+      "sha256": "4ccdf0b7ad0fa3d5c16e12a0031431027c1b626accca3392bb059f0716a9d7fe",
+      "byte_identical_to_source": true
+    }
+  ],
+  "raw_responses_retained_at_original_external_directories": true,
+  "files": [
+    {
+      "file": "body/body_five_view_annotated.png",
+      "bytes": 1676431,
+      "sha256": "c5dfacd50ba21c760d33411e960d92cbe35b416722b942f6068f8eb3a6a7e9b1"
+    },
+    {
+      "file": "body/body_five_view_plain.png",
+      "bytes": 1538886,
+      "sha256": "462dbd34edcbc1273f1916a90a136b1584688b1ccd10a240173c1096ed9df802"
+    },
+    {
+      "file": "body/top_bottom.png",
+      "bytes": 1223478,
+      "sha256": "7a8906f8dc46ee573a499f2e5549d2129f8fa98c25b57695f2c95d00d6c95175"
+    },
+    {
+      "file": "body/trace/approved_specification.json",
+      "bytes": 18939,
+      "sha256": "bb96ef6ac4480c2d686b4e782e7fc36bf48681b64dee38d947d6d809308d1450"
+    },
+    {
+      "file": "body/trace/negative_en.txt",
+      "bytes": 462,
+      "sha256": "b501d9724df136243e3a8581be765732b192373a3cc31b677052859ab139a087"
+    },
+    {
+      "file": "body/trace/negative_zh.txt",
+      "bytes": 392,
+      "sha256": "31cf88a2da9d51c677f9bbe49652240dd8215c8b2e03ed8ed350ac34ea1d0fbf"
+    },
+    {
+      "file": "body/trace/prompt_en.txt",
+      "bytes": 2097,
+      "sha256": "5f9ae6cf0f57feaa3f10968781a3091b1197b05c4ce4b18cbd3e31996d9811e1"
+    },
+    {
+      "file": "body/trace/prompt_zh.txt",
+      "bytes": 1786,
+      "sha256": "6ba3de119367ef498bff7e65c4e3da657ffd78a35d4804a3da75572c2ffcf78d"
+    },
+    {
+      "file": "body/trace/request.json",
+      "bytes": 6439,
+      "sha256": "0d6cc068ed2257b7e969a1bc17ef3e7ce3df49a91f28a3abd7c8772a6973f7c1"
+    },
+    {
+      "file": "body/trace/status.json",
+      "bytes": 396,
+      "sha256": "49a0e94011c7ab2235cf78d8b8ae9588a54991c556392ffd79e66ed9d54606e0"
+    },
+    {
+      "file": "body/trace/verification.json",
+      "bytes": 1764,
+      "sha256": "23040f4085132ebf2fd4306bdfc496309703013dca1057c21c5a06a7d1d56c48"
+    },
+    {
+      "file": "body/views/back.png",
+      "bytes": 367611,
+      "sha256": "88ec564eb7cda8ac7cb7e98a83519f3fb37bab28d791206f746656a4ae87997a"
+    },
+    {
+      "file": "body/views/bottom.png",
+      "bytes": 591354,
+      "sha256": "2315e9c4b0fc27a795ef1f3916d9fcf327ba1cf824a3e3013d2330f2f285e0d9"
+    },
+    {
+      "file": "body/views/front.png",
+      "bytes": 368468,
+      "sha256": "015e4c90ef27f03a7667ecd7037a888af2dffe1b5122003d9d253bee36b14a07"
+    },
+    {
+      "file": "body/views/right.png",
+      "bytes": 346914,
+      "sha256": "bdf749eacad6628fac6b2a6c4084756e4c695ab58a06583def69581a4ec355c8"
+    },
+    {
+      "file": "body/views/top.png",
+      "bytes": 586676,
+      "sha256": "2e05ccec49c03e6f59896b9b5226c90bd54ac07dea63157ab6a7cf67b7aa5f86"
+    },
+    {
+      "file": "delivery_verification.json",
+      "bytes": 3845,
+      "sha256": "2e1f0e847c0948fbc97f96b0d369472a8b54641148ab707aa65d88d750a6843f"
+    },
+    {
+      "file": "layout_transforms.json",
+      "bytes": 2943,
+      "sha256": "aaf4fed62652432b85018efc388e65fd0d9fc3a1945884146e0d71a69175d9d5"
+    },
+    {
+      "file": "README.md",
+      "bytes": 3220,
+      "sha256": "c4478b25e7718a7c5801e980f4a3ad89835b8c5ece12bbc5536eabbf667ae963"
+    },
+    {
+      "file": "tassel/tassel_five_view_annotated.png",
+      "bytes": 1710921,
+      "sha256": "433968bec108a085c72caa9d0be037cbac06fc3edcf13420a82d3621e96dc88d"
+    },
+    {
+      "file": "tassel/tassel_five_view_plain.png",
+      "bytes": 1578740,
+      "sha256": "f653ff1c4d405190223be1bb6a63a1f45605812a8ae9162c28d460cc8b48b250"
+    },
+    {
+      "file": "tassel/top_bottom.png",
+      "bytes": 1224781,
+      "sha256": "e3264524a6df6f6ea84538bf2ac59ce80d1d2f3d4fb28d3ee1459419bb0f8d66"
+    },
+    {
+      "file": "tassel/trace/approved_specification.json",
+      "bytes": 18939,
+      "sha256": "bb96ef6ac4480c2d686b4e782e7fc36bf48681b64dee38d947d6d809308d1450"
+    },
+    {
+      "file": "tassel/trace/negative_en.txt",
+      "bytes": 472,
+      "sha256": "4ccdf0b7ad0fa3d5c16e12a0031431027c1b626accca3392bb059f0716a9d7fe"
+    },
+    {
+      "file": "tassel/trace/negative_zh.txt",
+      "bytes": 395,
+      "sha256": "754cce7cae34fdabc06b185d78f9dc446bd988eeaa861f42ca8de93642b2d896"
+    },
+    {
+      "file": "tassel/trace/prompt_en.txt",
+      "bytes": 2147,
+      "sha256": "33844c0d24f7b0ebb2befc2609915ae3a80e8640367083ad7420b7aaff7141d6"
+    },
+    {
+      "file": "tassel/trace/prompt_zh.txt",
+      "bytes": 1742,
+      "sha256": "c701fb9f87da991f2622c991ae3c025142f026ba11d1b35497222d5695a18200"
+    },
+    {
+      "file": "tassel/trace/request.json",
+      "bytes": 6468,
+      "sha256": "819977b1c3ee75def36eea9ef12a4505342e6b70ebed327014b557e471adf2da"
+    },
+    {
+      "file": "tassel/trace/status.json",
+      "bytes": 401,
+      "sha256": "51159fc905e031154d16250045d2861897462b190641e8017349c3a20247fa3e"
+    },
+    {
+      "file": "tassel/trace/verification.json",
+      "bytes": 1770,
+      "sha256": "0864180ef7261e26cd07526f700dc5ca05c842dbe1c2f4f8181c2ec1686871e0"
+    },
+    {
+      "file": "tassel/views/back.png",
+      "bytes": 451916,
+      "sha256": "7ce2c25270db63f2f9c5ceeca62a6107da0894a73d723252a05868788aa99b1f"
+    },
+    {
+      "file": "tassel/views/bottom.png",
+      "bytes": 700786,
+      "sha256": "4f5dc5f803f244483e9cf431e70d842100c32e7c14e848eb70ff97905d703659"
+    },
+    {
+      "file": "tassel/views/front.png",
+      "bytes": 464272,
+      "sha256": "4b540c6ec87a4fd56172033359799519686e67de9cad14b8841afcee6b1a3e60"
+    },
+    {
+      "file": "tassel/views/right.png",
+      "bytes": 341732,
+      "sha256": "b92267118a597c8036ccfad3268dfe363b910c967a3d8417757509198e118df4"
+    },
+    {
+      "file": "tassel/views/top.png",
+      "bytes": 722591,
+      "sha256": "6e5f0c4eb81b13a98acef1d52e8b551deff741cce1a4969d6ed8fa82919b1a78"
+    }
+  ]
+}

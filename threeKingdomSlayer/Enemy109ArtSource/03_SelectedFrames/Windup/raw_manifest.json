@@ -1,0 +1,71 @@
+{
+ "frames": [
+  {
+   "file": "windup1_f015.png",
+   "ordinal": 1,
+   "source_frame": 15,
+   "group": null,
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_windup_charge_v1_decode\\selected_frames_v1\\windup\\windup_01_srcf015.png",
+   "sha256": "7939ad9dfe740639227ecf87d7bfe882e86a6af2b066349ea68f69e5d9e0111e",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "windup2_f016.png",
+   "ordinal": 2,
+   "source_frame": 16,
+   "group": null,
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_windup_charge_v1_decode\\selected_frames_v1\\windup\\windup_02_srcf016.png",
+   "sha256": "2a3efca95c1171022c7b686da8d29950b6a638b1fddc3829da281c72acd65054",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "windup3_f017.png",
+   "ordinal": 3,
+   "source_frame": 17,
+   "group": null,
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_windup_charge_v1_decode\\selected_frames_v1\\windup\\windup_03_srcf017.png",
+   "sha256": "b9155044fbf3ceb0909254d29a3518b9fdf975555542786cf9514bb2a2eb8b40",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "windup4_f018.png",
+   "ordinal": 4,
+   "source_frame": 18,
+   "group": null,
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_windup_charge_v1_decode\\selected_frames_v1\\windup\\windup_04_srcf018.png",
+   "sha256": "98cd575c8b666c606970107f0eb4af8f8ce7fd780e0dc5a38562fcb53394464c",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "windup5_f019.png",
+   "ordinal": 5,
+   "source_frame": 19,
+   "group": null,
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_windup_charge_v1_decode\\selected_frames_v1\\windup\\windup_05_srcf019.png",
+   "sha256": "6e3ab5877bab474307db72801694052b0fe7679d351eabec7faa2ee78828efa4",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "windup6_f020.png",
+   "ordinal": 6,
+   "source_frame": 20,
+   "group": null,
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_windup_charge_v1_decode\\selected_frames_v1\\windup\\windup_06_srcf020.png",
+   "sha256": "4b9a70b55a5605df272619fdf66d4dbb1b1e8dbcde2c376c25231c6e5498db86",
+   "sha256_matches_manifest": true
+  }
+ ],
+ "acceptance": {
+  "status": "user_accepted_pending_cutout",
+  "cutout_request_created": false,
+  "next_step": "Frame-level approval is complete. Run the authorized cutout workflow on these 12 raw frames, then inspect alpha and normalize/pad before Unity import."
+ },
+ "deployed_reference_count": 6,
+ "plate_rgb": [
+  0,
+  161,
+  60
+ ],
+ "plate_chroma": 161.0,
+ "suggested_threshold": 79
+}

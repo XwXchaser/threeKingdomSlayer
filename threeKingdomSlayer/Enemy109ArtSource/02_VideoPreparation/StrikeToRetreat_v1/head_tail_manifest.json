@@ -1,0 +1,192 @@
+{
+  "version": "enemy109-strike-to-retreat-head-tail-v1",
+  "created_utc": "2026-10-11T13:16:13.572806+00:00",
+  "status": "prepared_for_user_review_no_upload_no_generation",
+  "sources_sha256": {
+    "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\Attack\\keyed_ui_t79\\attack18_f103.png": "93de7296fee10a93320ee5c41724297aba129afc711bc0c89aad928e224a3359",
+    "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\Attack\\raw\\attack18_f103.png": "8f23a311d407111f2199bfac4d29c2320660bec273333ca7992dfbc6aacb6c52",
+    "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_run_loop_v1\\diagnostic_review\\first_frame.png": "d8e2a653ed1543fbbf89a506a053b1e40430adc33ce20ca588cb74558fd71359",
+    "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_retreat_run_loop_v1_720p_4s.mp4": "9adf1f6be61a6c02bcbcf675f7d9e88981f2b1b2cb3d72aee768b0e0d5e343cd",
+    "E:\\sprite-video-lab\\server.py": "d2f8c9d8bd79f2a4fb9962ed454b20441c42c28d3cd6f4c7c9fc8fe61a8a23d8"
+  },
+  "head_source": "Attack18 f103 (current final strike followthrough, lance still extended)",
+  "tail_source": "actual decoded retreat video f001, frame1 PTS0.0; not static concept or TurnToIdle first frame",
+  "tail_matte": {
+    "auto_key_rgb": [
+      0,
+      154,
+      63
+    ],
+    "core_pixels": 100087,
+    "core_deleted_pixels": 0,
+    "core_changed_rgb_pixels": 0,
+    "visible_edge_rgb_changed_pixels": 691,
+    "alpha_values": [
+      0,
+      255
+    ],
+    "alpha_bbox_xy_exclusive": [
+      304,
+      51,
+      701,
+      892
+    ]
+  },
+  "recipe": {
+    "method": "SVL Chroma",
+    "threshold": 79,
+    "softness": 16,
+    "halo": 1,
+    "harden": true,
+    "smoothing": false
+  },
+  "head_geometry": {
+    "scale": 0.9375,
+    "resampled_size": [
+      900,
+      900
+    ],
+    "offset_xy": [
+      12,
+      59
+    ],
+    "resampling": "Nearest",
+    "scale_basis": "known 1024 retreat input -> 960 output ratio, not independent bbox fitting",
+    "translation_basis": "preserve prior source-space horizontal anchor x12; align current hoof support bottom to real retreat f001",
+    "scope": "one global transform for this anchor; no per-part editing, warping or RGB correction"
+  },
+  "tail_geometry": {
+    "scale": 1.0,
+    "offset_xy": [
+      0,
+      0
+    ],
+    "original_video_canvas_preserved": true
+  },
+  "background_rgb": [
+    0,
+    159,
+    62
+  ],
+  "uploads": [
+    {
+      "role": "first_frame",
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\StrikeToRetreat_v1\\upload\\first_frame_attack18_aligned_green_015962_960.png",
+      "sha256": "890a1ca3bb5c54d14027e716031477cd527801dd2ab947718748eb1d54842878",
+      "size": [
+        960,
+        960
+      ],
+      "mode": "RGB",
+      "alpha_bbox_xy_exclusive": [
+        106,
+        184,
+        844,
+        892
+      ],
+      "margins_LTRB": [
+        106,
+        184,
+        116,
+        68
+      ],
+      "hoof_bottom_row": 891,
+      "background": {
+        "median_rgb": [
+          0.0,
+          159.0,
+          62.0
+        ],
+        "std_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "range_rgb": [
+          [
+            0,
+            0
+          ],
+          [
+            159,
+            159
+          ],
+          [
+            62,
+            62
+          ]
+        ],
+        "pixel_samples": 16384
+      },
+      "opaque_subject_rgb_changes_from_prepared_rgba": 0
+    },
+    {
+      "role": "last_frame",
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\StrikeToRetreat_v1\\upload\\last_frame_actual_retreat_f001_green_015962_960.png",
+      "sha256": "244c3ee6fb89e2d239ef93faaa363fc10e700347cc5cdc3615cee5627468ce1c",
+      "size": [
+        960,
+        960
+      ],
+      "mode": "RGB",
+      "alpha_bbox_xy_exclusive": [
+        304,
+        51,
+        701,
+        892
+      ],
+      "margins_LTRB": [
+        304,
+        51,
+        259,
+        68
+      ],
+      "hoof_bottom_row": 891,
+      "background": {
+        "median_rgb": [
+          0.0,
+          159.0,
+          62.0
+        ],
+        "std_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "range_rgb": [
+          [
+            0,
+            0
+          ],
+          [
+            159,
+            159
+          ],
+          [
+            62,
+            62
+          ]
+        ],
+        "pixel_samples": 16384
+      },
+      "opaque_subject_rgb_changes_from_prepared_rgba": 0
+    }
+  ],
+  "reviews": [
+    "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\StrikeToRetreat_v1\\review\\head_tail_green.png",
+    "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\StrikeToRetreat_v1\\review\\head_tail_neutral.png",
+    "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\StrikeToRetreat_v1\\review\\retreat_tail_matte_details.png"
+  ],
+  "protected_originals_unchanged": true,
+  "subject_color_matching": false,
+  "new_paid_api_calls": 0,
+  "reference_uploads": 0,
+  "video_create_attempts": 0,
+  "unity_modified": false,
+  "limitations": [
+    "Same source scale and foot floor are geometry preparation, not proof of anatomical equality during a turn.",
+    "Binary-alpha edge recovery changes necessary edge RGB; raw decoded RGB stays archived.",
+    "Unified input green is not a guarantee of generated background or subject color stability.",
+    "Tail matte and head geometry await user visual review."
+  ]
+}

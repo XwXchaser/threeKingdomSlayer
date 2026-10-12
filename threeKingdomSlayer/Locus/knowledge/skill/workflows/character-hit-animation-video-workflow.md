@@ -1,7 +1,7 @@
 ---
 id: kd_41b35b08-46a1-4917-b863-4d07b837439e
 injectMode: inherit
-summary: 需要制作角色受击、失盾、待机及状态转换视频并提取透明帧时使用；含参考图对齐、固定坐标、防超框、GPT Image 语义去背、收费确认与独立验收。
+summary: 需要制作角色受击、失盾、待机及状态转换视频并提取透明帧时使用；含参考图对齐、绿幕上传副本统一、输出背景与主体色彩分开验收、固定坐标、防超框、去背与收费确认。
 aiEditMode: inherit
 skillEnabled: true
 skillSurface: command
@@ -79,10 +79,11 @@ Generate a 4-second game sprite animation, not a cinematic video. Use a locked o
 2. 确认图片存在且可读取；检查 `REACH_API_KEY` 是否存在，但绝不打印、记录或提交 Key。
 3. 向用户说明并确认本次收费生成的模型、时长、分辨率、比例、音频、参考图和输出路径。已有针对同一任务的明确确认应复用，不重复询问。
 4. 采用版本化输出，保留失败版用于比较，不覆盖用户资源。
-5. 顺序纪律（必须遵守）：关键姿态参考图生成后，先交给用户目检并取得验收结论，再复述视频任务规格并取得确认，之后才能发起视频生成。不得以“参考图不会上传、视频不依赖它”为理由把两步合并提交。不得在未取得本次确认的情况下自行重试收费任务；服务端明确 `failed` 且 `cost=0` 只能证明未计费，不等于已获授权。交付时必须贴**完整路径**（含并排对比图），不用省略号缩写地址。
-6. 提交任何生成任务前，把提示词/关键词的**中文对照版**贴在对话里给用户过目（提交仍用原英文），便于用户在花钱前修正语义。
-7. 受击类提示词的已知陷阱（实测教训）：在正面锁定视角下，“向后/后仰”不可投影，模型只能用左右倾斜来表达，容易得到侧倾；写“变宽/略宽”会被模型实现为整体放大（看成充气）；把倾斜/迈步/位移/旋转全部禁止后，模型只剩“体积变化”一个通道。正确做法：用**关节角度与部位位移**逐项描述（肩线上移、脖子缩短、骨盆略降、膝屈、手臂滞后/肘弯、剑角变化、飘带上扬），并显式禁止整体放大（overall size must never grow larger than the idle）。
-8. 透明抠图路线纪律（本案例确立的 SOP）：先发 **1 次** GPT 语义去背探针（该帧同时就是成品，成功不浪费）；用指纹判断落到哪套后端 —— 支持透明的后端就把其余帧全走 GPT，不支持就**立刻停手不连发**；不可用时改用**本地绿幕抠图**（前提：输入本身是绿幕）。指纹与判据见 `skill/gpt-image-generation.md`，本地绿幕键的有效组合与代价、以及验证指标的陷阱见 `memory/hit-animation-video-pipeline-lessons.md`；**本地路线（非 GPT）的权威配方、七项验收清单与失败模式复盘见 `skill/workflows/local-green-screen-cutout.md`（2026-10-04 随「攻击帧抠图 13 次失败」复盘新增）。**
+5. 绿幕视频的首尾/参考图色键必须进入生成前检查：在确认无主体的同类空背景区域量测RGB中位数、std。除非用户明确要求保留不同底色，否则必须另存同一明确RGB底色的上传副本，并把色值写入双语Prompt与请求规格；不能只让生图模型画“绿色”后就默认满足。保留源图，仅在副本替换背景，禁止全图调色。优先使用可信Alpha合成；无可信Alpha时先做背景分离和边缘小样，不能冒险重绘角色。核对主体核心RGB逐像素保留、画布/位置/尺度/锚点不变，混色边缘变化另报，副本须让用户验收；色彩准备方法见 `skill/reachapi-seedance-video-generation-v2.md` 的色彩一致性章节。
+6. 顺序纪律（必须遵守）：关键姿态参考图生成后，先交给用户目检并取得验收结论，再复述视频任务规格并取得确认，之后才能发起视频生成。不得以“参考图不会上传、视频不依赖它”为理由把两步合并提交。不得在未取得本次确认的情况下自行重试收费任务；服务端明确 `failed` 且 `cost=0` 只能证明未计费，不等于已获授权。交付时必须贴**完整路径**（含并排对比图），不用省略号缩写地址。
+7. 提交任何生成任务前，把提示词/关键词的**中文对照版**贴在对话里给用户过目（提交仍用原英文），便于用户在花钱前修正语义。
+8. 受击类提示词的已知陷阱（实测教训）：在正面锁定视角下，“向后/后仰”不可投影，模型只能用左右倾斜来表达，容易得到侧倾；写“变宽/略宽”会被模型实现为整体放大（看成充气）；把倾斜/迈步/位移/旋转全部禁止后，模型只剩“体积变化”一个通道。正确做法：用**关节角度与部位位移**逐项描述（肩线上移、脖子缩短、骨盆略降、膝屈、手臂滞后/肘弯、剑角变化、飘带上扬），并显式禁止整体放大（overall size must never grow larger than the idle）。
+9. 透明抠图路线纪律（本案例确立的 SOP）：先发 **1 次** GPT 语义去背探针（该帧同时就是成品，成功不浪费）；用指纹判断落到哪套后端 —— 支持透明的后端就把其余帧全走 GPT，不支持就**立刻停手不连发**；不可用时改用**本地绿幕抠图**（前提：输入本身是绿幕）。指纹与判据见 `skill/gpt-image-generation.md`，本地绿幕键的有效组合与代价、以及验证指标的陷阱见 `memory/hit-animation-video-pipeline-lessons.md`；**本地路线（非 GPT）的权威配方、七项验收清单与失败模式复盘见 `skill/workflows/local-green-screen-cutout.md`（2026-10-04 随「攻击帧抠图 13 次失败」复盘新增）。**
 
 本次规格：
 
@@ -130,12 +131,17 @@ output: C:/Users/steam/Videos/doubaoVideo/enemy2_hitted_return_v2.mp4
 - [ ] 最大后仰时所有轮廓仍完整，盾牌、头盔、手脚不触边或超框。
 - [ ] 起始和结束姿势衔接，无额外攻击、迈步或第二次受击。
 - [ ] 装備形状与像素密度稳定，痛苦表情不变成惊讶、滑稽或卖萌。
+- [ ] 若使用纯色制作底：分开抽查首帧、动作展开帧、收尾和全帧背景时间线；记录背景是否稳定，不能只看首尾总览。
+- [ ] 主体颜色连续性独立检查：选稳定材质区域并按动作配准；不以未配准的同坐标全图差值直接判断主体变色，也不把绿幕不一致当作所有主体色差的充分因果。
+- [ ] 输入底色归一化、输出背景稳定、主体颜色稳定、视频验收和关键帧验收分别记录；任一颜色门槛未检查，不标为“颜色已修复”或“可直接批量抠图”。
 
-文件下载和容器校验通过，不等于美术合格。必须实际观看或抽帧检查后再称为可部署。
+文件下载和容器校验通过，不等于美术合格。必须实际观看或抽帧检查后再称为可部署。提示词中的固定背景/无闪烁为目标而非保证；统一输入底色也不能代替输出检查。
 
 ### 透明帧与 Unity 部署（独立步骤，需单独授权）
 
 Seedance 视频 Skill 没有承诺 Alpha 透明视频，也没有提供透明视频参数。`no background` 只是画面要求，不能证明文件透明。视频若使用灰色、黑色或其他与角色相近的背景，传统颜色阈值去背可能留下明显脏边；此时可在不重新生成视频的前提下，增加 GPT Image 语义去背分支。
+
+即使首尾输入副本统一为同一RGB纯色，生成器仍可能让背景随时间变化，并可能重绘主体颜色。因此去背前先看背景时间线和主体色彩稳定性。颜色异常时先保留已验收源帧并报告，不自动重生成或整图校色；背景Key、主体连续性、视频用户验收与关键帧验收分别记录。
 
 经用户认可后，再按单独授权范围进行：
 
@@ -164,7 +170,7 @@ Seedance 视频 Skill 没有承诺 Alpha 透明视频，也没有提供透明视
 
 ## 9. 复用时最重要的纪律
 
-先读文档与图像 → 明确游戏素材约束 → 确认收费规格 → 实际上传对应参考图 → 创建并记录任务 → 有限查询和可靠下载 → 区分容器验证与美术验收 → 验收后才制作透明帧和部署。
+先读文档与图像 → 明确游戏素材约束 → 检查并验收同色键上传副本 → 确认双语Prompt及收费规格 → 上传已确认副本并创建/记录任务 → 有限查询与完整下载/解码 → 独立检查背景时间线、主体颜色与动作 → 分别记录视频/帧序验收 → 单独授权去背小样与批量 → 接回Idle验证 → 单独授权部署。
 
 不把读 Skill 当作已执行，不把上传成功当作任务成功，不把服务端成功当作下载完成，不把下载完成当作美术可用。
 
@@ -242,26 +248,26 @@ Keep drawing scale, camera and both boot contacts fixed. Do not recenter or resi
 
 1. 对已验收的视频原文件核对路径/哈希，用PyAV等解码至最后有效画面；保存未裁切、未缩放的PNG，记录零基帧索引、PTS时间、实际尺寸与fps。不能用视频生成前的静态尾图代替实际视频尾帧。
 2. 同时抽查末尾约半秒的连续画面，确认手、肩、表情和脚底状态，判断是否仍有收势运动；只取最后一张不能证明接续自然。
-3. 保留原画布留白、背景色和角色像素位置。请求720p不代表实测尺寸一定720×720；读取实际输出后再准备输入。
+3. 保存的真实尾帧原件必须保留画布留白、背景色和角色像素位置；这是来源证据，不要求它与另一张参考图的不同底色一起原样上传。另存上传副本时遵循第6.A.5条，只统一色键背景并保护主体；原件与副本的职责、变更和哈希分别记录。请求720p不代表实测尺寸一定720×720，读取实际输出后再准备输入。
 
 ### 循环生成分支（流程可用，结果仍须验收）
 
-- 将同一张真实尾帧作为 `first_frame` 和 `last_frame`；可只上传一次并复用URL。不混入普通 `reference_image`。此分支是起止状态约束，不是中间全程位置或无缝保证。
+- 以同一张真实尾帧为来源，使用同一张已验收上传副本作为 `first_frame` 和 `last_frame`；可只上传一次并复用URL。不混入普通 `reference_image`。此分支只约束起止状态，不保证中间位置、无缝或背景/主体恒色；如未做副本变换，也须先实测原件色键。
 - 最短4秒生成候选，围绕稳定姿态做一次温和呼吸周期与细微腕指颤动，不安排新攻击、再次受击、后退或回到持盾状态。
 - 后仰、双掌前挡与胆怯神态以实际尾帧为准；不重新摆姿势、不放大填满盾牌消失后的留白。
 - 根位置、脚底和绘制比例固定，但允许局部呼吸和关节变化。禁止全身上下跳动、夸张晃动和把胆怯变成主动拳击。
 
-可复用提示核心：
+可复用提示核心（`<approved R,G,B>`必须替换为已确认上传副本的实际色键；这仍是软约束，生成后须按第7节检验）：
 
 ```text
-The first and last images are the SAME actual final frame of the preceding approved animation.
+The first and last images are the SAME approved upload copy derived from the actual final frame of the preceding approved animation. Preserve the source subject pixels, pose, scale and contact position; only the production matte may have been normalized in this prepared copy.
 Continue directly from this exact pose, without resetting, recentering or rescaling.
 Keep the backward-leaning fearful stance, planted boots and open defensive palms.
 Perform one gentle nervous breathing cycle with tiny wrist and fingertip tremors.
 Only local articulation changes. No whole-body bobbing, foot sliding, new flinch or gesture.
 Return naturally to the starting pose with continuous movement direction and speed across the loop boundary.
 No freeze-frame animation, rewind, crossfade, visible reset, weapon, shield or effects.
-Preserve the source background and lighting without flicker.
+Use the same opaque production matte RGB(<approved R,G,B>) as the prepared image throughout. No background gradient, texture, shadow or green spill. Preserve the subject material palette and lighting without recoloring or exposure shifts.
 ```
 
 ### 循环与耗时验收
@@ -269,7 +275,7 @@ Preserve the source background and lighting without flicker.
 - 按技术Skill选择限时4路Range下载，分别记录上传、创建请求、观察完成等待、下载墙钟与总耗时；不靠延长单连接超时掩盖慢速。
 - 完整解码后记录实际帧数/时长并输出接触表，检查起、中、尾的人物位置、比例、边界和装备。
 - 首尾差值只是诊断：大面积白底会稀释全画布MAE，应补查主体ROI、两只脚坐标以及相邻帧运动方向。相同首尾输入也可能输出不同画面。
-- 顺序检查“原视频末尾→循环开头”接缝和“循环末尾→循环开头”接缝，两处都需视觉与运动连续性验收。
+- 顺序检查“原视频末尾→循环开头”接缝和“循环末尾→循环开头”接缝，两处都需姿态、运动和主体颜色连续性验收。先在同一中性背景比较，再辅以浅/深底边缘检查；去背或两端绿色相近不证明主体配色连续。
 - 不自动删除末帧；先检查是否重复端点导致停顿，再决定截取周期或处理接缝。不能用逐帧缩放修正漂移。
 - **用户肯定速度/生成水平不等于接受循环成片。** 明确标记待验收，不用技术成功升级美术状态。当前此分支仅有候选生成、完整下载/解码和抽帧观察证据；无缝循环及部署须另验收。
 
@@ -285,13 +291,13 @@ Preserve the source background and lighting without flicker.
 | ④ 硬约束 | 画布/机位/尺寸红线/禁止项 | 漂移、超框、旋转 |
 | ⑤ 节奏 | 受力窗口与回弹时间分配 | 冲击感不足 |
 
-另：在正面锁定视角下“向后/后仰”不可投影，模型只会用左右倾斜表达，必须显式禁止纵轴倾斜并改用正面可见读点（双肩上耸、脖子压缩、胸腔压扁、膝屈、手臂惯性、装备滞后）；不要写 `slightly wider`，写死“整体尺寸任何时刻不得大于 idle”（详见第 6.A 节第 7 条与 `memory/hit-animation-video-pipeline-lessons.md`）。
+另：在正面锁定视角下“向后/后仰”不可投影，模型只会用左右倾斜表达，必须显式禁止纵轴倾斜并改用正面可见读点（双肩上耸、脖子压缩、胸腔压扁、膝屈、手臂惯性、装备滞后）；不要写 `slightly wider`，写死“整体尺寸任何时刻不得大于 idle”（详见第 6.A 节第 8 条与 `memory/hit-animation-video-pipeline-lessons.md`）。
 
 ### 12.2 关键帧筛选要有客观依据（不靠肉眼）
 
 用「**相对 idle 的上半身变化量**」曲线定位真实关键帧。本案例实测：f12=16.0 → **f16=46.4（断崖 = 受力点）**、f16–36 为外扩相、f44–72 为收缩相（**平台，等距采样会拿到重复帧**）、f80=22.7（≈ idle）。
 
-6 帧结构：**受击极值 / 后摇 / 回弹 3 帧 / idle 首帧**。第 6 帧用**已部署 idle 的首帧**（同源），切回待机不会跳姿势；受击 clip 的末帧也应引用该 sprite 而不是新建素材。
+原受击案例的6帧结构：**受击极值 / 后摇 / 回弹3帧 / Idle首帧**。该案例可复用同源的已部署Idle精灵作为末帧，但这不是任意角色的无跳变保证。跨视频或不同处理批次接回Idle，必须先在相同中性底检查位置、尺度、轮廓和主体颜色连续；不能只因姿态接近就用静态参考图替换视频末帧。原视频末帧与准备时的静态尾图须分开留档，帧序验收不自动授权替换或校色。
 
 播放 6×0.1s = 0.6s 时，“受力→后摇”在动画里只隔 0.1s（而源视频相隔 1.3s）→ **快进慢出自动成立**。
 

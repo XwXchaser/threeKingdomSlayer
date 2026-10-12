@@ -1,0 +1,71 @@
+{
+  "passed": true,
+  "scope": "actual CavalryCycle with scene drivers temporarily deactivated and temporary isolated ColumnManager",
+  "hits": 1,
+  "damage": 32.0,
+  "damageSprite": "Enemy_109_Attack12",
+  "conversionEntries": 1,
+  "finalRow": 3,
+  "observedConversionFrameCount": 11,
+  "observedConversionFrames": [
+    "Enemy_109_StrikeToRetreat1",
+    "Enemy_109_StrikeToRetreat10",
+    "Enemy_109_StrikeToRetreat11",
+    "Enemy_109_StrikeToRetreat2",
+    "Enemy_109_StrikeToRetreat3",
+    "Enemy_109_StrikeToRetreat4",
+    "Enemy_109_StrikeToRetreat5",
+    "Enemy_109_StrikeToRetreat6",
+    "Enemy_109_StrikeToRetreat7",
+    "Enemy_109_StrikeToRetreat8",
+    "Enemy_109_StrikeToRetreat9"
+  ],
+  "turnToIdle": true,
+  "finalSprite": "Enemy_109_MountedIdle1",
+  "finalSpeed": 1.0,
+  "elapsedRealSeconds": 2.2698271999979625,
+  "log": [
+    {
+      "frame": 15,
+      "stage": "Windup",
+      "rowIndex": 3,
+      "sprite": "Enemy_109_Windup1"
+    },
+    {
+      "frame": 79,
+      "stage": "Charging",
+      "rowIndex": 3,
+      "sprite": "Enemy_109_Charging1"
+    },
+    {
+      "frame": 197,
+      "stage": "StrikeWindup",
+      "rowIndex": 1,
+      "sprite": "Enemy_109_Attack1"
+    },
+    {
+      "frame": 248,
+      "stage": "StrikeRecover",
+      "rowIndex": 1,
+      "sprite": "Enemy_109_Attack12"
+    },
+    {
+      "frame": 295,
+      "stage": "Retreating",
+      "rowIndex": 1,
+      "sprite": "Enemy_109_StrikeToRetreat1"
+    },
+    {
+      "frame": 414,
+      "stage": "Idle",
+      "rowIndex": 3,
+      "sprite": "Enemy_109_TurnToIdle1"
+    },
+    {
+      "frame": 414,
+      "stage": "Idle",
+      "rowIndex": 3,
+      "sprite": "Enemy_109_TurnToIdle1"
+    }
+  ]
+}

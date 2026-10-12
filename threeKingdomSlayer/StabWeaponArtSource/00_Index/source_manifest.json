@@ -1,0 +1,175 @@
+{
+  "purpose": "Project-local archive for Stab spear three-view preparation; outside Assets and not imported by Unity.",
+  "source_root": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01",
+  "copied_file_count": 17,
+  "total_bytes": 5108780,
+  "archive_policy": "Unmodified copies. Historical JSON statuses and external paths are retained, not rewritten.",
+  "current_evidence_status": "V01 reference images generated and exported; final user acceptance not established by the available verification records.",
+  "new_remote_generation_count": 0,
+  "records": [
+    {
+      "file": "01_Reference/assembly_reference.png",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/assembly_reference.png",
+      "bytes": 1080284,
+      "sha256": "6475df45a489976d0de95f042235d4080e1adf36c18c54f639dbd231ec46c9ae",
+      "byte_identical_to_source": true,
+      "png_size": [
+        1280,
+        1280
+      ],
+      "png_color_type": 2
+    },
+    {
+      "file": "02_OrthographicV01/body/front.png",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/body/front.png",
+      "bytes": 273306,
+      "sha256": "f396f857cda70ab10f4df029a8a4b59916cb86ce9467e6fda9bb751054ff031c",
+      "byte_identical_to_source": true,
+      "png_size": [
+        512,
+        1024
+      ],
+      "png_color_type": 2
+    },
+    {
+      "file": "02_OrthographicV01/body/right.png",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/body/right.png",
+      "bytes": 262185,
+      "sha256": "1b6503b879a55c09f6c26cfe40f54ca915fcaf855f183e24188d2f0711139490",
+      "byte_identical_to_source": true,
+      "png_size": [
+        512,
+        1024
+      ],
+      "png_color_type": 2
+    },
+    {
+      "file": "02_OrthographicV01/body/back.png",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/body/back.png",
+      "bytes": 278303,
+      "sha256": "40b26120eeb694f71c263d8c825a86bccdeaf21c32b3629349d385dcf7781fab",
+      "byte_identical_to_source": true,
+      "png_size": [
+        512,
+        1024
+      ],
+      "png_color_type": 2
+    },
+    {
+      "file": "03_TraceV01/body/body_board.png",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/source_boards/body/body_board.png",
+      "bytes": 1090518,
+      "sha256": "cb177ecd96d8ec38732ab364e72c848faffb5c734c67a27acc809dca625f375c",
+      "byte_identical_to_source": true,
+      "png_size": [
+        1536,
+        1024
+      ],
+      "png_color_type": 2
+    },
+    {
+      "file": "03_TraceV01/body/request.json",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/source_boards/body/request.json",
+      "bytes": 4570,
+      "sha256": "09b00a422681d8543f8982fa4e5fca11e5177a46355d4f88be7ad938e6b3fb9f",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "03_TraceV01/body/status.json",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/source_boards/body/status.json",
+      "bytes": 317,
+      "sha256": "d75cb7a6abc2ad5e252af5c3bdea1010f2231a410523ddf87579151125ff3278",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "03_TraceV01/body/verification.json",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/source_boards/body/verification.json",
+      "bytes": 1415,
+      "sha256": "368690e1bee308e6c1ed8fd8de1a6b91c526ba32789625e7a9f3180f9f4a93e8",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "02_OrthographicV01/ribbon/front.png",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/ribbon/front.png",
+      "bytes": 332663,
+      "sha256": "e9e28892eb093323310391a4a52e0ca157047fd3be2af851e66faf989d5d7090",
+      "byte_identical_to_source": true,
+      "png_size": [
+        512,
+        1024
+      ],
+      "png_color_type": 2
+    },
+    {
+      "file": "02_OrthographicV01/ribbon/right.png",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/ribbon/right.png",
+      "bytes": 275353,
+      "sha256": "49c0774e5ce9a3a159976b9cf1b95ef081a2c231652fea2bc904f988ad0ad8f1",
+      "byte_identical_to_source": true,
+      "png_size": [
+        512,
+        1024
+      ],
+      "png_color_type": 2
+    },
+    {
+      "file": "02_OrthographicV01/ribbon/back.png",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/ribbon/back.png",
+      "bytes": 327018,
+      "sha256": "3941c58cc122b7749114212b4b46da4224064fd9d3e1250d690171f79a3db79d",
+      "byte_identical_to_source": true,
+      "png_size": [
+        512,
+        1024
+      ],
+      "png_color_type": 2
+    },
+    {
+      "file": "03_TraceV01/ribbon/ribbon_board.png",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/source_boards/ribbon/ribbon_board.png",
+      "bytes": 1166131,
+      "sha256": "a5f5fc812d671951c2157036eceb5a6276846d3837d9c643b4ecc427c533c3f9",
+      "byte_identical_to_source": true,
+      "png_size": [
+        1536,
+        1024
+      ],
+      "png_color_type": 2
+    },
+    {
+      "file": "03_TraceV01/ribbon/request.json",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/source_boards/ribbon/request.json",
+      "bytes": 4719,
+      "sha256": "37d544528762505353217f802b803bcba8ee5677a18f603307fd0f8cc4c8c174",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "03_TraceV01/ribbon/status.json",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/source_boards/ribbon/status.json",
+      "bytes": 324,
+      "sha256": "446e1a0da594d18592638b79cf3158284184c9a37761ff35c0db02a1fd063718",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "03_TraceV01/ribbon/verification.json",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/source_boards/ribbon/verification.json",
+      "bytes": 1618,
+      "sha256": "4a7665e9f7df8585f753241a9dcb721ed4d96ee0ae2469364aa42b108d726f34",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "03_TraceV01/approved_specification.json",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/source_boards/approved_specification.json",
+      "bytes": 8569,
+      "sha256": "59369b22a18637db7234910280788ddf3775fc78466a89bc65bc4fc8b59af707",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "03_TraceV01/export_verification.json",
+      "original_source": "C:/Users/Administrator/Pictures/gptGen/stab_orthographic_refs_v01/source_boards/export_verification.json",
+      "bytes": 1487,
+      "sha256": "53e2ef891c8648e0944a87529b4d425ec836808fee75331f74941997ef37ce27",
+      "byte_identical_to_source": true
+    }
+  ]
+}

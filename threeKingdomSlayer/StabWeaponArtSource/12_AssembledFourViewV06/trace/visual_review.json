@@ -1,0 +1,35 @@
+{
+  "status": "left_view_candidate_for_four_view_delivery",
+  "one_complete_tasselled_spear": true,
+  "blade_profile_narrower_than_front": true,
+  "no_horizontal_mirroring_used": true,
+  "strict_opposite_side_geometry_verified": false,
+  "user_acceptance_pending": true,
+  "board_title": "带红缨长枪｜前・左・右・后四视图",
+  "board_subtitle": "前／右／后沿用V5原图；新增左侧整体等比对齐，隐藏结构与红缨遮挡待验收",
+  "view_labels": ["前视 FRONT", "左视补图 LEFT", "右视 RIGHT", "后视 BACK"],
+  "limitation_note": "左侧补图红缨展开较宽、根部遮挡未严格对应右视；原始生成图保留，未镜像或局部拉伸，需造型验收。",
+  "normalization": {
+    "uniform_scale": 0.6825396825396826,
+    "offset_x": -164.27777777777777,
+    "offset_y": -3.984126984126984,
+    "source_size": [1024, 1536],
+    "target_size": [384, 1024],
+    "target_tip_y": 24,
+    "target_butt_y": 970,
+    "target_shaft_center_x": 184.5,
+    "method": "Single uniform whole-image scaling plus white canvas placement; no mirror, rotation or component stretching. Only blank canvas is cropped.",
+    "filter": "NearestNeighbor"
+  },
+  "source_bounds_xyxy": [362, 41, 546, 1427],
+  "requested_64px_source_margin_met": false,
+  "source_top_margin_px": 41,
+  "limitations": [
+    "The generated view has a narrow blade profile and is a new image, not a mirrored V5 right image.",
+    "The tassel is broader than expected from the V5 right-side silhouette and the far-side attachment occlusion is not fully demonstrated. Exact left/right geometry correspondence is not verified.",
+    "Overall tip-to-butt height can be uniformly aligned, but individual connector heights and cloth folds are not guaranteed pixel-identical across generated views.",
+    "Original image top margin is 41px, below the requested 64px. Complete spear tip, butt and cloth terminal remain visible."
+  ],
+  "generation_submission_count": 1,
+  "unity_changes": false
+}

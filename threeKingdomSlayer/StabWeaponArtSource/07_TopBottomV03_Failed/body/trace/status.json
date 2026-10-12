@@ -1,0 +1,12 @@
+{
+  "job": "body",
+  "stage": "image_verified",
+  "utc_started": "2026-10-11T13:53:42.558880+00:00",
+  "generation_submission_count": 1,
+  "automatic_retry": false,
+  "approved_prompt_sha256": "9c35224e1c39346266a7d79adbf4b41941c8d76d8779f2f086f293c50ec68668",
+  "http_status": 200,
+  "generation_delivered": true,
+  "output_image": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v03/stab_body_top_bottom_v03.png",
+  "elapsed_seconds": 125.421
+}

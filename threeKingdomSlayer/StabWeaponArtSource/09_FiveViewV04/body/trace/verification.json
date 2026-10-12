@@ -1,0 +1,57 @@
+{
+  "format": "PNG",
+  "size": [
+    1536,
+    1024
+  ],
+  "mode": "RGB",
+  "png_color_type": 2,
+  "bytes": 1223478,
+  "sha256": "7a8906f8dc46ee573a499f2e5549d2129f8fa98c25b57695f2c95d00d6c95175",
+  "all_chunk_crcs_valid": true,
+  "idat_decoded_and_filters_valid": true,
+  "matches_requested_size": true,
+  "job": "body",
+  "version": "V04",
+  "http_status": 200,
+  "output_image": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v04/stab_body_top_bottom_v04.png",
+  "references_unchanged": true,
+  "generation_submission_count": 1,
+  "request_to_verified_file_seconds": 103.536,
+  "visual_review_pending": false,
+  "user_acceptance_pending": true,
+  "unity_deployment": "Not performed; original Unity assets and scenes unchanged.",
+  "visual_review": {
+    "end_on_projection_passed": true,
+    "longitudinal_Y_axis_not_visible": true,
+    "compact_XZ_footprint": true,
+    "silhouettes_correspond_after_view_reversal": true,
+    "modeling_geometry_passed": false,
+    "limitations": [
+      "V04 passed camera-direction review: it no longer shows a long pole along Y.",
+      "The generated X-Z depth and visible-layer relationships are plausible but do not strictly agree with the existing right-side thickness and occlusion evidence; this is a candidate, not an engineering top/bottom view.",
+      "Final art acceptance and shared-3D-model verification are pending."
+    ],
+    "user_acceptance_pending": true
+  },
+  "layout_audit": {
+    "top": [
+      154,
+      279,
+      625,
+      710
+    ],
+    "bottom": [
+      141,
+      284,
+      600,
+      712
+    ],
+    "bbox_reflection_error": {
+      "horizontal": 13,
+      "vertical": 5,
+      "width": 12,
+      "height": 3
+    }
+  }
+}

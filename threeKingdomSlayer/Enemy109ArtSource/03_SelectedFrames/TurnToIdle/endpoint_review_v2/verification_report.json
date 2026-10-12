@@ -1,0 +1,291 @@
+{
+  "version": "endpoint-review-v2-corrected-rgba-evidence",
+  "status": "complete_user_endpoint_review_pending",
+  "created_utc": "2026-10-11T09:50:34.844993+00:00",
+  "source_video": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_retreat_to_idle_v1_720p_6s.mp4",
+  "source_video_sha256": "c01c129c581e0b95df5fe7d427d15e7d18d47e8b2f6fd7b9077ed92127074b7a",
+  "candidate_frames": [
+    {
+      "source_frame": 2,
+      "time_seconds": 0.041666666666666664,
+      "raw_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v2\\raw_candidates\\source_f002.png",
+      "raw_sha256": "57743b8c3a1e65a1f9c2a1a7ac082c0fd1d4b94f60a7851a7aca3de486c8c2be",
+      "raw_rgb_sha256": "613808082be697a354602cb2f058d945e8b9a98cd192496069b5d9b197c623f4",
+      "rgba_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v2\\rgba_candidates\\turnToIdle_f002_T79.png",
+      "rgba_sha256": "64c2bd700dae26a482ed59f0f4fe81a1b391ad1125a13354613aa815bd4d6400",
+      "auto_key_rgb": [
+        0,
+        144,
+        60
+      ],
+      "rgba_size": [
+        960,
+        960
+      ],
+      "alpha_values": [
+        0,
+        255
+      ],
+      "verified_core_pixels": 86973,
+      "core_deleted_or_changed": 0,
+      "same_recipe_v1_candidate_pixel_equal": true
+    },
+    {
+      "source_frame": 140,
+      "time_seconds": 5.791666666666667,
+      "raw_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v2\\raw_candidates\\source_f140.png",
+      "raw_sha256": "675fd83685ed064f88670d34d937a830fa41a720d8900a6888a1ba5cf0382be1",
+      "raw_rgb_sha256": "dc7d268101d10f6623f01af369e1d48240d6a23c00491ef54fff2dfaf1a8521d",
+      "rgba_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v2\\rgba_candidates\\turnToIdle_f140_T79.png",
+      "rgba_sha256": "2d5557f9160b15306278dfcdc64474a70be1b8aecb6c518120f449e75c78ba76",
+      "auto_key_rgb": [
+        2,
+        154,
+        58
+      ],
+      "rgba_size": [
+        960,
+        960
+      ],
+      "alpha_values": [
+        0,
+        255
+      ],
+      "verified_core_pixels": 121523,
+      "core_deleted_or_changed": 0,
+      "same_recipe_v1_candidate_pixel_equal": true
+    },
+    {
+      "source_frame": 141,
+      "time_seconds": 5.833333333333333,
+      "raw_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v2\\raw_candidates\\source_f141.png",
+      "raw_sha256": "0f81e968d840b6d483282d1332f918944af2c0d9e594bbfcebc4cd22fa82ce5c",
+      "raw_rgb_sha256": "c24f0df276a32550e48acb72a2c6090f0729d18761b5eda4cf0226de541cc6b5",
+      "rgba_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v2\\rgba_candidates\\turnToIdle_f141_T79.png",
+      "rgba_sha256": "9228649e07a130a562ef05e9377dafe422815ea3b22657315fe564823c5a3e36",
+      "auto_key_rgb": [
+        2,
+        154,
+        58
+      ],
+      "rgba_size": [
+        960,
+        960
+      ],
+      "alpha_values": [
+        0,
+        255
+      ],
+      "verified_core_pixels": 120749,
+      "core_deleted_or_changed": 0,
+      "same_recipe_v1_candidate_pixel_equal": true
+    },
+    {
+      "source_frame": 144,
+      "time_seconds": 5.958333333333333,
+      "raw_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v2\\raw_candidates\\source_f144.png",
+      "raw_sha256": "8cb9a78c873b2df5c0e8961b451c7e149c8fc1c4817e3b71fbfdedf2ae8306c9",
+      "raw_rgb_sha256": "49c85f8375d325da6354f46cc22860e66fbd8b7448b75e48175f13a966580a84",
+      "rgba_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v2\\rgba_candidates\\turnToIdle_f144_T79.png",
+      "rgba_sha256": "fa8ba314b6bc452799fd5782901d81c5fd9aaad01fe8cc72daf872189f984d1c",
+      "auto_key_rgb": [
+        0,
+        160,
+        56
+      ],
+      "rgba_size": [
+        960,
+        960
+      ],
+      "alpha_values": [
+        0,
+        255
+      ],
+      "verified_core_pixels": 143815,
+      "core_deleted_or_changed": 0,
+      "same_recipe_v1_candidate_pixel_equal": true
+    }
+  ],
+  "previews": [
+    {
+      "file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v2\\review\\head_f001_vs_f002_parallel.webp",
+      "frame_count": 3,
+      "duration_ms": [
+        700,
+        900,
+        700
+      ],
+      "sources": [
+        [
+          "run tail",
+          "f001",
+          "f019"
+        ],
+        [
+          "run tail",
+          "f002",
+          "f019"
+        ]
+      ],
+      "sha256": "a11b4eea9e6a8843c57d850aa6bc0f5b4a511020be01ad6cf263b212eb068655",
+      "all_displayed_frames_pixel_verified": true,
+      "timing_is_review_only": true,
+      "repeat_is_not_a_production_animation_loop": true
+    },
+    {
+      "file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v2\\review\\tail_options_parallel.webp",
+      "frame_count": 3,
+      "duration_ms": [
+        800,
+        1000,
+        1000
+      ],
+      "sources": [
+        [
+          "f138",
+          "f140",
+          "Idle1"
+        ],
+        [
+          "f138",
+          "f141",
+          "Idle1"
+        ],
+        [
+          "f138",
+          "f144",
+          "Idle1"
+        ],
+        [
+          "f138",
+          "f145",
+          "Idle1"
+        ]
+      ],
+      "sha256": "91f4a070bdbc8989e1c30afd74d929df0ffc5d6d554d14ade4134279a84a94dc",
+      "all_displayed_frames_pixel_verified": true,
+      "timing_is_review_only": true,
+      "repeat_is_not_a_production_animation_loop": true
+    },
+    {
+      "file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v2\\review\\tail_f140_to_idle.webp",
+      "frame_count": 3,
+      "duration_ms": [
+        800,
+        1000,
+        1000
+      ],
+      "sources": [
+        "f138",
+        "f140",
+        "Idle1"
+      ],
+      "sha256": "8bc2504d2af7fca99ff7ec7597f4567e53c3317c228a600b79d6eb1ea7188fc6",
+      "all_displayed_frames_pixel_verified": true,
+      "timing_is_review_only": true,
+      "repeat_is_not_a_production_animation_loop": true
+    },
+    {
+      "file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v2\\review\\tail_f141_to_idle.webp",
+      "frame_count": 3,
+      "duration_ms": [
+        800,
+        1000,
+        1000
+      ],
+      "sources": [
+        "f138",
+        "f141",
+        "Idle1"
+      ],
+      "sha256": "c766c277c8a1dca4a7570851c408482a1656061f21f60779c14d6729664910e4",
+      "all_displayed_frames_pixel_verified": true,
+      "timing_is_review_only": true,
+      "repeat_is_not_a_production_animation_loop": true
+    },
+    {
+      "file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v2\\review\\tail_f144_to_idle.webp",
+      "frame_count": 3,
+      "duration_ms": [
+        800,
+        1000,
+        1000
+      ],
+      "sources": [
+        "f138",
+        "f144",
+        "Idle1"
+      ],
+      "sha256": "f69839ef39f722d1bf04c1ba04281c6a7d22c7e43059df698d607b8dd54dc7cd",
+      "all_displayed_frames_pixel_verified": true,
+      "timing_is_review_only": true,
+      "repeat_is_not_a_production_animation_loop": true
+    },
+    {
+      "file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v2\\review\\tail_f145_to_idle.webp",
+      "frame_count": 3,
+      "duration_ms": [
+        800,
+        1000,
+        1000
+      ],
+      "sources": [
+        "f138",
+        "f145",
+        "Idle1"
+      ],
+      "sha256": "3ba177c81cbc4a3a95eb7c4c7a620b2f2e570909430255c3100e39c1338c6300",
+      "all_displayed_frames_pixel_verified": true,
+      "timing_is_review_only": true,
+      "repeat_is_not_a_production_animation_loop": true
+    },
+    {
+      "file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\TurnToIdle\\endpoint_review_v2\\review\\f144_f145_toggle_neutral.webp",
+      "frame_count": 2,
+      "duration_ms": [
+        1000,
+        1000
+      ],
+      "sources": [
+        "f144",
+        "f145"
+      ],
+      "sha256": "e4f8e3eb884a11b0ec477965cf39e02614ead6fa9a40385dc5cb59690b2d9875",
+      "all_displayed_frames_pixel_verified": true,
+      "timing_is_review_only": true,
+      "repeat_is_not_a_production_animation_loop": true
+    }
+  ],
+  "accepted_24_frame_assets_unchanged": true,
+  "candidate_user_verdict": "pending",
+  "current_24_frame_selection_replaced": false,
+  "all_previews_built_from_rgba_and_pixel_verified": true,
+  "no_subject_color_adjustment": true,
+  "recipe": {
+    "method": "SVL Chroma",
+    "key": "per_frame_auto",
+    "softness": 16,
+    "halo": 1,
+    "harden": true,
+    "smoothing": false,
+    "extra_postprocess": false,
+    "threshold": 79
+  },
+  "svl_server_sha256": "d2f8c9d8bd79f2a4fb9962ed454b20441c42c28d3cd6f4c7c9fc8fe61a8a23d8",
+  "idle_reference_mapping": {
+    "scale": 0.9375,
+    "canvas": [
+      960,
+      960
+    ],
+    "origin": [
+      12,
+      20
+    ],
+    "resampling": "nearest",
+    "diagnostic_only": true
+  },
+  "previous_review_v1_status": "superseded; two old WebP files used opaque green RGB and old mean_abs metric was signed; exclude those from evidence",
+  "paid_api_calls": 0,
+  "unity_changed": false
+}

@@ -1,0 +1,32 @@
+{
+  "job": "body",
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "parameters": {
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "background": "opaque",
+    "output_format": "png",
+    "n": 1,
+    "prompt": "这是沿长枪轴线观察的两个端向正交图。最重要：枪身长度Y完全沿摄像机视线消失，画面只保留X宽度和Z厚度。不能出现长红棕枪杆，不能把枪头、枪套、枪杆、枪尾从上到下串成一把缩短的枪；不能出现斜视、俯视透视或长幅正面。\n\n参考A的三视图只决定同一把枪的造型、厚度和材质：冷银双刃片和中央脊、金绿枪套、圆杆、金色尾鐏。参考B只决定摄像机沿±Y的方向和长度压缩原则，灰色块、文字、箭头均不属于目标，不复制。\n\n左区TOP：从枪尖上方沿−Y正交看向枪尾。右区BOTTOM：从枪尾下方沿+Y正交看向枪尖。顶视画面右为+X、上为−Z；底视画面右为+X、上为+Z。两图都是同一完整物体的X–Z投影，轮廓紧凑。侧面和正面的枪刃都不得重复显示；枪刃在端向中只贡献沿X的宽度和沿Z的脊厚，不出现沿Y的尖叶形全长。枪杆投影为圆形区域并被较近零件正常遮挡，不表现成长条。\n\n用正常遮挡表现银色刃面、金绿连接件和金色尾件可见的端向表面，所有零件同轴重叠，不分拆，不剖切，不透视隐藏零件。同一物体的顶底外轮廓在屏幕上下镜像后应对应，不能变成两个尺寸或两种设计；两侧可见材质和遮挡面可以不同。不新增孔洞、装饰或握套。\n\n生成1536×1024纯白不透明PNG，左TOP、右BOTTOM两个768×1024等宽无边框区域，每区一个投影。两个投影中心对齐、同尺度、可共同放大，四边至少64像素边距。沿用A的高清像素色簇、中性光照和金属体积。最终图不要文字、箭头、标线、轴、边框、人物、红缨或背景；中文解释随后本地添加。\n\nEnglish version of the same approved brief:\n\nCreate TWO ORTHOGRAPHIC END-ON views looking directly ALONG the spear's long axis. PRIMARY RULE: the entire Y length collapses into the camera line of sight; only X width and Z depth remain in the picture. No long red-brown pole. Do not arrange head, socket, pole and butt sequentially down the image as a shortened spear. No oblique overhead, perspective or tall front view.\n\nReference A's three views define the SAME spear's identity, thickness and materials: cool silver double-edged blade and central ridge, gold-green socket, round pole, angular gold butt. Reference B defines ONLY the +/-Y camera direction and length-collapse principle. Its grey block, arrows and words are not target geometry and must not be copied.\n\nLeft TOP looks orthographically from above the tip along -Y toward the butt. Right BOTTOM looks from below the butt along +Y toward the tip. Screen-right is +X in both; screen-up is -Z for top and +Z for bottom. Both are compact X-Z projections of the SAME complete object. Do not repeat the front or side blade. The blade contributes only its X width and Z ridge thickness end-on, never its leaf-shaped Y length. The pole projects as a circular region normally occluded by closer components, never a long strip.\n\nShow only visible silver, gold-green and gold end surfaces under normal occlusion, with all components overlapping coaxially. Do not separate, cut away or x-ray parts. Opposite orthographic views of the same opaque object have corresponding external silhouettes after a vertical screen reflection: no different sizes or designs. Visible surfaces, materials and occlusion order may differ. Add no holes, ornaments or grip.\n\nOutput one opaque pure-white 1536x1024 PNG with two equal unbordered 768x1024 regions: TOP left, BOTTOM right, one projection each. Match center and scale; both may share one enlargement. Leave at least 64 pixels on every edge. Retain A's high-definition pixel clusters, neutral lighting and metal volume. No text, arrows, lines, axes, borders, characters, tassels or scenery. Chinese captions will be added locally afterward.\n\nNegative constraints:\n竖长正面、根在上尾在下的全长红缨、长枪杆、枪头枪套枪杆枪尾顺序排列、斜俯视、3/4透视、透视缩短、横放正面、二维旋转、剖切、爆炸图、X光隐藏面、不同姿态、不同轮廓尺寸、额外物体、复制方向图灰色块或箭头、文字、标签、轴、线、边框、人物、场景、阴影、光效。\n\n红缨、布料。\n\nTall front view, full-length tassel with root above and terminal below, long shaft, head/socket/pole/butt arranged sequentially, oblique overhead, three-quarter perspective, foreshortened perspective, front laid sideways, 2D rotation, cutaway, exploded diagram, x-ray hidden surfaces, changed pose or silhouette size, extra objects, copied grey guide block or arrows, text, labels, axes, lines, borders, characters, scenery, cast shadow, glow.\n\nTassels, cloth."
+  },
+  "references": [
+    {
+      "name": "A",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/StabWeaponArtSource/04_BodyV02/stab_body_orthographic_v02.png",
+      "sha256": "c108a368fbe8a4bc028c214705d243eafa84ffd9b4f66f330242b87d1d7a130b",
+      "role": "Object geometry, pose, thickness and material identity from the unchanged V02 sheet. Do not generate the original three views again."
+    },
+    {
+      "name": "B",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/StabWeaponArtSource/08_TopBottomV04Preparation/end_on_camera_guide.png",
+      "sha256": "f7bb3c56c54a0da6b366cab76734973ff59b2e35751a4d68fa4f6bbf512b2ed0",
+      "role": "Camera direction only: +/-Y projection collapses Y length, leaving X width and Z depth. Guide block, arrows and text are not target geometry or output."
+    }
+  ],
+  "output_image": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v04/stab_body_top_bottom_v04.png",
+  "authorization": "User explicitly approved the revised V04 bilingual prompts, two reference roles including camera guide, and one additional request per object: 批准修订两组.",
+  "submission_policy": "One request for this job, no automatic retry or fallback model.",
+  "transport": "Direct HTTPS with urllib ProxyHandler({})."
+}

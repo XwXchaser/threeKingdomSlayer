@@ -1,0 +1,300 @@
+{
+  "status": "assembled_five_view_candidate_delivered_geometry_not_passed",
+  "authorization": "User explicitly approved exactly one V05 request: 批准生成一次. Generated complete assembled five-view sheet and local Chinese board delivered.",
+  "remote_generation_count": 1,
+  "planned_generation_count": 1,
+  "handoff_document": "Locus/knowledge/plan/stab-assembled-five-view-v05-prompts.md",
+  "references": [
+    {
+      "name": "A",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/StabWeaponArtSource/10_AssembledFiveViewPreparation/assembled_three_view_reference_v05.png",
+      "sha256": "f4fd3575125c8942514c99540658eb5669b64c408ffd89e0e3468a3585d472ee",
+      "role": "Local 2D assembled three-view draft. Locks the accepted V02 spear body, the shared tassel scale, upper socket attachment and fixed cloth pose. Not a mesh-rendered orthographic sheet."
+    },
+    {
+      "name": "B",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/StabWeaponArtSource/08_TopBottomV04Preparation/end_on_camera_guide.png",
+      "sha256": "f7bb3c56c54a0da6b366cab76734973ff59b2e35751a4d68fa4f6bbf512b2ed0",
+      "role": "Camera-direction guide only. Collapse Y length in top/bottom views, retain X width and Z depth. Do not copy grey block, arrows, text or its proportions."
+    }
+  ],
+  "parameters": {
+    "model": "gpt-image-2.5-sunburst",
+    "endpoint": "https://api.muskapis.com/v1/images/edits",
+    "size": "1536x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "background": "opaque",
+    "output_format": "png",
+    "n": 1
+  },
+  "prompt_zh": "制作一张用于游戏3D建模的“同一把带单根红缨长枪”完整装配正交五视图。参考A是已经统一比例和挂点的完整长枪三视图，锁定枪刃、中央刃脊、金绿交叉枪套、银色连接段、红棕直圆杆、金色几何尾鐏，以及接在枪套上部右侧的一根朱红布缨。参考B只解释摄像机端向观察，灰块、箭头、文字不是目标，不复制。不要使用其他武器或红缨造型。\n\n五个视图都是同一件固定装配物体。只有一把枪和一根红缨，红缨一个收束根部、一片连续薄布、一个主尖尾。保持参考A的红缨长度、宽窄变化和向外展开后回弯的静止姿态；下垂高度约为整枪长度的32%，不能独立放大、缩短、拆开、换风吹姿态。根部实际连接在金绿枪套上部；正面在右，背面转到相反侧，右侧显示薄边、有限前后起伏和正确遮挡。枪头、枪套、枪杆、尾鐏同轴，红缨不悬空。不新增握套、环扣、盘蛇、双缨或零件。\n\n输出1536×1024纯白不透明PNG。左侧三个等宽384×1024区域依次为正面、右侧、背面，各画一把完整竖直带红缨长枪，同一尺度、枪尖枪尾及红缨根部高度对齐，上下至少48像素余量，主体不跨格、不裁断。右侧384×1024区域分成上下两个384×512格，上为顶视，下为底视，各只有一个完整装配端向投影。总共恰好五个物体投影，不增加局部图。\n\nY轴从枪尾指向枪尖，X是正面右侧，Z朝正面观察者。正面沿−Z看，右侧沿−X看，背面沿+Z看。顶视从枪尖上方沿−Y看，底视从枪尾下方沿+Y看。顶视和底视只投影X宽与Z深，整把枪和红缨的Y长度完全沿视线消失；不能显示长枪杆或完整纵长红缨，不能画斜俯视、3/4透视或缩短的长枪。顶视画面右+X、上−Z，底视画面右+X、上+Z。同一装配顶底外轮廓在画面上下镜像后对应，只有可见折面与遮挡先后不同。严格正常遮挡，不剖切，不X光显示隐藏件，不爆炸展开。\n\n参考A的整枪装配正面宽与右侧深度之比约为X:Z=1:0.36。顶底端向的Z深／X宽维持约0.32–0.40，不扩大成厚圆团或多叶花。红缨是带浅折面和有限深度的薄布片，不是粗绳、实心雕塑、分叉流苏。顶底可以共同放大以阅读，但不能改变深宽比例。若表面被更近的枪体或布面遮挡，按真实遮挡不画出，不为展示所有零件重新摆物体。\n\n保持高清像素色簇、清楚实体分面、冷银钢刃、深绿与暖金连接件、红棕木杆、朱红主布面、深红折面及少量橙红高光。中性光照，清晰完整轮廓。不要文字、标签、尺寸线、坐标轴、分隔线、边框、人物、手、场景、发光、残影。标签和中文解释随后本地排版添加。",
+  "prompt_en": "Create one assembled orthographic FIVE-VIEW sheet of the SAME spear with ONE attached red tassel for game 3D modeling. Reference A is the assembled three-view sheet with unified proportions and attachment placement. It locks the blade, central ridge, gold-and-dark-green crossed socket, silver connection, straight round red-brown pole, angular gold butt, and ONE vermilion cloth tassel attached at the upper-right socket. Reference B explains ONLY the end-on camera direction; its grey block, arrows and words are not the target and must not be copied. Use no other spear or tassel design.\n\nAll five views show ONE fixed assembled object: one spear, one tassel with one gathered root, one continuous thin cloth surface and one main tapered terminal. Preserve A's tassel length, width variation and static outward-then-returning curve, with a vertical drop about 32 percent of total spear length. Never enlarge it independently, shorten it, detach it or invent a different wind-blown pose. The root physically connects to the upper gold-green socket: right in front, opposite side in back; the right-side view shows a thin edge, limited depth variation and coherent occlusion. Head, socket, pole and butt are coaxial; the tassel root is not floating. No new grip, clasp, coiled serpent, paired tassels or extra components.\n\nOutput one opaque pure-white 1536x1024 PNG. The left three equal 384x1024 regions contain front, right-side and back, one complete upright tasselled spear each, at identical scale with aligned spear tip, butt and tassel-root heights. Leave at least 48 pixels above and below; no clipping or cross-region subjects. The right 384x1024 column contains two 384x512 cells: TOP above, BOTTOM below, one complete assembled end-on projection each. Exactly FIVE projections in total, no detail insets.\n\nY runs from butt to tip, X is screen-right in front and Z points toward the front observer. Front looks along -Z, right side along -X and back along +Z. TOP looks from above the tip along -Y; BOTTOM from below the butt along +Y. Top and bottom project ONLY X width and Z depth; the entire spear/tassel Y length collapses along the sight line. No long pole, full-length hanging tassel, oblique overhead, three-quarter perspective or foreshortened spear. Screen-right is +X in both; screen-up is -Z in top and +Z in bottom. The external top/bottom silhouettes correspond after vertical screen reflection; only visible facets and occlusion order differ. Use normal occlusion, no cutaway, x-ray or exploded assembly.\n\nA's full assembled front width and right-side depth approximately give X:Z=1:0.36. Keep end-on Z-depth/X-width around 0.32-0.40, never a thick round cluster or multi-petal flower. The tassel is thin cloth with shallow folds and limited depth, not rope, solid sculpture or branching streamers. The two end views may share one enlargement for readability, but never change the depth/width ratio. Surfaces hidden by closer weapon or cloth parts stay occluded; do not rearrange the object to expose every component.\n\nPreserve high-definition pixel clusters and readable physical planes: cool silver blade, dark green and warm gold fittings, red-brown wood, vermilion cloth, deep-red folds and restrained orange-red highlights. Use neutral lighting and complete clean silhouettes. No text, labels, dimension lines, axes, dividers, borders, characters, hands, scenery, glow or motion trails. View labels and Chinese explanations will be added locally afterward.",
+  "negative_zh": "五种不同武器、两根红缨、悬空根部、拆分枪体与红缨、独立放大红缨、每视角换姿态、粗绳、实心红雕塑、多叶花、厚圆团、分叉、第二尾端、新增零件或握套、盘蛇、长枪杆出现在顶底视、完整纵长红缨出现在顶底视、斜俯视、3/4透视、透视缩短、横放正面、二维旋转伪装顶底、剖切、X光、爆炸图、局部放大、裁断、主体跨格、不同尺度、人物、手、文字、标签、尺寸线、轴、边框、场景、光效、残影。",
+  "negative_en": "Five different weapons, paired tassels, floating root, separated weapon and cloth, independently enlarged tassel, changed pose between views, thick cord, solid red sculpture, multi-petal flower, thick round cluster, branching, second terminal, new components or grip, coiled serpent, long pole in top/bottom, full-length hanging tassel in top/bottom, oblique overhead, three-quarter perspective, foreshortening, front laid sideways, fake end views by 2D rotation, cutaway, x-ray, exploded diagram, detail inset, clipping, cross-region subjects, mismatched scale, characters, hands, text, labels, dimension lines, axes, borders, scenery, glow, motion trails.",
+  "prompt_zh_sha256": "442e7cce947145fe8435b5a4b3a06a0b0c7af481263d04a409064adf57e7821c",
+  "prompt_en_sha256": "fd11aea39e8468bb74293f072c78c1775f188f59bc9ecace5469575e09ed216b",
+  "proposed_output_directory": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_five_view_v05",
+  "proposed_output_image": "stab_assembled_five_view_v05.png",
+  "planned_project_delivery": "StabWeaponArtSource/11_AssembledFiveViewV05",
+  "layout": {
+    "generated_size": [
+      1536,
+      1024
+    ],
+    "regions": [
+      {
+        "view": "front",
+        "label": "正面 FRONT",
+        "rect_xywh": [
+          0,
+          0,
+          384,
+          1024
+        ],
+        "caption": "检查已验收枪体身份、单根红缨、上部右侧挂点及整枪比例。"
+      },
+      {
+        "view": "right",
+        "label": "右侧 RIGHT",
+        "rect_xywh": [
+          384,
+          0,
+          384,
+          1024
+        ],
+        "caption": "检查刃脊厚度、圆杆深度、薄布前后起伏与根部真实连接；不要重复宽正面。"
+      },
+      {
+        "view": "back",
+        "label": "背面 BACK",
+        "rect_xywh": [
+          768,
+          0,
+          384,
+          1024
+        ],
+        "caption": "红缨位于正面相反侧，保持同一根部、长度和静止形状；连接件绕轴连续。"
+      },
+      {
+        "view": "top",
+        "label": "顶视 TOP",
+        "rect_xywh": [
+          1152,
+          0,
+          384,
+          512
+        ],
+        "caption": "沿−Y从枪尖看向枪尾，只留下装配X–Z投影；枪杆与布面按正常遮挡，不能成为长条。"
+      },
+      {
+        "view": "bottom",
+        "label": "底视 BOTTOM",
+        "rect_xywh": [
+          1152,
+          512,
+          384,
+          512
+        ],
+        "caption": "沿+Y从枪尾看向枪尖，同一装配的端向反面；不展开被遮挡零件，不改变布缨姿态。"
+      }
+    ],
+    "same_main_view_scale": true,
+    "same_end_view_scale": true,
+    "longitudinal_margin_target_px": 48,
+    "annotations": "Add all Chinese labels and explanations locally after generation; retain an unlabelled source sheet."
+  },
+  "geometry_targets": {
+    "assembled_tassel_drop_fraction": 0.32,
+    "approximate_reference_side_depth_to_front_width": 0.3556701030927835,
+    "end_view_depth_to_width_target": [
+      0.32,
+      0.4
+    ],
+    "top_view_direction": "-Y",
+    "bottom_view_direction": "+Y",
+    "same_static_assembly": true,
+    "image_ratios_are_not_physical_dimensions": true
+  },
+  "submission_policy": "After explicit approval, one submission only into a new output directory. No automatic repeated generation or model fallback after failure or unknown completion.",
+  "limitations": "The source is a local 2D assembly draft. Generative views may remain geometrically inconsistent; verify the full sheet and disclose candidate-only results instead of claiming CAD or mesh-rendered correspondence.",
+  "output_image": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_five_view_v05/stab_assembled_five_view_v05.png",
+  "output_sha256": "15fddd686807898ae93547d580426d80e286ea9e876614a528d5ff05ee13c154",
+  "project_plain_image": "StabWeaponArtSource/11_AssembledFiveViewV05/assembled_five_view_plain.png",
+  "project_annotated_image": "StabWeaponArtSource/11_AssembledFiveViewV05/assembled_five_view_annotated.png",
+  "actual_crop_regions": [
+    {
+      "view": "front",
+      "rect_xywh": [
+        0,
+        0,
+        384,
+        1024
+      ]
+    },
+    {
+      "view": "right",
+      "rect_xywh": [
+        352,
+        0,
+        384,
+        1024
+      ]
+    },
+    {
+      "view": "back",
+      "rect_xywh": [
+        704,
+        0,
+        384,
+        1024
+      ]
+    },
+    {
+      "view": "top",
+      "rect_xywh": [
+        1088,
+        192,
+        448,
+        384
+      ]
+    },
+    {
+      "view": "bottom",
+      "rect_xywh": [
+        1088,
+        560,
+        448,
+        384
+      ]
+    }
+  ],
+  "source_art_resampled": false,
+  "complete_assembled_candidate_delivered": true,
+  "modeling_geometry_passed": false,
+  "verification_record": "StabWeaponArtSource/11_AssembledFiveViewV05/delivery_verification.json",
+  "visual_review": {
+    "status": "complete_assembled_five_view_candidate_geometry_not_passed",
+    "five_subjects_present": true,
+    "front_right_back_assembly_readable": true,
+    "one_tassel_attached_to_each_weapon_view": true,
+    "no_character_or_scene": true,
+    "end_views_show_axial_composition": true,
+    "modeling_geometry_passed": false,
+    "user_acceptance_pending": true,
+    "board_title": "带红缨长枪｜完整装配五视图评审板",
+    "board_subtitle": "同一长枪与单根红缨的五视图候选；顶／底比例未通过，待评审",
+    "view_labels": [
+      "正面 FRONT",
+      "右侧 RIGHT",
+      "背面 BACK",
+      "顶视候选 TOP",
+      "底视候选 BOTTOM"
+    ],
+    "actual_crop_regions": [
+      {
+        "view": "front",
+        "rect_xywh": [
+          0,
+          0,
+          384,
+          1024
+        ]
+      },
+      {
+        "view": "right",
+        "rect_xywh": [
+          352,
+          0,
+          384,
+          1024
+        ]
+      },
+      {
+        "view": "back",
+        "rect_xywh": [
+          704,
+          0,
+          384,
+          1024
+        ]
+      },
+      {
+        "view": "top",
+        "rect_xywh": [
+          1088,
+          192,
+          448,
+          384
+        ]
+      },
+      {
+        "view": "bottom",
+        "rect_xywh": [
+          1088,
+          560,
+          448,
+          384
+        ]
+      }
+    ],
+    "crop_policy": "Source art is unmodified. Actual whitespace boundaries replace the requested fixed grid where subjects crossed it. No scaling, distortion or synthetic 2D view rotation. Small overlaps between main crop canvases contain only background.",
+    "footer_lines": [
+      "正／侧／背保持同一枪体和红缨挂点；红缨仅一根，静止姿态。",
+      "坐标：+Y向枪尖，+X为正面右，+Z朝正面观察者。",
+      "顶视沿−Y，底视沿+Y；端向图与长幅图展示倍率不同。",
+      "合图提取按实际留白，不缩放、不改形；无字原图与请求记录保留。"
+    ],
+    "limitation_note": "比例未通过：侧／正约0.35，顶约0.72、底约0.83。端向布面与遮挡不严格对应；不得按候选直接确定模型厚度。",
+    "audit": {
+      "method": "min(R,G,B)<220 approximate visible image bounds, not physical dimensions",
+      "global_bounds": {
+        "front": [
+          146,
+          26,
+          316,
+          970
+        ],
+        "right": [
+          510,
+          24,
+          569,
+          970
+        ],
+        "back": [
+          756,
+          25,
+          924,
+          969
+        ],
+        "top": [
+          1140,
+          288,
+          1455,
+          516
+        ],
+        "bottom": [
+          1143,
+          611,
+          1449,
+          866
+        ]
+      },
+      "main_tip_height_spread_px": 2,
+      "main_butt_height_spread_px": 1,
+      "side_depth_to_front_width_ratio": 0.3508771929824561,
+      "top_depth_to_width_ratio": 0.7246835443037974,
+      "bottom_depth_to_width_ratio": 0.8338762214983714,
+      "all_complete_subjects_can_be_extracted": true,
+      "requested_fixed_grid_fully_obeyed": false,
+      "requested_48px_main_top_margin_met": false
+    },
+    "limitations": [
+      "The generator did not fully obey the requested grid: back and top silhouettes crossed the nominal region boundary. Actual whitespace extraction preserves them completely.",
+      "Main-view top margins are approximately 24-26px, below the requested 48px.",
+      "Top/bottom composition collapses the long axis, but depth ratios are about 0.72/0.83 instead of the reference approximately 0.35. Opposite occlusion and tassel fold relationships are not rigorously corresponding.",
+      "Delivered as an art review candidate, not accepted orthographic modeling geometry. Exactly one V05 request was submitted, no additional generation."
+    ],
+    "unity_changes": false
+  }
+}

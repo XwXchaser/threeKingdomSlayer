@@ -563,6 +563,15 @@ MonoBehaviour:
   mountedCombinedAnimatorController: {fileID: 9100000, guid: 81afdd8da29bba844a8c235ffa07b915, type: 2}
   mountedPlaceholderAnimatorController: {fileID: 9100000, guid: dd82b46f8eda9d344b1cbd2f8d86f54d, type: 2}
   dismountedAnimatorController: {fileID: 9100000, guid: 1f96cc32fd193494e943b84135b6e49f, type: 2}
+  windupAnimation: {fileID: 7400000, guid: 593aa57fccccc5a4fa41646a98ab2ddf, type: 2}
+  chargingAnimation: {fileID: 7400000, guid: e1bba48d68d55ec4c8f3d78117e334b7, type: 2}
+  strikeAnimation: {fileID: 7400000, guid: 24328658409d6f146a5990579da47dc8, type: 2}
+  strikeToRetreatAnimation: {fileID: 7400000, guid: e326eddf144296b4896006f659328c65, type: 2}
+  turnToIdleAnimation: {fileID: 7400000, guid: 591870c15f82cfd4fa2222e2594c4825, type: 2}
+  retreatPoseAnimation: {fileID: 7400000, guid: f2ea3bf80df2de141a85b717a1987690, type: 2}
+  interruptedAnimation: {fileID: 7400000, guid: a55955a9b287c8a48bf4f1e16a2953a7, type: 2}
+  strikeHitNormalizedTime: 0.45
+  turnToIdleDuration: 0.8
   debugLabel: {fileID: 4514936625154281685}
   showDebugState: 1
   mountedRiderOffset: {x: 0, y: 3.5, z: -0.04}

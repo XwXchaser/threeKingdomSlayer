@@ -1,0 +1,30 @@
+{
+  "format": "PNG",
+  "size": [
+    1536,
+    1024
+  ],
+  "mode": "RGB",
+  "png_color_type": 2,
+  "bytes": 1595339,
+  "sha256": "87a000b2aba5d0234760fdd972a21ae77d9ff9d15dc815b43bc5df04e459b917",
+  "all_chunk_crcs_valid": true,
+  "idat_decoded_and_filters_valid": true,
+  "matches_requested_size": true,
+  "job": "tassel",
+  "http_status": 200,
+  "output_image": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v03/stab_tassel_top_bottom_v03.png",
+  "reference_unchanged": true,
+  "generation_submission_count": 1,
+  "request_to_verified_file_seconds": 93.838,
+  "visual_review_pending": false,
+  "visual_review": {
+    "requested_end_on_projection_passed": false,
+    "classification": "Full-height front/back-like cloth views, not orthographic X-Z end views.",
+    "evidence": "The fixed root and long tapered terminal remain separated over almost the full image height. A Y-axis projection should collapse the root-to-terminal length, exposing lateral spread and shallow depth.",
+    "approved_as_modeling_top_or_bottom": false,
+    "action": "Retain as failed generation evidence; do not label or merge as valid top/bottom. Revised prompt requires new approval."
+  },
+  "user_acceptance_pending": true,
+  "unity_deployment": "Not performed. No Unity assets or scenes changed."
+}

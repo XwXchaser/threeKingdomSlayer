@@ -1,0 +1,134 @@
+{
+  "status": "front_left_right_back_delivered_left_art_acceptance_pending",
+  "generation_submission_count": 1,
+  "repeated_generation_after_interruption": false,
+  "view_order": [
+    "front",
+    "left",
+    "right",
+    "back"
+  ],
+  "view_checks": [
+    {
+      "view": "front",
+      "size": [
+        384,
+        1024
+      ],
+      "plain_and_annotated_regions_pixel_identical": true,
+      "bounds_xyxy": [
+        146,
+        26,
+        316,
+        970
+      ],
+      "edge_margins_px": [
+        146,
+        26,
+        67,
+        53
+      ],
+      "complete_subject_with_margin": true,
+      "byte_identical_to_V5": true
+    },
+    {
+      "view": "left",
+      "size": [
+        384,
+        1024
+      ],
+      "plain_and_annotated_regions_pixel_identical": true,
+      "bounds_xyxy": [
+        83,
+        24,
+        208,
+        970
+      ],
+      "edge_margins_px": [
+        83,
+        24,
+        175,
+        53
+      ],
+      "complete_subject_with_margin": true,
+      "byte_identical_to_V5": false
+    },
+    {
+      "view": "right",
+      "size": [
+        384,
+        1024
+      ],
+      "plain_and_annotated_regions_pixel_identical": true,
+      "bounds_xyxy": [
+        158,
+        24,
+        217,
+        970
+      ],
+      "edge_margins_px": [
+        158,
+        24,
+        166,
+        53
+      ],
+      "complete_subject_with_margin": true,
+      "byte_identical_to_V5": true
+    },
+    {
+      "view": "back",
+      "size": [
+        384,
+        1024
+      ],
+      "plain_and_annotated_regions_pixel_identical": true,
+      "bounds_xyxy": [
+        52,
+        25,
+        220,
+        969
+      ],
+      "edge_margins_px": [
+        52,
+        25,
+        163,
+        54
+      ],
+      "complete_subject_with_margin": true,
+      "byte_identical_to_V5": true
+    }
+  ],
+  "png_decoding_and_chunk_crcs_passed": true,
+  "original_front_right_back_V5_bytes_preserved": true,
+  "left_not_pixel_identical_to_mirrored_right": true,
+  "left_generation_sha256": "2939a06dde90e95e56a35f5159c89b057eb7a258d8c766948a2bf8c96974dc08",
+  "left_normalization": {
+    "uniform_scale": 0.6825396825396826,
+    "offset_x": -164.27777777777777,
+    "offset_y": -3.984126984126984,
+    "source_size": [
+      1024,
+      1536
+    ],
+    "target_size": [
+      384,
+      1024
+    ],
+    "target_tip_y": 24,
+    "target_butt_y": 970,
+    "target_shaft_center_x": 184.5,
+    "method": "Single uniform whole-image scaling plus white canvas placement; no mirror, rotation or component stretching. Only blank canvas is cropped.",
+    "filter": "NearestNeighbor"
+  },
+  "left_right_tip_height_difference_px": 0,
+  "left_right_butt_height_difference_px": 0,
+  "strict_left_right_geometry_verified": false,
+  "limitations": [
+    "The generated view has a narrow blade profile and is a new image, not a mirrored V5 right image.",
+    "The tassel is broader than expected from the V5 right-side silhouette and the far-side attachment occlusion is not fully demonstrated. Exact left/right geometry correspondence is not verified.",
+    "Overall tip-to-butt height can be uniformly aligned, but individual connector heights and cloth folds are not guaranteed pixel-identical across generated views.",
+    "Original image top margin is 41px, below the requested 64px. Complete spear tip, butt and cloth terminal remain visible."
+  ],
+  "user_acceptance_pending": true,
+  "unity_changes": false
+}

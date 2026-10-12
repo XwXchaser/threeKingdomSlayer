@@ -1,0 +1,134 @@
+{
+  "status": "generation_technically_succeeded_projection_failed",
+  "generation_submission_count": 2,
+  "valid_top_bottom_views": 0,
+  "raw_response_policy": "Service responses remain in original C:/Users/Administrator/Pictures/gptGen/ output directories.",
+  "records": [
+    {
+      "file": "body/stab_body_top_bottom_v03.png",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v03/stab_body_top_bottom_v03.png",
+      "bytes": 1015309,
+      "sha256": "c9a2133967b9b56c9d7d05d627186745d6bbc7de4189ab266f806398d1553c29",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/approved_specification.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v03/trace/approved_specification.json",
+      "bytes": 17425,
+      "sha256": "e5a9f4d4ed6bf28ddcc78ca6a55e81ec97dbc412c453e4d7312a2e4d0fb7ec5d",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/request.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v03/trace/request.json",
+      "bytes": 6134,
+      "sha256": "b8d72a8999f41b4402f661d5d9dffaad34298e658977fc4404a991640fade5ee",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/status.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v03/trace/status.json",
+      "bytes": 472,
+      "sha256": "ad35d1ba6dc27dca47736bae64c14b84895a72a936fd81c9f96cb8f26346f43c",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/verification.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v03/trace/verification.json",
+      "bytes": 1332,
+      "sha256": "eecdf38bd2089a81f80ebba17d827cacaa72ea024ea9a179d25e21880a7646d7",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/prompt_zh.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v03/trace/prompt_zh.txt",
+      "bytes": 1817,
+      "sha256": "e31c618f1f382954d7bf5b1d58d9592f27dbd2ead17af978e2805e1e0466fc56",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/prompt_en.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v03/trace/prompt_en.txt",
+      "bytes": 2137,
+      "sha256": "77d2097f033837af3034c806d9cb22bd66ce7c7e263114a642d12be5e77168b8",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/negative_zh.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v03/trace/negative_zh.txt",
+      "bytes": 412,
+      "sha256": "57155cfc860c1419527f781022904c12fcd252b92bdfef16610d2c88717bded0",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "body/trace/negative_en.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v03/trace/negative_en.txt",
+      "bytes": 508,
+      "sha256": "a13798a88e366a8ca0d75eeb92d567687741f3b81fee589f8b3bb514eaa0fe69",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/stab_tassel_top_bottom_v03.png",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v03/stab_tassel_top_bottom_v03.png",
+      "bytes": 1595339,
+      "sha256": "87a000b2aba5d0234760fdd972a21ae77d9ff9d15dc815b43bc5df04e459b917",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/approved_specification.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v03/trace/approved_specification.json",
+      "bytes": 17425,
+      "sha256": "e5a9f4d4ed6bf28ddcc78ca6a55e81ec97dbc412c453e4d7312a2e4d0fb7ec5d",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/request.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v03/trace/request.json",
+      "bytes": 6595,
+      "sha256": "74d39096f7fc593fcb719b712d970536b693d01a622ea2bc8a1580d79183b338",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/status.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v03/trace/status.json",
+      "bytes": 477,
+      "sha256": "b211386907b4578deef3e33244be9548b3d3ba97cc20d43fdf5cf521c4a8fb2d",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/verification.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v03/trace/verification.json",
+      "bytes": 1329,
+      "sha256": "481f7818c6582b0d03ba335af49b7be85766f49f55735204fd6c61fca9c14b3f",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/prompt_zh.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v03/trace/prompt_zh.txt",
+      "bytes": 1924,
+      "sha256": "6508240000aee51a4be753031623f02b6f0fb28be711c42b1265d5c3a9dd0a83",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/prompt_en.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v03/trace/prompt_en.txt",
+      "bytes": 2362,
+      "sha256": "6870d081d827f87da4c81947d7dbb72c5aa281964e8da1c92e716f7befbe4a5a",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/negative_zh.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v03/trace/negative_zh.txt",
+      "bytes": 469,
+      "sha256": "10c2bbe35c1652d73bc4980e8a575d1f37780d5b2e905d81825c4ec2a0254e7a",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "tassel/trace/negative_en.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v03/trace/negative_en.txt",
+      "bytes": 570,
+      "sha256": "e3d6bb53422d1628c88249500d59c0ffbc45ec7a6682dcd4f8c0b93f974f8d57",
+      "byte_identical_to_source": true
+    }
+  ]
+}

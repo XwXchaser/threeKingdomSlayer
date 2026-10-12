@@ -19,10 +19,8 @@ public sealed class YScrollSample : MonoBehaviour
     public Transform leftBranchEncounter;
     public Transform rightBranchEncounter;
     public Transform junctionVisuals;
-    [Header("Linear story route stops")]
-    public Transform e0StoryStop;
-    public Transform e1StoryStop;
-    public Transform j1StoryStop;
+    [Header("Inspector-authored logical node anchors")]
+    public ScrollRouteNodePresentation[] nodePresentations = System.Array.Empty<ScrollRouteNodePresentation>();
     Bounds[] originalBounds;
     float angle;
     Vector3 position;
@@ -40,7 +38,7 @@ public sealed class YScrollSample : MonoBehaviour
 
     public static Vector3 Evaluate(float distance, float degrees, bool right, out float heading)
     {
-        // The straight N1 -> E0 -> E1 -> J1 story lane ends at the first branch decision.
+        // The N1 -> E0 -> J1 lane reaches the fork before either branch turns.
         const float junction=JunctionDistance, radius=CurveRadius;
         float a=degrees*Mathf.Deg2Rad, sign=right?1:-1;
         if(distance<=junction){heading=0;return new Vector3(0,0,distance);}
@@ -52,11 +50,22 @@ public sealed class YScrollSample : MonoBehaviour
         return p+new Vector3(sign*Mathf.Sin(a),0,Mathf.Cos(a))*tail;
     }
     public float Length => GetRouteLength(turnAngle);
-    public float GetNormalizedProgress(Transform stop)
+    public bool TryGetNodeProgress(FakeRouteNodeConfig node, out float normalizedProgress)
     {
-        if (!stop) return 0f;
-        float distance = transform.InverseTransformPoint(stop.position).z;
-        return Mathf.Clamp01(distance / Mathf.Max(0.1f, Length));
+        normalizedProgress = 0f;
+        if (!node || nodePresentations == null) return false;
+        ScrollRouteNodePresentation match = null;
+        foreach (var presentation in nodePresentations)
+        {
+            if (!presentation || presentation.node != node) continue;
+            if (match) return false;
+            match = presentation;
+        }
+        if (!match || float.IsNaN(match.worldDistance) || match.worldDistance < 0f
+            || match.worldDistance > Length) return false;
+        // Branch world Z is shorter than traveled distance. The authored route distance is authoritative.
+        normalizedProgress = match.worldDistance / Mathf.Max(0.1f, Length);
+        return true;
     }
     void OnEnable(){Camera.onPreCull+=Before;Camera.onPostRender+=After;}
     void OnDisable(){Camera.onPreCull-=Before;Camera.onPostRender-=After;Restore();}

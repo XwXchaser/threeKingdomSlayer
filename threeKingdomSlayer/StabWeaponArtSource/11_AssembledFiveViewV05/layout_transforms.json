@@ -1,0 +1,95 @@
+{
+    "source":  "C:\\Users\\Administrator\\Pictures\\gptGen\\stab_assembled_five_view_v05\\stab_assembled_five_view_v05.png",
+    "annotated_size":  [
+                           2304,
+                           1760
+                       ],
+    "plain_size":  [
+                       1536,
+                       1024
+                   ],
+    "views":  [
+                  {
+                      "view":  "front",
+                      "source_rect":  [
+                                          0,
+                                          0,
+                                          384,
+                                          1024
+                                      ],
+                      "board_rect":  [
+                                         64,
+                                         190,
+                                         384,
+                                         1024
+                                     ],
+                      "resampled":  false
+                  },
+                  {
+                      "view":  "right",
+                      "source_rect":  [
+                                          352,
+                                          0,
+                                          384,
+                                          1024
+                                      ],
+                      "board_rect":  [
+                                         576,
+                                         190,
+                                         384,
+                                         1024
+                                     ],
+                      "resampled":  false
+                  },
+                  {
+                      "view":  "back",
+                      "source_rect":  [
+                                          704,
+                                          0,
+                                          384,
+                                          1024
+                                      ],
+                      "board_rect":  [
+                                         1088,
+                                         190,
+                                         384,
+                                         1024
+                                     ],
+                      "resampled":  false
+                  },
+                  {
+                      "view":  "top",
+                      "source_rect":  [
+                                          1088,
+                                          192,
+                                          448,
+                                          384
+                                      ],
+                      "board_rect":  [
+                                         1664,
+                                         190,
+                                         448,
+                                         384
+                                     ],
+                      "resampled":  false
+                  },
+                  {
+                      "view":  "bottom",
+                      "source_rect":  [
+                                          1088,
+                                          560,
+                                          448,
+                                          384
+                                      ],
+                      "board_rect":  [
+                                         1664,
+                                         874,
+                                         448,
+                                         384
+                                     ],
+                      "resampled":  false
+                  }
+              ],
+    "source_cells_used_at_native_size":  true,
+    "added_chinese_text_locally":  true
+}

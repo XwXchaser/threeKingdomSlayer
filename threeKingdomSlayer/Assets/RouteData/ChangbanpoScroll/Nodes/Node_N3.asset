@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97c31ca4a9c37e140af66cba54f4cbf7, type: 3}
+  m_Name: Node_N3
+  m_EditorClassIdentifier: 
+  nodeId: N3
+  displayName: "N3\xB7\u6751\u843D\u641C\u6551\uFF08\u6D41\u7A0B\u9884\u89C8\uFF09"
+  dialogues: []
+  rewards: []
+  battleEntries:
+  - battleConfig: {fileID: 11400000, guid: bcb5b2d5dd8e4e64f816011a2a9a2f65, type: 2}
+    conditionEnabled: 0
+  completionPolicy: 0
+  terminalPolicy: 1
+  savePoint: 1
+  visualProfile: {fileID: 0}
+  outgoingChoices: []

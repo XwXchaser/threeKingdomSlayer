@@ -1,0 +1,12 @@
+{
+  "job": "tassel",
+  "version": "V04",
+  "stage": "image_verified",
+  "utc_started": "2026-10-11T14:54:10.449121+00:00",
+  "generation_submission_count": 1,
+  "automatic_retry": false,
+  "http_status": 200,
+  "generation_delivered": true,
+  "output_image": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v04/stab_tassel_top_bottom_v04.png",
+  "elapsed_seconds": 99.718
+}

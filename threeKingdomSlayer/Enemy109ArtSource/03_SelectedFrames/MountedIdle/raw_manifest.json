@@ -1,0 +1,70 @@
+{
+ "frames": [
+  {
+   "file": "mountedIdle1_f001.png",
+   "ordinal": 1,
+   "source_frame": 1,
+   "group": null,
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_idle_video_v1_retry1_decode\\frame_001.png",
+   "sha256": "daceeadcbcf99694e8db4a3241aff27007e05dad240bf60f3468c76b1290bf5b",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "mountedIdle2_f010.png",
+   "ordinal": 2,
+   "source_frame": 10,
+   "group": null,
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_idle_video_v1_retry1_decode\\frame_010.png",
+   "sha256": "a5b6223bac5d318cecea483b748d72261cc604a8408f1487bae88769bf0b23ac",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "mountedIdle3_f020.png",
+   "ordinal": 3,
+   "source_frame": 20,
+   "group": null,
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_idle_video_v1_retry1_decode\\frame_020.png",
+   "sha256": "b08a063315b1720845e50a4fca10c1be21ba6282812e6ab772b8f07939a5d649",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "mountedIdle4_f030.png",
+   "ordinal": 4,
+   "source_frame": 30,
+   "group": null,
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_idle_video_v1_retry1_decode\\frame_030.png",
+   "sha256": "380c6b186aa0c9b7be26f29573b78919e92a36be24a0e4016c07cd5a34f35bc8",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "mountedIdle5_f040.png",
+   "ordinal": 5,
+   "source_frame": 40,
+   "group": null,
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_idle_video_v1_retry1_decode\\frame_040.png",
+   "sha256": "df1d7dafd99ab7963926083ddc9c56ebc641f716110467397840075b57e78bec",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "mountedIdle6_f049.png",
+   "ordinal": 6,
+   "source_frame": 49,
+   "group": null,
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_idle_video_v1_retry1_decode\\frame_049.png",
+   "sha256": "9e011e9e4e8e00fe4449066387779ce4de154e3ab98b09a818148c28b89ea123",
+   "sha256_matches_manifest": true
+  }
+ ],
+ "acceptance": {
+  "status": "deployed_reference_exists",
+  "note": "deployed sprites came from GPT cutouts of these frames"
+ },
+ "deployed_reference_count": 6,
+ "plate_rgb": [
+  0,
+  168,
+  58
+ ],
+ "plate_chroma": 168.0,
+ "suggested_threshold": 79
+}

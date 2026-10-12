@@ -1,0 +1,86 @@
+{
+ "root": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames",
+ "actions": {
+  "Windup": {
+   "acceptance": {
+    "status": "user_accepted_pending_cutout",
+    "cutout_request_created": false,
+    "next_step": "Frame-level approval is complete. Run the authorized cutout workflow on these 12 raw frames, then inspect alpha and normalize/pad before Unity import."
+   },
+   "deployed_reference_count": 6,
+   "plate_rgb": [
+    0,
+    161,
+    60
+   ],
+   "plate_chroma": 161.0,
+   "suggested_threshold": 79
+  },
+  "Charging": {
+   "acceptance": {
+    "status": "user_accepted_pending_cutout",
+    "cutout_request_created": false,
+    "next_step": "Frame-level approval is complete. Run the authorized cutout workflow on these 12 raw frames, then inspect alpha and normalize/pad before Unity import."
+   },
+   "deployed_reference_count": 6,
+   "plate_rgb": [
+    0,
+    160,
+    61
+   ],
+   "plate_chroma": 160.0,
+   "suggested_threshold": 79
+  },
+  "Attack": {
+   "acceptance": {
+    "status": "keyed_and_accepted_by_user",
+    "note": "v6 striking 18 frames, keyed at T=70 and accepted"
+   },
+   "plate_rgb": [
+    0,
+    145,
+    60
+   ],
+   "plate_chroma": 145.0,
+   "suggested_threshold": 79
+  },
+  "MountedIdle": {
+   "acceptance": {
+    "status": "deployed_reference_exists",
+    "note": "deployed sprites came from GPT cutouts of these frames"
+   },
+   "deployed_reference_count": 6,
+   "plate_rgb": [
+    0,
+    168,
+    58
+   ],
+   "plate_chroma": 168.0,
+   "suggested_threshold": 79
+  },
+  "TurnToIdle": {
+   "acceptance": {
+    "source_video_status": "user_accepted",
+    "source_frames_status": "user_accepted",
+    "keyed_status": "matting_complete_user_matte_review_pending"
+   },
+   "frame_count": 24,
+   "raw_manifest": "TurnToIdle/raw_manifest.json",
+   "matting_report": "TurnToIdle/matting_report.json",
+   "raw_directory": "TurnToIdle/raw",
+   "keyed_directory": "TurnToIdle/keyed_ui_t79",
+   "recipe": {
+    "method": "SVL Chroma",
+    "auto_key_per_frame": true,
+    "threshold": 79,
+    "softness": 16,
+    "halo": 1,
+    "semitransparent_to_opaque": true,
+    "smoothing": false
+   },
+   "subject_color_issue_remains": true,
+   "deployed_reference_count": 0,
+   "unity_imported": false
+  }
+ }
+}

@@ -1,0 +1,60 @@
+[
+    {
+        "name":  "body",
+        "board_size":  [
+                           2560,
+                           1760
+                       ],
+        "reference_three_view":  "H:/Project/threeKingdomSlayer/threeKingdomSlayer/StabWeaponArtSource/04_BodyV02/stab_body_orthographic_v02.png",
+        "generated_end_views":  "C:\\Users\\Administrator\\Pictures\\gptGen\\stab_body_top_bottom_v04\\stab_body_top_bottom_v04.png",
+        "same_crop_rectangle_for_top_and_bottom":  [
+                                                       109,
+                                                       247,
+                                                       549,
+                                                       498
+                                                   ],
+        "same_display_scale_for_top_and_bottom":  0.72289156626506024,
+        "displayed_end_view_size":  [
+                                        396,
+                                        360
+                                    ],
+        "native_main_view_exports":  [
+                                         "front.png",
+                                         "right.png",
+                                         "back.png"
+                                     ],
+        "native_end_view_exports":  [
+                                        "top.png",
+                                        "bottom.png"
+                                    ]
+    },
+    {
+        "name":  "tassel",
+        "board_size":  [
+                           2560,
+                           1760
+                       ],
+        "reference_three_view":  "H:/Project/threeKingdomSlayer/threeKingdomSlayer/StabWeaponArtSource/05_TasselV02/stab_tassel_orthographic_v02.png",
+        "generated_end_views":  "C:\\Users\\Administrator\\Pictures\\gptGen\\stab_tassel_top_bottom_v04\\stab_tassel_top_bottom_v04.png",
+        "same_crop_rectangle_for_top_and_bottom":  [
+                                                       68,
+                                                       81,
+                                                       639,
+                                                       870
+                                                   ],
+        "same_display_scale_for_top_and_bottom":  0.41379310344827586,
+        "displayed_end_view_size":  [
+                                        264,
+                                        360
+                                    ],
+        "native_main_view_exports":  [
+                                         "front.png",
+                                         "right.png",
+                                         "back.png"
+                                     ],
+        "native_end_view_exports":  [
+                                        "top.png",
+                                        "bottom.png"
+                                    ]
+    }
+]

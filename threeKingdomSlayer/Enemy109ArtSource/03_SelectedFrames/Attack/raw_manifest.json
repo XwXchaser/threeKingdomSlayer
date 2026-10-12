@@ -1,0 +1,177 @@
+{
+ "frames": [
+  {
+   "file": "attack1_f055.png",
+   "ordinal": 1,
+   "source_frame": 55,
+   "group": "pre_thrust",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\pre_thrust\\pre_thrust_01_srcf055.png",
+   "sha256": "5e35ba3adbc02599b3c75ae22c6453d055af9ad9400d17e5176e936aee0ba5c1",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack2_f059.png",
+   "ordinal": 2,
+   "source_frame": 59,
+   "group": "pre_thrust",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\pre_thrust\\pre_thrust_02_srcf059.png",
+   "sha256": "7baeadb5a7d76d2eef75d92a75bc399ac533d54027cef6b0dcb5b6b2e5279c12",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack3_f063.png",
+   "ordinal": 3,
+   "source_frame": 63,
+   "group": "pre_thrust",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\pre_thrust\\pre_thrust_03_srcf063.png",
+   "sha256": "cb366d3f89efd36ceb1f7b210f526eb9316c949d783e2b49ccfa714ca355ea4c",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack4_f067.png",
+   "ordinal": 4,
+   "source_frame": 67,
+   "group": "pre_thrust",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\pre_thrust\\pre_thrust_04_srcf067.png",
+   "sha256": "cb445a106781937d6c3e28e620d0ae523f9241c7d160d6d9a76b119a10fe36af",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack5_f071.png",
+   "ordinal": 5,
+   "source_frame": 71,
+   "group": "pre_thrust",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\pre_thrust\\pre_thrust_05_srcf071.png",
+   "sha256": "1c60d116b9ac7488914ca61ef5770a1495e97aedaba6130d8ba21907cf3b6a36",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack6_f074.png",
+   "ordinal": 6,
+   "source_frame": 74,
+   "group": "pre_thrust",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\pre_thrust\\pre_thrust_06_srcf074.png",
+   "sha256": "9ee2cac93e36651236b5d69a46e81ba918b738bd28e84ad91d95fc379a6bb8d5",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack7_f075.png",
+   "ordinal": 7,
+   "source_frame": 75,
+   "group": "core_damage_thrust",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\core_damage_thrust\\core_damage_thrust_01_srcf075.png",
+   "sha256": "a9bf8d7de67119e7ab5c4b111e8dad680d52ba19215ef5f9062a2d01e5579e5b",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack8_f076.png",
+   "ordinal": 8,
+   "source_frame": 76,
+   "group": "core_damage_thrust",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\core_damage_thrust\\core_damage_thrust_02_srcf076.png",
+   "sha256": "6a0b1078a52903a90e7ecc40207ec12829ed988d95668402fea80823a4faf673",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack9_f078.png",
+   "ordinal": 9,
+   "source_frame": 78,
+   "group": "core_damage_thrust",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\core_damage_thrust\\core_damage_thrust_03_srcf078.png",
+   "sha256": "5c225d555ff79712f53237454e6ee1e8b46568733fe8727b41c7ad6557662fd2",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack10_f080.png",
+   "ordinal": 10,
+   "source_frame": 80,
+   "group": "core_damage_thrust",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\core_damage_thrust\\core_damage_thrust_04_srcf080.png",
+   "sha256": "008eaee3d42a82b3e4636d99bc80b175a08954d4392c26d1fcd23d1770c5f5e9",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack11_f081.png",
+   "ordinal": 11,
+   "source_frame": 81,
+   "group": "core_damage_thrust",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\core_damage_thrust\\core_damage_thrust_05_srcf081.png",
+   "sha256": "0bcaeae3439f1fcaee83795f9fa07c61124313cee9f93de83dd11167edff8051",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack12_f082.png",
+   "ordinal": 12,
+   "source_frame": 82,
+   "group": "core_damage_thrust",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\core_damage_thrust\\core_damage_thrust_06_srcf082.png",
+   "sha256": "ae2561bd7e2146ecdd87bcaa3385ddb1c5809d674bfec0fa55b2749439cf335d",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack13_f083.png",
+   "ordinal": 13,
+   "source_frame": 83,
+   "group": "post_083_followthrough",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\post_083_followthrough\\post_083_followthrough_01_srcf083.png",
+   "sha256": "8a101b51236da245e7127bd8dc5b90c7a0c014a5d33d06d056d56b2c4f6970c7",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack14_f086.png",
+   "ordinal": 14,
+   "source_frame": 86,
+   "group": "post_083_followthrough",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\post_083_followthrough\\post_083_followthrough_02_srcf086.png",
+   "sha256": "a16923adfbf3968723815cb8d4ae474f71efe807475c1036c1802bcb5e03f314",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack15_f089.png",
+   "ordinal": 15,
+   "source_frame": 89,
+   "group": "post_083_followthrough",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\post_083_followthrough\\post_083_followthrough_03_srcf089.png",
+   "sha256": "10cbf4ca0bc502a0f046f15c3cab41975342f8fd66a7ff1603643772495bed76",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack16_f092.png",
+   "ordinal": 16,
+   "source_frame": 92,
+   "group": "post_083_followthrough",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\post_083_followthrough\\post_083_followthrough_04_srcf092.png",
+   "sha256": "ea218f94b501eae37f39e72d06111b434f92dd39ee2ea23a1b3414c9fe545154",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack17_f097.png",
+   "ordinal": 17,
+   "source_frame": 97,
+   "group": "post_083_followthrough",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\post_083_followthrough\\post_083_followthrough_05_srcf097.png",
+   "sha256": "6c555b9c244109211a92480bbf72a2951b5b344440c0f0662dde16cabfda524c",
+   "sha256_matches_manifest": true
+  },
+  {
+   "file": "attack18_f103.png",
+   "ordinal": 18,
+   "source_frame": 103,
+   "group": "post_083_followthrough",
+   "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\cavalry_striking_video_v6\\keyframes_6plus6plus6_v2\\post_083_followthrough\\post_083_followthrough_06_srcf103.png",
+   "sha256": "8f23a311d407111f2199bfac4d29c2320660bec273333ca7992dfbc6aacb6c52",
+   "sha256_matches_manifest": true
+  }
+ ],
+ "acceptance": {
+  "status": "keyed_and_accepted_by_user",
+  "note": "v6 striking 18 frames, keyed at T=70 and accepted"
+ },
+ "plate_rgb": [
+  0,
+  145,
+  60
+ ],
+ "plate_chroma": 145.0,
+ "suggested_threshold": 79
+}

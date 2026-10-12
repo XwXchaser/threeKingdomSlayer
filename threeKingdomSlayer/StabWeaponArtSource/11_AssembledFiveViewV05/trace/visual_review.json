@@ -1,0 +1,53 @@
+{
+  "status": "complete_assembled_five_view_candidate_geometry_not_passed",
+  "five_subjects_present": true,
+  "front_right_back_assembly_readable": true,
+  "one_tassel_attached_to_each_weapon_view": true,
+  "no_character_or_scene": true,
+  "end_views_show_axial_composition": true,
+  "modeling_geometry_passed": false,
+  "user_acceptance_pending": true,
+  "board_title": "带红缨长枪｜完整装配五视图评审板",
+  "board_subtitle": "同一长枪与单根红缨的五视图候选；顶／底比例未通过，待评审",
+  "view_labels": ["正面 FRONT", "右侧 RIGHT", "背面 BACK", "顶视候选 TOP", "底视候选 BOTTOM"],
+  "actual_crop_regions": [
+    {"view": "front", "rect_xywh": [0, 0, 384, 1024]},
+    {"view": "right", "rect_xywh": [352, 0, 384, 1024]},
+    {"view": "back", "rect_xywh": [704, 0, 384, 1024]},
+    {"view": "top", "rect_xywh": [1088, 192, 448, 384]},
+    {"view": "bottom", "rect_xywh": [1088, 560, 448, 384]}
+  ],
+  "crop_policy": "Source art is unmodified. Actual whitespace boundaries replace the requested fixed grid where subjects crossed it. No scaling, distortion or synthetic 2D view rotation. Small overlaps between main crop canvases contain only background.",
+  "footer_lines": [
+    "正／侧／背保持同一枪体和红缨挂点；红缨仅一根，静止姿态。",
+    "坐标：+Y向枪尖，+X为正面右，+Z朝正面观察者。",
+    "顶视沿−Y，底视沿+Y；端向图与长幅图展示倍率不同。",
+    "合图提取按实际留白，不缩放、不改形；无字原图与请求记录保留。"
+  ],
+  "limitation_note": "比例未通过：侧／正约0.35，顶约0.72、底约0.83。端向布面与遮挡不严格对应；不得按候选直接确定模型厚度。",
+  "audit": {
+    "method": "min(R,G,B)<220 approximate visible image bounds, not physical dimensions",
+    "global_bounds": {
+      "front": [146, 26, 316, 970],
+      "right": [510, 24, 569, 970],
+      "back": [756, 25, 924, 969],
+      "top": [1140, 288, 1455, 516],
+      "bottom": [1143, 611, 1449, 866]
+    },
+    "main_tip_height_spread_px": 2,
+    "main_butt_height_spread_px": 1,
+    "side_depth_to_front_width_ratio": 0.3508771929824561,
+    "top_depth_to_width_ratio": 0.7246835443037974,
+    "bottom_depth_to_width_ratio": 0.8338762214983714,
+    "all_complete_subjects_can_be_extracted": true,
+    "requested_fixed_grid_fully_obeyed": false,
+    "requested_48px_main_top_margin_met": false
+  },
+  "limitations": [
+    "The generator did not fully obey the requested grid: back and top silhouettes crossed the nominal region boundary. Actual whitespace extraction preserves them completely.",
+    "Main-view top margins are approximately 24-26px, below the requested 48px.",
+    "Top/bottom composition collapses the long axis, but depth ratios are about 0.72/0.83 instead of the reference approximately 0.35. Opposite occlusion and tassel fold relationships are not rigorously corresponding.",
+    "Delivered as an art review candidate, not accepted orthographic modeling geometry. Exactly one V05 request was submitted, no additional generation."
+  ],
+  "unity_changes": false
+}

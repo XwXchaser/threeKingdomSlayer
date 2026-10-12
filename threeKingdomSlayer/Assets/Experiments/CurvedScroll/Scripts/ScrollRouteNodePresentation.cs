@@ -6,14 +6,30 @@ public sealed class ScrollRouteNodePresentation : MonoBehaviour
 {
     public FakeRouteNodeConfig node;
     public float worldDistance;
+    public ScrollRouteDirection direction = ScrollRouteDirection.Forward;
     public Transform battleAnchor;
     public Transform backgroundAnchor;
     public bool showLabel = true;
     public Color color = Color.cyan;
     void OnValidate()
     {
+        SyncTransformFromDistance();
+    }
+
+    public void SyncTransformFromDistance()
+    {
         gameObject.name = (node != null ? node.nodeId : "Node") + " - Presentation Anchor";
-        if (worldDistance > 0f) transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y, worldDistance);
+        var route = GetComponentInParent<YScrollSample>();
+        if (route != null)
+        {
+            float heading;
+            var position = YScrollSample.Evaluate(worldDistance, route.turnAngle,
+                direction == ScrollRouteDirection.Right, out heading);
+            transform.position = route.transform.TransformPoint(position);
+            transform.rotation = route.transform.rotation * Quaternion.Euler(0f, heading, 0f);
+        }
+        else if (worldDistance > 0f)
+            transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y, worldDistance);
     }
     void OnDrawGizmos()
     {

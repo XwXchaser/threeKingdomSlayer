@@ -426,6 +426,65 @@ aiEditMode: inherit
 - 18帧严格按用户分段：pre f055/f059/f063/f067/f071/f074；core damage f075/f076/f078/f080/f081/f082；post-083 f083/f086/f089/f092/f097/f103。PNG与源逐字节/哈希一致，核心段未跳过f076–f081。
 - 交付目录：`Library/Locus/tmp/cavalry_concept/cavalry_striking_video_v6/keyframes_6plus6plus6_v2/`，含三个分组子目录、`keyframes_18_all.png`、`keyframes_6_core_damage_thrust.png`、`keyframes_18_review.webp`、CSV、manifest和README。无去背/Unity导入/Clip接线或玩法时序改动，帧序等待用户验收。
 
+### Enemy 109 背向返航形象与4秒奔跑循环 v1（2026-10-10，形象与视频均已验收；暂不抠图）
+
+- 背向起始形象：`C:/Users/Administrator/Pictures/gptGen/enemy109_retreat_back_startframe_v1.png`，960×960 RGB，1,004,086字节；SHA-256 `645b6bf888fa4a9ba7258884a9525426132cfc233137b3ef1a1d1f4c73340b31`。GPT Image单次编辑成功，用户明确“已验收，准备这个奔跑动画制作，4秒loop的即可”。右手枪在画面右侧，正背面人马合一；未抠图或部署。
+- 为视频四边各补32px背景，原960窗口逐像素保留、零重采样/重绘，得到1024×1024同一首尾副本：`Library/Locus/tmp/cavalry_concept/retreat_run_loop_v1/first_last_retreat_back_padded_1024.png`；SHA-256 `3b825459db173e8c99c6ac93a2637f55865086835dc1ef7daffc4933a1a74e13`。
+- 用户随后“发起生成”，仅创建1次 task `task_767c173fa0ea4ff2a5869894ce316d9b`；seedance-2-fast / 4s / 720p / 1:1 / 无音频水印 / seed=-1；只上传同一图一次用于first/last，不混参考图/视频。英文Prompt SHA `f862113827320ae2a73fe88ca09da4415f52f38e1fc0d63f21e35bc3a5b9dd4a`。
+- 原视频：`C:/Users/Administrator/Videos/doubaoVideo/enemy109_retreat_run_loop_v1_720p_4s.mp4`，2,388,438字节；SHA-256 `9adf1f6be61a6c02bcbcf675f7d9e88981f2b1b2cb3d72aee768b0e0d5e343cd`。服务success，MP4/全量解码通过；960×960、24fps、97帧、约4.04s、无音频；usage87300，cost原值spend=0.48888，不推断币种。
+- 首轮有限12次查询仍generating，之后单次查询同task为success。4路Range完整下载10.408秒（含取URL/探测）；accepted→success观察约307.0秒，不是纯推理时长。
+- 全97帧未检测到触边裁切，最低L/T/R/B余量301/16/244/64px；枪尖部分帧未达到拟定3%安全带。前轮预审观察尾部约3.79–4.00s趋向站定；用户随后明确“已验收，先不抠图，准备头尾帧思考该范围如何完成转身回到idle状态”。**视频已获用户验收，旧接缝疑虑保留为历史，不覆盖验收。** 任意循环相位退出/Unity衔接尚未验证。
+- 审阅图、97帧WebP及全帧报告：`Library/Locus/tmp/cavalry_concept/retreat_run_loop_v1/diagnostic_review/`；运行记录：`Library/Locus/tmp/cavalry_concept/retreat_run_loop_v1.runtime.json`。原视频保持，无剪帧/倒放/补生；生产选帧、去背、Unity部署未执行，当前明确暂停抠图。
+- 转回Idle首尾准备：`Library/Locus/tmp/cavalry_concept/retreat_to_idle_v1/`。第一帧为真实视频第97帧（零基96，PTS49152/12288=4.0s），FFmpeg重解码RGB回读一致；最后姿态目标用现有MountedIdle1。已另存整体0.9375比例/单次偏移的RGB Idle参考候选（无抠图，原源保留），两端蹄底同为y892、蹄中点差约0.5px。用户确认采用背面→画面左侧侧身→正面，以延续原正面→画面右侧攻击→背面方向；对齐后的Idle终点构图/比例也已确认。随后6秒Prompt获“发起生产”授权，实际结果见下一项；不再沿用旧“尚未创建、待批准”状态。
+
+### Enemy 109 返航到位→左侧转身回 MountedIdle v1（2026-10-11，视频与24帧已验收；色差问题已诊断未修复）
+
+- 用户复核6秒双语Prompt、方向和对齐Idle终点后明确“发起生产”，仅创建一次 `task_75f597274c3a4dc28fb978b719692522`。规格 `seedance-2-fast / 6s / 720p / 1:1 / 无音频无水印 / seed=-1`，只上传已批准的 first_frame 和 last_frame，不混普通参考图/视频/音频。
+- 输入：实际已验收奔跑视频尾帧 `first_frame_actual_retreat_video_tail_960.png` SHA-256 `a03b02000c5295bb760fdc09f016ba7392d4323b016ffe57698e5f405cf38570`；对齐Idle `last_frame_mountedIdle1_aligned_candidate_960.png` SHA-256 `2273e61abc6dfad13ff5bb51a9b0e487fab4d894356947c30337c5d217865e73`。均在 `Library/Locus/tmp/cavalry_concept/retreat_to_idle_v1/`，960×960 RGB，创建前哈希核对一致。
+- 英文Prompt SHA-256 `a2e133eb309093876c7081d02d9456f3b5a6192ee056f74d1975f090d49ba0ee`，中文 `277f8b18d954bd8c64672b41f38559bc206ec0d61938a5b8d41a6b6dff071044`；原批准文件与输入保持，未改背景。
+- 原片：`C:/Users/Administrator/Videos/doubaoVideo/enemy109_retreat_to_idle_v1_720p_6s.mp4`，3,801,380 bytes；SHA-256 `c01c129c581e0b95df5fe7d427d15e7d18d47e8b2f6fd7b9077ed92127074b7a`。实际H.264 / 960×960 / 24fps / 145帧 / 约6.04s，末帧名义时间6.000s；MP4结构与FFmpeg全量解码0，流信息确认无音轨，审阅后原片哈希不变。
+- API usage completion_tokens / total_tokens = 130500，cost原值spend=0.7308，不推断币种。首轮12次有限查询仍generating，后续只查询原task一次为success；四路Range验证后下载、容器与解码通过才改为正式MP4，下载阶段约6.283s。没有第二次创建。
+- 历史代理接触表预审：背面→画面左侧侧身→正面方向符合目标，人马共同转向、马腿抬落换位、枪由画面右侧转至左侧；采样未看到第二圈或攻击。曾记约2.5–3.5s侧身停留较久并反复迈步；用户随后已验收原片，旧疑虑不覆盖用户验收。接触表仍不证明全帧解剖或无滑步。
+- 全145帧绿色主导诊断未检测到4px边缘前景触碰；最低L/T/R/B余量28/28/40/65px。**18帧低于拟定32px安全带**（f071–075、107–109、119–122、130–135），因此只可记“未检测到裁切”，不可记“全部构图约束通过”；该掩码不是Alpha抠图。
+- 首帧输入/实际包围框只差左边1px，尾帧包围框均 `[240,33,658,893]`（右下排他），蹄底可见行892；前景联合RGB MAE分别5.7304 / 7.6063，不宣称像素一致或最终Unity尺度/锚点衔接已通过。
+- 审阅目录 `Library/Locus/tmp/cavalry_concept/retreat_to_idle_v1/diagnostic_review/`：全程、侧身连续16帧、最后16帧、首尾对照、145帧WebP、`validation_and_endpoint_report.json`与`findings.md`；WebP重复仅为诊断，原动作是非循环转换。规格/brief及 `Library/Locus/tmp/cavalry_concept/retreat_to_idle_v1.runtime.json` 已同步结果。
+- 用户明确“已验收，请截取有效帧供我验收”，随后确认“当前这批挑选帧已验收”：**原视频与24帧帧序均通过**。保持暂不抠图、未Unity导入/Clip/路由接入、未玩法时序或场景修改、未Git提交。6秒是制作源时长，不是游戏到位等待时间；任意奔跑循环相位退出与后续映射仍未验证。
+
+#### 转回Idle有效帧 v1：24张本地原帧（帧序已验收，色彩一致性单独待处理）
+
+- 目录 `Library/Locus/tmp/cavalry_concept/retreat_to_idle_v1/keyframes_v1_24/`，按动作节点4+8+8+4分组：起始f001/019/024/029；背面到左侧f034/039/044/049/054/059/064/069；左侧到正面f079/086/092/098/103/110/114/118；收稳f124/128/138/145。删除相似站定/侧身踏步长停留，保留真实首尾锚点，未均匀抽全部6秒。
+- 24张完整960×960 RGB PNG，与原视频对应解码像素全相等，和保存的解码源PNG逐字节/哈希一致；RGB哈希24个均不同。未裁切/缩放/平移/调色/插值/镜像/去背。独立回读24/24通过，CSV顺序与manifest一致，原视频哈希不变。
+- 避开原片18张低于32px余量的帧；候选最低L/T/R/B=35/33/42/66px、4px边缘诊断前景全0，24/24达到32px。此量测不是Alpha或解剖验收。
+- `keyframes_24_all.png`及四组总览、独立分组PNG、`selected_frames_manifest.json`、`selected_frames.csv`和README已导出；`keyframes_24_sequence_preview.webp` / `keyframes_24_slow_review.webp`均480×480、24帧，顺序/像素回读通过。2.68s快速与6.24s慢放只是审阅节奏，不是游戏时序或Loop。`_decoded_source/`为追溯副本，不作为第二套动画帧。
+- 本轮只有本地解码选帧，零新收费API，无Unity/玩法/场景操作。用户随后明确“当前这批挑选帧已验收”，视频与帧序均accepted；颜色问题单独记录，不自动抠图、改色或部署。
+- 用户指出收尾色差，要求先检查流程。本次只诊断：两张上传输入角落64px中位首帧(0,152,63)、尾帧(0,168,60)，输入本来就不同；本次规格明确no_background_normalization，遗漏了此前刺击v4已验证的“另存只改背景统一副本”前置项。尾帧按Nearest900px+(12,20)+边缘延展重建与输入逐像素一致，非对齐变换意外调色。
+- 输出f001(0,146,60)、已选第23张f138(0,153,59)、第24张f145(0,160,57)；全145帧G中位145..160。f140/f141 G153→f142 G157→f145 G160的末段变化已在原视频。24张帧是原片RGB复制，没有用静态尾图替换f145；哈希24/24不变。
+- 原始YUV角落f001(96,112,69)→f145(102,107,65)；color range/space/primaries/trc均unknown。默认与强制601一致，709仍时变且更暗，因此不能用换播放器/固定解码矩阵解释全部问题。生成模型与服务端编码贡献尚不能完全拆开，不能认定输入背景差是主体变色唯一因果。
+- f138→f145局部材质配准NCC约0.980..0.982，配对RGB中位差头盔(0,+1,-2)、红布(+2,-1,-3)、马胸(+2,+2,-4)，主体也不是完全不变；只统一或去掉背景不保证修复主体色差。现行SVL key_frame逐图auto_key_color，不是全批固定首帧绿色。
+- 详细诊断：`Library/Locus/tmp/cavalry_concept/retreat_to_idle_v1/diagnostic_review/background_color_diagnosis.md`。本轮未修改PNG/MP4/Skills/Unity，零新生成API；保持已验收帧，不因色差自动重做。
+
+#### 转回Idle24帧：SVL透明版 v1（2026-10-11，抠图完成；透明结果待用户验收）
+
+- 用户“请继续未完成的抠图工作”恢复本地去背授权。仅处理已验收24张TurnToIdle原帧；4秒返航奔跑目前没有已确认选帧清单，本次未自行抽选或部署。
+- 先对7张代表帧扫描T55/70/79，采用现行SVL Chroma / 逐帧auto_key / T79 / softness16 / halo1 / 半透明转不透明；无Real-ESRGAN、全图校色、旧环替换或新收费API。同一源码+配方重新处理Idle1，与已存在keyed_ui_t79逐像素一致。
+- 产物 `Enemy109ArtSource/03_SelectedFrames/TurnToIdle/keyed_ui_t79/` 共24张，`turnToIdle1_f001.png`至`turnToIdle24_f145.png`；raw副本及清单同动作目录，root source manifest仅追加TurnToIdle，不擅改旧T70/T79备注。
+- 独立回读24/24为960×960 RGBA、Alpha仅0/255、半透明0、透明隐藏RGB0；24份raw与来源字节/哈希相同，原MP4哈希不变。核心掩码3257182像素次0删除/0改色；边缘反混合每帧1075–2295可见像素RGB发生变化，不能宣称所有可见像素原样。非透明边界最小L/T/R/B=37/36/43/67px。
+- 已读白/深底总览、枪杆/缰绳/马尾/马蹄局部源图对照与末两帧接现有Idle1的中性底对照；未见明显新增绿边、主体大片缺口或细部断裂。两版24帧WebP（中性底2.68s、白底慢放6.24s）与CSV顺序通过；速度仅审阅，不改玩法。
+- `TurnToIdle/matting_report.json`、`raw_manifest.json`、`frame_list.csv`、README与`review/`完整落盘；Runtime/spec记录抠图true、matte_user_verdict=pending、Unity=false。**只去掉制作背景，既有生成器主体轻微色差仍保留，未做主体校色或静态尾图替换。** 未补1108/导入Unity/建Clip/改场景或提交。
+- 用户质疑此前只凭数值结论不充分，要求实际抠图对照。新增只读候选复核 `Enemy109ArtSource/03_SelectedFrames/TurnToIdle/endpoint_review_v2/`：使用同一T79实际抠出f002/f140/f141/f144；总览、局部材质和切换预览均经RGBA合成并逐帧像素回读。v1两份早期切换WebP错误使用不透明绿底源图，已在v2 report标作superseded，不能当作抠图证据。
+- 实图确认±1端点不修复色差：f001/f002背景中位G146/145，f144/f145 G159/160；f140/f141的G153且与f138收尾姿势/主体较接近，但与Idle1的主体色差更大。候选提供视觉取舍，不自动替换/重排已验收序列；四候选均待用户决定。当前序列、24张透明版、Idle、MP4哈希全未改，无收费API或Unity操作。
+
+### Enemy109 刺击收尾→转身接背向返航 v1（2026-10-11，视频已验收；f010共用端点11帧已抠图部署）
+
+- 用户确认头尾副本和双语词后明确“已确认，发起生成，时长为6秒”；只将原4秒提案改成6秒及对应时间段，精确头尾哈希未变。唯一task `task_c67ba690deac46f2bb2cb17c31f0471f`，上传2次，创建POST仅1次，原task success，禁止重复创建。
+- `seedance-2-fast / 6s / 720p / 1:1 / 无音频无水印 / seed=-1`，仅first_frame+last_frame。头是Attack18/f103的0.9375倍/整幅(12,59)对齐副本；尾是真实返航视频f001/T79去背副本，两张960×960RGB背景均(0,159,62)，上传sha分别`890a1ca3bb5c54d14027e716031477cd527801dd2ab947718748eb1d54842878`、`244c3ee6fb89e2d239ef93faaa363fc10e700347cc5cdc3615cee5627468ce1c`。
+- 原片 `C:/Users/Administrator/Videos/doubaoVideo/enemy109_strike_to_retreat_v1_720p_6s.mp4`，3,788,350字节，sha`a207d2ce1310bb22e36045348bd9c6039f59bc0f784b88b28a38fa28f2cb3d96`。实际H.264、960×960、24fps、145帧、约6.04秒、无音轨，容器与FFmpeg全量解码通过。最后下载分段曾超时，保留前三段后续传第4段成功，身份/长度通过，没有重生成。usage completion_tokens/total_tokens=130500；cost原值spend=0.7308，币种未返回。
+- 生成后的历史预审曾检测到右侧身→斜背→正背方向；原尺寸f054水平枪尖越过右边，36帧触及4px外围、57帧低于32px安全带，约4.4秒后趋于背向站定。上述是历史代理预审，不覆盖用户随后对视频的明确验收；也不意味着原视频的边界问题已修复，若选帧用于抠图/部署仍应避开/检查越框动作。
+- 上传平底已统一但输出空背景中位范围R0–3/G143–155/B59–63，首(0,155,59)、尾(0,150,61)。本轮没有主体材质配准，不把背景时变等同主体统一染色原因。
+- 原始视频诊断与预览仍在`Enemy109ArtSource/02_VideoPreparation/StrikeToRetreat_v1/generated_review_6s/`；其diagnostic_frames不是生产选帧。视频用户验收后，依照“已验收，请挑选12帧有效帧”，新增生产选帧目录`Enemy109ArtSource/03_SelectedFrames/StrikeToRetreat_v1/`：保留真实f001/f145首尾，12帧源号f001/f010/f027/f035/f039/f043/f072/f075/f079/f087/f104/f145。f013–025与f046–068枪尖裁切段排除。重解码独立核对12/12 RGB像素、SHA、CSV和两份预览顺序通过；最小留白L/T/R/B=44/33/38/64px，选帧边缘4px前景全0。原片哈希未变，选帧状态`selection_user_verdict=pending`；不是透明帧，不表示该序列已用户验收。本轮未抠图、未Unity导入、未改玩法或场景。完整清单见`selected_frames_manifest.json`，交接入口`plan/enemy109-turn-to-retreat-video-preparation.md`。
+- 后续用户指定第02张f010作为新的StrikeToRetreat头帧与Strike尾帧，并明确授权“抠图并替换部署”。另建`Enemy109ArtSource/03_SelectedFrames/StrikeToRetreat_f010_v2/`，从f010保留11张T79 RGBA；原12张RGB与MP4哈希保持。核心1,359,179像素次0删除/改RGB，14,321边缘反混合像素次留档，Alpha0/255、幕布/隐藏RGB0。
+- 新帧Nearest16/15到1024、置1108(61,57)恢复Strike映射。Attack18 PNG覆盖且meta/GUID保留，与新StrikeToRetreat1字节/像素相同；新Clip/Controller状态/Prefab直接引用接通，仅成功刺击后按现有返航格数时长播放一次，阻塞/HitStop续播，打断不共用。针对性+隔离CavalryCycle验证通过；自然路线/游戏速度美术未覆盖，透明美术pending。测试停用根对象触发1条伤害数字inactive协程日志，已归因留档，未改跳字系统。权威接线和验证见`plan/enemy109-matting-unity-handoff-20261010.md` §12；没有新收费任务。
+
 ### Seedance 路线视频
 
 | 段 | task id | 最终文件 | 大小 | 结论 |

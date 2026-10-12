@@ -1,0 +1,73 @@
+{
+  "generation_submission_count": 1,
+  "archive_source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_orthographic_v02",
+  "status": "Generated and technically verified; visual/layout limitations disclosed; final user acceptance pending.",
+  "raw_response_location": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_orthographic_v02/trace/response.json",
+  "raw_response_archive_policy": "Raw service response retained at source; not duplicated into project archive.",
+  "copied_file_count": 9,
+  "records": [
+    {
+      "file": "stab_tassel_orthographic_v02.png",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_orthographic_v02/stab_tassel_orthographic_v02.png",
+      "bytes": 1184588,
+      "sha256": "d5d59dcbad2fb4674c64a6f4be3e167f2ad488852c382d9e4bfa2cd9743373a7",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/approved_specification.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_orthographic_v02/trace/approved_specification.json",
+      "bytes": 9363,
+      "sha256": "f7f99633d8644eae2e75012ce4266602568d40a8f26434e48c6b40c13ab5a2b6",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/negative_en.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_orthographic_v02/trace/negative_en.txt",
+      "bytes": 535,
+      "sha256": "31ebf4c4791eaea3fef6ee00cd58e067710e0cae4032399085ad90ba6de6ddc8",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/negative_zh.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_orthographic_v02/trace/negative_zh.txt",
+      "bytes": 459,
+      "sha256": "9bd97a2970f784c1ff55817d824c73f6035d6e3934084cef3f00620fc53a17c4",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/prompt_en.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_orthographic_v02/trace/prompt_en.txt",
+      "bytes": 2727,
+      "sha256": "45266ee0159e8e4ee4ea5ba1bcc0941cdd51da163f08e247314fcaa200535225",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/prompt_zh.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_orthographic_v02/trace/prompt_zh.txt",
+      "bytes": 2226,
+      "sha256": "93b5a72f03ea5ce95c68bc7001f1a33a4585e2500d8e4439107b82b6e134692a",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/request.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_orthographic_v02/trace/request.json",
+      "bytes": 7807,
+      "sha256": "035c36915297ae6e6fdc15a5876ffa3645a0d77fb91b6f7e23e16413091a7770",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/status.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_orthographic_v02/trace/status.json",
+      "bytes": 461,
+      "sha256": "31d2849242c8ed4d3e56add7f640f361fde171b998b93be4ec60a6a72a28010d",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/verification.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_orthographic_v02/trace/verification.json",
+      "bytes": 2517,
+      "sha256": "1f53888728e3580f3c92d98925a18a3d61ee24528fb1ac547cefff22a54e740d",
+      "byte_identical_to_source": true
+    }
+  ]
+}

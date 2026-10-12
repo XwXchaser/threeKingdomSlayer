@@ -1,0 +1,30 @@
+{
+  "format": "PNG",
+  "size": [
+    1024,
+    1536
+  ],
+  "mode": "RGB",
+  "png_color_type": 2,
+  "bytes": 1515159,
+  "sha256": "2939a06dde90e95e56a35f5159c89b057eb7a258d8c766948a2bf8c96974dc08",
+  "all_chunk_crcs_valid": true,
+  "idat_decoded_and_filters_valid": true,
+  "matches_requested_size": true,
+  "version": "V06_LEFT",
+  "http_status": 200,
+  "output_image": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_left_view_v06/stab_assembled_left_view_v06.png",
+  "reference_unchanged": true,
+  "generation_submission_count": 1,
+  "request_to_verified_file_seconds": 67.694,
+  "visual_review_pending": false,
+  "visual_review_record": "trace/visual_review.json",
+  "visual_review_summary": {
+    "one_complete_spear": true,
+    "narrow_blade_profile": true,
+    "strict_left_right_geometry_correspondence_verified": false,
+    "limitations": "Tassel spread and far-side root occlusion differ from V5 right view. Candidate pending user art acceptance; no synthetic horizontal mirroring."
+  },
+  "user_acceptance_pending": true,
+  "unity_deployment": "Not performed. No Unity mode, scenes or assets changed."
+}

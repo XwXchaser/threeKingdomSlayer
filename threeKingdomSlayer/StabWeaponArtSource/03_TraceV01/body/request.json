@@ -1,0 +1,21 @@
+{
+  "job": "body",
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "parameters": {
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "background": "opaque",
+    "output_format": "png",
+    "n": 1,
+    "prompt": "只参考输入图片中当前已认可的长枪造型，制作不含红缨或飘带的枪体正交三视图。保留尖叶形钢枪头、中央脊线、金绿交叉连接件、短银色连接段、连续红棕直杆和金色几何枪尾。移除全部红色布料，并合理补全原被布料遮挡的枪体；不新增把手、零件或装饰。\n\n输出1536×1024白底图片，分成三个等宽的无边框区域：左区正面，中区右侧面，右区背面。每区只展示一个完整枪体，主体留在本区内，枪尖和枪尾均留边距。三个视角是同一个固定物体的0度、90度、180度正交投影，同尺度，枪尖、连接件和枪尾处于相同高度，不是三种设计。\n\n枪头为有中央脊线的薄双刃钢片，侧面显示真实厚度和削薄刃口；枪杆为圆形直杆，侧背面不得改变长度和直径；连接套及其金绿装饰贴合枪轴连续，背面只补合理的同类结构。保留当前材质和高清像素色簇，使用清楚中性的明暗，不将像素阶梯解释为实体锯齿。不得出现飘带、人物、文字、标签、尺寸线、坐标轴、分隔线、透视、额外局部图或不同尺寸的重复部件。\n\nEnglish version of the same approved brief:\n\nUse only the currently accepted spear in the input image. Produce orthographic front, right and back views of the rigid weapon body WITHOUT any red tassel or ribbon. Preserve its pointed leaf-shaped steel head, central ridge, gold-and-dark-green crossed connector, short silver connection, continuous red-brown pole and angular gold butt ornament. Remove all red cloth and plausibly complete the body it occluded. Add no handle, new component or decoration.\n\nOutput a white 1536x1024 image with three equal-width unbordered regions: front on the left, right side in the center, back on the right. Show one complete body per region, entirely within that region with margin above the tip and below the butt. These are 0, 90 and 180 degree orthographic projections of the SAME fixed object, at identical scale and aligned tip, connector and butt heights, not three designs.\n\nThe head is a thin double-edged steel blade with a central ridge; the side reveals thickness and tapered edges. The pole is round and straight, with unchanged diameter and length in every view. Keep the gold-green connector coherent around its axis; supplement only plausible matching hidden surfaces. Preserve existing materials and high-definition pixel clusters under clear neutral shading. Pixel stair steps are not physical saw teeth. No cloth, character, text, labels, dimension lines, axes, dividers, perspective, detail insets or differently scaled duplicates.\n\nNegative constraints:\n三种不同设计、视角间换姿态或比例、斜透视、3/4视角、多余零件、把手、青龙、盘蛇、额外飘带、粗绳、实心红色雕塑、文字、标签、尺寸线、骨骼、背景场景、分隔线、跨区域裁切主体、光效、残影。\n\nThree different designs, changed pose or scale between views, perspective, three-quarter view, extra components, handle, coiled dragon or serpent, extra streamers, thick cord, solid red sculpture, text, labels, dimension lines, bones, scenery, dividers, subjects cropped across regions, glow, motion trails."
+  },
+  "reference_image": "C:\\Users\\Administrator\\Pictures\\gptGen\\stab_original_shape_restyle_v01_retry02\\stab_original_shape_restyle_v01_retry02.png",
+  "reference_role": "Current accepted weapon identity, proportions, colors, material language and ribbon silhouette. No older Stab versions or character images are uploaded for these views.",
+  "reference_sha256": "6475df45a489976d0de95f042235d4080e1adf36c18c54f639dbd231ec46c9ae",
+  "output_image": "C:\\Users\\Administrator\\Pictures\\gptGen\\stab_orthographic_refs_v01\\source_boards\\body\\body_board.png",
+  "authorization": "User explicitly approved both bilingual briefs, negative constraints, current reference, max quality and 1536x1024 opaque PNG boards; six independent images exported by unscaled cropping.",
+  "transport": "Direct HTTPS using urllib ProxyHandler({}).",
+  "submission_policy": "Exactly one submission for this job; no automatic retry or model fallback."
+}

@@ -1,0 +1,57 @@
+{
+  "format": "PNG",
+  "size": [
+    1536,
+    1024
+  ],
+  "mode": "RGB",
+  "png_color_type": 2,
+  "bytes": 1224781,
+  "sha256": "e3264524a6df6f6ea84538bf2ac59ce80d1d2f3d4fb28d3ee1459419bb0f8d66",
+  "all_chunk_crcs_valid": true,
+  "idat_decoded_and_filters_valid": true,
+  "matches_requested_size": true,
+  "job": "tassel",
+  "version": "V04",
+  "http_status": 200,
+  "output_image": "C:/Users/Administrator/Pictures/gptGen/stab_tassel_top_bottom_v04/stab_tassel_top_bottom_v04.png",
+  "references_unchanged": true,
+  "generation_submission_count": 1,
+  "request_to_verified_file_seconds": 99.718,
+  "visual_review_pending": false,
+  "user_acceptance_pending": true,
+  "unity_deployment": "Not performed; original Unity assets and scenes unchanged.",
+  "visual_review": {
+    "end_on_projection_passed": true,
+    "longitudinal_Y_axis_not_visible": true,
+    "compact_XZ_footprint": true,
+    "silhouettes_correspond_after_view_reversal": true,
+    "modeling_geometry_passed": false,
+    "limitations": [
+      "V04 passed camera-direction review: it no longer shows the full root-to-terminal Y length.",
+      "The generated X-Z footprint has excessive depth relative to the existing narrow right-side view, and changes the visible root/fold organization. It is not yet a consistent modeling top/bottom reference.",
+      "Final art acceptance and shared-3D-model verification are pending."
+    ],
+    "user_acceptance_pending": true
+  },
+  "layout_audit": {
+    "top": [
+      164,
+      113,
+      674,
+      918
+    ],
+    "bottom": [
+      100,
+      117,
+      606,
+      912
+    ],
+    "bbox_reflection_error": {
+      "horizontal": 3,
+      "vertical": 4,
+      "width": 4,
+      "height": 10
+    }
+  }
+}

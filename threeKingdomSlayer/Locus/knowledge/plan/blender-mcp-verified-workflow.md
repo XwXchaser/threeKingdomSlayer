@@ -23,12 +23,47 @@ aiEditMode: inherit
 - 配套：`references/bridge-protocol.md`、`references/api-gotchas.md`、`references/rigging-and-animation.md`、`references/preview-without-ffmpeg.md`，均位于上述技能目录。
 - GUI 插件：`C:/Users/Administrator/AppData/Roaming/Blender Foundation/Blender/5.2/scripts/addons/blender_mcp.py`。
 - 已验证插件地址：`127.0.0.1:9876`。下次先重新探活，不假定进程一直存在。
-- 本会话 `mcp_reload` 返回 `not_allowed`，没有原生 Blender MCP 工具。用户提供的 Skill 明确支持现成 socket 桥接；该路径已实际工作，不需要反复要求用户重装或刷新。
-- 不要把 `C:/Users/Administrator/AppData/Roaming/locus/mcp_server.json` 当作外部 MCP 客户端列表；此前读取的文件是 Locus 自身服务配置，含 token，不应输出凭据。
+- **2026-10-11 起原生 MCP 工具已接入**（见下节）。`mcp_reload` 在 Agent 工具列表里仍可能显示 not_allowed，但可通过 Python SDK 调用：`await locus.call_tool("mcp_reload", {})`。
+- 用户提供的 Skill（`H:/CindyData/skills/blender-mcp/`）socket 桥接仍可用，作为 MCP 不可用时的回退路径。
+- 不要把 `C:/Users/Administrator/AppData/Roaming/locus/mcp_server.json` 当作外部 MCP 客户端列表；该文件是 Locus 自身对外服务配置，含 token，不应输出凭据。外部 MCP 客户端列表另有其名，见下节。
+
+## 原生 Blender MCP 接入（已验收）
+
+配置文件：`C:/Users/Administrator/AppData/Roaming/locus/mcp_servers.json`（复数 `mcp_servers`，与 Locus 自身服务配置 `mcp_server.json` 单数区分开）。
+
+- `command` 用绝对路径 `C:\\Users\\Administrator\\.local\\bin\\uvx.exe`：GUI 启动的进程不继承终端 PATH，写裸 `uvx` 会 `spawn uvx ENOENT`。
+- `args`：`["--python", "3.11", "mcp-for-blender"]`，`env` 里 `UV_PYTHON_PREFERENCE=only-managed` 避免 uv 抓到系统/conda 解释器。
+- 包已从 `blender-mcp` 更名为 `mcp-for-blender`（同一个包，旧名仍可运行）。
+- `callTimeoutMs` 240000；`loadMode` lazy。
+- 首次 `mcp_reload` 会因下载包+Python 超过 10s 初始化超时而报 `initialize timed out`。先手动预热再 reload：`UV_PYTHON_PREFERENCE=only-managed uvx --python 3.11 mcp-for-blender --help`。
+- 重载成功后 9 个工具：`get_addon_status`、`get_scene_info`、`execute_blender_code`、`look`、`generate_3d`、`search_assets`、`import_asset`、`disable_telemetry`、`record_trajectory_feedback`，线名形如 `mcp__blender__<tool>`，用 `tool_load` / `tool_call` 调用。
+- 验证调用：`mcp__blender__get_addon_status`、`mcp__blender__get_scene_info`。
+- **插件版本落后**：Blender 侧 `blender_mcp.py` 为 addon 1.7 / protocol 9，服务端期望 13；基础工具可用（有 fallback），但轨迹等高级能力降级。升级需 `uvx mcp-for-blender install-addon` 后在 Blender 里重启用插件或重启 Blender，属用户侧操作。
+- 该 MCP 桥与 Tripo Bridge（`ws://127.0.0.1:60600`）无关：Tripo Bridge 只做 Tripo 网站推模型导入，无 MCP 协议；两者端口不冲突，可共存。
+
+## Tripo Bridge 安装与网页导出口（2026-10-12 已修复并验证）
+
+**症状**：Tripo 网页（studio.tripo3d.ai）点“开启/导出到 Blender” 提示未安装 DCC 插件。
+
+**根因**：插件根本没装。Blender 用户 addons 目录当时只有 `blender_mcp.py`；60600 无监听，网页就是靠这个端口探活判定“未安装”。
+
+**安装步骤**（源包：`C:/Users/Administrator/Downloads/Tripo3d_Blender_Bridge-latest/Tripo3d_Blender_Bridge`）：
+
+1. 整目录复制到用户 addons：`%APPDATA%/Blender Foundation/Blender/5.2/scripts/addons/Tripo3d_Blender_Bridge`，删除复制的 `__pycache__`。
+2. 启用并持久化（不要只 `enable` 不存偏好，否则重启丢失）：`addon_utils.enable(name, default_set=True, persistent=True)` 然后 `bpy.ops.wm.save_userpref()`。注意 `addon_utils.enable()` 返回 module 但 `addon_utils.check()` 才是启用依据。
+3. 插件 register 时自动起 60600 服务（`core/task.py`），无需手动点按钮。N 面板标签：3D 视图 → 侧边栏 → `Tripo`。
+
+**兼容性实测**（重要，避免误判为版本不兼容）：
+- 插件内置 websockets 15.1，其中 `websockets.server.serve` 是指向 `legacy.server` 的 deprecation shim，**旧式双参 handler `handle(websocket, path)` 仍可用**（已用 Blender 5.2 / Python 3.13.13 实跑起 60600 验证）。
+- 插件 `bl_info` 写 `blender: (4,1,0)`，实测在 Blender 5.2.1 LTS 正常加载。
+
+**端到端验证方式**（比看面板文字更硬）：用 Blender 自带 Python 跑 `Library/Locus/tmp/tripo-bridge-check/handshake_probe.py`，向 `ws://127.0.0.1:60600` 发 `{"type":"handshake","payload":{"clientName":...,"protocolVersion":"1.0.0"}}`，应收到 `handshake_ack`（含 `dccVersion` 与 `pluginVersion`），再发 `ping` 应收到 `pong`。两者都有 = 网页能识别到 Blender。
+
+**注意**：网页端提示消失的前提是 **Blender 进程在跑且插件已启用**；网页与插件同机、走 127.0.0.1。若网页仍不识别，先查 60600 是否 LISTENING，再看日志 `%LOCALAPPDATA%/Temp/tripo3d_blender_bridge.log`。
 
 ## 标准操作循环
 
-在项目根目录 `H:/Project/threeKingdomSlayer/threeKingdomSlayer` 执行：
+首选原生 MCP：`mcp__blender__get_scene_info`（只读探活）、`mcp__blender__execute_blender_code`（执行 bpy）、`mcp__blender__look`（截图验收）。MCP 工具不可用时回退到用户 Skill 的 socket 桥接，在项目根目录 `H:/Project/threeKingdomSlayer/threeKingdomSlayer` 执行：
 
 ```sh
 python H:/CindyData/skills/blender-mcp/scripts/blender_bridge.py ping

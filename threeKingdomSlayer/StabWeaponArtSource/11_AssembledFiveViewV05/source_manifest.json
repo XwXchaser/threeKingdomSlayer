@@ -1,0 +1,159 @@
+{
+  "status": "assembled_five_view_candidate_delivered_geometry_not_passed",
+  "generation_submission_count": 1,
+  "external_source": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_five_view_v05/stab_assembled_five_view_v05.png",
+  "trace_copies": [
+    {
+      "file": "trace/approved_specification.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_five_view_v05/trace/approved_specification.json",
+      "sha256": "4ebe200549c036ebc2950718f0cc9ae24f960bc79cd2c69fd43f84b00c9b989c",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/request.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_five_view_v05/trace/request.json",
+      "sha256": "c6e1975748d5ebfb53ca8fa8843cd6500db00a0ea01be833cf3c2fe2f0f9c388",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/status.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_five_view_v05/trace/status.json",
+      "sha256": "eddb2bbf5e4e273e9ad5dea59a84c664cdf225d64505ac03ca5467ebdfdd0dd9",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/verification.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_five_view_v05/trace/verification.json",
+      "sha256": "3cdc2afab7c60d0c6b223164e41f1619016f07ed665b9787d8017f17569c673f",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/visual_review.json",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_five_view_v05/trace/visual_review.json",
+      "sha256": "3792336c88eff4a7aa294a1a106fd1bc073d1f0752c81a61eb713bcd4680acaf",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/prompt_zh.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_five_view_v05/trace/prompt_zh.txt",
+      "sha256": "224d27d6e4b7e81d5331901cf2b5abf09a9bb12bae63637428c460ef56894f73",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/prompt_en.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_five_view_v05/trace/prompt_en.txt",
+      "sha256": "38afb9f46827cbbeee483e8835b5204ec6d40c7bc5f50a13d8cac389d584a7a6",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/negative_zh.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_five_view_v05/trace/negative_zh.txt",
+      "sha256": "993b6e87c643840929dcd4ddfc3311c030cc4ffeceed4180128df7eddbac9339",
+      "byte_identical_to_source": true
+    },
+    {
+      "file": "trace/negative_en.txt",
+      "source": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_five_view_v05/trace/negative_en.txt",
+      "sha256": "dcd66f86d7ada44e3469b8d2389ff1ca083f35b887e0c27184035478e815b2b5",
+      "byte_identical_to_source": true
+    }
+  ],
+  "raw_service_response_retained_at": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_five_view_v05/trace/response.json",
+  "files": [
+    {
+      "file": "assembled_five_view_annotated.png",
+      "bytes": 1408474,
+      "sha256": "bb196e1e7e5ad66c4b26a5637e6d768535abb9220ffce0e273411673c242dbb3"
+    },
+    {
+      "file": "assembled_five_view_plain.png",
+      "bytes": 1282002,
+      "sha256": "15fddd686807898ae93547d580426d80e286ea9e876614a528d5ff05ee13c154"
+    },
+    {
+      "file": "delivery_verification.json",
+      "bytes": 6194,
+      "sha256": "58403f430e25d52069b2c886c77932811135f1aafa4ff8f16adf3613bce38023"
+    },
+    {
+      "file": "layout_transforms.json",
+      "bytes": 3822,
+      "sha256": "105448801e2e4786e6fc856218124014ec5c988f025e300add66af8a611e337a"
+    },
+    {
+      "file": "README.md",
+      "bytes": 2505,
+      "sha256": "0a91b34a8c838544fbdb49d6815dc0e2b3750ca267b28eb61d168a6737c17cd4"
+    },
+    {
+      "file": "trace/approved_specification.json",
+      "bytes": 12394,
+      "sha256": "4ebe200549c036ebc2950718f0cc9ae24f960bc79cd2c69fd43f84b00c9b989c"
+    },
+    {
+      "file": "trace/negative_en.txt",
+      "bytes": 657,
+      "sha256": "dcd66f86d7ada44e3469b8d2389ff1ca083f35b887e0c27184035478e815b2b5"
+    },
+    {
+      "file": "trace/negative_zh.txt",
+      "bytes": 544,
+      "sha256": "993b6e87c643840929dcd4ddfc3311c030cc4ffeceed4180128df7eddbac9339"
+    },
+    {
+      "file": "trace/prompt_en.txt",
+      "bytes": 3497,
+      "sha256": "38afb9f46827cbbeee483e8835b5204ec6d40c7bc5f50a13d8cac389d584a7a6"
+    },
+    {
+      "file": "trace/prompt_zh.txt",
+      "bytes": 2901,
+      "sha256": "224d27d6e4b7e81d5331901cf2b5abf09a9bb12bae63637428c460ef56894f73"
+    },
+    {
+      "file": "trace/request.json",
+      "bytes": 9386,
+      "sha256": "c6e1975748d5ebfb53ca8fa8843cd6500db00a0ea01be833cf3c2fe2f0f9c388"
+    },
+    {
+      "file": "trace/status.json",
+      "bytes": 365,
+      "sha256": "eddb2bbf5e4e273e9ad5dea59a84c664cdf225d64505ac03ca5467ebdfdd0dd9"
+    },
+    {
+      "file": "trace/verification.json",
+      "bytes": 1257,
+      "sha256": "3cdc2afab7c60d0c6b223164e41f1619016f07ed665b9787d8017f17569c673f"
+    },
+    {
+      "file": "trace/visual_review.json",
+      "bytes": 3140,
+      "sha256": "3792336c88eff4a7aa294a1a106fd1bc073d1f0752c81a61eb713bcd4680acaf"
+    },
+    {
+      "file": "views/back.png",
+      "bytes": 328384,
+      "sha256": "e486720b32e18e79a26769625ae3e57100fc9d11bb6c3a02750854c10ff4814e"
+    },
+    {
+      "file": "views/bottom.png",
+      "bytes": 147642,
+      "sha256": "54a4884ca46a88f9071885cae5091b09093e1de2a4ea67f9dc702220fc972ed8"
+    },
+    {
+      "file": "views/front.png",
+      "bytes": 327955,
+      "sha256": "1d00d044e737413e5421a5250e9676c927568d069e8953fd730529a4eaa14a1a"
+    },
+    {
+      "file": "views/right.png",
+      "bytes": 279535,
+      "sha256": "584e53baf19afd3b5e89521d3d9eca151c42c19bdd06d4fec6edbd8e86b15010"
+    },
+    {
+      "file": "views/top.png",
+      "bytes": 151643,
+      "sha256": "42562508d92d172260a8f606081eaf6e0df77250a37c7da3384c147e3dbbf244"
+    }
+  ]
+}

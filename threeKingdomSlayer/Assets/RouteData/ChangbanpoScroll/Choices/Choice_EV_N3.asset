@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16925fda9b28c20418fdd288e0dd3a1c, type: 3}
+  m_Name: Choice_EV_N3
+  m_EditorClassIdentifier: 
+  choiceId: ev_to_n3
+  displayName: "\u7EE7\u7EED\u524D\u8FDB\uFF1A\u6751\u843D\u641C\u6551"
+  targetNode: {fileID: 11400000, guid: 6bc7b629080bf6e45a9b461bb4d2858b, type: 2}
+  presentation: {fileID: 11400000, guid: 54636ca4a5fa4a1499bad7f563550cde, type: 2}

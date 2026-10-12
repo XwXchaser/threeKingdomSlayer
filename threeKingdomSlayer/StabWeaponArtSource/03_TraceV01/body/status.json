@@ -1,0 +1,9 @@
+{
+  "job": "body",
+  "stage": "image_verified",
+  "automatic_retry": false,
+  "utc_started": "2026-10-11T09:18:41.158882+00:00",
+  "http_status": 200,
+  "output_image": "C:\\Users\\Administrator\\Pictures\\gptGen\\stab_orthographic_refs_v01\\source_boards\\body\\body_board.png",
+  "elapsed_seconds": 96.879
+}

@@ -1,0 +1,51 @@
+{
+  "format": "PNG",
+  "size": [
+    1536,
+    1024
+  ],
+  "mode": "RGB",
+  "png_color_type": 2,
+  "bytes": 1127867,
+  "sha256": "c108a368fbe8a4bc028c214705d243eafa84ffd9b4f66f330242b87d1d7a130b",
+  "all_chunk_crcs_valid": true,
+  "idat_decoded_and_filters_valid": true,
+  "matches_requested_size": true,
+  "http_status": 200,
+  "output_image": "C:/Users/Administrator/Pictures/gptGen/stab_body_orthographic_v02/stab_body_orthographic_v02.png",
+  "reference_unchanged": true,
+  "generation_submission_count": 1,
+  "request_to_verified_file_seconds": 86.286,
+  "visual_review_pending": false,
+  "visual_review": {
+    "front_right_back_order": true,
+    "three_complete_rigid_weapon_bodies": true,
+    "no_ribbon_cloth_character_or_added_grip": true,
+    "side_blade_profile_narrower_than_front": true,
+    "steel_green_gold_wood_material_identity_retained": true,
+    "blade_outline_strictly_matches_reference": false,
+    "all_axes_centered_in_equal_regions": false,
+    "limitations": [
+      "The front/back blade retains a more pronounced mid-blade shoulder than the selected assembly reference. Generation did not fully restore the reference contour.",
+      "Front/back axes are offset from the region centers by approximately +42/-44 pixels. Side axis is approximately centered.",
+      "Top margins are approximately 24-25 pixels, below the requested 32 pixels. No subject touches a region edge.",
+      "Cross-view landmark similarity does not certify mathematically exact projections or a completed 3D model."
+    ],
+    "user_acceptance_pending": true
+  },
+  "layout_audit": {
+    "measurement": "min(R,G,B)<220 visible-subject threshold; approximate image bounds, not geometric dimensions",
+    "front_local_bounds_inclusive_xyxy": [245, 25, 352, 980],
+    "right_local_bounds_inclusive_xyxy": [226, 24, 285, 979],
+    "back_local_bounds_inclusive_xyxy": [158, 24, 265, 980],
+    "tip_height_spread_px": 1,
+    "butt_height_spread_px": 1,
+    "shaft_width_y500_to750_px": [31, 30, 31],
+    "shaft_center_local_x_y500_to750": [298.0, 255.5, 212.0],
+    "all_subjects_within_their_regions": true,
+    "requested_32px_top_and_bottom_margin_met": false,
+    "post_generation_resampling_or_repositioning": false
+  },
+  "user_acceptance_pending": true,
+  "unity_deployment": "Not performed. No Unity assets or scenes changed."
+}

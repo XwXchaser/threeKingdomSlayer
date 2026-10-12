@@ -1,0 +1,142 @@
+{
+  "status": "review_boards_and_candidate_views_delivered_geometry_not_passed",
+  "v03_generation_requests": 2,
+  "v04_generation_requests": 2,
+  "geometry_approved_new_views": 0,
+  "candidate_new_views": 4,
+  "checks": {
+    "body": {
+      "native_views": {
+        "front": "pixel-identical fixed source crop",
+        "right": "pixel-identical fixed source crop",
+        "back": "pixel-identical fixed source crop",
+        "top": "pixel-identical fixed candidate crop; geometry not passed",
+        "bottom": "pixel-identical fixed candidate crop; geometry not passed"
+      },
+      "boards": {
+        "annotated": {
+          "size": [
+            2560,
+            1760
+          ],
+          "native_three_views_unchanged": true,
+          "png_crcs_and_decoding_valid": true
+        },
+        "plain": {
+          "size": [
+            2560,
+            1760
+          ],
+          "native_three_views_unchanged": true,
+          "png_crcs_and_decoding_valid": true
+        }
+      },
+      "image_ratio_audit": {
+        "method": "min(R,G,B)<220 approximate image bounds; shape correspondence only, not physical measurement",
+        "front_bounds": [
+          245,
+          25,
+          352,
+          980
+        ],
+        "side_bounds": [
+          226,
+          24,
+          285,
+          979
+        ],
+        "end_view_bounds": [
+          [
+            154,
+            279,
+            625,
+            710
+          ],
+          [
+            141,
+            284,
+            600,
+            712
+          ]
+        ],
+        "side_depth_to_front_width_ratio": 0.5556,
+        "end_view_depth_to_width_ratios": [
+          0.9153,
+          0.9326
+        ],
+        "ratio_consistency_passed": false
+      },
+      "end_on_composition_only": true,
+      "modeling_geometry_passed": false,
+      "user_acceptance_pending": true
+    },
+    "tassel": {
+      "native_views": {
+        "front": "pixel-identical fixed source crop",
+        "right": "pixel-identical fixed source crop",
+        "back": "pixel-identical fixed source crop",
+        "top": "pixel-identical fixed candidate crop; geometry not passed",
+        "bottom": "pixel-identical fixed candidate crop; geometry not passed"
+      },
+      "boards": {
+        "annotated": {
+          "size": [
+            2560,
+            1760
+          ],
+          "native_three_views_unchanged": true,
+          "png_crcs_and_decoding_valid": true
+        },
+        "plain": {
+          "size": [
+            2560,
+            1760
+          ],
+          "native_three_views_unchanged": true,
+          "png_crcs_and_decoding_valid": true
+        }
+      },
+      "image_ratio_audit": {
+        "method": "min(R,G,B)<220 approximate image bounds; shape correspondence only, not physical measurement",
+        "front_bounds": [
+          147,
+          74,
+          505,
+          964
+        ],
+        "side_bounds": [
+          193,
+          77,
+          340,
+          960
+        ],
+        "end_view_bounds": [
+          [
+            164,
+            113,
+            674,
+            918
+          ],
+          [
+            100,
+            117,
+            606,
+            912
+          ]
+        ],
+        "side_depth_to_front_width_ratio": 0.4123,
+        "end_view_depth_to_width_ratios": [
+          1.5773,
+          1.57
+        ],
+        "ratio_consistency_passed": false
+      },
+      "end_on_composition_only": true,
+      "modeling_geometry_passed": false,
+      "user_acceptance_pending": true
+    }
+  },
+  "annotations": "Locally typeset Chinese; candidates and geometry failure explicitly labelled.",
+  "layout_transform_record": "layout_transforms.json",
+  "unity_changes": false
+}

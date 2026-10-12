@@ -1,0 +1,30 @@
+{
+  "format": "PNG",
+  "size": [
+    1536,
+    1024
+  ],
+  "mode": "RGB",
+  "png_color_type": 2,
+  "bytes": 1015309,
+  "sha256": "c9a2133967b9b56c9d7d05d627186745d6bbc7de4189ab266f806398d1553c29",
+  "all_chunk_crcs_valid": true,
+  "idat_decoded_and_filters_valid": true,
+  "matches_requested_size": true,
+  "job": "body",
+  "http_status": 200,
+  "output_image": "C:/Users/Administrator/Pictures/gptGen/stab_body_top_bottom_v03/stab_body_top_bottom_v03.png",
+  "reference_unchanged": true,
+  "generation_submission_count": 1,
+  "request_to_verified_file_seconds": 125.421,
+  "visual_review_pending": false,
+  "visual_review": {
+    "requested_end_on_projection_passed": false,
+    "classification": "Oblique/foreshortened longitudinal spear views, not orthographic X-Z end views.",
+    "evidence": "Both images still show a long red-brown pole and sequential blade/socket/pole/butt along the image vertical direction. A true Y-axis projection would collapse that length into overlapping end profiles.",
+    "approved_as_modeling_top_or_bottom": false,
+    "action": "Retain as failed generation evidence; do not label or merge as valid top/bottom. Revised prompt requires new approval."
+  },
+  "user_acceptance_pending": true,
+  "unity_deployment": "Not performed. No Unity assets or scenes changed."
+}

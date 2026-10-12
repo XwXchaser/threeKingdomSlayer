@@ -1,0 +1,10 @@
+{
+  "stage": "image_verified",
+  "utc_started": "2026-10-11T16:49:36.681358+00:00",
+  "generation_submission_count": 1,
+  "automatic_retry": false,
+  "http_status": 200,
+  "generation_delivered": true,
+  "output_image": "C:/Users/Administrator/Pictures/gptGen/stab_assembled_left_view_v06/stab_assembled_left_view_v06.png",
+  "elapsed_seconds": 67.694
+}

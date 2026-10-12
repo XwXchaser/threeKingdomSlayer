@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af766f21f5bc3bf4294d3aa2577d4751, type: 3}
+  m_Name: Changbanpo_ScrollRoute
+  m_EditorClassIdentifier: 
+  routeId: changbanpo_scroll_preview
+  stageId: 1
+  configurationVersion: 1
+  stageName: "\u957F\u5742\u5761\xB7\u5377\u8F74\u8282\u70B9\u9884\u89C8"
+  startNode: {fileID: 11400000, guid: 717b9cde4180dbd4797f6e39ab6aad11, type: 2}
+  nodes:
+  - {fileID: 11400000, guid: 717b9cde4180dbd4797f6e39ab6aad11, type: 2}
+  - {fileID: 11400000, guid: 9de8370a27d963541908615a756f0d96, type: 2}
+  - {fileID: 11400000, guid: dad27b007167fa243a24d55cf4c94b29, type: 2}
+  - {fileID: 11400000, guid: f95cd9a4a76b67d43bd72cafedf31c33, type: 2}
+  - {fileID: 11400000, guid: 64494f266ab77bf46b987e20c001a182, type: 2}
+  - {fileID: 11400000, guid: 6bc7b629080bf6e45a9b461bb4d2858b, type: 2}
+  clearCoinReward: 0

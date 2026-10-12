@@ -1,0 +1,69 @@
+{
+    "status":  "Local 2D assembly draft, not a generated 3D projection or approved model",
+    "bodySource":  "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\StabWeaponArtSource\\04_BodyV02\\stab_body_orthographic_v02.png",
+    "tasselSource":  "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\StabWeaponArtSource\\05_TasselV02\\stab_tassel_orthographic_v02.png",
+    "referenceRole":  "Unified body design and a common tassel scale/root mapping. No top or bottom projection is fabricated.",
+    "keyRule":  "Remove isolated-view background where min(R,G,B)\u003e=245; preserve remaining colors, hard alpha",
+    "commonTasselScale":  0.34375,
+    "desiredTasselDropFractionOfSpearLength":  0.32,
+    "drawingRule":  "Original body copied at native scale; tassel views share one scale; root mapping is explicit 2D assembly inference",
+    "views":  [
+                  {
+                      "view":  "front",
+                      "sourceRoot":  [
+                                         183,
+                                         102
+                                     ],
+                      "targetRoot":  [
+                                         328,
+                                         283
+                                     ],
+                      "bodyAxisLocalX":  298,
+                      "sameTasselScale":  0.34375,
+                      "drawRectangleLocal":  [
+                                                 265,
+                                                 248,
+                                                 176,
+                                                 352
+                                             ]
+                  },
+                  {
+                      "view":  "right",
+                      "sourceRoot":  [
+                                         228,
+                                         102
+                                     ],
+                      "targetRoot":  [
+                                         256,
+                                         283
+                                     ],
+                      "bodyAxisLocalX":  255.5,
+                      "sameTasselScale":  0.34375,
+                      "drawRectangleLocal":  [
+                                                 178,
+                                                 248,
+                                                 176,
+                                                 352
+                                             ]
+                  },
+                  {
+                      "view":  "back",
+                      "sourceRoot":  [
+                                         320,
+                                         102
+                                     ],
+                      "targetRoot":  [
+                                         182,
+                                         283
+                                     ],
+                      "bodyAxisLocalX":  212,
+                      "sameTasselScale":  0.34375,
+                      "drawRectangleLocal":  [
+                                                 72,
+                                                 248,
+                                                 176,
+                                                 352
+                                             ]
+                  }
+              ]
+}

@@ -1,0 +1,33 @@
+{
+  "job": "ribbon",
+  "http_status": 200,
+  "output_image": "C:\\Users\\Administrator\\Pictures\\gptGen\\stab_orthographic_refs_v01\\source_boards\\ribbon\\ribbon_board.png",
+  "format": "PNG",
+  "size": [
+    1536,
+    1024
+  ],
+  "matches_requested_size": true,
+  "mode": "RGB",
+  "bytes": 1166131,
+  "png_color_type": 2,
+  "sha256": "a5f5fc812d671951c2157036eceb5a6276846d3837d9c643b4ecc427c533c3f9",
+  "request_to_verified_file_seconds": 105.456,
+  "reference_unchanged": true,
+  "visual_review_pending": false,
+  "export_pending": false,
+  "visual_review": {
+    "front_right_back_order": true,
+    "three_complete_isolated_single_ribbons": true,
+    "no_weapon_parts_or_extra_streamers": true,
+    "one_root_and_main_terminal_per_view": true,
+    "right_view_is_narrower_than_front": true,
+    "outward_returning_curve_family_preserved": true,
+    "subject_color_bounds_xyxy": {"front": [132, 94, 449, 894], "right": [207, 90, 304, 901], "back": [60, 92, 381, 903]},
+    "limitations": "Generated views are a proposed set of corresponding shapes, not certified exact orthographic projections. Side depth and back folds are inferred from the original front image. Root top and terminal bottom differ by about 4 and 9 pixels across views, and local folds have changed. No independent scaling or synthetic rotation was used to conceal those differences.",
+    "user_acceptance_pending": true
+  },
+  "exports": ["ribbon/front.png", "ribbon/right.png", "ribbon/back.png"],
+  "user_acceptance_pending": true,
+  "unity_deployment": "Not performed; no Unity assets or scenes modified."
+}

@@ -1,0 +1,319 @@
+{
+  "version": "enemy109-strike-to-retreat-v1-6s",
+  "created_at_utc": "2026-10-11T13:45:33.479489+00:00",
+  "status": "f010_shared_strike_tail_matted_and_unity_deployed_runtime_verified",
+  "diagnostic_review": {
+    "directory": "Enemy109ArtSource/02_VideoPreparation/StrikeToRetreat_v1/generated_review_6s/",
+    "report": "Enemy109ArtSource/02_VideoPreparation/StrikeToRetreat_v1/generated_review_6s/validation_and_color_report.json",
+    "findings": "Enemy109ArtSource/02_VideoPreparation/StrikeToRetreat_v1/generated_review_6s/findings.md",
+    "agent_images_reviewed": true,
+    "observed_turn": "horse screen-right side -> rear three-quarter -> rear; continuous full anatomy and weapon path remain unverified",
+    "minimum_margins_LTRB": [0, 5, 0, 60],
+    "edge4px_foreground_frame_count": 36,
+    "below_32px_margin_frame_count": 57,
+    "boundary_passed": false,
+    "confirmed_image_issue": "horizontal lance tip is cropped on actual frame54/t2.208s; source pixel evidence retained",
+    "tail_observation": "t4.4s onward tends toward a rear standing pose; no claim of completely identical frozen pixels",
+    "background_median_rgb_ranges": [[0, 3], [143, 155], [59, 63]],
+    "subject_color_registration_done": false,
+    "preview_frame_count": 145,
+    "user_art_verdict": "accepted",
+    "original_video_hash_unchanged": true
+  },
+  "task_id": "task_c67ba690deac46f2bb2cb17c31f0471f",
+  "user_authorization": "已确认，发起生成，时长为6秒",
+  "parameters": {
+    "duration_seconds": 6,
+    "resolution": "720p",
+    "aspect_ratio": "1:1",
+    "generate_audio": false,
+    "watermark": false,
+    "seed": -1
+  },
+  "model": "seedance-2-fast",
+  "frames": [
+    {
+      "type": "image_url",
+      "role": "first_frame",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/Enemy109ArtSource/02_VideoPreparation/StrikeToRetreat_v1/upload/first_frame_attack18_aligned_green_015962_960.png",
+      "sha256": "890a1ca3bb5c54d14027e716031477cd527801dd2ab947718748eb1d54842878",
+      "source": "Enemy109ArtSource/03_SelectedFrames/Attack/keyed_ui_t79/attack18_f103.png",
+      "role_detail": "Current Attack18/f103 followthrough with lance still extended; one global 0.9375 Nearest scale and (12,59) placement into 960 canvas. This frame starts the withdrawal and remaining turn."
+    },
+    {
+      "type": "image_url",
+      "role": "last_frame",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/Enemy109ArtSource/02_VideoPreparation/StrikeToRetreat_v1/upload/last_frame_actual_retreat_f001_green_015962_960.png",
+      "sha256": "244c3ee6fb89e2d239ef93faaa363fc10e700347cc5cdc3615cee5627468ce1c",
+      "source": "Library/Locus/tmp/cavalry_concept/retreat_run_loop_v1/diagnostic_review/first_frame.png",
+      "role_detail": "Actual frame1/t0.0 of the accepted rear-facing return video. Same 960 source geometry, locally matted with SVL T79 then composited over the common green. Not the static concept or the TurnToIdle endpoint."
+    }
+  ],
+  "prompt_en_sha256": "c0b4e12ea2c54f33cf0251d1b1209c36dd3d7e8d6477084d20cecc5c39aba10c",
+  "prompt_zh_sha256": "684d601cf1f951d11e590d8a47bcec6eca4d1d0538b224b994de322e2526e693",
+  "output": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_strike_to_retreat_v1_720p_6s.mp4",
+  "request_record": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_strike_to_retreat_v1_720p_6s.request.json",
+  "response_record": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_strike_to_retreat_v1_720p_6s.response.json",
+  "create_post_attempt_count": 1,
+  "automatic_create_retry": false,
+  "uploads": [
+    {
+      "role": "first_frame",
+      "sha256": "890a1ca3bb5c54d14027e716031477cd527801dd2ab947718748eb1d54842878",
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\StrikeToRetreat_v1\\upload\\first_frame_attack18_aligned_green_015962_960.png",
+      "observed_at_utc": "2026-10-11T13:45:37.937935+00:00",
+      "http_status": 200,
+      "elapsed_seconds": 4.453,
+      "response": {
+        "code": 200,
+        "msg": "",
+        "data": {
+          "file_id": "img_d311bc27126549c0a42709952088cd0a",
+          "file_kind": "image",
+          "object_key": "tmp/6039af75-fe09-4e58-bc14-6a7977811339/img_d311bc27126549c0a42709952088cd0a.png",
+          "url": "<temporary URL redacted>",
+          "mime_type": "image/png",
+          "size_bytes": 476244,
+          "expires_at": "2026-10-14T13:45:18.779855248Z"
+        }
+      }
+    },
+    {
+      "role": "last_frame",
+      "sha256": "244c3ee6fb89e2d239ef93faaa363fc10e700347cc5cdc3615cee5627468ce1c",
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\StrikeToRetreat_v1\\upload\\last_frame_actual_retreat_f001_green_015962_960.png",
+      "observed_at_utc": "2026-10-11T13:45:42.646966+00:00",
+      "http_status": 200,
+      "elapsed_seconds": 4.703,
+      "response": {
+        "code": 200,
+        "msg": "",
+        "data": {
+          "file_id": "img_5950923f1710405a9343035c8a2bd1ab",
+          "file_kind": "image",
+          "object_key": "tmp/6039af75-fe09-4e58-bc14-6a7977811339/img_5950923f1710405a9343035c8a2bd1ab.png",
+          "url": "<temporary URL redacted>",
+          "mime_type": "image/png",
+          "size_bytes": 285133,
+          "expires_at": "2026-10-14T13:45:22.838522050Z"
+        }
+      }
+    }
+  ],
+  "polls": [
+    {
+      "observed_at_utc": "2026-10-11T13:45:46.396510+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-11T13:45:55.370725+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-11T13:46:04.437389+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-11T13:46:12.548597+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-11T13:46:20.726894+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-11T13:46:29.736606+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-11T13:46:39.120967+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-11T13:46:48.343276+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-11T13:46:57.635464+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-11T13:47:06.983915+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-11T13:47:15.379047+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-11T13:47:24.677262+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-11T13:49:59.899288+00:00",
+      "http_status": 200,
+      "status": "success",
+      "purpose": "retrieve_existing_result",
+      "usage": {
+        "completion_tokens": 130500,
+        "total_tokens": 130500
+      },
+      "cost": {
+        "spend": 0.7308
+      }
+    },
+    {
+      "observed_at_utc": "2026-10-11T13:55:53.241243+00:00",
+      "http_status": 200,
+      "status": "success",
+      "purpose": "retrieve_existing_result",
+      "usage": {
+        "completion_tokens": 130500,
+        "total_tokens": 130500
+      },
+      "cost": {
+        "spend": 0.7308
+      }
+    }
+  ],
+  "video_downloaded": true,
+  "container_validated": true,
+  "full_decode_validated": true,
+  "user_art_verdict": "accepted",
+  "user_art_feedback": "已验收，请挑选12帧有效帧",
+  "production_frames_selected": true,
+  "keyframe_selection": {
+    "directory": "Enemy109ArtSource/03_SelectedFrames/StrikeToRetreat_v1/",
+    "manifest": "Enemy109ArtSource/03_SelectedFrames/StrikeToRetreat_v1/selected_frames_manifest.json",
+    "count": 12,
+    "source_frames_1based": [1, 10, 27, 35, 39, 43, 72, 75, 79, 87, 104, 145],
+    "selection_user_verdict": "pending",
+    "minimum_margins_LTRB": [44, 33, 38, 64],
+    "source_pixel_equal_count": 12,
+    "source_frames_resized_cropped_translated_recolored_matted": false,
+    "preview_order_verified": true
+  },
+  "deployment_revision": {
+    "name": "f010_v2",
+    "user_authorization": "指定f010为新的StrikeToRetreat头帧和Strike尾帧，抠图并替换部署",
+    "directory": "Enemy109ArtSource/03_SelectedFrames/StrikeToRetreat_f010_v2/",
+    "manifest": "Enemy109ArtSource/03_SelectedFrames/StrikeToRetreat_f010_v2/deployment_manifest.json",
+    "source_frames_1based": [10, 27, 35, 39, 43, 72, 75, 79, 87, 104, 145],
+    "count": 11,
+    "head_source_frame": 10,
+    "shared_tail_png": "Assets/Sprites/Enemy/Enemy109/Enemy_109_Attack18.png",
+    "shared_head_png": "Assets/Sprites/Enemy/Enemy109/Enemy_109_StrikeToRetreat1.png",
+    "shared_boundary_pixel_equal": true,
+    "clip": "Assets/Animations/Enemy_109_StrikeToRetreat.anim",
+    "runtime_validation": "passed_targeted_and_isolated_full_cycle",
+    "matte_user_verdict": "pending",
+    "original_v1_sources_preserved": true,
+    "new_paid_api_calls": 0
+  },
+  "cutout_done": true,
+  "unity_imported": true,
+  "gameplay_modified": false,
+  "create_started_at_utc": "2026-10-11T13:45:42.651927+00:00",
+  "create_elapsed_seconds": 2.297,
+  "create_http_status": 200,
+  "task_accepted_at_utc": "2026-10-11T13:45:44.943500+00:00",
+  "usage": {
+    "completion_tokens": 130500,
+    "total_tokens": 130500
+  },
+  "cost": {
+    "spend": 0.7308
+  },
+  "last_task_status": "success",
+  "observation_wall_seconds": 99.734,
+  "download_started_at_utc": "2026-10-11T13:55:55.620553+00:00",
+  "last_error": {
+    "phase": "range_download",
+    "at_utc": "2026-10-11T13:52:13.436281+00:00",
+    "type": "RuntimeError",
+    "message": "Incomplete parts: [3]"
+  },
+  "bytes": 3788350,
+  "sha256": "a207d2ce1310bb22e36045348bd9c6039f59bc0f784b88b28a38fa28f2cb3d96",
+  "download_elapsed_seconds": 41.796,
+  "full_decode": {
+    "exit_code": 0,
+    "elapsed_seconds": 0.156,
+    "tool": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\strike_to_retreat_v1\\_deps\\imageio_ffmpeg\\binaries\\ffmpeg-win-x86_64-v7.1.exe",
+    "stderr": "",
+    "frame_count": 145
+  },
+  "actual_media": {
+    "video_stream": [
+      "Stream #0:0[0x1](und): Video: h264 (High) (avc1 / 0x31637661), yuv420p(progressive), 960x960, 4984 kb/s, 24 fps, 24 tbr, 12288 tbn (default)"
+    ],
+    "audio_stream_present": false,
+    "width": 960,
+    "height": 960,
+    "fps": 24.0,
+    "frame_count": 145,
+    "duration_seconds": 6.04
+  },
+  "validated_at_utc": "2026-10-11T13:56:35.297903+00:00",
+  "download_manifest": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\strike_to_retreat_v1\\download_manifest.json"
+}

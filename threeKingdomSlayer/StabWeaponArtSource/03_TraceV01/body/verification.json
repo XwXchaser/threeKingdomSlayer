@@ -1,0 +1,32 @@
+{
+  "job": "body",
+  "http_status": 200,
+  "output_image": "C:\\Users\\Administrator\\Pictures\\gptGen\\stab_orthographic_refs_v01\\source_boards\\body\\body_board.png",
+  "format": "PNG",
+  "size": [
+    1536,
+    1024
+  ],
+  "matches_requested_size": true,
+  "mode": "RGB",
+  "bytes": 1090518,
+  "png_color_type": 2,
+  "sha256": "cb177ecd96d8ec38732ab364e72c848faffb5c734c67a27acc809dca625f375c",
+  "request_to_verified_file_seconds": 96.879,
+  "reference_unchanged": true,
+  "visual_review_pending": false,
+  "export_pending": false,
+  "visual_review": {
+    "front_right_back_order": true,
+    "three_complete_isolated_bodies": true,
+    "no_ribbon_or_added_handle": true,
+    "right_view_has_narrower_blade_profile": true,
+    "pixel_art_material_language_preserved": true,
+    "key_height_alignment": "Subject-color top/bottom bounds within 1 pixel across three views; no geometric rescaling was applied.",
+    "limitations": "The generated head has a small mid-blade shoulder change compared with the assembly reference. Hidden connector and butt surfaces are proposed completions. Visual correspondence does not certify mathematically exact projections.",
+    "user_acceptance_pending": true
+  },
+  "exports": ["body/front.png", "body/right.png", "body/back.png"],
+  "user_acceptance_pending": true,
+  "unity_deployment": "Not performed; no Unity assets or scenes modified."
+}
