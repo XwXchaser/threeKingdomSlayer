@@ -62,7 +62,8 @@ public sealed class StabSweepEffect : MonoBehaviour
     private Coroutine _hitStopRoutine;
     private bool _hitAny;
     private bool _usingSpeedSprite;
-    private float _halfBaseSpriteLength;
+    /// <summary>视觉体半长（世界单位）。精灵取 sprite.bounds，网格取包围盒长轴。</summary>
+    private float _halfVisualLength;
     private Coroutine _hitDeformationRoutine;
     private ChargeStabVisual _chargeVisual;
     private SpriteRenderer _renderer;
@@ -119,12 +120,9 @@ public sealed class StabSweepEffect : MonoBehaviour
 
         var visual = Instantiate(prefab, ray.transform);
         visual.name = "StabVisual";
-        var spriteRenderer = visual.GetComponentInChildren<SpriteRenderer>();
-        if (spriteRenderer != null)
-        {
-            float visualLength = spriteRenderer.sprite.bounds.size.y * visual.transform.localScale.y;
-            visual.transform.localPosition = Vector3.back * (visualLength * 0.5f - visualReachOffset);
-        }
+        // 枪尖定位依赖视觉长度：精灵与网格都按同一语义测量，否则用网格时这一段会被跳过。
+        float visualLength = MeasureVisualLength(visual);
+        visual.transform.localPosition = Vector3.back * (visualLength * 0.5f - visualReachOffset);
         visual.transform.position += Vector3.right * visualStartXOffset;
 
         if (motion.windupRatio <= 0f) motion = StabMotionParams.Default;
@@ -134,6 +132,59 @@ public sealed class StabSweepEffect : MonoBehaviour
             visualTargetRandomRadius, baseRayLength, interruptsCavalryCharge, hitReactionDirection,
             suppressHitReaction, motion, startPose, chargeVisual);
         return effect;
+    }
+
+    /// <summary>
+    /// 视觉体沿「枪身长轴」的长度（世界单位）。
+    /// 精灵沿用 sprite.bounds（保留像素长轴、含透明边距的旧行为，数值不变）；
+    /// 网格则把各 Renderer 的局部包围盒八个角变换到 visual 根节点空间后取最长边，
+    /// 因此结果不受父级 StabRay 朝向影响。两种 prefab 同为 (90,0,0) 姿态，语义一致。
+    /// </summary>
+    private static float MeasureVisualLength(GameObject visual)
+    {
+        var spriteRenderer = visual.GetComponentInChildren<SpriteRenderer>();
+        if (spriteRenderer != null && spriteRenderer.sprite != null)
+            return spriteRenderer.sprite.bounds.size.y * visual.transform.localScale.y;
+
+        Bounds bounds = ComputeVisualLocalBounds(visual);
+        float localLength = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
+        return localLength * visual.transform.localScale.y;
+    }
+
+    /// <summary>把所有子 Renderer 的包围盒并到 visual 根节点的局部空间（精灵/网格通用）</summary>
+    private static Bounds ComputeVisualLocalBounds(GameObject visual)
+    {
+        var renderers = visual.GetComponentsInChildren<Renderer>();
+        Transform root = visual.transform;
+        bool hasBounds = false;
+        Bounds accumulated = new Bounds(Vector3.zero, Vector3.zero);
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer r = renderers[i];
+            Bounds local = r.localBounds;
+            Vector3 center = local.center;
+            Vector3 extents = local.extents;
+            for (int sx = -1; sx <= 1; sx += 2)
+            for (int sy = -1; sy <= 1; sy += 2)
+            for (int sz = -1; sz <= 1; sz += 2)
+            {
+                Vector3 worldCorner = r.transform.TransformPoint(
+                    center + Vector3.Scale(extents, new Vector3(sx, sy, sz)));
+                Vector3 rootLocal = root.InverseTransformPoint(worldCorner);
+                if (!hasBounds)
+                {
+                    accumulated = new Bounds(rootLocal, Vector3.zero);
+                    hasBounds = true;
+                }
+                else
+                {
+                    accumulated.Encapsulate(rootLocal);
+                }
+            }
+        }
+
+        return hasBounds ? accumulated : new Bounds(Vector3.zero, Vector3.zero);
     }
 
     private void Initialize(GameObject visual, Sprite speedSprite, Vector3 targetPosition, int column, int rangeRows, int visualRangeRows, float damage,
@@ -172,8 +223,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         Quaternion visualBaseLocalRotation = _visualTransform.localRotation;
         Matrix4x4 visualWorldMatrix = _visualTransform.localToWorldMatrix;
 
-        var sr2 = visual.GetComponentInChildren<SpriteRenderer>();
-        _halfBaseSpriteLength = sr2 != null ? sr2.sprite.bounds.size.y * _visualBaseLocalScale.y * 0.5f : 0f;
+        _halfVisualLength = MeasureVisualLength(visual) * 0.5f;
 
         _deformRoot = new GameObject("DeformRoot").transform;
         _visualOffsetRoot = new GameObject("VisualOffsetRoot").transform;
@@ -412,7 +462,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         if (_deformRoot == null) return;
         float lengthDelta = _deformRoot.localScale.y - _visualBaseLocalScale.y;
         _deformRoot.localPosition = _visualBaseLocalPosition
-            + Vector3.up * (_halfBaseSpriteLength * lengthDelta / Mathf.Max(_visualBaseLocalScale.y, 0.0001f));
+            + Vector3.up * (_halfVisualLength * lengthDelta / Mathf.Max(_visualBaseLocalScale.y, 0.0001f));
     }
 
     /// <summary>指向偏摆增量（度）：由 AttackSystem 按「当前朝向 → 手指指向列」给出，实际角度被资产上限夹住</summary>
@@ -821,7 +871,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         float lengthScale = _deformRoot != null
             ? _deformRoot.localScale.y / Mathf.Max(_visualBaseLocalScale.y, 0.0001f)
             : 1f;
-        visualPosition += _rayDirection * (_halfBaseSpriteLength * lengthScale);
+        visualPosition += _rayDirection * (_halfVisualLength * lengthScale);
         return visualPosition;
     }
 
