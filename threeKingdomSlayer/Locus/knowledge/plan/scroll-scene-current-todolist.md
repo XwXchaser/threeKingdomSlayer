@@ -9,7 +9,8 @@ aiEditMode: inherit
 # 当前卷轴化场景 TodoList：N1→E0→J1
 
 > 本清单根据本轮用户讨论整理，作为卷轴场景制作的专项执行入口。总里程碑仍以 `plan/october-milestone-plan.md` 为准；不向已停用的 `plan/latest-todolist.md` 追加。
-> 最新状态（2026-10-11）：N1（战斗）→E0（战斗）→J1（分叉选择）已接线，E1已从当前Host/Y节点部署移除；J1更正到190米，左路EV→N3、右路N2按Inspector资产运行。当前节点/流程入口为 `plan/scroll-node-deployment-correction-20261011.md`。J1右侧官道、左侧通向村庄的绿色石路、两侧固定±45°缓弯、中央无字实体双箭头路牌；J1机位尚未抵达村庄，左侧只显露篱笆等装饰。v1已否决、v2村庄出现过早需修订；v3按用户明确批准的quality=max提交一次并生成，原图已验证、附图并获用户验收。素材拆分已完成，入口 `plan/j1-scene-asset-breakdown.md`。A01路牌与G1运输车/两段篱笆组图均已生成并获用户验收。A02中央/两侧配套石路纹理已接入正式Y层并完成实际Game采样；部署与回读记录见 `plan/j1-scene-deployment-handoff-20261011.md`，用户对整体比例、路牌大小、纹理和路侧密度的最终美术验收仍待确认。
+> 最新状态（2026-10-15）：N1→E0→J1→EV→N3 的布景主体（含N3石墙、EV村口）均已获用户验收；新对话下一步入口见 §8。
+> 历史状态（2026-10-11）：N1（战斗）→E0（战斗）→J1（分叉选择）已接线，E1已从当前Host/Y节点部署移除；J1更正到190米，左路EV→N3、右路N2按Inspector资产运行。当前节点/流程入口为 `plan/scroll-node-deployment-correction-20261011.md`。J1右侧官道、左侧通向村庄的绿色石路、两侧固定±45°缓弯、中央无字实体双箭头路牌；J1机位尚未抵达村庄，左侧只显露篱笆等装饰。v1已否决、v2村庄出现过早需修订；v3按用户明确批准的quality=max提交一次并生成，原图已验证、附图并获用户验收。素材拆分已完成，入口 `plan/j1-scene-asset-breakdown.md`。A01路牌与G1运输车/两段篱笆组图均已生成并获用户验收。A02中央/两侧配套石路纹理已接入正式Y层并完成实际Game采样；部署与回读记录见 `plan/j1-scene-deployment-handoff-20261011.md`。**J1 布景（植被、篱笆、两侧密度、右官道辎重）已于 2026-10-14 获用户验收；下一阶段为村庄相关场景部署，交接入口 `plan/j1-vegetation-deployment-handoff-20261014.md`。**
 
 ## 1. 已确认的方向与现有证据
 
@@ -142,9 +143,19 @@ N1：开阔黄土战场战斗
 
 ## 8. 当前优先项与状态
 
-最新参考图状态：v4已按明确授权生成一次，但用户否决其转弯后道路回正的空间错误；v4不得再作为J1几何/布局输入。v5仅完成道路带解析投影、固定−45°/+45°俯视拓扑、小路牌占位图及完整中英文生成词/参数，等待审阅和新的明确生成批准，远程请求0。入口 `plan/j1-no-return-geometry-v5-preparation.md`，准备包 `C:/Users/Administrator/Pictures/gptGen/j1_no_return_geometry_v5/`；本轮未改正式场景。
+最新参考图状态：v4仍因道路回正被用户否决。v5构图获用户认可，景物偏西幻/中世纪需改；用户授权后，v6保留v5构图并修订汉末三国景物，已提交一次HTTP200、完整PNG解码，原图及对照图已附图。土色残埂、木竹篱、柳形树冠及粮袋/竹筐更明显，右侧仍有部分桶箱形货物，待用户最终验收。无重试、未部署；原图目录 `C:/Users/Administrator/Pictures/gptGen/j1_three_kingdoms_scenery_v6/`，最新交接 `plan/j1-three-kingdoms-scenery-v6-reference.md`。
 
-**当前优先：用户验收190米J1节点画面与真实操作流程。J1素材/144个Renderer保留，scenery434无空项/重复；旧E1代码与场景占位已移除，Host按新路线资产消费N1→E0→J1、左EV→N3/右N2。两次Play程序化流程回归通过，包含奖励阻塞、单出口确认、双击、旅行暂停和两路落点；真实战斗手感/失败/弃置尚未验收。当前交接为 `plan/scroll-node-deployment-correction-20261011.md`；E0/N2/N3正式内容、后续环境、门内空间和存档另行制作。**
+**当前优先（2026-10-15）：N3石墙与EV村口外围组均已获用户Game验收；N1→E0→J1→EV→N3 的布景主体到此全部验收完毕。** G1三座茅屋与村井、G2院墙/院门/柴垛及四面石墙组图均获美术验收。N3独立村庄组包括8屋舍、7生活/横墙物件、12段石墙、树草碎石43个Renderer；N3 backgroundAnchor已绑定。石材Atlas原图保留、底部透明与四面采样区已核对，12段墙已换材质且几何/布局不变，用户已Game验收。EV225按三国村口理解复用H1/H2、B1/B3/B4、J1木车树草建成独立组，45 Renderer绑定EV backgroundAnchor，scenery=681/null0/duplicate0；保存重载通过。编辑态采样确认J1无可见EV泄漏、N3/右路不受影响，用户已Game验收。
+
+**新对话接续入口（按优先级）：**
+
+1. **N2右官道背景组**：`N2 - Presentation Anchor` 的 `backgroundAnchor` 仍为空，是当前唯一没有任何背景组的正式节点；需先出+45°分支构图方案（局部坐标左右语义与EV相反），再复用现有素材布景。
+2. **EV/N3可选生活补充件（G3/G4）**：陶罐/水缸、竹筐/粮袋/谷束、远景淡炊烟、焦木/搜救痕迹；两组首版均不依赖。若做，先交清单+完整中英文词+参考职责并取得生成批准，不自动发起收费生成。
+3. **完整自然流程与真实战斗回归**：N1→E0→J1→选支→EV→N3 自然推进、奖励阻塞、失败/退出与真实战斗手感均未验收。
+
+交接入口：`plan/ev-village-outskirts-deployment-handoff-20261015.md`（含接续清单）、`plan/n3-wall-surface-deployment-handoff-20261015.md`、首轮部署`plan/n3-village-deployment-handoff-20261014.md`、组件清单`plan/n3-village-component-backlog-and-g2-preparation-20261014.md`。
+
+**历史背景（J1布景完成时）：村庄相关场景位于左支 −45° 绿色石路 → EV·村落外围(225) → N3 村落搜救(266)。J1 布景已于 2026-10-14 获用户验收（植被、篱笆、两侧密度、右官道辎重），交接入口 `plan/j1-vegetation-deployment-handoff-20261014.md`。历史：J1素材/144个Renderer保留，scenery=566、无空项/重复；旧E1代码与场景占位已移除，Host按新路线资产消费N1→E0→J1、左EV→N3/右N2。两次Play程序化流程回归通过，包含奖励阻塞、单出口确认、双击、旅行暂停和两路落点；真实战斗手感/失败/弃置尚未验收。视觉准备已闭环：G2组图因同排素材无法沿原格线安全拆分，改为「以已认可RGB组图为唯一输入、只做背景移除与Alpha清理」重新生成一次（HTTP200、2048×2048原生Alpha验收通过），拆为2棵树+2种高草共4件独立Sprite部署进正式J1并已获用户验收；原中高灌木未纳入本次交付。村庄场景现状：EV/N3 的 backgroundAnchor 仍为空、Y层无村庄景物组、项目内无民居素材，旧山谷组不得整组启用。路边推车、箱、旗沿用现有素材，A03/A04篱笆仅做尺度修正。篱笆随后按用户反馈加高（约2.44–2.75世界单位）并改接定向投影材质，已获用户验收。村庄美术来源（复用 J1 v3 参考图，或新出参考图+拆件生成）待用户决定，未获批准前不发起收费生成。当前交接为 `plan/j1-vegetation-deployment-handoff-20261014.md`；E0/N2/N3正式内容、后续环境、门内空间和存档另行制作。**
 
 2026-10-10 用户授权修复门垣偏矮与草固定高层：正式Y中的门垣6件等比放大1.2、立面Z132不变，横向和旗高度同比例调整；新建 `Gate Facade - Depth Sorted`，SortingGroup外部Default/0、内部保留墙体拼接Order0/1/2。Approach与Shoulder Detail组46个Order3恢复0，72个目标Renderer全部Default/0，全路线106个草Renderer为Default/0；位置/颜色/材质引用不变。保存重载Y后dirty=false、progress0、scenery297、空项/重复0，停点和路线几何不变；未修改组快照一致；334个保护文件哈希无变化；Console warn/error0。Battle磁盘未保存，当前dirty=true，但本轮修复前后Unity导出临时副本完全一致；Active为Battle，Additive为Y。90米停留/72米接近/102米更近采样截图和范围见 `plan/e0-approach-scene-refinement-handoff.md` 3.1。门内空间、E1/J1参考图、自然流程仍未完成。
 

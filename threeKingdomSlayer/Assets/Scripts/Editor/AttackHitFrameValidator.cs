@@ -41,6 +41,11 @@ public static class AttackHitFrameValidator
             sb.AppendLine();
             sb.AppendLine($"== {System.IO.Path.GetFileName(path)} (enemyId={enemy.enemyId}, isRanged={enemy.isRanged}) ==");
             ValidateSequence(enemy.attackSequence, controller, controllers, sb, ref warningCount, ref stepCount);
+
+            var cavalry = go.GetComponent<CavalryEnemy>();
+            if (cavalry != null)
+                ValidateCavalryStrike(cavalry, AttackHitFrameResolver.ResolveClipForTrigger(controller, "Attack"),
+                    sb, ref warningCount, ref stepCount);
         }
 
         foreach (var guid in AssetDatabase.FindAssets("t:BossPhaseData"))
@@ -188,6 +193,70 @@ public static class AttackHitFrameValidator
             if (clip != null) return clip;
         }
         return null;
+    }
+
+    /// <summary>
+    /// 骑兵刺击命中帧（109）：与 1011 的 hitFrames 同一口径——按精灵名声明命中帧，
+    /// 这里把名字解析到 Attack clip 的关键帧，核对 hitTime 并输出前摇/伤判/收尾三段拆分。
+    /// 只做静态推导与提示，不修改数据。
+    /// </summary>
+    private static void ValidateCavalryStrike(CavalryEnemy cavalry, AnimationClip attackClip,
+        StringBuilder sb, ref int warningCount, ref int stepCount)
+    {
+        stepCount++;
+        if (!cavalry.HasStrikeHitFrame)
+        {
+            warningCount++;
+            sb.AppendLine("   [骑兵刺击] [WARN] 未声明命中帧精灵名 → 伤判只能落在前摇计时结束，无法保证与画面同帧");
+            return;
+        }
+
+        float windup = cavalry.StrikeWindupDuration;
+        float recover = cavalry.StrikeRecoverDuration;
+
+        if (attackClip == null)
+        {
+            warningCount++;
+            sb.AppendLine($"   [骑兵刺击] 命中帧 {cavalry.StrikeHitSpriteName} [WARN] 解析不到攻击 clip（trigger=Attack）");
+            return;
+        }
+
+        var keys = GetSpriteKeys(attackClip);
+        int keyIndex = -1;
+        if (keys != null)
+        {
+            for (int k = 0; k < keys.Length; k++)
+                if (keys[k].value != null && keys[k].value.name == cavalry.StrikeHitSpriteName) { keyIndex = k; break; }
+            if (keyIndex < 0)
+                for (int k = 0; k < keys.Length; k++)
+                    if (keys[k].value != null && keys[k].value.name.EndsWith(cavalry.StrikeHitSpriteName)) { keyIndex = k; break; }
+        }
+
+        if (keyIndex < 0)
+        {
+            warningCount++;
+            sb.AppendLine($"   [骑兵刺击] clip={attackClip.name}({attackClip.length:F3}s) [WARN] 命中帧 {cavalry.StrikeHitSpriteName} 在 clip 里找不到");
+            return;
+        }
+
+        float hitTime = keys[keyIndex].time;
+        float tailTime = Mathf.Max(0f, attackClip.length - hitTime);
+        string tailSprite = keys[keys.Length - 1].value != null ? keys[keys.Length - 1].value.name : "null";
+
+        sb.AppendLine($"   [骑兵刺击] clip={attackClip.name}({attackClip.length:F3}s) 命中帧 {cavalry.StrikeHitSpriteName} → key[{keyIndex}] t={hitTime:F4}s norm={hitTime / attackClip.length:F4}");
+        sb.AppendLine($"      前摇 {windup:F3}s（{keyIndex + 1} 帧 / clip {hitTime:F4}s）→ 伤判 → 收尾 {recover:F3}s（{keys.Length - 1 - keyIndex} 帧 / clip {tailTime:F4}s，末帧={tailSprite}）");
+
+        if (Mathf.Abs(cavalry.StrikeHitTime - hitTime) > 0.0005f)
+        {
+            warningCount++;
+            sb.AppendLine($"      [WARN] strikeHitFrame.hitTime={cavalry.StrikeHitTime:F4}s 与关键帧 {hitTime:F4}s 不一致 → 前摇/收尾切分点会错位，应改为 {hitTime:F4}");
+        }
+
+        if (keyIndex == keys.Length - 1)
+        {
+            warningCount++;
+            sb.AppendLine("      [WARN] 命中帧就是最后一帧 → 没有收尾段，Attack5..N 之后无帧可播");
+        }
     }
 
     private static ObjectReferenceKeyframe[] GetSpriteKeys(AnimationClip clip)

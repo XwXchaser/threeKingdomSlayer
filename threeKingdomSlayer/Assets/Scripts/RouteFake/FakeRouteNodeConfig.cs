@@ -9,6 +9,13 @@ public sealed class FakeRouteNodeConfig : ScriptableObject
 {
     public string nodeId;
     public string displayName;
+
+    [Header("节点内容")]
+    public DialogueEventData entryDialogue;
+    public DialogueEventData postBattleDialogue;
+    public FakeRoutePresentation postBattlePresentation;
+    [Tooltip("终点节点：BattleEntry 完成后不显示出口，收尾进入整关结算。")]
+    public bool isFinalNode;
     public List<DialogueEventData> dialogues = new List<DialogueEventData>();
     public List<KillRewardEntry> rewards = new List<KillRewardEntry>();
     public List<FakeRouteBattleEntry> battleEntries = new List<FakeRouteBattleEntry>();

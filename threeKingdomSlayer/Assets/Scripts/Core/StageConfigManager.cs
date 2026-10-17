@@ -15,6 +15,9 @@ public class StageConfigManager : MonoBehaviour
     [Tooltip("V2场景化路线关卡配置列表。每个配置对应一张RouteStage场景")]
     public List<RouteStageConfigV2> routeStagesV2 = new List<RouteStageConfigV2>();
 
+    [Tooltip("假移动/卷轴路线关卡配置列表。每个配置对应一条纯逻辑路线（卷轴表现）")]
+    public List<FakeRouteStageConfig> fakeRouteStages = new List<FakeRouteStageConfig>();
+
     private void Awake()
     {
         if (Instance != null && Instance != this)

@@ -37,6 +37,8 @@ public class EnemyHealthBar : MonoBehaviour
     private Vector3 fillOriginPos;
     private float fillFullWidth;
     private float _cachedYOffset;
+    private bool _useSilhouetteTop;
+    private float _cachedSilhouetteTopLocalY;
     private Transform _enemyTransform;
 
     private sealed class StatusBarVisual
@@ -73,10 +75,26 @@ public class EnemyHealthBar : MonoBehaviour
         if (actualYOffset <= 0.001f)
         {
             var enemySr = GetComponent<SpriteRenderer>();
-            if (enemySr != null && enemySr.sprite != null)
+            // 用真实剪影顶点定位头顶，避开 Tight 打包的透明边距。
+            // 旧实现取画布半高（bounds），109 这类高大单位会被算高一截。
+            // 存下剪影顶点 Y，由世界位置公式换算出世界空间偏移。
+            if (enemySr != null && enemySr.sprite != null
+                && EnemyGroundAligner.TryGetSilhouetteBounds(enemySr.sprite, out var silMinY, out var silMaxY))
+            {
+                _cachedSilhouetteTopLocalY = silMaxY;
+                _useSilhouetteTop = true;
+                actualYOffset = silMaxY + 0.3f;
+            }
+            else if (enemySr != null && enemySr.sprite != null)
+            {
+                _useSilhouetteTop = false;
                 actualYOffset = enemySr.sprite.bounds.size.y * 0.5f + 0.3f;
+            }
             else
+            {
+                _useSilhouetteTop = false;
                 actualYOffset = 2.5f;
+            }
         }
 
         var quad = CreateQuadMesh();
@@ -290,7 +308,13 @@ public class EnemyHealthBar : MonoBehaviour
 
     private Vector3 GetHeadWorldPosition()
     {
-        return _enemyTransform.position + new Vector3(0, _cachedYOffset * _enemyTransform.lossyScale.y, 0);
+        if (!_useSilhouetteTop)
+            return _enemyTransform.position + new Vector3(0, _cachedYOffset * _enemyTransform.lossyScale.y, 0);
+
+        // 剪影顶点在 sprite 网格空间；敌人根节点的 world Y 已含 visualYOffset 抬升，
+        // 所以直接用顶点换算即可，不再叠加偏移。
+        float headY = _enemyTransform.position.y + _cachedSilhouetteTopLocalY * _enemyTransform.lossyScale.y;
+        return new Vector3(_enemyTransform.position.x, headY + 0.3f, _enemyTransform.position.z);
     }
 
     private void Update()

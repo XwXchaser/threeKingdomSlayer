@@ -58,6 +58,9 @@ public sealed class StabSweepEffect : MonoBehaviour
     private Transform _visualOffsetRoot;
     private Transform _deformRoot;
     private WeaponMotionBlurController _motionBlur;
+    private MeshWeaponAfterimage _afterimage;
+    private bool _enableWeaponAfterimage;
+    private WeaponTasselDynamics _tasselDynamics;
     private Sequence _sequence;
     private Coroutine _hitStopRoutine;
     private bool _hitAny;
@@ -111,7 +114,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         float targetDuration = -1f, bool interruptsCavalryCharge = false,
         HitReactionDirection hitReactionDirection = HitReactionDirection.None, bool suppressHitReaction = false,
         StabMotionParams motion = default, StabStartPose startPose = default,
-        ChargeStabVisual chargeVisual = null)
+        ChargeStabVisual chargeVisual = null, bool enableWeaponAfterimage = false)
     {
         var ray = new GameObject("StabRay");
         ray.transform.position = startPosition;
@@ -130,7 +133,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         effect.Initialize(visual, speedSprite, targetPosition, column, rangeRows, visualRangeRows, damage, damageType,
             columnManager, coveredBossTarget, onHit, onFirstHitBeforeDamage, onFirstHit, onComplete, targetDuration,
             visualTargetRandomRadius, baseRayLength, interruptsCavalryCharge, hitReactionDirection,
-            suppressHitReaction, motion, startPose, chargeVisual);
+            suppressHitReaction, motion, startPose, chargeVisual, enableWeaponAfterimage);
         return effect;
     }
 
@@ -142,6 +145,9 @@ public sealed class StabSweepEffect : MonoBehaviour
     /// </summary>
     private static float MeasureVisualLength(GameObject visual)
     {
+        var dynamics = visual.GetComponentInChildren<WeaponTasselDynamics>();
+        if (dynamics != null && dynamics.WeaponLength > 0f)
+            return dynamics.WeaponLength;
         var spriteRenderer = visual.GetComponentInChildren<SpriteRenderer>();
         if (spriteRenderer != null && spriteRenderer.sprite != null)
             return spriteRenderer.sprite.bounds.size.y * visual.transform.localScale.y;
@@ -193,7 +199,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         Action onComplete, float targetDuration, float visualTargetRandomRadius, float baseRayLength,
         bool interruptsCavalryCharge = false, HitReactionDirection hitReactionDirection = HitReactionDirection.None,
         bool suppressHitReaction = false, StabMotionParams motion = default, StabStartPose startPose = default,
-        ChargeStabVisual chargeVisual = null)
+        ChargeStabVisual chargeVisual = null, bool enableWeaponAfterimage = false)
     {
         _column = column;
         _rangeRows = rangeRows;
@@ -212,11 +218,13 @@ public sealed class StabSweepEffect : MonoBehaviour
         _onFirstHit = onFirstHit;
         _onComplete = onComplete;
         _chargeVisual = chargeVisual;
+        _enableWeaponAfterimage = enableWeaponAfterimage;
 
         var renderer = visual.GetComponentInChildren<SpriteRenderer>();
         if (renderer != null)
             renderer.sortingOrder = SortingOrderWithEnemies;
 
+        _tasselDynamics = visual.GetComponentInChildren<WeaponTasselDynamics>();
         _visualTransform = visual.transform;
         _visualBaseLocalPosition = _visualTransform.localPosition;
         _visualBaseLocalScale = _visualTransform.localScale;
@@ -319,7 +327,11 @@ public sealed class StabSweepEffect : MonoBehaviour
         // 命中只能在刺出阶段开始之后生效（交接时起始位置可能已经在敌人前方）
         _sequence.InsertCallback(windupDuration + holdDuration, () => _hitsEnabled = true);
         _sequence.Append(transform.DOMove(targetPosition, thrustDuration).SetEase(Ease.InCubic)
-            .OnStart(() => _motionBlur?.SetStrength(_motion.blurThrust * _motion.motionBlurScale))
+            .OnStart(() =>
+            {
+                _motionBlur?.SetStrength(_motion.blurThrust * _motion.motionBlurScale);
+                _afterimage?.SetEmission(true);
+            })
             .OnUpdate(CheckHits));
         // 绕枪身长轴自转：刺出段 0 → 设定值
         if (_motion.rollDegrees != 0f)
@@ -360,7 +372,12 @@ public sealed class StabSweepEffect : MonoBehaviour
         _retractToScale = _visualBaseLocalScale;
         _retractFromVisualOffset = _visualTargetOffsetLocal;
         _deformBaseRotation = deformBaseRotation;
-        _sequence.InsertCallback(_retractStartTime, TryHoldForCharge);
+        _sequence.InsertCallback(_retractStartTime, () =>
+        {
+            // 回收段是「向后拉」，此时再产生残影会读成拖泥带水（与 MeshWeaponTrail 的 retractSuppression 同一意图）。
+            _afterimage?.EndEmission();
+            TryHoldForCharge();
+        });
         _sequence.OnKill(() =>
         {
             _visualTransform?.DOKill();
@@ -371,6 +388,28 @@ public sealed class StabSweepEffect : MonoBehaviour
             _visualTransform?.DOKill();
             Destroy(gameObject);
         });
+
+        // 残影/本体涂抹：与斩击共用同一组件，只在戳击实例上 opt-in；精灵枪预制体没有该组件。
+        if (_enableWeaponAfterimage)
+        {
+            MeshWeaponVisual meshVisual = visual.GetComponentInChildren<MeshWeaponVisual>();
+            _afterimage = visual.GetComponentInChildren<MeshWeaponAfterimage>(true);
+            if (meshVisual != null && _afterimage != null)
+            {
+                _afterimage.Begin(meshVisual, MeshWeaponAfterimage.MotionProfile.Thrust);
+                // 戳击只在刺出段出残影：起手与回收段由时间线显式关闭（见下面 thrust 的 OnStart 与 _retractStartTime）。
+                _afterimage.SetEmission(false);
+                if (_afterimage.IsRunning && _afterimage.ReplaceTipTrail)
+                {
+                    MeshWeaponTrail tipTrail = visual.GetComponentInChildren<MeshWeaponTrail>(true);
+                    if (tipTrail != null) tipTrail.enabled = false;
+                }
+            }
+            else
+            {
+                _afterimage = null;
+            }
+        }
     }
 
     /// <summary>绕枪身长轴的自转：在形变节点的本地 Y（也就是精灵长轴）上叠加角度</summary>
@@ -557,6 +596,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         {
             StopCoroutine(_hitStopRoutine);
             _hitStopRoutine = null;
+            _tasselDynamics?.SetMotionPaused(false);
         }
         if (_hitDeformationRoutine != null)
         {
@@ -566,6 +606,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         if (_visualTransform != null)
             _visualTransform.DOKill();
         _motionBlur?.Dispose();
+        _afterimage?.Clear();
         _sequence?.Kill();
     }
 
@@ -592,6 +633,8 @@ public sealed class StabSweepEffect : MonoBehaviour
     public void HandOff()
     {
         _hitsEnabled = false;
+        // 本段的残影不交给下一段继承，否则交接瞬间会留下上一枪的鬼影。
+        _afterimage?.Clear();
         if (_visualTransform != null)
             _visualTransform.gameObject.SetActive(false);
     }
@@ -711,6 +754,25 @@ public sealed class StabSweepEffect : MonoBehaviour
     /// 姿态已被下一招接手：隐藏本段视觉与命中，并让时间线继续跑完自行销毁
     /// （不能 Kill/Destroy，否则会连带影响同帧新建的下一段）。
     /// </summary>
+    public GameObject TakeHeldMeshVisual()
+    {
+        if (!_chargeHoldActive || _visualTransform == null ||
+            _visualTransform.GetComponent<MeshWeaponVisual>() == null) return null;
+        GameObject visual = _visualTransform.gameObject;
+        if (_hitDeformationRoutine != null)
+        {
+            StopCoroutine(_hitDeformationRoutine);
+            _hitDeformationRoutine = null;
+        }
+        _visualTransform.DOKill();
+        _visualTransform.SetParent(null, true);
+        _visualTransform = null;
+        _tasselDynamics?.SetMotionPaused(false);
+        _tasselDynamics = null;
+        ReleaseAfterChargeHold();
+        return visual;
+    }
+
     public void ReleaseAfterChargeHold()
     {
         _chargeHoldPending = false;
@@ -756,6 +818,7 @@ public sealed class StabSweepEffect : MonoBehaviour
         {
             StopCoroutine(_hitStopRoutine);
             _hitStopRoutine = null;
+            _tasselDynamics?.SetMotionPaused(false);
         }
 
         _motionBlur?.SetStrength(0f);
@@ -858,7 +921,11 @@ public sealed class StabSweepEffect : MonoBehaviour
     private System.Collections.IEnumerator HitStopRoutine(float duration)
     {
         if (_sequence != null) _sequence.Pause();
+        _tasselDynamics?.SetMotionPaused(true);
+        _afterimage?.SetPaused(true);
         yield return new WaitForSecondsRealtime(duration);
+        _tasselDynamics?.SetMotionPaused(false);
+        _afterimage?.SetPaused(false);
         // 蓄力保持期间不能被卡肉解冻
         if (!_chargeHoldActive && _sequence != null && _sequence.IsActive())
             _sequence.Play();

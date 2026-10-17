@@ -29,7 +29,7 @@ public sealed class YScrollSample : MonoBehaviour
 
     public const float JunctionDistance = 190f;
     public const float CurveRadius = 28.1595573f;
-    public const float ExitTailDistance = 54f;
+    public const float ExitTailDistance = 113f;
 
     public static float GetRouteLength(float degrees)
     {
@@ -61,8 +61,10 @@ public sealed class YScrollSample : MonoBehaviour
             if (match) return false;
             match = presentation;
         }
+        // 0.2 m tolerance: EV/N3 anchors are authored in metres and the N3 anchor
+        // legitimately sits 0.116455 m past the computed end of the route.
         if (!match || float.IsNaN(match.worldDistance) || match.worldDistance < 0f
-            || match.worldDistance > Length) return false;
+            || match.worldDistance > Length + 0.2f) return false;
         // Branch world Z is shorter than traveled distance. The authored route distance is authoritative.
         normalizedProgress = match.worldDistance / Mathf.Max(0.1f, Length);
         return true;

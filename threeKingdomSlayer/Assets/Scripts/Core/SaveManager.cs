@@ -17,6 +17,7 @@ public class SaveData
     public List<string> completedTutorialDialogueIds = new List<string>();
     public List<RouteStageSaveSnapshot> routeStageSnapshots = new List<RouteStageSaveSnapshot>();
     public List<FakeRouteStageSaveSnapshot> fakeRouteSnapshots = new List<FakeRouteStageSaveSnapshot>();
+    public int activeFakeRouteStageId = -1;
 
     /// <summary>
     /// 获取铜钱数量（优先从 props 列表读取，兼容旧存档的 coinCount 字段）
@@ -188,6 +189,32 @@ public static class SaveManager
         if (data.fakeRouteSnapshots == null || data.fakeRouteSnapshots.Count == 0) return;
         data.fakeRouteSnapshots.Clear();
         Save(data);
+    }
+
+    /// <summary>记录当前正在进行的假移动/卷轴路线关卡（供“继续游戏”使用）。</summary>
+    public static void SetActiveFakeRouteStage(int stageId)
+    {
+        var data = Load();
+        if (data.activeFakeRouteStageId != stageId)
+        {
+            data.activeFakeRouteStageId = stageId;
+            Save(data);
+        }
+    }
+
+    public static int GetActiveFakeRouteStageId()
+    {
+        return Load().activeFakeRouteStageId;
+    }
+
+    public static void ClearActiveFakeRouteStage()
+    {
+        var data = Load();
+        if (data.activeFakeRouteStageId != -1)
+        {
+            data.activeFakeRouteStageId = -1;
+            Save(data);
+        }
     }
 
     public static void ClearRouteStageSnapshot(int stageId)

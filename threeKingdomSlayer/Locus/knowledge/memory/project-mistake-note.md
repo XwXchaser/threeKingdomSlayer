@@ -1,7 +1,7 @@
 ---
 id: kd_4a9116b1-c70a-4de3-8eeb-801deb71c4fe
 injectMode: inherit
-summary: 项目开发错误复盘：含Y分叉卷轴场景目标/回退安全、渲染遮挡与草簇验收，以及路线、战斗、Tween和序列化经验。
+summary: 项目开发错误复盘：含Y分叉卷轴场景目标/回退安全、渲染遮挡与草簇验收，以及路线、战斗、Tween、序列化经验；另含「Prefab 资产编辑把未落盘的内存改动刷回磁盘值」的根因与安全做法，以及「素材零引用审计必须包含 .scene」的误删教训。
 aiEditMode: auto
 maintenanceRules: |-
   - Keep only durable and reusable project memory
@@ -145,3 +145,14 @@ maintenanceRules: |-
 - 文件：`Assets/Scripts/Core/SpikeTrapController.cs`、`Assets/Scripts/Managers/StageController.cs`
 
 ### FakeRoute 假移动路线阶段总结（2026-03）
+### Prefab 资产编辑会把未落盘的内存改动刷回磁盘值（2026-10-16）
+
+- 症状：用户在 `Enemy_109.prefab` 的 Inspector 里把 `CavalryEnemy.chargeDamage` 改成 1（未写盘），我在同一 Prefab 上做了几次「`PrefabUtility.LoadPrefabContents` → 改字段 → `SaveAsPrefabAsset`」后，该值回到磁盘上的 8；用户点 Locus 刷新/切换对话时也会看到同样的"被刷回去"。
+- 根因：`LoadPrefabContents` 是**从磁盘重新读取** Prefab 到隔离场景，`SaveAsPrefabAsset` 再整体写回，内存中尚未落盘的 Inspector 改动会被直接丢弃。任何重载/刷新都会让未写盘的值回到磁盘版本。
+- 正确做法：只改 Prefab 资产字段时用 `AssetDatabase.LoadAssetAtPath<GameObject>` 取**内存实例** + `SerializedObject` / `AddComponent`，再 `EditorUtility.SetDirty` + `AssetDatabase.SaveAssets()`；确需 `LoadPrefabContents` 时先 `AssetDatabase.SaveAssets()` 把待写改动落盘。给用户报数值前先确认是「内存值」还是「磁盘值」（grep 文件内容只能证明磁盘值）。
+- 附带纪律：交付用户可调的 Inspector 数值后，提示其改完按 Ctrl+S；改回正确值时必须显式写盘（`AssetDatabase.SaveAssets()`），否则下次刷新仍会回到旧值。
+
+### 素材“零引用”审计必须包含 .scene（2026-10-17）
+- 症状：清理 N1 未引用重复贴图后，又批量删除“零引用垃圾素材”，其中 `Assets/Sprites/background_MENU.jpg` 实际被 `Assets/Scenes/MainMenu.scene` 引用，被误删。
+- 根因：本项目是 Tuanjie 变体，场景扩展名是 **`.scene`**（不是常见的 `.unity`），审计脚本只扫了 `.unity/.prefab/.mat/.asset`，目标只被 `.scene` 引用的素材被误判为零引用。
+- 预防规则：引用扫描的文件集合必须包含 `.scene`、`.unity`、`.prefab`、`.mat`、`.asset`、`.controller`、`.anim`、`.playable`、`.mask`、`.spriteatlas` 等全部文本序列化类型；删除前另做一次全库 guid 断链校验（逐文件正则取 `guid: <32hex>` → `AssetDatabase.GUIDToAssetPath` 必须非空），并排除 `Resources/`、`StreamingAssets/` 与代码里按名/按路径加载的素材。被删资产若已入库，可用 `git checkout -- <path>` 原地恢复且 guid 不变。

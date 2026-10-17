@@ -37,3 +37,12 @@ __pycache__/
 # 1011 美术素材总包（约 518MB：原视频/原抽帧/选帧/交付精灵，Unity 不导入）
 # 归档说明与溯源：Locus/knowledge/plan/enemy1011-frame-provenance.md
 Enemy1011ArtSource/
+
+# 109 / 长枪 原始素材工作目录（109 约 406MB、长枪约 135MB；Unity 不导入，仅本地留档）
+# 已入库的历史部分不受影响，新增文件不再纳入版本库。
+Enemy109ArtSource/
+StabWeaponArtSource/
+
+# Locus 工具包残留（Packages/com.farlocus.locus 未在 Packages/manifest.json 注册，Unity 不加载，
+# 约 13MB 的编辑器二进制；重装工具会重新生成）
+Packages/com.farlocus.locus/

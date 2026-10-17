@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// 109骑兵视觉路由。
-/// 已制作的骑乘动作使用根Animator上的人马合一Sprite；成功刺击后转身接返航，返航奔跑及打断收招暂用静态姿势。
+/// 骑乘动作使用根Animator上的人马合一Sprite；成功刺击与打断收招各有独立转身路由，返航奔跑尚未入库。
 /// 动画速率适配骑兵玩法时长，真正落马后切换到正式1011控制器。
 /// </summary>
 [RequireComponent(typeof(CavalryEnemy), typeof(Enemy), typeof(Animator))]
@@ -34,13 +34,19 @@ public sealed class CavalryVisualController : MonoBehaviour
     [SerializeField] private AnimationClip strikeAnimation;
     [Tooltip("成功刺击后收枪转身，在现有返航移动时长内播放一次；受阻暂停，被打断时不共用成功动作。")]
     [SerializeField] private AnimationClip strikeToRetreatAnimation;
+    [Tooltip("打断急停后回正、收枪并向左转至背面，只在实际需要返航时播放；不共用成功刺击动作。")]
+    [SerializeField] private AnimationClip interruptedToRetreatAnimation;
     [SerializeField] private AnimationClip turnToIdleAnimation;
-    [Tooltip("奔跑帧尚未制作，暂时保持背向姿势，不能视作正式返航循环。")]
+    [Tooltip("返航后退时的循环奔跑动画（6 帧，一个步态周期 0.5s）。")]
     [SerializeField] private AnimationClip retreatPoseAnimation;
-    [Tooltip("打断收招尚未制作，暂用持枪姿势，不播放成功刺击。")]
+    [Tooltip("返航受阻（停在原地）时的背向姿势；留空则回退到奔跑动画。")]
+    [SerializeField] private AnimationClip retreatBlockedPoseAnimation;
+    [Tooltip("返航奔跑动画播放速度倍率（1 = 按源片 0.5s 一个步态周期）。")]
+    [SerializeField, Min(0.05f)] private float retreatRunSpeed = 1f;
+    [Tooltip("冲锋被打断后的受击急停动画，按现有0.20/0.22秒收招时间调速，不提交伤害。")]
     [SerializeField] private AnimationClip interruptedAnimation;
-    [Tooltip("刺击Clip中命中帧的归一化时间；前后两段分别适配strikeWindup和strikeRecover。")]
-    [SerializeField, Range(0.01f, 0.99f)] private float strikeHitNormalizedTime = 0.45f;
+    [Tooltip("打开后在命中帧校验通过时输出一行日志（不一致时始终告警）。")]
+    [SerializeField] private bool showStrikeHitDebug = false;
     [Tooltip("返航到位后转回Idle的播放时长，自动限制在现有冲锋冷却内，不延长玩法等待。")]
     [SerializeField, Min(0f)] private float turnToIdleDuration = 0.8f;
 
@@ -73,17 +79,21 @@ public sealed class CavalryVisualController : MonoBehaviour
     private bool _turnPlaying;
     private float _turnElapsed;
     private float _turnDuration;
-    private bool _strikeToRetreatPlaying;
-    private float _strikeToRetreatElapsed;
-    private float _strikeToRetreatDuration;
-    private float _strikeToRetreatSpeed;
+    // 两条转身路由共用计时，素材分别由Inspector直接引用。
+    private bool _retreatTurnPlaying;
+    private bool _retreatTurnFromInterrupt;
+    private float _retreatTurnElapsed;
+    private float _retreatTurnDuration;
+    private float _retreatTurnSpeed;
     private float _activeSpeed = 1f;
+    private bool _strikeHitVerified;
 
     private static readonly int IdleState = Animator.StringToHash("Base Layer.Idle");
     private static readonly int WindupState = Animator.StringToHash("Base Layer.Windup");
     private static readonly int ChargingState = Animator.StringToHash("Base Layer.Charging");
     private static readonly int AttackState = Animator.StringToHash("Base Layer.Attack");
     private static readonly int StrikeToRetreatState = Animator.StringToHash("Base Layer.StrikeToRetreat");
+    private static readonly int InterruptedToRetreatState = Animator.StringToHash("Base Layer.InterruptedToRetreat");
     private static readonly int InterruptedState = Animator.StringToHash("Base Layer.Interrupted");
     private static readonly int RetreatingState = Animator.StringToHash("Base Layer.Retreating");
     private static readonly int RetreatBlockedState = Animator.StringToHash("Base Layer.RetreatBlocked");
@@ -92,6 +102,37 @@ public sealed class CavalryVisualController : MonoBehaviour
     public bool OwnsMountedAnimator => _cavalry != null && _cavalry.IsMounted
         && mountedCombinedAnimatorController != null
         && (GetVisualMode() == VisualMode.MountedCombinedIdle || GetVisualMode() == VisualMode.MountedCombined);
+
+    /// <summary>
+    /// 刺击命中帧在 Attack clip 上的归一化位置。
+    /// 来源是 CavalryEnemy.strikeHitFrame.hitTime（与 1011 的 hitFrames 同口径），
+    /// 不再手填，避免改帧序后又错位。
+    /// </summary>
+    public float StrikeHitNormalized
+    {
+        get
+        {
+            if (strikeAnimation == null || strikeAnimation.length <= 0f) return 0.5f;
+            CavalryEnemy cavalry = _cavalry != null ? _cavalry : (_cavalry = GetComponent<CavalryEnemy>());
+            if (cavalry == null) return 0.5f;
+            float hitTime = cavalry.StrikeHitTime;
+            if (hitTime <= 0f) return 0.5f;
+            return Mathf.Clamp(hitTime / strikeAnimation.length, 0.01f, 0.99f);
+        }
+    }
+
+    /// <summary>骑乘刺击的 Attack clip 是否已播到末尾（供玩法侧确认整个攻击动作演完）。</summary>
+    public bool IsMountedAttackClipFinished
+    {
+        get
+        {
+            if (_animator == null) return true;
+            if (_animator.IsInTransition(0)) return false;
+            AnimatorStateInfo stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
+            if (stateInfo.fullPathHash != AttackState) return true;   // 已切走，不再等
+            return stateInfo.normalizedTime >= 0.999f;
+        }
+    }
 
     /// <summary>Enemy的Idle/Attack入口不能覆盖骑兵正在播放的阶段或返航到位转身。</summary>
     public bool TryRefreshMountedAnimation()
@@ -122,8 +163,10 @@ public sealed class CavalryVisualController : MonoBehaviour
         _lastMoving = false;
         _turnPlaying = false;
         _turnElapsed = 0f;
-        _strikeToRetreatPlaying = false;
-        _strikeToRetreatElapsed = 0f;
+        _retreatTurnPlaying = false;
+        _retreatTurnFromInterrupt = false;
+        _retreatTurnElapsed = 0f;
+        _strikeHitVerified = false;
         Refresh(_cavalry);
     }
 
@@ -152,15 +195,14 @@ public sealed class CavalryVisualController : MonoBehaviour
         {
             // Enemy的普通移动收尾可能重置speed；骑乘阶段保持自己的播放速率。
             if (_animator != null) _animator.speed = _activeSpeed;
-            if (_strikeToRetreatPlaying && !_enemy.IsHitStopped
+            if (_retreatTurnPlaying && !_enemy.IsHitStopped
                 && _cavalry.CurrentAnimationStage != CavalryEnemy.AnimationStage.RetreatBlocked)
             {
-                _strikeToRetreatElapsed += Time.deltaTime;
-                if (_strikeToRetreatElapsed >= _strikeToRetreatDuration)
+                _retreatTurnElapsed += Time.deltaTime;
+                if (_retreatTurnElapsed >= _retreatTurnDuration)
                 {
-                    _strikeToRetreatPlaying = false;
-                    PlayMounted(_cavalry.CurrentAnimationStage == CavalryEnemy.AnimationStage.RetreatBlocked
-                        ? RetreatBlockedState : RetreatingState, retreatPoseAnimation, 0f);
+                    _retreatTurnPlaying = false;
+                    PlayRetreatPose(_cavalry.CurrentAnimationStage);
                 }
             }
             if (_turnPlaying && !_enemy.IsHitStopped)
@@ -244,7 +286,8 @@ public sealed class CavalryVisualController : MonoBehaviour
 
             case VisualMode.Dismounted:
                 _turnPlaying = false;
-                _strikeToRetreatPlaying = false;
+                _retreatTurnPlaying = false;
+                _retreatTurnFromInterrupt = false;
                 _lastAnimationStage = (CavalryEnemy.AnimationStage)(-1);
                 if (_animator != null) _animator.speed = 1f;
                 SetAnimatorController(dismountedAnimatorController, _enemy != null && _enemy.state == EnemyState.Idle);
@@ -268,7 +311,11 @@ public sealed class CavalryVisualController : MonoBehaviour
                 || previousStage == CavalryEnemy.AnimationStage.RetreatBlocked);
         bool retreatStage = stage == CavalryEnemy.AnimationStage.Retreating
             || stage == CavalryEnemy.AnimationStage.RetreatBlocked;
-        if (!retreatStage) _strikeToRetreatPlaying = false;
+        if (!retreatStage)
+        {
+            _retreatTurnPlaying = false;
+            _retreatTurnFromInterrupt = false;
+        }
         _lastAnimationStage = stage;
         _lastMoving = moving;
         _turnPlaying = false;
@@ -279,17 +326,18 @@ public sealed class CavalryVisualController : MonoBehaviour
                 PlayMounted(WindupState, windupAnimation, _cavalry.WindupDuration);
                 break;
             case CavalryEnemy.AnimationStage.Charging:
-                PlayMounted(ChargingState, chargingAnimation, Mathf.Max(0.02f, _enemy.moveSpeed));
+                PlayMounted(ChargingState, chargingAnimation, _cavalry.ChargeStepDuration);
                 break;
             case CavalryEnemy.AnimationStage.StrikeWindup:
                 PlayMounted(AttackState, strikeAnimation, _cavalry.StrikeWindupDuration,
-                    0f, strikeHitNormalizedTime);
+                    0f, StrikeHitNormalized);
                 break;
             case CavalryEnemy.AnimationStage.StrikeRecover:
                 // 先同步采样命中帧，再由CavalryEnemy提交伤害；收招不依赖动画结束事件。
                 // Sprite键在浮点边界上可能仍采样前一帧，微小偏移确保提交当帧显示命中Sprite。
                 PlayMounted(AttackState, strikeAnimation, _cavalry.StrikeRecoverDuration,
-                    Mathf.Min(1f, strikeHitNormalizedTime + 0.00001f), 1f);
+                    Mathf.Min(1f, StrikeHitNormalized + 0.00001f), 1f);
+                VerifyStrikeHitSprite();
                 break;
             case CavalryEnemy.AnimationStage.Interrupted:
                 PlayMounted(InterruptedState, interruptedAnimation,
@@ -298,32 +346,37 @@ public sealed class CavalryVisualController : MonoBehaviour
                 break;
             case CavalryEnemy.AnimationStage.Retreating:
             case CavalryEnemy.AnimationStage.RetreatBlocked:
-                if (previousStage == CavalryEnemy.AnimationStage.StrikeRecover && strikeToRetreatAnimation != null)
+                AnimationClip retreatTurnClip = previousStage == CavalryEnemy.AnimationStage.Interrupted
+                    ? interruptedToRetreatAnimation
+                    : previousStage == CavalryEnemy.AnimationStage.StrikeRecover ? strikeToRetreatAnimation : null;
+                int returnRows = _cavalry.ChargeOriginRow - _enemy.rowIndex;
+                if (retreatTurnClip != null && returnRows > 0 && _cavalry.RetreatTurnDuration > 0f)
                 {
-                    int returnRows = Mathf.Max(1, _cavalry.ChargeOriginRow - _enemy.rowIndex);
-                    _strikeToRetreatDuration = Mathf.Max(0.02f, _enemy.moveSpeed) * returnRows;
-                    _strikeToRetreatElapsed = 0f;
-                    _strikeToRetreatPlaying = true;
-                    PlayMounted(StrikeToRetreatState, strikeToRetreatAnimation, _strikeToRetreatDuration);
-                    _strikeToRetreatSpeed = _activeSpeed;
+                    _retreatTurnFromInterrupt = previousStage == CavalryEnemy.AnimationStage.Interrupted;
+                    // 转身时长与玩法侧保持一致：转身演完才后退（不再拉满整个返航过程）。
+                    _retreatTurnDuration = Mathf.Max(0.02f, _cavalry.RetreatTurnDuration);
+                    _retreatTurnElapsed = 0f;
+                    _retreatTurnPlaying = true;
+                    PlayMounted(_retreatTurnFromInterrupt ? InterruptedToRetreatState : StrikeToRetreatState,
+                        retreatTurnClip, _retreatTurnDuration);
+                    _retreatTurnSpeed = _activeSpeed;
                 }
-                if (_strikeToRetreatPlaying)
+                if (_retreatTurnPlaying)
                 {
                     _activeSpeed = stage == CavalryEnemy.AnimationStage.RetreatBlocked
-                        ? 0f : _strikeToRetreatSpeed;
+                        ? 0f : _retreatTurnSpeed;
                     if (_animator != null) _animator.speed = _activeSpeed;
                 }
                 else
                 {
-                    PlayMounted(stage == CavalryEnemy.AnimationStage.RetreatBlocked
-                        ? RetreatBlockedState : RetreatingState, retreatPoseAnimation, 0f);
+                    PlayRetreatPose(stage);
                 }
                 // 受阻、移动标记及排号变化不重播转身；在原有返航时间内完成，不增加等待。
                 break;
             default:
                 if (moving && chargingAnimation != null)
                 {
-                    PlayMounted(ChargingState, chargingAnimation, Mathf.Max(0.02f, _enemy.moveSpeed));
+                    PlayMounted(ChargingState, chargingAnimation, _cavalry.ChargeStepDuration);
                 }
                 else if (returned && turnToIdleAnimation != null && turnToIdleDuration > 0f
                     && _cavalry.ChargeCooldown > 0f)
@@ -338,6 +391,60 @@ public sealed class CavalryVisualController : MonoBehaviour
                     PlayMounted(IdleState, null, 0f);
                 }
                 break;
+        }
+    }
+
+    /// <summary>
+    /// 命中帧一致性自检：切到收尾段后，屏幕上真实显示的精灵必须是声明的命中帧。
+    /// 不一致就告警（说明 strikeHitFrame.hitTime 与 clip 关键帧不一致），每次启用只报一次，不影响玩法。
+    /// </summary>
+    private void VerifyStrikeHitSprite()
+    {
+        if (_strikeHitVerified || _cavalry == null || !_cavalry.HasStrikeHitFrame) return;
+        if (_enemy != null && _enemy.IsHitStopped) return;   // 卡肉时画面被冻结，等恢复后再校验
+        _strikeHitVerified = true;
+
+        string shown = _rootRenderer != null && _rootRenderer.sprite != null ? _rootRenderer.sprite.name : null;
+        string declared = _cavalry.StrikeHitSpriteName;
+        if (!AttackHitFrameResolver.MatchesSprite(declared, shown))
+        {
+            Debug.LogWarning($"[109] 刺击命中帧不一致：声明 {declared}，切分点实际显示 {shown}；" +
+                             $"请核对 CavalryEnemy.strikeHitFrame.hitTime（当前 {_cavalry.StrikeHitTime:F4}s）与 Attack clip 关键帧");
+        }
+        else if (showStrikeHitDebug)
+        {
+            Debug.Log($"[109] 刺击命中帧校验通过：{shown} @ norm {StrikeHitNormalized:F4}");
+        }
+    }
+
+    /// <summary>屏幕上当前是否正显示指定精灵（精确或后缀匹配，与 1011 命中帧同一口径）。</summary>
+    public bool IsSpriteShowing(string spriteName)
+    {
+        if (string.IsNullOrEmpty(spriteName) || _rootRenderer == null || _rootRenderer.sprite == null) return false;
+        return AttackHitFrameResolver.MatchesSprite(spriteName, _rootRenderer.sprite.name);
+    }
+
+    private void PlayRetreatPose(CavalryEnemy.AnimationStage stage)
+    {
+        if (_retreatTurnFromInterrupt && interruptedToRetreatAnimation != null)
+        {
+            // 循环尚未入库时保持该路由自己的末帧，不能切回颜色/姿态不同的成功转身尾态。
+            PlayMounted(InterruptedToRetreatState, interruptedToRetreatAnimation, 0f, 1f, 1f);
+            _activeSpeed = 0f;
+            if (_animator != null) _animator.speed = 0f;
+        }
+        else
+        {
+            bool blocked = stage == CavalryEnemy.AnimationStage.RetreatBlocked;
+            AnimationClip clip = blocked
+                ? (retreatBlockedPoseAnimation != null ? retreatBlockedPoseAnimation : retreatPoseAnimation)
+                : retreatPoseAnimation;
+            PlayMounted(blocked ? RetreatBlockedState : RetreatingState, clip, 0f);
+            if (!blocked && retreatRunSpeed > 0f)
+            {
+                _activeSpeed = retreatRunSpeed;
+                if (_animator != null) _animator.speed = _activeSpeed;
+            }
         }
     }
 

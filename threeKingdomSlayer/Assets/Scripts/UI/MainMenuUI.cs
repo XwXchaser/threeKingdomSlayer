@@ -19,6 +19,7 @@ public class MainMenuUI : MonoBehaviour
     public StageConfigManager stageConfigManager;
     private List<StageConfig> stageConfigs = new List<StageConfig>();
     private List<RouteStageConfigV2> routeStageConfigsV2 = new List<RouteStageConfigV2>();
+    private List<FakeRouteStageConfig> fakeRouteStageConfigs = new List<FakeRouteStageConfig>();
 
     [Header("过渡")]
     public CameraManager cameraManager;
@@ -35,8 +36,10 @@ public class MainMenuUI : MonoBehaviour
         {
             if (stageConfigManager.routeStagesV2.Count > 0)
                 routeStageConfigsV2 = new List<RouteStageConfigV2>(stageConfigManager.routeStagesV2);
+            if (stageConfigManager.fakeRouteStages.Count > 0)
+                fakeRouteStageConfigs = new List<FakeRouteStageConfig>(stageConfigManager.fakeRouteStages);
         }
-        if (stageConfigs.Count == 0 && routeStageConfigsV2.Count == 0)
+        if (stageConfigs.Count == 0 && routeStageConfigsV2.Count == 0 && fakeRouteStageConfigs.Count == 0)
             Debug.LogWarning("[MainMenuUI] 未找到线性或路线关卡配置，请配置 StageConfigManager");
     }
 
@@ -91,6 +94,46 @@ public class MainMenuUI : MonoBehaviour
 
         foreach (var cfg in routeStageConfigsV2)
             CreateRouteStageV2Button(cfg);
+
+        foreach (var cfg in fakeRouteStageConfigs)
+            CreateFakeRouteStageButton(cfg);
+    }
+
+    /// <summary>卷轴路线关卡按钮（假移动/纯逻辑路线 + 卷轴表现）。</summary>
+    private void CreateFakeRouteStageButton(FakeRouteStageConfig cfg)
+    {
+        var go = new GameObject("FakeRouteStageBtn_" + cfg.stageId, typeof(RectTransform));
+        go.transform.SetParent(stageGrid.transform, false);
+        var img = go.AddComponent<Image>();
+        img.color = new Color(0.2f, 0.28f, 0.22f, 1f);
+        var btn = go.AddComponent<Button>();
+        bool unlocked = cfg.stageId <= SaveManager.GetNextAvailableStageId();
+        var colors = btn.colors;
+        colors.normalColor = new Color(0.25f, 0.4f, 0.28f, 1f);
+        colors.highlightedColor = new Color(0.35f, 0.55f, 0.38f, 1f);
+        colors.pressedColor = new Color(0.18f, 0.3f, 0.2f, 1f);
+        colors.disabledColor = new Color(0.15f, 0.15f, 0.15f, 0.35f);
+        btn.colors = colors;
+        var textGo = new GameObject("Text", typeof(RectTransform));
+        textGo.transform.SetParent(go.transform, false);
+        var textRt = textGo.GetComponent<RectTransform>();
+        textRt.anchorMin = Vector2.zero;
+        textRt.anchorMax = Vector2.one;
+        textRt.offsetMin = new Vector2(4, 4);
+        textRt.offsetMax = new Vector2(-4, -4);
+        var txt = textGo.AddComponent<Text>();
+        string status = unlocked ? (SaveManager.IsStageCleared(cfg.stageId) ? "[已通关]" : "[可挑战]") : "[未解锁]";
+        txt.text = cfg.stageName + "\n[卷轴] " + status;
+        txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        txt.fontSize = Mathf.RoundToInt(16 * _uiScale);
+        txt.alignment = TextAnchor.MiddleCenter;
+        txt.color = unlocked ? Color.white : new Color(0.5f, 0.5f, 0.5f);
+        btn.interactable = unlocked;
+        if (unlocked)
+        {
+            int stageId = cfg.stageId;
+            btn.onClick.AddListener(() => OnFakeRouteStageSelected(stageId));
+        }
     }
 
     private void CreateRouteStageV2Button(RouteStageConfigV2 cfg)
@@ -309,6 +352,27 @@ public class MainMenuUI : MonoBehaviour
                 btn.onClick.AddListener(() => OnRouteStageV2Selected(stageId));
             }
         }
+
+        for (int i = 0; i < fakeRouteStageConfigs.Count; i++)
+        {
+            var cfg = fakeRouteStageConfigs[i];
+            var child = stageGrid.transform.Find("FakeRouteStageBtn_" + cfg.stageId);
+            if (child == null) continue;
+            var btn = child.GetComponent<Button>();
+            var txt = child.GetComponentInChildren<Text>();
+            if (btn == null || txt == null) continue;
+            bool unlocked = cfg.stageId <= nextAvailable;
+            string status = unlocked ? (SaveManager.IsStageCleared(cfg.stageId) ? "[已通关]" : "[可挑战]") : "[未解锁]";
+            txt.text = cfg.stageName + "\n[卷轴] " + status;
+            txt.color = unlocked ? Color.white : new Color(0.5f, 0.5f, 0.5f);
+            btn.interactable = unlocked;
+            btn.onClick.RemoveAllListeners();
+            if (unlocked)
+            {
+                int stageId = cfg.stageId;
+                btn.onClick.AddListener(() => OnFakeRouteStageSelected(stageId));
+            }
+        }
     }
 
     #endregion
@@ -337,15 +401,42 @@ public class MainMenuUI : MonoBehaviour
     {
         Debug.Log("[MainMenu] 旧路线入口已停用: " + stageId);
     }
+
+    /// <summary>选择卷轴路线关卡：清快照、从 startNode 开始（不读失败恢复快照）。</summary>
+    private void OnFakeRouteStageSelected(int stageId)
+    {
+        var cfg = fakeRouteStageConfigs.Find(s => s != null && s.stageId == stageId);
+        if (cfg == null) return;
+        StageController.PendingStageConfig = null;
+        StageController.PendingRouteStageConfig = null;
+        RouteStageV2Launch.PendingConfig = null;
+        FakeRouteLaunch.StartFromCheckpoint = false;
+        FakeRouteLaunch.PendingConfig = cfg;
+        SaveManager.ClearFakeRouteSnapshot(cfg.routeId, cfg.stageId);
+        SaveManager.SetActiveFakeRouteStage(cfg.stageId);
+        StartBattle();
+    }
     public void OnNewGame()
     {
         Debug.Log("[MainMenu] 新游戏");
         SaveManager.Delete();
-        if (routeStageConfigsV2.Count > 0)
+        if (fakeRouteStageConfigs.Count > 0)
+        {
+            var cfg = fakeRouteStageConfigs[0];
+            StageController.PendingStageConfig = null;
+            StageController.PendingRouteStageConfig = null;
+            RouteStageV2Launch.PendingConfig = null;
+            FakeRouteLaunch.StartFromCheckpoint = false;
+            SaveManager.ClearFakeRouteSnapshot(cfg.routeId, cfg.stageId);
+            SaveManager.SetActiveFakeRouteStage(cfg.stageId);
+            FakeRouteLaunch.PendingConfig = cfg;
+        }
+        else if (routeStageConfigsV2.Count > 0)
         {
             StageController.PendingStageConfig = null;
             StageController.PendingRouteStageConfig = null;
             RouteStageV2Launch.StartFromCheckpoint = false;
+            FakeRouteLaunch.PendingConfig = null;
             SaveManager.ClearRouteStageSnapshot(routeStageConfigsV2[0].stageId);
             RouteStageV2Launch.PendingConfig = routeStageConfigsV2[0];
         }
@@ -354,6 +445,7 @@ public class MainMenuUI : MonoBehaviour
             StageController.PendingStageConfig = null;
             StageController.PendingRouteStageConfig = null;
             RouteStageV2Launch.PendingConfig = null;
+            FakeRouteLaunch.PendingConfig = null;
         }
         RefreshUI();
         StartBattle();
@@ -362,12 +454,26 @@ public class MainMenuUI : MonoBehaviour
     public void OnContinueGame()
     {
         Debug.Log("[MainMenu] 继续游戏");
-        if (routeStageConfigsV2.Count > 0)
+        if (fakeRouteStageConfigs.Count > 0)
+        {
+            // 继续游戏：从最后未完成的卷轴关卡重新开始（不读取失败恢复快照）。
+            int activeId = SaveManager.GetActiveFakeRouteStageId();
+            var cfg = fakeRouteStageConfigs.Find(s => s != null && s.stageId == activeId) ?? fakeRouteStageConfigs[0];
+            StageController.PendingStageConfig = null;
+            StageController.PendingRouteStageConfig = null;
+            RouteStageV2Launch.PendingConfig = null;
+            FakeRouteLaunch.StartFromCheckpoint = false;
+            SaveManager.ClearFakeRouteSnapshot(cfg.routeId, cfg.stageId);
+            SaveManager.SetActiveFakeRouteStage(cfg.stageId);
+            FakeRouteLaunch.PendingConfig = cfg;
+        }
+        else if (routeStageConfigsV2.Count > 0)
         {
             var cfg = routeStageConfigsV2[0];
             StageController.PendingStageConfig = null;
             StageController.PendingRouteStageConfig = null;
             RouteStageV2Launch.StartFromCheckpoint = false;
+            FakeRouteLaunch.PendingConfig = null;
             SaveManager.ClearRouteStageSnapshot(cfg.stageId);
             RouteStageV2Launch.PendingConfig = cfg;
         }
@@ -376,6 +482,7 @@ public class MainMenuUI : MonoBehaviour
             StageController.PendingStageConfig = null;
             StageController.PendingRouteStageConfig = null;
             RouteStageV2Launch.PendingConfig = null;
+            FakeRouteLaunch.PendingConfig = null;
         }
         StartBattle();
     }

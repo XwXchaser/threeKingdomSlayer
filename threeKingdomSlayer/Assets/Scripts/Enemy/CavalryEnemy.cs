@@ -22,18 +22,35 @@ public sealed class CavalryEnemy : MonoBehaviour
     [SerializeField, Min(0f)] private float chargeDamage = 8f;
     [Tooltip("判定成功后到开始前移的动作前摇时长；前摇期间可被打断。")]
     [SerializeField, Min(0f)] private float windupDuration = 0.3f;
-    [Tooltip("命中前探时长。")]
-    [SerializeField, Min(0.02f)] private float strikeWindup = 0.18f;
+    [Tooltip("命中前探时长；也为玩家留出‘看到冲锋起来后拉远’的反应窗口。")]
+    [SerializeField, Min(0.02f)] private float strikeWindup = 0.36f;
     [Tooltip("命中收招时长。")]
-    [SerializeField, Min(0.02f)] private float strikeRecover = 0.22f;
+    [SerializeField, Min(0.02f)] private float strikeRecover = 0.3f;
     [Tooltip("命中时向前探出的本地距离。")]
     [SerializeField, Min(0f)] private float strikeLungeDistance = 0.5f;
     [Tooltip("被打断后进入返航前的收招时长。")]
     [SerializeField, Min(0f)] private float interruptRecover = 0.2f;
+    [Tooltip("冲锋时向前推进一排的时长（秒/排）。独立于普通行军的 moveSpeed，改这里不会影响普通行军。")]
+    [SerializeField, Min(0.02f)] private float chargeStepDuration = 0.35f;
+    [Tooltip("返航时向后退回一排的时长（秒/排）。独立于普通行军的 moveSpeed，改这里不会影响普通行军。")]
+    [SerializeField, Min(0.02f)] private float retreatStepDuration = 0.35f;
+    [Tooltip("返航转身时长（秒）：先把转身动作在原地演完，再开始逐排后退。0 = 不转身，直接切背向姿势。")]
+    [SerializeField, Min(0f)] private float retreatTurnDuration = 0.4f;
     [Tooltip("两次冲锋之间的冷却。")]
-    [SerializeField, Min(0f)] private float chargeCooldown = 1f;
+    [SerializeField, Min(0f)] private float chargeCooldown = 1.6f;
     [Tooltip("SpawnEntry结束后推迟战斗判定的时间，避免入场同帧发起冲锋。")]
     [SerializeField, Min(0f)] private float spawnEntrySettleDuration = 0.35f;
+
+    [Header("命中帧（与 1011 同一口径：按屏幕精灵名结算）")]
+    [Tooltip("刺击的伤害判帧。spriteName = 该帧精灵名（如 Enemy_109_Attack4），运行时比对屏幕上真实显示的精灵；" +
+             "hitTime/keyIndex 用于把 Attack clip 切成前摇/收尾两段，默认值见 Tools/三国杀戮/校验攻击命中帧。")]
+    [SerializeField] private AttackHitFrame strikeHitFrame = new AttackHitFrame
+    {
+        spriteName = "",
+        keyIndex = 0,
+        resolve = true,
+        hitTime = 0f
+    };
 
     public enum CavalryPhase { MountedIdle, Windup, Charging, Striking, Retreating, RetreatBlocked, Dismounted }
     // 视觉子阶段不新增移动/伤害状态；命中前探与收招共享Striking玩法阶段。
@@ -46,11 +63,30 @@ public sealed class CavalryEnemy : MonoBehaviour
     public float StrikeRecoverDuration => strikeRecover;
     public float InterruptRecoveryDuration => interruptRecover;
     public float ChargeCooldown => chargeCooldown;
+    /// <summary>冲锋每前进一排的时长（秒/排）。</summary>
+    public float ChargeStepDuration => chargeStepDuration;
+    /// <summary>返航每退回一排的时长（秒/排）。</summary>
+    public float RetreatStepDuration => retreatStepDuration;
+    /// <summary>返航前的原地转身时长（秒）；0 = 不转身。</summary>
+    public float RetreatTurnDuration => retreatTurnDuration;
+    /// <summary>是否声明了刺击命中帧精灵名（空 = 只能靠前摇计时结算）。</summary>
+    public bool HasStrikeHitFrame => !string.IsNullOrEmpty(strikeHitFrame.spriteName);
+    /// <summary>刺击命中帧精灵名，与 1011 的 hitFrames.spriteName 同一口径。</summary>
+    public string StrikeHitSpriteName => strikeHitFrame.spriteName;
+    /// <summary>命中帧在 Attack clip 中的时间（秒）；由关键帧推导，用作前摇/收尾的切分点。</summary>
+    public float StrikeHitTime => strikeHitFrame.hitTime;
     public event System.Action<CavalryEnemy> OnStateChanged;
     public string LastReason { get; private set; } = "";
 
     private Enemy _enemy;
+    private CavalryVisualController _visual;
     private Coroutine _cycleRoutine;
+
+    /// <summary>收尾阶段等待 Attack clip 播完的安全超时（秒），防止配置错误导致卡死。</summary>
+    private const float MaxAttackTailWait = 2f;
+
+    /// <summary>前摇结束后等待命中帧精灵上屏的最长时间（秒）；超时则按计时兜底结算。</summary>
+    private const float HitFrameGrace = 0.15f;
     private bool _mounted;
     private int _generation;
     private bool _damageCommitted;
@@ -88,6 +124,7 @@ public sealed class CavalryEnemy : MonoBehaviour
     private void Awake()
     {
         _enemy = GetComponent<Enemy>();
+        _visual = GetComponent<CavalryVisualController>();
     }
 
     /// <summary>每次从对象池取出时调用。Enemy.Initialize 会调用本方法。</summary>
@@ -99,6 +136,7 @@ public sealed class CavalryEnemy : MonoBehaviour
             _cycleRoutine = null;
         }
         _enemy ??= GetComponent<Enemy>();
+        _visual ??= GetComponent<CavalryVisualController>();
         EnemyManager.Instance?.columnManager?.ReleaseCavalrySlot(_enemy);
 
         _mounted = true;
@@ -334,6 +372,22 @@ public sealed class CavalryEnemy : MonoBehaviour
         }
         else if (!_damageCommitted)
         {
+            // 伤判：与 1011 同口径——等屏幕上真实显示命中帧精灵再结算；
+            // 精灵名缺失/与 clip 不符时最多等 HitFrameGrace，然后按计时兜底，避免卡死。
+            if (!IsStrikeHitSpriteShowing())
+            {
+                float grace = 0f;
+                while (!IsStrikeHitSpriteShowing() && grace < HitFrameGrace)
+                {
+                    if (OwnerGone || !_mounted) yield break;
+                    if (_enemy.IsHitStopped) { yield return null; continue; }
+                    grace += Time.deltaTime;
+                    yield return null;
+                }
+                if (!IsStrikeHitSpriteShowing())
+                    Diag("STRIKE_HIT_SPRITE_FALLBACK", $"declared={StrikeHitSpriteName} grace={grace:F3}s");
+            }
+
             // 阶段事件先将Animator采样到命中帧，随后仍由玩法提交唯一一次伤害。
             SetAnimationStage(AnimationStage.StrikeRecover);
             _damageCommitted = true;
@@ -353,6 +407,28 @@ public sealed class CavalryEnemy : MonoBehaviour
         }
         if (!OwnerGone)
             _enemy.transform.localPosition = origin;
+
+        // 攻击动作没演完就不进返航（strikeRecover 配得过短时在这里补足到尾帧）。
+        // 卡肉帧不推进计时；超时兜底避免配置错误导致卡死。
+        if (!OwnerGone && _mounted && _visual != null)
+        {
+            float waited = 0f;
+            while (_visual != null && !_visual.IsMountedAttackClipFinished && waited < MaxAttackTailWait)
+            {
+                if (OwnerGone || !_mounted) yield break;
+                if (_enemy.IsHitStopped) { yield return null; continue; }
+                waited += Time.deltaTime;
+                yield return null;
+            }
+        }
+    }
+
+    /// <summary>屏幕上当前是否正显示声明的命中帧精灵（与 Enemy.UpdateAttackHitFrames 同一口径）。</summary>
+    private bool IsStrikeHitSpriteShowing()
+    {
+        if (!HasStrikeHitFrame) return false;
+        if (_visual == null) _visual = GetComponent<CavalryVisualController>();
+        return _visual != null && _visual.IsSpriteShowing(StrikeHitSpriteName);
     }
 
     private void ResolveStrikeDamage(Enemy target)
@@ -383,7 +459,10 @@ public sealed class CavalryEnemy : MonoBehaviour
         _damageCommitted = true;
         if (_enemy != null && _mounted && _enemy.state != EnemyState.Dead)
         {
-            SetPhase(CavalryPhase.Retreating, "冲锋被打断，收招返航");
+            // 先进入Interrupted，避免从Charging瞬间广播一次Retreating并显示背向占位。
+            // OnInterruptingHit已设置相同视觉子阶段，这里不重播打断动画。
+            Phase = CavalryPhase.Retreating;
+            LastReason = "冲锋被打断，收招返航";
             SetAnimationStage(AnimationStage.Interrupted);
             Diag("RECOVERY_RETREAT", $"fromRow={_enemy.rowIndex} origin={_chargeOriginRow}");
             yield return RestoreVisualToRow(interruptRecover);
@@ -409,6 +488,23 @@ public sealed class CavalryEnemy : MonoBehaviour
         }
 
         SetPhase(CavalryPhase.Retreating, "返航");
+
+        // 转身动作要在后退之前完整演完：这里先原地等待，位置不动。
+        if (retreatTurnDuration > 0f)
+        {
+            Diag("RETREAT_TURN_START", $"duration={retreatTurnDuration:F2}");
+            float turnElapsed = 0f;
+            while (turnElapsed < retreatTurnDuration)
+            {
+                if (OwnerGone || !_mounted) yield break;
+                if (_enemy.IsHitStopped) { yield return null; continue; }
+                turnElapsed += Time.deltaTime;
+                yield return null;
+            }
+            if (OwnerGone || !_mounted) yield break;
+            Diag("RETREAT_TURN_END", "开始后退");
+        }
+
         var manager = EnemyManager.Instance?.columnManager;
         while (_enemy != null && _mounted && _enemy.state != EnemyState.Dead && _enemy.rowIndex < target)
         {
@@ -422,7 +518,7 @@ public sealed class CavalryEnemy : MonoBehaviour
             }
 
             Diag("RETREAT_STEP_START", $"nextRow={nextRow}");
-            yield return MoveVisualToRow(nextRow, generation);
+            yield return MoveVisualToRow(nextRow, generation, retreatStepDuration);
             if (OwnerGone)
             {
                 manager.ReleaseCavalrySlot(_enemy);
@@ -507,10 +603,16 @@ public sealed class CavalryEnemy : MonoBehaviour
 
     private IEnumerator MoveVisualToRow(int row, int generation)
     {
+        return MoveVisualToRow(row, generation, chargeStepDuration);
+    }
+
+    /// <summary>按指定时长把视觉位置移到目标排。冲锋用 ChargeStepDuration，返航用 RetreatStepDuration。</summary>
+    private IEnumerator MoveVisualToRow(int row, int generation, float stepDuration)
+    {
         if (_enemy == null) yield break;
         Vector3 start = _enemy.transform.localPosition;
         Vector3 end = _enemy.GetCavalryRowLocalPosition(row);
-        float duration = Mathf.Max(0.02f, _enemy.moveSpeed);
+        float duration = Mathf.Max(0.02f, stepDuration);
         float elapsed = 0f;
         while (elapsed < duration)
         {

@@ -58,8 +58,10 @@ public sealed class ParryVisualEffect : MonoBehaviour
 
         Quaternion guardWeaponRotation = guardRotation * Quaternion.Inverse(entryRotation);
 
+        var meshVisual = _weapon.GetComponent<MeshWeaponVisual>();
+        meshVisual?.SetSorting(2);
         Renderer weaponRenderer = _weapon.GetComponentInChildren<Renderer>();
-        if (weaponRenderer != null)
+        if (meshVisual == null && weaponRenderer != null)
             _weaponMaterial = weaponRenderer.material;
 
         float totalDuration = Mathf.Max(0.66f, config.parrySweepDuration * 2.4f);
@@ -88,7 +90,9 @@ public sealed class ParryVisualEffect : MonoBehaviour
         _sequence.Join(_weaponPivot.DOLocalRotate(entryRotation.eulerAngles, exitDuration, RotateMode.Fast)
             .SetEase(Ease.InCubic));
         _sequence.Join(_weapon.transform.DOScale(targetScale * 0.82f, exitDuration).SetEase(Ease.InQuad));
-        if (_weaponMaterial != null)
+        if (meshVisual != null)
+            _sequence.Join(DOTween.To(() => meshVisual.Alpha, meshVisual.SetAlpha, 0f, exitDuration).SetEase(Ease.InQuad));
+        else if (_weaponMaterial != null)
             _sequence.Join(_weaponMaterial.DOFade(0f, exitDuration).SetEase(Ease.InQuad));
 
         _sequence.OnKill(() =>

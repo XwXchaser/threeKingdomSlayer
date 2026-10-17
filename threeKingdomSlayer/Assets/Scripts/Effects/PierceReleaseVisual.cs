@@ -16,17 +16,28 @@ public sealed class PierceReleaseVisual : MonoBehaviour
     public static void Create(Sprite sprite, ChargeStabVisual chargeVisual, Vector3 fallbackPosition,
         Quaternion fallbackRotation, Vector3 fallbackScale, Vector3 projectileStartPosition,
         Quaternion projectileRotation, Vector3 projectileScale, float duration,
-        Action<PierceReleaseVisual> onRelease)
+        Action<PierceReleaseVisual> onRelease, GameObject weaponPrefab = null)
     {
         if (onRelease == null)
             return;
-        if (sprite == null)
+        bool meshWeapon = weaponPrefab != null && weaponPrefab.GetComponent<MeshWeaponVisual>() != null;
+        if (sprite == null && !meshWeapon)
         {
             onRelease(null);
             return;
         }
 
-        var root = new GameObject("Pierce_ReleaseVisual");
+        GameObject root = meshWeapon && chargeVisual != null ? chargeVisual.TakeMeshVisual() : null;
+        bool transferredCharge = root != null;
+        if (root == null) root = meshWeapon ? Instantiate(weaponPrefab) : new GameObject("Pierce_ReleaseVisual");
+        root.name = "Pierce_ReleaseVisual";
+        if (transferredCharge)
+        {
+            fallbackPosition = root.transform.position;
+            fallbackRotation = root.transform.rotation;
+            fallbackScale = root.transform.localScale;
+        }
+        foreach (var collider in root.GetComponentsInChildren<Collider>()) Destroy(collider);
         root.AddComponent<PierceReleaseVisual>().Initialize(sprite, chargeVisual, fallbackPosition,
             fallbackRotation, fallbackScale, projectileStartPosition, projectileRotation,
             projectileScale, Mathf.Max(duration, 0.01f), onRelease);
@@ -55,12 +66,21 @@ public sealed class PierceReleaseVisual : MonoBehaviour
         transform.SetPositionAndRotation(startPosition, startRotation);
         transform.localScale = startScale;
 
-        var renderer = gameObject.AddComponent<SpriteRenderer>();
-        renderer.sprite = sprite;
-        renderer.color = Color.white;
-        renderer.sortingLayerName = "Default";
-        renderer.sortingOrder = 2;
-        _spinVisual = PierceAxialSpinVisual.Create(transform, renderer);
+        var meshVisual = GetComponent<MeshWeaponVisual>();
+        if (meshVisual != null)
+        {
+            meshVisual.SetSorting(2);
+            _spinVisual = PierceAxialSpinVisual.CreateMesh(meshVisual);
+        }
+        else
+        {
+            var renderer = gameObject.AddComponent<SpriteRenderer>();
+            renderer.sprite = sprite;
+            renderer.color = Color.white;
+            renderer.sortingLayerName = "Default";
+            renderer.sortingOrder = 2;
+            _spinVisual = PierceAxialSpinVisual.Create(transform, renderer);
+        }
 
         // 射出方向（固定飞行轴）。蓄力→弹射轨迹严格沿此轴直线。
         Vector3 flightAxis = (projectileRotation * Vector3.up).normalized;
@@ -136,6 +156,7 @@ public sealed class PierceReleaseVisual : MonoBehaviour
 
     private void ApplyProjectileSorting()
     {
+        GetComponent<MeshWeaponVisual>()?.SetSorting(2);
         SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>(true);
         for (int i = 0; i < renderers.Length; i++)
         {

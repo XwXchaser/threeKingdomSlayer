@@ -8,6 +8,8 @@ aiEditMode: inherit
 
 # Stab 3D 长枪：现状交接 —— 骨骼绑定与物理效果工作入口
 
+> 后续更新：已实施六节红缨骨链、蒙皮和 Unity 实时动态；正式Battle的蓄力/Pierce/Slash/Launch/Parry以及104/107/108 QTE也已切到3D模型并完成基础流程检查。最新接线、验证与限制见 `plan/stab-3d-weapon-full-replacement-plan.md` 的阶段1/2实施记录。以下无骨骼/蒙皮/物理及剩余消费者阻塞等为历史状态。三个试验场景仍用旧蓄力枪；模型模糊和画风优化未完成，用户反馈回收时红缨乱晃已记录并暂缓。轴向已核实：保留Prefab根90°旋转时世界长轴为Z，根旋转identity时才为Y。
+
 ## 0. 这份文档的用途
 
 后续工作目标：**(a) 在 Blender 里给这杆枪绑定骨骼；(b) 在 Unity 或 Blender 里制作物理效果（红缨摆动、枪身动态）；(c) 完全替换原本的面片长枪 `Stab.prefab`。**

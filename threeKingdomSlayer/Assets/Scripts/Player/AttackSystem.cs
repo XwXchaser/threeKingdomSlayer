@@ -464,7 +464,8 @@ public class AttackSystem : MonoBehaviour
             cfg.stabVisualTargetRandomRadius,
             baseLength,
             GetAttackDuration(cfg), chargeInterrupt, cfg.hitReactionDirection,
-            false, StabMotionParams.FromConfig(cfg), startPose, _chargeStabVisual);
+            false, StabMotionParams.FromConfig(cfg), startPose, _chargeStabVisual,
+            enableWeaponAfterimage: true);
         AudioManager.Instance?.PostEvent("Player_Attack");
 
         Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 射程:{effectiveRows} 视觉射程:{visualRangeRows}");
@@ -501,7 +502,8 @@ public class AttackSystem : MonoBehaviour
             rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite,
             visualPathTilt: visualTilt,
             useEnhancedSlashMotion: true,
-            interruptsCavalryCharge: chargeInterrupt);
+            interruptsCavalryCharge: chargeInterrupt,
+            enableWeaponAfterimage: true);
         AudioManager.Instance?.PostEvent("Player_Attack");
 
         Debug.Log($"[AttackSystem] 斩击 方向:{(leftToRight ? "L→R" : "R→L")} 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -631,7 +633,7 @@ public class AttackSystem : MonoBehaviour
                 onHit: _ => AudioManager.Instance?.PostEvent("Stab_Hit"), timeScale: pierceTimeScale,
                 interruptsCavalryCharge: chargeInterrupt,
                 hitReactionDirection: cfg.hitReactionDirection);
-        });
+        }, weaponPrefab: cfg.attackWavePrefab);
 
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
         return true;
@@ -888,18 +890,22 @@ public class AttackSystem : MonoBehaviour
         Vector3 holdCenter = default;
         Quaternion holdRotation = default;
         Vector3 holdScale = default;
+        GameObject transferredWeapon = null;
         StabSweepEffect heldStab = _lastStabEffect;
         if (heldStab != null && heldStab.IsChargeHeld
             && heldStab.TryGetChargeHoldPose(out holdCenter, out holdRotation, out holdScale))
         {
             hasHoldPose = true;
-            heldStab.ReleaseAfterChargeHold();
+            bool meshWeapon = cfg.attackWavePrefab != null
+                && cfg.attackWavePrefab.GetComponent<MeshWeaponVisual>() != null;
+            if (meshWeapon) transferredWeapon = heldStab.TakeHeldMeshVisual();
+            if (transferredWeapon == null) heldStab.ReleaseAfterChargeHold();
             _lastStabEffect = null;
         }
 
         LaunchVisualEffect.Create(_launchSprite1, _launchSprite2, _launchSprite3, cfg, playerPos,
             _chargeStabVisual, LaunchVisualEffect.ObservationScale, onImpact,
-            hasHoldPose, holdCenter, holdRotation, holdScale, cfg.launchSkipWindup && hasHoldPose);
+            hasHoldPose, holdCenter, holdRotation, holdScale, cfg.launchSkipWindup && hasHoldPose, transferredWeapon);
     }
 
     /// <summary>

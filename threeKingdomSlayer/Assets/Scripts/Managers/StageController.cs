@@ -17,6 +17,8 @@ public class StageController : MonoBehaviour
     public bool autoStartStage = true;
     public RouteStageConfig routeStageConfig;
     public RouteStageConfigV2 routeStageConfigV2;
+    [Tooltip("卷轴/假移动路线关卡配置。为空时该流程不参与。")]
+    public FakeRouteStageConfig fakeRouteStageConfig;
 
     /// <summary>
     /// 待加载的线性关卡配置（MainMenu选关后设置）
@@ -69,13 +71,23 @@ public class StageController : MonoBehaviour
         Instance = this;
 
         // 从 MainMenu 传入的路线或线性关卡配置
-        if (RouteStageV2Launch.PendingConfig != null)
+        if (FakeRouteLaunch.PendingConfig != null)
+        {
+            fakeRouteStageConfig = FakeRouteLaunch.PendingConfig;
+            Debug.Log("[FakeRoute] launch stage=" + fakeRouteStageConfig.stageId);
+            FakeRouteLaunch.PendingConfig = null;
+            routeStageConfigV2 = null;
+            routeStageConfig = null;
+            stageConfig = null;
+        }
+        else if (RouteStageV2Launch.PendingConfig != null)
         {
             routeStageConfigV2 = RouteStageV2Launch.PendingConfig;
             Debug.Log("[RouteV2] launch mode=" + (RouteStageV2Launch.StartFromCheckpoint ? "checkpoint" : "new game") + " stage=" + routeStageConfigV2.stageId);
             RouteStageV2Launch.PendingConfig = null;
             routeStageConfig = null;
             stageConfig = null;
+            fakeRouteStageConfig = null;
         }
         else if (PendingRouteStageConfig != null)
         {
@@ -83,15 +95,21 @@ public class StageController : MonoBehaviour
             PendingRouteStageConfig = null;
             routeStageConfigV2 = null;
             stageConfig = null;
+            fakeRouteStageConfig = null;
         }
         else if (PendingStageConfig != null)
         {
             stageConfig = PendingStageConfig;
             PendingStageConfig = null;
             routeStageConfig = null;
+            fakeRouteStageConfig = null;
         }
 
-        if (routeStageConfig != null)
+        if (fakeRouteStageConfig != null)
+        {
+            Debug.Log($"[StageController] 加载卷轴路线关卡: {fakeRouteStageConfig.stageName} (stageId={fakeRouteStageConfig.stageId})");
+        }
+        else if (routeStageConfig != null)
         {
             Debug.Log($"[StageController] 加载路线关卡: {routeStageConfig.stageName} (stageId={routeStageConfig.stageId})");
         }
@@ -160,6 +178,22 @@ public class StageController : MonoBehaviour
     /// </summary>
     public void StartStage()
     {
+        if (fakeRouteStageConfig != null)
+        {
+            _routeStageSettled = false;
+            playerState?.ResetPlayer();
+            UltimateSystem.Instance?.ResetEnergy();
+            enemyManager?.ClearAllEnemies();
+            var fakeRuntime = FindObjectOfType<FakeRouteRuntime>();
+            if (fakeRuntime == null)
+            {
+                Debug.LogError("[StageController] 卷轴路线运行时缺失（FakeRouteRuntime）");
+                return;
+            }
+            fakeRuntime.Begin(fakeRouteStageConfig);
+            return;
+        }
+
         if (routeStageConfigV2 != null)
         {
             _routeStageSettled = false;
@@ -370,9 +404,17 @@ public class StageController : MonoBehaviour
     {
         if (currentState == StageState.Defeat || currentState == StageState.Victory) return;
 
-        var v2Runtime = FindObjectOfType<RouteStageRuntimeV2>();
-        if (v2Runtime != null)
-            v2Runtime.HandleStageDefeat();
+        var fakeRuntime = FindObjectOfType<FakeRouteRuntime>();
+        if (fakeRuntime != null)
+        {
+            fakeRuntime.HandleStageDefeat();
+        }
+        else
+        {
+            var v2Runtime = FindObjectOfType<RouteStageRuntimeV2>();
+            if (v2Runtime != null)
+                v2Runtime.HandleStageDefeat();
+        }
 
         // 取消待处理的选择完成回调（玩家已死，不再生成下一波）
         var ucm = UpgradeChoiceManager.Instance;
@@ -434,6 +476,10 @@ public class StageController : MonoBehaviour
 
     public void CleanupRouteStage(bool unloadScene)
     {
+        var fakeRuntime = FindObjectOfType<FakeRouteRuntime>();
+        if (fakeRuntime != null)
+            fakeRuntime.HandleStageDefeat();
+
         var runtimeV2 = FindObjectOfType<RouteStageRuntimeV2>();
         if (runtimeV2 != null)
             runtimeV2.CleanupRouteStage(unloadScene);
@@ -441,6 +487,17 @@ public class StageController : MonoBehaviour
 
     private IEnumerator RestartStageCoroutine()
     {
+        if (fakeRouteStageConfig != null)
+        {
+            // 卷轴路线重开：清场 → 重置玩家 → 重新 Begin；是否从存档点恢复由 FakeRouteLaunch.StartFromCheckpoint 决定。
+            enemyManager?.ClearAllEnemies();
+            enemyPool?.ClearAllPools();
+            playerState?.ResetPlayer();
+            yield return null;
+            StartStage();
+            yield break;
+        }
+
         Debug.Log("[RouteV2] RestartStage begin checkpointMode=" + RouteStageV2Launch.StartFromCheckpoint + " health=" + (playerState != null ? playerState.currentHealth.ToString("F1") : "NULL") + " level=" + (playerState != null ? playerState.currentLevel.ToString() : "NULL") + " upgrades=" + (playerState != null ? playerState.acquiredUpgrades.Count.ToString() : "NULL"));
         enemyManager?.ClearAllEnemies();
         enemyPool?.ClearAllPools();
@@ -502,6 +559,20 @@ public class StageController : MonoBehaviour
         UnityEngine.SceneManagement.SceneManager.LoadScene(battleSceneName);
     }
 
+    /// <summary>卷轴/假移动路线整关结算：整关奖励 + 标记通关 + 铜钱结算，只执行一次。</summary>
+    public void CompleteFakeRouteStage(int clearReward)
+    {
+        if (fakeRouteStageConfig == null || _routeStageSettled) return;
+        _routeStageSettled = true;
+        AudioManager.Instance?.StopBGM();
+        SetState(StageState.Victory);
+        ClearEnemyProjectiles();
+        if (clearReward > 0) playerState?.AddCoins(clearReward);
+        SaveManager.MarkStageCleared(fakeRouteStageConfig.stageId);
+        SettleCoins();
+        OnStageVictory?.Invoke();
+    }
+
     public void CompleteRouteStage(int clearReward)
     {
         if (!_routeBattleRuntime || _routeStageSettled) return;
@@ -534,8 +605,10 @@ public class StageController : MonoBehaviour
     public void SetRouteRewardWaitState()
     {
         _routeRewardWaiting = true;
-        // Keep death animation and delayed reward callbacks alive until departure.
+        // 奖励等待阶段：不再生成新波次，并取消正在播放的大招表现；
+        // 保留死亡动画与延迟奖励回调直到玩家离开本节点。
         waveSpawner?.StopSpawning();
+        UltimateSystem.Instance?.CancelUltimate();
     }
 
     public bool IsRouteRewardWaiting => _routeRewardWaiting;

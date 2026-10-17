@@ -177,7 +177,7 @@ MonoBehaviour:
   normalFormDamageReductionPercent: 0
   attackRange: 3
   moveSpeed: 0.2
-  visualYOffset: 0
+  visualYOffset: 0.26250008
   attackSequence:
   - isCAttack: 0
     animationTrigger: 

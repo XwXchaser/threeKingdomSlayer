@@ -41,6 +41,7 @@ public class AttackWave : MonoBehaviour
     private bool _travelCompleted;
     private float _targetDuration = -1f;
     private PierceAxialSpinVisual _pierceSpinVisual;
+    private MeshWeaponVisual _meshVisual;
     private PierceVortexStreamVisual _pierceVortexStream;
     private float _pierceTimeScale = 1f;
     private Vector3 _pierceEndPosition;
@@ -98,6 +99,7 @@ public class AttackWave : MonoBehaviour
         wave.hitReactionDirection = hitReactionDirection;
         wave.targetScale = visualObject.transform.localScale;
         wave._pierceSpinVisual = visualObject.GetComponent<PierceAxialSpinVisual>();
+        wave._meshVisual = visualObject.GetComponent<MeshWeaponVisual>();
         wave._pierceTimeScale = timeScale;
         wave._pierceEndPosition = endPosition;
         PierceAimIndicator indicator = PierceAimIndicator.Instance;
@@ -154,7 +156,8 @@ public class AttackWave : MonoBehaviour
         Material material = null;
         Color color;
 
-        if (materialOverride != null)
+        bool isMeshWeapon = prefab != null && prefab.GetComponent<MeshWeaponVisual>() != null;
+        if (materialOverride != null && !isMeshWeapon)
         {
             // 幻影材质路径：使用传入材质，仅叠加 alpha
             material = new Material(materialOverride);
@@ -164,8 +167,8 @@ public class AttackWave : MonoBehaviour
         }
         else
         {
-            color = colorOverride ?? GetColor(damageType);
-            color.a = alphaOverride ?? 1.0f;
+            color = materialOverride != null ? materialOverride.color : colorOverride ?? GetColor(damageType);
+            color.a = alphaOverride ?? (materialOverride != null ? materialOverride.color.a : 1f);
         }
 
         if (prefab != null)
@@ -175,7 +178,14 @@ public class AttackWave : MonoBehaviour
             obj = Object.Instantiate(prefab, spawnPos, prefab.transform.rotation);
             obj.name = shouldReturnWave ? $"ReturnWave_{damageType}" : $"Wave_{damageType}";
 
-            if (materialOverride != null)
+            if (isMeshWeapon)
+            {
+                var meshVisual = obj.GetComponent<MeshWeaponVisual>();
+                color = materialOverride != null ? materialOverride.color : shouldReturnWave ? color : Color.white;
+                color.a = alphaOverride ?? (materialOverride != null ? materialOverride.color.a : 1f);
+                meshVisual.SetTint(color);
+            }
+            else if (materialOverride != null)
             {
                 // 幻影材质：直接赋给 Renderer
                 Renderer r = obj.GetComponentInChildren<Renderer>();
@@ -221,6 +231,8 @@ public class AttackWave : MonoBehaviour
         wave._instanceId = obj.GetInstanceID();
         AliveCount++;
         wave.mat = material;
+        wave._meshVisual = obj.GetComponent<MeshWeaponVisual>();
+        wave._meshVisual?.SetAlpha(color.a);
         wave.damage = damage;
         wave.damageType = damageType;
         wave.onHit = onHit;
@@ -380,7 +392,7 @@ public class AttackWave : MonoBehaviour
         // 缩放淡入；Pierce 接管既有出手视觉时保持当前尺度，避免释放帧重新缩放。
         Tween scaleIn = null;
         bool reusePierceVisual = damageType == DamageType.Pierce && _pierceSpinVisual != null;
-        if (!reusePierceVisual)
+        if (!reusePierceVisual && _meshVisual == null)
         {
             transform.localScale = Vector3.zero;
             scaleIn = transform.DOScale(targetScale, 0.06f).SetEase(Ease.OutQuad);
@@ -389,9 +401,13 @@ public class AttackWave : MonoBehaviour
         {
             if (_pierceSpinVisual == null)
             {
-                SpriteRenderer pierceRenderer = GetComponentInChildren<SpriteRenderer>();
-                if (pierceRenderer != null)
-                    _pierceSpinVisual = PierceAxialSpinVisual.Create(pierceRenderer.transform, pierceRenderer);
+                if (_meshVisual != null) _pierceSpinVisual = PierceAxialSpinVisual.CreateMesh(_meshVisual);
+                else
+                {
+                    SpriteRenderer pierceRenderer = GetComponentInChildren<SpriteRenderer>();
+                    if (pierceRenderer != null)
+                        _pierceSpinVisual = PierceAxialSpinVisual.Create(pierceRenderer.transform, pierceRenderer);
+                }
             }
             _pierceSpinVisual?.SetSpinProfile(thrustTime, 420f, 1800f);
         }
@@ -439,7 +455,9 @@ public class AttackWave : MonoBehaviour
             // 回旋镖折返自旋：继续 ~4转/秒
             travelSeq.Join(transform.DORotate(new Vector3(90f, 1440f * returnTime, 0f), returnTime, RotateMode.FastBeyond360).SetEase(Ease.Linear));
 
-            if (mat != null)
+            if (_meshVisual != null)
+                travelSeq.Join(DOTween.To(() => _meshVisual.Alpha, _meshVisual.SetAlpha, 0f, returnTime).SetEase(Ease.InQuad));
+            else if (mat != null)
                 travelSeq.Join(mat.DOFade(0f, returnTime).SetEase(Ease.InQuad));
         }
         else if (shouldRetract)
@@ -448,7 +466,9 @@ public class AttackWave : MonoBehaviour
             var retract = transform.DOMoveZ(startZ, retractTime).SetEase(Ease.InQuad);
             travelSeq.Append(retract);
 
-            if (mat != null)
+            if (_meshVisual != null)
+                travelSeq.Join(DOTween.To(() => _meshVisual.Alpha, _meshVisual.SetAlpha, 0f, retractTime).SetEase(Ease.InQuad));
+            else if (mat != null)
                 travelSeq.Join(mat.DOFade(0f, retractTime).SetEase(Ease.InQuad));
         }
         else
@@ -460,7 +480,11 @@ public class AttackWave : MonoBehaviour
                 _pierceVortexStream?.StopEmission();
                 travelSeq.AppendCallback(() => _pierceSpinVisual?.BeginEndFade(0.35f));
             }
-            if (mat != null)
+            if (_meshVisual != null && damageType != DamageType.Pierce)
+                travelSeq.Append(DOTween.To(() => _meshVisual.Alpha, _meshVisual.SetAlpha, 0f, 0.35f));
+            else if (_meshVisual != null)
+                travelSeq.AppendInterval(0.35f);
+            else if (mat != null)
                 travelSeq.Append(mat.DOFade(0f, 0.35f).SetEase(Ease.InQuad));
         }
 
@@ -561,7 +585,11 @@ public class AttackWave : MonoBehaviour
     private void UpdateFixed()
     {
         float scaleDuration = 0.06f;
-        if (elapsed < scaleDuration)
+        if (_meshVisual != null)
+        {
+            transform.localScale = targetScale;
+        }
+        else if (elapsed < scaleDuration)
         {
             float t = elapsed / scaleDuration;
             t = t * t * (3f - 2f * t);
@@ -578,14 +606,15 @@ public class AttackWave : MonoBehaviour
             nextIndex++;
         }
 
-        if (elapsed >= fadeStartTime && mat != null)
+        if (elapsed >= fadeStartTime && (mat != null || _meshVisual != null))
         {
             float fadeDuration = lifetime - fadeStartTime;
             float alpha = fadeDuration > 0f ? 1f - (elapsed - fadeStartTime) / fadeDuration : 0f;
             alpha = Mathf.Clamp01(alpha);
             Color c = waveColor;
             c.a *= alpha;
-            mat.color = c;
+            if (_meshVisual != null) _meshVisual.SetAlpha(c.a);
+            else mat.color = c;
         }
 
         if (elapsed >= lifetime)
@@ -629,7 +658,10 @@ public class AttackWave : MonoBehaviour
     private System.Collections.IEnumerator HitStopRoutine(float duration)
     {
         travelSeq.Pause();
+        var dynamics = GetComponentInChildren<WeaponTasselDynamics>();
+        dynamics?.SetMotionPaused(true);
         yield return new WaitForSecondsRealtime(duration);
+        dynamics?.SetMotionPaused(false);
         if (travelSeq != null && travelSeq.IsActive())
             travelSeq.Play();
         _hitStopRoutine = null;
@@ -643,6 +675,7 @@ public class AttackWave : MonoBehaviour
             StopCoroutine(_hitStopRoutine);
             _hitStopRoutine = null;
         }
+        if (mat != null) Destroy(mat);
         AliveCount--;
         float alive = Time.unscaledTime - _creationTime;
         Debug.Log($"[AttackWave] OnDestroy: {gameObject.name}, mode={mode}, alive={alive:F2}s, frame={Time.frameCount}");

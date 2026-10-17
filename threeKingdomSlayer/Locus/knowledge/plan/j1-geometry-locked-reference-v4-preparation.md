@@ -156,4 +156,4 @@ Battle/Y均为Edit Mode、dirty=false，progress=0、right=false、root position
 
 ## 中断恢复后的后续准备
 
-v4拒绝状态、唯一一次请求和原PNG哈希已再次核对。后续已另建 `plan/j1-no-return-geometry-v5-preparation.md`，准备包在 `C:/Users/Administrator/Pictures/gptGen/j1_no_return_geometry_v5/`：用当前路线中心线及道路半宽生成解析道路带和等比例俯视拓扑，明确一次圆弧后固定世界−45°/+45°、向左右出画且不回正。v5完整中英文词、五图职责和max参数已落盘，远程请求0、未获新批准。v4原图未被复制进v5作为几何输入，正式Battle/Y及道路资源未改变。
+v4拒绝状态、唯一一次请求和原PNG哈希已再次核对。后续另建 `plan/j1-no-return-geometry-v5-preparation.md` 与 `C:/Users/Administrator/Pictures/gptGen/j1_no_return_geometry_v5/`，用当前路线中心线及道路半宽制作解析道路带和世界俯视拓扑。用户明确批准后，v5按五张参考图、完整双语提示词、max/high参数提交一次，HTTP200并保存PNG/请求/响应。候选完整解码，代理曾记录道路投影疑虑；用户随后认可v5整体构图，要求修正偏中世纪西幻的景物形制。当前后续范围为保留v5构图、恢复三国器物与材料；未重试、未部署。v4原图未作为v5几何输入，正式Battle/Y及道路资源未改变。

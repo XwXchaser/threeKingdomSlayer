@@ -190,6 +190,11 @@ Y Junction - select for preview
 - 小范围试摆后必须持续推进到有意义的一组，并明确“已保存/未保存”；不能只摆6株就宣称密度需求完成，也不能因画面不合格把全部草删除当作最终交付。
 - 先调整已有四种草图，不因部署失败自动再生新图；用户认可的密度要保留。
 
+#### 投影景物的左右朝向
+- **Scene 编辑画面与 Game 画面会因负 `scale.x` 而镜像**：路线 Shader 的投影分支用 `length()` 重建 XY（丢符号），而 Scene 编辑画面走非投影分支（保留符号）。所以「在场景里看是对称的、开游戏反了」不是错觉，也不是 `flipX` 调错。
+- **规则**：路线投影材质上的景物一律 `scale.x > 0`，左右朝向用 `flipX`。
+- 排查与验证方法（像素级双路径对比）、以及「`Renderer.bounds` 位移不等于画面位移」的坑，详见 `memory/unity-project-understanding/route-projection-shader-constraints.md`。
+
 #### 植物Y旋转与高度
 - 普通 `YScrollScenery.shader` 将景物顶点强制朝路线视图，可能忽略Transform自身旋转。先验证视觉效果，不以Inspector角度非零作为完成依据。
 - 当前草用独立 `YGrass.shader` + `YGrass.mat`，只为草处理相机朝向和作者Y偏转；不要修改共享树/建筑Shader。

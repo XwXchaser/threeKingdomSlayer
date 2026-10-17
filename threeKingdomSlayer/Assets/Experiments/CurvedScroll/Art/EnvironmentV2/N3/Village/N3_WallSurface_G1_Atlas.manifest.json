@@ -1,0 +1,59 @@
+{
+  "purpose": "Authoring provenance only; this manifest is not loaded at runtime.",
+  "accepted_source": "N3_WallSurface_G1_Source.png",
+  "source_sha256": "f845120da8b1e061d8626fe5992729b6cb88dfafdb3db8922ac78864600651c9",
+  "production_atlas": "N3_WallSurface_G1_Atlas.png",
+  "atlas_sha256": "7ab79b02103623dcaf88f2f460529118e3d439e99e1d4c444deabc32f6bc3393",
+  "size": [2048, 2048],
+  "coordinate_convention": "Top-left image origin; right and bottom exclusive. Material rectangle vectors use these coordinates; shader converts to bottom-left texture UV.",
+  "processing": "Crop safe source interiors at common 300 px/m, then resize uniformly 4/3 using nearest sampling to 400 px/m. Preserve source RGB; normalize only near-opaque source alpha250-254 to255. Add8px edge extrusion; remaining atlas pixels are fully transparent.",
+  "edge_extrusion_px": 8,
+  "faces": {
+    "side_a": {
+      "source_crop": [256, 305, 1456, 869],
+      "source_alpha_range": [250, 253],
+      "atlas_rect": [64, 64, 1664, 816],
+      "physical_size_m": [4, 1.88],
+      "mapping": "uv2.x>1 and uv2.y>1; local vertex.x<=0"
+    },
+    "side_b": {
+      "source_crop": [256, 1064, 1456, 1628],
+      "source_alpha_range": [250, 254],
+      "atlas_rect": [64, 912, 1664, 1664],
+      "physical_size_m": [4, 1.88],
+      "mapping": "uv2.x>1 and uv2.y>1; local vertex.x>0"
+    },
+    "top": {
+      "source_crop": [256, 1777, 1456, 1942],
+      "source_alpha_range": [250, 253],
+      "atlas_rect": [64, 1760, 1664, 1980],
+      "physical_size_m": [4, 0.55],
+      "mapping": "uv2.x>1 and uv2.y<=1"
+    },
+    "end": {
+      "source_crop": [1780, 305, 1945, 869],
+      "source_alpha_range": [250, 253],
+      "atlas_rect": [1760, 64, 1980, 816],
+      "physical_size_m": [0.55, 1.88],
+      "mapping": "uv2.x<=1; only authored capped wall ends have this face"
+    }
+  },
+  "material": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_StoneWall_Outline.mat",
+  "shader": "Assets/Experiments/CurvedScroll/Shaders/YVillageWallPrototype.shader",
+  "import": {
+    "type": "Default",
+    "filter": "Bilinear",
+    "wrap": "Clamp",
+    "mipmaps": false,
+    "compression": "Uncompressed",
+    "max_size": 2048,
+    "sRGB": true,
+    "alpha_source": "FromInput",
+    "alpha_is_transparency": false
+  },
+  "scene": "Assets/Experiments/CurvedScroll/YJunctionSample.unity",
+  "wall_group": "Y Junction - select for preview/N3 Village Rescue - Accepted Art and Grey Wall Study @ 266/Road Parallel Walls - Grey Black Outline",
+  "wall_segments": 12,
+  "geometry_modified": false,
+  "notes": "The opaque wall shader samples only explicit face rectangles, with half-texel bounds. Original uv0 still drives the accepted0.045m black edge outline. No alpha blending is used for the solid walls. Mat tint is white; existing vertex color shading is retained. Exact stone-by-stone cross-module seam matching is not claimed."
+}

@@ -483,7 +483,11 @@ public class BattleHUD : MonoBehaviour
         if (defeatPanel != null) defeatPanel.SetActive(false);
         if (_heroHUD != null) _heroHUD.gameObject.SetActive(true);
         SyncCurrentPlayerState();
-        RouteStageV2Launch.StartFromCheckpoint = true;
+        // 路线模式重开：从最近存档点恢复。卷轴/假移动路线与外层 V2 路线各自持有标志。
+        if (StageController.Instance != null && StageController.Instance.fakeRouteStageConfig != null)
+            FakeRouteLaunch.StartFromCheckpoint = true;
+        else
+            RouteStageV2Launch.StartFromCheckpoint = true;
         StageController.Instance?.RestartStage();
     }
 

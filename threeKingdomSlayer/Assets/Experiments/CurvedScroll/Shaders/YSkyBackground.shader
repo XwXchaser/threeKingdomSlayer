@@ -41,7 +41,11 @@ Shader "CurvedScroll/Y Sky Background"
                 #endif
                 float screenAspect=_ScreenParams.x/_ScreenParams.y;
                 float imageAspect=max(0.01,_ImageAspect);
-                float2 cover=float2(min(1,screenAspect/imageAspect),min(1,imageAspect/screenAspect));
+                // Horizontal may crop, vertical must not: the image always spans the full
+                // screen height so the visible content never changes with the aspect ratio.
+                // (Scaling the vertical axis, as min(1,imageAspect/screenAspect) did, made the
+                // image zoom in and crop top/bottom on screens wider than the image itself.)
+                float2 cover=float2(min(1,screenAspect/imageAspect),1);
                 o.uv=(v.uv-0.5)*cover+0.5;
                 // Sprite UVs are vertically oriented opposite to the screen-space quad.
                 // Flip here so the blue sky stays at the top and the warm haze remains at the horizon.

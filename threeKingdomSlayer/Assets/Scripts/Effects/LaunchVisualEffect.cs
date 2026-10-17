@@ -27,6 +27,9 @@ public sealed class LaunchVisualEffect : MonoBehaviour
     {
         if (config == null)
             return 0f;
+        var meshMotion = !config.launchSweepMode && config.attackWavePrefab != null
+            ? config.attackWavePrefab.GetComponent<MeshSpearLaunchMotion>() : null;
+        if (meshMotion != null) return meshMotion.Duration * ObservationScale;
         return (Mathf.Max(config.launchFlickDuration, 0.1f)
             + RecoveryHoldDuration + RecoveryRetractDuration) * ObservationScale;
     }
@@ -44,25 +47,48 @@ public sealed class LaunchVisualEffect : MonoBehaviour
         AttackSkillConfig config, Vector3 playerPosition, ChargeStabVisual chargeVisual,
         float durationScale, Action onImpact,
         bool hasExplicitPose = false, Vector3 explicitPosition = default, Quaternion explicitRotation = default,
-        Vector3 explicitScale = default, bool skipWindup = false)
+        Vector3 explicitScale = default, bool skipWindup = false, GameObject transferredWeapon = null)
     {
-        if (launchSprite1 == null)
+        bool meshWeapon = config != null && config.attackWavePrefab != null
+            && config.attackWavePrefab.GetComponent<MeshWeaponVisual>() != null;
+        if (launchSprite1 == null && !meshWeapon)
         {
             onImpact?.Invoke();
+            return;
+        }
+
+        if (meshWeapon && !config.launchSweepMode
+            && config.attackWavePrefab.GetComponent<MeshSpearLaunchMotion>() != null)
+        {
+            GameObject weapon = transferredWeapon;
+            if (weapon == null && chargeVisual != null) weapon = chargeVisual.TakeMeshVisual();
+            bool preservePose = weapon != null || hasExplicitPose;
+            if (weapon == null)
+            {
+                weapon = Instantiate(config.attackWavePrefab);
+                if (hasExplicitPose)
+                {
+                    weapon.transform.SetPositionAndRotation(explicitPosition, explicitRotation);
+                    if (explicitScale != Vector3.zero) weapon.transform.localScale = explicitScale;
+                }
+            }
+            weapon.name = "Launch_3DWeapon";
+            weapon.GetComponent<MeshSpearLaunchMotion>().Begin(playerPosition, preservePose,
+                durationScale, onImpact);
             return;
         }
 
         var root = new GameObject("Launch_Visual");
         root.AddComponent<LaunchVisualEffect>().Initialize(launchSprite1, launchSprite2, launchSprite3,
             config, playerPosition, chargeVisual, Mathf.Max(durationScale, 0.01f), onImpact,
-            hasExplicitPose, explicitPosition, explicitRotation, explicitScale, skipWindup);
+            hasExplicitPose, explicitPosition, explicitRotation, explicitScale, skipWindup, transferredWeapon);
     }
 
     private void Initialize(Sprite launchSprite1, Sprite launchSprite2, Sprite launchSprite3,
         AttackSkillConfig config, Vector3 playerPosition, ChargeStabVisual chargeVisual,
         float durationScale, Action onImpact,
         bool hasExplicitPose, Vector3 explicitPosition, Quaternion explicitRotation,
-        Vector3 explicitScale, bool skipWindup)
+        Vector3 explicitScale, bool skipWindup, GameObject transferredWeapon)
     {
         _onImpact = onImpact;
         _sweepMode = config.launchSweepMode;
@@ -84,6 +110,17 @@ public sealed class LaunchVisualEffect : MonoBehaviour
         bool useChargePose = chargeVisual != null
             && chargeVisual.TryGetCurrentVisualPose(out chargePosition, out chargeRotation, out chargeScale);
 
+        bool meshWeapon = config.attackWavePrefab != null
+            && config.attackWavePrefab.GetComponent<MeshWeaponVisual>() != null;
+        GameObject meshObject = transferredWeapon;
+        if (meshWeapon && meshObject == null && useChargePose)
+            meshObject = chargeVisual.TakeMeshVisual();
+        if (meshWeapon && meshObject == null) meshObject = Instantiate(config.attackWavePrefab);
+        var meshVisual = meshObject != null ? meshObject.GetComponent<MeshWeaponVisual>() : null;
+        // Keep the original 5/8 launch-to-prefab length ratio so prefab size tuning also affects Launch.
+        Vector3 defaultScale = meshVisual != null
+            ? meshObject.transform.localScale * (5f / 8f)
+            : ComputeDefaultScale(launchSprite1);
         Vector3 targetScale;
         bool hasStartPose = false;
         if (hasExplicitPose)
@@ -91,7 +128,7 @@ public sealed class LaunchVisualEffect : MonoBehaviour
             // 连段终结技：从上一段保持中的枪体姿态原地起手（位置=枪体中心、缩放=同一世界缩放，不位移）
             spawnPosition = explicitPosition;
             startRotation = explicitRotation;
-            targetScale = explicitScale != Vector3.zero ? explicitScale : ComputeDefaultScale(launchSprite1);
+            targetScale = explicitScale != Vector3.zero ? explicitScale : defaultScale;
             hasStartPose = true;
         }
         else if (useChargePose)
@@ -104,7 +141,7 @@ public sealed class LaunchVisualEffect : MonoBehaviour
         }
         else
         {
-            targetScale = ComputeDefaultScale(launchSprite1);
+            targetScale = defaultScale;
         }
 
         float sideRatio = 0f;
@@ -126,8 +163,17 @@ public sealed class LaunchVisualEffect : MonoBehaviour
         Vector3 cameraDown = -cameraUp;
         Vector3 cameraRight = mainCamera != null ? mainCamera.transform.right : Vector3.right;
 
-        float spriteHeight = launchSprite1.rect.height / launchSprite1.pixelsPerUnit;
-        float halfLength = spriteHeight * targetScale.y * 0.5f;
+        float halfLength;
+        if (meshVisual != null)
+        {
+            meshObject.transform.localScale = targetScale;
+            halfLength = meshVisual.Length * 0.5f;
+        }
+        else
+        {
+            float spriteHeight = launchSprite1.rect.height / launchSprite1.pixelsPerUnit;
+            halfLength = spriteHeight * targetScale.y * 0.5f;
+        }
         Vector3 gunUp = startRotation * Vector3.up;
         Vector3 gunTail = spawnPosition - gunUp * halfLength;
         // 支点距枪尾的比例：0 = 正好在枪尾（上挑读感最强，用户要求）；旧值 0.4 ≈ 距枪尾 20% 枪长
@@ -180,17 +226,29 @@ public sealed class LaunchVisualEffect : MonoBehaviour
         pivot.SetParent(transform, false);
         pivot.localRotation = startRotation;
 
-        var weapon = new GameObject("Launch_Weapon").transform;
+        var weapon = meshObject != null ? meshObject.transform : new GameObject("Launch_Weapon").transform;
+        weapon.name = "Launch_Weapon";
+        foreach (var collider in weapon.GetComponentsInChildren<Collider>()) Destroy(collider);
         weapon.SetParent(pivot, false);
         weapon.localPosition = Vector3.up * pivotArmLength;
+        weapon.localRotation = Quaternion.identity;
         weapon.localScale = targetScale;
 
-        var renderer = weapon.gameObject.AddComponent<SpriteRenderer>();
-        renderer.sprite = launchSprite1;
-        renderer.color = Color.white;
-        renderer.sortingLayerName = "Default";
-        renderer.sortingOrder = 2;
-        _motionBlur = new WeaponMotionBlurController(renderer, 1.2f, 0.09f, 56f);
+        SpriteRenderer renderer = null;
+        if (meshVisual != null)
+        {
+            meshVisual.SetSorting(2);
+            meshVisual.SetAlpha(1f);
+        }
+        else
+        {
+            renderer = weapon.gameObject.AddComponent<SpriteRenderer>();
+            renderer.sprite = launchSprite1;
+            renderer.color = Color.white;
+            renderer.sortingLayerName = "Default";
+            renderer.sortingOrder = 2;
+            _motionBlur = new WeaponMotionBlurController(renderer, 1.2f, 0.09f, 56f);
+        }
 
         float windupDuration = skipWindup ? 0f : Mathf.Clamp(config.launchWindupDuration, 0.06f,
             config.launchFlickDuration * 0.56f) * durationScale;
@@ -235,13 +293,13 @@ public sealed class LaunchVisualEffect : MonoBehaviour
 
         _sequence.InsertCallback(thrustStart, () =>
         {
-            if (launchSprite2 != null)
+            if (renderer != null && launchSprite2 != null)
                 renderer.sprite = launchSprite2;
             _motionBlur?.SetStrength(38f);
         });
         _sequence.InsertCallback(thrustStart + thrustDuration * 0.55f, () =>
         {
-            if (launchSprite3 != null)
+            if (renderer != null && launchSprite3 != null)
                 renderer.sprite = launchSprite3;
             _motionBlur?.SetStrength(30f);
         });
@@ -271,9 +329,12 @@ public sealed class LaunchVisualEffect : MonoBehaviour
             1f,
             retractDuration).SetEase(Ease.OutCubic);
         _sequence.Append(recoveryTween);
+        Tween fade = meshVisual != null
+            ? DOTween.To(() => meshVisual.Alpha, meshVisual.SetAlpha, 0f, retractDuration * 0.65f)
+            : renderer.DOFade(0f, retractDuration * 0.65f);
         _sequence.Join(DOTween.Sequence()
             .AppendInterval(retractDuration * 0.35f)
-            .Append(renderer.DOFade(0f, retractDuration * 0.65f).SetEase(Ease.InQuad)));
+            .Append(fade.SetEase(Ease.InQuad)));
         _sequence.Join(DOTween.To(() => 4f, value => _motionBlur?.SetStrength(value), 0f, retractDuration)
             .SetEase(Ease.InQuad));
 

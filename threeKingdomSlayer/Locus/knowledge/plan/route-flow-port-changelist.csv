@@ -1,0 +1,46 @@
+Phase,Category,Path,Change,Rollback,ConcurrencyRisk,Verification
+P0,基线,Library/Locus/tmp/route-port-baseline-status.txt,记录 git rev-parse HEAD 与 git status --porcelain 快照,删除该文件,无,文件存在且内容可读
+P0,基线,Library/Locus/tmp/route-port-baseline-hashes.txt,记录待改共享文件与资产的哈希,删除该文件,无,哈希清单覆盖全部待改路径
+P0,备份,Library/Locus/tmp/route-port-backup/,复制待改共享脚本与资产副本,删除目录,无,副本与源文件字节一致
+P1,新增,Assets/Scripts/Route/RouteChoiceLayout.cs,移植视频版 10 行 overrideDefault/anchoredPosition/rotation,删除该文件与 .meta,无,编译通过
+P1,新增,Assets/Scripts/Route/RouteChoicePanel.cs,移植 133 行 按出口动态生成按钮 父级取 BattleHUD(Canvas),同上,无,可在 BattleHUD(Canvas) 下实例化面板
+P1,新增,Assets/Scripts/Route/RouteChoiceButton.cs,移植 161 行 箭头 Icon + TMP Label + DOTween 指引动效,同上,无,点击回调返回 choiceId
+P1,新增,Assets/Prefabs/UI/RouteChoicePanel_Test.prefab,随 .meta 一起复制以保持 GUID,删除文件与 .meta,无,引用无 Missing
+P1,新增,Assets/Prefabs/UI/RouteChoiceButton_Test.prefab,同上,同上,无,引用无 Missing
+P1,新增,Assets/Sprites/UI/RouteChoiceArrow_Test.png,箭头图标随 .meta 复制,同上,无,布局窗口可载入该 sprite
+P1,新增,Assets/Scripts/RouteFake/Editor/FakeRouteChoiceLayoutWindow.cs,移植 220 行 布局拖拽授权窗口,同上,无,Tools/Fake Route/Choice Layout Preview 可打开
+P1,不动,Assets/Scenes/Battle.scene,仅编辑器内临时试摆 试后删除实例且不保存,确认 dirty=false,其他 agent 可能正在编辑该场景,场景 dirty 状态与开工前一致
+P2,新增,Assets/Scripts/RouteFake/IRouteMotionPresenter.cs,表现接口 PlayOpening/Play/PlayNodePresentation/SetNodeBackground/Skip/IsPlaying,删除文件与 .meta,无,编译通过
+P2,新增,Assets/Scripts/RouteFake/FakeRouteRuntime.cs,移植 623 行状态机并改 3 处 跑完本节点全部 Entry/拒绝回访/改用表现接口,删除文件与 .meta,无,6 节点流程程序化回归通过
+P2,新增,Assets/Scripts/Core/ScrollRoutePresenter.cs,卷轴表现实现 读 YScrollSample 与锚点距离 写 progress/right,删除文件与 .meta,无,旅行时长与落点与现 host 一致
+P2,新增,Assets/Scripts/RouteFake/FakeRouteLaunch.cs,移植 5 行静态入口 PendingConfig/StartFromCheckpoint,删除文件与 .meta,无,编译通过
+P2,禁改,Assets/Experiments/CurvedScroll/YJunctionSample.unity,新 Presenter 不改 Y 场景 对分支视觉组空引用容忍,无,其他 agent 正在改该场景,Play 中 progress 与分支视觉行为不变
+P2,禁改,Assets/Experiments/CurvedScroll/Scripts/YScrollSample.cs,不修改 Evaluate/Length/junction/radius/turnAngle,无,无,路线几何与时长基线不变
+P3,改造,Assets/Scripts/RouteFake/FakeRouteNodeConfig.cs,追加 entryDialogue/postBattleDialogue/postBattlePresentation/isFinalNode 并与 terminalPolicy 合并,从 P0 备份副本反向编辑,其他 agent 可能同时改 RouteFake,字段与设计一致且编译通过
+P3,改造,Assets/Scripts/RouteFake/FakeRouteChoiceConfig.cs,追加 RouteChoiceLayout layout 保留 FakeRouteTravelPresentation,同上,同上,layout 在出口资产上可见可编辑
+P3,改造,Assets/Scripts/RouteFake/FakeRouteStageConfig.cs,追加 openingTravel 并将 clearCoinReward 填真实值,同上,同上,开场旅行可配置
+P3,改造,Assets/Scripts/RouteFake/FakeRouteGraphValidator.cs,追加终点无出口/出口必须有表现/禁止指向已访问节点校验,同上,无,Validate Assets 全绿
+P3,改造,Assets/Scripts/RouteFake/FakeRouteStageSaveSnapshot.cs,追加 ultimateEnergy/killCount/coinCount 并将 choiceHistory 升级为结构化,同上,无,快照读写往返一致
+P3,重导,Assets/RouteData/ChangbanpoScroll,6 节点/5 出口/5 旅行资产按新字段重导,按备份副本恢复并 ImportAsset(ForceUpdate),其他 agent 可能改同批资产,引用无 Missing 且校验器通过
+P4,改造,Assets/Scripts/Managers/StageController.cs,新增 fakeRouteStageConfig 与 CompleteFakeRouteStage 与失败/重开 fake 分支,逐文件反向编辑 只撤销本方案新增分支,共享热路径文件,编译通过且普通关卡路径不变
+P4,改造,Assets/Scripts/Core/SaveManager.cs,新增 SetActiveFakeRouteStage/GetActiveFakeRouteStageId/ClearActiveFakeRouteStage,同上,同上,既有存档字段不受影响
+P4,改造,Assets/Scripts/Core/UltimateSystem.cs,新增 SetEnergyForRouteRestore/CancelUltimate 与 _activeEffect 跟踪,同上,触碰 ActivateUltimate 热路径,单独冒烟大招释放与取消
+P4,改造,Assets/Scripts/Core/UltimateEffect.cs,新增 virtual Cancel 空实现,删除该方法,无,编译通过
+P4,改造,Assets/Scripts/UI/DialogueManager.cs,新增 IsBusy 与 QueueEventAndNotify,同上,无,节点对话可排队并等待结束
+P4,改造,Assets/Scripts/Core/StageConfigManager.cs,新增 fakeRouteStages 列表并保留 routeStagesV2,同上,无,列表为空时行为不变
+P4,改造,Assets/Scripts/UI/MainMenuUI.cs,新增 FakeRoute 选关与新游戏/继续入口,同上,共享 UI 文件,列表为空时界面不变
+P4,禁改,Assets/Scripts/Core/SpikeTrapController.cs,本轮不按视频版重写 沿用 SetRouteVisibility 路线开关,无,无,旅行阶段地刺仍隐藏
+P4,禁改,Assets/Scripts/Core/TimedPassiveModule.cs,保留本分支诊断日志,无,无,非战斗阶段计时被动不推进
+P5,场景新增,Assets/Scenes/Battle.scene/Route Flow (Fake),挂 FakeRouteRuntime 与 ScrollRoutePresenter 并填引用,删除该对象及其组件,共享场景文件,新流程闭环 N1-E0-J1 可走通
+P5,场景停用,Assets/Scenes/Battle.scene/Battle Y Route Host,SetActive(false) 不删除对象,重新 SetActive(true),同上,旧流程可一键切回
+P5,场景保留,Assets/Scenes/Battle.scene/RouteStageRuntimeV2 与 RouteStageTargetsV2,保持 enabled=false,无,同上,V2 不参与运行
+P5,场景改造,Assets/Scenes/MainMenu.scene 的 StageConfigManager.fakeRouteStages,填入 FakeRoute 关卡配置,清空该列表,共享场景文件,选关与继续可进入正式流程
+P5,保留,Assets/Scripts/Core/BattleYRouteHost.cs,不删除 删除会连带 YScrollSample.battleHost 编译失败,无,无,编译通过
+P5,保留,Assets/Scripts/Core/BattleYVisualBridge.cs,不删除 仅被 host 引用,无,无,编译通过
+P5,禁改,Assets/Experiments/CurvedScroll/YJunctionSample.unity,本轮不补分支视觉组接线,无,其他 agent 正在改,Presenter 空引用容忍
+全局,禁改,Assets/Scenes/Battle.scene 的 Main Camera/Player/Enemies 与战斗坐标,路线表现不得移动战斗坐标,无,无,像素对照与战斗坐标哈希不变
+P6,待确认,Assets/Scripts/RouteFake/FakeRouteStageConfig.cs,内嵌声明 Serializable FakeRouteChoiceConfig 并加入 layout,恢复该文件备份,共享 SO 脚本,编译通过且运行器可读内嵌出口
+P6,待确认,Assets/RouteData/ChangbanpoScroll/Nodes,5 条出口数据迁入 6 个节点资产的 outgoingChoices,恢复节点资产备份,其他 agent 可能改同批资产,校验器全绿且出口目标与旅行资产引用不变
+P6,待确认,Assets/RouteData/ChangbanpoScroll/Choices,删除 5 个出口资产与 .meta,恢复 5 个资产与 .meta,同上,先清空 host 两个字段后场景无 Missing
+P6,待确认,Assets/Scripts/RouteFake/FakeRouteChoiceConfig.cs,删除 ScriptableObject 资产版（改为内嵌类）,恢复该文件与 .meta,无,编译通过
+P5.1,已实施,Assets/Experiments/CurvedScroll/Shaders/YSkyBackground.shader,"cover.y 由 min(1,imageAspect/screenAspect) 改为恒 1：横向仍按比例裁切、纵向永不裁切，使任何比例下内容一致只裁切",还原该文件备份,低（仅 Y 场景天空材质使用该 shader）,同帧多比例 RT 对比：0.450/0.500/0.5625/0.750 四档天空结束行均为 16.9%（修复前 0.750 为 12.8%）；真机验收正常

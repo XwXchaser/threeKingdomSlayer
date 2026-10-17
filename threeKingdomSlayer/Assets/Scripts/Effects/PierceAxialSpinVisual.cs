@@ -3,6 +3,7 @@ using UnityEngine;
 public sealed class PierceAxialSpinVisual : MonoBehaviour
 {
     private Transform _spinPivot;
+    private MeshWeaponVisual _meshVisual;
     private SpriteRenderer _planeA;
     private SpriteRenderer _planeB;
     private Color _baseColor;
@@ -14,6 +15,7 @@ public sealed class PierceAxialSpinVisual : MonoBehaviour
     private float _fade = 1f;
     private float _endFadeElapsed;
     private float _endFadeDuration;
+    private float _endFadeStart = 1f;
     private bool _endFading;
     private bool _flightBlurEnabled;
     private Vector3 _flightDirection;
@@ -29,6 +31,20 @@ public sealed class PierceAxialSpinVisual : MonoBehaviour
         sourceRenderer.enabled = false;
         var controller = root.gameObject.AddComponent<PierceAxialSpinVisual>();
         controller.Initialize(sourceRenderer);
+        return controller;
+    }
+
+    public static PierceAxialSpinVisual CreateMesh(MeshWeaponVisual visual)
+    {
+        if (visual == null || visual.ModelRoot == null) return null;
+        var existing = visual.GetComponent<PierceAxialSpinVisual>();
+        if (existing != null) return existing;
+        var controller = visual.gameObject.AddComponent<PierceAxialSpinVisual>();
+        controller._meshVisual = visual;
+        // Pivot is centred on the weapon; ModelRoot's centring offset stays beneath it.
+        controller._spinPivot = new GameObject("Pierce_MeshSpinPivot").transform;
+        controller._spinPivot.SetParent(visual.transform, false);
+        visual.ModelRoot.SetParent(controller._spinPivot, false);
         return controller;
     }
 
@@ -75,6 +91,8 @@ public sealed class PierceAxialSpinVisual : MonoBehaviour
         _flightDirection = worldDirection.sqrMagnitude > 0.0001f
             ? worldDirection.normalized
             : Vector3.forward;
+        // Mesh motion blur is a separate production stage; never build crossed sprite planes.
+        if (_meshVisual != null) return;
         _blurA ??= new WeaponMotionBlurController(_planeA, 0.75f, 0.012f, 24f);
         _blurB ??= new WeaponMotionBlurController(_planeB, 0.75f, 0.012f, 24f);
         _blurA.ResetSampleWorld(_planeA.transform.position, _planeA.transform.rotation);
@@ -88,6 +106,7 @@ public sealed class PierceAxialSpinVisual : MonoBehaviour
     public void SetFade(float fade)
     {
         _fade = Mathf.Clamp01(fade);
+        _meshVisual?.SetAlpha(_fade);
         UpdatePlaneAlpha();
         _vortexVisual?.SetFade(_fade);
     }
@@ -100,6 +119,7 @@ public sealed class PierceAxialSpinVisual : MonoBehaviour
         _endFading = true;
         _endFadeElapsed = 0f;
         _endFadeDuration = Mathf.Max(duration, 0.001f);
+        _endFadeStart = _meshVisual != null ? _meshVisual.Alpha : _fade;
         _vortexVisual?.StopAfterimages();
     }
 
@@ -125,7 +145,7 @@ public sealed class PierceAxialSpinVisual : MonoBehaviour
         if (_endFading)
         {
             _endFadeElapsed += Time.deltaTime;
-            SetFade(1f - Mathf.Clamp01(_endFadeElapsed / _endFadeDuration));
+            SetFade(_endFadeStart * (1f - Mathf.Clamp01(_endFadeElapsed / _endFadeDuration)));
             if (_endFadeElapsed >= _endFadeDuration)
             {
                 _blurA?.SetStrength(0f);

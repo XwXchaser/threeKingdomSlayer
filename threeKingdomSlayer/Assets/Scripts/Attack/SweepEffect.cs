@@ -41,6 +41,8 @@ public class SweepEffect : MonoBehaviour
     private float _creationTime;
     private int _instanceId;
     private bool _completed;
+    private MeshWeaponMangaSweep mangaSweep;
+    private MeshWeaponAfterimage afterimage;
     public static int AliveCount { get; private set; }
     public float CreationTime => _creationTime;
     public DamageType DamageType => damageType;
@@ -53,7 +55,8 @@ public class SweepEffect : MonoBehaviour
         Sprite rotateSprite1 = null, Sprite rotateSprite2 = null, float angleOffset = 0f, float movementTilt = 0f,
         float additionalWeaponRotation = 0f, bool useEnhancedSlashMotion = false, float visualPathTilt = 0f,
         bool interruptsCavalryCharge = false, HitReactionDirection hitReactionDirection = HitReactionDirection.None,
-        bool suppressHitReaction = false)
+        bool suppressHitReaction = false, bool enableMangaSweep = false,
+        bool enableWeaponAfterimage = false)
     {
         float startX = leftToRight ? -halfWidth : halfWidth;
         float endX = leftToRight ? halfWidth : -halfWidth;
@@ -70,7 +73,8 @@ public class SweepEffect : MonoBehaviour
         Material material = null;
         Color color;
 
-        if (materialOverride != null)
+        bool isMeshWeapon = prefab != null && prefab.GetComponent<MeshWeaponVisual>() != null;
+        if (materialOverride != null && !isMeshWeapon)
         {
             material = new Material(materialOverride);
             color = material.color;
@@ -79,8 +83,8 @@ public class SweepEffect : MonoBehaviour
         }
         else
         {
-            color = GetSlashColor(damageType);
-            color.a = alphaOverride ?? 1.0f;
+            color = materialOverride != null ? materialOverride.color : GetSlashColor(damageType);
+            color.a = alphaOverride ?? (materialOverride != null ? materialOverride.color.a : 1f);
         }
 
         if (prefab != null)
@@ -88,7 +92,13 @@ public class SweepEffect : MonoBehaviour
             obj = Object.Instantiate(prefab, spawnPos, prefab.transform.rotation);
             obj.name = $"Slash_{damageType}";
 
-            if (materialOverride != null)
+            if (isMeshWeapon)
+            {
+                color = materialOverride != null ? materialOverride.color : Color.white;
+                color.a = alphaOverride ?? (materialOverride != null ? materialOverride.color.a : 1f);
+                obj.GetComponent<MeshWeaponVisual>().SetTint(color);
+            }
+            else if (materialOverride != null)
             {
                 Renderer r = obj.GetComponentInChildren<Renderer>();
                 if (r != null) { r.material = material; }
@@ -129,8 +139,13 @@ public class SweepEffect : MonoBehaviour
             }
         }
 
+        var meshVisual = obj.GetComponent<MeshWeaponVisual>();
+        meshVisual?.SetSorting(2);
+        meshVisual?.SetAlpha(color.a);
+        foreach (var collider in obj.GetComponentsInChildren<Collider>()) Destroy(collider);
+        // Mesh orientation follows the swing; negative scale would invert winding and skinning.
         // L→R 时翻转 prefab X 使枪头朝向运动方向（必须在视觉分层前做）
-        if (leftToRight)
+        if (leftToRight && meshVisual == null)
         {
             Vector3 s = obj.transform.localScale;
             s.x = -Mathf.Abs(s.x);
@@ -175,7 +190,9 @@ public class SweepEffect : MonoBehaviour
         effect.hitReactionDirection = hitReactionDirection;
         effect.suppressHitReaction = suppressHitReaction;
         effect.onAllHit = onAllHit;
-        if (useEnhancedSlashMotion)
+        effect.mangaSweep = enableMangaSweep ? obj.GetComponentInChildren<MeshWeaponMangaSweep>(true) : null;
+        effect.afterimage = enableWeaponAfterimage ? obj.GetComponentInChildren<MeshWeaponAfterimage>(true) : null;
+        if (useEnhancedSlashMotion && meshVisual == null)
         {
             var blurRenderer = visualTransform.GetComponentInChildren<SpriteRenderer>();
             effect.motionBlur = blurRenderer != null
@@ -196,18 +213,41 @@ public class SweepEffect : MonoBehaviour
             effect.targets.Add(new TargetEntry { enemy = enemy, xThreshold = enemy.transform.position.x });
 
         Vector3 targetScale = useEnhancedSlashMotion ? visualTransform.localScale : obj.transform.localScale;
-        if (useEnhancedSlashMotion)
-            visualTransform.localScale = Vector3.zero;
-        else
-            obj.transform.localScale = Vector3.zero;
-        float scaleInDuration = useEnhancedSlashMotion ? 0.02f : 0.05f;
-        Tween scaleIn = useEnhancedSlashMotion
-            ? visualTransform.DOScale(targetScale, scaleInDuration).SetTarget(visualTransform).SetEase(Ease.OutQuad)
-            : obj.transform.DOScale(targetScale, scaleInDuration).SetTarget(obj.transform).SetEase(Ease.OutQuad);
+        Tween scaleIn = null;
+        if (meshVisual == null)
+        {
+            if (useEnhancedSlashMotion) visualTransform.localScale = Vector3.zero;
+            else obj.transform.localScale = Vector3.zero;
+            float scaleInDuration = useEnhancedSlashMotion ? 0.02f : 0.05f;
+            scaleIn = useEnhancedSlashMotion
+                ? visualTransform.DOScale(targetScale, scaleInDuration).SetTarget(visualTransform).SetEase(Ease.OutQuad)
+                : obj.transform.DOScale(targetScale, scaleInDuration).SetTarget(obj.transform).SetEase(Ease.OutQuad);
+        }
 
         Vector3 initEuler = obj.transform.eulerAngles;
         obj.transform.eulerAngles = new Vector3(initEuler.x, initEuler.y, initEuler.z + startAngle);
         Vector3 targetEuler = new Vector3(initEuler.x, initEuler.y, initEuler.z + endAngle);
+
+        if (effect.mangaSweep != null)
+        {
+            effect.mangaSweep.Begin(obj.transform, leftToRight, meshVisual);
+            if (effect.mangaSweep.IsRunning)
+            {
+                MeshWeaponTrail tipTrail = obj.GetComponentInChildren<MeshWeaponTrail>(true);
+                if (effect.mangaSweep.ReplaceTipTrail && tipTrail != null)
+                    tipTrail.enabled = false;
+            }
+        }
+
+        if (effect.afterimage != null)
+        {
+            effect.afterimage.Begin(meshVisual);
+            if (effect.afterimage.IsRunning && effect.afterimage.ReplaceTipTrail)
+            {
+                MeshWeaponTrail tipTrail = obj.GetComponentInChildren<MeshWeaponTrail>(true);
+                if (tipTrail != null) tipTrail.enabled = false;
+            }
+        }
 
         effect.seq = DOTween.Sequence();
         effect.seq.SetTarget(obj.transform);
@@ -248,7 +288,13 @@ public class SweepEffect : MonoBehaviour
             move.OnUpdate(() =>
             {
                 effect.UpdateMotionBlur(1f);
+                effect.mangaSweep?.SetProgress(move.ElapsedPercentage());
                 effect.CheckHitThresholds();
+            });
+            move.OnComplete(() =>
+            {
+                effect.mangaSweep?.EndEmission();
+                effect.afterimage?.EndEmission();
             });
             effect.seq.Append(move);
             effect.seq.Join(visualPathMove);
@@ -272,7 +318,9 @@ public class SweepEffect : MonoBehaviour
                 visualBasePosition + Vector3.right * inertiaOffset, inertiaDuration)
                 .SetEase(Ease.OutCubic));
 
-            if (material != null)
+            if (meshVisual != null)
+                effect.seq.Append(DOTween.To(() => meshVisual.Alpha, meshVisual.SetAlpha, 0f, fadeDuration).SetEase(Ease.InQuad));
+            else if (material != null)
                 effect.seq.Append(material.DOFade(0f, fadeDuration).SetEase(Ease.InQuad));
             else
                 effect.seq.AppendInterval(fadeDuration);
@@ -286,13 +334,24 @@ public class SweepEffect : MonoBehaviour
             move.OnUpdate(() =>
             {
                 effect.UpdateMotionBlur(1f);
+                effect.mangaSweep?.SetProgress(move.ElapsedPercentage());
                 effect.CheckHitThresholds();
+            });
+            move.OnComplete(() =>
+            {
+                effect.mangaSweep?.EndEmission();
+                effect.afterimage?.EndEmission();
             });
             effect.seq.Append(move);
             effect.seq.Join(obj.transform.DORotate(targetEuler, duration, RotateMode.Fast)
                 .SetEase(Ease.InOutQuad));
 
-            if (material != null)
+            if (meshVisual != null)
+            {
+                effect.seq.AppendInterval(0.03f);
+                effect.seq.Append(DOTween.To(() => meshVisual.Alpha, meshVisual.SetAlpha, 0f, 0.25f).SetEase(Ease.InQuad));
+            }
+            else if (material != null)
             {
                 effect.seq.AppendInterval(0.03f);
                 effect.seq.Append(material.DOFade(0f, 0.25f).SetEase(Ease.InQuad));
@@ -300,7 +359,7 @@ public class SweepEffect : MonoBehaviour
         }
 
         // Stab sprite 三帧动画：stab → rotate1 → rotate2
-        if (rotateSprite1 != null && rotateSprite2 != null)
+        if (meshVisual == null && rotateSprite1 != null && rotateSprite2 != null)
         {
             SpriteRenderer sr = visualTransform.GetComponentInChildren<SpriteRenderer>();
             if (sr != null)
@@ -318,7 +377,7 @@ public class SweepEffect : MonoBehaviour
             {
                 Debug.Log($"[SweepEffect] OnKill (premature): id={effect._instanceId}, name={effect.gameObject.name}, damageType={effect.damageType}, frame={Time.frameCount}");
                 effect.seq = null;
-                scaleIn.Kill();
+                scaleIn?.Kill();
                 Destroy(effect.gameObject);
             }
         });
@@ -332,7 +391,7 @@ public class SweepEffect : MonoBehaviour
             }
             effect._completed = true;
             effect.seq = null;
-            scaleIn.Kill();
+            scaleIn?.Kill();
             Destroy(effect.gameObject);
         });
 
@@ -419,7 +478,14 @@ public class SweepEffect : MonoBehaviour
     private System.Collections.IEnumerator HitStopRoutine(float duration)
     {
         seq.Pause();
+        mangaSweep?.SetPaused(true);
+        afterimage?.SetPaused(true);
+        var dynamics = GetComponentInChildren<WeaponTasselDynamics>();
+        dynamics?.SetMotionPaused(true);
         yield return new WaitForSecondsRealtime(duration);
+        dynamics?.SetMotionPaused(false);
+        mangaSweep?.SetPaused(false);
+        afterimage?.SetPaused(false);
         if (seq != null && seq.IsActive())
             seq.Play();
         _hitStopRoutine = null;
@@ -438,6 +504,9 @@ public class SweepEffect : MonoBehaviour
             visualPathTransform.DOKill();
         transform.DOKill();
         motionBlur?.Dispose();
+        if (mangaSweep != null) mangaSweep.Clear();
+        if (afterimage != null) afterimage.Clear();
+        if (mat != null) Destroy(mat);
         AliveCount--;
         float alive = Time.unscaledTime - _creationTime;
         Debug.Log($"[SweepEffect] OnDestroy: {gameObject.name}, alive={alive:F2}s, frame={Time.frameCount}");

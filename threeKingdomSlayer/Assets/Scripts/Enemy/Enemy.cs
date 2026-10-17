@@ -135,8 +135,14 @@ public class Enemy : MonoBehaviour
     public float moveSpeed = 1f;
 
     [Header("视觉偏移")]
-    [Tooltip("精灵 Y 轴偏移量，用于补偿精灵锚点不在底部导致的脚底不对齐。半高 = 精灵高度(px) / PPU / 2")]
+    [Tooltip("美术基准偏移（Inspector 手工值）。精灵锚点在画布中心，此值把脚下移到地面基准线；对齐 -1.8 时取值见 EnemyGroundAligner。")]
     public float visualYOffset = 0f;
+
+    /// <summary>
+    /// 运行时按真实精灵剪影推算出的偏移（由 EnemyGroundAligner 写入，不序列化）。
+    /// 与 visualYOffset 相加，使二者互不覆盖：美术基准可继续手调，自动对齐单独生效。
+    /// </summary>
+    [System.NonSerialized] public float runtimeVisualYOffset;
 
     [Header("攻击序列")]
     [Tooltip("攻击序列（按顺序循环执行每步攻击）")]
@@ -351,6 +357,22 @@ public class Enemy : MonoBehaviour
     // DOTween: 前进补齐时 Y 轴弹跳偏移（由 DOTween 驱动，在 UpdateWorldPosition 中应用）
     private float bounceYOffset;
 
+    /// <summary>当前生效的脚底视觉偏移（美术基准 + 运行时自动对齐）。</summary>
+    public float EffectiveVisualYOffset => visualYOffset + runtimeVisualYOffset;
+
+    /// <summary>
+    /// 立即按当前生效偏移重算世界位置。
+    /// 供 EnemyGroundAligner 在运行时写入 runtimeVisualYOffset 后调用，避免等到下一帧。
+    /// 未初始化、击飞、死亡时不干预：这些状态下位置由 Enemy 自身时序或外部接管，
+    /// 此时 runtimeVisualYOffset 已写入，会在下一次正常更新时生效。
+    /// </summary>
+    public void ApplyVisualOffsetNow()
+    {
+        if (!initialized) return;
+        if (state == EnemyState.Launched || state == EnemyState.Dead) return;
+        UpdateWorldPosition();
+    }
+
     // DOTween: 当前攻击动画序列（用于在 Die() 中取消正在执行的攻击动作）
     private Sequence _attackTween;
     // 命中帧：声明后出伤时刻由屏幕上的命中帧精灵决定（见 UpdateAttackHitFrames）
@@ -399,6 +421,16 @@ public class Enemy : MonoBehaviour
     public System.Action<Enemy> OnDying;
     public System.Action<Enemy> OnDeath;
     public System.Action<Enemy> OnDeathAnimComplete; // 死亡动画播放完毕（Boss锦囊触发时机）
+
+    /// <summary>当前排位对应的视觉不透明度（供独立死亡视觉等外部演出对齐，与 UpdateAlpha 同一套策略）。</summary>
+    public float CurrentVisualAlpha => GetAlphaForRow(rowIndex);
+
+    /// <summary>
+    /// 自定义死亡视觉接管点（可选）。同 Prefab 上的视觉组件在 OnEnable 注册、OnDisable 注销；
+    /// 返回 true 表示由它接管非击飞死亡演出，Enemy 不再启动 DeathBounceAndFall（根弹起＋随机旋转＋掉落）。
+    /// 接管方在演出结束时必须调用 <see cref="CompleteCustomDeathVisualSequence"/> 完成收尾与回收。
+    /// </summary>
+    [System.NonSerialized] public System.Func<Enemy, bool> CustomDeathVisualHandler;
     public System.Action<Enemy> OnDamageTaken;
     public System.Action<Enemy, float, float> OnHealthChanged; // enemy, current, max
     public System.Action<Enemy, float, float> OnPoiseChanged;  // enemy, current, max
@@ -3053,10 +3085,35 @@ private void SpawnProjectile()
         transform.DOKill();
 
         // 启动死亡动效协程（弹起 + 旋转 + 重力掉落，纯视觉表现）
-        if (wasLaunched)
+        // 骑兵类（109）的非击飞死亡改由专用视觉组件接管：骑手摔落→战马逃跑，不能再叠加根弹起/旋转。
+        bool customDeathVisual = !wasLaunched
+            && CustomDeathVisualHandler != null
+            && CustomDeathVisualHandler(this);
+
+        if (customDeathVisual)
+        {
+            // 演出与回收由接管方负责，结束时调用 CompleteCustomDeathVisualSequence()。
+        }
+        else if (wasLaunched)
             StartCoroutine(LaunchDeathEffect());
         else
             StartCoroutine(DeathBounceAndFall());
+    }
+
+    /// <summary>
+    /// 自定义死亡视觉演出结束：与 DeathBounceAndFall 的收尾一致（还原姿态 → OnDeathAnimComplete → 回对象池）。
+    /// 只能由通过 <see cref="CustomDeathVisualHandler"/> 接管演出的组件调用。
+    /// </summary>
+    public void CompleteCustomDeathVisualSequence()
+    {
+        if (state != EnemyState.Dead) return;
+
+        transform.localScale = originalScale;
+        transform.localRotation = originalRotation;
+
+        OnDeathAnimComplete?.Invoke(this);
+
+        EnemyPool.Instance?.ReturnEnemy(this);
     }
 
     /// <summary>
@@ -3623,7 +3680,7 @@ private void SpawnProjectile()
         // 你可以在场景中创建一个空的 Enemies GameObject 作为父节点，
         // 然后调整父节点的 Transform Position 来整体移动所有敌人的位置
         // DOTween: 前进补齐时 Y 轴弹跳由 bounceYOffset 驱动（非补齐移动时 bounceYOffset = 0）
-        transform.localPosition = new Vector3(xPos, bounceYOffset + visualYOffset, zPos);
+        transform.localPosition = new Vector3(xPos, bounceYOffset + EffectiveVisualYOffset, zPos);
     }
 
     /// <summary>

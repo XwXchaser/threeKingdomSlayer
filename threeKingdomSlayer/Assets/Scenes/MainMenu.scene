@@ -1658,8 +1658,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   stages: []
-  routeStagesV2:
-  - {fileID: 11400000, guid: f778a791580f74242bf5486112cf907a, type: 2}
+  routeStagesV2: []
+  fakeRouteStages:
+  - {fileID: 11400000, guid: 2559bd9f55014d04eb83cf9b7efea656, type: 2}
 --- !u!4 &1931903701
 Transform:
   m_ObjectHideFlags: 0

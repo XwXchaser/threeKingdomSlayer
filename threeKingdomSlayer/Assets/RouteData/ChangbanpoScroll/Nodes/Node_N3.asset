@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nodeId: N3
   displayName: "N3\xB7\u6751\u843D\u641C\u6551\uFF08\u6D41\u7A0B\u9884\u89C8\uFF09"
+  entryDialogue: {fileID: 0}
+  postBattleDialogue: {fileID: 0}
+  postBattlePresentation: {fileID: 0}
+  isFinalNode: 1
   dialogues: []
   rewards: []
   battleEntries:

@@ -1,0 +1,274 @@
+[
+  {
+    "name": "N3_H1_CompactHouse_v1",
+    "path": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_H1_CompactHouse_v1.png",
+    "source": "C:/Users/Administrator/Pictures/gptGen/n3_village_assets_g1_v1_preparation/n3_village_architecture_g1_v1.png",
+    "source_sha256": "2218ff9b40f75c32d1144f1d697149829ba70a13cf8c0297e40c053b45e9859a",
+    "scope_xyxy": [
+      0,
+      0,
+      956,
+      1000
+    ],
+    "contour_bbox_alpha_gt16": [
+      37,
+      215,
+      954,
+      884
+    ],
+    "crop_origin": [
+      25,
+      203
+    ],
+    "size": [
+      941,
+      693
+    ],
+    "padding": 12,
+    "pivot_normalized": [
+      0.6256528631905367,
+      0.018037518037518036
+    ],
+    "visible_height_world_at_ppu100": 6.69,
+    "visible_width_world_at_ppu100": 9.17,
+    "sha256": "4d12bf78f576fa9f4b9b75b96c1bf48de97e5259850a381a864d1b660458ee96"
+  },
+  {
+    "name": "N3_H2_LongHouse_v1",
+    "path": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_H2_LongHouse_v1.png",
+    "source": "C:/Users/Administrator/Pictures/gptGen/n3_village_assets_g1_v1_preparation/n3_village_architecture_g1_v1.png",
+    "source_sha256": "2218ff9b40f75c32d1144f1d697149829ba70a13cf8c0297e40c053b45e9859a",
+    "scope_xyxy": [
+      956,
+      0,
+      2048,
+      1000
+    ],
+    "contour_bbox_alpha_gt16": [
+      959,
+      235,
+      2033,
+      888
+    ],
+    "crop_origin": [
+      947,
+      223
+    ],
+    "size": [
+      1098,
+      677
+    ],
+    "padding": 12,
+    "pivot_normalized": [
+      0.2294155100988121,
+      0.01846381093057607
+    ],
+    "visible_height_world_at_ppu100": 6.53,
+    "visible_width_world_at_ppu100": 10.74,
+    "sha256": "152b1c6c7fea19680a8fe29e83fd1e105393675914801b6ebdb891261b0398f8"
+  },
+  {
+    "name": "N3_H3_DamagedHouse_v1",
+    "path": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_H3_DamagedHouse_v1.png",
+    "source": "C:/Users/Administrator/Pictures/gptGen/n3_village_assets_g1_v1_preparation/n3_village_architecture_g1_v1.png",
+    "source_sha256": "2218ff9b40f75c32d1144f1d697149829ba70a13cf8c0297e40c053b45e9859a",
+    "scope_xyxy": [
+      0,
+      1050,
+      1200,
+      2048
+    ],
+    "contour_bbox_alpha_gt16": [
+      54,
+      1139,
+      1113,
+      1889
+    ],
+    "crop_origin": [
+      42,
+      1127
+    ],
+    "size": [
+      1083,
+      774
+    ],
+    "padding": 12,
+    "pivot_normalized": [
+      0.6460886631026974,
+      0.01614987080103359
+    ],
+    "visible_height_world_at_ppu100": 7.5,
+    "visible_width_world_at_ppu100": 10.59,
+    "sha256": "b66b127170cfeb70d1410aab240c297325730bd58bdd0d44fe9859c62f33e744"
+  },
+  {
+    "name": "N3_W1_Well_v1",
+    "path": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_W1_Well_v1.png",
+    "source": "C:/Users/Administrator/Pictures/gptGen/n3_village_assets_g1_v1_preparation/n3_village_architecture_g1_v1.png",
+    "source_sha256": "2218ff9b40f75c32d1144f1d697149829ba70a13cf8c0297e40c053b45e9859a",
+    "scope_xyxy": [
+      1200,
+      1050,
+      2048,
+      2048
+    ],
+    "contour_bbox_alpha_gt16": [
+      1302,
+      1299,
+      1851,
+      1886
+    ],
+    "crop_origin": [
+      1290,
+      1287
+    ],
+    "size": [
+      573,
+      611
+    ],
+    "padding": 12,
+    "pivot_normalized": [
+      0.5321391987252447,
+      0.020458265139116204
+    ],
+    "visible_height_world_at_ppu100": 5.87,
+    "visible_width_world_at_ppu100": 5.49,
+    "sha256": "15d5013b07839a66a7755040112e3b28dfb1f80dee4a987a94637cb6b745e9f3"
+  },
+  {
+    "name": "N3_B1_IntactWall_v1",
+    "path": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_B1_IntactWall_v1.png",
+    "source": "C:/Users/Administrator/Pictures/gptGen/n3_village_assets_g2_v1_preparation/n3_village_boundaries_g2_v1.png",
+    "source_sha256": "1ebff1bd97049697b8bcf36999c9f8aa6eb2e843e797387960ef205b7bd9c337",
+    "scope_xyxy": [
+      0,
+      0,
+      1024,
+      1024
+    ],
+    "contour_bbox_alpha_gt16": [
+      56,
+      399,
+      990,
+      768
+    ],
+    "crop_origin": [
+      44,
+      387
+    ],
+    "size": [
+      958,
+      393
+    ],
+    "padding": 12,
+    "pivot_normalized": [
+      0.9106516766389308,
+      0.031806615776081425
+    ],
+    "visible_height_world_at_ppu100": 3.69,
+    "visible_width_world_at_ppu100": 9.34,
+    "sha256": "31c39f2de6f9c0b8701ba1de8671b3c8c5f53d03ae55d9ce5d6f6fbbd2095bca"
+  },
+  {
+    "name": "N3_B2_DamagedWall_v1",
+    "path": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_B2_DamagedWall_v1.png",
+    "source": "C:/Users/Administrator/Pictures/gptGen/n3_village_assets_g2_v1_preparation/n3_village_boundaries_g2_v1.png",
+    "source_sha256": "1ebff1bd97049697b8bcf36999c9f8aa6eb2e843e797387960ef205b7bd9c337",
+    "scope_xyxy": [
+      1024,
+      0,
+      2048,
+      1024
+    ],
+    "contour_bbox_alpha_gt16": [
+      1070,
+      403,
+      1995,
+      775
+    ],
+    "crop_origin": [
+      1058,
+      391
+    ],
+    "size": [
+      949,
+      396
+    ],
+    "padding": 12,
+    "pivot_normalized": [
+      0.1448121196740577,
+      0.03156565656565657
+    ],
+    "visible_height_world_at_ppu100": 3.72,
+    "visible_width_world_at_ppu100": 9.25,
+    "sha256": "dc2a108411cdaa2b43d303e58caee52c97c7415d9f8f19b2b3a65492dbf840cc"
+  },
+  {
+    "name": "N3_B3_CourtyardGate_v1",
+    "path": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_B3_CourtyardGate_v1.png",
+    "source": "C:/Users/Administrator/Pictures/gptGen/n3_village_assets_g2_v1_preparation/n3_village_boundaries_g2_v1.png",
+    "source_sha256": "1ebff1bd97049697b8bcf36999c9f8aa6eb2e843e797387960ef205b7bd9c337",
+    "scope_xyxy": [
+      0,
+      1024,
+      1024,
+      2048
+    ],
+    "contour_bbox_alpha_gt16": [
+      116,
+      1068,
+      952,
+      1893
+    ],
+    "crop_origin": [
+      104,
+      1056
+    ],
+    "size": [
+      860,
+      849
+    ],
+    "padding": 12,
+    "pivot_normalized": [
+      0.8415069138906348,
+      0.014723203769140165
+    ],
+    "visible_height_world_at_ppu100": 8.25,
+    "visible_width_world_at_ppu100": 8.36,
+    "sha256": "c1ab30ba4215697e707de781874a6baa3bcadc74fe984c08f06f28049c4b1f90"
+  },
+  {
+    "name": "N3_B4_Firewood_v1",
+    "path": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_B4_Firewood_v1.png",
+    "source": "C:/Users/Administrator/Pictures/gptGen/n3_village_assets_g2_v1_preparation/n3_village_boundaries_g2_v1.png",
+    "source_sha256": "1ebff1bd97049697b8bcf36999c9f8aa6eb2e843e797387960ef205b7bd9c337",
+    "scope_xyxy": [
+      1024,
+      1024,
+      2048,
+      2048
+    ],
+    "contour_bbox_alpha_gt16": [
+      1087,
+      1374,
+      1999,
+      1836
+    ],
+    "crop_origin": [
+      1075,
+      1362
+    ],
+    "size": [
+      936,
+      486
+    ],
+    "padding": 12,
+    "pivot_normalized": [
+      0.7384021842355175,
+      0.0257201646090535
+    ],
+    "visible_height_world_at_ppu100": 4.62,
+    "visible_width_world_at_ppu100": 9.12,
+    "sha256": "787b93b0b3a16d39a4dd0b8d54d2c5939d894c95833687d8a815fdb6c6266dd5"
+  }
+]

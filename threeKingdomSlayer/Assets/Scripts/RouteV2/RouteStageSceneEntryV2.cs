@@ -60,10 +60,3 @@ public sealed class RouteConnectionSceneBindingV2 : MonoBehaviour
     public Transform rotationPivot;
     public Transform[] travelPath = Array.Empty<Transform>();
 }
-
-public sealed class RouteStageTargetsV2 : MonoBehaviour
-{
-    public Transform initialHeadTarget;
-    public Transform combatTarget;
-    public Transform tailTarget;
-}

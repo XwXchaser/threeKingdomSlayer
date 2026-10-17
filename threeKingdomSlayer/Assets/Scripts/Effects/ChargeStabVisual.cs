@@ -54,6 +54,7 @@ public class ChargeStabVisual : MonoBehaviour
 
     private GameObject _visualInstance;
     private SpriteRenderer _sr;
+    private MeshWeaponVisual _meshVisual;
     private float _weaponLength;
     private Camera _mainCam;
 
@@ -251,13 +252,15 @@ public class ChargeStabVisual : MonoBehaviour
         var collider2D = _visualInstance.GetComponent<Collider2D>();
         if (collider2D != null) Destroy(collider2D);
 
-        _sr = _visualInstance.GetComponent<SpriteRenderer>();
-        if (_sr == null)
-            _sr = _visualInstance.AddComponent<SpriteRenderer>();
+        _sr = _visualInstance.GetComponentInChildren<SpriteRenderer>();
+        _meshVisual = _visualInstance.GetComponent<MeshWeaponVisual>();
 
         _visualInstance.transform.localScale = visualScale;
         _visualInstance.transform.SetParent(null); // 世界空间独立
-        _weaponLength = _sr.bounds.size.y; // 世界枪长
+        _weaponLength = _meshVisual != null ? _meshVisual.Length
+            : (_sr != null && _sr.sprite != null ? _sr.sprite.bounds.size.y * visualScale.y : 0f);
+        _meshVisual?.SetSorting(2);
+        SetAlpha(1f);
 
         if (TryGetPointerWorldPosition(screenPos, out Vector3 worldPos))
         {
@@ -305,6 +308,21 @@ public class ChargeStabVisual : MonoBehaviour
         rotation = _visualInstance.transform.rotation;
         scale = _visualInstance.transform.localScale;
         return true;
+    }
+
+    /// <summary>Transfers the live mesh instance so its bone pose and inertia survive release.</summary>
+    public GameObject TakeMeshVisual()
+    {
+        if (_visualInstance == null || _meshVisual == null) return null;
+        GameObject visual = _visualInstance;
+        CancelInvoke();
+        _visualInstance = null;
+        _meshVisual = null;
+        _sr = null;
+        _isActive = _hasAppeared = _isCharged = _readyShown = false;
+        _isEntering = _isFadingOut = _hasPitchBaseline = false;
+        visual.GetComponent<MeshWeaponVisual>().SetAlpha(1f);
+        return visual;
     }
 
     public void SuppressFadeAndDestroy()
@@ -368,7 +386,7 @@ public class ChargeStabVisual : MonoBehaviour
     /// </summary>
     private void ApplyChargePose(Vector3 tipPosition)
     {
-        if (_visualInstance == null || _sr == null) return;
+        if (_visualInstance == null) return;
 
         Quaternion rotation = CalculateFollowRotation(tipPosition);
         Vector3 axis = rotation * Vector3.up;
@@ -377,6 +395,8 @@ public class ChargeStabVisual : MonoBehaviour
         _visualInstance.transform.position = tipPosition - axis * halfLength;
         _visualInstance.transform.rotation = rotation;
         _visualInstance.transform.localScale = visualScale;
+        if (_meshVisual != null)
+            _visualInstance.transform.position += tipPosition - _meshVisual.TipPosition;
     }
 
     private Vector3 ClampFollowPosition(Vector3 worldPosition)
@@ -404,6 +424,7 @@ public class ChargeStabVisual : MonoBehaviour
             Destroy(_visualInstance);
             _visualInstance = null;
             _sr = null;
+            _meshVisual = null;
         }
         _hasAppeared = false;
         _isEntering = false;
@@ -469,6 +490,7 @@ public class ChargeStabVisual : MonoBehaviour
 
     private void SetAlpha(float alpha)
     {
+        _meshVisual?.SetAlpha(alpha);
         if (_sr != null)
         {
             Color c = _sr.color;

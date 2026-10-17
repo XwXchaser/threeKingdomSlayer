@@ -10,6 +10,10 @@ public sealed class FakeRouteStageSaveSnapshot
     public int stageId;
     public int configurationVersion;
     public string checkpointNodeId;
+    public int ultimateEnergy;
+    public int killCount;
+    public int coinCount;
+    public List<FakeRouteChoiceSaveState> choiceHistory = new List<FakeRouteChoiceSaveState>();
     public List<string> visitedNodeIds = new List<string>();
     public List<string> completedNodeIds = new List<string>();
     public List<string> routeChoiceHistory = new List<string>();
@@ -44,4 +48,13 @@ public sealed class RouteItemSaveState
     public string definitionId;
     public int remainingUses;
     public bool isPotion;
+}
+
+/// <summary>一条路线推进记录：从哪个节点、选了哪个出口、到了哪个节点。</summary>
+[Serializable]
+public sealed class FakeRouteChoiceSaveState
+{
+    public string sourceNodeId;
+    public string choiceId;
+    public string targetNodeId;
 }

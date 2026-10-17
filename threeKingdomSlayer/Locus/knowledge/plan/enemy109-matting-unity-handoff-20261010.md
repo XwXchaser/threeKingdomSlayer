@@ -11,12 +11,19 @@ aiEditMode: inherit
 > **本文件是 Enemy 109 当前交接的权威起点。** §0 / §11 记录本轮动画接线与运行时验证；§1–9 保留素材入库时的历史现场，§10 保留返航素材生产记录。历史描述不覆盖后续接线结果。
 > **重要**：`plan/cavalry-enemy-visual-handoff.md` 顶部已增加转向本文件的说明，但其历史正文仍保留「等待动作帧验收，无去背、无 Unity 接线」等旧描述；**不能据此判断当前状态**，冲突时以本文件为准。
 > §1–9 中的状态是入库时历史快照。素材生产记录见 §10；本轮已将 Windup、Charging、Attack、TurnToIdle 接入 109 Prefab，运行时验证及剩余缺口见 §11。TurnToIdle 透明版仍待美术目检，生成器主体轻微色差仍单独保留；动画接线不等于素材美术验收。
+> **2026-10-14 追加入口（并行素材线程）**：「冲锋被打断 → 接返航」（K1/K2 → A段视频 → 12帧选帧 → 透明01–11 → f063 → 返航f001 转身桥 v1）见 `plan/enemy109-charge-interrupted-keypose-preparation.md`；**该文档顶部「续接入口」是那条线的唯一入口**，含当前待决项与未授权边界。
+>
+> **2026-10-15 最新续接：骑手摔落＋马存活逃跑**：见 `plan/enemy109-rider-fall-mount-escape-handoff-20261015.md`。用户已否定继续沿用人马一起倒地的方向；改为**①骑手受击到摔落接地一次连续视频，马保持站立；②独立无骑手马向画面左侧跑离，游戏控制渐隐**。只在第一段交接帧分离视觉，正常骑乘合成动画不必重做。旧D1～D3已生成3张但未获整体美术验收，只供追溯。**当前进展（2026-10-16）：视频①、12帧选帧与T79透明版均已用户验收，均未部署Unity**；下一对话入口为该文档 §0.5（视频②无骑手马左向逃跑）。旧“按D2重做D3”和三段视频提案均不再采用。
 
 ---
 
 ## 0. 一句话状态
 
 Enemy 109 的骑乘主要动作现已接线：MountedIdle / Windup / Charging / 18帧 Attack / 24帧 TurnToIdle 均有专用 Clip 和 Inspector 引用，Controller 阶段由 `CavalryEnemy` 驱动。Attack 核心帧 `Enemy_109_Attack12` 对齐 `strikeWindup=0.18s` 的伤害提交点；命中、打断、返航受阻、落马与池复用已作运行时探针验证。背向返航跑步、成功/打断后的收枪回身尚缺素材，当前以静态背向姿势和 Charging 姿势作明确占位；TurnToIdle 透明版尚待美术目检。不得将占位误述为完整骑乘循环。T70/T79 与被替换素材验收记录冲突仍见 §5。
+
+> **2026-10-15 状态更正（打断路径已接线）**：成功刺击后的收枪转身已按 §12 接线；**打断路径 `Interrupted → Retreating` 已接入专用转身**：新增 `Enemy_109_ChargeInterrupted.anim`（11帧，打断急停收招，替换旧静态 `Enemy_109_InterruptedPose.anim`）与 `Enemy_109_InterruptedToRetreat.anim`（12帧，回正+左转向背面），Controller 新增 `InterruptedToRetreat` 状态，Prefab 两个字段直接引用；前摇被提前打断且未离排时不强转，直接回 Idle。第一关预览波次已加 109。**背向返航奔跑仍无入库循环**：视频已验收但未选帧/抠图/建Clip，成功路径用静态 `RetreatPose`、打断路径用本段末帧冻结，返航读感仍是滑行。109 动画完整清单（已接入 / 已产出未入库 / 尚未制作）见 `plan/enemy109-charge-interrupted-keypose-preparation.md` 顶部「109 骑兵动画清单」。
+
+> **2026-10-14 状态更正（已被上一条部分取代）**：成功刺击后的收枪转身已按 §12 接线并验证；背向返航跑步仍是静态占位。
 
 ---
 

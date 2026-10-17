@@ -390,7 +390,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: maxHealth
-      value: 200
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: moveSpeed
@@ -399,6 +399,10 @@ PrefabInstance:
     - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: attackDamage
       value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
+      propertyPath: visualYOffset
+      value: 0.79381204
       objectReference: {fileID: 0}
     - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: launchDuration
@@ -503,6 +507,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 688460577474092011, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5539183438271926435}
+    - targetCorrespondingSourceObject: {fileID: 688460577474092011, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1287027851775566345}
   m_SourcePrefab: {fileID: 100100000, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
 --- !u!4 &4199147349820429124 stripped
 Transform:
@@ -532,14 +539,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cavalryEnemyId: 109
-  chargeDamage: 8
-  windupDuration: 0.3
-  strikeWindup: 0.18
-  strikeRecover: 0.22
+  chargeDamage: 1
+  windupDuration: 0.5
+  strikeWindup: 0.5
+  strikeRecover: 0.8
   strikeLungeDistance: 0.5
-  interruptRecover: 0.2
-  chargeCooldown: 1
+  interruptRecover: 0.8
+  chargeStepDuration: 0.35
+  retreatStepDuration: 0.6
+  retreatTurnDuration: 0.4
+  chargeCooldown: 3
   spawnEntrySettleDuration: 0.35
+  strikeHitFrame:
+    spriteName: Enemy_109_Attack4
+    keyIndex: 3
+    resolve: 1
+    hitTime: 0.055
 --- !u!114 &5539183438271926435
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -567,13 +582,86 @@ MonoBehaviour:
   chargingAnimation: {fileID: 7400000, guid: e1bba48d68d55ec4c8f3d78117e334b7, type: 2}
   strikeAnimation: {fileID: 7400000, guid: 24328658409d6f146a5990579da47dc8, type: 2}
   strikeToRetreatAnimation: {fileID: 7400000, guid: e326eddf144296b4896006f659328c65, type: 2}
+  interruptedToRetreatAnimation: {fileID: 7400000, guid: 10fa10520ca90b247af92a1a5a682430, type: 2}
   turnToIdleAnimation: {fileID: 7400000, guid: 591870c15f82cfd4fa2222e2594c4825, type: 2}
-  retreatPoseAnimation: {fileID: 7400000, guid: f2ea3bf80df2de141a85b717a1987690, type: 2}
-  interruptedAnimation: {fileID: 7400000, guid: a55955a9b287c8a48bf4f1e16a2953a7, type: 2}
-  strikeHitNormalizedTime: 0.45
+  retreatPoseAnimation: {fileID: 7400000, guid: 2cf370bb8a337ee419800a4d386da94a, type: 2}
+  retreatBlockedPoseAnimation: {fileID: 7400000, guid: f2ea3bf80df2de141a85b717a1987690, type: 2}
+  retreatRunSpeed: 1
+  interruptedAnimation: {fileID: 7400000, guid: 75f30cf304d10d04c90a8e6cdef63341, type: 2}
+  showStrikeHitDebug: 1
   turnToIdleDuration: 0.8
   debugLabel: {fileID: 4514936625154281685}
   showDebugState: 1
   mountedRiderOffset: {x: 0, y: 3.5, z: -0.04}
   dismountedRiderOffset: {x: 0, y: 0, z: 0}
   walkFrameDuration: 0.12
+--- !u!114 &1287027851775566345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8370877317619064943}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9913caf0a91c64542b32d2f9a95618ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  densityScale: 1.2065
+  densityOffset: {x: 0.0075, y: -1.039}
+  applyDensityCompensation: 1
+  fallVerticalOffsetPx:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  mountEscapeOffset: {x: 0.0075, y: -1.039}
+  riderFallFrames:
+  - {fileID: 21300000, guid: 3f432a6e96e4d914086c346b2c35b7ff, type: 3}
+  - {fileID: 21300000, guid: c9cda63de8b5ffc4ead9a3dfeceb7245, type: 3}
+  - {fileID: 21300000, guid: 0d5194e0a2008c14ea2a9caceb150427, type: 3}
+  - {fileID: 21300000, guid: b977633a42d237d4a93c79ee4bbc3ba1, type: 3}
+  - {fileID: 21300000, guid: 33eb3551d1f030048a137ae513f6cf56, type: 3}
+  - {fileID: 21300000, guid: fa502f4306e78ab4ca50298e5dea30f3, type: 3}
+  - {fileID: 21300000, guid: 2c9fe4943f53c534c92775ad5449bc57, type: 3}
+  - {fileID: 21300000, guid: 803a52f0ea15de34b8a336dfd275cc37, type: 3}
+  - {fileID: 21300000, guid: 9b78950763fbc8f409b5a8e30611865f, type: 3}
+  - {fileID: 21300000, guid: 7c9cf96431311ab48ae5df9ff441aef5, type: 3}
+  - {fileID: 21300000, guid: 2ef4043835705304a894584372bef1d3, type: 3}
+  - {fileID: 21300000, guid: 48a2930c8cf3d334bbaa55d2022e1257, type: 3}
+  riderFallFrameDurations:
+  - 0.375
+  - 0.333
+  - 0.334
+  - 0.333
+  - 0.333
+  - 0.334
+  - 0.333
+  - 0.333
+  - 0.334
+  - 0.5
+  - 0.875
+  fallTimeScale: 0.28
+  entryBlendDuration: 0.1
+  handoffHold: 0.1
+  mountEscapePrefab: {fileID: 2969838075473810750, guid: 8c8a1b540eea6074e9d968c8bf13b5ec, type: 3}
+  corpseFadeDuration: 0.25

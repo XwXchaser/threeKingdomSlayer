@@ -395,6 +395,9 @@ public class EnemyManager : MonoBehaviour
 
         allAliveEnemies.Clear();
         columnManager?.ClearAllColumns();
+
+        // 清场/节点切换时回收独立的纯视觉对象（如 109 战马逃跑），它们不归对象池管理。
+        MountEscapeVisual.DespawnAll();
     }
 
     #endregion

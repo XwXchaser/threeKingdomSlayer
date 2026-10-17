@@ -1307,6 +1307,9 @@ public class QTEController : MonoBehaviour
         visual.transform.localPosition = new Vector3(stabBlockOffsetX, 0f, -stabBlockOffsetY);
         visual.transform.localScale = stabBlockScale;
         visual.transform.localRotation = Quaternion.identity;
+        foreach (var collider in visual.GetComponentsInChildren<Collider>()) Destroy(collider);
+        var meshVisual = visual.GetComponent<MeshWeaponVisual>();
+        meshVisual?.SetSorting(2);
 
         var sr = visual.GetComponentInChildren<SpriteRenderer>();
         if (sr == null) sr = visual.GetComponent<SpriteRenderer>();
@@ -1334,7 +1337,13 @@ public class QTEController : MonoBehaviour
         }
 
         // 末尾20% fadeout
-        if (sr != null)
+        if (meshVisual != null)
+        {
+            var fadeSequence = DOTween.Sequence().SetTarget(visual).SetUpdate(UpdateType.Normal, false);
+            fadeSequence.AppendInterval(duration * 0.8f);
+            fadeSequence.Append(DOTween.To(() => meshVisual.Alpha, meshVisual.SetAlpha, 0f, duration * 0.2f));
+        }
+        else if (sr != null)
         {
             DOVirtual.DelayedCall(duration * 0.8f, () =>
             {

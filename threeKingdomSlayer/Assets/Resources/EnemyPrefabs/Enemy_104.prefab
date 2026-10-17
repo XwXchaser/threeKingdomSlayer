@@ -175,7 +175,7 @@ MonoBehaviour:
   normalFormDamageReductionPercent: 0
   attackRange: 2
   moveSpeed: 0.3
-  visualYOffset: 0.36
+  visualYOffset: 1.0350002
   attackSequence:
   - isCAttack: 0
     animationTrigger: 
@@ -361,7 +361,7 @@ MonoBehaviour:
   qteData: {fileID: 11400000, guid: 6812898a4865fa14aa4f2f901f749c5e, type: 2}
   arrowConfig: {fileID: 11400000, guid: ec643285a069f874c89cc104693f5f74, type: 2}
   _inputRule: 1
-  stabBlockEffectPrefab: {fileID: 8166106663261759673, guid: 3ebe15c25c9ebda4fb9cd0b5ea7df39c, type: 3}
+  stabBlockEffectPrefab: {fileID: 1326451241060622409, guid: 27d8262bc67b9864ea33c9576052febc, type: 3}
   stabBlockSprite: {fileID: 21300000, guid: 25af535c82ad6084fbc774e85e15666c, type: 3}
   stabBlockRotateSprite1: {fileID: 21300000, guid: c3b681405b0dde84581ec1d0fd4bfc26, type: 3}
   stabBlockRotateSprite2: {fileID: 21300000, guid: 510b65bb3ae606848905fe73c9061811, type: 3}
@@ -369,7 +369,7 @@ MonoBehaviour:
   stabBlockDistance: 5
   stabBlockOffsetX: 0
   stabBlockOffsetY: -1.5
-  stabBlockScale: {x: 0.1, y: 0.1, z: 0.1}
+  stabBlockScale: {x: 11.050714, y: 11.050714, z: 11.050714}
   enemy: {fileID: 0}
   qteDisplay: {fileID: 0}
   _state: 0

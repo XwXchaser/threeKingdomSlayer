@@ -18,6 +18,7 @@ public class UltimateSystem : MonoBehaviour
     public GameObject ultimateEffectPrefab;
 
     [System.NonSerialized] private int currentEnergy;
+    private UltimateEffect _activeEffect;
 
     // 事件
     public System.Action<float> OnEnergyChanged;
@@ -103,6 +104,14 @@ public class UltimateSystem : MonoBehaviour
         OnEnergyChanged?.Invoke(0f);
     }
 
+    /// <summary>路线存档恢复：按快照直接设置大招充能（不重放升级/能量事件）。</summary>
+    public void SetEnergyForRouteRestore(int energy)
+    {
+        currentEnergy = Mathf.Clamp(energy, 0, maxUltimateEnergy);
+        OnEnergyChanged?.Invoke(EnergyPercent);
+        if (IsReady) OnUltimateReady?.Invoke();
+    }
+
     public void ActivateUltimate()
     {
         var qte = FindObjectOfType<QTEController>();
@@ -137,6 +146,7 @@ public class UltimateSystem : MonoBehaviour
             var effect = effectInstance.GetComponent<UltimateEffect>();
             if (effect != null)
             {
+                _activeEffect = effect;
                 effect.Execute();
                 // Handheld.Vibrate(); // 安卓端攻击震动暂关闭
             }
@@ -148,5 +158,15 @@ public class UltimateSystem : MonoBehaviour
             float lifetime = effect != null ? effect.GetLifetime() : 2f;
             Destroy(effectInstance, lifetime);
         }
+    }
+
+    /// <summary>取消当前大招表现（路线旅行、奖励等待、失败时调用）。</summary>
+    public void CancelUltimate()
+    {
+        var effect = _activeEffect;
+        _activeEffect = null;
+        if (effect == null) return;
+        effect.Cancel();
+        Destroy(effect.gameObject);
     }
 }

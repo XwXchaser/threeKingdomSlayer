@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Travel_J1_EV
   m_EditorClassIdentifier: 
   duration: 3
-  travelDistance: 35
+  travelDistance: 90
   speedCurve:
     serializedVersion: 2
     m_Curve:

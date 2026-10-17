@@ -485,6 +485,26 @@ aiEditMode: inherit
 - 后续用户指定第02张f010作为新的StrikeToRetreat头帧与Strike尾帧，并明确授权“抠图并替换部署”。另建`Enemy109ArtSource/03_SelectedFrames/StrikeToRetreat_f010_v2/`，从f010保留11张T79 RGBA；原12张RGB与MP4哈希保持。核心1,359,179像素次0删除/改RGB，14,321边缘反混合像素次留档，Alpha0/255、幕布/隐藏RGB0。
 - 新帧Nearest16/15到1024、置1108(61,57)恢复Strike映射。Attack18 PNG覆盖且meta/GUID保留，与新StrikeToRetreat1字节/像素相同；新Clip/Controller状态/Prefab直接引用接通，仅成功刺击后按现有返航格数时长播放一次，阻塞/HitStop续播，打断不共用。针对性+隔离CavalryCycle验证通过；自然路线/游戏速度美术未覆盖，透明美术pending。测试停用根对象触发1条伤害数字inactive协程日志，已归因留档，未改跳字系统。权威接线和验证见`plan/enemy109-matting-unity-handoff-20261010.md` §12；没有新收费任务。
 
+### Enemy109 冲锋被打断 K1/K2 与 A段视频 v1（2026-10-14；帧序/f029已验收，整套12张透明帧完成）
+
+- 用户纠正后续制作目标为打断动画，已有背向返航视频不重生；完整中英文词、参考职责与规格审阅后明确“发起生成”，单图编辑POST只1次，无自动重试。
+- 模型`gpt-image-2.5-sunburst`、quality=max、input_fidelity=high、1024×1024PNG、n=1、不请求Alpha，绿幕目标(0,159,62)。唯一输入为现有Charging1/f036的32px补边同底副本，源192075可见RGB保持；批准输入和两版Prompt哈希未变。
+- 原图`C:/Users/Administrator/Pictures/gptGen/enemy109_charge_interrupted_keypose_v1.png`，HTTP200、POST66.062s、1024×1024RGB/ColorType2、1,071,876bytes、sha`eed75c1aefabcd3d26699f1bcafc5398b9945d0ffc2d9a7d0a0e318fdbb8b46a`，工程字节副本、请求/脱敏响应、完整词及生产记录在`Enemy109ArtSource/01_KeyPosePreparation/ChargeInterrupted_v1/`。Usage input2227/output7024/total9251、cost未返回，host=r2.52image.xyz。
+- 原图和同画布对照已回读附图：骑手回仰收缰仍坐鞍、馬前膝屈/后蹄支撑、单枪完整；用户美术pending。诊断边距165/148/297/173px；输入底929→输出851约上移78px，后续锚点需核对，不能凭姿态bbox变化断言统一缩放或直接部署。背景角落64块中位(2,162,63)、std约0.6–0.9，不是精确请求底色，主体未配准比较。
+- 无重生成/改色/移位/抠图/视频/Unity/Play。验收后才另准备视频方案。恢复入口`plan/enemy109-charge-interrupted-keypose-preparation.md`，原片和返航/成功转身部署不改。
+- 后续用户将首图K1定位为“命中关键帧”，并要求K2呈现马急停、骑手措不及防，再衔接转身返航；K1职责得到确认，锚点/配色/部署仍是独立验收项。K2位于`Enemy109ArtSource/01_KeyPosePreparation/ChargeInterruptedTail_v1/`：K1原RGB唯一输入的字节副本、K2前蹄落地/骑手惯性前扑坐鞍Prompt及对照留档。K2 POST仅1次、HTTP200、1024×1024 RGB、SHA`a8af5e01cfae6a606388a527d635a5fde2f69eaa6d08b4c2a8019586761da703`；回读观察为骑手前扑/低头/仍在鞍上、缰枪完整，四个脚部支撑轮廓可见。虽无地面线且技术检查未证明承重/锚点/颜色，用户之后明确“K2已验收，思考冲锋被打断的视频内容”，故K2关键姿态状态更新为accepted。
+- 当前内容方案拆为A段K1→K2刹停（对应0.20s普通打断恢复或0.22s刺击提交前打断收招）与B段K2→背向返航f001转身桥，再复用已验收返航Loop；生成视频源时长不得等同游戏Clip时长。现有路由只让成功StrikeRecover播放StrikeToRetreat，Interrupted→Retreating暂切静态背向pose；有位移才需转身，Windup原地打断不应无条件旋转。详细动作、阶段和锚点/色键门槛见`plan/enemy109-charge-interrupted-keypose-preparation.md`“视频内容方案”章节。
+- A段视频经完整双语词、参考职责、规格与输入副本审阅后，用户明确“确认并生成”。唯一task `task_2db36264422f43af9add2480770f4e6c`，首尾上传2次、create POST仅1次；`seedance-2-fast / 4s / 720p / 1:1 / 无音频无水印 / seed=-1`。服务端success；usage completion/total=87300，cost `spend=0.48888`（币种未返回）。curl查询原task成功，生成没有重试。
+- 最终文件`C:/Users/Administrator/Videos/doubaoVideo/enemy109_charge_interrupted_v1_720p_4s.mp4`，2,114,011 bytes，SHA`d3df3049161ade578d178c658972087d55e5c24a06310b9e961f5998a40d22d9`；实际960×960、24fps、97帧、4.04s、无音轨。4段HTTP206、MP4 ftyp/moov/mdat边界和FFmpeg全量解码通过。正式记录及审阅输入在`Enemy109ArtSource/02_VideoPreparation/ChargeInterrupted_v1/`。
+- 诊断接触表/末12连续帧/首尾对照均已保存：外4px无前景，最小边距L/T/R/B=120/86/242/154；输出背景每帧四角中位范围R0–2/G143–154/B56–60，跟输入键(0,159,62)有偏差和轻微漂移；主体颜色未配准验证。原尺寸抽帧显示大体K1→K2且尾段收稳，但开头约0.3–0.8秒追加马前躯/前蹄上抬，再落蹄，和原拟直接刹停动作有偏差。这是历史代理观察；用户后来明确“已验收，请挑选有效帧”，视频美术accepted，不自动重生成。
+- 按用户验收后的选帧要求，新增`Enemy109ArtSource/03_SelectedFrames/ChargeInterrupted_v1/`：12张960×960 RGB真实源帧f001/003/009/017/021/025/029/033/039/051/063/097，保留真实首尾，前段按动作节点加密，尾段去掉长停留的近似重复。独立完整重解码核对12/12像素、PNG哈希、CSV及静态/动态预览顺序通过，MP4指纹不变；最小留白L/T/R/B=120/90/243/158px，外4px诊断前景0。清单`selected_frames_manifest.json`、验证`selection_verification.json`和总览/WebP已保存。用户后续“已验收，请抠图”确认帧序accepted。RGB原件保持未裁切/缩放/移位/调色/插帧，后续透明版另存，不把原件验收等同整套Alpha/部署验收。
+- f029 T79小样随后获用户“已验收，可以按照当前参数继续抠图”确认。11帧按同参数生成、f029逐字节复用，共12张960×960 RGBA，目录`Enemy109ArtSource/03_SelectedFrames/ChargeInterrupted_v1/keyed_ui_t79/`，原RGB和MP4不变。配方SVL Chroma/逐帧auto-key/T79/softness16/halo1/alpha-aware despill/半透明转不透明；无额外描边替色、压绿、平滑或全图调色。
+- `matting_report.json`及独立`matting_verification.json`回读12/12 ColorType6/Alpha0或255，半透明/透明隐藏RGB/源键色残留0，990743保护核心像素次Alpha/RGB改动0，10523可见边缘RGB像素次反混色变化另记。白底可见gEx>0每帧801–1317、gEx>8每帧216–569；不宣称零绿。f029原PNG哈希`7349b5b99fb26827fbee556e9327089aa3d64679ec3c5d34d22bb8232c931573`保持；三底总览、细节对照和12帧中性底WebP顺序/像素核对通过。
+- 视频/帧序/f029小样及ChargeInterrupted01–11透明帧accepted；ChargeInterrupted12_f097透明帧因用户指出色差不采纳，文件保留追溯但不作为返航端点。未Unity导入、1108补边、Clip/Prefab修改或Play自检，未新收费API。
+- 用户要求“思考从63帧关键帧开始返航的动画内容”。采用f063透明帧为失衡尾态起点，接真实返航f001背向支撑帧；方案分为恢复重心→收枪牵缰→人马短步转向→背向接入。f063透明底行788，返航f001底行891，相差约103px，后续首尾准备需单独整体源空间对齐；不能使用f097色差帧或自动缩放/漂移补差。详细分析见`plan/enemy109-charge-interrupted-keypose-preparation.md`“从f063开始的返航动画内容”。
+- f063→返航f001转身桥已按确认规格创建一次并完成下载解码：task `task_9af5590e1ede438fa2ca54e6210aa74c`，2,833,549 bytes，SHA `b1c5094dc2eb5503ee9ccd00c02a231eb9c6978e775c9094861b7830a05f8daa`，960×960/24fps/97帧/4.04s/无音轨，create POST 1次，usage 87300、spend 0.48888（币种未返回）。成片待用户美术验收；代理预审发现中段未保持单向转身（右→左→后侧→正背）并含原地小跑感，不自动重生成。
+- **本批触发工作流修正（2026-10-14）**：审计确认“输入统一绿幕”不是输出片基的决定因素——输入四角精确`(0,159,62)`、std=0、可见像素零改色时，成片片基仍系统性偏低约5–20G，且多批最差帧均落在开头0.2–0.35秒、最低G均为143。原流程只在输入端设门槛，输出端仅要求“记录”，再加上“不得自动改色/重生”与“背景漂移不是作废条件”的写法，使同一缺陷每批重复并仅被标为已知问题；2026-10-11诊断中“若用户批准再列为独立检查项”的待决项也一直未被重新提出。经用户批准，`skill/reachapi-seedance-video-generation-v2.md`的§色彩一致性改为 G1输入片基/G2输出片基/G3交付物 三级门槛，新增“偏差必须升级为待用户决策项”与“参考帧来自上一代产物时先与身份基准比主体核心RGB”，并删除旧结案写法；`skill/workflows/character-hit-animation-video-workflow.md`验收清单与纪律行同步。
+
 ### Seedance 路线视频
 
 | 段 | task id | 最终文件 | 大小 | 结论 |
@@ -622,6 +642,20 @@ aiEditMode: inherit
 - **核验与评审产物**：`Library/Locus/tmp/enemy1021_attack_video_v1/frames/verification_report_v2.json` 记录12帧960×960 RGBA、Alpha0/255、透明区RGB全0、画布边界完整、底边均780、重新测得脚底中点最大X误差1.75px。接触表 `Library/Locus/tmp/enemy1021_attack_video_v1/frames/ATTACK_ALIGNED_12_WHITE_REVIEW_v2.png`；前后对照 `Library/Locus/tmp/enemy1021_attack_video_v1/frames/ATTACK_ALIGNMENT_BEFORE_AFTER_v2.png`；GIF `Library/Locus/tmp/enemy1021_attack_video_v1/frames/ATTACK_ALIGNMENT_BEFORE_AFTER_v2_preview.gif` 为每帧0.12秒评审预览，不定义游戏时序。正常SVL抠图仍有每帧562–806个gEx>8可见像素；整帧尺度/位置校正无法消除局部透视或重绘变化，仍需用户检查边缘和动作。
 - **Unity接入（素材v2验收后）**：十二张对齐v2帧按固定 `(74,91)` 偏移零重采样补到1108×1108，导入 `Assets/Sprites/Enemy/Enemy1021/Enemy_1021_attack1.png` 至 `Assets/Sprites/Enemy/Enemy1021/Enemy_1021_attack12.png`，导入设置与Idle一致。创建 `Assets/Animations/Enemy_1021_Attack.anim`：30fps、2秒非循环、十二个有效Sprite键，`attack6` 接触姿态在1秒；含旧 `ShieldVisual` 清空键。`Assets/Animations/Enemy_1021.controller` 的Attack motion已替换，原转场保留，Prefab沿用该Controller，第一关 `Assets/RouteData/Stage01/N1_ArtPreview_Battle.asset` 已含1021。
 - **部署留档与边界**：`Library/Locus/tmp/enemy1021_attack_deploy_v1/preparation_report.json` 与 `Library/Locus/tmp/enemy1021_attack_deploy_v1/asset_verification.json` 已回读；补边像素一致、十二个root引用完整、Clip/Controller已保存。没有修改脚本、攻击数值、命中帧声明、Prefab或场景；本轮未进入Play Mode、未做额外运行或画面自检。用户已验收 Attack 通过，后续在其他对话继续。
+
+### Enemy109 骑手落马：连续受击后仰离鞍（2026-10-15；视频/12帧/透明版均已验收）
+
+**当前交付状态：视频①、12帧选帧、T79透明版均已用户验收；未部署 Unity。下一步为视频②无骑手马左向逃跑。** 正式入口见 `plan/enemy109-rider-fall-mount-escape-handoff-20261015.md` §0.5。
+
+- **背景**：用户将“人马一起倒地死亡”改为“骑手受击摔落，马存活、向画面左侧跑离并渐隐”。v1静态姿态被否决（“马匹没有惊慌感，角色倒地姿势应该后仰身而不是躺下”）；v2“马受惊＋骑手后仰失衡”与v3“倒地尾姿”均获验收。
+- **视规则**：`seedance-2-fast`，6秒 / 720p / 1:1，无音频、无水印、seed=-1。三张**普通 `reference_image`**按“正常骑乘 → v2后仰 → v3倒地”顺序提交，未混用 `first_frame`/`last_frame`，无自创 `middle_frame` 或时间戳字段。普通参考不保证精确首尾帧。
+- **输入准备**：三张派生上传副本统一1152×1152、RGB(0,159,62)，每边补64px；起始图1449、v2为25、v3为27个外轮廓绿边像素被中性化；原图未改。
+- **Task ID**：`task_393dfe84427642639b163b4d499cfa26`；创建HTTP200、仅1次、无自动重试；服务端 `2026-10-15T09:05:23.879836+00:00` 返回 success。usage 130500/130500，`cost.spend=0.7308`（币种未返回）。
+- **成片**：`C:/Users/Administrator/Videos/doubaoVideo/enemy109_rider_fall_v1_720p_6s.mp4`，3,810,739 bytes，SHA-256 `381b184bfeaf3064436c681b3f28b3e7222631170d3e362d4ac002066c01ac9d`；960×960、24fps、145帧、约6.04s、无音轨；容器与全量解码通过。用户已验收。
+- **选帧**：`Enemy109ArtSource/03_SelectedFrames/RiderFall_12Frames_v1/raw/`，源帧号（1-based）`001,010,018,026,034,042,050,058,066,074,086,107`；尾帧f107（约4.417s），省略后续运动量降至2%–13%的重复保持段。12张均为真实解码帧，独立重解码像素一致；用户已验收。
+- **拨图**：`.../keyed_ui_t79/`，12张960×960 RGBA。实输出绿幕为漂移绿`(0,148,59)`，按手册扫描T55/70/79/100后选 **T79**（被删主体16.6%、幕布残留0、绿>8 494），与109已验收区间及本角色已部署t79/t80一致；T100被删升至18.5%不取。配方：SVL Chroma / 逐帧auto-key / T79 / softness16 / halo1 / alpha-aware despill / 半透明转不透明；无平滑、无额外描边替色、无全图调色。同配方回归处理已部署 MountedIdle1 输出逐像素相同。用户已验收。
+- **硬门**：半透明0、透明区隐藏RGB0、保护核心被删0、4px边缘Alpha前景0；白底绿优势>8为357–596，低于109 MountedIdle t79基线的1086–1458。
+- **边界**：未部署Unity，未做1108补边、锚点对齐、Clip或死亡视觉路由；骑手与马的拆分属视频②。骑手落马死亡演出接入属独立授权项（`CavalryVisualController.LateUpdate()`在 `Dead` 时直接返回；`Enemy.Die()`自带弹起旋转，不能与已烘焙落马叠加）。
 
 ## 二、FakeRoute 视频与节点部署状态
 

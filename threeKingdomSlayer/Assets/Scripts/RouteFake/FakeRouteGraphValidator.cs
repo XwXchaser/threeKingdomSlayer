@@ -20,7 +20,7 @@ public static class FakeRouteGraphValidator
             if (node == null) { error = "nodes包含空引用"; return false; }
             if (!nodes.Add(node)) { error = "nodes包含重复资产引用: " + node.name; return false; }
             if (string.IsNullOrEmpty(node.nodeId) || !ids.Add(node.nodeId)) { error = "nodeId为空或重复: " + node.name; return false; }
-            if (node == config.startNode && node.terminalPolicy != FakeRouteTerminalPolicy.None)
+            if (node == config.startNode && IsTerminal(node))
             { error = "startNode不能是终点节点"; return false; }
             if (node.outgoingChoices == null) continue;
             var choiceIds = new HashSet<string>();
@@ -33,7 +33,7 @@ public static class FakeRouteGraphValidator
                 if (choice.targetNode == node) { error = "禁止节点自环: " + node.nodeId; return false; }
                 if (choice.presentation == null) { error = "出口缺少旅行表现: " + choice.choiceId; return false; }
             }
-            if (node.terminalPolicy != FakeRouteTerminalPolicy.None && node.outgoingChoices.Count > 0)
+            if (IsTerminal(node) && node.outgoingChoices.Count > 0)
             { error = "终点节点不能有出口: " + node.nodeId; return false; }
         }
         if (!ContainsNode(config.nodes, config.startNode)) { error = "startNode不在nodes列表"; return false; }
@@ -43,6 +43,11 @@ public static class FakeRouteGraphValidator
         if (HasCycle(config.startNode, visiting, visited, out var cycleNode))
         { error = "从startNode可达路径存在回环: " + cycleNode.nodeId; return false; }
         return true;
+    }
+
+    static bool IsTerminal(FakeRouteNodeConfig node)
+    {
+        return node != null && (node.isFinalNode || node.terminalPolicy != FakeRouteTerminalPolicy.None);
     }
 
     static bool ContainsNode(List<FakeRouteNodeConfig> nodes, FakeRouteNodeConfig target)
