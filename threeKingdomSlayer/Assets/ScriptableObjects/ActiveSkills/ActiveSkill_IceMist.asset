@@ -1,0 +1,102 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9bf2b0c688767c4792fda72a76ca5ac, type: 3}
+  m_Name: ActiveSkill_IceMist
+  m_EditorClassIdentifier: 
+  category: 4
+  upgradeId: active_ice_mist
+  displayName: "\u51B0\u96FE"
+  descriptionTemplate: "\u5411\u8EAB\u524D\u55B7\u5C04\u6247\u5F62\u51B0\u6D41\uFF0C\u9020\u6210\u51B0\u4F24\u5BB3\u5E76\u53E0\u52A0\u51BB\u7ED3\u6982\u7387\uFF1B\u654C\u4EBA\u5904\u4E8E\u653B\u51FB\u524D\u6447\u65F6\u53E0\u52A0\u7FFB\u500D\u3002"
+  extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
+  rarity: 1
+  maxLevel: 5
+  effectType: 
+  numericLevels: []
+  floatValue: 0
+  intValue: 0
+  secondaryIntValue: 0
+  stringValue: 
+  baseAttackConfig: {fileID: 0}
+  icon: {fileID: 21300000, guid: ddca02e6e8040c948a9908a5c48c4b57, type: 3}
+  phantomLevels: []
+  timedAoeLevels:
+  - intervalSeconds: 0
+    triggerThreshold: 0
+    rangeRows: 2
+    damage: 2
+    columns: 0000000001000000020000000300000004000000
+    burnTotalDamage: 0
+    burnDurationSeconds: 0
+    iceFreezeChancePerHit: 0.3
+  - intervalSeconds: 0
+    triggerThreshold: 0
+    rangeRows: 2
+    damage: 3
+    columns: 0000000001000000020000000300000004000000
+    burnTotalDamage: 0
+    burnDurationSeconds: 0
+    iceFreezeChancePerHit: 0.32
+  - intervalSeconds: 0
+    triggerThreshold: 0
+    rangeRows: 3
+    damage: 4
+    columns: 0000000001000000020000000300000004000000
+    burnTotalDamage: 0
+    burnDurationSeconds: 0
+    iceFreezeChancePerHit: 0.34
+  - intervalSeconds: 0
+    triggerThreshold: 0
+    rangeRows: 3
+    damage: 5
+    columns: 0000000001000000020000000300000004000000
+    burnTotalDamage: 0
+    burnDurationSeconds: 0
+    iceFreezeChancePerHit: 0.36
+  - intervalSeconds: 0
+    triggerThreshold: 0
+    rangeRows: 3
+    damage: 6
+    columns: 0000000001000000020000000300000004000000
+    burnTotalDamage: 0
+    burnDurationSeconds: 0
+    iceFreezeChancePerHit: 0.38
+  timedArrowLevels: []
+  returnWaveLevels: []
+  chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
+  chargeHitShockwaveLevels: []
+  diseaseLevels: []
+  triggerParam: 0
+  phantomSteps: []
+  useCount: 1
+  gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
+  prerequisites: []
+  activeEffectType: 7
+  cooldownLevels:
+  - 12
+  - 11
+  - 10
+  - 9
+  - 8

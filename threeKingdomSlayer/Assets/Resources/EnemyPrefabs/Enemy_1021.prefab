@@ -89,6 +89,22 @@ MonoBehaviour:
   shareHealthWithAdjacent: 0
   maxPoise: 50
   stunDuration: 1.5
+  freezeDuration: 4
+  freezeChanceMax: 0.75
+  freezeChanceDecayDelay: 0.6
+  freezeChanceDecayPerSecond: 0.5
+  freezeWindupChanceMultiplier: 2
+  freezePushImmune: 0
+  freezeResist: 0
+  iceBreakAnimDuration: 0.4
+  breakIceReturnDelay: 1.2
+  freezeOverlayPrefab: {fileID: 0}
+  freezeOverlayScale: 0.825
+  freezeOverlayYOffset: 0.1
+  freezeRecoveryDelay: 0.5
+  iceBreakEffectPrefab: {fileID: 0}
+  freezeMeltEffectPrefab: {fileID: 0}
+  freezePresentation: {fileID: 11400000, guid: 2707f6fb7c6df9b4e8c573c273f3ccfa, type: 2}
   launchDuration: 2
   launchGravity: 20
   launchReboundVelocity: 8

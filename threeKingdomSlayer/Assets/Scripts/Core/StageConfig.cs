@@ -135,6 +135,10 @@ public class StageConfig : ScriptableObject
     
     [Header("通关奖励")]
     public int clearCoinReward = 100;
+
+    [Header("元素反应（冰系）")]
+    [Tooltip("破冰推动被阻挡时的碰撞伤害固定值：推动者与被撞者各结算一次")]
+    public float collisionDamage = 15f;
     
     [Header("阵型与可见性（多关卡共享）")]
     [Tooltip("阵型配置资产。若未设置则使用代码默认值")]

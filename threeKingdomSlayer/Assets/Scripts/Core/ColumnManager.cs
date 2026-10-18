@@ -1230,8 +1230,9 @@ public class ColumnManager : MonoBehaviour
         return _pushReturnOrderId;
     }
 
-    private void RegisterPushReturn(Enemy enemy, int originalColumn, int originalRow, int displacedRow)
+    private void RegisterPushReturn(Enemy enemy, int originalColumn, int originalRow, int displacedRow, float delaySeconds = -1f, bool abortWaveMarch = true)
     {
+        float delay = delaySeconds >= 0f ? delaySeconds : pushReturnDelay;
         if (_pushReturnTransactions.TryGetValue(enemy, out var transaction))
         {
             enemy.OnRushMoveComplete -= OnPushReturnStepComplete;
@@ -1241,14 +1242,14 @@ public class ColumnManager : MonoBehaviour
             transaction.displacedRow = displacedRow;
             transaction.generation = NextPushReturnGeneration();
             transaction.orderId = NextPushReturnOrderId();
-            transaction.returnDueTime = Time.time + pushReturnDelay;
+            transaction.returnDueTime = Time.time + delay;
             transaction.scheduled = true;
             transaction.lastBlockedRow = int.MinValue;
             DebugLog.Info($"[PushReturn] reschedule {enemy.DebugTag} origin=({transaction.originalColumn},{transaction.originalRow}) target=({originalColumn},{displacedRow}) gen={transaction.generation} order={transaction.orderId}");
             return;
         }
 
-        if (_pushReturnTransactions.Count == 0)
+        if (abortWaveMarch && _pushReturnTransactions.Count == 0)
         {
             AbortWaveMarch(preserveForPushReturn: true);
             _topologyChangedWhilePushReturn = false;
@@ -1266,7 +1267,7 @@ public class ColumnManager : MonoBehaviour
             displacedRow = displacedRow,
             generation = generation,
             orderId = orderId,
-            returnDueTime = Time.time + pushReturnDelay,
+            returnDueTime = Time.time + delay,
             scheduled = true
         };
         _pushReturnTransactions.Add(enemy, transaction);
@@ -1519,6 +1520,87 @@ public class ColumnManager : MonoBehaviour
     #endregion
 
     #region 位移效果（击退/聚拢）
+
+    /// <summary>
+    /// 破冰推动（方案 A）：逐排向后推进到最远合法排，被占则停在阻挡者前一排。
+    /// 不在这里登记回位，回位由调用方（Enemy）在破冰动画结束时用 RegisterBreakIceReturn 登记。
+    /// </summary>
+    public struct BreakIcePushResult
+    {
+        public bool moved;
+        public Enemy blockedBy;
+        public int fromRow;
+        public int toRow;
+    }
+
+    public BreakIcePushResult ApplyBreakIcePush(Enemy frozen, int maxRows)
+    {
+        var result = new BreakIcePushResult { moved = false, blockedBy = null, fromRow = -1, toRow = -1 };
+        if (frozen == null || frozen.state == EnemyState.Dead) return result;
+        if (frozen.isBoss || frozen.IsMountedCavalry || frozen.freezePushImmune) return result;
+
+        int col = frozen.columnIndex;
+        if (!IsValidColumn(col) || maxRows <= 0) return result;
+
+        int visibleMaxRow = (StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5) - 1;
+        int allowed = Mathf.Min(maxRows, visibleMaxRow - frozen.rowIndex);
+        if (allowed <= 0) return result;
+
+        var column = columns[col];
+        int fromRow = frozen.rowIndex;
+        int targetRow = fromRow;
+
+        for (int step = 1; step <= allowed; step++)
+        {
+            int probe = fromRow + step;
+            var occupant = column.GetEnemyAtRow(probe);
+            if (occupant != null && occupant != frozen)
+            {
+                // 本次破冰的其他冻结目标不算阻挡者：只停在其前方，不结算碰撞伤害（设计 §5.7）
+                if (IceBreakRuntime.IsBreakSetMember(occupant))
+                {
+                    result.blockedBy = null;
+                    break;
+                }
+                result.blockedBy = occupant;
+                break;
+            }
+            targetRow = probe;
+        }
+
+        result.fromRow = fromRow;
+        result.toRow = targetRow;
+        if (targetRow == fromRow) return result;
+        if (column.IsRowOccupied(targetRow, frozen)) return result;
+
+        Vector3 fromWorldPosition = frozen.transform.position;
+        // 只停掉它自己的在途移动；不走 ReleaseEnemyFromSchedulers，
+        // 否则会打断波次行军链、取消回位事务（会造成“被推后不再补齐回来”）。
+        if (frozen.IsRushMovementActive)
+            frozen.CancelRushMoveOrder(resetActiveMovement: true);
+        column.RemoveEnemySilent(frozen);
+        frozen.SetRowIndex(targetRow);
+        column.InsertEnemySorted(frozen);
+        result.moved = true;
+        frozen.PlayBreakIcePushMove(fromWorldPosition);
+
+        frozen.RecheckAttackRange();
+        SpikeTrapController.Instance?.CheckAndTrigger(frozen);
+        DebugLog.Info($"[BreakIcePush] {frozen.DebugTag} col={col} row {fromRow}→{targetRow} blockedBy={(result.blockedBy != null ? result.blockedBy.DebugTag : "none")}");
+        return result;
+    }
+
+    /// <summary>破冰后的延迟回位（走现有回位交易，原槽被占时按既有重试逻辑等待）。
+    /// 注意：不中止波次行军（abortWaveMarch=false）。
+    /// 否则每次破冰都会把在途的补齐步骤挂起并重播，造成“补齐规则被破坏”的观感。
+    /// 目标本身因带回位交易会被行军计划自动跳过。</summary>
+    public void RegisterBreakIceReturn(Enemy enemy, int originalColumn, int originalRow, int displacedRow, float delaySeconds)
+    {
+        if (enemy == null || enemy.state == EnemyState.Dead) return;
+        RegisterPushReturn(enemy, originalColumn, originalRow, displacedRow, delaySeconds, abortWaveMarch: false);
+        NotifyPushReturnTopologyChanged();
+        DebugLog.Info($"[BreakIcePush] 登记延迟回位 {enemy.DebugTag} origin=({originalColumn},{originalRow}) displacedRow={displacedRow} delay={delaySeconds:F2}s");
+    }
 
     /// <summary>
     /// 将敌人移动到目标列的指定排（保留 row 位置），更新世界坐标。

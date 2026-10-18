@@ -186,6 +186,9 @@ public class PlayerState : MonoBehaviour
         damageReductionPercent = 0f;
         damageReductionTimer = 0f;
         buffTimers.Clear();
+        // 元素一次性 BUFF 与破冰会话属于战斗内状态，开新局必须清空
+        PlayerElementalBuffs.Clear();
+        IceBreakRuntime.EndAttack();
 
         float maxHp = heroConfig != null ? heroConfig.maxHealth : 100f;
         OnHealthChanged?.Invoke(currentHealth, maxHp);

@@ -14,7 +14,9 @@ public enum EnemyState
     Launched,
     Dead,
     QTEAttacking,  // BOSS QTE 攻击演出中
-    GettingUp
+    GettingUp,
+    Frozen,        // 冻结：暂停而非取消一切行动
+    IceBreaking    // 破冰动画播放中：位置静止、不可再冻，动画结束才解除冻结
 }
 
 public enum EnemyFormState
@@ -179,6 +181,50 @@ public class Enemy : MonoBehaviour
     [Header("架势系统")]
     public float maxPoise = 50f;
     public float stunDuration = 1.5f;
+
+    [Header("冻结（冰系）")]
+    [Tooltip("冻结时长（秒）。重复冻结只重置为满值，不叠加")]
+    public float freezeDuration = 4f;
+    [Tooltip("冻结概率上限，防必冻")]
+    [Range(0f, 1f)] public float freezeChanceMax = 0.75f;
+    [Tooltip("最后一次冰伤害后多久开始衰退（秒）")]
+    public float freezeChanceDecayDelay = 0.6f;
+    [Tooltip("冻结概率每秒衰退量")]
+    public float freezeChanceDecayPerSecond = 0.5f;
+    [Tooltip("处于攻击前摇时，冰伤害叠加概率的倍率")]
+    public float freezeWindupChanceMultiplier = 2f;
+    [Tooltip("冻结中被破冰推动时不产生位移")]
+    public bool freezePushImmune = false;
+    [Tooltip("冻结抗性：减算到冻结概率，减到 0 即免疫")]
+    [Range(0f, 1f)] public float freezeResist = 0f;
+    [Tooltip("破冰动画时长（秒）")]
+    public float iceBreakAnimDuration = 0.4f;
+[Tooltip("破冰后的回位延时（秒），从破冰动画结束起算")]
+public float breakIceReturnDelay = 1.2f;
+[Tooltip("冻结表现：挂在敌人身上的覆盖层 Prefab（可为空，为空时用程序化冰块）")]
+public GameObject freezeOverlayPrefab;
+[Tooltip("冰块高度 / 角色可见高度（等比缩放，保持素材本身的长宽比）")]
+[Range(0.3f, 2.5f)] public float freezeOverlayScale = 0.825f;
+[Tooltip("冰块中心垂直偏移（相对角色可见高度，正=向上）")]
+[Range(-0.5f, 0.5f)] public float freezeOverlayYOffset = 0.1f;
+[Tooltip("自然解冻后的停顿（秒）：此期间不接补齐/行军订单")]
+[Min(0f)] public float freezeRecoveryDelay = 0.5f;
+[Tooltip("破冰一次性特效 Prefab（可为空）。时长以 iceBreakAnimDuration 为准")]
+public GameObject iceBreakEffectPrefab;
+[Tooltip("自然解冻一次性特效 Prefab（可为空）。与破冰碎裂是两套不同表现")]
+public GameObject freezeMeltEffectPrefab;
+
+    [Tooltip("冰系表现共享配置（所有敌人共用一份；为空时才回落到本预制体上的以下字段）")]
+    public FreezePresentationConfig freezePresentation;
+
+    private GameObject ResolveFreezeOverlayPrefab() =>
+        freezePresentation != null && freezePresentation.freezeOverlayPrefab != null ? freezePresentation.freezeOverlayPrefab : freezeOverlayPrefab;
+    private GameObject ResolveIceBreakPrefab() =>
+        freezePresentation != null && freezePresentation.iceBreakEffectPrefab != null ? freezePresentation.iceBreakEffectPrefab : iceBreakEffectPrefab;
+    private GameObject ResolveMeltPrefab() =>
+        freezePresentation != null && freezePresentation.freezeMeltEffectPrefab != null ? freezePresentation.freezeMeltEffectPrefab : freezeMeltEffectPrefab;
+    private float ResolveOverlayScale() => freezePresentation != null ? freezePresentation.overlayScale : freezeOverlayScale;
+    private float ResolveOverlayYOffset() => freezePresentation != null ? freezePresentation.overlayYOffset : freezeOverlayYOffset;
 
     [Header("击飞系统")]
     public float launchDuration = 2f;
@@ -382,12 +428,48 @@ public class Enemy : MonoBehaviour
     private bool _hitFrameResolvedOnce;
     private bool _hitFrameFiredAny;
     private bool _hitFrameInterrupted;
-    private bool _attackTweenPausedByHitStop;
+    private bool _suspendTweenPaused;
     private EnemyAttackTelegraph _attackTelegraph;
     private Tween _hitScaleTween;
+    private Tween _breakIcePushTween;
     private float _hitStopRemaining;
-    public bool IsHitStopped => _hitStopRemaining > 0f;
-    private bool _hitStopAnimatorWasEnabled;
+    public bool IsHitStopped => (_suspendSources & SuspendSource.HitStop) != 0;
+    /// <summary>任何来源（卡肉 / 冻结）造成的挂起。挂起期间动画与攻击位移都停住。</summary>
+    public bool IsSuspended => _suspendSources != SuspendSource.None;
+    /// <summary>挂起来源：可叠加；只有全部解除才真正恢复动画与位移。</summary>
+    [System.Flags]
+    public enum SuspendSource
+    {
+        None = 0,
+        HitStop = 1,
+        Frozen = 2
+    }
+    private SuspendSource _suspendSources;
+    private bool _suspendAnimatorWasEnabled;
+
+    // 冻结运行时状态（不序列化）
+    [System.NonSerialized] private float _freezeRemaining;
+    [System.NonSerialized] private float _iceBreakRemaining;
+    [System.NonSerialized] private int _breakIceOriginColumn;
+    [System.NonSerialized] private int _breakIceOriginRow;
+    /// <summary>顶开位移时长（秒）：这段期间保持冰冻形态，到位后才碎冰</summary>
+    public const float BreakPushMoveSeconds = 0.12f;
+    [System.NonSerialized] private ColumnManager.BreakIcePushResult _pendingBreakPush;
+    [System.NonSerialized] private bool _breakSequencePending;
+    [System.NonSerialized] private float _breakSequenceDelay;
+    [System.NonSerialized] private float _freezeChance;
+    [System.NonSerialized] private float _lastIceHitTime;
+    [System.NonSerialized] private EnemyState _preFrozenState = EnemyState.Idle;
+    [System.NonSerialized] private GameObject _freezeOverlayInstance;
+    [System.NonSerialized] private SpriteRenderer _freezeOverlayRenderer;
+    private static Sprite _proceduralFrostSprite;
+    private static Sprite[] _proceduralShardSprites;
+    private static Sprite _proceduralShardSprite;
+    [System.NonSerialized] private Vector3 _freezeOverlayWorldSize;
+    [System.NonSerialized] private Color _colorBeforeFreeze;
+    [System.NonSerialized] private bool _hasFreezeColorSnapshot;
+    [System.NonSerialized] private float _postFreezeRecoverRemaining;
+    private static readonly Color FreezeTintColor = new Color(0.55f, 0.78f, 1f, 1f);
     private float _hitScaleMultiplier = 1f;
 
     // Animator HitFlash 协程引用
@@ -699,6 +781,9 @@ public class Enemy : MonoBehaviour
         if (!initialized || state == EnemyState.Dead) return;
 
         UpdateHitStop();
+        UpdateFreezeChanceDecay();
+        if (_postFreezeRecoverRemaining > 0f)
+            _postFreezeRecoverRemaining -= Time.deltaTime;
         if (_pierceHighlighted)
             UpdateOutlineState();
 
@@ -730,6 +815,12 @@ public class Enemy : MonoBehaviour
             case EnemyState.QTEAttacking:
                 // QTE 攻击演出中，由 QTEController 驱动，此处不做任何事
                 break;
+            case EnemyState.Frozen:
+                UpdateFrozen();
+                break;
+            case EnemyState.IceBreaking:
+                UpdateIceBreaking();
+                break;
             case EnemyState.Idle:
             default:
                 if (_cavalry != null && _cavalry.Tick())
@@ -749,7 +840,8 @@ public class Enemy : MonoBehaviour
             UpdateAttackHitFrames();
 
         // Only an already assigned scheduler order may resume after its delay.
-        if (rushMoveDelayTimer > 0f)
+        // 冻结期间整段计时暂停（冻结语义是挂起，不是取消）。
+        if (!IsActionPaused && rushMoveDelayTimer > 0f)
         {
             rushMoveDelayTimer -= Time.deltaTime;
             if (rushMoveDelayTimer <= 0f && HasRushMoveOrder)
@@ -757,7 +849,7 @@ public class Enemy : MonoBehaviour
         }
 
         // Boss 应战缓冲计时器：到达应战排后短暂无敌（给出场动画留时间）
-        if (_bossEngageTimer > 0f)
+        if (!IsActionPaused && _bossEngageTimer > 0f)
         {
             _bossEngageTimer -= Time.deltaTime;
             if (_bossEngageTimer <= 0f)
@@ -1522,7 +1614,7 @@ public class Enemy : MonoBehaviour
         }
 
         UpdateOutlineState();
-        if (HasRushMoveOrder && state != EnemyState.Stunned && state != EnemyState.Launched)
+        if (HasRushMoveOrder && state != EnemyState.Stunned && state != EnemyState.Launched && state != EnemyState.Frozen)
             TryStartRushMove();
         DebugLog.Info($"[Enemy] 退出QTE攻击: {DebugTag}");
     }
@@ -2142,7 +2234,7 @@ private void SpawnProjectile()
         _attackTween = DOTween.Sequence().SetUpdate(UpdateType.Normal, false);
         _attackTween.SetTarget(transform);
         _attackTween.SetId("attackAnim");
-        _attackTweenPausedByHitStop = false;
+        _suspendTweenPaused = false;
 
         // 远程攻击：不移动；声明命中帧时由命中帧决定击发时刻
         if (isRanged)
@@ -2218,7 +2310,7 @@ private void SpawnProjectile()
             if (isBoss)
             {
                 // 若已被 Stun/Launch 打断，不覆盖状态
-                if (state != EnemyState.Stunned && state != EnemyState.Launched)
+                if (state != EnemyState.Stunned && state != EnemyState.Launched && state != EnemyState.Frozen)
                 {
                     state = EnemyState.Idle;
                     SetBossActionCooldown();
@@ -2226,7 +2318,7 @@ private void SpawnProjectile()
             }
             else
             {
-                if (state != EnemyState.Stunned && state != EnemyState.Launched)
+                if (state != EnemyState.Stunned && state != EnemyState.Launched && state != EnemyState.Frozen)
                 {
                     int atkRange = (int)Mathf.Max(1, attackRange);
                     if (HasRushMoveOrder)
@@ -2250,7 +2342,7 @@ private void SpawnProjectile()
             }
 
             // Attack completion may only resume an already owned order.
-            if (state != EnemyState.Stunned && state != EnemyState.Launched)
+            if (state != EnemyState.Stunned && state != EnemyState.Launched && state != EnemyState.Frozen)
             {
                 PlayIdleVisual();
                 if (HasRushMoveOrder)
@@ -2422,6 +2514,10 @@ private void SpawnProjectile()
         // 锁血检查
         if (_healthLocked) return;
 
+        // 破冰（P4）：合规重攻击命中冻结目标 → 播破冰动画 + 本段伤害翻倍。
+        // 推动（①）与碰撞（②）由 BreakIcePush 负责。
+        IceBreakRuntime.TryResolve(this, damageType, feedbackSource, ref damage);
+
         // 转阶段血量阈值检查（在扣血前判断）
         if (isBoss && bossPhases != null && currentBossPhase < bossPhases.Count - 1)
         {
@@ -2490,6 +2586,7 @@ private void SpawnProjectile()
 
         bool allowHitReactionAnimation = triggerHitAnimation
             && !suppressHitReactionAnimation
+            && !IsFrozenHitReactionSuppressed // 冻结中受击不播 hitted（破冰序列除外）
             && feedbackSource != HitFeedbackSource.Dot
             && damageType != DamageType.Launch
             && formState != EnemyFormState.ShieldBroken; // 破盾表现期：普通受击不打断掉盾动画
@@ -2685,17 +2782,730 @@ private void SpawnProjectile()
 
         if (_hitStopRemaining <= 0f)
         {
-            _hitStopAnimatorWasEnabled = _animator != null && _animator.enabled;
-            if (_animator != null)
-                _animator.enabled = false;
-            // 卡肉同时冻结攻击位移：否则「精灵冻结、位移/出伤继续」会错拍
-            PauseAttackTweenForHitStop();
+            PushSuspend(SuspendSource.HitStop);
             if (HitFeedbackManager.EnableDebugLogs)
-                Debug.Log($"[HitFeedback] Freeze enemy={DebugTag} requested={duration:F3}s animator={_animator != null} animatorWasEnabled={_hitStopAnimatorWasEnabled} frame={Time.frameCount}");
+                Debug.Log($"[HitFeedback] Freeze enemy={DebugTag} requested={duration:F3}s animator={_animator != null} animatorWasEnabled={_suspendAnimatorWasEnabled} frame={Time.frameCount}");
         }
 
         _hitStopRemaining = Mathf.Max(_hitStopRemaining, duration);
     }
+
+    /// <summary>挂起：暂停 Animator 与攻击位移。可叠加（卡肉 + 冻结），全部解除才恢复。</summary>
+    public void PushSuspend(SuspendSource source)
+    {
+        if (source == SuspendSource.None) return;
+        if ((_suspendSources & source) != 0) return;
+        bool wasSuspended = IsSuspended;
+        _suspendSources |= source;
+        if (wasSuspended) return;
+
+        _suspendAnimatorWasEnabled = _animator != null && _animator.enabled;
+        if (_animator != null)
+            _animator.enabled = false;
+        // 与 Animator 同时暂停攻击位移：否则「精灵冻结、位移/出伤继续」会错拍
+        PauseAttackTweenForSuspend();
+    }
+
+    /// <summary>解除挂起。仍有其它来源时保持挂起状态。</summary>
+    public void PopSuspend(SuspendSource source)
+    {
+        if (source == SuspendSource.None) return;
+        if ((_suspendSources & source) == 0) return;
+        _suspendSources &= ~source;
+        if (IsSuspended) return;
+
+        if (state != EnemyState.Dead && _animator != null && _suspendAnimatorWasEnabled)
+            _animator.enabled = true;
+        _suspendAnimatorWasEnabled = false;
+        ResumeAttackTweenAfterSuspend();
+    }
+
+    #region 冻结（冰系）
+
+    /// <summary>当前是否处于攻击前摇播放中（与 Parry 打断同口径：收招不算前摇）。</summary>
+    public bool IsInAttackWindup => state == EnemyState.Attacking && isAttackAnimating && !isAttackDrawPhase;
+
+    public bool IsFrozen => state == EnemyState.Frozen;
+    /// <summary>
+    /// 冻结中受击不播受击动画（设计 4.2）。
+    /// 例外：破冰序列（含 0.12s 顶开窗口）——那时受击动画要与碎冰同步播放（设计 4.6）。
+    /// </summary>
+    private bool IsFrozenHitReactionSuppressed => state == EnemyState.Frozen && !_breakSequencePending;
+    /// <summary>自然解冻后的短暂停顿：不接补齐/行军，保证玩家能看到“解冻了”这一步。</summary>
+    public bool IsInPostFreezeRecovery => _postFreezeRecoverRemaining > 0f;
+    /// <summary>冻结或破冰动画期间：所有自主行动与计时都暂停。</summary>
+    public bool IsActionPaused => state == EnemyState.Frozen || state == EnemyState.IceBreaking;
+    public float FreezeChance => _freezeChance;
+
+    /// <summary>是否允许进入冻结：空中、起身、QTE、阶段切换、死亡、未应战 BOSS 都不允许。</summary>
+    public bool CanBeFrozen
+    {
+        get
+        {
+            if (state == EnemyState.Dead) return false;
+            if (state == EnemyState.Frozen) return false;
+            if (state == EnemyState.IceBreaking) return false; // 破冰动画期间不可再冻（设计 4.6 / 用例 6b）
+            if (state == EnemyState.Launched) return false;
+            if (state == EnemyState.GettingUp) return false;
+            if (state == EnemyState.QTEAttacking) return false;
+            if (isPhaseTransitioning) return false;
+            if (isBoss && bossState != BossState.InCombat) return false;
+            return true;
+        }
+    }
+
+    /// <summary>冻结：暂停而非取消。已冻结时只把时长重置为满值，不重复挂起。</summary>
+    public bool Freeze(float duration)
+    {
+        if (duration <= 0f) duration = freezeDuration;
+
+        if (state == EnemyState.Frozen)
+        {
+            _freezeRemaining = Mathf.Max(_freezeRemaining, duration);
+            return true;
+        }
+        if (!CanBeFrozen) return false;
+
+        // 在途补齐移动先落位（走完整完成分支，含补齐链回调），再进入冻结（设计 §4.1）
+        CompletePendingMovement();
+
+        _preFrozenState = state;
+        state = EnemyState.Frozen;
+        _freezeRemaining = duration;
+        PushSuspend(SuspendSource.Frozen);
+        ApplyFreezeVisual(true);
+        _postFreezeRecoverRemaining = 0f;
+        DebugLog.Info($"[Freeze] {DebugTag} 进入冻结 {duration:F2}s (原状态={_preFrozenState})");
+        return true;
+    }
+
+    /// <summary>自然解冻：从暂停处续播原动作。</summary>
+    private void EndFreezeNatural()
+    {
+        if (state != EnemyState.Frozen) return;
+        _freezeRemaining = 0f;
+        ApplyFreezeVisual(false);
+        state = _preFrozenState;
+        PopSuspend(SuspendSource.Frozen);
+        _postFreezeRecoverRemaining = Mathf.Max(0f, freezeRecoveryDelay);
+
+        // 自然解冻用另一套表现（塌陷/融化），与破冰爆散区分
+        if (ResolveMeltPrefab() != null)
+        {
+            SpawnFittedFx(ResolveMeltPrefab(), 1.15f);
+        }
+
+        DebugLog.Info($"[Freeze] {DebugTag} 自然解冻 → {state}，停顿 {_postFreezeRecoverRemaining:F2}s 后再接补齐");
+    }
+
+    /// <summary>破冰解冻：取消被暂停的动作。（P4 会在这里接入破冰动画与双倍结算）</summary>
+    public void BreakFreeze()
+    {
+        if (state != EnemyState.Frozen) return;
+        _freezeRemaining = 0f;
+        ApplyFreezeVisual(false);
+        PopSuspend(SuspendSource.Frozen);
+        CancelAttack();
+        state = EnemyState.Idle;
+        DebugLog.Info($"[Freeze] {DebugTag} 破冰解冻 → Idle");
+    }
+
+    /// <summary>
+    /// 系统演出接管（BOSS 转阶段）：强制解除冻结与破冰序列。
+    /// 冻结是“暂停”而非“取消”，但阶段演出不允许被暂停，必须由演出方主动清掉挂起令牌：
+    /// 否则 _suspendSources 残留 Frozen 会让 Animator 永久禁用、冻结计时不再递减、冰块覆盖层不销毁。
+    /// </summary>
+    private void ClearFreezeForSystemOverride()
+    {
+        bool hasFrozenToken = (_suspendSources & SuspendSource.Frozen) != 0;
+        if (state != EnemyState.Frozen && state != EnemyState.IceBreaking && !hasFrozenToken) return;
+
+        ApplyFreezeVisual(false);
+        _freezeRemaining = 0f;
+        _breakSequencePending = false;
+        _breakSequenceDelay = 0f;
+        _iceBreakRemaining = 0f;
+        _postFreezeRecoverRemaining = 0f;
+        PopSuspend(SuspendSource.Frozen);
+        DebugLog.Info($"[Freeze] {DebugTag} 系统演出接管，强制解除冻结 (state={state})");
+    }
+
+    private void UpdateFrozen()
+    {
+        // 顶开到位 → 碰撞 + 碎冰
+        if (_breakSequencePending)
+        {
+            _breakSequenceDelay -= Time.deltaTime;
+            if (_breakSequenceDelay <= 0f)
+            {
+                StartBreakSequence();
+                return;
+            }
+        }
+
+        _freezeRemaining -= Time.deltaTime;
+
+        // 冰壳呼吸：让"冻住"在读感上不是一张静止图片
+        if (_freezeOverlayRenderer != null)
+        {
+            float t = 0.5f + 0.5f * Mathf.Sin(Time.time * 6f);
+            Color c = _freezeOverlayRenderer.color;
+            c.a = Mathf.Lerp(0.55f, 0.92f, t);
+            _freezeOverlayRenderer.color = c;
+        }
+
+        if (_freezeRemaining <= 0f)
+            EndFreezeNatural();
+    }
+
+    /// <summary>①破冰推动 + ②碰撞伤害。双倍伤害与破冰动画由调用方接着处理。</summary>
+    public void BreakIcePush()
+    {
+        if (state != EnemyState.Frozen) return;
+
+        var cm = EnemyManager.Instance?.columnManager;
+        if (cm == null) return;
+
+        _breakIceOriginColumn = columnIndex;
+        _breakIceOriginRow = rowIndex;
+
+        var res = cm.ApplyBreakIcePush(this, IceBreakRuntime.BreakIcePushRows);
+        _pendingBreakPush = res;
+
+        string blockedTag = res.blockedBy != null
+            ? res.blockedBy.DebugTag + "@row" + res.blockedBy.rowIndex
+            : "none";
+        Debug.Log("[BreakIcePush] " + DebugTag + " col=" + columnIndex + " row " + res.fromRow + "->" + res.toRow
+                  + " moved=" + res.moved + " blockedBy=" + blockedTag);
+
+        // 回位事务当场登记：到期时间 = 顶开位移 + 破冰动画 + 停留
+        if (res.moved)
+        {
+            float delay = BreakPushMoveSeconds
+                          + Mathf.Max(0f, iceBreakAnimDuration)
+                          + Mathf.Max(0f, breakIceReturnDelay);
+            cm.RegisterBreakIceReturn(this, _breakIceOriginColumn, _breakIceOriginRow, rowIndex, delay);
+        }
+    }
+
+    /// <summary>顶开到位后的碰撞结算（双方各一次）。</summary>
+    private void ApplyPendingBreakCollision()
+    {
+        var res = _pendingBreakPush;
+        if (res.blockedBy == null) return;
+
+        float collisionDamage = 0f;
+        if (StageController.Instance != null && StageController.Instance.stageConfig != null)
+            collisionDamage = StageController.Instance.stageConfig.collisionDamage;
+
+        if (collisionDamage <= 0f)
+        {
+            Debug.LogWarning("[BreakIcePush] 被 " + res.blockedBy.DebugTag + " 挡住，但关卡 collisionDamage<=0，未结算碰撞伤害");
+            return;
+        }
+
+        float blockerHpBefore = res.blockedBy.currentHealth;
+        float selfHpBefore = currentHealth;
+
+        res.blockedBy.TakeDamage(collisionDamage, DamageType.Collision,
+            feedbackSource: HitFeedbackSource.Collision,
+            countsForCombo: true,
+            canInterruptAttack: false,
+            triggerHitAnimation: !res.blockedBy.IsFrozen,
+            hitReactionDirection: HitReactionDirection.Front);
+        TakeDamage(collisionDamage, DamageType.Collision,
+            feedbackSource: HitFeedbackSource.Collision,
+            countsForCombo: true,
+            canInterruptAttack: false,
+            triggerHitAnimation: false,
+            hitReactionDirection: HitReactionDirection.None);
+
+        Debug.Log("[BreakIcePush] 碰撞结算：" + DebugTag + " " + selfHpBefore + "->" + currentHealth
+                  + " / " + res.blockedBy.DebugTag + " " + blockerHpBefore + "->" + res.blockedBy.currentHealth);
+    }
+
+
+    /// <summary>④破冰动画：停冻结、播特效；hitted 由本次 TakeDamage 正常同步播放。</summary>
+    public void BeginIceBreaking()
+    {
+        if (state != EnemyState.Frozen) return;
+
+        // 被顶开时：先保持冰冻形态跑完位移，到位那一刻才碰撞 + 碎冰
+        if (_pendingBreakPush.moved)
+        {
+            _breakSequencePending = true;
+            _breakSequenceDelay = BreakPushMoveSeconds;
+            return;
+        }
+
+        StartBreakSequence();
+    }
+
+    private void StartBreakSequence()
+    {
+        _breakSequencePending = false;
+        _breakSequenceDelay = 0f;
+
+        ApplyPendingBreakCollision();
+
+        _freezeRemaining = 0f;
+        ApplyFreezeVisual(false);
+        PopSuspend(SuspendSource.Frozen);
+
+        if (ResolveIceBreakPrefab() != null)
+            SpawnFittedFx(ResolveIceBreakPrefab(), 1.35f);
+        else
+            SpawnProceduralIceBreakFx();
+
+        state = EnemyState.IceBreaking;
+        _iceBreakRemaining = Mathf.Max(0.01f, iceBreakAnimDuration);
+        DebugLog.Info("[Freeze] " + DebugTag + " 破冰 -> IceBreaking " + _iceBreakRemaining.ToString("F2") + "s");
+    }
+
+
+    /// <summary>破冰推动的位移补间：从被推前的位置快速滑到新排，避免“瞬移”。</summary>
+    public void PlayBreakIcePushMove(Vector3 fromWorldPosition, float duration = 0.12f)
+    {
+        Vector3 end = transform.position;
+        transform.position = fromWorldPosition;
+
+        _breakIcePushTween?.Kill();
+        _breakIcePushTween = transform
+            .DOMove(end, Mathf.Max(0.02f, duration))
+            .SetEase(Ease.OutQuad)
+            .SetTarget(transform)
+            .SetId("breakIcePush");
+    }
+
+    /// <summary>没有美术素材时的冰碎占位：把冰块按 3x3 切开，整块沿切口碎开飞散。</summary>
+    private void SpawnProceduralIceBreakFx()
+    {
+        GetSpriteVisibleArea(out Vector3 center, out Vector3 visibleSize);
+        center += Vector3.up * (visibleSize.y * ResolveOverlayYOffset());
+        Vector3 blockSize = _freezeOverlayWorldSize.sqrMagnitude > 0.0001f
+            ? _freezeOverlayWorldSize
+            : new Vector3(visibleSize.y * ResolveOverlayScale(), visibleSize.y * ResolveOverlayScale(), 1f);
+
+        var root = new GameObject("IceBreakFx");
+        root.transform.position = center;
+
+        int sortingBase = (_spriteRenderer != null ? _spriteRenderer.sortingOrder : 0) + 6;
+
+        // 1) 破冰闪光：确保“冰碎了”这一下先被看到
+        var flash = new GameObject("flash");
+        flash.transform.SetParent(root.transform, false);
+        var flashSr = flash.AddComponent<SpriteRenderer>();
+        flashSr.sprite = GetProceduralShardSprite();
+        flashSr.sortingOrder = sortingBase - 1;
+        flashSr.color = new Color(1f, 1f, 1f, 0.9f);
+        flash.transform.position = center;
+        flash.transform.localScale = Vector3.one * (Mathf.Max(blockSize.x, blockSize.y) * 1.7f);
+        flash.transform.DORotate(new Vector3(0f, 0f, 80f), 0.24f).SetTarget(flash).SetUpdate(UpdateType.Normal, false);
+        flashSr.DOFade(0f, 0.22f).SetTarget(flash).SetUpdate(UpdateType.Normal, false);
+
+        // 2) 碎片：12 片亮色冰栈向外飞散
+        const int count = 12;
+        float minSide = Mathf.Max(0.1f, Mathf.Min(blockSize.x, blockSize.y));
+
+        for (int i = 0; i < count; i++)
+        {
+            var shard = new GameObject("shard");
+            shard.transform.SetParent(root.transform, false);
+            var sr = shard.AddComponent<SpriteRenderer>();
+            sr.sprite = GetProceduralShardSprite();
+            sr.sortingOrder = sortingBase;
+            sr.color = new Color(0.9f, 0.97f, 1f, 1f);
+
+            float angle = (Mathf.PI * 2f / count) * i + Random.Range(-0.25f, 0.25f);
+            Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            float startRadius = minSide * 0.22f;
+            shard.transform.position = center + new Vector3(dir.x, dir.y, 0f) * startRadius;
+            shard.transform.localScale = Vector3.one * Mathf.Max(0.18f, minSide * Random.Range(0.22f, 0.38f));
+            shard.transform.localRotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
+
+            Vector3 start = shard.transform.position;
+            Vector3 target = start + new Vector3(dir.x * Random.Range(0.55f, 1.15f), dir.y * Random.Range(0.45f, 0.95f), 0f);
+
+            shard.transform.DOMove(target, 0.42f).SetEase(Ease.OutQuad).SetTarget(shard).SetUpdate(UpdateType.Normal, false);
+            shard.transform.DORotate(new Vector3(0f, 0f, Random.Range(-220f, 220f)), 0.5f).SetTarget(shard).SetUpdate(UpdateType.Normal, false);
+            sr.DOFade(0f, 0.45f).SetDelay(0.18f).SetTarget(shard).SetUpdate(UpdateType.Normal, false);
+        }
+
+        Destroy(root, 0.85f);
+    }
+
+    /// <summary>破冰碎片占位精灵：亮边 + 不透明的三角化冰块（原先用半透明冰块贴图切分，几乎看不见）。</summary>
+    private static Sprite GetProceduralShardSprite()
+    {
+        if (_proceduralShardSprite != null) return _proceduralShardSprite;
+
+        const int size = 32;
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            wrapMode = TextureWrapMode.Clamp,
+            filterMode = FilterMode.Point,
+            name = "IceShard_Procedural"
+        };
+
+        var px = new Color32[size * size];
+        float c = (size - 1) * 0.5f;
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float dx = x - c;
+                float dy = y - c;
+                float d = Mathf.Sqrt(dx * dx + dy * dy) / c;
+                float ang = Mathf.Atan2(dy, dx);
+                float edge = 0.82f + 0.16f * Mathf.Sin(ang * 3f + 1.7f);
+
+                if (d > edge)
+                {
+                    px[y * size + x] = new Color32(0, 0, 0, 0);
+                    continue;
+                }
+
+                bool rim = d > edge - 0.2f;
+                px[y * size + x] = new Color32(
+                    rim ? (byte)248 : (byte)150,
+                    rim ? (byte)253 : (byte)218,
+                    (byte)255,
+                    rim ? (byte)255 : (byte)220);
+            }
+        }
+
+        tex.SetPixels32(px);
+        tex.Apply();
+        _proceduralShardSprite = Sprite.Create(tex, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 32f);
+        return _proceduralShardSprite;
+    }
+
+    private void UpdateIceBreaking()
+    {
+        _iceBreakRemaining -= Time.deltaTime;
+        if (_iceBreakRemaining > 0f) return;
+
+        _iceBreakRemaining = 0f;
+        CancelAttack();
+        state = EnemyState.Idle;
+
+        DebugLog.Info($"[Freeze] {DebugTag} 破冰动画结束 → Idle");
+    }
+
+    /// <summary>冰伤害入口：叠加冻结概率 → 前摇翻倍 → clamp → 按当前累计概率掷骰。</summary>
+    public void ApplyIceHit(float chancePerHit)
+    {
+        if (chancePerHit <= 0f) return;
+        // 冻结中不累加、不掷骰；破冰动画期间同样不累加不掷骰（设计 3 / 4.6）
+        if (state == EnemyState.Dead || state == EnemyState.Frozen || state == EnemyState.IceBreaking) return;
+
+        float delta = chancePerHit * (IsInAttackWindup ? freezeWindupChanceMultiplier : 1f);
+        _freezeChance = Mathf.Clamp(_freezeChance + delta, 0f, freezeChanceMax);
+        _lastIceHitTime = Time.time;
+
+        float effective = Mathf.Max(0f, _freezeChance - freezeResist);
+        if (effective <= 0f) return;
+        bool rolled = Random.value < effective;
+        DebugLog.Info($"[Ice] {DebugTag} chance={_freezeChance:F2} effective={effective:F2} windup={IsInAttackWindup} roll={(rolled ? "HIT" : "miss")}");
+        if (rolled)
+        {
+            _freezeChance = 0f;
+            Freeze(freezeDuration);
+        }
+    }
+
+    /// <summary>冻结概率衰退。冻结中不累加，但仍按时间衰退。</summary>
+    private void UpdateFreezeChanceDecay()
+    {
+        if (_freezeChance <= 0f) return;
+        if (Time.time - _lastIceHitTime < freezeChanceDecayDelay) return;
+        _freezeChance = Mathf.Max(0f, _freezeChance - freezeChanceDecayPerSecond * Time.deltaTime);
+    }
+
+    /// <summary>冻结表现：优先用美术给的覆盖层 Prefab；未配置时生成冰壳占位（不依赖素材）。</summary>
+    private void ApplyFreezeVisual(bool on)
+    {
+        if (on)
+        {
+            if (_freezeOverlayInstance == null)
+            {
+                if (ResolveFreezeOverlayPrefab() != null)
+                {
+                    _freezeOverlayInstance = Instantiate(ResolveFreezeOverlayPrefab(), transform, false);
+                    _freezeOverlayRenderer = _freezeOverlayInstance.GetComponentInChildren<SpriteRenderer>();
+                    FitOverlayToBlock();
+                }
+                else
+                {
+                    _freezeOverlayRenderer = CreateProceduralFrostOverlay();
+                    _freezeOverlayInstance = _freezeOverlayRenderer != null ? _freezeOverlayRenderer.gameObject : null;
+                    ApplyFreezeTint();
+                }
+            }
+            return;
+        }
+
+        if (_freezeOverlayInstance != null)
+        {
+            Destroy(_freezeOverlayInstance);
+            _freezeOverlayInstance = null;
+            _freezeOverlayRenderer = null;
+        }
+        if (_hasFreezeColorSnapshot && _spriteRenderer != null)
+            _spriteRenderer.color = _colorBeforeFreeze;
+        _hasFreezeColorSnapshot = false;
+    }
+
+    private void ApplyFreezeTint()
+    {
+        if (_spriteRenderer == null) return;
+        if (!_hasFreezeColorSnapshot)
+        {
+            _colorBeforeFreeze = _spriteRenderer.color;
+            _hasFreezeColorSnapshot = true;
+        }
+        Color c = Color.Lerp(_colorBeforeFreeze, FreezeTintColor, 0.55f);
+        c.a = _colorBeforeFreeze.a;
+        _spriteRenderer.color = c;
+    }
+
+    /// <summary>生成一个冰壳占位精灵（圆形边缘 + 内部较透），并贴合当前精灵包围盒。</summary>
+    /// <summary>
+    /// <summary>把美术给的冰块 Prefab 按“角色可见区 × 比例”自动缩放并居中（素材不用自己调尺寸）。</summary>
+    private void FitOverlayToBlock()
+    {
+        if (_freezeOverlayInstance == null || _freezeOverlayRenderer == null || _freezeOverlayRenderer.sprite == null) return;
+
+        GetSpriteVisibleArea(out Vector3 visibleCenter, out Vector3 visibleSize);
+        Vector3 blockSize = new Vector3(visibleSize.y * ResolveOverlayScale(), visibleSize.y * ResolveOverlayScale(), 1f);
+        Vector3 blockCenter = visibleCenter + Vector3.up * (visibleSize.y * ResolveOverlayYOffset());
+
+        Vector3 sb = _freezeOverlayRenderer.sprite.bounds.size;
+        if (sb.x <= 0.0001f || sb.y <= 0.0001f) return;
+
+        Vector3 parentScale = transform.lossyScale;
+        // 等比缩放：只按高度算，宽度跟随素材本身比例（不再分别拉伸宽高）
+        float k = (visibleSize.y * ResolveOverlayScale()) / sb.y;
+        float sx = k / Mathf.Max(0.0001f, Mathf.Abs(parentScale.x));
+        float sy = k / Mathf.Max(0.0001f, Mathf.Abs(parentScale.y));
+
+        _freezeOverlayInstance.transform.position = blockCenter;
+        _freezeOverlayInstance.transform.localScale = new Vector3(sx, sy, 1f);
+        _freezeOverlayRenderer.sortingOrder = (_spriteRenderer != null ? _spriteRenderer.sortingOrder : 0) + 1;
+        _freezeOverlayWorldSize = blockSize;
+    }
+
+    /// <summary>生成一次性特效并按冰块尺寸自动缩放（不依赖素材分辨率）。</summary>
+    private void SpawnFittedFx(GameObject prefab, float scaleMultiplier)
+    {
+        if (prefab == null) return;
+
+        GetFreezeFxPosition(out Vector3 pos);
+        var fx = Instantiate(prefab, pos, Quaternion.identity);
+        var sr = fx.GetComponentInChildren<SpriteRenderer>();
+        if (sr == null || sr.sprite == null) return;
+
+        Vector3 sb = sr.sprite.bounds.size;
+        float maxSide = Mathf.Max(sb.x, sb.y);
+        if (maxSide <= 0.0001f) return;
+
+        float target = Mathf.Max(_freezeOverlayWorldSize.x, _freezeOverlayWorldSize.y) * scaleMultiplier;
+        fx.transform.localScale = Vector3.one * (target / maxSide);
+    }
+
+    /// <summary>冻结/破冰特效的生成位置：角色可见区域中心 + 冰块垂直偏移。</summary>
+    private void GetFreezeFxPosition(out Vector3 position)
+    {
+        GetSpriteVisibleArea(out Vector3 center, out Vector3 size);
+        position = center + Vector3.up * (size.y * ResolveOverlayYOffset());
+    }
+
+    /// 取得精灵“实际可见区域”的世界中心与尺寸。
+    /// 敌人贴图普遍是大幅画布 + 角色居中（如 1011 为 1108x1108，角色仅占 644x693），
+    /// 直接用 SpriteRenderer.bounds 会把冰块做得比角色大很多。这里用 textureRect（tight 区域）修正。
+    /// </summary>
+    private void GetSpriteVisibleArea(out Vector3 worldCenter, out Vector3 worldSize)
+    {
+        if (_spriteRenderer == null)
+        {
+            worldCenter = transform.position;
+            worldSize = Vector3.one;
+            return;
+        }
+
+        Bounds bounds = _spriteRenderer.bounds;
+        worldCenter = bounds.center;
+        worldSize = bounds.size;
+
+        var sprite = _spriteRenderer.sprite;
+        if (sprite == null) return;
+
+        Rect rect = sprite.rect;
+        Rect texRect = sprite.textureRect;
+        if (rect.width <= 0.0001f || rect.height <= 0.0001f) return;
+        if (texRect.width <= 0.0001f || texRect.height <= 0.0001f) return;
+
+        // Full Rect 时两者相同，比例=1，不影响结果
+        float wRatio = Mathf.Clamp01(texRect.width / rect.width);
+        float hRatio = Mathf.Clamp01(texRect.height / rect.height);
+        worldSize = new Vector3(bounds.size.x * wRatio, bounds.size.y * hRatio, bounds.size.z);
+
+        Vector2 offsetPx = texRect.center - rect.center;
+        if (offsetPx.sqrMagnitude < 0.0001f) return;
+
+        Vector3 lossy = transform.lossyScale;
+        float signX = lossy.x < 0f ? -1f : 1f;
+        float signY = lossy.y < 0f ? -1f : 1f;
+        worldCenter += new Vector3(
+            offsetPx.x / rect.width * bounds.size.x * signX,
+            offsetPx.y / rect.height * bounds.size.y * signY,
+            0f);
+    }
+
+    private SpriteRenderer CreateProceduralFrostOverlay()
+    {
+        if (_spriteRenderer == null) return null;
+
+        var go = new GameObject("FreezeOverlay");
+        go.transform.SetParent(transform, false);
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = GetProceduralFrostSprite();
+        sr.color = new Color(0.72f, 0.9f, 1f, 0.8f);
+        sr.sortingOrder = _spriteRenderer.sortingOrder + 1;
+
+        GetSpriteVisibleArea(out Vector3 visibleCenter, out Vector3 visibleSize);
+
+        Vector3 blockSize = new Vector3(visibleSize.y * ResolveOverlayScale(), visibleSize.y * ResolveOverlayScale(), 1f);
+        Vector3 blockCenter = visibleCenter + Vector3.up * (visibleSize.y * ResolveOverlayYOffset());
+
+        Vector3 spriteSize = sr.sprite.bounds.size;
+        Vector3 parentScale = transform.lossyScale;
+        float k2 = (visibleSize.y * ResolveOverlayScale()) / Mathf.Max(0.0001f, spriteSize.y);
+        float sx = k2 / Mathf.Max(0.0001f, Mathf.Abs(parentScale.x));
+        float sy = k2 / Mathf.Max(0.0001f, Mathf.Abs(parentScale.y));
+        go.transform.localScale = new Vector3(sx, sy, 1f);
+        go.transform.position = blockCenter;
+        _freezeOverlayWorldSize = blockSize;
+        return sr;
+    }
+
+    private static Sprite GetProceduralFrostSprite()
+    {
+        if (_proceduralFrostSprite != null) return _proceduralFrostSprite;
+
+        const int size = 192;
+        const int bevel = 26;
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            wrapMode = TextureWrapMode.Clamp,
+            filterMode = FilterMode.Point,
+            name = "IceBlock_Procedural"
+        };
+
+        var px = new Color32[size * size];
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                int dx = Mathf.Min(x, size - 1 - x);
+                int dy = Mathf.Min(y, size - 1 - y);
+
+                // 倒角：切掉四个角，读成“一块冰”而不是“一个圆”
+                if (dx + dy < bevel)
+                {
+                    px[y * size + x] = new Color32(255, 255, 255, 0);
+                    continue;
+                }
+
+                int edgeDist = Mathf.Min(dx, dy);
+                float alpha;
+                int r, g, b;
+
+                if (edgeDist <= 1)
+                {
+                    alpha = 0.95f; r = 236; g = 250; b = 255;   // 外轮廓
+                }
+                else if (edgeDist <= 4)
+                {
+                    alpha = 0.42f; r = 150; g = 205; b = 240;   // 内圈冷色
+                }
+                else
+                {
+                    // 内部：半透明主体 + 左上到右下的斜切高光
+                    float diag = (x - y) / (float)size;
+                    alpha = 0.20f + 0.10f * Mathf.Abs(diag);
+                    r = 118 + (int)(72f * Mathf.Clamp01(diag + 0.5f));
+                    g = 180 + (int)(56f * Mathf.Clamp01(diag + 0.5f));
+                    b = 235;
+                }
+
+                // 斜向裂纹
+                bool crack = ((x + 2 * y) % 81 == 0) || ((2 * x - y + size) % 123 == 0);
+                if (crack && edgeDist > 3)
+                {
+                    alpha = 0.78f; r = 240; g = 252; b = 255;
+                }
+
+                px[y * size + x] = new Color32((byte)r, (byte)g, (byte)b, (byte)(Mathf.Clamp01(alpha) * 255f));
+            }
+        }
+
+        tex.SetPixels32(px);
+        tex.Apply();
+        _proceduralFrostSprite = Sprite.Create(tex, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 64f);
+        return _proceduralFrostSprite;
+    }
+
+    /// <summary>把冰块切成 3x3 碎片，破冰时用于“整块碎开”。</summary>
+    private static Sprite[] GetProceduralShardSprites()
+    {
+        if (_proceduralShardSprites != null) return _proceduralShardSprites;
+
+        var baseSprite = GetProceduralFrostSprite();
+        var tex = baseSprite.texture;
+        const int cols = 3;
+        const int rows = 3;
+        int cw = tex.width / cols;
+        int ch = tex.height / rows;
+        _proceduralShardSprites = new Sprite[cols * rows];
+
+        for (int gy = 0; gy < rows; gy++)
+        {
+            for (int gx = 0; gx < cols; gx++)
+            {
+                var rect = new Rect(gx * cw, gy * ch, cw, ch);
+                _proceduralShardSprites[gy * cols + gx] =
+                    Sprite.Create(tex, rect, new Vector2(0.5f, 0.5f), baseSprite.pixelsPerUnit);
+            }
+        }
+
+        return _proceduralShardSprites;
+    }
+
+    /// <summary>死亡 / 回收：清掉冻结状态与残留挂起，避免对象池复用时动画仍被停住。</summary>
+    private void ClearFreezeOnTeardown()
+    {
+        if (_freezeRemaining > 0f || state == EnemyState.Frozen)
+        {
+            ApplyFreezeVisual(false);
+            _freezeRemaining = 0f;
+        }
+        _freezeChance = 0f;
+        _lastIceHitTime = 0f;
+        _iceBreakRemaining = 0f;
+        _breakSequencePending = false;
+        _breakSequenceDelay = 0f;
+        _postFreezeRecoverRemaining = 0f;
+        _breakIcePushTween?.Kill();
+        _breakIcePushTween = null;
+        _suspendSources = SuspendSource.None;
+        _suspendTweenPaused = false;
+        if (_animator != null) _animator.enabled = true;
+    }
+
+    #endregion
 
     private void UpdateHitStop()
     {
@@ -2704,37 +3514,31 @@ private void SpawnProjectile()
         if (_hitStopRemaining > 0f) return;
 
         _hitStopRemaining = 0f;
-        if (state != EnemyState.Dead && _animator != null && _hitStopAnimatorWasEnabled)
-            _animator.enabled = true;
-        ResumeAttackTweenAfterHitStop();
+        PopSuspend(SuspendSource.HitStop);
         if (HitFeedbackManager.EnableDebugLogs)
             Debug.Log($"[HitFeedback] Resume enemy={DebugTag} frame={Time.frameCount}");
-        _hitStopAnimatorWasEnabled = false;
     }
 
     private void StopHitStop()
     {
         _hitStopRemaining = 0f;
-        if (_animator != null && _hitStopAnimatorWasEnabled)
-            _animator.enabled = true;
-        ResumeAttackTweenAfterHitStop();
-        _hitStopAnimatorWasEnabled = false;
+        PopSuspend(SuspendSource.HitStop);
     }
 
-    /// <summary>卡肉冻结：与 Animator 同时暂停攻击位移（自持标记，不依赖 DOTween 的暂停查询接口）。</summary>
-    private void PauseAttackTweenForHitStop()
+    /// <summary>挂起：与 Animator 同时暂停攻击位移（自持标记，不依赖 DOTween 的暂停查询接口）。</summary>
+    private void PauseAttackTweenForSuspend()
     {
-        if (_attackTweenPausedByHitStop) return;
+        if (_suspendTweenPaused) return;
         if (_attackTween == null || !_attackTween.IsActive()) return;
         _attackTween.Pause();
-        _attackTweenPausedByHitStop = true;
+        _suspendTweenPaused = true;
     }
 
-    /// <summary>卡肉解除：只恢复自己暂停过的攻击位移。</summary>
-    private void ResumeAttackTweenAfterHitStop()
+    /// <summary>解除挂起：只恢复自己暂停过的攻击位移。</summary>
+    private void ResumeAttackTweenAfterSuspend()
     {
-        if (!_attackTweenPausedByHitStop) return;
-        _attackTweenPausedByHitStop = false;
+        if (!_suspendTweenPaused) return;
+        _suspendTweenPaused = false;
         if (_attackTween != null && _attackTween.IsActive())
             _attackTween.Play();
     }
@@ -2827,6 +3631,7 @@ private void SpawnProjectile()
             && state != EnemyState.Dead
             && state != EnemyState.QTEAttacking
             && state != EnemyState.Stunned
+            && !IsFrozenHitReactionSuppressed
             && allowHit)
         {
             if (wasGettingUp)
@@ -3084,6 +3889,7 @@ private void SpawnProjectile()
         bool wasLaunched = (state == EnemyState.Launched);
         OnDying?.Invoke(this);
         StopHitStop();
+        ClearFreezeOnTeardown();
         StopHitScaleFeedback();
         state = EnemyState.Dead;
         UpdateOutlineState();
@@ -3378,6 +4184,11 @@ private void SpawnProjectile()
         _rushMoveOrderOwner = owner;
         _rushMoveOrderGeneration = generation;
         _rushMoveMode = mode;
+        if (orderTargetRow < 0)
+        {
+            DebugLog.Warning($"[RowGuard] {DebugTag} 收到目标排<0 的订单 owner={owner} target={orderTargetRow} 当前row={rowIndex}，已夹到 0");
+            orderTargetRow = 0;
+        }
         targetRow = orderTargetRow;
         pendingRushMove = rowIndex > orderTargetRow;
         rushMoveDelayTimer = 0f;
@@ -3452,6 +4263,27 @@ private void SpawnProjectile()
     }
 
     /// <summary>
+    /// 冻结前落位：把在途的补齐移动立刻走完。
+    /// 复用 UpdateMovement 的完整完成分支（行号推进 / 地刺检测 / 撞击回退 / CompleteRushMoveOrder 补齐链回调），
+    /// 不另写一份，避免漏回调把整列补齐挂住（设计 §4.1 / P1c）。
+    /// </summary>
+    public void CompletePendingMovement()
+    {
+        if (state != EnemyState.Moving || !isMovingToNextRow) return;
+
+        int fromRow = rowIndex;
+        moveProgress = 1f;
+        UpdateMovement();
+
+        // 完成分支的个别早退路径（如 BOSS 推进暂停）会留下 Moving 空壳；清成 Idle，
+        // 否则冻结会把 Moving 当作 _preFrozenState，解冻后 UpdateMovement 直接早退卡死。
+        if (state == EnemyState.Moving && !isMovingToNextRow)
+            state = EnemyState.Idle;
+
+        DebugLog.Info($"[Freeze] {DebugTag} 冻结前落位：在途移动已完成 row {fromRow}→{rowIndex}");
+    }
+
+    /// <summary>
     /// 尝试开始补齐移动（链式触发）
     /// 根据当前状态决定是否立即开始移动：
     ///   - Idle：直接开始移动（或攻击，若已到最前排）
@@ -3463,7 +4295,7 @@ private void SpawnProjectile()
     /// </summary>
     public RushMoveStartResult TryStartRushMove()
     {
-        if (!HasRushMoveOrder || !pendingRushMove || state == EnemyState.Dead)
+        if (!HasRushMoveOrder || !pendingRushMove || state == EnemyState.Dead || state == EnemyState.Frozen || IsInPostFreezeRecovery)
             return RushMoveStartResult.Rejected;
         if (_rushMoveOrderOwner == RushMoveOrderOwner.WaveMarch &&
             _cavalry != null && _cavalry.IsMounted)
@@ -3589,6 +4421,11 @@ private void SpawnProjectile()
     /// </summary>
     public void SetRowIndex(int row)
     {
+        if (row < 0)
+        {
+            DebugLog.Warning($"[RowGuard] {DebugTag} SetRowIndex 收到负数排 {row}（当前 {rowIndex}），已夹到 0\n{new System.Diagnostics.StackTrace(1, false)}");
+            row = 0;
+        }
         int oldRow = rowIndex;
         rowIndex = row;
         UpdateWorldPosition();
@@ -4179,6 +5016,9 @@ private void SpawnProjectile()
         isCFrame = false;
         UpdateOutlineState();
 
+        // 转阶段演出优先（设计 4.3 / 用例 11e）：先解除冻结与破冰序列
+        ClearFreezeForSystemOverride();
+
         if (_phaseTransitionRoutine != null)
             StopCoroutine(_phaseTransitionRoutine);
         _phaseTransitionRoutine = StartCoroutine(PhaseTransitionSequence(nextPhase));
@@ -4272,6 +5112,7 @@ private void SpawnProjectile()
         _attackTelegraph?.StopWarning();
         EnemyManager.Instance?.columnManager?.CancelPushReturnForEnemy(this, "cancel-reset");
         StopHitStop();
+        ClearFreezeOnTeardown();
         StopHitScaleFeedback();
         initialized = false;
     }
@@ -4285,6 +5126,7 @@ private void SpawnProjectile()
         _cavalry?.ResetCavalry();
         _shieldGuard?.ResetShieldGuard();
         StopHitStop();
+        ClearFreezeOnTeardown();
         StopHitScaleFeedback();
 
         // 终止所有活跃的 DOTween 动画（完成当前值后跳转到最终值）
@@ -4359,7 +5201,9 @@ public enum DamageType
     Sweep,  // 横扫
     Launch, // 挑飞
     Poise,       // 架势伤害
-    Convergence  // 聚拢冲突伤害
+    Convergence, // 聚拢冲突伤害
+    Ice,         // 冰系伤害
+    Collision    // 破冰推动被阻挡时的碰撞伤害
 }
 
 /// <summary>

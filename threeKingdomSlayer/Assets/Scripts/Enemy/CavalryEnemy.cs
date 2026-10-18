@@ -95,6 +95,8 @@ public sealed class CavalryEnemy : MonoBehaviour
     private float _nextChargeTime;
     private bool _spawnEntryCompleted = true;
     private float _spawnEntrySettleUntil;
+    /// <summary>本次冲锋是否在冻结中被暂停过：解冻后不续播冲锋，转为返航（设计 §4.1 / 用例 11f）。</summary>
+    private bool _frozenDuringCharge;
 
     public bool IsMounted => _mounted;
     /// <summary>冲锋判定已开始且本次伤害尚未提交：只有这段时间会被“可打断冲锋”的攻击打断。</summary>
@@ -120,6 +122,21 @@ public sealed class CavalryEnemy : MonoBehaviour
     private bool OwnerGone => _enemy == null || _enemy.state == EnemyState.Dead;
     private bool IsStale(int generation) => generation != _generation || !_mounted || _enemy == null;
     private bool HasMovementOrder() => _enemy != null && (_enemy.HasRushMoveOrder || _enemy.IsRushMovementActive);
+
+    /// <summary>
+    /// 本帧骑兵动作是否应暂停：卡肉，或冻结/破冰（设计 §4.1：冻结期间冲锋停在原地，不落位、不落马）。
+    /// 冲锋阶段一旦因冻结暂停，标记本代际冲锋作废，解冻后由冲锋循环转入返航。
+    /// </summary>
+    private bool StepPaused()
+    {
+        if (_enemy == null) return false;
+        if (_enemy.IsActionPaused)
+        {
+            if (IsCharging) _frozenDuringCharge = true;
+            return true;
+        }
+        return _enemy.IsHitStopped;
+    }
 
     private void Awake()
     {
@@ -147,6 +164,7 @@ public sealed class CavalryEnemy : MonoBehaviour
         _nextChargeTime = 0f;
         _spawnEntryCompleted = true;
         _spawnEntrySettleUntil = 0f;
+        _frozenDuringCharge = false;
         Phase = CavalryPhase.MountedIdle;
         CurrentAnimationStage = AnimationStage.Idle;
         LastReason = "";
@@ -207,6 +225,7 @@ public sealed class CavalryEnemy : MonoBehaviour
     {
         int generation = ++_generation;
         _damageCommitted = false;
+        _frozenDuringCharge = false;
         _enemy.EnterCavalryControl();
         Diag("CYCLE_START", $"originRow={_chargeOriginRow} grids={_chargeGrids} damage={ChargeDamage:F1}");
 
@@ -215,12 +234,21 @@ public sealed class CavalryEnemy : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < windupDuration && !IsStale(generation))
         {
-            if (!_enemy.IsHitStopped) elapsed += Time.deltaTime;
+            if (!StepPaused()) elapsed += Time.deltaTime;
             yield return null;
         }
         if (OwnerGone) { StopCycle(); yield break; }
         if (IsStale(generation))
         {
+            yield return RecoveryAndRetreat(generation);
+            StopCycle();
+            yield break;
+        }
+        // 前摇期间被冻结：解冻后不续播冲锋，直接收招返航（设计 §4.1 / 用例 11f）
+        if (_frozenDuringCharge)
+        {
+            _frozenDuringCharge = false;
+            Diag("CYCLE_FROZEN_ABORT", $"前摇中被冻结，解冻后直接返航 row={_enemy.rowIndex}");
             yield return RecoveryAndRetreat(generation);
             StopCycle();
             yield break;
@@ -231,6 +259,17 @@ public sealed class CavalryEnemy : MonoBehaviour
         var manager = EnemyManager.Instance?.columnManager;
         while (_enemy != null && _mounted && _enemy.state != EnemyState.Dead && _enemy.rowIndex > 0 && !IsStale(generation))
         {
+            // 冻结：原地停住（不推进、不落位）；解冻后本次冲锋作废，转为返航
+            if (StepPaused()) { yield return null; continue; }
+            if (_frozenDuringCharge)
+            {
+                _frozenDuringCharge = false;
+                Diag("CYCLE_FROZEN_ABORT", $"解冻后终止冲锋，进入返航 row={_enemy.rowIndex}");
+                yield return RecoveryAndRetreat(generation);
+                StopCycle();
+                yield break;
+            }
+
             manager ??= EnemyManager.Instance?.columnManager;
             int nextRow = _enemy.rowIndex - 1;
             var column = manager?.GetColumn(_enemy.columnIndex);
@@ -288,6 +327,19 @@ public sealed class CavalryEnemy : MonoBehaviour
             {
                 // 被打断：放弃未提交的位移，收招后返航，本次不结算伤害
                 manager.ReleaseCavalrySlot(_enemy);
+                yield return RecoveryAndRetreat(generation);
+                StopCycle();
+                yield break;
+            }
+
+            // 位移补间期间被冻结：这一排不提交，解冻后直接返航，不续播冲锋、也不打人
+            // （设计 §4.1 / 用例 11f）。少了这段，MoveVisualToRow 补间结束后 rowIndex 会先落进
+            // 下一排、循环条件随即退出，于是冲锋照打，玩家这一次冻结白挨一下。
+            if (_frozenDuringCharge)
+            {
+                _frozenDuringCharge = false;
+                manager.ReleaseCavalrySlot(_enemy);
+                Diag("CYCLE_FROZEN_ABORT", $"位移中被冻结，放弃本步并返航 row={_enemy.rowIndex}");
                 yield return RecoveryAndRetreat(generation);
                 StopCycle();
                 yield break;
@@ -358,7 +410,7 @@ public sealed class CavalryEnemy : MonoBehaviour
         {
             if (OwnerGone || !_mounted) yield break;
             if (IsStale(generation)) break;
-            if (_enemy.IsHitStopped) { yield return null; continue; }
+            if (StepPaused()) { yield return null; continue; }
             elapsed += Time.deltaTime;
             _enemy.transform.localPosition = Vector3.Lerp(origin, lunge, Mathf.Clamp01(elapsed / strikeWindup));
             yield return null;
@@ -380,7 +432,7 @@ public sealed class CavalryEnemy : MonoBehaviour
                 while (!IsStrikeHitSpriteShowing() && grace < HitFrameGrace)
                 {
                     if (OwnerGone || !_mounted) yield break;
-                    if (_enemy.IsHitStopped) { yield return null; continue; }
+                    if (StepPaused()) { yield return null; continue; }
                     grace += Time.deltaTime;
                     yield return null;
                 }
@@ -400,7 +452,7 @@ public sealed class CavalryEnemy : MonoBehaviour
         while (elapsed < strikeRecover)
         {
             if (OwnerGone || !_mounted) yield break;
-            if (_enemy.IsHitStopped) { yield return null; continue; }
+            if (StepPaused()) { yield return null; continue; }
             elapsed += Time.deltaTime;
             _enemy.transform.localPosition = Vector3.Lerp(recoverStart, origin, Mathf.Clamp01(elapsed / strikeRecover));
             yield return null;
@@ -416,7 +468,7 @@ public sealed class CavalryEnemy : MonoBehaviour
             while (_visual != null && !_visual.IsMountedAttackClipFinished && waited < MaxAttackTailWait)
             {
                 if (OwnerGone || !_mounted) yield break;
-                if (_enemy.IsHitStopped) { yield return null; continue; }
+                if (StepPaused()) { yield return null; continue; }
                 waited += Time.deltaTime;
                 yield return null;
             }
@@ -497,7 +549,7 @@ public sealed class CavalryEnemy : MonoBehaviour
             while (turnElapsed < retreatTurnDuration)
             {
                 if (OwnerGone || !_mounted) yield break;
-                if (_enemy.IsHitStopped) { yield return null; continue; }
+                if (StepPaused()) { yield return null; continue; }
                 turnElapsed += Time.deltaTime;
                 yield return null;
             }
@@ -618,7 +670,7 @@ public sealed class CavalryEnemy : MonoBehaviour
         {
             if (OwnerGone) yield break;
             if (IsStale(generation)) yield break;
-            if (_enemy.IsHitStopped) { yield return null; continue; }
+            if (StepPaused()) { yield return null; continue; }
             elapsed += Time.deltaTime;
             _enemy.transform.localPosition = Vector3.Lerp(start, end, Mathf.Clamp01(elapsed / duration));
             yield return null;
@@ -642,7 +694,7 @@ public sealed class CavalryEnemy : MonoBehaviour
         while (elapsed < duration)
         {
             if (OwnerGone || !_mounted) yield break;
-            if (_enemy.IsHitStopped) { yield return null; continue; }
+            if (StepPaused()) { yield return null; continue; }
             elapsed += Time.deltaTime;
             _enemy.transform.localPosition = Vector3.Lerp(start, end, Mathf.Clamp01(elapsed / duration));
             yield return null;

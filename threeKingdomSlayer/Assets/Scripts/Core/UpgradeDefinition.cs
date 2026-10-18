@@ -332,6 +332,10 @@ public struct TimedAoeLevelConfig
     public int burnTotalDamage;
     [Tooltip("灼烧持续时间（秒）")]
     public float burnDurationSeconds;
+
+    [Header("冰系")]
+    [Tooltip("每次冰伤害叠加的冻结概率（0~1）。火系保持 0")]
+    [Range(0f, 1f)] public float iceFreezeChancePerHit;
 }
 
 /// <summary>箭雨每级配置</summary>

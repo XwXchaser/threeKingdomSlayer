@@ -375,6 +375,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _fireEffectPrefab: {fileID: 7080427255057156643, guid: 145d6875cc6c6fd4798603b5d4830fcb, type: 3}
+  _iceEffectPrefab: {fileID: 3521657491267370319, guid: e63a5a1ef4ade3e48a418fd9e7928739, type: 3}
   _arrowEffectPrefab: {fileID: 1707118907136065935, guid: 7d3ceaa069c134f419679af082cb68a5, type: 3}
   _cycloneEffectPrefab: {fileID: 3409137233646897394, guid: cc817a47c8a9d8b47820f0677fe9f041, type: 3}
   _waveManager: {fileID: 0}
@@ -14214,6 +14215,22 @@ MonoBehaviour:
   shareHealthWithAdjacent: 0
   maxPoise: 50
   stunDuration: 1.5
+  freezeDuration: 1.5
+  freezeChanceMax: 0.75
+  freezeChanceDecayDelay: 0.6
+  freezeChanceDecayPerSecond: 0.5
+  freezeWindupChanceMultiplier: 2
+  freezePushImmune: 0
+  freezeResist: 0
+  iceBreakAnimDuration: 0.4
+  breakIceReturnDelay: 1.2
+  freezeOverlayPrefab: {fileID: 0}
+  freezeOverlayScale: 0.825
+  freezeOverlayYOffset: 0.1
+  freezeRecoveryDelay: 0.5
+  iceBreakEffectPrefab: {fileID: 0}
+  freezeMeltEffectPrefab: {fileID: 0}
+  freezePresentation: {fileID: 0}
   launchDuration: 2
   launchGravity: 20
   launchReboundVelocity: 8

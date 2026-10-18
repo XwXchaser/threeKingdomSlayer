@@ -17,6 +17,8 @@ public class ActiveSkillRunner : MonoBehaviour
 
     [Header("特效预制体（未配置时回退使用 TimedPassiveModule）")]
     [SerializeField] private GameObject _fireEffectPrefab;
+    [Tooltip("冰雾特效预制体。为空时回退用 _fireEffectPrefab 并乘上冰蓝色占位")]
+    [SerializeField] private GameObject _iceEffectPrefab;
     [SerializeField] private GameObject _arrowEffectPrefab;
     [SerializeField] private GameObject _cycloneEffectPrefab;
     [SerializeField] private WaveManager _waveManager;
@@ -63,9 +65,57 @@ public class ActiveSkillRunner : MonoBehaviour
                 return ActivateWave(definition, level);
             case ActiveSkillEffectType.Disease:
                 return ActivateDisease(definition, level);
+            case ActiveSkillEffectType.IceMist:
+                return ActivateIceMist(definition, level);
             default:
                 return false;
         }
+    }
+
+    private bool ActivateIceMist(ActiveSkillDefinition definition, int level)
+    {
+        if (definition.timedAoeLevels == null || level > definition.timedAoeLevels.Count)
+        {
+            Debug.LogWarning($"[ActiveSkillRunner] ActivateIceMist failed: timedAoeLevels null or level {level} > count {definition.timedAoeLevels?.Count}");
+            return false;
+        }
+        var cfg = definition.timedAoeLevels[level - 1];
+        var prefab = _iceEffectPrefab != null ? _iceEffectPrefab : _fireEffectPrefab;
+        if (prefab == null)
+        {
+            Debug.LogWarning("[ActiveSkillRunner] ActivateIceMist failed: 没有可用的喷流特效 prefab（_iceEffectPrefab / _fireEffectPrefab 均为空）");
+            return false;
+        }
+        if (cfg.columns == null || cfg.columns.Count == 0)
+        {
+            Debug.LogWarning($"[ActiveSkillRunner] ActivateIceMist failed: columns null or empty (level={level})");
+            return false;
+        }
+
+        var instance = Instantiate(prefab);
+        var effect = instance.GetComponent<ShootFireEffect>();
+        if (effect == null)
+        {
+            Debug.LogError("[ActiveSkillRunner] ActivateIceMist failed: ShootFireEffect component missing on prefab");
+            Destroy(instance);
+            return false;
+        }
+
+        // 占位表现：没有专属冰系特效时，把火焰素材乘上冰蓝色
+        if (_iceEffectPrefab == null)
+            effect.particleTint = new Color(0.55f, 0.85f, 1f, 1f);
+
+        float chancePerHit = cfg.iceFreezeChancePerHit;
+        effect.onSweepHit = enemy =>
+        {
+            if (enemy == null) return;
+            enemy.ApplyIceHit(chancePerHit);
+        };
+
+        effect.PlaySweep(cfg.columns, cfg.damage, cfg.rangeRows, 0f, 0, 0f, DamageType.Ice);
+        PlayerElementalBuffs.GrantIce(ElementalScope.SingleColumnHeavy);
+        Debug.Log($"[ActiveSkillRunner] ActivateIceMist: columns=[{string.Join(",", cfg.columns)}] rows={cfg.rangeRows} dmg={cfg.damage} chancePerHit={chancePerHit}");
+        return true;
     }
 
     private bool ActivateFire(ActiveSkillDefinition definition, int level)

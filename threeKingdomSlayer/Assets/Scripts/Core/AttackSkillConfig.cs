@@ -29,6 +29,14 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("勾选后，本次攻击命中可以打断骑兵敌人（109）的冲锋。把某种攻击视为“蓄力攻击 / 重攻击”时在这里声明即可，不需要改代码；像斩击这类普攻与蓄力共用的动作由输入分支（isCharged）补充判定。")]
     public bool interruptsCavalryCharge;
 
+    [Header("元素反应（冰系切片）")]
+    [Tooltip("横向覆盖标签：单列 = 只打目标列（Stab / 枪突 / 指向突刺 / Pierce）；多列 = 打全部列（Slash / Sweep / Launch / 终结技）。元素反应只判这个，永不动态变化。")]
+    public ColumnMode columnMode = ColumnMode.SingleColumn;
+    [Tooltip("是否为「重攻击派生」。与 interruptsCavalryCharge 语义不同：这个用于元素反应判定，那个用于打断骑兵 / 破盾。")]
+    public bool isHeavy;
+    [Tooltip("破冰推动的最大档击退排数（实际还会被可见排上限截断；从第 0 排出发最多到最后一排）")]
+    [Min(0)] public int breakIcePushRows = 4;
+
     [Header("范围与冷却")]
     [Tooltip("影响排数")]
     public int rangeRows = 1;
@@ -315,6 +323,17 @@ public enum SlashSweepDirection
     FromGesture = 0,
     LeftToRight = 1,
     RightToLeft = 2
+}
+
+/// <summary>
+/// 招式的横向覆盖标签。元素反应只判这个，永不动态变化：射程延长、穿透、技能改排数都不改它。
+/// </summary>
+public enum ColumnMode
+{
+    /// <summary>只打目标列（Stab / 枪突 / 指向突刺 / Pierce）</summary>
+    SingleColumn = 0,
+    /// <summary>打全部列（Slash / Sweep / Launch / 终结技）</summary>
+    MultiColumn = 1
 }
 
 /// <summary>

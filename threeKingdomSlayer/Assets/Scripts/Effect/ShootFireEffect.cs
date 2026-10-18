@@ -21,6 +21,16 @@ public class ShootFireEffect : MonoBehaviour
     [Header("精灵")]
     [Tooltip("火焰团精灵组，运行时随机选取")]
     public Sprite[] fireSprites;
+
+    [Header("颜色（元素占位用）")]
+    [Tooltip("粒子颜色乘算。冰雾占位时用它把火焰素材临时染成冰蓝；接入正式冰系素材后保持白色即可")]
+    public Color particleTint = Color.white;
+
+    [Tooltip("扇扫每股的基色（在 particleTint 之前乘算，alpha 走淡入淡出所以保持 0）。火焰保留暖黄；接入冰系素材时必须设白，否则冰素材会被乘成橄榄绿")]
+    public Color sweepBaseColor = new Color(1f, 0.85f, 0.2f, 0f);
+
+    /// <summary>扇扫每次命中敌人后的回调（冰雾用它挂冻结概率，避免把元素逻辑写进喷流类）。</summary>
+    public System.Action<Enemy> onSweepHit;
     [Tooltip("整体缩放倍率（调大=火焰更大）")]
     public float globalScale = 1f;
 
@@ -85,6 +95,9 @@ public class ShootFireEffect : MonoBehaviour
     private int _burnTotalDamage;
     private float _burnDuration;
     private bool _critIfBurning;
+    private DamageType _damageType = DamageType.Pierce;
+
+    private Color Tinted(Color c) => new Color(c.r * particleTint.r, c.g * particleTint.g, c.b * particleTint.b, c.a);
     public void Play(List<int> columns, int damage, int maxRows = -1, int burnTotalDamage = 0, float burnDuration = 0f, bool critIfBurning = false)
     {
         var cm = AttackSystem.Instance?.columnManager;
@@ -113,11 +126,12 @@ public class ShootFireEffect : MonoBehaviour
         Destroy(gameObject, burstDuration + particleLifetime + 0.5f);
     }
 
-    public void PlaySweep(List<int> columns, int damage, int maxRows = -1, float startZOffset = 0f, int burnTotalDamage = 0, float burnDuration = 0f)
+    public void PlaySweep(List<int> columns, int damage, int maxRows = -1, float startZOffset = 0f, int burnTotalDamage = 0, float burnDuration = 0f, DamageType damageType = DamageType.Pierce)
     {
         _damage = damage;
         _burnTotalDamage = burnTotalDamage;
         _burnDuration = burnDuration;
+        _damageType = damageType;
         if (AttackSystem.Instance?.columnManager == null)
         {
             Destroy(gameObject);
@@ -201,7 +215,7 @@ public class ShootFireEffect : MonoBehaviour
         var spriteRenderer = particle.AddComponent<SpriteRenderer>();
         spriteRenderer.sprite = fireSprites[Random.Range(0, fireSprites.Length)];
         spriteRenderer.sortingOrder = 50;
-        spriteRenderer.color = new Color(1f, 0.85f, 0.2f, 0f);
+        spriteRenderer.color = Tinted(sweepBaseColor);
         particle.transform.localScale = Vector3.one * scaleNearMax * globalScale;
         particle.transform.localRotation = Quaternion.Euler(0f, 0f, -angle + Random.Range(-rotJitter, rotJitter));
 
@@ -246,10 +260,11 @@ public class ShootFireEffect : MonoBehaviour
             int finalDamage = _damage;
             if (_critIfBurning && UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.IsBurning(enemy))
                 finalDamage *= 2;
-            enemy.TakeDamage(finalDamage, DamageType.Pierce,
+            enemy.TakeDamage(finalDamage, _damageType,
                 feedbackSource: HitFeedbackSource.Passive, feedbackStrength: HitFeedbackStrength.Light);
             if (_burnTotalDamage > 0 && UpgradeEffectManager.Instance != null)
                 UpgradeEffectManager.Instance.ApplyBurn(enemy, _burnTotalDamage, _burnDuration);
+            onSweepHit?.Invoke(enemy);
         }
     }
 
@@ -311,8 +326,8 @@ public class ShootFireEffect : MonoBehaviour
 
         // 颜色：白黄 → 橙红
         var colorSeq = DOTween.Sequence().SetUpdate(UpdateType.Normal, false);
-        colorSeq.Append(sr.DOColor(new Color(1f, 0.85f, 0.2f, 1f), particleLifetime * 0.5f));
-        colorSeq.Append(sr.DOColor(new Color(0.8f, 0.3f, 0.05f, 1f), particleLifetime * 0.5f));
+        colorSeq.Append(sr.DOColor(Tinted(new Color(1f, 0.85f, 0.2f, 1f)), particleLifetime * 0.5f));
+        colorSeq.Append(sr.DOColor(Tinted(new Color(0.8f, 0.3f, 0.05f, 1f)), particleLifetime * 0.5f));
         colorSeq.SetTarget(p);
 
         // Z轴移动 + 命中检测 + 动态排序

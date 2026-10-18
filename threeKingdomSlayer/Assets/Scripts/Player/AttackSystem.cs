@@ -289,6 +289,9 @@ public class AttackSystem : MonoBehaviour
 
         bool hitAny = false;
         _attackIsCharged = chargedAttack;
+        // 破冰会话：本次招式的合规判定在这里开，命中时由 IceBreakRuntime 校验作用域；
+        // 会话寿命跟本次招式实际动作时长走（设计 §7：招式结束即关闭）
+        IceBreakRuntime.BeginAttack(GetConfig(attackType), GetAttackDuration(GetConfig(attackType)));
         switch (attackType)
         {
             case AttackType.Stab:   hitAny = ExecuteStab(targetColumn); break;
@@ -1088,6 +1091,9 @@ public class AttackSystem : MonoBehaviour
     public bool ApplyMovePushBack(AttackSkillConfig cfg, Enemy enemy, List<Enemy> pushedTargets)
     {
         if (enemy == null || columnManager == null) return false;
+
+        // 破冰推动已接管本次位移：同一目标不再叠加招式自带的普通击退
+        if (IceBreakRuntime.IsBrokenThisAttack(enemy)) return false;
 
         int pushDist = GetEffectivePushBack(cfg);
         if (pushDist <= 0) return false;

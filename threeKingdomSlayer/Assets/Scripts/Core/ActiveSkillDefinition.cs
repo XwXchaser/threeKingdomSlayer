@@ -15,7 +15,8 @@ public enum ActiveSkillEffectType
     FireLine,
     ChargeAttackShockwave,
     Wave,
-    Disease
+    Disease,
+    IceMist
 }
 
 [CreateAssetMenu(fileName = "ActiveSkillDefinition", menuName = "一夫当关/主动技能定义")]

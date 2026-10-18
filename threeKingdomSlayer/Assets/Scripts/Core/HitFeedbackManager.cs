@@ -10,7 +10,8 @@ public enum HitFeedbackSource
     Dot,
     Ultimate,
     Displacement,
-    SpikeTrap
+    SpikeTrap,
+    Collision
 }
 
 public enum HitFeedbackStrength

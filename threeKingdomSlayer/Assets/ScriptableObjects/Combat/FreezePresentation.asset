@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 859168666cfccbd4aa35e2e693f6c6ef, type: 3}
+  m_Name: FreezePresentation
+  m_EditorClassIdentifier: 
+  freezeOverlayPrefab: {fileID: 7052055282293276634, guid: fbad94dc0a299be4f8921ee196c00016, type: 3}
+  iceBreakEffectPrefab: {fileID: 40847987420399088, guid: e0986df50f064e64e99c21892c4bb0b1, type: 3}
+  freezeMeltEffectPrefab: {fileID: 5096715064749503512, guid: 519309f187aee52439aed5270b4aa8ec, type: 3}
+  overlayScale: 0.825
+  overlayYOffset: 0.1

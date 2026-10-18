@@ -19,6 +19,9 @@ MonoBehaviour:
   damage: 35
   poiseDamage: 0
   interruptsCavalryCharge: 0
+  columnMode: 0
+  isHeavy: 1
+  breakIcePushRows: 4
   rangeRows: 2
   cooldown: 0.3
   actionDuration: 0.66
