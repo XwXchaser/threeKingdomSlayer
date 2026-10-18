@@ -24,6 +24,33 @@ MonoBehaviour:
     flagId: 
     treePosition: {x: 0, y: 420}
     icon: {fileID: 0}
+  - nodeId: talent_ice_thaw
+    displayName: "\u91CD\u51FB\u89E3\u51BB"
+    description: "\u91CD\u653B\u51FB\u547D\u4E2D\u88AB\u51B0\u51BB\u7684\u654C\u4EBA\u65F6\u5C06\u5176\u6253\u788E\u89E3\u51BB\u3002\uFF08\u672A\u70B9\uFF1A\u51B0\u96FE\u53EA\u80FD\u51BB\u4F4F\uFF0C\u4E0D\u80FD\u89E3\u51BB\uFF09"
+    coinCost: 150
+    unlockKind: 1
+    moveConfig: {fileID: 0}
+    flagId: ice_thaw
+    treePosition: {x: 150, y: 330}
+    icon: {fileID: 0}
+  - nodeId: talent_ice_break_push
+    displayName: "\u7834\u51B0\u51B2\u51FB"
+    description: "\u89E3\u51BB\u65F6\u628A\u51B0\u51BB\u7684\u654C\u4EBA\u5411\u540E\u9876\u5F00\u82E5\u5E72\u6392\uFF0C\u649E\u5230\u4EBA\u65F6\u53CC\u65B9\u53D7\u4F24\u3002\uFF08\u672A\u70B9\uFF1A\u53EA\u89E3\u51BB\u4E0D\u4F4D\u79FB\uFF09"
+    coinCost: 200
+    unlockKind: 1
+    moveConfig: {fileID: 0}
+    flagId: ice_break_push
+    treePosition: {x: -150, y: 600}
+    icon: {fileID: 0}
+  - nodeId: talent_ice_break_double
+    displayName: "\u788E\u51B0\u91CD\u51FB"
+    description: "\u89E3\u51BB\u7684\u90A3\u4E00\u51FB\u4F24\u5BB3\u7FFB\u500D\u3002\uFF08\u672A\u70B9\uFF1A\u89E3\u51BB\u4E0D\u989D\u5916\u589E\u4F24\uFF09"
+    coinCost: 250
+    unlockKind: 1
+    moveConfig: {fileID: 0}
+    flagId: ice_break_double
+    treePosition: {x: 150, y: 760}
+    icon: {fileID: 0}
   - nodeId: talent_unlock_c4
     displayName: "\u67AA\u7A81\u6536\u5C3E"
     description: "\u89E3\u9501 C4\uFF1A\u67AA\u7A81\u4E09\u4E0B\u540E\u6309\u4F4F\u84C4\u529B\u4E0A\u6311\uFF0C\u5168\u5217

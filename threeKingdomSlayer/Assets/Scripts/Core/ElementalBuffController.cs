@@ -64,6 +64,11 @@ public static class PlayerElementalBuffs
 /// </summary>
 public static class IceBreakRuntime
 {
+    /// <summary>破冰相关能力都由天赋节点 id 控制：没点就是“只有冻结”，点了才有对应能力。</summary>
+    public const string TalentIdThaw = "talent_ice_thaw";
+    public const string TalentIdBreakPush = "talent_ice_break_push";
+    public const string TalentIdBreakDouble = "talent_ice_break_double";
+
     private static AttackSkillConfig _cfg;
     private static float _sessionEndTime;
     private static bool _armed;
@@ -154,8 +159,7 @@ public static class IceBreakRuntime
     }
 
     public static bool TryResolve(Enemy target, DamageType damageType, HitFeedbackSource feedbackSource, ref float damage)
-    {
-        // 碰撞伤害本身不得再触发破冰（否则会递归翻倍）
+    {        // 碰撞伤害本身不得再触发破冰（否则会递归翻倍）
         if (damageType == DamageType.Collision) return false;
         // 只认玩家攻击本体造成的伤害：DoT / 被动 / 道具 / 位移 / 地刺都不算“本次重攻击命中”
         if (feedbackSource != HitFeedbackSource.BasicAttack) return false;
@@ -165,6 +169,10 @@ public static class IceBreakRuntime
         // 同一目标在一次攻击里只结算一次（设计 §6：每个冻结目标各自走一遍 ①–④）
         if (_brokenThisAttack.Contains(target)) return false;
 
+        // 机制门槛：没点“重击解冻”天赋，重击打在冻结目标身上就是普通伤害，不会解冻。
+        // 教学关里玩家只有冰雾（只冻不解），天赋点出来才有后面的能力。
+        if (!TalentTreeState.IsUnlocked(TalentIdThaw)) return false;
+
         if (!_armed)
         {
             if (!PlayerElementalBuffs.TryConsumeIce(_cfg.columnMode, _cfg.isHeavy)) return false;
@@ -173,11 +181,13 @@ public static class IceBreakRuntime
 
         // ①推动 + ②碰撞（设计 §5.7）：同列被本次重攻击覆盖的冻结目标从后往前逐个推，
         // 它们彼此不算阻挡，避免“两次破冰互相撞停并各自吃碰撞伤害”。
-        if (!_pushedThisAttack.Contains(target))
+        // 需要“击退碰撞”天赋，否则只解冻不位移。
+        if (TalentTreeState.IsUnlocked(TalentIdBreakPush) && !_pushedThisAttack.Contains(target))
             PushFrozenTargetsInColumn(target);
         _brokenThisAttack.Add(target);
-        // ③原始命中双倍
-        damage *= 2f;
+        // ③原始命中双倍（需要“碎冰翻倍”天赋）
+        if (TalentTreeState.IsUnlocked(TalentIdBreakDouble))
+            damage *= 2f;
         // ④破冰动画（hitted 由本次 TakeDamage 同步播放）
         target.BeginIceBreaking();
 

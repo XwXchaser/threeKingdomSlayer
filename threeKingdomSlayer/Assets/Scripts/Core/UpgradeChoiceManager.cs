@@ -31,6 +31,9 @@ public class UpgradeChoiceManager : MonoBehaviour
     [Tooltip("弹窗期间是否暂停游戏")]
     public bool pauseGameDuringChoice = true;
 
+    [Tooltip("教学关用：非空时三选一固定显示这些选项（按顺序），不走随机池；只填 1 个就是强制选择")]
+    public List<UpgradeDefinition> forcedChoices = new List<UpgradeDefinition>();
+
     [Tooltip("教学关等脚本化关卡用：置 true 时不弹三选一、不暂停（否则升级会把下一波卡住）")]
     public bool suppressChoices;
 
@@ -169,7 +172,9 @@ public class UpgradeChoiceManager : MonoBehaviour
         else
         {
             _pendingLevelUps--;
-            _currentChoices = DrawChoices();
+            _currentChoices = forcedChoices != null && forcedChoices.Count > 0
+                ? new List<UpgradeDefinition>(forcedChoices)
+                : DrawChoices();
             if (UsesActiveSkillRules && (_currentChoices == null || _currentChoices.Count == 0))
                 _currentChoices = DrawBossActiveSkillChoices();
         }

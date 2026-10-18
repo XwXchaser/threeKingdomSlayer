@@ -37,6 +37,10 @@ public class TutorialStageDirector : MonoBehaviour
     [Tooltip("最后一波同时把敌人血量抬高，避免玩家在演出前把它打死")]
     public float executionerHealth = 0f;
 
+    [Header("教学升级")]
+    [Tooltip("教学关三选一固定给的这个技能（冰雾）。留空则不弹选择")]
+    public UpgradeDefinition tutorialIceSkill;
+
     [Header("行进（N1 → E0）")]
     [Tooltip("驱动 YJ 场景自带投影的 YScrollSample，只改 progress，不重写卷轴")]
     public YScrollSample routeVisual;
@@ -78,7 +82,13 @@ public class TutorialStageDirector : MonoBehaviour
 
         DebugLog.Info("[Tutorial] 教学关开始");
         // 教学关不出三选一：升级弹窗会暂停并把下一波卡住
-        if (UpgradeChoiceManager.Instance != null) UpgradeChoiceManager.Instance.suppressChoices = true;
+        if (UpgradeChoiceManager.Instance != null)
+        {
+            UpgradeChoiceManager.Instance.suppressChoices = false;
+            UpgradeChoiceManager.Instance.forcedChoices = tutorialIceSkill != null
+                ? new System.Collections.Generic.List<UpgradeDefinition> { tutorialIceSkill }
+                : new System.Collections.Generic.List<UpgradeDefinition>();
+        }
         // 教学关不能完成充能：终结技留到正式关卡再教
         if (InputManager.Instance != null) InputManager.Instance.suppressCharging = true;
         StartCoroutine(BeginStageNextFrame());
@@ -97,7 +107,11 @@ public class TutorialStageDirector : MonoBehaviour
             _waveSpawner.OnWaveCompleted -= OnWaveCompleted;
             _waveSpawner.holdNextWave = false;
         }
-        if (UpgradeChoiceManager.Instance != null) UpgradeChoiceManager.Instance.suppressChoices = false;
+        if (UpgradeChoiceManager.Instance != null)
+        {
+            UpgradeChoiceManager.Instance.suppressChoices = false;
+            UpgradeChoiceManager.Instance.forcedChoices.Clear();
+        }
         if (InputManager.Instance != null) InputManager.Instance.suppressCharging = false;
     }
 
