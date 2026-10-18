@@ -25,7 +25,7 @@ aiEditMode: inherit
 |---|---|
 | 分支 / HEAD | `route-scroll-movement` @ `75bba2a`，与 `origin` 一致 |
 | 可用敌人 | **1011、1021、109、BOSS（104/107/108）及其衍生** |
-| 路线系统 | 已在跑 **RouteV2**（滚动路线 + 分叉选择），Stage01 的 V2 配置有 4 个战斗节点 |
+| 路线系统 | 实际在跑的是**卷轴路线**（`FakeRouteRuntime` + `ScrollRoutePresenter`），配置 `Assets/RouteData/ChangbanpoScroll/Changbanpo_ScrollRoute.asset`，6 个节点 N1/E0/J1/EV/N2/N3。**RouteV2 已不可达**：`Battle.scene` 的 `RouteStageRuntimeV2` 被 `FakeRouteRuntime.Awake()` 主动停用，主菜单 `StageConfigManager` 只挂了 1 个卷轴关卡、0 个 V2 关卡 |
 | 战斗内成长 | 三选一升级、连击、蓄力/位移/火系协同、冰系冻结破冰均已实现 |
 | 局外成长 | **未实现**。铜钱能赚能存（`SaveManager`），但没有消费入口、没有天赋/属性升级界面 |
 | 教学关 | **没有教学关资产**。但有对话系统与 `Tutorial` 事件类型、`tutorialCompleted` 存档位 |
@@ -57,21 +57,23 @@ aiEditMode: inherit
 
 ## 3. 现状锚点（可直接照着改的地方）
 
-### 3.1 路线与节点（RouteV2）
+### 3.1 路线与节点（卷轴路线 FakeRoute，2026-10-18 实测）
 
-- 配置：`Assets/RouteData/Stage01V2/Stage01_RouteV2.asset`（`stageId: 1`，`routeSceneName: Stage01_RouteV2`），`combatNodes` = 4 个。
-- 节点资产：`Assets/RouteData/Stage01V2/Node_A.asset` … `Node_D.asset`，类型 `RouteNodeConfigV2`。
-- 实测字段：
+- 配置：`Assets/RouteData/ChangbanpoScroll/Changbanpo_ScrollRoute.asset`（`routeId: changbanpo_scroll_preview`，`stageId: 1`，`startNode: N1`）。
+- **6 个节点的 `savePoint` 全是 true**（节点资产在 `Assets/RouteData/ChangbanpoScroll/Nodes/`）：
 
-| 节点 | savePoint | isFinalNode | outgoingConnections |
-|---|---|---|---|
-| A | 0 | 0 | 3 条（choiceSlot `To B` / `To C` / `To D`） |
-| B | 0 | **1** | 0 |
-| C | 1 | 0 | 1 |
-| D | 1 | 0 | 1 |
+| 节点 | 名称 | savePoint | isFinal | completionPolicy | battleEntries | outgoingChoices |
+|---|---|---|---|---|---|---|
+| N1 | 当阳乱军 | true | false | BattleAndReward | 1 | 1 |
+| E0 | 残门垣前 | true | false | BattleAndReward | 1 | 1 |
+| J1 | 城郊分叉 | true | false | ChoiceConfirmation | 0 | 2 |
+| EV | 村落外围 | true | false | ChoiceConfirmation | 0 | 1 |
+| N2 | 官道断后（右路终点） | true | **true** | BattleAndReward | 1 | 0 |
+| N3 | 村落搜救（左路终点） | true | **true** | BattleAndReward | 1 | 0 |
 
-- **J1 右路锁定的落点**：Node A 的 `outgoingConnections`（当前一次给出三条）。要么删掉对应 connection，要么给 connection 加"锁定/条件"字段并在选择 UI 里置灰。**当前没有条件字段**，需要新增一个（`conditionEnabled` 目前只出现在 battleEntries 上）。
-- 路线运行时：`Assets/Scripts/RouteV2/RouteStageRuntimeV2.cs`，节点推进 `RunNode` → `RunBattleEntries` → 尾部锚点 → 选择（`_choosing`）。
+- 运行时：`Assets/Scripts/RouteFake/FakeRouteRuntime.cs`。进入节点前 `EnterNode` 里写存档（`node.savePoint && (!_restoredFromCheckpoint || node.nodeId != _restoredCheckpointNodeId)`）。
+- **表现层场景是 `Assets/Experiments/CurvedScroll/YJunctionSample.unity`**（根节点 `Y Junction - select for preview`：`YScrollSample` / `YSampleBattleHost` / `YRouteStreamingWindow` / `YRouteSegments`）。它**不是**可独立 Play 的关卡，由 `ScrollRoutePresenter.Prepare` 附加加载；战场本体仍在 `Assets/Scenes/Battle.scene`，主菜单 New Game 加载的也是 Battle.scene。
+- J1 右路锁定的落点：J1 的 `outgoingChoices`（2 条）。条件字段需要新加，做法同下文原 RouteV2 结论（`conditionEnabled` 目前只出现在 battleEntries 上）。
 
 ### 3.2 战斗与关卡配置
 
@@ -96,10 +98,12 @@ RouteStageSaveSnapshot {
 - 参照实现：`SaveManager` 里还有旧的**卷轴/FakeRoute 存档**（`FakeRouteStageSaveSnapshot`、`activeFakeRouteStageId`），那套是完整的；V2 存档若恢复不灵，直接对照它。
 - 主菜单已有 New Game / Continue / Delete Save，Continue 走的就是存档恢复。
 
-**结论与待办**：
-1. "每个战斗节点存档"当前**没开满**：A、B 是 `savePoint: 0`。开启方式是把战斗节点都设为 `savePoint: 1`（或改成"进入战斗前必定存"）。
-2. 恢复是否真的正确（血量/等级/升级/已通关 entry 能否回到原位）**没有实测证据**。第一步应该是：跑一遍"打到 C → 退出 → Continue → 看是否落在 C 且状态正确"。
-3. 教学关是否也参与存档、失败重进是否从教学关重来，需要拍板（见 §4）。
+**结论与待办（2026-10-18 已实机验证，P1 完成）**：
+
+1. “每个战斗节点存档”**已经是开的**：6 个节点 `savePoint` 全 true，不需要再改。
+2. **档案恢复已验通**：卷轴路线跑到 N1 后把玩家改成 `hp=63 / lv=4 / exp=12 / coin=250 / kills=17 / 已拿 arrow_volley Lv1`，手动 `SaveCheckpoint()`，再用死亡重试同一路径（`FakeRouteLaunch.StartFromCheckpoint = true` + `StageController.RestartStage()`）重进 —— 节点回 N1，hp/lv/exp/coin/kills/升级 **全部一致**。
+3. **“继续游戏”的语义已拍板（= 从头开）**：`MainMenuUI.OnContinueGame()` 的两个分支都是 `StartFromCheckpoint = false` + 清快照，即 Continue 保留铜钱/局外进度但从 N1 重打。**checkpoint 只给死亡重试（`BattleHUD.OnRestartButton`）用**。本次不改这个行为。
+4. 教学关是否参与存档：教学关一旦接入，建议同样走 `savePoint` 节点，不另开一套。
 
 ### 3.4 招式与"锁 C2/C4"
 
@@ -125,7 +129,7 @@ RouteStageSaveSnapshot {
 2. **C4 到底是哪个资产**，C1–C4 的命名与资产映射表要不要一并整理进文档。
 3. **"只能打到 N3"的实现方式**：N3 结尾就结算（推荐），还是难度曲线自然卡住（需要配平）。
 4. **教学关挂在哪**：独立 stage（主菜单入口 → 教学 → 回主菜单）还是 Route V2 的 `startNode` 前置节点（推荐，省一套流程）。
-5. **存档粒度**：每个战斗节点进战斗前存（推荐）；战斗中退出是否算失败；教学关是否参与存档。
+5. **存档粒度**：✅ 已定（2026-10-18）—— 节点 `savePoint` 已全开；**Continue = 从头开**（保铜钱/局外进度，清快照），checkpoint 仅用于死亡重试；已实机验通。教学关若接入同样走 `savePoint`。
 6. **J1 右路是删掉还是置灰**（置灰更可读，能暗示"以后能走"）。
 
 ## 5. 建议实施顺序
@@ -133,7 +137,7 @@ RouteStageSaveSnapshot {
 | 阶段 | 内容 | 验收 |
 |---|---|---|
 | **P0 卫生** | 冰系单独提交；删除 `DEBUG_IceTest_Bootstrap`；确认 N1 `rows` 与 `YJunctionSample.unity` 的改动归属 | 工作区只剩一件事 |
-| **P1 存档** | 验证 V2 checkpoint 恢复；战斗节点全开 `savePoint`；必要时对照 FakeRoute 存档 | 打到任意节点退出 → Continue → 状态与位置正确 |
+| **P1 存档** | ✅ **已完成（2026-10-18）**：6 个节点 savePoint 已全开（无需改）；死亡重试从 checkpoint 恢复 hp/等级/经验/铜钱/击杀/升级/节点，实机验通；Continue 已定为从头开 | — （已完成） |
 | **P2 N1→N3 打通** | 三节点战斗配置串联；N3 结尾结算回主菜单；铜钱落袋 | 一轮完整通关，无需作弊 |
 | **P3 教学关** | 教学节点 + 109 初见杀演出 + 对话 | 新档第一次必走教学关，死法可复现 |
 | **P4 招式锁定** | 玩家已解锁招式集合 + C2/C4 锁定 + HUD/招式表表达 | 首轮无 C2/C4，解锁后可用 |
