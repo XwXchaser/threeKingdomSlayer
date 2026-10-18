@@ -312,7 +312,9 @@ public class BattleHUD : MonoBehaviour
                 ShowVictory();
                 break;
             case StageState.Defeat:
-                ShowDefeat();
+                // 教学关的“初见杀”是演出：关卡仍然进 Defeat（停输入、触发事件），但不弹战败面板
+                if (StageController.Instance == null || !StageController.Instance.suppressDefeatUI)
+                    ShowDefeat();
                 break;
         }
     }

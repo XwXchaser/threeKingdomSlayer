@@ -236,6 +236,7 @@ MonoBehaviour:
   discardPopupPrefab: {fileID: 7107821338073346431, guid: df18255a4d7748444a03f0106865276d, type: 3}
   choiceCount: 3
   pauseGameDuringChoice: 1
+  suppressChoices: 0
 --- !u!114 &5137004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5678,6 +5679,7 @@ MonoBehaviour:
   enemyPool: {fileID: 1773764670}
   mainMenuSceneName: MainMenu
   battleSceneName: Battle
+  suppressDefeatUI: 0
 --- !u!4 &681761647
 Transform:
   m_ObjectHideFlags: 0

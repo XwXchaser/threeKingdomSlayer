@@ -1105,6 +1105,7 @@ MonoBehaviour:
   coinText: {fileID: 1902378607}
   stageConfigManager: {fileID: 1931903700}
   cameraManager: {fileID: 653455772}
+  tutorialStageConfig: {fileID: 11400000, guid: 7df1c303164a47e4fb6984f7a3f7ac99, type: 2}
 --- !u!114 &891565944
 MonoBehaviour:
   m_ObjectHideFlags: 0

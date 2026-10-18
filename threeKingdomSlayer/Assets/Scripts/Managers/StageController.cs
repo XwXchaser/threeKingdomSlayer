@@ -52,6 +52,9 @@ public class StageController : MonoBehaviour
     public System.Action<StageState> OnStageStateChanged;
     public System.Action OnStageVictory;
     public System.Action OnStageDefeat;
+
+    [Tooltip("脚本化演出用（教学关初见杀）：置 true 时玩家阵亡仍会进 Defeat 状态与事件，但不接战败面板")]
+    public bool suppressDefeatUI;
     public System.Action OnCombatNodeCleared;
     public System.Action OnRouteBattleCompleted;
 
@@ -102,6 +105,9 @@ public class StageController : MonoBehaviour
             stageConfig = PendingStageConfig;
             PendingStageConfig = null;
             routeStageConfig = null;
+            // 场景里可能残留 V2 路线配置；不清掉的话 StartStage() 会被 V2 分支截走，
+            // 表现是非路线关卡永远停在 None/Starting，波次不生成（教学关踩过）。
+            routeStageConfigV2 = null;
             fakeRouteStageConfig = null;
         }
 
@@ -302,7 +308,15 @@ public class StageController : MonoBehaviour
     /// </summary>
     private void SetState(StageState newState)
     {
-        if (currentState == newState) return; // BUG FIX: 防止重复设置导致循环
+        if (currentState == newState)
+        {
+            // 状态没变也必须把玩家侧状态同步回来：
+            // StartStage 开头会 ResetPlayer() 把 playerState 打回 Starting，
+            // 如果这里直接 return，playerState 就永远停在 Starting，
+            // 后果是攻击/主动技能/道具全部被“非 InProgress”的门挡住（教学关就是这么没反应的）。
+            playerState?.SetStageState(newState);
+            return;
+        }
 
         currentState = newState;
         OnStageStateChanged?.Invoke(newState);

@@ -20,6 +20,11 @@ public sealed class CavalryEnemy : MonoBehaviour
     [SerializeField] private int cavalryEnemyId = 109;
     [Tooltip("冲锋基础伤害；最终伤害 = 本值 × 冲锋格数（发起排+1）× 波次攻击倍率。")]
     [SerializeField, Min(0f)] private float chargeDamage = 8f;
+
+    /// <summary>
+    /// 教学关演出用：把本次冲锋伤害改成固定值（不污染 Enemy_109.prefab 的正式数值）。
+    /// </summary>
+    public void OverrideChargeDamageForScript(float value) => chargeDamage = Mathf.Max(0f, value);
     [Tooltip("判定成功后到开始前移的动作前摇时长；前摇期间可被打断。")]
     [SerializeField, Min(0f)] private float windupDuration = 0.3f;
     [Tooltip("命中前探时长；也为玩家留出‘看到冲锋起来后拉远’的反应窗口。")]

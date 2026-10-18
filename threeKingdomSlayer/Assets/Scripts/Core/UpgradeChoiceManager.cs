@@ -31,6 +31,9 @@ public class UpgradeChoiceManager : MonoBehaviour
     [Tooltip("弹窗期间是否暂停游戏")]
     public bool pauseGameDuringChoice = true;
 
+    [Tooltip("教学关等脚本化关卡用：置 true 时不弹三选一、不暂停（否则升级会把下一波卡住）")]
+    public bool suppressChoices;
+
     // ── 运行时状态 ──
     private bool _isChoosing;
     private int _pendingLevelUps;
@@ -99,6 +102,9 @@ public class UpgradeChoiceManager : MonoBehaviour
     /// </summary>
     public void TriggerItemChoice()
     {
+        // 教学关等脚本化关卡：不弹三选一、不暂停（否则波次会被卡住）
+        if (suppressChoices) return;
+
         // 通关/战败后不再弹出
         if (StageController.Instance != null && !StageController.Instance.IsStageInProgress)
             return;
@@ -111,6 +117,15 @@ public class UpgradeChoiceManager : MonoBehaviour
 
     private void StartChoiceFlow()
     {
+        // 教学关等脚本化关卡：吞掉本次选择，不暂停
+        if (suppressChoices)
+        {
+            _pendingLevelUps = 0;
+            _pendingItemChoices = 0;
+            _pendingQueue.Clear();
+            return;
+        }
+
         // 通关后不再弹出
         if (StageController.Instance != null && !StageController.Instance.IsStageInProgress)
         {

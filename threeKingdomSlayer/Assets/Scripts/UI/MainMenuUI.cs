@@ -24,6 +24,12 @@ public class MainMenuUI : MonoBehaviour
     [Header("过渡")]
     public CameraManager cameraManager;
 
+    [Header("教学关")]
+    [Tooltip("新档第一次点“新游戏”时先打这个关卡；留空则跳过教学，直接进正式路线")]
+    public StageConfig tutorialStageConfig;
+    [Tooltip("教学关场景名（Build Settings 里的名字）；留空则走常规 StartBattle")]
+    public string tutorialSceneName = "Tutorial_YJ";
+
     private GameObject stageGrid;
     private float _uiScale;
 
@@ -420,6 +426,26 @@ public class MainMenuUI : MonoBehaviour
     {
         Debug.Log("[MainMenu] 新游戏");
         SaveManager.Delete();
+
+        // 新档第一次进游戏先走教学关（初见杀）；教学结束会直接接正式路线，不会回到这里
+        if (tutorialStageConfig != null && !SaveManager.Load().tutorialCompleted)
+        {
+            StageController.PendingStageConfig = tutorialStageConfig;
+            StageController.PendingRouteStageConfig = null;
+            RouteStageV2Launch.PendingConfig = null;
+            FakeRouteLaunch.PendingConfig = null;
+            FakeRouteLaunch.StartFromCheckpoint = false;
+            Debug.Log("[MainMenu] 进入教学关: " + tutorialStageConfig.stageName);
+            RefreshUI();
+            if (!string.IsNullOrEmpty(tutorialSceneName))
+            {
+                // 教学关是 YJ 场景的拷贝，直接进那一份，不走主界面→战斗的过渡动画
+                UnityEngine.SceneManagement.SceneManager.LoadScene(tutorialSceneName);
+                return;
+            }
+            StartBattle();
+            return;
+        }
         if (fakeRouteStageConfigs.Count > 0)
         {
             var cfg = fakeRouteStageConfigs[0];
