@@ -7,6 +7,8 @@ using UnityEngine;
 /// 规则（权威版见 design/enemy-1021-shield-guard.md §3.2）：
 ///   盾侧(Left，力来自画面左) / 正面(Front) → 普通与重攻击都被格挡：扣固定减伤（下限 minDamage）
 ///   反侧(Right)                          → 普通全额；重攻击破盾
+///   挑飞(DamageType.Launch)              → 不受侧向限制，直接破盾（C4 收尾与 Launch 挑飞都走这条）；
+///                                          被挑飞会立即打断掉盾动画并转入胆怯击飞
 ///   未声明方向(None / Random)             → 不进盾判定（全额）
 ///   DoT / ignoreDamageModifiers           → 整段跳过
 ///   破盾：减伤立即失效 → 播放 ShieldBreak → 动画期间普通受击不打断（死亡/击飞可打断）→ 播完进入胆怯（增伤）
@@ -14,7 +16,7 @@ using UnityEngine;
 /// 借用说明（本版本）：
 ///   - "重攻击"暂用既有 AttackSkillConfig.interruptsCavalryCharge 透传到 TakeDamage 的标记（现役可达路径 = 蓄力斩击/横划）。
 ///     设计上后续会换成独立的 breaksGuard 字段，见设计文档 §8。
-///   - 掉盾动画复用 102 的 CowardTransition（本体 + ShieldVisual 双目标）；盾的分离层/掉落/层级按 D5 属后续美术重做项。
+///   - ShieldBreak 的脱手/结束由 AnimationEvent 同步；脱手后通过 Inspector 引用的独立盾对象掉落。
 /// </summary>
 [RequireComponent(typeof(Enemy))]
 public class ShieldGuardEnemy : MonoBehaviour
@@ -45,14 +47,20 @@ public class ShieldGuardEnemy : MonoBehaviour
     public bool heavyFromShieldSideBreaks;
 
     [Header("破盾与胆怯")]
-    [Tooltip("掉盾动画时长（秒）。当前复用 Enemy_102_CowardTransition，其 stopTime = 0.46s")]
+    [Tooltip("掉盾动画时长（秒）。须与 ShieldBreak clip 一致；正式动画以事件同步，此值用于缺失动画的兜底。")]
     public float breakAnimationDuration = 0.46f;
 
-    [Tooltip("掉盾动画的状态名（1021 controller 中新增，绑定 CowardTransition 同一 clip）")]
+    [Tooltip("掉盾动画状态名，正式 clip 的脱手与结束事件挂在该状态。")]
     public string breakAnimatorState = "ShieldBreak";
 
     [Tooltip("胆怯形态下受到伤害的倍率（越小越接近现状；与击飞倍率取较大者，不叠乘）")]
     public float cowardDamageTakenMultiplier = 1.5f;
+
+    [Header("脱手表现（直接引用，不从 Resources 动态查找）")]
+    [SerializeField] private AnimationClip breakAnimationClip;
+    [SerializeField] private ShieldDropEffect shieldDropPrefab;
+    [SerializeField] private Vector3 shieldReleaseLocalPosition;
+    [SerializeField] private SpriteRenderer legacyShieldVisual;
 
     [Header("反馈")]
     [Tooltip("格挡命中时伤害数字使用的颜色（区别于普通命中，让减伤可读）")]
@@ -67,6 +75,12 @@ public class ShieldGuardEnemy : MonoBehaviour
     private Enemy _enemy;
     private Animator _animator;
     private Coroutine _breakRoutine;
+    private SpriteRenderer _bodyRenderer;
+    private bool _breakInProgress;
+    private bool _shieldReleased;
+    private Vector3 _legacyShieldPosition;
+    private Quaternion _legacyShieldRotation;
+    private Vector3 _legacyShieldScale;
 
     public Color BlockDamageNumberColor => blockDamageNumberColor;
 
@@ -77,6 +91,18 @@ public class ShieldGuardEnemy : MonoBehaviour
     {
         _enemy = GetComponent<Enemy>();
         _animator = GetComponent<Animator>();
+        _bodyRenderer = GetComponent<SpriteRenderer>();
+        if (legacyShieldVisual != null)
+        {
+            _legacyShieldPosition = legacyShieldVisual.transform.localPosition;
+            _legacyShieldRotation = legacyShieldVisual.transform.localRotation;
+            _legacyShieldScale = legacyShieldVisual.transform.localScale;
+        }
+    }
+
+    private void OnDisable()
+    {
+        ResetShieldGuard();
     }
 
     /// <summary>对象池复用 / 波次重置：中断未完成的破盾流程。</summary>
@@ -87,6 +113,19 @@ public class ShieldGuardEnemy : MonoBehaviour
             StopCoroutine(_breakRoutine);
             _breakRoutine = null;
         }
+        _breakInProgress = false;
+        _shieldReleased = false;
+        ClearLegacyShield();
+    }
+
+    private void ClearLegacyShield()
+    {
+        if (legacyShieldVisual == null)
+            return;
+        legacyShieldVisual.sprite = null;
+        legacyShieldVisual.transform.localPosition = _legacyShieldPosition;
+        legacyShieldVisual.transform.localRotation = _legacyShieldRotation;
+        legacyShieldVisual.transform.localScale = _legacyShieldScale;
     }
 
     /// <summary>
@@ -116,6 +155,14 @@ public class ShieldGuardEnemy : MonoBehaviour
                 }
                 result.finalDamage = damage * multiplier;
             }
+            return result;
+        }
+
+        // 挑飞类攻击（C4 收尾 / Launch 挑飞）不受侧向限制，直接破盾：本次按全额结算、不格挡。
+        // 紧随其后的 Launch() 会通过 InterruptShieldBreakVisual 立即完成破盾并走胆怯击飞。
+        if (damageType == DamageType.Launch)
+        {
+            result.broke = true;
             return result;
         }
 
@@ -183,41 +230,117 @@ public class ShieldGuardEnemy : MonoBehaviour
             return;
         if (_enemy.formState != EnemyFormState.Normal)
             return;
+
+        ClearLegacyShield();
+        _shieldReleased = false;
         if (!_enemy.EnterShieldBrokenForm())
             return;
 
         if (logShieldEvents)
             Debug.Log($"[ShieldGuard] 破盾: {_enemy.DebugTag} → 减伤失效，播放掉落动画 {breakAnimationDuration:F2}s");
 
+        _breakInProgress = true;
         if (_breakRoutine != null)
             StopCoroutine(_breakRoutine);
         _breakRoutine = StartCoroutine(BreakRoutine());
     }
 
-    private IEnumerator BreakRoutine()
+    /// <summary>ShieldBreak 第3帧事件：本体已不带盾，同帧只生成一次独立盾。</summary>
+    public void OnShieldReleaseFrame()
     {
-        float elapsed = 0f;
-        while (elapsed < breakAnimationDuration)
-        {
-            if (_enemy == null || _enemy.state == EnemyState.Dead)
-            {
-                _breakRoutine = null;
-                yield break;
-            }
-            // 被击飞（或其它会夺走表现的状态）→ 立即完成破盾，后续表现走无盾形态
-            if (_enemy.state == EnemyState.Launched)
-                break;
+        if (_breakInProgress)
+            ReleaseShield();
+    }
 
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
+    private void ReleaseShield()
+    {
+        if (_shieldReleased)
+            return;
+        _shieldReleased = true;
+        ClearLegacyShield();
+        if (shieldDropPrefab == null || _bodyRenderer == null)
+            return;
 
-        _breakRoutine = null;
-        if (_enemy == null || _enemy.state == EnemyState.Dead)
-            yield break;
+        Vector3 position = shieldReleaseLocalPosition;
+        if (_bodyRenderer.flipX) position.x = -position.x;
+        if (_bodyRenderer.flipY) position.y = -position.y;
+        var droppedShield = Instantiate(shieldDropPrefab, transform.parent);
+        droppedShield.Begin(_bodyRenderer, position);
+    }
 
+    /// <summary>末帧保持结束事件。卡肉/暂停时 Animator 不推进，事件也不会提早触发。</summary>
+    public void OnShieldBreakAnimationComplete()
+    {
+        if (!_breakInProgress || _enemy == null || _enemy.state == EnemyState.Dead)
+            return;
+        ReleaseShield();
+        _breakInProgress = false;
+        ClearLegacyShield();
         _enemy.CompleteShieldBrokenToCoward();
         if (logShieldEvents)
             Debug.Log($"[ShieldGuard] 掉盾动画结束 → 胆怯: {_enemy.DebugTag}");
+    }
+
+    /// <summary>死亡/击飞抢占：取消未到脱手帧的生成；已脱手的世界盾自行完成掉落。</summary>
+    public void InterruptShieldBreakVisual()
+    {
+        if (!_breakInProgress)
+            return;
+        _breakInProgress = false;
+        if (_breakRoutine != null)
+        {
+            StopCoroutine(_breakRoutine);
+            _breakRoutine = null;
+        }
+        ClearLegacyShield();
+        if (_enemy != null && _enemy.formState == EnemyFormState.ShieldBroken && _enemy.state != EnemyState.Dead)
+            _enemy.CompleteShieldBrokenToCowardWithoutVisual();
+    }
+
+    private IEnumerator BreakRoutine()
+    {
+        float fallbackElapsed = 0f;
+        bool enteredAnimation = false;
+        int stateHash = Animator.StringToHash("Base Layer." + breakAnimatorState);
+        bool hasAnimation = _animator != null && breakAnimationClip != null && _animator.HasState(0, stateHash);
+        // 先等 Animator 应用 Play；禁止在首帧读到上一动作便直接结束。
+        yield return null;
+        while (_breakInProgress)
+        {
+            if (_enemy == null || _enemy.state == EnemyState.Dead)
+            {
+                InterruptShieldBreakVisual();
+                break;
+            }
+            if (_enemy.state == EnemyState.Launched || _enemy.state == EnemyState.GettingUp)
+            {
+                InterruptShieldBreakVisual();
+                break;
+            }
+
+            if (!hasAnimation && !_enemy.IsHitStopped)
+            {
+                fallbackElapsed += Time.deltaTime;
+                if (fallbackElapsed >= breakAnimationDuration)
+                    OnShieldBreakAnimationComplete();
+            }
+            else if (_animator != null && _animator.enabled && !_enemy.IsHitStopped)
+            {
+                var state = _animator.GetCurrentAnimatorStateInfo(0);
+                if (state.fullPathHash == stateHash)
+                {
+                    enteredAnimation = true;
+                    // 正常通过事件结束；这里只兜底导入丢事件或低帧率越过末尾。
+                    if (state.normalizedTime >= 1f)
+                        OnShieldBreakAnimationComplete();
+                }
+                else if (enteredAnimation)
+                {
+                    OnShieldBreakAnimationComplete();
+                }
+            }
+            yield return null;
+        }
+        _breakRoutine = null;
     }
 }

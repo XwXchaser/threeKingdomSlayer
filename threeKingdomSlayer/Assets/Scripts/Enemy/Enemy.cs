@@ -854,8 +854,8 @@ public class Enemy : MonoBehaviour
         isMovingToNextRow = true;
         moveProgress = 0f;
 
-        // 补齐移动时播放行走动画（弹跳 + Walk 精灵交替共存）
-        if (isRush)
+        // 仅1021：破盾不抢走 ShieldBreak；胆怯移动保留无盾姿态，不改变102等敌人的行为。
+        if (isRush && (_shieldGuard == null || formState == EnemyFormState.Normal))
         {
             _animator?.SetTrigger("Walk");
             // 加速 Walk 动画，使两帧都能在 moveSpeed 时间内可见
@@ -924,6 +924,8 @@ public class Enemy : MonoBehaviour
         isCFrame = false;
         _animator?.ResetTrigger("Attack");
         _animator?.ResetTrigger("Hit");
+        _animator?.ResetTrigger("Walk");
+        if (_animator != null) _animator.speed = 1f;
 
         // 站立/移动/眩晕/攻击态播放掉盾动画；被击飞或起身中不抢表现，只标记形态
         if (state != EnemyState.Launched && state != EnemyState.GettingUp)
@@ -941,6 +943,17 @@ public class Enemy : MonoBehaviour
     /// <summary>掉盾动画播完：进入胆怯（无盾、增伤生效、不再攻击）。</summary>
     public void CompleteShieldBrokenToCoward()
     {
+        CompleteShieldBrokenToCowardInternal(true);
+    }
+
+    // 死亡/击飞已拥有动画时，只结束破盾形态，不递归切换 Animator。
+    public void CompleteShieldBrokenToCowardWithoutVisual()
+    {
+        CompleteShieldBrokenToCowardInternal(false);
+    }
+
+    private void CompleteShieldBrokenToCowardInternal(bool refreshVisual)
+    {
         if (state == EnemyState.Dead || IsCoward)
             return;
         if (formState != EnemyFormState.ShieldBroken)
@@ -954,7 +967,11 @@ public class Enemy : MonoBehaviour
         isCFrame = false;
         _animator?.ResetTrigger("Attack");
         _animator?.ResetTrigger("Hit");
-        PlayIdleVisual();
+        _animator?.ResetTrigger("Walk");
+        if (refreshVisual && state == EnemyState.Launched)
+            PlayLaunchVisual();
+        else if (refreshVisual && state != EnemyState.GettingUp)
+            PlayIdleVisual();
         DebugLog.Info($"[Enemy] 掉盾动画结束 → 胆怯形态: {DebugTag}");
     }
 
@@ -985,10 +1002,16 @@ public class Enemy : MonoBehaviour
 
     private void PlayIdleVisual()
     {
+        if (formState == EnemyFormState.ShieldBroken) return;
         if (_cavalryVisual != null && _cavalryVisual.TryRefreshMountedAnimation()) return;
         _animator?.Play(IsCoward ? "CowardIdle" : "Idle", 0, 0f);
     }
-    private void PlayLaunchVisual() => _animator?.Play(IsCoward ? "CowardLaunched" : "Launched_Rise", 0, 0f);
+    private void PlayLaunchVisual()
+    {
+        _shieldGuard?.InterruptShieldBreakVisual();
+        bool withoutShield = IsCoward || formState == EnemyFormState.ShieldBroken;
+        _animator?.Play(withoutShield ? "CowardLaunched" : "Launched_Rise", 0, 0f);
+    }
     private void PlayHitVisual(HitReactionDirection direction)
     {
         if (_animator == null)
@@ -1027,10 +1050,15 @@ public class Enemy : MonoBehaviour
         if (_animator == null || _animator.runtimeAnimatorController == null)
             return false;
 
-        return _animator.HasState(0, Animator.StringToHash("Base Layer.Launched_Getup"));
+        return _animator.HasState(0, Animator.StringToHash(IsCoward ? "Base Layer.CowardGetup" : "Base Layer.Launched_Getup"));
     }
 
-    private void PlayDeadVisual() => _animator?.Play(IsCoward ? "CowardDead" : "Dead", 0, 0f);
+    private void PlayDeadVisual()
+    {
+        _shieldGuard?.InterruptShieldBreakVisual();
+        bool withoutShield = IsCoward || formState == EnemyFormState.ShieldBroken;
+        _animator?.Play(withoutShield ? "CowardDead" : "Dead", 0, 0f);
+    }
 
     public Vector3 GetCavalryRowLocalPosition(int visualRow)
     {
@@ -1329,6 +1357,11 @@ public class Enemy : MonoBehaviour
     /// </summary>
     public bool CanBeLaunched(float poiseDamage = 0f)
     {
+        // 盾兵（1021）持盾或处于破盾表现期：挑飞打在盾上，不吃击飞而是脱盾。
+        // 只对有 ShieldGuardEnemy 的单位生效，102 等其它敌人行为不变。
+        if (_shieldGuard != null
+            && (formState == EnemyFormState.Normal || formState == EnemyFormState.ShieldBroken))
+            return false;
         if (PlayerState.Instance != null && PlayerState.Instance.HasBuff(BuffType.ForceLaunch))
             return true;
         if (isBoss)

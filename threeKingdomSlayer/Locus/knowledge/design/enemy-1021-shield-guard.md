@@ -14,7 +14,7 @@ aiEditMode: inherit
 
 - **已确认并实现（最小可玩版）**：四值方向分类（盾侧 / 反侧 / 正面 / 未声明）、固定数值减伤（下限 1）、破盾 → 掉盾动画 → 胆怯（增伤 1.5×、不再攻击）、对象池复位、波次接入。Play Mode 实测见 §11。
 - **已确认、尚未实现**：跟手精确攻击（连段蓄力派生戳 `Zhangfei_StabR2`）与命中部位（盾区）判定；`breaksGuard` / `isPreciseAim` 独立资产字段（见 §4.4）。
-- **当前美术进度（2026-10-11）**：正式Idle四帧、Walk六帧与Attack十二帧已接入第一关；Walk与Attack已获用户验收。其余受击/格挡/破盾/死亡/击飞/胆怯动作仍使用102占位，独立盾掉落对象及脱手接管尚未实现（见§7、§12）。动画验收不代表下文机制未覆盖项已完成；后续在其他对话继续，交接见 `plan/enemy1021-art-production-handoff.md`。
+- **当前美术进度（2026-10-14）**：正式Idle四帧、Walk六帧、Attack十二帧、ShieldGuardHit六帧、HitFlash六帧已接入第一关并获用户游戏验收；HitRight六帧（用户自抠）已接入、待游戏验收。破盾（`ShieldBreak`）与独立盾掉落接管已于 2026-10-15 实现并接入，待用户游戏验收；死亡、击飞、无盾胆怯家族仍使用 102 占位（见§7、§12）。动画验收不代表下文机制未覆盖项已完成；交接与剩余清单见 `plan/enemy1021-art-production-handoff.md` §0.2。
 
 ### 1.1 代码与资产落点
 
@@ -217,14 +217,14 @@ Normal（持盾：固定减伤生效）
 
 > 动画制作输入（逐状态 × 动画矩阵、素材清单与规格、Animator 待补状态、时间对齐规则、盾的表现方案、验收清单）见 `design/enemy-1021-animation.md`；本节只记录代码侧的播放契约。
 
-当前复用 102 的全部 clip（`Assets/Animations/Enemy_102_*.anim`）与精灵（`Assets/Sprites/Enemy/Enemy2/`）。
+1021已把 Idle/Walk/Attack/ShieldGuardHit/HitFlash/HitRight/ShieldBreak 换成正式 clip，`CowardIdle` 暂用静态兜底 clip；其余状态仍复用 102 的 clip（`Assets/Animations/Enemy_102_*.anim`）与精灵（`Assets/Sprites/Enemy/Enemy2/`）。
 
-`Enemy_1021.controller`（复制自 102）新增两个状态：
+`Enemy_1021.controller`（复制自 102）已新增 `ShieldBreak`、`ShieldGuardHit`、`HitRight` 三个状态（其中 `ShieldBreak` 与 `HitRight` 无入边，只由代码 `Play`）：
 
 | 状态 | motion | 出边 | 说明 |
 |---|---|---|---|
-| `ShieldBreak` | `Enemy_102_CowardTransition.anim` | 无（代码在 `breakAnimationDuration` 后播 `CowardIdle`） | 掉盾表现；102 原 clip 同时驱动本体 5 帧与 `ShieldVisual` 5 帧（盾飞出的位置曲线在此 clip 内） |
-| `ShieldGuardHit` | `Enemy_102_HitFlash.anim` | exit time 1 → `Idle` | 格挡表现（占位帧；正式版为盾臂局部承力、盾牌小幅震荡、上身相对骨盆向画面右侧轻微倾斜；不后仰、无特效） |
+| `ShieldBreak` | `Enemy_1021_ShieldBreak.anim` | 无（0.46s 结束事件触发进入胆怯） | 掉盾表现（50fps、0.46s 非循环）；0.12s 事件生成独立盾、0.46s 事件收尾；`ShieldVisual` 0 秒 null 键。已接入、待游戏验收 |
+| `ShieldGuardHit` | `Enemy_1021_ShieldGuardHit.anim` | exit time 1 → `Idle` | 格挡表现（正式6帧、0.30s非循环，已获用户游戏验收：盾臂局部承力、盾牌小幅震荡、上身相对骨盆向画面右侧轻微倾斜；不后仰、无特效） |
 
 状态名契约（代码按名 `Play`，缺失时回落）：
 
@@ -247,7 +247,7 @@ _animator.Play("ShieldGuardHit") // 缺失回落 "HitFlash"
 ## 8. 表现与可读性（机制的一部分）
 
 - **格挡三件套**：专属跳字颜色（`blockDamageNumberColor`）、弱化卡肉（`HitFeedbackStrength.Light`）、`ShieldGuardHit` 状态。缺了跳字颜色，玩家会把"减伤"读成"没打中"。
-- **破盾**：当前仍复用 102 的掉盾 clip（本体 + 盾分离层）。用户已确认正式制作方案：盾在角色视频与本体帧内，动画表现脱手后由引擎驱动独立盾对象掉落；站立失盾与引擎掉落接管尚未制作/实现。
+- **破盾**：已改接正式 `Enemy_1021_ShieldBreak.anim`（50fps/0.46s）。盾在角色本体帧内直到脱手帧，0.12s 事件后由引擎驱动独立世界对象（`Enemy_1021_ShieldDrop.prefab`）接手下落；旧 `ShieldVisual` 分离层已停用并在池复位清空。已接入、待用户游戏验收。
 - **定妆形象（单帧已验收，未部署）**：用户已确认 `C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3.png` 的 Idle 形象通过。人物直接以 1011 为基底改剑为盾，保留其体型、头盔、甲胄与色彩；盾在画面左侧、胸腹前方，持盾手/前臂藏在盾后，画面右侧左手保持空垂。实际生成参考为 1011 Idle1 + 用户盾牌局部材质/构造图，后续以 v3 成图为身份锚点；Idle 动画、透明处理、对齐和 Unity 部署尚未开始，详见 `plan/enemy1021-art-production-handoff.md`。本轮未更改机制与数值。
 - **胆怯**：无盾、缩身的胆怯家族；增伤可由跳字颜色/大小体现。
 - **教学顺序**：正面（Jab1）与盾侧（Jab2）都打不动 → 用 Jab3 / 右→左划从反侧打全额 → 用反侧重攻击或精确攻击拆盾 → 胆怯处决。
@@ -326,10 +326,10 @@ QTE / 招架对盾兵的表现、Boss 混编、同列多只 1021、移动端触�
 1. **数值与手感**：固定减伤 10、生命 40、胆怯 1.5×；以及"低伤招式在盾侧只打 1 点"是否过于拖沓。
 2. **实机蓄力斩击破盾**：用真实手指右→左划 + 蓄力打盾兵，确认破盾路径成立。
 3. **跟手精确攻击 + 盾区判定**（§4.4）：尚未实现，是"正面位置判定"的唯一落地方式。
-4. **盾与格挡的正式美术**：持盾Idle形象已验收，Idle/Walk/Attack正式素材已接入且Walk/Attack已由用户验收。正式 `ShieldGuardHit`、`ShieldBreak` 专用clip、盾的世界掉落对象与脱手接管（替代clip内的分离层曲线）、格挡火花与金属音效仍未完成。
-   - 其中包含当前占位层的已知问题：`ShieldVisual` 的 `sortingOrder = 1` 固定（会跨排压其他敌人本体，`Enemy` 本身没有排序逻辑、靠世界 Z）、盾的分离帧是紧裁剪（115×214 等）与 512×512 画布不同锚点体系、被 clip 写过的 sprite/位置没有任何复位代码。
-5. **方向受击表现**：补 `HitRight`；`HitLeft` 不做（盾侧表现并入 `ShieldGuardHit`，见 `design/enemy-1021-animation.md` §7）。
-6. **破盾后美术错配**：`Dead` / `Launched_Rise` 仍用带盾帧；`state` 停在 `Attacking`（§6.5）。
+4. **盾与格挡的正式美术**：持盾Idle形象已验收，Idle/Walk/Attack/ShieldGuardHit/HitFlash正式素材已接入且游戏验收通过。正式 `ShieldBreak` clip、盾的世界掉落对象与脱手接管**已于 2026-10-15 实现并接入，待游戏验收**；格挡火花与金属音效仍未做。
+   - 旧分离层的三个已知问题已随接入处理：`ShieldVisual` 上的 sprite 已清空且 transform 已复位；不再由任何 clip 驱动该分离层；池复位（`ResetShieldGuard`）会显式清空它。独立盾对象改为继承本体的层序与透明度来源，不再依赖固定 `sortingOrder`。
+5. **方向受击表现**：`HitRight` 已接入（`Enemy_1021_HitRight.anim`，0.9s非循环，待用户游戏验收）；`HitLeft` 不做（盾侧表现并入 `ShieldGuardHit`，见 `design/enemy-1021-animation.md` §7）。
+6. **破盾后美术错配（部分缓解）**：破盾后死亡/击飞已改为路由到无盾占位（`CowardDead`/`CowardLaunched`），但两者仍是 102 占位、不是 1021 正式素材；持盾形态的 `Dead`/`Launched_Rise` 仍用带盾帧。`state` 停在 `Attacking`（§6.5）。
 7. **字段正名**：`breaksGuard` / `isPreciseAim` 落地后与 `interruptsCavalryCharge` 解耦。
 8. **未覆盖场景**：QTE/招架交互、同列多只 1021、共享血量、Boss 混编、移动端手感、长时间节点切换与并发补齐。
 
@@ -341,3 +341,6 @@ QTE / 招架对盾兵的表现、Boss 混编、同列多只 1021、移动端触�
 - 早期仅同步用户确认的美术生产理解：A 型宽矩形木盾、空手副手、固定持盾；盾在本体帧内，破盾动画脱手后由引擎驱动掉落。当时正式素材及掉落接管未实现，机制/数值不变。
 - 本轮 Idle 定妆验收：用户确认 `enemy1021_shield_hold_v3.png` 的持盾Idle单帧形象通过；当时正式动画、透明帧、对齐、Unity部署和掉落接管未完成，机制/数值不变。
 - 2026-10-11 动画交接同步：Idle/Walk/Attack已接入，Walk与Attack已获用户验收。Attack为十二帧、2秒非循环、1秒接触姿态键；本轮只更新进度记录，机制规则、攻击数值和代码不变。跟手精确攻击、独立声明字段、盾区判定及独立掉盾对象仍未完成；后续在其他对话继续。默认部署完成后由用户开游戏验收，未明确要求不运行自检。
+- 2026-10-14 进度同步：ShieldGuardHit六帧与HitFlash六帧已接入第一关并获用户游戏验收；本文§1当前进度、§7播放契约与§12待验收项同步为实际 clip（`Enemy_1021_ShieldGuardHit.anim`、`Enemy_1021_HitFlash.anim`）。HitRight当时仍待透明验收、暂不部署（同日稍后用户自行抠图并授权接入，见下条）；`ShieldBreak`、盾掉落独立对象与脱手接管仍未实现。仅同步事实状态，未改代码、机制规则或数值。
+- 2026-10-14 HitRight接入：用户自行抠图并授权接入，六张补边为1108×1108，新建 `Enemy_1021_HitRight.anim`（0.9s非循环）并在控制器新增 `HitRight` 状态与回 Idle 转场；本文§1进度与§12第5项同步为已接入、待游戏验收。盾掉落独立对象与脱手接管仍未实现。
+- 2026-10-15 ShieldBreak 接入与独立盾接管：新建 `Enemy_1021_ShieldBreak.anim`（50fps/0.46s，0.12s `OnShieldReleaseFrame`＋0.46s `OnShieldBreakAnimationComplete`）、`Enemy_1021_CowardIdle_Hold.anim`（`CowardIdle` 静态兜底）、`Assets/Prefabs/Effects/Enemy_1021_ShieldDrop.prefab` 与 `ShieldDropEffect`；`Enemy.cs`/`ShieldGuardEnemy.cs` 补脱手、打断（未到脱手帧取消生成、已脱手自行完成）与池复位；旧 `ShieldVisual` 清空。本文§7播放契约、§8破盾表现与§12第4/6项同步为已实现、待游戏验收。

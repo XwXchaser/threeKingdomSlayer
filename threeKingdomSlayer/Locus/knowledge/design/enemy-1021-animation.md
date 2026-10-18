@@ -11,7 +11,7 @@ aiEditMode: inherit
 本文件是 1021 盾兵的**动画制作输入**。机制规则与状态机以 `design/enemy-1021-shield-guard.md` 为准；本文件只回答"每个状态需要什么动画、什么时候播、时长对不齐时谁让谁、素材放哪、怎么接线"。
 
 > **开工入口**：当前进度、素材来源、后续未完成项与用户制作流程见 `plan/enemy1021-art-production-handoff.md`；机制接续见 `plan/enemy1021-minimal-playable-handoff.md`。
-> **最新状态（2026-10-11）**：Idle四帧、Walk六帧与Attack十二帧均已接入第一关；Walk与Attack已获用户游戏验收。Attack使用已验收对齐v2，30fps、2秒非循环，`attack6` 接触姿态键在1秒，沿用前摇1秒/收招1秒且未增加命中帧声明。身份锚点仍为 `C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3.png`。Hit/ShieldGuardHit/ShieldBreak、死亡/击飞/胆怯等其余正式素材仍未完成。后续在其他对话继续，已验收动作不重复制作。
+> **最新状态（2026-10-17）**：Idle四帧、Walk六帧、Attack十二帧、ShieldGuardHit六帧、HitFlash六帧与**持盾死亡 `Enemy_1021_Dead`（3帧、30fps、0.6秒非循环、末帧保持）**均已接入第一关并获用户游戏验收；HitRight六帧与ShieldBreak（含独立掉盾）已接入、待游戏验收。Attack为30fps、2秒非循环，`attack6` 接触姿态键在1秒；ShieldGuardHit为0.30秒非循环；HitFlash为30fps、0.3667秒非循环；HitRight为30fps、0.9秒非循环。身份锚点仍为 `C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3.png`。击飞三阶段与无盾胆怯家族仍为102占位，详见 `plan/enemy1021-art-production-handoff.md` §0。已验收动作不重复制作。
 > **用户验收边界**：先选有效帧交用户验收，再正常SVL抠图和尺寸/锚点对齐；部署只接入第一关及对应动画，完成后通知用户开游戏检查。未在对话中明确要求时不运行自检；本次Attack接入与交接未进入Play Mode，用户随后自行开游戏并确认通过。
 
 制作规范遵循 `design/pixel-character-and-enemy-animation-spec.md`（统一画布与脚底锚点、禁止整体平移、四周留边距、动作按"起手 → 蓄力 → 命中 → 收势"）。命名与导入参考 `plan/enemy1011-animation-deployment-handoff.md`。
@@ -38,20 +38,20 @@ Normal（持盾）
 | 1 | 持盾 Idle | 生成（`Initialize`）、移动结束、攻击收招、起身结束 | — | 持盾待机 | 是 | **已接入并验收**：`Assets/Animations/Enemy_1021_Idle.anim`；4帧，0.96s循环 |
 | 2 | 持盾 Walk | 开始逐排补齐/前移（`SetTrigger("Walk")`） | 每排 `moveSpeed`（0.3s/排） | 持盾行进 | 是 | **已接入并获用户验收**：`Assets/Animations/Enemy_1021_Walk.anim`，6帧，0.6s循环 |
 | 3 | 持盾 Attack | 攻击序列开始（`Play("Idle")` + `SetTrigger("Attack")`） | `spawnDuration 1.0` + `drawDuration 1.0`（当前无命中帧声明） | 稍侧身盾撞 | 否 | **已接入并获用户验收**：`Assets/Animations/Enemy_1021_Attack.anim`，12帧，2s非循环，1s接触姿态 |
-| 4 | 受击（正面 / 未声明方向） | `TriggerHitFlash` → `PlayHitVisual(Front)` | clip 长 0.33s | 正面挨打 | 否 | 现复用 `Enemy_102_HitFlash`（实质单帧） |
+| 4 | 受击（正面 / 未声明方向） | `TriggerHitFlash` → `PlayHitVisual(Front)` | clip 长 0.3667s | 正面挨打 | 否 | **已接入并获用户游戏验收**：`Assets/Animations/Enemy_1021_HitFlash.anim`，6帧、30fps、非循环；命中前会被卡肉延迟几帧 |
 | 5 | ~~受击（盾侧 = Left）~~ | — | — | **并入 #7**：盾侧攻击在当前规则下必然被格挡，`HitLeft` 在持盾形态不可达（见 §7） | — | 不做 |
-| 6 | 受击（反侧 = Right） | `PlayHitVisual(Right)` | 建议 ≈0.9s | 右侧挨打（无盾侧，全额） | 否 | **缺失**（现回落 #4） |
-| 7 | **格挡命中**（盾侧 / 正面的普通与重攻击） | `ShieldGuardEnemy.PlayBlockVisual()` 覆盖普通受击动画 | 建议 0.25–0.35s | 盾臂局部承力 + 盾牌小幅震荡；K1上身相对骨盆向画面右侧轻微倾斜，双脚/根位置固定；无后仰、无特效 | 否 | **缺失**（现回落 #4，占位） |
+| 6 | 受击（反侧 = Right） | `PlayHitVisual(Right)` | 0.9s | 右侧挨打（无盾侧，全额） | 否 | **已接入、待用户游戏验收**：`Assets/Animations/Enemy_1021_HitRight.anim`，6帧、30fps、非循环，`HitRight → Idle` exit 0.9（与1011方向受击约定一致）；末帧仍接近持盾站姿 |
+| 7 | **格挡命中**（盾侧 / 正面的普通与重攻击） | `ShieldGuardEnemy.PlayBlockVisual()` 覆盖普通受击动画 | 0.30s | 盾臂局部承力 + 盾牌小幅震荡；上身相对骨盆向画面右侧轻微倾斜，双脚/根位置固定；无后仰、无特效 | 否 | **已接入并获用户游戏验收**：`Assets/Animations/Enemy_1021_ShieldGuardHit.anim`，6帧、30fps、非循环 |
 | 8 | 击飞 Rise | `Launch()` → `PlayLaunchVisual()` | 到落地为止 | 被挑飞起手 | 否 | 现复用 `Enemy_102_Launched`（1 帧，借 105 的帧） |
 | 9 | 击飞 Fall | Rise 播完自动转移（`Launched_Rise → Launched_Fall`） | 循环至落地 | 空中下坠 | 是 | 现复用 `Enemy_102_Launched_Fall`（1 帧） |
 | 10 | 起身 Getup | 落地后 `BeginGetup()`（**当前控制器无该状态 → 直接回 Idle**） | 代码兜底 0.6s | 爬起 | 否 | **缺失** |
 | 11 | 眩晕 | `Stun()`（架势破防；1021 非 Boss） | `stunDuration = 1.5s` | 当前无专属动画（非 Boss 通用缺口） | — | 可选新增 |
-| 12 | 持盾死亡 | HP 归零（AnyState → `Dead`） | clip 长（末帧保持） | 持盾倒地 | 否 | 现复用 `Enemy_102_Dead`（1 帧） |
+| 12 | 持盾死亡 | HP 归零（AnyState → `Dead`，`Enemy.PlayDeadVisual()` 按名 `Play`） | 视觉段由 `DeathBounceAndFall()` 协程（0.3s 弹起＋0.8s 掉落）决定；clip 0.6s 非循环、末帧保持 | 持盾倒地 | 否 | **已接入并获用户游戏验收（2026-10-17）**：`Assets/Animations/Enemy_1021_Dead.anim`，3帧（f044/f046/f072）、30fps、0.6s、Clamp；源帧为已验收的 `dead_3frames_matted_v1/` |
 | 13 | **破盾表现期** | 破盾瞬间 `Enemy.EnterShieldBrokenForm()` → `Play("ShieldBreak")` | **`breakAnimationDuration = 0.46s`** | 盾被击飞/脱手 + 本体踉跄（站立版） | 否 | **缺失**（现复用 `Enemy_102_CowardTransition`） |
-| 14 | 胆怯 Idle | 掉盾动画播完（`CompleteShieldBrokenToCoward`）；胆怯形态移动结束 | — | 无盾缩身待机 | 是 | 现复用 `Enemy_102_CowardIdle` |
-| 15 | 胆怯 受击 | 胆怯形态受击（`PlayHitVisual` → `CowardHit`） | clip 长 0.26s | 抱头挨打 | 否 | 现复用 `Enemy_102_CowardHit` |
-| 16 | 胆怯 击飞 | `IsCoward` 时 `PlayLaunchVisual()` → `CowardLaunched` | 到落地为止 | 无盾被挑飞 | 是 | 现复用 `Enemy_102_CowardLaunched`（复用了死亡帧，需新做） |
-| 17 | 胆怯 死亡 | `IsCoward` 时 `Die()` → `CowardDead` | 末帧保持 | 无盾倒地 | 否 | 现复用 `Enemy_102_CowardDead` |
+| 14 | 胆怯 Idle | 掉盾动画播完（`CompleteShieldBrokenToCoward`）；胆怯形态移动结束 | — | 无盾缩身待机 | 是 | **已接入第一关、待游戏验收（2026-10-18）**：`Assets/Animations/Enemy_1021_CowardIdle.anim`，6 帧、30fps、0.96s 循环；素材为已验收的 `coward_idle_6frames_matted_v1/`。注意胆怯无 Walk 动画 |
+| 15 | 胆怯 受击 | 胆怯形态受击（`PlayHitVisual` → `CowardHit`） | `CowardHit → CowardIdle` exit 1.0，**clip 长即表现时长** | 无盾受击（压缩→张开峰值→回待机） | 否 | **已接入第一关、待游戏验收（2026-10-18）**：`Assets/Animations/Enemy_1021_CowardHit.anim`，30fps、0.2666s、4 姿势键（待机 0 / 压缩 0.0667 / 张开 0.1333 / 待机 0.2）＋末键 0.2333；素材为待机帧＋已认可的 v6/v8 生成图 |
+| 16 | 胆怯 击飞 | `IsCoward` 时 `PlayLaunchVisual()` → `CowardLaunched` | 到落地为止（`launchDuration = 2.0`） | 无盾被挑飞 | 是 | 现复用 `Enemy_102_CowardLaunched`（复用了死亡帧）。已排期：默认做 **2.0s Clamp 长保持 clip**；其 `→ CowardIdle` exit 1.0 出边会提前切走，见 `plan/enemy1021-coward-family-plan.md` §4.2 |
+| 17 | 胆怯 死亡 | `IsCoward` 时 `Die()` → `CowardDead` | 末帧保持 | 无盾倒地 | 否 | 现复用 `Enemy_102_CowardDead`；已排期，目标 0.6s 非循环、末帧保持，不直接复用持盾 Dead 的帧 |
 
 补充说明：
 
@@ -69,9 +69,9 @@ Normal（持盾）
 | 用途 | 资产 | 实际内容 |
 |---|---|---|
 | 旧持盾 Idle/Walk/Attack | `Enemy_102_Idle.anim`、`Enemy_102_Walk.anim`、`Enemy_102_Attack.anim` | 1021这三个状态已改接正式1021素材；102原资产保留不变 |
-| 持盾受击 / 死亡 | `Enemy_102_HitFlash.anim`（0.33s，实质1张 `enemy2_hitted`）、`Enemy_102_Dead.anim`（0.10s，1帧） | 仍为占位 |
+| 持盾受击 / 死亡 | `Enemy_102_HitFlash.anim`（0.33s，实质1张 `enemy2_hitted`）、`Enemy_102_Dead.anim`（0.10s，1帧） | 1021的受击与持盾死亡已改接正式 `Enemy_1021_HitFlash.anim` / `Enemy_1021_Dead.anim`；102原资产保留不变 |
 | 击飞 | `Enemy_102_Launched.anim` / `_Launched_Fall.anim` | 各 1 帧，借用 `enemy5_launch` |
-| 破盾（掉盾） | `Enemy_102_CowardTransition.anim` | 0.46s：本体 5 帧（`Lost_Body`）+ `ShieldVisual` 5 帧（`Lost_Shield`）+ 盾的局部位置曲线（x 7.13→6.55、y 5.83→18.05） |
+| 破盾（掉盾） | `Enemy_102_CowardTransition.anim` | **1021 已改接正式 `Enemy_1021_ShieldBreak.anim`（50fps/0.46s，本体6帧＋末帧保持；盾改由独立对象接管）**；本行是 102 原资产，保留不变 |
 | 胆怯 | `Enemy_102_CowardIdle.anim`（0.42s 循环）、`_CowardHit.anim`（0.26s）、`_CowardDead.anim`（0.30s）、`_CowardLaunched.anim`（0.30s） | 胆怯 Idle/Hit 各 3 键 + `ShieldVisual` 的 **null 键**（显式清掉盾）；分帧精灵在 `Assets/Sprites/Enemy/Enemy2/Coward/` |
 
 ### 3.2 建议新增（命名 `Enemy_1021_*`）
@@ -81,13 +81,13 @@ Normal（持盾）
 | 持盾待机 | `Enemy_1021_Idle` | **已完成：4帧循环，0.96s，30fps，键位0/0.24/0.48/0.72s，末帧0.9267s短暂保持**；盾的位置在循环内保持稳定；来源为f001/f025/f049/f073的SVL透明帧 |
 | 持盾行进 | `Enemy_1021_Walk` | **已完成并验收：6帧、0.6s循环、30fps**；沿用moveSpeed调制，不重复制作 |
 | 持盾攻击 | `Enemy_1021_Attack` | **已完成并验收：12帧、2s非循环、30fps，接触姿态键1s**；沿用前摇1s/收招1s，无命中帧声明 |
-| 正面受击 | `Enemy_1021_HitFlash` | 3–5 帧，≈0.33s |
-| 右受击 | `Enemy_1021_HitRight` | 6 帧，≈0.9s（参考 1011 的方向受击规格） |
-| **格挡命中** | `Enemy_1021_ShieldGuardHit` | 3–4 帧，0.25–0.35s；首帧即"盾面接触"（卡肉只有 45ms），末帧回站姿（出边 exit time 1 → Idle） |
-| **破盾（站立版）** | `Enemy_1021_ShieldBreak` | **长度 == `breakAnimationDuration`**；首帧能承接 Idle / 受击姿态，末帧是"无盾踉跄/空手"（播完立刻切 `CowardIdle`） |
+| 正面受击 | `Enemy_1021_HitFlash` | **已完成并验收：6帧、30fps、0.3667s非循环**；末帧接近持盾站姿，含 `ShieldVisual` 清空键 |
+| 右受击 | `Enemy_1021_HitRight` | **已接入、待游戏验收：6帧、30fps、0.9s非循环**；用户自行抠图后按固定偏移补边部署，含 `ShieldVisual` 清空键 |
+| **格挡命中** | `Enemy_1021_ShieldGuardHit` | **已完成并验收：6帧、0.30s非循环**；首帧即“盾面接触”（卡肉只有 45ms），末帧回站姿（出边 exit time 1 → Idle） |
+| **破盾（站立版）** | `Enemy_1021_ShieldBreak` | **已完成并接入、待游戏验收：50fps、0.46s 非循环**；六帧键位 0/0.06/0.12/0.22/0.32/0.40＋末帧保持 0.44；`ShieldVisual` null 键；0.12s 事件生成独立盾、0.46s 事件收尾进胆怯。长度 == `breakAnimationDuration` |
 | 击飞三阶段 | `Enemy_1021_Launched_Rise` / `_Launched_Fall` / `_Launched_Getup` | Rise ≈0.5–0.6s 非循环、Fall 循环（≈0.45–0.6s）、Getup ≈0.6s 非循环 |
-| 持盾死亡 | `Enemy_1021_Dead` | ≈0.6s 非循环（末帧保持） |
-| 盾掉落（独立对象） | `ShieldDrop.prefab`（盾精灵 + 旋转/下落缓动 + 自动销毁或回池） | 1 张盾精灵即可；由代码在破盾瞬间生成（替代 clip 内的位置曲线） |
+| 持盾死亡 | `Enemy_1021_Dead` | **已接入并获用户游戏验收：3帧、30fps、0.6s 非循环（末帧保持）**；键位 0/0.2/0.4＋保持键 0.5667，`ShieldVisual` null 键；源帧 960→固定偏移 `(74,91)` 补边 1108 |
+| 盾掉落（独立对象） | `Assets/Prefabs/Effects/Enemy_1021_ShieldDrop.prefab` | **已实现并接入、待游戏验收**：由 0.12s 事件在脱手帧生成，读取敌人姿态一次后不跟随移动/形变，0.85s 后自毁；脚本 `Assets/Scripts/Effects/ShieldDropEffect.cs` |
 | （可选）眩晕 | `Enemy_1021_Stun` | 非 Boss 目前无眩晕表现，属通用缺口 |
 
 美术规范要点（同规范文档）：同一动作画布尺寸统一、脚底锚点固定、最大后仰/展开时不越框、像素密度与描边一致、禁止镜头运动与整体平移。
@@ -96,7 +96,7 @@ Normal（持盾）
 
 ## 4. Animator 结构
 
-现状：`Assets/Animations/Enemy_1021.controller`（复制自102）已有14个状态、6个Trigger参数；Idle、Walk、Attack分别引用 `Assets/Animations/Enemy_1021_Idle.anim`、`Assets/Animations/Enemy_1021_Walk.anim`、`Assets/Animations/Enemy_1021_Attack.anim`。本次Attack接入仅替换motion，原转场保留。
+现状：`Assets/Animations/Enemy_1021.controller`（复制自102）已有15个状态、6个Trigger参数；Idle、Walk、Attack、Dead 分别引用 `Enemy_1021_Idle.anim`、`Enemy_1021_Walk.anim`、`Enemy_1021_Attack.anim`、`Enemy_1021_Dead.anim`（其余正式动作为 `Enemy_1021_HitFlash/HitRight/ShieldGuardHit/ShieldBreak`）。每次接入只替换目标状态的 motion，原转场保留。
 
 参数：`Attack`、`Launch`、`Dead`、`Hit`、`ReRise`、`Walk`（全 Trigger）。默认状态 `Idle`。
 
@@ -120,7 +120,7 @@ AnyState -> Dead [Dead]、AnyState -> Launched_Rise [Launch]
 
 需要补的状态与边（与 §3.2 一一对应）：
 
-1. `HitRight`（由 `Enemy.PlayHitVisual` 按名 `Play`，无出边也可；建议与 `HitFlash` 一致：exit 1.0 → Idle）；**`HitLeft` 不做**（盾侧表现并入 `ShieldGuardHit`，见 §7）。
+1. ~~`HitRight`~~ **已接入**（由 `Enemy.PlayHitVisual` 按名 `Play`）：`Enemy_1021_HitRight.anim` 0.9s、非循环，出边 `HitRight → Idle` hasExitTime、exit 0.9、duration 0；**`HitLeft` 不做**（盾侧表现并入 `ShieldGuardHit`，见 §7）。
 2. `Launched_Getup`（`HasGetupAnimatorState()` 依赖状态名 `Base Layer.Launched_Getup`；补上后才会有起身表现；`CowardGetup` 可选，若不补则胆怯落地直接回 `CowardIdle`）。
 3. `ShieldGuardHit`、`ShieldBreak` 已就位，把 motion 换成正式 clip 即可（不用改代码）。
 4. Trigger `Walk` 的进入边位于 `Idle`；`ShieldBreak` / `ShieldGuardHit` 没有入边，**只能由代码 `Play`**——这是刻意的（破盾与格挡都不该被其它 Trigger 抢走表现）。
@@ -134,11 +134,11 @@ AnyState -> Dead [Dead]、AnyState -> Launched_Rise [Launch]
 5. **所有状态都可能被外部切走**：死亡与击飞是 AnyState 转移，随时会打断当前表现 → 关键姿态（盾面接触、盾脱手）不要放在 clip 尾部。唯一例外是 `ShieldBreak`：它的尾部本身就是接口（"无盾站姿"），用来衔接 `CowardIdle`。
 6. **破盾表现期内可能发生补齐位移**：那段 0.46s 里若前排被清空，敌人会平移补齐，画面上会看到"掉盾姿态平移"。属可接受的边缘情况；若要在意，需要在计时内推迟补齐（不必为最小版加复杂度）。
 
-## 6. 盾的表现方案（Idle/Walk/Attack已接入，独立掉盾接管未实现）
+## 6. 盾的表现方案（方案 A 已落地：Idle/Walk/Attack/HitFlash/ShieldBreak 已接入，独立掉盾接管已实现）
 
 用户已确认正式制作方案：**持盾时盾画在角色本体帧内；破盾动画表现脱手，之后由引擎驱动独立盾对象掉落。初版保持已举盾应战的 Idle，不制作举起/收回盾的状态切换。** 人物以 1011 为基底改剑为盾，具体体型、头盔、装备、盾形与位置以已验收 `C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3.png` 为准。盾位于画面左侧、胸腹前方，角色右手/手指/前臂/握把藏在盾后；画面右侧左手保持空垂，头盔、面罩与眼光可读。脱手帧、本体中盾的消失与独立对象的接管必须协调，避免双盾、闪没或重新出现；具体时间点留待制作/部署时确认。
 
-当前占位实现仍是"混合式"：持盾形态把盾**画在本体帧内**（Idle/Walk/Attack/HitFlash/Dead 只绑 root），掉盾时用**分离层**（`ShieldVisual` 子物体，由 `CowardTransition` 给 sprite 键 + 位置曲线），胆怯家族再用 **null 键**把盾清掉。用户选择方案不等于正式实现已落地。
+**方案 A 已落地（2026-10-15）**：持盾与脱手前仍把盾**画在本体帧内**（Idle/Walk/Attack/HitFlash/Dead 只绑 root）；`Enemy_1021_ShieldBreak` 从第 3 帧起本体无盾，0.12s 事件生成独立世界对象接手下落，末帧为无盾姿态。旧 `ShieldVisual` 分离层不再作为持盾/掉盾路线：Prefab 上该子渲染器已清空（sprite 为空、transform 复位），并在池复位中显式清空。
 
 方案对照（A 已选，B 仅保留为历史比较）：
 
@@ -196,12 +196,12 @@ AnyState -> Dead [Dead]、AnyState -> Launched_Rise [Launch]
 
 ## 10. 待确认（需要拍板再开工）
 
-1. **盾的方案已定**：盾画在本体帧内，破盾动画脱手后由引擎驱动独立对象掉落（§6）；正式实现未落地。
+1. **盾的方案已落地**：盾画在本体帧内，破盾动画脱手后由引擎驱动独立对象掉落（§6）；已于 2026-10-15 随 `ShieldBreak` 接入实现，待游戏验收。
 2. **持盾姿态已验收**：初版为 v3 成图的已举盾应战 Idle（持盾手藏于盾后、副手空垂），不制作举起/收回盾的状态切换；没有据此新增命中部位判定或玩法状态。
 3. **胆怯是否需要起身**：补 `Launched_Getup`（非胆怯形态落地起身）与 `CowardGetup`（胆怯形态）？
 4. ~~是否需要方向受击~~ **已定**：要 `HitRight`（反侧 = 全额，必须看得出没被挡）；`HitLeft` 不做（当前规则下不可达，盾侧表现并入 `ShieldGuardHit`，见 §7）。
 5. **眩晕表现**：非 Boss 目前无眩晕动画（属全敌人通用缺口），1021 是否单独补？
-6. **盾掉落已定**：由引擎驱动独立对象，不继续用本体 clip 的盾位置曲线；具体接管帧和生命周期另行实现/验证。
+6. **盾掉落已实现**：由引擎驱动独立对象（`Enemy_1021_ShieldDrop.prefab`），不继续用本体 clip 的盾位置曲线；接管帧为 `ShieldBreak` 的 0.12s 事件，生命周期 0.85s 自毁；层级与轨迹仍待游戏内确认。
 7. **形象单帧已验收**：以 1011 人物为基底改剑为盾；实际生成参考为 1011 Idle1 浅灰副本 + 用户盾牌局部构造/材质参考，不再使用 109。后续动作统一沿用 `C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3.png`，不按早期头身比或盾形数字另行重设计。实际输入、参数和阶段边界见 `plan/enemy1021-art-production-handoff.md`。
 
 ## 11. 变更日志
@@ -211,3 +211,7 @@ AnyState -> Dead [Dead]、AnyState -> Launched_Rise [Launch]
 - 本轮 Idle 定妆验收：用户确认 `enemy1021_shield_hold_v3.png` 的 Idle 形象通过，作为后续动作身份锚点；同步以 1011 改剑为盾、持盾手遮挡和副手空垂的实际方案。仅单帧形象通过，正式 Idle 动画、透明帧、对齐与部署仍待制作；本轮未改代码/Unity 资产。
 - 2026-10-10 Idle 素材部署：找到其他AI完成的 `Library/Locus/tmp/enemy1021_idle_v1_frames/keyed_ui_t79/` 四帧，依据 `svl_matte_batch_report.json` 核对 RGBA、半透明0、幕布残留0。四帧固定偏移 `(74,91)` 零重采样补到1108，写入 `Assets/Sprites/Enemy/Enemy1021/`；创建 `Assets/Animations/Enemy_1021_Idle.anim`，接入 `Enemy_1021.controller` 的 Idle 状态。Prefab scale改为0.090161，碰撞盒/血条世界尺寸匹配101基准；Idle clip含 `ShieldVisual` null键清旧分离盾。Play Mode已验证自然生成、四阶段循环、旧盾清空、对象池复用，Console错误0。详细报告见 `Library/Locus/tmp/enemy1021_idle_deploy_v1/deploy_report.json`。
 - 2026-10-11 Walk与Attack交接：Walk六帧、0.6秒循环已接入并验收；Attack十二帧先选帧验收，再经SVL抠图与整帧尺度/脚底对齐v2验收，按 `(74,91)` 补边后接入第一关。Attack为2秒非循环、1秒接触姿态键，用户已验收游戏表现。本次仅同步文档，不改机制/数值或工程资产，不启动运行自检；后续在其他对话继续未完成动画与机制。
+- 2026-10-14 进度同步（ShieldGuardHit/HitFlash完成）：ShieldGuardHit六帧与HitFlash六帧先后接入第一关并获用户游戏验收；§2矩阵、§3素材清单与顶部状态行同步为已完成，HitRight标为未接入/透明候选待验收，ShieldBreak与死亡/击飞/胆怯仍为102占位。仅同步事实状态，未改代码、控制器或数值；剩余清单见 `plan/enemy1021-art-production-handoff.md` §0.2。
+- 2026-10-14 HitRight接入：用户自行对已验收六帧完成抠图并授权接入。新增 `Assets/Animations/Enemy_1021_HitRight.anim`（30fps、0.9秒、非循环、6帧+末姿态保持键）与控制器 `HitRight` 状态（`HitRight → Idle` exit 0.9、duration 0），与1011已验收的方向受击约定一致；§2第6行与§3.2同步为已接入、待游戏验收。本次未改其他状态、规则或数值。
+- 2026-10-17 持盾死亡接入：用户已验收的 3 帧透明素材（`dead01_f044` / `dead02_f046` / `dead03_f072`，960×960 RGBA，T=80）按固定偏移 `(74,91)` 零重采样补边到 1108，新增 `Assets/Sprites/Enemy/Enemy1021/Enemy_1021_dead1..3.png`（导入设置与 `Enemy_1021_hitFlash1` 逐项一致）与 `Assets/Animations/Enemy_1021_Dead.anim`（30fps、0.6s、Clamp、键位 0/0.2/0.4＋保持 0.5667、`ShieldVisual` null 键），控制器仅替换 `Dead` 状态的 motion，18 条转场与其余 14 个状态 motion 未变。未进入 Play、未采样动画；用户随后开游戏确认持盾死亡表现通过（2026-10-17）。核验记录 `Library/Locus/tmp/enemy1021_dead_deploy_v1/asset_verification.json`。
+- 2026-10-15 ShieldBreak 接入：新建 `Enemy_1021_ShieldBreak.anim`（50fps/0.46s，0.12s 脱手事件＋0.46s 结束事件）、`Enemy_1021_CowardIdle_Hold.anim`（`CowardIdle` 静态兜底）、独立盾 Prefab 与 `Assets/Scripts/Effects/ShieldDropEffect.cs`；`Enemy.cs`/`ShieldGuardEnemy.cs` 补脱手、打断与池复位；旧 `ShieldVisual` 清空。素材按单一全局缩放 1.20＋脚底对齐部署（源六帧比 Idle 小约 20%，**非精确标定**）。静态核验通过，未进入 Play、未采样动画，待用户游戏验收。接入流程见 `skill/workflows/action-to-unity-deployment.md`。

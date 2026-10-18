@@ -1,7 +1,7 @@
 ---
 id: kd_b36a0f8e-c80c-4114-824c-e74466d1d189
 injectMode: inherit
-summary: AI视频素材台账：1021 Idle/Walk/Attack/ShieldGuardHit已接入第一关，Walk/Attack/ShieldGuardHit均获用户游戏验收；格挡六帧、0.30秒非循环。后续在其他对话继续，角色部署未明确要求不运行自检。
+summary: 1021素材台账现状：ShieldBreak视频/修订六帧/T79透明与分件已验收并接入第一关；HitFlash与持盾死亡（含`Enemy_1021_Dead.anim`）已游戏验收；HitRight已接入待游戏验收；CowardIdle的呼吸最高点图、循环视频与6帧透明素材均已验收；CowardHit v1/v2/v3 验收不通过，v4 视频已生成待看片；v4 受击峰值图不通过。CowardLaunched 单图 10 秒完整链 v2 已提交一次（task_78a8dfe0…）并下载解码：虽为停格结构（174/241 帧静止 + 33 次单帧换图），用户反馈“效果挺好”，已按 1011 三段式选出 18 帧（用户剔除待机首末后剩 16 帧），并按 T=80 完成抠图：`keyed_t80_v1/`（960×960 RGBA、半透明0/幕布残留0），**已验收**。旧 6 秒带剑版验收不通过。不自动自检。
 aiEditMode: inherit
 ---
 
@@ -642,6 +642,327 @@ aiEditMode: inherit
 - **核验与评审产物**：`Library/Locus/tmp/enemy1021_attack_video_v1/frames/verification_report_v2.json` 记录12帧960×960 RGBA、Alpha0/255、透明区RGB全0、画布边界完整、底边均780、重新测得脚底中点最大X误差1.75px。接触表 `Library/Locus/tmp/enemy1021_attack_video_v1/frames/ATTACK_ALIGNED_12_WHITE_REVIEW_v2.png`；前后对照 `Library/Locus/tmp/enemy1021_attack_video_v1/frames/ATTACK_ALIGNMENT_BEFORE_AFTER_v2.png`；GIF `Library/Locus/tmp/enemy1021_attack_video_v1/frames/ATTACK_ALIGNMENT_BEFORE_AFTER_v2_preview.gif` 为每帧0.12秒评审预览，不定义游戏时序。正常SVL抠图仍有每帧562–806个gEx>8可见像素；整帧尺度/位置校正无法消除局部透视或重绘变化，仍需用户检查边缘和动作。
 - **Unity接入（素材v2验收后）**：十二张对齐v2帧按固定 `(74,91)` 偏移零重采样补到1108×1108，导入 `Assets/Sprites/Enemy/Enemy1021/Enemy_1021_attack1.png` 至 `Assets/Sprites/Enemy/Enemy1021/Enemy_1021_attack12.png`，导入设置与Idle一致。创建 `Assets/Animations/Enemy_1021_Attack.anim`：30fps、2秒非循环、十二个有效Sprite键，`attack6` 接触姿态在1秒；含旧 `ShieldVisual` 清空键。`Assets/Animations/Enemy_1021.controller` 的Attack motion已替换，原转场保留，Prefab沿用该Controller，第一关 `Assets/RouteData/Stage01/N1_ArtPreview_Battle.asset` 已含1021。
 - **部署留档与边界**：`Library/Locus/tmp/enemy1021_attack_deploy_v1/preparation_report.json` 与 `Library/Locus/tmp/enemy1021_attack_deploy_v1/asset_verification.json` 已回读；补边像素一致、十二个root引用完整、Clip/Controller已保存。没有修改脚本、攻击数值、命中帧声明、Prefab或场景；本轮未进入Play Mode、未做额外运行或画面自检。用户已验收 Attack 通过，后续在其他对话继续。
+
+### Enemy 1021 HitRight 反侧受击：视频/六帧已验收，用户自抠后已接入第一关，等待游戏验收（2026-10-14）
+
+- **方向与参考边界**：画面右侧来力，击中无盾侧肩胸；用户允许参考1011 HitRight原词，但不上传其动作图片。身份锚点为 `C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3.png`。
+- **关键图v1**：`C:/Users/steam/Pictures/gptGen/enemy1021_hit_right_keypose_v1.png`，1024×1024 RGB，1,149,099 bytes，SHA-256 `77049b6b2e328bfa56471b1f678b0aff2f716af260ed8fa4d32c19029b5e6419`。只上传1021 Idle，单次 `gpt-image-2.5-sunburst` 编辑，quality=max/input_fidelity=high。用户当时认可姿态并授权视频；后续成片反馈要求修订，不再将其作为新版视频的动作依据。
+- **视频v1**：Task ID `task_0fe59a2e947441778045dac0611a615e`，2026-10-12创建一次；spec为seedance-2-fast/4秒/720p/1:1/无音频/无水印/seed=-1，两个普通reference_image分别为1021 Idle与关键图v1。未上传1011图片，未混用首尾帧。
+- **v1下载**：用户要求下载后，于2026-10-13查询现有任务得到success；`C:/Users/steam/Videos/doubaoVideo/enemy1021_hit_right_v1.mp4`，1,462,829 bytes，SHA-256 `75a16f91bf6409f9d51f3fd316111bcdee61bb216a3cea5ae1915a8f3238ed66`。实测960×960/24fps/97帧/4.041667秒/H.264/无音频，容器与全部帧解码通过。4路Range下载30.477秒，返回cost.spend=0.48888（币种未知）。完整请求、响应、下载记录在视频旁同名JSON；检查接触表在 `Library/Locus/tmp/enemy1021_hit_right_video_v1/contact_sheet.png`，不是生产选帧。
+- **用户对v1反馈**：参考图让动作走错方向，要求像1011一样歪头，同时盾牌敞开表达没有挡住攻击。旧词的“盾只做很小被动震动”和小幅头部转动压弱了这两个读点；v1视频未获动作验收，不继续选帧、抠图或部署。
+- **v2授权**：用户审阅新版完整双语图像提示词后明确“请制作参考图”。仅上传已验收1021 Idle，不上传旧关键图或任何1011图片；生成目标为歪头与盾牌外敞的受击峰值。
+- **关键图v2结果**：`C:/Users/steam/Pictures/gptGen/enemy1021_hit_right_keypose_v2.png`，HTTP200，1024×1024 RGB，990,459 bytes，SHA-256 `de620e2a72353f32aefcebd1f8c1bcd81575b64968f8ba7afc7c2dfc0404aeee`。单次 `/v1/images/edits`，gpt-image-2.5-sunburst/quality=max/input_fidelity=high/background=opaque/PNG/n=1；usage input/output=1639/8176，cost未返回，不推断费用。没有重试。
+- **v2留档与验收**：完整请求、响应、结果核验在图片旁同名 `.request.json`、`.response.json`、`.result.json`，成图已回读附到对话。盾牌明显外敞、胸甲和持盾臂露出、头部歪斜更明显；脚底位置及局部绘制相对Idle有变化，不能宣称像素或几何锁定。用户随后明确“这个可以，准备视频生成”，v2姿态已认可；完整双语视频词、规格和上传副本呈现后，用户再明确“发起视频生成”，授权一次v2视频任务。
+- **视频v2本地准备**：`Library/Locus/tmp/enemy1021_hit_right_video_v2/job.json` 保存完整双语词与拟用seedance-2-fast/4秒/720p/1:1/无音频/无水印/seed=-1规格。两张普通reference_image为1021 Idle与v2峰值，不上传1011图片或旧版HitRight；拟输出 `C:/Users/steam/Videos/doubaoVideo/enemy1021_hit_right_v2.mp4`。主读点为冲击后头部歪斜与盾牌被动外敞；图1决定身份、根与双脚，图2仅决定上身局部峰值。0.30秒受击、0.50–0.65秒经过峰值、2.10秒前回Idle是提示词目标，非实际测得时序。
+- **上传副本与待批边界**：本地上传副本在 `Library/Locus/tmp/enemy1021_hit_right_video_v2/upload_copies/01_idle_gray232.png` 与 `02_peak_v2_gray232.png`。两图以外部连通中性背景Mask统一为RGB(232,232,232)，四角64×64区域均值/中位数232、std0；未Mask的源RGB逐像素变化0，内部金属高光保留。峰值图整图平移(-1,+32)px、无重采样或缩放，未裁剪前景；个别靴底约±5px残差，不宣称双脚精确一致。原图哈希不变。准备报告 `reference_preparation.json` 与原件/副本对照 `REFERENCE_UPLOAD_REVIEW_v2.png` 已回读附图。用户审阅后已授权按上述副本、双语词和4秒规格生成；已上传两张副本并创建一次任务，没有制作透明帧或修改Unity资产。
+- **视频v2创建与状态**：Task ID `task_f1086e5874ee4ae7bf386a0bd0a1aea6`，HTTP200，accepted UTC `2026-10-13T05:46:47.503966+00:00`；规格及实际提交英文词与获批job一致，Prompt SHA-256 `417023193f446f1babf126ce17bbc1a9422b4984f22329e6ca8e05f22cf4dcd6`。首轮第10次查询于UTC `2026-10-13T05:50:05.375845+00:00`返回success；轮询窗口88.741秒，不当作纯模型推理时长。创建只有一次，没有重试。
+- **视频v2下载与核验**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_hit_right_v2.mp4`，1,847,087 bytes，SHA-256 `adbe1efbd2539b17cbd15321fa1b74609cc47f0128515ab19c7bbb901bad1514`。4路Range/ETag验证通过，下载28.444秒；960×960/24fps/97帧/4.041667秒/H.264/无音频/末帧PTS4秒，ftyp/uuid/free/mdat/moov及全帧解码通过，最终文件回读哈希与下载报告一致。原任务cost.spend=0.48888（币种未知），completion_tokens=87300。
+- **视频v2交付边界**：完整请求、响应、下载核验在视频旁 `.request.json`、`.response.json`、`.download.json`；运行/下载manifest在 `Library/Locus/tmp/enemy1021_hit_right_video_v2/`。稀疏文件检查接触表 `contact_sheet.png` 已回读，可见歪头与盾外敞，但不证明动作节奏、背景/主体全帧颜色或用户美术验收。用户随后明确“已验收，但是存在严重的流程问题，当前视频并非绿幕”，v2视频动作已验收，背景流程另列故障；不把灰底问题改写为动作未通过。后续补救见下方，不因服务端success自动推进。
+- **灰底流程纠正**：此次代理在视频词和副本中选择RGB(232,232,232)浅灰底，未沿用用户需要的绿幕流程。以后角色视频先准备统一绿幕上传副本并验收，不自动沿用定妆灰底。当前视频及原帧保留不变，本轮不重新生成、不收费。
+- **97帧解码与六帧候选**：用户提出“能否截取有效帧然后染绿背景再抠图”，已解码至 `Library/Locus/tmp/enemy1021_hit_right_video_v2/frames/clean_raw/`。候选零基f018/f024/f050/f052/f054/f066，依次为已受击敞盾→代表峰值→三段恢复→回Idle；f016/f017过渡异常、前后Idle等待和中段重复姿态均未选。六张960×960 RGB原画布PNG在 `frames/selected_v1/`，`hitRight1_f018.png` 至 `hitRight6_f066.png`，逐张与新解码像素和来源哈希一致，无裁切、缩放、平移、染色或抠图。用户后续明确“已验收挑选帧，清补回绿底然后再抠图”；manifest已更新selected_frames_accepted_by_user=true。选帧PNG/GIF预览此前已回读附图，GIF120ms/帧仅为评审预览。
+- **背景实测与本地小样**：全部97帧四角64×64 ROI背景中位数范围RGB227–228，最大std约1.06；主体全帧颜色配准未验证，不仅凭底稳定判主体恒色。对f024做单帧背景连通蒙版（距逐帧灰底26、保护内部高光，SVL T14/softness16），反混合后另存RGB(0,177,64)绿底，再用SVL T79/softness16/halo1/半透明转不透明。样本保留1498个受保护近灰内部像素，识别到的外部底残留0、半透明0、透明RGB非零0，距轮廓4px内部RGB变更0；源几何、原图和视频哈希不变。不使用生成式重绘、安装或远程请求。
+- **小样文件与结论边界**：`frames/green_feasibility_sample_v1/hitRight2_f024_green_sample.png`、`hitRight2_f024_green_keyed_sample.png`、直接灰底对照 `hitRight2_f024_direct_gray_sample.png`；`GRAY_GREEN_KEY_FEASIBILITY_REVIEW_v1.png` 与 `sample_report.json` 已回读。染绿依然需要先准确分离灰底，只是中间交付，不能将近灰金属整体染绿。单帧结果支持本地补救，不等于六帧已处理、未知封闭空隙已清除或用户已验收小样。用户已明确授权按已验收六帧进行灰底分离、恢复绿底并本地抠图。六帧批处理已完成，结果待用户验收；没有对齐、部署Unity或改Unity资产。
+
+- **六帧绿底恢复与SVL批处理（已完成，透明验收待返回）**：绿底中间文件在 `Library/Locus/tmp/enemy1021_hit_right_video_v2/frames/green_recovered_v1/`，统一RGB(0,177,64)；最终透明帧在 `frames/keyed_green_t79_v1/`，文件名 `hitRight1_f018.png` / `hitRight2_f024.png` / `hitRight3_f050.png` / `hitRight4_f052.png` / `hitRight5_f054.png` / `hitRight6_f066.png`。每张960×960 RGBA，绿底先补再走SVL Chroma T79/softness16/halo1/半透明转不透明，原始灰底来源不变，无裁切、缩放、对齐或平移。报告 `hitright_green_matting_report_v1.json`、总览 `HITRIGHT_GREEN_MATTED_6_REVIEW_v1.png`、细节 `HITRIGHT_GREEN_MATTED_DETAIL_v1.png` 均已回读。
+- **批处理核验与已知边界（2026-10-13）**：六帧连接到外部的灰底残留均0、半透明像素均0、透明RGB非零均0，透明结果与源内部RGB变化均0。最初报告写入因numpy.int64序列化失败，图片已落盘；收尾脚本只读取既有图片补写报告，没有重新生成或覆盖素材。封闭近灰色区域尚保留为前景（可能包含手指/红缨空隙，也可能是金属高光），当时不能宣称全部空隙清理完毕；用户随后要求暂不部署，代理未自动清孔、对齐或接入。
+- **用户自抠与接入（2026-10-14）**：用户自行在 SVL 网页处理六帧（文件时间 17:11–17:38），成品仍在 `frames/keyed_green_t79_v1/`，随后明确“我已抠好那批图，你可以接入了”。代理回读：六张 960×960 RGBA，绿边极低（可见像素平均绿优势 0.0、>8 仅0–4像素）；边缘留有半透明像素（155–699/帧），全透明区RGB未清零。为与 1021 其他五套动作一致，补边时做了两项归一：半透明→不透明（699/338/485/363/155/190 像素）与全透明RGB→0（66.9万–78.5万像素）；用户源图未被修改，源文件哈希与记录一致。
+- **接入结果**：六张按固定 `(74,91)` 零重采样补边为1108×1108，部署为 `Assets/Sprites/Enemy/Enemy1021/Enemy_1021_hitRight1.png` 至 `...hitRight6.png`，导入设置与 Idle 一致（Single/PPU16/Point/无压缩/无Mipmaps/Tight/Center，实际导入1024×1024、Sprite PPU14.7870035）。新建 `Assets/Animations/Enemy_1021_HitRight.anim`：30fps、0.9秒、非循环，6个精灵键（0/0.15/0.30/0.45/0.60/0.75秒）加末姿态保持键（0.8667秒），含 `ShieldVisual` 清空键，无Transform曲线与AnimationEvent；时长与1011已验收的HitRight/HitFlash约定一致（0.9s、6键、exit 0.9回Idle）。控制器新增 `HitRight` 状态与 `HitRight → Idle`（hasExitTime、exit 0.9、duration 0），其余14个状态motion未变；Prefab仍引用该Controller，第一关配置仍含enemyId 1021；121个受保护文件哈希一致。报告 `Library/Locus/tmp/enemy1021_hitright_deploy_v1/asset_verification.json`。未进入Play Mode、未采样动画或运行自检，游戏表现待用户验收。
+
+### Enemy 1021 HitFlash 正面受击关键图：v1–v4均未通过，制作暂停（2026-10-13）
+
+- **授权**：用户同意通用受击HitFlash的对称胸肩压缩、缩颈、盾牌小幅松开方向；完整双语词、参考和参数呈现后明确“发起生成”。只提交一次图像编辑，不自动重试，暂不部署。
+- **唯一实际参考**：`C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3_green_v1.png`，1024×1024 RGB，344,540 bytes，SHA-256 `d398a1eb7cd436f8082c6cf7dd7901e59d4f888e757f48b1ac01823f4adf40de`。四角64×64背景实测RGB(0,177,64)、std0。没有上传1011动作图或HitRight姿态图；1011只借用正面受击原词。
+- **生成规格与结果**：`POST /v1/images/edits`，gpt-image-2.5-sunburst/quality=max/input_fidelity=high/1024×1024/background=opaque/PNG/n=1；HTTP200。`C:/Users/steam/Pictures/gptGen/enemy1021_hit_front_keypose_v1.png`，1,051,224 bytes，SHA-256 `0c674c36021787cb91f2737d2192087f4b8706a0d18a24262fb3be143adbd035`，1024×1024 RGB。usage input/output=1932/7024，cost未返回，不推断费用。
+- **v1姿态反馈与纠正**：代理最初把头盔下沉与肩甲形状变化读为双肩受力，判断偏乐观；用户明确反馈双肩没有可读移动、缺少轻微后仰，像主动后缩而非受击。v1姿态未通过，不用于视频。新目标是肩关节带肩甲明显上提并后撤、胸口绕腰部轻微向后折开、下巴略被惯性带起，缩颈仅为次要反应；保持固定双脚和正面左右朝向，但允许头胸在前后方向俯仰，不用全身缩放代替。
+- **背景边界**：实际绿底四角中位RGB(2,177,66)，std约0.58/0.78/0.83，并非严格RGB(0,177,64)恒色；视频前必须另存同色绿幕上传副本并检查，不能把“提示词写绿幕”当作锁色。原v1 PNG保留追溯，不自行覆盖或重生成。
+- **留档**：完整获批请求、响应、结果在图片旁同名 `.request.json`、`.response.json`、`.result.json`；双语准备与执行状态在 `Library/Locus/tmp/enemy1021_hit_front_keypose_v1/job.json`。尚未生成HitFlash视频、选帧、抠图或修改Unity。此前HitRight透明候选保留且暂不部署。
+- **v2生成结果**：用户明确“发起生成”后，以同一绿幕Idle为唯一参考提交一次修订请求；未上传v1、1011动作图或HitRight图。`C:/Users/steam/Pictures/gptGen/enemy1021_hit_front_keypose_v2.png`，HTTP200，1024×1024 RGB，1,082,775 bytes，SHA-256 `6864343baa029793780757e00ede93dfa746e7a1382ba6b0b408ff6a003686e0`；usage input/output=2059/7024，cost未返回，不推断费用。Prompt SHA-256 `eb231431952f4685f7d699b6d7fa18020d38ea13bb33f5e9a1adb35943f9ed1a`；无自动重试。
+- **v2视觉反馈**：v2 `C:/Users/steam/Pictures/gptGen/enemy1021_hit_front_keypose_v2.png` 虽表现肩线抬高、胸口后仰、下巴抬起，但用户明确验收不通过：有明显左右朝向，且后仰不像受击。不可用于视频或选帧。对比图 `Library/Locus/tmp/enemy1021_hit_front_keypose_v2/IDLE_V1_V2_POSE_REVIEW.png` 对照Idle/v1/v2，不改变原图。
+- **v3修订方向与边界**：去掉明显12–15°后仰目标，改为上胸被击退约5–8°的短促轻微后仰，避免把正面受击误导成转身或挺胸；保持胸甲中心、腰带扣、面罩中线和骨盆严格朝正前方。主要可读点改为双肩在根与脚固定下短促同步上提、上胸局部受压缩短、头颈和手臂稍滞后；盾只作次级小幅松动。使用词强制镜头/身体左右朝向锁定，不要求视觉上露出侧面。完整中英文v3提示词和绿幕参数保存在 `Library/Locus/tmp/enemy1021_hit_front_keypose_v3/job.json`。用户审阅完整双语词后明确“发起生成”，已仅上传绿幕Idle图并提交一次单图编辑；未上传v1/v2或1011动作图。
+- **v3生成结果与验证**：HTTP200，`C:/Users/steam/Pictures/gptGen/enemy1021_hit_front_keypose_v3.png`，1,071,680 bytes，1024×1024 RGB，SHA-256 `8878d97aeab84c39b0c886a40178c86f6ac9b3741b402bc4b05d9b6f80b75842`，回读格式和哈希一致。规格sunburst/max/high/不透明PNG/n=1不变；Prompt SHA-256 `1295e680675a9ad20483165cdd7b9056709b533584cf7f4d03bd08befeff11d0`。API返回input/output=1075/963，cost未返回，不推断费用。无自动重试。
+- **v3视觉与背景边界**：原图与同画布Idle对照 `Library/Locus/tmp/enemy1021_hit_front_keypose_v3/IDLE_V3_POSE_REVIEW.png` 均已回读附图；代理观察正面朝向比v2稳定，但肩部受力与轻微后仰读感仍弱，头盔/体型相对Idle有变化，不能宣称身份或几何锁定。四角64×64背景中位RGB(1,177,68)，std约0.58/0.82/0.78，不是严格RGB(0,177,64)恒色。用户后续反馈肩部与双手姿态不对、受击感弱，v3不再作为已认可姿态，按1011正面受击图重新修订。未生成视频、抠图或部署；完整请求、响应、结果记录位于成图旁同名JSON。
+- **v4准备与授权**：用户要求根据1011正面受击图修正肩肘手语言。代理仅在本地查看1011 Idle和hit1/hit2/hit4/hit5，不上传1011动作图；实际唯一参考仍为1021绿幕Idle `enemy1021_shield_hold_v3_green_v1.png`。肩带上提内收、双肘屈曲留在身体两侧、空手前臂从下垂收向腰侧、持盾肘屈曲并带盾小幅下沉外偏是新词目标。完整双语词与规格在 `Library/Locus/tmp/enemy1021_hit_front_keypose_v4/job.json`；用户明确“发起生成”后提交一次。
+- **v4生成与验证**：HTTP200，`C:/Users/steam/Pictures/gptGen/enemy1021_hit_front_keypose_v4.png`，1,040,103 bytes，1024×1024 RGB，SHA-256 `a0c623298cc50ec34e431f6a83a157a34694c9841f6d94ce2638fece49633669`，回读格式与哈希通过。sunburst/quality=max/input_fidelity=high/不透明绿底PNG/n=1，Prompt SHA-256 `922926c04ea523f7ea3273a73287806650531bfe9d5f1c455f5aa665122d7ebf`。usage input/output=1790/7024，cost未返回，不推断费用。第一次工具调用被权限层拦截、无文件或POST执行；确认提交次数0后换可用Python工具完成唯一一次实际请求，未付费重试。
+- **v4视觉边界与最终反馈**：原图已回读附图；代理观察空手屈肘收至腰侧、肩部和持盾臂姿势改变，正面朝向基本保持，但这不是用户验收。四角64×64背景中位RGB(2,176,66)，std约0.58/0.84/0.81，不是严格RGB(0,177,64)恒色，任何后续视频仍需统一绿幕上传副本。用户随后明确“这好像还不如V1版本，算了先写交接文档吧，我们在别的对话继续”。v4未通过，v1不因比较而重新获批；HitFlash v1–v4均无用户认可基准，生产暂停。未生成HitFlash视频、选帧、抠图或修改Unity，所有候选与请求JSON保留追溯。
+- **暂停交接留档**：`Library/Locus/tmp/enemy1021_hit_front_keypose_v4/job.json` 与 `C:/Users/steam/Pictures/gptGen/enemy1021_hit_front_keypose_v4.result.json` 已同步 `not_accepted_user_paused`，不改原图、请求、响应或Prompt哈希。下一对话入口为 `plan/enemy1021-art-production-handoff.md` §0，机制入口为 `plan/enemy1021-minimal-playable-handoff.md` §0；没有批准v5、HitFlash视频、HitRight部署或Unity自检。
+
+### Enemy 1021 HitFlash 视频 v1（2026-10-14，第一关游戏验收通过）
+
+- **本次新授权**：用户明确“继续hitflash动画的制作工作，我建议还是按照v1参考题去准备生成视频”，完整双语视频词、绿幕副本、参考职责和4秒参数呈现后回复“发起生成”。这是新授权使用v1，不抹去2026-10-13关键图v1–v4未通过的历史；视频、选帧、透明结果和游戏表现仍须分别验收。
+- **规格与实际提交**：seedance-2-fast / 4秒 / 720p / 1:1 / 无音频 / 无水印 / seed=-1。两张普通 `reference_image`，不混首尾帧；实际完整英文Prompt（正文+负面词）SHA-256 `44e1eb9950f515c9ec9c86a07716259cd78010088d46086a2b77276179bd17b8`，只提交一次创建请求。
+- **Task ID**：`task_16d49a77f64446e693cf170b55106a32`，创建HTTP200，accepted UTC `2026-10-14T04:23:10.769696+00:00`。图1/图2上传HTTP200，耗时4.320/3.482秒，创建请求2.159秒。首轮在accepted后120秒停止，共查询6次，全部generating；最后观察UTC `2026-10-14T04:25:03.786081+00:00`。usage/cost仍未返回，不推断费用；停止的是本地轮询，非取消服务端任务。
+- **实际上传参考**：`C:/threeKingdomSlayer/threeKingdomSlayer/Library/Locus/tmp/enemy1021_hitflash_video_v1_preparation/upload_copies/01_idle_green_00B140.png`（SHA-256 `d398a1eb7cd436f8082c6cf7dd7901e59d4f888e757f48b1ac01823f4adf40de`，负责身份、绘制比例、镜头、根/双脚坐标及开头/恢复Idle）；同目录 `02_hitflash_v1_green_00B140.png`（SHA-256 `e2cb862037bbb054c78617826b14a62e5aeb0fd14610cc131142bc9972255e63`，只负责v1局部胸肩/盾臂/空手受击姿态）。两张均1024×1024 RGB，四角64×64空背景RGB(0,177,64)、std0；未上传1011动作图、v2–v4、HitRight或ShieldGuardHit图片/视频。
+- **副本处理边界**：保留源图，只在v1副本替换4连通空背景904,073像素，再整图平移(+2,+9)px；没有缩放、重采样或重绘，背景蒙版外RGB逐像素保留，主体未被裁掉。1,761个绿优势混边/细节像素原样保留，不宣称正式抠图完成。两只靴的残余差异约5px，图1为唯一坐标依据，不将差异生成成滑步。
+- **后续成功与下载**：首轮停止后再查询同一task一次，于UTC `2026-10-14T04:34:06.960219+00:00` 观察success，总查询7次、总创建仍1次。usage completion_tokens/total_tokens=87300/87300，cost.spend=0.48888（币种未注明）。同一成片于UTC `2026-10-14T04:36:06.721047+00:00` 下载完成，传输119.752秒；`C:/Users/steam/Videos/doubaoVideo/enemy1021_hitflash_v1.mp4`，1,951,465 bytes，SHA-256 `a36baeab0cf9fd2e276b859855fa89320fe6e790182b4c36abc08cf36fabf091`。MP4 ftyp/moov/mdat结构通过，PyAV逐帧完整解码通过；960×960/24fps/97帧/4.041667秒/H.264/无音轨。
+- **请求与停点留档**：视频旁 `.request.json` / `.download.json`、`Library/Locus/tmp/enemy1021_hitflash_video_v1_preparation/job.json` / `runtime.json` / `inspection/decode_report.json` 已回读；创建哨兵 `create_attempted.json` 保持一次。首次解码检查因 `to_ndarray` 依赖缺失numpy失败，改用 `VideoFrame.to_image()` 完成全帧解码，没有安装包、重下载或新生成。首/末诊断帧仅验证媒体可读，不是生产选帧或动作验收。
+- **动作验收与选帧**：用户明确“动作通过，请挑选有效帧”。原始97帧全部解码保存，候选六帧为零基f028/f034/f043/f046/f049/f052（1.167/1.417/1.792/1.917/2.042/2.167秒），覆盖干净受击姿态、余势、恢复早中晚和接近Idle；避开f018–f027可见火花与长时间近似保持。全部候选为原960×960 RGB PNG字节副本，原始解码RGB和视频重新解码RGB哈希核对一致；没有裁切、缩放、平移、改色、抠图或对齐。
+- **候选素材入口**：`Library/Locus/tmp/enemy1021_hitflash_video_v1_preparation/frames/selected_v1/`（`hitFlash1_f028.png`、`hitFlash2_f034.png`、`hitFlash3_f043.png`、`hitFlash4_f046.png`、`hitFlash5_f049.png`、`hitFlash6_f052.png`）；清单 `frames/selected_frames_v1.json`。预览 `frames/HITFLASH_SELECTED_6_REVIEW_v1.png` 与 `frames/HITFLASH_SELECTED_6_PREVIEW_v1.gif` 使用同一固定ROI，GIF100ms/帧仅评审帧序、不定义Clip。视频与六帧均已验收，`selected_frames_accepted_by_user=true`。
+- **T80抠图授权与完成**：用户明确“已验收，请按照容差80处理抠图”。复用C盘已安装SVL和Python3.10.11/NumPy2.2.6/Pillow12.3.0，运行现有 `Locus/tools/svl-matting/svl_matte_batch.py`；Chroma逐帧自动取色、threshold80/softness16/halo1/半透明转不透明。无收费调用、新安装、平滑处理、重绘或额外全图调色。六张同名960×960 RGBA在 `Library/Locus/tmp/enemy1021_hitflash_video_v1_preparation/frames/keyed_ui_t80/`；源帧哈希未变，最终输出哈希与SVL工作输出一致。
+- **T80实测与限制**：六帧半透明0、透明RGB非零0、SVL幕布残留/封闭孔指标0；严格四连通Alpha诊断另识别f028盔顶与红缨间3717像素合法透明负空间，保持透明未填孔（诊断图与 `hitflash_matting_t80_connectivity_audit.json` 保留）。距可见轮廓4px内侧的核心RGB改动0。边缘去溢色改动553–714像素/帧，green_gt8仍280–359像素/帧，不声称严格零绿或所有RGB不变；用户已明确验收透明结果。
+- **Unity接入与游戏验收**：新建 `Assets/Sprites/Enemy/Enemy1021/Enemy_1021_hitFlash1.png` 至 `Assets/Sprites/Enemy/Enemy1021/Enemy_1021_hitFlash6.png`，固定补边 `(74,91)`、1108×1108；新建 `Assets/Animations/Enemy_1021_HitFlash.anim`，30fps/0.3667s/非循环，六个受击键和末帧保持键，显式清空`ShieldVisual`。仅替换 `Assets/Animations/Enemy_1021.controller` 的HitFlash motion，原Exit Time 0.9/duration 0保留。静态导入、源像素、Prefab Controller、第一关enemyId 1021和109个保护文件哈希已核对；用户现明确游戏验收通过。报告 `Library/Locus/tmp/enemy1021_hitflash_deploy_v1/asset_verification.json` 已同步 `user_game_acceptance=accepted`。代理未进入Play Mode、未采样或自检；用户验收不代表代理运行自检。
+- **后续未完成项**：当前剩余动作和机制统一见 `plan/enemy1021-art-production-handoff.md` §0.2；HitRight已完成接入，待游戏验收。
+- **后续边界**：HitFlash四个阶段（视频/选帧/透明/游戏）均已验收完成；HitRight已接入、待游戏验收。不要重做已验收动作，不自动运行自检。剩余动作与机制清单见 `plan/enemy1021-art-production-handoff.md` §0.2。
+
+### Enemy 1021 ShieldBreak 关键图 v1–v3（2026-10-14，v3姿态已验收）
+
+- **阶段与边界**：当前仅制作第一张“刚刚脱手”关键图。v1被用户以“​​不像是被动脱手，姿态不合格”拒收；v2被用户以“受击方向反了，角色姿态方向反了，没有脱手感，角色右手没有伸张开而是蜷缩感”拒收。两张原图与请求/响应保留，不作为后续参考，结果JSON已标记拒收。用户随后明确v3“正确”，该脱手姿态已验收；后续授权制作无盾终态并已验收，当前只授权视频生成准备，未创建视频任务、制作透明帧或接入Unity。
+- **v1/v2追溯**：原图分别为 `C:/Users/steam/Pictures/gptGen/enemy1021_shield_break_detach_keypose_v1.png`（1,090,827 bytes、SHA-256 `0fc572323d3bf18d11cbdf8507f8a8dcf7d710c5df94dcae7209e4cd76872e4a`）、同目录 `enemy1021_shield_break_detach_keypose_v2.png`（1,084,556 bytes、SHA-256 `5f62757c11390b8ce06b3da40a4ac8cf1c4f0fa9595b37e8e3a75a4db5f64be1`）。两次均单次POST/HTTP200/sunburst/max/high/1024×1024/opaque/PNG/n=1，cost与task id未返回。v1同时上传Idle与HitRight绿幕副本，v2只上传Idle。v1在G1副本技术量测后未等待副本单独视觉确认即上传，已向用户说明此流程偏差；不能把技术量测当作用户目视验收。
+- **v3授权与规格**：用户审阅完整中英文正文、双语负面词、两张实际绿幕副本与参数后明确“发起生成”。一次 `POST /v1/images/edits`，`gpt-image-2.5-sunburst`、`quality=max`、`input_fidelity=high`、1024×1024、opaque、PNG、n=1；无自动重试。正文与英文负面词合并为实际prompt，SHA-256 `fb0a1bdb8607fbb3a7f8cf47773ff5946ac1cbeed343bb76fa9a4fac73148b41`。
+- **v3实际参考**：`Library/Locus/tmp/enemy1021_shield_break_keypose_v1/reference_uploads/01_idle_identity_green_009F3E.png`（SHA-256 `c5c2be6203aa41afd90ff3059b748252e1b458e063855b1d429980aef6584106`）只负责身份、装备、绘制尺度与脚位；同目录 `02_hit_right_reaction_green_009F3E.png`（SHA-256 `1e03b5e7c329160d807f218ec5db1b5d6ad109d58603b159a9b2ea203443d732`）只负责画面右侧来力、上身向左受击与盾臂被动打开，明确不照抄仍握盾的手势。两图均1024×1024 RGB，四角64×64实测(0,159,62)、std0；原图保留，背景外未遮罩像素RGB改动0，无裁切、缩放或平移。
+- **v3结果**：`C:/Users/steam/Pictures/gptGen/enemy1021_shield_break_detach_keypose_v3.png`，1,094,431 bytes、SHA-256 `b2ba2b253a64e84d11497c2ff6b1d61a9bb0a1ddd15cb207a180ed51ff7fb3bf`；PNG解码通过，1024×1024 RGB，Color Type2，符合本次不透明关键图请求。HTTP200，POST129.609秒、下载5.322秒；usage input/output/total=1927/8288/10215，cost/task id未返回，不推断费用。请求时间UTC `2026-10-14T14:23:50.390393+00:00`，下载校验完成UTC `2026-10-14T14:26:05.353883+00:00`。
+- **v3颜色与姿态边界**：实际四角64×64背景中位依次(2,161,65)/(2,161,66)/(2,162,65)/(2,161,66)，相对目标(0,159,62)为Δ(2,2,3)/(2,2,4)/(2,3,3)/(2,2,4)，角区std约0.56–0.97；不是精确恒色。用户随后明确“正确”，v3姿态验收通过；实际绿底仍需视频前另存统一副本，未进行视频时序G2或抠图后G3，不声称主体配色或几何已锁定。原图已通过read附图；代理观察头盔位于腰带扣左侧、画面左手五指张开，不代替用户对被动脱手感的判断。
+- **留档**：每张原图旁均有同名 `.request.json` / `.response.json` / `.result.json`，v3另有 `.submitted_once.json`；工程准备稿为 `Library/Locus/tmp/enemy1021_shield_break_keypose_v3/job.json`。本次未进入Play、未抠图、未改Unity资产。
+
+### Enemy 1021 ShieldBreak 无盾终态与视频 v1（修订六帧已验收；抠图/分件v1已完成待验收，未接入）
+
+- **终态图生成与验收**：用户批准一次 `sunburst/max/input_fidelity high/1024×1024/opaque/PNG/n=1` 编辑。成图 `C:/Users/steam/Pictures/gptGen/enemy1021_shield_break_coward_target_keypose_v1.png`，1,011,668 bytes、SHA-256 `24e10b01a3e3be3c848f11a85198393fad3721c6869f221a31a3bf0387097f06`，RGB/ColorType2/解码通过，HTTP200。usage input/output/total=3194/7024/10218，cost/task id未返回；POST64.81秒、下载5.39秒，只提交一次。实际英文prompt SHA-256 `48f226b69481b29debe7ee0779ea8011fba07d6f63449dbe46b56e5eacdeded7`，同名请求/脱敏响应/结果留档；用户现明确“已验收”。
+- **终态色键实测**：四角64×64中位(3,158,62)/(3,158,62)/(3,157,62)/(3,157,62)，相对(0,159,62)为ΔR+3/ΔG−1至−2/ΔB0；关键姿态验收不等于下游视频锁色或G3通过。
+- **本次用户要求**：准备发起视频，特别指出参考图与视频绿底和光泽不同。已核对既有Idle原片97帧，源`idle1_f001.png`像素与真实f000一致；既有视频首/末空背景中位(0,172,57)/(0,168,56)，全段G中位162–172。输入统一色键不决定视频输出色。
+- **最终G1候选**：在 `Library/Locus/tmp/enemy1021_shield_break_video_v1_preparation/upload_copies_final_v3/` 另存三张1200×1200 RGB(0,159,62)副本，原图不变，无重采样、无裁主体，保留区RGB改动0；旧草稿目录不上传。图1改用已验收Idle视频真实帧作为材质/金属高光权威，图2已验收脱手v3与图3已验收无盾终态只提供姿态。副本SHA/平移/残差见 `G1_final_input_preparation.json`，实际候选对照 `FINAL_G1_VIDEO_REFERENCES_REVIEW.png`，同中性底诊断 `MATERIAL_NEUTRAL_DIAGNOSTIC_REVIEW.png`；用户随后明确发起视频生成，这组三张已逐张上传HTTP200并用于下述唯一视频任务；原准备稿和诊断对照保留。
+- **光泽诊断与未解决项**：一个头盔局部灰度配准NCC0.723/0.874，关键图匹配区亮度中位相对Idle约+34/+23；单局部且有姿态受光差异，不能推断全图光泽或校色量。未对已验收图自动调色。视频词声明图1独占材质、图2/3只提供动作，但这是软约束；该风险在本批审批与未来输出G2/G3报告列为待决项，不能只记color_issue结案。
+- **视频创建及首次轮询（历史快照，最终下载与选帧以下条为准）**：完整双语正文/负面词/职责/参数在 `Library/Locus/tmp/enemy1021_shield_break_video_v1_preparation/VIDEO_GENERATION_REVIEW.md` 和 `job.json`，拟seedance-2-fast/6秒/720p/1:1/无音频无水印/seed=-1，3张普通reference_image。拟输出 `C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_break_v1_6s.mp4`。用户随后明确“发起视频生成”，已按原准备稿创建一次任务 `task_fea6963084c740be8ac0cd34c8369645`；三张上传和创建均HTTP200。accepted UTC `2026-10-14T16:35:32.160421+00:00`，实际英文Prompt SHA-256 `8418c452b06d3a29094db6b9c559ed3cc8e22194e53dd40118237613b458cfbf`。12次限时查询均generating，最后观察UTC `2026-10-14T16:37:25.386339+00:00`；已停止本地轮询，未取消远端任务，无本地视频/usage/cost，不推断费用。上传3次、创建1次、查询12次，未重试创建。请求留档 `C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_break_v1_6s.mp4.request.json`，运行记录 `Library/Locus/tmp/enemy1021_shield_break_video_v1_preparation/runtime.json`，一次创建哨兵 `create_attempted.json`；后续只查询/下载此task，不能重跑创建脚本。脱手后源视频拟盾自然左下落出画、人物完整入框；正式本体帧不带飞落盾，引擎接管仍未实现。未进入Play、未抠图、未改Unity。
+
+- **最终下载**：仅查询原 task `task_fea6963084c740be8ac0cd34c8369645`，UTC `2026-10-15T03:28:57.576279+00:00` 观察到success，下载HTTP200，于 `2026-10-15T03:29:00.349823+00:00` 完成。成片 `C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_break_v1_6s.mp4`，2,779,848 bytes，SHA-256 `2ff04f2ee8d19c38af23831ec82f7b9fc3f7c883860ba4f0297269581e6fb5ef`；下载及容器校验记录在同路径 `.download.json`。本地解码读取为960×960/24fps/145帧/6.041667秒，正式G2背景统计和G3主体材质对照尚未完成，不据选帧验收宣称这些检查通过。未重新创建任务。
+- **修订六帧已验收**：用户否定初版 `frame_000.png` 与 `frame_024.png`，指定在24–48帧寻找脱手前的关联动作；最终零基 **f028/f034/f048/f072/f108/f144**（1.166667/1.416667/2/3/4.5/6秒）已获用户明确“已验收”。目录 `C:/Users/steam/Pictures/doubaoVideo/enemy1021_shield_break_selected_6_frames_v2/`，文件依次 `01_frame_028.png`、`02_frame_034.png`、`03_frame_048.png`、`04_frame_072.png`、`05_frame_108.png`、`06_frame_144.png`；全为原960×960 RGB，未抠图、调色、缩放或部署。`selection_manifest.json` 已记录用户验收，编号预览 `preview_6_frames_v2.jpg` 已回读。前两帧为受击臂外开与张手松盾，后四帧保留原选择；原目录和33/35/37/39等调查帧仅供追溯，不能混作最终六帧。
+- **用户分件建议与102现状核查（实施前快照，后续完成以下条为准）**：用户提出“盾牌脱手后单独分件，参考102敌人的做法”。已只读确认102的 `Assets/Animations/Enemy_102_CowardTransition.anim` 同步驱动根Sprite的五张Body与 `ShieldVisual` 的五张Shield（资源位于 `Assets/Sprites/Enemy/Enemy2/Coward/LostSplit/`），并带子物体局部位置曲线；没有创建独立掉落对象，Prefab盾层sortingOrder=1。1021可借鉴素材拆分，前两张保留本体内盾，从选中第3张f048起将飞盾从本体移除，f108左下残余盾也需清除；保持本体统一画布/锚点。正式引擎接管仍按既有Design的独立对象方案，具体分件与接线尚未实施；本次只做调查与验收留档，未改代码/Unity资产、未进入Play、未采样动画。
+
+- **本地抠图与分件v1已完成并获用户验收**：用户明确“请按照需要抠图并拆件”后，使用既有本地SVL、逐帧自动取绿底（本批空角中位约RGB(0,141–142,58–59)），最终T79/softness16/halo1/半透明转不透明；未启用平滑或全图调色。T90初试会改动距边界4px的内部190–435px/帧等，未交付；T79内部仍有0–22px变化，已在Alpha不变的前提下恢复距边界4px内部的源RGB，边缘仅保留SVL去溢色。最终目录 `C:/Users/steam/Pictures/doubaoVideo/enemy1021_shield_break_matted_split_v1/`。
+- **交付结构与接管信息**：`body_960/01_body_f028.png`、`02_body_f034.png`、`03_body_f048.png`、`04_body_f072.png`、`05_body_f108.png`、`06_body_f144.png` 全部960×960 RGBA、不缩放/不平移/不重绘；前两张仍含盾，第3–6张本体无盾。f048/f072完整盾分别拆为 `shield_parts/Enemy_1021_shieldDrop_f048.png`（147×254）及 `Enemy_1021_shieldDrop_f072.png`（205×226），各8px透明补边；前者为接管主素材，后者为后续转向参考。`shield_full_canvas_960/` 保存同源位置版；f108左下1236px残片已从人物层移除，只留 `trace/shield_remnant_960/05_shield_f108.png` 追溯，不当完整盾使用。
+- **回读与核验**：源六PNG哈希未变，六帧Alpha仅0/255、透明RGB全0、内部源RGB改动0；人物/盾层无重叠，复合后与颜色保护的抠图全身层RGBA逐像素相同，裁剪盾重新定位亦相同。按底色距离≤12的残留0，不宣称严格零绿：复合图g−max(r,b)>8为75–116px/帧。严格4连通透明区检查识别f034头缨空隙380px/手盾空隙57px、f048头缨空隙330px、f072头缨空隙277px；已以原绿底/白底/Alpha三方附图确认是真实负空间，未填孔。报告 `split_report_v1.json`、`verification_v1.json` 与交付说明均在输出目录；工作脚本/原始T79/T90在 `Library/Locus/tmp/enemy1021_shield_break_matte_v1/`。
+- **评审与边界**：`preview/BODY_6_WHITE.png` / `BODY_6_DARK.png` / `BODY_6_CHECKER.png`、独立盾 `SHIELD_PARTS_WHITE_DARK.png`、手盾细节及复合核对均已回读；同中性底 `IDLE_MATERIAL_NEUTRAL_COMPARISON.png` 只去除既有Idle部署补边(74,91)，同960画布比例呈现，源ShieldBreak人物相对Idle显小，本次未做尺寸/锚点对齐、全局校色或给出跨动作颜色一致性通过结论。没有调用远程生成，没有修改Unity资产/代码/场景、没有进入Play或采样动画。用户随后明确“已验收，请按需求接入”，透明与分件验收通过并授权接入。
+- **ShieldBreak 接入已完成，待用户游戏验收（2026-10-15）**：接入只做到“接入＋配置＋静态核验”，**未进入 Play、未采样动画、未做对象池实测**，游戏表现待用户验收。
+- **素材归一取值**：源六帧比已部署 Idle 小约 20%，按“单一全局缩放＋只钉脚底”处理：全局缩放 **1.20**、目标画布 1108、粘贴偏移 **(-22, 6)**（把双靴中点与基线均值对齐到已部署 Idle，再叠加既有 `(74,91)` 约定）。局部头盔配准得分很低（约 0.40），**不是精确标定**；六帧共用同一变换、未逐帧拉齐。取值与证据见 `Library/Locus/tmp/enemy1021_shield_break_deploy_v1/preparation_report_v2.json` 与同目录 `scale_registration.json`。
+- **精灵（本次新增 7 张，未覆盖既有动作）**：`Assets/Sprites/Enemy/Enemy1021/Enemy_1021_shieldBreak1.png` 至 `Enemy_1021_shieldBreak6.png` 与 `Enemy_1021_shieldDrop.png`；导入设置逐项镜像 Idle（Point / Uncompressed / 无 Mipmap / AlphaIsTransparency / 源 PPU 16 / pivot 中心）。逐张哈希见 `preparation_report_v2.json`。
+- **Clip 与事件**：新建 `Assets/Animations/Enemy_1021_ShieldBreak.anim`，50fps、实际长度 **0.46s**（与 `breakAnimationDuration` 一致），六姿势键 0/0.06/0.12/0.22/0.32/0.40 秒 ＋ 末帧保持键 0.44 秒，`ShieldVisual` 0 秒 null 键；事件 0.12s `OnShieldReleaseFrame`（本体已无盾的那一帧生成独立盾）、0.46s `OnShieldBreakAnimationComplete`（收尾进入胆怯）。用事件而非墙钟计时，因为命中卡肉会临时禁用 Animator。**注意**：Unity 会按最后一个键＋一个采样间隔自动加长 PPtr clip（首次建成 0.48s，把保持键移到 0.44 才回到 0.46）。
+- **胆怯兜底**：新建 `Assets/Animations/Enemy_1021_CowardIdle_Hold.anim`（0.5s 循环、静态复用破盾末帧、ShieldVisual null），替换 Controller 的 `CowardIdle` motion，避免破盾后立刻跳回 102 占位。**这不是新的待机动画，只是兜底**；无盾胆怯家族其余动作仍为 102 占位。
+- **独立盾对象**：新建 `Assets/Prefabs/Effects/Enemy_1021_ShieldDrop.prefab` 与 `Assets/Scripts/Effects/ShieldDropEffect.cs`。脱手时只读取敌人姿态一次，之后不跟随敌人的移动/形变/死亡；参数 velocity (-2.3,-0.4)、gravity 13、angular -150、lifetime 0.85，到时自毁。
+- **代码改动（4 个既有文件）**：`Assets/Scripts/Enemy/ShieldGuardEnemy.cs`（脱手/结束/打断/池复位＋Inspector 直接引用）、`Assets/Scripts/Enemy/Enemy.cs`（无盾形态表现路由、破盾期不抢 Walk，且仅对 1021 生效）、`Assets/Animations/Enemy_1021.controller`、`Assets/Resources/EnemyPrefabs/Enemy_1021.prefab`（清空旧 `ShieldVisual`、接好 Clip/盾 Prefab/脱手局部坐标 `(-20.0625, -3.84375, 0)`）。
+- **静态核验已通过**：完整编译＋域重载完成；事件方法可解析、Clip 长度与键位正确、精灵引用完整、关卡仍含 1021、场景未 dirty、未进入 Play；受保护哈希核对显示只有上述 4 个目标文件变化，102 资产、其他已验收动作与关卡配置均未改。
+- **核验留档**：`Library/Locus/tmp/enemy1021_shield_break_deploy_v1/asset_verification.json` 已补写（改为只输出原生数值，避开 Unity 类型序列化报错），记录 Clip 长度/键位、两个事件及其可解析性、Prefab 引用与脱手坐标、盾对象参数、旧层已清空、关卡仍含 1021、七张精灵导入设置与 GUID。**已知缺口**：无盾胆怯家族、持盾死亡、击飞 Rise/Fall 仍为占位；1.20 缩放与脱手时序的手感仍需游戏内确认。
+- **接入流程已固化为工作流**：`skill/workflows/action-to-unity-deployment.md`（参数化步骤＋决策表＋不变量）与 `skill/workflows/character-action-pipeline-entry.md`（阶段入口清单）。
+
+### Enemy 1021 CowardIdle 6 帧透明素材 v1（2026-10-17，T=80，**已获用户验收**）
+
+- **用户决策**：采用 **6 帧**（否掉 4 帧）、抠图容差 **80**。
+- **抠图**：`svl_matte_batch.py --label CowardIdle --tolerance 80 --sheet`；SVL 自动取键，实测底 `(0,159,63)`、coloured screen；softness 16 / halo 1 / 半透明转不透明，未开平滑。T=80 下幕布残留 0；扫描时 T=90 的绿残留更低（132 vs 246），但按用户指定值执行。
+- **结果（逐帧）**：半透明 **0**、透明区非零 RGB **0**、幕布残留 **0**、孔 **0**；可见像素 59,085 / 59,253 / 60,536 / 61,328 / 60,548 / 60,253；距轮廓 ≥4px 内部 RGB 改动 f039 仅 2 px（maxΔ7），其余 0。保留可见区 green>8 共 214–317 px（约 0.35%–0.53%），不声称严格零绿。
+- **交付**：`Library/Locus/tmp/enemy1021_coward_idle_video_v1/coward_idle_6frames_matted_v1/` 下六张 960×960 RGBA（与 `keyed_ui_t80/` 同名）+ 清单 `coward_idle_6frames_matted_v1.json`（含逐帧 SHA-256）。
+- **帧序**：f039 → f045 → f059 → f069 → f076 → f078（步长 28,041–37,104，比值 1.32）。
+- **评审**：`COWARD_IDLE_MATTED_6_REVIEW_v1.png`（上白下深）、`COWARD_IDLE_MATTED_6_CHECKER_v1.png`、`COWARD_IDLE_MATTED_6_PREVIEW_v1.gif`（6×150ms）。
+- **边界**：对齐、1108 补边、Clip 创建、Unity 接入均不由本侧做；未改任何 Unity 资产、未进入 Play。
+- **用户验收（2026-10-17）**：用户确认“已验收”，6 帧透明结果通过；遗留绿像素（每帧 214–317 px）与 f039 的 2 px 内部偏差均视为已接受。
+
+### Enemy 1021 CowardIdle 循环帧候选（2026-10-17，用户选定 6 帧）
+
+- **前置**：用户验收循环视频内容（`enemy1021_coward_idle_v1.mp4`，1,706,747 bytes，SHA-256 `84c7e29b…fd2f`，960×960/24fps/97 帧）并要求挑选 6 帧或 4 帧循环帧。
+- **单周期定位**：呼吸信号用顶边 y（肩上抬高度）与主体像素。静息顶边 = 298（f000-f005、f034-f044、f085-f096）；峰值顶边 = 282（f016-f023、f063-f073）；一次完整呼吸约 **2 秒**，全片含两次呼吸。
+- **关键发现**：视频**不是平滑渐变**，相邻帧差异呈“小→大→小”跳变，单帧步长可达 2–3 万像素，平台期连续帧几乎不变（≤344 px）。因此等时间间隔取帧会拿到重复姿态，必须先按姿态聚合再按相位选。
+- **选帧方法**：按 ≥4000 px 阈值聚成 29 个姿态组并取代表帧；在该周期内穷举组合，目标为“相邻帧变化最大值/最小值”最小，且强制包含静息与峰值，排除重复的静息/平台帧。
+- **候选 A（6 帧）**：`Library/Locus/tmp/enemy1021_coward_idle_video_v1/candidates_six/` — `cowardIdle01_f039`、`02_f045`、`03_f059`、`04_f069`、`05_f076`、`06_f078`；步长 28,041–37,104（比值 1.32）。
+- **候选 B（4 帧）**：`.../candidates_four/` — `cowardIdle01_f045`、`02_f059`、`03_f069`、`04_f076`；步长 32,502–37,104（比值 **1.14**，更均匀）。
+- **共同属性**：均 960×960 RGB、未抠图、与解码源帧逐字节一致（已校 SHA-256）、未缩放/平移；清单 `coward_idle_candidates.json`。
+- **排除项**：两套均**不包含两个静息帧**（首尾都取静息会产生重复帧，步长比升到 3.19–17.96）。
+- **评审**：`CANDIDATES_SIX_REVIEW.png`、`CANDIDATES_FOUR_REVIEW.png`；数据 `pose_groups.json`、`phase_candidates.json`、`chosen_frames.json`、`frame_metrics.json`。
+- **边界**：未抠图、未组装 Clip、未接入 Unity、未进入 Play、未改任何 Unity 资产。
+
+### Enemy 1021 CowardIdle 循环视频 v1（2026-10-17，已下载、解码并获用户验收）
+
+- **来源**：`plan/enemy1021-art-production-handoff.md` §0.13 词，脚本逐字提取，未改写。
+- **规格**：`seedance-2-fast` / 4 秒 / 720p / 1:1 / 无音频 / 无水印 / seed=-1；两张普通 `reference_image`（未混 `first_frame`/`last_frame`）。
+- **两张上传图**：图1 `Library/Locus/tmp/enemy1021_coward_idle_peak_v1/01_coward_idle_peak_source_green_00B140_1024.png`（SHA `3fd64c93…a6c0`）；图2 `Library/Locus/tmp/enemy1021_coward_idle_video_v1/02_coward_idle_peak_green_00B140_1024.png`（SHA `8b5355be…e736`，G1 副本，外部 977,318 px + 边缘 546 px 换色，主体内部 0）。两图四角均精确 `(0,177,64)`、max_dev 0。
+- **Task**：`task_d9b8cc176ff54dd7a70be22663228710`；accepted UTC `2026-10-17T10:04:05+00:00`；create HTTP 200；两次上传 HTTP 200；**只创建一次**。usage completion_tokens=87300；`cost.spend=0.48888`。11 次轮询后于 `2026-10-17T10:07:49+00:00` 返回 `success`。
+- **下载故障与处理**：首次下载报 `ModuleNotFoundError: No module named 'av'`（提交脚本误用了无 PyAV 的 SVL 解释器）。生成本身成功，**未重建任务**；改用带 PyAV 的解释器查询同一 task 下载：四段 Range 均 206、ETag 一致、全帧解码通过。
+- **成片**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_coward_idle_v1.mp4`，1,706,747 bytes、SHA-256 `84c7e29b13bd94a959d2abfd8dcc3c536aadc1ac0b0ff5b320b34163fe62fd2f`；960×960 / 24fps / 97 帧 / 4.041667 秒 / 末帧 PTS 4.0 秒 / H.264 / 无音轨。
+- **客观量测**：首尾 f000 vs f096 差 **6,721 px**（主体约 10.6%），包围盒差 ≤1 px，中段 f000 vs f048 为 49,057 px；主体像素 63,176–65,788（摆幅 **4.13%**）；两周期同相位 f024 vs f072 差 22,842 px——两次呼吸不完全重复，做循环需按单周期截取；首帧片基 `(0,160,63)`。
+- **检查材料**：`Library/Locus/tmp/enemy1021_coward_idle_video_v1/` 下 `COWARD_IDLE_DENSE_SHEET.png`、`COWARD_IDLE_FIRST_LAST.png`、`COWARD_IDLE_PREVIEW_v1.gif`、`loop_metrics.json`、`frames_clean_raw/`（97 帧）、`runtime.json`、`job.json`；脚本 `build_job.py`、`generate_video.py`、`download_existing.py` 均已执行，**不要重跑创建**。
+- **边界**：未抠图、未组装 Clip、未接入 Unity、未进入 Play、未改任何 Unity 资产；本侧未写或改视频词、不验收画面。用户随后验收视频内容并要求挑选循环帧（见上一条）。
+
+### Enemy 1021 胆怯受击峰值图 v4（2026-10-17，已提交一次；**验收不通过**）
+
+- **来源**：`plan/enemy1021-art-production-handoff.md` §0.17 词，脚本逐字提取、校验哈希后提交，未改写。
+- **参数**：`gpt-image-2.5-sunburst` / `POST https://api.muskapis.com/v1/images/edits` / quality=max / input_fidelity=high / 1024x1024 / opaque / png / n=1；单图输入 `image[]`。
+- **上传图**：`Library/Locus/tmp/enemy1021_coward_idle_peak_v1/01_coward_idle_peak_source_green_00B140_1024.png`（四角精确 `(0,177,64)`，SHA-256 `3fd64c93…a6c0`）；未上传 102 受击图、v1/v2/v3 成片帧或持盾受击图。
+- **词指纹**：英文正文 `a4eace35…2923`＋负面词 `709a4169…790c`，合并 `b2cbe6a2…cb8e`。
+- **结果**：HTTP 200，POST 42.973 秒；usage input 333 / output 7,024 tokens；cost 与 task id 未返回，不推断。
+- **产物**：`C:/Users/steam/Pictures/gptGen/enemy1021_coward_hit_peak_keypose_v4.png`，991,457 bytes、SHA-256 `291cc23d363af756a64ce6d872f4681f42e4874119877e67181353613c59ec48`、1024×1024 RGB、完整解码。
+- **客观量测**：主体框 450×445（源图 320×438）——宽比 **1.406**、高比 **1.016**、可见像素比 **1.137**；最小留白 275 px（26.9%）；四角中位 `(1,175,63)`、极差 ≤15（非精确 00B140，视频前需重新做 G1 副本）。
+- **验收结果：不通过（2026-10-17）**：用户判定“**看着像摆超级英雄的 pose**”。宽大外张的轮廓来自那只大幅甩开的手，读成英雄姿势而非被打中。不得用作视频参考图，也不得抠图部署。
+- **边界**：未写视频词、未提交视频、未抠图、未改任何 Unity 资产。
+
+### Enemy 1021 胆怯受击视频 v4（2026-10-18，已提交一次、下载并全帧解码，待用户看片）
+
+- **词来源**：用户批准的草稿 `Library/Locus/tmp/enemy1021_coward_hit_video_v4/draft_prompt.md`（本侧写的，用户审后指令“发起视频生成”）。
+- **两张参考图（普通 reference_image）**：① 无盾待机绿幕 `01_coward_idle_peak_source_green_00B140_1024.png`（SHA `3fd64c93…a6c0`，四角精确 `(0,177,64)`）；② 已获用户认可的受击峰值 v8 的 G1 副本 `02_coward_hit_peak_v8_green_00B140_1024.png`（SHA `790d3f10…865e`，背景改 954,834 px、主体内改动 0）。
+- **参数**：`seedance-2-fast` / 4 秒 / 720p / 1:1 / 无音频 / 无水印 / seed=-1。
+- **Task**：`task_3e4271451e904295ad5be8d673703526`，create HTTP 200，**只创建一次**；usage completion 87,300 tokens，`cost.spend=0.48888`。
+- **成片**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_coward_hit_v4.mp4`，1,883,229 bytes、SHA-256 `b32093731a356e771581dfddf7427576d8e204b2582e06370699cf2fe09a73b3`；960×960 / 24fps / 97 帧 / 4.041667 秒 / 末帧 PTS 4.0 / H.264 / 无音轨；四段 Range 与全帧解码通过。
+- **实测（逐帧主体框）**：f000–f016 待机 299×410；**f018 直接张到 525×441**（与已认可的 v8 在 960 画布上等宽）、底边从 704 升到 693（离地 11 px）；f018–f062 保持张开约 **1.85 秒**；f063–f069 收回，f069 回到 299×410；之后待机到 f096。
+- **与词的对差（需用户判定）**：词要求峰值只保持 0.30–0.60 秒、1.10 秒前收回；实际保持到 2.6 秒才收回。选帧时可以自己压缩，不影响���用。
+- **检查材料**：`Library/Locus/tmp/enemy1021_coward_hit_video_v4/COWARD_HIT_V4_DENSE_SHEET.png`（每 4 帧）、`contact_sheet.png`、`first_frame.png`、`last_frame.png`、`runtime.json`、`job.json`、`download_manifest.json`。
+- **下一步**：交用户看片；通过再选帧→抠图→补边→接入 `CowardHit`。不通过就记原因、等新词，本侧不改词不自重发。
+
+### Enemy 1021 胆怯受击峰值图 v8 · X 形四肢全开（2026-10-17，已提交一次，待用户验收）
+
+- **用户反馈**：v7 “看着像跳起来而不是被电那种四肢完全张开的感觉”。
+- **做法**：改用两张输入——图1 = 1021 无盾待机（身份/画风/正面/绿幕），图2 = **自家 1011 `Enemy_1011_dead3`**（四肢张开、腾空）仅作**张开程度**参考；另给了备选参考 `POSE_REF_1011_DEAD_STRIP.png`（六帧并排）。
+- **图2 副本**：`Library/Locus/tmp/enemy1021_coward_hit_reference/pose_ref_1011_dead3_green_1024.png`（1108→1024 等比、绿幕、SHA `32e1277c…341a`）。
+- **参数**：`gpt-image-2.5-sunburst` / `/v1/images/edits` / quality=max / input_fidelity=high / 1024x1024 / opaque / png / n=1。
+- **结果**：HTTP 200，POST 65.561 秒；usage input 2,617 / output 7,024 tokens；cost 与 task id 未返回。
+- **产物**：`C:/Users/steam/Pictures/gptGen/enemy1021_coward_hit_peak_v8_spread.png`，998,991 bytes、SHA-256 `3f8b8607cbbae9345f84f03a0c526f904e7ed6f5ee08f9148873c1b93370be63`、1024×1024 RGB。
+- **客观量测**：主体框 **560×469**（待机 320×438）——宽比 **1.75**（v7 1.21、v4 1.41、1011_dead3 自身参考 1.51）、高比 1.071、可见像素 93,474（1.31×）；底边 739，比待机 752 高 13 px（脚仍离地，但比 v7 的 20 px 少）。
+- **对照**：`Library/Locus/tmp/enemy1021_coward_hit_peak_v8/V8_VS_IDLE_V7.png`、`v8_metrics.json`。
+- **风险提示**：图2 是 1011 的动作图，可能带来身份/盔甲轻度串味，验收时需看“还是不是 1021”。
+- **边界**：仅参考图；未写视频词、未提交视频、未抠图、未改任何 Unity 资产。
+
+### Enemy 1021 胆怯受击峰值图 v7 · 在 v6 上大幅夸张（双臂外扬、双脚离地）（2026-10-17，已提交一次，待用户验收）
+
+- **用户指令**：“双手应该外甩，像是被电一样，允许脚离地；受击动作应该更夸张些”。
+- **做法**：不再换参考图，直接以 **v6 成品为唯一输入**做一次夸张化编辑（同一身份/画风/机位，避免风格与角色漂移）。
+- **参数**：`gpt-image-2.5-sunburst` / `/v1/images/edits` / quality=max / input_fidelity=high / 1024x1024 / opaque / png / n=1。
+- **结果**：HTTP 200，POST 66.773 秒；usage input 1,437 / output 7,024 tokens；cost 与 task id 未返回。
+- **产物**：`C:/Users/steam/Pictures/gptGen/enemy1021_coward_hit_peak_v7_exaggerated.png`，991,060 bytes、SHA-256 `90c945ee34ee65c4570d1ead71bc19588022791f51879b09db2bcd14e8df9522`、1024×1024 RGB。
+- **客观量测（均以胆怯待机为基准）**：主体框 387×442（待机 320×438）——宽比 **1.209**（v6 是 0.944，v4 是 1.406）、高比 1.009；**主体底边 732，比待机的 752 高 20 px，即两只脚离地约 4.6% 身高**；可见像素 71,093≈待机。
+- **对照**：`Library/Locus/tmp/enemy1021_coward_hit_peak_v7/V7_VS_IDLE_V6.png`（待机 / v6 / v7 并排）、`v7_metrics.json`。
+- **边界**：仅参考图；动作素材本身不带特效（未画闪电/电流），未写视频词、未提交视频、未抠图、未改任何 Unity 资产。
+
+### Enemy 1021 胆怯受击峰值图 v6 · 两张输入（自身待机 + 横版受击参考）（2026-10-17，已提交一次，待用户验收）
+
+- **思路**：v5（从持盾 HitFlash 去盾）被指出“带盾受击的厚重感不适合胆怯”；改用横版游戏的受击帧当**姿势参考**，让模型把它译成正面。
+- **图 1（身份/风格/机位）**：`Library/Locus/tmp/enemy1021_coward_idle_peak_v1/01_coward_idle_peak_source_green_00B140_1024.png`（SHA `3fd64c93…a6c0`）。
+- **图 2（仅姿势参考，CC0）**：`NES Soldier Hurt`（OpenGameArt，作者 Chasersgaming，CC0；`https://opengameart.org/content/brawler-asset-character-soldier-nes`），16×32 单帧，20× 最近邻放大并置中于浅灰色 1024 画布 → `Library/Locus/tmp/enemy1021_coward_hit_reference/pose_ref_soldier_hurt_1024.png`（SHA `c3317313…afc8`）。同色包内还有 `Renegade_Hurt`（已下载备用）。
+- **参数**：`gpt-image-2.5-sunburst` / `/v1/images/edits` / quality=max / input_fidelity=high / 1024x1024 / opaque / png / n=1；两张图以 `image[]` 上传。
+- **结果**：HTTP 200，POST 52.48 秒；usage input 2,589 / output 7,024 tokens；cost 与 task id 未返回。
+- **产物**：`C:/Users/steam/Pictures/gptGen/enemy1021_coward_hit_peak_v6_front_from_side.png`，945,941 bytes、SHA-256 `aea80b619d5b03907f66671ab3391c587c7e3039871ef934ef035f6ff2100324`、1024×1024 RGB。
+- **客观量测（相对自身待机）**：主体框 302×421（待机 320×438）——宽比 **0.944**、高比 **0.961**、可见像素比 **0.882**；重心左移 6.2 px、下移 6.0 px；最小留白 278 px（27%）；四角中位 `(2,178,69)`。即“向内收、变矮、变薄”，与 v4 的宽比 1.406 完全相反。
+- **对照**：`Library/Locus/tmp/enemy1021_coward_hit_peak_v6/V6_VS_IDLE.png`、`v6_metrics.json`；参考姿势图 `HURT_REFERENCE_POSES_24x.png`。
+- **边界**：仅参考图；未写视频词、未提交视频、未抠图、未改任何 Unity 资产。
+
+### Enemy 1021 胆怯受击峰值图 v5 · 从已验收 HitFlash 去盾（2026-10-17，已提交一次，待用户验收）
+
+- **动机**：v4 峰值图被否（像摆超级英雄 pose）。不再让模型凭空编姿态，改用用户已验收的正面受击帧 `Enemy_1021_hitFlash2`（源 `hitFlash2_f034`）作基准，只要求去掉盾。
+- **输入副本**：`Library/Locus/tmp/enemy1021_coward_hit_reference/02_hitflash2_green_00B140_1024.png`（1024×1024 RGB，四角精确 `(0,177,64)`，SHA-256 `77fa4776…b3f4`）。
+- **参数**：`gpt-image-2.5-sunburst` / `/v1/images/edits` / quality=max / input_fidelity=high / 1024x1024 / opaque / png / n=1；单图输入。
+- **结果**：HTTP 200，POST 57.907 秒；usage input 1,422 / output 7,024 tokens；cost 与 task id 未返回。
+- **产物**：`C:/Users/steam/Pictures/gptGen/enemy1021_coward_hit_peak_v5_noshield.png`，995,900 bytes、SHA-256 `18a484325b99b6f3c1154232543870e51a33009ec24ea054c0ce6c45a45687ef`、1024×1024 RGB。
+- **几何核验（证明姿态与尺寸未被改）**：输入 bbox 452×573（x 289–741）；输出 **390×573（x 351–741）**——高、顶边 239、底边 812、右边界 741 **完全一致**，只有左边界内收 62 px（盾被去掉）；可见像素 144,117→117,695（−26,422，约等于盾的面积）。四角中位 `(2,179,67)`（非精确 00B140，入视频前需重做 G1 副本）。
+- **对照**：`Library/Locus/tmp/enemy1021_coward_hit_peak_v5/V5_VS_HITFLASH2.png`（输入/输出各 50%）、`v5_metrics.json`。
+- **边界**：仅参考图；未写视频词、未提交视频、未抠图、未改任何 Unity 资产。
+
+### Enemy 1021 胆怯受击 CowardHit 视频 v1 / v2（2026-10-17，**两版均验收不通过**）
+
+- **v1（用户否决：完全没有受击感）**：按 §0.14 词提交一次，task `task_bae4d800be834f8cbbd9cf3ae93950a2`；成片 `C:/Users/steam/Videos/doubaoVideo/enemy1021_coward_hit_v1.mp4`，1,913,306 bytes、960×960 / 24fps / 97 帧 / 4.041667 秒、cost 0.48888。抽帧显示 f012/f024 仍是待机护脸、f036 之后只是把手放低。**不再重跑 §0.14**。
+- **v2（按 §0.15 重写；已提交一次、下载完成、完整解码通过；**用户验收不通过**）**：用户指令“根据文档发起生成视频”，按 §0.15 原文提交，未改词、未换图、未降参数。
+- **参考图**：只上传 `Library/Locus/tmp/enemy1021_coward_idle_peak_v1/01_coward_idle_peak_source_green_00B140_1024.png`（SHA-256 `3fd64c935cd7b5adf562d2729899430e2156120edf0575e969e2faf95146a6c0`，1024×1024 RGB，四角精确 `(0,177,64)`），单张普通 `reference_image`；未上传 102 的受击图、v1 成片帧或已补边的 `Enemy_1021_shieldBreak6.png`。
+- **词与指纹**：§0.15 英文正文 SHA-256 `c76eb24a956f6b2041dfd0b0f6e570d427fb3e2944bc3d816c8aa2404e8d7eb4` ＋ 负面词 `69fed04fbbe04def37a9fba2b2c01cf91e2e4eb666fd7f9fd6d25cde4a3c7ee6`，合并后 `3d29a8b5193c0638b75c42ce3bf0e7e58e3652910c5c03c291c44af7af09683c`；脚本从文档逐字提取后校验哈希再提交。
+- **参数与任务**：`seedance-2-fast` / 4 秒 / 720p / 1:1 / 无音频 / 无水印 / seed=-1；task `task_de9e6bcb777248eeb7c0fa5a257bee1e`，create HTTP 200，accepted UTC `2026-10-17T14:14:05+00:00`，**只创建一次**（`create_attempts=1`）；32 次轮询后 `success`；usage completion 87,300 tokens，`cost.spend=0.48888`（币种未注明）。
+- **成片**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_coward_hit_v2.mp4`，1,747,950 bytes、SHA-256 `0ceae089e47bd52bd8f7d775d5b5ccd081af7b772d9479f165b76a5858ebd664`；实测 960×960 / 24fps / 97 帧 / 容器 4.041667 秒 / 末帧 PTS 4.0 秒 / H.264 / 无音轨；四段 Range 均 206 并按 ETag 校验，MP4 结构 `ftyp/uuid/free/mdat/moov`，全帧解码通过。
+- **检查材料（不是选帧）**：`Library/Locus/tmp/enemy1021_coward_hit_v2/` 的 `contact_sheet.png`（帧 0/24/48/72/96）、`inspection_frames/`、`first_frame.png`、`last_frame.png`、`job.json`、`runtime.json`、`download_manifest.json`；下载报告为视频旁 `.download.json`。脚本 `generate_video.py` 已执行，**不要重跑创建**。
+- **边界与验收（最终）**：**验收不通过**。用户判定视频里“实际上做了两个语义完全不一致的受击动作，且切换的非常僵硬”，整支作废，不接受用抽帧裁剪补救。逐帧实测支持该判断：f016–f024 抱胸（主体框宽 299→264）、f025–f033 几乎静止（约 0.35 秒）、f033–f042 甩臂（框宽 265→399）、f042 之后静止——两段独立动作中间夹了一段停顿。
+- **帧挑选尝试（已否，不得用于部署）**：按用户“只取前半部分、跳过开头 idle”的指示抽过 3 帧稳定姿态 `f024`（1.00s）/ `f036`（1.50s）/ `f044`（1.83s），文件 `Library/Locus/tmp/enemy1021_coward_hit_v2/selected_v1/`，对比图 `COWARD_HIT_3FRAME_REVIEW_v1.png`、预览 `COWARD_HIT_3FRAME_PREVIEW_v1.gif`、清单 `selected_frames_v1.json`、逐帧指标 `frame_metrics.json`。结论：三帧仍是从两段不同语义里各取一帧，选了也是“两个动作硬拼”；用户否掉整支视频。**这些帧不抠图、不接入。**
+- **后续**：词由另一侧改写后重新出词；本侧不改词、不重发 §0.14/§0.15。未抠图、未对齐补边、未接入 Unity、未进入 Play、未改任何 Unity 资产。
+
+### Enemy 1021 胆怯受击 CowardHit 视频 v3（2026-10-17，已提交一次、下载并完整解码；**验收不通过**）
+
+- **来源**：`plan/enemy1021-art-production-handoff.md` §0.16 词，脚本从文档逐字提取、校验哈希后提交，未改写。
+- **规格**：`seedance-2-fast` / 4 秒 / 720p / 1:1 / 无音频 / 无水印 / seed=-1；单张普通 `reference_image`（无盾待机绿幕图，SHA `3fd64c93…a6c0`）。词指纹：英文正文 `9469e0fb…ad15`＋负面词 `4b7e2c7b…04ed`，合并 `723d9b85…576c`。
+- **Task**：`task_f121b090d3c54b078ec70db42eda1bd9`，create HTTP 200，**只创建一次**；usage completion 87,300 tokens，`cost.spend=0.48888`。
+- **下载故障与处理**：首次下载在分段读取时报 `TimeoutError`（任务已 success），**未重建任务**；改用带续传的分段下载器重试同一 task（段 0 从 81,920 字节续传，其余三段复用），拼接后全帧解码通过。
+- **成片**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_coward_hit_v3.mp4`，1,652,421 bytes、SHA-256 `bfd4eda1f126ef7697bd98b3e76f85a04fdbf5891bbf6a1494234c89e40ffcc3`；960×960 / 24fps / 97 帧 / 4.041667 秒 / 末帧 PTS 4.0 秒 / H.264 / 无音轨。
+- **客观量测（供判断）**：f000–f016 idle（298×410）；**f017–f020 人物变高**（顶部 294→252、可见像素 62,757→67,865）；f021 跳到 266×394 并保持到 f053（约 1.35 秒）；**f054 单帧弹回 idle**（变化 58,260 px，无收势）。
+- **检查材料**：`Library/Locus/tmp/enemy1021_coward_hit_v3/` 的 `COWARD_HIT_V3_DENSE_SHEET_f000_f048.png`、`keyframes/`、`contact_sheet.png`、`runtime.json`、`download_manifest.json`；脚本 `generate_video.py`、`download_existing.py` 均已执行，**不要重跑创建**。
+- **验收结果：不通过（2026-10-17）**：用户判据——① 动作非常抽象；② 关键受击动作只是**毫无表情的捂胸**；③ **没有任何受击感**。产物仅作失败样本，不得选帧、抠图、接入；§0.16 词作废，待另一侧再改。
+- **边界**：未选帧、未抠图、未补边、未接入 Unity、未进入 Play、未改任何 Unity 资产。
+
+### Enemy 1021 CowardIdle 呼吸最高点关键帧 v1（2026-10-17，**已获用户验收**）
+
+- **来源**：`plan/enemy1021-art-production-handoff.md` §0.12 词，脚本逐字提取，未改写。
+- **规格**：`POST /v1/images/edits`；`gpt-image-2.5-sunburst` / `quality=max` / `input_fidelity=high` / `1024x1024` / `opaque` / `png` / `n=1`；英文正文 `8d85157a…0e36` + 22 条负面词 `ad092a98…1fdf` 合并为 `7cd71799…6fbb`。
+- **上传副本（G1）**：源 `C:/Users/steam/Pictures/doubaoVideo/enemy1021_shield_break_selected_6_frames_v2/06_frame_144.png` 实测底 `(0,142,59)`，非 00B140。另存 `Library/Locus/tmp/enemy1021_coward_idle_peak_v1/01_coward_idle_peak_source_green_00B140_1024.png`：960 中心补边到 1024（偏移 32,32）、外部背景 849,750 px + 2px 边缘环 11 px 换为 `(0,177,64)`、四角精确 std 0、主体内部改动 0、角色未缩放；原帧未动。
+- **结果**：HTTP 200、POST 68.859 秒；usage 1365/7024/8389；cost 与 task id 未返回。产物 `C:/Users/steam/Pictures/gptGen/enemy1021_coward_idle_peak_keypose_v1.png`，953,009 bytes、SHA-256 `8b6656bcbe15ed016c94fcf44ad995f2d397d1f97702bf2c4eefc7bdbebb569d`、1024×1024 RGB。只提交一次，未重试。
+- **客观量测（与上传副本同口径）**：包围盒源 `320×438` vs 生成 `320×430`；宽比 1.000、高比 0.982、像素比 0.984；底边差 −2 px、顶边差 +6 px；双靴质心 (−2.9,−0.8)、左侧手区 (−0.1,−2.3)、右侧胸前手区 (−4.0,+1.3)、红缨 (−12.8,+7.3)；最小留白 26.8%。
+- **背景实测**：四角中位 `(2,178,67)` 附近、dev std 0.54–0.66，非精确 `(0,177,64)`。
+- **边界**：未组装 4 帧循环、未做视频、未抠图、未接入 Unity、未进入 Play、未改任何 Unity 资产。对照材料 `UPLOAD_COPY_REVIEW.png`、`COWARD_PEAK_V1_VS_SOURCE.png`；脚本 `build_upload_copy.py` / `build_job.py` / `generate_coward_peak.py` 均已执行，**不要重跑创建**。
+- **用户验收（2026-10-17）**：用户明确“已验收”，呼吸最高点关键帧通过；底色偏差（生成图四角约 `(2,178,67)`）视为已接受，不重发不改图。用户同时要求更新交接文档**让另一侧写提示词**：胆怯家族剩余项的生成词由写词侧起草并自行提交，本侧不写词。本侧接下来的职责仍是发起生成/取回产物/选帧/抠图并回写验收状态。
+
+### Enemy 1021 持盾死亡：3 帧透明素材 v1（2026-10-17，T=80，**已获用户验收**）
+
+- **用户决策**：采用 **3 帧**（否掉 5 帧）、抠图容差 **80**、开头 idle 帧无意义从 **f044** 起。
+- **为何只能 3 帧**：用「平坦区差异」区分真实姿态与重编码噪声。f045 vs f048 = **0 px**；f049 vs f096 = 1,000 px（90.3% 边缘噪声）；而 f044 vs f046 = 141,696 px、f046 vs f051 = 134,141 px。即 f044…f096 只有 A2/B/C 三个真姿态。证据 `effective_pose_inventory.json`。
+- **选定帧**：`dead01_f044`（1.833s）、`dead02_f046`（1.917s）、`dead03_f072`（3.000s）。
+- **抠图**：`Locus/tools/svl-matting/svl_matte_batch.py --label Dead --tolerance 80 --sheet`；SVL 自动取键（实测底 `(1,157,60)`，coloured screen），softness 16 / halo 1 / 半透明转不透明，未开平滑。
+- **结果（逐帧）**：半透明 **0**、透明区非零 RGB **0**、幕布残留 **0**、封闭孔 **0**；可见像素 156,451 / 153,627 / 136,853；距轮廓 ≥4px 内部 RGB 改动 0 px / 1 px / 6 px（>8Δ 仅 2 px）。保留可见区 `g−max(r,b)>8` 共 403/508/495 px（可见区 0.26%–0.37%），不声称严格零绿。
+- **交付**：`Library/Locus/tmp/enemy1021_dead_video_v2/dead_3frames_matted_v1/` 下三张 960×960 RGBA（与 `keyed_ui_t80/` 同名副本一致）+ 清单 `dead_3frames_matted_v1.json`（含 SHA-256）。评审：`DEAD_MATTED_DELIVERY_REVIEW_v1.png`、`_3_WHITE/_3_DARK/_3_CHECKER`、`ZOOM_*`、`DEAD_MATTED_PREVIEW_v1_0p6s.gif`。
+- **边界**：未对齐、未 1108 补边、未部署 Unity、未进入 Play、未改任何 Unity 资产。
+- **用户验收（2026-10-17）**：用户明确“已验收”，三帧透明结果通过；遗留绿像素（green>8 共 403/508/495 px）视为已接受。用户同时明确**本侧不负责对齐、补边与接入**，这三项由另一侧执行；本侧交付到此结束。
+- **接入侧部署（2026-10-17，已游戏验收）**：按固定偏移 `(74,91)` 零重采样补边到 1108（粘贴区逐像素差 0、画布外非零 0），新增 `Assets/Sprites/Enemy/Enemy1021/Enemy_1021_dead1..3.png`（导入设置与 `Enemy_1021_hitFlash1` 一致，Unity 实际 1024×1024 / Sprite PPU 14.787）与 `Assets/Animations/Enemy_1021_Dead.anim`（30fps、0.6s、Clamp、键位 0/0.2/0.4＋保持 0.5667、`ShieldVisual` null 键）；仅替换 1021 控制器 `Dead` 状态 motion，其余 14 状态/18 转场不变。核验记录 `Library/Locus/tmp/enemy1021_dead_deploy_v1/asset_verification.json`；未进入 Play、未采样动画；用户 2026-10-17 开游戏验收通过。
+
+### Enemy 1021 持盾死亡：选中帧候选 v1（2026-10-17，视频已验收；5 帧已被 3 帧方案取代）
+
+- **前置**：用户验收视频 v2（`C:/Users/steam/Videos/doubaoVideo/enemy1021_dead_v2.mp4`，2,326,004 bytes，SHA-256 `c2b444a3…9095`，960×960/24fps/97 帧），并授权开始选帧。
+- **选帧前的客观分析（关键发现）**：97 帧全部字节唯一，但只存在 **5 个真正不同的姿态**，R态之间是 1 帧硬切而非渐变。判据：帧间真实变化 >24 通道差且 >4000 px 才计为新姿态；跳切点 `f033→f034`（143,480 px / 15.57%）、`f044→f045`（208,206 px / 22.59%）、`f048→f049`（205,966 px / 22.35%）。
+- **姿态分组**：`f000-f033` 站立（bbox `[270,230,681,781]`，fill 0.617）；`f034-f036` 受击起手（`[206,214,795,781]`，fill 0.486）；`f037-f044` 张开中段（同 bbox，与上组差 15,766 px，头/躯干微调）；`f045-f048` 展开加强（`[154,217,813,760]`，fill 0.451）；`f049-f096` 终态（`[84,228,866,717]`，fill 0.379）。
+- **选帧规则**：每组只取 1 帧，取组内对相邻帧变化最小的一帧（避开跳切边缘与压缩伪影），不机械等距采样。
+- **候选 v1（5 帧）**：`dead01_f010.png`（0.417s，fill 0.617）、`dead02_f034.png`（1.417s，0.486）、`dead03_f044.png`（1.833s，0.486）、`dead04_f048.png`（2.000s，0.451）、`dead05_f051.png`（2.125s，0.379）。均在 `Library/Locus/tmp/enemy1021_dead_video_v2/candidates_v1/`，960×960 RGB，与解码源帧 SHA-256 逐一相同，未抠图/缩放/平移。
+- **预览（不定义 Clip）**：`SELECTED_REVIEW_v1.png`、`SELECTED_PREVIEW_v1_0p6s.gif`（5帧×120ms）、`SELECTED_PREVIEW_ALT4_0p6s.gif`（4帧×150ms，去掉 f044）。
+- **未决**：f044 与 f034 差异主要是头/躯干微调（11,442 px），是否保留由用户定；若求平滑过渡，需重新出视频（本侧不写词、不自行重发）。
+- **边界**：**未抠图、未对齐、未补边、未部署 Unity、未进入 Play；未重发视频、未写词。** 数据与脚本在 `Library/Locus/tmp/enemy1021_dead_video_v2/`（`frame_metrics.json`、`pose_groups.json`、`group_analysis.json`、`selected_frames_v1.json`、`extract_and_measure.py`、`distinct_pose_check.py`、`group_analysis.py`、`select_frames.py`）；原始 97 帧在 `frames/clean_raw/`。
+
+### Enemy 1021 持盾死亡：视频 v2（2026-10-17，已下载、解码并获用户验收）
+
+- **发起依据**：用户更新交接后要求“根据交接文档发起视频生成，下载后立刻汇报”。词源为 `plan/enemy1021-art-production-handoff.md` §0.11，由脚本从文档逐字提取，未改写、未换图。
+- **规格**：`seedance-2-fast` / 4 秒 / 720p / 1:1 / 无音频 / 无水印 / seed=-1；两张普通 `reference_image`（未混 `first_frame`/`last_frame`）。
+- **两张上传图**：图1 `C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3_green_v1.png`（SHA `d398a1eb…40de`，四角精确 `(0,177,64)`）；图2 `Library/Locus/tmp/enemy1021_dead_video_v2/02_dead_v3_green_00B140_1024.png`（SHA `16bfc410…83cf`，G1 副本，四角精确 `(0,177,64)`、std 0）。上传前两份哈希与文档记录逐一校对一致。
+- **Task**：`task_215c88d7209f46bc8e5b36a528c225e2`；accepted UTC `2026-10-17T03:12:03.170732+00:00`；create HTTP 200 / 2.135 秒；上传 HTTP 200（4.76 / 5.72 秒）。
+- **轮询**：创建后 12 次限时轮询均为 generating（前两次 queued）后停止本地等待；随后只查询同一任务，UTC `2026-10-17T03:16:07.205752+00:00` 观察到 `success`。usage completion_tokens=87300；`cost.spend=0.48888`（币种未注明）。未创建新任务、未重试。
+- **成片**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_dead_v2.mp4`，2,326,004 bytes、SHA-256 `c2b444a358d246f2ac677a63bfdb6f0c2327e28ca96300836c9d1a2bf47e9095`；实测 960×960 / 24fps / 97 帧 / 容器 4.041667 秒 / 末帧 PTS 4.0 秒 / H.264 / 无音轨；四段 Range 均 206 且 ETag 校验一致，MP4 结构 `ftyp/uuid/free/mdat/moov`，全帧解码通过。
+- **提交 prompt**：§0.11 英文正文 `f1d9ff62…0d4f` + 39 条负面词 `19bd7829…f9ce` 合并为 `086e7c9c…12a9`，负面词并入同一字段，无独立负面字段。
+- **留档**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_dead_v2.request.json`、`enemy1021_dead_v2.download.json`；工作目录 `Library/Locus/tmp/enemy1021_dead_video_v2/`（`job.json`、`runtime.json`、`create_attempted.json`、`download_manifest.json`、`download_parts/`、`contact_sheet.png`、`first_frame.png`、`last_frame.png`、`inspection_frames/`、脚本 `build_job_v2.py` / `generate_dead_video_v2.py` / `query_existing_v2.py` / `poll_and_download_v2.py`）。脚本均已执行，**不要重跑创建**。
+- **边界**：只发起、下载、解码与汇报。**未选帧（当时）、未抠图、未对齐、未部署 Unity、未进入 Play、未改任何 Unity 资产；本侧未写或改视频词、不验收画面。**检查帧仅文件诊断，不是选帧。用户随后验收本视频并授权选帧（见上一条）。
+
+### Enemy 1021 持盾死亡：图2 v1/v2 历史 + 重做 v3（2026-10-16，v3 已获用户验收）
+
+- **前置状态**：持盾死亡视频 v1（同时早些时候）已生成并**两轮验收不通过**（task `task_800f25278957424d9c5b911e75bfca2c`，`cost.spend=0.48888`；成片 `C:/Users/steam/Videos/doubaoVideo/enemy1021_dead_v1.mp4`，2,056,869 bytes、960×960/24fps/97帧）。用户第二轮反馈：“动作毫无张力，没有被击飞到底的感觉”“与1011的dead动画语义完全不符”“姿态僵硬像是被催眠倒下”。代理实测确认根因不在视频词而在目标图2：1011 已验收死亡填充率约 0.30、宽度为 Idle 的 1.45–1.52 倍，而成片末帧填充率反而从 0.620 升到 0.670。用户随后拍板“按 A 方向”= 重做图2。
+- **图2 历史版本**：v1 `enemy1021_dead_airborne_keypose_v1.png`（940,772 bytes，SHA-256 `5a13710a…da60`，未通过：整身旋转 46.5°、盾区放大 1.331×/1.234×）；v2 `enemy1021_dead_airborne_keypose_v2.png`（1,072,848 bytes，SHA-256 `f6073b06…2ac9`，用户验收通过，但为“垂头失重、身形站桩”，主轴仅 28.4°——正是导致视频僵硬的来源）。两者均保留追溯，不再提交。
+- **v3 生图规格**：`POST /v1/images/edits`；`gpt-image-2.5-sunburst` / `quality=max` / `input_fidelity=high` / `1024x1024` / `background=opaque` / `output_format=png` / `n=1`；唯一参考图1 `enemy1021_shield_hold_v3_green_v1.png`（SHA-256 `d398a1eb…40de`）；英文正文与 40 条负面词合并进同一 `prompt` 字段，未使用独立负面字段。已按 §0.10 词提交**一次**，无自动重试。
+- **v3 结果**：HTTP 200、POST 108.071 秒；usage prompt/completion/total = 667/946/1613，`cost` 与 task id **未返回**（不推断费用）。产物 `C:/Users/steam/Pictures/gptGen/enemy1021_dead_airborne_keypose_v3.png`，1,122,630 bytes、SHA-256 `dba1290c0b78b3e4df861fe63f53b2e0d83c973ba133a5587f87fe2f84669785`、1024×1024 RGB、ColorType2、解码通过。实际提交合并 prompt SHA-256 `eb06952c4725d02ed4d0c89d30766f4a91360409cfab1a5f17a1924b07f91140`（英文正文 `721e7814…587c` + 负面词 `e55a48fe…92ca`）。同名 `.request.json` / `.response.json` / `.result.json` / `.submitted_once.json` 已落盘。
+- **v3 四角背景实测**：约 `(1.6, 181.1, 72.4)`，**不是**图1 的精确 `(0,177,64)`，与 v2 的 `(2,178,68)` 同类；若后续进视频，仍需按 G1 另存同色绿幕上传副本。
+- **v3 客观测量（与 1011 同口径；仅辅助，不代替用户目检）**：全身宽高比 **1.60**（要求 >1.4）；填充率 **0.376**、张力 0.624（目标填充率 ≈0.30–0.35；1011 dead1/3/6 为 0.345/0.257/0.256）；主体分为 **2 个连通块**，身体块 `[318,244,924,765]` 与盾块 `[90,317,338,627]` 最小间距 **14 px**（脱手成立）；盾像素面积约为图1 的 **0.64**，面积换算线性尺度约 **0.80**（偏小而非放大）；身体块主轴 **79.8°**（落于目标 50°–80°；1011 dead3 为 71.5°、dead6 为 81.6°；v2 身体倾角为 28.5°）；四边最小留白 **8.8% / 9.7%**（左/右，未裁切但略低于词中 ≥10%）。
+- **留档**：审计目录 `Library/Locus/tmp/enemy1021_dead_keypose_v3/`，含 `KEYPOSE_V3_SOURCE_COMPARE.png`（图1/v1/v2/v3 同画布 50% 并排）、`KEYPOSE_V3_VS_1011_DEAD.png`、`SHIELD_WINDOW_100PCT_COMPARE.png`、`HEAD_100PCT_COMPARE.png`，数据 `v3_metrics.json`、`v3_body_metrics.json`、`v3_shield_oriented.json`、`v3_gap_check.json`，脚本 `build_jobs_v3.py`、`generate_dead_keypose_v3.py`、`measure_v3.py`、`body_metrics_v3.py`、`shield_oriented_v3.py`、`gap_check_v3.py`。暖色木材分类受皮革/靴子同色干扰，已用窗口回避并在报告中标明为代理指标。
+- **边界**：本次只生成关键姿态并做静态量测。未抠图、未对齐、未改任何 Unity 资产、未进入 Play 或运行自检；**未写新视频词、未提交视频**。图2 v3 通过用户目检后，视频才改用图1＋v3 作为两张普通 `reference_image` 并另行审批视频词。
+- **用户验收**：用户于 2026-10-16 明确“**已验收该图片**”，v3 成为持盾死亡末帧锚点；代理量测出的三项达标边沿（左右留白 8.8%/9.7%、填充率 0.376、盾面积 0.64×）均视为已接受，不重发。下一步由负责写词的对话以图1＋v3 起草新死亡视频词（§0.8 旧词作废）；本侧不写词、不验收图。
+
+### Enemy 1021 胆怯击飞 CowardLaunched 视频 v1（2026-10-18，已提交一次；**验收不通过**：凭空出现 1011 的剑）
+
+- **授权**：用户 2026-10-18 指令“根据交接文档发起视频生成”，按 `plan/enemy1021-art-production-handoff.md` §0.18 原文只提交一次；词、参数、输出路径均未改。
+- **图2 缺口与替代（用户已批准）**：§0.18 要求从 `enemy1011_launch_rise_v1.mp4` 重抽 1-based f056，但该视频与 `Library/Locus/tmp/sword_enemy_launch_v1/` 在本机都不存在（全盘搜索 mp4/帧目录为 0）。替代源为 `Assets/Sprites/Enemy/Enemy1_1/Enemy_1011_rise4.png`——`plan/enemy1011-frame-provenance.csv` 登记为 f056 @2.292s、本地绿幕键、补边 (74,120)、逐像素一致。已另存 1024×1024 RGB 绿幕副本 `Library/Locus/tmp/enemy1021_coward_launched_video_v1/02_1011_rise4_f056_green_00B140_1024.png`（角色不缩放，主体 791×520 与源相同，四角精确 (0,177,64)，最小留边 116px，SHA-256 `8772afd16c48cb5b4d314d3a988b2e82e611cac32ac7c62197d6021bf9c25b3d`）。
+- **图1**：`Library/Locus/tmp/enemy1021_coward_idle_peak_v1/01_coward_idle_peak_source_green_00B140_1024.png`，SHA-256 `3fd64c935cd7b5adf562d2729899430e2156120edf0575e969e2faf95146a6c0`，四角精确 (0,177,64)。
+- **词指纹**：§0.18 英文正文 `f40787301c5595995a43140f37b8323723c319e143a94e39a66d20bf1e6a144a` ＋ 负面词 `abfbbffa069bd844ae24e074c834cf09642fa104316073ae4d3dbabbc457a6e9`，合并 `e7bc74b09957eb76e39afbddb0e14109c0cc3d3c88aed266c109353bf897bfc8`；脚本按文档逐字提取后先校验哈希再上传。
+- **Task**：`task_99b97a3345fc4606a3df4aa11f796522`；create HTTP 200，两次上传均 200，`create_attempts=1`，无重试；usage completion 130,500，`cost.spend=0.7308`（币种未注明）。
+- **成片**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_coward_launched_v1.mp4`，3,087,094 bytes、SHA-256 `1037d2bec320b830a4d0c72fc4b4489d5d73bc4daf1cd4fcfd1d1d10f3496afd`；960×960 / 24fps / 145 帧 / 容器 6.041667 秒 / 末帧 PTS 6.0 / H.264 / 无音轨；四段 Range 均 206 且 ETag 一致，全帧解码通过。
+- **与词的客观对差**：① 动作在 f029（1.208s）才开始，f000–f028（0–1.17s）完全是待机姿态（298×410、底边 703），词要求 0.08–0.30s 起跳、0.55s 到位；② f033（1.375s）后姿态冻结到 f144（6.0s），相邻帧差异 ≤约 60 px，等于 4.6 秒稳定保持，符合“不下落、不翻滚、不二次受击”；③ 末帧包围盒 742×488、主轴距水平 4.6°（躯干接近水平），宽度为待机的 2.49 倍；④ 末帧最低带只有 57px 宽（x 606–662，y 699–723），上一带 24px 高却 412px 宽——该窄突出后续量测确认为**剑尖**（不是靴尖），见文末可复用教训。
+- **检查材料**：`Library/Locus/tmp/enemy1021_coward_launched_video_v1/` 的 `LAUNCHED_V1_EARLY_f000_f025.png`、`LAUNCHED_V1_TRANSITION_f026_f038.png`（全片唯一的运动段）、`LAUNCHED_V1_FINAL_POSE_MARKED.png`、`LAUNCHED_V1_FINAL_LOWEST_ZOOM.png`、`LAUNCHED_V1_LATE_SAMPLES.png`、`objective_metrics.json`、`pose_detail.json`、`first_frame.png`、`last_frame.png`、`frames_all/`（145 张原帧）。
+- **边界**：未选帧、未抠图、未对齐、未补边、未改任何 Unity 资产、未进入 Play Mode。脚本 `generate_video.py` 已执行，**不要重跑创建**。
+- **验收结果（2026-10-18）：不通过**。用户原话要点：① 凭空出现了 1011 的剑；② 完全没有按 1021 的胆怯造型制作击飞。成片留作失败样本，不复用、不抽帧。
+- **可复用教训**：带武器的姿态参考图会把武器复制进成片，负面词 `no sword` / `no weapon` 扣不住；武器在剪影上表现为“宽带之后突降的 45–60px 窄突出”。图2 用了 `Enemy_1011_rise4.png` 的绿幕副本（参考最后两档 60px→ 45px，x 646–705），成片末帧同样在 394px 之后降为 57px→46px（x 606–662）；正常待机底部是 248px 连续靴带。今后角色动画参考图必须是**无武器、无盾**的自身帧。证据 `Library/Locus/tmp/enemy1021_coward_launched_video_v1/fail_analysis_sword_protrusion.json`。
+
+### Enemy 1021 胆怯击飞完整链（单图 / 10 秒）v2（2026-10-18，已提交一次、下载并全帧解码；源片与 16 帧均已验收）
+
+- **依据**：`plan/enemy1021-coward-launch-full-cycle-10s-preparation.md` §6 + §8 逐字提交（正文 `6cfea968…6bc5`、负面 `68aad0e5…3507`、合并 `fccc7c2c…ec11`），唯一参考图 1021 无盾胆怯 Idle（`3fd64c93…a6c0`）；无 1011、无额外姿态图、无 first/last frame。
+- **Task**：`task_78a8dfe06b3849be8cbd429c8964b706`；上传/创建均 HTTP 200，`create_attempts=1`；usage 216,900，`cost.spend=1.21464`。
+- **成片**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_coward_launch_fullcycle_v2_10s.mp4`，3,859,668 bytes、SHA-256 `cef48f8e…9cd7`；960×960 / 24fps / 241 帧 / 10.041667 秒 / 无音轨；四段 Range 与全帧解码通过。
+- **客观实测**：241 帧中 **174 帧处于 3–10 帧长的静止平台**，另有 **33 次 ≥30k px 的单帧换图**（最大 107,112 px，f079→f080），典型为“静止 4 帧 → 一帧 71k–102k px 换图 → 再静止”；阶段弧线存在（idle→离地 1.50s→空中 2.5–3.7s→背部平躺 3.9–5.9s→起身 6.0–7.5s→idle 8.0–10.0s），首末帧尺寸与参考 idle 一致（299×408 / 298×412，底边 703）。
+- **背景色**：四角均值约 `(1,160,61)`，与请求 `(0,177,64)` 不同（最大通道差 21）；后续抠图必须自动取键。主体均值色最大偏移 22.5。
+- **结论**：用户看片后反馈“效果挺好啊”，本片转为**已认可的动作素材源片**，不再归为废片；停格结构改作选帧依据（取平台内部帧）。
+- **抠图（2026-10-18，T=80）**：用户剔除起飞前待机与回 idle 两帧后剩 **16 帧**，段内重编为 rise1..5 / fall1..6 / getup1..5。SVL Chroma 自动取键（实测 `(2,158,59)`）、容差 80 / softness 16 / halo 1 / alpha-aware despill / 半透明转不透明（cutoff 128），无缩放/对齐/补边。结果：半透明 **0**、透明区非零 RGB **0**、幕布残留 **0**、内部改动 6 px（maxΔ7）；遗留 `g−max(r,b)>8` 为 197–524 px/帧（合计 5,380），属 SVL 去溢色边界，待白底/深底目视确认。交付 `Library/Locus/tmp/enemy1021_coward_launch_fullcycle_v2_10s/keyed_t80_v1/`（16 张 960×960 RGBA）；报告 `matte_report_v1.json`；评审 `MATTE_16_WHITE_v1.png`、`MATTE_16_DARK_v1.png`、`MATTE_16_CHECKER_v1.png` 与三个 `*_MATTED_PREVIEW_v1.gif`。未对齐、未补边、未建 Clip、未改 Unity。**用户 2026-10-18 已验收源片与 16 帧**；可复用经验见 `memory/enemy1021-coward-launch-recipe.md`。
+
+### Enemy 1021 胆怯死亡 CowardDead 源片 v1（10 秒 / 单图）（2026-10-18，已提交一次、下载并全帧解码；选帧待验收）
+
+- **依据**：`plan/enemy1021-coward-dead-10s-video-preparation.md` §4 + §6 逐字提交（正文 `1868d8f6…0b2b`、负面 `12fcd757…a741`、合并 `9930871c…d564`）；唯一参考图 1021 无盾胆怯 Idle（`3fd64c93…a6c0`），无其他图片/视频。
+- **Task**：`task_64938fa46e21459eace6e2109afc62ce`；上传/创建均 HTTP 200，`create_attempts=1`；usage 216,900，`cost.spend=1.21464`。
+- **成片**：`C:/Users/steam/Videos/doubaoVideo/enemy1021_coward_dead_v1_10s.mp4`，4,864,912 bytes、SHA-256 `5c9d7355…d28a`；960×960 / 24fps / 241 帧 / 10.041667 秒 / 无音轨；四段 Range 与全帧解码通过。
+- **结构实测**：f000–f047（0–1.96 秒）纯 idle（299–300×410、底边 703）；f048–f155（2.00–6.46 秒）逐帧连续变化（帧间中位数 3,284 px，最大 90,438）；f156–f240（6.50–10.00 秒）85 帧完全冻结（607×526、底边 787）。底边全程单调下降 703→787，无向上腾空。背景四角相对 `(0,177,64)` 偏 20.8，相对项目基 `(0,159,62)` ≤4.8；主体颜色漂移仅 5.4。
+- **选帧（2026-10-18，待验收）**：跳过纯 idle 与冻结段重复，按真实不同姿态取 **8 帧**（dead1..8 = f049/f057/f072/f089/f104/f133/f146/f160），相邻帧差异 80,365–160,246 px。素材 `Library/Locus/tmp/enemy1021_coward_dead_video_v1_10s/selected_dead_v1/`（960×960 RGB、未抠图），清单 `selected_dead_v1.json`，评审 `DEAD_SELECTED_REVIEW_v1.png` / `DEAD_SELECTED_PREVIEW_v1.gif`。
+- **未做**：未抠图、未补边、未建 Clip、未改 Unity；`generate_video.py` 已执行，不得重跑创建。
 
 ### Enemy109 骑手落马：连续受击后仰离鞍（2026-10-15；视频/12帧/透明版均已验收）
 

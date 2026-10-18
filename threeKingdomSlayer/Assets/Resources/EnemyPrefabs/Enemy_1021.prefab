@@ -261,6 +261,10 @@ MonoBehaviour:
   breakAnimationDuration: 0.46
   breakAnimatorState: ShieldBreak
   cowardDamageTakenMultiplier: 1.5
+  breakAnimationClip: {fileID: 7400000, guid: 273848eae1711694b8a738c60998997e, type: 2}
+  shieldDropPrefab: {fileID: 35165969333605060, guid: e0adae05d849f41459a450532c6dd72a, type: 3}
+  shieldReleaseLocalPosition: {x: -20.0625, y: -3.84375, z: 0}
+  legacyShieldVisual: {fileID: 3817922041027281450}
   blockDamageNumberColor: {r: 0.62, g: 0.7, b: 0.86, a: 1}
   blockAnimatorState: ShieldGuardHit
   logShieldEvents: 1
