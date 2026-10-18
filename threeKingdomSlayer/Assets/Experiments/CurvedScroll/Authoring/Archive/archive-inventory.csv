@@ -1,0 +1,628 @@
+group,prefab,parentPath,localPosition,objectName,worldPosition,activeSelf,rendererCountInGroup
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Approach - Valley Road","0.000 0.000 0.000",True,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1","-4.035 -0.392 4.302",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1","4.035 1.200 4.302",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1","-2.353 -0.142 8.911",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1","2.353 -0.142 8.911",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1","-4.035 -0.392 13.213",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1","4.035 -0.392 13.213",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1","-2.353 -0.142 17.822",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1","2.353 -0.142 17.822",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1","-4.035 -0.392 22.124",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1","4.035 -0.392 22.124",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1","-2.353 -0.142 26.733",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1","2.353 -0.142 26.733",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_00","-1.915 0.000 8.911",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_01","2.033 0.000 11.062",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_02","-2.107 0.000 15.671",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_03","1.862 0.000 18.744",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_04","-1.939 0.000 23.660",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_05","2.107 0.000 27.348",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_00","-1.755 0.000 0.000",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_01","1.809 0.000 1.536",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_02","2.144 0.000 3.380",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_03","-1.973 0.000 4.916",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_04","-1.880 0.000 5.838",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_05","1.720 0.000 8.911",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_06","2.125 0.000 10.447",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_07","-1.737 0.000 14.442",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_08","-2.162 0.000 16.900",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_09","-1.862 0.000 18.129",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_10","2.090 0.000 22.124",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_11","1.684 0.000 25.197",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_12","-2.033 0.000 27.040",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_13","1.880 0.000 30.113",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_TravelCopy_22","-4.035 -0.392 36.259",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_TravelCopy_22","4.035 -0.392 36.259",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_TravelCopy_22","-2.353 -0.142 40.868",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_TravelCopy_22","2.353 -0.142 40.868",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_TravelCopy_22","-4.035 -0.392 45.170",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_TravelCopy_22","4.035 -0.392 45.170",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_TravelCopy_22","-2.353 -0.142 49.779",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_TravelCopy_22","2.353 -0.142 49.779",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_TravelCopy_22","-4.035 -0.392 54.081",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_TravelCopy_22","4.035 -0.392 54.081",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_TravelCopy_22","-2.353 -0.142 58.383",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_TravelCopy_22","2.353 -0.142 58.383",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_00_TravelCopy_22","-1.915 0.000 40.868",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_01_TravelCopy_22","2.033 0.000 43.019",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_02_TravelCopy_22","-2.107 0.000 47.321",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_03_TravelCopy_22","1.862 0.000 50.701",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_04_TravelCopy_22","-1.939 0.000 55.617",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_05_TravelCopy_22","2.107 0.000 59.304",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_00_TravelCopy_22","-1.755 0.000 29.191",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_01_TravelCopy_22","1.809 0.000 33.493",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_02_TravelCopy_22","2.144 0.000 35.030",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_03_TravelCopy_22","-1.973 0.000 36.873",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_04_TravelCopy_22","-1.880 0.000 37.795",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_05_TravelCopy_22","1.720 0.000 40.868",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_06_TravelCopy_22","2.125 0.000 42.404",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_07_TravelCopy_22","-1.737 0.000 46.399",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_08_TravelCopy_22","-2.162 0.000 48.857",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_09_TravelCopy_22","-1.862 0.000 50.086",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_10_TravelCopy_22","2.090 0.000 54.081",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_11_TravelCopy_22","1.684 0.000 57.153",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_12_TravelCopy_22","-2.033 0.000 58.690",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_13_TravelCopy_22","1.880 0.000 62.070",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_TravelCopy_43","-4.835 -0.392 68.215",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_TravelCopy_43","4.835 -0.392 68.215",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_TravelCopy_43","-3.153 -0.142 72.517",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_TravelCopy_43","3.153 -0.142 72.517",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_TravelCopy_43","-4.835 -0.392 77.126",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_TravelCopy_43","4.835 -0.392 77.126",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_TravelCopy_43","-3.153 -0.142 80.503",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_TravelCopy_43","3.153 -0.142 80.503",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_TravelCopy_43","-4.835 -0.392 82.125",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_TravelCopy_43","4.835 -0.392 82.125",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_TravelCopy_43","-3.159 -0.142 83.678",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_TravelCopy_43","3.159 -0.142 83.678",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_00_TravelCopy_43","-2.715 0.000 72.517",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_01_TravelCopy_43","2.833 0.000 74.668",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_02_TravelCopy_43","-2.907 0.000 79.277",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_03_TravelCopy_43","2.662 0.000 80.935",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_04_TravelCopy_43","-2.739 0.000 82.558",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_05_TravelCopy_43","2.918 0.000 83.878",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_00_TravelCopy_43","-1.755 0.000 61.148",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_01_TravelCopy_43","1.809 0.000 65.450",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_02_TravelCopy_43","2.944 0.000 66.986",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_03_TravelCopy_43","-2.773 0.000 68.523",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_04_TravelCopy_43","-2.680 0.000 69.752",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_05_TravelCopy_43","2.520 0.000 72.517",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_06_TravelCopy_43","2.925 0.000 74.361",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_07_TravelCopy_43","-2.537 0.000 78.355",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_08_TravelCopy_43","-2.962 0.000 80.178",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_09_TravelCopy_43","-2.662 0.000 80.719",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_10_TravelCopy_43","2.890 0.000 82.125",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_11_TravelCopy_43","2.484 0.000 83.200",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_12_TravelCopy_43","-2.842 0.000 83.782",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_13_TravelCopy_43","1.941 0.000 84.916",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_TravelCopy_65","-4.084 -0.392 84.677",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_TravelCopy_65","4.084 -0.392 84.677",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_TravelCopy_65","-2.557 -0.142 86.364",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_TravelCopy_65","2.557 -0.142 86.364",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_TravelCopy_65","-4.473 -0.392 87.708",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_TravelCopy_65","4.473 -0.392 87.708",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_TravelCopy_65","-3.146 -0.142 89.478",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_TravelCopy_65","3.146 -0.142 89.478",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_TravelCopy_65","-5.185 -0.392 90.489",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_TravelCopy_65","5.185 -0.392 90.489",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_TravelCopy_65","-4.078 -0.142 92.404",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_TravelCopy_65","4.078 -0.142 92.404",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_00_TravelCopy_65","-2.110 0.000 86.318",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_01_TravelCopy_65","2.337 0.000 87.099",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_02_TravelCopy_65","-2.701 0.000 88.662",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_03_TravelCopy_65","2.721 0.000 89.795",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_04_TravelCopy_65","-3.251 0.000 91.320",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_05_TravelCopy_65","3.812 0.000 92.400",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_00_TravelCopy_65","-2.555 0.000 82.233",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_01_TravelCopy_65","2.615 0.000 83.690",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_02_TravelCopy_65","2.969 0.000 84.264",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_03_TravelCopy_65","-2.033 0.000 84.910",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_04_TravelCopy_65","-1.971 0.000 85.319",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_05_TravelCopy_65","1.904 0.000 86.241",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_06_TravelCopy_65","2.413 0.000 86.986",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_07_TravelCopy_65","-2.218 0.000 88.144",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_08_TravelCopy_65","-2.866 0.000 89.137",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_09_TravelCopy_65","-2.721 0.000 89.795",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_10_TravelCopy_65","3.273 0.000 90.892",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_11_TravelCopy_65","3.073 0.000 91.593",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_12_TravelCopy_65","-3.743 0.000 92.426",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_13_TravelCopy_65","3.899 0.000 93.230",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_ExtendedBranch_0_0","-4.073 -0.392 84.492",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_ExtendedBranch_0_0","-2.510 -0.142 85.970",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_ExtendedBranch_0_0","-4.374 -0.392 87.161",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_ExtendedBranch_0_0","-2.985 -0.142 88.803",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_ExtendedBranch_0_0","-4.970 -0.392 89.780",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_ExtendedBranch_0_0","-3.772 -0.142 91.567",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_00_ExtendedBranch_0_0","-2.075 0.000 86.018",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_02_ExtendedBranch_0_0","-2.600 0.000 88.172",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_04_ExtendedBranch_0_0","-3.069 0.000 90.744",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_00_ExtendedBranch_0_0","-2.555 0.000 83.099",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_03_ExtendedBranch_0_0","-2.020 0.000 84.709",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_04_ExtendedBranch_0_0","-1.955 0.000 85.117",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_07_ExtendedBranch_0_0","-2.180 0.000 87.945",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_08_ExtendedBranch_0_0","-2.734 0.000 88.553",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_09_ExtendedBranch_0_0","-2.551 0.000 89.108",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_12_ExtendedBranch_0_0","-3.502 0.000 91.766",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_ExtendedBranch_0_1","-6.459 -0.392 93.669",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_ExtendedBranch_0_1","-5.634 -0.142 95.722",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_ExtendedBranch_0_1","-7.765 -0.392 96.016",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_ExtendedBranch_0_1","-7.174 -0.142 98.148",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_ExtendedBranch_0_1","-9.324 -0.392 98.203",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_ExtendedBranch_0_1","-8.973 -0.142 100.387",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_00_ExtendedBranch_0_1","-5.252 0.000 95.935",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_02_ExtendedBranch_0_1","-6.573 0.000 97.716",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_04_ExtendedBranch_0_1","-8.006 0.000 99.903",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_00_ExtendedBranch_0_1","-3.823 0.000 93.372",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_03_ExtendedBranch_0_1","-4.693 0.000 94.751",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_04_ExtendedBranch_0_1","-4.746 0.000 95.062",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_07_ExtendedBranch_0_1","-6.043 0.000 97.585",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_08_ExtendedBranch_0_1","-6.845 0.000 98.014",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_09_ExtendedBranch_0_1","-6.833 0.000 98.515",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_12_ExtendedBranch_0_1","-8.803 0.000 100.676",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_ExtendedBranch_0_2","-12.419 -0.392 101.506",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_ExtendedBranch_0_2","-12.377 -0.142 103.843",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_ExtendedBranch_0_2","-14.637 -0.392 103.724",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_ExtendedBranch_0_2","-14.519 -0.142 105.984",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_ExtendedBranch_0_2","-16.855 -0.392 105.942",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_ExtendedBranch_0_2","-16.737 -0.142 108.202",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_00_ExtendedBranch_0_2","-12.068 0.000 104.152",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_02_ExtendedBranch_0_2","-13.809 0.000 105.623",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_04_ExtendedBranch_0_2","-15.756 0.000 107.806",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_00_ExtendedBranch_0_2","-9.737 0.000 102.047",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_03_ExtendedBranch_0_2","-11.114 0.000 103.117",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_04_ExtendedBranch_0_2","-11.278 0.000 103.412",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_07_ExtendedBranch_0_2","-13.319 0.000 105.655",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_08_ExtendedBranch_0_2","-14.231 0.000 105.966",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_09_ExtendedBranch_0_2","-14.325 0.000 106.484",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_12_ExtendedBranch_0_2","-16.587 0.000 108.505",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_ExtendedBranch_0_3","-20.373 -0.392 109.460",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_ExtendedBranch_0_3","-20.255 -0.142 111.720",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_ExtendedBranch_0_3","-22.591 -0.392 111.678",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_ExtendedBranch_0_3","-22.473 -0.142 113.938",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_ExtendedBranch_0_3","-24.809 -0.392 113.896",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_ExtendedBranch_0_3","-24.691 -0.142 116.156",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_00_ExtendedBranch_0_3","-19.945 0.000 112.029",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_02_ExtendedBranch_0_3","-21.763 0.000 113.577",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_04_ExtendedBranch_0_3","-23.633 0.000 115.684",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_00_ExtendedBranch_0_3","-17.614 0.000 109.925",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_03_ExtendedBranch_0_3","-18.992 0.000 110.995",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_04_ExtendedBranch_0_3","-19.232 0.000 111.366",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_07_ExtendedBranch_0_3","-21.273 0.000 113.608",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_08_ExtendedBranch_0_3","-22.108 0.000 113.844",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_09_ExtendedBranch_0_3","-22.279 0.000 114.438",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_12_ExtendedBranch_0_3","-24.541 0.000 116.459",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_ExtendedBranch_0_4","-28.251 -0.392 117.338",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_ExtendedBranch_0_4","-28.209 -0.142 119.674",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_ExtendedBranch_0_4","-30.469 -0.392 119.556",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_ExtendedBranch_0_4","-30.427 -0.142 121.892",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_ExtendedBranch_0_4","-32.686 -0.392 121.774",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_ExtendedBranch_0_4","-32.645 -0.142 124.110",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_00_ExtendedBranch_0_4","-27.899 0.000 119.983",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_02_ExtendedBranch_0_4","-29.717 0.000 121.531",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_04_ExtendedBranch_0_4","-31.587 0.000 123.638",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_00_ExtendedBranch_0_4","-25.568 0.000 117.879",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_03_ExtendedBranch_0_4","-26.946 0.000 118.949",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_04_ExtendedBranch_0_4","-27.109 0.000 119.244",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_07_ExtendedBranch_0_4","-29.150 0.000 121.486",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_08_ExtendedBranch_0_4","-30.062 0.000 121.798",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_09_ExtendedBranch_0_4","-30.156 0.000 122.316",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_12_ExtendedBranch_0_4","-32.495 0.000 124.413",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_ExtendedBranch_0_5","-36.205 -0.392 125.292",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_ExtendedBranch_0_5","-36.163 -0.142 127.628",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_ExtendedBranch_0_5","-38.423 -0.392 127.510",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_ExtendedBranch_0_5","-38.304 -0.142 129.769",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_ExtendedBranch_0_5","-40.640 -0.392 129.728",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_ExtendedBranch_0_5","-40.522 -0.142 131.987",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_00_ExtendedBranch_0_5","-35.853 0.000 127.937",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_02_ExtendedBranch_0_5","-37.595 0.000 129.408",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_04_ExtendedBranch_0_5","-39.541 0.000 131.592",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_00_ExtendedBranch_0_5","-33.522 0.000 125.833",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_03_ExtendedBranch_0_5","-34.823 0.000 126.826",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_04_ExtendedBranch_0_5","-35.063 0.000 127.198",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_07_ExtendedBranch_0_5","-37.104 0.000 129.440",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_08_ExtendedBranch_0_5","-38.016 0.000 129.752",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_09_ExtendedBranch_0_5","-38.110 0.000 130.270",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_12_ExtendedBranch_0_5","-40.372 0.000 132.290",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_ExtendedBranch_0_6","-44.159 -0.392 133.246",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_ExtendedBranch_0_6","-44.606 -0.142 134.940",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_ExtendedBranch_0_6","-46.942 -0.392 134.898",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_ExtendedBranch_0_6","-46.824 -0.142 137.158",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_ExtendedBranch_0_6","-49.160 -0.392 137.116",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_ExtendedBranch_0_6","-49.042 -0.142 139.376",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_00_ExtendedBranch_0_6","-44.296 0.000 135.249",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_02_ExtendedBranch_0_6","-46.114 0.000 136.796",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_04_ExtendedBranch_0_6","-47.984 0.000 138.903",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_00_ExtendedBranch_0_6","-41.400 0.000 133.710",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_03_ExtendedBranch_0_6","-42.777 0.000 134.780",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_04_ExtendedBranch_0_6","-43.017 0.000 135.152",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_07_ExtendedBranch_0_6","-45.547 0.000 136.752",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_08_ExtendedBranch_0_6","-46.459 0.000 137.063",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_09_ExtendedBranch_0_6","-46.630 0.000 137.658",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_12_ExtendedBranch_0_6","-48.892 0.000 139.678",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_ExtendedBranch_1_0","4.073 -0.392 84.492",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_ExtendedBranch_1_0","2.510 -0.142 85.970",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_ExtendedBranch_1_0","4.374 -0.392 87.161",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_ExtendedBranch_1_0","2.985 -0.142 88.803",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_ExtendedBranch_1_0","4.970 -0.392 89.780",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_ExtendedBranch_1_0","3.772 -0.142 91.567",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_01_ExtendedBranch_1_0","2.279 0.000 86.702",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_03_ExtendedBranch_1_0","2.598 0.000 89.305",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_05_ExtendedBranch_1_0","3.605 0.000 91.836",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_01_ExtendedBranch_1_0","2.615 0.000 83.690",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_02_ExtendedBranch_1_0","2.965 0.000 84.167",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_05_ExtendedBranch_1_0","1.880 0.000 86.040",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_06_ExtendedBranch_1_0","2.356 0.000 86.590",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_10_ExtendedBranch_1_0","3.101 0.000 90.316",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_11_ExtendedBranch_1_0","3.009 0.000 91.400",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_13_ExtendedBranch_1_0","3.747 0.000 92.856",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_ExtendedBranch_1_1","6.459 -0.392 93.669",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_ExtendedBranch_1_1","5.634 -0.142 95.722",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_ExtendedBranch_1_1","7.765 -0.392 96.016",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_ExtendedBranch_1_1","7.174 -0.142 98.148",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_ExtendedBranch_1_1","9.324 -0.392 98.203",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_ExtendedBranch_1_1","8.973 -0.142 100.387",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_01_ExtendedBranch_1_1","5.706 0.000 96.486",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_03_ExtendedBranch_1_1","6.952 0.000 98.679",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_05_ExtendedBranch_1_1","8.924 0.000 100.700",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_01_ExtendedBranch_1_1","4.073 0.000 93.816",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_02_ExtendedBranch_1_1","4.629 0.000 94.225",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_05_ExtendedBranch_1_1","5.081 0.000 96.031",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_06_ExtendedBranch_1_1","5.683 0.000 96.267",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_10_ExtendedBranch_1_1","7.806 0.000 99.418",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_11_ExtendedBranch_1_1","8.139 0.000 100.454",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_13_ExtendedBranch_1_1","9.381 0.000 101.513",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_ExtendedBranch_1_2","12.419 -0.392 101.506",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_ExtendedBranch_1_2","12.377 -0.142 103.843",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_ExtendedBranch_1_2","14.637 -0.392 103.724",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_ExtendedBranch_1_2","14.519 -0.142 105.984",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_ExtendedBranch_1_2","16.855 -0.392 105.942",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_ExtendedBranch_1_2","16.737 -0.142 108.202",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_01_ExtendedBranch_1_2","12.687 0.000 104.604",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_03_ExtendedBranch_1_2","14.478 0.000 106.637",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_05_ExtendedBranch_1_2","16.792 0.000 108.606",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_01_ExtendedBranch_1_2","10.157 0.000 102.392",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_02_ExtendedBranch_1_2","10.776 0.000 102.538",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_05_ExtendedBranch_1_2","11.929 0.000 104.290",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_06_ExtendedBranch_1_2","12.599 0.000 104.386",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_10_ExtendedBranch_1_2","15.480 0.000 107.317",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_11_ExtendedBranch_1_2","15.958 0.000 108.369",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_13_ExtendedBranch_1_2","17.320 0.000 109.454",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_ExtendedBranch_1_3","20.373 -0.392 109.460",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_ExtendedBranch_1_3","20.255 -0.142 111.720",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_ExtendedBranch_1_3","22.591 -0.392 111.678",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_ExtendedBranch_1_3","22.473 -0.142 113.938",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_ExtendedBranch_1_3","24.809 -0.392 113.896",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_ExtendedBranch_1_3","24.691 -0.142 116.156",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_01_ExtendedBranch_1_3","20.564 0.000 112.482",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_03_ExtendedBranch_1_3","22.355 0.000 114.515",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_05_ExtendedBranch_1_3","24.670 0.000 116.483",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_01_ExtendedBranch_1_3","18.111 0.000 110.346",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_02_ExtendedBranch_1_3","18.730 0.000 110.492",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_05_ExtendedBranch_1_3","19.807 0.000 112.168",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_06_ExtendedBranch_1_3","20.476 0.000 112.264",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_10_ExtendedBranch_1_3","23.434 0.000 115.271",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_11_ExtendedBranch_1_3","23.912 0.000 116.323",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_13_ExtendedBranch_1_3","25.274 0.000 117.408",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_ExtendedBranch_1_4","28.251 -0.392 117.338",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_ExtendedBranch_1_4","28.209 -0.142 119.674",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_ExtendedBranch_1_4","30.469 -0.392 119.556",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_ExtendedBranch_1_4","30.427 -0.142 121.892",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_ExtendedBranch_1_4","32.686 -0.392 121.774",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_ExtendedBranch_1_4","32.645 -0.142 124.110",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_01_ExtendedBranch_1_4","28.518 0.000 120.436",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_03_ExtendedBranch_1_4","30.309 0.000 122.469",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_05_ExtendedBranch_1_4","32.623 0.000 124.437",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_01_ExtendedBranch_1_4","25.988 0.000 118.223",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_02_ExtendedBranch_1_4","26.684 0.000 118.445",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_05_ExtendedBranch_1_4","27.761 0.000 120.122",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_06_ExtendedBranch_1_4","28.430 0.000 120.218",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_10_ExtendedBranch_1_4","31.312 0.000 123.148",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_11_ExtendedBranch_1_4","31.789 0.000 124.201",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_13_ExtendedBranch_1_4","33.151 0.000 125.286",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_ExtendedBranch_1_5","36.205 -0.392 125.292",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_ExtendedBranch_1_5","36.163 -0.142 127.628",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_ExtendedBranch_1_5","38.423 -0.392 127.510",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_ExtendedBranch_1_5","38.304 -0.142 129.769",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_ExtendedBranch_1_5","40.640 -0.392 129.728",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_ExtendedBranch_1_5","40.522 -0.142 131.987",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_01_ExtendedBranch_1_5","36.472 0.000 128.390",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_03_ExtendedBranch_1_5","38.263 0.000 130.423",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_05_ExtendedBranch_1_5","40.577 0.000 132.391",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_01_ExtendedBranch_1_5","33.942 0.000 126.177",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_02_ExtendedBranch_1_5","34.561 0.000 126.323",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_05_ExtendedBranch_1_5","35.715 0.000 128.076",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_06_ExtendedBranch_1_5","36.384 0.000 128.171",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_10_ExtendedBranch_1_5","39.266 0.000 131.102",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_11_ExtendedBranch_1_5","39.743 0.000 132.154",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_13_ExtendedBranch_1_5","41.105 0.000 133.240",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_ExtendedBranch_1_6","44.159 -0.392 133.246",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_ExtendedBranch_1_6","44.606 -0.142 134.940",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_ExtendedBranch_1_6","46.942 -0.392 134.898",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_ExtendedBranch_1_6","46.824 -0.142 137.158",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_ExtendedBranch_1_6","49.160 -0.392 137.116",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_ExtendedBranch_1_6","49.042 -0.142 139.376",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_01_ExtendedBranch_1_6","44.915 0.000 135.701",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_03_ExtendedBranch_1_6","46.706 0.000 137.734",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassOpeningTrial_05_ExtendedBranch_1_6","49.021 0.000 139.703",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_01_ExtendedBranch_1_6","41.896 0.000 134.131",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_02_ExtendedBranch_1_6","42.515 0.000 134.277",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_05_ExtendedBranch_1_6","44.158 0.000 135.388",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_06_ExtendedBranch_1_6","44.827 0.000 135.483",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_10_ExtendedBranch_1_6","47.785 0.000 138.491",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_11_ExtendedBranch_1_6","48.263 0.000 139.543",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","GrassPatch_Opening_13_ExtendedBranch_1_6","48.860 0.000 139.863",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_SpeedFill","-4.035 -0.392 8.742",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_SpeedFill","4.035 -0.392 8.742",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_SpeedFill","-2.353 -0.142 13.352",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_SpeedFill","2.353 -0.142 13.352",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_SpeedFill","-4.035 -0.392 17.653",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_SpeedFill","4.035 -0.392 17.653",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_SpeedFill","-2.353 -0.142 22.263",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_SpeedFill","2.353 -0.142 22.263",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_SpeedFill","-4.035 -0.392 26.564",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_SpeedFill","4.035 -0.392 26.564",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_SpeedFill","-2.353 -0.142 31.174",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_SpeedFill","2.353 -0.142 31.174",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_TravelCopy_22_SpeedFill","-4.035 -0.392 40.699",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_TravelCopy_22_SpeedFill","4.035 -0.392 40.699",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_TravelCopy_22_SpeedFill","-2.353 -0.142 45.308",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_TravelCopy_22_SpeedFill","2.353 -0.142 45.308",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_TravelCopy_22_SpeedFill","-4.035 -0.392 49.610",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_TravelCopy_22_SpeedFill","4.035 -0.392 49.610",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_TravelCopy_22_SpeedFill","-2.353 -0.142 54.219",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_TravelCopy_22_SpeedFill","2.353 -0.142 54.219",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_TravelCopy_22_SpeedFill","-4.035 -0.392 58.521",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_TravelCopy_22_SpeedFill","4.035 -0.392 58.521",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_TravelCopy_22_SpeedFill","-2.353 -0.142 62.823",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_TravelCopy_22_SpeedFill","2.353 -0.142 62.823",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_TravelCopy_43_SpeedFill","-4.835 -0.392 72.656",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_TravelCopy_43_SpeedFill","4.835 -0.392 72.656",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_TravelCopy_43_SpeedFill","-3.153 -0.142 76.958",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_TravelCopy_43_SpeedFill","3.153 -0.142 76.958",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_TravelCopy_43_SpeedFill","-4.835 -0.392 80.542",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_TravelCopy_43_SpeedFill","4.835 -0.392 80.542",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_TravelCopy_43_SpeedFill","-3.153 -0.142 82.056",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_TravelCopy_43_SpeedFill","3.153 -0.142 82.056",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_TravelCopy_43_SpeedFill","-4.840 -0.392 83.678",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_TravelCopy_43_SpeedFill","4.797 -0.392 83.678",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_TravelCopy_43_SpeedFill","-3.224 -0.142 85.077",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_TravelCopy_43_SpeedFill","3.224 -0.142 85.077",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_TravelCopy_65_SpeedFill","-4.208 -0.392 86.072",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_TravelCopy_65_SpeedFill","4.208 -0.392 86.072",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_TravelCopy_65_SpeedFill","-2.766 -0.142 87.748",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_TravelCopy_65_SpeedFill","2.766 -0.142 87.748",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_TravelCopy_65_SpeedFill","-4.772 -0.392 89.076",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_TravelCopy_65_SpeedFill","4.772 -0.392 89.076",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_TravelCopy_65_SpeedFill","-3.524 -0.142 90.826",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_TravelCopy_65_SpeedFill","3.524 -0.142 90.826",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_TravelCopy_65_SpeedFill","-5.644 -0.392 91.812",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_TravelCopy_65_SpeedFill","5.644 -0.392 91.812",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_TravelCopy_65_SpeedFill","-4.613 -0.142 93.698",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_TravelCopy_65_SpeedFill","4.613 -0.142 93.698",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_ExtendedBranch_0_0_SpeedFill","-4.186 -0.392 85.887",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_ExtendedBranch_0_0_SpeedFill","-2.698 -0.142 87.357",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_ExtendedBranch_0_0_SpeedFill","-4.642 -0.392 88.535",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_ExtendedBranch_0_0_SpeedFill","-3.326 -0.142 90.161",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_ExtendedBranch_0_0_SpeedFill","-5.388 -0.392 91.116",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_ExtendedBranch_0_0_SpeedFill","-4.261 -0.142 92.878",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_ExtendedBranch_0_1_SpeedFill","-7.101 -0.392 94.913",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_ExtendedBranch_0_1_SpeedFill","-6.347 -0.142 96.927",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_ExtendedBranch_0_1_SpeedFill","-8.542 -0.392 97.181",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_ExtendedBranch_0_1_SpeedFill","-8.016 -0.142 99.266",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_ExtendedBranch_0_1_SpeedFill","-10.225 -0.392 99.275",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_ExtendedBranch_0_1_SpeedFill","-9.935 -0.142 101.405",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_ExtendedBranch_0_2_SpeedFill","-13.518 -0.392 102.605",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_ExtendedBranch_0_2_SpeedFill","-13.476 -0.142 104.941",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_ExtendedBranch_0_2_SpeedFill","-15.736 -0.392 104.823",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_ExtendedBranch_0_2_SpeedFill","-15.617 -0.142 107.082",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_ExtendedBranch_0_2_SpeedFill","-17.953 -0.392 107.041",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_ExtendedBranch_0_2_SpeedFill","-17.835 -0.142 109.300",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_ExtendedBranch_0_3_SpeedFill","-21.472 -0.392 110.559",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_ExtendedBranch_0_3_SpeedFill","-21.353 -0.142 112.818",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_ExtendedBranch_0_3_SpeedFill","-23.689 -0.392 112.777",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_ExtendedBranch_0_3_SpeedFill","-23.571 -0.142 115.036",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_ExtendedBranch_0_3_SpeedFill","-25.907 -0.392 114.995",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_ExtendedBranch_0_3_SpeedFill","-25.789 -0.142 117.254",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_ExtendedBranch_0_4_SpeedFill","-29.349 -0.392 118.436",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_ExtendedBranch_0_4_SpeedFill","-29.307 -0.142 120.772",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_ExtendedBranch_0_4_SpeedFill","-31.567 -0.392 120.654",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_ExtendedBranch_0_4_SpeedFill","-31.525 -0.142 122.990",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_ExtendedBranch_0_4_SpeedFill","-33.785 -0.392 122.872",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_ExtendedBranch_0_4_SpeedFill","-33.743 -0.142 125.208",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_ExtendedBranch_0_5_SpeedFill","-37.303 -0.392 126.390",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_ExtendedBranch_0_5_SpeedFill","-37.261 -0.142 128.726",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_ExtendedBranch_0_5_SpeedFill","-39.521 -0.392 128.608",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_ExtendedBranch_0_5_SpeedFill","-39.403 -0.142 130.868",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_ExtendedBranch_0_5_SpeedFill","-41.739 -0.392 130.826",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_-1_ExtendedBranch_0_5_SpeedFill","-41.621 -0.142 133.086",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_-1_ExtendedBranch_0_6_SpeedFill","-45.257 -0.392 134.344",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_-1_ExtendedBranch_0_6_SpeedFill","-45.704 -0.142 136.038",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_-1_ExtendedBranch_0_6_SpeedFill","-48.041 -0.392 135.996",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_-1_ExtendedBranch_0_6_SpeedFill","-47.922 -0.142 138.256",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_-1_ExtendedBranch_0_6_SpeedFill","-50.258 -0.392 138.214",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_ExtendedBranch_1_0_SpeedFill","4.186 -0.392 85.887",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_ExtendedBranch_1_0_SpeedFill","2.698 -0.142 87.357",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_ExtendedBranch_1_0_SpeedFill","4.642 -0.392 88.535",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_ExtendedBranch_1_0_SpeedFill","3.326 -0.142 90.161",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_ExtendedBranch_1_0_SpeedFill","5.388 -0.392 91.116",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_ExtendedBranch_1_0_SpeedFill","4.261 -0.142 92.878",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_ExtendedBranch_1_1_SpeedFill","7.101 -0.392 94.913",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_ExtendedBranch_1_1_SpeedFill","6.347 -0.142 96.927",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_ExtendedBranch_1_1_SpeedFill","8.542 -0.392 97.181",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_ExtendedBranch_1_1_SpeedFill","8.016 -0.142 99.266",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_ExtendedBranch_1_1_SpeedFill","10.225 -0.392 99.275",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_ExtendedBranch_1_1_SpeedFill","9.935 -0.142 101.405",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_ExtendedBranch_1_2_SpeedFill","13.518 -0.392 102.605",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_ExtendedBranch_1_2_SpeedFill","13.476 -0.142 104.941",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_ExtendedBranch_1_2_SpeedFill","15.736 -0.392 104.823",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_ExtendedBranch_1_2_SpeedFill","15.617 -0.142 107.082",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_ExtendedBranch_1_2_SpeedFill","17.953 -0.392 107.041",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_ExtendedBranch_1_2_SpeedFill","17.835 -0.142 109.300",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_ExtendedBranch_1_3_SpeedFill","21.472 -0.392 110.559",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_ExtendedBranch_1_3_SpeedFill","21.353 -0.142 112.818",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_ExtendedBranch_1_3_SpeedFill","23.689 -0.392 112.777",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_ExtendedBranch_1_3_SpeedFill","23.571 -0.142 115.036",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_ExtendedBranch_1_3_SpeedFill","25.907 -0.392 114.995",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_ExtendedBranch_1_3_SpeedFill","25.789 -0.142 117.254",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_ExtendedBranch_1_4_SpeedFill","29.349 -0.392 118.436",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_ExtendedBranch_1_4_SpeedFill","29.307 -0.142 120.772",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_ExtendedBranch_1_4_SpeedFill","31.567 -0.392 120.654",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_ExtendedBranch_1_4_SpeedFill","31.525 -0.142 122.990",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_ExtendedBranch_1_4_SpeedFill","33.785 -0.392 122.872",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_ExtendedBranch_1_4_SpeedFill","33.743 -0.142 125.208",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_ExtendedBranch_1_5_SpeedFill","37.303 -0.392 126.390",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_ExtendedBranch_1_5_SpeedFill","37.261 -0.142 128.726",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_ExtendedBranch_1_5_SpeedFill","39.521 -0.392 128.608",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_ExtendedBranch_1_5_SpeedFill","39.403 -0.142 130.868",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_ExtendedBranch_1_5_SpeedFill","41.739 -0.392 130.826",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_5_1_ExtendedBranch_1_5_SpeedFill","41.621 -0.142 133.086",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_0_1_ExtendedBranch_1_6_SpeedFill","45.257 -0.392 134.344",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_1_1_ExtendedBranch_1_6_SpeedFill","45.704 -0.142 136.038",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_2_1_ExtendedBranch_1_6_SpeedFill","48.041 -0.392 135.996",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_3_1_ExtendedBranch_1_6_SpeedFill","47.922 -0.142 138.256",False,482
+Approach - Valley Road,Approach - Valley Road.prefab,Y Junction - select for preview,"0.000 0.000 0.000","Roadside_4_1_ExtendedBranch_1_6_SpeedFill","50.258 -0.392 138.214",False,482
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Junction Rock Barrier and Roadside Density","0.000 0.000 107.000",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Junction Central Cliff","-2.508 -0.228 212.813",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Junction Peak Rear","5.085 -0.384 220.623",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Junction Boulder Left","-5.924 -0.180 214.761",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Junction Boulder Right","7.418 -0.206 217.555",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Left Roadside Cluster 0","10.937 -0.371 207.251",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Left Roadside Cluster 1","-9.306 -0.127 206.699",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Left Roadside Cluster 2","-10.469 -0.150 216.422",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Left Roadside Cluster 3","-20.795 -0.371 217.109",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Left Roadside Cluster 4","-21.476 -0.127 227.595",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Left Roadside Cluster 5","-31.225 -0.150 228.858",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Left Roadside Cluster 6","-31.989 -0.371 239.261",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Left Roadside Cluster 7","-42.245 -0.127 239.712",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Left Roadside Cluster 8","-43.019 -0.150 250.104",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Right Roadside Cluster 0","6.697 0.000 200.351",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Right Roadside Cluster 1","-5.832 -0.371 213.105",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Right Roadside Cluster 2","14.629 -0.150 212.262",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Right Roadside Cluster 3","14.954 0.000 222.951",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Right Roadside Cluster 4","26.378 -0.371 222.692",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Right Roadside Cluster 5","27.065 -0.150 233.018",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Right Roadside Cluster 6","37.830 0.000 233.419",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Right Roadside Cluster 7","37.342 -0.371 244.614",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Right Roadside Cluster 8","48.311 -0.150 244.812",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Approach Outer Tree -1 0","-4.035 -0.392 124.822",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Approach Outer Tree -1 1","-4.355 -0.436 146.946",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Approach Outer Tree -1 2","-4.035 -0.392 169.070",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Approach Outer Tree -1 3","-5.155 -0.436 188.584",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Approach Outer Tree -1 4","-6.582 -0.392 200.919",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Approach Outer Tree 1 0","4.035 -0.392 124.822",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Approach Outer Tree 1 1","4.355 -0.436 146.946",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Approach Outer Tree 1 2","4.035 -0.392 169.070",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Approach Outer Tree 1 3","5.155 -0.436 188.584",False,32
+Junction Rock Barrier and Roadside Density,Junction Rock Barrier and Roadside Density.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Approach Outer Tree 1 4","6.582 -0.392 200.919",False,32
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Left branch landmarks","0.000 0.000 107.000",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","00_TreePine","-19.761 -0.392 215.848",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","01_RockRound","-18.671 -0.084 223.516",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","02_RockRound","-25.164 -0.084 223.906",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","03_TreePine","-24.074 -0.392 231.573",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","04_RockRound","-31.665 -0.084 230.407",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","05_RockRound","-32.055 -0.084 236.900",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","06_TreePine","-39.723 -0.392 235.810",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","07_RockRound","-38.556 -0.084 243.401",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","08_RockRound","-45.615 -0.084 243.225",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","09_TreePine","-43.394 -0.392 252.024",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","10_RockRound","-49.057 -0.084 246.667",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","11_RockRound","-44.874 -0.084 250.850",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Landmark_Watchtower_Left","-50.634 5.871 245.089",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_00","-2.498 0.000 194.176",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_01","-2.454 0.000 195.923",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_02","3.379 0.000 199.347",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_03","5.224 0.000 203.067",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_04","-5.893 0.000 204.319",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_05","-7.182 0.000 205.635",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_06","-7.933 0.000 206.963",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_07","-8.179 0.000 212.899",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_08","-13.737 0.000 212.695",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_09","-15.121 0.000 214.064",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_10","-16.304 0.000 220.529",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_11","-17.772 0.000 222.426",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_12","-24.325 0.000 223.216",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_13","-24.800 0.000 229.624",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_14","-26.222 0.000 230.497",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_15","-33.329 0.000 232.261",False,30
+Left branch landmarks,Left branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Left_16","-34.356 0.000 238.883",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Right branch landmarks","0.000 0.000 107.000",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","00_TreePine","14.055 -0.392 221.554",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","01_RockRound","21.723 -0.084 220.464",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","02_RockRound","22.113 -0.084 226.957",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","03_TreePine","29.780 -0.392 225.867",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","04_RockRound","28.614 -0.084 233.458",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","05_RockRound","35.107 -0.084 233.848",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","06_TreePine","34.017 -0.392 241.516",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","07_RockRound","41.608 -0.084 240.349",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","08_RockRound","41.432 -0.084 247.408",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","09_TreePine","50.231 -0.392 245.187",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","10_RockRound","44.874 -0.084 250.850",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","11_RockRound","49.057 -0.084 246.667",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Landmark_Watchtower_Right","50.634 5.871 245.089",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_00","2.636 0.000 195.165",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_01","2.830 0.000 197.394",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_02","-3.870 0.000 200.573",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_03","-2.448 0.000 205.559",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_04","6.718 0.000 205.103",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_05","7.600 0.000 206.583",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_06","8.000 0.000 212.772",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_07","14.364 0.000 213.750",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_08","16.755 0.000 215.490",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_09","17.830 0.000 217.015",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_10","18.573 0.000 223.155",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_11","23.981 0.000 222.795",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_12","24.564 0.000 228.789",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_13","26.533 0.000 231.409",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_14","28.503 0.000 232.804",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_15","34.988 0.000 233.967",False,30
+Right branch landmarks,Right branch landmarks.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GrassPatch_Right_16","36.529 0.000 241.145",False,30
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Left - Valley Encounter","0.000 0.000 107.000",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","ValleyWall_0_-1","-21.110 -0.275 219.089",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","ValleyWall_0_1","-17.296 -0.275 222.903",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","ValleyWall_1_-1","-27.335 -0.164 223.723",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","ValleyWall_1_1","-21.930 -0.164 229.128",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","ValleyWall_2_-1","-32.046 -0.275 230.025",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","ValleyWall_2_1","-28.233 -0.275 233.839",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","ValleyWall_3_-1","-38.425 -0.164 234.813",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","ValleyWall_3_1","-33.020 -0.164 240.218",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","ValleyWall_4_-1","-49.159 -0.205 246.564",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","ValleyWall_4_1","-44.771 -0.205 250.952",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","ValleyWall_5_-1","-49.629 -0.112 246.095",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","ValleyWall_5_1","-44.302 -0.112 251.422",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","ValleyWall_6_-1","-49.060 -0.180 246.663",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","ValleyWall_6_1","-44.870 -0.180 250.853",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Display Enemies - no combat","0.000 0.000 107.000",True,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Enemy101_Row1_Col1","-35.289 1.193 167.694",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Enemy101_Row1_Col2","-34.263 1.193 168.719",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Enemy101_Row1_Col3","-33.238 1.193 169.745",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Enemy101_Row2_Col1","-38.117 1.193 170.522",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Enemy101_Row2_Col2","-37.092 1.193 171.548",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Enemy101_Row2_Col3","-36.067 1.193 172.573",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","EncounterFlank_0_-1","-50.384 -0.392 245.340",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","EncounterFlank_0_1","-43.547 -0.392 252.177",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","EncounterFlank_1_-1","-49.604 -0.119 246.120",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","EncounterFlank_1_1","-44.327 -0.119 251.397",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","EncounterFlank_2_-1","-50.384 -0.392 245.340",False,26
+Left - Valley Encounter,Left - Valley Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","EncounterFlank_2_1","-43.547 -0.392 252.177",False,26
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Right - Camp Encounter","0.000 0.000 107.000",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GateFence_-1","43.863 0.000 251.860",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Banner_-1","44.413 0.000 251.311",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Brazier_-1","45.242 0.000 250.481",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Tent_-1","43.965 0.000 251.758",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Crates_-1","45.103 0.000 250.621",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","GateFence_1","50.067 0.000 245.656",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Banner_1","49.518 0.000 246.206",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Brazier_1","48.688 0.000 247.035",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Tent_1","49.965 0.000 245.758",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Crates_1","48.828 0.000 246.896",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","CommandTent - beside road","51.625 0.000 244.098",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Display Enemies - no combat","0.000 0.000 107.000",True,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Enemy101_Row1_Col1","33.238 1.193 169.745",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Enemy101_Row1_Col2","34.263 1.193 168.719",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Enemy101_Row1_Col3","35.289 1.193 167.694",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Enemy101_Row2_Col1","36.067 1.193 172.573",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Enemy101_Row2_Col2","37.092 1.193 171.548",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Enemy101_Row2_Col3","38.117 1.193 170.522",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Landmark_CampGate_Right","52.854 3.868 242.869",False,19
+Right - Camp Encounter,Right - Camp Encounter.prefab,Y Junction - select for preview,"0.000 0.000 107.000","Landmark_CommandTent_Right","41.321 3.124 254.402",False,19
