@@ -18,6 +18,8 @@ public class SaveData
     public List<RouteStageSaveSnapshot> routeStageSnapshots = new List<RouteStageSaveSnapshot>();
     public List<FakeRouteStageSaveSnapshot> fakeRouteSnapshots = new List<FakeRouteStageSaveSnapshot>();
     public int activeFakeRouteStageId = -1;
+    [Tooltip("已解锁的天赋节点 id（TalentNodeConfig.nodeId）。旧档缺失时 MigrateIfNeeded 会补空列表")]
+    public List<string> unlockedTalents = new List<string>();
 
     /// <summary>
     /// 获取铜钱数量（优先从 props 列表读取，兼容旧存档的 coinCount 字段）
@@ -38,6 +40,8 @@ public class SaveData
             props.SetPropAmount(PropType.Coin, coinCount);
             coinCount = 0;
         }
+        // 老档没有天赋字段，JsonUtility 会给 null，必须补上否则所有天赋查询空引用
+        if (unlockedTalents == null) unlockedTalents = new List<string>();
     }
 }
 

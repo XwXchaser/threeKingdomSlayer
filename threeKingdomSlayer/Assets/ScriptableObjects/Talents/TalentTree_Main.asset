@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd892d81fa973d4ba5f0fc391ffb1f6, type: 3}
+  m_Name: TalentTree_Main
+  m_EditorClassIdentifier: 
+  treeId: main
+  nodes:
+  - nodeId: talent_unlock_c2
+    displayName: "\u6307\u5411\u7A81\u523A"
+    description: "\u89E3\u9501 C2\uFF1A\u70B9\u4E00\u4E0B\u540E\u6309\u4F4F\u53EF\u6A2A\u5411\u6539\u5217\uFF0C\u677E\u624B\u6233\u51FA\u6240\u6307\u5217\u524D
+      2 \u6392\u3002"
+    coinCost: 100
+    unlockKind: 0
+    moveConfig: {fileID: 11400000, guid: f0d6ad785959ad941b9b51d73a275d01, type: 2}
+    flagId: 
+    treePosition: {x: 0, y: 420}
+    icon: {fileID: 0}
+  - nodeId: talent_unlock_c4
+    displayName: "\u67AA\u7A81\u6536\u5C3E"
+    description: "\u89E3\u9501 C4\uFF1A\u67AA\u7A81\u4E09\u4E0B\u540E\u6309\u4F4F\u84C4\u529B\u4E0A\u6311\uFF0C\u5168\u5217
+      3 \u6392\u5E76\u6311\u98DE\u3002"
+    coinCost: 150
+    unlockKind: 0
+    moveConfig: {fileID: 11400000, guid: 3fe76a22f36b7744fb64fb06cf75533a, type: 2}
+    flagId: 
+    treePosition: {x: -150, y: 240}
+    icon: {fileID: 0}
+  - nodeId: talent_break_formation
+    displayName: "\u7834\u9635"
+    description: "\u6240\u6709\u653B\u51FB\u9644\u5E26 1 \u70B9\u67B6\u52BF\u4F24\u5BB3\u3002\uFF08\u5360\u4F4D\uFF0C\u5F85\u8BA8\u8BBA\uFF09"
+    coinCost: 200
+    unlockKind: 1
+    moveConfig: {fileID: 0}
+    flagId: break_formation
+    treePosition: {x: 150, y: 60}
+    icon: {fileID: 0}
+  - nodeId: talent_pursuit
+    displayName: "\u8FFD\u51FB"
+    description: "\u51FB\u6740\u654C\u4EBA\u540E\u653B\u51FB\u51B7\u5374 -0.5s\u3002\uFF08\u5360\u4F4D\uFF0C\u5F85\u8BA8\u8BBA\uFF09"
+    coinCost: 250
+    unlockKind: 1
+    moveConfig: {fileID: 0}
+    flagId: pursuit
+    treePosition: {x: -150, y: -120}
+    icon: {fileID: 0}
+  - nodeId: talent_strategy
+    displayName: "\u8FD0\u7B79"
+    description: "\u4E09\u9009\u4E00\u53D8\u6210\u56DB\u9009\u4E00\u3002\uFF08\u5360\u4F4D\uFF0C\u5F85\u8BA8\u8BBA\uFF09"
+    coinCost: 300
+    unlockKind: 1
+    moveConfig: {fileID: 0}
+    flagId: extra_choice
+    treePosition: {x: 150, y: -300}
+    icon: {fileID: 0}
+  - nodeId: talent_undying
+    displayName: "\u4E0D\u5C48"
+    description: "\u8840\u91CF\u4F4E\u4E8E 30% \u65F6\u89E6\u53D1 2 \u79D2\u65E0\u654C\uFF0C\u6BCF\u5C40\u4E00\u6B21\u3002\uFF08\u5360\u4F4D\uFF0C\u5F85\u8BA8\u8BBA\uFF09"
+    coinCost: 400
+    unlockKind: 1
+    moveConfig: {fileID: 0}
+    flagId: undying
+    treePosition: {x: 0, y: -480}
+    icon: {fileID: 0}
