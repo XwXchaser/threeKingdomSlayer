@@ -18,6 +18,9 @@ public class InputManager : MonoBehaviour
     [Tooltip("最小蓄力时间（秒）：所有蓄力攻击（横扫、斩击、穿刺、挑飞）必须按住鼠标达到此时长后，手势判定才生效。\n" +
              "未达到前，任何划动/点击仅触发普通攻击（戳击/斩击）或无操作。")]
     public float minChargeTime = 0.5f;       // 最小蓄力时间（秒）
+
+    [Tooltip("教学关用：置 true 时蓄力永远算 0 级，玩家无法打出蓄力/终结技")]
+    public bool suppressCharging;
     public float swipeThreshold = 30f;       // 滑动判定最小距离（像素）
     [Tooltip("有效滑动必须在此时间内完成，超时的缓慢移动不会触发招式。")]
     public float maxSwipeDuration = 0.25f;
@@ -57,6 +60,7 @@ public class InputManager : MonoBehaviour
     {
         get
         {
+            if (suppressCharging) return 0;                          // 教学关：不允许完成充能
             if (!isLongPress || hasTriggeredDuringHold) return 0;   // 本次按住已经出过招 → 必须先抬手重按
             if (chargeLevelTimes == null || chargeLevelTimes.Length == 0)
                 return isCharged ? 1 : 0;

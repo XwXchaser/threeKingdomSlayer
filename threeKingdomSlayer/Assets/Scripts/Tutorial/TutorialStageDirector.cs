@@ -33,9 +33,19 @@ public class TutorialStageDirector : MonoBehaviour
     public float groundY = -1.8f;
     [Header("初见杀")]
     [Tooltip("最后一波冲锋伤害改成这个值，保证一击必杀")]
-    public float lethalChargeDamage = 9999f;
+    public float lethalChargeDamage = 20f;
     [Tooltip("最后一波同时把敌人血量抬高，避免玩家在演出前把它打死")]
-    public float executionerHealth = 99999f;
+    public float executionerHealth = 0f;
+
+    [Header("行进（N1 → E0）")]
+    [Tooltip("驱动 YJ 场景自带投影的 YScrollSample，只改 progress，不重写卷轴")]
+    public YScrollSample routeVisual;
+    [Tooltip("第几波开始前设置挂起（0 起）。默认第 2 波（索引 1）清完就去 E0")]
+    public int travelAfterWaveIndex = 1;
+    [Tooltip("行进到 E0 的 progress（E0 沿路 90 米 / 全长 325.1 米 ≈ 0.2768）")]
+    public float travelToProgress = 0.2768f;
+    [Tooltip("行进时长（秒）")]
+    public float travelDuration = 2.5f;
 
     [Header("初见杀之后")]
     [Tooltip("收尾后要接的正式路线；留空则回主菜单")]
@@ -61,11 +71,16 @@ public class TutorialStageDirector : MonoBehaviour
 
         _waveSpawner = FindObjectOfType<WaveSpawner>();
         if (_waveSpawner != null)
+        {
             _waveSpawner.OnWaveStarted += OnWaveStarted;
+            _waveSpawner.OnWaveCompleted += OnWaveCompleted;
+        }
 
         DebugLog.Info("[Tutorial] 教学关开始");
         // 教学关不出三选一：升级弹窗会暂停并把下一波卡住
         if (UpgradeChoiceManager.Instance != null) UpgradeChoiceManager.Instance.suppressChoices = true;
+        // 教学关不能完成充能：终结技留到正式关卡再教
+        if (InputManager.Instance != null) InputManager.Instance.suppressCharging = true;
         StartCoroutine(BeginStageNextFrame());
     }
 
@@ -76,8 +91,14 @@ public class TutorialStageDirector : MonoBehaviour
             _stage.OnStageDefeat -= OnStageDefeat;
             _stage.OnStageStateChanged -= OnStageStateChanged;
         }
-        if (_waveSpawner != null) _waveSpawner.OnWaveStarted -= OnWaveStarted;
+        if (_waveSpawner != null)
+        {
+            _waveSpawner.OnWaveStarted -= OnWaveStarted;
+            _waveSpawner.OnWaveCompleted -= OnWaveCompleted;
+            _waveSpawner.holdNextWave = false;
+        }
         if (UpgradeChoiceManager.Instance != null) UpgradeChoiceManager.Instance.suppressChoices = false;
+        if (InputManager.Instance != null) InputManager.Instance.suppressCharging = false;
     }
 
     private void OnStageStateChanged(StageState state)
@@ -115,6 +136,48 @@ public class TutorialStageDirector : MonoBehaviour
         bool isLastWave = waveIndex == _stage.stageConfig.waves.Count - 1;
         if (isLastWave) StartCoroutine(PrepareExecutionerWhenSpawned());
         AlignEnemiesToRoad();
+
+        // 这一波清完要去 E0：先在波次开始时挂起“自动刷下一波”，清完后由行进修完再放行
+        if (routeVisual != null && waveIndex == travelAfterWaveIndex && _waveSpawner != null)
+            _waveSpawner.holdNextWave = true;
+    }
+
+    private void OnWaveCompleted(int waveIndex)
+    {
+        if (!_active || routeVisual == null) return;
+        if (waveIndex != travelAfterWaveIndex) return;
+        StartCoroutine(TravelToE0());
+    }
+
+    /// <summary>
+    /// N1 → E0 的行进：直接推 YJ 场景自带的 YScrollSample.progress（卷轴投影就是它算的），
+    /// 不另写一套移动。行进期间关掉输入，完毕后再放行下一波。
+    /// </summary>
+    private IEnumerator TravelToE0()
+    {
+        var input = InputManager.Instance;
+        if (input != null) { input.gameplayInputEnabled = false; input.CancelCurrentGesture(); }
+
+        routeVisual.animate = false;
+        float from = routeVisual.progress;
+        float to = Mathf.Clamp01(travelToProgress);
+        float duration = Mathf.Max(0.2f, travelDuration);
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            routeVisual.progress = Mathf.Lerp(from, to, Mathf.SmoothStep(0f, 1f, t / duration));
+            yield return null;
+        }
+        routeVisual.progress = to;
+        DebugLog.Info("[Tutorial] 行进完成，到达 E0 progress=" + to.ToString("F3"));
+
+        if (input != null) input.gameplayInputEnabled = true;
+        if (_waveSpawner != null)
+        {
+            _waveSpawner.holdNextWave = false;
+            _waveSpawner.SpawnNextWave();
+        }
     }
 
     /// <summary>
@@ -186,8 +249,12 @@ public class TutorialStageDirector : MonoBehaviour
             if (cavalry == null) continue;
 
             cavalry.OverrideChargeDamageForScript(lethalChargeDamage);
-            enemy.maxHealth = executionerHealth;
-            enemy.currentHealth = executionerHealth;
+            // 血量只在显式指定时才改；现在 109 用配置里的真实血量（500 = 5 套枪突链）
+            if (executionerHealth > 0f)
+            {
+                enemy.maxHealth = executionerHealth;
+                enemy.currentHealth = executionerHealth;
+            }
             prepared++;
             DebugLog.Info($"[Tutorial] {enemy.DebugTag} 设为演出骑将：冲锋伤害 {lethalChargeDamage}、血量 {executionerHealth}");
         }

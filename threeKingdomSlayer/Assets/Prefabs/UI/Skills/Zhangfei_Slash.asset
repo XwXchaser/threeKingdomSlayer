@@ -16,7 +16,7 @@ MonoBehaviour:
   attackType: 1
   damageType: 1
   hitReactionDirection: 1
-  damage: 8
+  damage: 20
   poiseDamage: 0
   interruptsCavalryCharge: 0
   columnMode: 1

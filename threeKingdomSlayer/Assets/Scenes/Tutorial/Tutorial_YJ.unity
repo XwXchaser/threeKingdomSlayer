@@ -268,6 +268,7 @@ MonoBehaviour:
   discardPopupPrefab: {fileID: 7107821338073346431, guid: df18255a4d7748444a03f0106865276d, type: 3}
   choiceCount: 3
   pauseGameDuringChoice: 1
+  suppressChoices: 0
 --- !u!114 &5137004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12184,8 +12185,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 56396570454d8084d8667d63212d6563, type: 2}
   - {fileID: 11400000, guid: 20bd1e13308090744a61640eea921026, type: 2}
   handoffDelaySeconds: 0.8
+  groundY: -1.8
   lethalChargeDamage: 9999
   executionerHealth: 99999
+  routeVisual: {fileID: 1206920530}
+  travelAfterWaveIndex: 1
+  travelToProgress: 0.27682388
+  travelDuration: 2.5
   nextRouteConfig: {fileID: 11400000, guid: 2559bd9f55014d04eb83cf9b7efea656, type: 2}
 --- !u!4 &672136175
 Transform:
@@ -16299,6 +16305,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   longPressDuration: 0.3
   minChargeTime: 1
+  suppressCharging: 0
   swipeThreshold: 50
   maxSwipeDuration: 0.25
   swipeStartDeadZone: 8
@@ -21503,6 +21510,7 @@ MonoBehaviour:
   columnManager: {fileID: 1289233715}
   enemyManager: {fileID: 598331925}
   spawnRoot: {fileID: 0}
+  holdNextWave: 0
 --- !u!1 &1233931788
 GameObject:
   m_ObjectHideFlags: 0

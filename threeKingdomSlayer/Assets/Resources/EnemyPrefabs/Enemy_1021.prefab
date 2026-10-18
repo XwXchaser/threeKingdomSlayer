@@ -54,7 +54,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: "\u76FE\u536B"
   enemyId: 1021
-  maxHealth: 40
+  maxHealth: 150
   occupySlots: 1
   attackSpeed: 0.2
   attackDamage: 10

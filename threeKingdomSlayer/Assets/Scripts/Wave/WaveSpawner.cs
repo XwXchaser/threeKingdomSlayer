@@ -36,8 +36,7 @@ public class WaveSpawner : MonoBehaviour
     private const int SpawnEntryRowOffset = 2;
 
     // 运行时状态
-    private int currentWaveIndex = -1;
-    private bool isSpawning;
+    private int currentWaveIndex = -1;    private bool isSpawning;
     private bool isWaveComplete;
     private bool isAllWavesCompleted;
     private int _waveClearNotificationGeneration;
@@ -48,6 +47,9 @@ public class WaveSpawner : MonoBehaviour
     public System.Action<int> OnWaveStarted;       // waveIndex
     public System.Action<int> OnWaveCompleted;     // waveIndex
     public System.Action OnAllWavesCompleted;
+
+    [Tooltip("置 true 时 SpawnNextWave 不生效（教学关行进、脚本化演出用）")]
+    public bool holdNextWave;
 
     private void Awake()
     {
@@ -131,6 +133,12 @@ public class WaveSpawner : MonoBehaviour
     /// </summary>
     public void SpawnNextWave()
     {
+        // 外部（教学关行进、脚本化演出）暂时挂起下一波，避免清波后自动刷怪
+        if (holdNextWave)
+        {
+            Debug.Log("[WaveSpawner] 下一波被 holdNextWave 挂起");
+            return;
+        }
         if (isAllWavesCompleted) return;
 
         currentWaveIndex++;
