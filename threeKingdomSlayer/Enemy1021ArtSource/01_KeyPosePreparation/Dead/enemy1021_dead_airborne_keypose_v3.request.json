@@ -1,0 +1,33 @@
+{
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "content_type": "multipart/form-data",
+  "fields": {
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "output_format": "png",
+    "background": "opaque",
+    "n": "1",
+    "prompt": "Edit the provided shield soldier into one still 2D game sprite: the final frame of a violent death, not a video. Keep his identity: the same helmet, red plume, face opening, orange eyes, red scarf, cold-grey armour, warm-brown boots, thick dark outline and hard block shading. Do not redesign him and do not turn him into a sword soldier.\n\nOne invisible blow from straight ahead has already killed him and flung his body open in the picture plane. The attacker stays outside the frame. This is the same kind of death as a soldier knocked off his feet: limbs spread, hands open, equipment leaving the hand. It is not a slow collapse and not an ascension.\n\nBODY: rotate the whole figure about 50 to 80 degrees from vertical, inside the picture plane. Keep the chest readable from the front. Do not redraw him as a side-view character. The head slumps toward the upper side of the tilt. Both arms are thrown apart and both hands are open. Both legs are spread, not hanging together.\n\nSHIELD: the wooden shield is knocked out of the screen-left hand. A clear gap of background separates that open hand from the shield. The shield stays whole, at the same drawing size as the source, and remains fully inside the frame. It is not broken, split, duplicated or turned into a sword.\n\nSPREAD, NOT SCALE: the open pose makes the full-body bounding box wider than it is tall, with a width-to-height ratio above 1.4. The spread comes from separated limbs and the loose shield, not from enlarging parts. Helmet, chest, shield and boots keep the same drawing size as the source.\n\nPLACE: centre the whole group. Keep at least 10 percent empty margin on every side. If the pose would touch an edge, tighten the spacing instead of cropping. He is airborne: no floor, no ground contact and no ground shadow.\n\nBackground: flat chroma green RGB(0,177,64), no gradient, scenery or props. No blood, wound, sparks, smoke, dust, flash, speed lines or motion blur. No second character, no text and no UI.\n\nno shield still held, no hand hidden behind the shield, no gripping hand, no slow collapse, no hypnotic fall, no gentle sag, no braced standing pose, no ascension, no rising pose, no upward launch, no triumphant pose, no lying on the ground, no floor, no ground shadow, no side-view redesign, no profile character, no enlarged shield, no enlarged body parts, no stretched limbs, no broken shield, no split shield, no second shield, no sword, no cropped shield, no shield leaving the frame, no cropped limb, no body leaving the frame, no attacker, no second character, no blood, no wound, no sparks, no smoke, no dust, no flash, no speed lines, no motion blur, no scenery, no text, no UI"
+  },
+  "images": [
+    {
+      "order": 1,
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3_green_v1.png",
+      "sha256": "d398a1eb7cd436f8082c6cf7dd7901e59d4f888e757f48b1ac01823f4adf40de",
+      "role": "Sole edit input via image[]: approved 1021 shield-soldier identity, equipment, proportions, drawing style and the screen-left thick wooden shield. No v1 image, no v2 image, no 1011 frames."
+    }
+  ],
+  "output": "C:/Users/steam/Pictures/gptGen/enemy1021_dead_airborne_keypose_v3.png",
+  "prepared_at_utc": "2026-10-16T16:14:14.177996+00:00",
+  "prompt_sha256": "eb06952c4725d02ed4d0c89d30766f4a91360409cfab1a5f17a1924b07f91140",
+  "prompt_body_sha256": "721e78146b5f8057d409d38368437f9edfa9da7da5c9860c2999d595e743587c",
+  "prompt_zh_review": "把提供的盾兵改成一张暴力死亡终态静帧，不是视频。头盔、红缨、面罩、橙眼、红围巾、冷灰甲、暖棕靴、粗描边和硬块阴影保持原样。不得重设计，不得改成剑兵。\n\n画面正前方的一记隐形重击已经把他打死，并把身体在画面平面内甩开。攻击者不入画。这是和剑兵死亡同一类的结果：四肢张开、手张开、装备离开手。不是缓慢软倒，也不是飞升。\n\n整个人在画面平面内偏离竖直约 50°–80°。胸甲仍从正面可读，不要重画成侧面角色。头垂向倾斜后的上侧。双臂甩开，双手张开。双腿分开，不要并拢下垂。\n\n木盾从画面左侧那只手脱手。张开的手和盾之间要有一块清楚的背景空隙。盾保持完整，绘制尺寸与原图一致，并且完整留在画面里。不裂、不分成两块、不出现第二面盾、不变成剑。\n\n张开后的全身包围盒宽大于高，宽高比大于 1.4。宽度来自分开的四肢和脱手的盾，不来自放大部件。头盔、胸甲、盾和靴的绘制尺寸与原图一致。\n\n整组画面居中，四边至少留 10% 空边。会贴边就收紧间距，不许裁切。人在空中，没有地面、没有接地、没有地面阴影。背景是纯色绿幕 RGB(0,177,64)。无血迹、特效、第二个人、文字和 UI。",
+  "negative_clauses": "no shield still held, no hand hidden behind the shield, no gripping hand, no slow collapse, no hypnotic fall, no gentle sag, no braced standing pose, no ascension, no rising pose, no upward launch, no triumphant pose, no lying on the ground, no floor, no ground shadow, no side-view redesign, no profile character, no enlarged shield, no enlarged body parts, no stretched limbs, no broken shield, no split shield, no second shield, no sword, no cropped shield, no shield leaving the frame, no cropped limb, no body leaving the frame, no attacker, no second character, no blood, no wound, no sparks, no smoke, no dust, no flash, no speed lines, no motion blur, no scenery, no text, no UI",
+  "negative_merged_into_prompt": true,
+  "negative_prompt_api_field_used": false,
+  "approval": "User asked to launch the reference-image generation from the handoff (section 0.10 redo wording, shield released).",
+  "retry_policy": "Exactly one POST. No automatic resubmission. Failed, timed-out, empty or visually weak results stop for user review; do not change wording, quality or input_fidelity and resend.",
+  "persistence_boundary": "Static airborne death key pose v3 only. No video, no background removal, no frame extraction, no alignment, no Unity deployment."
+}

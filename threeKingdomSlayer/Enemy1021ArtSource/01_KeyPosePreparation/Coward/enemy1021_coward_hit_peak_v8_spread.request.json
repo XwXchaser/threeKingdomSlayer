@@ -1,0 +1,36 @@
+{
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "content_type": "multipart/form-data",
+  "fields": {
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "output_format": "png",
+    "background": "opaque",
+    "n": "1"
+  },
+  "prompt_sha256": "d4a1d4bc35ca687fd9c1661a55b21187370dd3e9887ef192db5f1cdfbf5646e0",
+  "prompt_body_sha256": "5831599da8259ef2890840dd5fc6ea3c3c2c4c37088f83ded136b3ff36aabd94",
+  "prompt_zh_review": "图1只定角色（1021 无盾士兵）与画风、正面机位、绿幕；图2只用来看“四肢张到多大”，不要抄它的角色和盔甲。输出一张触电式峰值帧：双臂几乎伸向两侧、到肩高或略高、手指张开；双腿也大幅分开、膝基本伸直、两靴拉开；脊柱后弓、胸口顶起、头后仰下巴抬起；整体呈 X 形，手臂与身体之间要留出空绿；两只脚离地且靴下有空隙；左右不对称。不要做跳跃姿势（不要屈膝收腿、不要双脚并拢、不要把手臂弯在胸前），不要侧身，人物大小与图1一致，四边至少 12%。",
+  "negative_clauses": "no jumping pose, no jump, no landing, no knees tucked, no bent knees pulled up, no feet together, no legs together, no narrow stance, no arms bent in front of the chest, no hands in front of the chest, no clasped hands, no crouch, no calm pose, no standing pose, no symmetrical stance, no copied character from image 2, no copied armour from image 2, no side view, no body turn, no shield, no weapon, no second character, no enlarged character, no drawn lightning, no electricity effects, no floor, no shadow, no scenery, no blood, no sparks, no smoke, no dust, no flash, no speed lines, no text, no UI, no cropped limb, no body leaving the frame",
+  "images": [
+    {
+      "order": 1,
+      "path": "C:/threeKingdomSlayer/threeKingdomSlayer/Library/Locus/tmp/enemy1021_coward_idle_peak_v1/01_coward_idle_peak_source_green_00B140_1024.png",
+      "role": "Character identity, style, front camera, green background.",
+      "sha256": "3fd64c935cd7b5adf562d2729899430e2156120edf0575e969e2faf95146a6c0"
+    },
+    {
+      "order": 2,
+      "path": "C:/threeKingdomSlayer/threeKingdomSlayer/Library/Locus/tmp/enemy1021_coward_hit_reference/pose_ref_1011_dead3_green_1024.png",
+      "role": "Spread/extent reference only (own 1011 dead frame, limbs open, airborne). No identity or style transfer.",
+      "sha256": "32e1277ce6487d0871a1d620d51fa1e0de89680562d5425efeed8a726473c41a"
+    }
+  ],
+  "output": "C:/Users/steam/Pictures/gptGen/enemy1021_coward_hit_peak_v8_spread.png",
+  "prepared_at_utc": "2026-10-18T03:55:55.662753+00:00",
+  "approval": "用户 2026-10-17：“看着像跳起来而不是被电那种四肢完全张开的感觉”",
+  "retry_policy": "Exactly one POST. No automatic resubmission.",
+  "persistence_boundary": "Single reference still only. No video submission, no matting, no Unity deployment."
+}

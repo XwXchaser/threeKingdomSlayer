@@ -56,9 +56,22 @@ python Locus/tools/art-sync/verify_art_sync.py     # 期望：18 条一致，0 �
 #    追加 MANIFEST.csv 后 git add/commit/push；本机再 pull 即可拿到
 ```
 
+> 2026-10-19：上述步骤已由 `steam` 机执行完毕，结果见 §5。
+
 ## 4. 明确没做（保持原状）
 
 - 1011 的 `03_SelectedFrames/`（129MB）、109 的 `03_SelectedFrames/`（194MB）、`05_ColorCorrection/`、`02_RawFrames/`、`04_DeliveredSprites/` 仍只留本机。理由：交付精灵已在 `Assets/` 入库；选帧与抠图帧可由 `00_SourceVideos/` 里的视频 + 各组 `selected_frames_manifest.json` 重建。
 - 109 的 `cavalry_lancer_striking_v6` 待用户动作帧验收，验收后再回填 `00_SourceVideos/` 并补 `MANIFEST.csv`。
-- 1021 的素材本机没有，只能由 `steam` 机按 `Enemy1021ArtSource/README.md` 提交。
+- ~~1021 的素材本机没有，只能由 `steam` 机按 `Enemy1021ArtSource/README.md` 提交。~~ 2026-10-19 已由 `steam` 机回填，见 §5。
 - `Locus/knowledge/memory/video-generation-case-log.md` 里提到的 `Library/Locus/tmp/cavalry_concept/`（750MB 中转目录）未做迁移；其中已验收内容的成品已在 `Enemy109ArtSource/03_SelectedFrames/TurnToIdle/` 等目录落盘，但中转目录被清理后其诊断/脚本会丢，如需长期保存另议。
+
+## 5. `steam` 机回填结果（2026-10-19）
+
+- **拉取**：`git pull --ff-only` 到 `2a83d89`，1011 的 `01_SourceVideos/`、109 的 `00_SourceVideos/` 与 `01_KeyPosePreparation/` 均正常落盘；本机没有 `.git/info/exclude` 阻塞。
+- **校验**：`python Locus/tools/art-sync/verify_art_sync.py` → **28 条一致，0 条有问题**（1011 10 + 109 8 + 1021 10）。
+- **1021 回填**：`Enemy1021ArtSource/` 现有 10 支已验收源视频（22.96MB，`00_SourceVideos/MANIFEST.csv`）+ 10 张已验收关键姿态与 3 张 G1 绿幕副本（9.58MB，`01_KeyPosePreparation/` + `00_Index/keyposes.csv`）。
+  - 关键姿态 sha256 与 `memory/video-generation-case-log.md` 的既有记录逐条吻合（`enemy1021_shield_hold_v3` `446d6d55…`、绿幕副本 `d398a1eb…`、`enemy1021_hit_front_keypose_v1` `0c674c36…`、`enemy1021_coward_idle_peak_keypose_v1` `8b6656bc…` 等），可作交叉验证。
+  - 8 支未验收/待验收视频与全部失败姿态图不入库，原因见 `Enemy1021ArtSource/README.md` 的「未入库」一节。
+  - `enemy1021_hit_front_keypose_v1.png` 姿态验收本未通过，仅作为已验收 HitFlash 视频图 2 的输入留档入库，README 已标注不得再当基准。
+- **未做**：选帧、抠图帧、补边成品仍只在各机本地（交付精灵已在 `Assets/Sprites/Enemy/Enemy1021/`）。
+- **待办**：`enemy1021_coward_hit_v4.mp4` 待用户看片、`enemy1021_coward_dead_v1_10s.mp4` 选帧待验收；通过后按同一流程补进 `00_SourceVideos/` 与 `MANIFEST.csv`。

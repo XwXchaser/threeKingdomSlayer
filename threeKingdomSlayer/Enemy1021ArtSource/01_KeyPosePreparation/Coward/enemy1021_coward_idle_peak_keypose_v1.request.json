@@ -1,0 +1,33 @@
+{
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "content_type": "multipart/form-data",
+  "fields": {
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "output_format": "png",
+    "background": "opaque",
+    "n": "1",
+    "prompt": "Edit the provided image into one still 2D game sprite. This is the highest point of a nervous breathing loop, not a new action and not a video. Keep the same unshielded soldier, the same front view, and the same planted stance.\n\nBoth open palms stay toward the camera. The screen-left hand stays high beside the face, and the screen-right hand stays in front of the chest. Fingers stay spread. There is no shield and no weapon in either hand.\n\nChange only the breath: both shoulders rise and pull slightly inward, the neck shortens a little, and the helmet ducks by only a few pixels. The fingers open a little wider. The red plume shifts slightly. Both boots, both knees, and the root stay where they are. Each hand moves by no more than about 20 pixels. The full-body size stays within 5 percent of the source.\n\nDo not enlarge, shrink, or stretch him. Do not turn the body, step, crouch lower, attack, or flinch. Flat chroma green RGB(0,177,64), no floor, shadow, scenery, effects, text, or UI. Keep at least 15 percent empty margin on every side.\n\nno shield, no weapon, no closed fist, no lowered hands, no guard stance, no attack, no hit reaction, no step, no walk cycle, no deeper crouch, no enlarged character, no stretched limbs, no body turn, no side view, no floor, no shadow, no scenery, no effects, no text, no UI, no cropped limb, no body leaving the frame"
+  },
+  "images": [
+    {
+      "order": 1,
+      "path": "C:/threeKingdomSlayer/threeKingdomSlayer/Library/Locus/tmp/enemy1021_coward_idle_peak_v1/01_coward_idle_peak_source_green_00B140_1024.png",
+      "role": "Sole edit input via image[]: the accepted ShieldBreak last frame, background unified to RGB(0,177,64), character not scaled. No shieldBreak6 sprite, no earlier coward target key pose, no shield-held Idle.",
+      "sha256": "3fd64c935cd7b5adf562d2729899430e2156120edf0575e969e2faf95146a6c0"
+    }
+  ],
+  "output": "C:/Users/steam/Pictures/gptGen/enemy1021_coward_idle_peak_keypose_v1.png",
+  "prepared_at_utc": "2026-10-17T08:39:39.827796+00:00",
+  "prompt_sha256": "7cd717992fcc1b28328db8e5065d75794beb93afffed24d41803f192cc2a6fbb",
+  "prompt_body_sha256": "8d85157a4364051dba028aab256c5a9dc18e425e79feb4be2b0a9553d8180e36",
+  "prompt_zh_review": "把提供的图改成一张静帧，是胆怯待机呼吸的最高点，不是新动作，也不是视频。同一个无盾士兵，同一个正面，同一套站姿。\n\n两只手掌继续朝向镜头。画面左侧的手仍高举在脸侧，画面右侧的手仍挡在胸前，手指张开。两只手里都没有盾，也没有武器。\n\n只改呼吸：双肩略上提并内收，脖子略缩短，头盔只低下几个像素。手指张得稍大一点，红缨轻轻摆动。双脚、双膝和身体根部保持原位。每只手的移动不超过约 20 像素，全身尺寸与原图相差不超过 5%。\n\n不得放大、缩小或拉长，不得转身、迈步、再蹲低、攻击或做受击。背景为纯色绿幕 RGB(0,177,64)，无地面、阴影、场景、特效、文字和 UI。四边至少留 15% 空边。",
+  "negative_clauses": "no shield, no weapon, no closed fist, no lowered hands, no guard stance, no attack, no hit reaction, no step, no walk cycle, no deeper crouch, no enlarged character, no stretched limbs, no body turn, no side view, no floor, no shadow, no scenery, no effects, no text, no UI, no cropped limb, no body leaving the frame",
+  "negative_merged_into_prompt": true,
+  "negative_prompt_api_field_used": false,
+  "approval": "User asked this side to launch the image generation from the updated handoff, section 0.12.",
+  "retry_policy": "Exactly one POST. No automatic resubmission on failure, timeout, empty or weak result.",
+  "persistence_boundary": "Static breathing-peak key frame only. No loop assembly, no video, no matting, no alignment, no Unity deployment."
+}

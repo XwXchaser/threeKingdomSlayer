@@ -1,0 +1,49 @@
+{
+  "state": "generated_downloaded_verified",
+  "post_attempts": 1,
+  "retry_policy": "one POST only; no automatic resubmission",
+  "submitted_at_utc": "2026-10-14T15:02:56.517966+00:00",
+  "request_path": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_break_coward_target_keypose_v1.request.json",
+  "response_path": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_break_coward_target_keypose_v1.response.json",
+  "prompt_sha256": "48f226b69481b29debe7ee0779ea8011fba07d6f63449dbe46b56e5eacdeded7",
+  "post_exit_code": 0,
+  "http_status": 200,
+  "post_seconds": 64.81,
+  "response_observed_at_utc": "2026-10-14T15:04:01.326820+00:00",
+  "usage": {
+    "input_tokens": 3194,
+    "input_tokens_details": {
+      "image_tokens": 2048,
+      "text_tokens": 1146
+    },
+    "output_tokens": 7024,
+    "output_tokens_details": {
+      "image_tokens": 7024,
+      "text_tokens": 0
+    },
+    "total_tokens": 10218
+  },
+  "cost": null,
+  "task_id": null,
+  "image_delivery": "url",
+  "image_url_host": "r2.52image.xyz",
+  "download_exit_code": 0,
+  "download_http_status": 200,
+  "download_seconds": 5.39,
+  "completed_at_utc": "2026-10-14T15:04:06.754296+00:00",
+  "image": {
+    "path": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_break_coward_target_keypose_v1.png",
+    "bytes": 1011668,
+    "sha256": "24e10b01a3e3be3c848f11a85198393fad3721c6869f221a31a3bf0387097f06",
+    "size": [
+      1024,
+      1024
+    ],
+    "mode": "RGB",
+    "png_color_type": 2,
+    "decoded": true
+  },
+  "visual_status": "user_accepted_pose",
+  "user_acceptance": "accepted",
+  "user_acceptance_note": "用户明确反馈已验收，授权准备ShieldBreak三关键姿态视频生成；尚未授权实际创建视频任务"
+}

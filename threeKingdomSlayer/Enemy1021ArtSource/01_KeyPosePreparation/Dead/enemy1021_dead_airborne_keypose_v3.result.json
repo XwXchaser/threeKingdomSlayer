@@ -1,0 +1,50 @@
+{
+  "state": "generated_downloaded_verified",
+  "submitted_at_utc": "2026-10-16T16:14:14.178824+00:00",
+  "post_attempts": 1,
+  "request_path": "C:/Users/steam/Pictures/gptGen/enemy1021_dead_airborne_keypose_v3.request.json",
+  "response_path": "C:/Users/steam/Pictures/gptGen/enemy1021_dead_airborne_keypose_v3.response.json",
+  "prompt_sha256": "eb06952c4725d02ed4d0c89d30766f4a91360409cfab1a5f17a1924b07f91140",
+  "retry_policy": "Exactly one POST. No automatic resubmission. Failed, timed-out, empty or visually weak results stop for user review; do not change wording, quality or input_fidelity and resend.",
+  "post_exit_code": 0,
+  "http_status": 200,
+  "post_seconds": 108.071,
+  "response_observed_at_utc": "2026-10-16T16:16:02.250642+00:00",
+  "usage": {
+    "prompt_tokens": 667,
+    "completion_tokens": 946,
+    "total_tokens": 1613,
+    "input_tokens": 667,
+    "output_tokens": 946,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 667
+    },
+    "output_tokens_details": {
+      "image_tokens": 946,
+      "text_tokens": 0
+    }
+  },
+  "cost": null,
+  "task_id": null,
+  "image_delivery": "url",
+  "image_url_host": "pre-signed-firefly-prod.s3-accelerate.amazonaws.com",
+  "download_exit_code": 0,
+  "download_http_status": 200,
+  "download_seconds": 4.7801,
+  "completed_at_utc": "2026-10-16T16:16:07.095126+00:00",
+  "image": {
+    "path": "C:/Users/steam/Pictures/gptGen/enemy1021_dead_airborne_keypose_v3.png",
+    "bytes": 1122630,
+    "sha256": "dba1290c0b78b3e4df861fe63f53b2e0d83c973ba133a5587f87fe2f84669785",
+    "size": [
+      1024,
+      1024
+    ],
+    "mode": "RGB",
+    "png_color_type": 2,
+    "decoded": true,
+    "size_matches_request": true
+  },
+  "visual_status": "Awaiting user visual review of the airborne death key pose; no video before acceptance"
+}

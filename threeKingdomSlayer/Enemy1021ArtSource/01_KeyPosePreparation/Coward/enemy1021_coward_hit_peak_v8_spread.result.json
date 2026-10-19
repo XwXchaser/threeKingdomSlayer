@@ -1,0 +1,44 @@
+{
+  "state": "generated_downloaded_verified",
+  "submitted_at_utc": "2026-10-18T03:55:55.663531+00:00",
+  "post_attempts": 1,
+  "request_path": "C:/Users/steam/Pictures/gptGen/enemy1021_coward_hit_peak_v8_spread.request.json",
+  "prompt_sha256": "d4a1d4bc35ca687fd9c1661a55b21187370dd3e9887ef192db5f1cdfbf5646e0",
+  "post_exit_code": 0,
+  "http_status": 200,
+  "post_seconds": 65.561,
+  "response_observed_at_utc": "2026-10-18T03:57:01.221738+00:00",
+  "usage": {
+    "input_tokens": 2617,
+    "input_tokens_details": {
+      "image_tokens": 2048,
+      "text_tokens": 569
+    },
+    "output_tokens": 7024,
+    "output_tokens_details": {
+      "image_tokens": 7024
+    },
+    "total_tokens": 9641
+  },
+  "cost": null,
+  "task_id": null,
+  "image_delivery": "url",
+  "image_url_host": "r2.52image.xyz",
+  "download_exit_code": 0,
+  "download_http_status": 200,
+  "download_seconds": 68.123,
+  "image": {
+    "path": "C:/Users/steam/Pictures/gptGen/enemy1021_coward_hit_peak_v8_spread.png",
+    "bytes": 998991,
+    "sha256": "3f8b8607cbbae9345f84f03a0c526f904e7ed6f5ee08f9148873c1b93370be63",
+    "size": [
+      1024,
+      1024
+    ],
+    "mode": "RGB",
+    "png_color_type": 2,
+    "decoded": true,
+    "size_matches_request": true
+  },
+  "completed_at_utc": "2026-10-18T03:57:03.813845+00:00"
+}

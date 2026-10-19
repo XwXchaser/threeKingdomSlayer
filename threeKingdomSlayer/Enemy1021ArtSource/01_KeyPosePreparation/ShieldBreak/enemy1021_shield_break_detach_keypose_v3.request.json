@@ -1,0 +1,71 @@
+{
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "method": "POST",
+  "content_type": "multipart/form-data",
+  "parameters": {
+    "model": "gpt-image-2.5-sunburst",
+    "quality": "max",
+    "input_fidelity": "high",
+    "size": "1024x1024",
+    "output_format": "png",
+    "background": "opaque",
+    "n": "1"
+  },
+  "prompt_en": "Create one single key-pose image for Enemy 1021's standing ShieldBreak animation: an impact arriving from SCREEN-RIGHT knocks the upper body toward SCREEN-LEFT, passively opens the shield arm, forces the anatomical right hand open with extended fingers, and has JUST separated the shield from that hand. This is not an intentional throw, a reach toward the shield, or a deliberate shield placement. Show one complete character and one complete shield, not a storyboard or an environment illustration.\n\nImage 1 is the sole identity and geometry anchor. Preserve the same body proportions, helmet, faceplate, red plume, scarf, armor, belt, boots, wooden shield construction, palette, pixel density and drawing scale. Use Image 1 for the canvas, pelvis, belt center and both boot contact coordinates. Image 2 provides ONLY the correct off-shield-side hit silhouette: chest, shoulders and head recoiling toward SCREEN-LEFT, the screen-left shoulder higher than the screen-right shoulder, and the shield arm being passively pulled open. Do not copy its still-gripping hand. Do not use Image 2 to change the character scale or boot contact coordinates.\n\nEvery direction below refers to the viewer's screen, not anatomical sides. The impact enters from SCREEN-RIGHT, hits the exposed screen-right chest and shoulder, and drives the upper body toward SCREEN-LEFT. Drive the screen-right impact shoulder down and inward toward screen-left. Lift the screen-left shield shoulder and pull it outward toward screen-left. Open the chest slightly toward screen-left and backward; do not curl toward screen-right, bow forward, or tuck both shoulders into a defensive guard. Relative to the fixed belt buckle, the helmet center and upper chest center must be visibly on its SCREEN-LEFT side. Whip the helmet toward SCREEN-LEFT with the chin slightly raised, matching the reaction silhouette of Image 2. Never reverse this into a screen-right lean. Keep the body front-readable, not a side or three-quarter view, and do not translate the whole character.\n\nThe character's anatomical RIGHT ARM is on SCREEN-LEFT and is the primary release read. The impact passively draws it outward toward screen-left. Open the upper arm and forearm; extend the elbow moderately without locking it straight. Do not retract it toward the chest. Keep the hand near the former grip point behind the shield. Make this RIGHT HAND clearly FULLY OPEN: abduct the thumb away from the four fingers; extend the four fingers in a natural spread fan, retaining the glove and normal hand size. The wrist lags slightly so the hand reads as having been forced out of its grip, not as a palm pushing the shield away. No curled gripping fingers, half-fist, drooping claw, or tucked-in forearm.\n\nPlace the shield on SCREEN-LEFT just outside the opening right hand. Preserve Image 1's shield size, wooden boards, iron edging and rivets. Separate it only a short distance toward screen-left and slightly upward along the opened arm's motion. Its inner edge remains close to the newly extended fingers, with a narrow strip of green background approximately half a palm width between them. This is the instant of failed contact, not a shield parked beside the soldier, flying far away, or being chased by a straight reaching arm. Keep the shield intact and fully opaque. Do not break, fade, shrink or send it out of frame.\n\nThe anatomical LEFT ARM is on SCREEN-RIGHT and trails passively after the hit. Keep its upper arm relatively low, its elbow relaxed, and its wrist and fingers loose with a slight outward hang. Do not guard or hug the chest, clench a fist or catch the shield. Flex the knees slightly under the force. Both boots remain planted at Image 1's original contacts and spacing. No step, jump, launch or fall.\n\nLock the front-facing camera and 1024x1024 canvas. Preserve Image 1's drawing scale and pixel-art rendering; change only local articulation and the shield-to-hand contact. Keep helmet, plume, limbs, boots and shield complete inside the frame, with at least 15 percent empty safety margin on each side. Use one uniform opaque production green RGB(0,159,62), without texture, floor or shadow. Preserve cold iron gray, warm brown wood, vermilion red and warm gold, sharp dark contours and hard pixel blocks. No sparks, flashes, splinters, trails or other effects.\n\nNegative constraints: upper-body recoil toward screen-right, helmet to the right of the belt buckle, shield forearm tucked against the chest, curled gripping right hand, half-fist, claw hand, intentional shield throw, palm pushing the shield, reaching after the shield, shield far away or parked beside the character, free hand guarding the chest or catching the shield, widened foot spacing, whole-body translation or scaling, mirrored character, shield on screen-right, duplicate shield, sword, spear, side view, three-quarter view, stepping, sliding, jumping, launching, falling, broken or fading shield, visual effects, crop, camera motion, scenery, floor, shadow, gradient or textured background, checkerboard, text, watermark",
+  "prompt_zh_review": "生成一张 Enemy 1021 盾兵站立破盾动作的单张关键姿态图：角色受到来自画面右侧的重击，上身被打向画面左侧，持盾臂被动打开，右手五指伸展开，盾刚刚脱手。不是主动扔盾、伸手追盾或主动放盾。只画一个完整角色和一面完整盾牌，不画分镜或场景。\n\n参考图1是唯一身份和几何基准：保持同一个角色的体型、头盔、面罩、红缨、围巾、护甲、腰带、靴子、木盾结构、配色、像素密度和绘制比例；画布、骨盆、腰带中心及两只靴的接地点以图1为准。参考图2只提供正确的反侧受击姿态：胸肩和头向画面左侧受击、画面左肩高而右肩低、持盾臂被动向外打开。不要复制图2仍然握盾的手势，不用图2改变角色尺度或脚底坐标。\n\n所有方向均指观看画面的左右，不是角色自身左右。攻击从画面右侧进入，作用于暴露的画面右侧胸肩，推动上半身向画面左侧。画面右侧受击肩下压并向左收；画面左侧持盾肩上提并向左外侧打开。胸口轻微向左后方展开，不能向右缩、低头前弓或把两肩收成防御架势。以固定腰带扣为参照，头盔中心和上胸中心必须清楚偏在它的画面左侧；头盔向画面左侧被甩偏，下巴略抬，形成与图2一致的受击轮廓，不能反向偏向画面右侧。身体仍正面可读，不转为侧身或三分之四视角，不整体横移。\n\n角色解剖学右臂位于画面左侧，是脱手动作的主读点。它被冲击带向画面左外侧，上臂与前臂打开，肘关节适度伸展但不锁直，不向胸前回收。手部停留在盾背原握持点附近。右手明确完全张开：拇指外展，与其余四指分开；四指伸展成自然扇形，保持手套和正常手掌尺寸。手腕稍滞后，表现手指被迫松开握持，而不是掌心向盾发力推出。不能画成弯曲抓握、半握拳、下垂蜷缩的手，也不能用回缩前臂表现失盾。\n\n盾位于画面左侧、张开右手的外侧，保持参考图1的大小、木板、铁包边和铆钉。它沿持盾臂被带开的方向只向画面左上方短距分离，盾的内侧边缘仍紧邻刚张开的手指，与手之间留约半个手掌宽的绿色间隙。这是握持刚失效的接触关系，不能把盾摆在旁边、飞到远处或让手伸直去追盾。盾保持完整和完全不透明，不碎裂、不淡出、不缩小、不飞出画面。\n\n角色左臂位于画面右侧，随受击被动滞后：上臂仍较低，肘部放松，手腕和手指松弛，略向外侧落下。不要护胸、抱胸、握拳或伸手接盾。双膝轻微弯曲承力，两只靴始终着地，脚距保持图1原样；人物没有迈步、跳起、被击飞或倒地。\n\n固定正面机位和1024×1024画布，保留图1的绘制尺度与像素风格，只有局部关节和盾手关系改变。头盔、红缨、四肢、双靴和盾牌完全入框，四边至少留15%安全空白。使用均匀不透明绿幕 RGB(0,159,62)，无纹理、地面或阴影。保持冷铁灰、暖棕木、朱红和暖金的材质关系，以及清晰深色轮廓、硬边像素块面。无火花、闪光、木屑、残影或其他特效。",
+  "prompt_sha256": "fb0a1bdb8607fbb3a7f8cf47773ff5946ac1cbeed343bb76fa9a4fac73148b41",
+  "references": [
+    {
+      "order": 1,
+      "source": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3.png",
+      "source_sha256": "446d6d558baa7d4a5d6e6fd9bf712c07b99c63a1c4f2e711cc0b28a7564427d0",
+      "upload_copy": "C:/threeKingdomSlayer/threeKingdomSlayer/Library/Locus/tmp/enemy1021_shield_break_keypose_v1/reference_uploads/01_idle_identity_green_009F3E.png",
+      "upload_sha256": "c5c2be6203aa41afd90ff3059b748252e1b458e063855b1d429980aef6584106",
+      "role": "唯一身份、绘制比例、装备材质、盾形、画布及双脚坐标基准；不是本次受击姿态",
+      "corner_rgb_median": [
+        0,
+        159,
+        62
+      ],
+      "corner_rgb_std": [
+        0,
+        0,
+        0
+      ],
+      "actual_sha256_at_submit": "c5c2be6203aa41afd90ff3059b748252e1b458e063855b1d429980aef6584106"
+    },
+    {
+      "order": 2,
+      "source": "C:/Users/steam/Pictures/gptGen/enemy1021_hit_right_keypose_v2.png",
+      "source_sha256": "de620e2a72353f32aefcebd1f8c1bcd81575b64968f8ba7afc7c2dfc0404aeee",
+      "upload_copy": "C:/threeKingdomSlayer/threeKingdomSlayer/Library/Locus/tmp/enemy1021_shield_break_keypose_v1/reference_uploads/02_hit_right_reaction_green_009F3E.png",
+      "upload_sha256": "1e03b5e7c329160d807f218ec5db1b5d6ad109d58603b159a9b2ea203443d732",
+      "role": "仅提供正确的右侧来力、上身向画面左侧受击、头部左偏、非对称肩线和盾臂被动打开；不复制仍然握盾的手势，不决定双脚坐标或绘制尺度",
+      "corner_rgb_median": [
+        0,
+        159,
+        62
+      ],
+      "corner_rgb_std": [
+        0,
+        0,
+        0
+      ],
+      "actual_sha256_at_submit": "1e03b5e7c329160d807f218ec5db1b5d6ad109d58603b159a9b2ea203443d732"
+    }
+  ],
+  "g1_input_background_rgb": [
+    0,
+    159,
+    62
+  ],
+  "g1_report": "C:/threeKingdomSlayer/threeKingdomSlayer/Library/Locus/tmp/enemy1021_shield_break_keypose_v1/G1_input_preparation.json",
+  "rejected_candidates_not_uploaded": [
+    "C:/Users/steam/Pictures/gptGen/enemy1021_shield_break_detach_keypose_v1.png",
+    "C:/Users/steam/Pictures/gptGen/enemy1021_shield_break_detach_keypose_v2.png"
+  ],
+  "output": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_break_detach_keypose_v3.png",
+  "approval": "user_confirmed_start_generation",
+  "prepared_at_utc": "2026-10-14T14:23:50.388198+00:00",
+  "retry_policy": "one POST only; no automatic resubmission"
+}

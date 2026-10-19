@@ -1,0 +1,74 @@
+{
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "method": "POST",
+  "content_type": "multipart/form-data",
+  "parameters": {
+    "model": "gpt-image-2.5-sunburst",
+    "quality": "max",
+    "input_fidelity": "high",
+    "size": "1024x1024",
+    "output_format": "png",
+    "background": "opaque",
+    "n": "1"
+  },
+  "prompt_en": "Create a single target key-pose image for the end of Enemy 1021's standing ShieldBreak animation. Show the unshielded fearful end pose after the approved instant when the shield has just left the hand and immediately before code switches to CowardIdle. This is a fixed-canvas game Sprite key pose, not a cinematic screenshot, scene illustration, video storyboard, or second hit reaction.\n\nImage 1 is the sole identity and geometry anchor for Enemy 1021. Preserve the exact same character, heavy silver-gray pixel helmet, faceplate, red plume and scarf, brown and cold-gray metal armor, red cloth, compact chibi proportions, short legs, thick dark pixel outline, hard pixel-block shading, belt and boots. Use Image 1 to lock the canvas, drawing scale, pelvis, belt center, both boot contact points and pixel density. Image 2 is the user-approved ShieldBreak release instant and is used only for motion continuity: the impact comes from screen-right, the upper body has residual recoil toward screen-left, and the character's screen-left right hand is already open. Do not carry the shield from Image 2 into the target. The target image must be completely shield-free. Do not upload or copy the low-resolution Enemy2 CowardIdle/Lost placeholder appearance.\n\nCore state: the shield has completely left both the character and the image. Absolutely no shield, detached falling shield, shield fragments, shield afterimage, or any other weapon may appear in the target. Do not shrink, fade, hide or partially retain the shield; the image must clearly show the same 1021 soldier after losing all protection. The character's right hand no longer reaches toward screen-left or chases the shield; it returns along a recovery arc to the front of the body.\n\nContinue naturally from Image 2. In Image 2 the character was struck from screen-right, with the head, shoulders and upper body recoiling toward screen-left and the screen-left right hand spread open. In the target pose, the screen-left residual recoil has damped, but do not violently reverse the body toward screen-right. Keep the pelvis, belt center and both boots anchored. Withdraw the upper chest, shoulders and head backward relative to the pelvis; raise the shoulders toward the helmet, shorten the neck, and pull the chest inward to show fear and the loss of protection. Do not bow forward, lower the head into a curl, or turn the chest into a boxing guard. Keep the body front-readable with the helmet and faceplate facing the camera. Use local recovery only, not a side or three-quarter turn.\n\nBoth hands are the primary read of the target pose. The character's anatomical right hand on screen-left follows the open-hand arc from Image 2 and returns to a front-left chest position. The anatomical left hand on screen-right follows slightly later and rises to a front-right chest position. Both hands are in front of the body, between shoulder height and below the face, palms facing the camera and the unseen attacker in an instinctive fearful protective gesture, not a combat block. Keep both elbows bent and near the body without pinning them to the ribs. Leave a clear gap between the two hands; do not cross the arms or hug the chest. Both hands must be fully open: thumb separated from the four fingers, four fingers naturally extended with readable gaps, relaxed wrists. No fists, half-fists, gripping, clawed curled fingers, or hidden hands. The screen-left anatomical right hand must especially not continue reaching toward the vanished shield and must not become an active palm strike.\n\nBend both knees slightly and keep both boots fully planted with the same spacing as Image 1. The character may lower the center of gravity slightly, but must not step, slide, jump, launch, fall, lie down, or translate as a whole. Preserve the overall character size, head-to-body proportions and equipment design from Image 1. Do not use scaling or recentering to express fear.\n\nLock a front-facing orthographic camera and a 1024x1024 canvas, with at least 15 percent empty safety margin on every side. Keep the helmet, plume, both arms, both hands, boots and complete character silhouette inside the frame. Use one uniform opaque production green matte, target RGB(0,159,62), with no texture, floor or shadow; the actual output background must be measured after generation and the prompt color is not a lock guarantee. Preserve the 1021 cold iron gray, vermilion red and warm gold material relationships, sharp dark outline and hard pixel blocks. No shield, weapon, sparks, flashes, splinters, trails, smoke or other visual effects.\n\nNegative constraints: any shield, detached falling shield, shield fragments, shield afterimage, shield fading or shrinking, sword, spear, other weapon, right hand chasing the shield, right hand reaching toward screen-left, right hand retracting out of view, gripping hands, fists, half-fists, clawed curled fingers, fused fingers, hidden hands, crossed arms, hugging the chest, boxing guard, active block, active palm strike, forward curl, lowered head, curled posture, violent reverse recoil toward screen-right, side view, three-quarter view, heroic stance, widened feet, stepping, sliding, jumping, launching, falling, whole-body translation, whole-body scaling, recentering, changed character identity, low-resolution placeholder soldier, multiple characters, scenery, floor, shadow, textured background, gradient, checkerboard, sparks, flashes, splinters, smoke, afterimages, blood, text, UI, watermark",
+  "prompt_zh_review": "生成一张用于 Enemy 1021 站立 ShieldBreak 动画末端的单张目标关键姿态图。它表现已验收的“盾刚刚脱手”瞬间之后、代码切换到 CowardIdle 之前的无盾胆怯终态。它是固定画布上的游戏 Sprite 关键姿态，不是电影截图、场景插画、视频分镜，也不是第二次受击姿态。\n\n参考图1是 Enemy 1021 唯一的身份和几何基准：保持同一个角色、银灰色厚重像素头盔、面罩、红色缨带和围巾、棕色与冷灰色金属甲胄、红色布料、紧凑的Q版体型、短腿、粗黑像素轮廓、硬边像素块面阴影、腰带和靴子。使用参考图1锁定画布、人物绘制比例、骨盆、腰带中心、两只靴的接地点和像素密度。参考图2是已验收的 ShieldBreak 脱手瞬间，只用于保持动作连续性：来自画面右侧的冲击、上身向画面左侧的余势、画面左侧已经张开的角色右手。不要把参考图2中的盾牌带入目标图；目标图必须完全无盾。不要上传或复制 Enemy2 的低分辨率 CowardIdle/Lost 占位形象。\n\n核心状态：盾已经完全离开画面和角色。目标图中绝对不能出现盾牌、独立掉落盾、盾牌碎片、盾牌残影或任何其他武器。不要把盾牌缩小、淡出或藏到身后；画面必须明确是同一名1021盾兵已经失去防护后的无盾状态。角色右手不再伸向画面左侧追盾，而是在收势弧线中回到身体前方。\n\n动作从参考图2连续收势：参考图2中角色受到画面右侧冲击、头肩和上身向画面左侧偏，画面左侧的角色右手张开。目标姿态中左侧余势已经衰减，但不能反向把身体猛烈甩向画面右侧。骨盆、腰带中心和双脚保持锚定；上胸、双肩和头部相对骨盆向后撤，肩膀上提靠近头盔，颈部缩短，胸口收回，表现受惊和失去盾牌后的胆怯。不要前弓低头，不要把胸口缩成拳击防御，不要做英雄式站姿。身体仍正面可读，头盔和面罩朝向镜头，只有局部收势，不做侧身或三分之四转身。\n\n双手是目标姿态的主要读点。角色解剖学右手在画面左侧，沿参考图2中张开手的弧线回收到胸前偏左位置；角色解剖学左手在画面右侧，稍晚跟随并抬到胸前偏右位置。两只手都位于身体前方、肩膀以下到面部以下的保护区域，手掌朝向画面前方和无形攻击者，形成害怕的下意识前挡，而不是战斗格挡。两肘保持弯曲并靠近身体但不要夹死，双手之间留出清楚空隙，不交叉、不抱胸。两只手都必须完全张开：拇指与四指分离，四指自然伸展并有可读间隔，手腕放松，不能握拳、半握拳、抓握、爪状蜷缩或把手藏进袖甲。画面左侧的角色右手尤其不能继续伸向已消失的盾，也不能变成主动推掌攻击。\n\n双膝轻微弯曲，双靴仍完全着地，脚距和参考图1一致。角色可以略微降低重心，但不能迈步、滑动、跳跃、击飞、倒地或整体平移。人物整体尺寸、头身比例和装备设计保持参考图1，不用缩放或重定中心表现害怕。\n\n固定正面正交机位和1024×1024画布，四边保留至少15%的安全空白；头盔、红缨、双臂、双手、双靴和完整人物轮廓全部入框。使用均匀不透明制作绿幕，目标 RGB(0,159,62)，无纹理、无地面、无阴影；实际输出背景必须在生成后量测，提示词中的色值不是锁色保证。保持冷铁灰、棕木残留为零、朱红和暖金的1021材质关系，清晰深色轮廓和硬边像素块面。无盾牌、无武器、无火花、闪光、木屑、残影、烟雾或其他特效。",
+  "prompt_sha256": "48f226b69481b29debe7ee0779ea8011fba07d6f63449dbe46b56e5eacdeded7",
+  "references": [
+    {
+      "order": 1,
+      "source": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3.png",
+      "source_sha256": "446d6d558baa7d4a5d6e6fd9bf712c07b99c63a1c4f2e711cc0b28a7564427d0",
+      "upload_copy": "C:/threeKingdomSlayer/threeKingdomSlayer/Library/Locus/tmp/enemy1021_shield_break_keypose_v1/reference_uploads/01_idle_identity_green_009F3E.png",
+      "upload_sha256": "c5c2be6203aa41afd90ff3059b748252e1b458e063855b1d429980aef6584106",
+      "role": "唯一身份、装备材质、人物比例、固定画布、骨盆腰带和双脚接地点基准；不提供无盾终态姿态",
+      "background_rgb": [
+        0,
+        159,
+        62
+      ],
+      "background_std": [
+        0,
+        0,
+        0
+      ],
+      "actual_sha256_at_submit": "c5c2be6203aa41afd90ff3059b748252e1b458e063855b1d429980aef6584106"
+    },
+    {
+      "order": 2,
+      "source": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_break_detach_keypose_v3.png",
+      "source_sha256": "b2ba2b253a64e84d11497c2ff6b1d61a9bb0a1ddd15cb207a180ed51ff7fb3bf",
+      "upload_copy": "C:/threeKingdomSlayer/threeKingdomSlayer/Library/Locus/tmp/enemy1021_shield_break_target_keypose_v1/reference_uploads/02_release_transition_green_009F3E.png",
+      "upload_sha256": "1af057581533becce8534f26eb8c30d9ee222df0e89e0bf7fad6c0309e94923e",
+      "role": "已验收的脱手瞬间连续性基准：画面右侧来力、上身向画面左侧的余势、角色右手已张开；目标图必须继续收势并完全移除盾牌，不复制盾牌",
+      "background_rgb": [
+        0,
+        159,
+        62
+      ],
+      "unmasked_source_rgb_changed": 0,
+      "actual_sha256_at_submit": "1af057581533becce8534f26eb8c30d9ee222df0e89e0bf7fad6c0309e94923e"
+    }
+  ],
+  "excluded_references": [
+    {
+      "paths": [
+        "Assets/Sprites/Enemy/Enemy2/Coward/Enemy2_Coward_Idle_01.png",
+        "Assets/Sprites/Enemy/Enemy2/Coward/Enemy2_Coward_Idle_02.png",
+        "Assets/Sprites/Enemy/Enemy2/Coward/Enemy2_Coward_Lost_01.png",
+        "Assets/Sprites/Enemy/Enemy2/Coward/Enemy2_Coward_Lost_05.png"
+      ],
+      "reason": "102低分辨率占位素材；只作为语义检查，不上传，不作为1021身份、比例或材质参考"
+    }
+  ],
+  "g1_input_background_rgb": [
+    0,
+    159,
+    62
+  ],
+  "g1_report": "C:/threeKingdomSlayer/threeKingdomSlayer/Library/Locus/tmp/enemy1021_shield_break_target_keypose_v1/G1_input_preparation.json",
+  "output": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_break_coward_target_keypose_v1.png",
+  "approval": "user_confirmed_start_generation",
+  "prepared_at_utc": "2026-10-14T15:02:56.516392+00:00",
+  "retry_policy": "one POST only; no automatic resubmission"
+}

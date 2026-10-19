@@ -1,0 +1,45 @@
+{
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "content_type": "multipart/form-data",
+  "fields": {
+    "model": "gpt-image-2.5-sunburst",
+    "prompt": "Create one combat-ready shield-guard sprite of the SAME soldier shown in Image 1. Image 1 is the primary reference for character identity, body proportions, equipment, camera angle, lighting and rendering. Preserve his helmet and faceplate, orange-red eyes, red helmet ribbon and scarf, armor, belt, red cloth, leg guards and boots. Retain the large helmet, broad shoulders, compact torso, short legs, substantial hands and boots, and the original bent-knee, asymmetric combat stance. Do not redesign the soldier or add more armor.\n    \n    Replace the sword with a shield actively supported by his anatomical RIGHT arm, on SCREEN-LEFT. His elbow is bent and his forearm is raised across the front of his chest behind the shield, with the hand gripping a handle on the back. From this camera angle, the shield completely conceals the gripping hand, fingers, forearm and handle. The visible shoulder armor and upper arm connect naturally into the arm behind the shield. Allow the right arm and its armor to articulate for this guard pose while retaining their original design.\n    \n    This is an already-raised defensive guard against an enemy directly ahead, not a presentation pose or a shield being carried by its edge. Place the shield in front of the chest and abdomen, offset toward SCREEN-LEFT, clearly overlapping that side of the torso. Its top edge sits below the chin, leaving the helmet, faceplate and eyes fully visible; its lower edge reaches mid-thigh. Keep the empty SCREEN-RIGHT arm hanging as in Image 1, and preserve the original leg stance and foot placement.\n    \n    Image 2 supplies ONLY shield construction and material reference. Use a substantial, broad rectangular wooden shield with a flat top and slightly narrowed lower edge. Show thick vertical planks, structural seams, a few restrained edge chips, dark cool-gray iron reinforcements and a small number of substantial rivets. Retain the weight and volume of the reference wood and iron, but use an unpainted wooden face. Do not transfer the red-and-black emblem, people, grip pose or battlefield from Image 2.\n    \n    Render the shield in Image 1's high-definition pixelated Three Kingdoms action-game style: stepped contours, clustered hard-edged shading, clear planes and convincing material volume. Warm-brown wood, dark cool-gray iron and restrained sharp highlights must harmonize with the soldier's existing iron-gray armor, vermilion cloth and warm-gold details. Wood grain supports the plank structure rather than covering it with uniform fine noise. Match the character's level of detail and lighting so the shield feels drawn as part of the same sprite, not pasted onto it.\n    \n    Produce one full-body image on a 1024x1024 canvas, matching Image 1's camera angle, relative framing and character proportions. Use a flat light-gray background with no floor, cast shadow, scenery, text or additional objects. Remove the sword completely and keep the entire soldier and shield inside the frame.",
+    "size": "1024x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "output_format": "png",
+    "n": "1"
+  },
+  "images": [
+    {
+      "order": 1,
+      "path": "C:/threeKingdomSlayer/threeKingdomSlayer/Library/Locus/tmp/enemy1021_shield_hold_v3_inputs/01_1011_idle1_lightgray.png",
+      "sha256": "67a32329aa33cc53a8b9da38bad1689b344f598b31402afa9fffd3b0e8f36ab1",
+      "role": "Primary character identity, proportions and rendering"
+    },
+    {
+      "order": 2,
+      "path": "C:/threeKingdomSlayer/threeKingdomSlayer/Library/Locus/tmp/enemy1021_shield_hold_v3_inputs/02_shield_material_detail.png",
+      "sha256": "126d6f6917c669ddf27694b94936dca4c1a011aedfb0de24ff5e4ddfab9b323d",
+      "role": "Shield construction and material only; motif and grip excluded"
+    }
+  ],
+  "reference_preparation": {
+    "image_1_source": "C:/threeKingdomSlayer/threeKingdomSlayer/Assets/Sprites/Enemy/Enemy1_1/Enemy_1011_idle1.png",
+    "image_1_operation": "RGBA composited onto #E6E6E6 at original 1108x1108; no sword removal or rescaling",
+    "image_2_source": "C:/Users/steam/Downloads/微信图片_20260928101134_12_223.png",
+    "image_2_crop_xyxy": [
+      685,
+      575,
+      1024,
+      1120
+    ],
+    "image_2_operation": "Unretouched material detail crop; motif remains in input but is explicitly excluded by prompt"
+  },
+  "output": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3.png",
+  "version": "shield_hold_v3",
+  "prompt_language": "English only, approved wording",
+  "prompt_sha256": "246e7766ee2b916fdc2070a91d62b9b9a691cdfc43c7f3e8e433ae5b67eec4be",
+  "submitted_at_utc": "2026-10-09T17:17:59.413235+00:00",
+  "retry_policy": "One POST only; no automatic resubmission"
+}

@@ -1,0 +1,29 @@
+{
+  "http_status": 200,
+  "saved_image": "C:/Users/steam/Pictures/gptGen/enemy1021_hit_right_keypose_v2.png",
+  "bytes": 990459,
+  "sha256": "de620e2a72353f32aefcebd1f8c1bcd81575b64968f8ba7afc7c2dfc0404aeee",
+  "format": "PNG",
+  "dimensions": [
+    1024,
+    1024
+  ],
+  "mode": "RGB",
+  "request_record": "C:/Users/steam/Pictures/gptGen/enemy1021_hit_right_keypose_v2.request.json",
+  "response_record": "C:/Users/steam/Pictures/gptGen/enemy1021_hit_right_keypose_v2.response.json",
+  "reference_sha256": "446d6d558baa7d4a5d6e6fd9bf712c07b99c63a1c4f2e711cc0b28a7564427d0",
+  "usage": {
+    "input_tokens": 1639,
+    "output_tokens": 8176,
+    "total_tokens": 9815,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "input_tokens_details": {
+      "text_tokens": 1303,
+      "image_tokens": 336
+    }
+  },
+  "cost": null,
+  "automatic_retry": false
+}

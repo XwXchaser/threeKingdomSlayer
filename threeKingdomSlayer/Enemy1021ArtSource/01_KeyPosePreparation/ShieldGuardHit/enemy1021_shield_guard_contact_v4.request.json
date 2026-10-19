@@ -1,0 +1,29 @@
+{
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "content_type": "multipart/form-data",
+  "fields": {
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "output_format": "png",
+    "n": "1",
+    "prompt": "Use the supplied Enemy 1021 K1 v3 image as the sole reference. Create one full-body game-sprite impact key pose with a small adjustment confined to the neck and shoulder area. Retain this exact character identity, proportions, helmet, armor, red scarf, wooden shield, palette, lighting, pixelated rendering, and existing load-bearing pose. Preserve the current torso inclination, shield position and angle, both arm poses, pelvis, knees, boot contact points, and framing.\n\nAdd only the brief instinctive neck-and-shoulder bracing response to an impact received from screen-left. Move the head, helmet, and attached red plume together slightly downward along the current neck axis toward the collar, by about 4–6 percent of the helmet body height excluding the plume, approximately 5–8 pixels as a drawing guide on this 1024-pixel canvas. Shrug the shield-side shoulder armor a little, with a smaller following response on the other shoulder; approximately 2–4 pixels of shoulder rise is a drawing guide. Use local neck and shoulder articulation to bring the lower faceplate slightly closer to the red scarf and modestly reduce the gap between the lower helmet edge and the upper shoulder armor. These values guide the subtle motion amplitude; do not mechanically distort the anatomy or equipment.\n\nPreserve the current head orientation and gaze. Keep the eye slit fully readable. No nodding, downward gaze, faceplate deformation, helmet resizing, head sinking into the chest armor, or new shield occlusion over the eyes. Retain the existing body pose without increasing or straightening its lateral lean, adding a backward lean, or lowering the whole character into a squat. The anatomical right hand holds the shield on screen-left; the gripping hand remains concealed.\n\nKeep the same 1024 by 1024 canvas, drawing scale, camera, and light-gray background. Keep the full character and all equipment visible. Show only the character and original equipment, with no effects, impact symbols, attacker, incoming weapon, floor, text, or watermark.\n\nAbsolutely forbidden: sparks, flashes, impact bursts, glow, wood chips, debris, dust, new cracks, shield damage, vibration marks, speed lines, afterimages, motion blur, any visual effects, nodding, downward gaze, faceplate distortion, helmet shrinkage, head sunk into chest armor, obscured eye slit, additional torso lean, straightened torso, backward lean, whole-body squat, pelvis shift, moved boot contacts, reposed limbs, repositioned shield, character rescaling, recentering, camera change, redesigned equipment, attacker, incoming weapon, floor, text, watermark."
+  },
+  "images": [
+    {
+      "order": 1,
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_guard_contact_v3.png",
+      "sha256": "ec3613fc53e63c38f9ae10b5eabd33054fcbd73529726f9d90eed81ac31b1031",
+      "role": "Sole reference for the already-near-final K1 pose. Preserve the existing torso inclination, shield position and angle, both arm poses, pelvis, knees, boots, framing, character identity and equipment. Only adjust the neck and shoulder area."
+    }
+  ],
+  "output": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_guard_contact_v4.png",
+  "prepared_at_utc": "2026-10-11T13:06:47.022117+00:00",
+  "prompt_sha256": "432f7ff4f048a2115e6c050c6030c571b125c2650c7e6580fb1978a385c09e74",
+  "prompt_zh_review": "以提供的1021盾兵K1 v3为唯一参考，制作一张颈肩区域微调后的全身游戏Sprite关键受力姿态图。沿用这张图现有的角色身份、体型、头盔、甲胄、红围巾、木盾、配色、光照、像素化绘制和完整承力姿态。保持现有躯干倾斜、盾牌位置与角度、双臂动作、骨盆、膝盖、靴底接触点和构图。\n\n只增加接住来自画面左侧冲击时，颈肩本能收紧的一瞬间。头部连同头盔和附着红缨作为完整部件，沿当前颈部中轴向领口轻微下收，幅度约为头盔本体高度的4–6%（不含红缨，当前1024画布可先以5–8像素为绘制参考）。持盾侧肩甲略微耸起，另一侧肩甲有更轻的随动；肩部上提约2–4像素作为绘制参考。通过颈肩关节变化，让面罩下缘更靠近红围巾，头盔底缘与肩甲上缘之间的间距略微缩短。角度和像素数只是控制幅度的绘制目标，不要求机械变形。\n\n头部保持当前朝向和视线，眼缝完整可读；不点头、不低头俯视，不改变面罩形状或头盔大小，不把头压进胸甲，也不让盾牌新增遮挡眼睛。保留当前身体姿态，不增加侧倾、不回正、不后仰、不整体下蹲。角色右手持盾，盾继续在画面左侧，握盾手保持隐藏。\n\n保持同一1024×1024画布、角色绘制比例、镜头和浅灰背景，角色及全部装备完整入画。只绘制角色和原有装备，不添加任何特效、撞击标记、攻击者、武器、地面、文字或水印。\n\n绝对禁止：火花、闪光、撞击爆点、发光、木屑、碎片、尘土、新增裂纹、盾牌损伤、震动线、速度线、残影、运动模糊、任何特效；点头、低头俯视、面罩变形、头盔缩小、头压入胸甲、遮挡眼缝；新增躯干倾斜、躯干回正、后仰、整体下蹲、骨盆移位、脚底移动、重新摆四肢、盾牌换位、角色缩放、重新居中、镜头变化、装备重设计、攻击者、伸入画面的武器、地面、文字、水印。",
+  "approval": "User explicitly requested generation after reviewing the v4 Chinese and English prompt, parameters, reference role and acceptance points.",
+  "retry_policy": "Exactly one POST. No automatic resubmission; ambiguous or failed result stops for user review.",
+  "persistence_boundary": "Static K1 neck-and-shoulder pose reference only. No K2, video, background removal, alignment, or Unity deployment.",
+  "negative_clauses": "Included in actual English prompt; no unsupported negative_prompt API field"
+}

@@ -1,0 +1,50 @@
+{
+  "state": "generated_downloaded_verified",
+  "submitted_at_utc": "2026-10-11T13:06:47.023453+00:00",
+  "post_attempts": 1,
+  "request_path": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_guard_contact_v4.request.json",
+  "response_path": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_guard_contact_v4.response.json",
+  "prompt_sha256": "432f7ff4f048a2115e6c050c6030c571b125c2650c7e6580fb1978a385c09e74",
+  "retry_policy": "Exactly one POST. No automatic resubmission; ambiguous or failed result stops for user review.",
+  "post_exit_code": 0,
+  "http_status": 200,
+  "post_seconds": 99.501,
+  "response_observed_at_utc": "2026-10-11T13:08:26.522159+00:00",
+  "usage": {
+    "prompt_tokens": 653,
+    "completion_tokens": 1023,
+    "total_tokens": 1676,
+    "input_tokens": 653,
+    "output_tokens": 1023,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 653
+    },
+    "output_tokens_details": {
+      "image_tokens": 1023,
+      "text_tokens": 0
+    }
+  },
+  "cost": null,
+  "task_id": null,
+  "image_delivery": "url",
+  "image_url_host": "pre-signed-firefly-prod.s3-accelerate.amazonaws.com",
+  "download_exit_code": 0,
+  "download_http_status": 200,
+  "download_seconds": 3.749151,
+  "completed_at_utc": "2026-10-11T13:08:30.327279+00:00",
+  "image": {
+    "path": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_guard_contact_v4.png",
+    "bytes": 994135,
+    "sha256": "fe6d53654ee1f985f440f835a9e7d0bef35b264f8cbc5d42e0ea399f40ad875d",
+    "size": [
+      1024,
+      1024
+    ],
+    "mode": "RGB",
+    "png_color_type": 2,
+    "decoded": true,
+    "size_matches_request": true
+  },
+  "visual_status": "Awaiting visual review and user acceptance; K1 neck-and-shoulder adjustment only"
+}

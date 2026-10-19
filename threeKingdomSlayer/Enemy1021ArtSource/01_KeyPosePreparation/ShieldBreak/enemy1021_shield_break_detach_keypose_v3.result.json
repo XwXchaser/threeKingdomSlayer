@@ -1,0 +1,49 @@
+{
+  "state": "generated_downloaded_verified",
+  "post_attempts": 1,
+  "retry_policy": "one POST only; no automatic resubmission",
+  "submitted_at_utc": "2026-10-14T14:23:50.390393+00:00",
+  "request_path": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_break_detach_keypose_v3.request.json",
+  "response_path": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_break_detach_keypose_v3.response.json",
+  "prompt_sha256": "fb0a1bdb8607fbb3a7f8cf47773ff5946ac1cbeed343bb76fa9a4fac73148b41",
+  "post_exit_code": 0,
+  "http_status": 200,
+  "post_seconds": 129.609,
+  "response_observed_at_utc": "2026-10-14T14:25:59.995678+00:00",
+  "usage": {
+    "input_tokens": 1927,
+    "output_tokens": 8288,
+    "total_tokens": 10215,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "input_tokens_details": {
+      "text_tokens": 1266,
+      "image_tokens": 661
+    }
+  },
+  "cost": null,
+  "task_id": null,
+  "image_delivery": "url",
+  "image_url_host": "img5.kjlw.uk",
+  "download_exit_code": 0,
+  "download_http_status": 200,
+  "download_seconds": 5.322,
+  "completed_at_utc": "2026-10-14T14:26:05.353883+00:00",
+  "image": {
+    "path": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_break_detach_keypose_v3.png",
+    "bytes": 1094431,
+    "sha256": "b2ba2b253a64e84d11497c2ff6b1d61a9bb0a1ddd15cb207a180ed51ff7fb3bf",
+    "size": [
+      1024,
+      1024
+    ],
+    "mode": "RGB",
+    "png_color_type": 2,
+    "decoded": true
+  },
+  "visual_status": "user_accepted_pose",
+  "user_acceptance": "accepted",
+  "user_acceptance_note": "用户明确反馈正确，作为ShieldBreak脱手瞬间关键姿态基准",
+  "next_authorized_scope": "仅准备脱手后目标姿态关键帧的生成内容；尚未授权调用下一次图像生成"
+}

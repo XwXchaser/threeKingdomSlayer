@@ -1,0 +1,47 @@
+{
+  "state": "generated_downloaded_verified",
+  "submitted_at_utc": "2026-10-17T08:39:39.828798+00:00",
+  "post_attempts": 1,
+  "request_path": "C:/Users/steam/Pictures/gptGen/enemy1021_coward_idle_peak_keypose_v1.request.json",
+  "prompt_sha256": "7cd717992fcc1b28328db8e5065d75794beb93afffed24d41803f192cc2a6fbb",
+  "retry_policy": "Exactly one POST. No automatic resubmission on failure, timeout, empty or weak result.",
+  "post_exit_code": 0,
+  "http_status": 200,
+  "post_seconds": 68.859,
+  "response_observed_at_utc": "2026-10-17T08:40:48.696278+00:00",
+  "usage": {
+    "input_tokens": 1365,
+    "input_tokens_details": {
+      "image_tokens": 1024,
+      "text_tokens": 341
+    },
+    "output_tokens": 7024,
+    "output_tokens_details": {
+      "image_tokens": 7024,
+      "text_tokens": 0
+    },
+    "total_tokens": 8389
+  },
+  "cost": null,
+  "task_id": null,
+  "image_delivery": "url",
+  "image_url_host": "r2.52image.xyz",
+  "download_exit_code": 0,
+  "download_http_status": 200,
+  "download_seconds": 3.745897,
+  "completed_at_utc": "2026-10-17T08:40:52.497280+00:00",
+  "image": {
+    "path": "C:/Users/steam/Pictures/gptGen/enemy1021_coward_idle_peak_keypose_v1.png",
+    "bytes": 953009,
+    "sha256": "8b6656bcbe15ed016c94fcf44ad995f2d397d1f97702bf2c4eefc7bdbebb569d",
+    "size": [
+      1024,
+      1024
+    ],
+    "mode": "RGB",
+    "png_color_type": 2,
+    "decoded": true,
+    "size_matches_request": true
+  },
+  "visual_status": "Awaiting user review of the breathing-peak key frame; no loop assembly before acceptance"
+}

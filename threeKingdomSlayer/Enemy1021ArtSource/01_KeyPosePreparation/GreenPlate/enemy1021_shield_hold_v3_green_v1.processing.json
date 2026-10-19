@@ -1,0 +1,31 @@
+{
+  "operation": "local_connected_background_replacement",
+  "source": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3.png",
+  "source_sha256": "446d6d558baa7d4a5d6e6fd9bf712c07b99c63a1c4f2e711cc0b28a7564427d0",
+  "source_mode": "RGB",
+  "source_size": [
+    1024,
+    1024
+  ],
+  "output": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3_green_v1.png",
+  "output_sha256": "d398a1eb7cd436f8082c6cf7dd7901e59d4f888e757f48b1ac01823f4adf40de",
+  "target_background_rgb": [
+    0,
+    177,
+    64
+  ],
+  "target_background_hex": "#00B140",
+  "candidate_rule": "min(R,G,B)>=205 and max(R,G,B)-min(R,G,B)<=14; 8-connected component touching image border",
+  "background_pixel_count": 890636,
+  "background_fraction": 0.8493766784667969,
+  "retained_pixel_count": 157940,
+  "output_background_sample_colors": [
+    [
+      0,
+      177,
+      64
+    ]
+  ],
+  "source_unchanged": true,
+  "note": "Opaque green reference copy only; no Alpha generated and no API call made."
+}
