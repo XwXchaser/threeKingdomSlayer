@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 
 /// <summary>
@@ -6,11 +7,14 @@ using UnityEngine;
 ///
 /// 使用 Update 等待关卡开始（ResetPlayer 之后）再设置值，
 /// 避免被 StageController.StartStage() → ResetPlayer() → ResetAll() 覆盖。
+///
+/// **仅限 Editor**：2026-10-20 修 Stab 击退 bug 时发现，运行时偶现/使用这个组件会在
+/// Stage Start 时偷偷写 _pushWaveDistance 等调试值，与生产逻辑冲突。
+/// build 时整类不编译，Battle.scene 里通过 guid 指向的 component 会被 Unity 静默跳过，
+/// 同 GameObject 上的 AttackSystem 等真正组件不受影响。
 /// </summary>
 public class DisplacementDebugTool : MonoBehaviour
 {
-    // 全部默认关闭：debug 工具 留在场上没风险，但每次 Stage Start 会写 _pushWaveDistance 等调试值。
-    // 之前默认开启会把 pushDist 偷偷 +1，与重击突刺（StabR2）的 Rule 1 栈式阻塞语义冲突。
     [Header("击退波 (Push Wave) — Stab 专属")]
     public bool enablePushWave = false;
     [Range(1, 5)] public int pushDistance = 1;
@@ -56,3 +60,4 @@ public class DisplacementDebugTool : MonoBehaviour
         }
     }
 }
+#endif
