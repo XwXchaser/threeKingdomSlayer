@@ -1,0 +1,106 @@
+{
+  "version": "enemy109-mounted-death-keyposes-v1",
+  "status": "candidates_saved_visual_review_pending",
+  "user_request": "准备生成关键帧动作",
+  "generation_authorized": true,
+  "generation_authorization_feedback": "发起生成",
+  "authorized_scope": "D1, D2 and D3; one image edit request each using the reviewed prompts, exact original reference and unchanged parameters; no automatic paid retries.",
+  "generation_started": true,
+  "generation_completed": true,
+  "new_paid_api_calls": 3,
+  "task_type": "single_reference_image_edit",
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "http_method": "POST",
+  "content_type": "multipart/form-data",
+  "model": "gpt-image-2.5-sunburst",
+  "size": "1024x1024",
+  "quality": "max",
+  "input_fidelity": "high",
+  "output_format": "png",
+  "n_per_request": 1,
+  "planned_request_count": 3,
+  "planned_image_count": 3,
+  "automatic_paid_retry": false,
+  "background": null,
+  "background_parameter_policy": "Omit the API background parameter; request opaque flat RGB(0,159,62) in the prompt. Native alpha is not requested. Actual output background and palette require inspection.",
+  "duration_seconds": null,
+  "negative_prompt_policy": "Common exclusions are appended to each complete prompt; no separate negative_prompt API field.",
+  "submitted_prompt_language": "en",
+  "prompt_assembly": "For each request, concatenate COMMON PROMPT + the single matching pose section + COMMON EXCLUSIONS. Never send the full three-pose package as one prompt.",
+  "prompt_package_zh": "Enemy109ArtSource/01_KeyPosePreparation/MountedDeath_v1/prompt.zh.txt",
+  "prompt_package_en": "Enemy109ArtSource/01_KeyPosePreparation/MountedDeath_v1/prompt.en.txt",
+  "primary_reference": {
+    "field": "image[]",
+    "path": "Enemy109ArtSource/01_KeyPosePreparation/MountedDeath_v1/upload/charging1_identity_green_015962_1024.png",
+    "sha256": "cb2592e25fb00fba0598ed41d39539724aa77316ef622ec6aa9012ee46532998",
+    "mode": "RGB",
+    "size": [
+      1024,
+      1024
+    ],
+    "role": "The only upload for all three independent requests: identity, armor, horse, tack, palette, lighting, anatomical scale and locked slightly elevated frontal camera. The standing/charging pose must change to the specified death phase.",
+    "transform": "Byte-identical copy of existing Charging1 production plate; original 960px RGBA source padded by 32px on all sides over RGB(0,159,62), without rescaling, cropping or subject recoloring.",
+    "visible_source_rgb_preserved_pixels": 192075,
+    "visible_source_rgb_changed_pixels": 0
+  },
+  "review_only_references_not_uploaded": [
+    "Enemy109ArtSource/01_KeyPosePreparation/MountedDeath_v1/source/charging1_f036_960_rgba.png",
+    "Enemy109ArtSource/01_KeyPosePreparation/MountedDeath_v1/source/mountedIdle1_f001_960_rgba.png",
+    "Enemy109ArtSource/01_KeyPosePreparation/MountedDeath_v1/review/reference_context.png"
+  ],
+  "requests": [
+    {
+      "id": "D1",
+      "role_zh": "前腿跪塌、失去支撑",
+      "role_en": "Front knees collapse, support lost",
+      "prompt_zh_section": "【D1动作：前腿跪塌、失去支撑】",
+      "prompt_en_section": "[D1: FRONT KNEES COLLAPSE, SUPPORT LOST]",
+      "planned_output": "generated/enemy109_mounted_death_d1_knee_collapse_v1.png",
+      "key_acceptance": "Front knees collapse and chest lowers; hind legs briefly brace; rider folds forward and sags right while hips stay near saddle; lance remains in anatomical right hand. No recovery or side-lying final pose yet."
+    },
+    {
+      "id": "D2",
+      "role_zh": "向右侧倒、马肩触地",
+      "role_en": "Side fall right, horse shoulder contact",
+      "prompt_zh_section": "【D2动作：向右侧倒、马肩触地】",
+      "prompt_en_section": "[D2: SIDE FALL RIGHT, HORSE SHOULDER CONTACT]",
+      "planned_output": "generated/enemy109_mounted_death_d2_shoulder_contact_v1.png",
+      "key_acceptance": "Horse shoulder contacts ground toward image right, hindquarters still slightly raised; rider follows later toward near-side ground; boots leave stirrups; lance starts releasing. Still visibly unsettled."
+    },
+    {
+      "id": "D3",
+      "role_zh": "人马倒地、最终收稳尾帧",
+      "role_en": "Settled rider and horse, final hold",
+      "prompt_zh_section": "【D3动作：人马倒地、最终收稳尾帧】",
+      "prompt_en_section": "[D3: SETTLED RIDER AND HORSE, FINAL HOLD]",
+      "planned_output": "generated/enemy109_mounted_death_d3_settled_hold_v1.png",
+      "key_acceptance": "Horse and rider rest on same ground; rider visible near horse, limp and no longer seated; single released lance rests outside bodies; full opaque final silhouette without fade."
+    }
+  ],
+  "shared_acceptance": [
+    "Same 109 identity, palette, material, equipment, anatomical scale and camera in all three images.",
+    "All falls toward image right; local body rotation is permitted, camera rotation and rigid rotation of standing sprite are excluded.",
+    "One rider, one horse, one straight complete lance; limbs, stirrups, reins and weapon relationships remain plausible.",
+    "At least 64px of margin around complete silhouette. No enlargement/recentering to fill the shorter fallen-pose frame. Approximate original support y=929 is an invisible ground reference, not a drawn guide.",
+    "No floor, shadow, effects, blood, motion blur, storyboard, text or baked-in fade.",
+    "Generated color and flatness are targets to inspect, not guaranteed by the prompt. D1/D2/D3 must remain visually distinct and sequentially coherent."
+  ],
+  "scope": {
+    "current_deliverable": "Local reference/prompt/specification preparation only",
+    "future_generation_scope_if_user_approves_all_three": "Three independent one-image edits using the same exact identity upload; one call per pose, no paid automatic retry.",
+    "use_previous_generated_frame_as_reference": false,
+    "new_video": false,
+    "matting": false,
+    "unity_import_or_deployment": false,
+    "code_or_scene_changes": false,
+    "runtime_checks": false
+  },
+  "known_limits": [
+    "This is the frontal mounted-death set. Side-attack and rear-retreat death entrances require separate continuity assessment.",
+    "Dismounted 109 death remains a separate existing infantry flow.",
+    "Later deployment must reconcile the dedicated collapse with Enemy.cs generic death bounce/rotation and preserve one-time death/recycle semantics. No implementation is included here.",
+    "Independent generation can drift between poses; review consistency before video preparation. Changing reference roles or material parameters requires renewed prompt approval."
+  ],
+  "saved_candidate_count": 3,
+  "production_record": "Enemy109ArtSource/01_KeyPosePreparation/MountedDeath_v1/production_record.json"
+}

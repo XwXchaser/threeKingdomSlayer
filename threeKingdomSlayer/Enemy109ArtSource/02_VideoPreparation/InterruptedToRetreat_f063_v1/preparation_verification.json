@@ -1,0 +1,66 @@
+{
+  "verified_utc": "2026-10-14T06:58:02.745460+00:00",
+  "status": "preparation_geometry_pixels_background_and_hashes_verified",
+  "reference_count": 2,
+  "prompt_and_input_hashes_verified": true,
+  "visible_source_pixels_preserved": true,
+  "rgba_scale": 1.0,
+  "no_subject_resampling": true,
+  "placement_checks": [
+    {
+      "role": "first_frame",
+      "upload_sha256": "61e0124e5dde941fba86a5292fe158a25344aba432d65eefd96bd11d2e43b2b7",
+      "source_visible_pixels": 142775,
+      "lost_source_visible_pixels": 0,
+      "source_visible_rgb_changed_pixels": 0,
+      "placement_xy": [
+        22,
+        135
+      ],
+      "scale": 1.0,
+      "resampling": false,
+      "support_midpoint_last6rows_x": 503.0,
+      "support_bottom_row": 923,
+      "corners_exact_common_background": true
+    },
+    {
+      "role": "last_frame",
+      "upload_sha256": "fdb0ed4ae67c741397181f5628f38f7ea8ea61d06ac267d18102c25adb95f479",
+      "source_visible_pixels": 149467,
+      "lost_source_visible_pixels": 0,
+      "source_visible_rgb_changed_pixels": 0,
+      "placement_xy": [
+        32,
+        32
+      ],
+      "scale": 1.0,
+      "resampling": false,
+      "support_midpoint_last6rows_x": 503.0,
+      "support_bottom_row": 923,
+      "corners_exact_common_background": true
+    }
+  ],
+  "common_support_midpoint_x": 503,
+  "common_support_bottom_row": 923,
+  "upload_canvas": [
+    1024,
+    1024
+  ],
+  "common_background_rgb": [
+    0,
+    159,
+    62
+  ],
+  "common_background_corner_std_rgb": [
+    0,
+    0,
+    0
+  ],
+  "rejected_f097_not_used": true,
+  "alignment_limit": "Support midpoint/floor coincident. Leaning front vs upright rear proportions are projection-dependent; native pixel scale retained, not a blanket anatomical scale-fit guarantee. User visual review required.",
+  "equipment_review": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\InterruptedToRetreat_f063_v1\\review\\equipment_native_pixel_scale.png",
+  "user_alignment_verdict": "pending",
+  "video_create_attempts": 0,
+  "remote_uploads": 0,
+  "unity_modified": false
+}

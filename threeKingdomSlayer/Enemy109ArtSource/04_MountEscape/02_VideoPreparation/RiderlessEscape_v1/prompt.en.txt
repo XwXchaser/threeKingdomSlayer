@@ -1,0 +1,23 @@
+Create one 4-second, square 1:1, non-looping game sprite action of Enemy109's riderless horse. The only reference is the accepted 1152 green-screen copy enemy109_riderless_horse_green_015962_despill_v1_1152: the user-accepted independent riderless horse after exact-green normalization and edge despill. It locks the same chestnut-horse design, the same silver-gray face armor and red/gold tack, and the same alarmed standing pose. This is the same design and the same starting pose, not a pixel continuation of video-1 frame f107; do not claim pixel identity with f107. From that pose it turns toward image-left, starts, accelerates, then completes one continuous run. Only this one horse is in frame. One locked shot and one connected motion. Do not replace the reference with a held still, and do not cut the action into two clips.
+
+0.0–0.4 seconds: leave the reference's alarmed stand immediately and begin the turn. Head and neck bias toward image-left first. Ears stay back and the mouth stays open, so the alarm does not reset. The forehooves start a step change while the hind hooves remain near their original support. No head-tossing idle, no victory pose, no return to calm idle.
+
+0.4–1.2 seconds: the body follows the head, rotating from a near-frontal torso into a side view facing image-left. One or two compact, real hoof changes complete the start. Weight shifts forward. Saddle cloth and reins swing with the body. Each hoof lifts and lands in turn. No four-hoof sliding, and no floating horse.
+
+1.2–2.4 seconds: accelerate. Stride lengthens, diagonal pairs read clearly, the neck reaches forward and the tail streams behind. Speed comes from hoof changes and body rise and fall, not from blur, speed lines or the horse growing larger.
+
+2.4–4.0 seconds: keep that same run through the end of the 4 seconds. Cadence stays steady. It does not need to be a loopable gait, and the last frame does not need to match the first. The ending is still the same horse running. Do not slow to a walk, plant all four hooves, or turn back.
+
+Action constraints: image-left means the left side of the camera picture, not a world axis. After the turn, the run direction stays toward image-left. The whole horse stays inside the canvas for every frame. Do not exit through the left edge, and do not bake lateral travel into the clip. The game will move the sprite later. Do not fade, turn transparent or shrink away.
+
+Legs and ground contact: all four legs stay anatomically continuous. Every step shows which hoof bears weight and which is airborne. Hoof contacts alternate along the invisible ground. No hovering slide, no hooves through the ground, no fused legs. The horse does not kneel, collapse, die, rear high or leave the ground with all four hooves at once.
+
+No rider: the saddle is empty. Reins hang from the mouth and swing naturally. Stirrups are empty and shift lightly with the gait. No human hand, boot, helmet, armor plate or red plume. No lance. Tack stays on the horse. It does not fall off or multiply.
+
+Identity and style: lock the reference's stocky chestnut horse, cool iron-gray face armor, warm gold trim, brown leather, red/gold saddle cloth, fixed lighting and high-definition pixel-styled Three Kingdoms art. Do not change head shape, body type, coat or equipment. Height changes from joints are action, not a rescale or recenter of the whole horse.
+
+Composition: lock this reference's 1152×1152 canvas, camera, perspective and anatomical drawing scale. The upload already has 64 pixels of exact green margin on every side. Act inside that canvas and keep the outer empty margin. Do not fit the horse's bounding box. Ears, head, tail, four hooves and saddle-cloth edges stay fully in frame. Input margins are about 230/251/233/243 pixels, but they do not guarantee the generated motion stays in frame.
+
+The upload's empty background is already one exact RGB(0,159,62)/#009F3E, not a green the model is asked to invent. Keep that same flat color stable in space and time for the whole clip, with no texture. No drawn floor, shadow, platform or scenery, and no green tint on the horse. Keep stepped contours, dark outlines, hard color clusters and sharp metal highlights. Do not hide the legs with motion blur. No audio, watermark, blood, dust, smoke, sparks, glow, speed lines, labels, UI or border.
+
+Exclusions: leftover rider, a second person, a second horse, a lance, calm idle, kneeling, death, high rear, all four hooves airborne, four-hoof sliding, running out of canvas, baked lateral travel, fade, shrink-away, a loop seam requirement, last frame matching the first, hard cuts, pasted reference stills, camera move or zoom, overall scaling, identity change, style change, photorealism, smooth 3D, extra or missing legs.

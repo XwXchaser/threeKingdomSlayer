@@ -1,0 +1,60 @@
+{
+  "artifact": "enemy109_riderless_handoff_horse_s1.png",
+  "path_project": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/generated/enemy109_riderless_handoff_horse_s1.png",
+  "path_external": "C:/Users/Administrator/Pictures/gptGen/enemy109_riderless_handoff_horse_s1.png",
+  "sha256": "dfa57ba90487d32e00c9086bc9c0412eaf6d1d182dee99f41376b1507af4f974",
+  "bytes": 920384,
+  "size": [1024, 1024],
+  "mode": "RGB",
+  "reviewer": "Locus Unity agent (technical review only; not the art acceptance authority)",
+  "art_acceptance_authority": "user",
+
+  "technical_validity": {
+    "decodable_png": true,
+    "opaque": true,
+    "uniform_background_requested": "RGB(0,159,62)",
+    "corner_median_rgb": {"TL": [1, 157, 62], "TR": [1, 159, 63], "BL": [1, 158, 62], "BR": [1, 158, 63]},
+    "corner_std_range": [0.72, 1.29],
+    "background_single_uniform_value": false,
+    "background_note": "Near-target drift of about 1-2 levels on R and G/B, comparable to the accepted v2/v3 drift; not a blocker and re-calibratable at matting time.",
+    "subject_margins_L_T_R_B": [166, 188, 170, 179],
+    "margin_target_64px_met": true,
+    "subject_touches_canvas_edge": false,
+    "green_holes_inside_subject_px": 3043,
+    "green_hole_bbox": [216, 324, 278, 405],
+    "green_hole_note": "A ~62x81 px green pocket at the horse's muzzle/lower-jaw area where the mouth is open; likely the visible green background showing through the open mouth rather than a hole in the body. Not confirmed as a defect."
+  },
+
+  "delete_step": {
+    "rider_removed": true,
+    "lance_removed": true,
+    "helmet_plume_armor_boots_residue": "none observed",
+    "freed_area_clean_green": true,
+    "residual_check_output_subject_px_beyond_x860": 0,
+    "residual_check_output_subject_px_below_y880": 0,
+    "verdict": "PASS - the two named foreground objects are gone and the freed area is plain green with no substitute object."
+  },
+
+  "edit_fidelity_step": {
+    "requirement": "Delete only; visible horse pixels stay as in the source; no redraw, no rescale, no recentering, no pose change, same canvas coordinates and drawing scale.",
+    "verdict": "FAIL",
+    "evidence": [
+      "Only 0.65% of the source horse's solid pixels survive within a tolerance of 10 (sum of |dR|+|dG|+|dB|) in the output; only 5.54% within 30.",
+      "Mean absolute RGB delta across the horse core region is 154.4 - i.e. essentially every horse pixel was repainted.",
+      "Output subject bbox is 688x657 px versus an estimated source horse-only bbox of 513x525 px: about 1.34x wider and 1.25x taller.",
+      "The horse's lowest subject row moved from about y=816 (front-leg band in the source) to y=844, so the invisible ground relationship changed.",
+      "Visual comparison of the head/neck crop shows different muzzle and mouth shape, different mane clumping, different face-armor rendering and different mane/neck shading - a new drawing of the same character, not the reference's pixels with the rider erased."
+    ],
+    "unaffected_by_measurement_caveat": "This conclusion rests on the direct pixel-preservation test over regions that cannot be the rider or the lance; it does not depend on separating the overlapping horse and rider masks."
+  },
+
+  "continuity_for_video2": {
+    "required": "Second video's first frame must be this exact horse at the video-1 handoff pose, same canvas position, scale and ground relation.",
+    "current_state": "Not satisfied: the pose is broadly similar (alarmed stand, head image-left, mouth open, ears back) but the horse is enlarged, shifted and fully redrawn, so it cannot serve as a pixel-level continuation of video-1's f107.",
+    "risk_if_used_anyway": "A visible jump in horse size/position/detail at the handoff in game, and loss of the 'same horse' guarantee the frozen contract requires."
+  },
+
+  "recommendation": "Reject for the S1 contract and re-run the edit once, changing a single variable. Suggested single change: strengthen the preserve clause and pin the geometry numerically - state that the output must be pixel-identical to the reference outside the deleted contours, give the expected horse bounding box and the ground row, and forbid any global or local scale change, recentering or leg restaging. Deletion itself already passes, so the deletion wording should be kept as is.",
+  "retry_counted": false,
+  "notes": "This review is technical plus visual comparison by the agent. Art acceptance remains with the user."
+}

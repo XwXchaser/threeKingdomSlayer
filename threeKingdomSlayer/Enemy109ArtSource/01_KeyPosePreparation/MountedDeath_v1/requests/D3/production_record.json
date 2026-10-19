@@ -1,0 +1,87 @@
+{
+  "version": "enemy109-mounted-death-keyposes-v1-D3",
+  "created_utc": "2026-10-15T02:19:13.382305+00:00",
+  "status": "candidate_saved_visual_review_pending",
+  "paid_post_attempt_count": 1,
+  "user_authorization": "发起生成",
+  "automatic_retry": false,
+  "request_record": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_mounted_death_d3_settled_hold_v1.request.json",
+  "response_record": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_mounted_death_d3_settled_hold_v1.response.json",
+  "output": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_mounted_death_d3_settled_hold_v1.png",
+  "project_copy": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\MountedDeath_v1\\generated\\enemy109_mounted_death_d3_settled_hold_v1.png",
+  "approved_input_sha256": "cb2592e25fb00fba0598ed41d39539724aa77316ef622ec6aa9012ee46532998",
+  "prompt_en_sha256": "caa5eb64796a2feccbb9b3e89298b13416adf342e4910ee44861cb4cd98fd486",
+  "prompt_zh_sha256": "6ecdae643674d849f4abd027ec72badc504e68ddd1e0068d73bb5ad6c40438f3",
+  "model": "gpt-image-2.5-sunburst",
+  "fields_without_prompt": {
+    "model": "gpt-image-2.5-sunburst",
+    "quality": "max",
+    "input_fidelity": "high",
+    "size": "1024x1024",
+    "output_format": "png",
+    "n": "1"
+  },
+  "user_art_verdict": "pending",
+  "video_created": false,
+  "cutout_done": false,
+  "unity_imported": false,
+  "http_status": 200,
+  "request_elapsed_seconds": 63.031,
+  "route_host": "r2.52image.xyz",
+  "usage": {
+    "input_tokens": 1804,
+    "input_tokens_details": {
+      "image_tokens": 1024,
+      "text_tokens": 780
+    },
+    "output_tokens": 7024,
+    "output_tokens_details": {
+      "image_tokens": 7024,
+      "text_tokens": 0
+    },
+    "total_tokens": 8828
+  },
+  "cost": null,
+  "returned_image_count": 1,
+  "output_validation": {
+    "bytes": 1051922,
+    "sha256": "8f12f70c94da89c33f56b47f446cd30662d0c63b8efb3b8baa0b4232f908cd86",
+    "size": [
+      1024,
+      1024
+    ],
+    "mode": "RGB",
+    "png_color_type": 2,
+    "alpha_range": [
+      255,
+      255
+    ],
+    "fully_opaque": true,
+    "corner_rgb": [
+      [
+        10,
+        150,
+        70
+      ],
+      [
+        8,
+        154,
+        67
+      ],
+      [
+        10,
+        149,
+        68
+      ],
+      [
+        9,
+        157,
+        70
+      ]
+    ],
+    "requested_size_matches": true
+  },
+  "output_project_copy_byte_equal": true,
+  "approved_input_and_prompts_unchanged": true,
+  "finished_utc": "2026-10-15T02:20:19.078192+00:00"
+}

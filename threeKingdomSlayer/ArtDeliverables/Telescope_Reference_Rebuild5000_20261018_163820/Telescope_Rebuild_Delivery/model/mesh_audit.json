@@ -1,0 +1,412 @@
+{
+  "asset": "Reference-only complete telescope rebuild",
+  "reference": "C:\\Users\\Administrator\\Downloads\\screenshot-20261018-150725.png",
+  "requirement": "User revised limit: <5000 triangles, replacing the initial <1000 plan.",
+  "construction": "New procedural geometry from the supplied image only; no existing project models/art read or reused.",
+  "triangles": 4804,
+  "faces": 4804,
+  "vertices": 2488,
+  "mesh_parts": 43,
+  "modifiers": 0,
+  "nonmanifold_edges": 0,
+  "degenerate_faces": 0,
+  "bounds_min": [
+    -0.5972078442573547,
+    -1.285027027130127,
+    0.0
+  ],
+  "bounds_max": [
+    0.5972078442573547,
+    1.2023663520812988,
+    2.134392261505127
+  ],
+  "dimensions_metres": [
+    1.1944156885147095,
+    2.487393379211426,
+    2.134392261505127
+  ],
+  "coordinates": {
+    "front": "-Y objective",
+    "rear": "+Y eyepiece",
+    "left": "-X",
+    "right": "+X",
+    "up": "+Z"
+  },
+  "color_note": "Reference contains no color; charcoal/silver metal and blue coated optics are an inferred finish.",
+  "render_size": [
+    2048,
+    2048
+  ],
+  "transparent": true,
+  "orthographic_scale": 2.78,
+  "views": [
+    {
+      "file": "views/01_Front_Objective.png",
+      "description": "Front: objective end, camera at -Y"
+    },
+    {
+      "file": "views/02_Rear_Eyepiece.png",
+      "description": "Rear: eyepiece end, camera at +Y"
+    },
+    {
+      "file": "views/03_Left.png",
+      "description": "Left: camera at -X"
+    },
+    {
+      "file": "views/04_Right.png",
+      "description": "Right: camera at +X"
+    },
+    {
+      "file": "views/05_ThreeQuarter.png",
+      "description": "Supplementary three-quarter presentation"
+    }
+  ],
+  "parts": [
+    {
+      "part": "TR5K20261018_163820_01_Main_Tube_Hood_and_Objective",
+      "vertices": 1104,
+      "triangles": 2204,
+      "faces": 2204,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_02_Rear_Drawtube_and_Eyepiece",
+      "vertices": 180,
+      "triangles": 356,
+      "faces": 356,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_03_Top_Finder_Scope",
+      "vertices": 144,
+      "triangles": 284,
+      "faces": 284,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_04_Finder_Support_01",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_05_Finder_Collar_01",
+      "vertices": 24,
+      "triangles": 44,
+      "faces": 44,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_04_Finder_Support_02",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_05_Finder_Collar_02",
+      "vertices": 24,
+      "triangles": 44,
+      "faces": 44,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_06_Mounting_Saddle_Band",
+      "vertices": 96,
+      "triangles": 188,
+      "faces": 188,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_07_Chamfered_Altitude_Yoke",
+      "vertices": 32,
+      "triangles": 60,
+      "faces": 60,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_08_Azimuth_Vertical_Stem",
+      "vertices": 24,
+      "triangles": 44,
+      "faces": 44,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_09_Stepped_Tripod_Head",
+      "vertices": 100,
+      "triangles": 196,
+      "faces": 196,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_10_Altitude_Pivot_L",
+      "vertices": 64,
+      "triangles": 124,
+      "faces": 124,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_11_Altitude_Hex_Bolt_L",
+      "vertices": 12,
+      "triangles": 20,
+      "faces": 20,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_10_Altitude_Pivot_R",
+      "vertices": 64,
+      "triangles": 124,
+      "faces": 124,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_11_Altitude_Hex_Bolt_R",
+      "vertices": 12,
+      "triangles": 20,
+      "faces": 20,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_12_Underside_Focus_Housing",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_13_Focus_Cross_Spindle",
+      "vertices": 24,
+      "triangles": 44,
+      "faces": 44,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_14_Scalloped_Focus_Wheel_L",
+      "vertices": 80,
+      "triangles": 156,
+      "faces": 156,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_15_Focus_Wheel_Center_L",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_14_Scalloped_Focus_Wheel_R",
+      "vertices": 80,
+      "triangles": 156,
+      "faces": 156,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_15_Focus_Wheel_Center_R",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_16_Upper_Tripod_Leg_01",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_17_Lower_Extending_Leg_01",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_18_Leg_Locking_Collar_01",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_19_Rubber_Foot_01",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_20_Leg_Hinge_Pin_01",
+      "vertices": 20,
+      "triangles": 36,
+      "faces": 36,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_21_Leg_Lock_Screw_01",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_22_Folding_Spreader_01",
+      "vertices": 8,
+      "triangles": 12,
+      "faces": 12,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_16_Upper_Tripod_Leg_02",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_17_Lower_Extending_Leg_02",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_18_Leg_Locking_Collar_02",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_19_Rubber_Foot_02",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_20_Leg_Hinge_Pin_02",
+      "vertices": 20,
+      "triangles": 36,
+      "faces": 36,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_21_Leg_Lock_Screw_02",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_22_Folding_Spreader_02",
+      "vertices": 8,
+      "triangles": 12,
+      "faces": 12,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_16_Upper_Tripod_Leg_03",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_17_Lower_Extending_Leg_03",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_18_Leg_Locking_Collar_03",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_19_Rubber_Foot_03",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_20_Leg_Hinge_Pin_03",
+      "vertices": 20,
+      "triangles": 36,
+      "faces": 36,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_21_Leg_Lock_Screw_03",
+      "vertices": 16,
+      "triangles": 28,
+      "faces": 28,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_22_Folding_Spreader_03",
+      "vertices": 8,
+      "triangles": 12,
+      "faces": 12,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    },
+    {
+      "part": "TR5K20261018_163820_23_Spreader_Central_Hub",
+      "vertices": 20,
+      "triangles": 36,
+      "faces": 36,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0
+    }
+  ],
+  "main_tube_radial_segments": 48,
+  "shading": "Sharp ring boundaries with smooth radial walls; no subdivision modifiers."
+}

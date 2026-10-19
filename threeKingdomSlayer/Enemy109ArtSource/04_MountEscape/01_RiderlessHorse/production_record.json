@@ -1,0 +1,162 @@
+{
+  "version": "enemy109-riderless-handoff-horse-s1",
+  "status": "generated_pending_art_review",
+  "user_generation_direction": "发起生成",
+  "generation_authorized": true,
+  "authorization_scope": "One GPT Image single-image edit for S1: delete the grounded rider and the grounded lance from the video-1 handoff frame f107 and restore only the narrow horse regions they were covering. No automatic retry, no video, no matting, no Unity changes.",
+  "generation_started": true,
+  "generation_completed": true,
+  "new_paid_api_calls": 1,
+  "http_status": 200,
+  "returned_image_count": 1,
+  "automatic_paid_retry": false,
+
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "http_method": "POST",
+  "content_type": "multipart/form-data",
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "max",
+  "input_fidelity": "high",
+  "size": "1024x1024",
+  "output_format": "png",
+  "n": 1,
+  "background": null,
+  "background_policy": "Opaque uniform RGB(0,159,62) requested in text; API background field omitted, alpha not requested.",
+  "api_cost": "not returned by API; no cost inferred",
+
+  "output_sha256": "dfa57ba90487d32e00c9086bc9c0412eaf6d1d182dee99f41376b1507af4f974",
+  "output_bytes": 920384,
+  "output_size": [1024, 1024],
+  "output_mode": "RGB",
+  "output_path_external": "C:/Users/Administrator/Pictures/gptGen/enemy109_riderless_handoff_horse_s1.png",
+  "output_path_project": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/generated/enemy109_riderless_handoff_horse_s1.png",
+  "external_and_project_bytes_identical": true,
+  "image_read_back": true,
+
+  "upload_reference": {
+    "field": "image[]",
+    "path": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/upload/f107_handoff_1024_rgb.png",
+    "sha256": "16a0c0d627252019cac4eef1fcbf9f27380ce1e9baed6193e6ef9f6d169bd22c",
+    "bytes": 327451,
+    "size": [1024, 1024],
+    "mode": "RGB",
+    "source": "Enemy109ArtSource/03_SelectedFrames/RiderFall_12Frames_v1/keyed_ui_t79/RiderFall12_f107_t4.417.png",
+    "source_sha256": "8ae37e9119f8b1606d68ba544948572cd6d637fccd57e43cbb52d14be9f99186",
+    "source_bytes": 351801,
+    "source_size": [960, 960],
+    "source_mode": "RGBA",
+    "source_transform": "960x960 RGBA transparent frame padded 32 px per side and alpha-composited onto uniform RGB(0,159,62) -> 1024x1024 RGB. Zero rescale, zero crop. The accepted transparent original was not overwritten.",
+    "upload_margins_L_T_R_B": [148, 245, 103, 161],
+    "role": "The true video-1 handoff frame; locks horse identity, tack, anatomical scale, camera, invisible ground and canvas position. The grounded rider and grounded lance are foreground objects to delete."
+  },
+
+  "reference_upload_count": 1,
+  "rejected_v1_or_old_death_poses_used_as_input": false,
+  "prompt_en": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/prompt.en.txt",
+  "prompt_en_sha256": "0be5526c5c97da7b8691d1b332d87a46c36307ba2c38eeb488fab096605f8500",
+  "prompt_zh": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/prompt.zh.txt",
+  "prompt_zh_sha256": "0daf712ad31a626cb31678f4d14da0812472d7a582c84b05a16b0e0bb408b64f",
+  "submission_language": "en",
+  "negative_prompt_policy": "Included in the full text prompt; no separate API field.",
+
+  "request_record": "C:/Users/Administrator/Pictures/gptGen/enemy109_riderless_handoff_horse_s1.request.json",
+  "response_record": "C:/Users/Administrator/Pictures/gptGen/enemy109_riderless_handoff_horse_s1.response.json",
+  "response_record_note": "Signed URLs and base64 omitted; original PNG bytes retained separately.",
+  "production_record": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/production_record.json",
+  "review_report": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/generated_review_report.json",
+  "diagnostics": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/review/s1_diagnostics.json",
+  "pixel_preservation_report": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/review/s1_pixel_preservation.json",
+  "final_checks": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/review/s1_final_checks.json",
+
+  "deletion_result": {
+    "grounded_rider_present_in_output": false,
+    "grounded_lance_present_in_output": false,
+    "rider_helmet_plume_armor_boots_residue": "none observed on read-back; output subject has zero pixels beyond x=860 or below y=880, where the rider and lance previously extended",
+    "freed_area_clean_green": "yes; no replacement object, shadow or silhouette inserted"
+  },
+
+  "edit_fidelity_result": {
+    "hard_requirement_quoted": "Visible horse pixels stay as in the source. No redraw, no rescale to the new bounding box, no recentering, no pose change.",
+    "verdict": "VIOLATED - output is a full redraw of the horse, not an in-place deletion",
+    "source_horse_core_pixels_retained_within_10_rgb_pct": 0.65,
+    "source_horse_core_pixels_retained_within_30_rgb_pct": 5.54,
+    "mean_abs_rgb_delta_over_horse_core": 154.4,
+    "head_neck_retention_pct": 78.41,
+    "output_subject_bbox_xyxy": [166, 188, 853, 844],
+    "output_subject_w_h": [688, 657],
+    "source_horse_only_bbox_xyxy_est": [148, 245, 660, 769],
+    "source_horse_only_w_h_est": [513, 525],
+    "source_horse_bbox_estimation_note": "Horse and rider overlap/touch in f107, so the horse-only bbox is estimated by seeded region partition and is approximate; the pixel-preservation test does not depend on it.",
+    "output_over_source_horse_height_ratio": 1.25,
+    "output_over_source_horse_width_ratio": 1.34,
+    "observed": "Horse enlarged and moved up/left; head, neck, face armor, mane, saddle, cloth and legs all redrawn with different pixel detail, lighting gradients and muzzle/mouth shape. Front-left leg stance also differs from the source.",
+    "ground_line_note": "Lowest subject row moved from y=862 (source, lance included) / y=816 in the front-leg band to y=844; the invisible ground relationship changed."
+  },
+
+  "user_art_verdict": "accepted",
+  "user_art_feedback": "已验收，请根据绿幕规则修缮这个马匹的配色，当前的绿底不适合用作视频生成",
+  "video_created": false,
+  "cutout_done": false,
+  "unity_modified": false,
+  "runtime_checks": false,
+  "compiled": false,
+  "committed": false,
+
+  "post_acceptance_green_prep": {
+    "trigger": "User: the current green backdrop is unsuitable for video generation; repair the palette per the green-screen rules.",
+    "note": "Handled as upload-copy preparation, not as a re-generation or a subject recolor. The accepted original above is untouched; its hash was re-verified after processing.",
+    "diagnosis": {
+      "backdrop_far_field_std_per_channel": [0.69, 0.9, 0.78],
+      "backdrop_unique_rgb_values": 4668,
+      "backdrop_far_field_off_batch_key_by_gt3_pct": 31.33,
+      "backdrop_1px_outside_horse_G_mean": 153.95,
+      "green_dominant_visible_px": 4400,
+      "green_dominant_within_4px_of_boundary_px": 4393,
+      "green_dominant_within_4px_share_pct": 99.84,
+      "interior_green_hue_px": 4062,
+      "interior_green_hue_beyond_4px_px": 0,
+      "boundary_ring_gex_mean_before": 38.49,
+      "boundary_ring_gex_max_before": 101
+    },
+    "fix_applied": "1) Backdrop pixels within sum|dRGB|<=45 of the batch key (0,159,62) and 4-connected reachable from the frame border are set to the exact key. 2) Visible boundary pixels within 3px where G-max(R,B)>0 get G=max(R,B)-3. 3) Interior beyond 3px untouched. No rescale, crop, recenter, smoothing or global color correction.",
+    "verification": {
+      "backdrop_unique_values_after": 1,
+      "backdrop_exact_key_px": 860894,
+      "green_dominant_visible_px_after": 7,
+      "green_dominant_gt5_after": 0,
+      "boundary_ring_gex_mean_after": -31.1,
+      "boundary_ring_gex_max_after": 0,
+      "interior_pixels_changed": 0,
+      "interior_max_abs_channel_diff": 0,
+      "core_mean_rgb_before": [127.1, 54.8, 39.0],
+      "core_mean_rgb_after": [127.1, 54.8, 39.0],
+      "subject_pixels_absorbed_into_backdrop": 0,
+      "white_composite_green_dominant_px": 7,
+      "white_composite_green_dominant_gt2_px": 0,
+      "residual_note": "The 7 residual green-dominant pixels are near-white highlights (253,255,254) etc. with gex=+1, inside the 3px boundary band; the strict 'green dominance = 0' line is tighter than the accepted baseline (idle1 had 307 on white)."
+    },
+    "outputs": {
+      "green_ready_1024": {
+        "path": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/video_ready/enemy109_riderless_horse_green_015962_despill_v1_1024.png",
+        "sha256": "572ca4954c8fbe03c0fca94ca76610b9b2df806d8c83ad4bd5f7741b4188988c",
+        "bytes": 367679
+      },
+      "video_upload_1152": {
+        "path": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/video_ready/enemy109_riderless_horse_green_015962_despill_v1_1152.png",
+        "sha256": "2727e31a20430c541d021806966768689c2d1744db7c0ef357d7e2e872387bd2",
+        "bytes": 369696,
+        "size": [1152, 1152],
+        "padding_per_side": 64,
+        "margins_L_T_R_B": [230, 251, 233, 243]
+      }
+    },
+    "package_notes": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/VIDEO_READY_GREEN_PREP.md",
+    "reports": [
+      "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/video_ready/green_prep_report.json",
+      "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/video_ready/green_prep_verification.json"
+    ],
+    "api_calls": 0,
+    "cost": "none",
+    "pending": "S2 bilingual prompt and reference_roles still describe the raw S1 output as the upload source; they do not yet state the normalized key value or point at the 1152 green-ready copy. That wording change is the writer session's job and needs user approval (5.A.5 requires the key value in the prompt and request spec)."
+  }
+}

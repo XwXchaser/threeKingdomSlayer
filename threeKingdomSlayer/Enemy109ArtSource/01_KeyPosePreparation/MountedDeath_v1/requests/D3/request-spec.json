@@ -1,0 +1,39 @@
+{
+  "version": "enemy109-mounted-death-keyposes-v1-D3",
+  "generation_authorized": true,
+  "generation_authorization_feedback": "发起生成",
+  "generation_started": false,
+  "new_paid_api_calls": 0,
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "background": null,
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "max",
+  "input_fidelity": "high",
+  "size": "1024x1024",
+  "output_format": "png",
+  "n": "1",
+  "primary_reference": {
+    "field": "image[]",
+    "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\MountedDeath_v1\\upload\\charging1_identity_green_015962_1024.png",
+    "sha256": "cb2592e25fb00fba0598ed41d39539724aa77316ef622ec6aa9012ee46532998",
+    "mode": "RGB",
+    "size": [
+      1024,
+      1024
+    ],
+    "role": "The only upload for all three independent requests: identity, armor, horse, tack, palette, lighting, anatomical scale and locked slightly elevated frontal camera. The standing/charging pose must change to the specified death phase.",
+    "transform": "Byte-identical copy of existing Charging1 production plate; original 960px RGBA source padded by 32px on all sides over RGB(0,159,62), without rescaling, cropping or subject recoloring.",
+    "visible_source_rgb_preserved_pixels": 192075,
+    "visible_source_rgb_changed_pixels": 0
+  },
+  "prompt_en": "Enemy109ArtSource/01_KeyPosePreparation/MountedDeath_v1/requests/D3/prompt.en.txt",
+  "prompt_zh": "Enemy109ArtSource/01_KeyPosePreparation/MountedDeath_v1/requests/D3/prompt.zh.txt",
+  "prompt_en_sha256": "caa5eb64796a2feccbb9b3e89298b13416adf342e4910ee44861cb4cd98fd486",
+  "prompt_zh_sha256": "6ecdae643674d849f4abd027ec72badc504e68ddd1e0068d73bb5ad6c40438f3",
+  "planned_output": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_mounted_death_d3_settled_hold_v1.png",
+  "planned_request_record": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_mounted_death_d3_settled_hold_v1.request.json",
+  "planned_response_record": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_mounted_death_d3_settled_hold_v1.response.json",
+  "planned_project_copy": "Enemy109ArtSource/01_KeyPosePreparation/MountedDeath_v1/generated/enemy109_mounted_death_d3_settled_hold_v1.png",
+  "key_acceptance": "Horse and rider rest on same ground; rider visible near horse, limp and no longer seated; single released lance rests outside bodies; full opaque final silhouette without fade.",
+  "automatic_paid_retry": false
+}

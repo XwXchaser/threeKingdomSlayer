@@ -1,0 +1,106 @@
+{
+  "version": "enemy109-charge-interrupted-tail-keypose-v1",
+  "created_utc": "2026-10-13T07:06:10.956884+00:00",
+  "status": "k2_tail_user_accepted_video_not_created",
+  "paid_post_attempt_count": 1,
+  "user_authorization": "发起生成",
+  "automatic_retry": false,
+  "request_record": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_charge_interrupted_brake_tail_v1.request.json",
+  "response_record": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_charge_interrupted_brake_tail_v1.response.json",
+  "output": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_charge_interrupted_brake_tail_v1.png",
+  "project_copy": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterruptedTail_v1\\generated\\enemy109_charge_interrupted_brake_tail_v1.png",
+  "approved_input_sha256": "eed75c1aefabcd3d26699f1bcafc5398b9945d0ffc2d9a7d0a0e318fdbb8b46a",
+  "prompt_en_sha256": "e9a766689886f5079555bc91a5d5665dcbf4bd4ebf953001acf65270347c923b",
+  "prompt_zh_sha256": "1b9b66a6266a14c4393343ea94b6f29d8af119f462fe88cd091804d8ca57bcfc",
+  "model": "gpt-image-2.5-sunburst",
+  "fields_without_prompt": {
+    "model": "gpt-image-2.5-sunburst",
+    "quality": "max",
+    "input_fidelity": "high",
+    "size": "1024x1024",
+    "output_format": "png",
+    "n": "1"
+  },
+  "user_art_verdict": "accepted",
+  "user_art_feedback": "已验收，思考冲锋被打断的视频内容",
+  "acceptance_scope": "K2 keypose artwork only; no blanket K1 alignment/palette acceptance, video-generation authorization, matting or Unity deployment approval.",
+  "video_generation_authorized": false,
+  "user_defined_k1_role": "hit_contact_keyframe",
+  "user_defined_k2_role": "braking_followthrough_tail_before_turn",
+  "review_report": "Enemy109ArtSource/01_KeyPosePreparation/ChargeInterruptedTail_v1/generated_review_report.json",
+  "comparison_file": "Enemy109ArtSource/01_KeyPosePreparation/ChargeInterruptedTail_v1/review/k1_k2_generated_comparison.png",
+  "video_created": false,
+  "cutout_done": false,
+  "unity_imported": false,
+  "http_status": 200,
+  "request_elapsed_seconds": 121.297,
+  "route_host": "b64_json",
+  "usage": {
+    "input_tokens": 2416,
+    "input_tokens_details": {
+      "image_tokens": 1024,
+      "text_tokens": 1392
+    },
+    "output_tokens": 7024,
+    "output_tokens_details": {
+      "image_tokens": 7024,
+      "text_tokens": 0
+    },
+    "total_tokens": 9440
+  },
+  "cost": null,
+  "returned_image_count": 1,
+  "output_validation": {
+    "bytes": 1094988,
+    "sha256": "a8af5e01cfae6a606388a527d635a5fde2f69eaa6d08b4c2a8019586761da703",
+    "size": [
+      1024,
+      1024
+    ],
+    "mode": "RGB",
+    "png_color_type": 2,
+    "alpha_range": [
+      255,
+      255
+    ],
+    "fully_opaque": true,
+    "corner_rgb": [
+      [
+        11,
+        155,
+        76
+      ],
+      [
+        9,
+        159,
+        72
+      ],
+      [
+        11,
+        156,
+        74
+      ],
+      [
+        9,
+        161,
+        74
+      ]
+    ],
+    "requested_size_matches": true
+  },
+  "output_project_copy_byte_equal": true,
+  "approved_input_and_prompts_unchanged": true,
+  "image_read_back": true,
+  "agent_review": {
+    "rider_forward_fold_and_lowered_helmet_readable": true,
+    "rider_remains_mounted": true,
+    "reins_and_lance_retained": true,
+    "four_visible_hoof_support_shapes": true,
+    "horse_planted_brake_read": "improved relative to K1 but exact weight bearing cannot be proven without a ground plane",
+    "alignment_to_k1_anchors_verified": false,
+    "background_uniformity_or_color_corrected": false,
+    "source_images_modified": false,
+    "user_verdict": "accepted"
+  },
+  "finished_utc": "2026-10-13T07:08:12.406777+00:00"
+}

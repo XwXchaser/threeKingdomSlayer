@@ -1,0 +1,206 @@
+{
+  "version": "enemy109-charge-interrupted-brake-tail-v1-review",
+  "created_utc": "2026-10-13T07:29:43.205193+00:00",
+  "k1_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterrupted_v1\\generated\\enemy109_charge_interrupted_keypose_v1.png",
+  "k1_sha256": "eed75c1aefabcd3d26699f1bcafc5398b9945d0ffc2d9a7d0a0e318fdbb8b46a",
+  "k2_path": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_charge_interrupted_brake_tail_v1.png",
+  "k2_sha256": "a8af5e01cfae6a606388a527d635a5fde2f69eaa6d08b4c2a8019586761da703",
+  "project_copy_byte_equal": true,
+  "comparison": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterruptedTail_v1\\review\\k1_k2_generated_comparison.png",
+  "comparison_review_only": true,
+  "k1_diagnostic": {
+    "corner_median_rgb": [
+      2.0,
+      162.0,
+      63.0
+    ],
+    "corner_patches": [
+      {
+        "box": [
+          0,
+          0,
+          64,
+          64
+        ],
+        "median_rgb": [
+          2.0,
+          162.0,
+          63.0
+        ],
+        "stddev_rgb": [
+          0.585,
+          0.883,
+          0.88
+        ]
+      },
+      {
+        "box": [
+          960,
+          0,
+          1024,
+          64
+        ],
+        "median_rgb": [
+          2.0,
+          162.0,
+          63.0
+        ],
+        "stddev_rgb": [
+          0.561,
+          0.665,
+          0.666
+        ]
+      },
+      {
+        "box": [
+          0,
+          960,
+          64,
+          1024
+        ],
+        "median_rgb": [
+          2.0,
+          161.0,
+          63.0
+        ],
+        "stddev_rgb": [
+          0.604,
+          0.752,
+          0.796
+        ]
+      },
+      {
+        "box": [
+          960,
+          960,
+          1024,
+          1024
+        ],
+        "median_rgb": [
+          2.0,
+          162.0,
+          63.0
+        ],
+        "stddev_rgb": [
+          0.562,
+          0.681,
+          0.784
+        ]
+      }
+    ],
+    "bbox_proxy_xy_exclusive": [
+      165,
+      148,
+      727,
+      851
+    ],
+    "margins_LTRB": [
+      165,
+      148,
+      297,
+      173
+    ]
+  },
+  "k2_diagnostic": {
+    "corner_median_rgb": [
+      1.0,
+      164.0,
+      66.0
+    ],
+    "corner_patches": [
+      {
+        "box": [
+          0,
+          0,
+          64,
+          64
+        ],
+        "median_rgb": [
+          1.0,
+          164.0,
+          66.0
+        ],
+        "stddev_rgb": [
+          0.599,
+          0.966,
+          0.89
+        ]
+      },
+      {
+        "box": [
+          960,
+          0,
+          1024,
+          64
+        ],
+        "median_rgb": [
+          1.0,
+          164.0,
+          66.0
+        ],
+        "stddev_rgb": [
+          0.541,
+          0.794,
+          0.654
+        ]
+      },
+      {
+        "box": [
+          0,
+          960,
+          64,
+          1024
+        ],
+        "median_rgb": [
+          1.0,
+          164.0,
+          66.0
+        ],
+        "stddev_rgb": [
+          0.571,
+          0.697,
+          0.75
+        ]
+      },
+      {
+        "box": [
+          960,
+          960,
+          1024,
+          1024
+        ],
+        "median_rgb": [
+          1.0,
+          163.0,
+          66.0
+        ],
+        "stddev_rgb": [
+          0.554,
+          0.74,
+          0.726
+        ]
+      }
+    ],
+    "bbox_proxy_xy_exclusive": [
+      161,
+      187,
+      716,
+      844
+    ],
+    "margins_LTRB": [
+      161,
+      187,
+      308,
+      180
+    ]
+  },
+  "agent_visual_observation": "Generated K2 rider clearly folds forward, helmet lowers, rider remains mounted and retains reins/lance. Detailed same-crop review shows four visible hoof/support shapes in a lower support band and a more settled silhouette than K1. The planted-brake read is improved, but exact weight bearing cannot be proven without a ground plane; do not claim full prompt match or deployment readiness.",
+  "alignment_to_K1_anchors_verified": false,
+  "background_uniformity_or_color_corrected": false,
+  "source_images_modified": false,
+  "user_art_verdict": "accepted",
+  "user_art_feedback": "已验收，思考冲锋被打断的视频内容",
+  "acceptance_scope": "K2 keypose artwork accepted by user; historical technical observations retained, not upgraded to verified alignment, uniform background or deployment readiness.",
+  "alpha_created": false,
+  "unity_imported": false
+}

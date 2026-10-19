@@ -1,0 +1,264 @@
+{
+  "version": "enemy109-interrupted-to-retreat-f063-v1-4s",
+  "created_at_utc": "2026-10-14T07:54:55.573240+00:00",
+  "status": "technical_complete_user_visual_review_pending",
+  "video_user_verdict": "pending",
+  "task_id": "task_9af5590e1ede438fa2ca54e6210aa74c",
+  "user_authorization": "同意，先对齐尺寸和锚点位置，然后准备生成词和图发起生成",
+  "user_confirmation": "确认并生成",
+  "model": "seedance-2-fast",
+  "parameters": {
+    "duration_seconds": 4,
+    "resolution": "720p",
+    "aspect_ratio": "1:1",
+    "generate_audio": false,
+    "watermark": false,
+    "seed": -1
+  },
+  "frames": [
+    {
+      "type": "image_url",
+      "role": "first_frame",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/Enemy109ArtSource/02_VideoPreparation/InterruptedToRetreat_f063_v1/upload/first_frame_f063_aligned_green_015962_1024.png",
+      "sha256": "61e0124e5dde941fba86a5292fe158a25344aba432d65eefd96bd11d2e43b2b7",
+      "source": "Enemy109ArtSource/03_SelectedFrames/ChargeInterrupted_v1/keyed_ui_t79/ChargeInterrupted11_f063_t2.583.png",
+      "role_detail": "User-adopted f063 forward-lean brake pose. Original pixels translated integer (-10,+103) relative to unchanged retreat geometry, then common32px pad; no scale/color changes."
+    },
+    {
+      "type": "image_url",
+      "role": "last_frame",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/Enemy109ArtSource/02_VideoPreparation/InterruptedToRetreat_f063_v1/upload/last_frame_retreat_f001_aligned_green_015962_1024.png",
+      "sha256": "fdb0ed4ae67c741397181f5628f38f7ea8ea61d06ac267d18102c25adb95f479",
+      "source": "Enemy109ArtSource/02_VideoPreparation/StrikeToRetreat_v1/source/retreat_video_f001_t79_rgba.png",
+      "role_detail": "Actual accepted rear-retreat video f001, prepared from existing T79 matte. Original native scale maintained and only common32px pad; final handoff to existing retreat video."
+    }
+  ],
+  "prompt_en_sha256": "99798fa58290e9be7f95f1d46965cebbc062eb66831ea831afdbf2b2cd390274",
+  "prompt_zh_sha256": "cb9c6fdd6ac4f1fff57baebbc7d6e2f01265159839f6e2663f81dc57df26ef0c",
+  "output": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_interrupted_to_retreat_f063_v1_720p_4s.mp4",
+  "request_record": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_interrupted_to_retreat_f063_v1_720p_4s.request.json",
+  "response_record": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_interrupted_to_retreat_f063_v1_720p_4s.response.json",
+  "create_post_attempt_count": 1,
+  "automatic_create_retry": false,
+  "uploads": [
+    {
+      "role": "first_frame",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/Enemy109ArtSource/02_VideoPreparation/InterruptedToRetreat_f063_v1/upload/first_frame_f063_aligned_green_015962_1024.png",
+      "sha256": "61e0124e5dde941fba86a5292fe158a25344aba432d65eefd96bd11d2e43b2b7",
+      "http_status": 200,
+      "elapsed_seconds": 4.656,
+      "observed_at_utc": "2026-10-14T07:55:00.229764+00:00",
+      "response": {
+        "code": 200,
+        "msg": "",
+        "data": {
+          "file_id": "img_fcc4d2d9ca38409ab5a9acca766815d0",
+          "file_kind": "image",
+          "object_key": "tmp/6039af75-fe09-4e58-bc14-6a7977811339/img_fcc4d2d9ca38409ab5a9acca766815d0.png",
+          "url": "<temporary URL redacted>",
+          "mime_type": "image/png",
+          "size_bytes": 293651,
+          "expires_at": "2026-10-17T07:54:39.035216771Z"
+        }
+      }
+    },
+    {
+      "role": "last_frame",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/Enemy109ArtSource/02_VideoPreparation/InterruptedToRetreat_f063_v1/upload/last_frame_retreat_f001_aligned_green_015962_1024.png",
+      "sha256": "fdb0ed4ae67c741397181f5628f38f7ea8ea61d06ac267d18102c25adb95f479",
+      "http_status": 200,
+      "elapsed_seconds": 4.828,
+      "observed_at_utc": "2026-10-14T07:55:05.062886+00:00",
+      "response": {
+        "code": 200,
+        "msg": "",
+        "data": {
+          "file_id": "img_49c40a001a1647368ec00d85e357587e",
+          "file_kind": "image",
+          "object_key": "tmp/6039af75-fe09-4e58-bc14-6a7977811339/img_49c40a001a1647368ec00d85e357587e.png",
+          "url": "<temporary URL redacted>",
+          "mime_type": "image/png",
+          "size_bytes": 280804,
+          "expires_at": "2026-10-17T07:54:43.881171266Z"
+        }
+      }
+    }
+  ],
+  "polls": [
+    {
+      "observed_at_utc": "2026-10-14T07:55:09.902940+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-14T07:55:19.475242+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-14T07:55:28.721209+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-14T07:55:39.419426+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-14T07:55:48.723388+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-14T07:55:59.799557+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-14T07:56:09.107474+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-14T07:56:19.294260+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-14T07:56:28.950382+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-14T07:56:38.326810+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-14T07:56:47.997314+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-14T07:56:57.377851+00:00",
+      "http_status": 200,
+      "status": "success",
+      "code": 200,
+      "msg": "",
+      "usage": {
+        "completion_tokens": 87300,
+        "total_tokens": 87300
+      },
+      "cost": {
+        "spend": 0.48888
+      }
+    },
+    {
+      "observed_at_utc": "2026-10-14T08:04:47.923751+00:00",
+      "http_status": 200,
+      "status": "success",
+      "purpose": "retrieve_existing_task",
+      "usage": {
+        "completion_tokens": 87300,
+        "total_tokens": 87300
+      },
+      "cost": {
+        "spend": 0.48888
+      }
+    }
+  ],
+  "video_downloaded": true,
+  "container_validated": true,
+  "full_decode_validated": true,
+  "user_art_verdict": "pending",
+  "production_frames_selected": false,
+  "cutout_done": false,
+  "unity_imported": false,
+  "gameplay_modified": false,
+  "f097_used": false,
+  "existing_retreat_regenerated": false,
+  "create_started_at_utc": "2026-10-14T07:55:05.066359+00:00",
+  "create_elapsed_seconds": 2.422,
+  "create_http_status": 200,
+  "task_accepted_at_utc": "2026-10-14T07:55:07.491359+00:00",
+  "usage": {
+    "completion_tokens": 87300,
+    "total_tokens": 87300
+  },
+  "cost": {
+    "spend": 0.48888
+  },
+  "last_task_status": "success",
+  "observation_wall_seconds": 109.89,
+  "download_started_at_utc": "2026-10-14T08:04:51.493680+00:00",
+  "bytes": 2833549,
+  "sha256": "b1c5094dc2eb5503ee9ccd00c02a231eb9c6978e775c9094861b7830a05f8daa",
+  "actual_media": {
+    "video_stream": [
+      "Stream #0:0[0x1](und): Video: h264 (High) (avc1 / 0x31637661), yuv420p(progressive), 960x960, 5561 kb/s, 24 fps, 24 tbr, 12288 tbn (default)"
+    ],
+    "audio_stream_present": false,
+    "width": 960,
+    "height": 960,
+    "fps": 24.0,
+    "frame_count": 97,
+    "duration_seconds": 4.04
+  },
+  "download_manifest": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\interrupted_to_retreat_f063_v1\\download_manifest.json",
+  "validated_at_utc": "2026-10-14T08:06:37.920935+00:00",
+  "query_errors_observed": false,
+  "completion_note": "Task returned success on query12 in the bounded create observation. One subsequent GET fetched this task's result for four-range download; exactly one create POST, no query/create retry or TLS error observed for this task.",
+  "diagnostic_review": "Enemy109ArtSource/02_VideoPreparation/InterruptedToRetreat_f063_v1/generated_review_4s/",
+  "agent_visual_observation": "Samples f033/f052 face image right, f059/f065 face image left, then f071 transitions rear-left and f084+ direct rear. The middle has gallop-like in-place steps and early frontal upright pose, not the intended compact one-direction turn. Lance is raised early; end is rear-facing with a short upright hold. Observation only; user verdict pending.",
+  "minimum_diagnostic_margins_LTRB": [43, 40, 88, 90],
+  "edge4px_foreground_frames": [],
+  "frames_below_32px_margin": [],
+  "background_median_rgb_ranges": [[0,0],[143,152],[55,62]],
+  "subject_color_continuity_verified": false,
+  "next_step": "User reviews original transition MP4; do not automatically regenerate, recolor, mat or deploy. Existing accepted retreat source remains unchanged."
+}

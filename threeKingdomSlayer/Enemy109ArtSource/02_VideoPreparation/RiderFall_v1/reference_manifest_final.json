@@ -1,0 +1,119 @@
+{
+  "version": "enemy109-rider-fall-video-inputs-final-v2",
+  "status": "final_inputs_prepared_agent_review_pending",
+  "created_utc": "2026-10-15T08:37:52.209162+00:00",
+  "background_rgb": [
+    0,
+    159,
+    62
+  ],
+  "canvas": [
+    1152,
+    1152
+  ],
+  "padding_px": 64,
+  "start_pose_source_canvas": [
+    960,
+    960
+  ],
+  "start_pose_offset_xy": [
+    96,
+    96
+  ],
+  "all_original_images_unchanged": true,
+  "preparation_method": "MountedIdle1 composited from preserved 960x960 trusted binary alpha; accepted v2/v3 are byte copies of already SVL-keyed/alpha-aware-despilled/hardened common-pad copies. No global subject recolor, resize or independent bbox fit.",
+  "references": [
+    {
+      "label": "01_mounted_start",
+      "semantic_role": "mounted_start_pose",
+      "source": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v2/source/mountedIdle1_f001_960_rgba.png",
+      "source_sha256": "8d085440b39ddf5fae48bc26a8f678406818526b0d4792bb8e69ace66bc198a7",
+      "path": "Enemy109ArtSource/02_VideoPreparation/RiderFall_v1/upload_final/01_mounted_start_green_009f3e_p96_1152.png",
+      "sha256": "8c5b9031df8aea1d664ac6dd5107f2d40c2ef99ecfb7e47b4b39a5d41e944c22",
+      "size": [
+        1152,
+        1152
+      ],
+      "mode": "RGB",
+      "source_transform": "960 transparent source placed at (96,96); equals prior (32,32) + common 64px pad; native source scale, no resampling.",
+      "visible_source_rgb_changed_pixels": 1449,
+      "visible_source_pixels": 197974,
+      "pre_edgeclean_sha256": "d1ebdab01e074dd7231c2d17544f449455940431e4e9d9ada7c0d83971b89674",
+      "edge_only_green_neutralized_pixels": 1449,
+      "boundary_green_gt8_after": 0,
+      "alpha_changed_pixels": 0,
+      "interior_beyond_2px_rgb_changed_pixels": 0,
+      "margins_ltrb": [
+        340,
+        113,
+        368,
+        125
+      ],
+      "source_original_unchanged": true
+    },
+    {
+      "label": "02_backward_fall_v2",
+      "semantic_role": "accepted_intermediate_backward_fall",
+      "source": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v2/generated/enemy109_backward_fall_startled_mount_keypose_v2.png",
+      "source_sha256": "61c7c36432d0986c41c9851535c46c843a549405c3f3329226f13189c5c5b240",
+      "path": "Enemy109ArtSource/02_VideoPreparation/RiderFall_v1/upload_final/02_backward_fall_v2_green_009f3e_p64_1152.png",
+      "sha256": "a16d503b1c72dcfd5ec5f71bba213c44b4dbe4226e1668d340ffcd90301ebc3b",
+      "size": [
+        1152,
+        1152
+      ],
+      "mode": "RGB",
+      "source_transform": "Copied from SVL-separated, common 64px-padded version 1; no additional transformation.",
+      "pre_edgeclean_sha256": "e36fe8f2d288dacc2f95223c9b66c8435c0f48da9ba51c5553a528d183800fe1",
+      "edge_only_green_neutralized_pixels": 25,
+      "boundary_green_gt8_after": 0,
+      "alpha_changed_pixels": 0,
+      "interior_beyond_2px_rgb_changed_pixels": 0,
+      "margins_ltrb": [
+        306,
+        92,
+        154,
+        154
+      ],
+      "source_original_unchanged": true
+    },
+    {
+      "label": "03_grounded_v3",
+      "semantic_role": "accepted_grounded_end_pose",
+      "source": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v3/generated/enemy109_grounded_rider_startled_mount_tail_v3.png",
+      "source_sha256": "0b6b0cb43b721e9697007d868deb64f3a0774f18994c3b1de505b182651b68ea",
+      "path": "Enemy109ArtSource/02_VideoPreparation/RiderFall_v1/upload_final/03_grounded_v3_green_009f3e_p64_1152.png",
+      "sha256": "e31cdbb9e7ed23a15ea746de65e0106bb90e5d2bdec30cc01391f579dc86ed90",
+      "size": [
+        1152,
+        1152
+      ],
+      "mode": "RGB",
+      "source_transform": "Copied from SVL-separated, common 64px-padded version 1; no additional transformation.",
+      "pre_edgeclean_sha256": "0c0377bc81e506f2064ceae2d1943eaec61ba732ae285fd8f31b400e96d8a1cb",
+      "edge_only_green_neutralized_pixels": 27,
+      "boundary_green_gt8_after": 0,
+      "alpha_changed_pixels": 0,
+      "interior_beyond_2px_rgb_changed_pixels": 0,
+      "margins_ltrb": [
+        138,
+        250,
+        79,
+        153
+      ],
+      "source_original_unchanged": true
+    }
+  ],
+  "review_image": "Enemy109ArtSource/02_VideoPreparation/RiderFall_v1/review_final/three_reference_final_preview.png",
+  "all_upload_backgrounds_exact_rgb": true,
+  "video_create_attempts": 0,
+  "remote_uploads": 0,
+  "notes": [
+    "Accepted original images remain unchanged.",
+    "MountedIdle1 uses trusted source alpha with edge-only green cleanup, avoiding another alpha erosion.",
+    "SVL v2/v3 plate preparation protects core pixels, then two-pixel green boundary cleanup is applied.",
+    "All three full reference frames are ordinary reference_image roles, no mixed frame-lock mode."
+  ],
+  "preparation_authorized_by_user": "注意补边和绿边问题，发起视频生成",
+  "edge_cleanup_report": "Enemy109ArtSource/02_VideoPreparation/RiderFall_v1/edge_cleanup_report.json"
+}

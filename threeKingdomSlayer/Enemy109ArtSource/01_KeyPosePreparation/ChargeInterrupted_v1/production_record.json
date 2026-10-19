@@ -1,0 +1,108 @@
+{
+  "version": "enemy109-charge-interrupted-keypose-v1",
+  "created_utc": "2026-10-13T05:40:32.073530+00:00",
+  "status": "technical_complete_keypose_user_art_review_pending",
+  "paid_post_attempt_count": 1,
+  "user_authorization": "发起生成",
+  "automatic_retry": false,
+  "request_record": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_charge_interrupted_keypose_v1.request.json",
+  "response_record": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_charge_interrupted_keypose_v1.response.json",
+  "output": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_charge_interrupted_keypose_v1.png",
+  "project_copy": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterrupted_v1\\generated\\enemy109_charge_interrupted_keypose_v1.png",
+  "approved_input_sha256": "cb2592e25fb00fba0598ed41d39539724aa77316ef622ec6aa9012ee46532998",
+  "prompt_en_sha256": "1ee01a0d2b72df9b8d91ff57741f892985b90b1b19cf3962b5735ac42baab90a",
+  "prompt_zh_sha256": "b24960f182990b5788afcafad321fb2023d32a3686ba0618d71b8937ddbd73ef",
+  "model": "gpt-image-2.5-sunburst",
+  "fields_without_prompt": {
+    "model": "gpt-image-2.5-sunburst",
+    "quality": "max",
+    "input_fidelity": "high",
+    "size": "1024x1024",
+    "output_format": "png",
+    "n": "1"
+  },
+  "user_art_verdict": "pending",
+  "user_defined_frame_role": "K1_hit_contact_keyframe",
+  "user_role_feedback": "这个是命中关键帧，后续应该是马急停角色措不及防的姿态。感觉还需要制作关键尾帧再衔接转身返航",
+  "user_role_confirmation_is_not_blanket_alignment_palette_or_deployment_acceptance": true,
+  "next_preparation": "Enemy109ArtSource/01_KeyPosePreparation/ChargeInterruptedTail_v1/",
+  "video_created": false,
+  "cutout_done": false,
+  "unity_imported": false,
+  "http_status": 200,
+  "request_elapsed_seconds": 66.062,
+  "route_host": "r2.52image.xyz",
+  "usage": {
+    "input_tokens": 2227,
+    "input_tokens_details": {
+      "image_tokens": 1024,
+      "text_tokens": 1203
+    },
+    "output_tokens": 7024,
+    "output_tokens_details": {
+      "image_tokens": 7024,
+      "text_tokens": 0
+    },
+    "total_tokens": 9251
+  },
+  "cost": null,
+  "returned_image_count": 1,
+  "output_validation": {
+    "bytes": 1071876,
+    "sha256": "eed75c1aefabcd3d26699f1bcafc5398b9945d0ffc2d9a7d0a0e318fdbb8b46a",
+    "size": [
+      1024,
+      1024
+    ],
+    "mode": "RGB",
+    "png_color_type": 2,
+    "alpha_range": [
+      255,
+      255
+    ],
+    "fully_opaque": true,
+    "corner_rgb": [
+      [
+        9,
+        151,
+        73
+      ],
+      [
+        8,
+        156,
+        68
+      ],
+      [
+        11,
+        152,
+        72
+      ],
+      [
+        10,
+        158,
+        73
+      ]
+    ],
+    "requested_size_matches": true
+  },
+  "output_project_copy_byte_equal": true,
+  "approved_input_and_prompts_unchanged": true,
+  "image_read_back": true,
+  "review_report": "Enemy109ArtSource/01_KeyPosePreparation/ChargeInterrupted_v1/generated_review_report.json",
+  "comparison_file": "Enemy109ArtSource/01_KeyPosePreparation/ChargeInterrupted_v1/review/generated_vs_charging1.png",
+  "agent_review": {
+    "observed_pose": "frontal seated rider recoils with chin lifted and reins drawn; horse front knees bent and hooves lifted, rear supports visible; single lance retained outside body",
+    "diagnostic_margins_LTRB": [165, 148, 297, 173],
+    "diagnostic_meets_64px_clearance": true,
+    "input_bottom_exclusive_y": 929,
+    "output_bottom_exclusive_y": 851,
+    "hoof_silhouette_bottom_delta_y": -78,
+    "alignment_with_charging_not_verified": true,
+    "background_corner_patch_median_rgb": [2, 162, 63],
+    "background_exact_requested_rgb": false,
+    "subject_palette_registered_comparison_done": false,
+    "original_output_modified": false,
+    "user_verdict": "pending"
+  },
+  "finished_utc": "2026-10-13T05:41:41.819799+00:00"
+}

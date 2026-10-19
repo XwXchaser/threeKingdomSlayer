@@ -1,0 +1,60 @@
+{
+  "status": "edge_cleaned_only_on_upload_copies",
+  "utc": "2026-10-15T08:37:52.209162+00:00",
+  "method": "Two-pixel visible boundary only, green advantage G-max(R,B)>8 is neutralized to G=max(R,B). No alpha, geometry or deeper-interior RGB edits. No smoothing. SVL auto-key/79/16/halo1/alpha-aware despill remains v2/v3 base separation.",
+  "rows": [
+    {
+      "label": "01_mounted_start",
+      "before_sha256": "d1ebdab01e074dd7231c2d17544f449455940431e4e9d9ada7c0d83971b89674",
+      "after_sha256": "8c5b9031df8aea1d664ac6dd5107f2d40c2ef99ecfb7e47b4b39a5d41e944c22",
+      "changed_green_boundary_pixels": 1449,
+      "boundary_green_gt8_before": 1449,
+      "boundary_green_gt8_after": 0,
+      "alpha_changed_pixels": 0,
+      "interior_beyond_2px_rgb_changed_pixels": 0,
+      "margins_ltrb": [
+        340,
+        113,
+        368,
+        125
+      ]
+    },
+    {
+      "label": "02_backward_fall_v2",
+      "before_sha256": "e36fe8f2d288dacc2f95223c9b66c8435c0f48da9ba51c5553a528d183800fe1",
+      "after_sha256": "a16d503b1c72dcfd5ec5f71bba213c44b4dbe4226e1668d340ffcd90301ebc3b",
+      "changed_green_boundary_pixels": 25,
+      "boundary_green_gt8_before": 25,
+      "boundary_green_gt8_after": 0,
+      "alpha_changed_pixels": 0,
+      "interior_beyond_2px_rgb_changed_pixels": 0,
+      "margins_ltrb": [
+        306,
+        92,
+        154,
+        154
+      ]
+    },
+    {
+      "label": "03_grounded_v3",
+      "before_sha256": "0c0377bc81e506f2064ceae2d1943eaec61ba732ae285fd8f31b400e96d8a1cb",
+      "after_sha256": "e31cdbb9e7ed23a15ea746de65e0106bb90e5d2bdec30cc01391f579dc86ed90",
+      "changed_green_boundary_pixels": 27,
+      "boundary_green_gt8_before": 27,
+      "boundary_green_gt8_after": 0,
+      "alpha_changed_pixels": 0,
+      "interior_beyond_2px_rgb_changed_pixels": 0,
+      "margins_ltrb": [
+        138,
+        250,
+        79,
+        153
+      ]
+    }
+  ],
+  "originals_unchanged": true,
+  "limitations": [
+    "This addresses visible source-boundary green contamination, not future model output.",
+    "Generated video still requires all-frame background and framing diagnostics."
+  ]
+}

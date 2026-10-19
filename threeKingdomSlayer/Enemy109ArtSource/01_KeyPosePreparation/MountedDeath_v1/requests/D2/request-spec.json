@@ -1,0 +1,39 @@
+{
+  "version": "enemy109-mounted-death-keyposes-v1-D2",
+  "generation_authorized": true,
+  "generation_authorization_feedback": "发起生成",
+  "generation_started": false,
+  "new_paid_api_calls": 0,
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "background": null,
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "max",
+  "input_fidelity": "high",
+  "size": "1024x1024",
+  "output_format": "png",
+  "n": "1",
+  "primary_reference": {
+    "field": "image[]",
+    "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\MountedDeath_v1\\upload\\charging1_identity_green_015962_1024.png",
+    "sha256": "cb2592e25fb00fba0598ed41d39539724aa77316ef622ec6aa9012ee46532998",
+    "mode": "RGB",
+    "size": [
+      1024,
+      1024
+    ],
+    "role": "The only upload for all three independent requests: identity, armor, horse, tack, palette, lighting, anatomical scale and locked slightly elevated frontal camera. The standing/charging pose must change to the specified death phase.",
+    "transform": "Byte-identical copy of existing Charging1 production plate; original 960px RGBA source padded by 32px on all sides over RGB(0,159,62), without rescaling, cropping or subject recoloring.",
+    "visible_source_rgb_preserved_pixels": 192075,
+    "visible_source_rgb_changed_pixels": 0
+  },
+  "prompt_en": "Enemy109ArtSource/01_KeyPosePreparation/MountedDeath_v1/requests/D2/prompt.en.txt",
+  "prompt_zh": "Enemy109ArtSource/01_KeyPosePreparation/MountedDeath_v1/requests/D2/prompt.zh.txt",
+  "prompt_en_sha256": "7e4f0c226a1c244b0c0d8e0c9f1b0fc939783ff045b2d3c1e025a36d6c3d8559",
+  "prompt_zh_sha256": "59b91f39185da17f68380c9bbcbfda501f08f051875b655583a9357fcd92c1d4",
+  "planned_output": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_mounted_death_d2_shoulder_contact_v1.png",
+  "planned_request_record": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_mounted_death_d2_shoulder_contact_v1.request.json",
+  "planned_response_record": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_mounted_death_d2_shoulder_contact_v1.response.json",
+  "planned_project_copy": "Enemy109ArtSource/01_KeyPosePreparation/MountedDeath_v1/generated/enemy109_mounted_death_d2_shoulder_contact_v1.png",
+  "key_acceptance": "Horse shoulder contacts ground toward image right, hindquarters still slightly raised; rider follows later toward near-side ground; boots leave stirrups; lance starts releasing. Still visibly unsettled.",
+  "automatic_paid_retry": false
+}

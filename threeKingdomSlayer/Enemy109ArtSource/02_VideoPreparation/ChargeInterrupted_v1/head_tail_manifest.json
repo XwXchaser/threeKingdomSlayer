@@ -1,0 +1,339 @@
+{
+  "version": "enemy109-charge-interrupted-video-v1-inputs",
+  "created_utc": "2026-10-13T10:08:22.639869+00:00",
+  "status": "local_inputs_prepared_no_upload_or_video_create",
+  "background_rgb": [
+    0,
+    159,
+    62
+  ],
+  "method": "Existing SVL chroma T79/softness16/halo1 and alpha-aware boundary recovery, recomposited onto common RGB green. No full-image RGB correction; soft alpha is intermediate for input plate only.",
+  "scale_and_translation": {
+    "scale": 1.0,
+    "offset_xy": [
+      0,
+      0
+    ],
+    "resize_crop_warp": false
+  },
+  "uploads": [
+    {
+      "role": "first_frame",
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\ChargeInterrupted_v1\\upload\\first_frame_k1_impact_green_015962_1024.png",
+      "sha256": "649ea33ac812b1988ab5628696bc8bde120f7a609cd7f6bca9a538d47265cc01",
+      "source": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterrupted_v1\\generated\\enemy109_charge_interrupted_keypose_v1.png",
+      "source_sha256": "eed75c1aefabcd3d26699f1bcafc5398b9945d0ffc2d9a7d0a0e318fdbb8b46a",
+      "original_copy": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\ChargeInterrupted_v1\\source\\k1_impact_original_1024_rgb.png",
+      "source_background": {
+        "roi_boxes": [
+          [
+            0,
+            0,
+            64,
+            64
+          ],
+          [
+            960,
+            0,
+            1024,
+            64
+          ],
+          [
+            0,
+            960,
+            64,
+            1024
+          ],
+          [
+            960,
+            960,
+            1024,
+            1024
+          ]
+        ],
+        "median_rgb": [
+          2.0,
+          162.0,
+          63.0
+        ],
+        "std_rgb": [
+          0.58441,
+          0.81741,
+          0.80654
+        ],
+        "range_rgb": [
+          [
+            0,
+            11
+          ],
+          [
+            151,
+            165
+          ],
+          [
+            61,
+            73
+          ]
+        ]
+      },
+      "upload_background": {
+        "roi_boxes": [
+          [
+            0,
+            0,
+            64,
+            64
+          ],
+          [
+            960,
+            0,
+            1024,
+            64
+          ],
+          [
+            0,
+            960,
+            64,
+            1024
+          ],
+          [
+            960,
+            960,
+            1024,
+            1024
+          ]
+        ],
+        "median_rgb": [
+          0.0,
+          159.0,
+          62.0
+        ],
+        "std_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "range_rgb": [
+          [
+            0,
+            0
+          ],
+          [
+            159,
+            159
+          ],
+          [
+            62,
+            62
+          ]
+        ]
+      },
+      "metrics": {
+        "auto_key_rgb": [
+          2,
+          161,
+          63
+        ],
+        "core_mask_definition": "Euclidean distance >115 from source key, no strong green dominance, eroded 5 pixels",
+        "core_pixels": 138808,
+        "core_alpha_changed_pixels": 0,
+        "core_rgb_changed_pixels": 0,
+        "visible_boundary_recomposite_rgb_changed_pixels": 414,
+        "matte_bbox_xy_exclusive": [
+          166,
+          149,
+          726,
+          850
+        ],
+        "margins_LTRB": [
+          166,
+          149,
+          298,
+          174
+        ],
+        "support_bottom_row": 849,
+        "source_canvas": [
+          1024,
+          1024
+        ],
+        "scale": 1.0,
+        "offset_xy": [
+          0,
+          0
+        ]
+      },
+      "mode": "RGB",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "role": "last_frame",
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\ChargeInterrupted_v1\\upload\\last_frame_k2_brake_tail_green_015962_1024.png",
+      "sha256": "f7b290c504516de275b4d86c5fe8e8b418b8660c9952be48e11eb394aecfa244",
+      "source": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterruptedTail_v1\\generated\\enemy109_charge_interrupted_brake_tail_v1.png",
+      "source_sha256": "a8af5e01cfae6a606388a527d635a5fde2f69eaa6d08b4c2a8019586761da703",
+      "original_copy": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\ChargeInterrupted_v1\\source\\k2_brake_tail_original_1024_rgb.png",
+      "source_background": {
+        "roi_boxes": [
+          [
+            0,
+            0,
+            64,
+            64
+          ],
+          [
+            960,
+            0,
+            1024,
+            64
+          ],
+          [
+            0,
+            960,
+            64,
+            1024
+          ],
+          [
+            960,
+            960,
+            1024,
+            1024
+          ]
+        ],
+        "median_rgb": [
+          1.0,
+          164.0,
+          66.0
+        ],
+        "std_rgb": [
+          0.5672,
+          0.85096,
+          0.81786
+        ],
+        "range_rgb": [
+          [
+            0,
+            11
+          ],
+          [
+            155,
+            168
+          ],
+          [
+            64,
+            76
+          ]
+        ]
+      },
+      "upload_background": {
+        "roi_boxes": [
+          [
+            0,
+            0,
+            64,
+            64
+          ],
+          [
+            960,
+            0,
+            1024,
+            64
+          ],
+          [
+            0,
+            960,
+            64,
+            1024
+          ],
+          [
+            960,
+            960,
+            1024,
+            1024
+          ]
+        ],
+        "median_rgb": [
+          0.0,
+          159.0,
+          62.0
+        ],
+        "std_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "range_rgb": [
+          [
+            0,
+            0
+          ],
+          [
+            159,
+            159
+          ],
+          [
+            62,
+            62
+          ]
+        ]
+      },
+      "metrics": {
+        "auto_key_rgb": [
+          2,
+          163,
+          66
+        ],
+        "core_mask_definition": "Euclidean distance >115 from source key, no strong green dominance, eroded 5 pixels",
+        "core_pixels": 130865,
+        "core_alpha_changed_pixels": 0,
+        "core_rgb_changed_pixels": 0,
+        "visible_boundary_recomposite_rgb_changed_pixels": 457,
+        "matte_bbox_xy_exclusive": [
+          162,
+          188,
+          715,
+          843
+        ],
+        "margins_LTRB": [
+          162,
+          188,
+          309,
+          181
+        ],
+        "support_bottom_row": 842,
+        "source_canvas": [
+          1024,
+          1024
+        ],
+        "scale": 1.0,
+        "offset_xy": [
+          0,
+          0
+        ]
+      },
+      "mode": "RGB",
+      "size": [
+        1024,
+        1024
+      ]
+    }
+  ],
+  "originals_unchanged": [
+    true,
+    true
+  ],
+  "review_files": [
+    "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\ChargeInterrupted_v1\\review\\k1_k2_input_preparation_comparison.png",
+    "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\ChargeInterrupted_v1\\review\\key_details_raw_vs_white.png"
+  ],
+  "video_create_attempts": 0,
+  "reference_uploads": 0,
+  "unity_modified": false,
+  "limitations": [
+    "Input separation and original-to-copy core protection do not prove generated color/pose stability.",
+    "Subject boundaries require visual inspection; common green is not a model lock.",
+    "Charging-to-K1 Unity mapping is outside this video generation task."
+  ]
+}

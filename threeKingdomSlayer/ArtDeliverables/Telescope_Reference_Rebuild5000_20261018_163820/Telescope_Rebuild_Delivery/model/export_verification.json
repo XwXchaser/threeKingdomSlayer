@@ -1,0 +1,83 @@
+{
+  "triangles": 4804,
+  "faces": 4804,
+  "source_meshes": 43,
+  "glb_triangles": 4804,
+  "glb_meshes": 43,
+  "fbx_roundtrip_triangles": 4804,
+  "fbx_roundtrip_meshes": 43,
+  "all_exported_geometry_is_new": true,
+  "only_source_image_used": true,
+  "nonmanifold_edges": 0,
+  "degenerate_faces": 0,
+  "render_engine": "CYCLES",
+  "samples": 48,
+  "views": [
+    {
+      "file": "views/01_Front_Objective.png",
+      "bytes": 1727997,
+      "seconds": 23.95,
+      "orthographic_scale": 2.7799999713897705,
+      "camera_forward": [
+        0.0,
+        0.9999999403953552,
+        1.4901161193847656e-07
+      ],
+      "frame_margin_world_units": 0.32280218601226807
+    },
+    {
+      "file": "views/02_Rear_Eyepiece.png",
+      "bytes": 1734591,
+      "seconds": 22.43,
+      "orthographic_scale": 2.7799999713897705,
+      "camera_forward": [
+        -1.4210854715202004e-14,
+        -1.0,
+        8.940696716308594e-08
+      ],
+      "frame_margin_world_units": 0.3228031396865845
+    },
+    {
+      "file": "views/03_Left.png",
+      "bytes": 1969086,
+      "seconds": 26.7,
+      "orthographic_scale": 2.7799999713897705,
+      "camera_forward": [
+        1.0,
+        -2.9802322387695312e-08,
+        2.9802322387695312e-08
+      ],
+      "frame_margin_world_units": 0.14630305767059326
+    },
+    {
+      "file": "views/04_Right.png",
+      "bytes": 1933033,
+      "seconds": 26.39,
+      "orthographic_scale": 2.7799999713897705,
+      "camera_forward": [
+        -1.0,
+        -2.9802322387695312e-08,
+        2.9802322387695312e-08
+      ],
+      "frame_margin_world_units": 0.14630305767059326
+    },
+    {
+      "file": "views/05_ThreeQuarter.png",
+      "bytes": 1817431,
+      "seconds": 25.61,
+      "orthographic_scale": 2.7799999713897705,
+      "camera_forward": [
+        -0.5526970624923706,
+        0.7737759351730347,
+        -0.3095102906227112
+      ],
+      "frame_margin_world_units": 0.3019217252731323
+    }
+  ],
+  "render_resolution": [
+    2048,
+    2048
+  ],
+  "alpha": true,
+  "blend_active_scene": "TR5K20261018_163820_Studio"
+}

@@ -1,0 +1,70 @@
+{
+  "version": "enemy109-rider-fall-mount-escape-handoff-v1",
+  "status": "generation_complete_user_art_rejected",
+  "user_request": "发起生成",
+  "generation_authorized": true,
+  "generation_authorization_feedback": "发起生成",
+  "generation_started": true,
+  "generation_completed": true,
+  "new_paid_api_calls": 1,
+  "http_status": 200,
+  "returned_image_count": 1,
+  "output_sha256": "abc75d9438946eb61a62ffffaa011114673bf833a778ac4916c7eb6b9edaa51c",
+  "output_bytes": 1097887,
+  "image_read_back": true,
+  "review_report": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v1/generated_review_report.json",
+  "automatic_paid_retry": false,
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "http_method": "POST",
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "max",
+  "input_fidelity": "high",
+  "size": "1024x1024",
+  "output_format": "png",
+  "n": "1",
+  "background": null,
+  "primary_reference": {
+    "field": "image[]",
+    "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v1/upload/mountedIdle1_identity_green_015962_1024.png",
+    "sha256": "b24263a422fe7cc6b7cf17afea093a097fd748138c0a1d2d7bf6cbe28e0983cc",
+    "mode": "RGB",
+    "size": [1024, 1024],
+    "original_source": "Enemy109ArtSource/03_SelectedFrames/MountedIdle/keyed_ui_t79/mountedIdle1_f001.png",
+    "source_sha256": "8d085440b39ddf5fae48bc26a8f678406818526b0d4792bb8e69ace66bc198a7",
+    "source_transform": "Native 960x960 RGBA copied to a 1024x1024 RGB plate with exactly 32px padding on all four sides; no crop, scale, flip or recolor of visible subject pixels.",
+    "background_rgb": [0, 159, 62],
+    "visible_rgb_changed_pixels": 0,
+    "role": "Strict identity, stable mounted pose, horse/rider equipment, palette, scale, lighting, camera and formation position reference."
+  },
+  "review_only_references": [
+    {
+      "path": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v1/source/charging1_f036_960_rgba.png",
+      "sha256": "ec5d3782bf49e278db0907405a02a19702cd12ddc41352a62df059be120a7c1b",
+      "role": "Local equipment and identity cross-check only; not uploaded."
+    },
+    {
+      "path": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v1/review/reference_context.png",
+      "sha256": "32200c5f2e62e8482fd0d389284e8cfd75eb481ea2f15c1c885e3f7acce66fae",
+      "role": "Review board only; not uploaded."
+    }
+  ],
+  "prompt_en": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v1/prompt.en.txt",
+  "prompt_zh": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v1/prompt.zh.txt",
+  "prompt_en_sha256": "a02d34b9b8d8f41e6f87a51e7b43d1ffd4d90c99242777b5758fa9f0a6bf83f2",
+  "prompt_zh_sha256": "ccf7f5cb9202b1261a610508e0241cf3988abe06c893829604d29d67f806b01f",
+  "planned_output": "C:/Users/Administrator/Pictures/gptGen/enemy109_rider_fall_mount_escape_handoff_v1.png",
+  "planned_request_record": "C:/Users/Administrator/Pictures/gptGen/enemy109_rider_fall_mount_escape_handoff_v1.request.json",
+  "planned_response_record": "C:/Users/Administrator/Pictures/gptGen/enemy109_rider_fall_mount_escape_handoff_v1.response.json",
+  "planned_project_copy": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v1/generated/enemy109_rider_fall_mount_escape_handoff_v1.png",
+  "production_record": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v1/production_record.json",
+  "runtime_record": "Library/Locus/tmp/rider_fall_mount_escape_v1/runtime.json",
+  "output_role": "Static handoff-pose candidate for later first-video endpoint preparation; not a final transparent sprite or Unity asset.",
+  "post_generation_scope": {
+    "video_created": false,
+    "matting_done": false,
+    "unity_modified": false,
+    "runtime_checks": false,
+    "user_art_verdict": "rejected",
+    "user_art_feedback": "验收不通过，因为马匹没有惊慌感，角色倒地姿势应该后仰身而不是躺下，很难与受击倒地死亡联系上"
+  }
+}

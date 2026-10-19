@@ -1,0 +1,88 @@
+{
+  "version": "enemy109-rider-fall-mount-escape-handoff-v1",
+  "created_utc": "2026-10-15T05:57:16.672568+00:00",
+  "status": "candidate_saved_user_art_rejected",
+  "paid_post_attempt_count": 1,
+  "user_authorization": "发起生成",
+  "automatic_retry": false,
+  "request_record": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_rider_fall_mount_escape_handoff_v1.request.json",
+  "response_record": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_rider_fall_mount_escape_handoff_v1.response.json",
+  "output": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_rider_fall_mount_escape_handoff_v1.png",
+  "project_copy": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\RiderFallMountEscape_v1\\generated\\enemy109_rider_fall_mount_escape_handoff_v1.png",
+  "approved_input_sha256": "b24263a422fe7cc6b7cf17afea093a097fd748138c0a1d2d7bf6cbe28e0983cc",
+  "prompt_en_sha256": "a02d34b9b8d8f41e6f87a51e7b43d1ffd4d90c99242777b5758fa9f0a6bf83f2",
+  "prompt_zh_sha256": "ccf7f5cb9202b1261a610508e0241cf3988abe06c893829604d29d67f806b01f",
+  "model": "gpt-image-2.5-sunburst",
+  "fields_without_prompt": {
+    "model": "gpt-image-2.5-sunburst",
+    "quality": "max",
+    "input_fidelity": "high",
+    "size": "1024x1024",
+    "output_format": "png",
+    "n": "1"
+  },
+  "user_art_verdict": "rejected",
+  "user_art_feedback": "验收不通过，因为马匹没有惊慌感，角色倒地姿势应该后仰身而不是躺下，很难与受击倒地死亡联系上",
+  "rejection_followup": "Prepare a separate v2 backward-recoil fall key pose with a visibly startled living horse. Keep the rejected v1 image and submitted prompts unchanged. No new generation authorization is implied.",
+  "video_created": false,
+  "cutout_done": false,
+  "unity_imported": false,
+  "http_status": 200,
+  "request_elapsed_seconds": 146.32,
+  "route_host": "cdn.jd23kjs.work",
+  "usage": {
+    "input_tokens": 1716,
+    "output_tokens": 8242,
+    "total_tokens": 9958,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "input_tokens_details": {
+      "text_tokens": 1376,
+      "image_tokens": 340
+    }
+  },
+  "cost": null,
+  "returned_image_count": 1,
+  "output_validation": {
+    "bytes": 1097887,
+    "sha256": "abc75d9438946eb61a62ffffaa011114673bf833a778ac4916c7eb6b9edaa51c",
+    "size": [
+      1024,
+      1024
+    ],
+    "mode": "RGB",
+    "png_color_type": 2,
+    "alpha_range": [
+      255,
+      255
+    ],
+    "fully_opaque": true,
+    "corner_rgb": [
+      [
+        10,
+        154,
+        74
+      ],
+      [
+        9,
+        159,
+        73
+      ],
+      [
+        11,
+        154,
+        72
+      ],
+      [
+        10,
+        160,
+        74
+      ]
+    ],
+    "requested_size_matches": true
+  },
+  "output_project_copy_byte_equal": true,
+  "approved_input_and_prompts_unchanged": true,
+  "finished_utc": "2026-10-15T05:59:54.807483+00:00"
+}

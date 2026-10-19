@@ -1,0 +1,210 @@
+{
+  "version": "enemy109-charge-interrupted-video-v1-4s",
+  "created_at_utc": "2026-10-13T11:20:55.485945+00:00",
+  "status": "11_mattes_user_accepted_f097_rejected_f063_transition_analysis",
+  "video_user_verdict": "accepted",
+  "video_user_feedback": "已验收，请挑选有效帧",
+  "selection_user_verdict": "accepted",
+  "selection_user_feedback": "已验收，请抠图",
+  "probe_user_verdict": "accepted",
+  "cutout_authorization": "已验收，可以按照当前参数继续抠图",
+  "matte_user_verdict": "partially_accepted",
+  "matte_user_feedback": "ChargeInterrupted12_f097_t4.000不采纳，因为出现了色差问题，其他帧已验收",
+  "accepted_rgba_frame_count": 11,
+  "accepted_rgba_source_frames_1based": [1, 3, 9, 17, 21, 25, 29, 33, 39, 51, 63],
+  "rejected_rgba_source_frames_1based": [97],
+  "adopted_interrupt_endpoint_file": "ChargeInterrupted11_f063_t2.583.png",
+  "next_video_generation_authorized": false,
+  "task_id": "task_2db36264422f43af9add2480770f4e6c",
+  "user_authorization": "发起视频生成",
+  "user_confirmation": "确认并生成",
+  "parameters": {
+    "duration_seconds": 4,
+    "resolution": "720p",
+    "aspect_ratio": "1:1",
+    "generate_audio": false,
+    "watermark": false,
+    "seed": -1
+  },
+  "model": "seedance-2-fast",
+  "frames": [
+    {
+      "type": "image_url",
+      "role": "first_frame",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/Enemy109ArtSource/02_VideoPreparation/ChargeInterrupted_v1/upload/first_frame_k1_impact_green_015962_1024.png",
+      "sha256": "649ea33ac812b1988ab5628696bc8bde120f7a609cd7f6bca9a538d47265cc01",
+      "role_detail": "K1 existing impact contact pose: rider backward recoil and raised front hooves; at t0 hit already received, no additional hit or charging lead-in."
+    },
+    {
+      "type": "image_url",
+      "role": "last_frame",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/Enemy109ArtSource/02_VideoPreparation/ChargeInterrupted_v1/upload/last_frame_k2_brake_tail_green_015962_1024.png",
+      "sha256": "f7b290c504516de275b4d86c5fe8e8b418b8660c9952be48e11eb394aecfa244",
+      "role_detail": "User-accepted K2: front-hoof support, rider involuntary forward fold while seated; still frontal, no idle reset or turn."
+    }
+  ],
+  "prompt_en_sha256": "8ee217bb8cbca6e8f40010768b16aa82c725557cc10c74bc840afed82b4fdb03",
+  "prompt_zh_sha256": "0a33fca048b6c35c7bbed6f74c4b7c4483274b668ea6466e9b6f4c800c3fc8d6",
+  "output": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_charge_interrupted_v1_720p_4s.mp4",
+  "request_record": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_charge_interrupted_v1_720p_4s.request.json",
+  "response_record": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_charge_interrupted_v1_720p_4s.response.json",
+  "create_post_attempt_count": 1,
+  "automatic_create_retry": false,
+  "uploads": [
+    {
+      "role": "first_frame",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/Enemy109ArtSource/02_VideoPreparation/ChargeInterrupted_v1/upload/first_frame_k1_impact_green_015962_1024.png",
+      "sha256": "649ea33ac812b1988ab5628696bc8bde120f7a609cd7f6bca9a538d47265cc01",
+      "http_status": 200,
+      "elapsed_seconds": 4.687,
+      "observed_at_utc": "2026-10-13T11:21:00.182381+00:00",
+      "response": {
+        "code": 200,
+        "msg": "",
+        "data": {
+          "file_id": "img_62ddbea045064708acb9725de5b35009",
+          "file_kind": "image",
+          "object_key": "tmp/6039af75-fe09-4e58-bc14-6a7977811339/img_62ddbea045064708acb9725de5b35009.png",
+          "url": "<temporary URL redacted>",
+          "mime_type": "image/png",
+          "size_bytes": 372006,
+          "expires_at": "2026-10-16T11:20:40.002248169Z"
+        }
+      }
+    },
+    {
+      "role": "last_frame",
+      "path": "H:/Project/threeKingdomSlayer/threeKingdomSlayer/Enemy109ArtSource/02_VideoPreparation/ChargeInterrupted_v1/upload/last_frame_k2_brake_tail_green_015962_1024.png",
+      "sha256": "f7b290c504516de275b4d86c5fe8e8b418b8660c9952be48e11eb394aecfa244",
+      "http_status": 200,
+      "elapsed_seconds": 4.172,
+      "observed_at_utc": "2026-10-13T11:21:04.355287+00:00",
+      "response": {
+        "code": 200,
+        "msg": "",
+        "data": {
+          "file_id": "img_c0205259c7f84357b42391cabf0b9fca",
+          "file_kind": "image",
+          "object_key": "tmp/6039af75-fe09-4e58-bc14-6a7977811339/img_c0205259c7f84357b42391cabf0b9fca.png",
+          "url": "<temporary URL redacted>",
+          "mime_type": "image/png",
+          "size_bytes": 372912,
+          "expires_at": "2026-10-16T11:20:44.482734403Z"
+        }
+      }
+    }
+  ],
+  "polls": [
+    {
+      "observed_at_utc": "2026-10-13T11:21:08.726121+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-13T11:21:17.738636+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-13T11:21:26.716385+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-13T11:21:35.683196+00:00",
+      "http_status": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": "",
+      "usage": null,
+      "cost": null
+    },
+    {
+      "observed_at_utc": "2026-10-13T11:28:24.339627+00:00",
+      "http_status": 200,
+      "status": "success",
+      "purpose": "retrieve_existing_task",
+      "usage": {
+        "completion_tokens": 87300,
+        "total_tokens": 87300
+      },
+      "cost": {
+        "spend": 0.48888
+      }
+    }
+  ],
+  "video_downloaded": true,
+  "container_validated": true,
+  "full_decode_validated": true,
+  "user_art_verdict": "accepted",
+  "production_frames_selected": true,
+  "selected_frame_count": 12,
+  "selected_frames_directory": "Enemy109ArtSource/03_SelectedFrames/ChargeInterrupted_v1/raw/",
+  "selected_frames_manifest": "Enemy109ArtSource/03_SelectedFrames/ChargeInterrupted_v1/selected_frames_manifest.json",
+  "selected_source_video_frames_1based": [1, 3, 9, 17, 21, 25, 29, 33, 39, 51, 63, 97],
+  "selection_pixels_equal_source_decode": true,
+  "selection_verification": "Enemy109ArtSource/03_SelectedFrames/ChargeInterrupted_v1/selection_verification.json",
+  "cutout_done": true,
+  "cutout_frame_count": 12,
+  "cutout_directory": "Enemy109ArtSource/03_SelectedFrames/ChargeInterrupted_v1/keyed_ui_t79/",
+  "cutout_report": "Enemy109ArtSource/03_SelectedFrames/ChargeInterrupted_v1/matting_report.json",
+  "cutout_verification": "Enemy109ArtSource/03_SelectedFrames/ChargeInterrupted_v1/matting_verification.json",
+  "unity_imported": false,
+  "gameplay_modified": false,
+  "create_started_at_utc": "2026-10-13T11:21:04.359752+00:00",
+  "create_elapsed_seconds": 2.375,
+  "create_http_status": 200,
+  "task_accepted_at_utc": "2026-10-13T11:21:06.746245+00:00",
+  "usage": {
+    "completion_tokens": 87300,
+    "total_tokens": 87300
+  },
+  "cost": {
+    "spend": 0.48888
+  },
+  "last_task_status": "success",
+  "last_error": {
+    "phase": "query_existing_task",
+    "at_utc": "2026-10-13T11:26:48.120625+00:00",
+    "type": "URLError",
+    "message": "<urlopen error _ssl.c:990: The handshake operation timed out>"
+  },
+  "download_started_at_utc": "2026-10-13T11:28:37.028662+00:00",
+  "bytes": 2114011,
+  "sha256": "d3df3049161ade578d178c658972087d55e5c24a06310b9e961f5998a40d22d9",
+  "actual_media": {
+    "video_stream": [
+      "Stream #0:0[0x1](und): Video: h264 (High) (avc1 / 0x31637661), yuv420p(progressive), 960x960, 4137 kb/s, 24 fps, 24 tbr, 12288 tbn (default)"
+    ],
+    "audio_stream_present": false,
+    "width": 960,
+    "height": 960,
+    "fps": 24.0,
+    "frame_count": 97,
+    "duration_seconds": 4.04
+  },
+  "download_manifest": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\charge_interrupted_video_v1\\download_manifest.json",
+  "validated_at_utc": "2026-10-13T11:30:05.359501+00:00",
+  "historical_query_errors_resolved": true,
+  "recovery_note": "Read/SSL handshake timeouts occurred only on existing-task GET. Curl GET later returned success; no additional creation POST. Download used four validated HTTP206 ranges, then container and full decode checks passed.",
+  "diagnostic_review": "Enemy109ArtSource/02_VideoPreparation/ChargeInterrupted_v1/generated_review_4s/",
+  "agent_visual_observation": "Samples show K1 to K2 and frontal mounted rider throughout inspected frames; first about 0.3-0.8 seconds add forequarter/front-hoof lift before landing, rather than direct lowering. Tail settles toward K2. This is agent observation, not user art acceptance or full prompt compliance.",
+  "minimum_diagnostic_margins_LTRB": [120, 86, 242, 154],
+  "diagnostic_edge4px_foreground_frames": [],
+  "background_median_rgb_ranges": [[0, 2], [143, 154], [56, 60]],
+  "subject_color_continuity_verified": false,
+  "adjacent_foreground_rgb_mae_summary": {"early_f002_f036_mean": 14.819, "middle_f037_f070_mean": 6.316, "tail_f071_f097_mean": 0.703, "scope": "Unregistered adjacent-frame foreground union; pose/redraw/encoding diagnostic only, not a material color metric."},
+  "next_step": "User accepted matte frames 01-11; transparent f097 is excluded for reported color difference but retained for trace. Analyze f063 to existing retreat entrance only; do not generate, delete/rekey/recolor sources or deploy Unity."
+}

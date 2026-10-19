@@ -1,0 +1,60 @@
+{
+  "version": "enemy109-charge-interrupted-tail-ref-preparation-v1",
+  "created_utc": "2026-10-13T06:18:52.549498+00:00",
+  "user_direction": "当前图是命中关键帧；随后马急停、骑手措不及防，需要制作关键尾帧再衔接转身返航",
+  "generation_started": false,
+  "new_paid_api_calls": 0,
+  "user_defined_k1_role": "hit_contact_keyframe",
+  "k1_visual_acceptance": "role_confirmed; no explicit blanket verdict for alignment/palette/deployment",
+  "k2_proposed_role": "braking_followthrough_tail_before_turn",
+  "primary_upload": {
+    "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterruptedTail_v1\\upload\\k1_impact_original_1024_rgb.png",
+    "sha256": "eed75c1aefabcd3d26699f1bcafc5398b9945d0ffc2d9a7d0a0e318fdbb8b46a",
+    "mode": "RGB",
+    "size": [
+      1024,
+      1024
+    ],
+    "source": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterrupted_v1\\generated\\enemy109_charge_interrupted_keypose_v1.png",
+    "copy_byte_identical": true,
+    "resized": false,
+    "cropped": false,
+    "translated": false,
+    "background_replaced": false,
+    "matted": false,
+    "role": "Only image edit upload: K1 palette/style/identity/scale and source phase, change local pose to K2 after horse brakes."
+  },
+  "review_only_sources": [
+    {
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterruptedTail_v1\\source\\charging3_anatomy_960_rgba.png",
+      "sha256": "3fc6751469bf69371493a40379ad4d8b6cf6ea99d1d1177da27b37f191358ca3",
+      "source": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\Charging\\keyed_ui_t79\\charging3_f039.png",
+      "role": "Horse limb/tack anatomy only; not uploaded."
+    },
+    {
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterruptedTail_v1\\source\\accepted_retreat_video_f001_960_rgb.png",
+      "sha256": "d8e2a653ed1543fbbf89a506a053b1e40430adc33ce20ca588cb74558fd71359",
+      "source": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\StrikeToRetreat_v1\\source\\retreat_video_f001_original_rgb.png",
+      "role": "Existing accepted rear retreat target for later turn; not uploaded in K2 request."
+    }
+  ],
+  "sources_before": [
+    {
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterrupted_v1\\generated\\enemy109_charge_interrupted_keypose_v1.png",
+      "sha256": "eed75c1aefabcd3d26699f1bcafc5398b9945d0ffc2d9a7d0a0e318fdbb8b46a"
+    },
+    {
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\Charging\\keyed_ui_t79\\charging3_f039.png",
+      "sha256": "3fc6751469bf69371493a40379ad4d8b6cf6ea99d1d1177da27b37f191358ca3"
+    },
+    {
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\StrikeToRetreat_v1\\source\\retreat_video_f001_original_rgb.png",
+      "sha256": "d8e2a653ed1543fbbf89a506a053b1e40430adc33ce20ca588cb74558fd71359"
+    }
+  ],
+  "sources_unchanged": true,
+  "prepared_context_sheet": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterruptedTail_v1\\review\\k1_charge_retreat_reference_context.png",
+  "action_plan_text_board": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterruptedTail_v1\\review\\k1_k2_k3_action_plan.png",
+  "action_plan_not_generated_pose_art": true,
+  "unity_modified": false
+}

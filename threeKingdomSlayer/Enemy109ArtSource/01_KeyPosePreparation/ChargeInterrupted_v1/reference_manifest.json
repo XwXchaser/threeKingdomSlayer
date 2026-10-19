@@ -1,0 +1,127 @@
+{
+  "version": "enemy109-charge-interrupted-keypose-preparation-v1",
+  "created_utc": "2026-10-13T05:12:52.632668+00:00",
+  "user_request": "准备制作关键打断帧参考图",
+  "prepared_only": true,
+  "generated_keypose_exists": false,
+  "reference_source_files_unchanged": true,
+  "primary_upload_count": 1,
+  "background_rgb": [
+    0,
+    159,
+    62
+  ],
+  "new_paid_api_calls": 0,
+  "unity_modified": false,
+  "source_rows": [
+    {
+      "label": "charging1_identity",
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\Charging\\keyed_ui_t79\\charging1_f036.png",
+      "source_sha256": "ec5d3782bf49e278db0907405a02a19702cd12ddc41352a62df059be120a7c1b",
+      "source_copy": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterrupted_v1\\source\\charging1_identity_960_rgba.png",
+      "copy_byte_equal": true,
+      "source_size": [
+        960,
+        960
+      ],
+      "source_alpha_bbox": [
+        113,
+        157,
+        698,
+        897
+      ],
+      "canvas_padding_only": [
+        32,
+        32,
+        32,
+        32
+      ],
+      "reference_role": "Primary upload: character identity, frontal charge pose, colors, equipment, source scale.",
+      "uploaded": false,
+      "prepared_upload": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterrupted_v1\\upload\\charging1_identity_green_015962_1024.png",
+      "prepared_upload_sha256": "cb2592e25fb00fba0598ed41d39539724aa77316ef622ec6aa9012ee46532998",
+      "prepared_upload_size": [
+        1024,
+        1024
+      ],
+      "prepared_upload_mode": "RGB",
+      "background_rgb": [
+        0,
+        159,
+        62
+      ],
+      "whole_image_resized": false,
+      "whole_image_cropped": false,
+      "visible_rgb_changed_pixels": 0,
+      "visible_rgb_preserved_pixels": 192075,
+      "alpha_bbox_on_padded_canvas": [
+        145,
+        189,
+        730,
+        929
+      ],
+      "margins_LTRB": [
+        145,
+        189,
+        294,
+        95
+      ]
+    },
+    {
+      "label": "charging3_leg_support",
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\Charging\\keyed_ui_t79\\charging3_f039.png",
+      "source_sha256": "3fc6751469bf69371493a40379ad4d8b6cf6ea99d1d1177da27b37f191358ca3",
+      "source_copy": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterrupted_v1\\source\\charging3_leg_support_960_rgba.png",
+      "copy_byte_equal": true,
+      "source_size": [
+        960,
+        960
+      ],
+      "source_alpha_bbox": [
+        112,
+        149,
+        743,
+        907
+      ],
+      "canvas_padding_only": [
+        32,
+        32,
+        32,
+        32
+      ],
+      "reference_role": "Local review only: horse anatomy, limbs and tack. Not a second upload or a target interruption pose.",
+      "uploaded": false
+    },
+    {
+      "label": "mountedIdle1_equipment",
+      "source_path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\03_SelectedFrames\\MountedIdle\\keyed_ui_t79\\mountedIdle1_f001.png",
+      "source_sha256": "8d085440b39ddf5fae48bc26a8f678406818526b0d4792bb8e69ace66bc198a7",
+      "source_copy": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterrupted_v1\\source\\mountedIdle1_equipment_960_rgba.png",
+      "copy_byte_equal": true,
+      "source_size": [
+        960,
+        960
+      ],
+      "source_alpha_bbox": [
+        244,
+        17,
+        688,
+        931
+      ],
+      "canvas_padding_only": [
+        32,
+        32,
+        32,
+        32
+      ],
+      "reference_role": "Local review only: equipment and standing proportions. Not an instruction to recover to Idle.",
+      "uploaded": false
+    }
+  ],
+  "existing_retreat_context": {
+    "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\cavalry_concept\\retreat_run_loop_v1\\diagnostic_review\\first_frame.png",
+    "sha256": "d8e2a653ed1543fbbf89a506a053b1e40430adc33ce20ca588cb74558fd71359",
+    "copy": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterrupted_v1\\source\\accepted_retreat_video_f001_960_rgb.png",
+    "role": "Review only, accepted video endpoint; not an input to frontal interruption image generation."
+  }
+}

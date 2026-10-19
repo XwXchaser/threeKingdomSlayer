@@ -1,0 +1,291 @@
+{
+  "version": "enemy109-riderless-escape-video-v1",
+  "created_utc": "2026-10-16T13:11:58.200632+00:00",
+  "status": "technical_complete_visual_review_pending",
+  "task_id": "task_aceac9346c3f47f1a7fb42d522ed84e7",
+  "user_authorization": "已更新交接文档，请根据文档内容发起视频生成",
+  "authorization_scope": "One Seedance task: upload the listed 1152 reference once, create one video, poll, download, validate the container and fully decode it. No automatic retry, no second video, no matting, no Unity.",
+  "model": "seedance-2-fast",
+  "parameters": {
+    "duration_seconds": 4,
+    "resolution": "720p",
+    "aspect_ratio": "1:1",
+    "generate_audio": false,
+    "watermark": false,
+    "seed": -1
+  },
+  "reference": {
+    "semantic_role": "accepted_riderless_start_pose_and_identity",
+    "proposed_api_role": "reference_image",
+    "source": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/video_ready/enemy109_riderless_horse_green_015962_despill_v1_1152.png",
+    "sha256": "2727e31a20430c541d021806966768689c2d1744db7c0ef357d7e2e872387bd2",
+    "bytes": 369696,
+    "size": [
+      1152,
+      1152
+    ],
+    "mode": "RGB",
+    "padding_per_side_px": 64,
+    "subject_margins_ltrb_px": [
+      230,
+      251,
+      233,
+      243
+    ],
+    "role": "Already prepared 1152 upload. Do not pad the 1024 edit result again."
+  },
+  "prompt_en_sha256": "7d81e08031c499ff782513a910e2d4519772d18882ba5bfbae2c2c505fe67623",
+  "prompt_zh_sha256": "1cacfa8d44207944f4663a8e065ef0f8c641845f40c3d71cc0b3f12b4426332d",
+  "output": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_riderless_escape_v1_720p_4s.mp4",
+  "request_record": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_riderless_escape_v1_720p_4s.request.json",
+  "response_record": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_riderless_escape_v1_720p_4s.response.json",
+  "create_post_attempt_count": 1,
+  "automatic_create_retry": false,
+  "uploads": [
+    {
+      "index": 1,
+      "http": 200,
+      "sha256": "2727e31a20430c541d021806966768689c2d1744db7c0ef357d7e2e872387bd2",
+      "utc": "2026-10-16T13:12:04.742752+00:00",
+      "elapsed_seconds": 6.538,
+      "response": {
+        "code": 200,
+        "msg": "",
+        "data": {
+          "file_id": "img_79f6c5a7a5e34dcca4fcefa950f0e50e",
+          "file_kind": "image",
+          "object_key": "tmp/6039af75-fe09-4e58-bc14-6a7977811339/img_79f6c5a7a5e34dcca4fcefa950f0e50e.png",
+          "url": "<temporary URL redacted>",
+          "mime_type": "image/png",
+          "size_bytes": 369696,
+          "expires_at": "2026-10-19T13:11:41.600880460Z"
+        }
+      }
+    }
+  ],
+  "polls": [
+    {
+      "utc": "2026-10-16T13:12:09.711203+00:00",
+      "http": 200,
+      "status": "queued",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-16T13:12:17.825074+00:00",
+      "http": 200,
+      "status": "queued",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-16T13:12:26.299777+00:00",
+      "http": 200,
+      "status": "queued",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-16T13:12:35.741164+00:00",
+      "http": 200,
+      "status": "queued",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-16T13:12:44.776831+00:00",
+      "http": 200,
+      "status": "queued",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-16T13:12:53.776245+00:00",
+      "http": 200,
+      "status": "queued",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-16T13:13:03.261166+00:00",
+      "http": 200,
+      "status": "queued",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-16T13:13:12.458310+00:00",
+      "http": 200,
+      "status": "queued",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-16T13:13:22.739574+00:00",
+      "http": 200,
+      "status": "queued",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-16T13:13:33.141855+00:00",
+      "http": 200,
+      "status": "queued",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-16T13:13:41.253000+00:00",
+      "http": 200,
+      "status": "queued",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-16T13:15:47.453698+00:00",
+      "http": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-16T13:18:11.345519+00:00",
+      "http": 200,
+      "status": "success",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-16T13:19:38.553894+00:00",
+      "status": "success",
+      "purpose": "retrieve_existing_task"
+    },
+    {
+      "utc": "2026-10-16T13:23:03.997559+00:00",
+      "status": "success",
+      "purpose": "retrieve_existing_task"
+    }
+  ],
+  "video_downloaded": true,
+  "container_validated": true,
+  "full_decode_validated": true,
+  "user_art_verdict": "pending",
+  "cutout_done": false,
+  "unity_imported": false,
+  "create_started_utc": "2026-10-16T13:12:04.746280+00:00",
+  "create_http_status": 200,
+  "task_accepted_utc": "2026-10-16T13:12:06.200258+00:00",
+  "last_task_status": "success",
+  "observation_wall_seconds": 102.054,
+  "usage": {
+    "completion_tokens": 87300,
+    "total_tokens": 87300
+  },
+  "cost": {
+    "spend": 0.48888
+  },
+  "last_error": {
+    "phase": "download_existing_video",
+    "utc": "2026-10-16T13:22:39.198524+00:00",
+    "type": "TimeoutError",
+    "message": "Download wall budget reached; partial kept"
+  },
+  "bytes": 2398640,
+  "sha256": "4789223a82768e82494a719ecb229f6276b380f1ccd1fee71599fb45aba48d0f",
+  "actual_media": {
+    "video_stream": [
+      "Stream #0:0[0x1](und): Video: h264 (High) (avc1 / 0x31637661), yuv420p(progressive), 960x960, 4700 kb/s, 24 fps, 24 tbr, 12288 tbn (default)"
+    ],
+    "audio_stream_present": false,
+    "width": 960,
+    "height": 960,
+    "fps": 24.0,
+    "frame_count": 97,
+    "duration_seconds": 4.04
+  },
+  "validated_utc": "2026-10-16T13:23:08.568174+00:00",
+  "download_manifest": "Library/Locus/tmp/riderless_escape_video_v1/download_manifest.json",
+  "technical_review": {
+    "review_report": "Enemy109ArtSource/04_MountEscape/02_VideoPreparation/RiderlessEscape_v1/review/technical_review.json",
+    "motion_profile": {
+      "max_changed_px": 137627,
+      "max_changed_px_frame": 95,
+      "first_frame_above_10pct": 13,
+      "frames_1_to_10_pct_of_max": [
+        1.5,
+        0.8,
+        0.0,
+        0.0,
+        0.2,
+        0.1,
+        0.0,
+        0.1,
+        0.6
+      ],
+      "note": "Frames 4-9 sit near zero change (a near-hold right after the reference pose) before motion builds from frame ~11-13."
+    },
+    "download_manifest": "Library/Locus/tmp/riderless_escape_video_v1/download_manifest.json",
+    "G2_output_plate": {
+      "method": "Corner 64x64 patches per frame; median minus the batch key (0,159,62).",
+      "dR_range": [
+        0,
+        0
+      ],
+      "dG_range": [
+        -17,
+        -13
+      ],
+      "dB_range": [
+        -3,
+        -1
+      ],
+      "dG_first_frame": -13,
+      "dG_last_frame": -17,
+      "worst_frame": 10,
+      "worst_median_rgb": [
+        0,
+        142,
+        59
+      ],
+      "comparison_to_video1": "Video-1 measured roughly -5 to -20 on G; this batch sits in the same direction and band (-17..-13).",
+      "escalation": "Plate drift does not void the take, but is an explicit user decision item (accept / regenerate / delivery-side handling only)."
+    },
+    "framing": {
+      "min_margins_L_T_R_B_any_frame": [
+        85,
+        208,
+        42,
+        202
+      ],
+      "max_margins_L_T_R_B_any_frame": [
+        192,
+        258,
+        216,
+        244
+      ],
+      "frames_touching_edge": 0,
+      "smallest_margin_frame": 62,
+      "subject_px_min": 133458,
+      "subject_px_max": 163807,
+      "subject_px_ratio_last_over_first": 1.224,
+      "note": "Largest sustained subject growth vs the first frame is consistent with the turn plus lengthened stride; it is not a single-frame jump."
+    },
+    "rider_zone_subject_px": {
+      "min": 262,
+      "max": 13364,
+      "note": "Lower-right zone; a lingering rider or lance would keep this high."
+    },
+    "keyframes": [
+      "review/keyframe_first_f001.png",
+      "review/keyframe_mid_f049.png",
+      "review/keyframe_last_f097.png",
+      "review/contact_sheet_13.png",
+      "review/reference_vs_firstframe.png",
+      "review/start_strip_f001_f014.png",
+      "review/late_strip.png"
+    ],
+    "reviewer_note": "Technical plus visual comparison by the agent. Art acceptance remains with the user."
+  },
+  "output_sha256_reverified": "4789223a82768e82494a719ecb229f6276b380f1ccd1fee71599fb45aba48d0f",
+  "output_bytes_reverified": 2398640
+}

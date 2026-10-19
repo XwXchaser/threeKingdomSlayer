@@ -1,0 +1,52 @@
+{
+  "version": "enemy109-rider-fall-mount-escape-backward-recoil-keypose-v2-review",
+  "status": "technical_readback_complete_user_accepted_as_intermediate_keypose",
+  "output": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v2/generated/enemy109_backward_fall_startled_mount_keypose_v2.png",
+  "output_sha256": "61c7c36432d0986c41c9851535c46c843a549405c3f3329226f13189c5c5b240",
+  "output_bytes": 1196925,
+  "image": {
+    "size": [1024, 1024],
+    "mode": "RGB",
+    "png_color_type": 2,
+    "alpha_range": [255, 255],
+    "fully_opaque": true,
+    "project_copy_byte_equal": true
+  },
+  "request": {
+    "http_status": 200,
+    "returned_image_count": 1,
+    "remote_post_attempt_count": 1,
+    "automatic_paid_retry": false,
+    "route_host": "cdn.jd23kjs.work",
+    "request_elapsed_seconds": 292.428,
+    "cost_returned": false,
+    "cost_note": "The API response did not contain a cost field; no amount is inferred."
+  },
+  "visual_readback_observations": [
+    "The rider is visibly recoiling backward above and to the image-right of the saddle rather than lying flat on the ground.",
+    "The horse has a raised and pulled-back head, open mouth, swept-back ears and a lifted foreleg, giving a clear startled reaction while the hind support remains visible.",
+    "The rider, horse and original lance remain one generated combined image; this is an action key-pose candidate, not the final grounded handoff frame or a separated horse asset.",
+    "The lance is visibly raised toward the upper-left with the weapon hand still gripping it, rather than the requested loose downward trailing carry. This deviation should be reviewed for an unintended triumphant or active-attack read.",
+    "The image requires user art review for the exact backward-fall read, horse alarm intensity, anatomy, weapon continuity and continuity with the later grounded landing."
+  ],
+  "diagnostics": {
+    "method": "Non-green pixel bounding-box probe over the generated RGB image; diagnostic only and not a matte.",
+    "non_green_bbox_xy_exclusive": [241, 26, 935, 935],
+    "margins_ltrb": [241, 26, 89, 89],
+    "target_margin_px": 64,
+    "all_sides_meet_target": false,
+    "limiting_edge": "top",
+    "corner_64px_median_rgb": [1, 162, 67],
+    "corner_64px_std_rgb": [0.571, 0.883, 0.83],
+    "background_note": "The generated green plate is close to but not exactly RGB(0,159,62), and varies slightly. It requires separate matting calibration if accepted. The top margin is 26px because the lance tip approaches the upper edge."
+  },
+  "scope": {
+    "video_created": false,
+    "matting_done": false,
+    "unity_modified": false,
+    "runtime_checks": false,
+    "user_art_verdict": "accepted",
+    "user_art_feedback": "已验收，但这个只适合当中间帧，请制作倒地帧",
+    "user_defined_frame_role": "intermediate_backward_fall_keypose_not_grounded_endpoint"
+  }
+}

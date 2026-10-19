@@ -1,0 +1,51 @@
+{
+  "version": "enemy109-grounded-rider-startled-mount-tail-v3-review",
+  "status": "technical_readback_complete_user_accepted_as_grounded_tail_pose",
+  "output": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v3/generated/enemy109_grounded_rider_startled_mount_tail_v3.png",
+  "output_sha256": "0b6b0cb43b721e9697007d868deb64f3a0774f18994c3b1de505b182651b68ea",
+  "output_bytes": 1249420,
+  "image": {
+    "size": [1024, 1024],
+    "mode": "RGB",
+    "png_color_type": 2,
+    "alpha_range": [255, 255],
+    "fully_opaque": true,
+    "project_copy_byte_equal": true
+  },
+  "request": {
+    "http_status": 200,
+    "returned_image_count": 1,
+    "remote_post_attempt_count": 1,
+    "automatic_paid_retry": false,
+    "route_host": "pre-signed-firefly-prod.s3-accelerate.amazonaws.com",
+    "request_elapsed_seconds": 263.375,
+    "cost_returned": false,
+    "cost_note": "The API response did not contain a cost field; no amount is inferred."
+  },
+  "visual_readback_observations": [
+    "The rider is grounded on his back with the chest armor upward, head tipped back and knees bent; this continues the accepted backward-fall pose rather than the rejected face-down image.",
+    "The horse remains alive, alarmed, open-mouthed and angled toward image-left with a raised foreleg; the saddle, bridle and cloth remain on it.",
+    "The lance is released and lies on the ground in front of the rider. The image remains a combined rider-plus-horse candidate; no transparent separation or actual video transition has been made.",
+    "Relative to the accepted v2 intermediate frame, the horse is visibly shifted left/up and the rider plume approaches the right edge. Motion continuity and exact game-space scale remain subject to user review."
+  ],
+  "diagnostics": {
+    "method": "Non-green pixel bounding-box probe over generated RGB; diagnostic only, not a matte.",
+    "non_green_bbox_xy_exclusive": [73, 184, 1010, 936],
+    "margins_ltrb": [73, 184, 14, 88],
+    "target_margin_px": 64,
+    "all_sides_meet_target": false,
+    "limiting_edge": "right",
+    "corner_64px_median_rgb": [1, 171, 72],
+    "corner_64px_std_rgb": [0.59, 0.876, 0.953],
+    "background_note": "The generated plate is not exactly uniform RGB(0,159,62); if accepted and matted, calibrate the actual output. Right-side margin is only 14px, near the rider plume."
+  },
+  "scope": {
+    "video_created": false,
+    "matting_done": false,
+    "unity_modified": false,
+    "runtime_checks": false,
+    "user_art_verdict": "accepted",
+    "user_art_feedback": "已验收，可以开始考虑视频生成的内容",
+    "user_defined_frame_role": "grounded_tail_keypose_candidate_for_video_1"
+  }
+}

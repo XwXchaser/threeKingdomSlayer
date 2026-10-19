@@ -1,0 +1,85 @@
+{
+  "unique_cardinal_views": 4,
+  "images": [
+    {
+      "file": "views/01_Front_Objective.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "mode": "RGBA",
+      "alpha_bounds": [
+        583,
+        236,
+        1465,
+        1811
+      ],
+      "nonzero_alpha_fraction": 0.0865,
+      "sha256": "8a2ef1893ad298ddb790a6e7e6cf369a38e1bc14e5b6ce8b62d6e24eafb0d0c0"
+    },
+    {
+      "file": "views/02_Rear_Eyepiece.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "mode": "RGBA",
+      "alpha_bounds": [
+        583,
+        236,
+        1465,
+        1811
+      ],
+      "nonzero_alpha_fraction": 0.0865,
+      "sha256": "76b4e4c075c6da6ab394c40960bce30f733b123d56c556258d0dd47ee52cf266"
+    },
+    {
+      "file": "views/03_Left.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "mode": "RGBA",
+      "alpha_bounds": [
+        107,
+        237,
+        1941,
+        1811
+      ],
+      "nonzero_alpha_fraction": 0.1495,
+      "sha256": "9cf085d480a5ce41d00d4940089c327af80f0f40ae93b11c0e31f6590c624cd8"
+    },
+    {
+      "file": "views/04_Right.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "mode": "RGBA",
+      "alpha_bounds": [
+        107,
+        237,
+        1941,
+        1811
+      ],
+      "nonzero_alpha_fraction": 0.1495,
+      "sha256": "0788a024b22f73488a3cb7d9e55759302e18b383bc56cf1aacf184040dd0046c"
+    },
+    {
+      "file": "views/05_ThreeQuarter.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "mode": "RGBA",
+      "alpha_bounds": [
+        385,
+        436,
+        1601,
+        1827
+      ],
+      "nonzero_alpha_fraction": 0.1271,
+      "sha256": "bfcd553bb1dead3920b40c37be7db8d3a4f6786ccf3430376b437f1fcb2a2813"
+    }
+  ]
+}

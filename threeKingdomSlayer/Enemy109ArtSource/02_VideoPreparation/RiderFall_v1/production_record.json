@@ -1,0 +1,266 @@
+{
+  "version": "enemy109-rider-fall-video-v1",
+  "created_utc": "2026-10-15T08:59:03.523491+00:00",
+  "status": "technical_complete_visual_review_pending",
+  "task_id": "task_393dfe84427642639b163b4d499cfa26",
+  "user_authorization": "注意补边和绿边问题，发起视频生成",
+  "model": "seedance-2-fast",
+  "parameters": {
+    "duration_seconds": 6,
+    "resolution": "720p",
+    "aspect_ratio": "1:1",
+    "generate_audio": false,
+    "watermark": false,
+    "seed": -1
+  },
+  "references": [
+    {
+      "semantic_role": "mounted_start_pose_proposed",
+      "proposed_api_role": "reference_image",
+      "source": "Enemy109ArtSource/02_VideoPreparation/RiderFall_v1/upload_final/01_mounted_start_green_009f3e_p96_1152.png",
+      "source_sha256": "8c5b9031df8aea1d664ac6dd5107f2d40c2ef99ecfb7e47b4b39a5d41e944c22",
+      "size": [
+        1152,
+        1152
+      ],
+      "mode": "RGB",
+      "role": "Normal MountedIdle1 identity and starting pose, approved with the user's generation instruction. Common padding and edge cleanup applied only on derived upload copy."
+    },
+    {
+      "semantic_role": "accepted_intermediate_backward_fall",
+      "proposed_api_role": "reference_image",
+      "source": "Enemy109ArtSource/02_VideoPreparation/RiderFall_v1/upload_final/02_backward_fall_v2_green_009f3e_p64_1152.png",
+      "source_sha256": "a16d503b1c72dcfd5ec5f71bba213c44b4dbe4226e1668d340ffcd90301ebc3b",
+      "size": [
+        1152,
+        1152
+      ],
+      "mode": "RGB",
+      "user_art_verdict": "accepted_as_intermediate_frame",
+      "role": "Visible backward recoil and saddle loss with startled living horse, passed through continuously without a still-frame hold."
+    },
+    {
+      "semantic_role": "accepted_grounded_end_pose",
+      "proposed_api_role": "reference_image",
+      "source": "Enemy109ArtSource/02_VideoPreparation/RiderFall_v1/upload_final/03_grounded_v3_green_009f3e_p64_1152.png",
+      "source_sha256": "e31cdbb9e7ed23a15ea746de65e0106bb90e5d2bdec30cc01391f579dc86ed90",
+      "size": [
+        1152,
+        1152
+      ],
+      "mode": "RGB",
+      "user_art_verdict": "accepted_as_grounded_frame",
+      "role": "Rider back/shoulder grounded, knees bent, lance released, living startled horse preparing leftward movement. Not yet an actual video handoff frame."
+    }
+  ],
+  "prompt_en_sha256": "e7dd195dde674865d89fe1b532511cd8bd0939cead2cdefb634478cc2cc90a1b",
+  "prompt_zh_sha256": "96350bc551047e69b4b3862ee2a005a8ec615cf4a8ff7c0c4fdc67a487270f8b",
+  "output": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_rider_fall_v1_720p_6s.mp4",
+  "request_record": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_rider_fall_v1_720p_6s.request.json",
+  "response_record": "C:\\Users\\Administrator\\Videos\\doubaoVideo\\enemy109_rider_fall_v1_720p_6s.response.json",
+  "create_post_attempt_count": 1,
+  "automatic_create_retry": false,
+  "uploads": [
+    {
+      "index": 1,
+      "http": 200,
+      "sha256": "8c5b9031df8aea1d664ac6dd5107f2d40c2ef99ecfb7e47b4b39a5d41e944c22",
+      "utc": "2026-10-15T08:59:07.869500+00:00",
+      "elapsed_seconds": 4.343,
+      "response": {
+        "code": 200,
+        "msg": "",
+        "data": {
+          "file_id": "img_0e78fa612e374d2f95fe028d75d54619",
+          "file_kind": "image",
+          "object_key": "tmp/6039af75-fe09-4e58-bc14-6a7977811339/img_0e78fa612e374d2f95fe028d75d54619.png",
+          "url": "<temporary URL redacted>",
+          "mime_type": "image/png",
+          "size_bytes": 362525,
+          "expires_at": "2026-10-18T08:58:46.746693587Z"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "http": 200,
+      "sha256": "a16d503b1c72dcfd5ec5f71bba213c44b4dbe4226e1668d340ffcd90301ebc3b",
+      "utc": "2026-10-15T08:59:11.880568+00:00",
+      "elapsed_seconds": 4.007,
+      "response": {
+        "code": 200,
+        "msg": "",
+        "data": {
+          "file_id": "img_79d55fe0477e43aeaa0641a106b73bb0",
+          "file_kind": "image",
+          "object_key": "tmp/6039af75-fe09-4e58-bc14-6a7977811339/img_79d55fe0477e43aeaa0641a106b73bb0.png",
+          "url": "<temporary URL redacted>",
+          "mime_type": "image/png",
+          "size_bytes": 526167,
+          "expires_at": "2026-10-18T08:58:50.891810467Z"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "http": 200,
+      "sha256": "e31cdbb9e7ed23a15ea746de65e0106bb90e5d2bdec30cc01391f579dc86ed90",
+      "utc": "2026-10-15T08:59:15.800277+00:00",
+      "elapsed_seconds": 3.917,
+      "response": {
+        "code": 200,
+        "msg": "",
+        "data": {
+          "file_id": "img_ba7d6af3f7fa4569bb60b3f5b3a33efa",
+          "file_kind": "image",
+          "object_key": "tmp/6039af75-fe09-4e58-bc14-6a7977811339/img_ba7d6af3f7fa4569bb60b3f5b3a33efa.png",
+          "url": "<temporary URL redacted>",
+          "mime_type": "image/png",
+          "size_bytes": 531609,
+          "expires_at": "2026-10-18T08:58:54.736125310Z"
+        }
+      }
+    }
+  ],
+  "polls": [
+    {
+      "utc": "2026-10-15T08:59:19.906163+00:00",
+      "http": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-15T08:59:28.947275+00:00",
+      "http": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-15T08:59:37.938714+00:00",
+      "http": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-15T08:59:46.927219+00:00",
+      "http": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-15T08:59:55.039528+00:00",
+      "http": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-15T09:00:03.136062+00:00",
+      "http": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-15T09:00:11.210106+00:00",
+      "http": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-15T09:00:20.238996+00:00",
+      "http": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-15T09:00:29.638781+00:00",
+      "http": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-15T09:00:39.020615+00:00",
+      "http": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-15T09:00:48.049733+00:00",
+      "http": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-15T09:00:57.091013+00:00",
+      "http": 200,
+      "status": "generating",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-15T09:05:23.879836+00:00",
+      "http": 200,
+      "status": "success",
+      "code": 200,
+      "msg": ""
+    },
+    {
+      "utc": "2026-10-15T09:09:34.228773+00:00",
+      "status": "success",
+      "purpose": "retrieve_existing_task"
+    }
+  ],
+  "video_downloaded": true,
+  "container_validated": true,
+  "full_decode_validated": true,
+  "user_art_verdict": "accepted",
+  "production_frames_selected": true,
+  "selected_frames_package": "Enemy109ArtSource/03_SelectedFrames/RiderFall_12Frames_v1/",
+  "selected_source_frames_1based": [1, 10, 18, 26, 34, 42, 50, 58, 66, 74, 86, 107],
+  "cutout_done": true,
+  "cutout_recipe": "SVL Chroma auto-key T79 softness16 halo1 alpha-aware despill, semitransparent-to-opaque",
+  "keyed_dir": "Enemy109ArtSource/03_SelectedFrames/RiderFall_12Frames_v1/keyed_ui_t79/",
+  "keyed_user_verdict": "accepted",
+  "keyed_user_feedback": "已验收，整理交接文档，准备在其他对话继续这部分工作",
+  "unity_imported": false,
+  "create_started_utc": "2026-10-15T08:59:15.805029+00:00",
+  "create_http_status": 200,
+  "task_accepted_utc": "2026-10-15T08:59:17.911130+00:00",
+  "last_task_status": "success",
+  "observation_wall_seconds": 99.181,
+  "usage": {
+    "completion_tokens": 130500,
+    "total_tokens": 130500
+  },
+  "cost": {
+    "spend": 0.7308
+  },
+  "bytes": 3810739,
+  "sha256": "381b184bfeaf3064436c681b3f28b3e7222631170d3e362d4ac002066c01ac9d",
+  "actual_media": {
+    "video_stream": [
+      "Stream #0:0[0x1](und): Video: h264 (High) (avc1 / 0x31637661), yuv420p(progressive), 960x960, 5013 kb/s, 24 fps, 24 tbr, 12288 tbn (default)"
+    ],
+    "audio_stream_present": false,
+    "width": 960,
+    "height": 960,
+    "fps": 24.0,
+    "frame_count": 145,
+    "duration_seconds": 6.04
+  },
+  "validated_utc": "2026-10-15T09:09:43.096924+00:00",
+  "review_directory": "Enemy109ArtSource/02_VideoPreparation/RiderFall_v1/generated_review_6s/",
+  "validation_report": "Enemy109ArtSource/02_VideoPreparation/RiderFall_v1/generated_review_6s/validation_and_color_report.json",
+  "review_observation": "Motion contact sheet shows mounted hit, backward saddle loss, rider ground landing and living horse leftward separation; the last ~1s has low residual motion. G2 background median G=145..148 versus input key159, delta=-14..-11; user decision pending.",
+  "download_manifest": "Library/Locus/tmp/rider_fall_video_v1/download_manifest.json"
+}

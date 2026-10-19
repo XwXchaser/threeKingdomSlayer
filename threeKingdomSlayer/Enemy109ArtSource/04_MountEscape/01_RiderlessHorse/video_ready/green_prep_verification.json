@@ -1,0 +1,98 @@
+{
+  "backdrop_unique_values": 1,
+  "backdrop_exactly_batch_key_px": 860894,
+  "visible_px": 187682,
+  "visible_green_dominant_px": 7,
+  "visible_green_dominant_gt5_px": 0,
+  "visible_gex_exactly_0_px": 149,
+  "visible_gex_exactly_minus3_px": 5162,
+  "remaining_green_px_locations": [
+    [
+      272,
+      239,
+      [
+        253,
+        255,
+        254
+      ]
+    ],
+    [
+      288,
+      248,
+      [
+        248,
+        249,
+        244
+      ]
+    ],
+    [
+      288,
+      249,
+      [
+        234,
+        241,
+        240
+      ]
+    ],
+    [
+      288,
+      250,
+      [
+        242,
+        246,
+        245
+      ]
+    ],
+    [
+      289,
+      250,
+      [
+        225,
+        231,
+        230
+      ]
+    ],
+    [
+      245,
+      697,
+      [
+        252,
+        253,
+        226
+      ]
+    ],
+    [
+      364,
+      765,
+      [
+        253,
+        254,
+        250
+      ]
+    ]
+  ],
+  "boundary_ring_gex_mean": -31.1,
+  "boundary_ring_gex_min": -236,
+  "boundary_ring_gex_max": 0,
+  "interior_identical_to_accepted_px": 168524,
+  "interior_px": 168524,
+  "interior_max_abs_channel_diff": 0,
+  "core_mean_rgb_prep": [
+    127.1,
+    54.8,
+    39.0
+  ],
+  "core_mean_rgb_accepted": [
+    127.1,
+    54.8,
+    39.0
+  ],
+  "core_gex_mean_prep": -73.36,
+  "core_gex_mean_accepted": -73.36,
+  "output_1152_size": [
+    1152,
+    1152
+  ],
+  "output_1152_pad_is_exact_key": true,
+  "output_1152_inner_matches_1024": true
+}

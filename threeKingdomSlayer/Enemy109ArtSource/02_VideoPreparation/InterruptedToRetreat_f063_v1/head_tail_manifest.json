@@ -1,0 +1,168 @@
+{
+  "version": "enemy109-f063-to-retreat-f001-aligned-head-tail-v1",
+  "created_utc": "2026-10-14T06:20:40.308149+00:00",
+  "status": "aligned_references_user_confirmed_for_single_video_create",
+  "scope": "One non-loop transition bridge from adopted f063 to existing accepted retreat-video f001; existing retreat loop is not regenerated.",
+  "protected_sources_sha256": {
+    "f063_original_rgba": "878107393ca8607dff93632f1b3a6249450851a3a56105a678614fdade9204b2",
+    "f063_original_rgb": "03064ac95fcad28cb2a8d31b8431321e0e632637f3fed8b3a9797b0be5c9f19b",
+    "retreat_f001_t79_rgba": "9f66646ecb9c624343ee2272dfdc3e37f19e1b000b3e59dc2df3fce091080ab9",
+    "retreat_video": "9adf1f6be61a6c02bcbcf675f7d9e88981f2b1b2cb3d72aee768b0e0d5e343cd"
+  },
+  "head_source": "accepted ChargeInterrupted f063 transparent frame; user accepted frame 11; f097 excluded and not used",
+  "tail_source": "actual retreat-loop video f001 T79 transparent frame; existing accepted video only",
+  "transform": {
+    "scale": 1.0,
+    "head_offset_relative_to_tail": [
+      -10,
+      103
+    ],
+    "canvas_size": [
+      1024,
+      1024
+    ],
+    "common_padding": 32,
+    "head_placement_xy": [
+      22,
+      135
+    ],
+    "tail_placement_xy": [
+      32,
+      32
+    ],
+    "resampling": "None for source geometry; native pixels copied with whole-anchor integer translation and common padding",
+    "translation_basis": "Align support-bottom rows 788/891 by dy103; last6-row outer support midpoints x481/x471 by dx-10. Prepared common support midpoint x503 and floor y923.",
+    "scale_basis": "Source canvases both960; local helmet/boot inspection did not establish a defensible global scale correction. Native pixel scale1 retained; no weapon-inclusive bbox fitting.",
+    "per_frame_bbox_fit": false,
+    "crop_visible_subject": false,
+    "warp": false,
+    "global_color_correction": false
+  },
+  "upload_background_rgb": [
+    0,
+    159,
+    62
+  ],
+  "uploads": [
+    {
+      "role": "first_frame",
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\InterruptedToRetreat_f063_v1\\upload\\first_frame_f063_aligned_green_015962_1024.png",
+      "sha256": "61e0124e5dde941fba86a5292fe158a25344aba432d65eefd96bd11d2e43b2b7",
+      "size": [
+        1024,
+        1024
+      ],
+      "mode": "RGB",
+      "source_alpha_bbox_xy_exclusive": [
+        178,
+        310,
+        697,
+        924
+      ],
+      "margins_LTRB": [
+        178,
+        310,
+        327,
+        100
+      ],
+      "support_bottom_row": 923,
+      "background": {
+        "median_rgb": [
+          0.0,
+          159.0,
+          62.0
+        ],
+        "std_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "range_rgb": [
+          [
+            0,
+            0
+          ],
+          [
+            159,
+            159
+          ],
+          [
+            62,
+            62
+          ]
+        ]
+      },
+      "opaque_subject_rgb_changes_from_aligned_rgba": 0
+    },
+    {
+      "role": "last_frame",
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\InterruptedToRetreat_f063_v1\\upload\\last_frame_retreat_f001_aligned_green_015962_1024.png",
+      "sha256": "fdb0ed4ae67c741397181f5628f38f7ea8ea61d06ac267d18102c25adb95f479",
+      "size": [
+        1024,
+        1024
+      ],
+      "mode": "RGB",
+      "source_alpha_bbox_xy_exclusive": [
+        336,
+        83,
+        733,
+        924
+      ],
+      "margins_LTRB": [
+        336,
+        83,
+        291,
+        100
+      ],
+      "support_bottom_row": 923,
+      "background": {
+        "median_rgb": [
+          0.0,
+          159.0,
+          62.0
+        ],
+        "std_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "range_rgb": [
+          [
+            0,
+            0
+          ],
+          [
+            159,
+            159
+          ],
+          [
+            62,
+            62
+          ]
+        ]
+      },
+      "opaque_subject_rgb_changes_from_aligned_rgba": 0
+    }
+  ],
+  "review_files": [
+    "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\InterruptedToRetreat_f063_v1\\review\\f063_retreat_alignment_comparison.png",
+    "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\02_VideoPreparation\\InterruptedToRetreat_f063_v1\\review\\f063_retreat_alignment_details.png"
+  ],
+  "protected_originals_unchanged": true,
+  "subject_core_rgb_changed": false,
+  "reference_uploads": 2,
+  "video_create_attempts": 1,
+  "task_id": "task_9af5590e1ede438fa2ca54e6210aa74c",
+  "video_user_verdict": "pending",
+  "unity_modified": false,
+  "user_alignment_verdict": "accepted_for_generation",
+  "user_confirmation": "确认并生成",
+  "video_generation_authorized": true,
+  "limitations": [
+    "Global support-bottom alignment does not prove anatomy/projected scale equality through a turn.",
+    "Front f063 and rear f001 have orientation-dependent silhouettes; do not fit whole bbox or weapon-inclusive bbox.",
+    "The f063 source is translated on the prepared copy only; original accepted transparent frame remains unchanged.",
+    "Background is normalized only on upload copies to common RGB(0,159,62); generated output requires separate color review."
+  ]
+}

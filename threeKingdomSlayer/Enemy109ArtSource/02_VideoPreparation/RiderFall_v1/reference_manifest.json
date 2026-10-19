@@ -1,0 +1,314 @@
+{
+  "version": "enemy109-rider-fall-video-reference-preparation-v1",
+  "status": "prepared_local_inputs_no_remote_calls",
+  "created_utc": "2026-10-15T08:30:47.966161+00:00",
+  "background_rgb": [
+    0,
+    159,
+    62
+  ],
+  "common_canvas": [
+    1152,
+    1152
+  ],
+  "common_padding_px": 64,
+  "source_to_prepared_xy": [
+    64,
+    64
+  ],
+  "source_pixel_scale": 1.0,
+  "resize_crop_warp_or_per_part_move": false,
+  "uploads": [
+    {
+      "label": "01_mounted_start",
+      "role": "reference_image",
+      "source": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v2/upload/mountedIdle1_identity_green_015962_1024.png",
+      "source_sha256": "b24263a422fe7cc6b7cf17afea093a097fd748138c0a1d2d7bf6cbe28e0983cc",
+      "path": "Enemy109ArtSource/02_VideoPreparation/RiderFall_v1/upload/01_mounted_start_green_009f3e_p64_1152.png",
+      "sha256": "d1ebdab01e074dd7231c2d17544f449455940431e4e9d9ada7c0d83971b89674",
+      "size": [
+        1152,
+        1152
+      ],
+      "mode": "RGB",
+      "key_auto_rgb": [
+        0,
+        159,
+        62
+      ],
+      "method": "Existing trusted binary alpha; original geometry at +32,+32 in 1024 canvas. Not re-keyed.",
+      "source_background": {
+        "median_rgb": [
+          0.0,
+          159.0,
+          62.0
+        ],
+        "std_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "range_rgb": [
+          [
+            0,
+            0
+          ],
+          [
+            159,
+            159
+          ],
+          [
+            62,
+            62
+          ]
+        ]
+      },
+      "upload_background": {
+        "median_rgb": [
+          0.0,
+          159.0,
+          62.0
+        ],
+        "std_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "range_rgb": [
+          [
+            0,
+            0
+          ],
+          [
+            159,
+            159
+          ],
+          [
+            62,
+            62
+          ]
+        ]
+      },
+      "bbox_xy_exclusive": [
+        340,
+        113,
+        784,
+        1027
+      ],
+      "margins_ltrb": [
+        340,
+        113,
+        368,
+        125
+      ],
+      "core_pixels": 153309,
+      "core_deleted_pixels": 0,
+      "core_rgb_changed_pixels": 0,
+      "visible_edge_rgb_changed_pixels": 0,
+      "semi_alpha_pixels": 0,
+      "edge_ring_green_gt8_pixels": 1449,
+      "edge_ring_pixels": 11573,
+      "edge_ring_gex_mean": -24.0596,
+      "inner_background_key_exact": true,
+      "source_original_unchanged": true
+    },
+    {
+      "label": "02_backward_fall_v2",
+      "role": "reference_image",
+      "source": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v2/generated/enemy109_backward_fall_startled_mount_keypose_v2.png",
+      "source_sha256": "61c7c36432d0986c41c9851535c46c843a549405c3f3329226f13189c5c5b240",
+      "path": "Enemy109ArtSource/02_VideoPreparation/RiderFall_v1/upload/02_backward_fall_v2_green_009f3e_p64_1152.png",
+      "sha256": "e36fe8f2d288dacc2f95223c9b66c8435c0f48da9ba51c5553a528d183800fe1",
+      "size": [
+        1152,
+        1152
+      ],
+      "mode": "RGB",
+      "key_auto_rgb": [
+        2,
+        162,
+        68
+      ],
+      "method": "SVL auto key / threshold79 / softness16 / halo1 / alpha-aware despill / semitransparent-to-opaque. No smoothing or global color correction.",
+      "source_background": {
+        "median_rgb": [
+          1.0,
+          162.0,
+          67.0
+        ],
+        "std_rgb": [
+          0.57078,
+          0.88338,
+          0.82999
+        ],
+        "range_rgb": [
+          [
+            0,
+            10
+          ],
+          [
+            152,
+            167
+          ],
+          [
+            65,
+            77
+          ]
+        ]
+      },
+      "upload_background": {
+        "median_rgb": [
+          0.0,
+          159.0,
+          62.0
+        ],
+        "std_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "range_rgb": [
+          [
+            0,
+            0
+          ],
+          [
+            159,
+            159
+          ],
+          [
+            62,
+            62
+          ]
+        ]
+      },
+      "bbox_xy_exclusive": [
+        306,
+        92,
+        998,
+        998
+      ],
+      "margins_ltrb": [
+        306,
+        92,
+        154,
+        154
+      ],
+      "core_pixels": 197159,
+      "core_deleted_pixels": 0,
+      "core_rgb_changed_pixels": 0,
+      "visible_edge_rgb_changed_pixels": 443,
+      "semi_alpha_pixels": 0,
+      "edge_ring_green_gt8_pixels": 25,
+      "edge_ring_pixels": 21311,
+      "edge_ring_gex_mean": -43.2762,
+      "inner_background_key_exact": true,
+      "source_original_unchanged": true
+    },
+    {
+      "label": "03_grounded_v3",
+      "role": "reference_image",
+      "source": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v3/generated/enemy109_grounded_rider_startled_mount_tail_v3.png",
+      "source_sha256": "0b6b0cb43b721e9697007d868deb64f3a0774f18994c3b1de505b182651b68ea",
+      "path": "Enemy109ArtSource/02_VideoPreparation/RiderFall_v1/upload/03_grounded_v3_green_009f3e_p64_1152.png",
+      "sha256": "0c0377bc81e506f2064ceae2d1943eaec61ba732ae285fd8f31b400e96d8a1cb",
+      "size": [
+        1152,
+        1152
+      ],
+      "mode": "RGB",
+      "key_auto_rgb": [
+        1,
+        170,
+        72
+      ],
+      "method": "SVL auto key / threshold79 / softness16 / halo1 / alpha-aware despill / semitransparent-to-opaque. No smoothing or global color correction.",
+      "source_background": {
+        "median_rgb": [
+          1.0,
+          171.0,
+          72.0
+        ],
+        "std_rgb": [
+          0.58974,
+          0.87574,
+          0.95344
+        ],
+        "range_rgb": [
+          [
+            0,
+            11
+          ],
+          [
+            161,
+            176
+          ],
+          [
+            70,
+            82
+          ]
+        ]
+      },
+      "upload_background": {
+        "median_rgb": [
+          0.0,
+          159.0,
+          62.0
+        ],
+        "std_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "range_rgb": [
+          [
+            0,
+            0
+          ],
+          [
+            159,
+            159
+          ],
+          [
+            62,
+            62
+          ]
+        ]
+      },
+      "bbox_xy_exclusive": [
+        138,
+        250,
+        1073,
+        999
+      ],
+      "margins_ltrb": [
+        138,
+        250,
+        79,
+        153
+      ],
+      "core_pixels": 188520,
+      "core_deleted_pixels": 0,
+      "core_rgb_changed_pixels": 0,
+      "visible_edge_rgb_changed_pixels": 350,
+      "semi_alpha_pixels": 0,
+      "edge_ring_green_gt8_pixels": 27,
+      "edge_ring_pixels": 23897,
+      "edge_ring_gex_mean": -50.8727,
+      "inner_background_key_exact": true,
+      "source_original_unchanged": true
+    }
+  ],
+  "production_cutout": false,
+  "new_remote_calls": 0,
+  "review_files": [
+    "review/reference_preparation_comparison.png",
+    "review/thin_parts_white_dark.png"
+  ],
+  "limitations": [
+    "Intermediate separation is for upload plate preparation, not final Unity production sprites.",
+    "Input color/padding and edge checks do not guarantee video output color or no crop.",
+    "Some residual material green advantage is not automatically a green halo; white/dark detail review remains required.",
+    "Accepted v2/v3 horse positions are preserved; no per-part alignment or bbox normalization was applied."
+  ]
+}

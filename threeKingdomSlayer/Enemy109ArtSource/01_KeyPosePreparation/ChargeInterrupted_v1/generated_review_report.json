@@ -1,0 +1,236 @@
+{
+  "version": "enemy109-charge-interrupted-keypose-v1-review",
+  "created_utc": "2026-10-13T05:45:02.618045+00:00",
+  "original_generated_png": "C:\\Users\\Administrator\\Pictures\\gptGen\\enemy109_charge_interrupted_keypose_v1.png",
+  "project_copy": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterrupted_v1\\generated\\enemy109_charge_interrupted_keypose_v1.png",
+  "output_sha256": "eed75c1aefabcd3d26699f1bcafc5398b9945d0ffc2d9a7d0a0e318fdbb8b46a",
+  "project_copy_byte_equal": true,
+  "reference_and_prompts_unchanged": true,
+  "image_generation_post_count": 1,
+  "input": {
+    "size": [
+      1024,
+      1024
+    ],
+    "corner_patches": [
+      {
+        "box": [
+          0,
+          0,
+          64,
+          64
+        ],
+        "median_rgb": [
+          0.0,
+          159.0,
+          62.0
+        ],
+        "std_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "box": [
+          960,
+          0,
+          1024,
+          64
+        ],
+        "median_rgb": [
+          0.0,
+          159.0,
+          62.0
+        ],
+        "std_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "box": [
+          0,
+          960,
+          64,
+          1024
+        ],
+        "median_rgb": [
+          0.0,
+          159.0,
+          62.0
+        ],
+        "std_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "box": [
+          960,
+          960,
+          1024,
+          1024
+        ],
+        "median_rgb": [
+          0.0,
+          159.0,
+          62.0
+        ],
+        "std_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ],
+    "corner_patch_combined_median_rgb": [
+      0.0,
+      159.0,
+      62.0
+    ],
+    "requested_background_rgb": [
+      0,
+      159,
+      62
+    ],
+    "background_exact_requested_rgb": true,
+    "diagnostic_foreground_bbox_xy_exclusive": [
+      145,
+      189,
+      730,
+      929
+    ],
+    "diagnostic_margins_LTRB": [
+      145,
+      189,
+      294,
+      95
+    ],
+    "diagnostic_meets_64px_margin": true,
+    "mask_note": "RGB chroma silhouette proxy for bounds only; not an alpha matte, not proof of intact anatomy or exact body-position match."
+  },
+  "output": {
+    "size": [
+      1024,
+      1024
+    ],
+    "corner_patches": [
+      {
+        "box": [
+          0,
+          0,
+          64,
+          64
+        ],
+        "median_rgb": [
+          2.0,
+          162.0,
+          63.0
+        ],
+        "std_rgb": [
+          0.585,
+          0.883,
+          0.88
+        ]
+      },
+      {
+        "box": [
+          960,
+          0,
+          1024,
+          64
+        ],
+        "median_rgb": [
+          2.0,
+          162.0,
+          63.0
+        ],
+        "std_rgb": [
+          0.561,
+          0.665,
+          0.666
+        ]
+      },
+      {
+        "box": [
+          0,
+          960,
+          64,
+          1024
+        ],
+        "median_rgb": [
+          2.0,
+          161.0,
+          63.0
+        ],
+        "std_rgb": [
+          0.604,
+          0.752,
+          0.796
+        ]
+      },
+      {
+        "box": [
+          960,
+          960,
+          1024,
+          1024
+        ],
+        "median_rgb": [
+          2.0,
+          162.0,
+          63.0
+        ],
+        "std_rgb": [
+          0.562,
+          0.681,
+          0.784
+        ]
+      }
+    ],
+    "corner_patch_combined_median_rgb": [
+      2.0,
+      162.0,
+      63.0
+    ],
+    "requested_background_rgb": [
+      0,
+      159,
+      62
+    ],
+    "background_exact_requested_rgb": false,
+    "diagnostic_foreground_bbox_xy_exclusive": [
+      165,
+      148,
+      727,
+      851
+    ],
+    "diagnostic_margins_LTRB": [
+      165,
+      148,
+      297,
+      173
+    ],
+    "diagnostic_meets_64px_margin": true,
+    "mask_note": "RGB chroma silhouette proxy for bounds only; not an alpha matte, not proof of intact anatomy or exact body-position match."
+  },
+  "user_art_verdict": "pending",
+  "agent_image_read_back": true,
+  "pose_alignment_not_verified": true,
+  "subject_palette_registered_comparison_done": false,
+  "output_recolored_cropped_scaled_matted": false,
+  "unity_imported": false,
+  "video_created": false,
+  "comparison_file": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy109ArtSource\\01_KeyPosePreparation\\ChargeInterrupted_v1\\review\\generated_vs_charging1.png",
+  "comparison_contains_input_and_output_without_recoloring": true,
+  "bbox_delta_input_to_output": [
+    20,
+    -41,
+    -3,
+    -78
+  ],
+  "comparison_limits": "Different local pose changes silhouette; bbox deltas cannot alone prove uniform scaling or translation. Feet/saddle compatibility needs separate later alignment review."
+}

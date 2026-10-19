@@ -34,13 +34,50 @@ Assets/TJAIGraph/Tmp.meta
 __pycache__/
 *.py[cod]
 
-# 1011 美术素材总包（约 518MB：原视频/原抽帧/选帧/交付精灵，Unity 不导入）
-# 归档说明与溯源：Locus/knowledge/plan/enemy1011-frame-provenance.md
-Enemy1011ArtSource/
+# ─────────────────────────────────────────────────────────────────────────────
+# 美术素材总包（项目根目录、Assets 之外，Unity 不导入）
+# 默认本地留档；只有「已验收 + 不可重建」的同步白名单进版本库，供两台开发主机对齐。
+# 写法：先用 <包名>/* 挡住整包，再用 ! 逐个子目录放行（Git 无法把文件从被排除的父目录里救回来，
+# 所以放行必须在父目录层级上做）。新增已验收素材必须在这里加白名单，否则不会被提交。
+# 明细/理由见各包 README.md；核对脚本 Locus/tools/art-sync/verify_art_sync.py。
+# ─────────────────────────────────────────────────────────────────────────────
 
-# 109 / 长枪 原始素材工作目录（109 约 406MB、长枪约 135MB；Unity 不导入，仅本地留档）
-# 已入库的历史部分不受影响，新增文件不再纳入版本库。
-Enemy109ArtSource/
+# 1011 剑兵（约 593MB）：同步源视频 + 索引/溯源
+# 溯源说明：Locus/knowledge/plan/enemy1011-frame-provenance.md
+Enemy1011ArtSource/*
+!Enemy1011ArtSource/README.md
+!Enemy1011ArtSource/00_Index/
+!Enemy1011ArtSource/01_SourceVideos/
+
+# 109 骑乘枪骑（约 406MB）：同步源视频 + 关键姿态 + 视频准备记录
+Enemy109ArtSource/*
+!Enemy109ArtSource/README.md
+!Enemy109ArtSource/00_SourceVideos/
+!Enemy109ArtSource/01_KeyPosePreparation/
+Enemy109ArtSource/01_KeyPosePreparation/*/review/
+Enemy109ArtSource/01_KeyPosePreparation/*/upload/
+!Enemy109ArtSource/02_VideoPreparation/
+Enemy109ArtSource/02_VideoPreparation/*/review/
+Enemy109ArtSource/02_VideoPreparation/*/review_final/
+Enemy109ArtSource/02_VideoPreparation/*/upload/
+Enemy109ArtSource/02_VideoPreparation/*/upload_final/
+Enemy109ArtSource/02_VideoPreparation/*/generated_review_4s/
+Enemy109ArtSource/02_VideoPreparation/*/generated_review_6s/
+Enemy109ArtSource/02_VideoPreparation/*/diagnostic_review/
+!Enemy109ArtSource/04_MountEscape/
+Enemy109ArtSource/04_MountEscape/03_SelectedFrames/
+Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/review/
+Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/upload/
+Enemy109ArtSource/04_MountEscape/02_VideoPreparation/*/review/
+
+# 1021 持盾兵（素材目前在另一台主机）：结构预留，该机按同一白名单提交
+Enemy1021ArtSource/*
+!Enemy1021ArtSource/README.md
+!Enemy1021ArtSource/00_Index/
+!Enemy1021ArtSource/00_SourceVideos/
+!Enemy1021ArtSource/01_KeyPosePreparation/
+
+# 长枪 / 其他素材源：仍整体本地留档（已入库的历史文件不受影响，新增文件不入库）
 StabWeaponArtSource/
 
 # Locus 工具包残留（Packages/com.farlocus.locus 未在 Packages/manifest.json 注册，Unity 不加载，

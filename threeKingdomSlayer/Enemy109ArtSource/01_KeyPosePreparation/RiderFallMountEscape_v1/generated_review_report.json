@@ -1,0 +1,48 @@
+{
+  "version": "enemy109-rider-fall-mount-escape-handoff-v1-review",
+  "status": "technical_readback_complete_user_art_rejected",
+  "output": "Enemy109ArtSource/01_KeyPosePreparation/RiderFallMountEscape_v1/generated/enemy109_rider_fall_mount_escape_handoff_v1.png",
+  "output_sha256": "abc75d9438946eb61a62ffffaa011114673bf833a778ac4916c7eb6b9edaa51c",
+  "output_bytes": 1097887,
+  "image": {
+    "size": [1024, 1024],
+    "mode": "RGB",
+    "png_color_type": 2,
+    "alpha_range": [255, 255],
+    "fully_opaque": true,
+    "project_copy_byte_equal": true
+  },
+  "request": {
+    "http_status": 200,
+    "returned_image_count": 1,
+    "paid_post_attempt_count": 1,
+    "automatic_paid_retry": false,
+    "route_host": "cdn.jd23kjs.work",
+    "cost_returned": false,
+    "cost_note": "The API response did not contain a cost field; no amount is inferred."
+  },
+  "visual_readback_observations": [
+    "The horse is standing and oriented toward image-left with the rider separated on the image-right ground area.",
+    "The rider is shown as a fallen armored body, and the original lance is placed on the ground near the rider.",
+    "The image is a generated candidate only; anatomy, identity continuity, equipment continuity, handoff-frame suitability and game-scale compatibility remain subject to user art review."
+  ],
+  "diagnostics": {
+    "method": "Non-green pixel bounding-box probe over the generated RGB image; diagnostic only and not a matte.",
+    "non_green_bbox_xy_exclusive": [114, 225, 973, 881],
+    "margins_ltrb": [114, 225, 51, 143],
+    "target_margin_px": 64,
+    "all_sides_meet_target": false,
+    "limiting_edge": "right",
+    "corner_64px_median_rgb": [2, 164, 65],
+    "corner_64px_std_rgb": [0.582, 0.916, 0.9],
+    "background_note": "The generated green plate is close to but not exactly RGB(0,159,62), and varies slightly across the corners. It requires separate matting calibration if the candidate is accepted."
+  },
+  "scope": {
+    "video_created": false,
+    "matting_done": false,
+    "unity_modified": false,
+    "runtime_checks": false,
+    "user_art_verdict": "rejected",
+    "user_art_feedback": "验收不通过，因为马匹没有惊慌感，角色倒地姿势应该后仰身而不是躺下，很难与受击倒地死亡联系上"
+  }
+}

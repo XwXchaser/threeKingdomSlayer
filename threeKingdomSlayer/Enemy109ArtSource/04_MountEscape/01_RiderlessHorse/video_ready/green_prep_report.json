@@ -1,0 +1,137 @@
+{
+  "source_accepted_sha256": "dfa57ba90487d32e00c9086bc9c0412eaf6d1d182dee99f41376b1507af4f974",
+  "source_unchanged_after": true,
+  "batch_key": [
+    0,
+    159,
+    62
+  ],
+  "backdrop_tolerance_sum_abs": 45,
+  "ring_width_px": 3,
+  "despill_margin": 3,
+  "backdrop_pixels": 860894,
+  "backdrop_enclosed_pixels": {
+    "px": 2995,
+    "bbox": [
+      216,
+      324,
+      278,
+      405
+    ],
+    "D_mean": 7.76,
+    "D_max": 45
+  },
+  "visible_pixels_before": 187682,
+  "ring_pixels": 19158,
+  "spill_pixels_changed": 5018,
+  "subject_pixels_changed_beyond_ring": 0,
+  "backdrop_after_unique_values": 1,
+  "backdrop_after_exact_key_px": 860894,
+  "visible_after_green_dominant_px": 7,
+  "visible_after_gex_min": -236,
+  "visible_after_gex_mean": -65.87,
+  "interior_pixels": 168524,
+  "interior_rgb_changed_px": 0,
+  "total_pixels_changed": 857816,
+  "pixels_changed_inside_ring_only": 5018,
+  "pixels_changed_outside_ring": 852798,
+  "subject_bbox_before_D60": [
+    166,
+    188,
+    853,
+    844
+  ],
+  "subject_bbox_after_D60": [
+    166,
+    187,
+    854,
+    844
+  ],
+  "spill_before_gex_mean": 42.72,
+  "spill_before_gex_max": 101,
+  "spill_after_gex_mean": -3.0,
+  "spill_after_gex_max": -3,
+  "spill_samples_before_after": [
+    {
+      "before": [
+        32,
+        144,
+        68
+      ],
+      "after": [
+        32,
+        65,
+        68
+      ]
+    },
+    {
+      "before": [
+        27,
+        110,
+        55
+      ],
+      "after": [
+        27,
+        52,
+        55
+      ]
+    },
+    {
+      "before": [
+        16,
+        130,
+        65
+      ],
+      "after": [
+        16,
+        62,
+        65
+      ]
+    },
+    {
+      "before": [
+        23,
+        104,
+        50
+      ],
+      "after": [
+        23,
+        47,
+        50
+      ]
+    },
+    {
+      "before": [
+        17,
+        139,
+        73
+      ],
+      "after": [
+        17,
+        70,
+        73
+      ]
+    }
+  ],
+  "output_1024": {
+    "path": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/video_ready/enemy109_riderless_horse_green_015962_despill_v1_1024.png",
+    "sha256": "572ca4954c8fbe03c0fca94ca76610b9b2df806d8c83ad4bd5f7741b4188988c",
+    "bytes": 367679
+  },
+  "output_1152": {
+    "path": "Enemy109ArtSource/04_MountEscape/01_RiderlessHorse/video_ready/enemy109_riderless_horse_green_015962_despill_v1_1152.png",
+    "sha256": "2727e31a20430c541d021806966768689c2d1744db7c0ef357d7e2e872387bd2",
+    "bytes": 369696,
+    "size": [
+      1152,
+      1152
+    ],
+    "padding_per_side": 64
+  },
+  "output_1152_margins_L_T_R_B": [
+    230,
+    251,
+    233,
+    243
+  ]
+}
