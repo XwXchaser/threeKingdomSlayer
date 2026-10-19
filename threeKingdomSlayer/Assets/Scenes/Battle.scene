@@ -14601,7 +14601,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c092aa791d152ec4f930c9ecccedc33a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enablePushWave: 1
+  enablePushWave: 0
   pushDistance: 1
   enableDirectionalPush: 1
   directionalPushStep: 1

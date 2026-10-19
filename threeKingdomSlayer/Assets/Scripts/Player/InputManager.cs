@@ -94,9 +94,15 @@ public class InputManager : MonoBehaviour
     /// </summary>
     [System.NonSerialized] public bool comboChargeActive;
 
+    [Header("蓄力招式开关")]
+    [Tooltip("打开后只允许竖滑蓄力（上挑）：站桩蓄力（穿刺）与横滑蓄力（横扫）都不成立，蓄力指示器与蓄力武器视觉也不出现。蓄力 stab / 蓄力 slash 还没做完，先保持打开。")]
+    public bool restrictChargedToVertical = true;
+
     // 技能输入开关（狂怒大招期间关闭）
     [System.NonSerialized] public bool skillInputEnabled = true;
     [System.NonSerialized] public bool gameplayInputEnabled = true;
+    /// <summary>教学手势拍：非 None 时只接受这个目标手势，其它手势一律不成立（不出招、也不消耗蓄力段）。</summary>
+    [System.NonSerialized] public TutorialGestureTarget tutorialGestureTarget = TutorialGestureTarget.None;
     /// <summary>输入屏蔽帧计数器（由 UpgradeChoiceManager 设置，防止选择选项的点击触发攻击）</summary>
     [System.NonSerialized] public int blockInputFrames = 0;
 
@@ -431,6 +437,9 @@ public class InputManager : MonoBehaviour
         bool executed;
         MoveGesture directionGesture = MoveGestureDefaults.ClassifySwipe(direction, verticalSwipeThreshold, horizontalSwipeThreshold);
 
+        // 教学手势拍：不是目标手势就不执行（也不算消费，蓄力段保留给正确动作）
+        if (!TutorialAllowsSwipeGesture(directionGesture, CurrentChargeLevel)) return false;
+
         if (CurrentChargeLevel >= 1)
         {
             // 蓄力滑动：竖滑 → 挑飞，横滑 → 横扫，斜滑 → 斩击。
@@ -543,6 +552,20 @@ public class InputManager : MonoBehaviour
         if (!skillInputEnabled) return;
 
         bool isSwiped = swipeDistance >= swipeThreshold;
+
+        // 教学手势拍：只放行这一拍要教的手势，其它一律当无效输入
+        if (tutorialGestureTarget != TutorialGestureTarget.None)
+        {
+            int tutorialCharge = CurrentChargeLevel;
+            if (isSwiped)
+            {
+                var tutorialDirection = MoveGestureDefaults.ClassifySwipe(releasePos - touchStartPos,
+                    verticalSwipeThreshold, horizontalSwipeThreshold);
+                if (!TutorialAllowsSwipeGesture(tutorialDirection, tutorialCharge)) return;
+            }
+            else if (!TutorialAllowsTapGesture(tutorialCharge)) return;
+        }
+
         if (TryConsumeStrictQTEInput(releasePos, isSwiped, swipeDistance, pressDuration))
             return;
 
@@ -574,7 +597,9 @@ public class InputManager : MonoBehaviour
 
         if (CurrentChargeLevel >= 1)
         {
-            ProcessLongPressGesture(releasePos);
+            // 教学期：站桩蓄力（穿刺）不成立，按什么都没发生
+            if (!restrictChargedToVertical) ProcessLongPressGesture(releasePos);
+            return;
         }
         else if (isSwiped)
         {
@@ -592,9 +617,40 @@ public class InputManager : MonoBehaviour
     /// 把手势投递给招式状态机；未配置状态机时直接调用 AttackSystem（保持旧行为）。
     /// 返回是否实际执行了招式；成功后按解析出的攻击类型派发 OnAttackExecuted。
     /// </summary>
+    /// <summary>
+    /// 教学引导用：玩家做对手势后，把这一下原样交给输入系统，让它真的打出去
+    /// （否则“教完什么都不发生”，教学没有意义）。
+    /// </summary>
+    public bool ReplayGesture(MoveGesture gesture, Vector2 screenPos, int chargeLevel = 0, int targetColumn = -1)
+    {
+        if (attackSystem == null) attackSystem = FindObjectOfType<AttackSystem>();
+        if (gesture == MoveGesture.SwipeHorizontal && restrictChargedToVertical) chargeLevel = 0;
+
+        // 有明确目标列就用它（教学引导指向的是具体某个敌人），否则按点击位置换算
+        int column = targetColumn >= 0 ? targetColumn : GetStabColumnFromScreenPosition(screenPos);
+        bool charged = chargeLevel >= 1;
+        var attackType = MoveGestureDefaults.ResolveAttackType(gesture, charged);
+
+        // 引导期间 timeScale=0，动作锁不会走时；重放必须带 cancelCurrentMove 才能立刻出手
+        if (moveStateMachine != null) moveStateMachine.NotifyExternalReset();
+        bool ok = attackSystem != null && attackSystem.TryExecuteAttack(
+            attackType, column, true, 0f, charged, cancelCurrentMove: true, chargeLevel: chargeLevel);
+
+        var ps = PlayerState.Instance;
+        Debug.Log("[Tutorial] 重放手势 " + gesture + "->" + attackType + " col=" + column + " charge=" + chargeLevel +
+                  " 结果=" + ok + " 阶段=" + (ps != null ? ps.stageState.ToString() : "null"));
+        if (ok) OnAttackExecuted?.Invoke(attackType, column);
+        return ok;
+    }
+
     private bool SubmitGesture(MoveGesture gesture, int chargeLevel, int targetColumn,
         bool slashLeftToRight = true, float slashVisualTilt = 0f)
     {
+        // 教学期没有「站桩蓄力」：按住不放一律不出招（不走连招松手、也不走长按穿刺）
+        // combo 链蓄力（Hold 由 C2 松手释放触发）必须放行，否则连段接不上。
+        if (gesture == MoveGesture.Hold && restrictChargedToVertical && !comboChargeActive)
+            return false;
+
         bool charged = chargeLevel >= 1;
         var input = new GestureInput
         {
@@ -677,7 +733,7 @@ public class InputManager : MonoBehaviour
         // 近水平划动（左/右）→ 横扫
         // 方向与水平轴夹角 < horizontalSwipeThreshold
         if (angleToHorizontal < horizontalSwipeThreshold)
-            return SubmitGesture(MoveGesture.SwipeHorizontal, CurrentChargeLevel, -1);
+            return SubmitGesture(MoveGesture.SwipeHorizontal, restrictChargedToVertical ? 0 : CurrentChargeLevel, -1);
 
         // 对角线划动 → 斩击（兜底）
         bool slashLeftToRight = direction.x > 0;
@@ -855,4 +911,43 @@ public class InputManager : MonoBehaviour
     }
 
     #endregion
+
+    #region 教学手势过滤
+
+    /// <summary>教学拍是否允许「点击」成立：只教点按时，滑动/蓄力都不算。</summary>
+    private bool TutorialAllowsTapGesture(int chargeLevel)
+    {
+        if (tutorialGestureTarget == TutorialGestureTarget.None) return true;
+        return tutorialGestureTarget == TutorialGestureTarget.Tap && chargeLevel < 1;
+    }
+
+    /// <summary>教学拍是否允许这次滑动成立：横滑教学只收未蓄力横滑，上挑教学只收已蓄力竖滑。</summary>
+    private bool TutorialAllowsSwipeGesture(MoveGesture directionGesture, int chargeLevel)
+    {
+        switch (tutorialGestureTarget)
+        {
+            case TutorialGestureTarget.None:
+                return true;
+            case TutorialGestureTarget.SwipeHorizontal:
+                return chargeLevel < 1 && directionGesture == MoveGesture.SwipeHorizontal;
+            case TutorialGestureTarget.ChargedVertical:
+                return chargeLevel >= 1 && directionGesture == MoveGesture.SwipeVertical;
+            default:
+                return false;   // 目标是点按时，任何滑动都不成立
+        }
+    }
+
+    #endregion
+}
+
+/// <summary>教学手势拍只接受哪一个手势；None = 不限制（正式战斗）。</summary>
+public enum TutorialGestureTarget
+{
+    None = 0,
+    /// <summary>点一下（未滑动、未蓄力）</summary>
+    Tap = 1,
+    /// <summary>未蓄力的横向滑动</summary>
+    SwipeHorizontal = 2,
+    /// <summary>按住蓄力后再竖划（上挑）</summary>
+    ChargedVertical = 3
 }

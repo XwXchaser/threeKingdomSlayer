@@ -9,16 +9,18 @@ using UnityEngine;
 /// </summary>
 public class DisplacementDebugTool : MonoBehaviour
 {
+    // 全部默认关闭：debug 工具 留在场上没风险，但每次 Stage Start 会写 _pushWaveDistance 等调试值。
+    // 之前默认开启会把 pushDist 偷偷 +1，与重击突刺（StabR2）的 Rule 1 栈式阻塞语义冲突。
     [Header("击退波 (Push Wave) — Stab 专属")]
-    public bool enablePushWave;
+    public bool enablePushWave = false;
     [Range(1, 5)] public int pushDistance = 1;
 
     [Header("方向推 (Directional Push) — Slash 专属")]
-    public bool enableDirectionalPush;
+    public bool enableDirectionalPush = false;
     [Range(1, 3)] public int directionalPushStep = 1;
 
     [Header("聚拢波 (Convergence Wave) — 独立效果")]
-    public bool enableConvergenceWave;
+    public bool enableConvergenceWave = false;
     [Range(1, 3)] public int convergenceStep = 1;
     [Range(0f, 0.5f)] public float convergenceDamagePercent = 0.1f;
 

@@ -263,6 +263,19 @@ public class AttackSystem : MonoBehaviour
         if (playerState == null) return false;
         if (playerState.stageState != StageState.InProgress) return false;
 
+        // 招架是局外解锁项：天赋树里配了节点且还没点时，竖滑不蓄力不再出招
+        if (attackType == AttackType.Parry)
+        {
+            var hero = playerState.heroConfig;
+            var tree = hero != null ? hero.talentTree : null;
+            var parryCfg = hero != null ? hero.GetSkillConfig(AttackType.Parry) : null;
+            if (TalentTreeState.IsMoveGatedAndLocked(tree, parryCfg))
+            {
+                Debug.Log("[Talent] 招架尚未解锁，本次输入不生效");
+                return false;
+            }
+        }
+
         if (!cancelCurrentMove && attackType == AttackType.Stab && _stabVisualTimer > 0f)
             return false;
 
@@ -303,6 +316,11 @@ public class AttackSystem : MonoBehaviour
         }
         _attackIsCharged = false;
 
+        // 可破坏补给：戳击命中目标列时，连带破坏该列的道具。
+        // 不参与 hitAny 判定（ExecuteStab 恒返回 true），只在道具确实存在时生效。
+        if (attackType == AttackType.Stab && targetColumn >= 0)
+            BreakableProp.TryHitColumn(targetColumn, attackType, 1f);
+
         if (hitAny)
         {
             // 动作锁模式只覆盖玩家自身的出手与收招；离手飞行物拥有独立生命周期。
@@ -341,11 +359,16 @@ public class AttackSystem : MonoBehaviour
                     OnAttackPerformed?.Invoke(attackType, targetColumn, slashLeftToRight);
             }
 
-            _currentConfigOverride = null;
+            // 注意：Stab 的击退是异步的（hit 回调在射线穿过时才触发）。
+            // 因此 _currentConfigOverride 不能在这里清，否则命中回调读到 null 会 fall back 到默认 Zhangfei_Stab（无击退）。
+            // 真正的清在下方 StabSweepEffect 的 onComplete lambda 里（参见 Bug #2 修复注释）。
+            if (attackType != AttackType.Stab)
+                _currentConfigOverride = null;
             return true;
         }
 
-        _currentConfigOverride = null;
+        if (attackType != AttackType.Stab)
+            _currentConfigOverride = null;
         Debug.Log($"[AttackSystem] {attackType} 未命中任何敌人，不消耗冷却");
         return false;
     }
@@ -461,6 +484,11 @@ public class AttackSystem : MonoBehaviour
             {
                 if (pushedTargets.Count > 0)
                     columnManager.PostDisplacementFillUp(pushedTargets);
+                // Bug #2 修复：Stab 的 hit 回调是异步的（射线穿过才触发），
+                // 如果在这里立刻清 _currentConfigOverride，hit 回调里 GetConfig(Stab) 会退回
+                // 默认 Zhangfei_Stab.pushBackRows=0 → pushDist=0 → 不尝试推退。
+                // 等射线播完才清；下一帧攻击的 line 297 会自动覆盖。
+                _currentConfigOverride = null;
             },
             cfg.stabVisualReachOffset,
             GetStabVisualStartXOffset(columnIndex),
@@ -1528,3 +1556,4 @@ public class AttackSystem : MonoBehaviour
 
     #endregion
 }
+
