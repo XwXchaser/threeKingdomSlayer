@@ -66,7 +66,7 @@ MonoBehaviour:
     rushMoveDelayMin: 0.02
   killMilestones: []
   clearCoinReward: 0
-  collisionDamage: 15
+  collisionDamage: 50
   formationConfig: {fileID: 11400000, guid: 55973faa39889b64294c71556eb8255b, type: 2}
   fillUpRule: 1
   rushMoveDelay: 0.2
