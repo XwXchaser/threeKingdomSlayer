@@ -174,6 +174,8 @@ public class TalentTreePanel : MonoBehaviour
         closeRect.pivot = new Vector2(0f, 1f);
         closeRect.sizeDelta = new Vector2(140f, 88f);
         closeRect.anchoredPosition = new Vector2(56f, -40f);
+        close.raycastTarget = true;
+        close.transform.SetAsLastSibling();
         var closeButton = close.gameObject.AddComponent<Button>();
         closeButton.targetGraphic = close;
         closeButton.onClick.AddListener(Close);
