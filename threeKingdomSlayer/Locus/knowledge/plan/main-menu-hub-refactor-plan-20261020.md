@@ -557,9 +557,10 @@ Build Settings
 2. 读 §3（现状机制）——尤其是 §3.3 开关表和 §3.4 存档 API；§3.2 已作废（MainMenu 时代）
 3. 读 `Locus/knowledge/plan/tutorial-beat-and-formal-config-handoff-20261019.md`（本项目的关卡/配置现状 + 踩坑记录）
 4. 读 `Locus/knowledge/design/anti-ghost-reference.md`（数据引用规范：Inspector 拖拽，不准 Resources/字符串查找）
-5. 阶段 A/B/C/D 已全部完成，**不要再重做**。剩下的只有：D0 中央轻交互（可砍）、D2 体力状态条（无设计）、阶段 E 字体那 36MB
+5. 阶段 A/B/C/D/F/G/H 已全部完成，**不要再重做**。剩下的只有：D0 中央轻交互（可砍）、D2 体力状态条（无设计）、阶段 E 字体那 36MB
 6. 验证落地页手感时：进 Play Mode 前先把存档 `SaveManager.SetActiveFakeRouteStage(9100)` 或 `1`，两种路线都要跑一遍
 7. 提交前先看 §7.15 / §7.17（工作区脏时的 hunk 拆分 + untracked 资产）——`FakeRouteRuntime.cs` / `FakeRouteStageSaveSnapshot.cs` 里还挂着可破坏道具的未提交改动
+8. 要动结构（拆程序集 / 收拾上帝类 / 清路线驱动）先读 `Locus/knowledge/design/architecture-decoupling-analysis.md`：那里有实测基线、六个结构性问题与 0-4 批改造顺序，以及“工作区必须先收敛”的前置条件
 
 ---
 
