@@ -18,6 +18,22 @@ public class StageConfigManager : MonoBehaviour
     [Tooltip("假移动/卷轴路线关卡配置列表。每个配置对应一条纯逻辑路线（卷轴表现）")]
     public List<FakeRouteStageConfig> fakeRouteStages = new List<FakeRouteStageConfig>();
 
+    [Tooltip("教学关路线配置（教学路线，不混进 fakeRouteStages——那个列表的第 0 项被当“正式关”用）")]
+    public FakeRouteStageConfig tutorialStage;
+
+    /// <summary>
+    /// 玩家在「选关页」里可选的全部路线：教学关 + 正式路线。
+    /// 选关页只列这个，不列节点（点哪条都从该路线的 startNode 开始）。
+    /// </summary>
+    public List<FakeRouteStageConfig> GetSelectableRoutes()
+    {
+        var result = new List<FakeRouteStageConfig>();
+        if (tutorialStage != null) result.Add(tutorialStage);
+        for (int i = 0; i < fakeRouteStages.Count; i++)
+            if (fakeRouteStages[i] != null) result.Add(fakeRouteStages[i]);
+        return result;
+    }
+
     private void Awake()
     {
         if (Instance != null && Instance != this)

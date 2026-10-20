@@ -17,6 +17,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Experiments/CurvedScroll/YJunctionSample.unity
     guid: 06be298dca052ae4d9c92170cfa51fff
+  - enabled: 1
+    path: Assets/Scenes/StageSelect.scene
+    guid: afa03912bdcac914d8f2fdb14f2b6dfe
   m_BuildProfiles: []
   m_configObjects: {}
   m_SlimFeaturesWeixinMiniGame:

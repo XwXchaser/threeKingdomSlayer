@@ -25,10 +25,19 @@ public class MainMenuUI : MonoBehaviour
     public CameraManager cameraManager;
 
     [Header("教学关")]
-    [Tooltip("新档第一次点“新游戏”时先打这个关卡；留空则跳过教学，直接进正式路线")]
-    public StageConfig tutorialStageConfig;
-    [Tooltip("教学关场景名（Build Settings 里的名字）；留空则走常规 StartBattle")]
-    public string tutorialSceneName = "Tutorial_YJ";
+    [Tooltip("新档第一次点“新游戏”时先打这条教学路线（走正式卷轴流程）；留空则跳过教学，直接进正式路线")]
+    public FakeRouteStageConfig tutorialRouteConfig;
+
+    [Header("临时选关（调试用）")]
+    [Tooltip("打开后主菜单左上角出现「教学关 / 正式关卡」两个按钮，方便直接进关验收。定稿前删掉即可")]
+    public bool showDebugStageSelect = true;
+
+    [Header("纯 UI overlay 入口")]
+    [Tooltip("主菜单的「选关」按钮。点击后叠加打开 StageSelect 纯 UI 场景（不中断主菜单）。")]
+    public Button stageSelectButton;
+
+    [Tooltip("主菜单的「天赋」按钮。点击后叠加打开 TalentTree 纯 UI 场景。")]
+    public Button talentTreeButton;
 
     private GameObject stageGrid;
     private float _uiScale;
@@ -57,12 +66,126 @@ public class MainMenuUI : MonoBehaviour
 
     private void Start()
     {
+        // 主菜单永远不能被上一局残留的暂停冻住（战斗/台词/教学被打断时可能留下 timeScale=0）
+        Time.timeScale = 1f;
         RefreshStageConfigs();
 
         UpdateCoinDisplay();
-        CreateStageGrid();
         SetupButtons();
+        CreateDebugStageSelect();
     }
+
+    #region 临时选关（调试用）
+
+    /// <summary>临时入口：左上角两个按钮，直接进教学关或正式路线。定稿时关掉 showDebugStageSelect 即可。</summary>
+    private void CreateDebugStageSelect()
+    {
+        if (!showDebugStageSelect) return;
+        if (transform.Find("DebugStageSelectPanel") != null) return;
+
+        float s = UIResolutionHelper.UIScale;
+        var panel = new GameObject("DebugStageSelectPanel", typeof(RectTransform));
+        var rt = panel.GetComponent<RectTransform>();
+        rt.SetParent(transform, false);
+        rt.anchorMin = new Vector2(0f, 1f);
+        rt.anchorMax = new Vector2(0f, 1f);
+        rt.pivot = new Vector2(0f, 1f);
+        rt.anchoredPosition = new Vector2(24f * s, -24f * s);
+        rt.sizeDelta = new Vector2(300f * s, 170f * s);
+
+        var layout = panel.AddComponent<VerticalLayoutGroup>();
+        layout.spacing = 8f * s;
+        layout.childControlHeight = false;
+        layout.childControlWidth = true;
+        layout.childForceExpandHeight = false;
+        layout.childForceExpandWidth = true;
+
+        CreateDebugStageButton(panel.transform, "教学关", s, StartTutorialRoute);
+        CreateDebugStageButton(panel.transform, "正式关卡（简单）", s, StartFormalRoute);
+        CreateDebugStageButton(panel.transform, "加铜钱 +500", s, AddCoinsForTest);
+        Debug.Log("[MainMenu] 临时选关按钮已生成");
+    }
+
+    private void CreateDebugStageButton(Transform parent, string label, float s, UnityEngine.Events.UnityAction onClick)
+    {
+        var go = new GameObject("DebugBtn_" + label, typeof(RectTransform));
+        go.transform.SetParent(parent, false);
+        var img = go.AddComponent<Image>();
+        img.color = new Color(0.2f, 0.24f, 0.34f, 0.92f);
+        var btn = go.AddComponent<Button>();
+        var colors = btn.colors;
+        colors.normalColor = new Color(0.26f, 0.34f, 0.5f, 1f);
+        colors.highlightedColor = new Color(0.38f, 0.5f, 0.7f, 1f);
+        colors.pressedColor = new Color(0.18f, 0.24f, 0.36f, 1f);
+        btn.colors = colors;
+        go.AddComponent<LayoutElement>().preferredHeight = 64f * s;
+
+        var textGo = new GameObject("Text", typeof(RectTransform));
+        textGo.transform.SetParent(go.transform, false);
+        var textRt = textGo.GetComponent<RectTransform>();
+        textRt.anchorMin = Vector2.zero;
+        textRt.anchorMax = Vector2.one;
+        textRt.offsetMin = new Vector2(4, 4);
+        textRt.offsetMax = new Vector2(-4, -4);
+        var txt = textGo.AddComponent<Text>();
+        txt.text = label;
+        txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        txt.fontSize = Mathf.RoundToInt(18 * s);
+        txt.alignment = TextAnchor.MiddleCenter;
+        txt.color = Color.white;
+
+        btn.onClick.AddListener(onClick);
+    }
+
+    /// <summary>直接进教学关（不管存档状态）。</summary>
+    public void StartTutorialRoute()
+    {
+        if (tutorialRouteConfig == null)
+        {
+            Debug.LogWarning("[MainMenu] 未配置教学路线，无法进入教学关");
+            return;
+        }
+        StageController.PendingStageConfig = null;
+        StageController.PendingRouteStageConfig = null;
+        RouteStageV2Launch.PendingConfig = null;
+        FakeRouteLaunch.StartFromCheckpoint = false;
+        FakeRouteLaunch.PendingConfig = tutorialRouteConfig;
+        SaveManager.ClearFakeRouteSnapshot(tutorialRouteConfig.routeId, tutorialRouteConfig.stageId);
+        SaveManager.SetActiveFakeRouteStage(tutorialRouteConfig.stageId);
+        Debug.Log("[MainMenu] 临时选关 → 教学关");
+        StartBattle();
+    }
+
+    /// <summary>临时：点一次加 500 铜钱，用来测试天赋树解锁。</summary>
+    public void AddCoinsForTest()
+    {
+        int total = SaveManager.AddCoins(500);
+        UpdateCoinDisplay();
+        Debug.Log("[MainMenu] 测试加铜钱 +500 → 当前 " + total);
+    }
+
+    /// <summary>直接进正式路线（当前配置已是简化版预览）。</summary>
+    public void StartFormalRoute()
+    {
+        RefreshStageConfigs();
+        if (fakeRouteStageConfigs.Count == 0)
+        {
+            Debug.LogWarning("[MainMenu] 没有正式卷轴路线配置");
+            return;
+        }
+        var cfg = fakeRouteStageConfigs[0];
+        StageController.PendingStageConfig = null;
+        StageController.PendingRouteStageConfig = null;
+        RouteStageV2Launch.PendingConfig = null;
+        FakeRouteLaunch.StartFromCheckpoint = false;
+        FakeRouteLaunch.PendingConfig = cfg;
+        SaveManager.ClearFakeRouteSnapshot(cfg.routeId, cfg.stageId);
+        SaveManager.SetActiveFakeRouteStage(cfg.stageId);
+        Debug.Log("[MainMenu] 临时选关 → 正式关卡: " + cfg.stageName);
+        StartBattle();
+    }
+
+    #endregion
 
     #region 选关网格
 
@@ -266,7 +389,42 @@ public class MainMenuUI : MonoBehaviour
             quitButton.onClick.RemoveAllListeners();
             quitButton.onClick.AddListener(OnQuitGame);
         }
+        if (stageSelectButton != null)
+        {
+            stageSelectButton.onClick.RemoveAllListeners();
+            stageSelectButton.onClick.AddListener(OnStageSelectClicked);
+        }
+        if (talentTreeButton != null)
+        {
+            talentTreeButton.onClick.RemoveAllListeners();
+            talentTreeButton.onClick.AddListener(OnTalentTreeClicked);
+        }
         RefreshUI();
+    }
+
+    /// <summary>打开选关页（纯 UI overlay 场景，叠在主菜单之上）。</summary>
+    private void OnStageSelectClicked()
+    {
+        Debug.Log("[MainMenu] 打开选关页");
+        OpenOverlayScene(SceneFlowManager.SceneStageSelect);
+    }
+
+    /// <summary>打开天赋页（纯 UI overlay 场景）。</summary>
+    private void OnTalentTreeClicked()
+    {
+        Debug.Log("[MainMenu] 打开天赋页");
+        OpenOverlayScene(SceneFlowManager.SceneTalentTree);
+    }
+
+    private void OpenOverlayScene(string sceneName)
+    {
+        var flow = SceneFlowManager.Instance;
+        if (flow != null)
+        {
+            flow.OpenOverlay(sceneName);
+            return;
+        }
+        Debug.LogWarning("[MainMenuUI] 找不到 SceneFlowManager，无法打开 overlay: " + sceneName);
     }
 
     private void RefreshUI()
@@ -427,22 +585,18 @@ public class MainMenuUI : MonoBehaviour
         Debug.Log("[MainMenu] 新游戏");
         SaveManager.Delete();
 
-        // 新档第一次进游戏先走教学关（初见杀）；教学结束会直接接正式路线，不会回到这里
-        if (tutorialStageConfig != null && !SaveManager.Load().tutorialCompleted)
+        // 新档第一次进游戏先走教学关；教学关本身就是一条正式路线，结算完回主菜单点天赋。
+        if (tutorialRouteConfig != null && !SaveManager.Load().tutorialCompleted)
         {
-            StageController.PendingStageConfig = tutorialStageConfig;
+            StageController.PendingStageConfig = null;
             StageController.PendingRouteStageConfig = null;
             RouteStageV2Launch.PendingConfig = null;
-            FakeRouteLaunch.PendingConfig = null;
             FakeRouteLaunch.StartFromCheckpoint = false;
-            Debug.Log("[MainMenu] 进入教学关: " + tutorialStageConfig.stageName);
+            FakeRouteLaunch.PendingConfig = tutorialRouteConfig;
+            SaveManager.ClearFakeRouteSnapshot(tutorialRouteConfig.routeId, tutorialRouteConfig.stageId);
+            SaveManager.SetActiveFakeRouteStage(tutorialRouteConfig.stageId);
+            Debug.Log("[MainMenu] 进入教学关: " + tutorialRouteConfig.stageName);
             RefreshUI();
-            if (!string.IsNullOrEmpty(tutorialSceneName))
-            {
-                // 教学关是 YJ 场景的拷贝，直接进那一份，不走主界面→战斗的过渡动画
-                UnityEngine.SceneManagement.SceneManager.LoadScene(tutorialSceneName);
-                return;
-            }
             StartBattle();
             return;
         }
@@ -480,6 +634,23 @@ public class MainMenuUI : MonoBehaviour
     public void OnContinueGame()
     {
         Debug.Log("[MainMenu] 继续游戏");
+
+        // 教学没通关时，「继续」必须回到教学关：教学路线不在选关列表里，
+        // 按 activeFakeRouteStageId 查不到就会掉进第一条正式路线（实测会直接进 YJ）。
+        if (tutorialRouteConfig != null && !SaveManager.Load().tutorialCompleted)
+        {
+            StageController.PendingStageConfig = null;
+            StageController.PendingRouteStageConfig = null;
+            RouteStageV2Launch.PendingConfig = null;
+            FakeRouteLaunch.StartFromCheckpoint = false;
+            SaveManager.ClearFakeRouteSnapshot(tutorialRouteConfig.routeId, tutorialRouteConfig.stageId);
+            SaveManager.SetActiveFakeRouteStage(tutorialRouteConfig.stageId);
+            FakeRouteLaunch.PendingConfig = tutorialRouteConfig;
+            Debug.Log("[MainMenu] 继续教学关: " + tutorialRouteConfig.stageName);
+            StartBattle();
+            return;
+        }
+
         if (fakeRouteStageConfigs.Count > 0)
         {
             // 继续游戏：从最后未完成的卷轴关卡重新开始（不读取失败恢复快照）。
@@ -517,13 +688,6 @@ public class MainMenuUI : MonoBehaviour
     {
         Debug.Log("[MainMenu] 删除存档");
         SaveManager.Delete();
-        // 重建选关网格（所有关卡变为未解锁状态）
-        if (stageGrid != null)
-        {
-            Destroy(stageGrid);
-            stageGrid = null;
-        }
-        CreateStageGrid();
         RefreshUI();
     }
 
