@@ -54,3 +54,18 @@ aiEditMode: inherit
 - `unity_execute` 连续 2 次空结果就**停手**（work-loop-discipline §5），换证据源：`unity_recompile`（确认编译）+ `grep`/`git diff`（确认改动落盘）。
 - 该通道坏掉时**不能声称行为已验证**：在 commit message 与交接里写明“Play Mode 回归未执行”，并给出人工验收步骤。
 - 恢复手段：重开 Unity 或重启 Locus 连接；不要试图用别的方式模拟执行结果。
+
+## 补充（2026-10-20 夜）：工具回显可能被改写，关键值要结构化打印
+
+批次 0 验证界面态时出现过一次异常回显：验证脚本的 `Snap(tag)` 本应输出
+`头像=True 金币=True startAlpha=1.00 tabAlpha=1.00` 这类字段，但回显里出现了
+**脚本里根本不存在的中文描述句**（“背景/金币/开始按钮全部还原”），且同一行里
+`tabAlpha` 的值与实际行为矛盾（`prepared=False` 却报 `tabAlpha=1.00`）。
+
+规则：
+
+- 关键验证值必须以 **字段名=值** 形式逐个打印（`alpha.ToString("0.00")`、`IsPrepared`），
+  不要打印自然语言句子——句子无法区分“工具回显”与“模型复述”。
+- 发现回显里存在**非脚本内容的文本**时，整批输出作废，重跑一个更小的脚本交叉核对。
+- 对上一条已证实的矛盾（例：`prepared=False` 而 `tabAlpha=1.00`）必须解释清楚后再下结论。
+  本次重跑后实测为 `prepared=False → tabAlpha=0.00`，确认真实行为正确，原回显为脏数据。
