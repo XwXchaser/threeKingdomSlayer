@@ -7,7 +7,7 @@ using UnityEngine;
 /// 管理关卡开始、进行中、胜利、失败状态
 /// 协调 WaveSpawner、EnemyManager、PlayerState 之间的交互
 /// </summary>
-public class StageController : MonoBehaviour
+public class StageController : MonoBehaviour, IRouteBattleHost
 {
     public static StageController Instance { get; private set; }
 
@@ -49,6 +49,29 @@ public class StageController : MonoBehaviour
     public bool blockRestartOnDefeat;
     public System.Action OnCombatNodeCleared;
     public System.Action OnRouteBattleCompleted;
+
+    // ───────── IRouteBattleHost 显式实现 ─────────
+    // 路线层（FakeRouteRuntime）只依赖它自己声明的端口；这三个成员在 StageController 上
+    // 原本是 public 字段，用显式实现包一层，字段与 Inspector 序列化保持不变。
+    // 四个方法（StartRouteBattle / SetRouteRewardWaitState / SetRouteTravelState /
+    // CompleteFakeRouteStage）签名已匹配，隐式实现接口。
+    bool IRouteBattleHost.AutoStartStage
+    {
+        get => autoStartStage;
+        set => autoStartStage = value;
+    }
+
+    FakeRouteStageConfig IRouteBattleHost.RouteConfig
+    {
+        get => fakeRouteStageConfig;
+        set => fakeRouteStageConfig = value;
+    }
+
+    event System.Action IRouteBattleHost.RouteBattleCompleted
+    {
+        add => OnRouteBattleCompleted += value;
+        remove => OnRouteBattleCompleted -= value;
+    }
 
     private void OnEnable()
     {

@@ -23,6 +23,8 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     [SerializeField] private StageController stageController;
     [SerializeField] private MonoBehaviour presenterBehaviour;
     private IRouteMotionPresenter movementPresenter;
+    /// <summary>路线战斗宿主：只通过端口接口调用，不直接碰 StageController 的具体成员。</summary>
+    private IRouteBattleHost _battleHost;
     [SerializeField] private bool autoStart = true;
     [SerializeField] private bool useTestStartNode;
     [SerializeField] private RouteChoicePanel choicePanelPrefab;
@@ -83,8 +85,8 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     /// </summary>
     private void AcquireExclusiveDriving()
     {
-        if (stageController == null) stageController = StageController.Instance;
-        if (stageController != null) stageController.autoStartStage = false;
+        var host = ResolveBattleHost();
+        if (host != null) host.AutoStartStage = false;
         var runtimes = FindObjectsOfType<RouteStageRuntimeV2>();
         for (int i = 0; i < runtimes.Length; i++)
         {
@@ -92,6 +94,14 @@ public sealed class FakeRouteRuntime : MonoBehaviour
             runtimes[i].StopAllCoroutines();
             runtimes[i].enabled = false;
         }
+    }
+
+    /// <summary>解析路线战斗宿主（StageController 实现 IRouteBattleHost），幂等。</summary>
+    private IRouteBattleHost ResolveBattleHost()
+    {
+        if (stageController == null) stageController = StageController.Instance;
+        if (stageController != null) _battleHost = stageController as IRouteBattleHost;
+        return _battleHost;
     }
 
     private IEnumerator Start()
@@ -141,8 +151,8 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
-        if (stageController != null)
-            stageController.OnRouteBattleCompleted -= NotifyBattleCompleted;
+        if (_battleHost != null)
+            _battleHost.RouteBattleCompleted -= NotifyBattleCompleted;
     }
 
     public void Begin(FakeRouteStageConfig config)
@@ -173,8 +183,9 @@ public sealed class FakeRouteRuntime : MonoBehaviour
             SetPhase(FakeRoutePhase.None);
             return;
         }
-        stageController.OnRouteBattleCompleted -= NotifyBattleCompleted;
-        stageController.OnRouteBattleCompleted += NotifyBattleCompleted;
+        ResolveBattleHost();
+        _battleHost.RouteBattleCompleted -= NotifyBattleCompleted;
+        _battleHost.RouteBattleCompleted += NotifyBattleCompleted;
         _generation++;
         _routeSettled = false;
         _completedBattleEntries.Clear();
@@ -207,11 +218,12 @@ public sealed class FakeRouteRuntime : MonoBehaviour
             Debug.LogError("[FakeRoute] PrepareForEntry: 配置或StageController为空");
             return;
         }
-        // 让 StageController 也知道「当前路线」：结算（CompleteFakeRouteStage）、战败重来
+        // 让宿主也知道「当前路线」：结算（CompleteFakeRouteStage）、战败重来
         // （RestartStageCoroutine）、重来按钮都靠这个字段判断「现在跑的是卷轴路线」。
         // 落地页自举时它是 null（没有 MainMenu 传参），不补的话结算会直接被 early-return 掉：
         // 没有 Victory 状态 / 没有通关铜钱 / 没有记录已通关。
-        stageController.fakeRouteStageConfig = routeConfig;
+        ResolveBattleHost();
+        _battleHost.RouteConfig = routeConfig;
         AcquireExclusiveDriving();
         movementPresenter = presenterBehaviour as IRouteMotionPresenter;
 
@@ -229,8 +241,9 @@ public sealed class FakeRouteRuntime : MonoBehaviour
             return;
         }
 
-        stageController.OnRouteBattleCompleted -= NotifyBattleCompleted;
-        stageController.OnRouteBattleCompleted += NotifyBattleCompleted;
+        ResolveBattleHost();
+        _battleHost.RouteBattleCompleted -= NotifyBattleCompleted;
+        _battleHost.RouteBattleCompleted += NotifyBattleCompleted;
         _generation++;
         _routeSettled = false;
         _completedBattleEntries.Clear();
@@ -474,7 +487,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
             _battleCleared = false;
             SetPhase(FakeRoutePhase.Battle);
             movementPresenter?.ApplyNodeVisuals(_currentNode);
-            stageController.StartRouteBattle(entry.battleConfig);
+            _battleHost.StartRouteBattle(entry.battleConfig);
             SetGameplayInput(true);
 
             while (_battleActive && !_battleCleared && generation == _generation && Phase != FakeRoutePhase.Defeated)
@@ -483,7 +496,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
 
             SetGameplayInput(false);
             SetPhase(FakeRoutePhase.WaitingReward);
-            stageController.SetRouteRewardWaitState();
+            _battleHost.SetRouteRewardWaitState();
             while (IsRewardBlocking() && generation == _generation && Phase != FakeRoutePhase.Defeated)
                 yield return null;
             if (generation != _generation || Phase == FakeRoutePhase.Defeated) yield break;
@@ -530,7 +543,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
                     targetNodeId = choice.targetNode.nodeId
                 });
                 SetGameplayInput(false);
-                stageController.SetRouteTravelState();
+                _battleHost.SetRouteTravelState();
                 _flow = StartCoroutine(PlayPlaceholderAndEnter(choice, _generation));
                 return true;
             }
@@ -792,7 +805,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         yield return new WaitForSecondsRealtime(0.5f);
         SaveManager.ClearFakeRouteSnapshot(routeConfig.routeId, routeConfig.stageId);
         AdvanceActiveStageAfterClear();
-        stageController.CompleteFakeRouteStage(routeConfig.clearCoinReward);
+        _battleHost.CompleteFakeRouteStage(routeConfig.clearCoinReward);
     }
 
     /// <summary>
