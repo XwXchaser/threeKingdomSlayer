@@ -12,6 +12,10 @@ aiEditMode: inherit
 > **本文只做分析与方案，不含任何落地改动。** 落地按 §5 的批次单独排期。
 > 测量基线与复测命令见 §7；与功能计划的关系见 §9。
 > 测量时的 HEAD：`1b1c2e5`（`feat/stage-select-talent-overlays`）。
+>
+> 📌 **已落地**：批次 0 与批次 1 已在 2026-10-20 完成并 push（41 个提交，结束于 `afbd41e`）。
+> 现状、验收清单与后续选项见 `plan/architecture-optimization-handoff-20261020.md`；本文保留作为
+> 问题分析与方案依据。
 
 ---
 

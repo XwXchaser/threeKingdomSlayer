@@ -561,6 +561,7 @@ Build Settings
 6. 验证落地页手感时：进 Play Mode 前先把存档 `SaveManager.SetActiveFakeRouteStage(9100)` 或 `1`，两种路线都要跑一遍
 7. 提交前先看 §7.15 / §7.17（工作区脏时的 hunk 拆分 + untracked 资产）——`FakeRouteRuntime.cs` / `FakeRouteStageSaveSnapshot.cs` 里还挂着可破坏道具的未提交改动
 8. 要动结构（拆程序集 / 收拾上帝类 / 清路线驱动）先读 `Locus/knowledge/design/architecture-decoupling-analysis.md`：那里有实测基线、六个结构性问题与 0-4 批改造顺序，以及“工作区必须先收敛”的前置条件
+9. **结构改造已于 2026-10-20 落地**（41 个提交，结束于 `afbd41e`）：交接与验收清单见 `Locus/knowledge/plan/architecture-optimization-handoff-20261020.md`
 
 ---
 
