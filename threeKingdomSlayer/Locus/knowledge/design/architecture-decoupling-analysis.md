@@ -351,7 +351,7 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 | 18 个消费者批量迁移（阵型 / 战斗状态 / 流程控制三角色） | ✅ `853d022`（门面引用 99 → 35 行） |
 | A3：清掉最后几处门面**成员调用** | ✅ `d705596`（只剩惰性解析点） |
 | `Enemy` 拆 `EnemyFreeze`（冰系，约 685 行） | ✅ `34b6bc5`（连视觉层 `EnemyFreezeVisual` 共拆两刀） |
-| **ColumnManager 拆分操作手册**（写给后续接手的 AI） | ✅ `plan/columnmanager-split-plan-20261020.md` |
+| **ColumnManager 拆分操作手册**（写给后续接手的 AI） | ✅ `plan/columnmanager-split-plan-20261020.md`（刀 1 已完成 `facdbde`） |
 
 **三处拆分后的验收证据**：
 
