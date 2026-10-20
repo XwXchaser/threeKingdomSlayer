@@ -3,6 +3,14 @@ using UnityEngine;
 
 public class ActiveSkillInventory : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡战斗状态（只读 + 状态事件）。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private IStageBattleState _stageBattleState;
+
+    private IStageBattleState StageBattleState => _stageBattleState ??= StageController.Instance;
     public sealed class SkillEntry
     {
         public int id;
@@ -126,7 +134,7 @@ public class ActiveSkillInventory : MonoBehaviour
     public bool TryActivate(int entryId)
     {
         if (PlayerState.Instance == null || PlayerState.Instance.stageState != StageState.InProgress) return false;
-        if (StageController.Instance != null && StageController.Instance.IsRouteRewardWaiting) return false;
+        if (StageBattleState != null && StageBattleState.IsRouteRewardWaiting) return false;
         if (!UsesActiveSkills) return false;
         if (Time.timeScale <= 0f) return false;
         if (DialogueManager.Instance != null && DialogueManager.Instance.IsInteractionBlocked) return false;

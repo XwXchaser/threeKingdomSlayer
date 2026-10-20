@@ -8,6 +8,14 @@ using UnityEngine;
 /// </summary>
 public class ColumnManager : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡/阵型信息（只读）。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private IStageFormation _stageFormation;
+
+    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
     [Header("列配置")]
     public int columnCount = 5; // 默认5列
 
@@ -1542,7 +1550,7 @@ public class ColumnManager : MonoBehaviour
         int col = frozen.columnIndex;
         if (!IsValidColumn(col) || maxRows <= 0) return result;
 
-        int visibleMaxRow = (StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5) - 1;
+        int visibleMaxRow = (StageFormation != null ? StageFormation.GetMaxVisibleRows() : 5) - 1;
         int allowed = Mathf.Min(maxRows, visibleMaxRow - frozen.rowIndex);
         if (allowed <= 0) return result;
 

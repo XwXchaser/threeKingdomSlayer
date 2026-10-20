@@ -3,6 +3,14 @@ using UnityEngine;
 
 public sealed class CycloneZone : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡/阵型信息（只读）。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private IStageFormation _stageFormation;
+
+    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
     [SerializeField] private float zoneScaleMultiplier = 2.2f;
 
     private readonly HashSet<Enemy> _triggeredEnemies = new HashSet<Enemy>();
@@ -96,11 +104,11 @@ public sealed class CycloneZone : MonoBehaviour
         if (parent != null && transform.parent != parent)
             transform.SetParent(parent, false);
 
-        int maxRow = StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() - 1 : 4;
-        float rowSpacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
-        float offsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
-        float x = StageController.Instance != null
-            ? StageController.Instance.GetFormationOffset(2, _rowIndex)
+        int maxRow = StageFormation != null ? StageFormation.GetMaxVisibleRows() - 1 : 4;
+        float rowSpacing = StageFormation != null ? StageFormation.GetRowSpacing() : 2.5f;
+        float offsetZ = StageFormation != null ? StageFormation.GetFormationOffsetZ() : 0f;
+        float x = StageFormation != null
+            ? StageFormation.GetFormationOffset(2, _rowIndex)
             : 0f;
         float z = (maxRow - _rowIndex) * (-rowSpacing) + offsetZ;
         transform.localPosition = new Vector3(x, 0f, z);

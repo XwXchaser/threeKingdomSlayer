@@ -9,6 +9,14 @@ using DG.Tweening;
 /// </summary>
 public class KillRewardUI : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡战斗状态（只读 + 状态事件）。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private IStageBattleState _stageBattleState;
+
+    private IStageBattleState StageBattleState => _stageBattleState ??= StageController.Instance;
     [Header("进度显示")]
     [Tooltip("击杀进度文字（如：击杀 12/20）")]
     public TMP_Text killProgressText;
@@ -62,7 +70,7 @@ public class KillRewardUI : MonoBehaviour
         }
 
         // 读取关卡总敌人数
-        StageConfig sc = StageController.Instance != null ? StageController.Instance.stageConfig : null;
+        StageConfig sc = StageBattleState != null ? StageBattleState.StageConfig : null;
         _totalEnemyCount = sc != null ? sc.GetTotalEnemyCount() : 0;
 
         BuildMilestoneLabels();
@@ -130,7 +138,7 @@ public class KillRewardUI : MonoBehaviour
         if (progressSlider == null || milestoneLabelPrefab == null) return;
         if (_totalEnemyCount <= 0) return;
 
-        StageConfig sc = StageController.Instance != null ? StageController.Instance.stageConfig : null;
+        StageConfig sc = StageBattleState != null ? StageBattleState.StageConfig : null;
         if (sc == null || sc.killMilestones == null || sc.killMilestones.Count == 0) return;
 
         RectTransform sliderRT = progressSlider.GetComponent<RectTransform>();

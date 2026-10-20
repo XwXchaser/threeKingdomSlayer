@@ -7,7 +7,7 @@ using UnityEngine;
 /// 管理关卡开始、进行中、胜利、失败状态
 /// 协调 WaveSpawner、EnemyManager、PlayerState 之间的交互
 /// </summary>
-public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation, IStageFlowControl
+public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation, IStageFlowControl, IStageBattleState
 {
     public static StageController Instance { get; private set; }
 
@@ -81,11 +81,36 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
 
     StageConfig IStageFlowControl.StageConfig => stageConfig;
 
+    bool IStageFlowControl.IsStageInProgress => IsStageInProgress;
+
     bool IStageFlowControl.BlockRestartOnDefeat => blockRestartOnDefeat;
 
     bool IStageFlowControl.SuppressDefeatUI => suppressDefeatUI;
 
     FakeRouteStageConfig IStageFlowControl.RouteConfig => fakeRouteStageConfig;
+
+    // ───────── IStageBattleState 显式实现 ─────────
+    // OnStageStateChanged / OnStageVictory 在 StageController 上是 public Action 字段，
+    // 用显式实现包成事件：字段与 Inspector 序列化不变，订阅者走接口。
+    bool IStageBattleState.IsRouteCombatActive => IsRouteCombatActive;
+
+    bool IStageBattleState.IsRouteRewardWaiting => IsRouteRewardWaiting;
+
+    bool IStageBattleState.IsStageInProgress => IsStageInProgress;
+
+    StageConfig IStageBattleState.StageConfig => stageConfig;
+
+    event System.Action<StageState> IStageBattleState.StageStateChanged
+    {
+        add => OnStageStateChanged += value;
+        remove => OnStageStateChanged -= value;
+    }
+
+    event System.Action IStageBattleState.StageVictory
+    {
+        add => OnStageVictory += value;
+        remove => OnStageVictory -= value;
+    }
 
     private void OnEnable()
     {

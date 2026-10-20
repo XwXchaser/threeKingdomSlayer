@@ -14,6 +14,14 @@ using UnityEngine;
 /// </summary>
 public class UpgradeChoiceManager : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡战斗状态（只读 + 状态事件）。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private IStageBattleState _stageBattleState;
+
+    private IStageBattleState StageBattleState => _stageBattleState ??= StageController.Instance;
     public static UpgradeChoiceManager Instance { get; private set; }
 
     [Header("常规池")]
@@ -109,7 +117,7 @@ public class UpgradeChoiceManager : MonoBehaviour
         if (suppressChoices) return;
 
         // 通关/战败后不再弹出
-        if (StageController.Instance != null && !StageController.Instance.IsStageInProgress)
+        if (StageBattleState != null && !StageBattleState.IsStageInProgress)
             return;
 
         _pendingItemChoices++;
@@ -130,7 +138,7 @@ public class UpgradeChoiceManager : MonoBehaviour
         }
 
         // 通关后不再弹出
-        if (StageController.Instance != null && !StageController.Instance.IsStageInProgress)
+        if (StageBattleState != null && !StageBattleState.IsStageInProgress)
         {
             _pendingLevelUps = 0;
             _pendingItemChoices = 0;

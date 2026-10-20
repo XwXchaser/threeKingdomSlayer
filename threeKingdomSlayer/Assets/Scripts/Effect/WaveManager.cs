@@ -11,6 +11,14 @@ using UnityEngine;
 /// </summary>
 public class WaveManager : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡/阵型信息（只读）。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private IStageFormation _stageFormation;
+
+    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
     public static WaveManager Instance { get; private set; }
 
     [Header("海浪预制体")]
@@ -50,11 +58,11 @@ public class WaveManager : MonoBehaviour
 
     private void CacheFormationParams()
     {
-        if (StageController.Instance != null)
+        if (StageFormation != null)
         {
-            _maxRow = StageController.Instance.GetMaxVisibleRows() - 1;
-            _rowSpacing = StageController.Instance.GetRowSpacing();
-            _formationZ = StageController.Instance.GetFormationOffsetZ();
+            _maxRow = StageFormation.GetMaxVisibleRows() - 1;
+            _rowSpacing = StageFormation.GetRowSpacing();
+            _formationZ = StageFormation.GetFormationOffsetZ();
         }
         else
         {

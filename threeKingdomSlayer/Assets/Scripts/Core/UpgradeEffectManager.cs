@@ -13,6 +13,14 @@ using UnityEngine;
 /// </summary>
 public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
 {
+
+    /// <summary>
+    /// 关卡战斗状态（只读 + 状态事件）。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private IStageBattleState _stageBattleState;
+
+    private IStageBattleState StageBattleState => _stageBattleState ??= StageController.Instance;
     public static UpgradeEffectManager Instance { get; private set; }
 
     // ── 数值累积 ──
@@ -230,7 +238,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
             state.tickTimer -= dt;
             if (state.tickTimer <= 0f)
             {
-                Debug.Log($"[RouteDiag] BurnTick frame={Time.frameCount} enemy={enemy.DebugTag} routeCombat=" + (StageController.Instance != null ? StageController.Instance.IsRouteCombatActive.ToString() : "NULL"));
+                Debug.Log($"[RouteDiag] BurnTick frame={Time.frameCount} enemy={enemy.DebugTag} routeCombat=" + (StageBattleState != null ? StageBattleState.IsRouteCombatActive.ToString() : "NULL"));
                 enemy.TakeDamage(state.damagePerTick, DamageType.Pierce, Color.red, countsForCombo: false, canInterruptAttack: false, triggerHitAnimation: false, ignoreDamageModifiers: true, feedbackSource: HitFeedbackSource.Dot, feedbackStrength: HitFeedbackStrength.None);
                 state.ticksRemaining--;
                 state.tickTimer += BurnTickInterval;
@@ -281,7 +289,7 @@ public class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
             state.tickTimer -= dt;
             if (state.tickTimer <= 0f)
             {
-                Debug.Log($"[RouteDiag] DiseaseTick frame={Time.frameCount} enemy={enemy.DebugTag} routeCombat=" + (StageController.Instance != null ? StageController.Instance.IsRouteCombatActive.ToString() : "NULL"));
+                Debug.Log($"[RouteDiag] DiseaseTick frame={Time.frameCount} enemy={enemy.DebugTag} routeCombat=" + (StageBattleState != null ? StageBattleState.IsRouteCombatActive.ToString() : "NULL"));
                 int tickDmg = state.damagePerTick * state.layers;
                 float hpBefore = enemy.currentHealth;
                 Debug.Log($"[Disease] Tick: {enemy.DebugTag} dmg={tickDmg} hpBefore={hpBefore:F1} remaining={state.ticksRemaining} layers={state.layers}");

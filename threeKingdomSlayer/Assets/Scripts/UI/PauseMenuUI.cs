@@ -8,6 +8,14 @@ using DG.Tweening;
 /// </summary>
 public class PauseMenuUI : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡流程控制。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private IStageFlowControl _stageFlow;
+
+    private IStageFlowControl StageFlow => _stageFlow ??= StageController.Instance;
     [Header("暂停按钮")]
     public UnityEngine.UI.Button pauseButton;
 
@@ -56,7 +64,7 @@ public class PauseMenuUI : MonoBehaviour
 
     private void OnPauseClicked()
     {
-        var sc = StageController.Instance;
+        var sc = StageFlow;
         if (sc == null || !sc.IsStageInProgress) return;
 
         _isPaused = true;
@@ -78,7 +86,7 @@ public class PauseMenuUI : MonoBehaviour
     private void OnMainMenuClicked()
     {
         Time.timeScale = 1f;
-        StageController.Instance?.GoToMainMenu();
+        StageFlow?.GoToMainMenu();
     }
 
     private void ConfigureVolumeSlider(UnityEngine.UI.Slider slider, float value, UnityEngine.Events.UnityAction<float> callback)

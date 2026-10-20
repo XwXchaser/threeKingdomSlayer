@@ -15,6 +15,14 @@ using UnityEngine;
 [RequireComponent(typeof(SpriteRenderer))]
 public sealed class BreakableProp : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡/阵型信息（只读）：道具按 x 坐标反查所在列。
+    /// 历史上直接摸 StageController 门面，现只依赖角色接口（2026-10-20 批次 1）。
+    /// </summary>
+    private IStageFormation _stageFormation;
+
+    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
     [Serializable]
     public struct PropSaveEntry
     {
@@ -135,7 +143,7 @@ public sealed class BreakableProp : MonoBehaviour
     {
         if (columnOverride >= 0) return columnOverride;
 
-        var stage = StageController.Instance;
+        var stage = StageFormation;
         if (stage != null)
         {
             float x = transform.position.x;

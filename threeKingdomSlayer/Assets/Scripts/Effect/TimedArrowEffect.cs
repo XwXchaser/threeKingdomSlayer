@@ -12,6 +12,14 @@ using DG.Tweening;
 /// </summary>
 public class TimedArrowEffect : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡/阵型信息（只读）。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private static IStageFormation _stageFormation;
+
+    private static IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
     [Header("箭矢精灵")]
     [Tooltip("箭矢 SpriteRenderer 模板（复制此精灵生成箭矢）")]
     public SpriteRenderer arrowTemplate;
@@ -367,8 +375,8 @@ public class TimedArrowEffect : MonoBehaviour
 
     private static Vector3 GetStableSlotPosition(Enemy enemy, Vector3 battlefieldOffset)
     {
-        float localX = StageController.Instance != null
-            ? StageController.Instance.GetFormationOffset(enemy.columnIndex, enemy.rowIndex)
+        float localX = StageFormation != null
+            ? StageFormation.GetFormationOffset(enemy.columnIndex, enemy.rowIndex)
             : (enemy.columnIndex - 2) * 2f;
         return new Vector3(
             battlefieldOffset.x + localX,
@@ -452,18 +460,18 @@ public class TimedArrowEffect : MonoBehaviour
 
     private static float GetColumnLocalX(int col)
     {
-        if (StageController.Instance != null)
-            return StageController.Instance.GetFormationOffset(col, 0);
+        if (StageFormation != null)
+            return StageFormation.GetFormationOffset(col, 0);
         return (col - 2) * 2f;
     }
 
     private static float GetRowLocalZ(int row)
     {
-        if (StageController.Instance != null)
+        if (StageFormation != null)
         {
-            float rowSpacing = StageController.Instance.GetRowSpacing();
-            float offsetZ = StageController.Instance.GetFormationOffsetZ();
-            int maxRow = StageController.Instance.GetMaxVisibleRows() - 1;
+            float rowSpacing = StageFormation.GetRowSpacing();
+            float offsetZ = StageFormation.GetFormationOffsetZ();
+            int maxRow = StageFormation.GetMaxVisibleRows() - 1;
             return (maxRow - row) * (-rowSpacing) + offsetZ;
         }
 

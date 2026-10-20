@@ -11,6 +11,14 @@ using UnityEngine;
 /// </summary>
 public class TimedPassiveModule : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡战斗状态（只读 + 状态事件）。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private IStageBattleState _stageBattleState;
+
+    private IStageBattleState StageBattleState => _stageBattleState ??= StageController.Instance;
     public static TimedPassiveModule Instance { get; private set; }
 
     [Header("特效预制体")]
@@ -67,7 +75,7 @@ public class TimedPassiveModule : MonoBehaviour
         }
 
         bool suppressImmediate = _suppressImmediateEffects
-            || (StageController.Instance != null && StageController.Instance.IsRouteRewardWaiting)
+            || (StageBattleState != null && StageBattleState.IsRouteRewardWaiting)
             || PlayerState.Instance == null
             || PlayerState.Instance.stageState != StageState.InProgress;
 
@@ -108,7 +116,7 @@ public class TimedPassiveModule : MonoBehaviour
 
     public void TriggerPendingCombatStartEffects()
     {
-        if (logDiagnostics) Debug.Log($"[TimedPassiveDiag] TriggerPending count={_pendingCombatStartEffects.Count} frame={Time.frameCount} combat={StageController.Instance?.IsRouteCombatActive} enemies={AttackSystem.Instance?.columnManager?.GetAllEnemies()?.Count}");
+        if (logDiagnostics) Debug.Log($"[TimedPassiveDiag] TriggerPending count={_pendingCombatStartEffects.Count} frame={Time.frameCount} combat={StageBattleState?.IsRouteCombatActive} enemies={AttackSystem.Instance?.columnManager?.GetAllEnemies()?.Count}");
         var pending = new List<string>(_pendingCombatStartEffects);
         for (int i = 0; i < pending.Count; i++)
         {
@@ -117,7 +125,7 @@ public class TimedPassiveModule : MonoBehaviour
                 _pendingCombatStartEffects.Remove(pending[i]);
                 continue;
             }
-            if (logDiagnostics) Debug.Log($"[TimedPassiveDiag] TryFirst id={state.definition.upgradeId} level={state.level} frame={Time.frameCount} combat={StageController.Instance?.IsRouteCombatActive}");
+            if (logDiagnostics) Debug.Log($"[TimedPassiveDiag] TryFirst id={state.definition.upgradeId} level={state.level} frame={Time.frameCount} combat={StageBattleState?.IsRouteCombatActive}");
             if (!TrySpawnEffect(state))
             {
                 Debug.LogWarning($"[TimedPassiveModule] Combat首次触发失败，保留待触发: {state.definition.displayName}");
@@ -208,9 +216,9 @@ public class TimedPassiveModule : MonoBehaviour
 
     private void Update()
     {
-        if (StageController.Instance != null && !StageController.Instance.IsRouteCombatActive)
+        if (StageBattleState != null && !StageBattleState.IsRouteCombatActive)
             return;
-        if (logDiagnostics) Debug.Log($"[TimedPassiveDiag] Update active frame={Time.frameCount} routeCombat={StageController.Instance?.IsRouteCombatActive} states={_states.Count}");
+        if (logDiagnostics) Debug.Log($"[TimedPassiveDiag] Update active frame={Time.frameCount} routeCombat={StageBattleState?.IsRouteCombatActive} states={_states.Count}");
         bool isCharging = PlayerState.Instance != null && PlayerState.Instance.IsCharging;
 
         foreach (var kv in _states)
@@ -228,7 +236,7 @@ public class TimedPassiveModule : MonoBehaviour
             state.timer -= Time.deltaTime;
             if (state.timer <= 0f)
             {
-                if (logDiagnostics) Debug.Log($"[TimedPassiveDiag] TimerExpired id={kv.Key} frame={Time.frameCount} combat={StageController.Instance?.IsRouteCombatActive}");
+                if (logDiagnostics) Debug.Log($"[TimedPassiveDiag] TimerExpired id={kv.Key} frame={Time.frameCount} combat={StageBattleState?.IsRouteCombatActive}");
                 if (TrySpawnEffect(state))
                     state.timer = GetIntervalForLevel(state.definition, state.level);
             }

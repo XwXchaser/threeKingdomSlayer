@@ -33,6 +33,34 @@ public interface IStageFormation
 }
 
 /// <summary>
+/// 关卡**战斗状态**（只读 + 状态事件）。
+///
+/// 消费方只要「现在是不是在打 / 在等奖励 / 关卡是否进行中」以及关卡配置，
+/// 不需要知道 StageController 这个门面长什么样。
+/// 历史上这些查询散在各处直接摸 `StageController.Instance`，现改为只依赖本接口。
+/// </summary>
+public interface IStageBattleState
+{
+    /// <summary>是否处于路线战斗进行中。</summary>
+    bool IsRouteCombatActive { get; }
+
+    /// <summary>是否在等奖励选择（三选一）。</summary>
+    bool IsRouteRewardWaiting { get; }
+
+    /// <summary>关卡是否处于进行中（StageState.InProgress）。</summary>
+    bool IsStageInProgress { get; }
+
+    /// <summary>当前关卡配置（可为 null）。</summary>
+    StageConfig StageConfig { get; }
+
+    /// <summary>关卡状态变化。</summary>
+    event System.Action<StageState> StageStateChanged;
+
+    /// <summary>关卡胜利。</summary>
+    event System.Action StageVictory;
+}
+
+/// <summary>
 /// 关卡**流程控制**（UI 侧）：战败是否允许重来、是否压掉战败面板、当前卷轴路线、返回落地页。
 ///
 /// 与 <see cref="IStageFormation"/> 一样是角色的切分：BattleHUD 只需要这几项，
@@ -51,6 +79,9 @@ public interface IStageFlowControl
 
     /// <summary>当前关卡配置（进度条注入用；可为 null）。</summary>
     StageConfig StageConfig { get; }
+
+    /// <summary>关卡是否处于进行中。</summary>
+    bool IsStageInProgress { get; }
 
     /// <summary>重开当前关卡（战败后的「重来」）。</summary>
     void RestartStage();

@@ -50,6 +50,14 @@ public class QTEInstance
 /// </summary>
 public class QTEController : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡/阵型信息（只读）。历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private IStageFormation _stageFormation;
+
+    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
     [Header("配置")]
     public BossQTEData qteData;
     public ArrowGlobalConfig arrowConfig;
@@ -406,7 +414,7 @@ public class QTEController : MonoBehaviour
 
     private Vector3 GetProjectileTargetPosition()
     {
-        float offsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
+        float offsetZ = StageFormation != null ? StageFormation.GetFormationOffsetZ() : 0f;
         float zPos = offsetZ + _currentAttack.projectileTargetZ;
         return new Vector3(0, 1.5f, zPos);
     }
@@ -468,7 +476,7 @@ public class QTEController : MonoBehaviour
 
         float row5Z = GetRow5ZPosition();
         float spawnZ = row5Z + _currentAttack.arrowSpawnOffsetZ;
-        float offsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
+        float offsetZ = StageFormation != null ? StageFormation.GetFormationOffsetZ() : 0f;
         float targetZ = offsetZ + _currentAttack.projectileTargetZ;
         float playerX = PlayerState.Instance != null ? PlayerState.Instance.transform.position.x : 0f;
 
@@ -582,9 +590,9 @@ public class QTEController : MonoBehaviour
 
     private float GetRow5ZPosition()
     {
-        float offsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
-        float rowSpacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
-        int maxRow = StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() - 1 : 4;
+        float offsetZ = StageFormation != null ? StageFormation.GetFormationOffsetZ() : 0f;
+        float rowSpacing = StageFormation != null ? StageFormation.GetRowSpacing() : 2.5f;
+        int maxRow = StageFormation != null ? StageFormation.GetMaxVisibleRows() - 1 : 4;
         // 使用与 Enemy.GetRowZ 一致的公式: (maxRow - row) * (-spacing) + offset
         return (maxRow - 5) * (-rowSpacing) + offsetZ;
     }

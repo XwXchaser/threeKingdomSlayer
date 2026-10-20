@@ -7,6 +7,14 @@ using UnityEngine;
 /// </summary>
 public class KillRewardManager : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡战斗状态（只读）：取当前关卡配置的击杀里程碑。
+    /// 历史上直接摸 StageController 门面，现只依赖角色接口（2026-10-20 批次 1）。
+    /// </summary>
+    private IStageBattleState _stageBattleState;
+
+    private IStageBattleState StageBattleState => _stageBattleState ??= StageController.Instance;
     /// <summary>已领取的里程碑阈值集合</summary>
     private HashSet<int> _earnedThresholds = new HashSet<int>();
 
@@ -33,8 +41,8 @@ public class KillRewardManager : MonoBehaviour
     public void ResetRewards()
     {
         _earnedThresholds.Clear();
-        var sc = StageController.Instance;
-        _milestones = (sc != null && sc.stageConfig != null) ? sc.stageConfig.killMilestones : null;
+        var sc = StageBattleState;
+        _milestones = (sc != null && sc.StageConfig != null) ? sc.StageConfig.killMilestones : null;
     }
 
     /// <summary>获取当前关卡里程碑（供 UI 读取进度）</summary>

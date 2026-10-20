@@ -11,6 +11,14 @@ using DG.Tweening;
 [ExecuteAlways]
 public class StageProgressBar : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡战斗状态（只读 + 状态事件）。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private IStageBattleState _stageBattleState;
+
+    private IStageBattleState StageBattleState => _stageBattleState ??= StageController.Instance;
     [Header("布局")]
     [Tooltip("相邻节点间距（像素）")]
     public float dotSpacing = 150f;
@@ -127,7 +135,7 @@ public class StageProgressBar : MonoBehaviour
     private void TryInitializeFromScene()
     {
         if (_initialized) return;
-        var stageConfig = StageController.Instance?.stageConfig;
+        var stageConfig = StageBattleState?.StageConfig;
         var waveSpawner = WaveSpawner.Instance;
         if (stageConfig != null && waveSpawner != null)
             Initialize(stageConfig, waveSpawner);

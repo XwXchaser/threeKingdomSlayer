@@ -4,6 +4,14 @@ using UnityEngine;
 
 public class SpikeTrapController : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡/阵型信息（只读）。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private IStageFormation _stageFormation;
+
+    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
     public static SpikeTrapController Instance { get; private set; }
 
     [Header("美术素材")]
@@ -200,13 +208,13 @@ public class SpikeTrapController : MonoBehaviour
         float xPos = 0f;
         float zPos = 0f;
 
-        if (StageController.Instance != null)
+        if (StageFormation != null)
         {
-            xPos = StageController.Instance.GetFormationOffset(col, row);
+            xPos = StageFormation.GetFormationOffset(col, row);
 
-            float rowSpacing = StageController.Instance.GetRowSpacing();
-            float offsetZ = StageController.Instance.GetFormationOffsetZ();
-            int maxRow = StageController.Instance.GetMaxVisibleRows() - 1;
+            float rowSpacing = StageFormation.GetRowSpacing();
+            float offsetZ = StageFormation.GetFormationOffsetZ();
+            int maxRow = StageFormation.GetMaxVisibleRows() - 1;
             zPos = (maxRow - row) * (-rowSpacing) + offsetZ;
         }
 

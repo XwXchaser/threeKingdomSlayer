@@ -9,6 +9,14 @@ using UnityEngine;
 /// </summary>
 public class WaveSpawner : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡战斗状态（只读 + 状态事件）。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private IStageBattleState _stageBattleState;
+
+    private IStageBattleState StageBattleState => _stageBattleState ??= StageController.Instance;
     public static WaveSpawner Instance { get; private set; }
 
     [Header("配置")]
@@ -26,7 +34,7 @@ public class WaveSpawner : MonoBehaviour
         get
         {
             if (stageConfig != null) return stageConfig;
-            return StageController.Instance != null ? StageController.Instance.stageConfig : null;
+            return StageBattleState != null ? StageBattleState.StageConfig : null;
         }
     }
 

@@ -4,6 +4,14 @@ using UnityEngine.UI;
 
 public sealed class DialogueManager : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡战斗状态（只读 + 状态事件）。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private static IStageBattleState _stageBattleState;
+
+    private static IStageBattleState StageBattleState => _stageBattleState ??= StageController.Instance;
     public static DialogueManager Instance { get; private set; }
 
     [SerializeField] private DialogueDatabase _database;
@@ -62,7 +70,7 @@ public sealed class DialogueManager : MonoBehaviour
             _interactionBlockFrames--;
 
         TrySubscribe();
-        if (!_stageStartTriggered && StageController.Instance != null && StageController.Instance.IsStageInProgress)
+        if (!_stageStartTriggered && StageBattleState != null && StageBattleState.IsStageInProgress)
             OnStageStateChanged(StageState.InProgress);
         TryPlayNext();
     }
@@ -83,10 +91,10 @@ public sealed class DialogueManager : MonoBehaviour
         }
         if (PlayerState.Instance != null)
             PlayerState.Instance.OnKillCountChanged -= OnKillCountChanged;
-        if (StageController.Instance != null)
+        if (StageBattleState != null)
         {
-            StageController.Instance.OnStageStateChanged -= OnStageStateChanged;
-            StageController.Instance.OnStageVictory -= CommitTutorialProgress;
+            StageBattleState.StageStateChanged -= OnStageStateChanged;
+            StageBattleState.StageVictory -= CommitTutorialProgress;
         }
     }
 
@@ -195,15 +203,15 @@ public sealed class DialogueManager : MonoBehaviour
     private void TrySubscribe()
     {
         if (_subscriptionsSet) return;
-        if (WaveSpawner.Instance == null || EnemyManager.Instance == null || PlayerState.Instance == null || StageController.Instance == null)
+        if (WaveSpawner.Instance == null || EnemyManager.Instance == null || PlayerState.Instance == null || StageBattleState == null)
             return;
 
         WaveSpawner.Instance.OnWaveStarted += OnWaveStarted;
         EnemyManager.Instance.OnBossEngaged += OnBossEngaged;
         EnemyManager.Instance.OnAnyEnemyDied += OnEnemyDied;
         PlayerState.Instance.OnKillCountChanged += OnKillCountChanged;
-        StageController.Instance.OnStageStateChanged += OnStageStateChanged;
-        StageController.Instance.OnStageVictory += CommitTutorialProgress;
+        StageBattleState.StageStateChanged += OnStageStateChanged;
+        StageBattleState.StageVictory += CommitTutorialProgress;
         _subscriptionsSet = true;
     }
 
@@ -272,7 +280,7 @@ public sealed class DialogueManager : MonoBehaviour
 
     private static bool MatchesStage(DialogueEventData dialogueEvent)
     {
-        return dialogueEvent.stageId == 0 || (StageController.Instance != null && StageController.Instance.stageConfig != null && dialogueEvent.stageId == StageController.Instance.stageConfig.stageId);
+        return dialogueEvent.stageId == 0 || (StageBattleState != null && StageBattleState.StageConfig != null && dialogueEvent.stageId == StageBattleState.StageConfig.stageId);
     }
 
     private static bool HasBossInCombat()

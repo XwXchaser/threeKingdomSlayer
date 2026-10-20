@@ -18,6 +18,14 @@ using DG.Tweening;
 /// </summary>
 public class ShootFireEffect : MonoBehaviour
 {
+
+    /// <summary>
+    /// 关卡/阵型信息（只读）。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// </summary>
+    private static IStageFormation _stageFormation;
+
+    private static IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
     [Header("精灵")]
     [Tooltip("火焰团精灵组，运行时随机选取")]
     public Sprite[] fireSprites;
@@ -114,7 +122,7 @@ public class ShootFireEffect : MonoBehaviour
         _columns = new List<int>(columns);
         _visibleRows = maxRows > 0
             ? maxRows
-            : StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
+            : StageFormation != null ? StageFormation.GetMaxVisibleRows() : 5;
         _hitEnemies.Clear();
         _zStart = fireStartZ;
         _zEnd = fireEndZ;
@@ -141,7 +149,7 @@ public class ShootFireEffect : MonoBehaviour
         _lastSweepHitTimes.Clear();
         _sweepRangeRows = maxRows > 0
             ? maxRows
-            : StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
+            : StageFormation != null ? StageFormation.GetMaxVisibleRows() : 5;
         _zStart = fireStartZ + startZOffset;
         _zEnd = GetSweepEndZ(_sweepRangeRows);
         float baseDistance = Mathf.Max(0.01f, fireEndZ - _zStart);
@@ -155,10 +163,10 @@ public class ShootFireEffect : MonoBehaviour
 
     private float GetSweepEndZ(int rangeRows)
     {
-        int visibleRows = StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
+        int visibleRows = StageFormation != null ? StageFormation.GetMaxVisibleRows() : 5;
         int clampedRows = Mathf.Clamp(rangeRows, 1, visibleRows);
-        float rowSpacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
-        float formationOffsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
+        float rowSpacing = StageFormation != null ? StageFormation.GetRowSpacing() : 2.5f;
+        float formationOffsetZ = StageFormation != null ? StageFormation.GetFormationOffsetZ() : 0f;
         int targetRow = clampedRows - 1;
         float targetRowZ = (visibleRows - 1 - targetRow) * (-rowSpacing) + formationOffsetZ;
         float enemiesRootZ = GetEnemyRootWorldZ();
@@ -405,8 +413,8 @@ public class ShootFireEffect : MonoBehaviour
 
     private static float GetColumnX(int col)
     {
-        if (StageController.Instance != null)
-            return StageController.Instance.GetFormationOffset(col, 0);
+        if (StageFormation != null)
+            return StageFormation.GetFormationOffset(col, 0);
         return (col - 2) * 2f;
     }
 }
