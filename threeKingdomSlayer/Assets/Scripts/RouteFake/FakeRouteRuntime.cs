@@ -213,6 +213,11 @@ public sealed class FakeRouteRuntime : MonoBehaviour
             Debug.LogError("[FakeRoute] PrepareForEntry: 配置或StageController为空");
             return;
         }
+        // 让 StageController 也知道「当前路线」：结算（CompleteFakeRouteStage）、战败重来
+        // （RestartStageCoroutine）、重来按钮都靠这个字段判断「现在跑的是卷轴路线」。
+        // 落地页自举时它是 null（没有 MainMenu 传参），不补的话结算会直接被 early-return 掉：
+        // 没有 Victory 状态 / 没有通关铜钱 / 没有记录已通关。
+        stageController.fakeRouteStageConfig = routeConfig;
         AcquireExclusiveDriving();
         movementPresenter = presenterBehaviour as IRouteMotionPresenter;
 
@@ -303,12 +308,22 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         yield return EnterNode(startNode);
     }
 
-    /// <summary>解析起始节点（含 checkpoint 恢复）。Begin 与 PrepareForEntry 共用。</summary>
+    /// <summary>
+    /// 解析起始节点（含 checkpoint 恢复）。Begin 与 PrepareForEntry 共用。
+    ///
+    /// 是否接存档点的判定：
+    ///   ① 老路径（<see cref="Begin"/>）：只看 FakeRouteLaunch.StartFromCheckpoint，行为不变。
+    ///   ② 落地页自举（<see cref="IsHubEntry"/>）：**无条件**尝试恢复快照。
+    ///      落地页语义就是「进游戏 = 当前进度」，而 StartFromCheckpoint 是 static、
+    ///      进程冷启动时默认 false；只靠它会让二次启动回到 route.startNode 并丢掉血量/升级。
+    ///      快照在通关时已被 FinishRoute 清掉，所以「有快照」= 该关没打完，可以安全恢复。
+    /// </summary>
     private FakeRouteNodeConfig ResolveStartNode()
     {
         if (routeConfig == null) return null;
         var startNode = useTestStartNode && testStartNode != null ? testStartNode : routeConfig.startNode;
-        if (!useTestStartNode && FakeRouteLaunch.StartFromCheckpoint)
+        bool tryRestoreCheckpoint = !useTestStartNode && (FakeRouteLaunch.StartFromCheckpoint || IsHubEntry);
+        if (tryRestoreCheckpoint)
         {
             var snapshot = SaveManager.GetFakeRouteSnapshot(routeConfig.routeId, routeConfig.stageId);
             if (snapshot != null && RestoreCheckpoint(snapshot, out var restoredNode))
@@ -766,7 +781,30 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         SetPhase(FakeRoutePhase.Completed);
         yield return new WaitForSecondsRealtime(0.5f);
         SaveManager.ClearFakeRouteSnapshot(routeConfig.routeId, routeConfig.stageId);
+        AdvanceActiveStageAfterClear();
         stageController.CompleteFakeRouteStage(routeConfig.clearCoinReward);
+    }
+
+    /// <summary>
+    /// 通关后把存档「当前关卡」推进到可选列表里的下一条路线（教学关 → 正式关）。
+    ///
+    /// 落地页开机就是按这个值自举的，不推进的话打完教学关回到落地页还是教学关，
+    /// 玩家必须自己去选关页手动切。已是最后一条时保持不变（重复挑战不倒退）。
+    /// </summary>
+    private void AdvanceActiveStageAfterClear()
+    {
+        if (routeConfig == null) return;
+        var scm = StageConfigManager.Instance != null ? StageConfigManager.Instance : FindObjectOfType<StageConfigManager>();
+        if (scm == null) return;
+        var routes = scm.GetSelectableRoutes();
+        int index = -1;
+        for (int i = 0; i < routes.Count; i++)
+            if (routes[i] != null && routes[i].stageId == routeConfig.stageId) { index = i; break; }
+        if (index < 0 || index + 1 >= routes.Count) return;
+        var next = routes[index + 1];
+        if (next == null) return;
+        SaveManager.SetActiveFakeRouteStage(next.stageId);
+        Debug.Log("[FakeRoute] 通关推进当前关卡: " + routeConfig.stageName + " → " + next.stageName);
     }
 
     private void SetPhase(FakeRoutePhase phase)

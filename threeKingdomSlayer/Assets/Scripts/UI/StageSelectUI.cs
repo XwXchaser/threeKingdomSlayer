@@ -6,7 +6,7 @@ using UnityEngine.UI;
 /// 选关页（纯 UI overlay 场景）。
 ///
 /// 场景结构：Canvas(StageSelectUI) → 由本脚本运行时生成节点网格。
-/// 交互：点节点 → 写入 StageController/FakeRouteLaunch 的 Pending* → 关闭 overlay → 进 Battle。
+/// 交互：点节点 → 写存档「当前关卡」→ 落地页（下层 Battle 场景）当场重载该路线 → 关闭 overlay。
 ///
 /// 与 MainMenuUI 的关系：网格生成逻辑原来在 MainMenuUI 里（但 Start() 从未调用 CreateStageGrid，
 /// 属于死代码），现在搬到这里成为唯一实现。
@@ -178,16 +178,39 @@ public class StageSelectUI : MonoBehaviour
     // ────────────────────────── 选择处理 ──────────────────────────
 
     /// <summary>
-    /// 选关：只写存档的「当前关卡」，**不立即切换**。
-    /// 落地页（Battle 场景）开机时读这个值加载对应路线。
+    /// 选关：写存档「当前关卡」，并让下层的落地页（Battle 场景里的 FakeRouteRuntime）
+    /// 立刻 PrepareForEntry 换成新路线，然后关闭自己。
+    /// 旧做法是「只写存档，下次进入生效」，但落地页就在下层场景里，不立即应用会让玩家
+    /// 关掉选关页后看到的还是旧关卡。
     /// </summary>
     private void OnRouteSelected(int stageId)
     {
         var cfg = _routes.Find(s => s != null && s.stageId == stageId);
         if (cfg == null) return;
+        int previous = SaveManager.GetActiveFakeRouteStageId();
         SaveManager.SetActiveFakeRouteStage(cfg.stageId);
-        Debug.Log("[StageSelect] 已设为当前关卡: " + cfg.stageName + "（下次进入生效）");
+
+        var runtime = FakeRouteRuntime.Instance;
+        if (previous != cfg.stageId)
+        {
+            if (runtime != null)
+            {
+                Debug.Log("[StageSelect] 切换当前关卡并重载落地页: " + cfg.stageName);
+                runtime.PrepareForEntry(cfg);
+            }
+            else
+            {
+                Debug.LogWarning("[StageSelect] 找不到 FakeRouteRuntime，仅写存档（下次进入生效）: " + cfg.stageName);
+            }
+        }
+        else
+        {
+            Debug.Log("[StageSelect] 已是当前关卡: " + cfg.stageName);
+        }
+
         if (statusText != null)
-            statusText.text = "已选择「" + cfg.stageName + "」，下次进入生效";
+            statusText.text = "已切换到「" + cfg.stageName + "」";
+
+        OnCloseClicked();
     }
 }
