@@ -462,16 +462,7 @@ public GameObject freezeMeltEffectPrefab;
     [System.NonSerialized] private float _freezeChance;
     [System.NonSerialized] private float _lastIceHitTime;
     [System.NonSerialized] private EnemyState _preFrozenState = EnemyState.Idle;
-    [System.NonSerialized] private GameObject _freezeOverlayInstance;
-    [System.NonSerialized] private SpriteRenderer _freezeOverlayRenderer;
-    private static Sprite _proceduralFrostSprite;
-    private static Sprite[] _proceduralShardSprites;
-    private static Sprite _proceduralShardSprite;
-    [System.NonSerialized] private Vector3 _freezeOverlayWorldSize;
-    [System.NonSerialized] private Color _colorBeforeFreeze;
-    [System.NonSerialized] private bool _hasFreezeColorSnapshot;
     [System.NonSerialized] private float _postFreezeRecoverRemaining;
-    private static readonly Color FreezeTintColor = new Color(0.55f, 0.78f, 1f, 1f);
     private float _hitScaleMultiplier = 1f;
 
     // Animator HitFlash 协程引用
@@ -493,6 +484,22 @@ public GameObject freezeMeltEffectPrefab;
     private IStageFormation _stageFormation;
 
     private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
+
+    /// <summary>冰系视觉层（冰壳覆盖层 / 着色 / 碎冰特效）。视觉逻辑已从本类拆出，见 EnemyFreezeVisual。</summary>
+    private EnemyFreezeVisual _freezeVisual;
+
+    private EnemyFreezeVisual FreezeVisual => _freezeVisual ??= new EnemyFreezeVisual();
+
+    /// <summary>冰系视觉层需要的上下文：敌人节点 + 渲染器 + 冻结表现配置。</summary>
+    private EnemyFreezeVisual.Context FreezeVisualContext() => new EnemyFreezeVisual.Context
+    {
+        transform = transform,
+        spriteRenderer = _spriteRenderer,
+        overlayPrefab = ResolveFreezeOverlayPrefab(),
+        overlayScale = ResolveOverlayScale(),
+        overlayYOffset = ResolveOverlayYOffset(),
+        tintColor = EnemyFreezeVisual.TintColor
+    };
 
     // 敌人物体原始缩放与旋转值（从预制体读取，用于对象池复用还原）
     // 不能硬编码为 Vector3.one / Quaternion.identity，因为预制体可能有自定义初始姿态。
@@ -2888,7 +2895,7 @@ private void SpawnProjectile()
         state = EnemyState.Frozen;
         _freezeRemaining = duration;
         PushSuspend(SuspendSource.Frozen);
-        ApplyFreezeVisual(true);
+        FreezeVisual.Apply(true, FreezeVisualContext());
         _postFreezeRecoverRemaining = 0f;
         DebugLog.Info($"[Freeze] {DebugTag} 进入冻结 {duration:F2}s (原状态={_preFrozenState})");
         return true;
@@ -2899,7 +2906,7 @@ private void SpawnProjectile()
     {
         if (state != EnemyState.Frozen) return;
         _freezeRemaining = 0f;
-        ApplyFreezeVisual(false);
+        FreezeVisual.Apply(false, FreezeVisualContext());
         state = _preFrozenState;
         PopSuspend(SuspendSource.Frozen);
         _postFreezeRecoverRemaining = Mathf.Max(0f, freezeRecoveryDelay);
@@ -2907,7 +2914,7 @@ private void SpawnProjectile()
         // 自然解冻用另一套表现（塌陷/融化），与破冰爆散区分
         if (ResolveMeltPrefab() != null)
         {
-            SpawnFittedFx(ResolveMeltPrefab(), 1.15f);
+            FreezeVisual.SpawnFittedFx(ResolveMeltPrefab(), 1.15f, FreezeVisualContext());
         }
 
         DebugLog.Info($"[Freeze] {DebugTag} 自然解冻 → {state}，停顿 {_postFreezeRecoverRemaining:F2}s 后再接补齐");
@@ -2918,7 +2925,7 @@ private void SpawnProjectile()
     {
         if (state != EnemyState.Frozen) return;
         _freezeRemaining = 0f;
-        ApplyFreezeVisual(false);
+        FreezeVisual.Apply(false, FreezeVisualContext());
         PopSuspend(SuspendSource.Frozen);
         CancelAttack();
         state = EnemyState.Idle;
@@ -2935,7 +2942,7 @@ private void SpawnProjectile()
         bool hasFrozenToken = (_suspendSources & SuspendSource.Frozen) != 0;
         if (state != EnemyState.Frozen && state != EnemyState.IceBreaking && !hasFrozenToken) return;
 
-        ApplyFreezeVisual(false);
+        FreezeVisual.Apply(false, FreezeVisualContext());
         _freezeRemaining = 0f;
         _breakSequencePending = false;
         _breakSequenceDelay = 0f;
@@ -2961,12 +2968,12 @@ private void SpawnProjectile()
         _freezeRemaining -= Time.deltaTime;
 
         // 冰壳呼吸：让"冻住"在读感上不是一张静止图片
-        if (_freezeOverlayRenderer != null)
+        if (FreezeVisual.OverlayRenderer != null)
         {
             float t = 0.5f + 0.5f * Mathf.Sin(Time.time * 6f);
-            Color c = _freezeOverlayRenderer.color;
+            Color c = FreezeVisual.OverlayRenderer.color;
             c.a = Mathf.Lerp(0.55f, 0.92f, t);
-            _freezeOverlayRenderer.color = c;
+            FreezeVisual.OverlayRenderer.color = c;
         }
 
         if (_freezeRemaining <= 0f)
@@ -3066,13 +3073,13 @@ private void SpawnProjectile()
         ApplyPendingBreakCollision();
 
         _freezeRemaining = 0f;
-        ApplyFreezeVisual(false);
+        FreezeVisual.Apply(false, FreezeVisualContext());
         PopSuspend(SuspendSource.Frozen);
 
         if (ResolveIceBreakPrefab() != null)
-            SpawnFittedFx(ResolveIceBreakPrefab(), 1.35f);
+            FreezeVisual.SpawnFittedFx(ResolveIceBreakPrefab(), 1.35f, FreezeVisualContext());
         else
-            SpawnProceduralIceBreakFx();
+            FreezeVisual.SpawnProceduralIceBreakFx(FreezeVisualContext());
 
         state = EnemyState.IceBreaking;
         _iceBreakRemaining = Mathf.Max(0.01f, iceBreakAnimDuration);
@@ -3094,109 +3101,7 @@ private void SpawnProjectile()
             .SetId("breakIcePush");
     }
 
-    /// <summary>没有美术素材时的冰碎占位：把冰块按 3x3 切开，整块沿切口碎开飞散。</summary>
-    private void SpawnProceduralIceBreakFx()
-    {
-        GetSpriteVisibleArea(out Vector3 center, out Vector3 visibleSize);
-        center += Vector3.up * (visibleSize.y * ResolveOverlayYOffset());
-        Vector3 blockSize = _freezeOverlayWorldSize.sqrMagnitude > 0.0001f
-            ? _freezeOverlayWorldSize
-            : new Vector3(visibleSize.y * ResolveOverlayScale(), visibleSize.y * ResolveOverlayScale(), 1f);
 
-        var root = new GameObject("IceBreakFx");
-        root.transform.position = center;
-
-        int sortingBase = (_spriteRenderer != null ? _spriteRenderer.sortingOrder : 0) + 6;
-
-        // 1) 破冰闪光：确保“冰碎了”这一下先被看到
-        var flash = new GameObject("flash");
-        flash.transform.SetParent(root.transform, false);
-        var flashSr = flash.AddComponent<SpriteRenderer>();
-        flashSr.sprite = GetProceduralShardSprite();
-        flashSr.sortingOrder = sortingBase - 1;
-        flashSr.color = new Color(1f, 1f, 1f, 0.9f);
-        flash.transform.position = center;
-        flash.transform.localScale = Vector3.one * (Mathf.Max(blockSize.x, blockSize.y) * 1.7f);
-        flash.transform.DORotate(new Vector3(0f, 0f, 80f), 0.24f).SetTarget(flash).SetUpdate(UpdateType.Normal, false);
-        flashSr.DOFade(0f, 0.22f).SetTarget(flash).SetUpdate(UpdateType.Normal, false);
-
-        // 2) 碎片：12 片亮色冰栈向外飞散
-        const int count = 12;
-        float minSide = Mathf.Max(0.1f, Mathf.Min(blockSize.x, blockSize.y));
-
-        for (int i = 0; i < count; i++)
-        {
-            var shard = new GameObject("shard");
-            shard.transform.SetParent(root.transform, false);
-            var sr = shard.AddComponent<SpriteRenderer>();
-            sr.sprite = GetProceduralShardSprite();
-            sr.sortingOrder = sortingBase;
-            sr.color = new Color(0.9f, 0.97f, 1f, 1f);
-
-            float angle = (Mathf.PI * 2f / count) * i + Random.Range(-0.25f, 0.25f);
-            Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-            float startRadius = minSide * 0.22f;
-            shard.transform.position = center + new Vector3(dir.x, dir.y, 0f) * startRadius;
-            shard.transform.localScale = Vector3.one * Mathf.Max(0.18f, minSide * Random.Range(0.22f, 0.38f));
-            shard.transform.localRotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
-
-            Vector3 start = shard.transform.position;
-            Vector3 target = start + new Vector3(dir.x * Random.Range(0.55f, 1.15f), dir.y * Random.Range(0.45f, 0.95f), 0f);
-
-            shard.transform.DOMove(target, 0.42f).SetEase(Ease.OutQuad).SetTarget(shard).SetUpdate(UpdateType.Normal, false);
-            shard.transform.DORotate(new Vector3(0f, 0f, Random.Range(-220f, 220f)), 0.5f).SetTarget(shard).SetUpdate(UpdateType.Normal, false);
-            sr.DOFade(0f, 0.45f).SetDelay(0.18f).SetTarget(shard).SetUpdate(UpdateType.Normal, false);
-        }
-
-        Destroy(root, 0.85f);
-    }
-
-    /// <summary>破冰碎片占位精灵：亮边 + 不透明的三角化冰块（原先用半透明冰块贴图切分，几乎看不见）。</summary>
-    private static Sprite GetProceduralShardSprite()
-    {
-        if (_proceduralShardSprite != null) return _proceduralShardSprite;
-
-        const int size = 32;
-        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
-        {
-            wrapMode = TextureWrapMode.Clamp,
-            filterMode = FilterMode.Point,
-            name = "IceShard_Procedural"
-        };
-
-        var px = new Color32[size * size];
-        float c = (size - 1) * 0.5f;
-
-        for (int y = 0; y < size; y++)
-        {
-            for (int x = 0; x < size; x++)
-            {
-                float dx = x - c;
-                float dy = y - c;
-                float d = Mathf.Sqrt(dx * dx + dy * dy) / c;
-                float ang = Mathf.Atan2(dy, dx);
-                float edge = 0.82f + 0.16f * Mathf.Sin(ang * 3f + 1.7f);
-
-                if (d > edge)
-                {
-                    px[y * size + x] = new Color32(0, 0, 0, 0);
-                    continue;
-                }
-
-                bool rim = d > edge - 0.2f;
-                px[y * size + x] = new Color32(
-                    rim ? (byte)248 : (byte)150,
-                    rim ? (byte)253 : (byte)218,
-                    (byte)255,
-                    rim ? (byte)255 : (byte)220);
-            }
-        }
-
-        tex.SetPixels32(px);
-        tex.Apply();
-        _proceduralShardSprite = Sprite.Create(tex, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 32f);
-        return _proceduralShardSprite;
-    }
 
     private void UpdateIceBreaking()
     {
@@ -3240,273 +3145,21 @@ private void SpawnProjectile()
         _freezeChance = Mathf.Max(0f, _freezeChance - freezeChanceDecayPerSecond * Time.deltaTime);
     }
 
-    /// <summary>冻结表现：优先用美术给的覆盖层 Prefab；未配置时生成冰壳占位（不依赖素材）。</summary>
-    private void ApplyFreezeVisual(bool on)
-    {
-        if (on)
-        {
-            if (_freezeOverlayInstance == null)
-            {
-                if (ResolveFreezeOverlayPrefab() != null)
-                {
-                    _freezeOverlayInstance = Instantiate(ResolveFreezeOverlayPrefab(), transform, false);
-                    _freezeOverlayRenderer = _freezeOverlayInstance.GetComponentInChildren<SpriteRenderer>();
-                    FitOverlayToBlock();
-                }
-                else
-                {
-                    _freezeOverlayRenderer = CreateProceduralFrostOverlay();
-                    _freezeOverlayInstance = _freezeOverlayRenderer != null ? _freezeOverlayRenderer.gameObject : null;
-                    ApplyFreezeTint();
-                }
-            }
-            return;
-        }
 
-        if (_freezeOverlayInstance != null)
-        {
-            Destroy(_freezeOverlayInstance);
-            _freezeOverlayInstance = null;
-            _freezeOverlayRenderer = null;
-        }
-        if (_hasFreezeColorSnapshot && _spriteRenderer != null)
-            _spriteRenderer.color = _colorBeforeFreeze;
-        _hasFreezeColorSnapshot = false;
-    }
 
-    private void ApplyFreezeTint()
-    {
-        if (_spriteRenderer == null) return;
-        if (!_hasFreezeColorSnapshot)
-        {
-            _colorBeforeFreeze = _spriteRenderer.color;
-            _hasFreezeColorSnapshot = true;
-        }
-        Color c = Color.Lerp(_colorBeforeFreeze, FreezeTintColor, 0.55f);
-        c.a = _colorBeforeFreeze.a;
-        _spriteRenderer.color = c;
-    }
 
-    /// <summary>生成一个冰壳占位精灵（圆形边缘 + 内部较透），并贴合当前精灵包围盒。</summary>
-    /// <summary>
-    /// <summary>把美术给的冰块 Prefab 按“角色可见区 × 比例”自动缩放并居中（素材不用自己调尺寸）。</summary>
-    private void FitOverlayToBlock()
-    {
-        if (_freezeOverlayInstance == null || _freezeOverlayRenderer == null || _freezeOverlayRenderer.sprite == null) return;
 
-        GetSpriteVisibleArea(out Vector3 visibleCenter, out Vector3 visibleSize);
-        Vector3 blockSize = new Vector3(visibleSize.y * ResolveOverlayScale(), visibleSize.y * ResolveOverlayScale(), 1f);
-        Vector3 blockCenter = visibleCenter + Vector3.up * (visibleSize.y * ResolveOverlayYOffset());
 
-        Vector3 sb = _freezeOverlayRenderer.sprite.bounds.size;
-        if (sb.x <= 0.0001f || sb.y <= 0.0001f) return;
 
-        Vector3 parentScale = transform.lossyScale;
-        // 等比缩放：只按高度算，宽度跟随素材本身比例（不再分别拉伸宽高）
-        float k = (visibleSize.y * ResolveOverlayScale()) / sb.y;
-        float sx = k / Mathf.Max(0.0001f, Mathf.Abs(parentScale.x));
-        float sy = k / Mathf.Max(0.0001f, Mathf.Abs(parentScale.y));
 
-        _freezeOverlayInstance.transform.position = blockCenter;
-        _freezeOverlayInstance.transform.localScale = new Vector3(sx, sy, 1f);
-        _freezeOverlayRenderer.sortingOrder = (_spriteRenderer != null ? _spriteRenderer.sortingOrder : 0) + 1;
-        _freezeOverlayWorldSize = blockSize;
-    }
 
-    /// <summary>生成一次性特效并按冰块尺寸自动缩放（不依赖素材分辨率）。</summary>
-    private void SpawnFittedFx(GameObject prefab, float scaleMultiplier)
-    {
-        if (prefab == null) return;
-
-        GetFreezeFxPosition(out Vector3 pos);
-        var fx = Instantiate(prefab, pos, Quaternion.identity);
-        var sr = fx.GetComponentInChildren<SpriteRenderer>();
-        if (sr == null || sr.sprite == null) return;
-
-        Vector3 sb = sr.sprite.bounds.size;
-        float maxSide = Mathf.Max(sb.x, sb.y);
-        if (maxSide <= 0.0001f) return;
-
-        float target = Mathf.Max(_freezeOverlayWorldSize.x, _freezeOverlayWorldSize.y) * scaleMultiplier;
-        fx.transform.localScale = Vector3.one * (target / maxSide);
-    }
-
-    /// <summary>冻结/破冰特效的生成位置：角色可见区域中心 + 冰块垂直偏移。</summary>
-    private void GetFreezeFxPosition(out Vector3 position)
-    {
-        GetSpriteVisibleArea(out Vector3 center, out Vector3 size);
-        position = center + Vector3.up * (size.y * ResolveOverlayYOffset());
-    }
-
-    /// 取得精灵“实际可见区域”的世界中心与尺寸。
-    /// 敌人贴图普遍是大幅画布 + 角色居中（如 1011 为 1108x1108，角色仅占 644x693），
-    /// 直接用 SpriteRenderer.bounds 会把冰块做得比角色大很多。这里用 textureRect（tight 区域）修正。
-    /// </summary>
-    private void GetSpriteVisibleArea(out Vector3 worldCenter, out Vector3 worldSize)
-    {
-        if (_spriteRenderer == null)
-        {
-            worldCenter = transform.position;
-            worldSize = Vector3.one;
-            return;
-        }
-
-        Bounds bounds = _spriteRenderer.bounds;
-        worldCenter = bounds.center;
-        worldSize = bounds.size;
-
-        var sprite = _spriteRenderer.sprite;
-        if (sprite == null) return;
-
-        Rect rect = sprite.rect;
-        Rect texRect = sprite.textureRect;
-        if (rect.width <= 0.0001f || rect.height <= 0.0001f) return;
-        if (texRect.width <= 0.0001f || texRect.height <= 0.0001f) return;
-
-        // Full Rect 时两者相同，比例=1，不影响结果
-        float wRatio = Mathf.Clamp01(texRect.width / rect.width);
-        float hRatio = Mathf.Clamp01(texRect.height / rect.height);
-        worldSize = new Vector3(bounds.size.x * wRatio, bounds.size.y * hRatio, bounds.size.z);
-
-        Vector2 offsetPx = texRect.center - rect.center;
-        if (offsetPx.sqrMagnitude < 0.0001f) return;
-
-        Vector3 lossy = transform.lossyScale;
-        float signX = lossy.x < 0f ? -1f : 1f;
-        float signY = lossy.y < 0f ? -1f : 1f;
-        worldCenter += new Vector3(
-            offsetPx.x / rect.width * bounds.size.x * signX,
-            offsetPx.y / rect.height * bounds.size.y * signY,
-            0f);
-    }
-
-    private SpriteRenderer CreateProceduralFrostOverlay()
-    {
-        if (_spriteRenderer == null) return null;
-
-        var go = new GameObject("FreezeOverlay");
-        go.transform.SetParent(transform, false);
-        var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = GetProceduralFrostSprite();
-        sr.color = new Color(0.72f, 0.9f, 1f, 0.8f);
-        sr.sortingOrder = _spriteRenderer.sortingOrder + 1;
-
-        GetSpriteVisibleArea(out Vector3 visibleCenter, out Vector3 visibleSize);
-
-        Vector3 blockSize = new Vector3(visibleSize.y * ResolveOverlayScale(), visibleSize.y * ResolveOverlayScale(), 1f);
-        Vector3 blockCenter = visibleCenter + Vector3.up * (visibleSize.y * ResolveOverlayYOffset());
-
-        Vector3 spriteSize = sr.sprite.bounds.size;
-        Vector3 parentScale = transform.lossyScale;
-        float k2 = (visibleSize.y * ResolveOverlayScale()) / Mathf.Max(0.0001f, spriteSize.y);
-        float sx = k2 / Mathf.Max(0.0001f, Mathf.Abs(parentScale.x));
-        float sy = k2 / Mathf.Max(0.0001f, Mathf.Abs(parentScale.y));
-        go.transform.localScale = new Vector3(sx, sy, 1f);
-        go.transform.position = blockCenter;
-        _freezeOverlayWorldSize = blockSize;
-        return sr;
-    }
-
-    private static Sprite GetProceduralFrostSprite()
-    {
-        if (_proceduralFrostSprite != null) return _proceduralFrostSprite;
-
-        const int size = 192;
-        const int bevel = 26;
-        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
-        {
-            wrapMode = TextureWrapMode.Clamp,
-            filterMode = FilterMode.Point,
-            name = "IceBlock_Procedural"
-        };
-
-        var px = new Color32[size * size];
-
-        for (int y = 0; y < size; y++)
-        {
-            for (int x = 0; x < size; x++)
-            {
-                int dx = Mathf.Min(x, size - 1 - x);
-                int dy = Mathf.Min(y, size - 1 - y);
-
-                // 倒角：切掉四个角，读成“一块冰”而不是“一个圆”
-                if (dx + dy < bevel)
-                {
-                    px[y * size + x] = new Color32(255, 255, 255, 0);
-                    continue;
-                }
-
-                int edgeDist = Mathf.Min(dx, dy);
-                float alpha;
-                int r, g, b;
-
-                if (edgeDist <= 1)
-                {
-                    alpha = 0.95f; r = 236; g = 250; b = 255;   // 外轮廓
-                }
-                else if (edgeDist <= 4)
-                {
-                    alpha = 0.42f; r = 150; g = 205; b = 240;   // 内圈冷色
-                }
-                else
-                {
-                    // 内部：半透明主体 + 左上到右下的斜切高光
-                    float diag = (x - y) / (float)size;
-                    alpha = 0.20f + 0.10f * Mathf.Abs(diag);
-                    r = 118 + (int)(72f * Mathf.Clamp01(diag + 0.5f));
-                    g = 180 + (int)(56f * Mathf.Clamp01(diag + 0.5f));
-                    b = 235;
-                }
-
-                // 斜向裂纹
-                bool crack = ((x + 2 * y) % 81 == 0) || ((2 * x - y + size) % 123 == 0);
-                if (crack && edgeDist > 3)
-                {
-                    alpha = 0.78f; r = 240; g = 252; b = 255;
-                }
-
-                px[y * size + x] = new Color32((byte)r, (byte)g, (byte)b, (byte)(Mathf.Clamp01(alpha) * 255f));
-            }
-        }
-
-        tex.SetPixels32(px);
-        tex.Apply();
-        _proceduralFrostSprite = Sprite.Create(tex, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 64f);
-        return _proceduralFrostSprite;
-    }
-
-    /// <summary>把冰块切成 3x3 碎片，破冰时用于“整块碎开”。</summary>
-    private static Sprite[] GetProceduralShardSprites()
-    {
-        if (_proceduralShardSprites != null) return _proceduralShardSprites;
-
-        var baseSprite = GetProceduralFrostSprite();
-        var tex = baseSprite.texture;
-        const int cols = 3;
-        const int rows = 3;
-        int cw = tex.width / cols;
-        int ch = tex.height / rows;
-        _proceduralShardSprites = new Sprite[cols * rows];
-
-        for (int gy = 0; gy < rows; gy++)
-        {
-            for (int gx = 0; gx < cols; gx++)
-            {
-                var rect = new Rect(gx * cw, gy * ch, cw, ch);
-                _proceduralShardSprites[gy * cols + gx] =
-                    Sprite.Create(tex, rect, new Vector2(0.5f, 0.5f), baseSprite.pixelsPerUnit);
-            }
-        }
-
-        return _proceduralShardSprites;
-    }
 
     /// <summary>死亡 / 回收：清掉冻结状态与残留挂起，避免对象池复用时动画仍被停住。</summary>
     private void ClearFreezeOnTeardown()
     {
         if (_freezeRemaining > 0f || state == EnemyState.Frozen)
         {
-            ApplyFreezeVisual(false);
+            FreezeVisual.Apply(false, FreezeVisualContext());
             _freezeRemaining = 0f;
         }
         _freezeChance = 0f;
