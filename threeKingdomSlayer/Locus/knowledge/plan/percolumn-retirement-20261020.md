@@ -80,17 +80,20 @@ summary: PerColumn 退役方案（2026-10-20）：实测现役内容 100% 用 Pe
 
 ## 2. 三步方案
 
-### 步骤 1：默认值翻转 + 显式废弃标注 + 导入期报错（零风险，立刻做）
+### 步骤 1：默认值翻转 + 显式废弃标注 + 导入期报错（零风险）✅ 已完成（`5769fb0`）
 
 | 改动 | 位置 | 说明 |
 |---|---|---|
 | 字段默认值改 PerRow | `StageConfig.fillUpRule = FillUpRule.PerRow` | **只影响新建资产**；已有资产的序列化值不变 |
-| 枚举项标注废弃 | `FillUpRule.PerColumn` 加 `[Obsolete("PerColumn 已废弃：逻辑排队列/999 节奏门才是当前规则")]` + 注释 | 给人和 AI 一个显式信号（写代码时会有编译警告） |
-| 兜底默认改 PerRow | `StageFormation.GetFillUpRule`、`WaveSpawner` 两处 `??`、`SpawnRow` 参数默认值 | 配置缺失时按**现行规则**走，而不是退回遗留路径 |
-| **导入期报错** | `StageConfig.OnValidate()`：若 `fillUpRule == PerColumn` → `Debug.LogError`（带资产路径与修复指引："该规则已废弃，请改为 PerRow"） | AI 写完/改完资产，Unity 导入时**立刻红字**，不会默默带过去 |
+| 枚举项标注废弃 | `FillUpRule.PerColumn` 加 `[Obsolete(...)]` + 注释 | 写代码时会有编译警告，是显式信号 |
+| 兜底默认改 PerRow | `StageFormation.GetFillUpRule`、`WaveSpawner` 两处 `??`、`SpawnRow` 参数默认值 | 配置缺失时按**现行规则**走 |
+| **导入期报错** | `StageConfig.OnValidate()`：`fillUpRule == PerColumn` → `LogError`（带资产名 + 现行规则 + 修复指引） | AI 写完资产导入时立刻红字 |
 
-**风险**：接近零。已有 11 个 PerColumn 资产会在导入时报红——这正是我们要的信号（步骤 2 会清掉它们）。
-**验收**：① 新建 StageConfig → 默认 PerRow；② 手动把某资产改成 PerColumn → 导入时红字；③ 现役教学/正式关卡行为不变。
+**实测**：新建 StageConfig 默认 = PerRow；现有 PerColumn 资产 11 个（PerRow 12 个），强制导入后
+每个都产生一条 `[StageConfig]` 红字；现役流程（教学关·初见 → 开打 → 出怪 → 攻击掉血）不受影响；
+Play Mode 运行期 Console error = 0。
+
+> 这 11 条红字是**预期的守门信号**，步骤 2 清理资产后消失。
 
 ### 步骤 2：清理 11 个存量 PerColumn 资产
 
