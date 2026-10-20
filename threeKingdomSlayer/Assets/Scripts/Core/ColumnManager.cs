@@ -39,7 +39,6 @@ public class ColumnManager : MonoBehaviour
     private readonly List<Enemy> _spawnEntryEnemies = new List<Enemy>();
     private readonly HashSet<Enemy> _pendingSpawnEntryEnemies = new HashSet<Enemy>();
     private bool _currentWaveContinuousRun;
-    private bool _useRowMarchPlanner;
     private int _currentWaveSourceRow = -1;
     private int _currentWaveTargetRow = -1;
     private int _waveGeneration;
@@ -56,27 +55,8 @@ public class ColumnManager : MonoBehaviour
     private readonly Dictionary<Enemy, int> _activeWaveTargetRows = new Dictionary<Enemy, int>();
     private readonly HashSet<long> _activeWaveTargetSlots = new HashSet<long>();
     private readonly HashSet<long> _plannedWaveTargetSlots = new HashSet<long>();
-    private readonly List<LogicalWaveRow> _logicalWaveRows = new List<LogicalWaveRow>();
-    private readonly Dictionary<int, LogicalWaveRow> _logicalRowsByInitialRow = new Dictionary<int, LogicalWaveRow>();
-    private readonly Dictionary<Enemy, LogicalWaveRow> _waveEnemyLogicalRows = new Dictionary<Enemy, LogicalWaveRow>();
-    private readonly HashSet<int> _openedRhythmGateRows = new HashSet<int>();
-    private bool _logicalLayoutDirty;
-    private int _waveLayoutGeneration;
-
-    private enum LogicalWaveRowKind
-    {
-        Live,
-        Empty,
-        RhythmGate
-    }
-
-    private sealed class LogicalWaveRow
-    {
-        public LogicalWaveRowKind kind;
-        public int initialRow;
-        public int currentRow;
-        public bool removed;
-    }
+    /// <summary>逻辑排队列（活人排 / 空排占位符 / 999 节奏门）。数据与队列操作见 LogicalRowQueue。</summary>
+    private readonly LogicalRowQueue _queue = new LogicalRowQueue();
 
     private sealed class PushReturnTransaction
     {
@@ -270,11 +250,11 @@ public class ColumnManager : MonoBehaviour
         if (!IsValidColumn(columnIndex)) return;
 
         LogicalWaveRow clearedLogicalRow = null;
-        bool mayCreateWaveMarch = _useRowMarchPlanner
+        bool mayCreateWaveMarch = _queue.UseRowMarchPlanner
             && enemy != null
             && !enemy.isBoss
             && enemy.state == EnemyState.Dead
-            && _waveEnemyLogicalRows.TryGetValue(enemy, out clearedLogicalRow);
+            && _queue.TryGetRowForEnemy(enemy, out clearedLogicalRow);
 
         columns[columnIndex].RemoveEnemy(enemy, skipChain: true);
         ReleaseCavalrySlot(enemy);
@@ -283,7 +263,7 @@ public class ColumnManager : MonoBehaviour
 
         if (mayCreateWaveMarch && !HasLivingMembers(clearedLogicalRow))
             RequestLogicalLayoutReflow(clearedLogicalRow);
-        else if (!_useRowMarchPlanner && enemy != null && enemy.state == EnemyState.Dead)
+        else if (!_queue.UseRowMarchPlanner && enemy != null && enemy.state == EnemyState.Dead)
             StartWaveMarch();
 
         NotifyPushReturnTopologyChanged();
@@ -362,7 +342,7 @@ public class ColumnManager : MonoBehaviour
 
         NotifyPushReturnTopologyChanged();
         OnColumnsModified?.Invoke();
-        if (!_useRowMarchPlanner)
+        if (!_queue.UseRowMarchPlanner)
             StartWaveMarch();
     }
 
@@ -552,48 +532,15 @@ public class ColumnManager : MonoBehaviour
 
     public void ConfigureWaveRowLayout(IList<RowConfig> rows, int rowOffset)
     {
-        _waveLayoutGeneration++;
-        _useRowMarchPlanner = true;
-        _logicalWaveRows.Clear();
-        _logicalRowsByInitialRow.Clear();
-        _waveEnemyLogicalRows.Clear();
-        _openedRhythmGateRows.Clear();
-        _logicalLayoutDirty = false;
+        _queue.Configure(rows, rowOffset);
         _isSpawnEntryPreparing = false;
         _spawnEntryEnemies.Clear();
         _pendingSpawnEntryEnemies.Clear();
-
-        if (rows == null)
-            return;
-
-        for (int i = 0; i < rows.Count; i++)
-        {
-            int runtimeRow = i + rowOffset;
-            var row = rows[i];
-            var logicalRow = new LogicalWaveRow
-            {
-                kind = row != null && row.IsRhythmGate
-                    ? LogicalWaveRowKind.RhythmGate
-                    : row != null && row.HasConfiguredEnemies
-                        ? LogicalWaveRowKind.Live
-                        : LogicalWaveRowKind.Empty,
-                initialRow = runtimeRow,
-                currentRow = runtimeRow
-            };
-            _logicalWaveRows.Add(logicalRow);
-            _logicalRowsByInitialRow[runtimeRow] = logicalRow;
-        }
     }
 
     public void ClearWaveRowLayout()
     {
-        _waveLayoutGeneration++;
-        _useRowMarchPlanner = false;
-        _logicalWaveRows.Clear();
-        _logicalRowsByInitialRow.Clear();
-        _waveEnemyLogicalRows.Clear();
-        _openedRhythmGateRows.Clear();
-        _logicalLayoutDirty = false;
+        _queue.Clear();
         _isSpawnEntryPreparing = false;
         _spawnEntryEnemies.Clear();
         _pendingSpawnEntryEnemies.Clear();
@@ -601,20 +548,14 @@ public class ColumnManager : MonoBehaviour
 
     public bool IsRhythmGateRow(int row)
     {
-        for (int i = 0; i < _logicalWaveRows.Count; i++)
-        {
-            var logicalRow = _logicalWaveRows[i];
-            if (!logicalRow.removed && logicalRow.kind == LogicalWaveRowKind.RhythmGate && logicalRow.currentRow == row)
-                return true;
-        }
-        return false;
+        return _queue.IsRhythmGateRow(row);
     }
 
     /// <summary>Mounted cavalry retains its logical row membership, but only resumes ordinary marching after dismount.</summary>
     public void RequestCavalryDismountReflow(Enemy enemy)
     {
-        if (enemy == null || !_useRowMarchPlanner || !_waveEnemyLogicalRows.ContainsKey(enemy)) return;
-        _logicalLayoutDirty = true;
+        if (enemy == null || !_queue.UseRowMarchPlanner || !_queue.HasRowFor(enemy)) return;
+        _queue.MarkDirty();
         StartPendingLogicalLayoutReflow();
     }
 
@@ -626,9 +567,7 @@ public class ColumnManager : MonoBehaviour
 
     public void RegisterWaveEnemy(Enemy enemy, int configuredRow)
     {
-        if (enemy == null || !_logicalRowsByInitialRow.TryGetValue(configuredRow, out var logicalRow))
-            return;
-        _waveEnemyLogicalRows[enemy] = logicalRow;
+        _queue.RegisterEnemy(enemy, configuredRow);
     }
 
     public void StartSpawnEntry(IList<Enemy> enemies)
@@ -646,7 +585,7 @@ public class ColumnManager : MonoBehaviour
             var enemy = enemies[i];
             if (enemy == null || enemy.isBoss || enemy.state == EnemyState.Dead)
                 continue;
-            if (!_waveEnemyLogicalRows.TryGetValue(enemy, out var logicalRow) || logicalRow.removed)
+            if (!_queue.TryGetRowForEnemy(enemy, out var logicalRow) || logicalRow.removed)
                 continue;
 
             int targetRow = logicalRow.currentRow;
@@ -697,38 +636,12 @@ public class ColumnManager : MonoBehaviour
 
     public void UnregisterWaveEnemy(Enemy enemy)
     {
-        if (enemy != null)
-            _waveEnemyLogicalRows.Remove(enemy);
+        _queue.UnregisterEnemy(enemy);
     }
 
     public bool IsRhythmGateOpen(int row)
     {
-        for (int i = 0; i < _logicalWaveRows.Count; i++)
-        {
-            var gate = _logicalWaveRows[i];
-            if (gate.removed || gate.kind != LogicalWaveRowKind.RhythmGate || gate.currentRow != row)
-                continue;
-            return IsRhythmGateOpen(gate);
-        }
-        return true;
-    }
-
-    private bool IsRhythmGateOpen(LogicalWaveRow gate)
-    {
-        if (_openedRhythmGateRows.Contains(gate.initialRow))
-            return true;
-
-        for (int i = 0; i < _logicalWaveRows.Count; i++)
-        {
-            var row = _logicalWaveRows[i];
-            if (row == gate)
-                break;
-            if (!row.removed && row.kind == LogicalWaveRowKind.Live)
-                return false;
-        }
-
-        _openedRhythmGateRows.Add(gate.initialRow);
-        return true;
+        return _queue.IsRhythmGateOpen(row);
     }
 
     public bool IsContinuousWaveTargetReserved(Enemy enemy, int column, int row)
@@ -780,25 +693,18 @@ public class ColumnManager : MonoBehaviour
         if (clearedRow == null || clearedRow.removed || clearedRow.kind != LogicalWaveRowKind.Live)
             return;
 
-        clearedRow.removed = true;
-        _logicalLayoutDirty = true;
+        _queue.MarkRowRemoved(clearedRow);
         StartPendingLogicalLayoutReflow();
     }
 
     private bool HasLivingMembers(LogicalWaveRow logicalRow)
     {
-        foreach (var pair in _waveEnemyLogicalRows)
-        {
-            var enemy = pair.Key;
-            if (pair.Value == logicalRow && enemy != null && enemy.state != EnemyState.Dead)
-                return true;
-        }
-        return false;
+        return _queue.HasLivingMembers(logicalRow);
     }
 
     private void StartPendingLogicalLayoutReflow()
     {
-        if (!_useRowMarchPlanner || !_logicalLayoutDirty)
+        if (!_queue.UseRowMarchPlanner || !_queue.IsDirty)
             return;
         if (_isSpawnEntryPreparing || _pendingSpawnEntryEnemies.Count > 0)
             return;
@@ -812,11 +718,11 @@ public class ColumnManager : MonoBehaviour
 
         if (!TryBuildLogicalWaveMarchPlan())
         {
-            _logicalLayoutDirty = false;
+            _queue.ConsumeDirty();
             return;
         }
 
-        _logicalLayoutDirty = false;
+        _queue.ConsumeDirty();
         BeginWaveStep();
     }
 
@@ -826,7 +732,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public void StartWaveMarch()
     {
-        if (_useRowMarchPlanner)
+        if (_queue.UseRowMarchPlanner)
         {
             StartPendingLogicalLayoutReflow();
             return;
@@ -841,7 +747,7 @@ public class ColumnManager : MonoBehaviour
         }
         if (_isWaveMarching || _isWavePreparing)
         {
-            if (_useRowMarchPlanner)
+            if (_queue.UseRowMarchPlanner)
                 _topologyChangedWhilePushReturn = true;
             Debug.Log($"[WaveMarch] StartWaveMarch blocked: _isWaveMarching={_isWaveMarching} _isWavePreparing={_isWavePreparing} srcRow={_currentWaveSourceRow} tgtRow={_currentWaveTargetRow}");
             return;
@@ -864,39 +770,9 @@ public class ColumnManager : MonoBehaviour
         _plannedWaveTargetRows.Clear();
         _plannedWaveTargetSlots.Clear();
 
-        int nextRuntimeRow = 0;
-        bool hasLiveBefore = false;
-        for (int i = 0; i < _logicalWaveRows.Count; i++)
-        {
-            var row = _logicalWaveRows[i];
-            if (row.removed)
-                continue;
+        _queue.ReassignRuntimeRows();
 
-            if (row.kind == LogicalWaveRowKind.RhythmGate)
-            {
-                if (!IsRhythmGateOpen(row))
-                {
-                    nextRuntimeRow = row.currentRow + 1;
-                    hasLiveBefore = false;
-                    continue;
-                }
-
-                row.removed = true;
-                continue;
-            }
-
-            if (row.kind == LogicalWaveRowKind.Empty && !hasLiveBefore)
-            {
-                row.removed = true;
-                continue;
-            }
-
-            row.currentRow = nextRuntimeRow++;
-            if (row.kind == LogicalWaveRowKind.Live)
-                hasLiveBefore = true;
-        }
-
-        foreach (var pair in _waveEnemyLogicalRows)
+        foreach (var pair in _queue.EnemyRows)
         {
             var enemy = pair.Key;
             var logicalRow = pair.Value;
@@ -1063,7 +939,7 @@ public class ColumnManager : MonoBehaviour
         _activeWaveTargetRows.Clear();
         _activeWaveTargetSlots.Clear();
         StartPendingLogicalLayoutReflow();
-        if (!_useRowMarchPlanner)
+        if (!_queue.UseRowMarchPlanner)
             StartWaveMarch();
     }
 
@@ -1130,8 +1006,8 @@ public class ColumnManager : MonoBehaviour
         _plannedWaveTargetSlots.Clear();
         _activeWaveTargetRows.Clear();
         _activeWaveTargetSlots.Clear();
-        if (_useRowMarchPlanner)
-            _logicalLayoutDirty = true;
+        if (_queue.UseRowMarchPlanner)
+            _queue.MarkDirty();
         _isWavePreparing = false;
         _isWaveMarching = false;
         _currentWaveSourceRow = -1;
@@ -1179,9 +1055,9 @@ public class ColumnManager : MonoBehaviour
             _currentWaveTargetRow = -1;
             _activeWaveTargetRows.Clear();
             _activeWaveTargetSlots.Clear();
-            if (_useRowMarchPlanner)
+            if (_queue.UseRowMarchPlanner)
             {
-                _logicalLayoutDirty = true;
+                _queue.MarkDirty();
                 StartWaveMarch();
                 return;
             }
@@ -1468,7 +1344,7 @@ public class ColumnManager : MonoBehaviour
         {
             _waveMarchRequestedWhilePushReturn = false;
             _topologyChangedWhilePushReturn = false;
-            if (_useRowMarchPlanner)
+            if (_queue.UseRowMarchPlanner)
                 StartPendingLogicalLayoutReflow();
             else
                 StartWaveMarch();
