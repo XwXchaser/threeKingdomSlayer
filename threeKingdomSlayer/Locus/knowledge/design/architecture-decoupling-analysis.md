@@ -281,15 +281,27 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 
 **Hub 事件化后的形态**：`HubStateSource`（挂在 `Battle.scene / BattleHUD(Canvas)`）是 `IsPrepared` 与 `Overlay` 的唯一计算源，变化时抛 `Changed`，首帧强制广播一次。三个组件改为 `OnEnable` 订阅 + `TrySubscribe()`（源可能晚 Awake，`Start` 再试一次），各自的 `Update` 与私有 `IsOverlayOpen()` 已删（`grep "void Update()"` 三文件均为空）。
 
-**`Locus.Data` 实际只能圈 7 个文件，不是先前估的 13 个**。可行集：`ExpCurveConfig` / `FormationConfig` / `GlobalKillDisplayConfig` / `KillMilestoneConfig` / `RowFormation` / `StageConfig` / `StatModifier`。被排除的 6 个（`ActiveSkillDefinition` / `ActiveSkillPoolConfig` / `DropItemPoolConfig` / `ItemPoolConfig` / `TalentTreeConfig` / `UpgradePoolConfig`）**都被 `UpgradeDefinition` 或 `AttackSkillConfig` 挡住**，而这两个文件自己反向依赖 `PlayerState` / `BuffDisplayPanel`（数据层引用运行时与 UI，本身就是层间倒置的实例）。
+**首次只能圈 7 个文件（不是先前估的 13 个）**：`ExpCurveConfig` / `FormationConfig` / `GlobalKillDisplayConfig` / `KillMilestoneConfig` / `RowFormation` / `StageConfig` / `StatModifier`。
 
-→ **批次 1 的前置条件**：想让这 6 个配置进 Data，必须先把 `UpgradeDefinition` / `AttackSkillConfig` 对 `PlayerState` / UI 的引用改成注入或事件回调。这比“先拆 asmdef”更根本，应排在批次 1 首位。
+**根因不是「配置引用了 PlayerState / UI」**（那是错误结论：`PlayerState` / `BuffDisplayPanel` / `Enemy` 在 `UpgradeDefinition` / `AttackSkillConfig` 里只出现在**注释与 Tooltip 文本**中，被朴素的 grep 当成了依赖）。实际根因是**三个纯枚举被埋在运行时大类里**：
+
+| 枚举 | 原声明位置 | 被谁引用 |
+|---|---|---|
+| `AttackType` | `PlayerState.cs` 末尾 | `MoveGesture` / `UpgradeDefinition` / `AttackSkillConfig` 等配置 |
+| `DamageType` | `Enemy.cs` 末尾（5224 行） | 几乎全部战斗代码 |
+| `HitFeedbackSource` / `HitFeedbackStrength` | `HitFeedbackManager.cs` 顶部（与持有 `Enemy` 的 `HitFeedbackContext` 同居） | `AttackSkillConfig` 的反馈字段 |
+
+把这些枚举提到 `Assets/Scripts/Data/CombatEnums.cs` 与 `HitFeedbackEnums.cs`（值不变，序列化按 int），并把本来就行干净的 `HitReactionDirection` / `MoveGesture` 一并搬入后，**闭包从 7 个扩到 19 个文件 / 1875 行**，`UpgradeDefinition`（581 行）也在其中。
+
+→ **教训（已写进 `memory/tool-result-verification.md`）**：依赖分析必须先剥注释、字符串与 XML 文档注释；同时第一版闭包算法还有“把集合内文件误算成外部依赖”的 bug，两个错误叠在一起才会得出“配置反向依赖 PlayerState”这种错结论。
+
+→ **批次 1 的实际形态**：先搬枚举（零行为风险），配置自然解封——**不需要**先做 PlayerState 注入化改造。后者仍值得做，但它不再是数据分层的前置条件。
 
 **验证方式（本轮补足了 Play Mode）**：
 
 | 项 | 实测 |
 |---|---|
-| 程序集 | `Locus.Data` 存在且含 25 个类型；`Assembly-CSharp` 无同名残留且引用 `Locus.Data` |
+| 程序集 | `Locus.Data` 含 69 个类型（业务类型 60 个）；`Assembly-CSharp` 无同名残留且引用 `Locus.Data` |
 | 资产引用 | `Stage_1.asset` / `Stage_Trial.asset` / `N1_Battle.asset` 均解析为 `StageConfig [Locus.Data]`（GUID 未变） |
 | 界面态 A/B/C/D | 战斗 `overlay=null`、开始按钮与 tab 均 1.00；选关/天赋 `overlay` 正确、头像隐藏、开始按钮 0.00、tab 仍 1.00；返回后全部还原 |
 | 开打 | 点开始关卡 → `phase=Battle`、`IsPrepared=false` → tab 与开始按钮同时归零、出怪 1 只 |
@@ -311,6 +323,24 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 | `4eec32b` fix(combat) | 1021 盾侧/反侧/正面判定按实际来向 |
 | `36b1a12` fix(talent) | 天赋页关闭按钮 raycast + 置顶 |
 | `05ae55f` chore(locus) | 工作区工具配置 |
+
+### 5.3 批次 1 进展（2026-10-20 夜，`8a3586c`）
+
+| 子项 | 状态 |
+|---|---|
+| 提取纯枚举（AttackType / DamageType / HitFeedbackSource / HitFeedbackStrength / HitReactionDirection / MoveGesture） | ✅ |
+| 8 个配置搬入 `Locus.Data`（含 `UpgradeDefinition` 581 行） | ✅ |
+| 四个角色接口（IRunFlow / ICombatStaging / IRewardGate / ISceneHost） | ⬜ |
+| `Enemy` 拆 `EnemyOutline` / `EnemyFreeze` | ⬜ |
+
+`Locus.Data` 现状：**19 文件 / 1875 行 / 69 类型**。
+
+验证：枚举全项目各声明 1 次；`Assembly-CSharp` 无同名残留且引用 `Locus.Data`；
+`TalentTree_Main`/`Zhangfei_Stab`/`Stage_1` 均解析到 `Locus.Data` 类型；枚举值与搬家前一致；
+Play Mode 点开始关卡→`phase=Battle`→出怪 1、`ResolveAttackType` 映射不变、Console 0/0。
+
+**一次真事故**：`HitFeedbackManager.cs` 的枚举删除第一次「回执已应用但未落盘」，导致项目里同时
+存在两份枚举声明（重复类型，直接编译不过）。靠回读 `grep` 发现、重做并复核才避免。
 
 
 ---
