@@ -44,6 +44,31 @@ public class SceneFlowManager : MonoBehaviour
         _cameraManager = FindObjectOfType<CameraManager>();
     }
 
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    /// <summary>
+    /// 主场景被整场景重载（LoadSceneMode.Single，例如落地页 GoToMainMenu）时，Unity 会一并卸掉叠着的
+    /// overlay 场景，但本对象是 DontDestroyOnLoad，<c>_overlayStack</c> 会留住旧条目：
+    /// 之后 <see cref="HasOverlay"/> 永远为真 → Hub 内容（开始关卡 / 头像 / 金币）永久隐藏，
+    /// 而且再次点 tab 会被「已在栈中」拦掉。所以在主场景重载完成后把栈对齐到现实。
+    /// （只处理 Single 模式；Additive 加载 overlay 自己不会触发重置。）
+    /// </summary>
+    private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, LoadSceneMode mode)
+    {
+        if (mode != LoadSceneMode.Single) return;
+        if (_overlayStack.Count == 0) return;
+        Debug.Log("[SceneFlow] 主场景已重载，清空过期的 overlay 栈（" + _overlayStack.Count + " 条）");
+        _overlayStack.Clear();
+    }
+
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
