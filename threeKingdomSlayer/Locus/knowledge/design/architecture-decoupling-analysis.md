@@ -335,6 +335,7 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 | 剩余角色接口（`IRunFlow` / `ICombatStaging` / `IRewardGate`） | ⬜ |
 | `IStageFormation`（阵型只读）+ `IStageFlowControl`（流程控制） | ✅ `Enemy` / `BattleHUD` 已迁移 |
 | `AttackSystem` 迁移到 `IStageFormation` | ✅ `a0dccc9`（32 处调用收敛为一处） |
+| 18 个消费者批量迁移（阵型 / 战斗状态 / 流程控制三角色） | ✅ `853d022`（门面引用 99 → 35 行） |
 | `Enemy` 拆 `EnemyFreeze`（冰系，约 685 行） | ⬜ 高风险，需先定契约 |
 
 **三处拆分后的验收证据**：
@@ -352,6 +353,11 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 - `AttackSystem` 迁移：32 处阵型调用改为一份只读契约，接口与门面 `ReferenceEquals=true`
   （同一实例，行为零变化）；实跑 `TryExecuteAttack`：Stab 掉血 20、Slash 掉血 20、Launch 掉血 2。
   全项目 `StageController.Instance` 匹配行数 125 → 78。
+- 18 个消费者批量迁移：新增 `IStageBattleState`（战斗状态只读 + 状态事件），
+  `StageController` 现实现四个角色接口；阵型类 8 个文件、战斗状态类 10 个、流程类 1 个。
+  验证：12 个在场景中的消费者，其角色接口属性全部解析为同一个 `StageController` 实例；
+  三次攻击各掉血 20、阵型位置一致。门面直接引用 99 → 35 匹配行（107 → 36 次），
+  剩下的基本是每个文件那一行惰性解析。
 
 `Locus.Data` 现状：**19 文件 / 1875 行 / 69 类型**。
 
