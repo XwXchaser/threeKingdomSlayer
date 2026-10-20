@@ -11,7 +11,7 @@ aiEditMode: inherit
 
 > 目标平台：微信小程序。加载完毕后玩家**直接进入 Battle 场景**，看到的就是当前进度的关卡起始场景。
 > 本文是**可交接的实施计划**：现状机制 → 目标形态 → 分阶段任务 → 验收 → 已知坑。
-> **进度：阶段 A / B / C 与 D1（底部 tab）/ D3（结算回落地页）已完成并推送；剩下 D0 中央轻交互、D2 顶部状态条、D4 删 MainMenu、阶段 E 包体精简。**
+> **进度：阶段 A / B / C / D1 / D3 / D4 全部完成并推送（MainMenu 已删除，全局回落地页）；只剩 D0 中央轻交互、D2 顶部状态条；阶段 E 已重测（真实可省 2.4MB，Tutorial_YJ 的 9.3MB 已落地）。**
 
 ---
 
@@ -90,17 +90,22 @@ aiEditMode: inherit
 
 ### 3.1 场景清单与体积（实测，`AssetDatabase.GetDependencies`）
 
-| # | 场景 | 依赖数 | 贴图数 | 依赖体积 | 状态 |
+| # | 场景 | 依赖数 | 贴图数 | 依赖体积 | 状态（2026-10-20 更新） |
 |---|---|---|---|---|---|
-| 0 | `Assets/Scenes/MainMenu.scene` | 101 | 25 | 45.7 MB | **启动场景**（要废弃） |
-| 1 | `Assets/Scenes/Tutorial/Tutorial_YJ.unity` | 571 | 247 | 154.8 MB | **几乎无用**（见 §3.4） |
-| 2 | `Assets/Scenes/Battle.scene` | 462 | 183 | 92.2 MB | 真正的战场 |
-| 3 | `Assets/Experiments/CurvedScroll/YJunctionSample.unity` | 146 | 60 | 59.0 MB | **route 场景**（表现层加载） |
-| 4 | `Assets/Scenes/StageSelect.scene` | 9 | 0 | 0.0 MB | 本次新建 |
+| ~~0~~ | ~~`Assets/Scenes/MainMenu.scene`~~ | ~~101~~ | ~~25~~ | ~~45.7 MB~~ | **已于 D4 删除**（`f39d4ba`） |
+| — | `Assets/Scenes/Tutorial/Tutorial_YJ.unity` | 571 | 247 | 154.8 MB | 遗留副本，已从 build settings 移除（`0972fa2`），文件还在磁盘 |
+| **0** | `Assets/Scenes/Battle.scene` | 462 | 183 | 92.2 MB | **启动场景**（落地页） |
+| 1 | `Assets/Experiments/CurvedScroll/YJunctionSample.unity` | 146 | 60 | 59.0 MB | **route 场景**（表现层 additive） |
+| 2 | `Assets/Scenes/StageSelect.scene` | 9 | 0 | 0.0 MB | overlay |
+| 3 | `Assets/Scenes/TalentTree.scene` | — | — | — | overlay |
+
+> 当前 build settings 实际只有 4 个：Battle / YJunctionSample / StageSelect / TalentTree。
 
 > 依赖体积是各场景独立计算，共享资产会重复计。**并集**才是真实包体。
 
 ### 3.2 现在的启动→开打链路
+
+> ⚠️ **本节描述的是 MainMenu 时代的历史链路，已于 D4（`f39d4ba`）作废**；现在的真实链路看 §4.1 与 §3.3。
 
 ```
 微信小程序启动
@@ -307,7 +312,7 @@ Build Settings
 | D1 | ✅ **底部 tab 栏**（`ff912e9` 后 `8f30a2e`） | 新组件 `BattleHubTabBar`（`Battle.scene` / `BattleHUD(Canvas)/HubTabBar`）：战斗 / 选关 / 天赋 / 家园。CanvasGroup 控制显隐，只在 `IsPrepared` 时可见可点；选关/天赋走 `SceneFlowManager.OpenOverlay`；家园暂置灰占位 |
 | D2 | 顶部队列、金币等状态条 | 复用 `CoinCounter`，补体力（还没有） |
 | D3 | ✅ 结算后回落地页（`1cdc7f8` + `87d266d`） | 实际做法不是 `PrepareForEntry` 原地重置，而是 `FakeRouteRuntime.IsHubEntry` 标记 + `StageController.GoToMainMenu()` 里重载 Battle 场景（干净状态、自动重新自举）；回落地页时 `StartFromCheckpoint = true` 接上次进度 |
-| D4 | 删 `MainMenu.scene` / `MainMenuUI` / 临时 debug 面板 | 定稿清理。**删之前先保住 legacy 路径**：现在 tab 入口已经有了，但 legacy 直通仍是快速调试通道 |
+| D4 | ✅ 删 `MainMenu.scene`（`f39d4ba`） | 删前逐项审计：AudioListener / CameraManager / Directional Light / EventSystem / SafeAreaAdapter / StageConfigManager / SceneFlowManager 在 Battle 都有；TalentTreePanel 在 TalentTree.scene、StageSelectUI 在 StageSelect.scene。`GoToMainMenu()` 改为一律重载 Battle；`mainMenuSceneName` 字段与 `SceneFlowManager.SceneMainMenu` 已删；暂停/战败/胜利三个按钮文案改为「返回」 |
 
 ---
 
@@ -384,6 +389,9 @@ Build Settings
 | `feat/stage-select-talent-overlays` | **阶段 C**：`FakeRouteRuntime` 拆 Prepare/Run + Battle 自举读存档 + `BattleStartStageButton` + Battle 自带 `StageConfigManager` + build index 0 = Battle | ✅ pushed（`ff912e9`） |
 | `feat/stage-select-talent-overlays` | **阶段 D1**：`BattleHubTabBar` + `Battle.scene/HubTabBar`（战斗/选关/天赋/家园） | ✅ pushed（`8f30a2e`） |
 | `feat/stage-select-talent-overlays` | **阶段 D3**：`IsHubEntry` + `GoToMainMenu` 回落地页（含 `StartFromCheckpoint=true` 接上次进度） | ✅ pushed（`1cdc7f8`、`87d266d`） |
+| `feat/stage-select-talent-overlays` | **就绪态/关卡态 HUD 拆分**：`HubHudModeSwitch`（就绪态隐藏 15 个局内节点，头像/金币常驻） | ✅ pushed（`8b780cd`） |
+| `feat/stage-select-talent-overlays` | **阶段 D4**：删 `MainMenu.scene` + `MainMenuUI.cs`，`GoToMainMenu()` 一律回落地页，按钮文案改「返回」 | ✅ pushed（`f39d4ba`） |
+| `feat/stage-select-talent-overlays` | 补提交 UI 精灵（`Sprites/UI/MainMenu` / `Talent` / `Tutorial`，之前一直 untracked 但已被场景引用） | ✅ pushed（`31d2937`） |
 
 ---
 
