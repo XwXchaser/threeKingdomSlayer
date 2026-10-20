@@ -11,7 +11,7 @@ aiEditMode: inherit
 
 > 目标平台：微信小程序。加载完毕后玩家**直接进入 Battle 场景**，看到的就是当前进度的关卡起始场景。
 > 本文是**可交接的实施计划**：现状机制 → 目标形态 → 分阶段任务 → 验收 → 已知坑。
-> **进度：阶段 A / B / C / D1 / D3 / D4 全部完成并推送（MainMenu 已删除，全局回落地页）；阶段 F（自举路径收尾修复，`fb5279b`）与阶段 G（二级页面接管全屏，`1210dc5`）已完成、本地提交未 push；只剩 D0 中央轻交互、D2 顶部状态条；阶段 E 已重测（真实可省 2.4MB，Tutorial_YJ 的 9.3MB 已落地）。**
+> **进度：阶段 A / B / C / D1 / D3 / D4 全部完成并推送（MainMenu 已删除，全局回落地页）；阶段 F（`fb5279b`）、G（`1210dc5`）、H（`d3676c3`）已完成、本地提交未 push；只剩 D0 中央轻交互、D2 顶部状态条；阶段 E 已重测（真实可省 2.4MB，Tutorial_YJ 的 9.3MB 已落地）。**
 
 ---
 
@@ -61,7 +61,8 @@ aiEditMode: inherit
 | 就绪态/关卡态 HUD 拆分 | ✅ `8b780cd` |
 | 阶段 E | ✅ 重测：敌人美术真实只浪费 2.4MB（旧文档的「114MB 死资源」作废）；`Tutorial_YJ` 移出 build（9.3MB） |
 | 阶段 F：自举路径收尾修复（结算/冷启动接档/通关推进/选关立即生效 + 补提交路线资产） | ✅ `fb5279b` + `46e7c19`（未 push） |
-| 阶段 G：二级页面接管全屏（画布层级 / 不透明底 / 落地页内容让位） | ✅ `1210dc5`（未 push） |
+| 阶段 G：界面接管全屏（画布层级 / 不透明底 / 落地页内容让位） | ✅ `1210dc5`（未 push） |
+| 阶段 H：tab 栏改为界面导航（选关/天赋是界面，不是二级窗口） | ✅ `d3676c3`（未 push） |
 | D0 中央轻交互 / D2 体力状态条 / 字体 36MB | ⬜ 未做 |
 
 **待用户人眼验收**：hub 实际观感（头像/金币/开始按钮/tab 栏的大小与位置、就绪态背景是否好看）。截图工具在本机截不到 Overlay UI（§7.14），只能人眼看。
@@ -256,33 +257,36 @@ Build Settings
 > 实现要点：`HubHudModeSwitch` 用「进入就绪态前记录 active → 隐藏 → 离开时还原」，**不要强行 SetActive(true)** —— 这些节点里有自己的显隐逻辑（连击数、击杀里程碑、QTE 翻牌），强行打开会显示不该显示的东西。
 > 头像「局外换角色」的接口位置：`Assets/Scripts/UI/UltimateButtonUI.cs:200` 目前写的是 `ultimateButton.interactable = ready`（只在必杀技亮起来时可点），就绪态下能量=0 所以头像纯展示。将来要做换角色，就在 `IsPrepared` 时把 `interactable` 打开并换成换角色面板入口。
 
-### 4.3 底部 tab 规划
+### 4.3 四个 tab = 四个界面
 
-| tab | 内容 | 形态 |
-|---|---|---|
-| 战斗 | 当前关卡（就绪态 / 关卡态） | Battle 场景本体 |
-| 选关 | 2 条 route（教学关 / 正式YJ） | overlay 场景 `StageSelect.scene` |
-| 天赋 | `TalentTreePanel` | overlay 场景 `TalentTree.scene` |
-| 家园 | 待定 | 先留占位 |
-
-### 4.4 界面职责划分（2026-10-20 用户验收后拍定）
-
-用户验收反馈：打开选关/天赋页时，「开始关卡」大按钮、头像、金币、tab 栏仍浮在页面上。定下如下职责：
-
-| 层 | 场景 | 职责（只做这些） | 生命周期 |
+| tab | 界面 | 载体 | 属于该界面的内容 |
 |---|---|---|---|
-| 主场景 | `Battle.scene` | 「战斗」这一个 tab 的全部内容：局内 HUD（关卡态）+ 落地页 hub（就绪态：开始关卡 / tab 栏 / 头像 / 金币） | 常驻 |
-| 二级全屏页 | `StageSelect.scene` | 只负责「换关卡」：列路线、点选写档、返回；选完立即回战斗 | 打开接管全屏，关闭还原 |
-| 二级全屏页 | `TalentTree.scene` | 只负责「改天赋」：节点/连线/金币，返回 | 同上 |
+| 战斗 | 战斗界面 | `Battle.scene` 本体 | 落地页（就绪态：开始关卡 / 头像 / 金币）+ 局内 HUD（关卡态） |
+| 选关 | 选关界面 | additive `StageSelect.scene` | 路线列表、标题、返回 |
+| 天赋 | 天赋界面 | additive `TalentTree.scene` | 天赋树、金币、返回 |
+| 家园 | 待定 | 占位 | — |
 
-三条硬规则（不满足就会出现「两个界面的东西叠在一起」）：
+### 4.4 界面职责划分（2026-10-20 两轮用户反馈后定稿）
 
-1. **二级页必须画在主场景 HUD 之上。** `BattleHUD(Canvas)` 是 Screen Space - Overlay（order 21），Overlay 画布永远画在摄像机画布之后——所以二级页不能再做 Screen Space - Camera（旧值 10/11），必须是 Screen Space - Overlay 且 order > 21（现为 40 / 41）。
-2. **二级页自带不透明全屏底**，不能靠下层场景透出来（选关页 0.05/0.06/0.09/0.96；天赋页原缺，阶段 G 已补）。
-3. **二级页打开期间 hub 内容隐藏**，不只是被盖住：`HubHudModeSwitch.hubOnly`（头像/金币）按 `SceneFlowManager.HasOverlay` 隐藏，`BattleStartStageButton` / `BattleHubTabBar` 的可见性同样 AND `!HasOverlay`。
+第一轮反馈：打开选关/天赋时「开始关卡 + 头像 + 金币」没消失。
+第二轮澄清（用户原话）：**「天赋还是作为界面而不是二级窗口。选关也是界面不是二级窗口」** —— 它们与「战斗」同级，底部 tab 就是界面导航。
 
-> 纯 UI 的 overlay 场景不接管摄像机：两个 overlay 场景的 `Main Camera` 在阶段 G 已停用（画布改 Overlay 后不需要它，也避开两个摄像机同时渲染与 AudioListener 重复）。
-> 取舍：overlay 打开期间 tab 栏也隐藏，切页需要先「返回」再点另一个 tab——与「二级页」语义一致；若要改成参考图那种常驻底栏，需要把二级页降为「面板」并同步改上面三条规则。
+| 内容 | 归属 | 在选关/天赋界面上 |
+|---|---|---|
+| 底部 tab 栏 | App 级导航（`Battle.scene` 的 `HubTabBar`，自己挂 overrideSorting 画布 order 50） | **常驻**，当前 tab 高亮，点 tab 直接切界面 |
+| 开始关卡按钮 | 战斗界面 | 隐藏（`IsPrepared && !HasOverlay`） |
+| 头像 / 金币 | 战斗界面（`HubHudModeSwitch.hubOnly`） | 隐藏 |
+| 局内 HUD | 战斗界面关卡态 | 本就隐藏 |
+
+四条硬规则：
+
+1. **界面画布必须是 Screen Space - Overlay 且 order > `BattleHUD(Canvas)`(21)**：选关 40、天赋 41。Overlay 画布永远画在 Camera 画布之后，旧值 10/11 会被 HUD 盖住。
+2. **界面自带不透明全屏底**（0.05/0.06/0.09，alpha 1），不靠下层场景透出来。
+3. **界面切换由 tab 驱动**：`SceneFlowManager.SwitchOverlay`（先卸当前再开目标，不叠两层）；战斗 tab = `CloseAllOverlays`。
+4. **tab 栏自己的画布 order 50 + GraphicRaycaster**，保证在每个界面上可见可点；它只在关卡态（`IsPrepared=false`）隐藏。
+
+> 保留：两个界面各自的「返回」按钮仍能关掉自己（等价于点战斗 tab），不影响「界面」语义。
+> 纯 UI 界面不接管摄像机：两个 overlay 场景的 `Main Camera` 已停用（避开双相机渲染与 AudioListener 重复）。
 
 ---
 
@@ -450,6 +454,34 @@ Build Settings
 | Console | warn/error = 0 |
 
 **未覆盖**：未在微信小程序/真机上确认 Overlay 画布层级；选关页点击选中后的视觉反馈只是状态文字（选完立即关页）。
+
+> ⚠️ 本阶段第 3 条「tab 栏也 AND `!HasOverlay`」在阶段 H 已回退：tab 栏是界面导航，必须常驻。
+
+---
+
+### 阶段 H：tab 栏改为界面导航（2026-10-20，`d3676c3`）
+
+用户澄清：**选关与天赋是「界面」，不是「二级窗口」**。所以底部 tab 不是装饰，是界面导航，必须常驻；阶段 G 把 tab 栏一起藏掉是错的。
+
+| # | 任务 | 文件 | 状态 |
+|---|---|---|---|
+| H1 | `HubTabBar` 挂自己的 Canvas（`overrideSorting`，order 50）+ `GraphicRaycaster`，画在选关(40)/天赋(41)之上 | `Battle.scene` / `HubTabBar` | ✅ |
+| H2 | tab 栏可见性回到只看 `IsPrepared`（不再 AND `!HasOverlay`） | `BattleHubTabBar.cs` | ✅ |
+| H3 | tab 行为：战斗 → `CloseAllOverlays`；选关/天赋 → `SwitchOverlay`（先卸当前再开目标） | `BattleHubTabBar.cs` + `SceneFlowManager.SwitchOverlay` | ✅ |
+| H4 | 当前 tab 高亮（`activeTabTint` 1/0.86/0.55，非当前纯白） | `BattleHubTabBar.cs` + `Battle.scene` | ✅ |
+| H5 | 两个界面的全屏底改为完全不透明（alpha 1） | `StageSelect.scene` / `TalentTree.scene` | ✅ |
+
+**Play Mode 实测**：
+
+| 步骤 | 结果 |
+|---|---|
+| 战斗界面基线 | `tabAlpha=1.00`、战斗高亮、头像/金币显示、开始按钮 alpha 1.00 |
+| 点选关 tab | `overlay=StageSelect`、`tabAlpha=1.00`（常驻）、选关高亮、头像/金币隐藏、开始按钮 alpha 0.00 |
+| 选关界面点天赋 tab | 选关已卸载=True、天赋加载、天赋高亮、tab 仍常驻 |
+| 天赋界面点战斗 tab | 天赋已卸载=True、头像/金币/开始按钮全部还原、战斗高亮、`Phase=Ready` |
+| Console | warn/error = 0 |
+
+**未覆盖**：tab 栏在界面上的视觉叠放（截图工具截不到 UI，需人眼）；天赋树面板内容可能与底栏区域重叠（未调）。
 
 ---
 
