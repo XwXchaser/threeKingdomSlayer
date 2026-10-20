@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nodeId: J1
   displayName: "J1\xB7\u57CE\u90CA\u5206\u53C9"
+  entryDialogue: {fileID: 0}
+  postBattleDialogue: {fileID: 0}
+  postBattlePresentation: {fileID: 0}
+  isFinalNode: 0
   dialogues: []
   rewards: []
   battleEntries: []
@@ -23,4 +27,3 @@ MonoBehaviour:
   visualProfile: {fileID: 0}
   outgoingChoices:
   - {fileID: 11400000, guid: 030a7a6f9f71cac439277027124c8022, type: 2}
-  - {fileID: 11400000, guid: 966e16de89949e74d923ed9f70c5aed2, type: 2}

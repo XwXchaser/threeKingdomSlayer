@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nodeId: N1
   displayName: "N1\xB7\u5F53\u9633\u4E71\u519B"
+  entryDialogue: {fileID: 0}
+  postBattleDialogue: {fileID: 0}
+  postBattlePresentation: {fileID: 0}
+  isFinalNode: 0
   dialogues: []
   rewards: []
   battleEntries:
-  - battleConfig: {fileID: 11400000, guid: 29f11170886998f4ca470b5075e5d3d7, type: 2}
+  - battleConfig: {fileID: 11400000, guid: 5542226fb6647424e9fb0ce473788fb5, type: 2}
     conditionEnabled: 0
   completionPolicy: 0
   terminalPolicy: 0

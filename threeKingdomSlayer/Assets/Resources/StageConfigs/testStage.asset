@@ -39,6 +39,7 @@ MonoBehaviour:
     - enemyIds: 0000000069000000690000006900000000000000
     - enemyIds: 0000000000000000680000000000000000000000
     healthMultiplier: 1
+    bossHealthMultiplier: 0
     attackSpeedMultiplier: 1
     damageMultiplier: 1
     waveTintColor: {r: 1, g: 1, b: 1, a: 1}
@@ -69,6 +70,7 @@ MonoBehaviour:
     - enemyIds: 0000000000000000690000000000000000000000
     - enemyIds: 0000000000000000680000000000000000000000
     healthMultiplier: 2
+    bossHealthMultiplier: 0
     attackSpeedMultiplier: 2
     damageMultiplier: 2
     waveTintColor: {r: 1, g: 0.78301877, b: 0.78301877, a: 1}
@@ -99,6 +101,7 @@ MonoBehaviour:
     - enemyIds: 0000000000000000690000000000000000000000
     - enemyIds: 0000000000000000680000000000000000000000
     healthMultiplier: 2.5
+    bossHealthMultiplier: 0
     attackSpeedMultiplier: 3
     damageMultiplier: 3
     waveTintColor: {r: 0.99371064, g: 0.24686506, b: 0.24686506, a: 1}
@@ -129,6 +132,7 @@ MonoBehaviour:
     - rewardType: 0
       rewardAmount: 100
   clearCoinReward: 100
+  collisionDamage: 50
   formationConfig: {fileID: 11400000, guid: f329fc350cf1b54439fcc603e63223ba, type: 2}
   fillUpRule: 1
   rushMoveDelay: 0.2

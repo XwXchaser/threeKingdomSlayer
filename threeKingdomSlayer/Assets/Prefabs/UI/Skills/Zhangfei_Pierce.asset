@@ -67,7 +67,7 @@ MonoBehaviour:
   launchSweepRollDegrees: 0
   slashSweepAlpha: 1
   launchForwardShift: 0
-  ultimateEnergyGain: 15
+  ultimateEnergyGain: 3
   chargeLevelDamageMultipliers: []
   stabWindupRatio: 0.12
   stabThrustRatio: 0.28

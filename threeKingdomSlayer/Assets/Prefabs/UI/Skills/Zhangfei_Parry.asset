@@ -19,6 +19,9 @@ MonoBehaviour:
   damage: 0
   poiseDamage: 10
   interruptsCavalryCharge: 0
+  columnMode: 0
+  isHeavy: 0
+  breakIcePushRows: 4
   rangeRows: 1
   cooldown: 0.5
   actionDuration: 0.2
@@ -64,7 +67,7 @@ MonoBehaviour:
   launchSweepRollDegrees: 0
   slashSweepAlpha: 1
   launchForwardShift: 0
-  ultimateEnergyGain: 5
+  ultimateEnergyGain: 1
   chargeLevelDamageMultipliers: []
   stabWindupRatio: 0.12
   stabThrustRatio: 0.28

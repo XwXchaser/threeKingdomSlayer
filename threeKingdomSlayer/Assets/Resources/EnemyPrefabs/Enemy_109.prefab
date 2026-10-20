@@ -410,7 +410,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: normalFormDamageReductionPercent
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4985420312235204657, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: m_Controller
@@ -539,7 +539,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cavalryEnemyId: 109
-  chargeDamage: 1
+  chargeDamage: 20
   windupDuration: 0.5
   strikeWindup: 0.5
   strikeRecover: 0.8
