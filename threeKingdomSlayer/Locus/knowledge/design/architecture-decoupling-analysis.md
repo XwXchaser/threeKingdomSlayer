@@ -334,6 +334,7 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 | `Enemy` 拆 `EnemyOutline`（描边） | ✅ `eac2922`（5212 → 5132 行） |
 | 剩余角色接口（`IRunFlow` / `ICombatStaging` / `IRewardGate`） | ⬜ |
 | `IStageFormation`（阵型只读）+ `IStageFlowControl`（流程控制） | ✅ `Enemy` / `BattleHUD` 已迁移 |
+| `AttackSystem` 迁移到 `IStageFormation` | ✅ `a0dccc9`（32 处调用收敛为一处） |
 | `Enemy` 拆 `EnemyFreeze`（冰系，约 685 行） | ⬜ 高风险，需先定契约 |
 
 **三处拆分后的验收证据**：
@@ -348,6 +349,9 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
   三个角色；`Enemy`（14 处）与 `BattleHUD`（6 处）已全部改为走窄接口，两个文件里
   `StageController.Instance` 只剩延迟解析那一行；全项目门面直接引用从 125 降到 99。
   实测：敌人实际 x 与 `GetFormationOffset` 期望值差 0.00，阵型未错位；Console 0/0。
+- `AttackSystem` 迁移：32 处阵型调用改为一份只读契约，接口与门面 `ReferenceEquals=true`
+  （同一实例，行为零变化）；实跑 `TryExecuteAttack`：Stab 掉血 20、Slash 掉血 20、Launch 掉血 2。
+  全项目 `StageController.Instance` 匹配行数 125 → 78。
 
 `Locus.Data` 现状：**19 文件 / 1875 行 / 69 类型**。
 
