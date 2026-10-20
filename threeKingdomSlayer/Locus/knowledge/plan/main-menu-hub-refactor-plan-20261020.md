@@ -210,6 +210,7 @@ Build Settings
 
 > 用户明确：**敌人不在就绪态摆出来**（Q1 答案），所以就绪态中央是空场。
 > 实现要点：`HubHudModeSwitch` 用「进入就绪态前记录 active → 隐藏 → 离开时还原」，**不要强行 SetActive(true)** —— 这些节点里有自己的显隐逻辑（连击数、击杀里程碑、QTE 翻牌），强行打开会显示不该显示的东西。
+> 头像「局外换角色」的接口位置：`Assets/Scripts/UI/UltimateButtonUI.cs:200` 目前写的是 `ultimateButton.interactable = ready`（只在必杀技亮起来时可点），就绪态下能量=0 所以头像纯展示。将来要做换角色，就在 `IsPrepared` 时把 `interactable` 打开并换成换角色面板入口。
 
 ### 4.3 底部 tab 规划
 
