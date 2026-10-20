@@ -95,18 +95,34 @@ Play Mode 运行期 Console error = 0。
 
 > 这 11 条红字是**预期的守门信号**，步骤 2 清理资产后消失。
 
-### 步骤 2：清理 11 个存量 PerColumn 资产
+### 步骤 2：清理 11 个存量 PerColumn 资产 ✅ 已完成（`dc23b6f`，连同旧关卡一起清）
 
-| 分组 | 建议动作 |
+> 用户确认：「当前其实只有教学关和配置的 YJ 关有用」→ 旧的、无人引用的直接删。
+> 实际删除范围比 11 个更大（119 个文件，含 .meta）：
+
+| 分组 | 删除内容 |
 |---|---|
-| 旧命名 5 个（`Stage01/N1_Battle` 等） | 确认无引用后**删除**（已被 `Tutorial_*` / `Formal_*` 取代） |
-| 试玩/实验 5 个 | 改为 PerRow（保留实验用途） |
-| `Resources/StageConfigs/Stage_1` | 无引用但在 Resources（**进包**）→ 建议删除（顺带省包体）或改 PerRow |
+| 旧 V1 Stage01 链 | `Assets/RouteData/Stage01/`（4 战斗配置 + 3 节点 + `Stage01_Route`） |
+| V2 遗留链 | `Assets/RouteData/Stage01V2/` + `Assets/Scenes/RouteStageV2/` |
+| 实验路线链 | `Assets/Experiments/CurvedScroll/RouteTrialData/` 整目录（路线 + 4 节点 + 3 个 NarrowRoadBattle + Choice/Travel/VisualProfile 等配套） |
+| 旧命名战斗配置 | `RouteData/ChangbanpoScroll/Battles/E0_Battle_Preview`（被 `Formal_E0_Battle` 取代） |
+| Resources 死资产 | `Resources/StageConfigs/Stage_1`（进包但无引用） |
+| 旧教学场景 | `Assets/Scenes/Tutorial/Tutorial_YJ.unity`（1.1MB，已不在 build settings） |
+| 试玩/实验场景 | `ScrollCombatTrial` / `ValleyCombatTrial` / `FakeRouteDataTrial` / `CurvedScrollLab` / `E0OuterGatePreview` |
+| 试玩战斗配置 | `Experiments/CurvedScroll/TrialBattle.asset` |
 
-**风险**：删除类操作，需用 `AssetDatabase` 反查引用后再删（别用 grep）。
-**验收**：全项目 `fillUpRule` 分布只剩 PerRow；`OnValidate` 不再报红。
+**有意保留**：`Bisect.unity` 与 `EmptyDiag.unity`（`AndroidBuildMenu` 的打包诊断工具用）、
+`YJunctionSample.unity`（`ScrollRoutePresenter` 按路径加载的路线场景）、
+教学 `Tutorial_Route` 与正式 `Changbanpo_ScrollRoute` 两条链。
 
-### 步骤 3（终态，根除）：删掉枚举与字段
+**结果**：PerColumn 资产 11 → **0**（OnValidate 的红字随之消失）；StageConfig 规则分布只剩 PerRow。
+回归：落地页（教学关·初见）→ 开打 → 出怪 → 攻击掉血正常；已加载场景 `Battle + YJunctionSample`；Console error = 0。
+
+### 步骤 3（终态，根除）：删掉枚举与字段 ⬜ 未做
+
+> 现在 PerColumn 资产已清零，**删字段的前提已满足**；但这一步会让运行时只剩一种补齐语义，
+> 需要先把 `ColumnManager` 的 legacy 分支（`StartWaveMarch` 的旧扫描路径、已 inert 的
+> `RowBasedFillUp` / `CompactAllColumns`）一起清掉——建议与「ColumnManager 拆分」合并做。
 
 | 改动 | 说明 |
 |---|---|
