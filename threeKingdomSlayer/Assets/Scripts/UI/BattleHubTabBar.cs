@@ -11,8 +11,9 @@ using UnityEngine.UI;
 ///   • 当前 tab 高亮用 image 颜色区分；
 ///   • 点 tab = 切界面（战斗 → 关掉 overlay；选关/天赋 → SwitchOverlay）。
 ///
-/// 它自身排在一个 overrideSorting 的Canvas（order 50）上，画在选关/天赋页（40/41）之上。
-/// 显隐用 CanvasGroup，不 SetActive（关掉自己 Update 就跑不回来了）。
+/// 它自身排在一个 overrideSorting 的 Canvas（order 50）上，画在选关/天赋页（40/41）之上。
+/// 显隐由 <see cref="HubStateSource"/> 事件广播驱动，本组件不再每帧轮询；
+/// 当前 tab 高亮仍在状态变化时重算一次。
 /// </summary>
 public sealed class BattleHubTabBar : MonoBehaviour
 {
@@ -43,6 +44,21 @@ public sealed class BattleHubTabBar : MonoBehaviour
     private bool _wired;
     private bool _tabApplied;
     private string _appliedTab;
+    private bool _subscribed;
+
+    private void OnEnable()
+    {
+        Wire();
+        TrySubscribe();
+        ApplyFromState();
+    }
+
+    private void OnDisable()
+    {
+        if (_subscribed && HubStateSource.Instance != null)
+            HubStateSource.Instance.Changed -= OnHubStateChanged;
+        _subscribed = false;
+    }
 
     private void Start()
     {
@@ -50,7 +66,33 @@ public sealed class BattleHubTabBar : MonoBehaviour
         if (sceneFlow == null) sceneFlow = SceneFlowManager.Instance;
         if (group == null) group = GetComponent<CanvasGroup>();
         Wire();
-        ApplyState(false);
+        ApplyFromState();
+        ApplyTabHighlight();
+        TrySubscribe();
+        if (HubStateSource.Instance == null)
+            Debug.LogWarning("[HubTabBar] 场景里没有 HubStateSource，tab 栏会一直停在隐藏态");
+    }
+
+    private void TrySubscribe()
+    {
+        if (_subscribed) return;
+        var state = HubStateSource.Instance;
+        if (state == null) return;
+        state.Changed += OnHubStateChanged;
+        _subscribed = true;
+    }
+
+    private void OnHubStateChanged()
+    {
+        ApplyFromState();
+        ApplyTabHighlight();
+    }
+
+    /// <summary>tab 栏是界面导航：只要在就绪态就在，不随界面开关隐藏。</summary>
+    private void ApplyFromState()
+    {
+        var state = HubStateSource.Instance;
+        ApplyState(state != null && state.IsPrepared);
     }
 
     private void Wire()
@@ -80,16 +122,6 @@ public sealed class BattleHubTabBar : MonoBehaviour
             homeTab.onClick.RemoveAllListeners();
             homeTab.interactable = false;
         }
-    }
-
-    private void Update()
-    {
-        if (routeRuntime == null) routeRuntime = FakeRouteRuntime.Instance;
-        if (sceneFlow == null) sceneFlow = SceneFlowManager.Instance;
-        Wire();
-        // tab 栏是界面导航：只要在就绪态就在，不随 overlay 开关隐藏。
-        ApplyState(routeRuntime != null && routeRuntime.IsPrepared);
-        ApplyTabHighlight();
     }
 
     /// <summary>按当前叠着的界面高亮对应 tab（战斗 = 无 overlay）。</summary>

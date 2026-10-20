@@ -33,31 +33,54 @@ public sealed class HubHudModeSwitch : MonoBehaviour
     private bool[] _hubOriginalActive;
     private bool _hubCaptured;
     private bool _appliedOverlay;
+    private bool _subscribed;
+
+    private void OnEnable()
+    {
+        Capture();
+        CaptureHub();
+        TrySubscribe();
+        ApplyFromState();
+    }
+
+    private void OnDisable()
+    {
+        if (_subscribed && HubStateSource.Instance != null)
+            HubStateSource.Instance.Changed -= OnHubStateChanged;
+        _subscribed = false;
+    }
 
     private void Start()
     {
         if (routeRuntime == null) routeRuntime = FakeRouteRuntime.Instance;
         Capture();
         CaptureHub();
-        Apply(false);
-        ApplyOverlay(IsOverlayOpen());
+        ApplyFromState();
+        TrySubscribe();
+        if (HubStateSource.Instance == null)
+            Debug.LogWarning("[HubHudMode] 场景里没有 HubStateSource，HUD 可见性不会随状态变化");
     }
 
-    private void Update()
+    private void TrySubscribe()
     {
-        if (routeRuntime == null) routeRuntime = FakeRouteRuntime.Instance;
+        if (_subscribed) return;
+        var state = HubStateSource.Instance;
+        if (state == null) return;
+        state.Changed += OnHubStateChanged;
+        _subscribed = true;
+    }
 
-        bool ready = routeRuntime != null && routeRuntime.IsPrepared;
+    private void OnHubStateChanged() => ApplyFromState();
+
+    /// <summary>把唯一状态源的两个维度映射成两组显隐；只在真正变化时才改对象。</summary>
+    private void ApplyFromState()
+    {
+        var state = HubStateSource.Instance;
+        bool ready = state != null && state.IsPrepared;
         if (ready != _appliedReady) Apply(ready);
 
-        bool overlayOpen = IsOverlayOpen();
+        bool overlayOpen = state != null && state.IsOverlayOpen;
         if (overlayOpen != _appliedOverlay) ApplyOverlay(overlayOpen);
-    }
-
-    private static bool IsOverlayOpen()
-    {
-        var flow = SceneFlowManager.Instance;
-        return flow != null && flow.HasOverlay;
     }
 
     private void Capture()

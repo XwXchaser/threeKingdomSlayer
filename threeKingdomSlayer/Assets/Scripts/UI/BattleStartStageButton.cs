@@ -4,10 +4,11 @@ using UnityEngine.UI;
 /// <summary>
 /// 落地页的「开始关卡」大按钮。
 ///
-/// 只在「落地页就绪态且没有二级页面打开」时可见可点：点一下 → <see cref="FakeRouteRuntime.RunPrepared"/>
-/// 正式开跑路线。其余状态（加载中 / 跑关卡中 / 已结算 / 选关或天赋页打开）整块隐藏，
-/// 不遮挡二级页面，也不会误触重复启动。
-/// 用 CanvasGroup 控制显隐而不是 SetActive：物体自己关掉后 Update 就再也不会跑回来。
+/// 只在「落地页就绪态且没有界面打开」时可见可点：点一下 → <see cref="FakeRouteRuntime.RunPrepared"/>
+/// 正式开跑路线。其余状态（加载中 / 跑关卡中 / 已结算 / 选关或天赋界面打开）整块隐藏，
+/// 不遮挡界面，也不会误触重复启动。
+/// 状态由 <see cref="HubStateSource"/> 单一计算后事件广播，本组件不再自己每帧轮询。
+/// 用 CanvasGroup 控制显隐而不是 SetActive：物体自己关掉后订阅也一并断掉。
 /// </summary>
 [RequireComponent(typeof(Button))]
 [RequireComponent(typeof(CanvasGroup))]
@@ -40,26 +41,50 @@ public class BattleStartStageButton : MonoBehaviour
         _group = GetComponent<CanvasGroup>();
     }
 
+    private bool _subscribed;
+
+    private void OnEnable()
+    {
+        TrySubscribe();
+        ApplyFromState();
+    }
+
+    private void OnDisable()
+    {
+        if (_subscribed && HubStateSource.Instance != null)
+            HubStateSource.Instance.Changed -= OnHubStateChanged;
+        _subscribed = false;
+    }
+
     private void Start()
     {
         if (routeRuntime == null) routeRuntime = FakeRouteRuntime.Instance;
         _button.onClick.RemoveAllListeners();
         _button.onClick.AddListener(OnClick);
-        ApplyState(false);
+        // 初始态由状态源决定，不写死 false（否则 OnEnable 已应用的正确态会被覆掉，下一帧再恢复 = 一帧闪烁）
+        ApplyFromState();
+        TrySubscribe();
+        if (HubStateSource.Instance == null)
+            Debug.LogWarning("[BattleStartStageButton] 场景里没有 HubStateSource，按钮会一直停在隐藏态");
     }
 
-    private void Update()
+    /// <summary>订阅唯一状态源。Enable 阶段源可能还没 Awake，所以 Start 再试一次。</summary>
+    private void TrySubscribe()
     {
-        // routeRuntime 可能比本按钮晚 Awake（FakeRouteRuntime 在 Battle 场景根节点），每帧兜底取一次。
-        if (routeRuntime == null) routeRuntime = FakeRouteRuntime.Instance;
-        // 选关/天赋这类二级页面打开时，落地页的一切都不该露出来。
-        ApplyState(routeRuntime != null && routeRuntime.IsPrepared && !IsOverlayOpen());
+        if (_subscribed) return;
+        var state = HubStateSource.Instance;
+        if (state == null) return;
+        state.Changed += OnHubStateChanged;
+        _subscribed = true;
     }
 
-    private static bool IsOverlayOpen()
+    private void OnHubStateChanged() => ApplyFromState();
+
+    /// <summary>就绪 且 没有界面叠在上层 = 可显示。</summary>
+    private void ApplyFromState()
     {
-        var flow = SceneFlowManager.Instance;
-        return flow != null && flow.HasOverlay;
+        var state = HubStateSource.Instance;
+        ApplyState(state != null && state.IsPrepared && !state.IsOverlayOpen);
     }
 
     private void ApplyState(bool ready)
