@@ -42,6 +42,36 @@ summary: ColumnManager 拆分实施方案（2026-10-20，写给后续接手的 A
 
 ---
 
+## 0.7 进度（截至 2026-10-20 夜）
+
+| 刀 | 抽出 | 状态 |
+|---|---|---|
+| **1** | `LogicalRowQueue`（逻辑排队列：活人排 / 空排占位符 / 999 门） | ✅ **已完成**（`facdbde`）：ColumnManager 2149 → 2026 行 |
+| **2** | `ColumnQueries`（13 个只读查询） | ✅ **已完成**（`415d4c0`）：ColumnManager 2026 → 1958 行 |
+| 3 | `SpawnEntryMover`（入场调度） | ⬜ 待做（中风险） |
+| 4 | `WaveMarchScheduler`（补齐调度） | ⬜ 待做（中高风险） |
+| 5 | `DisplacementMover`（击退回位 / 横向位移 / 破冰顶开 / 聚拢） | ⬜ 待做（中高风险） |
+| 6（=F） | 删 PerColumn 遗留分支 + `FillUpRule` 枚举与字段 | ⬜ 待做（中；建议在刀 4/5 之后） |
+
+**刀 1 / 刀 2 的验收数据**（Play Mode，注入 `Stage_Trial` 第 1 波：6 排含一个空排占位符）：
+
+- 入场后敌人在逻辑行 **0/1/3/4/5**（与拆分前一致）
+- 整排清空基线：杀 r0 → `col1/r0 · col1/r2 · col2/r3 · col3/r4`（与拆分前**逐位一致**）
+- 豁免 A/B：col1/r1 打 `ignoreFillUpOrders` 后杀 r0 → `col1/r1[豁免] · col1/r2 · col2/r3 · col3/r4`（豁免者不动）
+- 主流程：落地页 → 开始关卡 → `phase=Battle`、出怪、范围攻击连掉 20×3
+
+**给后续执行者的两条实现要点**（省得重新踩）：
+
+1. 刀 1：`LogicalWaveRow` / `LogicalWaveRowKind` 由 ColumnManager 的**嵌套类型提为顶层类型**，
+   因此 ColumnManager 里原有引用**原样编译**，改动只落在字段与方法体；队列类不决定何时补齐、不派单、不移动敌人。
+2. 刀 2：`ColumnQueries` 用委托 `() => columns` 取列数组（避免 `InitializeColumns` 重建后拿到旧引用）；
+   ColumnManager 侧保留同名 public 方法改为委派，**调用方零改动**。
+
+> 附带修掉一个既有问题（`49d4e96`）：落地页就绪态把局内 HUD 整组隐藏时，连击数字启动协程会报
+> 「Coroutine couldn't be started because the game object is inactive」→ 加 `activeInHierarchy` 守卫。
+
+---
+
 ## 1. 不可违反的规则（动手前先背下来）
 
 ### 1.1 不可变约束 8 条（`design/immutable-constraints.md` 全文）
@@ -172,7 +202,7 @@ summary: ColumnManager 拆分实施方案（2026-10-20，写给后续接手的 A
 - **验收**：`Stage_Trial` 注入后，敌人仍落在逻辑目标行 0/1/3/4/5（row2 是空排占位符）；999 门场景行为不变
 - **提交**：`refactor(column): 逻辑排队列抽成 LogicalRowQueue`
 
-### 刀 2：`ColumnQueries`（只读查询）— 风险低
+### 刀 2：`ColumnQueries`（只读查询）— ✅ 已完成（`415d4c0`）
 
 - 新建 `Assets/Scripts/Core/ColumnQueries.cs`
 - 搬运 13 个只读方法（`GetAllEnemiesInRange` / `GetEnemiesInRange` / `GetEnemyAt` / `GetFrontEnemy` /
