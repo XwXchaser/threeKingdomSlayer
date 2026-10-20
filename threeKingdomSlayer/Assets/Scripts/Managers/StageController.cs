@@ -7,7 +7,7 @@ using UnityEngine;
 /// 管理关卡开始、进行中、胜利、失败状态
 /// 协调 WaveSpawner、EnemyManager、PlayerState 之间的交互
 /// </summary>
-public class StageController : MonoBehaviour, IRouteBattleHost
+public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation, IStageFlowControl
 {
     public static StageController Instance { get; private set; }
 
@@ -72,6 +72,20 @@ public class StageController : MonoBehaviour, IRouteBattleHost
         add => OnRouteBattleCompleted += value;
         remove => OnRouteBattleCompleted -= value;
     }
+
+    // ───────── IStageFormation / IStageFlowControl 显式实现 ─────────
+    // 原本是 public 字段的成员用显式实现包一层，字段与 Inspector 序列化保持不变；
+    // GetFormationOffset / GetRowSpacing / GetFormationOffsetZ / GetMaxVisibleRows /
+    // GoToMainMenu 签名已匹配，走隐式实现。
+    StageConfig IStageFormation.StageConfig => stageConfig;
+
+    StageConfig IStageFlowControl.StageConfig => stageConfig;
+
+    bool IStageFlowControl.BlockRestartOnDefeat => blockRestartOnDefeat;
+
+    bool IStageFlowControl.SuppressDefeatUI => suppressDefeatUI;
+
+    FakeRouteStageConfig IStageFlowControl.RouteConfig => fakeRouteStageConfig;
 
     private void OnEnable()
     {

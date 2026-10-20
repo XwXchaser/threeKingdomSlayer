@@ -26,6 +26,14 @@ public class BattleHUD : MonoBehaviour
     // GC 优化：缓存所有攻击类型数组，避免每帧 new[]
     private static readonly AttackType[] AllAttackTypes = { AttackType.Stab, AttackType.Slash, AttackType.Pierce, AttackType.Sweep, AttackType.Launch, AttackType.Parry };
 
+    /// <summary>
+    /// 关卡流程控制（只读契约）：战败面板 / 重来按钮 / 返回落地页只依赖这几个成员，
+    /// 不再直接摸 StageController 门面（2026-10-20 批次 1）。延迟解析，Instance 可能晚于本组件。
+    /// </summary>
+    private IStageFlowControl _stageFlow;
+
+    private IStageFlowControl StageFlow => _stageFlow ??= StageController.Instance;
+
     [Header("Boss 血条")]
     [Tooltip("BossHealthBar 模板 Prefab（BattleHUD 动态实例化）")]
     public GameObject bossHealthBarPrefab;
@@ -172,7 +180,7 @@ public class BattleHUD : MonoBehaviour
         // 注入依赖到 StageProgressBar（避免时序问题）
         if (_heroHUD.stageProgressBar != null)
         {
-            var sc = StageController.Instance?.stageConfig;
+            var sc = StageFlow?.StageConfig;
             var ws = WaveSpawner.Instance;
             Debug.Log("[BattleHUD] StageProgressBar 注入: stageConfig=" + (sc != null ? sc.name : "NULL") + " waveSpawner=" + (ws != null ? ws.name : "NULL"));
             if (sc != null && ws != null)
@@ -313,7 +321,7 @@ public class BattleHUD : MonoBehaviour
                 break;
             case StageState.Defeat:
                 // 教学关的“初见杀”是演出：关卡仍然进 Defeat（停输入、触发事件），但不弹战败面板
-                if (StageController.Instance == null || !StageController.Instance.suppressDefeatUI)
+                if (StageFlow == null || !StageFlow.SuppressDefeatUI)
                     ShowDefeat();
                 break;
         }
@@ -422,7 +430,7 @@ public class BattleHUD : MonoBehaviour
             defeatPanel.transform.SetAsLastSibling();
             defeatPanel.SetActive(true);
             // 教学关：不允许重来，只留「返回主菜单」，避免重跑整个教学流程
-            SetDefeatRestartVisible(StageController.Instance == null || !StageController.Instance.blockRestartOnDefeat);
+            SetDefeatRestartVisible(StageFlow == null || !StageFlow.BlockRestartOnDefeat);
             if (resultCoinText != null && PlayerState.Instance != null)
                 resultCoinText.text = $"获得铜钱: {PlayerState.Instance.coinCount}";
         }
@@ -485,7 +493,7 @@ public class BattleHUD : MonoBehaviour
     public void OnRestartButton()
     {
         // 教学关不允许重来：直接当「返回主菜单」处理
-        if (StageController.Instance != null && StageController.Instance.blockRestartOnDefeat)
+        if (StageFlow != null && StageFlow.BlockRestartOnDefeat)
         {
             Debug.Log("[BattleHUD] 教学关不允许重来，转回主菜单");
             OnMainMenuButton();
@@ -495,11 +503,11 @@ public class BattleHUD : MonoBehaviour
         if (_heroHUD != null) _heroHUD.gameObject.SetActive(true);
         SyncCurrentPlayerState();
         // 路线模式重开：从最近存档点恢复。卷轴/假移动路线与外层 V2 路线各自持有标志。
-        if (StageController.Instance != null && StageController.Instance.fakeRouteStageConfig != null)
+        if (StageFlow != null && StageFlow.RouteConfig != null)
             FakeRouteLaunch.StartFromCheckpoint = true;
         else
             RouteStageV2Launch.StartFromCheckpoint = true;
-        StageController.Instance?.RestartStage();
+        StageFlow?.RestartStage();
     }
 
     /// <summary>隐藏/显示战败面板上的「重来」按钮（按场景里绑定的 OnRestartButton 识别）。</summary>
@@ -522,8 +530,8 @@ public class BattleHUD : MonoBehaviour
 
     public void OnMainMenuButton()
     {
-        if (StageController.Instance != null)
-            StageController.Instance.GoToMainMenu();
+        if (StageFlow != null)
+            StageFlow.GoToMainMenu();
         else
             UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
     }

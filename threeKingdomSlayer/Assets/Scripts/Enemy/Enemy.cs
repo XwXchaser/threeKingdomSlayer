@@ -486,6 +486,14 @@ public GameObject freezeMeltEffectPrefab;
     private SpriteRenderer _spriteRenderer;
     private MaterialPropertyBlock _tintPropBlock; // 波次染色（描边属性已移到 EnemyOutline，不再共用 block）
 
+    /// <summary>
+    /// 关卡/阵型信息（只读）。敌人只依赖这份 5 成员的契约，不再直接摸 StageController 门面
+    /// （2026-10-20 批次 1）。延迟解析：Enemy 可能早于 StageController Awake。
+    /// </summary>
+    private IStageFormation _stageFormation;
+
+    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
+
     // 敌人物体原始缩放与旋转值（从预制体读取，用于对象池复用还原）
     // 不能硬编码为 Vector3.one / Quaternion.identity，因为预制体可能有自定义初始姿态。
     private Vector3 originalScale;
@@ -908,7 +916,7 @@ public GameObject freezeMeltEffectPrefab;
         if (isRush && !HasRushMoveOrder) return;
 
         // 逐排补齐模式：非补齐移动时，检查前方整排是否已完全清空
-        if (!isRush && StageController.Instance?.GetFillUpRule() == FillUpRule.PerRow && !IsFrontRowClear())
+        if (!isRush && StageFormation?.GetFillUpRule() == FillUpRule.PerRow && !IsFrontRowClear())
         {
             DebugLog.Info($"[Enemy] PerRow 模式等待前排清空: {DebugTag}, col={columnIndex}, row={rowIndex}");
             return;
@@ -1156,12 +1164,13 @@ public GameObject freezeMeltEffectPrefab;
 
     public Vector3 GetCavalryRowLocalPosition(int visualRow)
     {
-        float xPos = StageController.Instance != null
-            ? StageController.Instance.GetFormationOffset(columnIndex, visualRow)
+        var stage = StageFormation;
+        float xPos = stage != null
+            ? stage.GetFormationOffset(columnIndex, visualRow)
             : (columnIndex - 2) * 2f;
-        float rowSpacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
-        int maxRow = StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() - 1 : 4;
-        float offsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
+        float rowSpacing = stage != null ? stage.GetRowSpacing() : 2.5f;
+        int maxRow = stage != null ? stage.GetMaxVisibleRows() - 1 : 4;
+        float offsetZ = stage != null ? stage.GetFormationOffsetZ() : 0f;
         float zPos = (maxRow - visualRow) * (-rowSpacing) + offsetZ;
         return new Vector3(xPos, transform.localPosition.y, zPos);
     }
@@ -1993,7 +2002,7 @@ public GameObject freezeMeltEffectPrefab;
                     pendingRushMove = true;
                     float delay = _rushMoveMode == RushMoveMode.ContinuousEmptyRun
                         ? 0f
-                        : StageController.Instance?.GetRushMoveDelay() ?? 0f;
+                        : StageFormation?.GetRushMoveDelay() ?? 0f;
                     if (delay > 0f)
                         rushMoveDelayTimer = delay;
                     else
@@ -3001,8 +3010,10 @@ private void SpawnProjectile()
         if (res.blockedBy == null) return;
 
         float collisionDamage = 0f;
-        if (StageController.Instance != null && StageController.Instance.stageConfig != null)
-            collisionDamage = StageController.Instance.stageConfig.collisionDamage;
+        var stageForDamage = StageFormation;
+        var stageConfigForDamage = stageForDamage != null ? stageForDamage.StageConfig : null;
+        if (stageConfigForDamage != null)
+            collisionDamage = stageConfigForDamage.collisionDamage;
 
         if (collisionDamage <= 0f)
         {
@@ -4116,11 +4127,12 @@ private void SpawnProjectile()
         float xPos;
         float rowSpacing = 2.5f;
         float offsetZ = 0f;
-        if (StageController.Instance != null)
+        var stage = StageFormation;
+        if (stage != null)
         {
-            xPos = StageController.Instance.GetFormationOffset(columnIndex, rowIndex);
-            rowSpacing = StageController.Instance.GetRowSpacing();
-            offsetZ = StageController.Instance.GetFormationOffsetZ();
+            xPos = stage.GetFormationOffset(columnIndex, rowIndex);
+            rowSpacing = stage.GetRowSpacing();
+            offsetZ = stage.GetFormationOffsetZ();
         }
         else
         {
@@ -4486,9 +4498,10 @@ private void SpawnProjectile()
     private float GetRowZ(int row, float spacing, float offset)
     {
         int maxRow = 4; // 默认值
-        if (StageController.Instance != null)
+        var stage = StageFormation;
+        if (stage != null)
         {
-            maxRow = StageController.Instance.GetMaxVisibleRows() - 1;
+            maxRow = stage.GetMaxVisibleRows() - 1;
         }
         return (maxRow - row) * (-spacing) + offset;
     }
@@ -4507,13 +4520,14 @@ private void SpawnProjectile()
     {
         float xPos;
         float rowSpacing = 2.5f;
-        if (StageController.Instance != null)
+        var stage = StageFormation;
+        if (stage != null)
         {
             // BUG FIX: 移动过程中使用 rowIndex（旧排位置）计算 X 轴偏移
             // 因为 rowIndex 在移动过程中尚未更新（移动完成后才 rowIndex--）
             // 这样 X 轴和 Z 轴同步，避免"梯形向内聚拢"问题
-            xPos = StageController.Instance.GetFormationOffset(columnIndex, rowIndex);
-            rowSpacing = StageController.Instance.GetRowSpacing();
+            xPos = stage.GetFormationOffset(columnIndex, rowIndex);
+            rowSpacing = stage.GetRowSpacing();
         }
         else
         {
@@ -4523,9 +4537,9 @@ private void SpawnProjectile()
 
         // 获取阵型整体Z轴偏移（用于调整敌人生成位置远离/靠近摄像机）
         float offsetZ = 0f;
-        if (StageController.Instance != null)
+        if (stage != null)
         {
-            offsetZ = StageController.Instance.GetFormationOffsetZ();
+            offsetZ = stage.GetFormationOffsetZ();
         }
 
         float zPos;
@@ -4538,7 +4552,7 @@ private void SpawnProjectile()
             //
             // rowIndex 尚未更新，使用 rowIndex 作为起点，rowIndex-1 作为终点
             float currentX = xPos; // 当前排的 X 偏移（已在上面通过 GetFormationOffset 计算）
-            float targetX = StageController.Instance.GetFormationOffset(columnIndex, rowIndex - 1);
+            float targetX = stage.GetFormationOffset(columnIndex, rowIndex - 1);
             xPos = Mathf.Lerp(currentX, targetX, moveProgress);
 
             // Z 轴：从当前排向目标排平滑过渡
@@ -4601,7 +4615,7 @@ private void SpawnProjectile()
 
         // 从StageController获取透明度配置
         // 默认：第0排=1.0, 第1排=0.8, 第2排=0.6, 第3排=0.4, 第4排=0.2, 第5排+=0
-        float[] factors = StageController.Instance?.GetRowAlphaFactors()
+        float[] factors = StageFormation?.GetRowAlphaFactors()
                           ?? DefaultRowAlphaFactors;
         if (row < factors.Length)
             return factors[row];

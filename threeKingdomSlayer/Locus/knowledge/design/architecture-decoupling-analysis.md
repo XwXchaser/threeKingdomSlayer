@@ -332,10 +332,11 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 | 8 个配置搬入 `Locus.Data`（含 `UpgradeDefinition` 581 行） | ✅ |
 | 路线层端口接口 `IRouteBattleHost`（依赖倒置第一层） | ✅ `b2da9d2` |
 | `Enemy` 拆 `EnemyOutline`（描边） | ✅ `eac2922`（5212 → 5132 行） |
-| 剩余角色接口（`IRunFlow` / `ICombatStaging` / `IRewardGate` / `ISceneHost`） | ⬜ |
+| 剩余角色接口（`IRunFlow` / `ICombatStaging` / `IRewardGate`） | ⬜ |
+| `IStageFormation`（阵型只读）+ `IStageFlowControl`（流程控制） | ✅ `Enemy` / `BattleHUD` 已迁移 |
 | `Enemy` 拆 `EnemyFreeze`（冰系，约 685 行） | ⬜ 高风险，需先定契约 |
 
-**两处拆分后的验收证据**：
+**三处拆分后的验收证据**：
 
 - 端口接口：`StageController is IRouteBattleHost`=true（显式实现三个原本是 public 字段的成员，
   字段与 Inspector 序列化未动）；路线层 `_battleHost` 已解析、`autoStartStage` 被置 false、
@@ -343,6 +344,10 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
   `grep` 确认 `FakeRouteRuntime` 已无 `stageController.<成员>` 调用。
 - 描边拆分：真实敌人 `Enemy_1011` 上 `_OutlineEnabled` 初始 0.00 → 穿刺高亮 0.71（白/宽 3）
   → 调试强制霸体 1.00（橙色/宽 8）→ 关高亮 0.00。序列化字段未搬动，prefab 无变更。
+- 角色接口拆分：`StageController` 现实现 `IRouteBattleHost` / `IStageFormation` / `IStageFlowControl`
+  三个角色；`Enemy`（14 处）与 `BattleHUD`（6 处）已全部改为走窄接口，两个文件里
+  `StageController.Instance` 只剩延迟解析那一行；全项目门面直接引用从 125 降到 99。
+  实测：敌人实际 x 与 `GetFormationOffset` 期望值差 0.00，阵型未错位；Console 0/0。
 
 `Locus.Data` 现状：**19 文件 / 1875 行 / 69 类型**。
 
