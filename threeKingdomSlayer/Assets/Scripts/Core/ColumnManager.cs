@@ -906,6 +906,14 @@ public class ColumnManager : MonoBehaviour
                 continue;
             if (_pushReturnTransactions.ContainsKey(enemy) || enemy.rowIndex <= logicalRow.currentRow)
                 continue;
+            // 「豁免补齐」：该敌人不参与波次行军——不派单、不预留目标槽（原地下不动）。
+            // 注意这是**设计意图的排除**（敌人自己声明不参与），不是按状态过滤；
+            // 按状态过滤会让敌人永远拿不到本该有的订单（历史缺陷：105 远程敌人永远不补齐）。
+            if (enemy.ignoreFillUpOrders)
+            {
+                DebugLog.Info("[FillUp] 豁免补齐（不参与波次行军）: " + enemy.DebugTag);
+                continue;
+            }
 
             long slotKey = ((long)enemy.columnIndex << 32) ^ (uint)logicalRow.currentRow;
             if (!_plannedWaveTargetSlots.Add(slotKey))
@@ -973,6 +981,9 @@ public class ColumnManager : MonoBehaviour
                 if (enemy.GetComponent<CavalryEnemy>()?.IsMounted == true)
                     continue;
                 if (restrictedEnemies != null && !restrictedEnemies.Contains(enemy))
+                    continue;
+                // 「豁免补齐」：不参与波次行军（与规划层一致，见 TryBuildLogicalWaveMarchPlan 注释）
+                if (enemy.ignoreFillUpOrders)
                     continue;
 
                 if (_pushReturnTransactions.ContainsKey(enemy))

@@ -356,6 +356,18 @@ public GameObject freezeMeltEffectPrefab;
     public bool isAttackAnimating; // 是否正在播放攻击动画（AttackSpawn 或 AttackDraw）
     /// <summary>教学手势拍：敌人不进攻、不移动（只影响行动调度，受击/闪白/动画照常）。</summary>
     [System.NonSerialized] public bool tutorialHold;
+    /// <summary>
+    /// 「豁免补齐」：该敌人**不参与波次行军**（整排清空后的前移补齐），
+    /// 原地不动、不填补前方空排；但它仍然**算占位**（它所在的排不会因为它而判空，
+    /// 因此它身后的排也不会前移）——与「击退留下的空位不传给未受击敌人」同一口径。
+    ///
+    /// 用途：让某些敌人「无视空排补齐」（守卫/锚点类），用来做不前移的阻挡型效果。
+    /// 生效位置：<c>ColumnManager</c> 的补齐**规划/派单**层（不派单、不预留目标槽），
+    /// 不影响 SpawnEntry 入场、击退回位、横向位移与 Boss 推进（它们各有独立语义）。
+    ///
+    /// 可在 Inspector 预设（按 prefab），也可由效果在运行时置位。
+    /// </summary>
+    public bool ignoreFillUpOrders;
     public bool isAttackDrawPhase;  // 是否处于攻击收招阶段（不可被招架打断）
     public bool isCFrame;           // 是否处于C技起始帧（霸体窗口），仅 Parry/Launch 可打断
     private int _currentAttackStep;  // 攻击序列当前位置
