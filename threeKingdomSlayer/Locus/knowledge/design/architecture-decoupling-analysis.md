@@ -330,8 +330,19 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 |---|---|
 | 提取纯枚举（AttackType / DamageType / HitFeedbackSource / HitFeedbackStrength / HitReactionDirection / MoveGesture） | ✅ |
 | 8 个配置搬入 `Locus.Data`（含 `UpgradeDefinition` 581 行） | ✅ |
-| 四个角色接口（IRunFlow / ICombatStaging / IRewardGate / ISceneHost） | ⬜ |
-| `Enemy` 拆 `EnemyOutline` / `EnemyFreeze` | ⬜ |
+| 路线层端口接口 `IRouteBattleHost`（依赖倒置第一层） | ✅ `b2da9d2` |
+| `Enemy` 拆 `EnemyOutline`（描边） | ✅ `eac2922`（5212 → 5132 行） |
+| 剩余角色接口（`IRunFlow` / `ICombatStaging` / `IRewardGate` / `ISceneHost`） | ⬜ |
+| `Enemy` 拆 `EnemyFreeze`（冰系，约 685 行） | ⬜ 高风险，需先定契约 |
+
+**两处拆分后的验收证据**：
+
+- 端口接口：`StageController is IRouteBattleHost`=true（显式实现三个原本是 public 字段的成员，
+  字段与 Inspector 序列化未动）；路线层 `_battleHost` 已解析、`autoStartStage` 被置 false、
+  `RouteConfig=教学关·初见`、完成事件订阅者 1、点开始关卡后 `phase=Battle` 出怪 1；
+  `grep` 确认 `FakeRouteRuntime` 已无 `stageController.<成员>` 调用。
+- 描边拆分：真实敌人 `Enemy_1011` 上 `_OutlineEnabled` 初始 0.00 → 穿刺高亮 0.71（白/宽 3）
+  → 调试强制霸体 1.00（橙色/宽 8）→ 关高亮 0.00。序列化字段未搬动，prefab 无变更。
 
 `Locus.Data` 现状：**19 文件 / 1875 行 / 69 类型**。
 
