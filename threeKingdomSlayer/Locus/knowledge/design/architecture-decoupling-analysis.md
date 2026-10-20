@@ -335,6 +335,7 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 | `Enemy` 拆 `EnemyFreezeVisual`（冰系视觉层） | ✅ `86c3fbd`（5145 → 4798 行，冰系区段 685 → 333 行） |
 | `StageController` 按角色拆 `StageFormation` / `StageRouteBattleHost` | ✅ `f906501`（852 → 790 行） |
 | 遗留路线实现收进 `Assets/Scripts/Legacy/`，Battle 场景去掉 V2 竞争驱动 | ✅ `55c216a` |
+| Legacy 彻底隔离（现役代码不再引用遗留类型）+ 说明文档 | ✅ `a38ee66` |
 | 剩余角色接口（`IRunFlow` / `ICombatStaging` / `IRewardGate`） | ⬜ |
 | `IStageFormation`（阵型只读）+ `IStageFlowControl`（流程控制） | ✅ `Enemy` / `BattleHUD` 已迁移 |
 | `AttackSystem` 迁移到 `IStageFormation` | ✅ `a0dccc9`（32 处调用收敛为一处） |
@@ -382,7 +383,14 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
   `Assets/Scripts/Legacy/`（`git mv`，GUID 不变，试玩场景引用不受影响），Battle 场景里那个
   `RouteStageRuntimeV2` 组件删除，`FakeRouteRuntime.AcquireExclusiveDriving` 里
   「遍历停用 V2 运行时」的竞争逻辑随之移除——**「靠运行期暴力保证唯一驱动」这个历史包袱
-  现在没有了**。`Assets/Scripts/Route` 只留现役的 `RouteChoice*` 三件套。
+  现在没有了**。  `Assets/Scripts/Route` 只留现役的 `RouteChoice*` 三件套。
+- Legacy 彻底隔离（`a38ee66`）：现役代码不再引用任何 Legacy 类型——
+  `StageController` 删掉 V1/V2 死分支与两个遗留字段（790 → 673 行），`StageConfigManager` 删死字段，
+  `BattleHUD` 删 V2 旗标分支，`Battle.scene` 删掉挂着 Legacy 组件的残留对象，
+  旧预演驱动 `BattleYRouteHost` 移入 Legacy（`YScrollSample.battleHost` 改 `Component` 类型）。
+  **结论：Legacy 不能用 Editor-only asmdef 剔出包**——asmdef 程序集不能引用 Assembly-CSharp，
+  而 Legacy 依赖仍在 Assembly-CSharp 的类型；真要剔除，前置是先把共享类型搬进独立程序集。
+  详见 `Assets/Scripts/Legacy/README.md`。
 
 `Locus.Data` 现状：**19 文件 / 1875 行 / 69 类型**。
 
