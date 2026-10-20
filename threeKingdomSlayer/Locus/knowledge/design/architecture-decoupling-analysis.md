@@ -268,6 +268,34 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 
 **为什么是这个顺序**：先做"能自动阻止耦合回流"的（asmdef），再做"只改名不改行为"的（接口），最后才动热点（Enemy / 战斗）。反过来做，会在没有边界的情况下反复把耦合长回去。
 
+### 5.1 批次 0 进展（2026-10-20）
+
+| 子项 | 状态 | 提交 |
+|---|---|---|
+| 删两条死启动入口（实际是四条 Pending* 分支） | ✅ 代码已提交 | `f139212` |
+| Hub 三处轮询合并为 `HubStateSource` | ✅ 代码已提交 | `31f0332` |
+| `Locus.Data` asmdef | ⬜ 未开工（前置已解除） | — |
+| Play Mode 回归 | ⚠️ **未执行**（`unity_execute` 通道异常，连 trivial probe 都返回空） | — |
+
+**死路径清理的实际发现**：`StageController.Awake` 里四条 Pending* 分支（MainMenu 传 FakeRoute / 传 RouteV2 / 线性关卡 / 旧路线）**全部**无人写入，不只是文档里写的两条；两个 `public static` 字段也仅被自己置 null。已全部删除，Hub 自举成为唯一入口。
+
+**Hub 事件化后的形态**：`HubStateSource`（挂在 `Battle.scene / BattleHUD(Canvas)`）是 `IsPrepared` 与 `Overlay` 的唯一计算源，变化时抛 `Changed`，首帧强制广播一次。三个组件改为 `OnEnable` 订阅 + `TrySubscribe()`（源可能晚 Awake，`Start` 再试一次），各自的 `Update` 与私有 `IsOverlayOpen()` 已删（`grep "void Update()"` 三文件均为空）。
+
+**开工前置已完成**：两条未提交流已分组落地（见 §5.2），工作区脏文件 92 → 0。
+
+### 5.2 存量未提交流的落地分组（2026-10-20）
+
+| 提交 | 内容 |
+|---|---|
+| `39ac81b` feat(tutorial) | 教学关导演重写 + 手势门槛/非阻断台词 + 招式解锁与冰系天赋（成组，含 `Enemy.tutorialHold`、`StageConfig.collisionDamage` 等编译依赖） |
+| `e036ad2` feat(prop) | 可破坏道具；**同时修好 HEAD 缺失类型**：`AttackSystem.cs:322` 早已引用 `BreakableProp`，但 `Assets/Scripts/Prop/` 一直 untracked，clean clone 编译不过 |
+| `99ba074` chore(balance) | 技能/关卡/敌人数值与 `TimedPassiveModule.logDiagnostics` |
+| `65e1957` chore(scroll) | 卷轴试玩数据与 J1 地面着色 |
+| `4eec32b` fix(combat) | 1021 盾侧/反侧/正面判定按实际来向 |
+| `36b1a12` fix(talent) | 天赋页关闭按钮 raycast + 置顶 |
+| `05ae55f` chore(locus) | 工作区工具配置 |
+
+
 ---
 
 ## 6. 明确不做

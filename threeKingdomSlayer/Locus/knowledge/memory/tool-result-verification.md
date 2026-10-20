@@ -38,3 +38,19 @@ aiEditMode: inherit
 - UI 验证改走结构性证据：组件状态回读（`RectTransform` / `CanvasGroup.alpha` / `Image.sprite` / `Selectable.interactable`）+ `EventSystem.RaycastAll` 看点击命中 + 最终由人眼看真机/Game 视图。
 - `ScreenCapture.CaptureScreenshotAsTexture()` 在 `unity_execute` 的 async 片段里可能返回 null（不在帧末尾），不要靠它取像素。
 - 同理：`bash` 里的 heredoc（`cat >> file <<'EOF'`）经 shell 包装后会写不进去或写坏，追加/修改文件一律用 `edit`/`write`，改完回读确认。
+
+## 补充（2026-10-20 晚）：`unity_execute` 可能整体返回空
+
+做批次 0 的 Play Mode 回归时，`unity_execute` 连续三次返回空结果：先是带 `await` 的大验证脚本，随后连 `print("probe ok ...")` 这种 trivial 探针也是空。同一时刻：
+
+- `unity_set_play_mode` 正常（能报「已进入 / 已在 Play Mode」）
+- `unity_get_console_log` 正常（返回 0 条）
+- `unity_recompile` 正常（`compiled` / `up_to_date`）
+- 退出 Play Mode 后重试 `unity_execute` **仍然为空** → 不是 Play Mode 专属，是脚本执行通道本身坏了
+- `Logs/Editor.log` 尾部出现 `Api is in the wrong state [2]`、`Error displaying dialog: 无效的窗口句柄`、`Licensing Client 连接丢失`
+
+规则：
+
+- `unity_execute` 连续 2 次空结果就**停手**（work-loop-discipline §5），换证据源：`unity_recompile`（确认编译）+ `grep`/`git diff`（确认改动落盘）。
+- 该通道坏掉时**不能声称行为已验证**：在 commit message 与交接里写明“Play Mode 回归未执行”，并给出人工验收步骤。
+- 恢复手段：重开 Unity 或重启 Locus 连接；不要试图用别的方式模拟执行结果。
