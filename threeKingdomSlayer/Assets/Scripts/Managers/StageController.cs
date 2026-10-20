@@ -537,13 +537,26 @@ public class StageController : MonoBehaviour
     }
 
     /// <summary>
-    /// 返回主菜单（结算铜钱后跳转）
+    /// 返回上一级：落地页模式下重载 Battle 场景回就绪态，否则回 MainMenu。
+    /// 结算铜钱始终先做。
     /// </summary>
     public void GoToMainMenu()
     {
         AudioManager.Instance?.StopBGM();
         CleanupRouteStage(true);
         SettleCoins();
+
+        // 落地页模式（Battle 自己自举起来的）：不回 MainMenu，重载 Battle → FakeRouteRuntime 重新自举到 Ready。
+        // 路线场景（YJunctionSample）是 additive 加载的，LoadScene 不会自动卸载它；
+        // 新的 ScrollRoutePresenter.EnsureRoute 会直接复用已加载的那个场景并重新初始化，所以不用手动卸载。
+        if (FakeRouteRuntime.Instance != null && FakeRouteRuntime.Instance.IsHubEntry)
+        {
+            Debug.Log("[StageController] 落地页模式：重载 Battle 回到就绪态");
+            FakeRouteLaunch.StartFromCheckpoint = false;
+            UnityEngine.SceneManagement.SceneManager.LoadScene(battleSceneName);
+            return;
+        }
+
         UnityEngine.SceneManagement.SceneManager.LoadScene(mainMenuSceneName);
     }
 

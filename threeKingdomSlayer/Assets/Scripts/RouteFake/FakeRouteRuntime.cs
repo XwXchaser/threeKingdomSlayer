@@ -49,6 +49,12 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     /// <summary>已准备完毕（表现层就位、随时可 RunPrepared）。</summary>
     public bool IsPrepared => _prepared;
 
+    /// <summary>
+    /// true = 本次是 Battle 场景自己当落地页自举起来的（没有 MainMenu 传参）。
+    /// 结算/退到菜单时据此决定「回落地页」还是「回 MainMenu」。
+    /// </summary>
+    public bool IsHubEntry { get; private set; }
+
     public static FakeRouteRuntime Instance { get; private set; }
     public FakeRouteStageConfig RouteConfig => routeConfig;
     public FakeRouteNodeConfig CurrentNode => _currentNode;
@@ -111,6 +117,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
             yield break;
         }
         Debug.Log("[FakeRoute] 落地页自举：当前关卡 = " + activeRoute.stageName);
+        IsHubEntry = true;
         PrepareForEntry(activeRoute);
     }
 
@@ -146,6 +153,8 @@ public sealed class FakeRouteRuntime : MonoBehaviour
 
     public void Begin(FakeRouteStageConfig config)
     {
+        // 显式 Begin = 由 MainMenu 选关/继续启动的老路径，结算后回 MainMenu。
+        IsHubEntry = false;
         if (_flow != null) StopCoroutine(_flow);
         routeConfig = config;
         if (stageController == null) stageController = StageController.Instance;
