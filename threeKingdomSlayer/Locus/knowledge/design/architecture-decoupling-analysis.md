@@ -336,6 +336,7 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 | `IStageFormation`（阵型只读）+ `IStageFlowControl`（流程控制） | ✅ `Enemy` / `BattleHUD` 已迁移 |
 | `AttackSystem` 迁移到 `IStageFormation` | ✅ `a0dccc9`（32 处调用收敛为一处） |
 | 18 个消费者批量迁移（阵型 / 战斗状态 / 流程控制三角色） | ✅ `853d022`（门面引用 99 → 35 行） |
+| A3：清掉最后几处门面**成员调用** | ✅ `d705596`（只剩惰性解析点） |
 | `Enemy` 拆 `EnemyFreeze`（冰系，约 685 行） | ⬜ 高风险，需先定契约 |
 
 **三处拆分后的验收证据**：
@@ -358,6 +359,13 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
   验证：12 个在场景中的消费者，其角色接口属性全部解析为同一个 `StageController` 实例；
   三次攻击各掉血 20、阵型位置一致。门面直接引用 99 → 35 匹配行（107 → 36 次），
   剩下的基本是每个文件那一行惰性解析。
+- A3 收尾：`FakeRouteRuntime` / `RouteStageRuntimeV2` / `TutorialStageDirector` 三处最后的
+  门面**成员调用**也改为走接口（`IStageFlowControl.BlockRestartOnDefeat` 改为可写，
+  `IRouteBattleHost` 增 `CompleteRouteStage`）。
+  **结果：全项目再无消费者调用门面成员**；`StageController.Instance` 剩下的 30 处引用
+  全部是「惰性解析单例」那一行（另加单例声明本身、2 行文档注释、1 处遗留原型
+  `RouteProgressionController`）。这意味着 `StageController` 现在可以按四个角色拆成
+  多个类，而消费者一行都不用改。
 
 `Locus.Data` 现状：**19 文件 / 1875 行 / 69 类型**。
 
