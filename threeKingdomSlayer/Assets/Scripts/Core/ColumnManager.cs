@@ -29,7 +29,6 @@ public class ColumnManager : MonoBehaviour
     private readonly Dictionary<int, List<Enemy>> _rowEnemies = new Dictionary<int, List<Enemy>>();
 
     // GC 优化：范围查询复用列表
-    private readonly List<Enemy> _rangeQueryList = new List<Enemy>();
 
     // Wave march has a preparing barrier and one exact generation per row step.
     private bool _isWaveMarching;
@@ -57,6 +56,11 @@ public class ColumnManager : MonoBehaviour
     private readonly HashSet<long> _plannedWaveTargetSlots = new HashSet<long>();
     /// <summary>逻辑排队列（活人排 / 空排占位符 / 999 节奏门）。数据与队列操作见 LogicalRowQueue。</summary>
     private readonly LogicalRowQueue _queue = new LogicalRowQueue();
+
+    /// <summary>只读查询层（战斗侧取数入口）。取列数组用委托，避免重建后拿到旧引用。</summary>
+    private ColumnQueries _queries;
+
+    private ColumnQueries Queries => _queries ??= new ColumnQueries(() => columns);
 
     private sealed class PushReturnTransaction
     {
@@ -355,8 +359,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public Column GetColumn(int columnIndex)
     {
-        if (!IsValidColumn(columnIndex)) return null;
-        return columns[columnIndex];
+        return Queries.GetColumn(columnIndex);
     }
 
     /// <summary>
@@ -364,8 +367,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public Enemy GetFrontEnemy(int columnIndex)
     {
-        if (!IsValidColumn(columnIndex)) return null;
-        return columns[columnIndex].GetFrontEnemy();
+        return Queries.GetFrontEnemy(columnIndex);
     }
 
     /// <summary>
@@ -373,8 +375,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public Enemy GetEnemyAt(int columnIndex, int rowIndex)
     {
-        if (!IsValidColumn(columnIndex)) return null;
-        return columns[columnIndex].GetEnemyAtRow(rowIndex);
+        return Queries.GetEnemyAt(columnIndex, rowIndex);
     }
 
     /// <summary>
@@ -382,8 +383,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public List<Enemy> GetEnemiesInColumn(int columnIndex)
     {
-        if (!IsValidColumn(columnIndex)) return null;
-        return columns[columnIndex].enemies;
+        return Queries.GetEnemiesInColumn(columnIndex);
     }
 
     /// <summary>
@@ -392,26 +392,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public Enemy GetCombatBossCoveringColumn(int columnIndex)
     {
-        if (!IsValidColumn(columnIndex)) return null;
-
-        for (int centerColumn = 0; centerColumn < columnCount; centerColumn++)
-        {
-            var enemies = columns[centerColumn].enemies;
-            for (int i = 0; i < enemies.Count; i++)
-            {
-                var enemy = enemies[i];
-                if (enemy == null || !enemy.isBoss || enemy.state == EnemyState.Dead || enemy.bossState != BossState.InCombat)
-                    continue;
-
-                int footprint = Mathf.Clamp(enemy.occupySlots, 1, columnCount);
-                int left = Mathf.Clamp(enemy.columnIndex - footprint / 2, 0, columnCount - footprint);
-                int right = left + footprint - 1;
-                if (columnIndex >= left && columnIndex <= right)
-                    return enemy;
-            }
-        }
-
-        return null;
+        return Queries.GetCombatBossCoveringColumn(columnIndex);
     }
 
     /// <summary>
@@ -419,12 +400,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public List<Enemy> GetAllEnemies()
     {
-        List<Enemy> allEnemies = new List<Enemy>();
-        for (int i = 0; i < columnCount; i++)
-        {
-            allEnemies.AddRange(columns[i].enemies);
-        }
-        return allEnemies;
+        return Queries.GetAllEnemies();
     }
 
     /// <summary>
@@ -433,17 +409,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public List<Enemy> GetEnemiesInRange(int columnIndex, int rangeRows)
     {
-        List<Enemy> result = new List<Enemy>();
-        if (!IsValidColumn(columnIndex)) return result;
-
-        Column column = columns[columnIndex];
-        for (int i = 0; i < column.enemies.Count; i++)
-        {
-            var e = column.enemies[i];
-            if (e.rowIndex < rangeRows || (e.isBoss && e.bossState == BossState.InCombat))
-                result.Add(e);
-        }
-        return result;
+        return Queries.GetEnemiesInRange(columnIndex, rangeRows);
     }
 
     /// <summary>
@@ -451,20 +417,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public List<Enemy> GetAllEnemiesInRange(int rangeRows)
     {
-        // 复用列表，内联查询避免 GetEnemiesInRange 的中间分配
-        _rangeQueryList.Clear();
-        for (int i = 0; i < columnCount; i++)
-        {
-            if (!IsValidColumn(i)) continue;
-            var col = columns[i];
-            for (int j = 0; j < col.enemies.Count; j++)
-            {
-                var e = col.enemies[j];
-                if (e.rowIndex < rangeRows || (e.isBoss && e.bossState == BossState.InCombat))
-                    _rangeQueryList.Add(e);
-            }
-        }
-        return _rangeQueryList;
+        return Queries.GetAllEnemiesInRange(rangeRows);
     }
 
     /// <summary>
@@ -472,17 +425,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public List<Enemy> GetEnemiesByRowLimit(int maxRowIndex)
     {
-        List<Enemy> result = new List<Enemy>();
-        for (int i = 0; i < columnCount; i++)
-        {
-            Column column = columns[i];
-            for (int j = 0; j < column.enemies.Count; j++)
-            {
-                if (column.enemies[j].rowIndex <= maxRowIndex)
-                    result.Add(column.enemies[j]);
-            }
-        }
-        return result;
+        return Queries.GetEnemiesByRowLimit(maxRowIndex);
     }
 
     /// <summary>
@@ -490,8 +433,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public bool IsColumnEmpty(int columnIndex)
     {
-        if (!IsValidColumn(columnIndex)) return true;
-        return columns[columnIndex].IsEmpty;
+        return Queries.IsColumnEmpty(columnIndex);
     }
 
     /// <summary>
@@ -499,11 +441,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public bool AreAllColumnsEmpty()
     {
-        for (int i = 0; i < columnCount; i++)
-        {
-            if (!columns[i].IsEmpty) return false;
-        }
-        return true;
+        return Queries.AreAllColumnsEmpty();
     }
 
     /// <summary>
@@ -511,8 +449,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public int GetColumnEnemyCount(int columnIndex)
     {
-        if (!IsValidColumn(columnIndex)) return 0;
-        return columns[columnIndex].EnemyCount;
+        return Queries.GetColumnEnemyCount(columnIndex);
     }
 
     /// <summary>
@@ -520,12 +457,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public int GetTotalEnemyCount()
     {
-        int total = 0;
-        for (int i = 0; i < columnCount; i++)
-        {
-            total += columns[i].EnemyCount;
-        }
-        return total;
+        return Queries.GetTotalEnemyCount();
     }
 
     #endregion
