@@ -51,6 +51,8 @@ summary: 架构改造交接（2026-10-20）：41 个提交落地——落地页/
 | `9f735e2` / `a0dccc9` / `853d022` / `d705596` | 拆出 `IStageFormation` / `IStageFlowControl` / `IStageBattleState`，28 个消费者迁移，**门面成员调用清零** |
 | `eac2922` / `86c3fbd` | `Enemy` 拆出 `EnemyOutline`（描边）与 `EnemyFreezeVisual`（冰系视觉层） |
 | `34b6bc5` | `Enemy` 拆出 `EnemyFreeze`（冰系状态与流程，4798 → 4496 行） |
+| `5769fb0` / `dc23b6f` | PerColumn 退役：默认值反转 + 导入期报错；清理 119 个无引用文件（现役只剩教学关 + 正式 YJ） |
+| `b3c382b` | 补齐豁免扩展点 `Enemy.ignoreFillUpOrders`（A/B 实测：豁免者不前移、同排他人照常前移、仍算占位） |
 | `f906501` | `StageController` 按角色拆出 `StageFormation` / `StageRouteBattleHost` |
 | `8224843` | 修：主场景重载后 overlay 栈过期，导致 hub 内容永久隐藏 |
 | `55c216a` / `a38ee66` | 遗留路线实现收进 `Assets/Scripts/Legacy/`，现役代码不再引用任何 Legacy 类型 |
@@ -123,9 +125,10 @@ summary: 架构改造交接（2026-10-20）：41 个提交落地——落地页/
 |---|---|---|---|
 | A. 收尾小事 | 删两个界面的「返回」按钮；调天赋树面板底部留白 | 低 | 纯 UI |
 | B. 包体 | 字体 36MB / `Enemy_1`+`Enemy_102`（2.4MB）/ 试玩场景剔除 | 低-中 | 阶段 E 已实测过数据；你之前要求延后 |
-| C. `EnemyFreeze` 流程拆分 | 冰系**状态机**（剩 333 行）搬进 `EnemyFreeze` | 中高 | 敌人机制支柱，与状态机/伤害/挂起令牌交织 |
+| C. `EnemyFreeze` 流程拆分 | 冰系**状态机**（已从 Enemy 拆出，✅ `34b6bc5`） | — | 已完成，无需再做 |
 | D. `ColumnManager` 拆分 | 2130 行 → 阵型/位移/补齐/骑兵槽位 | 中高 | 承载「位移三原则」，越稳越好 |
 | E. 共享类型独立成程序集 | 为「Legacy 剔出包」铺路 | 中 | 需先给 `Enemy`/`PlayerState` 等定程序集边界 |
+| F. 终态删 `FillUpRule` 枚举与字段 | PerColumn 资产已归零，前置已满足 | 中 | 删的是不可达死代码 + legacy 分支；建议与 D 合并做 |
 
 ---
 
