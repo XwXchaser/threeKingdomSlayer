@@ -553,64 +553,84 @@ public class InputManager : MonoBehaviour
 
         bool isSwiped = swipeDistance >= swipeThreshold;
 
-        // 教学手势拍：只放行这一拍要教的手势，其它一律当无效输入
-        if (tutorialGestureTarget != TutorialGestureTarget.None)
+        // 手势过路径拆为多个独立 gate，每个 gate 返回 true = 已消耗 / 已处理（stop 后续）。
+        // 顺序与原原硬编码顺序一致：
+        //   1) 教学手势拍过滤（drop 非目标手势）
+        //   2) QTE 输入消费（吃掉输入避免后续误触）
+        //   3) hold 中已出过招（松手不产生攻击）
+        //   4) combo 链释放（把松手交给招式状态机裁定（C2 链在这里触发））
+        //   5) 默认路径：以上都过过的，释放普通戳 / 长穿 / 滑斩
+        // 新增门控只要在这里追加一行即可，不用改 ProcessGesture 主体。
+        if (ProcessTutorialGate(releasePos, isSwiped)) return;
+        if (ProcessQTEGate(releasePos, isSwiped, swipeDistance, pressDuration)) return;
+        if (ProcessHoldGate()) return;
+        if (ProcessComboBranchGate(releasePos)) return;
+        ProcessDefaultPathGate(releasePos, isSwiped);
+    }
+
+    /// <summary>教学手势拍：返回 true 表示输入被 drop（不是目标手势）。</summary>
+    private bool ProcessTutorialGate(Vector2 releasePos, bool isSwiped)
+    {
+        if (tutorialGestureTarget == TutorialGestureTarget.None) return false;
+        int tutorialCharge = CurrentChargeLevel;
+        if (isSwiped)
         {
-            int tutorialCharge = CurrentChargeLevel;
-            if (isSwiped)
-            {
-                var tutorialDirection = MoveGestureDefaults.ClassifySwipe(releasePos - touchStartPos,
-                    verticalSwipeThreshold, horizontalSwipeThreshold);
-                if (!TutorialAllowsSwipeGesture(tutorialDirection, tutorialCharge)) return;
-            }
-            else if (!TutorialAllowsTapGesture(tutorialCharge)) return;
+            var tutorialDirection = MoveGestureDefaults.ClassifySwipe(releasePos - touchStartPos,
+                                                                 verticalSwipeThreshold, horizontalSwipeThreshold);
+            if (!TutorialAllowsSwipeGesture(tutorialDirection, tutorialCharge)) return true;
         }
+        else if (!TutorialAllowsTapGesture(tutorialCharge)) return true;
+        return false;
+    }
 
-        if (TryConsumeStrictQTEInput(releasePos, isSwiped, swipeDistance, pressDuration))
-            return;
-
+    /// <summary>QTE 输入消费：消费成功则 return true。</summary>
+    private bool ProcessQTEGate(Vector2 releasePos, bool isSwiped, float swipeDistance, float pressDuration)
+    {
+        if (TryConsumeStrictQTEInput(releasePos, isSwiped, swipeDistance, pressDuration)) return true;
         if (IsAnyQTEActive())
         {
-            if (attackSystem != null && attackSystem.IsActionPlaying)
-                return;
-            if (TryConsumeQTEInput(releasePos, isSwiped, swipeDistance, pressDuration))
-                return;
+            if (attackSystem != null && attackSystem.IsActionPlaying) return true;
+            if (TryConsumeQTEInput(releasePos, isSwiped, swipeDistance, pressDuration)) return true;
         }
+        return false;
+    }
 
-        if (hasTriggeredDuringHold)
-            return;
+    /// <summary>一次按住期间已出过招：本帧松手不再产生攻击。</summary>
+    private bool ProcessHoldGate() => hasTriggeredDuringHold;
 
-        // 连招蓄力：本次按下已属于连招，已蓄成的那一下松手不再触发射手招式（站桩蓄力）；
-        // 普通点击（未蓄力）必须照旧放行，否则连段接不上。
-        // 例外：招式仍在进行且该节点配了「松手释放」的边（C2 链）时，把这次松手交给状态机裁定；
-        //       状态机在节点激活分支下无匹配边不会回落直通，因此没有该边的节点行为与改造前一致。
-        if (comboChargeActive && CurrentChargeLevel >= 1)
+    /// <summary>
+    /// combo 链释放：松手给招式状态机判定（C2 连段会在这里触发）。
+    /// 返回 true = 已处理（本帧不再走默认路径）。
+    /// </summary>
+    private bool ProcessComboBranchGate(Vector2 releasePos)
+    {
+        if (!comboChargeActive || CurrentChargeLevel < 1) return false;
+        if (moveStateMachine != null && moveStateMachine.IsMoveActive)
         {
-            if (moveStateMachine != null && moveStateMachine.IsMoveActive)
-            {
-                int holdColumn = GetStabColumnFromScreenPosition(releasePos);
-                if (holdColumn >= 0)
-                    SubmitGesture(MoveGesture.Hold, CurrentChargeLevel, holdColumn);
-            }
-            return;
+            int holdColumn = GetStabColumnFromScreenPosition(releasePos);
+            if (holdColumn >= 0)
+                SubmitGesture(MoveGesture.Hold, CurrentChargeLevel, holdColumn);
         }
+        return true;
+    }
 
+    /// <summary>默认路径：以上 gate 都没消耗时执行的释放逻辑（普通戳 / 长穿 / 滑斩）。</summary>
+    private void ProcessDefaultPathGate(Vector2 releasePos, bool isSwiped)
+    {
         if (CurrentChargeLevel >= 1)
         {
             // 教学期：站桩蓄力（穿刺）不成立，按什么都没发生
             if (!restrictChargedToVertical) ProcessLongPressGesture(releasePos);
             return;
         }
-        else if (isSwiped)
+        if (isSwiped)
         {
             // 未蓄力的滑动：与按住期间的未蓄力判定一致（竖滑 → 招架，其余 → 斩击）
             Vector2 swipeDirection = releasePos - touchStartPos;
             ProcessSwipeGesture(swipeDirection, releasePos);
+            return;
         }
-        else if (!isSwiped)
-        {
-            ProcessTapGesture(releasePos);
-        }
+        ProcessTapGesture(releasePos);
     }
 
     /// <summary>
