@@ -552,7 +552,8 @@ public class StageController : MonoBehaviour
         if (FakeRouteRuntime.Instance != null && FakeRouteRuntime.Instance.IsHubEntry)
         {
             Debug.Log("[StageController] 落地页模式：重载 Battle 回到就绪态");
-            FakeRouteLaunch.StartFromCheckpoint = false;
+            // 回落地页时要接着上次的进度：中途退出 → 用 checkpoint 节点；已通关（snapshot 已被 FinishRoute 清掉）→ 回起点。
+            FakeRouteLaunch.StartFromCheckpoint = true;
             UnityEngine.SceneManagement.SceneManager.LoadScene(battleSceneName);
             return;
         }
