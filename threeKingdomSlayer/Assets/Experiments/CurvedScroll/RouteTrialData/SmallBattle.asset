@@ -19,16 +19,17 @@ MonoBehaviour:
     isBossWave: 0
     rows:
     - enemyIds: 0000000000000000f30300000000000000000000
-    healthMultiplier: 1
+    healthMultiplier: 0.6
     bossHealthMultiplier: 0
-    attackSpeedMultiplier: 1
-    damageMultiplier: 0.1
+    attackSpeedMultiplier: 0.85
+    damageMultiplier: 0.5
     waveTintColor: {r: 1, g: 1, b: 1, a: 1}
     enableDynamicRush: 0
     rushMoveDelay: 0.2
     rushMoveDelayMin: 0.02
   killMilestones: []
   clearCoinReward: 0
+  collisionDamage: 50
   formationConfig: {fileID: 11400000, guid: f329fc350cf1b54439fcc603e63223ba, type: 2}
   fillUpRule: 0
   rushMoveDelay: 0.2

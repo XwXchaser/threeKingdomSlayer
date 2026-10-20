@@ -20,6 +20,7 @@ Shader "CurvedScroll/Y Ground J1 Branches"
         _ShoulderTint("Shoulder tint",Color)=(1,1,1,1)
         _OuterTint("Outer tint",Color)=(1,1,1,1)
         _LeftStoneTint("Left stone tint",Color)=(1,1,1,1)
+        [HideInInspector] _TutorialDim("Tutorial dim",Color)=(1,1,1,1)
     }
     SubShader
     {
@@ -38,6 +39,7 @@ Shader "CurvedScroll/Y Ground J1 Branches"
             float _RoadHalfWidth, _ShoulderWidth, _RoadBlend, _OuterBlend, _JunctionDistance, _CurveRadius;
             float _LeftStoneTileSize, _LeftStoneRoadBlend, _StoneEntryLength, _BranchMaterialBlend;
             fixed4 _ShoulderTint, _OuterTint, _LeftStoneTint;
+            fixed4 _TutorialDim;
             struct appdata { float4 vertex:POSITION; };
             struct v2f { float4 pos:SV_POSITION; float2 map:TEXCOORD0; float z:TEXCOORD1; };
             float3 project(float3 p)
@@ -97,7 +99,7 @@ Shader "CurvedScroll/Y Ground J1 Branches"
                 fixed4 stone=tex2D(_LeftStoneRoad,stoneUV)*_LeftStoneTint;
                 fixed4 stoneSides=tex2D(_LeftStoneSides,stoneUV)*_LeftStoneTint;
                 fixed4 leftGround=lerp(lerp(stone,stoneSides,leftRoadEdge),outer,leftOuterEdge);
-                return lerp(dirt,leftGround,leftWeight);
+                return lerp(dirt,leftGround,leftWeight) * _TutorialDim;
             }
             ENDCG
         }
