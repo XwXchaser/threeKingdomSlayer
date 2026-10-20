@@ -87,6 +87,22 @@ public class SceneFlowManager : MonoBehaviour
         SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
     }
 
+    /// <summary>
+    /// 切换 overlay：先关掉当前叠着的，再打开目标。用于「界面」之间的 tab 切换。
+    /// sceneName 为空表示回到主场景界面（战斗）。
+    /// </summary>
+    public void SwitchOverlay(string sceneName)
+    {
+        if (string.IsNullOrEmpty(sceneName))
+        {
+            CloseAllOverlays();
+            return;
+        }
+        if (CurrentOverlay == sceneName) return;
+        if (_overlayStack.Count > 0) CloseAllOverlays();
+        OpenOverlay(sceneName);
+    }
+
     /// <summary>关闭栈顶 overlay 场景。</summary>
     public void CloseOverlay()
     {
