@@ -30,7 +30,44 @@ aiEditMode: inherit
 
 **选关页与天赋页不再是必经流程**，是玩家主动打开的二级内容。
 
-> ✅ ①②③⑤ 已实现（`ff912e9`）；④ 中央轻交互和底部 tab 还在阶段 D。
+> ✅ ① ② ③ ⑤ + 底部 tab 已全部实现；④ 中央轻交互未做（可砍）。
+
+---
+
+## 0.1 当前状态（2026-10-20 收尾快照）
+
+**分支**：`feat/stage-select-talent-overlays`（HEAD = `55dbd83`，已推送）
+
+**build settings（4 个）**：`Battle.scene`（index 0，启动） / `YJunctionSample.unity` / `StageSelect.scene` / `TalentTree.scene`
+
+**现在能跑的完整链路**：
+
+```
+启动 → Battle.scene
+  └─ FakeRouteRuntime.Start()：读存档当前关卡（默认教学关 9100）
+       └─ PrepareForEntry → 加载 YJunctionSample（additive）+ 定位到起始节点（含 checkpoint）
+            └─ Phase = Ready
+                 ├─ 局内 HUD 全隐藏（HubHudModeSwitch）；头像 / 金币 / 「开始关卡」/ 底部 4 tab 可见
+                 ├─ 点 tab → 选关 / 天赋 overlay 打开、能关
+                 └─ 点「开始关卡」→ RunPrepared → 局内 HUD 恢复 → 对话/战斗/奖励/下一节点…
+                      └─ 结算或暂停返回 → 重载 Battle → 又回到 Ready（带 checkpoint）
+```
+
+| 项 | 状态 |
+|---|---|
+| 阶段 A（选关 overlay）/ B（天赋 overlay） | ✅ `908e7c0` |
+| 阶段 C（落地页自举） | ✅ `ff912e9`，验收 4/5/7/9/10 均跑过 |
+| 阶段 D1（底部 tab）/ D3（回落地页）/ D4（删 MainMenu） | ✅ `8f30a2e` / `1cdc7f8`+`87d266d` / `f39d4ba` |
+| 就绪态/关卡态 HUD 拆分 | ✅ `8b780cd` |
+| 阶段 E | ✅ 重测：敌人美术真实只浪费 2.4MB（旧文档的「114MB 死资源」作废）；`Tutorial_YJ` 移出 build（9.3MB） |
+| D0 中央轻交互 / D2 体力状态条 / 字体 36MB | ⬜ 未做 |
+
+**待用户人眼验收**：hub 实际观感（头像/金币/开始按钮/tab 栏的大小与位置、就绪态背景是否好看）。截图工具在本机截不到 Overlay UI（§7.14），只能人眼看。
+
+**已知遗留**：
+- `FakeRouteRuntime.cs` / `FakeRouteStageSaveSnapshot.cs` 里挂着可破坏道具（`BreakableProp`）的未提交改动
+- 配置里 `enemyId = 999` 出现 7 次但没有对应 prefab → 运行时会走 Cube fallback
+- `EnemyPool` 用 `Resources.Load("EnemyPrefabs/...")` 按名字加载（违反 `anti-ghost-reference.md`，属未来架构改造）
 
 ---
 
@@ -375,6 +412,10 @@ Build Settings
 14. **`unity_capture_viewport` 在本环境截不到 Overlay UI**（阶段 C 踩到）：把 `StartStageButton` 和 HUD 底栏都改成洋红、甚至把主相机 `clearFlags=SolidColor` + 背景洋红，截图里**一像素洋红都没有**；连续两次截图几乎一模一样。结论：它不能用来做 UI 像素验证。UI 验证改用「组件状态回读 + `EventSystem.RaycastAll` + 人眼」
 15. **工作区脏时提交自己的改动**（阶段 C 踩到）：`FakeRouteRuntime.cs` 里混着上一轮未提交的 `BreakableProp` 改动（而 `Assets/Scripts/Prop/` 本身还是 untracked）。直接 `git add` 会提交一个引用 untracked 类型的坏 commit。做法：`git diff <file> > full.patch` → `sed -n '1,Np'` 只留自己的 hunk → `git apply --cached mine.patch`，然后 `git show :<file> | grep -c BreakableProp` 必须为 0
 16. **无 sprite 的 `Image` 不要赌它一定出网格**：本项目所有 UI 一律配精灵（按钮用 `MM_Btn_Primary` / `Secondary` + `SpriteSwap`，pressed 用 `*_Pressed`）。落地页大按钮直接复用这套，尺寸/字号也抄主菜单（479×172、TMP 54、字色 `0.97/0.92/0.78`）
+17. **引用了 untracked 资产**（D4 收尾时发现）：`Assets/Sprites/UI/MainMenu` / `Talent` / `Tutorial` 三个目录一直是 untracked，但 `908e7c0` 的 overlay 场景和落地页按钮已经在用它们的 GUID —— **新克隆会全是丢引用**。已补提交（`31d2937`）。提交前先 `git status --short` 看场景/预手引用到的目录是否都是 tracked
+18. **删场景前必须做「能力对比审计」**（D4）：把待删场景的根对象组件列出来，逐项到保留场景里找对应。最容易漏的是不显眼的基础设施：`AudioListener` / `EventSystem` / `SafeAreaAdapter`（刘海适配）/ `CameraManager` / `Directional Light`。MainMenu 审计结果见阶段 D4
+19. **跨文件的同一改动不能按 hunk 拆提交**：`BattleHUD` 引用 `StageController.blockRestartOnDefeat`，两边的改动拆到两个 commit 会让中间那个 commit 编译不过。**这种必须成组提交**，并在 commit message 里说明带上了什么
+20. **每次进/出 Play Mode 都会注入 `[Unity Editor Status Changed]`，当前回合立即结束**：25 分钟内自己开关 5 次，就把工作切成了 9 个短回合。**批处理**：改代码 → 编译 → 静态检查 → 进一次 Play 把所有验证项一次跑完 → 出来 → 提交（详见 `memory/work-loop-discipline.md`）
 
 ---
 
@@ -397,12 +438,13 @@ Build Settings
 
 ## 9. 给接手者的建议路径
 
-1. 读 §3（现状机制）——尤其是 §3.3 开关表和 §3.4 存档 API
-2. 读 `Locus/knowledge/plan/tutorial-beat-and-formal-config-handoff-20261019.md`（本项目的关卡/配置现状 + 踩坑记录）
-3. 读 `Locus/knowledge/design/anti-ghost-reference.md`（数据引用规范：Inspector 拖拽，不准 Resources/字符串查找）
-4. 阶段 A/B/C 已完成，**直接从阶段 D 接**：先做 D1 底部 tab（否则选关/天赋在落地页没有入口），再做 D3 结算回落地页
-5. 验证落地页手感时：进 Play Mode 前先把存档 `SaveManager.SetActiveFakeRouteStage(9100)` 或 `1`，两种路线都要跑一遍
-6. 提交前先看 §7.15（工作区脏时的 hunk 拆分）——`FakeRouteRuntime.cs` / `FakeRouteStageSaveSnapshot.cs` 里还挂着可破坏道具的未提交改动
+1. 读 §0.1（当前状态）——能省掉一半核对时间
+2. 读 §3（现状机制）——尤其是 §3.3 开关表和 §3.4 存档 API；§3.2 已作废（MainMenu 时代）
+3. 读 `Locus/knowledge/plan/tutorial-beat-and-formal-config-handoff-20261019.md`（本项目的关卡/配置现状 + 踩坑记录）
+4. 读 `Locus/knowledge/design/anti-ghost-reference.md`（数据引用规范：Inspector 拖拽，不准 Resources/字符串查找）
+5. 阶段 A/B/C/D 已全部完成，**不要再重做**。剩下的只有：D0 中央轻交互（可砍）、D2 体力状态条（无设计）、阶段 E 字体那 36MB
+6. 验证落地页手感时：进 Play Mode 前先把存档 `SaveManager.SetActiveFakeRouteStage(9100)` 或 `1`，两种路线都要跑一遍
+7. 提交前先看 §7.15 / §7.17（工作区脏时的 hunk 拆分 + untracked 资产）——`FakeRouteRuntime.cs` / `FakeRouteStageSaveSnapshot.cs` 里还挂着可破坏道具的未提交改动
 
 ---
 
