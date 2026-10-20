@@ -16,7 +16,6 @@ public class SceneFlowManager : MonoBehaviour
 {
     public static SceneFlowManager Instance { get; private set; }
 
-    public const string SceneMainMenu = "MainMenu";
     public const string SceneBattle = "Battle";
     public const string SceneStageSelect = "StageSelect";
     public const string SceneTalentTree = "TalentTree";
@@ -57,13 +56,6 @@ public class SceneFlowManager : MonoBehaviour
     {
         Debug.Log("[SceneFlow] → Battle");
         ReplaceActiveScene(SceneBattle);
-    }
-
-    /// <summary>回到主菜单（替换当前 active scene）。</summary>
-    public void GoToMainMenu()
-    {
-        Debug.Log("[SceneFlow] → MainMenu");
-        ReplaceActiveScene(SceneMainMenu);
     }
 
     private void ReplaceActiveScene(string sceneName)

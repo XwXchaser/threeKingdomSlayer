@@ -37,7 +37,7 @@ public class StageController : MonoBehaviour
     public EnemyPool enemyPool;
 
     [Header("场景引用")]
-    public string mainMenuSceneName = "MainMenu";
+    // MainMenu 已于 D4 删除；落地页（回 Ready）就靠重载 battleSceneName。
     public string battleSceneName = "Battle";
 
     // 运行时状态
@@ -55,6 +55,8 @@ public class StageController : MonoBehaviour
 
     [Tooltip("脚本化演出用（教学关初见杀）：置 true 时玩家阵亡仍会进 Defeat 状态与事件，但不接战败面板")]
     public bool suppressDefeatUI;
+    [Tooltip("教学关：战败后不允许「重来」，只保留回主菜单（教学流程不重跑）")]
+    public bool blockRestartOnDefeat;
     public System.Action OnCombatNodeCleared;
     public System.Action OnRouteBattleCompleted;
 
@@ -537,8 +539,8 @@ public class StageController : MonoBehaviour
     }
 
     /// <summary>
-    /// 返回上一级：落地页模式下重载 Battle 场景回就绪态，否则回 MainMenu。
-    /// 结算铜钱始终先做。
+    /// 返回落地页：重载 Battle 场景，FakeRouteRuntime 会重新自举回 Ready。结算铜钱始终先做。
+    /// （MainMenu 已随 D4 删除，不再有「回主菜单」分支。）
     /// </summary>
     public void GoToMainMenu()
     {
@@ -546,19 +548,18 @@ public class StageController : MonoBehaviour
         CleanupRouteStage(true);
         SettleCoins();
 
-        // 落地页模式（Battle 自己自举起来的）：不回 MainMenu，重载 Battle → FakeRouteRuntime 重新自举到 Ready。
-        // 路线场景（YJunctionSample）是 additive 加载的，LoadScene 不会自动卸载它；
-        // 新的 ScrollRoutePresenter.EnsureRoute 会直接复用已加载的那个场景并重新初始化，所以不用手动卸载。
-        if (FakeRouteRuntime.Instance != null && FakeRouteRuntime.Instance.IsHubEntry)
+        // 回落地页要接上次进度：中途退出 → 用 checkpoint 节点；已通关（snapshot 已被 FinishRoute 清掉）→ 回起点。
+        FakeRouteLaunch.StartFromCheckpoint = true;
+
+        if (string.IsNullOrEmpty(battleSceneName))
         {
-            Debug.Log("[StageController] 落地页模式：重载 Battle 回到就绪态");
-            // 回落地页时要接着上次的进度：中途退出 → 用 checkpoint 节点；已通关（snapshot 已被 FinishRoute 清掉）→ 回起点。
-            FakeRouteLaunch.StartFromCheckpoint = true;
-            UnityEngine.SceneManagement.SceneManager.LoadScene(battleSceneName);
+            Debug.LogError("[StageController] battleSceneName 为空，无法回落地页");
             return;
         }
 
-        UnityEngine.SceneManagement.SceneManager.LoadScene(mainMenuSceneName);
+        // 路线场景（YJunctionSample）是 additive 加载的，LoadScene 不会自动卸载它；
+        // 新的 ScrollRoutePresenter.EnsureRoute 会直接复用已加载的那个场景并重新初始化。
+        UnityEngine.SceneManagement.SceneManager.LoadScene(battleSceneName);
     }
 
     /// <summary>
@@ -590,6 +591,7 @@ public class StageController : MonoBehaviour
     /// <summary>卷轴/假移动路线整关结算：整关奖励 + 标记通关 + 铜钱结算，只执行一次。</summary>
     public void CompleteFakeRouteStage(int clearReward)
     {
+        Debug.Log($"[Tutorial] 结算入口: config={(fakeRouteStageConfig != null ? fakeRouteStageConfig.stageName : "NULL")} 已结算={_routeStageSettled} 奖励={clearReward} 玩家={(playerState != null)}");
         if (fakeRouteStageConfig == null || _routeStageSettled) return;
         _routeStageSettled = true;
         AudioManager.Instance?.StopBGM();

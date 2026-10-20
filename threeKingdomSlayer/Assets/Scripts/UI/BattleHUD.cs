@@ -421,6 +421,8 @@ public class BattleHUD : MonoBehaviour
             if (panelImage != null) panelImage.color = Color.clear;
             defeatPanel.transform.SetAsLastSibling();
             defeatPanel.SetActive(true);
+            // 教学关：不允许重来，只留「返回主菜单」，避免重跑整个教学流程
+            SetDefeatRestartVisible(StageController.Instance == null || !StageController.Instance.blockRestartOnDefeat);
             if (resultCoinText != null && PlayerState.Instance != null)
                 resultCoinText.text = $"获得铜钱: {PlayerState.Instance.coinCount}";
         }
@@ -482,6 +484,13 @@ public class BattleHUD : MonoBehaviour
 
     public void OnRestartButton()
     {
+        // 教学关不允许重来：直接当「返回主菜单」处理
+        if (StageController.Instance != null && StageController.Instance.blockRestartOnDefeat)
+        {
+            Debug.Log("[BattleHUD] 教学关不允许重来，转回主菜单");
+            OnMainMenuButton();
+            return;
+        }
         if (defeatPanel != null) defeatPanel.SetActive(false);
         if (_heroHUD != null) _heroHUD.gameObject.SetActive(true);
         SyncCurrentPlayerState();
@@ -493,12 +502,30 @@ public class BattleHUD : MonoBehaviour
         StageController.Instance?.RestartStage();
     }
 
+    /// <summary>隐藏/显示战败面板上的「重来」按钮（按场景里绑定的 OnRestartButton 识别）。</summary>
+    private void SetDefeatRestartVisible(bool visible)
+    {
+        if (defeatPanel == null) return;
+        foreach (var button in defeatPanel.GetComponentsInChildren<Button>(true))
+        {
+            int count = button.onClick.GetPersistentEventCount();
+            for (int i = 0; i < count; i++)
+            {
+                if (button.onClick.GetPersistentMethodName(i) == nameof(OnRestartButton))
+                {
+                    button.gameObject.SetActive(visible);
+                    break;
+                }
+            }
+        }
+    }
+
     public void OnMainMenuButton()
     {
         if (StageController.Instance != null)
             StageController.Instance.GoToMainMenu();
         else
-            UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+            UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
     }
 
     #endregion
