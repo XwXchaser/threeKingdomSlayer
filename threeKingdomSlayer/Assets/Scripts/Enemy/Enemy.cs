@@ -484,8 +484,7 @@ public GameObject freezeMeltEffectPrefab;
 
     // 描边效果
     private SpriteRenderer _spriteRenderer;
-    private MaterialPropertyBlock _propBlock;
-    private MaterialPropertyBlock _tintPropBlock; // 波次染色，独立于描边 _propBlock
+    private MaterialPropertyBlock _tintPropBlock; // 波次染色（描边属性已移到 EnemyOutline，不再共用 block）
 
     // 敌人物体原始缩放与旋转值（从预制体读取，用于对象池复用还原）
     // 不能硬编码为 Vector3.one / Quaternion.identity，因为预制体可能有自定义初始姿态。
@@ -4803,13 +4802,7 @@ private void SpawnProjectile()
     public enum OutlineDebugMode { None, CAttack, SuperArmor, QTE }
 
     private bool _pierceHighlighted;
-    private const float OUTLINE_WIDTH_DEFAULT = 8f;
-    private const float PIERCE_OUTLINE_WIDTH = 3f;
-    private const float PIERCE_HIGHLIGHT_MIN_STRENGTH = 0.30f;
-    private const float PIERCE_HIGHLIGHT_MAX_STRENGTH = 0.80f;
-    private static readonly Color OUTLINE_COLOR_C_DEFAULT = Color.red;
-    private static readonly Color OUTLINE_COLOR_SUPER_ARMOR_DEFAULT = new Color(1f, 0.5f, 0f); // 橙色
-    private static readonly Color OUTLINE_COLOR_QTE_DEFAULT = new Color(0.2f, 0.4f, 1f);        // 蓝色
+    private EnemyOutline _outline;
 
     public void SetPierceHighlight(bool highlighted)
     {
@@ -4820,106 +4813,32 @@ private void SpawnProjectile()
         UpdateOutlineState();
     }
 
+    /// <summary>
+    /// 把当前状态打包交给 <see cref="EnemyOutline"/>：描边的优先级与材质处理都在那边，
+    /// Enemy 只提供事实（状态、覆盖色/宽度）。
+    /// </summary>
     void UpdateOutlineState()
     {
         if (_spriteRenderer == null) return;
-        if (_propBlock == null) _propBlock = new MaterialPropertyBlock();
-        _spriteRenderer.GetPropertyBlock(_propBlock);
-        bool showPierceHighlight = _pierceHighlighted
-            && state != EnemyState.Dead
-            && !isPhaseTransitioning
-            && state != EnemyState.QTEAttacking
-            && !isSuperArmor
-            && !(isCFrame && state == EnemyState.Attacking);
-        float piercePulse = showPierceHighlight
-            ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 14f * Mathf.PI)
-            : 0f;
-        float pierceHighlightStrength = Mathf.Lerp(
-            PIERCE_HIGHLIGHT_MIN_STRENGTH,
-            PIERCE_HIGHLIGHT_MAX_STRENGTH,
-            piercePulse);
-        _propBlock.SetFloat("_PierceHighlightStrength", showPierceHighlight ? pierceHighlightStrength : 0f);
+        if (_outline == null) _outline = new EnemyOutline();
 
-        // 死亡或转阶段时不显示描边
-        if (state == EnemyState.Dead || isPhaseTransitioning)
+        var facts = new EnemyOutline.OutlineFacts
         {
-            _propBlock.SetFloat("_OutlineEnabled", 0f);
-            _spriteRenderer.SetPropertyBlock(_propBlock);
-            return;
-        }
-
-        // 调试强制描边
-        if (debugForceOutline != OutlineDebugMode.None)
-        {
-            ApplyDebugOutline();
-            return;
-        }
-
-        // QTE 描边优先级最高（覆盖霸体/CFrame描边）
-        if (state == EnemyState.QTEAttacking)
-        {
-            Color c = outlineColorQTEOverride != Color.clear
-                ? outlineColorQTEOverride : OUTLINE_COLOR_QTE_DEFAULT;
-            float w = outlineWidthQTEOverride > 0f ? outlineWidthQTEOverride : OUTLINE_WIDTH_DEFAULT;
-            _propBlock.SetColor("_OutlineColor", c);
-            _propBlock.SetFloat("_OutlineWidth", w);
-            _propBlock.SetFloat("_OutlineEnabled", 1f);
-        }
-        else if (isSuperArmor)
-        {
-            Color c = outlineColorSuperArmorOverride != Color.clear
-                ? outlineColorSuperArmorOverride : OUTLINE_COLOR_SUPER_ARMOR_DEFAULT;
-            float w = outlineWidthSuperArmorOverride > 0f ? outlineWidthSuperArmorOverride : OUTLINE_WIDTH_DEFAULT;
-            _propBlock.SetColor("_OutlineColor", c);
-            _propBlock.SetFloat("_OutlineWidth", w);
-            _propBlock.SetFloat("_OutlineEnabled", 1f);
-        }
-        else if (isCFrame && state == EnemyState.Attacking)
-        {
-            Color c = outlineColorCOverride != Color.clear
-                ? outlineColorCOverride : OUTLINE_COLOR_C_DEFAULT;
-            float w = outlineWidthCOverride > 0f ? outlineWidthCOverride : OUTLINE_WIDTH_DEFAULT;
-            _propBlock.SetColor("_OutlineColor", c);
-            _propBlock.SetFloat("_OutlineWidth", w);
-            _propBlock.SetFloat("_OutlineEnabled", 1f);
-        }
-        else if (_pierceHighlighted)
-        {
-            _propBlock.SetColor("_OutlineColor", Color.white);
-            _propBlock.SetFloat("_OutlineWidth", PIERCE_OUTLINE_WIDTH);
-            _propBlock.SetFloat("_OutlineEnabled", 0.35f + 0.65f * piercePulse);
-        }
-        else
-        {
-            _propBlock.SetFloat("_OutlineEnabled", 0f);
-        }
-
-        _spriteRenderer.SetPropertyBlock(_propBlock);
-    }
-
-    void ApplyDebugOutline()
-    {
-        Color c; float w;
-        switch (debugForceOutline)
-        {
-            case OutlineDebugMode.CAttack:
-                c = outlineColorCOverride != Color.clear ? outlineColorCOverride : OUTLINE_COLOR_C_DEFAULT;
-                w = outlineWidthCOverride > 0f ? outlineWidthCOverride : OUTLINE_WIDTH_DEFAULT;
-                break;
-            case OutlineDebugMode.SuperArmor:
-                c = outlineColorSuperArmorOverride != Color.clear ? outlineColorSuperArmorOverride : OUTLINE_COLOR_SUPER_ARMOR_DEFAULT;
-                w = outlineWidthSuperArmorOverride > 0f ? outlineWidthSuperArmorOverride : OUTLINE_WIDTH_DEFAULT;
-                break;
-            case OutlineDebugMode.QTE:
-                c = outlineColorQTEOverride != Color.clear ? outlineColorQTEOverride : OUTLINE_COLOR_QTE_DEFAULT;
-                w = outlineWidthQTEOverride > 0f ? outlineWidthQTEOverride : OUTLINE_WIDTH_DEFAULT;
-                break;
-            default: return;
-        }
-        _propBlock.SetColor("_OutlineColor", c);
-        _propBlock.SetFloat("_OutlineWidth", w);
-        _propBlock.SetFloat("_OutlineEnabled", 1f);
-        _spriteRenderer.SetPropertyBlock(_propBlock);
+            PierceHighlighted = _pierceHighlighted,
+            Dead = state == EnemyState.Dead,
+            PhaseTransitioning = isPhaseTransitioning,
+            QteAttacking = state == EnemyState.QTEAttacking,
+            SuperArmor = isSuperArmor,
+            CFrameAttacking = isCFrame && state == EnemyState.Attacking,
+            DebugMode = debugForceOutline,
+            CColor = outlineColorCOverride,
+            CWidth = outlineWidthCOverride,
+            SuperArmorColor = outlineColorSuperArmorOverride,
+            SuperArmorWidth = outlineWidthSuperArmorOverride,
+            QteColor = outlineColorQTEOverride,
+            QteWidth = outlineWidthQTEOverride
+        };
+        _outline.Apply(_spriteRenderer, in facts);
     }
 
     #endregion
