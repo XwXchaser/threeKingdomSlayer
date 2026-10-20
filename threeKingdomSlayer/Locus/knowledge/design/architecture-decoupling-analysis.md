@@ -333,6 +333,7 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 | 路线层端口接口 `IRouteBattleHost`（依赖倒置第一层） | ✅ `b2da9d2` |
 | `Enemy` 拆 `EnemyOutline`（描边） | ✅ `eac2922`（5212 → 5132 行） |
 | `Enemy` 拆 `EnemyFreezeVisual`（冰系视觉层） | ✅ `86c3fbd`（5145 → 4798 行，冰系区段 685 → 333 行） |
+| `StageController` 按角色拆 `StageFormation` / `StageRouteBattleHost` | ✅ `f906501`（852 → 790 行） |
 | 剩余角色接口（`IRunFlow` / `ICombatStaging` / `IRewardGate`） | ⬜ |
 | `IStageFormation`（阵型只读）+ `IStageFlowControl`（流程控制） | ✅ `Enemy` / `BattleHUD` 已迁移 |
 | `AttackSystem` 迁移到 `IStageFormation` | ✅ `a0dccc9`（32 处调用收敛为一处） |
@@ -371,6 +372,11 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
   融化/碎冰特效、程序化贴图），冻结与破冰的**流程**仍留在 Enemy。环境依赖用 Context 结构体
   每次传入，类不持有 Enemy 引用。自检：冻结生成冰壳、呼吸动画 alpha 变化、破冰销毁覆盖层
   （子物体 2→1）、短冻结自然解冻；另起一局攻击命中链路完好（两次各掉 20）。
+- `StageController` 按角色拆分（`f906501`）：`StageFormation`（阵型纯计算，可脱离场景单测）与
+  `StageRouteBattleHost`（节点战斗的开打/旅行/等奖励状态与迁移，接管原 `_routeBattleRuntime` /
+  `_routeRewardWaiting` 两个状态位）拆出，门面 852 → 790 行。
+  自检：阵型数值与搬迁前算法**逐位一致**（5 列 × 全排，差异 < 0.0001）；旅行态/奖励等待/重新开打
+  三个状态迁移正确且宿主与门面状态位同步；攻击两次各掉 20。
 
 `Locus.Data` 现状：**19 文件 / 1875 行 / 69 类型**。
 
