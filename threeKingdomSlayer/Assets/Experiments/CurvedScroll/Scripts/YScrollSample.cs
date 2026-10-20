@@ -12,7 +12,11 @@ public sealed class YScrollSample : MonoBehaviour
     [Range(15,65)] public float turnAngle = 45;
     public bool animate;
     [Min(1)] public float duration = 10;
-    public BattleYRouteHost battleHost;
+    /// <summary>
+    /// 旧版路线驱动（已收进 Assets/Scripts/Legacy）。这里只把它当作「动画由谁接管」的标记：
+    /// 旧驱动不在时本脚本自己推进 progress。类型用 Component，避免运行时代码依赖 Legacy 程序集。
+    /// </summary>
+    public Component battleHost;
     [Header("Route visual groups")]
     public Transform leftBranchVisuals;
     public Transform rightBranchVisuals;

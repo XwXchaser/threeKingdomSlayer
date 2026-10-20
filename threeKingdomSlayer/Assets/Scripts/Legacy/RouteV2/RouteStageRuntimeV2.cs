@@ -445,7 +445,7 @@ public sealed class RouteStageRuntimeV2 : MonoBehaviour
         SetGameplayInput(false);
         Debug.Log("[RouteV2] Final node reached, completing route stage");
         yield return new WaitForSecondsRealtime(0.5f);
-        _battleHost.CompleteRouteStage(routeConfig.clearCoinReward);
+        _battleHost.CompleteRouteStage(routeConfig.stageId, routeConfig.clearCoinReward);
     }
 
     private IEnumerator TravelTo(RouteConnectionV2 connection)
