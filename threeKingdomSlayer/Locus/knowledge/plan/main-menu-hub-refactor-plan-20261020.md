@@ -297,21 +297,26 @@ Build Settings
 
 ---
 
-### 阶段 E：包体精简（可与 A~D 并行）
+### 阶段 E：包体精简（⚠️ 旧数字已推翻，2026-10-20 实测重测）
 
-**实测数据**（`AssetDatabase.GetDependencies`，2026-10-20）：
+**实测方法**：根 = build settings 里 enabled 的 6 个场景 + `Assets/Resources/` 全部 36 个资源，用 `AssetDatabase.GetDependencies(root, true)` 求并集（1239 个资产），再比 `Assets/Sprites/Enemy/` 全量。
 
-| 项 | 体积 | 动作 | 预计省 |
-|---|---|---|---|
-| `MainMenu.scene` 独有依赖 | **7.7 MB / 16 张贴图** | 废弃场景后自动不打包 | ~5-6 MB（`MM_Background` 2.7MB + `zhangfei_idle×4` + `MM_Btn×4`；Talent 的 `TT_*` 5 张要被 `TalentTree.scene` 复用则仍进包） |
-| `Tutorial_YJ.unity` 独有依赖 | **9.3 MB / 7 张贴图** | 从 build settings 移除 | 9.3 MB（含老 `Enemy1` 贴图 + stronghold 道具） |
-| `Assets/Resources/UI/` | 4.6 MB（`UpgradeChoice` 3.1 + `ItemDiscard` 1.5） | 战斗内 UI 必需 | — |
-| **`Assets/Sprites/Enemy/`** | **114 MB / 416 张** | 实际只用 3 个敌人（1011/1021/109）。**其余 400+ 张是死资源** | **最大头，单独排期** |
-| `Assets/Experiments/CurvedScroll/Art/` | 118.5 MB | 大部分只被非 build 场景引用，不进包；但 `YJunctionSample` 用到的那 59MB 是必需的 | — |
+| 项 | 实测 | 结论 |
+|---|---|---|
+| `Assets/Sprites/Enemy/` | 417 张 / 117.9 MB（磁盘） | **被引用 405 张 / 112.6 MB；未被引用只有 12 张 / 5.2 MB**（其中 `BOSS.psd` 3.9MB 是源文件） |
+| `Assets/Resources/EnemyPrefabs/` | 12 个 prefab | **12 个里有 10 个真在用**：配置里实际出现的 enemyId = `101 / 103 / 104 / 105 / 106 / 107 / 108 / 109 / 1011 / 1021`（扫 139 个 `.asset` 的 `enemyIds` 十六进制字段解码得到） |
+| 未用的 prefab | `Enemy_1`、`Enemy_102` | 各自独占贴图仅 0.1 MB / 2.3 MB，删完约省 **2.4 MB** |
+| `Tutorial_YJ.unity` | build settings 里的遗留副本 | 全工程搜不到任何引用 → 从 build settings 移除可省 **9.3 MB**（不删文件，可逆） |
+| `MainMenu.scene` | 7.7 MB 独有依赖 | 需保留（legacy 入口），不省 |
+| 字体 | 旧文档记 36 MB（TMP Examples / 未用字重） | 仍是最大单项，未重新测 |
 
-> ⚠️ 删死资源前必须确认引用关系（`anti-ghost-reference.md`：禁 Resources 查找 / 禁字符串 ID 查找）。建议逐张用 `AssetDatabase.GetDependencies` 反查，而不是按文件名猜。
+> ❌ **旧结论作废**：「Sprites/Enemy 114MB 死资源、实际只用 3 个敌人」是错的。敌人美术几乎全部进包（112.6 MB），真正的浪费只有 2.4 MB。**不要再按旧文档去批量删敌人贴图——那会删掉 104/107/108 这些在用资源。**
 
-> 历史上另有一份包体方案：`plan/package-size-optimization.md`（Android 50MB→8-12MB 目标，字体/TMP Examples 为主）。**本项目现目标是微信小程序，两边目标不同但字体那 36MB 的结论仍然适用。**
+> `EnemyPool` 是 `Resources.Load("EnemyPrefabs/...")` 按名字加载（`EnemyPool.resourcesPrefabPath`），所以依赖分析**无法**剪掉 prefab 包裹的贴图——想省包体只能删 prefab 本身。这也违反 `anti-ghost-reference.md`，属未来的架构改造项。
+
+> ⚠️ 扫描还发现配置里出现了 **`enemyId = 999`（7 处）但 `Resources/EnemyPrefabs/` 里没有对应 prefab** → 运行时会走 `EnemyPool` 的临时 Cube fallback。如果 999 是特意的占位符就没事；如果不是，需要补 prefab 或改配置。
+
+> 待授权动作：① 删 `Enemy_1` / `Enemy_102` prefab 及其独占贴图（~2.4MB）；② 把 `Tutorial_YJ.unity` 从 build settings 移除（~9.3MB，可逆）。两项都需要用户点头。
 
 ---
 
