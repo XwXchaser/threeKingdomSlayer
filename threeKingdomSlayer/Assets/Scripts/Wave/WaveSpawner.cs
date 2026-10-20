@@ -173,7 +173,7 @@ public class WaveSpawner : MonoBehaviour
         Debug.Log($"[WaveSpawner] 开始生成第 {currentWaveIndex + 1} 波，共 {wave.rows.Count} 排敌人");
 
         // 生成该波的所有排
-        FillUpRule fillRule = ResolvedStageConfig?.fillUpRule ?? FillUpRule.PerColumn;
+        FillUpRule fillRule = ResolvedStageConfig?.fillUpRule ?? FillUpRule.PerRow;
         var spawnedNormalEnemies = new List<Enemy>();
         if (fillRule == FillUpRule.PerRow)
         {
@@ -253,7 +253,7 @@ public class WaveSpawner : MonoBehaviour
     /// 该排所有敌人共享相同的排索引（rowIndex）。
     /// </summary>
     /// <param name="explicitRowIndex">PerRow 模式下的显式排号（>=0 时直接使用，无需计算）</param>
-    private void SpawnRow(RowConfig row, FillUpRule fillRule = FillUpRule.PerColumn, int explicitRowIndex = -1, List<Enemy> spawnedNormalEnemies = null)
+    private void SpawnRow(RowConfig row, FillUpRule fillRule = FillUpRule.PerRow, int explicitRowIndex = -1, List<Enemy> spawnedNormalEnemies = null)
     {
         if (row == null)
             return;

@@ -72,9 +72,9 @@ public sealed class StageFormation
             : null;
     }
 
-    /// <summary>补齐规则（按列 / 按排）。</summary>
+    /// <summary>补齐规则。配置缺失时按**现行规则**（PerRow）走，而不是回退到已废弃的逐列补齐。</summary>
     public FillUpRule GetFillUpRule(StageConfig config)
     {
-        return config != null ? config.fillUpRule : FillUpRule.PerColumn;
+        return config != null ? config.fillUpRule : FillUpRule.PerRow;
     }
 }

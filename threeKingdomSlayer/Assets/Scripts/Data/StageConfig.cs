@@ -3,13 +3,21 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 补齐规则枚举
+/// 补齐规则枚举。
+///
+/// 【现状】现行规则只有 <see cref="PerRow"/>：整排清空 → 逻辑排队列前移 → 波次行军；
+/// 空排占位符与 999 节奏门都在这条路径上。
+/// <see cref="PerColumn"/> 是更早的遗留路径（按列找空位前压），**已被误部署成默认值**：
+/// 枚举第 0 项 + 字段默认值 + 三处 null 兜底默认值叠加，导致新建/AI 生成的关卡都落在它上面。
+/// 退役方案见 plan/percolumn-retirement-20261020.md（步骤 1：默认值反转 + 导入期报错；
+/// 步骤 3：终态删掉本枚举与字段，让这个选项根本不存在）。
 /// </summary>
 public enum FillUpRule
 {
-    [Tooltip("逐列补齐：每列独立，前排敌人死亡后同列后方敌人立即前移")]
+    [Obsolete("逐列补齐已废弃：现行规则是逐排补齐（PerRow）。该值只可能出现在历史误部署的资产上，导入时会报错提醒。")]
+    [Tooltip("逐列补齐（已废弃）：每列独立，前排敌人死亡后同列后方敌人立即前移")]
     PerColumn,
-    [Tooltip("逐排补齐：整排敌人全部阵亡后，下一排敌人才会集体前移")]
+    [Tooltip("逐排补齐（现行规则）：整排敌人全部阵亡后，下一排敌人才会集体前移")]
     PerRow
 }
 
@@ -145,8 +153,26 @@ public class StageConfig : ScriptableObject
     public FormationConfig formationConfig;
 
     [Header("补齐规则")]
-    [Tooltip("选择补齐规则：逐列补齐（每列独立前移）或逐排补齐（整排清空后集体前移）")]
-    public FillUpRule fillUpRule = FillUpRule.PerColumn;
+    [Tooltip("选择补齐规则。逐列补齐（PerColumn）已废弃，默认与现行规则都是逐排补齐（PerRow）")]
+    public FillUpRule fillUpRule = FillUpRule.PerRow;
+
+    /// <summary>
+    /// 导入期校验：逐列补齐（PerColumn）已废弃，现役规则是逐排补齐（PerRow）。
+    /// 历史误部署的资产会在这里报错——避免它们带着旧规则继续被使用或被 AI 继续照抄。
+    /// 退役方案见 plan/percolumn-retirement-20261020.md。
+    /// </summary>
+    private void OnValidate()
+    {
+#pragma warning disable CS0618 // PerColumn 已废弃；校验它正是目的
+        bool legacy = fillUpRule == FillUpRule.PerColumn;
+#pragma warning restore CS0618
+        if (!legacy) return;
+
+        Debug.LogError(
+            $"[StageConfig] 「{name}」使用了已废弃的补齐规则 PerColumn（逐列补齐）。" +
+            "现行规则是 PerRow（逐排补齐：整排清空 → 逻辑排队列前移 → 波次行军，含 0 排占位符与 999 节奏门）。" +
+            "请把「补齐规则」改为 PerRow；退役与清理方案见 plan/percolumn-retirement-20261020.md。", this);
+    }
 
     [Header("补齐移动配置（每个关卡可不同）")]
     [Tooltip("连续补齐移动间的延迟（秒）。用于实现'快移动+停顿'的效果")]
