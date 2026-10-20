@@ -58,8 +58,10 @@ aiEditMode: inherit
 1. 来源侧为**盾侧（Left）**或**正面（Front）**的普通攻击 → **格挡**：`实际伤害 = max(minDamage, 伤害 − 固定减伤)`。
 2. **减伤是固定数值**，不是百分比。
 3. **DoT 不参与**盾的任何判定（走既有 `ignoreDamageModifiers`，整段跳过）。
-4. **未声明方向**的伤害（`None` / `Random`）**不进盾判定**，按全额结算。
-   - 注意：`未声明 ≠ 正面`。被动烈焰/箭雨/落雷/道具/DoT 与未填方向的招式都落在"未声明"，若把它们归入"正面"，这些伤害会突然被格挡，与规则 4 冲突。实现上必须是**四值分类**，不允许把 `None` 映射为 `Front`。
+4. **未声明方向**的伤害（`None` / `Random`）**按正面处理 → 格挡**（2026-10-19 用户决定）。
+   - 理由：卷轴战场里玩家永远从正前方出手，未声明方向的攻击绕开盾牌等于盾形同虚设。
+   - 随之改变：未填方向的招式（戳击/斩击/穿刺/横扫等）、道具落雷这类未声明来源，现在都吃格挡减伤；`DamageType.Launch` 仍然无条件破盾（见 §3.3）。
+   - DoT / `Poise` / `Convergence` 在 `ProcessHit` 开头直接返回，不参与盾判定，不受此条影响。
 5. 最少造成 `minDamage`（默认 1），避免低伤多段攻击被完全免疫。
 
 ### 3.3 破盾
@@ -96,7 +98,7 @@ aiEditMode: inherit
 | 盾侧 ShieldSide | `HitReactionDirection.Left`（力来自画面左） | 格挡（重攻击也不破盾） |
 | 反侧 OffSide | `HitReactionDirection.Right` | 普通全额；重攻击破盾 |
 | 正面 Front | `HitReactionDirection.Front` | 格挡 |
-| 未声明 Unspecified | `None` / `Random`（含 DoT 与 `ignoreDamageModifiers`） | 不进盾判定，全额 |
+| 未声明 Unspecified | `None` / `Random`（DoT / `ignoreDamageModifiers` 除外） | **按正面处理 → 格挡**（2026-10-19 起；Launch 仍无条件破盾） |
 
 **判定必须读"原始声明值"**：`Enemy.ResolveHitReactionDirection()` 会把未声明招式**随机**成 Front/Left/Right（那是受击动画用）；若拿解析后的值做玩法判定，未声明招式会变成随机格挡。
 
@@ -109,9 +111,9 @@ aiEditMode: inherit
 | `Zhangfei_Jab3` | Stab | Right（反侧） | `--SwipeVertical,minCharge≥1-->` `LaunchFinisher`（AoE，排除） |
 | `Zhangfei_Slash` | Slash | **几何覆盖**：左→右划 = Left，右→左划 = Right | `AttackSystem.ExecuteSlash` |
 | `Zhangfei_StabR2` | Stab, rows=2 | 未声明（精确攻击载体，玩法只看命中部位） | 串尾 |
-| `Zhangfei_Stab / Pierce / Sweep / Launch / LaunchFinisher / Parry / Jab*` 其余 | — | 未声明（Random） | 需要参与盾判定时在资产填方向即可，无需改代码 |
+| `Zhangfei_Stab / Pierce / Sweep / Launch / LaunchFinisher / Parry / Jab*` 其余 | — | 未声明（Random） | 2026-10-19 起未声明按**正面**处理 → 普通与蓄力一律被格挡；`Launch` 走挑飞破盾 |
 
-由此得到本敌人的**读招循环**：连段第 1/2 段（正面/盾侧）打不动 → 第 3 段（反侧）才是全额；想更快处决就用**反侧重攻击**或**精确攻击拆盾** → 胆怯增伤。
+由此得到本敌人的**读招循环**：所有正面出手（含未声明方向的普通点戳、横划）一律被格挡，只剩 1 点固定伤害；要打动它必须**上挑破盾**（`DamageType.Launch`，教学关 E0 教的就是这个）、**反侧重攻击**，或**精确攻击命中盾区**；破盾后进入胆怯增伤，才是处决窗口。
 
 ### 4.2 "重攻击"声明与扩展协议
 

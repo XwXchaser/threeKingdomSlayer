@@ -7,9 +7,9 @@ using UnityEngine;
 /// 规则（权威版见 design/enemy-1021-shield-guard.md §3.2）：
 ///   盾侧(Left，力来自画面左) / 正面(Front) → 普通与重攻击都被格挡：扣固定减伤（下限 minDamage）
 ///   反侧(Right)                          → 普通全额；重攻击破盾
+///   未声明方向(None / Random)             → 按正面处理（玩家总是从正前方出手，不能绕盾）
 ///   挑飞(DamageType.Launch)              → 不受侧向限制，直接破盾（C4 收尾与 Launch 挑飞都走这条）；
 ///                                          被挑飞会立即打断掉盾动画并转入胆怯击飞
-///   未声明方向(None / Random)             → 不进盾判定（全额）
 ///   DoT / ignoreDamageModifiers           → 整段跳过
 ///   破盾：减伤立即失效 → 播放 ShieldBreak → 动画期间普通受击不打断（死亡/击飞可打断）→ 播完进入胆怯（增伤）
 ///
@@ -197,7 +197,11 @@ public class ShieldGuardEnemy : MonoBehaviour
         return result;
     }
 
-    /// <summary>盾侧 / 反侧 / 正面的判定：沿用工程既有 HitReactionDirection 语义（Left = 力来自画面左 = 盾侧）。</summary>
+    /// <summary>
+    /// 盾侧 / 反侧 / 正面的判定：沿用工程既有 HitReactionDirection 语义（Left = 力来自画面左 = 盾侧）。
+    /// 未声明方向（None / Random）一律按**正面**处理：玩家在卷轴战场里总是从正前方出手，
+    /// 未声明的普通攻击不得绕开盾牌（DoT / Poise 等在 ProcessHit 开头已单独跳过）。
+    /// </summary>
     public static DamageSide ClassifySide(HitReactionDirection rawDirection)
     {
         switch (rawDirection)
@@ -205,7 +209,7 @@ public class ShieldGuardEnemy : MonoBehaviour
             case HitReactionDirection.Left: return DamageSide.ShieldSide;
             case HitReactionDirection.Right: return DamageSide.OffSide;
             case HitReactionDirection.Front: return DamageSide.Front;
-            default: return DamageSide.Unspecified;
+            default: return DamageSide.Front;
         }
     }
 
