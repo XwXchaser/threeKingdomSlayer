@@ -99,8 +99,8 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     /// <summary>解析路线战斗宿主（StageController 实现 IRouteBattleHost），幂等。</summary>
     private IRouteBattleHost ResolveBattleHost()
     {
-        if (stageController == null) stageController = StageController.Instance;
-        if (stageController != null) _battleHost = stageController as IRouteBattleHost;
+        if (_battleHost == null && stageController != null) _battleHost = stageController as IRouteBattleHost;
+        if (_battleHost == null) _battleHost = StageController.Instance as IRouteBattleHost;
         return _battleHost;
     }
 
@@ -108,8 +108,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     {
         if (!autoStart) yield break;
         yield return null;
-        if (stageController == null) stageController = StageController.Instance;
-        if (stageController == null) yield break;
+        if (ResolveBattleHost() == null) yield break;
 
         // 落地页自举：读存档「当前进度」→ 只准备表现层，等玩家点「开始关卡」。
         // （历史 ① 传统路径依赖 FakeRouteLaunch.PendingConfig，MainMenu 删除后无人写入，
@@ -161,8 +160,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         IsHubEntry = false;
         if (_flow != null) StopCoroutine(_flow);
         routeConfig = config;
-        if (stageController == null) stageController = StageController.Instance;
-        if (stageController == null || routeConfig == null)
+        if (ResolveBattleHost() == null || routeConfig == null)
         {
             Debug.LogError("[FakeRoute] 配置或StageController为空");
             return;
@@ -212,8 +210,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     {
         if (_flow != null) { StopCoroutine(_flow); _flow = null; }
         routeConfig = config;
-        if (stageController == null) stageController = StageController.Instance;
-        if (stageController == null || routeConfig == null)
+        if (ResolveBattleHost() == null || routeConfig == null)
         {
             Debug.LogError("[FakeRoute] PrepareForEntry: 配置或StageController为空");
             return;

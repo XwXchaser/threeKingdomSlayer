@@ -83,7 +83,11 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
 
     bool IStageFlowControl.IsStageInProgress => IsStageInProgress;
 
-    bool IStageFlowControl.BlockRestartOnDefeat => blockRestartOnDefeat;
+    bool IStageFlowControl.BlockRestartOnDefeat
+    {
+        get => blockRestartOnDefeat;
+        set => blockRestartOnDefeat = value;
+    }
 
     bool IStageFlowControl.SuppressDefeatUI => suppressDefeatUI;
 

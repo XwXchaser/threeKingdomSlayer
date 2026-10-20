@@ -8,6 +8,18 @@ public sealed class RouteStageRuntimeV2 : MonoBehaviour
     [SerializeField] private RouteStageConfigV2 routeConfig;
     [SerializeField] private RouteStageTargetsV2 battleTargets;
     [SerializeField] private StageController stageController;
+
+    /// <summary>路线战斗宿主（只走端口接口，不直接调 StageController 的具体成员）。</summary>
+    private IRouteBattleHost _battleHost;
+
+    /// <summary>解析战斗宿主：Inspector 拖的引用优先，否则回落到单例。幂等。</summary>
+    private IRouteBattleHost ResolveBattleHost()
+    {
+        if (_battleHost == null && stageController != null) _battleHost = stageController as IRouteBattleHost;
+        if (_battleHost == null) _battleHost = StageController.Instance as IRouteBattleHost;
+        return _battleHost;
+    }
+
     [SerializeField] private float moveDuration = 1.5f;
     [SerializeField] private float rotateDuration = 0.75f;
     [SerializeField] private bool autoStart = true;
@@ -36,29 +48,29 @@ public sealed class RouteStageRuntimeV2 : MonoBehaviour
     {
         if (!autoStart) yield break;
         yield return null;
-        if (stageController == null) stageController = StageController.Instance;
-        if (routeConfig == null || battleTargets == null || stageController == null)
+        ResolveBattleHost();
+        if (routeConfig == null || battleTargets == null || _battleHost == null)
         {
             Debug.LogError("[RouteV2] 配置、BattleStageTargets或StageController为空");
             yield break;
         }
-        stageController.OnRouteBattleCompleted += NotifyBattleCompleted;
+        _battleHost.RouteBattleCompleted += NotifyBattleCompleted;
         yield return StartRoute();
     }
 
     private void OnDestroy()
     {
-        if (stageController != null)
-            stageController.OnRouteBattleCompleted -= NotifyBattleCompleted;
+        if (_battleHost != null)
+            _battleHost.RouteBattleCompleted -= NotifyBattleCompleted;
     }
 
     public void Begin(RouteStageConfigV2 config)
     {
         routeConfig = config;
         Debug.Log("[RouteV2] Begin mode=" + (RouteStageV2Launch.StartFromCheckpoint ? "checkpoint" : "new game") + " stage=" + (config != null ? config.stageId.ToString() : "NULL"));
-        if (stageController == null) stageController = StageController.Instance;
+        ResolveBattleHost();
         if (battleTargets == null) battleTargets = FindObjectOfType<RouteStageTargetsV2>();
-        if (stageController != null) stageController.OnRouteBattleCompleted += NotifyBattleCompleted;
+        if (_battleHost != null) _battleHost.RouteBattleCompleted += NotifyBattleCompleted;
         if (!isActiveAndEnabled) return;
         StartCoroutine(StartRoute());
     }
@@ -94,9 +106,8 @@ public sealed class RouteStageRuntimeV2 : MonoBehaviour
         }
         if (battleTargets == null)
             battleTargets = FindObjectOfType<RouteStageTargetsV2>();
-        if (stageController == null)
-            stageController = StageController.Instance;
-        if (battleTargets == null || battleTargets.initialHeadTarget == null || battleTargets.combatTarget == null || battleTargets.tailTarget == null || stageController == null)
+        ResolveBattleHost();
+        if (battleTargets == null || battleTargets.initialHeadTarget == null || battleTargets.combatTarget == null || battleTargets.tailTarget == null || _battleHost == null)
         {
             Debug.LogError("[RouteV2] BattleStageTargets或StageController未完成接线");
             yield break;
@@ -168,7 +179,7 @@ public sealed class RouteStageRuntimeV2 : MonoBehaviour
         yield return MoveAnchorToTarget(_currentEntry.combatArea, battleTargets.combatTarget, _currentEntry.headJunction, _currentEntry.headToCombatPath);
         yield return RunBattleEntries();
         SetGameplayInput(false);
-        stageController.SetRouteTravelState();
+        _battleHost.SetRouteTravelState();
         yield return MoveAnchorToTarget(_currentEntry.tailJunction, battleTargets.tailTarget, _currentEntry.combatArea, _currentEntry.combatToTailPath);
         _running = false;
         _choosing = true;
@@ -266,11 +277,11 @@ public sealed class RouteStageRuntimeV2 : MonoBehaviour
             _battleCleared = false;
             _battleEntryCompleted = false;
             Debug.Log("[RouteV2] Start battle node=" + _currentNode.name + " index=" + _battleIndex + " config=" + _currentBattle.battleConfig.name);
-            stageController.StartRouteBattle(_currentBattle.battleConfig);
+            _battleHost.StartRouteBattle(_currentBattle.battleConfig);
             SetGameplayInput(true);
             while (!_battleCleared) yield return null;
             SetGameplayInput(false);
-            stageController.SetRouteRewardWaitState();
+            _battleHost.SetRouteRewardWaitState();
             while ((UpgradeChoiceManager.Instance != null && UpgradeChoiceManager.Instance.IsChoosing)
                 || ItemDiscardPopup.IsShowing
                 || (ExpGemManager.Instance != null && ExpGemManager.Instance.IsCollecting))
@@ -419,7 +430,7 @@ public sealed class RouteStageRuntimeV2 : MonoBehaviour
             if (GUILayout.Button(connection.choiceSlot + " -> " + connection.targetNode.displayName, GUILayout.Height(40f)))
             {
                 Debug.Log("[RouteV2] route choice clicked: " + _currentNode.nodeId + " -> " + connection.targetNode.nodeId);
-                stageController.SetRouteTravelState();
+                _battleHost.SetRouteTravelState();
                 StartCoroutine(TravelTo(connection));
             }
         }
@@ -434,7 +445,7 @@ public sealed class RouteStageRuntimeV2 : MonoBehaviour
         SetGameplayInput(false);
         Debug.Log("[RouteV2] Final node reached, completing route stage");
         yield return new WaitForSecondsRealtime(0.5f);
-        stageController.CompleteRouteStage(routeConfig.clearCoinReward);
+        _battleHost.CompleteRouteStage(routeConfig.clearCoinReward);
     }
 
     private IEnumerator TravelTo(RouteConnectionV2 connection)

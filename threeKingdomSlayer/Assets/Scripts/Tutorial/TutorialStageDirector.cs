@@ -54,7 +54,11 @@ public class TutorialStageDirector : MonoBehaviour
     [Tooltip("手势拍时场景（背景/路面/植被/墙体）保留的亮度；1 = 不压暗。角色、长枪、敌人始终不压暗")]
     [Range(0.1f, 1f)] public float sceneDimBrightness = 0.42f;
 
-    private StageController _stage;
+    /// <summary>关卡战斗状态（只读 + 状态事件）。</summary>
+    private IStageBattleState _stageState;
+
+    /// <summary>关卡流程控制（战败是否允许重来等开关）。</summary>
+    private IStageFlowControl _stageFlow;
     private WaveSpawner _waveSpawner;
     private bool _choiceDialogueShown;
     private Coroutine _hintRoutine;
@@ -69,16 +73,17 @@ public class TutorialStageDirector : MonoBehaviour
 
     private void Start()
     {
-        _stage = StageController.Instance;
+        _stageState = StageController.Instance as IStageBattleState;
+        _stageFlow = StageController.Instance as IStageFlowControl;
         _waveSpawner = FindObjectOfType<WaveSpawner>();
         if (_waveSpawner != null) _waveSpawner.OnWaveStarted += OnWaveStarted;
-        if (_stage != null) _stage.OnStageVictory += OnStageVictory;
+        if (_stageState != null) _stageState.StageVictory += OnStageVictory;
     }
 
     private void OnDisable()
     {
         if (_waveSpawner != null) _waveSpawner.OnWaveStarted -= OnWaveStarted;
-        if (_stage != null) _stage.OnStageVictory -= OnStageVictory;
+        if (_stageState != null) _stageState.StageVictory -= OnStageVictory;
         StopHint();
         if (UpgradeChoiceManager.Instance != null)
         {
@@ -98,8 +103,7 @@ public class TutorialStageDirector : MonoBehaviour
             {
                 _openingPlayed = true;
                 // 教学关战败不重来：只保留回主菜单（否则要把整个教学流程再跑一遍）
-                var stageNow = StageController.Instance != null ? StageController.Instance : _stage;
-                if (stageNow != null) stageNow.blockRestartOnDefeat = true;
+                if (_stageFlow != null) _stageFlow.BlockRestartOnDefeat = true;
                 DialogueManager.Instance?.QueueEventAndNotify(openingDialogue, forceReplay: true);
                 DebugLog.Info("[Tutorial] 开幕台词");
             }
@@ -130,9 +134,9 @@ public class TutorialStageDirector : MonoBehaviour
 
     private void OnWaveStarted(int waveIndex)
     {
-        Debug.Log($"[Tutorial] 波次开始 wave={waveIndex} stage={(_stage != null && _stage.stageConfig != null ? _stage.stageConfig.name : "NULL")} hint={(gestureHint != null)} steps={(gestureSteps != null ? gestureSteps.Length : -1)}");
-        if (_stage == null || _stage.stageConfig == null) return;
-        var config = _stage.stageConfig;
+        Debug.Log($"[Tutorial] 波次开始 wave={waveIndex} stage={(_stageState != null && _stageState.StageConfig != null ? _stageState.StageConfig.name : "NULL")} hint={(gestureHint != null)} steps={(gestureSteps != null ? gestureSteps.Length : -1)}");
+        if (_stageState == null || _stageState.StageConfig == null) return;
+        var config = _stageState.StageConfig;
         var dialogues = config == n1Battle ? n1Dialogues : (config == e0Battle ? e0Dialogues : null);
         if (dialogues == null) return; // 不是教学战斗
 
@@ -174,12 +178,12 @@ public class TutorialStageDirector : MonoBehaviour
     private void StartHint(int waveIndex)
     {
         StopHint();
-        if (gestureHint == null || _stage == null || _stage.stageConfig == null || gestureSteps == null)
+        if (gestureHint == null || _stageState == null || _stageState.StageConfig == null || gestureSteps == null)
         {
-            Debug.Log($"[Tutorial] 手势未启动：hint={(gestureHint != null)} stage={(_stage != null)} cfg={(_stage != null && _stage.stageConfig != null)} steps={(gestureSteps != null)}");
+            Debug.Log($"[Tutorial] 手势未启动：hint={(gestureHint != null)} stage={(_stageState != null)} cfg={(_stageState != null && _stageState.StageConfig != null)} steps={(gestureSteps != null)}");
             return;
         }
-        var battle = _stage.stageConfig;
+        var battle = _stageState.StageConfig;
         for (int i = 0; i < gestureSteps.Length; i++)
         {
             var step = gestureSteps[i];
@@ -332,7 +336,7 @@ public class TutorialStageDirector : MonoBehaviour
             float limit = hintWaitForEnemySeconds + (hpThreshold < 0.999f ? 25f : 0f);
             while (true)
             {
-                if (_stage != null && !_stage.IsStageInProgress)
+                if (_stageState != null && !_stageState.IsStageInProgress)
                 {
                     Debug.Log("[Tutorial] 等待期间舞台已结束，取消这一拍");
                     _hintRoutine = null;
@@ -381,7 +385,7 @@ public class TutorialStageDirector : MonoBehaviour
         }
 
         // 等条件期间可能已经阵亡/通关：不要再开拍，否则示范会盖在战败/胜利面板上一直循环
-        if (_stage != null && !_stage.IsStageInProgress)
+        if (_stageState != null && !_stageState.IsStageInProgress)
         {
             Debug.Log("[Tutorial] 舞台已结束，取消手势拍");
             _hintRoutine = null;
@@ -415,7 +419,7 @@ public class TutorialStageDirector : MonoBehaviour
         if (step.kind == GestureHintKind.ChargedSwipe) playSeconds = Mathf.Max(playSeconds, 2.5f);
         while (_beatActive)
         {
-            if (_stage != null && !_stage.IsStageInProgress)
+            if (_stageState != null && !_stageState.IsStageInProgress)
             {
                 Debug.Log("[Tutorial] 教学拍期间舞台结束，结束手势拍");
                 EndBeat();
@@ -601,7 +605,7 @@ public class TutorialStageDirector : MonoBehaviour
 
     private void OnStageVictory()
     {
-        if (_stage == null || tutorialRouteConfig == null) return;
+        if (_stageState == null || tutorialRouteConfig == null) return;
         var runtime = FakeRouteRuntime.Instance;
         if (runtime == null || runtime.RouteConfig != tutorialRouteConfig) return;
 

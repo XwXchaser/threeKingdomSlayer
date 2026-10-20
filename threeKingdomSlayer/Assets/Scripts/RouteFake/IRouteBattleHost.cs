@@ -37,4 +37,7 @@ public interface IRouteBattleHost
 
     /// <summary>整条路线结算（胜利界面、通关铜钱、记录已通关）。</summary>
     void CompleteFakeRouteStage(int clearReward);
+
+    /// <summary>旧版（RouteV2）路线结算。RouteV2 已属遗留实现，等批次 2 收进 Legacy 时一并删除。</summary>
+    void CompleteRouteStage(int clearReward);
 }

@@ -68,8 +68,8 @@ public interface IStageBattleState
 /// </summary>
 public interface IStageFlowControl
 {
-    /// <summary>战败后是否禁止「重来」（教学关为 true，只保留返回）。</summary>
-    bool BlockRestartOnDefeat { get; }
+    /// <summary>战败后是否禁止「重来」（教学关为 true，只保留返回）。教学关导演会写这个开关。</summary>
+    bool BlockRestartOnDefeat { get; set; }
 
     /// <summary>是否压掉战败面板（脚本化演出用）。</summary>
     bool SuppressDefeatUI { get; }
