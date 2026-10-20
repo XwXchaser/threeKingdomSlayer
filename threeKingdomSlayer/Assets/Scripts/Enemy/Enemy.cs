@@ -219,9 +219,9 @@ public GameObject freezeMeltEffectPrefab;
 
     private GameObject ResolveFreezeOverlayPrefab() =>
         freezePresentation != null && freezePresentation.freezeOverlayPrefab != null ? freezePresentation.freezeOverlayPrefab : freezeOverlayPrefab;
-    private GameObject ResolveIceBreakPrefab() =>
+    internal GameObject ResolveIceBreakPrefab() =>
         freezePresentation != null && freezePresentation.iceBreakEffectPrefab != null ? freezePresentation.iceBreakEffectPrefab : iceBreakEffectPrefab;
-    private GameObject ResolveMeltPrefab() =>
+    internal GameObject ResolveMeltPrefab() =>
         freezePresentation != null && freezePresentation.freezeMeltEffectPrefab != null ? freezePresentation.freezeMeltEffectPrefab : freezeMeltEffectPrefab;
     private float ResolveOverlayScale() => freezePresentation != null ? freezePresentation.overlayScale : freezeOverlayScale;
     private float ResolveOverlayYOffset() => freezePresentation != null ? freezePresentation.overlayYOffset : freezeOverlayYOffset;
@@ -430,10 +430,9 @@ public GameObject freezeMeltEffectPrefab;
     private bool _hitFrameResolvedOnce;
     private bool _hitFrameFiredAny;
     private bool _hitFrameInterrupted;
-    private bool _suspendTweenPaused;
+    internal bool _suspendTweenPaused;
     private EnemyAttackTelegraph _attackTelegraph;
     private Tween _hitScaleTween;
-    private Tween _breakIcePushTween;
     private float _hitStopRemaining;
     public bool IsHitStopped => (_suspendSources & SuspendSource.HitStop) != 0;
     /// <summary>任何来源（卡肉 / 冻结）造成的挂起。挂起期间动画与攻击位移都停住。</summary>
@@ -446,23 +445,12 @@ public GameObject freezeMeltEffectPrefab;
         HitStop = 1,
         Frozen = 2
     }
-    private SuspendSource _suspendSources;
+    internal SuspendSource _suspendSources;
     private bool _suspendAnimatorWasEnabled;
 
     // 冻结运行时状态（不序列化）
-    [System.NonSerialized] private float _freezeRemaining;
-    [System.NonSerialized] private float _iceBreakRemaining;
-    [System.NonSerialized] private int _breakIceOriginColumn;
-    [System.NonSerialized] private int _breakIceOriginRow;
     /// <summary>顶开位移时长（秒）：这段期间保持冰冻形态，到位后才碎冰</summary>
     public const float BreakPushMoveSeconds = 0.12f;
-    [System.NonSerialized] private ColumnManager.BreakIcePushResult _pendingBreakPush;
-    [System.NonSerialized] private bool _breakSequencePending;
-    [System.NonSerialized] private float _breakSequenceDelay;
-    [System.NonSerialized] private float _freezeChance;
-    [System.NonSerialized] private float _lastIceHitTime;
-    [System.NonSerialized] private EnemyState _preFrozenState = EnemyState.Idle;
-    [System.NonSerialized] private float _postFreezeRecoverRemaining;
     private float _hitScaleMultiplier = 1f;
 
     // Animator HitFlash 协程引用
@@ -483,15 +471,26 @@ public GameObject freezeMeltEffectPrefab;
     /// </summary>
     private IStageFormation _stageFormation;
 
-    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
+    internal IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
 
     /// <summary>冰系视觉层（冰壳覆盖层 / 着色 / 碎冰特效）。视觉逻辑已从本类拆出，见 EnemyFreezeVisual。</summary>
     private EnemyFreezeVisual _freezeVisual;
 
-    private EnemyFreezeVisual FreezeVisual => _freezeVisual ??= new EnemyFreezeVisual();
+    internal EnemyFreezeVisual FreezeVisual => _freezeVisual ??= new EnemyFreezeVisual();
 
     /// <summary>冰系视觉层需要的上下文：敌人节点 + 渲染器 + 冻结表现配置。</summary>
-    private EnemyFreezeVisual.Context FreezeVisualContext() => new EnemyFreezeVisual.Context
+    /// <summary>当前挂起令牌集合（EnemyFreeze 判断「Frozen 令牌是否残留」用）。</summary>
+    internal SuspendSource SuspendSources => _suspendSources;
+
+    /// <summary>对象池回收：清掉残留挂起并恢复动画器（原本写在 ClearFreezeOnTeardown 里）。</summary>
+    internal void ResetSuspendForTeardown()
+    {
+        _suspendSources = SuspendSource.None;
+        _suspendTweenPaused = false;
+        if (_animator != null) _animator.enabled = true;
+    }
+
+    internal EnemyFreezeVisual.Context FreezeVisualContext() => new EnemyFreezeVisual.Context
     {
         transform = transform,
         spriteRenderer = _spriteRenderer,
@@ -508,7 +507,7 @@ public GameObject freezeMeltEffectPrefab;
 
     // 血条UI缓存
     private EnemyHealthBar cachedHealthBar;
-    private Animator _animator;
+    internal Animator _animator;
     private EnemySpriteController _spriteCtrl;
     private CavalryEnemy _cavalry;
     private CavalryVisualController _cavalryVisual;
@@ -798,8 +797,7 @@ public GameObject freezeMeltEffectPrefab;
 
         UpdateHitStop();
         UpdateFreezeChanceDecay();
-        if (_postFreezeRecoverRemaining > 0f)
-            _postFreezeRecoverRemaining -= Time.deltaTime;
+        FreezeSys.TickPostFreezeRecovery();
         if (_pierceHighlighted)
             UpdateOutlineState();
 
@@ -2844,336 +2842,40 @@ private void SpawnProjectile()
 
     #region 冻结（冰系）
 
+    // 冰系的**状态与流程**已搬到 EnemyFreeze（Assets/Scripts/Enemy/EnemyFreeze.cs），
+    // 表现层在 EnemyFreezeVisual（冰壳覆盖层 / 着色 / 碎冰特效）。
+    // 本区段只保留对外接口与转发，Enemy 不再持有冰系状态。
+
+    private EnemyFreeze _freezeSys;
+
+    private EnemyFreeze FreezeSys => _freezeSys ??= new EnemyFreeze(this);
+
     /// <summary>当前是否处于攻击前摇播放中（与 Parry 打断同口径：收招不算前摇）。</summary>
     public bool IsInAttackWindup => state == EnemyState.Attacking && isAttackAnimating && !isAttackDrawPhase;
 
-    public bool IsFrozen => state == EnemyState.Frozen;
-    /// <summary>
-    /// 冻结中受击不播受击动画（设计 4.2）。
-    /// 例外：破冰序列（含 0.12s 顶开窗口）——那时受击动画要与碎冰同步播放（设计 4.6）。
-    /// </summary>
-    private bool IsFrozenHitReactionSuppressed => state == EnemyState.Frozen && !_breakSequencePending;
-    /// <summary>自然解冻后的短暂停顿：不接补齐/行军，保证玩家能看到“解冻了”这一步。</summary>
-    public bool IsInPostFreezeRecovery => _postFreezeRecoverRemaining > 0f;
     /// <summary>冻结或破冰动画期间：所有自主行动与计时都暂停。</summary>
     public bool IsActionPaused => state == EnemyState.Frozen || state == EnemyState.IceBreaking || tutorialHold;
-    public float FreezeChance => _freezeChance;
 
-    /// <summary>是否允许进入冻结：空中、起身、QTE、阶段切换、死亡、未应战 BOSS 都不允许。</summary>
-    public bool CanBeFrozen
-    {
-        get
-        {
-            if (state == EnemyState.Dead) return false;
-            if (state == EnemyState.Frozen) return false;
-            if (state == EnemyState.IceBreaking) return false; // 破冰动画期间不可再冻（设计 4.6 / 用例 6b）
-            if (state == EnemyState.Launched) return false;
-            if (state == EnemyState.GettingUp) return false;
-            if (state == EnemyState.QTEAttacking) return false;
-            if (isPhaseTransitioning) return false;
-            if (isBoss && bossState != BossState.InCombat) return false;
-            return true;
-        }
-    }
+    public bool IsFrozen => FreezeSys.IsFrozen;
+    public bool IsInPostFreezeRecovery => FreezeSys.IsInPostFreezeRecovery;
+    public float FreezeChance => FreezeSys.FreezeChance;
+    public bool CanBeFrozen => FreezeSys.CanBeFrozen;
 
-    /// <summary>冻结：暂停而非取消。已冻结时只把时长重置为满值，不重复挂起。</summary>
-    public bool Freeze(float duration)
-    {
-        if (duration <= 0f) duration = freezeDuration;
+    private bool IsFrozenHitReactionSuppressed => FreezeSys.IsFrozenHitReactionSuppressed;
 
-        if (state == EnemyState.Frozen)
-        {
-            _freezeRemaining = Mathf.Max(_freezeRemaining, duration);
-            return true;
-        }
-        if (!CanBeFrozen) return false;
-
-        // 在途补齐移动先落位（走完整完成分支，含补齐链回调），再进入冻结（设计 §4.1）
-        CompletePendingMovement();
-
-        _preFrozenState = state;
-        state = EnemyState.Frozen;
-        _freezeRemaining = duration;
-        PushSuspend(SuspendSource.Frozen);
-        FreezeVisual.Apply(true, FreezeVisualContext());
-        _postFreezeRecoverRemaining = 0f;
-        DebugLog.Info($"[Freeze] {DebugTag} 进入冻结 {duration:F2}s (原状态={_preFrozenState})");
-        return true;
-    }
-
-    /// <summary>自然解冻：从暂停处续播原动作。</summary>
-    private void EndFreezeNatural()
-    {
-        if (state != EnemyState.Frozen) return;
-        _freezeRemaining = 0f;
-        FreezeVisual.Apply(false, FreezeVisualContext());
-        state = _preFrozenState;
-        PopSuspend(SuspendSource.Frozen);
-        _postFreezeRecoverRemaining = Mathf.Max(0f, freezeRecoveryDelay);
-
-        // 自然解冻用另一套表现（塌陷/融化），与破冰爆散区分
-        if (ResolveMeltPrefab() != null)
-        {
-            FreezeVisual.SpawnFittedFx(ResolveMeltPrefab(), 1.15f, FreezeVisualContext());
-        }
-
-        DebugLog.Info($"[Freeze] {DebugTag} 自然解冻 → {state}，停顿 {_postFreezeRecoverRemaining:F2}s 后再接补齐");
-    }
-
-    /// <summary>破冰解冻：取消被暂停的动作。（P4 会在这里接入破冰动画与双倍结算）</summary>
-    public void BreakFreeze()
-    {
-        if (state != EnemyState.Frozen) return;
-        _freezeRemaining = 0f;
-        FreezeVisual.Apply(false, FreezeVisualContext());
-        PopSuspend(SuspendSource.Frozen);
-        CancelAttack();
-        state = EnemyState.Idle;
-        DebugLog.Info($"[Freeze] {DebugTag} 破冰解冻 → Idle");
-    }
-
-    /// <summary>
-    /// 系统演出接管（BOSS 转阶段）：强制解除冻结与破冰序列。
-    /// 冻结是“暂停”而非“取消”，但阶段演出不允许被暂停，必须由演出方主动清掉挂起令牌：
-    /// 否则 _suspendSources 残留 Frozen 会让 Animator 永久禁用、冻结计时不再递减、冰块覆盖层不销毁。
-    /// </summary>
-    private void ClearFreezeForSystemOverride()
-    {
-        bool hasFrozenToken = (_suspendSources & SuspendSource.Frozen) != 0;
-        if (state != EnemyState.Frozen && state != EnemyState.IceBreaking && !hasFrozenToken) return;
-
-        FreezeVisual.Apply(false, FreezeVisualContext());
-        _freezeRemaining = 0f;
-        _breakSequencePending = false;
-        _breakSequenceDelay = 0f;
-        _iceBreakRemaining = 0f;
-        _postFreezeRecoverRemaining = 0f;
-        PopSuspend(SuspendSource.Frozen);
-        DebugLog.Info($"[Freeze] {DebugTag} 系统演出接管，强制解除冻结 (state={state})");
-    }
-
-    private void UpdateFrozen()
-    {
-        // 顶开到位 → 碰撞 + 碎冰
-        if (_breakSequencePending)
-        {
-            _breakSequenceDelay -= Time.deltaTime;
-            if (_breakSequenceDelay <= 0f)
-            {
-                StartBreakSequence();
-                return;
-            }
-        }
-
-        _freezeRemaining -= Time.deltaTime;
-
-        // 冰壳呼吸：让"冻住"在读感上不是一张静止图片
-        if (FreezeVisual.OverlayRenderer != null)
-        {
-            float t = 0.5f + 0.5f * Mathf.Sin(Time.time * 6f);
-            Color c = FreezeVisual.OverlayRenderer.color;
-            c.a = Mathf.Lerp(0.55f, 0.92f, t);
-            FreezeVisual.OverlayRenderer.color = c;
-        }
-
-        if (_freezeRemaining <= 0f)
-            EndFreezeNatural();
-    }
-
-    /// <summary>①破冰推动 + ②碰撞伤害。双倍伤害与破冰动画由调用方接着处理。</summary>
-    public void BreakIcePush()
-    {
-        if (state != EnemyState.Frozen) return;
-
-        var cm = EnemyManager.Instance?.columnManager;
-        if (cm == null) return;
-
-        _breakIceOriginColumn = columnIndex;
-        _breakIceOriginRow = rowIndex;
-
-        var res = cm.ApplyBreakIcePush(this, IceBreakRuntime.BreakIcePushRows);
-        _pendingBreakPush = res;
-
-        string blockedTag = res.blockedBy != null
-            ? res.blockedBy.DebugTag + "@row" + res.blockedBy.rowIndex
-            : "none";
-        Debug.Log("[BreakIcePush] " + DebugTag + " col=" + columnIndex + " row " + res.fromRow + "->" + res.toRow
-                  + " moved=" + res.moved + " blockedBy=" + blockedTag);
-
-        // 回位事务当场登记：到期时间 = 顶开位移 + 破冰动画 + 停留
-        if (res.moved)
-        {
-            float delay = BreakPushMoveSeconds
-                          + Mathf.Max(0f, iceBreakAnimDuration)
-                          + Mathf.Max(0f, breakIceReturnDelay);
-            cm.RegisterBreakIceReturn(this, _breakIceOriginColumn, _breakIceOriginRow, rowIndex, delay);
-        }
-    }
-
-    /// <summary>顶开到位后的碰撞结算（双方各一次）。</summary>
-    private void ApplyPendingBreakCollision()
-    {
-        var res = _pendingBreakPush;
-        if (res.blockedBy == null) return;
-
-        float collisionDamage = 0f;
-        var stageForDamage = StageFormation;
-        var stageConfigForDamage = stageForDamage != null ? stageForDamage.StageConfig : null;
-        if (stageConfigForDamage != null)
-            collisionDamage = stageConfigForDamage.collisionDamage;
-
-        if (collisionDamage <= 0f)
-        {
-            Debug.LogWarning("[BreakIcePush] 被 " + res.blockedBy.DebugTag + " 挡住，但关卡 collisionDamage<=0，未结算碰撞伤害");
-            return;
-        }
-
-        float blockerHpBefore = res.blockedBy.currentHealth;
-        float selfHpBefore = currentHealth;
-
-        res.blockedBy.TakeDamage(collisionDamage, DamageType.Collision,
-            feedbackSource: HitFeedbackSource.Collision,
-            countsForCombo: true,
-            canInterruptAttack: false,
-            triggerHitAnimation: !res.blockedBy.IsFrozen,
-            hitReactionDirection: HitReactionDirection.Front);
-        TakeDamage(collisionDamage, DamageType.Collision,
-            feedbackSource: HitFeedbackSource.Collision,
-            countsForCombo: true,
-            canInterruptAttack: false,
-            triggerHitAnimation: false,
-            hitReactionDirection: HitReactionDirection.None);
-
-        Debug.Log("[BreakIcePush] 碰撞结算：" + DebugTag + " " + selfHpBefore + "->" + currentHealth
-                  + " / " + res.blockedBy.DebugTag + " " + blockerHpBefore + "->" + res.blockedBy.currentHealth);
-    }
-
-
-    /// <summary>④破冰动画：停冻结、播特效；hitted 由本次 TakeDamage 正常同步播放。</summary>
-    public void BeginIceBreaking()
-    {
-        if (state != EnemyState.Frozen) return;
-
-        // 被顶开时：先保持冰冻形态跑完位移，到位那一刻才碰撞 + 碎冰
-        if (_pendingBreakPush.moved)
-        {
-            _breakSequencePending = true;
-            _breakSequenceDelay = BreakPushMoveSeconds;
-            return;
-        }
-
-        StartBreakSequence();
-    }
-
-    private void StartBreakSequence()
-    {
-        _breakSequencePending = false;
-        _breakSequenceDelay = 0f;
-
-        ApplyPendingBreakCollision();
-
-        _freezeRemaining = 0f;
-        FreezeVisual.Apply(false, FreezeVisualContext());
-        PopSuspend(SuspendSource.Frozen);
-
-        if (ResolveIceBreakPrefab() != null)
-            FreezeVisual.SpawnFittedFx(ResolveIceBreakPrefab(), 1.35f, FreezeVisualContext());
-        else
-            FreezeVisual.SpawnProceduralIceBreakFx(FreezeVisualContext());
-
-        state = EnemyState.IceBreaking;
-        _iceBreakRemaining = Mathf.Max(0.01f, iceBreakAnimDuration);
-        DebugLog.Info("[Freeze] " + DebugTag + " 破冰 -> IceBreaking " + _iceBreakRemaining.ToString("F2") + "s");
-    }
-
-
-    /// <summary>破冰推动的位移补间：从被推前的位置快速滑到新排，避免“瞬移”。</summary>
+    public bool Freeze(float duration) => FreezeSys.Freeze(duration);
+    public void BreakFreeze() => FreezeSys.BreakFreeze();
+    public void ApplyIceHit(float chancePerHit) => FreezeSys.ApplyIceHit(chancePerHit);
+    public void BreakIcePush() => FreezeSys.BreakIcePush();
+    public void BeginIceBreaking() => FreezeSys.BeginIceBreaking();
     public void PlayBreakIcePushMove(Vector3 fromWorldPosition, float duration = 0.12f)
-    {
-        Vector3 end = transform.position;
-        transform.position = fromWorldPosition;
+        => FreezeSys.PlayBreakIcePushMove(fromWorldPosition, duration);
 
-        _breakIcePushTween?.Kill();
-        _breakIcePushTween = transform
-            .DOMove(end, Mathf.Max(0.02f, duration))
-            .SetEase(Ease.OutQuad)
-            .SetTarget(transform)
-            .SetId("breakIcePush");
-    }
-
-
-
-    private void UpdateIceBreaking()
-    {
-        _iceBreakRemaining -= Time.deltaTime;
-        if (_iceBreakRemaining > 0f) return;
-
-        _iceBreakRemaining = 0f;
-        CancelAttack();
-        state = EnemyState.Idle;
-
-        DebugLog.Info($"[Freeze] {DebugTag} 破冰动画结束 → Idle");
-    }
-
-    /// <summary>冰伤害入口：叠加冻结概率 → 前摇翻倍 → clamp → 按当前累计概率掷骰。</summary>
-    public void ApplyIceHit(float chancePerHit)
-    {
-        if (chancePerHit <= 0f) return;
-        // 冻结中不累加、不掷骰；破冰动画期间同样不累加不掷骰（设计 3 / 4.6）
-        if (state == EnemyState.Dead || state == EnemyState.Frozen || state == EnemyState.IceBreaking) return;
-
-        float delta = chancePerHit * (IsInAttackWindup ? freezeWindupChanceMultiplier : 1f);
-        _freezeChance = Mathf.Clamp(_freezeChance + delta, 0f, freezeChanceMax);
-        _lastIceHitTime = Time.time;
-
-        float effective = Mathf.Max(0f, _freezeChance - freezeResist);
-        if (effective <= 0f) return;
-        bool rolled = Random.value < effective;
-        DebugLog.Info($"[Ice] {DebugTag} chance={_freezeChance:F2} effective={effective:F2} windup={IsInAttackWindup} roll={(rolled ? "HIT" : "miss")}");
-        if (rolled)
-        {
-            _freezeChance = 0f;
-            Freeze(freezeDuration);
-        }
-    }
-
-    /// <summary>冻结概率衰退。冻结中不累加，但仍按时间衰退。</summary>
-    private void UpdateFreezeChanceDecay()
-    {
-        if (_freezeChance <= 0f) return;
-        if (Time.time - _lastIceHitTime < freezeChanceDecayDelay) return;
-        _freezeChance = Mathf.Max(0f, _freezeChance - freezeChanceDecayPerSecond * Time.deltaTime);
-    }
-
-
-
-
-
-
-
-
-
-
-    /// <summary>死亡 / 回收：清掉冻结状态与残留挂起，避免对象池复用时动画仍被停住。</summary>
-    private void ClearFreezeOnTeardown()
-    {
-        if (_freezeRemaining > 0f || state == EnemyState.Frozen)
-        {
-            FreezeVisual.Apply(false, FreezeVisualContext());
-            _freezeRemaining = 0f;
-        }
-        _freezeChance = 0f;
-        _lastIceHitTime = 0f;
-        _iceBreakRemaining = 0f;
-        _breakSequencePending = false;
-        _breakSequenceDelay = 0f;
-        _postFreezeRecoverRemaining = 0f;
-        _breakIcePushTween?.Kill();
-        _breakIcePushTween = null;
-        _suspendSources = SuspendSource.None;
-        _suspendTweenPaused = false;
-        if (_animator != null) _animator.enabled = true;
-    }
+    private void UpdateFrozen() => FreezeSys.UpdateFrozen();
+    private void UpdateIceBreaking() => FreezeSys.UpdateIceBreaking();
+    private void UpdateFreezeChanceDecay() => FreezeSys.UpdateFreezeChanceDecay();
+    private void ClearFreezeForSystemOverride() => FreezeSys.ClearFreezeForSystemOverride();
+    private void ClearFreezeOnTeardown() => FreezeSys.ClearFreezeOnTeardown();
 
     #endregion
 
