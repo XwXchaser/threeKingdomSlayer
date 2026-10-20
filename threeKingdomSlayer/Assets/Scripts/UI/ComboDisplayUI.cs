@@ -238,6 +238,9 @@ public class ComboDisplayUI : MonoBehaviour
 
     private void PlayScaleAnimation()
     {
+        // 物体本身被隐藏时（如落地页就绪态把局内 HUD 整组隐藏）不能启协程，
+        // 否则 Unity 会报「Coroutine couldn't be started because the game object is inactive」。
+        if (!gameObject.activeInHierarchy) return;
         if (_scaleRoutine != null)
             StopCoroutine(_scaleRoutine);
         _scaleRoutine = StartCoroutine(ScaleRoutine());
