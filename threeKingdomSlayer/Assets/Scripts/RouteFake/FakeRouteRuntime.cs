@@ -628,9 +628,24 @@ public sealed class FakeRouteRuntime : MonoBehaviour
                     snapshot.activeSkills.Add(new RouteActiveSkillSaveState { upgradeId = entry.definition.upgradeId, level = entry.level });
             }
         }
+        snapshot.propStates.Clear();
+        snapshot.propStates.AddRange(BreakableProp.ExportStates());
         SaveManager.SaveFakeRouteSnapshot(snapshot);
         SaveManager.SetActiveFakeRouteStage(routeConfig.stageId);
         Debug.Log("[FakeRoute] checkpoint saved node=" + _currentNode.nodeId);
+    }
+
+    /// <summary>
+    /// 道具被破坏后就地更新已存在的快照（只改道具记录，不改变检查点节点）。
+    /// 没有快照时不创建，避免把未开始的节点当成检查点。
+    /// </summary>
+    public void NotifyPropDestroyed()
+    {
+        if (routeConfig == null) return;
+        var snapshot = SaveManager.GetFakeRouteSnapshot(routeConfig.routeId, routeConfig.stageId);
+        if (snapshot == null) return;
+        snapshot.propStates = new List<BreakableProp.PropSaveEntry>(BreakableProp.ExportStates());
+        SaveManager.SaveFakeRouteSnapshot(snapshot);
     }
 
     private bool RestoreCheckpoint(FakeRouteStageSaveSnapshot snapshot, out FakeRouteNodeConfig restoredNode)
@@ -647,6 +662,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         player.currentExp = snapshot.currentExp;
         player.killCount = snapshot.killCount;
         player.coinCount = snapshot.coinCount;
+        BreakableProp.ImportStates(snapshot.propStates);
         player.acquiredUpgrades.Clear();
         _completedBattleEntries.Clear();
         _visitedNodes.Clear();
