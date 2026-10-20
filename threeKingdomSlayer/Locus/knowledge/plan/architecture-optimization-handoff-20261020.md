@@ -50,6 +50,7 @@ summary: 架构改造交接（2026-10-20）：41 个提交落地——落地页/
 | `b2da9d2` | 路线层改用端口接口 `IRouteBattleHost` |
 | `9f735e2` / `a0dccc9` / `853d022` / `d705596` | 拆出 `IStageFormation` / `IStageFlowControl` / `IStageBattleState`，28 个消费者迁移，**门面成员调用清零** |
 | `eac2922` / `86c3fbd` | `Enemy` 拆出 `EnemyOutline`（描边）与 `EnemyFreezeVisual`（冰系视觉层） |
+| `34b6bc5` | `Enemy` 拆出 `EnemyFreeze`（冰系状态与流程，4798 → 4496 行） |
 | `f906501` | `StageController` 按角色拆出 `StageFormation` / `StageRouteBattleHost` |
 | `8224843` | 修：主场景重载后 overlay 栈过期，导致 hub 内容永久隐藏 |
 | `55c216a` / `a38ee66` | 遗留路线实现收进 `Assets/Scripts/Legacy/`，现役代码不再引用任何 Legacy 类型 |
@@ -60,7 +61,7 @@ summary: 架构改造交接（2026-10-20）：41 个提交落地——落地页/
 
 | 指标 | 改造前 | 现在 |
 |---|---|---|
-| `Enemy.cs` | 5224 行 | **4798 行** |
+| `Enemy.cs` | 5224 行 | **4496 行**（描边 + 冰系视觉 + 冰系流程已拆出） |
 | `StageController.cs` | 852 行 | **708 行** |
 | 门面（`StageController`）成员调用 | 大量 | **0**（`StageController.Instance` 仅剩 30 处惰性解析点） |
 | 角色接口 | 0 | 4 个（`IRouteBattleHost` / `IStageFormation` / `IStageFlowControl` / `IStageBattleState`） |

@@ -3,8 +3,8 @@
   "presetId": "default",
   "name": "Default",
   "projectId": "unity-293bce2768c5fa7e2c039c6f",
-  "revision": 839,
-  "lastOperationId": "c6db2417-c76b-4acf-bcd3-f4ca23c148d3",
+  "revision": 840,
+  "lastOperationId": "6d891bc7-9469-4f76-bd19-78fb4dbe8559",
   "nodes": [
     {
       "nodeId": "resource:knowledge:32ea9f99-4b8d-4ed1-9e16-8f4ed1f7200e",
@@ -14,7 +14,7 @@
       "resourceId": "kd_3bee8e5e-dd47-4c40-91f0-5c9e5e4eb8b6",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 248
+      "position": 249
     },
     {
       "nodeId": "resource:knowledge:2e5ffbcc-fc5b-479f-880f-f6eaca0fe41c",
@@ -24,7 +24,7 @@
       "resourceId": "kd_835a3457-a00c-42ea-8e56-dcd37c457f2d",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 249
+      "position": 250
     },
     {
       "nodeId": "resource:knowledge:25ef51bb-f824-479c-a790-0a219516d3c8",
@@ -34,7 +34,7 @@
       "resourceId": "kd_b6cf4b62-1523-4614-a917-e03794a2eb27",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 250
+      "position": 251
     },
     {
       "nodeId": "resource:knowledge:0fc410db-6e3c-499e-b7c0-2e0405c3078e",
@@ -44,7 +44,7 @@
       "resourceId": "kd_a9df5837-75e3-4f6e-872f-1b0dedc64c06",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 251
+      "position": 252
     },
     {
       "nodeId": "resource:knowledge:7305724a-8c64-4694-a336-482b1c691a36",
@@ -54,7 +54,7 @@
       "resourceId": "kd_4a05f94c-c97a-4aab-8a5c-1538d75ae6ef",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 252
+      "position": 253
     },
     {
       "nodeId": "resource:knowledge:ef002776-d99b-4fb0-9191-d9e31a2c8a9a",
@@ -64,7 +64,7 @@
       "resourceId": "kd_aec42590-df09-4ecc-bb13-39892f781020",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 253
+      "position": 254
     },
     {
       "nodeId": "resource:knowledge:f09a82c6-a4d7-45d8-a746-c08511ac21cd",
@@ -74,7 +74,7 @@
       "resourceId": "kd_fc1817f0-c03f-43a6-bb88-42e428f07611",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 254
+      "position": 255
     },
     {
       "nodeId": "resource:knowledge:6af9af67-07bc-49dc-b6f0-60a56053b42e",
@@ -84,7 +84,7 @@
       "resourceId": "kd_7b0b3fe1-8bf7-4f26-ab3c-5085f77cc015",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 255
+      "position": 256
     },
     {
       "nodeId": "resource:knowledge:9ef577db-d68c-4311-9f3c-c05d3cf9803b",
@@ -94,7 +94,7 @@
       "resourceId": "kd_8eef08bf-76a1-4af2-8f94-ace7cb327e3c",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 256
+      "position": 257
     },
     {
       "nodeId": "resource:system:819e4356-6c9a-4769-ac9f-91b033e557e5",
@@ -130,7 +130,7 @@
       "resourceKind": "system",
       "resourceId": "collaboration",
       "hidden": false,
-      "position": 257
+      "position": 258
     },
     {
       "nodeId": "resource:system:5fea5724-ae05-4bf0-a345-29811c839d59",
@@ -139,7 +139,7 @@
       "resourceKind": "system",
       "resourceId": "assets",
       "hidden": false,
-      "position": 258
+      "position": 259
     },
     {
       "nodeId": "resource:system:6569d829-129e-44f3-b130-b2605e896669",
@@ -148,7 +148,7 @@
       "resourceKind": "system",
       "resourceId": "views",
       "hidden": false,
-      "position": 259
+      "position": 260
     },
     {
       "nodeId": "resource:system:74980b6d-3170-45e7-a338-f1699d8ac93d",
@@ -157,7 +157,7 @@
       "resourceKind": "system",
       "resourceId": "archived",
       "hidden": true,
-      "position": 260
+      "position": 261
     },
     {
       "nodeId": "resource:knowledge:29ff4b83-19e1-4b81-89ba-21ac07b8c599",
@@ -167,7 +167,7 @@
       "resourceId": "kd_47eaa9f8-1f3b-45d4-a363-10752239b1e5",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 247
+      "position": 248
     },
     {
       "nodeId": "resource:session:d1fd189c-951d-4d6b-b5cc-bba4f5df309c",
@@ -186,7 +186,7 @@
       "resourceId": "kd_857e052b-eed5-499e-a5f3-1ccc48ed9627",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 246
+      "position": 247
     },
     {
       "nodeId": "resource:knowledge:39a03dea-5fe5-4858-a51e-37cf30ce574a",
@@ -196,7 +196,7 @@
       "resourceId": "kd_4e5d40cf-94fe-48ec-810b-b2d06351bee3",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 244
+      "position": 245
     },
     {
       "nodeId": "resource:knowledge:7c53e4f3-252d-42f2-b5c4-6005bd183dd0",
@@ -206,7 +206,7 @@
       "resourceId": "kd_4518874e-fcb2-4448-b3e6-c134e15466ca",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 245
+      "position": 246
     },
     {
       "nodeId": "resource:knowledge:87a51feb-ea01-4994-a3fa-f73d48f51ef3",
@@ -216,7 +216,7 @@
       "resourceId": "kd_bb60439d-5117-49fd-9789-7cc1a60f4bd8",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 239
+      "position": 240
     },
     {
       "nodeId": "resource:knowledge:410f2307-27bd-49ae-ba1f-8499d9f6ae2c",
@@ -226,7 +226,7 @@
       "resourceId": "kd_88f24d6e-f055-43ca-9efd-25c26dcf7568",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 240
+      "position": 241
     },
     {
       "nodeId": "resource:knowledge:78976699-bf99-4606-a438-2f6fb19eb4aa",
@@ -236,7 +236,7 @@
       "resourceId": "kd_ce13d75a-8543-4f9e-b0a0-dd691b6eda64",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 241
+      "position": 242
     },
     {
       "nodeId": "resource:knowledge:0cb79b46-b22f-47b6-bec4-9d05c3de5c6f",
@@ -246,7 +246,7 @@
       "resourceId": "kd_65412ee0-2f14-4b9d-a598-afdce4337b9a",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 242
+      "position": 243
     },
     {
       "nodeId": "resource:knowledge:b3bc93cb-245a-4083-9637-359fca5c34bb",
@@ -256,7 +256,7 @@
       "resourceId": "kd_d2fd0160-9f84-4843-809c-379b5aa11ee8",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 243
+      "position": 244
     },
     {
       "nodeId": "resource:knowledge:9d6f1143-3ae2-4aea-84f9-c287077f0020",
@@ -266,7 +266,7 @@
       "resourceId": "kd_27ef541b-f3c9-4b70-9c9d-0699fc1bcb0f",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 235
+      "position": 236
     },
     {
       "nodeId": "resource:knowledge:d1226f11-6839-48e7-8d1e-039c4de6fe6f",
@@ -276,7 +276,7 @@
       "resourceId": "kd_b30bbb29-64fa-4982-8f1a-5044011a151e",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 236
+      "position": 237
     },
     {
       "nodeId": "resource:knowledge:ca216da5-8f07-435d-aa10-a391dc97b3c7",
@@ -286,7 +286,7 @@
       "resourceId": "kd_2cb3f665-80e5-4387-8f66-572ff852e4c6",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 237
+      "position": 238
     },
     {
       "nodeId": "resource:knowledge:15ed639b-bc49-4c38-a457-d4d617fe75f8",
@@ -296,7 +296,7 @@
       "resourceId": "kd_05e6039b-c5f9-463c-87f9-59b43da2ce9a",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 238
+      "position": 239
     },
     {
       "nodeId": "resource:knowledge:c8e24159-f050-4279-a198-bc51c2ca9ea0",
@@ -306,7 +306,7 @@
       "resourceId": "kd_a7a6ad74-a259-4fd0-a8e9-269476883aaa",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 234
+      "position": 235
     },
     {
       "nodeId": "resource:knowledge:84912355-841d-4e2a-bbdf-a6517a2593e8",
@@ -316,7 +316,7 @@
       "resourceId": "kd_ba079271-c302-4d4a-9e7b-4af1a2395764",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 233
+      "position": 234
     },
     {
       "nodeId": "resource:system:5ce6d915-54be-4c01-a465-36a21642d6ae",
@@ -325,7 +325,7 @@
       "resourceKind": "system",
       "resourceId": "agents",
       "hidden": false,
-      "position": 261
+      "position": 262
     },
     {
       "nodeId": "resource:knowledge:cc585995-1756-4126-86d0-552fda98834a",
@@ -335,7 +335,7 @@
       "resourceId": "kd_557e8789-77a2-4036-abe5-f8da68b81119",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 232
+      "position": 233
     },
     {
       "nodeId": "resource:knowledge:7ad4aa9f-e147-46f7-8ec7-aed8f2ee5138",
@@ -345,7 +345,7 @@
       "resourceId": "kd_05fdb97a-d8dc-45f8-9e27-272984b65401",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 231
+      "position": 232
     },
     {
       "nodeId": "mount:f8cd8096-b28d-4dd8-b8f8-cb30ed9dae34",
@@ -357,7 +357,7 @@
       "hidden": false,
       "sourcePath": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Locus\\knowledge\\plan\\curved-scroll-development-handoff.md",
       "sourceKind": "knowledge",
-      "position": 264
+      "position": 265
     },
     {
       "nodeId": "resource:session:9f9cb1a8-00bf-4d4a-916b-8c6dae606c1e",
@@ -376,7 +376,7 @@
       "resourceId": "kd_a670aea0-16a3-43a7-bfa9-cf93d4626a3d",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 230
+      "position": 231
     },
     {
       "nodeId": "resource:knowledge:e2975c61-3e18-4030-a8c9-4d9ca6248e4f",
@@ -386,7 +386,7 @@
       "resourceId": "kd_4906c2d2-cdf3-435c-8ccf-42c66d9e72bd",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 229
+      "position": 230
     },
     {
       "nodeId": "mount:8f923aea-18cb-43b8-9057-44b8213ee0de",
@@ -398,7 +398,7 @@
       "hidden": false,
       "sourcePath": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Locus\\knowledge\\plan\\blender-mcp-verified-workflow.md",
       "sourceKind": "knowledge",
-      "position": 262
+      "position": 263
     },
     {
       "nodeId": "mount:32175650-039d-4432-ab52-475b975236de",
@@ -410,7 +410,7 @@
       "hidden": false,
       "sourcePath": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Locus\\knowledge\\plan\\enemy1-model-production-handoff.md",
       "sourceKind": "knowledge",
-      "position": 263
+      "position": 264
     },
     {
       "nodeId": "resource:session:51e50cc3-a9c3-4782-94b8-20a5de5f820e",
@@ -440,7 +440,7 @@
       "hidden": false,
       "sourcePath": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Locus\\knowledge\\plan\\latest-todolist.md",
       "sourceKind": "knowledge",
-      "position": 265
+      "position": 266
     },
     {
       "nodeId": "resource:session:03e8258f-68c1-4383-87e3-3f59bb772130",
@@ -477,7 +477,7 @@
       "resourceId": "kd_4a287565-d873-4a77-aa8d-5f3e553ef92a",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 224
+      "position": 225
     },
     {
       "nodeId": "resource:knowledge:46874b77-78e2-41b7-9fef-f3988b245181",
@@ -487,7 +487,7 @@
       "resourceId": "kd_8b9a6f42-f1e9-4f1e-bb81-c84ff3d80c4f",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 225
+      "position": 226
     },
     {
       "nodeId": "resource:knowledge:aecd8db6-d103-4556-bf0c-72b972f0eee2",
@@ -497,7 +497,7 @@
       "resourceId": "kd_8789bec9-537e-4a51-a14f-c0bbf33d1fee",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 226
+      "position": 227
     },
     {
       "nodeId": "resource:knowledge:e4b8630e-7529-4c72-862e-fc4ed8bd4216",
@@ -507,7 +507,7 @@
       "resourceId": "kd_cbd002a0-2908-4479-a850-5aabdc38bed0",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 227
+      "position": 228
     },
     {
       "nodeId": "resource:knowledge:a32c4884-51e2-4372-8c3e-c171b823a43b",
@@ -517,7 +517,7 @@
       "resourceId": "kd_a01d540b-2822-4970-9c21-5fbed6a73304",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 228
+      "position": 229
     },
     {
       "nodeId": "resource:knowledge:d9477879-9ef9-4da4-9d70-37a9fab44512",
@@ -527,7 +527,7 @@
       "resourceId": "kd_1984e112-c650-49cb-85fb-a24e233f03e5",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 223
+      "position": 224
     },
     {
       "nodeId": "resource:session:70797a91-f145-46f3-9b72-9164315fb77f",
@@ -582,7 +582,7 @@
       "resourceId": "kd_ea04fcf7-9cb3-4bd7-9439-7549525ca59a",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 222
+      "position": 223
     },
     {
       "nodeId": "resource:knowledge:56cb84ba-e022-4cb8-8f07-630bf738363f",
@@ -592,7 +592,7 @@
       "resourceId": "kd_bff529ad-5232-44ac-8dd0-7e68dbaa24de",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 221
+      "position": 222
     },
     {
       "nodeId": "resource:session:898614da-b4e1-47f6-a49e-9d77ac633813",
@@ -620,7 +620,7 @@
       "resourceId": "kd_0441e4db-e43a-49b4-927f-546fc0b67b1e",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 220
+      "position": 221
     },
     {
       "nodeId": "resource:knowledge:de7ed57b-4c6b-47cb-85e8-1ddac19be09b",
@@ -630,7 +630,7 @@
       "resourceId": "kd_c8a85aec-124a-4370-af1a-30e14e63b4e0",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 219
+      "position": 220
     },
     {
       "nodeId": "resource:session:ad743be1-47a7-42bb-ad83-24319fe4479e",
@@ -676,7 +676,7 @@
       "resourceId": "kd_11392b64-1823-4e08-b61b-25bc36be24a2",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 218
+      "position": 219
     },
     {
       "nodeId": "resource:session:b9d6f99a-bc81-4608-af11-ce7018c43615",
@@ -713,7 +713,7 @@
       "resourceId": "kd_4b59108a-5687-49c9-8e18-309d563b3551",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 217
+      "position": 218
     },
     {
       "nodeId": "resource:session:1c4da308-776f-45d7-91b1-02d453805a94",
@@ -750,7 +750,7 @@
       "resourceId": "kd_ab3fec61-c782-4837-80f5-4cdedbab87da",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 216
+      "position": 217
     },
     {
       "nodeId": "resource:knowledge:f9fc5a26-8fa5-4475-957b-67062d3ef6ae",
@@ -760,7 +760,7 @@
       "resourceId": "kd_aedffec7-5626-4f5a-9abf-358a6c3c6410",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 215
+      "position": 216
     },
     {
       "nodeId": "resource:knowledge:23fa78c1-7e5a-4ce5-a198-7b689f675e6a",
@@ -770,7 +770,7 @@
       "resourceId": "kd_faf42c03-6ac6-4618-8a63-b15736274119",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 214
+      "position": 215
     },
     {
       "nodeId": "resource:knowledge:e777d84e-7ff2-4bfb-b854-4c26031b472a",
@@ -780,7 +780,7 @@
       "resourceId": "kd_15926f33-43e3-4aa2-8bf0-366a9b026124",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 213
+      "position": 214
     },
     {
       "nodeId": "resource:session:33c96cf1-3d88-41d7-8ce2-66ea16f72ab5",
@@ -801,7 +801,7 @@
       "hidden": false,
       "sourcePath": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\sword_enemy_dead_v1\\dead_tailframe_green.png",
       "sourceKind": "local",
-      "position": 266
+      "position": 267
     },
     {
       "nodeId": "resource:knowledge:655131c2-c4de-4864-9be7-842546045a7b",
@@ -811,7 +811,7 @@
       "resourceId": "kd_33c753e0-5c7c-45af-838c-a6ebe8d30ec4",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 212
+      "position": 213
     },
     {
       "nodeId": "resource:session:acd5f388-2af8-4803-a62e-2a21164d5739",
@@ -841,7 +841,7 @@
       "hidden": false,
       "sourcePath": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\tmp\\sword_enemy_dead_v1",
       "sourceKind": "local",
-      "position": 267
+      "position": 268
     },
     {
       "nodeId": "mount:18aa6769-bcf7-4845-ab09-181e00043332",
@@ -853,7 +853,7 @@
       "hidden": false,
       "sourcePath": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Library\\Locus\\Screenshots\\locus_game_20261005_050011_584.png",
       "sourceKind": "local",
-      "position": 268
+      "position": 269
     },
     {
       "nodeId": "resource:knowledge:0b35e422-68ec-4a08-89e7-f69f0ada015d",
@@ -863,7 +863,7 @@
       "resourceId": "kd_1b26ca05-47e3-42aa-8750-94e71805f019",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 211
+      "position": 212
     },
     {
       "nodeId": "resource:session:9b571e16-0586-4903-b08f-7e28b7892b57",
@@ -882,7 +882,7 @@
       "resourceId": "kd_f0d90b75-0a40-4f40-a46e-7346240c69f7",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 210
+      "position": 211
     },
     {
       "nodeId": "resource:session:db9856e2-12f9-475d-b039-2f68bbac98ac",
@@ -928,7 +928,7 @@
       "resourceId": "kd_2810fd31-5518-4f7f-bd60-00a3030454f9",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 206
+      "position": 207
     },
     {
       "nodeId": "resource:knowledge:9eb4d69f-74e0-41ce-b32a-64923c3ffe52",
@@ -938,7 +938,7 @@
       "resourceId": "kd_5b281b52-0ed2-4f6a-a5f2-69ab545003da",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 205
+      "position": 206
     },
     {
       "nodeId": "resource:session:6f961e21-83c8-441b-87a6-d1d10222c7d4",
@@ -957,7 +957,7 @@
       "resourceId": "kd_2b297c74-8d71-40ca-bc78-6e9575cc5d03",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 204
+      "position": 205
     },
     {
       "nodeId": "resource:session:2b5ebc17-59e0-483b-8ec5-e30f64df1ed8",
@@ -985,7 +985,7 @@
       "resourceId": "kd_55146d52-83cf-43cc-a52b-e082bd5ceb33",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 203
+      "position": 204
     },
     {
       "nodeId": "resource:session:0824ece5-6e9b-483e-a793-0be6ef4488e3",
@@ -1004,7 +1004,7 @@
       "resourceId": "kd_f26871aa-8bd5-4407-9654-96a1adeaca55",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 202
+      "position": 203
     },
     {
       "nodeId": "resource:session:691d6196-b7ca-4121-9c9a-ab282f5f33a3",
@@ -1041,7 +1041,7 @@
       "resourceId": "kd_0d24b0c9-1d8e-4188-999e-4633ee27a6eb",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 201
+      "position": 202
     },
     {
       "nodeId": "resource:session:5c278247-0814-4087-8dd5-f97e1c04f4bb",
@@ -1078,7 +1078,7 @@
       "resourceId": "kd_3a8110f3-a442-482f-b771-a872c976f637",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 200
+      "position": 201
     },
     {
       "nodeId": "resource:session:1ecb7493-6bb4-47a6-937b-11db55834fcc",
@@ -1106,7 +1106,7 @@
       "resourceId": "kd_ff4efaa3-1820-41ca-a10c-3650275656d5",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 208
+      "position": 209
     },
     {
       "nodeId": "resource:knowledge:16a0103f-1ae1-411c-97fb-1eaabdc37cf4",
@@ -1116,7 +1116,7 @@
       "resourceId": "kd_6021c98b-44e8-44b7-939e-82f46cbe7b67",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 209
+      "position": 210
     },
     {
       "nodeId": "resource:knowledge:38d28b2d-6001-4ebc-b028-9881ff0717a5",
@@ -1126,7 +1126,7 @@
       "resourceId": "kd_1a1a9602-d40f-4f86-a154-7ddcf01d6bbb",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 207
+      "position": 208
     },
     {
       "nodeId": "resource:session:f078a88c-0399-4a38-9ee4-da233094b268",
@@ -1208,7 +1208,7 @@
       "resourceId": "kd_f47e00ef-7f2c-4fc7-a0c7-079f5fc2351f",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 199
+      "position": 200
     },
     {
       "nodeId": "resource:knowledge:58b25bf5-8442-4de4-b671-9ebeecc37a17",
@@ -1218,7 +1218,7 @@
       "resourceId": "kd_87e60f85-f6fd-4a10-b5cc-eee0b4fd274f",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 198
+      "position": 199
     },
     {
       "nodeId": "resource:knowledge:922ecbee-7e50-4ffd-93de-6cef7202c4b6",
@@ -1228,7 +1228,7 @@
       "resourceId": "kd_0a431e09-a499-4b58-af2f-63191e0cfe9a",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 197
+      "position": 198
     },
     {
       "nodeId": "resource:session:8e7fe769-fb8f-4cec-81b3-50ef45ef5fe2",
@@ -1247,7 +1247,7 @@
       "resourceId": "kd_e9fdb1b5-0f1c-4261-a00e-f4ad818c3b7a",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 196
+      "position": 197
     },
     {
       "nodeId": "resource:knowledge:fd77fcfe-a2f9-4529-b790-41eeb66a369f",
@@ -1257,7 +1257,7 @@
       "resourceId": "kd_9fde5d4a-d068-4725-a171-de7fb22e652c",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 195
+      "position": 196
     },
     {
       "nodeId": "resource:knowledge:11f02205-504f-4799-888d-73e14b7c9314",
@@ -1267,7 +1267,7 @@
       "resourceId": "kd_c7517b58-055f-49c6-a1f3-9a92eca25ea8",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 194
+      "position": 195
     },
     {
       "nodeId": "resource:session:b8d8ee84-63f3-463b-b4bc-f76f6c23314c",
@@ -1286,7 +1286,7 @@
       "resourceId": "kd_89654184-e89f-4d1e-b4af-2aa4ea57b6fc",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 193
+      "position": 194
     },
     {
       "nodeId": "resource:knowledge:8b7f2b1c-03e2-43a7-bca4-3a0b4d88f0f7",
@@ -1296,7 +1296,7 @@
       "resourceId": "kd_3aac5c0f-aee8-40e3-9c03-1549e85b5c11",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 192
+      "position": 193
     },
     {
       "nodeId": "resource:knowledge:846334fd-0aa5-4502-9fad-752d13c71084",
@@ -1306,7 +1306,7 @@
       "resourceId": "kd_c5703d62-8423-4bc3-9447-05bb33d68039",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 191
+      "position": 192
     },
     {
       "nodeId": "resource:knowledge:cd377a1e-36cc-4625-9cc6-351931aab5a7",
@@ -1316,7 +1316,7 @@
       "resourceId": "kd_bb213026-ad50-4d6b-9c1e-bf001a9ad87c",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 190
+      "position": 191
     },
     {
       "nodeId": "resource:session:360524f1-cf61-41cf-b1e4-5c6c613d8280",
@@ -1353,7 +1353,7 @@
       "resourceId": "kd_3e71781d-686e-40f6-80e2-a1f1eebaf529",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 189
+      "position": 190
     },
     {
       "nodeId": "resource:knowledge:b94e6654-747c-4b6c-91f3-bad30c05ec3d",
@@ -1363,7 +1363,7 @@
       "resourceId": "kd_fbcc9ef1-13e0-4a5e-87af-f1a4f8921338",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 188
+      "position": 189
     },
     {
       "nodeId": "resource:knowledge:bc38e0e6-fb72-4224-89c8-ee0b27c6f9f4",
@@ -1373,7 +1373,7 @@
       "resourceId": "kd_6bcd5f5f-70bc-44b2-bb19-084f9e4e2f39",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 187
+      "position": 188
     },
     {
       "nodeId": "resource:knowledge:e3700ecb-97d6-4153-ac2c-2e9fbc11a4d7",
@@ -1383,7 +1383,7 @@
       "resourceId": "kd_3e4c5554-7867-43dc-95a4-3a1559154f12",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 186
+      "position": 187
     },
     {
       "nodeId": "resource:knowledge:da3d4fe3-e22c-43fc-9704-06be7e38ca5f",
@@ -1393,7 +1393,7 @@
       "resourceId": "kd_454a66a5-a72e-4174-8360-f946ad437cc2",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 185
+      "position": 186
     },
     {
       "nodeId": "resource:knowledge:04b37a77-c01d-470a-b2d2-6d15d876067f",
@@ -1403,7 +1403,7 @@
       "resourceId": "kd_cc7898d6-4a6d-4d43-8452-39780a2211a0",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 184
+      "position": 185
     },
     {
       "nodeId": "resource:knowledge:fc616153-fac1-42ce-87cc-425d262ebd24",
@@ -1413,7 +1413,7 @@
       "resourceId": "kd_8a808827-0065-40f6-8abb-353440d77aaa",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 183
+      "position": 184
     },
     {
       "nodeId": "resource:knowledge:627cc310-8e9c-4b16-8c4e-da9f4e149c17",
@@ -1423,7 +1423,7 @@
       "resourceId": "kd_ee04a4ee-f331-4966-be32-45a74b5bf560",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 182
+      "position": 183
     },
     {
       "nodeId": "resource:knowledge:377ac7cc-8d68-43c9-9e91-0afb00f42bd2",
@@ -1433,7 +1433,7 @@
       "resourceId": "kd_135b8dde-aa84-4d4e-8f3f-65609b953345",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 181
+      "position": 182
     },
     {
       "nodeId": "resource:session:52776491-ead6-465a-8da1-74fbb28e8757",
@@ -1452,7 +1452,7 @@
       "resourceId": "kd_92c740d1-481c-43a1-9d64-d73fa078d3b3",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 180
+      "position": 181
     },
     {
       "nodeId": "resource:knowledge:79ea9025-b07d-44eb-819d-092b2231b2a6",
@@ -1462,7 +1462,7 @@
       "resourceId": "kd_0963422f-ec65-4043-bdd3-1ee4210f2c28",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 179
+      "position": 180
     },
     {
       "nodeId": "resource:knowledge:3539819c-f931-425d-b5bb-475ed6398950",
@@ -1472,7 +1472,7 @@
       "resourceId": "kd_4a31970f-b81f-4f73-aefa-ff80567021af",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 178
+      "position": 179
     },
     {
       "nodeId": "resource:session:e7afd6d0-901c-44d2-975b-0fa5af27f8b7",
@@ -1491,7 +1491,7 @@
       "resourceId": "kd_190da719-cb35-4537-9560-44d26329b07d",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 174
+      "position": 175
     },
     {
       "nodeId": "resource:knowledge:4e179f40-262e-454e-8078-d4318f8ef6dc",
@@ -1501,7 +1501,7 @@
       "resourceId": "kd_7d503436-0e48-44b8-97e8-8a7fcd851ad3",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 175
+      "position": 176
     },
     {
       "nodeId": "resource:knowledge:0c034039-f88e-4e32-83b2-34e17c73cc44",
@@ -1511,7 +1511,7 @@
       "resourceId": "kd_06bec1a4-aa64-4b6c-a746-63f05b4ffbaf",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 176
+      "position": 177
     },
     {
       "nodeId": "resource:knowledge:f4018c13-f7e6-4220-825f-f07383f28c98",
@@ -1521,7 +1521,7 @@
       "resourceId": "kd_f7c02667-fb9c-4106-9ad4-0b10f6c79a3d",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 177
+      "position": 178
     },
     {
       "nodeId": "resource:session:9716e265-1038-4db3-b0f1-712fe76a8708",
@@ -1540,7 +1540,7 @@
       "resourceId": "kd_a4421ad4-a4cf-4881-aac8-c630a043ac3b",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 173
+      "position": 174
     },
     {
       "nodeId": "resource:knowledge:f9b26013-3ef0-41f7-bf9a-1ab233e6f48b",
@@ -1550,7 +1550,7 @@
       "resourceId": "kd_9cb0b4e5-0a6b-4e29-900e-ae511d53b5b3",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 172
+      "position": 173
     },
     {
       "nodeId": "resource:session:dbd05401-4c5f-4f53-b9b4-bbca402408f2",
@@ -1569,7 +1569,7 @@
       "resourceId": "kd_43486d77-fbae-486b-a78b-5131439042cc",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 171
+      "position": 172
     },
     {
       "nodeId": "resource:knowledge:bf5201b2-fd66-4077-88a6-574c8da49f39",
@@ -1579,7 +1579,7 @@
       "resourceId": "kd_408efff5-0767-441c-85c6-46522aaf2af4",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 170
+      "position": 171
     },
     {
       "nodeId": "resource:knowledge:8adf5652-c5fd-4869-825d-12d53d76ed6a",
@@ -1589,7 +1589,7 @@
       "resourceId": "kd_ebebf1a0-79e5-49be-b326-ae9b750408bb",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 169
+      "position": 170
     },
     {
       "nodeId": "resource:knowledge:05d4a39b-b2ca-44fa-a28c-8801d9b92db4",
@@ -1599,7 +1599,7 @@
       "resourceId": "kd_fe09c50b-4b87-4dfc-934b-3485e69d745d",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 168
+      "position": 169
     },
     {
       "nodeId": "resource:session:9f0a1403-f7a4-4653-8e86-873ea6597823",
@@ -1618,7 +1618,7 @@
       "resourceId": "kd_4719b98f-9130-4c0d-b456-5cc891a46dfd",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 167
+      "position": 168
     },
     {
       "nodeId": "resource:knowledge:77cdec2f-f00a-48a1-ba8c-afd7de69e498",
@@ -1628,7 +1628,7 @@
       "resourceId": "kd_21942a6c-cc88-4b7f-a49d-4e64c16a4a87",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 166
+      "position": 167
     },
     {
       "nodeId": "resource:session:e817025c-0671-4970-ad8c-9f887a488105",
@@ -1647,7 +1647,7 @@
       "resourceId": "kd_2c5cafd4-6bfc-446e-b214-46d3fe0b5251",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 165
+      "position": 166
     },
     {
       "nodeId": "resource:knowledge:e66da7cf-4510-40ee-a2cd-e914d07e5872",
@@ -1657,7 +1657,7 @@
       "resourceId": "kd_adf059a2-6025-4e57-ad6d-118262f7d9b7",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 164
+      "position": 165
     },
     {
       "nodeId": "resource:knowledge:352d5502-6016-4b79-a09a-31ff090e65a6",
@@ -1667,7 +1667,7 @@
       "resourceId": "kd_5b449304-df41-4583-90fa-211c05f7ee1e",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 163
+      "position": 164
     },
     {
       "nodeId": "resource:session:bfa095b9-a07b-4985-9632-d0cfed30b857",
@@ -1731,7 +1731,7 @@
       "resourceId": "kd_f6a8f076-fe3b-45b7-abc8-2e3bd926a8c0",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 162
+      "position": 163
     },
     {
       "nodeId": "resource:session:efec9b8e-66ec-4272-9c97-62d898c9f6c7",
@@ -1750,7 +1750,7 @@
       "resourceId": "kd_dc71c498-e563-40f9-a958-94bcc1e8f820",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 161
+      "position": 162
     },
     {
       "nodeId": "resource:knowledge:e6562d27-a498-469b-88d7-13b1dce19261",
@@ -1760,7 +1760,7 @@
       "resourceId": "kd_a7a9d391-c9f2-4f96-b114-88cdead5ce83",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 160
+      "position": 161
     },
     {
       "nodeId": "resource:knowledge:36d63d20-c12e-4323-bc69-98ecb6bf6955",
@@ -1770,7 +1770,7 @@
       "resourceId": "kd_csv_e9da15aabea0bdbc4305532239001f65afe1ef7f8a81b93c60ece5e3c3b59e1a",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 159
+      "position": 160
     },
     {
       "nodeId": "resource:knowledge:646287d1-f7eb-41c6-8e62-8e6c9b68653a",
@@ -1780,7 +1780,7 @@
       "resourceId": "kd_c674e0b4-5785-4b05-8e7b-e36b57a11baa",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 158
+      "position": 159
     },
     {
       "nodeId": "resource:knowledge:8b49e42b-c923-49ac-9fa8-59425fc3fb77",
@@ -1790,7 +1790,7 @@
       "resourceId": "kd_2459c777-e5d4-4d56-abf2-a6bf61c0d662",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 157
+      "position": 158
     },
     {
       "nodeId": "resource:knowledge:fbc9e51f-a4cf-4f93-b42a-a8a3d33cfff5",
@@ -1800,7 +1800,7 @@
       "resourceId": "kd_eed2c233-e7ac-414d-8ccb-9b6dafb6559a",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 156
+      "position": 157
     },
     {
       "nodeId": "resource:session:74c2b2fa-9452-487e-a2e2-2998a5050752",
@@ -1819,7 +1819,7 @@
       "resourceId": "kd_ad24e0ca-24b3-4f44-acea-c9880ff19a39",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 155
+      "position": 156
     },
     {
       "nodeId": "resource:knowledge:464428c8-da49-4199-ba2e-fca801de876e",
@@ -1829,7 +1829,7 @@
       "resourceId": "kd_ddfa8585-af48-48ac-99de-11af48f9f56d",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 154
+      "position": 155
     },
     {
       "nodeId": "resource:knowledge:a5445054-d42b-4741-bcf7-35afde7e864b",
@@ -1839,7 +1839,7 @@
       "resourceId": "kd_29150209-dc5d-4f08-8e1b-117cde2a06c0",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 153
+      "position": 154
     },
     {
       "nodeId": "resource:knowledge:674f2637-bfa7-44a4-b6b1-3589d074af24",
@@ -1849,7 +1849,7 @@
       "resourceId": "kd_b4ac32f2-7868-43e3-b144-74c1da9e6f1f",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 152
+      "position": 153
     },
     {
       "nodeId": "resource:knowledge:c149e1a4-3b0d-41f6-b63d-199cf736b70a",
@@ -1859,7 +1859,7 @@
       "resourceId": "kd_9d881561-815f-49b8-b4fc-ef332bc5438d",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 151
+      "position": 152
     },
     {
       "nodeId": "resource:session:044b6c71-b662-4d7e-8b1c-82d1315ea73c",
@@ -1878,7 +1878,7 @@
       "resourceId": "kd_bd8538b4-0bfd-4dd0-a081-5511e34c55fb",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 150
+      "position": 151
     },
     {
       "nodeId": "resource:knowledge:9c7ac6ad-ff5d-430b-ad0f-58996db5106e",
@@ -1888,7 +1888,7 @@
       "resourceId": "kd_86bb6e2b-c3a2-4a4a-8bfc-006c413f8f8a",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 149
+      "position": 150
     },
     {
       "nodeId": "resource:knowledge:e1785301-9018-4ae5-96a9-9dcae2455045",
@@ -1898,7 +1898,7 @@
       "resourceId": "kd_1232891a-f5e8-48f2-803a-2e02e610a3a5",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 148
+      "position": 149
     },
     {
       "nodeId": "resource:knowledge:9c5b4877-c7d2-4552-839f-cc92f0568abf",
@@ -1908,7 +1908,7 @@
       "resourceId": "kd_d1ab9556-9743-4da9-b864-39368ba0906a",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 147
+      "position": 148
     },
     {
       "nodeId": "resource:session:95851478-dd58-43c4-9fc7-b2737ad9cd1b",
@@ -1954,7 +1954,7 @@
       "resourceId": "kd_b2972d2c-c7ed-4284-bc55-ae820dfb89bb",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 146
+      "position": 147
     },
     {
       "nodeId": "resource:session:e66e77ac-53ff-4504-a3ce-f1f744f6ceff",
@@ -2000,7 +2000,7 @@
       "resourceId": "kd_b70e8e85-d63d-4a40-adb0-f347650b03cd",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 145
+      "position": 146
     },
     {
       "nodeId": "resource:session:aac9f886-7660-4ff3-9dcc-62c3907a4ed1",
@@ -2019,7 +2019,7 @@
       "resourceId": "kd_09566067-ea9f-4219-95a5-bd3c95c56883",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 144
+      "position": 145
     },
     {
       "nodeId": "resource:session:57bdd3c9-555b-4303-bfc1-79282340a8cd",
@@ -2038,7 +2038,7 @@
       "resourceId": "kd_2550c842-e38b-4dbb-9ed4-4bead96610b3",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 143
+      "position": 144
     },
     {
       "nodeId": "resource:session:e7a4b9d8-0c83-4bee-8dd1-f5331f5e4a02",
@@ -2057,7 +2057,7 @@
       "resourceId": "kd_093966d7-530f-44c6-8e01-fd74ed65f7b0",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 142
+      "position": 143
     },
     {
       "nodeId": "resource:session:a95bd08a-fc23-458d-b645-e02d0952733c",
@@ -2076,7 +2076,7 @@
       "resourceId": "kd_0ef77297-5d40-4b44-94c4-84b69f799122",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 141
+      "position": 142
     },
     {
       "nodeId": "resource:knowledge:9e496504-8ee4-4467-b9c4-bd99828b060b",
@@ -2086,7 +2086,7 @@
       "resourceId": "kd_92788a41-d0be-45e4-8602-dfaa897d69c2",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 140
+      "position": 141
     },
     {
       "nodeId": "resource:knowledge:33a9b833-cf43-491c-b0e0-51ace573b3b6",
@@ -2096,7 +2096,7 @@
       "resourceId": "kd_8369a11b-da3c-4bab-9f99-08885b65b27c",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 139
+      "position": 140
     },
     {
       "nodeId": "resource:knowledge:80938431-89c7-4263-b777-bdc2e8d45023",
@@ -2106,7 +2106,7 @@
       "resourceId": "kd_1571e5f3-0cc6-42ef-88b9-5237cee83a9e",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 138
+      "position": 139
     },
     {
       "nodeId": "resource:session:b96c8436-883d-4b17-85ba-576aef94d65c",
@@ -2125,7 +2125,7 @@
       "resourceId": "kd_1ab2dedb-1149-40d4-a7f9-7e7bbf95cdd9",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 137
+      "position": 138
     },
     {
       "nodeId": "resource:knowledge:57031488-1f95-415f-af26-b818be49fbef",
@@ -2135,7 +2135,7 @@
       "resourceId": "kd_250df163-16a2-4df9-bd4a-426a5cf02d95",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 136
+      "position": 137
     },
     {
       "nodeId": "resource:session:02ba3c1b-3f73-4ef8-9e19-e1253f99f448",
@@ -2154,7 +2154,7 @@
       "resourceId": "kd_20b4828f-0df9-4419-b64c-c56cd9529e0d",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 135
+      "position": 136
     },
     {
       "nodeId": "resource:knowledge:f02a76a8-4f73-4156-8579-2dd590f683d1",
@@ -2164,7 +2164,7 @@
       "resourceId": "kd_f5d147a6-617e-4c1a-9096-78b47fb734ee",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 134
+      "position": 135
     },
     {
       "nodeId": "resource:session:e482efb0-8e36-4856-9583-1c543e1decca",
@@ -2192,7 +2192,7 @@
       "resourceId": "kd_77e8a952-6544-43f8-838b-2eb152b3255e",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 133
+      "position": 134
     },
     {
       "nodeId": "resource:knowledge:353d2895-c8ba-40e2-8b4e-ef1650cd1df4",
@@ -2202,7 +2202,7 @@
       "resourceId": "kd_b1b74fff-723e-422f-b1d0-1b6520edef04",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 132
+      "position": 133
     },
     {
       "nodeId": "resource:knowledge:065586d6-57cd-4b9c-ac67-90de314edd3b",
@@ -2212,7 +2212,7 @@
       "resourceId": "kd_56a9bbe7-1093-44a9-9a6b-aa2652259744",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 131
+      "position": 132
     },
     {
       "nodeId": "resource:knowledge:ebbc1e78-0d5f-4ddd-bd75-d14dcf41718e",
@@ -2222,7 +2222,7 @@
       "resourceId": "kd_13af2bab-8e00-482d-8373-10b3fcbc410e",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 130
+      "position": 131
     },
     {
       "nodeId": "mount:5b30e45d-9606-4ca5-be3f-1e37838bf1e9",
@@ -2234,7 +2234,7 @@
       "hidden": false,
       "sourcePath": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Locus\\knowledge\\plan\\wechat-additive-loading-implementation-plan.md",
       "sourceKind": "knowledge",
-      "position": 269
+      "position": 270
     },
     {
       "nodeId": "resource:session:1d706548-c590-4fbd-8770-aa0ff23c4803",
@@ -2253,7 +2253,7 @@
       "resourceId": "kd_e42a0a48-0246-4517-838f-19022757a6ac",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 129
+      "position": 130
     },
     {
       "nodeId": "resource:session:2da4e171-25b1-4e31-8186-5839ef0cf991",
@@ -2308,7 +2308,7 @@
       "resourceId": "kd_b526b9b9-4afa-4a30-9f86-06c005ae5ad1",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 128
+      "position": 129
     },
     {
       "nodeId": "resource:session:88afd5f5-b14f-4efc-9dc0-edc90efab313",
@@ -2327,7 +2327,7 @@
       "resourceId": "kd_87dc14ba-875e-43e2-a2c6-bc1a18caeca9",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 125
+      "position": 126
     },
     {
       "nodeId": "resource:knowledge:c4dd1293-d397-43c9-ae4a-e153d02b503e",
@@ -2337,7 +2337,7 @@
       "resourceId": "kd_6c2953a4-8649-482a-9840-3cb984c37fa3",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 126
+      "position": 127
     },
     {
       "nodeId": "resource:knowledge:0d454e64-4062-44a3-955e-8a55b7293143",
@@ -2347,7 +2347,7 @@
       "resourceId": "kd_11befadd-ae26-4037-9d28-9a1b9f84303c",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 127
+      "position": 128
     },
     {
       "nodeId": "resource:knowledge:26c5f645-e0a3-43b4-92b8-fa4762df9e18",
@@ -2357,7 +2357,7 @@
       "resourceId": "kd_7ad1b9fe-1e65-469d-8f73-d4530b5c98c8",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 124
+      "position": 125
     },
     {
       "nodeId": "resource:session:d5ad5f74-352f-4eb5-8c97-4a10010eb267",
@@ -2376,7 +2376,7 @@
       "resourceId": "kd_8411e536-1f69-465a-8105-c33491cff791",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 123
+      "position": 124
     },
     {
       "nodeId": "resource:session:894c8db7-407d-4663-b6b6-f263d40b5111",
@@ -2395,7 +2395,7 @@
       "resourceId": "kd_66dac704-1e39-4362-852c-fb2956ad141a",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 122
+      "position": 123
     },
     {
       "nodeId": "resource:session:e3be9d57-49b6-4c19-a9f8-e80da208f882",
@@ -2414,7 +2414,7 @@
       "resourceId": "kd_c3548c00-b1f3-4cb4-877d-7793470de120",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 121
+      "position": 122
     },
     {
       "nodeId": "resource:knowledge:ae045bd9-c3ff-4493-900f-04cd49dc9f0d",
@@ -2424,7 +2424,7 @@
       "resourceId": "kd_fd5bd710-1fbc-4ab3-84e5-d6cf88d23e18",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 120
+      "position": 121
     },
     {
       "nodeId": "resource:session:c2dc64ae-c325-4a64-a1be-5358081fd6bf",
@@ -2452,7 +2452,7 @@
       "resourceId": "kd_df5c050a-1d54-41aa-bf73-ef6a1b500264",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 119
+      "position": 120
     },
     {
       "nodeId": "resource:session:f88237f7-daa7-4ce0-a7d7-bcffd17247cf",
@@ -2471,7 +2471,7 @@
       "resourceId": "kd_4ea58f45-f1e2-4cf9-a976-5ba0fcafcc66",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 118
+      "position": 119
     },
     {
       "nodeId": "resource:knowledge:e877c664-607d-453f-8007-08be91676a35",
@@ -2481,7 +2481,7 @@
       "resourceId": "kd_89980c00-247b-4c9f-84c0-e56f747298eb",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 117
+      "position": 118
     },
     {
       "nodeId": "resource:session:cb0b903d-bff9-47ed-90d3-147680dd9ea5",
@@ -2500,7 +2500,7 @@
       "resourceId": "kd_c60b7264-1bd2-4d67-959c-47f83d204821",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 116
+      "position": 117
     },
     {
       "nodeId": "resource:session:40c0c041-eb88-4c30-9195-29175733583d",
@@ -2519,7 +2519,7 @@
       "resourceId": "kd_41d45e7b-c4a4-480f-9626-81a85e1382e3",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 115
+      "position": 116
     },
     {
       "nodeId": "resource:knowledge:c1ac880c-185b-48e5-b835-0a491b49c90b",
@@ -2529,7 +2529,7 @@
       "resourceId": "kd_9bbdc84d-86be-46d5-9b77-5ee166a0ca85",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 114
+      "position": 115
     },
     {
       "nodeId": "resource:knowledge:26fb7971-285e-48f0-bfbc-1c372db4483c",
@@ -2539,7 +2539,7 @@
       "resourceId": "kd_9dd547f5-1f0b-41cd-a91d-4939c8cef351",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 113
+      "position": 114
     },
     {
       "nodeId": "resource:session:27887474-33f5-44ad-bbbe-1a3018ad7627",
@@ -2567,7 +2567,7 @@
       "resourceId": "kd_188283bd-ac80-484f-aeb3-0bb71a0345b5",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 112
+      "position": 113
     },
     {
       "nodeId": "resource:knowledge:f6f74946-94a6-4bdf-a2ad-a616b1170aa7",
@@ -2577,7 +2577,7 @@
       "resourceId": "kd_mainmenu-hub-refactor-plan-20261020",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 111
+      "position": 112
     },
     {
       "nodeId": "resource:session:0861d7f5-2f62-4f7e-b7e0-2540566049ab",
@@ -2596,7 +2596,7 @@
       "resourceId": "kd_a6b3e958-ee14-46fb-956a-17f03b2ee980",
       "hidden": false,
       "sourceKind": "knowledge",
-      "position": 110
+      "position": 111
     },
     {
       "nodeId": "resource:knowledge:2f67f45f-8ab9-4240-809b-21f2b47e5b93",
@@ -2604,6 +2604,16 @@
       "nodeKind": "resource",
       "resourceKind": "knowledge",
       "resourceId": "kd_25b1b2d9-4030-4f1c-b055-1d7c0bbbf47b",
+      "hidden": false,
+      "sourceKind": "knowledge",
+      "position": 110
+    },
+    {
+      "nodeId": "resource:knowledge:943367d3-77cd-4fe7-a2d9-47a412623a54",
+      "projectId": "unity-293bce2768c5fa7e2c039c6f",
+      "nodeKind": "resource",
+      "resourceKind": "knowledge",
+      "resourceId": "kd_6273c3ca-3823-4195-9d9e-fe0fe8c5e8df",
       "hidden": false,
       "sourceKind": "knowledge",
       "position": 109
