@@ -7,7 +7,8 @@ using UnityEngine;
 /// 管理关卡开始、进行中、胜利、失败状态
 /// 协调 WaveSpawner、EnemyManager、PlayerState 之间的交互
 /// </summary>
-public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation, IStageFlowControl, IStageBattleState
+public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation, IStageFlowControl, IStageBattleState,
+    StageRouteBattleHost.IContext
 {
     public static StageController Instance { get; private set; }
 
@@ -34,9 +35,7 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
     private StageState currentState = StageState.None;
     private bool _coinsSettled;
     private bool _routeRunInitialized;
-    private bool _routeBattleRuntime;
     private bool _routeStageSettled;
-    private bool _routeRewardWaiting;
 
     // 事件
     public System.Action<StageState> OnStageStateChanged;
@@ -79,6 +78,31 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
     // GoToMainMenu 签名已匹配，走隐式实现。
     StageConfig IStageFormation.StageConfig => stageConfig;
 
+    /// <summary>路线战斗宿主：节点战斗的开打/旅行/等奖励状态与迁移逻辑已拆出。</summary>
+    private StageRouteBattleHost _routeHost;
+
+    /// <summary>阵型计算：纯计算，已拆出（见 StageFormation）。</summary>
+    private StageFormation _formation = new StageFormation();
+
+    // ───────── StageRouteBattleHost.IContext 实现 ─────────
+    StageConfig StageRouteBattleHost.IContext.StageConfig
+    {
+        get => stageConfig;
+        set => stageConfig = value;
+    }
+
+    StageState StageRouteBattleHost.IContext.CurrentState => currentState;
+
+    void StageRouteBattleHost.IContext.SetStageState(StageState state) => SetState(state);
+
+    WaveSpawner StageRouteBattleHost.IContext.WaveSpawner => waveSpawner;
+
+    EnemyManager StageRouteBattleHost.IContext.EnemyManager => enemyManager;
+
+    PlayerState StageRouteBattleHost.IContext.PlayerState => playerState;
+
+    EnemyPool StageRouteBattleHost.IContext.EnemyPool => enemyPool;
+
     StageConfig IStageFlowControl.StageConfig => stageConfig;
 
     bool IStageFlowControl.IsStageInProgress => IsStageInProgress;
@@ -120,6 +144,7 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
     {
         if (Instance == null)
             Instance = this;
+        _routeHost = new StageRouteBattleHost(this);
     }
 
     private void Awake()
@@ -285,7 +310,7 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
         HealthPotionManager.Instance?.ResetForNewStage();
 
         // 预创建对象池
-        PrewarmEnemyPools();
+        _routeHost.PrewarmEnemyPools();
 
         // 设置关卡状态为进行中
         SetState(StageState.InProgress);
@@ -297,38 +322,7 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
         waveSpawner?.StartWaveSpawning();
     }
 
-    /// <summary>
-    /// 预创建敌人对象池
-    /// </summary>
-    private void PrewarmEnemyPools()
-    {
-        if (stageConfig == null || enemyPool == null) return;
 
-        var enemyIds = new HashSet<int>();
-        foreach (var wave in stageConfig.waves)
-            CollectEnemyIds(wave, enemyIds);
-
-        foreach (int enemyId in enemyIds)
-            enemyPool.PrewarmPool(enemyId, enemyPool.defaultPoolSize);
-    }
-
-    private void CollectEnemyIds(WaveConfig wave, HashSet<int> enemyIds)
-    {
-        if (wave == null || wave.rows == null)
-            return;
-
-        foreach (var row in wave.rows)
-        {
-            if (row == null || row.enemyIds == null)
-                continue;
-
-            foreach (int enemyId in row.enemyIds)
-            {
-                if (enemyId > 0 && enemyId != RowConfig.RhythmGateMarker)
-                    enemyIds.Add(enemyId);
-            }
-        }
-    }
 
     /// <summary>
     /// 设置关卡状态
@@ -401,7 +395,7 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
     {
         if (currentState != StageState.InProgress) return;
 
-        if (_routeBattleRuntime)
+        if (_routeHost.RouteBattleRunning)
         {
             OnRouteBattleCompleted?.Invoke();
             return;
@@ -420,7 +414,7 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
         Debug.Log("[StageController] 最终战斗节点已清空，关卡胜利！");
         AudioManager.Instance?.StopBGM();
         SetState(StageState.Victory);
-        ClearEnemyProjectiles();
+        StageRouteBattleHost.ClearEnemyProjectiles();
 
         if (stageConfig != null)
         {
@@ -465,22 +459,10 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
         Debug.Log("[StageController] 玩家阵亡，关卡失败");
         AudioManager.Instance?.StopBGM();
         SetState(StageState.Defeat);
-        ClearEnemyProjectiles();
+        StageRouteBattleHost.ClearEnemyProjectiles();
         OnStageDefeat?.Invoke();
     }
 
-    private void ClearEnemyProjectiles()
-    {
-        var projectiles = Resources.FindObjectsOfTypeAll<EnemyProjectile>();
-        for (int i = 0; i < projectiles.Length; i++)
-        {
-            if (projectiles[i].gameObject.scene.IsValid())
-            {
-                projectiles[i].gameObject.SetActive(false);
-                Destroy(projectiles[i].gameObject);
-            }
-        }
-    }
 
     /// <summary>
     /// 玩家状态变化
@@ -621,7 +603,7 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
         _routeStageSettled = true;
         AudioManager.Instance?.StopBGM();
         SetState(StageState.Victory);
-        ClearEnemyProjectiles();
+        StageRouteBattleHost.ClearEnemyProjectiles();
         if (clearReward > 0) playerState?.AddCoins(clearReward);
         SaveManager.MarkStageCleared(fakeRouteStageConfig.stageId);
         SettleCoins();
@@ -630,11 +612,11 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
 
     public void CompleteRouteStage(int clearReward)
     {
-        if (!_routeBattleRuntime || _routeStageSettled) return;
+        if (!_routeHost.RouteBattleRunning || _routeStageSettled) return;
         _routeStageSettled = true;
         AudioManager.Instance?.StopBGM();
         SetState(StageState.Victory);
-        ClearEnemyProjectiles();
+        StageRouteBattleHost.ClearEnemyProjectiles();
         if (clearReward > 0) playerState?.AddCoins(clearReward);
         if (routeStageConfigV2 != null)
             SaveManager.MarkStageCleared(routeStageConfigV2.stageId);
@@ -649,71 +631,38 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
 
     public void SetRouteTravelState()
     {
-        Debug.Log($"[RouteDiag] SetRouteTravelState frame={Time.frameCount} routeCombat={IsRouteCombatActive} burnStates=" + (UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetBurnStateCountForDiagnostics().ToString() : "NULL"));
-        _routeRewardWaiting = false;
-        StopCombatSystemsForNodeTransition();
-        TimedPassiveModule.Instance?.PrepareForNonCombat();
-        SpikeTrapController.Instance?.SetRouteVisibility(false);
-        SetState(StageState.Starting);
+        _routeHost.SetRouteTravelState();
     }
 
     public void SetRouteRewardWaitState()
     {
-        _routeRewardWaiting = true;
-        // 奖励等待阶段：不再生成新波次，并取消正在播放的大招表现；
-        // 保留死亡动画与延迟奖励回调直到玩家离开本节点。
-        waveSpawner?.StopSpawning();
-        UltimateSystem.Instance?.CancelUltimate();
+        _routeHost.SetRouteRewardWaitState();
     }
 
-    public bool IsRouteRewardWaiting => _routeRewardWaiting;
-    public bool IsRouteCombatActive => _routeBattleRuntime
-        && currentState == StageState.InProgress
-        && !_routeRewardWaiting;
+    public bool IsRouteRewardWaiting => _routeHost.IsRouteRewardWaiting;
+    public bool IsRouteCombatActive => _routeHost.IsRouteCombatActive;
 
     public void StartRouteBattle(StageConfig config)
     {
         if (config == null) return;
-        Debug.Log($"[RouteDiag] StartRouteBattle frame={Time.frameCount} nodeConfig={config.name} routeCombatBefore={IsRouteCombatActive} burnStates=" + (UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetBurnStateCountForDiagnostics().ToString() : "NULL"));
-        _routeBattleRuntime = true;
-        _routeRewardWaiting = false;
+        // 旧版路线模式互斥：进入卷轴路线战斗前清掉 V1 路线配置（迁移前也在此处）。
         routeStageConfig = null;
-        stageConfig = config;
-        StopCombatSystemsForNodeTransition();
-        PrewarmEnemyPools();
-        SetState(StageState.InProgress);
-        AudioManager.Instance?.PlayDefaultBGM();
-        waveSpawner?.StartWaveSpawning();
-        Debug.Log($"[RouteDiag] StartRouteBattle after wave spawn frame={Time.frameCount} routeCombat={IsRouteCombatActive} enemies={AttackSystem.Instance?.columnManager?.GetAllEnemies()?.Count}");
-        TimedPassiveModule.Instance?.TriggerPendingCombatStartEffects();
-        SpikeTrapController.Instance?.SetRouteVisibility(true);
+        _routeHost.StartRouteBattle(config);
     }
 
     public void StopCombatForRouteTravel()
     {
         if (routeStageConfig == null) return;
-        StopCombatSystemsForNodeTransition();
-        SetState(StageState.Starting);
+        _routeHost.StopCombatForRouteTravel();
     }
 
     public void StartCurrentRouteNode(bool resetPlayer = false)
     {
         if (routeStageConfig == null || stageConfig == null) return;
-        StopCombatSystemsForNodeTransition();
+        _routeHost.StopCombatSystemsForNodeTransition();
         StartNodeCombat(resetPlayer);
     }
 
-    private void StopCombatSystemsForNodeTransition()
-    {
-        waveSpawner?.StopSpawning();
-        enemyManager?.ClearAllEnemies();
-        ClearEnemyProjectiles();
-        ComboManager.Instance?.ResetCombo();
-        HealthPotionManager.Instance?.ResetForNewStage();
-        playerState?.ResetCooldownsForNodeTransition();
-        ActiveSkillInventory.Instance?.ResetCooldowns();
-        TimedPassiveModule.Instance?.ResetTimers();
-    }
 
     private void StartNodeCombat(bool resetPlayer)
     {
@@ -722,7 +671,7 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
         UltimateSystem.Instance?.ResetEnergy();
         var killRewardManager = FindObjectOfType<KillRewardManager>();
         killRewardManager?.ResetRewards();
-        PrewarmEnemyPools();
+        _routeHost.PrewarmEnemyPools();
         SetState(StageState.InProgress);
         AudioManager.Instance?.PlayDefaultBGM();
         waveSpawner?.StartWaveSpawning();
@@ -775,18 +724,7 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
     /// </summary>
     public float GetFormationOffset(int columnIndex, int rowIndex)
     {
-        var fc = stageConfig?.formationConfig;
-        if (fc == null) return (columnIndex - 2) * 2.0f;
-        int maxRow = Mathf.Max(fc.maxVisibleRows - 1, 0);
-
-        return RowFormation.GetColumnOffsetX(
-            rowIndex, columnIndex, maxRow,
-            fc.manualRowHalfWidths,
-            fc.formationPreset,
-            fc.formationMaxSpread,
-            fc.formationMinSpread,
-            fc.formationPowerCurve
-        );
+        return _formation.GetFormationOffset(stageConfig, columnIndex, rowIndex);
     }
 
     /// <summary>
@@ -794,22 +732,22 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
     /// </summary>
     public float GetRowSpacing()
     {
-        return stageConfig?.formationConfig?.rowSpacing ?? 2.5f;
+        return _formation.GetRowSpacing(stageConfig);
     }
 
     public float GetFormationOffsetZ()
     {
-        return stageConfig?.formationConfig?.formationOffsetZ ?? 0f;
+        return _formation.GetFormationOffsetZ(stageConfig);
     }
 
     public int GetMaxVisibleRows()
     {
-        return stageConfig?.formationConfig?.maxVisibleRows ?? 5;
+        return _formation.GetMaxVisibleRows(stageConfig);
     }
 
     public float[] GetRowAlphaFactors()
     {
-        return stageConfig?.formationConfig?.rowAlphaFactors;
+        return _formation.GetRowAlphaFactors(stageConfig);
     }
 
     /// <summary>
@@ -845,7 +783,7 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
     /// </summary>
     public FillUpRule GetFillUpRule()
     {
-        return stageConfig?.fillUpRule ?? FillUpRule.PerColumn;
+        return _formation.GetFillUpRule(stageConfig);
     }
 
     #endregion
