@@ -1,21 +1,15 @@
 ---
-id: kd_188283bd-ac80-484f-aeb3-0bb71a0345b5
+id: kd_mainmenu-hub-refactor-plan-20261020
 injectMode: inherit
 injectAgents:
 - '*'
-aiEditMode: inherit
----
-
----
-id: kd_mainmenu-hub-refactor-plan-20261020
-injectMode: inherit
 summary: 主菜单/落地页重构方案 —— 落地即 Battle 场景、关卡内容进场景即加载、选关与天赋降级为二级 overlay；含包体实测数据与分阶段实施计划
 aiEditMode: inherit
 ---
 
 # 主菜单 / 落地页重构方案（2026-10-20）
 
-> 目标平台：微信小程序。加载完毕后玩家**直接进入 Battle 场景**，看到的���是当前进度的关卡起始场景。
+> 目标平台：微信小程序。加载完毕后玩家**直接进入 Battle 场景**，看到的就是当前进度的关卡起始场景。
 > 本文是**可交接的实施计划**：现状机制 → 目标形态 → 分阶段任务 → 验收 → 已知坑。
 > 任何 AI 接手时，建议从 §3 的「现状机制」和 §5 的「阶段划分」读起。
 
@@ -169,7 +163,7 @@ aiEditMode: inherit
 |---|---|---|
 | `Tutorial_YJ.unity` 在 build settings 但几乎无用 | `ProjectSettings/EditorBuildSettings.asset` | 唯一依赖 9.3MB / 7 张贴图（老 `Enemy1` 贴图 + stronghold 道具）。route 场景实际是 `YJunctionSample.unity` |
 | `MainMenuUI.CreateStageGrid()` 死代码 | `MainMenuUI.cs` | 从未被调用 |
-| `TalentTreePanel` 有资产无入口 | `MainMenu.scene` Canvas 下 `active=False`；`MainMenuUI` 没有 `talentButton` 字段；场景里 `TalentButton` 的 onClick 没绑方法 | **点了没反应** |
+| `TalentTreePanel` 常驻 MainMenu 且无 UI 入口（进阶） | `MainMenu.scene` Canvas 下 `active=False`；`MainMenuUI` 没有 `talentButton` 字段 | **但** `TalentButton` 的 persistent onClick 已绑 `TalentTreePanel.Toggle`，所以点击**其实能打开**（只是默认关闭、无返回按钮）。阶段 B 已改为开 `TalentTree` overlay 场景 |
 | `DisplacementDebugTool` / `ItemTestHelper` 常驻生产场景 | `Battle.scene` → `Player/AttackSystem` | 已在 `refactor/p0-displacement-debug-editor-only` 用 `#if UNITY_EDITOR` 处理 |
 | `.meta` 用 base64 GUID、prefab 引用用 hex GUID | 全项目 | 文本 grep 比对 GUID 会失效，**依赖分析必须用 `AssetDatabase.GetDependencies`** |
 
