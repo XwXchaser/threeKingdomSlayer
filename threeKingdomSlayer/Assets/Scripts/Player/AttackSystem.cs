@@ -12,6 +12,15 @@ public class AttackSystem : MonoBehaviour
 {
     public static AttackSystem Instance { get; private set; }
 
+    /// <summary>
+    /// 关卡/阵型信息（只读）。攻击落点、瞄准指示、位移都依赖排偏移与排间距，
+    /// 历史上直接摸 StageController 门面（22 处），现只依赖这份只读契约
+    /// （2026-10-20 批次 1）。延迟解析：AttackSystem 可能早于 StageController Awake。
+    /// </summary>
+    private IStageFormation _stageFormation;
+
+    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
+
     /// <summary>攻击执行事件（仅 Slash/Sweep/Stab/Pierce/Launch 五种有效攻击触发）</summary>
     public System.Action<AttackType, int, bool> OnAttackPerformed; // attackType, targetColumn, slashLeftToRight
 
@@ -169,12 +178,12 @@ public class AttackSystem : MonoBehaviour
         // 会让枪身“转到一半就停”、和玩家看到的目标点对不上。这里直接用世界坐标算。
         if (aimColumn >= 0 && aimColumn != _lastStabColumn)
         {
-            float spacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
-            int visibleRows = StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
-            float formationOffsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
+            float spacing = StageFormation != null ? StageFormation.GetRowSpacing() : 2.5f;
+            int visibleRows = StageFormation != null ? StageFormation.GetMaxVisibleRows() : 5;
+            float formationOffsetZ = StageFormation != null ? StageFormation.GetFormationOffsetZ() : 0f;
             Vector3 origin = _lastStabEffect.transform.position;
-            float aimX = StageController.Instance != null
-                ? StageController.Instance.GetFormationOffset(aimColumn, 0)
+            float aimX = StageFormation != null
+                ? StageFormation.GetFormationOffset(aimColumn, 0)
                 : (aimColumn - 2) * 2f;
             float aimZ = GetEnemyRootWorldZ() + (visibleRows - 1) * (-spacing) + formationOffsetZ;
             float targetYaw = Mathf.Atan2(aimX - origin.x, aimZ - origin.z) * Mathf.Rad2Deg;
@@ -380,8 +389,8 @@ public class AttackSystem : MonoBehaviour
         if (useStabRayAngleOverrides && stabRayInwardAngleOverrides != null && columnIndex < stabRayInwardAngleOverrides.Length)
             return stabRayInwardAngleOverrides[columnIndex];
 
-        float columnOffset = StageController.Instance != null
-            ? StageController.Instance.GetFormationOffset(columnIndex, 0)
+        float columnOffset = StageFormation != null
+            ? StageFormation.GetFormationOffset(columnIndex, 0)
             : (columnIndex - 2) * 2f;
         return Mathf.Atan2(columnOffset, baseLength * 2f) * Mathf.Rad2Deg;
     }
@@ -429,7 +438,7 @@ public class AttackSystem : MonoBehaviour
             }
         }
         Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
-        float spacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
+        float spacing = StageFormation != null ? StageFormation.GetRowSpacing() : 2.5f;
         Vector3 startPosition = new Vector3(playerPos.x, playerPos.y + cfg.stabSpawnYOffset, -5.5f);
         float yaw = GetStabRayYaw(columnIndex, spacing);
         float baseLength = spacing * 2f;
@@ -555,21 +564,21 @@ public class AttackSystem : MonoBehaviour
 
         effectiveRows = GetEffectiveRangeRows(cfg);
         Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
-        float rowSpacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
-        float formationOffsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
-        int visibleRows = StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
+        float rowSpacing = StageFormation != null ? StageFormation.GetRowSpacing() : 2.5f;
+        float formationOffsetZ = StageFormation != null ? StageFormation.GetFormationOffsetZ() : 0f;
+        int visibleRows = StageFormation != null ? StageFormation.GetMaxVisibleRows() : 5;
         int targetRow = Mathf.Clamp(effectiveRows, 1, visibleRows) - 1;
         float enemyRootZ = GetEnemyRootWorldZ();
         float y = playerPos.y + cfg.stabSpawnYOffset;
-        float startX = StageController.Instance != null
-            ? StageController.Instance.GetFormationOffset(columnIndex, 0)
+        float startX = StageFormation != null
+            ? StageFormation.GetFormationOffset(columnIndex, 0)
             : (columnIndex - 2) * 2f;
         pathPoints.Add(new Vector3(startX, y, -5.5f));
 
         for (int row = 0; row <= targetRow; row++)
         {
-            float x = StageController.Instance != null
-                ? StageController.Instance.GetFormationOffset(columnIndex, row)
+            float x = StageFormation != null
+                ? StageFormation.GetFormationOffset(columnIndex, row)
                 : startX;
             float z = enemyRootZ + (visibleRows - 1 - row) * (-rowSpacing) + formationOffsetZ;
             pathPoints.Add(new Vector3(x, y, z));
@@ -594,16 +603,16 @@ public class AttackSystem : MonoBehaviour
 
         effectiveRows = GetEffectiveRangeRows(cfg);
         Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
-        float columnX = StageController.Instance != null
-            ? StageController.Instance.GetFormationOffset(columnIndex, 0)
+        float columnX = StageFormation != null
+            ? StageFormation.GetFormationOffset(columnIndex, 0)
             : (columnIndex - 2) * 2f;
-        float rowSpacing = StageController.Instance != null ? StageController.Instance.GetRowSpacing() : 2.5f;
-        float formationOffsetZ = StageController.Instance != null ? StageController.Instance.GetFormationOffsetZ() : 0f;
-        int visibleRows = StageController.Instance != null ? StageController.Instance.GetMaxVisibleRows() : 5;
+        float rowSpacing = StageFormation != null ? StageFormation.GetRowSpacing() : 2.5f;
+        float formationOffsetZ = StageFormation != null ? StageFormation.GetFormationOffsetZ() : 0f;
+        int visibleRows = StageFormation != null ? StageFormation.GetMaxVisibleRows() : 5;
         int targetRow = Mathf.Clamp(effectiveRows, 1, visibleRows) - 1;
         float targetRowZ = (visibleRows - 1 - targetRow) * (-rowSpacing) + formationOffsetZ;
-        float endX = StageController.Instance != null
-            ? StageController.Instance.GetFormationOffset(columnIndex, targetRow)
+        float endX = StageFormation != null
+            ? StageFormation.GetFormationOffset(columnIndex, targetRow)
             : columnX;
 
         startPosition = new Vector3(columnX, playerPos.y + cfg.stabSpawnYOffset, -5.5f);
