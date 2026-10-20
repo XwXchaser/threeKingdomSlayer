@@ -22,16 +22,16 @@ MonoBehaviour:
     unlockKind: 0
     moveConfig: {fileID: 11400000, guid: f0d6ad785959ad941b9b51d73a275d01, type: 2}
     flagId: 
-    treePosition: {x: 0, y: 420}
-    icon: {fileID: 0}
+    treePosition: {x: -56, y: 360}
+    icon: {fileID: 21300000, guid: 7c03071b89d13b347917441fe30a61ba, type: 3}
   - nodeId: talent_ice_thaw
     displayName: "\u91CD\u51FB\u89E3\u51BB"
-    description: "\u91CD\u653B\u51FB\u547D\u4E2D\u88AB\u51B0\u51BB\u7684\u654C\u4EBA\u65F6\u5C06\u5176\u6253\u788E\u89E3\u51BB\u3002\uFF08\u672A\u70B9\uFF1A\u51B0\u96FE\u53EA\u80FD\u51BB\u4F4F\uFF0C\u4E0D\u80FD\u89E3\u51BB\uFF09"
+    description: "\u91CD\u653B\u51FB\u547D\u4E2D\u88AB\u51B0\u51BB\u7684\u654C\u4EBA\u65F6\u5C06\u5176\u6253\u788E\u89E3\u51BB\uFF0C\u5E76\u4E14\u8FD9\u4E00\u51FB\u4F24\u5BB3\u7FFB\u500D\u3002\uFF08\u672A\u70B9\uFF1A\u51B0\u96FE\u53EA\u80FD\u51BB\u4F4F\uFF0C\u4E0D\u80FD\u89E3\u51BB\uFF09"
     coinCost: 150
     unlockKind: 1
     moveConfig: {fileID: 0}
     flagId: ice_thaw
-    treePosition: {x: 150, y: 330}
+    treePosition: {x: 56, y: 255}
     icon: {fileID: 0}
   - nodeId: talent_ice_break_push
     displayName: "\u7834\u51B0\u51B2\u51FB"
@@ -40,16 +40,7 @@ MonoBehaviour:
     unlockKind: 1
     moveConfig: {fileID: 0}
     flagId: ice_break_push
-    treePosition: {x: -150, y: 600}
-    icon: {fileID: 0}
-  - nodeId: talent_ice_break_double
-    displayName: "\u788E\u51B0\u91CD\u51FB"
-    description: "\u89E3\u51BB\u7684\u90A3\u4E00\u51FB\u4F24\u5BB3\u7FFB\u500D\u3002\uFF08\u672A\u70B9\uFF1A\u89E3\u51BB\u4E0D\u989D\u5916\u589E\u4F24\uFF09"
-    coinCost: 250
-    unlockKind: 1
-    moveConfig: {fileID: 0}
-    flagId: ice_break_double
-    treePosition: {x: 150, y: 760}
+    treePosition: {x: -56, y: 150}
     icon: {fileID: 0}
   - nodeId: talent_unlock_c4
     displayName: "\u67AA\u7A81\u6536\u5C3E"
@@ -59,8 +50,8 @@ MonoBehaviour:
     unlockKind: 0
     moveConfig: {fileID: 11400000, guid: 3fe76a22f36b7744fb64fb06cf75533a, type: 2}
     flagId: 
-    treePosition: {x: -150, y: 240}
-    icon: {fileID: 0}
+    treePosition: {x: -56, y: -60}
+    icon: {fileID: 21300000, guid: 24ad2d90c0c8b4341a1215586aeea097, type: 3}
   - nodeId: talent_break_formation
     displayName: "\u7834\u9635"
     description: "\u6240\u6709\u653B\u51FB\u9644\u5E26 1 \u70B9\u67B6\u52BF\u4F24\u5BB3\u3002\uFF08\u5360\u4F4D\uFF0C\u5F85\u8BA8\u8BBA\uFF09"
@@ -68,8 +59,8 @@ MonoBehaviour:
     unlockKind: 1
     moveConfig: {fileID: 0}
     flagId: break_formation
-    treePosition: {x: 150, y: 60}
-    icon: {fileID: 0}
+    treePosition: {x: 56, y: -165}
+    icon: {fileID: 21300000, guid: 327f8b816470dc54c8d9b5e0f2e0cbee, type: 3}
   - nodeId: talent_pursuit
     displayName: "\u8FFD\u51FB"
     description: "\u51FB\u6740\u654C\u4EBA\u540E\u653B\u51FB\u51B7\u5374 -0.5s\u3002\uFF08\u5360\u4F4D\uFF0C\u5F85\u8BA8\u8BBA\uFF09"
@@ -77,8 +68,8 @@ MonoBehaviour:
     unlockKind: 1
     moveConfig: {fileID: 0}
     flagId: pursuit
-    treePosition: {x: -150, y: -120}
-    icon: {fileID: 0}
+    treePosition: {x: -56, y: -270}
+    icon: {fileID: 21300000, guid: 1d4783a508dc8724a9d8884a563adb0c, type: 3}
   - nodeId: talent_strategy
     displayName: "\u8FD0\u7B79"
     description: "\u4E09\u9009\u4E00\u53D8\u6210\u56DB\u9009\u4E00\u3002\uFF08\u5360\u4F4D\uFF0C\u5F85\u8BA8\u8BBA\uFF09"
@@ -86,8 +77,8 @@ MonoBehaviour:
     unlockKind: 1
     moveConfig: {fileID: 0}
     flagId: extra_choice
-    treePosition: {x: 150, y: -300}
-    icon: {fileID: 0}
+    treePosition: {x: 56, y: -375}
+    icon: {fileID: 21300000, guid: 0129664365ecccd439f9ac184f79050e, type: 3}
   - nodeId: talent_undying
     displayName: "\u4E0D\u5C48"
     description: "\u8840\u91CF\u4F4E\u4E8E 30% \u65F6\u89E6\u53D1 2 \u79D2\u65E0\u654C\uFF0C\u6BCF\u5C40\u4E00\u6B21\u3002\uFF08\u5360\u4F4D\uFF0C\u5F85\u8BA8\u8BBA\uFF09"
@@ -95,5 +86,14 @@ MonoBehaviour:
     unlockKind: 1
     moveConfig: {fileID: 0}
     flagId: undying
-    treePosition: {x: 0, y: -480}
+    treePosition: {x: -56, y: -480}
+    icon: {fileID: 21300000, guid: e078a3a5ca0ef1f409b9c02ba3f461c9, type: 3}
+  - nodeId: talent_unlock_parry
+    displayName: "\u62DB\u67B6\u683C\u6321"
+    description: "\u89E3\u9501\u62DB\u67B6\uFF1A\u7AD6\u6ED1\uFF08\u4E0D\u84C4\u529B\uFF09\u683C\u6321\u654C\u4EBA\u653B\u51FB\u5E76\u53CD\u5F39\u98DE\u884C\u7269\u3002"
+    coinCost: 100
+    unlockKind: 0
+    moveConfig: {fileID: 11400000, guid: c596fb21c45e31e42b8e55d2d324b333, type: 2}
+    flagId: 
+    treePosition: {x: -300, y: 240}
     icon: {fileID: 0}

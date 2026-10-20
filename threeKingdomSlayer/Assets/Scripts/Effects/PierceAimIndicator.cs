@@ -178,6 +178,15 @@ public sealed class PierceAimIndicator : MonoBehaviour
 
     private void OnChargeBegan(Vector2 screenPosition)
     {
+        // 只允许竖滑蓄力时不存在「穿刺猫准」，整套指示器不参与蓄力
+        if (InputManager.Instance != null && InputManager.Instance.restrictChargedToVertical)
+        {
+            _chargeActive = false;
+            ClearEnemyHighlights();
+            SetVisible(false);
+            return;
+        }
+
         _chargeActive = true;
         _aimReady = false;
         _currentColumn = -1;
@@ -188,6 +197,13 @@ public sealed class PierceAimIndicator : MonoBehaviour
 
     private void OnChargeUpdated(Vector2 screenPosition, float progress)
     {
+        // 只允许竖滑蓄力时：不显示穿刺指示器（蓄力只服务于上挑）
+        if (InputManager.Instance != null && InputManager.Instance.restrictChargedToVertical)
+        {
+            SetVisible(false);
+            return;
+        }
+
         // 连段蓄力不是穿刺蓄力：不显示穿刺猫准指示器
         if (InputManager.Instance != null && InputManager.Instance.comboChargeActive)
         {

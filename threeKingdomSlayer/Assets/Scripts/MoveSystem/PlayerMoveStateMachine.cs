@@ -197,13 +197,13 @@ public class PlayerMoveStateMachine : MonoBehaviour
 
     // ---- 内部实现 ----
 
-    private bool ExecuteDirect(GestureInput input, ref AttackType resolvedType)
+    private bool ExecuteDirect(GestureInput input, ref AttackType resolvedType, bool cancelCurrentMove = false)
     {
         resolvedType = MoveGestureDefaults.ResolveAttackType(input.gesture, input.charged);
         if (attackSystem == null) return false;
 
         bool executed = attackSystem.TryExecuteAttack(resolvedType,
-            input.targetColumn, input.slashLeftToRight, input.slashVisualTilt, input.charged, chargeLevel: input.chargeLevel);
+            input.targetColumn, input.slashLeftToRight, input.slashVisualTilt, input.charged, cancelCurrentMove, chargeLevel: input.chargeLevel);
 
         if (!executed)
         {
@@ -304,8 +304,54 @@ public class PlayerMoveStateMachine : MonoBehaviour
             return false;
         }
 
+        // 招式解锁：C2/C4 这类连段收尾由天赋树控制。未解锁时不吞输入，改走该手势的默认招式
+        // （例如没点 C4 时，枪突三下后上划蓄力仍然是默认的挑飞 Launch）。
+        if (IsMoveLocked(next))
+        {
+            // 未解锁 = 这个输入根本不成立：不转移节点，也不回落成别的招式。
+            // （以前会回落成该手势的默认招式，导致「锁住了还能蓄力打出一记穿刺」）
+            _lastResolution = $"招式未解锁 {next.name}（不响应）";
+            ExitToNeutral();
+            return false;
+        }
+
         // 接续：取消当前招式的收尾，直接执行后继
         return ExecuteMove(next, input, out resolvedType, cancelCurrentMove: true);
+    }
+
+    /// <summary>
+    /// 招式是否被天赋锁住：招式表里有 MoveUnlock 节点指向它、但存档里还没解锁。
+    /// 没配天赋树（或没有对应节点）一律视为已解锁，避免配置缺失把招式全锁死。
+    /// </summary>
+    private bool IsMoveLocked(AttackSkillConfig move)
+    {
+        if (move == null) return false;
+        var hero = attackSystem != null && attackSystem.playerState != null ? attackSystem.playerState.heroConfig : null;
+        var tree = hero != null ? hero.talentTree : null;
+        if (tree == null || tree.nodes == null) return false;
+        for (int i = 0; i < tree.nodes.Count; i++)
+        {
+            var node = tree.nodes[i];
+            if (node == null || node.unlockKind != TalentUnlockKind.MoveUnlock || node.moveConfig != move) continue;
+            return !TalentTreeState.IsUnlocked(node);
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 本节点是否还有「能用」的蓄力后继：蓄力边指向的招式被天赋锁着就不算。
+    /// C2 未解锁时，按住不应该让枪体进入蓄势，也不应该把本段挂住等蓄力。
+    /// </summary>
+    private bool HasUsableChargeContinuation(AttackSkillConfig move)
+    {
+        if (move == null || move.moveEdges == null) return false;
+        for (int i = 0; i < move.moveEdges.Count; i++)
+        {
+            var edge = move.moveEdges[i];
+            if (edge == null || edge.next == null || edge.minChargeLevel < 1) continue;
+            if (!IsMoveLocked(edge.next)) return true;
+        }
+        return false;
     }
 
     /// <summary>
@@ -421,7 +467,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
         float parkTime = GetEarliestWindowStart01(_currentMove, _currentAttackType) * _duration;
         if (_elapsed < parkTime) return false;
 
-        if (!_currentMove.HasChargeContinuation())
+        if (!HasUsableChargeContinuation(_currentMove))
         {
             _holdWaitElapsed += Time.deltaTime;
             if (_holdWaitElapsed >= holdWaitMaxSeconds)
@@ -448,8 +494,9 @@ public class PlayerMoveStateMachine : MonoBehaviour
             // 连招进行中按下：这段输入属于连招，不属于站桩蓄力（穿刺指示器 / 蓄力视觉都让位）
             if (_active && inputManager != null) inputManager.comboChargeActive = true;
 
-            // 本节点存在蓄力后继时，还让枪体停在回收段中途等蓄力
-            if (_active && attackSystem != null && _currentMove != null && _currentMove.HasChargeContinuation())
+            // 本节点存在「没被天赋锁住」的蓄力后继时，才让枪体停在回收段中途等蓄力；
+            // C2/C4 未解锁时不应该连蓄力状态都进得去。
+            if (_active && attackSystem != null && _currentMove != null && HasUsableChargeContinuation(_currentMove))
             {
                 attackSystem.BeginComboChargeHold();
                 _comboChargeHeld = true;

@@ -67,7 +67,11 @@ public static class IceBreakRuntime
     /// <summary>破冰相关能力都由天赋节点 id 控制：没点就是“只有冻结”，点了才有对应能力。</summary>
     public const string TalentIdThaw = "talent_ice_thaw";
     public const string TalentIdBreakPush = "talent_ice_break_push";
-    public const string TalentIdBreakDouble = "talent_ice_break_double";
+    /// <summary>
+    /// 「重击解冻」这一层就包含碎冰翻倍：解冻那一击固定 ×2。
+    /// （旧版曾把它拆成独立天赋「碎冰重击」，用户确认这是错的，已合并回重击解冻）
+    /// </summary>
+    public const float ThawDamageMultiplier = 2f;
 
     private static AttackSkillConfig _cfg;
     private static float _sessionEndTime;
@@ -185,9 +189,8 @@ public static class IceBreakRuntime
         if (TalentTreeState.IsUnlocked(TalentIdBreakPush) && !_pushedThisAttack.Contains(target))
             PushFrozenTargetsInColumn(target);
         _brokenThisAttack.Add(target);
-        // ③原始命中双倍（需要“碎冰翻倍”天赋）
-        if (TalentTreeState.IsUnlocked(TalentIdBreakDouble))
-            damage *= 2f;
+        // ③原始命中翻倍：重击解冻自带，不再单独看天赋
+        damage *= ThawDamageMultiplier;
         // ④破冰动画（hitted 由本次 TakeDamage 同步播放）
         target.BeginIceBreaking();
 

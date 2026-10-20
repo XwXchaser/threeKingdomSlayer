@@ -90,6 +90,22 @@ public static class TalentTreeState
         return false;
     }
 
+    /// <summary>
+    /// 该招式是否「配了解锁节点、但还没解锁」。
+    /// 没有对应节点的招式一律视为不受天赋管（返回 false），避免配置缺失把招式全锁死。
+    /// </summary>
+    public static bool IsMoveGatedAndLocked(TalentTreeConfig tree, AttackSkillConfig move)
+    {
+        if (tree == null || move == null || tree.nodes == null) return false;
+        for (int i = 0; i < tree.nodes.Count; i++)
+        {
+            var n = tree.nodes[i];
+            if (n == null || n.unlockKind != TalentUnlockKind.MoveUnlock || n.moveConfig != move) continue;
+            return !IsUnlocked(n);
+        }
+        return false;
+    }
+
     public static int UnlockedCount(TalentTreeConfig tree)
     {
         if (tree == null || tree.nodes == null) return 0;
@@ -108,3 +124,4 @@ public static class TalentTreeState
         OnChanged?.Invoke();
     }
 }
+

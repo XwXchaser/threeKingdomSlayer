@@ -32,6 +32,10 @@ public class HeroConfig : ScriptableObject
     [Tooltip("招式状态机配置（招式转移图）。留空则使用直通模式，行为与改造前一致。")]
     public MoveTableConfig moveTable;
 
+    [Header("局外天赋")]
+    [Tooltip("招式解锁判定用（C2/C4 这类连段收尾）。留空 = 不做招式锁定；填了就按存档里已解锁的节点判定。")]
+    public TalentTreeConfig talentTree;
+
     [Header("大招配置")]
     [Tooltip("大招技能配置（独立于普通技能体系）")]
     public UltimateSkillConfig ultimateSkillConfig;

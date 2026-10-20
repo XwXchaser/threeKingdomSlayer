@@ -89,8 +89,9 @@ public class ChargeIndicatorController : MonoBehaviour
     {
         if (!isActive) return;
 
-        // 连段蓄力（C1 → C2）不是站桩蓄力：让位给 StabAimMarker，不显示蓄力指示器
-        if (InputManager.Instance != null && InputManager.Instance.comboChargeActive)
+        // 连段蓄力（C1 → C2）不是站桩蓄力：让位给 StabAimMarker，不显示蓄力指示器。
+        // 只允许竖滑蓄力时同样不出现蓄力指示器。
+        if (InputManager.Instance != null && (InputManager.Instance.comboChargeActive || InputManager.Instance.restrictChargedToVertical))
         {
             if (hasAppeared)
             {

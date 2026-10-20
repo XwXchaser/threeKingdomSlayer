@@ -34,9 +34,17 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
 
     public bool IsShowing => _isShowing;
 
+    /// <summary>是否允许「点一下推进台词」。教学手势门槛期间要关掉，否则玩家做手势的那一下会把台词点没了。</summary>
+    public bool PointerAdvanceEnabled { get; set; } = true;
+
     private void Update()
     {
         if (!_isShowing) return;
+        if (!PointerAdvanceEnabled)
+        {
+            _pointerPressed = false;
+            return;
+        }
 
         if (Input.GetMouseButtonDown(0))
             _pointerPressed = true;
@@ -108,10 +116,11 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
         _skipButton.onClick.RemoveListener(Skip);
     }
 
-    public void Show(DialogueEventData dialogueEvent, Action onFinished)
+    public void Show(DialogueEventData dialogueEvent, Action onFinished, bool blockClicks = true)
     {
         _lines.Clear();
         _pointerPressed = false;
+        PointerAdvanceEnabled = true;
         _lines.AddRange(dialogueEvent.lines);
         _lineIndex = 0;
         _onFinished = onFinished;
@@ -124,8 +133,8 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
         _bossPortrait.gameObject.SetActive(hasBossLines && _bossPortrait.sprite != null);
         _bossPortraitFrame.gameObject.SetActive(hasBossLines && _bossPortraitFrame.sprite != null);
         _skipButton.gameObject.SetActive(dialogueEvent.eventType == DialogueEventType.Conversation);
-        _advanceButton.gameObject.SetActive(true);
-        _clickBlocker.gameObject.SetActive(true);
+        _advanceButton.gameObject.SetActive(blockClicks);
+        _clickBlocker.gameObject.SetActive(blockClicks);
         RenderLine();
     }
 

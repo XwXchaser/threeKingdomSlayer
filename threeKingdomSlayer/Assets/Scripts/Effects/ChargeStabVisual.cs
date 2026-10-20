@@ -98,8 +98,9 @@ public class ChargeStabVisual : MonoBehaviour
 
     private void Update()
     {
-        // 连段蓄力期间不启用蓄力视觉的进出场实例（标记由招式状态机在按下时置位）
-        if (InputManager.Instance != null && InputManager.Instance.comboChargeActive)
+        // 连段蓄力期间不启用蓄力视觉的进出场实例（标记由招式状态机在按下时置位）；
+        // 只允许竖滑蓄力时，蓄力武器视觉整块不出现（上挑有自己的起手表现）。
+        if (InputManager.Instance != null && (InputManager.Instance.comboChargeActive || InputManager.Instance.restrictChargedToVertical))
         {
             if (_visualInstance != null) SuppressFadeAndDestroy();
             return;
@@ -170,6 +171,9 @@ public class ChargeStabVisual : MonoBehaviour
 
     private void OnChargeBegan(Vector2 screenPos)
     {
+        // 只允许竖滑蓄力时不启用蓄力视觉（连实例都不建，避免出现一帧就消失的长枪）
+        if (InputManager.Instance != null && InputManager.Instance.restrictChargedToVertical) return;
+
         if (_isFadingOut)
             DestroyChargeVisual();
 
@@ -188,6 +192,8 @@ public class ChargeStabVisual : MonoBehaviour
         _lastScreenPos = screenPos;
         // 连段蓄力不是穿刺蓄力：不启用蓄力视觉的进出场实例
         if (InputManager.Instance != null && InputManager.Instance.comboChargeActive) return;
+        // 只允许竖滑蓄力时整块蓄力表现都不出现
+        if (InputManager.Instance != null && InputManager.Instance.restrictChargedToVertical) return;
         if (!_isActive) return;
 
         if (progress >= appearThreshold)

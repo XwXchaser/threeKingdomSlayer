@@ -61,6 +61,17 @@ public sealed class YScrollSample : MonoBehaviour
             if (match) return false;
             match = presentation;
         }
+        // 兜底：场景锚点绑定的是具体节点资产。另有一份配置在同一条路上复用相同 nodeId 的节点时
+        // （教学关 N1/E0 与正式关卡同位），允许按 nodeId 解析到同一个锚点；同 id 匹配到多处仍视为歧义。
+        if (!match && !string.IsNullOrEmpty(node.nodeId))
+        {
+            foreach (var presentation in nodePresentations)
+            {
+                if (!presentation || !presentation.node || presentation.node.nodeId != node.nodeId) continue;
+                if (match) return false;
+                match = presentation;
+            }
+        }
         // 0.2 m tolerance: EV/N3 anchors are authored in metres and the N3 anchor
         // legitimately sits 0.116455 m past the computed end of the route.
         if (!match || float.IsNaN(match.worldDistance) || match.worldDistance < 0f

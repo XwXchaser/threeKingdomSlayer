@@ -126,3 +126,93 @@ aiEditMode: inherit
 
 这个会话里用户的耐心已经被消耗很多。汇报用三段：**做了什么 / 现在能不能玩 / 下一步做什么**，
 不要讲类名和字段；有不确定就先问一句再动手；宁可少做一步，也不要叠着未验证的改动往前推。
+
+## 10. 迁移进展（2026-10-19）：已按「走正式路线流程」改完并实测
+
+§7 第 1 步的骨架已经拍定并落地：教学关走 `FakeRouteRuntime` 那条正式卷轴流程，`Tutorial_YJ.unity` 保留但不再使用。
+
+**现在的流程**：主菜单新档 → `Battle.scene` → 教学路线 → N1（1011 两波）→ 出口旅行 → E0（1021 + 109，终点）→ 整关结算 → 回主菜单点天赋。
+
+**新增资产**（`Assets/RouteData/Tutorial/`）
+
+| 资产 | 内容 |
+|---|---|
+| `Tutorial_N1_Battle.asset` | stageId 9001，两波 1011（原 4 波配置的前两波） |
+| `Tutorial_E0_Battle.asset` | stageId 9002，1021 + 109（原后两波） |
+| `Tutorial_Node_N1.asset` / `Tutorial_Node_E0.asset` | nodeId 直接叫 `N1` / `E0`，复用 YJ 路线场景已有锚点；E0 为终点、只有一条战斗 |
+| `Tutorial_Choice_N1_E0.asset` | 旅行表现沿用正式 `Choice_N1_E0` |
+| `Tutorial_Route.asset` | routeId `tutorial_route`、stageId 9100、整关铜钱 250 |
+
+阵型与补齐一律照抄正式 YJ 战：`DefaultFormation` + `Per Column`、`rushMoveDelay 0.05`；教学敌人排布（1011 列 0/2/4、1021 列 2、109 单只）保持原样未改。
+
+**代码改动**
+
+1. `YScrollSample.TryGetNodeProgress`：精确资产匹配失败时按 `nodeId` 兜底（场景锚点绑的是正式节点资产，新教学节点没有自己的锚点；同 id 多处仍判歧义）。
+2. `TutorialStageDirector` 重写为 `Battle.scene` 上的常驻组件（对象名 `Tutorial Director`），只负责：按波推台词、教学期禁充能、N1 固定给冰雾（E0 不放三选一）、最后一波阵亡按通过收尾。
+3. `StageController` 新增 `defeatCountsAsClear` 与 `CompleteRouteBattleAsScriptedEnding()`；脚本化阵亡不再调 `HandleStageDefeat`，路线继续走奖励等待与结算。
+4. `MainMenuUI` 用 `tutorialRouteConfig` 取代旧的 `tutorialStageConfig` / `tutorialSceneName`（两者已从类里删除）。
+
+**踩到的坑（接手别再踩）**：`PlayerState.HandleDeath` 会先把玩家状态置 `Defeat`，`StageController` 只镜像状态、不再发 `OnStageDefeat`，所以教学导演必须同时订阅 `PlayerState.OnPlayerDied`，否则收尾永远不跑。
+
+**已实测（Play Mode，程序化驱动）**：新档 → N1 wave0（1011 hp100）→ wave1（1011×3）→ 三选一只有冰雾（选中 `active_ice_mist`）→ 选出口 → 旅行 → E0 wave0（1021 hp150）→ wave1（109 hp500，阵亡按通过=true）→ 玩家阵亡 → 收尾 → 路线 Completed / Victory / `tutorialCompleted=true`。禁充能在教学战斗里为 true；两场都是 DefaultFormation + Per Column。
+
+**未验证 / 待做**
+
+- 打赢 109 的出口没单独跑（和阵亡出口同走 `FinishRoute`）。
+- 1021 上挑破盾（`Launch` 无视盾）这个教学点没验证。
+- 冰系天赋三处开闸、固定三选一之后的「冰雾只冻结不解冻」仍未实机确认。
+- C2/C4 锁定仍未实现：天赋树有节点，代码里没有查询点。
+- `Tutorial_Battle.asset`（原 4 波配置）已被两份新配置取代，未删除，等用户决定。
+- 教学结算铜钱：固定 250 + 击杀铜钱，实测到手 300。
+
+## 11. 手势引导系统（2026-10-19 晚，已跑通）
+
+> 本文 §10 的两条描述已被本轮推翻：**教学期不再禁充能**（禁充能会把上挑一起禁死），
+> **阵亡也不再“按通过”**（阵亡就是失败，弹失败面板）。
+
+### 11.1 现在的教学形态
+
+台词自动推进 → 敌人站定（按需等血量）→ **暂停 + 黑遮罩 + 手势示范** → 玩家真做出该手势 → 重放这一下（真的出招）→ 放完台词 → 继续。
+
+### 11.2 组件与资产
+
+| 内容 | 路径 |
+|---|---|
+| 手势提示组件 | `Assets/Scripts/UI/TutorialGestureHint.cs`（手指/拖尾/光圈/遮罩四层 + 暂停门槛 + 原始输入判定 + 重放） |
+| 提示预制体 | `Assets/Prefabs/UI/TutorialGestureHint.prefab`（自带 Canvas 60 层，全层 raycastTarget=false） |
+| 三张图 | `Assets/Sprites/UI/Tutorial/tutorial_gesture_{finger,swipe_trail,hold_ring}_ui.png`（256²，手指的 **RectTransform pivot=(0.2637,0.8066)= 指尖**） |
+| 步骤配置 | `Battle.scene` 的 `Tutorial Director.gestureSteps`（`TutorialGestureStep[]`） |
+| 台词 | `tutorial_t0_open`（开幕）、`tutorial_t0_wave1/2/3/4`（每波）、`tutorial_t0_choice`（出口箭头） |
+
+### 11.3 当前 5 个步骤（配置权威）
+
+| # | 波次 | 手势 | 条件 | 备注 |
+|---|---|---|---|---|
+| 0 | N1 第 1 波 | Tap 点按 | 敌人站定 | 教点戳 |
+| 1 | N1 第 2 波 | Swipe 横划（0.28→0.72） | 敌人站定 | 教「一刀扫多个」 |
+| 2 | E0 第 1 波（1021） | ChargedSwipe 蓄力上挑 | **血量 ≤80%** | 不显示光圈 |
+| 3 | E0 第 2 波（109） | ChargedSwipe | **血量 ≤80%** | 同上 |
+| 4 | 路线出口（waveIndex=-2） | Tap | 箭头出现 | 教点箭头移动 |
+
+### 11.4 实测数据（`unity_run_states` 程序化驱动）
+
+```
+引导#1 点按      引导#2 横划      引导#3 血比=80%    引导#4 血比=80%
+引导中：遮罩=True、目标列=2、手指=显示
+通过后：遮罩关上、hp 100→80（重放真的打中）、招式=Zhangfei_Stab
+结束：路线=Completed、关卡=Victory、教学完成=True、铜钱=620（250+击杀）
+```
+
+### 11.5 本轮新增的坑（详细版见 `memory/tutorial-gesture-gate-pitfalls.md`）
+
+1. **构建链路**：`unity_recompile` 报 compiled 但 DLL 没更新 → 游戏跑旧包。唯一判据是 DLL mtime 晚于源码 mtime。
+2. **编辑丢行**：编辑工具报成功、目标代码却没进文件（遮罩 `SetActive(true)` 就这样丢过一次）。改完必须 grep 回读。
+3. **UI 轴心**：改图片的 sprite pivot 不会影响 UI 定位，**RectTransform 的 pivot 才决定锚点**；手指要指哪就把 RectTransform pivot 改到指尖。
+4. **自己取消自己**：示范循环每轮调 `Cancel()` 会把引导本身取消 → 播放用 `StopRoutine()`。
+5. **对话顶掉暂停**：`DialogueManager.Finish()` 无条件 `timeScale=1`，门槛期间需每帧压住 0。
+6. **遮罩叠加**：台词自己有一层压暗，台词在播时不要再叠我们的遮罩。
+7. **重放要绕动作锁**：`timeScale=0` 时动作锁不走时，重放必须 `cancelCurrentMove:true`；列号直接用目标敌人的 `columnIndex`，别用屏幕坐标反算（透视会偏）。
+8. **入场期间不能暂停**：敌人从后排走进来的时候暂停，敌人永远到不了前排；台词必须等敌人站定后再推。
+
+> **本轮之后的总交接看 `plan/tutorial-and-formal-stage-handoff-20261019.md`**
+> （包含完整进度、已实测数据、待做项、坑点与下一步顺序）。

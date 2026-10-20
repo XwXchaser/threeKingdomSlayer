@@ -54,6 +54,8 @@ public sealed class DialogueEventData : ScriptableObject
     public int killCount;
 
     [Header("Presentation")]
+    [Tooltip("true = 不暂停、不压暗屏幕、不挡点击：路线指引这类边打边看的台词用。默认 false 保持原有拦人行为")]
+    public bool nonBlocking;
     public BossDialogueProfile bossProfile;
     public List<Line> lines = new List<Line>();
 

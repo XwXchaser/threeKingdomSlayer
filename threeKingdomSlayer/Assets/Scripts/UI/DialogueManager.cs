@@ -14,8 +14,11 @@ public sealed class DialogueManager : MonoBehaviour
     private readonly HashSet<string> _playedThisRun = new HashSet<string>();
     private readonly HashSet<string> _pendingTutorialIds = new HashSet<string>();
     private readonly HashSet<string> _queuedIds = new HashSet<string>();
+    /// <summary>被强制重播（跳过「本局已播 / 存档已完成」）的事件；这类教学台词不写进完成记录，下次进教学关还要再讲一遍。</summary>
+    private readonly HashSet<string> _forcedIds = new HashSet<string>();
     private HeroHUD _heroHUD;
     private bool _isPlaying;
+    private bool _pausedForDialogue = true;
     private int _interactionBlockFrames;
     private string _activeEventId;
     private bool _stageStartTriggered;
@@ -67,6 +70,8 @@ public sealed class DialogueManager : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
+        // 對話被打断（转场/退出战斗）时不能把 timeScale 留在 0，否则下一场景直接冻住
+        if (Time.timeScale == 0f) Time.timeScale = 1f;
         if (WaveSpawner.Instance != null)
         {
             WaveSpawner.Instance.OnWaveStarted -= OnWaveStarted;
@@ -97,12 +102,13 @@ public sealed class DialogueManager : MonoBehaviour
     }
 
     /// <summary>把一段对话排入队列并返回是否入队成功（路线运行器用）。</summary>
-    public bool QueueEventAndNotify(DialogueEventData dialogueEvent)
+    /// <param name="forceReplay">true = 忽略「本局已播 / 存档已完成」。教学关的台词由导演按节拍推，必须每次都说。</param>
+    public bool QueueEventAndNotify(DialogueEventData dialogueEvent, bool forceReplay = false)
     {
-        return QueueEvent(dialogueEvent);
+        return QueueEvent(dialogueEvent, forceReplay);
     }
 
-    private bool QueueEvent(DialogueEventData dialogueEvent)
+    private bool QueueEvent(DialogueEventData dialogueEvent, bool forceReplay = false)
     {
         if (dialogueEvent == null || dialogueEvent.lines == null || dialogueEvent.lines.Count == 0) return false;
         if (string.IsNullOrEmpty(dialogueEvent.eventId))
@@ -110,9 +116,12 @@ public sealed class DialogueManager : MonoBehaviour
             Debug.LogWarning($"[DialogueManager] 对话资产 {dialogueEvent.name} 缺少 eventId");
             return false;
         }
-        if (_queuedIds.Contains(dialogueEvent.eventId) || _playedThisRun.Contains(dialogueEvent.eventId)) return false;
-        if (dialogueEvent.eventType == DialogueEventType.Tutorial && IsTutorialCompleted(dialogueEvent.eventId)) return false;
+        if (_queuedIds.Contains(dialogueEvent.eventId)) return false;
+        if (!forceReplay && _playedThisRun.Contains(dialogueEvent.eventId)) return false;
+        if (!forceReplay && dialogueEvent.eventType == DialogueEventType.Tutorial && IsTutorialCompleted(dialogueEvent.eventId)) return false;
 
+        if (forceReplay) _forcedIds.Add(dialogueEvent.eventId);
+        else _forcedIds.Remove(dialogueEvent.eventId);
         _queuedIds.Add(dialogueEvent.eventId);
         _queue.Enqueue(dialogueEvent);
         return true;
@@ -131,9 +140,11 @@ public sealed class DialogueManager : MonoBehaviour
         _queuedIds.Remove(dialogueEvent.eventId);
         _isPlaying = true;
         _activeEventId = dialogueEvent.eventId;
-        SetOverlayVisible(true);
-        Time.timeScale = 0f;
-        _dialogueView.Show(dialogueEvent, () => Finish(dialogueEvent));
+        // nonBlocking（路线指引这类）：不暂停、不压暗、不挡点击，玩家可以边看边点
+        _pausedForDialogue = !dialogueEvent.nonBlocking;
+        SetOverlayVisible(_pausedForDialogue);
+        if (_pausedForDialogue) Time.timeScale = 0f;
+        _dialogueView.Show(dialogueEvent, () => Finish(dialogueEvent), _pausedForDialogue);
     }
 
     private void Finish(DialogueEventData dialogueEvent)
@@ -141,16 +152,23 @@ public sealed class DialogueManager : MonoBehaviour
         if (_dialogueView != null && _dialogueView.IsShowing)
             _dialogueView.Clear();
 
+        bool forced = _forcedIds.Remove(dialogueEvent.eventId);
         if (dialogueEvent.eventType == DialogueEventType.Tutorial)
-            _pendingTutorialIds.Add(dialogueEvent.eventId);
+        {
+            // 强制重播的教学台词不记完成，否则下次进教学关就再也不讲了
+            if (!forced) _pendingTutorialIds.Add(dialogueEvent.eventId);
+        }
         else
+        {
             _playedThisRun.Add(dialogueEvent.eventId);
+        }
 
         _isPlaying = false;
         _interactionBlockFrames = 0;
         _activeEventId = null;
         SetOverlayVisible(false);
-        Time.timeScale = 1f;
+        if (_pausedForDialogue) Time.timeScale = 1f;
+        _pausedForDialogue = true;
         if (InputManager.Instance != null)
             InputManager.Instance.blockInputFrames = 0;
 
@@ -311,7 +329,8 @@ public sealed class DialogueManager : MonoBehaviour
             _heroHUD?.flipCard?.EnterBossCombat();
         else
             _heroHUD?.flipCard?.ExitBossCombat();
-        Time.timeScale = 1f;
+        if (_pausedForDialogue) Time.timeScale = 1f;
+        _pausedForDialogue = true;
     }
 
     private void SetOverlayVisible(bool visible)

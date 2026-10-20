@@ -20,6 +20,7 @@ MonoBehaviour:
   bossId: 0
   bossPhaseIndex: 0
   killCount: 0
+  nonBlocking: 1
   bossProfile: {fileID: 0}
   lines:
   - speaker: 0

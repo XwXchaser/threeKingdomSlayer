@@ -354,6 +354,8 @@ public GameObject freezeMeltEffectPrefab;
     private float attackTimer;      // 攻击冷却计时器（攻击动画结束后开始冷却）
     private float attackAnimTimer;  // 攻击动画计时器（攻击动作执行时间）
     public bool isAttackAnimating; // 是否正在播放攻击动画（AttackSpawn 或 AttackDraw）
+    /// <summary>教学手势拍：敌人不进攻、不移动（只影响行动调度，受击/闪白/动画照常）。</summary>
+    [System.NonSerialized] public bool tutorialHold;
     public bool isAttackDrawPhase;  // 是否处于攻击收招阶段（不可被招架打断）
     public bool isCFrame;           // 是否处于C技起始帧（霸体窗口），仅 Parry/Launch 可打断
     private int _currentAttackStep;  // 攻击序列当前位置
@@ -823,6 +825,7 @@ public GameObject freezeMeltEffectPrefab;
                 break;
             case EnemyState.Idle:
             default:
+                if (tutorialHold) break;   // 教学：不调度任何新行动
                 if (_cavalry != null && _cavalry.Tick())
                     break;
                 // BOSS Idle 调度：冷却计时结束后随机选择行动
@@ -1852,6 +1855,8 @@ public GameObject freezeMeltEffectPrefab;
     /// </summary>
     private void UpdateMovement()
     {
+        // 教学手势拍：敌人站住不动（移动进度冻结，解除后从原进度继续）
+        if (tutorialHold) return;
         if (!isMovingToNextRow) return;
 
         // 常规移动：基于 moveSpeed（秒/排）
@@ -2049,6 +2054,8 @@ public GameObject freezeMeltEffectPrefab;
     /// </summary>
     private void UpdateAttack()
     {
+        // 教学手势拍：不再起新的一刀（已经挥出去的这一下让它播完，不硬切动画）
+        if (tutorialHold && !isAttackAnimating) return;
         if (IsCoward || formState == EnemyFormState.ShieldBroken)
         {
             isAttackAnimating = false;
@@ -2834,7 +2841,7 @@ private void SpawnProjectile()
     /// <summary>自然解冻后的短暂停顿：不接补齐/行军，保证玩家能看到“解冻了”这一步。</summary>
     public bool IsInPostFreezeRecovery => _postFreezeRecoverRemaining > 0f;
     /// <summary>冻结或破冰动画期间：所有自主行动与计时都暂停。</summary>
-    public bool IsActionPaused => state == EnemyState.Frozen || state == EnemyState.IceBreaking;
+    public bool IsActionPaused => state == EnemyState.Frozen || state == EnemyState.IceBreaking || tutorialHold;
     public float FreezeChance => _freezeChance;
 
     /// <summary>是否允许进入冻结：空中、起身、QTE、阶段切换、死亡、未应战 BOSS 都不允许。</summary>
