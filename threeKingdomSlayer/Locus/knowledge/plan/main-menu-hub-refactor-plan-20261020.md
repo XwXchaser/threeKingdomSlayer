@@ -11,7 +11,7 @@ aiEditMode: inherit
 
 > 目标平台：微信小程序。加载完毕后玩家**直接进入 Battle 场景**，看到的就是当前进度的关卡起始场景。
 > 本文是**可交接的实施计划**：现状机制 → 目标形态 → 分阶段任务 → 验收 → 已知坑。
-> **进度：阶段 A / B / C 已完成并推送；下一步是阶段 D（底部 tab + 结算回落地页）。**
+> **进度：阶段 A / B / C 与 D1（底部 tab）/ D3（结算回落地页）已完成并推送；剩下 D0 中央轻交互、D2 顶部状态条、D4 删 MainMenu、阶段 E 包体精简。**
 
 ---
 
@@ -290,10 +290,10 @@ Build Settings
 | # | 任务 | 说明 |
 |---|---|---|
 | D0 | 就绪态「中央区域可点」轻交互（原 C6） | 点中央给反馈但不推进关卡；也可以直接砍掉，靠大按钮就够 |
-| D1 | Battle 场景底部 tab 栏（战斗 / 选关 / 天赋 / 家园） | 4 个按钮，切 `StageSelect.scene` / `TalentTree.scene` overlay。**阶段 A/B 造的 overlay 目前只能从 MainMenu 点进去，落地页还没有入口** |
+| D1 | ✅ **底部 tab 栏**（`ff912e9` 后 `8f30a2e`） | 新组件 `BattleHubTabBar`（`Battle.scene` / `BattleHUD(Canvas)/HubTabBar`）：战斗 / 选关 / 天赋 / 家园。CanvasGroup 控制显隐，只在 `IsPrepared` 时可见可点；选关/天赋走 `SceneFlowManager.OpenOverlay`；家园暂置灰占位 |
 | D2 | 顶部队列、金币等状态条 | 复用 `CoinCounter`，补体力（还没有） |
-| D3 | 结算后回落地页（而不是回 MainMenu） | `StageController.GoToMainMenu()` → 改成回就绪态（`FakeRouteRuntime.PrepareForEntry(当前路线)` + 清 checkpoint） |
-| D4 | 删 `MainMenu.scene` / `MainMenuUI` / 临时 debug 面板 | 定稿清理。**删之前先保住 legacy 路径**：只要落地页还缺 tab 入口，MainMenu 就是唯一能进选关/天赋的地方 |
+| D3 | ✅ 结算后回落地页（`1cdc7f8` + `87d266d`） | 实际做法不是 `PrepareForEntry` 原地重置，而是 `FakeRouteRuntime.IsHubEntry` 标记 + `StageController.GoToMainMenu()` 里重载 Battle 场景（干净状态、自动重新自举）；回落地页时 `StartFromCheckpoint = true` 接上次进度 |
+| D4 | 删 `MainMenu.scene` / `MainMenuUI` / 临时 debug 面板 | 定稿清理。**删之前先保住 legacy 路径**：现在 tab 入口已经有了，但 legacy 直通仍是快速调试通道 |
 
 ---
 
@@ -322,14 +322,14 @@ Build Settings
 2. 点「正式YJ」→ `SaveManager.GetActiveFakeRouteStageId()` == 1
 3. 点「天赋」→ overlay 弹出，节点/连线/金币正常，能关闭
 
-### 阶段 C（已跑：4/5/7；待跑：6/8/9/10）
+### 阶段 C（已跑：4/5/7/9/10；未做：6/8）
 4. ✅ **build index 0 = Battle.scene**，直接 Play 就是战场
 5. ✅ 进战场时 route 表现已就位（`Battle + YJunctionSample`），**敌人 0 个**（Q1 要求）
-6. ⬜ 点中央 → 有反馈但不推进关卡（原 C6，未实现）
+6. ⬜ 点中央 → 有反馈但不推进关卡（原 C6，未实现，可能直接砍）
 7. ✅ 点「开始关卡」→ `EnteringNode` → `Battle`、`stageState=InProgress`、敌人出现、按钮自动隐藏
-8. ⬜ 整条 route 跑到结算后回就绪态（阶段 D3，未做）
-9. ⬜ 中途退出重进恢复同一 checkpoint（自举会走 `ResolveStartNode()` 的 checkpoint 分支，但未端到端验证）
-10. ⬜ 在选关页换另一条 route → 重进加载新路线（自举按存档 id 找路线，逻辑覆盖，`MainMenu → 选关` 入口仍可用，未端到端验证）
+8. ✅ 结算后回就绪态（D3 已实现：重载 Battle → `Phase=Ready`、敌人 0、路线不变）
+9. ✅ 退出重进恢复同一 checkpoint：进关后 `snapshot.checkpointNodeId=N1` → `GoToMainMenu` → 落地页 `_restoredFromCheckpoint=true`、`preparedStartNode=N1`
+10. ✅ 选关页换路线：`SetActiveFakeRouteStage(1)` → `GoToMainMenu` → 落地页加载「长坂坡·卷轴节点预览」，`Phase=Ready`
 
 ---
 
@@ -363,6 +363,8 @@ Build Settings
 | `refactor/p1-input-gesture-gates` | `InputManager.ProcessGesture` 拆成 5 个独立 gate 方法 | ✅ pushed |
 | `feat/stage-select-talent-overlays` | **阶段 A+B**：`SceneFlowManager` / `StageSelectUI`+`StageSelect.scene` / `TalentTree.scene` / `UIOverlayCloseButton` / `StageConfigManager.tutorialStage` / `MainMenuUI` 接线 / build settings | ✅ pushed（`908e7c0`） |
 | `feat/stage-select-talent-overlays` | **阶段 C**：`FakeRouteRuntime` 拆 Prepare/Run + Battle 自举读存档 + `BattleStartStageButton` + Battle 自带 `StageConfigManager` + build index 0 = Battle | ✅ pushed（`ff912e9`） |
+| `feat/stage-select-talent-overlays` | **阶段 D1**：`BattleHubTabBar` + `Battle.scene/HubTabBar`（战斗/选关/天赋/家园） | ✅ pushed（`8f30a2e`） |
+| `feat/stage-select-talent-overlays` | **阶段 D3**：`IsHubEntry` + `GoToMainMenu` 回落地页（含 `StartFromCheckpoint=true` 接上次进度） | ✅ pushed（`1cdc7f8`、`87d266d`） |
 
 ---
 
