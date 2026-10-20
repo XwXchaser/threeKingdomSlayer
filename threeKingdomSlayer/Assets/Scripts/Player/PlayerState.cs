@@ -557,15 +557,6 @@ public class UpgradeAcquired
 }
 
 /// <summary>
-/// 攻击类型枚举
+/// 攻击类型枚举——已移到 Assets/Scripts/Data/CombatEnums.cs（数据层，2026-10-20 批次 1）。
+/// 保留此注释仅为定位：配置代码引用 AttackType 时不应再拉入 PlayerState。
 /// </summary>
-public enum AttackType
-{
-    Stab,     // 戳击
-    Slash,    // 斩击
-    Pierce,   // 穿刺
-    Sweep,    // 横扫
-    Launch,   // 挑飞
-    Parry,    // 招架
-    Ultimate  // 大招
-}

@@ -1,26 +1,8 @@
 using UnityEngine;
 
-public enum HitFeedbackSource
-{
-    BasicAttack,
-    ActiveSkill,
-    Passive,
-    Item,
-    Phantom,
-    Dot,
-    Ultimate,
-    Displacement,
-    SpikeTrap,
-    Collision
-}
-
-public enum HitFeedbackStrength
-{
-    None,
-    Light,
-    Standard,
-    Heavy
-}
+// HitFeedbackSource / HitFeedbackStrength 已移到 Assets/Scripts/Data/HitFeedbackEnums.cs
+// （数据层，2026-10-20 批次 1）：纯枚举，但原先与持有 Enemy 引用的 HitFeedbackContext 同居，
+// 导致配置层只要用到这两个枚举就被拉进打击反馈运行时。
 
 public readonly struct HitFeedbackContext
 {

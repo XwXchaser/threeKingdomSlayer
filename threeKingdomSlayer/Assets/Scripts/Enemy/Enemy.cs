@@ -5198,20 +5198,8 @@ private void SpawnProjectile()
 }
 
 /// <summary>
-/// 伤害类型枚举
+/// 伤害类型枚举——已移到 Assets/Scripts/Data/CombatEnums.cs（数据层，2026-10-20 批次 1）。
 /// </summary>
-public enum DamageType
-{
-    Stab,   // 戳击
-    Slash,  // 斩击
-    Pierce, // 穿刺
-    Sweep,  // 横扫
-    Launch, // 挑飞
-    Poise,       // 架势伤害
-    Convergence, // 聚拢冲突伤害
-    Ice,         // 冰系伤害
-    Collision    // 破冰推动被阻挡时的碰撞伤害
-}
 
 /// <summary>
 /// 招架眩晕阈值：招架造成伤害后，若敌人血量低于 healthPercent，则眩晕 stunDuration 秒
