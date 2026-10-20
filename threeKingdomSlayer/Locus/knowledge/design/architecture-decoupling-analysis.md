@@ -338,6 +338,7 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 | `Enemy` 拆 `EnemyOutline`（描边） | ✅ `eac2922`（5212 → 5132 行） |
 | `Enemy` 拆 `EnemyFreezeVisual`（冰系视觉层） | ✅ `86c3fbd`（5145 → 4798 行，冰系区段 685 → 333 行） |
 | `Enemy` 拆 `EnemyFreeze`（冰系状态与流程） | ✅ `34b6bc5`（4798 → 4496 行） |
+| 阵型/补齐/位移机制地图 + `ColumnManager` 拆分方案（批次 2 前置） | ✅ 见 `design/formation-fillup-mechanism-20261020.md` |
 | `StageController` 按角色拆 `StageFormation` / `StageRouteBattleHost` | ✅ `f906501`（852 → 790 行） |
 | 遗留路线实现收进 `Assets/Scripts/Legacy/`，Battle 场景去掉 V2 竞争驱动 | ✅ `55c216a` |
 | Legacy 彻底隔离（现役代码不再引用遗留类型）+ 说明文档 | ✅ `a38ee66` |
