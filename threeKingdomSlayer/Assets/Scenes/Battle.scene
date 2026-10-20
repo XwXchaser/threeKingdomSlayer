@@ -3610,6 +3610,9 @@ MonoBehaviour:
   - {fileID: 702404870}
   - {fileID: 2022372497}
   - {fileID: 133245387}
+  hubOnly:
+  - {fileID: 1149770338}
+  - {fileID: 382638938}
 --- !u!1 &316000406
 GameObject:
   m_ObjectHideFlags: 0
@@ -6180,7 +6183,6 @@ MonoBehaviour:
   enemyManager: {fileID: 598331925}
   playerState: {fileID: 1878310418}
   enemyPool: {fileID: 1773764670}
-  mainMenuSceneName: MainMenu
   battleSceneName: Battle
   suppressDefeatUI: 0
   blockRestartOnDefeat: 0
@@ -10473,6 +10475,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1149747425}
   m_CullTransparentMesh: 1
+--- !u!1 &1149770338 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5739317848575113075, guid: 16f0844e7d3a1bb45a8ed55b8ad2adc4, type: 3}
+  m_PrefabInstance: {fileID: 1748280058}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1156913730
 GameObject:
   m_ObjectHideFlags: 0

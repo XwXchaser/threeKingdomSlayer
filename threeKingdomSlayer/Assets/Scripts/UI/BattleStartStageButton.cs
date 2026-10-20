@@ -4,8 +4,9 @@ using UnityEngine.UI;
 /// <summary>
 /// 落地页的「开始关卡」大按钮。
 ///
-/// 就绪态（<see cref="FakeRouteRuntime.IsPrepared"/>）时整块可见可点：点一下 → <see cref="FakeRouteRuntime.RunPrepared"/>
-/// 正式开跑路线。其余状态（加载中 / 跑关卡中 / 已结算）整块隐藏，不遮挡底部 HUD，也不会误触重复启动。
+/// 只在「落地页就绪态且没有二级页面打开」时可见可点：点一下 → <see cref="FakeRouteRuntime.RunPrepared"/>
+/// 正式开跑路线。其余状态（加载中 / 跑关卡中 / 已结算 / 选关或天赋页打开）整块隐藏，
+/// 不遮挡二级页面，也不会误触重复启动。
 /// 用 CanvasGroup 控制显隐而不是 SetActive：物体自己关掉后 Update 就再也不会跑回来。
 /// </summary>
 [RequireComponent(typeof(Button))]
@@ -51,7 +52,14 @@ public class BattleStartStageButton : MonoBehaviour
     {
         // routeRuntime 可能比本按钮晚 Awake（FakeRouteRuntime 在 Battle 场景根节点），每帧兜底取一次。
         if (routeRuntime == null) routeRuntime = FakeRouteRuntime.Instance;
-        ApplyState(routeRuntime != null && routeRuntime.IsPrepared);
+        // 选关/天赋这类二级页面打开时，落地页的一切都不该露出来。
+        ApplyState(routeRuntime != null && routeRuntime.IsPrepared && !IsOverlayOpen());
+    }
+
+    private static bool IsOverlayOpen()
+    {
+        var flow = SceneFlowManager.Instance;
+        return flow != null && flow.HasOverlay;
     }
 
     private void ApplyState(bool ready)

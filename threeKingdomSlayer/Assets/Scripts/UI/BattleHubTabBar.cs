@@ -4,8 +4,8 @@ using UnityEngine.UI;
 /// <summary>
 /// 落地页底部 tab 栏（战斗 / 选关 / 天赋 / 家园）。
 ///
-/// 只在落地页就绪态（<see cref="FakeRouteRuntime.IsPrepared"/>）可见可点；开打后整条隐藏，
-/// 不遮挡技能键与 QTE 板。显隐用 CanvasGroup，不 SetActive（关掉自己 Update 就跑不回来了）。
+/// 只在「落地页就绪态且没有二级页面打开」时可见可点：开打后或选关/天赋页打开时整条隐藏，
+/// 不遮挡技能键、QTE 板与二级页面。显隐用 CanvasGroup，不 SetActive（关掉自己 Update 就跑不回来了）。
 /// tab 按钮用代码 AddListener 绑到本组件的公开方法，字段本身仍在 Inspector 里拖着，可追踪。
 /// </summary>
 public sealed class BattleHubTabBar : MonoBehaviour
@@ -75,7 +75,9 @@ public sealed class BattleHubTabBar : MonoBehaviour
         if (routeRuntime == null) routeRuntime = FakeRouteRuntime.Instance;
         if (sceneFlow == null) sceneFlow = SceneFlowManager.Instance;
         Wire();
-        ApplyState(routeRuntime != null && routeRuntime.IsPrepared);
+        // 二级页面（选关/天赋）打开时整条 tab 栏让位：否则它会压在页面上并误触。
+        bool overlayOpen = sceneFlow != null && sceneFlow.HasOverlay;
+        ApplyState(routeRuntime != null && routeRuntime.IsPrepared && !overlayOpen);
     }
 
     private void ApplyState(bool visible)
