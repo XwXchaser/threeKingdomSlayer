@@ -146,6 +146,7 @@ MonoBehaviour:
   columnIndex: 0
   rowIndex: 0
   isAttackAnimating: 0
+  ignoreFillUpOrders: 0
   isAttackDrawPhase: 0
   isCFrame: 0
   pendingRushMove: 0
