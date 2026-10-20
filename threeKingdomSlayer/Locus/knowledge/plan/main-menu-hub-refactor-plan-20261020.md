@@ -11,7 +11,7 @@ aiEditMode: inherit
 
 > 目标平台：微信小程序。加载完毕后玩家**直接进入 Battle 场景**，看到的就是当前进度的关卡起始场景。
 > 本文是**可交接的实施计划**：现状机制 → 目标形态 → 分阶段任务 → 验收 → 已知坑。
-> **进度：阶段 A / B / C / D1 / D3 / D4 全部完成并推送（MainMenu 已删除，全局回落地页）；只剩 D0 中央轻交互、D2 顶部状态条；阶段 E 已重测（真实可省 2.4MB，Tutorial_YJ 的 9.3MB 已落地）。**
+> **进度：阶段 A / B / C / D1 / D3 / D4 全部完成并推送（MainMenu 已删除，全局回落地页）；阶段 F（自举路径收尾修复）已完成并本地提交 `fb5279b`（未 push）；只剩 D0 中央轻交互、D2 顶部状态条；阶段 E 已重测（真实可省 2.4MB，Tutorial_YJ 的 9.3MB 已落地）。**
 
 ---
 
@@ -36,7 +36,7 @@ aiEditMode: inherit
 
 ## 0.1 当前状态（2026-10-20 收尾快照）
 
-**分支**：`feat/stage-select-talent-overlays`（HEAD = `55dbd83`，已推送）
+**分支**：`feat/stage-select-talent-overlays`（HEAD = `fb5279b`，本地提交，未 push）
 
 **build settings（4 个）**：`Battle.scene`（index 0，启动） / `YJunctionSample.unity` / `StageSelect.scene` / `TalentTree.scene`
 
@@ -60,6 +60,7 @@ aiEditMode: inherit
 | 阶段 D1（底部 tab）/ D3（回落地页）/ D4（删 MainMenu） | ✅ `8f30a2e` / `1cdc7f8`+`87d266d` / `f39d4ba` |
 | 就绪态/关卡态 HUD 拆分 | ✅ `8b780cd` |
 | 阶段 E | ✅ 重测：敌人美术真实只浪费 2.4MB（旧文档的「114MB 死资源」作废）；`Tutorial_YJ` 移出 build（9.3MB） |
+| 阶段 F：自举路径收尾修复（结算/冷启动接档/通关推进/选关立即生效 + 补提交路线资产） | ✅ `fb5279b` + `46e7c19`（未 push） |
 | D0 中央轻交互 / D2 体力状态条 / 字体 36MB | ⬜ 未做 |
 
 **待用户人眼验收**：hub 实际观感（头像/金币/开始按钮/tab 栏的大小与位置、就绪态背景是否好看）。截图工具在本机截不到 Overlay UI（§7.14），只能人眼看。
@@ -376,6 +377,36 @@ Build Settings
 
 ---
 
+### 阶段 F：自举路径收尾修复（2026-10-20，`fb5279b` + `46e7c19`）
+
+阶段 C/D 只验到了「进场景 = Ready + 点按钮能开打」，**结算、冷启动与选关的闭环从来没跑过**。四个问题同源：落地页自举没有 MainMenu 传参，`StageController.fakeRouteStageConfig` 是 null。
+
+| # | 问题 | 根因 | 修法 |
+|---|---|---|---|
+| F1 | 通关不结算（无 Victory、无通关铜钱、不记录已通关） | `CompleteFakeRouteStage()` 首行 `if (fakeRouteStageConfig == null) return;`，自举模式下永远命中 | `PrepareForEntry()` 里 `stageController.fakeRouteStageConfig = routeConfig;`（同时修好 `RestartStageCoroutine` / `OnRestartButton` 的同源分支） |
+| F2 | 冷启动不接 checkpoint（回 `startNode`、丢血量/升级） | `StartFromCheckpoint` 是 static，只有 `GoToMainMenu()` 与 HUD 重来会置 true；进程首次启动是 false | `ResolveStartNode()` 改成 `StartFromCheckpoint || IsHubEntry`，落地页路径无条件试恢复；有快照 = 该关没打完（通关时已清） |
+| F3 | 打完教学关回落地页还是教学关 | 没人把存档「当前关卡」推到下一条 | `FinishRoute()` 新增 `AdvanceActiveStageAfterClear()`：`GetSelectableRoutes()` 里当前条目的下一条；已是最后一条则不动 |
+| F4 | 选关后落地页仍是旧关卡 | 旧行为是「只写存档，下次进入生效」 | `StageSelectUI.OnRouteSelected()` 写档后直接 `FakeRouteRuntime.Instance.PrepareForEntry(cfg)` 换路线，再关 overlay |
+
+**资产引用补齐（`46e7c19`）**：`Tutorial_Route.asset` 及其 Node/Battle/Choice、`Formal_*_Battle`、`tutorial_t0_open/choice`、`StageSelectUI.cs.meta`、`UIOverlayCloseButton.cs.meta` 一直是 untracked，而 `Battle.scene` 的 `StageConfigManager.tutorialStage` 已经指向它们。clean clone 会直接丢默认路线。
+
+**Play Mode 实测（一次跑完，存档先备份后还原）**：
+
+| 项 | 结果 |
+|---|---|
+| 基线 | `Phase=Ready`、`IsPrepared=true`、`IsHubEntry=true`、`sc.route=教学关` |
+| 冷启动接档 | 植入 `checkpoint=J1 / level=7 / hp=42`、`StartFromCheckpoint=false` → 重载 Battle 后 `preparedStartNode=J1`、`_restoredFromCheckpoint=true`、`level=7`、`hp=42`、`coins=99` |
+| 选关立即生效 | overlay 加载 → `OnRouteSelected(教学关)` → overlay 关闭、`active=9100`、`sc.route=教学关`、回 Ready |
+| 落地页 UI | 等 Update 跑过后：`startBtnAlpha=1.00 blocks=True interactable=True`、`tabAlpha=1.00`、局内 HUD 隐藏 15/15、空引用 0 |
+| 通关收尾 | `StartCoroutine(FinishRoute)` → `phase=Completed`、tutorial 快照已清、`IsStageCleared(9100)=true`、`active=9100→1` |
+| 回落地页 | `GoToMainMenu()` → `scene=Battle`、`Phase=Ready`、按钮与 tab 均可见 |
+| 开打冒烟 | 点「开始关卡」→ `Phase=Battle`、`gameplayInputEnabled=true`、`enemies=1`、`stageState=InProgress` |
+| Console | warn/error = 0 |
+
+**未覆盖**：真实手打到通关（用 `FinishRoute` 驱动收尾）、战败重来（只做了代码路径确认）、就绪态观感（截图工具截不到 Overlay UI）。
+
+---
+
 ## 6. 验收步骤
 
 ### 阶段 A/B
@@ -410,12 +441,17 @@ Build Settings
 12. **跨场景拷贝组件配置要分两步**：`SerializedObject` 绑定的目标对象在切换场景后会被销毁 → 先把源值取到数组，再开目标场景写入（阶段 B 踩到）
 13. **`unity_execute` 的 `request_editor_status` 不要写死**：Play Mode 进/退和 domain reload 抢时序，写死成 `playing` 时会报「Status Changed: now editing」并**直接结束这一轮**，看起来就像「任务又断了」。正确做法：先确认状态（用 `unity_set_play_mode` 幂等推进到目标态），再发读取调用
 14. **`unity_capture_viewport` 在本环境截不到 Overlay UI**（阶段 C 踩到）：把 `StartStageButton` 和 HUD 底栏都改成洋红、甚至把主相机 `clearFlags=SolidColor` + 背景洋红，截图里**一像素洋红都没有**；连续两次截图几乎一模一样。结论：它不能用来做 UI 像素验证。UI 验证改用「组件状态回读 + `EventSystem.RaycastAll` + 人眼」
-15. **工作区脏时提交自己的改动**（阶段 C 踩到）：`FakeRouteRuntime.cs` 里混着上一轮未提交的 `BreakableProp` 改动（而 `Assets/Scripts/Prop/` 本身还是 untracked）。直接 `git add` 会提交一个引用 untracked 类型的坏 commit。做法：`git diff <file> > full.patch` → `sed -n '1,Np'` 只留自己的 hunk → `git apply --cached mine.patch`，然后 `git show :<file> | grep -c BreakableProp` 必须为 0
+15. **工作区脏时提交自己的改动**（阶段 C 踩到）：`FakeRouteRuntime.cs` 里混着上一轮未提交的 `BreakableProp` 改动（而 `Assets/Scripts/Prop/` 本身还是 untracked）。直接 `git add` 会提交一个引用 untracked 类型的坏 commit。做法：`git diff <file> > full.patch` → `sed -n '1,Np'` 只留自己的 hunk → `git apply --cached mine.patch`，然后 `git show :<file> | grep -c BreakableProp` 必须为 0（阶段 F 实测：这套 CRLF 环境下 `git apply --cached` 会报 `patch does not apply`，改用「`git show HEAD:<path>` 取出 → 脚本套上自己的替换写成 mine.cs → 覆盖工作区文件 `git add` → 把完整工作区文件覆盖回来」，`git show :./<path>` 注意要在子目录里加 `./` 前缀）
 16. **无 sprite 的 `Image` 不要赌它一定出网格**：本项目所有 UI 一律配精灵（按钮用 `MM_Btn_Primary` / `Secondary` + `SpriteSwap`，pressed 用 `*_Pressed`）。落地页大按钮直接复用这套，尺寸/字号也抄主菜单（479×172、TMP 54、字色 `0.97/0.92/0.78`）
 17. **引用了 untracked 资产**（D4 收尾时发现）：`Assets/Sprites/UI/MainMenu` / `Talent` / `Tutorial` 三个目录一直是 untracked，但 `908e7c0` 的 overlay 场景和落地页按钮已经在用它们的 GUID —— **新克隆会全是丢引用**。已补提交（`31d2937`）。提交前先 `git status --short` 看场景/预手引用到的目录是否都是 tracked
 18. **删场景前必须做「能力对比审计」**（D4）：把待删场景的根对象组件列出来，逐项到保留场景里找对应。最容易漏的是不显眼的基础设施：`AudioListener` / `EventSystem` / `SafeAreaAdapter`（刘海适配）/ `CameraManager` / `Directional Light`。MainMenu 审计结果见阶段 D4
 19. **跨文件的同一改动不能按 hunk 拆提交**：`BattleHUD` 引用 `StageController.blockRestartOnDefeat`，两边的改动拆到两个 commit 会让中间那个 commit 编译不过。**这种必须成组提交**，并在 commit message 里说明带上了什么
 20. **每次进/出 Play Mode 都会注入 `[Unity Editor Status Changed]`，当前回合立即结束**：25 分钟内自己开关 5 次，就把工作切成了 9 个短回合。**批处理**：改代码 → 编译 → 静态检查 → 进一次 Play 把所有验证项一次跑完 → 出来 → 提交（详见 `memory/work-loop-discipline.md`）
+21. **Play Mode 里 `WaitFrames` 的帧很快**：实测 90 帧 ≈ 0.32s（≈280fps），等 `WaitForSecondsRealtime(0.5f)` 的收尾逻辑用 60 帧只等到 0.2s，会看到「`phase=Completed` 但快照没清、没记通关」的假故障。**用 `Time.realtimeSinceStartup` 量一下再下结论**（阶段 F 踩到）
+22. **自举模式下 `StageController.fakeRouteStageConfig == null` 是一串隐藏 bug 的总开关**：结算、战败重来、重来按钮都按这个字段分支。任何新增的「按这个字段判断是否跑卷轴路线」的逻辑，落地页里都会走 else 分支
+23. **`StartFromCheckpoint` 这类 static 旗标扛不住进程重启**：落地页语义是「进游戏 = 当前进度」，判定要用「有没有合法快照」而不是「上一轮有没有置旗标」
+24. **同帧读取 UI 状态会读到旧值**：`IsPrepared` 变 true 的那一帧 `BattleStartStageButton` / `BattleHubTabBar` / `HubHudModeSwitch` 的 `Update` 还没跑，此刻读 `alpha` / `interactable` 会得到 0 / false。验证脚本要额外等几帧再读（阶段 F 踩到）
+25. **验证会污染存档（PlayerPrefs）**：`SetActiveFakeRouteStage` / `SaveFakeRouteSnapshot` / `MarkStageCleared` 都直写 PlayerPrefs。做法：开工前 `JsonUtility.ToJson(SaveManager.Load())` 备份、结束时 `SaveManager.Save(FromJson(...))` 还原（阶段 F 用的就是这个）
 
 ---
 
