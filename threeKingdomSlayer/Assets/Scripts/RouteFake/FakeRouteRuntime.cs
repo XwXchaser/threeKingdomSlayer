@@ -80,20 +80,17 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     }
 
     /// <summary>
-    /// 取得独占驱动权：关闭 StageController 的自动开战并停用场景内的 RouteStageRuntimeV2，
-    /// 保证同一时刻只有一个路线驱动在运行。幂等，可重复调用。
+    /// 取得独占驱动权：关闭 StageController 的自动开战，保证同一时刻只有一个路线驱动在运行。
+    /// 幂等，可重复调用。
+    ///
+    /// 2026-10-20：原先这里还会遍历停用场景内的 <c>RouteStageRuntimeV2</c>（靠运行期暴力
+    /// 保证“只有一个驱动”）。Battle 场景里那个 V2 组件已删除，V2 实现整体收进
+    /// Assets/Scripts/Legacy/RouteV2（只剩试玩场景在用），这段竞争逻辑随之移除。
     /// </summary>
     private void AcquireExclusiveDriving()
     {
         var host = ResolveBattleHost();
         if (host != null) host.AutoStartStage = false;
-        var runtimes = FindObjectsOfType<RouteStageRuntimeV2>();
-        for (int i = 0; i < runtimes.Length; i++)
-        {
-            if (runtimes[i] == null) continue;
-            runtimes[i].StopAllCoroutines();
-            runtimes[i].enabled = false;
-        }
     }
 
     /// <summary>解析路线战斗宿主（StageController 实现 IRouteBattleHost），幂等。</summary>
