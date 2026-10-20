@@ -27,3 +27,14 @@ aiEditMode: inherit
 - 回执只证明“工具被调用”，不证明“变更已持久化”。
 - 批量改动时逐个文件核对，不要抽查一个文件就推断整批成功。
 - 向用户汇报“已修改”之前，先把回读结果作为依据；发现未落盘时重做并再次回读。
+
+## 补充（2026-10-20）：`unity_capture_viewport` 截不到 Overlay UI
+
+验证落地页按钮时踩到：把 `StartStageButton` 的 `Image.color` 和 HUD 底栏都改成洋红（1,0,1），等 5 帧后 `unity_capture_viewport(target=game)` 截回来的图里**一像素洋红都没有**；再把主相机 `clearFlags` 改成 `SolidColor` + 背景洋红，截图依旧没变化，而且连续两次截图像素几乎完全一致。
+
+结论与规则：
+
+- 该工具**不能用来做 UI 像素验证**（至少在本机会话里截到的不是实时 Game 视图）。仍可做「场景大致长什么样」的粗略参考，但不能用来证明某个 UI 出现/消失/变色。
+- UI 验证改走结构性证据：组件状态回读（`RectTransform` / `CanvasGroup.alpha` / `Image.sprite` / `Selectable.interactable`）+ `EventSystem.RaycastAll` 看点击命中 + 最终由人眼看真机/Game 视图。
+- `ScreenCapture.CaptureScreenshotAsTexture()` 在 `unity_execute` 的 async 片段里可能返回 null（不在帧末尾），不要靠它取像素。
+- 同理：`bash` 里的 heredoc（`cat >> file <<'EOF'`）经 shell 包装后会写不进去或写坏，追加/修改文件一律用 `edit`/`write`，改完回读确认。
