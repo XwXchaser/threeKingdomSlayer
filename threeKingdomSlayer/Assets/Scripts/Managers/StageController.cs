@@ -20,16 +20,6 @@ public class StageController : MonoBehaviour
     [Tooltip("卷轴/假移动路线关卡配置。为空时该流程不参与。")]
     public FakeRouteStageConfig fakeRouteStageConfig;
 
-    /// <summary>
-    /// 待加载的线性关卡配置（MainMenu选关后设置）
-    /// </summary>
-    public static StageConfig PendingStageConfig;
-
-    /// <summary>
-    /// 待加载的路线关卡配置（MainMenu选关后设置）
-    /// </summary>
-    public static RouteStageConfig PendingRouteStageConfig;
-
     [Header("组件引用")]
     public WaveSpawner waveSpawner;
     public EnemyManager enemyManager;
@@ -75,43 +65,12 @@ public class StageController : MonoBehaviour
         }
         Instance = this;
 
-        // 从 MainMenu 传入的路线或线性关卡配置
-        if (FakeRouteLaunch.PendingConfig != null)
-        {
-            fakeRouteStageConfig = FakeRouteLaunch.PendingConfig;
-            Debug.Log("[FakeRoute] launch stage=" + fakeRouteStageConfig.stageId);
-            FakeRouteLaunch.PendingConfig = null;
-            routeStageConfigV2 = null;
-            routeStageConfig = null;
-            stageConfig = null;
-        }
-        else if (RouteStageV2Launch.PendingConfig != null)
-        {
-            routeStageConfigV2 = RouteStageV2Launch.PendingConfig;
-            Debug.Log("[RouteV2] launch mode=" + (RouteStageV2Launch.StartFromCheckpoint ? "checkpoint" : "new game") + " stage=" + routeStageConfigV2.stageId);
-            RouteStageV2Launch.PendingConfig = null;
-            routeStageConfig = null;
-            stageConfig = null;
-            fakeRouteStageConfig = null;
-        }
-        else if (PendingRouteStageConfig != null)
-        {
-            routeStageConfig = PendingRouteStageConfig;
-            PendingRouteStageConfig = null;
-            routeStageConfigV2 = null;
-            stageConfig = null;
-            fakeRouteStageConfig = null;
-        }
-        else if (PendingStageConfig != null)
-        {
-            stageConfig = PendingStageConfig;
-            PendingStageConfig = null;
-            routeStageConfig = null;
-            // 场景里可能残留 V2 路线配置；不清掉的话 StartStage() 会被 V2 分支截走，
-            // 表现是非路线关卡永远停在 None/Starting，波次不生成（教学关踩过）。
-            routeStageConfigV2 = null;
-            fakeRouteStageConfig = null;
-        }
+        // 【架构收口】关卡配置只由运行时注入，不再读任何跨场景 Pending* 静态入口：
+        //   • 落地页：FakeRouteRuntime.PrepareForEntry 写 fakeRouteStageConfig
+        //   • 战斗：StartRouteBattle(stageConfig) 注入当前节点配置
+        // 原来的四条分支（MainMenu 传参 / RouteV2 传参 / 线性关卡 / 旧路线）自 D4 删 MainMenu 起
+        // 已无人写入，只是每次 Awake 把自己读出来再置 null，2026-10-20 批次 0 一并删除。
+        // 注意：Hub 自举依赖此处保持 null，FakeRouteRuntime.Start 才能走「读存档自举」分支。
 
         if (fakeRouteStageConfig != null)
         {

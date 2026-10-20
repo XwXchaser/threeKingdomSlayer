@@ -1,6 +1,5 @@
-/// <summary>MainMenu → Battle 之间传递的待启动路线关卡配置。</summary>
+/// <summary>MainMenu 时代遗留的跨场景旗标。MainMenu 已删除，待批次 2 随路线收敛一并清掉。</summary>
 public static class FakeRouteLaunch
 {
-    public static FakeRouteStageConfig PendingConfig;
     public static bool StartFromCheckpoint;
 }

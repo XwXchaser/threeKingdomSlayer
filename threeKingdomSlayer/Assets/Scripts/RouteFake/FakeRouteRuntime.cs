@@ -101,15 +101,9 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         if (stageController == null) stageController = StageController.Instance;
         if (stageController == null) yield break;
 
-        // ① 传统路径：MainMenu 通过 FakeRouteLaunch.PendingConfig 传了 route（StageController.Awake
-        //    已把它读成 fakeRouteStageConfig）→ 老行为，自动开跑。这条保证了从主菜单进来的路零回归。
-        if (stageController.fakeRouteStageConfig != null)
-        {
-            Begin(stageController.fakeRouteStageConfig);
-            yield break;
-        }
-
-        // ② 落地页自举：读存档「当前进度」→ 只准备表现层，等玩家点「开始关卡」。
+        // 落地页自举：读存档「当前进度」→ 只准备表现层，等玩家点「开始关卡」。
+        // （历史 ① 传统路径依赖 FakeRouteLaunch.PendingConfig，MainMenu 删除后无人写入，
+        //    2026-10-20 批次 0 已移除；Begin() 本身保留，战败重来仍走它。）
         var activeRoute = ResolveActiveRouteFromSave();
         if (activeRoute == null)
         {
