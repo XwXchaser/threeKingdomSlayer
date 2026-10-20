@@ -11,7 +11,7 @@ aiEditMode: inherit
 
 > 目标平台：微信小程序。加载完毕后玩家**直接进入 Battle 场景**，看到的就是当前进度的关卡起始场景。
 > 本文是**可交接的实施计划**：现状机制 → 目标形态 → 分阶段任务 → 验收 → 已知坑。
-> **进度：阶段 A / B / C / D1 / D3 / D4 全部完成并推送（MainMenu 已删除，全局回落地页）；阶段 F（自举路径收尾修复）已完成并本地提交 `fb5279b`（未 push）；只剩 D0 中央轻交互、D2 顶部状态条；阶段 E 已重测（真实可省 2.4MB，Tutorial_YJ 的 9.3MB 已落地）。**
+> **进度：阶段 A / B / C / D1 / D3 / D4 全部完成并推送（MainMenu 已删除，全局回落地页）；阶段 F（自举路径收尾修复，`fb5279b`）与阶段 G（二级页面接管全屏，`1210dc5`）已完成、本地提交未 push；只剩 D0 中央轻交互、D2 顶部状态条；阶段 E 已重测（真实可省 2.4MB，Tutorial_YJ 的 9.3MB 已落地）。**
 
 ---
 
@@ -61,6 +61,7 @@ aiEditMode: inherit
 | 就绪态/关卡态 HUD 拆分 | ✅ `8b780cd` |
 | 阶段 E | ✅ 重测：敌人美术真实只浪费 2.4MB（旧文档的「114MB 死资源」作废）；`Tutorial_YJ` 移出 build（9.3MB） |
 | 阶段 F：自举路径收尾修复（结算/冷启动接档/通关推进/选关立即生效 + 补提交路线资产） | ✅ `fb5279b` + `46e7c19`（未 push） |
+| 阶段 G：二级页面接管全屏（画布层级 / 不透明底 / 落地页内容让位） | ✅ `1210dc5`（未 push） |
 | D0 中央轻交互 / D2 体力状态条 / 字体 36MB | ⬜ 未做 |
 
 **待用户人眼验收**：hub 实际观感（头像/金币/开始按钮/tab 栏的大小与位置、就绪态背景是否好看）。截图工具在本机截不到 Overlay UI（§7.14），只能人眼看。
@@ -264,6 +265,25 @@ Build Settings
 | 天赋 | `TalentTreePanel` | overlay 场景 `TalentTree.scene` |
 | 家园 | 待定 | 先留占位 |
 
+### 4.4 界面职责划分（2026-10-20 用户验收后拍定）
+
+用户验收反馈：打开选关/天赋页时，「开始关卡」大按钮、头像、金币、tab 栏仍浮在页面上。定下如下职责：
+
+| 层 | 场景 | 职责（只做这些） | 生命周期 |
+|---|---|---|---|
+| 主场景 | `Battle.scene` | 「战斗」这一个 tab 的全部内容：局内 HUD（关卡态）+ 落地页 hub（就绪态：开始关卡 / tab 栏 / 头像 / 金币） | 常驻 |
+| 二级全屏页 | `StageSelect.scene` | 只负责「换关卡」：列路线、点选写档、返回；选完立即回战斗 | 打开接管全屏，关闭还原 |
+| 二级全屏页 | `TalentTree.scene` | 只负责「改天赋」：节点/连线/金币，返回 | 同上 |
+
+三条硬规则（不满足就会出现「两个界面的东西叠在一起」）：
+
+1. **二级页必须画在主场景 HUD 之上。** `BattleHUD(Canvas)` 是 Screen Space - Overlay（order 21），Overlay 画布永远画在摄像机画布之后——所以二级页不能再做 Screen Space - Camera（旧值 10/11），必须是 Screen Space - Overlay 且 order > 21（现为 40 / 41）。
+2. **二级页自带不透明全屏底**，不能靠下层场景透出来（选关页 0.05/0.06/0.09/0.96；天赋页原缺，阶段 G 已补）。
+3. **二级页打开期间 hub 内容隐藏**，不只是被盖住：`HubHudModeSwitch.hubOnly`（头像/金币）按 `SceneFlowManager.HasOverlay` 隐藏，`BattleStartStageButton` / `BattleHubTabBar` 的可见性同样 AND `!HasOverlay`。
+
+> 纯 UI 的 overlay 场景不接管摄像机：两个 overlay 场景的 `Main Camera` 在阶段 G 已停用（画布改 Overlay 后不需要它，也避开两个摄像机同时渲染与 AudioListener 重复）。
+> 取舍：overlay 打开期间 tab 栏也隐藏，切页需要先「返回」再点另一个 tab——与「二级页」语义一致；若要改成参考图那种常驻底栏，需要把二级页降为「面板」并同步改上面三条规则。
+
 ---
 
 ## 5. 分阶段实施计划
@@ -407,6 +427,32 @@ Build Settings
 
 ---
 
+### 阶段 G：二级页面接管全屏（2026-10-20，`1210dc5`）
+
+用户验收反馈：切换到选关/天赋页时，「开始游戏」与头像 UI 没有消失。
+
+| # | 问题 | 根因 | 修法 |
+|---|---|---|---|
+| G1 | 落地页 UI 压在二级页上面 | `BattleHUD(Canvas)` 是 Screen Space - Overlay（21），二级页是 Screen Space - Camera（10/11）；Overlay 画布永远画在摄像机画布之后 | 两个 overlay 画布改 Screen Space - Overlay，order 40 / 41 |
+| G2 | 天赋页无全屏底 | 只有 `TalentTreePanel` + `CloseButton`，背景透出战斗场景 | 补全屏 `Background`（与选关页同款颜色） |
+| G3 | hub 内容不消失 | 只按 `IsPrepared` 控显隐，没有「二级页打开」这个维度 | `HubHudModeSwitch.hubOnly`（头像/金币）+ 按钮/tab 栏 AND `!HasOverlay` |
+| G4 | overlay 场景自带摄像机 | 纯 UI 页却持有 Main Camera，两机同时渲染 | 停用两个 overlay 场景的 `Main Camera` |
+
+**Play Mode 实测**：
+
+| 项 | 结果 |
+|---|---|
+| 基线 | 头像/金币 active、开始按钮 alpha 1.00、tab alpha 1.00 |
+| 选关页打开 | canvas `ScreenSpaceOverlay order=40`；头像/金币 `active=false`；开始按钮/tab alpha 0.00 |
+| 选关页关闭 | 头像/金币 active、按钮/tab alpha 1.00（全部还原） |
+| 天赋页打开 | canvas `order=41`；`Background` 就位（0.05/0.06/0.09/0.96）；hub 同样让位 |
+| 天赋页关闭 | 全部还原，`Phase=Ready` |
+| Console | warn/error = 0 |
+
+**未覆盖**：未在微信小程序/真机上确认 Overlay 画布层级；选关页点击选中后的视觉反馈只是状态文字（选完立即关页）。
+
+---
+
 ## 6. 验收步骤
 
 ### 阶段 A/B
@@ -452,6 +498,7 @@ Build Settings
 23. **`StartFromCheckpoint` 这类 static 旗标扛不住进程重启**：落地页语义是「进游戏 = 当前进度」，判定要用「有没有合法快照」而不是「上一轮有没有置旗标」
 24. **同帧读取 UI 状态会读到旧值**：`IsPrepared` 变 true 的那一帧 `BattleStartStageButton` / `BattleHubTabBar` / `HubHudModeSwitch` 的 `Update` 还没跑，此刻读 `alpha` / `interactable` 会得到 0 / false。验证脚本要额外等几帧再读（阶段 F 踩到）
 25. **验证会污染存档（PlayerPrefs）**：`SetActiveFakeRouteStage` / `SaveFakeRouteSnapshot` / `MarkStageCleared` 都直写 PlayerPrefs。做法：开工前 `JsonUtility.ToJson(SaveManager.Load())` 备份、结束时 `SaveManager.Save(FromJson(...))` 还原（阶段 F 用的就是这个）
+26. **Screen Space - Overlay 画布永远压在 Screen Space - Camera 画布之上**，与 sortingOrder 无关（`BattleHUD` 21 vs 二级页 10/11 → 二级页永远在下）。additive 叠 UI 页面时，**两边必须是同一种 render mode**，否则只能靠隐藏来实现「不叠在一起」（阶段 G 踩到）
 
 ---
 
