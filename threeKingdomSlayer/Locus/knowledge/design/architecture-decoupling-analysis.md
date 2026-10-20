@@ -334,6 +334,7 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 | `Enemy` 拆 `EnemyOutline`（描边） | ✅ `eac2922`（5212 → 5132 行） |
 | `Enemy` 拆 `EnemyFreezeVisual`（冰系视觉层） | ✅ `86c3fbd`（5145 → 4798 行，冰系区段 685 → 333 行） |
 | `StageController` 按角色拆 `StageFormation` / `StageRouteBattleHost` | ✅ `f906501`（852 → 790 行） |
+| 遗留路线实现收进 `Assets/Scripts/Legacy/`，Battle 场景去掉 V2 竞争驱动 | ✅ `55c216a` |
 | 剩余角色接口（`IRunFlow` / `ICombatStaging` / `IRewardGate`） | ⬜ |
 | `IStageFormation`（阵型只读）+ `IStageFlowControl`（流程控制） | ✅ `Enemy` / `BattleHUD` 已迁移 |
 | `AttackSystem` 迁移到 `IStageFormation` | ✅ `a0dccc9`（32 处调用收敛为一处） |
@@ -377,6 +378,11 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
   `_routeRewardWaiting` 两个状态位）拆出，门面 852 → 790 行。
   自检：阵型数值与搬迁前算法**逐位一致**（5 列 × 全排，差异 < 0.0001）；旅行态/奖励等待/重新开打
   三个状态迁移正确且宿主与门面状态位同步；攻击两次各掉 20。
+- 遗留路线收编（`55c216a`）：`RouteV2` 全套与 `Route` 里的 V1 原型移入
+  `Assets/Scripts/Legacy/`（`git mv`，GUID 不变，试玩场景引用不受影响），Battle 场景里那个
+  `RouteStageRuntimeV2` 组件删除，`FakeRouteRuntime.AcquireExclusiveDriving` 里
+  「遍历停用 V2 运行时」的竞争逻辑随之移除——**「靠运行期暴力保证唯一驱动」这个历史包袱
+  现在没有了**。`Assets/Scripts/Route` 只留现役的 `RouteChoice*` 三件套。
 
 `Locus.Data` 现状：**19 文件 / 1875 行 / 69 类型**。
 
