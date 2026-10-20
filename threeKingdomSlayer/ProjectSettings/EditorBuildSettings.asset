@@ -6,20 +6,23 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/Battle.scene
+    guid: 10856c7f0af014a459fc7135d0b17bd4
+  - enabled: 1
     path: Assets/Scenes/MainMenu.scene
     guid: e0a6fd08f41331748b718454360f7b98
   - enabled: 1
     path: Assets/Scenes/Tutorial/Tutorial_YJ.unity
     guid: 6dbe256e18a7d8546af0dc67156a79d2
   - enabled: 1
-    path: Assets/Scenes/Battle.scene
-    guid: 10856c7f0af014a459fc7135d0b17bd4
-  - enabled: 1
     path: Assets/Experiments/CurvedScroll/YJunctionSample.unity
     guid: 06be298dca052ae4d9c92170cfa51fff
   - enabled: 1
     path: Assets/Scenes/StageSelect.scene
     guid: afa03912bdcac914d8f2fdb14f2b6dfe
+  - enabled: 1
+    path: Assets/Scenes/TalentTree.scene
+    guid: 2195683b39352b246a6c560a34c19fc4
   m_BuildProfiles: []
   m_configObjects: {}
   m_SlimFeaturesWeixinMiniGame:

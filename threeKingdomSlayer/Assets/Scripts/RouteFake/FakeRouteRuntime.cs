@@ -5,6 +5,8 @@ using UnityEngine;
 public enum FakeRoutePhase
 {
     None,
+    /// <summary>落地页就绪态：表现层已加载、视觉已定位到起始节点，但尚未开始跑流程。</summary>
+    Ready,
     EnteringNode,
     Battle,
     WaitingReward,
@@ -39,6 +41,13 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     private string _restoredCheckpointNodeId;
     private int _generation;
     private Coroutine _flow;
+
+    /// <summary>就绪态下等待玩家点「开始关卡」的起始节点（含 checkpoint 恢复结果）。</summary>
+    private FakeRouteNodeConfig _preparedStartNode;
+    private bool _prepared;
+
+    /// <summary>已准备完毕（表现层就位、随时可 RunPrepared）。</summary>
+    public bool IsPrepared => _prepared;
 
     public static FakeRouteRuntime Instance { get; private set; }
     public FakeRouteStageConfig RouteConfig => routeConfig;
@@ -83,11 +92,49 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     {
         if (!autoStart) yield break;
         yield return null;
-        // 只有本关被显式启动（MainMenu 选关/继续、或失败重开）时才自走：
-        // 直接播放 Battle 场景（StageController 未拿到路线配置）时不启动，避免抢占其他测试环境。
         if (stageController == null) stageController = StageController.Instance;
-        if (stageController == null || stageController.fakeRouteStageConfig == null) yield break;
-        Begin(stageController.fakeRouteStageConfig);
+        if (stageController == null) yield break;
+
+        // ① 传统路径：MainMenu 通过 FakeRouteLaunch.PendingConfig 传了 route（StageController.Awake
+        //    已把它读成 fakeRouteStageConfig）→ 老行为，自动开跑。这条保证了从主菜单进来的路零回归。
+        if (stageController.fakeRouteStageConfig != null)
+        {
+            Begin(stageController.fakeRouteStageConfig);
+            yield break;
+        }
+
+        // ② 落地页自举：读存档「当前进度」→ 只准备表现层，等玩家点「开始关卡」。
+        var activeRoute = ResolveActiveRouteFromSave();
+        if (activeRoute == null)
+        {
+            Debug.LogWarning("[FakeRoute] 落地页自举失败：找不到可用的路线配置（检查 StageConfigManager 是否在本场景）");
+            yield break;
+        }
+        Debug.Log("[FakeRoute] 落地页自举：当前关卡 = " + activeRoute.stageName);
+        PrepareForEntry(activeRoute);
+    }
+
+    /// <summary>
+    /// 从存档解析「玩家当前关卡」：
+    /// SaveManager.GetActiveFakeRouteStageId() → 在 StageConfigManager.GetSelectableRoutes() 里找。
+    /// 存档 id 失效（比如关卡被删）时回退到可选列表第一条。
+    /// </summary>
+    private FakeRouteStageConfig ResolveActiveRouteFromSave()
+    {
+        var scm = StageConfigManager.Instance != null
+            ? StageConfigManager.Instance
+            : FindObjectOfType<StageConfigManager>();
+        if (scm == null) return null;
+
+        var routes = scm.GetSelectableRoutes();
+        if (routes.Count == 0) return null;
+
+        int activeId = SaveManager.GetActiveFakeRouteStageId();
+        for (int i = 0; i < routes.Count; i++)
+            if (routes[i] != null && routes[i].stageId == activeId) return routes[i];
+
+        Debug.LogWarning("[FakeRoute] 存档当前关卡 id=" + activeId + " 不在可选列表里，回退到第一条: " + routes[0].stageName);
+        return routes[0];
     }
 
     private void OnDestroy()
@@ -136,6 +183,138 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         _battleActive = false;
         SetPhase(FakeRoutePhase.EnteringNode);
         _flow = StartCoroutine(BeginRouteNextFrame());
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // 落地页（就绪态）两段式：PrepareForEntry → 玩家点「开始关卡」→ RunPrepared
+    // ══════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 【落地页】只准备、不跑流程：加载路线场景表现 + 把视觉定位到起始节点（含 checkpoint 恢复）。
+    /// 准备完成后 Phase = Ready；任何时刻调 <see cref="RunPrepared"/> 才真正开始跑节点流程。
+    /// 与 <see cref="Begin"/> 互斥：会顶掉正在跑的流程。
+    /// </summary>
+    public void PrepareForEntry(FakeRouteStageConfig config)
+    {
+        if (_flow != null) { StopCoroutine(_flow); _flow = null; }
+        routeConfig = config;
+        if (stageController == null) stageController = StageController.Instance;
+        if (stageController == null || routeConfig == null)
+        {
+            Debug.LogError("[FakeRoute] PrepareForEntry: 配置或StageController为空");
+            return;
+        }
+        AcquireExclusiveDriving();
+        movementPresenter = presenterBehaviour as IRouteMotionPresenter;
+
+        string validationError;
+        if (!ValidateConfiguration(out validationError))
+        {
+            Debug.LogError("[FakeRoute] PrepareForEntry 配置校验失败: " + validationError);
+            SetPhase(FakeRoutePhase.None);
+            return;
+        }
+        if (movementPresenter == null || !movementPresenter.TryValidate(routeConfig, out validationError))
+        {
+            Debug.LogError("[FakeRoute] PrepareForEntry 表现层不可用: " + (movementPresenter == null ? "未绑定 IRouteMotionPresenter" : validationError));
+            SetPhase(FakeRoutePhase.None);
+            return;
+        }
+
+        stageController.OnRouteBattleCompleted -= NotifyBattleCompleted;
+        stageController.OnRouteBattleCompleted += NotifyBattleCompleted;
+        _generation++;
+        _routeSettled = false;
+        _completedBattleEntries.Clear();
+        _visitedNodes.Clear();
+        _choiceHistory.Clear();
+        _restoredFromCheckpoint = false;
+        _restoredCheckpointNodeId = null;
+        _currentNode = null;
+        _battleActive = false;
+        _prepared = false;
+        _preparedStartNode = null;
+        SetPhase(FakeRoutePhase.Ready);
+        _flow = StartCoroutine(PrepareSceneOnly());
+    }
+
+    private IEnumerator PrepareSceneOnly()
+    {
+        yield return null;
+        _preparedStartNode = ResolveStartNode();
+        if (_preparedStartNode == null)
+        {
+            Debug.LogError("[FakeRoute] PrepareForEntry: startNode 为空");
+            SetPhase(FakeRoutePhase.None);
+            yield break;
+        }
+
+        SetGameplayInput(false);
+        yield return movementPresenter.Prepare(routeConfig, () => Phase != FakeRoutePhase.Defeated);
+        if (!movementPresenter.IsSceneReady)
+        {
+            Debug.LogError("[FakeRoute] PrepareForEntry: 路线表现层未就绪（检查 ScrollRoutePresenter 的 routeSceneName / battleCamera）");
+            SetPhase(FakeRoutePhase.None);
+            yield break;
+        }
+
+        // 不播开场、不进节点：只把视觉定位到起始节点锚点。
+        yield return movementPresenter.PlayOpening(null, _preparedStartNode, () => Phase != FakeRoutePhase.Defeated);
+        if (Phase == FakeRoutePhase.Defeated) yield break;
+
+        _prepared = true;
+        SetPhase(FakeRoutePhase.Ready);
+        Debug.Log("[FakeRoute] 落地页就绪：关卡=" + routeConfig.stageName +
+                  " 起始节点=" + (_preparedStartNode ? _preparedStartNode.nodeId : "null") +
+                  "（等玩家点开始关卡）");
+    }
+
+    /// <summary>【落地页】玩家点「开始关卡」：从已准备的起始节点开始跑节点流程。</summary>
+    public void RunPrepared()
+    {
+        if (!_prepared || routeConfig == null || _preparedStartNode == null)
+        {
+            Debug.LogWarning("[FakeRoute] RunPrepared 被忽略：尚未准备就绪（Phase=" + Phase + "）");
+            return;
+        }
+        if (_flow != null) StopCoroutine(_flow);
+        _flow = StartCoroutine(RunPreparedFlow());
+    }
+
+    private IEnumerator RunPreparedFlow()
+    {
+        var startNode = _preparedStartNode;
+        _prepared = false;
+        Debug.Log("[FakeRoute] 开始关卡：从节点 " + (startNode ? startNode.nodeId : "null") + " 起跑");
+
+        // 开场表现（如果有）：openingTravel 为空时表现层直接停在 startNode 锚点。
+        SetGameplayInput(false);
+        yield return movementPresenter.PlayOpening(routeConfig.openingTravel, startNode, () => Phase != FakeRoutePhase.Defeated);
+        if (Phase == FakeRoutePhase.Defeated) yield break;
+        yield return EnterNode(startNode);
+    }
+
+    /// <summary>解析起始节点（含 checkpoint 恢复）。Begin 与 PrepareForEntry 共用。</summary>
+    private FakeRouteNodeConfig ResolveStartNode()
+    {
+        if (routeConfig == null) return null;
+        var startNode = useTestStartNode && testStartNode != null ? testStartNode : routeConfig.startNode;
+        if (!useTestStartNode && FakeRouteLaunch.StartFromCheckpoint)
+        {
+            var snapshot = SaveManager.GetFakeRouteSnapshot(routeConfig.routeId, routeConfig.stageId);
+            if (snapshot != null && RestoreCheckpoint(snapshot, out var restoredNode))
+            {
+                startNode = restoredNode;
+                _restoredFromCheckpoint = true;
+                _restoredCheckpointNodeId = snapshot.checkpointNodeId;
+                Debug.Log("[FakeRoute] restored checkpoint node=" + snapshot.checkpointNodeId);
+            }
+            else
+            {
+                Debug.Log("[FakeRoute] no valid fake route checkpoint, starting from startNode");
+            }
+        }
+        return startNode;
     }
 
     private IEnumerator BeginRouteNextFrame()
