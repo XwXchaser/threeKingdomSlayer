@@ -3,7 +3,7 @@ id: kd_mainmenu-hub-refactor-plan-20261020
 injectMode: inherit
 injectAgents:
 - '*'
-summary: 主菜单/落地页重构方案 —— 落地即 Battle 场景、关卡内容进场景即加载、选关与天赋降级为二级 overlay；含包体实测数据与分阶段实施计划
+summary: 主菜单/落地页重构方案 —— 落地即 Battle 场景、关卡内容进场景即加载、选关与天赋降级为二级 overlay；阶段 A/B/C 已完成，含包体实测数据、分阶段计划与 16 条坑
 aiEditMode: inherit
 ---
 
@@ -11,7 +11,7 @@ aiEditMode: inherit
 
 > 目标平台：微信小程序。加载完毕后玩家**直接进入 Battle 场景**，看到的就是当前进度的关卡起始场景。
 > 本文是**可交接的实施计划**：现状机制 → 目标形态 → 分阶段任务 → 验收 → 已知坑。
-> 任何 AI 接手时，建议从 §3 的「现状机制」和 §5 的「阶段划分」读起。
+> **进度：阶段 A / B / C 已完成并推送；下一步是阶段 D（底部 tab + 结算回落地页）。**
 
 ---
 
@@ -29,6 +29,8 @@ aiEditMode: inherit
 ```
 
 **选关页与天赋页不再是必经流程**，是玩家主动打开的二级内容。
+
+> ✅ ①②③⑤ 已实现（`ff912e9`）；④ 中央轻交互和底部 tab 还在阶段 D。
 
 ---
 
@@ -252,23 +254,34 @@ Build Settings
 
 ---
 
-### 阶段 C：落地页（Battle 场景自举）★ 核心
+### 阶段 C：落地页（Battle 场景自举）✅ 已完成（`feat/stage-select-talent-overlays` @ `ff912e9`）
 
 **目标**：小程序加载完直接进 Battle 场景，自动恢复当前进度；玩家点「开始关卡」才正式开打。
 
-| # | 任务 | 文件 | 说明 |
+| # | 任务 | 文件 | 状态 |
 |---|---|---|---|
-| C1 | **拆分 `FakeRouteRuntime.Begin()`** | `Assets/Scripts/RouteFake/FakeRouteRuntime.cs` | 拆成 `PrepareForEntry(route, startNode)`（只做 `movementPresenter.Prepare`）与 `RunPrepared()`（走节点流程）。`Begin()` 保留为「Prepare + Run」的组合，避免动 `MainMenuUI` 现有调用点 |
-| C2 | **Battle 场景自举「当前进度」** | 新增 `BattleEntryBootstrap.cs` 或扩 `StageController` | 进 Battle 场景时：读 `SaveManager.GetActiveFakeRouteStageId()` → 找到 route config → 读 checkpoint → `PrepareForEntry`。**不能依赖 `FakeRouteLaunch.PendingConfig`（那是 MainMenu 时代的跨场景传参）** |
-| C3 | **关闭 `FakeRouteRuntime.autoStart` 的自动 Begin** | `Battle.scene`（`Route Flow (Scroll)` 组件的 `autoStart`） | 改为 `false`；改为由 C4 的「开始关卡」按钮显式触发 |
-| C4 | **「开始关卡」大按钮** | `Battle.scene` + 新 UI 脚本 | 参考图「捕捉」位。点击 → `FakeRouteRuntime.RunPrepared()`（或 `Begin(route)`，取决于 C1 的拆法） |
-| C5 | **build index 0 改成 Battle.scene** | `ProjectSettings/EditorBuildSettings.asset` | `MainMenu.scene` 移出 |
-| C6 | **「中央区域可点」轻交互** | `InputManager` / 新脚本 | 就绪态点中央 → 给反馈（不推进关卡）。**具体表现待定** |
+| C1 | 拆 `FakeRouteRuntime`：新增 `PrepareForEntry()` / `PrepareSceneOnly()` / `RunPrepared()` / `RunPreparedFlow()` / `ResolveStartNode()`；**`Begin()` 一行没改** | `Assets/Scripts/RouteFake/FakeRouteRuntime.cs` | ✅ |
+| C2 | Battle 场景自举：`Start()` 里 `ResolveActiveRouteFromSave()`（`StageConfigManager.GetSelectableRoutes()` + `GetActiveFakeRouteStageId()`，id 失效回退第一条） | 同上 | ✅ |
+| C3 | ~~关掉 `autoStart`~~ → 改成 `Start()` 内**双分支**（见下方偏差说明） | 同上 | ✅ 做法与计划不同 |
+| C4 | 「开始关卡」大按钮：新组件 `BattleStartStageButton`，`Ready` 态可点 → `RunPrepared()`；其余状态用 `CanvasGroup` 隐藏 | `Assets/Scripts/UI/BattleStartStageButton.cs` + `Battle.scene` | ✅ |
+| C5 | build index 0 = `Battle.scene`（MainMenu 保留在 index 1 当 legacy 后门） | `ProjectSettings/EditorBuildSettings.asset` | ✅ |
+| C6 | 就绪态「中央区域可点」轻交互 | — | ⬜ 未做（表现待定，并入阶段 D） |
 
-**风险**：
-- C1 拆 `Begin()` 会影响 `MainMenuUI` 现有调用点 → 用「保留 `Begin()` = Prepare + Run」的方式保证零回归
-- C2 的 route 查找：教学关与正式关不在同一个列表里（§3.5）→ 先做 A4 的数据源统一
-- C3 关掉 `autoStart` 后，**从 MainMenu 进 Battle 的老路径也会变成就绪态** → 需要 C4 的按钮兜住，或保留一条 legacy 直通开关
+**与计划的偏差（重要，别按旧计划回改）**：
+- C3 **没有**关掉 `autoStart`。关掉会让「从 MainMenu 进 Battle」的老路径也掉进就绪态 → 功能空窗。实际做法是在 `Start()` 里分支：`StageController.fakeRouteStageConfig != null`（MainMenu 通过 `FakeRouteLaunch.PendingConfig` 传的）→ `Begin()` 老行为自动开跑；为 `null` 才自举。**旧路径零回归。**
+- `Battle.scene` 必须自带一个 `StageConfigManager`（`tutorialStage` + `fakeRouteStages`，配置与 MainMenu 逐字段一致），否则自举时找不到路线。
+
+**实测（Play Mode）**：
+- 进场景：`Phase=Ready`、`IsPrepared=true`、路线=教学关·初见、**敌人 0 个**、`gameplayInputEnabled=false`；已加载场景 `Battle + YJunctionSample`
+- 点按钮：`EnteringNode` → 2.5s 后 `Battle`，`stageState=InProgress`，敌人出现 1 个，按钮自动隐藏（alpha 0）
+- Console error/warn = 0
+
+> ⚠️ **视觉验收未做**：本环境的截图工具截不到 Overlay UI（§7.15），按钮外观必须人眼确认。
+
+**风险（已消解 / 仍存在）**：
+- ~~C1 拆 `Begin()` 影响 `MainMenuUI`~~ → `Begin()` 未改动
+- ~~C2 教学关与正式关不在同一列表~~ → 阶段 A4 的 `GetSelectableRoutes()` 已统一
+- 仍存在：就绪态下战斗 HUD 是完整可见的（含暂停、QTE 板、技能键）；是否要压暗/隐藏非必要项待美术验收
 
 ---
 
@@ -276,10 +289,11 @@ Build Settings
 
 | # | 任务 | 说明 |
 |---|---|---|
-| D1 | Battle 场景底部 tab 栏（战斗 / 选关 / 天赋 / 家园） | 4 个按钮，切 overlay |
+| D0 | 就绪态「中央区域可点」轻交互（原 C6） | 点中央给反馈但不推进关卡；也可以直接砍掉，靠大按钮就够 |
+| D1 | Battle 场景底部 tab 栏（战斗 / 选关 / 天赋 / 家园） | 4 个按钮，切 `StageSelect.scene` / `TalentTree.scene` overlay。**阶段 A/B 造的 overlay 目前只能从 MainMenu 点进去，落地页还没有入口** |
 | D2 | 顶部队列、金币等状态条 | 复用 `CoinCounter`，补体力（还没有） |
-| D3 | 结算后回落地页（而不是回 MainMenu） | `StageController.GoToMainMenu()` → 改成回就绪态 |
-| D4 | 删 `MainMenu.scene` / `MainMenuUI` / 临时 debug 面板 | 定稿清理 |
+| D3 | 结算后回落地页（而不是回 MainMenu） | `StageController.GoToMainMenu()` → 改成回就绪态（`FakeRouteRuntime.PrepareForEntry(当前路线)` + 清 checkpoint） |
+| D4 | 删 `MainMenu.scene` / `MainMenuUI` / 临时 debug 面板 | 定稿清理。**删之前先保住 legacy 路径**：只要落地页还缺 tab 入口，MainMenu 就是唯一能进选关/天赋的地方 |
 
 ---
 
@@ -308,14 +322,14 @@ Build Settings
 2. 点「正式YJ」→ `SaveManager.GetActiveFakeRouteStageId()` == 1
 3. 点「天赋」→ overlay 弹出，节点/连线/金币正常，能关闭
 
-### 阶段 C
-4. **build index 0 = Battle.scene** → 小程序启动直接进战场，无主菜单
-5. 进战场时：背景/滚动场景已就位（route 表现加载完），**但没有敌人在场**（Q1 要求）
-6. 点中央 → 有反馈但不推进关卡
-7. 点「开始关卡」→ route 流程跑起来：对话 → 战斗 → 奖励 → 下一节点 → … → 结算
-8. 结算后回到就绪态（不是回主菜单）
-9. 退出重进 → 恢复同一个 route + 同一个 checkpoint 节点
-10. 在选关页选了另一条 → 退出重进 → 加载的是新选的那条
+### 阶段 C（已跑：4/5/7；待跑：6/8/9/10）
+4. ✅ **build index 0 = Battle.scene**，直接 Play 就是战场
+5. ✅ 进战场时 route 表现已就位（`Battle + YJunctionSample`），**敌人 0 个**（Q1 要求）
+6. ⬜ 点中央 → 有反馈但不推进关卡（原 C6，未实现）
+7. ✅ 点「开始关卡」→ `EnteringNode` → `Battle`、`stageState=InProgress`、敌人出现、按钮自动隐藏
+8. ⬜ 整条 route 跑到结算后回就绪态（阶段 D3，未做）
+9. ⬜ 中途退出重进恢复同一 checkpoint（自举会走 `ResolveStartNode()` 的 checkpoint 分支，但未端到端验证）
+10. ⬜ 在选关页换另一条 route → 重进加载新路线（自举按存档 id 找路线，逻辑覆盖，`MainMenu → 选关` 入口仍可用，未端到端验证）
 
 ---
 
@@ -333,6 +347,10 @@ Build Settings
 10. **`LoadSceneAsync` 按名字找场景，overlay 场景必须加进 `EditorBuildSettings`**：不加的话**不报错、就是不加载**，很难查（阶段 A 踩到）
 11. **`FindFirstObjectByType<T>()` 找不到 inactive 对象**：`TalentTreePanel` 在 MainMenu 场景里是 `active=False`，要用 `FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None)`（阶段 B 踩到）
 12. **跨场景拷贝组件配置要分两步**：`SerializedObject` 绑定的目标对象在切换场景后会被销毁 → 先把源值取到数组，再开目标场景写入（阶段 B 踩到）
+13. **`unity_execute` 的 `request_editor_status` 不要写死**：Play Mode 进/退和 domain reload 抢时序，写死成 `playing` 时会报「Status Changed: now editing」并**直接结束这一轮**，看起来就像「任务又断了」。正确做法：先确认状态（用 `unity_set_play_mode` 幂等推进到目标态），再发读取调用
+14. **`unity_capture_viewport` 在本环境截不到 Overlay UI**（阶段 C 踩到）：把 `StartStageButton` 和 HUD 底栏都改成洋红、甚至把主相机 `clearFlags=SolidColor` + 背景洋红，截图里**一像素洋红都没有**；连续两次截图几乎一模一样。结论：它不能用来做 UI 像素验证。UI 验证改用「组件状态回读 + `EventSystem.RaycastAll` + 人眼」
+15. **工作区脏时提交自己的改动**（阶段 C 踩到）：`FakeRouteRuntime.cs` 里混着上一轮未提交的 `BreakableProp` 改动（而 `Assets/Scripts/Prop/` 本身还是 untracked）。直接 `git add` 会提交一个引用 untracked 类型的坏 commit。做法：`git diff <file> > full.patch` → `sed -n '1,Np'` 只留自己的 hunk → `git apply --cached mine.patch`，然后 `git show :<file> | grep -c BreakableProp` 必须为 0
+16. **无 sprite 的 `Image` 不要赌它一定出网格**：本项目所有 UI 一律配精灵（按钮用 `MM_Btn_Primary` / `Secondary` + `SpriteSwap`，pressed 用 `*_Pressed`）。落地页大按钮直接复用这套，尺寸/字号也抄主菜单（479×172、TMP 54、字色 `0.97/0.92/0.78`）
 
 ---
 
@@ -343,7 +361,8 @@ Build Settings
 | `fix/stab-pushback-three-bugs` | 重击突刺推退 3 个 bug（debug tool / InputManager combo gate / AttackSystem override 时序）+ `tutorial-beat-and-formal-config-handoff-20261019.md` §13 | ✅ pushed |
 | `refactor/p0-displacement-debug-editor-only` | `DisplacementDebugTool` 用 `#if UNITY_EDITOR` 包住 | ✅ pushed |
 | `refactor/p1-input-gesture-gates` | `InputManager.ProcessGesture` 拆成 5 个独立 gate 方法 | ✅ pushed |
-| `feat/stage-select-talent-overlays` | **阶段 A+B**：`SceneFlowManager` / `StageSelectUI`+`StageSelect.scene` / `TalentTree.scene` / `UIOverlayCloseButton` / `StageConfigManager.tutorialStage` / `MainMenuUI` 接线 / build settings | ✅ pushed |
+| `feat/stage-select-talent-overlays` | **阶段 A+B**：`SceneFlowManager` / `StageSelectUI`+`StageSelect.scene` / `TalentTree.scene` / `UIOverlayCloseButton` / `StageConfigManager.tutorialStage` / `MainMenuUI` 接线 / build settings | ✅ pushed（`908e7c0`） |
+| `feat/stage-select-talent-overlays` | **阶段 C**：`FakeRouteRuntime` 拆 Prepare/Run + Battle 自举读存档 + `BattleStartStageButton` + Battle 自带 `StageConfigManager` + build index 0 = Battle | ✅ pushed（`ff912e9`） |
 
 ---
 
@@ -352,8 +371,9 @@ Build Settings
 1. 读 §3（现状机制）——尤其是 §3.3 开关表和 §3.4 存档 API
 2. 读 `Locus/knowledge/plan/tutorial-beat-and-formal-config-handoff-20261019.md`（本项目的关卡/配置现状 + 踩坑记录）
 3. 读 `Locus/knowledge/design/anti-ghost-reference.md`（数据引用规范：Inspector 拖拽，不准 Resources/字符串查找）
-4. 从**阶段 A** 开始（已有半成品，最快出可见成果）
-5. 阶段 C 是核心难点，`Begin()` 的拆分要小心，建议先写一个 Play Mode 验证脚本：进 Battle → 检查 `movementPresenter.IsSceneReady` → 点按钮 → 检查 route 是否跑起来
+4. 阶段 A/B/C 已完成，**直接从阶段 D 接**：先做 D1 底部 tab（否则选关/天赋在落地页没有入口），再做 D3 结算回落地页
+5. 验证落地页手感时：进 Play Mode 前先把存档 `SaveManager.SetActiveFakeRouteStage(9100)` 或 `1`，两种路线都要跑一遍
+6. 提交前先看 §7.15（工作区脏时的 hunk 拆分）——`FakeRouteRuntime.cs` / `FakeRouteStageSaveSnapshot.cs` 里还挂着可破坏道具的未提交改动
 
 ---
 
@@ -366,7 +386,8 @@ Build Settings
 | 天赋页 | `Assets/Scripts/UI/TalentTreePanel.cs`、`Assets/Scenes/TalentTree.scene` |
 | 主菜单（待废弃） | `Assets/Scripts/UI/MainMenuUI.cs`、`Assets/Scenes/MainMenu.scene` |
 | 关卡启动总控 | `Assets/Scripts/Managers/StageController.cs` |
-| 卷轴路线运行时（**要拆 Begin 的地方**） | `Assets/Scripts/RouteFake/FakeRouteRuntime.cs` |
+| 卷轴路线运行时（已拆 Prepare/Run） | `Assets/Scripts/RouteFake/FakeRouteRuntime.cs` |
+| 「开始关卡」按钮 | `Assets/Scripts/UI/BattleStartStageButton.cs`（`Battle.scene` / `BattleHUD(Canvas)/StartStageButton`） |
 | 跨场景传参（MainMenu 时代） | `Assets/Scripts/RouteFake/FakeRouteLaunch.cs` |
 | 路线表现层 | `Assets/Scripts/Core/ScrollRoutePresenter.cs` |
 | 存档 / 当前进度 | `Assets/Scripts/Core/SaveManager.cs` |
