@@ -554,6 +554,33 @@ Play Mode 点开始关卡→`phase=Battle`→出怪 1、`ResolveAttackType` 映�
 `PlayerState` 先发 `OnStageStateChanged(Defeat)` 再发 `OnPlayerDied`，门面状态已被同步为 `Defeat`，
 `OnPlayerDefeated` 的早退守卫命中。战败面板走 `PlayerState` 自己的事件（显示正常）。拆分前后一致。
 
+### 5.7 剩余上帝类：按 region partial 分文件（2026-10-22）
+
+> 提交 `c3a9a5b`。批次 3 刀 C 的手法（partial class 分文件）用到两个从未被拆过的上帝类上：
+> 同类型、零行为风险，只降单文件体量与阅读成本。
+
+| 类 | 拆前 | 拆后 | 分片 |
+|---|---|---|---|
+| `AttackSystem` | 1568 | **386 / 591 / 537 / 98** | 主文件（字段+生命周期+招式分发）/ 攻击类型实现 / 工具方法 / 解锁攻击注册表 |
+| `QTEController` | 1474 | **236 / 248 / 149 / 104 / 542 / 264** | 主文件（枚举+QTEInstance+字段+生命周期）/ 状态切换 / 箭矢波 / QTE 动画 / QTE 判定 / 收尾与表现 |
+
+**拆分前的机械校验（写入前在内存里跑，不通过就不落盘）**：
+
+| 检查 | 结果 |
+|---|---|
+| 内容行多重集（拆分前后逐行比对，剔除空白/region 标记/类声明） | **丢失 = 0** |
+| 新增行 | 只有文档注释 + 每个分片的 using 副本 |
+| region 数 / 未闭合 region | 3→3、7→7；未闭合 0 |
+| 花括号平衡 | 每个文件 `{` 与 `}` 数量相等 |
+| 字段随 region 搬走 | 3 个实例字典初始化 + 2 个 `static readonly` 列表，彼此无依赖 → 初始化语义不变；字段名未变 → Unity 序列化不受影响 |
+
+**验证（Play Mode，Battle.scene）**：编译通过、Console 0/0；Stab 掉血 20（150→130）、
+Slash 掉血 18（126→108，前排两名）、Launch 掉血 4；Boss 104 首次 `SelectBossAction()`
+即 `qteState=PerformingQTEAttack` / `enemyState=QTEAttacking`。
+
+**当前最大文件**：`Enemy.State.cs` 1495 / `UpgradeEffectManager.cs` 1284 / `PixelHitEffectManager.cs` 1227 /
+`StabSweepEffect.cs` 1012 / `InputManager.cs` 981。
+
 ---
 
 ## 6. 明确不做
