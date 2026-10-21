@@ -261,7 +261,7 @@ public GameObject freezeMeltEffectPrefab;
     public List<BossPhaseData> bossPhases;
     [System.NonSerialized] public int currentBossPhase = 0;
     [System.NonSerialized] public bool isPhaseTransitioning;
-    private bool _healthLocked;
+    internal bool _healthLocked;
     [System.NonSerialized] private BossPhaseData _deferredPhaseTransition; // QTE 中血量跌至转阶段阈值时挂起，待 QTE 结束再转阶段
 
     [Header("描边覆盖（0或Color.clear=使用全局默认）")]
@@ -341,7 +341,7 @@ public GameObject freezeMeltEffectPrefab;
     private float stunTimer;
     private float _appliedStunDuration; // 实际应用的眩晕时长（用于 UI 恢复进度）
     private float _poiseRecoveryEndTime; // 架势恢复完成的时间点（Time.time + duration）
-    private bool _isStunExiting;
+    internal bool _isStunExiting;
     private bool _resumeStunAfterLaunch;
     private Coroutine _stunExitRoutine;
     private const float BOSS_STUN_END_DURATION = 0.9f;
@@ -370,8 +370,8 @@ public GameObject freezeMeltEffectPrefab;
     public bool ignoreFillUpOrders;
     public bool isAttackDrawPhase;  // 是否处于攻击收招阶段（不可被招架打断）
     public bool isCFrame;           // 是否处于C技起始帧（霸体窗口），仅 Parry/Launch 可打断
-    private int _currentAttackStep;  // 攻击序列当前位置
-    private float actionCooldownTimer; // BOSS Idle 调度冷却计时器
+    internal int _currentAttackStep;  // 攻击序列当前位置
+    internal float actionCooldownTimer; // BOSS Idle 调度冷却计时器
     /// <summary> 当前攻击步骤的前摇时长（供 EnemySpriteController 读取） </summary>
     [System.NonSerialized] public float currentStepSpawnDuration;
     /// <summary> 当前攻击步骤的 Parry 窗口起点时刻（Time.time），-1=无窗口 </summary>
@@ -1670,7 +1670,7 @@ public GameObject freezeMeltEffectPrefab;
             BeginStunExit();
     }
 
-    private void BeginStunExit()
+    internal void BeginStunExit()
     {
         currentPoise = maxPoise;
         _poiseRecoveryEndTime = 0f;
@@ -2865,6 +2865,12 @@ private void SpawnProjectile()
 
     private EnemyHitFeedback HitFeedback => _hitFeedback ??= new EnemyHitFeedback(this);
 
+    /// <summary>BOSS 多阶段系统。实现见 EnemyBossPhases（批次 3 刀 B）。</summary>
+    private EnemyBossPhases _bossPhases;
+
+    private EnemyBossPhases BossPhases => _bossPhases ??= new EnemyBossPhases(this);
+
+
     private EnemyFreeze FreezeSys => _freezeSys ??= new EnemyFreeze(this);
 
     /// <summary>当前是否处于攻击前摇播放中（与 Parry 打断同口径：收招不算前摇）。</summary>
@@ -2891,7 +2897,7 @@ private void SpawnProjectile()
     private void UpdateFrozen() => FreezeSys.UpdateFrozen();
     private void UpdateIceBreaking() => FreezeSys.UpdateIceBreaking();
     private void UpdateFreezeChanceDecay() => FreezeSys.UpdateFreezeChanceDecay();
-    private void ClearFreezeForSystemOverride() => FreezeSys.ClearFreezeForSystemOverride();
+    internal void ClearFreezeForSystemOverride() => FreezeSys.ClearFreezeForSystemOverride();
     private void ClearFreezeOnTeardown() => FreezeSys.ClearFreezeOnTeardown();
 
     #endregion
@@ -2909,7 +2915,7 @@ private void SpawnProjectile()
     private void RestartHitScaleFeedback(HitFeedbackStrength feedbackStrength = HitFeedbackStrength.Standard)
         => HitFeedback.RestartHitScaleFeedback(feedbackStrength);
 
-    private void StopHitScaleFeedback() => HitFeedback.StopHitScaleFeedback();
+    internal void StopHitScaleFeedback() => HitFeedback.StopHitScaleFeedback();
 
     private void TriggerHitFlash(HitReactionDirection hitReactionDirection) => HitFeedback.TriggerHitFlash(hitReactionDirection);
 
@@ -4018,7 +4024,7 @@ private void SpawnProjectile()
     /// 把当前状态打包交给 <see cref="EnemyOutline"/>：描边的优先级与材质处理都在那边，
     /// Enemy 只提供事实（状态、覆盖色/宽度）。
     /// </summary>
-    void UpdateOutlineState()
+    internal void UpdateOutlineState()
     {
         if (_spriteRenderer == null) return;
         if (_outline == null) _outline = new EnemyOutline();
@@ -4046,182 +4052,21 @@ private void SpawnProjectile()
 
     #region BOSS多阶段系统
 
-    private Coroutine _phaseTransitionRoutine;
-
-    /// <summary>
-    /// 获取当前阶段的 BossPhaseData
-    /// </summary>
-    private BossPhaseData GetCurrentPhaseData()
-    {
-        if (!isBoss || bossPhases == null || bossPhases.Count == 0) return null;
-        if (currentBossPhase < 0 || currentBossPhase >= bossPhases.Count) return null;
-        return bossPhases[currentBossPhase];
-    }
-
-    /// <summary>
-    /// 设置 BOSS Idle 行动冷却计时器（从当前阶段的 actionInterval 随机取值）
-    /// </summary>
-    private void SetBossActionCooldown()
-    {
-        var phase = GetCurrentPhaseData();
-        if (phase != null)
-            actionCooldownTimer = Random.Range(phase.actionInterval.x, phase.actionInterval.y);
-        else
-            actionCooldownTimer = Random.Range(0.3f, 1f);
-    }
-
-    /// <summary>
-    /// BOSS Idle 调度：加权随机选择下一个行动（Attack/CAttack/QTE）
-    /// </summary>
-    private void SelectBossAction()
-    {
-        if (state != EnemyState.Idle) return;
-        var phase = GetCurrentPhaseData();
-        if (phase == null)
-        {
-            StartAttacking();
-            return;
-        }
-
-        float totalWeight = phase.normalAttackWeight + phase.cAttackWeight + phase.qteWeight;
-        if (totalWeight <= 0f)
-        {
-            StartAttacking();
-            return;
-        }
-
-        float roll = Random.Range(0f, totalWeight);
-
-        if (roll < phase.normalAttackWeight)
-        {
-            // 普通攻击
-            StartAttacking();
-        }
-        else if (roll < phase.normalAttackWeight + phase.cAttackWeight)
-        {
-            // C技
-            StartAttacking();
-        }
-        else
-        {
-            // QTE
-            var qte = GetQTEController();
-            if (qte != null && qte.TriggerQTEAttack())
-            {
-                // QTE 成功触发，QTEController 内部调用 EnterQTEAttack()
-                // 冷却在 ExitQTEAttack() 中设置
-                return;
-            }
-            // QTE 触发失败（序列耗尽/眩晕等），回 Idle 等冷却
-            SetBossActionCooldown();
-        }
-    }
-
-    private void EnterPhaseTransition(BossPhaseData nextPhase)
-    {
-        // BUG FIX: 转阶段时若处于 QTE 中，清理 QTE 状态（同 Die）
-        if (state == EnemyState.QTEAttacking)
-        {
-            GetQTEController()?.AbortQTE();
-        }
-
-        _healthLocked = true;
-        isPhaseTransitioning = true;
-
-        DebugLog.Info($"[Enemy] BOSS转阶段: {DebugTag}, phase={currentBossPhase} → {nextPhase.phaseIndex} ({nextPhase.phaseName})");
-
-        // 打断当前攻击
-        if (_attackTween != null && _attackTween.IsActive())
-        {
-            _attackTween.Kill();
-            _attackTween = null;
-        }
-        transform.DOKill(false);
-        StopHitScaleFeedback();
-        isAttackAnimating = false;
-        isAttackDrawPhase = false;
-        isCFrame = false;
-        UpdateOutlineState();
-
-        // 转阶段演出优先（设计 4.3 / 用例 11e）：先解除冻结与破冰序列
-        ClearFreezeForSystemOverride();
-
-        if (_phaseTransitionRoutine != null)
-            StopCoroutine(_phaseTransitionRoutine);
-        _phaseTransitionRoutine = StartCoroutine(PhaseTransitionSequence(nextPhase));
-    }
-
-    private System.Collections.IEnumerator PhaseTransitionSequence(BossPhaseData nextPhase)
-    {
-        while (state == EnemyState.Launched)
-        {
-            yield return null;
-        }
-
-        // 转阶段会结束当前眩晕；无敌已在 EnterPhaseTransition 生效，先完整播放眩晕收招。
-        if (state == EnemyState.Stunned)
-        {
-            BeginStunExit();
-            while (_isStunExiting || state == EnemyState.Launched)
-            {
-                yield return null;
-            }
-        }
-
-        // 设置无敌：切换到 Idle 状态
-        state = EnemyState.Idle;
-
-        // 播放转阶段动画
-        if (_animator != null && !string.IsNullOrEmpty(nextPhase.transitionTriggerName))
-        {
-            _animator.SetTrigger(nextPhase.transitionTriggerName);
-            yield return new WaitForSeconds(nextPhase.transitionDuration);
-        }
-
-        CompletePhaseTransition(nextPhase);
-    }
-
-    private void CompletePhaseTransition(BossPhaseData nextPhase)
-    {
-        int newPhaseIndex = nextPhase.phaseIndex;
-
-        // 应用新阶段配置
-        if (nextPhase.attackSequence != null && nextPhase.attackSequence.Count > 0)
-            attackSequence = nextPhase.attackSequence;
-
-        stabDamageMultiplier = nextPhase.stabDamageMultiplier;
-        slashDamageMultiplier = nextPhase.slashDamageMultiplier;
-        pierceDamageMultiplier = nextPhase.pierceDamageMultiplier;
-        sweepDamageMultiplier = nextPhase.sweepDamageMultiplier;
-        launchDamageMultiplier = nextPhase.launchDamageMultiplier;
-        poiseDamageMultiplier = nextPhase.poiseDamageMultiplier;
-
-        isSuperArmor = nextPhase.isSuperArmor;
-
-        // 切换 QTE 数据
-        if (nextPhase.qteData != null)
-        {
-            var qte = GetQTEController();
-            if (qte != null)
-                qte.SwitchQteData(nextPhase.qteData);
-        }
-
-        currentBossPhase = newPhaseIndex;
-        OnBossPhaseChanged?.Invoke(this, currentBossPhase);
-        _healthLocked = false;
-        isPhaseTransitioning = false;
-        _currentAttackStep = 0;
-        state = EnemyState.Idle;
-        isAttackAnimating = false;
-        isAttackDrawPhase = false;
-        SetBossActionCooldown();
-
-        UpdateOutlineState();
-
-        DebugLog.Info($"[Enemy] BOSS转阶段完成: {DebugTag}, phase={currentBossPhase} ({nextPhase.phaseName}), superArmor={isSuperArmor}");
-    }
+    internal Coroutine _phaseTransitionRoutine;
 
     #endregion
+
+    // ── BOSS 多阶段：实现见 EnemyBossPhases（批次 3 刀 B），此处保留同名薄转发 ──
+
+    private BossPhaseData GetCurrentPhaseData() => BossPhases.GetCurrentPhaseData();
+
+    private void SetBossActionCooldown() => BossPhases.SetBossActionCooldown();
+
+    private void SelectBossAction() => BossPhases.SelectBossAction();
+
+    private void EnterPhaseTransition(BossPhaseData nextPhase) => BossPhases.EnterPhaseTransition(nextPhase);
+
+    private void CompletePhaseTransition(BossPhaseData nextPhase) => BossPhases.CompletePhaseTransition(nextPhase);
 
     #region 对象池
 

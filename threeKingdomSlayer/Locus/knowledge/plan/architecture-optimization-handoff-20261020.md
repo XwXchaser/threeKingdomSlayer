@@ -83,7 +83,7 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 
 | 指标 | 改造前 | 现在 |
 |---|---|---|
-| `Enemy.cs` | 5224 行 | **4332 行**（描边 + 冰系视觉 + 冰系流程 + **打击反馈**已拆出） |
+| `Enemy.cs` | 5224 行 | **4177 行**（描边 + 冰系视觉 + 冰系流程 + 打击反馈 + **BOSS 多阶段**已拆出） |
 | `StageController.cs` | 852 行 | **708 行** |
 | `ColumnManager.cs` | 2149 行 | **662 行**（队列/查询/入场/补齐/位移五块全部拆出） |
 | 门面（`StageController`）成员调用 | 大量 | **0**（`StageController.Instance` 仅剩 30 处惰性解析点） |
@@ -301,6 +301,37 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 - 未采集 GC 分配与 Draw Call（指标名需用 `DiscoverMetrics` 拿到的
   `Draw Calls Count` / `GC.*` 再采一轮；本轮 `gc_allocated_in_frame` 名字不存在）。
 - 结论只说明「现在没必要为了性能重构」；若真机出现卡顿，应先在真机重采再动手。
+
+---
+
+## 11. 批次 3 刀 B：BOSS 多阶段拆出（`EnemyBossPhases`）
+
+> 2026-10-21 完成。`Enemy.cs` 4332 → **4177 行**（-155）；新增 `Assets/Scripts/Enemy/EnemyBossPhases.cs`（195 行）。
+> 批次 3 刀 A+B 累计：`Enemy.cs` 4512 → **4177 行**（-335）。
+
+**拆了什么**：当前阶段数据查询、BOSS Idle 行动加权调度（普通/C技/QTE）、转阶段的进入/演出/收尾（阶段参数套用、QTE 数据切换、`OnBossPhaseChanged` 广播）。
+**没拆**：「BOSS 推进到应战排 / 暂停等待 / 恢复推进」属于行军与补齐范畴，留在 Enemy。
+
+**同样用刀 A 的三件套**：`internal` 代替委托 + owner 引用 + 同名薄转发。
+新 internal 化成员：`actionCooldownTimer` / `_healthLocked` / `_isStunExiting` / `_currentAttackStep` /
+`_phaseTransitionRoutine` / `StopHitScaleFeedback()` / `UpdateOutlineState()` /
+`ClearFreezeForSystemOverride()` / `BeginStunExit()`。
+
+**验收（Play Mode，实例化 Enemy_104）**：
+
+| 项 | 实测 |
+|---|---|
+| 转阶段触发 | `TakeDamage(175)` → hp 350（70%）→ `phase=1` |
+| 阶段参数套用 | `isSuperArmor` false → **true**（phase1 配置生效）、`healthLocked=false`、`transitioning=false` |
+| 阶段事件 | `OnBossPhaseChanged` 触发 **1** 次 |
+| Idle 加权调度 | `SelectBossAction()` → `qteState=PerformingQTEAttack`、`attackIndex=0`、`enemyState=QTEAttacking` |
+| Console | 0 error / 0 warn |
+
+> 备注：脚本里直接实例化的 Boss `currentHealth` 初始为 0（`TakeDamage` 后才补齐），
+> 真实流程由 `EnemyManager.RegisterEnemy` 赋血量 —— **既有行为，非本次改动引入**。
+
+**下一步（批次 3 剩余）**：按同一手法拆 **韧性/护盾/伤害结算**（`EnemyHealth`，含 `TakeDamage`——
+风险最高，放最后）、**位置与透明度**（`EnemyVisuals`）、**移动**（`EnemyMovement`）。
 
 ---
 
