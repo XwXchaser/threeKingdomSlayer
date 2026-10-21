@@ -8,7 +8,8 @@ using UnityEngine;
 /// 新增一种元素反应或命中反应 = 写一个 <see cref="IDamageReactionHandler"/> 并注册，
 /// 不用改 <c>Enemy.TakeDamage</c> 或 <c>AttackSystem</c>。
 ///
-/// 内置处理器：冰系（<c>IceBreakReactionHandler</c>，包装原有的 <c>IceBreakRuntime</c> 静态实现），
+/// 内置处理器：冰系（<c>IceBreakReactionHandler</c>：判定在玩家侧会话 <c>IceBreakSession</c>，
+/// 反应在敌人侧冻结状态 <c>EnemyFreeze.TryBreak</c>），
 /// 它在注册表里排第一位，行为与改造前完全一致。
 /// </summary>
 public static class DamageReactionRegistry
@@ -145,7 +146,8 @@ public sealed class DelegateDamageReactionHandler : IDamageReactionHandler
 }
 
 /// <summary>
-/// 冰系命中反应的处理器（包装原有的 <c>IceBreakRuntime</c> 静态实现）。
+/// 冰系命中反应的处理器：把「本次命中合不合规」交给玩家侧会话判定，
+/// 把「解冻 / 翻倍 / 动画」交给敌人侧冻结状态自己处理。
 ///
 /// 行为与改造前一致：破冰会话由攻击的开始 / 结束驱动，命中时按合规重击判定解冻与翻倍。
 /// </summary>
@@ -154,16 +156,18 @@ public sealed class IceBreakReactionHandler : IDamageReactionHandler
 
     public void OnAttackBegin(AttackSkillConfig cfg, float attackDuration)
     {
-        IceBreakRuntime.BeginAttack(cfg, attackDuration);
+        IceBreakSession.BeginAttack(cfg, attackDuration);
     }
 
     public void OnAttackEnd()
     {
-        IceBreakRuntime.EndAttack();
+        IceBreakSession.EndAttack();
     }
 
     public bool TryResolve(Enemy target, DamageType damageType, HitFeedbackSource feedbackSource, ref float damage)
     {
-        return IceBreakRuntime.TryResolve(target, damageType, feedbackSource, ref damage);
+        // 破冰反应已搬到敌人侧（EnemyFreeze.TryBreak）：敌人自己回答“我冻结着吗 → 那我碎”。
+        if (target == null) return false;
+        return target.TryBreakIce(damageType, feedbackSource, ref damage);
     }
 }

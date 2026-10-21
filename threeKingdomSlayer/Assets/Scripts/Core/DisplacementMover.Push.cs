@@ -36,7 +36,7 @@ public sealed partial class DisplacementMover
             if (occupant != null && occupant != frozen)
             {
                 // 本次破冰的其他冻结目标不算阻挡者：只停在其前方，不结算碰撞伤害（设计 §5.7）
-                if (IceBreakRuntime.IsBreakSetMember(occupant))
+                if (IceBreakSession.IsBreakSetMember(occupant))
                 {
                     result.blockedBy = null;
                     break;

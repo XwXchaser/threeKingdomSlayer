@@ -63,6 +63,13 @@ public partial class Enemy : MonoBehaviour
     private void UpdateFrozen() => FreezeSys.UpdateFrozen();
     private void UpdateIceBreaking() => FreezeSys.UpdateIceBreaking();
     private void UpdateFreezeChanceDecay() => FreezeSys.UpdateFreezeChanceDecay();
+
+    /// <summary>
+    /// 破冰反应入口：本次命中是合规重击 → 解冻 + 伤害翻倍 + 破冰动画。
+    /// 判定在玩家侧会话（IceBreakSession），这里只转发给冻结状态。
+    /// </summary>
+    internal bool TryBreakIce(DamageType damageType, HitFeedbackSource source, ref float damage)
+        => FreezeSys.TryBreak(damageType, source, ref damage);
     internal void ClearFreezeForSystemOverride() => FreezeSys.ClearFreezeForSystemOverride();
     private void ClearFreezeOnTeardown() => FreezeSys.ClearFreezeOnTeardown();
 }

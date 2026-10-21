@@ -40,7 +40,6 @@ public sealed class EnemyFreeze : IStatusEffect
     }
 
     // ── IStatusEffect：状态效果的统一落地接口 ──
-
     /// <summary>状态 id（与 EnemyStatusRegistry.Frozen 一致）。</summary>
     public string StatusId => EnemyStatusRegistry.Frozen;
 
@@ -65,6 +64,36 @@ public sealed class EnemyFreeze : IStatusEffect
 
     /// <summary>清空（敌人回收时由宿主调用；实际清理走 ClearFreezeOnTeardown）。</summary>
     public void Clear() { }
+
+    // ── 破冰反应（敌人侧）──
+    // 「这次命中合不合规」由玩家侧会话判定（IceBreakSession.TryBeginBreak）；
+    // 本方法只负责**自己的反应**：解冻、伤害翻倍、播破冰动画。
+
+    /// <summary>
+    /// 「重击解冻」这一层就包含碎冰翻倍：解冻那一击固定 ×2。
+    /// （旧版曾把它拆成独立天赋「碎冰重击」，用户确认这是错的，已合并回重击解冻）
+    /// </summary>
+    public const float ThawDamageMultiplier = 2f;
+
+    /// <summary>
+    /// 破冰反应：本次命中是合规重击 → 我解冻、伤害翻倍、播破冰动画。
+    /// 返回 true = 本次命中造成了破冰。
+    /// </summary>
+    public bool TryBreak(DamageType damageType, HitFeedbackSource source, ref float damage)
+    {
+        if (!IsFrozen) return false;                                   // 我没冻结
+        if (!IceBreakSession.TryBeginBreak(_owner, damageType, source)) return false;   // 玩家侧：合规判定
+
+        // 攻击的 AoE 效果：同列顶开（属攻击侧，不属敌人状态）
+        IceBreakSession.ApplyBreakPush(_owner);
+
+        // 我的反应：伤害翻倍 + 破冰动画（hitted 由本次 TakeDamage 同步播放）
+        damage *= ThawDamageMultiplier;
+        BeginIceBreaking();
+
+        DebugLog.Info($"[IceBreak] {_owner.DebugTag} 破冰：伤害 x2 → {damage:F0}（cfg={IceBreakSession.ConfigName}）");
+        return true;
+    }
 
     // ══════════════════════════════════════════════════════════════
     // 状态查询
@@ -233,7 +262,7 @@ public sealed class EnemyFreeze : IStatusEffect
         _breakIceOriginColumn = _owner.columnIndex;
         _breakIceOriginRow = _owner.rowIndex;
 
-        var res = cm.ApplyBreakIcePush(_owner, IceBreakRuntime.BreakIcePushRows);
+        var res = cm.ApplyBreakIcePush(_owner, IceBreakSession.BreakIcePushRows);
         _pendingBreakPush = res;
 
         string blockedTag = res.blockedBy != null

@@ -184,7 +184,7 @@ public partial class AttackSystem : MonoBehaviour
         if (enemy == null || columnManager == null) return false;
 
         // 破冰推动已接管本次位移：同一目标不再叠加招式自带的普通击退
-        if (IceBreakRuntime.IsBrokenThisAttack(enemy)) return false;
+        if (IceBreakSession.IsBrokenThisAttack(enemy)) return false;
 
         int pushDist = GetEffectivePushBack(cfg);
         if (pushDist <= 0) return false;
