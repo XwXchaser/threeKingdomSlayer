@@ -207,6 +207,10 @@ Locus.Editor   工具窗口 / 导入器                 ──► 全部
 
 > 手法：先"只加接口、实现仍由 `StageController` 承担、行为一行不改"，让调用方逐步改成依赖接口。这一步零行为风险，但立刻让"谁在依赖什么"变成可读信息。
 > 已退役两个重叠的旧端口：`IStageFlowControl`（并入 `IRunFlow`）与 `IRouteBattleHost`（拆成上面三个窄角色，合成端口只做拼装）。
+>
+> **实现也搬出去了（2026-10-22 第二步）**：三个角色各有自己的实现类
+> （`StageRunFlow` / `StageCombatStaging` / `StageRewardGate`），通过 `IStageRoleContext` 拿环境；
+> `StageController` 退成薄宿主（Inspector 引用 + 状态 + 事件广播 + 协程宿主 + 薄转发）。
 
 ### 4.3 事件化：先把 Hub 的三处轮询合成一个状态源
 
@@ -516,6 +520,39 @@ Play Mode 点开始关卡→`phase=Battle`→出怪 1、`ResolveAttackType` 映�
 **下一刀（asmdef 分层的前置）**：门面的公开面已 100% 落在角色接口后面，
 因此可以把三个角色的**实现**从 `StageController` 拆成 `StageRunFlow` / `StageCombatStaging` / `StageRewardGate`
 三个类（照 `StageFormation` / `StageRouteBattleHost` 的先例），消费者一行都不用改。
+→ ✅ **已完成（`43f58e3`）**，见 §5.6。
+
+---
+
+### 5.6 三个角色的实现拆出（2026-10-22）
+
+> 提交 `43f58e3`。§5.5 的「下一刀」已落地。
+
+| 新文件 | 行数 | 内容 |
+|---|---|---|
+| `Assets/Scripts/Managers/IStageRoleContext.cs` | 75 | 三个角色实现拿环境用的窄接口（继承 `StageRouteBattleHost.IContext`） |
+| `Assets/Scripts/Managers/StageRunFlow.cs` | 277 | **一局流程**：开始 / 重开 / 退出 / 波次推进 / 胜负判定 |
+| `Assets/Scripts/Managers/StageCombatStaging.cs` | 93 | **一场战斗的布场与开打**：节点配置 / 开打 / 停战斗 / 旅行 / 切场景 |
+| `Assets/Scripts/Managers/StageRewardGate.cs` | 75 | **奖励门控与结算**：等奖励 / 节点完成 / 路线结算 |
+
+`StageController` **718 → 519 行**，只保留：Inspector 引用、关卡状态（`currentState`）、
+5 个 `public Action` 事件广播、协程宿主、角色接口的显式实现与薄转发。
+**公开成员清单与拆分前逐条一致**（41 个），Inspector 序列化未动。
+
+**验证（Play Mode，Battle.scene）**：
+
+| 项 | 实测 |
+|---|---|
+| 编译 / Console | 通过；0 error / 0 warn |
+| 路线流程 | 落地页 → 点「开始关卡」→ 节点战斗（8 敌）→ Stab 掉血 20（150→130）→ 清场 → `IsRouteRewardWaiting=True`、`IsRouteCombatActive=False` |
+| 线性关卡 | `StartStage` 出怪 → 战败（`state=Defeat`）→ `RestartStage` → 波次推进 wave 0→5 |
+| 胜利路径 | `state=Victory`、`OnStageVictory` 触发 1 次、铜钱结算 +1150 |
+| 守卫 | `CompleteCurrentCombatNode` 非 InProgress 时不触发；奖励门控↔旅行状态互转正确 |
+| **§15.5 回归基线** | **逐位一致**：入场完成 `col1/r1·col1/r3·col2/r0·col2/r4·col3/r5`；整排清空后 `col1/r0·col1/r2·col2/r3·col3/r4` |
+
+**观察（非本次引入）**：玩家阵亡时门面的 `OnStageDefeat` 事件**不广播** ——
+`PlayerState` 先发 `OnStageStateChanged(Defeat)` 再发 `OnPlayerDied`，门面状态已被同步为 `Defeat`，
+`OnPlayerDefeated` 的早退守卫命中。战败面板走 `PlayerState` 自己的事件（显示正常）。拆分前后一致。
 
 ---
 

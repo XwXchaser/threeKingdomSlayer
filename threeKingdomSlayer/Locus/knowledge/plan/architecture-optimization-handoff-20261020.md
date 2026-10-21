@@ -93,6 +93,14 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 
 > 详见 `design/architecture-decoupling-analysis.md` §4.2 / §5.5。**至此批次 0–3 全部完成。**
 
+### 1.7 三个角色的实现拆出（2026-10-22）
+
+| 提交 | 内容 |
+|---|---|
+| `43f58e3` | 新增 `IStageRoleContext` + `StageRunFlow`（277 行）/ `StageCombatStaging`（93 行）/ `StageRewardGate`（75 行）；`StageController` **718 → 519 行**，退成薄宿主（Inspector 引用 + 状态 + 事件广播 + 协程宿主 + 薄转发） |
+
+> 详见 `design/architecture-decoupling-analysis.md` §5.6。**§15.5 回归基线逐位一致。**
+
 ---
 
 ## 2. 当前结构快照（量化）
@@ -100,7 +108,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 指标 | 改造前 | 现在 |
 |---|---|---|
 | `Enemy.cs` | 5224 行 | **933 行**（主文件：字段/生命周期/初始化/转发）；另拆出 5 个 partial 分片：状态机 1495 / 战斗结算 828 / 表现层 431 / BOSS 推进 206 / 对象池 106；真类：`EnemyHitFeedback` / `EnemyMovement` / `EnemyBossPhases` / `EnemyPoise` |
-| `StageController.cs` | 852 行 | **708 行** |
+| `StageController.cs` | 852 行 | **519 行**（薄宿主：Inspector 引用 + 状态 + 事件广播 + 协程宿主 + 薄转发）；三个角色的实现在 `StageRunFlow`(277) / `StageCombatStaging`(93) / `StageRewardGate`(75) |
 | `ColumnManager.cs` | 2149 行 | **662 行**（队列/查询/入场/补齐/位移五块全部拆出） |
 | 门面（`StageController`）成员调用 | 大量 | **0**（`StageController.Instance` 仅剩 30 处惰性解析点） |
 | 角色接口 | 0 | 6 个（`IStageFormation` / `IStageBattleState` / `IRunFlow` / `ICombatStaging` / `IRewardGate` + 路线层合成端口 `IRouteStageHost`） |
@@ -330,7 +338,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 项 | 值 |
 |---|---|
 | 分支 / 远程 | `feat/stage-select-talent-overlays`，已同步 |
-| HEAD | `ee8d5a9`（`refactor(stage): 补齐三个角色接口`） |
+| HEAD | `43f58e3`（`refactor(stage): 三个角色的实现拆出`） |
 | 工作区 | 干净。**唯一例外**：用户自己的 `Assets/Resources/EnemyPrefabs/Enemy_1011.prefab`（`maxHealth 100→200`，调试值，**未提交**，已刻意不夹带） |
 | Unity | 2022.3.62t7（Tuanjie）· BIRP · Legacy Input |
 
@@ -352,6 +360,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 可玩包（两版） | `e554c06` / `5c34850` | 见 §15.4 |
 | **输入门**（批次 3 尾项） | `4d1a52e` | 9 个写入点全迁到 `GameplayInputGate`；`gameplayInputEnabled` 变只读；Play Mode：落地页拦（RouteTravel）→ 开打放行 → 结算面板持有（ResultPanel）→ 下一场战斗自己释放；owner 销毁自动失效；Console 0/0 |
 | **三个角色接口**（批次 1 尾项） | `ee8d5a9` | `IRunFlow` / `ICombatStaging` / `IRewardGate` + `IRouteStageHost`；退役 `IStageFlowControl` / `IRouteBattleHost`；角色覆盖 36/41（未覆盖的 5 个是 Inspector 协作者）；Play Mode：开打→8 敌→Stab 掉血 20→清场→等奖励；Console 0/0 |
+| **三个角色的实现拆出** | `43f58e3` | `StageController` 718→519 行（薄宿主）；`StageRunFlow`/`StageCombatStaging`/`StageRewardGate` 三个实现类 + `IStageRoleContext`；公开成员逐条一致、序列化未动；Play Mode：路线流程 + 线性关卡（战败/重开/波次推进 0→5）+ 胜利结算 + **§15.5 基线逐位一致**；Console 0/0 |
 
 **`Enemy` 终态**：`Enemy.cs` 5224 → **933 行**；另 5 个 partial 分片（状态机 1495 / 战斗结算 828 / 表现层 431 / BOSS 推进 206 / 对象池 106）
 + 4 个真类（`EnemyHitFeedback` / `EnemyMovement` / `EnemyBossPhases` / `EnemyPoise`）。
@@ -366,7 +375,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 3 | **包体优化** | 方案在 `plan/package-size-optimization.md`：只留 ARM64 **−70MB**（native 双架构占 140.5MB）、字体重建 **−33MB**、敌人贴图压缩 **−60~80MB**。当前包 **298.9MB**，微信小游戏有上限 → 做之前先确认目标渠道 |
 | 4 | **BUG-001 箱桶重挑战不重置** | 线索：存档 `FakeRouteStageSaveSnapshot.propStates` 专门存可破坏道具的破坏状态；重置需与「节点重进」路径一起处理 |
 | 5 | 主界面「加钱」调试按钮 | 用户提过但本轮“先放放”（未做）。做法：`SaveManager.AddCoins(1000)` + 落地页 `BattleHUD(Canvas)` 里加一个按钮 |
-| — | asmdef 继续分层 | 仍被「逻辑类（`LogicalRowQueue`/`WaveMarchScheduler`/…）依赖 `Enemy`/`Column` 等 MonoBehaviour」卡住，**需先做接口化**。<br>已走两步：① `GameplayInputGate` 放在 `Locus.Data`（下层契约），`InputManager.gameplayInputEnabled` 变只读；② 门面的公开面已 100% 落在角色接口后面（36/41）。<br>**下一刀**：把三个角色的实现从 `StageController` 拆成 `StageRunFlow` / `StageCombatStaging` / `StageRewardGate`（照 `StageFormation` / `StageRouteBattleHost` 先例），消费者一行不改 |
+| — | asmdef 继续分层 | 仍被「逻辑类（`LogicalRowQueue`/`WaveMarchScheduler`/…）依赖 `Enemy`/`Column` 等 MonoBehaviour」卡住，**需先做接口化**。<br>接口化前置已走完：① `GameplayInputGate` 在 `Locus.Data`；② 门面的公开面 100% 落在角色接口后面；③ 三个角色的实现已拆出（`StageController` 变薄宿主）。<br>**下一步**：给 `Enemy`/`Column` 等被依赖的 MonoBehaviour 抽窄接口（或把纯逻辑类改成不持有 MonoBehaviour），才能把 `Locus.Combat` 拉出 `Assembly-CSharp` |
 
 ### 15.4 可玩包现状
 
