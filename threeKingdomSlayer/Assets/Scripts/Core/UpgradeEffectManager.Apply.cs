@@ -159,74 +159,68 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
     // ── 内部 ──
 
     private void ApplyNumericEffect(UpgradeDefinition def, int level)
-    {
-        var cfg = def.GetNumericConfig(level);
-
-        switch (def.effectType)
         {
-            case "damage_multiplier":
-                _damageMultiplier += cfg.floatValue;
-                break;
-            case "attack_speed":
-                _attackSpeedMultiplier += cfg.floatValue;
-                break;
-            case "move_speed":
-                _moveSpeedMultiplier += cfg.floatValue;
-                break;
-            case "exp_multiplier":
-                _expMultiplier += cfg.floatValue;
-                break;
-            case "item_drop_rate":
-                _itemDropRateBonus += cfg.floatValue;
-                break;
-            case "item_damage_bonus":
-                _itemDamageBonus += cfg.floatValue;
-                break;
-            case "stab_range_boost":
-            case "sweep_range_boost":
-                _attackRangeBonus += cfg.intValue;
-                _attackDamagePenalty += cfg.secondaryIntValue * 0.01f;
-                break;
-            case "attack_range_boost":
-                _attackRangeBonus = cfg.intValue;
-                _attackDamagePenalty = cfg.secondaryIntValue * 0.01f;
-                break;
-            case "push_wave":
-                _pushWaveDistance += cfg.intValue;
-                break;
-            case "convergence_wave":
-                _convergenceStep += cfg.intValue;
-                if (cfg.floatValue > 0f) _convergenceDamagePercent = cfg.floatValue;
-                break;
-            case "unlock_attack":
-                break;
-            case "charge_damage_reduction":
-                _chargeDamageReduction += cfg.floatValue;
-                break;
-            case "charge_reflect_shield":
-                if (def.reflectShieldLevels != null && level <= def.reflectShieldLevels.Count)
-                {
-                    var rsCfg = def.reflectShieldLevels[level - 1];
-                    _reflectShieldInterval = rsCfg.intervalSeconds;
-                    _reflectShieldMaxAmount = rsCfg.shieldAmount;
-                    if (rsCfg.enableBonus)
-                        _bonusReflectPercent = rsCfg.bonusReflectPercent / 100f;
-                    _reflectShieldReady = true; // 首次获得/升级立即就绪
-                    _reflectShieldCooldown = 0f;
-                }
-                break;
-            case "spike_trap":
-                if (SpikeTrapController.Instance != null)
-                {
-                    if (level == 1)
-                        SpikeTrapController.Instance.Initialize(cfg.intValue, cfg.secondaryIntValue, cfg.floatValue);
-                    else
-                        SpikeTrapController.Instance.SetDamage(cfg.floatValue);
-                }
-                break;
-            case "cooldown_reduction":
-                _activeSkillCDReduction += cfg.floatValue;
-                break;
+            var cfg = def.GetNumericConfig(level);
+    
+            // 扩展点：数值型效果走注册表；未注册的 effectType 不做任何处理
+            //（与改造前 switch 无匹配分支的语义一致）。
+            if (_numericAppliers.TryGetValue(def.effectType, out var applier))
+                applier.Apply(def, level, cfg);
         }
-    }
+    
+        /// <summary>注册内置的默认应用器（数值型 effectType + 描述兼底）。</summary>
+        private void RegisterDefaultAppliers()
+        {
+            var defaultNumeric = new DefaultUpgradeNumericApplier(this);
+            for (int i = 0; i < DefaultUpgradeNumericApplier.EffectTypes.Length; i++)
+                _numericAppliers[DefaultUpgradeNumericApplier.EffectTypes[i]] = defaultNumeric;
+    
+            _defaultDescriptionFormatter = new DefaultUpgradeDescriptionFormatter();
+        }
+    
+        // ── IUpgradeStatSink 实现（数值型升级通过它写玩家数值）──
+    
+        void IUpgradeStatSink.AddDamageMultiplier(float value) => _damageMultiplier += value;
+    
+        void IUpgradeStatSink.AddAttackSpeedMultiplier(float value) => _attackSpeedMultiplier += value;
+    
+        void IUpgradeStatSink.AddMoveSpeedMultiplier(float value) => _moveSpeedMultiplier += value;
+    
+        void IUpgradeStatSink.AddExpMultiplier(float value) => _expMultiplier += value;
+    
+        void IUpgradeStatSink.AddItemDropRateBonus(float value) => _itemDropRateBonus += value;
+    
+        void IUpgradeStatSink.AddItemDamageBonus(float value) => _itemDamageBonus += value;
+    
+        void IUpgradeStatSink.AddAttackRangeBonus(int value) => _attackRangeBonus += value;
+    
+        void IUpgradeStatSink.AddAttackDamagePenalty(float value) => _attackDamagePenalty += value;
+    
+        void IUpgradeStatSink.SetAttackRangeBonus(int value) => _attackRangeBonus = value;
+    
+        void IUpgradeStatSink.SetAttackDamagePenalty(float value) => _attackDamagePenalty = value;
+    
+        void IUpgradeStatSink.AddPushWaveDistance(int value) => _pushWaveDistance += value;
+    
+        void IUpgradeStatSink.AddConvergenceStep(int value) => _convergenceStep += value;
+    
+        void IUpgradeStatSink.SetConvergenceDamagePercent(float value) => _convergenceDamagePercent = value;
+    
+        void IUpgradeStatSink.AddChargeDamageReduction(float value) => _chargeDamageReduction += value;
+    
+        void IUpgradeStatSink.AddActiveSkillCDReduction(float value) => _activeSkillCDReduction += value;
+    
+        void IUpgradeStatSink.ApplyReflectShieldLevel(UpgradeDefinition def, int level)
+        {
+            if (def.reflectShieldLevels != null && level <= def.reflectShieldLevels.Count)
+            {
+                var rsCfg = def.reflectShieldLevels[level - 1];
+                _reflectShieldInterval = rsCfg.intervalSeconds;
+                _reflectShieldMaxAmount = rsCfg.shieldAmount;
+                if (rsCfg.enableBonus)
+                    _bonusReflectPercent = rsCfg.bonusReflectPercent / 100f;
+                _reflectShieldReady = true; // 首次获得/升级立即就绪
+                _reflectShieldCooldown = 0f;
+            }
+        }
 }

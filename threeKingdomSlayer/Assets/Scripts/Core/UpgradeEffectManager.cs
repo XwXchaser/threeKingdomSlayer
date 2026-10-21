@@ -12,7 +12,7 @@ using UnityEngine;
 /// 数值型效果累积在此处，由 AttackSystem 在计算伤害时查询 GetDamageMultiplier()。
 /// 行为型效果通过 RegisterExecutor 注册执行器，ApplyUpgrade 时自动分发。
 /// </summary>
-public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
+public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier, IUpgradeStatSink
 {
 
     /// <summary>
@@ -100,6 +100,15 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
     // ── 行为执行器注册表 (effectType → executor) ──
     private Dictionary<string, IEffectExecutor> _executors = new Dictionary<string, IEffectExecutor>();
 
+    // ── 数值效果应用器注册表 (effectType → applier) ──
+    // 扩展点：新增数值型升级 = 写一个 IUpgradeNumericApplier 并注册，不必改 ApplyUpgrade。
+    private Dictionary<string, IUpgradeNumericApplier> _numericAppliers = new Dictionary<string, IUpgradeNumericApplier>();
+
+    // ── 描述格式化器注册表（自定义优先，内置兼底）──
+    // 扩展点：新增升级类型的文案 = 写一个 IUpgradeDescriptionFormatter 并注册，不必改格式化链。
+    private List<IUpgradeDescriptionFormatter> _descriptionFormatters = new List<IUpgradeDescriptionFormatter>();
+    private IUpgradeDescriptionFormatter _defaultDescriptionFormatter;
+
     // ── 升级事件 ──
     public System.Action<UpgradeDefinition, int> OnUpgradeApplied; // (def, newLevel)
     public System.Action OnUpgradesReset;
@@ -118,6 +127,47 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
     private void Start()
     {
         RegisterBuffAppliers();
+        RegisterDefaultAppliers();
+    }
+
+    /// <summary>
+    /// 注册**数值型升级效果应用器**（扩展点）。
+    /// 同 effectType 后注册者覆盖先注册者；不注册的内置 effectType 走默认实现。
+    /// </summary>
+    public void RegisterNumericApplier(string effectType, IUpgradeNumericApplier applier)
+    {
+        if (string.IsNullOrEmpty(effectType) || applier == null) return;
+        _numericAppliers[effectType] = applier;
+    }
+
+    /// <summary>
+    /// 注册**数值型升级效果应用器**（扩展点，委托版）。
+    /// 同 effectType 后注册者覆盖先注册者；不注册的内置 effectType 走默认实现。
+    /// </summary>
+    public void RegisterNumericApplier(string effectType, System.Action<UpgradeDefinition, int, NumericLevelConfig> apply)
+    {
+        if (string.IsNullOrEmpty(effectType) || apply == null) return;
+        RegisterNumericApplier(effectType, new DelegateUpgradeNumericApplier(apply));
+    }
+
+    /// <summary>
+    /// 注册**升级描述格式化器**（扩展点）。
+    /// 自定义格式化器优先于内置兼底生效；多个自定义按注册顺序尝试。
+    /// </summary>
+    public void RegisterDescriptionFormatter(IUpgradeDescriptionFormatter formatter)
+    {
+        if (formatter == null) return;
+        _descriptionFormatters.Add(formatter);
+    }
+
+    /// <summary>
+    /// 注册**升级描述格式化器**（扩展点，委托版）。
+    /// </summary>
+    public void RegisterDescriptionFormatter(
+        System.Func<UpgradeDefinition, int, bool> canFormat,
+        System.Func<UpgradeDefinition, string, int, string> format)
+    {
+        RegisterDescriptionFormatter(new DelegateUpgradeDescriptionFormatter(canFormat, format));
     }
 
     public void RegisterBuffAppliers()
@@ -346,26 +396,6 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
     public void DebugSetDirectionalPush(int step) => _directionalPushStep = step;
 
     #endregion
-
-    private static NumericLevelConfig GetCumulativeNumericConfig(UpgradeDefinition def, int level)
-    {
-        var total = new NumericLevelConfig();
-        for (int i = 1; i <= level; i++)
-        {
-            var config = def.GetNumericConfig(i);
-            total.floatValue += config.floatValue;
-            total.intValue += config.intValue;
-            total.secondaryIntValue += config.secondaryIntValue;
-        }
-        return total;
-    }
-
-    private static NumericLevelConfig GetDisplayNumericConfig(UpgradeDefinition def, int level)
-    {
-        return def.effectType == "attack_range_boost"
-            ? def.GetNumericConfig(level)
-            : GetCumulativeNumericConfig(def, level);
-    }
 
 
     /// <summary>重置所有升级效果（新对局开始时调用）</summary>
