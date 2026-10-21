@@ -4,16 +4,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-[Serializable]
-public sealed class RouteChoiceOption
-{
-    public string id;
-    public string label;
-    public string description;
-    public Sprite icon;
-    public RouteChoiceLayout layout;
-}
-
 public sealed class RouteChoicePanel : MonoBehaviour
 {
     [SerializeField] private Transform choiceContainer;

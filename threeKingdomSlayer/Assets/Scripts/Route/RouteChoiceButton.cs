@@ -49,7 +49,8 @@ public sealed class RouteChoiceButton : MonoBehaviour
         {
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(Select);
-            button.interactable = true;
+            // 锁定的出口不可点（原因已显示在副标题上）。
+            button.interactable = !option.locked;
         }
         StartVisualLoopNextFrame();
     }
