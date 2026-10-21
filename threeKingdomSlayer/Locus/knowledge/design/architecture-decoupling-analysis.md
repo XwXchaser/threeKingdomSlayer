@@ -3,7 +3,7 @@ id: kd_a6b3e958-ee14-46fb-956a-17f03b2ee980
 injectMode: inherit
 injectAgents:
 - '*'
-summary: 架构解耦与模块化分析：实测 226 脚本/0 asmdef/36 单例/96 处 Find*，指出六个结构性问题（无程序集边界、隐式全局网、上帝类、三套路线驱动、层间倒置、状态聚合），给出 asmdef 分层/三个会话/事件化/IRouteFlow/Enemy 分批拆/输入门/存档分片的方案与 0-4 批实施顺序，含复测命令与基线。
+summary: 架构解耦与模块化分析：实测 226 脚本/0 asmdef/36 单例/96 处 Find*，指出六个结构性问题（无程序集边界、隐式全局网、上帝类、三套路线驱动、层间倒置、状态聚合），给出 asmdef 分层/三个会话/事件化/IRouteFlow/Enemy 分批拆/输入门/存档分片的方案与 0-4 批实施顺序，含复测命令与基线。**输入门已落地（§4.6 / §5.4，2026-10-22）。**
 aiEditMode: inherit
 ---
 
@@ -240,16 +240,30 @@ public interface IRouteFlow
 
 > 不要一次拆成 10 个文件：`伤害 / 打断 / 共享血量` 的契约还没抽出来，硬拆会造出互相反向引用的碎片。
 
-### 4.6 输入：从布尔旗标到"输入意图门"
+### 4.6 输入：从布尔旗标到"输入意图门" ✅ 已落地
 
 ```csharp
-enum InputBlockReason { None, Dialogue, RouteTravel, Reward, HubInterface, Defeat }
-GameplayInputGate.RequestBlock(owner, reason);   // 唯一所有者
+enum InputBlockReason { None, RouteTravel, ResultPanel, TutorialGate, LegacyRoute, Other }
+GameplayInputGate.RequestBlock(owner, reason);   // 每个 owner 最多持有一份
 GameplayInputGate.Release(owner);
 bool GameplayInputGate.IsBlocked { get; }        // 可查询
+bool GameplayInputGate.IsBlockedBy(reason);      // 可按原因查
+string GameplayInputGate.Describe();             // 谁在拦、因为什么拦
 ```
 
-把现有 8 处直接写 `gameplayInputEnabled` 改为申请/释放，附上原因。"为什么点不动"从"要读 5 个模块"变成一次查询。
+**落地形态（2026-10-22，批次 3 尾项）**：`Assets/Scripts/Data/GameplayInputGate.cs`（在 `Locus.Data` 程序集，
+未来拆 `Locus.Combat` / `Route` / `UI` 时它仍是下层契约）。
+全工程**任一 owner 持有拦截 → 输入被拦**；owner 被销毁时拦截自动失效（不会把输入永久锁死）。
+
+- `InputManager.gameplayInputEnabled` 变成**只读属性**（`=> !GameplayInputGate.IsBlocked`）——
+  编译器从此禁止任何模块直接写它，回归成本为零。
+- 9 个写入点全部迁到门：路线层（`FakeRouteRuntime`）、结算面板（`BattleHUD`）、
+  教学门槛（`TutorialGestureHint`）、Legacy 两套路线驱动、`Experiments` 两个试玩脚本。
+- **唯一有意的行为差异**：教学门槛期间路线层的"解锁"不再踩掉教学门槛的拦截（旧行为是 bug）。
+
+> 旧实现是"多个模块轮流写同一个全局布尔，后写者覆盖前写者"：
+> `BattleHUD` 在胜利/战败写 `false` 后**从不自己撤销**，靠路线层在下一场战斗写 `true` 时顺带覆盖掉；
+> 教学门槛的 `true` 同样会踩掉别人的拦截。这正是 P2 点名的隐式全局状态。
 
 ### 4.7 存档与配置
 
@@ -346,7 +360,7 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 | `ColumnManager` 拆分（批次 2）：刀 1 `LogicalRowQueue` / 刀 2 `ColumnQueries` / 刀 3 `SpawnEntryMover` / 刀 4 `WaveMarchScheduler` / 刀 5 `DisplacementMover` / 刀 6 退役 `FillUpRule` | ✅ **批次 2 全部完成**（ColumnManager 2149 → **662 行**，−1487）：门面只剩列/骑兵槽位与薄转发；做法与验收见 `plan/columnmanager-split-plan-20261020.md` §0.8/§0.9 |
 | 遗留路线实现收进 `Assets/Scripts/Legacy/`，Battle 场景去掉 V2 竞争驱动 | ✅ `55c216a` |
 | Legacy 彻底隔离（现役代码不再引用遗留类型）+ 说明文档 | ✅ `a38ee66` |
-| 剩余角色接口（`IRunFlow` / `ICombatStaging` / `IRewardGate`） | ⬜ |
+| 剩余角色接口（`IRunFlow` / `ICombatStaging` / `IRewardGate`） | ⬜（唯一剩下的批次 1 尾项） |
 | `IStageFormation`（阵型只读）+ `IStageFlowControl`（流程控制） | ✅ `Enemy` / `BattleHUD` 已迁移 |
 | `AttackSystem` 迁移到 `IStageFormation` | ✅ `a0dccc9`（32 处调用收敛为一处） |
 | 18 个消费者批量迁移（阵型 / 战斗状态 / 流程控制三角色） | ✅ `853d022`（门面引用 99 → 35 行） |
@@ -416,6 +430,43 @@ Play Mode 点开始关卡→`phase=Battle`→出怪 1、`ResolveAttackType` 映�
 **一次真事故**：`HitFeedbackManager.cs` 的枚举删除第一次「回执已应用但未落盘」，导致项目里同时
 存在两份枚举声明（重复类型，直接编译不过）。靠回读 `grep` 发现、重做并复核才避免。
 
+### 5.4 批次 3 尾项进展：输入门 `GameplayInputGate`（2026-10-22）
+
+> 提交 `4d1a52e`。批次 3 的 `EnemyHealth` 经实测决定不拆（`TakeDamage` 耦合太高），
+> 本节是批次 3 剩下的最后一块：**输入门替换 `gameplayInputEnabled`**。
+
+**为什么是它**：`design/architecture-decoupling-analysis.md` P5（层间倒置）与 P2（隐式全局网）都指向同一处 ——
+`InputManager.gameplayInputEnabled` 是一个全局布尔，9 处写入点轮流写它，**谁最后写的决定结果**。
+`BattleHUD` 在胜利/战败写 `false` 后从不自己撤销，靠路线层在下一场战斗写 `true` 时顺带覆盖掉；
+教学门槛的 `true` 同样会踩掉别人的拦截。这就是本仓库之前那三处 bug 的同源形态。
+
+**落地**：
+
+| 项 | 结果 |
+|---|---|
+| 新增 | `Assets/Scripts/Data/GameplayInputGate.cs`（`Locus.Data` 程序集，未来拆上层程序集时它仍是下层契约） |
+| 状态模型 | 按 owner 键保存「拦截 + `InputBlockReason` 原因」；全局被拦 = 任一 owner 持有 |
+| 失效保护 | owner 被销毁（场景重载 / 对象回收）时拦截自动失效，不会把输入永久锁死 |
+| 编译期护栏 | `InputManager.gameplayInputEnabled` 变**只读属性**，任何直接写都会编译失败 |
+| 诊断 | `Describe()` 列出当前持有者与原因；拦截/放行翻转时打一条 `[InputGate]` 日志 |
+
+**写入点迁移（9 处，全部）**：`FakeRouteRuntime`（路线层）、`BattleHUD`（结算面板）、
+`TutorialGestureHint`（教学门槛）、Legacy `RouteV1/RouteV2`（两套遗留驱动）、
+`Experiments` 的 `ScrollCombatTrial` / `ScrollNodeFlowTrial`（两个试玩脚本）。
+
+**Play Mode 实测（Battle.scene）**：
+
+| 场景 | 期望 | 实测 |
+|---|---|---|
+| 落地页就绪态 | 路线层持 `RouteTravel` 拦截 | ✅ `Route Flow (Scroll)(RouteTravel)` |
+| 点「开始关卡」→ 进入节点战斗 | 路线层释放 → 可操作 | ✅ `blocked=False`、`enabled=True`、出怪 8 |
+| 结算面板（Victory / Defeat） | 申请 `ResultPanel` | ✅ 持有者 2 个（路线 + HUD） |
+| 下一场战斗（`StageState.InProgress`） | 结算面板**自己**释放 | ✅ `byResult=False` |
+| 教学门槛 | `Gate` 申请、`Pass`/`Cancel` 释放 | ✅ `byTutorial` 随开随关 |
+| owner 销毁 | 拦截自动失效 | ✅ 销毁后 `blockCount` 立即减 1 |
+| 同 owner 重复申请 | 不叠加 | ✅ `blockCount` 不变 |
+
+**唯一有意的行为差异**：教学门槛期间，路线层的"解锁"不再踩掉教学门槛的拦截（旧行为是 bug）。
 
 ---
 
@@ -458,7 +509,10 @@ grep -rn "Resources.Load" --include=*.cs Assets/Scripts | wc -l
 grep -rn "gameplayInputEnabled\s*=" --include=*.cs Assets/Scripts | grep -v NonSerialized | wc -l
 ```
 
-**当前基线（2026-10-20，HEAD `1b1c2e5`）**：asmdef 0 / 脚本 226 / 单例 36 / `public static` 192 / `Find*` 96 / 每帧回调 75 / `Resources.Load` 8 / 输入旗标写入 8。
+**当前基线（2026-10-22，HEAD `4d1a52e`）**：asmdef **1** / 脚本 **250** / 单例 **37** / `public static` **194** / `Find*` **92** / 每帧回调 **73** / `Resources.Load` **8** / **输入旗标写入 0**（旧基线：asmdef 0 / 脚本 226 / 单例 36 / `public static` 192 / `Find*` 96 / 每帧回调 75 / `Resources.Load` 8 / 输入旗标写入 8）。
+
+> 尚未动的三项：`Resources.Load` 8 处（anti-ghost-reference 违规项，且 `EnemyPool` 按名加载导致包体依赖剪不掉）、
+> 单例 37 / `public static` 194、批次 1 尾项的三个角色接口（`IRunFlow` / `ICombatStaging` / `IRewardGate`）。
 
 ---
 
