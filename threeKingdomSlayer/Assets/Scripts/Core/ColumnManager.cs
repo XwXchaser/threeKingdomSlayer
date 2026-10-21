@@ -33,10 +33,10 @@ public class ColumnManager : MonoBehaviour
     // Wave march has a preparing barrier and one exact generation per row step.
     private bool _isWaveMarching;
     private bool _isWavePreparing;
-    private bool _isSpawnEntryPreparing;
-    private int _spawnEntryGeneration;
-    private readonly List<Enemy> _spawnEntryEnemies = new List<Enemy>();
-    private readonly HashSet<Enemy> _pendingSpawnEntryEnemies = new HashSet<Enemy>();
+    /// <summary>入场调度（新波次远处入场）。状态与流程见 SpawnEntryMover。</summary>
+    private SpawnEntryMover _spawnEntry;
+
+    private SpawnEntryMover SpawnEntry => _spawnEntry ??= new SpawnEntryMover(_queue, StartPendingLogicalLayoutReflow);
     private bool _currentWaveContinuousRun;
     private int _currentWaveSourceRow = -1;
     private int _currentWaveTargetRow = -1;
@@ -145,25 +145,8 @@ public class ColumnManager : MonoBehaviour
     {
         UpdatePushReturns();
 
-        if (_isSpawnEntryPreparing)
-        {
-            for (int i = _spawnEntryEnemies.Count - 1; i >= 0; i--)
-            {
-                var enemy = _spawnEntryEnemies[i];
-                if (enemy == null || enemy.state == EnemyState.Dead || !enemy.IsRushMoveOrder(RushMoveOrderOwner.SpawnEntry, _spawnEntryGeneration))
-                {
-                    if (enemy != null)
-                        enemy.OnRushMoveComplete -= OnSpawnEntryComplete;
-                    _spawnEntryEnemies.RemoveAt(i);
-                    continue;
-                }
-                if (!enemy.IsRushMoveReady)
-                    return;
-            }
-
-            StartPreparedSpawnEntry();
-            return;
-        }
+        // 入场流程占用时，本帧不进入其它调度分支（与拆分前一致）
+        if (SpawnEntry.Tick()) return;
 
         if (!_isWavePreparing) return;
 
@@ -312,9 +295,7 @@ public class ColumnManager : MonoBehaviour
         _pausedWaveTargetRow = -1;
         _pausedWaveEnemies.Clear();
         _pausedWaveTargetRows.Clear();
-        _spawnEntryEnemies.Clear();
-        _pendingSpawnEntryEnemies.Clear();
-        _isSpawnEntryPreparing = false;
+        SpawnEntry.Reset();
         for (int i = 0; i < columnCount; i++)
             columns[i].enemies.Clear();
     }
@@ -465,17 +446,13 @@ public class ColumnManager : MonoBehaviour
     public void ConfigureWaveRowLayout(IList<RowConfig> rows, int rowOffset)
     {
         _queue.Configure(rows, rowOffset);
-        _isSpawnEntryPreparing = false;
-        _spawnEntryEnemies.Clear();
-        _pendingSpawnEntryEnemies.Clear();
+        SpawnEntry.Reset();
     }
 
     public void ClearWaveRowLayout()
     {
         _queue.Clear();
-        _isSpawnEntryPreparing = false;
-        _spawnEntryEnemies.Clear();
-        _pendingSpawnEntryEnemies.Clear();
+        SpawnEntry.Reset();
     }
 
     public bool IsRhythmGateRow(int row)
@@ -491,8 +468,7 @@ public class ColumnManager : MonoBehaviour
         StartPendingLogicalLayoutReflow();
     }
 
-    public bool IsSpawnEntryPending(Enemy enemy) => enemy != null &&
-        (_isSpawnEntryPreparing && _spawnEntryEnemies.Contains(enemy) || _pendingSpawnEntryEnemies.Contains(enemy));
+    public bool IsSpawnEntryPending(Enemy enemy) => SpawnEntry.IsPending(enemy);
 
     public bool IsCavalryReadyForCombat(Enemy enemy) => enemy != null &&
         !IsSpawnEntryPending(enemy) && !enemy.IsRushMoveOrder(RushMoveOrderOwner.SpawnEntry, enemy.RushMoveOrderGeneration);
@@ -504,66 +480,7 @@ public class ColumnManager : MonoBehaviour
 
     public void StartSpawnEntry(IList<Enemy> enemies)
     {
-        if (enemies == null || enemies.Count == 0)
-            return;
-
-        _spawnEntryGeneration++;
-        if (_spawnEntryGeneration <= 0) _spawnEntryGeneration = 1;
-        _spawnEntryEnemies.Clear();
-        _pendingSpawnEntryEnemies.Clear();
-
-        for (int i = 0; i < enemies.Count; i++)
-        {
-            var enemy = enemies[i];
-            if (enemy == null || enemy.isBoss || enemy.state == EnemyState.Dead)
-                continue;
-            if (!_queue.TryGetRowForEnemy(enemy, out var logicalRow) || logicalRow.removed)
-                continue;
-
-            int targetRow = logicalRow.currentRow;
-            if (enemy.rowIndex <= targetRow)
-                continue;
-            enemy.GetComponent<CavalryEnemy>()?.NotifySpawnEntryStarted();
-            if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.SpawnEntry, _spawnEntryGeneration, targetRow, RushMoveMode.ContinuousEmptyRun))
-            {
-                enemy.GetComponent<CavalryEnemy>()?.NotifySpawnEntryCompleted();
-                continue;
-            }
-
-            enemy.OnRushMoveComplete -= OnSpawnEntryComplete;
-            enemy.OnRushMoveComplete += OnSpawnEntryComplete;
-            _spawnEntryEnemies.Add(enemy);
-        }
-
-        _isSpawnEntryPreparing = _spawnEntryEnemies.Count > 0;
-    }
-
-    private void StartPreparedSpawnEntry()
-    {
-        _isSpawnEntryPreparing = false;
-        _pendingSpawnEntryEnemies.Clear();
-        for (int i = 0; i < _spawnEntryEnemies.Count; i++)
-        {
-            var enemy = _spawnEntryEnemies[i];
-            if (enemy == null || !enemy.IsRushMoveOrder(RushMoveOrderOwner.SpawnEntry, _spawnEntryGeneration))
-                continue;
-            _pendingSpawnEntryEnemies.Add(enemy);
-        }
-        _spawnEntryEnemies.Clear();
-
-        foreach (var enemy in _pendingSpawnEntryEnemies)
-            enemy.TryStartRushMove();
-    }
-
-    private void OnSpawnEntryComplete(Enemy enemy, RushMoveOrderOwner owner, int generation)
-    {
-        if (owner != RushMoveOrderOwner.SpawnEntry || generation != _spawnEntryGeneration)
-            return;
-        enemy.OnRushMoveComplete -= OnSpawnEntryComplete;
-        _pendingSpawnEntryEnemies.Remove(enemy);
-        enemy.GetComponent<CavalryEnemy>()?.NotifySpawnEntryCompleted();
-        if (_pendingSpawnEntryEnemies.Count == 0)
-            StartPendingLogicalLayoutReflow();
+        SpawnEntry.Start(enemies);
     }
 
     public void UnregisterWaveEnemy(Enemy enemy)
@@ -585,9 +502,7 @@ public class ColumnManager : MonoBehaviour
 
     public bool CanStartSpawnEntryOrder(Enemy enemy, int generation)
     {
-        return !_isSpawnEntryPreparing
-            && generation == _spawnEntryGeneration
-            && _pendingSpawnEntryEnemies.Contains(enemy);
+        return SpawnEntry.CanStartOrder(enemy, generation);
     }
 
     public bool CanStartWaveMarchOrder(Enemy enemy, int generation)
@@ -638,7 +553,7 @@ public class ColumnManager : MonoBehaviour
     {
         if (!_queue.UseRowMarchPlanner || !_queue.IsDirty)
             return;
-        if (_isSpawnEntryPreparing || _pendingSpawnEntryEnemies.Count > 0)
+        if (SpawnEntry.IsPreparing || SpawnEntry.HasPending)
             return;
         if (_pushReturnTransactions.Count > 0)
         {
@@ -950,12 +865,11 @@ public class ColumnManager : MonoBehaviour
     {
         if (enemy == null) return;
 
-        if (_spawnEntryEnemies.Remove(enemy) || _pendingSpawnEntryEnemies.Remove(enemy))
-            enemy.OnRushMoveComplete -= OnSpawnEntryComplete;
+        SpawnEntry.Remove(enemy);
         if (enemy.RushMoveOrderOwner == RushMoveOrderOwner.SpawnEntry)
             enemy.CancelRushMoveOrder(resetActiveMovement: true);
 
-        if (_pendingSpawnEntryEnemies.Count == 0)
+        if (!SpawnEntry.HasPending)
             StartPendingLogicalLayoutReflow();
 
         ReleaseEnemyFromMovementSchedulers(enemy, sourceColumn);
