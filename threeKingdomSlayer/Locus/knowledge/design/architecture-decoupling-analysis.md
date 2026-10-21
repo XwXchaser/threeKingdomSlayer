@@ -113,7 +113,7 @@ aiEditMode: inherit
 | `Assets/Scripts/Core/ColumnManager.cs` | 2130 | 添加/移除/位移/查询/布局/骑兵槽位 |
 | `Assets/Scripts/Player/AttackSystem.cs` | 1559 | 攻击类型实现、工具方法、解锁注册表 |
 | `Assets/Scripts/QTE/QTEController.cs` | 1466 | — |
-| `Assets/Scripts/Core/UpgradeEffectManager.cs` | 1276 | 局内 Build 的万能执行器 |
+| `Assets/Scripts/Core/UpgradeEffectManager.cs` | 1276 | 局内 Build 的万能执行器（2026-10-22 已拆为 437/359/232/304，并把数值效果与描述文案改成注册表扩展点，见 §5.9） |
 | `Assets/Scripts/RouteFake/FakeRouteRuntime.cs` | 909 | 流程 + checkpoint + 恢复 + 通关推进 |
 | `Assets/Scripts/Managers/StageController.cs` | 827 | **50 个 public 成员** |
 
@@ -589,7 +589,11 @@ Play Mode 点开始关卡→`phase=Battle`→出怪 1、`ResolveAttackType` 映�
 Slash 掉血 18（126→108，前排两名）、Launch 掉血 4；Boss 104 首次 `SelectBossAction()`
 即 `qteState=PerformingQTEAttack` / `enemyState=QTEAttacking`。
 
-**当前最大文件**：`UpgradeEffectManager.cs` 1284 / `PixelHitEffectManager.cs` 1227 / `StabSweepEffect.cs` 1012 / `Enemy.cs` 933 / `FakeRouteRuntime.cs` 914 / `DisplacementMover.cs` 894。
+**当前最大文件**：`Enemy.cs` 933 / `FakeRouteRuntime.cs` 914 / `DisplacementMover.cs` 894 / `StageProgressBar.cs` 864 / `CavalryEnemy.cs` 830 / `Enemy.Combat.cs` 828。
+
+> 至此**全部文件 ≤ 933 行**（本轮把 `UpgradeEffectManager` 1284、`PixelHitEffectManager` 1227、
+> `StabSweepEffect` 1012 也拆开了）。剩下的都是「机制本身就是这么大」的模块，
+> 继续拆的收益递减；下一步的量级变化要靠**程序集分层**（把一整层搬出 `Assembly-CSharp`）。
 
 > 剩下这三个（1284 / 1227 / 1012）**没有 region 结构**，要拆得先人工按方法语义分组，
 > 属于「需判断」而非「机械搬移」，暂缓。
@@ -618,6 +622,36 @@ Slash 掉血 18（126→108，前排两名）、Launch 掉血 4；Boss 104 首�
 
 **验证**：反射核对类型归属全部正确；2 个路线配置资产 + 1 个 `HeroConfig` 资产均可加载；
 Play Mode 落地页 → 战斗 → Stab 掉血 20 → **§15.5 基线逐位一致** → 路线正常推进；Console 0/0。
+
+### 5.9 局内升级体系：把两处硬编码分派改成注册表（2026-10-22）
+
+> 提交 `45f6f54`。P3 里点名的“下一条触发键会直接撞在 UpgradeEffectManager 身上”，本刀正面处理。
+
+**改造前的两处硬编码**：
+① `ApplyNumericEffect` 的 13 分支 `switch (def.effectType)`；② `FormatDescriptionForLevel` 的 215 行 if-else 链。
+两者都是“新机制必改本体”的典型点。
+
+**现在的形态**（沿用已有的 `IEffectExecutor` 注册表范式）：
+
+| 扩展点 | 接口 | 注册入口 |
+|---|---|---|
+| 数值型升级效果 | `IUpgradeNumericApplier` | `RegisterNumericApplier(effectType, applier)`（含委托重载） |
+| 升级描述文案 | `IUpgradeDescriptionFormatter` | `RegisterDescriptionFormatter(formatter)`（含委托重载） |
+| 玩家数值面 | `IUpgradeStatSink` | 由管理器实现，应用器通过它写数值（`Add*` 累加 / `Set*` 覆盖） |
+
+内置行为搬进 `DefaultUpgradeNumericApplier`（原 switch）与 `DefaultUpgradeDescriptionFormatter`（原 if-else 链，逐字保留），
+它们在 `Awake` 时批量注册；**自定义优先于内置兼底**。
+
+**用法（新增一种数值型升级）**：
+```csharp
+UpgradeEffectManager.Instance.RegisterNumericApplier("crit_rate",
+    (def, level, cfg) => CritService.Instance.AddRate(cfg.floatValue));
+```
+
+**验证**：
+- **升级快照逐行一致**：改造前/后各跑一遍「9 个升级定义 × 每级的描述 + 18 项数值」全量快照，diff 零差异。
+- 扩展点可用：注册一个全新 effectType（委托版）+ 一个自定义描述格式化器，两者都按预期生效；内置类型文案未变。
+- **§15.5 回归基线逐位一致**；Console 0/0。
 
 ---
 
