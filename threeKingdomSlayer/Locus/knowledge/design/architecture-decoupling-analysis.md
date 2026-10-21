@@ -686,6 +686,46 @@ UpgradeEffectManager.Instance.RegisterNumericApplier("crit_rate",
 > **不改变任何节点的完成语义**（EV / J1 的 ChoiceConfirmation 仍按旧规则跑）——那是玩法决策，单独排期；
 > 本次只把「可表达」的口子留出来。
 
+### 5.11 三选一：抽池独立 + 两把扩展点（2026-10-22）
+
+> 提交 `0b4e4c7`。需求：「后续可能会部分根据**天赋的解锁**才会入池，以及一些**额外效果**」。
+
+**改造前**：`UpgradeChoiceManager` 567 行里，流程（触发→暂停→弹窗→确认→恢复）与抽池
+（四个几乎重复的收集方法 + 两种抽取）混在一起；入池条件只有「需要另一个升级达到 N 级」一种硬编码。
+
+**现在的形态**：
+
+| 扩展点 | 接口 | 注册入口 |
+|---|---|---|
+| 入池条件（天赋解锁等） | `IUpgradeRequirementProvider`（+ `UpgradePoolKind`） | `UpgradeChoiceManager.RegisterRequirementProvider(...)` |
+| 选中后的额外效果 | `IUpgradeSelectionEffect` | `UpgradeChoiceManager.RegisterSelectionEffect(...)` |
+| 玩家数值面（上一刀） | `IUpgradeStatSink` | — |
+
+- 抽池独立成 `UpgradePoolSampler`（纯 C#，依赖注入：当前等级 / 被动上限 / 主动技能可获得性），
+  四个池的收集与两种抽取都在它里面；`UpgradeChoiceManager` 567 → **436 行**，只管流程。
+- 内置条件源 `TalentUpgradeRequirementProvider`：按 `UpgradeDefinition.requiredTalentIds`
+  判断（天赋状态以 `TalentTreeState` 为准，唯一权威是存档里的 `unlockedTalents`）。
+- 两个扩展点都带**委托重载**（注册时直接传 lambda，不必写类）。
+
+**用法**：
+```csharp
+// 按天赋解锁入池：升级定义里填 requiredTalentIds 即可，无需改代码
+// 额外入池条件：
+manager.RegisterRequirementProvider(new MyProvider());
+// 选中后的额外效果：
+manager.RegisterSelectionEffect(def => def.effectType == "crit_rate",
+                                def => CritService.Instance.Grant(def.upgradeId));
+```
+
+**验证**：
+- **四个池的候选集逐字一致**（改造前后快照 diff 零差异：id / 稀有度 / 权重全同）。
+- 扩展点实测：加 `requiredTalentIds`（未解锁）→ 掉出池；解锁天赋（写存档）→ 回到池；
+  注册选中效果 → `ConfirmChoice` 时触发 1 次且升级正常应用。
+- **§15.5 回归基线逐位一致**；8 条升级描述文案未变；Console 0/0。
+
+> 注：`IEffectExecutor`（持续型行为效果）与 `IUpgradeSelectionEffect`（一次性副作用）是两种东西，
+> 前者已存在，本次补上后者。
+
 ---
 
 ## 6. 明确不做

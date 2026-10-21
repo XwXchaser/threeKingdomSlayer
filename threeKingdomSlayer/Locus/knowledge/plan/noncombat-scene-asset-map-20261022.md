@@ -195,7 +195,7 @@ None → Ready ──点「开始关卡」──► RunPreparedFlow
 | # | 位置 | 现象 | 新机制会怎么撞 |
 |---|---|---|---|
 | 1 | ~~`FakeRouteRuntime` 的节点执行流程~~ | ✅ **已补**（2026-10-22，`a00134e`）：节点「什么算完成 / 要不要收尾整关」走完成策略注册表（`IRouteNodeCompletionPolicy` + `IRouteNodeProgressView`），详见 §5.10 | — |
-| 2 | `UpgradeChoiceManager`（567 行） | 抽取/展示/关卡完成回调都在里面 | 新升级池形态会撞 |
+| 2 | ~~`UpgradeChoiceManager`（567 行）~~ | ✅ **已解耦**（2026-10-22，`0b4e4c7`）：抽池拆成 `UpgradePoolSampler`，新增「入池条件源」与「选中额外效果」两把扩展点（天赋解锁已内置），详见 §5.11 | — |
 | 3 | `RouteChoicePanel`（133 行） | 分支面板的 UI 与数据绑定 | 新分支形态（多选/带条件）会撞 |
 | 4 | 存档单一 blob | `SaveData` 9 字段 + 两套快照 | 新存档域要加字段（批次 4 计划中） |
 
