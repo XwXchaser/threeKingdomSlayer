@@ -589,7 +589,7 @@ Play Mode 点开始关卡→`phase=Battle`→出怪 1、`ResolveAttackType` 映�
 Slash 掉血 18（126→108，前排两名）、Launch 掉血 4；Boss 104 首次 `SelectBossAction()`
 即 `qteState=PerformingQTEAttack` / `enemyState=QTEAttacking`。
 
-**当前最大文件**：`Enemy.cs` 933 / `FakeRouteRuntime.cs` 914 / `DisplacementMover.cs` 894 / `StageProgressBar.cs` 864 / `CavalryEnemy.cs` 830 / `Enemy.Combat.cs` 828。
+**当前最大文件**：`Enemy.cs` 933 / `DisplacementMover.cs` 894 / `StageProgressBar.cs` 864 / `CavalryEnemy.cs` 830 / `Enemy.Combat.cs` 828。
 
 > 至此**全部文件 ≤ 933 行**（本轮把 `UpgradeEffectManager` 1284、`PixelHitEffectManager` 1227、
 > `StabSweepEffect` 1012 也拆开了）。剩下的都是「机制本身就是这么大」的模块，
@@ -652,6 +652,39 @@ UpgradeEffectManager.Instance.RegisterNumericApplier("crit_rate",
 - **升级快照逐行一致**：改造前/后各跑一遍「9 个升级定义 × 每级的描述 + 18 项数值」全量快照，diff 零差异。
 - 扩展点可用：注册一个全新 effectType（委托版）+ 一个自定义描述格式化器，两者都按预期生效；内置类型文案未变。
 - **§15.5 回归基线逐位一致**；Console 0/0。
+
+### 5.10 路线节点：完成策略注册表（2026-10-22）
+
+> 提交 `a00134e`。与 §5.9 同范式（升级体系），但对象是**路线节点**。
+
+**问题**：数据模型早写了两个策略字段——`FakeRouteNodeConfig.completionPolicy`（4 种）与 `terminalPolicy`——
+但运行时一直用固定规则（战斗条目跑完 = 完成；`isFinalNode` = 收尾整关），
+两个字段**长期没有消费点**（`design/gameplay-pillars.md` 已标为 ❌）。
+实测：长坂坡的 EV / J1 声明 `completionPolicy=ChoiceConfirmation`、N2 / N3 声明 `terminalPolicy=1`，
+运行时却一律按旧规则走 → 资产表达的意图被顶掉了。
+
+**同时拆分**：`FakeRouteRuntime` 914 → 主文件 294 / Entry 202 / Node 146 / Choice 75 / Checkpoint 210 / Finish 61。
+
+**扩展点**：
+
+| 接口 | 作用 |
+|---|---|
+| `IRouteNodeCompletionPolicy` | 某节点是否由本策略接管 / 内容是否完成 / 是否收尾整关 |
+| `IRouteNodeProgressView` | 节点进度只读视图（条目数、条目完成、奖励是否待领） |
+| `DefaultRouteNodeCompletionPolicy` | 内置兼底 = 改造前的固定规则（行为不变） |
+| `DelegateRouteNodeCompletionPolicy` | 委托版，注册时直接传 lambda |
+
+注册入口：`FakeRouteRuntime.RegisterNodeCompletionPolicy(...)`。
+
+**验证**：
+- **节点判定快照逐行一致**：改造前后各跑一遍「2 条路线 × 8 个节点」的字段 + 三项判定，diff 零差异。
+- 快照第一次跑出差异，定位到内置策略在 `Awake` 里初始化（Edit Mode 不跑 Awake → 策略为 null → 判定失真）——
+  已改为字段初始化，顺带消除「Awake 前调用就变行为」的隐患。
+- 扩展点可用：注册只接管 N1 的策略 → N1 的判定改变，其它节点不受影响。
+- **§15.5 回归基线逐位一致**；Console 0/0。
+
+> **不改变任何节点的完成语义**（EV / J1 的 ChoiceConfirmation 仍按旧规则跑）——那是玩法决策，单独排期；
+> 本次只把「可表达」的口子留出来。
 
 ---
 

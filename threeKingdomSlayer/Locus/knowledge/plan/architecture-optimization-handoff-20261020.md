@@ -110,6 +110,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | `c0ffb1d` | **契约层与配置层下沉到 `Locus.Data`**：19 个文件 git rename（GUID 保留）——`StageState` + 5 个角色接口 + `IRouteStageHost` + 13 个配置类型；`Locus.Data` 19→**38 文件 / 2732 行** |
 | `34b6c08` | 三个千行文件按机制 partial 分文件：`UpgradeEffectManager` 1284→437/359/232/304、`PixelHitEffectManager` 1227→569/422/265、`StabSweepEffect` 1012→510/121/284/144 |
 | `45f6f54` | **局内升级体系的扩展点**：数值效果与描述文案改成注册表（`IUpgradeNumericApplier` / `IUpgradeDescriptionFormatter` / `IUpgradeStatSink` + 委托重载），新机制不用再改管理器本体 |
+| `a00134e` | **路线节点的扩展点**：`FakeRouteRuntime` 914→294/202/146/75/210/61；节点「什么算完成 / 要不要收尾整关」改成注册表（`IRouteNodeCompletionPolicy` + `IRouteNodeProgressView`）——数据模型里长期没消费点的 `completionPolicy` / `terminalPolicy` 终于有了落点 |
 
 > 详见 `design/architecture-decoupling-analysis.md` §5.7 / §5.8 / §5.9。拆分前机械校验：**内容丢失 = 0**。
 
@@ -128,7 +129,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 路线驱动 | 3 套并存 + 运行期互禁 | 1 套现役 + 1 套 Legacy 孤岛（无互禁） |
 | 遗留实现 | 散在 Core/Route/RouteV2 | `Assets/Scripts/Legacy/`（21 文件 / 2107 行）+ README |
 | 玩家输入 | 全局布尔 `gameplayInputEnabled`，9 处轮流写、后写者生效 | `GameplayInputGate`：按 owner 申请/释放 + 原因枚举；**直接写 = 0** |
-| 单文件体量 | `Enemy` 5224 / `ColumnManager` 2149 / `AttackSystem` 1568 / `QTEController` 1474 / `StageController` 852 | **全部 ≤ 933**：最大 `Enemy.cs` 933 / `FakeRouteRuntime` 914 / `DisplacementMover` 894 |
+| 单文件体量 | `Enemy` 5224 / `ColumnManager` 2149 / `AttackSystem` 1568 / `QTEController` 1474 / `StageController` 852 | **全部 ≤ 933**：最大 `Enemy.cs` 933 / `DisplacementMover` 894 / `StageProgressBar` 864 |
 
 ---
 
@@ -351,7 +352,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 项 | 值 |
 |---|---|
 | 分支 / 远程 | `feat/stage-select-talent-overlays`，已同步 |
-| HEAD | `45f6f54`（`feat(build): 局内升级体系加扩展点`） |
+| HEAD | `a00134e`（`refactor(route): FakeRouteRuntime 按机制 partial 分文件 + 节点完成策略注册表`） |
 | 工作区 | 干净。**唯一例外**：用户自己的 `Assets/Resources/EnemyPrefabs/Enemy_1011.prefab`（`maxHealth 100→200`，调试值，**未提交**，已刻意不夹带） |
 | Unity | 2022.3.62t7（Tuanjie）· BIRP · Legacy Input |
 
@@ -379,6 +380,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | **契约层与配置层下沉 `Locus.Data`** | `c0ffb1d` | 19 文件 git rename（GUID 全保留）：`StageState` + 5 角色接口 + `IRouteStageHost` + 13 配置类型；`Locus.Data` 19→38 文件 / 2732 行；一次编译通过；资产可加载（2 路线配置 + 1 HeroConfig）；Play Mode：落地页→战斗→Stab 掉血 20→**§15.5 基线逐位一致**→路线正常推进；Console 0/0 |
 | **三个千行文件 partial 分片** | `34b6c08` | `UpgradeEffectManager` 1284→437/359/232/304、`PixelHitEffectManager` 1227→569/422/265、`StabSweepEffect` 1012→510/121/284/144；校验「内容丢失=0 + 花括号平衡 + 切口在方法边界」；Play Mode：Stab 掉血 20、9 个升级定义快照留存；Console 0/0 |
 | **升级体系扩展点** | `45f6f54` | 数值效果 / 描述文案改成注册表（+ 委托重载）；**升级快照逐行一致**（9 定义 × 每级描述与 18 项数值，diff 零差异）；新 effectType 用一个 lambda 即可接入；自定义描述格式化器覆盖内置且内置文案未变；**§15.5 基线逐位一致**；Console 0/0 |
+| **路线节点扩展点** | `a00134e` | `FakeRouteRuntime` 914→294/202/146/75/210/61；节点完成判定改走注册表（`IRouteNodeCompletionPolicy`/`IRouteNodeProgressView`）；**节点判定快照逐行一致**（2 路线 × 8 节点 × 3 项判定，diff 零差异）；注册只接管 N1 的策略可验证接管生效、其它节点不受影响；**§15.5 基线逐位一致**；Console 0/0 |
 
 **`Enemy` 终态**：`Enemy.cs` 5224 → **933 行**；另 5 个 partial 分片（状态机 1495 / 战斗结算 828 / 表现层 431 / BOSS 推进 206 / 对象池 106）
 + 4 个真类（`EnemyHitFeedback` / `EnemyMovement` / `EnemyBossPhases` / `EnemyPoise`）。

@@ -194,7 +194,7 @@ None → Ready ──点「开始关卡」──► RunPreparedFlow
 
 | # | 位置 | 现象 | 新机制会怎么撞 |
 |---|---|---|---|
-| 1 | **`FakeRouteRuntime` 的节点执行流程**（914 行，10 个 phase 写死在协程里） | `EnterNode` / `RunBattleEntries` / `PlayPostBattleSequence` / `TrySelectChoice` 直接按类型分支 | 支柱五「节点奖励 / 分支预览 / 新节点形态」要加就得改这个类 |
+| 1 | ~~`FakeRouteRuntime` 的节点执行流程~~ | ✅ **已补**（2026-10-22，`a00134e`）：节点「什么算完成 / 要不要收尾整关」走完成策略注册表（`IRouteNodeCompletionPolicy` + `IRouteNodeProgressView`），详见 §5.10 | — |
 | 2 | `UpgradeChoiceManager`（567 行） | 抽取/展示/关卡完成回调都在里面 | 新升级池形态会撞 |
 | 3 | `RouteChoicePanel`（133 行） | 分支面板的 UI 与数据绑定 | 新分支形态（多选/带条件）会撞 |
 | 4 | 存档单一 blob | `SaveData` 9 字段 + 两套快照 | 新存档域要加字段（批次 4 计划中） |
@@ -210,10 +210,10 @@ None → Ready ──点「开始关卡」──► RunPreparedFlow
 
 ## 5. 建议的下一刀
 
-**给「节点执行流程」加扩展点**：把 `FakeRouteRuntime` 里按节点类型分支的部分收成
-「节点内容执行器」注册表（与本轮升级体系的 `IUpgradeNumericApplier` 同一范式），
-让新增一种节点形态（新的完成策略 / 新的内容块）不必改 `FakeRouteRuntime` 本体。
+**给「节点执行流程」加扩展点** ✅ **已完成（`a00134e`）**：
+① `FakeRouteRuntime` 已按机制拆成 partial（落地页 / 节点流程 / 分支选择 / 检查点 / 收尾）；
+② 「什么算完成 / 要不要收尾整关」已改为注册表（`IRouteNodeCompletionPolicy`），
+行为用「节点判定快照全量比对」验证（2 条路线 × 8 个节点，diff 零差异）。
 
-做法上仍走本项目已验证的两步：
-1. 先按机制把 `FakeRouteRuntime` 拆成 partial（节点流程 / 分支选择 / 检查点 / 演出）——机械搬移，内容丢失 = 0；
-2. 再把「按类型分支」的部分改成注册表，行为用「节点快照全量比对」验证。
+**下一刀候选**：`UpgradeChoiceManager`（567 行）与 `RouteChoicePanel`（133 行）的扩展点，
+以及批次 4 的存档分片。
