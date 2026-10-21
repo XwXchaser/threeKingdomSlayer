@@ -539,15 +539,6 @@ public class PlayerState : MonoBehaviour
 }
 
 /// <summary>
-/// Buff 类型枚举
-/// </summary>
-public enum BuffType
-{
-    ForceLaunch,       // 强制击飞：CanBeLaunched 始终返回 true
-    ProbabilityLaunch  // 概率击飞：攻击时按概率强制击飞
-}
-
-/// <summary>
 /// 已获得的升级记录
 /// </summary>
 [System.Serializable]

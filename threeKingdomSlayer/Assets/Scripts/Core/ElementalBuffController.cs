@@ -1,17 +1,6 @@
 using UnityEngine;
 
 /// <summary>
-/// 元素一次性 BUFF 的作用域。与招式资产的 ColumnMode 配合做合规判定。
-/// </summary>
-public enum ElementalScope
-{
-    /// <summary>只对单列重攻击生效（初始版）</summary>
-    SingleColumnHeavy = 0,
-    /// <summary>任意重攻击生效（局外解锁版）</summary>
-    AnyHeavy = 1
-}
-
-/// <summary>
 /// 玩家身上的元素一次性 BUFF：不设时限、挂到被消耗为止、可并存（当前只实装冰系）。
 /// 刻意与 BuffManager 分开：那个只承载数值 StatModifier，这里承载“改写规则”的一次性效果。
 ///

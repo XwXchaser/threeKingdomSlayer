@@ -4,6 +4,9 @@ using UnityEngine;
 
 /// <summary>
 /// 道具类型 — 铜钱为通用货币，后续可扩展钥匙/宝石等
+///
+/// 2026-10-22（asmdef 分层第一批）：从 <c>Assets/Scripts/Core/PropSystem.cs</c> 移到数据层
+/// —— 纯数据 + 纯函数，存档（SaveManager）与战斗（Prop）都要用。
 /// </summary>
 public enum PropType
 {
