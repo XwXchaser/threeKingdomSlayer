@@ -79,6 +79,47 @@ aiEditMode: inherit
 - 状态：**待验收（2026-10-21 已修根因）** —— `StageSelectUI.ResolveUnlock()` 改为保底放行前两条（`Mathf.Max(cleared, 1)`），教学关未通关也能进第一个正式关；实测选关场景两个按钮均 `interactable=True`。之前用存档绕开的做法可继续保留，不影响。
 - 备注：修前用存档临时绕开的做法（仅本机 Editor 存档）：`SaveManager.MarkStageCleared(9100)` + `SaveManager.SetActiveFakeRouteStage(1)`；回退 = 把 `clearedStageIds` 里的 9100 移除 + `SetActiveFakeRouteStage(9100)`。**现象 1（从检查点续跑）不改**：那是正常的续玩语义。待产品决策：是否继续放宽（比如全部关卡默认可选、教学关只作为引导入口）。
 
+### BUG-003 选关界面导致崩溃退出
+
+- 日期：2026-10-21
+- 类型：BUG / 逻辑（崩溃）
+- 现象：存档里**有一定节点记录**后，在主界面点「选关」会导致游戏崩溃退出。
+- 复现：存档已走过一段路线（有节点/选择记录）→ 启动游戏 → 主界面点「选关」→ 崩溃。
+- 期望：选关界面能正常打开（至少不崩溃）；锁定与解锁状态按 BUG-002 的新规则显示。
+- 涉及：`Assets/Scripts/UI/StageSelectUI.cs`（`RefreshStageConfigs` / `CreateRouteButton` / `OnRouteSelected`）、
+  `Assets/Scripts/RouteFake/FakeRouteRuntime.cs`（`PrepareForEntry` / `ResolveActiveRouteFromSave` / `RestoreCheckpoint`）、
+  `Assets/Scripts/Core/SaveManager.cs`（`GetFakeRouteSnapshot` / `GetRouteStageSnapshot`）。
+- 优先级：高（阻塞选关入口）
+- 状态：待处理（用户 2026-10-21 反馈，明确要求**先记录、不修**）
+- 备注：可疑方向（未验证）：选关点击后会立即 `PrepareForEntry` 换路线，而**有节点记录**时存档侧会走
+  `RestoreCheckpoint` / `ValidateChoiceHistory` 分支（无记录时不走）——崩溃可能发生在换路线的恢复流程。
+  定位需要设备侧堆栈（`adb logcat -s Tuanjie`）；编辑器里可用「先存一份有记录的存档 → 点选关」复现。
+
+### BUG-004 打包版落地页背景图显示不正确（回归）
+
+- 日期：2026-10-21
+- 类型：BUG / 表现
+- 现象：打包版（Android）**落地页背景图显示不正确**；**真机与模拟器都有**；此前打包（2026-10-15 的包）没有 → 属回归。
+- 复现：装 `Build/Android/threeKingdomSlayer_full_20261021_1510.apk`（或 `_1526.apk`）→ 启动 → 落地页。
+- 期望：与编辑器一致（**编辑器里已确认正常**：蓝天白云 + 远山 + 地面 + 战旗 + 底部 tab 栏）。
+- 涉及：
+  - `Assets/Experiments/CurvedScroll/Shaders/YSkyBackground.shader` —— 自定义 shader 里**手动翻转** `o.uv.y=1-o.uv.y`；D3D 与 GLES3 的纹理 Y 轴约定相反，这是「设备上上下颠倒」的头号嫌疑。
+  - `Assets/Experiments/CurvedScroll/Authoring/YSampleScenerySkybox_v2.mat` —— `_MainTex=ValleySkybox_v2.png`（1024×1536）、`_ImageAspect=0.67`、`_VerticalOffset=-0.23`。
+  - `Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N1/N1_FarBackground_v1.png` —— **SpriteRenderer 实际用的 sprite**（比例 1:2），与材质 `_MainTex` **不是同一张图**；两者比例不一致。
+  - `Assets/Experiments/CurvedScroll/Art/EnvironmentV2/ValleySkybox_v2.png` —— 导入设置 `type=Sprite` + `compression=Uncompressed` + `mipmap=False`（1024×1536, RGB24）。
+- 优先级：高（首屏观感）
+- 状态：待处理（**已排查到证据链，未定根因**；需要一张打包版截图才能收敛）
+- 备注：**已排除**（均有实测证据）：
+  ① 天空 quad 不在 `scenery[]` 数组（164 条不含它）→ 记忆里「天空被加进 scenery 读取投影全局量」那条坑**没复发**；
+  ② `_VerticalOffset=-0.23` 与真机验收值一致、git 上从未被改；
+  ③ 天空 quad 参数与旧场景完全一致（`scale=(22,33,1)`、`pos=(0,5,300)`、`active=1`）；
+  ④ 材质 `_MainTex` 引用**未断裂**（能解析到 ValleySkybox_v2.png）；
+  ⑤ `7198b85`（2026-10-17）把 `cover.y` 改成常量 `1` —— 该改动只在屏幕比例 > 0.667（平板/横屏）时才有差异，手机竖屏 0.45 下与旧值**完全等价** → 不是它。
+  **待查**：a) SpriteRenderer 的 sprite 与材质 `_MainTex` 是两张图、两个比例，shader 到底采样哪一个；
+  b) 贴图导入为 Sprite + Uncompressed + 无 mipmap 时，GLES3 上的采样/压缩行为与编辑器（D3D11）不同；
+  c) shader 手动 `o.uv.y=1-o.uv.y` 在 GLES3 上方向相反（`memory/android-build-state.md` 2026-10-15 记过同一线索，当时以「真机已验收通过」结案）。
+  **下一步需要**：一张打包版落地页截图（或描述是「缺失 / 上下颠倒 / 拉伸变形 / 位置错位」中的哪一种）→ 可直接判定是 a/b/c 哪一类。
+
 ---
 
 ## 待实现需求

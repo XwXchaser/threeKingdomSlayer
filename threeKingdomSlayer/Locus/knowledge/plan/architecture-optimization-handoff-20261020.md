@@ -4,7 +4,7 @@ injectMode: inherit
 injectAgents:
 - '*'
 aiEditMode: inherit
-summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落地页/界面职责定稿、Hub 状态事件化、Locus.Data 程序集、门面成员调用清零、Enemy 拆描边与冰系视觉、StageController 按角色拆类、ColumnManager 六刀拆完（2149→662 行）、Legacy 隔离；含量化现状、脚本已自动验过的清单、**当前可验收清单（面向人眼/手操）**、明确未覆盖项与后续选项。
+summary: 架构改造交接（2026-10-21 收官）：批次 2（ColumnManager 六刀）与批次 3（Enemy 拆 4 个真类 + 5 个 partial 分片，5224→933 行）全部完成并逐刀验证；含可玩包现状（298.9MB APK）、开局默认带喷冰、性能实测无热点，以及**收尾交接 §15**（仓库状态、未完成项排序、验证基线、9 条工作纪律）。
 ---
 
 # 架构改造交接（2026-10-21 更新）
@@ -83,7 +83,7 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 
 | 指标 | 改造前 | 现在 |
 |---|---|---|
-| `Enemy.cs` | 5224 行 | **933 行**（主文件：字段/生命周期/初始化/转发）；另拆出 5 个 partial 分片：状态机 1495 / 战斗结算 828 / 表现层 413 / BOSS 推进 206 / 对象池 106；真类：`EnemyHitFeedback` / `EnemyBossPhases` / `EnemyMovement` / `EnemyPoise` |
+| `Enemy.cs` | 5224 行 | **933 行**（主文件：字段/生命周期/初始化/转发）；另拆出 5 个 partial 分片：状态机 1495 / 战斗结算 828 / 表现层 431 / BOSS 推进 206 / 对象池 106；真类：`EnemyHitFeedback` / `EnemyMovement` / `EnemyBossPhases` / `EnemyPoise` |
 | `StageController.cs` | 852 行 | **708 行** |
 | `ColumnManager.cs` | 2149 行 | **662 行**（队列/查询/入场/补齐/位移五块全部拆出） |
 | 门面（`StageController`）成员调用 | 大量 | **0**（`StageController.Instance` 仅剩 30 处惰性解析点） |
@@ -301,6 +301,86 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 - 未采集 GC 分配与 Draw Call（指标名需用 `DiscoverMetrics` 拿到的
   `Draw Calls Count` / `GC.*` 再采一轮；本轮 `gc_allocated_in_frame` 名字不存在）。
 - 结论只说明「现在没必要为了性能重构」；若真机出现卡顿，应先在真机重采再动手。
+
+---
+
+## 15. 收尾交接（2026-10-21）
+
+> 本节是**给下一个对话的入口**。上文 §1–§14 是背景与手册，本节是「现在到哪了、接下来干什么」。
+
+### 15.1 仓库与工程状态
+
+| 项 | 值 |
+|---|---|
+| 分支 / 远程 | `feat/stage-select-talent-overlays`，已同步 |
+| HEAD | `5c34850`（`docs(memory): 补记 15:26 包`） |
+| 工作区 | 干净。**唯一例外**：用户自己的 `Assets/Resources/EnemyPrefabs/Enemy_1011.prefab`（`maxHealth 100→1000`，调试值，**未提交**，已刻意不夹带） |
+| Unity | 2022.3.62t7（Tuanjie）· BIRP · Legacy Input |
+
+### 15.2 本轮（2026-10-21）完成并已验证
+
+| 项 | 提交 | 验证手段与结果 |
+|---|---|---|
+| **批次 3 刀 A** 打击反馈 → `EnemyHitFeedback` | `2d56f6c` | 卡肉 0.074s、闪白 0.134s、缩放 22 帧、伤害 20、收尾归位 |
+| **批次 3 刀 B** BOSS 多阶段 → `EnemyBossPhases` | `a0091de` | 掉血到 70% → `phase=1`、`isSuperArmor` 套用、事件 1 次、Idle 调度触发 QTE |
+| **批次 3 刀 C** `Enemy` 主体 partial 分文件 | `4ee7406` | 方法集合逐名比对 **147=147 零丢失**；补齐基线逐位一致 |
+| **批次 3 刀 D** 移动订单 → `EnemyMovement` | `0a3a680` | 入场 +2 排→逻辑行 0/1/3/4/5；坐标 Z=(5-1-row)×(-2.5) 精确吻合；补齐基线一致 |
+| **批次 3 刀 E1** 韧性 → `EnemyPoise` | `91fa721` | 100→50→40→归零延迟眩晕重置；回归基线一致 |
+| 批次 3 收官（含 `TakeDamage` 不拆的结论） | `c8ec5e8` | — |
+| 性能实测：当前**无 CPU 热点** | `ad577f4` | main_thread avg 6.12ms / p95 6.65 / max 8.49（预算 16.67），超预算帧 0 |
+| QTE TODO-1 关闭（实测不复现） | `a920a9e` | 首次 `SelectBossAction()` 即 `PerformingQTEAttack` |
+| **BUG-002 根因修复**：正式关卡不再被教学关锁死 | `d4bc4b2` | 未通关状态下选关两个按钮均 `interactable=True` |
+| 蓄力长枪表现 3D 化 + 蓄力玩法重新开启 | `a45e57b` | 后拉 -0.52→-0.94 随进度递增、满蓄 scale 1.044 + 暖金 tint |
+| **开局默认带喷冰**（打包版也能用） | `bb9d26f` | 模拟首次启动：战斗开始后 `HasSkill(active_ice_mist)=True` lv1，`TryActivate` 成功冷却 12s |
+| 可玩包（两版） | `e554c06` / `5c34850` | 见 §15.4 |
+
+**`Enemy` 终态**：`Enemy.cs` 5224 → **933 行**；另 5 个 partial 分片（状态机 1495 / 战斗结算 828 / 表现层 431 / BOSS 推进 206 / 对象池 106）
++ 4 个真类（`EnemyHitFeedback` / `EnemyMovement` / `EnemyBossPhases` / `EnemyPoise`）。
+**改任一块最多读 1495 行**（原来 5224）—— 这是本轮减 token 成本的实得。
+
+### 15.3 未完成（按建议顺序）
+
+| 优先 | 项 | 状态与要点 |
+|---|---|---|
+| 1 | **BUG-004 打包版背景图显示不正确**（回归，真机+模拟器都有） | 已排除 5 项、留下 3 个嫌疑（sprite 与 `_MainTex` 不是同一张图 / 贴图 Sprite+Uncompressed+无 mipmap / shader 手动 `o.uv.y=1-o.uv.y` 在 GLES3 方向相反）。**需要一张打包版截图或一句现象描述**（缺失/颠倒/拉伸/错位）才能收敛 → 见 `plan/bugs-and-requests.md` BUG-004 |
+| 2 | **BUG-003 选关崩溃**（有节点记录后点选关 → 崩溃退出） | 用户明确“先记录别修”。可疑方向：选关点击后立即 `PrepareForEntry` 换路线，有记录时会走 `RestoreCheckpoint`/`ValidateChoiceHistory` 分支。定位需设备堆栈（`adb logcat -s Tuanjie`）→ `plan/bugs-and-requests.md` BUG-003 |
+| 3 | **包体优化** | 方案在 `plan/package-size-optimization.md`：只留 ARM64 **−70MB**（native 双架构占 140.5MB）、字体重建 **−33MB**、敌人贴图压缩 **−60~80MB**。当前包 **298.9MB**，微信小游戏有上限 → 做之前先确认目标渠道 |
+| 4 | **BUG-001 箱桶重挑战不重置** | 线索：存档 `FakeRouteStageSaveSnapshot.propStates` 专门存可破坏道具的破坏状态；重置需与「节点重进」路径一起处理 |
+| 5 | 主界面「加钱」调试按钮 | 用户提过但本轮“先放放”（未做）。做法：`SaveManager.AddCoins(1000)` + 落地页 `BattleHUD(Canvas)` 里加一个按钮 |
+| — | asmdef 继续分层 | 暂不可行：逻辑类（`LogicalRowQueue`/`WaveMarchScheduler`/…）依赖 `Enemy`/`Column` 等 MonoBehaviour，**拉出去就会反向依赖**；需先做接口化 |
+
+### 15.4 可玩包现状
+
+- 产物：`Build/Android/threeKingdomSlayer_full_20261021_1526.apk`（**298.9MB**，含默认喷冰）
+- `RESULT=Succeeded errors=0`，布局自检 ✅ 传统分文件（level*=4，无 `data.tj3d`），ABI `arm64-v8a`+`x86`，debug 签名（**不能上架**）
+- **本机无 AVD、无连接设备** → 设备冒烟未做（这是最大的验证缺口）
+- 重建方式（**别用 `BuildPipeline.BuildPlayer` 直调**，会内部异常失败）：
+  `EditorApplication.delayCall += () => AndroidBuildMenu.BuildAndroidTraditionalLayout();` → 构建期间 Editor 卡死 4–5 分钟，用 `bash` 轮询 `Build/Android/build-status.txt` 的 mtime
+
+### 15.5 验证基线（下一轮回归直接照抄）
+
+Play Mode 注入 `Stage_Trial` 第 1 波（`Resources.Load<StageConfig>("StageConfigs/Stage_Trial")` → 覆写 `WaveSpawner.stageConfig` → `StageController.SetCurrentNodeBattleConfig` → `StartRouteBattle`）：
+
+| 项 | 期望 |
+|---|---|
+| 入场初期 | 物理行 = 逻辑行 + 2，owner = SpawnEntry |
+| 入场完成 | `col1/r1 · col1/r3 · col2/r0 · col2/r4 · col3/r5` |
+| 整排清空（杀 r0） | `col1/r0 · col1/r2 · col2/r3 · col3/r4` |
+| 豁免 A/B（col1/r1 置 `ignoreFillUpOrders` 后杀 r0） | `col1/r1[豁免] · col1/r2 · col2/r3 · col3/r4` |
+| Console | 0 error / 0 warn |
+
+### 15.6 工作纪律（本轮踩过的坑，务必看）
+
+1. **工具回显可能是脏数据**：曾出现「commit/push 成功」的假回显，实际提交根本没发生（消息文件都没落盘）。
+   → **一切以 `git log` + `git rev-parse HEAD origin/...` 复核**，不信 commit/push 的回显文本。
+2. **`unity_execute` 回显被截断/改写**：用「把结果写文件 + `read` 回读」取证，别只依赖回显。
+3. **禁止 heredoc 写文件**（本环境会写坏）：提交信息用 `write` 工具写到 `Library/Locus/tmp/...`，再 `git commit -F <绝对路径>`。
+4. **一次 `edit` 只改一个文件**：把两个文件的替换塞进一个 `edit` 会必然失败（`filePath` 只能一个）。
+5. **不要用 `request_editor_status` 断言状态**：它状态翻转时报错并结束回合；只用幂等的 `unity_set_play_mode`。
+6. **不要直接 `edit` 贴图的 `.meta`**（Tuanjie GUID 加密，会触发重生成断引用）；导入设置一律走 `unity_execute` 的 `AssetImporter`/`SerializedObject`。
+7. **`.meta` 的 GUID 是 base64、资产内部引用是 hex** → `grep guid` 恒为 0；查引用只能用 `AssetDatabase.GUIDToAssetPath`。
+8. **`#region` 可能嵌套**（“伤害系统”⊃“冻结（冰系）”）：定位 region 跨度要用**栈式配对**，否则会漏搬并留下孤立 `#endregion`。
+9. **Play Mode 脚本里游戏时间比墙钟慢**（180 帧 ≈ 0.4s），且**攻击命中是延迟结算** → 等状态而不是等帧数。
 
 ---
 
