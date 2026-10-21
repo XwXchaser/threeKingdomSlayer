@@ -850,6 +850,56 @@ if (EnemyStatusRegistry.IsActive(enemy, "poison")) { /* 新机制：中毒的敌
 > 这些坑的共同点：**内容没丢 ≠ 结构没坏**。拆分类改动的验收必须同时看
 > 「内容多重集」和「结构可编译」，两者缺一不可。
 
+### 5.16 Enemy 侧：命中反应注册表 + 分片索引（2026-10-22）
+
+> 提交见下。本节两件事：给 Enemy 开一个「命中反应」扩展点，并给已经 40+ 文件的 Enemy 一族做索引。
+
+#### ① 命中反应注册表（扩展点）
+
+`Enemy.TakeDamage` 里**只有一个**元素钩子（<c>Enemy.Combat.cs</c>），
+而它写死冰系（静态类 <c>IceBreakRuntime</c>）——新增一种元素/反应（火 / 雷 / 破甲 / 处决）
+只能去改那个静态类。
+
+现在：
+
+| 扩展点 | 接口 | 注册入口 |
+|---|---|---|
+| 命中反应（元素反应等） | `IDamageReactionHandler` | `DamageReactionRegistry.Register(handler)`（带委托重载） |
+
+- 挂载点：`Enemy.TakeDamage` 的伤害结算前（一个点）、`AttackSystem` 攻击开始、`PlayerState` 攻击结束
+  （会话的起止，处理器可开自己的会话状态）。
+- 内置的冰系也改成一个已注册的处理器（`IceBreakReactionHandler`，包装原 `IceBreakRuntime`），
+  行为与改造前**完全一致**（它仍排第一、优先级不变）。
+- 所有处理器都会跑（各自可改 `ref damage`），返回 true 仅用于诊断。
+
+#### ② Enemy 一族分片索引（导航用）
+
+40+ 个文件后，「改某个机制要打开哪个文件」需要一张表：
+
+| 机制 | 文件 |
+|---|---|
+| 主体：字段 / 生命周期 / 薄转发 | `Enemy.cs` |
+| 共享类型（状态枚举、命中帧结构） | `Enemy.Types.cs` |
+| 初始化 / 波次缩放 | `Enemy.Init.cs` |
+| 伤害结算 | `Enemy.Combat.cs` |
+| 命中帧（动画帧 → 出伤） | `Enemy.HitFrame.cs` |
+| 冻结结算 | `Enemy.FreezeCombat.cs` |
+| 状态切换 | `Enemy.StateSwitch.cs` |
+| 形态特例（胆怯形态 / 骑兵控制） | `Enemy.FormSwitch.cs` |
+| QTE 攻击 | `Enemy.QTEAttack.cs` |
+| 状态更新 | `Enemy.StateUpdate.cs` |
+| 移动 | `Enemy.Movement.cs` |
+| 出招 | `Enemy.Attack.cs` |
+| 视觉 / 透明度 / 排位 | `Enemy.Visuals.cs` |
+| BOSS 推进 | `Enemy.Boss.cs` |
+| 对象池回收 | `Enemy.Pool.cs` |
+| 机制真类 | `EnemyFreeze` / `EnemyFreezeVisual` / `EnemyHitFeedback` / `EnemyPoise` / `EnemyOutline` / `EnemyMovement` / `EnemyBossPhases` / `ShieldGuardEnemy` / `SharedHealthGroup` |
+| 扩展点 | `EnemyStatusRegistry`（状态查询）/ `DamageReactionRegistry` + `IDamageReactionHandler`（命中反应） |
+| 骑兵 | `CavalryEnemy` + `.Charge` / `.Move` / `.Events` + `CavalryVisualController` / `CavalryDeathSequence` / `MountEscapeVisual` |
+| 周边 | `EnemyPool` / `EnemyAttackTelegraph` / `EnemyProjectile` / `EnemyGroundAligner` / `EnemySpriteController` / `AttackHitFrameResolver` / `BossPhaseData` |
+
+（空壳 `Enemy.State.cs` 已删除——内容早已搬到 `Enemy.StateSwitch` / `Enemy.StateUpdate`。）
+
 ---
 
 ## 6. 明确不做

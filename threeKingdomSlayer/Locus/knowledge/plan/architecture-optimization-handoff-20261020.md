@@ -116,6 +116,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | `d39ddc8` | **战斗侧两把扩展点**：招式执行器注册表（`AttackSystem` 的 switch → 注册表，新招式 = 注册一个执行器）+ 敌人状态统一查询（`EnemyStatusRegistry`，内置灼烧/疾病/冻结） |
 | `（计划）` | **大文件拆分批次 3**：把剩下的 8 个 ≥700 行文件拆到 ≤600 行（Enemy.cs 934 / DisplacementMover 895 / StageProgressBar 865 / CavalryEnemy 831 / Enemy.Combat 829 / Enemy.StateSwitch 769 / Enemy.StateUpdate 739 / CombatDataTableWindow 737），详见 §5.14 |
 | `aada544` | **大文件拆分批次 3 实施**：8 个文件拆成 25 个（最大降到 696），全工程**不再有 ≥700 行文件**；只搬不改（含位移三原则） |
+| `d82447d` | **Enemy 侧命中反应注册表**：`IDamageReactionHandler` + `DamageReactionRegistry`（元素反应等新机制只需注册一个处理器）；内置冰系改走注册表但优先级与行为不变；删除空壳 `Enemy.State.cs` |
 
 > 详见 `design/architecture-decoupling-analysis.md` §5.7 / §5.8 / §5.9。拆分前机械校验：**内容丢失 = 0**。
 
@@ -357,7 +358,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 项 | 值 |
 |---|---|
 | 分支 / 远程 | `feat/stage-select-talent-overlays`，已同步 |
-| HEAD | `aada544`（`refactor: 大文件拆分批次 3——8 个 ≥700 行文件拆到 ≤700（最大 696）`） |
+| HEAD | `d82447d`（`feat(enemy): 命中反应注册表（元素反应扩展点）+ 删除空壳 Enemy.State.cs`） |
 | 工作区 | 干净。**唯一例外**：用户自己的 `Assets/Resources/EnemyPrefabs/Enemy_1011.prefab`（`maxHealth 100→200`，调试值，**未提交**，已刻意不夹带） |
 | Unity | 2022.3.62t7（Tuanjie）· BIRP · Legacy Input |
 
@@ -390,6 +391,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | **分支出口解耦** | `91915da` | 出口呈现与可选性两把扩展点（均带委托重载）；`RouteChoiceOption` 下沉 `Locus.Data` + 加 locked/lockedReason；**出口选项快照逐字一致**（2 路线 × 6 出口 id+文案 diff 零差异）；扩展点实测：自定义格式化器接管文案、自定义判定器锁定并带原因；**§15.5 基线逐位一致**；Console 0/0 |
 | **战斗侧两把扩展点** | `d39ddc8` | 招式执行器注册表（`AttackSystem` 的 switch → 注册表 + `AttackExecutionContext`）；敌人状态统一查询（`EnemyStatusRegistry`，内置灼烧/疾病/冻结，两个血条 UI 改经注册表取状态，视觉不变）；验证：六个内置招式均已注册、Stab 掉血 20、覆盖语义生效、注册表与直接查询逐字一致、**§15.5 基线逐位一致**；Console 0/0 |
 | **大文件拆分批次 3** | `aada544` | 8 个 ≥700 行文件拆成 25 个（最大降到 696，全工程无 ≥700 行文件）；只搬不改（`DisplacementMover` 位移三原则原样保留）；验证：**§15.5 基线逐位一致**、Stab 掉血 20、推波后两名敌人整体后移一排互不重叠；Console 0/0 |
+| **Enemy 侧命中反应注册表** | `d82447d` | `IDamageReactionHandler` + `DamageReactionRegistry`（带委托版）；内置冰系改走注册表（优先级/行为不变）；接线三处（`Enemy.TakeDamage` 钩子 / 攻击开始 / 攻击结束）；验证：自定义处理器命中时被调用 1 次、Stab 掉血 20、**§15.5 基线逐位一致**；Console 0/0 |
 
 **`Enemy` 终态**：`Enemy.cs` 5224 → **933 行**；另 5 个 partial 分片（状态机 1495 / 战斗结算 828 / 表现层 431 / BOSS 推进 206 / 对象池 106）
 + 4 个真类（`EnemyHitFeedback` / `EnemyMovement` / `EnemyBossPhases` / `EnemyPoise`）。
