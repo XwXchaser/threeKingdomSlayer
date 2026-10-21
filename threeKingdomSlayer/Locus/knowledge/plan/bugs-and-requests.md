@@ -53,7 +53,31 @@ aiEditMode: inherit
 
 ## 待处理 BUG
 
-暂无登记条目。
+### BUG-001 可破坏道具（箱桶）在重挑战后不重置
+
+- 日期：2026-10-21
+- 类型：BUG / 逻辑
+- 现象：箱桶一类可破坏道具被打破后，**重新挑战同一关卡**时箱桶仍然是破的状态（没有重建），一直保留在场景里。
+- 复现：进入关卡 → 打碎一个箱/桶 → 退出（或战败重来 / 从选关重新进入同一关）→ 再次进入该关卡 → 箱桶仍是碎的。
+- 期望：关卡重开时，可破坏道具应回到初始状态（未破坏），与其它场景物件的重建逻辑一致。
+- 涉及：`Assets/Scripts/Prop/`（`BreakableProp` 与其生成/重置逻辑）、`Assets/Scripts/Core/ColumnManager.cs`（`ClearAllColumns` / 关卡重置入口）、关卡节点的重新进入路径（`Assets/Scripts/RouteFake/FakeRouteRuntime.cs`、`Assets/Scripts/Managers/StageController.cs`）。
+- 优先级：中（观感与可玩性；不阻塞流程，但会让重复挑战的关卡“越打越空”）
+- 状态：待处理（用户 2026-10-21 反馈，指示“先放放”，本轮不修）
+- 备注：需先确认道具状态是「场景对象残留」还是「存档里存了破坏状态」——本轮存档里已见到 `FakeRouteStageSaveSnapshot.nodeStates`（含 `completedEntryIndices`）与 `RouteNodeBattleSaveState`，两者都可能是来源；重置时应与「节点重进」路径一起处理。
+
+### BUG-002 落地页「开始关卡」从存档检查点起步，正式关卡在选关里被锁死
+
+- 日期：2026-10-21
+- 类型：BUG / 流程（设计待定）
+- 现象（两个现象同源）：
+  1. 落地页点「开始关卡」进入的是**教学关的后段节点**（实测存档 `tutorial_route` 的 checkpoint = `E0`），而不是该关卡的起点 `N1`——因为 `FakeRouteRuntime.ResolveStartNode()` 在落地页入口会去恢复存档检查点。
+  2. 选关界面里**正式关卡（长坂坡·卷轴节点预览，stageId=1）被锁住**：解锁规则是“按列表顺序，已通关 N 条则前 N+1 条可选”，而教学关未通关 → 正式关永远不可选。玩家打不过教学关就**无法进入正式关卡**（死锁）。
+- 复现：新存档（或教学关未通关的存档）→ 落地页 → 选关 → 正式关显示「[未解锁]」不可点；点「开始关卡」则从教学关的检查点节点（E0）继续。
+- 期望：正式关卡应当有可达路径（要么教学关可完成、要么允许直接选正式关、要么提供调试直选）。
+- 涉及：`Assets/Scripts/RouteFake/FakeRouteRuntime.cs`（`ResolveStartNode` / `IsHubEntry`）、`Assets/Scripts/UI/StageSelectUI.cs`（`ResolveUnlock` / `CreateRouteButton`）、`Assets/Scripts/Core/SaveManager.cs`（`MarkStageCleared` / `GetFakeRouteSnapshot` / `ClearFakeRouteSnapshot`）、`Assets/Scripts/Core/StageConfigManager.cs`（`GetSelectableRoutes`）。
+- 优先级：高（阻塞正式关卡的验收与试玩）
+- 状态：待处理（2026-10-21 已用存档手段临时绕开：把教学关标记为已通关 + 当前关卡切到正式关；**未改代码**。绕开方式与回退步骤见备注）
+- 备注：临时绕开做法（仅本机 Editor 存档）：`SaveManager.MarkStageCleared(9100)` + `SaveManager.SetActiveFakeRouteStage(1)`；回退 = 把 `clearedStageIds` 里的 9100 移除 + `SetActiveFakeRouteStage(9100)`。待产品决策：选关解锁规则是否改为“正式关卡默认可选、教学关只作为引导”。
 
 ---
 
