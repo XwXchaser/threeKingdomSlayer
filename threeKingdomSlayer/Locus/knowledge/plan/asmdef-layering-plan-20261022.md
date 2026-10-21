@@ -69,12 +69,13 @@ aiEditMode: inherit
 
 | 批次 | 内容 | 状态 |
 |---|---|---|
-| **1** | `Locus.Data` 扩容（纯数据类型下沉）+ `Locus.Services` 诞生（`DebugLog` / `AudioManager`） | ✅ 本轮完成 |
-| 2 | `Locus.Services` 补全：`SaveManager`（需先把 `FakeRouteStageSaveSnapshot` 与 `PropSaveEntry` 下沉到 L0）、`InputManager` 拆成「读输入」与「选目标」 | 待办 |
-| 3 | **内核接口化**：把第 3 节的硬引用逐条改成接口 / 事件（每条一个接口 + 装配处注入） | 待办 |
-| 4 | `Locus.Combat` 成立（Enemy / Core / Attack / Wave / QTE / Effect / Status / 战斗侧 Player） | 待办 |
-| 5 | `Locus.Flow`（流程 + 路线）与 `Locus.UI`（界面）分离 | 待办 |
-| 6 | `Locus.Editor` 独立成程序集（当前靠 `Editor` 特殊文件夹） | 待办 |
+| **1** | `Locus.Data` 扩容（纯数据类型下沉）+ `Locus.Services` 诞生（`DebugLog` / `AudioManager`） | ✅ 完成 |
+| **2** | `Locus.Services` 补全：`SaveManager`（含存档数据模型下沉到 L0）+ `BreakableProp.PropSaveEntry` 提成顶层类型 | ✅ 完成 |
+| 3 | `Locus.Services` 补全剩下的 `InputManager`：它带**序列化的玩法工具引用**（`AttackSystem` / `WhirlwindController` / `PlayerMoveStateMachine`）+ 自己的「落雷」技能逻辑 → 要先进能层（工具引用改成接口 / 定位器，落雷逻辑搬到技能层） | 待办 |
+| 4 | **内核接口化**：把第 3 节的硬引用逐条改成接口 / 事件（每条一个接口 + 装配处注入） | 待办 |
+| 5 | `Locus.Combat` 成立（Enemy / Core / Attack / Wave / QTE / Effect / Status / 战斗侧 Player） | 待办 |
+| 6 | `Locus.Flow`（流程 + 路线）与 `Locus.UI`（界面）分离 | 待办 |
+| 7 | `Locus.Editor` 独立成程序集（当前靠 `Editor` 特殊文件夹） | 待办 |
 
 ### 批次 1 做了什么
 
@@ -86,6 +87,22 @@ aiEditMode: inherit
 
 **实测效果**（重跑依赖工具）：`Core → Enemy` 22→18 文件、`Enemy → Core` 11→10、
 `Enemy/Core → Services` 新增一条**朝下**的边、`Core/Enemy → Data` 明显变多（数据真的下沉了）。
+
+### 批次 2 做了什么（`SaveManager` 进服务层）
+
+- 存档**数据模型**下沉到 L0：`SaveData` / `RouteStageSaveSnapshot` / `RouteNodeBattleSaveState` /
+  `RouteUpgradeSaveState`（从 `Core/SaveManager.cs` 拆出 → `Data/SaveData.cs`）；
+  `FakeRouteStageSaveSnapshot` 等 5 个快照类型（`RouteFake/` → `Data/`）。
+- `BreakableProp.PropSaveEntry`（嵌套在 MonoBehaviour 里的结构体）**提成顶层类型** → `Data/PropSaveEntry.cs`
+  —— 存档条目要塞进快照，嵌套类型就下不去；序列化字段名不变 → **旧存档照读** ✓。
+- `Core/SaveManager.cs` → `Services/SaveManager.cs`（服务只管「读 / 写 / 迁移」）。
+
+**实测结果**（重跑依赖工具）：**`Locus.Services` 的出边只有 `Locus.Data`** ✓，
+**`Locus.Data` 出边为空** ✓ —— 两层边界现在是**编译器保证**的，不再是口头约定。
+
+**验证**（Play Mode）：存档往返（`ToJson` → `FromJson`）字段逐项一致（天赋 3 / 假路线快照 2 / 道具 1 / 铜钱 2630）✓；
+快照里的 `propStates` 正确读出（`N1_Prop_Crate_01 destroyed=True coins=100`）✓；旧档 `coinCount` 迁移正常 ✓；
+§15.5 基线逐位一致 ✓；Console 0/0 ✓。
 
 ## 5. 每批验收口径
 
