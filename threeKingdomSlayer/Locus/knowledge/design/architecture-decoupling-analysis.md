@@ -923,6 +923,27 @@ if (EnemyStatusRegistry.IsActive(enemy, "poison")) { /* 新机制：中毒的敌
 写一个实现 `IEnemyStatusInstance` 的类 → 登记到 `Enemy.StatusHost` → 敌人统一 tick →
 统一从 `EnemyStatusRegistry` 问。
 
+#### ④ 状态框架宿主无关化 + 玩家侧状态先行迁移（2026-10-22，批次 A）
+
+上一节的状态框架还是「敌人的专用容器」（`EnemyStatusHost`）。按「状态类独立、宿主无关」的结论，
+框架改成通用容器，并**先迁玩家侧**：
+
+| 新增（`Assets/Scripts/Status/`） | 作用 |
+|---|---|
+| `IStatusEffect` | 通用状态接口（状态本体独立类，**不绑定宿主类型**） |
+| `StatusContainer` | 通用容器（谁持有谁挂一个，统一驱动 tick 与查询） |
+| `ReflectShieldStatus` | 玩家的反伤护盾（从 `UpgradeEffectManager` 迁出） |
+| `IceChargeStatus` | 玩家的破冰预备（从静态类 `PlayerElementalBuffs` 的字段迁出） |
+
+- `Enemy.StatusHost` 与 `PlayerState.StatusHost` 现在是**同一个类型** ✅ ——「状态是什么」与「状态挂在谁身上」彻底分开 ✅。
+- 玩家的反伤护盾原本寄居在局内 Build 层（升级效果管理器）里、由玩家在用 ✅ → 归属错位 ✅ → 现在是玩家容器上的一个状态 ✅。
+- 破冰预备原本是一份游离的静态字段 ✅ → 现在是玩家容器上的一个状态 ✅；`PlayerElementalBuffs` 退为门面 ✅
+  （HUD 订阅 `OnChanged`、主动技能 `GrantIce`、破冰会话 `TryConsumeIce` 的调用面不变 ✅）。
+
+**验证**：护盾授予 50 → 吸收 20 → 反伤 30、剩余盾 30 → 吃满 → 0 且消耗事件触发 1 次 → CD 读数 (0.00, 3.00)；
+破冰预备给予/单列重击消费=true/多列重击消费=false（作用域不匹配）/AnyHeavy 下多列消费=true；
+敌人冻结后宿主实例数=1、统一查询 frozen active=true；Stab 掉血 20；**§15.5 基线逐位一致**；Console 0/0。
+
 ---
 
 ## 6. 明确不做

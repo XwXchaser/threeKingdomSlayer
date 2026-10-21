@@ -118,6 +118,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | `aada544` | **大文件拆分批次 3 实施**：8 个文件拆成 25 个（最大降到 696），全工程**不再有 ≥700 行文件**；只搬不改（含位移三原则） |
 | `d82447d` | **Enemy 侧命中反应注册表**：`IDamageReactionHandler` + `DamageReactionRegistry`（元素反应等新机制只需注册一个处理器）；内置冰系改走注册表但优先级与行为不变；删除空壳 `Enemy.State.cs` |
 | `daf2b6f` | **状态效果统一落地**：`IEnemyStatusInstance` + `EnemyStatusHost`（每个敌人一个宿主，敌人统一 tick）；`EnemyFreeze` 改为实例并登记；`EnemyStatusRegistry` 查询分宿主式/管理器式两条路但对调用方同一套 API |
+| `dad8591` | **状态框架宿主无关化（批次 A）**：`IStatusEffect` + `StatusContainer`（通用容器，敌人与玩家共用）；玩家侧两个状态先行迁移（反伤护盾、破冰预备），各自的旧调用面保留薄转发 |
 
 > 详见 `design/architecture-decoupling-analysis.md` §5.7 / §5.8 / §5.9。拆分前机械校验：**内容丢失 = 0**。
 
@@ -359,7 +360,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 项 | 值 |
 |---|---|
 | 分支 / 远程 | `feat/stage-select-talent-overlays`，已同步 |
-| HEAD | `daf2b6f`（`feat(enemy): 统一状态效果落地方式——每个敌人一个状态宿主（IEnemyStatusInstance）`） |
+| HEAD | `dad8591`（`feat(status): 状态框架宿主无关化 + 玩家侧状态先行迁移（批次 A）`） |
 | 工作区 | 干净。**唯一例外**：用户自己的 `Assets/Resources/EnemyPrefabs/Enemy_1011.prefab`（`maxHealth 100→200`，调试值，**未提交**，已刻意不夹带） |
 | Unity | 2022.3.62t7（Tuanjie）· BIRP · Legacy Input |
 
@@ -394,6 +395,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | **大文件拆分批次 3** | `aada544` | 8 个 ≥700 行文件拆成 25 个（最大降到 696，全工程无 ≥700 行文件）；只搬不改（`DisplacementMover` 位移三原则原样保留）；验证：**§15.5 基线逐位一致**、Stab 掉血 20、推波后两名敌人整体后移一排互不重叠；Console 0/0 |
 | **Enemy 侧命中反应注册表** | `d82447d` | `IDamageReactionHandler` + `DamageReactionRegistry`（带委托版）；内置冰系改走注册表（优先级/行为不变）；接线三处（`Enemy.TakeDamage` 钩子 / 攻击开始 / 攻击结束）；验证：自定义处理器命中时被调用 1 次、Stab 掉血 20、**§15.5 基线逐位一致**；Console 0/0 |
 | **状态效果统一落地** | `daf2b6f` | `IEnemyStatusInstance`（实例自持状态）+ `EnemyStatusHost`（每敌一人，统一 tick）+ `IEnemyStatusProvider`（外部状态查询）；`EnemyFreeze` 改为实例并登记，冻结的两项每帧逻辑改由宿主驱动、状态机相关的两项不动；`EnemyStatusRegistry` 查询两条来源同一套 API；验证：冻结后宿主实例数=1、查询 frozen active/priority=30 与改造前一致、灼烧经同一套查询 active/progress=1.000、活动状态列表合并、**§15.5 基线逐位一致**；Console 0/0 |
+| **状态框架宿主无关化（批次 A）** | `dad8591` | 新增 `Assets/Scripts/Status/`：`IStatusEffect`（状态本体独立类）+ `StatusContainer`（宿主无关的统一容器）；`Enemy.StatusHost` 与 `PlayerState.StatusHost` 同一类型；玩家侧先行迁移：反伤护盾（从 Build 层迁出）、破冰预备（从静态字段迁出），旧调用面保留薄转发；验证：护盾授予/吸收/反伤/清空/事件/CD 全对、破冰预备作用域判定全对、冻结宿主与查询正常、Stab 掉血 20、**§15.5 基线逐位一致**；Console 0/0 |
 
 **`Enemy` 终态**：`Enemy.cs` 5224 → **933 行**；另 5 个 partial 分片（状态机 1495 / 战斗结算 828 / 表现层 431 / BOSS 推进 206 / 对象池 106）
 + 4 个真类（`EnemyHitFeedback` / `EnemyMovement` / `EnemyBossPhases` / `EnemyPoise`）。
