@@ -194,7 +194,19 @@ Locus.Editor   工具窗口 / 导入器                 ──► 全部
 
 `StageController` 的 50 个 public 成员按这四类拆成接口：`IRunFlow` / `ICombatStaging` / `IRewardGate` / `ISceneHost`。
 
-> **手法**：先"只加接口、实现仍由 `StageController` 承担、行为一行不改"，让调用方逐步改成依赖接口。这一步零行为风险，但立刻让"谁在依赖什么"变成可读信息。
+**落地图（2026-10-22，批次 1 尾项完成）**：
+
+| 角色 | 接口 | 消费者 |
+|---|---|---|
+| 一局流程 | `IRunFlow` | `BattleHUD` / `PauseMenuUI` / `TutorialStageDirector` |
+| 一场战斗的布场与开打 | `ICombatStaging` | 路线层（经 `IRouteStageHost`） |
+| 奖励门控与结算 | `IRewardGate` | 路线层（经 `IRouteStageHost`） |
+| 阵型只读 | `IStageFormation` | 12 个（战斗侧） |
+| 战斗状态只读 + 事件 | `IStageBattleState` | 13 个（战斗侧 / UI） |
+| 路线层合成端口 | `IRouteStageHost : IRunFlow, ICombatStaging, IRewardGate` | `FakeRouteRuntime` / Legacy `RouteStageRuntimeV2` |
+
+> 手法：先"只加接口、实现仍由 `StageController` 承担、行为一行不改"，让调用方逐步改成依赖接口。这一步零行为风险，但立刻让"谁在依赖什么"变成可读信息。
+> 已退役两个重叠的旧端口：`IStageFlowControl`（并入 `IRunFlow`）与 `IRouteBattleHost`（拆成上面三个窄角色，合成端口只做拼装）。
 
 ### 4.3 事件化：先把 Hub 的三处轮询合成一个状态源
 
@@ -360,7 +372,7 @@ string GameplayInputGate.Describe();             // 谁在拦、因为什么拦
 | `ColumnManager` 拆分（批次 2）：刀 1 `LogicalRowQueue` / 刀 2 `ColumnQueries` / 刀 3 `SpawnEntryMover` / 刀 4 `WaveMarchScheduler` / 刀 5 `DisplacementMover` / 刀 6 退役 `FillUpRule` | ✅ **批次 2 全部完成**（ColumnManager 2149 → **662 行**，−1487）：门面只剩列/骑兵槽位与薄转发；做法与验收见 `plan/columnmanager-split-plan-20261020.md` §0.8/§0.9 |
 | 遗留路线实现收进 `Assets/Scripts/Legacy/`，Battle 场景去掉 V2 竞争驱动 | ✅ `55c216a` |
 | Legacy 彻底隔离（现役代码不再引用遗留类型）+ 说明文档 | ✅ `a38ee66` |
-| 剩余角色接口（`IRunFlow` / `ICombatStaging` / `IRewardGate`） | ⬜（唯一剩下的批次 1 尾项） |
+| 剩余角色接口（`IRunFlow` / `ICombatStaging` / `IRewardGate`） | ✅ **已完成**（2026-10-22，`ee8d5a9`）：三个窄角色 + `IRouteStageHost` 合成端口；`IStageFlowControl` / `IRouteBattleHost` 同步退役。见 §5.5 |
 | `IStageFormation`（阵型只读）+ `IStageFlowControl`（流程控制） | ✅ `Enemy` / `BattleHUD` 已迁移 |
 | `AttackSystem` 迁移到 `IStageFormation` | ✅ `a0dccc9`（32 处调用收敛为一处） |
 | 18 个消费者批量迁移（阵型 / 战斗状态 / 流程控制三角色） | ✅ `853d022`（门面引用 99 → 35 行） |
@@ -467,6 +479,43 @@ Play Mode 点开始关卡→`phase=Battle`→出怪 1、`ResolveAttackType` 映�
 | 同 owner 重复申请 | 不叠加 | ✅ `blockCount` 不变 |
 
 **唯一有意的行为差异**：教学门槛期间，路线层的"解锁"不再踩掉教学门槛的拦截（旧行为是 bug）。
+
+### 5.5 批次 1 尾项：三个角色接口补齐（2026-10-22）
+
+> 提交 `ee8d5a9`。至此 `design/architecture-decoupling-analysis.md` §5 的 0–3 批全部完成，
+> 批次 1 遗留的最后一个 ⬜（三个角色接口）已清。
+
+**为什么**：门面公开面此前散在 4 个接口里，其中 `IStageFlowControl`（战败/重来/返回）
+与 `IRouteBattleHost`（路线宿主）职责交叉，后者还是个"什么都能干"的宽端口。
+消费方拿到的不是"角色"，是"半个门面"。
+
+**落地**：
+
+| 角色 | 接口 | 消费者 |
+|---|---|---|
+| 一局流程 | `IRunFlow`（状态 / 开始 / 重开 / 退出 / 战败策略 / 路线配置 / 战败事件） | `BattleHUD` / `PauseMenuUI` / `TutorialStageDirector` |
+| 一场战斗的布场与开打 | `ICombatStaging`（节点配置 / 开打 / 停战斗 / 旅行 / 切场景） | 路线层 |
+| 奖励门控与结算 | `IRewardGate`（等奖励 / 节点完成 / 路线结算） | 路线层 |
+| 路线层合成端口 | `IRouteStageHost : IRunFlow, ICombatStaging, IRewardGate`（0 自己的成员，只做拼装） | `FakeRouteRuntime` / Legacy `RouteStageRuntimeV2` |
+
+**退役**：`IStageFlowControl`（能力并入 `IRunFlow`）、`IRouteBattleHost`（拆成三个窄角色）。
+
+**验证**：
+
+| 项 | 实测 |
+|---|---|
+| 编译 | 通过；Console 0 error / 0 warn |
+| 角色覆盖 | 门面 41 个公开成员中 **36 个**落在角色接口后面；未覆盖的 5 个是 Inspector 协作者字段（`waveSpawner`/`enemyManager`/`playerState`/`enemyPool`/`battleSceneName`），外部读取 0 处，**故意不暴露** |
+| 消费者解析 | `BattleHUD` / `PauseMenuUI` / 路线层拿到的都是**同一个** `StageController` 实例 |
+| 主流程 | 点「开始关卡」→ 节点战斗（8 敌）→ Stab 掉血 20（总血 150→130） |
+| 节点完成 | 清场 → `IRewardGate.IsRouteRewardWaiting=True`、`ICombatStaging.IsRouteCombatActive=False` |
+
+> 附注：`Battle.scene` 里 `FakeRouteRuntime.stageController` 一直是 `{fileID: 0}`（空），
+> 路线层一直靠 `StageController.Instance` 兜底解析宿主；本轮未改变这一事实（已核实）。
+
+**下一刀（asmdef 分层的前置）**：门面的公开面已 100% 落在角色接口后面，
+因此可以把三个角色的**实现**从 `StageController` 拆成 `StageRunFlow` / `StageCombatStaging` / `StageRewardGate`
+三个类（照 `StageFormation` / `StageRouteBattleHost` 的先例），消费者一行都不用改。
 
 ---
 
