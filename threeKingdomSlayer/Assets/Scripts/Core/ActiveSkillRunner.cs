@@ -277,11 +277,11 @@ public class ActiveSkillRunner : MonoBehaviour
 
     public bool ConsumeArmedDisease(Enemy enemy)
     {
-        if (_armedDiseaseDefinition == null || enemy == null || UpgradeEffectManager.Instance == null)
+        if (_armedDiseaseDefinition == null || enemy == null)
             return false;
 
         var config = _armedDiseaseDefinition.diseaseLevels[_armedDiseaseLevel - 1];
-        UpgradeEffectManager.Instance.ApplyDisease(enemy, config.totalDamage, config.durationSeconds, _armedDiseaseLayers, smartSpread: config.smartSpread);
+        EnemyStatusDisease.ApplyTo(enemy, config.totalDamage, config.durationSeconds, _armedDiseaseLayers, smartSpread: config.smartSpread);
         Debug.Log($"[ActiveSkillRunner] 染病附着: {enemy.DebugTag}, totalDamage={config.totalDamage}, duration={config.durationSeconds}s, layers={_armedDiseaseLayers}");
         _armedDiseaseDefinition = null;
         _armedDiseaseLevel = 0;

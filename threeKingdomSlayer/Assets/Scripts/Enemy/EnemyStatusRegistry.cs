@@ -9,11 +9,11 @@ using System.Collections.Generic;
 /// 于是「这个敌人是不是在燃烧」只能去问具体的那一个系统，问不到别的状态。
 ///
 /// 现在：所有状态都统一从 <see cref="EnemyStatusRegistry"/> 问——
-/// 放在敌人侧的状态（冻结 / 未来的中毒等）走**状态宿主**（<see cref="IStatusEffect"/>），
-/// 放在管理器侧的状态（灼烧 / 疾病）走**本接口**。
+/// 放在敌人身上的状态（冻结 / 灼烧 / 疾病）一律走**状态宿主**（<see cref="IStatusEffect"/>）。
 /// 新机制（例如「中毒的敌人受到额外伤害」）不需要知道状态具体存在哪。
 ///
-/// 约定：本接口只负责**查询与展示**（是否生效 / 进度 / 层数 / 优先级）；
+/// 本接口保留给**不在敌人身上的状态**（例如「全场燃烧」这种全局效果）作为扩展点：
+/// 只负责**查询与展示**（是否生效 / 进度 / 层数 / 优先级）；
 /// 状态的施加与结算仍由各自的所有者负责。
 /// </summary>
 public interface IEnemyStatusProvider
@@ -37,8 +37,8 @@ public interface IEnemyStatusProvider
 /// <summary>
 /// 敌人状态效果的**注册表**（静态，唯一入口）。
 ///
-/// 内置三个：灼烧（burn）、疾病（disease）、冻结（frozen）——
-/// 行为与改造前完全一致，只是改成统一查询。
+/// 内置状态：灼烧（burn）、疾病（disease）、冻结（frozen）——
+/// 三者都住在敌人的状态宿主上，查询只走宿主一路（批次 C 起不再需要外部提供者）。
 /// </summary>
 public static class EnemyStatusRegistry
 {
@@ -67,13 +67,11 @@ public static class EnemyStatusRegistry
     }
 
     private static readonly List<IEnemyStatusProvider> _effects = new List<IEnemyStatusProvider>();
-    private static bool _builtinsAdded;
 
     /// <summary>注册状态效果（扩展点）。同一 id 后注册者覆盖先注册者。</summary>
     public static void Register(IEnemyStatusProvider effect)
     {
         if (effect == null || string.IsNullOrEmpty(effect.StatusId)) return;
-        EnsureBuiltins();
         for (int i = 0; i < _effects.Count; i++)
         {
             if (_effects[i].StatusId == effect.StatusId) { _effects[i] = effect; return; }
@@ -89,10 +87,9 @@ public static class EnemyStatusRegistry
             if (_effects[i].StatusId == statusId) _effects.RemoveAt(i);
     }
 
-    /// <summary>查询某个状态（未注册 → 返回「未生效」）。</summary>
+    /// <summary>查询某个状态（未登记 → 返回「未生效」）。</summary>
     public static Snapshot GetStatus(Enemy enemy, string statusId)
     {
-        EnsureBuiltins();
         if (enemy == null || string.IsNullOrEmpty(statusId)) return Snapshot.Inactive;
 
         // ① 敌人身上的状态效果实例（宿主式：如冻结）——新状态走这条路。
@@ -129,9 +126,8 @@ public static class EnemyStatusRegistry
     /// <summary>该敌人当前生效的状态（按优先级从高到低）。</summary>
     public static List<ActiveStatus> GetActive(Enemy enemy)
     {
-        EnsureBuiltins();
+        if (enemy == null) return new List<ActiveStatus>();
         var result = new List<ActiveStatus>();
-        if (enemy == null) return result;
 
         // ① 敌人身上的状态效果实例（宿主式）
         var hosted = enemy.StatusHost.Instances;
@@ -164,55 +160,5 @@ public static class EnemyStatusRegistry
 
         result.Sort((a, b) => b.priority.CompareTo(a.priority));
         return result;
-    }
-
-    /// <summary>确保内置状态已注册（惰性：任何时候调用都可用）。</summary>
-    private static void EnsureBuiltins()
-    {
-        if (_builtinsAdded) return;
-        _builtinsAdded = true;
-        Register(new DotStatusEffect(Burn, isDot: false, priority: 10));
-        Register(new DotStatusEffect(Disease, isDot: true, priority: 20));
-        // 冻结走敌人侧的状态宿主（EnemyFreeze 登记在 Enemy.StatusHost），不需在这里重复登记。
-    }
-
-    /// <summary>灼烧 / 疾病：状态与进度在 <c>UpgradeEffectManager</c>（玩家侧持有）。</summary>
-    private sealed class DotStatusEffect : IEnemyStatusProvider
-    {
-        private readonly string _statusId;
-        private readonly bool _isDisease;
-        private readonly int _priority;
-
-        public DotStatusEffect(string statusId, bool isDot, int priority)
-        {
-            _statusId = statusId;
-            _isDisease = isDot;
-            _priority = priority;
-        }
-
-        public string StatusId => _statusId;
-
-        public bool IsActive(Enemy enemy)
-        {
-            if (enemy == null || UpgradeEffectManager.Instance == null) return false;
-            var status = UpgradeEffectManager.Instance.GetDotStatus(enemy);
-            return _isDisease ? status.isDiseased : status.isBurning;
-        }
-
-        public float GetProgress(Enemy enemy)
-        {
-            if (enemy == null || UpgradeEffectManager.Instance == null) return 0f;
-            var status = UpgradeEffectManager.Instance.GetDotStatus(enemy);
-            return _isDisease ? status.diseaseProgress : status.burnProgress;
-        }
-
-        public int GetStacks(Enemy enemy)
-        {
-            if (enemy == null || UpgradeEffectManager.Instance == null) return 0;
-            if (!_isDisease) return 0;
-            return UpgradeEffectManager.Instance.GetDotStatus(enemy).diseaseLayers;
-        }
-
-        public int GetPriority(Enemy enemy) => _priority;
     }
 }

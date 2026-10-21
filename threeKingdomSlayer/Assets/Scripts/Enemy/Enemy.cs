@@ -412,8 +412,23 @@ public GameObject freezeMeltEffectPrefab;
                 _statusHost = new StatusContainer();
                 _ = FreezeSys; // 冻结系统创建时自己登记到宿主
             }
+            EnsureResidentStatusRegistered();
             return _statusHost;
         }
+    }
+
+    /// <summary>
+    /// **常驻状态**（冻结）在状态宿主被清空后自动补登记。
+    ///
+    /// 敌人回池时整个状态宿主会被清空（施加型状态如灼烧 / 疾病不能跟着敌人复用），
+    /// 但冻结是常驻系统（不是被施加的状态），清掉后就再也查不到了——所以这里补登记。
+    /// </summary>
+    private void EnsureResidentStatusRegistered()
+    {
+        if (_statusHost == null) return;
+        if (_statusHost.Get(EnemyStatusRegistry.Frozen) != null) return;
+        if (_freezeSys == null) return; // 尚未创建：EnemyFreeze 构造时会自己登记
+        _statusHost.Add(_freezeSys);
     }
 
     /// <summary>冰系视觉层需要的上下文：敌人节点 + 渲染器 + 冻结表现配置。</summary>

@@ -66,7 +66,7 @@ public sealed class StageRouteBattleHost
     public void StartRouteBattle(StageConfig config)
     {
         if (config == null) return;
-        Debug.Log($"[RouteDiag] StartRouteBattle frame={Time.frameCount} nodeConfig={config.name} routeCombatBefore={IsRouteCombatActive} burnStates=" + (UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetBurnStateCountForDiagnostics().ToString() : "NULL"));
+        Debug.Log($"[RouteDiag] StartRouteBattle frame={Time.frameCount} nodeConfig={config.name} routeCombatBefore={IsRouteCombatActive} burnStates=" + EnemyStatusBurn.CountActive());
         RouteBattleRunning = true;
         RewardWaiting = false;
         _ctx.StageConfig = config;
@@ -83,7 +83,7 @@ public sealed class StageRouteBattleHost
     /// <summary>进入节点间旅行：停战斗、准备非战斗被动、隐藏尖刺、状态回 Starting。</summary>
     public void SetRouteTravelState()
     {
-        Debug.Log($"[RouteDiag] SetRouteTravelState frame={Time.frameCount} routeCombat={IsRouteCombatActive} burnStates=" + (UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetBurnStateCountForDiagnostics().ToString() : "NULL"));
+        Debug.Log($"[RouteDiag] SetRouteTravelState frame={Time.frameCount} routeCombat={IsRouteCombatActive} burnStates=" + EnemyStatusBurn.CountActive());
         RewardWaiting = false;
         StopCombatSystemsForNodeTransition();
         TimedPassiveModule.Instance?.PrepareForNonCombat();

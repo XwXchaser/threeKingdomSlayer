@@ -12,7 +12,8 @@ using UnityEngine;
 ///   • <see cref="Tick"/> 只放「每帧都要跑」的部分，依赖宿主状态机的部分由宿主自己调用；
 ///   • <see cref="Clear"/> 用于宿主回收 / 状态结束时清干净。
 ///
-/// 已有实现：<c>EnemyFreeze</c>（敌人的冻结）、<c>ReflectShieldStatus</c>（玩家的反伤护盾）、
+/// 已有实现：<c>EnemyFreeze</c>（敌人的冻结）、<c>EnemyStatusBurn</c> / <c>EnemyStatusDisease</c>
+/// （敌人的灼烧 / 疾病）、<c>ReflectShieldStatus</c>（玩家的反伤护盾）、
 /// <c>IceChargeStatus</c>（玩家的破冰预备）。
 /// </summary>
 public interface IStatusEffect

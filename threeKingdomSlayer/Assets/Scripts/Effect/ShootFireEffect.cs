@@ -266,12 +266,12 @@ public class ShootFireEffect : MonoBehaviour
 
             _lastSweepHitTimes[enemy] = Time.time;
             int finalDamage = _damage;
-            if (_critIfBurning && UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.IsBurning(enemy))
+            if (_critIfBurning && EnemyStatusBurn.IsBurning(enemy))
                 finalDamage *= 2;
             enemy.TakeDamage(finalDamage, _damageType,
                 feedbackSource: HitFeedbackSource.Passive, feedbackStrength: HitFeedbackStrength.Light);
-            if (_burnTotalDamage > 0 && UpgradeEffectManager.Instance != null)
-                UpgradeEffectManager.Instance.ApplyBurn(enemy, _burnTotalDamage, _burnDuration);
+            if (_burnTotalDamage > 0)
+                EnemyStatusBurn.ApplyTo(enemy, _burnTotalDamage, _burnDuration);
             onSweepHit?.Invoke(enemy);
         }
     }
@@ -381,12 +381,12 @@ public class ShootFireEffect : MonoBehaviour
 
             _hitEnemies.Add(enemy);
             int finalDamage = _damage;
-            if (_critIfBurning && UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.IsBurning(enemy))
+            if (_critIfBurning && EnemyStatusBurn.IsBurning(enemy))
                 finalDamage *= 2;
             enemy.TakeDamage(finalDamage, DamageType.Pierce,
                 feedbackSource: HitFeedbackSource.Passive, feedbackStrength: HitFeedbackStrength.Light);
-            if (_burnTotalDamage > 0 && UpgradeEffectManager.Instance != null)
-                UpgradeEffectManager.Instance.ApplyBurn(enemy, _burnTotalDamage, _burnDuration);
+            if (_burnTotalDamage > 0)
+                EnemyStatusBurn.ApplyTo(enemy, _burnTotalDamage, _burnDuration);
         }
     }
 

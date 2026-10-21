@@ -44,6 +44,10 @@ public partial class Enemy : MonoBehaviour
         ClearFreezeOnTeardown();
         StopHitScaleFeedback();
 
+        // 状态宿主：施加型状态（灼烧 / 疾病）不能跟着敌人进池复用，整体清空。
+        // 常驻状态（冻结）会在下次访问宿主时自动补登记。
+        _statusHost?.ClearAll();
+
         // 终止所有活跃的 DOTween 动画（完成当前值后跳转到最终值）
         transform.DOKill(true);
         transform.localScale = originalScale;

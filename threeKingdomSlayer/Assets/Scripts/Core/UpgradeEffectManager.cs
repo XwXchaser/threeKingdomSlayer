@@ -47,46 +47,11 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
     private int _chargeHitShockwaveHitCount;
     private float _activeSkillCDReduction;
 
-    // DoT系统：伤害配置均表示完整持续时间内的总伤害。
-    private const float BurnTickInterval = 1f;
-    private const float DiseaseTickInterval = 0.5f;
-
-    private readonly Dictionary<Enemy, DotState> _burnStates = new Dictionary<Enemy, DotState>();
-    private readonly Dictionary<Enemy, DiseaseState> _diseaseStates = new Dictionary<Enemy, DiseaseState>();
-    private readonly List<Enemy> _dotRemovalList = new List<Enemy>();
-    private readonly List<KeyValuePair<Enemy, DotState>> _burnUpdateBuffer = new List<KeyValuePair<Enemy, DotState>>();
-    private readonly List<KeyValuePair<Enemy, DiseaseState>> _diseaseUpdateBuffer = new List<KeyValuePair<Enemy, DiseaseState>>();
-    private readonly Dictionary<Enemy, DiseaseBubbleEffect> _diseaseVisuals = new Dictionary<Enemy, DiseaseBubbleEffect>();
-
-    private void StopDiseaseVisual(Enemy enemy)
-    {
-        if (enemy == null || !_diseaseVisuals.TryGetValue(enemy, out var visual))
-            return;
-        _diseaseVisuals.Remove(enemy);
-        if (visual != null)
-            visual.StopEmission();
-    }
-
-    private void EnsureDiseaseVisual(Enemy enemy)
-    {
-        if (enemy == null)
-            return;
-        if (_diseaseVisuals.TryGetValue(enemy, out var existing) && existing != null)
-        {
-            existing.StartEmission();
-            return;
-        }
-
-        var visualObject = new GameObject("DiseaseBubbleEffect");
-        visualObject.transform.SetParent(enemy.transform, false);
-        var visual = visualObject.AddComponent<DiseaseBubbleEffect>();
-        visual.StartEmission();
-        _diseaseVisuals[enemy] = visual;
-    }
-
-
     // 反伤盾（由 charge_reflect_shield 管理）
     // 反伤盾的状态已迁至玩家侧状态 ReflectShieldStatus（2026-10-22），本类只保留薄转发。
+
+    // DoT（灼烧 / 疾病）的状态已迁至敌人侧状态 EnemyStatusBurn / EnemyStatusDisease
+    // （2026-10-22，批次 C），本类不再持有任何 DoT 状态。
 
     // ── 已应用升级追踪 (upgradeId → level) ──
     private Dictionary<string, int> _appliedUpgrades = new Dictionary<string, int>();
@@ -185,14 +150,8 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
             Instance = null;
     }
 
-    private void Update()
-    {
-        if (PlayerState.Instance == null || PlayerState.Instance.stageState != StageState.InProgress) return;
-        // 反伤盾 CD 计时器：蓄力期间暂停，非蓄力且未就绪时跑
-        TickBurnDamage();
-
-        // 反伤盾的 CD 由玩家侧状态容器统一驱动（PlayerState.Update → StatusHost.Tick）。
-    }
+    // 反伤盾的 CD 由玩家侧状态容器统一驱动（PlayerState.Update → StatusHost.Tick）。
+    // DoT（灼烧 / 疾病）由敌人侧状态自己结算（批次 C）。
 
 
 
@@ -430,17 +389,7 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
         ResetReflectShieldState();
         Shield?.SetCharging(false);
 
-        _burnStates.Clear();
-        _dotRemovalList.Clear();
-        _burnUpdateBuffer.Clear();
-        _diseaseUpdateBuffer.Clear();
-        foreach (var enemy in _diseaseStates.Keys)
-        {
-            if (enemy != null)
-                enemy.OnDying -= HandleDiseasedEnemyDeath;
-        }
-        _diseaseStates.Clear();
-        _diseaseVisuals.Clear();
+        // DoT（灼烧 / 疾病）状态在敌人侧，回池时随敌人一起清掉，这里不需要处理。
 
         CycloneItemController.Instance?.ResetAll();
         SpikeTrapController.Instance?.ResetAll();
