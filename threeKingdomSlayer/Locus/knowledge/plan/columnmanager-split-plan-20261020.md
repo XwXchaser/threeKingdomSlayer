@@ -88,6 +88,41 @@ summary: ColumnManager 拆分实施方案（2026-10-20，写给后续接手的 A
 
 ---
 
+## 0.8 刀 4b（补齐流程搬迁）的失败记录与正确做法
+
+> 2026-10-20 尝试过一次，**未完成、已回退**（回到 `09416f2`，代码可编译、已验证）。
+> 回退原因不是想法错，而是「整段搬 region」这个做法有四个硬伤。下一位请看这里。
+
+### 四个硬伤（都是批量搬 + 批量替换引起的）
+
+1. **`#region 波次行军（规则1/2）` 里混着跨区段共用的方法**：
+   `ReleaseEnemyFromSchedulers` / `ReleaseEnemyFromMovementSchedulers` / `ClearEnemyProjectiles`
+   （内部用 `CancelInvoke`）/ `GetMaxOccupiedRow`（刀 4a 已搬走 → 搬整段会**重复定义**）。
+   整段搬走它们后，击退区段、`Update`、敌人死亡清理路径都引用不到 → 十几处编译错误。
+2. **委托签名必须逐字对齐原方法**：`GetCavalryReservationOwner` / `CancelPushReturn` 的真实签名
+   与直觉写法不同（写成 `Func<int,int,Enemy,Enemy>` / `Action<Enemy,int,string>` 直接编译不过）。
+   **搬之前先读原方法的签名。**
+3. **全局替换会误伤声明行**：把 `_waveMarchRequestedWhilePushReturn` 全文换成
+   `WaveMarch.waveMarchRequestedWhilePushReturn` 时，**字段声明行**也被换了 → 语法错误。
+   （与刀 4a 的「惰性属性 vs 同名字段」是同一类错误：**替换前先排除声明行**。）
+4. **按名字替换会误伤方法声明**：把 `TryResumePausedWaveAfterPushReturns(` 换成 `_resumeAfterPushReturns(`
+   时，**方法声明本身**也被改 → 与委托字段同名 → 「already contains a definition」。
+
+### 建议的正确做法（下一位照做）
+
+- **不要整段搬 region**。改成**逐方法搬**，一次 2–3 个，每搬一次就编译一次：
+  1. 先挑**纯内部**的流程方法：`StartPendingLogicalLayoutReflow` → `TryBuildLogicalWaveMarchPlan`
+     → `BeginWaveStep`（两个重载）→ `StartPreparedWaveStep` → `OnWaveEnemyRushComplete` → `CompleteWaveStep`
+     → `CapturePausedWaveStep` → `AbortWaveMarch`。
+  2. 每个方法搬完：把 ColumnManager 里的原方法换成**同名转发**（保持 public 签名不变 → 调用方零改动）。
+  3. 跨区段共用方法（`ReleaseEnemyFromSchedulers` / `ClearEnemyProjectiles` / 骑兵槽位查询 /
+     击退回位事务）**留在 ColumnManager**，调度器通过委托回调它们。
+- 委托清单（已经验证可用）：列数组、骑兵槽位判定、入场是否占用、击退回位事务数量、
+  骑兵预留占用者查询、取消击退回位、击退回位后恢复、清敌方投射物。
+- 每搬完一组，跑一遍验收脚本（§5.3 入场 / 补齐基线 / 豁免 A/B）+ 主流程冒烟 + Console 必须 0/0。
+
+---
+
 ## 1. 不可违反的规则（动手前先背下来）
 
 ### 1.1 不可变约束 8 条（`design/immutable-constraints.md` 全文）
