@@ -121,6 +121,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | `dad8591` | **状态框架宿主无关化（批次 A）**：`IStatusEffect` + `StatusContainer`（通用容器，敌人与玩家共用）；玩家侧两个状态先行迁移（反伤护盾、破冰预备），各自的旧调用面保留薄转发 |
 | `9604f5d` | **破冰拆分（批次 B）**：`IceBreakRuntime` → 玩家侧 `IceBreakSession`（会话/作用域/BUFF消费/同列顶开）+ 敌人侧 `EnemyFreeze.TryBreak`（解冻/翻倍/动画）；静态类已删除 |
 | `bf51831` | **DoT 迁入敌人侧（批次 C）**：灼烧 / 疾病从 `UpgradeEffectManager` 的字典迁成敌人自己的状态（`EnemyStatusBurn` / `EnemyStatusDisease` / `EnemyStatusDoTRules`）；`EnemyStatusRegistry` 只剩宿主一路查询；管理器瘦身约 300 行 |
+| `（asmdef）` | **分层第一批**：`Locus.Data` 扩容（纯数据类型下沉：`EnemyTypes` / `FreezePresentationConfig` / `PropData` / `ComboBuffConfig` / `BuffType` / `ElementalScope`）+ 新建 `Locus.Services`（`DebugLog` / `AudioManager`）；依赖实测工具入仓 `Tools/asmdef-survey/`；方案见 `plan/asmdef-layering-plan-20261022.md` |
 
 > 详见 `design/architecture-decoupling-analysis.md` §5.7 / §5.8 / §5.9。拆分前机械校验：**内容丢失 = 0**。
 
@@ -448,6 +449,14 @@ Play Mode 注入 `Stage_Trial` 第 1 波（`Resources.Load<StageConfig>("StageCo
 7. **`.meta` 的 GUID 是 base64、资产内部引用是 hex** → `grep guid` 恒为 0；查引用只能用 `AssetDatabase.GUIDToAssetPath`。
 8. **`#region` 可能嵌套**（“伤害系统”⊃“冻结（冰系）”）：定位 region 跨度要用**栈式配对**，否则会漏搬并留下孤立 `#endregion`。
 9. **Play Mode 脚本里游戏时间比墙钟慢**（180 帧 ≈ 0.4s），且**攻击命中是延迟结算** → 等状态而不是等帧数。
+10. **仓库根有一份旧布局的 `Assets/` 副本**（sparse-checkout 遗留，仓库根 = `H:/Project/threeKingdomSlayer`，
+    工程在 `threeKingdomSlayer/` 子目录）→ 提交里的路径是 `threeKingdomSlayer/...`。
+    **别用 `git update-index --cacheinfo`**（它的路径按仓库根解释，会把文件写到仓库根的旧 `Assets/` 里）；
+    要暂存就从工程目录用相对路径 `git add`。
+11. **落地页有一段阻塞对话会把 `Time.timeScale` 置 0** → Play Mode 回归前先 `BattleDialogueView.Skip()`，
+    等待循环里每帧兜底 `Time.timeScale = 1f`；否则会看到「敌人不动 / DoT 不掉血」的假故障。
+12. **Editor 的 Play Mode 帧率极低** → 死亡动画（DOTween 1.1s）要跑 1000+ 帧才回池；
+    测「回池清理」要轮询到 `activeInHierarchy == false`，别用固定帧数。
 
 ---
 
