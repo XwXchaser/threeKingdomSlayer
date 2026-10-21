@@ -230,7 +230,7 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 | D. `ColumnManager` 拆分 | 2149 → **662 行**；刀 1/2/3/4/5/6 **全部完成**（批次 2 收官） | 中高（已落地） | 承载「位移三原则」；做法与验收见 `plan/columnmanager-split-plan-20261020.md` §0.8/§0.9 |
 | E. 共享类型独立成程序集 | 为「Legacy 剔出包」铺路 | 中 | 需先给 `Enemy`/`PlayerState` 等定程序集边界；也是 B 的前置 |
 | F. 终态删 `FillUpRule` 枚举与字段 | ✅ 已完成（`86832d4`）：补齐规则只剩一种，AI 无从选错 | — | 已完成 |
-| G. `Enemy.cs` 继续拆 | ✅ 部分完成：真类拆出 `EnemyHitFeedback` / `EnemyBossPhases` / `EnemyMovement` / `EnemyPoise`；主体 4177 → **933 行**（另 5 个 partial 分片，最大 1495）。**剩余**：只建议拆「护盾结算」→ `EnemyShield`（见 §14 的契约分析），`TakeDamage` 主体保留 | 中 | 刀 A–E1 的做法见 §10–§14 |
+| G. `Enemy.cs` 继续拆 | ✅ **批次 3 已收官**：真类拆出 `EnemyHitFeedback` / `EnemyBossPhases` / `EnemyMovement` / `EnemyPoise`；主体 5224 → **933 行**（另 5 个 partial 分片，最大 1495）。`TakeDamage` 主体**实测后决定不拆**（见 §14） | — | 刀 A–E1 的做法见 §10–§14 |
 
 ---
 
@@ -348,13 +348,17 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 |---|---|---|---|
 | 1 | 前置门控（无敌 / 锁血 / 转阶段阈值 / QTE 挂起） | 高（与 BOSS 阶段互调） | **留 Enemy** |
 | 2 | 攻击打断裁决 | 高（与状态机互调） | **留 Enemy** |
-| 3 | **护盾结算**（`_shieldGuard.ProcessHit` → finalDamage / blocked / broke） | 低（`_shieldGuard` 是独立组件） | **可拆 `EnemyShield`** |
+| 3 | 护盾结算（`_shieldGuard.ProcessHit`） | 低（`_shieldGuard` 是独立组件） | **实测后不拆**（见下） |
 | 4 | 共享血量组转交（一句 `sharedHealthGroup.TakeDamage(...)`） | 低 | 留 Enemy（一行转发） |
 | 5 | 扣血 + 阈值钳制 + 死亡 | 高（与状态机/血条/Combo 纠缠） | **留 Enemy** |
 | 6 | 受击反馈与伤害数字 | 已拆 | 已在 `EnemyHitFeedback` |
 
-**结论**：刀 E2 = **只拆护盾结算**（约 30–60 行），`TakeDamage` 主体保留。
-把 5 整块硬搬会造出 20+ 委托的壳，与“减 token”的目标相反。
+**结论（实测后修正）**：`TakeDamage` **主体保留在 Enemy，不拆**。
+护盾那段虽然耦合低，但**只散落 ~15 行**（格挡弱化卡肉强度、格挡跳字颜色、格挡表现、破盾启动），
+拆成独立类要回传 4 个 in/out 参数（finalDamage / blocked / broke / 跳字颜色），
+净收益 < 30 行，与“减 token”的目标相反。
+**批次 3 到此收官**：`Enemy.cs` 5224 → **933 行**；最大文件 1495 行（状态机）。
+若以后仍想动 `TakeDamage`，建议方向不是“搬走”，而是**把伤害结算拆成可测的纯函数**（输入伤害与状态，输出伤害与事件），而不是拆类。
 
 ---
 
