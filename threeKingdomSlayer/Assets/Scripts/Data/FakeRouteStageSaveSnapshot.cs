@@ -26,7 +26,7 @@ public sealed class FakeRouteStageSaveSnapshot
     public List<RouteActiveSkillSaveState> activeSkills = new List<RouteActiveSkillSaveState>();
     public List<RouteItemSaveState> items = new List<RouteItemSaveState>();
     // 可破坏补给：已破坏状态 + 已获取内容（旧档缺失时为 null，按“全部未破坏”处理）
-    public List<BreakableProp.PropSaveEntry> propStates = new List<BreakableProp.PropSaveEntry>();
+    public List<PropSaveEntry> propStates = new List<PropSaveEntry>();
 }
 
 [Serializable]

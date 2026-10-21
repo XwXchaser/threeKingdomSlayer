@@ -75,7 +75,7 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
         if (routeConfig == null) return;
         var snapshot = SaveManager.GetFakeRouteSnapshot(routeConfig.routeId, routeConfig.stageId);
         if (snapshot == null) return;
-        snapshot.propStates = new List<BreakableProp.PropSaveEntry>(BreakableProp.ExportStates());
+        snapshot.propStates = new List<PropSaveEntry>(BreakableProp.ExportStates());
         SaveManager.SaveFakeRouteSnapshot(snapshot);
     }
 
