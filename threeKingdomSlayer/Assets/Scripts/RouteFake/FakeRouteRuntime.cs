@@ -17,7 +17,7 @@ public enum FakeRoutePhase
     Defeated
 }
 
-public sealed class FakeRouteRuntime : MonoBehaviour
+public sealed partial class FakeRouteRuntime : MonoBehaviour, IRouteNodeProgressView
 {
     [SerializeField] private FakeRouteStageConfig routeConfig;
     [SerializeField] private StageController stageController;
@@ -30,6 +30,13 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     [SerializeField] private RouteChoicePanel choicePanelPrefab;
 
     [SerializeField] private FakeRouteNodeConfig testStartNode;
+
+    // ── 节点完成策略注册表（扩展点）──
+    // 新增一种「节点怎么算完成 / 要不要收尾整关」= 写一个 IRouteNodeCompletionPolicy 并注册，
+    // 不用改本类；内置兼底保持改造前的固定规则。
+    private readonly List<IRouteNodeCompletionPolicy> _nodeCompletionPolicies = new List<IRouteNodeCompletionPolicy>();
+    // 字段初始化（不用 Awake）：任何时候拿到这个对象都有一份可用的兼底策略。
+    private IRouteNodeCompletionPolicy _defaultNodeCompletionPolicy = new DefaultRouteNodeCompletionPolicy();
 
     private readonly Dictionary<FakeRouteNodeConfig, HashSet<int>> _completedBattleEntries = new Dictionary<FakeRouteNodeConfig, HashSet<int>>();
     private readonly HashSet<FakeRouteNodeConfig> _visitedNodes = new HashSet<FakeRouteNodeConfig>();
@@ -194,369 +201,8 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         _flow = StartCoroutine(BeginRouteNextFrame());
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // 落地页（就绪态）两段式：PrepareForEntry → 玩家点「开始关卡」→ RunPrepared
-    // ══════════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// 【落地页】只准备、不跑流程：加载路线场景表现 + 把视觉定位到起始节点（含 checkpoint 恢复）。
-    /// 准备完成后 Phase = Ready；任何时刻调 <see cref="RunPrepared"/> 才真正开始跑节点流程。
-    /// 与 <see cref="Begin"/> 互斥：会顶掉正在跑的流程。
-    /// </summary>
-    public void PrepareForEntry(FakeRouteStageConfig config)
-    {
-        if (_flow != null) { StopCoroutine(_flow); _flow = null; }
-        routeConfig = config;
-        if (ResolveBattleHost() == null || routeConfig == null)
-        {
-            Debug.LogError("[FakeRoute] PrepareForEntry: 配置或StageController为空");
-            return;
-        }
-        // 让宿主也知道「当前路线」：结算（CompleteFakeRouteStage）、战败重来
-        // （RestartStageCoroutine）、重来按钮都靠这个字段判断「现在跑的是卷轴路线」。
-        // 落地页自举时它是 null（没有 MainMenu 传参），不补的话结算会直接被 early-return 掉：
-        // 没有 Victory 状态 / 没有通关铜钱 / 没有记录已通关。
-        ResolveBattleHost();
-        _battleHost.RouteConfig = routeConfig;
-        AcquireExclusiveDriving();
-        movementPresenter = presenterBehaviour as IRouteMotionPresenter;
 
-        string validationError;
-        if (!ValidateConfiguration(out validationError))
-        {
-            Debug.LogError("[FakeRoute] PrepareForEntry 配置校验失败: " + validationError);
-            SetPhase(FakeRoutePhase.None);
-            return;
-        }
-        if (movementPresenter == null || !movementPresenter.TryValidate(routeConfig, out validationError))
-        {
-            Debug.LogError("[FakeRoute] PrepareForEntry 表现层不可用: " + (movementPresenter == null ? "未绑定 IRouteMotionPresenter" : validationError));
-            SetPhase(FakeRoutePhase.None);
-            return;
-        }
-
-        ResolveBattleHost();
-        _battleHost.RouteBattleCompleted -= NotifyBattleCompleted;
-        _battleHost.RouteBattleCompleted += NotifyBattleCompleted;
-        _generation++;
-        _routeSettled = false;
-        _completedBattleEntries.Clear();
-        _visitedNodes.Clear();
-        _choiceHistory.Clear();
-        _restoredFromCheckpoint = false;
-        _restoredCheckpointNodeId = null;
-        _currentNode = null;
-        _battleActive = false;
-        _prepared = false;
-        _preparedStartNode = null;
-        SetPhase(FakeRoutePhase.Ready);
-        _flow = StartCoroutine(PrepareSceneOnly());
-    }
-
-    private IEnumerator PrepareSceneOnly()
-    {
-        yield return null;
-        _preparedStartNode = ResolveStartNode();
-        if (_preparedStartNode == null)
-        {
-            Debug.LogError("[FakeRoute] PrepareForEntry: startNode 为空");
-            SetPhase(FakeRoutePhase.None);
-            yield break;
-        }
-
-        SetGameplayInput(false);
-        yield return movementPresenter.Prepare(routeConfig, () => Phase != FakeRoutePhase.Defeated);
-        if (!movementPresenter.IsSceneReady)
-        {
-            Debug.LogError("[FakeRoute] PrepareForEntry: 路线表现层未就绪（检查 ScrollRoutePresenter 的 routeSceneName / battleCamera）");
-            SetPhase(FakeRoutePhase.None);
-            yield break;
-        }
-
-        // 不播开场、不进节点：只把视觉定位到起始节点锚点。
-        yield return movementPresenter.PlayOpening(null, _preparedStartNode, () => Phase != FakeRoutePhase.Defeated);
-        if (Phase == FakeRoutePhase.Defeated) yield break;
-
-        _prepared = true;
-        SetPhase(FakeRoutePhase.Ready);
-        Debug.Log("[FakeRoute] 落地页就绪：关卡=" + routeConfig.stageName +
-                  " 起始节点=" + (_preparedStartNode ? _preparedStartNode.nodeId : "null") +
-                  "（等玩家点开始关卡）");
-    }
-
-    /// <summary>【落地页】玩家点「开始关卡」：从已准备的起始节点开始跑节点流程。</summary>
-    public void RunPrepared()
-    {
-        if (!_prepared || routeConfig == null || _preparedStartNode == null)
-        {
-            Debug.LogWarning("[FakeRoute] RunPrepared 被忽略：尚未准备就绪（Phase=" + Phase + "）");
-            return;
-        }
-        if (_flow != null) StopCoroutine(_flow);
-        _flow = StartCoroutine(RunPreparedFlow());
-    }
-
-    private IEnumerator RunPreparedFlow()
-    {
-        var startNode = _preparedStartNode;
-        _prepared = false;
-        Debug.Log("[FakeRoute] 开始关卡：从节点 " + (startNode ? startNode.nodeId : "null") + " 起跑");
-
-        // 开场表现（如果有）：openingTravel 为空时表现层直接停在 startNode 锚点。
-        SetGameplayInput(false);
-        yield return movementPresenter.PlayOpening(routeConfig.openingTravel, startNode, () => Phase != FakeRoutePhase.Defeated);
-        if (Phase == FakeRoutePhase.Defeated) yield break;
-        yield return EnterNode(startNode);
-    }
-
-    /// <summary>
-    /// 解析起始节点（含 checkpoint 恢复）。Begin 与 PrepareForEntry 共用。
-    ///
-    /// 是否接存档点的判定：
-    ///   ① 老路径（<see cref="Begin"/>）：只看 FakeRouteLaunch.StartFromCheckpoint，行为不变。
-    ///   ② 落地页自举（<see cref="IsHubEntry"/>）：**无条件**尝试恢复快照。
-    ///      落地页语义就是「进游戏 = 当前进度」，而 StartFromCheckpoint 是 static、
-    ///      进程冷启动时默认 false；只靠它会让二次启动回到 route.startNode 并丢掉血量/升级。
-    ///      快照在通关时已被 FinishRoute 清掉，所以「有快照」= 该关没打完，可以安全恢复。
-    /// </summary>
-    private FakeRouteNodeConfig ResolveStartNode()
-    {
-        if (routeConfig == null) return null;
-        var startNode = useTestStartNode && testStartNode != null ? testStartNode : routeConfig.startNode;
-        bool tryRestoreCheckpoint = !useTestStartNode && (FakeRouteLaunch.StartFromCheckpoint || IsHubEntry);
-        if (tryRestoreCheckpoint)
-        {
-            var snapshot = SaveManager.GetFakeRouteSnapshot(routeConfig.routeId, routeConfig.stageId);
-            if (snapshot != null && RestoreCheckpoint(snapshot, out var restoredNode))
-            {
-                startNode = restoredNode;
-                _restoredFromCheckpoint = true;
-                _restoredCheckpointNodeId = snapshot.checkpointNodeId;
-                Debug.Log("[FakeRoute] restored checkpoint node=" + snapshot.checkpointNodeId);
-            }
-            else
-            {
-                Debug.Log("[FakeRoute] no valid fake route checkpoint, starting from startNode");
-            }
-        }
-        return startNode;
-    }
-
-    private IEnumerator BeginRouteNextFrame()
-    {
-        yield return null;
-        var startNode = useTestStartNode && testStartNode != null ? testStartNode : routeConfig.startNode;
-        if (!useTestStartNode && FakeRouteLaunch.StartFromCheckpoint)
-        {
-            var snapshot = SaveManager.GetFakeRouteSnapshot(routeConfig.routeId, routeConfig.stageId);
-            if (snapshot != null && RestoreCheckpoint(snapshot, out var restoredNode))
-            {
-                startNode = restoredNode;
-                _restoredFromCheckpoint = true;
-                _restoredCheckpointNodeId = snapshot.checkpointNodeId;
-                Debug.Log("[FakeRoute] restored checkpoint node=" + snapshot.checkpointNodeId);
-            }
-            else
-            {
-                Debug.Log("[FakeRoute] no valid fake route checkpoint, starting from startNode");
-            }
-        }
-        if (startNode == null)
-        {
-            Debug.LogError("[FakeRoute] startNode为空");
-            SetPhase(FakeRoutePhase.None);
-            yield break;
-        }
-        // 表现层准备：加载路线场景并校验锚点，必须在播放开场、旅行之前完成。
-        SetGameplayInput(false);
-        yield return movementPresenter.Prepare(routeConfig, () => Phase != FakeRoutePhase.Defeated);
-        if (!movementPresenter.IsSceneReady)
-        {
-            Debug.LogError("[FakeRoute] 路线表现层未就绪，流程中止（检查 ScrollRoutePresenter 的 routeSceneName / battleCamera）");
-            SetPhase(FakeRoutePhase.None);
-            yield break;
-        }
-        // 开场表现：openingTravel 为空时不播开场，表现层直接把视觉定位到 startNode 锚点。
-        yield return movementPresenter.PlayOpening(routeConfig.openingTravel, startNode, () => Phase != FakeRoutePhase.Defeated);
-        if (Phase == FakeRoutePhase.Defeated) yield break;
-        yield return EnterNode(startNode);
-    }
-
-    private IEnumerator EnterNode(FakeRouteNodeConfig node)
-    {
-        if (node == null || !ContainsNode(node))
-        {
-            Debug.LogError("[FakeRoute] 目标节点无效");
-            SetPhase(FakeRoutePhase.None);
-            yield break;
-        }
-
-        _currentNode = node;
-        _visitedNodes.Add(node);
-        SetPhase(FakeRoutePhase.EnteringNode);
-        movementPresenter?.ApplyNodeVisuals(node);
-        yield return PlayEntryDialogue(node.entryDialogue);
-        if (Phase == FakeRoutePhase.Defeated) yield break;
-        if (node.savePoint && (!_restoredFromCheckpoint || node.nodeId != _restoredCheckpointNodeId))
-            SaveCheckpoint();
-        yield return RunBattleEntries();
-        if (Phase == FakeRoutePhase.Defeated) yield break;
-
-        if (node.isFinalNode)
-        {
-            if (HasUncompletedBattleEntry(node))
-            {
-                Debug.LogError("[FakeRoute] 终点节点仍有未完成BattleEntry: " + node.nodeId);
-                SetPhase(FakeRoutePhase.None);
-                yield break;
-            }
-            yield return FinishRoute();
-            yield break;
-        }
-
-        if (node.outgoingChoices == null || node.outgoingChoices.Count == 0)
-        {
-            Debug.LogError("[FakeRoute] 非终点节点没有出口: " + node.nodeId);
-            SetPhase(FakeRoutePhase.None);
-            yield break;
-        }
-
-        SetPhase(FakeRoutePhase.ChoosingRoute);
-        ShowRouteChoice();
-    }
-
-    private IEnumerator PlayPostBattleSequence(FakeRouteNodeConfig node)
-    {
-        if (node == null || (node.postBattleDialogue == null && node.postBattlePresentation == null)) yield break;
-        int generation = _generation;
-        RouteChoicePanel.HideCurrent();
-        SetGameplayInput(false);
-        yield return PlayEntryDialogue(node.postBattleDialogue);
-        if (generation != _generation || Phase == FakeRoutePhase.Defeated) yield break;
-        if (node.postBattlePresentation == null || movementPresenter == null) yield break;
-
-        SetPhase(FakeRoutePhase.EnteringNode);
-        SetGameplayInput(false);
-        stageController?.SetRouteTravelState();
-        yield return movementPresenter.PlayNodePresentation(node.postBattlePresentation,
-            () => generation == _generation && Phase != FakeRoutePhase.Defeated);
-        if (generation == _generation && Phase != FakeRoutePhase.Defeated)
-        {
-            // A held video frame is the node's new environment (e.g. dawn).
-            // Only presentations without frame retention should restore a static background.
-            movementPresenter.ApplyNodeVisuals(node);
-            Debug.Log("[FakeRoute] post-battle presentation completed node=" + node.nodeId);
-        }
-    }
-
-    private IEnumerator PlayEntryDialogue(DialogueEventData dialogue)
-    {
-        if (dialogue == null || DialogueManager.Instance == null)
-            yield break;
-
-        bool queued = DialogueManager.Instance.QueueEventAndNotify(dialogue);
-        if (!queued)
-            yield break;
-
-        yield return null;
-        while (DialogueManager.Instance.IsBusy && Phase != FakeRoutePhase.Defeated)
-            yield return null;
-    }
-
-    private IEnumerator RunBattleEntries()
-    {
-        if (_currentNode.battleEntries == null || _currentNode.battleEntries.Count == 0)
-            yield break;
-
-        bool anyExecuted = false;
-        for (_battleIndex = 0; _battleIndex < _currentNode.battleEntries.Count; _battleIndex++)
-        {
-            var entry = _currentNode.battleEntries[_battleIndex];
-            if (entry == null || entry.battleConfig == null) continue;
-            if (entry.conditionEnabled) continue;
-            if (IsBattleEntryCompleted(_currentNode, _battleIndex)) continue;
-
-            int generation = _generation;
-            _battleActive = true;
-            _battleCleared = false;
-            SetPhase(FakeRoutePhase.Battle);
-            movementPresenter?.ApplyNodeVisuals(_currentNode);
-            _battleHost.StartRouteBattle(entry.battleConfig);
-            SetGameplayInput(true);
-
-            while (_battleActive && !_battleCleared && generation == _generation && Phase != FakeRoutePhase.Defeated)
-                yield return null;
-            if (generation != _generation || Phase == FakeRoutePhase.Defeated) yield break;
-
-            SetGameplayInput(false);
-            SetPhase(FakeRoutePhase.WaitingReward);
-            _battleHost.SetRouteRewardWaitState();
-            while (IsRewardBlocking() && generation == _generation && Phase != FakeRoutePhase.Defeated)
-                yield return null;
-            if (generation != _generation || Phase == FakeRoutePhase.Defeated) yield break;
-
-            MarkBattleEntryCompleted(_currentNode, _battleIndex);
-            _battleActive = false;
-            anyExecuted = true;
-            Debug.Log("[FakeRoute] battle entry completed node=" + _currentNode.nodeId + " index=" + _battleIndex);
-        }
-
-        // 禁止回访，因此本节点本次进入的全部 Entry 必须一次跑完，然后统一播放战后演出。
-        if (anyExecuted)
-            yield return PlayPostBattleSequence(_currentNode);
-    }
-
-    private bool IsRewardBlocking()
-    {
-        return (UpgradeChoiceManager.Instance != null && UpgradeChoiceManager.Instance.IsChoosing)
-            || ItemDiscardPopup.IsShowing
-            || (ExpGemManager.Instance != null && ExpGemManager.Instance.IsCollecting);
-    }
-
-    public bool TrySelectChoice(string choiceId)
-    {
-        if (Phase != FakeRoutePhase.ChoosingRoute || _currentNode == null || string.IsNullOrEmpty(choiceId)) return false;
-        if (_currentNode.outgoingChoices == null) return false;
-        for (int i = 0; i < _currentNode.outgoingChoices.Count; i++)
-        {
-            var choice = _currentNode.outgoingChoices[i];
-            if (choice != null && choice.choiceId == choiceId)
-            {
-                if (choice.targetNode == null || !ContainsNode(choice.targetNode)) return false;
-                if (_visitedNodes.Contains(choice.targetNode))
-                {
-                    Debug.LogWarning("[FakeRoute] 禁止回访：目标节点已访问 " + choice.targetNode.nodeId);
-                    return false;
-                }
-                SetPhase(FakeRoutePhase.FakeMoving);
-                RouteChoicePanel.HideCurrent();
-                _choiceHistory.Add(new FakeRouteChoiceSaveState
-                {
-                    sourceNodeId = _currentNode.nodeId,
-                    choiceId = choice.choiceId,
-                    targetNodeId = choice.targetNode.nodeId
-                });
-                SetGameplayInput(false);
-                _battleHost.SetRouteTravelState();
-                _flow = StartCoroutine(PlayPlaceholderAndEnter(choice, _generation));
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private IEnumerator PlayPlaceholderAndEnter(FakeRouteChoiceConfig choice, int generation)
-    {
-        if (movementPresenter != null)
-            yield return movementPresenter.PlayChoiceTravel(choice, _currentNode, choice.targetNode, () => generation == _generation && Phase == FakeRoutePhase.FakeMoving);
-        else
-        {
-            // 没有表现层时无法播放旅行：报告并直接提交目标节点，不静默改变节点语义。
-            Debug.LogError("[FakeRoute] 表现层缺失，无法播放出口旅行: " + (choice != null ? choice.choiceId : "null"));
-        }
-        if (generation != _generation || Phase == FakeRoutePhase.Defeated) yield break;
-        yield return EnterNode(choice.targetNode);
-    }
 
     public bool ValidateConfiguration(out string error)
     {
@@ -581,250 +227,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         _battleCleared = true;
     }
 
-    public void SaveCheckpoint()
-    {
-        if (routeConfig == null || _currentNode == null || PlayerState.Instance == null) return;
-        var snapshot = new FakeRouteStageSaveSnapshot
-        {
-            snapshotVersion = 1,
-            routeArchitectureId = "fake-route-v1",
-            routeId = routeConfig.routeId,
-            stageId = routeConfig.stageId,
-            configurationVersion = routeConfig.configurationVersion,
-            checkpointNodeId = _currentNode.nodeId,
-            currentHealth = PlayerState.Instance.currentHealth,
-            currentRevives = PlayerState.Instance.currentRevives,
-            currentLevel = PlayerState.Instance.currentLevel,
-            currentExp = PlayerState.Instance.currentExp,
-            killCount = PlayerState.Instance.killCount,
-            coinCount = PlayerState.Instance.coinCount,
-            ultimateEnergy = UltimateSystem.Instance != null ? UltimateSystem.Instance.CurrentEnergy : 0
-        };
-        snapshot.choiceHistory.Clear();
-        snapshot.choiceHistory.AddRange(_choiceHistory);
-        // 路线推进记录：到过的节点 + 每个节点已完成的 BattleEntry。
-        snapshot.visitedNodeIds.Clear();
-        snapshot.completedNodeIds.Clear();
-        foreach (var node in _visitedNodes)
-        {
-            if (node == null) continue;
-            if (!snapshot.visitedNodeIds.Contains(node.nodeId)) snapshot.visitedNodeIds.Add(node.nodeId);
-            if (IsNodeContentCompleted(node) && !snapshot.completedNodeIds.Contains(node.nodeId))
-                snapshot.completedNodeIds.Add(node.nodeId);
-            if (!_completedBattleEntries.TryGetValue(node, out var completed) || completed.Count == 0) continue;
-            var state = new FakeRouteNodeBattleSaveState { nodeId = node.nodeId };
-            state.completedEntryIndices.AddRange(completed);
-            snapshot.nodeStates.Add(state);
-        }
-        foreach (var upgrade in PlayerState.Instance.acquiredUpgrades)
-        {
-            if (upgrade != null && upgrade.definition != null)
-                snapshot.upgrades.Add(new RouteUpgradeSaveState { upgradeId = upgrade.definition.upgradeId, level = upgrade.currentLevel });
-        }
-        if (ActiveSkillInventory.Instance != null)
-        {
-            foreach (var entry in ActiveSkillInventory.Instance.Entries)
-            {
-                if (entry != null && entry.definition != null)
-                    snapshot.activeSkills.Add(new RouteActiveSkillSaveState { upgradeId = entry.definition.upgradeId, level = entry.level });
-            }
-        }
-        snapshot.propStates.Clear();
-        snapshot.propStates.AddRange(BreakableProp.ExportStates());
-        SaveManager.SaveFakeRouteSnapshot(snapshot);
-        SaveManager.SetActiveFakeRouteStage(routeConfig.stageId);
-        Debug.Log("[FakeRoute] checkpoint saved node=" + _currentNode.nodeId);
-    }
 
-    /// <summary>
-    /// 道具被破坏后就地更新已存在的快照（只改道具记录，不改变检查点节点）。
-    /// 没有快照时不创建，避免把未开始的节点当成检查点。
-    /// </summary>
-    public void NotifyPropDestroyed()
-    {
-        if (routeConfig == null) return;
-        var snapshot = SaveManager.GetFakeRouteSnapshot(routeConfig.routeId, routeConfig.stageId);
-        if (snapshot == null) return;
-        snapshot.propStates = new List<BreakableProp.PropSaveEntry>(BreakableProp.ExportStates());
-        SaveManager.SaveFakeRouteSnapshot(snapshot);
-    }
-
-    private bool RestoreCheckpoint(FakeRouteStageSaveSnapshot snapshot, out FakeRouteNodeConfig restoredNode)
-    {
-        restoredNode = FindNodeById(snapshot != null ? snapshot.checkpointNodeId : null);
-        if (snapshot == null || restoredNode == null || snapshot.snapshotVersion != 1 || snapshot.routeArchitectureId != "fake-route-v1" || snapshot.routeId != routeConfig.routeId || snapshot.stageId != routeConfig.stageId || snapshot.configurationVersion != routeConfig.configurationVersion)
-            return false;
-
-        var player = PlayerState.Instance;
-        if (player == null) return false;
-        player.currentHealth = snapshot.currentHealth;
-        player.currentRevives = snapshot.currentRevives;
-        player.currentLevel = snapshot.currentLevel;
-        player.currentExp = snapshot.currentExp;
-        player.killCount = snapshot.killCount;
-        player.coinCount = snapshot.coinCount;
-        BreakableProp.ImportStates(snapshot.propStates);
-        player.acquiredUpgrades.Clear();
-        _completedBattleEntries.Clear();
-        _visitedNodes.Clear();
-        _choiceHistory.Clear();
-        if (snapshot.choiceHistory != null)
-            _choiceHistory.AddRange(snapshot.choiceHistory);
-        if (snapshot.visitedNodeIds != null)
-        {
-            for (int i = 0; i < snapshot.visitedNodeIds.Count; i++)
-            {
-                var node = FindNodeById(snapshot.visitedNodeIds[i]);
-                if (node != null) _visitedNodes.Add(node);
-            }
-        }
-        if (snapshot.nodeStates != null)
-        {
-            for (int i = 0; i < snapshot.nodeStates.Count; i++)
-            {
-                var savedNode = snapshot.nodeStates[i];
-                var node = FindNodeById(savedNode != null ? savedNode.nodeId : null);
-                if (node == null) continue;
-                _visitedNodes.Add(node);
-                if (savedNode.completedEntryIndices != null)
-                    _completedBattleEntries[node] = new HashSet<int>(savedNode.completedEntryIndices);
-            }
-        }
-        if (!ValidateChoiceHistory(snapshot.choiceHistory)) return false;
-        TimedPassiveModule.Instance?.SetSuppressImmediateEffects(true);
-        if (snapshot.upgrades != null && UpgradeEffectManager.Instance != null)
-        {
-            for (int i = 0; i < snapshot.upgrades.Count; i++)
-            {
-                var savedUpgrade = snapshot.upgrades[i];
-                var definition = FindUpgradeDefinition(savedUpgrade.upgradeId);
-                if (definition == null) continue;
-                for (int level = 0; level < savedUpgrade.level; level++)
-                    UpgradeEffectManager.Instance.ApplyUpgrade(definition);
-            }
-        }
-        if (snapshot.activeSkills != null && ActiveSkillInventory.Instance != null)
-        {
-            for (int i = 0; i < snapshot.activeSkills.Count; i++)
-            {
-                var savedSkill = snapshot.activeSkills[i];
-                var definition = FindActiveSkillDefinition(savedSkill.upgradeId);
-                if (definition == null) continue;
-                for (int level = 0; level < savedSkill.level; level++)
-                    ActiveSkillInventory.Instance.AcquireOrUpgrade(definition, out _);
-            }
-            ActiveSkillInventory.Instance.ResetCooldowns();
-        }
-        // 快照恢复会先 ResetAll() 清空库存；恢复完成后再补一次默认赠送技能（幂等）。
-        ActiveSkillInventory.Instance?.EnsureDefaultSkills();
-        TimedPassiveModule.Instance?.SetSuppressImmediateEffects(false);
-        if (UltimateSystem.Instance != null)
-            UltimateSystem.Instance.SetEnergyForRouteRestore(snapshot.ultimateEnergy);
-        float maxHealth = player.heroConfig != null ? player.heroConfig.maxHealth : 100f;
-        int requiredExp = player.GetExpRequiredForNextLevel();
-        player.OnHealthChanged?.Invoke(player.currentHealth, maxHealth);
-        player.OnReviveCountChanged?.Invoke(player.currentRevives);
-        player.OnLevelChanged?.Invoke(player.currentLevel);
-        player.OnExpChanged?.Invoke(player.currentExp, requiredExp > 0 ? requiredExp : player.currentExp);
-        return true;
-    }
-
-    private FakeRouteNodeConfig FindNodeById(string nodeId)
-    {
-        if (string.IsNullOrEmpty(nodeId) || routeConfig == null || routeConfig.nodes == null) return null;
-        for (int i = 0; i < routeConfig.nodes.Count; i++)
-            if (routeConfig.nodes[i] != null && routeConfig.nodes[i].nodeId == nodeId)
-                return routeConfig.nodes[i];
-        return null;
-    }
-
-    private bool ValidateChoiceHistory(List<FakeRouteChoiceSaveState> history)
-    {
-        if (history == null) return true;
-        for (int i = 0; i < history.Count; i++)
-        {
-            var item = history[i];
-            var source = FindNodeById(item != null ? item.sourceNodeId : null);
-            var target = FindNodeById(item != null ? item.targetNodeId : null);
-            if (source == null || target == null || source.outgoingChoices == null) return false;
-            bool matched = false;
-            for (int c = 0; c < source.outgoingChoices.Count; c++)
-            {
-                var choice = source.outgoingChoices[c];
-                if (choice != null && choice.choiceId == item.choiceId && choice.targetNode == target) { matched = true; break; }
-            }
-            if (!matched) return false;
-        }
-        return true;
-    }
-
-    private ActiveSkillDefinition FindActiveSkillDefinition(string upgradeId)
-    {
-        if (string.IsNullOrEmpty(upgradeId)) return null;
-        var all = Resources.FindObjectsOfTypeAll<ActiveSkillDefinition>();
-        for (int i = 0; i < all.Length; i++)
-            if (all[i] != null && all[i].upgradeId == upgradeId)
-                return all[i];
-        return null;
-    }
-
-    private UpgradeDefinition FindUpgradeDefinition(string upgradeId)
-    {
-        if (string.IsNullOrEmpty(upgradeId)) return null;
-        var all = Resources.FindObjectsOfTypeAll<UpgradeDefinition>();
-        for (int i = 0; i < all.Length; i++)
-            if (all[i] != null && all[i].upgradeId == upgradeId)
-                return all[i];
-        return null;
-    }
-
-    public void HandleStageDefeat()
-    {
-        _generation++;
-        _battleActive = false;
-        _battleCleared = false;
-        SetGameplayInput(false);
-        SetPhase(FakeRoutePhase.Defeated);
-        if (_flow != null)
-        {
-            StopCoroutine(_flow);
-            _flow = null;
-        }
-    }
-
-    private IEnumerator FinishRoute()
-    {
-        if (_routeSettled) yield break;
-        _routeSettled = true;
-        SetGameplayInput(false);
-        SetPhase(FakeRoutePhase.Completed);
-        yield return new WaitForSecondsRealtime(0.5f);
-        SaveManager.ClearFakeRouteSnapshot(routeConfig.routeId, routeConfig.stageId);
-        AdvanceActiveStageAfterClear();
-        _battleHost.CompleteFakeRouteStage(routeConfig.clearCoinReward);
-    }
-
-    /// <summary>
-    /// 通关后把存档「当前关卡」推进到可选列表里的下一条路线（教学关 → 正式关）。
-    ///
-    /// 落地页开机就是按这个值自举的，不推进的话打完教学关回到落地页还是教学关，
-    /// 玩家必须自己去选关页手动切。已是最后一条时保持不变（重复挑战不倒退）。
-    /// </summary>
-    private void AdvanceActiveStageAfterClear()
-    {
-        if (routeConfig == null) return;
-        var scm = StageConfigManager.Instance != null ? StageConfigManager.Instance : FindObjectOfType<StageConfigManager>();
-        if (scm == null) return;
-        var routes = scm.GetSelectableRoutes();
-        int index = -1;
-        for (int i = 0; i < routes.Count; i++)
-            if (routes[i] != null && routes[i].stageId == routeConfig.stageId) { index = i; break; }
-        if (index < 0 || index + 1 >= routes.Count) return;
-        var next = routes[index + 1];
-        if (next == null) return;
-        SaveManager.SetActiveFakeRouteStage(next.stageId);
-        Debug.Log("[FakeRoute] 通关推进当前关卡: " + routeConfig.stageName + " → " + next.stageName);
-    }
 
     private void SetPhase(FakeRoutePhase phase)
     {
@@ -856,15 +259,69 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     /// <summary>本节点本次要执行的 BattleEntry 是否已全部完成（无有效条目视为已完成）。</summary>
     private bool IsNodeContentCompleted(FakeRouteNodeConfig node)
     {
-        if (node == null || node.battleEntries == null) return true;
-        for (int i = 0; i < node.battleEntries.Count; i++)
-        {
-            var entry = node.battleEntries[i];
-            if (entry == null || entry.battleConfig == null || entry.conditionEnabled) continue;
-            if (!IsBattleEntryCompleted(node, i)) return false;
-        }
-        return true;
+        // 扩展点：判定走「节点完成策略」注册表（自定义优先，内置兼底）。
+        var policy = ResolveNodeCompletionPolicy(node);
+        if (policy == null) return true;
+        return policy.IsContentCompleted(node, this);
     }
+
+    /// <summary>该节点完成后是否直接收尾整条路线（终点语义）。</summary>
+    private bool ShouldFinishRouteAtNode(FakeRouteNodeConfig node)
+    {
+        var policy = ResolveNodeCompletionPolicy(node);
+        return policy != null && policy.ShouldFinishRoute(node);
+    }
+
+    /// <summary>解析该节点适用的完成策略：自定义优先，都没有命中则用内置兼底。</summary>
+    private IRouteNodeCompletionPolicy ResolveNodeCompletionPolicy(FakeRouteNodeConfig node)
+    {
+        for (int i = 0; i < _nodeCompletionPolicies.Count; i++)
+        {
+            var policy = _nodeCompletionPolicies[i];
+            if (policy != null && policy.CanHandle(node)) return policy;
+        }
+        return _defaultNodeCompletionPolicy;
+    }
+
+    /// <summary>
+    /// 注册**节点完成策略**（扩展点）。
+    /// 自定义策略优先于内置兼底；多个自定义按注册顺序尝试，第一个 CanHandle 为真的接管该节点。
+    /// </summary>
+    public void RegisterNodeCompletionPolicy(IRouteNodeCompletionPolicy policy)
+    {
+        if (policy == null) return;
+        _nodeCompletionPolicies.Add(policy);
+    }
+
+    /// <summary>
+    /// 注册**节点完成策略**（扩展点，委托版）。
+    /// </summary>
+    public void RegisterNodeCompletionPolicy(
+        System.Func<FakeRouteNodeConfig, bool> canHandle,
+        System.Func<FakeRouteNodeConfig, IRouteNodeProgressView, bool> isContentCompleted,
+        System.Func<FakeRouteNodeConfig, bool> shouldFinishRoute)
+    {
+        RegisterNodeCompletionPolicy(new DelegateRouteNodeCompletionPolicy(canHandle, isContentCompleted, shouldFinishRoute));
+    }
+
+    // ── IRouteNodeProgressView 实现（给完成策略看的节点进度只读视图）──
+
+    int IRouteNodeProgressView.GetBattleEntryCount(FakeRouteNodeConfig node)
+    {
+        return node != null && node.battleEntries != null ? node.battleEntries.Count : 0;
+    }
+
+    bool IRouteNodeProgressView.IsBattleEntryCompleted(FakeRouteNodeConfig node, int index)
+    {
+        return node != null && IsBattleEntryCompleted(node, index);
+    }
+
+    bool IRouteNodeProgressView.HasUncompletedBattleEntry(FakeRouteNodeConfig node)
+    {
+        return HasUncompletedBattleEntry(node);
+    }
+
+    bool IRouteNodeProgressView.HasPendingReward => IsRewardBlocking();
 
     private bool HasUncompletedBattleEntry(FakeRouteNodeConfig node)
     {
@@ -893,22 +350,5 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         completed.Add(index);
     }
 
-    private void ShowRouteChoice()
-    {
-        if (_currentNode == null || _currentNode.outgoingChoices == null) return;
-        var options = new List<RouteChoiceOption>();
-        for (int i = 0; i < _currentNode.outgoingChoices.Count; i++)
-        {
-            var choice = _currentNode.outgoingChoices[i];
-            if (choice == null || choice.targetNode == null) continue;
-            options.Add(new RouteChoiceOption
-            {
-                id = choice.choiceId,
-                label = choice.displayName + " → " + choice.targetNode.displayName,
-                layout = choice.layout
-            });
-        }
-        RouteChoicePanel.Show(choicePanelPrefab, _currentNode.displayName, options, id => TrySelectChoice(id));
-    }
 
 }
