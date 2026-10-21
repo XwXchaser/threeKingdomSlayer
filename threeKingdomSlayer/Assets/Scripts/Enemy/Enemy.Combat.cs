@@ -491,6 +491,12 @@ public partial class Enemy : MonoBehaviour
 
     private EnemyHitFeedback HitFeedback => _hitFeedback ??= new EnemyHitFeedback(this);
 
+    /// <summary>韧性（削韧 / 破势 / QTE 韧性伤害）。实现见 EnemyPoise（批次 3 刀 E1）。</summary>
+    private EnemyPoise _poise;
+
+    private EnemyPoise Poise => _poise ??= new EnemyPoise(this);
+
+
     /// <summary>BOSS 多阶段系统。实现见 EnemyBossPhases（批次 3 刀 B）。</summary>
     private EnemyBossPhases _bossPhases;
 
@@ -587,99 +593,13 @@ public partial class Enemy : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// V2 位移主动技能对未眩晕 Boss 造成最大架势百分比伤害。
-    /// QTE 中破势延迟到 QTE 完整结束；转阶段中不结算。
-    /// </summary>
-    public bool TakeActiveDisplacementPoiseDamage(float maxPoisePercent)
-    {
-        if (!isBoss || maxPoisePercent <= 0f) return false;
-        if (state == EnemyState.Dead || state == EnemyState.Stunned || state == EnemyState.Launched) return false;
-        if (bossState != BossState.InCombat || isPhaseTransitioning) return false;
+    // ── 韧性：实现见 EnemyPoise（批次 3 刀 E1），此处保留同名薄转发 ──
 
-        currentPoise = Mathf.Max(0f, currentPoise - maxPoise * Mathf.Clamp01(maxPoisePercent));
-        OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
+    public bool TakeActiveDisplacementPoiseDamage(float maxPoisePercent) => Poise.TakeActiveDisplacementPoiseDamage(maxPoisePercent);
 
-        if (currentPoise > 0f) return false;
+    public bool TakePoiseDamage(float poiseDamage) => Poise.TakePoiseDamage(poiseDamage);
 
-        if (state == EnemyState.QTEAttacking)
-        {
-            deferredStun = true;
-            DebugLog.Info($"[Enemy] 主动位移破势延迟Stun: {DebugTag}");
-            return true;
-        }
-
-        Stun(stunDuration);
-        return true;
-    }
-
-    /// <summary>
-    /// 受到架势（Poise）伤害 — 仅 Parry 在敌人 Attacking 态时调用
-    /// Poise 不会自动回复；归零时触发 STUN，STUN 结束后重置 Poise 到满值
-    /// Parry 判定窗口外不削韧：窗口外 parry 只造成伤害不打断、不削韧，
-    /// 避免"连续乱按 parry 把敌人削晕"的锁死（与打断门控一致）
-    /// </summary>
-    public bool TakePoiseDamage(float poiseDamage)
-    {
-        if (!isBoss) return false;
-        if (state == EnemyState.Dead) return false;
-        if (state == EnemyState.Stunned) return false;
-        if (state != EnemyState.Attacking) return false;
-        if (!isAttackAnimating || isAttackDrawPhase) return false;
-        if (bossState != BossState.InCombat) return false;
-
-        currentPoise -= poiseDamage;
-        OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
-
-        if (currentPoise <= 0f)
-        {
-            currentPoise = 0f;
-            Stun(stunDuration);
-            return true;
-        }
-        return false;
-    }
-
-    /// <summary>
-    /// QTE 专用 Poise 伤害 — 仅 QTEController 在 QTEAttacking 态时调用
-    /// interruptibleOnStun=true: Poise归零→触发Stun→QTEController中止QTE
-    /// interruptibleOnStun=false: Poise归零→播放受击硬直动画，Poise重置，QTE继续
-    /// </summary>
-    public bool TakeQTEPoiseDamage(float poiseDamage, bool interruptibleOnStun)
-    {
-        if (state == EnemyState.Dead) return false;
-        if (state != EnemyState.QTEAttacking) return false;
-
-        currentPoise -= poiseDamage;
-        OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
-
-        if (currentPoise <= 0f)
-        {
-            currentPoise = 0f;
-            if (interruptibleOnStun)
-            {
-                // 延迟Stun：等QTE动画播完再进入Stun，避免截断block动画和音效
-                if (!deferredStun)
-                {
-                    deferredStun = true;
-                    currentPoise = maxPoise;
-                    OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
-                    DebugLog.Info($"[Enemy] QTE破防延迟Stun: {DebugTag}");
-                }
-                return true;
-            }
-            else
-            {
-                // QTE 继续：仅播放受击硬直，不改变状态
-                currentPoise = maxPoise;
-                OnPoiseChanged?.Invoke(this, currentPoise, maxPoise);
-                // QTE期间禁止发Hit trigger：Any State→HitFlash会劫持QTE动画状态机
-                // 导致后续QTEBlocked/QTEFollowUp trigger被忽略
-                return false;
-            }
-        }
-        return false;
-    }
+    public bool TakeQTEPoiseDamage(float poiseDamage, bool interruptibleOnStun) => Poise.TakeQTEPoiseDamage(poiseDamage, interruptibleOnStun);
 
     /// <summary>
     /// 根据伤害类型获取倍率

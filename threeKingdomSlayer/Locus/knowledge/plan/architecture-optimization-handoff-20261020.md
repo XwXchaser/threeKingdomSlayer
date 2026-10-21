@@ -83,7 +83,7 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 
 | 指标 | 改造前 | 现在 |
 |---|---|---|
-| `Enemy.cs` | 5224 行 | **933 行**（主文件：字段/生命周期/初始化/转发）；另拆出 5 个 partial 分片：状态机 1495 / 战斗结算 902 / 表现层 413 / BOSS 推进 206 / 对象池 106；真类：`EnemyHitFeedback` / `EnemyBossPhases` / `EnemyMovement` |
+| `Enemy.cs` | 5224 行 | **933 行**（主文件：字段/生命周期/初始化/转发）；另拆出 5 个 partial 分片：状态机 1495 / 战斗结算 828 / 表现层 413 / BOSS 推进 206 / 对象池 106；真类：`EnemyHitFeedback` / `EnemyBossPhases` / `EnemyMovement` / `EnemyPoise` |
 | `StageController.cs` | 852 行 | **708 行** |
 | `ColumnManager.cs` | 2149 行 | **662 行**（队列/查询/入场/补齐/位移五块全部拆出） |
 | 门面（`StageController`）成员调用 | 大量 | **0**（`StageController.Instance` 仅剩 30 处惰性解析点） |
@@ -230,7 +230,7 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 | D. `ColumnManager` 拆分 | 2149 → **662 行**；刀 1/2/3/4/5/6 **全部完成**（批次 2 收官） | 中高（已落地） | 承载「位移三原则」；做法与验收见 `plan/columnmanager-split-plan-20261020.md` §0.8/§0.9 |
 | E. 共享类型独立成程序集 | 为「Legacy 剔出包」铺路 | 中 | 需先给 `Enemy`/`PlayerState` 等定程序集边界；也是 B 的前置 |
 | F. 终态删 `FillUpRule` 枚举与字段 | ✅ 已完成（`86832d4`）：补齐规则只剩一种，AI 无从选错 | — | 已完成 |
-| G. `Enemy.cs` 继续拆 | ✅ 部分完成：真类拆出 `EnemyHitFeedback` / `EnemyBossPhases` / `EnemyMovement`；主体 4177 → **933 行**（另 5 个 partial 分片，最大 1495）。**剩余**：`EnemyHealth`（含 `TakeDamage`，风险最高，放最后） | 中 | 刀 A/B/C/D 的做法见 §10–§13 |
+| G. `Enemy.cs` 继续拆 | ✅ 部分完成：真类拆出 `EnemyHitFeedback` / `EnemyBossPhases` / `EnemyMovement` / `EnemyPoise`；主体 4177 → **933 行**（另 5 个 partial 分片，最大 1495）。**剩余**：只建议拆「护盾结算」→ `EnemyShield`（见 §14 的契约分析），`TakeDamage` 主体保留 | 中 | 刀 A–E1 的做法见 §10–§14 |
 
 ---
 
@@ -301,6 +301,60 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 - 未采集 GC 分配与 Draw Call（指标名需用 `DiscoverMetrics` 拿到的
   `Draw Calls Count` / `GC.*` 再采一轮；本轮 `gc_allocated_in_frame` 名字不存在）。
 - 结论只说明「现在没必要为了性能重构」；若真机出现卡顿，应先在真机重采再动手。
+
+---
+
+## 14. 批次 3 刀 E：韧性拆出（`EnemyPoise`）+ 刀 E2 的契约分析
+
+### 刀 E1（已完成）：`EnemyPoise`
+
+> 新增 `Assets/Scripts/Enemy/EnemyPoise.cs`（117 行）；`Enemy.Combat.cs` 902 → **828 行**。
+> 拆了什么：普通削韧 `TakePoiseDamage`、主动位移百分比削韧 `TakeActiveDisplacementPoiseDamage`、
+> QTE 专用削韧 `TakeQTEPoiseDamage`（含破势延迟眩晕）。
+> **特例**：韧性相关成员在 Enemy 里**本来就是 public**（`currentPoise` / `maxPoise` /
+> `deferredStun` / `OnPoiseChanged` / `stunDuration`）→ 本刀**零 internal 化、零委托**，
+> 只靠 owner 引用访问，是四刀里改动面最小的一刀。
+
+**验证（Play Mode，实例化 Enemy_104）**：
+
+| 项 | 实测 |
+|---|---|
+| 初始 | currentPoise=100（104 的 maxPoise=100） |
+| 主动位移削韧 50% | 100 → **50**，`OnPoiseChanged` 事件 1 次 |
+| QTE 削韧 10 | 50 → **40**，事件累计 2 次 |
+| 韧性归零 | 返回 true、**deferredStun=true**、currentPoise 重置为 100（延迟眩晕语义） |
+| 回归 | 主流程 phase=Battle/4 敌人；补齐基线 `col1/r0 · col1/r2 · col2/r3 · col3/r4` 逐位一致 |
+| Console | 0 error / 0 warn |
+
+### 刀 E2（**未做，动手前先读这段**）：`TakeDamage` 本体
+
+> `TakeDamage`（~130 行）是战斗核心，**不建议整块搬**。下面是实测出来的依赖与自然缝。
+
+**它实际依赖的东西**（跨 15+ 字段、10+ 方法）：
+
+- 状态：`state` / `isBoss` / `bossState` / `isPhaseTransitioning` / `_healthLocked` /
+  `currentHealth` / `maxHealth` / `formState` / `sharedHealthGroup` / `_deferredPhaseTransition` /
+  `bossPhases` / `currentBossPhase` / `isAttackAnimating` / `isAttackDrawPhase` /
+  `isSuperArmor` / `isCFrame` / `launchedDamageTakenMultiplier`
+- 子系统：`_shieldGuard`（破盾）/ `IceBreakRuntime`（破冰翻倍）/ `HitFeedbackManager` /
+  伤害数字 / `Die()`
+- 方法：`GetDamageMultiplier` / `ResolveHitReactionDirection` / `EnterPhaseTransition` /
+  `CancelAttack` / `Stun` / `Die` / `ApplyHitFlashImmediate` / `RestartHitScaleFeedback` /
+  `TriggerHitFlash` / `OnDamageTaken` / `OnHealthChanged`
+
+**按耦合度排的自然缝**（建议只拆第 3 条）：
+
+| # | 段 | 耦合 | 建议 |
+|---|---|---|---|
+| 1 | 前置门控（无敌 / 锁血 / 转阶段阈值 / QTE 挂起） | 高（与 BOSS 阶段互调） | **留 Enemy** |
+| 2 | 攻击打断裁决 | 高（与状态机互调） | **留 Enemy** |
+| 3 | **护盾结算**（`_shieldGuard.ProcessHit` → finalDamage / blocked / broke） | 低（`_shieldGuard` 是独立组件） | **可拆 `EnemyShield`** |
+| 4 | 共享血量组转交（一句 `sharedHealthGroup.TakeDamage(...)`） | 低 | 留 Enemy（一行转发） |
+| 5 | 扣血 + 阈值钳制 + 死亡 | 高（与状态机/血条/Combo 纠缠） | **留 Enemy** |
+| 6 | 受击反馈与伤害数字 | 已拆 | 已在 `EnemyHitFeedback` |
+
+**结论**：刀 E2 = **只拆护盾结算**（约 30–60 行），`TakeDamage` 主体保留。
+把 5 整块硬搬会造出 20+ 委托的壳，与“减 token”的目标相反。
 
 ---
 
