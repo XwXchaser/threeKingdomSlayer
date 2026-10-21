@@ -2,18 +2,6 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 关卡状态枚举
-/// </summary>
-public enum StageState
-{
-    None,
-    Starting,
-    InProgress,
-    Victory,
-    Defeat
-}
-
-/// <summary>
 /// 玩家状态 - 单例
 /// 管理玩家属性（生命值、复活次数、6种攻击属性等）
 /// 处理玩家受伤和复活逻辑
