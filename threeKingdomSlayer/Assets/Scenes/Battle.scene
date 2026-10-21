@@ -395,6 +395,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _ruleVersion: 1
+  _grantDefaultSkills: 1
+  _defaultSkills:
+  - {fileID: 11400000, guid: 1a1d2c13de246f34dbe94e8e46ceb6af, type: 2}
 --- !u!114 &5137013
 MonoBehaviour:
   m_ObjectHideFlags: 0

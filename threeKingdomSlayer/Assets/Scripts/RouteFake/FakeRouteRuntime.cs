@@ -715,6 +715,8 @@ public sealed class FakeRouteRuntime : MonoBehaviour
             }
             ActiveSkillInventory.Instance.ResetCooldowns();
         }
+        // 快照恢复会先 ResetAll() 清空库存；恢复完成后再补一次默认赠送技能（幂等）。
+        ActiveSkillInventory.Instance?.EnsureDefaultSkills();
         TimedPassiveModule.Instance?.SetSuppressImmediateEffects(false);
         if (UltimateSystem.Instance != null)
             UltimateSystem.Instance.SetEnergyForRouteRestore(snapshot.ultimateEnergy);

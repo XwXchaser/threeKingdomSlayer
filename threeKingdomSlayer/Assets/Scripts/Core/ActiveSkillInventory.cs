@@ -35,10 +35,17 @@ public class ActiveSkillInventory : MonoBehaviour
     [Header("规则版本（仅开局前切换）")]
     [SerializeField] private ItemRuleVersion _ruleVersion = ItemRuleVersion.V1_LimitedItem;
 
+    [Header("默认技能（开局赠送，调试用）")]
+    [Tooltip("开启后：每次进入战斗时，若库存里没有这些技能则自动补上（不覆盖已有等级）。")]
+    [SerializeField] private bool _grantDefaultSkills = true;
+    [Tooltip("默认赠送的主动技能（V2 规则下生效）。")]
+    [SerializeField] private List<ActiveSkillDefinition> _defaultSkills = new List<ActiveSkillDefinition>();
+
     private readonly List<SkillEntry> _entries = new List<SkillEntry>();
     private int _nextEntryId = 1;
     private ItemRuleVersion _lockedRuleVersion;
     private bool _versionLocked;
+    private StageState _lastStageState = StageState.None;
 
     public System.Action OnSkillsChanged;
     public System.Action OnCooldownsChanged;
@@ -70,7 +77,18 @@ public class ActiveSkillInventory : MonoBehaviour
 
     private void Update()
     {
-        if (PlayerState.Instance == null || PlayerState.Instance.stageState != StageState.InProgress) return;
+        if (PlayerState.Instance == null) return;
+
+        // 战斗开始的那一刻补一次默认技能（存档恢复路径会在别处再补一次，这里兼颗无快照的新玩家）。
+        var currentState = PlayerState.Instance.stageState;
+        if (currentState != _lastStageState)
+        {
+            _lastStageState = currentState;
+            if (currentState == StageState.InProgress)
+                EnsureDefaultSkills();
+        }
+
+        if (PlayerState.Instance.stageState != StageState.InProgress) return;
         if (!UsesActiveSkills) return;
 
         bool changed = false;
@@ -91,6 +109,25 @@ public class ActiveSkillInventory : MonoBehaviour
         if (_versionLocked) return;
         _lockedRuleVersion = _ruleVersion;
         _versionLocked = true;
+    }
+
+    /// <summary>
+    /// 补齐默认赠送的主动技能（V2 规则下）。
+    /// 幂等：已持有的不动（不降级、不重置冷却）；缺失的按 lv1 补上。
+    /// 快照恢复会先 <c>ResetAll()</c> 清空库存，所以恢复路径需要在本方法之后再调一次。
+    /// </summary>
+    public void EnsureDefaultSkills()
+    {
+        if (!_grantDefaultSkills || !UsesActiveSkills) return;
+        if (_defaultSkills == null || _defaultSkills.Count == 0) return;
+
+        for (int i = 0; i < _defaultSkills.Count; i++)
+        {
+            var def = _defaultSkills[i];
+            if (def == null) continue;
+            if (FindByUpgradeId(def.upgradeId) != null) continue;
+            AcquireOrUpgrade(def, out _);
+        }
     }
 
     public bool CanAcquire(ActiveSkillDefinition definition)
