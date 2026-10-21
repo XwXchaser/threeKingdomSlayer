@@ -83,7 +83,7 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 
 | 指标 | 改造前 | 现在 |
 |---|---|---|
-| `Enemy.cs` | 5224 行 | **4177 行**（描边 + 冰系视觉 + 冰系流程 + 打击反馈 + **BOSS 多阶段**已拆出） |
+| `Enemy.cs` | 5224 行 | **933 行**（主文件：字段/生命周期/初始化/转发）；另拆出 5 个 partial 分片：状态机 1495 / 战斗结算 902 / 表现层 602 / BOSS 推进 206 / 对象池 106 |
 | `StageController.cs` | 852 行 | **708 行** |
 | `ColumnManager.cs` | 2149 行 | **662 行**（队列/查询/入场/补齐/位移五块全部拆出） |
 | 门面（`StageController`）成员调用 | 大量 | **0**（`StageController.Instance` 仅剩 30 处惰性解析点） |
@@ -230,7 +230,7 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 | D. `ColumnManager` 拆分 | 2149 → **662 行**；刀 1/2/3/4/5/6 **全部完成**（批次 2 收官） | 中高（已落地） | 承载「位移三原则」；做法与验收见 `plan/columnmanager-split-plan-20261020.md` §0.8/§0.9 |
 | E. 共享类型独立成程序集 | 为「Legacy 剔出包」铺路 | 中 | 需先给 `Enemy`/`PlayerState` 等定程序集边界；也是 B 的前置 |
 | F. 终态删 `FillUpRule` 枚举与字段 | ✅ 已完成（`86832d4`）：补齐规则只剩一种，AI 无从选错 | — | 已完成 |
-| G. `Enemy.cs` 继续拆（4496 行） | 拆状态机 / 战斗行为 | 高 | 收益下降、风险上升；建议先做 E 再考虑 |
+| G. `Enemy.cs` 继续拆 | ✅ 部分完成：真类拆出 `EnemyHitFeedback` / `EnemyBossPhases`；主体 4177 → **933 行**（另 5 个 partial 分片，最大 1495）。**剩余真类拆分**：`EnemyHealth`（含 `TakeDamage`，风险最高）、`EnemyMovement`（RushMove 订单） | 中 | 刀 A/B/C 的做法见 §10/§11/§12 |
 
 ---
 
@@ -301,6 +301,41 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 - 未采集 GC 分配与 Draw Call（指标名需用 `DiscoverMetrics` 拿到的
   `Draw Calls Count` / `GC.*` 再采一轮；本轮 `gc_allocated_in_frame` 名字不存在）。
 - 结论只说明「现在没必要为了性能重构」；若真机出现卡顿，应先在真机重采再动手。
+
+---
+
+## 12. 批次 3 刀 C：`Enemy` 按机制 partial 分文件（**直接降 token 成本**）
+
+> 2026-10-21 完成。动机：用户明确指出「减少上帝类，否则之后的工作都会大大消耗 token 和增添时长」。
+> 真类拆分（刀 A/B）已把行为逻辑搬出；但 `Enemy.cs` 仍有 4177 行，**改任一块都得读全文**。
+> 本刀用 `partial class` 把主体按机制分文件 —— **同类型、行为完全不变、零行为风险**。
+
+| 文件 | 行数 | 内容 |
+|---|---|---|
+| `Enemy.cs` | 933 | 字段、生命周期、初始化、各子系统的薄转发 |
+| `Enemy.State.cs` | 1495 | 状态机：状态切换 + 状态更新 |
+| `Enemy.Combat.cs` | 902 | 命中帧、伤害系统、韧性/护盾/位移命中、冰系薄转发 |
+| `Enemy.Visuals.cs` | 602 | 世界坐标与排位换算、透明度、描边 |
+| `Enemy.Boss.cs` | 206 | BOSS 推进到应战排 / 暂停等待 / 恢复推进 |
+| `Enemy.Pool.cs` | 106 | 对象池回收时的状态复位与资源清理 |
+
+**效果**：改任一机制只需读对应文件（**最多 1495 行**，原来 4177 行）。
+**做法**：`public class Enemy` → `public partial class Enemy`；按 `#region` 边界整块搬移，缩进不变；
+各分片带 `using System.Collections.Generic; using UnityEngine; using DG.Tweening;` 与机制说明头。
+
+**坑（我踩了一次）**：`#region` 可能**嵌套**（「伤害系统」内含「冻结（冰系）」），
+用「找第一个 `#endregion`」配对会漏搬内层之后的内容并留下孤立 `#endregion` → 编译报错。
+→ **必须用栈式配对**（深度计数）来定位 region 跨度。
+
+**验证**：
+- 静态：切分前后**方法集合逐名比对 147 = 147，零丢失零新增**；各文件 `#region`/`#endregion` 计数一致。
+- Play Mode：主流程 `phase=Battle`/4 敌人；命中反馈 hitStop 0.090s、flash 0.150s、缩放 22 帧、伤害 20；
+  补齐基线 `col1/r0 · col1/r2 · col2/r3 · col3/r4` 逐位一致；
+  Boss 转阶段 `phase=1`、`isSuperArmor=True`、事件 1 次、状态回 Idle；Console 0 error / 0 warn。
+
+**下一步（批次 3 剩余）**：真正**减类**的两块还剩 **韧性/护盾/伤害结算**（`EnemyHealth`，含 `TakeDamage`——
+风险最高，放最后）与 **移动**（`EnemyMovement`，RushMove 订单 + 位置）。这两块继续用
+刀 A/B 的「`internal` + owner 引用 + 同名薄转发」手法拆成独立类。
 
 ---
 
