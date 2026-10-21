@@ -6202,8 +6202,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stageConfig: {fileID: 0}
   autoStartStage: 0
-  routeStageConfig: {fileID: 11400000, guid: d9807631ee47b464c82a64542268044b, type: 2}
-  routeStageConfigV2: {fileID: 11400000, guid: f778a791580f74242bf5486112cf907a, type: 2}
   fakeRouteStageConfig: {fileID: 0}
   waveSpawner: {fileID: 1221163314}
   enemyManager: {fileID: 598331925}
@@ -7539,6 +7537,10 @@ MonoBehaviour:
   exitDuration: 0.13
   entryDistance: 3.5
   fadeOutDuration: 0.25
+  meshChargePullback: 0.45
+  meshChargedTint: {r: 1.55, g: 1.25, b: 0.5, a: 1}
+  meshReadyPulseScale: 0.05
+  meshReadyPulseInterval: 0.3
 --- !u!114 &864291166
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8188,7 +8190,7 @@ MonoBehaviour:
   - 0.3
   - 0.6
   - 1
-  restrictChargedToVertical: 1
+  restrictChargedToVertical: 0
 --- !u!1 &952166475
 GameObject:
   m_ObjectHideFlags: 0
@@ -12474,7 +12476,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   stages: []
-  routeStagesV2: []
   fakeRouteStages:
   - {fileID: 11400000, guid: 2559bd9f55014d04eb83cf9b7efea656, type: 2}
   tutorialStage: {fileID: 11400000, guid: 8992d31e29e5e084a8281de6cbfa0c19, type: 2}
@@ -15746,6 +15747,7 @@ MonoBehaviour:
   columnIndex: 0
   rowIndex: 0
   isAttackAnimating: 0
+  ignoreFillUpOrders: 0
   isAttackDrawPhase: 0
   isCFrame: 0
   pendingRushMove: 0

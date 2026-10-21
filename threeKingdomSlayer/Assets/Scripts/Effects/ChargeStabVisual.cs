@@ -52,9 +52,23 @@ public class ChargeStabVisual : MonoBehaviour
     [Header("渐隐")]
     public float fadeOutDuration = 0.25f;
 
+    [Header("3D 蓄力表现（无 SpriteRenderer 时启用）")]
+    [Tooltip("蓄力进度映射的枪身后拉距离（世界单位，沿枪轴向后拉）。")]
+    public float meshChargePullback = 0.45f;
+    [Tooltip("满蓄时的染色（1 = 原色；默认用暖金表示蓄满）。")]
+    public Color meshChargedTint = new Color(1.55f, 1.25f, 0.5f, 1f);
+    [Tooltip("满蓄脉动的缩放幅度（相对模型基准缩放）。")]
+    public float meshReadyPulseScale = 0.05f;
+    [Tooltip("满蓄脉动周期（秒）。")]
+    public float meshReadyPulseInterval = 0.3f;
+
     private GameObject _visualInstance;
     private SpriteRenderer _sr;
     private MeshWeaponVisual _meshVisual;
+    private Vector3 _modelRootBaseLocalPos;
+    private Vector3 _modelRootBaseLocalScale;
+    private bool _meshTintApplied;
+    private Color _meshTintCurrent;
     private float _weaponLength;
     private Camera _mainCam;
 
@@ -260,6 +274,13 @@ public class ChargeStabVisual : MonoBehaviour
 
         _sr = _visualInstance.GetComponentInChildren<SpriteRenderer>();
         _meshVisual = _visualInstance.GetComponent<MeshWeaponVisual>();
+        if (_meshVisual != null && _meshVisual.ModelRoot != null)
+        {
+            _modelRootBaseLocalPos = _meshVisual.ModelRoot.localPosition;
+            _modelRootBaseLocalScale = _meshVisual.ModelRoot.localScale;
+        }
+        _meshTintApplied = false;
+        _meshTintCurrent = Color.white;
 
         _visualInstance.transform.localScale = visualScale;
         _visualInstance.transform.SetParent(null); // 世界空间独立
@@ -327,6 +348,7 @@ public class ChargeStabVisual : MonoBehaviour
         _sr = null;
         _isActive = _hasAppeared = _isCharged = _readyShown = false;
         _isEntering = _isFadingOut = _hasPitchBaseline = false;
+        visual.GetComponent<MeshWeaponVisual>().SetTint(Color.white);
         visual.GetComponent<MeshWeaponVisual>().SetAlpha(1f);
         return visual;
     }
@@ -467,31 +489,81 @@ public class ChargeStabVisual : MonoBehaviour
 
     private void UpdateSprite(float progress)
     {
-        if (_sr == null) return;
+        // 2D 枪（带 SpriteRenderer）：按蓄力进度换精灵帧。
+        if (_sr != null)
+        {
+            if (progress < 1f)
+            {
+                _sr.sprite = progress < 0.65f ? chargeSprite1 : chargeSprite2;
+            }
+            else if (!_readyShown)
+            {
+                // 首次到达 100%
+                _sr.sprite = readySprite;
+                _isCharged = true;
+                _readyShown = true;
+                _readyTimer = readyDuration;
 
-        if (progress < 1f)
-        {
-            _sr.sprite = progress < 0.65f ? chargeSprite1 : chargeSprite2;
+                // readyDuration 后切换到 loop
+                Invoke(nameof(StartLoop), readyDuration);
+            }
+            return;
         }
-        else if (!_readyShown)
+
+        // 3D 枪（无 SpriteRenderer）：用模型局部变换 + 染色表达蓄力进度。
+        if (progress >= 1f && !_readyShown)
         {
-            // 首次到达 100%
-            _sr.sprite = readySprite;
+            // 首次到达 100%：与 2D 分支一致地标记蓄满
             _isCharged = true;
             _readyShown = true;
             _readyTimer = readyDuration;
-
-            // readyDuration 后切换到 loop
             Invoke(nameof(StartLoop), readyDuration);
+        }
+        UpdateMeshChargeLook(progress);
+    }
+
+    /// <summary>
+    /// 3D 蓄力表现：沿枪轴后拉（蓄势）+ 满蓄染色 + 满蓄脉动。
+    /// 不改实例整体朝向与位置，只动模型根的局部变换，避免与跟手/进出场打架。
+    /// </summary>
+    private void UpdateMeshChargeLook(float progress)
+    {
+        if (_meshVisual == null || _visualInstance == null) return;
+
+        Transform root = _meshVisual.ModelRoot;
+        if (root != null)
+        {
+            float pull = Mathf.Lerp(0f, meshChargePullback, Mathf.Clamp01(progress));
+            root.localPosition = _modelRootBaseLocalPos + new Vector3(0f, -pull, 0f);
+
+            float scale = 1f;
+            if (_isCharged && _readyShown)
+            {
+                float interval = Mathf.Max(0.01f, meshReadyPulseInterval);
+                scale = 1f + meshReadyPulseScale * Mathf.Abs(Mathf.Sin(Time.time * Mathf.PI / interval));
+            }
+            root.localScale = _modelRootBaseLocalScale * scale;
+        }
+
+        // 染色：蓄满前保持原色，蓄满后转暖金
+        Color tint = (_isCharged && _readyShown) ? meshChargedTint : Color.white;
+        if (!_meshTintApplied || tint != _meshTintCurrent)
+        {
+            _meshTintCurrent = tint;
+            _meshTintApplied = true;
+            _meshVisual.SetTint(tint);
         }
     }
 
     private void StartLoop()
     {
-        if (!_isCharged || _sr == null) return;
-        _loopTimer = 0f; // 立即触发第一次切换
-        _loopToggle = false;
-        if (_sr != null) _sr.sprite = loopSprite1;
+        if (!_isCharged) return;
+        if (_sr != null)
+        {
+            _loopTimer = 0f; // 立即触发第一次切换
+            _loopToggle = false;
+            _sr.sprite = loopSprite1;
+        }
     }
 
     private void SetAlpha(float alpha)

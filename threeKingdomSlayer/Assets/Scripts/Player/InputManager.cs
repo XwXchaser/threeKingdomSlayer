@@ -95,8 +95,8 @@ public class InputManager : MonoBehaviour
     [System.NonSerialized] public bool comboChargeActive;
 
     [Header("蓄力招式开关")]
-    [Tooltip("打开后只允许竖滑蓄力（上挑）：站桩蓄力（穿刺）与横滑蓄力（横扫）都不成立，蓄力指示器与蓄力武器视觉也不出现。蓄力 stab / 蓄力 slash 还没做完，先保持打开。")]
-    public bool restrictChargedToVertical = true;
+    [Tooltip("打开后只允许竖滑蓄力（上挑）：站桩蓄力（穿刺）与横滑蓄力（横扫）都不成立，蓄力指示器与蓄力武器视觉也不出现。\n蓄力 stab / 蓄力 slash 还没做完 —— 2026-10-21 起默认关闭（用户要求恢复蓄力表现），打开前先确认蓄力出招与命中正常。")]
+    public bool restrictChargedToVertical = false;
 
     // 技能输入开关（狂怒大招期间关闭）
     [System.NonSerialized] public bool skillInputEnabled = true;

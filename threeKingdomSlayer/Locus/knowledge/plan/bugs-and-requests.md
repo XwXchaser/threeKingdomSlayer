@@ -98,6 +98,7 @@ aiEditMode: inherit
 - 验收标准：画面中始终只有一把可见武器；三段枪突与指向突刺的手感、衔接、命中时序不变；`stab_v13` 高速帧替换可退休，刺出速度感另找表达方式。
 - 相关：`plan/stab-3d-three-view-production-handoff.md`（素材、真实进度与后续制作入口）、`plan/combo-progress-and-next.md` §6、`design/combo-zhangfei-stab3-launch.md`、`plan/stab-combo-video-reference-workflow.md`
 - 当前补充任务：V5缺左侧，用户要求前／左／右／后单图及合图。V06单次補左侧并完成交付 `StabWeaponArtSource/12_AssembledFourViewV06/`：四张单图、无字合图、中文标注版和trace。前右后沿用V5原文件，左侧整体等比对齐，左／右枪尖枪尾高度差0px；原图与合图像素校验通过。左側红缨与遮挡仍待美术验收。入口 `plan/stab-assembled-four-view-v06.md`。
+- 2026-10-21 追加：3D 枪已接入**蓄力视觉**（`Assets/Prefabs/FantasySpear3D.prefab` → `ChargeStabVisual.stabPrefab`）。蓄力进度可视化改为 3D 表现（枪身沿轴后拉 + 满蓄脉动 + 暖金染色，参数在 `ChargeStabVisual` 的「3D 蓄力表现」分组）；原 2D 精灵帧路径保留（prefab 带 `SpriteRenderer` 时仍走换帧）。**武器残影尚未接入**（用户同意先不做）。同时把 `InputManager.restrictChargedToVertical` 改为 false，蓄力玩法（站桩蓄力穿刺 / 横滑蓄力横扫）重新成立。
 - 状态：进行中（刚性枪体V02已验收；V06前左右后四图已交付，新增左侧待验收；旧顶底候选和3D模型接入未完成。V06只提交一次，中断恢复未重新生成，没有Unity工程或模式改动。）
 
 ### REQ-002 多攻击动作敌人的预警挂点（每个攻击步骤一个）
