@@ -391,16 +391,16 @@ public GameObject freezeMeltEffectPrefab;
     public bool pendingRushMove;
     public int targetRow = -1;
     public System.Action<Enemy, RushMoveOrderOwner, int> OnRushMoveComplete;
-    private RushMoveOrderOwner _rushMoveOrderOwner = RushMoveOrderOwner.None;
-    private int _rushMoveOrderGeneration;
-    private RushMoveMode _rushMoveMode = RushMoveMode.Step;
-    private float moveProgress; // 0~1, 当前排内移动进度
-    private bool isMovingToNextRow;
+    internal RushMoveOrderOwner _rushMoveOrderOwner = RushMoveOrderOwner.None;
+    internal int _rushMoveOrderGeneration;
+    internal RushMoveMode _rushMoveMode = RushMoveMode.Step;
+    internal float moveProgress; // 0~1, 当前排内移动进度
+    internal bool isMovingToNextRow;
 
-    private bool isRushMove;
+    internal bool isRushMove;
     private const float continuousRushMoveDuration = 0.2f;
-    private float rushMoveDelayTimer;
-    private bool rushMoveChainTriggered;
+    internal float rushMoveDelayTimer;
+    internal bool rushMoveChainTriggered;
     internal Renderer[] renderers;
     // 材质实例数组（用于闪白效果）
     // 通过 renderer.material 创建实例，避免 MaterialPropertyBlock 在对象禁用时不生效的问题。
@@ -415,7 +415,7 @@ public GameObject freezeMeltEffectPrefab;
     internal bool _allowHitFlashOnce; // Parry 打断霸体攻击时临时放行一次 HitFlash 动画
 
     // DOTween: 前进补齐时 Y 轴弹跳偏移（由 DOTween 驱动，在 UpdateWorldPosition 中应用）
-    private float bounceYOffset;
+    internal float bounceYOffset;
 
     /// <summary>当前生效的脚底视觉偏移（美术基准 + 运行时自动对齐）。</summary>
     public float EffectiveVisualYOffset => visualYOffset + runtimeVisualYOffset;
@@ -521,7 +521,7 @@ public GameObject freezeMeltEffectPrefab;
     private EnemyHealthBar cachedHealthBar;
     internal Animator _animator;
     private EnemySpriteController _spriteCtrl;
-    private CavalryEnemy _cavalry;
+    internal CavalryEnemy _cavalry;
     internal CavalryVisualController _cavalryVisual;
     private ShieldGuardEnemy _shieldGuard;
     private AnimationClip _attackClip; // 缓存的 Attack clip（用于同步 DOTween 与 Animator 时长）

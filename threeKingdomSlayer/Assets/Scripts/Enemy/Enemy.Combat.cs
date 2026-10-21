@@ -496,6 +496,12 @@ public partial class Enemy : MonoBehaviour
 
     private EnemyBossPhases BossPhases => _bossPhases ??= new EnemyBossPhases(this);
 
+    /// <summary>移动订单与世界坐标。实现见 EnemyMovement（批次 3 刀 D）。</summary>
+    private EnemyMovement _movement;
+
+    private EnemyMovement Movement => _movement ??= new EnemyMovement(this);
+
+
 
     private EnemyFreeze FreezeSys => _freezeSys ??= new EnemyFreeze(this);
 

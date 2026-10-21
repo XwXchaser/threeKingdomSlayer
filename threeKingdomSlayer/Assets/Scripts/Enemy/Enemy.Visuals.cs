@@ -114,123 +114,6 @@ public partial class Enemy : MonoBehaviour
         && !(state == EnemyState.Moving && !IsRushMovementActive)
         && rushMoveDelayTimer <= 0f;
 
-    public bool AssignRushMoveOrder(RushMoveOrderOwner owner, int generation, int orderTargetRow, RushMoveMode mode = RushMoveMode.Step)
-    {
-        if (owner == RushMoveOrderOwner.None || generation <= 0 || state == EnemyState.Dead)
-            return false;
-        if (_cavalry != null && _cavalry.IsSpecialMoveActive)
-            _cavalry.AbortForExternalOrder($"AssignRushMoveOrder:{owner}");
-
-        if (isBoss && owner != RushMoveOrderOwner.Boss)
-            return false;
-        if (!isBoss && owner == RushMoveOrderOwner.Boss)
-            return false;
-
-        if (HasRushMoveOrder && !IsRushMoveOrder(owner, generation))
-            return false;
-
-        _rushMoveOrderOwner = owner;
-        _rushMoveOrderGeneration = generation;
-        _rushMoveMode = mode;
-        if (orderTargetRow < 0)
-        {
-            DebugLog.Warning($"[RowGuard] {DebugTag} 收到目标排<0 的订单 owner={owner} target={orderTargetRow} 当前row={rowIndex}，已夹到 0");
-            orderTargetRow = 0;
-        }
-        targetRow = orderTargetRow;
-        pendingRushMove = rowIndex > orderTargetRow;
-        rushMoveDelayTimer = 0f;
-        rushMoveChainTriggered = false;
-        return true;
-    }
-
-    public bool IsRushMoveOrder(RushMoveOrderOwner owner, int generation)
-    {
-        return _rushMoveOrderOwner == owner && _rushMoveOrderGeneration == generation;
-    }
-
-    public void CancelRushMoveOrder(RushMoveOrderOwner owner, int generation, bool resetActiveMovement = false)
-    {
-        if (!IsRushMoveOrder(owner, generation)) return;
-
-        if (resetActiveMovement && IsRushMovementActive)
-            ResetRushMovementToCurrentRow();
-
-        ClearRushMoveOrder();
-    }
-
-    public void CancelRushMoveOrder(bool resetActiveMovement = false)
-    {
-        if (!HasRushMoveOrder) return;
-
-        if (resetActiveMovement && IsRushMovementActive)
-            ResetRushMovementToCurrentRow();
-
-        ClearRushMoveOrder();
-    }
-
-    private void ResetRushMovementToCurrentRow()
-    {
-        DOTween.Kill(transform, false);
-        StopHitScaleFeedback();
-        if (_animator != null)
-        {
-            _animator.speed = 1f;
-            _animator.ResetTrigger("Walk");
-            PlayIdleVisual();
-        }
-        bounceYOffset = 0f;
-        isMovingToNextRow = false;
-        isRushMove = false;
-        moveProgress = 0f;
-        if (state == EnemyState.Moving)
-            state = EnemyState.Idle;
-        UpdateWorldPosition();
-    }
-
-    private void ClearRushMoveOrder()
-    {
-        _rushMoveOrderOwner = RushMoveOrderOwner.None;
-        _rushMoveOrderGeneration = 0;
-        _rushMoveMode = RushMoveMode.Step;
-        pendingRushMove = false;
-        targetRow = -1;
-        rushMoveDelayTimer = 0f;
-        rushMoveChainTriggered = false;
-    }
-
-    private void CompleteRushMoveOrder()
-    {
-        if (!HasRushMoveOrder || rushMoveChainTriggered) return;
-
-        RushMoveOrderOwner owner = _rushMoveOrderOwner;
-        int generation = _rushMoveOrderGeneration;
-        rushMoveChainTriggered = true;
-        ClearRushMoveOrder();
-        OnRushMoveComplete?.Invoke(this, owner, generation);
-    }
-
-    /// <summary>
-    /// 冻结前落位：把在途的补齐移动立刻走完。
-    /// 复用 UpdateMovement 的完整完成分支（行号推进 / 地刺检测 / 撞击回退 / CompleteRushMoveOrder 补齐链回调），
-    /// 不另写一份，避免漏回调把整列补齐挂住（设计 §4.1 / P1c）。
-    /// </summary>
-    public void CompletePendingMovement()
-    {
-        if (state != EnemyState.Moving || !isMovingToNextRow) return;
-
-        int fromRow = rowIndex;
-        moveProgress = 1f;
-        UpdateMovement();
-
-        // 完成分支的个别早退路径（如 BOSS 推进暂停）会留下 Moving 空壳；清成 Idle，
-        // 否则冻结会把 Moving 当作 _preFrozenState，解冻后 UpdateMovement 直接早退卡死。
-        if (state == EnemyState.Moving && !isMovingToNextRow)
-            state = EnemyState.Idle;
-
-        DebugLog.Info($"[Freeze] {DebugTag} 冻结前落位：在途移动已完成 row {fromRow}→{rowIndex}");
-    }
-
     /// <summary>
     /// 尝试开始补齐移动（链式触发）
     /// 根据当前状态决定是否立即开始移动：
@@ -354,6 +237,42 @@ public partial class Enemy : MonoBehaviour
         }
     }
 
+    // ── 移动订单与世界坐标：实现见 EnemyMovement（批次 3 刀 D），此处保留同名薄转发 ──
+
+    public bool AssignRushMoveOrder(RushMoveOrderOwner owner, int generation, int orderTargetRow, RushMoveMode mode = RushMoveMode.Step)
+        => Movement.AssignRushMoveOrder(owner, generation, orderTargetRow, mode);
+
+    public bool IsRushMoveOrder(RushMoveOrderOwner owner, int generation) => Movement.IsRushMoveOrder(owner, generation);
+
+    public void CancelRushMoveOrder(RushMoveOrderOwner owner, int generation, bool resetActiveMovement = false)
+        => Movement.CancelRushMoveOrder(owner, generation, resetActiveMovement);
+
+    public void CancelRushMoveOrder(bool resetActiveMovement = false) => Movement.CancelRushMoveOrder(resetActiveMovement);
+
+    private void CompleteRushMoveOrder() => Movement.CompleteRushMoveOrder();
+
+    public void CompletePendingMovement() => Movement.CompletePendingMovement();
+
+    private void UpdateWorldPosition() => Movement.UpdateWorldPosition();
+
+    /// <summary>
+    /// 根据排索引计算Z轴位置
+    /// 在Unity中，-Z轴是前进方向（朝向玩家），+Z轴是后退方向（远离玩家）。
+    /// rowIndex=0在最前排（最靠近玩家），rowIndex越大越远离玩家。
+    ///
+    /// 公式：zPos = (maxVisibleRows - 1 - rowIndex) * (-rowSpacing) + offsetZ
+    /// </summary>
+    public float GetRowZ(int row, float spacing, float offset)
+    {
+        int maxRow = 4; // 默认值
+        var stage = StageFormation;
+        if (stage != null)
+        {
+            maxRow = stage.GetMaxVisibleRows() - 1;
+        }
+        return (maxRow - row) * (-spacing) + offset;
+    }
+
     /// <summary>
     /// 设置列和排索引
     /// </summary>
@@ -411,96 +330,6 @@ public partial class Enemy : MonoBehaviour
             state = EnemyState.Idle;
             PlayIdleVisual();
         }
-    }
-
-    /// <summary>
-    /// 根据排索引计算Z轴位置
-    /// 在Unity中，-Z轴是前进方向（朝向玩家），+Z轴是后退方向（远离玩家）。
-    /// rowIndex=0在最前排（最靠近玩家），rowIndex越大越远离玩家。
-    ///
-    /// 公式：zPos = (maxVisibleRows - 1 - rowIndex) * (-rowSpacing) + offsetZ
-    /// rowIndex=0 → Z = (5-1-0) * (-2.5) = -10（最靠近玩家）
-    /// rowIndex=4 → Z = (5-1-4) * (-2.5) = 0（最远离玩家）
-    ///
-    /// 前进方向：rowIndex从4→3→2→1→0，Z值从0→-2.5→-5.0→-7.5→-10
-    /// 即向-Z方向移动。-Z方向是前进方向（朝向玩家），所以这是前进。
-    /// </summary>
-    private float GetRowZ(int row, float spacing, float offset)
-    {
-        int maxRow = 4; // 默认值
-        var stage = StageFormation;
-        if (stage != null)
-        {
-            maxRow = stage.GetMaxVisibleRows() - 1;
-        }
-        return (maxRow - row) * (-spacing) + offset;
-    }
-
-    /// <summary>
-    /// 更新世界坐标
-    /// 列：X轴使用梯形/扇形阵型偏移，排：Z轴偏移
-    /// 移动过程中：从当前排(rowIndex)位置平滑移动到前一排(rowIndex-1)位置
-    /// 非移动中：固定在当前排(rowIndex)位置
-    ///
-    /// BUG FIX: 移动过程中使用 rowIndex（当前排位置）计算阵型偏移，
-    /// 因为 rowIndex 在移动过程中尚未更新（移动完成后才 rowIndex--）。
-    /// 这样 X 轴和 Z 轴同步，避免"梯形向内聚拢"问题。
-    /// </summary>
-    private void UpdateWorldPosition()
-    {
-        float xPos;
-        float rowSpacing = 2.5f;
-        var stage = StageFormation;
-        if (stage != null)
-        {
-            // BUG FIX: 移动过程中使用 rowIndex（旧排位置）计算 X 轴偏移
-            // 因为 rowIndex 在移动过程中尚未更新（移动完成后才 rowIndex--）
-            // 这样 X 轴和 Z 轴同步，避免"梯形向内聚拢"问题
-            xPos = stage.GetFormationOffset(columnIndex, rowIndex);
-            rowSpacing = stage.GetRowSpacing();
-        }
-        else
-        {
-            // 回退到原始直线排列
-            xPos = (columnIndex - 2) * 2.0f;
-        }
-
-        // 获取阵型整体Z轴偏移（用于调整敌人生成位置远离/靠近摄像机）
-        float offsetZ = 0f;
-        if (stage != null)
-        {
-            offsetZ = stage.GetFormationOffsetZ();
-        }
-
-        float zPos;
-        if (isMovingToNextRow)
-        {
-            // BUG FIX: 移动过程中同时平滑过渡 X 轴和 Z 轴。
-            // 之前 X 轴仅使用 rowIndex（当前排），导致移动完成时 X 瞬间跳跃到目标排的偏移量。
-            // 现在 X 和 Z 都从当前排(rowIndex)平滑过渡到目标排(rowIndex-1)，
-            // 使阵型的梯形/扇形展开在移动过程中就正确显示，而非抵达后才调整。
-            //
-            // rowIndex 尚未更新，使用 rowIndex 作为起点，rowIndex-1 作为终点
-            float currentX = xPos; // 当前排的 X 偏移（已在上面通过 GetFormationOffset 计算）
-            float targetX = stage.GetFormationOffset(columnIndex, rowIndex - 1);
-            xPos = Mathf.Lerp(currentX, targetX, moveProgress);
-
-            // Z 轴：从当前排向目标排平滑过渡
-            float currentRowZ = GetRowZ(rowIndex, rowSpacing, offsetZ);
-            float targetRowZ = GetRowZ(rowIndex - 1, rowSpacing, offsetZ);
-            zPos = Mathf.Lerp(currentRowZ, targetRowZ, moveProgress);
-        }
-        else
-        {
-            // 非移动中：固定在当前排位置
-            zPos = GetRowZ(rowIndex, rowSpacing, offsetZ);
-        }
-
-        // 使用 localPosition 而非 position，这样敌人会相对于父节点定位
-        // 你可以在场景中创建一个空的 Enemies GameObject 作为父节点，
-        // 然后调整父节点的 Transform Position 来整体移动所有敌人的位置
-        // DOTween: 前进补齐时 Y 轴弹跳由 bounceYOffset 驱动（非补齐移动时 bounceYOffset = 0）
-        transform.localPosition = new Vector3(xPos, bounceYOffset + EffectiveVisualYOffset, zPos);
     }
 
     /// <summary>

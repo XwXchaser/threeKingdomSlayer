@@ -83,7 +83,7 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 
 | 指标 | 改造前 | 现在 |
 |---|---|---|
-| `Enemy.cs` | 5224 行 | **933 行**（主文件：字段/生命周期/初始化/转发）；另拆出 5 个 partial 分片：状态机 1495 / 战斗结算 902 / 表现层 602 / BOSS 推进 206 / 对象池 106 |
+| `Enemy.cs` | 5224 行 | **933 行**（主文件：字段/生命周期/初始化/转发）；另拆出 5 个 partial 分片：状态机 1495 / 战斗结算 902 / 表现层 413 / BOSS 推进 206 / 对象池 106；真类：`EnemyHitFeedback` / `EnemyBossPhases` / `EnemyMovement` |
 | `StageController.cs` | 852 行 | **708 行** |
 | `ColumnManager.cs` | 2149 行 | **662 行**（队列/查询/入场/补齐/位移五块全部拆出） |
 | 门面（`StageController`）成员调用 | 大量 | **0**（`StageController.Instance` 仅剩 30 处惰性解析点） |
@@ -230,7 +230,7 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 | D. `ColumnManager` 拆分 | 2149 → **662 行**；刀 1/2/3/4/5/6 **全部完成**（批次 2 收官） | 中高（已落地） | 承载「位移三原则」；做法与验收见 `plan/columnmanager-split-plan-20261020.md` §0.8/§0.9 |
 | E. 共享类型独立成程序集 | 为「Legacy 剔出包」铺路 | 中 | 需先给 `Enemy`/`PlayerState` 等定程序集边界；也是 B 的前置 |
 | F. 终态删 `FillUpRule` 枚举与字段 | ✅ 已完成（`86832d4`）：补齐规则只剩一种，AI 无从选错 | — | 已完成 |
-| G. `Enemy.cs` 继续拆 | ✅ 部分完成：真类拆出 `EnemyHitFeedback` / `EnemyBossPhases`；主体 4177 → **933 行**（另 5 个 partial 分片，最大 1495）。**剩余真类拆分**：`EnemyHealth`（含 `TakeDamage`，风险最高）、`EnemyMovement`（RushMove 订单） | 中 | 刀 A/B/C 的做法见 §10/§11/§12 |
+| G. `Enemy.cs` 继续拆 | ✅ 部分完成：真类拆出 `EnemyHitFeedback` / `EnemyBossPhases` / `EnemyMovement`；主体 4177 → **933 行**（另 5 个 partial 分片，最大 1495）。**剩余**：`EnemyHealth`（含 `TakeDamage`，风险最高，放最后） | 中 | 刀 A/B/C/D 的做法见 §10–§13 |
 
 ---
 
@@ -301,6 +301,36 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 - 未采集 GC 分配与 Draw Call（指标名需用 `DiscoverMetrics` 拿到的
   `Draw Calls Count` / `GC.*` 再采一轮；本轮 `gc_allocated_in_frame` 名字不存在）。
 - 结论只说明「现在没必要为了性能重构」；若真机出现卡顿，应先在真机重采再动手。
+
+---
+
+## 13. 批次 3 刀 D：移动订单拆出（`EnemyMovement`）
+
+> 2026-10-21 完成。新增 `Assets/Scripts/Enemy/EnemyMovement.cs`（232 行）；
+> `Enemy.Visuals.cs` 602 → **413 行**。
+
+**拆了什么**：RushMove 订单的派发/校验/取消/完成（owner + generation 语义）、
+冻结前落位（`CompletePendingMovement`）、以及世界坐标换算（`UpdateWorldPosition`）。
+
+**边界划分**：「什么时候发起移动」（`TryStartRushMove`）**留在 Enemy** ——
+它同时牵扯 BOSS 应战分支与攻击状态机，拆开会同时牵动两块边界。
+`GetRowZ` 也**留在 Enemy**（击飞静默补齐在用），改为 public 供 `EnemyMovement` 调用。
+
+**手法**：同刀 A/B —— 状态字段留 `Enemy`（改 internal）+ owner 引用 + 同名薄转发（7 个）。
+
+**验证（Play Mode）**：
+
+| 项 | 实测 |
+|---|---|
+| 入场初期 | 物理行 = 逻辑行 + 2，owner = SpawnEntry（col1/r3 · col1/r5 · col2/r2 · col2/r6 · col3/r7） |
+| 入场完成 | `col1/r1 · col1/r3 · col2/r0 · col2/r4 · col3/r5`（逐位一致） |
+| 坐标换算 | col1/r1 → localPos (-1.25, 0.01, **-7.50**)，与 Z=(5-1-row)*(-2.5) 精确吻合 |
+| 补齐基线 | 杀 r0 → `col1/r0 · col1/r2 · col2/r3 · col3/r4`（逐位一致）；补齐后 col1/r0 → Z **-10.14**（含 offsetZ） |
+| Console | 0 error / 0 warn |
+
+**下一步（批次 3 最后一块）**：`EnemyHealth`（韧性 / 护盾 / `TakeDamage`）——
+**风险最高，放最后**：它是战斗核心，且与共享血量组、破盾、伤害数字、死亡判定纠缠。
+建议先定契约（哪些字段真能搬走）再动手。
 
 ---
 

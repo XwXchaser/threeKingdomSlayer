@@ -986,7 +986,7 @@ public partial class Enemy : MonoBehaviour
     ///   - 这样可以将单次补齐移动速度（moveSpeed）加快，
     ///     而整体补齐节奏通过 rushMoveDelay 来调节，达到"快移动+停顿"的效果。
     /// </summary>
-    private void UpdateMovement()
+    internal void UpdateMovement()
     {
         // 教学手势拍：敌人站住不动（移动进度冻结，解除后从原进度继续）
         if (tutorialHold) return;
