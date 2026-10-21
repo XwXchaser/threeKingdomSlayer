@@ -31,31 +31,19 @@ public class ColumnManager : MonoBehaviour
     // GC 优化：范围查询复用列表
 
     // Wave march has a preparing barrier and one exact generation per row step.
-    private bool _isWaveMarching;
-    private bool _isWavePreparing;
     /// <summary>入场调度（新波次远处入场）。状态与流程见 SpawnEntryMover。</summary>
     private SpawnEntryMover _spawnEntry;
 
     private SpawnEntryMover SpawnEntry => _spawnEntry ??= new SpawnEntryMover(_queue, StartPendingLogicalLayoutReflow);
-    private bool _currentWaveContinuousRun;
-    private int _currentWaveSourceRow = -1;
-    private int _currentWaveTargetRow = -1;
-    private int _waveGeneration;
     private bool _waveMarchRequestedWhilePushReturn;
     private bool _topologyChangedWhilePushReturn;
-    private bool _hasPausedWaveStep;
-    private int _pausedWaveSourceRow = -1;
-    private int _pausedWaveTargetRow = -1;
-    private readonly List<Enemy> _pausedWaveEnemies = new List<Enemy>();
-    private readonly Dictionary<Enemy, int> _pausedWaveTargetRows = new Dictionary<Enemy, int>();
-    private readonly List<Enemy> _preparingWaveEnemies = new List<Enemy>();
-    private readonly HashSet<Enemy> _pendingWaveEnemies = new HashSet<Enemy>();
-    private readonly Dictionary<Enemy, int> _plannedWaveTargetRows = new Dictionary<Enemy, int>();
-    private readonly Dictionary<Enemy, int> _activeWaveTargetRows = new Dictionary<Enemy, int>();
-    private readonly HashSet<long> _activeWaveTargetSlots = new HashSet<long>();
-    private readonly HashSet<long> _plannedWaveTargetSlots = new HashSet<long>();
     /// <summary>逻辑排队列（活人排 / 空排占位符 / 999 节奏门）。数据与队列操作见 LogicalRowQueue。</summary>
     private readonly LogicalRowQueue _queue = new LogicalRowQueue();
+
+    /// <summary>波次行军（普通补齐）的状态与查询。流程暂留本类，刀 4b 再搬。</summary>
+    private WaveMarchScheduler _waveMarch;
+
+    private WaveMarchScheduler WaveMarch => _waveMarch ??= new WaveMarchScheduler(() => columns, IsCavalrySlotReserved);
 
     /// <summary>只读查询层（战斗侧取数入口）。取列数组用委托，避免重建后拿到旧引用。</summary>
     private ColumnQueries _queries;
@@ -148,27 +136,27 @@ public class ColumnManager : MonoBehaviour
         // 入场流程占用时，本帧不进入其它调度分支（与拆分前一致）
         if (SpawnEntry.Tick()) return;
 
-        if (!_isWavePreparing) return;
+        if (!WaveMarch.isWavePreparing) return;
 
-        for (int i = _preparingWaveEnemies.Count - 1; i >= 0; i--)
+        for (int i = WaveMarch.preparingWaveEnemies.Count - 1; i >= 0; i--)
         {
-            var enemy = _preparingWaveEnemies[i];
-            if (enemy == null || enemy.state == EnemyState.Dead || !enemy.IsRushMoveOrder(RushMoveOrderOwner.WaveMarch, _waveGeneration))
+            var enemy = WaveMarch.preparingWaveEnemies[i];
+            if (enemy == null || enemy.state == EnemyState.Dead || !enemy.IsRushMoveOrder(RushMoveOrderOwner.WaveMarch, WaveMarch.waveGeneration))
             {
                 if (enemy != null)
                     enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
-                _preparingWaveEnemies.RemoveAt(i);
+                WaveMarch.preparingWaveEnemies.RemoveAt(i);
                 continue;
             }
             if (!enemy.IsRushMoveReady)
                 return;
         }
 
-        if (_preparingWaveEnemies.Count == 0)
+        if (WaveMarch.preparingWaveEnemies.Count == 0)
         {
-            _isWavePreparing = false;
-            _currentWaveSourceRow = -1;
-            _currentWaveTargetRow = -1;
+            WaveMarch.isWavePreparing = false;
+            WaveMarch.currentWaveSourceRow = -1;
+            WaveMarch.currentWaveTargetRow = -1;
             StartPendingLogicalLayoutReflow();
             return;
         }
@@ -290,11 +278,11 @@ public class ColumnManager : MonoBehaviour
         ClearWaveRowLayout();
         _waveMarchRequestedWhilePushReturn = false;
         _topologyChangedWhilePushReturn = false;
-        _hasPausedWaveStep = false;
-        _pausedWaveSourceRow = -1;
-        _pausedWaveTargetRow = -1;
-        _pausedWaveEnemies.Clear();
-        _pausedWaveTargetRows.Clear();
+        WaveMarch.hasPausedWaveStep = false;
+        WaveMarch.pausedWaveSourceRow = -1;
+        WaveMarch.pausedWaveTargetRow = -1;
+        WaveMarch.pausedWaveEnemies.Clear();
+        WaveMarch.pausedWaveTargetRows.Clear();
         SpawnEntry.Reset();
         for (int i = 0; i < columnCount; i++)
             columns[i].enemies.Clear();
@@ -495,9 +483,7 @@ public class ColumnManager : MonoBehaviour
 
     public bool IsContinuousWaveTargetReserved(Enemy enemy, int column, int row)
     {
-        if (enemy != null && _activeWaveTargetRows.TryGetValue(enemy, out int ownTargetRow) && ownTargetRow == row)
-            return false;
-        return _activeWaveTargetSlots.Contains(((long)column << 32) ^ (uint)row);
+        return WaveMarch.IsTargetReserved(enemy, column, row);
     }
 
     public bool CanStartSpawnEntryOrder(Enemy enemy, int generation)
@@ -507,25 +493,12 @@ public class ColumnManager : MonoBehaviour
 
     public bool CanStartWaveMarchOrder(Enemy enemy, int generation)
     {
-        return !_isWavePreparing
-            && generation == _waveGeneration
-            && _pendingWaveEnemies.Contains(enemy);
+        return WaveMarch.CanStartOrder(enemy, generation);
     }
 
     public bool CanContinuousWaveEnterRow(Enemy enemy, int column, int row)
     {
-        if (!IsValidColumn(column))
-            return false;
-        if (IsCavalrySlotReserved(column, row, enemy))
-            return false;
-
-        var occupant = columns[column].GetEnemyAtRow(row);
-        if (occupant == null || occupant == enemy || occupant.state == EnemyState.Dead)
-            return true;
-
-        return occupant.IsRushMoveOrder(RushMoveOrderOwner.WaveMarch, _waveGeneration)
-            && _activeWaveTargetRows.TryGetValue(occupant, out int occupantTargetRow)
-            && occupantTargetRow < row;
+        return WaveMarch.CanEnterRow(enemy, column, row);
     }
 
     public bool CanAdvanceIntoRow(int row)
@@ -560,7 +533,7 @@ public class ColumnManager : MonoBehaviour
             _waveMarchRequestedWhilePushReturn = true;
             return;
         }
-        if (_isWaveMarching || _isWavePreparing)
+        if (WaveMarch.isWaveMarching || WaveMarch.isWavePreparing)
             return;
 
         if (!TryBuildLogicalWaveMarchPlan())
@@ -586,8 +559,8 @@ public class ColumnManager : MonoBehaviour
 
     private bool TryBuildLogicalWaveMarchPlan()
     {
-        _plannedWaveTargetRows.Clear();
-        _plannedWaveTargetSlots.Clear();
+        WaveMarch.plannedWaveTargetRows.Clear();
+        WaveMarch.plannedWaveTargetSlots.Clear();
 
         _queue.ReassignRuntimeRows();
 
@@ -611,27 +584,27 @@ public class ColumnManager : MonoBehaviour
             }
 
             long slotKey = ((long)enemy.columnIndex << 32) ^ (uint)logicalRow.currentRow;
-            if (!_plannedWaveTargetSlots.Add(slotKey))
+            if (!WaveMarch.plannedWaveTargetSlots.Add(slotKey))
                 continue;
-            _plannedWaveTargetRows[enemy] = logicalRow.currentRow;
+            WaveMarch.plannedWaveTargetRows[enemy] = logicalRow.currentRow;
         }
 
-        return _plannedWaveTargetRows.Count > 0;
+        return WaveMarch.plannedWaveTargetRows.Count > 0;
     }
 
     private void BeginWaveStep()
     {
-        _waveGeneration++;
-        if (_waveGeneration <= 0) _waveGeneration = 1;
-        _currentWaveSourceRow = -1;
-        _currentWaveTargetRow = -1;
-        _currentWaveContinuousRun = true;
-        _preparingWaveEnemies.Clear();
-        _pendingWaveEnemies.Clear();
-        _activeWaveTargetRows.Clear();
-        _activeWaveTargetSlots.Clear();
+        WaveMarch.waveGeneration++;
+        if (WaveMarch.waveGeneration <= 0) WaveMarch.waveGeneration = 1;
+        WaveMarch.currentWaveSourceRow = -1;
+        WaveMarch.currentWaveTargetRow = -1;
+        WaveMarch.currentWaveContinuousRun = true;
+        WaveMarch.preparingWaveEnemies.Clear();
+        WaveMarch.pendingWaveEnemies.Clear();
+        WaveMarch.activeWaveTargetRows.Clear();
+        WaveMarch.activeWaveTargetSlots.Clear();
 
-        foreach (var pair in _plannedWaveTargetRows)
+        foreach (var pair in WaveMarch.plannedWaveTargetRows)
         {
             var enemy = pair.Key;
             if (enemy == null || enemy.state == EnemyState.Dead)
@@ -639,33 +612,33 @@ public class ColumnManager : MonoBehaviour
             var reservationOwner = GetCavalryReservationOwner(enemy.columnIndex, pair.Value);
             if (reservationOwner != null && reservationOwner != enemy)
                 reservationOwner.GetComponent<CavalryEnemy>()?.AbortForExternalOrder("WaveMarch目标优先");
-            if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, _waveGeneration, pair.Value, RushMoveMode.ContinuousEmptyRun))
+            if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, WaveMarch.waveGeneration, pair.Value, RushMoveMode.ContinuousEmptyRun))
                 continue;
 
             enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
             enemy.OnRushMoveComplete += OnWaveEnemyRushComplete;
-            _preparingWaveEnemies.Add(enemy);
-            _activeWaveTargetRows[enemy] = pair.Value;
-            _activeWaveTargetSlots.Add(((long)enemy.columnIndex << 32) ^ (uint)pair.Value);
+            WaveMarch.preparingWaveEnemies.Add(enemy);
+            WaveMarch.activeWaveTargetRows[enemy] = pair.Value;
+            WaveMarch.activeWaveTargetSlots.Add(((long)enemy.columnIndex << 32) ^ (uint)pair.Value);
         }
 
-        _plannedWaveTargetRows.Clear();
-        _plannedWaveTargetSlots.Clear();
-        if (_preparingWaveEnemies.Count == 0)
+        WaveMarch.plannedWaveTargetRows.Clear();
+        WaveMarch.plannedWaveTargetSlots.Clear();
+        if (WaveMarch.preparingWaveEnemies.Count == 0)
             return;
 
-        _isWavePreparing = true;
+        WaveMarch.isWavePreparing = true;
     }
 
     private void BeginWaveStep(int sourceRow, int targetRow, IList<Enemy> restrictedEnemies = null, bool continuousRun = false)
     {
-        _waveGeneration++;
-        if (_waveGeneration <= 0) _waveGeneration = 1;
-        _currentWaveSourceRow = sourceRow;
-        _currentWaveTargetRow = Mathf.Max(0, targetRow);
-        _currentWaveContinuousRun = continuousRun;
-        _preparingWaveEnemies.Clear();
-        _pendingWaveEnemies.Clear();
+        WaveMarch.waveGeneration++;
+        if (WaveMarch.waveGeneration <= 0) WaveMarch.waveGeneration = 1;
+        WaveMarch.currentWaveSourceRow = sourceRow;
+        WaveMarch.currentWaveTargetRow = Mathf.Max(0, targetRow);
+        WaveMarch.currentWaveContinuousRun = continuousRun;
+        WaveMarch.preparingWaveEnemies.Clear();
+        WaveMarch.pendingWaveEnemies.Clear();
 
         for (int c = 0; c < columnCount; c++)
         {
@@ -684,79 +657,79 @@ public class ColumnManager : MonoBehaviour
                 if (_pushReturnTransactions.ContainsKey(enemy))
                     continue;
 
-                var reservationOwner = GetCavalryReservationOwner(enemy.columnIndex, _currentWaveTargetRow);
+                var reservationOwner = GetCavalryReservationOwner(enemy.columnIndex, WaveMarch.currentWaveTargetRow);
                 if (reservationOwner != null && reservationOwner != enemy)
                     reservationOwner.GetComponent<CavalryEnemy>()?.AbortForExternalOrder("WaveMarch目标优先");
-                if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, _waveGeneration, _currentWaveTargetRow,
+                if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, WaveMarch.waveGeneration, WaveMarch.currentWaveTargetRow,
                     continuousRun ? RushMoveMode.ContinuousEmptyRun : RushMoveMode.Step))
                     continue;
 
                 enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
                 enemy.OnRushMoveComplete += OnWaveEnemyRushComplete;
-                _preparingWaveEnemies.Add(enemy);
+                WaveMarch.preparingWaveEnemies.Add(enemy);
             }
         }
 
-        if (_preparingWaveEnemies.Count == 0)
+        if (WaveMarch.preparingWaveEnemies.Count == 0)
         {
             Debug.Log($"[WaveMarch] BeginWaveStep srcRow={sourceRow} tgtRow={targetRow}: NO enemies eligible (all boss/dead/rush-order-rejected)");
-            _currentWaveSourceRow = -1;
-            _currentWaveTargetRow = -1;
+            WaveMarch.currentWaveSourceRow = -1;
+            WaveMarch.currentWaveTargetRow = -1;
             return;
         }
 
-        _isWavePreparing = true;
+        WaveMarch.isWavePreparing = true;
     }
 
     private void StartPreparedWaveStep()
     {
-        int generation = _waveGeneration;
-        _isWavePreparing = false;
-        _isWaveMarching = true;
-        _pendingWaveEnemies.Clear();
+        int generation = WaveMarch.waveGeneration;
+        WaveMarch.isWavePreparing = false;
+        WaveMarch.isWaveMarching = true;
+        WaveMarch.pendingWaveEnemies.Clear();
 
-        for (int i = 0; i < _preparingWaveEnemies.Count; i++)
+        for (int i = 0; i < WaveMarch.preparingWaveEnemies.Count; i++)
         {
-            var enemy = _preparingWaveEnemies[i];
+            var enemy = WaveMarch.preparingWaveEnemies[i];
             if (enemy == null || enemy.state == EnemyState.Dead)
                 continue;
             if (!enemy.IsRushMoveOrder(RushMoveOrderOwner.WaveMarch, generation))
                 continue;
-            _pendingWaveEnemies.Add(enemy);
+            WaveMarch.pendingWaveEnemies.Add(enemy);
         }
-        _preparingWaveEnemies.Clear();
+        WaveMarch.preparingWaveEnemies.Clear();
 
-        foreach (var enemy in _pendingWaveEnemies)
+        foreach (var enemy in WaveMarch.pendingWaveEnemies)
             enemy.TryStartRushMove();
 
-        if (_pendingWaveEnemies.Count == 0)
+        if (WaveMarch.pendingWaveEnemies.Count == 0)
             CompleteWaveStep(generation);
     }
 
     private void OnWaveEnemyRushComplete(Enemy enemy, RushMoveOrderOwner owner, int generation)
     {
-        if (owner != RushMoveOrderOwner.WaveMarch || generation != _waveGeneration)
+        if (owner != RushMoveOrderOwner.WaveMarch || generation != WaveMarch.waveGeneration)
             return;
 
         enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
-        _pendingWaveEnemies.Remove(enemy);
-        if (_pendingWaveEnemies.Count == 0)
+        WaveMarch.pendingWaveEnemies.Remove(enemy);
+        if (WaveMarch.pendingWaveEnemies.Count == 0)
             CompleteWaveStep(generation);
     }
 
     private void CompleteWaveStep(int generation)
     {
-        if (generation != _waveGeneration) return;
+        if (generation != WaveMarch.waveGeneration) return;
 
-        _isWaveMarching = false;
-        _isWavePreparing = false;
-        _currentWaveContinuousRun = false;
-        _currentWaveSourceRow = -1;
-        _currentWaveTargetRow = -1;
-        _pendingWaveEnemies.Clear();
-        _preparingWaveEnemies.Clear();
-        _activeWaveTargetRows.Clear();
-        _activeWaveTargetSlots.Clear();
+        WaveMarch.isWaveMarching = false;
+        WaveMarch.isWavePreparing = false;
+        WaveMarch.currentWaveContinuousRun = false;
+        WaveMarch.currentWaveSourceRow = -1;
+        WaveMarch.currentWaveTargetRow = -1;
+        WaveMarch.pendingWaveEnemies.Clear();
+        WaveMarch.preparingWaveEnemies.Clear();
+        WaveMarch.activeWaveTargetRows.Clear();
+        WaveMarch.activeWaveTargetSlots.Clear();
         StartPendingLogicalLayoutReflow();
         if (!_queue.UseRowMarchPlanner)
             StartWaveMarch();
@@ -768,32 +741,32 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     private void CapturePausedWaveStep()
     {
-        if (!_isWaveMarching && !_isWavePreparing)
+        if (!WaveMarch.isWaveMarching && !WaveMarch.isWavePreparing)
             return;
 
-        _hasPausedWaveStep = true;
-        _pausedWaveSourceRow = _currentWaveSourceRow;
-        _pausedWaveTargetRow = _currentWaveTargetRow;
-        _pausedWaveEnemies.Clear();
-        _pausedWaveTargetRows.Clear();
+        WaveMarch.hasPausedWaveStep = true;
+        WaveMarch.pausedWaveSourceRow = WaveMarch.currentWaveSourceRow;
+        WaveMarch.pausedWaveTargetRow = WaveMarch.currentWaveTargetRow;
+        WaveMarch.pausedWaveEnemies.Clear();
+        WaveMarch.pausedWaveTargetRows.Clear();
 
-        for (int i = 0; i < _preparingWaveEnemies.Count; i++)
+        for (int i = 0; i < WaveMarch.preparingWaveEnemies.Count; i++)
         {
-            var enemy = _preparingWaveEnemies[i];
-            if (enemy != null && !_pausedWaveEnemies.Contains(enemy))
-                _pausedWaveEnemies.Add(enemy);
+            var enemy = WaveMarch.preparingWaveEnemies[i];
+            if (enemy != null && !WaveMarch.pausedWaveEnemies.Contains(enemy))
+                WaveMarch.pausedWaveEnemies.Add(enemy);
         }
-        foreach (var enemy in _pendingWaveEnemies)
+        foreach (var enemy in WaveMarch.pendingWaveEnemies)
         {
-            if (enemy != null && !_pausedWaveEnemies.Contains(enemy))
-                _pausedWaveEnemies.Add(enemy);
+            if (enemy != null && !WaveMarch.pausedWaveEnemies.Contains(enemy))
+                WaveMarch.pausedWaveEnemies.Add(enemy);
         }
 
-        for (int i = 0; i < _pausedWaveEnemies.Count; i++)
+        for (int i = 0; i < WaveMarch.pausedWaveEnemies.Count; i++)
         {
-            var enemy = _pausedWaveEnemies[i];
-            if (_activeWaveTargetRows.TryGetValue(enemy, out int targetRow))
-                _pausedWaveTargetRows[enemy] = targetRow;
+            var enemy = WaveMarch.pausedWaveEnemies[i];
+            if (WaveMarch.activeWaveTargetRows.TryGetValue(enemy, out int targetRow))
+                WaveMarch.pausedWaveTargetRows[enemy] = targetRow;
         }
     }
 
@@ -803,34 +776,34 @@ public class ColumnManager : MonoBehaviour
             CapturePausedWaveStep();
 
         CancelInvoke(nameof(StartWaveMarch));
-        _waveGeneration++;
+        WaveMarch.waveGeneration++;
 
-        for (int i = 0; i < _preparingWaveEnemies.Count; i++)
+        for (int i = 0; i < WaveMarch.preparingWaveEnemies.Count; i++)
         {
-            var enemy = _preparingWaveEnemies[i];
+            var enemy = WaveMarch.preparingWaveEnemies[i];
             if (enemy == null) continue;
             enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
             enemy.CancelRushMoveOrder(resetActiveMovement: true);
         }
-        foreach (var enemy in _pendingWaveEnemies)
+        foreach (var enemy in WaveMarch.pendingWaveEnemies)
         {
             if (enemy == null) continue;
             enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
             enemy.CancelRushMoveOrder(resetActiveMovement: true);
         }
 
-        _preparingWaveEnemies.Clear();
-        _pendingWaveEnemies.Clear();
-        _plannedWaveTargetRows.Clear();
-        _plannedWaveTargetSlots.Clear();
-        _activeWaveTargetRows.Clear();
-        _activeWaveTargetSlots.Clear();
+        WaveMarch.preparingWaveEnemies.Clear();
+        WaveMarch.pendingWaveEnemies.Clear();
+        WaveMarch.plannedWaveTargetRows.Clear();
+        WaveMarch.plannedWaveTargetSlots.Clear();
+        WaveMarch.activeWaveTargetRows.Clear();
+        WaveMarch.activeWaveTargetSlots.Clear();
         if (_queue.UseRowMarchPlanner)
             _queue.MarkDirty();
-        _isWavePreparing = false;
-        _isWaveMarching = false;
-        _currentWaveSourceRow = -1;
-        _currentWaveTargetRow = -1;
+        WaveMarch.isWavePreparing = false;
+        WaveMarch.isWaveMarching = false;
+        WaveMarch.currentWaveSourceRow = -1;
+        WaveMarch.currentWaveTargetRow = -1;
     }
 
     private void ReleaseEnemyFromSchedulers(Enemy enemy, int sourceColumn)
@@ -852,10 +825,10 @@ public class ColumnManager : MonoBehaviour
     {
         if (enemy == null) return;
 
-        bool wasWaveMember = _pendingWaveEnemies.Remove(enemy);
-        if (_activeWaveTargetRows.Remove(enemy, out int activeTargetRow))
-            _activeWaveTargetSlots.Remove(((long)sourceColumn << 32) ^ (uint)activeTargetRow);
-        if (_preparingWaveEnemies.Remove(enemy))
+        bool wasWaveMember = WaveMarch.pendingWaveEnemies.Remove(enemy);
+        if (WaveMarch.activeWaveTargetRows.Remove(enemy, out int activeTargetRow))
+            WaveMarch.activeWaveTargetSlots.Remove(((long)sourceColumn << 32) ^ (uint)activeTargetRow);
+        if (WaveMarch.preparingWaveEnemies.Remove(enemy))
             wasWaveMember = true;
         if (wasWaveMember)
             enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
@@ -865,14 +838,14 @@ public class ColumnManager : MonoBehaviour
 
         enemy.CancelRushMoveOrder(resetActiveMovement: true);
 
-        if (wasWaveMember && _pendingWaveEnemies.Count == 0 && _preparingWaveEnemies.Count == 0)
+        if (wasWaveMember && WaveMarch.pendingWaveEnemies.Count == 0 && WaveMarch.preparingWaveEnemies.Count == 0)
         {
-            _isWavePreparing = false;
-            _isWaveMarching = false;
-            _currentWaveSourceRow = -1;
-            _currentWaveTargetRow = -1;
-            _activeWaveTargetRows.Clear();
-            _activeWaveTargetSlots.Clear();
+            WaveMarch.isWavePreparing = false;
+            WaveMarch.isWaveMarching = false;
+            WaveMarch.currentWaveSourceRow = -1;
+            WaveMarch.currentWaveTargetRow = -1;
+            WaveMarch.activeWaveTargetRows.Clear();
+            WaveMarch.activeWaveTargetSlots.Clear();
             if (_queue.UseRowMarchPlanner)
             {
                 _queue.MarkDirty();
@@ -895,30 +868,12 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public bool IsRowFullyVacated(int row)
     {
-        for (int c = 0; c < columnCount; c++)
-        {
-            foreach (var e in columns[c].enemies)
-            {
-                if (e == null) continue;
-                if (e.state == EnemyState.Dead) continue;
-                if (e.rowIndex == row) return false;
-            }
-        }
-        return true;
+        return WaveMarch.IsRowFullyVacated(row);
     }
 
     private int GetMaxOccupiedRow()
     {
-        int max = 0;
-        for (int c = 0; c < columnCount; c++)
-        {
-            foreach (var e in columns[c].enemies)
-            {
-                if (e == null || e.state == EnemyState.Dead) continue;
-                if (e.rowIndex > max) max = e.rowIndex;
-            }
-        }
-        return max;
+        return WaveMarch.GetMaxOccupiedRow();
     }
 
     #endregion
@@ -1099,35 +1054,35 @@ public class ColumnManager : MonoBehaviour
 
     private void ResumePausedWavePlan()
     {
-        _waveGeneration++;
-        if (_waveGeneration <= 0) _waveGeneration = 1;
-        _currentWaveSourceRow = -1;
-        _currentWaveTargetRow = -1;
-        _currentWaveContinuousRun = true;
-        _preparingWaveEnemies.Clear();
-        _pendingWaveEnemies.Clear();
-        _activeWaveTargetRows.Clear();
-        _activeWaveTargetSlots.Clear();
+        WaveMarch.waveGeneration++;
+        if (WaveMarch.waveGeneration <= 0) WaveMarch.waveGeneration = 1;
+        WaveMarch.currentWaveSourceRow = -1;
+        WaveMarch.currentWaveTargetRow = -1;
+        WaveMarch.currentWaveContinuousRun = true;
+        WaveMarch.preparingWaveEnemies.Clear();
+        WaveMarch.pendingWaveEnemies.Clear();
+        WaveMarch.activeWaveTargetRows.Clear();
+        WaveMarch.activeWaveTargetSlots.Clear();
 
-        foreach (var pair in _pausedWaveTargetRows)
+        foreach (var pair in WaveMarch.pausedWaveTargetRows)
         {
             var enemy = pair.Key;
             if (enemy == null || enemy.state == EnemyState.Dead || enemy.rowIndex <= pair.Value)
                 continue;
-            if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, _waveGeneration, pair.Value, RushMoveMode.ContinuousEmptyRun))
+            if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, WaveMarch.waveGeneration, pair.Value, RushMoveMode.ContinuousEmptyRun))
                 continue;
 
             enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
             enemy.OnRushMoveComplete += OnWaveEnemyRushComplete;
-            _preparingWaveEnemies.Add(enemy);
-            _activeWaveTargetRows[enemy] = pair.Value;
-            _activeWaveTargetSlots.Add(((long)enemy.columnIndex << 32) ^ (uint)pair.Value);
+            WaveMarch.preparingWaveEnemies.Add(enemy);
+            WaveMarch.activeWaveTargetRows[enemy] = pair.Value;
+            WaveMarch.activeWaveTargetSlots.Add(((long)enemy.columnIndex << 32) ^ (uint)pair.Value);
         }
 
-        _pausedWaveTargetRows.Clear();
-        _pausedWaveEnemies.Clear();
-        if (_preparingWaveEnemies.Count > 0)
-            _isWavePreparing = true;
+        WaveMarch.pausedWaveTargetRows.Clear();
+        WaveMarch.pausedWaveEnemies.Clear();
+        if (WaveMarch.preparingWaveEnemies.Count > 0)
+            WaveMarch.isWavePreparing = true;
     }
 
     private void TryResumePausedWaveAfterPushReturns()
@@ -1135,24 +1090,24 @@ public class ColumnManager : MonoBehaviour
         if (_pushReturnTransactions.Count > 0)
             return;
 
-        if (_hasPausedWaveStep)
+        if (WaveMarch.hasPausedWaveStep)
         {
-            int sourceRow = _pausedWaveSourceRow;
-            int targetRow = _pausedWaveTargetRow;
-            _hasPausedWaveStep = false;
-            _pausedWaveSourceRow = -1;
-            _pausedWaveTargetRow = -1;
+            int sourceRow = WaveMarch.pausedWaveSourceRow;
+            int targetRow = WaveMarch.pausedWaveTargetRow;
+            WaveMarch.hasPausedWaveStep = false;
+            WaveMarch.pausedWaveSourceRow = -1;
+            WaveMarch.pausedWaveTargetRow = -1;
 
-            if (_pausedWaveTargetRows.Count > 0)
+            if (WaveMarch.pausedWaveTargetRows.Count > 0)
                 ResumePausedWavePlan();
             else
             {
-                BeginWaveStep(sourceRow, targetRow, _pausedWaveEnemies);
-                _pausedWaveEnemies.Clear();
-                _pausedWaveTargetRows.Clear();
+                BeginWaveStep(sourceRow, targetRow, WaveMarch.pausedWaveEnemies);
+                WaveMarch.pausedWaveEnemies.Clear();
+                WaveMarch.pausedWaveTargetRows.Clear();
             }
 
-            if (_isWavePreparing)
+            if (WaveMarch.isWavePreparing)
                 return;
 
             StartPendingLogicalLayoutReflow();
@@ -1207,11 +1162,11 @@ public class ColumnManager : MonoBehaviour
     {
         _waveMarchRequestedWhilePushReturn = false;
         _topologyChangedWhilePushReturn = false;
-        _hasPausedWaveStep = false;
-        _pausedWaveSourceRow = -1;
-        _pausedWaveTargetRow = -1;
-        _pausedWaveEnemies.Clear();
-        _pausedWaveTargetRows.Clear();
+        WaveMarch.hasPausedWaveStep = false;
+        WaveMarch.pausedWaveSourceRow = -1;
+        WaveMarch.pausedWaveTargetRow = -1;
+        WaveMarch.pausedWaveEnemies.Clear();
+        WaveMarch.pausedWaveTargetRows.Clear();
         _suppressPushReturnResume = true;
         _pushReturnWorkList.Clear();
         foreach (var transaction in _pushReturnTransactions.Values)
