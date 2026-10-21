@@ -50,7 +50,7 @@ summary: ColumnManager 拆分实施方案（2026-10-20，写给后续接手的 A
 | **2** | `ColumnQueries`（13 个只读查询） | ✅ **已完成**（`415d4c0`）：ColumnManager 2026 → 1958 行 |
 | 3 | `SpawnEntryMover`（入场调度） | ✅ **已完成**（`6add76a`） |
 | 4 | `WaveMarchScheduler`（补齐调度） | ✅ **刀 4a**（`09416f2`，状态+查询）+ **刀 4b**（本次，补齐流程）均已完成，ColumnManager 1791 → **1370 行** |
-| 5 | `DisplacementMover`（击退回位 / 横向位移 / 破冰顶开 / 聚拢） | ⬜ 待做（中高风险，1079 行） |
+| 5 | `DisplacementMover`（击退回位 / 横向位移 / 破冰顶开 / 聚拢） | ✅ **已完成**（本次）：ColumnManager 1370 → **662 行**；做法与验收见 §0.9 |
 | 6（=F） | 删 PerColumn 遗留分支 + `FillUpRule` 枚举与字段 | ✅ **已完成**（`86832d4`）：补齐规则只剩一种 |
 
 **刀 1 / 刀 2 的验收数据**（Play Mode，注入 `Stage_Trial` 第 1 波：6 排含一个空排占位符）：
@@ -86,6 +86,10 @@ summary: ColumnManager 拆分实施方案（2026-10-20，写给后续接手的 A
    `TryResumePausedWaveAfterPushReturns` / `ResetPausedState`）已归位到 `WaveMarchScheduler`。
    ColumnManager 只剩**薄转发**与它自己该管的东西（列、骑兵槽位、击退回位事务、位移效果）。
    做法与坑见 §0.8。
+8. 刀 5 的结果：位移类（精确击退回位 / 破冰顶开 / 击退 / 横向位移 / 聚拢）与它的**全部状态**
+   （回位事务表、generation/orderId、回位抑制标志、四个复用容器）已归位到 `DisplacementMover`。
+   ColumnManager 只剩**薄转发**（public 签名全不变，外部调用方零改动）与列/骑兵槽位。
+   做法与坑见 §0.9。
 
 > 附带修掉一个既有问题（`49d4e96`）：落地页就绪态把局内 HUD 整组隐藏时，连击数字启动协程会报
 > 「Coroutine couldn't be started because the game object is inactive」→ 加 `activeInHierarchy` 守卫。
@@ -141,6 +145,57 @@ summary: ColumnManager 拆分实施方案（2026-10-20，写给后续接手的 A
 - 豁免 A/B：col1/r1 置 `ignoreFillUpOrders` 后杀 r0 → `col1/r1[豁免] · col1/r2 · col2/r3 · col3/r4` ✅
 - 主流程冒烟：落地页 → 开始关卡 → `phase=Battle`、出怪 1、Stab 150→140 ✅
 - Console：0 error / 0 warn ✅
+
+---
+
+## 0.9 刀 5（位移类搬迁）：做法与验收数据（✅ 已完成）
+
+> 2026-10-21 完成。`ColumnManager` 1370 → **662 行**；`DisplacementMover` 894 行。
+> **批次 2（ColumnManager 拆分）至此全部完成**：刀 1/2/3/4/5/6。
+
+### 做法（沿用 §0.8 的经验）
+
+- 先把**两个区段整体**（精确击退回位 + 位移效果）读一遍，确认它们的依赖面；
+  依赖面比刀 4b 小得多（没有隐藏的跨区段共用方法），所以**一次搬完**再编译。
+- 依赖通过 **9 个构造委托**注入：
+  列数组 `() => columns`、骑兵槽位判定 `IsCavalrySlotReserved`、
+  可见排数 `() => StageFormation != null ? StageFormation.GetMaxVisibleRows() : 5`、
+  释放骑兵槽位 `ReleaseCavalrySlot`、
+  释放敌人（入场/补齐/击退三层）`ReleaseEnemyFromSchedulers`、
+  只释放位移层 `ReleaseEnemyFromMovementSchedulers`、
+  中止补齐（为回位保留快照）`(bool preserve) => WaveMarch.AbortWaveMarch(preserveForPushReturn: preserve)`、
+  回位完成后恢复补齐 `() => WaveMarch.TryResumePausedWaveAfterPushReturns()`、
+  清暂停快照 `() => WaveMarch.ResetPausedState()`。
+- **状态跟着走**：回位事务表、generation/orderId、回位抑制标志、四个复用容器
+  （`_pushWorkList` / `_pushHitSet` / `_pushByColumn` / `_rowEnemies`）全部搬进新类。
+  `_rowEnemies` 原计划留在 ColumnManager，实际**只有**横推与聚拢在用 → 直接搬走。
+- **回指环**：补齐调度器要问「有没有回位事务」→ 加两个窄接口
+  `HasPushReturnTransactions` / `HasPushReturnTransaction(enemy)`，
+  ColumnManager 侧用委托转过去（避免两个类互相持有）。
+- **类型搬家**：`ColumnManager.BreakIcePushResult` → 顶层 `BreakIcePushResult`。
+  外部只有 `EnemyFreeze.cs` 一处引用（`private ColumnManager.BreakIcePushResult _pendingBreakPush;`）
+  → 改成顶层类型即可，不留兼容壳。
+- 宿主侧保留**同名薄转发**，public 签名一字不改 → 外部调用方（`AttackSystem` /
+  `WaveEffectPlayer` / `WaveManager` / `EnemyFreeze` / `Enemy`）零改动。
+
+### 刀 5 的验收数据（Play Mode，2026-10-21，注入 `Stage_Trial` 第 1 波）
+
+- **击退 + 精确回位**：击退 `col2/r4` → `col2/r5`，同列 `col2/r0` **不动** ✅；
+  约 1.5s 后回到**精确原槽** `col2/r4` ✅
+- **横向位移**：`col1/r3` → `col2/r3`（只改 column、row 不变），其他敌人不动 ✅
+- **破冰顶开**：冻结 `col1/r1` → 顶开到 `col1/r3`（`moved=True`），其他敌人不动 ✅；
+  `BreakFreeze` + 登记延迟回位后，逐排走回 `col1/r1` ✅（t+250f 落回原槽）
+- 补齐基线：杀 r0 → `col1/r0 · col1/r2 · col2/r3 · col3/r4` ✅（逐位一致）
+- 豁免 A/B：col1/r1 置豁免 → `col1/r1[豁免] · col1/r2 · col2/r3 · col3/r4` ✅
+- 主流程冒烟：`phase=Battle`、出怪 1、Stab 150→140 ✅
+- Console：0 error / 0 warn（四个会话均为 0/0）✅
+
+### 遗留提醒（未覆盖项，供下一棒接手时注意）
+
+- 破冰的**真实流程**是 `EnemyFreeze.BreakIcePush()`：顶开 + 当场登记延迟回位（延迟 = 位移动画 + 碎冰动画 + 停留）。
+  纯脚本注入必须自己 `BreakFreeze()` 再登记回位，否则敌人一直 Frozen、回位会被阻塞。
+- 冻结中的敌人**自然解冻计时不跑**（`UpdateFrozen` 挂在被挂起的敌人上），
+  这是既有行为，**不是本次拆分引入的**；但它会让「冻住 → 等它自己化掉」的脚本看起来「不动」。
 
 ---
 
@@ -303,15 +358,15 @@ summary: ColumnManager 拆分实施方案（2026-10-20，写给后续接手的 A
 - **豁免**：`Enemy.ignoreFillUpOrders` 的跳过逻辑（见 §5.3）必须跟着一起搬，且**留在规划层**
 - **验收**：见 §5.3 的补齐 A/B 脚本
 
-### 刀 5：`DisplacementMover`（位移类）— 风险中高
+### 刀 5：`DisplacementMover`（位移类）— ✅ 已完成
 
 - 新建 `Assets/Scripts/Core/DisplacementMover.cs`
-- 搬运：`_pushReturn*` / `_pushWorkList` / `_pushHitSet` / `_pushByColumn` 字段，
+- 搬运：`_pushReturn*` / `_pushWorkList` / `_pushHitSet` / `_pushByColumn` / `_rowEnemies` 字段，
   精确击退回位区段（`RegisterPushReturn` / `CancelPushReturnForEnemy` / `NotifyPushReturnTopologyChanged` …）、
   位移效果区段（`ApplyBreakIcePush` / `RegisterBreakIceReturn` / `MoveEnemyToColumnAtRow` / `CanPushColumn` /
   `ExecutePush` / `ApplyPushWave` / `ApplyDirectionalPush` / `ApplyConvergenceWave` / `PostDisplacementFillUp`）
 - **约束**：击退只移动被击退者、必须回精确原槽；横向位移只改 column；聚拢用自己的裁决
-- **验收**：见 §5.4
+- **验收**：见 §5.4 + §5.5（实测数据见 §0.9）
 
 ### 刀 6（= F）：删 PerColumn 遗留 + `FillUpRule` 字段 — 风险中
 

@@ -23,7 +23,7 @@ public sealed class EnemyFreeze
     private float _iceBreakRemaining;
     private int _breakIceOriginColumn;
     private int _breakIceOriginRow;
-    private ColumnManager.BreakIcePushResult _pendingBreakPush;
+    private BreakIcePushResult _pendingBreakPush;
     private bool _breakSequencePending;
     private float _breakSequenceDelay;
     private float _freezeChance;
