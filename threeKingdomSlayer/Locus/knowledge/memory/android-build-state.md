@@ -315,6 +315,46 @@ Editor 里它们表现为 2 个 `<null组件>`（本次排查发现 `GameObjectU
 
 ---
 
+## 2026-10-21 实测：可玩包已产出（299MB）
+
+> 落地页/界面改造 + ColumnManager 拆分后的第一个可玩包。**未做设备冒烟**（本机无 AVD、无连接设备）。
+
+**构建方式（新知识，补充 0.3 的说法）**：清单里说「不能从 Locus 代码片段里驱动构建」，指的是**直接调
+`BuildPipeline.BuildPlayer`**（会 `InvalidCastException @ CompleteActiveBuildWhilePumping`）。
+但**可以用 `EditorApplication.delayCall` 调用现成的菜单方法**，绕开片段超时：
+
+```csharp
+UnityEditor.EditorApplication.delayCall += () => AndroidBuildMenu.BuildAndroidTraditionalLayout();
+```
+
+构建在 Editor 主线程同步跑 4–5 分钟，期间 Editor 完全卡住 → **用 `bash` 轮询
+`Build/Android/build-status.txt` 的 mtime**，不要用 Unity 工具调用（会排队/超时）。
+
+**本次结果**（`Build/Android/threeKingdomSlayer_full_20261021_1510.apk`）：
+
+| 项 | 值 |
+|---|---|
+| `RESULT` | **Succeeded，errors=0**，warnings=37，用时 4:14 |
+| 布局自检 | ✅ **传统分文件**（level* = 4，data.tj3d = False）—— 崩溃根因已避开 |
+| ABI | `arm64-v8a` + `x86`（模拟器与真机都能装） |
+| 场景 | Battle / YJunctionSample / StageSelect / **TalentTree**（Build Settings 现为 4 张） |
+| 签名 | `useCustomKeystore=False`（debug 签名）→ 可自测，**不能上架** |
+| APK 体积 | **299MB**（解压 3715MB） |
+
+**体积构成**（决定后续包体优化优先级）：
+
+- `lib/` native **140.5MB**（双架构：`libil2cpp.so` x86 53MB + arm64 51MB + `libtuanjie.so` x86 23MB + arm64 19MB）
+  → **只留 ARM64 可省约 70MB**，是包体优化里最省事的一刀。
+- `assets/` **1716MB**（解压）：其中 `assets/bin/Data/b0718ab2f817ec04cb11794df3346209` = **33.5MB = 字体图集**
+  （打包后按 hash 改名，`unzip -l | grep -i font` **找不到**，别用文件名判断字体是否进包）。
+
+**遗留风险**：字体 35MB 未重建（阶段 3.4 仍待做）→ 中文可能缺字（项目 10215 个汉字 vs 字体 7229 字形）。
+
+**设备冒烟缺口**：本机 `emulator -list-avds` 为空、`adb devices` 无设备 → 装机验证需在有真机/模拟器的环境做；
+装完先查 `unzip -l <apk> | grep level0` 与 `lib/` 再装（见 0.1 / 0.3 的判定法）。
+
+---
+
 ## 经验教训
 
 - **绝不直接 `edit` .meta 文件**（Tuanjie 引擎加密 GUID，会触发重生成导致引用断裂）。纹理/音频等导入设置的修改必须通过 `unity_execute` API
