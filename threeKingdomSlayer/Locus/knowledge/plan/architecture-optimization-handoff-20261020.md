@@ -363,7 +363,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 项 | 值 |
 |---|---|
 | 分支 / 远程 | `feat/stage-select-talent-overlays`，已同步 |
-| HEAD | `bf51831`（`refactor(dot): 灼烧/疾病迁入敌人侧状态——状态挂在谁身上就由谁结算（批次 C）`） |
+| HEAD | `1625959`（`chore(locus): 同步工作区索引（工具状态）`；代码侧最新 `8759efd` = asmdef 分层第三批） |
 | 工作区 | 干净。**唯一例外**：用户自己的 `Assets/Resources/EnemyPrefabs/Enemy_1011.prefab`（`maxHealth 100→200`，调试值，**未提交**，已刻意不夹带） |
 | Unity | 2022.3.62t7（Tuanjie）· BIRP · Legacy Input |
 
@@ -415,7 +415,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 3 | **包体优化** | 方案在 `plan/package-size-optimization.md`：只留 ARM64 **−70MB**（native 双架构占 140.5MB）、字体重建 **−33MB**、敌人贴图压缩 **−60~80MB**。当前包 **298.9MB**，微信小游戏有上限 → 做之前先确认目标渠道 |
 | 4 | **BUG-001 箱桶重挑战不重置** | 线索：存档 `FakeRouteStageSaveSnapshot.propStates` 专门存可破坏道具的破坏状态；重置需与「节点重进」路径一起处理 |
 | 5 | 主界面「加钱」调试按钮 | 用户提过但本轮“先放放”（未做）。做法：`SaveManager.AddCoins(1000)` + 落地页 `BattleHUD(Canvas)` 里加一个按钮 |
-| — | asmdef 继续分层 | **第一步已完成（`c0ffb1d`）**：`Locus.Data` 已是完整的叶子层（配置 + 契约，38 文件 / 2732 行），上层程序集可直接引用。<br>**剩下的卡点**：战斗内核（`Enemy` / `ColumnManager` / `AttackSystem` …）自身还在 `Assembly-CSharp`，且彼此依赖 `SaveManager` / `AudioManager` / `PlayerState` / `InputManager` 等全局服务 → 要拉进 `Locus.Combat`，得先给这些全局服务定程序集边界（体量大，建议单独排期） |
+| — | asmdef 继续分层 | **已完成 3 批（2026-10-22，方案见 `plan/asmdef-layering-plan-20261022.md`）**：<br>① `Locus.Data` 扩容（纯数据类型下沉）+ `Locus.Services` 诞生；<br>② 存档数据模型下沉 L0 + `SaveManager` 进服务层 → **`Locus.Services` 出边只剩 `Locus.Data`** ✅ **`Locus.Data` 出边为空** ✅；<br>③ **扩展点契约下沉 L0**（`IStatusEffect` / `IEffectExecutor` / `IUpgrade*` / `IRouteMotionPresenter` / `IStatModifierApplier`）→ `Core→RouteFake/Attack/Effect` 三条边**归零** ✅。<br>**剩下的卡点（与之前判断不同，已实测）**：<br>• `InputManager` **进不了服务层** —— 它带**序列化的玩法工具引用**，而 Unity 序列化不认接口类型的字段；它其实属于**内核之上**（内核反过来读它的蓄力状态）。<br>• 要拉战斗内核进 `Locus.Combat`，得先**接口化内核→UI 的硬引用**（`BattleHUD` / `DialogueManager` / `ItemDiscardPopup` / `UpgradeChoicePopup` / `EnemyHealthBar`）与内核读 `InputManager` / `PlayerState` 的地方。<br>• 实测工具已入仓 `Tools/asmdef-survey/`（目录图 / 类型明细 / 枢纽排名 / 单文件闭合性 / 接口清单）。 |
 
 ### 15.4 可玩包现状
 

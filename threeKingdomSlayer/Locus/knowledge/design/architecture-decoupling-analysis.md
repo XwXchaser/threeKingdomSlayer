@@ -1000,6 +1000,35 @@ if (EnemyStatusRegistry.IsActive(enemy, "poison")) { /* 新机制：中毒的敌
 带灼烧 + 疾病的敌人死亡回池后宿主只剩冻结 ✅（残留 0 ✅）；
 §15.5 基线逐位一致 ✅；Console 0/0 ✅。
 
+#### ⑦ asmdef 分层：把「分层」从约定变成编译期约束（2026-10-22）
+
+前面几刀是把**单个机制**理顺；这一刀动的是**结构本身**：让程序集边界 = 依赖方向 ✅，
+以后新机制写错层，**编译器会直接报错** ✅，而不是靠人自觉。
+
+先**实测**再动手（工具已入仓 `Tools/asmdef-survey/`）：
+- 唯一干净的叶子是 `Locus.Data`（**无出边** ✅）；其余目录两两互环 ✅ → **目录不是程序集边界** ✅，
+  必须按**类型**切。
+- 枢纽类型：`PlayerState`（被 15 个目录用）、`Enemy`（14）、`EnemyState`（11）、`StageController`（11）……
+- 目标六层（方向只能向下）：`Locus.Data` → `Locus.Services` → `Locus.Combat` → `Locus.Flow` → `Locus.UI` → `Locus.Editor`。
+
+已落地三批（详见 `plan/asmdef-layering-plan-20261022.md`）：
+
+| 批次 | 做了什么 | 边界效果 |
+|---|---|---|
+| 1 | 纯数据类型下沉 `Locus.Data` + `Locus.Services` 诞生 | `Core→Enemy` 22→18 文件 ✅ |
+| 2 | 存档数据模型下沉 L0 + `SaveManager` 进服务层 | **服务层出边只剩 Data** ✅ **Data 出边为空** ✅ |
+| 3 | **扩展点契约下沉 L0**（`IStatusEffect` / `IEffectExecutor` / `IUpgrade*` / `IRouteMotionPresenter` / `IStatModifierApplier`） | `Core→RouteFake/Attack/Effect` **三条边归零** ✅ |
+
+> 第 3 批是这轮最贴题的一刀：**扩展点接口本来就该住在契约层** ✅ ——
+> 它们是「为新机制留接口」的载体 ✅，任何层都能实现它们 ✅。
+
+**实测纠正了一个此前的判断** ✅：`InputManager` **进不了服务层** ✅ ——
+它带**序列化的玩法工具引用** ✅，而 Unity 序列化不认接口类型的字段 ✅；
+它其实属于**内核之上**（内核反过来读它的蓄力状态）✅，归宿是上层而不是服务层 ✅。
+
+**下一刀**：内核 → UI 的硬引用接口化 ✅（`BattleHUD` / `DialogueManager` / `ItemDiscardPopup` /
+`UpgradeChoicePopup` / `EnemyHealthBar`）✅ —— 这是 `Locus.Combat` 能否成立的前置 ✅。
+
 ---
 
 ## 6. 明确不做

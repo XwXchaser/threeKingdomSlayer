@@ -19,6 +19,19 @@ aiEditMode: inherit
 > 判据三条：① 依赖方向单向（编译器可验）；② 每个 asmdef 程序集**自闭合**（asmdef 程序集看不到 `Assembly-CSharp`）；
 > ③ 每一刀都能回归（§15.5 基线逐位一致 + Console 0/0）。
 
+## 0. 当前进度（2026-10-22）
+
+| 批次 | 状态 | 成果 |
+|---|---|---|
+| 1 · `Locus.Data` 扩容 + `Locus.Services` 诞生 | ✅ | 纯数据类型下沉；`DebugLog` / `AudioManager` 进服务层 |
+| 2 · 存档下沉 L0 + `SaveManager` 进服务层 | ✅ | **`Locus.Services` 出边只剩 `Locus.Data`** ✅ **`Locus.Data` 出边为空** ✅ |
+| 3 · 扩展点契约下沉 L0 | ✅ | 7 个扩展点接口进契约层；`Core→RouteFake/Attack/Effect` 三条边**归零** ✅ |
+| 4 · 内核 → UI 的接口化（第一批） | 🔄 进行中 | 目标：让内核不再直接引用 UI 单例（`BattleHUD` / `DialogueManager` / `ItemDiscardPopup` / `UpgradeChoicePopup` / `EnemyHealthBar`） |
+| 5+ · `Locus.Combat` / `Locus.Flow` / `Locus.UI` / `Locus.Editor` | ⏳ | 等 4 的接口化 |
+
+**现在的分层实况**：`Locus.Data` 61 文件 / 3597 行（纯叶子）、`Locus.Services` 3 文件 / 642 行（只朝下依赖 Data）、
+其余运行时脚本仍在 `Assembly-CSharp`（251 文件 / 55666 行）。
+
 ## 1. 实测基线（不是猜的）
 
 工具：`Tools/asmdef-survey/`（`dep_survey.py` 目录级图 / `dep_detail.py` 跨目录类型明细 / `file_deps.py` 单文件闭合性）。
@@ -72,11 +85,12 @@ aiEditMode: inherit
 | **1** | `Locus.Data` 扩容（纯数据类型下沉）+ `Locus.Services` 诞生（`DebugLog` / `AudioManager`） | ✅ 完成 |
 | **2** | `Locus.Services` 补全：`SaveManager`（含存档数据模型下沉到 L0）+ `BreakableProp.PropSaveEntry` 提成顶层类型 | ✅ 完成 |
 | **3** | **扩展点契约下沉 L0**：`IStatusEffect` / `IEffectExecutor` / `IUpgradeStatSink` / `IUpgradeNumericApplier` / `IUpgradeDescriptionFormatter` / `IRouteMotionPresenter` / `IStatModifierApplier` | ✅ 完成 |
-| 4 | `Locus.Services` 补全剩下的 `InputManager`：它带**序列化的玩法工具引用**（`AttackSystem` / `WhirlwindController` / `PlayerMoveStateMachine`）+ 自己的「落雷」技能逻辑 → 要先进能层（工具引用改成接口 / 定位器，落雷逻辑搬到技能层） | 待办 |
-| 4 | **内核接口化**：把第 3 节的硬引用逐条改成接口 / 事件（每条一个接口 + 装配处注入） | 待办 |
-| 5 | `Locus.Combat` 成立（Enemy / Core / Attack / Wave / QTE / Effect / Status / 战斗侧 Player） | 待办 |
-| 6 | `Locus.Flow`（流程 + 路线）与 `Locus.UI`（界面）分离 | 待办 |
-| 7 | `Locus.Editor` 独立成程序集（当前靠 `Editor` 特殊文件夹） | 待办 |
+| 4 | `Locus.Services` 补全剩下的 `InputManager` —— **实测做不到**：它带**序列化的玩法工具引用**（`AttackSystem` / `WhirlwindController` / `PlayerMoveStateMachine`），而 Unity 序列化不认接口类型的字段；它也带自己的「落雷」技能逻辑。⇒ **它不属于服务层**，而是**内核之上的输入适配器**（内核反过来读它的蓄力状态）。它的归宿是上层的 `Locus.App` / `Locus.Input`，不是 `Locus.Services` | 结论已定，改为「归上层」 |
+| 4' | **内核 → UI 的接口化（第一批）**：内核不再直接引用 UI 单例，改经 L0 契约接口 | 进行中 |
+| 5 | **内核接口化（第二批）**：内核读 `InputManager` / `PlayerState` 的地方改成 L0 接口 + 装配处注入 | 待办 |
+| 6 | `Locus.Combat` 成立（Enemy / Core / Attack / Wave / QTE / Effect / Status / 战斗侧 Player） | 待办 |
+| 7 | `Locus.Flow`（流程 + 路线）与 `Locus.UI`（界面）分离 | 待办 |
+| 8 | `Locus.Editor` 独立成程序集（当前靠 `Editor` 特殊文件夹） | 待办 |
 
 ### 批次 1 做了什么
 
