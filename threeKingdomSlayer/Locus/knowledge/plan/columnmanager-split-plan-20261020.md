@@ -49,7 +49,7 @@ summary: ColumnManager 拆分实施方案（2026-10-20，写给后续接手的 A
 | **1** | `LogicalRowQueue`（逻辑排队列：活人排 / 空排占位符 / 999 门） | ✅ **已完成**（`facdbde`）：ColumnManager 2149 → 2026 行 |
 | **2** | `ColumnQueries`（13 个只读查询） | ✅ **已完成**（`415d4c0`）：ColumnManager 2026 → 1958 行 |
 | 3 | `SpawnEntryMover`（入场调度） | ⬜ 待做（中风险） |
-| 4 | `WaveMarchScheduler`（补齐调度） | ⬜ 待做（中高风险） |
+| 4 | `WaveMarchScheduler`（补齐调度） | 🟡 **刀 4a 已完成**（`09416f2`）：状态 + 只读查询已归位，ColumnManager 1836 → 1791 行；**刀 4b（流程）待做** |
 | 5 | `DisplacementMover`（击退回位 / 横向位移 / 破冰顶开 / 聚拢） | ⬜ 待做（中高风险） |
 | 6（=F） | 删 PerColumn 遗留分支 + `FillUpRule` 枚举与字段 | ⬜ 待做（中；建议在刀 4/5 之后） |
 
@@ -72,6 +72,16 @@ summary: ColumnManager 拆分实施方案（2026-10-20，写给后续接手的 A
    `Data/StageConfig.cs` 删除；`WaveSpawner` 只剩逐排路径；`ColumnManager` 的「按列找空位前压」
    legacy 分支与两个 inert 入口（`RowBasedFillUp` / `CompactAllColumns`）已删。
    结论：**AI 部署关卡时已经没有「补齐规则」这个选项可填**。
+
+5. 刀 4a 的结果：波次行军的**状态**（generation / 计划与生效的目标行与目标槽 / 准备中与待行军集合 /
+   暂停快照 / 当前步骤描述）与**只读查询**（`IsRowFullyVacated` / `GetMaxOccupiedRow` /
+   `IsTargetReserved` / `CanStartOrder` / `CanEnterRow`）已归位到 `WaveMarchScheduler`，
+   依赖只有「列数组」与「骑兵槽位判定」两个委托。**流程**（`StartWaveMarch` /
+   `TryBuildLogicalWaveMarchPlan` / `BeginWaveStep` / `StartPreparedWaveStep` / 暂停恢复）仍在
+   ColumnManager，刀 4b 再搬。
+6. ⚠️ 刀 4a 的坑（后续执行者注意）：批量替换时把引用写成了**字段** `_waveMarch.xxx`，
+   而该字段由惰性属性创建 → 运行时 200 次 NullReferenceException（`ColumnManager.Update:139`）。
+   改为走**属性** `WaveMarch.xxx` 后正常。**惰性属性 + 同名字段并存时，批量替换必须用属性名。**
 
 > 附带修掉一个既有问题（`49d4e96`）：落地页就绪态把局内 HUD 整组隐藏时，连击数字启动协程会报
 > 「Coroutine couldn't be started because the game object is inactive」→ 加 `activeInHierarchy` 守卫。
