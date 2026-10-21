@@ -1042,6 +1042,10 @@ if (EnemyStatusRegistry.IsActive(enemy, "poison")) { /* 新机制：中毒的敌
 > **Unity 坑**：`FindObjectOfType<T>()` 要求 `T : Object` ✅，**不接受接口** ✅ ——
 > 「按接口找对象」得扫一遍 `MonoBehaviour` 再按接口筛 ✅。
 
+**批次 6（血条工厂端口，已完成）** ✅：`IEnemyHealthBarView` + `IEnemyHealthBarFactory` ✅；
+**`Enemy→UI` 1→0** ✅ —— 内核（`Core` / `Enemy` / `Managers` / `Wave` / `Player` / `Status`）
+**一条 UI 引用都不剩** ✅；剩下 `QTE → 三个 UI 触点` ✅ 与 `Legacy → 两条` ✅。
+
 ---
 
 ## 6. 明确不做

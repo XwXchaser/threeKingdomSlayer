@@ -28,15 +28,15 @@ aiEditMode: inherit
 | 3 · 扩展点契约下沉 L0 | ✅ | 7 个扩展点接口进契约层；`Core→RouteFake/Attack/Effect` 三条边**归零** ✅ |
 | 4 · 内核 → UI 的接口化（第一批） | ✅ | 三个呈现层端口（`ICombatHud` / `IDialogueModal` / `IItemDiscardPrompt`）+ 装配点 `CombatPresenters`；`Core→UI` 5→1 文件 ✅ |
 | 5 · 工厂端口（内核自己创建 UI 组件那类） | ✅ | `IUpgradeChoiceView` / `IDamageNumberPresenter` / `ISceneTransitionCamera`；`DamageNumberManager` 移到界面层；**`Core→UI` / `Managers→UI` / `Wave→UI` 全部归零** ✅ |
-| 5+ · `Locus.Combat` / `Locus.Flow` / `Locus.UI` / `Locus.Editor` | ⏳ | 等剩下的接口化（`EnemyHealthBar` / QTE 的三个 UI 触点） |
+| 6 · 血条工厂端口 | ✅ | `IEnemyHealthBarView` + `IEnemyHealthBarFactory`；**`Enemy→UI` 1→0** ✅ —— 内核（Core/Enemy/Managers/Wave/Player/Status）**一条 UI 引用都不剩** ✅ |
+| 7+ · `Locus.Combat` / `Locus.Flow` / `Locus.UI` / `Locus.Editor` | ⏳ | 等 QTE 的三个 UI 触点（`HeroHUD` / `BuffDisplayPanel` / `UIResolutionHelper`）+ `Legacy` 的两条 |
 
 **现在的分层实况**：`Locus.Data` 61 文件 / 3597 行（纯叶子）、`Locus.Services` 3 文件 / 642 行（只朝下依赖 Data）、
 其余运行时脚本仍在 `Assembly-CSharp`（251 文件 / 55666 行）。
 
-**内核 → 界面还剩两条边**（批次 6、7 的目标）：
-- `Enemy → EnemyHealthBar`（敌人身上挂血条：血条是**每个敌人一个**的组件 ✅，
-  要靠「工厂端口」——内核问「给我一个血条视图」✅，创建动作在界面层做 ✅）；
-- `QTE → HeroHUD / BuffDisplayPanel / UIResolutionHelper`（QTE 直接摸 HUD ✅）。
+**内核 → 界面还剩两条边**（批次 7 的目标）：
+- `QTE → HeroHUD / BuffDisplayPanel / UIResolutionHelper`（QTE 直接摸 HUD ✅）；
+- `Legacy → DialogueManager / ItemDiscardPopup`（历史遗留路线代码 ✅，随旧路线清理一起处理 ✅）。
 
 ## 1. 实测基线（不是猜的）
 
@@ -189,6 +189,22 @@ aiEditMode: inherit
 
 > **Unity 坑**：`FindObjectOfType<T>()` 要求 `T : Object` ✅，**不接受接口** ✅ ——
 > 所以「按接口找对象」得扫一遍 `MonoBehaviour` 再按接口筛 ✅（`SceneFlowManager` 就是这么做的 ✅）。
+
+### 批次 6 做了什么（血条工厂端口）
+
+内核 → 界面最后一条硬引用：`Enemy → EnemyHealthBar` ✅ —— 敌人受击时自己
+`GetComponent<EnemyHealthBar>()` / `AddComponent<EnemyHealthBar>()` ✅，共享血量组也照做一遍 ✅
+（内核在**创建 UI 组件** ✅）。
+
+改成工厂端口 ✅：`IEnemyHealthBarView`（Show / Hide ✅）+ `IEnemyHealthBarFactory`（GetOrCreate ✅）；
+`EnemyHealthBar` 实现视图端口 ✅；新增 `EnemyHealthBarFactory`（创建动作在界面层做 ✅）。
+
+**实测效果**：`Enemy → UI` **1→0** ✅ —— 内核（`Core` / `Enemy` / `Managers` / `Wave` / `Player` / `Status`）
+**一条 UI 引用都不剩** ✅。
+
+**验证**：受击前血条隐藏 ✅ → 受击后血条出现 ✅、掉血 10 ✅ → 死亡后隐藏 ✅；§15.5 基线逐位一致 ✅；Console 0/0 ✅。
+**验证缺口**：Trial 波次没有共享血量组 ✅，`SharedHealthGroup` 里那条「给成员建血条」的路径本轮**没跑到** ✅
+（代码结构与敌人那条一致 ✅，但没实测 ✅）。
 
 ## 5. 每批验收口径
 
