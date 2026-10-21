@@ -366,7 +366,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 项 | 值 |
 |---|---|
 | 分支 / 远程 | `feat/stage-select-talent-overlays`，已同步 |
-| HEAD | `1625959`（`chore(locus): 同步工作区索引（工具状态）`；代码侧最新 `8759efd` = asmdef 分层第三批） |
+| HEAD | `16bec98`（`docs(asmdef): 分层第四批交接——呈现层端口化`；代码侧最新 `a523cc0` = asmdef 分层第四批） |
 | 工作区 | 干净。**唯一例外**：用户自己的 `Assets/Resources/EnemyPrefabs/Enemy_1011.prefab`（`maxHealth 100→200`，调试值，**未提交**，已刻意不夹带） |
 | Unity | 2022.3.62t7（Tuanjie）· BIRP · Legacy Input |
 
