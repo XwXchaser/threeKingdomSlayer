@@ -182,6 +182,15 @@ Locus.Editor   工具窗口 / 导入器                 ──► 全部
 
 **唯一硬规则：箭头不许反。** 契约（事件、接口、配置、存档 section 接口）放在 `Locus.Data`，下层不需要认识上层。
 
+> **2026-10-22 进展**：`Locus.Data` 已补成完整的叶子层（**38 文件 / 2732 行**）——
+> 配置（`StageConfig` / `HeroConfig` / `FakeRoute*` 路线配置 / `DialogueEventData` / `UltimateSkillConfig` …）
+> 与契约（`StageState` + 5 个角色接口 + `IRouteStageHost` 合成端口）全在里面。
+> 上层程序集（`Locus.Combat` / `Locus.Route` / `Locus.UI` / `Locus.App`）将来可以直接引用它们，
+> 不必反向依赖 `Assembly-CSharp`。
+> **剩下的卡点**：`Enemy` / `ColumnManager` / `AttackSystem` 等战斗内核自身还挂在 `Assembly-CSharp`，
+> 且彼此依赖 `SaveManager` / `AudioManager` / `PlayerState` / `InputManager` 等全局服务；
+> 要把它们拉进 `Locus.Combat`，得先给这些全局服务定程序集边界（体量远大于本轮）。
+
 落地顺序建议：**先只拆 `Locus.Data`**——它是叶子，几乎没有调用方需要改；拿到边界后，再逐层把 `Combat` / `Route` / `App` 拉出去。
 
 ### 4.2 三个"会话"边界替代全局门面
@@ -586,6 +595,29 @@ Slash 掉血 18（126→108，前排两名）、Launch 掉血 4；Boss 104 首�
 > 属于「需判断」而非「机械搬移」，暂缓。
 > 另一个坑（已踩两次）：分片文件必须**各自带齐 using**（主文件也要），否则编译报
 > “MonoBehaviour / Vector2 等找不到”；`InputManager` 的分片还需 `using UnityEngine.EventSystems;`。
+
+### 5.8 契约层与配置层下沉到 Locus.Data（2026-10-22）
+
+> 提交 `c0ffb1d`。这是 §4.1 目标分层的第一步：把叶子层补完整。
+
+**搬入 `Locus.Data`（19 个文件，git rename，GUID 全部保留）**：
+
+| 类别 | 类型 |
+|---|---|
+| 契约 | `StageState`（从 `PlayerState.cs` 抽出）、`IStageFormation`、`IStageBattleState`、`IRunFlow`、`ICombatStaging`、`IRewardGate`、`IRouteStageHost` |
+| 配置 | `FakeRouteStageConfig` / `NodeConfig` / `BattleEntry` / `ChoiceConfig` / `Presentation` / `TravelPresentation`、`HeroConfig`、`HeroHUDSkin`、`DialogueEventData`、`BossDialogueProfile`、`MoveTableConfig`、`RouteChoiceLayout`、`UltimateSkillConfig`、`ScrollRouteVisualProfile` |
+
+**留在 `Assembly-CSharp`**：`IStageRoleContext`（继承 `StageRouteBattleHost.IContext`，
+而后者依赖 `WaveSpawner`/`EnemyManager`/`PlayerState`/`EnemyPool` 等 MonoBehaviour）——
+它是「门面 ↔ 角色实现」的内部接线契约，不是对外端口。
+
+**方法论（值得记）**：**编译器就是闭包检查器**——`Locus.Data` 不能引用 `Assembly-CSharp`，
+少搬一个依赖类型就会直接编译报错。做法：先用「只解析声明的成员类型」算闭包 → 搬 → 编译；
+本次**一次编译通过**，说明闭包算准了。
+（注意：闭包脚本不能用「扫任意大写词」当类型引用，会把方法体里的词误判 → 闭包爆炸到全工程。）
+
+**验证**：反射核对类型归属全部正确；2 个路线配置资产 + 1 个 `HeroConfig` 资产均可加载；
+Play Mode 落地页 → 战斗 → Stab 掉血 20 → **§15.5 基线逐位一致** → 路线正常推进；Console 0/0。
 
 ---
 

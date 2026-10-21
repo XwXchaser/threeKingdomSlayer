@@ -107,8 +107,9 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 |---|---|
 | `c3a9a5b` | `AttackSystem` 1568 → **386/591/537/98**；`QTEController` 1474 → **236/248/149/104/542/264**（同类型 partial，零行为风险） |
 | `be11b87` | `Enemy.State` 1495 → **17/768/739**（状态切换 / 状态更新）；`InputManager` 981 → **319/164/370/161**（指针输入 / 手势识别 / 坐标映射与过滤） |
+| `c0ffb1d` | **契约层与配置层下沉到 `Locus.Data`**：19 个文件 git rename（GUID 保留）——`StageState` + 5 个角色接口 + `IRouteStageHost` + 13 个配置类型；`Locus.Data` 19→**38 文件 / 2732 行** |
 
-> 详见 `design/architecture-decoupling-analysis.md` §5.7。拆分前机械校验：**内容丢失 = 0**。
+> 详见 `design/architecture-decoupling-analysis.md` §5.7 / §5.8。拆分前机械校验：**内容丢失 = 0**。
 
 ---
 
@@ -121,7 +122,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | `ColumnManager.cs` | 2149 行 | **662 行**（队列/查询/入场/补齐/位移五块全部拆出） |
 | 门面（`StageController`）成员调用 | 大量 | **0**（`StageController.Instance` 仅剩 30 处惰性解析点） |
 | 角色接口 | 0 | 6 个（`IStageFormation` / `IStageBattleState` / `IRunFlow` / `ICombatStaging` / `IRewardGate` + 路线层合成端口 `IRouteStageHost`） |
-| 数据层程序集 | 无 | `Locus.Data`：19 文件 / 1875 行 / 69 类型 |
+| 数据层程序集 | 无 | `Locus.Data`：**38 文件 / 2732 行**（配置 + 契约的完整叶子层） |
 | 路线驱动 | 3 套并存 + 运行期互禁 | 1 套现役 + 1 套 Legacy 孤岛（无互禁） |
 | 遗留实现 | 散在 Core/Route/RouteV2 | `Assets/Scripts/Legacy/`（21 文件 / 2107 行）+ README |
 | 玩家输入 | 全局布尔 `gameplayInputEnabled`，9 处轮流写、后写者生效 | `GameplayInputGate`：按 owner 申请/释放 + 原因枚举；**直接写 = 0** |
@@ -348,7 +349,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 项 | 值 |
 |---|---|
 | 分支 / 远程 | `feat/stage-select-talent-overlays`，已同步 |
-| HEAD | `be11b87`（`refactor(input,enemy): Enemy.State 与 InputManager 按 region partial 分文件`） |
+| HEAD | `c0ffb1d`（`refactor(data): 契约层与配置层下沉到 Locus.Data`） |
 | 工作区 | 干净。**唯一例外**：用户自己的 `Assets/Resources/EnemyPrefabs/Enemy_1011.prefab`（`maxHealth 100→200`，调试值，**未提交**，已刻意不夹带） |
 | Unity | 2022.3.62t7（Tuanjie）· BIRP · Legacy Input |
 
@@ -373,6 +374,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | **三个角色的实现拆出** | `43f58e3` | `StageController` 718→519 行（薄宿主）；`StageRunFlow`/`StageCombatStaging`/`StageRewardGate` 三个实现类 + `IStageRoleContext`；公开成员逐条一致、序列化未动；Play Mode：路线流程 + 线性关卡（战败/重开/波次推进 0→5）+ 胜利结算 + **§15.5 基线逐位一致**；Console 0/0 |
 | **两个上帝类 partial 分片** | `c3a9a5b` | `AttackSystem` 1568→386/591/537/98、`QTEController` 1474→236/248/149/104/542/264；拆分前机械校验「内容丢失=0」；Play Mode：Stab 20 / Slash 18 / Launch 4 掉血、Boss 104 首次 QTE 即 `PerformingQTEAttack`；Console 0/0 |
 | **Enemy.State 与 InputManager partial 分片** | `be11b87` | `Enemy.State` 1495→17/768/739、`InputManager` 981→319/164/370/161；机械校验「内容丢失=0」；Play Mode：**§15.5 基线逐位一致**（入场完成 + 整排清空后布局）、`ReplayGesture(Tap)` 掉血 20、屏幕→列映射正常；Console 0/0 |
+| **契约层与配置层下沉 `Locus.Data`** | `c0ffb1d` | 19 文件 git rename（GUID 全保留）：`StageState` + 5 角色接口 + `IRouteStageHost` + 13 配置类型；`Locus.Data` 19→38 文件 / 2732 行；一次编译通过；资产可加载（2 路线配置 + 1 HeroConfig）；Play Mode：落地页→战斗→Stab 掉血 20→**§15.5 基线逐位一致**→路线正常推进；Console 0/0 |
 
 **`Enemy` 终态**：`Enemy.cs` 5224 → **933 行**；另 5 个 partial 分片（状态机 1495 / 战斗结算 828 / 表现层 431 / BOSS 推进 206 / 对象池 106）
 + 4 个真类（`EnemyHitFeedback` / `EnemyMovement` / `EnemyBossPhases` / `EnemyPoise`）。
@@ -387,7 +389,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 3 | **包体优化** | 方案在 `plan/package-size-optimization.md`：只留 ARM64 **−70MB**（native 双架构占 140.5MB）、字体重建 **−33MB**、敌人贴图压缩 **−60~80MB**。当前包 **298.9MB**，微信小游戏有上限 → 做之前先确认目标渠道 |
 | 4 | **BUG-001 箱桶重挑战不重置** | 线索：存档 `FakeRouteStageSaveSnapshot.propStates` 专门存可破坏道具的破坏状态；重置需与「节点重进」路径一起处理 |
 | 5 | 主界面「加钱」调试按钮 | 用户提过但本轮“先放放”（未做）。做法：`SaveManager.AddCoins(1000)` + 落地页 `BattleHUD(Canvas)` 里加一个按钮 |
-| — | asmdef 继续分层 | 仍被「逻辑类（`LogicalRowQueue`/`WaveMarchScheduler`/…）依赖 `Enemy`/`Column` 等 MonoBehaviour」卡住，**需先做接口化**。<br>接口化前置已走完：① `GameplayInputGate` 在 `Locus.Data`；② 门面的公开面 100% 落在角色接口后面；③ 三个角色的实现已拆出（`StageController` 变薄宿主）。<br>**下一步**：给 `Enemy`/`Column` 等被依赖的 MonoBehaviour 抽窄接口（或把纯逻辑类改成不持有 MonoBehaviour），才能把 `Locus.Combat` 拉出 `Assembly-CSharp` |
+| — | asmdef 继续分层 | **第一步已完成（`c0ffb1d`）**：`Locus.Data` 已是完整的叶子层（配置 + 契约，38 文件 / 2732 行），上层程序集可直接引用。<br>**剩下的卡点**：战斗内核（`Enemy` / `ColumnManager` / `AttackSystem` …）自身还在 `Assembly-CSharp`，且彼此依赖 `SaveManager` / `AudioManager` / `PlayerState` / `InputManager` 等全局服务 → 要拉进 `Locus.Combat`，得先给这些全局服务定程序集边界（体量大，建议单独排期） |
 
 ### 15.4 可玩包现状
 
