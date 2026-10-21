@@ -119,6 +119,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | `d82447d` | **Enemy 侧命中反应注册表**：`IDamageReactionHandler` + `DamageReactionRegistry`（元素反应等新机制只需注册一个处理器）；内置冰系改走注册表但优先级与行为不变；删除空壳 `Enemy.State.cs` |
 | `daf2b6f` | **状态效果统一落地**：`IEnemyStatusInstance` + `EnemyStatusHost`（每个敌人一个宿主，敌人统一 tick）；`EnemyFreeze` 改为实例并登记；`EnemyStatusRegistry` 查询分宿主式/管理器式两条路但对调用方同一套 API |
 | `dad8591` | **状态框架宿主无关化（批次 A）**：`IStatusEffect` + `StatusContainer`（通用容器，敌人与玩家共用）；玩家侧两个状态先行迁移（反伤护盾、破冰预备），各自的旧调用面保留薄转发 |
+| `9604f5d` | **破冰拆分（批次 B）**：`IceBreakRuntime` → 玩家侧 `IceBreakSession`（会话/作用域/BUFF消费/同列顶开）+ 敌人侧 `EnemyFreeze.TryBreak`（解冻/翻倍/动画）；静态类已删除 |
 
 > 详见 `design/architecture-decoupling-analysis.md` §5.7 / §5.8 / §5.9。拆分前机械校验：**内容丢失 = 0**。
 
@@ -360,7 +361,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 项 | 值 |
 |---|---|
 | 分支 / 远程 | `feat/stage-select-talent-overlays`，已同步 |
-| HEAD | `dad8591`（`feat(status): 状态框架宿主无关化 + 玩家侧状态先行迁移（批次 A）`） |
+| HEAD | `9604f5d`（`refactor(ice): 破冰拆分——判定归玩家侧会话，反应归敌人侧冻结状态（批次 B）`） |
 | 工作区 | 干净。**唯一例外**：用户自己的 `Assets/Resources/EnemyPrefabs/Enemy_1011.prefab`（`maxHealth 100→200`，调试值，**未提交**，已刻意不夹带） |
 | Unity | 2022.3.62t7（Tuanjie）· BIRP · Legacy Input |
 
@@ -396,6 +397,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | **Enemy 侧命中反应注册表** | `d82447d` | `IDamageReactionHandler` + `DamageReactionRegistry`（带委托版）；内置冰系改走注册表（优先级/行为不变）；接线三处（`Enemy.TakeDamage` 钩子 / 攻击开始 / 攻击结束）；验证：自定义处理器命中时被调用 1 次、Stab 掉血 20、**§15.5 基线逐位一致**；Console 0/0 |
 | **状态效果统一落地** | `daf2b6f` | `IEnemyStatusInstance`（实例自持状态）+ `EnemyStatusHost`（每敌一人，统一 tick）+ `IEnemyStatusProvider`（外部状态查询）；`EnemyFreeze` 改为实例并登记，冻结的两项每帧逻辑改由宿主驱动、状态机相关的两项不动；`EnemyStatusRegistry` 查询两条来源同一套 API；验证：冻结后宿主实例数=1、查询 frozen active/priority=30 与改造前一致、灼烧经同一套查询 active/progress=1.000、活动状态列表合并、**§15.5 基线逐位一致**；Console 0/0 |
 | **状态框架宿主无关化（批次 A）** | `dad8591` | 新增 `Assets/Scripts/Status/`：`IStatusEffect`（状态本体独立类）+ `StatusContainer`（宿主无关的统一容器）；`Enemy.StatusHost` 与 `PlayerState.StatusHost` 同一类型；玩家侧先行迁移：反伤护盾（从 Build 层迁出）、破冰预备（从静态字段迁出），旧调用面保留薄转发；验证：护盾授予/吸收/反伤/清空/事件/CD 全对、破冰预备作用域判定全对、冻结宿主与查询正常、Stab 掉血 20、**§15.5 基线逐位一致**；Console 0/0 |
+| **破冰拆分（批次 B）** | `9604f5d` | 玩家侧 `IceBreakSession`（会话/作用域校验/BUFF消费/同列顶开）+ 敌人侧 `EnemyFreeze.TryBreak`（解冻/伤害翻倍/破冰动画）；旧静态类 `IceBreakRuntime` 删除，接入口不变；验证：冻结目标被合规重击掉血 20 vs 对照 10（倍率 2.00）且已解冻、无天赋时掉血 5 且仍冻结、**§15.5 基线逐位一致**、存档状态已还原；Console 0/0 |
 
 **`Enemy` 终态**：`Enemy.cs` 5224 → **933 行**；另 5 个 partial 分片（状态机 1495 / 战斗结算 828 / 表现层 431 / BOSS 推进 206 / 对象池 106）
 + 4 个真类（`EnemyHitFeedback` / `EnemyMovement` / `EnemyBossPhases` / `EnemyPoise`）。
