@@ -71,7 +71,8 @@ aiEditMode: inherit
 |---|---|---|
 | **1** | `Locus.Data` 扩容（纯数据类型下沉）+ `Locus.Services` 诞生（`DebugLog` / `AudioManager`） | ✅ 完成 |
 | **2** | `Locus.Services` 补全：`SaveManager`（含存档数据模型下沉到 L0）+ `BreakableProp.PropSaveEntry` 提成顶层类型 | ✅ 完成 |
-| 3 | `Locus.Services` 补全剩下的 `InputManager`：它带**序列化的玩法工具引用**（`AttackSystem` / `WhirlwindController` / `PlayerMoveStateMachine`）+ 自己的「落雷」技能逻辑 → 要先进能层（工具引用改成接口 / 定位器，落雷逻辑搬到技能层） | 待办 |
+| **3** | **扩展点契约下沉 L0**：`IStatusEffect` / `IEffectExecutor` / `IUpgradeStatSink` / `IUpgradeNumericApplier` / `IUpgradeDescriptionFormatter` / `IRouteMotionPresenter` / `IStatModifierApplier` | ✅ 完成 |
+| 4 | `Locus.Services` 补全剩下的 `InputManager`：它带**序列化的玩法工具引用**（`AttackSystem` / `WhirlwindController` / `PlayerMoveStateMachine`）+ 自己的「落雷」技能逻辑 → 要先进能层（工具引用改成接口 / 定位器，落雷逻辑搬到技能层） | 待办 |
 | 4 | **内核接口化**：把第 3 节的硬引用逐条改成接口 / 事件（每条一个接口 + 装配处注入） | 待办 |
 | 5 | `Locus.Combat` 成立（Enemy / Core / Attack / Wave / QTE / Effect / Status / 战斗侧 Player） | 待办 |
 | 6 | `Locus.Flow`（流程 + 路线）与 `Locus.UI`（界面）分离 | 待办 |
@@ -103,6 +104,27 @@ aiEditMode: inherit
 **验证**（Play Mode）：存档往返（`ToJson` → `FromJson`）字段逐项一致（天赋 3 / 假路线快照 2 / 道具 1 / 铜钱 2630）✓；
 快照里的 `propStates` 正确读出（`N1_Prop_Crate_01 destroyed=True coins=100`）✓；旧档 `coinCount` 迁移正常 ✓；
 §15.5 基线逐位一致 ✓；Console 0/0 ✓。
+
+### 批次 3 做了什么（扩展点契约下沉 L0）
+
+搬的是**扩展点接口**——它们就是「为新机制留接口」的载体，理应住在最底层的契约层：
+
+| 接口 | 原位置 | 用途 |
+|---|---|---|
+| `IStatusEffect` | `Status/` | 状态机制（新状态类住哪一层都行） |
+| `IEffectExecutor` | `Core/` | 局内 Build 的行为型效果 |
+| `IUpgradeStatSink` / `IUpgradeNumericApplier` / `IUpgradeDescriptionFormatter` | `Core/` | 升级数值 / 文案扩展点 |
+| `IStatModifierApplier` | `Core/BuffManager.cs` 内嵌 | 属性修正应用器 |
+| `IRouteMotionPresenter` | `RouteFake/` | 路线表现 |
+
+**留在原处**（实测引用了上层类型，下不去）：`IDamageReactionHandler`（带 `Enemy` 参数）、
+`IEnemyStatusProvider`（带 `Enemy` 参数）、`IStageRoleContext`（依赖 `StageRouteBattleHost`）。
+
+**实测效果**：`Core → RouteFake` / `Core → Attack` / `Core → Effect` 三条边**归零** ✓；
+`Enemy → Status` 4→1 文件 ✓；`Status/` 目录出边只剩 `Data` ✓；`Locus.Data` 仍是纯叶子 ✓。
+
+> 顺带一个判据工具：`Tools/asmdef-survey/list_interfaces.py` —— 列出全工程接口 + 被多少目录使用，
+> 用来判断「哪些接口该下沉到 L0」。
 
 ## 5. 每批验收口径
 
