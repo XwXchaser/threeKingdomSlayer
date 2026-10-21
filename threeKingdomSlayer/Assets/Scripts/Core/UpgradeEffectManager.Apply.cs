@@ -212,15 +212,27 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
     
         void IUpgradeStatSink.ApplyReflectShieldLevel(UpgradeDefinition def, int level)
         {
-            if (def.reflectShieldLevels != null && level <= def.reflectShieldLevels.Count)
+            if (def.reflectShieldLevels == null || level > def.reflectShieldLevels.Count) return;
+            var rsCfg = def.reflectShieldLevels[level - 1];
+            // 护盾是玩家侧状态：写入玩家状态容器里的护盾状态。
+            var shield = ResolveReflectShieldStatus();
+            if (shield == null) return;
+            float bonusPercent = rsCfg.enableBonus ? rsCfg.bonusReflectPercent / 100f : 0f;
+            shield.Configure(rsCfg.shieldAmount, rsCfg.intervalSeconds, bonusPercent);
+        }
+
+        /// <summary>取玩家侧的反伤护盾状态（没有则建一个并登记到玩家状态容器）。</summary>
+        private ReflectShieldStatus ResolveReflectShieldStatus()
+        {
+            var player = PlayerState.Instance;
+            if (player == null) return null;
+            var status = player.StatusHost.Get(ReflectShieldStatus.Id) as ReflectShieldStatus;
+            if (status == null)
             {
-                var rsCfg = def.reflectShieldLevels[level - 1];
-                _reflectShieldInterval = rsCfg.intervalSeconds;
-                _reflectShieldMaxAmount = rsCfg.shieldAmount;
-                if (rsCfg.enableBonus)
-                    _bonusReflectPercent = rsCfg.bonusReflectPercent / 100f;
-                _reflectShieldReady = true; // 首次获得/升级立即就绪
-                _reflectShieldCooldown = 0f;
+                status = new ReflectShieldStatus();
+                status.OnConsumed += () => OnReflectShieldConsumed?.Invoke();
+                player.StatusHost.Add(status);
             }
+            return status;
         }
 }

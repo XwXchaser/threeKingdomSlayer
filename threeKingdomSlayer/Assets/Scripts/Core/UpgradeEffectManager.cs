@@ -86,13 +86,7 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
 
 
     // 反伤盾（由 charge_reflect_shield 管理）
-    private int _reflectShieldAmount;        // 当前护盾剩余值，0 = 无护盾
-    private int _reflectShieldMaxAmount;     // 护盾最大值
-    private float _reflectShieldCooldown;    // CD 计时器
-    private float _reflectShieldInterval;    // CD 间隔
-    private float _bonusReflectPercent;      // 反伤倍率加成（0~1）
-    private bool _reflectShieldReady;        // CD 冷却完毕，等待进入蓄力
-    private bool _isCharging;
+    // 反伤盾的状态已迁至玩家侧状态 ReflectShieldStatus（2026-10-22），本类只保留薄转发。
 
     // ── 已应用升级追踪 (upgradeId → level) ──
     private Dictionary<string, int> _appliedUpgrades = new Dictionary<string, int>();
@@ -113,7 +107,6 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
     public System.Action<UpgradeDefinition, int> OnUpgradeApplied; // (def, newLevel)
     public System.Action OnUpgradesReset;
     public System.Action OnReflectShieldConsumed; // 反伤盾被消耗时触发（供 ThornArmorEffect）
-
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -198,15 +191,7 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
         // 反伤盾 CD 计时器：蓄力期间暂停，非蓄力且未就绪时跑
         TickBurnDamage();
 
-        if (_reflectShieldInterval <= 0f) return;
-        if (_reflectShieldReady) return;
-        if (_isCharging) return;
-        _reflectShieldCooldown -= Time.deltaTime;
-        if (_reflectShieldCooldown <= 0f)
-        {
-            _reflectShieldReady = true;
-            _reflectShieldCooldown = 0f;
-        }
+        // 反伤盾的 CD 由玩家侧状态容器统一驱动（PlayerState.Update → StatusHost.Tick）。
     }
 
 
@@ -326,63 +311,73 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
     public float GetChargeDamageReduction() => _chargeDamageReduction;
 
     /// <summary>反伤盾当前剩余值（0=无盾）</summary>
-    public int GetReflectShieldAmount() => _reflectShieldAmount;
+    public int GetReflectShieldAmount() => Shield != null ? Shield.Amount : 0;
 
     /// <summary>是否持有反伤盾</summary>
-    public bool GetHasReflectShield() => _reflectShieldAmount > 0;
+    public bool GetHasReflectShield() => Shield != null && Shield.HasShield;
 
     /// <summary>反伤倍率加成（0~1）</summary>
-    public float GetBonusReflectPercent() => _bonusReflectPercent;
+    public float GetBonusReflectPercent() => Shield != null ? Shield.BonusPercent : 0f;
 
     /// <summary>反伤盾冷却进度，返回 (fill 0→1, 剩余秒数)。未获得升级返回 (-1, 0)</summary>
     public (float fill, float remaining) GetReflectShieldCooldown()
     {
-        if (_reflectShieldInterval <= 0f) return (-1f, 0f);
-        if (_reflectShieldReady) return (1f, 0f); // CD 就绪
-        float remaining = Mathf.Max(_reflectShieldCooldown, 0f);
-        float fill = 1f - (remaining / _reflectShieldInterval);
-        return (fill, remaining);
+        return Shield != null ? Shield.GetCooldown() : (-1f, 0f);
+    }
+
+    /// <summary>
+    /// 玩家的反伤护盾（玩家侧状态，2026-10-22 从本类迁出）。
+    /// 护盾是玩家身上的状态，不该寄居在局内 Build 层里。
+    /// </summary>
+    private ReflectShieldStatus Shield
+    {
+        get
+        {
+            var player = PlayerState.Instance;
+            if (player == null) return null;
+            var status = player.StatusHost.Get(ReflectShieldStatus.Id) as ReflectShieldStatus;
+            if (status == null)
+            {
+                status = new ReflectShieldStatus();
+                status.OnConsumed += () => OnReflectShieldConsumed?.Invoke();
+                player.StatusHost.Add(status);
+            }
+            return status;
+        }
+    }
+
+    /// <summary>重置玩家侧的反伤护盾状态（开新局）。</summary>
+    private void ResetReflectShieldState()
+    {
+        var player = PlayerState.Instance;
+        if (player == null) return;
+        var status = player.StatusHost.Get(ReflectShieldStatus.Id) as ReflectShieldStatus;
+        status?.ResetAll();
     }
 
     /// <summary>通知蓄力状态变化（由 PlayerState 调用）</summary>
     public void SetCharging(bool charging)
     {
-        _isCharging = charging;
+        if (Shield != null) Shield.SetCharging(charging);
     }
 
     /// <summary>尝试授予护盾。CD 就绪且进入蓄力时调用。返回授予的护盾值，0 表示未就绪</summary>
     public int TryGrantShield()
     {
-        if (!_reflectShieldReady || _reflectShieldMaxAmount <= 0) return 0;
-        _reflectShieldReady = false;
-        _reflectShieldAmount = _reflectShieldMaxAmount;
-        _reflectShieldCooldown = _reflectShieldInterval;
-        return _reflectShieldAmount;
+        return Shield != null ? Shield.TryGrant() : 0;
     }
 
     /// <summary>吸收伤害并返回反伤值。返回 0 表示无护盾</summary>
     public float AbsorbDamage(float damage)
     {
-        if (_reflectShieldAmount <= 0) return 0f;
-        int absorbed = Mathf.Min(_reflectShieldAmount, Mathf.CeilToInt(damage));
-        _reflectShieldAmount -= absorbed;
-        float reflect = damage * (1f + _bonusReflectPercent);
-        if (_reflectShieldAmount <= 0)
-        {
-            _reflectShieldAmount = 0;
-            OnReflectShieldConsumed?.Invoke();
-        }
-        return reflect;
+        if (Shield == null) return 0f;
+        return Shield.Absorb(damage);
     }
 
     /// <summary>清空护盾（离开蓄力时调用）</summary>
     public void ClearShield()
     {
-        if (_reflectShieldAmount > 0)
-        {
-            _reflectShieldAmount = 0;
-            OnReflectShieldConsumed?.Invoke();
-        }
+        if (Shield != null) Shield.Clear();
     }
 
     #region Debug Setters
@@ -431,13 +426,9 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
         _chargeHitShockwaveHitCount = 0;
         _activeSkillCDReduction = 0f;
 
-        _reflectShieldAmount = 0;
-        _reflectShieldMaxAmount = 0;
-        _reflectShieldCooldown = 0f;
-        _reflectShieldInterval = 0f;
-        _bonusReflectPercent = 0f;
-        _reflectShieldReady = false;
-        _isCharging = false;
+        // 反伤盾：状态已迁至玩家侧，重置走玩家状态容器
+        ResetReflectShieldState();
+        Shield?.SetCharging(false);
 
         _burnStates.Clear();
         _dotRemovalList.Clear();

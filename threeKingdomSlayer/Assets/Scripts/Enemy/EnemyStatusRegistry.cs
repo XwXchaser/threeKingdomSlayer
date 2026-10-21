@@ -9,7 +9,7 @@ using System.Collections.Generic;
 /// 于是「这个敌人是不是在燃烧」只能去问具体的那一个系统，问不到别的状态。
 ///
 /// 现在：所有状态都统一从 <see cref="EnemyStatusRegistry"/> 问——
-/// 放在敌人侧的状态（冻结 / 未来的中毒等）走**状态宿主**（<see cref="IEnemyStatusInstance"/>），
+/// 放在敌人侧的状态（冻结 / 未来的中毒等）走**状态宿主**（<see cref="IStatusEffect"/>），
 /// 放在管理器侧的状态（灼烧 / 疾病）走**本接口**。
 /// 新机制（例如「中毒的敌人受到额外伤害」）不需要知道状态具体存在哪。
 ///

@@ -23,6 +23,15 @@ public class PlayerState : MonoBehaviour
     [System.NonSerialized] public int currentWave;
     [System.NonSerialized] public StageState stageState = StageState.None;
 
+    /// <summary>
+    /// 玩家身上的**状态效果容器**（与敌人的同类容器是同一个类型，宿主无关）。
+    /// 玩家的反伤护盾、破冰预备等都挂在这里——它们是玩家身上的状态，
+    /// 不属于敌人、也不属于局内 Build 层。
+    /// </summary>
+    private StatusContainer _statusHost;
+
+    public StatusContainer StatusHost => _statusHost ??= new StatusContainer();
+
     // 升级系统运行时
     [System.NonSerialized] public int currentLevel;
     [System.NonSerialized] public float currentExp;
@@ -122,6 +131,9 @@ public class PlayerState : MonoBehaviour
 
     private void Update()
     {
+        // 状态效果宿主：统一驱动玩家身上的状态（反伤护盾、破冰预备……）
+        StatusHost.Tick(Time.deltaTime);
+
         // 更新冷却计时器（复用缓存列表，避免每帧 new List 分配）
         _cooldownKeysCache.Clear();
         _cooldownKeysCache.AddRange(cooldownTimers.Keys);

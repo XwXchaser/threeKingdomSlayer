@@ -399,17 +399,17 @@ public GameObject freezeMeltEffectPrefab;
     /// <summary>
     /// **状态效果宿主**：持有该敌人身上的状态效果实例（冻结是其中之一），
     /// 由 <c>Update</c> 统一驱动每帧结算，由 <c>EnemyStatusRegistry</c> 统一提供查询。
-    /// 新增一种状态效果 = 写一个 <see cref="IEnemyStatusInstance"/> 并在这里登记。
+    /// 新增一种状态效果 = 写一个 <see cref="IStatusEffect"/> 并在这里登记。
     /// </summary>
-    private EnemyStatusHost _statusHost;
+    private StatusContainer _statusHost;
 
-    internal EnemyStatusHost StatusHost
+    internal StatusContainer StatusHost
     {
         get
         {
             if (_statusHost == null)
             {
-                _statusHost = new EnemyStatusHost(this);
+                _statusHost = new StatusContainer();
                 _ = FreezeSys; // 冻结系统创建时自己登记到宿主
             }
             return _statusHost;

@@ -14,7 +14,7 @@ using UnityEngine;
 /// 不是 MonoBehaviour：由 Enemy 懒加载创建（<c>new EnemyFreeze(this)</c>），
 /// 避免改 prefab 序列化，也不在对象池复用路径上多一次 GetComponent。
 /// </summary>
-public sealed class EnemyFreeze : IEnemyStatusInstance
+public sealed class EnemyFreeze : IStatusEffect
 {
     private readonly Enemy _owner;
 
@@ -39,7 +39,7 @@ public sealed class EnemyFreeze : IEnemyStatusInstance
         owner.StatusHost?.Add(this);
     }
 
-    // ── IEnemyStatusInstance：状态效果的统一落地接口 ──
+    // ── IStatusEffect：状态效果的统一落地接口 ──
 
     /// <summary>状态 id（与 EnemyStatusRegistry.Frozen 一致）。</summary>
     public string StatusId => EnemyStatusRegistry.Frozen;
