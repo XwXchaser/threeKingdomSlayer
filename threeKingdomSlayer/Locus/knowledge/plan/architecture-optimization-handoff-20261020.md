@@ -129,6 +129,11 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | `fdd09dc` | **分层第六批（血条工厂端口）**：`IEnemyHealthBarView` + `IEnemyHealthBarFactory`；**`Enemy→UI` 1→0** ✅ —— 内核一条 UI 引用都不剩 |
 | `c32364b` | **分层第七批（QTE 的 UI 触点）**：`IQteHud` + `IQteInputLockTarget` / `QteInputLockTargets`；`UIResolutionHelper` 下沉 L0；**`QTE→UI` 3→0** ✅ —— **战斗内核一条 UI 引用都不剩** ✅ |
 | `90ab8ef` | **分层第八批（内核不再点名流程类）**：`StageRoles` 装配点 + `IPropDestroyNotifier`；17 处 `StageController.Instance` 改走装配点；`StageFormation` / `ArrowGlobalConfig` 下沉 L0 |
+| `5f9752c` | **分层第九批 a（输入端口）**：`IPlayerInput`（状态 + 事件✅，**不含手势识别**✅）+ `PlayerInputHub`；内核 6 个文件改走端口 ✅；**内核不再引用 `InputManager` 类型** ✅；调研与扩展路径见 `design/input-gesture-pipeline.md` ✅ |
+| `2e5771c` | **分层第九批 b（`Locus.Combat` 成立）**：战斗内核独立成程序集（用 `.asmref` 挂目录 ✅，250 个文件一个没搬 ✅）；内核只朝下依赖 Data / Services ✅；**编译即验收** ✅ |
+| `fdd09dc` | **分层第六批（血条工厂端口）**：`IEnemyHealthBarView` + `IEnemyHealthBarFactory`；**`Enemy→UI` 1→0** ✅ —— 内核一条 UI 引用都不剩 |
+| `c32364b` | **分层第七批（QTE 的 UI 触点）**：`IQteHud` + `IQteInputLockTarget` / `QteInputLockTargets`；`UIResolutionHelper` 下沉 L0；**`QTE→UI` 3→0** ✅ —— **战斗内核一条 UI 引用都不剩** ✅ |
+| `90ab8ef` | **分层第八批（内核不再点名流程类）**：`StageRoles` 装配点 + `IPropDestroyNotifier`；17 处 `StageController.Instance` 改走装配点；`StageFormation` / `ArrowGlobalConfig` 下沉 L0 |
 
 > 详见 `design/architecture-decoupling-analysis.md` §5.7 / §5.8 / §5.9。拆分前机械校验：**内容丢失 = 0**。
 

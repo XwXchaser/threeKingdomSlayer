@@ -1055,6 +1055,16 @@ if (EnemyStatusRegistry.IsActive(enemy, "poison")) { /* 新机制：中毒的敌
 只是「取实例」点名了流程类 ✅）；`StageFormation`（纯计算 ✅）/ `ArrowGlobalConfig`（配置 ✅）下沉 L0 ✅。
 ⇒ 内核对 `Managers` 只剩 `EnemyManager` ✅、对 `Player` 只剩战斗侧类型 + `InputManager` ✅ —— `Locus.Combat` 只差三步 ✅。
 
+**批次 9（内核独立成程序集，已完成）** ✅：
+- **9a 输入端口** ✅：`IPlayerInput`（状态 + 事件 ✅，**不含手势识别** ✅）+ `PlayerInputHub` ✅；
+  内核 6 个文件改走端口 ✅ → **内核不再引用 `InputManager` 类型** ✅；
+  调研与「以后加新手势改哪几处」见 `design/input-gesture-pipeline.md` ✅。
+- **9b `Locus.Combat` 成立** ✅：战斗内核独立成程序集 ✅ —— 用 **`.asmref`** 把内核目录挂进去 ✅，
+  **250 个文件一个没搬** ✅（GUID 不变 ✅，prefab / 资产引用零风险 ✅）。
+  编译器直接把「内核 → 上层」的引用报了出来 ✅（Y 卷轴实验代码 ✅ + DOTween 模块 ✅ 两处 ✅），
+  收口后 **0 error** ✅。
+  ⇒ **内核 → 界面 / 流程 / 输入类型 三条边界归零** ✅，现在是**编译器保证**的 ✅。
+
 ---
 
 ## 6. 明确不做

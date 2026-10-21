@@ -32,10 +32,19 @@ aiEditMode: inherit
 | 7 · QTE 的三个 UI 触点 | ✅ | `IQteHud` + `IQteInputLockTarget` + `QteInputLockTargets`（登记表✅）；`UIResolutionHelper` 下沉 L0（纯计算✅）；**`QTE→UI` 3→0** ✅ —— **战斗内核一条 UI 引用都不剩** ✅ |
 | 8 · 内核不再点名流程类 | ✅ | `StageRoles` 装配点（`BattleState` / `Formation`）+ `IPropDestroyNotifier`；17 处 `StageController.Instance` 改走装配点 ✅；`StageFormation`（纯计算✅）/ `ArrowGlobalConfig` 下沉 L0 ✅；内核对 `Managers` 只剩 `EnemyManager` ✅ |
 | 9a · 输入端口 | ✅ | `IPlayerInput`（状态 + 事件✅，**不含手势识别**✅）+ `PlayerInputHub`；内核 6 个文件改走端口 ✅；**内核不再引用 `InputManager` 类型** ✅；依据与扩展路径见 `design/input-gesture-pipeline.md` ✅ |
-| 9+ · `Locus.Combat` / `Locus.Flow` / `Locus.UI` / `Locus.Editor` | ⏳ | ① 战斗侧玩家类型（`PlayerState` / `AttackSystem` / `IceBreakSession`）+ `EnemyManager` 归位到内核目录 ✅；② 建 `Locus.Combat` asmdef（用 `.asmref` 把内核目录挂进去 ✅，不动 250 个文件 ✅） |
+| 9b · **`Locus.Combat` 成立** | ✅ | 战斗内核独立成程序集（662KB ✅）；用 `.asmref` 挂目录，**250 个文件一个没搬** ✅；内核只朝下依赖 `Locus.Data` / `Locus.Services` ✅；**编译即验收** ✅ |
+| 10+ · `Locus.Flow` / `Locus.UI` / `Locus.Editor` | ⏳ | 上层（`Assembly-CSharp` ✅）里还有流程 / 界面 / 编辑器工具；可按需再切 `Locus.Flow`（路线 + 流程 ✅）与 `Locus.UI`（界面 ✅）；`Locus.Editor` 独立成程序集 ✅ |
 
-**现在的分层实况**：`Locus.Data` 61 文件 / 3597 行（纯叶子）、`Locus.Services` 3 文件 / 642 行（只朝下依赖 Data）、
-其余运行时脚本仍在 `Assembly-CSharp`（251 文件 / 55666 行）。
+**现在的分层实况**（2026-10-22）：
+| 程序集 | 内容 | 依赖 |
+|---|---|---|
+| `Locus.Data` | 配置 + 契约 + 纯数据类型（61 文件 / 3597 行） | 无 ✅ |
+| `Locus.Services` | 全局服务（`DebugLog` / `AudioManager` / `SaveManager`） | Data ✅ |
+| `Locus.Combat` | **战斗内核**（Enemy / Core / Attack / Wave / QTE / Effect / Status / MoveSystem / Prop / 战斗侧 Player） | Data + Services + 第三方 ✅ |
+| `Assembly-CSharp` | 上层：流程 / 界面 / 输入适配器 / 编辑器工具 | 以上全部 ✅ |
+
+⇒ **内核 → 界面 归零** ✅、**内核 → 流程 归零** ✅、**内核 → 输入类型 归零** ✅
+—— 这三条边界现在是**编译器保证**的 ✅（写错层直接编译失败 ✅）。
 
 **内核 → 界面已全部归零** ✅ ✅。内核现在只朝下依赖 `Locus.Data` / `Locus.Services` ✅，
 跨目录依赖只剩两处 ✅（这就是 `Locus.Combat` 的最后一道门槛 ✅）：
