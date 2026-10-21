@@ -60,12 +60,18 @@ summary: ColumnManager 拆分实施方案（2026-10-20，写给后续接手的 A
 - 豁免 A/B：col1/r1 打 `ignoreFillUpOrders` 后杀 r0 → `col1/r1[豁免] · col1/r2 · col2/r3 · col3/r4`（豁免者不动）
 - 主流程：落地页 → 开始关卡 → `phase=Battle`、出怪、范围攻击连掉 20×3
 
-**给后续执行者的两条实现要点**（省得重新踩）：
+**给后续执行者的实现要点**（省得重新踩）：
 
 1. 刀 1：`LogicalWaveRow` / `LogicalWaveRowKind` 由 ColumnManager 的**嵌套类型提为顶层类型**，
    因此 ColumnManager 里原有引用**原样编译**，改动只落在字段与方法体；队列类不决定何时补齐、不派单、不移动敌人。
 2. 刀 2：`ColumnQueries` 用委托 `() => columns` 取列数组（避免 `InitializeColumns` 重建后拿到旧引用）；
    ColumnManager 侧保留同名 public 方法改为委派，**调用方零改动**。
+3. 刀 3：`SpawnEntryMover` 只依赖两样——逻辑排队列（取目标排）+ 一个「入场全部完成」的回调
+   （`StartPendingLogicalLayoutReflow`）；「入场占用中就跳过其它调度分支」的语义由 `Tick()` 返回 true 表达。
+4. 刀 6 的结果：**补齐规则现在只有一种**（逐排补齐），`FillUpRule` 枚举与 `fillUpRule` 字段已从
+   `Data/StageConfig.cs` 删除；`WaveSpawner` 只剩逐排路径；`ColumnManager` 的「按列找空位前压」
+   legacy 分支与两个 inert 入口（`RowBasedFillUp` / `CompactAllColumns`）已删。
+   结论：**AI 部署关卡时已经没有「补齐规则」这个选项可填**。
 
 > 附带修掉一个既有问题（`49d4e96`）：落地页就绪态把局内 HUD 整组隐藏时，连击数字启动协程会报
 > 「Coroutine couldn't be started because the game object is inactive」→ 加 `activeInHierarchy` 守卫。
