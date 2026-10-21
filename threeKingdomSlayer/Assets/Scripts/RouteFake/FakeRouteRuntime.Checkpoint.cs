@@ -23,6 +23,7 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour, IPropDestroyNotifi
             configurationVersion = routeConfig.configurationVersion,
             checkpointNodeId = _currentNode.nodeId,
             currentHealth = PlayerState.Instance.currentHealth,
+            maxHealthAtSave = PlayerState.Instance.heroConfig != null ? PlayerState.Instance.heroConfig.maxHealth : 100f,
             currentRevives = PlayerState.Instance.currentRevives,
             currentLevel = PlayerState.Instance.currentLevel,
             currentExp = PlayerState.Instance.currentExp,
@@ -87,7 +88,12 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour, IPropDestroyNotifi
 
         var player = PlayerState.Instance;
         if (player == null) return false;
-        player.currentHealth = snapshot.currentHealth;
+        // 血量按**比例**恢复：快照存的是绝对值 ✅，换英雄 / 改配置后绝对值会失真 ✅
+        // （曾经出现过「快照血量 9999 / 最大血量 100」这种脏数据 ✅ —— 直接赋值会把血条撑爆 ✅）。
+        float maxHealthNow = player.heroConfig != null ? player.heroConfig.maxHealth : 100f;
+        float maxHealthAtSave = snapshot.maxHealthAtSave > 0f ? snapshot.maxHealthAtSave : maxHealthNow;
+        float restoredHealth = maxHealthNow * (snapshot.currentHealth / maxHealthAtSave);
+        player.currentHealth = Mathf.Clamp(restoredHealth, 0f, maxHealthNow);
         player.currentRevives = snapshot.currentRevives;
         player.currentLevel = snapshot.currentLevel;
         player.currentExp = snapshot.currentExp;

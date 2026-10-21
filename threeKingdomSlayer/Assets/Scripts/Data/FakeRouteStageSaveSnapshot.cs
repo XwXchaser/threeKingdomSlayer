@@ -22,6 +22,8 @@ public sealed class FakeRouteStageSaveSnapshot
     public int currentRevives;
     public int currentLevel;
     public float currentExp;
+    /// <summary>存快照时的**最大血量**（用来按比例恢复血量 ✅ —— 换英雄 / 改配置后绝对值会失真 ✅）。</summary>
+    public float maxHealthAtSave;
     public List<RouteUpgradeSaveState> upgrades = new List<RouteUpgradeSaveState>();
     public List<RouteActiveSkillSaveState> activeSkills = new List<RouteActiveSkillSaveState>();
     public List<RouteItemSaveState> items = new List<RouteItemSaveState>();

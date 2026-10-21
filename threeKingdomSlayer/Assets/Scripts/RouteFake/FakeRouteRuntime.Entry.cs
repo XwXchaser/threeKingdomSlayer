@@ -130,18 +130,22 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
     /// <summary>
     /// 解析起始节点（含 checkpoint 恢复）。Begin 与 PrepareForEntry 共用。
     ///
-    /// 是否接存档点的判定：
-    ///   ① 老路径（<see cref="Begin"/>）：只看 FakeRouteLaunch.StartFromCheckpoint，行为不变。
-    ///   ② 落地页自举（<see cref="IsHubEntry"/>）：**无条件**尝试恢复快照。
-    ///      落地页语义就是「进游戏 = 当前进度」，而 StartFromCheckpoint 是 static、
-    ///      进程冷启动时默认 false；只靠它会让二次启动回到 route.startNode 并丢掉血量/升级。
-    ///      快照在通关时已被 FinishRoute 清掉，所以「有快照」= 该关没打完，可以安全恢复。
+    /// 是否接存档点的判定（2026-10-22 改，BUG-005）：
+    ///   • **只认显式的「续玩」标记** <see cref="FakeRouteLaunch.StartFromCheckpoint"/>；
+    ///   • **落地页自举（<see cref="IsHubEntry"/>）不再恢复检查点** ——
+    ///     重新进入游戏从**关卡的初始节点**开始（routeConfig.startNode），
+    ///     而不是从上次退出的节点续跑。
+    ///     原因：① 玩家反馈「重进游戏直接落在 N3」是 bug（关卡前段内容被跳过）；
+    ///     ② 检查点里还存着血量 / 等级 / 升级这些「上一次的状态」，
+    ///     换个关卡配置或换个英雄就会变成坏数据（血量对不上）——
+    ///     初始节点开局 = 状态干净，不会有这类脏数据。
+    ///     想续玩走显式入口（设置 <see cref="FakeRouteLaunch.StartFromCheckpoint"/>）。
     /// </summary>
     private FakeRouteNodeConfig ResolveStartNode()
     {
         if (routeConfig == null) return null;
         var startNode = useTestStartNode && testStartNode != null ? testStartNode : routeConfig.startNode;
-        bool tryRestoreCheckpoint = !useTestStartNode && (FakeRouteLaunch.StartFromCheckpoint || IsHubEntry);
+        bool tryRestoreCheckpoint = !useTestStartNode && FakeRouteLaunch.StartFromCheckpoint;
         if (tryRestoreCheckpoint)
         {
             var snapshot = SaveManager.GetFakeRouteSnapshot(routeConfig.routeId, routeConfig.stageId);

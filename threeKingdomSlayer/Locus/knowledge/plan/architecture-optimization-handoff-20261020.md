@@ -464,6 +464,11 @@ Play Mode 注入 `Stage_Trial` 第 1 波（`Resources.Load<StageConfig>("StageCo
     等待循环里每帧兜底 `Time.timeScale = 1f`；否则会看到「敌人不动 / DoT 不掉血」的假故障。
 12. **Editor 的 Play Mode 帧率极低** → 死亡动画（DOTween 1.1s）要跑 1000+ 帧才回池；
     测「回池清理」要轮询到 `activeInHierarchy == false`，别用固定帧数。
+13. **Play Mode 回归会写玩家的存档** ✗！卷轴路线进节点时 `SaveCheckpoint()` ✅ 会把当前节点 / 血量 / 升级写进快照 ✅
+    —— 回归脚本里把玩家血量改成 9999 ✗ 就会把「血量 9999」写进存档 ✗（玩家下次开局血条直接爆 ✗）。
+    ⇒ **回归前先备份存档** ✅（`PlayerPrefs.GetString("player_save")` ✅ 存到 `Library/Locus/tmp/` ✅），
+    **回归后还原** ✅（`PlayerPrefs.SetString` + `Save()` ✅）。
+    ⇒ 2026-10-22 已因此把玩家存档里的脏快照清掉 ✅（正式路线快照 HP=9999 ✅）。
 
 ---
 
