@@ -6,9 +6,16 @@ using UnityEngine;
 /// 关卡流程控制器 - 单例
 /// 管理关卡开始、进行中、胜利、失败状态
 /// 协调 WaveSpawner、EnemyManager、PlayerState 之间的交互
+///
+/// 【架构】本类现在是**薄宿主**：Inspector 引用、关卡状态、事件广播、协程宿主都在这里；
+/// 「这一局怎么跑」「一场战斗怎么开」「奖励怎么结算」三块逻辑分别拆到
+/// <see cref="StageRunFlow"/> / <see cref="StageCombatStaging"/> / <see cref="StageRewardGate"/>，
+/// 它们通过 <see cref="IStageRoleContext"/> 拿环境，不认识本门面。
+/// 对外仍然实现 5 个角色接口（阵型 / 战斗状态 / 一局流程 / 战斗布场 / 奖励门控），
+/// 消费者一行都不用改。
 /// </summary>
 public class StageController : MonoBehaviour, IStageFormation, IStageBattleState,
-    IRunFlow, ICombatStaging, IRewardGate, IRouteStageHost,
+    IRunFlow, ICombatStaging, IRewardGate, IRouteStageHost, IStageRoleContext,
     StageRouteBattleHost.IContext
 {
     public static StageController Instance { get; private set; }
@@ -33,7 +40,6 @@ public class StageController : MonoBehaviour, IStageFormation, IStageBattleState
     // 运行时状态
     private StageState currentState = StageState.None;
     private bool _coinsSettled;
-    private bool _routeRunInitialized;
     private bool _routeStageSettled;
 
     // 事件
@@ -79,8 +85,18 @@ public class StageController : MonoBehaviour, IStageFormation, IStageBattleState
     // GetRushMoveDelay / GetRowAlphaFactors 签名已匹配，走隐式实现。
     StageConfig IStageFormation.StageConfig => stageConfig;
 
+    // ───────── 三个角色的实现 ─────────
     /// <summary>路线战斗宿主：节点战斗的开打/旅行/等奖励状态与迁移逻辑已拆出。</summary>
     private StageRouteBattleHost _routeHost;
+
+    /// <summary>一局流程：开始 / 重开 / 退出 / 波次推进 / 胜负判定。</summary>
+    private StageRunFlow _runFlow;
+
+    /// <summary>一场战斗的布场与开打。</summary>
+    private StageCombatStaging _staging;
+
+    /// <summary>奖励门控与结算。</summary>
+    private StageRewardGate _rewardGate;
 
     /// <summary>阵型计算：纯计算，已拆出（见 StageFormation）。</summary>
     private StageFormation _formation = new StageFormation();
@@ -152,11 +168,86 @@ public class StageController : MonoBehaviour, IStageFormation, IStageBattleState
         remove => OnCombatNodeCleared -= value;
     }
 
+    // ───────── IStageRoleContext 实现（给三个角色类提供环境）─────────
+    FakeRouteStageConfig IStageRoleContext.RouteConfig
+    {
+        get => fakeRouteStageConfig;
+        set => fakeRouteStageConfig = value;
+    }
+
+    bool IStageRoleContext.AutoStartStage
+    {
+        get => autoStartStage;
+        set => autoStartStage = value;
+    }
+
+    bool IStageRoleContext.BlockRestartOnDefeat
+    {
+        get => blockRestartOnDefeat;
+        set => blockRestartOnDefeat = value;
+    }
+
+    bool IStageRoleContext.SuppressDefeatUI => suppressDefeatUI;
+
+    string IStageRoleContext.BattleSceneName => battleSceneName;
+
+    bool IStageRoleContext.RouteStageSettled
+    {
+        get => _routeStageSettled;
+        set => _routeStageSettled = value;
+    }
+
+    bool IStageRoleContext.IsRouteBattleRunning => _routeHost.RouteBattleRunning;
+
+    bool IStageRoleContext.IsRouteRewardWaiting => _routeHost.IsRouteRewardWaiting;
+
+    void IStageRoleContext.PrewarmEnemyPools() => _routeHost.PrewarmEnemyPools();
+
+    void IStageRoleContext.SettleCoins() => SettleCoins();
+
+    void IStageRoleContext.RunCoroutine(IEnumerator routine) => StartCoroutine(routine);
+
+    void IStageRoleContext.SyncStageStateSilently(StageState state)
+    {
+        if (currentState != state) currentState = state;
+    }
+
+    void IStageRoleContext.RaiseStageStateChanged(StageState state) => OnStageStateChanged?.Invoke(state);
+
+    void IStageRoleContext.RaiseStageVictory() => OnStageVictory?.Invoke();
+
+    void IStageRoleContext.RaiseStageDefeat() => OnStageDefeat?.Invoke();
+
+    void IStageRoleContext.RaiseCombatNodeCleared() => OnCombatNodeCleared?.Invoke();
+
+    void IStageRoleContext.RaiseRouteBattleCompleted() => OnRouteBattleCompleted?.Invoke();
+
+    event System.Action IStageRoleContext.StageDefeat
+    {
+        add => OnStageDefeat += value;
+        remove => OnStageDefeat -= value;
+    }
+
+    event System.Action IStageRoleContext.CombatNodeCleared
+    {
+        add => OnCombatNodeCleared += value;
+        remove => OnCombatNodeCleared -= value;
+    }
+
+    event System.Action IStageRoleContext.RouteBattleCompleted
+    {
+        add => OnRouteBattleCompleted += value;
+        remove => OnRouteBattleCompleted -= value;
+    }
+
     private void OnEnable()
     {
         if (Instance == null)
             Instance = this;
         _routeHost = new StageRouteBattleHost(this);
+        _runFlow = new StageRunFlow(this);
+        _staging = new StageCombatStaging(this, _routeHost);
+        _rewardGate = new StageRewardGate(this, _routeHost);
     }
 
     private void Awake()
@@ -205,20 +296,20 @@ public class StageController : MonoBehaviour, IStageFormation, IStageBattleState
         if (playerState == null) playerState = FindObjectOfType<PlayerState>();
         if (enemyPool == null) enemyPool = FindObjectOfType<EnemyPool>();
 
-        // 注册事件
+        // 注册事件（回调实现都在 StageRunFlow 里）
         if (waveSpawner != null)
         {
-            waveSpawner.OnAllWavesCompleted += OnAllWavesCleared;
-            waveSpawner.OnWaveCompleted += OnWaveCleared;
+            waveSpawner.OnAllWavesCompleted += _runFlow.OnAllWavesCleared;
+            waveSpawner.OnWaveCompleted += _runFlow.OnWaveCleared;
         }
         if (enemyManager != null)
         {
-            enemyManager.OnAnyEnemyDied += OnEnemyDied;
+            enemyManager.OnAnyEnemyDied += _runFlow.OnEnemyDied;
         }
         if (playerState != null)
         {
-            playerState.OnPlayerDied += OnPlayerDefeated;
-            playerState.OnStageStateChanged += OnPlayerStageStateChanged;
+            playerState.OnPlayerDied += _runFlow.OnPlayerDefeated;
+            playerState.OnStageStateChanged += _runFlow.OnPlayerStageStateChanged;
         }
 
         // 域重载或上一局暂停状态可能保留 timeScale=0；必须在安排首局启动前恢复，
@@ -227,74 +318,15 @@ public class StageController : MonoBehaviour, IStageFormation, IStageBattleState
 
         // 自动开始关卡：协程使用 unscaled 时间，避免其他 Start 在同帧暂停时让启动永久卡住。
         Debug.Log("[StageController] 场景加载完成，自动开始关卡");
-        if (autoStartStage) StartCoroutine(StartStageNextFrame());
+        if (autoStartStage) StartCoroutine(_runFlow.StartStageNextFrame());
     }
 
-    private IEnumerator StartStageNextFrame()
-    {
-        yield return null;
-        Time.timeScale = 1f;
-        StartStage();
-    }
-
-    #region 关卡流程
+    #region 关卡流程（薄转发：实现见 StageRunFlow）
 
     /// <summary>
     /// 开始关卡
     /// </summary>
-    public void StartStage()
-    {
-        if (fakeRouteStageConfig != null)
-        {
-            _routeStageSettled = false;
-            playerState?.ResetPlayer();
-            UltimateSystem.Instance?.ResetEnergy();
-            enemyManager?.ClearAllEnemies();
-            var fakeRuntime = FindObjectOfType<FakeRouteRuntime>();
-            if (fakeRuntime == null)
-            {
-                Debug.LogError("[StageController] 卷轴路线运行时缺失（FakeRouteRuntime）");
-                return;
-            }
-            fakeRuntime.Begin(fakeRouteStageConfig);
-            return;
-        }
-
-        if (stageConfig == null)
-        {
-            Debug.LogError("[StageController] 当前节点StageConfig未赋值，无法开始关卡");
-            return;
-        }
-
-        Debug.Log($"[StageController] 开始战斗节点: {stageConfig.stageName}");
-
-        // 重置所有状态
-        playerState?.ResetPlayer();
-        UltimateSystem.Instance?.ResetEnergy();
-        enemyManager?.ClearAllEnemies();
-
-        // 重置击杀奖励管理器
-        var killRewardManager = FindObjectOfType<KillRewardManager>();
-        killRewardManager?.ResetRewards();
-
-        // 重置连击管理器
-        ComboManager.Instance?.ResetCombo();
-
-        // 重置血包掉落
-        HealthPotionManager.Instance?.ResetForNewStage();
-
-        // 预创建对象池
-        _routeHost.PrewarmEnemyPools();
-
-        // 设置关卡状态为进行中
-        SetState(StageState.InProgress);
-
-        // 播放 BGM
-        AudioManager.Instance?.PlayDefaultBGM();
-
-        // 开始生成波次
-        waveSpawner?.StartWaveSpawning();
-    }
+    public void StartStage() => _runFlow.StartStage();
 
 
 
@@ -320,182 +352,20 @@ public class StageController : MonoBehaviour, IStageFormation, IStageBattleState
 
     #endregion
 
-    #region 事件回调
-
-    /// <summary>
-    /// 单波清空 → 若有待处理的三选一（升级/道具），等待选择完成再生成下一波
-    /// </summary>
-    private void OnWaveCleared(int waveIndex)
-    {
-        var ucm = UpgradeChoiceManager.Instance;
-        if (ucm != null && ucm.IsChoosing)
-        {
-            Debug.Log($"[StageController] 第{waveIndex + 1}波清空，有待处理选择，暂缓下一波");
-            ucm.OnAllChoicesDone += OnChoicesDoneSpawnNextWave;
-            return;
-        }
-
-        Debug.Log($"[StageController] 第{waveIndex + 1}波清空，自动开始下一波");
-        waveSpawner?.SpawnNextWave();
-    }
-
-    private void OnChoicesDoneSpawnNextWave()
-    {
-        var ucm = UpgradeChoiceManager.Instance;
-        if (ucm != null)
-            ucm.OnAllChoicesDone -= OnChoicesDoneSpawnNextWave;
-
-        // Existing scheduler-owned orders resume themselves when choices close.
-        var cm = FindObjectOfType<ColumnManager>();
-        if (cm != null)
-        {
-            DebugLog.Info("[BOSS_ADVANCE] StageController 调用TriggerAllBossFillForward");
-            cm.TriggerAllBossFillForward();
-        }
-
-        Debug.Log("[StageController] 所有选择完成，开始下一波");
-        waveSpawner?.SpawnNextWave();
-    }
-
-    /// <summary>
-    /// 所有波次已清空 → 关卡胜利
-    /// </summary>
-    private void OnAllWavesCleared()
-    {
-        if (currentState != StageState.InProgress) return;
-
-        if (_routeHost.RouteBattleRunning)
-        {
-            OnRouteBattleCompleted?.Invoke();
-            return;
-        }
-
-        Debug.Log("[StageController] 最终战斗节点已清空，关卡胜利！");
-        AudioManager.Instance?.StopBGM();
-        SetState(StageState.Victory);
-        StageRouteBattleHost.ClearEnemyProjectiles();
-
-        if (stageConfig != null)
-        {
-            playerState?.AddCoins(stageConfig.clearCoinReward);
-        }
-        if (stageConfig != null)
-            SaveManager.MarkStageCleared(stageConfig.stageId);
-        SettleCoins();
-
-        OnStageVictory?.Invoke();
-    }
-
-    /// <summary>
-    /// 玩家阵亡 → 关卡失败
-    /// </summary>
-    private void OnPlayerDefeated()
-    {
-        if (currentState == StageState.Defeat || currentState == StageState.Victory) return;
-
-        var fakeRuntime = FindObjectOfType<FakeRouteRuntime>();
-        if (fakeRuntime != null)
-        {
-            fakeRuntime.HandleStageDefeat();
-        }
-
-        // 取消待处理的选择完成回调（玩家已死，不再生成下一波）
-        var ucm = UpgradeChoiceManager.Instance;
-        if (ucm != null)
-            ucm.OnAllChoicesDone -= OnChoicesDoneSpawnNextWave;
-
-        Debug.Log("[StageController] 玩家阵亡，关卡失败");
-        AudioManager.Instance?.StopBGM();
-        SetState(StageState.Defeat);
-        StageRouteBattleHost.ClearEnemyProjectiles();
-        OnStageDefeat?.Invoke();
-    }
-
-
-    /// <summary>
-    /// 玩家状态变化
-    /// </summary>
-    private void OnPlayerStageStateChanged(StageState state)
-    {
-        // 同步状态
-        if (currentState != state)
-        {
-            currentState = state;
-        }
-    }
-
-    /// <summary>
-    /// 敌人死亡回调 - 增加击杀数和铜钱
-    /// </summary>
-    private void OnEnemyDied(Enemy enemy)
-    {
-        playerState?.AddKill();
-        playerState?.AddCoins(enemy.coinReward);
-    }
-
-    #endregion
-
     #region 场景管理
 
     /// <summary>
     /// 重新开始关卡
     /// </summary>
-    public void RestartStage()
-    {
-        StartCoroutine(RestartStageCoroutine());
-    }
+    public void RestartStage() => _runFlow.RestartStage();
 
-    public void CleanupRouteStage(bool unloadScene)
-    {
-        var fakeRuntime = FindObjectOfType<FakeRouteRuntime>();
-        if (fakeRuntime != null)
-            fakeRuntime.HandleStageDefeat();
-
-    }
-
-    private IEnumerator RestartStageCoroutine()
-    {
-        if (fakeRouteStageConfig != null)
-        {
-            // 卷轴路线重开：清场 → 重置玩家 → 重新 Begin；是否从存档点恢复由 FakeRouteLaunch.StartFromCheckpoint 决定。
-            enemyManager?.ClearAllEnemies();
-            enemyPool?.ClearAllPools();
-            playerState?.ResetPlayer();
-            yield return null;
-            StartStage();
-            yield break;
-        }
-
-        // 兜底：没有卷轴路线配置时按普通关卡重开。
-        enemyManager?.ClearAllEnemies();
-        enemyPool?.ClearAllPools();
-        yield return null;
-        StartStage();
-    }
+    public void CleanupRouteStage(bool unloadScene) => _runFlow.CleanupRouteStage(unloadScene);
 
     /// <summary>
     /// 返回落地页：重载 Battle 场景，FakeRouteRuntime 会重新自举回 Ready。结算铜钱始终先做。
     /// （MainMenu 已随 D4 删除，不再有「回主菜单」分支。）
     /// </summary>
-    public void GoToMainMenu()
-    {
-        AudioManager.Instance?.StopBGM();
-        CleanupRouteStage(true);
-        SettleCoins();
-
-        // 回落地页要接上次进度：中途退出 → 用 checkpoint 节点；已通关（snapshot 已被 FinishRoute 清掉）→ 回起点。
-        FakeRouteLaunch.StartFromCheckpoint = true;
-
-        if (string.IsNullOrEmpty(battleSceneName))
-        {
-            Debug.LogError("[StageController] battleSceneName 为空，无法回落地页");
-            return;
-        }
-
-        // 路线场景（YJunctionSample）是 additive 加载的，LoadScene 不会自动卸载它；
-        // 新的 ScrollRoutePresenter.EnsureRoute 会直接复用已加载的那个场景并重新初始化。
-        UnityEngine.SceneManagement.SceneManager.LoadScene(battleSceneName);
-    }
+    public void GoToMainMenu() => _runFlow.GoToMainMenu();
 
     /// <summary>
     /// 结算本局铜钱到存档（幂等：同一局只结算一次）
@@ -518,103 +388,34 @@ public class StageController : MonoBehaviour, IStageFormation, IStageBattleState
     /// <summary>
     /// 进入战斗场景
     /// </summary>
-    public void GoToBattleScene()
-    {
-        UnityEngine.SceneManagement.SceneManager.LoadScene(battleSceneName);
-    }
+    public void GoToBattleScene() => _staging.GoToBattleScene();
 
     /// <summary>卷轴/假移动路线整关结算：整关奖励 + 标记通关 + 铜钱结算，只执行一次。</summary>
     // ───────── 遗留路线（Legacy）用的入口 ─────────
     // 这些方法只被 Assets/Scripts/Legacy 里的 V1/V2 实现调用，现役流程不经过。
     // 刻意不引用任何 Legacy 类型（V1/V2 的配置类型），这样 Legacy 目录才能保持「孤岛」。
 
-    public void SetCurrentNodeBattleConfig(StageConfig config)
-    {
-        stageConfig = config;
-    }
+    public void SetCurrentNodeBattleConfig(StageConfig config) => _staging.SetCurrentNodeBattleConfig(config);
 
-    public void StopCombatForRouteTravel()
-    {
-        _routeHost.StopCombatForRouteTravel();
-    }
+    public void StopCombatForRouteTravel() => _staging.StopCombatForRouteTravel();
 
-    public void StartCurrentRouteNode(bool resetPlayer = false)
-    {
-        if (stageConfig == null) return;
-        _routeHost.StopCombatSystemsForNodeTransition();
-        StartNodeCombat(resetPlayer);
-    }
+    public void StartCurrentRouteNode(bool resetPlayer = false) => _staging.StartCurrentRouteNode(resetPlayer);
 
-    public void CompleteCurrentCombatNode()
-    {
-        if (CurrentState != StageState.InProgress) return;
-        OnCombatNodeCleared?.Invoke();
-    }
+    public void CompleteCurrentCombatNode() => _rewardGate.CompleteCurrentCombatNode();
 
     /// <summary>旧版（RouteV2）路线结算。stageId 由调用方给出，避免引用 V2 的配置类型。</summary>
-    public void CompleteRouteStage(int stageId, int clearReward)
-    {
-        if (!_routeHost.RouteBattleRunning || _routeStageSettled) return;
-        _routeStageSettled = true;
-        AudioManager.Instance?.StopBGM();
-        SetState(StageState.Victory);
-        StageRouteBattleHost.ClearEnemyProjectiles();
-        if (clearReward > 0) playerState?.AddCoins(clearReward);
-        if (stageId > 0) SaveManager.MarkStageCleared(stageId);
-        SettleCoins();
-        OnStageVictory?.Invoke();
-    }
+    public void CompleteRouteStage(int stageId, int clearReward) => _rewardGate.CompleteRouteStage(stageId, clearReward);
 
-    public void CompleteFakeRouteStage(int clearReward)
-    {
-        Debug.Log($"[Tutorial] 结算入口: config={(fakeRouteStageConfig != null ? fakeRouteStageConfig.stageName : "NULL")} 已结算={_routeStageSettled} 奖励={clearReward} 玩家={(playerState != null)}");
-        if (fakeRouteStageConfig == null || _routeStageSettled) return;
-        _routeStageSettled = true;
-        AudioManager.Instance?.StopBGM();
-        SetState(StageState.Victory);
-        StageRouteBattleHost.ClearEnemyProjectiles();
-        if (clearReward > 0) playerState?.AddCoins(clearReward);
-        SaveManager.MarkStageCleared(fakeRouteStageConfig.stageId);
-        SettleCoins();
-        OnStageVictory?.Invoke();
-    }
+    public void CompleteFakeRouteStage(int clearReward) => _rewardGate.CompleteFakeRouteStage(clearReward);
 
+    public void SetRouteTravelState() => _staging.SetRouteTravelState();
 
-
-    public void SetRouteTravelState()
-    {
-        _routeHost.SetRouteTravelState();
-    }
-
-    public void SetRouteRewardWaitState()
-    {
-        _routeHost.SetRouteRewardWaitState();
-    }
+    public void SetRouteRewardWaitState() => _rewardGate.SetRouteRewardWaitState();
 
     public bool IsRouteRewardWaiting => _routeHost.IsRouteRewardWaiting;
     public bool IsRouteCombatActive => _routeHost.IsRouteCombatActive;
 
-    public void StartRouteBattle(StageConfig config)
-    {
-        if (config == null) return;
-        _routeHost.StartRouteBattle(config);
-    }
-
-
-
-
-    private void StartNodeCombat(bool resetPlayer)
-    {
-        if (stageConfig == null) return;
-        if (resetPlayer) playerState?.ResetPlayer();
-        UltimateSystem.Instance?.ResetEnergy();
-        var killRewardManager = FindObjectOfType<KillRewardManager>();
-        killRewardManager?.ResetRewards();
-        _routeHost.PrewarmEnemyPools();
-        SetState(StageState.InProgress);
-        AudioManager.Instance?.PlayDefaultBGM();
-        waveSpawner?.StartWaveSpawning();
-    }
+    public void StartRouteBattle(StageConfig config) => _staging.StartRouteBattle(config);
 
 
 
