@@ -61,8 +61,14 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
             if (!ItemInventory.Instance.CanAdd(def))
             {
                 // 道具栏满 → 弹出弃置弹窗
-                var entries = new List<ItemInventory.ItemEntry>(ItemInventory.Instance.Entries);
-                ItemDiscardPopup.Show(entries, def, result =>
+                var entries = new List<ItemEntry>(ItemInventory.Instance.Entries);
+                var discardPrompt = CombatPresenters.ItemDiscard;
+                if (discardPrompt == null)
+                {
+                    Debug.LogWarning("[UpgradeEffectManager] 弃置弹窗未登记（呈现层未加载），放弃新道具");
+                    return;
+                }
+                discardPrompt.Show(entries, def, result =>
                 {
                     if (!result.DiscardNew && ItemInventory.Instance.DiscardEntryById(result.EntryId))
                     {

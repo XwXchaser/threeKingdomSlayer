@@ -24,10 +24,8 @@ public class UltimateEffect_Berserk : UltimateEffect
             return;
         }
 
-        // 设置血量条为橙色（委托给 BattleHUD → HeroHUD）
-        var hud = FindObjectOfType<BattleHUD>();
-        if (hud != null)
-            hud.SetHealthBarColor(new Color(1f, 0.5f, 0f)); // orange
+        // 设置血量条为橙色（经呈现层端口 → BattleHUD → HeroHUD）
+        CombatPresenters.Hud?.SetHealthBarColor(new Color(1f, 0.5f, 0f)); // orange
 
         // 无敌
         if (PlayerState.Instance != null)
@@ -97,9 +95,7 @@ public class UltimateEffect_Berserk : UltimateEffect
             InputManager.Instance.skillInputEnabled = true;
 
         // 恢复血量条原始颜色
-        var hud = FindObjectOfType<BattleHUD>();
-        if (hud != null)
-            hud.ResetHealthBarColor();
+        CombatPresenters.Hud?.ResetHealthBarColor();
     }
 
     private void OnDestroy()

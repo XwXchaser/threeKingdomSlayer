@@ -336,7 +336,7 @@ public class UpgradeChoiceManager : MonoBehaviour
             popup.Dismiss(() => { });
         }
 
-        if (pauseGameDuringChoice && !ItemDiscardPopup.IsShowing)
+        if (pauseGameDuringChoice && !(CombatPresenters.ItemDiscard != null && CombatPresenters.ItemDiscard.IsShowing))
         {
             Time.timeScale = 1f;
             if (InputManager.Instance != null)

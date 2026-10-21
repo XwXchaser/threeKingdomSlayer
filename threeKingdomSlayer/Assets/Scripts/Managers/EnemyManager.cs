@@ -212,8 +212,14 @@ public class EnemyManager : MonoBehaviour
         }
         else
         {
-            var entries = new List<ItemInventory.ItemEntry>(ItemInventory.Instance.Entries);
-            ItemDiscardPopup.Show(entries, picked, result =>
+            var entries = new List<ItemEntry>(ItemInventory.Instance.Entries);
+            var discardPrompt = CombatPresenters.ItemDiscard;
+            if (discardPrompt == null)
+            {
+                Debug.LogWarning("[EnemyManager] 弃置弹窗未登记（呈现层未加载），放弃新道具");
+                return;
+            }
+            discardPrompt.Show(entries, picked, result =>
             {
                 if (!result.DiscardNew && ItemInventory.Instance.DiscardEntryById(result.EntryId))
                     ItemInventory.Instance.AddItem(picked);

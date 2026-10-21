@@ -9,7 +9,7 @@ using DG.Tweening;
 /// 战斗HUD — 管理全局UI（波次、铜钱、击杀、Boss血条、胜负面板）。
 /// 英雄专属UI已提取到 HeroHUD Prefab，通过 HeroConfig.heroHUDPrefab 实例化。
 /// </summary>
-public class BattleHUD : MonoBehaviour
+public class BattleHUD : MonoBehaviour, ICombatHud
 {
     [Header("英雄 HUD")]
     [Tooltip("场景中常驻、可直接可视化调整的英雄 HUD。优先使用它；为空时才使用 HeroConfig.heroHUDPrefab 旧方案实例化。")]
@@ -63,6 +63,9 @@ public class BattleHUD : MonoBehaviour
 
     private void Awake()
     {
+        // 登记到呈现层装配点：内核只通过 ICombatHud 接口用 HUD（2026-10-22 asmdef 分层第四批）。
+        CombatPresenters.Hud = this;
+
         if (EnemyManager.Instance != null)
         {
             EnemyManager.Instance.OnBossEngaged += OnBossEngaged;

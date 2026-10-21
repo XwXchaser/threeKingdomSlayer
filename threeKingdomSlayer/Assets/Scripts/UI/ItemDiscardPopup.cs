@@ -11,26 +11,11 @@ using TMPro;
 /// </summary>
 public class ItemDiscardPopup : MonoBehaviour
 {
-    public readonly struct Result
-    {
-        public bool DiscardNew { get; }
-        public int EntryId { get; }
-
-        private Result(bool discardNew, int entryId)
-        {
-            DiscardNew = discardNew;
-            EntryId = entryId;
-        }
-
-        public static Result NewItem() => new Result(true, -1);
-        public static Result Existing(int entryId) => new Result(false, entryId);
-    }
-
     public static ItemDiscardPopup Instance { get; private set; }
     public static bool IsShowing => Instance != null;
 
     private CanvasGroup _canvasGroup;
-    private Action<Result> _onComplete;
+    private Action<ItemDiscardResult> _onComplete;
     private UpgradeCard _selectedCard;
     private bool _completed;
 
@@ -42,11 +27,11 @@ public class ItemDiscardPopup : MonoBehaviour
     private const string DiscardCardPath = "UI/ItemDiscard/item_discard_card";
     private const string NewItemCardPath = "UI/ItemDiscard/item_get_card";
 
-    public static void Show(List<ItemInventory.ItemEntry> entries, UpgradeDefinition newItem, Action<Result> onComplete)
+    public static void Show(List<ItemEntry> entries, UpgradeDefinition newItem, Action<ItemDiscardResult> onComplete)
     {
         if (Instance != null)
         {
-            onComplete?.Invoke(Result.NewItem());
+            onComplete?.Invoke(ItemDiscardResult.NewItem());
             return;
         }
 
@@ -54,7 +39,7 @@ public class ItemDiscardPopup : MonoBehaviour
         if (choiceManager == null || choiceManager.discardPopupPrefab == null)
         {
             Debug.LogWarning("[ItemDiscardPopup] discardPopupPrefab 未配置，丢弃新道具");
-            onComplete?.Invoke(Result.NewItem());
+            onComplete?.Invoke(ItemDiscardResult.NewItem());
             return;
         }
 
@@ -64,7 +49,7 @@ public class ItemDiscardPopup : MonoBehaviour
         popup.BuildUI(entries, newItem, onComplete);
     }
 
-    private void BuildUI(List<ItemInventory.ItemEntry> entries, UpgradeDefinition newItem, Action<Result> onComplete)
+    private void BuildUI(List<ItemEntry> entries, UpgradeDefinition newItem, Action<ItemDiscardResult> onComplete)
     {
         _onComplete = onComplete;
         _canvasGroup = GetComponent<CanvasGroup>();
@@ -78,14 +63,14 @@ public class ItemDiscardPopup : MonoBehaviour
         var template = choicePopup != null ? choicePopup.card1 : null;
         if (template == null)
         {
-            Complete(Result.NewItem());
+            Complete(ItemDiscardResult.NewItem());
             return;
         }
 
         var content = template.transform.parent as RectTransform;
         if (content == null)
         {
-            Complete(Result.NewItem());
+            Complete(ItemDiscardResult.NewItem());
             return;
         }
 
@@ -96,7 +81,7 @@ public class ItemDiscardPopup : MonoBehaviour
         if (newItem != null)
         {
             var card = CreateCard(template, content);
-            SetupCard(card, newItem, "新获得", true, Result.NewItem());
+            SetupCard(card, newItem, "新获得", true, ItemDiscardResult.NewItem());
         }
 
         int existingCount = Mathf.Min(entries.Count, 5);
@@ -106,7 +91,7 @@ public class ItemDiscardPopup : MonoBehaviour
             if (entry == null || entry.definition == null) continue;
             var card = CreateCard(template, content);
             string count = entry.remainingUses < 0 ? "∞" : entry.remainingUses.ToString();
-            SetupCard(card, entry.definition, $"持有 ×{count}", false, Result.Existing(entry.id));
+            SetupCard(card, entry.definition, $"持有 ×{count}", false, ItemDiscardResult.Existing(entry.id));
         }
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(content);
@@ -144,7 +129,7 @@ public class ItemDiscardPopup : MonoBehaviour
         }
     }
 
-    private void SetupCard(UpgradeCard card, UpgradeDefinition definition, string label, bool isNewItem, Result result)
+    private void SetupCard(UpgradeCard card, UpgradeDefinition definition, string label, bool isNewItem, ItemDiscardResult result)
     {
         card.Setup(definition);
         var cardSprite = Resources.Load<Sprite>(isNewItem ? NewItemCardPath : DiscardCardPath);
@@ -181,7 +166,7 @@ public class ItemDiscardPopup : MonoBehaviour
         }
     }
 
-    private void OnCardClicked(UpgradeCard card, Result result)
+    private void OnCardClicked(UpgradeCard card, ItemDiscardResult result)
     {
         if (_selectedCard == card)
         {
@@ -219,7 +204,7 @@ public class ItemDiscardPopup : MonoBehaviour
         }
     }
 
-    private void Complete(Result result)
+    private void Complete(ItemDiscardResult result)
     {
         if (_completed) return;
         _completed = true;

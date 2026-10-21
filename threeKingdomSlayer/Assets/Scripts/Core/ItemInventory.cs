@@ -4,16 +4,8 @@ using UnityEngine;
 /// <summary>道具库存：按槽位保存道具份数，可在开局前选择是否允许同类堆叠。</summary>
 public class ItemInventory : MonoBehaviour
 {
-    public sealed class ItemEntry
-    {
-        public int id;
-        public UpgradeDefinition definition;
-        public int remainingUses;
-        public bool isPotion;
-        public string GestureId => isPotion ? HealthPotionGestureId : definition != null ? definition.gestureId : null;
-    }
-
-    public const string HealthPotionGestureId = "health_potion";
+    // ItemEntry 已提成顶层类型并下沉到契约层（2026-10-22 asmdef 分层第四批）。
+    public const string HealthPotionGestureId = ItemEntry.HealthPotionGestureId;
     public static ItemInventory Instance { get; private set; }
 
     [Header("局外能力测试")]

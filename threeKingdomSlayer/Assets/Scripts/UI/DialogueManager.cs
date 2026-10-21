@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public sealed class DialogueManager : MonoBehaviour
+public sealed class DialogueManager : MonoBehaviour, IDialogueModal
 {
 
     /// <summary>
@@ -56,6 +56,9 @@ public sealed class DialogueManager : MonoBehaviour
             return;
         }
         Instance = this;
+        // 登记到呈现层装配点：内核只通过 IDialogueModal 接口问「对话是否挡路」
+        //（2026-10-22 asmdef 分层第四批）。
+        CombatPresenters.Dialogue = this;
         SetOverlayVisible(false);
     }
 

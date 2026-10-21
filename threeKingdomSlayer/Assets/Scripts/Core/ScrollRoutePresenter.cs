@@ -196,9 +196,9 @@ public sealed class ScrollRoutePresenter : MonoBehaviour, IRouteMotionPresenter
     static bool Blocking()
     {
         return Time.timeScale <= 0f
-            || (DialogueManager.Instance && DialogueManager.Instance.IsInteractionBlocked)
+            || (CombatPresenters.Dialogue != null && CombatPresenters.Dialogue.IsInteractionBlocked)
             || (UpgradeChoiceManager.Instance && UpgradeChoiceManager.Instance.IsChoosing)
-            || ItemDiscardPopup.IsShowing
+            || (CombatPresenters.ItemDiscard != null && CombatPresenters.ItemDiscard.IsShowing)
             || (ExpGemManager.Instance && ExpGemManager.Instance.IsCollecting);
     }
 

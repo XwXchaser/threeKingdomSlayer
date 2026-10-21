@@ -174,7 +174,7 @@ public class ActiveSkillInventory : MonoBehaviour
         if (StageBattleState != null && StageBattleState.IsRouteRewardWaiting) return false;
         if (!UsesActiveSkills) return false;
         if (Time.timeScale <= 0f) return false;
-        if (DialogueManager.Instance != null && DialogueManager.Instance.IsInteractionBlocked) return false;
+        if (CombatPresenters.Dialogue != null && CombatPresenters.Dialogue.IsInteractionBlocked) return false;
 
         var entry = FindById(entryId);
         if (entry == null)
