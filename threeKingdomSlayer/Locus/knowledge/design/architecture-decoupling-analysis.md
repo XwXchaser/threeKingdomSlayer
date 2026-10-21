@@ -812,6 +812,44 @@ if (EnemyStatusRegistry.IsActive(enemy, "poison")) { /* 新机制：中毒的敌
 **为什么先更文档**：这批拆分是纯机械搬移，最容易出错的是「切口切歪」与「漏搬」；
 把目标清单与验收口径先落纸，实施时逐个文件对照执行。
 
+### 5.15 大文件拆分批次 3：实施结果（2026-10-22）
+
+> 提交 `aada544`。§5.14 的计划已执行完毕。
+
+| 文件 | 拆前 | 拆后 |
+|---|---|---|
+| `Enemy/Enemy.cs` | 934 | 591 / `Enemy.Types.cs` 106 / `Enemy.Init.cs` 264 |
+| `Enemy/Enemy.Combat.cs` | 829 | 637 / `Enemy.HitFrame.cs` 154 / `Enemy.FreezeCombat.cs` 68 |
+| `Enemy/Enemy.StateSwitch.cs` | 769 | 432 / `Enemy.FormSwitch.cs` 249 / `Enemy.QTEAttack.cs` 118 |
+| `Enemy/Enemy.StateUpdate.cs` | 739 | 247 / `Enemy.Movement.cs` 202 / `Enemy.Attack.cs` 320 |
+| `Enemy/CavalryEnemy.cs` | 831 | 273 / `.Charge.cs` 441 / `.Move.cs` 63 / `.Events.cs` 96 |
+| `Core/DisplacementMover.cs` | 895 | 138 / `.PushReturn.cs` 227 / `.Push.cs` 486 / `.Convergence.cs` 89 |
+| `UI/StageProgressBar.cs` | 865 | 481 / `.Flow.cs` 228 / `.EditorPreview.cs` 188 |
+| `Editor/CombatDataTableWindow.cs` | 737 | 168 / `.Upgrades.cs` 420 / `.Enemies.cs` 86 / `.Skills.cs` 111 |
+
+**结果**：全工程**不再有 ≥700 行的文件**（最大 696 = `AttackWave.cs`）。本刀**只搬不改**，
+`DisplacementMover` 承载的位移三原则判定逻辑原样保留。
+
+**验证（Play Mode，Battle.scene）**：
+- **§15.5 回归基线逐位一致**（入场完成 / 整排清空后两套布局）
+- 攻击：Stab 掉血 20（800→780）
+- 位移三原则：推波后 col1 的两名敌人整体后移一排（r0→r1、r2→r3），互不重叠
+- Console 0 error / 0 warn
+
+**本刀踩到的坑（拆分工具的教训，值得留给下一刀）**：
+
+| 坑 | 现象 | 修法 |
+|---|---|---|
+| 内容比对**排除了花括号行** | 「类的闭合大括号被搬进分片」这种结构性破坏查不出来 | 比对必须**包含** `{` `}` 行 |
+| 朴素括号计数被**字符串/注释**干扰 | 代码里的 `"{0}"` 让深度漂移，切点全错 | 计数前先剔除注释与字符串字面量（做一次轻量词法扫描） |
+| 切点按「方法起始行」取 | 方法声明与函数体常分行、多行参数声明 → 切歪 | 改为「先做词法扫描，再以**整个成员**为最小单位搬移」 |
+| `#if` 块被切开 | 预处理指令不配平 → 编译错 | 搬移区间要连带 `#if`/`#endif` |
+| 顶层类型被包进类里 | `EnemyState` 等顶层枚举被塞进 partial class → 作用域变了 | 顶层类型单独成文件（不套类壳） |
+| 类声明漏加 `partial` | 分片存在但主文件没改 → CS0260 | 主文件的类声明同步改写 |
+
+> 这些坑的共同点：**内容没丢 ≠ 结构没坏**。拆分类改动的验收必须同时看
+> 「内容多重集」和「结构可编译」，两者缺一不可。
+
 ---
 
 ## 6. 明确不做

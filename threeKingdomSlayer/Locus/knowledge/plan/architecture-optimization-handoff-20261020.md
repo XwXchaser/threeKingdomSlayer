@@ -115,6 +115,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | `91915da` | **分支出口解耦**：出口的「呈现」（`IRouteChoiceFormatter`）与「可选性」（`IRouteChoiceValidator`）两把扩展点；`RouteChoiceOption` 下沉 `Locus.Data`；不可选时锁定按钮并显示原因 |
 | `d39ddc8` | **战斗侧两把扩展点**：招式执行器注册表（`AttackSystem` 的 switch → 注册表，新招式 = 注册一个执行器）+ 敌人状态统一查询（`EnemyStatusRegistry`，内置灼烧/疾病/冻结） |
 | `（计划）` | **大文件拆分批次 3**：把剩下的 8 个 ≥700 行文件拆到 ≤600 行（Enemy.cs 934 / DisplacementMover 895 / StageProgressBar 865 / CavalryEnemy 831 / Enemy.Combat 829 / Enemy.StateSwitch 769 / Enemy.StateUpdate 739 / CombatDataTableWindow 737），详见 §5.14 |
+| `aada544` | **大文件拆分批次 3 实施**：8 个文件拆成 25 个（最大降到 696），全工程**不再有 ≥700 行文件**；只搬不改（含位移三原则） |
 
 > 详见 `design/architecture-decoupling-analysis.md` §5.7 / §5.8 / §5.9。拆分前机械校验：**内容丢失 = 0**。
 
@@ -133,7 +134,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 路线驱动 | 3 套并存 + 运行期互禁 | 1 套现役 + 1 套 Legacy 孤岛（无互禁） |
 | 遗留实现 | 散在 Core/Route/RouteV2 | `Assets/Scripts/Legacy/`（21 文件 / 2107 行）+ README |
 | 玩家输入 | 全局布尔 `gameplayInputEnabled`，9 处轮流写、后写者生效 | `GameplayInputGate`：按 owner 申请/释放 + 原因枚举；**直接写 = 0** |
-| 单文件体量 | `Enemy` 5224 / `ColumnManager` 2149 / `AttackSystem` 1568 / `QTEController` 1474 / `StageController` 852 | **全部 ≤ 933**：最大 `Enemy.cs` 933 / `DisplacementMover` 894 / `StageProgressBar` 864；**下一刀（批次 3）把 ≥700 行的 8 个文件拆到 ≤600 行** |
+| 单文件体量 | `Enemy` 5224 / `ColumnManager` 2149 / `AttackSystem` 1568 / `QTEController` 1474 / `StageController` 852 | **全工程无 ≥700 行文件**（最大 696 = `AttackWave.cs`）；`Enemy` 一族 18 个分片、`StageController` 519、`DisplacementMover` 4 个分片 |
 
 ---
 
@@ -356,7 +357,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 项 | 值 |
 |---|---|
 | 分支 / 远程 | `feat/stage-select-talent-overlays`，已同步 |
-| HEAD | `d39ddc8`（`feat(combat): 战斗侧两把扩展点——招式执行器注册表 + 敌人状态统一查询`） |
+| HEAD | `aada544`（`refactor: 大文件拆分批次 3——8 个 ≥700 行文件拆到 ≤700（最大 696）`） |
 | 工作区 | 干净。**唯一例外**：用户自己的 `Assets/Resources/EnemyPrefabs/Enemy_1011.prefab`（`maxHealth 100→200`，调试值，**未提交**，已刻意不夹带） |
 | Unity | 2022.3.62t7（Tuanjie）· BIRP · Legacy Input |
 
@@ -388,6 +389,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | **三选一解耦** | `0b4e4c7` | 抽池独立成 `UpgradePoolSampler`（依赖注入，可脱离场景测）；新增 `IUpgradeRequirementProvider`（含**按天赋解锁**内置实现）与 `IUpgradeSelectionEffect` 两把扩展点（均带委托重载）；`UpgradeDefinition` 加 `requiredTalentIds`；**四个池的候选集逐字一致**（id/稀有度/权重 diff 零差异）；扩展点实测：天赋未解锁→掉出池、解锁→回池、选中额外效果触发；**§15.5 基线逐位一致**、8 条描述文案未变；Console 0/0 |
 | **分支出口解耦** | `91915da` | 出口呈现与可选性两把扩展点（均带委托重载）；`RouteChoiceOption` 下沉 `Locus.Data` + 加 locked/lockedReason；**出口选项快照逐字一致**（2 路线 × 6 出口 id+文案 diff 零差异）；扩展点实测：自定义格式化器接管文案、自定义判定器锁定并带原因；**§15.5 基线逐位一致**；Console 0/0 |
 | **战斗侧两把扩展点** | `d39ddc8` | 招式执行器注册表（`AttackSystem` 的 switch → 注册表 + `AttackExecutionContext`）；敌人状态统一查询（`EnemyStatusRegistry`，内置灼烧/疾病/冻结，两个血条 UI 改经注册表取状态，视觉不变）；验证：六个内置招式均已注册、Stab 掉血 20、覆盖语义生效、注册表与直接查询逐字一致、**§15.5 基线逐位一致**；Console 0/0 |
+| **大文件拆分批次 3** | `aada544` | 8 个 ≥700 行文件拆成 25 个（最大降到 696，全工程无 ≥700 行文件）；只搬不改（`DisplacementMover` 位移三原则原样保留）；验证：**§15.5 基线逐位一致**、Stab 掉血 20、推波后两名敌人整体后移一排互不重叠；Console 0/0 |
 
 **`Enemy` 终态**：`Enemy.cs` 5224 → **933 行**；另 5 个 partial 分片（状态机 1495 / 战斗结算 828 / 表现层 431 / BOSS 推进 206 / 对象池 106）
 + 4 个真类（`EnemyHitFeedback` / `EnemyMovement` / `EnemyBossPhases` / `EnemyPoise`）。
