@@ -21,7 +21,7 @@ public sealed class ScrollCombatTrial : MonoBehaviour
         stage.OnRouteBattleCompleted += OnCleared;
         stage.OnStageDefeat += OnDefeated;
         lab.Initialize(); lab.showControls = false; lab.paused = true;
-        input.gameplayInputEnabled = false;
+        GameplayInputGate.RequestBlock(this, InputBlockReason.RouteTravel);
         stage.playerState.ResetPlayer();
         stage.SetRouteTravelState();
         Phase = "Approaching"; lab.StartTrip();
@@ -30,10 +30,10 @@ public sealed class ScrollCombatTrial : MonoBehaviour
         yield return new WaitForSeconds(Mathf.Max(0,settleSeconds));
         Phase = "Combat";
         stage.StartRouteBattle(battle);
-        input.gameplayInputEnabled = true;
+        GameplayInputGate.Release(this);
         while(!cleared && !defeated && stage.CurrentState != StageState.Defeat) yield return null;
         defeated |= stage.CurrentState == StageState.Defeat;
-        input.gameplayInputEnabled = false; input.CancelCurrentGesture();
+        GameplayInputGate.RequestBlock(this, InputBlockReason.RouteTravel); input.CancelCurrentGesture();
         if(defeated){Phase="Defeated - stop Play Mode to retry";yield break;}
         Phase="Rewards"; stage.SetRouteRewardWaitState();
         // Let death/experience callbacks settle before inspecting blocking UI.

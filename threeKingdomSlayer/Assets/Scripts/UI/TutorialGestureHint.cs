@@ -96,8 +96,9 @@ using System.Collections;
             if (InputManager.Instance != null)
             {
                 InputManager.Instance.CancelCurrentGesture();
-                InputManager.Instance.gameplayInputEnabled = false;
             }
+            // 引导期间拦下战斗输入（只拦自己那一份，不影响别的 owner 的拦截）
+            GameplayInputGate.RequestBlock(this, InputBlockReason.TutorialGate);
             Time.timeScale = 0f;
             // 台词本身已经在压暗屏幕；这时再叠我们的遮罩会明显更黑，所以只在没有台词时补一层
             bool dialogueDimming = DialogueManager.Instance != null &&
@@ -146,8 +147,8 @@ using System.Collections;
             if (InputManager.Instance != null)
             {
                 InputManager.Instance.CancelCurrentGesture();
-                InputManager.Instance.gameplayInputEnabled = true;
             }
+            GameplayInputGate.Release(this);
             if (dimOverlay != null) dimOverlay.gameObject.SetActive(false);
             ReplayPlayerGesture();      // 把玩家做对的那一下真的打出去
             var cb = _gateOnPass;
@@ -306,7 +307,8 @@ using System.Collections;
                 _gateActive = false;
                 if (_gateLoop != null) { StopCoroutine(_gateLoop); _gateLoop = null; }
                 Time.timeScale = _prevTimeScale > 0f ? _prevTimeScale : 1f;
-                if (InputManager.Instance != null) InputManager.Instance.gameplayInputEnabled = true;
+                // 旧实现在这里写 gameplayInputEnabled = true（全局解锁）；现在只释放自己那一份拦截。
+                GameplayInputGate.Release(this);
                 _gateOnPass = null;
             }
             if (dimOverlay != null) dimOverlay.gameObject.SetActive(false);

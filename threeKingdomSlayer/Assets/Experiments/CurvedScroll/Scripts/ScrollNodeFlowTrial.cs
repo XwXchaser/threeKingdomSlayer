@@ -125,7 +125,7 @@ public sealed class ScrollNodeFlowTrial : MonoBehaviour
         lab.SetPresentationDistance(distance);
         if (worldSequence != null && art != null) art.ApplyWorldDistance((float)lab.Distance, worldSequence);
     }
-    void SetInput(bool value){if(InputManager.Instance){InputManager.Instance.gameplayInputEnabled=value;if(!value)InputManager.Instance.CancelCurrentGesture();}}
+    void SetInput(bool value){if(value){GameplayInputGate.Release(this);}else{GameplayInputGate.RequestBlock(this,InputBlockReason.RouteTravel);if(InputManager.Instance)InputManager.Instance.CancelCurrentGesture();}}
     void OnGUI()
     {
         var old = GUI.matrix;

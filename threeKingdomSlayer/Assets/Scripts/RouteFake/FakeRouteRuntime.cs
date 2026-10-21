@@ -834,13 +834,15 @@ public sealed class FakeRouteRuntime : MonoBehaviour
 
     private void SetGameplayInput(bool enabled)
     {
-        if (InputManager.Instance != null)
-        {
-            InputManager.Instance.gameplayInputEnabled = enabled
-                && PlayerState.Instance != null
-                && PlayerState.Instance.stageState == StageState.InProgress;
-            if (!enabled) InputManager.Instance.CancelCurrentGesture();
-        }
+        // 旧实现：直接写全局布尔（后写者覆盖前写者）。
+        // 现在路线层只管自己那一份拦截：别的模块（结算面板 / 教学门槛）要拦输入时，
+        // 不会被这里「解锁」顺带放掉。
+        bool allow = enabled
+            && PlayerState.Instance != null
+            && PlayerState.Instance.stageState == StageState.InProgress;
+        if (allow) GameplayInputGate.Release(this);
+        else GameplayInputGate.RequestBlock(this, InputBlockReason.RouteTravel);
+        if (!enabled && InputManager.Instance != null) InputManager.Instance.CancelCurrentGesture();
     }
 
     private bool ContainsNode(FakeRouteNodeConfig node)

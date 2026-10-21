@@ -100,7 +100,15 @@ public class InputManager : MonoBehaviour
 
     // 技能输入开关（狂怒大招期间关闭）
     [System.NonSerialized] public bool skillInputEnabled = true;
-    [System.NonSerialized] public bool gameplayInputEnabled = true;
+    /// <summary>
+    /// 玩家输入是否被放行（**只读**）。
+    ///
+    /// 2026-10-22 起这个开关不再允许直接写：真正的状态由 <see cref="GameplayInputGate"/> 持有
+    /// （每个 owner 各自申请 / 释放一份拦截 + 原因枚举）。
+    /// 旧实现是"多个模块轮流写同一个全局布尔，后写者覆盖前写者"，
+    /// 结果取决于调用顺序，代码上看不出来（隐式全局状态）——现在谁在拦、因为什么拦，一次查询就有答案。
+    /// </summary>
+    public bool gameplayInputEnabled => !GameplayInputGate.IsBlocked;
     /// <summary>教学手势拍：非 None 时只接受这个目标手势，其它手势一律不成立（不出招、也不消耗蓄力段）。</summary>
     [System.NonSerialized] public TutorialGestureTarget tutorialGestureTarget = TutorialGestureTarget.None;
     /// <summary>输入屏蔽帧计数器（由 UpgradeChoiceManager 设置，防止选择选项的点击触发攻击）</summary>

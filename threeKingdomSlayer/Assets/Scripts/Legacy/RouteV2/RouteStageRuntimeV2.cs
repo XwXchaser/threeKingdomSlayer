@@ -77,12 +77,12 @@ public sealed class RouteStageRuntimeV2 : MonoBehaviour
 
     private void SetGameplayInput(bool enabled)
     {
-        if (InputManager.Instance != null)
-        {
-            InputManager.Instance.gameplayInputEnabled = enabled && PlayerState.Instance != null && PlayerState.Instance.stageState == StageState.InProgress;
-            if (!enabled)
-                InputManager.Instance.CancelCurrentGesture();
-        }
+        // 旧实现：直接写全局布尔（后写者覆盖前写者）。现在只管自己那一份拦截。
+        bool allow = enabled && PlayerState.Instance != null && PlayerState.Instance.stageState == StageState.InProgress;
+        if (allow) GameplayInputGate.Release(this);
+        else GameplayInputGate.RequestBlock(this, InputBlockReason.LegacyRoute);
+        if (!enabled && InputManager.Instance != null)
+            InputManager.Instance.CancelCurrentGesture();
     }
 
     private void AlignAnchorToTarget(Transform anchor, Transform target)

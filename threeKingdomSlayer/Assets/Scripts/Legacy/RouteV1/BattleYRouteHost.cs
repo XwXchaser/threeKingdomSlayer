@@ -290,9 +290,10 @@ public sealed class BattleYRouteHost : MonoBehaviour
 
     void SetInput(bool value)
     {
-        if (!InputManager.Instance) return;
-        InputManager.Instance.gameplayInputEnabled = value;
-        if (!value) InputManager.Instance.CancelCurrentGesture();
+        // 旧实现：直接写全局布尔（后写者覆盖前写者）。现在只管自己那一份拦截。
+        if (value) GameplayInputGate.Release(this);
+        else GameplayInputGate.RequestBlock(this, InputBlockReason.LegacyRoute);
+        if (!value && InputManager.Instance) InputManager.Instance.CancelCurrentGesture();
     }
 
     void OnDestroy() { if (stage) stage.OnRouteBattleCompleted -= OnCleared; }

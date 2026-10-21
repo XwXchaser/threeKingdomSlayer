@@ -232,6 +232,10 @@ public class BattleHUD : MonoBehaviour
 
     private void OnDestroy()
     {
+        // 结算面板的输入拦截挂在 HUD 自己身上：HUD 没了就释放，
+        // 避免场景重载后输入被永久锁死。
+        GameplayInputGate.Release(this);
+
         if (PlayerState.Instance != null)
         {
             PlayerState.Instance.OnHealthChanged -= UpdateHealth;
@@ -324,6 +328,12 @@ public class BattleHUD : MonoBehaviour
                 if (StageFlow == null || !StageFlow.SuppressDefeatUI)
                     ShowDefeat();
                 break;
+            case StageState.InProgress:
+                // 新一场战斗开始：结算面板不再拦输入。
+                // 旧实现没有这一步——它靠路线层在下一场战斗写“解锁”把那次 false 覆盖掉，
+                // 属于“后写者生效”的隐式全局状态；现在由持有者自己释放。
+                GameplayInputGate.Release(this);
+                break;
         }
     }
 
@@ -334,7 +344,7 @@ public class BattleHUD : MonoBehaviour
     private void ShowVictory()
     {
         InputManager.Instance?.CancelCurrentGesture();
-        if (InputManager.Instance != null) InputManager.Instance.gameplayInputEnabled = false;
+        GameplayInputGate.RequestBlock(this, InputBlockReason.ResultPanel);
         if (_heroHUD != null) _heroHUD.gameObject.SetActive(true);
         if (victoryPanel != null)
         {
@@ -412,7 +422,7 @@ public class BattleHUD : MonoBehaviour
     private void ShowDefeat()
     {
         InputManager.Instance?.CancelCurrentGesture();
-        if (InputManager.Instance != null) InputManager.Instance.gameplayInputEnabled = false;
+        GameplayInputGate.RequestBlock(this, InputBlockReason.ResultPanel);
         if (_heroHUD != null) _heroHUD.gameObject.SetActive(true);
         if (defeatPanel != null)
         {
