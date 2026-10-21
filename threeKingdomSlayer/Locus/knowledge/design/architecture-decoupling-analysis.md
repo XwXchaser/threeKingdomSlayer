@@ -900,6 +900,29 @@ if (EnemyStatusRegistry.IsActive(enemy, "poison")) { /* 新机制：中毒的敌
 
 （空壳 `Enemy.State.cs` 已删除——内容早已搬到 `Enemy.StateSwitch` / `Enemy.StateUpdate`。）
 
+#### ③ 状态效果的统一落地方式（`EnemyStatusHost`）
+
+状态效果此前有两套驱动方式：灼烧/疾病在 `UpgradeEffectManager.Update` 驱动、冻结在 `Enemy.Update` 驱动，
+新写一个状态（中毒/流血/眩晕）不知道该跟谁走。
+
+现在：**每个敌人一个状态宿主**。
+
+| 扩展点 | 接口 | 说明 |
+|---|---|---|
+| 敌人身上的状态效果实例 | `IEnemyStatusInstance` | 自己持有状态与结算：StatusId / IsActive / GetProgress / GetStacks / GetPriority / Tick / Clear |
+| 宿主 | `EnemyStatusHost` | 由 `Enemy` 懒加载创建（`Enemy.StatusHost`），`Enemy.Update` 调 `StatusHost.Tick` |
+| 外部状态的查询入口 | `IEnemyStatusProvider` | 状态不在敌人身上时（如灼烧/疾病在管理器）实现它 |
+
+`EnemyFreeze` 已改为实现 `IEnemyStatusInstance`（创建时登记到宿主 ✅），它的「每帧都要跑」的两项
+（冻结概率衰减、解冻后停顿计时）改由宿主驱动；依赖状态机的两项（冻结中结算 / 破冰推进）仍在状态机里。
+
+`EnemyStatusRegistry` 的查询分两条路（① 宿主式 ② 管理器式），
+但**对调用方是同一套 API** —— 血条与机制判定不用关心状态存在哪。
+
+于是「新增一个状态效果」有了唯一、明确的落点：
+写一个实现 `IEnemyStatusInstance` 的类 → 登记到 `Enemy.StatusHost` → 敌人统一 tick →
+统一从 `EnemyStatusRegistry` 问。
+
 ---
 
 ## 6. 明确不做
