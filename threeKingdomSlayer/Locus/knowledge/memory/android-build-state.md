@@ -353,6 +353,19 @@ UnityEditor.EditorApplication.delayCall += () => AndroidBuildMenu.BuildAndroidTr
 **设备冒烟缺口**：本机 `emulator -list-avds` 为空、`adb devices` 无设备 → 装机验证需在有真机/模拟器的环境做；
 装完先查 `unzip -l <apk> | grep level0` 与 `lib/` 再装（见 0.1 / 0.3 的判定法）。
 
+### 2026-10-21 15:26 第二个包：含「开局默认带喷冰」
+
+- 产物：`Build/Android/threeKingdomSlayer_full_20261021_1526.apk`（298.9MB，errors=0，布局 ✅，增量构建 1:36）
+- 与 15:10 那个包同体积，`level0` 大 +16 字节 → 场景里的「默认赠送技能」配置确实进包
+- 新增功能（提交 `bb9d26f`）：`ActiveSkillInventory` 加 `_grantDefaultSkills` 开关 +
+  `_defaultSkills` 列表 + `EnsureDefaultSkills()`（幂等）。两个调用点覆盖全部路径：
+  `Update` 检测到 `stageState` 变 InProgress（无存档的新玩家）+ `RestoreCheckpoint` 末尾
+  （快照恢复会先 `ResetAll()` 清空库存）。Battle 场景配置为默认赠送 `active_ice_mist`（冰雾）。
+  → **打包版首次启动就带喷冰**，不必再改存档
+- 验收（Play Mode，模拟首次启动：存档与库存都清空）：战斗开始后库存 1 个技能、
+  `HasSkill(active_ice_mist)=True` lv1、`TryActivate` 成功冷却 12s、Console 0/0
+- 遗留：包体优化（只留 ARM64 −70MB、字体 −33MB、贴图压缩）仍未做，见 `plan/package-size-optimization.md`
+
 ---
 
 ## 经验教训
