@@ -112,6 +112,9 @@ public class StageSelectUI : MonoBehaviour
     /// <summary>
     /// 路线解锁：按列表顺序推进（教学关 → 正式关 → …），已通关 N 条则前 N+1 条可选。
     /// 不能用 stageId 数字比大小——教学关 stageId=9100 会被永远判为未解锁。
+    ///
+    /// 至少放行前两条（教学关 index 0 + 第一个正式关 index 1）：旧规则下教学关未通关时
+    /// 正式关永远锁死，打不过教学关的玩家就卡死了（BUG-002，2026-10-21 实测）。
     /// </summary>
     private int _clearedRouteCount = -1;
 
@@ -124,7 +127,8 @@ public class StageSelectUI : MonoBehaviour
                 if (SaveManager.IsStageCleared(_routes[i].stageId)) cleared++;
             _clearedRouteCount = cleared;
         }
-        return _clearedRouteCount;
+        // 保底 1：即使一条没通关，也放行前两条（教学关 + 第一个正式关）。
+        return Mathf.Max(_clearedRouteCount, 1);
     }
 
     private void CreateRouteButton(FakeRouteStageConfig cfg, int clearedCount)

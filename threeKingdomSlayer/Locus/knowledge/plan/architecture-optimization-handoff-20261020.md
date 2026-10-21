@@ -183,8 +183,9 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 
 ### 4.4 先别验（已知缺陷，验了会误判）
 
-- **正式关卡默认锁死**：选关解锁规则 = 已通关数+1，教学关未通关 → 正式关不可选；
-  落地页又会从教学关的存档检查点（E0）续跑。临时绕开见 `plan/bugs-and-requests.md` BUG-002。
+- **正式关卡默认锁死**（已修 `a45e57b` 之后）：旧规则「已通关数+1」会让教学关未通关时正式关不可选；
+  `StageSelectUI.ResolveUnlock()` 现保底放行前两条（教学关 + 第一个正式关）。详见 `plan/bugs-and-requests.md` BUG-002。
+  落地页仍会从当前路线的存档检查点续跑（正常续玩语义，未改）。
 - **QTE 反击无法触发**：`plan/unresolved-issues.md` TODO-1 未修复，Boss 战里 QTE 控制器一直是 Idle。
 - **箱桶重挑战不重置**：`plan/bugs-and-requests.md` BUG-001，用户已示意先放放。
 - **包体 / 字体缺字**：方案已有（`plan/package-size-optimization.md`、`plan/font-optimization-20261020.md`），**尚未实施**。

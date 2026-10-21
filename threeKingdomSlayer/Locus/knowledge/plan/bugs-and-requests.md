@@ -76,8 +76,8 @@ aiEditMode: inherit
 - 期望：正式关卡应当有可达路径（要么教学关可完成、要么允许直接选正式关、要么提供调试直选）。
 - 涉及：`Assets/Scripts/RouteFake/FakeRouteRuntime.cs`（`ResolveStartNode` / `IsHubEntry`）、`Assets/Scripts/UI/StageSelectUI.cs`（`ResolveUnlock` / `CreateRouteButton`）、`Assets/Scripts/Core/SaveManager.cs`（`MarkStageCleared` / `GetFakeRouteSnapshot` / `ClearFakeRouteSnapshot`）、`Assets/Scripts/Core/StageConfigManager.cs`（`GetSelectableRoutes`）。
 - 优先级：高（阻塞正式关卡的验收与试玩）
-- 状态：待处理（2026-10-21 已用存档手段临时绕开：把教学关标记为已通关 + 当前关卡切到正式关；**未改代码**。绕开方式与回退步骤见备注）
-- 备注：临时绕开做法（仅本机 Editor 存档）：`SaveManager.MarkStageCleared(9100)` + `SaveManager.SetActiveFakeRouteStage(1)`；回退 = 把 `clearedStageIds` 里的 9100 移除 + `SetActiveFakeRouteStage(9100)`。待产品决策：选关解锁规则是否改为“正式关卡默认可选、教学关只作为引导”。
+- 状态：**待验收（2026-10-21 已修根因）** —— `StageSelectUI.ResolveUnlock()` 改为保底放行前两条（`Mathf.Max(cleared, 1)`），教学关未通关也能进第一个正式关；实测选关场景两个按钮均 `interactable=True`。之前用存档绕开的做法可继续保留，不影响。
+- 备注：修前用存档临时绕开的做法（仅本机 Editor 存档）：`SaveManager.MarkStageCleared(9100)` + `SaveManager.SetActiveFakeRouteStage(1)`；回退 = 把 `clearedStageIds` 里的 9100 移除 + `SetActiveFakeRouteStage(9100)`。**现象 1（从检查点续跑）不改**：那是正常的续玩语义。待产品决策：是否继续放宽（比如全部关卡默认可选、教学关只作为引导入口）。
 
 ---
 
