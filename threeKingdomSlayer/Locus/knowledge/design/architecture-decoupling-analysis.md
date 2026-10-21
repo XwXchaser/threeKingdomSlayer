@@ -1035,6 +1035,13 @@ if (EnemyStatusRegistry.IsActive(enemy, "poison")) { /* 新机制：中毒的敌
 实测 `Core→UI` 5→1 文件 ✅、`Managers→UI` 3→2 ✅；剩下的都是「内核自己创建 UI 组件」那类 ✅
 （`UpgradeChoicePopup` / `EnemyHealthBar` / `CameraManager` / `DamageNumber`）✅ → 下一批用**工厂端口**处理 ✅。
 
+**批次 5（工厂端口，已完成）** ✅：`IUpgradeChoiceView` / `IDamageNumberPresenter` / `ISceneTransitionCamera` ✅；
+`DamageNumberManager` 从 `Managers/` 移到 `UI/` ✅ 并接管「清理残留跳字」✅。
+实测 **`Core→UI` / `Managers→UI` / `Wave→UI` 全部归零** ✅ —— 内核 → 界面只剩两处 ✅：
+`Enemy → EnemyHealthBar`（敌人身上挂血条 ✅，下一刀 ✅）与 `QTE → HeroHUD / BuffDisplayPanel / UIResolutionHelper` ✅。
+> **Unity 坑**：`FindObjectOfType<T>()` 要求 `T : Object` ✅，**不接受接口** ✅ ——
+> 「按接口找对象」得扫一遍 `MonoBehaviour` 再按接口筛 ✅。
+
 ---
 
 ## 6. 明确不做

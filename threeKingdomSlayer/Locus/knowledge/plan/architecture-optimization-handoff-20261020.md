@@ -125,6 +125,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | `3093515` | **分层第二批**：存档数据模型下沉 L0（`SaveData` / 快照类型 / `PropSaveEntry`）+ `SaveManager` 进 `Locus.Services`；实测 **`Locus.Services` 出边只剩 `Locus.Data`** ✅ **`Locus.Data` 出边为空** ✅ |
 | `8759efd` | **分层第三批**：扩展点契约下沉 L0（`IStatusEffect` / `IEffectExecutor` / `IUpgradeStatSink` / `IUpgradeNumericApplier` / `IUpgradeDescriptionFormatter` / `IStatModifierApplier` / `IRouteMotionPresenter`）；`Core→RouteFake/Attack/Effect` 三条边**归零** ✅ |
 | `a523cc0` | **分层第四批**：内核不再直接引用 UI 单例——三个呈现层端口（`ICombatHud` / `IDialogueModal` / `IItemDiscardPrompt`）+ 装配点 `CombatPresenters`（上层登记、下层使用）；`ItemEntry` / `ItemDiscardResult` 下沉 L0；`Core→UI` 5→1 文件 ✅ |
+| `d151e68` | **分层第五批（工厂端口）**：`IUpgradeChoiceView` / `IDamageNumberPresenter` / `ISceneTransitionCamera`；`DamageNumberManager` 移到界面层并接管跳字清理；**`Core→UI` / `Managers→UI` / `Wave→UI` 全部归零** ✅ |
 
 > 详见 `design/architecture-decoupling-analysis.md` §5.7 / §5.8 / §5.9。拆分前机械校验：**内容丢失 = 0**。
 

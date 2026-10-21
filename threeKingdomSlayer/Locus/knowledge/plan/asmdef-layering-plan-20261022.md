@@ -27,10 +27,16 @@ aiEditMode: inherit
 | 2 · 存档下沉 L0 + `SaveManager` 进服务层 | ✅ | **`Locus.Services` 出边只剩 `Locus.Data`** ✅ **`Locus.Data` 出边为空** ✅ |
 | 3 · 扩展点契约下沉 L0 | ✅ | 7 个扩展点接口进契约层；`Core→RouteFake/Attack/Effect` 三条边**归零** ✅ |
 | 4 · 内核 → UI 的接口化（第一批） | ✅ | 三个呈现层端口（`ICombatHud` / `IDialogueModal` / `IItemDiscardPrompt`）+ 装配点 `CombatPresenters`；`Core→UI` 5→1 文件 ✅ |
-| 5+ · `Locus.Combat` / `Locus.Flow` / `Locus.UI` / `Locus.Editor` | ⏳ | 等 4 的接口化 |
+| 5 · 工厂端口（内核自己创建 UI 组件那类） | ✅ | `IUpgradeChoiceView` / `IDamageNumberPresenter` / `ISceneTransitionCamera`；`DamageNumberManager` 移到界面层；**`Core→UI` / `Managers→UI` / `Wave→UI` 全部归零** ✅ |
+| 5+ · `Locus.Combat` / `Locus.Flow` / `Locus.UI` / `Locus.Editor` | ⏳ | 等剩下的接口化（`EnemyHealthBar` / QTE 的三个 UI 触点） |
 
 **现在的分层实况**：`Locus.Data` 61 文件 / 3597 行（纯叶子）、`Locus.Services` 3 文件 / 642 行（只朝下依赖 Data）、
 其余运行时脚本仍在 `Assembly-CSharp`（251 文件 / 55666 行）。
+
+**内核 → 界面还剩两条边**（批次 6、7 的目标）：
+- `Enemy → EnemyHealthBar`（敌人身上挂血条：血条是**每个敌人一个**的组件 ✅，
+  要靠「工厂端口」——内核问「给我一个血条视图」✅，创建动作在界面层做 ✅）；
+- `QTE → HeroHUD / BuffDisplayPanel / UIResolutionHelper`（QTE 直接摸 HUD ✅）。
 
 ## 1. 实测基线（不是猜的）
 
@@ -163,6 +169,26 @@ aiEditMode: inherit
 **实测效果**：`Core → UI` 5→1 文件 ✅、`Managers → UI` 3→2 ✅；
 剩下的都是「内核自己创建 UI 组件」那类 ✅（`UpgradeChoicePopup` / `EnemyHealthBar` / `CameraManager` / `DamageNumber`）✅，
 要靠**工厂端口**处理 ✅（下一批 ✅）。
+
+### 批次 5 做了什么（工厂端口：内核不再自己创建 UI 组件）
+
+上一批端口化的是「问状态 / 弹窗」；这一批处理**内核自己创建 UI 组件**那类 ✅：
+
+| 契约（L0） | 谁实现 | 内核原来的用法 |
+|---|---|---|
+| `IUpgradeChoiceView` | `UpgradeChoicePopup` | `GetComponent<UpgradeChoicePopup>()` ✅ |
+| `IDamageNumberPresenter` | `DamageNumberManager`（**从 `Managers/` 移到 `UI/`** ✅ —— 它管的是跳字对象池 ✅） | `DamageNumberManager.Instance.Spawn(...)` ✅ |
+| `ISceneTransitionCamera` | `CameraManager` | `FindObjectOfType<CameraManager>()` ✅ |
+
+`DamageNumberManager` 还接管了「清理残留跳字」（`ClearAll()`）✅ —— 原来由 `WaveSpawner` 直接
+`FindObjectsOfType<DamageNumber>()` 扫 ✅，现在收进界面层自己管 ✅。
+
+**实测效果**：`Core → UI` **1→0** ✅、`Managers → UI` **2→0** ✅、`Wave → UI` **1→0** ✅。
+内核 → 界面现在只剩两处：`Enemy → EnemyHealthBar`（敌人身上挂血条 ✅，按约定单独一刀 ✅）
+与 `QTE → HeroHUD / BuffDisplayPanel / UIResolutionHelper` ✅（下一批 ✅）。
+
+> **Unity 坑**：`FindObjectOfType<T>()` 要求 `T : Object` ✅，**不接受接口** ✅ ——
+> 所以「按接口找对象」得扫一遍 `MonoBehaviour` 再按接口筛 ✅（`SceneFlowManager` 就是这么做的 ✅）。
 
 ## 5. 每批验收口径
 
