@@ -31,7 +31,8 @@ aiEditMode: inherit
 | 6 · 血条工厂端口 | ✅ | `IEnemyHealthBarView` + `IEnemyHealthBarFactory`；**`Enemy→UI` 1→0** ✅ —— 内核（Core/Enemy/Managers/Wave/Player/Status）**一条 UI 引用都不剩** ✅ |
 | 7 · QTE 的三个 UI 触点 | ✅ | `IQteHud` + `IQteInputLockTarget` + `QteInputLockTargets`（登记表✅）；`UIResolutionHelper` 下沉 L0（纯计算✅）；**`QTE→UI` 3→0** ✅ —— **战斗内核一条 UI 引用都不剩** ✅ |
 | 8 · 内核不再点名流程类 | ✅ | `StageRoles` 装配点（`BattleState` / `Formation`）+ `IPropDestroyNotifier`；17 处 `StageController.Instance` 改走装配点 ✅；`StageFormation`（纯计算✅）/ `ArrowGlobalConfig` 下沉 L0 ✅；内核对 `Managers` 只剩 `EnemyManager` ✅ |
-| 9+ · `Locus.Combat` / `Locus.Flow` / `Locus.UI` / `Locus.Editor` | ⏳ | ① `InputManager` 端口（内核读输入的 34 处 ✅）；② 战斗侧玩家类型 + `EnemyManager` 归位到内核目录 ✅；③ 建 `Locus.Combat` asmdef（用 `.asmref` 把内核目录挂进去 ✅，不动 250 个文件 ✅） |
+| 9a · 输入端口 | ✅ | `IPlayerInput`（状态 + 事件✅，**不含手势识别**✅）+ `PlayerInputHub`；内核 6 个文件改走端口 ✅；**内核不再引用 `InputManager` 类型** ✅；依据与扩展路径见 `design/input-gesture-pipeline.md` ✅ |
+| 9+ · `Locus.Combat` / `Locus.Flow` / `Locus.UI` / `Locus.Editor` | ⏳ | ① 战斗侧玩家类型（`PlayerState` / `AttackSystem` / `IceBreakSession`）+ `EnemyManager` 归位到内核目录 ✅；② 建 `Locus.Combat` asmdef（用 `.asmref` 把内核目录挂进去 ✅，不动 250 个文件 ✅） |
 
 **现在的分层实况**：`Locus.Data` 61 文件 / 3597 行（纯叶子）、`Locus.Services` 3 文件 / 642 行（只朝下依赖 Data）、
 其余运行时脚本仍在 `Assembly-CSharp`（251 文件 / 55666 行）。
@@ -42,7 +43,7 @@ aiEditMode: inherit
 | 内核 → | 用到的类型 | 归属建议 |
 |---|---|---|
 | `Player` | `PlayerState` / `AttackSystem` / `IceBreakSession` / `UpgradeAcquired` | **属于内核** ✅（玩家侧战斗状态 ✅）—— 归位到内核目录 ✅ |
-| `Player` | `InputManager` | **属于内核之上** ✅（输入适配器 ✅）—— 内核读它的蓄力状态要改端口 ✅（34 处 ✅） |
+| `Player` | ~~`InputManager`~~ | **已解决** ✅：内核改走 `IPlayerInput` 端口 ✅（识别逻辑留在上层 ✅） |
 | `Managers` | `EnemyManager` | **属于内核** ✅（敌人注册表 ✅）—— 归位到内核目录 ✅ |
 
 > 顺带一条：内核读流程的 **17 处** 引用**本来就已经在用 L0 接口** ✅（`IStageBattleState` / `IStageFormation` ✅），
