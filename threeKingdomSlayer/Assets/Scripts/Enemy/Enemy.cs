@@ -295,7 +295,7 @@ public GameObject freezeMeltEffectPrefab;
     private float _prefabAttackSpeed;
     private float _prefabAttackDamage;
     public float BaseAttackDamage => _prefabAttackDamage;
-    private Color _prefabColor = Color.white;
+    internal Color _prefabColor = Color.white;
 
     [Header("招架血量眩晕阈值")]
     public ParryStunThreshold[] parryStunThresholds;
@@ -401,18 +401,18 @@ public GameObject freezeMeltEffectPrefab;
     private const float continuousRushMoveDuration = 0.2f;
     private float rushMoveDelayTimer;
     private bool rushMoveChainTriggered;
-    private Renderer[] renderers;
+    internal Renderer[] renderers;
     // 材质实例数组（用于闪白效果）
     // 通过 renderer.material 创建实例，避免 MaterialPropertyBlock 在对象禁用时不生效的问题。
     // 在 Initialize() 中创建，在 ResetEnemy() 中销毁。
-    private Material[] flashMaterials;
+    internal Material[] flashMaterials;
     private bool initialized;
 
     // 受伤闪白相关
-    private float hitFlashTimer; // 闪白剩余时间
+    internal float hitFlashTimer; // 闪白剩余时间
     private Color originalColor = Color.white; // 精灵原始颜色（白色）
     private const float HIT_FLASH_DURATION = 0.15f; // 闪白持续时间
-    private bool _allowHitFlashOnce; // Parry 打断霸体攻击时临时放行一次 HitFlash 动画
+    internal bool _allowHitFlashOnce; // Parry 打断霸体攻击时临时放行一次 HitFlash 动画
 
     // DOTween: 前进补齐时 Y 轴弹跳偏移（由 DOTween 驱动，在 UpdateWorldPosition 中应用）
     private float bounceYOffset;
@@ -434,7 +434,7 @@ public GameObject freezeMeltEffectPrefab;
     }
 
     // DOTween: 当前攻击动画序列（用于在 Die() 中取消正在执行的攻击动作）
-    private Sequence _attackTween;
+    internal Sequence _attackTween;
     // 命中帧：声明后出伤时刻由屏幕上的命中帧精灵决定（见 UpdateAttackHitFrames）
     private readonly List<string> _hitFrameSprites = new List<string>();
     private readonly List<bool> _hitFrameResolve = new List<bool>();
@@ -444,8 +444,8 @@ public GameObject freezeMeltEffectPrefab;
     private bool _hitFrameInterrupted;
     internal bool _suspendTweenPaused;
     private EnemyAttackTelegraph _attackTelegraph;
-    private Tween _hitScaleTween;
-    private float _hitStopRemaining;
+    internal Tween _hitScaleTween;
+    internal float _hitStopRemaining;
     public bool IsHitStopped => (_suspendSources & SuspendSource.HitStop) != 0;
     /// <summary>任何来源（卡肉 / 冻结）造成的挂起。挂起期间动画与攻击位移都停住。</summary>
     public bool IsSuspended => _suspendSources != SuspendSource.None;
@@ -463,18 +463,18 @@ public GameObject freezeMeltEffectPrefab;
     // 冻结运行时状态（不序列化）
     /// <summary>顶开位移时长（秒）：这段期间保持冰冻形态，到位后才碎冰</summary>
     public const float BreakPushMoveSeconds = 0.12f;
-    private float _hitScaleMultiplier = 1f;
+    internal float _hitScaleMultiplier = 1f;
 
     // Animator HitFlash 协程引用
-    private Coroutine _hitFlashRoutine;
-    private Coroutine _getupRoutine;
-    private bool _getupInterrupted;
+    internal Coroutine _hitFlashRoutine;
+    internal Coroutine _getupRoutine;
+    internal bool _getupInterrupted;
 
     // QTE 控制器缓存
     private QTEController _qteController;
 
     // 描边效果
-    private SpriteRenderer _spriteRenderer;
+    internal SpriteRenderer _spriteRenderer;
     private MaterialPropertyBlock _tintPropBlock; // 波次染色（描边属性已移到 EnemyOutline，不再共用 block）
 
     /// <summary>
@@ -514,7 +514,7 @@ public GameObject freezeMeltEffectPrefab;
 
     // 敌人物体原始缩放与旋转值（从预制体读取，用于对象池复用还原）
     // 不能硬编码为 Vector3.one / Quaternion.identity，因为预制体可能有自定义初始姿态。
-    private Vector3 originalScale;
+    internal Vector3 originalScale;
     private Quaternion originalRotation;
 
     // 血条UI缓存
@@ -522,7 +522,7 @@ public GameObject freezeMeltEffectPrefab;
     internal Animator _animator;
     private EnemySpriteController _spriteCtrl;
     private CavalryEnemy _cavalry;
-    private CavalryVisualController _cavalryVisual;
+    internal CavalryVisualController _cavalryVisual;
     private ShieldGuardEnemy _shieldGuard;
     private AnimationClip _attackClip; // 缓存的 Attack clip（用于同步 DOTween 与 Animator 时长）
 
@@ -1119,7 +1119,7 @@ public GameObject freezeMeltEffectPrefab;
 
     public bool OnPlayerLaunchHit() => EnterCowardFormFromPlayerLaunch();
 
-    private void PlayIdleVisual()
+    internal void PlayIdleVisual()
     {
         if (formState == EnemyFormState.ShieldBroken) return;
         if (_cavalryVisual != null && _cavalryVisual.TryRefreshMountedAnimation()) return;
@@ -1131,7 +1131,7 @@ public GameObject freezeMeltEffectPrefab;
         bool withoutShield = IsCoward || formState == EnemyFormState.ShieldBroken;
         _animator?.Play(withoutShield ? "CowardLaunched" : "Launched_Rise", 0, 0f);
     }
-    private void PlayHitVisual(HitReactionDirection direction)
+    internal void PlayHitVisual(HitReactionDirection direction)
     {
         if (_animator == null)
             return;
@@ -1843,7 +1843,7 @@ public GameObject freezeMeltEffectPrefab;
         ResumeAfterGetup();
     }
 
-    private void ResumeAfterGetup()
+    internal void ResumeAfterGetup()
     {
         if (state == EnemyState.Dead || state == EnemyState.Launched || state == EnemyState.GettingUp)
             return;
@@ -2860,6 +2860,11 @@ private void SpawnProjectile()
 
     private EnemyFreeze _freezeSys;
 
+    /// <summary>打击反馈（卡肉 / 受击缩放 / 闪白）。实现见 EnemyHitFeedback（批次 3 刀 A）。</summary>
+    private EnemyHitFeedback _hitFeedback;
+
+    private EnemyHitFeedback HitFeedback => _hitFeedback ??= new EnemyHitFeedback(this);
+
     private EnemyFreeze FreezeSys => _freezeSys ??= new EnemyFreeze(this);
 
     /// <summary>当前是否处于攻击前摇播放中（与 Parry 打断同口径：收招不算前摇）。</summary>
@@ -2873,7 +2878,7 @@ private void SpawnProjectile()
     public float FreezeChance => FreezeSys.FreezeChance;
     public bool CanBeFrozen => FreezeSys.CanBeFrozen;
 
-    private bool IsFrozenHitReactionSuppressed => FreezeSys.IsFrozenHitReactionSuppressed;
+    internal bool IsFrozenHitReactionSuppressed => FreezeSys.IsFrozenHitReactionSuppressed;
 
     public bool Freeze(float duration) => FreezeSys.Freeze(duration);
     public void BreakFreeze() => FreezeSys.BreakFreeze();
@@ -2891,213 +2896,28 @@ private void SpawnProjectile()
 
     #endregion
 
-    private void UpdateHitStop()
-    {
-        if (_hitStopRemaining <= 0f) return;
-        _hitStopRemaining -= Time.unscaledDeltaTime;
-        if (_hitStopRemaining > 0f) return;
+    // ── 打击反馈：实现见 EnemyHitFeedback（批次 3 刀 A），此处保留同名薄转发 ──
 
-        _hitStopRemaining = 0f;
-        PopSuspend(SuspendSource.HitStop);
-        if (HitFeedbackManager.EnableDebugLogs)
-            Debug.Log($"[HitFeedback] Resume enemy={DebugTag} frame={Time.frameCount}");
-    }
+    private void UpdateHitStop() => HitFeedback.UpdateHitStop();
 
-    private void StopHitStop()
-    {
-        _hitStopRemaining = 0f;
-        PopSuspend(SuspendSource.HitStop);
-    }
+    private void StopHitStop() => HitFeedback.StopHitStop();
 
-    /// <summary>挂起：与 Animator 同时暂停攻击位移（自持标记，不依赖 DOTween 的暂停查询接口）。</summary>
-    private void PauseAttackTweenForSuspend()
-    {
-        if (_suspendTweenPaused) return;
-        if (_attackTween == null || !_attackTween.IsActive()) return;
-        _attackTween.Pause();
-        _suspendTweenPaused = true;
-    }
+    private void PauseAttackTweenForSuspend() => HitFeedback.PauseAttackTweenForSuspend();
 
-    /// <summary>解除挂起：只恢复自己暂停过的攻击位移。</summary>
-    private void ResumeAttackTweenAfterSuspend()
-    {
-        if (!_suspendTweenPaused) return;
-        _suspendTweenPaused = false;
-        if (_attackTween != null && _attackTween.IsActive())
-            _attackTween.Play();
-    }
+    private void ResumeAttackTweenAfterSuspend() => HitFeedback.ResumeAttackTweenAfterSuspend();
 
     private void RestartHitScaleFeedback(HitFeedbackStrength feedbackStrength = HitFeedbackStrength.Standard)
-    {
-        StopHitScaleFeedback();
+        => HitFeedback.RestartHitScaleFeedback(feedbackStrength);
 
-        float basePeak = feedbackStrength switch
-        {
-            HitFeedbackStrength.Light => 1.1f,
-            HitFeedbackStrength.Heavy => 1.28f,
-            _ => 1.2f
-        };
-        float durationScale = feedbackStrength == HitFeedbackStrength.Heavy ? 1.15f : 1f;
-        float peakMultiplier = isSuperArmor ? Mathf.Min(basePeak, 1.1f) : basePeak;
-        float expandDuration = (isSuperArmor ? 0.04f : 0.06f) * durationScale;
-        float recoverDuration = (isSuperArmor ? 0.06f : 0.09f) * durationScale;
+    private void StopHitScaleFeedback() => HitFeedback.StopHitScaleFeedback();
 
-        Sequence sequence = DOTween.Sequence().SetTarget(transform);
-        sequence.Append(DOTween.To(
-            () => _hitScaleMultiplier,
-            ApplyHitScaleMultiplier,
-            peakMultiplier,
-            expandDuration).SetEase(Ease.OutQuad));
-        sequence.Append(DOTween.To(
-            () => _hitScaleMultiplier,
-            ApplyHitScaleMultiplier,
-            1f,
-            recoverDuration).SetEase(Ease.InQuad));
+    private void TriggerHitFlash(HitReactionDirection hitReactionDirection) => HitFeedback.TriggerHitFlash(hitReactionDirection);
 
-        _hitScaleTween = sequence;
-        sequence.OnComplete(() => FinishHitScaleFeedback(sequence));
-        sequence.OnKill(() => FinishHitScaleFeedback(sequence));
-    }
+    private void CreateFlashMaterials() => HitFeedback.CreateFlashMaterials();
 
-    private void FinishHitScaleFeedback(Tween owner)
-    {
-        if (_hitScaleTween != owner) return;
+    private void ResetWaveTint() => HitFeedback.ResetWaveTint();
 
-        _hitScaleTween = null;
-        _hitScaleMultiplier = 1f;
-        ApplyHitScaleMultiplier(1f);
-    }
-
-    private void StopHitScaleFeedback()
-    {
-        Tween activeTween = _hitScaleTween;
-        _hitScaleTween = null;
-        if (activeTween != null && activeTween.IsActive())
-            activeTween.Kill(false);
-
-        _hitScaleMultiplier = 1f;
-        ApplyHitScaleMultiplier(1f);
-    }
-
-    private void ApplyHitScaleMultiplier(float multiplier)
-    {
-        _hitScaleMultiplier = multiplier;
-        if (originalScale == Vector3.zero) return;
-
-        float currentX = transform.localScale.x;
-        float xSign = currentX < 0f ? -1f : 1f;
-        transform.localScale = new Vector3(
-            Mathf.Abs(originalScale.x) * xSign * multiplier,
-            originalScale.y * multiplier,
-            originalScale.z * multiplier);
-    }
-
-    /// <summary>
-    /// 触发受伤精灵闪烁（Animator HitFlash 状态，0.3秒后自动回到 Idle）
-    /// C技霸体帧(isCFrame)、击飞(Launched)、死亡(Dead)、QTE攻击中不触发 HitFlash 动画
-    /// </summary>
-    private void TriggerHitFlash(HitReactionDirection hitReactionDirection)
-    {
-        // 骑乘合成动作没有正式受击Clip；继续闪白/缩放/卡肉，保留当前阶段，避免显示101步兵。
-        if (_cavalryVisual != null && _cavalryVisual.OwnsMountedAnimator) return;
-        if (_hitFlashRoutine != null)
-            StopCoroutine(_hitFlashRoutine);
-        _hitFlashRoutine = StartCoroutine(HitFlashRoutine(hitReactionDirection));
-    }
-
-    private System.Collections.IEnumerator HitFlashRoutine(HitReactionDirection hitReactionDirection)
-    {
-        // 守卫：C帧弹刀、击飞、死亡、QTE 和眩晕不播受击动画；Getup 可被受击替换。
-        bool wasGettingUp = state == EnemyState.GettingUp;
-        bool allowHit = !isCFrame && (!isSuperArmor || _allowHitFlashOnce);
-        _allowHitFlashOnce = false;
-        if (state != EnemyState.Launched
-            && state != EnemyState.Dead
-            && state != EnemyState.QTEAttacking
-            && state != EnemyState.Stunned
-            && !IsFrozenHitReactionSuppressed
-            && allowHit)
-        {
-            if (wasGettingUp)
-            {
-                _getupInterrupted = true;
-                if (_getupRoutine != null)
-                {
-                    StopCoroutine(_getupRoutine);
-                    _getupRoutine = null;
-                }
-            }
-            PlayHitVisual(hitReactionDirection);
-        }
-        yield return new WaitForSeconds(wasGettingUp ? 0.9f : 0.4f);
-        if (wasGettingUp && state == EnemyState.GettingUp && _getupInterrupted)
-        {
-            _getupInterrupted = false;
-            state = EnemyState.Idle;
-            PlayIdleVisual();
-            ResumeAfterGetup();
-        }
-        _hitFlashRoutine = null;
-    }
-
-
-
-    /// <summary>
-    /// 创建或恢复每个 Renderer 的专属材质实例。
-    /// 对象池复用时保留实例，避免销毁后 Renderer 持有失效材质。
-    /// </summary>
-    private void CreateFlashMaterials()
-    {
-        if (renderers == null || renderers.Length == 0) return;
-
-        if (flashMaterials == null || flashMaterials.Length != renderers.Length)
-        {
-            DestroyFlashMaterials();
-            flashMaterials = new Material[renderers.Length];
-        }
-
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            var renderer = renderers[i];
-            if (renderer == null) continue;
-
-            if (flashMaterials[i] == null)
-                flashMaterials[i] = new Material(renderer.sharedMaterial);
-
-            if (renderer.sharedMaterial != flashMaterials[i])
-                renderer.material = flashMaterials[i];
-
-            flashMaterials[i].color = Color.white;
-        }
-    }
-
-    private void ResetWaveTint()
-    {
-        if (_spriteRenderer != null)
-            _spriteRenderer.color = _prefabColor;
-
-        if (renderers == null) return;
-        foreach (var renderer in renderers)
-        {
-            if (renderer != null && !(renderer is SpriteRenderer))
-                renderer.SetPropertyBlock(null);
-        }
-    }
-
-    /// <summary>
-    /// 销毁每个 Renderer 的专属材质实例（仅在对象最终销毁时调用）。
-    /// </summary>
-    private void DestroyFlashMaterials()
-    {
-        if (flashMaterials == null) return;
-
-        foreach (var mat in flashMaterials)
-        {
-            if (mat != null)
-                Object.Destroy(mat);
-        }
-        flashMaterials = null;
-    }
+    private void DestroyFlashMaterials() => HitFeedback.DestroyFlashMaterials();
 
     /// <summary>
     /// 位移主动的零伤害强控命中：打断攻击前摇（含CFrame/SuperArmor），

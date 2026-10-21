@@ -83,7 +83,7 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 
 | 指标 | 改造前 | 现在 |
 |---|---|---|
-| `Enemy.cs` | 5224 行 | **4496 行**（描边 + 冰系视觉 + 冰系流程已拆出） |
+| `Enemy.cs` | 5224 行 | **4332 行**（描边 + 冰系视觉 + 冰系流程 + **打击反馈**已拆出） |
 | `StageController.cs` | 852 行 | **708 行** |
 | `ColumnManager.cs` | 2149 行 | **662 行**（队列/查询/入场/补齐/位移五块全部拆出） |
 | 门面（`StageController`）成员调用 | 大量 | **0**（`StageController.Instance` 仅剩 30 处惰性解析点） |
@@ -301,6 +301,34 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 - 未采集 GC 分配与 Draw Call（指标名需用 `DiscoverMetrics` 拿到的
   `Draw Calls Count` / `GC.*` 再采一轮；本轮 `gc_allocated_in_frame` 名字不存在）。
 - 结论只说明「现在没必要为了性能重构」；若真机出现卡顿，应先在真机重采再动手。
+
+---
+
+## 10. 批次 3 刀 A：打击反馈拆出（`EnemyHitFeedback`）
+
+> 2026-10-21 完成。`Enemy.cs` 4512 → **4332 行**（-180）；新增 `Assets/Scripts/Enemy/EnemyHitFeedback.cs`（244 行）。
+
+**拆了什么**：卡肉（HitStop）、受击缩放、闪白动画协程 + 闪白材质、挂起时的攻击位移暂停。
+
+**关键做法（后续拆 Enemy 照抄）**：
+
+- **状态留原地、方法搬走**：打击反馈的 15 个字段（`_hitStopRemaining` / `_hitScaleTween` / `flashMaterials` /
+  `renderers` / `originalScale` / `_hitFlashRoutine` …）全部留在 `Enemy`，只把可见性 `private` → `internal`；
+  这样 Enemy 内部上百处使用点**一行都不用改**。
+- **`internal` 代替委托**：同程序集内 `internal` 可见 → 新类通过 `Enemy` 引用直接访问成员，
+  **不需要把字段搬到新类、也不需要注入一堆委托**。这是拆 `Enemy` 的低成本路径。
+- **owner 引用模式**（与 `EnemyFreeze` / `EnemyOutline` 一致）：新类持有 `Enemy _owner`，
+  构造时传入 `this`。
+- **同名薄转发**：Enemy 侧保留 `private void UpdateHitStop() => HitFeedback.UpdateHitStop();` 这类转发，
+  现有调用点零改动。
+
+**验收（Play Mode）**：命中后 `maxHitStop=0.074s`（卡肉）、`maxFlashTimer=0.134s`（闪白）、
+受击缩放 27 帧内生效、伤害 20、收尾后 scale 与 hitStop 归位；打死敌人路径无异常；
+补齐基线 `col1/r0 · col1/r2 · col2/r3 · col3/r4` 逐位一致；Console 0 error / 0 warn。
+
+**下一步（批次 3 剩余）**：按同样手法依次拆 **韧性/护盾/伤害结算**（`EnemyHealth`）、
+**位置与透明度**（`EnemyVisuals`）、**Boss 阶段**（`EnemyBossPhases`）、
+**移动**（`EnemyMovement`）；每个都保持 `internal` + owner 引用 + 同名转发三件套。
 
 ---
 
