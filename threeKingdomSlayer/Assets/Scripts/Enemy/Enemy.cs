@@ -396,6 +396,26 @@ public GameObject freezeMeltEffectPrefab;
 
     internal EnemyFreezeVisual FreezeVisual => _freezeVisual ??= new EnemyFreezeVisual();
 
+    /// <summary>
+    /// **状态效果宿主**：持有该敌人身上的状态效果实例（冻结是其中之一），
+    /// 由 <c>Update</c> 统一驱动每帧结算，由 <c>EnemyStatusRegistry</c> 统一提供查询。
+    /// 新增一种状态效果 = 写一个 <see cref="IEnemyStatusInstance"/> 并在这里登记。
+    /// </summary>
+    private EnemyStatusHost _statusHost;
+
+    internal EnemyStatusHost StatusHost
+    {
+        get
+        {
+            if (_statusHost == null)
+            {
+                _statusHost = new EnemyStatusHost(this);
+                _ = FreezeSys; // 冻结系统创建时自己登记到宿主
+            }
+            return _statusHost;
+        }
+    }
+
     /// <summary>冰系视觉层需要的上下文：敌人节点 + 渲染器 + 冻结表现配置。</summary>
     /// <summary>当前挂起令牌集合（EnemyFreeze 判断「Frozen 令牌是否残留」用）。</summary>
     internal SuspendSource SuspendSources => _suspendSources;
@@ -465,8 +485,8 @@ public GameObject freezeMeltEffectPrefab;
         if (!initialized || state == EnemyState.Dead) return;
 
         UpdateHitStop();
-        UpdateFreezeChanceDecay();
-        FreezeSys.TickPostFreezeRecovery();
+        // 状态效果宿主：统一驱动该敌人身上的状态效果（冻结是其中之一）。
+        StatusHost.Tick(Time.deltaTime);
         if (_pierceHighlighted)
             UpdateOutlineState();
 

@@ -14,7 +14,7 @@ using UnityEngine;
 /// 不是 MonoBehaviour：由 Enemy 懒加载创建（<c>new EnemyFreeze(this)</c>），
 /// 避免改 prefab 序列化，也不在对象池复用路径上多一次 GetComponent。
 /// </summary>
-public sealed class EnemyFreeze
+public sealed class EnemyFreeze : IEnemyStatusInstance
 {
     private readonly Enemy _owner;
 
@@ -35,7 +35,36 @@ public sealed class EnemyFreeze
     public EnemyFreeze(Enemy owner)
     {
         _owner = owner;
+        // 登记到敌人的状态宿主：由它统一驱动每帧结算与统一查询（2026-10-22）。
+        owner.StatusHost?.Add(this);
     }
+
+    // ── IEnemyStatusInstance：状态效果的统一落地接口 ──
+
+    /// <summary>状态 id（与 EnemyStatusRegistry.Frozen 一致）。</summary>
+    public string StatusId => EnemyStatusRegistry.Frozen;
+
+    /// <summary>当前是否冻结。</summary>
+    public bool IsActive => IsFrozen;
+
+    /// <summary>冻结没有进度概念（血条不显示）。</summary>
+    public float GetProgress() => 0f;
+
+    /// <summary>冻结没有层数概念。</summary>
+    public int GetStacks() => 0;
+
+    /// <summary>显示优先级（比灼烧/疾病高）。</summary>
+    public int GetPriority() => 30;
+
+    /// <summary>每帧结算：只放与状态无关的两项（状态相关的仍由状态机调用）。</summary>
+    public void Tick(float deltaTime)
+    {
+        UpdateFreezeChanceDecay();
+        TickPostFreezeRecovery();
+    }
+
+    /// <summary>清空（敌人回收时由宿主调用；实际清理走 ClearFreezeOnTeardown）。</summary>
+    public void Clear() { }
 
     // ══════════════════════════════════════════════════════════════
     // 状态查询
