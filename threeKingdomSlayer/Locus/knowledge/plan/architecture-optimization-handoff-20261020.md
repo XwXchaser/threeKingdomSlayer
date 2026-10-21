@@ -63,8 +63,7 @@ summary: 架构改造交接（2026-10-20）：41 个提交落地——落地页/
 
 | 指标 | 改造前 | 现在 |
 |---|---|---|
-| `Enemy.cs` | 5224 行 | **4496 行**（描边 + 冰系视觉 + 冰系流程已拆出） |
-| `StageController.cs` | 852 行 | **708 行** |
+| `Enemy.cs` | 5224 行 | **4496 行**（描边 + 冰系视觉 + 冰系流程已拆出） || `StageController.cs` | 852 行 | **708 行** |
 | 门面（`StageController`）成员调用 | 大量 | **0**（`StageController.Instance` 仅剩 30 处惰性解析点） |
 | 角色接口 | 0 | 4 个（`IRouteBattleHost` / `IStageFormation` / `IStageFlowControl` / `IStageBattleState`） |
 | 数据层程序集 | 无 | `Locus.Data`：19 文件 / 1875 行 / 69 类型 |
@@ -126,9 +125,9 @@ summary: 架构改造交接（2026-10-20）：41 个提交落地——落地页/
 | A. 收尾小事 | 删两个界面的「返回」按钮；调天赋树面板底部留白 | 低 | 纯 UI |
 | B. 包体 | 字体 36MB / `Enemy_1`+`Enemy_102`（2.4MB）/ 试玩场景剔除 | 低-中 | 阶段 E 已实测过数据；你之前要求延后 |
 | C. `EnemyFreeze` 流程拆分 | 冰系**状态机**（已从 Enemy 拆出，✅ `34b6bc5`） | — | 已完成，无需再做 |
-| D. `ColumnManager` 拆分 | 2130 行 → 阵型/位移/补齐/骑兵槽位 | 中高 | 承载「位移三原则」，越稳越好 |
+| D. `ColumnManager` 拆分 | 2149 → **1370 行**；刀 1/2/3/4/6 已完成 | 中高 | 承载「位移三原则」，越稳越好；刀 5 做法见 `plan/columnmanager-split-plan-20261020.md` §0.8 |
 | E. 共享类型独立成程序集 | 为「Legacy 剔出包」铺路 | 中 | 需先给 `Enemy`/`PlayerState` 等定程序集边界 |
-| F. 终态删 `FillUpRule` 枚举与字段 | PerColumn 资产已归零，前置已满足 | 中 | 删的是不可达死代码 + legacy 分支；建议与 D 合并做 |
+| F. 终态删 `FillUpRule` 枚举与字段 | ✅ 已完成（`86832d4`）：补齐规则只剩一种，AI 无从选错 | — | 已完成 |
 
 ---
 

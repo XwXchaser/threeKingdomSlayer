@@ -48,10 +48,10 @@ summary: ColumnManager 拆分实施方案（2026-10-20，写给后续接手的 A
 |---|---|---|
 | **1** | `LogicalRowQueue`（逻辑排队列：活人排 / 空排占位符 / 999 门） | ✅ **已完成**（`facdbde`）：ColumnManager 2149 → 2026 行 |
 | **2** | `ColumnQueries`（13 个只读查询） | ✅ **已完成**（`415d4c0`）：ColumnManager 2026 → 1958 行 |
-| 3 | `SpawnEntryMover`（入场调度） | ⬜ 待做（中风险） |
-| 4 | `WaveMarchScheduler`（补齐调度） | 🟡 **刀 4a 已完成**（`09416f2`）：状态 + 只读查询已归位，ColumnManager 1836 → 1791 行；**刀 4b（流程）待做** |
-| 5 | `DisplacementMover`（击退回位 / 横向位移 / 破冰顶开 / 聚拢） | ⬜ 待做（中高风险） |
-| 6（=F） | 删 PerColumn 遗留分支 + `FillUpRule` 枚举与字段 | ⬜ 待做（中；建议在刀 4/5 之后） |
+| 3 | `SpawnEntryMover`（入场调度） | ✅ **已完成**（`6add76a`） |
+| 4 | `WaveMarchScheduler`（补齐调度） | ✅ **刀 4a**（`09416f2`，状态+查询）+ **刀 4b**（本次，补齐流程）均已完成，ColumnManager 1791 → **1370 行** |
+| 5 | `DisplacementMover`（击退回位 / 横向位移 / 破冰顶开 / 聚拢） | ⬜ 待做（中高风险，1079 行） |
+| 6（=F） | 删 PerColumn 遗留分支 + `FillUpRule` 枚举与字段 | ✅ **已完成**（`86832d4`）：补齐规则只剩一种 |
 
 **刀 1 / 刀 2 的验收数据**（Play Mode，注入 `Stage_Trial` 第 1 波：6 排含一个空排占位符）：
 
@@ -75,23 +75,27 @@ summary: ColumnManager 拆分实施方案（2026-10-20，写给后续接手的 A
 
 5. 刀 4a 的结果：波次行军的**状态**（generation / 计划与生效的目标行与目标槽 / 准备中与待行军集合 /
    暂停快照 / 当前步骤描述）与**只读查询**（`IsRowFullyVacated` / `GetMaxOccupiedRow` /
-   `IsTargetReserved` / `CanStartOrder` / `CanEnterRow`）已归位到 `WaveMarchScheduler`，
-   依赖只有「列数组」与「骑兵槽位判定」两个委托。**流程**（`StartWaveMarch` /
-   `TryBuildLogicalWaveMarchPlan` / `BeginWaveStep` / `StartPreparedWaveStep` / 暂停恢复）仍在
-   ColumnManager，刀 4b 再搬。
+   `IsTargetReserved` / `CanStartOrder` / `CanEnterRow`）已归位到 `WaveMarchScheduler`。
 6. ⚠️ 刀 4a 的坑（后续执行者注意）：批量替换时把引用写成了**字段** `_waveMarch.xxx`，
    而该字段由惰性属性创建 → 运行时 200 次 NullReferenceException（`ColumnManager.Update:139`）。
    改为走**属性** `WaveMarch.xxx` 后正常。**惰性属性 + 同名字段并存时，批量替换必须用属性名。**
+7. 刀 4b 的结果：补齐**流程**（`StartWaveMarch` / `RequestLogicalLayoutReflow` /
+   `StartPendingLogicalLayoutReflow` / `TryBuildLogicalWaveMarchPlan` / `BeginWaveStep`×2 /
+   `StartPreparedWaveStep` / `OnWaveEnemyRushComplete` / `CompleteWaveStep` / `TickPreparing` /
+   `CapturePausedWaveStep` / `AbortWaveMarch` / `ReleaseWaveMember` / `ResumePausedWavePlan` /
+   `TryResumePausedWaveAfterPushReturns` / `ResetPausedState`）已归位到 `WaveMarchScheduler`。
+   ColumnManager 只剩**薄转发**与它自己该管的东西（列、骑兵槽位、击退回位事务、位移效果）。
+   做法与坑见 §0.8。
 
 > 附带修掉一个既有问题（`49d4e96`）：落地页就绪态把局内 HUD 整组隐藏时，连击数字启动协程会报
 > 「Coroutine couldn't be started because the game object is inactive」→ 加 `activeInHierarchy` 守卫。
 
 ---
 
-## 0.8 刀 4b（补齐流程搬迁）的失败记录与正确做法
+## 0.8 刀 4b（补齐流程搬迁）：坑与最终做法（✅ 已完成）
 
-> 2026-10-20 尝试过一次，**未完成、已回退**（回到 `09416f2`，代码可编译、已验证）。
-> 回退原因不是想法错，而是「整段搬 region」这个做法有四个硬伤。下一位请看这里。
+> 第一次尝试（整段搬 region）**编译不过、已回退**；第二次按「逐方法搬 + 保留转发」重做，**已完成并通过全部验收**。
+> 下面的四个硬伤是第一次踩出来的，读完再动刀 5。
 
 ### 四个硬伤（都是批量搬 + 批量替换引起的）
 
@@ -108,18 +112,35 @@ summary: ColumnManager 拆分实施方案（2026-10-20，写给后续接手的 A
 4. **按名字替换会误伤方法声明**：把 `TryResumePausedWaveAfterPushReturns(` 换成 `_resumeAfterPushReturns(`
    时，**方法声明本身**也被改 → 与委托字段同名 → 「already contains a definition」。
 
-### 建议的正确做法（下一位照做）
+### 最终做法（已按此完成，刀 5 可照抄）
 
-- **不要整段搬 region**。改成**逐方法搬**，一次 2–3 个，每搬一次就编译一次：
-  1. 先挑**纯内部**的流程方法：`StartPendingLogicalLayoutReflow` → `TryBuildLogicalWaveMarchPlan`
-     → `BeginWaveStep`（两个重载）→ `StartPreparedWaveStep` → `OnWaveEnemyRushComplete` → `CompleteWaveStep`
-     → `CapturePausedWaveStep` → `AbortWaveMarch`。
-  2. 每个方法搬完：把 ColumnManager 里的原方法换成**同名转发**（保持 public 签名不变 → 调用方零改动）。
-  3. 跨区段共用方法（`ReleaseEnemyFromSchedulers` / `ClearEnemyProjectiles` / 骑兵槽位查询 /
-     击退回位事务）**留在 ColumnManager**，调度器通过委托回调它们。
-- 委托清单（已经验证可用）：列数组、骑兵槽位判定、入场是否占用、击退回位事务数量、
-  骑兵预留占用者查询、取消击退回位、击退回位后恢复、清敌方投射物。
-- 每搬完一组，跑一遍验收脚本（§5.3 入场 / 补齐基线 / 豁免 A/B）+ 主流程冒烟 + Console 必须 0/0。
+- **不要整段搬 region**，改成**逐方法搬**，一次 2–3 个，每搬一次就编译一次：
+  1. 先搬**纯内部**的流程方法（计划/派单/步进/完成/暂停/恢复），再搬**需要宿主能力**的方法。
+  2. 每个方法搬完：ColumnManager 侧保留**同名薄转发**（public 签名不变 → 调用方零改动）。
+  3. 跨区段共用的方法（`ReleaseEnemyFromSchedulers` / 骑兵槽位查询 / 击退回位事务 /
+     `CancelInvoke`）**留在 ColumnManager**，调度器通过**构造委托**回调它们。
+- **实际用到的委托（8 个，已验证）**：列数组 `() => columns`、骑兵槽位判定、
+  逻辑排队列（直接传实例）、入场是否占用 `() => SpawnEntry.IsPreparing || SpawnEntry.HasPending`、
+  击退回位事务数量 `() => _pushReturnTransactions.Count > 0`、
+  单敌人是否在击退事务里 `(Enemy e) => _pushReturnTransactions.ContainsKey(e)`、
+  骑兵预留占用者查询 `GetCavalryReservationOwner`、
+  取消已排程的补齐 `() => CancelInvoke(nameof(StartWaveMarch))`。
+- **事件订阅必须一起搬**：`OnWaveEnemyRushComplete` 搬走后，宿主侧的
+  `enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete` 会**退订不掉**（委托目标变了）。
+  → 把「从批次里摘除敌人」也做成调度器方法（`ReleaseWaveMember`），订阅与退订都在调度器内部成对。
+- **顺带清掉一个死状态**：`_topologyChangedWhilePushReturn` 全项目**只写不读**（4 处赋值、0 处读取），
+  本次一并删除；`_waveMarchRequestedWhilePushReturn` 随暂停快照一起搬进调度器。
+- 每搬完一组，跑一遍验收脚本（§5.1 注入 / §5.2 入场 / §5.3 补齐基线 + 豁免 A/B）
+  + 主流程冒烟 + Console 必须 0/0。
+
+### 刀 4b 的验收数据（Play Mode，2026-10-21，注入 `Stage_Trial` 第 1 波）
+
+- 入场初期（物理行 = 逻辑行 + 2，owner = SpawnEntry，state = Moving）✅
+- 入场完成后阵型：`col2/r0 · col1/r1 · col1/r3 · col2/r4 · col3/r5`（逻辑行 0/1/3/4/5）✅
+- 整排清空基线：杀 r0 → `col1/r0 · col1/r2 · col2/r3 · col3/r4` ✅（逐位一致）
+- 豁免 A/B：col1/r1 置 `ignoreFillUpOrders` 后杀 r0 → `col1/r1[豁免] · col1/r2 · col2/r3 · col3/r4` ✅
+- 主流程冒烟：落地页 → 开始关卡 → `phase=Battle`、出怪 1、Stab 150→140 ✅
+- Console：0 error / 0 warn ✅
 
 ---
 

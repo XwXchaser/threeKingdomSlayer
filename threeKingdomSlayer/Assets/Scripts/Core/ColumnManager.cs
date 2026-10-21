@@ -34,16 +34,22 @@ public class ColumnManager : MonoBehaviour
     /// <summary>入场调度（新波次远处入场）。状态与流程见 SpawnEntryMover。</summary>
     private SpawnEntryMover _spawnEntry;
 
-    private SpawnEntryMover SpawnEntry => _spawnEntry ??= new SpawnEntryMover(_queue, StartPendingLogicalLayoutReflow);
-    private bool _waveMarchRequestedWhilePushReturn;
-    private bool _topologyChangedWhilePushReturn;
+    private SpawnEntryMover SpawnEntry => _spawnEntry ??= new SpawnEntryMover(_queue, () => WaveMarch.StartPendingLogicalLayoutReflow());
     /// <summary>逻辑排队列（活人排 / 空排占位符 / 999 节奏门）。数据与队列操作见 LogicalRowQueue。</summary>
     private readonly LogicalRowQueue _queue = new LogicalRowQueue();
 
-    /// <summary>波次行军（普通补齐）的状态与查询。流程暂留本类，刀 4b 再搬。</summary>
+    /// <summary>波次行军（普通补齐）的状态、查询与流程。刀 4b 后流程也归位到调度器。</summary>
     private WaveMarchScheduler _waveMarch;
 
-    private WaveMarchScheduler WaveMarch => _waveMarch ??= new WaveMarchScheduler(() => columns, IsCavalrySlotReserved);
+    private WaveMarchScheduler WaveMarch => _waveMarch ??= new WaveMarchScheduler(
+        () => columns,
+        IsCavalrySlotReserved,
+        _queue,
+        () => SpawnEntry.IsPreparing || SpawnEntry.HasPending,
+        () => _pushReturnTransactions.Count > 0,
+        (Enemy e) => e != null && _pushReturnTransactions.ContainsKey(e),
+        GetCavalryReservationOwner,
+        () => CancelInvoke(nameof(StartWaveMarch)));
 
     /// <summary>只读查询层（战斗侧取数入口）。取列数组用委托，避免重建后拿到旧引用。</summary>
     private ColumnQueries _queries;
@@ -136,32 +142,8 @@ public class ColumnManager : MonoBehaviour
         // 入场流程占用时，本帧不进入其它调度分支（与拆分前一致）
         if (SpawnEntry.Tick()) return;
 
-        if (!WaveMarch.isWavePreparing) return;
-
-        for (int i = WaveMarch.preparingWaveEnemies.Count - 1; i >= 0; i--)
-        {
-            var enemy = WaveMarch.preparingWaveEnemies[i];
-            if (enemy == null || enemy.state == EnemyState.Dead || !enemy.IsRushMoveOrder(RushMoveOrderOwner.WaveMarch, WaveMarch.waveGeneration))
-            {
-                if (enemy != null)
-                    enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
-                WaveMarch.preparingWaveEnemies.RemoveAt(i);
-                continue;
-            }
-            if (!enemy.IsRushMoveReady)
-                return;
-        }
-
-        if (WaveMarch.preparingWaveEnemies.Count == 0)
-        {
-            WaveMarch.isWavePreparing = false;
-            WaveMarch.currentWaveSourceRow = -1;
-            WaveMarch.currentWaveTargetRow = -1;
-            StartPendingLogicalLayoutReflow();
-            return;
-        }
-
-        StartPreparedWaveStep();
+        // 补齐批次的准备/放行推进归 WaveMarchScheduler（刀 4b）。
+        WaveMarch.TickPreparing();
     }
 
     private void InitializeColumns()
@@ -236,10 +218,10 @@ public class ColumnManager : MonoBehaviour
         ReleaseEnemyFromSchedulers(enemy, columnIndex);
         columns[columnIndex].ResumeRushMoveChain();
 
-        if (mayCreateWaveMarch && !HasLivingMembers(clearedLogicalRow))
-            RequestLogicalLayoutReflow(clearedLogicalRow);
+        if (mayCreateWaveMarch && !WaveMarch.HasLivingMembers(clearedLogicalRow))
+            WaveMarch.RequestLogicalLayoutReflow(clearedLogicalRow);
         else if (!_queue.UseRowMarchPlanner && enemy != null && enemy.state == EnemyState.Dead)
-            StartWaveMarch();
+            WaveMarch.StartWaveMarch();
 
         NotifyPushReturnTopologyChanged();
         OnColumnsModified?.Invoke();
@@ -273,16 +255,10 @@ public class ColumnManager : MonoBehaviour
     {
         _cavalryReservedByEnemy.Clear();
         _cavalryReservedSlots.Clear();
-        AbortWaveMarch();
+        WaveMarch.AbortWaveMarch();
         CancelAllPushReturns();
         ClearWaveRowLayout();
-        _waveMarchRequestedWhilePushReturn = false;
-        _topologyChangedWhilePushReturn = false;
-        WaveMarch.hasPausedWaveStep = false;
-        WaveMarch.pausedWaveSourceRow = -1;
-        WaveMarch.pausedWaveTargetRow = -1;
-        WaveMarch.pausedWaveEnemies.Clear();
-        WaveMarch.pausedWaveTargetRows.Clear();
+        WaveMarch.ResetPausedState();
         SpawnEntry.Reset();
         for (int i = 0; i < columnCount; i++)
             columns[i].enemies.Clear();
@@ -316,7 +292,7 @@ public class ColumnManager : MonoBehaviour
         NotifyPushReturnTopologyChanged();
         OnColumnsModified?.Invoke();
         if (!_queue.UseRowMarchPlanner)
-            StartWaveMarch();
+            WaveMarch.StartWaveMarch();
     }
 
     #endregion
@@ -453,7 +429,7 @@ public class ColumnManager : MonoBehaviour
     {
         if (enemy == null || !_queue.UseRowMarchPlanner || !_queue.HasRowFor(enemy)) return;
         _queue.MarkDirty();
-        StartPendingLogicalLayoutReflow();
+        WaveMarch.StartPendingLogicalLayoutReflow();
     }
 
     public bool IsSpawnEntryPending(Enemy enemy) => SpawnEntry.IsPending(enemy);
@@ -508,358 +484,14 @@ public class ColumnManager : MonoBehaviour
 
     #region 波次行军（规则1/2）
 
-    private void RequestLogicalLayoutReflow(LogicalWaveRow clearedRow)
-    {
-        if (clearedRow == null || clearedRow.removed || clearedRow.kind != LogicalWaveRowKind.Live)
-            return;
-
-        _queue.MarkRowRemoved(clearedRow);
-        StartPendingLogicalLayoutReflow();
-    }
-
-    private bool HasLivingMembers(LogicalWaveRow logicalRow)
-    {
-        return _queue.HasLivingMembers(logicalRow);
-    }
-
-    private void StartPendingLogicalLayoutReflow()
-    {
-        if (!_queue.UseRowMarchPlanner || !_queue.IsDirty)
-            return;
-        if (SpawnEntry.IsPreparing || SpawnEntry.HasPending)
-            return;
-        if (_pushReturnTransactions.Count > 0)
-        {
-            _waveMarchRequestedWhilePushReturn = true;
-            return;
-        }
-        if (WaveMarch.isWaveMarching || WaveMarch.isWavePreparing)
-            return;
-
-        if (!TryBuildLogicalWaveMarchPlan())
-        {
-            _queue.ConsumeDirty();
-            return;
-        }
-
-        _queue.ConsumeDirty();
-        BeginWaveStep();
-    }
-
     /// <summary>
     /// Cross-column wave march. Legacy non-layout stages may still request a topology scan.
     /// PerRow stages consume only logical layout changes caused by full row deaths.
+    /// 流程实现见 WaveMarchScheduler（刀 4b）。
     /// </summary>
     public void StartWaveMarch()
     {
-        // 补齐只有一条路径：整排清空 → 逻辑排队列差分 → 波次行军。
-        // 旧的「按列找空位前压」分支已随 FillUpRule 一起退役（plan/percolumn-retirement-20261020.md 刀 6）。
-        StartPendingLogicalLayoutReflow();
-    }
-
-    private bool TryBuildLogicalWaveMarchPlan()
-    {
-        WaveMarch.plannedWaveTargetRows.Clear();
-        WaveMarch.plannedWaveTargetSlots.Clear();
-
-        _queue.ReassignRuntimeRows();
-
-        foreach (var pair in _queue.EnemyRows)
-        {
-            var enemy = pair.Key;
-            var logicalRow = pair.Value;
-            if (enemy == null || enemy.isBoss || enemy.state == EnemyState.Dead || logicalRow == null || logicalRow.removed)
-                continue;
-            if (enemy.GetComponent<CavalryEnemy>()?.IsMounted == true)
-                continue;
-            if (_pushReturnTransactions.ContainsKey(enemy) || enemy.rowIndex <= logicalRow.currentRow)
-                continue;
-            // 「豁免补齐」：该敌人不参与波次行军——不派单、不预留目标槽（原地下不动）。
-            // 注意这是**设计意图的排除**（敌人自己声明不参与），不是按状态过滤；
-            // 按状态过滤会让敌人永远拿不到本该有的订单（历史缺陷：105 远程敌人永远不补齐）。
-            if (enemy.ignoreFillUpOrders)
-            {
-                DebugLog.Info("[FillUp] 豁免补齐（不参与波次行军）: " + enemy.DebugTag);
-                continue;
-            }
-
-            long slotKey = ((long)enemy.columnIndex << 32) ^ (uint)logicalRow.currentRow;
-            if (!WaveMarch.plannedWaveTargetSlots.Add(slotKey))
-                continue;
-            WaveMarch.plannedWaveTargetRows[enemy] = logicalRow.currentRow;
-        }
-
-        return WaveMarch.plannedWaveTargetRows.Count > 0;
-    }
-
-    private void BeginWaveStep()
-    {
-        WaveMarch.waveGeneration++;
-        if (WaveMarch.waveGeneration <= 0) WaveMarch.waveGeneration = 1;
-        WaveMarch.currentWaveSourceRow = -1;
-        WaveMarch.currentWaveTargetRow = -1;
-        WaveMarch.currentWaveContinuousRun = true;
-        WaveMarch.preparingWaveEnemies.Clear();
-        WaveMarch.pendingWaveEnemies.Clear();
-        WaveMarch.activeWaveTargetRows.Clear();
-        WaveMarch.activeWaveTargetSlots.Clear();
-
-        foreach (var pair in WaveMarch.plannedWaveTargetRows)
-        {
-            var enemy = pair.Key;
-            if (enemy == null || enemy.state == EnemyState.Dead)
-                continue;
-            var reservationOwner = GetCavalryReservationOwner(enemy.columnIndex, pair.Value);
-            if (reservationOwner != null && reservationOwner != enemy)
-                reservationOwner.GetComponent<CavalryEnemy>()?.AbortForExternalOrder("WaveMarch目标优先");
-            if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, WaveMarch.waveGeneration, pair.Value, RushMoveMode.ContinuousEmptyRun))
-                continue;
-
-            enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
-            enemy.OnRushMoveComplete += OnWaveEnemyRushComplete;
-            WaveMarch.preparingWaveEnemies.Add(enemy);
-            WaveMarch.activeWaveTargetRows[enemy] = pair.Value;
-            WaveMarch.activeWaveTargetSlots.Add(((long)enemy.columnIndex << 32) ^ (uint)pair.Value);
-        }
-
-        WaveMarch.plannedWaveTargetRows.Clear();
-        WaveMarch.plannedWaveTargetSlots.Clear();
-        if (WaveMarch.preparingWaveEnemies.Count == 0)
-            return;
-
-        WaveMarch.isWavePreparing = true;
-    }
-
-    private void BeginWaveStep(int sourceRow, int targetRow, IList<Enemy> restrictedEnemies = null, bool continuousRun = false)
-    {
-        WaveMarch.waveGeneration++;
-        if (WaveMarch.waveGeneration <= 0) WaveMarch.waveGeneration = 1;
-        WaveMarch.currentWaveSourceRow = sourceRow;
-        WaveMarch.currentWaveTargetRow = Mathf.Max(0, targetRow);
-        WaveMarch.currentWaveContinuousRun = continuousRun;
-        WaveMarch.preparingWaveEnemies.Clear();
-        WaveMarch.pendingWaveEnemies.Clear();
-
-        for (int c = 0; c < columnCount; c++)
-        {
-            foreach (var enemy in columns[c].enemies)
-            {
-                if (enemy == null || enemy.isBoss || enemy.state == EnemyState.Dead || enemy.rowIndex != sourceRow)
-                    continue;
-                if (enemy.GetComponent<CavalryEnemy>()?.IsMounted == true)
-                    continue;
-                if (restrictedEnemies != null && !restrictedEnemies.Contains(enemy))
-                    continue;
-                // 「豁免补齐」：不参与波次行军（与规划层一致，见 TryBuildLogicalWaveMarchPlan 注释）
-                if (enemy.ignoreFillUpOrders)
-                    continue;
-
-                if (_pushReturnTransactions.ContainsKey(enemy))
-                    continue;
-
-                var reservationOwner = GetCavalryReservationOwner(enemy.columnIndex, WaveMarch.currentWaveTargetRow);
-                if (reservationOwner != null && reservationOwner != enemy)
-                    reservationOwner.GetComponent<CavalryEnemy>()?.AbortForExternalOrder("WaveMarch目标优先");
-                if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, WaveMarch.waveGeneration, WaveMarch.currentWaveTargetRow,
-                    continuousRun ? RushMoveMode.ContinuousEmptyRun : RushMoveMode.Step))
-                    continue;
-
-                enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
-                enemy.OnRushMoveComplete += OnWaveEnemyRushComplete;
-                WaveMarch.preparingWaveEnemies.Add(enemy);
-            }
-        }
-
-        if (WaveMarch.preparingWaveEnemies.Count == 0)
-        {
-            Debug.Log($"[WaveMarch] BeginWaveStep srcRow={sourceRow} tgtRow={targetRow}: NO enemies eligible (all boss/dead/rush-order-rejected)");
-            WaveMarch.currentWaveSourceRow = -1;
-            WaveMarch.currentWaveTargetRow = -1;
-            return;
-        }
-
-        WaveMarch.isWavePreparing = true;
-    }
-
-    private void StartPreparedWaveStep()
-    {
-        int generation = WaveMarch.waveGeneration;
-        WaveMarch.isWavePreparing = false;
-        WaveMarch.isWaveMarching = true;
-        WaveMarch.pendingWaveEnemies.Clear();
-
-        for (int i = 0; i < WaveMarch.preparingWaveEnemies.Count; i++)
-        {
-            var enemy = WaveMarch.preparingWaveEnemies[i];
-            if (enemy == null || enemy.state == EnemyState.Dead)
-                continue;
-            if (!enemy.IsRushMoveOrder(RushMoveOrderOwner.WaveMarch, generation))
-                continue;
-            WaveMarch.pendingWaveEnemies.Add(enemy);
-        }
-        WaveMarch.preparingWaveEnemies.Clear();
-
-        foreach (var enemy in WaveMarch.pendingWaveEnemies)
-            enemy.TryStartRushMove();
-
-        if (WaveMarch.pendingWaveEnemies.Count == 0)
-            CompleteWaveStep(generation);
-    }
-
-    private void OnWaveEnemyRushComplete(Enemy enemy, RushMoveOrderOwner owner, int generation)
-    {
-        if (owner != RushMoveOrderOwner.WaveMarch || generation != WaveMarch.waveGeneration)
-            return;
-
-        enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
-        WaveMarch.pendingWaveEnemies.Remove(enemy);
-        if (WaveMarch.pendingWaveEnemies.Count == 0)
-            CompleteWaveStep(generation);
-    }
-
-    private void CompleteWaveStep(int generation)
-    {
-        if (generation != WaveMarch.waveGeneration) return;
-
-        WaveMarch.isWaveMarching = false;
-        WaveMarch.isWavePreparing = false;
-        WaveMarch.currentWaveContinuousRun = false;
-        WaveMarch.currentWaveSourceRow = -1;
-        WaveMarch.currentWaveTargetRow = -1;
-        WaveMarch.pendingWaveEnemies.Clear();
-        WaveMarch.preparingWaveEnemies.Clear();
-        WaveMarch.activeWaveTargetRows.Clear();
-        WaveMarch.activeWaveTargetSlots.Clear();
-        StartPendingLogicalLayoutReflow();
-        if (!_queue.UseRowMarchPlanner)
-            StartWaveMarch();
-    }
-
-    /// <summary>
-    /// Captures the exact current wave order before the first push transaction so temporary holes
-    /// cannot be reinterpreted. After all returns finish, only the captured members/target are revalidated.
-    /// </summary>
-    private void CapturePausedWaveStep()
-    {
-        if (!WaveMarch.isWaveMarching && !WaveMarch.isWavePreparing)
-            return;
-
-        WaveMarch.hasPausedWaveStep = true;
-        WaveMarch.pausedWaveSourceRow = WaveMarch.currentWaveSourceRow;
-        WaveMarch.pausedWaveTargetRow = WaveMarch.currentWaveTargetRow;
-        WaveMarch.pausedWaveEnemies.Clear();
-        WaveMarch.pausedWaveTargetRows.Clear();
-
-        for (int i = 0; i < WaveMarch.preparingWaveEnemies.Count; i++)
-        {
-            var enemy = WaveMarch.preparingWaveEnemies[i];
-            if (enemy != null && !WaveMarch.pausedWaveEnemies.Contains(enemy))
-                WaveMarch.pausedWaveEnemies.Add(enemy);
-        }
-        foreach (var enemy in WaveMarch.pendingWaveEnemies)
-        {
-            if (enemy != null && !WaveMarch.pausedWaveEnemies.Contains(enemy))
-                WaveMarch.pausedWaveEnemies.Add(enemy);
-        }
-
-        for (int i = 0; i < WaveMarch.pausedWaveEnemies.Count; i++)
-        {
-            var enemy = WaveMarch.pausedWaveEnemies[i];
-            if (WaveMarch.activeWaveTargetRows.TryGetValue(enemy, out int targetRow))
-                WaveMarch.pausedWaveTargetRows[enemy] = targetRow;
-        }
-    }
-
-    private void AbortWaveMarch(bool preserveForPushReturn = false)
-    {
-        if (preserveForPushReturn)
-            CapturePausedWaveStep();
-
-        CancelInvoke(nameof(StartWaveMarch));
-        WaveMarch.waveGeneration++;
-
-        for (int i = 0; i < WaveMarch.preparingWaveEnemies.Count; i++)
-        {
-            var enemy = WaveMarch.preparingWaveEnemies[i];
-            if (enemy == null) continue;
-            enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
-            enemy.CancelRushMoveOrder(resetActiveMovement: true);
-        }
-        foreach (var enemy in WaveMarch.pendingWaveEnemies)
-        {
-            if (enemy == null) continue;
-            enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
-            enemy.CancelRushMoveOrder(resetActiveMovement: true);
-        }
-
-        WaveMarch.preparingWaveEnemies.Clear();
-        WaveMarch.pendingWaveEnemies.Clear();
-        WaveMarch.plannedWaveTargetRows.Clear();
-        WaveMarch.plannedWaveTargetSlots.Clear();
-        WaveMarch.activeWaveTargetRows.Clear();
-        WaveMarch.activeWaveTargetSlots.Clear();
-        if (_queue.UseRowMarchPlanner)
-            _queue.MarkDirty();
-        WaveMarch.isWavePreparing = false;
-        WaveMarch.isWaveMarching = false;
-        WaveMarch.currentWaveSourceRow = -1;
-        WaveMarch.currentWaveTargetRow = -1;
-    }
-
-    private void ReleaseEnemyFromSchedulers(Enemy enemy, int sourceColumn)
-    {
-        if (enemy == null) return;
-
-        SpawnEntry.Remove(enemy);
-        if (enemy.RushMoveOrderOwner == RushMoveOrderOwner.SpawnEntry)
-            enemy.CancelRushMoveOrder(resetActiveMovement: true);
-
-        if (!SpawnEntry.HasPending)
-            StartPendingLogicalLayoutReflow();
-
-        ReleaseEnemyFromMovementSchedulers(enemy, sourceColumn);
-        CancelPushReturn(enemy, enemy.state == EnemyState.Dead ? "cancel-dead" : "cancel-removed");
-    }
-
-    private void ReleaseEnemyFromMovementSchedulers(Enemy enemy, int sourceColumn)
-    {
-        if (enemy == null) return;
-
-        bool wasWaveMember = WaveMarch.pendingWaveEnemies.Remove(enemy);
-        if (WaveMarch.activeWaveTargetRows.Remove(enemy, out int activeTargetRow))
-            WaveMarch.activeWaveTargetSlots.Remove(((long)sourceColumn << 32) ^ (uint)activeTargetRow);
-        if (WaveMarch.preparingWaveEnemies.Remove(enemy))
-            wasWaveMember = true;
-        if (wasWaveMember)
-            enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
-
-        if (IsValidColumn(sourceColumn))
-            columns[sourceColumn].ReleaseRushMoveOwnership(enemy);
-
-        enemy.CancelRushMoveOrder(resetActiveMovement: true);
-
-        if (wasWaveMember && WaveMarch.pendingWaveEnemies.Count == 0 && WaveMarch.preparingWaveEnemies.Count == 0)
-        {
-            WaveMarch.isWavePreparing = false;
-            WaveMarch.isWaveMarching = false;
-            WaveMarch.currentWaveSourceRow = -1;
-            WaveMarch.currentWaveTargetRow = -1;
-            WaveMarch.activeWaveTargetRows.Clear();
-            WaveMarch.activeWaveTargetSlots.Clear();
-            if (_queue.UseRowMarchPlanner)
-            {
-                _queue.MarkDirty();
-                StartWaveMarch();
-                return;
-            }
-            // 修复（WaveMarch死锁）：WaveMarch 步进成员被位移（横推/击退/移除）打断且集合清空后，
-            // 必须补发一次全局补齐扫描。此前只复位 flag 不重扫，导致补齐链永久暂停：
-            // 横推清空集合后无人重扫；随后 Stab 击退触发 RegisterPushReturn 时因 flag 已 false
-            // 而 AbortWaveMarch 不保存 paused，PushReturn 完成后无从恢复 → 永久死锁。
-            // StartWaveMarch 自带 PushReturn 感知：有挂起事务时 deferred 并置
-            // _waveMarchRequestedWhilePushReturn=true，由 TryResumePausedWaveAfterPushReturns 恢复。
-            StartWaveMarch();
-        }
+        WaveMarch.StartWaveMarch();
     }
 
     /// <summary>
@@ -874,6 +506,33 @@ public class ColumnManager : MonoBehaviour
     private int GetMaxOccupiedRow()
     {
         return WaveMarch.GetMaxOccupiedRow();
+    }
+
+    /// <summary>
+    /// 敌人被移出列 / 死亡时，从入场、补齐、击退三个调度器里摘除它。
+    /// </summary>
+    private void ReleaseEnemyFromSchedulers(Enemy enemy, int sourceColumn)
+    {
+        if (enemy == null) return;
+
+        SpawnEntry.Remove(enemy);
+        if (enemy.RushMoveOrderOwner == RushMoveOrderOwner.SpawnEntry)
+            enemy.CancelRushMoveOrder(resetActiveMovement: true);
+
+        if (!SpawnEntry.HasPending)
+            WaveMarch.StartPendingLogicalLayoutReflow();
+
+        ReleaseEnemyFromMovementSchedulers(enemy, sourceColumn);
+        CancelPushReturn(enemy, enemy.state == EnemyState.Dead ? "cancel-dead" : "cancel-removed");
+    }
+
+    /// <summary>
+    /// 从补齐批次里摘除该敌人（并按需补发一次全局补齐扫描）。
+    /// 实现见 WaveMarchScheduler.ReleaseWaveMember（刀 4b）。
+    /// </summary>
+    private void ReleaseEnemyFromMovementSchedulers(Enemy enemy, int sourceColumn)
+    {
+        WaveMarch.ReleaseWaveMember(enemy, sourceColumn);
     }
 
     #endregion
@@ -919,8 +578,7 @@ public class ColumnManager : MonoBehaviour
 
         if (abortWaveMarch && _pushReturnTransactions.Count == 0)
         {
-            AbortWaveMarch(preserveForPushReturn: true);
-            _topologyChangedWhilePushReturn = false;
+            WaveMarch.AbortWaveMarch(preserveForPushReturn: true);
         }
 
         int generation = NextPushReturnGeneration();
@@ -1049,79 +707,7 @@ public class ColumnManager : MonoBehaviour
             DebugLog.Info($"[PushReturn] complete {enemy.DebugTag} origin=({transaction.originalColumn},{transaction.originalRow}) gen={transaction.generation} order={transaction.orderId}");
         }
         _pushReturnTransactions.Remove(enemy);
-        TryResumePausedWaveAfterPushReturns();
-    }
-
-    private void ResumePausedWavePlan()
-    {
-        WaveMarch.waveGeneration++;
-        if (WaveMarch.waveGeneration <= 0) WaveMarch.waveGeneration = 1;
-        WaveMarch.currentWaveSourceRow = -1;
-        WaveMarch.currentWaveTargetRow = -1;
-        WaveMarch.currentWaveContinuousRun = true;
-        WaveMarch.preparingWaveEnemies.Clear();
-        WaveMarch.pendingWaveEnemies.Clear();
-        WaveMarch.activeWaveTargetRows.Clear();
-        WaveMarch.activeWaveTargetSlots.Clear();
-
-        foreach (var pair in WaveMarch.pausedWaveTargetRows)
-        {
-            var enemy = pair.Key;
-            if (enemy == null || enemy.state == EnemyState.Dead || enemy.rowIndex <= pair.Value)
-                continue;
-            if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, WaveMarch.waveGeneration, pair.Value, RushMoveMode.ContinuousEmptyRun))
-                continue;
-
-            enemy.OnRushMoveComplete -= OnWaveEnemyRushComplete;
-            enemy.OnRushMoveComplete += OnWaveEnemyRushComplete;
-            WaveMarch.preparingWaveEnemies.Add(enemy);
-            WaveMarch.activeWaveTargetRows[enemy] = pair.Value;
-            WaveMarch.activeWaveTargetSlots.Add(((long)enemy.columnIndex << 32) ^ (uint)pair.Value);
-        }
-
-        WaveMarch.pausedWaveTargetRows.Clear();
-        WaveMarch.pausedWaveEnemies.Clear();
-        if (WaveMarch.preparingWaveEnemies.Count > 0)
-            WaveMarch.isWavePreparing = true;
-    }
-
-    private void TryResumePausedWaveAfterPushReturns()
-    {
-        if (_pushReturnTransactions.Count > 0)
-            return;
-
-        if (WaveMarch.hasPausedWaveStep)
-        {
-            int sourceRow = WaveMarch.pausedWaveSourceRow;
-            int targetRow = WaveMarch.pausedWaveTargetRow;
-            WaveMarch.hasPausedWaveStep = false;
-            WaveMarch.pausedWaveSourceRow = -1;
-            WaveMarch.pausedWaveTargetRow = -1;
-
-            if (WaveMarch.pausedWaveTargetRows.Count > 0)
-                ResumePausedWavePlan();
-            else
-            {
-                BeginWaveStep(sourceRow, targetRow, WaveMarch.pausedWaveEnemies);
-                WaveMarch.pausedWaveEnemies.Clear();
-                WaveMarch.pausedWaveTargetRows.Clear();
-            }
-
-            if (WaveMarch.isWavePreparing)
-                return;
-
-            StartPendingLogicalLayoutReflow();
-        }
-
-        if (_waveMarchRequestedWhilePushReturn)
-        {
-            _waveMarchRequestedWhilePushReturn = false;
-            _topologyChangedWhilePushReturn = false;
-            if (_queue.UseRowMarchPlanner)
-                StartPendingLogicalLayoutReflow();
-            else
-                StartWaveMarch();
-        }
+        WaveMarch.TryResumePausedWaveAfterPushReturns();
     }
 
     private void LogPushReturnBlocked(PushReturnTransaction transaction, int blockedRow)
@@ -1144,7 +730,7 @@ public class ColumnManager : MonoBehaviour
         _pushReturnTransactions.Remove(enemy);
         DebugLog.Info($"[PushReturn] {logReason} {enemy.DebugTag} origin=({transaction.originalColumn},{transaction.originalRow}) gen={transaction.generation} order={transaction.orderId}");
         if (!_suppressPushReturnResume)
-            TryResumePausedWaveAfterPushReturns();
+            WaveMarch.TryResumePausedWaveAfterPushReturns();
     }
 
     public void CancelPushReturnForEnemy(Enemy enemy, string reason = "cancel-reset")
@@ -1160,13 +746,7 @@ public class ColumnManager : MonoBehaviour
 
     private void CancelAllPushReturns()
     {
-        _waveMarchRequestedWhilePushReturn = false;
-        _topologyChangedWhilePushReturn = false;
-        WaveMarch.hasPausedWaveStep = false;
-        WaveMarch.pausedWaveSourceRow = -1;
-        WaveMarch.pausedWaveTargetRow = -1;
-        WaveMarch.pausedWaveEnemies.Clear();
-        WaveMarch.pausedWaveTargetRows.Clear();
+        WaveMarch.ResetPausedState();
         _suppressPushReturnResume = true;
         _pushReturnWorkList.Clear();
         foreach (var transaction in _pushReturnTransactions.Values)

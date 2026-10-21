@@ -343,6 +343,7 @@ bool GameplayInputGate.IsBlocked { get; }        // 可查询
 | `PerColumn` 退役：步骤 2 清理 119 个无引用文件 | ✅ `dc23b6f` |
 | 补齐豁免扩展点（`Enemy.ignoreFillUpOrders`） | ✅ `b3c382b`（A/B 实测通过） |
 | `StageController` 按角色拆 `StageFormation` / `StageRouteBattleHost` | ✅ `f906501`（852 → 790 行） |
+| `ColumnManager` 拆分（批次 2）：刀 1 `LogicalRowQueue` / 刀 2 `ColumnQueries` / 刀 3 `SpawnEntryMover` / 刀 4 `WaveMarchScheduler` / 刀 6 退役 `FillUpRule` | ✅ 刀 1/2/3/4/6 已完成（ColumnManager 2149 → **1370 行**）；刀 5 `DisplacementMover`（1079 行）待做，**逐方法搬迁的做法**见 `plan/columnmanager-split-plan-20261020.md` §0.8 |
 | 遗留路线实现收进 `Assets/Scripts/Legacy/`，Battle 场景去掉 V2 竞争驱动 | ✅ `55c216a` |
 | Legacy 彻底隔离（现役代码不再引用遗留类型）+ 说明文档 | ✅ `a38ee66` |
 | 剩余角色接口（`IRunFlow` / `ICombatStaging` / `IRewardGate`） | ⬜ |
