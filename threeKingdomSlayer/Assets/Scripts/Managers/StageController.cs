@@ -259,6 +259,11 @@ public class StageController : MonoBehaviour, IStageFormation, IStageBattleState
         }
         Instance = this;
 
+        // 登记到角色契约装配点：内核只通过 IStageBattleState / IStageFormation 取本类，
+        // 不再点名流程类（2026-10-22 asmdef 分层第八批）。
+        StageRoles.BattleState = this;
+        StageRoles.Formation = this;
+
         // 【架构收口】关卡配置只由运行时注入，不再读任何跨场景 Pending* 静态入口：
         //   • 落地页：FakeRouteRuntime.PrepareForEntry 写 fakeRouteStageConfig
         //   • 战斗：StartRouteBattle(stageConfig) 注入当前节点配置

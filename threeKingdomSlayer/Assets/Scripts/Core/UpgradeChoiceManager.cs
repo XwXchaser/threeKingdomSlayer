@@ -26,7 +26,7 @@ public class UpgradeChoiceManager : MonoBehaviour
     /// </summary>
     private IStageBattleState _stageBattleState;
 
-    private IStageBattleState StageBattleState => _stageBattleState ??= StageController.Instance;
+    private IStageBattleState StageBattleState => _stageBattleState ??= StageRoles.BattleState;
     public static UpgradeChoiceManager Instance { get; private set; }
 
     [Header("常规池")]

@@ -11,7 +11,7 @@ public class SpikeTrapController : MonoBehaviour
     /// </summary>
     private IStageFormation _stageFormation;
 
-    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
+    private IStageFormation StageFormation => _stageFormation ??= StageRoles.Formation;
     public static SpikeTrapController Instance { get; private set; }
 
     [Header("美术素材")]

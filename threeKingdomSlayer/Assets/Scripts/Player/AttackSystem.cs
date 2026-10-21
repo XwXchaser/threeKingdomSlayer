@@ -19,7 +19,7 @@ public partial class AttackSystem : MonoBehaviour
     /// </summary>
     private IStageFormation _stageFormation;
 
-    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
+    private IStageFormation StageFormation => _stageFormation ??= StageRoles.Formation;
 
     /// <summary>攻击执行事件（仅 Slash/Sweep/Stab/Pierce/Launch 五种有效攻击触发）</summary>
     public System.Action<AttackType, int, bool> OnAttackPerformed; // attackType, targetColumn, slashLeftToRight

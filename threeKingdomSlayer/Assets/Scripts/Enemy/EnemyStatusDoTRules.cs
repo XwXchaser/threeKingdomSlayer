@@ -43,7 +43,7 @@ public static class EnemyStatusDoTRules
     /// <summary>诊断用：当前是否处于路线战斗（<c>null</c> 表示拿不到状态源）。</summary>
     public static string DescribeRouteCombat()
     {
-        var controller = StageController.Instance;
+        var controller = StageRoles.BattleState;
         if (controller == null) return "NULL";
         return controller.IsRouteCombatActive.ToString();
     }

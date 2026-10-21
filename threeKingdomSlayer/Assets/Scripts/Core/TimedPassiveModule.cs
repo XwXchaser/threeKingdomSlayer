@@ -18,7 +18,7 @@ public class TimedPassiveModule : MonoBehaviour
     /// </summary>
     private IStageBattleState _stageBattleState;
 
-    private IStageBattleState StageBattleState => _stageBattleState ??= StageController.Instance;
+    private IStageBattleState StageBattleState => _stageBattleState ??= StageRoles.BattleState;
     public static TimedPassiveModule Instance { get; private set; }
 
     [Header("特效预制体")]

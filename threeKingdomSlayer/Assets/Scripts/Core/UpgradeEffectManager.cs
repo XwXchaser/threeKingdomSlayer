@@ -21,7 +21,7 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
     /// </summary>
     private IStageBattleState _stageBattleState;
 
-    private IStageBattleState StageBattleState => _stageBattleState ??= StageController.Instance;
+    private IStageBattleState StageBattleState => _stageBattleState ??= StageRoles.BattleState;
     public static UpgradeEffectManager Instance { get; private set; }
 
     // ── 数值累积 ──

@@ -14,7 +14,7 @@ public class KillRewardManager : MonoBehaviour
     /// </summary>
     private IStageBattleState _stageBattleState;
 
-    private IStageBattleState StageBattleState => _stageBattleState ??= StageController.Instance;
+    private IStageBattleState StageBattleState => _stageBattleState ??= StageRoles.BattleState;
     /// <summary>已领取的里程碑阈值集合</summary>
     private HashSet<int> _earnedThresholds = new HashSet<int>();
 

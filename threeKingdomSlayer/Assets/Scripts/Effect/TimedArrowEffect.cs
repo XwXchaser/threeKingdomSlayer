@@ -19,7 +19,7 @@ public class TimedArrowEffect : MonoBehaviour
     /// </summary>
     private static IStageFormation _stageFormation;
 
-    private static IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
+    private static IStageFormation StageFormation => _stageFormation ??= StageRoles.Formation;
     [Header("箭矢精灵")]
     [Tooltip("箭矢 SpriteRenderer 模板（复制此精灵生成箭矢）")]
     public SpriteRenderer arrowTemplate;

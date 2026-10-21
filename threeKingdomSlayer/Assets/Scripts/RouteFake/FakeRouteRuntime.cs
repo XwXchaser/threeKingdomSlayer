@@ -82,6 +82,9 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour, IRouteNodeProgress
             return;
         }
         Instance = this;
+        // 登记道具破坏通知的接收方：战斗内核里的道具被破坏时经端口通知，
+        // 不再点名流程类（2026-10-22 asmdef 分层第八批）。
+        PropDestroyNotifiers.Current = this;
         movementPresenter = presenterBehaviour as IRouteMotionPresenter;
         AcquireExclusiveDriving();
     }

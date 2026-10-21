@@ -15,7 +15,7 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     private IStageFormation _stageFormation;
 
-    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
+    private IStageFormation StageFormation => _stageFormation ??= StageRoles.Formation;
     [Header("列配置")]
     public int columnCount = 5; // 默认5列
 

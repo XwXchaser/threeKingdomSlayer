@@ -389,7 +389,7 @@ public GameObject freezeMeltEffectPrefab;
     /// </summary>
     private IStageFormation _stageFormation;
 
-    internal IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
+    internal IStageFormation StageFormation => _stageFormation ??= StageRoles.Formation;
 
     /// <summary>冰系视觉层（冰壳覆盖层 / 着色 / 碎冰特效）。视觉逻辑已从本类拆出，见 EnemyFreezeVisual。</summary>
     private EnemyFreezeVisual _freezeVisual;

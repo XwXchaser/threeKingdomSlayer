@@ -9,7 +9,7 @@ using UnityEngine;
     /// partial class 与 FakeRouteRuntime.cs **同类型**，行为完全一致。
     /// </summary>
 
-public sealed partial class FakeRouteRuntime : MonoBehaviour
+public sealed partial class FakeRouteRuntime : MonoBehaviour, IPropDestroyNotifier
 {
     public void SaveCheckpoint()
     {

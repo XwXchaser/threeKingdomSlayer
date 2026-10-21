@@ -10,7 +10,7 @@ public sealed class CycloneZone : MonoBehaviour
     /// </summary>
     private IStageFormation _stageFormation;
 
-    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
+    private IStageFormation StageFormation => _stageFormation ??= StageRoles.Formation;
     [SerializeField] private float zoneScaleMultiplier = 2.2f;
 
     private readonly HashSet<Enemy> _triggeredEnemies = new HashSet<Enemy>();

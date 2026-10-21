@@ -57,7 +57,7 @@ public partial class QTEController : MonoBehaviour
     /// </summary>
     private IStageFormation _stageFormation;
 
-    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
+    private IStageFormation StageFormation => _stageFormation ??= StageRoles.Formation;
     [Header("配置")]
     public BossQTEData qteData;
     public ArrowGlobalConfig arrowConfig;

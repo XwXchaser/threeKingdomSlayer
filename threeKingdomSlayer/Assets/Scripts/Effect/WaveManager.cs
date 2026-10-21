@@ -18,7 +18,7 @@ public class WaveManager : MonoBehaviour
     /// </summary>
     private IStageFormation _stageFormation;
 
-    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
+    private IStageFormation StageFormation => _stageFormation ??= StageRoles.Formation;
     public static WaveManager Instance { get; private set; }
 
     [Header("海浪预制体")]

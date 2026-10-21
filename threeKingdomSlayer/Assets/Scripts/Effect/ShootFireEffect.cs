@@ -25,7 +25,7 @@ public class ShootFireEffect : MonoBehaviour
     /// </summary>
     private static IStageFormation _stageFormation;
 
-    private static IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
+    private static IStageFormation StageFormation => _stageFormation ??= StageRoles.Formation;
     [Header("精灵")]
     [Tooltip("火焰团精灵组，运行时随机选取")]
     public Sprite[] fireSprites;

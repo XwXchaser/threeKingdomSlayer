@@ -22,7 +22,7 @@ public sealed class BreakableProp : MonoBehaviour
     /// </summary>
     private IStageFormation _stageFormation;
 
-    private IStageFormation StageFormation => _stageFormation ??= StageController.Instance;
+    private IStageFormation StageFormation => _stageFormation ??= StageRoles.Formation;
     // 存档条目 PropSaveEntry 已提成顶层类型（数据层，2026-10-22 asmdef 分层第二批）。
     [Header("身份")]
     [Tooltip("场景内唯一标识，用于存档记录；留空时用 场景名/对象名 自动生成")]
@@ -218,7 +218,7 @@ public sealed class BreakableProp : MonoBehaviour
         }
 
         SavedStates[PropId] = entry;
-        FakeRouteRuntime.Instance?.NotifyPropDestroyed();
+        PropDestroyNotifiers.Current?.NotifyPropDestroyed();
 
         if (breakFrames != null && breakFrames.Length > 0 && spriteRenderer != null)
             _breakRoutine = StartCoroutine(PlayBreakFrames());

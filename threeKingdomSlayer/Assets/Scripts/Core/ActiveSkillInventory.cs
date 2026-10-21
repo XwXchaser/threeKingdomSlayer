@@ -10,7 +10,7 @@ public class ActiveSkillInventory : MonoBehaviour
     /// </summary>
     private IStageBattleState _stageBattleState;
 
-    private IStageBattleState StageBattleState => _stageBattleState ??= StageController.Instance;
+    private IStageBattleState StageBattleState => _stageBattleState ??= StageRoles.BattleState;
     public sealed class SkillEntry
     {
         public int id;

@@ -16,7 +16,7 @@ public class WaveSpawner : MonoBehaviour
     /// </summary>
     private IStageBattleState _stageBattleState;
 
-    private IStageBattleState StageBattleState => _stageBattleState ??= StageController.Instance;
+    private IStageBattleState StageBattleState => _stageBattleState ??= StageRoles.BattleState;
     public static WaveSpawner Instance { get; private set; }
 
     [Header("配置")]
