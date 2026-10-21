@@ -35,7 +35,8 @@ public partial class Enemy : MonoBehaviour
 
         // 破冰（P4）：合规重攻击命中冻结目标 → 播破冰动画 + 本段伤害翻倍。
         // 推动（①）与碰撞（②）由 BreakIcePush 负责。
-        IceBreakRuntime.TryResolve(this, damageType, feedbackSource, ref damage);
+        // 命中反应走注册表（扩展点）：冰系是内置处理器，新增元素/反应只需注册一个。
+        DamageReactionRegistry.TryResolve(this, damageType, feedbackSource, ref damage);
 
         // 转阶段血量阈值检查（在扣血前判断）
         if (isBoss && bossPhases != null && currentBossPhase < bossPhases.Count - 1)

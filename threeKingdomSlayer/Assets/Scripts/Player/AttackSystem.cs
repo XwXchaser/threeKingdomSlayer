@@ -343,7 +343,8 @@ public partial class AttackSystem : MonoBehaviour
         _attackIsCharged = chargedAttack;
         // 破冰会话：本次招式的合规判定在这里开，命中时由 IceBreakRuntime 校验作用域；
         // 会话寿命跟本次招式实际动作时长走（设计 §7：招式结束即关闭）
-        IceBreakRuntime.BeginAttack(GetConfig(attackType), GetAttackDuration(GetConfig(attackType)));
+        // 命中反应注册表（扩展点）：广播给所有已注册的处理器（内置冰系 + 自定义）。
+        DamageReactionRegistry.BeginAttack(GetConfig(attackType), GetAttackDuration(GetConfig(attackType)));
 
         // 招式分派：走执行器注册表（内置六个 + 可注册的扩展实现）。
         if (_attackExecutors.TryGetValue(attackType, out var attackExecutor))
