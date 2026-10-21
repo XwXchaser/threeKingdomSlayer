@@ -122,6 +122,9 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | `9604f5d` | **破冰拆分（批次 B）**：`IceBreakRuntime` → 玩家侧 `IceBreakSession`（会话/作用域/BUFF消费/同列顶开）+ 敌人侧 `EnemyFreeze.TryBreak`（解冻/翻倍/动画）；静态类已删除 |
 | `bf51831` | **DoT 迁入敌人侧（批次 C）**：灼烧 / 疾病从 `UpgradeEffectManager` 的字典迁成敌人自己的状态（`EnemyStatusBurn` / `EnemyStatusDisease` / `EnemyStatusDoTRules`）；`EnemyStatusRegistry` 只剩宿主一路查询；管理器瘦身约 300 行 |
 | `（asmdef）` | **分层第一批**：`Locus.Data` 扩容（纯数据类型下沉：`EnemyTypes` / `FreezePresentationConfig` / `PropData` / `ComboBuffConfig` / `BuffType` / `ElementalScope`）+ 新建 `Locus.Services`（`DebugLog` / `AudioManager`）；依赖实测工具入仓 `Tools/asmdef-survey/`；方案见 `plan/asmdef-layering-plan-20261022.md` |
+| `3093515` | **分层第二批**：存档数据模型下沉 L0（`SaveData` / 快照类型 / `PropSaveEntry`）+ `SaveManager` 进 `Locus.Services`；实测 **`Locus.Services` 出边只剩 `Locus.Data`** ✅ **`Locus.Data` 出边为空** ✅ |
+| `8759efd` | **分层第三批**：扩展点契约下沉 L0（`IStatusEffect` / `IEffectExecutor` / `IUpgradeStatSink` / `IUpgradeNumericApplier` / `IUpgradeDescriptionFormatter` / `IStatModifierApplier` / `IRouteMotionPresenter`）；`Core→RouteFake/Attack/Effect` 三条边**归零** ✅ |
+| `a523cc0` | **分层第四批**：内核不再直接引用 UI 单例——三个呈现层端口（`ICombatHud` / `IDialogueModal` / `IItemDiscardPrompt`）+ 装配点 `CombatPresenters`（上层登记、下层使用）；`ItemEntry` / `ItemDiscardResult` 下沉 L0；`Core→UI` 5→1 文件 ✅ |
 
 > 详见 `design/architecture-decoupling-analysis.md` §5.7 / §5.8 / §5.9。拆分前机械校验：**内容丢失 = 0**。
 

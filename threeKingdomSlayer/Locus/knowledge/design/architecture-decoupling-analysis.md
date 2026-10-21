@@ -1029,6 +1029,12 @@ if (EnemyStatusRegistry.IsActive(enemy, "poison")) { /* 新机制：中毒的敌
 **下一刀**：内核 → UI 的硬引用接口化 ✅（`BattleHUD` / `DialogueManager` / `ItemDiscardPopup` /
 `UpgradeChoicePopup` / `EnemyHealthBar`）✅ —— 这是 `Locus.Combat` 能否成立的前置 ✅。
 
+**批次 4 续（呈现层端口化，已完成）** ✅：三个触点改成契约端口 ✅
+（`ICombatHud` / `IDialogueModal` / `IItemDiscardPrompt` ✅）+ 装配点 `CombatPresenters` ✅
+（**上层登记、下层使用** ✅）；顺带干掉两处 `FindObjectOfType<BattleHUD>()` 反模式 ✅。
+实测 `Core→UI` 5→1 文件 ✅、`Managers→UI` 3→2 ✅；剩下的都是「内核自己创建 UI 组件」那类 ✅
+（`UpgradeChoicePopup` / `EnemyHealthBar` / `CameraManager` / `DamageNumber`）✅ → 下一批用**工厂端口**处理 ✅。
+
 ---
 
 ## 6. 明确不做
