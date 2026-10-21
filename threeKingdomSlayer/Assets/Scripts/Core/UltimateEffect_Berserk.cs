@@ -32,8 +32,8 @@ public class UltimateEffect_Berserk : UltimateEffect
             PlayerState.Instance.isInvincible = true;
 
         // 禁技能输入
-        if (InputManager.Instance != null)
-            InputManager.Instance.skillInputEnabled = false;
+        if (PlayerInputHub.Current != null)
+            PlayerInputHub.Current.SkillInputEnabled = false;
 
         berserkRoutine = StartCoroutine(BerserkLoop());
     }
@@ -91,8 +91,8 @@ public class UltimateEffect_Berserk : UltimateEffect
         if (PlayerState.Instance != null)
             PlayerState.Instance.isInvincible = false;
 
-        if (InputManager.Instance != null)
-            InputManager.Instance.skillInputEnabled = true;
+        if (PlayerInputHub.Current != null)
+            PlayerInputHub.Current.SkillInputEnabled = true;
 
         // 恢复血量条原始颜色
         CombatPresenters.Hud?.ResetHealthBarColor();

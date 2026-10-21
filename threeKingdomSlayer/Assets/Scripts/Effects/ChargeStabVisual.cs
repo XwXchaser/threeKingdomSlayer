@@ -98,12 +98,13 @@ public class ChargeStabVisual : MonoBehaviour
     {
         _mainCam = Camera.main;
 
-        if (InputManager.Instance != null)
+        var input = PlayerInputHub.Current;
+        if (input != null)
         {
-            InputManager.Instance.OnChargeBegan += OnChargeBegan;
-            InputManager.Instance.OnChargeUpdated += OnChargeUpdated;
-            InputManager.Instance.OnChargeEnded += OnChargeEnded;
-            InputManager.Instance.OnAttackExecuted += OnAttackExecuted;
+            input.OnChargeBegan += OnChargeBegan;
+            input.OnChargeUpdated += OnChargeUpdated;
+            input.OnChargeEnded += OnChargeEnded;
+            input.OnAttackExecuted += OnAttackExecuted;
         }
 
         if (PlayerState.Instance != null)
@@ -114,7 +115,7 @@ public class ChargeStabVisual : MonoBehaviour
     {
         // 连段蓄力期间不启用蓄力视觉的进出场实例（标记由招式状态机在按下时置位）；
         // 只允许竖滑蓄力时，蓄力武器视觉整块不出现（上挑有自己的起手表现）。
-        if (InputManager.Instance != null && (InputManager.Instance.comboChargeActive || InputManager.Instance.restrictChargedToVertical))
+        if (PlayerInputHub.Current != null && (PlayerInputHub.Current.ComboChargeActive || PlayerInputHub.Current.RestrictChargedToVertical))
         {
             if (_visualInstance != null) SuppressFadeAndDestroy();
             return;
@@ -171,12 +172,13 @@ public class ChargeStabVisual : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (InputManager.Instance != null)
+        var input = PlayerInputHub.Current;
+        if (input != null)
         {
-            InputManager.Instance.OnChargeBegan -= OnChargeBegan;
-            InputManager.Instance.OnChargeUpdated -= OnChargeUpdated;
-            InputManager.Instance.OnChargeEnded -= OnChargeEnded;
-            InputManager.Instance.OnAttackExecuted -= OnAttackExecuted;
+            input.OnChargeBegan -= OnChargeBegan;
+            input.OnChargeUpdated -= OnChargeUpdated;
+            input.OnChargeEnded -= OnChargeEnded;
+            input.OnAttackExecuted -= OnAttackExecuted;
         }
         if (PlayerState.Instance != null)
             PlayerState.Instance.OnPlayerDied -= OnChargeEnded;
@@ -186,7 +188,7 @@ public class ChargeStabVisual : MonoBehaviour
     private void OnChargeBegan(Vector2 screenPos)
     {
         // 只允许竖滑蓄力时不启用蓄力视觉（连实例都不建，避免出现一帧就消失的长枪）
-        if (InputManager.Instance != null && InputManager.Instance.restrictChargedToVertical) return;
+        if (PlayerInputHub.Current != null && PlayerInputHub.Current.RestrictChargedToVertical) return;
 
         if (_isFadingOut)
             DestroyChargeVisual();
@@ -205,9 +207,9 @@ public class ChargeStabVisual : MonoBehaviour
     {
         _lastScreenPos = screenPos;
         // 连段蓄力不是穿刺蓄力：不启用蓄力视觉的进出场实例
-        if (InputManager.Instance != null && InputManager.Instance.comboChargeActive) return;
+        if (PlayerInputHub.Current != null && PlayerInputHub.Current.ComboChargeActive) return;
         // 只允许竖滑蓄力时整块蓄力表现都不出现
-        if (InputManager.Instance != null && InputManager.Instance.restrictChargedToVertical) return;
+        if (PlayerInputHub.Current != null && PlayerInputHub.Current.RestrictChargedToVertical) return;
         if (!_isActive) return;
 
         if (progress >= appearThreshold)
@@ -579,9 +581,10 @@ public class ChargeStabVisual : MonoBehaviour
 
     private float GetChargeBeginProgress()
     {
-        if (InputManager.Instance == null) return 0f;
-        float minCharge = InputManager.Instance.minChargeTime;
+        var input = PlayerInputHub.Current;
+        if (input == null) return 0f;
+        float minCharge = input.MinChargeTime;
         if (minCharge <= 0f) return 0f;
-        return InputManager.Instance.longPressDuration / minCharge;
+        return input.LongPressDuration / minCharge;
     }
 }

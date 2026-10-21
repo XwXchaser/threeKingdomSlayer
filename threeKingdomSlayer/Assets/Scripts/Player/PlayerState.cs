@@ -102,11 +102,12 @@ public class PlayerState : MonoBehaviour
         }
 
         // 蓄力减伤：取消订阅
-        if (InputManager.Instance != null)
+        var input = PlayerInputHub.Current;
+        if (input != null)
         {
-            InputManager.Instance.OnChargeBegan -= OnChargeBegan;
-            InputManager.Instance.OnChargeUpdated -= OnChargeUpdated;
-            InputManager.Instance.OnChargeEnded -= OnChargeEnded;
+            input.OnChargeBegan -= OnChargeBegan;
+            input.OnChargeUpdated -= OnChargeUpdated;
+            input.OnChargeEnded -= OnChargeEnded;
         }
     }
 
@@ -119,11 +120,12 @@ public class PlayerState : MonoBehaviour
         }
 
         // 蓄力减伤：订阅 InputManager 的蓄力事件
-        if (InputManager.Instance != null)
+        var input = PlayerInputHub.Current;
+        if (input != null)
         {
-            InputManager.Instance.OnChargeBegan += OnChargeBegan;
-            InputManager.Instance.OnChargeUpdated += OnChargeUpdated;
-            InputManager.Instance.OnChargeEnded += OnChargeEnded;
+            input.OnChargeBegan += OnChargeBegan;
+            input.OnChargeUpdated += OnChargeUpdated;
+            input.OnChargeEnded += OnChargeEnded;
         }
 
         ResetPlayer();

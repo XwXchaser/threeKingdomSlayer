@@ -48,11 +48,12 @@ public class ThornArmorEffect : MonoBehaviour
 
     private void Start()
     {
-        if (InputManager.Instance != null)
+        var input = PlayerInputHub.Current;
+        if (input != null)
         {
-            InputManager.Instance.OnChargeBegan += OnChargeBegan;
-            InputManager.Instance.OnChargeUpdated += OnChargeUpdated;
-            InputManager.Instance.OnChargeEnded += OnChargeEnded;
+            input.OnChargeBegan += OnChargeBegan;
+            input.OnChargeUpdated += OnChargeUpdated;
+            input.OnChargeEnded += OnChargeEnded;
         }
         if (UpgradeEffectManager.Instance != null)
         {
@@ -62,11 +63,12 @@ public class ThornArmorEffect : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (InputManager.Instance != null)
+        var input = PlayerInputHub.Current;
+        if (input != null)
         {
-            InputManager.Instance.OnChargeBegan -= OnChargeBegan;
-            InputManager.Instance.OnChargeUpdated -= OnChargeUpdated;
-            InputManager.Instance.OnChargeEnded -= OnChargeEnded;
+            input.OnChargeBegan -= OnChargeBegan;
+            input.OnChargeUpdated -= OnChargeUpdated;
+            input.OnChargeEnded -= OnChargeEnded;
         }
         if (UpgradeEffectManager.Instance != null)
         {

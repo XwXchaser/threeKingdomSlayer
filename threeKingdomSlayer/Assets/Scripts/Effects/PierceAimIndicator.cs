@@ -89,11 +89,12 @@ public sealed class PierceAimIndicator : MonoBehaviour
         CreateVisual();
         SetVisible(false);
 
-        if (InputManager.Instance != null)
+        var input = PlayerInputHub.Current;
+        if (input != null)
         {
-            InputManager.Instance.OnChargeBegan += OnChargeBegan;
-            InputManager.Instance.OnChargeUpdated += OnChargeUpdated;
-            InputManager.Instance.OnChargeEnded += OnChargeEnded;
+            input.OnChargeBegan += OnChargeBegan;
+            input.OnChargeUpdated += OnChargeUpdated;
+            input.OnChargeEnded += OnChargeEnded;
         }
 
         if (PlayerState.Instance != null)
@@ -152,11 +153,12 @@ public sealed class PierceAimIndicator : MonoBehaviour
         ClearEnemyHighlights();
         if (Instance == this)
             Instance = null;
-        if (InputManager.Instance != null)
+        var input = PlayerInputHub.Current;
+        if (input != null)
         {
-            InputManager.Instance.OnChargeBegan -= OnChargeBegan;
-            InputManager.Instance.OnChargeUpdated -= OnChargeUpdated;
-            InputManager.Instance.OnChargeEnded -= OnChargeEnded;
+            input.OnChargeBegan -= OnChargeBegan;
+            input.OnChargeUpdated -= OnChargeUpdated;
+            input.OnChargeEnded -= OnChargeEnded;
         }
 
         if (PlayerState.Instance != null)
@@ -179,7 +181,7 @@ public sealed class PierceAimIndicator : MonoBehaviour
     private void OnChargeBegan(Vector2 screenPosition)
     {
         // 只允许竖滑蓄力时不存在「穿刺猫准」，整套指示器不参与蓄力
-        if (InputManager.Instance != null && InputManager.Instance.restrictChargedToVertical)
+        if (PlayerInputHub.Current != null && PlayerInputHub.Current.RestrictChargedToVertical)
         {
             _chargeActive = false;
             ClearEnemyHighlights();
@@ -198,26 +200,26 @@ public sealed class PierceAimIndicator : MonoBehaviour
     private void OnChargeUpdated(Vector2 screenPosition, float progress)
     {
         // 只允许竖滑蓄力时：不显示穿刺指示器（蓄力只服务于上挑）
-        if (InputManager.Instance != null && InputManager.Instance.restrictChargedToVertical)
+        if (PlayerInputHub.Current != null && PlayerInputHub.Current.RestrictChargedToVertical)
         {
             SetVisible(false);
             return;
         }
 
         // 连段蓄力不是穿刺蓄力：不显示穿刺猫准指示器
-        if (InputManager.Instance != null && InputManager.Instance.comboChargeActive)
+        if (PlayerInputHub.Current != null && PlayerInputHub.Current.ComboChargeActive)
         {
             SetVisible(false);
             return;
         }
 
-        if (!_chargeActive || progress < 1f || InputManager.Instance == null || AttackSystem.Instance == null)
+        if (!_chargeActive || progress < 1f || PlayerInputHub.Current == null || AttackSystem.Instance == null)
         {
             SetVisible(false);
             return;
         }
 
-        int column = InputManager.Instance.GetPierceColumnFromScreenPosition(screenPosition);
+        int column = PlayerInputHub.Current.GetPierceColumnFromScreenPosition(screenPosition);
         if (!AttackSystem.Instance.TryGetPierceIndicatorPath(column, _pathPoints, out int effectiveRows))
         {
             SetVisible(false);

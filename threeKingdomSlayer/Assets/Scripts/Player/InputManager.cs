@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 /// 使用Unity Input System检测点击、长按、滑动等手势
 /// 通过划动角度判定攻击类型（纯方向判定，不依赖屏幕区域）
 /// </summary>
-public partial class InputManager : MonoBehaviour
+public partial class InputManager : MonoBehaviour, IPlayerInput
 {
     public static InputManager Instance { get; private set; }
 
@@ -114,6 +114,64 @@ public partial class InputManager : MonoBehaviour
     /// <summary>输入屏蔽帧计数器（由 UpgradeChoiceManager 设置，防止选择选项的点击触发攻击）</summary>
     [System.NonSerialized] public int blockInputFrames = 0;
 
+    // ── IPlayerInput 端口实现（内核只读这些，不碰识别逻辑）──
+
+    /// <summary>连段蓄力标记（端口形态）。</summary>
+    public bool ComboChargeActive
+    {
+        get => comboChargeActive;
+        set => comboChargeActive = value;
+    }
+
+    /// <summary>教学期：只允许竖滑蓄力（上挑）。</summary>
+    public bool RestrictChargedToVertical => restrictChargedToVertical;
+
+    /// <summary>最小蓄力时间（秒）。</summary>
+    public float MinChargeTime => minChargeTime;
+
+    /// <summary>长按判定时间（秒）。</summary>
+    public float LongPressDuration => longPressDuration;
+
+    /// <summary>技能输入是否放行（狂化大招期间会关掉）。</summary>
+    public bool SkillInputEnabled
+    {
+        get => skillInputEnabled;
+        set => skillInputEnabled = value;
+    }
+
+    /// <summary>屏蔽若干帧输入（防止 UI 弹窗的点击误触发攻击）。</summary>
+    public void BlockInputForFrames(int frames)
+    {
+        blockInputFrames = Mathf.Max(0, frames);
+    }
+
+    // ── IPlayerInput 的事件（显式实现：内核走接口，上层仍可用本类的公开委托字段）──
+    // 公开字段不能直接实现接口的 event/property（C# 规则），所以这里显式转发到同一份委托。
+
+    event System.Action<Vector2> IPlayerInput.OnChargeBegan
+    {
+        add { OnChargeBegan += value; }
+        remove { OnChargeBegan -= value; }
+    }
+
+    event System.Action<Vector2, float> IPlayerInput.OnChargeUpdated
+    {
+        add { OnChargeUpdated += value; }
+        remove { OnChargeUpdated -= value; }
+    }
+
+    event System.Action IPlayerInput.OnChargeEnded
+    {
+        add { OnChargeEnded += value; }
+        remove { OnChargeEnded -= value; }
+    }
+
+    event System.Action<AttackType, int> IPlayerInput.OnAttackExecuted
+    {
+        add { OnAttackExecuted += value; }
+        remove { OnAttackExecuted -= value; }
+    }
+
     // 触摸状态
     private Vector2 touchStartPos;
     private float touchStartTime;
@@ -163,6 +221,10 @@ public partial class InputManager : MonoBehaviour
         }
         Instance = this;
 
+        // 登记到输入端口持有者：内核只通过 IPlayerInput 读输入状态 / 订阅输入事件
+        //（2026-10-22 asmdef 分层第九批）。手势识别逻辑仍然只在本类里 ✅。
+        PlayerInputHub.Current = this;
+
         // DPI 自适应：高 DPI 屏幕增加滑动阈值，避免误触发
         float dpi = Screen.dpi > 0f ? Screen.dpi : 160f;
         swipeThreshold = Mathf.Clamp(swipeThreshold * (dpi / 160f), 30f, 150f);
@@ -174,6 +236,8 @@ public partial class InputManager : MonoBehaviour
         {
             Instance = null;
         }
+        if (ReferenceEquals(PlayerInputHub.Current, this))
+            PlayerInputHub.Current = null;
     }
 
     private void Start()

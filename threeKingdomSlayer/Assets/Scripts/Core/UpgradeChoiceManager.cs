@@ -345,8 +345,8 @@ public class UpgradeChoiceManager : MonoBehaviour
         if (pauseGameDuringChoice && !(CombatPresenters.ItemDiscard != null && CombatPresenters.ItemDiscard.IsShowing))
         {
             Time.timeScale = 1f;
-            if (InputManager.Instance != null)
-                InputManager.Instance.blockInputFrames = 2;
+            if (PlayerInputHub.Current != null)
+                PlayerInputHub.Current.BlockInputForFrames(2);
         }
         OnAllChoicesDone?.Invoke();
     }

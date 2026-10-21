@@ -17,8 +17,11 @@ public class PlayerMoveStateMachine : MonoBehaviour
     [Header("引用")]
     public AttackSystem attackSystem;
     public PlayerState playerState;
-    [Tooltip("输入管理器（留空时自动取 InputManager.Instance）。用于「按住不成时本段先不结束」的宽限与连段蓄力保持")]
-    public InputManager inputManager;
+    [Tooltip("输入端口（留空时自动取 PlayerInputHub.Current）。用于「按住不成时本段先不结束」的宽限与连段蓄力保持")]
+    [System.NonSerialized] private IPlayerInput _inputPort;
+
+    /// <summary>输入端口（上层登记 InputManager 提供；取不到时按「无输入」降级）。</summary>
+    private IPlayerInput InputPort => _inputPort ??= PlayerInputHub.Current;
 
     [Header("招式表（留空 = 直通模式，行为与改造前一致）")]
     public MoveTableConfig moveTable;
@@ -75,8 +78,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
     {
         if (attackSystem == null) attackSystem = FindObjectOfType<AttackSystem>();
         if (playerState == null) playerState = FindObjectOfType<PlayerState>();
-        if (inputManager == null) inputManager = InputManager.Instance;
-        if (inputManager == null) inputManager = FindObjectOfType<InputManager>();
+        _inputPort = PlayerInputHub.Current;
 
         // 招式表默认从武将配置上取，避免场景与武将两处接线；显式赋值优先
         if (moveTable == null && playerState != null && playerState.heroConfig != null)
@@ -263,9 +265,9 @@ public class PlayerMoveStateMachine : MonoBehaviour
         // 招式表节点进行中且手指仍按着：这一按属于「连段蓄力」，不让站桩蓄力的表现插进来。
         // 注意：直通招式（move == null，例如站桩蓄力打出的横扫）不算连段，必须排除，
         // 否则该标记会一直为真，把后续滑动误判成连段蓄力（导致按住连滑可以一直刷同一个蓄力招式）。
-        if (inputManager != null && inputManager.IsPointerDown && move != null) inputManager.comboChargeActive = true;
+        if (InputPort != null && InputPort.IsPointerDown && move != null) InputPort.ComboChargeActive = true;
 
-        if (inputManager != null && inputManager.IsPointerDown && attackSystem != null
+        if (InputPort != null && InputPort.IsPointerDown && attackSystem != null
             && move != null && move.HasChargeContinuation())
         {
             attackSystem.BeginComboChargeHold();
@@ -359,7 +361,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
     /// </summary>
     public void NotifyExternalReset()
     {
-        if (inputManager != null) inputManager.comboChargeActive = false;
+        if (InputPort != null) InputPort.ComboChargeActive = false;
         ExitToNeutral();
         _lastResolution = "外部撤回：回到中立";
     }
@@ -369,7 +371,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
         if (_comboChargeHeld && attackSystem != null) attackSystem.EndComboChargeHold();
         _comboChargeHeld = false;
         // 离开节点后这次按住不再属于连段：清掉标记，站桩蓄力的视觉/语义才能恢复
-        if (inputManager != null) inputManager.comboChargeActive = false;
+        if (InputPort != null) InputPort.ComboChargeActive = false;
         _isWaiting = false;
         _active = false;
         _currentMove = null;
@@ -461,7 +463,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
     {
         _isWaiting = false;
         if (!holdWaitEnabled || _holdWaitUsed) return false;
-        if (inputManager == null || !inputManager.IsPointerDown) return false;
+        if (InputPort == null || !InputPort.IsPointerDown) return false;
         if (_currentMove == null || !_currentMove.HasAnyContinuation()) return false;
 
         float parkTime = GetEarliestWindowStart01(_currentMove, _currentAttackType) * _duration;
@@ -484,7 +486,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
     /// <summary>按下/松开的边沿处理：重置驻留额度，并决定是否让当前戳击的枪体停住等蓄力</summary>
     private void UpdatePointerHold()
     {
-        bool pointerDown = inputManager != null && inputManager.IsPointerDown;
+        bool pointerDown = InputPort != null && InputPort.IsPointerDown;
 
         if (pointerDown && !_pointerWasDown)
         {
@@ -492,7 +494,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
             _holdWaitElapsed = 0f;
 
             // 连招进行中按下：这段输入属于连招，不属于站桩蓄力（穿刺指示器 / 蓄力视觉都让位）
-            if (_active && inputManager != null) inputManager.comboChargeActive = true;
+            if (_active && InputPort != null) InputPort.ComboChargeActive = true;
 
             // 本节点存在「没被天赋锁住」的蓄力后继时，才让枪体停在回收段中途等蓄力；
             // C2/C4 未解锁时不应该连蓄力状态都进得去。
@@ -509,8 +511,8 @@ public class PlayerMoveStateMachine : MonoBehaviour
             _comboChargeHeld = false;
         }
 
-        if (pointerDown && _comboChargeHeld && attackSystem != null && inputManager != null)
-            attackSystem.UpdateComboChargeHold(inputManager.HoldDurationSeconds, inputManager.CurrentPointerStabColumn);
+        if (pointerDown && _comboChargeHeld && attackSystem != null && InputPort != null)
+            attackSystem.UpdateComboChargeHold(InputPort.HoldDurationSeconds, InputPort.CurrentPointerStabColumn);
 
         _pointerWasDown = pointerDown;
     }
