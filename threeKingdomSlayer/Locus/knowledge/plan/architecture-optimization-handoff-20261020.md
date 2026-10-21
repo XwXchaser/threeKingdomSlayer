@@ -128,6 +128,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | `d151e68` | **分层第五批（工厂端口）**：`IUpgradeChoiceView` / `IDamageNumberPresenter` / `ISceneTransitionCamera`；`DamageNumberManager` 移到界面层并接管跳字清理；**`Core→UI` / `Managers→UI` / `Wave→UI` 全部归零** ✅ |
 | `fdd09dc` | **分层第六批（血条工厂端口）**：`IEnemyHealthBarView` + `IEnemyHealthBarFactory`；**`Enemy→UI` 1→0** ✅ —— 内核一条 UI 引用都不剩 |
 | `c32364b` | **分层第七批（QTE 的 UI 触点）**：`IQteHud` + `IQteInputLockTarget` / `QteInputLockTargets`；`UIResolutionHelper` 下沉 L0；**`QTE→UI` 3→0** ✅ —— **战斗内核一条 UI 引用都不剩** ✅ |
+| `90ab8ef` | **分层第八批（内核不再点名流程类）**：`StageRoles` 装配点 + `IPropDestroyNotifier`；17 处 `StageController.Instance` 改走装配点；`StageFormation` / `ArrowGlobalConfig` 下沉 L0 |
 
 > 详见 `design/architecture-decoupling-analysis.md` §5.7 / §5.8 / §5.9。拆分前机械校验：**内容丢失 = 0**。
 

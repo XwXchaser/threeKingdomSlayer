@@ -30,20 +30,23 @@ aiEditMode: inherit
 | 5 · 工厂端口（内核自己创建 UI 组件那类） | ✅ | `IUpgradeChoiceView` / `IDamageNumberPresenter` / `ISceneTransitionCamera`；`DamageNumberManager` 移到界面层；**`Core→UI` / `Managers→UI` / `Wave→UI` 全部归零** ✅ |
 | 6 · 血条工厂端口 | ✅ | `IEnemyHealthBarView` + `IEnemyHealthBarFactory`；**`Enemy→UI` 1→0** ✅ —— 内核（Core/Enemy/Managers/Wave/Player/Status）**一条 UI 引用都不剩** ✅ |
 | 7 · QTE 的三个 UI 触点 | ✅ | `IQteHud` + `IQteInputLockTarget` + `QteInputLockTargets`（登记表✅）；`UIResolutionHelper` 下沉 L0（纯计算✅）；**`QTE→UI` 3→0** ✅ —— **战斗内核一条 UI 引用都不剩** ✅ |
-| 8+ · `Locus.Combat` / `Locus.Flow` / `Locus.UI` / `Locus.Editor` | ⏳ | 战斗内核已无 UI 引用 ✅；剩下要把内核对 `Player` / `Managers` 的依赖收口 ✅（见下）✅ |
+| 8 · 内核不再点名流程类 | ✅ | `StageRoles` 装配点（`BattleState` / `Formation`）+ `IPropDestroyNotifier`；17 处 `StageController.Instance` 改走装配点 ✅；`StageFormation`（纯计算✅）/ `ArrowGlobalConfig` 下沉 L0 ✅；内核对 `Managers` 只剩 `EnemyManager` ✅ |
+| 9+ · `Locus.Combat` / `Locus.Flow` / `Locus.UI` / `Locus.Editor` | ⏳ | ① `InputManager` 端口（内核读输入的 34 处 ✅）；② 战斗侧玩家类型 + `EnemyManager` 归位到内核目录 ✅；③ 建 `Locus.Combat` asmdef（用 `.asmref` 把内核目录挂进去 ✅，不动 250 个文件 ✅） |
 
 **现在的分层实况**：`Locus.Data` 61 文件 / 3597 行（纯叶子）、`Locus.Services` 3 文件 / 642 行（只朝下依赖 Data）、
 其余运行时脚本仍在 `Assembly-CSharp`（251 文件 / 55666 行）。
 
 **内核 → 界面已全部归零** ✅ ✅。内核现在只朝下依赖 `Locus.Data` / `Locus.Services` ✅，
-但仍**跨目录**依赖两处（这是 `Locus.Combat` 的最后一道门槛 ✅）：
+跨目录依赖只剩两处 ✅（这就是 `Locus.Combat` 的最后一道门槛 ✅）：
 
 | 内核 → | 用到的类型 | 归属建议 |
 |---|---|---|
-| `Player` | `PlayerState` / `AttackSystem` / `IceBreakSession` / `PlayerMoveStateMachine` | **属于内核** ✅（玩家侧战斗状态 ✅）—— 随内核一起搬 ✅ |
-| `Player` | `InputManager` | **属于内核之上** ✅（输入适配器 ✅）—— 内核读它的蓄力状态要改端口 ✅ |
-| `Managers` | `EnemyManager` | **属于内核** ✅（敌人注册表 ✅） |
-| `Managers` | `StageController` / `StageFormation` | **属于流程层** ✅ —— 内核改走已有的 L0 接口 `IStageBattleState` / `IStageFormation` ✅ |
+| `Player` | `PlayerState` / `AttackSystem` / `IceBreakSession` / `UpgradeAcquired` | **属于内核** ✅（玩家侧战斗状态 ✅）—— 归位到内核目录 ✅ |
+| `Player` | `InputManager` | **属于内核之上** ✅（输入适配器 ✅）—— 内核读它的蓄力状态要改端口 ✅（34 处 ✅） |
+| `Managers` | `EnemyManager` | **属于内核** ✅（敌人注册表 ✅）—— 归位到内核目录 ✅ |
+
+> 顺带一条：内核读流程的 **17 处** 引用**本来就已经在用 L0 接口** ✅（`IStageBattleState` / `IStageFormation` ✅），
+> 只是「取实例」点名了流程类 ✅ —— 改成 `StageRoles` 装配点就干净了 ✅。
 
 ## 1. 实测基线（不是猜的）
 

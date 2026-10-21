@@ -1049,7 +1049,11 @@ if (EnemyStatusRegistry.IsActive(enemy, "poison")) { /* 新机制：中毒的敌
 **批次 7（QTE 的 UI 触点，已完成）** ✅：`IQteHud` ✅ + `IQteInputLockTarget` / `QteInputLockTargets`（登记表 ✅ —— Buff 面板可能有多个 ✅）✅；
 `UIResolutionHelper`（纯计算 ✅）下沉 L0 ✅；**`QTE→UI` 3→0** ✅
 ⇒ **战斗内核一条 UI 引用都不剩** ✅ —— 内核只朝下依赖 `Locus.Data` / `Locus.Services` ✅。
-下一道门槛：内核对 `Player` / `Managers` 的跨目录依赖 ✅（见方案文档的归属表 ✅）。
+
+**批次 8（内核不再点名流程类，已完成）** ✅：`StageRoles` 装配点 ✅ + `IPropDestroyNotifier` ✅；
+内核 17 处 `StageController.Instance` 改走装配点 ✅（**那些地方本来就已经在用 L0 接口** ✅，
+只是「取实例」点名了流程类 ✅）；`StageFormation`（纯计算 ✅）/ `ArrowGlobalConfig`（配置 ✅）下沉 L0 ✅。
+⇒ 内核对 `Managers` 只剩 `EnemyManager` ✅、对 `Player` 只剩战斗侧类型 + `InputManager` ✅ —— `Locus.Combat` 只差三步 ✅。
 
 ---
 
