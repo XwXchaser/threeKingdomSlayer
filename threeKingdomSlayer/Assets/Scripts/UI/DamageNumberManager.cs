@@ -4,8 +4,11 @@ using System.Collections.Generic;
 /// <summary>
 /// 伤害数字管理器（单例 + 对象池）
 /// 管理 DamageNumber 对象的生成、回收和复用
+///
+/// 2026-10-22（asmdef 分层第五批）：从 <c>Managers/</c> 移到界面层
+/// —— 它管的是「跳字对象的池」，是呈现层的事；内核只通过 <see cref="IDamageNumberPresenter"/> 端口说「掉多少血」。
 /// </summary>
-public class DamageNumberManager : MonoBehaviour
+public class DamageNumberManager : MonoBehaviour, IDamageNumberPresenter
 {
     public static DamageNumberManager Instance { get; private set; }
 
@@ -27,6 +30,9 @@ public class DamageNumberManager : MonoBehaviour
             return;
         }
         Instance = this;
+        // 登记到呈现层装配点：内核只通过 IDamageNumberPresenter 接口要跳字
+        //（2026-10-22 asmdef 分层第五批）。
+        CombatPresenters.DamageNumbers = this;
     }
 
     private void Start()
@@ -56,6 +62,8 @@ public class DamageNumberManager : MonoBehaviour
         {
             Instance = null;
         }
+        if (ReferenceEquals(CombatPresenters.DamageNumbers, this))
+            CombatPresenters.DamageNumbers = null;
     }
 
     /// <summary>
@@ -116,5 +124,26 @@ public class DamageNumberManager : MonoBehaviour
         spawnPos.x += Random.Range(-0.3f, 0.3f);
 
         dn.Show(spawnPos, damage, colorOverride, feedbackStrength);
+    }
+
+    /// <summary>
+    /// 清理当前所有活跃的跳字（切波次前用），返回清理数量。
+    /// 原来由 WaveSpawner 直接 <c>FindObjectsOfType&lt;DamageNumber&gt;()</c> 扫 —— 现在收进界面层自己管 ✓。
+    /// </summary>
+    public int ClearAll()
+    {
+        var active = FindObjectsOfType<DamageNumber>();
+        int cleaned = 0;
+        for (int i = 0; i < active.Length; i++)
+        {
+            var dn = active[i];
+            if (dn == null || dn.gameObject == null || !dn.gameObject.activeSelf) continue;
+            if (dn.OnReturnToPool != null)
+            {
+                dn.ResetNumber();
+                cleaned++;
+            }
+        }
+        return cleaned;
     }
 }

@@ -85,9 +85,10 @@ public class SharedHealthGroup
         if (feedbackSource != HitFeedbackSource.Dot)
             AudioManager.Instance?.PostEvent("Enemy_Hit");
 
-        // 受伤跳字
-        if (hitMember != null && DamageNumberManager.Instance != null)
-            DamageNumberManager.Instance.Spawn(hitMember.transform.position, finalDamage, damageNumberColor,
+        // 受伤跳字（经呈现层端口）
+        var damageNumbers = CombatPresenters.DamageNumbers;
+        if (hitMember != null && damageNumbers != null)
+            damageNumbers.Spawn(hitMember.transform.position, finalDamage, damageNumberColor,
                 feedbackStrength ?? HitFeedbackManager.ResolveStrength(damageType, feedbackSource, finalDamage, true));
 
         if (countsForCombo && hitMember != null)

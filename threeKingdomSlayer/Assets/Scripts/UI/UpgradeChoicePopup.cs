@@ -8,7 +8,7 @@ using UnityEngine;
 /// 代码只负责填充内容 + 淡入淡出动画。
 /// 由 UpgradeChoiceManager 动态 Instantiate / Destroy 管理生命周期。
 /// </summary>
-public class UpgradeChoicePopup : MonoBehaviour
+public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView
 {
     [Header("预置卡片")]
     public UpgradeCard card1;

@@ -4,8 +4,11 @@ using UnityEngine.SceneManagement;
 /// <summary>
 /// 场景相机管理器：背景图缩放 + OnRenderImage 模糊 + 场景过渡。
 /// 挂载在 Main Camera 上，每个场景独立配置。
+///
+/// 2026-10-22（asmdef 分层第五批）：实现 <see cref="ISceneTransitionCamera"/> 端口
+/// —— <c>SceneFlowManager</c> 只通过接口驱动过渡，不再直接引用本类。
 /// </summary>
-public class CameraManager : MonoBehaviour
+public class CameraManager : MonoBehaviour, ISceneTransitionCamera
 {
     [Header("背景")]
     [Tooltip("拖入要做缩放动画的 RectTransform（如背景 Image）")]
@@ -24,6 +27,17 @@ public class CameraManager : MonoBehaviour
     [Header("场景加载（仅 Departure）")]
     [Tooltip("推入完成后要加载的场景名")]
     public string nextScene;
+
+    // ── ISceneTransitionCamera 端口 ──
+    /// <summary>是否已指定下一个场景。</summary>
+    public bool HasNextScene => !string.IsNullOrEmpty(nextScene);
+
+    /// <summary>下一个场景名（推入动画结束后由本相机自己 LoadSceneAsync）。</summary>
+    public string NextScene
+    {
+        get => nextScene;
+        set => nextScene = value;
+    }
 
     [Header("模糊")]
     [Tooltip("用于 OnRenderImage 后处理模糊的 Shader")]

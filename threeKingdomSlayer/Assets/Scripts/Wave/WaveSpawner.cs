@@ -379,17 +379,8 @@ public class WaveSpawner : MonoBehaviour
         if (activeSweeps.Length > 0)
             Debug.Log($"[WaveSpawner] 清理了 {activeSweeps.Length} 个残留斩击");
 
-        // 回收所有活跃的伤害跳字
-        var activeDNs = FindObjectsOfType<DamageNumber>();
-        int cleaned = 0;
-        foreach (var dn in activeDNs)
-        {
-            if (dn != null && dn.gameObject != null && dn.gameObject.activeSelf && dn.OnReturnToPool != null)
-            {
-                dn.ResetNumber();
-                cleaned++;
-            }
-        }
+        // 回收所有活跃的伤害跳字（界面层自己清，内核不再 FindObjectsOfType）
+        int cleaned = CombatPresenters.DamageNumbers != null ? CombatPresenters.DamageNumbers.ClearAll() : 0;
         if (cleaned > 0)
             Debug.Log($"[WaveSpawner] 清理了 {cleaned} 个残留伤害跳字");
     }

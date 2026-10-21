@@ -25,7 +25,7 @@ public class SceneFlowManager : MonoBehaviour
     public bool useCameraTransition = true;
 
     private readonly List<string> _overlayStack = new List<string>();
-    private CameraManager _cameraManager;
+    private ISceneTransitionCamera _cameraManager;
 
     /// <summary>当前叠着的 overlay 场景名（栈顶 = 最后打开的）</summary>
     public string CurrentOverlay => _overlayStack.Count > 0 ? _overlayStack[_overlayStack.Count - 1] : null;
@@ -41,7 +41,22 @@ public class SceneFlowManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
-        _cameraManager = FindObjectOfType<CameraManager>();
+        _cameraManager = FindSceneTransitionCamera();
+    }
+
+    /// <summary>
+    /// 找实现 <see cref="ISceneTransitionCamera"/> 的相机。
+    /// 流程层只认接口，不认具体相机类（Unity 的 FindObjectOfType 不接受接口类型，所以扫一遍再按接口筛）。
+    /// </summary>
+    private static ISceneTransitionCamera FindSceneTransitionCamera()
+    {
+        var behaviours = FindObjectsOfType<MonoBehaviour>(true);
+        for (int i = 0; i < behaviours.Length; i++)
+        {
+            var cam = behaviours[i] as ISceneTransitionCamera;
+            if (cam != null) return cam;
+        }
+        return null;
     }
 
     private void OnEnable()
@@ -86,10 +101,10 @@ public class SceneFlowManager : MonoBehaviour
     private void ReplaceActiveScene(string sceneName)
     {
         CloseAllOverlays();
-        if (useCameraTransition && _cameraManager != null && !string.IsNullOrEmpty(_cameraManager.nextScene))
+        if (useCameraTransition && _cameraManager != null && _cameraManager.HasNextScene)
         {
             // CameraManager 会在推入动画结束后 LoadSceneAsync(nextScene)
-            _cameraManager.nextScene = sceneName;
+            _cameraManager.NextScene = sceneName;
             _cameraManager.PlayDeparture();
             return;
         }

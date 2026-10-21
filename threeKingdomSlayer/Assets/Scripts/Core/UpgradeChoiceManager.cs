@@ -56,7 +56,7 @@ public class UpgradeChoiceManager : MonoBehaviour
     private int _pendingItemChoices;
     private bool _isShowingItemChoice;
     private List<UpgradeDefinition> _currentChoices;
-    private UpgradeChoicePopup _activePopup;
+    private IUpgradeChoiceView _activePopup;
 
     /// <summary>抽池器（候选收集 + 抽取）。入池条件源注册在它上面。</summary>
     private UpgradePoolSampler _sampler;
@@ -270,7 +270,13 @@ public class UpgradeChoiceManager : MonoBehaviour
                 return;
             }
             var go = Instantiate(popupPrefab);
-            _activePopup = go.GetComponent<UpgradeChoicePopup>();
+            // 只认端口，不认界面组件类型（2026-10-22 asmdef 分层第五批）。
+            _activePopup = go.GetComponent<IUpgradeChoiceView>();
+            if (_activePopup == null)
+            {
+                Debug.LogError("[UpgradeChoiceManager] popupPrefab 上找不到 IUpgradeChoiceView 实现");
+                return;
+            }
         }
 
         _activePopup.ShowChoices(_currentChoices);

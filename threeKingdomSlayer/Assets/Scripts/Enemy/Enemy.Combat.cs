@@ -170,14 +170,15 @@ public partial class Enemy : MonoBehaviour
             OnDamageTaken?.Invoke(this);
         OnHealthChanged?.Invoke(this, currentHealth, maxHealth);
 
-        // 受伤跳字
-        if (finalDamage > 0f && DamageNumberManager.Instance != null)
+        // 受伤跳字（经呈现层端口 → 界面层的跳字池）
+        var damageNumbers = CombatPresenters.DamageNumbers;
+        if (finalDamage > 0f && damageNumbers != null)
         {
             // 被盾格挡时用专属颜色跳字，让"减伤"可读（否则玩家会读成没打中）
             Color? resolvedNumberColor = shieldBlocked && _shieldGuard != null
                 ? _shieldGuard.BlockDamageNumberColor
                 : damageNumberColor;
-            DamageNumberManager.Instance.Spawn(transform.position, finalDamage, resolvedNumberColor, resolvedFeedbackStrength);
+            damageNumbers.Spawn(transform.position, finalDamage, resolvedNumberColor, resolvedFeedbackStrength);
         }
 
         // 血条显示（非BOSS、未死亡时显示）

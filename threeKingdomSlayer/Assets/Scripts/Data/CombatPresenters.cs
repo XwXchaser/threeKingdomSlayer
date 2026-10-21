@@ -40,6 +40,32 @@ public interface IItemDiscardPrompt
 }
 
 /// <summary>
+/// **三选一弹窗端口**：内核（<c>UpgradeChoiceManager</c>）只通过它展示 / 关闭弹窗，
+/// 不再直接引用界面组件（<c>UpgradeChoicePopup</c>）。
+/// </summary>
+public interface IUpgradeChoiceView
+{
+    /// <summary>展示一组候选升级。</summary>
+    void ShowChoices(List<UpgradeDefinition> choices);
+
+    /// <summary>关闭弹窗（动画结束后回调 <paramref name="onDone"/>）。</summary>
+    void Dismiss(Action onDone);
+}
+
+/// <summary>
+/// **伤害跳字端口**：内核只负责「敌人受击了，掉多少血、什么颜色」，
+/// 跳字对象的生成 / 回收 / 复用全在界面层。
+/// </summary>
+public interface IDamageNumberPresenter
+{
+    /// <summary>在敌人头顶弹一个伤害数字。</summary>
+    void Spawn(Vector3 worldPos, float damage, Color? colorOverride, HitFeedbackStrength feedbackStrength);
+
+    /// <summary>清理当前所有活跃的跳字（切波次时用），返回清理数量。</summary>
+    int ClearAll();
+}
+
+/// <summary>
 /// **呈现层装配点**：界面层把自己登记进来，内核只通过接口使用。
 ///
 /// 规则：
@@ -59,11 +85,15 @@ public static class CombatPresenters
     /// <summary>道具弃置弹窗。</summary>
     public static IItemDiscardPrompt ItemDiscard { get; set; }
 
+    /// <summary>伤害跳字。</summary>
+    public static IDamageNumberPresenter DamageNumbers { get; set; }
+
     /// <summary>清空登记（场景重载 / 退出战斗时用）。</summary>
     public static void Clear()
     {
         Hud = null;
         Dialogue = null;
         ItemDiscard = null;
+        DamageNumbers = null;
     }
 }
