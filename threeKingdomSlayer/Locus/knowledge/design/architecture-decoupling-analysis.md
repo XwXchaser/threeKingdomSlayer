@@ -781,6 +781,37 @@ if (EnemyStatusRegistry.IsActive(enemy, "poison")) { /* 新机制：中毒的敌
 覆盖语义（注册自定义 Stab 执行器 → 被调用、返回 false、不再造成伤害）；
 状态注册表与直接查询逐字一致；**§15.5 基线逐位一致**；Console 0/0。
 
+### 5.14 大文件拆分批次 3：把剩下的 ≥700 行文件拆到 ≤600 行（2026-10-22）
+
+> 计划先行：本节先写计划与口径，实施结果在 §5.15 补记。
+
+**目标**：当前还有 8 个文件 ≥700 行（合计 6591 行）：
+
+| 文件 | 行数 | 拆成 |
+|---|---|---|
+| `Enemy/Enemy.cs` | 934 | `Enemy.cs`（字段/生命周期/薄转发）+ `Enemy.Types.cs`（9 个顶层枚举与结构）+ `Enemy.Init.cs`（初始化/波次缩放） |
+| `Core/DisplacementMover.cs` | 895 | `DisplacementMover.cs`（字段与通用）+ `.PushReturn.cs`（击退回位）+ `.Push.cs`（横推/推波）+ `.Convergence.cs`（聚拢） |
+| `UI/StageProgressBar.cs` | 865 | 按职责分（本体 / 节点标记 / 演出） |
+| `Enemy/CavalryEnemy.cs` | 831 | `CavalryEnemy.cs`（状态与字段）+ `.Charge.cs`（冲锋循环）+ `.Move.cs`（位移）+ `.Events.cs`（外部事件） |
+| `Enemy/Enemy.Combat.cs` | 829 | `Enemy.Combat.cs`（伤害系统）+ `.HitFrame.cs`（命中帧）+ `.FreezeCombat.cs`（冻结结算） |
+| `Enemy/Enemy.StateSwitch.cs` | 769 | `Enemy.StateSwitch.cs`（通用切换）+ `.FormSwitch.cs`（胆怯形态 / 骑兵控制）+ `.QTEAttack.cs`（QTE 攻击） |
+| `Enemy/Enemy.StateUpdate.cs` | 739 | `Enemy.StateUpdate.cs`（眩晕 / 挑飞起身）+ `.Movement.cs`（移动）+ `.Attack.cs`（出招） |
+| `Editor/CombatDataTableWindow.cs` | 737 | 按 Tab 面板分 |
+
+**口径（与前几刀一致）**：
+- 同类型 partial 拆分，**行为零变化**；只搬不改。
+- 拆分前跑三道闸：**内容行多重集丢失 = 0**、**花括号平衡**、**切口落在方法/成员边界**。
+- 拆分后跑：**§15.5 回归基线逐位一致** + Console 0/0 + 该文件相关的行为点。
+
+**风险与对策**：
+- `DisplacementMover` 承载**位移三原则**（design/immutable-constraints.md）→ 本刀**只做机械搬移，不改任何判定逻辑**；
+  它的行为由 §15.5 基线 + 击退回位/横推/聚拢三处专项验证。
+- `Enemy` 的分片已较多（本次后 ~15 个）→ 命名统一用 `Enemy.<机制>.cs`，避免出现 `Enemy.State.StateSwitch` 这类双层名。
+- Editor 窗口（`CombatDataTableWindow`）不影响运行时 → 风险最低，但它的字段与 GUI 回调耦合较紧，只做**按面板的整块搬移**。
+
+**为什么先更文档**：这批拆分是纯机械搬移，最容易出错的是「切口切歪」与「漏搬」；
+把目标清单与验收口径先落纸，实施时逐个文件对照执行。
+
 ---
 
 ## 6. 明确不做

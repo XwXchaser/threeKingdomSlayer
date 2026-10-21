@@ -114,6 +114,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | `0b4e4c7` | **三选一解耦**：抽池独立成 `UpgradePoolSampler`；新增「入池条件源」（含**按天赋解锁**内置实现）与「选中后的额外效果」两把扩展点；`UpgradeChoiceManager` 567→436 |
 | `91915da` | **分支出口解耦**：出口的「呈现」（`IRouteChoiceFormatter`）与「可选性」（`IRouteChoiceValidator`）两把扩展点；`RouteChoiceOption` 下沉 `Locus.Data`；不可选时锁定按钮并显示原因 |
 | `d39ddc8` | **战斗侧两把扩展点**：招式执行器注册表（`AttackSystem` 的 switch → 注册表，新招式 = 注册一个执行器）+ 敌人状态统一查询（`EnemyStatusRegistry`，内置灼烧/疾病/冻结） |
+| `（计划）` | **大文件拆分批次 3**：把剩下的 8 个 ≥700 行文件拆到 ≤600 行（Enemy.cs 934 / DisplacementMover 895 / StageProgressBar 865 / CavalryEnemy 831 / Enemy.Combat 829 / Enemy.StateSwitch 769 / Enemy.StateUpdate 739 / CombatDataTableWindow 737），详见 §5.14 |
 
 > 详见 `design/architecture-decoupling-analysis.md` §5.7 / §5.8 / §5.9。拆分前机械校验：**内容丢失 = 0**。
 
@@ -132,7 +133,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 路线驱动 | 3 套并存 + 运行期互禁 | 1 套现役 + 1 套 Legacy 孤岛（无互禁） |
 | 遗留实现 | 散在 Core/Route/RouteV2 | `Assets/Scripts/Legacy/`（21 文件 / 2107 行）+ README |
 | 玩家输入 | 全局布尔 `gameplayInputEnabled`，9 处轮流写、后写者生效 | `GameplayInputGate`：按 owner 申请/释放 + 原因枚举；**直接写 = 0** |
-| 单文件体量 | `Enemy` 5224 / `ColumnManager` 2149 / `AttackSystem` 1568 / `QTEController` 1474 / `StageController` 852 | **全部 ≤ 933**：最大 `Enemy.cs` 933 / `DisplacementMover` 894 / `StageProgressBar` 864 |
+| 单文件体量 | `Enemy` 5224 / `ColumnManager` 2149 / `AttackSystem` 1568 / `QTEController` 1474 / `StageController` 852 | **全部 ≤ 933**：最大 `Enemy.cs` 933 / `DisplacementMover` 894 / `StageProgressBar` 864；**下一刀（批次 3）把 ≥700 行的 8 个文件拆到 ≤600 行** |
 
 ---
 
