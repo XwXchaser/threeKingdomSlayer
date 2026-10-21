@@ -245,20 +245,21 @@ public class EnemyHealthBar : MonoBehaviour
 
     private bool UpdateDotVisuals()
     {
-        var status = UpgradeEffectManager.Instance != null
-            ? UpgradeEffectManager.Instance.GetDotStatus(GetComponent<Enemy>())
-            : default;
+        // 状态查询走 EnemyStatusRegistry（统一查询层）；显示的槽位仍是疾病条 / 灼烧条。
+        var enemy = GetComponent<Enemy>();
+        var disease = EnemyStatusRegistry.GetStatus(enemy, EnemyStatusRegistry.Disease);
+        var burn = EnemyStatusRegistry.GetStatus(enemy, EnemyStatusRegistry.Burn);
 
         float statusHeight = barHeight * StatusBarHeightMultiplier;
         float diseaseY = -(barHeight * 0.5f + StatusBarGap + statusHeight * 0.5f);
-        bool hasDisease = status.isDiseased;
-        bool hasBurn = status.isBurning;
+        bool hasDisease = disease.active;
+        bool hasBurn = burn.active;
 
         if (_diseaseBar != null)
         {
             _diseaseBar.root.SetActive(hasDisease);
             if (hasDisease)
-                SetStatusBarFill(_diseaseBar, status.diseaseProgress, diseaseY, statusHeight);
+                SetStatusBarFill(_diseaseBar, disease.progress, diseaseY, statusHeight);
         }
 
         if (_burnBar != null)
@@ -269,7 +270,7 @@ public class EnemyHealthBar : MonoBehaviour
                 float burnY = hasDisease
                     ? diseaseY - statusHeight - StatusBarGap
                     : diseaseY;
-                SetStatusBarFill(_burnBar, status.burnProgress, burnY, statusHeight);
+                SetStatusBarFill(_burnBar, burn.progress, burnY, statusHeight);
             }
         }
 
@@ -278,7 +279,7 @@ public class EnemyHealthBar : MonoBehaviour
             _diseaseLayersText.gameObject.SetActive(hasDisease);
             if (hasDisease)
             {
-                _diseaseLayersText.text = status.diseaseLayers.ToString();
+                _diseaseLayersText.text = disease.stacks.ToString();
                 _diseaseLayersText.transform.localPosition = new Vector3(-barWidth * 0.5f - 0.08f, diseaseY, -0.02f);
             }
         }

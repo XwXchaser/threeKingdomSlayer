@@ -124,31 +124,31 @@ public class BossHealthUI : MonoBehaviour
 
     private void UpdateDotStatus()
     {
-        var status = UpgradeEffectManager.Instance != null
-            ? UpgradeEffectManager.Instance.GetDotStatus(_boss)
-            : default;
+        // 状态查询走 EnemyStatusRegistry（统一查询层）；显示的槽位仍是疾病条 / 灼烧条。
+        var disease = EnemyStatusRegistry.GetStatus(_boss, EnemyStatusRegistry.Disease);
+        var burn = EnemyStatusRegistry.GetStatus(_boss, EnemyStatusRegistry.Burn);
 
-        LayoutDotBars(status.isDiseased, status.isBurning);
+        LayoutDotBars(disease.active, burn.active);
 
         if (diseaseFill != null)
         {
-            diseaseFill.gameObject.SetActive(status.isDiseased);
-            if (status.isDiseased)
-                diseaseFill.fillAmount = status.diseaseProgress;
+            diseaseFill.gameObject.SetActive(disease.active);
+            if (disease.active)
+                diseaseFill.fillAmount = disease.progress;
         }
 
         if (burnFill != null)
         {
-            burnFill.gameObject.SetActive(status.isBurning);
-            if (status.isBurning)
-                burnFill.fillAmount = status.burnProgress;
+            burnFill.gameObject.SetActive(burn.active);
+            if (burn.active)
+                burnFill.fillAmount = burn.progress;
         }
 
         if (diseaseLayersText != null)
         {
-            diseaseLayersText.gameObject.SetActive(status.isDiseased);
-            if (status.isDiseased)
-                diseaseLayersText.text = status.diseaseLayers.ToString();
+            diseaseLayersText.gameObject.SetActive(disease.active);
+            if (disease.active)
+                diseaseLayersText.text = disease.stacks.ToString();
         }
     }
 

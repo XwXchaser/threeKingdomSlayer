@@ -223,6 +223,36 @@ public partial class AttackSystem : MonoBehaviour
             return;
         }
         Instance = this;
+        RegisterBuiltinAttackExecutors();
+    }
+
+    // ───────── 招式执行器注册表（扩展点）─────────
+    // 新增一种招式 = 注册一个执行器（AttackType + 执行委托），不用再改 TryExecuteAttack 的分派。
+    private readonly Dictionary<AttackType, System.Func<AttackExecutionContext, bool>> _attackExecutors =
+        new Dictionary<AttackType, System.Func<AttackExecutionContext, bool>>();
+
+    /// <summary>
+    /// 注册**招式执行器**（扩展点）。
+    /// 同一招式类型后注册者覆盖先注册者；未注册的招式不执行任何东西（与旧 switch 的默认分支一致）。
+    /// </summary>
+    public void RegisterAttackExecutor(AttackType type, System.Func<AttackExecutionContext, bool> executor)
+    {
+        if (executor == null) return;
+        _attackExecutors[type] = executor;
+    }
+
+    /// <summary>该招式是否已注册执行器（调试 / 工具用）。</summary>
+    public bool HasAttackExecutor(AttackType type) => _attackExecutors.ContainsKey(type);
+
+    /// <summary>内置的六个招式执行器（保持改造前的行为）。</summary>
+    private void RegisterBuiltinAttackExecutors()
+    {
+        RegisterAttackExecutor(AttackType.Stab, ctx => ExecuteStab(ctx.targetColumn));
+        RegisterAttackExecutor(AttackType.Slash, ctx => ExecuteSlash(ctx.slashLeftToRight, ctx.slashVisualTilt));
+        RegisterAttackExecutor(AttackType.Pierce, ctx => ExecutePierce(ctx.targetColumn));
+        RegisterAttackExecutor(AttackType.Sweep, ctx => ExecuteSweep());
+        RegisterAttackExecutor(AttackType.Launch, ctx => ExecuteLaunch());
+        RegisterAttackExecutor(AttackType.Parry, ctx => ExecuteParry());
     }
 
     private void OnDestroy()
@@ -314,14 +344,18 @@ public partial class AttackSystem : MonoBehaviour
         // 破冰会话：本次招式的合规判定在这里开，命中时由 IceBreakRuntime 校验作用域；
         // 会话寿命跟本次招式实际动作时长走（设计 §7：招式结束即关闭）
         IceBreakRuntime.BeginAttack(GetConfig(attackType), GetAttackDuration(GetConfig(attackType)));
-        switch (attackType)
+
+        // 招式分派：走执行器注册表（内置六个 + 可注册的扩展实现）。
+        if (_attackExecutors.TryGetValue(attackType, out var attackExecutor))
         {
-            case AttackType.Stab:   hitAny = ExecuteStab(targetColumn); break;
-            case AttackType.Slash:  hitAny = ExecuteSlash(slashLeftToRight, slashVisualTilt); break;
-            case AttackType.Pierce: hitAny = ExecutePierce(targetColumn); break;
-            case AttackType.Sweep:  hitAny = ExecuteSweep(); break;
-            case AttackType.Launch: hitAny = ExecuteLaunch(); break;
-            case AttackType.Parry:  hitAny = ExecuteParry(); break;
+            hitAny = attackExecutor(new AttackExecutionContext
+            {
+                system = this,
+                targetColumn = targetColumn,
+                slashLeftToRight = slashLeftToRight,
+                slashVisualTilt = slashVisualTilt,
+                charged = chargedAttack,
+            });
         }
         _attackIsCharged = false;
 
