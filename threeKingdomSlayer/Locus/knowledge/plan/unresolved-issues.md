@@ -13,7 +13,19 @@ aiEditMode: inherit
 
 ---
 
-## TODO-1 [高] QTE 无法触发 — QTEController 始终 Idle
+## TODO-1 [已验证不复现，2026-10-21] QTE 无法触发 — QTEController 始终 Idle
+
+> **2026-10-21 实测结论：已不复现，本条关闭。**
+> 方法：Play Mode 里 `Instantiate(Resources.Load<GameObject>("EnemyPrefabs/Enemy_104"))`，
+> 把 `bossState` 置 `InCombat` 后首次调用 `Enemy.SelectBossAction()`，
+> 立即得到 `QTEController._state = PerformingQTEAttack`、`attackIndex=0`、`enemy.state = QTEAttacking`。
+> 同期静态核对：三个 Boss prefab（104/107/108）均有 `QTEController` 组件，
+> `qteData = BossQTEData_104`（2 个攻击），`bossPhases` 各阶段 `qteWeight = 2 / 0.5`（不为 0）。
+> 另：原文说的排查方向「检查 OnBossEngaged 是否触发」是**错的** ——
+> `QTEController` 从不订阅 `OnBossEngaged`，它的启动链是
+> `Enemy.Update`（Idle + `bossState==InCombat`）→ `actionCooldownTimer` 归零 →
+> `SelectBossAction()` 加权随机 → `TriggerQTEAttack()`。
+> 下方历史排查记录保留，供“同类现象再次出现”时用。
 
 **症状**: Boss 进入战斗后 QTE 反击从不触发，`QTEController._state` 始终为 `Idle`
 
