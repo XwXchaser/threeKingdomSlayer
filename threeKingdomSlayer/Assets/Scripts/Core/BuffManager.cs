@@ -2,18 +2,12 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 属性修正应用器接口 — 实现者能接收 StatModifier 的 Apply/Remove
-/// </summary>
-public interface IStatModifierApplier
-{
-    void ApplyModifier(StatModifier modifier);
-    void RemoveModifier(StatModifier modifier);
-}
-
-/// <summary>
 /// Buff 管理器 - 单例
 /// 维护 IStatModifierApplier 注册表，管理 ActiveBuff 生命周期。
 /// 任何系统可通过 RegisterApplier 注册属性修改能力，BuffManager 在 Buff 激活/过期时通知。
+///
+/// 2026-10-22（asmdef 分层第三批）：<c>IStatModifierApplier</c> 已抽到契约层
+/// （<c>Assets/Scripts/Data/IStatModifierApplier.cs</c>）。
 /// </summary>
 public class BuffManager : MonoBehaviour
 {

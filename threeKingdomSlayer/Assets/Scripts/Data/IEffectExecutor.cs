@@ -1,6 +1,9 @@
 /// <summary>
 /// 效果执行器接口 — 处理升级奖励中的行为型效果
 /// 如 on_attack_trigger、on_kill_chance、unlock_attack 等
+///
+/// 2026-10-22（asmdef 分层第三批）：从 <c>Assets/Scripts/Core/IEffectExecutor.cs</c> 下沉到契约层
+/// —— 这是**局内 Build 的扩展点**，新行为型升级 = 实现它并注册，不必改管理器本体。
 /// </summary>
 public interface IEffectExecutor
 {

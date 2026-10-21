@@ -15,6 +15,9 @@ using UnityEngine;
 /// 已有实现：<c>EnemyFreeze</c>（敌人的冻结）、<c>EnemyStatusBurn</c> / <c>EnemyStatusDisease</c>
 /// （敌人的灼烧 / 疾病）、<c>ReflectShieldStatus</c>（玩家的反伤护盾）、
 /// <c>IceChargeStatus</c>（玩家的破冰预备）。
+///
+/// 2026-10-22（asmdef 分层第三批）：从 <c>Assets/Scripts/Status/IStatusEffect.cs</c> 下沉到契约层
+/// —— 这是**状态机制的扩展点**，任何层都要能实现它（新状态类住在哪一层都行）。
 /// </summary>
 public interface IStatusEffect
 {
