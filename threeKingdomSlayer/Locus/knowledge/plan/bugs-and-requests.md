@@ -120,6 +120,52 @@ aiEditMode: inherit
   c) shader 手动 `o.uv.y=1-o.uv.y` 在 GLES3 上方向相反（`memory/android-build-state.md` 2026-10-15 记过同一线索，当时以「真机已验收通过」结案）。
   **下一步需要**：一张打包版落地页截图（或描述是「缺失 / 上下颠倒 / 拉伸变形 / 位置错位」中的哪一种）→ 可直接判定是 a/b/c 哪一类。
 
+### BUG-005 重新进入游戏从「检查点节点」开始，而不是关卡的初始节点
+
+- 日期：2026-10-22
+- 类型：BUG / 流程（语义待定）
+- 现象：玩家**重新启动游戏**（落地页 → 开始关卡）时，不是从该关卡的**初始节点**开始，而是从存档里的**检查点节点**开始。
+  实测：正式关「长坂坡·卷轴节点预览」的存档检查点为 `N3` → 重启后直接落在 N3（村落搜救），跳过了 N1/N2。
+  Console 佐证：`[FakeRoute] 落地页自举：当前关卡 = 长坂坡·卷轴节点预览` → `[FakeRoute] restored checkpoint node=N3` → `[FakeRoute] 落地页就绪：… 起始节点=N3（等玩家点开始关卡）`。
+- 复现：进正式关 → 走到 N3（或任意非初始节点）→ 退出游戏 → 重新启动 → 落地页点「开始关卡」→ 直接从 N3 开打。
+- 期望：**重新进入游戏应从关卡初始节点开始**（N1），而不是从上次退出的节点续跑。
+- 涉及：
+  - `Assets/Scripts/RouteFake/FakeRouteRuntime.Entry.cs` —— `ResolveStartNode()` 第 144 行：
+    `bool tryRestoreCheckpoint = !useTestStartNode && (FakeRouteLaunch.StartFromCheckpoint || IsHubEntry);`
+    落地页自举（`IsHubEntry`）时**无条件**尝试恢复快照，于是 `startNode` 被换成 `restoredNode`；
+    同一文件 `BeginRouteNextFrame()` 第 167 行是「老路径」（只看 `FakeRouteLaunch.StartFromCheckpoint`）。
+  - `Assets/Scripts/RouteFake/FakeRouteRuntime.cs` —— `PrepareForEntry` / `RestoreCheckpoint`（`Assets/Scripts/RouteFake/FakeRouteRuntime.Checkpoint.cs`）。
+  - `Assets/Scripts/Core/SaveManager.cs` —— `GetFakeRouteSnapshot` / 快照写入与清除。
+  - `Assets/Scripts/UI/BattleStartStageButton.cs` —— 落地页「开始关卡」→ `FakeRouteRuntime.RunPrepared()`。
+- 优先级：高（玩家每次重进都跳过前段内容；也是「关卡内容看不到」的根因之一）
+- 状态：待处理（用户 2026-10-22 反馈，指示**先记录**）
+- 备注：
+  - 这个行为是**有意写进去的**（代码注释：「落地页语义就是『进游戏 = 当前进度』」），并在 BUG-002 的备注里被标为「正常的续玩语义，不改」——现在**需求变了**，需重新定夺。
+  - 连带要定的事：检查点恢复不只改起始节点，还恢复了**血量 / 局内升级 / 道具**（见 `RestoreCheckpoint` 里给地刺、火龙舌等升级的 `ApplyUpgrade`）。若改成「从初始节点开始」，这些**残留进度**要不要一起清？否则会出现「从 N1 开打但带着 N3 的等级」的错配。
+  - 建议做法（待确认）：把「落地页自举」与「续玩」拆成两条路径——落地页进图一律用 `routeConfig.startNode`；若要保留续玩，做成落地页上的显式入口（「继续上次进度」），而不是默认行为。
+
+### BUG-006 N3 节点的敌人被染成全黑（黑影）
+
+- 日期：2026-10-22
+- 类型：BUG / 表现
+- 现象：N3（村落搜救）节点的敌人**整个身体是纯黑的**，像一排黑影剪影，看不出是哪只兵种。
+- 复现：进正式关 → 走到 N3 节点开打 → 敌人全黑（N1 / N2 / E0 节点正常）。
+- 期望：N3 敌人与其它节点一样是正常贴图颜色（或与设计一致的淡红/其它染色）。
+- 涉及（**根因已定位**）：
+  - `Assets/RouteData/ChangbanpoScroll/Battles/Formal_N3_Battle.asset` 第 35 行：`waveTintColor: {r: 0, g: 0, b: 0, a: 0}`
+    （其余节点同字段均为白色：`Formal_N1_Battle` / `Formal_N2_Battle` / `Formal_E0_Battle` 都是 `{r:1,g:1,b:1,a:1}`）。
+  - 染色链路：`Assets/Scripts/Wave/WaveSpawner.cs` 第 303 行 `enemy.ApplyWaveScaling(currentWave.healthMultiplier, currentWave.waveTintColor, …)`
+    → `Assets/Scripts/Enemy/Enemy.Init.cs` 第 244–249 行 `Color finalColor = _prefabColor * tint;` → `_spriteRenderer.color = finalColor;`
+    → 乘上 `(0,0,0)` 即 RGB 全 0（alpha 被第 245 行改回 `_prefabColor.a`，所以不是透明，而是**纯黑**）。
+  - 同一个资产的第 31–34 行还有 `healthMultiplier: 0.1` / `bossHealthMultiplier: 0` / `attackSpeedMultiplier: 0.1` / `damageMultiplier: 0.1`，
+    而其它节点是 0.7~0.85 —— **疑似同一份占位配置整体没填实**（N3 敌人只有 10% 血、10% 伤害）。
+  - 该资产由 `46e7c19`（补提交落地页默认路线引用的教学关/正式关数据）引入，**只提交过一次、此后未改**。
+- 优先级：高（该节点完全不可读；且 0.1 倍率让该节点的战斗也失去意义）
+- 状态：待处理（用户 2026-10-22 反馈，指示**先记录**；根因已找到，改动量 = 1 行资产字段）
+- 备注：
+  - **修法**：把 `Formal_N3_Battle.asset` 的 `waveTintColor` 改回白色（与其它节点一致）；若设计本意是某种染色，用设计给的颜色而不是黑。
+  - **连带确认**：同一资产的四个倍率（血 / 攻速 / 伤害 / BOSS 血）是否也要按 N3 的设计重填（现在 0.1 与其它节点差一个量级）。需产品/数值给口径。
+
 ---
 
 ## 待实现需求
