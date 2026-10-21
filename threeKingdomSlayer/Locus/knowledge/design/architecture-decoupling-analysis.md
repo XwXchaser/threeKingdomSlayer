@@ -750,6 +750,37 @@ manager.RegisterSelectionEffect(def => def.effectType == "crit_rate",
 
 > 至此**非战斗侧（落地页 / 四个界面 / 路线流程 / 三选一 / 分支选择）全部有扩展点**。
 
+### 5.13 战斗侧两把扩展点（2026-10-22）
+
+> 提交 `d39ddc8`。战斗侧之前没有「机制延伸」的口子。
+
+**① 招式执行器注册表**
+`AttackSystem.TryExecuteAttack` 里的 `switch (attackType)` 六个分支改成注册表
+（`AttackType → 执行委托`），内置六个照旧注册。新增 `AttackExecutionContext`
+（目标列 / 横扫方向 / 倾斜 / 蓄力）随执行器传入。
+新招式 = `RegisterAttackExecutor(type, executor)`；同一类型后注册者覆盖先注册者；
+未注册的招式不执行（与旧 switch 的默认分支一致）。
+
+**② 敌人状态统一查询（`EnemyStatusRegistry`）**
+状态效果此前散在三处、形状还不同：灼烧/疾病在 `UpgradeEffectManager`（玩家侧持有状态）、
+冻结在敌人自己的状态机（`EnemyFreeze`）。于是「这个敌人是不是在燃烧」只能去问那一个系统。
+
+现在每个状态注册一个 `IEnemyStatusEffect`（是否生效 / 进度 / 层数 / 优先级），
+任何系统都能统一地问：
+```csharp
+if (EnemyStatusRegistry.IsActive(enemy, "poison")) { /* 新机制：中毒的敌人受到额外伤害 */ }
+```
+内置三个：灼烧 / 疾病 / 冻结。`EnemyHealthBar` 与 `BossHealthUI` 改为经注册表取状态
+（显示槽位仍是疾病条/灼烧条，**视觉不变**）。
+
+> 本接口只负责**查询与展示**；状态的施加与结算仍由各自的所有者负责
+> （灼烧疾病在管理器、冻结在敌人状态机）——与 `EnemyFreeze` 的先例一致：
+> 新状态自己写一个持有敌人侧状态的类。
+
+**验证**：六个内置招式全部已注册执行器；Stab 经注册表执行掉血 20；
+覆盖语义（注册自定义 Stab 执行器 → 被调用、返回 false、不再造成伤害）；
+状态注册表与直接查询逐字一致；**§15.5 基线逐位一致**；Console 0/0。
+
 ---
 
 ## 6. 明确不做
