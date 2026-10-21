@@ -181,14 +181,12 @@ public partial class Enemy : MonoBehaviour
             damageNumbers.Spawn(transform.position, finalDamage, resolvedNumberColor, resolvedFeedbackStrength);
         }
 
-        // 血条显示（非BOSS、未死亡时显示）
+        // 血条显示（非BOSS、未死亡时显示）——经工厂端口拿视图（创建在界面层做）
         if (!isBoss && currentHealth > 0f)
         {
             if (cachedHealthBar == null)
-                cachedHealthBar = GetComponent<EnemyHealthBar>();
-            if (cachedHealthBar == null)
-                cachedHealthBar = gameObject.AddComponent<EnemyHealthBar>();
-            cachedHealthBar.Show(currentHealth / maxHealth);
+                cachedHealthBar = CombatPresenters.EnemyHealthBars?.GetOrCreate(gameObject);
+            cachedHealthBar?.Show(currentHealth / maxHealth);
         }
 
         if (allowHitReactionAnimation)

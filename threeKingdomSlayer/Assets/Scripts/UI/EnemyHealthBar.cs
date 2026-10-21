@@ -4,8 +4,11 @@ using TMPro;
 /// <summary>
 /// 敌人血条UI — 受击时短暂显示百分比血条（无文字）
 /// 使用程序化 Quad Mesh + 自发光材质，确保在 BIRP 场景中始终可见
+///
+/// 2026-10-22（asmdef 分层第六批）：实现 <see cref="IEnemyHealthBarView"/> 端口
+/// —— 内核（Enemy / SharedHealthGroup）只经工厂拿视图，不再直接引用本组件。
 /// </summary>
-public class EnemyHealthBar : MonoBehaviour
+public class EnemyHealthBar : MonoBehaviour, IEnemyHealthBarView
 {
     [Header("尺寸")]
     [Tooltip("血条宽度（世界单位）")]

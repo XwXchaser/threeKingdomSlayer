@@ -459,7 +459,7 @@ public GameObject freezeMeltEffectPrefab;
     private Quaternion originalRotation;
 
     // 血条UI缓存
-    private EnemyHealthBar cachedHealthBar;
+    private IEnemyHealthBarView cachedHealthBar;
     internal Animator _animator;
     private EnemySpriteController _spriteCtrl;
     internal CavalryEnemy _cavalry;

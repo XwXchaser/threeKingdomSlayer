@@ -106,10 +106,9 @@ public class SharedHealthGroup
                 m.ApplyDamageFeedback(memberStrength, hitReactionDirection, suppressHitReactionAnimation);
             }
 
-            // 更新血条
-            var bar = m.GetComponent<EnemyHealthBar>();
-            if (bar == null) bar = m.gameObject.AddComponent<EnemyHealthBar>();
-            if (currentHealth > 0f) bar.Show(currentHealth / maxHealth);
+            // 更新血条（经工厂端口拿视图，创建在界面层做）
+            var bar = CombatPresenters.EnemyHealthBars?.GetOrCreate(m.gameObject);
+            if (currentHealth > 0f) bar?.Show(currentHealth / maxHealth);
         }
 
         // 同步更新每个成员的 currentHealth（供外部读取）

@@ -66,6 +66,28 @@ public interface IDamageNumberPresenter
 }
 
 /// <summary>
+/// **敌人血条视图端口**：每个敌人一个血条（挂在敌人身上）。
+/// </summary>
+public interface IEnemyHealthBarView
+{
+    /// <summary>显示血条（<paramref name="percent"/> = 当前血量比例 0~1）。</summary>
+    void Show(float percent);
+
+    /// <summary>隐藏血条（死亡时用，避免血条随死亡动画飘落）。</summary>
+    void Hide();
+}
+
+/// <summary>
+/// **血条工厂端口**：内核问「给我这个敌人的血条视图」，
+/// **创建动作在界面层做**（内核不碰 UI 组件类型 ✅）。
+/// </summary>
+public interface IEnemyHealthBarFactory
+{
+    /// <summary>取这个敌人身上的血条视图（没有就建一个）。</summary>
+    IEnemyHealthBarView GetOrCreate(GameObject enemyObject);
+}
+
+/// <summary>
 /// **呈现层装配点**：界面层把自己登记进来，内核只通过接口使用。
 ///
 /// 规则：
@@ -88,6 +110,9 @@ public static class CombatPresenters
     /// <summary>伤害跳字。</summary>
     public static IDamageNumberPresenter DamageNumbers { get; set; }
 
+    /// <summary>敌人血条工厂。</summary>
+    public static IEnemyHealthBarFactory EnemyHealthBars { get; set; }
+
     /// <summary>清空登记（场景重载 / 退出战斗时用）。</summary>
     public static void Clear()
     {
@@ -95,5 +120,6 @@ public static class CombatPresenters
         Dialogue = null;
         ItemDiscard = null;
         DamageNumbers = null;
+        EnemyHealthBars = null;
     }
 }
