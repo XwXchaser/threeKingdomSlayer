@@ -277,7 +277,34 @@ summary: 架构改造交接（2026-10-21 更新）：74 个提交落地——落
 
 ---
 
-## 8. 工作方式提醒
+## 8. 性能实测（2026-10-21，结论：当前无 CPU 热点）
+
+> 背景：架构重构后提出“继续优化性能”。按「先测量后优化」采了一次样，结论是
+> **没有数据支撑的优化点**，不要盲改。
+
+**采样条件**：编辑器 Play Mode · 长坂坡 N1 节点 · 4 个敌人 · 240 个样本（`WarmupFrames=30`）
+
+| 指标 | 结果 |
+|---|---|
+| `main_thread_ms` | avg **6.12** · p95 6.65 · max **8.49**（预算 16.67ms / 60fps） |
+| 超预算帧 | 0 |
+| Console | 0 error / 0 warn |
+| 产物 | `Library/Locus/RunStates/profiler-combat3-*-summary.json`（含 CSV） |
+
+**静态测量（同一结论）**：全项目 `Update/FixedUpdate/LateUpdate` 方法体内的运行时查找
+（`FindObjectOfType` / `GameObject.Find` / `GetComponent*`）只有 **5 处，分布在 3 个方法**
+（其中 2 处在 `Assets/Scripts/Legacy/`）—— 不是热点。
+
+**局限（别当成已验证）**：
+
+- 只覆盖编辑器、轻负载（4 敌人）；**未覆盖** Boss 战多特效峰值、大批量刷怪、真机（Android/微信小游戏）。
+- 未采集 GC 分配与 Draw Call（指标名需用 `DiscoverMetrics` 拿到的
+  `Draw Calls Count` / `GC.*` 再采一轮；本轮 `gc_allocated_in_frame` 名字不存在）。
+- 结论只说明「现在没必要为了性能重构」；若真机出现卡顿，应先在真机重采再动手。
+
+---
+
+## 9. 工作方式提醒
 
 - 每批改造：**改码 → 编译 → 静态复查（`git diff`）→ 一次 Play Mode 跑完所有验证 → 提交**；
   不要反复进出 Play Mode（每次进出都会切碎一个回合，见 `memory/work-loop-discipline.md`）。
