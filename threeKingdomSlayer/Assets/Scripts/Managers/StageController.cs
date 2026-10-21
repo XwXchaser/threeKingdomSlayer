@@ -699,10 +699,6 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
     /// <summary>
     /// 获取当前关卡的补齐规则
     /// </summary>
-    public FillUpRule GetFillUpRule()
-    {
-        return _formation.GetFillUpRule(stageConfig);
-    }
 
     #endregion
 }

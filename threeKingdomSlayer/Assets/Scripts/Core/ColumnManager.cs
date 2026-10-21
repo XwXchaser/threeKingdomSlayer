@@ -579,37 +579,9 @@ public class ColumnManager : MonoBehaviour
     /// </summary>
     public void StartWaveMarch()
     {
-        if (_queue.UseRowMarchPlanner)
-        {
-            StartPendingLogicalLayoutReflow();
-            return;
-        }
-
-        if (_pushReturnTransactions.Count > 0)
-        {
-            _waveMarchRequestedWhilePushReturn = true;
-            _topologyChangedWhilePushReturn = true;
-            Debug.Log($"[WaveMarch] StartWaveMarch deferred: pushReturnTx={_pushReturnTransactions.Count}");
-            return;
-        }
-        if (_isWaveMarching || _isWavePreparing)
-        {
-            if (_queue.UseRowMarchPlanner)
-                _topologyChangedWhilePushReturn = true;
-            Debug.Log($"[WaveMarch] StartWaveMarch blocked: _isWaveMarching={_isWaveMarching} _isWavePreparing={_isWavePreparing} srcRow={_currentWaveSourceRow} tgtRow={_currentWaveTargetRow}");
-            return;
-        }
-
-        int maxRow = GetMaxOccupiedRow();
-        for (int r = 0; r < maxRow; r++)
-        {
-            if (IsRowFullyVacated(r) && !IsRowFullyVacated(r + 1))
-            {
-                Debug.Log($"[WaveMarch] StartWaveMarch → BeginWaveStep srcRow={r + 1} tgtRow={r}");
-                BeginWaveStep(r + 1, r);
-                return;
-            }
-        }
+        // 补齐只有一条路径：整排清空 → 逻辑排队列差分 → 波次行军。
+        // 旧的「按列找空位前压」分支已随 FillUpRule 一起退役（plan/percolumn-retirement-20261020.md 刀 6）。
+        StartPendingLogicalLayoutReflow();
     }
 
     private bool TryBuildLogicalWaveMarchPlan()
@@ -1253,10 +1225,6 @@ public class ColumnManager : MonoBehaviour
     /// <summary>
     /// Legacy row-based compaction entry. It is intentionally inert; ordinary fill is scheduled by StartWaveMarch.
     /// </summary>
-    public void RowBasedFillUp(ISet<Enemy> protectedEnemies = null)
-    {
-        DebugLog.Warning("[ColumnManager] RowBasedFillUp ignored: legacy compaction is disabled");
-    }
 
     #endregion
 
@@ -1828,10 +1796,6 @@ public class ColumnManager : MonoBehaviour
     /// Legacy manual compaction entry retained for compatibility. It is intentionally inert;
     /// normal fill is owned exclusively by StartWaveMarch.
     /// </summary>
-    public void CompactAllColumns(int rangeStart = -1, int rangeEnd = -1)
-    {
-        DebugLog.Warning("[ColumnManager] CompactAllColumns ignored: legacy displacement compaction is disabled");
-    }
 
     /// <summary>
     /// 调试用：导出所有列中敌人的 (col, row, name)

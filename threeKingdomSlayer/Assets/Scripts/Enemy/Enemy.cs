@@ -933,7 +933,7 @@ public GameObject freezeMeltEffectPrefab;
         if (isRush && !HasRushMoveOrder) return;
 
         // 逐排补齐模式：非补齐移动时，检查前方整排是否已完全清空
-        if (!isRush && StageFormation?.GetFillUpRule() == FillUpRule.PerRow && !IsFrontRowClear())
+        if (!isRush && StageFormation != null && !IsFrontRowClear())
         {
             DebugLog.Info($"[Enemy] PerRow 模式等待前排清空: {DebugTag}, col={columnIndex}, row={rowIndex}");
             return;

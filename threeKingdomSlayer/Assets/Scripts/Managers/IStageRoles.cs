@@ -22,8 +22,6 @@ public interface IStageFormation
     /// <summary>可见排数上限。</summary>
     int GetMaxVisibleRows();
 
-    /// <summary>补齐规则（按列 / 按排）。</summary>
-    FillUpRule GetFillUpRule();
 
     /// <summary>冲锋移动延迟。</summary>
     float GetRushMoveDelay();

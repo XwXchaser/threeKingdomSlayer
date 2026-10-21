@@ -173,34 +173,21 @@ public class WaveSpawner : MonoBehaviour
         Debug.Log($"[WaveSpawner] 开始生成第 {currentWaveIndex + 1} 波，共 {wave.rows.Count} 排敌人");
 
         // 生成该波的所有排
-        FillUpRule fillRule = ResolvedStageConfig?.fillUpRule ?? FillUpRule.PerRow;
+        // 补齐规则只有一种：逐排补齐（整排清空 → 逻辑排队列前移 → 波次行军）。
+        // 旧的「逐列补齐」路径已随 FillUpRule 枚举一起退役（plan/percolumn-retirement-20261020.md 刀 6）。
         var spawnedNormalEnemies = new List<Enemy>();
-        if (fillRule == FillUpRule.PerRow)
+        columnManager.ConfigureWaveRowLayout(wave.rows, 0);
+        int rowIdx = 0;
+        foreach (RowConfig row in wave.rows)
         {
-            columnManager.ConfigureWaveRowLayout(wave.rows, 0);
-            int rowIdx = 0;
-            foreach (RowConfig row in wave.rows)
-            {
-                SpawnRow(row, fillRule, rowIdx++, spawnedNormalEnemies);
-            }
-        }
-        else
-        {
-            columnManager.ClearWaveRowLayout();
-            foreach (RowConfig row in wave.rows)
-            {
-                SpawnRow(row, fillRule);
-            }
+            SpawnRow(row, rowIdx++, spawnedNormalEnemies);
         }
 
         isSpawning = false;
 
         CreateSharedHealthGroups();
 
-        if (fillRule == FillUpRule.PerRow)
-            columnManager.StartSpawnEntry(spawnedNormalEnemies);
-        else
-            columnManager.StartWaveMarch();
+        columnManager.StartSpawnEntry(spawnedNormalEnemies);
 
         // Boss 独立补齐：波次行军跳过 Boss，需单独触发
         DebugLog.Info("[BOSS_ADVANCE] WaveSpawner 调用TriggerAllBossFillForward (wave=" + (currentWaveIndex + 1) + ")");
@@ -253,7 +240,7 @@ public class WaveSpawner : MonoBehaviour
     /// 该排所有敌人共享相同的排索引（rowIndex）。
     /// </summary>
     /// <param name="explicitRowIndex">PerRow 模式下的显式排号（>=0 时直接使用，无需计算）</param>
-    private void SpawnRow(RowConfig row, FillUpRule fillRule = FillUpRule.PerRow, int explicitRowIndex = -1, List<Enemy> spawnedNormalEnemies = null)
+    private void SpawnRow(RowConfig row, int explicitRowIndex = -1, List<Enemy> spawnedNormalEnemies = null)
     {
         if (row == null)
             return;
@@ -279,7 +266,7 @@ public class WaveSpawner : MonoBehaviour
         }
         else
         {
-            // PerColumn 模式：基于最大列数量计算后排位置
+            // 兼容路径：未指定配置排号时，按最大列数量估算后排位置（现行逐排流程总会传入配置排号）
             rowIndex = 0;
             if (columnManager != null)
             {
@@ -307,7 +294,7 @@ public class WaveSpawner : MonoBehaviour
             }
 
             // 直接使用数组索引作为列号：enemyIds[0]=列0(最左), enemyIds[4]=列4(最右)
-            Debug.Log($"[WaveSpawner] 生成敌人 id={enemyId} → 列{i} 排{rowIndex} (fillRule={fillRule})");
+            Debug.Log($"[WaveSpawner] 生成敌人 id={enemyId} → 列{i} 排{rowIndex}");
             enemy.Initialize(i, rowIndex);
 
             // 应用波次敌人强化（血量倍率 + 颜色叠加）
