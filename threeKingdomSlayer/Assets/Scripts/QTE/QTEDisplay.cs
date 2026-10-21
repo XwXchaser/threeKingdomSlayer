@@ -97,13 +97,12 @@ public class QTEDisplay : MonoBehaviour
     {
         if (qteFrameRect != null && qteIndicatorArea != null) return;
 
-        var heroHud = UnityEngine.Object.FindObjectOfType<HeroHUD>(true);
-        if (heroHud == null) return;
+        // 经端口拿英雄 HUD 的挂点（不再按类型找对象）
+        var hud = CombatPresenters.QteHud;
+        if (hud == null) return;
 
-        qteFrameRect = heroHud.qteFrameRect;
-        qteIndicatorArea = heroHud.qteIndicatorArea;
-        if (_strictModePrompt == null)
-            _strictModePrompt = heroHud.strictModePrompt;
+        qteFrameRect = hud.QteFrameRect;
+        qteIndicatorArea = hud.QteIndicatorArea;
     }
 
     // ═══════════════════════════════════════════
@@ -112,15 +111,19 @@ public class QTEDisplay : MonoBehaviour
 
     public void ShowStrictModePrompt()
     {
-        EnsureHeroHudReferences();
-        if (_strictModePrompt == null) return;
-
-        _strictModePromptTween?.Kill();
-        _strictModePrompt.gameObject.SetActive(true);
-        _strictModePrompt.alpha = 1f;
-        _strictModePromptTween = _strictModePrompt.DOFade(0f, _strictModePromptDuration)
-            .SetUpdate(true)
-            .OnComplete(() => _strictModePrompt.gameObject.SetActive(false));
+        // 自己 Inspector 上挂了提示就用自己的（保持原行为）；
+        // 没有就问界面层要（提示的表现与淡出由界面层负责）。
+        if (_strictModePrompt != null)
+        {
+            _strictModePromptTween?.Kill();
+            _strictModePrompt.gameObject.SetActive(true);
+            _strictModePrompt.alpha = 1f;
+            _strictModePromptTween = _strictModePrompt.DOFade(0f, _strictModePromptDuration)
+                .SetUpdate(true)
+                .OnComplete(() => _strictModePrompt.gameObject.SetActive(false));
+            return;
+        }
+        CombatPresenters.QteHud?.ShowStrictModePrompt(_strictModePromptDuration);
     }
 
     /// <summary>

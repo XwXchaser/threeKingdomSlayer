@@ -10,7 +10,7 @@ using UnityEngine;
 /// 在 Inspector 中将 BuffIcon 实例拖入 _columnASlots / _columnBSlots，
 /// 槽位按列表顺序分配（0 → N），代码不创建/销毁实例。
 /// </summary>
-public class BuffDisplayPanel : MonoBehaviour
+public class BuffDisplayPanel : MonoBehaviour, IQteInputLockTarget
 {
 
     /// <summary>
@@ -42,6 +42,9 @@ public class BuffDisplayPanel : MonoBehaviour
 
     private void Start()
     {
+        // 登记到 QTE 输入锁登记表：QTE 严格模式时由它统一加锁（2026-10-22 asmdef 分层第七批）。
+        QteInputLockTargets.Register(this);
+
         _canvasGroup = GetComponent<CanvasGroup>();
         if (_canvasGroup == null)
             _canvasGroup = gameObject.AddComponent<CanvasGroup>();
@@ -75,6 +78,7 @@ public class BuffDisplayPanel : MonoBehaviour
 
     private void OnDestroy()
     {
+        QteInputLockTargets.Unregister(this);
         if (UpgradeEffectManager.Instance != null)
         {
             UpgradeEffectManager.Instance.OnUpgradeApplied -= OnUpgradeApplied;

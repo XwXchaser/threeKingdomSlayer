@@ -150,9 +150,8 @@ public partial class QTEController : MonoBehaviour
 
     private static void SetBuffDisplayLocked(bool locked)
     {
-        var panels = FindObjectsOfType<BuffDisplayPanel>();
-        for (int i = 0; i < panels.Length; i++)
-            panels[i].SetQTEInputLocked(locked);
+        // 经登记表统一施加（Buff 面板可能有多个）
+        QteInputLockTargets.SetAllLocked(locked);
     }
 
     private void SpawnProjectile()

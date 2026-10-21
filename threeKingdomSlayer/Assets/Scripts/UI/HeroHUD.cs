@@ -2,13 +2,14 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using DG.Tweening;
 
 /// <summary>
 /// 英雄 HUD — 独立 Prefab，每个武将可拥有不同的布局和素材。
 /// 挂载到英雄 HUD Prefab 根节点，BattleHUD 在战斗开始时通过 HeroConfig.heroHUDPrefab 实例化。
 /// 所有字段按需拖拽，不需要的可以留空。
 /// </summary>
-public class HeroHUD : MonoBehaviour
+public class HeroHUD : MonoBehaviour, IQteHud
 {
     [Header("生命值")]
     public Slider healthSlider;
@@ -93,8 +94,37 @@ public class HeroHUD : MonoBehaviour
 
     private void Start()
     {
+        // 登记到呈现层装配点：QTE 演出只通过 IQteHud 端口用英雄 HUD
+        //（2026-10-22 asmdef 分层第七批）。
+        CombatPresenters.QteHud = this;
         EnsurePortraitForegroundLayer();
     }
+
+    // ── IQteHud 端口 ──
+
+    /// <summary>QTE 框（指示器用它定位）。</summary>
+    public RectTransform QteFrameRect => qteFrameRect;
+
+    /// <summary>QTE 指示器挂点。</summary>
+    public RectTransform QteIndicatorArea => qteIndicatorArea;
+
+    /// <summary>
+    /// 显示「严格模式」提示并淡出。
+    /// 表现（TMP 文字 + 淡出）由界面层负责 ✅ —— QTE 侧只说「要显示、显示多久」✅。
+    /// </summary>
+    public void ShowStrictModePrompt(float durationSeconds)
+    {
+        if (strictModePrompt == null) return;
+        _strictModePromptTween?.Kill();
+        strictModePrompt.gameObject.SetActive(true);
+        strictModePrompt.alpha = 1f;
+        _strictModePromptTween = strictModePrompt.DOFade(0f, durationSeconds)
+            .SetUpdate(true)
+            .OnComplete(() => strictModePrompt.gameObject.SetActive(false));
+    }
+
+    /// <summary>「严格模式」提示的淡出 Tween（避免与上一次淡出叠加）。</summary>
+    private Tween _strictModePromptTween;
 
     private void Update()
     {

@@ -113,6 +113,9 @@ public static class CombatPresenters
     /// <summary>敌人血条工厂。</summary>
     public static IEnemyHealthBarFactory EnemyHealthBars { get; set; }
 
+    /// <summary>QTE 演出用的英雄 HUD（QTE 侧只通过端口拿挂点与提示表现）。</summary>
+    public static IQteHud QteHud { get; set; }
+
     /// <summary>清空登记（场景重载 / 退出战斗时用）。</summary>
     public static void Clear()
     {
@@ -121,5 +124,6 @@ public static class CombatPresenters
         ItemDiscard = null;
         DamageNumbers = null;
         EnemyHealthBars = null;
+        QteHud = null;
     }
 }

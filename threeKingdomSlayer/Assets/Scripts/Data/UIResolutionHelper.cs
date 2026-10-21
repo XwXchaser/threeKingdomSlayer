@@ -3,6 +3,10 @@ using UnityEngine;
 /// <summary>
 /// UI 分辨率适配工具。基于参考分辨率 1080×1920 提供缩放系数，
 /// 窄屏设备上 UI 元素自动等比缩小，防止水平方向溢出。
+///
+/// 2026-10-22（asmdef 分层第七批）：从 <c>Assets/Scripts/UI/</c> 下沉到契约层
+/// —— 它是**纯计算**（屏幕宽高比 → 缩放系数）✅，不依赖任何界面对象 ✅，
+/// 放在契约层后 QTE 等内核代码也能直接用 ✅。
 /// </summary>
 public static class UIResolutionHelper
 {
