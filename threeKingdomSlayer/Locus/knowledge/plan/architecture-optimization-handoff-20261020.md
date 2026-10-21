@@ -120,6 +120,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | `daf2b6f` | **状态效果统一落地**：`IEnemyStatusInstance` + `EnemyStatusHost`（每个敌人一个宿主，敌人统一 tick）；`EnemyFreeze` 改为实例并登记；`EnemyStatusRegistry` 查询分宿主式/管理器式两条路但对调用方同一套 API |
 | `dad8591` | **状态框架宿主无关化（批次 A）**：`IStatusEffect` + `StatusContainer`（通用容器，敌人与玩家共用）；玩家侧两个状态先行迁移（反伤护盾、破冰预备），各自的旧调用面保留薄转发 |
 | `9604f5d` | **破冰拆分（批次 B）**：`IceBreakRuntime` → 玩家侧 `IceBreakSession`（会话/作用域/BUFF消费/同列顶开）+ 敌人侧 `EnemyFreeze.TryBreak`（解冻/翻倍/动画）；静态类已删除 |
+| `bf51831` | **DoT 迁入敌人侧（批次 C）**：灼烧 / 疾病从 `UpgradeEffectManager` 的字典迁成敌人自己的状态（`EnemyStatusBurn` / `EnemyStatusDisease` / `EnemyStatusDoTRules`）；`EnemyStatusRegistry` 只剩宿主一路查询；管理器瘦身约 300 行 |
 
 > 详见 `design/architecture-decoupling-analysis.md` §5.7 / §5.8 / §5.9。拆分前机械校验：**内容丢失 = 0**。
 
@@ -361,7 +362,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 项 | 值 |
 |---|---|
 | 分支 / 远程 | `feat/stage-select-talent-overlays`，已同步 |
-| HEAD | `9604f5d`（`refactor(ice): 破冰拆分——判定归玩家侧会话，反应归敌人侧冻结状态（批次 B）`） |
+| HEAD | `bf51831`（`refactor(dot): 灼烧/疾病迁入敌人侧状态——状态挂在谁身上就由谁结算（批次 C）`） |
 | 工作区 | 干净。**唯一例外**：用户自己的 `Assets/Resources/EnemyPrefabs/Enemy_1011.prefab`（`maxHealth 100→200`，调试值，**未提交**，已刻意不夹带） |
 | Unity | 2022.3.62t7（Tuanjie）· BIRP · Legacy Input |
 
@@ -398,6 +399,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | **状态效果统一落地** | `daf2b6f` | `IEnemyStatusInstance`（实例自持状态）+ `EnemyStatusHost`（每敌一人，统一 tick）+ `IEnemyStatusProvider`（外部状态查询）；`EnemyFreeze` 改为实例并登记，冻结的两项每帧逻辑改由宿主驱动、状态机相关的两项不动；`EnemyStatusRegistry` 查询两条来源同一套 API；验证：冻结后宿主实例数=1、查询 frozen active/priority=30 与改造前一致、灼烧经同一套查询 active/progress=1.000、活动状态列表合并、**§15.5 基线逐位一致**；Console 0/0 |
 | **状态框架宿主无关化（批次 A）** | `dad8591` | 新增 `Assets/Scripts/Status/`：`IStatusEffect`（状态本体独立类）+ `StatusContainer`（宿主无关的统一容器）；`Enemy.StatusHost` 与 `PlayerState.StatusHost` 同一类型；玩家侧先行迁移：反伤护盾（从 Build 层迁出）、破冰预备（从静态字段迁出），旧调用面保留薄转发；验证：护盾授予/吸收/反伤/清空/事件/CD 全对、破冰预备作用域判定全对、冻结宿主与查询正常、Stab 掉血 20、**§15.5 基线逐位一致**；Console 0/0 |
 | **破冰拆分（批次 B）** | `9604f5d` | 玩家侧 `IceBreakSession`（会话/作用域校验/BUFF消费/同列顶开）+ 敌人侧 `EnemyFreeze.TryBreak`（解冻/伤害翻倍/破冰动画）；旧静态类 `IceBreakRuntime` 删除，接入口不变；验证：冻结目标被合规重击掉血 20 vs 对照 10（倍率 2.00）且已解冻、无天赋时掉血 5 且仍冻结、**§15.5 基线逐位一致**、存档状态已还原；Console 0/0 |
+| **DoT 迁入敌人侧（批次 C）** | `bf51831` | 新增 `Assets/Scripts/Enemy/EnemyStatusBurn.cs` / `EnemyStatusDisease.cs` / `EnemyStatusDoTRules.cs`；灼烧 / 疾病的每跳结算、泡泡表现、死亡扩散全部住在 `Enemy.StatusHost` 上，由敌人自己 tick；施加点（`ShootFireEffect` / `ActiveSkillRunner`）直接构造状态，不再经管理器；`UpgradeEffectManager` 删掉 DoT 子系统（文件删除，瘦身约 300 行）；`EnemyStatusRegistry` 退役内置 DoT provider（查询只剩宿主一路，`IEnemyStatusProvider` 保留为扩展点）；`StatusContainer` 增删延迟化 + `ClearAll` 快照遍历；`Enemy` 回池清空施加型状态 + 常驻状态（冻结）补登记；验证：灼烧每跳 10/20/30 逐跳吻合且 3 跳后自行结束、疾病每跳 10×2=20 累计 40 且层数 2、泡泡对象生成、`stageState=Victory` 时不结算而恢复后立刻结算、疾病死亡扩散（智能与「左右→后排」两种）都能传给下一个敌人、带灼烧+疾病的敌人回池后宿主只剩冻结（残留 0）、**§15.5 基线逐位一致**；Console 0/0 |
 
 **`Enemy` 终态**：`Enemy.cs` 5224 → **933 行**；另 5 个 partial 分片（状态机 1495 / 战斗结算 828 / 表现层 431 / BOSS 推进 206 / 对象池 106）
 + 4 个真类（`EnemyHitFeedback` / `EnemyMovement` / `EnemyBossPhases` / `EnemyPoise`）。
