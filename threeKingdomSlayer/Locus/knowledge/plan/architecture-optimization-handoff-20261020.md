@@ -127,6 +127,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | `a523cc0` | **分层第四批**：内核不再直接引用 UI 单例——三个呈现层端口（`ICombatHud` / `IDialogueModal` / `IItemDiscardPrompt`）+ 装配点 `CombatPresenters`（上层登记、下层使用）；`ItemEntry` / `ItemDiscardResult` 下沉 L0；`Core→UI` 5→1 文件 ✅ |
 | `d151e68` | **分层第五批（工厂端口）**：`IUpgradeChoiceView` / `IDamageNumberPresenter` / `ISceneTransitionCamera`；`DamageNumberManager` 移到界面层并接管跳字清理；**`Core→UI` / `Managers→UI` / `Wave→UI` 全部归零** ✅ |
 | `fdd09dc` | **分层第六批（血条工厂端口）**：`IEnemyHealthBarView` + `IEnemyHealthBarFactory`；**`Enemy→UI` 1→0** ✅ —— 内核一条 UI 引用都不剩 |
+| `c32364b` | **分层第七批（QTE 的 UI 触点）**：`IQteHud` + `IQteInputLockTarget` / `QteInputLockTargets`；`UIResolutionHelper` 下沉 L0；**`QTE→UI` 3→0** ✅ —— **战斗内核一条 UI 引用都不剩** ✅ |
 
 > 详见 `design/architecture-decoupling-analysis.md` §5.7 / §5.8 / §5.9。拆分前机械校验：**内容丢失 = 0**。
 

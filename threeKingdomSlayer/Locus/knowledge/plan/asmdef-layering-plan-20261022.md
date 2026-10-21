@@ -29,14 +29,21 @@ aiEditMode: inherit
 | 4 · 内核 → UI 的接口化（第一批） | ✅ | 三个呈现层端口（`ICombatHud` / `IDialogueModal` / `IItemDiscardPrompt`）+ 装配点 `CombatPresenters`；`Core→UI` 5→1 文件 ✅ |
 | 5 · 工厂端口（内核自己创建 UI 组件那类） | ✅ | `IUpgradeChoiceView` / `IDamageNumberPresenter` / `ISceneTransitionCamera`；`DamageNumberManager` 移到界面层；**`Core→UI` / `Managers→UI` / `Wave→UI` 全部归零** ✅ |
 | 6 · 血条工厂端口 | ✅ | `IEnemyHealthBarView` + `IEnemyHealthBarFactory`；**`Enemy→UI` 1→0** ✅ —— 内核（Core/Enemy/Managers/Wave/Player/Status）**一条 UI 引用都不剩** ✅ |
-| 7+ · `Locus.Combat` / `Locus.Flow` / `Locus.UI` / `Locus.Editor` | ⏳ | 等 QTE 的三个 UI 触点（`HeroHUD` / `BuffDisplayPanel` / `UIResolutionHelper`）+ `Legacy` 的两条 |
+| 7 · QTE 的三个 UI 触点 | ✅ | `IQteHud` + `IQteInputLockTarget` + `QteInputLockTargets`（登记表✅）；`UIResolutionHelper` 下沉 L0（纯计算✅）；**`QTE→UI` 3→0** ✅ —— **战斗内核一条 UI 引用都不剩** ✅ |
+| 8+ · `Locus.Combat` / `Locus.Flow` / `Locus.UI` / `Locus.Editor` | ⏳ | 战斗内核已无 UI 引用 ✅；剩下要把内核对 `Player` / `Managers` 的依赖收口 ✅（见下）✅ |
 
 **现在的分层实况**：`Locus.Data` 61 文件 / 3597 行（纯叶子）、`Locus.Services` 3 文件 / 642 行（只朝下依赖 Data）、
 其余运行时脚本仍在 `Assembly-CSharp`（251 文件 / 55666 行）。
 
-**内核 → 界面还剩两条边**（批次 7 的目标）：
-- `QTE → HeroHUD / BuffDisplayPanel / UIResolutionHelper`（QTE 直接摸 HUD ✅）；
-- `Legacy → DialogueManager / ItemDiscardPopup`（历史遗留路线代码 ✅，随旧路线清理一起处理 ✅）。
+**内核 → 界面已全部归零** ✅ ✅。内核现在只朝下依赖 `Locus.Data` / `Locus.Services` ✅，
+但仍**跨目录**依赖两处（这是 `Locus.Combat` 的最后一道门槛 ✅）：
+
+| 内核 → | 用到的类型 | 归属建议 |
+|---|---|---|
+| `Player` | `PlayerState` / `AttackSystem` / `IceBreakSession` / `PlayerMoveStateMachine` | **属于内核** ✅（玩家侧战斗状态 ✅）—— 随内核一起搬 ✅ |
+| `Player` | `InputManager` | **属于内核之上** ✅（输入适配器 ✅）—— 内核读它的蓄力状态要改端口 ✅ |
+| `Managers` | `EnemyManager` | **属于内核** ✅（敌人注册表 ✅） |
+| `Managers` | `StageController` / `StageFormation` | **属于流程层** ✅ —— 内核改走已有的 L0 接口 `IStageBattleState` / `IStageFormation` ✅ |
 
 ## 1. 实测基线（不是猜的）
 

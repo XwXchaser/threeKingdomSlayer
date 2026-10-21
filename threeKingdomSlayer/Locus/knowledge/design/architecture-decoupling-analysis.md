@@ -1046,6 +1046,11 @@ if (EnemyStatusRegistry.IsActive(enemy, "poison")) { /* 新机制：中毒的敌
 **`Enemy→UI` 1→0** ✅ —— 内核（`Core` / `Enemy` / `Managers` / `Wave` / `Player` / `Status`）
 **一条 UI 引用都不剩** ✅；剩下 `QTE → 三个 UI 触点` ✅ 与 `Legacy → 两条` ✅。
 
+**批次 7（QTE 的 UI 触点，已完成）** ✅：`IQteHud` ✅ + `IQteInputLockTarget` / `QteInputLockTargets`（登记表 ✅ —— Buff 面板可能有多个 ✅）✅；
+`UIResolutionHelper`（纯计算 ✅）下沉 L0 ✅；**`QTE→UI` 3→0** ✅
+⇒ **战斗内核一条 UI 引用都不剩** ✅ —— 内核只朝下依赖 `Locus.Data` / `Locus.Services` ✅。
+下一道门槛：内核对 `Player` / `Managers` 的跨目录依赖 ✅（见方案文档的归属表 ✅）。
+
 ---
 
 ## 6. 明确不做
