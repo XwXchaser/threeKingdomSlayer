@@ -11,6 +11,11 @@ using UnityEngine;
 ///   4. 通知 UI 显示（OnChoicesReady）
 ///   5. 玩家选择后 → 应用效果 → 检查是否还有待处理的升级
 ///   6. 有则刷新弹窗（仍暂停），无则恢复游戏
+///
+/// 【2026-10-22 解耦】「什么能进池、怎么抽」已拆到 <see cref="UpgradePoolSampler"/>；
+/// 本类只管流程。两把扩展点：
+///   • 入池条件：<see cref="IUpgradeRequirementProvider"/>（如按天赋解锁入池）；
+///   • 选中后的额外效果：<see cref="IUpgradeSelectionEffect"/>。
 /// </summary>
 public class UpgradeChoiceManager : MonoBehaviour
 {
@@ -53,6 +58,12 @@ public class UpgradeChoiceManager : MonoBehaviour
     private List<UpgradeDefinition> _currentChoices;
     private UpgradeChoicePopup _activePopup;
 
+    /// <summary>抽池器（候选收集 + 抽取）。入池条件源注册在它上面。</summary>
+    private UpgradePoolSampler _sampler;
+
+    /// <summary>选中后的额外效果（扩展点）。</summary>
+    private readonly List<IUpgradeSelectionEffect> _selectionEffects = new List<IUpgradeSelectionEffect>();
+
     // 排队：按触发时间先后
     private enum PendingType { LevelUp, Item }
     private Queue<PendingType> _pendingQueue = new Queue<PendingType>();
@@ -64,6 +75,28 @@ public class UpgradeChoiceManager : MonoBehaviour
 
     public bool IsChoosing => _isChoosing;
     public int PendingLevelUps => _pendingLevelUps;
+
+    /// <summary>抽池器（调试 / 工具用；注册条件源也走它）。惰性创建：Awake 之前也能用。</summary>
+    public UpgradePoolSampler PoolSampler
+    {
+        get
+        {
+            if (_sampler == null) _sampler = CreateSampler();
+            return _sampler;
+        }
+    }
+
+    /// <summary>创建抽池器（依赖注入：等级查询 / 被动上限 / 主动技能可获得性）。</summary>
+    private UpgradePoolSampler CreateSampler()
+    {
+        var sampler = new UpgradePoolSampler(
+            GetCurrentLevel,
+            () => UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.PassiveUpgradeCount >= 6,
+            def => ActiveSkillInventory.Instance != null && ActiveSkillInventory.Instance.CanAcquire(def));
+        // 内置条件源：按天赋解锁入池（升级定义填了 requiredTalentIds 才生效）。
+        sampler.AddRequirementProvider(new TalentUpgradeRequirementProvider());
+        return sampler;
+    }
 
     private int GetCurrentLevel(UpgradeDefinition definition)
     {
@@ -81,12 +114,44 @@ public class UpgradeChoiceManager : MonoBehaviour
             return;
         }
         Instance = this;
+        _sampler = CreateSampler();
     }
 
     private void OnDestroy()
     {
         if (Instance == this)
             Instance = null;
+    }
+
+    // ── 扩展点注册 ──
+
+    /// <summary>
+    /// 注册**入池条件源**（扩展点）。例如「某条升级需要先解锁某个天赋才进池」。
+    /// 多个条件源是「与」的关系：凡是适用的条件源都必须满足。
+    /// </summary>
+    public void RegisterRequirementProvider(IUpgradeRequirementProvider provider)
+    {
+        if (provider == null) return;
+        PoolSampler.AddRequirementProvider(provider);
+    }
+
+    /// <summary>
+    /// 注册**选中后的额外效果**（扩展点）。在升级本身的效果应用之后调用一次。
+    /// </summary>
+    public void RegisterSelectionEffect(IUpgradeSelectionEffect effect)
+    {
+        if (effect == null) return;
+        _selectionEffects.Add(effect);
+    }
+
+    /// <summary>
+    /// 注册**选中后的额外效果**（扩展点，委托版）。
+    /// </summary>
+    public void RegisterSelectionEffect(
+        System.Func<UpgradeDefinition, bool> appliesTo,
+        System.Action<UpgradeDefinition> onSelected)
+    {
+        RegisterSelectionEffect(new DelegateUpgradeSelectionEffect(appliesTo, onSelected));
     }
 
     private void Start()
@@ -222,6 +287,7 @@ public class UpgradeChoiceManager : MonoBehaviour
 
         UpgradeEffectManager.Instance.ApplyUpgrade(selected);
         OnChoiceSelected?.Invoke(selected);
+        ApplySelectionEffects(selected);
 
         // 检查是否还有待处理的选择
         if (_pendingQueue.Count > 0 || _pendingLevelUps > 0 || _pendingItemChoices > 0)
@@ -232,6 +298,24 @@ public class UpgradeChoiceManager : MonoBehaviour
         else
         {
             FinishAllChoices();
+        }
+    }
+
+    /// <summary>执行选中后的额外效果（扩展点）。在升级本身的效果应用之后。</summary>
+    private void ApplySelectionEffects(UpgradeDefinition selected)
+    {
+        for (int i = 0; i < _selectionEffects.Count; i++)
+        {
+            var effect = _selectionEffects[i];
+            if (effect == null || !effect.AppliesTo(selected)) continue;
+            try
+            {
+                effect.OnSelected(selected);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("[UpgradeChoiceManager] 选中额外效果执行失败: " + e);
+            }
         }
     }
 
@@ -261,307 +345,107 @@ public class UpgradeChoiceManager : MonoBehaviour
         OnAllChoicesDone?.Invoke();
     }
 
-    // ── 随机抽取 ──
-
-    private List<UpgradeDefinition> DrawChoices()
-    {
-        bool v2 = UsesActiveSkillRules && activeSkillPoolConfig != null;
-        if (!v2 && poolConfig == null)
+    // ── 随机抽取（实现见 UpgradePoolSampler）──
+    
+        private List<UpgradeDefinition> DrawChoices()
         {
-            Debug.LogWarning("[UpgradeChoiceManager] poolConfig 未配置");
-            return new List<UpgradeDefinition>();
-        }
-
-        var candidates = CollectEligible();
-        if (candidates.Count == 0)
-            return new List<UpgradeDefinition>();
-
-        var results = new List<UpgradeDefinition>();
-        var usedIds = new HashSet<string>();
-
-        for (int i = 0; i < choiceCount && usedIds.Count < candidates.Count; i++)
-        {
-            UpgradeRarity targetRarity = RollRarity();
-
-            // 同一稀有度中未选中的候选项
-            var rarityCandidates = new List<EligibleEntry>();
-            for (int j = 0; j < candidates.Count; j++)
+            bool v2 = UsesActiveSkillRules && activeSkillPoolConfig != null;
+            if (!v2 && poolConfig == null)
             {
-                var c = candidates[j];
-                if (c.rarity == targetRarity && !usedIds.Contains(c.upgrade.upgradeId))
-                    rarityCandidates.Add(c);
+                Debug.LogWarning("[UpgradeChoiceManager] poolConfig 未配置");
+                return new List<UpgradeDefinition>();
             }
-
-            // 稀有度池不够 → 降级到所有剩余候选项
-            if (rarityCandidates.Count == 0)
+    
+            var candidates = CollectEligible();
+            if (candidates.Count == 0)
+                return new List<UpgradeDefinition>();
+    
+            return _sampler.DrawByRarity(candidates, choiceCount, RollRarity);
+        }
+    
+        /// <summary>收集所有满足前置条件且未满级的候选项；V2 从 activeSkillPoolConfig 读取全池。</summary>
+        private List<UpgradePoolSampler.Candidate> CollectEligible()
+        {
+            var candidates = new List<UpgradePoolSampler.Candidate>();
+            if (UsesActiveSkillRules && activeSkillPoolConfig != null)
             {
-                for (int j = 0; j < candidates.Count; j++)
-                {
-                    var c = candidates[j];
-                    if (!usedIds.Contains(c.upgrade.upgradeId))
-                        rarityCandidates.Add(c);
-                }
-            }
-
-            if (rarityCandidates.Count == 0) break;
-
-            var picked = WeightedPick(rarityCandidates);
-            results.Add(picked.upgrade);
-            usedIds.Add(picked.upgrade.upgradeId);
-        }
-
-        return results;
-    }
-
-    /// <summary>收集所有满足前置条件且未满级的候选项；V2 从 activeSkillPoolConfig 读取全池。</summary>
-    private List<EligibleEntry> CollectEligible()
-    {
-        var candidates = new List<EligibleEntry>();
-        if (UsesActiveSkillRules && activeSkillPoolConfig != null)
-        {
-            CollectFromUnifiedPool(candidates, activeSkillPoolConfig.commonPool, UpgradeRarity.Common);
-            CollectFromUnifiedPool(candidates, activeSkillPoolConfig.rarePool, UpgradeRarity.Rare);
-            CollectFromUnifiedPool(candidates, activeSkillPoolConfig.legendaryPool, UpgradeRarity.Legendary);
-        }
-        else
-        {
-            CollectFromPool(candidates, poolConfig.commonPool, UpgradeRarity.Common);
-            CollectFromPool(candidates, poolConfig.rarePool, UpgradeRarity.Rare);
-            CollectFromPool(candidates, poolConfig.legendaryPool, UpgradeRarity.Legendary);
-        }
-        return candidates;
-    }
-
-    /// <summary>V2 统一池收集：主动技能走 CanAcquire，其余走前置条件+槽位检查。</summary>
-    private void CollectFromUnifiedPool(List<EligibleEntry> result, List<WeightedUpgrade> pool, UpgradeRarity rarity)
-    {
-        if (pool == null) return;
-        for (int i = 0; i < pool.Count; i++)
-        {
-            var wu = pool[i];
-            if (wu.upgrade == null) continue;
-            if (wu.upgrade.category == UpgradeCategory.Item) continue;
-
-            if (wu.upgrade.category == UpgradeCategory.ActiveSkill)
-            {
-                var inventory = ActiveSkillInventory.Instance;
-                if (inventory == null || !inventory.CanAcquire(wu.upgrade as ActiveSkillDefinition)) continue;
+                _sampler.CollectUnified(candidates, activeSkillPoolConfig.commonPool, UpgradeRarity.Common);
+                _sampler.CollectUnified(candidates, activeSkillPoolConfig.rarePool, UpgradeRarity.Rare);
+                _sampler.CollectUnified(candidates, activeSkillPoolConfig.legendaryPool, UpgradeRarity.Legendary);
             }
             else
             {
-                if (!PrerequisitesMet(wu.upgrade)) continue;
-                int currentLevel = GetCurrentLevel(wu.upgrade);
-                if (currentLevel >= wu.upgrade.maxLevel) continue;
-                if (currentLevel == 0 && UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.PassiveUpgradeCount >= 6)
-                    continue;
+                _sampler.CollectRegular(candidates, poolConfig.commonPool, UpgradeRarity.Common);
+                _sampler.CollectRegular(candidates, poolConfig.rarePool, UpgradeRarity.Rare);
+                _sampler.CollectRegular(candidates, poolConfig.legendaryPool, UpgradeRarity.Legendary);
             }
-
-            result.Add(new EligibleEntry { upgrade = wu.upgrade, weight = Mathf.Max(1, wu.weight), rarity = rarity });
+            return candidates;
         }
-    }
-
-    private void CollectFromPool(List<EligibleEntry> result, List<WeightedUpgrade> pool, UpgradeRarity rarity)
-    {
-        if (pool == null) return;
-        for (int i = 0; i < pool.Count; i++)
+    
+        /// <summary>从物品池抽取候选项</summary>
+        private List<UpgradeDefinition> DrawItemChoices()
         {
-            var wu = pool[i];
-            if (wu.upgrade == null) continue;
-            // V1 Item 与 V2 ActiveSkill 均由各自独立池处理
-            if (wu.upgrade.category == UpgradeCategory.Item || wu.upgrade.category == UpgradeCategory.ActiveSkill) continue;
-            if (!PrerequisitesMet(wu.upgrade)) continue;
-            int currentLevel = GetCurrentLevel(wu.upgrade);
-            if (currentLevel >= wu.upgrade.maxLevel) continue;
-            // 被动技能上限 6 个：已满时只允许升级已有技能，不允许获得新技能
-            if (currentLevel == 0 && UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.PassiveUpgradeCount >= 6)
-                continue;
-            result.Add(new EligibleEntry { upgrade = wu.upgrade, weight = wu.weight, rarity = rarity });
-        }
-    }
-
-    /// <summary>从物品池抽取候选项</summary>
-    private List<UpgradeDefinition> DrawItemChoices()
-    {
-        if (itemPoolConfig == null)
-        {
-            Debug.LogWarning("[UpgradeChoiceManager] itemPoolConfig 未配置");
-            return new List<UpgradeDefinition>();
-        }
-
-        var candidates = CollectItemEligible();
-        if (candidates.Count == 0)
-        {
-            Debug.LogWarning("[UpgradeChoiceManager] 物品池无可用候选项");
-            return new List<UpgradeDefinition>();
-        }
-
-        var results = new List<UpgradeDefinition>();
-        var usedIds = new HashSet<string>();
-
-        for (int i = 0; i < choiceCount && usedIds.Count < candidates.Count; i++)
-        {
-            UpgradeRarity targetRarity = RollItemRarity();
-
-            var rarityCandidates = new List<EligibleEntry>();
-            for (int j = 0; j < candidates.Count; j++)
+            if (itemPoolConfig == null)
             {
-                var c = candidates[j];
-                if (c.rarity == targetRarity && !usedIds.Contains(c.upgrade.upgradeId))
-                    rarityCandidates.Add(c);
+                Debug.LogWarning("[UpgradeChoiceManager] itemPoolConfig 未配置");
+                return new List<UpgradeDefinition>();
             }
-
-            if (rarityCandidates.Count == 0)
+    
+            var candidates = CollectItemEligible();
+            if (candidates.Count == 0)
             {
-                for (int j = 0; j < candidates.Count; j++)
-                {
-                    var c = candidates[j];
-                    if (!usedIds.Contains(c.upgrade.upgradeId))
-                        rarityCandidates.Add(c);
-                }
+                Debug.LogWarning("[UpgradeChoiceManager] 物品池无可用候选项");
+                return new List<UpgradeDefinition>();
             }
-
-            if (rarityCandidates.Count == 0) break;
-
-            var picked = WeightedPick(rarityCandidates);
-            results.Add(picked.upgrade);
-            usedIds.Add(picked.upgrade.upgradeId);
+    
+            return _sampler.DrawByRarity(candidates, choiceCount, RollItemRarity);
         }
-
-        return results;
-    }
-
-    private List<EligibleEntry> CollectItemEligible()
-    {
-        var candidates = new List<EligibleEntry>();
-        CollectFromItemPool(candidates, itemPoolConfig.commonPool, UpgradeRarity.Common);
-        CollectFromItemPool(candidates, itemPoolConfig.rarePool, UpgradeRarity.Rare);
-        CollectFromItemPool(candidates, itemPoolConfig.legendaryPool, UpgradeRarity.Legendary);
-        return candidates;
-    }
-
-    private void CollectFromItemPool(List<EligibleEntry> result, List<WeightedUpgrade> pool, UpgradeRarity rarity)
-    {
-        if (pool == null) return;
-        for (int i = 0; i < pool.Count; i++)
+    
+        private List<UpgradePoolSampler.Candidate> CollectItemEligible()
         {
-            var wu = pool[i];
-            if (wu.upgrade == null) continue;
-            if (!PrerequisitesMet(wu.upgrade)) continue;
-            if (GetCurrentLevel(wu.upgrade) >= wu.upgrade.maxLevel) continue;
-            result.Add(new EligibleEntry { upgrade = wu.upgrade, weight = wu.weight, rarity = rarity });
+            var candidates = new List<UpgradePoolSampler.Candidate>();
+            _sampler.CollectItem(candidates, itemPoolConfig.commonPool, UpgradeRarity.Common);
+            _sampler.CollectItem(candidates, itemPoolConfig.rarePool, UpgradeRarity.Rare);
+            _sampler.CollectItem(candidates, itemPoolConfig.legendaryPool, UpgradeRarity.Legendary);
+            return candidates;
         }
-    }
-
-    private UpgradeRarity RollItemRarity()
-    {
-        float total = itemPoolConfig.commonWeight + itemPoolConfig.rareWeight + itemPoolConfig.legendaryWeight;
-        float roll = Random.value * total;
-        if (roll < itemPoolConfig.commonWeight) return UpgradeRarity.Common;
-        if (roll < itemPoolConfig.commonWeight + itemPoolConfig.rareWeight) return UpgradeRarity.Rare;
-        return UpgradeRarity.Legendary;
-    }
-
-    private bool PrerequisitesMet(UpgradeDefinition def)
-    {
-        if (def == null) return false;
-        if (def.prerequisites == null || def.prerequisites.Count == 0) return true;
-        for (int i = 0; i < def.prerequisites.Count; i++)
+    
+        private UpgradeRarity RollItemRarity()
         {
-            var prereq = def.prerequisites[i];
-            if (prereq.requiredUpgrade == null) continue;
-            if (GetCurrentLevel(prereq.requiredUpgrade) < prereq.requiredLevel)
-                return false;
+            float total = itemPoolConfig.commonWeight + itemPoolConfig.rareWeight + itemPoolConfig.legendaryWeight;
+            float roll = Random.value * total;
+            if (roll < itemPoolConfig.commonWeight) return UpgradeRarity.Common;
+            if (roll < itemPoolConfig.commonWeight + itemPoolConfig.rareWeight) return UpgradeRarity.Rare;
+            return UpgradeRarity.Legendary;
         }
-        return true;
-    }
-
-    private List<UpgradeDefinition> DrawBossActiveSkillChoices()
-    {
-        var candidates = new List<EligibleEntry>();
-        CollectActiveSkills(candidates, includeCommon: false);
-        return DrawFromEligible(candidates);
-    }
-
-    private void CollectActiveSkills(List<EligibleEntry> result, bool includeCommon)
-    {
-        if (activeSkillPoolConfig == null || ActiveSkillInventory.Instance == null) return;
-        if (includeCommon)
-            CollectActiveSkillEntries(result, activeSkillPoolConfig.commonPool, UpgradeRarity.Common);
-        CollectActiveSkillEntries(result, activeSkillPoolConfig.rarePool, UpgradeRarity.Rare);
-        CollectActiveSkillEntries(result, activeSkillPoolConfig.legendaryPool, UpgradeRarity.Legendary);
-    }
-
-    private void CollectActiveSkillEntries(List<EligibleEntry> result, List<WeightedUpgrade> pool, UpgradeRarity rarity)
-    {
-        if (pool == null) return;
-        for (int i = 0; i < pool.Count; i++)
+    
+        private List<UpgradeDefinition> DrawBossActiveSkillChoices()
         {
-            var wu = pool[i];
-            if (wu.upgrade == null || wu.upgrade.category != UpgradeCategory.ActiveSkill) continue;
-            var skill = wu.upgrade as ActiveSkillDefinition;
-            if (skill == null) continue;
-            var inventory = ActiveSkillInventory.Instance;
-            if (inventory == null || !inventory.CanAcquire(skill)) continue;
-            result.Add(new EligibleEntry { upgrade = skill, weight = Mathf.Max(1, wu.weight), rarity = rarity });
+            var candidates = new List<UpgradePoolSampler.Candidate>();
+            CollectActiveSkills(candidates, includeCommon: false);
+            return _sampler.DrawByWeight(candidates, choiceCount);
         }
-    }
-
-    private List<UpgradeDefinition> DrawFromEligible(List<EligibleEntry> candidates)
-    {
-        var results = new List<UpgradeDefinition>();
-        if (candidates == null || candidates.Count == 0) return results;
-
-        var usedIds = new HashSet<string>();
-        for (int i = 0; i < choiceCount && usedIds.Count < candidates.Count; i++)
+    
+        private void CollectActiveSkills(List<UpgradePoolSampler.Candidate> result, bool includeCommon)
         {
-            var remaining = new List<EligibleEntry>();
-            for (int j = 0; j < candidates.Count; j++)
-                if (!usedIds.Contains(candidates[j].upgrade.upgradeId))
-                    remaining.Add(candidates[j]);
-            if (remaining.Count == 0) break;
-            var picked = WeightedPick(remaining);
-            results.Add(picked.upgrade);
-            usedIds.Add(picked.upgrade.upgradeId);
+            if (activeSkillPoolConfig == null || ActiveSkillInventory.Instance == null) return;
+            if (includeCommon)
+                _sampler.CollectActiveSkills(result, activeSkillPoolConfig.commonPool, UpgradeRarity.Common);
+            _sampler.CollectActiveSkills(result, activeSkillPoolConfig.rarePool, UpgradeRarity.Rare);
+            _sampler.CollectActiveSkills(result, activeSkillPoolConfig.legendaryPool, UpgradeRarity.Legendary);
         }
-        return results;
-    }
-
-    /// <summary>按稀有度权重随机选择稀有度</summary>
-    private UpgradeRarity RollRarity()
-    {
-        bool v2 = UsesActiveSkillRules && activeSkillPoolConfig != null;
-        float commonW = v2 ? activeSkillPoolConfig.commonWeight : poolConfig.commonWeight;
-        float rareW = v2 ? activeSkillPoolConfig.rareWeight : poolConfig.rareWeight;
-        float legendaryW = v2 ? activeSkillPoolConfig.legendaryWeight : poolConfig.legendaryWeight;
-        float total = commonW + rareW + legendaryW;
-        float roll = Random.value * total;
-        if (roll < commonW) return UpgradeRarity.Common;
-        if (roll < commonW + rareW) return UpgradeRarity.Rare;
-        return UpgradeRarity.Legendary;
-    }
-
-    /// <summary>按权重随机抽取一个</summary>
-    private static EligibleEntry WeightedPick(List<EligibleEntry> candidates)
-    {
-        int totalWeight = 0;
-        for (int i = 0; i < candidates.Count; i++)
-            totalWeight += candidates[i].weight;
-
-        int roll = Random.Range(0, totalWeight);
-        int cumulative = 0;
-        for (int i = 0; i < candidates.Count; i++)
+    
+        /// <summary>按稀有度权重随机选择稀有度</summary>
+        private UpgradeRarity RollRarity()
         {
-            cumulative += candidates[i].weight;
-            if (roll < cumulative)
-                return candidates[i];
+            bool v2 = UsesActiveSkillRules && activeSkillPoolConfig != null;
+            float commonW = v2 ? activeSkillPoolConfig.commonWeight : poolConfig.commonWeight;
+            float rareW = v2 ? activeSkillPoolConfig.rareWeight : poolConfig.rareWeight;
+            float legendaryW = v2 ? activeSkillPoolConfig.legendaryWeight : poolConfig.legendaryWeight;
+            float total = commonW + rareW + legendaryW;
+            float roll = Random.value * total;
+            if (roll < commonW) return UpgradeRarity.Common;
+            if (roll < commonW + rareW) return UpgradeRarity.Rare;
+            return UpgradeRarity.Legendary;
         }
-        return candidates[candidates.Count - 1];
     }
-
-    private struct EligibleEntry
-    {
-        public UpgradeDefinition upgrade;
-        public int weight;
-        public UpgradeRarity rarity;
-    }
-}

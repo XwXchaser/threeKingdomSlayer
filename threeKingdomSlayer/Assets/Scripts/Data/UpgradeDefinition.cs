@@ -158,6 +158,10 @@ public class UpgradeDefinition : ScriptableObject
     [Tooltip("需要其他选项达到指定等级后才会进入抽取池")]
     public List<UpgradePrerequisite> prerequisites;
 
+    [Header("天赋条件（2026-10-22）")]
+    [Tooltip("需要先解锁这些天赋节点（节点 id）才会进入抽取池；空 = 不受天赋限制")]
+    public List<string> requiredTalentIds = new List<string>();
+
     // ── 辅助方法 ──
 
     /// <summary>获取指定等级的幻影配置。优先使用 phantomLevels，回退到旧字段。</summary>
