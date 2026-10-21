@@ -106,6 +106,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 提交 | 内容 |
 |---|---|
 | `c3a9a5b` | `AttackSystem` 1568 → **386/591/537/98**；`QTEController` 1474 → **236/248/149/104/542/264**（同类型 partial，零行为风险） |
+| `be11b87` | `Enemy.State` 1495 → **17/768/739**（状态切换 / 状态更新）；`InputManager` 981 → **319/164/370/161**（指针输入 / 手势识别 / 坐标映射与过滤） |
 
 > 详见 `design/architecture-decoupling-analysis.md` §5.7。拆分前机械校验：**内容丢失 = 0**。
 
@@ -124,7 +125,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 路线驱动 | 3 套并存 + 运行期互禁 | 1 套现役 + 1 套 Legacy 孤岛（无互禁） |
 | 遗留实现 | 散在 Core/Route/RouteV2 | `Assets/Scripts/Legacy/`（21 文件 / 2107 行）+ README |
 | 玩家输入 | 全局布尔 `gameplayInputEnabled`，9 处轮流写、后写者生效 | `GameplayInputGate`：按 owner 申请/释放 + 原因枚举；**直接写 = 0** |
-| 单文件体量 | `Enemy` 5224 / `ColumnManager` 2149 / `AttackSystem` 1568 / `QTEController` 1474 / `StageController` 852 | 全部 ≤ 1495：最大为 `Enemy.State.cs` 1495，其余 `UpgradeEffectManager` 1284 / `PixelHitEffectManager` 1227 / `StabSweepEffect` 1012 / `InputManager` 981 |
+| 单文件体量 | `Enemy` 5224 / `ColumnManager` 2149 / `AttackSystem` 1568 / `QTEController` 1474 / `StageController` 852 | 全部 ≤ 1284：最大为 `UpgradeEffectManager` 1284、`PixelHitEffectManager` 1227、`StabSweepEffect` 1012、`Enemy.cs` 933、`FakeRouteRuntime` 914 |
 
 ---
 
@@ -347,7 +348,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 项 | 值 |
 |---|---|
 | 分支 / 远程 | `feat/stage-select-talent-overlays`，已同步 |
-| HEAD | `c3a9a5b`（`refactor(combat): AttackSystem 与 QTEController 按 region partial 分文件`） |
+| HEAD | `be11b87`（`refactor(input,enemy): Enemy.State 与 InputManager 按 region partial 分文件`） |
 | 工作区 | 干净。**唯一例外**：用户自己的 `Assets/Resources/EnemyPrefabs/Enemy_1011.prefab`（`maxHealth 100→200`，调试值，**未提交**，已刻意不夹带） |
 | Unity | 2022.3.62t7（Tuanjie）· BIRP · Legacy Input |
 
@@ -371,6 +372,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | **三个角色接口**（批次 1 尾项） | `ee8d5a9` | `IRunFlow` / `ICombatStaging` / `IRewardGate` + `IRouteStageHost`；退役 `IStageFlowControl` / `IRouteBattleHost`；角色覆盖 36/41（未覆盖的 5 个是 Inspector 协作者）；Play Mode：开打→8 敌→Stab 掉血 20→清场→等奖励；Console 0/0 |
 | **三个角色的实现拆出** | `43f58e3` | `StageController` 718→519 行（薄宿主）；`StageRunFlow`/`StageCombatStaging`/`StageRewardGate` 三个实现类 + `IStageRoleContext`；公开成员逐条一致、序列化未动；Play Mode：路线流程 + 线性关卡（战败/重开/波次推进 0→5）+ 胜利结算 + **§15.5 基线逐位一致**；Console 0/0 |
 | **两个上帝类 partial 分片** | `c3a9a5b` | `AttackSystem` 1568→386/591/537/98、`QTEController` 1474→236/248/149/104/542/264；拆分前机械校验「内容丢失=0」；Play Mode：Stab 20 / Slash 18 / Launch 4 掉血、Boss 104 首次 QTE 即 `PerformingQTEAttack`；Console 0/0 |
+| **Enemy.State 与 InputManager partial 分片** | `be11b87` | `Enemy.State` 1495→17/768/739、`InputManager` 981→319/164/370/161；机械校验「内容丢失=0」；Play Mode：**§15.5 基线逐位一致**（入场完成 + 整排清空后布局）、`ReplayGesture(Tap)` 掉血 20、屏幕→列映射正常；Console 0/0 |
 
 **`Enemy` 终态**：`Enemy.cs` 5224 → **933 行**；另 5 个 partial 分片（状态机 1495 / 战斗结算 828 / 表现层 431 / BOSS 推进 206 / 对象池 106）
 + 4 个真类（`EnemyHitFeedback` / `EnemyMovement` / `EnemyBossPhases` / `EnemyPoise`）。

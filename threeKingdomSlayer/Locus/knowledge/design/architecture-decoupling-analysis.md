@@ -563,6 +563,8 @@ Play Mode 点开始关卡→`phase=Battle`→出怪 1、`ResolveAttackType` 映�
 |---|---|---|---|
 | `AttackSystem` | 1568 | **386 / 591 / 537 / 98** | 主文件（字段+生命周期+招式分发）/ 攻击类型实现 / 工具方法 / 解锁攻击注册表 |
 | `QTEController` | 1474 | **236 / 248 / 149 / 104 / 542 / 264** | 主文件（枚举+QTEInstance+字段+生命周期）/ 状态切换 / 箭矢波 / QTE 动画 / QTE 判定 / 收尾与表现 |
+| `Enemy.State`（批次 2 补） | 1495 | **17 / 768 / 739** | 只留类声明与总览 / 状态切换 / 状态更新 |
+| `InputManager`（批次 2 补） | 981 | **319 / 164 / 370 / 161** | 主文件（字段+生命周期）/ 指针输入 / 手势识别 / 坐标映射与输入过滤 |
 
 **拆分前的机械校验（写入前在内存里跑，不通过就不落盘）**：
 
@@ -578,8 +580,12 @@ Play Mode 点开始关卡→`phase=Battle`→出怪 1、`ResolveAttackType` 映�
 Slash 掉血 18（126→108，前排两名）、Launch 掉血 4；Boss 104 首次 `SelectBossAction()`
 即 `qteState=PerformingQTEAttack` / `enemyState=QTEAttacking`。
 
-**当前最大文件**：`Enemy.State.cs` 1495 / `UpgradeEffectManager.cs` 1284 / `PixelHitEffectManager.cs` 1227 /
-`StabSweepEffect.cs` 1012 / `InputManager.cs` 981。
+**当前最大文件**：`UpgradeEffectManager.cs` 1284 / `PixelHitEffectManager.cs` 1227 / `StabSweepEffect.cs` 1012 / `Enemy.cs` 933 / `FakeRouteRuntime.cs` 914 / `DisplacementMover.cs` 894。
+
+> 剩下这三个（1284 / 1227 / 1012）**没有 region 结构**，要拆得先人工按方法语义分组，
+> 属于「需判断」而非「机械搬移」，暂缓。
+> 另一个坑（已踩两次）：分片文件必须**各自带齐 using**（主文件也要），否则编译报
+> “MonoBehaviour / Vector2 等找不到”；`InputManager` 的分片还需 `using UnityEngine.EventSystems;`。
 
 ---
 
