@@ -7,7 +7,8 @@ using UnityEngine;
 /// 管理关卡开始、进行中、胜利、失败状态
 /// 协调 WaveSpawner、EnemyManager、PlayerState 之间的交互
 /// </summary>
-public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation, IStageFlowControl, IStageBattleState,
+public class StageController : MonoBehaviour, IStageFormation, IStageBattleState,
+    IRunFlow, ICombatStaging, IRewardGate, IRouteStageHost,
     StageRouteBattleHost.IContext
 {
     public static StageController Instance { get; private set; }
@@ -47,33 +48,35 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
     public System.Action OnCombatNodeCleared;
     public System.Action OnRouteBattleCompleted;
 
-    // ───────── IRouteBattleHost 显式实现 ─────────
-    // 路线层（FakeRouteRuntime）只依赖它自己声明的端口；这三个成员在 StageController 上
-    // 原本是 public 字段，用显式实现包一层，字段与 Inspector 序列化保持不变。
-    // 四个方法（StartRouteBattle / SetRouteRewardWaitState / SetRouteTravelState /
-    // CompleteFakeRouteStage）签名已匹配，隐式实现接口。
-    bool IRouteBattleHost.AutoStartStage
+    // ───────── ICombatStaging / IRunFlow 显式实现 ─────────
+    // 路线层（FakeRouteRuntime）只依赖它自己声明的端口（IRouteStageHost = 三个角色的合成）；
+    // 这三个成员在 StageController 上原本是 public 字段，用显式实现包一层，
+    // 字段与 Inspector 序列化保持不变。
+    // 方法（StartRouteBattle / SetRouteTravelState / SetRouteRewardWaitState /
+    // CompleteFakeRouteStage / CompleteRouteStage / SetCurrentNodeBattleConfig /
+    // StartCurrentRouteNode / StopCombatForRouteTravel / GoToBattleScene）签名已匹配，隐式实现接口。
+    bool ICombatStaging.AutoStartStage
     {
         get => autoStartStage;
         set => autoStartStage = value;
     }
 
-    FakeRouteStageConfig IRouteBattleHost.RouteConfig
+    FakeRouteStageConfig IRunFlow.RouteConfig
     {
         get => fakeRouteStageConfig;
         set => fakeRouteStageConfig = value;
     }
 
-    event System.Action IRouteBattleHost.RouteBattleCompleted
+    event System.Action ICombatStaging.RouteBattleCompleted
     {
         add => OnRouteBattleCompleted += value;
         remove => OnRouteBattleCompleted -= value;
     }
 
-    // ───────── IStageFormation / IStageFlowControl 显式实现 ─────────
+    // ───────── IStageFormation 显式实现 ─────────
     // 原本是 public 字段的成员用显式实现包一层，字段与 Inspector 序列化保持不变；
     // GetFormationOffset / GetRowSpacing / GetFormationOffsetZ / GetMaxVisibleRows /
-    // GoToMainMenu 签名已匹配，走隐式实现。
+    // GetRushMoveDelay / GetRowAlphaFactors 签名已匹配，走隐式实现。
     StageConfig IStageFormation.StageConfig => stageConfig;
 
     /// <summary>路线战斗宿主：节点战斗的开打/旅行/等奖励状态与迁移逻辑已拆出。</summary>
@@ -101,19 +104,21 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
 
     EnemyPool StageRouteBattleHost.IContext.EnemyPool => enemyPool;
 
-    StageConfig IStageFlowControl.StageConfig => stageConfig;
+    StageConfig IRunFlow.StageConfig => stageConfig;
 
-    bool IStageFlowControl.IsStageInProgress => IsStageInProgress;
-
-    bool IStageFlowControl.BlockRestartOnDefeat
+    bool IRunFlow.BlockRestartOnDefeat
     {
         get => blockRestartOnDefeat;
         set => blockRestartOnDefeat = value;
     }
 
-    bool IStageFlowControl.SuppressDefeatUI => suppressDefeatUI;
+    bool IRunFlow.SuppressDefeatUI => suppressDefeatUI;
 
-    FakeRouteStageConfig IStageFlowControl.RouteConfig => fakeRouteStageConfig;
+    event System.Action IRunFlow.StageDefeat
+    {
+        add => OnStageDefeat += value;
+        remove => OnStageDefeat -= value;
+    }
 
     // ───────── IStageBattleState 显式实现 ─────────
     // OnStageStateChanged / OnStageVictory 在 StageController 上是 public Action 字段，
@@ -136,6 +141,15 @@ public class StageController : MonoBehaviour, IRouteBattleHost, IStageFormation,
     {
         add => OnStageVictory += value;
         remove => OnStageVictory -= value;
+    }
+
+    // ───────── IRewardGate 显式实现 ─────────
+    // OnCombatNodeCleared 在 StageController 上是 public Action 字段，用显式实现包成事件：
+    // 字段与 Inspector 序列化不变，订阅者走接口。
+    event System.Action IRewardGate.CombatNodeCleared
+    {
+        add => OnCombatNodeCleared += value;
+        remove => OnCombatNodeCleared -= value;
     }
 
     private void OnEnable()

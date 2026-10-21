@@ -10,12 +10,13 @@ public class PauseMenuUI : MonoBehaviour
 {
 
     /// <summary>
-    /// 关卡流程控制。 历史上直接摸 StageController 门面，现只依赖角色接口
-    /// （2026-10-20 批次 1）。延迟解析：本组件可能早于 StageController Awake。
+    /// 一局流程。 历史上直接摸 StageController 门面，现只依赖角色接口
+    /// （2026-10-20 批次 1；2026-10-22 角色重收口：原 <c>IStageFlowControl</c> 已退役，
+    /// 能力并入 <c>IRunFlow</c>）。延迟解析：本组件可能早于 StageController Awake。
     /// </summary>
-    private IStageFlowControl _stageFlow;
+    private IRunFlow _stageFlow;
 
-    private IStageFlowControl StageFlow => _stageFlow ??= StageController.Instance;
+    private IRunFlow StageFlow => _stageFlow ??= StageController.Instance;
     [Header("暂停按钮")]
     public UnityEngine.UI.Button pauseButton;
 

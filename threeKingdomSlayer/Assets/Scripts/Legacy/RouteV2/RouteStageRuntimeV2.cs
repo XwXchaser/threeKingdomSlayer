@@ -10,13 +10,13 @@ public sealed class RouteStageRuntimeV2 : MonoBehaviour
     [SerializeField] private StageController stageController;
 
     /// <summary>路线战斗宿主（只走端口接口，不直接调 StageController 的具体成员）。</summary>
-    private IRouteBattleHost _battleHost;
+    private IRouteStageHost _battleHost;
 
     /// <summary>解析战斗宿主：Inspector 拖的引用优先，否则回落到单例。幂等。</summary>
-    private IRouteBattleHost ResolveBattleHost()
+    private IRouteStageHost ResolveBattleHost()
     {
-        if (_battleHost == null && stageController != null) _battleHost = stageController as IRouteBattleHost;
-        if (_battleHost == null) _battleHost = StageController.Instance as IRouteBattleHost;
+        if (_battleHost == null && stageController != null) _battleHost = stageController as IRouteStageHost;
+        if (_battleHost == null) _battleHost = StageController.Instance as IRouteStageHost;
         return _battleHost;
     }
 

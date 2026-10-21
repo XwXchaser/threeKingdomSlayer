@@ -57,8 +57,8 @@ public class TutorialStageDirector : MonoBehaviour
     /// <summary>关卡战斗状态（只读 + 状态事件）。</summary>
     private IStageBattleState _stageState;
 
-    /// <summary>关卡流程控制（战败是否允许重来等开关）。</summary>
-    private IStageFlowControl _stageFlow;
+    /// <summary>一局流程（战败是否允许重来等开关）。</summary>
+    private IRunFlow _stageFlow;
     private WaveSpawner _waveSpawner;
     private bool _choiceDialogueShown;
     private Coroutine _hintRoutine;
@@ -74,7 +74,7 @@ public class TutorialStageDirector : MonoBehaviour
     private void Start()
     {
         _stageState = StageController.Instance as IStageBattleState;
-        _stageFlow = StageController.Instance as IStageFlowControl;
+        _stageFlow = StageController.Instance as IRunFlow;
         _waveSpawner = FindObjectOfType<WaveSpawner>();
         if (_waveSpawner != null) _waveSpawner.OnWaveStarted += OnWaveStarted;
         if (_stageState != null) _stageState.StageVictory += OnStageVictory;

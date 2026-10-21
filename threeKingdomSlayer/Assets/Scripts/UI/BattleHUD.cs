@@ -27,12 +27,13 @@ public class BattleHUD : MonoBehaviour
     private static readonly AttackType[] AllAttackTypes = { AttackType.Stab, AttackType.Slash, AttackType.Pierce, AttackType.Sweep, AttackType.Launch, AttackType.Parry };
 
     /// <summary>
-    /// 关卡流程控制（只读契约）：战败面板 / 重来按钮 / 返回落地页只依赖这几个成员，
-    /// 不再直接摸 StageController 门面（2026-10-20 批次 1）。延迟解析，Instance 可能晚于本组件。
+    /// 一局流程（角色契约）：战败面板 / 重来按钮 / 返回落地页只依赖这几个成员，
+    /// 不再直接摸 StageController 门面（2026-10-20 批次 1；2026-10-22 角色重收口：
+    /// 原 <c>IStageFlowControl</c> 已退役，能力并入 <c>IRunFlow</c>）。延迟解析，Instance 可能晚于本组件。
     /// </summary>
-    private IStageFlowControl _stageFlow;
+    private IRunFlow _stageFlow;
 
-    private IStageFlowControl StageFlow => _stageFlow ??= StageController.Instance;
+    private IRunFlow StageFlow => _stageFlow ??= StageController.Instance;
 
     [Header("Boss 血条")]
     [Tooltip("BossHealthBar 模板 Prefab（BattleHUD 动态实例化）")]

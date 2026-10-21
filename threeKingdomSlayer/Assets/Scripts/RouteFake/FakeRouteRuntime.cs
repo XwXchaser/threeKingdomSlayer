@@ -24,7 +24,7 @@ public sealed class FakeRouteRuntime : MonoBehaviour
     [SerializeField] private MonoBehaviour presenterBehaviour;
     private IRouteMotionPresenter movementPresenter;
     /// <summary>路线战斗宿主：只通过端口接口调用，不直接碰 StageController 的具体成员。</summary>
-    private IRouteBattleHost _battleHost;
+    private IRouteStageHost _battleHost;
     [SerializeField] private bool autoStart = true;
     [SerializeField] private bool useTestStartNode;
     [SerializeField] private RouteChoicePanel choicePanelPrefab;
@@ -93,11 +93,11 @@ public sealed class FakeRouteRuntime : MonoBehaviour
         if (host != null) host.AutoStartStage = false;
     }
 
-    /// <summary>解析路线战斗宿主（StageController 实现 IRouteBattleHost），幂等。</summary>
-    private IRouteBattleHost ResolveBattleHost()
+    /// <summary>解析路线战斗宿主（StageController 实现 IRouteStageHost），幂等。</summary>
+    private IRouteStageHost ResolveBattleHost()
     {
-        if (_battleHost == null && stageController != null) _battleHost = stageController as IRouteBattleHost;
-        if (_battleHost == null) _battleHost = StageController.Instance as IRouteBattleHost;
+        if (_battleHost == null && stageController != null) _battleHost = stageController as IRouteStageHost;
+        if (_battleHost == null) _battleHost = StageController.Instance as IRouteStageHost;
         return _battleHost;
     }
 
