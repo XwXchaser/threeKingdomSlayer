@@ -112,6 +112,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | `45f6f54` | **局内升级体系的扩展点**：数值效果与描述文案改成注册表（`IUpgradeNumericApplier` / `IUpgradeDescriptionFormatter` / `IUpgradeStatSink` + 委托重载），新机制不用再改管理器本体 |
 | `a00134e` | **路线节点的扩展点**：`FakeRouteRuntime` 914→294/202/146/75/210/61；节点「什么算完成 / 要不要收尾整关」改成注册表（`IRouteNodeCompletionPolicy` + `IRouteNodeProgressView`）——数据模型里长期没消费点的 `completionPolicy` / `terminalPolicy` 终于有了落点 |
 | `0b4e4c7` | **三选一解耦**：抽池独立成 `UpgradePoolSampler`；新增「入池条件源」（含**按天赋解锁**内置实现）与「选中后的额外效果」两把扩展点；`UpgradeChoiceManager` 567→436 |
+| `91915da` | **分支出口解耦**：出口的「呈现」（`IRouteChoiceFormatter`）与「可选性」（`IRouteChoiceValidator`）两把扩展点；`RouteChoiceOption` 下沉 `Locus.Data`；不可选时锁定按钮并显示原因 |
 
 > 详见 `design/architecture-decoupling-analysis.md` §5.7 / §5.8 / §5.9。拆分前机械校验：**内容丢失 = 0**。
 
@@ -353,7 +354,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | 项 | 值 |
 |---|---|
 | 分支 / 远程 | `feat/stage-select-talent-overlays`，已同步 |
-| HEAD | `0b4e4c7`（`feat(build): 三选一解耦——抽池独立成采样器，新增入池条件与选中额外效果两把扩展点`） |
+| HEAD | `91915da`（`feat(route): 分支出口解耦——呈现与可选性两把扩展点`） |
 | 工作区 | 干净。**唯一例外**：用户自己的 `Assets/Resources/EnemyPrefabs/Enemy_1011.prefab`（`maxHealth 100→200`，调试值，**未提交**，已刻意不夹带） |
 | Unity | 2022.3.62t7（Tuanjie）· BIRP · Legacy Input |
 
@@ -383,6 +384,7 @@ summary: 架构改造交接（2026-10-22 更新）：批次 0–3 全部完成�
 | **升级体系扩展点** | `45f6f54` | 数值效果 / 描述文案改成注册表（+ 委托重载）；**升级快照逐行一致**（9 定义 × 每级描述与 18 项数值，diff 零差异）；新 effectType 用一个 lambda 即可接入；自定义描述格式化器覆盖内置且内置文案未变；**§15.5 基线逐位一致**；Console 0/0 |
 | **路线节点扩展点** | `a00134e` | `FakeRouteRuntime` 914→294/202/146/75/210/61；节点完成判定改走注册表（`IRouteNodeCompletionPolicy`/`IRouteNodeProgressView`）；**节点判定快照逐行一致**（2 路线 × 8 节点 × 3 项判定，diff 零差异）；注册只接管 N1 的策略可验证接管生效、其它节点不受影响；**§15.5 基线逐位一致**；Console 0/0 |
 | **三选一解耦** | `0b4e4c7` | 抽池独立成 `UpgradePoolSampler`（依赖注入，可脱离场景测）；新增 `IUpgradeRequirementProvider`（含**按天赋解锁**内置实现）与 `IUpgradeSelectionEffect` 两把扩展点（均带委托重载）；`UpgradeDefinition` 加 `requiredTalentIds`；**四个池的候选集逐字一致**（id/稀有度/权重 diff 零差异）；扩展点实测：天赋未解锁→掉出池、解锁→回池、选中额外效果触发；**§15.5 基线逐位一致**、8 条描述文案未变；Console 0/0 |
+| **分支出口解耦** | `91915da` | 出口呈现与可选性两把扩展点（均带委托重载）；`RouteChoiceOption` 下沉 `Locus.Data` + 加 locked/lockedReason；**出口选项快照逐字一致**（2 路线 × 6 出口 id+文案 diff 零差异）；扩展点实测：自定义格式化器接管文案、自定义判定器锁定并带原因；**§15.5 基线逐位一致**；Console 0/0 |
 
 **`Enemy` 终态**：`Enemy.cs` 5224 → **933 行**；另 5 个 partial 分片（状态机 1495 / 战斗结算 828 / 表现层 431 / BOSS 推进 206 / 对象池 106）
 + 4 个真类（`EnemyHitFeedback` / `EnemyMovement` / `EnemyBossPhases` / `EnemyPoise`）。

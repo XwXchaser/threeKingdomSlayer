@@ -726,6 +726,30 @@ manager.RegisterSelectionEffect(def => def.effectType == "crit_rate",
 > 注：`IEffectExecutor`（持续型行为效果）与 `IUpgradeSelectionEffect`（一次性副作用）是两种东西，
 > 前者已存在，本次补上后者。
 
+### 5.12 分支出口：呈现与可选性两把扩展点（2026-10-22）
+
+> 提交 `91915da`。非战斗侧最后一个缺扩展点的部分。
+
+**改造前**：出口的「呈现」（标题拼法）与「可选性」（禁止回访）都写死在 `FakeRouteRuntime` 里；
+新分支形态（带预览 / 带消耗 / 需要天赋解锁）必须改运行时。
+
+**现在的形态**：
+
+| 扩展点 | 接口 | 说明 |
+|---|---|---|
+| 出口呈现 | `IRouteChoiceFormatter` | 第一个 `CanHandle` 为真的格式化器完全接管该出口；内置兼底 = 「出口名 → 目标节点名」 |
+| 出口可选性 | `IRewardGate`→`IRouteChoiceValidator` | 内置规则 = 禁止回访已访问节点；不可选时**锁定按钮并把原因显示在副标题上**（原来点不动但无提示） |
+
+- `RouteChoiceOption` 下沉到 `Locus.Data`（扩展点要引用它），并加 `locked` / `lockedReason`。
+- `FakeRouteRuntime` 新增 `RegisterChoiceFormatter` / `RegisterChoiceValidator`（均带委托重载）。
+- 选项构造抽成 `BuildChoiceOptions(node)`，面板只管显示。
+- `RouteChoiceButton` 尊重 `option.locked`（原来恒为可点）。
+
+**验证**：出口选项快照逐字一致（2 路线 × 6 出口的 id + 文案，diff 零差异，当前路线无回访→无锁定）；
+扩展点实测（自定义格式化器接管文案 / 自定义判定器锁定并带原因）；**§15.5 基线逐位一致**；Console 0/0。
+
+> 至此**非战斗侧（落地页 / 四个界面 / 路线流程 / 三选一 / 分支选择）全部有扩展点**。
+
 ---
 
 ## 6. 明确不做
