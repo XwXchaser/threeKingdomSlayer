@@ -1122,6 +1122,19 @@ public static class YSceneSpecTools
         return true;
     }
 
+    /// <summary>
+    /// 把**生成树的根**对齐到**参照物的根** ✅（位置/旋转/缩放 ✅）——
+    /// 因为规格里的根变换**未必会被应用** ✅（`applyRootTransform=false` ✅ —— 例：切片导出的规格 ✅），
+    /// 而**部署中的 prefab / 场景物件的根才是权威** ✅ → 比对必须拿同一个基准 ✅。
+    /// </summary>
+    private static void AlignRootTo(Transform generatedRoot, Transform referenceRoot)
+    {
+        if (generatedRoot == null || referenceRoot == null) return;
+        generatedRoot.localPosition = referenceRoot.localPosition;
+        generatedRoot.localEulerAngles = referenceRoot.localEulerAngles;
+        generatedRoot.localScale = referenceRoot.localScale;
+    }
+
     // ───────────────────────── 刀三：三方漂移检查 ─────────────────────────
 
     /// <summary>
@@ -1156,6 +1169,9 @@ public static class YSceneSpecTools
             holderB = new GameObject("SpecOnDisk");
             Generate(specOnDisk, holderB.transform);
             var rootB = holderB.transform.Find(specOnDisk.nodeSpecs[0].nodeId);
+            // 两棵树都**以部署中的 prefab 根为基准** ✅（规格里的根变换未必会被应用 ✅）
+            AlignRootTo(rootA, prefabOnDisk.transform);
+            AlignRootTo(rootB, prefabOnDisk.transform);
 
             var d1 = (rootA != null && rootB != null)
                 ? CompareTrees(rootA, rootB, true, true)
@@ -1234,6 +1250,8 @@ public static class YSceneSpecTools
             Generate(spec, holder.transform);
             var rebuilt = holder.transform.Find(spec.nodeSpecs[0].nodeId);
             if (rebuilt == null) { report = "由规格重建时找不到节点根"; return false; }
+            // 重建树的根**对齐到现状的根** ✅（规格里的根变换未必会被应用 ✅）
+            AlignRootTo(rebuilt, source.transform);
             string pathB = RenderForCompare(rebuilt, tmp, camPos, camRot, "B");
 
             ComparePng(pathA, pathB, out int exact, out int over4, out int max, out int total);

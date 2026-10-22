@@ -32,23 +32,6 @@ public sealed class YSceneSpec : ScriptableObject
 
     [Tooltip("节点布景规格")]
     public YNodeSceneSpec[] nodeSpecs = Array.Empty<YNodeSceneSpec>();
-
-    [Tooltip("过道段规格（按需装载的段 prefab）")]
-    public YSegmentSpec[] segmentSpecs = Array.Empty<YSegmentSpec>();
-}
-
-/// <summary>一个过道段（按需装载的段 prefab）。</summary>
-[Serializable]
-public sealed class YSegmentSpec
-{
-    [Tooltip("段 prefab（沿路装饰的一段）")]
-    public GameObject prefab;
-    [Tooltip("段起点沿路米数")]
-    public float startDistance = 0f;
-    [Tooltip("段终点沿路米数")]
-    public float endDistance = 0f;
-    [Tooltip("常驻（不参与按需卸载）")]
-    public bool alwaysResident = false;
 }
 
 /// <summary>一条分支的地面材质（分叉路：左支一套 + 共用一套）。</summary>

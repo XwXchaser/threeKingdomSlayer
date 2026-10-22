@@ -1,0 +1,2372 @@
+{
+    "nodeId": "N3 Village Rescue - Accepted Art and Grey Wall Study @ 266",
+    "space": "local",
+    "origin": [
+        -88.06845092773438,
+        0.0,
+        289.7325439453125
+    ],
+    "rootRotation": [
+        0.0,
+        315.0,
+        0.0
+    ],
+    "backgroundMaterial": "",
+    "spriteSearchFolders": "",
+    "roadHalfWidth": 0.0,
+    "skipped": [],
+    "items": [
+        {
+            "id": "Village Houses - Near Mid Far",
+            "kind": "group",
+            "layer": "",
+            "spriteName": "",
+            "meshName": "",
+            "asset": "",
+            "material": "",
+            "materialPath": "",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_House_Left_Compact_Near",
+            "kind": "sprite",
+            "layer": "Village Houses - Near Mid Far",
+            "spriteName": "N3_H1_CompactHouse_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_H1_CompactHouse_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -6.864902496337891,
+                -0.019999999552965165,
+                24.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.9599999785423279,
+                0.9599999785423279,
+                0.9599999785423279
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_House_Right_Long_Near",
+            "kind": "sprite",
+            "layer": "Village Houses - Near Mid Far",
+            "spriteName": "N3_H2_LongHouse_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_H2_LongHouse_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                6.539852142333984,
+                -0.019999999552965165,
+                29.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0299999713897706,
+                1.0299999713897706,
+                1.0299999713897706
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_House_Left_Damaged_Mid",
+            "kind": "sprite",
+            "layer": "Village Houses - Near Mid Far",
+            "spriteName": "N3_H3_DamagedHouse_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_H3_DamagedHouse_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -8.91786003112793,
+                -0.019999999552965165,
+                32.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_House_Right_Compact_Mid",
+            "kind": "sprite",
+            "layer": "Village Houses - Near Mid Far",
+            "spriteName": "N3_H1_CompactHouse_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_H1_CompactHouse_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                13.541513442993164,
+                -0.019999999552965165,
+                36.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_House_Left_Long_Far",
+            "kind": "sprite",
+            "layer": "Village Houses - Near Mid Far",
+            "spriteName": "N3_H2_LongHouse_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_H2_LongHouse_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -6.226088523864746,
+                -0.019999999552965165,
+                35.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.47999998927116396,
+                0.47999998927116396,
+                0.47999998927116396
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_House_Right_Damaged_Far",
+            "kind": "sprite",
+            "layer": "Village Houses - Near Mid Far",
+            "spriteName": "N3_H3_DamagedHouse_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_H3_DamagedHouse_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                5.6385345458984379,
+                -0.019999999552965165,
+                38.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5299999713897705,
+                0.5299999713897705,
+                0.5299999713897705
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_House_Left_Compact_Back",
+            "kind": "sprite",
+            "layer": "Village Houses - Near Mid Far",
+            "spriteName": "N3_H1_CompactHouse_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_H1_CompactHouse_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -15.876726150512696,
+                -0.019999999552965165,
+                35.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.949999988079071,
+                0.949999988079071,
+                0.949999988079071
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_House_Right_Long_Back",
+            "kind": "sprite",
+            "layer": "Village Houses - Near Mid Far",
+            "spriteName": "N3_H2_LongHouse_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_H2_LongHouse_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                14.969562530517579,
+                -0.019999999552965165,
+                38.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0199999809265137,
+                1.0199999809265137,
+                1.0199999809265137
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "Courtyard Props - Well Gate Wood",
+            "kind": "group",
+            "layer": "",
+            "spriteName": "",
+            "meshName": "",
+            "asset": "",
+            "material": "",
+            "materialPath": "",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Well_Left_Courtyard",
+            "kind": "sprite",
+            "layer": "Courtyard Props - Well Gate Wood",
+            "spriteName": "N3_W1_Well_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_W1_Well_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -5.689505577087402,
+                -0.019999999552965165,
+                21.799999237060548
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6000000238418579,
+                0.6000000238418579,
+                0.6000000238418579
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Gate_Right_Courtyard",
+            "kind": "sprite",
+            "layer": "Courtyard Props - Well Gate Wood",
+            "spriteName": "N3_B3_CourtyardGate_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_B3_CourtyardGate_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                8.36847972869873,
+                -0.019999999552965165,
+                25.399999618530275
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Firewood_Right",
+            "kind": "sprite",
+            "layer": "Courtyard Props - Well Gate Wood",
+            "spriteName": "N3_B4_Firewood_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_B4_Firewood_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                8.47109317779541,
+                -0.019999999552965165,
+                17.5
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.47999998927116396,
+                0.47999998927116396,
+                0.47999998927116396
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Firewood_Left_Mid",
+            "kind": "sprite",
+            "layer": "Courtyard Props - Well Gate Wood",
+            "spriteName": "N3_B4_Firewood_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_B4_Firewood_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -7.107422351837158,
+                -0.019999999552965165,
+                20.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.4000000059604645,
+                0.4000000059604645,
+                0.4000000059604645
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_CrossWall_Left_Courtyard",
+            "kind": "sprite",
+            "layer": "Courtyard Props - Well Gate Wood",
+            "spriteName": "N3_B1_IntactWall_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_B1_IntactWall_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -6.429680347442627,
+                -0.019999999552965165,
+                18.600000381469728
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.44999998807907107,
+                0.44999998807907107,
+                0.44999998807907107
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_CrossWall_Right_Ruin",
+            "kind": "sprite",
+            "layer": "Courtyard Props - Well Gate Wood",
+            "spriteName": "N3_B2_DamagedWall_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_B2_DamagedWall_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                8.3146333694458,
+                -0.019999999552965165,
+                25.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_CrossWall_Left_Ruin_Far",
+            "kind": "sprite",
+            "layer": "Courtyard Props - Well Gate Wood",
+            "spriteName": "N3_B2_DamagedWall_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_B2_DamagedWall_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -7.348293304443359,
+                -0.019999999552965165,
+                31.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.4000000059604645,
+                0.4000000059604645,
+                0.4000000059604645
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "Road Parallel Walls - Grey Black Outline",
+            "kind": "group",
+            "layer": "",
+            "spriteName": "",
+            "meshName": "",
+            "asset": "",
+            "material": "",
+            "materialPath": "",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Left_Near",
+            "kind": "group",
+            "layer": "Road Parallel Walls - Grey Black Outline",
+            "spriteName": "",
+            "meshName": "",
+            "asset": "",
+            "material": "",
+            "materialPath": "",
+            "at": [
+                -5.900000095367432,
+                0.0,
+                8.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Left_Near_Segment_01",
+            "kind": "mesh",
+            "layer": "Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Near",
+            "spriteName": "",
+            "meshName": "N3_Wall4m_Start_Open",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_Wall4m_Start_Open.asset",
+            "material": "N3_StoneWall_Outline",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_StoneWall_Outline.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Left_Near_Segment_02",
+            "kind": "mesh",
+            "layer": "Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Near",
+            "spriteName": "",
+            "meshName": "N3_Wall4m_Open_Open",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_Wall4m_Open_Open.asset",
+            "material": "N3_StoneWall_Outline",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_StoneWall_Outline.mat",
+            "at": [
+                0.0,
+                0.0,
+                4.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Left_Near_Segment_03",
+            "kind": "mesh",
+            "layer": "Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Near",
+            "spriteName": "",
+            "meshName": "N3_Wall4m_Open_End",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_Wall4m_Open_End.asset",
+            "material": "N3_StoneWall_Outline",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_StoneWall_Outline.mat",
+            "at": [
+                0.0,
+                0.0,
+                8.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Left_Mid",
+            "kind": "group",
+            "layer": "Road Parallel Walls - Grey Black Outline",
+            "spriteName": "",
+            "meshName": "",
+            "asset": "",
+            "material": "",
+            "materialPath": "",
+            "at": [
+                -7.0,
+                0.0,
+                28.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Left_Mid_Segment_01",
+            "kind": "mesh",
+            "layer": "Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Mid",
+            "spriteName": "",
+            "meshName": "N3_Wall4m_Start_Open",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_Wall4m_Start_Open.asset",
+            "material": "N3_StoneWall_Outline",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_StoneWall_Outline.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Left_Mid_Segment_02",
+            "kind": "mesh",
+            "layer": "Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Mid",
+            "spriteName": "",
+            "meshName": "N3_Wall4m_Open_Open",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_Wall4m_Open_Open.asset",
+            "material": "N3_StoneWall_Outline",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_StoneWall_Outline.mat",
+            "at": [
+                0.0,
+                0.0,
+                4.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Left_Mid_Segment_03",
+            "kind": "mesh",
+            "layer": "Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Mid",
+            "spriteName": "",
+            "meshName": "N3_Wall4m_Open_End",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_Wall4m_Open_End.asset",
+            "material": "N3_StoneWall_Outline",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_StoneWall_Outline.mat",
+            "at": [
+                0.0,
+                0.0,
+                8.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Right_Near",
+            "kind": "group",
+            "layer": "Road Parallel Walls - Grey Black Outline",
+            "spriteName": "",
+            "meshName": "",
+            "asset": "",
+            "material": "",
+            "materialPath": "",
+            "at": [
+                5.800000190734863,
+                0.0,
+                12.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Right_Near_Segment_01",
+            "kind": "mesh",
+            "layer": "Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Near",
+            "spriteName": "",
+            "meshName": "N3_Wall4m_Start_Open",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_Wall4m_Start_Open.asset",
+            "material": "N3_StoneWall_Outline",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_StoneWall_Outline.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Right_Near_Segment_02",
+            "kind": "mesh",
+            "layer": "Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Near",
+            "spriteName": "",
+            "meshName": "N3_Wall4m_Open_Open",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_Wall4m_Open_Open.asset",
+            "material": "N3_StoneWall_Outline",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_StoneWall_Outline.mat",
+            "at": [
+                0.0,
+                0.0,
+                4.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Right_Near_Segment_03",
+            "kind": "mesh",
+            "layer": "Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Near",
+            "spriteName": "",
+            "meshName": "N3_Wall4m_Open_End",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_Wall4m_Open_End.asset",
+            "material": "N3_StoneWall_Outline",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_StoneWall_Outline.mat",
+            "at": [
+                0.0,
+                0.0,
+                8.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Right_Mid",
+            "kind": "group",
+            "layer": "Road Parallel Walls - Grey Black Outline",
+            "spriteName": "",
+            "meshName": "",
+            "asset": "",
+            "material": "",
+            "materialPath": "",
+            "at": [
+                8.199999809265137,
+                0.0,
+                32.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Right_Mid_Segment_01",
+            "kind": "mesh",
+            "layer": "Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Mid",
+            "spriteName": "",
+            "meshName": "N3_Wall4m_Start_Open",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_Wall4m_Start_Open.asset",
+            "material": "N3_StoneWall_Outline",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_StoneWall_Outline.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Right_Mid_Segment_02",
+            "kind": "mesh",
+            "layer": "Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Mid",
+            "spriteName": "",
+            "meshName": "N3_Wall4m_Open_Open",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_Wall4m_Open_Open.asset",
+            "material": "N3_StoneWall_Outline",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_StoneWall_Outline.mat",
+            "at": [
+                0.0,
+                0.0,
+                4.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Wall_Right_Mid_Segment_03",
+            "kind": "mesh",
+            "layer": "Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Mid",
+            "spriteName": "",
+            "meshName": "N3_Wall4m_Open_End",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_Wall4m_Open_End.asset",
+            "material": "N3_StoneWall_Outline",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/N3Village/N3_StoneWall_Outline.mat",
+            "at": [
+                0.0,
+                0.0,
+                8.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "Roadside Trees Grass and Rocks",
+            "kind": "group",
+            "layer": "",
+            "spriteName": "",
+            "meshName": "",
+            "asset": "",
+            "material": "",
+            "materialPath": "",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Tree_0",
+            "kind": "sprite",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "J1_Tree_Broad_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Tree_Broad_v2.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -12.5,
+                -0.03999999910593033,
+                18.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.8500000238418579,
+                0.8500000238418579,
+                0.8500000238418579
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks/N3_Tree_0",
+            "spriteName": "",
+            "meshName": "WindSceneryGrid",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+            "material": "Tree_J1_Tree_Broad_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Tree_J1_Tree_Broad_v2_Wind.mat",
+            "at": [
+                -0.2459864616394043,
+                5.984996318817139,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                10.960000038146973,
+                12.289999961853028,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Tree_1",
+            "kind": "sprite",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "J1_Tree_Willow_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Tree_Willow_v2.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                13.0,
+                -0.03999999910593033,
+                24.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.8500000238418579,
+                0.8500000238418579,
+                0.8500000238418579
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks/N3_Tree_1",
+            "spriteName": "",
+            "meshName": "WindSceneryGrid",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+            "material": "Tree_J1_Tree_Willow_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Tree_J1_Tree_Willow_v2_Wind.mat",
+            "at": [
+                -1.0630950927734376,
+                5.994994163513184,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                9.079999923706055,
+                12.329999923706055,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Tree_2",
+            "kind": "sprite",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "J1_Tree_Willow_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Tree_Willow_v2.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -14.0,
+                -0.03999999910593033,
+                30.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.8500000238418579,
+                0.8500000238418579,
+                0.8500000238418579
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks/N3_Tree_2",
+            "spriteName": "",
+            "meshName": "WindSceneryGrid",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+            "material": "Tree_J1_Tree_Willow_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Tree_J1_Tree_Willow_v2_Wind.mat",
+            "at": [
+                -1.0630950927734376,
+                5.994994163513184,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                9.079999923706055,
+                12.329999923706055,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Tree_3",
+            "kind": "sprite",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "J1_Tree_Broad_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Tree_Broad_v2.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                16.0,
+                -0.03999999910593033,
+                34.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.8500000238418579,
+                0.8500000238418579,
+                0.8500000238418579
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks/N3_Tree_3",
+            "spriteName": "",
+            "meshName": "WindSceneryGrid",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+            "material": "Tree_J1_Tree_Broad_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Tree_J1_Tree_Broad_v2_Wind.mat",
+            "at": [
+                -0.2459864616394043,
+                5.984996318817139,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                10.960000038146973,
+                12.289999961853028,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Tree_4",
+            "kind": "sprite",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "J1_Tree_Broad_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Tree_Broad_v2.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -18.0,
+                -0.03999999910593033,
+                38.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.8500000238418579,
+                0.8500000238418579,
+                0.8500000238418579
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks/N3_Tree_4",
+            "spriteName": "",
+            "meshName": "WindSceneryGrid",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+            "material": "Tree_J1_Tree_Broad_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Tree_J1_Tree_Broad_v2_Wind.mat",
+            "at": [
+                -0.2459864616394043,
+                5.984996318817139,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                10.960000038146973,
+                12.289999961853028,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Tree_5",
+            "kind": "sprite",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "J1_Tree_Willow_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Tree_Willow_v2.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                20.0,
+                -0.03999999910593033,
+                41.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.8500000238418579,
+                0.8500000238418579,
+                0.8500000238418579
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks/N3_Tree_5",
+            "spriteName": "",
+            "meshName": "WindSceneryGrid",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+            "material": "Tree_J1_Tree_Willow_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Tree_J1_Tree_Willow_v2_Wind.mat",
+            "at": [
+                -1.0630950927734376,
+                5.994994163513184,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                9.079999923706055,
+                12.329999923706055,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Rock_6",
+            "kind": "sprite",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "RockRound",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -5.5,
+                -0.019999999552965165,
+                7.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.36000001430511477,
+                0.36000001430511477,
+                0.36000001430511477
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Rock_7",
+            "kind": "sprite",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "RockRound",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                5.800000190734863,
+                -0.019999999552965165,
+                10.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.36000001430511477,
+                0.36000001430511477,
+                0.36000001430511477
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Rock_8",
+            "kind": "sprite",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "RockRound",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -6.0,
+                -0.019999999552965165,
+                17.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.36000001430511477,
+                0.36000001430511477,
+                0.36000001430511477
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Rock_9",
+            "kind": "sprite",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "RockRound",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                7.5,
+                -0.019999999552965165,
+                28.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.36000001430511477,
+                0.36000001430511477,
+                0.36000001430511477
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Rock_10",
+            "kind": "sprite",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "RockRound",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -10.0,
+                -0.019999999552965165,
+                38.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.36000001430511477,
+                0.36000001430511477,
+                0.36000001430511477
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_00",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -4.5,
+                -0.03999999910593033,
+                4.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.47999998927116396,
+                0.47999998927116396,
+                0.47999998927116396
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_01",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -5.059999942779541,
+                -0.03999999910593033,
+                7.099999904632568
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5299999713897705,
+                0.5299999713897705,
+                0.5299999713897705
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_02",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -5.619999885559082,
+                -0.03999999910593033,
+                10.199999809265137
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5799999833106995,
+                0.5799999833106995,
+                0.5799999833106995
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_03",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -5.429999828338623,
+                -0.03999999910593033,
+                13.299999237060547
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6299999952316284,
+                0.6299999952316284,
+                0.6299999952316284
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_04",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -5.989999771118164,
+                -0.03999999910593033,
+                16.399999618530275
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.47999998927116396,
+                0.47999998927116396,
+                0.47999998927116396
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_05",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -6.549999713897705,
+                -0.03999999910593033,
+                19.5
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5299999713897705,
+                0.5299999713897705,
+                0.5299999713897705
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_06",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -6.359999656677246,
+                -0.03999999910593033,
+                22.599998474121095
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5799999833106995,
+                0.5799999833106995,
+                0.5799999833106995
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_07",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -6.919999599456787,
+                -0.03999999910593033,
+                25.69999885559082
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6299999952316284,
+                0.6299999952316284,
+                0.6299999952316284
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_08",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -7.480000019073486,
+                -0.03999999910593033,
+                28.799999237060548
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.47999998927116396,
+                0.47999998927116396,
+                0.47999998927116396
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_09",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -7.289999961853027,
+                -0.03999999910593033,
+                31.899999618530275
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5299999713897705,
+                0.5299999713897705,
+                0.5299999713897705
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_10",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -7.849999904632568,
+                -0.03999999910593033,
+                35.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5799999833106995,
+                0.5799999833106995,
+                0.5799999833106995
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_11",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -8.40999984741211,
+                -0.03999999910593033,
+                38.099998474121097
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6299999952316284,
+                0.6299999952316284,
+                0.6299999952316284
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_12",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -8.219999313354493,
+                -0.03999999910593033,
+                41.19999694824219
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.47999998927116396,
+                0.47999998927116396,
+                0.47999998927116396
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_13",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -8.779999732971192,
+                -0.03999999910593033,
+                44.29999923706055
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5299999713897705,
+                0.5299999713897705,
+                0.5299999713897705
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_14",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -9.34000015258789,
+                -0.03999999910593033,
+                47.39999771118164
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5799999833106995,
+                0.5799999833106995,
+                0.5799999833106995
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_L_15",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                -9.149999618530274,
+                -0.03999999910593033,
+                50.5
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6299999952316284,
+                0.6299999952316284,
+                0.6299999952316284
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_00",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                4.5,
+                -0.03999999910593033,
+                4.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.47999998927116396,
+                0.47999998927116396,
+                0.47999998927116396
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_01",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                5.059999942779541,
+                -0.03999999910593033,
+                7.099999904632568
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5299999713897705,
+                0.5299999713897705,
+                0.5299999713897705
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_02",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                5.619999885559082,
+                -0.03999999910593033,
+                10.199999809265137
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5799999833106995,
+                0.5799999833106995,
+                0.5799999833106995
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_03",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                5.429999828338623,
+                -0.03999999910593033,
+                13.299999237060547
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6299999952316284,
+                0.6299999952316284,
+                0.6299999952316284
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_04",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                5.989999771118164,
+                -0.03999999910593033,
+                16.399999618530275
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.47999998927116396,
+                0.47999998927116396,
+                0.47999998927116396
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_05",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                6.549999713897705,
+                -0.03999999910593033,
+                19.5
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5299999713897705,
+                0.5299999713897705,
+                0.5299999713897705
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_06",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                6.359999656677246,
+                -0.03999999910593033,
+                22.599998474121095
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5799999833106995,
+                0.5799999833106995,
+                0.5799999833106995
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_07",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                6.919999599456787,
+                -0.03999999910593033,
+                25.69999885559082
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6299999952316284,
+                0.6299999952316284,
+                0.6299999952316284
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_08",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                7.480000019073486,
+                -0.03999999910593033,
+                28.799999237060548
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.47999998927116396,
+                0.47999998927116396,
+                0.47999998927116396
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_09",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                7.289999961853027,
+                -0.03999999910593033,
+                31.899999618530275
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5299999713897705,
+                0.5299999713897705,
+                0.5299999713897705
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_10",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                7.849999904632568,
+                -0.03999999910593033,
+                35.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5799999833106995,
+                0.5799999833106995,
+                0.5799999833106995
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_11",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                8.40999984741211,
+                -0.03999999910593033,
+                38.099998474121097
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6299999952316284,
+                0.6299999952316284,
+                0.6299999952316284
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_12",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                8.219999313354493,
+                -0.03999999910593033,
+                41.19999694824219
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.47999998927116396,
+                0.47999998927116396,
+                0.47999998927116396
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_13",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                8.779999732971192,
+                -0.03999999910593033,
+                44.29999923706055
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5299999713897705,
+                0.5299999713897705,
+                0.5299999713897705
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_14",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                9.34000015258789,
+                -0.03999999910593033,
+                47.39999771118164
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5799999833106995,
+                0.5799999833106995,
+                0.5799999833106995
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N3_Grass_R_15",
+            "kind": "mesh",
+            "layer": "Roadside Trees Grass and Rocks",
+            "spriteName": "",
+            "meshName": "YGrassMesh_GrassMedium_v1",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+            "material": "YGrass_GrassMedium_v1",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+            "at": [
+                9.149999618530274,
+                -0.03999999910593033,
+                50.5
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6299999952316284,
+                0.6299999952316284,
+                0.6299999952316284
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        }
+    ]
+}
