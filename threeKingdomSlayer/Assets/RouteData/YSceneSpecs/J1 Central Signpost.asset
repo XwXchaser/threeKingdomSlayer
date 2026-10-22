@@ -26,7 +26,7 @@ MonoBehaviour:
       entries:
       - name: J1_A01_DoubleArrowSignpost
         path: J1_A01_DoubleArrowSignpost
-        localPosition: {x: 0, y: 0, z: 2}
+        localPosition: {x: 0, y: 0, z: 17}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.6, y: 0.6, z: 0.6}
         renderKind: 0
@@ -39,11 +39,10 @@ MonoBehaviour:
         isWindMesh: 0
         containerOnly: 0
         active: 1
-        rendererDisabled: 0
         userModified: 0
       - name: J1_Divider_Rock_1
         path: J1_Divider_Rock_1
-        localPosition: {x: -0.5, y: -0.022499999, z: 2.4}
+        localPosition: {x: -0.68, y: -0.022499999, z: 17.800003}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.16, y: 0.16, z: 0.16}
         renderKind: 0
@@ -56,11 +55,10 @@ MonoBehaviour:
         isWindMesh: 0
         containerOnly: 0
         active: 1
-        rendererDisabled: 0
         userModified: 0
       - name: J1_Divider_Rock_2
         path: J1_Divider_Rock_2
-        localPosition: {x: 0, y: -0.020624999, z: 2.85}
+        localPosition: {x: 0, y: -0.020624999, z: 18.600006}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
@@ -73,11 +71,10 @@ MonoBehaviour:
         isWindMesh: 0
         containerOnly: 0
         active: 1
-        rendererDisabled: 0
         userModified: 0
       - name: J1_Divider_Rock_3
         path: J1_Divider_Rock_3
-        localPosition: {x: 0.5, y: -0.022499999, z: 2.4}
+        localPosition: {x: 0.68, y: -0.022499999, z: 17.800003}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.16, y: 0.16, z: 0.16}
         renderKind: 0
@@ -90,11 +87,10 @@ MonoBehaviour:
         isWindMesh: 0
         containerOnly: 0
         active: 1
-        rendererDisabled: 0
         userModified: 0
       - name: J1_Divider_Grass_1
         path: J1_Divider_Grass_1
-        localPosition: {x: -1.75, y: -0.0264, z: 2.9}
+        localPosition: {x: -1.125, y: -0.0264, z: 17}
         localEulerAngles: {x: 0, y: 15.000001, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
@@ -107,11 +103,10 @@ MonoBehaviour:
         isWindMesh: 0
         containerOnly: 0
         active: 1
-        rendererDisabled: 0
         userModified: 0
       - name: J1_Divider_Grass_2
         path: J1_Divider_Grass_2
-        localPosition: {x: -1.15, y: -0.0264, z: 3.6}
+        localPosition: {x: -0.375, y: -0.0264, z: 18.199997}
         localEulerAngles: {x: 0, y: 15.000001, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
@@ -124,11 +119,10 @@ MonoBehaviour:
         isWindMesh: 0
         containerOnly: 0
         active: 1
-        rendererDisabled: 0
         userModified: 0
       - name: J1_Divider_Grass_3
         path: J1_Divider_Grass_3
-        localPosition: {x: 1.6, y: -0.0264, z: 2.5}
+        localPosition: {x: 0.375, y: -0.0264, z: 17}
         localEulerAngles: {x: 0, y: 15.000001, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
@@ -141,11 +135,10 @@ MonoBehaviour:
         isWindMesh: 0
         containerOnly: 0
         active: 1
-        rendererDisabled: 0
         userModified: 0
       - name: J1_Divider_Grass_4
         path: J1_Divider_Grass_4
-        localPosition: {x: 1.15, y: -0.0264, z: 3.6}
+        localPosition: {x: 1.125, y: -0.0264, z: 18.199997}
         localEulerAngles: {x: 0, y: 15.000001, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
@@ -158,11 +151,10 @@ MonoBehaviour:
         isWindMesh: 0
         containerOnly: 0
         active: 1
-        rendererDisabled: 0
         userModified: 0
       - name: J1_Divider_LowBush_1
         path: J1_Divider_LowBush_1
-        localPosition: {x: -2.35, y: -0.06, z: 3.3}
+        localPosition: {x: -1, y: -0.058125, z: 17.5}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.31, y: 0.31, z: 0.31}
         renderKind: 0
@@ -175,11 +167,10 @@ MonoBehaviour:
         isWindMesh: 0
         containerOnly: 0
         active: 1
-        rendererDisabled: 0
         userModified: 0
       - name: J1_Divider_LowBush_2
         path: J1_Divider_LowBush_2
-        localPosition: {x: 2.4, y: -0.06, z: 3.1}
+        localPosition: {x: 0, y: -0.06375, z: 18.5}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.34, y: 0.34, z: 0.34}
         renderKind: 0
@@ -192,11 +183,10 @@ MonoBehaviour:
         isWindMesh: 0
         containerOnly: 0
         active: 1
-        rendererDisabled: 0
         userModified: 0
       - name: J1_Divider_LowBush_3
         path: J1_Divider_LowBush_3
-        localPosition: {x: 0.9, y: -0.06, z: 4.2}
+        localPosition: {x: 1, y: -0.058125, z: 17.5}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.31, y: 0.31, z: 0.31}
         renderKind: 0
@@ -209,7 +199,6 @@ MonoBehaviour:
         isWindMesh: 0
         containerOnly: 0
         active: 1
-        rendererDisabled: 0
         userModified: 0
       functions: []
     - path: J1_Divider_LowBush_1
@@ -230,7 +219,6 @@ MonoBehaviour:
         isWindMesh: 0
         containerOnly: 0
         active: 1
-        rendererDisabled: 0
         userModified: 0
       functions: []
     - path: J1_Divider_LowBush_2
@@ -251,7 +239,6 @@ MonoBehaviour:
         isWindMesh: 0
         containerOnly: 0
         active: 1
-        rendererDisabled: 0
         userModified: 0
       functions: []
     - path: J1_Divider_LowBush_3
@@ -272,7 +259,6 @@ MonoBehaviour:
         isWindMesh: 0
         containerOnly: 0
         active: 1
-        rendererDisabled: 0
         userModified: 0
       functions: []
     interactives: []
@@ -283,3 +269,4 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     localScale: {x: 1, y: 1, z: 1}
     applyRootTransform: 1
+  segmentSpecs: []
