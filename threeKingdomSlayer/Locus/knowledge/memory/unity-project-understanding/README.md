@@ -32,6 +32,7 @@ aiEditMode: inherit
 | **QTE 与结算** ✅ | `qte-and-rewards.md` ✅ ✅ | `Assets/Scripts/QTE/QTEController*.cs` ✅、`QTEConfig.cs` ✅、`BossQTEData.cs` ✅、`Assets/Scripts/Managers/StageController.cs` ✅ |
 | **道具与局内成长** ✅ | `items-and-growth.md` ✅ ✅ | `Assets/Scripts/Data/UpgradeDefinition.cs` ✅、`ActiveSkillDefinition.cs` ✅、`Assets/Scripts/Core/UpgradeChoiceManager.cs` ✅、`ItemInventory.cs` ✅、`ExpGemManager.cs` ✅ |
 | **UI** ✅ | `ui.md` ✅ ✅ | `Assets/Scripts/UI/` ✅ ✅、`HubHudModeSwitch.cs` ✅、`CanvasScalerAdapter.cs` ✅ ✅ |
+| **全项目体检（优化空间 / 旧架构残留）** ✅ | `plan/project-audit-20261024.md` ✅ ✅ | 全库扫描 ✅ ✅：**Legacy 树已证实全死 ✅ ✅**、单例 40 ✅ ✅ / Find* 107 ✅ ✅、配置资产 0 孤儿 ✅ ✅ ✅ |
 | **存档** ✅ | 见「三、联动点」✅ ✅ | `Assets/Scripts/Services/SaveManager.cs` ✅、`Assets/Scripts/Data/Save/*.cs` ✅（分片 ✅ ✅）✅ |
 
 **全局约定** ✅ ✅：
