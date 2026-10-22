@@ -310,12 +310,12 @@ public partial class AttackSystem : MonoBehaviour
                 if (targets.Count > 0)
                 {
                     Vector3 wavePos = GetWavePosition(targets, -1);
-                    bool probLaunchActive = playerState != null && playerState.HasBuff(BuffType.ProbabilityLaunch);
+                    bool probLaunchActive = playerState != null && playerState.HasBuff(BuffIds.ProbabilityLaunch);
                     AttackWave.Create(wavePos, cfg.damageType, finalDmg, targets,
                         onHit: (enemy) =>
                         {
                             bool canLaunch = enemy.CanBeLaunched(cfg.poiseDamage);
-                            if (!canLaunch && probLaunchActive && Random.value < 0.3f)
+                            if (!canLaunch && probLaunchActive && Random.value < playerState.LaunchProbability)
                             {
                                 enemy.Stun(cfg.launchDuration * 0.5f);
                                 canLaunch = true;

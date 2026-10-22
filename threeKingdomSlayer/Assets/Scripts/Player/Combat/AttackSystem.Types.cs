@@ -391,7 +391,7 @@ public partial class AttackSystem : MonoBehaviour
             ReleaseChargeHitShockwave();
             StartCoroutine(ReleaseChargeShockwaves());
 
-            bool probLaunchActive = playerState != null && playerState.HasBuff(BuffType.ProbabilityLaunch);
+            bool probLaunchActive = playerState != null && playerState.HasBuff(BuffIds.ProbabilityLaunch);
             Vector3 wavePos = GetWavePosition(targets, -1);
             PlayLaunchVisual(cfg, playerLaunchPos, () =>
             {
@@ -406,7 +406,7 @@ public partial class AttackSystem : MonoBehaviour
                         }
 
                         bool canLaunch = enemy.CanBeLaunched(cfg.poiseDamage);
-                        if (!canLaunch && probLaunchActive && Random.value < 0.3f)
+                        if (!canLaunch && probLaunchActive && Random.value < playerState.LaunchProbability)
                         {
                             enemy.Stun(cfg.launchDuration * 0.5f);
                             canLaunch = true;

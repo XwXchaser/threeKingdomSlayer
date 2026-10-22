@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93c7e03cbb6c41f45875ad0b247049bd, type: 3}
+  m_Name: ProbabilityLaunch
+  m_EditorClassIdentifier: 
+  buffId: probability_launch
+  displayName: "\u6982\u7387\u51FB\u98DE"
+  defaultDuration: 0
+  launchProbability: 0.3

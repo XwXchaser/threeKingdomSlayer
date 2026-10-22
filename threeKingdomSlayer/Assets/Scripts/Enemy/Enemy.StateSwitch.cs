@@ -356,7 +356,7 @@ public partial class Enemy : MonoBehaviour
         if (_shieldGuard != null
             && (formState == EnemyFormState.Normal || formState == EnemyFormState.ShieldBroken))
             return false;
-        if (PlayerState.Instance != null && PlayerState.Instance.HasBuff(BuffType.ForceLaunch))
+        if (PlayerState.Instance != null && PlayerState.Instance.HasBuff(BuffIds.ForceLaunch))
             return true;
         if (isBoss)
             return state == EnemyState.Stunned;

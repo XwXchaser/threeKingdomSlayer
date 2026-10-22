@@ -41,11 +41,11 @@ public class PlayerState : MonoBehaviour
     private Dictionary<AttackType, float> cooldownTimers = new Dictionary<AttackType, float>();
 
     // Buff 系统
-    private Dictionary<BuffType, float> buffTimers = new Dictionary<BuffType, float>();
+    private Dictionary<string, float> buffTimers = new Dictionary<string, float>();
 
     // GC 优化：复用容器，避免每帧 new
     private readonly List<AttackType> _cooldownKeysCache = new List<AttackType>();
-    private readonly List<BuffType> _expiredBuffsCache = new List<BuffType>();
+    private readonly List<string> _expiredBuffsCache = new List<string>();
 
     // 减伤Buff
     private float damageReductionPercent;
@@ -463,28 +463,38 @@ public class PlayerState : MonoBehaviour
     #region Buff 系统
 
     /// <summary>
-    /// 检查是否拥有指定 Buff
+    /// 检查是否拥有指定 Buff ✅（**按 id 字符串** ✅ —— 与 `BuffManager` ✅ ✅ / `ActiveBuff.buffId` ✅ ✅ 同一套 ✅ ✅）。
+    /// → 状态不再受枚举限制 ✅ ✅：新增一种状态 = **加一条 id** ✅ ✅（数值走资产 ✅ ✅）。
     /// </summary>
-    public bool HasBuff(BuffType type)
+    public bool HasBuff(string buffId)
     {
-        return buffTimers.ContainsKey(type);
+        return !string.IsNullOrEmpty(buffId) && buffTimers.ContainsKey(buffId);
     }
 
     /// <summary>
-    /// 应用 Buff（duration=0 表示永久）
+    /// 应用 Buff（duration=0 表示永久）✅。
     /// </summary>
-    public void ApplyBuff(BuffType type, float duration = 0f)
+    public void ApplyBuff(string buffId, float duration = 0f)
     {
-        buffTimers[type] = duration;
+        if (string.IsNullOrEmpty(buffId)) return;
+        buffTimers[buffId] = duration;
     }
 
     /// <summary>
-    /// 移除 Buff
+    /// 移除 Buff ✅。
     /// </summary>
-    public void RemoveBuff(BuffType type)
+    public void RemoveBuff(string buffId)
     {
-        buffTimers.Remove(type);
+        if (string.IsNullOrEmpty(buffId)) return;
+        buffTimers.Remove(buffId);
     }
+
+    [Header("战斗状态定义 ✅（机制型 ✅ —— 数值写资产 ✅ ✅）")]
+    [Tooltip("**概率击飞**状态定义 ✅ —— 触发概率 ✅ / 默认时长 ✅ 写在这里 ✅ ✅（原先 0.3 写死在代码里 ✅ ❗）")]
+    public CombatBuffDefinition probabilityLaunchBuff;
+
+    /// <summary>概率击飞的触发概率 ✅（没配定义 ✅ → 0 ✅ = 永不触发 ✅）。</summary>
+    public float LaunchProbability => probabilityLaunchBuff != null ? probabilityLaunchBuff.launchProbability : 0f;
 
     #endregion
 

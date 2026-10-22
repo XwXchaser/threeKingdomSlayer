@@ -233,8 +233,30 @@ Unity Console 0 error ✅。
 - 菜单 **`Tools/数据校验/关卡清单 ✅`** ✅
 - **验收** ✅：清单自检 0 ✅；两条关卡的解锁结果与旧规则**一致** ✅ ✅；Play Mode 路线仍落到 J1 ✅、段装载 11/14 ✅ ✅
 
-**剩下 ③ 状态去枚举** ✅ ✅（`BuffType` ✅ ❗ → string id + 配置资产 ✅ ✅）——
-⚠️ 战斗代码里大量使用 ✅ ✅ → **分批换** ✅ ✅（先开 id 通道 ✅，枚举保留兼容 ✅ ✅）。
+### ③ 状态：去枚举 ✅（`BuffType` ✅ 枚举已退役 ✅）
+
+**先量了再说** ✅ ✅：项目里其实有**两套 buff 系统** ✅ ✅ ——
+| 系统 | 现状 | 结论 |
+|---|---|---|
+| `BuffManager` ✅ + `ActiveBuff` ✅ + `StatModifier` ✅ | **已经是 string id ✅ ✅**（`buffId` ✅ + `statId` ✅）→ 数值型状态**本来就是数据驱动** ✅ ✅ | 不用动 ✅ |
+| `PlayerState.buffTimers` ✅ + `BuffType` ✅ 枚举 | 2 个值 ✅（击飞机制 ✅ ✅）｜**没人调 `ApplyBuff` ✅ ✅** → 死通道 ✅ ✅；两个硬编码 `0.3f` 概率分支 ✅ ✅ 也是死的 ✅ ✅ | 换掉 ✅ ✅ |
+
+**改了什么** ✅ ✅：
+- 新增 **`BuffIds`** ✅ ✅（`force_launch` ✅ / `probability_launch` ✅）—— **枚举退役 ✅ ✅**（`BuffType.cs` 已删 ✅ ✅）
+- `PlayerState` 的 buff 通道改成 **string id** ✅ ✅（`HasBuff/ApplyBuff/RemoveBuff(string)` ✅ ✅）→ 与 `BuffManager` ✅ ✅ / `ActiveBuff.buffId` ✅ ✅ **同一套** ✅ ✅ → **新增状态 = 加一个 id ✅ ✅** ✅ ✅
+- 新增 **`CombatBuffDefinition`** ✅ ✅（SO ✅ ✅）：`buffId` ✅ / `displayName` ✅ / `defaultDuration` ✅ / **`launchProbability`** ✅ ✅ → **击飞概率 0.3 从代码挪进资产** ✅ ✅
+- 资产 `Assets/RouteData/CombatBuffs/ProbabilityLaunch.asset` ✅ ✅（0.3 ✅ —— **数值与原值一致 ✅ ✅**）+ Battle 场景接线 ✅ ✅
+- 菜单 **`Tools/数据校验/战斗状态定义 ✅`** ✅（id 为空 ✅ / 重复 ✅ / **不在词表里 ✅**（拼错 id 最容易踩 ✅ ✅）/ 概率越界 ✅ ✅）
+- **验收** ✅：枚举已退役 ✅；按 id 的存取 ✅；`LaunchProbability = 0.3` ✅ ✅ 与原值一致 ✅ ✅；Play Mode 路线仍落到 J1 ✅、段装载 11/14 ✅ ✅
+
+**「状态」的两类划分（写下来当规则 ✅ ✅）** ✅：
+| 类别 | 举例 | 载体 | 加一条要做什么 |
+|---|---|---|---|
+| **数值型** ✅ | 属性增减 ✅ / 持续时间 ✅ / 叠层 ✅ | `ComboBuffConfig` ✅ + `StatModifier` ✅ ✅ | **加资产** ✅ ✅ |
+| **机制型** ✅ | 强制击飞 ✅ / 概率击飞 ✅ | `CombatBuffDefinition` ✅ ✅ + `BuffIds` 词表 ✅ ✅ | 加资产 ✅ ✅（+ 新机制仍要写代码 ✅ —— 那是**机制** ✅ 不是内容 ✅ ✅） |
+
+**所以「状态写死 → 僵化」这条 ✅ ✅ 已经解掉** ✅ ✅：可调数值全在资产 ✅ ✅；
+剩下的枚举 ✅ ✅（`EnemyState` ✅ / `BuffType` 的替代 ✅ / 等 36 个 ✅ ✅）是**机制词表** ✅ ✅ —— 加机制要写代码 ✅ ✅，那是应该的 ✅ ✅。
 
 ## 十一、「表化这个组」工具 + N1→E0 切片表化 ✅（2026-10-24）
 

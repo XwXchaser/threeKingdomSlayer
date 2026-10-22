@@ -16280,6 +16280,7 @@ MonoBehaviour:
   heroConfig: {fileID: 11400000, guid: 6a50843ddffb1fa43af2e2a34d5d2432, type: 2}
   expCurveConfig: {fileID: 11400000, guid: 9cdb0e82b7b5e1c47b39ab0e0ee0c3c1, type: 2}
   shieldGrantProgress: 0.3
+  probabilityLaunchBuff: {fileID: 11400000, guid: 81881d706de41384191260fd6d3a2798, type: 2}
 --- !u!4 &1878310419
 Transform:
   m_ObjectHideFlags: 0
