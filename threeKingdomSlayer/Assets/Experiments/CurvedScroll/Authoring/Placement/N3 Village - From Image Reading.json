@@ -50,7 +50,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        -5.6,
+        -9.73,
         -0.02,
         14.0
       ],
@@ -75,7 +75,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        5.8,
+        6.65,
         -0.02,
         15.0
       ],
@@ -100,7 +100,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        -6.2,
+        -6.94,
         -0.02,
         25.0
       ],
@@ -125,7 +125,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        6.6,
+        7.0,
         -0.02,
         30.0
       ],
@@ -150,7 +150,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        -7.0,
+        -5.61,
         -0.02,
         38.0
       ],
@@ -175,7 +175,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        8.0,
+        6.81,
         -0.02,
         44.0
       ],
@@ -200,7 +200,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        -9.5,
+        -4.81,
         -0.02,
         46.0
       ],
@@ -225,7 +225,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        9.0,
+        4.31,
         -0.02,
         44.0
       ],
@@ -250,7 +250,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        -4.6,
+        -4.11,
         -0.02,
         24.0
       ],
@@ -275,7 +275,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        -4.8,
+        -3.7,
         -0.02,
         18.0
       ],
@@ -300,7 +300,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        4.8,
+        6.38,
         -0.02,
         22.0
       ],
@@ -325,7 +325,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        2.6,
+        6.83,
         -0.02,
         42.0
       ],
@@ -350,7 +350,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        -4.2,
+        -3.12,
         -0.02,
         13.0
       ],
@@ -375,7 +375,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        4.2,
+        6.95,
         -0.02,
         14.0
       ],
@@ -400,7 +400,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        -4.2,
+        -6.3,
         -0.02,
         30.0
       ],
@@ -425,7 +425,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        4.2,
+        3.3,
         -0.02,
         27.0
       ],
@@ -2050,5 +2050,6 @@
       ],
       "sortingOrder": 0
     }
-  ]
+  ],
+  "roadHalfWidth": 2.5
 }

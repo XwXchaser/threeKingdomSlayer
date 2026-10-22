@@ -79,6 +79,7 @@ public static class YScenePlacementImporter
         public float[] rootRotation;
         public string backgroundMaterial;      // 整表默认材质 ✅（手写表用 ✅）
         public string spriteSearchFolders;
+        public float roadHalfWidth;            // 路面半宽 ✅（米 ✅）→ 沿街构件不得侵入 ✅（0 = 不检查 ✅）
         public List<PlacementSkipped> skipped = new List<PlacementSkipped>();
         public List<PlacementItem> items = new List<PlacementItem>();
     }
@@ -365,6 +366,32 @@ public static class YScenePlacementImporter
         AssetDatabase.CreateAsset(spec, specPath);
         AssetDatabase.SaveAssets();
         if (missing > 0) Debug.LogWarning($"[Y 场景] 有 {missing} 件资产没找到，规格里缺这些 ✅");
+
+        // 沿街构件不得侵入道路 ✅（路面半宽由表给 ✅ —— 权威值来自 ScrollRouteRoadSurface.width ✅）
+        if (table.roadHalfWidth > 0f)
+        {
+            var intruded = new List<string>();
+            foreach (var item in table.items)
+            {
+                if (item == null || item.kind == "mesh" || item.kind == "group") continue;
+                var sprite = FindAssetByName<Sprite>(item.asset, item.spriteName);
+                if (sprite == null) continue;
+                float scale = item.scale != null && item.scale.Length >= 3 ? item.scale[0] : 1f;
+                float x = item.at != null && item.at.Length >= 3 ? item.at[0] : 0f;
+                // 精灵相对枢轴的左右延伸 ✅（visible bounds ✅ + 枢轴偏移 ✅）
+                float half = sprite.bounds.size.x * 0.5f * scale;
+                float pivotOffset = (sprite.pivot.x / Mathf.Max(1f, sprite.rect.size.x) - 0.5f) * sprite.bounds.size.x * scale;
+                float left = x + (-half - pivotOffset);
+                float right = x + (half - pivotOffset);
+                float inner = Mathf.Abs(left) < Mathf.Abs(right) ? left : right;   // 更靠路中心的那侧 ✅
+                if (Mathf.Abs(inner) < table.roadHalfWidth)
+                    intruded.Add($"{item.id}（内边缘 {inner:0.00}m < 路面半宽 {table.roadHalfWidth:0.0}m ✅）");
+            }
+            if (intruded.Count > 0)
+                Debug.LogWarning($"[Y 场景] 有 {intruded.Count} 件沿街构件侵入道路 ✅（路面半宽 {table.roadHalfWidth}m ✅）：\n    · " + string.Join("\n    · ", intruded));
+            else
+                Debug.Log($"[Y 场景] 沿街构件不侵入道路 ✅（路面半宽 {table.roadHalfWidth}m ✅）");
+        }
         // 缺口清单 ✅：参考图上有、但没搭的元素 ✅（不生成 ✅、不借用别处素材 ✅ —— 记下来再说 ✅）
         if (table.skipped != null && table.skipped.Count > 0)
         {
