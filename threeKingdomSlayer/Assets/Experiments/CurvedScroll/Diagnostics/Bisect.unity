@@ -236,6 +236,8 @@ MonoBehaviour:
   discardPopupPrefab: {fileID: 7107821338073346431, guid: df18255a4d7748444a03f0106865276d, type: 3}
   choiceCount: 3
   pauseGameDuringChoice: 1
+  forcedChoices: []
+  suppressChoices: 0
 --- !u!114 &5137004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -282,6 +284,7 @@ MonoBehaviour:
   arrowEffectPrefab: {fileID: 1707118907136065935, guid: 7d3ceaa069c134f419679af082cb68a5, type: 3}
   cycloneEffectPrefab: {fileID: 3409137233646897394, guid: cc817a47c8a9d8b47820f0677fe9f041, type: 3}
   fireSweepStartZOffset: -4
+  logDiagnostics: 0
 --- !u!114 &5137007
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -375,6 +378,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _fireEffectPrefab: {fileID: 7080427255057156643, guid: 145d6875cc6c6fd4798603b5d4830fcb, type: 3}
+  _iceEffectPrefab: {fileID: 0}
   _arrowEffectPrefab: {fileID: 1707118907136065935, guid: 7d3ceaa069c134f419679af082cb68a5, type: 3}
   _cycloneEffectPrefab: {fileID: 3409137233646897394, guid: cc817a47c8a9d8b47820f0677fe9f041, type: 3}
   _waveManager: {fileID: 0}
@@ -391,6 +395,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _ruleVersion: 1
+  _grantDefaultSkills: 1
+  _defaultSkills: []
 --- !u!114 &5137013
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5668,15 +5674,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stageConfig: {fileID: 0}
   autoStartStage: 0
-  routeStageConfig: {fileID: 11400000, guid: d9807631ee47b464c82a64542268044b, type: 2}
-  routeStageConfigV2: {fileID: 11400000, guid: f778a791580f74242bf5486112cf907a, type: 2}
   fakeRouteStageConfig: {fileID: 11400000, guid: 2559bd9f55014d04eb83cf9b7efea656, type: 2}
   waveSpawner: {fileID: 1221163314}
   enemyManager: {fileID: 598331925}
   playerState: {fileID: 1878310418}
   enemyPool: {fileID: 1773764670}
-  mainMenuSceneName: MainMenu
   battleSceneName: Battle
+  suppressDefeatUI: 0
+  blockRestartOnDefeat: 0
 --- !u!4 &681761647
 Transform:
   m_ObjectHideFlags: 0
@@ -6783,6 +6788,10 @@ MonoBehaviour:
   exitDuration: 0.13
   entryDistance: 3.5
   fadeOutDuration: 0.25
+  meshChargePullback: 0.45
+  meshChargedTint: {r: 1.55, g: 1.25, b: 0.5, a: 1}
+  meshReadyPulseScale: 0.05
+  meshReadyPulseInterval: 0.3
 --- !u!114 &864291166
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6828,7 +6837,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   attackSystem: {fileID: 1809121297}
   playerState: {fileID: 1878310418}
-  inputManager: {fileID: 938232414}
   moveTable: {fileID: 0}
   bufferEnabled: 1
   holdWaitEnabled: 1
@@ -7415,6 +7423,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   longPressDuration: 0.3
   minChargeTime: 1
+  suppressCharging: 0
   swipeThreshold: 50
   maxSwipeDuration: 0.25
   swipeStartDeadZone: 8
@@ -7431,6 +7440,7 @@ MonoBehaviour:
   - 0.3
   - 0.6
   - 1
+  restrictChargedToVertical: 0
 --- !u!1 &952166475
 GameObject:
   m_ObjectHideFlags: 0
@@ -9664,6 +9674,7 @@ MonoBehaviour:
   columnManager: {fileID: 1289233715}
   enemyManager: {fileID: 598331925}
   spawnRoot: {fileID: 0}
+  holdNextWave: 0
 --- !u!1 &1256612181
 GameObject:
   m_ObjectHideFlags: 0
@@ -14075,8 +14086,19 @@ MonoBehaviour:
   poolRoot: {fileID: 1491410886}
   enemiesRoot: {fileID: 0}
   defaultPoolSize: 20
-  autoLoadFromResources: 1
-  resourcesPrefabPath: EnemyPrefabs
+  enemyPrefabList:
+  - {fileID: 2110877209529557190, guid: 30b66f965c8a8a34bab132a28368c04f, type: 3}
+  - {fileID: 688460577474092011, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
+  - {fileID: 688460577474092011, guid: a6478d3e62202c24a801dabd472ea286, type: 3}
+  - {fileID: 688460577474092011, guid: 45128849bfc23d84f832225dbfe90b62, type: 3}
+  - {fileID: 688460577474092011, guid: 015901ed643502646a07ade0b062fbb8, type: 3}
+  - {fileID: 688460577474092011, guid: 8696609500eb89d48a0795629bc3228a, type: 3}
+  - {fileID: 688460577474092011, guid: 584286a2efbafc940af2e7354f4db7be, type: 3}
+  - {fileID: 4490234657047111907, guid: 62df127e4f854a6418289bf7f9736fcc, type: 3}
+  - {fileID: 4490234657047111907, guid: 044d22723b28af84ba312b193c9ca2c4, type: 3}
+  - {fileID: 688460577474092011, guid: 622151c91404ad742bc9f619087957c2, type: 3}
+  - {fileID: 688460577474092011, guid: 1b1c1cf4abc1f0848b47b9f09d254c71, type: 3}
+  - {fileID: 8370877317619064943, guid: 72fa501694f0de5418eded223f290ae0, type: 3}
 --- !u!1 &1790019513
 GameObject:
   m_ObjectHideFlags: 0
@@ -14214,6 +14236,22 @@ MonoBehaviour:
   shareHealthWithAdjacent: 0
   maxPoise: 50
   stunDuration: 1.5
+  freezeDuration: 4
+  freezeChanceMax: 0.75
+  freezeChanceDecayDelay: 0.6
+  freezeChanceDecayPerSecond: 0.5
+  freezeWindupChanceMultiplier: 2
+  freezePushImmune: 0
+  freezeResist: 0
+  iceBreakAnimDuration: 0.4
+  breakIceReturnDelay: 1.2
+  freezeOverlayPrefab: {fileID: 0}
+  freezeOverlayScale: 0.825
+  freezeOverlayYOffset: 0.1
+  freezeRecoveryDelay: 0.5
+  iceBreakEffectPrefab: {fileID: 0}
+  freezeMeltEffectPrefab: {fileID: 0}
+  freezePresentation: {fileID: 0}
   launchDuration: 2
   launchGravity: 20
   launchReboundVelocity: 8
@@ -14244,6 +14282,7 @@ MonoBehaviour:
   columnIndex: 0
   rowIndex: 0
   isAttackAnimating: 0
+  ignoreFillUpOrders: 0
   isAttackDrawPhase: 0
   isCFrame: 0
   pendingRushMove: 0
@@ -14546,6 +14585,7 @@ MonoBehaviour:
   parryProjectileRange: 10
   finisherParryUnlocked: 0
   _phantomMaterial: {fileID: 2100000, guid: fee439e9b5beeee4e8d78510d42a97ee, type: 2}
+  motionBlurMaterial: {fileID: 2100000, guid: 98ae1b8f68e3bfd41b9d2ba54b30bc73, type: 2}
   _returnWavePrefab: {fileID: 1696509926255576402, guid: 8d45dcaf9eddb404882cd74d73471000, type: 3}
   _chainBounceVisualPrefab: {fileID: 5155658655490824707, guid: 35cd492da5108c14d9770fcb69e856e5, type: 3}
   _chainBouncePrefab: {fileID: 6047275720404681381, guid: e5859ea2ae076734dbfd60135c133a81, type: 3}

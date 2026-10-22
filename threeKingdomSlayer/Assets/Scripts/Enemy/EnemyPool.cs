@@ -23,11 +23,9 @@ public class EnemyPool : MonoBehaviour
     public Transform enemiesRoot; // 敌人运行时父节点（可选，用于场景中整体移动敌人位置）
     public int defaultPoolSize = 20; // 每个池默认预创建数量
 
-    [Header("自动注册设置")]
-    [Tooltip("是否在 Awake 时自动从 Resources/EnemyPrefabs/ 加载预制体")]
-    public bool autoLoadFromResources = true;
-    [Tooltip("Resources 中存放敌人预制体的文件夹路径（相对于 Resources 根目录）")]
-    public string resourcesPrefabPath = "EnemyPrefabs";
+    [Header("敌人预制体（Inspector 引用）")]
+    [Tooltip("按 enemyId 注册的敌人预制体。名字需为 Enemy_{id} 或 Enemy_{id}_任意后缀（id 从名字解析）。")]
+    public List<GameObject> enemyPrefabList = new List<GameObject>();
 
     // 按敌人ID分池：Dictionary<enemyId, Queue<Enemy>>
     private Dictionary<int, Queue<Enemy>> pools = new Dictionary<int, Queue<Enemy>>();
@@ -49,47 +47,37 @@ public class EnemyPool : MonoBehaviour
             poolRoot = transform;
         }
 
-        // 自动从 Resources 加载预制体
-        if (autoLoadFromResources)
-        {
-            AutoRegisterPrefabsFromResources();
-        }
+        // 注册敌人预制体（Inspector 引用 → 按名字解析 enemyId）
+        RegisterInspectorPrefabs();
     }
 
     /// <summary>
-    /// 从 Resources 文件夹自动加载并注册敌人预制体
-    /// 预制体文件名格式：Enemy_{enemyId}.prefab
-    /// 例如：Enemy_1.prefab → enemyId = 1
-    ///       Enemy_2.prefab → enemyId = 2
+    /// 注册 Inspector 里配好的敌人预制体。
+    /// 预制体名格式为 <c>Enemy_{enemyId}</c>（可带后缀，如 <c>Enemy_106_Fixed</c>）——
+    /// enemyId 从名字解析，与旧实现行为一致。
     ///
-    /// 【回退方案】
-    /// 1. 优先从 Resources/EnemyPrefabs/ 加载
-    /// 2. 如果为空，尝试从项目 Prefabs/ 目录加载（通过 Resources.Load 无法直接访问 Prefabs 目录）
-    /// 3. 如果仍然没有，则动态创建临时 Cube 作为敌人（确保至少能看到敌人出现）
+    /// 2026-10-23：原先是运行时 <c>Resources.LoadAll("EnemyPrefabs")</c> 扫目录
+    /// （幽灵引用：数据来源在 Inspector 里看不见，且 Resources 会强制整棵依赖树进包）。
     /// </summary>
-    private void AutoRegisterPrefabsFromResources()
+    private void RegisterInspectorPrefabs()
     {
-        GameObject[] prefabs = Resources.LoadAll<GameObject>(resourcesPrefabPath);
-        if (prefabs == null || prefabs.Length == 0)
+        if (enemyPrefabList == null || enemyPrefabList.Count == 0)
         {
-            Debug.Log($"[EnemyPool] Resources/{resourcesPrefabPath}/ 中未找到任何预制体，尝试创建临时敌人");
-
-            // 回退方案：动态创建临时 Cube 作为敌人
-            // 这样即使没有预制体，也能看到敌人出现
-            CreateFallbackEnemyPrefab(101); // 对应 Enemy_Skeleton.asset 的 enemyId
+            Debug.LogError("[EnemyPool] 敌人预制体列表为空（Inspector 未配置），回退到临时敌人");
+            CreateFallbackEnemyPrefab(101); // 对应 Enemy_101 的 enemyId
             return;
         }
 
-        foreach (GameObject prefab in prefabs)
+        for (int i = 0; i < enemyPrefabList.Count; i++)
         {
-            // 从文件名解析 enemyId
-            // 格式：Enemy_{enemyId} 或 Enemy_{enemyId}_任意后缀
+            GameObject prefab = enemyPrefabList[i];
+            if (prefab == null) continue;
             string name = prefab.name;
             int enemyId = ParseEnemyIdFromName(name);
             if (enemyId > 0)
             {
                 RegisterPrefab(enemyId, prefab);
-                Debug.Log($"[EnemyPool] 自动注册敌人预制体: {name} → enemyId={enemyId}");
+                Debug.Log($"[EnemyPool] 注册敌人预制体: {name} → enemyId={enemyId}");
             }
             else
             {

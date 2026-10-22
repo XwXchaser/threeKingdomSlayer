@@ -43,6 +43,12 @@ public partial class AttackSystem : MonoBehaviour
     [Header("幻影攻击")]
     [Tooltip("幻影攻击使用的紫色透明材质")]
     [SerializeField] private Material _phantomMaterial;
+    /// <summary>
+    /// 武器方向性像素模糊材质（枪身 / 刀光拖影）。
+    /// 登记到共享素材表 <see cref="SharedVisualAssets"/>，表现层按需取用
+    /// （2026-10-23 幽灵引用清零：原先是运行时按路径 Resources 加载）。
+    /// </summary>
+    [SerializeField] private Material motionBlurMaterial;
 
     [Header("被动效果Prefab")]
     [Tooltip("折返波使用的视觉Prefab")]
@@ -224,6 +230,8 @@ public partial class AttackSystem : MonoBehaviour
         }
         Instance = this;
         RegisterBuiltinAttackExecutors();
+        // 登记共享表现素材（拖影材质等）—— 表现层只认登记表，不再自己按路径加载。
+        SharedVisualAssets.DirectionalPixelBlur = motionBlurMaterial;
     }
 
     // ───────── 招式执行器注册表（扩展点）─────────

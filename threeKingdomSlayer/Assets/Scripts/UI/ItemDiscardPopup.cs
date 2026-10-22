@@ -18,14 +18,13 @@ public class ItemDiscardPopup : MonoBehaviour
     private Action<ItemDiscardResult> _onComplete;
     private UpgradeCard _selectedCard;
     private bool _completed;
+    /// <summary>弹窗 prefab 上的三选一组件 —— 弃置弹窗的素材（外框 / 卡片底图）从它的 Inspector 字段读。</summary>
+    private UpgradeChoicePopup _choicePopup;
 
     private readonly List<UpgradeCard> _cards = new List<UpgradeCard>(6);
     private readonly Dictionary<UpgradeCard, Outline> _selectionOutlines = new Dictionary<UpgradeCard, Outline>();
 
     private const float FadeDuration = 0.2f;
-    private const string OuterFramePath = "UI/ItemDiscard/item_discard_popup_outer_frame_v2";
-    private const string DiscardCardPath = "UI/ItemDiscard/item_discard_card";
-    private const string NewItemCardPath = "UI/ItemDiscard/item_get_card";
 
     public static void Show(List<ItemEntry> entries, UpgradeDefinition newItem, Action<ItemDiscardResult> onComplete)
     {
@@ -60,6 +59,7 @@ public class ItemDiscardPopup : MonoBehaviour
         Time.timeScale = 0f;
 
         var choicePopup = GetComponent<UpgradeChoicePopup>();
+        _choicePopup = choicePopup;
         var template = choicePopup != null ? choicePopup.card1 : null;
         if (template == null)
         {
@@ -119,7 +119,8 @@ public class ItemDiscardPopup : MonoBehaviour
 
     private void ApplyDiscardFrame()
     {
-        var outerSprite = Resources.Load<Sprite>(OuterFramePath);
+        // 素材来自弹窗 prefab 上的 Inspector 引用（UpgradeChoicePopup），不再运行时按路径加载。
+        var outerSprite = _choicePopup != null ? _choicePopup.discardOuterFrame : null;
         var frameImage = transform.Find("FrameBg")?.GetComponent<Image>();
         if (outerSprite != null && frameImage != null)
         {
@@ -132,7 +133,9 @@ public class ItemDiscardPopup : MonoBehaviour
     private void SetupCard(UpgradeCard card, UpgradeDefinition definition, string label, bool isNewItem, ItemDiscardResult result)
     {
         card.Setup(definition);
-        var cardSprite = Resources.Load<Sprite>(isNewItem ? NewItemCardPath : DiscardCardPath);
+        var cardSprite = _choicePopup != null
+            ? (isNewItem ? _choicePopup.newItemCardBackground : _choicePopup.discardCardBackground)
+            : null;
         if (cardSprite != null && card.backgroundImage != null)
         {
             card.backgroundImage.sprite = cardSprite;

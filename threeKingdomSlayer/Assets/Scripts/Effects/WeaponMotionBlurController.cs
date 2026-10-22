@@ -5,7 +5,6 @@ public sealed class WeaponMotionBlurController
     private static readonly int MainTextureId = Shader.PropertyToID("_MainTex");
     private static readonly int MotionDirectionId = Shader.PropertyToID("_MotionDirectionUV");
     private static readonly int MotionStrengthId = Shader.PropertyToID("_MotionStrengthPixels");
-    private static Material _sharedMaterial;
     private static bool _missingMaterialLogged;
 
     private readonly SpriteRenderer _renderer;
@@ -34,20 +33,21 @@ public sealed class WeaponMotionBlurController
         if (_renderer == null)
             return;
 
-        if (_sharedMaterial == null)
-            _sharedMaterial = Resources.Load<Material>("Materials/WeaponDirectionalPixelBlur");
-        if (_sharedMaterial == null)
+        // 材质来自共享素材登记表（由持有 Inspector 引用的上层登记），
+        // 不再运行时按路径从 Resources 加载（2026-10-23 幽灵引用清零）。
+        var sharedMaterial = SharedVisualAssets.DirectionalPixelBlur;
+        if (sharedMaterial == null)
         {
             if (!_missingMaterialLogged)
             {
-                Debug.LogWarning("[WeaponMotionBlur] Resources/Materials/WeaponDirectionalPixelBlur 未找到");
+                Debug.LogWarning("[WeaponMotionBlur] 未登记共享拖影材质（SharedVisualAssets.DirectionalPixelBlur），本次跳过拖影");
                 _missingMaterialLogged = true;
             }
             return;
         }
 
         _originalMaterial = _renderer.sharedMaterial;
-        _materialInstance = new Material(_sharedMaterial);
+        _materialInstance = new Material(sharedMaterial);
         _materialInstance.SetTexture(MainTextureId, _renderer.sprite != null ? _renderer.sprite.texture : null);
         _materialInstance.SetVector(MotionDirectionId, new Vector4(1f, 0f, 0f, 0f));
         _materialInstance.SetFloat(MotionStrengthId, 0f);

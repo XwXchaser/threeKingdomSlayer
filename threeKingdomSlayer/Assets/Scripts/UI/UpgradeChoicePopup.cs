@@ -15,6 +15,14 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView
     public UpgradeCard card2;
     public UpgradeCard card3;
 
+    [Header("弃置弹窗素材（道具栏满时弹出的弃置窗用）")]
+    [Tooltip("弃置弹窗外框（Inspector 引用，替代运行时按路径加载）")]
+    public Sprite discardOuterFrame;
+    [Tooltip("弃置弹窗里「已有道具」卡片的底图")]
+    public Sprite discardCardBackground;
+    [Tooltip("弃置弹窗里「新获得道具」卡片的底图")]
+    public Sprite newItemCardBackground;
+
     [Header("动画")]
     public CanvasGroup canvasGroup;
     public float fadeInDuration = 0.2f;

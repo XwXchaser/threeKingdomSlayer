@@ -374,6 +374,7 @@ MonoBehaviour:
   iconImage: {fileID: 7108065040341967617}
   nameText: {fileID: 4311799879071400538}
   descriptionText: {fileID: 8474547127931342366}
+  cooldownText: {fileID: 0}
   levelStatusText: {fileID: 0}
   passiveTagImage: {fileID: 0}
   activeTagImage: {fileID: 0}
@@ -536,6 +537,7 @@ MonoBehaviour:
   iconImage: {fileID: 1283294691439390605}
   nameText: {fileID: 2422713831538217866}
   descriptionText: {fileID: 2185217261417272568}
+  cooldownText: {fileID: 0}
   levelStatusText: {fileID: 0}
   passiveTagImage: {fileID: 0}
   activeTagImage: {fileID: 0}
@@ -1047,6 +1049,7 @@ MonoBehaviour:
   iconImage: {fileID: 537912593880011792}
   nameText: {fileID: 265260590221095363}
   descriptionText: {fileID: 4327766278717300060}
+  cooldownText: {fileID: 0}
   levelStatusText: {fileID: 0}
   passiveTagImage: {fileID: 0}
   activeTagImage: {fileID: 0}
@@ -1444,6 +1447,9 @@ MonoBehaviour:
   card1: {fileID: 1423984117899856023}
   card2: {fileID: 3397497752380820606}
   card3: {fileID: 6657848741605593460}
+  discardOuterFrame: {fileID: 21300000, guid: c0f4c22b157e7174783ee5c3d506f9ce, type: 3}
+  discardCardBackground: {fileID: 21300000, guid: ab7ec88aadaf04f41afed87c3d7fd4e1, type: 3}
+  newItemCardBackground: {fileID: 21300000, guid: d1ed9dea3b9977c4683ddfcc8ba0e52d, type: 3}
   canvasGroup: {fileID: 7777246056681051982}
   fadeInDuration: 0.2
   fadeOutDuration: 0.15
