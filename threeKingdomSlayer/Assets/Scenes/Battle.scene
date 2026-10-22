@@ -12457,6 +12457,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1556589544}
   - component: {fileID: 1556589543}
+  - component: {fileID: 1556589545}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: StageConfigManager
@@ -12478,9 +12479,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   stages: []
-  fakeRouteStages:
-  - {fileID: 11400000, guid: 2559bd9f55014d04eb83cf9b7efea656, type: 2}
-  tutorialStage: {fileID: 11400000, guid: 8992d31e29e5e084a8281de6cbfa0c19, type: 2}
 --- !u!4 &1556589544
 Transform:
   m_ObjectHideFlags: 0
@@ -12496,6 +12494,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1556589545
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1556589542}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 589fd69bd894732428b4cbf98c3f8d80, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fakeRouteStages:
+  - {fileID: 11400000, guid: 2559bd9f55014d04eb83cf9b7efea656, type: 2}
+  tutorialStage: {fileID: 11400000, guid: 8992d31e29e5e084a8281de6cbfa0c19, type: 2}
 --- !u!1 &1559928909
 GameObject:
   m_ObjectHideFlags: 0

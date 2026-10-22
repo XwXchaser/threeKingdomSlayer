@@ -46,7 +46,7 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
     private void AdvanceActiveStageAfterClear()
     {
         if (routeConfig == null) return;
-        var scm = StageConfigManager.Instance != null ? StageConfigManager.Instance : FindObjectOfType<StageConfigManager>();
+        var scm = RouteCatalog.Resolve();
         if (scm == null) return;
         var routes = scm.GetSelectableRoutes();
         int index = -1;

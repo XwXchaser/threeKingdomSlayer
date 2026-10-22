@@ -126,12 +126,10 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour, IRouteNodeProgress
     /// </summary>
     private FakeRouteStageConfig ResolveActiveRouteFromSave()
     {
-        var scm = StageConfigManager.Instance != null
-            ? StageConfigManager.Instance
-            : FindObjectOfType<StageConfigManager>();
-        if (scm == null) return null;
+        var catalog = RouteCatalog.Resolve();
+        if (catalog == null) return null;
 
-        var routes = scm.GetSelectableRoutes();
+        var routes = catalog.GetSelectableRoutes();
         if (routes.Count == 0) return null;
 
         int activeId = SaveManager.GetActiveFakeRouteStageId();

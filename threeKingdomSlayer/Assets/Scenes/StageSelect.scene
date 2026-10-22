@@ -959,7 +959,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 032dce40f2ebc654a96980aa10eda42b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stageConfigManager: {fileID: 0}
+  routeCatalog: {fileID: 0}
   titleText: {fileID: 1292992015}
   statusText: {fileID: 72183169}
   closeButton: {fileID: 956370433}

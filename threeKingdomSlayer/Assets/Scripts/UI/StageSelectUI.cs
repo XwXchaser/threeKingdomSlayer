@@ -14,8 +14,8 @@ using UnityEngine.UI;
 public class StageSelectUI : MonoBehaviour
 {
     [Header("数据")]
-    [Tooltip("场景中 StageConfigManager 组件上的路线关卡列表。运行时自动查找")]
-    public StageConfigManager stageConfigManager;
+    [Tooltip("场景中 RouteCatalog 组件上的路线关卡列表。运行时自动查找")]
+    public RouteCatalog routeCatalog;
 
     [Header("标题")]
     public Text titleText;
@@ -63,14 +63,14 @@ public class StageSelectUI : MonoBehaviour
 
     private void RefreshStageConfigs()
     {
-        if (stageConfigManager == null)
-            stageConfigManager = FindObjectOfType<StageConfigManager>();
-        if (stageConfigManager == null)
+        if (routeCatalog == null)
+            routeCatalog = RouteCatalog.Resolve();
+        if (routeCatalog == null)
         {
-            Debug.LogWarning("[StageSelectUI] 找不到 StageConfigManager，选关列表为空");
+            Debug.LogWarning("[StageSelectUI] 找不到 RouteCatalog，选关列表为空");
             return;
         }
-        _routes = stageConfigManager.GetSelectableRoutes();
+        _routes = routeCatalog.GetSelectableRoutes();
     }
 
     private void BuildGrid()
