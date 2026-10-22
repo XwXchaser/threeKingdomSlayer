@@ -231,7 +231,7 @@ sprite 的 pivot 与贴图 alpha 底边（对照 `slice_manifest.pivot_normalize
 | **S1** | **E0 段**（城门楼 ✅ + Approach ✅ + 路肩 ✅ + 栅栏 ✅）—— 含排序规则修正 ✅ | 视觉与现状一致 ✅（差异只在城门楼层级 ✅）+ 自检 6/7/8 通过 ✅ | ✅ **完成（2026-10-23）**：规格 `Assets/RouteData/YSceneSpecs/N1 to E0 - Shoulder Detail v1_Slice.asset` ✅（3 组 / 30 条目 + 3 条段规格 ✅）；从规格重建回场景 **逐件差异 0** ✅，**场景文件零改动** ✅；**城门楼层级已修** ✅（见 §6.3 ✅） |
 | **S2** | N1 段 + 中央路牌 ✅ | 同上 ✅ | ⏳ |
 | **S3** | J1 段（石路分支 ✅ 5 张地面贴图 ✅）+ 两侧植被 ✅ | 同上 ✅ | ⏳ |
-| **S4** | EV 段 + **N3 立体围墙**（照 1.4 的配方 ✅） | 同上 ✅ | ⏳ |
+| **S4** | EV 段 + **N3 立体围墙**（照 1.4 的配方 ✅） | 同上 ✅ | 🟡 **部分完成（2026-10-24）**：EV **节点**布景已进规格与 prefab ✅（§6.4 ✅，含 9 件立体围墙 ✅）；EV/N3 的**段** prefab 仍是手摆资产 ✅，未入规格 ✅ |
 | **S5** | 节点 prefab 化 + `YNodeSceneLoader` ✅ + 段表写回 ✅ | 加载行为与现状一致 ✅（`YRouteSegments` ✅） | ⏳ |
 | **S6** | 交互物（箱子 ✅）+ 开发者「跳过本节点战斗」小按钮 ✅ | 按钮在手机构建里可用 ✅ | 🟡 **部分完成（2026-10-24）**：按钮已做 ✅（`Assets/Scripts/Debug/DevSkipBattleButton.cs` ✅，只进开发构建 ✅，零场景接线 ✅）；交互物（箱子 ✅）仍手摆在 `Encounter Authoring` ✅ 里，**未入规格** ✅ |
 
@@ -252,6 +252,34 @@ sprite 的 pivot 与贴图 alpha 底边（对照 `slice_manifest.pivot_normalize
 > ⚠️ 自检规则 6 ✅ 现在能自动抓出这类越界 ✅（「组基准 + 最大 sortBias > 世界基准」✅）。
 > ⚠️ 已知误报：规则 7 ✅（同层多件共用 sortBias ✅）会把**同深度不同物件**也报出来 ✅
 > → 需改成「同 z 才判穿插」✅（B6 ✅）。
+
+### 6.4 节点 prefab 首产（2026-10-24 ✅）
+
+新方案第一次真正**产出内容** ✅（此前只有管线与自检 ✅）。
+
+**新工具**：`Tools/Y 场景规格/⑥ 节点 prefab 生产（导出→摆放表→规格→prefab→逐件比对）` ✅
+链路：场景里的节点组 → 摆放表 ✅ → 规格 ✅ → **prefab** ✅ → 与源逐件比对 ✅。
+
+**产物约定**（后续都按这个 ✅）：
+
+| 产物 | 路径 | 说明 |
+|---|---|---|
+| 节点 prefab | `Assets/Experiments/CurvedScroll/Authoring/Nodes/{nodeId}.prefab` ✅ | 根 = 节点 id ✅（例：`EV.prefab` ✅）；**不带位置** ✅（由路线系统放在节点锚点上 ✅） |
+| 节点规格 | `Assets/RouteData/YSceneSpecs/{nodeId}.asset` ✅ | `nodeId` **必须**与 `FakeRouteNodeConfig.nodeId` 对齐 ✅（例：`EV` ✅） |
+
+**EV 首产实测** ✅：
+
+| 项 | 数值 |
+|---|---|
+| 源 | 场景里 `EV - Presentation Anchor`（57 件 ✅，含 9 件 3D 立体围墙 ✅） |
+| 摆放表 → 规格 → prefab | 57 条 → 57 个对象 ✅（28 个 MeshRenderer ✅ + 21 个 SpriteRenderer ✅） |
+| 逐件比对（规格 → prefab） | **0 条** ✅ |
+| 放到锚点后的世界表现 | 49 个渲染器 ✅：最大位置偏差 3.05e-05 ✅（float 精度 ✅）、旋转 \|dot\|=1 ✅、材质全同 ✅、排序全同 ✅ |
+| 当前场景 | **零改动** ✅（`isDirty = false` ✅） |
+| 旧残留 | 不激活的 `EV Approach - Existing Shoulder`（9 件 ✅）**没被带过去** ✅ |
+
+**还没做的** ✅：prefab 还没有运行时加载器 ✅（S5 的 `YNodeSceneLoader` ✅）→ 场景里仍是手摆版 ✅；
+其余 5 个节点（N1/E0/J1/N2/N3 ✅）还没进规格 ✅；`Opening Roadside Props` 那 100 件 ✅ 也还没进 ✅。
 
 ---
 

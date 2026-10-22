@@ -58,7 +58,14 @@ summary: YJunctionSample（Y 卷轴场景）的**旧残留清单**：21 个作�
 3. 场景数据仍以**场景本身**为准 ✅；规格资产只是派生数据 ✅ → 物件真要重新启用 ✅，
    在场景里打开它 ✅，再重新导出 ✅。
 
-## 五、实测口径（2026-10-24 ✅）
+## 五、残留**资产**（不是场景物件 ✅，同样别当现役内容 ✅）
+
+| 资产 | 状态 | 说明 |
+|---|---|---|
+| `Authoring/Segments/J1 Side Vegetation and Right Road Detail.prefab`（197 件） | **切分前的原件** ✅，未进段表 ✅ | `plan/scroll-on-demand-loading-plan.md` 第 141 行 ✅：单批 197 件实例化摊不平 ✅ → 已拆成 `J1 Side Vegetation A`（50 件 ✅ 174→211 ✅）+ `J1 Side Vegetation B`（147 件 ✅ 209→271 ✅）✅。**不进段表是对的** ✅，但它会误导后来人 ✅。 |
+| `Authoring/Segments/J1 Integrated - Official Road and Stone Lane @ 190.prefab` | **空壳** ✅（只有 1 个 Transform ✅） | 路面是画在地形贴图里的 ✅ → 不需要进段表 ✅ |
+
+## 六、实测口径（2026-10-24 ✅）
 
 - 整场景规格：剔除前 **189 条目 + 85 功能件** ✅ → 剔除后 **161 + 84** ✅（差 21 ✅ + 1 容器 ✅）；
   重建逐件差异 **0** ✅。
