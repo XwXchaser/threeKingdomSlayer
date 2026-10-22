@@ -18,8 +18,8 @@ using UnityEngine.UI;
 public sealed class BattleHubTabBar : MonoBehaviour
 {
     [Header("引用")]
-    [Tooltip("留空则自动找场景里的 FakeRouteRuntime")]
-    public FakeRouteRuntime routeRuntime;
+    [Tooltip("留空则自动找场景里的路线驱动（实现 IRouteFlow 的组件）")]
+    public MonoBehaviour routeRuntime;
 
     [Tooltip("留空则用 SceneFlowManager.Instance")]
     public SceneFlowManager sceneFlow;
@@ -62,7 +62,6 @@ public sealed class BattleHubTabBar : MonoBehaviour
 
     private void Start()
     {
-        if (routeRuntime == null) routeRuntime = FakeRouteRuntime.Instance;
         if (sceneFlow == null) sceneFlow = SceneFlowManager.Instance;
         if (group == null) group = GetComponent<CanvasGroup>();
         Wire();

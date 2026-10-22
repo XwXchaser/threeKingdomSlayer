@@ -17,8 +17,8 @@ using UnityEngine;
 /// </summary>
 public sealed class HubHudModeSwitch : MonoBehaviour
 {
-    [Tooltip("留空则自动找场景里的 FakeRouteRuntime")]
-    public FakeRouteRuntime routeRuntime;
+    [Tooltip("留空则自动找场景里的路线驱动（实现 IRouteFlow 的组件）")]
+    public MonoBehaviour routeRuntime;
 
     [Tooltip("局内专用节点：就绪态隐藏，进关后按原状态还原")]
     public GameObject[] inRunOnly;
@@ -52,7 +52,6 @@ public sealed class HubHudModeSwitch : MonoBehaviour
 
     private void Start()
     {
-        if (routeRuntime == null) routeRuntime = FakeRouteRuntime.Instance;
         Capture();
         CaptureHub();
         ApplyFromState();

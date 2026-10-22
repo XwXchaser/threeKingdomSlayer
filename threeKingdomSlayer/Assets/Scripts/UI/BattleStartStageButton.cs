@@ -15,8 +15,8 @@ using UnityEngine.UI;
 public class BattleStartStageButton : MonoBehaviour
 {
     [Header("引用")]
-    [Tooltip("留空则自动找场景里的 FakeRouteRuntime")]
-    public FakeRouteRuntime routeRuntime;
+    [Tooltip("留空则自动找场景里的路线驱动（实现 IRouteFlow 的组件）")]
+    public MonoBehaviour routeRuntime;
 
     [Tooltip("按钮上的 TMP 文字（优先）")]
     public TMPro.TextMeshProUGUI tmpLabel;
@@ -58,7 +58,6 @@ public class BattleStartStageButton : MonoBehaviour
 
     private void Start()
     {
-        if (routeRuntime == null) routeRuntime = FakeRouteRuntime.Instance;
         _button.onClick.RemoveAllListeners();
         _button.onClick.AddListener(OnClick);
         // 初始态由状态源决定，不写死 false（否则 OnEnable 已应用的正确态会被覆掉，下一帧再恢复 = 一帧闪烁）
@@ -107,13 +106,13 @@ public class BattleStartStageButton : MonoBehaviour
 
     private void OnClick()
     {
-        if (routeRuntime == null) routeRuntime = FakeRouteRuntime.Instance;
-        if (routeRuntime == null)
+        var flow = routeRuntime as IRouteFlow ?? RouteFlowHub.Current;
+        if (flow == null)
         {
-            Debug.LogWarning("[BattleStartStageButton] 找不到 FakeRouteRuntime");
+            Debug.LogWarning("[BattleStartStageButton] 找不到路线驱动（IRouteFlow）");
             return;
         }
         Debug.Log("[BattleStartStageButton] 玩家点「开始关卡」");
-        routeRuntime.RunPrepared();
+        flow.RunPrepared();
     }
 }

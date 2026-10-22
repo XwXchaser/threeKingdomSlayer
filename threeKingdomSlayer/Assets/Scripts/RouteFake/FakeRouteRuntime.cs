@@ -2,22 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum FakeRoutePhase
-{
-    None,
-    /// <summary>落地页就绪态：表现层已加载、视觉已定位到起始节点，但尚未开始跑流程。</summary>
-    Ready,
-    EnteringNode,
-    Battle,
-    WaitingReward,
-    RouteChoiceTransition,
-    ChoosingRoute,
-    FakeMoving,
-    Completed,
-    Defeated
-}
-
-public sealed partial class FakeRouteRuntime : MonoBehaviour, IRouteNodeProgressView
+public sealed partial class FakeRouteRuntime : MonoBehaviour, IRouteNodeProgressView, IRouteFlow
 {
     [SerializeField] private FakeRouteStageConfig routeConfig;
     [SerializeField] private StageController stageController;
@@ -82,6 +67,9 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour, IRouteNodeProgress
             return;
         }
         Instance = this;
+        // 登记到路线驱动装配点（2026-10-23）：界面 / 教学只认 IRouteFlow 端口，
+        // 不再点名流程层的具体类。
+        RouteFlowHub.Current = this;
         // 登记道具破坏通知的接收方：战斗内核里的道具被破坏时经端口通知，
         // 不再点名流程类（2026-10-22 asmdef 分层第八批）。
         PropDestroyNotifiers.Current = this;
@@ -157,6 +145,7 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour, IRouteNodeProgress
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
+        if (ReferenceEquals(RouteFlowHub.Current, this)) RouteFlowHub.Clear();
         if (_battleHost != null)
             _battleHost.RouteBattleCompleted -= NotifyBattleCompleted;
     }

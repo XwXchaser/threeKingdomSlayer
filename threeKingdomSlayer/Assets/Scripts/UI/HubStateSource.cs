@@ -20,8 +20,8 @@ public sealed class HubStateSource : MonoBehaviour
 {
     public static HubStateSource Instance { get; private set; }
 
-    [Tooltip("留空则自动找场景里的 FakeRouteRuntime")]
-    public FakeRouteRuntime routeRuntime;
+    [Tooltip("留空则自动找场景里的路线驱动（实现 IRouteFlow 的组件）")]
+    public MonoBehaviour routeRuntime;
 
     /// <summary>落地页就绪态（已准备好，可以直接开始关卡）。</summary>
     public bool IsPrepared { get; private set; }
@@ -54,9 +54,8 @@ public sealed class HubStateSource : MonoBehaviour
 
     private void Update()
     {
-        if (routeRuntime == null) routeRuntime = FakeRouteRuntime.Instance;
-
-        bool prepared = routeRuntime != null && routeRuntime.IsPrepared;
+        var routeFlow = routeRuntime as IRouteFlow ?? RouteFlowHub.Current;
+        bool prepared = routeFlow != null && routeFlow.IsPrepared;
         var flow = SceneFlowManager.Instance;
         string overlay = flow != null ? flow.CurrentOverlay : null;
 

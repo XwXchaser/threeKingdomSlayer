@@ -98,7 +98,7 @@ public class TutorialStageDirector : MonoBehaviour
         // 开幕台词：教学路线一就绪就播一次
         if (!_openingPlayed && openingDialogue != null && tutorialRouteConfig != null)
         {
-            var route = FakeRouteRuntime.Instance;
+            var route = RouteFlowHub.Current;
             if (route != null && route.RouteConfig == tutorialRouteConfig && route.Phase != FakeRoutePhase.None)
             {
                 _openingPlayed = true;
@@ -109,7 +109,7 @@ public class TutorialStageDirector : MonoBehaviour
             }
         }
 
-        var routeRuntime = FakeRouteRuntime.Instance;
+        var routeRuntime = RouteFlowHub.Current;
         bool onTutorialRoute = routeRuntime != null && tutorialRouteConfig != null && routeRuntime.RouteConfig == tutorialRouteConfig;
 
         // 出口光标：选完路（或离开选择阶段/离开教学路线）就收起来。必须放在下面的「已推过」早退之前。
@@ -621,7 +621,7 @@ public class TutorialStageDirector : MonoBehaviour
     private void OnStageVictory()
     {
         if (_stageState == null || tutorialRouteConfig == null) return;
-        var runtime = FakeRouteRuntime.Instance;
+        var runtime = RouteFlowHub.Current;
         if (runtime == null || runtime.RouteConfig != tutorialRouteConfig) return;
 
         var data = SaveManager.Load();

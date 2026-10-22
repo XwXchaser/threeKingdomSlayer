@@ -194,7 +194,7 @@ public class StageSelectUI : MonoBehaviour
         int previous = SaveManager.GetActiveFakeRouteStageId();
         SaveManager.SetActiveFakeRouteStage(cfg.stageId);
 
-        var runtime = FakeRouteRuntime.Instance;
+        var runtime = RouteFlowHub.Current;
         if (previous != cfg.stageId)
         {
             if (runtime != null)
@@ -204,7 +204,7 @@ public class StageSelectUI : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning("[StageSelect] 找不到 FakeRouteRuntime，仅写存档（下次进入生效）: " + cfg.stageName);
+                Debug.LogWarning("[StageSelect] 找不到路线驱动（IRouteFlow），仅写存档（下次进入生效）: " + cfg.stageName);
             }
         }
         else
