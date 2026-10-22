@@ -1105,6 +1105,249 @@ public static class YSceneSpecTools
         return diffs;
     }
 
+    /// <summary>
+    /// Unity 不允许「活动场景 = 未保存的新场景 ✅」时再加性建场景 ✅（会抛 "Cannot create a new scene additively with an untitled scene unsaved" ✅）。
+    /// 先把活动场景切到**有路径的**已加载场景 ✅（不动内容 ✅）。
+    /// </summary>
+    private static bool CanCreateAdditiveScene(out string why)
+    {
+        why = null;
+        for (int i = 0; i < SceneManager.sceneCount; i++)
+        {
+            var sc = SceneManager.GetSceneAt(i);
+            if (!string.IsNullOrEmpty(sc.path)) continue;
+            why = "有未保存的空场景已加载 ✅（Unity 不允许再加性建场景 ✅）—— 请先把它关掉 ✅";
+            return false;
+        }
+        return true;
+    }
+
+    // ───────────────────────── 刀三：三方漂移检查 ─────────────────────────
+
+    /// <summary>
+    /// **三方漂移检查** ✅：**表 ↔ 规格 ↔ 段 prefab** ✅
+    /// ① 表 → 规格A（**临时新资产** ✅ —— 绝不覆盖盘上的规格 ❗）
+    /// ② 规格A ↔ 规格B（盘上的 ✅）→ 「表与规格是否同步」✅
+    /// ③ 规格B → 生成 ↔ 段 prefab（盘上的 ✅）→ 「规格与 prefab 是否同步」✅
+    /// 为什么要它 ✅：规格资产会随类字段改动**静默变陈旧** ✅（反序列化不报错 ✅）→ 没人会发现 ❗。
+    /// </summary>
+    public static bool RunChainCheck(string tablePath, string specPath, string prefabPath, out string report)
+    {
+        report = string.Empty;
+        var sb = new System.Text.StringBuilder();
+        if (string.IsNullOrEmpty(tablePath) || !File.Exists(tablePath)) { report = "找不到摆放表：" + tablePath; return false; }
+        var specOnDisk = AssetDatabase.LoadAssetAtPath<YSceneSpec>(specPath);
+        var prefabOnDisk = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+        if (specOnDisk == null) { report = "找不到规格资产：" + specPath; return false; }
+        if (prefabOnDisk == null) { report = "找不到段 prefab：" + prefabPath; return false; }
+
+        var specFromTable = YScenePlacementImporter.Import(tablePath);
+        if (specFromTable == null) { report = "摆放表导入失败"; return false; }
+        string tempSpecPath = AssetDatabase.GetAssetPath(specFromTable);
+
+        if (!CanCreateAdditiveScene(out string why)) { report = why; return false; }
+        var tmp = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+        GameObject holderA = null, holderB = null;
+        try
+        {
+            holderA = new GameObject("SpecFromTable");
+            Generate(specFromTable, holderA.transform);
+            var rootA = holderA.transform.Find(specFromTable.nodeSpecs[0].nodeId);
+            holderB = new GameObject("SpecOnDisk");
+            Generate(specOnDisk, holderB.transform);
+            var rootB = holderB.transform.Find(specOnDisk.nodeSpecs[0].nodeId);
+
+            var d1 = (rootA != null && rootB != null)
+                ? CompareTrees(rootA, rootB, true, true)
+                : new List<string> { "节点根缺失（表导出的 ✅ / 盘上的 ✅）" };
+            var d2 = (rootB != null)
+                ? CompareTrees(prefabOnDisk.transform, rootB, true, true)
+                : new List<string> { "节点根缺失" };
+
+            sb.AppendLine($"表 → 规格：{d1.Count} 条差异 ✅");
+            for (int i = 0; i < d1.Count && i < 12; i++) sb.AppendLine("    · " + d1[i]);
+            sb.AppendLine($"规格 → 段 prefab：{d2.Count} 条差异 ✅");
+            for (int i = 0; i < d2.Count && i < 12; i++) sb.AppendLine("    · " + d2[i]);
+            sb.AppendLine(d1.Count == 0 && d2.Count == 0 ? "三方一致 ✅" : "三方不一致 ❌ —— 重新导出规格 / 重建 prefab ✅");
+            report = sb.ToString();
+            return d1.Count == 0 && d2.Count == 0;
+        }
+        finally
+        {
+            if (holderA != null) UnityEngine.Object.DestroyImmediate(holderA);
+            if (holderB != null) UnityEngine.Object.DestroyImmediate(holderB);
+            EditorSceneManager.CloseScene(tmp, true);
+            if (!string.IsNullOrEmpty(tempSpecPath)) AssetDatabase.DeleteAsset(tempSpecPath);   // 临时资产不留 ✅
+        }
+    }
+
+    // ───────────────────────── 刀四：画面逐像素比对 ─────────────────────────
+
+    private const int PixCheckLayer = 2;        // Ignore Raycast ✅（项目里没在用 ✅）
+    private const int PixCheckWidth = 887;
+    private const int PixCheckHeight = 1774;
+
+    /// <summary>
+    /// **画面逐像素比对** ✅：**现状** vs **由规格重建** ✅。
+    /// 「画面没变」是唯一能证明表化无损的口径 ✅ —— 结构比对通过 ≠ 画面一致 ✅（今天实证过 ✅）。
+    /// 做法 ✅：把现状**克隆**一份 ✅（不动用户的对象 ✅）→ 挪进临时场景 ✅ → 挪到检查层 ✅ → 渲 A ✅；
+    /// 由规格生成一份 ✅ → 渲 B ✅；最后在 C# 里逐像素比 ✅（不依赖外部 Python ✅）。
+    /// </summary>
+    public static bool RunPixelCheck(GameObject source, string tablePath, string specPath, string prefabPath, out string report)
+    {
+        report = string.Empty;
+        var sb = new System.Text.StringBuilder();
+        if (source == null) { report = "没有要比对的现状对象"; return false; }
+        var spec = AssetDatabase.LoadAssetAtPath<YSceneSpec>(specPath);
+        if (spec == null) { report = "找不到规格资产：" + specPath; return false; }
+
+        // 机位按**现状的世界包围盒**定 ✅ → 两张图同一机位 ✅
+        Bounds bounds = new Bounds();
+        bool first = true;
+        foreach (var r in source.GetComponentsInChildren<Renderer>(true))
+        {
+            if (r == null) continue;
+            if (first) { bounds = r.bounds; first = false; } else bounds.Encapsulate(r.bounds);
+        }
+        if (first) { report = "现状对象里没有渲染器"; return false; }
+        Vector3 camPos = new Vector3(bounds.center.x, 1.7f, bounds.min.z - 5f);
+        Quaternion camRot = Quaternion.Euler(10f, 0f, 0f);
+
+        if (!CanCreateAdditiveScene(out string why)) { report = why; return false; }
+        var tmp = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+        GameObject clone = null, holder = null;
+        try
+        {
+            // A = 现状（克隆 ✅ —— 不动用户的对象 ✅）
+            clone = UnityEngine.Object.Instantiate(source);
+            clone.hideFlags = HideFlags.DontSave;
+            SceneManager.MoveGameObjectToScene(clone, tmp);
+            clone.transform.position = source.transform.position;
+            clone.transform.rotation = source.transform.rotation;
+            string pathA = RenderForCompare(clone.transform, tmp, camPos, camRot, "A");
+            // 克隆渲完**立刻销毁** ✅ —— 否则 B 图里会叠着两份布景 ❗（克隆 + 重建 ✅）→ 比对必然有差异 ❌
+            UnityEngine.Object.DestroyImmediate(clone);
+            clone = null;
+
+            // B = 由规格重建 ✅
+            holder = new GameObject("Rebuilt");
+            Generate(spec, holder.transform);
+            var rebuilt = holder.transform.Find(spec.nodeSpecs[0].nodeId);
+            if (rebuilt == null) { report = "由规格重建时找不到节点根"; return false; }
+            string pathB = RenderForCompare(rebuilt, tmp, camPos, camRot, "B");
+
+            ComparePng(pathA, pathB, out int exact, out int over4, out int max, out int total);
+            sb.AppendLine($"机位 = ({camPos.x:F1}, {camPos.y:F1}, {camPos.z:F1}) rot = ({camRot.eulerAngles.x:F0}, {camRot.eulerAngles.y:F0}, {camRot.eulerAngles.z:F0})");
+            sb.AppendLine($"完全不同的像素 = {exact} / {total}（{100.0 * exact / Mathf.Max(1, total):F4}%）");
+            sb.AppendLine($"通道差 > 4 的像素 = {over4}｜最大通道差 = {max}");
+            sb.AppendLine(exact == 0 ? "画面完全一致 ✅" : "画面有差异 ❌ —— 两张图在 Library/Locus/tmp/ypix_A.png ✅ / ypix_B.png ✅");
+            report = sb.ToString();
+            return exact == 0;
+        }
+        finally
+        {
+            if (clone != null) UnityEngine.Object.DestroyImmediate(clone);
+            if (holder != null) UnityEngine.Object.DestroyImmediate(holder);
+            EditorSceneManager.CloseScene(tmp, true);
+        }
+    }
+
+    /// <summary>把一棵树按固定机位渲成 PNG ✅（只渲检查层 ✅ → 当前场景的其它东西不会进来 ✅）。</summary>
+    private static string RenderForCompare(Transform tree, Scene scene, Vector3 camPos, Quaternion camRot, string tag)
+    {
+        foreach (var r in tree.GetComponentsInChildren<Renderer>(true))
+            if (r != null) SetLayerRecursive(r.transform, PixCheckLayer);
+
+        var camGo = new GameObject("PixCam");
+        camGo.hideFlags = HideFlags.DontSave;
+        SceneManager.MoveGameObjectToScene(camGo, scene);
+        var cam = camGo.AddComponent<Camera>();
+        camGo.transform.position = camPos;
+        camGo.transform.rotation = camRot;
+        cam.fieldOfView = 60f; cam.aspect = 0.5f;
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = new Color(0.55f, 0.72f, 0.88f);
+        cam.nearClipPlane = 0.05f; cam.farClipPlane = 600f;
+        cam.cullingMask = 1 << PixCheckLayer;              // 只看检查层 ✅
+        int W = PixCheckWidth, H = PixCheckHeight;
+        var rt = new RenderTexture(W, H, 24, RenderTextureFormat.ARGB32);
+        cam.targetTexture = rt;
+        cam.Render();
+        RenderTexture.active = rt;
+        var tex = new Texture2D(W, H, TextureFormat.RGB24, false);
+        tex.ReadPixels(new Rect(0, 0, W, H), 0, 0);
+        tex.Apply();
+        RenderTexture.active = null;
+        string path = $"Library/Locus/tmp/ypix_{tag}.png";
+        File.WriteAllBytes(path, tex.EncodeToPNG());
+        cam.targetTexture = null;
+        UnityEngine.Object.DestroyImmediate(tex);
+        UnityEngine.Object.DestroyImmediate(rt);
+        UnityEngine.Object.DestroyImmediate(camGo);
+        return path;
+    }
+
+    /// <summary>两张 PNG 逐像素比较 ✅（完全一致 = 0 ✅）。</summary>
+    private static void ComparePng(string pathA, string pathB, out int exact, out int over4, out int max, out int total)
+    {
+        var ta = LoadPng(pathA);
+        var tb = LoadPng(pathB);
+        var pa = ta.GetPixels32();
+        var pb = tb.GetPixels32();
+        exact = 0; over4 = 0; max = 0; total = pa.Length;
+        int n = Mathf.Min(pa.Length, pb.Length);
+        for (int i = 0; i < n; i++)
+        {
+            int d = Mathf.Max(Mathf.Abs(pa[i].r - pb[i].r),
+                      Mathf.Max(Mathf.Abs(pa[i].g - pb[i].g), Mathf.Abs(pa[i].a - pb[i].a)));
+            if (d > 0) { exact++; if (d > 4) over4++; if (d > max) max = d; }
+        }
+        UnityEngine.Object.DestroyImmediate(ta);
+        UnityEngine.Object.DestroyImmediate(tb);
+    }
+
+    private static Texture2D LoadPng(string path)
+    {
+        var bytes = File.ReadAllBytes(path);
+        var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        tex.LoadImage(bytes);
+        return tex;
+    }
+
+    private static void SetLayerRecursive(Transform t, int layer)
+    {
+        t.gameObject.layer = layer;
+        for (int i = 0; i < t.childCount; i++) SetLayerRecursive(t.GetChild(i), layer);
+    }
+
+    [MenuItem("Tools/Y 场景规格/⑧ 全链路校验（表→规格→段 prefab 三方对齐 ✅）")]
+    private static void ChainCheckMenu()
+    {
+        var sel = Selection.activeObject as GameObject;
+        if (sel == null || !EditorUtility.IsPersistent(sel)) { Debug.LogError("[Y 场景规格] 请在 Project 里选中一个段 prefab ✅"); return; }
+        string name = sel.name;
+        bool ok = RunChainCheck(
+            $"Assets/Experiments/CurvedScroll/Authoring/Placement/{name}.json",
+            $"Assets/RouteData/YSceneSpecs/{name}.asset",
+            AssetDatabase.GetAssetPath(sel),
+            out string report);
+        Debug.Log($"[Y 场景规格] 全链路校验「{name}」：" + (ok ? "三方一致 ✅" : "三方不一致 ❌") + "\n" + report);
+    }
+
+    [MenuItem("Tools/Y 场景规格/⑨ 画面逐像素比对（现状 vs 由规格重建 ✅）")]
+    private static void PixelCheckMenu()
+    {
+        var sel = Selection.activeGameObject;
+        if (sel == null) { Debug.LogError("[Y 场景规格] 先选中要比对的对象 ✅（段 prefab ✅ 或场景里的组 ✅）"); return; }
+        string name = sel.name;
+        bool ok = RunPixelCheck(sel,
+            $"Assets/Experiments/CurvedScroll/Authoring/Placement/{name}.json",
+            $"Assets/RouteData/YSceneSpecs/{name}.asset",
+            $"Assets/Experiments/CurvedScroll/Authoring/Segments/{name}.prefab",
+            out string report);
+        Debug.Log($"[Y 场景规格] 画面比对「{name}」：" + (ok ? "完全一致 ✅" : "有差异 ❌") + "\n" + report);
+    }
+
     private static Dictionary<string, Transform> Flatten(Transform root, bool ignoreInactive = false)
     {
         var map = new Dictionary<string, Transform>();
