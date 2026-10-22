@@ -51,3 +51,17 @@ aiEditMode: inherit
   - 上下文逼近上限前就换会话并写交接文档，别等自动压缩兜底。
   - `contextLength` 配置值要给摘要预留留余量：上游真实窗口小于配置值时，压缩请求会先于主请求超预算。
   - 同一会话别混用 openai_chat 与 openai_responses 端点：换端点会换掉报错形态（2013 → `No tool output found`），极易误判成新故障。
+
+## 8. Locus 会话 413 Payload Too Large（图片附件累积撑爆请求体，工具侧）
+- **现象**：会话跑到中途后，**连续两轮 run 直接 error**，报错是网关层的 `Custom Chat API error (413 Payload Too Large): <html>…nginx…</html>`（上游 `https://api.muskapis.com/v1/chat/completions`，nginx 拒收请求体）。该会话之后任何消息都发不出去 → 任务卡死无法继续。
+- **与问题 7 的区别**：问题 7 是**上下文 token 预算**型（400 / 2013 / 压缩死锁）；本条是**请求体字节数**型（413），别按同一种故障排查。
+- **根因（实测 2026-10-22 会话 `6938f3dc-20ac-4da1-87dc-5a198e9d8585`）**：会话 1038 条消息里只有 **26 条带图片附件，合计 104,510,310 B ≈ 99.7 MiB 的 base64 PNG**（`read` 工具读 PNG / 截图回传时把**全分辨率原图**内联进消息）。同期纯文本只有 content 0.61 MiB + tool_calls 0.61 MiB + thinking 0.93 MiB → **撑爆的是图片，不是文字**。单张最大三张 base64 分别 12.65 MB / 12.45 MB / 12.38 MB。
+- **取证**：`H:/locus/data/locus.db`（只读打开即可）→
+  `select count(*), sum(length(images)) from messages where session_id='<id>';`
+  `select length(images), substr(images,1,80) from messages where session_id='<id>' and length(coalesce(images,''))>0 order by length(images) desc;`
+  注意 `response_request_payloads` 在本机不落原始请求体，指望从那里复原载荷是没用的。
+- **恢复**：同问题 7 —— 不要在原会话里反复重试；换新会话 + 交接摘要（范例 `plan/scene-pipeline-handoff-20261023.md`）。**未提交的工作区改动不会丢**，按 `git status` 接管即可。
+- **预防**：
+  - 长会话里**别把全分辨率 PNG 读进对话**：先用外部脚本裁剪/缩放后再 `read`；成组对比图改用拼图脚本合成一张。
+  - 会话里读图次数控制在个位数；每读一张大图就估算累积体积，超过 ~20 MiB 就先写交接文档再换会话。
+  - 截图验收优先走「渲染到文件 → 桌面文件夹」而不是反复回传图给模型。
