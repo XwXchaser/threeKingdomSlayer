@@ -114,16 +114,24 @@ public static class YScenePlacementImporter
     /// <paramref name="includeInactive"/> = false（默认 ✅）→ **跳过作者态关掉的物件** ✅
     /// （= 旧残留 ✅：运行时没人会再打开它们 ✅ —— <c>YRouteStreamingWindow</c> 只切 <c>Renderer.enabled</c> ✅）。
     /// 「拿现成场景当参考重搭一遍」时**不要**把这些带上 ✅。
+    ///
+    /// <paramref name="nodeIdOverride"/>：写进表里的节点 id ✅（默认用根物件名 ✅）。
+    /// 对齐路线节点就传它 ✅（例：<c>"EV"</c> ✅ —— 要与 <c>FakeRouteNodeConfig.nodeId</c> 一致 ✅）。
+    ///
+    /// <paramref name="localRoot"/> = true → 表里的原点/朝向 = 单位变换 ✅：
+    /// 内容坐标已经相对根物件了 ✅ → 产出的 prefab **不自带位置** ✅（由路线系统放到节点锚点上 ✅）。
     /// </summary>
-    public static int ExportPlacementTable(GameObject root, string jsonPath, bool includeInactive = false)
+    public static int ExportPlacementTable(GameObject root, string jsonPath, bool includeInactive = false,
+        string nodeIdOverride = null, bool localRoot = false)
     {
         if (root == null) return 0;
         var table = new PlacementTable
         {
-            nodeId = root.name,
+            nodeId = string.IsNullOrEmpty(nodeIdOverride) ? root.name : nodeIdOverride,
             space = "local",                       // 局部坐标 = 无损 ✅
-            origin = Vec(root.transform.localPosition),
-            rootRotation = Vec(root.transform.localEulerAngles),
+            // localRoot：prefab 不自带位置 ✅（原点=原点 ✅，朝向=朝向 ✅）
+            origin = localRoot ? new float[] { 0f, 0f, 0f } : Vec(root.transform.localPosition),
+            rootRotation = localRoot ? new float[] { 0f, 0f, 0f } : Vec(root.transform.localEulerAngles),
         };
 
         int skipped = 0;
@@ -132,7 +140,8 @@ public static class YScenePlacementImporter
         {
             if (t == root.transform) continue;
             // 作者态关掉的 = 旧残留 ✅ → 默认不搬 ✅
-            if (!includeInactive && !t.gameObject.activeSelf) { skipped++; continue; }
+            // （连它的子树一起不搬 ✅：父级关着 → 子级在层级上也是不激活的 ✅）
+            if (!includeInactive && !IsEffectivelyActive(t, root.transform)) { skipped++; continue; }
             var item = new PlacementItem
             {
                 id = t.name,
@@ -189,6 +198,18 @@ public static class YScenePlacementImporter
             Debug.LogError($"[Y 场景] 写摆放表失败：{e.Message}");
             return 0;
         }
+    }
+
+    /// <summary>物件是否**实际可见**（自身与所有祖先都激活 ✅，根除外 ✅）。</summary>
+    private static bool IsEffectivelyActive(Transform t, Transform root)
+    {
+        var cur = t;
+        while (cur != null && cur != root)
+        {
+            if (!cur.gameObject.activeSelf) return false;
+            cur = cur.parent;
+        }
+        return true;
     }
 
     private static void CaptureMaterial(PlacementItem item, Material mat)

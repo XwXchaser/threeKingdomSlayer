@@ -77,6 +77,27 @@ public static class YSceneSpecTools
         RunPlacementRoundTrip(sel);
     }
 
+    [MenuItem("Tools/Y 场景规格/⑥ 节点 prefab 生产（导出→摆放表→规格→prefab→逐件比对）")]
+    private static void NodeProductionMenu()
+    {
+        var sel = Selection.activeGameObject;
+        if (sel == null) { Debug.LogError("[Y 场景规格] 先在场景里选中要生产的节点组（节点锚点 ✅）"); return; }
+        string nodeId = DeriveNodeId(sel.name);
+        string prefabPath = $"Assets/Experiments/CurvedScroll/Authoring/Nodes/{nodeId}.prefab";
+        string report;
+        bool ok = RunNodeProduction(sel, nodeId, prefabPath, out report);
+        Debug.Log($"[Y 场景规格] 节点生产 {nodeId}：" + (ok ? "逐件差异 0 ✅" : "有差异 ❌") + "\n" + report);
+    }
+
+    /// <summary>从物件名推节点 id ✅（"EV - Presentation Anchor" → "EV" ✅）。</summary>
+    public static string DeriveNodeId(string objectName)
+    {
+        if (string.IsNullOrEmpty(objectName)) return "Node";
+        int idx = objectName.IndexOf(" - Presentation Anchor", System.StringComparison.OrdinalIgnoreCase);
+        if (idx > 0) return objectName.Substring(0, idx).Trim();
+        return objectName.Trim();
+    }
+
     // ───────────────────────── 导出 ─────────────────────────
 
     public static YSceneSpec ExportSlice(GameObject sliceRoot, YSceneSpec existing, bool includeInactive = false)
@@ -712,6 +733,80 @@ public static class YSceneSpecTools
         UnityEngine.Object.DestroyImmediate(rootGo);
         EditorSceneManager.CloseScene(tmp, true);
         if (!keepSpec && !string.IsNullOrEmpty(specPath)) AssetDatabase.DeleteAsset(specPath);
+        return diffs.Count == 0;
+    }
+
+    // ───────────────────────── 生成到 prefab ─────────────────────────
+
+    /// <summary>
+    /// 把规格生成成一个 **prefab** ✅（新方案的产物形态 ✅：节点 prefab / 段 prefab ✅）。
+    ///
+    /// 生成在**临时场景**里做 ✅ → 当前场景零改动 ✅（不脏场景 ✅）。
+    /// prefab 的根 = 节点根 ✅；节点的**位置由路线系统放在锚点上** ✅（规格里原点为单位变换 ✅）。
+    /// </summary>
+    public static GameObject GenerateToPrefab(YSceneSpec spec, string prefabPath, out int count)
+    {
+        count = 0;
+        if (spec == null || string.IsNullOrEmpty(prefabPath)) return null;
+        if (spec.nodeSpecs == null || spec.nodeSpecs.Length == 0) return null;
+
+        var tmp = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+        try
+        {
+            var holder = new GameObject("PrefabBuild");
+            count = Generate(spec, holder.transform);
+            var nodeRoot = holder.transform.Find(spec.nodeSpecs[0].nodeId);
+            if (nodeRoot == null)
+            {
+                Debug.LogError($"[Y 场景规格] 生成结果里找不到节点根「{spec.nodeSpecs[0].nodeId}」");
+                return null;
+            }
+            EnsureAssetFolder(Path.GetDirectoryName(prefabPath));
+            var prefab = PrefabUtility.SaveAsPrefabAsset(nodeRoot.gameObject, prefabPath);
+            if (prefab == null) Debug.LogError("[Y 场景规格] prefab 存盘失败：" + prefabPath);
+            return prefab;
+        }
+        finally
+        {
+            EditorSceneManager.CloseScene(tmp, true);
+        }
+    }
+
+    private static void EnsureAssetFolder(string folder)
+    {
+        if (string.IsNullOrEmpty(folder) || AssetDatabase.IsValidFolder(folder)) return;
+        Directory.CreateDirectory(folder);
+        AssetDatabase.Refresh();
+    }
+
+    /// <summary>
+    /// **节点 prefab 生产**（2026-10-24 ✅）：现成场景组 → 摆放表 → 规格 → **prefab** ✅ → 与源逐件比对 ✅。
+    /// 这是「用新方案产出内容」的完整链路 ✅。
+    /// 产物 = prefab ✅（**当前场景零改动** ✅）；比对不比根变换 ✅（prefab 不带位置 ✅）。
+    /// </summary>
+    public static bool RunNodeProduction(GameObject source, string nodeId, string prefabPath, out string report)
+    {
+        var sb = new System.Text.StringBuilder();
+        report = string.Empty;
+        if (source == null) { report = "源为空"; return false; }
+        if (string.IsNullOrEmpty(nodeId)) nodeId = DeriveNodeId(source.name);
+
+        string jsonPath = "Library/Locus/tmp/y_node_production.json";
+        int exported = YScenePlacementImporter.ExportPlacementTable(source, jsonPath, false, nodeId, true);
+        var spec = YScenePlacementImporter.Import(jsonPath);
+        if (spec == null) { report = "规格导入失败"; return false; }
+        string specPath = AssetDatabase.GetAssetPath(spec);
+        sb.AppendLine($"摆放表 {exported} 条 → 规格 {specPath}");
+
+        int count = 0;
+        var prefab = GenerateToPrefab(spec, prefabPath, out count);
+        if (prefab == null) { report = sb + "prefab 生成失败"; return false; }
+        sb.AppendLine($"prefab {prefabPath}（生成 {count} 个对象 ✅）");
+
+        var diffs = CompareTrees(source.transform, prefab.transform, false, true);
+        sb.AppendLine($"逐件比对：差异 {diffs.Count} 条");
+        for (int i = 0; i < diffs.Count && i < 20; i++) sb.AppendLine("   " + diffs[i]);
+        report = sb.ToString();
         return diffs.Count == 0;
     }
 
