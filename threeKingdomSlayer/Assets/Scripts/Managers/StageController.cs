@@ -404,6 +404,9 @@ public class StageController : MonoBehaviour, IStageFormation, IStageBattleState
 
     public void StopCombatForRouteTravel() => _staging.StopCombatForRouteTravel();
 
+    /// <summary>中止当前这场节点战斗（开发者「跳过战斗」按钮用 ✅；不推进节点状态 ✅）。</summary>
+    public void AbortRouteBattle() => _staging.AbortRouteBattle();
+
     public void StartCurrentRouteNode(bool resetPlayer = false) => _staging.StartCurrentRouteNode(resetPlayer);
 
     public void CompleteCurrentCombatNode() => _rewardGate.CompleteCurrentCombatNode();

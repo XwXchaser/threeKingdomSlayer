@@ -81,6 +81,12 @@ public interface ICombatStaging
     /// <summary>停止战斗（进入节点间旅行前）。</summary>
     void StopCombatForRouteTravel();
 
+    /// <summary>
+    /// **中止**当前这场节点战斗（停波次 + 清场 + 清投射物 ✅）——
+    /// 开发者「跳过战斗」用 ✅；**不推进节点状态** ✅（节点完成仍由路线流程走 ✅）。
+    /// </summary>
+    void AbortRouteBattle();
+
     /// <summary>进入节点间旅行状态。</summary>
     void SetRouteTravelState();
 

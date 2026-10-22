@@ -59,6 +59,9 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour, IRouteNodeProgress
     public bool IsChoosing => Phase == FakeRoutePhase.ChoosingRoute;
     public bool IsFakeMoving => Phase == FakeRoutePhase.FakeMoving;
 
+    /// <summary>当前节点 id（还没进节点时为空）—— 供界面层/开发者按钮读 ✅。</summary>
+    public string CurrentNodeId => _currentNode != null ? _currentNode.nodeId : string.Empty;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -215,6 +218,33 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour, IRouteNodeProgress
     {
         if (!_battleActive || Phase != FakeRoutePhase.Battle) return;
         _battleCleared = true;
+    }
+
+    /// <summary>
+    /// **开发者跳过本节点战斗**（2026-10-24 ✅）：清场 ✅ + 把本节点所有战斗条目标记完成 ✅
+    /// → 流程直接进战后演出 / 选路 ✅（**不碰战斗逻辑** ✅，**不碰奖励发放** ✅）。
+    ///
+    /// 通路（与方案一致 ✅）：<c>AbortRouteBattle</c>（停波次 + 清场 ✅）→
+    /// <see cref="NotifyBattleCompleted"/>（让等待中的战斗循环退出 ✅）→
+    /// 标记全部条目完成 ✅（后续条目不再打 ✅）。
+    /// </summary>
+    public bool SkipCurrentNodeBattle()
+    {
+        if (Phase != FakeRoutePhase.Battle) return false;
+        var node = _currentNode;
+        if (node == null) return false;
+
+        // ① 停战清场（不动节点状态 ✅）
+        _battleHost?.AbortRouteBattle();
+        // ② 通知「这场战斗结束」→ 等待中的战斗循环退出 ✅
+        NotifyBattleCompleted();
+        // ③ 本节点的战斗条目全部标记完成 ✅ → 后续条目不再打 ✅
+        if (node.battleEntries != null)
+        {
+            for (int i = 0; i < node.battleEntries.Count; i++) MarkBattleEntryCompleted(node, i);
+        }
+        Debug.Log("[FakeRoute] 开发者跳过战斗 node=" + node.nodeId);
+        return true;
     }
 
 

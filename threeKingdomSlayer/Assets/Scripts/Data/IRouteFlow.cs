@@ -21,6 +21,9 @@ public interface IRouteFlow
     /// <summary>当前路线配置（未绑定时为 null）。</summary>
     FakeRouteStageConfig RouteConfig { get; }
 
+    /// <summary>当前节点 id（还没进节点时为空）—— 开发者界面用 ✅。</summary>
+    string CurrentNodeId { get; }
+
     /// <summary>落地页是否已准备好（可以点「开始关卡」）。</summary>
     bool IsPrepared { get; }
 
@@ -29,6 +32,13 @@ public interface IRouteFlow
 
     /// <summary>正式开始跑这条路线（落地页「开始关卡」）。</summary>
     void RunPrepared();
+
+    /// <summary>
+    /// **开发者跳过本节点战斗**（2026-10-24 ✅）：清场 ✅ + 标记本节点战斗条目完成 ✅
+    /// → 直接进战后演出 / 选路 ✅；**不碰战斗逻辑** ✅，**不碰奖励发放** ✅。
+    /// 当前不在战斗中时返回 false ✅。
+    /// </summary>
+    bool SkipCurrentNodeBattle();
 }
 
 /// <summary>

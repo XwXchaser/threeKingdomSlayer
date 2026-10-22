@@ -64,6 +64,12 @@ public sealed class StageCombatStaging : ICombatStaging
         _host.StopCombatForRouteTravel();
     }
 
+    /// <summary>中止当前这场战斗（开发者跳过战斗用 ✅；不动关卡状态 ✅）。</summary>
+    public void AbortRouteBattle()
+    {
+        _host.AbortRouteBattle();
+    }
+
     /// <summary>进入节点间旅行状态。</summary>
     public void SetRouteTravelState()
     {

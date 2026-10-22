@@ -108,6 +108,16 @@ public sealed class StageRouteBattleHost
         _ctx.SetStageState(StageState.Starting);
     }
 
+    /// <summary>
+    /// **中止**当前这场战斗：停波次 + 清场 + 清投射物 ✅。
+    /// 与 <see cref="StopCombatForRouteTravel"/> 的区别：**不动关卡状态** ✅ ——
+    /// 节点「算不算完成」仍由路线流程判定 ✅（开发者跳过战斗时用 ✅）。
+    /// </summary>
+    public void AbortRouteBattle()
+    {
+        StopCombatSystemsForNodeTransition();
+    }
+
     /// <summary>重置路线战斗状态位（重开关卡 / 重开时用）。</summary>
     public void ResetRouteBattleState()
     {
