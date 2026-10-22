@@ -375,38 +375,45 @@ summary: 架构改造交接（2026-10-23 更新）：asmdef 分层十二批全�
 
 **主线目标**：① 把「架构分层」变成**编译期约束**（asmdef 分层）✅ **已切完**；② 把机制理顺、留好扩展接口 ✅ 持续。
 
-**现在的程序集结构**（依赖方向只能向下，由编译器保证）：
+**现在的程序集结构**（依赖方向只能向下，由编译器保证；**`Assembly-CSharp` 已清空** ✅）：
 
 | 程序集 | 内容 | 依赖 |
 |---|---|---|
-| `Locus.Data` | 配置 + 契约 + 纯数据类型（71 文件） | 无 |
-| `Locus.Services` | 全局服务（`DebugLog` / `AudioManager` / `SaveManager`） | Data |
-| `Locus.Combat` | **战斗内核**（Enemy / Core / Attack / Wave / QTE / Effect / Status / MoveSystem / Prop / 战斗侧 Player，158 文件） | Data + Services + 第三方 |
-| `Locus.Flow` | **流程层**（Managers 7 / RouteFake 10 / Route 2 / InputManager 4 / Utils 1 = 24 文件） | Data + Services + Combat |
+| `Locus.Data` | 配置 + 契约 + 纯数据类型（72 文件，含存档分片 6 个） | 无 |
+| `Locus.Services` | 全局服务（`DebugLog` / `AudioManager` / `SaveManager` / `SharedVisualAssets`） | Data |
+| `Locus.Combat` | **战斗内核**（Enemy / Core / Attack / Wave / QTE / Effect / Status / MoveSystem / Prop / 战斗侧 Player，157 文件） | Data + Services + 第三方 |
+| `Locus.Flow` | **流程层**（Managers 7 / RouteFake 11 / Route 2 / InputManager 4 / Utils 1 = 25 文件） | Data + Services + Combat |
 | `Locus.UI` | **界面层**（UI 49 / Tutorial 2 = 51 文件） | Data + Services + Combat + Flow |
-| `Locus.EditorTools` | **编辑器工具**（14 文件，includePlatforms=Editor） | Data + Combat + UI |
-| `Assembly-CSharp` | 剩两座孤岛：Y 卷轴实验 26 + `Legacy/` 旧路线 17 | 上面全部 |
-| `Assembly-CSharp-Editor` | 实验/旧路线的编辑器工具 11 + Android 打包钩子 1 + 包内 4 | 上面全部 |
+| `Locus.Experiments` | **Y 卷轴实验孤岛**（26 文件，含卷轴路线表现层） | Data + Services + Combat + Flow + UI |
+| `Locus.Legacy` | **旧路线孤岛**（17 文件，RouteV1 / RouteV2） | 上面全部 |
+| `Locus.EditorTools` | **编辑器工具**（24 文件，includePlatforms=Editor） | Data + Combat + Flow + UI + Experiments + Legacy |
+| `Assembly-CSharp-Editor` | 只剩 Android 打包钩子 1 + 包内 4 | 上面全部 |
 
-**已完成（十二批，asmdef 分层）**：① 纯数据类型下沉 L0 + `Locus.Services` 诞生；② 存档模型下沉 + `SaveManager` 进服务层；
-③ **扩展点契约下沉 L0**（`IStatusEffect` / `IEffectExecutor` / `IUpgrade*` / `IRouteMotionPresenter` …）；
-④ 呈现层端口化（`ICombatHud` / `IDialogueModal` / `IItemDiscardPrompt` + 装配点 `CombatPresenters`）；
-⑤ 工厂端口（`IUpgradeChoiceView` / `IDamageNumberPresenter` / `ISceneTransitionCamera`）；
-⑥ 血条工厂端口；⑦ QTE 的 UI 触点端口化；⑧ 内核不再点名流程类（`StageRoles` 装配点）；
-⑨a 输入端口（`IPlayerInput`）；⑨b **`Locus.Combat` 成立**；⑩ **`Locus.Flow` 成立**；
-⑪ **`Locus.UI` 成立**；⑫ **`Locus.EditorTools` 成立**。
+**已完成（十三批 asmdef + 五批解耦）**：
+asmdef 分层：① 纯数据类型下沉 L0 + `Locus.Services` 诞生；② 存档模型下沉 + `SaveManager` 进服务层；
+③ 扩展点契约下沉 L0；④ 呈现层端口化；⑤ 工厂端口；⑥ 血条工厂端口；⑦ QTE 的 UI 触点端口化；
+⑧ 内核不再点名流程类（`StageRoles` 装配点）；⑨a 输入端口；⑨b **`Locus.Combat`**；⑩ **`Locus.Flow`**；
+⑪ **`Locus.UI`**；⑫ **`Locus.EditorTools`**；⑬ **两座孤岛定界**（`Locus.Experiments` / `Locus.Legacy` ✅，`Assembly-CSharp` 清空 ✅）。
+机制解耦：⑭ **幽灵引用清零**（`Resources.Load` 8 → 0 ✅）；⑮ **路线驱动走端口** `IRouteFlow` ✅；
+⑯ **存档分片**（`ISaveSection` + 5 个分片 ✅，存档格式不变 ✅）；⑰ **配置语义拆分**（`RouteCatalog` ✅）。
 
-**内核的三条边界已归零** ✅：内核 → 界面 / 流程 / 输入类型，全部由编译器保证 ✅；
-**上层的边界也归零** ✅：流程层 → 界面（走 `CombatPresenters` 端口 ✅）、界面层 → 流程（向下 ✅）、
-界面层 → 实验代码（走 `IRouteMotionPresenter` 端口 ✅）—— 全部由编译器保证 ✅。
+**边界现状**：
+- 内核 → 界面 / 流程 / 输入：**归零** ✅（编译器保证 ✅）；
+- 流程 → 界面：**归零** ✅（走 `CombatPresenters` 端口 ✅）；
+- 界面 → 流程具体类：**归零** ✅（走 `IRouteFlow` / `RouteFlowHub` 端口 ✅）；
+- 界面 → 实验代码：**归零** ✅（走 `IRouteMotionPresenter` 端口 ✅）；
+- 运行时按路径加载：**归零** ✅（幽灵引用 0 处 ✅）。
 
 **下一步（按建议顺序）**：
-1. **清理 `Legacy/`**（旧路线两套实现）：它还引用 Y 分叉实验代码 ✅ + UI ✅ + 流程层 ✅，
-   现在是唯一还在 `Assembly-CSharp` 里的**游戏侧**代码 ✅ → 要么删 ✅，要么切端口 ✅。
-2. **继续机制解耦**：看 `plan/bugs-and-requests.md` 的待处理条目 ✅ 与
-   `design/architecture-decoupling-analysis.md` §5 的遗留 ✅。
-3. **Y 卷轴实验孤岛**：`Assets/Experiments/CurvedScroll/Scripts`（26 文件）要不要也定一个程序集边界 ✅（现在是 `Assembly-CSharp` ✅）。
-4. **包体 / 真机**：`plan/package-size-optimization.md` ✅（当前包 298.9MB ✅）。
+1. **C1 体量**：8 个 600~696 行的文件还没拆到 ≤600 ✅（`AttackWave` 696 / `TutorialStageDirector` 678 /
+   `ColumnManager` 662 / `WaveMarchScheduler` 661 / `MeshWeaponMangaSweep` 653 / `MeshWeaponAfterimage` 650 /
+   `Enemy.Combat` 636 / `PierceVortexVisual` 633 ✅）—— 只搬不改 ✅，坑见 `design/architecture-decoupling-analysis.md` §5.15 ✅。
+2. **A6 节点奖励**：`FakeRouteNodeConfig.rewards` 字段存在但运行时从未读取 ✅ —— **需要产品口径**（发什么、何时发 ✅）。
+3. **A7 `Route/` 归位到界面层**：`FakeRouteRuntime.choicePanelPrefab` 是场景序列化的组件引用 ✅，
+   要改成工厂端口就得改场景序列化字段 ✅ —— **需用户拍板**（改序列化的风险 ✅）。
+4. **D 玩法耦合缺口**：1021 破盾是概率且与轻重耦合 ✅、蓄力等级无收益 ✅、分支无差异 ✅ —— 需讨论 ✅。
+5. **包体 / 真机**：`plan/package-size-optimization.md` ✅（当前包 298.9MB ✅）。
+6. **BUG 台账**：`plan/bugs-and-requests.md` ✅（BUG-001/003/004/005/006 ✅）。
 
 **程序集命名**：`Locus.Data` / `Locus.Services` / `Locus.Combat` / `Locus.Flow` / `Locus.UI` / `Locus.EditorTools` ——
 `Locus.` 只是**前缀标识**（沿用最早的 `Locus.Data` ✅），**不是 C# 命名空间** ✅（游戏类型全在全局命名空间 ✅）。
@@ -472,6 +479,12 @@ summary: 架构改造交接（2026-10-23 更新）：asmdef 分层十二批全�
 | **分层第十一批：`Locus.UI` 成立** | `100a070` | 界面层 51 文件（UI 49 + Tutorial 2）；教学压暗改走 `IRouteMotionPresenter` 新增的 `TryGetActiveScene(out Scene)`（不再摸 `ScrollRoutePresenter` / `YScrollSample`）；程序集归属实测 Locus.UI 51 / Assembly-CSharp 43（实验 26 + Legacy 17）；Play Mode：入场完成与整排清空均 match=True、路线表现层端口实测能取到 `YJunctionSample` 场景；Console 0/0 |
 | **分层第十二批：`Locus.EditorTools` 成立** | `a0eb817` | 编辑器工具 14 文件独立成 `Locus.EditorTools`（**名字避开工具包已占用的 `Locus.Editor`**）；asmdef 放在名为 `Editor` 的目录里**照样生效**（特殊目录规则让位给 asmdef）；编辑器工具冒烟：战斗数值总表能打开 ✅、`FakeRouteValidator.ValidateAssets` 能跑 ✅；Play Mode：§15.5 基线逐位一致；Console 0/0 |
 
+| **分层第十三批：两座孤岛定界** | `2ce3d0f` | `Locus.Experiments`（26）+ `Locus.Legacy`（17）独立成程序集，**`Assembly-CSharp` 清空** ✅；解掉两个孤岛互相引用的环（`YSampleBattleHost` 里关掉旧 V2 驱动那行是死代码 ✅，删掉 ✅）；Legacy 4 个 + Y 分叉 6 个编辑器脚本 → `Assets/Scripts/Editor/` ✅（`Locus.EditorTools` 24 文件 ✅）；程序集归属实测 ✅；Play Mode：基线逐位一致 ✅、表现层端口仍取得到 ✅；Console 0/0 |
+| **幽灵引用清零** | `677c116` | `Resources.Load` 5 处真实代码 → **0** ✅：`EnemyPool` 改 Inspector 列表（12 个敌人预制体 ✅）、拖影材质走 `SharedVisualAssets` 登记 ✅、弃置弹窗三张图走 `UpgradeChoicePopup` 的 Inspector 字段 ✅；删除无人使用的 `StageRegistry`（类 + 资产 ✅，AssetDatabase 实测引用 0 ✅）；Play Mode：出怪正常 ✅、基线逐位一致 ✅；Console 0/0 |
+| **路线驱动走端口 `IRouteFlow`** | `3c473ca` | L0 新增 `IRouteFlow` + `RouteFlowHub` 装配点 ✅；`FakeRoutePhase` 枚举下沉 Data ✅；界面/教学 6 处不再点名 `FakeRouteRuntime` ✅（序列化字段改成 `MonoBehaviour` ✅，场景里本来就是 null ✅）；Play Mode：点「开始关卡」Phase Ready → Battle ✅；Console 0/0 |
+| **存档分片 `ISaveSection`** | `6b6935f` | L0 新增 `ISaveSection` + `SaveSections` + 5 个分片（道具/天赋/教学/进度/局内快照 ✅）；`SaveManager` 18 个公开方法改为转发 ✅（**公开 API 一字未变** ✅）；**存档格式完全不动** ✅：往返 JSON 逐字一致（1531 字节 ✅）；旧档读取正常（天赋 3 / 假路线快照 2 / 道具 1 ✅）；Console 0/0 |
+| **配置语义拆分 `RouteCatalog`** | `5994eac` | 线性关卡清单（`StageConfigManager` ✅）与路线清单（`RouteCatalog` ✅）分开 ✅；Battle.scene 新增 RouteCatalog 组件并搬数据 ✅（回读确认 ✅）；StageSelect.scene 字段改名 ✅；Play Mode：可选路线 2 条 ✅、基线逐位一致 ✅；Console 0/0 |
+
 **`Enemy` 终态**：`Enemy.cs` 5224 → **933 行**；另 5 个 partial 分片（状态机 1495 / 战斗结算 828 / 表现层 431 / BOSS 推进 206 / 对象池 106）
 + 4 个真类（`EnemyHitFeedback` / `EnemyMovement` / `EnemyBossPhases` / `EnemyPoise`）。
 **改任一块最多读 1495 行**（原来 5224）—— 这是本轮减 token 成本的实得。
@@ -487,8 +500,11 @@ summary: 架构改造交接（2026-10-23 更新）：asmdef 分层十二批全�
 | 5 | 主界面「加钱」调试按钮 | 用户提过但本轮“先放放”（未做）。做法：`SaveManager.AddCoins(1000)` + 落地页 `BattleHUD(Canvas)` 里加一个按钮 |
 | 6 | **BUG-006 的四个倍率**（N3 节点） | 染色已修（敌人不再全黑 ✅），但 `Formal_N3_Battle.asset` 的 `healthMultiplier` / `attackSpeedMultiplier` / `damageMultiplier` / `bossHealthMultiplier` **还是 0.1**（其它节点 0.7~0.85）—— 需产品 / 数值给 N3 的口径 |
 | 7 | **BUG-005 的「续玩」显式入口** | 重新进游戏已改成从初始节点开始 ✅（不再无条件恢复检查点 ✅）；若要做「继续上次进度」按钮，引擎已就位 ✅（`FakeRouteLaunch.StartFromCheckpoint` ✅）但**入口 UI 还没做** ✅ |
-| 8 | **旧路线 `Legacy/`**（RouteV1 / RouteV2） | 还引用 UI（`DialogueManager` / `ItemDiscardPopup`）、流程层与 Y 卷轴实验代码 ✅；**现在是 `Assembly-CSharp` 里唯一剩下的游戏侧代码** ✅（其余 43 文件里 26 是 Y 实验）→ 要么删掉 ✅，要么切端口 ✅ |
-| — | ~~**asmdef 继续分层**~~ | **✅ 已完成 12 批（2026-10-23）**：游戏侧 `Locus.Data` → `Locus.Services` → `Locus.Combat` → `Locus.Flow` → `Locus.UI` ＋ `Locus.EditorTools` 全部成立 ✅，依赖方向由编译器保证 ✅。<br>逐批记录与验收口径见 `plan/asmdef-layering-plan-20261022.md` ✅ 与本文件 §15.2 ✅。<br>**实测工具**：`Tools/asmdef-survey/`（目录图 / 类型明细 / 枢纽排名 / 单文件闭合性 / 接口清单）✅。 |
+| 8 | **旧路线 `Legacy/`**（RouteV1 / RouteV2） | ✅ **已定界**（`Locus.Legacy` 程序集 ✅）—— 现在有边界、方向朝下 ✅，但仍是死代码 ✅（`Battle.scene` 里还挂着 `BattleYRouteHost` 组件 ✅）→ 下一步要么删 ✅，要么把场景里的组件也清掉 ✅ |
+| 9 | **C1 体量**：8 个 600~696 行文件 | `AttackWave` 696 / `TutorialStageDirector` 678 / `ColumnManager` 662 / `WaveMarchScheduler` 661 / `MeshWeaponMangaSweep` 653 / `MeshWeaponAfterimage` 650 / `Enemy.Combat` 636 / `PierceVortexVisual` 633 ✅ —— 只搬不改 ✅（坑见 §5.15 ✅） |
+| 10 | **A6 节点奖励未发放** | `FakeRouteNodeConfig.rewards` 字段存在但运行时从未读取 ✅ —— 需要产品口径（发什么 / 何时发 / 怎么预览 ✅） |
+| 11 | **A7 `Route/` 归位到界面层** | `RouteChoicePanel/Button` 暂住流程层 ✅（因为 `FakeRouteRuntime.choicePanelPrefab` 是场景序列化的组件引用 ✅，Unity 不认接口字段 ✅）→ 改工厂端口就要改场景序列化字段 ✅（需拍板 ✅） |
+| — | ~~**asmdef 继续分层**~~ | **✅ 已完成 13 批**（2026-10-23）：游戏侧 `Locus.Data` → `Locus.Services` → `Locus.Combat` → `Locus.Flow` → `Locus.UI` ＋ `Locus.Experiments` / `Locus.Legacy` / `Locus.EditorTools` 全部成立 ✅，**`Assembly-CSharp` 已清空** ✅。<br>逐批记录与验收口径见 `plan/asmdef-layering-plan-20261022.md` ✅ 与本文件 §15.2 ✅。<br>**实测工具**：`Tools/asmdef-survey/` ✅；程序集归属用 `CompilationPipeline.GetAssemblies()` ✅。 |
 
 ### 15.4 可玩包现状
 

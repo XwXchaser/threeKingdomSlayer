@@ -68,6 +68,26 @@ public EnemyConfig config;  // 运行时动态赋值，Inspector 看不到真实
 
 ## 历史教训
 
+### 2026-10-23 全工程清零（可作为后续新代码的参照）
+
+本工程最后一处 `Resources.Load` 真实代码（5 处）已全部改成 Inspector 引用 ✅，
+四类做法各有适用场景 ✅：
+
+| 场景 | 做法 |
+|---|---|
+| **对象池要一批预制体**（`EnemyPool`） | 组件上加 `List<GameObject>` ✅，Inspector 里逐个拖 ✅（enemyId 仍从名字解析 ✅，行为不变 ✅） |
+| **项目级共享素材**（拖影材质） | 新增 `SharedVisualAssets`（服务层登记表 ✅），**登记在持有 Inspector 引用的那一层**（`AttackSystem` ✅），表现层只读登记表 ✅；取不到时安全降级 ✅ |
+| **弹窗素材**（弃置弹窗三张图） | 挂在**弹窗 prefab 自己**的组件上（`UpgradeChoicePopup` 的字段 ✅），运行时读同 prefab 的组件 ✅（`ItemDiscardPopup` 是运行时 AddComponent 的 ✅，自己身上存不住序列化字段 ✅） |
+| **完全没人用的类** | 直接删（`StageRegistry` ✅ —— `AssetDatabase` 实测引用数 0 ✅ 才删 ✅） |
+
+> ⚠️ 两个坑：
+> ① 改字段类型 / 删字段后**保存场景会把旧字段的值清空** ✅（Unity 重新序列化时按新类定义来 ✅）
+>    → 搬数据前先把原值从 git 里取出来 ✅，搬完**从磁盘回读确认** ✅；
+> ② 改 `MonoBehaviour` 字段的类型（`FakeRouteRuntime` → `MonoBehaviour`）**不丢引用** ✅
+>    （场景里存的是 fileID ✅），但 Inspector 上会变成通用 Object 字段 ✅（类型安全靠代码里 `as` 转换 ✅）。
+
+## 历史教训（EnemyConfig 合并）
+
 本次 EnemyConfig 合并就是典型的幽灵引用清理：
 - 敌人数据存放在 `EnemyConfig` ScriptableObject 中
 - 运行时通过 `WaveSpawner.GetEnemyConfig(enemyId)` + 静态缓存查找

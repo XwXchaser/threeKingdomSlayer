@@ -36,19 +36,21 @@ aiEditMode: inherit
 | 10 · **`Locus.Flow` 成立** | ✅ | 流程层 24 文件（Managers / RouteFake / Route / InputManager / Utils）；流程层 → 界面改走 `CombatPresenters` 端口 ✅；Y 分叉实验件归位到 `Assets/Experiments/` ✅；**编译即验收** ✅ |
 | 11 · **`Locus.UI` 成立** | ✅ | 界面层 51 文件（UI 49 + Tutorial 2）；教学压暗改走 `IRouteMotionPresenter` 端口 ✅；**编译即验收** ✅ |
 | 12 · **`Locus.EditorTools` 成立** | ✅ | 编辑器工具 14 文件（名字避开工具包已占用的 `Locus.Editor` ✅）；**编译即验收** ✅ |
-| 13+ · `Legacy/` 清理 · Y 实验孤岛定界 · 包体 | ⏳ | `Legacy/`（21 文件）还引用 Y 分叉实验代码 ✅ + UI ✅ + 流程层 ✅ → **删** ✅ 或**切端口** ✅；`Assets/Experiments/CurvedScroll/Scripts`（26 文件）现在在 `Assembly-CSharp` ✅ |
+| 13+ · `Legacy/` 清理 · C1 体量 · A6/A7 需拍板 | ⏳ | `Legacy/` 已定界（`Locus.Legacy` ✅）但仍是死代码 ✅（`Battle.scene` 里还挂着组件 ✅）→ 删或清场景 ✅；C1：8 个 600~696 行文件待拆 ✅；A6 节点奖励待产品口径 ✅；A7 改场景序列化需拍板 ✅ |
 
-**现在的分层实况**（2026-10-23）：
+**现在的分层实况**（2026-10-23，第十二批后 + 第十三批孤岛定界）：
 | 程序集 | 内容 | 依赖 |
 |---|---|---|
-| `Locus.Data` | 配置 + 契约 + 纯数据类型（71 文件） | 无 ✅ |
-| `Locus.Services` | 全局服务（`DebugLog` / `AudioManager` / `SaveManager`，3 文件） | Data ✅ |
-| `Locus.Combat` | **战斗内核**（Enemy / Core / Attack / Wave / QTE / Effect / Status / MoveSystem / Prop / 战斗侧 Player，158 文件） | Data + Services + 第三方 ✅ |
-| `Locus.Flow` | **流程层**（Managers 7 / RouteFake 10 / Route 2 / InputManager 4 / Utils 1 = 24 文件） | Data + Services + Combat ✅ |
-| `Locus.UI` | **界面层**（UI 49 / Tutorial 2 = 51 文件） | Data + Services + Combat + Flow ✅ |
-| `Locus.EditorTools` | **编辑器工具**（14 文件，includePlatforms=Editor） | Data + Combat + UI ✅ |
-| `Assembly-CSharp` | Y 卷轴实验 26 + `Legacy/` 旧路线 17（两座孤岛） | 上面全部 ✅ |
-| `Assembly-CSharp-Editor` | 实验/旧路线的编辑器工具 11 + Android 打包钩子 1 + 包内 4 | 上面全部 ✅ |
+| `Locus.Data` | 配置 + 契约 + 纯数据类型（72 文件，含 6 个存档分片 ✅） | 无 ✅ |
+| `Locus.Services` | 全局服务（`DebugLog` / `AudioManager` / `SaveManager` / `SharedVisualAssets` ✅，4 文件） | Data ✅ |
+| `Locus.Combat` | **战斗内核**（Enemy / Core / Attack / Wave / QTE / Effect / Status / MoveSystem / Prop / 战斗侧 Player，157 文件） | Data + Services + 第三方 ✅ |
+| `Locus.Flow` | **流程层**（Managers 7 / RouteFake 11 / Route 2 / InputManager 4 / Utils 1 = 25 文件 ✅） | Data + Services + Combat ✅ |
+| `Locus.UI` | **界面层**（UI 49 / Tutorial 2 = 51 文件 ✅） | Data + Services + Combat + Flow ✅ |
+| `Locus.Experiments` | **Y 卷轴实验孤岛**（26 文件 ✅） | Data + Services + Combat + Flow + UI ✅ |
+| `Locus.Legacy` | **旧路线孤岛**（17 文件 ✅） | 上面全部 ✅ |
+| `Locus.EditorTools` | **编辑器工具**（24 文件 ✅，includePlatforms=Editor ✅） | Data + Combat + Flow + UI + Experiments + Legacy ✅ |
+| `Assembly-CSharp` | **已清空** ✅（不再存在 ✅） | — |
+| `Assembly-CSharp-Editor` | Android 打包钩子 1 + 包内 4 ✅ | 上面全部 ✅ |
 
 ⇒ **游戏侧分层已全部切完** ✅：**依赖方向由编译器保证** ✅
 （asmdef 的 `references` 就是边的定义 ✅，写错层直接编译失败 ✅）。
