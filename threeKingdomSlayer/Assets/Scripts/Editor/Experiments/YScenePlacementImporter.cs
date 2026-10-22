@@ -63,6 +63,14 @@ public static class YScenePlacementImporter
     }
 
     [Serializable]
+    private class PlacementSkipped
+    {
+        public string element;      // 参考图上的元素（读图结果 ✅）
+        public string reason;       // 为什么没搭（素材缺 ✅ / 非本节点素材集 ✅）
+        public string note;         // 补充（图上位置 ✅、将来要补时的提示 ✅）
+    }
+
+    [Serializable]
     private class PlacementTable
     {
         public string nodeId;
@@ -71,6 +79,7 @@ public static class YScenePlacementImporter
         public float[] rootRotation;
         public string backgroundMaterial;      // 整表默认材质 ✅（手写表用 ✅）
         public string spriteSearchFolders;
+        public List<PlacementSkipped> skipped = new List<PlacementSkipped>();
         public List<PlacementItem> items = new List<PlacementItem>();
     }
 
@@ -356,6 +365,15 @@ public static class YScenePlacementImporter
         AssetDatabase.CreateAsset(spec, specPath);
         AssetDatabase.SaveAssets();
         if (missing > 0) Debug.LogWarning($"[Y 场景] 有 {missing} 件资产没找到，规格里缺这些 ✅");
+        // 缺口清单 ✅：参考图上有、但没搭的元素 ✅（不生成 ✅、不借用别处素材 ✅ —— 记下来再说 ✅）
+        if (table.skipped != null && table.skipped.Count > 0)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"[Y 场景] 摆放表记录了 {table.skipped.Count} 个「参考图上有、没搭」的元素 ✅：");
+            foreach (var sk in table.skipped)
+                if (sk != null) sb.AppendLine($"    · {sk.element} —— {sk.reason}" + (string.IsNullOrEmpty(sk.note) ? "" : "（" + sk.note + "）"));
+            Debug.Log(sb.ToString());
+        }
         return spec;
     }
 
