@@ -111,8 +111,10 @@ public static class YSceneSpecTools
         // ① 收集所有带渲染器的节点（带完整相对路径 ✅）
         var entries = new List<YPropEntry>();
         var sliceRootT = sliceRoot.transform;
-        for (int i = 0; i < sliceRootT.childCount; i++)
-            Collect(sliceRootT.GetChild(i), sliceRootT, entries);
+        // 切片根自身的渲染器（地形 / 天空盒 ✅ —— 也是「给定输入」✅）也记下来 ✅
+        var rootRenderer = sliceRootT.GetComponent<Renderer>();
+        if (rootRenderer != null) entries.Add(BuildEntry(sliceRootT, "", rootRenderer));
+        Collect(sliceRootT, entries);
         Debug.Log($"[Y 场景规格] 导出「{sliceRoot.name}」：子物体 {sliceRootT.childCount}，收集条目 {entries.Count}");
 
         // ② 按「组路径」（= 条目的父路径 ✅）分组 ✅
@@ -131,22 +133,127 @@ public static class YSceneSpecTools
             foreach (var e in groups[g]) e.sortBias -= baseline;      // 换成相对偏移 ✅
             groupList.Add(new YSceneGroup { path = g, sortBaseline = baseline, entries = groups[g].ToArray() });
         }
+
+        // ②b 功能件（无渲染器但带组件的物件 ✅）也按组归类 ✅
+        var funcsByGroup = new Dictionary<string, List<YFuncEntry>>();
+        var funcOrder = new List<string>();
+        var funcEntries = new List<YFuncEntry>();
+        CollectFunctions(sliceRootT, sliceRootT, funcsByGroup, funcOrder, funcEntries);
+        foreach (var g in groupList)
+        {
+            if (funcsByGroup.TryGetValue(g.path, out var fl)) g.functions = fl.ToArray();
+        }
+        foreach (var key in funcOrder)
+        {
+            if (groupList.Exists(g => g.path == key)) continue;
+            groupList.Add(new YSceneGroup
+            {
+                path = key,
+                sortBaseline = 0,
+                entries = Array.Empty<YPropEntry>(),
+                functions = funcsByGroup[key].ToArray(),
+            });
+        }
+        // ②c 实例引用绑定表（重建时把组件里的引用接回新物件 ✅）
+        node.refBindings = BuildRefBindings(sliceRootT, entries, funcEntries);
+
         node.groups = groupList.ToArray();
         spec.nodeSpecs = new[] { node };
         return spec;
     }
 
-    private static void Collect(Transform t, Transform sliceRootT, List<YPropEntry> into)
+    /// <summary>收集「旧场景实例 → 物件路径」的映射 ✅。</summary>
+    private static YRefBinding[] BuildRefBindings(Transform sliceRootT, List<YPropEntry> entries, List<YFuncEntry> funcEntries)
+    {
+        var map = new Dictionary<int, string>();
+        foreach (var e in entries)
+        {
+            var go = FindByPath(sliceRootT, e.path);
+            if (go != null) map[go.GetInstanceID()] = e.path;
+        }
+        foreach (var f in funcEntries)
+        {
+            var go = FindByPath(sliceRootT, f.path);
+            if (go != null) map[go.GetInstanceID()] = f.path;
+        }
+        var list = new List<YRefBinding>();
+        foreach (var kv in map) list.Add(new YRefBinding { instanceId = kv.Key, path = kv.Value });
+        return list.ToArray();
+    }
+
+    private static GameObject FindByPath(Transform root, string path)
+    {
+        if (string.IsNullOrEmpty(path)) return null;
+        var cur = root;
+        var parts = path.Split('/');
+        for (int i = 0; i < parts.Length; i++)
+        {
+            var child = cur.Find(parts[i]);
+            if (child == null) return null;
+            cur = child;
+        }
+        return cur.gameObject;
+    }
+
+    /// <summary>收集「无渲染器但带组件」的物件（节点锚点 / 连接 / 战斗锚点 …）✅。</summary>
+    private static void CollectFunctions(Transform t, Transform sliceRootT,
+        Dictionary<string, List<YFuncEntry>> byGroup, List<string> order, List<YFuncEntry> all)
     {
         for (int i = 0; i < t.childCount; i++)
         {
             var child = t.GetChild(i);
-            // 相对路径：自己往上拼到切片根 ✅（不靠递归拼 ✅）
-            string path = RelPath(child, sliceRootT);
-            var r = child.GetComponent<Renderer>();
-            if (r != null) into.Add(BuildEntry(child, path, r));
-            Collect(child, sliceRootT, into);       // 容器与渲染器节点的子层级都继续 ✅
+            if (child.GetComponent<Renderer>() == null)
+            {
+                // 没有渲染器的物件 = 功能件（节点锚点 ✅ / 连接 ✅ / 战斗锚点 ✅ / 路径可视化空容器 ✅）
+                var fe = BuildFuncEntry(child, sliceRootT);
+                string g = ParentPath(fe.path);
+                if (!byGroup.TryGetValue(g, out var list)) { list = new List<YFuncEntry>(); byGroup[g] = list; order.Add(g); }
+                list.Add(fe);
+                all.Add(fe);
+            }
+            CollectFunctions(child, sliceRootT, byGroup, order, all);
         }
+    }
+
+    private static YFuncEntry BuildFuncEntry(Transform t, Transform sliceRootT)
+    {
+        var e = new YFuncEntry
+        {
+            path = RelPath(t, sliceRootT),
+            name = t.name,
+            localPosition = t.localPosition,
+            localEulerAngles = t.localEulerAngles,
+            localScale = t.localScale,
+            active = t.gameObject.activeSelf,
+        };
+        var comps = t.GetComponents<MonoBehaviour>();
+        var types = new List<string>();
+        var jsons = new List<string>();
+        for (int i = 0; i < comps.Length; i++)
+        {
+            if (comps[i] == null) continue;
+            types.Add(comps[i].GetType().AssemblyQualifiedName);
+            jsons.Add(UnityEditor.EditorJsonUtility.ToJson(comps[i]));
+        }
+        e.componentTypes = types.ToArray();
+        e.componentJson = jsons.ToArray();
+        return e;
+    }
+
+    /// <summary>递归收集：切片根**之下**所有带渲染器的节点（切片根本身不算 ✅）。</summary>
+    private static void Collect(Transform sliceRootT, List<YPropEntry> into)
+    {
+        for (int i = 0; i < sliceRootT.childCount; i++)
+            CollectNode(sliceRootT.GetChild(i), sliceRootT, into);
+    }
+
+    private static void CollectNode(Transform t, Transform sliceRootT, List<YPropEntry> into)
+    {
+        // 先看自己（切片根的直接子物件也可能就是布景件 ✅），再看子树 ✅
+        var r = t.GetComponent<Renderer>();
+        if (r != null) into.Add(BuildEntry(t, RelPath(t, sliceRootT), r));
+        for (int i = 0; i < t.childCount; i++)
+            CollectNode(t.GetChild(i), sliceRootT, into);
     }
 
     private static string RelPath(Transform t, Transform root)
@@ -219,18 +326,68 @@ public static class YSceneSpecTools
         foreach (var node in spec.nodeSpecs)
         {
             var nodeRoot = FindOrCreatePath(root, node.nodeId);
+
+            // ── 阶段 1：建全部物件 ✅（组件数据先不填 ✅，等引用映射齐了再填 ✅）
             foreach (var g in node.groups)
             {
-                foreach (var e in g.entries)
-                    count += GenerateEntry(e, nodeRoot, g.sortBaseline);
+                foreach (var e in g.entries) { GenerateEntry(e, nodeRoot, g.sortBaseline); count++; }
+                foreach (var f in g.functions) { CreateFunction(f, nodeRoot); count++; }
             }
-            if (node.interactives != null && node.interactives.Length > 0)
-            {
-                foreach (var e in node.interactives)
-                    count += GenerateEntry(e, nodeRoot, spec.renderWorldBaseline);
-            }
+            if (node.interactives != null)
+                foreach (var e in node.interactives) { GenerateEntry(e, nodeRoot, spec.renderWorldBaseline); count++; }
+
+            // ── 阶段 2：回填组件数据 ✅（对象引用按绑定表重映射到**新建的**物件 ✅）
+            var remap = BuildRemap(node, nodeRoot);
+            foreach (var g in node.groups)
+                foreach (var f in g.functions)
+                    ApplyFunctionData(f, nodeRoot, remap);
+            ApplyRootComponents(node, nodeRoot, remap);
         }
         return count;
+    }
+
+    /// <summary>旧 instanceID → 新 instanceID 的重映射表 ✅。</summary>
+    private static Dictionary<int, int> BuildRemap(YNodeSceneSpec node, Transform nodeRoot)
+    {
+        var map = new Dictionary<int, int>();
+        if (node.refBindings == null) return map;
+        foreach (var b in node.refBindings)
+        {
+            var go = FindByPath(nodeRoot, b.path);
+            if (go != null) map[b.instanceId] = go.GetInstanceID();
+        }
+        return map;
+    }
+
+    /// <summary>把 JSON 里的旧 instanceID 换成新的 ✅（EditorJsonUtility 的对象引用格式 ✅）。</summary>
+    private static string RemapJson(string json, Dictionary<int, int> remap)
+    {
+        if (string.IsNullOrEmpty(json) || remap == null || remap.Count == 0) return json;
+        return System.Text.RegularExpressions.Regex.Replace(json, "\"instanceID\":(\\d+)",
+            m =>
+            {
+                int oldId;
+                if (!int.TryParse(m.Groups[1].Value, out oldId)) return m.Value;
+                int newId;
+                return remap.TryGetValue(oldId, out newId) ? "\"instanceID\":" + newId : m.Value;
+            });
+    }
+
+    private static void ApplyRootComponents(YNodeSceneSpec node, Transform nodeRoot, Dictionary<int, int> remap)
+    {
+        if (node.rootComponentTypes == null) return;
+        for (int i = 0; i < node.rootComponentTypes.Length; i++)
+        {
+            var type = System.Type.GetType(node.rootComponentTypes[i]);
+            if (type == null) continue;
+            var comp = nodeRoot.GetComponent(type);
+            if (comp == null) comp = nodeRoot.gameObject.AddComponent(type);
+            if (i < node.rootComponentJson.Length && !string.IsNullOrEmpty(node.rootComponentJson[i]))
+            {
+                try { UnityEditor.EditorJsonUtility.FromJsonOverwrite(RemapJson(node.rootComponentJson[i], remap), comp); }
+                catch (System.Exception ex) { Debug.LogWarning($"[Y 场景规格] 回填根组件失败 {type.Name}: {ex.Message}"); }
+            }
+        }
     }
 
     /// <summary>按路径找/建一个对象（幂等 ✅：同名即复用 ✅）。</summary>
@@ -255,6 +412,31 @@ public static class YSceneSpecTools
 
     private static int GenerateEntry(YPropEntry e, Transform nodeRoot, int baseline)
     {
+        // 路径为空 = 节点根自身 ✅（地形 / 天空盒 ✅）
+        if (string.IsNullOrEmpty(e.path))
+        {
+            var rootGo = nodeRoot.gameObject;
+            rootGo.transform.localPosition = e.localPosition;
+            rootGo.transform.localEulerAngles = e.localEulerAngles;
+            rootGo.transform.localScale = e.localScale;
+            var rs = rootGo.GetComponent<Renderer>();
+            if (rs == null) rs = rootGo.AddComponent(e.renderKind == YRenderKind.Sprite ? typeof(SpriteRenderer) : typeof(MeshRenderer)) as Renderer;
+            if (e.renderKind == YRenderKind.Sprite)
+            {
+                var spr = rs as SpriteRenderer;
+                if (spr != null) { spr.sprite = e.sprite; spr.material = e.material; spr.sortingOrder = baseline + e.sortBias; }
+            }
+            else
+            {
+                var mf = rootGo.GetComponent<MeshFilter>();
+                if (mf == null && e.mesh != null) mf = rootGo.AddComponent<MeshFilter>();
+                if (mf != null) mf.sharedMesh = e.mesh;
+                var mr = rs as MeshRenderer;
+                if (mr != null) { mr.sharedMaterial = e.material; mr.sortingOrder = baseline + e.sortBias; }
+            }
+            if (rootGo.activeSelf != e.active) rootGo.SetActive(e.active);
+            return 1;
+        }
         string parentPath = ParentPath(e.path);
         var parent = FindOrCreatePath(nodeRoot, parentPath);
         var existing = parent.Find(e.name);
@@ -298,6 +480,52 @@ public static class YSceneSpecTools
         return 1;
     }
 
+    /// <summary>生成一个功能件（无渲染器但带组件的物件 ✅）：建物体 + 加组件 + 回填序列化数据 ✅。</summary>
+    /// <summary>阶段 1：建功能件物件（组件数据稍后回填 ✅）。</summary>
+    private static int CreateFunction(YFuncEntry f, Transform nodeRoot)
+    {
+        var go = ResolveFunctionObject(f, nodeRoot);
+        if (go == null) return 0;
+        go.transform.localPosition = f.localPosition;
+        go.transform.localEulerAngles = f.localEulerAngles;
+        go.transform.localScale = f.localScale;
+        if (go.activeSelf != f.active) go.SetActive(f.active);
+        // 某些组件（例：ScrollRouteConnection）会在 OnValidate 里给物体改名（追加方向后缀 ✅），
+        // 生成后要还原成规格里的名字 ✅，否则会变成 "X [Forward] [Forward]" ✅。
+        if (go.name != f.name) go.name = f.name;
+        return 1;
+    }
+
+    /// <summary>阶段 2：回填功能件的组件数据（引用按重映射表接回新物件 ✅）。</summary>
+    private static void ApplyFunctionData(YFuncEntry f, Transform nodeRoot, Dictionary<int, int> remap)
+    {
+        var go = ResolveFunctionObject(f, nodeRoot);
+        if (go == null) return;
+        for (int i = 0; i < f.componentTypes.Length; i++)
+        {
+            var type = System.Type.GetType(f.componentTypes[i]);
+            if (type == null) { Debug.LogWarning($"[Y 场景规格] 找不到组件类型 {f.componentTypes[i]}"); continue; }
+            var comp = go.GetComponent(type);
+            if (comp == null) comp = go.AddComponent(type);
+            if (i < f.componentJson.Length && !string.IsNullOrEmpty(f.componentJson[i]))
+            {
+                try { UnityEditor.EditorJsonUtility.FromJsonOverwrite(RemapJson(f.componentJson[i], remap), comp); }
+                catch (System.Exception ex) { Debug.LogWarning($"[Y 场景规格] 回填组件数据失败 {f.name}/{type.Name}: {ex.Message}"); }
+            }
+        }
+        if (go.name != f.name) go.name = f.name;
+    }
+
+    private static GameObject ResolveFunctionObject(YFuncEntry f, Transform nodeRoot)
+    {
+        string parentPath = ParentPath(f.path);
+        var parent = FindOrCreatePath(nodeRoot, parentPath);
+        var existing = parent.Find(f.name);
+        if (existing != null) return existing.gameObject;
+        var go = new GameObject(f.name);
+        go.transform.SetParent(parent, false);
+        return go;
+    }
     private static Transform FindOrCreateRoot(Scene scene, YSceneSpec spec)
     {
         string name = spec.nodeSpecs.Length > 0 ? spec.nodeSpecs[0].nodeId : "Y Spec Root";

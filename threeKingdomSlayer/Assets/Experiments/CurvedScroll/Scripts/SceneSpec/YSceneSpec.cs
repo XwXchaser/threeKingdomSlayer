@@ -72,6 +72,12 @@ public sealed class YNodeSceneSpec
     public YSceneGroup[] groups = Array.Empty<YSceneGroup>();
     [Tooltip("可交互物（箱子等）")]
     public YPropEntry[] interactives = Array.Empty<YPropEntry>();
+    [Tooltip("实例引用绑定表：旧的 instanceID → 物件路径。重建时用它把组件里的引用接回新物件 ✅")]
+    public YRefBinding[] refBindings = Array.Empty<YRefBinding>();
+    [Tooltip("切片根自身的组件类型（例：YScrollSample ✅ —— 它的 nodePresentations 指向节点锚点 ✅）")]
+    public string[] rootComponentTypes = Array.Empty<string>();
+    [Tooltip("切片根自身组件的序列化数据（与 rootComponentTypes 一一对应）")]
+    public string[] rootComponentJson = Array.Empty<string>();
 }
 
 /// <summary>一个分组：某个容器路径下的全部条目。</summary>
@@ -84,6 +90,8 @@ public sealed class YSceneGroup
     public int sortBaseline = 0;
     [Tooltip("组内条目（路径以本组路径开头）")]
     public YPropEntry[] entries = Array.Empty<YPropEntry>();
+    [Tooltip("组内**功能件**（没有渲染器、但带组件的物件：节点锚点 / 连接路径 / 战斗锚点 …）")]
+    public YFuncEntry[] functions = Array.Empty<YFuncEntry>();
 
     /// <summary>组名（路径的最后一段 ✅，仅用于显示 ✅）。</summary>
     public string GroupName => string.IsNullOrEmpty(path) ? "(节点根)" : path.Substring(path.LastIndexOf('/') + 1);
@@ -122,6 +130,45 @@ public sealed class YPropEntry
     public bool active = true;
     [Tooltip("被手工微调过：生成器不再覆盖这一条")]
     public bool userModified = false;
+}
+
+/// <summary>
+/// **功能件**：没有渲染器、但带组件的物件（节点锚点 <c>ScrollRouteNodePresentation</c> ✅、
+/// 连接 <c>ScrollRouteConnection</c> ✅、战斗锚点 <c>BattleEncounterAuthoring</c> ✅ …）。
+///
+/// 组件数据用 <c>EditorJsonUtility</c> 序列化 ✅ —— 逐字段无损 ✅，
+/// 不用为每种组件手写字段映射 ✅（以后新增组件类型也不用改代码 ✅）。
+/// </summary>
+[Serializable]
+public sealed class YFuncEntry
+{
+    [Tooltip("完整相对路径（相对节点根）")]
+    public string path = "";
+    [Tooltip("对象名")]
+    public string name = "";
+    public Vector3 localPosition = Vector3.zero;
+    public Vector3 localEulerAngles = Vector3.zero;
+    public Vector3 localScale = Vector3.one;
+    [Tooltip("生成时是否激活")]
+    public bool active = true;
+    [Tooltip("组件类型（程序集限定名）")]
+    public string[] componentTypes = Array.Empty<string>();
+    [Tooltip("组件序列化数据（EditorJsonUtility JSON，与 componentTypes 一一对应）")]
+    public string[] componentJson = Array.Empty<string>();
+}
+
+/// <summary>
+/// **实例引用绑定**：把「旧场景里的一个实例」映射到「规格里的一个物件路径」。
+/// 重建时用它把组件里的对象引用接回**新建的**物件 ✅
+/// （例：YScrollSample.nodePresentations 指向 6 个节点锚点 ✅、连接指向节点 ✅）。
+/// </summary>
+[Serializable]
+public sealed class YRefBinding
+{
+    [Tooltip("旧场景里的 instanceID")]
+    public int instanceId;
+    [Tooltip("对应物件的路径（相对节点根）")]
+    public string path = "";
 }
 
 public enum YRenderKind { Sprite, Solid3D }
