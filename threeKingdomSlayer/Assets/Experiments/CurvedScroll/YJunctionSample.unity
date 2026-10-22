@@ -2100,7 +2100,8 @@ MonoBehaviour:
   displayName: "N1\xB7\u5F53\u9633\u4E71\u519B"
   worldDistance: 0
   battleConfigs:
-  - {fileID: 11400000, guid: 29f11170886998f4ca470b5075e5d3d7, type: 2}
+  - {fileID: 11400000, guid: 1b96b5aa7cd65a747a0bbfba74b3fb25, type: 2}
+  - {fileID: 11400000, guid: 5542226fb6647424e9fb0ce473788fb5, type: 2}
   enabledForRoute: 1
   showAllWaves: 0
   showLabels: 1
