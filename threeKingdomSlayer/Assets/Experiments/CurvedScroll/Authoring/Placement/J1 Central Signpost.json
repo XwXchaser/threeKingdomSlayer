@@ -1,0 +1,414 @@
+{
+  "nodeId": "J1 Central Signpost",
+  "space": "local",
+  "origin": [
+    0.0,
+    0.0,
+    190.0
+  ],
+  "rootRotation": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "backgroundMaterial": "",
+  "spriteSearchFolders": "",
+  "roadHalfWidth": 2.5,
+  "skipped": [
+    {
+      "element": "分叉口右侧的高红旗杆（大幅红布）",
+      "reason": "J1 素材集里只有小断旗（现在在右官道段里用 N1_SmallBrokenFlag）",
+      "note": "参考图 v6 上它在右前景；要它得先生成 J1 的大红旗"
+    },
+    {
+      "element": "分叉口左前的木篱（比现有矮栅更高更密）",
+      "reason": "J1 素材里只有 A03 完好矮栅 / A04 破损矮栅（已在左石板路段里）",
+      "note": "参考图 v6 的木篱明显更高，需要单独素材"
+    },
+    {
+      "element": "路牌基座的小石台",
+      "reason": "用分隔石代替了",
+      "note": "参考图上路牌立在一小堆石头上"
+    }
+  ],
+  "items": [
+    {
+      "id": "J1_A01_DoubleArrowSignpost",
+      "kind": "sprite",
+      "layer": "",
+      "spriteName": "J1_A01_DoubleArrowSignpost_v1",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/J1_A01_DoubleArrowSignpost_v1.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        0.0,
+        0.0,
+        17.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.6000000238418579,
+        0.6000000238418579,
+        0.6000000238418579
+      ],
+      "sortingOrder": 0,
+      "active": true
+    },
+    {
+      "id": "J1_Divider_Rock_1",
+      "kind": "sprite",
+      "layer": "",
+      "spriteName": "RockRound",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        -0.6800000071525574,
+        -0.022499999031424522,
+        17.800003051757812
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.1599999964237213,
+        0.1599999964237213,
+        0.1599999964237213
+      ],
+      "sortingOrder": 0,
+      "active": true
+    },
+    {
+      "id": "J1_Divider_Rock_2",
+      "kind": "sprite",
+      "layer": "",
+      "spriteName": "RockAngular",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        0.0,
+        -0.020624998956918716,
+        18.600006103515625
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.2199999988079071,
+        0.2199999988079071,
+        0.2199999988079071
+      ],
+      "sortingOrder": 0,
+      "active": true
+    },
+    {
+      "id": "J1_Divider_Rock_3",
+      "kind": "sprite",
+      "layer": "",
+      "spriteName": "RockRound",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        0.6800000071525574,
+        -0.022499999031424522,
+        17.800003051757812
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.1599999964237213,
+        0.1599999964237213,
+        0.1599999964237213
+      ],
+      "sortingOrder": 0,
+      "active": true
+    },
+    {
+      "id": "J1_Divider_Grass_1",
+      "kind": "sprite",
+      "layer": "",
+      "spriteName": "GrassWide_v1",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassWide_v1.png",
+      "material": "YGrass_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+      "at": [
+        -1.125,
+        -0.026399999856948853,
+        17.0
+      ],
+      "rotation": [
+        0.0,
+        15.000000953674316,
+        0.0
+      ],
+      "scale": [
+        0.2199999988079071,
+        0.2199999988079071,
+        0.2199999988079071
+      ],
+      "sortingOrder": 0,
+      "active": true
+    },
+    {
+      "id": "J1_Divider_Grass_2",
+      "kind": "sprite",
+      "layer": "",
+      "spriteName": "GrassSmall_v1",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassSmall_v1.png",
+      "material": "YGrass_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+      "at": [
+        -0.375,
+        -0.026399999856948853,
+        18.199996948242188
+      ],
+      "rotation": [
+        0.0,
+        15.000000953674316,
+        0.0
+      ],
+      "scale": [
+        0.2199999988079071,
+        0.2199999988079071,
+        0.2199999988079071
+      ],
+      "sortingOrder": 0,
+      "active": true
+    },
+    {
+      "id": "J1_Divider_Grass_3",
+      "kind": "sprite",
+      "layer": "",
+      "spriteName": "GrassWide_v1",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassWide_v1.png",
+      "material": "YGrass_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+      "at": [
+        0.375,
+        -0.026399999856948853,
+        17.0
+      ],
+      "rotation": [
+        0.0,
+        15.000000953674316,
+        0.0
+      ],
+      "scale": [
+        0.2199999988079071,
+        0.2199999988079071,
+        0.2199999988079071
+      ],
+      "sortingOrder": 0,
+      "active": true
+    },
+    {
+      "id": "J1_Divider_Grass_4",
+      "kind": "sprite",
+      "layer": "",
+      "spriteName": "GrassSmall_v1",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassSmall_v1.png",
+      "material": "YGrass_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+      "at": [
+        1.125,
+        -0.026399999856948853,
+        18.199996948242188
+      ],
+      "rotation": [
+        0.0,
+        15.000000953674316,
+        0.0
+      ],
+      "scale": [
+        0.2199999988079071,
+        0.2199999988079071,
+        0.2199999988079071
+      ],
+      "sortingOrder": 0,
+      "active": true
+    },
+    {
+      "id": "J1_Divider_LowBush_1",
+      "kind": "sprite",
+      "layer": "",
+      "spriteName": "BushCompact",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        -1.0,
+        -0.058125000447034836,
+        17.5
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.3100000023841858,
+        0.3100000023841858,
+        0.3100000023841858
+      ],
+      "sortingOrder": 0,
+      "active": true
+    },
+    {
+      "id": "Wind Mesh",
+      "kind": "mesh",
+      "layer": "J1_Divider_LowBush_1",
+      "spriteName": "",
+      "meshName": "WindSceneryGrid",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+      "material": "Bush_BushCompact_Wind",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Bush_BushCompact_Wind.mat",
+      "at": [
+        -0.0859375,
+        1.4140625,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        3.109375,
+        2.703125,
+        1.0
+      ],
+      "sortingOrder": 0,
+      "active": true
+    },
+    {
+      "id": "J1_Divider_LowBush_2",
+      "kind": "sprite",
+      "layer": "",
+      "spriteName": "BushWide",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        0.0,
+        -0.0637499988079071,
+        18.5
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.3400000035762787,
+        0.3400000035762787,
+        0.3400000035762787
+      ],
+      "sortingOrder": 0,
+      "active": true
+    },
+    {
+      "id": "Wind Mesh",
+      "kind": "mesh",
+      "layer": "J1_Divider_LowBush_2",
+      "spriteName": "",
+      "meshName": "WindSceneryGrid_MirrorX",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid_MirrorX.asset",
+      "material": "Bush_BushWide_Wind",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Bush_BushWide_Wind.mat",
+      "at": [
+        0.0,
+        1.515625,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        3.71875,
+        2.90625,
+        1.0
+      ],
+      "sortingOrder": 0,
+      "active": true
+    },
+    {
+      "id": "J1_Divider_LowBush_3",
+      "kind": "sprite",
+      "layer": "",
+      "spriteName": "BushCompact",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        1.0,
+        -0.058125000447034836,
+        17.5
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.3100000023841858,
+        0.3100000023841858,
+        0.3100000023841858
+      ],
+      "sortingOrder": 0,
+      "active": true
+    },
+    {
+      "id": "Wind Mesh",
+      "kind": "mesh",
+      "layer": "J1_Divider_LowBush_3",
+      "spriteName": "",
+      "meshName": "WindSceneryGrid",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+      "material": "Bush_BushCompact_Wind",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Bush_BushCompact_Wind.mat",
+      "at": [
+        -0.0859375,
+        1.4140625,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        3.109375,
+        2.703125,
+        1.0
+      ],
+      "sortingOrder": 0,
+      "active": true
+    }
+  ]
+}
