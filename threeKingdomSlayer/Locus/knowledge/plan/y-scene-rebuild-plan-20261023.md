@@ -232,7 +232,7 @@ sprite 的 pivot 与贴图 alpha 底边（对照 `slice_manifest.pivot_normalize
 | **S2** | N1 段 + 中央路牌 ✅ | 同上 ✅ | ⏳ |
 | **S3** | J1 段（石路分支 ✅ 5 张地面贴图 ✅）+ 两侧植被 ✅ | 同上 ✅ | ⏳ |
 | **S4** | EV 段 + **N3 立体围墙**（照 1.4 的配方 ✅） | 同上 ✅ | 🟡 **部分完成（2026-10-24）**：EV **节点**布景已进规格与 prefab ✅（§6.4 ✅，含 9 件立体围墙 ✅）；EV/N3 的**段** prefab 仍是手摆资产 ✅，未入规格 ✅ |
-| **S5** | 节点 prefab 化 + `YNodeSceneLoader` ✅ + 段表写回 ✅ | 加载行为与现状一致 ✅（`YRouteSegments` ✅） | ⏳ |
+| **S5** | 节点 prefab 化 + `YNodeSceneLoader` ✅ + 段表写回 ✅ | 加载行为与现状一致 ✅（`YRouteSegments` ✅） | 🟡 **部分完成（2026-10-24）**：**15 个段已全部表化** ✅（表→规格→prefab ✅ 逐件差异 0 ✅，prefab 变生成物 ✅）；节点侧只做了 EV ✅（`Authoring/Nodes/EV.prefab` ✅），**运行时加载器还没做** ✅ |
 | **S6** | 交互物（箱子 ✅）+ 开发者「跳过本节点战斗」小按钮 ✅ | 按钮在手机构建里可用 ✅ | 🟡 **部分完成（2026-10-24）**：按钮已做 ✅（`Assets/Scripts/Debug/DevSkipBattleButton.cs` ✅，只进开发构建 ✅，零场景接线 ✅）；交互物（箱子 ✅）仍手摆在 `Encounter Authoring` ✅ 里，**未入规格** ✅ |
 
 ### 6.3 已修的层级 bug（2026-10-23）
@@ -324,6 +324,23 @@ sprite 的 pivot 与贴图 alpha 底边（对照 `slice_manifest.pivot_normalize
 Play Mode 跑到 N3 ✅ → 段实例化 ✅ → 游戏内实景与参考图构图一致 ✅；Console 0 error ✅。
 
 > ⚠️ 旧的段 prefab `N3 Village Rescue - Accepted Art and Grey Wall Study @ 266` ✅ **还在资产里** ✅（没删 ✅）→ 回退只要把段表那一条指回去 ✅。
+
+### 6.7 全段表化 + 验收手段（2026-10-24 ✅）
+
+**15 个段、764 条** 全部改成「摆放表驱动」✅：表在 `Authoring/Placement/{段名}.json` ✅，
+规格在 `Assets/RouteData/YSceneSpecs/{段名}.asset` ✅，**prefab 变成生成物** ✅（原地回写 ✅，GUID 不变 ✅）。
+逐件比对**全 0** ✅。工具：`Tools/Y 场景规格/⑧ 全段表化` ✅（幂等 ✅）。
+
+**验收手段**（三个 ✅）：
+
+| 手段 | 位置 | 看什么 |
+|---|---|---|
+| 改前/改后对照图 ✅ | `Library/Locus/tmp/segment_compare/side_by_side/*.png` ✅ | 左旧右新 ✅ 肉眼看一致 ✅ |
+| 数值比对 ✅ | `Tools/Y 场景规格/⑤ 摆放表往返验证` ✅ | 逐件差异必须 0 ✅ |
+| 编辑器预览 ✅ | `Tools/Y 场景规格/⑦ 预览段 prefab` ✅ | 按游戏位姿摆进场景看 ✅ |
+
+**还欠的**：节点侧只有 EV 做了 prefab ✅（其余 5 个节点 + 场景里手摆的 `Opening Roadside Props` ✅
+100 件 ✅ + `Route Nodes` ✅ 73 件 ✅ 仍是场景文件里的手摆内容 ✅）→ 且**运行时还没有节点加载器** ✅。
 
 ---
 
