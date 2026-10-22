@@ -33,30 +33,53 @@ aiEditMode: inherit
 | 8 · 内核不再点名流程类 | ✅ | `StageRoles` 装配点（`BattleState` / `Formation`）+ `IPropDestroyNotifier`；17 处 `StageController.Instance` 改走装配点 ✅；`StageFormation`（纯计算✅）/ `ArrowGlobalConfig` 下沉 L0 ✅；内核对 `Managers` 只剩 `EnemyManager` ✅ |
 | 9a · 输入端口 | ✅ | `IPlayerInput`（状态 + 事件✅，**不含手势识别**✅）+ `PlayerInputHub`；内核 6 个文件改走端口 ✅；**内核不再引用 `InputManager` 类型** ✅；依据与扩展路径见 `design/input-gesture-pipeline.md` ✅ |
 | 9b · **`Locus.Combat` 成立** | ✅ | 战斗内核独立成程序集（662KB ✅）；用 `.asmref` 挂目录，**250 个文件一个没搬** ✅；内核只朝下依赖 `Locus.Data` / `Locus.Services` ✅；**编译即验收** ✅ |
-| 10+ · `Locus.Flow` / `Locus.UI` / `Locus.Editor` | ⏳ | 上层（`Assembly-CSharp` ✅）里还有流程 / 界面 / 编辑器工具；可按需再切 `Locus.Flow`（路线 + 流程 ✅）与 `Locus.UI`（界面 ✅）；`Locus.Editor` 独立成程序集 ✅ |
+| 10 · **`Locus.Flow` 成立** | ✅ | 流程层 24 文件（Managers / RouteFake / Route / InputManager / Utils）；流程层 → 界面改走 `CombatPresenters` 端口 ✅；Y 分叉实验件归位到 `Assets/Experiments/` ✅；**编译即验收** ✅ |
+| 11 · **`Locus.UI` 成立** | ✅ | 界面层 51 文件（UI 49 + Tutorial 2）；教学压暗改走 `IRouteMotionPresenter` 端口 ✅；**编译即验收** ✅ |
+| 12 · **`Locus.EditorTools` 成立** | ✅ | 编辑器工具 14 文件（名字避开工具包已占用的 `Locus.Editor` ✅）；**编译即验收** ✅ |
+| 13+ · `Legacy/` 清理 · Y 实验孤岛定界 · 包体 | ⏳ | `Legacy/`（21 文件）还引用 Y 分叉实验代码 ✅ + UI ✅ + 流程层 ✅ → **删** ✅ 或**切端口** ✅；`Assets/Experiments/CurvedScroll/Scripts`（26 文件）现在在 `Assembly-CSharp` ✅ |
 
-**现在的分层实况**（2026-10-22）：
+**现在的分层实况**（2026-10-23）：
 | 程序集 | 内容 | 依赖 |
 |---|---|---|
-| `Locus.Data` | 配置 + 契约 + 纯数据类型（61 文件 / 3597 行） | 无 ✅ |
-| `Locus.Services` | 全局服务（`DebugLog` / `AudioManager` / `SaveManager`） | Data ✅ |
-| `Locus.Combat` | **战斗内核**（Enemy / Core / Attack / Wave / QTE / Effect / Status / MoveSystem / Prop / 战斗侧 Player） | Data + Services + 第三方 ✅ |
-| `Assembly-CSharp` | 上层：流程 / 界面 / 输入适配器 / 编辑器工具 | 以上全部 ✅ |
+| `Locus.Data` | 配置 + 契约 + 纯数据类型（71 文件） | 无 ✅ |
+| `Locus.Services` | 全局服务（`DebugLog` / `AudioManager` / `SaveManager`，3 文件） | Data ✅ |
+| `Locus.Combat` | **战斗内核**（Enemy / Core / Attack / Wave / QTE / Effect / Status / MoveSystem / Prop / 战斗侧 Player，158 文件） | Data + Services + 第三方 ✅ |
+| `Locus.Flow` | **流程层**（Managers 7 / RouteFake 10 / Route 2 / InputManager 4 / Utils 1 = 24 文件） | Data + Services + Combat ✅ |
+| `Locus.UI` | **界面层**（UI 49 / Tutorial 2 = 51 文件） | Data + Services + Combat + Flow ✅ |
+| `Locus.EditorTools` | **编辑器工具**（14 文件，includePlatforms=Editor） | Data + Combat + UI ✅ |
+| `Assembly-CSharp` | Y 卷轴实验 26 + `Legacy/` 旧路线 17（两座孤岛） | 上面全部 ✅ |
+| `Assembly-CSharp-Editor` | 实验/旧路线的编辑器工具 11 + Android 打包钩子 1 + 包内 4 | 上面全部 ✅ |
 
-⇒ **内核 → 界面 归零** ✅、**内核 → 流程 归零** ✅、**内核 → 输入类型 归零** ✅
-—— 这三条边界现在是**编译器保证**的 ✅（写错层直接编译失败 ✅）。
+⇒ **游戏侧分层已全部切完** ✅：**依赖方向由编译器保证** ✅
+（asmdef 的 `references` 就是边的定义 ✅，写错层直接编译失败 ✅）。
+⇒ 剩下的两座孤岛（Y 实验 ✅ / `Legacy/` ✅）都在 `Assembly-CSharp` ✅，是「无约束」区 ✅，
+⇒ **要清它们，先决定删还是切端口** ✅。
 
-**内核 → 界面已全部归零** ✅ ✅。内核现在只朝下依赖 `Locus.Data` / `Locus.Services` ✅，
-跨目录依赖只剩两处 ✅（这就是 `Locus.Combat` 的最后一道门槛 ✅）：
+**实测工具**：`Tools/asmdef-survey/` ✅（目录图 / 类型明细 / 枢纽排名 / 单文件闭合性 / 接口清单 ✅）；
+**程序集归属实测**：`CompilationPipeline.GetAssemblies()` ✅（能看到每个文件属于哪个程序集 ✅，
+也能看到包里的程序集 ✅ —— 本轮就是靠它发现 `Locus.Editor` 已被工具包占用 ✅）。
 
-| 内核 → | 用到的类型 | 归属建议 |
-|---|---|---|
-| `Player` | `PlayerState` / `AttackSystem` / `IceBreakSession` / `UpgradeAcquired` | **属于内核** ✅（玩家侧战斗状态 ✅）—— 归位到内核目录 ✅ |
-| `Player` | ~~`InputManager`~~ | **已解决** ✅：内核改走 `IPlayerInput` 端口 ✅（识别逻辑留在上层 ✅） |
-| `Managers` | `EnemyManager` | **属于内核** ✅（敌人注册表 ✅）—— 归位到内核目录 ✅ |
+> 历史：内核 → 界面 / 流程 / 输入类型 三条边界在第九批就归零 ✅（见 §15.0 ✅）。
 
-> 顺带一条：内核读流程的 **17 处** 引用**本来就已经在用 L0 接口** ✅（`IStageBattleState` / `IStageFormation` ✅），
-> 只是「取实例」点名了流程类 ✅ —— 改成 `StageRoles` 装配点就干净了 ✅。
+## 0.1 切上层三批的实操要点（第十~十二批，2026-10-23）
+
+1. **做法照旧**：`Assets/Scripts/<新层>/<名>.asmdef`（只放 asmdef ✅，不放代码 ✅）
+   + 需要入层的目录各放一个 `<名>.asmref` ✅（**不动那些源文件** ✅，GUID 全保留 ✅）。
+2. **`.asmref` 嵌套时更深的赢** ✅：`Player/Locus.Flow.asmref` 与 `Player/Combat/Locus.Combat.asmref` 并存 ✅
+   → `Player/Combat/*` 仍在 `Locus.Combat` ✅，`Player/InputManager*` 进 `Locus.Flow` ✅。
+3. **asmdef 放在名为 `Editor` 的目录里照样生效** ✅（特殊目录规则让位给 asmdef ✅）。
+   **反过来**：asmdef/asmref 覆盖的目录里，嵌套 `Editor` 子目录**不再享受特殊规则** ✅
+   → 里面的脚本要用 `UnityEditor` 就得**移出去** ✅ 或**单独给 editor-only asmdef** ✅。
+4. **`Locus.Editor` 已被工具包占用** ✅（`Packages/com.farlocus.locus/Editor` ✅）→ 游戏侧叫 `Locus.EditorTools` ✅。
+5. **搬脚本要连 `.meta` 一起搬** ✅（`git mv` 只给 `.cs` 不会带走 `.meta` ✅ → GUID 会重生成 ✅ → 引用全断 ✅）。
+6. **切层前先用「类型级依赖」找出越层引用** ✅（`Tools/asmdef-survey/dep_detail.py` ✅）：
+   本轮抓到的三处 ✅ —— `FakeRouteRuntime` → `DialogueManager` / `ItemDiscardPopup` ✅、
+   `TutorialStageDirector` → `ScrollRoutePresenter` / `YScrollSample` ✅、
+   `Legacy/BattleYRouteHost` → Y 分叉实验类型 ✅（**因此 Legacy 留在 `Assembly-CSharp`** ✅）。
+7. **序列化字段不能换接口** ✅：Unity 不认接口类型的序列化字段 ✅ → 端口只能走装配点 ✅；
+   被场景序列化引用的界面组件（如 `FakeRouteRuntime.choicePanelPrefab` ✅）暂住流程层 ✅。
+8. **验收**：编译即验收 ✅（asmdef 看不到 `Assembly-CSharp` ✅）+ 程序集归属实测 ✅
+   （`CompilationPipeline.GetAssemblies()` ✅）+ Play Mode 基线逐位一致 ✅ + Console 0/0 ✅。
 
 ## 1. 实测基线（不是猜的）
 
@@ -115,9 +138,10 @@ aiEditMode: inherit
 | 4' | **内核 → UI 的接口化（第一批）**：内核不再直接引用 UI 单例，改经 L0 契约接口 | 进行中 |
 | 5 | **内核接口化（第二批）**：剩下的「内核自己创建 UI 组件」类引用——`UpgradeChoicePopup`（内核创建三选一弹窗）、`EnemyHealthBar`（敌人身上挂血条）、`CameraManager` / `DamageNumber` → 要靠**工厂端口**处理（内核只问「给我一个血条视图」，创建动作在界面层做 ✅） | 待办 |
 | 6 | **内核接口化（第三批）**：内核读 `InputManager` / `PlayerState` 的地方改成 L0 接口 + 装配处注入 | 待办 |
-| 6 | `Locus.Combat` 成立（Enemy / Core / Attack / Wave / QTE / Effect / Status / 战斗侧 Player） | 待办 |
-| 7 | `Locus.Flow`（流程 + 路线）与 `Locus.UI`（界面）分离 | 待办 |
-| 8 | `Locus.Editor` 独立成程序集（当前靠 `Editor` 特殊文件夹） | 待办 |
+| 6 | `Locus.Combat` 成立（Enemy / Core / Attack / Wave / QTE / Effect / Status / 战斗侧 Player） | ✅ 完成（第九批 b） |
+| 7 | `Locus.Flow`（流程 + 路线）成立 | ✅ 完成（第十批） |
+| 8 | `Locus.UI`（界面）成立 | ✅ 完成（第十一批） |
+| 9 | 编辑器工具独立成程序集 | ✅ 完成（第十二批，名字用 `Locus.EditorTools` —— `Locus.Editor` 已被工具包占用） |
 
 ### 批次 1 做了什么
 
