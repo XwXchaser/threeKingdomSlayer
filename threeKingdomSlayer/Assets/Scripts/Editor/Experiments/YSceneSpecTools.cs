@@ -743,8 +743,13 @@ public static class YSceneSpecTools
     ///
     /// 生成在**临时场景**里做 ✅ → 当前场景零改动 ✅（不脏场景 ✅）。
     /// prefab 的根 = 节点根 ✅；节点的**位置由路线系统放在锚点上** ✅（规格里原点为单位变换 ✅）。
+    ///
+    /// <paramref name="worldRootPosition"/> / <paramref name="worldRootEuler"/>：
+    /// 非空时把 **prefab 根摆到世界位姿** ✅ → 产出的就是**段 prefab** ✅
+    /// （段表按 prefab 根的位姿搬运 ✅，见 <c>YRouteSegment.prefab</c> 的约定 ✅）。
     /// </summary>
-    public static GameObject GenerateToPrefab(YSceneSpec spec, string prefabPath, out int count)
+    public static GameObject GenerateToPrefab(YSceneSpec spec, string prefabPath, out int count,
+        Vector3? worldRootPosition = null, Vector3? worldRootEuler = null)
     {
         count = 0;
         if (spec == null || string.IsNullOrEmpty(prefabPath)) return null;
@@ -760,6 +765,12 @@ public static class YSceneSpecTools
             {
                 Debug.LogError($"[Y 场景规格] 生成结果里找不到节点根「{spec.nodeSpecs[0].nodeId}」");
                 return null;
+            }
+            // 段 prefab：根带世界位姿 ✅（节点 prefab：根留在原点 ✅）
+            if (worldRootPosition.HasValue)
+            {
+                nodeRoot.localPosition = worldRootPosition.Value;
+                nodeRoot.localEulerAngles = worldRootEuler.HasValue ? worldRootEuler.Value : Vector3.zero;
             }
             EnsureAssetFolder(Path.GetDirectoryName(prefabPath));
             var prefab = PrefabUtility.SaveAsPrefabAsset(nodeRoot.gameObject, prefabPath);

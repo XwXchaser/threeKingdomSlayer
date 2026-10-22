@@ -1,0 +1,1468 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 415b05279c152a045ae0879ac1ef8d75, type: 3}
+  m_Name: N3
+  m_EditorClassIdentifier: 
+  routeId: changbanpo
+  stageId: -1
+  renderWorldBaseline: 0
+  groundProfiles: []
+  backgroundBands: []
+  nodeSpecs:
+  - nodeId: N3
+    anchorDistance: 0
+    groups:
+    - path: Village Houses - Near Mid Far
+      sortBaseline: 0
+      entries:
+      - name: N3_House_Left_Compact_Near
+        path: Village Houses - Near Mid Far/N3_House_Left_Compact_Near
+        localPosition: {x: -6.86, y: -0.02, z: 24}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.96, y: 0.96, z: 0.96}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 5b996c8b5acd03442bd2366c249eed6c, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_House_Right_Long_Near
+        path: Village Houses - Near Mid Far/N3_House_Right_Long_Near
+        localPosition: {x: 6.54, y: -0.02, z: 29}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1.03, y: 1.03, z: 1.03}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: a50432ac14c99c9458d8774fab8c8b7e, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_House_Left_Damaged_Mid
+        path: Village Houses - Near Mid Far/N3_House_Left_Damaged_Mid
+        localPosition: {x: -8.92, y: -0.02, z: 32}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 9b0547b5afb450540bb4feac0da4da96, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_House_Right_Compact_Mid
+        path: Village Houses - Near Mid Far/N3_House_Right_Compact_Mid
+        localPosition: {x: 13.54, y: -0.02, z: 36}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1.05, y: 1.05, z: 1.05}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 5b996c8b5acd03442bd2366c249eed6c, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_House_Left_Long_Far
+        path: Village Houses - Near Mid Far/N3_House_Left_Long_Far
+        localPosition: {x: -6.23, y: -0.02, z: 35}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.48, y: 0.48, z: 0.48}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: a50432ac14c99c9458d8774fab8c8b7e, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_House_Right_Damaged_Far
+        path: Village Houses - Near Mid Far/N3_House_Right_Damaged_Far
+        localPosition: {x: 5.64, y: -0.02, z: 38}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.53, y: 0.53, z: 0.53}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 9b0547b5afb450540bb4feac0da4da96, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_House_Left_Compact_Back
+        path: Village Houses - Near Mid Far/N3_House_Left_Compact_Back
+        localPosition: {x: -15.88, y: -0.02, z: 35}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.95, y: 0.95, z: 0.95}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 5b996c8b5acd03442bd2366c249eed6c, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_House_Right_Long_Back
+        path: Village Houses - Near Mid Far/N3_House_Right_Long_Back
+        localPosition: {x: 14.97, y: -0.02, z: 38}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1.02, y: 1.02, z: 1.02}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: a50432ac14c99c9458d8774fab8c8b7e, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: Courtyard Props - Well Gate Wood
+      sortBaseline: 0
+      entries:
+      - name: N3_Well_Left_Courtyard
+        path: Courtyard Props - Well Gate Wood/N3_Well_Left_Courtyard
+        localPosition: {x: -5.69, y: -0.02, z: 21.8}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.6, y: 0.6, z: 0.6}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 8fa192e1870109e4894898725adffdc5, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Gate_Right_Courtyard
+        path: Courtyard Props - Well Gate Wood/N3_Gate_Right_Courtyard
+        localPosition: {x: 8.37, y: -0.02, z: 25.4}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.5, y: 0.5, z: 0.5}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: c5054da31e7e0a74199eaab9c63af7dd, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Firewood_Right
+        path: Courtyard Props - Well Gate Wood/N3_Firewood_Right
+        localPosition: {x: 8.47, y: -0.02, z: 17.5}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.48, y: 0.48, z: 0.48}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 5934a0a0aaa5c264ea1e047de94c00fe, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Firewood_Left_Mid
+        path: Courtyard Props - Well Gate Wood/N3_Firewood_Left_Mid
+        localPosition: {x: -7.11, y: -0.02, z: 20}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.4, y: 0.4, z: 0.4}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 5934a0a0aaa5c264ea1e047de94c00fe, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_CrossWall_Left_Courtyard
+        path: Courtyard Props - Well Gate Wood/N3_CrossWall_Left_Courtyard
+        localPosition: {x: -6.43, y: -0.02, z: 18.6}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.45, y: 0.45, z: 0.45}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 6ccd15de96e39d8469123b25c8fc61db, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_CrossWall_Right_Ruin
+        path: Courtyard Props - Well Gate Wood/N3_CrossWall_Right_Ruin
+        localPosition: {x: 8.31, y: -0.02, z: 25}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.5, y: 0.5, z: 0.5}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 458662474db24cb44b7d64942e2962ef, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_CrossWall_Left_Ruin_Far
+        path: Courtyard Props - Well Gate Wood/N3_CrossWall_Left_Ruin_Far
+        localPosition: {x: -7.35, y: -0.02, z: 31}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.4, y: 0.4, z: 0.4}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 458662474db24cb44b7d64942e2962ef, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: Road Parallel Walls - Grey Black Outline
+      sortBaseline: 0
+      entries:
+      - name: N3_Wall_Left_Near
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Near
+        localPosition: {x: -5.9, y: 0, z: 8}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 0
+        sprite: {fileID: 0}
+        mesh: {fileID: 0}
+        material: {fileID: 0}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 1
+        active: 1
+        userModified: 0
+      - name: N3_Wall_Left_Mid
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Mid
+        localPosition: {x: -7, y: 0, z: 28}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 0
+        sprite: {fileID: 0}
+        mesh: {fileID: 0}
+        material: {fileID: 0}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 1
+        active: 1
+        userModified: 0
+      - name: N3_Wall_Right_Near
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Near
+        localPosition: {x: 5.8, y: 0, z: 12}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 0
+        sprite: {fileID: 0}
+        mesh: {fileID: 0}
+        material: {fileID: 0}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 1
+        active: 1
+        userModified: 0
+      - name: N3_Wall_Right_Mid
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Mid
+        localPosition: {x: 8.2, y: 0, z: 32}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 0
+        sprite: {fileID: 0}
+        mesh: {fileID: 0}
+        material: {fileID: 0}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 1
+        active: 1
+        userModified: 0
+      functions: []
+    - path: Roadside Trees Grass and Rocks
+      sortBaseline: 0
+      entries:
+      - name: N3_Tree_0
+        path: Roadside Trees Grass and Rocks/N3_Tree_0
+        localPosition: {x: -12.5, y: -0.04, z: 18}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.85, y: 0.85, z: 0.85}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: da60ae4969b605c4e97ba98c9baee2fe, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Tree_1
+        path: Roadside Trees Grass and Rocks/N3_Tree_1
+        localPosition: {x: 13, y: -0.04, z: 24}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.85, y: 0.85, z: 0.85}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 57261876c1f4b3e4b878c7c2a5ed94bf, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Tree_2
+        path: Roadside Trees Grass and Rocks/N3_Tree_2
+        localPosition: {x: -14, y: -0.04, z: 30}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.85, y: 0.85, z: 0.85}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 57261876c1f4b3e4b878c7c2a5ed94bf, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Tree_3
+        path: Roadside Trees Grass and Rocks/N3_Tree_3
+        localPosition: {x: 16, y: -0.04, z: 34}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.85, y: 0.85, z: 0.85}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: da60ae4969b605c4e97ba98c9baee2fe, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Tree_4
+        path: Roadside Trees Grass and Rocks/N3_Tree_4
+        localPosition: {x: -18, y: -0.04, z: 38}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.85, y: 0.85, z: 0.85}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: da60ae4969b605c4e97ba98c9baee2fe, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Tree_5
+        path: Roadside Trees Grass and Rocks/N3_Tree_5
+        localPosition: {x: 20, y: -0.04, z: 41}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.85, y: 0.85, z: 0.85}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 57261876c1f4b3e4b878c7c2a5ed94bf, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Rock_6
+        path: Roadside Trees Grass and Rocks/N3_Rock_6
+        localPosition: {x: -5.5, y: -0.02, z: 7}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.36, y: 0.36, z: 0.36}
+        renderKind: 0
+        sprite: {fileID: 5586946825318410489, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Rock_7
+        path: Roadside Trees Grass and Rocks/N3_Rock_7
+        localPosition: {x: 5.8, y: -0.02, z: 10}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.36, y: 0.36, z: 0.36}
+        renderKind: 0
+        sprite: {fileID: 5586946825318410489, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Rock_8
+        path: Roadside Trees Grass and Rocks/N3_Rock_8
+        localPosition: {x: -6, y: -0.02, z: 17}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.36, y: 0.36, z: 0.36}
+        renderKind: 0
+        sprite: {fileID: 5586946825318410489, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Rock_9
+        path: Roadside Trees Grass and Rocks/N3_Rock_9
+        localPosition: {x: 7.5, y: -0.02, z: 28}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.36, y: 0.36, z: 0.36}
+        renderKind: 0
+        sprite: {fileID: 5586946825318410489, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Rock_10
+        path: Roadside Trees Grass and Rocks/N3_Rock_10
+        localPosition: {x: -10, y: -0.02, z: 38}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.36, y: 0.36, z: 0.36}
+        renderKind: 0
+        sprite: {fileID: 5586946825318410489, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_00
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_00
+        localPosition: {x: -4.5, y: -0.04, z: 4}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.48, y: 0.48, z: 0.48}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_01
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_01
+        localPosition: {x: -5.06, y: -0.04, z: 7.1}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.53, y: 0.53, z: 0.53}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_02
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_02
+        localPosition: {x: -5.62, y: -0.04, z: 10.2}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.58, y: 0.58, z: 0.58}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_03
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_03
+        localPosition: {x: -5.43, y: -0.04, z: 13.3}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.63, y: 0.63, z: 0.63}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_04
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_04
+        localPosition: {x: -5.99, y: -0.04, z: 16.4}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.48, y: 0.48, z: 0.48}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_05
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_05
+        localPosition: {x: -6.55, y: -0.04, z: 19.5}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.53, y: 0.53, z: 0.53}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_06
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_06
+        localPosition: {x: -6.36, y: -0.04, z: 22.6}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.58, y: 0.58, z: 0.58}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_07
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_07
+        localPosition: {x: -6.92, y: -0.04, z: 25.7}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.63, y: 0.63, z: 0.63}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_08
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_08
+        localPosition: {x: -7.48, y: -0.04, z: 28.8}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.48, y: 0.48, z: 0.48}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_09
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_09
+        localPosition: {x: -7.29, y: -0.04, z: 31.9}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.53, y: 0.53, z: 0.53}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_10
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_10
+        localPosition: {x: -7.85, y: -0.04, z: 35}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.58, y: 0.58, z: 0.58}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_11
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_11
+        localPosition: {x: -8.41, y: -0.04, z: 38.1}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.63, y: 0.63, z: 0.63}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_12
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_12
+        localPosition: {x: -8.22, y: -0.04, z: 41.2}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.48, y: 0.48, z: 0.48}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_13
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_13
+        localPosition: {x: -8.78, y: -0.04, z: 44.3}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.53, y: 0.53, z: 0.53}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_14
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_14
+        localPosition: {x: -9.34, y: -0.04, z: 47.4}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.58, y: 0.58, z: 0.58}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_L_15
+        path: Roadside Trees Grass and Rocks/N3_Grass_L_15
+        localPosition: {x: -9.15, y: -0.04, z: 50.5}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.63, y: 0.63, z: 0.63}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_00
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_00
+        localPosition: {x: 4.5, y: -0.04, z: 4}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.48, y: 0.48, z: 0.48}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_01
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_01
+        localPosition: {x: 5.06, y: -0.04, z: 7.1}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.53, y: 0.53, z: 0.53}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_02
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_02
+        localPosition: {x: 5.62, y: -0.04, z: 10.2}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.58, y: 0.58, z: 0.58}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_03
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_03
+        localPosition: {x: 5.43, y: -0.04, z: 13.3}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.63, y: 0.63, z: 0.63}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_04
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_04
+        localPosition: {x: 5.99, y: -0.04, z: 16.4}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.48, y: 0.48, z: 0.48}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_05
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_05
+        localPosition: {x: 6.55, y: -0.04, z: 19.5}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.53, y: 0.53, z: 0.53}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_06
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_06
+        localPosition: {x: 6.36, y: -0.04, z: 22.6}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.58, y: 0.58, z: 0.58}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_07
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_07
+        localPosition: {x: 6.92, y: -0.04, z: 25.7}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.63, y: 0.63, z: 0.63}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_08
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_08
+        localPosition: {x: 7.48, y: -0.04, z: 28.8}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.48, y: 0.48, z: 0.48}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_09
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_09
+        localPosition: {x: 7.29, y: -0.04, z: 31.9}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.53, y: 0.53, z: 0.53}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_10
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_10
+        localPosition: {x: 7.85, y: -0.04, z: 35}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.58, y: 0.58, z: 0.58}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_11
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_11
+        localPosition: {x: 8.41, y: -0.04, z: 38.1}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.63, y: 0.63, z: 0.63}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_12
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_12
+        localPosition: {x: 8.22, y: -0.04, z: 41.2}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.48, y: 0.48, z: 0.48}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_13
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_13
+        localPosition: {x: 8.78, y: -0.04, z: 44.3}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.53, y: 0.53, z: 0.53}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_14
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_14
+        localPosition: {x: 9.34, y: -0.04, z: 47.4}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.58, y: 0.58, z: 0.58}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Grass_R_15
+        path: Roadside Trees Grass and Rocks/N3_Grass_R_15
+        localPosition: {x: 9.15, y: -0.04, z: 50.5}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.63, y: 0.63, z: 0.63}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 95716377140dac448b28059e1e6b872c, type: 2}
+        material: {fileID: 2100000, guid: 3a03a3221a05fdd42be7e1ffa8c180be, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: Reference Extras - From N3 Concept
+      sortBaseline: 0
+      entries:
+      - name: N3_Watchtower_Right_Mid
+        path: Reference Extras - From N3 Concept/N3_Watchtower_Right_Mid
+        localPosition: {x: 6.2, y: -0.02, z: 26}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.42, y: 0.42, z: 0.42}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: e12e1d4270c9ce143a375d4aa06bd8d7, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_CampGate_Far_Center
+        path: Reference Extras - From N3 Concept/N3_CampGate_Far_Center
+        localPosition: {x: 1.8, y: -0.02, z: 44}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.28, y: 0.28, z: 0.28}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 7a64914c2b0a60447b884e5062b9dbf3, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_CommandTent_Left_Mid
+        path: Reference Extras - From N3 Concept/N3_CommandTent_Left_Mid
+        localPosition: {x: -6.4, y: -0.02, z: 30}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.3, y: 0.3, z: 0.3}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 1b108646bdd6ab041a96c72dab53c304, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_BrokenCart_Right_Near
+        path: Reference Extras - From N3 Concept/N3_BrokenCart_Right_Near
+        localPosition: {x: 4.6, y: -0.02, z: 19}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.3, y: 0.3, z: 0.3}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: c53f7c7db995ee243a06acbf1fb7841b, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_BrokenFlag_Left_Near
+        path: Reference Extras - From N3 Concept/N3_BrokenFlag_Left_Near
+        localPosition: {x: -5.3, y: -0.02, z: 22}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.9, y: 0.9, z: 0.9}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 8aaa9e33d7164f8439c8a0fc52dba200, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Palisade_Left_Near
+        path: Reference Extras - From N3 Concept/N3_Palisade_Left_Near
+        localPosition: {x: -4.5, y: -0.02, z: 24.5}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.5, y: 0.5, z: 0.5}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: feaabe049e93a2446b708672d616bab1, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Near
+      sortBaseline: 0
+      entries:
+      - name: N3_Wall_Left_Near_Segment_01
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Near/N3_Wall_Left_Near_Segment_01
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 8015bccab152de14fa4e156520f6b6aa, type: 2}
+        material: {fileID: 2100000, guid: 8fb42768a57a0304faa0004c7e36f7ea, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Wall_Left_Near_Segment_02
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Near/N3_Wall_Left_Near_Segment_02
+        localPosition: {x: 0, y: 0, z: 4}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 4ada51f1560a3134096ad5d592aab133, type: 2}
+        material: {fileID: 2100000, guid: 8fb42768a57a0304faa0004c7e36f7ea, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Wall_Left_Near_Segment_03
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Near/N3_Wall_Left_Near_Segment_03
+        localPosition: {x: 0, y: 0, z: 8}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 409fc4ab9076d4e4480865549d4a5332, type: 2}
+        material: {fileID: 2100000, guid: 8fb42768a57a0304faa0004c7e36f7ea, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Mid
+      sortBaseline: 0
+      entries:
+      - name: N3_Wall_Left_Mid_Segment_01
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Mid/N3_Wall_Left_Mid_Segment_01
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 8015bccab152de14fa4e156520f6b6aa, type: 2}
+        material: {fileID: 2100000, guid: 8fb42768a57a0304faa0004c7e36f7ea, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Wall_Left_Mid_Segment_02
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Mid/N3_Wall_Left_Mid_Segment_02
+        localPosition: {x: 0, y: 0, z: 4}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 4ada51f1560a3134096ad5d592aab133, type: 2}
+        material: {fileID: 2100000, guid: 8fb42768a57a0304faa0004c7e36f7ea, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Wall_Left_Mid_Segment_03
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Left_Mid/N3_Wall_Left_Mid_Segment_03
+        localPosition: {x: 0, y: 0, z: 8}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 409fc4ab9076d4e4480865549d4a5332, type: 2}
+        material: {fileID: 2100000, guid: 8fb42768a57a0304faa0004c7e36f7ea, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Near
+      sortBaseline: 0
+      entries:
+      - name: N3_Wall_Right_Near_Segment_01
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Near/N3_Wall_Right_Near_Segment_01
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 8015bccab152de14fa4e156520f6b6aa, type: 2}
+        material: {fileID: 2100000, guid: 8fb42768a57a0304faa0004c7e36f7ea, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Wall_Right_Near_Segment_02
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Near/N3_Wall_Right_Near_Segment_02
+        localPosition: {x: 0, y: 0, z: 4}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 4ada51f1560a3134096ad5d592aab133, type: 2}
+        material: {fileID: 2100000, guid: 8fb42768a57a0304faa0004c7e36f7ea, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Wall_Right_Near_Segment_03
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Near/N3_Wall_Right_Near_Segment_03
+        localPosition: {x: 0, y: 0, z: 8}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 409fc4ab9076d4e4480865549d4a5332, type: 2}
+        material: {fileID: 2100000, guid: 8fb42768a57a0304faa0004c7e36f7ea, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Mid
+      sortBaseline: 0
+      entries:
+      - name: N3_Wall_Right_Mid_Segment_01
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Mid/N3_Wall_Right_Mid_Segment_01
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 8015bccab152de14fa4e156520f6b6aa, type: 2}
+        material: {fileID: 2100000, guid: 8fb42768a57a0304faa0004c7e36f7ea, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Wall_Right_Mid_Segment_02
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Mid/N3_Wall_Right_Mid_Segment_02
+        localPosition: {x: 0, y: 0, z: 4}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 4ada51f1560a3134096ad5d592aab133, type: 2}
+        material: {fileID: 2100000, guid: 8fb42768a57a0304faa0004c7e36f7ea, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: N3_Wall_Right_Mid_Segment_03
+        path: Road Parallel Walls - Grey Black Outline/N3_Wall_Right_Mid/N3_Wall_Right_Mid_Segment_03
+        localPosition: {x: 0, y: 0, z: 8}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: 409fc4ab9076d4e4480865549d4a5332, type: 2}
+        material: {fileID: 2100000, guid: 8fb42768a57a0304faa0004c7e36f7ea, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: Roadside Trees Grass and Rocks/N3_Tree_0
+      sortBaseline: 0
+      entries:
+      - name: Wind Mesh
+        path: Roadside Trees Grass and Rocks/N3_Tree_0/Wind Mesh
+        localPosition: {x: -0.25, y: 5.98, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 10.96, y: 12.29, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: b8ff6090a80d9274c9e0ef9c17b9c213, type: 2}
+        material: {fileID: 2100000, guid: bea6cd27275548b4ebe4e5204fd3510f, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: Roadside Trees Grass and Rocks/N3_Tree_1
+      sortBaseline: 0
+      entries:
+      - name: Wind Mesh
+        path: Roadside Trees Grass and Rocks/N3_Tree_1/Wind Mesh
+        localPosition: {x: -1.06, y: 5.99, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 9.08, y: 12.33, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: b8ff6090a80d9274c9e0ef9c17b9c213, type: 2}
+        material: {fileID: 2100000, guid: 70e12fbe0eb530e43a32cc9c31c860b9, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: Roadside Trees Grass and Rocks/N3_Tree_2
+      sortBaseline: 0
+      entries:
+      - name: Wind Mesh
+        path: Roadside Trees Grass and Rocks/N3_Tree_2/Wind Mesh
+        localPosition: {x: -1.06, y: 5.99, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 9.08, y: 12.33, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: b8ff6090a80d9274c9e0ef9c17b9c213, type: 2}
+        material: {fileID: 2100000, guid: 70e12fbe0eb530e43a32cc9c31c860b9, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: Roadside Trees Grass and Rocks/N3_Tree_3
+      sortBaseline: 0
+      entries:
+      - name: Wind Mesh
+        path: Roadside Trees Grass and Rocks/N3_Tree_3/Wind Mesh
+        localPosition: {x: -0.25, y: 5.98, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 10.96, y: 12.29, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: b8ff6090a80d9274c9e0ef9c17b9c213, type: 2}
+        material: {fileID: 2100000, guid: bea6cd27275548b4ebe4e5204fd3510f, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: Roadside Trees Grass and Rocks/N3_Tree_4
+      sortBaseline: 0
+      entries:
+      - name: Wind Mesh
+        path: Roadside Trees Grass and Rocks/N3_Tree_4/Wind Mesh
+        localPosition: {x: -0.25, y: 5.98, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 10.96, y: 12.29, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: b8ff6090a80d9274c9e0ef9c17b9c213, type: 2}
+        material: {fileID: 2100000, guid: bea6cd27275548b4ebe4e5204fd3510f, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: Roadside Trees Grass and Rocks/N3_Tree_5
+      sortBaseline: 0
+      entries:
+      - name: Wind Mesh
+        path: Roadside Trees Grass and Rocks/N3_Tree_5/Wind Mesh
+        localPosition: {x: -1.06, y: 5.99, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 9.08, y: 12.33, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: b8ff6090a80d9274c9e0ef9c17b9c213, type: 2}
+        material: {fileID: 2100000, guid: 70e12fbe0eb530e43a32cc9c31c860b9, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    interactives: []
+    refBindings: []
+    rootComponentTypes: []
+    rootComponentJson: []
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+    applyRootTransform: 1
+  segmentSpecs: []
