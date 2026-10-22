@@ -300,6 +300,24 @@ sprite 的 pivot 与贴图 alpha 底边（对照 `slice_manifest.pivot_normalize
 
 **回退**：从 `Node_N1.asset` 的 `battleEntries` 里删掉测试那条 ✅ 即可 ✅（正式战斗自动回到第 1 条 ✅）。
 
+### 6.6 N3：从参考图搭出来（2026-10-24 ✅）
+
+第一次真正「拿参考图 → 写表 → 生成场景」✅（此前只是把现成内容导成表 ✅）。
+
+| 项 | 值 |
+|---|---|
+| 构图母图 | `C:/Users/Administrator/Pictures/gptGen/4c7ef3f7-f89c-44e0-b008-725566fcb107.png` ✅（N3 村落 ✅，素材就是从它切的 ✅） |
+| 摆放表（可手改 ✅） | `Authoring/Placement/N3_Village.json` ✅（86 条 ✅） |
+| 规格 | `Assets/RouteData/YSceneSpecs/N3.asset` ✅（15 组 / 86 条目 ✅） |
+| 节点 prefab | `Authoring/Nodes/N3.prefab` ✅（根 = `N3` ✅，不带位置 ✅） |
+| 段 prefab（**已进段表** ✅） | `Authoring/Segments/N3 Village - From Reference Table.prefab` ✅（根 = 世界位姿 (-88.07, 0, 289.73) rot 315° ✅；段表 323→328 ✅） |
+| 参考图新增元素 | `Reference Extras - From N3 Concept` 层 6 件 ✅：望楼 / 营门 / 军帐 / 破车 / 断旗 / 木栅 ✅（素材现成 ✅，比例按图收紧 ✅） |
+
+**验证** ✅：与已部署版本共同 84 件 → 位置最大偏差 **6.4 mm** ✅（表是 2 位小数 ✅）；
+Play Mode 跑到 N3 ✅ → 段实例化 ✅ → 游戏内实景与参考图构图一致 ✅；Console 0 error ✅。
+
+> ⚠️ 旧的段 prefab `N3 Village Rescue - Accepted Art and Grey Wall Study @ 266` ✅ **还在资产里** ✅（没删 ✅）→ 回退只要把段表那一条指回去 ✅。
+
 ---
 
 ## 七、加载与包体（诚实结论 ✅）

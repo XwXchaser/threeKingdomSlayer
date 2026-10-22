@@ -66,7 +66,7 @@ JSON ✅，两种坐标空间由表级字段 `space` 决定 ✅：
 5. **组路径前缀只取第一层** ✅：按 `layer` 前缀拼组路径时会截断 ✅ → 深层容器拿不到自己的变换 ✅。
    → 层级一律靠**条目完整路径** ✅（`layer + "/" + id` ✅），别靠前缀推导 ✅。
 
-## 五、节点 prefab 生产（2026-10-24 ✅）
+## 六、节点 prefab 生产（2026-10-24 ✅）
 
 **新方案第一次真正产出内容** ✅（此前只有管线与自检 ✅）。
 
@@ -94,7 +94,34 @@ JSON ✅，两种坐标空间由表级字段 `space` 决定 ✅：
 
 **还没做** ✅：prefab 的运行时加载器 ✅（S5 ✅）→ 场景里仍是手摆版 ✅；其余 5 个节点未进规格 ✅。
 
-## 六、场景是 flat world ✅
+## 六·一、N3 参考图 → 摆放表 → 场景（2026-10-24 ✅，首个「从参考图搭」）
+
+**参考图在哪**（都在项目外 ✅，容易丢 ✅ → 记这里 ✅）：
+
+| 图 | 路径 | 作用 |
+|---|---|---|
+| **N3 村落构图参考** ✅ | `C:/Users/Administrator/Pictures/gptGen/4c7ef3f7-f89c-44e0-b008-725566fcb107.png` ✅ | N3 村落的**构图母图** ✅（N3 素材就是从它切出来的 ✅） |
+| 已部署路面/相机参考 | `C:/Users/Administrator/Pictures/gptGen/n3_village_scene_reference_v1/references/reference_2_n3_left_branch_deployed.png` | 真实相机/地平线/路面材质 ✅（**路面宽度与密度不取自它** ✅） |
+| 参考图三件套 | `.../n3_village_scene_reference_v1/references/`（+ `references_manifest.json` ✅） | 提交用参考图 ✅ |
+| 项目内 N3 素材 | `Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/` ✅（8 件精灵 ✅ + 墙段图集 ✅ + `slice_manifest.json` ✅） | |
+
+**产物** ✅：
+
+| 产物 | 路径 | 说明 |
+|---|---|---|
+| **摆放表**（可手改的输入 ✅） | `Authoring/Placement/N3_Village.json` ✅ | 86 条 ✅（local 空间 ✅，层 = 分组 ✅） |
+| 节点规格 | `Assets/RouteData/YSceneSpecs/N3.asset` ✅ | 15 组 / 86 条目 ✅ |
+| 节点 prefab | `Authoring/Nodes/N3.prefab` ✅ | 根 = `N3` ✅，**不带位置** ✅ |
+| **段 prefab**（已进段表 ✅） | `Authoring/Segments/N3 Village - From Reference Table.prefab` ✅ | 根 = 世界位姿 (-88.07, 0, 289.73) rot 315° ✅ → 段表 323→328 ✅ |
+
+**参考图带来的新增**（已部署版本里没有的 ✅，素材现成 ✅）：
+`Reference Extras - From N3 Concept` 层 6 件 ✅ —— 望楼 ✅、营门 ✅、军帐 ✅、破车 ✅、断旗 ✅、木栅 ✅
+（比例按参考图收紧过 ✅：望楼 0.42 / 营门 0.28 / 军帐 0.30 ✅）。
+
+**验证** ✅：与已部署版本共同 84 件 → 位置最大偏差 **6.4 mm** ✅（表里写的是 2 位小数 ✅）；
+Play Mode 跑到 N3 ✅ → 段已实例化 ✅ → 游戏内截图与参考图构图一致 ✅（Console 0 error ✅）。
+
+## 七、场景是 flat world ✅
 
 z = 沿路米数 ✅，x = 横向偏移 ✅；190m 处分叉 ✅，左右两支采样取最近的那支 ✅。
 段 prefab 可以带自己的朝向（如 315° 分支朝向 ✅）→ 沿路坐标 ↔ 局部坐标要按根朝向换算 ✅（`route` 空间已内置 ✅）。
