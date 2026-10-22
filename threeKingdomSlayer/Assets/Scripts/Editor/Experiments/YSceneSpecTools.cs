@@ -1,0 +1,430 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+/// <summary>
+/// **Y 场景规格工具**（2026-10-23）：导出 / 生成 / 校验 / 往返验证。
+///
+/// 规格 ↔ 场景的映射规则（**路径驱动** ✅，无损 ✅）：
+///   • **每个带 Renderer 的节点 = 一条条目** ✅，条目带**完整相对路径** ✅（相对节点根 ✅）；
+///   • 路径上缺的无渲染器容器，生成时**自动补出来** ✅（纯容器 ✅）；
+///   • **组** = 路径前缀 ✅（用于排序基准与自检 ✅）：组基准 = 组内条目最小 sortingOrder ✅，
+///     条目用 **sortBias（相对组基准的偏移）** 表达前后 ✅；
+///   • 生成是**幂等**的 ✅：同路径对象复用并更新 ✅，标了 <c>userModified</c> 的条目**不覆盖** ✅。
+///
+/// 工作流：① 导出切片为规格 → ② 从规格生成到当前场景 → ③ 校验规格 → ④ 往返验证。
+/// </summary>
+public static class YSceneSpecTools
+{
+    private const string SpecFolder = "Assets/RouteData/YSceneSpecs";
+    private const string YScenePath = "Assets/Experiments/CurvedScroll/YJunctionSample.unity";
+
+    // ───────────────────────── 菜单 ─────────────────────────
+
+    [MenuItem("Tools/Y 场景规格/① 导出切片为规格")]
+    private static void ExportSliceMenu()
+    {
+        var sel = Selection.activeGameObject;
+        if (sel == null) { Debug.LogError("[Y 场景规格] 先在场景里选中要导出的那一组"); return; }
+        var spec = ExportSlice(sel, null);
+        if (spec == null) return;
+        Selection.activeObject = spec;
+        EditorGUIUtility.PingObject(spec);
+        Debug.Log($"[Y 场景规格] 已导出切片「{sel.name}」→ {AssetDatabase.GetAssetPath(spec)}");
+    }
+
+    [MenuItem("Tools/Y 场景规格/② 从规格生成到当前场景")]
+    private static void GenerateMenu()
+    {
+        var spec = Selection.activeObject as YSceneSpec;
+        if (spec == null) { Debug.LogError("[Y 场景规格] 先在 Project 里选中一个 YSceneSpec 资产"); return; }
+        var scene = SceneManager.GetActiveScene();
+        var root = FindOrCreateRoot(scene, spec);
+        int count = Generate(spec, root);
+        EditorSceneManager.MarkSceneDirty(scene);
+        Debug.Log($"[Y 场景规格] 已在场景「{scene.name}」生成/更新 {count} 个对象，根组「{root.name}」");
+    }
+
+    [MenuItem("Tools/Y 场景规格/③ 校验规格")]
+    private static void ValidateMenu()
+    {
+        var spec = Selection.activeObject as YSceneSpec;
+        if (spec == null) { Debug.LogError("[Y 场景规格] 先选中一个 YSceneSpec 资产"); return; }
+        var issues = Validate(spec);
+        if (issues.Count == 0) { Debug.Log("[Y 场景规格] 自检通过 ✅（0 问题）"); return; }
+        foreach (var i in issues) Debug.LogWarning("[Y 场景规格] " + i);
+        Debug.Log($"[Y 场景规格] 自检发现 {issues.Count} 个问题");
+    }
+
+    [MenuItem("Tools/Y 场景规格/④ 往返验证（导出→生成→逐件比对）")]
+    private static void RoundTripMenu()
+    {
+        var sel = Selection.activeObject;
+        if (sel == null) { Debug.LogError("[Y 场景规格] 先在场景里选中要验证的那一组"); return; }
+        RunRoundTrip(sel as GameObject);
+    }
+
+    // ───────────────────────── 导出 ─────────────────────────
+
+    public static YSceneSpec ExportSlice(GameObject sliceRoot, YSceneSpec existing)
+    {
+        if (sliceRoot == null) return null;
+        var spec = existing;
+        if (spec == null)
+        {
+            if (!AssetDatabase.IsValidFolder(SpecFolder))
+            {
+                Directory.CreateDirectory(SpecFolder);
+                AssetDatabase.Refresh();
+            }
+            string path = AssetDatabase.GenerateUniqueAssetPath($"{SpecFolder}/{sliceRoot.name}_Slice.asset");
+            spec = ScriptableObject.CreateInstance<YSceneSpec>();
+            AssetDatabase.CreateAsset(spec, path);
+        }
+        var built = BuildSpecFromSlice(sliceRoot);
+        spec.routeId = built.routeId;
+        spec.renderWorldBaseline = built.renderWorldBaseline;
+        spec.nodeSpecs = built.nodeSpecs;
+        EditorUtility.SetDirty(spec);
+        AssetDatabase.SaveAssets();
+        return spec;
+    }
+
+    /// <summary>把场景里的一个切片转成内存中的规格（不落盘）。</summary>
+    public static YSceneSpec BuildSpecFromSlice(GameObject sliceRoot)
+    {
+        var spec = ScriptableObject.CreateInstance<YSceneSpec>();
+        spec.routeId = "changbanpo";
+        spec.renderWorldBaseline = 0;
+        var node = new YNodeSceneSpec
+        {
+            nodeId = sliceRoot.name,
+            anchorDistance = FindAnchorDistance(sliceRoot),
+            groups = Array.Empty<YSceneGroup>(),
+        };
+
+        // ① 收集所有带渲染器的节点（带完整相对路径 ✅）
+        var entries = new List<YPropEntry>();
+        var sliceRootT = sliceRoot.transform;
+        for (int i = 0; i < sliceRootT.childCount; i++)
+            Collect(sliceRootT.GetChild(i), sliceRootT, entries);
+        Debug.Log($"[Y 场景规格] 导出「{sliceRoot.name}」：子物体 {sliceRootT.childCount}，收集条目 {entries.Count}");
+
+        // ② 按「组路径」（= 条目的父路径 ✅）分组 ✅
+        var groups = new Dictionary<string, List<YPropEntry>>();
+        var order = new List<string>();
+        foreach (var e in entries)
+        {
+            string g = ParentPath(e.path);
+            if (!groups.TryGetValue(g, out var list)) { list = new List<YPropEntry>(); groups[g] = list; order.Add(g); }
+            list.Add(e);
+        }
+        var groupList = new List<YSceneGroup>();
+        foreach (var g in order)
+        {
+            int baseline = groups[g].Min(e => e.sortBias);
+            foreach (var e in groups[g]) e.sortBias -= baseline;      // 换成相对偏移 ✅
+            groupList.Add(new YSceneGroup { path = g, sortBaseline = baseline, entries = groups[g].ToArray() });
+        }
+        node.groups = groupList.ToArray();
+        spec.nodeSpecs = new[] { node };
+        return spec;
+    }
+
+    private static void Collect(Transform t, Transform sliceRootT, List<YPropEntry> into)
+    {
+        for (int i = 0; i < t.childCount; i++)
+        {
+            var child = t.GetChild(i);
+            // 相对路径：自己往上拼到切片根 ✅（不靠递归拼 ✅）
+            string path = RelPath(child, sliceRootT);
+            var r = child.GetComponent<Renderer>();
+            if (r != null) into.Add(BuildEntry(child, path, r));
+            Collect(child, sliceRootT, into);       // 容器与渲染器节点的子层级都继续 ✅
+        }
+    }
+
+    private static string RelPath(Transform t, Transform root)
+    {
+        var parts = new List<string>();
+        var cur = t;
+        while (cur != null && cur != root) { parts.Insert(0, cur.name); cur = cur.parent; }
+        return string.Join("/", parts);
+    }
+
+    private static YPropEntry BuildEntry(Transform t, string path, Renderer r)
+    {
+        var e = new YPropEntry
+        {
+            name = t.name,
+            path = path,
+            localPosition = t.localPosition,
+            localEulerAngles = t.localEulerAngles,
+            localScale = t.localScale,
+            material = r.sharedMaterial,
+            active = t.gameObject.activeSelf,
+            isWindMesh = t.name == "Wind Mesh",
+        };
+        var sr = r as SpriteRenderer;
+        if (sr != null)
+        {
+            e.renderKind = YRenderKind.Sprite;
+            e.sprite = sr.sprite;
+            e.sortBias = sr.sortingOrder;
+            e.pivotMode = YPivotMode.Foot;
+            if (sr.sprite != null) e.footOffsetY = sr.sprite.pivot.y - sr.sprite.bounds.min.y;
+        }
+        else
+        {
+            e.renderKind = YRenderKind.Solid3D;
+            var mf = t.GetComponent<MeshFilter>();
+            e.mesh = mf != null ? mf.sharedMesh : null;
+            e.sortBias = r.sortingOrder;
+            e.pivotMode = YPivotMode.Center;
+        }
+        return e;
+    }
+
+    private static string ParentPath(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return "";
+        int i = path.LastIndexOf('/');
+        return i < 0 ? "" : path.Substring(0, i);
+    }
+
+    private static float FindAnchorDistance(GameObject sliceRoot)
+    {
+        var scene = sliceRoot.scene;
+        float best = -1f; float bestDist = float.MaxValue;
+        foreach (var p in UnityEngine.Object.FindObjectsOfType<ScrollRouteNodePresentation>(true))
+        {
+            if (p == null || p.gameObject.scene != scene) continue;
+            float d = Vector3.Distance(p.transform.position, sliceRoot.transform.position);
+            if (d < bestDist) { bestDist = d; best = p.worldDistance; }
+        }
+        return best;
+    }
+
+    // ───────────────────────── 生成 ─────────────────────────
+
+    public static int Generate(YSceneSpec spec, Transform root)
+    {
+        if (spec == null || root == null) return 0;
+        int count = 0;
+        foreach (var node in spec.nodeSpecs)
+        {
+            var nodeRoot = FindOrCreatePath(root, node.nodeId);
+            foreach (var g in node.groups)
+            {
+                foreach (var e in g.entries)
+                    count += GenerateEntry(e, nodeRoot, g.sortBaseline);
+            }
+            if (node.interactives != null && node.interactives.Length > 0)
+            {
+                foreach (var e in node.interactives)
+                    count += GenerateEntry(e, nodeRoot, spec.renderWorldBaseline);
+            }
+        }
+        return count;
+    }
+
+    /// <summary>按路径找/建一个对象（幂等 ✅：同名即复用 ✅）。</summary>
+    private static Transform FindOrCreatePath(Transform parent, string path)
+    {
+        if (string.IsNullOrEmpty(path)) return parent;
+        var cur = parent;
+        var parts = path.Split('/');
+        for (int i = 0; i < parts.Length; i++)
+        {
+            var child = cur.Find(parts[i]);
+            if (child == null)
+            {
+                var go = new GameObject(parts[i]);
+                go.transform.SetParent(cur, false);
+                child = go.transform;
+            }
+            cur = child;
+        }
+        return cur;
+    }
+
+    private static int GenerateEntry(YPropEntry e, Transform nodeRoot, int baseline)
+    {
+        string parentPath = ParentPath(e.path);
+        var parent = FindOrCreatePath(nodeRoot, parentPath);
+        var existing = parent.Find(e.name);
+        GameObject go;
+        if (existing != null)
+        {
+            if (e.userModified) return 0;      // 手工改过 → 不覆盖 ✅
+            go = existing.gameObject;
+        }
+        else
+        {
+            go = new GameObject(e.name);
+            go.transform.SetParent(parent, false);
+        }
+        go.transform.localPosition = e.localPosition;
+        go.transform.localEulerAngles = e.localEulerAngles;
+        go.transform.localScale = e.localScale;
+        if (go.activeSelf != e.active) go.SetActive(e.active);
+
+        if (e.renderKind == YRenderKind.Sprite)
+        {
+            var sr = go.GetComponent<SpriteRenderer>();
+            if (sr == null) sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = e.sprite;
+            sr.material = e.material;
+            sr.sortingOrder = baseline + e.sortBias;
+        }
+        else
+        {
+            if (e.mesh != null)
+            {
+                var mf = go.GetComponent<MeshFilter>();
+                if (mf == null) mf = go.AddComponent<MeshFilter>();
+                mf.sharedMesh = e.mesh;
+            }
+            var mr = go.GetComponent<MeshRenderer>();
+            if (mr == null) mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = e.material;
+            mr.sortingOrder = baseline + e.sortBias;
+        }
+        return 1;
+    }
+
+    private static Transform FindOrCreateRoot(Scene scene, YSceneSpec spec)
+    {
+        string name = spec.nodeSpecs.Length > 0 ? spec.nodeSpecs[0].nodeId : "Y Spec Root";
+        var existing = GameObject.Find(name);
+        if (existing != null) return existing.transform;
+        var main = scene.GetRootGameObjects().Length > 0 ? scene.GetRootGameObjects()[0].transform : null;
+        var go = new GameObject(name);
+        if (main != null) go.transform.SetParent(main, false);
+        return go.transform;
+    }
+
+    // ───────────────────────── 校验 ─────────────────────────
+
+    public static List<string> Validate(YSceneSpec spec)
+    {
+        var issues = new List<string>();
+        if (spec == null) { issues.Add("规格为空"); return issues; }
+
+        foreach (var node in spec.nodeSpecs)
+        {
+            if (string.IsNullOrEmpty(node.nodeId)) issues.Add("节点 id 为空");
+            foreach (var g in node.groups)
+            {
+                if (g.entries == null || g.entries.Length == 0) continue;
+
+                int maxBias = g.entries.Max(e => e.sortBias);
+                if (g.sortBaseline + maxBias > spec.renderWorldBaseline)
+                {
+                    issues.Add($"[{node.nodeId}/{g.GroupName}] 层级越界：组基准 {g.sortBaseline} + 最大 sortBias {maxBias} = {g.sortBaseline + maxBias} > 世界基准 {spec.renderWorldBaseline}"
+                             + "（该组会压在所有场景物之上）");
+                }
+
+                var dup = g.entries.GroupBy(e => e.sortBias).Where(x => x.Count() > 1).Select(x => x.Key).OrderBy(x => x).ToArray();
+                if (dup.Length > 0)
+                    issues.Add($"[{node.nodeId}/{g.GroupName}] 同层多件共用 sortBias {string.Join(",", dup)}（同深度时穿插）");
+
+                foreach (var e in g.entries)
+                {
+                    if (e.renderKind == YRenderKind.Sprite && e.sprite == null) issues.Add($"[{node.nodeId}/{g.GroupName}/{e.name}] 精灵引用为空");
+                    if (e.renderKind == YRenderKind.Solid3D && e.mesh == null) issues.Add($"[{node.nodeId}/{g.GroupName}/{e.name}] 网格引用为空");
+                    if (e.material == null) issues.Add($"[{node.nodeId}/{g.GroupName}/{e.name}] 材质引用为空");
+                }
+            }
+        }
+        return issues;
+    }
+
+    // ───────────────────────── 往返验证 ─────────────────────────
+
+    public static bool RunRoundTrip(GameObject sliceRoot)
+    {
+        if (sliceRoot == null) return false;
+        var spec = BuildSpecFromSlice(sliceRoot);
+
+        var tmp = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+        var rootGo = new GameObject("RoundTrip");
+        int created = Generate(spec, rootGo.transform);
+        var nodeRoot = rootGo.transform.Find(sliceRoot.name);
+
+        var diffs = nodeRoot != null
+            ? CompareTrees(sliceRoot.transform, nodeRoot)
+            : new List<string> { "生成结果里找不到节点根" };
+        Debug.Log($"[Y 场景规格] 往返验证：生成 {created} 个对象；差异 {diffs.Count} 条");
+        for (int i = 0; i < diffs.Count && i < 20; i++) Debug.Log("   " + diffs[i]);
+
+        var issues = Validate(spec);
+        foreach (var i in issues) Debug.LogWarning("[Y 场景规格][自检] " + i);
+        Debug.Log($"[Y 场景规格] 自检问题数 = {issues.Count}");
+
+        UnityEngine.Object.DestroyImmediate(rootGo);
+        EditorSceneManager.CloseScene(tmp, true);
+        return diffs.Count == 0;
+    }
+
+    /// <summary>逐对象比对两棵层级树（相对各自根，路径为准）。</summary>
+    public static List<string> CompareTrees(Transform a, Transform b)
+    {
+        var diffs = new List<string>();
+        var mapA = Flatten(a);
+        var mapB = Flatten(b);
+        foreach (var kv in mapA)
+        {
+            if (!mapB.TryGetValue(kv.Key, out var tb)) { diffs.Add($"缺失: {kv.Key}"); continue; }
+            var ta = kv.Value;
+            if (ta.name != tb.name) diffs.Add($"{kv.Key}: 名字 {ta.name} vs {tb.name}");
+            if (ta.localPosition != tb.localPosition) diffs.Add($"{kv.Key}: 位置 {ta.localPosition} vs {tb.localPosition}");
+            if (ta.localEulerAngles != tb.localEulerAngles) diffs.Add($"{kv.Key}: 旋转 {ta.localEulerAngles} vs {tb.localEulerAngles}");
+            if (ta.localScale != tb.localScale) diffs.Add($"{kv.Key}: 缩放 {ta.localScale} vs {tb.localScale}");
+            var sa = ta.GetComponent<SpriteRenderer>(); var sb = tb.GetComponent<SpriteRenderer>();
+            if (sa != null || sb != null)
+            {
+                if (sa == null || sb == null) { diffs.Add($"{kv.Key}: 渲染器类型不同"); continue; }
+                if (sa.sprite != sb.sprite) diffs.Add($"{kv.Key}: 精灵 {sa.sprite?.name} vs {sb.sprite?.name}");
+                if (sa.sharedMaterial != sb.sharedMaterial) diffs.Add($"{kv.Key}: 材质 {sa.sharedMaterial?.name} vs {sb.sharedMaterial?.name}");
+                if (sa.sortingOrder != sb.sortingOrder) diffs.Add($"{kv.Key}: sortingOrder {sa.sortingOrder} vs {sb.sortingOrder}");
+                if (sa.sortingLayerID != sb.sortingLayerID) diffs.Add($"{kv.Key}: sortingLayer {sa.sortingLayerID} vs {sb.sortingLayerID}");
+            }
+            else
+            {
+                var ma = ta.GetComponent<MeshRenderer>(); var mb = tb.GetComponent<MeshRenderer>();
+                if (ma != null && mb != null)
+                {
+                    var fa = ta.GetComponent<MeshFilter>(); var fb = tb.GetComponent<MeshFilter>();
+                    if ((fa == null ? null : fa.sharedMesh) != (fb == null ? null : fb.sharedMesh)) diffs.Add($"{kv.Key}: 网格不同");
+                    if (ma.sharedMaterial != mb.sharedMaterial) diffs.Add($"{kv.Key}: 材质 {ma.sharedMaterial?.name} vs {mb.sharedMaterial?.name}");
+                    if (ma.sortingOrder != mb.sortingOrder) diffs.Add($"{kv.Key}: sortingOrder {ma.sortingOrder} vs {mb.sortingOrder}");
+                }
+            }
+        }
+        foreach (var kv in mapB) if (!mapA.ContainsKey(kv.Key)) diffs.Add($"多出: {kv.Key}");
+        return diffs;
+    }
+
+    private static Dictionary<string, Transform> Flatten(Transform root)
+    {
+        var map = new Dictionary<string, Transform>();
+        void Walk(Transform t, string path)
+        {
+            for (int i = 0; i < t.childCount; i++)
+            {
+                var c = t.GetChild(i);
+                string p = path.Length == 0 ? c.name : path + "/" + c.name;
+                map[p] = c;
+                Walk(c, p);
+            }
+        }
+        Walk(root, "");
+        return map;
+    }
+}
