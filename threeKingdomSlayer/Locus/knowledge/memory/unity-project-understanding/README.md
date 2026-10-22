@@ -28,6 +28,10 @@ aiEditMode: inherit
 | **战斗状态 / Buff** ✅ | `buff-and-status.md` ✅ | `Assets/Scripts/Core/BuffManager.cs` ✅、`Assets/Scripts/Data/StatModifier.cs` ✅、`Assets/Scripts/Data/CombatBuffDefinition.cs` ✅、`Assets/Scripts/Data/BuffIds.cs` ✅、`Assets/Scripts/Player/Combat/PlayerState.cs` ✅ |
 | **招式 / 连招 / 技能 / 选角（换英雄·换武器·换招式）** ✅ | `attacks-moves-and-heroes.md` ✅ ✅ | `Assets/Scripts/Data/AttackSkillConfig.cs` ✅、`Assets/Scripts/Data/MoveTableConfig.cs` ✅、`Assets/Scripts/MoveSystem/PlayerMoveStateMachine.cs` ✅、`Assets/Scripts/Player/Combat/AttackSystem*.cs` ✅、`Assets/Scripts/Data/HeroConfig.cs` ✅、`Assets/Scripts/Editor/CombatDataTableWindow*.cs` ✅（既有总表窗口 ✅ ✅）✅ |
 | **Y 场景（美术搭景 / 表驱动）** ✅ | `yscene-table-pipeline.md` ✅ | `Assets/Scripts/Editor/Experiments/YSceneSpecTools.cs` ✅、`Assets/Scripts/Editor/Experiments/YScenePlacementImporter.cs` ✅、`Assets/Scripts/Editor/Experiments/YSceneTableizeWindow.cs` ✅ |
+| **敌人（含 Boss ✅ / 骑兵 ✅）** ✅ | `enemies.md` ✅ ✅ | `Assets/Scripts/Enemy/Enemy*.cs` ✅、`EnemyPool.cs` ✅、`Assets/Scripts/Data/EnemyTypes.cs` ✅、`Assets/Resources/EnemyPrefabs/` ✅ ✅ |
+| **QTE 与结算** ✅ | `qte-and-rewards.md` ✅ ✅ | `Assets/Scripts/QTE/QTEController*.cs` ✅、`QTEConfig.cs` ✅、`BossQTEData.cs` ✅、`Assets/Scripts/Managers/StageController.cs` ✅ |
+| **道具与局内成长** ✅ | `items-and-growth.md` ✅ ✅ | `Assets/Scripts/Data/UpgradeDefinition.cs` ✅、`ActiveSkillDefinition.cs` ✅、`Assets/Scripts/Core/UpgradeChoiceManager.cs` ✅、`ItemInventory.cs` ✅、`ExpGemManager.cs` ✅ |
+| **UI** ✅ | `ui.md` ✅ ✅ | `Assets/Scripts/UI/` ✅ ✅、`HubHudModeSwitch.cs` ✅、`CanvasScalerAdapter.cs` ✅ ✅ |
 | **存档** ✅ | 见「三、联动点」✅ ✅ | `Assets/Scripts/Services/SaveManager.cs` ✅、`Assets/Scripts/Data/Save/*.cs` ✅（分片 ✅ ✅）✅ |
 
 **全局约定** ✅ ✅：
@@ -44,6 +48,10 @@ aiEditMode: inherit
 > 照着改 ✅ ✅ 就行 ✅ ✅；**别新写一套平行实现** ✅ ❗（平行实现 = 两份真相 ✅ ✅ + 以后都要维护 ✅ ❗❗✅ ✅）✅ ✅。
 
 | 需求里可能出现的词 ✅ | **已经有的** ✅ ✅ | ❌ 别新造 ✅ |
+| 加一个敌人 ✅ | **预制体** ✅ ✅（`Enemy_{id}.prefab` ✅ ✅ + `EnemyPool` ✅ ✅ 注册 ✅ ✅）+ 状态枚举 ✅ ✅ | 别新写一套敌人配置类 ✅ ❗✅ ✅ |
+| 加一个 QTE ✅ | **数据资产** ✅ ✅（`BossQTEData` ✅ ✅ 阶段化 ✅ ✅ + `ArrowConfigs` ✅ ✅✅ ✅）✅ ✅ | 别新写 QTE 配置格式 ✅ ❗✅ ✅ |
+| 加一个升级/技能/道具 ✅ | 四条数据线 ✅ ✅（`UpgradeDefinition` ✅ ✅ / `ActiveSkillDefinition` ✅ ✅ / `ItemInventory` ✅ ✅ / `ExpCurveConfig` ✅ ✅✅ ✅）✅ ✅ | 别写第五套成长系统 ✅ ❗✅ ✅ |
+| 加一个界面 ✅ | **程序化生成** ✅ ✅（选关 ✅ ✅ / 天赋页 ✅ ✅ ✅）+ `HubHudModeSwitch` ✅ ✅ 统一切态 ✅ ✅ | 别手摆 UI 预制体 ✅ ❗ / 别各写各的显隐 ✅ ❗✅ ✅ |
 |---|---|---|
 | 连招 / 段位 / 接续 ✅ | **招式状态机** ✅ ✅（`MoveTableConfig.states` ✅ ✅ 的边 ✅ ✅ + `PlayerMoveStateMachine` ✅ ✅ ✅）✅ ✅ | 别新写 combo 系统 ✅ ❗✅ ✅ |
 | 手势 → 招式 的映射 ✅ | `MoveTableConfig.roots` ✅ ✅ ✅ | 别新写手势映射表 ✅ ❗✅ ✅ |
