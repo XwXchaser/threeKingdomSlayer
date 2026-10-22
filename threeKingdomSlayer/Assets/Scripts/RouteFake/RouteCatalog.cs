@@ -25,6 +25,11 @@ public class RouteCatalog : MonoBehaviour
     [Tooltip("教学关路线配置（教学路线，不混进 fakeRouteStages——那个列表的第 0 项被当“正式关”用）")]
     public FakeRouteStageConfig tutorialStage;
 
+    [Tooltip("**关卡清单资产** ✅ —— 选关列表 ✅ + 解锁关系 ✅ 都在里面 ✅。\n"
+           + "留空 = 退回旧行为 ✅（用下面的列表 ✅ + 按位置解锁 ✅）。\n"
+           + "有了它 ✅ → **加关卡 = 改这个资产 ✅ ✅**（不用改场景 ✅ ✅）。")]
+    public RouteCatalogData catalogData;
+
     /// <summary>
     /// 取当前场景的路线清单（优先单例 ✅，找不到就扫场景 ✅）。
     /// </summary>
@@ -50,12 +55,18 @@ public class RouteCatalog : MonoBehaviour
     }
 
     /// <summary>
-    /// 玩家在「选关页」里可选的全部路线：教学关 + 正式路线。
-    /// 选关页只列这个，不列节点（点哪条都从该路线的 startNode 开始）。
+    /// 玩家在「选关页」里可选的全部路线 ✅。
+    /// 优先用**清单资产** ✅（`catalogData` ✅ —— 解锁关系也在里面 ✅ ✅）；
+    /// 没有资产 ✅ → 退回旧的「教学关 + 列表 ✅」（解锁走旧规则 ✅ ✅）。
     /// </summary>
     public List<FakeRouteStageConfig> GetSelectableRoutes()
     {
         var result = new List<FakeRouteStageConfig>();
+        if (catalogData != null)
+        {
+            var fromAsset = catalogData.GetStages();
+            if (fromAsset.Count > 0) return fromAsset;
+        }
         if (tutorialStage != null) result.Add(tutorialStage);
         for (int i = 0; i < fakeRouteStages.Count; i++)
             if (fakeRouteStages[i] != null) result.Add(fakeRouteStages[i]);

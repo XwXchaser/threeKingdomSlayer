@@ -106,19 +106,20 @@ public class StageSelectUI : MonoBehaviour
         }
 
         foreach (var cfg in _routes)
-            CreateRouteButton(cfg, ResolveUnlock());
+            CreateRouteButton(cfg);
     }
 
     /// <summary>
-    /// 路线解锁：按列表顺序推进（教学关 → 正式关 → …），已通关 N 条则前 N+1 条可选。
-    /// 不能用 stageId 数字比大小——教学关 stageId=9100 会被永远判为未解锁。
+    /// 路线解锁 ✅ —— **规则写在数据里** ✅ ✅：
+    /// ① <c>RouteCatalogData.alwaysUnlockedStageIds</c> ✅ —— 总是可选 ✅（教学关 ✅ / 第一个正式关 ✅）；
+    /// ② 其余关卡要求 <c>prerequisiteStageIds</c> 里的**所有前置都通关** ✅ ✅（可多个 ✅ → 支持分叉 ✅）。
     ///
-    /// 至少放行前两条（教学关 index 0 + 第一个正式关 index 1）：旧规则下教学关未通关时
-    /// 正式关永远锁死，打不过教学关的玩家就卡死了（BUG-002，2026-10-21 实测）。
+    /// 旧行为（按列表位置数前面通了几个 ✅）只作为**没配清单资产时的兜底** ✅ ✅ ——
+    /// 那个写法中间插一条关卡会连锁改 ✅ ❗。
     /// </summary>
     private int _clearedRouteCount = -1;
 
-    private int ResolveUnlock()
+    private int ResolveClearedCount()
     {
         if (_clearedRouteCount < 0)
         {
@@ -127,19 +128,27 @@ public class StageSelectUI : MonoBehaviour
                 if (SaveManager.IsStageCleared(_routes[i].stageId)) cleared++;
             _clearedRouteCount = cleared;
         }
-        // 保底 1：即使一条没通关，也放行前两条（教学关 + 第一个正式关）。
-        return Mathf.Max(_clearedRouteCount, 1);
+        return _clearedRouteCount;
     }
 
-    private void CreateRouteButton(FakeRouteStageConfig cfg, int clearedCount)
+    private bool IsStageUnlocked(FakeRouteStageConfig cfg)
+    {
+        if (cfg == null) return false;
+        var data = routeCatalog != null ? routeCatalog.catalogData : null;
+        if (data != null) return data.IsUnlocked(cfg, id => SaveManager.IsStageCleared(id));
+        // 兜底：旧规则 ✅（保底放行前两条 ✅ —— 教学关 + 第一个正式关 ✅）
+        int index = _routes.FindIndex(s => s != null && s.stageId == cfg.stageId);
+        return index >= 0 && index <= Mathf.Max(ResolveClearedCount(), 1);
+    }
+
+    private void CreateRouteButton(FakeRouteStageConfig cfg)
     {
         var go = new GameObject("RouteBtn_" + cfg.stageId, typeof(RectTransform));
         go.transform.SetParent(_grid, false);
         var img = go.AddComponent<Image>();
         img.color = panelColor;
         var btn = go.AddComponent<Button>();
-        int index = _routes.FindIndex(s => s != null && s.stageId == cfg.stageId);
-        bool unlocked = index >= 0 && index <= clearedCount;
+        bool unlocked = IsStageUnlocked(cfg);
         var colors = btn.colors;
         colors.normalColor = buttonColor;
         colors.highlightedColor = buttonHighlightColor;

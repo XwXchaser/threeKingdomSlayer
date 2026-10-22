@@ -12509,6 +12509,7 @@ MonoBehaviour:
   fakeRouteStages:
   - {fileID: 11400000, guid: 2559bd9f55014d04eb83cf9b7efea656, type: 2}
   tutorialStage: {fileID: 11400000, guid: 8992d31e29e5e084a8281de6cbfa0c19, type: 2}
+  catalogData: {fileID: 11400000, guid: bb5aedd1f41a05d468baae958def639c, type: 2}
 --- !u!1 &1559928909
 GameObject:
   m_ObjectHideFlags: 0

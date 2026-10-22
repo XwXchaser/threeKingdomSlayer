@@ -211,7 +211,30 @@ Unity Console 0 error ✅。
 新写一个 `Validate` ✅ ✅：前置 id 存在 ✅ ✅、无环 ✅ ✅、无孤立 ✅ ✅、类型匹配 ✅ ✅ ✅（形式照 `YSceneSpecTools.Validate` ✅ ✅✅ ✅）。
 
 **动手顺序** ✅ ✅（离交付近 ✅ + 风险低 ✅）：
-**① 天赋前置显式化 ✅（天赋页马上要做 ✅ ✅✅）→ ② 选关解锁显式化 + RouteCatalog 资产化 ✅ ✅ → ③ 状态去枚举 ✅ ✅（长期活 ✅ ✅，风险最高 ✅ ✅ ✅）** ✅。
+**① 天赋前置显式化 ✅（`fb6af69` ✅）→ ② 选关解锁显式化 + 清单资产化 ✅（本节 ✅）→ ③ 状态去枚举 ✅ ✅（长期活 ✅ ✅，风险最高 ✅ ✅ ✅）** ✅。
+
+### ① 天赋前置显式化 ✅（`fb6af69` ✅）
+
+- `TalentNodeConfig` 加 **`prerequisiteIds`** ✅（nodeId 列表 ✅ ✅，可多个 ✅ → 支持分叉 ✅ ✅）
+- `TalentTreeConfig.GetPrerequisites` ✅：优先用显式 id ✅；没填 ✅ 退回旧行为 ✅（上一项 ✅）→ **老资产零改动可用** ✅ ✅ ✅
+- `TalentTreeState.IsAvailable` / `TryUnlock` ✅：改成「**所有前置**都解锁 ✅」✅
+- `TalentTreePanel` ✅：连线**按边画** ✅ ✅（每个节点 → 它的每个前置 ✅ ✅）
+- 新增 `TalentTreeConfig.Validate()` ✅（前置 id 不存在 ✅ / 自指 ✅ / 环 ✅ / nodeId 重复 ✅）+ 菜单 **`Tools/数据校验/天赋树 ✅`** ✅
+- **老存档安全** ✅ ✅：存档存 **nodeId** ✅ → 改前置结构不毁老档 ✅ ✅✅ ✅
+- **验收** ✅：真实资产 9 节点 ✅ 自检 0 ✅ 且旧行为不变 ✅；分叉树 ✅ D 的前置=[B,C] ✅；坏数据成环被抓住 ✅ ✅
+
+### ② 选关：解锁显式化 + 清单资产化 ✅
+
+- 新增 **`RouteCatalogData`**（ScriptableObject ✅ ✅）：`stages` ✅（选关列表 ✅）+ `alwaysUnlockedStageIds` ✅（总是可选的 ✅）+ `IsUnlocked` ✅（所有前置都通关 ✅ ✅）+ `Validate` ✅ ✅
+- `FakeRouteStageConfig` 加 **`prerequisiteStageIds`** ✅（stageId 列表 ✅ ✅）✅
+- `RouteCatalog` 加 **`catalogData`** 引用 ✅ ✅：`GetSelectableRoutes()` ✅ 优先用资产 ✅ ✅，没配则退回旧的「教学关 + 列表 ✅」✅ ✅✅ ✅（**旧行为一条没丢 ✅ ✅**）
+- `StageSelectUI` ✅：解锁判定改成**走数据** ✅ ✅（`alwaysUnlocked` ✅ 或**所有前置都通关** ✅ ✅）；旧的位置计数规则**只作兜底** ✅ ✅
+- 资产：`Assets/RouteData/RouteCatalog.asset` ✅（2 条 ✅：教学关 9100 ✅ + 长坂坡 1 ✅；默认可选 = 前两条 ✅ —— **等价于旧规则 ✅**，不重新引入 BUG-002 ✅ ✅）
+- 菜单 **`Tools/数据校验/关卡清单 ✅`** ✅
+- **验收** ✅：清单自检 0 ✅；两条关卡的解锁结果与旧规则**一致** ✅ ✅；Play Mode 路线仍落到 J1 ✅、段装载 11/14 ✅ ✅
+
+**剩下 ③ 状态去枚举** ✅ ✅（`BuffType` ✅ ❗ → string id + 配置资产 ✅ ✅）——
+⚠️ 战斗代码里大量使用 ✅ ✅ → **分批换** ✅ ✅（先开 id 通道 ✅，枚举保留兼容 ✅ ✅）。
 
 ## 十一、「表化这个组」工具 + N1→E0 切片表化 ✅（2026-10-24）
 

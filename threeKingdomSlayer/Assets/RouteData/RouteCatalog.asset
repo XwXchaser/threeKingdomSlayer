@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6bdc998562a3a14f9e9c8ca2edec677, type: 3}
+  m_Name: RouteCatalog
+  m_EditorClassIdentifier: 
+  stages:
+  - {fileID: 11400000, guid: 8992d31e29e5e084a8281de6cbfa0c19, type: 2}
+  - {fileID: 11400000, guid: 2559bd9f55014d04eb83cf9b7efea656, type: 2}
+  alwaysUnlockedStageIds: 8c23000001000000
