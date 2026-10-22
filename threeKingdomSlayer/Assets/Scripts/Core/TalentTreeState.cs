@@ -29,12 +29,14 @@ public static class TalentTreeState
 
     public static bool IsUnlocked(TalentNodeConfig node) => node != null && IsUnlocked(node.nodeId);
 
-    /// <summary>可以点了：自己没解锁、前置已解锁（根节点恒满足）。</summary>
+    /// <summary>可以点了：自己没解锁、**所有前置**已解锁（根节点恒满足）✅。</summary>
     public static bool IsAvailable(TalentTreeConfig tree, TalentNodeConfig node)
     {
         if (tree == null || node == null || IsUnlocked(node)) return false;
-        var prereq = tree.GetPrerequisite(node);
-        return prereq == null || IsUnlocked(prereq);
+        var prereqs = tree.GetPrerequisites(node);
+        for (int i = 0; i < prereqs.Count; i++)
+            if (!IsUnlocked(prereqs[i])) return false;
+        return true;
     }
 
     public static bool HasEnoughCoins(TalentNodeConfig node) =>
@@ -46,8 +48,9 @@ public static class TalentTreeState
             return TalentUnlockResult.Invalid;
         if (IsUnlocked(node)) return TalentUnlockResult.AlreadyUnlocked;
 
-        var prereq = tree.GetPrerequisite(node);
-        if (prereq != null && !IsUnlocked(prereq)) return TalentUnlockResult.Locked;
+        var prereqs = tree.GetPrerequisites(node);
+        for (int i = 0; i < prereqs.Count; i++)
+            if (!IsUnlocked(prereqs[i])) return TalentUnlockResult.Locked;
         if (!HasEnoughCoins(node)) return TalentUnlockResult.NotEnoughCoins;
 
         int coins = SaveManager.GetCoins();

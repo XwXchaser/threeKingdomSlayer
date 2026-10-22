@@ -53,6 +53,7 @@ public class TalentTreePanel : MonoBehaviour
     private readonly List<TextMeshProUGUI> _nodeLabels = new List<TextMeshProUGUI>();
     private readonly List<TextMeshProUGUI> _nodeCosts = new List<TextMeshProUGUI>();
     private readonly List<Image> _connectorImages = new List<Image>();
+private readonly List<TalentNodeConfig> _connectorTargets = new List<TalentNodeConfig>();
     private bool _built;
 
     private static Sprite _circleSprite;
@@ -195,17 +196,25 @@ public class TalentTreePanel : MonoBehaviour
         _nodeLabels.Clear();
         _nodeCosts.Clear();
         _connectorImages.Clear();
+        _connectorTargets.Clear();
         if (tree == null || tree.nodes == null) return;
 
         // 连线先画，压在节点下面
-        for (int i = 1; i < tree.nodes.Count; i++)
+        // **按「边」画** ✅ —— 每个节点 → 它的每个前置 ✅（支持分叉 ✅ ✅）
+        for (int i = 0; i < tree.nodes.Count; i++)
         {
-            var from = tree.nodes[i - 1];
             var to = tree.nodes[i];
-            if (from == null || to == null) continue;
-            var line = CreateImage($"Link_{i}", _nodeRoot, connectorLockedColor, connector);
-            _connectorImages.Add(line);
-            PlaceConnector(line.rectTransform, from.treePosition, to.treePosition);
+            if (to == null) continue;
+            var prereqs = tree.GetPrerequisites(to);
+            for (int p = 0; p < prereqs.Count; p++)
+            {
+                var from = prereqs[p];
+                if (from == null) continue;
+                var line = CreateImage($"Link_{from.nodeId}_{to.nodeId}", _nodeRoot, connectorLockedColor, connector);
+                _connectorImages.Add(line);
+                _connectorTargets.Add(to);
+                PlaceConnector(line.rectTransform, from.treePosition, to.treePosition);
+            }
         }
 
         for (int i = 0; i < tree.nodes.Count; i++)
@@ -297,10 +306,10 @@ public class TalentTreePanel : MonoBehaviour
                 DebugLog.Info($"[Talent] {node.nodeId} unlocked={unlocked} available={available} cost={node.coinCost} coins={coins}");
         }
 
-        // 连线状态：目标节点解锁即点亮
-        for (int i = 0; i < _connectorImages.Count && i + 1 < tree.nodes.Count; i++)
+        // 连线状态：目标节点解锁即点亮（按边 ✅ ✅）
+        for (int i = 0; i < _connectorImages.Count && i < _connectorTargets.Count; i++)
         {
-            var target = tree.nodes[i + 1];
+            var target = _connectorTargets[i];
             bool lit = target != null && TalentTreeState.IsUnlocked(target);
             if (_connectorImages[i] != null)
                 _connectorImages[i].color = lit ? connectorUnlockedColor : connectorLockedColor;
@@ -323,7 +332,7 @@ public class TalentTreePanel : MonoBehaviour
                 SetDescription(node, $"{node.displayName}\n{node.description}");
                 break;
             case TalentUnlockResult.Locked:
-                SetDescription(node, "需要先解锁前一个节点");
+                SetDescription(node, "需要先解锁前置节点");
                 break;
             case TalentUnlockResult.NotEnoughCoins:
                 SetDescription(node, $"铜钱不足：需要 {node.coinCost}，当前 {SaveManager.GetCoins()}");
