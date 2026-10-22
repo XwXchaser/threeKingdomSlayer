@@ -281,6 +281,25 @@ sprite 的 pivot 与贴图 alpha 底边（对照 `slice_manifest.pivot_normalize
 **还没做的** ✅：prefab 还没有运行时加载器 ✅（S5 的 `YNodeSceneLoader` ✅）→ 场景里仍是手摆版 ✅；
 其余 5 个节点（N1/E0/J1/N2/N3 ✅）还没进规格 ✅；`Opening Roadside Props` 那 100 件 ✅ 也还没进 ✅。
 
+### 6.5 测试用战斗节点（2026-10-24 ✅）
+
+**进游戏 → 落地页 → 点「开始关卡」→ N1 → 第一场就是测试战斗** ✅（方便反复测场景/战斗/跳过按钮 ✅）。
+
+| 项 | 值 |
+|---|---|
+| 战斗配置 | `Assets/RouteData/ChangbanpoScroll/Battles/Test_Node_Battle.asset` ✅（stageId **1199** ✅，名字「测试战斗·首节点」✅） |
+| 接线 | `RouteData/ChangbanpoScroll/Nodes/Node_N1.asset` 的 **battleEntries[0]** ✅（正式 N1 战斗挪到第 1 条 ✅，没删 ✅） |
+| 场景预览 | YJ 场景 `Encounter Authoring/N1 Encounter` 的 `battleConfigs` = [测试, 正式] ✅（场景只改这一处 ✅） |
+| 波形 | 2 波 ✅：第 1 波 2 只 1011（列 1/3）✅、第 2 波 3 只 1011（列 0/2/4）✅ → 共 5 只 ✅ |
+| 倍率 | 血量 ×0.25 ✅、伤害 ×0.15 ✅、攻速 ×0.6 ✅ → 打得快、不会死 ✅（专供测试 ✅） |
+| 其他 | `clearCoinReward=0` ✅、`killMilestones` 空 ✅、阵型用共享的 `Formation_Tutorial` ✅（与正式 N1 同 ✅） |
+
+**生效前提**：进游戏时的路线由**存档**决定 ✅（`activeFakeRouteStageId` ✅，PlayerPrefs ✅）。
+本机存档 = **1**（长坂坡正式路线 ✅）→ 首关就是 N1 的测试战斗 ✅；
+若存档指向教学关（9100 ✅）→ 首关是教学关自己的 N1 战斗 ✅（教学流程不动 ✅）。
+
+**回退**：从 `Node_N1.asset` 的 `battleEntries` 里删掉测试那条 ✅ 即可 ✅（正式战斗自动回到第 1 条 ✅）。
+
 ---
 
 ## 七、加载与包体（诚实结论 ✅）
