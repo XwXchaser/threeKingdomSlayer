@@ -3,17 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 天赋节点解锁后产生什么。刻意只做“机械开关”，不做纯数值伤害提升（见 design/out-of-game-growth-system.md 设计约束）。
-/// </summary>
-public enum TalentUnlockKind
-{
-    [Tooltip("解锁一个招式/连段收尾（C2 = Zhangfei_StabR2，C4 = Zhangfei_LaunchFinisher）")]
-    MoveUnlock = 0,
-    [Tooltip("点亮一个机械开关（破阵/追击/运筹…），由后续系统按 flagId 读取")]
-    Flag = 1
-}
-
-/// <summary>
 /// 单个天赋节点。用普通可序列化类而不是独立资产：
 /// 节点只在天赋树资产里被引用一次，做成内联数据可以避免几十个零散 .asset。
 /// </summary>
@@ -30,11 +19,10 @@ public sealed class TalentNodeConfig
     [Tooltip("解锁花费的铜钱。0 = 免费（仅用于框架验证）")]
     [Min(0)] public int coinCost = 100;
 
-    [Header("解锁内容")]
-    public TalentUnlockKind unlockKind = TalentUnlockKind.Flag;
-    [Tooltip("unlockKind = MoveUnlock 时必填：解锁后该招式才可出招")]
+    [Header("解锁载荷 ✅（可同时给多个 ✅ —— 不再有「解锁类型」枚举 ✅）")]
+    [Tooltip("**解锁招式** ✅ —— 解锁后该招式才可出招 ✅（留空 = 不解锁招式 ✅）")]
     public AttackSkillConfig moveConfig;
-    [Tooltip("unlockKind = Flag 时必填：机械开关 id，后续系统用 TalentTreeState.IsFlagUnlocked 判定")]
+    [Tooltip("**点亮机械开关** ✅ —— 开关 id ✅（后续系统用 `TalentTreeState.IsFlagUnlocked` ✅ 读 ✅）（留空 = 不点开关 ✅）")]
     public string flagId = "";
 
     [Header("前置关系")]
@@ -49,10 +37,17 @@ public sealed class TalentNodeConfig
     [Tooltip("节点图标；为空时用程序化圆形占位")]
     public Sprite icon;
 
+    /// <summary>
+    /// 这个节点**带没带解锁载荷** ✅ —— 两个载荷都空 ✅ = 无效 ✅（自检会报错 ✅ ✅）。
+    /// </summary>
     public bool HasValidUnlockPayload =>
-        unlockKind == TalentUnlockKind.MoveUnlock
-            ? moveConfig != null
-            : !string.IsNullOrEmpty(flagId);
+        moveConfig != null || !string.IsNullOrEmpty(flagId);
+
+    /// <summary>解锁了招式 ✅（不再靠枚举判断 ✅ ✅）。</summary>
+    public bool UnlocksMove => moveConfig != null;
+
+    /// <summary>点亮了机械开关 ✅。</summary>
+    public bool UnlocksFlag => !string.IsNullOrEmpty(flagId);
 }
 
 /// <summary>
@@ -165,8 +160,6 @@ public class TalentTreeConfig : ScriptableObject
                 n.nodeId = "node_" + i;
             else if (!seen.Add(n.nodeId))
                 n.nodeId = n.nodeId + "_" + i;
-            if (!n.HasValidUnlockPayload && n.unlockKind == TalentUnlockKind.MoveUnlock && n.moveConfig == null)
-                n.unlockKind = TalentUnlockKind.Flag;
         }
     }
 }

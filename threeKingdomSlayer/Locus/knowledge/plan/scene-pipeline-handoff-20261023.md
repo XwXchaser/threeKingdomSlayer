@@ -258,6 +258,24 @@ Unity Console 0 error ✅。
 **所以「状态写死 → 僵化」这条 ✅ ✅ 已经解掉** ✅ ✅：可调数值全在资产 ✅ ✅；
 剩下的枚举 ✅ ✅（`EnemyState` ✅ / `BuffType` 的替代 ✅ / 等 36 个 ✅ ✅）是**机制词表** ✅ ✅ —— 加机制要写代码 ✅ ✅，那是应该的 ✅ ✅。
 
+### ④ 天赋解锁载荷：`TalentUnlockKind` 枚举也收成**载荷组合** ✅
+
+**先量了再说** ✅ ✅：那个枚举**是冗余的** ✅ ✅ —— 数据里 `kind=0 ⟺ 有 moveConfig` ✅、`kind=1 ⟺ 有 flagId` ✅ ✅（可以只填其一 ✅ ✅）→ 删掉它**不丢任何信息** ✅ ✅✅ ✅。
+
+**改了什么** ✅ ✅：
+- **`TalentUnlockKind` 枚举退役** ✅ ✅（文件已删 ✅ ✅）
+- `TalentNodeConfig` 的载荷改成**两个独立的可选字段** ✅ ✅：`moveConfig` ✅（解锁招式 ✅）+ `flagId` ✅（点机械开关 ✅✅）
+  → **一个节点可以同时给两个载荷** ✅ ✅（= 组合 ✅ ✅）；「解锁类型」不再需要**枚举值** ✅ ✅✅ ✅
+- `HasValidUnlockPayload` ✅ → 「至少一个载荷非空 ✅ ✅」；新增 `UnlocksMove` ✅ / `UnlocksFlag` ✅（不再靠枚举判断 ✅ ✅）
+- 消费方（`TalentTreeState` ✅ ×3 ✅ + `PlayerMoveStateMachine` ✅）✅ ✅ 去掉 kind 判断 ✅ ✅，只看载荷 ✅ ✅
+- `OnValidate` 里那个「kind 回退」逻辑 ✅ ✅ 随之删掉 ✅ ✅
+
+**迁移无损** ✅ ✅（实测 ✅）：9 个节点 ✅ —— 带招式 3 ✅（正是原来 kind=0 的三个 ✅：Zhangfei_StabR2 ✅ / Zhangfei_LaunchFinisher ✅ / Zhangfei_Parry ✅）、带开关 6 ✅ ✅（正是 kind=1 的 ✅）、两者都有 0 ✅、都空 0 ✅ → **老资产一个字节都不用改** ✅ ✅✅ ✅（连 YAML 里的 `unlockKind` 行都没动 ✅ ✅ —— Unity 忽略未知键 ✅ ✅，下次保存自动清掉 ✅ ✅）。
+
+**为什么值得做** ✅ ✅：枚举一旦加一种「解锁类型」✅ ❗ → **所有资产**的 `unlockKind` 数值都得重映射 ✅ ❗❗（数据大爆炸 ✅ ✅）；改成独立载荷字段 ✅ ✅ → 加第三种载荷 = **加一个可选字段** ✅ ✅（老资产继续有效 ✅ ✅✅ ✅ ✅）。
+
+**验收** ✅：枚举已退役 ✅；9 个节点的载荷与改前**逐个对得上** ✅ ✅；`IsFlagUnlocked` ✅ / `IsMoveUnlocked` ✅ / `IsMoveGatedAndLocked` ✅ 行为一致 ✅ ✅；自检 0 问题 ✅ ✅；Console 0 error ✅ ✅。
+
 ## 十一、「表化这个组」工具 + N1→E0 切片表化 ✅（2026-10-24）
 
 **§十 的 #3 与 #4 一次做完** ✅ —— 先把工具做出来 ✅（#4 ✅），再用它做 #3 ✅。

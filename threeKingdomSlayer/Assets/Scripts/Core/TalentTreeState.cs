@@ -73,7 +73,7 @@ public static class TalentTreeState
         for (int i = 0; i < tree.nodes.Count; i++)
         {
             var n = tree.nodes[i];
-            if (n == null || n.unlockKind != TalentUnlockKind.Flag || n.flagId != flagId) continue;
+            if (n == null || n.flagId != flagId) continue;
             if (IsUnlocked(n)) return true;
         }
         return false;
@@ -86,7 +86,7 @@ public static class TalentTreeState
         for (int i = 0; i < tree.nodes.Count; i++)
         {
             var n = tree.nodes[i];
-            if (n == null || n.unlockKind != TalentUnlockKind.MoveUnlock || n.moveConfig != move) continue;
+            if (n == null || n.moveConfig != move) continue;
             if (IsUnlocked(n)) return true;
         }
         return false;
@@ -102,7 +102,7 @@ public static class TalentTreeState
         for (int i = 0; i < tree.nodes.Count; i++)
         {
             var n = tree.nodes[i];
-            if (n == null || n.unlockKind != TalentUnlockKind.MoveUnlock || n.moveConfig != move) continue;
+            if (n == null || n.moveConfig != move) continue;
             return !IsUnlocked(n);
         }
         return false;

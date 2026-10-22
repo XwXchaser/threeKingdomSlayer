@@ -334,7 +334,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
         for (int i = 0; i < tree.nodes.Count; i++)
         {
             var node = tree.nodes[i];
-            if (node == null || node.unlockKind != TalentUnlockKind.MoveUnlock || node.moveConfig != move) continue;
+            if (node == null || node.moveConfig != move) continue;
             return !TalentTreeState.IsUnlocked(node);
         }
         return false;
