@@ -1,0 +1,207 @@
+{
+    "nodeId": "J1 to EV - Village Approach",
+    "space": "local",
+    "origin": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "rootRotation": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "backgroundMaterial": "",
+    "spriteSearchFolders": "",
+    "items": [
+        {
+            "id": "Approach_Fence_A",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_A04_BrokenLowFence_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/J1_A04_BrokenLowFence_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -21.03499984741211,
+                -0.019999999552965165,
+                215.34500122070313
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.41999998688697817,
+                0.41999998688697817,
+                0.41999998688697817
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Approach_Rock_A",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "e0_j1_r1_rubble_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/E0/Transition/e0_j1_r1_rubble_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -18.48900032043457,
+                -0.019999999552965165,
+                227.7899932861328
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.23999999463558198,
+                0.23999999463558198,
+                0.23999999463558198
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Approach_Cart",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_A05_CompleteWoodenCart_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/J1_A05_CompleteWoodenCart_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -23.722000122070314,
+                -0.019999999552965165,
+                233.87100219726563
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.3400000035762787,
+                0.3400000035762787,
+                0.3400000035762787
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Approach_Fence_B",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_A04_BrokenLowFence_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/J1_A04_BrokenLowFence_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -37.439998626708987,
+                -0.019999999552965165,
+                231.4669952392578
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.4000000059604645,
+                0.4000000059604645,
+                0.4000000059604645
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Interior_House_Left_A",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N3_H1_CompactHouse_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_H1_CompactHouse_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -44.935001373291019,
+                -0.019999999552965165,
+                238.11399841308595
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.7799999713897705,
+                0.7799999713897705,
+                0.7799999713897705
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Interior_House_Right_A",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N3_H2_LongHouse_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_H2_LongHouse_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -41.96500015258789,
+                -0.019999999552965165,
+                252.39700317382813
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.7400000095367432,
+                0.7400000095367432,
+                0.7400000095367432
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Interior_House_Left_B",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N3_H3_DamagedHouse_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N3/Village/N3_H3_DamagedHouse_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -56.53099822998047,
+                -0.019999999552965165,
+                249.14500427246095
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.699999988079071,
+                0.699999988079071,
+                0.699999988079071
+            ],
+            "sortingOrder": 0,
+            "active": true
+        }
+    ]
+}

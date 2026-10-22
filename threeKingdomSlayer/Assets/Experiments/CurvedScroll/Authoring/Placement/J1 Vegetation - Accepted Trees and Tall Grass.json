@@ -1,0 +1,774 @@
+{
+    "nodeId": "J1 Vegetation - Accepted Trees and Tall Grass",
+    "space": "local",
+    "origin": [
+        0.0,
+        0.0,
+        190.0
+    ],
+    "rootRotation": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "backgroundMaterial": "",
+    "spriteSearchFolders": "",
+    "items": [
+        {
+            "id": "J1_Tree_Broad_Main",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_Tree_Broad_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Tree_Broad_v2.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                1.899999976158142,
+                0.0,
+                29.799999237060548
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.550000011920929,
+                0.550000011920929,
+                0.550000011920929
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "J1_Tree_Broad_Main",
+            "spriteName": "",
+            "meshName": "WindSceneryGrid",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+            "material": "Tree_J1_Tree_Broad_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Tree_J1_Tree_Broad_v2_Wind.mat",
+            "at": [
+                -0.2459864616394043,
+                5.984996318817139,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                10.960000038146973,
+                12.289999961853028,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "J1_Tree_Willow_Secondary",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_Tree_Willow_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Tree_Willow_v2.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -2.200000047683716,
+                0.0,
+                28.799999237060548
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5199999809265137,
+                0.5199999809265137,
+                0.5199999809265137
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "J1_Tree_Willow_Secondary",
+            "spriteName": "",
+            "meshName": "WindSceneryGrid",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+            "material": "Tree_J1_Tree_Willow_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Tree_J1_Tree_Willow_v2_Wind.mat",
+            "at": [
+                -1.0630950927734376,
+                5.994994163513184,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                9.079999923706055,
+                12.329999923706055,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "J1_Central_TallGrass_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_Grass_TallDense_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Grass_TallDense_v2.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -2.0999999046325685,
+                0.0,
+                23.0
+            ],
+            "rotation": [
+                0.0,
+                352.0,
+                0.0
+            ],
+            "scale": [
+                0.28999999165534975,
+                0.28999999165534975,
+                0.28999999165534975
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "J1_Central_TallGrass_01",
+            "spriteName": "",
+            "meshName": "J1_Grass_TallDense_v2_WindMesh",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallDense_v2_WindMesh.asset",
+            "material": "J1_Grass_TallDense_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallDense_v2_Wind.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "J1_Central_TallGrass_02",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_Grass_TallWide_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Grass_TallWide_v2.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                1.649999976158142,
+                0.0,
+                23.600000381469728
+            ],
+            "rotation": [
+                0.0,
+                6.0,
+                0.0
+            ],
+            "scale": [
+                0.30000001192092898,
+                0.30000001192092898,
+                0.30000001192092898
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "J1_Central_TallGrass_02",
+            "spriteName": "",
+            "meshName": "J1_Grass_TallWide_v2_WindMesh",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallWide_v2_WindMesh.asset",
+            "material": "J1_Grass_TallWide_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallWide_v2_Wind.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "J1_Central_TallGrass_03",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_Grass_TallWide_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Grass_TallWide_v2.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                0.10000000149011612,
+                0.0,
+                25.799999237060548
+            ],
+            "rotation": [
+                0.0,
+                348.0,
+                0.0
+            ],
+            "scale": [
+                0.3199999928474426,
+                0.3199999928474426,
+                0.3199999928474426
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "J1_Central_TallGrass_03",
+            "spriteName": "",
+            "meshName": "J1_Grass_TallWide_v2_WindMesh",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallWide_v2_WindMesh.asset",
+            "material": "J1_Grass_TallWide_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallWide_v2_Wind.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "J1_Central_TallGrass_04",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_Grass_TallDense_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Grass_TallDense_v2.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                2.9000000953674318,
+                0.0,
+                29.0
+            ],
+            "rotation": [
+                0.0,
+                13.0,
+                0.0
+            ],
+            "scale": [
+                0.2800000011920929,
+                0.2800000011920929,
+                0.2800000011920929
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "J1_Central_TallGrass_04",
+            "spriteName": "",
+            "meshName": "J1_Grass_TallDense_v2_WindMesh",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallDense_v2_WindMesh.asset",
+            "material": "J1_Grass_TallDense_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallDense_v2_Wind.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "J1_Central_TallGrass_05",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_Grass_TallWide_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Grass_TallWide_v2.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -3.0999999046325685,
+                0.0,
+                30.200000762939454
+            ],
+            "rotation": [
+                0.0,
+                354.0,
+                0.0
+            ],
+            "scale": [
+                0.2800000011920929,
+                0.2800000011920929,
+                0.2800000011920929
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "J1_Central_TallGrass_05",
+            "spriteName": "",
+            "meshName": "J1_Grass_TallWide_v2_WindMesh",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallWide_v2_WindMesh.asset",
+            "material": "J1_Grass_TallWide_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallWide_v2_Wind.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "J1_Central_TallGrass_06",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_Grass_TallDense_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Grass_TallDense_v2.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                0.75,
+                0.0,
+                32.20000076293945
+            ],
+            "rotation": [
+                0.0,
+                5.0,
+                0.0
+            ],
+            "scale": [
+                0.2800000011920929,
+                0.2800000011920929,
+                0.2800000011920929
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "J1_Central_TallGrass_06",
+            "spriteName": "",
+            "meshName": "J1_Grass_TallDense_v2_WindMesh",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallDense_v2_WindMesh.asset",
+            "material": "J1_Grass_TallDense_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallDense_v2_Wind.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "J1_Left_Shoulder_TallGrass_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_Grass_TallDense_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Grass_TallDense_v2.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -8.243227005004883,
+                0.0,
+                10.80718994140625
+            ],
+            "rotation": [
+                0.0,
+                349.0,
+                0.0
+            ],
+            "scale": [
+                0.20000000298023225,
+                0.20000000298023225,
+                0.20000000298023225
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "J1_Left_Shoulder_TallGrass_01",
+            "spriteName": "",
+            "meshName": "J1_Grass_TallDense_v2_WindMesh",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallDense_v2_WindMesh.asset",
+            "material": "J1_Grass_TallDense_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallDense_v2_Wind.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "J1_Left_Shoulder_TallGrass_02",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_Grass_TallWide_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Grass_TallWide_v2.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -17.923463821411134,
+                0.0,
+                21.385101318359376
+            ],
+            "rotation": [
+                0.0,
+                9.000000953674317,
+                0.0
+            ],
+            "scale": [
+                0.2199999988079071,
+                0.2199999988079071,
+                0.2199999988079071
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "J1_Left_Shoulder_TallGrass_02",
+            "spriteName": "",
+            "meshName": "J1_Grass_TallWide_v2_WindMesh",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallWide_v2_WindMesh.asset",
+            "material": "J1_Grass_TallWide_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallWide_v2_Wind.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "J1_Left_Shoulder_TallGrass_03",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_Grass_TallDense_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Grass_TallDense_v2.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -29.661436080932618,
+                0.0,
+                33.68876647949219
+            ],
+            "rotation": [
+                0.0,
+                356.0,
+                0.0
+            ],
+            "scale": [
+                0.1899999976158142,
+                0.1899999976158142,
+                0.1899999976158142
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "J1_Left_Shoulder_TallGrass_03",
+            "spriteName": "",
+            "meshName": "J1_Grass_TallDense_v2_WindMesh",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallDense_v2_WindMesh.asset",
+            "material": "J1_Grass_TallDense_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallDense_v2_Wind.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "J1_Right_Shoulder_TallGrass_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_Grass_TallWide_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Grass_TallWide_v2.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                12.101985931396485,
+                0.0,
+                14.83221435546875
+            ],
+            "rotation": [
+                0.0,
+                7.999999046325684,
+                0.0
+            ],
+            "scale": [
+                0.20999999344348908,
+                0.20999999344348908,
+                0.20999999344348908
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "J1_Right_Shoulder_TallGrass_01",
+            "spriteName": "",
+            "meshName": "J1_Grass_TallWide_v2_WindMesh",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallWide_v2_WindMesh.asset",
+            "material": "J1_Grass_TallWide_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallWide_v2_Wind.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "J1_Right_Shoulder_TallGrass_02",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_Grass_TallDense_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Grass_TallDense_v2.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                24.428848266601564,
+                0.0,
+                27.607635498046876
+            ],
+            "rotation": [
+                0.0,
+                351.0,
+                0.0
+            ],
+            "scale": [
+                0.2199999988079071,
+                0.2199999988079071,
+                0.2199999988079071
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "J1_Right_Shoulder_TallGrass_02",
+            "spriteName": "",
+            "meshName": "J1_Grass_TallDense_v2_WindMesh",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallDense_v2_WindMesh.asset",
+            "material": "J1_Grass_TallDense_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallDense_v2_Wind.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "J1_Right_Shoulder_TallGrass_03",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "J1_Grass_TallWide_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Grass_TallWide_v2.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                35.530418395996097,
+                0.0,
+                39.13348388671875
+            ],
+            "rotation": [
+                0.0,
+                7.000000476837158,
+                0.0
+            ],
+            "scale": [
+                0.1899999976158142,
+                0.1899999976158142,
+                0.1899999976158142
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "J1_Right_Shoulder_TallGrass_03",
+            "spriteName": "",
+            "meshName": "J1_Grass_TallWide_v2_WindMesh",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallWide_v2_WindMesh.asset",
+            "material": "J1_Grass_TallWide_v2_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/J1Vegetation/J1_Grass_TallWide_v2_Wind.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true
+        }
+    ]
+}

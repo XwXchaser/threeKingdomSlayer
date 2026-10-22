@@ -1,0 +1,272 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 415b05279c152a045ae0879ac1ef8d75, type: 3}
+  m_Name: Central Signpost and Divider
+  m_EditorClassIdentifier: 
+  routeId: changbanpo
+  stageId: -1
+  renderWorldBaseline: 0
+  groundProfiles: []
+  backgroundBands: []
+  nodeSpecs:
+  - nodeId: Central Signpost and Divider
+    anchorDistance: 0
+    groups:
+    - path: 
+      sortBaseline: 0
+      entries:
+      - name: J1_A01_DoubleArrowSignpost
+        path: J1_A01_DoubleArrowSignpost
+        localPosition: {x: 0, y: 0, z: 17}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.6, y: 0.6, z: 0.6}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 4e259f8588e94c44388bba37fbb5e5a0, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: J1_Divider_Rock_1
+        path: J1_Divider_Rock_1
+        localPosition: {x: -0.68, y: -0.022499999, z: 17.800003}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.16, y: 0.16, z: 0.16}
+        renderKind: 0
+        sprite: {fileID: 5586946825318410489, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: J1_Divider_Rock_2
+        path: J1_Divider_Rock_2
+        localPosition: {x: 0, y: -0.020624999, z: 18.600006}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.22, y: 0.22, z: 0.22}
+        renderKind: 0
+        sprite: {fileID: -8661792031295128353, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: J1_Divider_Rock_3
+        path: J1_Divider_Rock_3
+        localPosition: {x: 0.68, y: -0.022499999, z: 17.800003}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.16, y: 0.16, z: 0.16}
+        renderKind: 0
+        sprite: {fileID: 5586946825318410489, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: J1_Divider_Grass_1
+        path: J1_Divider_Grass_1
+        localPosition: {x: -1.125, y: -0.0264, z: 17}
+        localEulerAngles: {x: 0, y: 15.000001, z: 0}
+        localScale: {x: 0.22, y: 0.22, z: 0.22}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 4f1099760b5e00c4db00468be9055c4f, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: J1_Divider_Grass_2
+        path: J1_Divider_Grass_2
+        localPosition: {x: -0.375, y: -0.0264, z: 18.199997}
+        localEulerAngles: {x: 0, y: 15.000001, z: 0}
+        localScale: {x: 0.22, y: 0.22, z: 0.22}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 8e9424e72f187f8418c4c22292f6b097, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: J1_Divider_Grass_3
+        path: J1_Divider_Grass_3
+        localPosition: {x: 0.375, y: -0.0264, z: 17}
+        localEulerAngles: {x: 0, y: 15.000001, z: 0}
+        localScale: {x: 0.22, y: 0.22, z: 0.22}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 4f1099760b5e00c4db00468be9055c4f, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: J1_Divider_Grass_4
+        path: J1_Divider_Grass_4
+        localPosition: {x: 1.125, y: -0.0264, z: 18.199997}
+        localEulerAngles: {x: 0, y: 15.000001, z: 0}
+        localScale: {x: 0.22, y: 0.22, z: 0.22}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 8e9424e72f187f8418c4c22292f6b097, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: J1_Divider_LowBush_1
+        path: J1_Divider_LowBush_1
+        localPosition: {x: -1, y: -0.058125, z: 17.5}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.31, y: 0.31, z: 0.31}
+        renderKind: 0
+        sprite: {fileID: -3597727112801000960, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: J1_Divider_LowBush_2
+        path: J1_Divider_LowBush_2
+        localPosition: {x: 0, y: -0.06375, z: 18.5}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.34, y: 0.34, z: 0.34}
+        renderKind: 0
+        sprite: {fileID: -1477885403368150206, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: J1_Divider_LowBush_3
+        path: J1_Divider_LowBush_3
+        localPosition: {x: 1, y: -0.058125, z: 17.5}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.31, y: 0.31, z: 0.31}
+        renderKind: 0
+        sprite: {fileID: -3597727112801000960, guid: 7015c8db69c181c47ae637775d90a5b7, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: J1_Divider_LowBush_1
+      sortBaseline: 0
+      entries:
+      - name: Wind Mesh
+        path: J1_Divider_LowBush_1/Wind Mesh
+        localPosition: {x: -0.0859375, y: 1.4140625, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 3.109375, y: 2.703125, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: b8ff6090a80d9274c9e0ef9c17b9c213, type: 2}
+        material: {fileID: 2100000, guid: 0be791ff1fadbb141a6ffc840dc67132, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: J1_Divider_LowBush_2
+      sortBaseline: 0
+      entries:
+      - name: Wind Mesh
+        path: J1_Divider_LowBush_2/Wind Mesh
+        localPosition: {x: 0, y: 1.515625, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 3.71875, y: 2.90625, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: e3eebb665e8a6b842b5e39563f101254, type: 2}
+        material: {fileID: 2100000, guid: 6894aa5b93bcef2479649994e7f6c5d0, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    - path: J1_Divider_LowBush_3
+      sortBaseline: 0
+      entries:
+      - name: Wind Mesh
+        path: J1_Divider_LowBush_3/Wind Mesh
+        localPosition: {x: -0.0859375, y: 1.4140625, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 3.109375, y: 2.703125, z: 1}
+        renderKind: 1
+        sprite: {fileID: 0}
+        mesh: {fileID: 4300000, guid: b8ff6090a80d9274c9e0ef9c17b9c213, type: 2}
+        material: {fileID: 2100000, guid: 0be791ff1fadbb141a6ffc840dc67132, type: 2}
+        sortBias: 0
+        pivotMode: 1
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    interactives: []
+    refBindings: []
+    rootComponentTypes: []
+    rootComponentJson: []
+    localPosition: {x: 0, y: 0, z: 190}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+    applyRootTransform: 1
+  segmentSpecs: []

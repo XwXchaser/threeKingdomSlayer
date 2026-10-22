@@ -1,0 +1,100 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 415b05279c152a045ae0879ac1ef8d75, type: 3}
+  m_Name: EV to N3 - Village Interior
+  m_EditorClassIdentifier: 
+  routeId: changbanpo
+  stageId: -1
+  renderWorldBaseline: 0
+  groundProfiles: []
+  backgroundBands: []
+  nodeSpecs:
+  - nodeId: EV to N3 - Village Interior
+    anchorDistance: 0
+    groups:
+    - path: 
+      sortBaseline: 0
+      entries:
+      - name: Interior_House_Left_A
+        path: Interior_House_Left_A
+        localPosition: {x: -29.095753, y: -0.02, z: 222.84024}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.82, y: 0.82, z: 0.82}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 5b996c8b5acd03442bd2366c249eed6c, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: Interior_House_Right_A
+        path: Interior_House_Right_A
+        localPosition: {x: -25.277374, y: -0.02, z: 235.14389}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.78, y: 0.78, z: 0.78}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: a50432ac14c99c9458d8774fab8c8b7e, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: Interior_House_Left_B
+        path: Interior_House_Left_B
+        localPosition: {x: -39.41951, y: -0.02, z: 232.31546}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.72, y: 0.72, z: 0.72}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 9b0547b5afb450540bb4feac0da4da96, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: Interior_House_Right_B
+        path: Interior_House_Right_B
+        localPosition: {x: -35.035446, y: -0.02, z: 245.18481}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.68, y: 0.68, z: 0.68}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 5b996c8b5acd03442bd2366c249eed6c, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    interactives: []
+    refBindings: []
+    rootComponentTypes: []
+    rootComponentJson: []
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+    applyRootTransform: 1
+  segmentSpecs: []

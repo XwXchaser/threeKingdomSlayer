@@ -1,0 +1,148 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 415b05279c152a045ae0879ac1ef8d75, type: 3}
+  m_Name: J1 to EV - Village Approach
+  m_EditorClassIdentifier: 
+  routeId: changbanpo
+  stageId: -1
+  renderWorldBaseline: 0
+  groundProfiles: []
+  backgroundBands: []
+  nodeSpecs:
+  - nodeId: J1 to EV - Village Approach
+    anchorDistance: 0
+    groups:
+    - path: 
+      sortBaseline: 0
+      entries:
+      - name: Approach_Fence_A
+        path: Approach_Fence_A
+        localPosition: {x: -21.035, y: -0.02, z: 215.345}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.42, y: 0.42, z: 0.42}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 4d39ca40fc8a23d4e94f07e9a31c8262, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: Approach_Rock_A
+        path: Approach_Rock_A
+        localPosition: {x: -18.489, y: -0.02, z: 227.79}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.24, y: 0.24, z: 0.24}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: b2cd55be6414d214d936411173afebc7, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: Approach_Cart
+        path: Approach_Cart
+        localPosition: {x: -23.722, y: -0.02, z: 233.871}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.34, y: 0.34, z: 0.34}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 144bca3525d471940bfe9cd5f4dab226, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: Approach_Fence_B
+        path: Approach_Fence_B
+        localPosition: {x: -37.44, y: -0.02, z: 231.467}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.4, y: 0.4, z: 0.4}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 4d39ca40fc8a23d4e94f07e9a31c8262, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: Interior_House_Left_A
+        path: Interior_House_Left_A
+        localPosition: {x: -44.935, y: -0.02, z: 238.114}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.78, y: 0.78, z: 0.78}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 5b996c8b5acd03442bd2366c249eed6c, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: Interior_House_Right_A
+        path: Interior_House_Right_A
+        localPosition: {x: -41.965, y: -0.02, z: 252.397}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.74, y: 0.74, z: 0.74}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: a50432ac14c99c9458d8774fab8c8b7e, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      - name: Interior_House_Left_B
+        path: Interior_House_Left_B
+        localPosition: {x: -56.531, y: -0.02, z: 249.145}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 0.7, y: 0.7, z: 0.7}
+        renderKind: 0
+        sprite: {fileID: 21300000, guid: 9b0547b5afb450540bb4feac0da4da96, type: 3}
+        mesh: {fileID: 0}
+        material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 0
+        active: 1
+        userModified: 0
+      functions: []
+    interactives: []
+    refBindings: []
+    rootComponentTypes: []
+    rootComponentJson: []
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+    applyRootTransform: 1
+  segmentSpecs: []

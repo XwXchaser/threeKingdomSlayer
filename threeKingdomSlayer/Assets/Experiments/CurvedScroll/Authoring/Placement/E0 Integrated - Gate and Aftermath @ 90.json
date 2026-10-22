@@ -1,0 +1,234 @@
+{
+    "nodeId": "E0 Integrated - Gate and Aftermath @ 90",
+    "space": "local",
+    "origin": [
+        0.0,
+        0.0,
+        90.0
+    ],
+    "rootRotation": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "backgroundMaterial": "",
+    "spriteSearchFolders": "",
+    "items": [
+        {
+            "id": "Gate Facade - Depth Sorted",
+            "kind": "group",
+            "layer": "",
+            "spriteName": "",
+            "meshName": "",
+            "asset": "",
+            "material": "",
+            "materialPath": "",
+            "at": [
+                0.0,
+                0.0,
+                42.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "E0_A01_CentralStoneArch",
+            "kind": "sprite",
+            "layer": "Gate Facade - Depth Sorted",
+            "spriteName": "e0_a01_stone_arch_front_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/E0/Architecture/e0_a01_stone_arch_front_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.6800000667572022,
+                1.6800000667572022,
+                1.6800000667572022
+            ],
+            "sortingOrder": -1,
+            "active": true
+        },
+        {
+            "id": "E0_A02_LeftFlagSidePier",
+            "kind": "sprite",
+            "layer": "Gate Facade - Depth Sorted",
+            "spriteName": "e0_a02_ruined_pier_left_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/E0/Architecture/e0_a02_ruined_pier_left_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -9.779999732971192,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0444800853729249,
+                1.0444800853729249,
+                1.0444800853729249
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "E0_A03_RightCompactPier",
+            "kind": "sprite",
+            "layer": "Gate Facade - Depth Sorted",
+            "spriteName": "e0_a03_ruined_pier_right_v2",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/E0/Architecture/e0_a03_ruined_pier_right_v2.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                9.144000053405762,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.7996800541877747,
+                0.7996800541877747,
+                0.7996800541877747
+            ],
+            "sortingOrder": 0,
+            "active": true
+        },
+        {
+            "id": "E0_B01_RightLowWall",
+            "kind": "sprite",
+            "layer": "Gate Facade - Depth Sorted",
+            "spriteName": "e0_b01_low_wall_right_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/E0/Candidates/e0_b01_low_wall_right_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                18.479999542236329,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.4524800777435303,
+                1.4524800777435303,
+                1.4524800777435303
+            ],
+            "sortingOrder": -2,
+            "active": true
+        },
+        {
+            "id": "E0_B01_LeftLowWall_Reuse",
+            "kind": "sprite",
+            "layer": "Gate Facade - Depth Sorted",
+            "spriteName": "e0_b01_low_wall_right_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/E0/Candidates/e0_b01_low_wall_right_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -17.64000129699707,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.4524800777435303,
+                1.4524800777435303,
+                1.4524800777435303
+            ],
+            "sortingOrder": -2,
+            "active": true
+        },
+        {
+            "id": "E0_Flag_Left_Independent",
+            "kind": "sprite",
+            "layer": "Gate Facade - Depth Sorted",
+            "spriteName": "N1_SmallBrokenFlag_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_SmallBrokenFlag_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -11.016000747680664,
+                8.160000801086426,
+                0.34999847412109377
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.1399999856948853,
+                1.1399999856948853,
+                1.1399999856948853
+            ],
+            "sortingOrder": -1,
+            "active": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "Gate Facade - Depth Sorted/E0_Flag_Left_Independent",
+            "spriteName": "",
+            "meshName": "WindSceneryGrid",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+            "material": "Flag_N1_SmallBrokenFlag_v1_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Flag_N1_SmallBrokenFlag_v1_Wind.mat",
+            "at": [
+                0.8547000288963318,
+                2.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                2.309999942779541,
+                4.039999961853027,
+                1.0
+            ],
+            "sortingOrder": -1,
+            "active": true
+        }
+    ]
+}

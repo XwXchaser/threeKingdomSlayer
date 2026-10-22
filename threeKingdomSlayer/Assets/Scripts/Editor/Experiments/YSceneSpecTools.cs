@@ -124,6 +124,152 @@ public static class YSceneSpecTools
         return inst;
     }
 
+    [MenuItem("Tools/Y 场景规格/⑧ 全段表化（导出→表→规格→回写 prefab→逐件比对＋对照图）")]
+    private static void BatchTableizeMenu()
+    {
+        string report;
+        int done = BatchTableizeSegments(out report, true);
+        Debug.Log($"[Y 场景规格] 全段表化完成（成功 {done} 个 ✅）\n{report}");
+    }
+
+    /// <summary>
+    /// **全段表化** ✅：把 <c>Authoring/Segments/</c> 下每个段 prefab 变成「表驱动的段」✅。
+    ///
+    /// 流程：导表 ✅ → 导规格 ✅ → 生成到临时场景并与原 prefab **逐件比对** ✅（必须 0 ✅）→
+    /// 渲染**改前/改后同机位对照图** ✅ → **回写同一个 prefab 路径** ✅（GUID 不变 ✅ → 段表不用改 ✅）。
+    /// 已有同名表的段会跳过 ✅（幂等 ✅）。
+    /// </summary>
+    public static int BatchTableizeSegments(out string report, bool renderCompare)
+    {
+        var sb = new System.Text.StringBuilder();
+        report = "";
+        const string segFolder = "Assets/Experiments/CurvedScroll/Authoring/Segments";
+        const string tableFolder = "Assets/Experiments/CurvedScroll/Authoring/Placement";
+        const string shotFolder = "Library/Locus/tmp/segment_compare";
+        if (renderCompare) Directory.CreateDirectory(shotFolder);
+
+        int done = 0, failed = 0, skipped = 0;
+        var guids = AssetDatabase.FindAssets("t:Prefab", new[] { segFolder });
+        var paths = new List<string>();
+        foreach (var g in guids) paths.Add(AssetDatabase.GUIDToAssetPath(g));
+        paths.Sort();
+
+        foreach (var path in paths)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab == null) continue;
+            string name = prefab.name;
+            // 空占位 prefab（只有一个根、没有内容 ✅）→ 跳过 ✅（不是失败 ✅）
+            if (prefab.transform.childCount == 0) { skipped++; sb.AppendLine($"[跳过] {name}（空占位 ✅）"); continue; }
+            string tablePath = tableFolder + "/" + name + ".json";
+            if (File.Exists(tablePath)) { skipped++; sb.AppendLine($"[跳过] {name}（已有表 ✅）"); continue; }
+
+            // ① 导表 ✅
+            int exported = YScenePlacementImporter.ExportPlacementTable(prefab, tablePath, false, name, false);
+            // ② 导规格 ✅
+            var spec = YScenePlacementImporter.Import(tablePath);
+            if (spec == null) { failed++; sb.AppendLine($"[失败] {name}：规格导入失败 ✅"); continue; }
+
+            // ③ 生成到临时场景 → 与原 prefab 逐件比对 ✅
+            var tmp = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+            var holder = new GameObject("Gen");
+            Generate(spec, holder.transform);
+            var nodeRoot = holder.transform.Find(spec.nodeSpecs[0].nodeId);
+            var diffs = nodeRoot != null ? CompareTrees(prefab.transform, nodeRoot, true, true) : new List<string> { "生成结果里找不到节点根" };
+            UnityEngine.Object.DestroyImmediate(holder);
+            EditorSceneManager.CloseScene(tmp, true);
+
+            if (diffs.Count > 0)
+            {
+                failed++;
+                sb.AppendLine($"[失败] {name}：逐件比对 {diffs.Count} 条差异 ✅ → 不回写 ✅（表保留待查 ✅）");
+                for (int i = 0; i < diffs.Count && i < 5; i++) sb.AppendLine("      " + diffs[i]);
+                continue;
+            }
+
+            // ④ 改前对照图 ✅
+            string beforePath = null, afterPath = null;
+            if (renderCompare)
+            {
+                beforePath = shotFolder + "/" + name + "_before.png";
+                RenderSegmentView(prefab, beforePath);
+            }
+
+            // ⑤ 回写同一个 prefab 路径 ✅（GUID 不变 ✅ → 段表不用动 ✅）
+            int count = 0;
+            var written = GenerateToPrefab(spec, path, out count);
+            if (written == null) { failed++; sb.AppendLine($"[失败] {name}：prefab 回写失败 ✅"); continue; }
+
+            // ⑥ 改后对照图 ✅
+            if (renderCompare)
+            {
+                afterPath = shotFolder + "/" + name + "_after.png";
+                RenderSegmentView(AssetDatabase.LoadAssetAtPath<GameObject>(path), afterPath);
+                sb.AppendLine($"[完成] {name}：表 {exported} 条 ✅ → prefab {count} 件 ✅ 逐件差异 0 ✅ | 对照图 {beforePath} / {afterPath}");
+            }
+            else
+            {
+                sb.AppendLine($"[完成] {name}：表 {exported} 条 ✅ → prefab {count} 件 ✅ 逐件差异 0 ✅");
+            }
+            done++;
+        }
+        AssetDatabase.SaveAssets();
+        report = sb.ToString() + $"\n汇总：成功 {done} ✅ / 跳过 {skipped} ✅ / 失败 {failed} ✅";
+        return done;
+    }
+
+    /// <summary>
+    /// 按段 prefab **自带的位姿** 渲染一张同机位对照图 ✅（相机 = 段根的位姿 + 眼高 1.6m ✅，沿段的前进方向 ✅）。
+    /// 用来肉眼验收「改前 vs 改后」✅。
+    /// </summary>
+    public static string RenderSegmentView(GameObject segmentPrefab, string outPath)
+    {
+        if (segmentPrefab == null) return null;
+        var scene = SceneManager.GetActiveScene();
+        GameObject inst = null;
+        try
+        {
+            inst = PrefabUtility.InstantiatePrefab(segmentPrefab, scene) as GameObject;
+            if (inst == null) return null;
+            inst.hideFlags = HideFlags.DontSave;
+            var rootT = segmentPrefab.transform;
+            var camGo = new GameObject("SegCam");
+            camGo.hideFlags = HideFlags.DontSave;
+            var cam = camGo.AddComponent<Camera>();
+            camGo.transform.position = rootT.position + rootT.rotation * new Vector3(0f, 1.6f, 0f);
+            camGo.transform.rotation = rootT.rotation * Quaternion.Euler(2f, 0f, 0f);
+            cam.fieldOfView = 60f;
+            cam.aspect = 0.5f;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.55f, 0.72f, 0.88f);
+            cam.nearClipPlane = 0.05f;
+            cam.farClipPlane = 600f;
+            int W = 900, H = 1800;
+            var rt = new RenderTexture(W, H, 24, RenderTextureFormat.ARGB32);
+            cam.targetTexture = rt;
+            cam.Render();
+            RenderTexture.active = rt;
+            var tex = new Texture2D(W, H, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, W, H), 0, 0);
+            tex.Apply();
+            RenderTexture.active = null;
+            Directory.CreateDirectory(Path.GetDirectoryName(outPath));
+            File.WriteAllBytes(outPath, tex.EncodeToPNG());
+            cam.targetTexture = null;
+            UnityEngine.Object.DestroyImmediate(tex);
+            UnityEngine.Object.DestroyImmediate(rt);
+            UnityEngine.Object.DestroyImmediate(camGo);
+            UnityEngine.Object.DestroyImmediate(inst);
+            return outPath;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("[Y 场景规格] 渲染对照图失败：" + e.Message);
+            if (inst != null) UnityEngine.Object.DestroyImmediate(inst);
+            return null;
+        }
+    }
+
     /// <summary>从物件名推节点 id ✅（"EV - Presentation Anchor" → "EV" ✅）。</summary>
     public static string DeriveNodeId(string objectName)
     {
