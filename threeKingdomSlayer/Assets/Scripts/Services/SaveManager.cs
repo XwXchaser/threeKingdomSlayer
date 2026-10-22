@@ -62,74 +62,39 @@ public static class SaveManager
 
     public static RouteStageSaveSnapshot GetRouteStageSnapshot(int stageId)
     {
-        var data = Load();
-        for (int i = 0; i < data.routeStageSnapshots.Count; i++)
-            if (data.routeStageSnapshots[i] != null && data.routeStageSnapshots[i].stageId == stageId)
-                return data.routeStageSnapshots[i];
-        return null;
+        return RunSnapshotSaveSection.GetRouteStageSnapshot(Load(), stageId);
     }
 
     public static void SaveRouteStageSnapshot(RouteStageSaveSnapshot snapshot)
     {
         var data = Load();
-        for (int i = data.routeStageSnapshots.Count - 1; i >= 0; i--)
-            if (data.routeStageSnapshots[i] == null || data.routeStageSnapshots[i].stageId == snapshot.stageId)
-                data.routeStageSnapshots.RemoveAt(i);
-        data.routeStageSnapshots.Add(snapshot);
+        RunSnapshotSaveSection.SaveRouteStageSnapshot(data, snapshot);
         Save(data);
     }
 
     public static FakeRouteStageSaveSnapshot GetFakeRouteSnapshot(string routeId, int stageId)
     {
-        var data = Load();
-        if (data.fakeRouteSnapshots == null) return null;
-        for (int i = 0; i < data.fakeRouteSnapshots.Count; i++)
-        {
-            var snapshot = data.fakeRouteSnapshots[i];
-            if (snapshot != null && snapshot.routeId == routeId && snapshot.stageId == stageId
-                && snapshot.routeArchitectureId == "fake-route-v1") return snapshot;
-        }
-        return null;
+        return RunSnapshotSaveSection.GetFakeRouteSnapshot(Load(), routeId, stageId);
     }
 
     public static void SaveFakeRouteSnapshot(FakeRouteStageSaveSnapshot snapshot)
     {
         if (snapshot == null || string.IsNullOrEmpty(snapshot.routeId)) return;
         var data = Load();
-        if (data.fakeRouteSnapshots == null) data.fakeRouteSnapshots = new List<FakeRouteStageSaveSnapshot>();
-        for (int i = data.fakeRouteSnapshots.Count - 1; i >= 0; i--)
-        {
-            var old = data.fakeRouteSnapshots[i];
-            if (old == null || (old.routeId == snapshot.routeId && old.stageId == snapshot.stageId))
-                data.fakeRouteSnapshots.RemoveAt(i);
-        }
-        data.fakeRouteSnapshots.Add(snapshot);
+        RunSnapshotSaveSection.SaveFakeRouteSnapshot(data, snapshot);
         Save(data);
     }
 
     public static void ClearFakeRouteSnapshot(string routeId, int stageId)
     {
         var data = Load();
-        if (data.fakeRouteSnapshots == null) return;
-        bool changed = false;
-        for (int i = data.fakeRouteSnapshots.Count - 1; i >= 0; i--)
-        {
-            var snapshot = data.fakeRouteSnapshots[i];
-            if (snapshot != null && snapshot.routeId == routeId && snapshot.stageId == stageId)
-            {
-                data.fakeRouteSnapshots.RemoveAt(i);
-                changed = true;
-            }
-        }
-        if (changed) Save(data);
+        if (RunSnapshotSaveSection.ClearFakeRouteSnapshot(data, routeId, stageId)) Save(data);
     }
 
     public static void ClearFakeRouteSnapshots()
     {
         var data = Load();
-        if (data.fakeRouteSnapshots == null || data.fakeRouteSnapshots.Count == 0) return;
-        data.fakeRouteSnapshots.Clear();
-        Save(data);
+        if (RunSnapshotSaveSection.ClearAllFakeRouteSnapshots(data)) Save(data);
     }
 
     /// <summary>记录当前正在进行的假移动/卷轴路线关卡（供“继续游戏”使用）。</summary>
@@ -138,14 +103,14 @@ public static class SaveManager
         var data = Load();
         if (data.activeFakeRouteStageId != stageId)
         {
-            data.activeFakeRouteStageId = stageId;
+            RunSnapshotSaveSection.SetActiveFakeRouteStage(data, stageId);
             Save(data);
         }
     }
 
     public static int GetActiveFakeRouteStageId()
     {
-        return Load().activeFakeRouteStageId;
+        return RunSnapshotSaveSection.GetActiveFakeRouteStageId(Load());
     }
 
     public static void ClearActiveFakeRouteStage()
@@ -153,7 +118,7 @@ public static class SaveManager
         var data = Load();
         if (data.activeFakeRouteStageId != -1)
         {
-            data.activeFakeRouteStageId = -1;
+            RunSnapshotSaveSection.ClearActiveFakeRouteStage(data);
             Save(data);
         }
     }
@@ -161,24 +126,15 @@ public static class SaveManager
     public static void ClearRouteStageSnapshot(int stageId)
     {
         var data = Load();
-        bool changed = false;
-        for (int i = data.routeStageSnapshots.Count - 1; i >= 0; i--)
-        {
-            if (data.routeStageSnapshots[i] != null && data.routeStageSnapshots[i].stageId == stageId)
-            {
-                data.routeStageSnapshots.RemoveAt(i);
-                changed = true;
-            }
-        }
-        if (changed) Save(data);
+        if (RunSnapshotSaveSection.ClearRouteStageSnapshot(data, stageId)) Save(data);
     }
 
     public static void MarkStageCleared(int stageId)
     {
         var data = Load();
-        if (!data.clearedStageIds.Contains(stageId))
+        if (!ProgressSaveSection.IsCleared(data, stageId))
         {
-            data.clearedStageIds.Add(stageId);
+            ProgressSaveSection.MarkCleared(data, stageId);
             Save(data);
         }
     }
@@ -189,7 +145,7 @@ public static class SaveManager
     public static void SetCoins(int amount)
     {
         var data = Load();
-        data.props.SetPropAmount(PropType.Coin, amount);
+        PropSaveSection.SetCoins(data, amount);
         Save(data);
     }
 
@@ -198,7 +154,7 @@ public static class SaveManager
     /// </summary>
     public static int GetCoins()
     {
-        return Load().GetCoinCount();
+        return PropSaveSection.GetCoins(Load());
     }
 
     /// <summary>
@@ -207,7 +163,7 @@ public static class SaveManager
     public static int AddCoins(int delta)
     {
         var data = Load();
-        int total = data.props.AddPropAmount(PropType.Coin, delta);
+        int total = PropSaveSection.AddCoins(data, delta);
         Save(data);
         return total;
     }
@@ -217,7 +173,7 @@ public static class SaveManager
     /// </summary>
     public static int GetProp(PropType type)
     {
-        return Load().props.GetPropAmount(type);
+        return PropSaveSection.GetProp(Load(), type);
     }
 
     /// <summary>
@@ -226,7 +182,7 @@ public static class SaveManager
     public static void SetProp(PropType type, int amount)
     {
         var data = Load();
-        data.props.SetPropAmount(type, amount);
+        PropSaveSection.SetProp(data, type, amount);
         Save(data);
     }
 
@@ -236,7 +192,7 @@ public static class SaveManager
     public static int AddProp(PropType type, int delta)
     {
         var data = Load();
-        int total = data.props.AddPropAmount(type, delta);
+        int total = PropSaveSection.AddProp(data, type, delta);
         Save(data);
         return total;
     }
@@ -246,11 +202,7 @@ public static class SaveManager
     /// </summary>
     public static int GetNextAvailableStageId()
     {
-        var data = Load();
-        int maxCleared = 0;
-        foreach (int id in data.clearedStageIds)
-            if (id > maxCleared) maxCleared = id;
-        return maxCleared + 1;
+        return ProgressSaveSection.GetNextAvailableStageId(Load());
     }
 
     /// <summary>
@@ -258,6 +210,6 @@ public static class SaveManager
     /// </summary>
     public static bool IsStageCleared(int stageId)
     {
-        return Load().clearedStageIds.Contains(stageId);
+        return ProgressSaveSection.IsCleared(Load(), stageId);
     }
 }

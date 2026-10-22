@@ -35,17 +35,12 @@ public class SaveData
     }
 
     /// <summary>
-    /// 迁移旧存档：将过时的 coinCount 字段合并到 props 列表
+    /// 迁移旧存档：各分片各自补齐 / 迁移自己的字段（2026-10-23 存档分片：
+    /// 逻辑从模型本体搬到 <c>SaveSections</c> 登记的各分片 ✅，模型只留入口 ✅）。
     /// </summary>
     public void MigrateIfNeeded()
     {
-        if (coinCount > 0 && props.GetPropAmount(PropType.Coin) == 0)
-        {
-            props.SetPropAmount(PropType.Coin, coinCount);
-            coinCount = 0;
-        }
-        // 老档没有天赋字段，JsonUtility 会给 null，必须补上否则所有天赋查询空引用
-        if (unlockedTalents == null) unlockedTalents = new List<string>();
+        SaveSections.MigrateAll(this);
     }
 }
 

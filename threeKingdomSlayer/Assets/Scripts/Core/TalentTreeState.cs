@@ -20,12 +20,11 @@ public static class TalentTreeState
 {
     public static event System.Action OnChanged;
 
-    private static List<string> Unlocked => SaveManager.Load().unlockedTalents;
+    private static List<string> Unlocked => TalentSaveSection.GetUnlocked(SaveManager.Load());
 
     public static bool IsUnlocked(string nodeId)
     {
-        if (string.IsNullOrEmpty(nodeId)) return false;
-        return Unlocked.Contains(nodeId);
+        return TalentSaveSection.IsUnlocked(SaveManager.Load(), nodeId);
     }
 
     public static bool IsUnlocked(TalentNodeConfig node) => node != null && IsUnlocked(node.nodeId);
@@ -56,7 +55,7 @@ public static class TalentTreeState
             SaveManager.SetCoins(coins - node.coinCost);
 
         var data = SaveManager.Load();
-        data.unlockedTalents.Add(node.nodeId);
+        TalentSaveSection.Unlock(data, node.nodeId);
         SaveManager.Save(data);
 
         DebugLog.Info($"[Talent] 解锁 {node.nodeId}({node.displayName}) 花费 {node.coinCost}，剩余铜钱 {SaveManager.GetCoins()}");
@@ -119,7 +118,7 @@ public static class TalentTreeState
     public static void ResetAll()
     {
         var data = SaveManager.Load();
-        data.unlockedTalents.Clear();
+        TalentSaveSection.Clear(data);
         SaveManager.Save(data);
         OnChanged?.Invoke();
     }

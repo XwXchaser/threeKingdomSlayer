@@ -625,8 +625,8 @@ public class TutorialStageDirector : MonoBehaviour
         if (runtime == null || runtime.RouteConfig != tutorialRouteConfig) return;
 
         var data = SaveManager.Load();
-        if (data.tutorialCompleted) return;
-        data.tutorialCompleted = true;
+        if (TutorialSaveSection.IsCompleted(data)) return;
+        TutorialSaveSection.MarkCompleted(data);
         SaveManager.Save(data);
         DebugLog.Info("[Tutorial] 教学关已完成并记档");
     }
