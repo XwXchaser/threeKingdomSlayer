@@ -81,6 +81,12 @@ public sealed class YNodeSceneSpec
     public string[] rootComponentTypes = Array.Empty<string>();
     [Tooltip("切片根自身组件的序列化数据（与 rootComponentTypes 一一对应）")]
     public string[] rootComponentJson = Array.Empty<string>();
+    [Tooltip("节点根的变换（相对规格根）—— 只有摆放表带了原点时才写 ✅（否则保留场景里的摆位 ✅）")]
+    public Vector3 localPosition = Vector3.zero;
+    public Vector3 localEulerAngles = Vector3.zero;
+    public Vector3 localScale = Vector3.one;
+    [Tooltip("生成时是否把上面的节点根变换写进场景 ✅")]
+    public bool applyRootTransform = false;
 }
 
 /// <summary>一个分组：某个容器路径下的全部条目。</summary>
@@ -95,6 +101,8 @@ public sealed class YSceneGroup
     public YPropEntry[] entries = Array.Empty<YPropEntry>();
     [Tooltip("组内**功能件**（没有渲染器、但带组件的物件：节点锚点 / 连接路径 / 战斗锚点 …）")]
     public YFuncEntry[] functions = Array.Empty<YFuncEntry>();
+    // 组**不**带变换 ✅：每个节点的变换都由它自己的条目带 ✅（组只是排序桶 ✅）——
+    // 否则组和条目会写同一个物件的变换 ✅（谁后写谁赢 ✅ → 变换被抹掉 ✅）。
 
     /// <summary>组名（路径的最后一段 ✅，仅用于显示 ✅）。</summary>
     public string GroupName => string.IsNullOrEmpty(path) ? "(节点根)" : path.Substring(path.LastIndexOf('/') + 1);
@@ -129,6 +137,8 @@ public sealed class YPropEntry
     public float footOffsetY = 0f;
     [Tooltip("风动网格（树/旗的 Wind Mesh 子件）")]
     public bool isWindMesh = false;
+    [Tooltip("**只带变换的容器**（没有渲染器 ✅）—— 纯层级容器 ✅，生成时不加工渲染器 ✅")]
+    public bool containerOnly = false;
     [Tooltip("生成时是否激活（场景里有一批隐藏件，不记就会被动点亮）")]
     public bool active = true;
     [Tooltip("被手工微调过：生成器不再覆盖这一条")]

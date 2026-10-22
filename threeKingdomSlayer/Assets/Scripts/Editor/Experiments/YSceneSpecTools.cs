@@ -69,6 +69,14 @@ public static class YSceneSpecTools
         RunRoundTrip(sel as GameObject);
     }
 
+    [MenuItem("Tools/Y 场景规格/⑤ 摆放表往返验证（prefab→摆放表→规格→生成→逐件比对）")]
+    private static void PlacementRoundTripMenu()
+    {
+        var sel = Selection.activeGameObject;
+        if (sel == null) { Debug.LogError("[Y 场景规格] 先在 Project 里选中要验证的 prefab"); return; }
+        RunPlacementRoundTrip(sel);
+    }
+
     // ───────────────────────── 导出 ─────────────────────────
 
     public static YSceneSpec ExportSlice(GameObject sliceRoot, YSceneSpec existing)
@@ -360,6 +368,13 @@ public static class YSceneSpecTools
         foreach (var node in spec.nodeSpecs)
         {
             var nodeRoot = FindOrCreatePath(root, node.nodeId);
+            // 节点根的变换 ✅（只有规格里明确带了才写 ✅——否则保留场景里已有的摆位 ✅）
+            if (node.applyRootTransform)
+            {
+                nodeRoot.localPosition = node.localPosition;
+                nodeRoot.localEulerAngles = node.localEulerAngles;
+                nodeRoot.localScale = node.localScale;
+            }
 
             // ── 阶段 1：建全部物件 ✅（组件数据先不填 ✅，等引用映射齐了再填 ✅）
             foreach (var band in spec.backgroundBands)
@@ -379,6 +394,8 @@ public static class YSceneSpecTools
             }
             foreach (var g in node.groups)
             {
+                // 组**不带变换** ✅（每个节点的变换由它自己的条目写 ✅）
+                // 组只是排序桶 ✅：路径上的容器由条目路径自动补出来 ✅
                 foreach (var e in g.entries) { GenerateEntry(e, nodeRoot, g.sortBaseline); count++; }
                 foreach (var f in g.functions) { CreateFunction(f, nodeRoot); count++; }
             }
@@ -505,6 +522,10 @@ public static class YSceneSpecTools
         go.transform.localScale = e.localScale;
         if (go.activeSelf != e.active) go.SetActive(e.active);
 
+        // 没有贴图也没有网格 = 只带变换的容器 ✅（嵌套 prefab 实例 ✅）→ 不加渲染器 ✅
+        if (e.containerOnly) return 1;
+        if (e.renderKind == YRenderKind.Sprite && e.sprite == null) return 1;
+
         if (e.renderKind == YRenderKind.Sprite)
         {
             var sr = go.GetComponent<SpriteRenderer>();
@@ -613,6 +634,7 @@ public static class YSceneSpecTools
 
                 foreach (var e in g.entries)
                 {
+                    if (e.containerOnly) continue;          // 纯容器 ✅（无渲染器 ✅，不算缺失 ✅）
                     if (e.renderKind == YRenderKind.Sprite && e.sprite == null) issues.Add($"[{node.nodeId}/{g.GroupName}/{e.name}] 精灵引用为空");
                     if (e.renderKind == YRenderKind.Solid3D && e.mesh == null) issues.Add($"[{node.nodeId}/{g.GroupName}/{e.name}] 网格引用为空");
                     if (e.material == null) issues.Add($"[{node.nodeId}/{g.GroupName}/{e.name}] 材质引用为空");
@@ -649,10 +671,50 @@ public static class YSceneSpecTools
         return diffs.Count == 0;
     }
 
+    /// <summary>
+    /// **摆放表往返**：prefab → 摆放表 → 规格 → 生成 → 与原 prefab 逐件比对 ✅。
+    /// 验证的是「摆放表格式能不能无损承载一个现成场景」✅（自动搭场景的前置条件 ✅）。
+    /// </summary>
+    public static bool RunPlacementRoundTrip(GameObject source, string jsonPath = null, bool keepSpec = false)
+    {
+        if (source == null) return false;
+        jsonPath = string.IsNullOrEmpty(jsonPath) ? "Library/Locus/tmp/y_placement_roundtrip.json" : jsonPath;
+        int exported = YScenePlacementImporter.ExportPlacementTable(source, jsonPath);
+        var spec = YScenePlacementImporter.Import(jsonPath);
+        if (spec == null) return false;
+        string specPath = AssetDatabase.GetAssetPath(spec);
+
+        var tmp = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+        var rootGo = new GameObject("RoundTrip");
+        int created = Generate(spec, rootGo.transform);
+        var nodeRoot = rootGo.transform.Find(spec.nodeSpecs[0].nodeId);
+
+        var diffs = nodeRoot != null
+            ? CompareTrees(source.transform, nodeRoot, true)
+            : new List<string> { "生成结果里找不到节点根" };
+        Debug.Log($"[Y 场景规格] 摆放表往返：导出 {exported} 条 → 生成 {created} 个对象；差异 {diffs.Count} 条");
+        for (int i = 0; i < diffs.Count && i < 30; i++) Debug.Log("   " + diffs[i]);
+
+        var issues = Validate(spec);
+        foreach (var i in issues) Debug.LogWarning("[Y 场景规格][自检] " + i);
+        Debug.Log($"[Y 场景规格] 自检问题数 = {issues.Count}");
+
+        UnityEngine.Object.DestroyImmediate(rootGo);
+        EditorSceneManager.CloseScene(tmp, true);
+        if (!keepSpec && !string.IsNullOrEmpty(specPath)) AssetDatabase.DeleteAsset(specPath);
+        return diffs.Count == 0;
+    }
+
     /// <summary>逐对象比对两棵层级树（相对各自根，路径为准）。</summary>
-    public static List<string> CompareTrees(Transform a, Transform b)
+    public static List<string> CompareTrees(Transform a, Transform b, bool compareRoot = false)
     {
         var diffs = new List<string>();
+        if (compareRoot)
+        {
+            if (a.localPosition != b.localPosition) diffs.Add($"[根] 位置 {a.localPosition} vs {b.localPosition}");
+            if (a.localEulerAngles != b.localEulerAngles) diffs.Add($"[根] 旋转 {a.localEulerAngles} vs {b.localEulerAngles}");
+            if (a.localScale != b.localScale) diffs.Add($"[根] 缩放 {a.localScale} vs {b.localScale}");
+        }
         var mapA = Flatten(a);
         var mapB = Flatten(b);
         foreach (var kv in mapA)
