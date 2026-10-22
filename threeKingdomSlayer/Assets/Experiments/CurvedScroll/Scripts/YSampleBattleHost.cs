@@ -29,7 +29,9 @@ public sealed class YSampleBattleHost : MonoBehaviour
         if (op == null) { Debug.LogError("[YSampleBattleHost] Battle scene load failed: " + battleSceneName, this); yield break; }
         while (!op.isDone) yield return null;
         battleScene = SceneManager.GetSceneByName(battleSceneName);
-        foreach (var routeRuntime in FindObjectsOfType<RouteStageRuntimeV2>()) routeRuntime.enabled = false;
+        // 2026-10-23：原先这里会关掉场景里的旧版路线驱动（RouteStageRuntimeV2）——
+        // 但 Battle 场景早已不再挂那个组件（遗留实现已收进 Assets/Scripts/Legacy），
+        // 这行是死代码；留着还会让 Y 分叉程序集反向依赖遗留程序集（成环），故删除。
         var stage = FindObjectOfType<StageController>();
         if (stage == null) { Debug.LogError("[YSampleBattleHost] StageController not found after Battle load", this); yield break; }
         if (battleConfig == null) { Debug.LogError("[YSampleBattleHost] battleConfig is not assigned", this); yield break; }

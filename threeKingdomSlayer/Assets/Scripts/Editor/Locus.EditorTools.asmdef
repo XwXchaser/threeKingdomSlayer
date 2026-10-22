@@ -4,7 +4,10 @@
     "references": [
         "Locus.Data",
         "Locus.Combat",
-        "Locus.UI"
+        "Locus.Flow",
+        "Locus.UI",
+        "Locus.Experiments",
+        "Locus.Legacy"
     ],
     "includePlatforms": [
         "Editor"
