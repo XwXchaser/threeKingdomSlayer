@@ -10,6 +10,32 @@ using UnityEngine.EventSystems;
 
 public partial class InputManager : MonoBehaviour
 {
+    /// <summary>
+    /// 指针位置是否在 UI 元素上 ✅。
+    ///
+    /// **不能只用 <c>EventSystem.IsPointerOverGameObject()</c>** ✅：那读的是 EventSystem
+    /// **上一帧**的射线缓存 ✅ —— 指针刚按下那一帧还没更新 ✅ → UI 点击会漏成游戏手势 ✅
+    /// （表现：点按钮被判成攻击手势 ✅）。所以这里**当场做一次射线检测** ✅（与更新顺序无关 ✅）。
+    /// </summary>
+    private static bool IsPointerOverUIAt(Vector2 screenPos)
+    {
+        var es = EventSystem.current;
+        if (es == null) return false;
+        var data = new PointerEventData(es) { position = screenPos };
+        var results = new System.Collections.Generic.List<RaycastResult>();
+        es.RaycastAll(data, results);
+        for (int i = 0; i < results.Count; i++)
+        {
+            var go = results[i].gameObject;
+            if (go == null) continue;
+            // 不可交互的（blocksRaycasts 关闭的）不挡 ✅
+            var cg = go.GetComponent<CanvasGroup>();
+            if (cg != null && !cg.blocksRaycasts) continue;
+            return true;
+        }
+        return false;
+    }
+
     #region 鼠标输入
 
     private void HandleMouseInput()
@@ -18,7 +44,7 @@ public partial class InputManager : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             // UI 之上的点击不处理游戏输入（QTE 活跃时除外：QTE 指示器本身是 UI 元素）
-            bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            bool overUI = IsPointerOverUIAt(Input.mousePosition);
             if (overUI && !IsAnyQTEActive())
             {
                 isTouching = false;
@@ -92,7 +118,7 @@ public partial class InputManager : MonoBehaviour
         {
             case TouchPhase.Began:
                 // UI 之上的触摸不处理游戏输入（QTE 活跃时除外：QTE 指示器本身是 UI 元素）
-                if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject(touch.fingerId) && !IsAnyQTEActive())
+                if (IsPointerOverUIAt(touch.position) && !IsAnyQTEActive())
                 {
                     isTouching = false;
                     break;

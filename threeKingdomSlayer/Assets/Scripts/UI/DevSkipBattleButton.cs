@@ -111,6 +111,10 @@ public sealed class DevSkipBattleButton : MonoBehaviour
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(ReferenceWidth, ReferenceHeight);
         scaler.matchWidthOrHeight = 0.5f;
+        // **必须有 GraphicRaycaster** ✅：没有它画布不参与射线检测 ✅ →
+        // 按钮收不到点击 ✅，点击会漏到游戏里变成攻击手势 ✅（2026-10-24 踩过 ✅）。
+        if (canvasGo.GetComponent<UnityEngine.UI.GraphicRaycaster>() == null)
+            canvasGo.AddComponent<UnityEngine.UI.GraphicRaycaster>();
 
         // 按钮本体（右上角 ✅）
         var btnGo = new GameObject("SkipBattleButton", typeof(RectTransform));
