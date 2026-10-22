@@ -89,6 +89,41 @@ public static class YSceneSpecTools
         Debug.Log($"[Y 场景规格] 节点生产 {nodeId}：" + (ok ? "逐件差异 0 ✅" : "有差异 ❌") + "\n" + report);
     }
 
+    [MenuItem("Tools/Y 场景规格/⑦ 预览段 prefab（摆进当前场景）")]
+    private static void PreviewSegmentMenu()
+    {
+        var sel = Selection.activeObject as GameObject;
+        if (sel == null || !EditorUtility.IsPersistent(sel))
+        {
+            Debug.LogError("[Y 场景规格] 先在 Project 里选中一个段 prefab ✅");
+            return;
+        }
+        PreviewSegmentInScene(sel);
+    }
+
+    /// <summary>
+    /// 把段 prefab **按它自带的位姿** 摆进当前场景 ✅（段 prefab 的根带世界位姿 ✅，见 <c>YRouteSegment</c> 约定 ✅）。
+    /// 段是**运行时按需装载**的 ✅ → Edit 模式的场景里没有它 ✅ → 想在编辑器里看就得这样摆一份 ✅。
+    /// 只影响当前场景 ✅（可撤销 ✅）。
+    /// </summary>
+    public static GameObject PreviewSegmentInScene(GameObject segmentPrefab)
+    {
+        if (segmentPrefab == null) return null;
+        var scene = SceneManager.GetActiveScene();
+        var inst = PrefabUtility.InstantiatePrefab(segmentPrefab, scene) as GameObject;
+        if (inst == null) return null;
+        inst.name = segmentPrefab.name + " (预览)";
+        inst.transform.position = segmentPrefab.transform.localPosition;
+        inst.transform.rotation = segmentPrefab.transform.localRotation;
+        // **不被保存** ✅（场景随便存 ✅，不会留下预览垃圾 ✅；重载场景自动没 ✅）
+        inst.hideFlags = HideFlags.DontSave;
+        EditorSceneManager.MarkSceneDirty(scene);
+        Selection.activeGameObject = inst;
+        SceneView.lastActiveSceneView?.FrameSelected();
+        Debug.Log($"[Y 场景规格] 段预览已摆进场景「{scene.name}」：{inst.name} @ {inst.transform.position} rot {inst.transform.eulerAngles}（场景已脏 ✅，可撤销 ✅）");
+        return inst;
+    }
+
     /// <summary>从物件名推节点 id ✅（"EV - Presentation Anchor" → "EV" ✅）。</summary>
     public static string DeriveNodeId(string objectName)
     {
