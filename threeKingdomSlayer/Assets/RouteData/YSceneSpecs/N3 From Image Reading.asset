@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 415b05279c152a045ae0879ac1ef8d75, type: 3}
-  m_Name: N3 1
+  m_Name: N3 From Image Reading
   m_EditorClassIdentifier: 
   routeId: changbanpo
   stageId: -1
@@ -18,7 +18,7 @@ MonoBehaviour:
   groundProfiles: []
   backgroundBands: []
   nodeSpecs:
-  - nodeId: N3
+  - nodeId: N3 From Image Reading
     anchorDistance: 0
     groups:
     - path: Street Houses (read from reference)
@@ -26,7 +26,7 @@ MonoBehaviour:
       entries:
       - name: N3_House_Left_Long_Near
         path: Street Houses (read from reference)/N3_House_Left_Long_Near
-        localPosition: {x: -5.6, y: -0.02, z: 14}
+        localPosition: {x: -9.73, y: -0.02, z: 14}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.85, y: 0.85, z: 0.85}
         renderKind: 0
@@ -42,7 +42,7 @@ MonoBehaviour:
         userModified: 0
       - name: N3_House_Right_Long_Near
         path: Street Houses (read from reference)/N3_House_Right_Long_Near
-        localPosition: {x: 5.8, y: -0.02, z: 15}
+        localPosition: {x: 6.65, y: -0.02, z: 15}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.85, y: 0.85, z: 0.85}
         renderKind: 0
@@ -58,7 +58,7 @@ MonoBehaviour:
         userModified: 0
       - name: N3_House_Left_Damaged_Mid
         path: Street Houses (read from reference)/N3_House_Left_Damaged_Mid
-        localPosition: {x: -6.2, y: -0.02, z: 25}
+        localPosition: {x: -6.94, y: -0.02, z: 25}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.8, y: 0.8, z: 0.8}
         renderKind: 0
@@ -74,7 +74,7 @@ MonoBehaviour:
         userModified: 0
       - name: N3_House_Right_Compact_Mid
         path: Street Houses (read from reference)/N3_House_Right_Compact_Mid
-        localPosition: {x: 6.6, y: -0.02, z: 30}
+        localPosition: {x: 7, y: -0.02, z: 30}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.75, y: 0.75, z: 0.75}
         renderKind: 0
@@ -90,7 +90,7 @@ MonoBehaviour:
         userModified: 0
       - name: N3_House_Left_Compact_Far
         path: Street Houses (read from reference)/N3_House_Left_Compact_Far
-        localPosition: {x: -7, y: -0.02, z: 38}
+        localPosition: {x: -5.61, y: -0.02, z: 38}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.7, y: 0.7, z: 0.7}
         renderKind: 0
@@ -106,7 +106,7 @@ MonoBehaviour:
         userModified: 0
       - name: N3_House_Right_Damaged_Far
         path: Street Houses (read from reference)/N3_House_Right_Damaged_Far
-        localPosition: {x: 8, y: -0.02, z: 44}
+        localPosition: {x: 6.81, y: -0.02, z: 44}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.6, y: 0.6, z: 0.6}
         renderKind: 0
@@ -122,7 +122,7 @@ MonoBehaviour:
         userModified: 0
       - name: N3_House_Left_Compact_Back
         path: Street Houses (read from reference)/N3_House_Left_Compact_Back
-        localPosition: {x: -9.5, y: -0.02, z: 46}
+        localPosition: {x: -4.81, y: -0.02, z: 46}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.6, y: 0.6, z: 0.6}
         renderKind: 0
@@ -138,7 +138,7 @@ MonoBehaviour:
         userModified: 0
       - name: N3_House_Right_Long_Back
         path: Street Houses (read from reference)/N3_House_Right_Long_Back
-        localPosition: {x: 9, y: -0.02, z: 44}
+        localPosition: {x: 4.31, y: -0.02, z: 44}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.55, y: 0.55, z: 0.55}
         renderKind: 0
@@ -158,7 +158,7 @@ MonoBehaviour:
       entries:
       - name: N3_Well_Left_Courtyard
         path: Street Props (read from reference)/N3_Well_Left_Courtyard
-        localPosition: {x: -4.6, y: -0.02, z: 24}
+        localPosition: {x: -4.11, y: -0.02, z: 24}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.55, y: 0.55, z: 0.55}
         renderKind: 0
@@ -174,7 +174,7 @@ MonoBehaviour:
         userModified: 0
       - name: N3_Firewood_Left_Mid
         path: Street Props (read from reference)/N3_Firewood_Left_Mid
-        localPosition: {x: -4.8, y: -0.02, z: 18}
+        localPosition: {x: -3.7, y: -0.02, z: 18}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.42, y: 0.42, z: 0.42}
         renderKind: 0
@@ -190,7 +190,7 @@ MonoBehaviour:
         userModified: 0
       - name: N3_Firewood_Right_Mid
         path: Street Props (read from reference)/N3_Firewood_Right_Mid
-        localPosition: {x: 4.8, y: -0.02, z: 22}
+        localPosition: {x: 6.38, y: -0.02, z: 22}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.45, y: 0.45, z: 0.45}
         renderKind: 0
@@ -206,7 +206,7 @@ MonoBehaviour:
         userModified: 0
       - name: N3_Gate_Right_Courtyard
         path: Street Props (read from reference)/N3_Gate_Right_Courtyard
-        localPosition: {x: 2.6, y: -0.02, z: 42}
+        localPosition: {x: 6.83, y: -0.02, z: 42}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.5, y: 0.5, z: 0.5}
         renderKind: 0
@@ -226,7 +226,7 @@ MonoBehaviour:
       entries:
       - name: N3_CrossWall_Left_Courtyard
         path: Road Parallel Walls (read from reference)/N3_CrossWall_Left_Courtyard
-        localPosition: {x: -4.2, y: -0.02, z: 13}
+        localPosition: {x: -3.12, y: -0.02, z: 13}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.5, y: 0.5, z: 0.5}
         renderKind: 0
@@ -242,7 +242,7 @@ MonoBehaviour:
         userModified: 0
       - name: N3_CrossWall_Right_Courtyard
         path: Road Parallel Walls (read from reference)/N3_CrossWall_Right_Courtyard
-        localPosition: {x: 4.2, y: -0.02, z: 14}
+        localPosition: {x: 6.95, y: -0.02, z: 14}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.5, y: 0.5, z: 0.5}
         renderKind: 0
@@ -258,7 +258,7 @@ MonoBehaviour:
         userModified: 0
       - name: N3_CrossWall_Left_Ruin_Far
         path: Road Parallel Walls (read from reference)/N3_CrossWall_Left_Ruin_Far
-        localPosition: {x: -4.2, y: -0.02, z: 30}
+        localPosition: {x: -6.3, y: -0.02, z: 30}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.45, y: 0.45, z: 0.45}
         renderKind: 0
@@ -274,7 +274,7 @@ MonoBehaviour:
         userModified: 0
       - name: N3_CrossWall_Right_Ruin
         path: Road Parallel Walls (read from reference)/N3_CrossWall_Right_Ruin
-        localPosition: {x: 4.2, y: -0.02, z: 27}
+        localPosition: {x: 3.3, y: -0.02, z: 27}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.45, y: 0.45, z: 0.45}
         renderKind: 0
