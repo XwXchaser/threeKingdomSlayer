@@ -2583,9 +2583,9 @@ MonoBehaviour:
   stageController: {fileID: 0}
   presenterBehaviour: {fileID: 180400098}
   autoStart: 1
-  useTestStartNode: 0
+  useTestStartNode: 1
   choicePanelPrefab: {fileID: 7064198236342991636, guid: 5295112bf6e4dcb4cb8cdeec16e13340, type: 3}
-  testStartNode: {fileID: 0}
+  testStartNode: {fileID: 11400000, guid: 6bc7b629080bf6e45a9b461bb4d2858b, type: 2}
 --- !u!114 &180400098
 MonoBehaviour:
   m_ObjectHideFlags: 0
