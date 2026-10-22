@@ -26,7 +26,7 @@ MonoBehaviour:
       entries:
       - name: J1_A01_DoubleArrowSignpost
         path: J1_A01_DoubleArrowSignpost
-        localPosition: {x: 0, y: 0, z: 17}
+        localPosition: {x: -3, y: 0, z: 2}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.6, y: 0.6, z: 0.6}
         renderKind: 0
@@ -42,7 +42,7 @@ MonoBehaviour:
         userModified: 0
       - name: J1_Divider_Rock_1
         path: J1_Divider_Rock_1
-        localPosition: {x: -0.68, y: -0.022499999, z: 17.800003}
+        localPosition: {x: -3.45, y: -0.022499999, z: 2.4}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.16, y: 0.16, z: 0.16}
         renderKind: 0
@@ -58,7 +58,7 @@ MonoBehaviour:
         userModified: 0
       - name: J1_Divider_Rock_2
         path: J1_Divider_Rock_2
-        localPosition: {x: 0, y: -0.020624999, z: 18.600006}
+        localPosition: {x: -3, y: -0.020624999, z: 2.85}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
@@ -74,7 +74,7 @@ MonoBehaviour:
         userModified: 0
       - name: J1_Divider_Rock_3
         path: J1_Divider_Rock_3
-        localPosition: {x: 0.68, y: -0.022499999, z: 17.800003}
+        localPosition: {x: -2.8, y: -0.022499999, z: 2.4}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.16, y: 0.16, z: 0.16}
         renderKind: 0
@@ -90,7 +90,7 @@ MonoBehaviour:
         userModified: 0
       - name: J1_Divider_Grass_1
         path: J1_Divider_Grass_1
-        localPosition: {x: -1.125, y: -0.0264, z: 17}
+        localPosition: {x: -4.15, y: -0.0264, z: 1.7}
         localEulerAngles: {x: 0, y: 15.000001, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
@@ -106,7 +106,7 @@ MonoBehaviour:
         userModified: 0
       - name: J1_Divider_Grass_2
         path: J1_Divider_Grass_2
-        localPosition: {x: -0.375, y: -0.0264, z: 18.199997}
+        localPosition: {x: -2.95, y: -0.0264, z: 2.95}
         localEulerAngles: {x: 0, y: 15.000001, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
@@ -122,7 +122,7 @@ MonoBehaviour:
         userModified: 0
       - name: J1_Divider_Grass_3
         path: J1_Divider_Grass_3
-        localPosition: {x: 0.375, y: -0.0264, z: 17}
+        localPosition: {x: -3.7, y: -0.0264, z: 3.45}
         localEulerAngles: {x: 0, y: 15.000001, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
@@ -138,7 +138,7 @@ MonoBehaviour:
         userModified: 0
       - name: J1_Divider_Grass_4
         path: J1_Divider_Grass_4
-        localPosition: {x: 1.125, y: -0.0264, z: 18.199997}
+        localPosition: {x: -2.95, y: -0.0264, z: 4.05}
         localEulerAngles: {x: 0, y: 15.000001, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
@@ -154,7 +154,7 @@ MonoBehaviour:
         userModified: 0
       - name: J1_Divider_LowBush_1
         path: J1_Divider_LowBush_1
-        localPosition: {x: -1, y: -0.058125, z: 17.5}
+        localPosition: {x: -3.6, y: -0.06, z: 3.95}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.31, y: 0.31, z: 0.31}
         renderKind: 0
@@ -170,7 +170,7 @@ MonoBehaviour:
         userModified: 0
       - name: J1_Divider_LowBush_2
         path: J1_Divider_LowBush_2
-        localPosition: {x: 0, y: -0.06375, z: 18.5}
+        localPosition: {x: -4.4, y: -0.06, z: 3.05}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.34, y: 0.34, z: 0.34}
         renderKind: 0
@@ -186,7 +186,7 @@ MonoBehaviour:
         userModified: 0
       - name: J1_Divider_LowBush_3
         path: J1_Divider_LowBush_3
-        localPosition: {x: 1, y: -0.058125, z: 17.5}
+        localPosition: {x: -3.15, y: -0.06, z: 3.3}
         localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.31, y: 0.31, z: 0.31}
         renderKind: 0
