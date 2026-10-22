@@ -94,7 +94,7 @@ Unity Console 0 error ✅。
 1. **美术整理三步**：① 过程文件移出 `Assets/`（`Transition/Previews`、各 `References/Review/Candidates/Plans/Archive`，约 35MB，只减包体、不影响引用）→ ② 正式素材按 `Assets/Art/YRoute/<节点>/<用途>/` 重组（与摆放表 `id`/`layer` 一一对应）→ ③ 命名规范 `<节点>_<类别>_<物件>_<版本>`。
    资产盘点结论：Y 场景美术约 60MB 全在 `Assets/Experiments/CurvedScroll/Art/**`；正式素材约 25MB（`EnvironmentV2/N1|E0|J1|N3` + `Authoring/`），过程文件约 35MB。
 2. **下一批做哪个（2026-10-24 更新 ✅）**：(a) 坐标读取工具 ✅ 已做（`YSceneCoordinateWindow.cs` ✅）；(b)「跳过本节点战斗」小按钮 ✅ 已做（`DevSkipBattleButton.cs` ✅）。
-   → **当前真正待定的三块** ✅：① **J1 剩下的两段**（左石板路 52 件 / 右官道 55 件 ✅）照第八节那套方法真搭 ✅；② **N1 那 100 件手摆布景**（`Opening Roadside Props` ✅）表化 ✅（画面不变 ✅，但「整场景可从零重建」才成立 ✅）；③ 参考图缺的 3 件素材 ✅（需生成素材 ✅ —— 用户说过不补 ✅，勿擅自生成 ✅）。
+   → **当前真正待定的三块** ✅：① **J1 剩下的两段**（左石板路 52 件 / 右官道 55 件 ✅）照第八节那套方法真搭 ✅；② ~~N1 那 100 件手摆布景表化~~ ✅ **已做 ✅（第九节 ✅）**；③ 参考图缺的 3 件素材 ✅（需生成素材 ✅ —— 用户说过不补 ✅，勿擅自生成 ✅）。
 
 ## 六、已知的坑（不要重复踩）
 
@@ -134,3 +134,25 @@ Unity Console 0 error ✅。
 验收图在桌面 `J1_分叉口/` ✅（实景 / 参考图 v6 三联对比 / 游戏内实况 / 路牌特写 ✅）。
 
 **工具侧** ✅：上一条会话（`6938f3dc` ✅）的 413 **不是**上下文 token 撑爆 ✅，是**图片附件累积** ✅（99.7 MiB base64 ✅）→ 见 `memory/known-issues.md` 第 8 条 ✅（换会话 + 交接 ✅；别把全分辨率图读进长会话 ✅）。
+
+## 九、N1 路旁布景表化 ✅（2026-10-24，`09f7bdb` + `6eee2a1`）
+
+「Opening Roadside Props」✅ 是场景里最后一块手摆布景 ✅（98 个渲染器 ✅ / z=0~104 ✅）→ 已接进同一条流水线 ✅。
+
+| 产物 | 路径 |
+|---|---|
+| 摆放表 ✅（80 条 ✅） | `Authoring/Placement/N1 Opening Roadside Props.json` |
+| 段 prefab ✅（81 个物件 ✅） | `Authoring/Segments/N1 Opening Roadside Props.prefab` |
+| 规格资产 ✅ | `Assets/RouteData/YSceneSpecs/N1 Opening Roadside Props.asset` |
+| 场景 ✅ | `YJunctionSample.unity`：删掉 100 个手摆物件 ✅ → 换成 1 个 prefab 实例 ✅（场景 275 → 175 个物件 ✅） |
+
+**验证** ✅：表→规格→生成→与场景原件逐件差异 0 ✅；**画面逐像素比对 0 / 1,573,538 像素不同** ✅；Play Mode 路线仍落到 J1 ✅、段装载 11/14 ✅（其余 3 段在窗口外 ✅ 正常 ✅）。
+
+**新发现的坑（勿重复踩）** ✅：
+1. **`Object.DestroyImmediate(transform)` 毁的是「组件」不是「物体」** ✅ → 手摆组没删掉 ✅ → 场景里同时存在两份布景 ✅ → 渲出来多出一堆东西 ❗。**必须传 GameObject** ✅（Console 会报 "Can't destroy Transform component of …" ✅ —— 看到这条就去查对象有没有真删 ✅）。
+2. **「逐件差异 0」不等于画面一样** ✅ —— 比对器只查位置/旋转/缩放/精灵/材质/sortingOrder ✅，**不查渲染器的 enabled** ✅。所以要加一道**逐像素比对** ✅：同一机位渲改前/改后两张 ✅ → `ImageChops.difference` ✅ → 差异像素数应当为 0 ✅。
+3. **摆放表现在多一个字段** ✅：`rendererDisabled` ✅（作者态关掉的渲染器 ✅ —— 例：旗子的精灵关着 ✅、只留风动网格 ✅）。**用取反命名** ✅ → 旧表缺字段 = false = 渲染器照常开着 ✅ → 既有 16 张表 / 19 个段规格**不用重导** ✅。
+4. **改场景里的布景前先查引用** ✅：用 `SerializedObject` 扫全场景组件的 ObjectReference ✅（本次唯一外部引用 = `N1 - Presentation Anchor.backgroundAnchor` ✅ → 重指向 ✅）。
+5. **N1 组不进路线段表** ✅：它是路线起点 ✅、常驻 ✅（段表是按需装载 ✅）—— 以后要流式化再挪 ✅。
+
+**「整场景可从零重建」现在的口径** ✅：地形 ✅ + 天空盒 ✅ + 路线节点/连接 ✅ + N1→E0 切片 ✅ + N1 路旁布景（prefab 实例 ✅）+ **14 个按需装载段** ✅ —— 全部内容都有表 ✅（场景里不再有手摆布景 ✅）。
