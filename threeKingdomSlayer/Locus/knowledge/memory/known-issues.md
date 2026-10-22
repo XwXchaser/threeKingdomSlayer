@@ -1,7 +1,7 @@
 ---
 id: kd_c2de3458-57af-4257-9475-96d4662f67f2
 injectMode: inherit
-summary: 战斗已知问题清单（QTE 被打断、特效残留、BOSS 墙壁、超范围攻击等）与已修复项；带调试步骤的待办见 plan/unresolved-issues.md。
+summary: 战斗已知问题清单（QTE 被打断、特效残留、BOSS 墙壁、超范围攻击等）与已修复项；含 Locus 会话上下文撑爆/自动压缩死锁的工具侧排查；带调试步骤的待办见 plan/unresolved-issues.md。
 aiEditMode: inherit
 ---
 
@@ -35,3 +35,19 @@ aiEditMode: inherit
 - **实际根因**: 战斗场景依赖透视相机 + Z 位置做 2.5D 深度排序。给 Cyclone 设置高 sortingOrder 会绕过 Z 深度，导致后排特效压住前排敌人
 - **修复**: CycloneEffect 保持 `sortingOrder = 0`，生成时 `pos.z -= 0.2f`，与 SpikeTrap 的 Z 前移思路一致，让目标行内显示在敌人身前，同时保留跨排前后关系
 - **规则**: 战斗内敌人/地面特效遮挡优先用 Z 偏移，不要用高 sortingOrder；高 sortingOrder 只用于 overlay/描边/UI 类视觉
+
+## 7. Locus 会话上下文撑爆 → 自动压缩死锁（工具侧，不是游戏缺陷）
+- **现象**：长会话跑到约 1088 条消息后，任何新消息都发不出去，聊天直接报错，且每轮重试 3 次结果完全一致：
+  - `Custom Chat API error (400): invalid params, context window exceeds limit (2013)`（openai_chat 端点，如 MiniMax）
+  - 或 `Responses API error (400): No tool output found for tool call call_function_xxx`（openai_responses 端点，如 DeepSeek）
+  - 伴随 `preflight auto-compact failed`，会话 run 直接 failed。
+- **根因是两段**，别只盯报错：
+  1. 自动压缩在约 878k 上下文时连试三次都产出 `Checkpoint compaction returned an invalid anchored summary`，Locus 拒绝并**保留原文** → 上下文一点没变小。
+  2. 之后压缩请求本身超预算：`Checkpoint summary request exceeds the endpoint context budget: estimated_tokens=968342, budget_tokens=967232, summary_output_tokens=32768`。预算 = `contextLength`（1,000,000）− 固定 32,768 摘要预留；历史 968,342 只差约 1.1k token 就超 → **压缩永远发不出去**，形成死锁，原文被原样保留，990k+ 的请求照发 → 上游 400。
+- **第二个报错（`No tool output found`）的来历**：上游 Responses 校验发现载荷里有 `function_call` 却缺配对的 `function_call_output`。本例缺的正是整段历史里**第一个异步投递**的工具结果（`unity_execute` 异步片段编译失败）。该消息在 DB 里仍在（role=tool、tool_call_id 齐全、include_in_prompt=1），Locus 也把该会话登记进 `session_context_capture_gaps` → 是**载荷拼装缺项，不是消息丢失**。
+- **取证位置**：`H:/locus/data/locus.db`（表 `sessions` / `messages` / `session_events` / `token_usage` / `session_context_capture_gaps`）＋ `C:/Users/Administrator/AppData/Roaming/locus/logs/locus.log`（关键字 `auto-compact`、`Checkpoint summary request exceeds`、`invalid anchored summary`、`No tool output found`、`iteration N, messages=`、`[Responses] POST`）。注意 `session_context_attempts` 与 `response_request_payloads` 在本机**不落原始请求体**，别指望从那里复原载荷。
+- **恢复**：不要在原会话里反复重试。首选**换新会话 + 交接摘要**（范例见 `plan/scene-pipeline-handoff-20261023.md`）。原地硬救需退出 Locus 后直接改 `locus.db` 删早期历史，把上下文压到预算之下让压缩能跑，代价高、风险大，且旧会话仍带缺配对的 function_call。
+- **预防**：
+  - 上下文逼近上限前就换会话并写交接文档，别等自动压缩兜底。
+  - `contextLength` 配置值要给摘要预留留余量：上游真实窗口小于配置值时，压缩请求会先于主请求超预算。
+  - 同一会话别混用 openai_chat 与 openai_responses 端点：换端点会换掉报错形态（2013 → `No tool output found`），极易误判成新故障。
