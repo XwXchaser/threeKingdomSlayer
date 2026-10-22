@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 415b05279c152a045ae0879ac1ef8d75, type: 3}
-  m_Name: N1 to E0 - Shoulder Detail v1_Slice
+  m_Name: N1 to E0 - Shoulder Detail v1
   m_EditorClassIdentifier: 
   routeId: changbanpo
   stageId: -1
@@ -21,13 +21,68 @@ MonoBehaviour:
   - nodeId: N1 to E0 - Shoulder Detail v1
     anchorDistance: 0
     groups:
+    - path: 
+      sortBaseline: 0
+      entries:
+      - name: Approach Shoulder
+        path: Approach Shoulder
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 0
+        sprite: {fileID: 0}
+        mesh: {fileID: 0}
+        material: {fileID: 0}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 1
+        active: 1
+        rendererDisabled: 0
+        userModified: 0
+      - name: E0 Wall Foot
+        path: E0 Wall Foot
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 0
+        sprite: {fileID: 0}
+        mesh: {fileID: 0}
+        material: {fileID: 0}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 1
+        active: 1
+        rendererDisabled: 0
+        userModified: 0
+      - name: Grass Stitch
+        path: Grass Stitch
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        localScale: {x: 1, y: 1, z: 1}
+        renderKind: 0
+        sprite: {fileID: 0}
+        mesh: {fileID: 0}
+        material: {fileID: 0}
+        sortBias: 0
+        pivotMode: 0
+        footOffsetY: 0
+        isWindMesh: 0
+        containerOnly: 1
+        active: 1
+        rendererDisabled: 0
+        userModified: 0
+      functions: []
     - path: Approach Shoulder
       sortBaseline: 0
       entries:
       - name: N1E0_Logs_Left_01
         path: Approach Shoulder/N1E0_Logs_Left_01
         localPosition: {x: -4.5, y: 0, z: 54.5}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.36, y: 0.36, z: 0.36}
         renderKind: 0
         sprite: {fileID: 21300000, guid: 218b103a11c589b46a0a674e0e834cdb, type: 3}
@@ -35,15 +90,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Shield_Right_01
         path: Approach Shoulder/N1E0_Shield_Right_01
         localPosition: {x: 3.65, y: 0, z: 58.2}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.24, y: 0.24, z: 0.24}
         renderKind: 0
         sprite: {fileID: 21300000, guid: 725906996378bd04a8b40693d78e1bb6, type: 3}
@@ -51,15 +107,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Logs_Right_02
         path: Approach Shoulder/N1E0_Logs_Right_02
         localPosition: {x: 4.55, y: 0, z: 65.2}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.35, y: 0.35, z: 0.35}
         renderKind: 0
         sprite: {fileID: 21300000, guid: 218b103a11c589b46a0a674e0e834cdb, type: 3}
@@ -67,15 +124,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Shield_Left_02
         path: Approach Shoulder/N1E0_Shield_Left_02
         localPosition: {x: -3.65, y: 0, z: 68.3}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
         sprite: {fileID: 21300000, guid: 725906996378bd04a8b40693d78e1bb6, type: 3}
@@ -83,15 +141,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Stake_Left_03
         path: Approach Shoulder/N1E0_Stake_Left_03
         localPosition: {x: -4.8, y: 0, z: 74.6}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.36, y: 0.36, z: 0.36}
         renderKind: 0
         sprite: {fileID: 21300000, guid: 0dd7a96b4f4e9154689de94e77e013c4, type: 3}
@@ -99,15 +158,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Logs_Left_03
         path: Approach Shoulder/N1E0_Logs_Left_03
         localPosition: {x: -4.7, y: 0, z: 77.8}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.37, y: 0.37, z: 0.37}
         renderKind: 0
         sprite: {fileID: 21300000, guid: 218b103a11c589b46a0a674e0e834cdb, type: 3}
@@ -115,15 +175,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_LowMound_Right_03
         path: Approach Shoulder/N1E0_LowMound_Right_03
         localPosition: {x: 4.75, y: 0, z: 79.5}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.4, y: 0.4, z: 0.4}
         renderKind: 0
         sprite: {fileID: 21300000, guid: b6da6e03de1631e49ae70b55a4ac1630, type: 3}
@@ -131,15 +192,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 97.97
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Cheval_Right_04
         path: Approach Shoulder/N1E0_Cheval_Right_04
         localPosition: {x: 4.55, y: 0, z: 83.8}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.43, y: 0.43, z: 0.43}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fc52c2524eb118e4f89fc7298474b6c8, type: 3}
@@ -147,15 +209,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_LowMound_Left_04
         path: Approach Shoulder/N1E0_LowMound_Left_04
         localPosition: {x: -5.05, y: 0, z: 87}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.43, y: 0.43, z: 0.43}
         renderKind: 0
         sprite: {fileID: 21300000, guid: 7caa83bc63fbba144a8372dea7223993, type: 3}
@@ -163,10 +226,11 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 107.06
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       functions: []
     - path: E0 Wall Foot
@@ -175,7 +239,7 @@ MonoBehaviour:
       - name: E0_WallFoot_LowEarth_Left
         path: E0 Wall Foot/E0_WallFoot_LowEarth_Left
         localPosition: {x: -5.5, y: 0, z: 129}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.53, y: 0.53, z: 0.53}
         renderKind: 0
         sprite: {fileID: 21300000, guid: b6da6e03de1631e49ae70b55a4ac1630, type: 3}
@@ -183,15 +247,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 97.97
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: E0_WallFoot_LowEarth_Right
         path: E0 Wall Foot/E0_WallFoot_LowEarth_Right
         localPosition: {x: 5.65, y: 0, z: 130}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.5, y: 0.5, z: 0.5}
         renderKind: 0
         sprite: {fileID: 21300000, guid: 7caa83bc63fbba144a8372dea7223993, type: 3}
@@ -199,15 +264,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 107.06
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: E0_WallFoot_FallenLogs_Left
         path: E0 Wall Foot/E0_WallFoot_FallenLogs_Left
         localPosition: {x: -7.6, y: 0, z: 128.2}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.4, y: 0.4, z: 0.4}
         renderKind: 0
         sprite: {fileID: 21300000, guid: 218b103a11c589b46a0a674e0e834cdb, type: 3}
@@ -215,15 +281,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: E0_WallFoot_SmallShield_Right
         path: E0 Wall Foot/E0_WallFoot_SmallShield_Right
         localPosition: {x: 6.25, y: 0, z: 127.4}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
         sprite: {fileID: 21300000, guid: 725906996378bd04a8b40693d78e1bb6, type: 3}
@@ -231,15 +298,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: cfe9bb7bb91fcc9438e0b74fa9cabe76, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: E0_WallFoot_Grass_Left
         path: E0 Wall Foot/E0_WallFoot_Grass_Left
         localPosition: {x: -4.85, y: 0, z: 128.6}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.27, y: 0.27, z: 0.27}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -247,15 +315,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: E0_WallFoot_Grass_Right
         path: E0 Wall Foot/E0_WallFoot_Grass_Right
         localPosition: {x: 5.25, y: 0, z: 129.6}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.26, y: 0.26, z: 0.26}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -263,10 +332,11 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       functions: []
     - path: Grass Stitch
@@ -275,7 +345,7 @@ MonoBehaviour:
       - name: N1E0_Grass_L_01
         path: Grass Stitch/N1E0_Grass_L_01
         localPosition: {x: -3.8, y: 0, z: 52}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -283,15 +353,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Grass_R_01
         path: Grass Stitch/N1E0_Grass_R_01
         localPosition: {x: 3.85, y: 0, z: 55.2}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.21, y: 0.21, z: 0.21}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -299,15 +370,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Grass_L_02
         path: Grass Stitch/N1E0_Grass_L_02
         localPosition: {x: -4.25, y: 0, z: 56.8}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.23, y: 0.23, z: 0.23}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -315,15 +387,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Grass_R_02
         path: Grass Stitch/N1E0_Grass_R_02
         localPosition: {x: 3.6, y: 0, z: 57.9}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.21, y: 0.21, z: 0.21}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -331,15 +404,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Grass_L_03
         path: Grass Stitch/N1E0_Grass_L_03
         localPosition: {x: -3.7, y: 0, z: 61.2}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -347,15 +421,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Grass_R_03
         path: Grass Stitch/N1E0_Grass_R_03
         localPosition: {x: 4.35, y: 0, z: 64.9}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.24, y: 0.24, z: 0.24}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -363,15 +438,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Grass_L_04
         path: Grass Stitch/N1E0_Grass_L_04
         localPosition: {x: -3.7, y: 0, z: 68}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.21, y: 0.21, z: 0.21}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -379,15 +455,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Grass_R_04
         path: Grass Stitch/N1E0_Grass_R_04
         localPosition: {x: 3.8, y: 0, z: 71}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -395,15 +472,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Grass_L_05
         path: Grass Stitch/N1E0_Grass_L_05
         localPosition: {x: -4.6, y: 0, z: 74.2}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.22, y: 0.22, z: 0.22}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -411,15 +489,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Grass_L_06
         path: Grass Stitch/N1E0_Grass_L_06
         localPosition: {x: -4.25, y: 0, z: 77.5}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.24, y: 0.24, z: 0.24}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -427,15 +506,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Grass_R_05
         path: Grass Stitch/N1E0_Grass_R_05
         localPosition: {x: 4.5, y: 0, z: 79.2}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.23, y: 0.23, z: 0.23}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -443,15 +523,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Grass_L_07
         path: Grass Stitch/N1E0_Grass_L_07
         localPosition: {x: -3.75, y: 0, z: 81}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.23, y: 0.23, z: 0.23}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -459,15 +540,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Grass_R_06
         path: Grass Stitch/N1E0_Grass_R_06
         localPosition: {x: 4.3, y: 0, z: 83.5}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.23, y: 0.23, z: 0.23}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -475,15 +557,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Grass_L_08
         path: Grass Stitch/N1E0_Grass_L_08
         localPosition: {x: -4.7, y: 0, z: 86.7}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.24, y: 0.24, z: 0.24}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -491,15 +574,16 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       - name: N1E0_Grass_R_07
         path: Grass Stitch/N1E0_Grass_R_07
         localPosition: {x: 3.85, y: 0, z: 88.8}
-        localEulerAngles: {x: -0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
         localScale: {x: 0.23, y: 0.23, z: 0.23}
         renderKind: 0
         sprite: {fileID: 21300000, guid: fb521d792bcd8d4478026e9be9b92033, type: 3}
@@ -507,112 +591,19 @@ MonoBehaviour:
         material: {fileID: 2100000, guid: 1a8212c7b78ed8c4b8dd5cb6c8485a81, type: 2}
         sortBias: 0
         pivotMode: 0
-        footOffsetY: 16.16
+        footOffsetY: 0
         isWindMesh: 0
         containerOnly: 0
         active: 1
+        rendererDisabled: 0
         userModified: 0
       functions: []
-    - path: 
-      sortBaseline: 0
-      entries: []
-      functions:
-      - path: Approach Shoulder
-        name: Approach Shoulder
-        localPosition: {x: 0, y: 0, z: 0}
-        localEulerAngles: {x: -0, y: 0, z: 0}
-        localScale: {x: 1, y: 1, z: 1}
-        active: 1
-        componentTypes: []
-        componentJson: []
-      - path: E0 Wall Foot
-        name: E0 Wall Foot
-        localPosition: {x: 0, y: 0, z: 0}
-        localEulerAngles: {x: -0, y: 0, z: 0}
-        localScale: {x: 1, y: 1, z: 1}
-        active: 1
-        componentTypes: []
-        componentJson: []
-      - path: Grass Stitch
-        name: Grass Stitch
-        localPosition: {x: 0, y: 0, z: 0}
-        localEulerAngles: {x: -0, y: 0, z: 0}
-        localScale: {x: 1, y: 1, z: 1}
-        active: 1
-        componentTypes: []
-        componentJson: []
     interactives: []
-    refBindings:
-    - instanceId: 171740
-      path: Approach Shoulder/N1E0_Logs_Left_01
-    - instanceId: 171824
-      path: Approach Shoulder/N1E0_Shield_Right_01
-    - instanceId: 171558
-      path: Approach Shoulder/N1E0_Logs_Right_02
-    - instanceId: 171542
-      path: Approach Shoulder/N1E0_Shield_Left_02
-    - instanceId: 171818
-      path: Approach Shoulder/N1E0_Stake_Left_03
-    - instanceId: 170988
-      path: Approach Shoulder/N1E0_Logs_Left_03
-    - instanceId: 171230
-      path: Approach Shoulder/N1E0_LowMound_Right_03
-    - instanceId: 171890
-      path: Approach Shoulder/N1E0_Cheval_Right_04
-    - instanceId: 170942
-      path: Approach Shoulder/N1E0_LowMound_Left_04
-    - instanceId: 170572
-      path: E0 Wall Foot/E0_WallFoot_LowEarth_Left
-    - instanceId: 170458
-      path: E0 Wall Foot/E0_WallFoot_LowEarth_Right
-    - instanceId: 170528
-      path: E0 Wall Foot/E0_WallFoot_FallenLogs_Left
-    - instanceId: 171522
-      path: E0 Wall Foot/E0_WallFoot_SmallShield_Right
-    - instanceId: 171884
-      path: E0 Wall Foot/E0_WallFoot_Grass_Left
-    - instanceId: 171592
-      path: E0 Wall Foot/E0_WallFoot_Grass_Right
-    - instanceId: 170708
-      path: Grass Stitch/N1E0_Grass_L_01
-    - instanceId: 171322
-      path: Grass Stitch/N1E0_Grass_R_01
-    - instanceId: 171794
-      path: Grass Stitch/N1E0_Grass_L_02
-    - instanceId: 171734
-      path: Grass Stitch/N1E0_Grass_R_02
-    - instanceId: 170660
-      path: Grass Stitch/N1E0_Grass_L_03
-    - instanceId: 171954
-      path: Grass Stitch/N1E0_Grass_R_03
-    - instanceId: 171896
-      path: Grass Stitch/N1E0_Grass_L_04
-    - instanceId: 171632
-      path: Grass Stitch/N1E0_Grass_R_04
-    - instanceId: 171976
-      path: Grass Stitch/N1E0_Grass_L_05
-    - instanceId: 171090
-      path: Grass Stitch/N1E0_Grass_L_06
-    - instanceId: 171488
-      path: Grass Stitch/N1E0_Grass_R_05
-    - instanceId: 171494
-      path: Grass Stitch/N1E0_Grass_L_07
-    - instanceId: 171368
-      path: Grass Stitch/N1E0_Grass_R_06
-    - instanceId: 170814
-      path: Grass Stitch/N1E0_Grass_L_08
-    - instanceId: 171392
-      path: Grass Stitch/N1E0_Grass_R_07
-    - instanceId: 170450
-      path: Approach Shoulder
-    - instanceId: 171118
-      path: E0 Wall Foot
-    - instanceId: 171474
-      path: Grass Stitch
+    refBindings: []
     rootComponentTypes: []
     rootComponentJson: []
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     localScale: {x: 1, y: 1, z: 1}
-    applyRootTransform: 0
+    applyRootTransform: 1
   segmentSpecs: []
