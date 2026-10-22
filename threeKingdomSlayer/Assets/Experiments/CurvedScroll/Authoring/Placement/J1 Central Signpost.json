@@ -42,7 +42,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        -3.0,
+        0.0,
         0.0,
         2.0
       ],
@@ -69,7 +69,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        -3.45,
+        -0.5,
         -0.022499999031424522,
         2.4
       ],
@@ -96,7 +96,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        -3.0,
+        0.0,
         -0.020624998956918716,
         2.85
       ],
@@ -123,7 +123,7 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        -2.8,
+        0.5,
         -0.022499999031424522,
         2.4
       ],
@@ -150,9 +150,9 @@
       "material": "YGrass_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
       "at": [
-        -4.15,
+        -1.75,
         -0.026399999856948853,
-        1.7
+        2.9
       ],
       "rotation": [
         0.0,
@@ -177,9 +177,9 @@
       "material": "YGrass_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
       "at": [
-        -2.95,
+        -1.15,
         -0.026399999856948853,
-        2.95
+        3.6
       ],
       "rotation": [
         0.0,
@@ -204,9 +204,9 @@
       "material": "YGrass_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
       "at": [
-        -3.7,
+        1.6,
         -0.026399999856948853,
-        3.45
+        2.5
       ],
       "rotation": [
         0.0,
@@ -231,9 +231,9 @@
       "material": "YGrass_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
       "at": [
-        -2.95,
+        1.15,
         -0.026399999856948853,
-        4.05
+        3.6
       ],
       "rotation": [
         0.0,
@@ -258,9 +258,9 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        -3.6,
+        -2.35,
         -0.06,
-        3.95
+        3.3
       ],
       "rotation": [
         0.0,
@@ -312,9 +312,9 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        -4.4,
+        2.4,
         -0.06,
-        3.05
+        3.1
       ],
       "rotation": [
         0.0,
@@ -366,9 +366,9 @@
       "material": "YSampleScenery_E0Route",
       "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
       "at": [
-        -3.15,
+        0.9,
         -0.06,
-        3.3
+        4.2
       ],
       "rotation": [
         0.0,
