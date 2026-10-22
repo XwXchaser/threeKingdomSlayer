@@ -33,14 +33,25 @@ aiEditMode: inherit
 
 | 文件 | 状态 | 内容 |
 |---|---|---|
-| `Assets/Scripts/Editor/Experiments/YScenePlacementImporter.cs` | ✅ 已提交 | 摆放表格式 v2：`route`/`local` 两种坐标空间 ✅、容器也进表 ✅、局部变换 ✅、精灵名+路径解析 ✅ |
+| `Assets/Scripts/Editor/Experiments/YScenePlacementImporter.cs` | ✅ 已提交 | 摆放表格式 v2：`route`/`local` 两种坐标空间 ✅、容器也进表 ✅、局部变换 ✅、精灵名+路径解析 ✅、**默认跳过不激活旧残留** ✅ |
 | `Assets/Experiments/CurvedScroll/Scripts/SceneSpec/YSceneSpec.cs` | ✅ 已提交 | 规格**条目化** ✅：条目带完整路径 ✅、组只做排序桶 ✅、节点根变换 ✅、`containerOnly` ✅ |
-| `Assets/Scripts/Editor/Experiments/YSceneSpecTools.cs` | ✅ 已提交 | 生成器不变量 ✅（变换只写一次 ✅）+ 摆放表往返验证工具 ✅ |
+| `Assets/Scripts/Editor/Experiments/YSceneSpecTools.cs` | ✅ 已提交 | 生成器不变量 ✅（变换只写一次 ✅）+ 摆放表往返验证工具 ✅ + **导出/比对同步跳过旧残留** ✅ |
+| `Assets/Scripts/Debug/DevSkipBattleButton.cs` | ✅ 新增 | 开发者「跳过本节点战斗」按钮 ✅（只进开发构建 ✅，零场景接线 ✅） |
+| `Assets/Scripts/Data/IStageSessionRoles.cs` + `Managers/StageRouteBattleHost.cs` + `Managers/StageCombatStaging.cs` + `Managers/StageController.cs` | ✅ 已提交 | 停战端口 `AbortRouteBattle()` ✅（只清场 ✅，不动关卡状态 ✅） |
+| `Assets/Scripts/RouteFake/FakeRouteRuntime.cs` | ✅ 已提交 | `SkipCurrentNodeBattle()` ✅（清场 + 标记本节点战斗条目完成 ✅） |
 | `Assets/Scripts/Editor/Experiments/YSceneCoordinateWindow.cs` | ✅ 已提交 | `Tools/Y 场景/坐标读取器`：选中场景物件 → 报「沿路米数 / 横向偏移 / 所属节点」✅ |
 | `Assets/RouteData/YSceneSpecs/N1 to E0 - Shoulder Detail v1_Slice.asset` | ✅ 已重写 | **旧资产字段名过期** ✅（`groupName`/`parentPath` → 反序列化为空路径 ✅，重建会塌成一堆 ✅）→ 已按当前格式从场景重导 ✅ |
 | `Assets/Resources/EnemyPrefabs/Enemy_1011.prefab` | **用户自己的改动**（`maxHealth: 100 → 200`） | 与本管线无关，**没有**提交 ✅ |
 
 Unity Console 0 error ✅。
+
+## 二之二、Y 场景的旧残留（用户提醒 ✅，2026-10-24）
+
+**YJ 场景里有一批以前残留、正式游戏**永远不会激活**的物件** ✅ —— 拿场景当参考重搭时**不要搬过去** ✅。
+
+- 清单与判据见 `memory/y-junction-scene-legacy-inventory.md` ✅（21 个不激活物件 ✅ + 旧路线机制残留 ✅）。
+- **代码层已兜住** ✅：摆放表导出 ✅ 与场景→规格导出 ✅ **默认跳过作者态关闭的物件** ✅；
+  往返比对同步跳过 ✅（否则会误报「缺失」 ✅）。
 
 ## 三、N3 往返测试：已完成 ✅（2026-10-24）
 

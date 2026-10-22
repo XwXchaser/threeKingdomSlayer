@@ -233,7 +233,7 @@ sprite 的 pivot 与贴图 alpha 底边（对照 `slice_manifest.pivot_normalize
 | **S3** | J1 段（石路分支 ✅ 5 张地面贴图 ✅）+ 两侧植被 ✅ | 同上 ✅ | ⏳ |
 | **S4** | EV 段 + **N3 立体围墙**（照 1.4 的配方 ✅） | 同上 ✅ | ⏳ |
 | **S5** | 节点 prefab 化 + `YNodeSceneLoader` ✅ + 段表写回 ✅ | 加载行为与现状一致 ✅（`YRouteSegments` ✅） | ⏳ |
-| **S6** | 交互物（箱子 ✅）+ 开发者「跳过本节点战斗」小按钮 ✅ | 按钮在手机构建里可用 ✅ | ⏳ |
+| **S6** | 交互物（箱子 ✅）+ 开发者「跳过本节点战斗」小按钮 ✅ | 按钮在手机构建里可用 ✅ | 🟡 **部分完成（2026-10-24）**：按钮已做 ✅（`Assets/Scripts/Debug/DevSkipBattleButton.cs` ✅，只进开发构建 ✅，零场景接线 ✅）；交互物（箱子 ✅）仍手摆在 `Encounter Authoring` ✅ 里，**未入规格** ✅ |
 
 ### 6.3 已修的层级 bug（2026-10-23）
 
@@ -266,13 +266,23 @@ sprite 的 pivot 与贴图 alpha 底边（对照 `slice_manifest.pivot_normalize
 
 ---
 
-## 八、开发者「跳过本节点战斗」小按钮（用户要的方向 ✅）
+## 八、开发者「跳过本节点战斗」小按钮（用户要的方向 ✅）—— **已实现（2026-10-24 ✅）**
 
 - 位置：落地页/关卡内的**屏幕角落小按钮** ✅（仅开发构建显示 ✅）→ 方便打到手机上测 ✅。
 - 通路（现成 ✅）：`FakeRouteRuntime.MarkBattleEntryCompleted`（改 internal ✅）→
   `NotifyBattleCompleted()` ✅ → `StageController.CompleteCurrentCombatNode()` ✅（奖励门控 ✅）。
 - 行为：标记当前节点所有战斗条目已完成 ✅ → 直接进奖励/下一节点 ✅ → **不碰战斗逻辑 ✅**。
 - 附带收益：可作为**自动化冒烟**入口 ✅（自检脚本可用它跑全路线 ✅）。
+
+**实现现状（2026-10-24 ✅）**：
+
+| 件 | 位置 | 说明 |
+|---|---|---|
+| 按钮本体 | `Assets/Scripts/Debug/DevSkipBattleButton.cs` ✅ | 零场景接线 ✅（`RuntimeInitializeOnLoadMethod` 自建 UI ✅）；**只进开发构建** ✅（`DEVELOPMENT_BUILD \|\| UNITY_EDITOR` ✅ → 正式包没有它 ✅） |
+| 跳过逻辑 | `FakeRouteRuntime.SkipCurrentNodeBattle()` ✅ | 清场 ✅ → `NotifyBattleCompleted()` ✅ → 本节点战斗条目全标完成 ✅ → 直接进战后演出/选路 ✅ |
+| 停战端口 | `ICombatStaging.AbortRouteBattle()` ✅ | 只停波次 + 清场 + 清投射物 ✅，**不动关卡状态** ✅（节点完成仍由路线流程判 ✅） |
+
+**Play Mode 实测 ✅**：节点 N1 战斗中按钮可点 ✅ → 点击后敌人清空 ✅（4 → 0 ✅）→ 相位 `Battle → ChoosingRoute` ✅ → 选路面板弹出 ✅ → Console 0 error ✅。
 
 ---
 
@@ -308,6 +318,8 @@ sprite 的 pivot 与贴图 alpha 底边（对照 `slice_manifest.pivot_normalize
 
 ## 十二、相关文档
 
+- `memory/y-junction-scene-legacy-inventory.md` ✅（Y 场景旧残留清单 ✅ + 「别搬过去」规则 ✅）
+- `memory/y-scene-spec-pipeline.md` ✅（摆放表格式 ✅ / 规格条目化 ✅ / 往返口径 ✅）
 - `plan/scroll-on-demand-loading-plan.md` ✅（加载模型与不变量 ✅）
 - `plan/j1-scene-deployment-handoff-20261011.md` ✅（人工部署流程与导入基线 ✅）
 - `plan/architecture-optimization-handoff-20261020.md` ✅（分层与纪律 ✅）
