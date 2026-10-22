@@ -108,8 +108,14 @@ public static class YScenePlacementImporter
 
     // ───────────────────────── 导出 ─────────────────────────
 
-    /// <summary>把一个 prefab / 场景根导出成摆放表 JSON（用现成场景反推 ✅）。</summary>
-    public static int ExportPlacementTable(GameObject root, string jsonPath)
+    /// <summary>
+    /// 把一个 prefab / 场景根导出成摆放表 JSON（用现成场景反推 ✅）。
+    ///
+    /// <paramref name="includeInactive"/> = false（默认 ✅）→ **跳过作者态关掉的物件** ✅
+    /// （= 旧残留 ✅：运行时没人会再打开它们 ✅ —— <c>YRouteStreamingWindow</c> 只切 <c>Renderer.enabled</c> ✅）。
+    /// 「拿现成场景当参考重搭一遍」时**不要**把这些带上 ✅。
+    /// </summary>
+    public static int ExportPlacementTable(GameObject root, string jsonPath, bool includeInactive = false)
     {
         if (root == null) return 0;
         var table = new PlacementTable
@@ -120,10 +126,13 @@ public static class YScenePlacementImporter
             rootRotation = Vec(root.transform.localEulerAngles),
         };
 
+        int skipped = 0;
         // **全部变换节点**都进表 ✅（容器也要 ✅——容器带位置但自己没渲染器 ✅）
         foreach (var t in root.GetComponentsInChildren<Transform>(true))
         {
             if (t == root.transform) continue;
+            // 作者态关掉的 = 旧残留 ✅ → 默认不搬 ✅
+            if (!includeInactive && !t.gameObject.activeSelf) { skipped++; continue; }
             var item = new PlacementItem
             {
                 id = t.name,
@@ -172,6 +181,7 @@ public static class YScenePlacementImporter
         try
         {
             File.WriteAllText(jsonPath, JsonUtility.ToJson(table, true));
+            if (skipped > 0) Debug.Log($"[Y 场景] 导出跳过 {skipped} 个不激活物件（旧残留 ✅）");
             return table.items.Count;
         }
         catch (System.Exception e)

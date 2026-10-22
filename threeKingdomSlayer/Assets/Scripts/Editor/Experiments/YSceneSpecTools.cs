@@ -79,7 +79,7 @@ public static class YSceneSpecTools
 
     // ───────────────────────── 导出 ─────────────────────────
 
-    public static YSceneSpec ExportSlice(GameObject sliceRoot, YSceneSpec existing)
+    public static YSceneSpec ExportSlice(GameObject sliceRoot, YSceneSpec existing, bool includeInactive = false)
     {
         if (sliceRoot == null) return null;
         var spec = existing;
@@ -94,7 +94,7 @@ public static class YSceneSpecTools
             spec = ScriptableObject.CreateInstance<YSceneSpec>();
             AssetDatabase.CreateAsset(spec, path);
         }
-        var built = BuildSpecFromSlice(sliceRoot);
+        var built = BuildSpecFromSlice(sliceRoot, includeInactive);
         spec.routeId = built.routeId;
         spec.renderWorldBaseline = built.renderWorldBaseline;
         spec.nodeSpecs = built.nodeSpecs;
@@ -103,8 +103,13 @@ public static class YSceneSpecTools
         return spec;
     }
 
-    /// <summary>把场景里的一个切片转成内存中的规格（不落盘）。</summary>
-    public static YSceneSpec BuildSpecFromSlice(GameObject sliceRoot)
+    /// <summary>
+    /// 把场景里的一个切片转成内存中的规格（不落盘）。
+    ///
+    /// <paramref name="includeInactive"/> = false（默认 ✅）→ **跳过作者态关掉的物件** ✅
+    /// （旧残留 ✅：运行时没人会再打开它们 ✅）。
+    /// </summary>
+    public static YSceneSpec BuildSpecFromSlice(GameObject sliceRoot, bool includeInactive = false)
     {
         var spec = ScriptableObject.CreateInstance<YSceneSpec>();
         spec.routeId = "changbanpo";
@@ -122,7 +127,7 @@ public static class YSceneSpecTools
         // 切片根自身的渲染器（地形 / 天空盒 ✅ —— 也是「给定输入」✅）也记下来 ✅
         var rootRenderer = sliceRootT.GetComponent<Renderer>();
         if (rootRenderer != null) entries.Add(BuildEntry(sliceRootT, "", rootRenderer));
-        Collect(sliceRootT, entries);
+        Collect(sliceRootT, entries, includeInactive);
         Debug.Log($"[Y 场景规格] 导出「{sliceRoot.name}」：子物体 {sliceRootT.childCount}，收集条目 {entries.Count}");
 
         // ② 按「组路径」（= 条目的父路径 ✅）分组 ✅
@@ -146,7 +151,7 @@ public static class YSceneSpecTools
         var funcsByGroup = new Dictionary<string, List<YFuncEntry>>();
         var funcOrder = new List<string>();
         var funcEntries = new List<YFuncEntry>();
-        CollectFunctions(sliceRootT, sliceRootT, funcsByGroup, funcOrder, funcEntries);
+        CollectFunctions(sliceRootT, sliceRootT, funcsByGroup, funcOrder, funcEntries, includeInactive);
         foreach (var g in groupList)
         {
             if (funcsByGroup.TryGetValue(g.path, out var fl)) g.functions = fl.ToArray();
@@ -239,11 +244,14 @@ public static class YSceneSpecTools
 
     /// <summary>收集「无渲染器但带组件」的物件（节点锚点 / 连接 / 战斗锚点 …）✅。</summary>
     private static void CollectFunctions(Transform t, Transform sliceRootT,
-        Dictionary<string, List<YFuncEntry>> byGroup, List<string> order, List<YFuncEntry> all)
+        Dictionary<string, List<YFuncEntry>> byGroup, List<string> order, List<YFuncEntry> all,
+        bool includeInactive)
     {
         for (int i = 0; i < t.childCount; i++)
         {
             var child = t.GetChild(i);
+            // 作者态关掉的 = 旧残留 ✅ → 默认不收 ✅
+            if (!includeInactive && !child.gameObject.activeSelf) continue;
             if (child.GetComponent<Renderer>() == null)
             {
                 // 没有渲染器的物件 = 功能件（节点锚点 ✅ / 连接 ✅ / 战斗锚点 ✅ / 路径可视化空容器 ✅）
@@ -253,7 +261,7 @@ public static class YSceneSpecTools
                 list.Add(fe);
                 all.Add(fe);
             }
-            CollectFunctions(child, sliceRootT, byGroup, order, all);
+            CollectFunctions(child, sliceRootT, byGroup, order, all, includeInactive);
         }
     }
 
@@ -283,19 +291,21 @@ public static class YSceneSpecTools
     }
 
     /// <summary>递归收集：切片根**之下**所有带渲染器的节点（切片根本身不算 ✅）。</summary>
-    private static void Collect(Transform sliceRootT, List<YPropEntry> into)
+    private static void Collect(Transform sliceRootT, List<YPropEntry> into, bool includeInactive)
     {
         for (int i = 0; i < sliceRootT.childCount; i++)
-            CollectNode(sliceRootT.GetChild(i), sliceRootT, into);
+            CollectNode(sliceRootT.GetChild(i), sliceRootT, into, includeInactive);
     }
 
-    private static void CollectNode(Transform t, Transform sliceRootT, List<YPropEntry> into)
+    private static void CollectNode(Transform t, Transform sliceRootT, List<YPropEntry> into, bool includeInactive)
     {
+        // 作者态关掉的 = 旧残留 ✅ → 默认不收 ✅
+        if (!includeInactive && !t.gameObject.activeSelf) return;
         // 先看自己（切片根的直接子物件也可能就是布景件 ✅），再看子树 ✅
         var r = t.GetComponent<Renderer>();
         if (r != null) into.Add(BuildEntry(t, RelPath(t, sliceRootT), r));
         for (int i = 0; i < t.childCount; i++)
-            CollectNode(t.GetChild(i), sliceRootT, into);
+            CollectNode(t.GetChild(i), sliceRootT, into, includeInactive);
     }
 
     private static string RelPath(Transform t, Transform root)
@@ -649,7 +659,7 @@ public static class YSceneSpecTools
     public static bool RunRoundTrip(GameObject sliceRoot)
     {
         if (sliceRoot == null) return false;
-        var spec = BuildSpecFromSlice(sliceRoot);
+        var spec = BuildSpecFromSlice(sliceRoot, false);
 
         var tmp = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
         var rootGo = new GameObject("RoundTrip");
@@ -657,7 +667,7 @@ public static class YSceneSpecTools
         var nodeRoot = rootGo.transform.Find(sliceRoot.name);
 
         var diffs = nodeRoot != null
-            ? CompareTrees(sliceRoot.transform, nodeRoot)
+            ? CompareTrees(sliceRoot.transform, nodeRoot, false, true)
             : new List<string> { "生成结果里找不到节点根" };
         Debug.Log($"[Y 场景规格] 往返验证：生成 {created} 个对象；差异 {diffs.Count} 条");
         for (int i = 0; i < diffs.Count && i < 20; i++) Debug.Log("   " + diffs[i]);
@@ -690,7 +700,7 @@ public static class YSceneSpecTools
         var nodeRoot = rootGo.transform.Find(spec.nodeSpecs[0].nodeId);
 
         var diffs = nodeRoot != null
-            ? CompareTrees(source.transform, nodeRoot, true)
+            ? CompareTrees(source.transform, nodeRoot, true, true)
             : new List<string> { "生成结果里找不到节点根" };
         Debug.Log($"[Y 场景规格] 摆放表往返：导出 {exported} 条 → 生成 {created} 个对象；差异 {diffs.Count} 条");
         for (int i = 0; i < diffs.Count && i < 30; i++) Debug.Log("   " + diffs[i]);
@@ -705,8 +715,13 @@ public static class YSceneSpecTools
         return diffs.Count == 0;
     }
 
-    /// <summary>逐对象比对两棵层级树（相对各自根，路径为准）。</summary>
-    public static List<string> CompareTrees(Transform a, Transform b, bool compareRoot = false)
+    /// <summary>
+    /// 逐对象比对两棵层级树（相对各自根，路径为准）。
+    ///
+    /// <paramref name="ignoreInactive"/> = true → 两边都跳过**作者态关掉**的物件 ✅
+    /// （旧残留 ✅：导出时不带它们 ✅，比对时也要跳过 ✅，否则会误报「缺失」✅）。
+    /// </summary>
+    public static List<string> CompareTrees(Transform a, Transform b, bool compareRoot = false, bool ignoreInactive = false)
     {
         var diffs = new List<string>();
         if (compareRoot)
@@ -715,8 +730,8 @@ public static class YSceneSpecTools
             if (a.localEulerAngles != b.localEulerAngles) diffs.Add($"[根] 旋转 {a.localEulerAngles} vs {b.localEulerAngles}");
             if (a.localScale != b.localScale) diffs.Add($"[根] 缩放 {a.localScale} vs {b.localScale}");
         }
-        var mapA = Flatten(a);
-        var mapB = Flatten(b);
+        var mapA = Flatten(a, ignoreInactive);
+        var mapB = Flatten(b, ignoreInactive);
         foreach (var kv in mapA)
         {
             if (!mapB.TryGetValue(kv.Key, out var tb)) { diffs.Add($"缺失: {kv.Key}"); continue; }
@@ -750,7 +765,7 @@ public static class YSceneSpecTools
         return diffs;
     }
 
-    private static Dictionary<string, Transform> Flatten(Transform root)
+    private static Dictionary<string, Transform> Flatten(Transform root, bool ignoreInactive = false)
     {
         var map = new Dictionary<string, Transform>();
         void Walk(Transform t, string path)
@@ -758,6 +773,8 @@ public static class YSceneSpecTools
             for (int i = 0; i < t.childCount; i++)
             {
                 var c = t.GetChild(i);
+                // 作者态关掉的 = 旧残留 ✅ → 比对时也跳过 ✅
+                if (ignoreInactive && !c.gameObject.activeSelf) continue;
                 string p = path.Length == 0 ? c.name : path + "/" + c.name;
                 map[p] = c;
                 Walk(c, p);
