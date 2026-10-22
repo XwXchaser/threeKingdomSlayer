@@ -19,12 +19,19 @@ public interface ICombatHud
 }
 
 /// <summary>
-/// **对话模态端口**：内核问「对话是否正在挡路」（挡住技能激活 / 交互）。
+/// **对话模态端口**：内核问「对话是否正在挡路」（挡住技能激活 / 交互）；
+/// 流程层（路线节点对话）还要「排队一段对话」并「等它演完」，所以这里同时给出这两件事。
 /// </summary>
 public interface IDialogueModal
 {
     /// <summary>对话正在播放或仍在拦输入帧 → 视为挡路。</summary>
     bool IsInteractionBlocked { get; }
+
+    /// <summary>对话是否还在播放或排队中（挡路判定更宽：排队也算占用）。</summary>
+    bool IsBusy { get; }
+
+    /// <summary>把一段对话事件排进队列，返回是否排进去了。</summary>
+    bool QueueEventAndNotify(DialogueEventData dialogueEvent, bool forceReplay = false);
 }
 
 /// <summary>

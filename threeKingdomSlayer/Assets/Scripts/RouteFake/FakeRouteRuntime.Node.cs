@@ -82,15 +82,17 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
 
     private IEnumerator PlayEntryDialogue(DialogueEventData dialogue)
     {
-        if (dialogue == null || DialogueManager.Instance == null)
+        // 流程层只认对话端口（IDialogueModal），不认界面层的 DialogueManager —— 依赖方向朝下。
+        var dialogueModal = CombatPresenters.Dialogue;
+        if (dialogue == null || dialogueModal == null)
             yield break;
 
-        bool queued = DialogueManager.Instance.QueueEventAndNotify(dialogue);
+        bool queued = dialogueModal.QueueEventAndNotify(dialogue);
         if (!queued)
             yield break;
 
         yield return null;
-        while (DialogueManager.Instance.IsBusy && Phase != FakeRoutePhase.Defeated)
+        while (dialogueModal.IsBusy && Phase != FakeRoutePhase.Defeated)
             yield return null;
     }
 
@@ -139,8 +141,9 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
 
     private bool IsRewardBlocking()
     {
+        var discardPrompt = CombatPresenters.ItemDiscard;
         return (UpgradeChoiceManager.Instance != null && UpgradeChoiceManager.Instance.IsChoosing)
-            || ItemDiscardPopup.IsShowing
+            || (discardPrompt != null && discardPrompt.IsShowing)
             || (ExpGemManager.Instance != null && ExpGemManager.Instance.IsCollecting);
     }
 }
