@@ -55,10 +55,15 @@ public static class YSceneSpecTools
     {
         var spec = Selection.activeObject as YSceneSpec;
         if (spec == null) { Debug.LogError("[Y 场景规格] 先选中一个 YSceneSpec 资产"); return; }
-        var issues = Validate(spec);
-        if (issues.Count == 0) { Debug.Log("[Y 场景规格] 自检通过 ✅（0 问题）"); return; }
-        foreach (var i in issues) Debug.LogWarning("[Y 场景规格] " + i);
-        Debug.Log($"[Y 场景规格] 自检发现 {issues.Count} 个问题");
+        var issues = Validate(spec, out var clusters);
+        if (issues.Count == 0) { Debug.Log("[Y 场景规格] 自检通过 ✅（0 问题）"); }
+        else
+        {
+            foreach (var i in issues) Debug.LogWarning("[Y 场景规格] " + i);
+            Debug.Log($"[Y 场景规格] 自检发现 {issues.Count} 个问题");
+        }
+        if (clusters.Count > 0)
+            Debug.Log($"[Y 场景规格] 另有 {clusters.Count} 对「挤在一簇」✅（同深度带 ✅ + 脚点 < 0.5m ✅ —— 多为故意的叠放 ✅ 默认不报 ✅）");
     }
 
     [MenuItem("Tools/Y 场景规格/④ 往返验证（导出→生成→逐件比对）")]
@@ -826,7 +831,20 @@ public static class YSceneSpecTools
 
     public static List<string> Validate(YSceneSpec spec)
     {
+        return Validate(spec, out _);
+    }
+
+    /// <summary>
+    /// 自检 ✅。
+    /// <paramref name="clusterDetails"/>：**可选**的「挤在一簇」清单 ✅（同 sortBias ✅ + 脚点距离 &lt; 0.5m ✅）——
+    /// 默认**不报** ✅（实测：同 sortBias 共 18104 对 ✅，脚点 &lt; 0.5m 的只有 25 对 ✅，
+    /// 而那些全是**故意**的叠放 ✅ —— 路牌脚下的石头 ✅ / 墙脚的草 ✅ → 报出来纯噪音 ✅）。
+    /// 需要审这簇时再取它 ✅。
+    /// </summary>
+    public static List<string> Validate(YSceneSpec spec, out List<string> clusterDetails)
+    {
         var issues = new List<string>();
+        clusterDetails = new List<string>();
         if (spec == null) { issues.Add("规格为空"); return issues; }
 
         foreach (var node in spec.nodeSpecs)
@@ -843,9 +861,29 @@ public static class YSceneSpecTools
                              + "（该组会压在所有场景物之上）");
                 }
 
-                var dup = g.entries.GroupBy(e => e.sortBias).Where(x => x.Count() > 1).Select(x => x.Key).OrderBy(x => x).ToArray();
-                if (dup.Length > 0)
-                    issues.Add($"[{node.nodeId}/{g.GroupName}] 同层多件共用 sortBias {string.Join(",", dup)}（同深度时穿插）");
+                // 规则 7 ✅：**同一深度带里真叠放** ✅ —— 判据 = **脚点几乎重合** ✅（< 0.1m ✅）
+                // 为什么不用「AABB 重叠」❗：精灵的可见范围含大片透明 ✅（路牌那张 10.24m 见方 ✅）
+                // → AABB 一判就和旁边所有东西"重叠" ✅ → 全量跑出 52 条 ❗ 还是噪音 ❗
+                // 为什么把「挤在一簇」降成可选 ✅：实测同 sortBias 共 18104 对 ✅，脚点 < 0.5m 的只有 25 对 ✅，
+                // 而那 25 对全是**故意**的叠放 ✅（路牌脚下的石头 ✅ / 墙脚的草 ✅ / 树边的灌木 ✅）→ 报出来纯噪音 ✅
+                var sameBias = g.entries.Where(e => e != null && !e.containerOnly)
+                                        .GroupBy(e => e.sortBias)
+                                        .Where(x => x.Count() > 1);
+                foreach (var biasGroup in sameBias)
+                {
+                    var list = biasGroup.ToList();
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        for (int j = i + 1; j < list.Count; j++)
+                        {
+                            float d = FootDistance(list[i], list[j]);
+                            if (d < 0.1f)
+                                issues.Add($"[{node.nodeId}/{g.GroupName}] 同层真叠放：{list[i].name} × {list[j].name}（脚点相距 {d:F2}m ✅）");
+                            else if (d < 0.5f && clusterDetails != null)
+                                clusterDetails.Add($"[{node.nodeId}/{g.GroupName}] 挤在一簇：{list[i].name} × {list[j].name}（{d:F2}m ✅）");
+                        }
+                    }
+                }
 
                 foreach (var e in g.entries)
                 {
@@ -857,6 +895,16 @@ public static class YSceneSpecTools
             }
         }
         return issues;
+    }
+
+    /// <summary>
+    /// 两条同组条目的**脚点距离**（局部 XZ ✅ —— 同组同父级 ✅ → 坐标可比 ✅）。
+    /// </summary>
+    private static float FootDistance(YPropEntry a, YPropEntry b)
+    {
+        return Vector2.Distance(
+            new Vector2(a.localPosition.x, a.localPosition.z),
+            new Vector2(b.localPosition.x, b.localPosition.z));
     }
 
     // ───────────────────────── 往返验证 ─────────────────────────
@@ -1038,6 +1086,7 @@ public static class YSceneSpecTools
                 if (sa.sharedMaterial != sb.sharedMaterial) diffs.Add($"{kv.Key}: 材质 {sa.sharedMaterial?.name} vs {sb.sharedMaterial?.name}");
                 if (sa.sortingOrder != sb.sortingOrder) diffs.Add($"{kv.Key}: sortingOrder {sa.sortingOrder} vs {sb.sortingOrder}");
                 if (sa.sortingLayerID != sb.sortingLayerID) diffs.Add($"{kv.Key}: sortingLayer {sa.sortingLayerID} vs {sb.sortingLayerID}");
+                if (sa.enabled != sb.enabled) diffs.Add($"{kv.Key}: 渲染器 enabled {sa.enabled} vs {sb.enabled}（作者态关掉的 ✅ 表里能记 ✅）");
             }
             else
             {
@@ -1047,7 +1096,8 @@ public static class YSceneSpecTools
                     var fa = ta.GetComponent<MeshFilter>(); var fb = tb.GetComponent<MeshFilter>();
                     if ((fa == null ? null : fa.sharedMesh) != (fb == null ? null : fb.sharedMesh)) diffs.Add($"{kv.Key}: 网格不同");
                     if (ma.sharedMaterial != mb.sharedMaterial) diffs.Add($"{kv.Key}: 材质 {ma.sharedMaterial?.name} vs {mb.sharedMaterial?.name}");
-                    if (ma.sortingOrder != mb.sortingOrder) diffs.Add($"{kv.Key}: sortingOrder {ma.sortingOrder} vs {mb.sortingOrder}");
+                        if (ma.sortingOrder != mb.sortingOrder) diffs.Add($"{kv.Key}: sortingOrder {ma.sortingOrder} vs {mb.sortingOrder}");
+                        if (ma.enabled != mb.enabled) diffs.Add($"{kv.Key}: 渲染器 enabled {ma.enabled} vs {mb.enabled}（作者态关掉的 ✅ 表里能记 ✅）");
                 }
             }
         }
