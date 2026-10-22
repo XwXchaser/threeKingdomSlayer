@@ -60,6 +60,8 @@ public static class YScenePlacementImporter
         public float[] scale;
         public int sortingOrder = 0;
         public bool active = true;
+        /// <summary>渲染器被关掉 ✅（例：旗子的精灵关掉 ✅、只留风动网格 ✅）—— 不记就会被动点亮 ✅。</summary>
+        public bool rendererDisabled = false;
     }
 
     [Serializable]
@@ -171,6 +173,7 @@ public static class YScenePlacementImporter
             {
                 item.kind = "sprite";
                 item.sortingOrder = sr.sortingOrder;
+                item.rendererDisabled = !sr.enabled;      // 作者态关掉的渲染器 ✅ 要带走 ✅
                 if (sr.sprite != null)
                 {
                     item.spriteName = sr.sprite.name;
@@ -182,6 +185,7 @@ public static class YScenePlacementImporter
             {
                 item.kind = "mesh";
                 item.sortingOrder = mr.sortingOrder;
+                item.rendererDisabled = !mr.enabled;      // 同上 ✅
                 var mf = t.GetComponent<MeshFilter>();
                 if (mf != null && mf.sharedMesh != null)
                 {
@@ -302,6 +306,7 @@ public static class YScenePlacementImporter
                 renderKind = YRenderKind.Sprite,
                 pivotMode = YPivotMode.Foot,
                 active = item.active,
+                rendererDisabled = item.rendererDisabled,
             };
 
             if (item.kind == "mesh")

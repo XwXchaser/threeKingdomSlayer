@@ -141,6 +141,8 @@ public sealed class YPropEntry
     public bool containerOnly = false;
     [Tooltip("生成时是否激活（场景里有一批隐藏件，不记就会被动点亮）")]
     public bool active = true;
+    [Tooltip("渲染器被关掉 ✅（作者态关的 ✅ —— 例：旗子的精灵关掉 ✅、只留风动网格 ✅）—— 生成时保持关 ✅（不记就会被动点亮 ✅）")]
+    public bool rendererDisabled = false;
     [Tooltip("被手工微调过：生成器不再覆盖这一条")]
     public bool userModified = false;
 }

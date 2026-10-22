@@ -712,6 +712,7 @@ public static class YSceneSpecTools
                 var mr = rs as MeshRenderer;
                 if (mr != null) { mr.sharedMaterial = e.material; mr.sortingOrder = baseline + e.sortBias; }
             }
+            rs.enabled = !e.rendererDisabled;      // 作者态关掉的渲染器 ✅ 保持关 ✅
             if (rootGo.activeSelf != e.active) rootGo.SetActive(e.active);
             return 1;
         }
@@ -745,6 +746,7 @@ public static class YSceneSpecTools
             sr.sprite = e.sprite;
             sr.material = e.material;
             sr.sortingOrder = baseline + e.sortBias;
+            sr.enabled = !e.rendererDisabled;        // 作者态关掉的渲染器 ✅ 保持关 ✅
         }
         else
         {
@@ -758,6 +760,7 @@ public static class YSceneSpecTools
             if (mr == null) mr = go.AddComponent<MeshRenderer>();
             mr.sharedMaterial = e.material;
             mr.sortingOrder = baseline + e.sortBias;
+            mr.enabled = !e.rendererDisabled;        // 同上 ✅
         }
         return 1;
     }
