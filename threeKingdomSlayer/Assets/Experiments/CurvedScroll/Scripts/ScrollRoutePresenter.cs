@@ -121,6 +121,14 @@ public sealed class ScrollRoutePresenter : MonoBehaviour, IRouteMotionPresenter
         route.animate = false;
     }
 
+    public bool TryGetActiveScene(out Scene scene)
+    {
+        scene = default;
+        if (route == null) return false;
+        scene = route.gameObject.scene;
+        return scene.IsValid() && scene.isLoaded;
+    }
+
     public void Skip()
     {
         if (IsPlaying) skipRequested = true;

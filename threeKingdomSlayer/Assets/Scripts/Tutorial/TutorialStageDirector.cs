@@ -523,17 +523,32 @@ public class TutorialStageDirector : MonoBehaviour
 
         if (!_sceneDimBound && dim)
         {
-            var presenter = FindObjectOfType<ScrollRoutePresenter>();
-            var route = presenter != null ? presenter.Route : null;
-            if (route == null)
+            // 只认路线表现层端口（IRouteMotionPresenter），不认具体的 Y 分叉实验类 —— 依赖方向朝下。
+            var presenter = FindRoutePresenter();
+            if (presenter == null || !presenter.TryGetActiveScene(out var routeScene))
             {
                 Debug.Log("[Tutorial] 场景压暗：路线场景未就绪，跳过压暗");
                 return;
             }
-            _sceneDim.Bind(route.gameObject.scene);
+            _sceneDim.Bind(routeScene);
             _sceneDimBound = true;
         }
         _sceneDim.FadeTo(dim);
+    }
+
+    /// <summary>
+    /// 找路线表现层。Unity 的 FindObjectOfType 不接受接口类型，所以扫一遍 MonoBehaviour 再按接口筛
+    /// （与 SceneFlowManager 找 ISceneTransitionCamera 同一手法）。
+    /// </summary>
+    private static IRouteMotionPresenter FindRoutePresenter()
+    {
+        var behaviours = FindObjectsOfType<MonoBehaviour>(true);
+        for (int i = 0; i < behaviours.Length; i++)
+        {
+            var presenter = behaviours[i] as IRouteMotionPresenter;
+            if (presenter != null) return presenter;
+        }
+        return null;
     }
 
     private void PlayGestureAt(GestureHintKind kind, Vector2 from, Vector2 to)

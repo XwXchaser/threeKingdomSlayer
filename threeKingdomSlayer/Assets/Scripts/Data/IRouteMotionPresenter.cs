@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 路线表现层接口：运行器只负责提交阶段与目标节点，表现层只负责播放并在结束时回调一次。
@@ -32,6 +33,12 @@ public interface IRouteMotionPresenter
 
     /// <summary>进入节点后同步视觉状态（分支车道、锚点、随行表现开关）。</summary>
     void ApplyNodeVisuals(FakeRouteNodeConfig node);
+
+    /// <summary>
+    /// 表现层当前作用的场景（路线场景）；未就绪时返回 false。
+    /// 场景级效果（教学压暗等）靠它拿到要作用的场景 —— 调用方不必知道表现层的具体实现。
+    /// </summary>
+    bool TryGetActiveScene(out Scene scene);
 
     /// <summary>跳过当前表现阶段：只完成表现本身，不跳过战斗、奖励或条件求值。</summary>
     void Skip();
