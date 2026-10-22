@@ -15,7 +15,8 @@ MonoBehaviour:
   routeId: changbanpo_scroll_preview
   stageId: 1
   configurationVersion: 1
-  stageName: "\u957F\u5742\u5761\xB7\u5377\u8F74\u8282\u70B9\u9884\u89C8"
+  stageName: "\u957F\u5742\u5761\xB7\u5377\u8F74"
+  openingTravel: {fileID: 0}
   startNode: {fileID: 11400000, guid: 717b9cde4180dbd4797f6e39ab6aad11, type: 2}
   nodes:
   - {fileID: 11400000, guid: 717b9cde4180dbd4797f6e39ab6aad11, type: 2}
@@ -25,3 +26,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 64494f266ab77bf46b987e20c001a182, type: 2}
   - {fileID: 11400000, guid: 6bc7b629080bf6e45a9b461bb4d2858b, type: 2}
   clearCoinReward: 0
+  prerequisiteStageIds: 
