@@ -1,0 +1,93 @@
+---
+id: kd_4f0d83f7-879c-4472-ba90-5e9f35580b84
+injectMode: inherit
+summary: Y 场景自动搭建管线交接（2026-10-23）：已提交基线表、未提交改动清单、中断时的 N3 往返测试位置、用户已拍板四件事与仍待拍板项、已知坑。
+injectAgents:
+- '*'
+aiEditMode: inherit
+---
+
+# Y 场景自动搭建管线 · 交接（2026-10-24 更新）
+
+> 入口说明：本文始于 2026-10-22 14:16 因「上下文撑爆 + 自动压缩死锁」而中断的那条会话（id `17859427-b132-4a53-bf25-6438197a5e4d`，标题「§15.0 一页纸现状就是入口（其余 §」）。
+> **2026-10-24 新会话已把 N3 往返测试跑通 ✅（逐件差异 0 ✅）**，下面是最新可用状态 ✅。
+> 格式与模型的**可复用规则**见 `memory/y-scene-spec-pipeline.md` ✅；
+> 更早的背景再读 `plan/curved-scroll-development-handoff.md`、`memory/scene-art-production-pipeline.md`、`plan/asmdef-layering-plan-20261022.md`。
+> 故障本身的诊断与取证方法见 `memory/known-issues.md` 第 7 条。
+
+## 一、基线：已提交且已验证（可直接用）
+
+| 提交 | 内容 | 验证口径 |
+|---|---|---|
+| `0a181c5` | Y 卷轴场景重建方案文档（spec 数据 / 生成器 / 层级自检 / 节点按需装载 / 跳过战斗按钮） | — |
+| `b7c8702` | Y 场景规格管线 S0 + 城门楼层级修正 B3 + E0 段重建 B2 | E0 墙脚（z≈128~130）现在正确画在城门楼（z=132）之前，视觉验证过 |
+| `82f2a9d` | 方案文档更新（S0/S1 完成、城门楼层级 bug 修复记录） | — |
+| `53eda4b` | 功能件入规格 + 引用重映射 | 整场景 453 件（189 布景 + 266 功能件）从零重建、**逐件差异 0**；`YScrollSample.nodePresentations` 6 个锚点全部指回新场景 |
+| `ce809ac` | 背景带 `YBackgroundBand` + 摆放表导入器 | 整场景重建逐件差异 0（275 件，含背景带） |
+| `（2026-10-24）` | **摆放表格式 v2 + 规格条目化 + 往返验证工具** | **15 个段 prefab 共 764 件逐件差异 0 ✅；整场景 275 件逐件差异 0 ✅** |
+
+管线两端已通：规格导出 → 按规格重建（幂等，`userModified` 条目不覆盖）→ 12 条层级自检 → 逐件比对。
+规格资产目录：`Assets/RouteData/YSceneSpecs/`（当前只有 `N1 to E0 - Shoulder Detail v1_Slice.asset`）。
+
+## 二、工作区状态：agent 改动已提交 ✅（2026-10-24）
+
+| 文件 | 状态 | 内容 |
+|---|---|---|
+| `Assets/Scripts/Editor/Experiments/YScenePlacementImporter.cs` | ✅ 已提交 | 摆放表格式 v2：`route`/`local` 两种坐标空间 ✅、容器也进表 ✅、局部变换 ✅、精灵名+路径解析 ✅ |
+| `Assets/Experiments/CurvedScroll/Scripts/SceneSpec/YSceneSpec.cs` | ✅ 已提交 | 规格**条目化** ✅：条目带完整路径 ✅、组只做排序桶 ✅、节点根变换 ✅、`containerOnly` ✅ |
+| `Assets/Scripts/Editor/Experiments/YSceneSpecTools.cs` | ✅ 已提交 | 生成器不变量 ✅（变换只写一次 ✅）+ 摆放表往返验证工具 ✅ |
+| `Assets/Scripts/Editor/Experiments/YSceneCoordinateWindow.cs` | ✅ 已提交 | `Tools/Y 场景/坐标读取器`：选中场景物件 → 报「沿路米数 / 横向偏移 / 所属节点」✅ |
+| `Assets/RouteData/YSceneSpecs/N1 to E0 - Shoulder Detail v1_Slice.asset` | ✅ 已重写 | **旧资产字段名过期** ✅（`groupName`/`parentPath` → 反序列化为空路径 ✅，重建会塌成一堆 ✅）→ 已按当前格式从场景重导 ✅ |
+| `Assets/Resources/EnemyPrefabs/Enemy_1011.prefab` | **用户自己的改动**（`maxHealth: 100 → 200`） | 与本管线无关，**没有**提交 ✅ |
+
+Unity Console 0 error ✅。
+
+## 三、N3 往返测试：已完成 ✅（2026-10-24）
+
+原计划：现成的 N3 段 prefab → 摆放表 → 规格 → 重建 → 与原 prefab 逐件比对 ✅。
+**结果：逐件差异 0 ✅**（连同全部 15 个段 prefab 共 764 件 ✅、整场景 275 件 ✅）。
+
+测试暴露 5 个**格式缺口** ✅（不是管线缺陷 ✅），已全部修掉 ✅：
+
+1. 精灵按路径解析失败（那些 PNG 不是 Sprite 导入）→ 改按名/路径解析 ✅。
+2. y 坐标没带 → 格式补 `at` 的 y ✅。
+3. 嵌套 prefab 实例 `localPosition` 为 0、真实位置在 prefab 内部 → 容器也进表 ✅（容器自己带变换 ✅）。
+4. 组旋转没相对化（段 prefab 带 315° 分支朝向，被重复旋转一次）→ **改用局部变换** ✅（不做世界换算 ✅）。
+5. 嵌套 prefab 实例自身没有 Renderer → 容器变换丢失 → **全部变换节点进表** ✅。
+
+修完后又发现并修掉的三个问题 ✅：
+
+6. **组写变换会覆盖条目写的变换** ✅（同一条 transform 被写两次 ✅）→ 组不再带变换 ✅，层级一律靠条目完整路径 ✅。
+7. **世界坐标换算有 ~1e-5 浮点误差** ✅（根 315° 朝向 ✅）→ 一律用局部变换 ✅。
+8. **多精灵图集按路径取会取到第一个子精灵** ✅（RockRound → BushCompact ✅）→ 带 `spriteName` ✅ 按名字取 ✅。
+
+另修：**已提交的 N1→E0 切片规格资产字段名过期** ✅（见第二节 ✅）→ 已按当前格式从场景重导 ✅，切片往返也是 0 差异 ✅。
+
+## 四、用户已拍板的四件事（2026-10-22 13:49）
+
+1. 坐标用**沿路坐标**：x = 横向偏移，z = 沿路米数。
+2. 参考图 = 一张图让 agent 自行分析，允许有差距，但**最重要的物件相对位置必须正确**。
+3. 美术资源存储位置混乱 → 先梳理（结论见第五节第 1 条）。
+4. 同一关卡内换背景图 → 已用 `YBackgroundBand`（沿路区间 + 图 + 材质 + 排序）落地，换背景 = 改一段区间。
+
+## 五、仍待用户拍板（原文提案，勿擅自执行）
+
+1. **美术整理三步**：① 过程文件移出 `Assets/`（`Transition/Previews`、各 `References/Review/Candidates/Plans/Archive`，约 35MB，只减包体、不影响引用）→ ② 正式素材按 `Assets/Art/YRoute/<节点>/<用途>/` 重组（与摆放表 `id`/`layer` 一一对应）→ ③ 命名规范 `<节点>_<类别>_<物件>_<版本>`。
+   资产盘点结论：Y 场景美术约 60MB 全在 `Assets/Experiments/CurvedScroll/Art/**`；正式素材约 25MB（`EnvironmentV2/N1|E0|J1|N3` + `Authoring/`），过程文件约 35MB。
+2. **下一批做哪个**：(a) 坐标读取工具（喂自动搭场景）/ (b)「跳过本节点战斗」小按钮（手机可测）。两者独立，可都做。
+
+## 六、已知的坑（不要重复踩）
+
+- 该会话自己总结的空转纪律（13:46）：每轮先更新 todo 再动手；思考不超过「一个假设 + 一个测量」；遇异常先跑决定性测量，禁止脑内枚举假设；上下文长了少读文件、多引用已写好的文档；拿不准就问，不空转。
+- **同一条 transform 只能被写一次** ✅：组与条目各写一次 → 谁后写谁赢 ✅ → 变换被抹掉 ✅。组只是排序桶 ✅。
+- **一律用局部变换** ✅：世界坐标换算（`InverseTransformPoint` ✅）在根有 315° 朝向时会引入 ~1e-5 误差 ✅ → 往返比对会报「位置看着一样却不一致」✅。
+- **多精灵图集必须带子资产名** ✅：按路径取会取到第一个子精灵 ✅。
+- 嵌套 prefab 实例：真实位置在 prefab 内部 ✅，容器自己带变换 ✅，导出要导**全部变换节点** ✅。
+- 场景是 flat world：z = 沿路米数，x = 横向偏移；190m 处分叉，左右两支采样取最近的那支。
+- **规格资产会随类字段改动变陈旧** ✅：反序列化不会报错 ✅，只会静默变空 ✅ → 改过 `YSceneSpec` 字段名后要**重新导出规格** ✅。
+
+## 七、git 状态
+
+分支 `feat/stage-select-talent-overlays` ✅。管线改动已提交 ✅；
+用户的 `Enemy_1011.prefab`（maxHealth）改动**仍未提交** ✅（保持原样 ✅）。
+`VideoGenerationPack/` 与 `VideoGenerationValidation/`（未跟踪 ✅）不在本管线范围 ✅，没动 ✅。
