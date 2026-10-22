@@ -91,7 +91,7 @@ aiEditMode: inherit
 │   ├─ terrain: 地形 mesh + 每条分支的地面材质（5 贴图+混合）  │
 │   ├─ nodeSpecs[]:  nodeId / 锚点米数(引用 worldDistance) /    │
 │   │                分组 / propEntries[] / interactives[]      │
-│   ├─ segmentSpecs[]: 段 prefab + 装载窗口[start,end] + 常驻   │
+│   ├─ ~~segmentSpecs[]: 段 prefab + 装载窗口[start,end] + 常驻~~ ❗ **已删 ✅（2026-10-24 ✅）—— 21 个规格里 0 个在用 ✅ → 唯一真源 = 场景里的 `YRouteSegments` ✅**
 │   └─ groundProfiles[]: 每条分支的地面材质                     │
 └───────────────────────────────────────────────────────────┘
         │ 生成器（Editor，只写 spec 负责的条目，幂等）
@@ -127,7 +127,7 @@ aiEditMode: inherit
 | `terrainMesh` | GameObject | 地形（**给定输入** ✅，生成器不生成地形 ✅） |
 | `groundProfiles[]` | `YGroundProfile` | 每条分支：地面材质 ✅ + 混合系数 ✅ + 贴图槽位（可选 ✅，缺省用材质自带 ✅） |
 | `nodeSpecs[]` | `YNodeSceneSpec` | 见下 ✅ |
-| `segmentSpecs[]` | `YSegmentSpec` | 段 prefab ✅ + `startDistance` / `endDistance` ✅ + `alwaysResident` ✅ |
+| ~~`segmentSpecs[]`~~ ❗ | ~~`YSegmentSpec`~~ | **已删 ✅（2026-10-24 ✅）** —— 全项目没人读它 ✅（21 个规格里 0 个非空 ✅）→ 留两份真相没意义 ✅ → 删 ✅ |
 | `renderWorldBaseline` | int | **世界基准 sortingOrder** ✅（默认 0 ✅）→ 校验器用它判「越界」✅ |
 
 ### 3.2 `YNodeSceneSpec`
@@ -321,7 +321,7 @@ sprite 的 pivot 与贴图 alpha 底边（对照 `slice_manifest.pivot_normalize
 | 构图参考图 | `C:/Users/Administrator/Pictures/gptGen/4c7ef3f7-f89c-44e0-b008-725566fcb107.png` ✅（手绘 2.5D 街景 ✅） |
 | 素材来源图 | `C:/Users/Administrator/Pictures/gptGen/n3_village_assets_g1_v1_preparation/n3_village_architecture_g1_v1.png` ✅（**孤立物件表** ✅） |
 | 摆放表（可手改 ✅） | `Authoring/Placement/N3_Village.json` ✅（86 条 ✅） |
-| 规格 | `Assets/RouteData/YSceneSpecs/N3.asset` ✅（15 组 / 86 条目 ✅） |
+| 规格 | `Assets/RouteData/YSceneSpecs/N3 Village Rescue - Accepted Art and Grey Wall Study @ 266.asset` ✅（原 `N3.asset` ✅，已改名对齐段名 ✅）｜15 组 / 86 条目 ✅ |
 | 节点 prefab | `Authoring/Nodes/N3.prefab` ✅（根=N3 ✅，不带位置 ✅） |
 | 段 prefab（**已进段表** ✅） | `Authoring/Segments/N3 Village - From Reference Table.prefab` ✅（根 = 世界位姿 (-88.07,0,289.73) rot 315° ✅；段表 323→328 ✅） |
 | 参考图新增 6 件 | **已撤** ✅（不是 N3 素材 ✅） |

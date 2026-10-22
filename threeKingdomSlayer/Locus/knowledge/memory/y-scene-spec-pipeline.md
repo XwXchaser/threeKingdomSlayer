@@ -118,7 +118,7 @@ JSON ✅，两种坐标空间由表级字段 `space` 决定 ✅：
 | 产物 | 路径 | 说明 |
 |---|---|---|
 | **摆放表**（可手改的输入 ✅） | `Authoring/Placement/N3_Village.json` ✅ | 86 条 ✅（local 空间 ✅，层 = 分组 ✅） |
-| 节点规格 | `Assets/RouteData/YSceneSpecs/N3.asset` ✅ | 15 组 / 86 条目 ✅ |
+| 节点规格 | `Assets/RouteData/YSceneSpecs/N3 Village Rescue - Accepted Art and Grey Wall Study @ 266.asset` ✅（原名 `N3.asset` ✅ → 已改名对齐段名 ✅ 2026-10-24 ✅） | 15 组 / 86 条目 ✅ |
 | 节点 prefab | `Authoring/Nodes/N3.prefab` ✅ | 根 = `N3` ✅，**不带位置** ✅ |
 | **段 prefab**（已进段表 ✅） | `Authoring/Segments/N3 Village - From Reference Table.prefab` ✅ | 根 = 世界位姿 (-88.07, 0, 289.73) rot 315° ✅ → 段表 323→328 ✅ |
 
