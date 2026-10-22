@@ -1,0 +1,2260 @@
+{
+    "nodeId": "N1 Opening Roadside Props",
+    "space": "local",
+    "origin": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "rootRotation": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "backgroundMaterial": "",
+    "spriteSearchFolders": "",
+    "roadHalfWidth": 0.0,
+    "skipped": [],
+    "items": [
+        {
+            "id": "N1_StakeCluster_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_StakeCluster_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_StakeCluster_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -3.8499999046325685,
+                0.0,
+                6.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5199999809265137,
+                0.5199999809265137,
+                0.5199999809265137
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_PalisadeShort_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_PalisadeShort_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_PalisadeShort_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                5.800000190734863,
+                0.0,
+                42.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.44999998807907107,
+                0.44999998807907107,
+                0.44999998807907107
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_LowCheval_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_LowChevalDeFrise_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_LowChevalDeFrise_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                4.699999809265137,
+                0.0,
+                11.5
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.41999998688697817,
+                0.41999998688697817,
+                0.41999998688697817
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_BrokenCart_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_BrokenCart_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_BrokenCart_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -3.5999999046325685,
+                -0.699999988079071,
+                4.199999809265137
+            ],
+            "rotation": [
+                35.5462760925293,
+                8.330612182617188,
+                14.137290954589844
+            ],
+            "scale": [
+                0.36000001430511477,
+                0.36000001430511477,
+                0.36000001430511477
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_GrassMedium_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_GrassMedium_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_GrassMedium_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -3.950000047683716,
+                0.0,
+                3.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.41999998688697817,
+                0.23999999463558198,
+                0.23999999463558198
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_GrassMedium_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_GrassMedium_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_GrassMedium_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                4.0,
+                0.0,
+                4.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.41999998688697817,
+                0.23999999463558198,
+                0.23999999463558198
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_GrassMedium_Left_02",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_GrassMedium_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_GrassMedium_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -5.900000095367432,
+                0.0,
+                16.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.44999998807907107,
+                0.23999999463558198,
+                0.23999999463558198
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_GrassMedium_Right_02",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_GrassMedium_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_GrassMedium_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                5.900000095367432,
+                0.0,
+                18.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.44999998807907107,
+                0.23999999463558198,
+                0.23999999463558198
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_GrassMedium_Left_03",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_GrassMedium_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_GrassMedium_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -4.800000190734863,
+                0.0,
+                24.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.41999998688697817,
+                0.23000000417232514,
+                0.46000000834465029
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_GrassMedium_Right_03",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_GrassMedium_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_GrassMedium_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                4.800000190734863,
+                0.0,
+                26.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.41999998688697817,
+                0.23000000417232514,
+                0.46000000834465029
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_GrassMedium_Left_04",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_GrassMedium_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_GrassMedium_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -5.0,
+                0.0,
+                30.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.41999998688697817,
+                0.23000000417232514,
+                0.46000000834465029
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_GrassMedium_Right_04",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_GrassMedium_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_GrassMedium_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                5.0,
+                0.0,
+                32.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.41999998688697817,
+                0.23000000417232514,
+                0.46000000834465029
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_StakeCluster_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_StakeCluster_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_StakeCluster_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                3.950000047683716,
+                0.0,
+                7.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.47999998927116396,
+                0.47999998927116396,
+                0.47999998927116396
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_LowCheval_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_LowChevalDeFrise_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_LowChevalDeFrise_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -4.699999809265137,
+                0.0,
+                10.5
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.4399999976158142,
+                0.4399999976158142,
+                0.4399999976158142
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_PalisadeShort_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_PalisadeShort_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_PalisadeShort_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -5.800000190734863,
+                0.0,
+                38.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.4399999976158142,
+                0.4399999976158142,
+                0.4399999976158142
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_BrokenCart_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_BrokenCart_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_BrokenCart_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                3.700000047683716,
+                -0.5,
+                5.199999809265137
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.3400000035762787,
+                0.3400000035762787,
+                0.3400000035762787
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Rampart_Left_Far",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundEarthenRampart_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundEarthenRampart_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -4.900000095367432,
+                0.0,
+                37.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.36000001430511477,
+                0.36000001430511477,
+                0.36000001430511477
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Timber_Right_Far",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundTimberBarricade_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundTimberBarricade_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                4.900000095367432,
+                0.0,
+                40.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.3799999952316284,
+                0.3400000035762787,
+                0.3400000035762787
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Mound_Left_Mid",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_LowEarthMound_ColorV4",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_LowEarthMound_ColorV4.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -4.349999904632568,
+                0.0,
+                6.150000095367432
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.20000000298023225,
+                0.20000000298023225,
+                0.20000000298023225
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Rampart_Right_Mid",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundEarthenRampart_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundEarthenRampart_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                4.800000190734863,
+                0.0,
+                20.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5600000023841858,
+                0.5600000023841858,
+                0.5600000023841858
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Timber_Left_Mid",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundTimberBarricade_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundTimberBarricade_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -4.800000190734863,
+                0.0,
+                30.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Ruins_Right_Far",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundDistantRuins_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundDistantRuins_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                5.800000190734863,
+                0.0,
+                34.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.7599999904632568,
+                0.6200000047683716,
+                0.6200000047683716
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Ruins_Left_Far",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundDistantRuins_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundDistantRuins_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -5.599999904632568,
+                0.0,
+                32.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.7799999713897705,
+                0.6399999856948853,
+                0.6399999856948853
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Mound_Right_Near",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_LowEarthMound_ColorV4",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_LowEarthMound_ColorV4.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                4.349999904632568,
+                0.0,
+                6.949999809265137
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.1899999976158142,
+                0.1899999976158142,
+                0.1899999976158142
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Timber_Left_Near",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundTimberBarricade_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundTimberBarricade_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -6.300000190734863,
+                0.0,
+                23.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Rampart_Right_Near",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundEarthenRampart_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundEarthenRampart_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                6.300000190734863,
+                0.0,
+                25.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.4399999976158142,
+                0.4399999976158142,
+                0.4399999976158142
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Mound_Left_Far2",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundReinforcedMound_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundReinforcedMound_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -5.400000095367432,
+                0.0,
+                45.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.3799999952316284,
+                0.3799999952316284,
+                0.3799999952316284
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Timber_Right_Far2",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundTimberBarricade_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundTimberBarricade_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                5.699999809265137,
+                0.0,
+                36.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6399999856948853,
+                0.4399999976158142,
+                0.4399999976158142
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Rampart_Left_Far2",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundEarthenRampart_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundEarthenRampart_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -5.699999809265137,
+                0.0,
+                38.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6800000071525574,
+                0.4000000059604645,
+                0.4000000059604645
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Ruins_Right_Far2",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundDistantRuins_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundDistantRuins_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                6.599999904632568,
+                0.0,
+                46.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6399999856948853,
+                0.5,
+                0.5
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Ruins_Left_Far2",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundDistantRuins_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundDistantRuins_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -6.800000190734863,
+                0.0,
+                44.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6200000047683716,
+                0.5,
+                0.5
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundEarthenRampart_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundEarthenRampart_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -7.0,
+                0.0,
+                20.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6800000071525574,
+                0.5400000214576721,
+                0.5400000214576721
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Left_02",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundTimberBarricade_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundTimberBarricade_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -7.400000095367432,
+                0.0,
+                28.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6200000047683716,
+                0.47999998927116396,
+                0.47999998927116396
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Left_03",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundReinforcedMound_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundReinforcedMound_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -6.199999809265137,
+                0.0,
+                19.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.8600000143051148,
+                0.47999998927116396,
+                0.47999998927116396
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Left_04",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundEarthenRampart_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundEarthenRampart_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -6.5,
+                0.0,
+                29.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.7200000286102295,
+                0.3799999952316284,
+                0.3799999952316284
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundTimberBarricade_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundTimberBarricade_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                7.0,
+                0.0,
+                22.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6800000071525574,
+                0.5400000214576721,
+                0.5400000214576721
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Right_02",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundReinforcedMound_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundReinforcedMound_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                7.400000095367432,
+                0.0,
+                30.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.6200000047683716,
+                0.47999998927116396,
+                0.47999998927116396
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Right_03",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundEarthenRampart_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundEarthenRampart_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                6.199999809265137,
+                0.0,
+                23.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.8399999737739563,
+                0.46000000834465029,
+                0.46000000834465029
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Right_04",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundTimberBarricade_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundTimberBarricade_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                6.599999904632568,
+                0.0,
+                33.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.699999988079071,
+                0.3799999952316284,
+                0.3799999952316284
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Left_05",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundEarthenRampart_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundEarthenRampart_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -4.650000095367432,
+                0.0,
+                42.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.8199999928474426,
+                0.6000000238418579,
+                0.6000000238418579
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Right_05",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundTimberBarricade_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundTimberBarricade_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                4.800000190734863,
+                0.0,
+                46.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.8600000143051148,
+                0.5799999833106995,
+                0.5799999833106995
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Left_06",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundReinforcedMound_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundReinforcedMound_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -4.75,
+                0.0,
+                52.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.8600000143051148,
+                0.6399999856948853,
+                0.6399999856948853
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Right_06",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundEarthenRampart_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundEarthenRampart_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                4.849999904632568,
+                0.0,
+                56.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.8999999761581421,
+                0.6200000047683716,
+                0.6200000047683716
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Left_07",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundTimberBarricade_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundTimberBarricade_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -4.900000095367432,
+                0.0,
+                62.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.9200000166893005,
+                0.6399999856948853,
+                0.6399999856948853
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Right_07",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundReinforcedMound_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundReinforcedMound_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                4.75,
+                0.0,
+                66.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.8600000143051148,
+                0.6200000047683716,
+                0.6200000047683716
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Left_08",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundEarthenRampart_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundEarthenRampart_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -4.800000190734863,
+                0.0,
+                72.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.8799999952316284,
+                0.6000000238418579,
+                0.6000000238418579
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_SideBand_Right_08",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundTimberBarricade_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundTimberBarricade_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                4.800000190734863,
+                0.0,
+                76.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.8799999952316284,
+                0.6000000238418579,
+                0.6000000238418579
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Ruins_Left_Tail",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundDistantRuins_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundDistantRuins_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -6.199999809265137,
+                0.0,
+                80.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0199999809265137,
+                0.8199999928474426,
+                0.8199999928474426
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Mid_Ruins_Right_Tail",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_MidgroundDistantRuins_v1_clean",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_MidgroundDistantRuins_v1_clean.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                6.300000190734863,
+                0.0,
+                82.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0399999618530274,
+                0.8199999928474426,
+                0.8199999928474426
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_FallenLogs_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_FallenLogs_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_FallenLogs_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -2.6500000953674318,
+                0.0,
+                3.549999952316284
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                353.0
+            ],
+            "scale": [
+                0.3199999928474426,
+                0.3199999928474426,
+                0.3199999928474426
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_BrokenShieldArrows_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_BrokenShieldArrows_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_BrokenShieldArrows_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                2.6500000953674318,
+                0.0,
+                3.950000047683716
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                7.999999046325684
+            ],
+            "scale": [
+                0.25999999046325686,
+                0.25999999046325686,
+                0.25999999046325686
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Transition_FallenLogs_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_FallenLogs_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_FallenLogs_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -4.050000190734863,
+                0.0,
+                8.199999809265137
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                348.0
+            ],
+            "scale": [
+                0.27000001072883608,
+                0.27000001072883608,
+                0.27000001072883608
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Transition_GrassWide_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassWide_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassWide_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -4.300000190734863,
+                0.0,
+                9.600000381469727
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.3400000035762787,
+                0.23000000417232514,
+                0.23000000417232514
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Transition_StakeCluster_Left_02",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_StakeCluster_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_StakeCluster_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -4.25,
+                0.0,
+                13.399999618530274
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                356.0
+            ],
+            "scale": [
+                0.3400000035762787,
+                0.3400000035762787,
+                0.3400000035762787
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Transition_GrassSmall_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassSmall_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassSmall_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -4.650000095367432,
+                0.0,
+                14.600000381469727
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.33000001311302187,
+                0.20999999344348908,
+                0.20999999344348908
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Transition_BrokenShield_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_BrokenShieldArrows_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_BrokenShieldArrows_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                4.050000190734863,
+                0.0,
+                8.800000190734864
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                9.999999046325684
+            ],
+            "scale": [
+                0.23999999463558198,
+                0.23999999463558198,
+                0.23999999463558198
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Transition_GrassSmall_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassSmall_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassSmall_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                4.300000190734863,
+                0.0,
+                10.100000381469727
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.3400000035762787,
+                0.20999999344348908,
+                0.20999999344348908
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Transition_LowCheval_Right_02",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_LowChevalDeFrise_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_LowChevalDeFrise_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                4.199999809265137,
+                0.0,
+                13.800000190734864
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                352.0
+            ],
+            "scale": [
+                0.3199999928474426,
+                0.3199999928474426,
+                0.3199999928474426
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_Transition_GrassWide_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassWide_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassWide_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                4.449999809265137,
+                0.0,
+                15.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.33000001311302187,
+                0.20999999344348908,
+                0.20999999344348908
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_MidScatter_GrassMedium_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_GrassMedium_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_GrassMedium_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -3.950000047683716,
+                0.0,
+                18.200000762939454
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.3400000035762787,
+                0.1899999976158142,
+                0.1899999976158142
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_MidScatter_FallenLogs_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_FallenLogs_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_FallenLogs_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                4.099999904632568,
+                0.0,
+                17.399999618530275
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                14.000000953674317
+            ],
+            "scale": [
+                0.18000000715255738,
+                0.18000000715255738,
+                0.18000000715255738
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_MidScatter_GrassSmall_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassSmall_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassSmall_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                4.550000190734863,
+                0.0,
+                20.200000762939454
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.27000001072883608,
+                0.1599999964237213,
+                0.1599999964237213
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_MidScatter_GrassWide_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassWide_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassWide_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -4.349999904632568,
+                0.0,
+                21.5
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.25,
+                0.1599999964237213,
+                0.1599999964237213
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_MidScatter_StakeCluster_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_StakeCluster_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_StakeCluster_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                5.199999809265137,
+                0.0,
+                23.799999237060548
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                354.0
+            ],
+            "scale": [
+                0.2199999988079071,
+                0.2199999988079071,
+                0.2199999988079071
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_MidScatter_GrassMedium_Left_02",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_GrassMedium_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_GrassMedium_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -5.099999904632568,
+                0.0,
+                25.200000762939454
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.2800000011920929,
+                0.1599999964237213,
+                0.1599999964237213
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_InnerEdge_GrassSmall_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassSmall_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassSmall_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -3.549999952316284,
+                0.0,
+                7.800000190734863
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.25,
+                0.15000000596046449,
+                0.15000000596046449
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_InnerEdge_GrassWide_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassWide_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassWide_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -3.75,
+                0.0,
+                11.800000190734864
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.23999999463558198,
+                0.15000000596046449,
+                0.15000000596046449
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_InnerEdge_BrokenShield_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_BrokenShieldArrows_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_BrokenShieldArrows_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -3.6500000953674318,
+                0.0,
+                15.199999809265137
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.14000000059604646,
+                0.14000000059604646,
+                0.14000000059604646
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_InnerEdge_GrassSmall_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassSmall_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassSmall_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                3.549999952316284,
+                0.0,
+                8.300000190734864
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.25,
+                0.15000000596046449,
+                0.15000000596046449
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_InnerEdge_GrassWide_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassWide_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassWide_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                3.75,
+                0.0,
+                12.399999618530274
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.23000000417232514,
+                0.15000000596046449,
+                0.15000000596046449
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_InnerEdge_FallenLogs_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "N1_FallenLogs_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_FallenLogs_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                3.6500000953674318,
+                0.0,
+                16.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.14000000059604646,
+                0.14000000059604646,
+                0.14000000059604646
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_FarScatter_GrassSmall_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassSmall_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassSmall_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -5.25,
+                0.0,
+                32.5
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.2199999988079071,
+                0.14000000059604646,
+                0.14000000059604646
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_FarScatter_GrassWide_Left_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassWide_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassWide_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -4.849999904632568,
+                0.0,
+                39.5
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.2199999988079071,
+                0.14000000059604646,
+                0.14000000059604646
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_FarScatter_GrassSmall_Left_02",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassSmall_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassSmall_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                -5.849999904632568,
+                0.0,
+                48.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.18000000715255738,
+                0.11999999731779099,
+                0.11999999731779099
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_FarScatter_GrassSmall_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassSmall_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassSmall_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                5.25,
+                0.0,
+                35.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.2199999988079071,
+                0.14000000059604646,
+                0.14000000059604646
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_FarScatter_GrassWide_Right_01",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassWide_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassWide_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                4.849999904632568,
+                0.0,
+                42.5
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.20999999344348908,
+                0.12999999523162843,
+                0.12999999523162843
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_FarScatter_GrassSmall_Right_02",
+            "kind": "sprite",
+            "layer": "",
+            "spriteName": "GrassSmall_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Grass/GrassSmall_v1.png",
+            "material": "YGrass_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YGrass_E0Route.mat",
+            "at": [
+                5.900000095367432,
+                0.0,
+                50.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.18000000715255738,
+                0.11999999731779099,
+                0.11999999731779099
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1 Lamp Flags - Behind Battle",
+            "kind": "group",
+            "layer": "",
+            "spriteName": "",
+            "meshName": "",
+            "asset": "",
+            "material": "",
+            "materialPath": "",
+            "at": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        },
+        {
+            "id": "N1_LampFlag_Left_24",
+            "kind": "sprite",
+            "layer": "N1 Lamp Flags - Behind Battle",
+            "spriteName": "N1_SmallBrokenFlag_v1",
+            "meshName": "",
+            "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/Props/N1/N1_SmallBrokenFlag_v1.png",
+            "material": "YSampleScenery_E0Route",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+            "at": [
+                -4.96999979019165,
+                -0.8500000238418579,
+                25.040000915527345
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.6799999475479127,
+                1.6799999475479127,
+                1.6799999475479127
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": true
+        },
+        {
+            "id": "Wind Mesh",
+            "kind": "mesh",
+            "layer": "N1 Lamp Flags - Behind Battle/N1_LampFlag_Left_24",
+            "spriteName": "",
+            "meshName": "WindSceneryGrid_MirrorX",
+            "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid_MirrorX.asset",
+            "material": "Flag_N1_SmallBrokenFlag_v1_Wind",
+            "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Flag_N1_SmallBrokenFlag_v1_Wind.mat",
+            "at": [
+                -0.8547000288963318,
+                2.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                2.309999942779541,
+                4.039999961853027,
+                1.0
+            ],
+            "sortingOrder": 0,
+            "active": true,
+            "rendererDisabled": false
+        }
+    ]
+}
