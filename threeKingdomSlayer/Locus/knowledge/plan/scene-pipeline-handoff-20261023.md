@@ -209,6 +209,9 @@ Unity Console 0 error ✅。
 - **分支** ✅ ✅：`feat/stage-select-talent-overlays` ✅ ✅ —— **已 push** ✅ ✅ ✅（最新 `198aebe` ✅ ✅ + 本次交接提交 ✅ ✅✅ ✅）。
 - **未提交** ✅ ✅：用户的 `Enemy_1011.prefab` ✅ ✅（maxHealth ✅ —— 按惯例保持原样 ✅ ✅）✅ ✅；`chatradio-*` ✅ ✅ 文档与 `VideoGenerationPack/` ✅ ✅ 属另一条线 ✅ ✅，**没动** ✅ ✅。
 - **下一步** ✅ ✅：① 按 §十四 的两条待拍板 ✅ ✅ 处理 ✅ ✅；② 回到 J1 的**内容缺口** ✅ ✅（路旁太空 ✅ / 左支石板路看不出来 ✅ ✅ —— 都能用现有素材补 ✅ ✅，两处新素材 ✅ 仍缺 ✅ ✅）；③ 美术资产整理三步 ✅ ✅（49MB 过程文件已移出 Assets ✅ ✅ ✅，剩下的正式素材重组 ✅ ✅ + 命名规范 ✅ ✅ ✅）。
+- **使用文档** ✅ ✅：**功能地图 ✅ ✅** = `memory/unity-project-understanding/README.md` ✅ ✅（「要做什么 → 看哪份文档 → 读哪个代码 ✅ ✅」✅ ✅）；
+  Y 场景这一域的用法 ✅ ✅ = `memory/unity-project-understanding/yscene-table-pipeline.md` ✅ ✅✅ ✅。
+  规矩 ✅ ✅：**改功能要同步改对应文档** ✅ ✅；**文档与代码不一致时以代码为准** ✅ ✅（文档末尾都列了代码路径 ✅ ✅ ✅）✅ ✅。
 
 ## 十三、数据模块化：把「增量内容」从代码里解放出来 ✅（2026-10-24，用户定调 ✅）
 

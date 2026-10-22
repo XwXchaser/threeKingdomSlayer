@@ -118,7 +118,20 @@ aiEditMode: inherit
 ---
 
 ## 七、相关文档 ✅ ✅
+- **使用文档（给新会话/AI 的入口 ✅ ✅）** ✅：
+  - **功能地图 ✅ ✅**：`memory/unity-project-understanding/README.md` ✅ ✅ —— 「要做什么 → 看哪份 → 读哪个代码 ✅ ✅」✅ ✅
+  - 选关/路线 ✅ ✅：`memory/unity-project-understanding/stage-select-and-routes.md` ✅ ✅
+  - 天赋树 ✅ ✅：`memory/unity-project-understanding/talent-system.md` ✅ ✅
+  - 战斗状态 ✅ ✅：`memory/unity-project-understanding/buff-and-status.md` ✅ ✅
+  - Y 场景管线 ✅ ✅：`memory/unity-project-understanding/yscene-table-pipeline.md` ✅ ✅
+  - ⏳ **招式/技能/选角 ✅ ✅ 还没写** ✅（需先读一遍代码 ✅ ✅）✅ ✅ —— 从功能地图 ✅ ✅ 能看到这条待补 ✅ ✅。
 - Y 场景表驱动管线（**另一条线** ✅ ✅）：`plan/scene-pipeline-handoff-20261023.md` ✅ ✅
 - Y 场景重建方案（批次状态 ✅ ✅）：`plan/y-scene-rebuild-plan-20261023.md` ✅ ✅
 - 校验工具化方案（刀一~刀四 ✅ ✅）：`plan/yscene-verification-tooling-plan-20261024.md` ✅ ✅
 - 已知问题（工具侧 ✅ ✅）：`memory/known-issues.md` ✅ ✅
+
+## 八、规矩 ✅ ✅（新会话务必遵守 ✅ ✅）
+1. **改某个功能 → 同步更新它对应的那份使用文档** ✅ ✅（否则文档开始骗人 ✅ ❗✅ ✅）。
+2. **文档与代码不一致时以代码为准** ✅ ✅（每份文档末尾都列了对应代码路径 ✅ ✅ —— 先核对再动手 ✅ ✅✅ ✅）。
+3. **不确定就量** ✅ ✅ —— 别脑内枚举假设 ✅ ✅（今天两次误判 J1 路牌位置 ✅ ✅ ✅，都是没量 ✅ ✅❗）✅ ✅。
+4. **不确定要动哪个域** ✅ ✅ → 先看**功能地图** ✅ ✅ ✅（`memory/unity-project-understanding/README.md` ✅ ✅ ✅）✅ ✅。
