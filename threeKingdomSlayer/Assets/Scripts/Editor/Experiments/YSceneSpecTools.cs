@@ -159,7 +159,41 @@ public static class YSceneSpecTools
 
         node.groups = groupList.ToArray();
         spec.nodeSpecs = new[] { node };
+
+        // 背景带 ✅（一关内可以分段换背景 ✅）
+        var bands = new List<YBackgroundBand>();
+        var bg = FindBackgroundObject(sliceRootT);
+        if (bg != null)
+        {
+            var sr = bg.GetComponent<SpriteRenderer>();
+            float length = 0f;
+            var route = sliceRootT.GetComponent<YScrollSample>();
+            if (route != null) length = route.Length;
+            if (length <= 0f) length = 200f;
+            bands.Add(new YBackgroundBand
+            {
+                fromDistance = 0f,
+                toDistance = length,
+                objectName = bg.name,
+                sprite = sr != null ? sr.sprite : null,
+                material = sr != null ? sr.sharedMaterial : null,
+                sortBias = sr != null ? sr.sortingOrder : 0,
+                enabled = true,
+            });
+        }
+        spec.backgroundBands = bands.ToArray();
         return spec;
+    }
+
+    /// <summary>找场景里的背景物件（按名字含 Background ✅）。</summary>
+    private static Transform FindBackgroundObject(Transform root)
+    {
+        for (int i = 0; i < root.childCount; i++)
+        {
+            var c = root.GetChild(i);
+            if (c.name.IndexOf("Background", System.StringComparison.OrdinalIgnoreCase) >= 0) return c;
+        }
+        return null;
     }
 
     /// <summary>收集「旧场景实例 → 物件路径」的映射 ✅。</summary>
@@ -328,6 +362,21 @@ public static class YSceneSpecTools
             var nodeRoot = FindOrCreatePath(root, node.nodeId);
 
             // ── 阶段 1：建全部物件 ✅（组件数据先不填 ✅，等引用映射齐了再填 ✅）
+            foreach (var band in spec.backgroundBands)
+            {
+                if (band == null || !band.enabled || band.sprite == null) continue;
+                // 幂等：场景里已有背景物件就复用它 ✅（名字带 Background ✅）→ 重建后名字不变 ✅
+                var existing = FindBackgroundObject(root);
+                var go = existing != null ? existing.gameObject : new GameObject(band.objectName);
+                go.transform.SetParent(root, false);
+                go.transform.localPosition = new Vector3(0f, 0f, (band.fromDistance + band.toDistance) * 0.5f);
+                var sr = go.GetComponent<SpriteRenderer>();
+                if (sr == null) sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = band.sprite;
+                sr.material = band.material;
+                sr.sortingOrder = spec.renderWorldBaseline + band.sortBias;
+                count++;
+            }
             foreach (var g in node.groups)
             {
                 foreach (var e in g.entries) { GenerateEntry(e, nodeRoot, g.sortBaseline); count++; }

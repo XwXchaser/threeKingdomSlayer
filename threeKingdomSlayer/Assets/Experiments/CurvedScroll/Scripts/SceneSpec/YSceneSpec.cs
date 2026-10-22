@@ -27,6 +27,9 @@ public sealed class YSceneSpec : ScriptableObject
     [Tooltip("每条分支的地面材质（分叉路要两套：左支 / 共用）")]
     public YGroundProfile[] groundProfiles = Array.Empty<YGroundProfile>();
 
+    [Tooltip("背景带：一关内可以有多段不同背景（按沿路区间切换）")]
+    public YBackgroundBand[] backgroundBands = Array.Empty<YBackgroundBand>();
+
     [Tooltip("节点布景规格")]
     public YNodeSceneSpec[] nodeSpecs = Array.Empty<YNodeSceneSpec>();
 
@@ -169,6 +172,32 @@ public sealed class YRefBinding
     public int instanceId;
     [Tooltip("对应物件的路径（相对节点根）")]
     public string path = "";
+}
+
+/// <summary>
+/// **背景带**：按沿路区间铺一段背景（2026-10-23）。
+///
+/// 为什么要它：背景原先是**一张覆盖全条路线的大图** ✅ —— 整关只有一张背景 ✅。
+/// 有了背景带 ✅，某个节点位置换背景图 ✅ 只是改一段区间 ✅；
+/// 美术也能按节点分段出图 ✅（每段一张 ✅）。
+/// </summary>
+[Serializable]
+public sealed class YBackgroundBand
+{
+    [Tooltip("沿路起点（米）")]
+    public float fromDistance = 0f;
+    [Tooltip("沿路终点（米）")]
+    public float toDistance = 0f;
+    [Tooltip("背景图（Sprite）")]
+    public Sprite sprite;
+    [Tooltip("背景物件名（重建时沿用这个名字，避免名字漂移）")]
+    public string objectName = "Background Band";
+    [Tooltip("背景材质（可选；不填则用默认 Sprite 材质）")]
+    public Material material;
+    [Tooltip("相对世界基准的排序偏移")]
+    public int sortBias = 0;
+    [Tooltip("是否启用（可先禁用某段再补图）")]
+    public bool enabled = true;
 }
 
 public enum YRenderKind { Sprite, Solid3D }
