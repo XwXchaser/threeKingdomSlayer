@@ -1,23 +1,22 @@
 {
-    "name": "Locus.EditorTools",
-    "rootNamespace": "",
-    "references": [
-        "Locus.Data",
-        "Locus.Combat",
-        "Locus.Flow",
-        "Locus.UI",
-        "Locus.Experiments",
-        "Locus.Legacy"
-    ],
-    "includePlatforms": [
-        "Editor"
-    ],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
-    "versionDefines": [],
-    "noEngineReferences": false
+  "name": "Locus.EditorTools",
+  "rootNamespace": "",
+  "references": [
+    "Locus.Data",
+    "Locus.Combat",
+    "Locus.Flow",
+    "Locus.UI",
+    "Locus.Experiments"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
 }
