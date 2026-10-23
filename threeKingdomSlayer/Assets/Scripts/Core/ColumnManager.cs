@@ -8,6 +8,7 @@ using UnityEngine;
 /// </summary>
 public class ColumnManager : MonoBehaviour
 {
+    public static ColumnManager Instance { get; private set; }
 
     /// <summary>
     /// 关卡/阵型信息（只读）。 历史上直接摸 StageController 门面，现只依赖角色接口
@@ -119,7 +120,19 @@ public class ColumnManager : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
         InitializeColumns();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
     }
 
     private void Update()

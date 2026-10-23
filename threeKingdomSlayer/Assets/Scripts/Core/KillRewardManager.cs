@@ -7,7 +7,7 @@ using UnityEngine;
 /// </summary>
 public class KillRewardManager : MonoBehaviour
 {
-
+    public static KillRewardManager Instance { get; private set; }
     /// <summary>
     /// 关卡战斗状态（只读）：取当前关卡配置的击杀里程碑。
     /// 历史上直接摸 StageController 门面，现只依赖角色接口（2026-10-20 批次 1）。
@@ -23,6 +23,16 @@ public class KillRewardManager : MonoBehaviour
 
     private List<KillMilestoneEntry> _milestones;
 
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
     private void Start()
     {
         if (PlayerState.Instance != null)
@@ -33,6 +43,8 @@ public class KillRewardManager : MonoBehaviour
     {
         if (PlayerState.Instance != null)
             PlayerState.Instance.OnKillCountChanged -= OnKillCountChanged;
+        if (Instance == this)
+            Instance = null;
     }
 
     /// <summary>

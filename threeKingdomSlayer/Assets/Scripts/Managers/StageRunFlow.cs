@@ -73,7 +73,7 @@ public sealed class StageRunFlow : IRunFlow
             _ctx.PlayerState?.ResetPlayer();
             UltimateSystem.Instance?.ResetEnergy();
             _ctx.EnemyManager?.ClearAllEnemies();
-            var fakeRuntime = UnityEngine.Object.FindObjectOfType<FakeRouteRuntime>();
+            var fakeRuntime = FakeRouteRuntime.Instance;
             if (fakeRuntime == null)
             {
                 Debug.LogError("[StageController] 卷轴路线运行时缺失（FakeRouteRuntime）");
@@ -98,7 +98,7 @@ public sealed class StageRunFlow : IRunFlow
         _ctx.EnemyManager?.ClearAllEnemies();
 
         // 重置击杀奖励管理器
-        var killRewardManager = UnityEngine.Object.FindObjectOfType<KillRewardManager>();
+        var killRewardManager = KillRewardManager.Instance;
         killRewardManager?.ResetRewards();
 
         // 重置连击管理器
@@ -149,7 +149,7 @@ public sealed class StageRunFlow : IRunFlow
     /// <summary>收尾当前路线战斗（战败 / 退出时清理）。</summary>
     public void CleanupRouteStage(bool unloadScene)
     {
-        var fakeRuntime = UnityEngine.Object.FindObjectOfType<FakeRouteRuntime>();
+        var fakeRuntime = FakeRouteRuntime.Instance;
         if (fakeRuntime != null)
             fakeRuntime.HandleStageDefeat();
     }
@@ -200,7 +200,7 @@ public sealed class StageRunFlow : IRunFlow
             ucm.OnAllChoicesDone -= OnChoicesDoneSpawnNextWave;
 
         // Existing scheduler-owned orders resume themselves when choices close.
-        var cm = UnityEngine.Object.FindObjectOfType<ColumnManager>();
+        var cm = ColumnManager.Instance;
         if (cm != null)
         {
             DebugLog.Info("[BOSS_ADVANCE] StageController 调用TriggerAllBossFillForward");
@@ -242,13 +242,16 @@ public sealed class StageRunFlow : IRunFlow
     /// <summary>玩家阵亡 → 关卡失败</summary>
     public void OnPlayerDefeated()
     {
-        if (_ctx.CurrentState == StageState.Defeat || _ctx.CurrentState == StageState.Victory) return;
-
-        var fakeRuntime = UnityEngine.Object.FindObjectOfType<FakeRouteRuntime>();
+        // 路线通知必须先于状态检查：PlayerState 会先把自身与 StageController 同步为 Defeat，
+        // 若在此之前按状态拦截，路线会永远停在 Battle，且「重来」无法从存档点接回。
+        // HandleStageDefeat 重复调用无害（递增 generation、停止协程），重复调用无副作用。
+        var fakeRuntime = FakeRouteRuntime.Instance;
         if (fakeRuntime != null)
         {
             fakeRuntime.HandleStageDefeat();
         }
+
+        if (_ctx.CurrentState == StageState.Defeat || _ctx.CurrentState == StageState.Victory) return;
 
         // 取消待处理的选择完成回调（玩家已死，不再生成下一波）
         var ucm = UpgradeChoiceManager.Instance;
