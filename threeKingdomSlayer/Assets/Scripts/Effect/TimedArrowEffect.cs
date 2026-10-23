@@ -12,6 +12,20 @@ using DG.Tweening;
 /// </summary>
 public class TimedArrowEffect : MonoBehaviour
 {
+    private void OnEnable()
+    {
+        SceneRegistry<TimedArrowEffect>.Register(this);
+    }
+
+    private void OnDisable()
+    {
+        SceneRegistry<TimedArrowEffect>.Unregister(this);
+    }
+
+    private void OnDestroy()
+    {
+        SceneRegistry<TimedArrowEffect>.Unregister(this);
+    }
 
     /// <summary>
     /// 关卡/阵型信息（只读）。 历史上直接摸 StageController 门面，现只依赖角色接口

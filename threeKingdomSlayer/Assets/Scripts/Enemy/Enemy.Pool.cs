@@ -15,6 +15,7 @@ public partial class Enemy : MonoBehaviour
 
     private void OnDestroy()
     {
+        SceneRegistry<Enemy>.Unregister(this);
         _attackTelegraph?.StopWarning();
         _attackTween?.Kill(false);
         _attackTween = null;
@@ -24,6 +25,7 @@ public partial class Enemy : MonoBehaviour
 
     private void OnDisable()
     {
+        SceneRegistry<Enemy>.Unregister(this);
         _attackTelegraph?.StopWarning();
         EnemyManager.Instance?.columnManager?.CancelPushReturnForEnemy(this, "cancel-reset");
         StopHitStop();

@@ -667,8 +667,19 @@ public class AttackWave : MonoBehaviour
         _hitStopRoutine = null;
     }
 
+    private void OnEnable()
+    {
+        SceneRegistry<AttackWave>.Register(this);
+    }
+
+    private void OnDisable()
+    {
+        SceneRegistry<AttackWave>.Unregister(this);
+    }
+
     private void OnDestroy()
     {
+        SceneRegistry<AttackWave>.Unregister(this);
         _pierceVortexStream?.StopEmission();
         if (_hitStopRoutine != null)
         {

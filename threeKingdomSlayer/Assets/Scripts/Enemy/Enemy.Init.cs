@@ -64,6 +64,7 @@ public partial class Enemy : MonoBehaviour
     /// </summary>
     private void OnEnable()
     {
+        SceneRegistry<Enemy>.Register(this);
         RefreshRendererCache();
     }
 

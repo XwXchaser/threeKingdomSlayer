@@ -147,8 +147,19 @@ public class DamageNumber : MonoBehaviour
         gameObject.SetActive(false);
     }
 
+    private void OnEnable()
+    {
+        SceneRegistry<DamageNumber>.Register(this);
+    }
+
+    private void OnDisable()
+    {
+        SceneRegistry<DamageNumber>.Unregister(this);
+    }
+
     private void OnDestroy()
     {
+        SceneRegistry<DamageNumber>.Unregister(this);
         if (animSeq != null && animSeq.IsActive())
         {
             animSeq.Kill();

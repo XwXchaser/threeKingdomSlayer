@@ -491,8 +491,19 @@ public class SweepEffect : MonoBehaviour
         _hitStopRoutine = null;
     }
 
+    private void OnEnable()
+    {
+        SceneRegistry<SweepEffect>.Register(this);
+    }
+
+    private void OnDisable()
+    {
+        SceneRegistry<SweepEffect>.Unregister(this);
+    }
+
     private void OnDestroy()
     {
+        SceneRegistry<SweepEffect>.Unregister(this);
         if (_hitStopRoutine != null)
         {
             StopCoroutine(_hitStopRoutine);

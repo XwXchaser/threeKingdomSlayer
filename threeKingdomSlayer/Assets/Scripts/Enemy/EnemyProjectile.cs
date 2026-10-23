@@ -219,8 +219,19 @@ public class EnemyProjectile : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        SceneRegistry<EnemyProjectile>.Register(this);
+    }
+
+    private void OnDisable()
+    {
+        SceneRegistry<EnemyProjectile>.Unregister(this);
+    }
+
     private void OnDestroy()
     {
+        SceneRegistry<EnemyProjectile>.Unregister(this);
         _flightProgressTween?.Kill();
         _deflectTween?.Kill();
         if (_safetyTimeout != null)

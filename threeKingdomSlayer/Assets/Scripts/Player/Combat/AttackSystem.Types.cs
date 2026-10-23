@@ -474,7 +474,7 @@ public partial class AttackSystem : MonoBehaviour
     /// </summary>
     private int DeflectProjectilesNear(Vector3 playerPos, float range)
     {
-        var projectiles = FindObjectsOfType<EnemyProjectile>();
+        var projectiles = SceneRegistry<EnemyProjectile>.Snapshot();
         int deflected = 0;
         foreach (var p in projectiles)
         {

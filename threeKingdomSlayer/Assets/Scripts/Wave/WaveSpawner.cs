@@ -78,9 +78,9 @@ public class WaveSpawner : MonoBehaviour
     }
     private void Start()
     {
-        if (enemyPool == null) enemyPool = FindObjectOfType<EnemyPool>();
+        if (enemyPool == null) enemyPool = EnemyPool.Instance;
         if (columnManager == null) columnManager = FindObjectOfType<ColumnManager>();
-        if (enemyManager == null) enemyManager = FindObjectOfType<EnemyManager>();
+        if (enemyManager == null) enemyManager = EnemyManager.Instance;
         if (enemyManager != null)
             enemyManager.OnAllEnemiesDied += OnAllEnemiesDied;
     }
@@ -352,7 +352,7 @@ public class WaveSpawner : MonoBehaviour
     public void CleanupLingeringEffects()
     {
         // 销毁所有活跃的攻击波特效
-        var activeWaves = FindObjectsOfType<AttackWave>();
+        var activeWaves = SceneRegistry<AttackWave>.Snapshot();
         foreach (var w in activeWaves)
         {
             if (w != null && w.gameObject != null)
@@ -366,7 +366,7 @@ public class WaveSpawner : MonoBehaviour
             Debug.Log($"[WaveSpawner] 清理了 {activeWaves.Length} 个残留攻击波");
 
         // 销毁所有活跃的斩击特效
-        var activeSweeps = FindObjectsOfType<SweepEffect>();
+        var activeSweeps = SceneRegistry<SweepEffect>.Snapshot();
         foreach (var s in activeSweeps)
         {
             if (s != null && s.gameObject != null)

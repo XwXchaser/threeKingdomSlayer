@@ -132,7 +132,7 @@ public class DamageNumberManager : MonoBehaviour, IDamageNumberPresenter
     /// </summary>
     public int ClearAll()
     {
-        var active = FindObjectsOfType<DamageNumber>();
+        var active = SceneRegistry<DamageNumber>.Snapshot();
         int cleaned = 0;
         for (int i = 0; i < active.Length; i++)
         {

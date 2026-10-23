@@ -11,6 +11,7 @@ using DG.Tweening;
 /// </summary>
 public class QTEDisplay : MonoBehaviour
 {
+    public static QTEDisplay Instance { get; private set; }
     [Header("框架")]
     [Tooltip("QTE 判定框 RectTransform（含 RectMask2D），运行时由 BattleHUD 注入")]
     public RectTransform qteFrameRect;
@@ -78,12 +79,24 @@ public class QTEDisplay : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
         _uiScale = UIResolutionHelper.UIScale;
         slideInOffsetY *= _uiScale;
 
         var canvas = GetComponent<Canvas>();
         if (canvas != null)
             _fallbackParent = canvas.GetComponent<RectTransform>();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
     }
 
     private RectTransform GetIndicatorParent()

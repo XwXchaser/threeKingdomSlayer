@@ -6,6 +6,21 @@ using UnityEngine.UI;
 
 public sealed class RouteChoicePanel : MonoBehaviour
 {
+    private void OnEnable()
+    {
+        SceneRegistry<RouteChoicePanel>.Register(this);
+    }
+
+    private void OnDisable()
+    {
+        SceneRegistry<RouteChoicePanel>.Unregister(this);
+    }
+
+    private void OnDestroy()
+    {
+        SceneRegistry<RouteChoicePanel>.Unregister(this);
+    }
+
     [SerializeField] private Transform choiceContainer;
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private RouteChoiceButton buttonPrefab;
@@ -28,7 +43,9 @@ public sealed class RouteChoicePanel : MonoBehaviour
 
     public static void HideCurrent()
     {
-        var panels = FindObjectsOfType<RouteChoicePanel>(true);
+        // 注册表只含运行时生成的激活面板；场景中没有未激活的面板实例，资产模板（RouteChoicePanel_Test）
+        // 不在场景中，原 FindObjectsOfType 也找不到它，因此不会误删资产。
+        var panels = SceneRegistry<RouteChoicePanel>.Snapshot();
         for (int i = 0; i < panels.Length; i++)
             if (panels[i] != null)
                 Destroy(panels[i].gameObject);

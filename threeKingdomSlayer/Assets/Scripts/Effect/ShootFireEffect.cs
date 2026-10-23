@@ -18,6 +18,20 @@ using DG.Tweening;
 /// </summary>
 public class ShootFireEffect : MonoBehaviour
 {
+    private void OnEnable()
+    {
+        SceneRegistry<ShootFireEffect>.Register(this);
+    }
+
+    private void OnDisable()
+    {
+        SceneRegistry<ShootFireEffect>.Unregister(this);
+    }
+
+    private void OnDestroy()
+    {
+        SceneRegistry<ShootFireEffect>.Unregister(this);
+    }
 
     /// <summary>
     /// 关卡/阵型信息（只读）。 历史上直接摸 StageController 门面，现只依赖角色接口

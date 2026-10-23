@@ -169,11 +169,14 @@ public class TimedPassiveModule : MonoBehaviour
 
     private void ClearActiveEffects()
     {
-        var fireEffects = Object.FindObjectsOfType<ShootFireEffect>(true);
+        // 注册表只含激活实例。两类特效的根对象始终激活（TimedArrowEffect 的未激活模板是子物体，
+        // 不挂本组件），因此与原 FindObjectsOfType(true) 的结果一致。若日后让特效根对象进入
+        // 未激活状态复用，需要重新评估这里。
+        var fireEffects = SceneRegistry<ShootFireEffect>.Snapshot();
         for (int i = 0; i < fireEffects.Length; i++)
             if (fireEffects[i] != null) Object.Destroy(fireEffects[i].gameObject);
 
-        var arrowEffects = Object.FindObjectsOfType<TimedArrowEffect>(true);
+        var arrowEffects = SceneRegistry<TimedArrowEffect>.Snapshot();
         for (int i = 0; i < arrowEffects.Length; i++)
             if (arrowEffects[i] != null) Object.Destroy(arrowEffects[i].gameObject);
     }

@@ -392,7 +392,7 @@ public class EnemyManager : MonoBehaviour
             }
         }
 
-        var deadEnemies = FindObjectsOfType<Enemy>();
+        var deadEnemies = SceneRegistry<Enemy>.Snapshot();
         foreach (var enemy in deadEnemies)
         {
             if (enemy != null && enemy.state == EnemyState.Dead)
