@@ -78,7 +78,21 @@ aiEditMode: inherit
 
 ---
 
-## 六、本次**没读**的范围 ✅ ✅（诚实说明 ✅ ✅）
+## 七、**顺带挖出的功能缺口** ✅ ✅（不是重构造成的 ✅ ✅）
+
+**`TutorialStageDirector` 没挂在任何场景/预制体上** ✅ ❗❗
+- 证据 ✅ ✅：按脚本 GUID ✅ ✅ 扫全部 `.unity` / `.prefab` ✅ ✅ → **零命中** ✅ ✅；运行时 `FindObjectOfType` ✅ ✅ 也找不到 ✅ ✅
+- 后果 ✅ ❗：它的三件事**都没在跑** ✅ ❗❗ ——
+  ① **按波推台词** ✅ ✅（走对话数据库的 WaveStart 匹配会漏第一波 ✅ ✅）✅ ✅；
+  ② **教学期升级固定给冰雾** ✅ ✅（正式游玩才是随机三选一 ✅ ✅）✅ ✅；
+  ③ **手势引导** ✅ ✅（`TutorialGestureHint` ✅ ✅ 同样没挂 ✅ ✅）✅ ✅
+- ⚠️ **拆文件不是原因** ✅ ✅（拆分前后都没挂 ✅ ✅ ✅）；✅ **要不要挂回去** ✅ ✅ 是**内容决策** ✅ ✅
+  —— 要挂 ✅ ✅ 还得把它的数据（`n1Battle` ✅ / `e0Battle` ✅ / `gestureSteps` ✅ / `tutorialRouteConfig` ✅ ✅✅ ✅）**接上** ✅ ✅ ✅ —— ✅ **不盲接** ✅ ✅❗❗✅ ✅ ✅
+- ✅ **已记入** ✅ ✅：本表 ✅ ✅ + `memory/unity-project-understanding/ui.md` ✅ ✅ 的教学域 ✅ ✅
+
+---
+
+## 八、本次**没读**的范围 ✅ ✅（诚实说明 ✅ ✅）
 
 以下部分**只做了结构扫描 ✅ ✅**，**没有逐行读** ✅ ✅ ✅：
 - **UI 的 50 个文件** ✅ ✅（只按界面名归类 ✅ ✅ ✅）✅ ✅
@@ -94,7 +108,7 @@ aiEditMode: inherit
 
 ---
 
-## 七、相关文档 ✅ ✅
+## 九、相关文档 ✅ ✅
 - 功能地图（入口 ✅ ✅）：`memory/unity-project-understanding/README.md` ✅ ✅
 - 交接 ✅ ✅：`plan/scene-pipeline-handoff-20261023.md` ✅ ✅、`plan/data-modularization-handoff-20261024.md` ✅ ✅
 - 已知问题 ✅ ✅：`memory/known-issues.md` ✅ ✅
