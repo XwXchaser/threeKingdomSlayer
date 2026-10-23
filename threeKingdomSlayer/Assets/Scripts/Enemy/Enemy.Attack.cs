@@ -76,7 +76,7 @@ public partial class Enemy : MonoBehaviour
 
     private System.Collections.IEnumerator TraceAttackAnimatorEntry(string expectedState, int attackStartFrame)
     {
-        yield return new WaitForSecondsRealtime(0.12f);
+        yield return new GameplayPausableWait(0.12f);
         if (_animator == null || state != EnemyState.Attacking || !isAttackAnimating)
             yield break;
 

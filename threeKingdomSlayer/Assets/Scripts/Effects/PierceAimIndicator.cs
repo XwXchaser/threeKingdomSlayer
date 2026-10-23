@@ -106,7 +106,7 @@ public sealed class PierceAimIndicator : MonoBehaviour
         if (!_chargeActive || !_aimReady || !showPiercePulse || _pathPoints.Count < 2)
             return;
 
-        float deltaTime = Time.unscaledDeltaTime;
+        float deltaTime = GameplayPause.UnscaledDelta;
         _pulseSpawnTimer -= deltaTime;
         while (_pulseSpawnTimer <= 0f)
         {

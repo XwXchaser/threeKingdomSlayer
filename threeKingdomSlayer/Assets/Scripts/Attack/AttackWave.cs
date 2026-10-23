@@ -86,7 +86,7 @@ public class AttackWave : MonoBehaviour
         visualObject.name = "Wave_Pierce";
         visualObject.transform.position = position;
         var wave = visualObject.AddComponent<AttackWave>();
-        wave._creationTime = Time.unscaledTime;
+        wave._creationTime = GameplayPause.UnscaledTime;
         wave._instanceId = visualObject.GetInstanceID();
         AliveCount++;
         wave.damage = damage;
@@ -227,7 +227,7 @@ public class AttackWave : MonoBehaviour
         }
 
         AttackWave wave = obj.AddComponent<AttackWave>();
-        wave._creationTime = Time.unscaledTime;
+        wave._creationTime = GameplayPause.UnscaledTime;
         wave._instanceId = obj.GetInstanceID();
         AliveCount++;
         wave.mat = material;
@@ -291,7 +291,7 @@ public class AttackWave : MonoBehaviour
         float thrustTime = travelDistance / (PierceProjectileSpeed / _pierceTimeScale);
         _pierceSpinVisual?.SetSpinProfile(thrustTime, 420f, 1800f);
 
-        travelSeq = DOTween.Sequence().SetTarget(transform).SetUpdate(true);
+        travelSeq = GameplayPause.Bind(DOTween.Sequence().SetTarget(transform).SetUpdate(true));
         travelSeq.Append(transform.DOMoveZ(endZ, thrustTime).SetEase(Ease.OutCubic));
         travelSeq.AppendInterval(0.05f);
         travelSeq.AppendCallback(() =>
@@ -321,7 +321,7 @@ public class AttackWave : MonoBehaviour
         float thrustDistance = Vector3.Distance(transform.position, endPosition);
         float thrustTime = thrustDistance / (PierceProjectileSpeed / _pierceTimeScale);
         _pierceSpinVisual?.SetSpinProfile(thrustTime, 420f, 1800f);
-        travelSeq = DOTween.Sequence().SetTarget(transform).SetUpdate(true);
+        travelSeq = GameplayPause.Bind(DOTween.Sequence().SetTarget(transform).SetUpdate(true));
         travelSeq.Append(transform.DOMove(endPosition, thrustTime).SetEase(Ease.OutCubic));
         travelSeq.AppendCallback(() =>
         {
@@ -423,6 +423,7 @@ public class AttackWave : MonoBehaviour
         travelSeq = DOTween.Sequence();
         travelSeq.SetTarget(transform);
         travelSeq.SetUpdate(true);
+        GameplayPause.Bind(travelSeq);
 
         Ease thrustEase = damageType == DamageType.Pierce ? Ease.OutCubic : Ease.OutQuad;
         Tween thrust = damageType == DamageType.Pierce
@@ -577,7 +578,7 @@ public class AttackWave : MonoBehaviour
     {
         if (mode == WaveMode.Fixed)
         {
-            elapsed += Time.unscaledDeltaTime * _fixedTimeScale;
+            elapsed += GameplayPause.UnscaledDelta * _fixedTimeScale;
             UpdateFixed();
         }
     }
@@ -660,7 +661,7 @@ public class AttackWave : MonoBehaviour
         travelSeq.Pause();
         var dynamics = GetComponentInChildren<WeaponTasselDynamics>();
         dynamics?.SetMotionPaused(true);
-        yield return new WaitForSecondsRealtime(duration);
+        yield return new GameplayPausableWait(duration);
         dynamics?.SetMotionPaused(false);
         if (travelSeq != null && travelSeq.IsActive())
             travelSeq.Play();
@@ -688,7 +689,7 @@ public class AttackWave : MonoBehaviour
         }
         if (mat != null) Destroy(mat);
         AliveCount--;
-        float alive = Time.unscaledTime - _creationTime;
+        float alive = GameplayPause.UnscaledTime - _creationTime;
         Debug.Log($"[AttackWave] OnDestroy: {gameObject.name}, mode={mode}, alive={alive:F2}s, frame={Time.frameCount}");
         if (travelSeq != null && travelSeq.IsActive())
             travelSeq.Kill();

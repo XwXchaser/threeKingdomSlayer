@@ -197,7 +197,7 @@ public sealed class PierceVortexVisual : MonoBehaviour
 
     private void Update()
     {
-        float deltaTime = _useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+        float deltaTime = _useUnscaledTime ? GameplayPause.UnscaledDelta : Time.deltaTime;
         _elapsed += deltaTime;
         _afterimageTimer -= deltaTime;
         _slowRotation += 110f * deltaTime;

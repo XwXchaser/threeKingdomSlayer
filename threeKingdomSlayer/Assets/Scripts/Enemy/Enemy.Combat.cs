@@ -542,8 +542,8 @@ public partial class Enemy : MonoBehaviour
         // 保存起始位置
         Vector3 startPos = transform.localPosition;
 
-        // 构建 DOTween 序列
-        Sequence deathSeq = DOTween.Sequence().SetTarget(transform).SetUpdate(true);
+        // 构建 DOTween 序列（unscaled，但登记到暂停门：暂停时死亡动画冻结）
+        Sequence deathSeq = GameplayPause.Bind(DOTween.Sequence().SetTarget(transform).SetUpdate(true));
         deathSeq.SetId("deathAnim");
 
         float jumpHeight = Random.Range(1.5f, 3.0f);   // 弹起高度
@@ -565,11 +565,11 @@ public partial class Enemy : MonoBehaviour
             Random.Range(-360f, 360f)   // Z 轴大角度旋转
         );
         float totalAnimDuration = jumpDuration + fallDuration;
-        transform.DORotate(randomRotation, totalAnimDuration, RotateMode.LocalAxisAdd)
+        GameplayPause.Bind(transform.DORotate(randomRotation, totalAnimDuration, RotateMode.LocalAxisAdd)
             .SetEase(Ease.OutQuad)
             .SetTarget(transform)
             .SetUpdate(true)
-            .SetId("deathAnim");
+            .SetId("deathAnim"));
 
         // 等待序列完成
         yield return deathSeq.WaitForCompletion();
@@ -595,7 +595,7 @@ public partial class Enemy : MonoBehaviour
 
         Vector3 startPos = transform.localPosition;
 
-        Sequence deathSeq = DOTween.Sequence().SetTarget(transform).SetUpdate(true);
+        Sequence deathSeq = GameplayPause.Bind(DOTween.Sequence().SetTarget(transform).SetUpdate(true));
         deathSeq.SetId("deathAnim");
 
         float fallDistance = 20f;

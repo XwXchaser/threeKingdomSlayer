@@ -171,7 +171,7 @@ public class SweepEffect : MonoBehaviour
         }
 
         SweepEffect effect = obj.AddComponent<SweepEffect>();
-        effect._creationTime = Time.unscaledTime;
+        effect._creationTime = GameplayPause.UnscaledTime;
         effect._instanceId = obj.GetInstanceID();
         effect.visualTransform = visualTransform;
         effect.visualPathTransform = visualPathTransform;
@@ -482,7 +482,7 @@ public class SweepEffect : MonoBehaviour
         afterimage?.SetPaused(true);
         var dynamics = GetComponentInChildren<WeaponTasselDynamics>();
         dynamics?.SetMotionPaused(true);
-        yield return new WaitForSecondsRealtime(duration);
+        yield return new GameplayPausableWait(duration);
         dynamics?.SetMotionPaused(false);
         mangaSweep?.SetPaused(false);
         afterimage?.SetPaused(false);
@@ -509,17 +509,16 @@ public class SweepEffect : MonoBehaviour
             StopCoroutine(_hitStopRoutine);
             _hitStopRoutine = null;
         }
-        if (visualTransform != null)
-            visualTransform.DOKill();
-        if (visualPathTransform != null)
-            visualPathTransform.DOKill();
-        transform.DOKill();
+        // 用原始引用 Kill：目标已销毁时 DOKill 会因 Unity 假 null 直接跳过，Tween 会继续访问已销毁对象
+        DOTween.Kill(visualTransform, false);
+        DOTween.Kill(visualPathTransform, false);
+        DOTween.Kill(transform, false);
         motionBlur?.Dispose();
         if (mangaSweep != null) mangaSweep.Clear();
         if (afterimage != null) afterimage.Clear();
         if (mat != null) Destroy(mat);
         AliveCount--;
-        float alive = Time.unscaledTime - _creationTime;
+        float alive = GameplayPause.UnscaledTime - _creationTime;
         Debug.Log($"[SweepEffect] OnDestroy: {gameObject.name}, alive={alive:F2}s, frame={Time.frameCount}");
         if (seq != null && seq.IsActive())
             seq.Kill();

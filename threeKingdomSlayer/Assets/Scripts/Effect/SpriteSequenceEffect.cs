@@ -58,7 +58,7 @@ public class SpriteSequenceEffect : MonoBehaviour
     {
         if (_finished || frames == null || frames.Length == 0) return;
 
-        _timer += useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+        _timer += useUnscaledTime ? GameplayPause.UnscaledDelta : Time.deltaTime;
         float frameTime = 1f / Mathf.Max(1f, fps);
         while (_timer >= frameTime)
         {
@@ -101,10 +101,12 @@ public class SpriteSequenceEffect : MonoBehaviour
 
         if (fadeOutSeconds > 0f && _renderer != null)
         {
-            _renderer.DOFade(0f, fadeOutSeconds)
+            var fadeTween = _renderer.DOFade(0f, fadeOutSeconds)
                 .SetTarget(gameObject)
                 .SetUpdate(useUnscaledTime)
                 .OnComplete(() => { if (destroyOnFinish) Destroy(gameObject); });
+            // unscaled 的淡出是游戏内容：登记到暂停门，暂停时冻结
+            if (useUnscaledTime) GameplayPause.Bind(fadeTween);
             if (destroyOnFinish) Destroy(gameObject, fadeOutSeconds + 0.05f);
         }
         else if (destroyOnFinish)

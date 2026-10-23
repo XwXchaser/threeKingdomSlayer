@@ -30,7 +30,7 @@ public sealed class EnemyHitFeedback
     public void UpdateHitStop()
     {
         if (_owner._hitStopRemaining <= 0f) return;
-        _owner._hitStopRemaining -= Time.unscaledDeltaTime;
+        _owner._hitStopRemaining -= GameplayPause.UnscaledDelta;
         if (_owner._hitStopRemaining > 0f) return;
 
         _owner._hitStopRemaining = 0f;

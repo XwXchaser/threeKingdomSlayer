@@ -25,7 +25,33 @@ public class TimedArrowEffect : MonoBehaviour
     private void OnDestroy()
     {
         SceneRegistry<TimedArrowEffect>.Unregister(this);
+        KillArrowTweens();
     }
+
+    /// <summary>
+    /// 父对象销毁时，必须按创建时同一 target 显式杀掉动态子对象（箭矢）的 Tween。
+    /// DOTween 不会自动清理目标已销毁的 Tween，否则下一帧会访问已销毁的 Transform / SpriteRenderer
+    /// 抛 MissingReferenceException。这里用原始托管引用调用 DOTween.Kill：
+    /// 目标已被销毁时 Component.DOKill 会因 Unity 假 null 直接跳过，而 Kill 仍能命中。
+    /// </summary>
+    private void KillArrowTweens()
+    {
+        for (int i = 0; i < _spawnedArrows.Count; i++)
+        {
+            GameObject arrow = _spawnedArrows[i];
+            if (arrow == null) continue;
+            DOTween.Kill(arrow.transform, false);
+            var renderers = arrow.GetComponentsInChildren<SpriteRenderer>(true);
+            for (int r = 0; r < renderers.Length; r++)
+            {
+                if (renderers[r] == null) continue;
+                DOTween.Kill(renderers[r], false);
+            }
+        }
+        _spawnedArrows.Clear();
+    }
+
+    private readonly List<GameObject> _spawnedArrows = new List<GameObject>();
 
     /// <summary>
     /// 关卡/阵型信息（只读）。 历史上直接摸 StageController 门面，现只依赖角色接口
@@ -207,6 +233,7 @@ public class TimedArrowEffect : MonoBehaviour
 
         var arrowGO = Instantiate(arrowTemplate.gameObject, transform);
         arrowGO.SetActive(true);
+        _spawnedArrows.Add(arrowGO);
         var sr = arrowGO.GetComponent<SpriteRenderer>();
         if (sr == null) { Destroy(arrowGO); return; }
         sr.color = Color.white;

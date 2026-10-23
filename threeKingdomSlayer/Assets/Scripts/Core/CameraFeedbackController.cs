@@ -76,11 +76,11 @@ public sealed class CameraFeedbackController : MonoBehaviour
             return;
         if (context.source == HitFeedbackSource.Dot)
             return;
-        if (Time.unscaledTime - _lastRequestTime < requestCooldown
+        if (GameplayPause.UnscaledTime - _lastRequestTime < requestCooldown
             && context.strength <= _activeStrength)
             return;
 
-        _lastRequestTime = Time.unscaledTime;
+        _lastRequestTime = GameplayPause.UnscaledTime;
         bool heavy = context.strength == HitFeedbackStrength.Heavy;
         Vector3 direction = GetImpactDirection(context.worldPosition);
         PlayFeedback(heavy ? heavyDuration : standardDuration,
@@ -93,7 +93,7 @@ public sealed class CameraFeedbackController : MonoBehaviour
 
     public void RequestPlayerDamage()
     {
-        _lastRequestTime = Time.unscaledTime;
+        _lastRequestTime = GameplayPause.UnscaledTime;
         PlayFeedback(playerDamageDuration, playerDamageIntensity, heavyVibrato, Vector3.zero, playerDamageRotationScale);
         _activeStrength = HitFeedbackStrength.Heavy;
     }
@@ -129,7 +129,8 @@ public sealed class CameraFeedbackController : MonoBehaviour
         Vector3 offset = direction.sqrMagnitude > 0.0001f
             ? direction.normalized * intensity
             : new Vector3(intensity * 0.35f, -intensity * 0.2f, 0f);
-        _feedbackSequence = DOTween.Sequence().SetTarget(transform).SetUpdate(UpdateType.Normal, true);
+        // 镜头反馈是游戏内容：登记到暂停门，暂停时镜头不再抖
+        _feedbackSequence = GameplayPause.Bind(DOTween.Sequence().SetTarget(transform).SetUpdate(UpdateType.Normal, true));
         _feedbackSequence.Append(transform.DOLocalMove(_baseLocalPosition + offset, duration * 0.35f).SetEase(Ease.OutQuad));
         _feedbackSequence.Append(transform.DOLocalMove(_baseLocalPosition, duration * 0.65f).SetEase(Ease.OutCubic));
         if (rotationScale > 0f)

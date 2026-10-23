@@ -54,7 +54,7 @@ public sealed class EnemyOutline
             && !f.SuperArmor
             && !f.CFrameAttacking;
         float piercePulse = showPierceHighlight
-            ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 14f * Mathf.PI)
+            ? 0.5f + 0.5f * Mathf.Sin(GameplayPause.UnscaledTime * 14f * Mathf.PI)
             : 0f;
         float pierceHighlightStrength = Mathf.Lerp(
             PIERCE_HIGHLIGHT_MIN_STRENGTH,

@@ -55,7 +55,7 @@ public sealed partial class StabSweepEffect : MonoBehaviour
         if (_sequence != null) _sequence.Pause();
         _tasselDynamics?.SetMotionPaused(true);
         _afterimage?.SetPaused(true);
-        yield return new WaitForSecondsRealtime(duration);
+        yield return new GameplayPausableWait(duration);
         _tasselDynamics?.SetMotionPaused(false);
         _afterimage?.SetPaused(false);
         // 蓄力保持期间不能被卡肉解冻

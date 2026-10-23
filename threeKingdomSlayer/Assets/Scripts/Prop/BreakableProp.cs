@@ -110,7 +110,7 @@ public sealed class BreakableProp : MonoBehaviour
             return;
         }
 
-        _hintTime += Time.unscaledDeltaTime * hintPulseHz;
+        _hintTime += GameplayPause.UnscaledDelta * hintPulseHz;
         float pulse = (Mathf.Sin(_hintTime * Mathf.PI * 2f) + 1f) * 0.5f * hintPulseAmount;
         spriteRenderer.GetPropertyBlock(_mpb);
         _mpb.SetColor("_Color", Color.Lerp(_idleColor, hintTint, pulse));

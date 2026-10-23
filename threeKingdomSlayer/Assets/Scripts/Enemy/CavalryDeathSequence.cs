@@ -146,7 +146,7 @@ public sealed class CavalryDeathSequence : MonoBehaviour
             while (elapsed < corpseFadeDuration)
             {
                 if (_fallVisualMaterial == null) break;
-                elapsed += Time.unscaledDeltaTime;
+                elapsed += GameplayPause.UnscaledDelta;
                 Color color = baseColor;
                 color.a = baseColor.a * (1f - Mathf.Clamp01(elapsed / corpseFadeDuration));
                 _fallVisualMaterial.color = color;
@@ -174,7 +174,7 @@ public sealed class CavalryDeathSequence : MonoBehaviour
             float elapsed = 0f;
             while (elapsed < entryBlendDuration)
             {
-                elapsed += Time.unscaledDeltaTime;
+                elapsed += GameplayPause.UnscaledDelta;
                 float t = Mathf.Clamp01(elapsed / entryBlendDuration);
                 Color rc = rootBase;
                 rc.a = rootBase.a * (1f - t);
@@ -228,7 +228,7 @@ public sealed class CavalryDeathSequence : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < duration)
         {
-            elapsed += Time.unscaledDeltaTime;
+            elapsed += GameplayPause.UnscaledDelta;
             yield return null;
         }
     }

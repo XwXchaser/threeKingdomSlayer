@@ -222,7 +222,7 @@ public sealed class MountEscapeVisual : MonoBehaviour
                 spriteRenderer.color = color;
             }
 
-            elapsed += Time.unscaledDeltaTime;
+            elapsed += GameplayPause.UnscaledDelta;
             yield return null;
         }
 

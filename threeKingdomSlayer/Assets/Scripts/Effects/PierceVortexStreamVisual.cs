@@ -58,7 +58,7 @@ public sealed class PierceVortexStreamVisual : MonoBehaviour
 
     private void Update()
     {
-        float deltaTime = Time.unscaledDeltaTime;
+        float deltaTime = GameplayPause.UnscaledDelta;
         if (_emitting)
         {
             _spawnTimer -= deltaTime;

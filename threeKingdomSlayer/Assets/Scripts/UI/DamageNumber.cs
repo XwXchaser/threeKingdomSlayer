@@ -98,12 +98,13 @@ public class DamageNumber : MonoBehaviour
         // 上飘终点
         Vector3 endPos = worldPos + new Vector3(0f, floatUpDistance, 0f);
 
-        // DOTween 动画：向上漂浮 + 透明度淡出（SetUpdate 无视 timeScale 暂停）
+        // DOTween 动画：向上漂浮 + 透明度淡出（unscaled，但登记到暂停门：暂停时伤害数字冻结）
         int instanceId = GetInstanceID();
         animSeq = DOTween.Sequence();
         animSeq.SetTarget(transform);
         animSeq.SetUpdate(true);
         animSeq.SetId($"damageNumber_{instanceId}");
+        GameplayPause.Bind(animSeq);
 
         animSeq.Join(transform.DOMove(endPos, duration).SetEase(Ease.OutQuad));
         if (feedbackStrength == HitFeedbackStrength.Heavy)
@@ -186,7 +187,8 @@ public class DamageNumber : MonoBehaviour
 
     private System.Collections.IEnumerator SafetyTimeoutRealtime(float delay)
     {
-        yield return new WaitForSecondsRealtime(delay);
+        // 安全超时兜底：2 倍动画时长后强制回收（暂停感知：暂停期间不回收）
+        yield return new GameplayPausableWait(delay);
         Debug.LogWarning($"[DamageNumber] 安全超时强制回收 instanceId={GetInstanceID()}");
         if (animSeq != null && animSeq.IsActive())
         {

@@ -182,7 +182,7 @@ public sealed partial class PixelHitEffectManager : MonoBehaviour
         float duration = heavy ? heavyDuration : standardDuration;
         Color color = heavy ? heavyColor : GetDamageTypeColor(context.damageType);
 
-        instance.sequence = DOTween.Sequence().SetTarget(instance.root).SetUpdate(UpdateType.Normal, true);
+        instance.sequence = GameplayPause.Bind(DOTween.Sequence().SetTarget(instance.root).SetUpdate(UpdateType.Normal, true));
         if (context.isDiseaseStabHit && context.damageType == DamageType.Stab)
         {
             BuildDiseaseStabEffect(instance, heavy);

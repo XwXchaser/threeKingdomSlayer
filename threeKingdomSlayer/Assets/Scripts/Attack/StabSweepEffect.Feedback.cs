@@ -29,7 +29,7 @@ public sealed partial class StabSweepEffect : MonoBehaviour
             && _motion.shakeRollDegrees <= 0f && _motion.shakePitchDegrees <= 0f) return;
 
         _shakeActive = true;
-        _shakeStartRealtime = Time.realtimeSinceStartup;
+        _shakeStartRealtime = GameplayPause.UnscaledTime;
         _shakeScale = Mathf.Clamp01(scale);
     }
 
@@ -45,7 +45,7 @@ public sealed partial class StabSweepEffect : MonoBehaviour
         }
 
         float duration = Mathf.Max(0.0001f, _motion.shakeDuration);
-        float t = Time.realtimeSinceStartup - _shakeStartRealtime;
+        float t = GameplayPause.UnscaledTime - _shakeStartRealtime;
         if (t >= duration)
         {
             _shakeActive = false;
@@ -110,8 +110,9 @@ public sealed partial class StabSweepEffect : MonoBehaviour
             StopCoroutine(_hitDeformationRoutine);
             _hitDeformationRoutine = null;
         }
-        if (_visualTransform != null)
-            _visualTransform.DOKill();
+        // 用原始引用 Kill：目标已销毁时 DOKill 会因 Unity 假 null 直接跳过，Tween 会继续访问已销毁对象
+        DOTween.Kill(_visualTransform, false);
+        DOTween.Kill(transform, false);
         _motionBlur?.Dispose();
         _afterimage?.Clear();
         _sequence?.Kill();
