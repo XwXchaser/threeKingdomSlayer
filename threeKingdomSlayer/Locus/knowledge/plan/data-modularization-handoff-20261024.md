@@ -118,13 +118,22 @@ aiEditMode: inherit
 ---
 
 ## 七、相关文档 ✅ ✅
-- **使用文档（给新会话/AI 的入口 ✅ ✅）** ✅：
+- **使用文档（给新会话/AI 的入口 ✅ ✅）** ✅ ✅：
   - **功能地图 ✅ ✅**：`memory/unity-project-understanding/README.md` ✅ ✅ —— 「要做什么 → 看哪份 → 读哪个代码 ✅ ✅」✅ ✅
-  - 选关/路线 ✅ ✅：`memory/unity-project-understanding/stage-select-and-routes.md` ✅ ✅
-  - 天赋树 ✅ ✅：`memory/unity-project-understanding/talent-system.md` ✅ ✅
-  - 战斗状态 ✅ ✅：`memory/unity-project-understanding/buff-and-status.md` ✅ ✅
-  - Y 场景管线 ✅ ✅：`memory/unity-project-understanding/yscene-table-pipeline.md` ✅ ✅
-  - ⏳ **招式/技能/选角 ✅ ✅ 还没写** ✅（需先读一遍代码 ✅ ✅）✅ ✅ —— 从功能地图 ✅ ✅ 能看到这条待补 ✅ ✅。
+    + **「已有什么 ✅ / 别再造一遍 ✅ ✅」主表** ✅ ✅（防重复造模块 ✅ ✅ ✅）✅ ✅
+    + 「加一条内容要动哪几处 ✅ ✅」速查 ✅ ✅ + 跨域联动点 ✅ ✅✅ ✅
+  - 选关/路线 ✅ ✅：`stage-select-and-routes.md` ✅ ✅
+  - 天赋树 ✅ ✅：`talent-system.md` ✅ ✅
+  - 战斗状态 ✅ ✅：`buff-and-status.md` ✅ ✅
+  - 招式/连招/技能/选角 ✅ ✅：`attacks-moves-and-heroes.md` ✅ ✅
+  - 敌人 ✅ ✅：`enemies.md` ✅ ✅
+  - QTE 与结算 ✅ ✅：`qte-and-rewards.md` ✅ ✅
+  - 道具与局内成长 ✅ ✅：`items-and-growth.md` ✅ ✅
+  - UI ✅ ✅：`ui.md` ✅ ✅
+  - Y 场景管线 ✅ ✅：`yscene-table-pipeline.md` ✅ ✅
+  - ⚠️ 旧的窄主题细节文档 ✅ ✅（`qte-system` ✅ ✅ / `upgrade-choice-ui` ✅ ✅ / `dialogue-ui` ✅ ✅ / `combo-buff-runtime` ✅ ✅）
+    **不是重复 ✅ ✅**（是**细节层** ✅ ✅✅ ✅）→ **两层都留 ✅ ✅✅ ✅**，关系见功能地图 ✅ ✅✅ ✅
+- **全项目体检报告** ✅ ✅ = `plan/project-audit-20261024.md` ✅ ✅（40 单例 ✅ ✅ / 107 Find* ✅ ✅ 的分布 ✅ ✅ + 优化清单 ✅ ✅✅ ✅）✅ ✅
 - Y 场景表驱动管线（**另一条线** ✅ ✅）：`plan/scene-pipeline-handoff-20261023.md` ✅ ✅
 - Y 场景重建方案（批次状态 ✅ ✅）：`plan/y-scene-rebuild-plan-20261023.md` ✅ ✅
 - 校验工具化方案（刀一~刀四 ✅ ✅）：`plan/yscene-verification-tooling-plan-20261024.md` ✅ ✅
