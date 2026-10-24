@@ -13,6 +13,19 @@ aiEditMode: inherit
 > 相关文档：设计规则见 `design/art-style-guide.md`、系统地图见 `memory/unity-project-understanding/README.md`、
 > Y 场景管线见 `plan/scene-pipeline-handoff-20261023.md`、路线/天赋域见 `memory/unity-project-understanding/stage-select-and-routes.md` 与 `talent-system.md`。
 
+> **2026-10-25 逐条实测复核（已修正 3 处过期）** ✅
+> ① **D2-1 右官道段与 Q5 左石板路其实已经建好并部署**（原文写“用户明说先不搭了”已过期）：
+>    右官道表 54 件（45 精灵 + 9 mesh）、左石板路表 51 件（44 精灵 + 7 mesh），
+>    段 prefab 均已登记在 `YRouteSegments`（d=[192,262]），实测 SpriteRenderer 数量与表**逐件对齐**。
+> ② **D1-2 教学关接口核对已有答案**：`StageController` 仍实现 `IStageBattleState`/`IRunFlow`
+>    （`Assets/Scripts/Managers/StageController.cs:17-18`），导演也已走这两个接口
+>    （`Assets/Scripts/Tutorial/TutorialStageDirector.cs:76-77`）→ **代码已就绪，只差挂载后跑通验证**。
+> ③ **工具路径已变**：`Tools/Y 场景规格/` 与 `Tools/数据校验/` **在本 checkout 已不存在**，
+>    工具已迁至 `Assets/Scripts/Editor/Experiments/`（`YSceneSpecTools` / `YScenePlacementImporter` /
+>    `YSceneTableizeWindow` / `YSampleSceneTools`）与 `Assets/Scripts/Editor/`（`TalentTreeValidator` /
+>    `RouteCatalogValidator` / `CombatBuffValidator` / `EnemyGroundAlignTool` / `AttackHitFrameValidator`）。
+>    → 本文中所有 `Tools/…` 路径均需按此换算。
+
 ---
 
 ## 零、总览：7 项需求 → 动的功能域
@@ -67,6 +80,9 @@ aiEditMode: inherit
   `tutorialIceSkill`(`UpgradeDefinition`)、`tutorialRouteConfig`(`FakeRouteStageConfig`)、`gestureHint`、`gestureSteps`(`TutorialGestureStep[]`)。
 - 新架构下它依赖的接口还在：`IStageBattleState`（`Scripts/Data/IStageRoles.cs`）、`IRunFlow`（`Scripts/Data/IStageSessionRoles.cs`）、
   路线侧 `IRouteFlow`（`Scripts/Data/IRouteFlow.cs`）—— **但要核对实现方是否已换人**（架构十二批改造后 `StageController` / `StageRunFlow` 都拆过）。
+  → **2026-10-25 实测：没换人** ✅ —— `StageController` 仍声明 `IStageBattleState` / `IRunFlow`，
+  导演也是用 `StageController.Instance as IStageBattleState / IRunFlow` 拿的（`TutorialStageDirector.cs:76-77`）。
+  **结论：D1-2 的代码侧核对已完成，剩余风险只在挂载后运行时验证。**
 - 教学关战斗内容：1011（`f303`）+ 1021（`fd03`）+ 109 骑兵（`6d00`）。
 
 **会动的功能**
@@ -133,16 +149,17 @@ aiEditMode: inherit
 - 右路 = J1 分叉后 `Choice_J1_N2`（displayName「右路：官道」）→ `Node_N2`「N2·官道断后（流程预览）」，`isFinalNode=1`，
   战斗 `Formal_N2_Battle`（1011 多数 + 1021 + 109 骑兵）。
 - **Y 场景侧**：已有规格 `Right Official Road - Transport and Supplies`、`J1 Side Vegetation and Right Road Detail`、
-  `Left Stone Lane - Fences and Low Vegetation`；但交接文档写明 **J1 剩下的两段（左石板路 52 件 / 右官道 55 件）用户 2026-10-24 明说「先不搭了」**，
-  且 **N2 段本身没有任何 YSceneSpec**。
-- **工具已就绪**（不用重写）：摆放表 JSON → 规格 `.asset` → 段 prefab → 场景实例；10 条 `Tools/Y 场景规格/` 菜单；
+  `Left Stone Lane - Fences and Low Vegetation`；**2026-10-25 复核：这两段（左石板路 / 右官道）已经建好并部署**
+  （段 prefab 已登记在 `YRouteSegments`，实测与摆放表逐件对齐），**N2 段本身仍没有任何 YSceneSpec**。
+- **工具已就绪**（不用重写）：摆放表 JSON → 规格 `.asset` → 段 prefab → 场景实例；
+  工具在 `Assets/Scripts/Editor/Experiments/`（`YSceneSpecTools` / `YScenePlacementImporter` / `YSceneTableizeWindow` / `YSampleSceneTools`）；
   往返验证（逐件差异 0）+ 画面逐像素比对 + 三方对齐 + 表化工具。
 - 敌人搭配：`Formal_N2_Battle` 的 waves 可重排（官道题材：骑军 109 + 步卒 1011 + 盾兵 1021 + Boss）。
 
 **会动的功能**
-1. J1 右官道 55 件（+ 左石板路 52 件要不要补）→ 走 Y 场景管线。
-2. N2 段新建（官道断后场景）→ 摆位表 → 规格 → 段 prefab → 接进 `YRouteSegments`。
-3. `Formal_N2_Battle` 敌人搭配表 + wave 数调整。
+1. ~~J1 右官道 55 件（+ 左石板路 52 件）~~ ✅ **已完成（2026-10-25 复核）**，本项无需再排。
+2. N2 段新建（官道断后场景）→ 摆位表 → 规格 → 段 prefab → 接进 `YRouteSegments`。**未开始**。
+3. `Formal_N2_Battle` 敌人搭配表 + wave 数调整。**现状：混编已在（1011+1021+109），但只有 2 波、大量空排**，waves 重排与波数扩充未做。
 4. 段的美术素材缺口要盘点（`design/art-style-guide.md` §6 的三层空间要求）。
 
 ### 7. 104 boss 形象重塑（与第 1 项一起做）
@@ -158,6 +175,8 @@ aiEditMode: inherit
 **会动的功能**
 1. 美术换新（当前形象来自旧 `Sprites/Enemy/BOSS1/`，按画风指南属于「旧素材」）。
 2. **动画资产重导**：新形象的帧数与节奏变了 → 27 个 clip 要跟着重导（这是形象重塑里最花时间的一项，不是画图本身）。
+   现有 27 个 clip 在 `Assets/Animations/`（`Boss_104.controller` + Idle/Walk/Attack/CAttack/Dead/HitFlash/
+   Launched_Rise|Fall/Phase2|3Transition/Stun/QTE_Sweep/QTE_TripleStab 系列）——**但没有重导流程与参数表**（D2-5 未做）。
 3. **入关接线**：battle 配置 + boss 血条 + 阶段配置 + QTE + 描边 + 入场演出。
 4. prefab 名与 `EnemyPool` 的 `Resources.Load` 名字要对上。
 
@@ -170,7 +189,7 @@ aiEditMode: inherit
 | **表现样式数据化** | 3 / 4 都要换皮；若颜色/尺寸还写死在代码里，美术来了要改代码 | 选关 + 天赋的样式抽成 ScriptableObject 皮肤；卡片/节点布局参数化 |
 | **暂停语义统一** | 本轮已落地 `GameplayPause`（暂停时游戏内容冻结、UI 继续跑） | 教学手势提示 / 三选一 / 对话都走同一套，**不要再各写各的 timeScale=0** |
 | **敌人素材流水线** | 第 1 / 7 项批量换素材时反复用 | 抠图 → 导入（PPU16/pivot）→ prefab 替换 → 回读 → 回归；登记进 `memory/` |
-| **Y 场景管线** | 第 6 项直接用 | 摆位表 → 规格 → prefab → 场景；每步跑往返验证 + 逐像素比对 |
+| **Y 场景管线** | 第 6 项直接用 | 摆位表 → 规格 → prefab → 场景；每步跑往返验证 + 逐像素比对。**工具路径已迁**：`Tools/Y 场景规格/` → `Assets/Scripts/Editor/Experiments/`（`YSceneSpecTools` / `YScenePlacementImporter` / `YSceneTableizeWindow`）；`Tools/数据校验/` → `Assets/Scripts/Editor/`（三个 Validator） |
 | **存档兼容** | 选关解锁规则、天赋解锁、关卡进度都写 PlayerPrefs | 改结构前备份存档；天赋存 nodeId（安全）；选关解锁改成前置 id 后要迁老存档的 clearedCount 语义 |
 | **验证纪律** | 本机 Editor Play Mode 帧率极低（2–5fps），`WaitFrames(10)` 只推进 2–3 帧 | 按帧数规划等待；进出 Play Mode 批处理（一次进、一次出跑完所有验证项） |
 
@@ -181,7 +200,7 @@ aiEditMode: inherit
 | # | 任务 | 交付物 | 验收 |
 | --- | --- | --- | --- |
 | D1-1 | **教学关挂回**：`TutorialStageDirector` 挂到 Battle 场景或做成 prefab，填 `n1Battle/e0Battle/dialogues/gestureHint/gestureSteps/tutorialRouteConfig` 等数据 | 教学关可跑 | N1→E0 全流程通；按波台词 / 冰雾 / 手势提示三者都出现；Console 0 error |
-| D1-2 | **教学关接口核对**：`IStageBattleState` / `IRunFlow` 在新架构下的实现方是否还对得上 | 核对结论 + 改法 | 导演不再靠 `FindObjectOfType` 找实现 |
+| D1-2 | **教学关接口核对**：`IStageBattleState` / `IRunFlow` 在新架构下的实现方是否还对得上 | ✅ **已核对（2026-10-25）**：实现方未换人，代码侧就绪 | `StageController` 仍实现两接口；导演走接口拿而非 `FindObjectOfType` |
 | D1-3 | **N1→N3 跑通 + 断点清单**：走一遍 N1→E0→J1→EV→N3 | 断点清单（带文件与行号） | 每个断点都有归属与修法 |
 | D1-4 | **N1 第 0 条测试战斗**：删 / 保留（待拍板） | 配置改完 | 正式 N1 战斗是第 0 条 |
 | D1-5 | **节点对话与奖励占位**：给 N1/E0/J1/EV/N2/N3 补 `entryDialogue` / `postBattleDialogue` / `rewards` | 资产改完 | 进节点有台词、出节点发奖励 |
@@ -192,7 +211,7 @@ aiEditMode: inherit
 
 | # | 任务 | 交付物 | 验收 |
 | --- | --- | --- | --- |
-| D2-1 | **J1 右官道段**：55 件走 Y 场景管线（摆位表 → 规格 → 段 prefab → 场景实例） | 段进场景 | 往返逐件差异 0；画面逐像素 0 差；地面无侵入路面；Play Mode 落到 J1 正常 |
+| D2-1 | **J1 右官道段** ✅ **已完成（2026-10-25 复核）**：表 54 件（45 精灵 + 9 mesh）→ 段 prefab 已建并登记在 `YRouteSegments`（d=[192,262]），实测逐件对齐 | 段已进场景 | 往返逐件差异 0（表 54 = prefab 45 精灵 + 9 mesh）✅ |
 | D2-2 | **N2 段新建**（官道断后）：素材盘点 → 摆位表 → 规格 → 段 prefab | N2 段 | 同上 |
 | D2-3 | **右路敌人搭配**：`Formal_N2_Battle` 的 waves 重排（109 骑军 / 1011 步卒 / 1021 盾兵 / Boss？） | 战斗资产 | 通关节奏合理、不卡壳（跑一遍） |
 | D2-4 | **104 入关接线**：battle 配置 + boss 血条 + 阶段 + QTE + 描边 + 入场演出 | 104 能在正式关卡出现 | 104 在关卡里完整跑一遍（阶段切换 / QTE / 死亡） |
@@ -207,8 +226,10 @@ aiEditMode: inherit
 | Q2 | **敌人新美术素材**（哪些先做：1011 / 1021 / 109 / 104？） | D2-5 / D2-6 的实际产出 | 形象与 104 一起定，优先级由你排 |
 | Q3 | **104 放在哪**：N2（右路终点）/ N3（左路终点）/ 独立关卡 | D1-3、D2-4 | 影响 N1→N3 流程设计 |
 | Q4 | **N1 第 0 条测试战斗删不删** | D1-4 | 一句话即可 |
-| Q5 | **J1 左石板路要不要一起补**（52 件） | D2-1 | 交接文档记的是「先不搭了」 |
+| Q5 | **J1 左石板路要不要一起补**（52 件） | — | **2026-10-25 已解决**：左石板路也已建好并部署（表 51 件 = 44 精灵 + 7 mesh，段 prefab 已登记），无需再决策 |
 | Q6 | **「原本的新手教程」原始设计**（台词 / 教学点 / 节奏）在哪 | D1-1 | 仓库里只有机制，没有文案；沿用现有对话词表也行 |
+| Q7 | **局内补给要不要也改成「按生成表每局刷」** | 可破坏补给线 | 现在 E0 只有一只写死的箱子（`E0_Prop_Crate_01`）；改表驱动 = 局内也做一份「点位+轮次」计划（同局外那套 `SupplySpawnPlan`），每局刷出不同位置、坏掉的箱子下一局重置 |
+| Q8 | **重打关卡时箱子要不要复原** | 可破坏补给线 / BUG-001 | 现状：**不复原**（局内箱子的“已破坏”写进路线快照 → 重打 E0 仍是残骸）。残骸保留是设计选择，但“越打越空”与 BUG-001 是同一件事 → 要么定“不复原”，要么在节点重进时清 |
 
 ---
 
@@ -220,3 +241,7 @@ aiEditMode: inherit
 4. **旧资产在场**：正式路线里 N1 的 `Test_Node_Battle`、节点对话全空、J1/EV 无战斗 —— 跑流程时先分清「设计如此」和「没做完」。
 5. **验证污染存档**：`SaveManager` 直写 PlayerPrefs，验证前备份、结束后还原。
 6. **本机 Editor 帧率极低**：Play Mode 验证按帧数规划等待，别用秒数估算；进出 Play Mode 批处理（一次进一次出跑完所有项）。
+7. **工具路径已迁（2026-10-25）**：`Tools/Y 场景规格/` 与 `Tools/数据校验/` 在本 checkout 已不存在，
+   实际位置见 §二「Y 场景管线」行与 §一.6 的工具清单；按旧路径找会以为工具丢了。
+8. **可破坏补给线的剩余项**不在本文排期里，见 `plan/breakable-props-redesign-20261024.md` §7–§8
+   （已完成 A/B/C 三批：点中本体命中、局外生成固定点位+倒计时、金币爆散表现、N1 移除→E0 部署）。

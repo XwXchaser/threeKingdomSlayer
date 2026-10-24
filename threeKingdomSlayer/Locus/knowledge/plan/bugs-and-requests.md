@@ -64,6 +64,10 @@ aiEditMode: inherit
 - 优先级：中（观感与可玩性；不阻塞流程，但会让重复挑战的关卡“越打越空”）
 - 状态：待处理（用户 2026-10-21 反馈，指示“先放放”，本轮不修）
 - 备注：需先确认道具状态是「场景对象残留」还是「存档里存了破坏状态」——本轮存档里已见到 `FakeRouteStageSaveSnapshot.nodeStates`（含 `completedEntryIndices`）与 `RouteNodeBattleSaveState`，两者都可能是来源；重置时应与「节点重进」路径一起处理。
+- 2026-10-25 复核（可破坏补给重构后）：**「存档里存了破坏状态」这条已确认** —— 局内箱子的「已破坏」写在
+  `FakeRouteStageSaveSnapshot.propStates`（`BreakableProp.Break()` → `SavedStates` + `PropDestroyNotifiers`），
+  所以重进同一节点时箱子仍是碎的。现状是「残骸保留」的设计选择（用户 2026-10-24 确认“局内保留”），
+  但“越打越空”与本条是同一件事 → 已作为 **Q8** 提给用户拍板（重打关卡时箱子要不要复原）。
 
 ### BUG-002 落地页「开始关卡」从存档检查点起步，正式关卡在选关里被锁死
 
@@ -178,6 +182,31 @@ aiEditMode: inherit
 - 备注：
   - **修法（已执行）**：把 `Formal_N3_Battle.asset` 的 `waveTintColor` 改回白色（与其它节点一致）；若设计本意是某种染色，用设计给的颜色而不是黑。
   - **连带确认（未决）**：同一资产的四个倍率（血 / 攻速 / 伤害 / BOSS 血）是否也要按 N3 的设计重填（现在 0.1 与其它节点差一个量级）。需产品/数值给口径。
+
+### BUG-007 敌人被销毁时 DOTween 仍在访问已销毁的 Transform（偶发 MissingReferenceException）
+
+- 日期：2026-10-25
+- 类型：BUG / 表现（运行时异常）
+- 现象：战斗中偶发一次 `MissingReferenceException: The object of type 'Transform' has been destroyed but you are still trying to access it`，
+  栈为 `DG.Tweening.ShortcutExtensions.<DOMove>b__1 → UnityEngine.Transform.set_position`。
+  一次抛出后不再刷屏（DOTween 会摘掉该 Tween），但那一帧的逻辑被打断。
+- 复现：用户报告发生在**战斗里出招 / 点箱子**时，怀疑与「第二波刷怪 + 补齐」同时发生相关；**目前无法稳定复现**。
+  机制已用最小用例确认：新建 GameObject → `t.DOMove(end, 3f)` → `Destroy(go)` → 下一帧必抛同样的栈；
+  若先 `DOTween.Kill(t, false)`（**原始托管引用**）再销毁 → 不抛。
+- 期望：任何访问 Transform / SpriteRenderer 的 Tween，在其目标被销毁前被显式杀掉
+  （项目规则见 `memory/dotween-destroyed-transform.md`）。
+- 涉及：
+  - `Assets/Scripts/Enemy/Enemy.Pool.cs`（`OnDestroy`）+ `Assets/Scripts/Enemy/Enemy.Init.cs`（`Awake` 缓存 `_destroySafeTransform`）—— **已修**：
+    原来用 `transform.DOKill(false)`，销毁过程中 `transform` 已是 Unity 假 null → **静默失败** → Tween 存活。
+  - `Assets/Scripts/Enemy/EnemyFreezeVisual.cs`（破冰碎片：Tween target 是**子 GameObject**）—— **已修**（销毁 root 前逐个 Kill）。
+  - `Assets/Scripts/Effect/ShootFireEffect.cs`（火焰粒子：同上）—— **已修**。
+  - `Assets/Scripts/QTE/QTEController.State.cs`（备用弹道的 `DOMove` 未 `SetTarget`；`KillProjectileSequence` 只按 GameObject 引用 Kill，匹配不到 Transform target）—— **已修**。
+  - 已核对**有**清理、不是嫌疑点：`AttackWave` / `StabSweepEffect` / `SweepEffect` / `PierceReleaseVisual` /
+    `DamageNumber` / `QTEProjectile` / `PassiveTriggerModule` / `TimedArrowEffect`。
+- 优先级：中（偶发、一次即止；不阻塞流程）
+- 状态：**已修四处、待复现观察**（2026-10-25 补完四处清理；用户当轮「暂时没法复现」）
+- 备注：根因是 `Component.DOKill()` 在目标已销毁时因 Unity 假 null **静默失败**，必须用原始引用 `DOTween.Kill(targetRef, false)`。
+  若再现，请记下**当时的节点与操作**——DOTween 的调用栈不包含调用方，靠栈定位不到具体是哪一个 `DOMove`。
 
 ---
 
