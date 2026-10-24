@@ -13,6 +13,19 @@ summary: 双设备项目交接入口（2026-10-09）：仓库历史已重写（W
 >
 > **权威边界**：本文是"当前状况 + 必须动作"的入口摘要；角色制作契约细节以 `plan/two-character-parallel-production.md` 为准，历史重写细节以 `memory/git-history-rewrite-20261008.md` 为准。
 
+## 0.1 2026-10-24 更新（当前分支与同步状态）
+
+- **开发分支已换成 `feat/stage-select-talent-overlays`**（§1 里写的 `route-scroll-movement` 是当时的）。
+- 2026-10-24 已推：`600d702..a6be228`（含 5 个本地积压提交 + 1 个「落地页 UI + 可破坏补给 + DOTween 清理」大提交）。
+  **另一台机器同步**：`git fetch origin --prune` → `git merge --ff-only origin/feat/stage-select-talent-overlays`
+  → 回到 Unity 让它重新导入被改动的资产。
+- **本机（机器 A）新增的本地排除**（写在 `.git/info/exclude`，**只在本机生效**、不入库、不影响另一台）：
+  `_art_process/`、`VideoGenerationPack/`、`VideoGenerationValidation/`。
+  前者是落地页 UI 美术生成工作目录（待目视验收，按「美术素材总包」惯例本地留档）；
+  后两者属另一条线（见 `plan/architecture-optimization-handoff-20261020.md`）。
+  备份：`.git/info/exclude.bak-20261024`。
+- `Locus/workspace-trees/default.json` 仍是**本机修改态**（Locus 索引缓存），提交时已排除，不要提交。
+
 ## 0. 如果你在另一台主机上（先执行这段）
 
 本工程的历史已在 2026-10-08 被重写（剔除废弃 Wwise 与构建产物），**所有 commit hash 已改变**。旧克隆不能 `git pull`——拉取只会把旧历史混回来。要拿到本文内容，必须先迁到新历史：
