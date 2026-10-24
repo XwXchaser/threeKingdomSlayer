@@ -258,7 +258,8 @@ public partial class InputManager : MonoBehaviour
     }
 
     private bool SubmitGesture(MoveGesture gesture, int chargeLevel, int targetColumn,
-        bool slashLeftToRight = true, float slashVisualTilt = 0f)
+        bool slashLeftToRight = true, float slashVisualTilt = 0f,
+        Vector2 screenPos = default, ISupplyPropTarget supplyTarget = null)
     {
         // 教学期没有「站桩蓄力」：按住不放一律不出招（不走连招松手、也不走长按穿刺）
         // combo 链蓄力（Hold 由 C2 松手释放触发）必须放行，否则连段接不上。
@@ -274,7 +275,9 @@ public partial class InputManager : MonoBehaviour
             targetColumn = targetColumn,
             slashLeftToRight = slashLeftToRight,
             slashVisualTilt = slashVisualTilt,
-            timestamp = Time.time
+            timestamp = Time.time,
+            screenPos = screenPos,
+            supplyTarget = supplyTarget
         };
 
         AttackType resolvedType;
@@ -302,14 +305,29 @@ public partial class InputManager : MonoBehaviour
 
     /// <summary>
     /// 处理点击手势 → 戳击
+    /// 点中补给物件时：这一下同时命中该物件（点中本体，与所在列无关）。
     /// </summary>
     private void ProcessTapGesture(Vector2 position)
     {
         int column = GetStabColumnFromScreenPosition(position);
-        if (column >= 0)
-        {
-            SubmitGesture(MoveGesture.Tap, CurrentChargeLevel, column);
-        }
+        if (column < 0) return;
+
+        ISupplyPropTarget supplyTarget = null;
+        if (BreakableProp.TryHitAtScreenPoint(position, out var prop)) supplyTarget = prop;
+
+        bool executed = SubmitGesture(MoveGesture.Tap, CurrentChargeLevel, column, screenPos: position, supplyTarget: supplyTarget);
+
+        // 局外（主菜单 / 落地页）没有战斗状态，招式不会执行 → 物件的交互直接生效。
+        // 局内若招式被冷却或状态挡住，则这一下不生效（保持“照常出招、吃冷却”的语义）。
+        if (!executed && supplyTarget != null && !IsInBattleState())
+            supplyTarget.ApplySupplyHit(AttackType.Stab, 1f);
+    }
+
+    /// <summary>当前是否处于战斗进行中（局内才有招式结算）。</summary>
+    private static bool IsInBattleState()
+    {
+        var ps = PlayerState.Instance;
+        return ps != null && ps.stageState == StageState.InProgress;
     }
 
     /// <summary>

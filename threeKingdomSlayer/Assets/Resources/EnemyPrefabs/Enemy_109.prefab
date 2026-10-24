@@ -543,7 +543,6 @@ MonoBehaviour:
   windupDuration: 0.5
   strikeWindup: 0.5
   strikeRecover: 0.8
-  strikeLungeDistance: 0.5
   interruptRecover: 0.8
   chargeStepDuration: 0.35
   retreatStepDuration: 0.6

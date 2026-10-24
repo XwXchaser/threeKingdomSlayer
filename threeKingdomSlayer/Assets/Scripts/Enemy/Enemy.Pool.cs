@@ -13,13 +13,22 @@ public partial class Enemy : MonoBehaviour
 {
     #region 对象池
 
+    /// <summary>
+    /// 缓存的 Transform **原始托管引用**。
+    /// 销毁时用它 Kill Tween：Unity 销毁过程中 <c>transform</c> 已是「假 null」，
+    /// <c>transform.DOKill(false)</c> 会静默失败 → Tween 继续访问已销毁的 Transform
+    /// → MissingReferenceException（本项目规则见 memory/dotween-destroyed-transform.md）。
+    /// </summary>
+    private Transform _destroySafeTransform;
+
     private void OnDestroy()
     {
         SceneRegistry<Enemy>.Unregister(this);
         _attackTelegraph?.StopWarning();
         _attackTween?.Kill(false);
         _attackTween = null;
-        transform.DOKill(false);
+        // 用原始引用 Kill（目标已销毁时 DOKill 会因 Unity 假 null 直接跳过）
+        DOTween.Kill(_destroySafeTransform, false);
         DestroyFlashMaterials();
     }
 

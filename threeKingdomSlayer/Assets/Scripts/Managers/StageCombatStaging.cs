@@ -89,7 +89,7 @@ public sealed class StageCombatStaging : ICombatStaging
         if (_ctx.StageConfig == null) return;
         if (resetPlayer) _ctx.PlayerState?.ResetPlayer();
         UltimateSystem.Instance?.ResetEnergy();
-        var killRewardManager = UnityEngine.Object.FindObjectOfType<KillRewardManager>();
+        var killRewardManager = KillRewardManager.Instance;
         killRewardManager?.ResetRewards();
         _host.PrewarmEnemyPools();
         _ctx.SetStageState(StageState.InProgress);

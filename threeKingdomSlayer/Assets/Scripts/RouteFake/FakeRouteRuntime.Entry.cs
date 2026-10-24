@@ -96,6 +96,8 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
         if (Phase == FakeRoutePhase.Defeated) yield break;
 
         _prepared = true;
+        // 就绪态（落地页 / 主菜单）：局外补给物件可交互，局内补给不可交互
+        BreakableProp.HubState = true;
         SetPhase(FakeRoutePhase.Ready);
         Debug.Log("[FakeRoute] 落地页就绪：关卡=" + routeConfig.stageName +
                   " 起始节点=" + (_preparedStartNode ? _preparedStartNode.nodeId : "null") +
@@ -118,6 +120,8 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
     {
         var startNode = _preparedStartNode;
         _prepared = false;
+        // 关卡态：局内补给物件可交互，局外补给（落地页专属）不再响应
+        BreakableProp.HubState = false;
         Debug.Log("[FakeRoute] 开始关卡：从节点 " + (startNode ? startNode.nodeId : "null") + " 起跑");
 
         // 开场表现（如果有）：openingTravel 为空时表现层直接停在 startNode 锚点。

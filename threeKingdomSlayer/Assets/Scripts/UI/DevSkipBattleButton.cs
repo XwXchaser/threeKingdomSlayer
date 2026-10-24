@@ -64,7 +64,10 @@ public sealed class DevSkipBattleButton : MonoBehaviour
     {
         var flow = RouteFlowHub.Current;
         // 没有路线流程就藏起来 ✅（主菜单 / 其它场景不显示 ✅）
-        bool show = flow != null;
+        // 落地页（就绪态）不显示这个按钮：它是"跳过本节点战斗"的局内工具
+        var hubState = HubStateSource.Instance;
+        bool landing = hubState != null && hubState.IsPrepared;
+        bool show = flow != null && !landing;
         if (_button != null && _button.gameObject.activeSelf != show) _button.gameObject.SetActive(show);
         if (!show) return;
 
@@ -120,10 +123,11 @@ public sealed class DevSkipBattleButton : MonoBehaviour
         var btnGo = new GameObject("SkipBattleButton", typeof(RectTransform));
         btnGo.transform.SetParent(canvasGo.transform, false);
         var rect = (RectTransform)btnGo.transform;
-        rect.anchorMin = new Vector2(1f, 1f);
-        rect.anchorMax = new Vector2(1f, 1f);
-        rect.pivot = new Vector2(1f, 1f);
-        rect.anchoredPosition = new Vector2(-24f, -24f);
+        // 放**顶部中间**：右上角是落地页金币的位置，会重叠
+        rect.anchorMin = new Vector2(0.5f, 1f);
+        rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = new Vector2(0f, -40f);
         rect.sizeDelta = new Vector2(240f, 84f);
 
         _background = btnGo.AddComponent<Image>();

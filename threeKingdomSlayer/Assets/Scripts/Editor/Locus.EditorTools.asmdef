@@ -3,10 +3,12 @@
   "rootNamespace": "",
   "references": [
     "Locus.Data",
+    "Locus.Services",
     "Locus.Combat",
     "Locus.Flow",
     "Locus.UI",
-    "Locus.Experiments"
+    "Locus.Experiments",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [
     "Editor"

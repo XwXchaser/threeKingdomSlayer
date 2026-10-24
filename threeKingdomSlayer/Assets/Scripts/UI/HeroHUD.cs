@@ -11,6 +11,7 @@ using DG.Tweening;
 /// </summary>
 public class HeroHUD : MonoBehaviour, IQteHud
 {
+    public static HeroHUD Instance { get; private set; }
     [Header("生命值")]
     public Slider healthSlider;
     public TMP_Text healthText;
@@ -89,7 +90,14 @@ public class HeroHUD : MonoBehaviour, IQteHud
 
     private void OnEnable()
     {
+        if (Instance == null) Instance = this;
         EnsurePortraitForegroundLayer();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
     }
 
     private void Start()

@@ -72,7 +72,7 @@ public partial class TutorialStageDirector : MonoBehaviour
 
     private BattleDialogueView ResolveDialogueView()
     {
-        if (_dialogueView == null) _dialogueView = FindObjectOfType<BattleDialogueView>();
+        if (_dialogueView == null) _dialogueView = BattleDialogueView.Instance;
         return _dialogueView;
     }
 }

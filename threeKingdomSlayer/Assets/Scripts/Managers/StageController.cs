@@ -296,10 +296,10 @@ public class StageController : MonoBehaviour, IStageFormation, IStageBattleState
     private void Start()
     {
         // 自动查找组件引用
-        if (waveSpawner == null) waveSpawner = FindObjectOfType<WaveSpawner>();
-        if (enemyManager == null) enemyManager = FindObjectOfType<EnemyManager>();
-        if (playerState == null) playerState = FindObjectOfType<PlayerState>();
-        if (enemyPool == null) enemyPool = FindObjectOfType<EnemyPool>();
+        if (waveSpawner == null) waveSpawner = WaveSpawner.Instance;
+        if (enemyManager == null) enemyManager = EnemyManager.Instance;
+        if (playerState == null) playerState = PlayerState.Instance;
+        if (enemyPool == null) enemyPool = EnemyPool.Instance;
 
         // 注册事件（回调实现都在 StageRunFlow 里）
         if (waveSpawner != null)

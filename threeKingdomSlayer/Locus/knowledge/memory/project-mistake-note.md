@@ -156,3 +156,9 @@ maintenanceRules: |-
 - 症状：清理 N1 未引用重复贴图后，又批量删除“零引用垃圾素材”，其中 `Assets/Sprites/background_MENU.jpg` 实际被 `Assets/Scenes/MainMenu.scene` 引用，被误删。
 - 根因：本项目是 Tuanjie 变体，场景扩展名是 **`.scene`**（不是常见的 `.unity`），审计脚本只扫了 `.unity/.prefab/.mat/.asset`，目标只被 `.scene` 引用的素材被误判为零引用。
 - 预防规则：引用扫描的文件集合必须包含 `.scene`、`.unity`、`.prefab`、`.mat`、`.asset`、`.controller`、`.anim`、`.playable`、`.mask`、`.spriteatlas` 等全部文本序列化类型；删除前另做一次全库 guid 断链校验（逐文件正则取 `guid: <32hex>` → `AssetDatabase.GUIDToAssetPath` 必须非空），并排除 `Resources/`、`StreamingAssets/` 与代码里按名/按路径加载的素材。被删资产若已入库，可用 `git checkout -- <path>` 原地恢复且 guid 不变。
+- **删/移 Unity 场景节点前必须查序列化引用**（2026-10-24）：删掉 `DialogueOverlay/BossPortrait` 后 `BattleDialogueView.Awake` 直接 NRE（`_bossPortrait` / `_bossPortraitFrame` 是序列化字段引用）→ 整个游戏进不去。⚠️ 用 grep 查引用时**别只搜类名/驼峰**：`BossPortrait` 搜不到字段 `_bossPortrait`（下划线+小写开头）。用 `unity_code_usages` 或按字段名（含 `_` 前缀）全量扫。
+- **Editor 工具改场景时不要把运行时状态写进文件**（2026-10-24）：`HubHudModeSwitch` 在编辑模式也会应用显隐（`HubStateSource.Instance` 为 null → 判定非就绪态 → 关掉落地页组），并随场景保存 → 开局就少一半 UI。修法：显隐组件在 `!Application.isPlaying` 时直接 return。
+- **替换显隐名单后必须重新采样**（2026-10-24）：`HubHudModeSwitch` 缓存了旧名单的初始 active 状态数组，换名单后下标错位 → 显隐随机。需要提供 `Recapture()` 并在改名单后调用。
+- **工具里"删旧建新"要删全部同名 + 递归查找**（2026-10-24）：`Transform.Find` 只找直接子节点，节点进了分组文件夹就找不到 → 每次重建多一份，场景里出现重复 UI。
+- **UI 素材先裁透明留白再排版**（2026-10-24）：生图给的 UI 元素常带大块透明留白（笔刷条 222 高里内容只有 113）→ 直接塞进小框再 Sliced 会「纵向压扁 + 横向拉长」。做法：先按 alpha 裁到内容 bbox，再按**素材自然比例**定元素尺寸；九宫格只用在真能横向拉伸的条子上，窄于素材的标签改 `Simple + preserveAspect`。**Unity 的 Image 没有 sprite 时会画白框** → 占位图标要先 `enabled=false`。
+- **Overlay 画布在 Scene 视图不可见**（2026-10-24）：要拖 UI 得把画布临时切成 `Screen Space - Camera`；要在 Play Mode 之外验收 UI，可把画布临时切到 Camera 模式 + 相机渲到 RenderTexture 存 PNG（注意 planeDistance 要比背景近，否则 UI 被背景挡住）。

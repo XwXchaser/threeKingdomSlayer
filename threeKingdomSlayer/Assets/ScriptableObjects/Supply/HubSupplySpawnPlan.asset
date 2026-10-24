@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 491514e8e35916f4d865fc2559812b3b, type: 3}
+  m_Name: HubSupplySpawnPlan
+  m_EditorClassIdentifier: 
+  roundSeconds: 60
+  points:
+  - id: hub_left_shoulder
+    localPosition: {x: -3.6, y: 0, z: 11}
+    roundOffsetSeconds: 0
+    lifetimeSeconds: 60
+    coinReward: 100
+    propPrefab: {fileID: 2431079911377691670, guid: 89bccf3d88e2d964ba2f2a2bd2f70662, type: 3}
+  - id: hub_right_far
+    localPosition: {x: 4.5, y: 0, z: 14.4}
+    roundOffsetSeconds: 20
+    lifetimeSeconds: 40
+    coinReward: 150
+    propPrefab: {fileID: 2431079911377691670, guid: 89bccf3d88e2d964ba2f2a2bd2f70662, type: 3}

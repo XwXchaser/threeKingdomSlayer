@@ -291,7 +291,7 @@ public partial class AttackSystem : MonoBehaviour
         if (columnManager == null)
             columnManager = FindObjectOfType<ColumnManager>();
         if (playerState == null)
-            playerState = FindObjectOfType<PlayerState>();
+            playerState = PlayerState.Instance;
         if (_chargeStabVisual == null)
             _chargeStabVisual = FindObjectOfType<ChargeStabVisual>();
     }
@@ -304,7 +304,7 @@ public partial class AttackSystem : MonoBehaviour
     /// </summary>
     public bool TryExecuteAttack(AttackType attackType, int targetColumn = -1, bool slashLeftToRight = true,
         float slashVisualTilt = 0f, bool chargedAttack = false, bool cancelCurrentMove = false, int chargeLevel = 0,
-        AttackSkillConfig moveConfig = null)
+        AttackSkillConfig moveConfig = null, ISupplyPropTarget supplyTarget = null)
     {
         _currentChargeLevel = chargeLevel;
         if (playerState == null) return false;
@@ -368,10 +368,10 @@ public partial class AttackSystem : MonoBehaviour
         }
         _attackIsCharged = false;
 
-        // 可破坏补给：戳击命中目标列时，连带破坏该列的道具。
-        // 不参与 hitAny 判定（ExecuteStab 恒返回 true），只在道具确实存在时生效。
-        if (attackType == AttackType.Stab && targetColumn >= 0)
-            BreakableProp.TryHitColumn(targetColumn, attackType, 1f);
+        // 可破坏补给：**点中本体**才算命中（点一下落在物件上 → 这一下同时打它）。
+        // 与所在列无关，也与敌人是否被打中无关（空挥也会打中它）。
+        if (supplyTarget != null && attackType == AttackType.Stab)
+            supplyTarget.ApplySupplyHit(attackType, 1f);
 
         if (hitAny)
         {

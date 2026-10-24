@@ -7,6 +7,7 @@ using UnityEngine.UI;
 
 public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
 {
+    public static BattleDialogueView Instance { get; private set; }
     [SerializeField] private Image _clickBlocker;
     [SerializeField] private GameObject _tutorialBubble;
     [SerializeField] private GameObject _playerBubble;
@@ -62,6 +63,12 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
         _advanceButton.onClick.AddListener(Advance);
         _skipButton.onClick.AddListener(Skip);
         ApplyDialogueLayout();
@@ -70,7 +77,7 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
 
     private void ApplyDialogueLayout()
     {
-        var heroHud = FindObjectOfType<HeroHUD>(true);
+        var heroHud = HeroHUD.Instance;
         if (heroHud == null || heroHud.portraitImage == null) return;
 
         var root = transform as RectTransform;
@@ -114,6 +121,8 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
     {
         _advanceButton.onClick.RemoveListener(Advance);
         _skipButton.onClick.RemoveListener(Skip);
+        if (Instance == this)
+            Instance = null;
     }
 
     public void Show(DialogueEventData dialogueEvent, Action onFinished, bool blockClicks = true)

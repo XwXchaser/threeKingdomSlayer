@@ -122,8 +122,8 @@ private void SpawnProjectile()
 
     /// <summary>
     /// 使用 DOTween 播放攻击动效（三阶段攻击循环）
-    ///   AttackSpawn（前摇翻面）：向前移动 + 镜像翻转，完成时造成伤害，可被招架打断
-    ///   AttackDraw（收招返回）：后退到原位 + 翻转回正，不可被招架打断
+    ///   AttackSpawn（前摇翻面）：原地计时 + 镜像翻转，完成时造成伤害，可被招架打断
+    ///   AttackDraw（收招返回）：原地计时 + 翻转回正，不可被招架打断
     ///   冷却阶段（AttackSpeed）：等待 attackTimer 倒计时，冷却结束后再次进入 AttackSpawn
     ///
     ///   按 attackSequence 顺序循环执行每步攻击
@@ -192,11 +192,9 @@ private void SpawnProjectile()
         _animator?.SetTrigger(trigger);
         StartCoroutine(TraceAttackAnimatorEntry(trigger, attackStartFrame));
 
-        Vector3 startPos = transform.localPosition;
         Vector3 startScale = transform.localScale;
 
         float totalInterval = (1f / attackSpeed);
-        float forwardDistance = 0.5f;
 
         _attackTween = DOTween.Sequence().SetUpdate(UpdateType.Normal, false);
         _attackTween.SetTarget(transform);
@@ -229,8 +227,8 @@ private void SpawnProjectile()
         }
         else
         {
-            // 近战：向前 + 翻转（AttackSpawn）
-            _attackTween.Append(transform.DOLocalMoveZ(startPos.z - forwardDistance, approachDuration).SetEase(Ease.OutQuad));
+            // 近战：原地前摇 + 翻转（AttackSpawn），不做位移；时长保留以维持命中帧与预警时序
+            _attackTween.AppendInterval(approachDuration);
             if (useFlip)
                 _attackTween.Join(transform.DOScaleX(-startScale.x, approachDuration).SetEase(Ease.OutQuad));
 
@@ -246,9 +244,9 @@ private void SpawnProjectile()
                 });
             }
 
-            // AttackDraw：后退到原位 + 翻转回正（不可被招架打断）
-            // 声明命中帧时 drawDuration 已被改写为 clip 剩余时间，整段位移与动画同时结束
-            _attackTween.Append(transform.DOLocalMoveZ(startPos.z, drawDuration).SetEase(Ease.InQuad));
+            // AttackDraw：原地收招 + 翻转回正（不可被招架打断）
+            // 声明命中帧时 drawDuration 已被改写为 clip 剩余时间，整段时长与动画同时结束
+            _attackTween.AppendInterval(drawDuration);
             if (useFlip)
                 _attackTween.Join(transform.DOScaleX(startScale.x, drawDuration).SetEase(Ease.InQuad));
         }

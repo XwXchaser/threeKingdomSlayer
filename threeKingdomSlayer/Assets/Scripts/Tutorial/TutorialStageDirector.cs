@@ -75,7 +75,7 @@ public partial class TutorialStageDirector : MonoBehaviour
     {
         _stageState = StageController.Instance as IStageBattleState;
         _stageFlow = StageController.Instance as IRunFlow;
-        _waveSpawner = FindObjectOfType<WaveSpawner>();
+        _waveSpawner = WaveSpawner.Instance;
         if (_waveSpawner != null) _waveSpawner.OnWaveStarted += OnWaveStarted;
         if (_stageState != null) _stageState.StageVictory += OnStageVictory;
     }

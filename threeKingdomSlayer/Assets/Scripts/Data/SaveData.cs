@@ -24,6 +24,8 @@ public class SaveData
     public int activeFakeRouteStageId = -1;
     [Tooltip("已解锁的天赋节点 id（TalentNodeConfig.nodeId）。旧档缺失时 MigrateIfNeeded 会补空列表")]
     public List<string> unlockedTalents = new List<string>();
+    [Tooltip("已领取过的局外补给实例 id（轮次+点位）。旧档缺失时由 SupplySaveSection 补空列表")]
+    public List<string> claimedSupplyIds = new List<string>();
 
     /// <summary>
     /// 获取铜钱数量（优先从 props 列表读取，兼容旧存档的 coinCount 字段）

@@ -184,16 +184,13 @@ public sealed partial class CavalryEnemy : MonoBehaviour
         StopCycle();
     }
 
-    /// <summary>命中表现：向前探出、结算一次伤害、再收回。伤害提交后不再可被打断。</summary>
+    /// <summary>命中表现：原地等待命中帧、结算一次伤害、再收招。伤害提交后不再可被打断。</summary>
     private IEnumerator StrikeRoutine(int generation, Enemy target)
     {
         if (OwnerGone) yield break;
 
         SetPhase(CavalryPhase.Striking, target != null ? $"命中{target.DebugTag}" : "命中玩家");
         _enemy.PlayCavalryStrikeVisual();
-
-        Vector3 origin = _enemy.transform.localPosition;
-        Vector3 lunge = origin + new Vector3(0f, 0f, -strikeLungeDistance);
 
         float elapsed = 0f;
         while (elapsed < strikeWindup)
@@ -202,7 +199,6 @@ public sealed partial class CavalryEnemy : MonoBehaviour
             if (IsStale(generation)) break;
             if (StepPaused()) { yield return null; continue; }
             elapsed += Time.deltaTime;
-            _enemy.transform.localPosition = Vector3.Lerp(origin, lunge, Mathf.Clamp01(elapsed / strikeWindup));
             yield return null;
         }
 
@@ -236,19 +232,15 @@ public sealed partial class CavalryEnemy : MonoBehaviour
             ResolveStrikeDamage(target);
         }
 
-        // 无论命中还是被打断，都走完收招再返航
-        Vector3 recoverStart = _enemy.transform.localPosition;
+        // 无论命中还是被打断，都走完收招计时再返航
         elapsed = 0f;
         while (elapsed < strikeRecover)
         {
             if (OwnerGone || !_mounted) yield break;
             if (StepPaused()) { yield return null; continue; }
             elapsed += Time.deltaTime;
-            _enemy.transform.localPosition = Vector3.Lerp(recoverStart, origin, Mathf.Clamp01(elapsed / strikeRecover));
             yield return null;
         }
-        if (!OwnerGone)
-            _enemy.transform.localPosition = origin;
 
         // 攻击动作没演完就不进返航（strikeRecover 配得过短时在这里补足到尾帧）。
         // 卡肉帧不推进计时；超时兜底避免配置错误导致卡死。

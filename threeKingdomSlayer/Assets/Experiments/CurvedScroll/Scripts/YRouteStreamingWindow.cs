@@ -101,6 +101,9 @@ public sealed class YRouteStreamingWindow : MonoBehaviour
         foreach (var renderer in GetComponentsInChildren<Renderer>(true))
         {
             if (IsAlwaysResident(renderer.transform)) continue;
+            // 玩法物件（可破坏补给等）由 RoutePropFollower 独占可见性：它按投影后的路线坐标
+            // 自行隐藏/显示。两套系统同时写 renderer.enabled 会让「已破坏的物件复活成残骸」。
+            if (IsFollowerOwned(renderer)) continue;
             AddEntry(renderer);
         }
         restored = false;
@@ -126,6 +129,8 @@ public sealed class YRouteStreamingWindow : MonoBehaviour
         var renderers = segmentRoot.GetComponentsInChildren<Renderer>(true);
         foreach (var renderer in renderers)
         {
+            if (renderer == null) continue;
+            if (IsFollowerOwned(renderer)) continue;
             if (tracked.Contains(renderer)) continue;
             AddEntry(renderer);
             registeredScenery.Add(renderer);
@@ -219,6 +224,13 @@ public sealed class YRouteStreamingWindow : MonoBehaviour
             if (target == root || target.IsChildOf(root)) return true;
         }
         return false;
+    }
+
+    /// <summary>渲染器是否由 RoutePropFollower 独占可见性（是则本窗口不碰它）。</summary>
+    static bool IsFollowerOwned(Renderer renderer)
+    {
+        if (renderer == null) return false;
+        return renderer.GetComponentInParent<RoutePropFollower>() != null;
     }
 
     void ApplyWindow(float position)

@@ -14,10 +14,11 @@ public class WaveTimer : MonoBehaviour
     private int _currentWaveIndex = -1;
     private bool _isBossWave;
     private bool _bossDied;
+    private EnemyManager _subscribedEnemyManager;
 
     private void Start()
     {
-        _waveSpawner = FindObjectOfType<WaveSpawner>();
+        _waveSpawner = WaveSpawner.Instance;
         _stageConfig = _waveSpawner?.ResolvedStageConfig;
 
         if (_waveSpawner == null)
@@ -30,9 +31,10 @@ public class WaveTimer : MonoBehaviour
         _waveSpawner.OnWaveCompleted += OnWaveCompleted;
 
         // 监听Boss死亡
-        var enemyManager = FindObjectOfType<EnemyManager>();
+        var enemyManager = EnemyManager.Instance;
         if (enemyManager != null)
             enemyManager.OnAnyEnemyDied += OnAnyEnemyDied;
+        _subscribedEnemyManager = enemyManager;
     }
 
     private void OnDestroy()
@@ -42,9 +44,9 @@ public class WaveTimer : MonoBehaviour
             _waveSpawner.OnWaveStarted -= OnWaveStarted;
             _waveSpawner.OnWaveCompleted -= OnWaveCompleted;
         }
-        var enemyManager = FindObjectOfType<EnemyManager>();
-        if (enemyManager != null)
-            enemyManager.OnAnyEnemyDied -= OnAnyEnemyDied;
+        if (_subscribedEnemyManager != null)
+            _subscribedEnemyManager.OnAnyEnemyDied -= OnAnyEnemyDied;
+        _subscribedEnemyManager = null;
     }
 
     private void OnWaveStarted(int waveIndex)

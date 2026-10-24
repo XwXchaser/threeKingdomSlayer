@@ -162,7 +162,7 @@ public class BattleHUD : MonoBehaviour, ICombatHud
         // 将 QTE frame 注入 QTEDisplay（老虎机动画区域）
         if (_heroHUD.qteIndicatorArea != null)
         {
-            var qteDisplay = FindObjectOfType<QTEDisplay>();
+            var qteDisplay = QTEDisplay.Instance;
             if (qteDisplay != null)
             {
                 qteDisplay.qteFrameRect = _heroHUD.qteFrameRect;

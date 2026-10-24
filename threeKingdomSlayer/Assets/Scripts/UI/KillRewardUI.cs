@@ -57,7 +57,7 @@ public class KillRewardUI : MonoBehaviour
 
     private void Start()
     {
-        _manager = FindObjectOfType<KillRewardManager>();
+        _manager = KillRewardManager.Instance;
         if (_manager != null)
             _manager.OnMilestoneReached += OnMilestoneReached;
 

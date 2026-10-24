@@ -31,8 +31,6 @@ public sealed partial class CavalryEnemy : MonoBehaviour
     [SerializeField, Min(0.02f)] private float strikeWindup = 0.36f;
     [Tooltip("命中收招时长。")]
     [SerializeField, Min(0.02f)] private float strikeRecover = 0.3f;
-    [Tooltip("命中时向前探出的本地距离。")]
-    [SerializeField, Min(0f)] private float strikeLungeDistance = 0.5f;
     [Tooltip("被打断后进入返航前的收招时长。")]
     [SerializeField, Min(0f)] private float interruptRecover = 0.2f;
     [Tooltip("冲锋时向前推进一排的时长（秒/排）。独立于普通行军的 moveSpeed，改这里不会影响普通行军。")]

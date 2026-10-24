@@ -243,7 +243,7 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
     private void Start()
     {
         if (attackSystem == null)
-            attackSystem = FindObjectOfType<AttackSystem>();
+            attackSystem = AttackSystem.Instance;
         if (moveStateMachine == null)
             moveStateMachine = FindObjectOfType<PlayerMoveStateMachine>();
     }

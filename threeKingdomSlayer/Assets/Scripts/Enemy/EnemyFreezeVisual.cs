@@ -284,6 +284,16 @@ public sealed class EnemyFreezeVisual
             sr.DOFade(0f, 0.45f).SetDelay(0.18f).SetTarget(shard).SetUpdate(UpdateType.Normal, false);
         }
 
+        // 销毁前先杀掉碎片/闪光上的 Tween：**DOTween 不会自动杀掉目标已销毁的 Tween**
+        // （本项目规则，见 memory/dotween-destroyed-transform.md）。
+        // 碎片 Tween 的 target 是 shard/flash 这个 GameObject（不是它的 Transform），
+        // 所以要用原始 GameObject 引用 Kill —— childTransform.DOKill() 杀不掉。
+        for (int i = 0; i < root.transform.childCount; i++)
+        {
+            var child = root.transform.GetChild(i);
+            DOTween.Kill(child.gameObject, false);
+        }
+        DOTween.Kill(root, false);
         Object.Destroy(root, 0.85f);
     }
 

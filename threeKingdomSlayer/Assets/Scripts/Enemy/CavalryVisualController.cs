@@ -11,8 +11,8 @@ using UnityEngine;
 public sealed class CavalryVisualController : MonoBehaviour
 {
     [Header("旧占位坐骑层")]
-    [SerializeField] private Transform mountAnchor;
-    [SerializeField] private SpriteRenderer mountRenderer;
+    [SerializeField] public Transform mountAnchor;
+    [SerializeField] public SpriteRenderer mountRenderer;
     [SerializeField] private Sprite mountIdle;
     [SerializeField] private Sprite mountWalk1;
     [SerializeField] private Sprite mountWalk2;

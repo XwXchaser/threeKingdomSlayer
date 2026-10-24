@@ -37,6 +37,7 @@ public static class SaveSections
         new TutorialSaveSection(),
         new ProgressSaveSection(),
         new RunSnapshotSaveSection(),
+        new SupplySaveSection(),
     };
 
     /// <summary>全部已登记的分片（只读）。</summary>

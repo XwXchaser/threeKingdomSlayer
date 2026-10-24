@@ -49,9 +49,24 @@ public class CoinCounterUI : MonoBehaviour
         if (totalText != null)
             totalTextRect = totalText.GetComponent<RectTransform>();
 
-        // 初始显示（本局铜钱从0开始）
+        // 初始显示：落地页（就绪态）显示**玩家总铜钱**，战斗中显示**本局获得**
         if (totalText != null)
-            totalText.text = (PlayerState.Instance != null ? PlayerState.Instance.coinCount : 0).ToString();
+            totalText.text = DisplayValue().ToString();
+    }
+
+    /// <summary>落地页（就绪态）显示玩家总铜钱；战斗中显示本局获得的铜钱。</summary>
+    private int DisplayValue()
+    {
+        var hub = HubStateSource.Instance;
+        if (hub != null && hub.IsPrepared)
+            return SaveManager.GetCoins();
+        return PlayerState.Instance != null ? PlayerState.Instance.coinCount : 0;
+    }
+
+    private void OnEnable()
+    {
+        // Start 可能因为对象初始是 inactive 而没跑到 → OnEnable 再刷一次
+        if (totalText != null) totalText.text = DisplayValue().ToString();
     }
 
     private void OnDestroy()

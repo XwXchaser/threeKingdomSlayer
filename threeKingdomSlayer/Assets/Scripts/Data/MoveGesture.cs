@@ -27,6 +27,10 @@ public struct GestureInput
     public bool slashLeftToRight;
     public float slashVisualTilt;
     public float timestamp;
+    /// <summary>手势落点（屏幕坐标）：点中补给物件时用它判定「戳中的是哪个物件」。</summary>
+    public Vector2 screenPos;
+    /// <summary>点中的补给物件（可空）：非空时这一下同时命中该物件。</summary>
+    public ISupplyPropTarget supplyTarget;
 }
 
 public static class MoveGestureDefaults

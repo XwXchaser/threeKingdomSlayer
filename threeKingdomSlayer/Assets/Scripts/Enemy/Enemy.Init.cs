@@ -15,6 +15,8 @@ public partial class Enemy : MonoBehaviour
     private void Awake()
     {
         RefreshRendererCache();
+        // 缓存 Transform 原始引用：销毁时用它 Kill Tween（见 Enemy.Pool.cs 的 _destroySafeTransform）
+        _destroySafeTransform = transform;
 
         // 快照 prefab 原始值，供池复用 / 多波次重置
         SnapshotOriginalValues();
@@ -29,6 +31,10 @@ public partial class Enemy : MonoBehaviour
             _prefabColor = _spriteRenderer.color;
         else if (renderers != null && renderers.Length > 0)
             _prefabColor = renderers[0].sharedMaterial.color;
+
+        // 脳下阴影：运行时挂上，不改 Prefab；已存在则不重复添加
+        if (GetComponent<EnemyGroundShadow>() == null)
+            gameObject.AddComponent<EnemyGroundShadow>();
     }
 
     private void SnapshotOriginalValues()

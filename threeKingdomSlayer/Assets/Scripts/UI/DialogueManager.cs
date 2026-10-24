@@ -142,9 +142,9 @@ public sealed class DialogueManager : MonoBehaviour, IDialogueModal
     {
         if (_isPlaying || _queue.Count == 0 || IsBlockedByOtherUI()) return;
         if (_heroHUD == null)
-            _heroHUD = FindObjectOfType<HeroHUD>();
+            _heroHUD = HeroHUD.Instance;
         if (_dialogueView == null)
-            _dialogueView = FindObjectOfType<BattleDialogueView>();
+            _dialogueView = BattleDialogueView.Instance;
         if (_dialogueView == null) return;
 
         var dialogueEvent = _queue.Dequeue();

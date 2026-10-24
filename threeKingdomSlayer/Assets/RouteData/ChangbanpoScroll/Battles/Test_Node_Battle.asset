@@ -42,5 +42,5 @@ MonoBehaviour:
   killMilestones: []
   clearCoinReward: 0
   collisionDamage: 50
-  formationConfig: {fileID: 11400000, guid: 55973faa39889b64294c71556eb8255b, type: 2}
+  formationConfig: {fileID: 11400000, guid: f329fc350cf1b54439fcc603e63223ba, type: 2}
   rushMoveDelay: 0.05

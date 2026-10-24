@@ -978,6 +978,37 @@ aiEditMode: inherit
 - **硬门**：半透明0、透明区隐藏RGB0、保护核心被删0、4px边缘Alpha前景0；白底绿优势>8为357–596，低于109 MountedIdle t79基线的1086–1458。
 - **边界**：未部署Unity，未做1108补边、锚点对齐、Clip或死亡视觉路由；骑手与马的拆分属视频②。骑手落马死亡演出接入属独立授权项（`CavalryVisualController.LateUpdate()`在 `Dead` 时直接返回；`Enemy.Die()`自带弹起旋转，不能与已烘焙落马叠加）。
 
+## 一之二、落地页 UI 参考图（2026-10-24，GPT Image 图生图）
+
+- **目的**：把参考游戏界面（`微信图片_20261019125149_30_455.jpg`，1116×2480）适配成本项目画风的落地页参考图，按已拍板的排布（底部 tab 栏下线 / 右侧关卡卡片 / 右下天赋卡 / 左下任务条 + 四宫格菜单键 / 体力位暂不放）。
+- **调用**：图生图 `/v1/images/edits`，`model=gpt-image-2.5-sunburst`、`quality=max`、`input_fidelity=high`、`size=1024x1536`、`output_format=png`；HTTP 200，usage in 1012（image 560 / text 452）/ out 5488；路由回显 `background=auto`。
+- **产物**：`C:/Users/Administrator/Pictures/gptGen/hub_landing_reference_v1.png`（2,826,903 bytes，1024×1536，PNG Color Type 2 = RGB）；同目录 `.request.json` / `.response.json` 保留原始请求与响应。
+- **AI 视觉检查（未等于用户验收）**：三国战场氛围与六个 UI 元素位置全部命中（头像+等级+经验条、红点、金币、右侧关卡卡片「长坂坡·卷轴」+三星+选关、左下任务条「击杀守卫 20 个 0/20」+金币、左下四宫格置灰键、右下天赋树卡「天赋」、中下「开始关卡」朱红笔刷大按钮）；底部整排小 tab 与可爱吉祥物已按要求删除；文字渲染全部正确。
+- **偏离**：① 画风偏厚涂插画，**不是** `design/art-style-guide.md` 要求的「高清像素化成簇色块」；② 画面中央多出一个武将背影主角，与「落地页中央空场」冲突（可否作为主角形象待定）；③ 画布 2:3，本项目 UI 是 1080×1920（9:16），纵向比例需重出；④ 底部左侧元素略挤。
+- **状态**：**待用户验收**；未导入 Unity，未据此改动 `Assets/Scenes/Battle.scene`。
+
+## 一之二之二、落地页 UI 参考图 v2（2026-10-24，文生图）
+
+- **v1 的问题**（用户反馈）：UI「太复古了，与我们的游戏画风不符」；v1 是做旧青铜浮雕 + 厚涂插画风，违反 `design/art-style-guide.md` 的「墨色笔刷块 + 克制金属 + 高清像素化成簇色块」。
+- **排布决策（用户 2026-10-24 拍板）**：底部 tab 栏下线；左上↔左下对调 —— **武将头像挪到左下角**（与战斗一致：`UltPortraitButton` 就在左下 300×300，局内=必杀技按钮），**任务条挪到左上角**（落地页专属，战斗中左上是空的）；四宫格菜单键置灰占位；体力位暂不放。
+- **调用**：文生图 `/v1/images/generations`，`model=gpt-image-2.5-sunburst`、`quality=max`、`size=1024x1820`、`output_format=png`；HTTP 200，usage in 507 / out 5013；**自定义尺寸 9:16 被接口接受**（实得 1027×1824，宽高比 0.563 ≈ 1080/1920 的 0.5625）。
+- **产物**：`C:/Users/Administrator/Pictures/gptGen/hub_landing_reference_v2.png`（4,432,228 bytes，PNG Color Type 2 = RGB）；同目录 `.request.json` / `.response.json`。
+- **AI 视觉检查（未等于用户验收）**：左上墨色笔刷任务条（「击杀守卫 20 个 / 0/20」+金币图标）；左下圆形武将头像 + 等级 12 + 绿经验条 + 红点，旁边置灰四宫格键；右上关卡卡（缩略图 + 「长坂坡·卷轴」+ 三星 + 「选关」）；右下天赋树卡；底部中间朱红笔刷「开始关卡」大按钮；背景为三国分叉路口（夯土路/石板路/官道、城墙望楼、朱红军旗），武将背影立于路中下方；中文文字全部正确；UI 已是墨色笔刷 + 细金边，无做旧浮雕。
+- **仍偏**：① 天空与地面仍有插画式渐变，未完全成簇色块；② **金币计数器缺席** —— 现有 `CoinCounter` 锚在左上，已被任务条占位，落地页金币新位置待定；③ 场景中的武将背影偏大偏中下，与实际玩家屏幕位置（1080×1920 下约 540,922）仍有偏差。
+- **状态**：**待用户验收**；未导入 Unity，未据此改 `Assets/Scenes/Battle.scene`。**v1 保留作对照**。
+
+## 一之二之三、落地页 UI 素材表 + 选关景色入口（2026-10-24）
+
+- **背景**：v2 参考图验收反馈 —— UI 造型可用，但**排布不正确**；并且用户要「拆些 UI 出来当实际美术素材」，但**选关要做成参考图那样的「景色非规则 UI」**（不是矩形卡）。
+- **为什么不从 v2 合成图里直接裁**：v2 的裁片**带烘焙文字 + 带背景像素**（文字必须走 TMP，背景要抠），直接裁进 Unity 不可用 → 改为**另出一张无文字素材表**再本地切件。
+- **素材表**：文生图 `/v1/images/generations`，`gpt-image-2.5-sunburst`、`quality=max`、`size=1536x1024`、`output_format=png`；HTTP 200，usage in 339 / out 5488。**8 个无文字元件排在纯洋红（#FF00FF）底上**：墨色笔刷条底、圆形头像金框+红点、等级牌底、经验条、朱红笔刷按钮底、四宫格菜单键、金币、发光技能树。
+- **本地切件**（Pillow + numpy，脚本见 `Library/Locus/tmp/hub_reference/`）：洋红混合度 `m = min(R,B)/255*(1-G/255)`；`alpha = clip(1-(m-0.18)/0.35)`，**暗像素（max<70）直接判不透明**（否则反预乘会把墨色算成绿）；只对真混合像素做反预乘；alpha=0 处 RGB 清零；再清最外 2px 残留 → 8 件 RGBA PNG（alpha 0..255、四角透明）。
+  - ⚠️ **踩坑**：第一版用 `alpha=1-m` + 全量反预乘 → 墨色/深色像素被减掉洋红分量后**整体变绿**（中心采样 (0,255,0)）。判据必须先把「暗色不透明」与「真混合」分开。
+- **选关景色入口**：文生图 `size=1024x1024`，HTTP 200，usage in 273 / out 7024；产出**不规则景色剪影**（分叉土路 + 城墙望楼 + 朱红旗，轮廓沿形，金色描边）+ 墨色笔刷带「长坂坡·卷轴」+ 三颗金星。抠图后 856×716 RGBA。
+- **产物目录**（**在 `Assets` 之外**，尚未导入 Unity，等用户目视验收）：`threeKingdomSlayer/_art_process/hub_ui_v1/`（8 件 + `stage_entry_scenery.png` + `_contact_sheet.png` 印样）；原始图在 `C:/Users/Administrator/Pictures/gptGen/hub_uikit_v1.png`、`hub_stage_entry_v1.png`。
+- **遗留**：`stage_entry_scenery.png` 的关卡名是**烘焙在图里**的（每关一张图）；若要走 TMP 需再出一版无文字的。
+- **状态**：**待用户验收**；未导入 Unity，未改 `Assets/Scenes/Battle.scene`。
+
 ## 二、FakeRoute 视频与节点部署状态
 
 - N3 的视频挂在 EV 的出边 `ev_to_n3` 上；N3 出边的 `N3toE3` 是另一段视频，两者不可混淆。

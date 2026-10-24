@@ -31,6 +31,16 @@ public class ShootFireEffect : MonoBehaviour
     private void OnDestroy()
     {
         SceneRegistry<ShootFireEffect>.Unregister(this);
+        // 粒子是本对象的子物体，它们的 Tween 的 target 是**粒子这个 GameObject**。
+        // 本对象先被销毁 → 粒子随之销毁 → Tween 不会被 DOTween 自动杀掉，
+        // 下一帧就会访问已销毁的 Transform → MissingReferenceException。
+        // 必须在销毁前按原始 GameObject 引用逐个 Kill（本项目规则：memory/dotween-destroyed-transform.md）。
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            var child = transform.GetChild(i);
+            DOTween.Kill(child.gameObject, false);
+        }
+        DOTween.Kill(this, false);
     }
 
     /// <summary>

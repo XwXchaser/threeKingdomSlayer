@@ -157,6 +157,20 @@ public static class SaveManager
         return PropSaveSection.GetCoins(Load());
     }
 
+    /// <summary>该局外补给实例是否已经领过奖励（防反复进出主菜单刷金币）。</summary>
+    public static bool IsSupplyClaimed(string instanceId)
+    {
+        return SupplySaveSection.IsClaimed(Load(), instanceId);
+    }
+
+    /// <summary>标记该局外补给实例已领取。</summary>
+    public static void MarkSupplyClaimed(string instanceId)
+    {
+        var data = Load();
+        SupplySaveSection.MarkClaimed(data, instanceId);
+        Save(data);
+    }
+
     /// <summary>
     /// 增加铜钱（返回增加后的总量）
     /// </summary>

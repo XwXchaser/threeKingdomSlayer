@@ -276,7 +276,7 @@ public partial class QTEController : MonoBehaviour
         qte.failureFeedbackShown = true;
 
         if (qteDisplay == null)
-            qteDisplay = UnityEngine.Object.FindObjectOfType<QTEDisplay>();
+            qteDisplay = QTEDisplay.Instance;
         if (qteDisplay == null) return;
 
         if (qte.indicator != null)
@@ -356,7 +356,7 @@ public partial class QTEController : MonoBehaviour
         if (!_qteCanvasCameraChecked)
         {
             _qteCanvasCameraChecked = true;
-            if (qteDisplay == null) qteDisplay = FindObjectOfType<QTEDisplay>();
+            if (qteDisplay == null) qteDisplay = QTEDisplay.Instance;
             if (qteDisplay != null)
             {
                 var canvas = qteDisplay.GetComponent<Canvas>();
@@ -453,7 +453,7 @@ public partial class QTEController : MonoBehaviour
     {
         if (qteDisplay == null)
         {
-            qteDisplay = UnityEngine.Object.FindObjectOfType<QTEDisplay>();
+            qteDisplay = QTEDisplay.Instance;
             if (qteDisplay == null)
             {
                 Debug.LogWarning("[QTEController] 未找到 QTEDisplay");

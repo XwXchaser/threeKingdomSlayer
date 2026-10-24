@@ -130,7 +130,7 @@ public partial class QTEController : MonoBehaviour
         if (UsesStrictInputRule)
         {
             if (qteDisplay == null)
-                qteDisplay = UnityEngine.Object.FindObjectOfType<QTEDisplay>();
+                qteDisplay = QTEDisplay.Instance;
             qteDisplay?.ShowStrictModePrompt();
         }
         SetStrictInputLock(true);
@@ -176,6 +176,7 @@ public partial class QTEController : MonoBehaviour
             Vector3 targetPos = GetProjectileTargetPosition();
             spawnedProjectile.transform.DOMove(targetPos, _currentAttack.projectileFlightTime)
                 .SetEase(Ease.Linear)
+                .SetTarget(spawnedProjectile.transform)
                 .SetUpdate(UpdateType.Normal, false)
                 .OnComplete(() =>
                 {
@@ -237,8 +238,12 @@ public partial class QTEController : MonoBehaviour
 
     private void KillProjectileSequence()
     {
-        if (_activeProjectile != null)
-            DOTween.Kill(_activeProjectile);
+        if (_activeProjectile == null) return;
+        // 备用弹道的 Tween 的 target 是 projectile 的 **Transform**（DOMove 的默认 target），
+        // 只用 GameObject 引用 Kill 匹配不到 → Tween 会活下来访问已销毁的 Transform。
+        // 两种引用都杀一遍（原始托管引用，目标已销毁时也安全）。
+        DOTween.Kill(_activeProjectile.transform, false);
+        DOTween.Kill(_activeProjectile, false);
     }
 
 
