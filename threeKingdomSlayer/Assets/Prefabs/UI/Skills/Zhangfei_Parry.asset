@@ -24,7 +24,7 @@ MonoBehaviour:
   breakIcePushRows: 4
   rangeRows: 1
   cooldown: 0.5
-  actionDuration: 0.2
+  actionDuration: 0.48
   launchDuration: 0
   attackWavePrefab: {fileID: 1326451241060622409, guid: 27d8262bc67b9864ea33c9576052febc, type: 3}
   stabSpawnYOffset: 1.5
@@ -46,7 +46,7 @@ MonoBehaviour:
   parrySpawnYOffset: 1.5
   parrySpawnZOffset: -6
   parryAngleVariance: 15
-  parryWhiffDuration: 0.8
+  parryWhiffDuration: 0.9
   parryGuardBreakThreshold: 120
   parryGuardBreakDuration: 1.5
   parryGuardDecayDelay: 3
@@ -54,12 +54,18 @@ MonoBehaviour:
   parryGuardWeaponPrefab: {fileID: 0}
   parryStanceTipDegrees: 42
   parryStanceHeadAnchor: {x: 1.35, y: 2.25, z: -4.5}
-  parryStanceScale: 0.55
-  parryStanceRaiseSeconds: 0.25
-  parryStanceReturnSeconds: 0.8
-  parryStanceEntryDropDegrees: 55
-  parryStanceDefendDropDegrees: 8
-  parryStanceDefendEnterSeconds: 0.2
+  parryStanceScale: 1.2
+  parryStanceEntryAngleDegrees: 77
+  parryStanceSwingInSeconds: 0.18
+  parryStanceOvershootDegrees: 8
+  parryStanceSettleSeconds: 0.08
+  parryStanceHoldSeconds: 0.1
+  parryStanceExitFastSeconds: 0.12
+  parryStanceExitNormalSeconds: 0.54
+  parryStanceDefendAnchorDrop: 0.25
+  parryStanceDefendEnterSeconds: 0.12
+  parryStanceTasselDamping: 26
+  parryStanceTasselMaxBend: 14
   parryGuardRecoilDistance: 0.5
   parryGuardRecoilSeconds: 0.18
   launchFlickAngle: 90

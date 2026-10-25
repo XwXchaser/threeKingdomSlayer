@@ -126,32 +126,52 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("防御姿态的武器 Prefab（留空则用招架的 attackWavePrefab）")]
     public GameObject parryGuardWeaponPrefab;
     [Tooltip("持枪姿态：枪尖指向的角度（度）。0 = 指向屏幕右(+X)，90 = 竖直向上。\n" +
-             "参考图（《起源》背面视角）实测为屏幕右上 ≈42°。枪身长轴 = prefab 本地 +Y，用 FromToRotation 反解。")]
+             "参考图（《起源》背面视角）实测为屏幕右上 ≈42°。枪身长轴 = prefab 本地 +Y，用 FromToRotation 反解。\n" +
+             "**防御位用同一个角度**（只用位置差表达“稍低于 idle”）→ 枪尖上扬角每次读得一样")]
     [Range(-90f, 180f)]
     public float parryStanceTipDegrees = 42f;
     [Tooltip("持枪姿态：**矛头（枪尖）的位置**，相对玩家的世界偏移。\n" +
-             "注意：prefab 的根节点在**枪尾**，枪沿本地 +Y 延伸 10.8 个单位 → 根节点由“矛头 − 长度·方向”反推。\n" +
-             "深度取 -5：与 Stab(-5.5) / Slash(-3.6) / 原版 Parry(-6) 同一前景带（相机 z=-10、玩家 z=0、敌人 z=+9）。\n" +
-             "默认 (0.76, 2.0, -5) → 矛头落在屏幕右上（离中心约 25% 右、20% 上），枪身向左下出画。")]
-    public Vector3 parryStanceHeadAnchor = new Vector3(0.76f, 2.0f, -5f);
-    [Tooltip("持枪姿态：缩放。1 = 与其它武器视觉（Stab/Slash/Parry）同一尺度")]
+             "注意：prefab 的根节点在**枪身中段**，枪沿本地 +Y 延伸 10.8 个单位 → 根节点由“矛头 − (Length/2)·方向”反推。\n" +
+             "深度取 -4.5（与 Stab -5.5 / Slash -3.6 同一前景带：相机 z=-10、玩家 z=0、敌人 z=+9）。\n" +
+             "默认 (1.35, 2.25, -4.5) → 矛头落在屏幕右上约 43% 右 / 31% 上")]
+    public Vector3 parryStanceHeadAnchor = new Vector3(1.35f, 2.25f, -4.5f);
+    [Tooltip("持枪姿态：缩放。1.2 = 与 Stab/Slash 的视觉大小一致（它们在更近的深度上，用 1.0）")]
     [Range(0.2f, 2f)]
-    public float parryStanceScale = 1f;
-    [Tooltip("举枪时长（秒）：招架 → 斜举位。0.25s：要“迅速格开”的脆度，别做成慢慢举枪")]
-    [Range(0.05f, 2f)]
-    public float parryStanceRaiseSeconds = 0.25f;
-    [Tooltip("回落时长（秒）：斜举位 → 起手位。**它同时就是防御可进入窗口**（回落途中按住可接住）")]
-    [Range(0.05f, 2f)]
-    public float parryStanceReturnSeconds = 0.8f;
-    [Tooltip("起手位比斜举位低多少度（度）：举枪就是从个方向把矛头扇形扫上去（同一矛头锚点）")]
-    [Range(0f, 120f)]
-    public float parryStanceEntryDropDegrees = 55f;
-    [Tooltip("防御保持位比斜举位低多少度（度）：用户定的“稍低于 idle”")]
-    [Range(0f, 60f)]
-    public float parryStanceDefendDropDegrees = 8f;
-    [Tooltip("落到防御保持位的时长（秒）")]
+    public float parryStanceScale = 1.2f;
+    [Tooltip("起手角（度）：招架动作的**起点**——矛头在画面上方之外 → 动作是“从屏外斜劈入画”。\n" +
+             "参考：斜举 42°，起手 77°（屏外上方）")]
+    [Range(-90f, 180f)]
+    public float parryStanceEntryAngleDegrees = 77f;
+    [Tooltip("挥入时长（秒）：从起手角砍到斜举位。0.18s = 要“迅速格开”的脆度")]
     [Range(0.05f, 1f)]
-    public float parryStanceDefendEnterSeconds = 0.2f;
+    public float parryStanceSwingInSeconds = 0.18f;
+    [Tooltip("过冲角度（度）：到位前冲过目标角再收回来（力度的来源）")]
+    [Range(0f, 30f)]
+    public float parryStanceOvershootDegrees = 8f;
+    [Tooltip("回弹时长（秒）：从过冲收回到斜举位")]
+    [Range(0.02f, 0.5f)]
+    public float parryStanceSettleSeconds = 0.08f;
+    [Tooltip("定格时长（秒）：到位后的停顿（“格住了”的那一下）")]
+    [Range(0f, 0.5f)]
+    public float parryStanceHoldSeconds = 0.1f;
+    [Tooltip("收枪时长（秒，成功格挡时）：沿原路挥出画面 → 加速版")]
+    [Range(0.05f, 1f)]
+    public float parryStanceExitFastSeconds = 0.12f;
+    [Tooltip("收枪时长（秒，未格挡时）：沿原路挥出画面 → 正常速度")]
+    [Range(0.05f, 2f)]
+    public float parryStanceExitNormalSeconds = 0.54f;
+    [Tooltip("防御位比斜举位低多少（世界单位）：**只用位置差**，角度保持一致（枪尖上扬角每次读得一样）")]
+    [Range(0f, 1f)]
+    public float parryStanceDefendAnchorDrop = 0.25f;
+    [Tooltip("落到防御保持位的时长（秒）")]
+    [Range(0.02f, 0.5f)]
+    public float parryStanceDefendEnterSeconds = 0.12f;
+    [Tooltip("持枪时红缨的阻尼（越大回弹越快 → 枪头附近的视觉抖动越小）")]
+    [Range(1f, 60f)]
+    public float parryStanceTasselDamping = 26f;
+    [Tooltip("持枪时红缨的最大弯曲（度）")]
+    [Range(0f, 80f)]
+    public float parryStanceTasselMaxBend = 14f;
     [Tooltip("受击时武器后退的距离（世界单位）")]
     public float parryGuardRecoilDistance = 0.5f;
     [Tooltip("受击后退回原位的时间（秒）")]

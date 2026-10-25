@@ -31,6 +31,16 @@ public sealed class WeaponTasselDynamics : MonoBehaviour
     public float WeaponLength => weaponTip != null && weaponTail != null
         ? Vector3.Distance(weaponTip.position, weaponTail.position) : 0f;
 
+    /// <summary>
+    /// 调快回弹、减小摆幅（持枪姿态用）：红缨是速度驱动的弹簧骨链，
+    /// 动作后会继续摆动 → 枪头附近的视觉角度每次都不同。持枪时收敛它，让枪尖读数稳定。
+    /// </summary>
+    public void SetSettle(float newDamping, float newMaxBendDegrees)
+    {
+        if (newDamping > 0f) damping = newDamping;
+        if (newMaxBendDegrees > 0f) maxBendDegrees = newMaxBendDegrees;
+    }
+
     private void Awake() { Initialize(); }
     private void OnEnable() { _sampleValid = false; }
 

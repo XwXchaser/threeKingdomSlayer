@@ -454,8 +454,9 @@ public partial class AttackSystem : MonoBehaviour
         {
             _lastParryWhiff = false;
             AudioManager.Instance?.PostEvent("Player_Parry");
-            // 招架 = 持枪实体举枪（与防御姿态同一条动作链 → 连贯）
-            PlayerState.Instance?.WeaponStance?.PlayParry(cfg);
+            // 招架动作：持枪实体挥入（从屏外斜劈入画）
+            PlayerState.Instance?.WeaponStance?.PlayParry(cfg, true);
+            RequestParryImpactFeedback(playerPos);
             return true;
         }
 
@@ -479,22 +480,34 @@ public partial class AttackSystem : MonoBehaviour
         }
         _lastParryWhiff = !blockedAttack;
 
+        bool blockedAny = false;
         for (int i = 0; i < targets.Count; i++)
         {
             var enemy = targets[i];
             if (enemy == null || enemy.state == EnemyState.Dead) continue;
+            bool wasAttacking = enemy.isAttackAnimating;
             // 削韧跟着“格开成功”走：只有真的在出伤窗口里格开一次才磨架势
             // （不再对范围内所有敌人无条件磨——否则空挥也能削 BOSS 的架势）
             // 冲锋（109）不在这条打断链里：招架对它只造成伤害/架势，打不断冲锋。
             enemy.TakeDamage(finalDmg, cfg.damageType, canInterruptCFrame: true, isParryInterrupt: true,
                 feedbackStrength: HitFeedbackStrength.Heavy, parryPoiseDamage: cfg.poiseDamage);
+            if (wasAttacking && !enemy.isAttackAnimating) blockedAny = true;
         }
 
-        Debug.Log($"[AttackSystem] 招架 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 目标数:{targets.Count} 空放:{_lastParryWhiff}");
+        Debug.Log($"[AttackSystem] 招架 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 目标数:{targets.Count} 空放:{_lastParryWhiff} 格开:{blockedAny}");
         AudioManager.Instance?.PostEvent("Player_Parry");
-        // 招架 = 持枪实体举枪（与防御姿态同一条动作链 → 连贯）
-        PlayerState.Instance?.WeaponStance?.PlayParry(cfg);
+        // 招架动作：持枪实体挥入（从屏外斜劈入画）；成功格挡 → 收尾加速
+        PlayerState.Instance?.WeaponStance?.PlayParry(cfg, blockedAny);
+        if (blockedAny) RequestParryImpactFeedback(playerPos);
         return true;
+    }
+
+    /// <summary>格挡成功的画面反馈：小镜头震动（力度感的一半来自画面，不只是动作）。</summary>
+    private void RequestParryImpactFeedback(Vector3 playerPos)
+    {
+        var ctx = new HitFeedbackContext(null, DamageType.Stab, HitFeedbackSource.BasicAttack,
+            HitFeedbackStrength.Heavy, 0f, false, false, playerPos);
+        CameraFeedbackController.Instance?.RequestHit(ctx);
     }
 
     /// <summary>
