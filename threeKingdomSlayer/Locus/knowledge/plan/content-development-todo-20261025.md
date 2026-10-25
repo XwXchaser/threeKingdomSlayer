@@ -14,6 +14,10 @@ aiEditMode: inherit
 > Y 场景管线见 `plan/scene-pipeline-handoff-20261023.md`、路线/天赋域见 `memory/unity-project-understanding/stage-select-and-routes.md` 与 `talent-system.md`。
 
 > **2026-10-25 逐条实测复核（已修正 3 处过期）** ✅
+> ④ **D1-1 教学关已挂回并实测通过**（见 §三）；挂载时还发现 **D1-8：教学台词的自动停留字段未接线**（详见 §三）。
+> ⑤ **教学关的台词其实存在**（原文“仓库里只有机制，没有文案”已过期）：`DialogueDatabase` 里有 4 条 `tutorial_t0_wave1..4`
+>    （点一下/横划/蓄力上挑破盾/骑将登场），与 `Tutorial_N1_Battle(2波)` + `Tutorial_E0_Battle(2波)` **逐波对得上**。
+>    本轮补了 2 条缺失的：`tutorial_t0_opening`（“燕人张翼德在此！”）与 `tutorial_t0_route_choice`（“选一条路，往前走。”——**文案待用户定稿**）。
 > ① **D2-1 右官道段与 Q5 左石板路其实已经建好并部署**（原文写“用户明说先不搭了”已过期）：
 >    右官道表 54 件（45 精灵 + 9 mesh）、左石板路表 51 件（44 精灵 + 7 mesh），
 >    段 prefab 均已登记在 `YRouteSegments`（d=[192,262]），实测 SpriteRenderer 数量与表**逐件对齐**。
@@ -199,7 +203,8 @@ aiEditMode: inherit
 
 | # | 任务 | 交付物 | 验收 |
 | --- | --- | --- | --- |
-| D1-1 | **教学关挂回**：`TutorialStageDirector` 挂到 Battle 场景或做成 prefab，填 `n1Battle/e0Battle/dialogues/gestureHint/gestureSteps/tutorialRouteConfig` 等数据 | 教学关可跑 | N1→E0 全流程通；按波台词 / 冰雾 / 手势提示三者都出现；Console 0 error |
+| D1-1 | **教学关挂回**：`TutorialStageDirector` 挂到 Battle 场景或做成 prefab，填 `n1Battle/e0Battle/dialogues/gestureHint/gestureSteps/tutorialRouteConfig` 等数据 | 教学关可跑 | ✅ **已完成（2026-10-25 实测）**：导演挂在 `Assets/Scenes/Battle.scene` 的「Tutorial Director」对象；数据全部接上（`n1Battle=Tutorial_N1_Battle(9001)` / `e0Battle=Tutorial_E0_Battle(9002)` / 台词 `tutorial_t0_wave1..4` / `tutorialIceSkill=ActiveSkill_IceMist`（`ActiveSkillDefinition` 继承 `UpgradeDefinition` ✅ 可直接赋）/ `tutorialRouteConfig=Tutorial_Route` / `gestureHint`＝场景内「Tutorial Gesture Hint」实例 / 5 条 `gestureSteps`）；**Play Mode 实测**：切到教学路线 → 开幕台词排队 → `RunPrepared()` → 战斗配置＝`Tutorial_N1_Battle` → 教学台词在播 → 手势门槛 `IsGating=True`、手指+轨迹可见、场景压暗 ✅；存档已备份并还原 |
+| D1-8 | **教学台词自动停留未接线**（2026-10-25 挂载时发现） | 导演的 `tutorialLineSeconds`（注释写“教学台词每行自动停留的秒数（不拦玩家；真正的门槛是手势）”）**全库零引用**；`BattleDialogueView` 只有点击推进 → 教学台词会一直卡到玩家点击才继续 | 教学拍自动推进（2.2s/行），门槛只留手势；或明确改成“点击推进”并更新字段说明 |
 | D1-2 | **教学关接口核对**：`IStageBattleState` / `IRunFlow` 在新架构下的实现方是否还对得上 | ✅ **已核对（2026-10-25）**：实现方未换人，代码侧就绪 | `StageController` 仍实现两接口；导演走接口拿而非 `FindObjectOfType` |
 | D1-3 | **N1→N3 跑通 + 断点清单**：走一遍 N1→E0→J1→EV→N3 | 断点清单（带文件与行号） | 每个断点都有归属与修法 |
 | D1-4 | **N1 第 0 条测试战斗**：删 / 保留（待拍板） | 配置改完 | 正式 N1 战斗是第 0 条 |
