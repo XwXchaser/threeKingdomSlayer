@@ -133,15 +133,19 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("持枪姿态：**矛头（枪尖）的位置**，相对玩家的世界偏移。\n" +
              "注意：prefab 的根节点在**枪身中段**，枪沿本地 +Y 延伸 10.8 个单位 → 根节点由“矛头 − (Length/2)·方向”反推。\n" +
              "深度取 -4.5（与 Stab -5.5 / Slash -3.6 同一前景带：相机 z=-10、玩家 z=0、敌人 z=+9）。\n" +
-             "默认 (1.35, 2.25, -4.5) → 矛头落在屏幕右上约 43% 右 / 31% 上")]
-    public Vector3 parryStanceHeadAnchor = new Vector3(1.35f, 2.25f, -4.5f);
-    [Tooltip("持枪姿态：缩放。1.2 = 与 Stab/Slash 的视觉大小一致（它们在更近的深度上，用 1.0）")]
-    [Range(0.2f, 2f)]
-    public float parryStanceScale = 1.2f;
-    [Tooltip("起手角（度）：招架动作的**起点**——矛头在画面上方之外 → 动作是“从屏外斜劈入画”。\n" +
-             "参考：斜举 42°，起手 77°（屏外上方）")]
+             "默认 (0.95, 1.38, -4.5) → 矛头落在屏幕右中偏上，杆尾拖向左下（被 HUD 挡住）")]
+    public Vector3 parryStanceHeadAnchor = new Vector3(0.95f, 1.38f, -4.5f);
+    [Tooltip("持枪姿态：缩放。**0.42 ≈ 枪长 4.5 单位 ≈ 1.5~2 倍杂兵身高**（参照《起源》参考图）。\n" +
+             "别学 Stab/Slash 用 1.0：那两个是“从镜头前扫过”的一次性攻击特效，天然巨大；\n" +
+             "持在手上的枪必须小得多，否则画面里只剩一片怼脸的银刃")]
+    [Range(0.1f, 2f)]
+    public float parryStanceScale = 0.42f;
+    [Tooltip("起手角（度）：招架动作的**起点**指向（与斜举位一起配合枪尾位移完成入画）")]
     [Range(-90f, 180f)]
-    public float parryStanceEntryAngleDegrees = 77f;
+    public float parryStanceEntryAngleDegrees = 20f;
+    [Tooltip("起手时**枪尾（手的位置）的偏移**（相对斜举位的枪尾）：\n" +
+             "靠它把整杆枪推到画面外 → 招架动作是“从屏外挥入”，而不是凭空出现")]
+    public Vector3 parryStanceEntryRootOffset = new Vector3(2.6f, -1.8f, 0f);
     [Tooltip("挥入时长（秒）：从起手角砍到斜举位。0.18s = 要“迅速格开”的脆度")]
     [Range(0.05f, 1f)]
     public float parryStanceSwingInSeconds = 0.18f;
