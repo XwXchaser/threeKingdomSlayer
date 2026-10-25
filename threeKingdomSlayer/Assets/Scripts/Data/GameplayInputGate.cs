@@ -28,6 +28,9 @@ public enum InputBlockReason
 
     /// <summary>其它未归类原因。</summary>
     Other,
+
+    /// <summary>防御破防：破防硬直期间不能行动 / 不能放技能 / 不能做手势输入。</summary>
+    GuardBroken,
 }
 
 /// <summary>

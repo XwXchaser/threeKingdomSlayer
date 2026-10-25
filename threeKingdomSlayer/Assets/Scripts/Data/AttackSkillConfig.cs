@@ -109,6 +109,39 @@ public class AttackSkillConfig : ScriptableObject
     [Range(0f, 2f)]
     public float parryWhiffDuration = 0.8f;
 
+    [Header("招架防御姿态")]
+    [Tooltip("防御姿态：招架后摇期间长按进入，防御期间免伤、只累积破防值；破防值满则破防（短硬直）。\n" +
+             "破防阈值 = 防御期间累积受到的伤害上限（默认 120）")]
+    [Range(0f, 1000f)]
+    public float parryGuardBreakThreshold = 120f;
+    [Tooltip("破防后的硬直时长（秒）：不能行动、不能放技能、不能做手势输入（默认 1.5）")]
+    [Range(0f, 5f)]
+    public float parryGuardBreakDuration = 1.5f;
+    [Tooltip("破防值衰减：停止挨打多少秒后开始衰减（默认 3）")]
+    [Range(0f, 10f)]
+    public float parryGuardDecayDelay = 3f;
+    [Tooltip("破防值每秒衰减量（默认 30）")]
+    [Range(0f, 200f)]
+    public float parryGuardDecayPerSecond = 30f;
+    [Tooltip("防御姿态的武器 Prefab（留空则用招架的 attackWavePrefab）")]
+    public GameObject parryGuardWeaponPrefab;
+    [Tooltip("防御姿态武器的横向偏移（世界单位）")]
+    public float parryGuardWeaponOffsetX = 0f;
+    [Tooltip("防御姿态武器的高度（世界单位）")]
+    public float parryGuardWeaponOffsetY = 1.1f;
+    [Tooltip("防御姿态武器的前伸距离（世界单位，负值 = 身前）")]
+    public float parryGuardWeaponOffsetZ = -1.4f;
+    [Tooltip("防御姿态武器的朝向：绕 Y 轴旋转多少度（90 = 枪身横举，与屏幕水平）")]
+    [Range(-180f, 180f)]
+    public float parryGuardWeaponYawDegrees = 90f;
+    [Tooltip("防御姿态武器的额外倾角（绕 Z 轴，度）：稍微斜一点更像举枪防御")]
+    [Range(-90f, 90f)]
+    public float parryGuardWeaponTiltDegrees = 12f;
+    [Tooltip("受击时武器后退的距离（世界单位）")]
+    public float parryGuardRecoilDistance = 0.5f;
+    [Tooltip("受击后退回原位的时间（秒）")]
+    public float parryGuardRecoilSeconds = 0.18f;
+
     [Header("挑飞上挑")]
     [Tooltip("Z 轴旋转幅度（度，默认 90）。枪头从低到高上挑")]
     [Range(30f, 180f)]

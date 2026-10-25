@@ -69,6 +69,12 @@ public class PlayerState : MonoBehaviour
     // 无敌标记（狂怒大招等）
     [System.NonSerialized] public bool isInvincible;
 
+    /// <summary>
+    /// 防御姿态（招架后摇期间长按进入；防御期间免伤、只累积破防值；破防则短硬直）。
+    /// 由本类持有，与 Enemy → EnemyPoise 的做法一致（不新增场景组件）。
+    /// </summary>
+    public PlayerGuard Guard { get; private set; }
+
     // 事件
     public System.Action<float, float> OnHealthChanged; // current, max
     public System.Action<int> OnReviveCountChanged;
@@ -92,6 +98,7 @@ public class PlayerState : MonoBehaviour
             return;
         }
         Instance = this;
+        Guard = new PlayerGuard(this);
     }
 
     private void OnDestroy()
@@ -135,6 +142,9 @@ public class PlayerState : MonoBehaviour
     {
         // 状态效果宿主：统一驱动玩家身上的状态（反伤护盾、破冰预备……）
         StatusHost.Tick(Time.deltaTime);
+
+        // 防御姿态：破防值衰减 + 破防硬直计时
+        if (Guard != null) Guard.Tick(Time.deltaTime);
 
         // 更新冷却计时器（复用缓存列表，避免每帧 new List 分配）
         _cooldownKeysCache.Clear();
@@ -210,6 +220,9 @@ public class PlayerState : MonoBehaviour
     {
         if (stageState == StageState.Defeat || stageState == StageState.Victory) return;
         if (isInvincible) return;
+
+        // 防御姿态：免伤，只累积破防值（破防值满 → 破防硬直）
+        if (Guard != null && Guard.IsGuarding && Guard.TryAbsorbDamage(damage)) return;
 
         float originalDamage = damage;
 

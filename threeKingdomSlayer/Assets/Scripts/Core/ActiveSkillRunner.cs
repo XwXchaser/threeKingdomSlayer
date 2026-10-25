@@ -48,6 +48,8 @@ public class ActiveSkillRunner : MonoBehaviour
     {
         if (PlayerState.Instance == null || PlayerState.Instance.stageState != StageState.InProgress) return false;
         if (definition == null || level <= 0) return false;
+        // 输入被拦下时（破防硬直、路线转场、三选一面板……）不能释放主动技能
+        if (GameplayInputGate.IsBlocked) return false;
 
         switch (definition.activeEffectType)
         {

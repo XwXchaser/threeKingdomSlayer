@@ -61,6 +61,7 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
         get
         {
             if (suppressCharging) return 0;                          // 教学关：不允许完成充能
+            if (IsGuarding) return 0;                                // 防御姿态：不是蓄力
             if (!isLongPress || hasTriggeredDuringHold) return 0;   // 本次按住已经出过招 → 必须先抬手重按
             if (chargeLevelTimes == null || chargeLevelTimes.Length == 0)
                 return isCharged ? 1 : 0;
@@ -73,6 +74,14 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
             return level;
         }
     }
+
+    /// <summary>
+    /// 当前是否处于防御姿态（招架后摇期间长按进入）。
+    /// 防御期间：蓄力等级恒 0（不出现蓄力视觉）、手势被吞掉（滑动出招必须先松手）。
+    /// </summary>
+    public bool IsGuarding => PlayerState.Instance != null
+        && PlayerState.Instance.Guard != null
+        && PlayerState.Instance.Guard.IsGuarding;
 
     /// <summary>
     /// 指针是否处于「已按下且未被输入门拦下」的状态。
@@ -261,6 +270,38 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
         currentTouchId = -1;
     }
 
+    /// <summary>
+    /// 防御姿态的进出：招架后摇期间长按进入防御；松手退出防御。
+    /// 进入时收掉站桩蓄力的武器表现（避免场上两把枪）。
+    /// </summary>
+    private void UpdateGuardState()
+    {
+        var guard = PlayerState.Instance != null ? PlayerState.Instance.Guard : null;
+        if (guard == null) return;
+
+        if (guard.IsBroken) return;   // 破防硬直中：等硬直走完（计时在 PlayerState 侧）
+
+        if (!isTouching)
+        {
+            if (guard.IsGuarding) guard.Exit();
+            return;
+        }
+
+        if (guard.IsGuarding) return;
+        if (!IsInParryRecovery()) return;   // 只有招架后摇期间才能进入防御
+        if (!guard.TryEnter()) return;
+
+        var chargeVisual = FindObjectOfType<ChargeStabVisual>();
+        if (chargeVisual != null) chargeVisual.SuppressFadeAndDestroy();
+    }
+
+    /// <summary>当前是否处于「招架后摇」：招架的动作锁还没走完。</summary>
+    private bool IsInParryRecovery()
+    {
+        if (attackSystem == null) return false;
+        return attackSystem.LastMoveAttackType == AttackType.Parry && attackSystem.ActionLockRemaining > 0f;
+    }
+
     private void Update()
     {
         // 暂停时不处理任何输入
@@ -298,6 +339,9 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
         }
 
         // DebugLog.Info($"[InputManager] Update frame={Time.frameCount} timeScale={Time.timeScale} isTouching={isTouching} mouseDown={Input.GetMouseButtonDown(0)} mouseUp={Input.GetMouseButtonUp(0)} mouseHeld={Input.GetMouseButton(0)} touchCount={Input.touchCount}"); // COMMENTED: too verbose
+
+        // 防御姿态：招架后摇期间长按进入防御，松手退出
+        UpdateGuardState();
 
         // BUG FIX: 鼠标和触摸输入互斥
         // 如果有触摸输入，则跳过鼠标输入（避免在触摸屏设备上双重触发）

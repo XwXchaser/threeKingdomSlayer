@@ -90,8 +90,11 @@ public class ChargeIndicatorController : MonoBehaviour
         if (!isActive) return;
 
         // 连段蓄力（C1 → C2）不是站桩蓄力：让位给 StabAimMarker，不显示蓄力指示器。
+        // 防御姿态同理：防御时不显示蓄力指示器。
         // 只允许竖滑蓄力时同样不出现蓄力指示器。
-        if (InputManager.Instance != null && (InputManager.Instance.comboChargeActive || InputManager.Instance.restrictChargedToVertical))
+        if (InputManager.Instance != null && (InputManager.Instance.comboChargeActive
+            || InputManager.Instance.restrictChargedToVertical
+            || InputManager.Instance.IsGuarding))
         {
             if (hasAppeared)
             {

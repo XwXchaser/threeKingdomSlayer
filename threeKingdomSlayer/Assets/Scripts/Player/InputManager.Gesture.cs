@@ -64,6 +64,9 @@ public partial class InputManager : MonoBehaviour
     /// <returns>true 表示触发了招式并已重置分段</returns>
     private bool TryDetectHoldSwipe(Vector2 currentPos)
     {
+        // 防御姿态中不识别滑动：滑动出招必须先松手退出防御
+        if (IsGuarding) return false;
+
         float segmentDuration = Time.time - segmentStartTime;
         float verticalDrift = Mathf.Abs(currentPos.y - segmentStartPos.y);
 
@@ -144,6 +147,14 @@ public partial class InputManager : MonoBehaviour
     private void ProcessGesture(Vector2 releasePos, float pressDuration, float swipeDistance)
     {
         if (!skillInputEnabled) return;
+
+        // 防御姿态中：松手退出防御，并且这一下的手势被吞掉（滑动出招必须先松手）
+        var guard = PlayerState.Instance != null ? PlayerState.Instance.Guard : null;
+        if (guard != null && guard.IsGuarding)
+        {
+            guard.Exit();
+            return;
+        }
 
         bool isSwiped = swipeDistance >= swipeThreshold;
 
