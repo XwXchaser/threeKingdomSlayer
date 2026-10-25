@@ -36,10 +36,24 @@ public partial class Enemy : MonoBehaviour
             // 自愈看门狗：攻击 tween 被杀或被永久挂起时，OnComplete 不会来，
             // isAttackAnimating 就会一直挂着 → UpdateAttack 每帧早退 → **敌人再也不攻击**
             // （实测：被连续命中 8 秒，敌人只打出 1 次攻击，表现为“打多了就不还手”）。
-            // 这里兜底复位：tween 已不在活动状态、且已超过应有的动画时长 → 回到冷却阶段。
+            // 这里兜底复位：tween 已不在活动状态（或被挂起）且已超过应有的动画时长 → 回到冷却阶段。
             // 合法挂起（冰系冻结 / 卡肉）期间不触发。
-            if (!IsSuspended && !IsAttackTweenAlive() && Time.time - _attackAnimStartTime > _attackAnimGuardSeconds)
+            if (!IsSuspended && (!IsAttackTweenAlive() || _suspendTweenPaused) && Time.time - _attackAnimStartTime > _attackAnimGuardSeconds)
                 ResetStalledAttack();
+
+            // 连续受击硬直预算：受击每挨一下就把攻击 tween 挂起（Pause），
+            // 玩家出招够快时 tween 会被永久 Pause → 敌人卡在起手、玩家也被“攻击中”挡住出招（僵局）。
+            // 预算用尽就强制解除挂起，让攻击打完。
+            if (_hitStunAccum >= MaxContinuousStunSeconds)
+            {
+                _hitStunAccum = 0f;
+                StopHitStop();
+                if (_hitFlashRoutine != null)
+                {
+                    StopCoroutine(_hitFlashRoutine);
+                    _hitFlashRoutine = null;
+                }
+            }
             return;
         }
         else
