@@ -26,6 +26,9 @@ public class ParryStanceTuningWindow : EditorWindow
     private float _swingIn, _overshoot, _settle, _hold, _exitFast, _exitNormal;
 
     private string _readout = "";
+    private float _targetScreenX = 95f;
+    private float _targetScreenY = 50f;
+    private float _targetDepth = -4.5f;
 
     [MenuItem("Tools/三国杀戮/招架姿态调参")]
     private static void Open()
@@ -102,6 +105,20 @@ public class ParryStanceTuningWindow : EditorWindow
         if (EditorGUI.EndChangeCheck()) Apply();
 
         EditorGUILayout.Space();
+        EditorGUILayout.LabelField("按目标屏幕位反解矛头锚点", EditorStyles.boldLabel);
+        _targetScreenX = EditorGUILayout.FloatField("矛头屏幕 X (%, 0=中 100=右缘)", _targetScreenX);
+        _targetScreenY = EditorGUILayout.FloatField("矛头屏幕 Y (%, 0=中 100=上缘)", _targetScreenY);
+        _targetDepth = EditorGUILayout.FloatField("深度 z（越负 = 越靠镜头）", _targetDepth);
+        if (GUILayout.Button("反解并应用"))
+        {
+            if (SolveHeadAnchor(out Vector3 solved))
+            {
+                _anchor = solved;
+                Apply();
+            }
+        }
+
+        EditorGUILayout.Space();
         EditorGUILayout.LabelField("读数（0% = 画面中心，100% = 画面边缘）", EditorStyles.boldLabel);
         EditorGUILayout.TextArea(_readout, GUILayout.Height(170f));
 
@@ -115,6 +132,30 @@ public class ParryStanceTuningWindow : EditorWindow
             "· 尺寸固定为 prefab 原尺寸（不可调）——武器大小是武器的属性，与动作无关。\n" +
             "· 整杆枪在任何前景深度都必然出画 → 只能解算“矛头在哪、杆身从哪穿出”。\n" +
             "· 改完直接进 Battle 场景 Play 看效果，不需要截图目测。", MessageType.Info);
+    }
+
+    /// <summary>
+    /// 由「目标屏幕百分比 + 深度」反解矛头的世界坐标。
+    /// 相机空间里目标点方向 = (sx·tanH, sy·tanV, 1)；沿该射线走到指定深度平面即得世界坐标。
+    /// </summary>
+    private bool SolveHeadAnchor(out Vector3 result)
+    {
+        result = _anchor;
+        var cam = Camera.main;
+        if (cam == null) return false;
+
+        float tanV = Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
+        float tanH = tanV * cam.aspect;
+        Vector3 right = cam.transform.right, up = cam.transform.up, fwd = cam.transform.forward;
+        Vector3 camPos = cam.transform.position;
+
+        float sx = _targetScreenX / 100f, sy = _targetScreenY / 100f;
+        Vector3 dir = right * (sx * tanH) + up * (sy * tanV) + fwd;
+        float dz = dir.z;
+        if (Mathf.Abs(dz) < 0.0001f) return false;
+        float t = (_targetDepth - camPos.z) / dz;
+        result = camPos + dir * t;
+        return true;
     }
 
     /// <summary>几何解算：把关键点投影到屏幕百分比。</summary>
