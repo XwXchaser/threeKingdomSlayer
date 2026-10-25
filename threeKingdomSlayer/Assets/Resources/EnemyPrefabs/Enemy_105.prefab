@@ -320,6 +320,7 @@ MonoBehaviour:
   shareHealthWithAdjacent: 0
   maxPoise: 40
   stunDuration: 2
+  parryStrikeWindow: 0.15
   poiseStunDuration: 1.5
   freezeDuration: 4
   freezeChanceMax: 0.75
