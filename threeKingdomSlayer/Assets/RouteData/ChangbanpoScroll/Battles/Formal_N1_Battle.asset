@@ -19,7 +19,7 @@ MonoBehaviour:
     isBossWave: 0
     rows:
     - enemyIds: 00000000f303000000000000f303000000000000
-    healthMultiplier: 3.6
+    healthMultiplier: 0.5
     bossHealthMultiplier: 0
     attackSpeedMultiplier: 0.85
     damageMultiplier: 0.45
@@ -31,7 +31,7 @@ MonoBehaviour:
     isBossWave: 0
     rows:
     - enemyIds: 00000000f3030000f3030000f303000000000000
-    healthMultiplier: 2.7
+    healthMultiplier: 0.5
     bossHealthMultiplier: 0
     attackSpeedMultiplier: 0.85
     damageMultiplier: 0.45
@@ -44,7 +44,7 @@ MonoBehaviour:
     rows:
     - enemyIds: 0000000000000000f30300000000000000000000
     - enemyIds: 00000000f303000000000000f303000000000000
-    healthMultiplier: 3
+    healthMultiplier: 0.52
     bossHealthMultiplier: 0
     attackSpeedMultiplier: 0.9
     damageMultiplier: 0.5
@@ -58,7 +58,7 @@ MonoBehaviour:
     - enemyIds: 00000000f303000000000000f303000000000000
     - enemyIds: 00000000f303000000000000f303000000000000
     - enemyIds: 0000000000000000f30300000000000000000000
-    healthMultiplier: 1.9
+    healthMultiplier: 0.52
     bossHealthMultiplier: 0
     attackSpeedMultiplier: 0.9
     damageMultiplier: 0.5
@@ -72,7 +72,7 @@ MonoBehaviour:
     - enemyIds: 00000000f303000000000000f303000000000000
     - enemyIds: f3030000000000000000000000000000f3030000
     - enemyIds: 0000000000000000f30300000000000000000000
-    healthMultiplier: 2
+    healthMultiplier: 0.54
     bossHealthMultiplier: 0
     attackSpeedMultiplier: 0.9
     damageMultiplier: 0.5
