@@ -159,7 +159,33 @@ Boss 可通过 `isSuperArmor`（BossPhase配置）和 `isCFrame`（C技步骤）
 - 空放 → 动作锁用 `AttackSkillConfig.parryWhiffDuration`（默认 **0.8s**），而不是格挡成功的 `actionDuration`（0.2s）→ **招架不能连发**。
 - 空放不给大招能量（否则可空刷）。
 - 动作锁模式下生效；独立 CD 模式仍走每招独立冷却（`cooldown`）。
-- 后续扩展：长按可在招架后摇期间保持防御姿态（防御姿态与破防系统尚未实现）。
+- 后续扩展：长按可在招架后摇期间保持防御姿态（见 §4.7）。
+
+### 4.7 防御姿态与破防（2026-10-25 定）
+
+**入口**：只在**招架后摇**（招架的动作锁窗口）期间长按进入；进入后只要一直按着就维持，松手退出。
+选择“只在招架后摇”是因为本项目的**长按已经是蓄力**（`chargeLevel` 0.3/0.6/1.0，蓄力门 1.0s，连段 C2 还占用“按住→松手”），占用任意时刻的“按住不动”会与蓄力整套重排。
+
+**防御期间**：
+
+- **免伤**：受到的伤害不扣血，只累积「破防值」（`AccumulatedDamage`）。
+- 蓄力等级恒 0（不出现蓄力视觉），蓄力指示器让位。
+- **滑动不出招**：必须先松手退出防御，再重新操作。
+
+**破防**：
+
+```
+破防值 ≥ parryGuardBreakThreshold（默认 120）
+  → 进入 Broken：GameplayInputGate 申请 GuardBroken 拦截
+    → 不能行动、不能放技能、不能做手势输入
+  → 持续 parryGuardBreakDuration（默认 1.5s）后自动恢复
+```
+
+破防值在停止挨打 `parryGuardDecayDelay`（默认 3s）后按 `parryGuardDecayPerSecond`（默认 30/秒）衰减。
+
+**归属与数值来源**：`PlayerGuard`（`Assets/Scripts/Player/Combat/PlayerGuard.cs`）由 `PlayerState` 持有（与 Enemy → EnemyPoise 同做法，不新增场景组件）；全部数值与武器 Prefab 挂在**招架招式资产**的 `parryGuard*` 字段上（Inspector 可调、无幽灵引用）。
+
+**实现注意**：武器销毁前必须先 `DOKill`（否则后摇 tween 会写已销毁的 Transform → MissingReferenceException）。
 
 ## 5. 数据流
 
