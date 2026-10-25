@@ -1,7 +1,7 @@
 ---
 id: kd_c10dc057-dc52-4576-94f9-09869e1c6e5e
 injectMode: inherit
-summary: 敌人攻击打断系统设计文档：三级打断体系（普通攻击/C技/QTE）、霸体机制、与三选一奖励及Parry/Launch的交互关系、实现计划。已完成sharedHealthGroup打断修复和canInterruptCFrame参数传递，待实现P0-P2。
+summary: 敌人攻击打断系统设计文档：三级打断体系（普通攻击/C技/QTE）、霸体机制、与三选一奖励及Parry/Launch的交互关系、实现计划。2026-10-25 霸体反制规则重定：重攻击可打断霸体并削韧破势、招架空放长后摇。
 aiEditMode: inherit
 ---
 
@@ -37,15 +37,18 @@ aiEditMode: inherit
 │ 窗口       │ 打断条件              │ 设计意图         │
 ├─────────────────────────────────────────────────────┤
 │ 普通攻击   │ 任何直接伤害即可打断   │ 割草压制         │
-│ C技(蓄力技)│ 仅 Parry / Launch 打断 │ 需要正确对策     │
+│ C技(蓄力技)│ 招架 / 任何重攻击      │ 需要正确对策     │
 │ AttackDraw │ 不可打断               │ 收招保护         │
 │ QTE攻击    │ 不可打断               │ BOSS终极技能     │
 └─────────────────────────────────────────────────────┘
 ```
 
+> **重攻击** = 招式资产 `isHeavy = true`（穿刺 / 横扫 / 挑飞 / 枪突终结技 / 指向突刺 C2）。
+> 重攻击打断霸体的**同时**按资产 `poiseDamage` 削韧（见 §4.5 破势规则）。
+
 ### 3.2 Boss敌人
 
-Boss 的攻击打断规则与非Boss不同，核心原则：**Parry始终可打断Boss攻击，Launch仅在普通窗口可打断**。
+Boss 的攻击打断规则与非Boss不同，核心原则：**招架始终可打断Boss攻击；重攻击可打断霸体并削韧；Launch仅在普通窗口可打断**。
 
 ```
 ┌──────────────────────────────────────────────────────┐
@@ -53,18 +56,18 @@ Boss 的攻击打断规则与非Boss不同，核心原则：**Parry始终可打�
 ├──────────────────────────────────────────────────────┤
 │ 普通窗口          │ 所有攻击可打断       │ 压制窗口    │
 │ (非CFrame非SA)    │                      │             │
-│ CFrame (C技霸体)  │ 仅 Parry 可打断     │ Parry对策   │
-│ SuperArmor (霸体) │ 仅 Parry 可打断     │ Parry对策   │
+│ CFrame (C技霸体)  │ 招架 或 重攻击       │ 招架快/重攻击慢 │
+│ SuperArmor (霸体) │ 招架 或 重攻击       │ 同上        │
 │ AttackDraw        │ 不可打断             │ 收招保护    │
 │ QTE攻击           │ 不可打断             │ 独立系统    │
 └──────────────────────────────────────────────────────┘
 ```
 
 **设计理由**：
-- Boss 的 CFrame/SuperArmor 窗口赋予 Parry 独特的战术价值——它是唯一能打断Boss霸体/蓄力攻击的手段
-- Launch（挑飞）在 Boss CFrame/SuperArmor 窗口不能打断，避免 Launch 替代 Parry 的地位
-- Boss 的普通窗口保持"所有攻击可打断"，给予玩家压制空间
-- 不存在玩家用 Parry 无法打断的 Boss 攻击（QTE 属于独立演出系统，不在此规则内）
+- 招架仍然是**最快**的反制（立即打断 + 削韧），保持它的战术价值与「精准时机」定位
+- 重攻击提供**第二条路**：慢但稳（能打断、能削韧、削满破势），BOSS 后半场不再只有招架一个答案
+- Launch（挑飞）在 Boss 普通窗口可打断；不把 Launch 单独排除在霸体反制之外，是因其本身就是重攻击
+- 不存在玩家用招架无法打断的 Boss 攻击（QTE 属于独立演出系统，不在此规则内）
 
 ### 3.3 Level 1 — 普通攻击
 - 所有敌人默认的攻击类型
@@ -76,10 +79,10 @@ Boss 的攻击打断规则与非Boss不同，核心原则：**Parry始终可打�
 - 由 `cAttackProbability` 控制触发概率
 - 前摇阶段 `isCFrame = true`（霸体窗口）
 - 伤害帧（`PerformAttack()`）结束后 `isCFrame = false`
-- 非Boss: Parry/Launch 伤害 → 打断成功
-- Boss: **仅** Parry 伤害 → 打断成功
+- 非Boss: 招架 / 任何重攻击 伤害 → 打断成功（重攻击同时削韧）
+- Boss: **招架 或 重攻击** 伤害 → 打断成功（重攻击同时削韧）
 - 普通伤害 → 弹刀反馈（`PlayClankEffect()`：橙红闪烁+水平抖动）
-- **意义**：为 Parry 赋予战术价值，避免它沦为"普通攻击的换皮"
+- **意义**：为 Parry 赋予战术价值，避免它沦为"普通攻击的换皮"；重攻击提供慢但可靠的第二条路
 
 ### 3.5 Level 3 — QTE攻击（BOSS专属）
 - `state == EnemyState.QTEAttacking`
@@ -117,51 +120,95 @@ Boss 可通过 `isSuperArmor`（BossPhase配置）和 `isCFrame`（C技步骤）
 ```
 玩家进攻 → 杂兵被压制（普通窗口打断）
          → 遇到 C技敌人 → 弹刀反馈 → 玩家选择：
-            ├─ Parry：高风险高回报（精确时机 + 眩晕）
-            ├─ Launch：挑空连段
+            ├─ 招架：高风险高回报（精确时机 + 立即打断 + 削韧）
+            ├─ 重攻击：慢但稳（打断 + 削韧，削满破势）
             └─ 闪避：安全但损失输出窗口
-         → BOSS 霸体/CFrame → 弹刀反馈 → 玩家必须：
-            └─ Parry：唯一打断手段
+         → BOSS 霸体/CFrame → 弹刀反馈 → 玩家选择：
+            ├─ 招架：立即打断（唯一即时选项）
+            └─ 重攻击：打断 + 削韧，削满 → 破势眩晕
          → BOSS QTE：强制演出，不可打断（Level 3）
 ```
+
+### 4.5 破势削韧（2026-10-25 定）
+
+**削韧来源**：招架（既有，`poiseDamage`）＋ **任何重攻击**（`isHeavy = true` 的招式，削韧值取同一字段）。
+
+**生效范围**：削韧**只在霸体窗口内**生效——C 技霸体（`isCFrame`）或阶段霸体（`isSuperArmor`）。
+窗口外的敌人不吃这份削韧：**破势是“破霸体”的手段，不是通用输出窗**。
+
+**结算**：
+
+```
+① 重攻击命中处于霸体窗口的敌人 → 按资产 poiseDamage 削韧
+② 韧性归零 → 破势：进入 Stunned（眩晕输出窗），同时解除霸体
+③ 眩晕结束 → 韧性回满（Enemy.StateUpdate.BeginStunExit）
+```
+
+**边界**：
+
+- 只有玩家攻击本体算数（`HitFeedbackSource.BasicAttack`）：DoT / 被动 / 道具 / 碰撞 / 幻影不削韧（与冰系“破冰只认玩家本体”同口径）。
+- 破势眩晕时长：普通敌人用 `poiseStunDuration`（默认 1.5s）；BOSS 沿用 `stunDuration`（默认 5s）。
+- 非 BOSS 敌人的 `maxPoise` / `poiseStunDuration` 此前是死值（只有 BOSS 会被削韧），本规则后它们**第一次生效**。
+- 招式资产 `poiseDamage` 一字段两用：招架用它是“削韧量”；挑飞/终结技用它是“挑飞所需的架势阈值”（`CanBeLaunched`）——**改这两个资产的 `poiseDamage` 会同时改挑飞阈值**。
+- 当前数值：挑飞 50 / 枪突终结技 80 / 指向突刺 C2 30 / 穿刺 30 / 横扫 25（未挂载）。
+
+### 4.6 招架后摇（2026-10-25 定）
+
+**空放 = 没格挡到任何攻击**：既没弹开敌方飞行物，也没格挡到正在攻击的敌人（`state == Attacking && isAttackAnimating && !isAttackDrawPhase`）。
+
+- 空放 → 动作锁用 `AttackSkillConfig.parryWhiffDuration`（默认 **0.8s**），而不是格挡成功的 `actionDuration`（0.2s）→ **招架不能连发**。
+- 空放不给大招能量（否则可空刷）。
+- 动作锁模式下生效；独立 CD 模式仍走每招独立冷却（`cooldown`）。
+- 后续扩展：长按可在招架后摇期间保持防御姿态（防御姿态与破防系统尚未实现）。
 
 ## 5. 数据流
 
 ### 5.1 canInterruptCFrame 传递
 
 ```
-伤害来源                      canInterruptCFrame   isParryInterrupt
-──────────────────────────────────────────────────────────────────
-Stab/Slash/Pierce/Sweep       false（默认）         false（默认）
-Parry                          true                  true
-Launch (via AttackWave)        true                  false
-Launch (via WhirlwindController.ExecuteLaunch)  直接调用 enemy.Launch() —— 绕过 TakeDamage
-Thunder (落雷)                 false（默认）         false（默认）
-三选一全屏伤害                  false（默认）         false（默认）
-Whirlwind tick damage          false（默认）         false（默认）
+伤害来源                      canInterruptCFrame   isParryInterrupt   isHeavyAttack
+──────────────────────────────────────────────────────────────────────────────────
+Stab/Slash/Pierce/Sweep       false（默认）         false（默认）       false（默认）
+Parry                          true                  true                false
+Launch (via AttackWave)        true                  false               true（资产 isHeavy）
+枪突终结技 (via AttackWave)    true                  false               true
+指向突刺 C2 (via StabSweep)    false                 false               true
+Thunder (落雷)                 false（默认）         false（默认）       false（默认）
+三选一全屏伤害                  false（默认）         false（默认）       false（默认）
+Whirlwind tick damage          false（默认）         false（默认）       false（默认）
 ```
+
+> `isHeavyAttack` 与 `poiseDamage` 一路透传到 `Enemy.TakeDamage`（沿用 `interruptsCavalryCharge` 的逐段透传风格）。
 
 ### 5.2 打断决策伪代码
 
 ```
 if state == Attacking && isAttackAnimating && !isAttackDrawPhase:
     if isBoss:
-        if isParryInterrupt:
-            CancelAttack()    // Boss任何窗口：仅Parry可打断
-        // else: 不打断（Launch等对其他窗口无效）
-    else if !isSuperArmor && !isCFrame:
-        CancelAttack()        // 非Boss普通窗口：所有攻击可打断
-    else if canInterruptCFrame:
-        CancelAttack()        // 非Boss CFrame：Parry/Launch可打断
+        if !inArmorWindow:
+            CancelAttack()    # Boss普通窗口：所有攻击可打断
+        elif isParryInterrupt or isHeavyAttack:
+            CancelAttack()    # Boss霸体/CFrame：招架或重攻击可打断
+    else:
+        if !inArmorWindow:
+            CancelAttack()    # 非Boss普通窗口：所有攻击可打断
+        elif canInterruptCFrame or isHeavyAttack:
+            CancelAttack()    # 非Boss CFrame：招架/打断标记/重攻击可打断
+
+# 削韧（破势）：只在霸体窗口内，且只认玩家攻击本体
+if poiseDamage > 0 and inArmorWindow and source == BasicAttack:
+    currentPoise -= poiseDamage
+    if currentPoise <= 0: Stun()                # 破势：眩晕 + 解除霸体
 ```
 
 ### 5.3 关键传递路径
 ```
 AttackSystem
-  → AttackWave.Create(..., canInterruptCFrame, isParryInterrupt)
+  → AttackWave.Create(..., canInterruptCFrame, isParryInterrupt, isHeavyAttack, poiseDamage)
     → AttackWave.HitTarget()
-      → Enemy.TakeDamage(damage, type, color, canInterruptCFrame, isParryInterrupt)
-        → 打断检查
+      → Enemy.TakeDamage(damage, type, color, canInterruptCFrame, isParryInterrupt,
+                          isHeavyAttack, poiseDamage)
+        → 霸体窗口捕获 → 破势削韧 → 打断检查
 ```
 
 ## 6. 已完成的改动
@@ -215,11 +262,23 @@ AttackSystem
 - 非攻击状态敌人不受影响（日志确认：`state=Idle → 条件不满足`）
 
 ### 待验证
-- Launch 命中 Boss CFrame → 应触发弹刀，不打断攻击
-- Parry 命中 Boss CFrame → 应打断攻击 + 削Poise
-- Parry 命中 Boss SuperArmor → 应打断攻击 + 削Poise
-- Boss 普通窗口：所有攻击可打断
-- 非Boss CFrame：Launch 仍可打断（行为不变）
+- 破冰推动与破势眩晕叠加时的表现（冰系 + 霸体同时成立）
+- 挑飞打断霸体后的挑飞阈值是否被破势改写（`CanBeLaunched` 读 `currentPoise`）
+- 招架空放在独立 CD 模式下的表现
+- 弹刀反馈仍未实现（设计 §3.4 写了 `PlayClankEffect`，代码里不存在）
+
+### 2026-10-25 霸体反制重定 · Play Mode 实测（Battle 场景，运行时构造 1011 / 104）
+
+| 用例 | 结果 |
+|---|---|
+| 重攻击打 C 技霸体 | 打断 ✓；架势 50 → 20 ✓ |
+| 再一击重攻击（同一目标） | 架势归零 → **破势 Stunned** ✓；`isCFrame` 清除（霸体解除）✓ |
+| 非霸体窗口打重攻击 | 打断 ✓；**架势不变**（窗口外不削韧）✓ |
+| BOSS 阶段霸体 + 重攻击 | **打断 ✓**（新规则，旧设计只有招架能断）；架势 100 → 70 ✓ |
+| BOSS 阶段霸体 + 轻攻击 | 不断打 ✓；不削韧 ✓ |
+| 招架空放 | 动作锁 **0.8s**（`parryWhiffDuration`）✓ |
+| 招架格挡到正在攻击的敌人 | 动作锁 0.2s ✓；目标被打断 ✓ |
+| 空放后立刻再招架 | 被动作锁挡住 ✓ |
 
 ## 10. Parry 架势边界修复（已实现）
 
