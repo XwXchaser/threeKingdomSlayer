@@ -390,15 +390,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: maxHealth
-      value: 500
+      value: 400
       objectReference: {fileID: 0}
     - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: moveSpeed
       value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
+      propertyPath: attackSpeed
+      value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: attackDamage
-      value: 10
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: visualYOffset

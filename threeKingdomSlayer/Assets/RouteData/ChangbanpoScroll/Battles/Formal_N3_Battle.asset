@@ -19,11 +19,11 @@ MonoBehaviour:
     isBossWave: 0
     rows:
     - enemyIds: 00000000f303000000000000f303000000000000
-    - enemyIds: 0000000000000000f30300000000000000000000
-    healthMultiplier: 0.6
-    bossHealthMultiplier: 0
+    - enemyIds: 0000000000000000f303000000000000f3030000
+    healthMultiplier: 1
+    bossHealthMultiplier: 1
     attackSpeedMultiplier: 1
-    damageMultiplier: 0.65
+    damageMultiplier: 1
     waveTintColor: {r: 1, g: 1, b: 1, a: 1}
     enableDynamicRush: 0
     rushMoveDelay: 0.2
@@ -31,68 +31,27 @@ MonoBehaviour:
   - waveId: 1
     isBossWave: 0
     rows:
-    - enemyIds: 00000000f303000000000000f303000000000000
-    - enemyIds: 0000000000000000690000000000000000000000
-    healthMultiplier: 0.6
-    bossHealthMultiplier: 0
+    - enemyIds: f3030000000000006d0000000000000000000000
+    - enemyIds: 0000000000000000000000006900000000000000
+    - enemyIds: 00000000690000000000000000000000f3030000
+    healthMultiplier: 1
+    bossHealthMultiplier: 1
     attackSpeedMultiplier: 1
-    damageMultiplier: 0.65
+    damageMultiplier: 1
     waveTintColor: {r: 1, g: 1, b: 1, a: 1}
     enableDynamicRush: 0
     rushMoveDelay: 0.2
     rushMoveDelayMin: 0.02
   - waveId: 2
-    isBossWave: 0
-    rows:
-    - enemyIds: 00000000f303000000000000f303000000000000
-    - enemyIds: 00000000f3030000fd0300000000000000000000
-    healthMultiplier: 0.61
-    bossHealthMultiplier: 0
-    attackSpeedMultiplier: 1
-    damageMultiplier: 0.65
-    waveTintColor: {r: 1, g: 1, b: 1, a: 1}
-    enableDynamicRush: 0
-    rushMoveDelay: 0.2
-    rushMoveDelayMin: 0.02
-  - waveId: 3
-    isBossWave: 0
-    rows:
-    - enemyIds: 00000000f303000000000000f303000000000000
-    - enemyIds: 00000000000000006d0000000000000000000000
-    - enemyIds: 0000000069000000000000006900000000000000
-    - enemyIds: 0000000000000000690000000000000000000000
-    healthMultiplier: 0.61
-    bossHealthMultiplier: 0
-    attackSpeedMultiplier: 1
-    damageMultiplier: 0.65
-    waveTintColor: {r: 1, g: 1, b: 1, a: 1}
-    enableDynamicRush: 0
-    rushMoveDelay: 0.2
-    rushMoveDelayMin: 0.02
-  - waveId: 4
-    isBossWave: 0
-    rows:
-    - enemyIds: 0000000000000000fd0300000000000000000000
-    - enemyIds: 00000000f303000000000000f303000000000000
-    - enemyIds: 0000000000000000f30300000000000000000000
-    healthMultiplier: 0.62
-    bossHealthMultiplier: 0
-    attackSpeedMultiplier: 1
-    damageMultiplier: 0.7
-    waveTintColor: {r: 1, g: 1, b: 1, a: 1}
-    enableDynamicRush: 0
-    rushMoveDelay: 0.2
-    rushMoveDelayMin: 0.02
-  - waveId: 5
     isBossWave: 1
     rows:
-    - enemyIds: 00000000fd030000f30300000000000000000000
     - enemyIds: 00000000f303000000000000f303000000000000
+    - enemyIds: 0000000000000000fd0300000000000000000000
     - enemyIds: 0000000000000000680000000000000000000000
-    healthMultiplier: 0.62
-    bossHealthMultiplier: 9
+    healthMultiplier: 1
+    bossHealthMultiplier: 1
     attackSpeedMultiplier: 1
-    damageMultiplier: 0.7
+    damageMultiplier: 1
     waveTintColor: {r: 1, g: 1, b: 1, a: 1}
     enableDynamicRush: 0
     rushMoveDelay: 0.2
