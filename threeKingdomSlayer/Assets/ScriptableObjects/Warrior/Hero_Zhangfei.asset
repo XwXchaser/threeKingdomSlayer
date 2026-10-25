@@ -23,8 +23,6 @@ MonoBehaviour:
   skillConfigs:
   - {fileID: 11400000, guid: be0d2cd0d81581742ad3b5d189204f52, type: 2}
   - {fileID: 11400000, guid: c4862b3d5d44d2543af3deae939e5053, type: 2}
-  - {fileID: 11400000, guid: bb54309c327b81441b6ee3035a6d2db2, type: 2}
-  - {fileID: 11400000, guid: b9436d083cf392d448b491eb34d9fb60, type: 2}
   - {fileID: 11400000, guid: f626e0c5b2498c44699381bf54ba9d68, type: 2}
   - {fileID: 11400000, guid: c596fb21c45e31e42b8e55d2d324b333, type: 2}
   moveTable: {fileID: 11400000, guid: 78c25b38faaf994408ae82f6e0fd5c99, type: 2}

@@ -257,6 +257,16 @@ public partial class InputManager : MonoBehaviour
         return ok;
     }
 
+    /// <summary>
+    /// 调试 / 跑关机器人用：直接投递一次手势，**不打断当前连招**。
+    /// 走的是与玩家输入完全相同的路径（SubmitGesture → 招式状态机），所以连招会正常接段。
+    /// </summary>
+    public bool SubmitGestureForDebug(MoveGesture gesture, int chargeLevel, int targetColumn,
+        Vector2 screenPos, bool slashLeftToRight = true, float slashVisualTilt = 0f)
+    {
+        return SubmitGesture(gesture, chargeLevel, targetColumn, slashLeftToRight, slashVisualTilt, screenPos);
+    }
+
     private bool SubmitGesture(MoveGesture gesture, int chargeLevel, int targetColumn,
         bool slashLeftToRight = true, float slashVisualTilt = 0f,
         Vector2 screenPos = default, ISupplyPropTarget supplyTarget = null)

@@ -52,7 +52,13 @@ public class BattleAutoPlayer : MonoBehaviour
     private string _battleLabel = "";
     private bool _battleActive;
     private bool _waveActive;
+    private InputManager _input;
     private readonly List<UpgradeDefinition> _pendingChoices = new List<UpgradeDefinition>();
+
+    private void Awake()
+    {
+        _input = FindObjectOfType<InputManager>();
+    }
 
     private void OnEnable()
     {
