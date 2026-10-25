@@ -87,6 +87,10 @@ public partial class Enemy : MonoBehaviour
     [Header("架势系统")]
     public float maxPoise = 50f;
     public float stunDuration = 1.5f;
+    [Tooltip("招架可打断的「出伤窗口」：挥击即将落下的那段时间（出伤瞬间前多少秒内，招架能格开）。\n" +
+             "默认 0.15s。窗口之外（=前摇）招架打不断——前摇留给重攻击拆（2026-10-26 招架时机重定）。")]
+    [Range(0f, 0.6f)]
+    public float parryStrikeWindow = 0.15f;
     [Tooltip("破势（架势归零）时的眩晕时长（秒，默认 1.5）。普通敌人用这个值；BOSS 沿用 stunDuration。\n" +
              "破势由「霸体窗口内被重攻击削韧」触发，眩晕同时解除霸体。")]
     [Range(0f, 10f)]
@@ -251,6 +255,26 @@ public GameObject freezeMeltEffectPrefab;
     private float stunTimer;
     private float _appliedStunDuration; // 实际应用的眩晕时长（用于 UI 恢复进度）
     private float _poiseRecoveryEndTime; // 架势恢复完成的时间点（Time.time + duration）
+
+    /// <summary>本次攻击的“前摇”实际时长（已按命中帧修正）：出伤就落在这一时刻。</summary>
+    private float _approachDuration;
+
+    /// <summary>
+    /// 当前是否处于**出伤窗口**（挥击即将落下的那段时间）。
+    /// 招架只能在这个窗口内格开；前摇打不断（前摇留给重攻击拆）。
+    /// 用攻击 tween 的已播时间算（而不是墙钟），卡肉/冻结/变速下都准。
+    /// </summary>
+    public bool IsInStrikeWindow()
+    {
+        if (state != EnemyState.Attacking || !isAttackAnimating) return false;
+        if (_attackTween == null || !_attackTween.IsActive()) return false;
+        if (_approachDuration <= 0f) return false;
+        // 用 tween 的已播比例换算已播时间（卡肉/冻结时 tween 会暂停，比例不跑 → 判定不会错位）
+        float elapsed = _attackTween.Duration() * _attackTween.ElapsedPercentage();
+        float timeToStrike = _approachDuration - elapsed;
+        float window = Mathf.Max(0f, parryStrikeWindow);
+        return timeToStrike <= window && timeToStrike >= -0.05f;
+    }
     internal bool _isStunExiting;
     private bool _resumeStunAfterLaunch;
     private Coroutine _stunExitRoutine;

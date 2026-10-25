@@ -483,10 +483,11 @@ public partial class AttackSystem : MonoBehaviour
         {
             var enemy = targets[i];
             if (enemy == null || enemy.state == EnemyState.Dead) continue;
-            enemy.TakePoiseDamage(cfg.poiseDamage);
-            // 冲锋暂不可被 Parry 打断：格挡只造成架势/伤害。
+            // 削韧跟着“格开成功”走：只有真的在出伤窗口里格开一次才磨架势
+            // （不再对范围内所有敌人无条件磨——否则空挥也能削 BOSS 的架势）
+            // 冲锋（109）不在这条打断链里：招架对它只造成伤害/架势，打不断冲锋。
             enemy.TakeDamage(finalDmg, cfg.damageType, canInterruptCFrame: true, isParryInterrupt: true,
-                feedbackStrength: HitFeedbackStrength.Heavy);
+                feedbackStrength: HitFeedbackStrength.Heavy, parryPoiseDamage: cfg.poiseDamage);
         }
 
         Debug.Log($"[AttackSystem] 招架 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 目标数:{targets.Count} 空放:{_lastParryWhiff}");

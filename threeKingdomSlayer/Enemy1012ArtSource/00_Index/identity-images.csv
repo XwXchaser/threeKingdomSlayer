@@ -1,0 +1,4 @@
+variant,source_path,bytes,sha256,note
+base,C:\Users\steam\Pictures\gptGen\enemy1011_attack_anim_v1\input_identity_v11_696.png,432162,544b35842302752968d57db8ddd7d408ac3a20043086fb00130705c2033f8da6,主体高 696、脚底 896（1024 画布）——idle / walk / attack / hitLeft / hitRight / hitHeavy 用这张
+ground830,C:\threeKingdomSlayer\threeKingdomSlayer\Library\Locus\tmp\dao_v11_dead\input_identity_v11_dead_A696_ground830.png,450020,40fb5b37f00c7cff20690708d21d56de51cd24b5a3483c23875bfa10a634c8e8,主体高 696、接触线 830 = 站立地面线——dead / rise / getup 用这张
+ground717,C:\threeKingdomSlayer\threeKingdomSlayer\Library\Locus\tmp\dao_v11_rise\input_identity_v11_landing_A696_ground717.png,449136,dfc662842fad89bade2f992d77b2c32b38dc25a5fe5289abd922046eac63900b,主体高 696、接触线 717 = 躺姿地面线——landing 用这张

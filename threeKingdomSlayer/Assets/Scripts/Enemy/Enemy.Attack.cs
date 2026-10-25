@@ -272,6 +272,9 @@ private void SpawnProjectile()
         _attackTween.SetId("attackAnim");
         _suspendTweenPaused = false;
 
+        // 出伤落点：近战 = 前摇结束那一帧；远程 = 发射瞬间（= spawnDuration）
+        _approachDuration = isRanged ? spawnDuration : approachDuration;
+
         // 远程攻击：不移动；声明命中帧时由命中帧决定击发时刻
         if (isRanged)
         {

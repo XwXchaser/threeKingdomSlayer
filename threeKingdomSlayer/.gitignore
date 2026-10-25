@@ -49,6 +49,13 @@ Enemy1011ArtSource/*
 !Enemy1011ArtSource/00_Index/
 !Enemy1011ArtSource/01_SourceVideos/
 
+# 1012 v11 刀兵形象（替换自 1011，1011 已还原原造型）：源视频 + 身份图 + 溯源表
+Enemy1012ArtSource/*
+!Enemy1012ArtSource/README.md
+!Enemy1012ArtSource/00_Index/
+!Enemy1012ArtSource/01_SourceVideos/
+!Enemy1012ArtSource/02_IdentityImages/
+
 # 109 骑乘枪骑（约 406MB）：同步源视频 + 关键姿态 + 视频准备记录
 Enemy109ArtSource/*
 !Enemy109ArtSource/README.md

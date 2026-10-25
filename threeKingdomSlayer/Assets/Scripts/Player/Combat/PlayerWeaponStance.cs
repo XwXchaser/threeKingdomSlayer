@@ -168,6 +168,15 @@ public sealed class PlayerWeaponStance
             ApplyPose(1f);
         }
 
+        // 预输入：举枪过程中就按住 → 直接转防御保持位（不空档）
+        // （2026-10-26：玩家在 parry 判定段就开始长按 → 直接进防御，不存在 parry→防御的间隙）
+        if (Phase == StancePhase.Raising && _holding && !_atDefend)
+        {
+            _atDefend = true;
+            Phase = StancePhase.Settled;
+            MoveTo(_rootAnchor, _poseDefend, _cfg != null ? Mathf.Max(0.05f, _cfg.parryStanceDefendEnterSeconds) : 0.15f);
+        }
+
         // 分流：举枪到位后，按住 → 防御位；没按住 → 回落
         if (Phase == StancePhase.Settled || Phase == StancePhase.Returning)
         {

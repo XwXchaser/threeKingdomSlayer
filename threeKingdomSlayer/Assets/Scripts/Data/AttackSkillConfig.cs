@@ -137,9 +137,9 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("持枪姿态：缩放。1 = 与其它武器视觉（Stab/Slash/Parry）同一尺度")]
     [Range(0.2f, 2f)]
     public float parryStanceScale = 1f;
-    [Tooltip("举枪时长（秒）：招架 → 斜举位")]
+    [Tooltip("举枪时长（秒）：招架 → 斜举位。0.25s：要“迅速格开”的脆度，别做成慢慢举枪")]
     [Range(0.05f, 2f)]
-    public float parryStanceRaiseSeconds = 0.8f;
+    public float parryStanceRaiseSeconds = 0.25f;
     [Tooltip("回落时长（秒）：斜举位 → 起手位。**它同时就是防御可进入窗口**（回落途中按住可接住）")]
     [Range(0.05f, 2f)]
     public float parryStanceReturnSeconds = 0.8f;
