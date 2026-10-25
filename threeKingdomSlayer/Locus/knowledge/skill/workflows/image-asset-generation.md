@@ -280,6 +280,8 @@ Produce a clean true RGBA transparent PNG. Remove gray-background contamination 
 
 ### 透明素材部署进 Unity 的尺寸与密度约定
 
+> **适用范围**：本节公式面向**新单位**落地（该单位尚无其它已验收动作）。若是**现有单位新增动作**、且新动作源素材与该单位已部署动作的比例不一致，则不能改导入设置（与本节一致），而改单位 scale 又会破坏该单位已验收的其它动作 → 按 `skill/workflows/action-to-unity-deployment.md` §决策表 1 选定方案，并把本批取值写进核验记录。
+
 新单位的透明帧落地时，**不许改图片的导入设置**（PPU、Pivot、Filter、Compression、MeshType 全项目统一），密度差一律放到**单位 transform 的 scale** 上。
 
 **密度关系**：世界尺寸 = 素材像素高 ÷ PPU × 单位scale。本项目敌人基准（enemy101）：角色 280px、PPU 16、Prefab scale 0.18 → 角色世界高 3.15。项目现有敌人本来就使用 0.18 / 0.20 两种单位 scale，所以“按单位缩放”是既有做法。

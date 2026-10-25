@@ -615,6 +615,7 @@ Library\Locus\tmp\enemy1021_idle_v1_frames\clean_raw\f001.png … f097.png      
 ### 7.4 不在本工作流范围内
 
 - **动画 clip / Animator controller 的创建与接线**：本手册只负责“把帧变成透明精灵并入库”，不建 clip、不改 controller。入库后 sprite 是孤立的（未被任何 clip 引用），需要单独做动画部署。
+  **去向**：帧→Clip（时长契约/键位/旧层清空键）、与显示同步的 AnimationEvent、Controller 状态与转场契约、装备脱离后的独立对象接管、代码挂点与池复位、接入前后静态核验，见 `skill/workflows/action-to-unity-deployment.md`；阶段顺序与门禁见 `skill/workflows/character-action-pipeline-entry.md`。
 - **具体已知情况（2026-10-10）**：1011 的 10 个 clip 均已存在；109 只有 `Enemy_109_MountedIdle.anim` 引用了 109 的精灵，`Enemy_109.controller` 里 Attack/Dead/HitFlash/Walk/Launched_* 仍指向 `Enemy_101_*` 的 clip（占位）。
 - 项目里存在与本工作流无关的既有问题：11 个空 sprite 引用（`Boss_104_QTE_Sweep_Start` 2、`Boss_104_QTE_Swipe` 5、`Enemy_102_CowardDead/Hit/Idle/Launched` 各 1）。
 

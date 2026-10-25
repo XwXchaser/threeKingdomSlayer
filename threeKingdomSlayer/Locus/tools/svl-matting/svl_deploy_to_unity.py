@@ -74,8 +74,8 @@ def main() -> None:
     offset = tuple(int(v) for v in args.offset.split(","))
     sources = collect(args.src)
     stamp = time.strftime("%Y%m%d-%H%M%S")
-    default_backup = (args.dest.parents[2] / "Library/Locus/tmp" if "Assets" in args.dest.parts
-                      else args.dest.parent)
+    default_backup = (pathlib.Path(*args.dest.parts[:args.dest.parts.index("Assets")]) / "Library/Locus/tmp"
+                      if "Assets" in args.dest.parts else args.dest.parent)
     backup_root = args.backup_root or (default_backup / ("backup_%s_%s" % (args.dest.name, stamp)))
 
     records = []

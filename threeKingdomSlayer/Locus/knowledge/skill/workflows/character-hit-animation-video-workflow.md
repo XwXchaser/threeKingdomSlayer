@@ -144,6 +144,8 @@ output: C:/Users/steam/Videos/doubaoVideo/enemy2_hitted_return_v2.mp4
 
 ### 透明帧与 Unity 部署（独立步骤，需单独授权）
 
+> **接入步骤去向**：本节第 6–8 条只给素材、对齐与验收约束；从「帧 → Clip → 事件 → Controller → 脱离物件接管 → 静态核验」的具体步骤、不变量与决策表见 `skill/workflows/action-to-unity-deployment.md`，阶段顺序与门禁见 `skill/workflows/character-action-pipeline-entry.md`。
+
 Seedance 视频 Skill 没有承诺 Alpha 透明视频，也没有提供透明视频参数。`no background` 只是画面要求，不能证明文件透明。视频若使用灰色、黑色或其他与角色相近的背景，传统颜色阈值去背可能留下明显脏边；此时可在不重新生成视频的前提下，增加 GPT Image 语义去背分支。
 
 即使首尾输入副本统一为同一RGB纯色，生成器仍会（实测）让背景随时间变化并可能重绘主体颜色。因此去背前先按 G2/G3 量测背景时间线和主体色彩稳定性。颜色异常时先保留已验收源帧、给出数值，并**升级为待用户决策项**，不自动重生成或整图校色；背景Key、主体连续性、视频用户验收与关键帧验收分别记录。
@@ -312,4 +314,159 @@ Use the same opaque production matte RGB(<approved R,G,B>) as the prepared image
 - **禁止逐帧按高度归一化**：那会把“受击变矮/压缩”这个姿态本身抹掉。
 - GPT 抠图会**逐帧改变缩放与位移** → 用「**单一全局缩放（各帧“源高÷输出高”的中位数）+ 逐帧只钉脚底锚点**」，并单独量化残余的逐帧尺寸差。
 
+## 13. 形象替换只做一次：禁止多轮视频替换生成（1011 实测教训）
 
+### 13.1 禁令
+
+**一个动作的成片只允许一次生成。禁止把上一轮生成结果再作为下一轮的 `reference_video` 继续替换形象或表情。** 需要改脸、改底色、改动作时，必须回到**最初的原始源片 + 原始身份图**重新做一次完整提交，而不是在已生成片上再叠一轮。
+
+### 13.2 为什么（实测数据）
+
+Seedance 的每一轮都会**整帧重画**，不是局部编辑。1011 走路的三代实测：
+
+| 版本 | 输入 | 边缘锐度中段帧 | 码率 | 脸的结果 |
+|---|---|---|---|---|
+| v1 | 原始走路源片 + 身份图 | 3.71 | 4.89 Mbps | 冷脸，但全程无变化 |
+| v2 | **v1 成片** + 身份图 | 3.33 | 5.50 Mbps | 张嘴，静立时开口，方向写反 |
+| v3 | **v2 成片**（无身份图） | 3.14 | 5.89 Mbps | 嘴闭住了，但脸仍无变化，第 6 帧刀位漂移 |
+
+分辨率没有变（都是 960×960 / 24fps / 720p），**码率反而逐轮升高**——那是把被抹过的边缘用更多字节存下来，不会把边补回去。清晰度的损失来自重画次数，不来自请求档位。
+
+更关键的是**功能损失**：第二轮能改的只有第一轮已画对的部分。v1 的脸没有表情，v2 补不上；v2 张嘴，v3 闭住了嘴却仍然没有表情变化。**每一轮都在继承上一轮的缺陷，同时还要再付一次重画的清晰度代价。**
+
+### 13.3 面部表情必须写进第一次提交
+
+「只改脸、只改 X」这类**增量指令对视频模型无效**，会被理解成「保持整体稳定」，于是得到一张全程不变的脸。要拿到有表情的脸，只能在**第一次提交的同一份词里**，把表情写成一个**跟随源片动作节拍的时间性表演**：
+
+- 先测源片的动作节拍，再写表情。1011 走路源片实测：f0–9 静立、f10–88 步态、f89–96 回到静立；步态段每约 10.6 帧一个完整步幅。表情要绑在这些真实节拍上，不要笼统写「愤怒」「紧张」。
+- 写**状态随动作的迁移**，不写**固定表情**。例：「前脚落地、上身前倾时眉压低、眼盯住前方；重心落定、身体回正时眉松开一线，眼睛仍锁在前方」。
+- **嘴的状态写死并且每帧都写**。v2 写了「下颌松开」，被画成静立时张嘴；改成「嘴全程闭着，包括落定的帧」后，v3 才是闭口。呼吸只写在眉、眼和鼻翼上，不要让它去驱动嘴。
+- 禁止项要覆盖模型最容易自作主张的地方：不露齿、不张嘴、不喊、不歪嘴、不为了露脸而抬头。
+- 表情变化要写「逐步、不得在两帧之间突变」，避免抽搐。
+
+### 13.4 执行口径
+
+- **一次授权一个任务**，一轮内不重发、不换模型、不降档（见 `skill/reachapi-seedance-video-generation-v2.md`）。
+- 提交前先把词念一遍：这段词里有没有任何一句是「上一轮已经做对了，所以这次只要补 X」？有就说明走错了流程。
+- 若第一次生成的表情不达标，**判定为提示词问题**，重写一次完整提交（原始源片 + 原始身份图），不是追加一轮。追加轮次的成本是清晰度，且大概率仍然无效。
+- 每轮成片都要量边缘锐度并与第一轮对比；出现逐轮下降时立即停止，不要用后续轮次「挽救」。
+
+
+
+
+## 14. 事件型表情词、特效禁令与可判验收闸门（2026-10-25 实测）
+
+> 来源：1011 刀兵**正面受击新动作**（纯生成词驱动，无源片）。task `task_178c011a4c1746a48d358e0e9e960e96`，成片 `dao_v11_hitfront_v1_6s_720p.mp4`。本节是 §12/§13 的补充与修正，实测记录见 `plan/enemy1011-style-locked-dao-generation-handoff.md` §26.10。
+
+### 14.1 脸只能写成「事件阶梯」，不能写成「状态保持」
+
+- **死脸反例（walk v1 实测，全程无变化）**：`Keep the face as a cold advance… jaw set, mouth closed in every frame. The expression may tighten slightly…`
+- **可用正例（attack v2 实测，f29–f47 张口窗口、峰值 +4176 @f41）**：五拍，每拍一个状态，顶点有一次性事件：`举刀初=冷脸闭嘴 → 刀上行=眉压眼眯唇抿 → 顶点=眉心压到底+张口 → 挥砍=仍张 → 收势=闭回硬线`，外加 `must change gradually and continuously… never snap… never stay frozen for a long stretch and then jump`。
+- **判据**：把脸段遮住，剩下的词能不能回答「第 N 拍脸是什么状态」。若每拍答案相同 → 必然死脸。
+- **弱量词是死脸信号**：`may / slightly / by a hair / a fraction` 全部不算数。事件必须可量测（张口、牙关咬紧、眉心下压）。
+
+### 14.2 事件必须写收尾，并禁止身体代偿表情
+
+- 事件要有起止：开口写 `the mouth opens… fully open at the highest point… stays open as the blade starts to fall`，收尾写 `the mouth closes back into a hard line`。
+- 必须写 `Do not lift, turn or tilt the head in order to show the face`，否则模型会靠抬头把脸「交出来」。**实测 1011 受击：模型仍然把头抬起来了**（词里明写 `head stays level and forward`），表演因此可读但属词面违背——**验收时要看头位，不要只看脸**。
+- 先锁死尺度/地线/相机，再谈脸：v1 同时踩「主体放大 1.216 倍 + 无脸段」两个坑，v2 把尺度写成独立段之后脸段才生效。
+
+### 14.3 代理指标只能量它量到的通道
+
+- 口腔空腔探针（暗红褐色像素）量的是「嘴张开了多少」。v3 的词要求 `no dark cavity behind them` → 必然低。
+- **实测误读**：v11 attack 探针峰值仅 +73、无超阈窗口，被判成「表情几乎读不出来」；但该版的表情由**眉/眼/颚**承载，用户的目视判断是「表情有明显变化」。**结论：探针低 ≠ 没表情；表情验收以目视为准，探针只用于回答它真正测量的那个问题（如「有没有张口事件」）。**
+
+### 14.4 纯生成词必须自带特效禁令
+
+参考素材路线下模型会照抄源片里的特效（实测：1011 旧 attack 源片刀身带太阳耀斑，v1 成片原样复现了一个白星）；**纯生成时模型会自己加**。因此词里要写死整段禁令：
+
+`No impact flash, no white flash, no screen flash, no shockwave, no impact lines, no speed lines, no motion blur streaks, no dust, no debris, no sparks, no smoke, no blood, no aura, no magic glow, no rim light, no bloom, no lens flare, no star glint, no sparkle on the blade or the helmet, no light rays, no halo around the fighter, no vignette, no gradient in the background, no brighter patch behind him, no light falloff, no change of light and no change of colour in any part of the frame.`
+
+配套三条：① 冲击本身**不画出来**（`the blow is never shown and leaves no trace, and the only thing that changes in the frame is his body and his face`）；② 金属高光写 `soft even highlights` 而不是 `concentrated highlights`（后者容易招星芒），并加 `never a white mirror, never a bright point of light`；③ 脚步打滑写 `a plain movement of the foot, with no dust and no marks`。
+
+### 14.5 接触阴影是硬边暗绿，T=79 能键掉
+
+- 实测 1011 受击源片脚下有**硬边**接触阴影：背景 (0,136,60) vs 阴影 (0,71,40)，距离 68 < 阈值 79 → 被 Chroma 正常键掉；键后残留阴影样像素仅 40，脚部干净。
+- 检查方法：抠图后统计「绿主导且比键暗 20+」的保留像素数（>几十即需处理），并看脚部裁切图。
+- 注意：阴影会污染**主体 bbox 测量**（底边被阴影撑高、主体高被高估），**必须先抠图再量 bbox**。
+
+### 14.6 「回到 idle」的可靠做法：末帧直接用现成精灵
+
+不要指望模型生成出与游戏里 idle 完全一致的姿态。**最后一格直接引用已部署的 idle 精灵**，生成只需产出前 N−1 格；成片只要求「回到与起始相同的站姿」。实测 1011 受击：5 格新做 + 第 6 格用 `Enemy_1011_idle1.png`，回到 idle 是逐像素保证。
+
+### 14.7 可判的验收闸门（数值为 1011 实测基线）
+
+| 闸门 | 判据 | 干净基线 |
+| --- | --- | --- |
+| 背景偏离像素数 | 去主体框后，偏离键色 >25 的像素数，每帧 | ≤1500；idle max 122 / walk 553 / attack 237 / 本批 844，mean 77 |
+| 亮像素（>235，1/4 采样） | 局部爆白/耀斑 | idle 166 / walk 625 / 本批 413 |
+| 脚底行漂移 | 逐帧主体 bbox 底边 | 应在 ±20 px 内；漂移即说明人物在缩放或离地 |
+| 首尾站立帧 | 站立帧 alpha bbox 是否逐像素一致 | 相同 = 首尾闭合 |
+
+**尺度校准**：用站立参考帧对齐到 idle1 主体高，得全局 k；然后**整帧等比缩放**（不要裁切主体后缩放，否则尺度错位），再按缩放后 alpha 底边钉脚底行、主体居中对齐 idle1 主体中心 x。1011 受击：k=0.92791，脚底行 898，主体中心 x=521，画布 1108×1108。
+
+### 14.8 入库纪律与 .meta GUID 坑（2026-10-25 实测）
+
+- **选帧必须先出图给用户验收，未验收不得写入 `Assets/`。** 中途曾把未验收的选帧直接入库，只能回滚（源文件留在 `Library/Locus/tmp/` 可复现）。正确顺序：出帧 → 出预览图 → 用户点头 → 再写 `Assets/` → 再接 clip/controller。
+- **不要手写 `.meta` 的 GUID。** 项目的 GUID 是 base64 形如 `…=`（**带 `=`` 尾**）；手写 48 字节无填充版，Unity 报
+  `The .meta file … does not have a valid GUID and its corresponding Asset file will be ignored`，资源全部加载不出来，且报错是延迟出现的、容易漏看。
+  正确做法：删掉手写 `.meta` → `AssetDatabase.Refresh()` 让 Unity 重新生成合法 GUID → 用 `TextureImporter` API 复制参照物的导入设置：
+  `imp.SetTextureSettings(refSettings); imp.maxTextureSize / textureCompression / textureType / spriteImportMode / mipmapEnabled / alphaIsTransparency / filterMode` 全部取自参照物（1011 用 idle1：PPU 16 / align 0 / pivot 0.6539,0.5487 / maxTex 2048 / Point / alphaIsTransparency）→ `SaveAndReimport()`。
+  验收：纹理 1108→1024、sprite rect 全幅、bounds extents 与参照物一致（1011 = 34.63）。
+- **生成动画 clip 的可靠做法**（Unity 2022 API）：
+  `new AnimationClip()` → `clip.frameRate = 30` → `EditorCurveBinding.PPtrCurve("", typeof(SpriteRenderer), "m_Sprite")` →
+  `AnimationUtility.SetObjectReferenceCurve(clip, binding, ObjectReferenceKeyframe[]{ time = i*0.15f, value = sprite })` →
+  `AnimationClipSettings{ startTime=0, stopTime=1.05, loopTime=false }` → `AssetDatabase.CreateAsset`。
+  注意：2022 的重载要的是 **`ObjectReferenceKeyframe[]`**（直接带 sprite 引用），不是 `Keyframe[]`；创建后用 `SerializedObject.FindProperty("m_PPtrCurves")` 验证会抛 NRE，**直接读 .anim 的 YAML 验键值与 `m_PPtrCurveMapping` 更可靠**。
+- **接 controller**：用 `AnimatorController` API 改 `state.motion` 再 `EditorUtility.SetDirty` + `AssetDatabase.SaveAssets()`，不要手改 controller YAML。
+
+### 14.9 预览包规范（2026-10-25 用户要求）
+
+- 每个动作在 `Library/Locus/tmp/<work>/preview_<action>/` 出一个**预览包**，必须同时包含：
+  - `00.png … NN.png`：**按播放顺序**命名的落位成品精灵（最后一张是现成的 idle 精灵），可直接当序列播放；
+  - `anim.gif`：按**游戏内键间隔**（0.15 s/帧）+ 尾帧保持（0.30 s）合成的可播放 GIF；
+  - `contact.png`：带槽位标注的对照图；
+  - `manifest.json`：槽位 → 精灵 → 源帧的映射，并标出**不在 clip 里的备用帧**。
+- **预览包的播放序列必须与 clip 的实际键序列一致**：clip 末键是 idle 精灵，就不要从成片里再抽一张站姿占槽（用户明确指出头尾站姿帧是“纯无效动作”）。
+- 生成器：`Library/Locus/tmp/dao_v11_hits/make_preview_pack.py`。
+- 坑：GIF 时长单位是**毫秒**（`KEY_STEP*1000`），写成 `*100` 会被 Pillow 按 1/100 s 取整（15 ms → 存成 1 cs = 10 ms），回读时长全错。
+
+### 14.10 选帧必须用「与 idle 的差异」做客观闸门（2026-10-25 实测）
+
+用户两次驳回选帧，理由都是「头尾帧都是回到 idle 的纯无效动作」。**肉眼比不出这件事，必须量化。**
+
+- **闸门**：把候选帧按该动作的落位规则抠好图、贴好位，然后与**部署中的 idle 精灵**（不是重新渲染的）逐像素求差，得到 `meanDiff` 与「差异 >24 的像素数」。
+  - 脚本：`Library/Locus/tmp/dao_v11_hits/measure_vs_idle.py`。
+  - **idle 区的指纹**（1011 实测）：meanDiff ≈ **5.5**、差异像素 ≈ **64k**；动作区 ≥16（强动作 22–33）。
+- **规则**：落在 idle 区（meanDiff 接近 5.5）的帧**一律不取**；末帧必须是动作帧（“还在起身/还在歪”），回位交给 clip 末键的 idle 精灵。
+- **落位方式会影响差异值**：侧击用“固定 x 贴图”保位移时，比较也要用同一规则，否则量到的是错位而不是姿态。
+- **选完还要看重复度**：源片可能连续几十帧是同一个姿势（如 1011 左侧受击 f026–f064 全同），此时“帧帧不同”不可能满足，应如实报告并给出换源片重做的选项，而不是硬凑。
+- **抠图验收也要量化**（脚本 `verify_keying.py`）：holes=0、plate_leak=0、semi_transparent=0、green>8 残留 <1% 可见像素、阴影样残留 <0.1%；再叠一张白底边缘检查图。
+
+### 14.11 侧击的左右语义、受力方向量法与峰值闸门（2026-10-25 实测）
+
+- **游戏的 Left/Right = 力从画面哪一侧来**，不是身体倒向哪边。
+  - `Assets/Scripts/Enemy/ShieldGuardEnemy.cs:200`：「沿用工程既有 HitReactionDirection 语义（**Left = 力来自画面左 = 盾侧**）」，Right = 反侧（暴露侧），Front = 正面。
+  - `Assets/Scripts/Core/HitReactionDirection.cs:3`：「Left/Right 表示要播放的受击动画方向（HitLeft / HitRight），**不是攻击受力向量**」。
+  - 指定方：每个攻击技能的 `AttackSkillConfig.hitReactionDirection`（`Zhangfei_Jab1`=2 Front、`Jab2`=3 Left、`Jab3`=4 Right，其余默认 1 Random）；未指定时 `Enemy.cs:1136` 在 Front/Left/Right 里随机。
+  - 命名链：Left/Right → Animator 状态 `HitLeft`/`HitRight` → `Enemy_1011_HitLeft.anim`/`HitRight.anim` → `Enemy_1011_hitLeft1..6.png`/`hitRight1..6.png`；源片见 `Enemy1011ArtSource/00_Index/frame-provenance.csv`。
+- **量受力方向必须用「上身（头带）相对脚底的偏移」，不能用全身质心**：刀在身后摆，会把质心带偏。
+  - 1011 实测：`sword_enemy_hit_left_v3.mp4` 全身质心向左 73 px，但上身实际甩向**画面右 +254 px** → 来力=画面左=游戏的 `Left` ✓；`sword_enemy_hit_right_v1.mp4` 上身甩向**画面左 −91 px** → 来力=画面右=游戏的 `Right` ✓。**源片命名与游戏语义一致，不要怀疑源片取错。**
+- **选帧要加“受力位移覆盖”闸门**：光有“与 idle 的差异”闸门不够。1011 右受击的特征是 f018–f024 那一格“被甩向画面左”，若从 f020 之后取帧，5 槽全是回摆段，**最猛的一下被漏掉**。正确取法：f020(发力) → **f024(位移峰值)** → f032(回摆) → f042(保持) → f050(将正)。每槽都应落在“受力位移曲线”的不同相位上。
+
+### 14.12 侧击命名纠正：源片文件名与游戏动作相反（2026-10-25 用户确认）
+
+**规则：源片文件名的 legacy 命名与游戏里的动作相反，必须以精灵/状态命名为准。**
+
+- 1011 实测（上身相对脚底的偏移）：`sword_enemy_hit_left_v3.mp4` 受力时上身甩向**画面右 +254 px** → 它对应游戏的 **HitRight**；`sword_enemy_hit_right_v1.mp4` 上身甩向**画面左 −91 px** → 对应游戏的 **HitLeft**。
+- 因此：`HitReactionDirection.Left` → Animator 状态 `HitLeft` → `Enemy_1011_hitLeft1..6.png`（**身体被击后倒向画面左**）；`Right` → `HitRight` → `Enemy_1011_hitRight1..6.png`（倒向画面右）。
+- **量受力方向要用「上身（头带）相对脚底的偏移」，不能用全身质心**：刀在身后摆会把质心带偏（1011 实测：hit_left_v3 全身质心向左 73 px，但上身实际甩向画面右 +254 px）。
+- **选帧要加“受力位移覆盖”闸门**：光有“与 idle 的差异”闸门不够。1011 右受击的特征是 f018–f024 那一格“被甩向画面左”，若从 f020 之后取帧，5 槽全是回摆段，**最猛的一下被漏掉**。正确取法：f020(发力) → **f024(位移峰值)** → f032(回摆) → f042(保持) → f050(将正)。每槽都应落在“受力位移曲线”的不同相位上。
+- 改完务必核对：成片文件名 → 源片 → 动作 → 精灵名 → clip → 状态，六者对得上。
+
+### 14.13 两条动作来自两条视频时，必须加「来源不同」校验（2026-10-25 事故）
+
+**事故**：用 `sed` 复制“左受击”的落位脚本来做“右受击”时，路径写的是 `WORK / "frames_left"`，而我的 sed 模式是 `dao_v11_hits/frames_left` → **没匹配上**，右受击脚本仍然从左边的帧目录读图。结果两套精灵其实都出自同一条视频（文件大小撞车：两边都出现同一帧 f024，402,672 B 完全相同），而 `dao_v11_hitright_v1_4s_720p.mp4` 从未被用来出帧。**用户从预览图里发现左右雷同。**
+- **教训**：复制脚本改路径后，必须跑一次**逐字节校验**：两套成品之间的 sha256 必须互不相同；且每套的帧必须与“预期源视频”对得上。
+- **校验脚本**：`Library/Locus/tmp/dao_v11_hits/verify_hit_packs.py`（检查：预览包帧 == 工程内精灵；左右两套精灵集合无交集；左右两套源帧列表不相同）。每次做完两条以上同类动作都要跑，FAIL 即不许入库。
+- **落位结果也要自检**：本批右侧重建后落位 cx 从 522/463/502… 变成 484/470/460/460/486/462，方向与位移量对上了源片；这种“数值变化方向”也是发现读错帧目录的信号。
