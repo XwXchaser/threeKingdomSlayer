@@ -53,9 +53,8 @@ public sealed class PlayerWeaponStance
     private GameObject _weapon;
     private Transform _weaponTransform;
     private float _weaponBaseScale = 1f;
-    private float _weaponLength = 10.8f;   // 整杆枪的世界长度（scale=1 时）
+    private float _weaponLength = 10.8f;   // 整杆枪的世界长度（prefab 原尺寸）
     private float _tipOffset = 5.4f;      // 根节点 → 矛头（= Length/2，根在枪身中段）
-    private float _stanceScale = 1f;
 
     // 当前姿态与目标姿态（位置 = 根节点相对玩家的偏移；旋转 = 世界旋转）
     private Vector3 _rootFrom, _rootTo;
@@ -67,7 +66,8 @@ public sealed class PlayerWeaponStance
     private Action _onArrive;
 
     // 姿态集合
-    private Vector3 _rootAnchor;        // 杆尾（手的位置）
+    private Vector3 _rootAnchor;        // 杆尾（手的位置）——斜举位
+    private Vector3 _entryRoot;         // 杆尾在起手位的位置（推到画面外 → 挥入）
     private Vector3 _defendRootOffset;  // 防御位相对杆尾的下沉量（**只用位置差，不用角度差**）
     private Quaternion _poseIdle, _poseEntry, _poseOvershoot;
     private AttackSkillConfig _cfg;
@@ -109,8 +109,8 @@ public sealed class PlayerWeaponStance
         Phase = StancePhase.SwingIn;
 
         // 起点在屏外（矛头出画），动作从这里挥入
-        _rootFrom = _rootAnchor;
-        _rootTo = _rootAnchor;
+        _rootFrom = _entryRoot;
+        _rootTo = _entryRoot;
         _poseFrom = _poseEntry;
         _poseTo = _poseEntry;
         ApplyPose(1f);
@@ -276,7 +276,10 @@ public sealed class PlayerWeaponStance
 
         // 根节点（手的位置）= 矛头 − (Length/2)·斜举方向
         Vector3 dir = _poseIdle * Vector3.up;
-        _rootAnchor = headAnchor - dir * (_tipOffset * _stanceScale);
+        _rootAnchor = headAnchor - dir * _tipOffset;
+
+        // 起手位：枪尾再往画面外推 → 整杆枪（矛头+枪尾）都在画外 → 挥入才看得出来
+        _entryRoot = _rootAnchor + cfg.parryStanceEntryRootOffset;
 
         // 防御位：只用位置差（角度与斜举位一致 → 枪尖上扬角每次都读得一样）
         _defendRootOffset = new Vector3(0f, -cfg.parryStanceDefendAnchorDrop, 0f);
@@ -320,8 +323,6 @@ public sealed class PlayerWeaponStance
         _weaponTransform = _weapon.transform;
         // 姿态由 FromToRotation 直接控制 → 用 identity 让模型本地 +Y 就是枪身长轴
         _weaponTransform.localRotation = Quaternion.identity;
-        _stanceScale = Mathf.Max(0.05f, cfg.parryStanceScale);
-        float s = _weaponBaseScale * _stanceScale;
-        _weaponTransform.localScale = new Vector3(s, s, s);
+        // 尺寸不归动作管：持枪与其它招式用同一把枪、同一个大小（prefab 原尺寸）→ 不做缩放
     }
 }
