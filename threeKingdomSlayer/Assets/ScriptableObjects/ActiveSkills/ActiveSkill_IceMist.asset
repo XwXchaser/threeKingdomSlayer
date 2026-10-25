@@ -37,7 +37,7 @@ MonoBehaviour:
     columns: 0000000001000000020000000300000004000000
     burnTotalDamage: 0
     burnDurationSeconds: 0
-    iceFreezeChancePerHit: 0.3
+    iceFreezeChancePerHit: 0.1
   - intervalSeconds: 0
     triggerThreshold: 0
     rangeRows: 2
@@ -45,7 +45,7 @@ MonoBehaviour:
     columns: 0000000001000000020000000300000004000000
     burnTotalDamage: 0
     burnDurationSeconds: 0
-    iceFreezeChancePerHit: 0.32
+    iceFreezeChancePerHit: 0.11
   - intervalSeconds: 0
     triggerThreshold: 0
     rangeRows: 3
@@ -53,7 +53,7 @@ MonoBehaviour:
     columns: 0000000001000000020000000300000004000000
     burnTotalDamage: 0
     burnDurationSeconds: 0
-    iceFreezeChancePerHit: 0.34
+    iceFreezeChancePerHit: 0.120000005
   - intervalSeconds: 0
     triggerThreshold: 0
     rangeRows: 3
@@ -61,7 +61,7 @@ MonoBehaviour:
     columns: 0000000001000000020000000300000004000000
     burnTotalDamage: 0
     burnDurationSeconds: 0
-    iceFreezeChancePerHit: 0.36
+    iceFreezeChancePerHit: 0.13
   - intervalSeconds: 0
     triggerThreshold: 0
     rangeRows: 3
@@ -69,7 +69,7 @@ MonoBehaviour:
     columns: 0000000001000000020000000300000004000000
     burnTotalDamage: 0
     burnDurationSeconds: 0
-    iceFreezeChancePerHit: 0.38
+    iceFreezeChancePerHit: 0.14
   timedArrowLevels: []
   returnWaveLevels: []
   chainBounceLevels: []
@@ -93,6 +93,7 @@ MonoBehaviour:
     initialDamage: 0
     landingDamagePercent: 0
   prerequisites: []
+  requiredTalentIds: []
   activeEffectType: 7
   cooldownLevels:
   - 12
