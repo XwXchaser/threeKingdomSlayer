@@ -259,6 +259,10 @@ public GameObject freezeMeltEffectPrefab;
     private int _launchExtendCount;         // 当前浮空内 ExtendLaunch 次数（落地/重Launch 重置）
     private float attackTimer;      // 攻击冷却计时器（攻击动画结束后开始冷却）
     private float attackAnimTimer;  // 攻击动画计时器（攻击动作执行时间）
+    /// <summary>本次攻击动画的开始时刻（看门狗用）。</summary>
+    private float _attackAnimStartTime;
+    /// <summary>攻击动画看门狗时限：超过这个时长还没结束就认为卡死并自愈。</summary>
+    private float _attackAnimGuardSeconds = 3f;
     public bool isAttackAnimating; // 是否正在播放攻击动画（AttackSpawn 或 AttackDraw）
     /// <summary>教学手势拍：敌人不进攻、不移动（只影响行动调度，受击/闪白/动画照常）。</summary>
     [System.NonSerialized] public bool tutorialHold;
@@ -373,6 +377,10 @@ public GameObject freezeMeltEffectPrefab;
 
     // Animator HitFlash 协程引用
     internal Coroutine _hitFlashRoutine;
+    /// <summary>连续受击硬直的累计时长（受击反应没停就一直在累加）。</summary>
+    internal float _hitStunAccum;
+    /// <summary>连续受击硬直预算（秒）：超过就不允许再被受击挡住攻击。</summary>
+    internal static float MaxContinuousStunSeconds = 0.6f;
     internal Coroutine _getupRoutine;
     internal bool _getupInterrupted;
 

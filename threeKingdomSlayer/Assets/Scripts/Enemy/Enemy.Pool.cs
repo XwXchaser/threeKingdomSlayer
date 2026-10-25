@@ -40,6 +40,15 @@ public partial class Enemy : MonoBehaviour
         StopHitStop();
         ClearFreezeOnTeardown();
         StopHitScaleFeedback();
+        // 受击闪白协程：停用时协程会被 Unity 停掉，但**引用会变野**。
+        // 而 UpdateAttack 用「协程还在不在」判断「受击动画是否在播」→ 野引用会让冷却分支每帧早退
+        // → 敌人再也启动不了攻击（复现：被打多次后就不还手了）。这里必须清干净。
+        if (_hitFlashRoutine != null)
+        {
+            StopCoroutine(_hitFlashRoutine);
+            _hitFlashRoutine = null;
+        }
+        _hitStunAccum = 0f;
         initialized = false;
     }
 
@@ -54,6 +63,12 @@ public partial class Enemy : MonoBehaviour
         StopHitStop();
         ClearFreezeOnTeardown();
         StopHitScaleFeedback();
+        // 同 OnDisable：受击闪白协程的野引用会锁死敌人的攻击循环（见 OnDisable 注释）
+        if (_hitFlashRoutine != null)
+        {
+            StopCoroutine(_hitFlashRoutine);
+            _hitFlashRoutine = null;
+        }
 
         // 状态宿主：施加型状态（灼烧 / 疾病）不能跟着敌人进池复用，整体清空。
         // 常驻状态（冻结）会在下次访问宿主时自动补登记。

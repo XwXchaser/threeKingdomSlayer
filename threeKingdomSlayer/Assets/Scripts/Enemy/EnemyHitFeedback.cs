@@ -181,6 +181,8 @@ public sealed class EnemyHitFeedback
             _owner.ResumeAfterGetup();
         }
         _owner._hitFlashRoutine = null;
+        // 受击反应正常结束 → 连续硬直预算重置（下次再挨打重新计）
+        _owner._hitStunAccum = 0f;
     }
 
     // ───────────────────────── 闪白材质 ─────────────────────────

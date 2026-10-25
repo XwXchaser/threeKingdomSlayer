@@ -32,13 +32,39 @@ public partial class Enemy : MonoBehaviour
         {
             // 阶段2：DOTween 攻击动画播放中
             // 动画完成后通过 OnComplete 回调处理（PerformAttack + 设置冷却 + TryStartRushMove）
+            //
+            // 自愈看门狗：攻击 tween 被杀或被永久挂起时，OnComplete 不会来，
+            // isAttackAnimating 就会一直挂着 → UpdateAttack 每帧早退 → **敌人再也不攻击**
+            // （实测：被连续命中 8 秒，敌人只打出 1 次攻击，表现为“打多了就不还手”）。
+            // 这里兜底复位：tween 已不在活动状态、且已超过应有的动画时长 → 回到冷却阶段。
+            // 合法挂起（冰系冻结 / 卡肉）期间不触发。
+            if (!IsSuspended && !IsAttackTweenAlive() && Time.time - _attackAnimStartTime > _attackAnimGuardSeconds)
+                ResetStalledAttack();
             return;
         }
         else
         {
-            // 受击停顿/受击动画期间不推进攻击冷却，避免 Hit 与 Attack Trigger 竞争。
+            // 受击停顿/受击动画期间**不推进攻击冷却**，避免 Hit 与 Attack Trigger 竞争。
+            // 但冷却计时要继续走：否则连续命中会把敌人的攻击永久压住
+            // （配合 CancelAttack 不再重置为满间隔，两处一起修才能保住正常攻击节奏）。
             if (_hitStopRemaining > 0f || _hitFlashRoutine != null)
-                return;
+            {
+                attackTimer = Mathf.Max(0f, attackTimer - Time.deltaTime);
+                // 受击反应每被挨一下就重新计时（0.4s），而玩家出招间隔往往 < 0.4s
+                // → 受击协程一直续命 → 这里的早退会让**攻击永远启动不了**
+                // （实测：每 0.3s 挨一次打，10 秒里敌人只还手 1 次，表现为“打多了就不还手”）。
+                // 所以给连续硬直一个预算：超了就强制解除受击挂起，敌人照常还手。
+                _hitStunAccum += Time.deltaTime;
+                if (_hitStunAccum < MaxContinuousStunSeconds) return;
+
+                _hitStunAccum = 0f;
+                StopHitStop();
+                if (_hitFlashRoutine != null)
+                {
+                    StopCoroutine(_hitFlashRoutine);
+                    _hitFlashRoutine = null;
+                }
+            }
 
             // 阶段1：攻击冷却
             // BUG FIX: 冷却期间如果标记了需要补齐，先执行补齐再攻击
@@ -55,6 +81,36 @@ public partial class Enemy : MonoBehaviour
                 PlayAttackAnimationTween();
             }
         }
+    }
+
+    /// <summary>攻击 tween 是否还在活动（活着）。</summary>
+    private bool IsAttackTweenAlive()
+    {
+        return _attackTween != null && _attackTween.IsActive();
+    }
+
+    /// <summary>
+    /// 攻击动画卡死自愈：清掉挂着的标志，回到冷却阶段按正常节奏重来。
+    /// 不会碰挂起状态（冰系 / 卡肉由各自的 suspend 源管理）。
+    /// </summary>
+    private void ResetStalledAttack()
+    {
+        DebugLog.Warning($"[Enemy] 攻击动画卡死自愈: {DebugTag}, state={state}, tweenAlive={IsAttackTweenAlive()}");
+        if (_attackTween != null)
+        {
+            _attackTween.Kill();
+            _attackTween = null;
+        }
+        transform.localScale = originalScale;
+        isAttackAnimating = false;
+        isAttackDrawPhase = false;
+        isCFrame = false;
+        UpdateOutlineState();
+
+        float totalInterval = (1f / attackSpeed);
+        float cooldown = totalInterval * 0.4f;
+        if (cooldown < 0.1f) cooldown = 0.1f;
+        attackTimer = cooldown;
     }
 
     private void PerformAttack()
@@ -186,6 +242,7 @@ private void SpawnProjectile()
         isAttackAnimating = true;
         isAttackDrawPhase = false;
         isCFrame = isCAttack;
+        _attackAnimStartTime = Time.time;
         UpdateOutlineState();
         string trigger = string.IsNullOrEmpty(step.animationTrigger) ? "Attack" : step.animationTrigger;
         int attackStartFrame = Time.frameCount;
@@ -261,6 +318,8 @@ private void SpawnProjectile()
         }
 
         // 收招完成
+        // 看门狗时限 = 整段时长 + 1s 宽限（tween 被杀/挂起时用来自愈）
+        _attackAnimGuardSeconds = _attackTween.Duration() + 1f;
         _attackTween.OnComplete(() =>
         {
             _attackTelegraph?.StopWarning();

@@ -397,9 +397,16 @@ public partial class Enemy : MonoBehaviour
         }
         else
         {
+            // 打断不把冷却推回**满间隔**。
+            // 原因：满间隔重置 + 「受击期间冷却不推进」= 连续命中的玩家能把敌人的攻击永久压制
+            // （数值草案 §2.0「Hit数与硬直压制」记录的就是这个坑；实测：每 0.3s 命中一次时，
+            //  敌人 8 秒内只打出 1 次攻击，几乎不还手）。
+            // 改法：与正常循环用同一个冷却公式（0.4×间隔，与 StartAttacking / 攻击完成一致），
+            // 保证被打断后仍按原节奏重新准备攻击，不会被玩家锁死。
             float totalInterval = (1f / attackSpeed);
-            attackTimer = totalInterval * 1.0f;
-            if (attackTimer < 0.35f) attackTimer = 0.35f;
+            float cooldown = totalInterval * 0.4f;
+            if (cooldown < 0.1f) cooldown = 0.1f;
+            attackTimer = cooldown;
         }
 
         DebugLog.Info($"[Enemy] 打断攻击成功: {DebugTag}, col={columnIndex}");
