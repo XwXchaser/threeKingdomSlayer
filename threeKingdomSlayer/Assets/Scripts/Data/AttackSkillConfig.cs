@@ -135,12 +135,17 @@ public class AttackSkillConfig : ScriptableObject
              "深度取 -5.5（= Stab 射线起点的深度，与已验收武器同一深度带：相机 z=-10、玩家 z=0、敌人 z=+9）。\n" +
              "默认 (1.10, 2.63, -5.5) → 矛头落在屏幕“右 85% / 上 40%”（银刃部分出画），杆身从左缘穿出且在 HUD 之上")]
     public Vector3 parryStanceHeadAnchor = new Vector3(1.10f, 2.63f, -5.5f);
-    [Tooltip("起手角（度）：招架动作的**起点**指向（配合枪尾位移把整杆枪推到画外 → 挥入时从屏外扫进来）")]
-    [Range(-90f, 180f)]
-    public float parryStanceEntryAngleDegrees = 70f;
-    [Tooltip("起手时**枪尾（手的位置）的偏移**（相对斜举位的枪尾）：\n" +
-             "靠它把整杆枪推到画面外 → 招架动作是“从屏外挥入”，而不是凭空出现")]
-    public Vector3 parryStanceEntryRootOffset = new Vector3(-1.0f, -1.2f, 0f);
+    [Tooltip("起手指向（度）：**枪尖从下往上挑**的起点指向（枪尾基本不动）。\n" +
+             "参考：原版招架视觉就是“枪尾从下往上挑 ~100°”；现值使枪尖起点刚好在 HUD 上沿之下一点")]
+    [Range(-180f, 180f)]
+    public float parryStanceEntryAngleDegrees = -48f;
+    [Tooltip("起手时枪尾的偏移（相对斜举位枪尾）：默认 0 = 枪尾不动，只有枪尖在挑")]
+    public Vector3 parryStanceEntryRootOffset = Vector3.zero;
+    [Tooltip("收枪指向（度）：收枪时枪尖继续往下走 → 整杆顺势出画")]
+    [Range(-180f, 180f)]
+    public float parryStanceExitAngleDegrees = -100f;
+    [Tooltip("收枪时枪尾的偏移（相对斜举位枪尾）：把枪尾也推出画面，保证**整杆出画后才销毁**")]
+    public Vector3 parryStanceExitRootOffset = new Vector3(-1.2f, -1.5f, 0f);
     [Tooltip("挥入时长（秒）：从起手角砍到斜举位。0.18s = 要“迅速格开”的脆度")]
     [Range(0.05f, 1f)]
     public float parryStanceSwingInSeconds = 0.18f;

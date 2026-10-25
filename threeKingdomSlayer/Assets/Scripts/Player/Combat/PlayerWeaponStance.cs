@@ -67,9 +67,10 @@ public sealed class PlayerWeaponStance
 
     // 姿态集合
     private Vector3 _rootAnchor;        // 杆尾（手的位置）——斜举位
-    private Vector3 _entryRoot;         // 杆尾在起手位的位置（推到画面外 → 挥入）
+    private Vector3 _entryRoot;         // 起手位的枪尾（默认与斜举位相同 = 枪尾不动，只挑枪尖）
+    private Vector3 _exitRoot;          // 收枪位的枪尾（要把整杆推出画面）
     private Vector3 _defendRootOffset;  // 防御位相对杆尾的下沉量（**只用位置差，不用角度差**）
-    private Quaternion _poseIdle, _poseEntry, _poseOvershoot;
+    private Quaternion _poseIdle, _poseEntry, _poseOvershoot, _poseExit;
     private AttackSkillConfig _cfg;
 
     private float _recoilAmount;
@@ -230,7 +231,7 @@ public sealed class PlayerWeaponStance
         float dur = _cfg != null
             ? (_parrySucceeded ? Mathf.Max(0.05f, _cfg.parryStanceExitFastSeconds) : Mathf.Max(0.05f, _cfg.parryStanceExitNormalSeconds))
             : 0.3f;
-        MoveTo(_rootAnchor, _poseEntry, dur, EaseMode.Out, onArrived: () => Reset());
+        MoveTo(_exitRoot, _poseExit, dur, EaseMode.Out, onArrived: () => Reset());
     }
 
     // ── 内部实现 ───────────────────────────────────────────────
@@ -265,21 +266,28 @@ public sealed class PlayerWeaponStance
     }
 
     /// <summary>
-    /// 由招式资产推导姿态：矛头落点 → 杆尾（手的位置）；三种指向：起手（屏外）/ 斜举 / 过冲。
+    /// 由招式资产推导姿态：
+    ///   · 斜举位：矛头落在 <c>parryStanceHeadAnchor</c>，枪尖指向 <c>parryStanceTipDegrees</c>
+    ///   · 起手位：**枪尾基本不动**，只有枪尖指向压低（<c>parryStanceEntryAngleDegrees</c>）→ “枪尖从下往上挑”
+    ///   · 收枪位：枪尖继续往下 + 枪尾推出画面 → **整杆出画后才销毁**
+    ///   · 防御位：与斜举位**同角度**，只用位置下沉（角度一致 → 枪尖上扬角每次读得一样）
     /// </summary>
     private void BuildPoses(AttackSkillConfig cfg)
     {
         Vector3 headAnchor = cfg.parryStanceHeadAnchor;
         _poseIdle = PoseForAngle(cfg.parryStanceTipDegrees);
         _poseEntry = PoseForAngle(cfg.parryStanceEntryAngleDegrees);
+        _poseExit = PoseForAngle(cfg.parryStanceExitAngleDegrees);
         _poseOvershoot = PoseForAngle(cfg.parryStanceTipDegrees + cfg.parryStanceOvershootDegrees);
 
         // 根节点（手的位置）= 矛头 − (Length/2)·斜举方向
         Vector3 dir = _poseIdle * Vector3.up;
         _rootAnchor = headAnchor - dir * _tipOffset;
 
-        // 起手位：枪尾再往画面外推 → 整杆枪（矛头+枪尾）都在画外 → 挥入才看得出来
+        // 起手：枪尾不动（默认），只有枪尖压到下方 → 挑起来
         _entryRoot = _rootAnchor + cfg.parryStanceEntryRootOffset;
+        // 收枪：枪尾也推出画面 → 整杆出画
+        _exitRoot = _rootAnchor + cfg.parryStanceExitRootOffset;
 
         // 防御位：只用位置差（角度与斜举位一致 → 枪尖上扬角每次都读得一样）
         _defendRootOffset = new Vector3(0f, -cfg.parryStanceDefendAnchorDrop, 0f);
