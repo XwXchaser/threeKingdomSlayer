@@ -25,6 +25,12 @@ public interface IPlayerInput
     /// </summary>
     bool PointerHeld { get; }
 
+    /// <summary>
+    /// 持枪姿态是否进行中（招架 / 举枪 / 防御 / 回落）。
+    /// 蓄力视觉、蓄力等级、蓄力指示器都要给它让位（否则招架时场上两杆长枪）。
+    /// </summary>
+    bool IsGuarding { get; }
+
     /// <summary>按住时长（秒）。</summary>
     float HoldDurationSeconds { get; }
 

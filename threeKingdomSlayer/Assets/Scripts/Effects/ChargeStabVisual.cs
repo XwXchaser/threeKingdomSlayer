@@ -189,6 +189,12 @@ public class ChargeStabVisual : MonoBehaviour
     {
         // 只允许竖滑蓄力时不启用蓄力视觉（连实例都不建，避免出现一帧就消失的长枪）
         if (PlayerInputHub.Current != null && PlayerInputHub.Current.RestrictChargedToVertical) return;
+        // 持枪姿态进行中（招架 / 举枪 / 防御 / 回落）：蓄力视觉让位，避免场上两杆长枪
+        if (PlayerInputHub.Current != null && PlayerInputHub.Current.IsGuarding)
+        {
+            if (_visualInstance != null) SuppressFadeAndDestroy();
+            return;
+        }
 
         if (_isFadingOut)
             DestroyChargeVisual();
@@ -208,6 +214,12 @@ public class ChargeStabVisual : MonoBehaviour
         _lastScreenPos = screenPos;
         // 连段蓄力不是穿刺蓄力：不启用蓄力视觉的进出场实例
         if (PlayerInputHub.Current != null && PlayerInputHub.Current.ComboChargeActive) return;
+        // 持枪姿态进行中：蓄力视觉让位（否则招架时会出现两杆长枪）
+        if (PlayerInputHub.Current != null && PlayerInputHub.Current.IsGuarding)
+        {
+            if (_visualInstance != null) SuppressFadeAndDestroy();
+            return;
+        }
         // 只允许竖滑蓄力时整块蓄力表现都不出现
         if (PlayerInputHub.Current != null && PlayerInputHub.Current.RestrictChargedToVertical) return;
         if (!_isActive) return;

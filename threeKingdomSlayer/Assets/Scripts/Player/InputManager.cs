@@ -76,15 +76,16 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
     }
 
     /// <summary>
-    /// 当前是否处于防御姿态（招架后按住进入）。
-    /// 防御期间：蓄力等级恒 0（不出现蓄力视觉）、手势被吞掉（滑动出招必须先松手）。
+    /// 持枪姿态是否在进行中（招架 / 举枪 / 防御 / 回落）。
+    /// 期间：蓄力等级恒 0（不出现蓄力视觉）、蓄力指示器让位、蓄力武器让位（否则场上两杆长枪）。
     /// </summary>
     public bool IsGuarding
     {
         get
         {
             var ps = PlayerState.Instance;
-            return ps != null && ps.WeaponStance != null && ps.WeaponStance.IsDefending;
+            return ps != null && ps.WeaponStance != null
+                && ps.WeaponStance.Phase != PlayerWeaponStance.StancePhase.Idle;
         }
     }
 

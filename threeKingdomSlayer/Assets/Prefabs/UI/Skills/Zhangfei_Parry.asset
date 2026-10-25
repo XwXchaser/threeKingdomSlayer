@@ -46,6 +46,22 @@ MonoBehaviour:
   parrySpawnYOffset: 1.5
   parrySpawnZOffset: -6
   parryAngleVariance: 15
+  parryWhiffDuration: 0.8
+  parryGuardBreakThreshold: 120
+  parryGuardBreakDuration: 1.5
+  parryGuardDecayDelay: 3
+  parryGuardDecayPerSecond: 30
+  parryGuardWeaponPrefab: {fileID: 0}
+  parryStanceTipDegrees: 42
+  parryStanceHeadAnchor: {x: 0.68, y: 1, z: -4.5}
+  parryStanceScale: 0.55
+  parryStanceRaiseSeconds: 0.8
+  parryStanceReturnSeconds: 0.8
+  parryStanceEntryDropDegrees: 55
+  parryStanceDefendDropDegrees: 8
+  parryStanceDefendEnterSeconds: 0.2
+  parryGuardRecoilDistance: 0.5
+  parryGuardRecoilSeconds: 0.18
   launchFlickAngle: 90
   launchFlickDuration: 0.2
   launchWindupDuration: 0.1
