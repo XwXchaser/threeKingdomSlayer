@@ -19,6 +19,10 @@ public class AttackWave : MonoBehaviour
     private System.Action<Enemy> onHit;
     private bool canInterruptCFrame;
     private bool interruptsCavalryCharge;
+    /// <summary>本次招式是否“重攻击”（霸体反制：重攻击能打断霸体）</summary>
+    private bool isHeavyAttack;
+    /// <summary>本次招式的削韧值（仅在霸体窗口内生效，归零 → 破势眩晕）</summary>
+    private float poiseDamage;
     private HitReactionDirection hitReactionDirection = HitReactionDirection.None;
     private bool suppressHitReaction;
     private List<TargetEntry> targets = new List<TargetEntry>();
@@ -65,20 +69,22 @@ public class AttackWave : MonoBehaviour
         List<Enemy> targets, System.Action<Enemy> onHit = null, GameObject prefab = null, float zOffset = 0f,
         float? alphaOverride = null, Color? damageNumberColor = null, bool canInterruptCFrame = false,
         Material materialOverride = null, float targetDuration = -1f, bool interruptsCavalryCharge = false,
-        HitReactionDirection hitReactionDirection = HitReactionDirection.None, bool suppressHitReaction = false)
+        HitReactionDirection hitReactionDirection = HitReactionDirection.None, bool suppressHitReaction = false,
+        bool isHeavyAttack = false, float poiseDamage = 0f)
     {
         return CreateInternal(position, damageType, damage, targets, onHit, prefab, zOffset,
             alphaOverride, damageNumberColor, canInterruptCFrame, materialOverride,
             shouldReturnWave: false, returnDamageMultiplier: 0.5f, targetDuration: targetDuration,
             interruptsCavalryCharge: interruptsCavalryCharge, hitReactionDirection: hitReactionDirection,
-            suppressHitReaction: suppressHitReaction);
+            suppressHitReaction: suppressHitReaction, isHeavyAttack: isHeavyAttack, poiseDamage: poiseDamage);
     }
 
     public static AttackWave CreatePierceFromVisual(GameObject visualObject, Vector3 position,
         float damage, List<Enemy> targets, Vector3 endPosition,
         System.Action<Enemy> onHit = null, Color? damageNumberColor = null,
         bool canInterruptCFrame = false, float timeScale = 1f, bool interruptsCavalryCharge = false,
-        HitReactionDirection hitReactionDirection = HitReactionDirection.None)
+        HitReactionDirection hitReactionDirection = HitReactionDirection.None,
+        bool isHeavyAttack = false, float poiseDamage = 0f)
     {
         if (visualObject == null)
             return null;
@@ -96,6 +102,8 @@ public class AttackWave : MonoBehaviour
         wave.damageNumberColor = damageNumberColor;
         wave.canInterruptCFrame = canInterruptCFrame;
         wave.interruptsCavalryCharge = interruptsCavalryCharge;
+        wave.isHeavyAttack = isHeavyAttack;
+        wave.poiseDamage = poiseDamage;
         wave.hitReactionDirection = hitReactionDirection;
         wave.targetScale = visualObject.transform.localScale;
         wave._pierceSpinVisual = visualObject.GetComponent<PierceAxialSpinVisual>();
@@ -150,7 +158,8 @@ public class AttackWave : MonoBehaviour
         float? alphaOverride, Color? damageNumberColor, bool canInterruptCFrame,
         Material materialOverride, bool shouldReturnWave, float returnDamageMultiplier,
         Color? colorOverride = null, float targetDuration = -1f, bool interruptsCavalryCharge = false,
-        HitReactionDirection hitReactionDirection = HitReactionDirection.None, bool suppressHitReaction = false)
+        HitReactionDirection hitReactionDirection = HitReactionDirection.None, bool suppressHitReaction = false,
+        bool isHeavyAttack = false, float poiseDamage = 0f)
     {
         GameObject obj;
         Material material = null;
@@ -240,6 +249,8 @@ public class AttackWave : MonoBehaviour
         wave.damageNumberColor = damageNumberColor;
         wave.canInterruptCFrame = canInterruptCFrame;
         wave.interruptsCavalryCharge = interruptsCavalryCharge;
+        wave.isHeavyAttack = isHeavyAttack;
+        wave.poiseDamage = poiseDamage;
         wave.hitReactionDirection = hitReactionDirection;
         wave.suppressHitReaction = suppressHitReaction;
         wave._shouldReturnWave = shouldReturnWave;
@@ -641,7 +652,8 @@ public class AttackWave : MonoBehaviour
                 impactDirection: damageType == DamageType.Launch
                     ? (Camera.main != null ? Camera.main.transform.up : Vector3.up)
                     : default,
-                hitReactionDirection: hitReactionDirection);
+                hitReactionDirection: hitReactionDirection,
+                isHeavyAttack: isHeavyAttack, poiseDamage: poiseDamage);
             if (strength >= HitFeedbackStrength.Standard)
                 PauseTravelForHitStop(strength);
             onHit?.Invoke(enemy);

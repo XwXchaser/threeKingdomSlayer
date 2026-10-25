@@ -136,7 +136,8 @@ public partial class AttackSystem : MonoBehaviour
             baseLength,
             GetAttackDuration(cfg), chargeInterrupt, cfg.hitReactionDirection,
             false, StabMotionParams.FromConfig(cfg), startPose, _chargeStabVisual,
-            enableWeaponAfterimage: true);
+            enableWeaponAfterimage: true,
+            isHeavyAttack: cfg.isHeavy, poiseDamage: cfg.isHeavy ? cfg.poiseDamage : 0f);
         AudioManager.Instance?.PostEvent("Player_Attack");
 
         Debug.Log($"[AttackSystem] 戳击 列{columnIndex} 伤害:{finalDmg} 射程:{effectiveRows} 视觉射程:{visualRangeRows}");
@@ -174,7 +175,8 @@ public partial class AttackSystem : MonoBehaviour
             visualPathTilt: visualTilt,
             useEnhancedSlashMotion: true,
             interruptsCavalryCharge: chargeInterrupt,
-            enableWeaponAfterimage: true);
+            enableWeaponAfterimage: true,
+            isHeavyAttack: cfg.isHeavy, poiseDamage: cfg.isHeavy ? cfg.poiseDamage : 0f);
         AudioManager.Instance?.PostEvent("Player_Attack");
 
         Debug.Log($"[AttackSystem] 斩击 方向:{(leftToRight ? "L→R" : "R→L")} 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -292,7 +294,8 @@ public partial class AttackSystem : MonoBehaviour
                         onHit: _ => AudioManager.Instance?.PostEvent("Stab_Hit"),
                         prefab: cfg.attackWavePrefab,
                         interruptsCavalryCharge: chargeInterrupt,
-                        hitReactionDirection: cfg.hitReactionDirection);
+                        hitReactionDirection: cfg.hitReactionDirection,
+                        isHeavyAttack: cfg.isHeavy, poiseDamage: cfg.isHeavy ? cfg.poiseDamage : 0f);
                 return;
             }
 
@@ -303,7 +306,8 @@ public partial class AttackSystem : MonoBehaviour
                 aliveTargets, visualEndPosition,
                 onHit: _ => AudioManager.Instance?.PostEvent("Stab_Hit"), timeScale: pierceTimeScale,
                 interruptsCavalryCharge: chargeInterrupt,
-                hitReactionDirection: cfg.hitReactionDirection);
+                hitReactionDirection: cfg.hitReactionDirection,
+                isHeavyAttack: cfg.isHeavy, poiseDamage: cfg.isHeavy ? cfg.poiseDamage : 0f);
         }, weaponPrefab: cfg.attackWavePrefab);
 
         Debug.Log($"[AttackSystem] 穿刺 列{columnIndex} 伤害:{finalDmg} 目标数:{targets.Count}");
@@ -333,7 +337,8 @@ public partial class AttackSystem : MonoBehaviour
                 AttackWave.Create(wavePos, cfg.damageType, finalDmg, aliveTargets,
                     prefab: cfg.attackWavePrefab,
                     interruptsCavalryCharge: chargeInterrupt,
-                    hitReactionDirection: cfg.hitReactionDirection);
+                    hitReactionDirection: cfg.hitReactionDirection,
+                    isHeavyAttack: cfg.isHeavy, poiseDamage: cfg.isHeavy ? cfg.poiseDamage : 0f);
             });
         }
 
@@ -422,7 +427,8 @@ public partial class AttackSystem : MonoBehaviour
                     canInterruptCFrame: true,
                     interruptsCavalryCharge: chargeInterrupt,
                     hitReactionDirection: cfg.hitReactionDirection,
-                    suppressHitReaction: true);
+                    suppressHitReaction: true,
+                    isHeavyAttack: cfg.isHeavy, poiseDamage: cfg.isHeavy ? cfg.poiseDamage : 0f);
             });
         }
         else
@@ -434,6 +440,9 @@ public partial class AttackSystem : MonoBehaviour
         return targets.Count > 0;
     }
 
+    /// <summary>本次招架是否空放（没格挡到任何攻击）：空放 → 长后摇，不能连发。</summary>
+    private bool _lastParryWhiff;
+
     private bool ExecuteParry()
     {
         var cfg = GetConfig(AttackType.Parry);
@@ -443,6 +452,7 @@ public partial class AttackSystem : MonoBehaviour
         bool deflectedAny = DeflectProjectilesNear(playerPos, parryProjectileRange) > 0;
         if (deflectedAny)
         {
+            _lastParryWhiff = false;
             AudioManager.Instance?.PostEvent("Player_Parry");
             PlayParryVisual(cfg, playerPos);
             return true;
@@ -452,17 +462,33 @@ public partial class AttackSystem : MonoBehaviour
         if (columnManager == null) return false;
         float finalDmg = GetFinalDamage(cfg);
         List<Enemy> targets = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
-        if (targets.Count == 0) return false;
 
-        foreach (var enemy in targets)
+        // 空放判定（2026-10-25 招架后摇规则）：
+        // 既没弹到飞行物、也没格挡到正在攻击的敌人 → 空放 → 长后摇，招架不能连续刷。
+        bool blockedAttack = false;
+        for (int i = 0; i < targets.Count; i++)
         {
+            var candidate = targets[i];
+            if (candidate == null || candidate.state == EnemyState.Dead) continue;
+            if (candidate.state == EnemyState.Attacking && candidate.isAttackAnimating && !candidate.isAttackDrawPhase)
+            {
+                blockedAttack = true;
+                break;
+            }
+        }
+        _lastParryWhiff = !blockedAttack;
+
+        for (int i = 0; i < targets.Count; i++)
+        {
+            var enemy = targets[i];
+            if (enemy == null || enemy.state == EnemyState.Dead) continue;
             enemy.TakePoiseDamage(cfg.poiseDamage);
             // 冲锋暂不可被 Parry 打断：格挡只造成架势/伤害。
             enemy.TakeDamage(finalDmg, cfg.damageType, canInterruptCFrame: true, isParryInterrupt: true,
                 feedbackStrength: HitFeedbackStrength.Heavy);
         }
 
-        Debug.Log($"[AttackSystem] 招架 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 目标数:{targets.Count}");
+        Debug.Log($"[AttackSystem] 招架 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 目标数:{targets.Count} 空放:{_lastParryWhiff}");
         AudioManager.Instance?.PostEvent("Player_Parry");
         PlayParryVisual(cfg, playerPos);
         return true;

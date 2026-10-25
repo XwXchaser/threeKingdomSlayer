@@ -24,7 +24,7 @@ public partial class Enemy : MonoBehaviour
     /// <summary>
     /// 受到伤害
     /// </summary>
-    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true, bool canInterruptAttack = true, bool triggerHitAnimation = true, bool ignoreDamageModifiers = false, HitFeedbackSource feedbackSource = HitFeedbackSource.BasicAttack, HitFeedbackStrength? feedbackStrength = null, Vector3? impactPosition = null, Vector3 impactDirection = default, bool diseaseStabHit = false, bool interruptsCavalryCharge = false, HitReactionDirection hitReactionDirection = HitReactionDirection.None, bool suppressHitReactionAnimation = false)
+    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true, bool canInterruptAttack = true, bool triggerHitAnimation = true, bool ignoreDamageModifiers = false, HitFeedbackSource feedbackSource = HitFeedbackSource.BasicAttack, HitFeedbackStrength? feedbackStrength = null, Vector3? impactPosition = null, Vector3 impactDirection = default, bool diseaseStabHit = false, bool interruptsCavalryCharge = false, HitReactionDirection hitReactionDirection = HitReactionDirection.None, bool suppressHitReactionAnimation = false, bool isHeavyAttack = false, float poiseDamage = 0f)
     {
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
@@ -77,19 +77,29 @@ public partial class Enemy : MonoBehaviour
             }
         }
 
+        // ----- 霸体窗口（打断会清 isCFrame，所以先捕获）-----
+        // 霸体 = C 技霸体（isCFrame）或阶段霸体（isSuperArmor，仅 BOSS 有赋值路径）。
+        bool inArmorWindow = isCFrame || isSuperArmor;
+
+        // ----- 破势削韧（重攻击打霸体）-----
+        // 规则（2026-10-25 霸体反制重定）：削韧只在霸体窗口内生效；归零 → 破势眩晕 → 同时解除霸体。
+        // 只有玩家攻击本体算数：DoT / 被动 / 道具 / 碰撞不削韧（与冰系“破冰只认玩家本体”同口径）。
+        if (poiseDamage > 0f && inArmorWindow && feedbackSource == HitFeedbackSource.BasicAttack)
+            Poise.TakeSuperArmorPoiseDamage(poiseDamage);
+
         // ----- 攻击打断逻辑 -----
         // QTEAttacking: 不可被任何攻击打断（独立状态，不进入此分支）
         // Attacking + AttackDraw: 不可打断
         // Boss:  普通窗口（无霸体/CFrame）→ 所有攻击可打断
-        //        霸体/CFrame → 仅 Parry 可打断
-        // 非Boss: 普通窗口任何攻击可打断; CFrame/SuperArmor 仅 canInterruptCFrame 可打断
+        //        霸体/CFrame → 招架 或 重攻击 可打断（重攻击同时削韧，见上）
+        // 非Boss: 普通窗口任何攻击可打断; CFrame/SuperArmor → 招架 / 打断标记 / 重攻击 可打断
         if (canInterruptAttack && state == EnemyState.Attacking && isAttackAnimating && !isAttackDrawPhase)
         {
             if (isBoss)
             {
-                if (!isSuperArmor && !isCFrame)
+                if (!inArmorWindow)
                     CancelAttack();
-                else if (isParryInterrupt)
+                else if (isParryInterrupt || isHeavyAttack)
                 {
                     _allowHitFlashOnce = true;
                     CancelAttack();
@@ -97,9 +107,9 @@ public partial class Enemy : MonoBehaviour
             }
             else
             {
-                if (!isSuperArmor && !isCFrame)
+                if (!inArmorWindow)
                     CancelAttack();
-                else if (canInterruptCFrame)
+                else if (canInterruptCFrame || isHeavyAttack)
                     CancelAttack();
             }
         }

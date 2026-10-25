@@ -205,6 +205,7 @@ MonoBehaviour:
   shareHealthWithAdjacent: 0
   maxPoise: 40
   stunDuration: 2
+  poiseStunDuration: 1.5
   freezeDuration: 4
   freezeChanceMax: 0.75
   freezeChanceDecayDelay: 0.6

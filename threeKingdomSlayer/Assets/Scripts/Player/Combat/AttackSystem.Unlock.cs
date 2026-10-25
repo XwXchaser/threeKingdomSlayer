@@ -87,6 +87,17 @@ public partial class AttackSystem : MonoBehaviour
         return cfg.actionDuration / Mathf.Max(speedMult, 0.01f);
     }
 
+    /// <summary>
+    /// 招架空放（没格挡到任何攻击）时的动作锁时长：比格挡成功长得多，让招架不能连发。
+    /// 数值走招式资产（AttackSkillConfig.parryWhiffDuration，默认 0.8s），随攻速缩放。
+    /// </summary>
+    private float GetParryWhiffDuration(AttackSkillConfig cfg)
+    {
+        if (cfg == null) return 0.8f;
+        float speedMult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetAttackSpeedMultiplier() : 1f;
+        return cfg.parryWhiffDuration / Mathf.Max(speedMult, 0.01f);
+    }
+
     private float GetVisualTargetDuration(AttackSkillConfig cfg)
     {
         if (!useActionBasedCooldown || cfg == null) return -1f;

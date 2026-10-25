@@ -129,7 +129,8 @@ public sealed partial class StabSweepEffect : MonoBehaviour
                 triggerHitAnimation: !_suppressHitReaction,
                 impactPosition: impactPosition, impactDirection: _rayDirection,
                 diseaseStabHit: diseaseStabHit, interruptsCavalryCharge: _interruptsCavalryCharge,
-                hitReactionDirection: _hitReactionDirection);
+                hitReactionDirection: _hitReactionDirection,
+                isHeavyAttack: _isHeavyAttack, poiseDamage: _poiseDamage);
             if (!_hitAny)
                 PauseSequenceForHitStop(feedbackStrength);
             if (!_hitAny)

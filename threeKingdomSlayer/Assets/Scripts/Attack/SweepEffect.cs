@@ -24,6 +24,10 @@ public class SweepEffect : MonoBehaviour
     private bool _onAllHitInvoked;
     private bool canInterruptCFrame;
     private bool interruptsCavalryCharge;
+    /// <summary>本次招式是否“重攻击”（霸体反制：重攻击能打断霸体）</summary>
+    private bool isHeavyAttack;
+    /// <summary>本次招式的削韧值（仅在霸体窗口内生效，归零 → 破势眩晕）</summary>
+    private float poiseDamage;
     private HitReactionDirection hitReactionDirection = HitReactionDirection.None;
     private bool suppressHitReaction;
     private List<TargetEntry> targets = new List<TargetEntry>();
@@ -56,7 +60,7 @@ public class SweepEffect : MonoBehaviour
         float additionalWeaponRotation = 0f, bool useEnhancedSlashMotion = false, float visualPathTilt = 0f,
         bool interruptsCavalryCharge = false, HitReactionDirection hitReactionDirection = HitReactionDirection.None,
         bool suppressHitReaction = false, bool enableMangaSweep = false,
-        bool enableWeaponAfterimage = false)
+        bool enableWeaponAfterimage = false, bool isHeavyAttack = false, float poiseDamage = 0f)
     {
         float startX = leftToRight ? -halfWidth : halfWidth;
         float endX = leftToRight ? halfWidth : -halfWidth;
@@ -187,6 +191,8 @@ public class SweepEffect : MonoBehaviour
         effect.damageNumberColor = damageNumberColor;
         effect.canInterruptCFrame = canInterruptCFrame;
         effect.interruptsCavalryCharge = interruptsCavalryCharge;
+        effect.isHeavyAttack = isHeavyAttack;
+        effect.poiseDamage = poiseDamage;
         effect.hitReactionDirection = hitReactionDirection;
         effect.suppressHitReaction = suppressHitReaction;
         effect.onAllHit = onAllHit;
@@ -458,7 +464,8 @@ public class SweepEffect : MonoBehaviour
                 feedbackStrength: isFirstHit ? HitFeedbackStrength.Standard : HitFeedbackStrength.Light,
                 triggerHitAnimation: !suppressHitReaction,
                 impactPosition: impactPosition, impactDirection: impactDirection,
-                hitReactionDirection: hitReactionDirection);
+                hitReactionDirection: hitReactionDirection,
+                isHeavyAttack: isHeavyAttack, poiseDamage: poiseDamage);
             if (isFirstHit)
                 PauseSequenceForHitStop(HitFeedbackStrength.Standard);
             if (isFirstHit)

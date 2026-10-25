@@ -87,6 +87,10 @@ public partial class Enemy : MonoBehaviour
     [Header("架势系统")]
     public float maxPoise = 50f;
     public float stunDuration = 1.5f;
+    [Tooltip("破势（架势归零）时的眩晕时长（秒，默认 1.5）。普通敌人用这个值；BOSS 沿用 stunDuration。\n" +
+             "破势由「霸体窗口内被重攻击削韧」触发，眩晕同时解除霸体。")]
+    [Range(0f, 10f)]
+    public float poiseStunDuration = 1.5f;
 
     [Header("冻结（冰系）")]
     [Tooltip("冻结时长（秒）。重复冻结只重置为满值，不叠加")]

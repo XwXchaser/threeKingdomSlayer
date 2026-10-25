@@ -37,6 +37,10 @@ public sealed partial class StabSweepEffect : MonoBehaviour
     private float _damage;
     private DamageType _damageType;
     private bool _interruptsCavalryCharge;
+    /// <summary>本次招式是否“重攻击”（霸体反制：重攻击能打断霸体）</summary>
+    private bool _isHeavyAttack;
+    /// <summary>本次招式的削韧值（仅在霸体窗口内生效，归零 → 破势眩晕）</summary>
+    private float _poiseDamage;
     private HitReactionDirection _hitReactionDirection = HitReactionDirection.None;
     private bool _suppressHitReaction;
     private readonly HashSet<Enemy> _hitEnemies = new HashSet<Enemy>();
@@ -115,7 +119,8 @@ public sealed partial class StabSweepEffect : MonoBehaviour
         float targetDuration = -1f, bool interruptsCavalryCharge = false,
         HitReactionDirection hitReactionDirection = HitReactionDirection.None, bool suppressHitReaction = false,
         StabMotionParams motion = default, StabStartPose startPose = default,
-        ChargeStabVisual chargeVisual = null, bool enableWeaponAfterimage = false)
+        ChargeStabVisual chargeVisual = null, bool enableWeaponAfterimage = false,
+        bool isHeavyAttack = false, float poiseDamage = 0f)
     {
         var ray = new GameObject("StabRay");
         ray.transform.position = startPosition;
@@ -134,7 +139,8 @@ public sealed partial class StabSweepEffect : MonoBehaviour
         effect.Initialize(visual, speedSprite, targetPosition, column, rangeRows, visualRangeRows, damage, damageType,
             columnManager, coveredBossTarget, onHit, onFirstHitBeforeDamage, onFirstHit, onComplete, targetDuration,
             visualTargetRandomRadius, baseRayLength, interruptsCavalryCharge, hitReactionDirection,
-            suppressHitReaction, motion, startPose, chargeVisual, enableWeaponAfterimage);
+            suppressHitReaction, motion, startPose, chargeVisual, enableWeaponAfterimage,
+            isHeavyAttack, poiseDamage);
         return effect;
     }
 
@@ -200,7 +206,8 @@ public sealed partial class StabSweepEffect : MonoBehaviour
         Action onComplete, float targetDuration, float visualTargetRandomRadius, float baseRayLength,
         bool interruptsCavalryCharge = false, HitReactionDirection hitReactionDirection = HitReactionDirection.None,
         bool suppressHitReaction = false, StabMotionParams motion = default, StabStartPose startPose = default,
-        ChargeStabVisual chargeVisual = null, bool enableWeaponAfterimage = false)
+        ChargeStabVisual chargeVisual = null, bool enableWeaponAfterimage = false,
+        bool isHeavyAttack = false, float poiseDamage = 0f)
     {
         _column = column;
         _rangeRows = rangeRows;
@@ -208,6 +215,8 @@ public sealed partial class StabSweepEffect : MonoBehaviour
         _damage = damage;
         _damageType = damageType;
         _interruptsCavalryCharge = interruptsCavalryCharge;
+        _isHeavyAttack = isHeavyAttack;
+        _poiseDamage = poiseDamage;
         _hitReactionDirection = hitReactionDirection;
         _suppressHitReaction = suppressHitReaction;
         _motion = motion.windupRatio <= 0f ? StabMotionParams.Default : motion;

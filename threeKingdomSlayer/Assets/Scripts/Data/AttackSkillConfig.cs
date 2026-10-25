@@ -102,6 +102,13 @@ public class AttackSkillConfig : ScriptableObject
     [Range(0f, 30f)]
     public float parryAngleVariance = 15f;
 
+    [Header("招架后摇")]
+    [Tooltip("招架空放（没格挡到任何攻击）时的动作锁时长（秒，默认 0.8）。\n" +
+             "格挡成功用 actionDuration；空放用这个更长的后摇，让招架不能连续刷。\n" +
+             "动作锁模式下生效；独立 CD 模式仍走每招独立冷却。")]
+    [Range(0f, 2f)]
+    public float parryWhiffDuration = 0.8f;
+
     [Header("挑飞上挑")]
     [Tooltip("Z 轴旋转幅度（度，默认 90）。枪头从低到高上挑")]
     [Range(30f, 180f)]

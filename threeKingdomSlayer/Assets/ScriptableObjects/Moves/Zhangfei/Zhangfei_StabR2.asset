@@ -17,7 +17,7 @@ MonoBehaviour:
   damageType: 0
   hitReactionDirection: 1
   damage: 35
-  poiseDamage: 0
+  poiseDamage: 30
   interruptsCavalryCharge: 0
   columnMode: 0
   isHeavy: 1
@@ -46,6 +46,7 @@ MonoBehaviour:
   parrySpawnYOffset: 1.5
   parrySpawnZOffset: 0
   parryAngleVariance: 15
+  parryWhiffDuration: 0.8
   launchFlickAngle: 90
   launchFlickDuration: 0.2
   launchWindupDuration: 0.1

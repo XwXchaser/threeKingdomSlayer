@@ -75,6 +75,33 @@ public sealed class EnemyPoise
     }
 
     /// <summary>
+    /// 霸体窗口内的削韧（重攻击打霸体）。
+    ///
+    /// 规则（2026-10-25 霸体反制规则重定）：
+    ///   • 削韧只在**霸体窗口**内生效 —— C 技霸体（<c>isCFrame</c>）或阶段霸体（<c>isSuperArmor</c>）；
+    ///     窗口外的敌人不吃这份削韧（破势是“破霸体”的手段，不是通用输出窗）。
+    ///   • 韧性归零 → **破势眩晕**：进入 Stunned，眩晕同时解除霸体（Stun 里会清 isCFrame / isSuperArmor）。
+    ///   • 普通敌人用 <c>poiseStunDuration</c>（短眩晕），BOSS 沿用 <c>stunDuration</c>。
+    /// </summary>
+    public bool TakeSuperArmorPoiseDamage(float poiseDamage)
+    {
+        if (poiseDamage <= 0f) return false;
+        if (_owner.state == EnemyState.Dead) return false;
+        if (_owner.state == EnemyState.Stunned) return false;
+
+        _owner.currentPoise -= poiseDamage;
+        _owner.OnPoiseChanged?.Invoke(_owner, _owner.currentPoise, _owner.maxPoise);
+
+        if (_owner.currentPoise > 0f) return false;
+
+        _owner.currentPoise = 0f;
+        float stunSeconds = _owner.isBoss ? _owner.stunDuration : _owner.poiseStunDuration;
+        _owner.Stun(stunSeconds);
+        DebugLog.Info($"[Enemy] 破势: {_owner.DebugTag} 霸体窗口内被削韧 {poiseDamage:F0} → 眩晕 {stunSeconds:F2}s");
+        return true;
+    }
+
+    /// <summary>
     /// QTE 专用 Poise 伤害 — 仅 QTEController 在 QTEAttacking 态时调用
     /// interruptibleOnStun=true: Poise归零→触发Stun→QTEController中止QTE
     /// interruptibleOnStun=false: Poise归零→播放受击硬直动画，Poise重置，QTE继续

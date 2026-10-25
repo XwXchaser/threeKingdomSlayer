@@ -377,10 +377,13 @@ public partial class AttackSystem : MonoBehaviour
         {
             // 动作锁模式只覆盖玩家自身的出手与收招；离手飞行物拥有独立生命周期。
             float moveDuration;
+            bool parryWhiff = attackType == AttackType.Parry && _lastParryWhiff;
             if (useActionBasedCooldown)
             {
                 var cfg = GetConfig(attackType);
                 _actionLockTimer = GetAttackDuration(cfg);
+                // 招架空放（没格挡到任何攻击）→ 长后摇，禁止连发
+                if (parryWhiff) _actionLockTimer = GetParryWhiffDuration(cfg);
                 if (attackType == AttackType.Launch)
                     _actionLockTimer = Mathf.Max(_actionLockTimer, LaunchVisualEffect.GetObservationDuration(cfg));
                 moveDuration = _actionLockTimer;
@@ -404,7 +407,8 @@ public partial class AttackSystem : MonoBehaviour
             }
 
             // Stab 与 Slash 的资源结算由实际首次命中时触发；空挥只消耗动作锁定/冷却。
-            if (attackType != AttackType.Stab && attackType != AttackType.Slash)
+            // 招架空放同样不给能量（否则可以空刷大招能量）。
+            if (attackType != AttackType.Stab && attackType != AttackType.Slash && !parryWhiff)
             {
                 UltimateSystem.Instance?.AddEnergyForAttack(attackType);
                 if (attackType != AttackType.Parry && attackType != AttackType.Ultimate)
