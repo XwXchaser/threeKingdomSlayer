@@ -59,6 +59,17 @@ aiEditMode: inherit
 
 **关键设计**：天赋树每个节点都是「机械开关」，改变「能做什么」而非「做了多疼」。
 
+#### 当前实现（2026-10-25 核对，与 `TalentTree_Main.asset` 一致）
+
+现资产 9 个节点，与上表的对应关系：**破阵 / 追击 / 运筹 / 不屈** 对应 flag 节点（`talent_break_formation` / `talent_pursuit` / `talent_strategy`（extra_choice）/ `talent_undying`）；**冰系** 两个 flag（`talent_ice_thaw` 重击解冻、`talent_ice_break_push` 破冰顶开）；三个招式解锁节点 `talent_unlock_c2`（指向突刺）、`talent_unlock_c4`（枪突收尾）、**`talent_unlock_parry`（招架格挡）**。
+
+**前置关系的数据规则（重要）**：
+
+- 节点的**显式空列表 = 无前置**（可独立购买）——旁支节点用这个表达。
+- 列表为 `null`（老资产没这个字段）才退回旧行为：前置 = **列表里的上一项**。
+- 2026-10-25 修复：`talent_unlock_parry` 原本是空列表 → 被旧规则挂到列表上一项（不屈）→ 变成 **9 节点单链、1850 铜钱**，而存档只有 860 铜钱 → **招架实际买不到**，连带招架后摇的**防御姿态**（见 `design/attack-interrupt-system.md` §4.7）也用不了。
+  现在主链 8 个节点显式写死前置，**招架 = 独立旁支、100 铜钱、无前置**。
+
 ---
 
 ### Layer 2：战前 Loadout（Build 核心）

@@ -30,7 +30,8 @@ MonoBehaviour:
     coinCost: 150
     moveConfig: {fileID: 0}
     flagId: ice_thaw
-    prerequisiteIds: []
+    prerequisiteIds:
+    - talent_unlock_c2
     treePosition: {x: 56, y: 255}
     icon: {fileID: 0}
   - nodeId: talent_ice_break_push
@@ -39,7 +40,8 @@ MonoBehaviour:
     coinCost: 200
     moveConfig: {fileID: 0}
     flagId: ice_break_push
-    prerequisiteIds: []
+    prerequisiteIds:
+    - talent_ice_thaw
     treePosition: {x: -56, y: 150}
     icon: {fileID: 0}
   - nodeId: talent_unlock_c4
@@ -49,7 +51,8 @@ MonoBehaviour:
     coinCost: 150
     moveConfig: {fileID: 11400000, guid: 3fe76a22f36b7744fb64fb06cf75533a, type: 2}
     flagId: 
-    prerequisiteIds: []
+    prerequisiteIds:
+    - talent_ice_break_push
     treePosition: {x: -56, y: -60}
     icon: {fileID: 21300000, guid: 24ad2d90c0c8b4341a1215586aeea097, type: 3}
   - nodeId: talent_break_formation
@@ -58,7 +61,8 @@ MonoBehaviour:
     coinCost: 200
     moveConfig: {fileID: 0}
     flagId: break_formation
-    prerequisiteIds: []
+    prerequisiteIds:
+    - talent_unlock_c4
     treePosition: {x: 56, y: -165}
     icon: {fileID: 21300000, guid: 327f8b816470dc54c8d9b5e0f2e0cbee, type: 3}
   - nodeId: talent_pursuit
@@ -67,7 +71,8 @@ MonoBehaviour:
     coinCost: 250
     moveConfig: {fileID: 0}
     flagId: pursuit
-    prerequisiteIds: []
+    prerequisiteIds:
+    - talent_break_formation
     treePosition: {x: -56, y: -270}
     icon: {fileID: 21300000, guid: 1d4783a508dc8724a9d8884a563adb0c, type: 3}
   - nodeId: talent_strategy
@@ -76,7 +81,8 @@ MonoBehaviour:
     coinCost: 300
     moveConfig: {fileID: 0}
     flagId: extra_choice
-    prerequisiteIds: []
+    prerequisiteIds:
+    - talent_pursuit
     treePosition: {x: 56, y: -375}
     icon: {fileID: 21300000, guid: 0129664365ecccd439f9ac184f79050e, type: 3}
   - nodeId: talent_undying
@@ -85,7 +91,8 @@ MonoBehaviour:
     coinCost: 400
     moveConfig: {fileID: 0}
     flagId: undying
-    prerequisiteIds: []
+    prerequisiteIds:
+    - talent_strategy
     treePosition: {x: -56, y: -480}
     icon: {fileID: 21300000, guid: e078a3a5ca0ef1f409b9c02ba3f461c9, type: 3}
   - nodeId: talent_unlock_parry

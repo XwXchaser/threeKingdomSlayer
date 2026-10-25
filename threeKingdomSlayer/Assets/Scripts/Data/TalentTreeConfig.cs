@@ -53,8 +53,9 @@ public sealed class TalentNodeConfig
 /// <summary>
 /// 一条天赋树。
 /// **前置关系 = 显式的 nodeId 列表** ✅（`TalentNodeConfig.prerequisiteIds` ✅）→ **支持分叉 ✅** ✅。
-/// 兼容旧写法 ✅：某节点的 `prerequisiteIds` 为空 ✅ → 前置 = 列表里的**上一个**节点 ✅（原来的单向链 ✅ ✅）✅
-/// → **老资产不用改也能用** ✅ ✅ ✅。
+/// 显式空列表 = 无前置 ✅（旁支节点用它表达 ✅，例：招架格挡）；
+/// 列表为 null（老资产没这个字段）✅ → 退回旧行为 ✅：某节点的 `prerequisiteIds` 为空 ✅ → 前置 = 列表里的**上一个**节点 ✅。
+/// 列表顺序只影响**旧写法 ✅**（前置 = 上一项 ✅）与面板里的排布顺序 ✅。
 /// </summary>
 [CreateAssetMenu(fileName = "TalentTree", menuName = "一夫当关/天赋树")]
 public class TalentTreeConfig : ScriptableObject
@@ -79,14 +80,16 @@ public class TalentTreeConfig : ScriptableObject
 
     /// <summary>
     /// 节点的**全部前置** ✅ —— 优先用显式的 `prerequisiteIds` ✅；
-    /// 没填 ✅ 则退回旧行为 ✅（前置 = 列表里的上一项 ✅）✅ → **老资产零改动可用** ✅ ✅。
+    /// **显式空列表 = 无前置** ✅（旁支节点用它表达 ✅）；
+    /// 列表为 null（老资产没这个字段）✅ 才退回旧行为 ✅（前置 = 列表里的上一项 ✅）✅ → **老资产零改动可用** ✅ ✅。
     /// </summary>
     public List<TalentNodeConfig> GetPrerequisites(TalentNodeConfig node)
     {
         var result = new List<TalentNodeConfig>();
         if (node == null) return result;
-        if (node.prerequisiteIds != null && node.prerequisiteIds.Count > 0)
+        if (node.prerequisiteIds != null)
         {
+            // 显式列表（可能为空 = 「无前置」）：按列表走，支持分叉
             foreach (var id in node.prerequisiteIds)
             {
                 if (string.IsNullOrEmpty(id)) continue;
@@ -95,6 +98,7 @@ public class TalentTreeConfig : ScriptableObject
             }
             return result;
         }
+        // 旧兜底：列表为 null（老资产没这个字段）→ 前置 = 列表里的上一项
         int i = IndexOf(node);
         if (i > 0 && nodes != null && nodes[i - 1] != null) result.Add(nodes[i - 1]);
         return result;
