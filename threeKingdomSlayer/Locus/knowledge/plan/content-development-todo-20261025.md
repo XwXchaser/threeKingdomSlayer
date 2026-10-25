@@ -205,8 +205,9 @@ aiEditMode: inherit
 | --- | --- | --- | --- |
 | D1-1 | **教学关挂回**：`TutorialStageDirector` 挂到 Battle 场景或做成 prefab，填 `n1Battle/e0Battle/dialogues/gestureHint/gestureSteps/tutorialRouteConfig` 等数据 | 教学关可跑 | ✅ **已完成（2026-10-25 实测）**：导演挂在 `Assets/Scenes/Battle.scene` 的「Tutorial Director」对象；数据全部接上（`n1Battle=Tutorial_N1_Battle(9001)` / `e0Battle=Tutorial_E0_Battle(9002)` / 台词 `tutorial_t0_wave1..4` / `tutorialIceSkill=ActiveSkill_IceMist`（`ActiveSkillDefinition` 继承 `UpgradeDefinition` ✅ 可直接赋）/ `tutorialRouteConfig=Tutorial_Route` / `gestureHint`＝场景内「Tutorial Gesture Hint」实例 / 5 条 `gestureSteps`）；**Play Mode 实测**：切到教学路线 → 开幕台词排队 → `RunPrepared()` → 战斗配置＝`Tutorial_N1_Battle` → 教学台词在播 → 手势门槛 `IsGating=True`、手指+轨迹可见、场景压暗 ✅；存档已备份并还原 |
 | D1-8 | **教学台词自动停留未接线**（2026-10-25 挂载时发现） | 导演的 `tutorialLineSeconds`（注释写“教学台词每行自动停留的秒数（不拦玩家；真正的门槛是手势）”）**全库零引用**；`BattleDialogueView` 只有点击推进 → 教学台词会一直卡到玩家点击才继续 | 教学拍自动推进（2.2s/行），门槛只留手势；或明确改成“点击推进”并更新字段说明 |
+| D1-9 | **第一关难度映射表**（2026-10-25 已产出） | `Locus/knowledge/plan/first-level-difficulty-20261025.xlsx`（6 页：总览 / 波次明细 / 敌人能力 / 玩家成长 / 配对与铁律 / 待决与风险），生成脚本 `Tools/build_first_level_difficulty_table.py`（数据全部来自资产实测） | 待你拍板：成长缺口三选一（加波次 / 提经验 / 用里程碑）、104 放哪条支路、单波敌人上限口径 |
 | D1-2 | **教学关接口核对**：`IStageBattleState` / `IRunFlow` 在新架构下的实现方是否还对得上 | ✅ **已核对（2026-10-25）**：实现方未换人，代码侧就绪 | `StageController` 仍实现两接口；导演走接口拿而非 `FindObjectOfType` |
-| D1-3 | **N1→N3 跑通 + 断点清单**：走一遍 N1→E0→J1→EV→N3 | 断点清单（带文件与行号） | 每个断点都有归属与修法 |
+| D1-3 | **N1→N3 跑通 + 断点清单**：走一遍 N1→E0→J1→EV→N3 | 断点清单（带文件与行号） | ✅ **断点清单已出（2026-10-25）**：`Locus/knowledge/plan/first-level-difficulty-20261025.xlsx` 的「总览」页逐节点列出现状问题与建议动作（开发用测试战斗、E0 台词与波次错位、N2 无远程无 Boss、N3 仍是 0.1 倍率占位） | 每个断点都有归属与修法 |
 | D1-4 | **N1 第 0 条测试战斗**：删 / 保留（待拍板） | 配置改完 | 正式 N1 战斗是第 0 条 |
 | D1-5 | **节点对话与奖励占位**：给 N1/E0/J1/EV/N2/N3 补 `entryDialogue` / `postBattleDialogue` / `rewards` | 资产改完 | 进节点有台词、出节点发奖励 |
 | D1-6 | **外观改造地基**：选关/天赋的样式与布局参数抽成可配资产（先不改美术） | 皮肤/布局资产 + 代码接线 | 改一份配置就能换网格尺寸/卡片样式/节点三态视觉；不写代码 |
@@ -218,7 +219,7 @@ aiEditMode: inherit
 | --- | --- | --- | --- |
 | D2-1 | **J1 右官道段** ✅ **已完成（2026-10-25 复核）**：表 54 件（45 精灵 + 9 mesh）→ 段 prefab 已建并登记在 `YRouteSegments`（d=[192,262]），实测逐件对齐 | 段已进场景 | 往返逐件差异 0（表 54 = prefab 45 精灵 + 9 mesh）✅ |
 | D2-2 | **N2 段新建**（官道断后）：素材盘点 → 摆位表 → 规格 → 段 prefab | N2 段 | 同上 |
-| D2-3 | **右路敌人搭配**：`Formal_N2_Battle` 的 waves 重排（109 骑军 / 1011 步卒 / 1021 盾兵 / Boss？） | 战斗资产 | 通关节奏合理、不卡壳（跑一遍） |
+| D2-3 | **右路敌人搭配**：`Formal_N2_Battle` 的 waves 重排（109 骑军 / 1011 步卒 / 1021 盾兵 / Boss？） | 战斗资产 | ⚠️ **设计已出、待拍板**（2026-10-25）：同上的 Excel「波次明细」页给出 N2/N3 共 12 波的完整编成与 hp× 反推（含“盾兵掩护弓兵”配对、远程后排、Boss 最后一排）；**另有一个成长缺口：按当前经验值只到 Lv28，设计目标 Lv40（差 61%）**，三个补法见 Excel「玩家成长」页 | 通关节奏合理、不卡壳（跑一遍） |
 | D2-4 | **104 入关接线**：battle 配置 + boss 血条 + 阶段 + QTE + 描边 + 入场演出 | 104 能在正式关卡出现 | 104 在关卡里完整跑一遍（阶段切换 / QTE / 死亡） |
 | D2-5 | **104 形象重塑的技术准备**：把 27 个 clip 的重导流程写成可执行步骤 + 画布/PPU/锚点参数表 | 流程文档 + 参数表 | 拿到新素材后能按表批量重导，不用重新摸索 |
 | D2-6 | **敌人素材流水线固化**：抠图 → 导入 → prefab 替换 → 回读 → 回归，写成脚本/菜单 | 工具或 SOP 文档 | 拿一个敌人走完整条流水线试跑 |

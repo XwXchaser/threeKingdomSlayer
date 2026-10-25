@@ -249,4 +249,28 @@ aiEditMode: inherit
 
 ## 已关闭（归档）
 
-暂无。
+### BUG-008 敌人被连续命中后不再攻击（受击硬直无限锁死攻击循环）
+
+- 日期：2026-10-25
+- 类型：BUG / 逻辑（战斗手感）
+- 现象：连续命中同一只普通敌人时，它几乎完全不再还手（实测：每 0.3s 命中一次，10 秒内攻击起手 **0 次**；不吃它的基线是 10 秒 2 次）。用户反馈「多次受到攻击后好像就不会进入攻击了」。
+- 复现：进任意战斗 → 找到前排 1011 → 每 0.3s 对它 `TakeDamage(1, Stab)` → 数它的 `isAttackAnimating` 由 false→true 的次数。
+- 根因（逐帧采样定位，三处叠加）：
+  1. `Enemy.Attack.cs` 的冷却分支有一道早退：`if (_hitStopRemaining > 0f || _hitFlashRoutine != null) return;`——用「受击闪白协程还在不在」当「受击动画是否在播」；
+  2. 闪白协程每挨一下就重新计时 0.4s，而玩家出招间隔往往 < 0.4s → 协程一直续命 → 早退一直命中 → **攻击永远启动不了**（就是数值草案 §2.0 记的「Hit数与硬直压制」）；
+  3. 对象池回收/停用时没清 `_hitFlashRoutine`，协程被 Unity 停掉但**引用变野** → 复用后同样锁死。
+- 修法（提交 `a868a8d`）：
+  - 新增「连续受击硬直预算」`Enemy.MaxContinuousStunSeconds`（默认 0.6s）：预算内仍不启动攻击（避免 Hit 与 Attack Trigger 竞争），超预算强制解除受击挂起、敌人照常还手；
+  - 受击反应正常结束时重置预算累计；
+  - `Enemy.OnDisable` / `ResetEnemy` 清理 `_hitFlashRoutine` 与预算累计（消除野引用）；
+  - `CancelAttack` 不再把冷却重置为「满间隔」，改用与正常循环一致的 0.4×间隔（打断不该让敌人节奏慢 2.5 倍）；
+  - 受击期间冷却照走（原来完全不推进）；
+  - 新增攻击动画看门狗：tween 被杀/永久挂起时 `OnComplete` 不会来、`isAttackAnimating` 会一直挂着 → 超时自愈复位回冷却阶段。
+- 涉及：`Assets/Scripts/Enemy/Enemy.Attack.cs`、`Enemy.cs`、`Enemy.Pool.cs`、`EnemyHitFeedback.cs`、`Enemy.StateSwitch.cs`
+- 优先级：中（不阻塞流程，但让战斗变成单方面输出）
+- 状态：**已修（2026-10-25）**
+- 验证（Play Mode，同一局内 A/B 对照）：
+  | 条件 | 每 0.3s 命中一次，10 秒内攻击起手 |
+  |---|---|
+  | 硬直预算=无限（≈修前） | **0 次**（完全锁死） |
+  | 硬直预算=0.6s（修后） | **2 次**（= 不打它的基线 2 次/10s） |
