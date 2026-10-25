@@ -348,6 +348,42 @@ public partial class QTEController : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// **调试 / 跑关机器人用**：按当前 QTE 配置自动作答一次。
+    ///   • Click 型 → 点在指示器中心；
+    ///   • Swipe  型 → 按配置的划动方向（0=右 90=上 180=左 270=下）划过指示器。
+    /// 玩家走的是 <c>InputManager</c> 的手势识别；这里直接调判定接口，
+    /// 供机器人模拟一次「会答 QTE」的操作（机器人不会读屏幕，只能按配置算）。
+    /// 返回 false = 现在没有可答的 QTE（还没进判定窗口 / 不是这两类）。
+    /// </summary>
+    public bool TryAnswerQTEForDebug()
+    {
+        if (!IsQTEActive) return false;
+        if (_currentQTEIndex < 0 || _currentQTEIndex >= _activeQTEs.Count) return false;
+
+        var qte = _activeQTEs[_currentQTEIndex];
+        if (qte == null || qte.config == null || qte.resolved) return false;
+
+        Rect? rect = GetIndicatorScreenRect(qte);
+        if (rect == null) return false;
+        Vector2 center = rect.Value.center;
+
+        if (qte.config.qteType == QTEType.Click)
+            return TryQTEClick(center);
+
+        if (qte.config.qteType == QTEType.Swipe)
+        {
+            float rad = qte.config.swipeDirection * Mathf.Deg2Rad;
+            Vector2 dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+            // 划过指示器：从一侧进、从另一侧出（判定要求线段与指示器矩形相交）
+            float half = Mathf.Max(rect.Value.width, rect.Value.height) * 0.5f + 40f;
+            float speed = Mathf.Max(qte.config.swipeMinSpeed, 200f) + 100f;
+            return TryQTESwipe(center - dir * half, dir, speed, center + dir * half);
+        }
+
+        return false;
+    }
+
     private Camera _qteCanvasCamera;
     private bool _qteCanvasCameraChecked;
 

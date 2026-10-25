@@ -12,8 +12,13 @@ using UnityEngine;
 /// 产物目录：<c>Library/Locus/telemetry/</c>（机器本地，不入库；Library 本身被 .gitignore 忽略）。
 /// 记录时机：
 ///   • 每波开始：波次序号、敌人构成、玩家血量/等级/已获升级数
-///   • 每波结束：该波用时、期间掉血、是否用过重攻击
-///   • 每场战斗结束：总用时、总掉血、死亡次数、最终等级、升级数、结算铜钱
+///   • 每波结束：该波用时、**该波**掉血、击杀数、是否用过重攻击
+///   • 每场战斗结束：总用时、总掉血、死亡次数、最终等级、升级数、结算铜钱、胜负
+///
+/// 口径说明（2026-10-25 修正）：
+///   • 「一波」= 一个 <see cref="StageConfig"/> 里的一条 <see cref="WaveConfig"/>（按 <c>WaveSpawner</c> 的出波事件切）。
+///   • <c>hpLost</c> 是**该波内**的掉血（波开始时快照 HP → 波结束时相减），不是整场累计。
+///   • 整场累计掉血/死亡次数由 <see cref="ReportHpChanged"/> 累加（需外部接 <c>PlayerState.OnHealthChanged</c>）。
 /// </summary>
 public static class LevelTelemetry
 {
@@ -24,7 +29,9 @@ public static class LevelTelemetry
     private static bool _enabled;
     private static float _battleStartTime;
     private static int _battleWaveCount;
+    private static int _battleKills;
     private static float _waveStartTime;
+    private static float _waveStartHp = -1f;
     private static float _battleStartHp = -1f;
     private static float _lastHp = -1f;
     private static float _battleDamageTaken;
@@ -44,12 +51,19 @@ public static class LevelTelemetry
         }
     }
 
-    /// <summary>战斗开始（由 WaveSpawner 的波次事件或外部调用触发）。</summary>
+    /// <summary>当前是否在一场战斗的埋点区间内。</summary>
+    public static bool BattleActive => _battleActive;
+
+    /// <summary>当前战斗的关卡配置名（调试用）。</summary>
+    public static string BattleLabel => _battleLabel;
+
+    /// <summary>战斗开始（一场 = 一个 StageConfig 的全部波次）。</summary>
     public static void BeginBattle(string label)
     {
         _battleLabel = label ?? "";
         _battleStartTime = Time.time;
         _battleWaveCount = 0;
+        _battleKills = 0;
         _battleWaveIndex = 0;
         _battleDamageTaken = 0f;
         _battleDeaths = 0;
@@ -71,6 +85,7 @@ public static class LevelTelemetry
     {
         _battleWaveIndex = waveIndex;
         _waveStartTime = Time.time;
+        _waveStartHp = CurrentHp();
         Log("wave_begin", new Dictionary<string, object>
         {
             { "battle", _battleLabel },
@@ -84,23 +99,30 @@ public static class LevelTelemetry
         });
     }
 
-    /// <summary>一波结束。alive 剩余敌人数。usedHeavy = 本波是否用过重攻击/蓄力。</summary>
-    public static void EndWave(int aliveRemaining, bool usedHeavy)
+    /// <summary>
+    /// 一波结束。aliveRemaining = 波结束时剩余敌人数；usedHeavy = 本波是否用过蓄力/重招；
+    /// kills = 本波击杀数。
+    /// </summary>
+    public static void EndWave(int aliveRemaining, bool usedHeavy, int kills = 0)
     {
         float dur = Time.time - _waveStartTime;
+        float hpNow = CurrentHp();
+        float waveHpLost = (_waveStartHp >= 0f && hpNow >= 0f) ? Mathf.Max(0f, _waveStartHp - hpNow) : 0f;
         Log("wave_end", new Dictionary<string, object>
         {
             { "battle", _battleLabel },
             { "wave", _battleWaveIndex },
             { "duration", Round(dur) },
-            { "hpLost", Round(_battleStartHp >= 0 ? _battleStartHp - CurrentHp() : 0f) },
+            { "hpLost", Round(waveHpLost) },
             { "alive", aliveRemaining },
+            { "kills", kills },
             { "usedHeavy", usedHeavy },
             { "level", CurrentLevel() },
             { "upgrades", CurrentUpgradeCount() },
             { "time", NowStamp() },
         });
         _battleWaveCount++;
+        _battleKills += kills;
     }
 
     /// <summary>战斗结束（胜/败都记）。</summary>
@@ -114,6 +136,7 @@ public static class LevelTelemetry
             { "victory", victory },
             { "duration", Round(Time.time - _battleStartTime) },
             { "waves", _battleWaveCount },
+            { "kills", _battleKills },
             { "hpLost", Round(_battleDamageTaken) },
             { "deaths", _battleDeaths },
             { "level", CurrentLevel() },

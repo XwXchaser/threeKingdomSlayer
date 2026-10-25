@@ -2,8 +2,12 @@
 """分析关卡埋点（Library/Locus/telemetry/*.jsonl）→ 难度体检表。
 
 用法：
-    python Tools/analyze_level_telemetry.py            # 读最近的埋点，输出摘要
-    python Tools/analyze_level_telemetry.py --csv out.csv  # 同时导出逐波明细 CSV
+    python Tools/analyze_level_telemetry.py            # 读全部埋点，输出摘要
+    python Tools/analyze_level_telemetry.py --csv out.csv   # 同时导出逐波明细 CSV
+    python Tools/analyze_level_telemetry.py --latest   # 只读最新一个文件
+
+注意：埋点**每 flush 一次就新建一个文件**（run-<时间戳>.jsonl），
+所以一场战斗可能散在多个文件里 → 默认要把**所有文件**一起读。
 
 输出内容（对应 design/numerical-balance-draft.md §0.5 的十条铁律）：
   · 逐波：清场时长、剩余敌人、玩家掉血、等级 → 对照「普通波 30~55s / Boss 波 45~90s」
@@ -53,12 +57,13 @@ def load_records():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", help="导出逐波明细到 CSV")
-    ap.add_argument("--all", action="store_true", help="读取全部埋点文件（默认只读最新一个）")
+    ap.add_argument("--all", action="store_true", help="读取全部埋点文件（默认行为）")
+    ap.add_argument("--latest", action="store_true", help="只读最新一个埋点文件")
     args = ap.parse_args()
     load_curve()
 
     recs, files = load_records()
-    if not args.all:
+    if args.latest and not args.all:
         # 只保留最新一个文件里的记录
         latest = max((os.path.getmtime(f) for f in glob.glob(os.path.join(TELE_DIR, "*.jsonl"))), default=0)
         keep = []

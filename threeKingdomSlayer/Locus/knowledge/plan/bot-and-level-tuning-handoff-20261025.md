@@ -16,13 +16,12 @@ aiEditMode: inherit
 
 # 交接：跑关机器人 + 关卡难度调参（2026-10-25）
 
-> **给下一个会话的开场白**：读本文 → 读 `plan/first-level-difficulty-20261025-v2.xlsx`（难度映射表 + 「无聊根因与解法」页）
-> → 读 `plan/level-deployment-handoff-20261025.md`（关卡部署全景与两个现场问题）→ 开工。
+> **给下一个会话的开场白**：读本文 → 读 `plan/bot-and-level-tuning-round2-20261025.md`（**第二轮，已把机器人重做 + 第一关 22 波落配置 + 四次实跑标定**）→ 读 `plan/first-level-difficulty-20261025-v2.xlsx`（难度映射表 + 「无聊根因与解法」页）→ 读 `plan/level-deployment-handoff-20261025.md`（关卡部署全景与两个现场问题）→ 开工。
 > 本文**自包含**：不依赖本会话的任何上下文。
 
 ---
 
-## 0. 现在在哪（2026-10-25 收盘状态）
+## 0. 现在在哪（2026-10-25 第一轮收盘状态；**第二轮见 `plan/bot-and-level-tuning-round2-20261025.md`**）
 
 | 项 | 值 |
 | --- | --- |
@@ -36,6 +35,10 @@ aiEditMode: inherit
 ---
 
 ## 1. 跑关机器人（`BattleAutoPlayer`）
+
+> ⚠️ **2026-10-25 第二轮已重做**：下面写的「走手势路径 / 遇盾兵改上挑 / 点 UI」当时**代码里只做了一半**；
+> 第二轮把机器人改成能跨节点续跑、胜负/掉血口径正确、能标定 hp× 的版本。
+> **以 `plan/bot-and-level-tuning-round2-20261025.md` §1 为准。**
 
 **位置**：`Assets/Scripts/Utils/BattleAutoPlayer.cs`
 

@@ -21,8 +21,6 @@ MonoBehaviour:
   dialogues: []
   rewards: []
   battleEntries:
-  - battleConfig: {fileID: 11400000, guid: 1b96b5aa7cd65a747a0bbfba74b3fb25, type: 2}
-    conditionEnabled: 0
   - battleConfig: {fileID: 11400000, guid: 5542226fb6647424e9fb0ce473788fb5, type: 2}
     conditionEnabled: 0
   completionPolicy: 0

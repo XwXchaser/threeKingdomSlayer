@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Node_N2
   m_EditorClassIdentifier: 
   nodeId: N2
-  displayName: "N2\xB7\u5B98\u9053\u65AD\u540E\uFF08\u6D41\u7A0B\u9884\u89C8\uFF09"
+  displayName: "N2\xB7\u5B98\u9053\u65AD\u540E"
   entryDialogue: {fileID: 0}
   postBattleDialogue: {fileID: 0}
   postBattlePresentation: {fileID: 0}

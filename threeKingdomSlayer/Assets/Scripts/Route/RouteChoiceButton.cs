@@ -17,6 +17,9 @@ public sealed class RouteChoiceButton : MonoBehaviour
     [SerializeField] private float breathingScale = 0.025f;
     [NonSerialized] public Text fallbackText;
 
+    /// <summary>本按钮绑定的路线选项 id（= RouteChoiceOption.id，例：J1_N2）。</summary>
+    public string OptionId => _id;
+
     private string _id;
     private Action<string> _onSelected;
     private RectTransform _rectTransform;
