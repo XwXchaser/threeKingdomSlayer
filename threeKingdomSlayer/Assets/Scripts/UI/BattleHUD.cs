@@ -231,6 +231,11 @@ public class BattleHUD : MonoBehaviour, ICombatHud
                 else
                     _heroHUD.SetShieldFillActive(false);
             }
+
+            // 防御破防条：真衰减条，每帧都在变 → 每帧轮询
+            var guard = PlayerState.Instance.Guard;
+            if (guard != null)
+                _heroHUD.SetGuardMeter(guard.MeterRatio, guard.MeterVisible);
         }
     }
 

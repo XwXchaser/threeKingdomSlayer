@@ -20,6 +20,23 @@ public class HeroHUD : MonoBehaviour, IQteHud
     [Tooltip("护盾状态下替换血条 Fill 的精灵（留空则不改动）")]
     public Sprite shieldFillSprite;
 
+    [Header("防御破防条")]
+    [Tooltip("破防条填充图（放在玩家血条上方）。留空 = 不显示")]
+    public Image guardMeterImage;
+
+    /// <summary>破防条：ratio01 = 0~1；visible=false 时隐藏。衰减条每帧都在变 → 由 HUD 每帧轮询。</summary>
+    public void SetGuardMeter(float ratio01, bool visible)
+    {
+        if (guardMeterImage == null) return;
+        if (!visible)
+        {
+            if (guardMeterImage.gameObject.activeSelf) guardMeterImage.gameObject.SetActive(false);
+            return;
+        }
+        if (!guardMeterImage.gameObject.activeSelf) guardMeterImage.gameObject.SetActive(true);
+        guardMeterImage.fillAmount = Mathf.Clamp01(ratio01);
+    }
+
     [Header("大招头像")]
     public Image ultimateBaseImage;
     public Image ultimateFillImage;

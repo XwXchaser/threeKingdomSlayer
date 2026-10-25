@@ -125,18 +125,36 @@ public class AttackSkillConfig : ScriptableObject
     public float parryGuardDecayPerSecond = 30f;
     [Tooltip("防御姿态的武器 Prefab（留空则用招架的 attackWavePrefab）")]
     public GameObject parryGuardWeaponPrefab;
-    [Tooltip("防御姿态武器的横向偏移（世界单位）")]
-    public float parryGuardWeaponOffsetX = 0f;
-    [Tooltip("防御姿态武器的高度（世界单位）")]
-    public float parryGuardWeaponOffsetY = 1.1f;
-    [Tooltip("防御姿态武器的前伸距离（世界单位，负值 = 身前）")]
-    public float parryGuardWeaponOffsetZ = -1.4f;
-    [Tooltip("防御姿态武器的朝向：绕 Y 轴旋转多少度（90 = 枪身横举，与屏幕水平）")]
-    [Range(-180f, 180f)]
-    public float parryGuardWeaponYawDegrees = 90f;
-    [Tooltip("防御姿态武器的额外倾角（绕 Z 轴，度）：稍微斜一点更像举枪防御")]
-    [Range(-90f, 90f)]
-    public float parryGuardWeaponTiltDegrees = 12f;
+    [Tooltip("持枪姿态：枪尖指向的角度（度）。0 = 指向屏幕右(+X)，90 = 竖直向上。\n" +
+             "参考图（《起源》背面视角）实测为屏幕右上 ≈42°。枪身长轴 = prefab 本地 +Y，用 FromToRotation 反解。")]
+    [Range(-90f, 180f)]
+    public float parryStanceTipDegrees = 42f;
+    [Tooltip("持枪姿态：握持点（枪身根节点）相对玩家的世界偏移")]
+    public Vector3 parryStanceAnchor = new Vector3(0f, 0.9f, 0.4f);
+    [Tooltip("持枪姿态：缩放。相机可见半宽只有 2.89 而枪长 10.8 → 不缩放的话矛头会出画。\n" +
+             "目标：画面右侧能看到矛头部分至少 20%")]
+    [Range(0.05f, 1f)]
+    public float parryStanceScale = 0.33f;
+    [Tooltip("举枪时长（秒）：招架 → 斜举位")]
+    [Range(0.05f, 2f)]
+    public float parryStanceRaiseSeconds = 0.8f;
+    [Tooltip("回落时长（秒）：斜举位 → 起手位。**它同时就是防御可进入窗口**（回落途中按住可接住）")]
+    [Range(0.05f, 2f)]
+    public float parryStanceReturnSeconds = 0.8f;
+    [Tooltip("起手位比斜举位低多少度（度）：举枪就是从这个角度挑上去")]
+    [Range(0f, 120f)]
+    public float parryStanceEntryDropDegrees = 55f;
+    [Tooltip("起手位的握持点偏移（相对斜举位）")]
+    public Vector3 parryStanceEntryAnchorOffset = new Vector3(-0.2f, -0.35f, 0.6f);
+    [Tooltip("防御保持位比斜举位低多少度（度）：用户定的“稍低于 idle”")]
+    [Range(0f, 60f)]
+    public float parryStanceDefendDropDegrees = 8f;
+    [Tooltip("防御保持位的握持点比斜举位低多少（世界单位）")]
+    [Range(0f, 1f)]
+    public float parryStanceDefendAnchorDrop = 0.12f;
+    [Tooltip("落到防御保持位的时长（秒）")]
+    [Range(0.05f, 1f)]
+    public float parryStanceDefendEnterSeconds = 0.2f;
     [Tooltip("受击时武器后退的距离（世界单位）")]
     public float parryGuardRecoilDistance = 0.5f;
     [Tooltip("受击后退回原位的时间（秒）")]

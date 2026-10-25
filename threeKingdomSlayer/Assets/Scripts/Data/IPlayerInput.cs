@@ -19,6 +19,12 @@ public interface IPlayerInput
     /// <summary>指针是否处于「已按下且未被输入门拦下」的状态。</summary>
     bool IsPointerDown { get; }
 
+    /// <summary>
+    /// 指针是否**物理按下**（不受输入门影响）。
+    /// 防御姿态用它判断“玩家是否还在按住”（破防硬直时输入门拦下，但手指仍按着）。
+    /// </summary>
+    bool PointerHeld { get; }
+
     /// <summary>按住时长（秒）。</summary>
     float HoldDurationSeconds { get; }
 

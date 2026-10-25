@@ -70,10 +70,16 @@ public class PlayerState : MonoBehaviour
     [System.NonSerialized] public bool isInvincible;
 
     /// <summary>
-    /// 防御姿态（招架后摇期间长按进入；防御期间免伤、只累积破防值；破防则短硬直）。
+    /// 防御姿态（招架后按住进入；防御期间免伤、只累积破防值；破防则短硬直）。
     /// 由本类持有，与 Enemy → EnemyPoise 的做法一致（不新增场景组件）。
     /// </summary>
     public PlayerGuard Guard { get; private set; }
+
+    /// <summary>
+    /// 常驻持枪实体：招架 → 防御姿态 的同一条动作链（举枪 / 回落 / 防御保持）。
+    /// 与 <see cref="Guard"/> 分工：姿态在这条线，破防值在 Guard。
+    /// </summary>
+    public PlayerWeaponStance WeaponStance { get; private set; }
 
     // 事件
     public System.Action<float, float> OnHealthChanged; // current, max
@@ -99,6 +105,7 @@ public class PlayerState : MonoBehaviour
         }
         Instance = this;
         Guard = new PlayerGuard(this);
+        WeaponStance = new PlayerWeaponStance(this);
     }
 
     private void OnDestroy()
@@ -145,6 +152,14 @@ public class PlayerState : MonoBehaviour
 
         // 防御姿态：破防值衰减 + 破防硬直计时
         if (Guard != null) Guard.Tick(Time.deltaTime);
+
+        // 持枪姿态：按“手指是否按住”决定落防御位还是回落
+        if (WeaponStance != null)
+        {
+            var input = PlayerInputHub.Current;
+            bool pointerHeld = input != null && input.PointerHeld;
+            WeaponStance.Tick(Time.deltaTime, pointerHeld);
+        }
 
         // 更新冷却计时器（复用缓存列表，避免每帧 new List 分配）
         _cooldownKeysCache.Clear();
@@ -222,7 +237,8 @@ public class PlayerState : MonoBehaviour
         if (isInvincible) return;
 
         // 防御姿态：免伤，只累积破防值（破防值满 → 破防硬直）
-        if (Guard != null && Guard.IsGuarding && Guard.TryAbsorbDamage(damage)) return;
+        if (Guard != null && WeaponStance != null && WeaponStance.IsDefending
+            && Guard.TryAbsorbDamage(damage)) return;
 
         float originalDamage = damage;
 

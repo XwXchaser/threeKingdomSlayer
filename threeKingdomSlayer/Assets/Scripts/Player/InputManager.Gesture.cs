@@ -64,8 +64,9 @@ public partial class InputManager : MonoBehaviour
     /// <returns>true 表示触发了招式并已重置分段</returns>
     private bool TryDetectHoldSwipe(Vector2 currentPos)
     {
-        // 防御姿态中不识别滑动：滑动出招必须先松手退出防御
-        if (IsGuarding) return false;
+        // 持枪姿态进行中（招架 / 防御）：不识别滑动
+        // （滑动出招必须先松手退出防御，姿态自己回落）
+        if (StanceActive) return false;
 
         float segmentDuration = Time.time - segmentStartTime;
         float verticalDrift = Mathf.Abs(currentPos.y - segmentStartPos.y);
@@ -148,13 +149,9 @@ public partial class InputManager : MonoBehaviour
     {
         if (!skillInputEnabled) return;
 
-        // 防御姿态中：松手退出防御，并且这一下的手势被吞掉（滑动出招必须先松手）
-        var guard = PlayerState.Instance != null ? PlayerState.Instance.Guard : null;
-        if (guard != null && guard.IsGuarding)
-        {
-            guard.Exit();
-            return;
-        }
+        // 持枪姿态进行中（招架 / 防御）：抬手这一下的手势被吞掉
+        // （姿态自己回落；防御中松手 → 回落 → 走完则收枪）
+        if (StanceActive) return;
 
         bool isSwiped = swipeDistance >= swipeThreshold;
 

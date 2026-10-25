@@ -454,7 +454,8 @@ public partial class AttackSystem : MonoBehaviour
         {
             _lastParryWhiff = false;
             AudioManager.Instance?.PostEvent("Player_Parry");
-            PlayParryVisual(cfg, playerPos);
+            // 招架 = 持枪实体举枪（与防御姿态同一条动作链 → 连贯）
+            PlayerState.Instance?.WeaponStance?.PlayParry(cfg);
             return true;
         }
 
@@ -490,7 +491,8 @@ public partial class AttackSystem : MonoBehaviour
 
         Debug.Log($"[AttackSystem] 招架 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 目标数:{targets.Count} 空放:{_lastParryWhiff}");
         AudioManager.Instance?.PostEvent("Player_Parry");
-        PlayParryVisual(cfg, playerPos);
+        // 招架 = 持枪实体举枪（与防御姿态同一条动作链 → 连贯）
+        PlayerState.Instance?.WeaponStance?.PlayParry(cfg);
         return true;
     }
 
