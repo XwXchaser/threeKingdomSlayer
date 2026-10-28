@@ -63,16 +63,21 @@ public static class HeroHudLayoutTool
         var btn = canvas.transform.Find("Combat/Overlay/Pause/PauseLayer/PauseButton");
         if (btn == null) return;
 
-        SetRect(btn.gameObject, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(26, -26), new Vector2(150, 150));
+        SetRect(btn.gameObject, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -24), new Vector2(130, 130));
         var img = btn.GetComponent<Image>();
         if (img == null) img = btn.gameObject.AddComponent<Image>();
         img.color = new Color(0.16f, 0.42f, 0.85f, 0.92f);
 
         // 子节点原本锚在父级右上角 → 改成居中锚，逐个摆位
-        CenterChild(btn, "PausePigeon", new Vector2(0, 26), new Vector2(112, 86));
-        CenterChild(btn, "PauseWordBrush", new Vector2(0, -34), new Vector2(112, 50));
-        CenterChild(btn, "PauseLabel", new Vector2(0, -34), new Vector2(104, 56));
+        CenterChild(btn, "PausePigeon", new Vector2(0, 22), new Vector2(96, 74));
+        CenterChild(btn, "PauseWordBrush", new Vector2(0, -30), new Vector2(96, 44));
+        CenterChild(btn, "PauseLabel", new Vector2(0, -30), new Vector2(92, 48));
         CenterChild(btn, "Text", Vector2.zero, new Vector2(0, 0));
+
+        // 教学对话的「点击任意处继续」原本压在屏幕最底部 → 挡住整个底排 HUD，挪到画面中部
+        var adv = GameObject.Find("BattleHUD(Canvas)/Combat/Overlay/Dialogue/DialogueLayer/DialogueOverlay/DialogueAdvanceButton");
+        if (adv != null)
+            SetRect(adv, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -120), new Vector2(281, 134));
     }
 
     private static void CenterChild(Transform parent, string name, Vector2 pos, Vector2 size)
@@ -120,9 +125,9 @@ public static class HeroHudLayoutTool
         var diamond = AssetDatabase.LoadAssetAtPath<Sprite>(DiamondSpritePath);
         var barFill = AssetDatabase.LoadAssetAtPath<Sprite>(BarFillSpritePath);
 
-        // 根节点与卡片：贴底通铺（与场景实例一致），卡片高 440
+        // 根节点与卡片：贴底通铺（与场景实例一致）。卡片下缘推到**屏幕最底**（y=130 → 下缘 0）
         SetRect(root.gameObject, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0.5f), new Vector2(0, 1050), new Vector2(0, 1920));
-        SetRect(card.gameObject, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0.5f), new Vector2(0, 195), new Vector2(0, 440));
+        SetRect(card.gameObject, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0.5f), new Vector2(0, 130), new Vector2(0, 440));
 
         // ① 退役节点：经验条（等级球取代）/ 六个招式冷却图标 / 破防条
         Kill(card.Find("ExpBar"));
@@ -145,8 +150,8 @@ public static class HeroHudLayoutTool
 
         // 卡片局部坐标：HudCard 的锚点参考点是它的**下边缘**（anchorMin/Max y=0）
         // → anchoredPosition.y 是「离卡片下边缘多高」，卡片高 440。
-        // 高度 150：接近旧设计的 168（框图 zhangfei_HP_Background 是 5:1，旧 prefab 用的是 6.7:1）
-        SetRect(healthGo, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 10), new Vector2(-40, 150));
+        // 血条**独占底部一行**（h 30..110），头像/技能行在它**上方**（h 130 起）—— 两行不重叠。
+        SetRect(healthGo, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(-40, 80));
 
         var bg = healthGo.transform.Find("Background_bottom");
         var frame = healthGo.transform.Find("Background_frame");
@@ -174,8 +179,8 @@ public static class HeroHudLayoutTool
                 if (htext.GetComponent<UnityEngine.UI.Outline>() == null)
                 {
                     var ol = htext.gameObject.AddComponent<UnityEngine.UI.Outline>();
-                    ol.effectColor = new Color(0f, 0f, 0f, 0.9f);
-                    ol.effectDistance = new Vector2(2f, -2f);
+                    ol.effectColor = new Color(0f, 0f, 0f, 0.95f);
+                    ol.effectDistance = new Vector2(3f, -3f);
                 }
             }
         }
@@ -209,7 +214,7 @@ public static class HeroHudLayoutTool
         if (ult != null)
         {
             ult.SetParent(card, false);
-            SetRect(ult.gameObject, Vector2.zero, Vector2.zero, new Vector2(0, 0), new Vector2(44, 46), new Vector2(120, 120));
+            SetRect(ult.gameObject, Vector2.zero, Vector2.zero, new Vector2(0, 0), new Vector2(30, 130), new Vector2(160, 160));
             foreach (var n in new[] { "UltBase", "UltFill", "Head" })
             {
                 var c = ult.Find(n);
@@ -219,7 +224,7 @@ public static class HeroHudLayoutTool
             if (strip != null)
             {
                 var srt = strip.GetComponent<RectTransform>();
-                srt.localScale = new Vector3(0.42f, 0.42f, 1f);
+                srt.localScale = new Vector3(0.53f, 0.53f, 1f);
             }
         }
 
@@ -229,7 +234,7 @@ public static class HeroHudLayoutTool
         orbImg.sprite = circle;
         orbImg.type = Image.Type.Simple;
         orbImg.color = new Color(0.12f, 0.13f, 0.16f, 0.92f);
-        SetRect(orb, Vector2.zero, Vector2.zero, new Vector2(0, 0), new Vector2(8, 148), new Vector2(56, 56));
+        SetRect(orb, Vector2.zero, Vector2.zero, new Vector2(0, 0), new Vector2(24, 244), new Vector2(64, 64));
         var mask = orb.GetComponent<Mask>();
         if (mask == null) mask = orb.AddComponent<Mask>();
         mask.showMaskGraphic = true;
@@ -248,7 +253,7 @@ public static class HeroHudLayoutTool
         var ot = orbText.GetComponent<TextMeshProUGUI>();
         if (ot == null) ot = orbText.AddComponent<TextMeshProUGUI>();
         ot.text = "1";
-        ot.fontSize = 26;
+        ot.fontSize = 30;
         ot.alignment = TextAlignmentOptions.Center;
         ot.color = Color.white;
         ot.enableWordWrapping = false;
@@ -269,15 +274,15 @@ public static class HeroHudLayoutTool
             fibT.SetParent(card, false);
             // pivot 必须取 (0, 0.5)：槽位自身锚点是 (0, 0.5) → anchoredPosition 相对的是
             // **父级的垂直中心**。pivot 取 (0,0)（下缘）会让槽位整体比 pivot 高一半高度 → 与头像错行。
-            SetRect(fibT.gameObject, Vector2.zero, Vector2.zero, new Vector2(0, 0.5f), new Vector2(172, 106), new Vector2(560, 120));
+            SetRect(fibT.gameObject, Vector2.zero, Vector2.zero, new Vector2(0, 0.5f), new Vector2(210, 210), new Vector2(560, 120));
             for (int i = 0; i < fibT.childCount; i++)
             {
                 var slot = fibT.GetChild(i);
                 // 槽位锚点用 (0,0.5)：anchoredPosition 相对的是**父级左缘**，才能真正“从左往右排”
-                FixedLeft(slot, 104);
+                FixedLeft(slot, 88);
                 Fill(FindDeep(slot, "ButtonFrame"));
                 Fill(FindDeep(slot, "ButtonFace"));
-                Fixed(FindDeep(slot, "Icon"), 72);
+                Fixed(FindDeep(slot, "Icon"), 60);
                 Fill(FindDeep(slot, "CooldownDim"));
                 Fill(FindDeep(slot, "CooldownFill"));
                 // 棱形底框：道具样式走 Frame，技能样式走 ButtonFrame/ButtonFace —— 两套都要换
