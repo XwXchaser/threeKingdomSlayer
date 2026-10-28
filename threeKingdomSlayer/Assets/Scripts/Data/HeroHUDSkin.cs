@@ -17,20 +17,6 @@ public class HeroHUDSkin : ScriptableObject
     public Sprite[] readyFireLoopSprites;
     public float readyFireFps = 10f;
 
-    [Header("技能图标")]
-    public Sprite stabIcon;
-    public Sprite stabChargeSprite;
-    public Sprite slashIcon;
-    public Sprite slashChargeSprite;
-    public Sprite pierceIcon;
-    public Sprite pierceChargeSprite;
-    public Sprite sweepIcon;
-    public Sprite sweepChargeSprite;
-    public Sprite launchIcon;
-    public Sprite launchChargeSprite;
-    public Sprite parryIcon;
-    public Sprite parryChargeSprite;
-
     [Header("扩展UI")]
     public GameObject[] extraUIPrefabs;
 }

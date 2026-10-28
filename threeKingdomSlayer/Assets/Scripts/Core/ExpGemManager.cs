@@ -19,6 +19,10 @@ public class ExpGemManager : MonoBehaviour
     [Header("父容器（运行时由BattleHUD设置，宝石生成为其子对象）")]
     public RectTransform gemParent;
 
+    [Header("收集点：等级球（运行时由BattleHUD设置；为空则回落到 expSlider）")]
+    [Tooltip("经验宝石的飞行目标（等级球）。优先于 expSlider。")]
+    public RectTransform collectTarget;
+
     [Header("经验条（运行时由BattleHUD设置，宝石飞向其Fill右端）")]
     public Slider expSlider;
 
@@ -60,9 +64,16 @@ public class ExpGemManager : MonoBehaviour
             Instance = null;
     }
 
-    /// <summary>获取经验条 Fill 右端的屏幕坐标（生成时锁定，不受后续 Fill 变化影响）</summary>
+    /// <summary>获取经验收集点的屏幕坐标（生成时锁定，不受后续变化影响）</summary>
     private Vector3 GetFillEndScreenPosition()
     {
+        // 优先：等级球（球心）—— 升级归零不会让球心移动
+        if (collectTarget != null)
+        {
+            Vector3[] orbCorners = new Vector3[4];
+            collectTarget.GetWorldCorners(orbCorners);
+            return (orbCorners[0] + orbCorners[2]) * 0.5f;
+        }
         if (expSlider != null && expSlider.fillRect != null)
         {
             Vector3[] corners = new Vector3[4];

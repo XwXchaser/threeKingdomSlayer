@@ -83,14 +83,18 @@ public class FrontItemBar : MonoBehaviour
         }
     }
 
-    private void LayoutSlots()
+    /// <summary>重新排布槽位（按获得顺序左对齐）。改造工具会在改完尺寸后主动调一次。</summary>
+    public void LayoutSlots()
     {
         int count = _itemSlots.Count;
         if (count == 0) return;
 
-        float slotWidth = _itemSlots[0] != null ? _itemSlots[0].GetComponent<RectTransform>().rect.width : 0f;
-        float totalWidth = count * slotWidth + (count - 1) * _slotSpacing;
-        float startX = -totalWidth * 0.5f + slotWidth * 0.5f;
+        // 用 sizeDelta 而不是 rect.width：rect 要等布局跑完才有值，Edit Mode / 首帧可能是 0
+        float slotWidth = _itemSlots[0] != null ? _itemSlots[0].GetComponent<RectTransform>().sizeDelta.x : 0f;
+        if (slotWidth <= 0f) slotWidth = 104f;
+        // 左对齐：从最左槽开始向右排 —— “新获得就从左往右排序出现”。
+        // 槽位是 FrontItemBar 本地坐标（该物体 pivot 在左下角），所以 x=0 即左边缘。
+        float startX = slotWidth * 0.5f;
         for (int i = 0; i < count; i++)
         {
             var slot = _itemSlots[i];
@@ -111,21 +115,13 @@ public class FrontItemBar : MonoBehaviour
     private void InitializeItemSlots()
     {
         LayoutSlots();
-        int capacity = ItemInventory.Instance != null ? ItemInventory.Instance.Capacity : 2;
+        // 初始全部隐藏 —— “新获得就出现”，空槽不占位。
         for (int i = 0; i < _itemSlots.Count; i++)
         {
             var slot = _itemSlots[i];
             if (slot == null) continue;
             slot.OnClicked -= OnItemIconClicked;
-            if (i < capacity)
-            {
-                slot.ShowEmpty(_skillFrame);
-                slot.gameObject.SetActive(true);
-            }
-            else
-            {
-                slot.ResetSlot();
-            }
+            slot.ResetSlot();
         }
     }
 
@@ -139,58 +135,29 @@ public class FrontItemBar : MonoBehaviour
 
         _itemIcons.Clear();
         _iconEntryIds.Clear();
+        _itemSlotAssignments.Clear();
+
         int capacity = ItemInventory.Instance != null ? ItemInventory.Instance.Capacity : 0;
         var entries = ItemInventory.Instance != null ? ItemInventory.Instance.Entries : null;
 
-        var activeEntryIds = new HashSet<int>();
-        if (entries != null)
-        {
-            for (int i = 0; i < entries.Count; i++)
-                activeEntryIds.Add(entries[i].id);
-        }
-
-        var staleAssignments = new List<int>();
-        foreach (var pair in _itemSlotAssignments)
-        {
-            if (!activeEntryIds.Contains(pair.Key))
-                staleAssignments.Add(pair.Key);
-        }
-        foreach (int entryId in staleAssignments)
-            _itemSlotAssignments.Remove(entryId);
-
-        var occupiedSlots = new HashSet<BuffIcon>();
+        // 先全部清空（未占用的槽隐藏）
         for (int i = 0; i < _itemSlots.Count; i++)
         {
             var slot = _itemSlots[i];
             if (slot == null) continue;
             slot.OnClicked -= OnItemIconClicked;
-            slot.ShowEmpty(_skillFrame);
-            if (i >= capacity)
-                slot.ResetSlot();
+            slot.ResetSlot();
         }
 
         if (entries == null) return;
 
-        for (int i = 0; i < entries.Count; i++)
+        // 按**获得顺序紧凑排列**：entries[i] → 第 i 个槽（不再锁死槽位）
+        int used = 0;
+        for (int i = 0; i < entries.Count && used < capacity && used < _itemSlots.Count; i++)
         {
             var entry = entries[i];
-            if (!_itemSlotAssignments.TryGetValue(entry.id, out var slot) || slot == null || !_itemSlots.Contains(slot))
-            {
-                slot = null;
-                for (int j = 0; j < capacity && j < _itemSlots.Count; j++)
-                {
-                    var candidate = _itemSlots[j];
-                    if (candidate != null && !occupiedSlots.Contains(candidate))
-                    {
-                        slot = candidate;
-                        break;
-                    }
-                }
-                if (slot == null) continue;
-                _itemSlotAssignments[entry.id] = slot;
-            }
-
-            occupiedSlots.Add(slot);
+            var slot = _itemSlots[used];
+            if (slot == null) continue;
             var def = entry.definition;
             slot.Setup(def != null ? def.icon : null, def != null ? def.upgradeId : null,
                 UpgradeCategory.Item, entry.GestureId);
@@ -203,7 +170,9 @@ public class FrontItemBar : MonoBehaviour
             slot.gameObject.SetActive(true);
             _itemIcons[entry.id] = slot;
             _iconEntryIds[slot] = entry.id;
+            used++;
         }
+        LayoutSlots();
     }
 
     private void RefreshActiveSkillSlots()
@@ -219,24 +188,16 @@ public class FrontItemBar : MonoBehaviour
             var slot = _itemSlots[i];
             if (slot == null) continue;
             slot.OnClicked -= OnItemIconClicked;
-            if (i < capacity)
-            {
-                slot.ShowEmpty(_skillFrame);
-                slot.SetActiveSlotStyle(true);
-                slot.gameObject.SetActive(true);
-            }
-            else
-            {
-                slot.ResetSlot();
-            }
+            slot.ResetSlot();
         }
 
         if (inventory == null) return;
         var entries = inventory.Entries;
-        for (int i = 0; i < entries.Count && i < capacity && i < _itemSlots.Count; i++)
+        int used = 0;
+        for (int i = 0; i < entries.Count && used < capacity && used < _itemSlots.Count; i++)
         {
             var entry = entries[i];
-            var slot = _itemSlots[i];
+            var slot = _itemSlots[used];
             if (slot == null || entry.definition == null) continue;
             slot.Setup(entry.definition.icon, entry.definition.upgradeId, UpgradeCategory.ActiveSkill, entry.definition.upgradeId);
             slot.SetFrame(_skillFrame);
@@ -245,8 +206,10 @@ public class FrontItemBar : MonoBehaviour
             slot.gameObject.SetActive(true);
             _itemIcons[entry.id] = slot;
             _iconEntryIds[slot] = entry.id;
+            used++;
         }
         RefreshActiveSkillCooldowns();
+        LayoutSlots();
     }
 
     private void RefreshActiveSkillCooldowns()

@@ -12,30 +12,24 @@ using DG.Tweening;
 public class HeroHUD : MonoBehaviour, IQteHud
 {
     public static HeroHUD Instance { get; private set; }
-    [Header("生命值")]
-    public Slider healthSlider;
+    [Header("生命值（通栏 · 两侧向中间收缩）")]
+    [Tooltip("左半块填充：Filled / Horizontal / fillOrigin=Right（贴中心，向左收缩）")]
+    public Image healthFillLeft;
+    [Tooltip("右半块填充：Filled / Horizontal / fillOrigin=Left（贴中心，向右收缩）")]
+    public Image healthFillRight;
     public TMP_Text healthText;
     public Image healthBottomImage;
     public Image healthFrameImage;
     [Tooltip("护盾状态下替换血条 Fill 的精灵（留空则不改动）")]
     public Sprite shieldFillSprite;
 
-    [Header("防御破防条")]
-    [Tooltip("破防条填充图（放在玩家血条上方）。留空 = 不显示")]
-    public Image guardMeterImage;
-
-    /// <summary>破防条：ratio01 = 0~1；visible=false 时隐藏。衰减条每帧都在变 → 由 HUD 每帧轮询。</summary>
-    public void SetGuardMeter(float ratio01, bool visible)
-    {
-        if (guardMeterImage == null) return;
-        if (!visible)
-        {
-            if (guardMeterImage.gameObject.activeSelf) guardMeterImage.gameObject.SetActive(false);
-            return;
-        }
-        if (!guardMeterImage.gameObject.activeSelf) guardMeterImage.gameObject.SetActive(true);
-        guardMeterImage.fillAmount = Mathf.Clamp01(ratio01);
-    }
+    [Header("等级球")]
+    [Tooltip("球内液体层：Filled / Vertical / fillOrigin=Bottom（自下而上「水上涨」）")]
+    public Image levelOrbFill;
+    [Tooltip("等级数字（只显示等级，不显示具体经验值）")]
+    public TMP_Text levelOrbText;
+    [Tooltip("等级球本体 —— 经验宝石的飞行目标")]
+    public RectTransform levelOrbTarget;
 
     [Header("大招头像")]
     public Image ultimateBaseImage;
@@ -48,22 +42,6 @@ public class HeroHUD : MonoBehaviour, IQteHud
 
     [Header("复活次数")]
     public TMP_Text reviveText;
-
-    [Header("冷却指示器 (FillMethod=Horizontal)")]
-    public Image stabCooldownImage;
-    public Image slashCooldownImage;
-    public Image pierceCooldownImage;
-    public Image sweepCooldownImage;
-    public Image launchCooldownImage;
-    public Image parryCooldownImage;
-
-    [Header("冷却充能指示器 (Radial 填充)")]
-    public Image stabChargeFill;
-    public Image slashChargeFill;
-    public Image pierceChargeFill;
-    public Image sweepChargeFill;
-    public Image launchChargeFill;
-    public Image parryChargeFill;
 
     [Header("QTE 老虎机")]
     [Tooltip("QTE 判定框 RectTransform（含 RectMask2D 裁剪）")]
@@ -86,10 +64,6 @@ public class HeroHUD : MonoBehaviour, IQteHud
         if (data == null) return;
         Debug.LogWarning("[HeroHUD] 旧 DialogueData 已弃用，请改用 DialogueManager.Trigger(eventId)");
     }
-
-    [Header("经验条")]
-    public Slider expSlider;
-    public TMP_Text expLevelText;
 
     [Header("关卡进度")]
     [Tooltip("关卡进度条组件（与 QTEFrame 互斥显示）")]
@@ -183,7 +157,8 @@ public class HeroHUD : MonoBehaviour, IQteHud
         if (skin == null) return;
 
         SetImageSprite(healthBottomImage, skin.healthBottomSprite);
-        SetImageSprite(GetHealthFillImage(), skin.healthFillSprite);
+        SetImageSprite(healthFillLeft, skin.healthFillSprite);
+        SetImageSprite(healthFillRight, skin.healthFillSprite);
         SetImageSprite(healthFrameImage, skin.healthFrameSprite);
         if (skin.shieldFillSprite != null)
         {
@@ -196,13 +171,6 @@ public class HeroHUD : MonoBehaviour, IQteHud
         SetImageSprite(portraitImage, skin.portraitSprite);
         if (ultimateButtonUI != null)
             ultimateButtonUI.ApplyReadyEffectSkin(skin.readyFireStartSprite, skin.readyFireLoopSprites, skin.readyFireFps);
-
-        SetSkillSprites(stabCooldownImage, stabChargeFill, skin.stabIcon, skin.stabChargeSprite);
-        SetSkillSprites(slashCooldownImage, slashChargeFill, skin.slashIcon, skin.slashChargeSprite);
-        SetSkillSprites(pierceCooldownImage, pierceChargeFill, skin.pierceIcon, skin.pierceChargeSprite);
-        SetSkillSprites(sweepCooldownImage, sweepChargeFill, skin.sweepIcon, skin.sweepChargeSprite);
-        SetSkillSprites(launchCooldownImage, launchChargeFill, skin.launchIcon, skin.launchChargeSprite);
-        SetSkillSprites(parryCooldownImage, parryChargeFill, skin.parryIcon, skin.parryChargeSprite);
 
         var parent = extraUIRoot != null ? extraUIRoot : transform;
         if (skin.extraUIPrefabs != null)
@@ -218,11 +186,11 @@ public class HeroHUD : MonoBehaviour, IQteHud
 
     public void SetHealth(float current, float max, int shieldAmount = 0)
     {
-        if (healthSlider != null)
-        {
-            healthSlider.maxValue = max;
-            healthSlider.value = current;
-        }
+        // 血条「两侧向中间收缩」：左右两块镜像填充，fillAmount 同步 = hp/max
+        float ratio = max > 0f ? Mathf.Clamp01(current / max) : 0f;
+        if (healthFillLeft != null) healthFillLeft.fillAmount = ratio;
+        if (healthFillRight != null) healthFillRight.fillAmount = ratio;
+        HealthInitialized = true;
         if (healthText != null)
         {
             if (shieldAmount > 0)
@@ -230,6 +198,21 @@ public class HeroHUD : MonoBehaviour, IQteHud
             else
                 healthText.text = $"{Mathf.CeilToInt(current)}/{Mathf.CeilToInt(max)}";
         }
+    }
+
+    /// <summary>等级球：只显示等级与「水上涨」的经验比例，不显示具体经验值。</summary>
+    public void SetLevelExp(float currentExp, float requiredExp)
+    {
+        if (levelOrbFill == null) return;
+        float ratio = requiredExp > 0f ? Mathf.Clamp01(currentExp / requiredExp) : 0f;
+        levelOrbFill.fillAmount = ratio;
+    }
+
+    /// <summary>等级球的等级数字。</summary>
+    public void SetLevelText(int level)
+    {
+        if (levelOrbText == null) return;
+        levelOrbText.text = $"{level}";
     }
 
     public void SetReviveCount(int count)
@@ -243,19 +226,16 @@ public class HeroHUD : MonoBehaviour, IQteHud
 
     public void SetHealthBarColor(Color color)
     {
-        if (healthSlider != null && healthSlider.fillRect != null)
+        var left = healthFillLeft;
+        var right = healthFillRight;
+        if (left == null && right == null) return;
+        if (!_healthBarColorSaved)
         {
-            var img = healthSlider.fillRect.GetComponent<Image>();
-            if (img != null)
-            {
-                if (!_healthBarColorSaved)
-                {
-                    _healthBarDefaultColor = img.color;
-                    _healthBarColorSaved = true;
-                }
-                img.color = color;
-            }
+            _healthBarDefaultColor = left != null ? left.color : right.color;
+            _healthBarColorSaved = true;
         }
+        if (left != null) left.color = color;
+        if (right != null) right.color = color;
     }
 
     public void ResetHealthBarColor()
@@ -269,38 +249,18 @@ public class HeroHUD : MonoBehaviour, IQteHud
     /// </summary>
     public void SetShieldFillActive(bool active)
     {
-        if (healthSlider == null || healthSlider.fillRect == null || shieldFillSprite == null) return;
-        var img = healthSlider.fillRect.GetComponent<Image>();
-        if (img == null) return;
+        if (shieldFillSprite == null) return;
+        var left = healthFillLeft;
+        var right = healthFillRight;
+        if (left == null && right == null) return;
         if (!_defaultFillSpriteCached)
         {
-            _defaultFillSprite = img.sprite;
+            _defaultFillSprite = left != null ? left.sprite : right.sprite;
             _defaultFillSpriteCached = true;
         }
-        img.sprite = active ? shieldFillSprite : _defaultFillSprite;
-    }
-
-    /// <summary>
-    /// 更新冷却指示器 fillAmount（0=可用, 1=冷却中）
-    /// </summary>
-    public void SetCooldown(AttackType type, float progress)
-    {
-        var img = GetCooldownImage(type);
-        if (img != null)
-        {
-            img.fillAmount = progress;
-            img.color = progress > 0f ? Color.red : Color.green;
-        }
-    }
-
-    /// <summary>
-    /// 更新冷却充能 Radial 填充（0→1, 技能就绪时=1）
-    /// </summary>
-    public void SetChargeFill(AttackType type, float fillAmount)
-    {
-        var img = GetChargeFillImage(type);
-        if (img != null)
-            img.fillAmount = fillAmount;
+        var sprite = active ? shieldFillSprite : _defaultFillSprite;
+        if (left != null) left.sprite = sprite;
+        if (right != null) right.sprite = sprite;
     }
 
     #endregion
@@ -309,20 +269,16 @@ public class HeroHUD : MonoBehaviour, IQteHud
 
     private Image GetHealthFillImage()
     {
-        if (healthSlider == null || healthSlider.fillRect == null) return null;
-        return healthSlider.fillRect.GetComponent<Image>();
+        return healthFillLeft;
     }
+
+    /// <summary>血量是否已经收到过真实数值（用于 HUD 初始化判定）。</summary>
+    public bool HealthInitialized { get; private set; }
 
     private void SetImageSprite(Image image, Sprite sprite)
     {
         if (image != null && sprite != null)
             image.sprite = sprite;
-    }
-
-    private void SetSkillSprites(Image icon, Image chargeFill, Sprite iconSprite, Sprite chargeSprite)
-    {
-        SetImageSprite(icon, iconSprite);
-        SetImageSprite(chargeFill, chargeSprite != null ? chargeSprite : iconSprite);
     }
 
     private void ClearExtraUI()
@@ -333,34 +289,6 @@ public class HeroHUD : MonoBehaviour, IQteHud
                 Destroy(_extraUIInstances[i]);
         }
         _extraUIInstances.Clear();
-    }
-
-    private Image GetCooldownImage(AttackType type)
-    {
-        switch (type)
-        {
-            case AttackType.Stab:   return stabCooldownImage;
-            case AttackType.Slash:  return slashCooldownImage;
-            case AttackType.Pierce: return pierceCooldownImage;
-            case AttackType.Sweep:  return sweepCooldownImage;
-            case AttackType.Launch: return launchCooldownImage;
-            case AttackType.Parry:  return parryCooldownImage;
-            default: return null;
-        }
-    }
-
-    private Image GetChargeFillImage(AttackType type)
-    {
-        switch (type)
-        {
-            case AttackType.Stab:   return stabChargeFill;
-            case AttackType.Slash:  return slashChargeFill;
-            case AttackType.Pierce: return pierceChargeFill;
-            case AttackType.Sweep:  return sweepChargeFill;
-            case AttackType.Launch: return launchChargeFill;
-            case AttackType.Parry:  return parryChargeFill;
-            default: return null;
-        }
     }
 
     #endregion

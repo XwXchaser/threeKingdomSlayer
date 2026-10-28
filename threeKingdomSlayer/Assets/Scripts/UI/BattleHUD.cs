@@ -23,9 +23,6 @@ public class BattleHUD : MonoBehaviour, ICombatHud
     [Header("铜钱")]
     public TMP_Text coinText;
 
-    // GC 优化：缓存所有攻击类型数组，避免每帧 new[]
-    private static readonly AttackType[] AllAttackTypes = { AttackType.Stab, AttackType.Slash, AttackType.Pierce, AttackType.Sweep, AttackType.Launch, AttackType.Parry };
-
     /// <summary>
     /// 一局流程（角色契约）：战败面板 / 重来按钮 / 返回落地页只依赖这几个成员，
     /// 不再直接摸 StageController 门面（2026-10-20 批次 1；2026-10-22 角色重收口：
@@ -173,7 +170,7 @@ public class BattleHUD : MonoBehaviour, ICombatHud
         // 将 ExpBar Slider 和 Canvas 引用传给 ExpGemManager 和 HealthPotionManager
         if (ExpGemManager.Instance != null)
         {
-            ExpGemManager.Instance.expSlider = _heroHUD.expSlider;
+            ExpGemManager.Instance.collectTarget = _heroHUD != null ? _heroHUD.levelOrbTarget : null;
             ExpGemManager.Instance.gemParent = (RectTransform)transform;
         }
         if (HealthPotionManager.Instance != null)
@@ -200,20 +197,13 @@ public class BattleHUD : MonoBehaviour, ICombatHud
 
     private void Update()
     {
-        if (_heroHUD != null && _heroHUD.healthSlider != null && _heroHUD.healthSlider.maxValue <= 1f && PlayerState.Instance != null)
+        if (_heroHUD != null && !_heroHUD.HealthInitialized && PlayerState.Instance != null)
             SyncCurrentPlayerState();
 
         if (!_bossEventSubscribed && EnemyManager.Instance != null)
         {
             EnemyManager.Instance.OnBossEngaged += OnBossEngaged;
             _bossEventSubscribed = true;
-        }
-
-        // 冷却 UI 委托给 HeroHUD
-        if (_heroHUD != null && PlayerState.Instance != null && PlayerState.Instance.heroConfig != null)
-        {
-            UpdateCooldownUI();
-            UpdateCooldownFillUI();
         }
 
         // 护盾值轮询（护盾授予/消耗不触发 OnHealthChanged）
@@ -227,17 +217,13 @@ public class BattleHUD : MonoBehaviour, ICombatHud
                 float maxHp = PlayerState.Instance.heroConfig != null ? PlayerState.Instance.heroConfig.maxHealth : 100f;
                 _heroHUD.SetHealth(hp, maxHp, shield);
                 if (shield > 0)
-                    _heroHUD.SetShieldFillActive(true);
-                else
-                    _heroHUD.SetShieldFillActive(false);
+                _heroHUD.SetShieldFillActive(true);
+            else
+                _heroHUD.SetShieldFillActive(false);
             }
-
-            // 防御破防条：真衰减条，每帧都在变 → 每帧轮询
-            var guard = PlayerState.Instance.Guard;
-            if (guard != null)
-                _heroHUD.SetGuardMeter(guard.MeterRatio, guard.MeterVisible);
         }
     }
+
 
     private void OnDestroy()
     {
@@ -298,31 +284,14 @@ public class BattleHUD : MonoBehaviour, ICombatHud
 
     private void UpdateExpBar(float currentExp, float requiredExp)
     {
-        if (_heroHUD != null && _heroHUD.expSlider != null)
-        {
-            _heroHUD.expSlider.maxValue = requiredExp > 0 ? requiredExp : 1f;
-            _heroHUD.expSlider.value = Mathf.Min(currentExp, _heroHUD.expSlider.maxValue);
-        }
+        if (_heroHUD != null)
+            _heroHUD.SetLevelExp(currentExp, requiredExp);
     }
 
     private void UpdateExpLevel(int level)
     {
-        if (_heroHUD != null && _heroHUD.expLevelText != null)
-            _heroHUD.expLevelText.text = $"Lv.{level}";
-    }
-
-    private void UpdateCooldownUI()
-    {
-        if (_heroHUD == null || PlayerState.Instance == null) return;
-        foreach (var t in AllAttackTypes)
-            _heroHUD.SetCooldown(t, PlayerState.Instance.GetCooldownProgress(t));
-    }
-
-    private void UpdateCooldownFillUI()
-    {
-        if (_heroHUD == null || PlayerState.Instance == null) return;
-        foreach (var t in AllAttackTypes)
-            _heroHUD.SetChargeFill(t, 1f - PlayerState.Instance.GetCooldownProgress(t));
+        if (_heroHUD != null)
+            _heroHUD.SetLevelText(level);
     }
 
     private void OnStageStateChanged(StageState state)
@@ -521,9 +490,8 @@ public class BattleHUD : MonoBehaviour, ICombatHud
         if (defeatPanel != null) defeatPanel.SetActive(false);
         if (_heroHUD != null) _heroHUD.gameObject.SetActive(true);
         SyncCurrentPlayerState();
-        // 路线模式重开：从最近存档点恢复。卷轴/假移动路线与外层 V2 路线各自持有标志。
-        if (StageFlow != null && StageFlow.RouteConfig != null)
-            FakeRouteLaunch.StartFromCheckpoint = true;
+        // 2026-10-27：不再置 StartFromCheckpoint —— 「重来」走的是 RestartStage（重开当前节点的战斗），
+        // 用不到这个开关；之前置位反而会毒化下一次落地页进入（从存档点续跑）。
         StageFlow?.RestartStage();
     }
 
