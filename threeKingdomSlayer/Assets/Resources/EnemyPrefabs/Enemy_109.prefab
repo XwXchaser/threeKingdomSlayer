@@ -558,6 +558,7 @@ MonoBehaviour:
     keyIndex: 3
     resolve: 1
     hitTime: 0.055
+  exitFadeSeconds: 0.9
 --- !u!114 &5539183438271926435
 MonoBehaviour:
   m_ObjectHideFlags: 0

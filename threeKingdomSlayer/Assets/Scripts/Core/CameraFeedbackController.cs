@@ -12,7 +12,7 @@ public sealed class CameraFeedbackController : MonoBehaviour
     [SerializeField] private float heavyIntensity = 0.035f;
     [SerializeField] private float playerDamageDuration = 0.15f;
     [SerializeField] private float playerDamageIntensity = 0.07f;
-    [SerializeField] private float requestCooldown = 0.04f;
+    [SerializeField] private float requestCooldown = 0.12f;
     [SerializeField] private int standardVibrato = 10;
     [SerializeField] private int heavyVibrato = 14;
     [SerializeField] private RectTransform worldBackground;
@@ -20,6 +20,10 @@ public sealed class CameraFeedbackController : MonoBehaviour
     [SerializeField, Range(0f, 2f)] private float hitRotationScale = 1f;
     [Tooltip("玩家受击时的相机旋转震动倍率。1 = 原有表现。")]
     [SerializeField, Range(0f, 2f)] private float playerDamageRotationScale = 1f;
+    [Tooltip("**只有重击才震镜头**。\n" +
+             "2026-10-26：普通敌人受击时整个场景都在震（背景也跟着位移），\n" +
+             "但设计要求是「**敌人自己震**」（受击缩放/闪白），镜头只给重击/格挡这类关键帧。")]
+    [SerializeField] private bool heavyOnlyCameraShake = true;
 
     private Sequence _feedbackSequence;
     private float _lastRequestTime = -10f;
@@ -76,6 +80,9 @@ public sealed class CameraFeedbackController : MonoBehaviour
             return;
         if (context.source == HitFeedbackSource.Dot)
             return;
+        // 普通命中不震镜头（敌人自己震）；只有重击才给镜头反馈
+        if (heavyOnlyCameraShake && context.strength < HitFeedbackStrength.Heavy)
+            return;
         if (GameplayPause.UnscaledTime - _lastRequestTime < requestCooldown
             && context.strength <= _activeStrength)
             return;
@@ -89,6 +96,19 @@ public sealed class CameraFeedbackController : MonoBehaviour
             direction,
             hitRotationScale);
         _activeStrength = context.strength;
+    }
+
+    /// <summary>
+    /// **格挡成功的反馈**（2026-10-26）：玩家用防御姿态挡下敌人攻击时，
+    /// 镜头给一下重击级震动 —— 与「普通命中不震镜头」区分开，
+    /// 让「挡住了」这个瞬间有明确的画面反馈。
+    /// </summary>
+    public void RequestGuardBlock(Vector3 worldPosition)
+    {
+        _lastRequestTime = GameplayPause.UnscaledTime;
+        PlayFeedback(heavyDuration, heavyIntensity, heavyVibrato,
+            GetImpactDirection(worldPosition), hitRotationScale);
+        _activeStrength = HitFeedbackStrength.Heavy;
     }
 
     public void RequestPlayerDamage()

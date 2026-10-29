@@ -1,3 +1,7 @@
+// 本文件位于 Locus.Combat（运行时程序集）下的 Editor 子目录 → asmref 接管后 "Editor 文件夹" 规则失效，
+// 编辑器脚本会被编进玩家程序集（打包报 "The type or namespace name 'Editor' could not be found"）。
+// 用标准的 #if UNITY_EDITOR 包裹，运行时编译为空。
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 
@@ -40,3 +44,4 @@ public class QTEConfigEditor : Editor
         }
     }
 }
+#endif

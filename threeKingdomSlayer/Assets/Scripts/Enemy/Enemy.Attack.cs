@@ -221,7 +221,10 @@ private void SpawnProjectile()
         {
             approachDuration = firstResolveHitTime;
         }
-        float telegraphDuration = Mathf.Min(0.3f, Mathf.Max(0f, approachDuration));
+        // 预警时长：必须盖住“玩家能做出反应的那一段”——
+        // 招架是接触帧判定（挥入结束才判），玩家要提前 contactDelay~contactDelay+window 按下；
+        // 而“反应+手势识别”要 0.3~0.55s，所以预警要提前 0.75s 亮起才够（2026-10-26）。
+        float telegraphDuration = Mathf.Min(0.75f, Mathf.Max(0f, approachDuration));
 
         // ── 命中帧 ─────────────────────────────────────────────────────────────
         // 声明命中帧后：出伤/击发时刻由「命中帧精灵出现在屏幕上」决定（见 UpdateAttackHitFrames），

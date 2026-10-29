@@ -443,6 +443,9 @@ public partial class AttackSystem : MonoBehaviour
     /// <summary>本次招架是否空放（没格挡到任何攻击）：空放 → 长后摇，不能连发。</summary>
     private bool _lastParryWhiff;
 
+    /// <summary>格开特效的落点高度（敌人本体上）：没有枪头可对，就打在敌人身上。</summary>
+    private const float ParryImpactHeight = 2.0f;
+
     private bool ExecuteParry()
     {
         var cfg = GetConfig(AttackType.Parry);
@@ -450,9 +453,11 @@ public partial class AttackSystem : MonoBehaviour
 
         Vector3 playerPos = playerState != null ? playerState.transform.position : transform.position;
         bool deflectedAny = DeflectProjectilesNear(playerPos, parryProjectileRange) > 0;
+        LastParryBlocked = false;
         if (deflectedAny)
         {
             _lastParryWhiff = false;
+            LastParryBlocked = true;
             AudioManager.Instance?.PostEvent("Player_Parry");
             // 招架动作：持枪实体挥入（从屏外斜劈入画）
             PlayerState.Instance?.WeaponStance?.PlayParry(cfg, true);
@@ -460,46 +465,96 @@ public partial class AttackSystem : MonoBehaviour
             return true;
         }
 
-        // 无飞行物在范围内 → 对敌人执行招架伤害
+        // 无飞行物在范围内 → 对敌人执行招架
         if (columnManager == null) return false;
-        float finalDmg = GetFinalDamage(cfg);
-        List<Enemy> targets = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
 
-        // 空放判定（2026-10-25 招架后摇规则）：
-        // 既没弹到飞行物、也没格挡到正在攻击的敌人 → 空放 → 长后摇，招架不能连续刷。
-        bool blockedAttack = false;
-        for (int i = 0; i < targets.Count; i++)
+        // ── active-frame 模型（2026-10-26）──────────────────────────────────────
+        // 输入**不直接判定**：输入只负责起手；判定发生在**接触帧**（挥入结束、枪到位那一刻）。
+        // 敌人的出伤若落在 [接触帧, 接触帧 + 敌人的 parryStrikeWindow] 内 → 被格开
+        // （取消攻击，出伤不结算）。
+        // → 玩家可以在出伤前 contactDelay ~ contactDelay+window 这段按下（能对预警做出反应），
+        //   而不是必须在出伤瞬间的 0.15s 窗口里命中。
+        float contactDelay = Mathf.Max(0f, cfg.parryStanceSwingInSeconds);
+
+        // 输入瞬间的预测：能不能接上（决定动作锁走短后摇还是空放长后摇；不产生任何战斗效果）
+        bool armed = HasDeflectTarget(contactDelay);
+        _lastParryWhiff = !armed;
+        LastParryBlocked = armed;
+
+        Debug.Log($"[AttackSystem] 招架 接触延迟:{contactDelay:F2}s 预测接上:{armed} 空放:{_lastParryWhiff}");
+        _parryDebugText = $"招架 按下 t={Time.time:F2}  接触延迟={contactDelay:F2}s  预测接上={armed}  空放={_lastParryWhiff}";
+        AudioManager.Instance?.PostEvent("Player_Parry");
+        // 招架动作：持枪实体挥入（从屏外滑入）；判定在接触帧由计时器触发
+        PlayerState.Instance?.WeaponStance?.PlayParry(cfg);
+        _parryJudgeTimer = contactDelay;
+        _parryJudgeConfig = cfg;
+        _parryJudgePlayerPos = playerPos;
+        return true;
+    }
+
+    /// <summary>
+    /// 招架接触帧的判定（active-frame 模型）：此刻枪已到位，
+    /// 敌人出伤落在 [现在, 现在 + 敌人的 parryStrikeWindow] 内 → 格开（取消攻击，出伤不结算）。
+    /// </summary>
+    private void ResolveParryContact(AttackSkillConfig cfg, Vector3 playerPos)
+    {
+        bool blockedAny = false;
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"招架 接触帧 t={Time.time:F2}  判定：");
+        if (columnManager != null)
         {
-            var candidate = targets[i];
-            if (candidate == null || candidate.state == EnemyState.Dead) continue;
-            if (candidate.state == EnemyState.Attacking && candidate.isAttackAnimating && !candidate.isAttackDrawPhase)
+            var targets = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
+            for (int i = 0; i < targets.Count; i++)
             {
-                blockedAttack = true;
-                break;
+                var enemy = targets[i];
+                if (enemy == null || enemy.state == EnemyState.Dead) continue;
+                float window = Mathf.Max(0f, enemy.parryStrikeWindow);
+                float tts = enemy.TimeToStrike();
+                bool ok = enemy.TryDeflectByParry(window, cfg.poiseDamage);
+                if (ok)
+                {
+                    blockedAny = true;
+                    // 弹刀反馈（2026-10-26）：格开要有"铛"的一下，而且必须打在**敌人身上**——
+                    // 枪头按设计是出画的，画面上唯一能当"接触点"的就是敌人本体。
+                    // HitFeedbackManager.Trigger 一次给全：卡肉（全局+敌人）＋镜头震（以敌人为原点）＋像素火花。
+                    Vector3 impact = enemy.transform.position + new Vector3(0f, ParryImpactHeight, 0f);
+                    var ctx = new HitFeedbackContext(enemy, DamageType.Stab, HitFeedbackSource.BasicAttack,
+                        HitFeedbackStrength.Heavy, 0f, false, false, impact, Vector3.zero, hasImpactPosition: true);
+                    HitFeedbackManager.Trigger(ctx);
+                }
+                string why = ok ? "★格开" : (tts < -0.05f ? "太晚(出伤已过)" : (tts > window ? "太早(招架会过期)" : "状态不对"));
+                sb.Append($"\n   {enemy.name}: tts={tts:F2} 窗口={window:F2} → {why}");
             }
         }
-        _lastParryWhiff = !blockedAttack;
+        _parryDebugText = sb.ToString();
+        LastParryBlocked = blockedAny;
+        PlayerState.Instance?.WeaponStance?.SetParryResult(blockedAny);
+        Debug.Log($"[AttackSystem] 招架 接触帧判定: 格开 {blockedAny}\n{_parryDebugText}");
+    }
 
-        bool blockedAny = false;
+    /// <summary>
+    /// 输入瞬间的预测：范围内是否有敌人的出伤会落在本次招架的有效窗口里。
+    /// 只用来决定动作锁（短后摇 vs 空放长后摇），不产生任何战斗效果。
+    /// </summary>
+    private bool HasDeflectTarget(float contactDelay)
+    {
+        var cfg = GetConfig(AttackType.Parry);
+        if (cfg == null || columnManager == null) return false;
+        var targets = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
         for (int i = 0; i < targets.Count; i++)
         {
-            var enemy = targets[i];
-            if (enemy == null || enemy.state == EnemyState.Dead) continue;
-            bool wasAttacking = enemy.isAttackAnimating;
-            // 削韧跟着“格开成功”走：只有真的在出伤窗口里格开一次才磨架势
-            // （不再对范围内所有敌人无条件磨——否则空挥也能削 BOSS 的架势）
-            // 冲锋（109）不在这条打断链里：招架对它只造成伤害/架势，打不断冲锋。
-            enemy.TakeDamage(finalDmg, cfg.damageType, canInterruptCFrame: true, isParryInterrupt: true,
-                feedbackStrength: HitFeedbackStrength.Heavy, parryPoiseDamage: cfg.poiseDamage);
-            if (wasAttacking && !enemy.isAttackAnimating) blockedAny = true;
+            var e = targets[i];
+            if (e == null || e.state == EnemyState.Dead) continue;
+            if (e.state != EnemyState.Attacking || !e.isAttackAnimating || e.isAttackDrawPhase) continue;
+            float timeToStrike = e.TimeToStrike();
+            if (timeToStrike < 0f) continue;                               // 出伤已过
+            // 冻结（教学时停）时游戏时间不走 → 出伤不会自己落地 → 不扣接触延迟
+            float effective = Time.timeScale > 0f ? timeToStrike - contactDelay : timeToStrike;
+            if (effective < -0.05f) continue;                               // 出伤会先落地：太晚
+            if (effective > e.parryStrikeWindow) continue;                  // 招架会先过期：太早
+            return true;
         }
-
-        Debug.Log($"[AttackSystem] 招架 伤害:{finalDmg} 架势伤害:{cfg.poiseDamage} 目标数:{targets.Count} 空放:{_lastParryWhiff} 格开:{blockedAny}");
-        AudioManager.Instance?.PostEvent("Player_Parry");
-        // 招架动作：持枪实体挥入（从屏外斜劈入画）；成功格挡 → 收尾加速
-        PlayerState.Instance?.WeaponStance?.PlayParry(cfg, blockedAny);
-        if (blockedAny) RequestParryImpactFeedback(playerPos);
-        return true;
+        return false;
     }
 
     /// <summary>格挡成功的画面反馈：小镜头震动（力度感的一半来自画面，不只是动作）。</summary>

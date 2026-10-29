@@ -46,19 +46,19 @@ MonoBehaviour:
   parrySpawnYOffset: 1.5
   parrySpawnZOffset: -6
   parryAngleVariance: 15
-  parryWhiffDuration: 0.9
+  parryWhiffDuration: 0.6
   parryGuardBreakThreshold: 120
   parryGuardBreakDuration: 1.5
   parryGuardDecayDelay: 3
   parryGuardDecayPerSecond: 30
   parryGuardWeaponPrefab: {fileID: 0}
   parryStanceTipDegrees: 42
-  parryStanceHeadAnchor: {x: 2.121, y: 3.222, z: -2.5}
+  parryStanceHeadAnchor: {x: 5.6, y: 5, z: -2.2}
   parryStanceEntryAngleDegrees: 8
-  parryStanceEntryRootOffset: {x: -1.386, y: -2.769, z: 0}
+  parryStanceEntryRootOffset: {x: 0, y: -8.6, z: 0}
   parryStanceExitAngleDegrees: -100
-  parryStanceExitRootOffset: {x: -1.2, y: -1.5, z: 0}
-  parryStanceSwingInSeconds: 0.18
+  parryStanceExitRootOffset: {x: 2, y: -10, z: 0}
+  parryStanceSwingInSeconds: 0.12
   parryStanceOvershootDegrees: 8
   parryStanceSettleSeconds: 0.08
   parryStanceHoldSeconds: 0.1

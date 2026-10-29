@@ -95,10 +95,11 @@ public sealed class PlayerWeaponStance
     // ── 对外接口 ───────────────────────────────────────────────
 
     /// <summary>
-    /// 招架：挥入（从屏外斜劈入画 → 斜举位）。
-    /// <paramref name="succeeded"/> = 这次是否真的格开了攻击 → 决定收尾是加速还是正常速度。
+    /// 招架：挥入（从屏外滑入 → 斜举位）。
+    /// <param name="succeeded">已知结果时直接给（弹飞物格挡那种同帧成立的）；
+    /// 未知时留 false，等**接触帧**判定完用 <see cref="SetParryResult"/> 回填。</param>
     /// </summary>
-    public void PlayParry(AttackSkillConfig cfg, bool succeeded)
+    public void PlayParry(AttackSkillConfig cfg, bool succeeded = false)
     {
         if (cfg == null) return;
         _cfg = cfg;
@@ -118,6 +119,9 @@ public sealed class PlayerWeaponStance
 
         StartSwingIn();
     }
+
+    /// <summary>回填招架结果（格开=true）→ 决定收枪是加速（格挡成功）还是正常速度。</summary>
+    public void SetParryResult(bool succeeded) { _parrySucceeded = succeeded; }
 
     /// <summary>受击：武器先后退再回位。</summary>
     public void Recoil(AttackSkillConfig cfg)

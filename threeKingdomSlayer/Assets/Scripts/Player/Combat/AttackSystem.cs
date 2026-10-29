@@ -93,6 +93,19 @@ public partial class AttackSystem : MonoBehaviour
     [SerializeField] private float pierceTimeScale = 3f;
 
     private float _actionLockTimer;
+
+    // ── 招架诊断（临时）──────────────────────────────────────────────────────
+    // 非 Development 打包（development=False）会剥掉 Debug.Log → 包里拿不到日志，
+    // 只能把招架链路的数字直接画到屏幕上。发布前把 ShowParryDebug 置 false 即可。
+    public static bool ShowParryDebug = true;
+    private static string _parryDebugText = "招架诊断：尚未出招";
+
+    // ── 招架的 active-frame 判定（2026-10-26）────────────────────────────────
+    // 输入不判定；判定在**接触帧**（挥入结束、枪到位）做，用 unscaled 计时，
+    // 这样教学时停（timeScale=0）时也能把招架判完（否则时停招架拍会死锁）。
+    private float _parryJudgeTimer = -1f;
+    private AttackSkillConfig _parryJudgeConfig;
+    private Vector3 _parryJudgePlayerPos;
     private float _stabVisualTimer;
     private StabSweepEffect _lastStabEffect;
     private StabStartPose _lastStabPose = StabStartPose.None;
@@ -109,6 +122,19 @@ public partial class AttackSystem : MonoBehaviour
     /// 当前是否处于攻击动作播放中（动作锁定计时器未结束）
     /// </summary>
     public bool IsActionPlaying => _actionLockTimer > 0f;
+
+    /// <summary>
+    /// 清空动作锁（教学时停用）。
+    /// 冻结时 <c>Time.deltaTime = 0</c> → 动作锁的计时**不走** → 上一拍（例如点戳）的锁
+    /// 会永远卡着 → 玩家的招架发不出来（看起来就是「招架不出来」）。
+    /// </summary>
+    public void ClearActionLock() => _actionLockTimer = 0f;
+
+    /// <summary>
+    /// 上一次招架**是否真的格到了东西**（true = 格开了敌人的攻击 / 弹开了飞行物）。
+    /// 教学时停拍用：格不到就不收拍，让玩家再试一次（教学不设失败）。
+    /// </summary>
+    public bool LastParryBlocked { get; private set; }
 
     /// <summary>最近一次成功执行招式的攻击类型（供招式状态机同步当前节点）</summary>
     public AttackType LastMoveAttackType { get; private set; }
@@ -278,12 +304,31 @@ public partial class AttackSystem : MonoBehaviour
         if (_stabVisualTimer > 0f)
             _stabVisualTimer -= Time.deltaTime;
 
+        // 招架接触帧：挥入结束（枪到位）才判能不能格开
+        if (_parryJudgeTimer >= 0f)
+        {
+            _parryJudgeTimer -= Time.unscaledDeltaTime;
+            if (_parryJudgeTimer <= 0f)
+            {
+                _parryJudgeTimer = -1f;
+                var cfg = _parryJudgeConfig;
+                _parryJudgeConfig = null;
+                if (cfg != null) ResolveParryContact(cfg, _parryJudgePlayerPos);
+            }
+        }
+
         // 持续记录当前戳击的姿态：即使特效被外部清理（如路线转场），下一段也能接着走
         if (_lastStabEffect != null)
         {
             _lastStabPose = _lastStabEffect.CapturePose();
             _lastStabPoseTime = Time.time;
         }
+    }
+
+    private void OnGUI()
+    {
+        if (!ShowParryDebug) return;
+        GUI.Box(new Rect(10f, 130f, 500f, 92f), _parryDebugText);
     }
 
     private void Start()
@@ -309,6 +354,13 @@ public partial class AttackSystem : MonoBehaviour
         _currentChargeLevel = chargeLevel;
         if (playerState == null) return false;
         if (playerState.stageState != StageState.InProgress) return false;
+
+        // 教学关：还没教到的招式不允许发出（白名单 = 已教完的 + 当前这一拍要教的）
+        if (!TutorialAttackGate.Allows(attackType))
+        {
+            Debug.Log("[Tutorial] 招式还没教到，不允许发出：" + attackType + "（当前可用：" + TutorialAttackGate.Describe() + "）");
+            return false;
+        }
 
         // 招架是局外解锁项：天赋树里配了节点且还没点时，竖滑不蓄力不再出招
         if (attackType == AttackType.Parry)

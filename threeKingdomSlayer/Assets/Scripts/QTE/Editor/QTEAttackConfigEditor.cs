@@ -1,3 +1,5 @@
+// 同 QTEConfigEditor：本文件在运行时程序集里，必须用 #if UNITY_EDITOR 包裹，否则打包编译失败。
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -166,3 +168,4 @@ public class QTEAttackConfigEditor : Editor
         Debug.Log($"[QTEAttackConfigEditor] {config.name}: clip {oldDuration:F2}s → {newDuration:F2}s");
     }
 }
+#endif

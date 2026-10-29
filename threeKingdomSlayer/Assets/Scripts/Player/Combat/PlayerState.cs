@@ -237,8 +237,9 @@ public class PlayerState : MonoBehaviour
         if (isInvincible) return;
 
         // 防御姿态：免伤，只累积破防值（破防值满 → 破防硬直）
+        // 把攻击者传进去 → 防御能给出「格挡」反馈（攻击者卡肉 + 镜头震动）
         if (Guard != null && WeaponStance != null && WeaponStance.IsDefending
-            && Guard.TryAbsorbDamage(damage)) return;
+            && Guard.TryAbsorbDamage(damage, source)) return;
 
         float originalDamage = damage;
 

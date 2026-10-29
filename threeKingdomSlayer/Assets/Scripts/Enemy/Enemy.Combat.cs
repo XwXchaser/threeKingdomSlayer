@@ -92,6 +92,7 @@ public partial class Enemy : MonoBehaviour
         // 重攻击：前摇可打断（霸体期也能）→ 专职“拆前摇”
         // 招架  ：只在**出伤窗口**（挥击即将落下）能格开；前摇打不断 → 专职“格出伤”
         // 收招（AttackDraw）：一律不可打断
+        bool parryDeflected = false;
         if (canInterruptAttack && state == EnemyState.Attacking && isAttackAnimating)
         {
             if (isParryInterrupt)
@@ -99,6 +100,7 @@ public partial class Enemy : MonoBehaviour
                 // 格开：只在出伤窗口内生效（出伤会随攻击被取消而不结算）
                 if (IsInStrikeWindow())
                 {
+                    parryDeflected = true;
                     // 削韧跟着“判定成功”走：只有真的格开了一次才磨架势（不再范围无条件磨）
                     if (parryPoiseDamage > 0f) Poise.TakePoiseDamage(parryPoiseDamage);
                     _allowHitFlashOnce = true;
@@ -112,8 +114,16 @@ public partial class Enemy : MonoBehaviour
             }
         }
 
+        // 招架**没格开**时对敌人零表现（2026-10-26）：
+        // 不卡肉、不闪白、不播受击动画、不播受击音效。
+        // 否则招架会把敌人的攻击前摇动画打断：闪白 + Hit 动画会盖掉 Attack 状态，
+        // 0.14s 局部卡肉还会让前摇动作顿一下——但招架在前摇本来就“打不断”。
+        // 只有真的格开了一次（parryDeflected）才保留受击表现（弹刀反馈未实现前的临时替代）。
+        bool parryNoDeflect = isParryInterrupt && !parryDeflected;
+
         bool allowHitReactionAnimation = triggerHitAnimation
             && !suppressHitReactionAnimation
+            && !parryNoDeflect // 招架没格开 = 不碰敌人的受击动画（前摇动画不能被打断）
             && !IsFrozenHitReactionSuppressed // 冻结中受击不播 hitted（破冰序列除外）
             && feedbackSource != HitFeedbackSource.Dot
             && damageType != DamageType.Launch
@@ -165,15 +175,16 @@ public partial class Enemy : MonoBehaviour
             }
         }
 
-        if (!isBoss && feedbackSource != HitFeedbackSource.Dot)
+        if (!isBoss && feedbackSource != HitFeedbackSource.Dot && !parryNoDeflect)
             AudioManager.Instance?.PostEvent("Enemy_Hit");
         HitFeedbackStrength resolvedFeedbackStrength = feedbackStrength
             ?? HitFeedbackManager.ResolveStrength(damageType, feedbackSource, finalDamage, false);
         if (shieldBlocked)
             resolvedFeedbackStrength = HitFeedbackStrength.Light; // 格挡：弱化卡肉，避免读成重击
-        HitFeedbackManager.Trigger(HitFeedbackManager.CreateDamageContext(this, damageType,
-            feedbackSource, resolvedFeedbackStrength, finalDamage, false, impactPosition, impactDirection,
-            diseaseStabHit, resolvedHitReactionDirection));
+        if (!parryNoDeflect) // 招架没格开 = 不卡肉（局部卡肉会顿掉敌人的前摇动作）
+            HitFeedbackManager.Trigger(HitFeedbackManager.CreateDamageContext(this, damageType,
+                feedbackSource, resolvedFeedbackStrength, finalDamage, false, impactPosition, impactDirection,
+                diseaseStabHit, resolvedHitReactionDirection));
         if (countsForCombo)
             OnDamageTaken?.Invoke(this);
         OnHealthChanged?.Invoke(this, currentHealth, maxHealth);
@@ -252,6 +263,39 @@ public partial class Enemy : MonoBehaviour
             // 普通攻击只造成伤害，不打断；真正击飞走 Launch -> 落马。
             _cavalry.OnInterruptingHit();
         }
+    }
+
+    /// <summary>
+    /// 招架的**有效窗口**判定（2026-10-26 active-frame 模型）：
+    /// 玩家的招架在**接触帧**（挥入结束、枪到位那一刻）起进入有效状态，持续 <paramref name="windowSeconds"/>。
+    /// 敌人的出伤若落在 [现在, 现在+window] 内 → 被格开（取消攻击，出伤随之不结算）。
+    /// 出伤已过（太晚，枪还没到位对方就打到了）或还太早（太早，招架先过期）→ 不格开。
+    /// </summary>
+    /// <param name="windowSeconds">有效窗口长度（= 敌人的 <see cref="parryStrikeWindow"/>：越难挡的敌人越短）。</param>
+    /// <param name="poiseDamage">格开成功时结算的架势伤害（只在真格开时结算）。</param>
+    /// <returns>是否真的格开了。</returns>
+    public bool TryDeflectByParry(float windowSeconds, float poiseDamage)
+    {
+        if (state == EnemyState.Dead) return false;
+        if (isBoss && bossState != BossState.InCombat) return false;
+        if (isPhaseTransitioning || _healthLocked) return false;
+        if (state != EnemyState.Attacking || !isAttackAnimating) return false;
+        if (isAttackDrawPhase) return false;                     // 收招：不可格开
+        float timeToStrike = TimeToStrike();
+        if (timeToStrike < -0.05f) return false;                // 出伤已过：太晚
+        if (timeToStrike > windowSeconds) return false;         // 出伤还太早：招架会先过期
+
+        // 格开：取消攻击（出伤随之不结算）+ 削韧（跟着判定成功走）
+        if (poiseDamage > 0f) Poise.TakePoiseDamage(poiseDamage);
+        _allowHitFlashOnce = true;
+        CancelAttack();
+
+        // 受击表现（弹刀反馈未实现前的临时替代）：闪白 + 受击动画
+        // （卡肉/镜头震/像素火花由调用方 HitFeedbackManager.Trigger 统一触发，避免重复）
+        ApplyHitFlashImmediate();
+        hitFlashTimer = HIT_FLASH_DURATION;
+        TriggerHitFlash(ResolveHitReactionDirection(HitReactionDirection.None));
+        return true;
     }
 
     /// <summary>

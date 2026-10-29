@@ -52,9 +52,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: "\u6301\u5251\u6742\u5175_1011"
   enemyId: 1011
-  maxHealth: 200
+  maxHealth: 100
   occupySlots: 1
-  attackSpeed: 0.5
+  attackSpeed: 0.4
   attackDamage: 3
   normalFormDamageReductionPercent: 0
   attackRange: 1
@@ -71,7 +71,7 @@ MonoBehaviour:
     - spriteName: Enemy_1011_attack8
       keyIndex: 8
       resolve: 1
-      hitTime: 2
+      hitTime: 2.4
   isRanged: 0
   projectilePrefab: {fileID: 0}
   projectileArcHeight: 3
@@ -91,6 +91,8 @@ MonoBehaviour:
   shareHealthWithAdjacent: 0
   maxPoise: 50
   stunDuration: 5
+  parryStrikeWindow: 0.4
+  poiseStunDuration: 1.5
   freezeDuration: 4
   freezeChanceMax: 0.9
   freezeChanceDecayDelay: 0.8

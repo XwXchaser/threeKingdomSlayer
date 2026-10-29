@@ -87,10 +87,12 @@ public partial class Enemy : MonoBehaviour
     [Header("架势系统")]
     public float maxPoise = 50f;
     public float stunDuration = 1.5f;
-    [Tooltip("招架可打断的「出伤窗口」：挥击即将落下的那段时间（出伤瞬间前多少秒内，招架能格开）。\n" +
-             "默认 0.15s。窗口之外（=前摇）招架打不断——前摇留给重攻击拆（2026-10-26 招架时机重定）。")]
+    [Tooltip("招架的**有效窗口**：玩家的招架在**接触帧**（挥入结束、枪到位那一刻）起进入有效状态，持续这段时间。\n" +
+             "敌人的出伤若落在 [接触帧, 接触帧+本值] 内 → 被格开（取消攻击，出伤不结算）。\n" +
+             "默认 0.4s。值越大 = 这个敌人的攻击越容易格开（1012 这种慢手给 0.5）。\n" +
+             "出伤落在窗口之前 = 招架太晚（已经挨打）；落在窗口之后 = 招架太早（白挥）。")]
     [Range(0f, 0.6f)]
-    public float parryStrikeWindow = 0.15f;
+    public float parryStrikeWindow = 0.4f;
     [Tooltip("破势（架势归零）时的眩晕时长（秒，默认 1.5）。普通敌人用这个值；BOSS 沿用 stunDuration。\n" +
              "破势由「霸体窗口内被重攻击削韧」触发，眩晕同时解除霸体。")]
     [Range(0f, 10f)]
@@ -274,6 +276,20 @@ public GameObject freezeMeltEffectPrefab;
         float timeToStrike = _approachDuration - elapsed;
         float window = Mathf.Max(0f, parryStrikeWindow);
         return timeToStrike <= window && timeToStrike >= -0.05f;
+    }
+
+    /// <summary>
+    /// 本次攻击距离**出伤**还剩多久（秒）；不在攻击中 / 没有前摇时返回 -1。
+    /// 与 <see cref="IsInStrikeWindow"/> 同源（都用 tween 已播比例），
+    /// 教学关的时停拍用它判断"窗口是否已开"（冻结必须落在窗口内，否则招架永远判不中 → 死锁）。
+    /// </summary>
+    public float TimeToStrike()
+    {
+        if (state != EnemyState.Attacking || !isAttackAnimating) return -1f;
+        if (_attackTween == null || !_attackTween.IsActive()) return -1f;
+        if (_approachDuration <= 0f) return -1f;
+        float elapsed = _attackTween.Duration() * _attackTween.ElapsedPercentage();
+        return _approachDuration - elapsed;
     }
     internal bool _isStunExiting;
     private bool _resumeStunAfterLaunch;

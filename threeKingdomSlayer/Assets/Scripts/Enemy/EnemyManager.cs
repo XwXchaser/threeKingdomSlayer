@@ -176,6 +176,29 @@ public class EnemyManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// **非死亡移除**：把敌人从战场摘掉（移出存活列表 + 移出列），**不触发** <see cref="OnAnyEnemyDied"/>
+    /// → 不计击杀 / 经验 / 铜钱 / 道具掉落。
+    ///
+    /// 用途：教学关的 109 冲锋后"回退淡出离场"（玩家不是把它打死的）。
+    /// 调用方必须先停掉该敌人的协程/演出（否则回池后残留状态）。
+    /// 存活列表清空时照常触发 <see cref="OnAllEnemiesDied"/>（波次完成的判据）。
+    /// </summary>
+    public void DespawnEnemy(Enemy enemy)
+    {
+        if (enemy == null) return;
+        if (!allAliveEnemies.Remove(enemy)) return;
+
+        columnManager?.RemoveEnemyFromColumn(enemy.columnIndex, enemy, skipChain: true);
+
+        EnemyPool.Instance?.ReturnEnemy(enemy);
+
+        if (allAliveEnemies.Count == 0)
+        {
+            OnAllEnemiesDied?.Invoke();
+        }
+    }
+
     /// <summary>击杀掉落道具判定</summary>
     private void TryDropItem(Enemy enemy)
     {

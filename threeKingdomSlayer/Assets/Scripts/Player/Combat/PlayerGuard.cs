@@ -38,6 +38,12 @@ public sealed class PlayerGuard
     /// <summary>状态变化回调（表现层可订阅）。</summary>
     public event Action<GuardState> OnStateChanged;
 
+    /// <summary>
+    /// 防御期间吸收了伤害时广播（参数 = 本次吸收的伤害量）。
+    /// 教学关的防御拍靠它判定"玩家成功防住了一下"（破防值累积、HP 不变）。
+    /// </summary>
+    public event Action<float> OnDamageAbsorbed;
+
     public PlayerGuard(PlayerState owner)
     {
         _owner = owner;
@@ -73,13 +79,27 @@ public sealed class PlayerGuard
     /// <summary>
     /// 防御期间吸收伤害：返回 true 表示这次伤害被防御吃掉（不掉血，只累积破防值）。
     /// 非防御状态一律返回 false，由调用方照常结算。
+    /// <paramref name="source">攻击者（用来做「格挡」反馈：攻击者被卡肉 + 镜头震动）。
     /// </summary>
-    public bool TryAbsorbDamage(float damage)
+    public bool TryAbsorbDamage(float damage, Enemy source = null)
     {
         if (State == GuardState.Broken) return false;
 
-        AccumulatedDamage += Mathf.Max(0f, damage);
+        float absorbed = Mathf.Max(0f, damage);
+        AccumulatedDamage += absorbed;
         _owner?.WeaponStance?.Recoil(ParryConfig);
+        OnDamageAbsorbed?.Invoke(absorbed);
+
+        // 格挡反馈（2026-10-26）：挡下一下必须有明确的画面反馈 ——
+        // 攻击者被卡肉（这一下顿住）+ 镜头重击级震动。
+        // 否则玩家只看到血条没掉、破防条涨一点，**感觉不到「挡住了」**。
+        if (source != null)
+        {
+            source.ApplyHitStop(0.12f);
+        }
+        Vector3 blockPos = source != null ? source.transform.position
+            : (_owner != null ? _owner.transform.position : Vector3.zero);
+        CameraFeedbackController.Instance?.RequestGuardBlock(blockPos);
 
         if (AccumulatedDamage >= Threshold) Break(ParryConfig);
         return true;
