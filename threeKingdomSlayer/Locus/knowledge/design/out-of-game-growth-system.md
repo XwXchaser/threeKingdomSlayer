@@ -59,9 +59,10 @@ aiEditMode: inherit
 
 **关键设计**：天赋树每个节点都是「机械开关」，改变「能做什么」而非「做了多疼」。
 
-#### 当前实现（2026-10-25 核对，与 `TalentTree_Main.asset` 一致）
+#### 当前实现（2026-10-26 核对，与 `TalentTree_Main.asset` 一致）
 
-现资产 9 个节点，与上表的对应关系：**破阵 / 追击 / 运筹 / 不屈** 对应 flag 节点（`talent_break_formation` / `talent_pursuit` / `talent_strategy`（extra_choice）/ `talent_undying`）；**冰系** 两个 flag（`talent_ice_thaw` 重击解冻、`talent_ice_break_push` 破冰顶开）；三个招式解锁节点 `talent_unlock_c2`（指向突刺）、`talent_unlock_c4`（枪突收尾）、**`talent_unlock_parry`（招架格挡）**。
+现资产 **8 个节点**（原 9 个）：**破阵 / 追击 / 运筹 / 不屈** 对应 flag 节点（`talent_break_formation` / `talent_pursuit` / `talent_strategy`（extra_choice）/ `talent_undying`）；**冰系** 两个 flag（`talent_ice_thaw` 重击解冻、`talent_ice_break_push` 破冰顶开）；两个招式解锁节点 `talent_unlock_c2`（指向突刺）、`talent_unlock_c4`（枪突收尾）。
+**`talent_unlock_parry`（招架格挡）已于 2026-10-26 删除** → 招架变**基础招式**（教学关就要教它与防御；用户定调“本来就不应该在这里”）。
 
 **前置关系的数据规则（重要）**：
 

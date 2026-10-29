@@ -3,7 +3,7 @@ id: kd_mainmenu-hub-refactor-plan-20261020
 injectMode: inherit
 injectAgents:
 - '*'
-summary: 主菜单/落地页重构方案 —— 落地即 Battle 场景、关卡内容进场景即加载、选关与天赋降级为二级 overlay；阶段 A/B/C 已完成，含包体实测数据、分阶段计划与 16 条坑
+summary: 主菜单/落地页重构方案 —— 落地即 Battle 场景、关卡内容进场景即加载、选关与天赋降级为二级 overlay；阶段 A/B/C 已完成，含包体实测数据、分阶段计划与 26 条坑；落地页美术已由 V9 拆件替换（见 plan/hub-ui-v9-assembly-handoff-20261025.md）
 aiEditMode: inherit
 ---
 
@@ -64,8 +64,9 @@ aiEditMode: inherit
 | 阶段 G：界面接管全屏（画布层级 / 不透明底 / 落地页内容让位） | ✅ `1210dc5`（未 push） |
 | 阶段 H：tab 栏改为界面导航（选关/天赋是界面，不是二级窗口） | ✅ `d3676c3`（未 push） |
 | D0 中央轻交互 / D2 体力状态条 / 字体 36MB | ⬜ 未做 |
+| **落地页美术（V9 拆件）** | ✅ **用户已签收**（2026-10-25）：8 件拆件接入 Battle 场景并按 V7 比例重排，真实 Game 视图截图核验通过 → 见 `plan/hub-ui-v9-assembly-handoff-20261025.md`；**左上角「商城 / 首充 / 活动」那组仍未做** |
 
-**待用户人眼验收**：hub 实际观感（头像/金币/开始按钮/tab 栏的大小与位置、就绪态背景是否好看）。截图工具在本机截不到 Overlay UI（§7.14），只能人眼看。
+**待用户人眼验收**：hub 实际观感（头像/金币/开始按钮/tab 栏的大小与位置、就绪态背景是否好看）。**注：`unity_capture_viewport` 现在能截到 Overlay UI**（§7.14 已作废），落地页美术已能用截图自检；仍需用户在游戏里看最终观感。
 
 **已知遗留**：
 - `FakeRouteRuntime.cs` / `FakeRouteStageSaveSnapshot.cs` 里挂着可破坏道具（`BreakableProp`）的未提交改动
@@ -518,7 +519,7 @@ Build Settings
 11. **`FindFirstObjectByType<T>()` 找不到 inactive 对象**：`TalentTreePanel` 在 MainMenu 场景里是 `active=False`，要用 `FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None)`（阶段 B 踩到）
 12. **跨场景拷贝组件配置要分两步**：`SerializedObject` 绑定的目标对象在切换场景后会被销毁 → 先把源值取到数组，再开目标场景写入（阶段 B 踩到）
 13. **`unity_execute` 的 `request_editor_status` 不要写死**：Play Mode 进/退和 domain reload 抢时序，写死成 `playing` 时会报「Status Changed: now editing」并**直接结束这一轮**，看起来就像「任务又断了」。正确做法：先确认状态（用 `unity_set_play_mode` 幂等推进到目标态），再发读取调用
-14. **`unity_capture_viewport` 在本环境截不到 Overlay UI**（阶段 C 踩到）：把 `StartStageButton` 和 HUD 底栏都改成洋红、甚至把主相机 `clearFlags=SolidColor` + 背景洋红，截图里**一像素洋红都没有**；连续两次截图几乎一模一样。结论：它不能用来做 UI 像素验证。UI 验证改用「组件状态回读 + `EventSystem.RaycastAll` + 人眼」
+14. ~~**`unity_capture_viewport` 在本环境截不到 Overlay UI**~~（**2026-10-25 已作废**）：当时把 `StartStageButton` 和 HUD 底栏都改成洋红、截图里一像素洋红都没有。现在实测可直接截到 Overlay UI（Game 视图 1080×2160，输出 640×1280，落地页 UI 完整入画），落地页改版可以直接用截图自检。其余「组件状态回读 + `EventSystem.RaycastAll`」的验证手段仍有效。
 15. **工作区脏时提交自己的改动**（阶段 C 踩到）：`FakeRouteRuntime.cs` 里混着上一轮未提交的 `BreakableProp` 改动（而 `Assets/Scripts/Prop/` 本身还是 untracked）。直接 `git add` 会提交一个引用 untracked 类型的坏 commit。做法：`git diff <file> > full.patch` → `sed -n '1,Np'` 只留自己的 hunk → `git apply --cached mine.patch`，然后 `git show :<file> | grep -c BreakableProp` 必须为 0（阶段 F 实测：这套 CRLF 环境下 `git apply --cached` 会报 `patch does not apply`，改用「`git show HEAD:<path>` 取出 → 脚本套上自己的替换写成 mine.cs → 覆盖工作区文件 `git add` → 把完整工作区文件覆盖回来」，`git show :./<path>` 注意要在子目录里加 `./` 前缀）
 16. **无 sprite 的 `Image` 不要赌它一定出网格**：本项目所有 UI 一律配精灵（按钮用 `MM_Btn_Primary` / `Secondary` + `SpriteSwap`，pressed 用 `*_Pressed`）。落地页大按钮直接复用这套，尺寸/字号也抄主菜单（479×172、TMP 54、字色 `0.97/0.92/0.78`）
 17. **引用了 untracked 资产**（D4 收尾时发现）：`Assets/Sprites/UI/MainMenu` / `Talent` / `Tutorial` 三个目录一直是 untracked，但 `908e7c0` 的 overlay 场景和落地页按钮已经在用它们的 GUID —— **新克隆会全是丢引用**。已补提交（`31d2937`）。提交前先 `git status --short` 看场景/预手引用到的目录是否都是 tracked
@@ -531,6 +532,10 @@ Build Settings
 24. **同帧读取 UI 状态会读到旧值**：`IsPrepared` 变 true 的那一帧 `BattleStartStageButton` / `BattleHubTabBar` / `HubHudModeSwitch` 的 `Update` 还没跑，此刻读 `alpha` / `interactable` 会得到 0 / false。验证脚本要额外等几帧再读（阶段 F 踩到）
 25. **验证会污染存档（PlayerPrefs）**：`SetActiveFakeRouteStage` / `SaveFakeRouteSnapshot` / `MarkStageCleared` 都直写 PlayerPrefs。做法：开工前 `JsonUtility.ToJson(SaveManager.Load())` 备份、结束时 `SaveManager.Save(FromJson(...))` 还原（阶段 F 用的就是这个）
 26. **Screen Space - Overlay 画布永远压在 Screen Space - Camera 画布之上**，与 sortingOrder 无关（`BattleHUD` 21 vs 二级页 10/11 → 二级页永远在下）。additive 叠 UI 页面时，**两边必须是同一种 render mode**，否则只能靠隐藏来实现「不叠在一起」（阶段 G 踩到）
+27. **布局组会覆盖手工设的 Rect**：`HubSceneSetup` 搭 UI 时给任务栏 `Content` 加了 `HorizontalLayoutGroup`、`TextBox` 加了 `VerticalLayoutGroup`，每帧重算子节点 Rect，脚本改的 anchoredPosition 会被冲掉。要手工排版必须先移除这些布局组与 `LayoutElement`（V9 落地页已移除）
+28. **构建工具会把占位 `Image` 组件 disable**：`HubTaskBar/Content/Icon`（当时没接任务系统）被置为 `Image.enabled=false`，只换 sprite 不会显示。替换素材后要同时确认 `enabled` 与 `gameObject.activeSelf`
+29. **Hub 脚本在 `OnEnable` 用自身字段覆盖精灵**：`HubTaskBar.barSprite/iconSprite/rewardSprite`、`HubCoinDisplay.iconSprite`、`HubTalentEntry.treeSprite`、`HubMenuPlaceholder.keySprite` 都会把 Image 的 sprite 刷成自己的 public 字段。换素材必须同时改场景里的脚本字段，否则运行时退回旧图
+30. **`RectTransform.anchoredPosition` 相对的是「轴心点」不是「左边缘」**：父节点轴心 0.5 时，锚在父左边缘的子节点会偏出父框一半（落地页标题被推出屏幕就是这个原因）。父节点轴心改成左对齐可消除这类偏移
 
 ---
 

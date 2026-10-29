@@ -275,7 +275,7 @@ rot = Quaternion.FromToRotation(枪身本地 +Y, 目标世界方向)
 - **两杆长枪的根因**：站桩蓄力武器 `ChargeStabVisual` 是**跟随指针世界坐标**的，按住 ≥0.3s 就出现，
   而招架正是“按住时划一下”→ 两者必然同屏。现在蓄力视觉 / 蓄力等级 / 蓄力指示器
   一律对“持枪姿态进行中”（Raising / Returning / Settled）让位（`IPlayerInput.IsGuarding`）。
-- **前置条件**：招架本身是**局外天赋解锁项**（`talent_unlock_parry`，100 铜钱，独立旁支、无前置）。没解锁就既不能招架、也进不了防御姿态。2026-10-25 曾因天赋树的“空列表 = 取列表上一项”旧规则把它挂在 1850 铜钱单链末端，导致实际买不到 → 已修（见 `design/out-of-game-growth-system.md`）。
+- **前置条件**：~~招架本身是**局外天赋解锁项**（`talent_unlock_parry`，100 铜钱，独立旁支、无前置）。没解锁就既不能招架、也进不了防御姿态。~~ → **2026-10-26 起取消**：教学关要教招架/防御，且用户定调「招架是基础招式，不该锁在天赋后面」→ `TalentTree_Main.asset` 已删除 `talent_unlock_parry` 节点（9→8 节点），招架恒可用。防御姿态同样不再有前置。
 - **归属**：`PlayerWeaponStance` + `PlayerGuard` 都由 `PlayerState` 持有（与 Enemy → EnemyPoise 同做法，不新增场景组件）；全部数值挂在**招架招式资产**的 `parryGuard*` / `parryStance*` 字段上（Inspector 可调、无幽灵引用）。
 - **实现注意**：武器销毁前必须先 `DOKill`（否则后摇 tween 会写已销毁的 Transform → MissingReferenceException）。
 

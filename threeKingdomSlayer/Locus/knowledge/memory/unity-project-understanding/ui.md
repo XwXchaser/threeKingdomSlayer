@@ -7,7 +7,7 @@ aiEditMode: inherit
 ---
 
 ---
-summary: UI 域的使用文档（2026-10-24）——HUD/落地页/选关/天赋页/翻牌各系统的代码位置与职责、Hub 态与局内态的切换（HubHudModeSwitch）、竖屏分辨率适配与安全区、调试按钮；含加一个 UI 要动哪几处、坑与代码路径，便于按需核对。
+summary: UI 域的使用文档（2026-10-25 更新）——HUD/落地页/选关/天赋页/翻牌各系统的代码位置与职责、Hub 态与局内态的切换（HubHudModeSwitch）、竖屏分辨率适配与安全区、落地页 V9 美术接线（Assets/Sprites/UI/Hub/hub_v9_*）与改素材必动的四类坑、调试按钮；便于按需核对。
 injectMode: inherit
 aiEditMode: inherit
 ---
@@ -81,10 +81,24 @@ aiEditMode: inherit
 4. **QTE 翻牌会被打断** ✅ ❗（已知问题 ✅ ✅ → `memory/known-issues.md` ✅ ✅✅ ✅）✅ ✅
 5. **开发按钮只在开发构建** ✅ ✅（`DevSkipBattleButton` ✅ ✅ ✅）✅ ✅ —— 别带进正式包 ✅ ✅
 6. **UI 文件多（~55 个 ✅ ✅）** ✅ ✅ → 找界面先按**文件名 + 用途**找 ✅ ✅（`UI/` ✅ ✅ 下按界面分文件 ✅ ✅✅ ✅）✅ ✅
+7. **改落地页素材必动四类地方** ✅ ❗（2026-10-25 实测踩到 ✅ ✅✅ ✅）：
+   ① **脚本字段** —— `HubTaskBar.barSprite/iconSprite/rewardSprite`、`HubCoinDisplay.iconSprite`、`HubTalentEntry.treeSprite`、`HubMenuPlaceholder.keySprite` 会在 `OnEnable` 把 Image 的 sprite 刷回去 ✅ ✅（只改 Image 不够 ✅ ✅❗）✅ ✅
+   ② **布局组** —— 任务栏 `Content` 上的 `HorizontalLayoutGroup` + `TextBox` 上的 `VerticalLayoutGroup` 每帧重算子节点 Rect，手工定位会被冲掉 ✅ ✅（要手工排版必须先移除 ✅ ✅❗）✅ ✅
+   ③ **组件启用状态** —— `HubSceneSetup` 把占位的 `Content/Icon` 的 `Image` 置为 `enabled=false`（当时未接任务系统）✅ ✅（只换 sprite 不会显示 ✅ ✅❗）✅ ✅
+   ④ **RectTransform 轴心** —— `anchoredPosition` 相对的是轴心点不是左边缘 ✅ ✅（父轴心 0.5 时子节点锚父左缘会偏出父框一半 ✅ ✅❗）✅ ✅
 
 ---
 
-## 六、代码路径（改之前先核对 ✅ ✅）
+## 六、落地页美术接线（V9，2026-10-25） ✅ ✅
+- **画布** ✅ ✅：`Battle.scene` → `HubCanvas(Canvas)`（Screen Space - Overlay ✅ ✅ order 25 ✅ ✅）→ `Hub` → `Top` / `Side` / `Bottom` ✅ ✅；设计空间 **960×1920** ✅ ✅（`CanvasScaler` 参考 1080×1920 + match height ✅ ✅，真机 Game 视图 1080×2160 ✅ ✅）✅ ✅。
+- **资产** ✅ ✅：`Assets/Sprites/UI/Hub/hub_v9_*.png` ✅ ✅（14 个 ✅ ✅ —— 空方框 ✅ ✅ / 任务底 ✅ ✅ / 靶标 ✅ ✅ / 红底 ✅ ✅ / 艺术字 ✅ ✅ / 包子 ✅ ✅ / 金币 ✅ ✅ / 资源底 ✅ ✅ / 经脉武将 ✅ ✅ / 四键符号 ×4 ✅ ✅ / 进度条 ✅ ✅）✅ ✅；导入参数照抄 `hub_task_plate_v3.png` ✅ ✅（Sprite ✅ ✅ / Single ✅ ✅ / alphaIsTransparency ✅ ✅ / 无 mipmap ✅ ✅ / Point ✅ ✅ / PPU 100 ✅ ✅ / 中心轴 ✅ ✅）✅ ✅。
+- **就绪态可见性** ✅ ✅：`HubHudModeSwitch.inRunOnly = Hero / Feedback / Enemy / Input / PauseLayer` ✅ ✅ → 就绪态整组隐藏 ✅ ✅，所以**局内头像与局内铜钱计数在落地页不出现** ✅ ✅（不会与 `HubCoin` 资源行重复 ✅ ✅）✅ ✅。
+- **构建工具** ✅ ✅：`Tools/落地页/搭建落地页 UI` ✅ ✅（`HubSceneSetup.cs` ✅ ✅）会**重建节点并覆盖手工布局** ✅ ✅❗ —— 改完布局别随手重跑它 ✅ ✅。
+- **详见** ✅ ✅：`plan/hub-ui-v9-assembly-handoff-20261025.md` ✅ ✅（接线映射表 ✅ ✅ / 6 个可复用坑 ✅ ✅ / 遗留项 ✅ ✅）✅ ✅。
+
+---
+
+## 七、代码路径（改之前先核对 ✅ ✅）
 - `Assets/Scripts/UI/` ✅ ✅（~55 个文件 ✅ ✅ —— 按界面分 ✅ ✅✅ ✅）✅ ✅
 - `Assets/Scripts/UI/HubHudModeSwitch.cs` ✅ ✅、`HubStateSource.cs` ✅ ✅、`CanvasScalerAdapter.cs` ✅ ✅、`SafeAreaAdapter.cs` ✅ ✅、`DevSkipBattleButton.cs` ✅ ✅ ✅ ✅
 - `Assets/Scripts/Managers/StageController.cs` ✅ ✅（局内总控 ✅ ✅✅ ✅）✅ ✅

@@ -368,6 +368,45 @@ UnityEditor.EditorApplication.delayCall += () => AndroidBuildMenu.BuildAndroidTr
 
 ---
 
+## 2026-10-27 教学关改造后出新包（335MB）
+
+> 用途：教学关招架/防御改造后给用户真机验收。
+
+- 产物：`Build/Android/threeKingdomSlayer_full_20261026_0944.apk`（**335MB**，errors=0，warnings=35，用时 4:55）
+- 布局自检：✅ 传统分文件（level* = 4，data.tj3d = False）→ 避开集群包崩溃
+- ABI：`arm64-v8a` + `x86`（真机与模拟器都能装）
+- 包名：`com.DefaultCompany.threeKingdomSlayer` v0.1（debug 签名，**不能上架**）
+- 设备：构建时 `adb devices` 为空 → 装机验证需在有真机的环境做
+
+### 新坑：**运行时程序集里的 Editor 脚本会让打包编译失败**（2026-10-27）
+
+- 现象：打包 `RESULT=Failed errors=7`，报
+  `Assets\Scripts\QTE\Editor\QTEAttackConfigEditor.cs(5,2): error CS0246: The type or namespace name 'CustomEditor' could not be found`，
+  末行 `Error building Player because scripts had compiler errors`。
+- 根因：`Assets/Scripts/QTE/` 被 `Locus.Combat.asmref` 划进**运行时**程序集 → 其中的 `Editor/` 子目录**不再适用 Unity 的「Editor 文件夹自动排除」规则** →
+  编辑器脚本被编进玩家程序集（玩家侧没有 `UnityEditor`）。
+  **为什么编辑器里不报错**：编辑器编译运行时程序集时会给 `UnityEditor.dll` 引用（`#if UNITY_EDITOR` 块能编）→ 只有出包才炸。
+- 修法：用标准的 `#if UNITY_EDITOR … #endif` 把这两个文件包起来（不动文件位置、不动 GUID）。
+- 排查方法：`find Assets/Scripts -type d -name Editor` 逐个看该目录归属的程序集；
+  归属运行时程序集（asmdef/asmref）的必须自己加 `#if UNITY_EDITOR`。
+  目前只有 `Assets/Scripts/QTE/Editor/` 有这个问题（`Assets/Scripts/Editor/` 属于 Editor-only 的 `Locus.EditorTools` ✓）。
+
+### 打包前置自检（本轮做的）
+
+- [x] 字体字形覆盖：教学关全部台词 + 关键 UI 文案共 260 字，`方正粗黑宋简体 SDF`（7229 字形）**缺 0** ✓
+      （项目总汉字 10215 > 字形 7229，**其它界面仍可能缺字**，真机看到方块就是这个）
+- [x] Target Architectures = 6（ARM64|X86）✓
+- [x] Build Settings 4 张场景：Battle / YJunctionSample / StageSelect / TalentTree ✓
+- [x] AndroidPlayer 模块已装 ✓
+
+### 真机验收要点（教学关）
+
+1. **必须清掉旧存档**才会进教学关：落地页左下角「清除存档」（字体已修好可读）；或 `adb shell pm clear com.DefaultCompany.threeKingdomSlayer`。
+2. 流程：落地页 → 开始关卡 → 点按拍 → 横划拍 → 升级（冰雾）→ 选路 → **招架拍（时停 + 上划格开霸体攻击）** → **防御拍（上划后按住挡住 109 冲锋）** → 109 淡出离场 → 胜利结算 → 回落地页。
+3. 真机重点验：**上划手势**（招架/防御都靠它）、定格时手指提示是否看得见、场景压暗是否只压场景。
+
+---
+
 ## 经验教训
 
 - **绝不直接 `edit` .meta 文件**（Tuanjie 引擎加密 GUID，会触发重生成导致引用断裂）。纹理/音频等导入设置的修改必须通过 `unity_execute` API

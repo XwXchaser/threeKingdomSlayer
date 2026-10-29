@@ -8,6 +8,9 @@ aiEditMode: inherit
 
 # 落地页剩余美术素材：四组九件生成交接（2026-10-24）
 
+> ⚠️ **本文的四组九件方案已大部分被 V9 拆件取代。当前权威入口：`Locus/knowledge/plan/hub-ui-v9-assembly-handoff-20261025.md`（用户已签收，8 件已接入 Battle 场景）。**
+> 实际落地对照：开始无字底板 → `hub_v9_start_brush`；任务底板 → `hub_v9_task_strip`；任务徽章 → `hub_v9_task_target`；铜钱墨条/资源栏底 → `hub_v9_resource_bar`；铜钱图标 → `hub_v9_coin`；四宫格置灰键 → `hub_v9_talent_frame` + `hub_v9_key_symbol_1..4`（改成了「方形底 + 彩色符号」）；天赋横向卡底 → **未按本文做**，改成了方形底框 + 经脉武将图标（`hub_v9_talent_frame` / `hub_v9_talent_icon`）。本文其余分析与提示词仍可作为素材工艺参考。
+
 > 状态：生成准备文档。用户要求根据上一轮方案准备交接，在别处发起生成。本轮未调用图片服务，未生成参考裁切、组图或独立素材，未修改 Unity 工程。
 > 本次目标：回到原始效果图的朱红破笔、硬朗角饰、墨色承托和克制金属质感，制作尚缺的四组九件素材。
 > 部署背景见 `Locus/knowledge/plan/hub-ui-deployment-handoff-20261024.md`。本文件是本次剩余素材生产入口，不重做已经生成的艺术字、木桥图或可算验收的铜钱图标。

@@ -30,6 +30,8 @@ aiEditMode: inherit
 
 ## 补充（2026-10-20）：`unity_capture_viewport` 截不到 Overlay UI
 
+> ⚠️ **本节结论已于 2026-10-25 修正为不成立，见文末「修正」小节。** 保留原文是因为「当时那台机器/那个会话确实截不到」这一事实仍然成立，且它提醒当时是靠什么绕过限制的。
+
 验证落地页按钮时踩到：把 `StartStageButton` 的 `Image.color` 和 HUD 底栏都改成洋红（1,0,1），等 5 帧后 `unity_capture_viewport(target=game)` 截回来的图里**一像素洋红都没有**；再把主相机 `clearFlags` 改成 `SolidColor` + 背景洋红，截图依旧没变化，而且连续两次截图像素几乎完全一致。
 
 结论与规则：
@@ -38,6 +40,17 @@ aiEditMode: inherit
 - UI 验证改走结构性证据：组件状态回读（`RectTransform` / `CanvasGroup.alpha` / `Image.sprite` / `Selectable.interactable`）+ `EventSystem.RaycastAll` 看点击命中 + 最终由人眼看真机/Game 视图。
 - `ScreenCapture.CaptureScreenshotAsTexture()` 在 `unity_execute` 的 async 片段里可能返回 null（不在帧末尾），不要靠它取像素。
 - 同理：`bash` 里的 heredoc（`cat >> file <<'EOF'`）经 shell 包装后会写不进去或写坏，追加/修改文件一律用 `edit`/`write`，改完回读确认。
+
+## 修正（2026-10-25）：`unity_capture_viewport` 现在能截到 Overlay UI
+
+重新做落地页 UI 时实测：`unity_capture_viewport(target=game)` 直接截到了完整的 Overlay UI（Game 视图 1080×2160 → 输出 640×1280），落地页的任务条、开始按钮、天赋方框、四宫格全部入画，**且截到的是实时状态**（改完就能看到）。
+
+- 所以「该工具不能做 UI 像素验证」这条**已作废**：UI 改版可以直接截图自检。
+- 当时那条结论可能来自特定会话/环境（连拍两次几乎一致、连相机底色都截不到，**更像截到的是缓存帧或非当前视图**），遇到时先试一次、确认截到的是实时画面再下结论。
+- 截图只能证明**画面**，不能证明**交互与状态机**：`EventSystem.RaycastAll`、组件状态回读、`Selectable.interactable` 等结构性验证仍然必要。
+- 截图前若临时改了场景状态（如为了模拟就绪态而隐藏战斗 HUD），**截完必须恢复并保存**，否则会把临时状态写进场景文件。
+
+---
 
 ## 补充（2026-10-20 晚）：`unity_execute` 可能整体返回空
 
