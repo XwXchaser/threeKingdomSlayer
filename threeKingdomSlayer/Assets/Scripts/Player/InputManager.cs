@@ -89,8 +89,18 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
         }
     }
 
-    /// <summary>指针是否物理按下（不受输入门影响）：防御姿态靠它判断玩家还在不在按住。</summary>
-    public bool PointerHeld => isTouching;
+    /// <summary>
+    /// 指针是否仍被按住（**含教学的强制按住**）：防御姿态靠它判断玩家还在不在按住。
+    /// 教学锁定打开时，即使玩家松手也仍算"按着"（防御拍需要玩家一直举着枪）。
+    /// </summary>
+    public bool PointerHeld => isTouching || forcePointerHeld;
+
+    /// <summary>
+    /// 教学临时锁定：强制"手指仍按住"（用于教学关的防御拍 —— 玩家进入防御后不许松手，
+    /// 否则防御姿态会自己回落，109 的冲锋就会打中玩家）。
+    /// 只有教学导演会开它；拍结束 / 被打断 / 场景卸载必须清零，否则玩家会永久无法出招。
+    /// </summary>
+    [System.NonSerialized] public bool forcePointerHeld;
 
     /// <summary>
     /// 指针是否处于「已按下且未被输入门拦下」的状态。
@@ -129,6 +139,12 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
     public bool gameplayInputEnabled => !GameplayInputGate.IsBlocked;
     /// <summary>教学手势拍：非 None 时只接受这个目标手势，其它手势一律不成立（不出招、也不消耗蓄力段）。</summary>
     [System.NonSerialized] public TutorialGestureTarget tutorialGestureTarget = TutorialGestureTarget.None;
+    /// <summary>
+    /// 教学时停用：<c>timeScale = 0</c> 时仍然处理玩家输入。
+    /// 教学招架拍要把游戏整个冻住（让新手从容出手），但玩家必须还能做手势 → 只能靠这条开关。
+    /// 只有教学导演会开它，拍结束必须清零。
+    /// </summary>
+    [System.NonSerialized] public bool allowInputWhileTimeFrozen;
     /// <summary>输入屏蔽帧计数器（由 UpgradeChoiceManager 设置，防止选择选项的点击触发攻击）</summary>
     [System.NonSerialized] public int blockInputFrames = 0;
 
@@ -294,8 +310,10 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
 
     private void Update()
     {
-        // 暂停时不处理任何输入
-        if (!gameplayInputEnabled || Time.timeScale == 0f)
+        // 暂停时不处理任何输入。
+        // 例外：教学时停（allowInputWhileTimeFrozen）——世界停住，但玩家仍要能做手势
+        // （招架拍：冻结在出伤窗口里，玩家必须能上划招架）。
+        if (!gameplayInputEnabled || (Time.timeScale == 0f && !allowInputWhileTimeFrozen))
         {
             if (isTouching)
             {
@@ -410,5 +428,7 @@ public enum TutorialGestureTarget
     /// <summary>未蓄力的横向滑动</summary>
     SwipeHorizontal = 2,
     /// <summary>按住蓄力后再竖划（上挑）</summary>
-    ChargedVertical = 3
+    ChargedVertical = 3,
+    /// <summary>未蓄力的竖向滑动（= 招架）</summary>
+    ParryVertical = 4
 }

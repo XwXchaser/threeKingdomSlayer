@@ -161,8 +161,11 @@ public sealed class StageRunFlow : IRunFlow
         CleanupRouteStage(true);
         _ctx.SettleCoins();
 
-        // 回落地页要接上次进度：中途退出 → 用 checkpoint 节点；已通关（snapshot 已被 FinishRoute 清掉）→ 回起点。
-        FakeRouteLaunch.StartFromCheckpoint = true;
+        // 2026-10-27：**不再**置 StartFromCheckpoint。
+        // 退出关卡后重新进入 = 从**关卡开头**开始（与 FakeRouteRuntime.ResolveStartNode 的注释意图一致）。
+        // 之前这里置了位，而那个静态开关又永不复位 → 之后每次进关都从上一个节点续跑
+        // （用户反馈「重进游戏直接落在 N3/E0，关卡前段被跳过」）。
+        // 明确要从存档点续玩的地方（如「重来」）自己置位，并确保只消费一次。
 
         string battleSceneName = _ctx.BattleSceneName;
         if (string.IsNullOrEmpty(battleSceneName))

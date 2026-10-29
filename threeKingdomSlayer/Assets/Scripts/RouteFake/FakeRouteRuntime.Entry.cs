@@ -149,7 +149,8 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
     {
         if (routeConfig == null) return null;
         var startNode = useTestStartNode && testStartNode != null ? testStartNode : routeConfig.startNode;
-        bool tryRestoreCheckpoint = !useTestStartNode && FakeRouteLaunch.StartFromCheckpoint;
+        // **一次性消费**：读走即清（否则退出一次关卡后，本会话后续每次进入都从存档点续跑）
+        bool tryRestoreCheckpoint = !useTestStartNode && FakeRouteLaunch.ConsumeStartFromCheckpoint();
         if (tryRestoreCheckpoint)
         {
             var snapshot = SaveManager.GetFakeRouteSnapshot(routeConfig.routeId, routeConfig.stageId);
@@ -172,7 +173,7 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
     {
         yield return null;
         var startNode = useTestStartNode && testStartNode != null ? testStartNode : routeConfig.startNode;
-        if (!useTestStartNode && FakeRouteLaunch.StartFromCheckpoint)
+        if (!useTestStartNode && FakeRouteLaunch.ConsumeStartFromCheckpoint())
         {
             var snapshot = SaveManager.GetFakeRouteSnapshot(routeConfig.routeId, routeConfig.stageId);
             if (snapshot != null && RestoreCheckpoint(snapshot, out var restoredNode))

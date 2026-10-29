@@ -142,7 +142,7 @@ public partial class InputManager : MonoBehaviour
         return tutorialGestureTarget == TutorialGestureTarget.Tap && chargeLevel < 1;
     }
 
-    /// <summary>教学拍是否允许这次滑动成立：横滑教学只收未蓄力横滑，上挑教学只收已蓄力竖滑。</summary>
+    /// <summary>教学拍是否允许这次滑动成立：横滑教学只收未蓄力横滑，上挑教学只收已蓄力竖滑，招架教学只收未蓄力竖滑。</summary>
     private bool TutorialAllowsSwipeGesture(MoveGesture directionGesture, int chargeLevel)
     {
         switch (tutorialGestureTarget)
@@ -153,6 +153,9 @@ public partial class InputManager : MonoBehaviour
                 return chargeLevel < 1 && directionGesture == MoveGesture.SwipeHorizontal;
             case TutorialGestureTarget.ChargedVertical:
                 return chargeLevel >= 1 && directionGesture == MoveGesture.SwipeVertical;
+            case TutorialGestureTarget.ParryVertical:
+                // 招架 = 不蓄力的竖滑（与游戏映射一致：ResolveAttackType(SwipeVertical, false) == Parry）
+                return chargeLevel < 1 && directionGesture == MoveGesture.SwipeVertical;
             default:
                 return false;   // 目标是点按时，任何滑动都不成立
         }
