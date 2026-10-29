@@ -37,6 +37,11 @@ public sealed class TalentNodeConfig
     [Tooltip("节点图标；为空时用程序化圆形占位")]
     public Sprite icon;
 
+    [Tooltip("**隐藏节点** ✅ —— 不在天赋面板上显示（但仍参与前置关系与存档）✅。\n" +
+             "用途：① 招式暂时不开放给玩家时，用一个隐藏节点做“天赋门”（招架）✅；\n" +
+             "② 招式改为直接开放后，把原来的解锁节点藏起来（保留链上的前置关系）✅。")]
+    public bool hidden = false;
+
     /// <summary>
     /// 这个节点**带没带解锁载荷** ✅ —— 两个载荷都空 ✅ = 无效 ✅（自检会报错 ✅ ✅）。
     /// </summary>

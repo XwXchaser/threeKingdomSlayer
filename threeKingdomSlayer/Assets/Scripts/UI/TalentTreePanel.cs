@@ -210,6 +210,7 @@ private readonly List<TalentNodeConfig> _connectorTargets = new List<TalentNodeC
             {
                 var from = prereqs[p];
                 if (from == null) continue;
+                if (from.hidden || to.hidden) continue;   // 隐藏节点不画连线
                 var line = CreateImage($"Link_{from.nodeId}_{to.nodeId}", _nodeRoot, connectorLockedColor, connector);
                 _connectorImages.Add(line);
                 _connectorTargets.Add(to);
@@ -224,6 +225,8 @@ private readonly List<TalentNodeConfig> _connectorTargets = new List<TalentNodeC
 
             var go = new GameObject($"Node_{node.nodeId}", typeof(RectTransform));
             go.transform.SetParent(_nodeRoot, false);
+            // 隐藏节点：不显示（但仍建对象，保证 _nodeImages/_nodeButtons 等与 tree.nodes 下标一一对应 ✅）
+            if (node.hidden) go.SetActive(false);
             var rect = (RectTransform)go.transform;
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
