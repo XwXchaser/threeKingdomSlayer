@@ -43,7 +43,10 @@ public static class HubSceneSetup
 
         // 幂等：先删掉同名的旧节点（**两个画布下都要删** —— 重构后它们在 HubCanvas 下，
         // 只删 BattleHUD 下的会留下重复节点，散落在画布根上、关卡态也显示）
-        string[] generated = { "HubStageEntry", "HubTalentEntry", "HubTaskBar", "HubMenuPlaceholder" };
+        // 注意：四宫格键在 2026-10-26 重构后改名为 MenuKey_1..4（旧名已不再使用），
+        // 两个名字都列进来，重建时不会留下重复键。
+        string[] generated = { "HubStageEntry", "HubTalentEntry", "HubTaskBar", "HubMenuPlaceholder",
+                               "MenuKey_1", "MenuKey_2", "MenuKey_3", "MenuKey_4" };
         for (int i = 0; i < generated.Length; i++)
         {
             // 注意要用**递归**查找：重构后节点在 Hub/Bottom/ 这类分组文件夹里，
