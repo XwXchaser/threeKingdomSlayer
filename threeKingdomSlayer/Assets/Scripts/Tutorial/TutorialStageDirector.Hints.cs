@@ -23,7 +23,24 @@ public partial class TutorialStageDirector : MonoBehaviour
             if (step.battle != null && step.battle != battle) continue;
             Debug.Log($"[Tutorial] 命中手势步骤 {i} wave={waveIndex} kind={step.kind} pause={step.pauseUntilPerformed}");
             // 路线出口（负数波次）不走暂停门槛：那一拍没有战斗，只需把光标停在箭头上
-            _hintRoutine = waveIndex < 0 ? StartCoroutine(RouteHintRoutine(step)) : StartCoroutine(HintRoutine(step));
+            if (waveIndex < 0)
+            {
+                _hintRoutine = StartCoroutine(RouteHintRoutine(step));
+            }
+            else if (step.freezeOnGesture)
+            {
+                // 时停拍（招架）：冻结整个游戏，玩家在冻结中做手势
+                _hintRoutine = StartCoroutine(FreezeParryRoutine(step));
+            }
+            else if (step.holdAfterGesture)
+            {
+                // 防御拍：上划后按住 → 扛住 109 冲锋
+                _hintRoutine = StartCoroutine(DefendHoldRoutine(step));
+            }
+            else
+            {
+                _hintRoutine = StartCoroutine(HintRoutine(step));
+            }
             return;
         }
         Debug.Log($"[Tutorial] 没有匹配的手势步骤 wave={waveIndex} battle={battle.name}");
@@ -47,6 +64,15 @@ public partial class TutorialStageDirector : MonoBehaviour
             if (gestureHint.IsGating) gestureHint.Cancel();
             else gestureHint.Hide();
         }
+        // 时停拍被打断：必须解冻，否则整局卡在 timeScale=0
+        if (_frozenByTutorial)
+        {
+            _frozenByTutorial = false;
+            Time.timeScale = 1f;
+        }
+        // 防御拍的强制按住必须清零（否则玩家永久无法出招）
+        var input = InputManager.Instance;
+        if (input != null) input.forcePointerHeld = false;
         var view = ResolveDialogueView();
         if (view != null) view.PointerAdvanceEnabled = true;
     }
@@ -179,7 +205,7 @@ public partial class TutorialStageDirector : MonoBehaviour
             from = enemyScreen;
         }
 
-        BeginBeat(target);
+        BeginBeat(target, AttackTypeFor(step.kind));
         Debug.Log($"[Tutorial] 手势拍开始 wave={step.waveIndex} kind={step.kind} target={target} 敌人={CountAliveEnemies()}");
 
         float playSeconds = step.playSeconds > 0f ? step.playSeconds : 1.1f;
@@ -205,11 +231,14 @@ public partial class TutorialStageDirector : MonoBehaviour
         _hintRoutine = null;
     }
 
-    private void BeginBeat(TutorialGestureTarget target)
+    private void BeginBeat(TutorialGestureTarget target, AttackType? teachAttack, bool holdEnemies = true)
     {
         _beatActive = true;
         _beatTarget = target;
-        SetEnemiesHold(true);
+        _currentTeachAttack = teachAttack;
+        _beatCompleted = false;
+        // 招架拍**不能冻敌人**（敌人必须真的挥下来才能被格开）→ holdEnemies=false
+        if (holdEnemies) SetEnemiesHold(true);
         SetSceneDim(true);
         var input = InputManager.Instance;
         if (input != null)
@@ -218,6 +247,8 @@ public partial class TutorialStageDirector : MonoBehaviour
             input.OnAttackExecuted -= OnTutorialAttackExecuted;
             input.OnAttackExecuted += OnTutorialAttackExecuted;
         }
+        // 教学进度：把白名单刷成「已教完的 + 当前这一拍要教的」
+        ApplyAttackGate(teachAttack);
     }
 
     private void EndBeat()
@@ -229,6 +260,13 @@ public partial class TutorialStageDirector : MonoBehaviour
         {
             input.OnAttackExecuted -= OnTutorialAttackExecuted;
             input.tutorialGestureTarget = TutorialGestureTarget.None;
+            input.allowInputWhileTimeFrozen = false;   // 时停结束 → 恢复正常输入规则
+        }
+        // 时停：解冻（必须在恢复输入之前，否则玩家会在冻结态里继续出招）
+        if (_frozenByTutorial)
+        {
+            _frozenByTutorial = false;
+            Time.timeScale = 1f;
         }
         SetEnemiesHold(false);
         SetSceneDim(false);
@@ -236,6 +274,13 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 做完立刻收掉台词：玩家要能马上看清自己打出了什么
         var view = ResolveDialogueView();
         if (view != null && view.IsShowing) view.Skip();
+        // 这一拍真的教完了 → 该招式转为"已教"（之后不再锁）
+        if (_beatCompleted && _currentTeachAttack.HasValue)
+        {
+            _taughtAttacks.Add(_currentTeachAttack.Value);
+            ApplyAttackGate(null);
+        }
+        _beatCompleted = false;
     }
 
     private void PlayGestureAt(GestureHintKind kind, Vector2 from, Vector2 to)
@@ -247,6 +292,8 @@ public partial class TutorialStageDirector : MonoBehaviour
             case GestureHintKind.Hold: gestureHint.PlayHold(from); break;
             case GestureHintKind.Swipe: gestureHint.PlaySwipe(from, to); break;
             case GestureHintKind.ChargedSwipe: gestureHint.PlayChargedSwipe(from, to); break;
+            case GestureHintKind.Parry: gestureHint.PlayParry(from, to); break;
+            case GestureHintKind.ParryHold: gestureHint.PlayParryHold(from, to); break;
         }
     }
 
@@ -264,6 +311,8 @@ public partial class TutorialStageDirector : MonoBehaviour
             case GestureHintKind.Hold: gestureHint.PlayHold(from); break;
             case GestureHintKind.Swipe: gestureHint.PlaySwipe(from, to); break;
             case GestureHintKind.ChargedSwipe: gestureHint.PlayChargedSwipe(from, to); break;
+            case GestureHintKind.Parry: gestureHint.PlayParry(from, to); break;
+            case GestureHintKind.ParryHold: gestureHint.PlayParryHold(from, to); break;
         }
     }
 }

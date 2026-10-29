@@ -18,8 +18,8 @@ MonoBehaviour:
   - waveId: 2
     isBossWave: 0
     rows:
-    - enemyIds: 0000000000000000fd0300000000000000000000
-    healthMultiplier: 1
+    - enemyIds: 0000000000000000f40300000000000000000000
+    healthMultiplier: 0.4
     bossHealthMultiplier: 0
     attackSpeedMultiplier: 1
     damageMultiplier: 0.3
@@ -44,5 +44,4 @@ MonoBehaviour:
   clearCoinReward: 0
   collisionDamage: 50
   formationConfig: {fileID: 11400000, guid: f329fc350cf1b54439fcc603e63223ba, type: 2}
-  fillUpRule: 1
   rushMoveDelay: 0.05

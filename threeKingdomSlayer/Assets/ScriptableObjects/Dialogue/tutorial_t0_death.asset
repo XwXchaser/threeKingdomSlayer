@@ -20,7 +20,8 @@ MonoBehaviour:
   bossId: 0
   bossPhaseIndex: 0
   killCount: 0
+  nonBlocking: 0
   bossProfile: {fileID: 0}
   lines:
   - speaker: 0
-    text: "\uFF08\u5598\u606F\uFF09\u2026\u2026\u957F\u5742\u5761\u7684\u8DEF\uFF0C\u8FD8\u957F\u7740\u3002"
+    text: "\uFF08\u5598\u606F\uFF09\u2026\u2026\u597D\u9669\u3002\u957F\u5742\u5761\u7684\u8DEF\uFF0C\u8FD8\u957F\u7740\u3002"

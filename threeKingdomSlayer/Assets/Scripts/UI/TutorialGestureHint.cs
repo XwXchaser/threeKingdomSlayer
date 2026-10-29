@@ -32,12 +32,31 @@ using System.Collections;
         public float ringSize = 240f;
         [Range(0f, 0.3f)] public float trailInset = 0.06f;
     
-        [Header("节奏")]
-        public float tapDuration = 0.9f;
-        public float swipeDuration = 1.1f;
-        public float holdDuration = 1.2f;
-        [Range(0.2f, 1f)] public float ringEndScale = 0.55f;
-        public float ringSpinSpeed = 90f;
+    [Header("提示层压暗")]
+    [Tooltip("提示层自带的全屏压暗透明度（0 = 不压暗）。\n" +
+             "场景压暗（TutorialSceneDim）不作用于所有材质（SpriteRenderer 的 _Color 改不动、\n" +
+             "自定义地形的 _TutorialDim 可能被别的脚本覆盖）→ 时停拍改用这一层保证「画面真的暗下来」。")]
+    [Range(0f, 0.9f)] public float dimOverlayAlpha = 0.45f;
+
+    [Header("节奏")]
+    public float tapDuration = 0.9f;
+    public float swipeDuration = 1.1f;
+    public float holdDuration = 1.2f;
+    [Range(0.2f, 1f)] public float ringEndScale = 0.55f;
+    public float ringSpinSpeed = 90f;
+
+    [Header("招架/防御")]
+    [Tooltip("招架示范的划动时长（秒）。必须贴近游戏里的划动门限（≥180px/s、≤0.25s），\n" +
+             "示范画得慢 → 玩家学出来的手势在游戏里不成立。")]
+    public float parrySwipeSeconds = 0.22f;
+    [Tooltip("防御示范：抬手前需要按住多久才算「上划后按住」（与招架挥入 0.36s 对齐）。")]
+    public float parryHoldSeconds = 0.35f;
+    [Tooltip("冻结拍里一次示范循环的间隔（秒）。")]
+    public float parryPlaySeconds = 0.9f;
+    [Tooltip("防御示范里光圈脉动的速度（弧度/秒）。")]
+    public float parryPulseSpeed = 4f;
+    [Tooltip("防御示范里光圈脉动的幅度（0.12 = ±12%）。")]
+    public float parryPulseAmount = 0.12f;
     
         private Coroutine _routine;
         private Canvas _canvas;
@@ -58,22 +77,25 @@ using System.Collections;
         [Tooltip("蓄力上挑判定：按住多久算「已蓄力」。<=0 时自动取 InputManager 的一级蓄力时长（与游戏实际手感对齐）")]
         public float chargeSwipeHoldSeconds = 0f;
 
-        private bool _gateActive;
-        private GestureHintKind _gateKind;
-        private Vector2 _gateFrom;
-        private Vector2 _gateTo;
-        private System.Action _gateOnPass;
-        private Coroutine _gateLoop;
-        private float _prevTimeScale = 1f;
-        private bool _pressing;
-        private Vector2 _pressPos;
-        private float _pressStart;
-        private bool _holdSatisfied;
-        private Vector2 _lastReleasePos;
-        private bool _lastSwipeVertical;
-        private float _gateStartTime;
-        private int _gateColumn = -1;
-        private float _gateHoldSeconds = 0.9f;
+    private bool _gateActive;
+    private GestureHintKind _gateKind;
+    private Vector2 _gateFrom;
+    private Vector2 _gateTo;
+    private System.Action _gateOnPass;
+    private Coroutine _gateLoop;
+    private float _prevTimeScale = 1f;
+    private bool _pressing;
+    private Vector2 _pressPos;
+    private float _pressStart;
+    private bool _holdSatisfied;
+    private Vector2 _lastReleasePos;
+    private bool _lastSwipeVertical;
+    private float _gateStartTime;
+    private int _gateColumn = -1;
+    private float _gateHoldSeconds = 0.9f;
+    /// <summary>正在跟踪的触摸 id（抬手那一帧 touchCount 会归零 → 必须自己记住 id 与位置）。</summary>
+    private int _trackTouchId = -1;
+    private Vector2 _trackTouchPos;
     
         /// <summary>
         /// 引导门槛：暂停游戏、循环播放手势示范，玩家真的做出这个手势才恢复并回调。
@@ -124,14 +146,14 @@ using System.Collections;
 
         public bool IsGating => _gateActive;
     
-        private void Update()
-        {
-            if (!_gateActive) return;
-            // 对话系统的 Finish() 会无条件把 timeScale 设回 1，会把引导的暂停顶掉。
-            // 门槛期间每帧压住 0，直到玩家做对。
-            if (Time.timeScale != 0f) Time.timeScale = 0f;
-            PollRawInput();
-        }
+    private void Update()
+    {
+        if (!_gateActive) return;
+        // 对话系统的 Finish() 会无条件把 timeScale 设回 1，会把引导的暂停顶掉。
+        // 门槛期间每帧压住 0，直到玩家做对。
+        if (Time.timeScale != 0f) Time.timeScale = 0f;
+        PollRawInput();
+    }
     
         private void Pass()
         {
@@ -199,57 +221,68 @@ using System.Collections;
             }
         }
     
-        /// <summary>原始输入判定：不依赖 InputManager（它在 timeScale=0 时不工作）。</summary>
-        private void PollRawInput()
+    /// <summary>原始输入判定：不依赖 InputManager（它在 timeScale=0 时不工作）。</summary>
+    private void PollRawInput()
+    {
+        bool down = false, held = false, up = false;
+        Vector2 pos = Vector2.zero;
+
+        if (Input.touchCount > 0)
         {
-            bool down = false, held = false, up = false;
-            Vector2 pos = Vector2.zero;
-    
-            if (Input.touchCount > 0)
+            var touch = Input.GetTouch(0);
+            pos = touch.position;
+            _trackTouchId = touch.fingerId;
+            _trackTouchPos = touch.position;
+            down = touch.phase == TouchPhase.Began;
+            held = touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary;
+            up = touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled;
+        }
+        else if (_trackTouchId >= 0)
+        {
+            // **抬手那一帧 touchCount 已经归零** → 看不到 Ended 相位 → 自己补一次"抬起"
+            // （不补的话触摸设备的划动永远不会被识别）
+            pos = _trackTouchPos;
+            up = true;
+            _trackTouchId = -1;
+        }
+        else
+        {
+            pos = Input.mousePosition;
+            down = Input.GetMouseButtonDown(0);
+            held = Input.GetMouseButton(0) && !down;
+            up = Input.GetMouseButtonUp(0);
+        }
+
+        if (down)
+        {
+            _pressing = true;
+            _pressPos = pos;
+            _pressStart = Time.unscaledTime;
+            _holdSatisfied = false;
+        }
+
+        float heldSeconds = _pressing ? Time.unscaledTime - _pressStart : 0f;
+
+        // 按住类：按够时间就算过（不需要抬手）
+        if (_pressing && heldSeconds >= _gateHoldSeconds && Mathf.Abs(pos.y - _pressPos.y) < swipeMinPixels && Mathf.Abs(pos.x - _pressPos.x) < swipeMinPixels)
+        {
+            if (_gateKind == GestureHintKind.Hold) { _pressing = false; Pass(); return; }
+            if (_gateKind == GestureHintKind.ChargedSwipe && !_holdSatisfied)
             {
-                var touch = Input.GetTouch(0);
-                pos = touch.position;
-                down = touch.phase == TouchPhase.Began;
-                held = touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary;
-                up = touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled;
+                _holdSatisfied = true;
+                Debug.Log("[TutorialHint] 蓄力已满足（按住 " + heldSeconds.ToString("F2") + "s），接着往上划");
             }
-            else
-            {
-                pos = Input.mousePosition;
-                down = Input.GetMouseButtonDown(0);
-                held = Input.GetMouseButton(0) && !down;
-                up = Input.GetMouseButtonUp(0);
-            }
-    
-            if (down)
-            {
-                _pressing = true;
-                _pressPos = pos;
-                _pressStart = Time.unscaledTime;
-                _holdSatisfied = false;
-            }
-    
-            float heldSeconds = _pressing ? Time.unscaledTime - _pressStart : 0f;
-    
-            // 按住类：按够时间就算过（不需要抬手）
-            if (_pressing && heldSeconds >= _gateHoldSeconds && Mathf.Abs(pos.y - _pressPos.y) < swipeMinPixels && Mathf.Abs(pos.x - _pressPos.x) < swipeMinPixels)
-            {
-                if (_gateKind == GestureHintKind.Hold) { _pressing = false; Pass(); return; }
-                if (_gateKind == GestureHintKind.ChargedSwipe && !_holdSatisfied)
-                {
-                    _holdSatisfied = true;
-                    Debug.Log("[TutorialHint] 蓄力已满足（按住 " + heldSeconds.ToString("F2") + "s），接着往上划");
-                }
-            }
-    
-            if (!up || !_pressing) return;
-    
-            Vector2 delta = pos - _pressPos;
-            float duration = Time.unscaledTime - _pressStart;
-            _pressing = false;
-            // 记录这一下的真实落点/方向：通过后要按它重放，之前这两个字段从来没被赋过值
-            _lastReleasePos = pos;
-            _lastSwipeVertical = Mathf.Abs(delta.y) >= Mathf.Abs(delta.x);
+        }
+
+        if (!up || !_pressing) return;
+
+        Vector2 delta = pos - _pressPos;
+        float duration = Time.unscaledTime - _pressStart;
+        _pressing = false;
+
+        // 记录这一下的真实落点/方向：通过后要按它重放，之前这两个字段从来没被赋过值
+        _lastReleasePos = pos;
+        _lastSwipeVertical = Mathf.Abs(delta.y) >= Mathf.Abs(delta.x);
     
             switch (_gateKind)
             {
@@ -277,18 +310,19 @@ using System.Collections;
             }
         }
     
-        private bool DirectionMatches(Vector2 delta)
-        {
-            Vector2 expected = _gateTo - _gateFrom;
-            if (expected.sqrMagnitude < 1f) return true;
-            return Vector2.Dot(delta.normalized, expected.normalized) > 0.6f;
-        }
+    private bool DirectionMatches(Vector2 delta)
+    {
+        Vector2 expected = _gateTo - _gateFrom;
+        if (expected.sqrMagnitude < 1f) return true;
+        return Vector2.Dot(delta.normalized, expected.normalized) > 0.6f;
+    }
     
         private void Awake()
         {
             if (root == null) root = transform as RectTransform;
             _canvas = GetComponentInParent<Canvas>();
             if (screenSpace == null) screenSpace = root;
+            EnsureDimSprite();
             HideLayers();
         }
     
@@ -349,20 +383,86 @@ using System.Collections;
             _routine = StartCoroutine(HoldRoutine());
         }
     
-        /// <summary>蓄力上挑：先按住（光圈收缩 = 蓄力），再沿方向划出去。</summary>
-        public void PlayChargedSwipe(Vector2 fromScreenPos, Vector2 toScreenPos)
+    /// <summary>显示提示层自带的全屏压暗（教学时停拍用；alpha &lt;= 0 = 不显示）。</summary>
+    public void ShowDim(float alpha)
+    {
+        if (dimOverlay == null) return;
+        EnsureDimSprite();
+        var img = dimOverlay.GetComponent<Image>();
+        if (img != null)
         {
-            StopRoutine();   // 只停上一个示范协程，不能动引导本身
-            // 先播蓄力光圈：玩家要先看到「按住蓄力」，再看「上划」，否则学到的顺序是错的
-            ShowLayers(ring: true, trail: false, finger: true);
-            Place(finger, fromScreenPos, fingerSize);
-            Place(ring.rectTransform, fromScreenPos, ringSize);
-            ring.rectTransform.localScale = Vector3.one;
-            ring.rectTransform.localRotation = Quaternion.identity;
-            SetAlpha(FingerImage, 1f);
-            SetAlpha(ring, 1f);
-            _routine = StartCoroutine(ChargedSwipeRoutine(fromScreenPos, toScreenPos));
+            var c = img.color;
+            c.a = Mathf.Clamp01(alpha);
+            img.color = c;
         }
+        dimOverlay.gameObject.SetActive(alpha > 0.001f);
+    }
+
+    /// <summary>
+    /// 压暗层原本没给 sprite → **Unity 的 Image 没有 sprite 就完全不渲染**（实测：压暗层完全没显示，
+    /// 连旧的「黑遮罩门槛」也一直是失效的）。这里运行时补一张 4×4 白图（不新增资产）。
+    /// </summary>
+    private void EnsureDimSprite()
+    {
+        if (dimOverlay == null) return;
+        if (dimOverlay.sprite != null) return;
+        var tex = new Texture2D(4, 4, TextureFormat.RGBA32, false);
+        tex.hideFlags = HideFlags.HideAndDontSave;
+        var colors = new Color[16];
+        for (int i = 0; i < colors.Length; i++) colors[i] = Color.white;
+        tex.SetPixels(colors);
+        tex.Apply();
+        var sp = Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+        sp.hideFlags = HideFlags.HideAndDontSave;
+        dimOverlay.sprite = sp;
+        dimOverlay.type = Image.Type.Simple;
+    }
+
+    /// <summary>隐藏提示层压暗。</summary>
+    public void HideDim() => ShowDim(0f);
+
+    /// <summary>蓄力上挑：先按住（光圈收缩 = 蓄力），再沿方向划出去。</summary>
+    public void PlayChargedSwipe(Vector2 fromScreenPos, Vector2 toScreenPos)
+    {
+        StopRoutine();   // 只停上一个示范协程，不能动引导本身
+        // 先播蓄力光圈：玩家要先看到「按住蓄力」，再看「上划」，否则学到的顺序是错的
+        ShowLayers(ring: true, trail: false, finger: true);
+        Place(finger, fromScreenPos, fingerSize);
+        Place(ring.rectTransform, fromScreenPos, ringSize);
+        ring.rectTransform.localScale = Vector3.one;
+        ring.rectTransform.localRotation = Quaternion.identity;
+        SetAlpha(FingerImage, 1f);
+        SetAlpha(ring, 1f);
+        _routine = StartCoroutine(ChargedSwipeRoutine(fromScreenPos, toScreenPos));
+    }
+
+    /// <summary>
+    /// 招架示范：快速竖直上划。
+    /// 时长取 <see cref="parrySwipeSeconds"/>（贴近游戏划动门限），拖尾沿段铺开。
+    /// </summary>
+    public void PlayParry(Vector2 fromScreenPos, Vector2 toScreenPos)
+    {
+        StopRoutine();
+        ShowLayers(ring: false, trail: true, finger: true);
+        LayoutTrail(fromScreenPos, toScreenPos);
+        SetAlpha(trail, 1f);
+        SetAlpha(FingerImage, 1f);
+        _routine = StartCoroutine(ParrySwipeRoutine(fromScreenPos, toScreenPos, false));
+    }
+
+    /// <summary>
+    /// 防御示范：快速上划 → 手指**停住** + 光圈**脉动**。
+    /// 光圈刻意不收缩（收缩在项目里已经是「蓄力」的语义，这里要表达的是「按住别松手」）。
+    /// </summary>
+    public void PlayParryHold(Vector2 fromScreenPos, Vector2 toScreenPos)
+    {
+        StopRoutine();
+        ShowLayers(ring: false, trail: true, finger: true);
+        LayoutTrail(fromScreenPos, toScreenPos);
+        SetAlpha(trail, 1f);
+        SetAlpha(FingerImage, 1f);
+        _routine = StartCoroutine(ParrySwipeRoutine(fromScreenPos, toScreenPos, true));
+    }
     
         // ---------------------------------------------------------------- 协程
     
@@ -475,9 +575,80 @@ using System.Collections;
             Finish();
         }
     
-        // ---------------------------------------------------------------- 工具
-    
-        private Image FingerImage => finger != null ? finger.GetComponent<Image>() : null;
+    // ---------------------------------------------------------------- 工具
+
+    /// <summary>
+    /// 招架/防御示范：
+    ///   • 招架（holdAtEnd=false）：**上↔下来回划**（循环），让玩家一眼看到「在上划」；
+    ///   • 防御（holdAtEnd=true）：上划一次 → 手指停住 + 光圈脉动（表达「按住别松手」）。
+    /// 拖尾每次划完淡出，**图层不隐藏**（手指常驻）→ 玩家任何时候都知道要在哪儿划。
+    /// </summary>
+    private IEnumerator ParrySwipeRoutine(Vector2 from, Vector2 to, bool holdAtEnd)
+    {
+        float dur = Mathf.Max(0.06f, parrySwipeSeconds);
+
+        while (true)
+        {
+            // ── 划过去 ──
+            float t = 0f;
+            while (t < dur)
+            {
+                t += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(t / dur);
+                Vector2 pos = Vector2.Lerp(from, to, Mathf.SmoothStep(0f, 1f, k));
+                Place(finger, pos, fingerSize);
+                finger.localRotation = Quaternion.identity;
+                SetAlpha(trail, 1f);
+                SetAlpha(FingerImage, 1f);
+                yield return null;
+            }
+
+            // ── 拖尾淡出（手指留在终点）──
+            float fade = 1f;
+            while (fade > 0f)
+            {
+                fade -= Time.unscaledDeltaTime * 5f;
+                SetAlpha(trail, Mathf.Clamp01(fade));
+                yield return null;
+            }
+
+            if (holdAtEnd)
+            {
+                // 停住 + 光圈脉动（不收缩：收缩 = 蓄力的语义，这里是「按住别松」）
+                if (ring != null)
+                {
+                    ring.gameObject.SetActive(true);
+                    Place(ring.rectTransform, to, ringSize);
+                    ring.rectTransform.localScale = Vector3.one;
+                    ring.rectTransform.localRotation = Quaternion.identity;
+                    SetAlpha(ring, 1f);
+                }
+                float pulse = 0f;
+                while (true)
+                {
+                    pulse += Time.unscaledDeltaTime * parryPulseSpeed;
+                    float s = 1f + parryPulseAmount * Mathf.Sin(pulse);
+                    if (ring != null) ring.rectTransform.localScale = Vector3.one * s;
+                    yield return null;
+                }
+            }
+
+            // ── 划回来（再循环）──
+            t = 0f;
+            while (t < dur)
+            {
+                t += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(t / dur);
+                Vector2 pos = Vector2.Lerp(to, from, Mathf.SmoothStep(0f, 1f, k));
+                Place(finger, pos, fingerSize);
+                finger.localRotation = Quaternion.identity;
+                yield return null;
+            }
+            yield return new WaitForSecondsRealtime(0.2f);
+        }
+    }
+
+    private Image FingerImage => finger != null ? finger.GetComponent<Image>() : null;
     
         private void Finish()
         {

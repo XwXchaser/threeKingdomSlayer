@@ -70,6 +70,9 @@ public partial class TutorialStageDirector : MonoBehaviour
     private TutorialGestureTarget _beatTarget = TutorialGestureTarget.None;
     private TutorialSceneDim _sceneDim;
     private bool _sceneDimBound;
+    /// <summary>已绑定压暗的路线场景（换节点后场景会换 → 需要重新绑定）。</summary>
+    private UnityEngine.SceneManagement.Scene _dimBoundScene;
+    private bool _dimBoundSceneValid;
 
     private void Start()
     {
@@ -85,6 +88,12 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (_waveSpawner != null) _waveSpawner.OnWaveStarted -= OnWaveStarted;
         if (_stageState != null) _stageState.StageVictory -= OnStageVictory;
         StopHint();
+        // 教学结束：招式白名单必须放开（否则玩家进正式关仍然放不出招）
+        _attackGateOn = false;
+        _taughtAttacks.Clear();
+        TutorialAttackGate.Clear();
+        var input = InputManager.Instance;
+        if (input != null) { input.forcePointerHeld = false; input.allowInputWhileTimeFrozen = false; }
         if (UpgradeChoiceManager.Instance != null)
         {
             UpgradeChoiceManager.Instance.suppressChoices = false;
@@ -95,11 +104,17 @@ public partial class TutorialStageDirector : MonoBehaviour
     /// <summary>路线出口（箭头）出现时推一条教学台词：没人告诉过玩家点箭头才能走。</summary>
     private void Update()
     {
+        // 教学关才限制招式（还没教到的不许发出）
+        UpdateAttackGate();
+
         // 开幕台词：教学路线一就绪就播一次
         if (!_openingPlayed && openingDialogue != null && tutorialRouteConfig != null)
         {
             var route = RouteFlowHub.Current;
-            if (route != null && route.RouteConfig == tutorialRouteConfig && route.Phase != FakeRoutePhase.None)
+            // 只在**真正进关卡**时播（2026-10-26：原来只要路线不是 None 就播 → 落地页（Ready）也播，
+            // 于是玩家还没点「开始关卡」就被一句阻塞台词 + 遮罩糊在脸上）
+            if (route != null && route.RouteConfig == tutorialRouteConfig &&
+                (route.Phase == FakeRoutePhase.EnteringNode || route.Phase == FakeRoutePhase.Battle))
             {
                 _openingPlayed = true;
                 // 教学关战败不重来：只保留回主菜单（否则要把整个教学流程再跑一遍）
@@ -140,6 +155,14 @@ public partial class TutorialStageDirector : MonoBehaviour
         var dialogues = config == n1Battle ? n1Dialogues : (config == e0Battle ? e0Dialogues : null);
         if (dialogues == null) return; // 不是教学战斗
 
+        // 一次教学流程的开始（教学 N1 的第一波）→ 已教招式作废，从头学
+        if (config == n1Battle && waveIndex == 0)
+        {
+            _taughtAttacks.Clear();
+            ApplyAttackGate(null);
+        }
+        Debug.Log("[Tutorial] 波次开始 wave=" + waveIndex + " 招式白名单=" + TutorialAttackGate.Describe());
+
         // 新一波开始先把上一波没读完的台词收掉：否则手势门槛会用上一波的文字暂停在那里
         var staleView = ResolveDialogueView();
         if (staleView != null && staleView.IsShowing) staleView.Skip();
@@ -164,8 +187,12 @@ public enum GestureHintKind
     Swipe,
     /// <summary>按住蓄力后滑出去（蓄力上挑）</summary>
     ChargedSwipe,
-    /// <summary>不教手势：这一波只播登场台词（例如 109 骑兵来索命），上挑已经在前一波教过</summary>
-    None
+    /// <summary>不教手势：这一波只播登场台词</summary>
+    None,
+    /// <summary>竖直上划（招架）：**时停拍** —— 冻结整个游戏，玩家在冻结中做手势</summary>
+    Parry,
+    /// <summary>上划后按住（防御）：上划一次并保持按住 → 落防御位</summary>
+    ParryHold
 }
 
 [System.Serializable]
@@ -190,6 +217,19 @@ public class TutorialGestureStep
     public bool lineAtWaveStart;
     [Tooltip("等目标敌人血量降到这个比例再开始教（1 = 开局就教）。例如 0.8 = 掉到 80% 才教")]
     [Range(0.05f, 1f)] public float triggerHpPercent = 1f;
+
+    [Tooltip("**时停拍**：把整个游戏冻结（timeScale=0），玩家在冻结中做手势。\n" +
+             "用于招架 —— 必须冻在敌人的出伤窗口内（窗口开了才冻 → 冻结期间窗口永远开着）。")]
+    public bool freezeOnGesture;
+
+    [Tooltip("示范贴在**玩家**身上而不是目标敌人（招架/防御都是玩家侧动作）")]
+    public bool anchorToPlayer;
+
+    [Tooltip("成功判据 = 玩家进入**防御姿态**（而不是出招）；用于「上划后按住」这一拍")]
+    public bool holdAfterGesture;
+
+    [Tooltip("成功后让目标敌人离场（109 回退淡出，不计击杀）")]
+    public bool despawnTargetOnSuccess;
 
     [Tooltip("重复次数；<=0 表示一直重复到本波结束")]
     public int loops = 0;

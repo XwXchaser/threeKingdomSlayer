@@ -47,8 +47,26 @@ public partial class TutorialStageDirector : MonoBehaviour
     private void OnTutorialAttackExecuted(AttackType attackType, int column)
     {
         if (!_beatActive) return;
+        // 防御拍的成功判据是「进入防御姿态」，不是出招 → 出招不收拍
+        if (!_beatEndsOnAttack) return;
         if (attackType != ExpectedAttackFor(_beatTarget)) return;
+
+        // 时停招架拍：必须**真的格到了**才算这一拍完成；格不到就继续等玩家再试（教学不设失败）
+        if (_requireParryBlocked && attackType == AttackType.Parry)
+        {
+            var atk = AttackSystem.Instance;
+            bool blocked = atk != null && atk.LastParryBlocked;
+            if (!blocked)
+            {
+                Debug.LogWarning("[Tutorial] 这一下没格到 → 不算，继续等玩家再划");
+                // 空放招架的 0.9s 后摇在冻结中不走（deltaTime=0）→ 清掉，否则玩家再也划不出来
+                atk?.ClearActionLock();
+                return;
+            }
+        }
+
         DebugLog.Info($"[Tutorial] 手势拍完成：{attackType} col={column}");
+        _beatCompleted = true;
         EndBeat();
     }
 

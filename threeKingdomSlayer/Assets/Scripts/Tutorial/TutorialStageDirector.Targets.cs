@@ -14,6 +14,8 @@ public partial class TutorialStageDirector : MonoBehaviour
             case GestureHintKind.Tap: return TutorialGestureTarget.Tap;
             case GestureHintKind.Swipe: return TutorialGestureTarget.SwipeHorizontal;
             case GestureHintKind.ChargedSwipe: return TutorialGestureTarget.ChargedVertical;
+            case GestureHintKind.Parry:
+            case GestureHintKind.ParryHold: return TutorialGestureTarget.ParryVertical;
             default: return TutorialGestureTarget.None;
         }
     }
@@ -24,6 +26,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         {
             case TutorialGestureTarget.SwipeHorizontal: return AttackType.Slash;
             case TutorialGestureTarget.ChargedVertical: return AttackType.Launch;
+            case TutorialGestureTarget.ParryVertical: return AttackType.Parry;
             default: return AttackType.Stab;
         }
     }

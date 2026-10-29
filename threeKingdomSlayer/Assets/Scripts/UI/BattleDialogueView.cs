@@ -38,6 +38,12 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
     /// <summary>是否允许「点一下推进台词」。教学手势门槛期间要关掉，否则玩家做手势的那一下会把台词点没了。</summary>
     public bool PointerAdvanceEnabled { get; set; } = true;
 
+    private void Start()
+    {
+        // 没有台词时，推进按钮不应该亮着（它在落地页上会压住底部的按钮）
+        if (!_isShowing) Clear();
+    }
+
     private void Update()
     {
         if (!_isShowing) return;

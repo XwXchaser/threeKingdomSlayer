@@ -7,6 +7,68 @@ using UnityEngine;
 /// </summary>
 public partial class TutorialStageDirector : MonoBehaviour
 {
+    // ── 教学招式白名单（还没教到的招式不许发出）────────────────
+    // 口径：白名单 = **已经教完的招式 ∪ 当前这一拍要教的招式**。
+    // 拍开始时把当前招式加进去（这一拍里玩家必须能出它），拍真的完成了它就转为"已教"。
+    private readonly System.Collections.Generic.HashSet<AttackType> _taughtAttacks =
+        new System.Collections.Generic.HashSet<AttackType>();
+    private bool _attackGateOn;
+    /// <summary>当前这一拍正在教的招式（收拍后转入"已教"）。</summary>
+    private AttackType? _currentTeachAttack;
+    /// <summary>这一拍是否真的完成了（完成才把招式转为"已教"）。</summary>
+    private bool _beatCompleted;
+
+    /// <summary>手势种类 → 它教的招式。</summary>
+    private static AttackType? AttackTypeFor(GestureHintKind kind)
+    {
+        switch (kind)
+        {
+            case GestureHintKind.Tap: return AttackType.Stab;
+            case GestureHintKind.Swipe: return AttackType.Slash;
+            case GestureHintKind.ChargedSwipe: return AttackType.Launch;
+            case GestureHintKind.Parry:
+            case GestureHintKind.ParryHold: return AttackType.Parry;
+            default: return null;
+        }
+    }
+
+    /// <summary>把白名单刷成「已教完的 + 当前这一拍要教的」。</summary>
+    private void ApplyAttackGate(AttackType? extra)
+    {
+        if (!_attackGateOn) return;
+        var set = new System.Collections.Generic.HashSet<AttackType>(_taughtAttacks);
+        if (extra.HasValue) set.Add(extra.Value);
+        TutorialAttackGate.SetAllowed(set);
+    }
+
+    /// <summary>
+    /// 只有教学关才限制招式；一离开教学路线（回落地页 / 进正式关）立刻放开。
+    ///
+    /// 注意：<b>不能</b>在“重新启用”时清空已教招式 —— 路线切场时 <c>RouteFlowHub.Current</c> 会短暂为 null，
+    /// 那一帧会被当成“离开教学”→ 清空 → 玩家学过的招式又锁回去了。
+    /// 已教招式的生命周期 = **一次教学关流程**（从 N1 第一波开始算），在 <c>OnWaveStarted</c> 里重置。
+    /// </summary>
+    private void UpdateAttackGate()
+    {
+        var route = RouteFlowHub.Current;
+        bool onTutorial = route != null && tutorialRouteConfig != null && route.RouteConfig == tutorialRouteConfig;
+        if (onTutorial)
+        {
+            if (!_attackGateOn)
+            {
+                _attackGateOn = true;
+                ApplyAttackGate(null);
+                Debug.Log("[Tutorial] 招式白名单启用：还没教到的招式不允许发出");
+            }
+            return;
+        }
+        if (_attackGateOn)
+        {
+            _attackGateOn = false;
+            TutorialAttackGate.Clear();
+        }
+    }
+
     private void ApplyTutorialRules(StageConfig config)
     {
         var choices = UpgradeChoiceManager.Instance;
@@ -56,17 +118,22 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (_sceneDim == null) return;
         _sceneDim.dimBrightness = sceneDimBrightness;
 
-        if (!_sceneDimBound && dim)
+        // **每次开压暗都重新绑定**：Y 场景表驱动的节点切换会在**同一个场景里重建景物**
+        // （scene handle 不变，但旧的渲染器已销毁）→ 绑一次就会变成“压的是上一批已死对象”。
+        var presenter = FindRoutePresenter();
+        UnityEngine.SceneManagement.Scene routeScene = default;
+        bool haveScene = presenter != null && presenter.TryGetActiveScene(out routeScene);
+        if (dim)
         {
-            // 只认路线表现层端口（IRouteMotionPresenter），不认具体的 Y 分叉实验类 —— 依赖方向朝下。
-            var presenter = FindRoutePresenter();
-            if (presenter == null || !presenter.TryGetActiveScene(out var routeScene))
+            if (!haveScene)
             {
                 Debug.Log("[Tutorial] 场景压暗：路线场景未就绪，跳过压暗");
                 return;
             }
             _sceneDim.Bind(routeScene);
             _sceneDimBound = true;
+            _dimBoundScene = routeScene;
+            _dimBoundSceneValid = true;
         }
         _sceneDim.FadeTo(dim);
     }

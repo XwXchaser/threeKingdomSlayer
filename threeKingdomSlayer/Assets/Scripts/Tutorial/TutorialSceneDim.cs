@@ -12,6 +12,7 @@ using UnityEngine.SceneManagement;
 /// 既不挡角色，也不需要动相机/排序层。
 /// </summary>
 [DisallowMultipleComponent]
+[DefaultExecutionOrder(1000)]   // 必须在 Y 场景脚本（LateUpdate 写属性块）之后压
 public sealed class TutorialSceneDim : MonoBehaviour
 {
     [Tooltip("压暗后场景保留的亮度（1 = 不压暗）")]
@@ -23,6 +24,13 @@ public sealed class TutorialSceneDim : MonoBehaviour
     private readonly List<Color> _rendererColors = new List<Color>();
     private readonly List<string> _rendererProps = new List<string>();
     private readonly List<MaterialPropertyBlock> _blocks = new List<MaterialPropertyBlock>();
+
+    // 精灵：改**共享材质**的 _Color
+    // （2026-10-26 实测：SpriteRenderer 的 PropertyBlock 改不动 _Color（渲染器自己接管），
+    //   而 Y 场景的自定义 shader `CurvedScroll/Y Sample Scenery E0 Route` **忽略顶点色**
+    //   → sprite.color 也没用：手动压暗 497 个精灵，画面完全不变。）
+    private readonly List<Material> _dimMaterials = new List<Material>();
+    private readonly List<Color> _dimMaterialColors = new List<Color>();
 
     // 材质没有颜色属性的精灵才回落到 sprite.color
     private readonly List<SpriteRenderer> _fallbackSprites = new List<SpriteRenderer>();
@@ -62,13 +70,22 @@ public sealed class TutorialSceneDim : MonoBehaviour
                 AddByMaterial(mesh, material);
             }
 
-            // 精灵：优先材质属性（天空背景这类 shader 不读精灵色），没有颜色属性才回落到 sprite.color
+            // 精灵：改共享材质的 _Color（PropertyBlock / sprite.color 对这个自定义 shader 都无效）
             var sprites = root.GetComponentsInChildren<SpriteRenderer>(true);
             for (int i = 0; i < sprites.Length; i++)
             {
                 var sprite = sprites[i];
                 if (sprite == null) continue;
-                if (AddByMaterial(sprite, sprite.sharedMaterial)) continue;
+                var mat = sprite.sharedMaterial;
+                if (mat != null && mat.HasProperty("_Color"))
+                {
+                    if (!_dimMaterials.Contains(mat))
+                    {
+                        _dimMaterials.Add(mat);
+                        _dimMaterialColors.Add(mat.GetColor("_Color"));
+                    }
+                    continue;
+                }
                 _fallbackSprites.Add(sprite);
                 _fallbackColors.Add(sprite.color);
             }
@@ -149,6 +166,12 @@ public sealed class TutorialSceneDim : MonoBehaviour
         _current = 0f;
         Apply(0f);
         RestoreSkybox();
+        // 共享材质还原（改了必须还原，否则场景一直是暗的）
+        for (int i = 0; i < _dimMaterials.Count; i++)
+        {
+            var m = _dimMaterials[i];
+            if (m != null && m.HasProperty("_Color")) m.SetColor("_Color", _dimMaterialColors[i]);
+        }
     }
 
     private IEnumerator FadeRoutine()
@@ -162,6 +185,17 @@ public sealed class TutorialSceneDim : MonoBehaviour
         _current = _target;
         Apply(_current);
         _fadeRoutine = null;
+    }
+
+    /// <summary>
+    /// **每帧重压**：Y 场景的脚本（`ValleyArtPresentation.LateUpdate` / `ScrollWorldItem`）每帧会重写
+    /// 材质的 _Color 与 PropertyBlock → 只在淡入那 0.12s 压一次会被立刻改回去（实测：压暗完全无效）。
+    /// 执行序 1000 保证排在它们之后。
+    /// </summary>
+    private void LateUpdate()
+    {
+        if (!_bound || _target <= 0.001f) return;
+        Apply(_current);
     }
 
     private void Apply(float t)
@@ -188,6 +222,15 @@ public sealed class TutorialSceneDim : MonoBehaviour
             sprite.color = new Color(original.r * k, original.g * k, original.b * k, original.a);
         }
 
+        // 精灵：改共享材质的 _Color
+        for (int i = 0; i < _dimMaterials.Count; i++)
+        {
+            var m = _dimMaterials[i];
+            if (m == null || !m.HasProperty("_Color")) continue;
+            Color o = _dimMaterialColors[i];
+            m.SetColor("_Color", new Color(o.r * k, o.g * k, o.b * k, o.a));
+        }
+
         if (_skyboxInstance != null)
         {
             _skyboxInstance.SetColor("_SkyTint", new Color(_skyTintOriginal.r * k, _skyTintOriginal.g * k, _skyTintOriginal.b * k, _skyTintOriginal.a));
@@ -201,6 +244,8 @@ public sealed class TutorialSceneDim : MonoBehaviour
         _rendererColors.Clear();
         _rendererProps.Clear();
         _blocks.Clear();
+        _dimMaterials.Clear();
+        _dimMaterialColors.Clear();
         _fallbackSprites.Clear();
         _fallbackColors.Clear();
         _bound = false;
