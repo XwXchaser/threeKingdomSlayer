@@ -500,4 +500,42 @@ public sealed class CavalryVisualController : MonoBehaviour
             mountRenderer.sprite = mountIdle;
         }
     }
+
+    // ── 教学离场：淡出 ────────────────────────────────────
+
+    private Color _mountColorOriginal;
+    private Color _riderColorOriginal;
+    private bool _fadeColorsCached;
+
+    /// <summary>缓存马 / 骑手的原色（淡出前调一次）。</summary>
+    public void CacheFadeColors()
+    {
+        if (mountRenderer != null) _mountColorOriginal = mountRenderer.color;
+        if (riderRenderer != null) _riderColorOriginal = riderRenderer.color;
+        _fadeColorsCached = true;
+    }
+
+    /// <summary>设置淡出透明度（0 = 完全透明，1 = 原色）。</summary>
+    public void SetFadeAlpha(float alpha)
+    {
+        if (!_fadeColorsCached) CacheFadeColors();
+        float a = Mathf.Clamp01(alpha);
+        if (mountRenderer != null)
+        {
+            var c = _mountColorOriginal; c.a = _mountColorOriginal.a * a; mountRenderer.color = c;
+        }
+        if (riderRenderer != null)
+        {
+            var c = _riderColorOriginal; c.a = _riderColorOriginal.a * a; riderRenderer.color = c;
+        }
+    }
+
+    /// <summary>还原原色（**回池前必须调**，否则下一次复用会隐形）。</summary>
+    public void RestoreFadeAlpha()
+    {
+        if (!_fadeColorsCached) return;
+        if (mountRenderer != null) mountRenderer.color = _mountColorOriginal;
+        if (riderRenderer != null) riderRenderer.color = _riderColorOriginal;
+        _fadeColorsCached = false;
+    }
 }

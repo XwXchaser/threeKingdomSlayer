@@ -161,6 +161,7 @@ public sealed partial class CavalryEnemy : MonoBehaviour
 
         _mounted = true;
         _generation = 0;
+        _exiting = false;
         _damageCommitted = false;
         _chargeOriginRow = -1;
         _chargeGrids = 1;
@@ -183,6 +184,9 @@ public sealed partial class CavalryEnemy : MonoBehaviour
         if (_enemy == null || !_mounted || _enemy.state == EnemyState.Dead)
             return false;
         if (_cycleRoutine != null)
+            return true;
+        // 离场中：不再发起新的冲锋（否则会在淡出过程中再冲一次）
+        if (_exiting)
             return true;
         if (_enemy.state != EnemyState.Idle)
             return false;
