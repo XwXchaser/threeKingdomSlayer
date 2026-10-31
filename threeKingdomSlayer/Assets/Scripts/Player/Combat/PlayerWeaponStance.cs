@@ -225,22 +225,31 @@ public sealed class PlayerWeaponStance
 
     // ── 动作分段 ───────────────────────────────────────────────
 
-    /// <summary>挥入：斜劈入画 → 过冲 → 回弹 → 定格 → 分流。</summary>
+    /// <summary>
+    /// 挥入：**一段动作直接落到防御位**（斜劈入画 → 过冲 → 回弹 → 定格）。
+    ///
+    /// 「前迎」不是落位之后另加的一段：<see cref="parryStanceDefendOffset"/> 直接参与了
+    /// 这一段的落点（枪在入画到位的过程中就一路向前），所以整条防御动作只有
+    /// **一次连续的位移 + 一次过冲回弹**，中间没有“停顿后再补一下”。
+    /// </summary>
     private void StartSwingIn()
     {
         float swingIn = _cfg != null ? Mathf.Max(0.05f, _cfg.parryStanceSwingInSeconds) : 0.18f;
         float settle = _cfg != null ? Mathf.Max(0.05f, _cfg.parryStanceSettleSeconds) : 0.08f;
         float hold = _cfg != null ? Mathf.Max(0f, _cfg.parryStanceHoldSeconds) : 0.10f;
 
-        MoveTo(_rootAnchor, _poseIdle, swingIn, EaseMode.Out, onArrived: () =>
+        // 落点 = 防御位（斜举位 + 前迎偏移）：前迎在这一段里完成，不另起一段
+        Vector3 guardRoot = _rootAnchor + _defendRootOffset;
+
+        MoveTo(guardRoot, _poseIdle, swingIn, EaseMode.Out, onArrived: () =>
         {
             // 过冲：冲过目标角再收回来（“力度”的来源）
-            MoveTo(_rootAnchor, _poseOvershoot, settle * 0.4f, EaseMode.Smooth, onArrived: () =>
+            MoveTo(guardRoot, _poseOvershoot, settle * 0.4f, EaseMode.Smooth, onArrived: () =>
             {
-                MoveTo(_rootAnchor, _poseIdle, settle * 0.6f, EaseMode.Smooth, onArrived: () =>
+                MoveTo(guardRoot, _poseIdle, settle * 0.6f, EaseMode.Smooth, onArrived: () =>
                 {
                     // 定格：格住的那一下（保持姿势不动）
-                    MoveTo(_rootAnchor, _poseIdle, hold, EaseMode.Smooth, onArrived: AfterSwingIn);
+                    MoveTo(guardRoot, _poseIdle, hold, EaseMode.Smooth, onArrived: AfterSwingIn);
                 });
             });
         });
@@ -253,13 +262,14 @@ public sealed class PlayerWeaponStance
         else BeginExit();
     }
 
-    /// <summary>进入防御位：角度与斜举位一致（读数一致），只用位置差表达“稍低于 idle”。</summary>
+    /// <summary>进入防御位：已经在防御位（挥入那段直接落在这里），这里只切相位。</summary>
     private void EnterDefend(float durationOverride = -1f)
     {
         Phase = StancePhase.Defending;
         float dur = durationOverride > 0f
             ? durationOverride
             : (_cfg != null ? Mathf.Max(0.05f, _cfg.parryStanceDefendEnterSeconds) : 0.12f);
+        // 落点已经对了（挥入那段直接落到防御位）→ 这里的 MoveTo 只是一次同点插值，不产生第二段动作
         MoveTo(_rootAnchor + _defendRootOffset, _poseIdle, dur, EaseMode.Smooth);
     }
 
