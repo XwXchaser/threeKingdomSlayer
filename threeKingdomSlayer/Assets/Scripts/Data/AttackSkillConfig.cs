@@ -178,6 +178,14 @@ public class AttackSkillConfig : ScriptableObject
              "注意：枪在屏幕上占屏高 124%，任何位移都会让可见段变化 —— 改完必须实拍，\n" +
              "不要只看数值（见 plan/combat-ui-reference-image-generation-plan-20261030.md §11.22）")]
     public Vector3 parryStanceDefendOffset = Vector3.zero;
+    [Tooltip("**防御保持期间的持续前迎速度**（世界单位/秒，负 Z = 朝相机）。\n" +
+             "0 = 保持时完全静止（枪会像一张贴图）；\n" +
+             ">0 = 按住防御时枪一直朝镜头推进（越按越近、越按越大）—— “防御”与“向前”合成一段动作。")]
+    [Range(0f, 3f)]
+    public float parryStanceDefendDriftPerSecond = 0f;
+    [Tooltip("防御保持期间的持续前迎**总量上限**（世界单位）：推到上限就不再前进")]
+    [Range(0f, 4f)]
+    public float parryStanceDefendDriftMax = 0f;
     [Tooltip("落到防御保持位的时长（秒）")]
     [Range(0.02f, 0.5f)]
     public float parryStanceDefendEnterSeconds = 0.12f;

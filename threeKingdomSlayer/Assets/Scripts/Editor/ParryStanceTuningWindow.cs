@@ -25,6 +25,7 @@ public class ParryStanceTuningWindow : EditorWindow
     private Vector3 _exitOffset;
     private Vector3 _defendOffset;
     private float _tipDeg, _entryDeg, _defendDrop, _exitDeg;
+    private float _driftSpeed, _driftMax;
     private float _swingIn, _overshoot, _settle, _hold, _exitFast, _exitNormal;
 
     private string _readout = "";
@@ -53,6 +54,8 @@ public class ParryStanceTuningWindow : EditorWindow
         _entryDeg = _cfg.parryStanceEntryAngleDegrees;
         _defendDrop = _cfg.parryStanceDefendAnchorDrop;
         _defendOffset = _cfg.parryStanceDefendOffset;
+        _driftSpeed = _cfg.parryStanceDefendDriftPerSecond;
+        _driftMax = _cfg.parryStanceDefendDriftMax;
         _exitDeg = _cfg.parryStanceExitAngleDegrees;
         _swingIn = _cfg.parryStanceSwingInSeconds;
         _overshoot = _cfg.parryStanceOvershootDegrees;
@@ -74,6 +77,8 @@ public class ParryStanceTuningWindow : EditorWindow
         _cfg.parryStanceEntryAngleDegrees = _entryDeg;
         _cfg.parryStanceDefendAnchorDrop = _defendDrop;
         _cfg.parryStanceDefendOffset = _defendOffset;
+        _cfg.parryStanceDefendDriftPerSecond = _driftSpeed;
+        _cfg.parryStanceDefendDriftMax = _driftMax;
         _cfg.parryStanceExitAngleDegrees = _exitDeg;
         _cfg.parryStanceSwingInSeconds = _swingIn;
         _cfg.parryStanceOvershootDegrees = _overshoot;
@@ -105,6 +110,8 @@ public class ParryStanceTuningWindow : EditorWindow
         _exitDeg = EditorGUILayout.Slider("收枪指向 (度)", _exitDeg, -180f, 180f);
         _defendDrop = EditorGUILayout.Slider("防御位下沉", _defendDrop, 0f, 1f);
         _defendOffset = EditorGUILayout.Vector3Field("防御位额外位移 (x左/ y上抬/ z前迎)", _defendOffset);
+        _driftSpeed = EditorGUILayout.Slider("防御保持·持续前迎速度 (单位/秒)", _driftSpeed, 0f, 3f);
+        _driftMax = EditorGUILayout.Slider("防御保持·前迎总量上限", _driftMax, 0f, 4f);
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("时序", EditorStyles.boldLabel);
         _swingIn = EditorGUILayout.Slider("挥入时长 (s)", _swingIn, 0.05f, 1f);
@@ -241,6 +248,6 @@ public class ParryStanceTuningWindow : EditorWindow
 
     private string BuildCopyText()
     {
-        return $"矛头锚点={_anchor} 斜举角={_tipDeg} 起手指向={_entryDeg} 起手枪尾偏移={_entryOffset} 防御下沉={_defendDrop} 防御额外位移={_defendOffset} 收枪指向={_exitDeg} 收枪枪尾偏移={_exitOffset}";
+        return $"矛头锚点={_anchor} 斜举角={_tipDeg} 起手指向={_entryDeg} 起手枪尾偏移={_entryOffset} 防御下沉={_defendDrop} 防御额外位移={_defendOffset} 持续前迎={_driftSpeed}/s(上限 {_driftMax}) 收枪指向={_exitDeg} 收枪枪尾偏移={_exitOffset}";
     }
 }

@@ -70,6 +70,7 @@ public sealed class PlayerWeaponStance
     private Vector3 _entryRoot;         // 起手位的枪尾（默认与斜举位相同 = 枪尾不动，只挑枪尖）
     private Vector3 _exitRoot;          // 收枪位的枪尾（要把整杆推出画面）
     private Vector3 _defendRootOffset;  // 防御位相对杆尾的下沉量（**只用位置差，不用角度差**）
+    private float _defendDrift;        // 防御保持期间已推进的总量（朝相机，负 Z）
     private Quaternion _poseIdle, _poseEntry, _poseOvershoot, _poseExit;
     private AttackSkillConfig _cfg;
 
@@ -173,6 +174,7 @@ public sealed class PlayerWeaponStance
         _holding = false;
         _holdRequested = false;
         _recoilTimer = 0f;
+        _defendDrift = 0f;
         if (_weapon != null) UnityEngine.Object.Destroy(_weapon);
         _weapon = null;
         _weaponTransform = null;
@@ -185,8 +187,7 @@ public sealed class PlayerWeaponStance
         _holding = pointerHeld;
 
         // 受击后退的衰减
-        if (_recoilTimer > 0f)
-        {
+        if (_recoilTimer > 0f)        {
             _recoilTimer -= deltaTime;
             float k = _recoilTimer > 0f ? Mathf.Clamp01(_recoilTimer / _recoilTotal) : 0f;
             _recoilOffset = new Vector3(0f, 0f, -_recoilAmount * k);
@@ -195,6 +196,14 @@ public sealed class PlayerWeaponStance
 
         // 预输入：挥入期间只**记住**按住，不切断动作（规则 1）
         if (Phase == StancePhase.SwingIn && _holding) _holdRequested = true;
+
+        // **防御保持期间持续前迎**（朝相机）：防御与向前是同一段动作，不是一次性位移。
+        if (Phase == StancePhase.Defending && _holding && _cfg != null)
+        {
+            float speed = Mathf.Max(0f, _cfg.parryStanceDefendDriftPerSecond);
+            float max = Mathf.Max(0f, _cfg.parryStanceDefendDriftMax);
+            if (speed > 0f) _defendDrift = Mathf.Min(_defendDrift + speed * deltaTime, max);
+        }
 
         if (_moving)
         {
@@ -310,7 +319,7 @@ public sealed class PlayerWeaponStance
         float e = _ease == EaseMode.Out ? 1f - Mathf.Pow(1f - t, 3f) : t * t * (3f - 2f * t);
         Vector3 root = Vector3.Lerp(_rootFrom, _rootTo, e);
         Quaternion pose = Quaternion.Slerp(_poseFrom, _poseTo, e);
-        _weaponTransform.position = PlayerPosition + root + _recoilOffset;
+        _weaponTransform.position = PlayerPosition + root + _recoilOffset + Vector3.back * _defendDrift;
         _weaponTransform.rotation = pose;
     }
 
