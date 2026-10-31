@@ -35,3 +35,27 @@ aiEditMode: inherit
 - 回调：`OnComplete` 可以销毁自然播放完成的对象；不要在 `OnKill` 中再次 `Destroy`，外部清理过程中会造成 DOTween 回收重入和 `IndexOutOfRangeException`。
 - 战斗时序：三选一只暂停 `Time.timeScale`，已开始的视觉与 ULT 都应冻结并在恢复后继续；真正结束战斗才取消 ULT。路线奖励等待是软结束，普通死亡/火焰/箭雨等应自然结束；玩家确认离开节点、重开或退回菜单才允许硬清理。
 - 暂停冻结的落地实现见 `memory/pause-gate-implementation.md`，规则见 `design/pause-freeze-rule.md`。
+
+## 2026-10-29 补充：场景重载后的残留 tween（实战排查）
+
+- **现场**：玩家阵亡 → 点「返回主菜单」→ `StageController.GoToMainMenu()` 把 Battle 场景卸载并重载 →
+  下一帧抛 `MissingReferenceException: The object of type 'Transform' has been destroyed`，
+  栈固定为 `Sequence.ApplyInternalCycle → Vector3Plugin.EvaluateAndApply → Transform.set_localScale`。
+  （日志位置：`C:/Users/Administrator/AppData/Local/Tuanjie/Editor/Editor.log`；Unity 的 Console 面板不显示这条。）
+- **审计方法**：把全项目 `.DOScale(` 调用点列全（14 处文件），逐个查「谁创建 sequence / 谁在销毁时杀它」→ 发现两处**确凿泄漏**：
+  1. `Assets/Scripts/UI/BattleHUD.cs` 的通关印章序列是**局部变量**（`var seq = DOTween.Sequence();`），`OnDestroy` 里一句 `Kill` 都没有 → 印章是运行时 `Instantiate` 到相机下的，场景重载时先被销毁 → 已修：改为字段 `_victorySequence` + `OnDestroy` 杀。
+  2. `Assets/Scripts/QTE/QTEDisplay.cs` 的 `_resultFeedbackTween`（QTE 结果反馈，运行时 new 出来的对象挂在 HUD 的 QTE 指示区下）`OnDestroy` 不杀 → 已修。
+- **兜底**：`Assets/Scripts/Core/TweenLeakGuard.cs`（2026-10-29 新建）——
+  每帧在 **DOTween 求值之前**（`[DefaultExecutionOrder(-1000)]`）扫一遍活跃 tween，杀掉「目标已销毁」的；
+  序列还要看**嵌套 tween 的 target**（序列自身的 target 常常是 null）；另外在 `SceneManager.sceneUnloaded` 再扫一次。
+  命中时打印来源（目标类型 + 名字），下次再犯就能直接定位到是哪条链路漏了清理。
+  验证：合成探针（`DOScale` / `Sequence+Append(DOScale)` → 销毁目标）→ 守卫杀掉后 **Console 0 error**。
+- **本版 DOTween 的 API 实测（踩过的坑）**：
+  - `Tween` 只暴露属性；`Kill(bool)` / `IsActive()` 是 **`TweenExtensions` 的扩展方法**（没有 `using DG.Tweening;` 的临时脚本里调不到）。
+  - `Sequence.Append/Join` 在 **`DG.Tweening.TweenSettingsExtensions`**，不在 `TweenExtensions`。
+  - 反射句柄：`DG.Tweening.Core.TweenManager._activeTweens`（`Tween[]`）、`TweenManager.totActiveTweens`（int）、`DG.Tweening.Sequence.sequencedTweens`（`List<Tween>`，private）。
+  - `tween.target` 的静态类型是 `object` → **Unity 假 null 判断必须写成** `target is UnityEngine.Object uo && uo == null`，
+    直接 `target == null` 是引用比较，**抓不到已销毁对象**。
+- **复现手法（可复用）**：新建 `RectTransform` → `DOScale(rt, …)`（或 `Sequence` 里 `Append` 一个 `DOScale`）→
+  `Destroy` 目标 → 下一帧必抛；想同一帧复现就用 `DestroyImmediate`。
+

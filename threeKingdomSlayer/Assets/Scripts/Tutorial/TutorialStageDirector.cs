@@ -61,6 +61,8 @@ public partial class TutorialStageDirector : MonoBehaviour
     private IRunFlow _stageFlow;
     private WaveSpawner _waveSpawner;
     private bool _choiceDialogueShown;
+    /// <summary>教学是否已经教到「防御按键」那一拍（教到之前防御键锁住）。</summary>
+    private bool _defendTaught;
     private Coroutine _hintRoutine;
     private DialogueEventData _pendingWaveDialogue;
     private bool _openingPlayed;
@@ -93,11 +95,47 @@ public partial class TutorialStageDirector : MonoBehaviour
         _taughtAttacks.Clear();
         TutorialAttackGate.Clear();
         var input = InputManager.Instance;
-        if (input != null) { input.forcePointerHeld = false; input.allowInputWhileTimeFrozen = false; }
+        if (input != null) { input.allowInputWhileTimeFrozen = false; }
         if (UpgradeChoiceManager.Instance != null)
         {
             UpgradeChoiceManager.Instance.suppressChoices = false;
             UpgradeChoiceManager.Instance.forcedChoices.Clear();
+        }
+    }
+
+    /// <summary>
+    /// 防御键的开放时机：
+    ///   • 教学关：**教到那一拍之前锁住**（锁住 = 不可见 + 不吃射线 → 既不会被点到，也不吞手势）；
+    ///   • 正式关 / 教学已完成：一直开放。
+    /// </summary>
+    private void RefreshDefenseButtonAvailability()
+    {
+        var button = DefenseButton.Instance;
+        if (button == null) return;
+
+        bool shouldLock = false;
+        if (!_defendTaught && !TutorialCompleted)
+        {
+            var route = RouteFlowHub.Current;
+            bool onTutorialRoute = route != null && tutorialRouteConfig != null && route.RouteConfig == tutorialRouteConfig;
+            shouldLock = onTutorialRoute;
+        }
+
+        if (button.Available == shouldLock) button.SetAvailable(!shouldLock);
+    }
+
+    /// <summary>教学是否已完成（缓存：只读一次，通关时置 true）。</summary>
+    private bool? _tutorialCompletedCache;
+    private bool TutorialCompleted
+    {
+        get
+        {
+            if (_tutorialCompletedCache == null)
+            {
+                var data = SaveManager.Load();
+                _tutorialCompletedCache = data != null && TutorialSaveSection.IsCompleted(data);
+            }
+            return _tutorialCompletedCache.Value;
         }
     }
 
@@ -106,6 +144,11 @@ public partial class TutorialStageDirector : MonoBehaviour
     {
         // 教学关才限制招式（还没教到的不许发出）
         UpdateAttackGate();
+
+        // 防御键：教学关在教到之前**不给用** ——
+        // 它是个可交互 UI，按输入规则（IsPointerOverUIAt：命中可交互 UI → 这次输入不算手势）
+        // 会把玩家点敌人的手势吞掉 → 开局的点击提示点过去就落在按钮上。
+        RefreshDefenseButtonAvailability();
 
         // 开幕台词：教学路线一就绪就播一次
         if (!_openingPlayed && openingDialogue != null && tutorialRouteConfig != null)
@@ -192,7 +235,12 @@ public enum GestureHintKind
     /// <summary>竖直上划（招架）：**时停拍** —— 冻结整个游戏，玩家在冻结中做手势</summary>
     Parry,
     /// <summary>上划后按住（防御）：上划一次并保持按住 → 落防御位</summary>
-    ParryHold
+    ParryHold,
+    /// <summary>
+    /// **防御按键**（2026-10-29 用户定）：点一下底排中间的防御键 → 长枪举起 → 落防御位。
+    /// 不做任何招架判定（敌人不会被打断）；防御期免伤、只涨破防值。
+    /// </summary>
+    DefendButton
 }
 
 [System.Serializable]

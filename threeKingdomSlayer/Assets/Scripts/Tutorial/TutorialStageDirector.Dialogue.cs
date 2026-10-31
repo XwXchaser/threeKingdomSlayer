@@ -80,6 +80,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (TutorialSaveSection.IsCompleted(data)) return;
         TutorialSaveSection.MarkCompleted(data);
         SaveManager.Save(data);
+        _tutorialCompletedCache = true;   // 缓存刷新：之后防御键在正式关一直开放
         DebugLog.Info("[Tutorial] 教学关已完成并记档");
     }
 

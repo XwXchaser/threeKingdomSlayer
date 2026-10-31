@@ -27,6 +27,8 @@ public partial class TutorialStageDirector : MonoBehaviour
     private bool _defendLocked;
     /// <summary>这一拍是否「出招即收拍」（防御拍为 false：成功判据是进入防御姿态）。</summary>
     private bool _beatEndsOnAttack = true;
+    /// <summary>当前防御拍的配置（决定成功后是否让目标敌人离场）。</summary>
+    private TutorialGestureStep _defendStep;
     /// <summary>时停拍：招架必须**真的格到了**才算这一拍完成（格不到就继续等玩家再试）。</summary>
     private bool _requireParryBlocked;
 
@@ -147,59 +149,84 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 2) 推台词
         yield return PushWaveDialogue();
 
-        // 3) 按住 109（tutorialHold → 冲锋计时不走），等玩家进入防御再放行
+        // 3) 按住敌人（tutorialHold → 冲锋计时不走），等玩家进入防御再放行
         target.tutorialHold = true;
 
         _defendLocked = false;
         _beatEndsOnAttack = false;
-        _currentTeachAttack = AttackType.Parry;
-        BeginBeat(TutorialGestureTarget.ParryVertical, AttackType.Parry, holdEnemies: true);
+        _currentTeachAttack = null;                    // 防御键不教任何招式
+        _defendStep = step;
+        // **闸门不再限手势**：这一拍教的是「按防御键」，玩家仍可自由点击/划动攻击。
+        BeginBeat(TutorialGestureTarget.None, null, holdEnemies: true);
 
         var ps = PlayerState.Instance;
         if (ps != null && ps.Guard != null) ps.Guard.OnDamageAbsorbed += OnGuardAbsorbed;
 
         Vector2 from = step.anchorToPlayer ? PlayerScreenPoint() : ScreenPoint(step.from01);
         Vector2 to = step.anchorToPlayer ? from + new Vector2(0f, 260f) : ScreenPoint(step.to01);
+
+        // 防御键拍：提示手去**点那个按钮**（不是划动）→ 落点用按钮的屏幕坐标。
+        if (step.kind == GestureHintKind.DefendButton && TryGetDefendButtonScreenPoint(out var btnPos))
+        {
+            from = btnPos;
+            to = btnPos;
+        }
+
         PlayGestureAt(step.kind, from, to);   // 示范自循环，不需要反复重播
 
         while (_beatActive)
         {
             if (_stageState != null && !_stageState.IsStageInProgress) { EndBeat(); break; }
 
-            // 成功判据：玩家进入防御姿态 → 教学锁定防御（不许松手）+ 放 109 冲锋
+            // 成功判据：玩家进入防御姿态 → 放开敌人，让它出手
+            // （2026-10-29：防御键改成 **hold** 语义 —— 玩家按住按钮本身就是“按住”，
+            //   不再需要 forcePointerHeld 去强行锁住手指）
             var p = PlayerState.Instance;
             if (!_defendLocked && p != null && p.WeaponStance != null && p.WeaponStance.IsDefending)
             {
                 _defendLocked = true;
-                var input = InputManager.Instance;
-                if (input != null) input.forcePointerHeld = true;
                 if (target != null) target.tutorialHold = false;
-                Debug.Log("[Tutorial] 防御拍：玩家已进入防御 → 锁定防御并放 109 冲锋");
+                Debug.Log("[Tutorial] 防御拍：玩家已进入防御 → 放开敌人出手");
             }
 
             yield return new WaitForSecondsRealtime(0.25f);
         }
 
-        // 4) 收场：解除订阅与强制按住
+        // 4) 收场：解除订阅
         if (ps != null && ps.Guard != null) ps.Guard.OnDamageAbsorbed -= OnGuardAbsorbed;
-        var input2 = InputManager.Instance;
-        if (input2 != null) input2.forcePointerHeld = false;
         _beatEndsOnAttack = true;
         _defendLocked = false;
+        // 教学拍结束 → 收起防御（把枪放下来）
+        var ps2 = PlayerState.Instance;
+        if (ps2 != null) ps2.SetDefend(false);
         _hintRoutine = null;
     }
 
-    /// <summary>防御吸收了伤害 → 防御成功：解除锁定，让 109 回退淡出离场（不计击杀）。</summary>
+    /// <summary>防御按键的屏幕坐标（提示手去点它）。</summary>
+    private static bool TryGetDefendButtonScreenPoint(out Vector2 screenPos)
+    {
+        screenPos = Vector2.zero;
+        var button = DefenseButton.Instance;
+        if (button == null || button.Button == null) return false;
+        var rect = button.Button.GetComponent<RectTransform>();
+        if (rect == null) return false;
+        var canvas = rect.GetComponentInParent<Canvas>();
+        var cam = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+        screenPos = RectTransformUtility.WorldToScreenPoint(cam, rect.TransformPoint(rect.rect.center));
+        return true;
+    }
+
+    /// <summary>防御吸收了伤害 → 防御成功：解除锁定，按配置决定是否让目标敌人离场。</summary>
     private void OnGuardAbsorbed(float damage)
     {
         if (!_defendLocked) return;
         _defendLocked = false;
-        Debug.Log("[Tutorial] 防御拍：成功吸收伤害 " + damage.ToString("F0") + " → 109 离场");
-
-        var input = InputManager.Instance;
-        if (input != null) input.forcePointerHeld = false;
+        Debug.Log("[Tutorial] 防御拍：成功吸收伤害 " + damage.ToString("F0") + " → 收拍");
 
         EndBeat();
+
+        // 不离场（despawnTargetOnSuccess = false）→ 敌人继续打，玩家继续用防御处理
+        if (_defendStep != null && !_defendStep.despawnTargetOnSuccess) return;
 
         var target = FindTargetEnemy();
         if (target == null) return;

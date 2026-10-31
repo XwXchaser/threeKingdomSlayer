@@ -471,4 +471,55 @@ public class EnemyManager : MonoBehaviour
             if (g != null) Destroy(g.gameObject);
         };
     }
+
+    // ── 区域位置识别：屏幕点 ↔ 敌人 ────────────────────────────────
+    /// <summary>
+    /// 该屏幕点是否落在某个**活着的敌人**身上（用于区分「点在动作按钮上」与「点在敌人上」）。
+    ///
+    /// 背景（2026-10-29 用户定）：防御键这类**动作按钮**会压在敌人所在的画面区域上，
+    /// 玩家点敌人时**不该**被当成点按钮 → 需要知道“这个点下面有没有敌人”。
+    ///
+    /// 命中范围 = 敌人**身体核心**（胸口处的一个小圆），不是整个精灵：
+    ///   • 敌人精灵很大（1011 实测屏幕高 ≈1200 px），用整个精灵判定会把半个屏幕都算成“敌人身上”
+    ///     → 防御键将永远点不动；
+    ///   • 用核心圆（实测半径 ≈ 敌人屏高的 22%）→ 防御键所在的**脚下/身前**区域仍然可用。
+    ///
+    /// 结论：点**敌人胸口** = 攻击；点**按钮** = 防御（点敌人边缘且正好压在按钮上时，以按钮为准）。
+    /// </summary>
+    /// <param name="screenPos">屏幕坐标（像素，左下原点）。</param>
+    /// <param name="cam">投影用的相机（一般传 Camera.main）。</param>
+    /// <param name="enemy">命中时输出那个敌人。</param>
+    public static bool TryGetEnemyAtScreenPoint(Vector2 screenPos, Camera cam, out Enemy enemy)
+    {
+        enemy = null;
+        if (cam == null || Instance == null) return false;
+
+        var alive = Instance.GetAllAliveEnemies();
+        if (alive == null) return false;
+
+        for (int i = 0; i < alive.Count; i++)
+        {
+            var e = alive[i];
+            if (e == null || e.state == EnemyState.Dead) continue;
+
+            var renderer = e.GetComponentInChildren<SpriteRenderer>();
+            if (renderer == null) continue;
+
+            // **不能直接用世界包围盒投影后的 AABB**：透视下那个框会大得离谱
+            //（实测 1011 投影出 X=-163..951 / Y=594..1692 → 几乎全屏都算“敌人身上”）。
+            var bounds = renderer.bounds;
+            Vector2 center = cam.WorldToScreenPoint(bounds.center);
+            Vector2 top = cam.WorldToScreenPoint(bounds.center + Vector3.up * (bounds.size.y * 0.5f));
+            float halfHeight = Mathf.Abs(top.y - center.y);
+            float radius = Mathf.Max(40f, halfHeight * 0.22f);   // 核心圆：约屏高 11%
+
+            float dx = screenPos.x - center.x;
+            float dy = screenPos.y - center.y;
+            if (dx * dx + dy * dy > radius * radius) continue;
+
+            enemy = e;
+            return true;
+        }
+        return false;
+    }
 }

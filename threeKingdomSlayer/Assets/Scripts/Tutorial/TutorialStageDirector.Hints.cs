@@ -22,6 +22,8 @@ public partial class TutorialStageDirector : MonoBehaviour
             if (step == null || step.waveIndex != waveIndex) continue;
             if (step.battle != null && step.battle != battle) continue;
             Debug.Log($"[Tutorial] 命中手势步骤 {i} wave={waveIndex} kind={step.kind} pause={step.pauseUntilPerformed}");
+            // 教到「防御按键」这一拍 → 防御键从这一刻起才开放给玩家
+            if (step.kind == GestureHintKind.DefendButton) _defendTaught = true;
             // 路线出口（负数波次）不走暂停门槛：那一拍没有战斗，只需把光标停在箭头上
             if (waveIndex < 0)
             {
@@ -35,6 +37,11 @@ public partial class TutorialStageDirector : MonoBehaviour
             else if (step.holdAfterGesture)
             {
                 // 防御拍：上划后按住 → 扛住 109 冲锋
+                _hintRoutine = StartCoroutine(DefendHoldRoutine(step));
+            }
+            else if (step.kind == GestureHintKind.DefendButton)
+            {
+                // 防御按键拍（2026-10-29）：点一下防御键 → 举枪 → 落防御位 → 扛住这一击
                 _hintRoutine = StartCoroutine(DefendHoldRoutine(step));
             }
             else
@@ -70,9 +77,6 @@ public partial class TutorialStageDirector : MonoBehaviour
             _frozenByTutorial = false;
             Time.timeScale = 1f;
         }
-        // 防御拍的强制按住必须清零（否则玩家永久无法出招）
-        var input = InputManager.Instance;
-        if (input != null) input.forcePointerHeld = false;
         var view = ResolveDialogueView();
         if (view != null) view.PointerAdvanceEnabled = true;
     }
@@ -294,6 +298,7 @@ public partial class TutorialStageDirector : MonoBehaviour
             case GestureHintKind.ChargedSwipe: gestureHint.PlayChargedSwipe(from, to); break;
             case GestureHintKind.Parry: gestureHint.PlayParry(from, to); break;
             case GestureHintKind.ParryHold: gestureHint.PlayParryHold(from, to); break;
+            case GestureHintKind.DefendButton: gestureHint.PlayPressHoldLoop(from); break;   // 防御键：按住（hold）
         }
     }
 
@@ -313,6 +318,7 @@ public partial class TutorialStageDirector : MonoBehaviour
             case GestureHintKind.ChargedSwipe: gestureHint.PlayChargedSwipe(from, to); break;
             case GestureHintKind.Parry: gestureHint.PlayParry(from, to); break;
             case GestureHintKind.ParryHold: gestureHint.PlayParryHold(from, to); break;
+            case GestureHintKind.DefendButton: gestureHint.PlayPressHoldLoop(from); break;
         }
     }
 }

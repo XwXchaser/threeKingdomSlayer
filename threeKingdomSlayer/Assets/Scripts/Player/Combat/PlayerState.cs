@@ -81,6 +81,67 @@ public class PlayerState : MonoBehaviour
     /// </summary>
     public PlayerWeaponStance WeaponStance { get; private set; }
 
+    /// <summary>
+    /// **防御意图**（2026-10-29 用户定：防御按键点按切换，点击立即发动）。
+    /// 与手势输入完全分开：手势走 `MoveGesture → AttackType`，防御走这条布尔状态。
+    /// </summary>
+    public bool DefendHeld { get; private set; }
+
+    /// <summary>防御开/关变化（表现层可订阅：按钮高亮、枪的举起/收枪）。</summary>
+    public event System.Action<bool> OnDefendChanged;
+
+    /// <summary>防御按键：点按切换（开 → 举枪；关 → 收枪出画）。</summary>
+    public void ToggleDefend() => SetDefend(!DefendHeld);
+
+    /// <summary>设置防御开/关。打开时**立即发动**（举枪 → 落防御位）。</summary>
+    public void SetDefend(bool on)
+    {
+        if (DefendHeld == on) return;
+
+        // **出招时不能防御**（2026-10-29 用户定：出招与防御互斥，与既有动作设计一致）
+        if (on && !CanStartDefend())
+        {
+            DebugLog.Info("[Defend] 出招中，不能防御");
+            return;
+        }
+
+        DefendHeld = on;
+
+        var stance = WeaponStance;
+        if (stance != null)
+        {
+            if (on)
+            {
+                // 点击即发动：复用招架的挥入表现（无判定、无打断）。
+                stance.PlayDefend(DefendConfig);
+                AudioManager.Instance?.PostEvent("Player_Parry");
+            }
+            // 关闭时不做特殊处理：姿态链每帧看到「没有按住」→ 自动收枪出画。
+        }
+
+        OnDefendChanged?.Invoke(on);
+        DebugLog.Info($"[Defend] 防御 {(on ? "开启" : "关闭")}");
+    }
+
+    /// <summary>
+    /// 当前是否**占用了防御**（防御意图已开，或枪正在举起 / 已在防御位）→ 此时**不能出招**。
+    /// 与“出招时不能防御”互为镜像，构成“出招 ↔ 防御”互斥（2026-10-29 用户定）。
+    /// </summary>
+    public bool IsDefendingActive =>
+        DefendHeld || (WeaponStance != null && (WeaponStance.IsDefending || WeaponStance.IsSwingingIn));
+
+    /// <summary>现在能不能举枪防御：出招中不行（动作锁未结束 → 还在出招）。</summary>
+    public bool CanStartDefend()
+    {
+        var attack = AttackSystem.Instance;
+        if (attack != null && attack.IsActionPlaying) return false;
+        return true;
+    }
+
+    /// <summary>防御用的招式资产（姿态与破防参数都挂在招架资产上）。</summary>
+    private AttackSkillConfig DefendConfig =>
+        heroConfig != null ? heroConfig.GetSkillConfig(AttackType.Parry) : null;
+
     // 事件
     public System.Action<float, float> OnHealthChanged; // current, max
     public System.Action<int> OnReviveCountChanged;
@@ -153,12 +214,12 @@ public class PlayerState : MonoBehaviour
         // 防御姿态：破防值衰减 + 破防硬直计时
         if (Guard != null) Guard.Tick(Time.deltaTime);
 
-        // 持枪姿态：按“手指是否按住”决定落防御位还是回落
+        // 持枪姿态：**防御只认防御键的 hold**（2026-10-29 用户定）。
+        // 旧的“按住屏幕任意处也算按住”必须去掉 —— 否则玩家想做别的指令
+        // （点一下攻击 / 划一下 / 长按蓄力）时会被拖回防御状态。
         if (WeaponStance != null)
         {
-            var input = PlayerInputHub.Current;
-            bool pointerHeld = input != null && input.PointerHeld;
-            WeaponStance.Tick(Time.deltaTime, pointerHeld);
+            WeaponStance.Tick(Time.deltaTime, DefendHeld);
         }
 
         // 更新冷却计时器（复用缓存列表，避免每帧 new List 分配）
@@ -238,8 +299,15 @@ public class PlayerState : MonoBehaviour
 
         // 防御姿态：免伤，只累积破防值（破防值满 → 破防硬直）
         // 把攻击者传进去 → 防御能给出「格挡」反馈（攻击者卡肉 + 镜头震动）
-        if (Guard != null && WeaponStance != null && WeaponStance.IsDefending
-            && Guard.TryAbsorbDamage(damage, source)) return;
+        // **挥入（举枪）期间也算防御**：2026-10-29 用户定「挥入期受击免伤」，
+        // 且此时直接跳位进防御位（PlayerWeaponStance.InterruptToDefend）。
+        if (Guard != null && WeaponStance != null
+            && (WeaponStance.IsDefending || WeaponStance.IsSwingingIn)
+            && Guard.TryAbsorbDamage(damage, source))
+        {
+            if (WeaponStance.IsSwingingIn) WeaponStance.InterruptToDefend(DefendConfig);
+            return;
+        }
 
         float originalDamage = damage;
 

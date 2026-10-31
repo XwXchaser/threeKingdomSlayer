@@ -26,12 +26,23 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
     [SerializeField] private Vector2 _playerBubbleOffset = new Vector2(310f, 170f);
     [SerializeField] private float _tailInset = 33f;
 
+    [Header("教学台词自动推进")]
+    [Tooltip("教学类台词（DialogueEventType.Tutorial）每行**自动**推进的下限秒数。\n" +
+             "真正的停留时长按**字数**算并取大者（中文读速约 6 字/秒）；\n" +
+             "固定 2.2 秒读不完 20~30 字的教学台词（2026-10-29 复核）。")]
+    [SerializeField] private float _tutorialAutoAdvanceMinSeconds = 2.2f;
+    [Tooltip("每字额外停留秒数（0.16 ≈ 6 字/秒）")]
+    [SerializeField] private float _tutorialSecondsPerChar = 0.16f;
+
     private readonly List<DialogueEventData.Line> _lines = new List<DialogueEventData.Line>();
     private Action _onFinished;
     private int _lineIndex;
     private bool _isShowing;
 
     private bool _pointerPressed;
+
+    /// <summary>当前这行台词的**自动推进倒计时**（秒）；&lt;= 0 = 不自动推进。</summary>
+    private float _autoAdvanceRemaining;
 
     public bool IsShowing => _isShowing;
 
@@ -47,6 +58,19 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
     private void Update()
     {
         if (!_isShowing) return;
+
+        // 教学台词自动推进（2026-10-29）：不靠玩家点；玩家点仍可立即跳过。
+        if (_autoAdvanceRemaining > 0f)
+        {
+            _autoAdvanceRemaining -= Time.unscaledDeltaTime;
+            if (_autoAdvanceRemaining <= 0f)
+            {
+                _autoAdvanceRemaining = 0f;
+                Advance();
+                return;
+            }
+        }
+
         if (!PointerAdvanceEnabled)
         {
             _pointerPressed = false;
@@ -140,6 +164,7 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
         _lineIndex = 0;
         _onFinished = onFinished;
         _isShowing = true;
+        _isTutorialEvent = dialogueEvent.eventType == DialogueEventType.Tutorial;
 
         bool hasBossLines = dialogueEvent.HasBossLines;
         ApplyDialogueLayout();
@@ -157,6 +182,7 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
     {
         _isShowing = false;
         _pointerPressed = false;
+        _autoAdvanceRemaining = 0f;
         _onFinished = null;
         _lines.Clear();
         _tutorialBubble.SetActive(false);
@@ -216,6 +242,26 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
             _playerText.text = line.text;
         else
             _bossText.text = line.text;
+
+        // 教学类台词：排好自动推进的倒计时（正式对话不自动推进）
+        _autoAdvanceRemaining = _isTutorialEvent ? ComputeAutoAdvanceSeconds(line.text) : 0f;
+    }
+
+    /// <summary>当前播的是否是教学类台词（只有教学类才自动推进）。</summary>
+    private bool _isTutorialEvent;
+
+    /// <summary>这一行台词自动推进前要停多久：下限 2.2 秒，按字数再往上加（中文读速 ≈ 6 字/秒）。</summary>
+    private float ComputeAutoAdvanceSeconds(string text)
+    {
+        int chars = 0;
+        if (!string.IsNullOrEmpty(text))
+        {
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (text[i] > ' ' && text[i] < (char)0xFFFD) chars++;   // 跳过空白
+            }
+        }
+        return Mathf.Max(_tutorialAutoAdvanceMinSeconds, chars * _tutorialSecondsPerChar);
     }
 
     private void Finish()

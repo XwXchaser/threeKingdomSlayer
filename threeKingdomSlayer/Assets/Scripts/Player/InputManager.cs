@@ -90,17 +90,12 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
     }
 
     /// <summary>
-    /// 指针是否仍被按住（**含教学的强制按住**）：防御姿态靠它判断玩家还在不在按住。
-    /// 教学锁定打开时，即使玩家松手也仍算"按着"（防御拍需要玩家一直举着枪）。
+    /// 指针是否仍被按住。
+    /// **注意**（2026-10-29）：防御姿态**不再**看它 —— 防御只认**防御键的 hold**
+    /// （<c>PlayerState.DefendHeld</c>）。旧的“按住屏幕任意处也算按住、会把玩家拖回防御态”
+    /// 的逻辑与教学用的 <c>forcePointerHeld</c> 一起移除。
     /// </summary>
-    public bool PointerHeld => isTouching || forcePointerHeld;
-
-    /// <summary>
-    /// 教学临时锁定：强制"手指仍按住"（用于教学关的防御拍 —— 玩家进入防御后不许松手，
-    /// 否则防御姿态会自己回落，109 的冲锋就会打中玩家）。
-    /// 只有教学导演会开它；拍结束 / 被打断 / 场景卸载必须清零，否则玩家会永久无法出招。
-    /// </summary>
-    [System.NonSerialized] public bool forcePointerHeld;
+    public bool PointerHeld => isTouching;
 
     /// <summary>
     /// 指针是否处于「已按下且未被输入门拦下」的状态。
