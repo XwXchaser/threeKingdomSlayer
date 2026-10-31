@@ -666,3 +666,15 @@ prefab / Battle.scene / AttackSystem **自动合并**，双方改动都保住：
 
 **实机验证**：`final3_bottomrow.png`（底排：等级球 + 圆环剪影头像 + 能量条 + 4 个令牌 + 通栏红血条）、
 `final3_shield.png`（像素盾已接进防御键）。Console 0 error。
+
+### 11.15 用户定稿方向：头像回退旧的 + 技能/被动技能统一用兵符图（2026-10-31）
+
+| 决定 | 落地 |
+|---|---|
+| **角色头像先用回旧的** | `HeroHUDSkin.portraitSprite` → `zhangfei_head`；prefab/场景的 `Head` → `zhangfei_head`；`PortraitFrame` 节点**保留但停用**（剪影方案待定，随时可启用） |
+| **技能和被动技能用新的兵符图** | 主动技能排（上轮已接）+ **被动技能排 `PassiveSkills` 的 4 个槽**：槽位 72×139 → **62×96**；`ButtonFrame` = 兵符放大 4px 近黑衬底、`ButtonFace`/`Frame` = 兵符本体、`Icon` 48×48 居中偏上、`BadgeNumber`（等级）移到右上角 |
+
+**被动排的间距保持原样**（pitch 87，原会话定的右对齐节奏），所以它比左侧主动排（pitch 11.3 间距）更疏；
+若要两侧节奏一致，需把被动排 pitch 改成 73.3 并同步 `Overflow`("+N") 的位置 → **未动**（属于原会话的布局决定）。
+
+**实机**：`final4_bottomrow.png` —— 左：旧描金头像 + 4 个兵符（主动技能）；右：4 个兵符（被动技能）；等级球 + 通栏红血条不变。
