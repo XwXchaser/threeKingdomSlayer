@@ -54,7 +54,7 @@ MonoBehaviour:
   parryGuardDecayPerSecond: 30
   parryGuardWeaponPrefab: {fileID: 0}
   parryStanceTipDegrees: 42
-  parryStanceHeadAnchor: {x: 2.31, y: 5, z: -1.2}
+  parryStanceHeadAnchor: {x: 2.969, y: 3.5, z: -1.2}
   parryStanceEntryAngleDegrees: 30
   parryStanceEntryRootOffset: {x: 0, y: 0, z: -3.5}
   parryStanceExitAngleDegrees: 30
