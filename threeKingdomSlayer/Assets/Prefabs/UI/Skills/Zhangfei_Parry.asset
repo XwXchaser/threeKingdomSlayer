@@ -57,8 +57,8 @@ MonoBehaviour:
   parryStanceHeadAnchor: {x: 4.29, y: 7.4, z: -2.2}
   parryStanceEntryAngleDegrees: 30
   parryStanceEntryRootOffset: {x: -4.78, y: -0.79, z: 0}
-  parryStanceExitAngleDegrees: -100
-  parryStanceExitRootOffset: {x: 2, y: -10, z: 0}
+  parryStanceExitAngleDegrees: 30
+  parryStanceExitRootOffset: {x: -7.6, y: -1.05, z: 0}
   parryStanceSwingInSeconds: 0.12
   parryStanceOvershootDegrees: 8
   parryStanceSettleSeconds: 0.08

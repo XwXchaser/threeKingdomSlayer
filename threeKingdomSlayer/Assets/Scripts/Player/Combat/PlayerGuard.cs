@@ -109,8 +109,8 @@ public sealed class PlayerGuard
     {
         State = GuardState.Broken;
         _breakTimer = cfg != null ? cfg.parryGuardBreakDuration : 1.5f;
-        // 破防：持枪姿态收掉 + 拦下全部玩法输入
-        _owner?.WeaponStance?.Reset();
+        // 破防：持枪姿态**挥出画面**（走收枪，不原地消失）+ 拦下全部玩法输入
+        _owner?.WeaponStance?.BeginExit(cfg != null ? Mathf.Max(0.05f, cfg.parryStanceExitFastSeconds) : 0.12f);
         GameplayInputGate.RequestBlock(this, InputBlockReason.GuardBroken);
         DebugLog.Info($"[Guard] 破防！硬直 {_breakTimer:F2}s（累积伤害 {AccumulatedDamage:F0}）");
         OnStateChanged?.Invoke(State);

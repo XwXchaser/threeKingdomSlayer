@@ -264,12 +264,15 @@ public sealed class PlayerWeaponStance
     }
 
     /// <summary>收枪：沿原路挥出画面 → 出画后才销毁。</summary>
-    private void BeginExit()
+    /// <param name="durationOverride">时长覆盖（秒）；&lt;=0 时用配置值。</param>
+    public void BeginExit(float durationOverride = -1f)
     {
         Phase = StancePhase.Exiting;
-        float dur = _cfg != null
-            ? (_parrySucceeded ? Mathf.Max(0.05f, _cfg.parryStanceExitFastSeconds) : Mathf.Max(0.05f, _cfg.parryStanceExitNormalSeconds))
-            : 0.3f;
+        float dur = durationOverride > 0f
+            ? durationOverride
+            : (_cfg != null
+                ? (_parrySucceeded ? Mathf.Max(0.05f, _cfg.parryStanceExitFastSeconds) : Mathf.Max(0.05f, _cfg.parryStanceExitNormalSeconds))
+                : 0.3f);
         MoveTo(_exitRoot, _poseExit, dur, EaseMode.Out, onArrived: () => Reset());
     }
 
