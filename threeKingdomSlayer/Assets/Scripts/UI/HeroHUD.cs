@@ -191,12 +191,15 @@ public class HeroHUD : MonoBehaviour, IQteHud
         if (healthFillLeft != null) healthFillLeft.fillAmount = ratio;
         if (healthFillRight != null) healthFillRight.fillAmount = ratio;
         HealthInitialized = true;
-        if (healthText != null)
+        if (healthText != null && healthText.gameObject.activeSelf)
         {
+            // 夹取到 0：死亡时 current 会是负数（实测出现过 -2/100）
+            int curHp = Mathf.Max(0, Mathf.CeilToInt(current));
+            int maxHp = Mathf.Max(0, Mathf.CeilToInt(max));
             if (shieldAmount > 0)
-                healthText.text = $"{Mathf.CeilToInt(current)}+({shieldAmount})/{Mathf.CeilToInt(max)}";
+                healthText.text = $"{curHp}+({shieldAmount})/{maxHp}";
             else
-                healthText.text = $"{Mathf.CeilToInt(current)}/{Mathf.CeilToInt(max)}";
+                healthText.text = $"{curHp}/{maxHp}";
         }
     }
 

@@ -21,6 +21,8 @@ public class BuffIcon : MonoBehaviour
     [Header("冷却显示（计时被动专用）")]
     [SerializeField] private Image _cooldownDim;
     [SerializeField] private Image _cooldownFill;
+    [Tooltip("专属冷却遮罩图（可选）。填了则遮罩用这张图，而不是图标贴图 —— 战斗 HUD 的菱形槽需要它。")]
+    [SerializeField] private Sprite _cooldownMaskSprite;
 
     [Header("道具就绪光效")]
     [SerializeField] private float _readyGlowSpeed = 1.2f;
@@ -267,8 +269,10 @@ public class BuffIcon : MonoBehaviour
     /// <summary>同步冷却蒙层精灵（图标变更时调用）</summary>
     public void SyncCooldownSprite(Sprite sprite)
     {
-        if (_cooldownDim != null) _cooldownDim.sprite = sprite;
-        if (_cooldownFill != null) _cooldownFill.sprite = sprite;
+        // 有专属遮罩图时优先用它（菱形槽的遮罩不能拿图标贴图，否则会把整块槽糊住）
+        var mask = _cooldownMaskSprite != null ? _cooldownMaskSprite : sprite;
+        if (_cooldownDim != null) _cooldownDim.sprite = mask;
+        if (_cooldownFill != null) _cooldownFill.sprite = mask;
     }
 
     public void ShowEmpty(Sprite frame)

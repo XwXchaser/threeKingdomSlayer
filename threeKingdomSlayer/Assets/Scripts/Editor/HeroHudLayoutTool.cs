@@ -6,11 +6,19 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// 战斗 UI 改造工具（2026-10-27，本周战斗 UI 改造）。
+/// 战斗 UI 改造工具（2026-10-27，本周战斗 UI 改造；2026-10-30 按刀锋实测再调尺寸）。
 ///
 /// 对应 `Locus/knowledge/plan/weekly-plan-combat-ui-tutorial-20261027.md` §5：
 ///   ① 暂停键挪左上 / ② 头像整块缩到左下 / ③ 黄色棱形技能排（主动技能+道具）
 ///   / ④ 通栏红血条（两侧向中间收缩）/ ⑤ 破防条退役 / ⑥ 等级球（球形面片 + 球内「水上涨」）
+///
+/// **2026-10-30 尺寸规则（用户拍板）**：**排布位置以我们游戏为主，UI 尺寸以《上古卷轴：刀锋》为主**。
+/// 参照 `C:/Users/steam/Downloads/screenshot-20261030-154524.png`（刀锋实机 308×615）实测值：
+///   • 刀锋左上罗盘 16×25（屏宽 5.2%）→ 暂停块取**折中 88×88**（可点性优先，非照抄罗盘）
+///   • 刀锋底通栏生命条 235×5（屏宽 77.9%）→ 血条收窄到 **756×34**、**去掉血量数字**
+///   • 刀锋左下大招菱形 ≈ 21×33 实心 → 黄色棱形 **62×125**（并补出可见外框 + 独立冷却遮罩）
+///   • 头像 / 等级球 / 铜钱：刀锋无对应物 → **保持现尺寸**
+/// 实测对照见 `Locus/knowledge/plan/combat-ui-reference-image-plan-20261030.md` §二之二。
 ///
 /// **为什么做成工具**：场景里的 HUD 是 prefab 实例且带 157 处手改 override，
 /// 改 prefab 不会同步到场景；两边必须用同一套函数改，否则模板与实例会漂移。
@@ -26,6 +34,27 @@ public static class HeroHudLayoutTool
     private const string CircleSpritePath = "Assets/Sprites/UI/hud_orb_circle.png";
     private const string DiamondSpritePath = "Assets/Sprites/UI/hud_slot_diamond.png";
     private const string BarFillSpritePath = "Assets/Sprites/UI/hud_bar_fill.png";
+    // 2026-10-30 白边版正式资产（程序化像素图：白边 + 墨底）
+    private const string HealthFrameSpritePath = "Assets/Sprites/UI/Combat/hud_health_frame.png";
+    private const string HealthTroughSpritePath = "Assets/Sprites/UI/Combat/hud_health_trough.png";
+    private const string HealthFillSpritePath = "Assets/Sprites/UI/Combat/hud_health_fill.png";
+    private const string OrbDiscSpritePath = "Assets/Sprites/UI/Combat/hud_orb_disc.png";
+    private const string OrbLiquidSpritePath = "Assets/Sprites/UI/Combat/hud_orb_liquid.png";
+    private const string PauseFrameSpritePath = "Assets/Sprites/UI/Combat/hud_pause_frame.png";
+    private const string PauseIconSpritePath = "Assets/Sprites/UI/Combat/hud_pause_icon.png";
+
+    // ── 尺寸常量（canvas 960×1920 口径）────────────────────────────
+    private const float PauseSize = 88f;        // 刀锋罗盘 5.2% 屏宽 → 折中
+    private const float PauseGlyphSize = 34f;    // 旧程序化白条（已退役）
+    private const float PauseIconSize = 38f;     // 新画风暂停符号
+    private const float HealthBarWidth = 756f;   // 刀锋生命条 77.9% 屏宽
+    private const float HealthBarHeight = 34f;
+    private const float SlotWidth = 62f;         // 刀锋大招菱形实心宽度
+    private const float SlotHeight = 125f;
+    private const float SlotIconSize = 48f;
+    private const float SlotRim = 3f;            // 外框比内面每边大出的量（露出一圈暗金边）
+    private const float SlotSpacing = 11.3f;     // 刀锋菱形间距口径
+    private const float SlotRowWidth = 293f;     // 4 槽总宽（62*4 + 11.3*3）
 
     [MenuItem("三国杀戮/战斗UI/应用新布局", false, 2000)]
     public static void ApplyAll()
@@ -95,17 +124,44 @@ public static class HeroHudLayoutTool
         var btn = canvas.transform.Find("Combat/Overlay/Pause/PauseLayer/PauseButton");
         if (btn == null) return;
 
-        // 参考图实测：canvas x 19..211、y 1723..1901（画布高 1920 → 距顶 19）
-        SetRect(btn.gameObject, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(19, -19), new Vector2(197, 178));
+        // 2026-10-30：88×88（刀锋罗盘 5.2% 屏宽的折中值；位置不变，仍贴左上角）
+        SetRect(btn.gameObject, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(19, -19), new Vector2(PauseSize, PauseSize));
         var img = btn.GetComponent<Image>();
         if (img == null) img = btn.gameObject.AddComponent<Image>();
-        img.color = new Color(0.16f, 0.42f, 0.85f, 0.92f);
+        var frameSprite = AssetDatabase.LoadAssetAtPath<Sprite>(PauseFrameSpritePath);
+        img.sprite = frameSprite;
+        img.color = Color.white;
 
-        // 子节点原本锚在父级右上角 → 改成居中锚，逐个摆位
-        CenterChild(btn, "PausePigeon", new Vector2(0, 28), new Vector2(150, 115));
-        CenterChild(btn, "PauseWordBrush", new Vector2(0, -40), new Vector2(150, 68));
-        CenterChild(btn, "PauseLabel", new Vector2(0, -40), new Vector2(142, 74));
-        CenterChild(btn, "Text", Vector2.zero, new Vector2(0, 0));
+        // 旧的「鸽子 + 毛笔字」美术退役（刀锋的对应物是小体积符号，不是插画）→ 换成单符号占位
+        foreach (var n in new[] { "PausePigeon", "PauseWordBrush", "PauseLabel", "Text" })
+        {
+            var c = btn.Find(n);
+            if (c != null) c.gameObject.SetActive(false);
+        }
+        EnsureGlyph(btn, "PauseGlyphL", new Vector2(-11f, 0f));
+        EnsureGlyph(btn, "PauseGlyphR", new Vector2(11f, 0f));
+        // 新画风：整张暂停符号图（替掉程序化的两根白条）
+        var iconSprite = AssetDatabase.LoadAssetAtPath<Sprite>(PauseIconSpritePath);
+        if (iconSprite != null)
+        {
+            var iconGo = btn.Find("PauseIcon");
+            if (iconGo == null)
+            {
+                var created = new GameObject("PauseIcon", typeof(RectTransform));
+                created.transform.SetParent(btn, false);
+                iconGo = created.transform;
+            }
+            var iconImg = EnsureImage(iconGo.gameObject);
+            iconImg.sprite = iconSprite;
+            iconImg.color = Color.white;
+            iconImg.type = Image.Type.Simple;
+            SetRect(iconGo.gameObject, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(PauseIconSize, PauseIconSize));
+            foreach (var n in new[] { "PauseGlyphL", "PauseGlyphR" })
+            {
+                var g = btn.Find(n);
+                if (g != null) g.gameObject.SetActive(false);
+            }
+        }
 
         // 教学对话的「点击任意处继续」原本压在屏幕最底部 → 挡住整个底排 HUD，挪到画面中部
         var adv = GameObject.Find("BattleHUD(Canvas)/Combat/Overlay/Dialogue/DialogueLayer/DialogueOverlay/DialogueAdvanceButton");
@@ -113,11 +169,21 @@ public static class HeroHudLayoutTool
             SetRect(adv, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -120), new Vector2(281, 134));
     }
 
-    private static void CenterChild(Transform parent, string name, Vector2 pos, Vector2 size)
+    /// <summary>暂停符号：两段白色竖条（程序化占位，最终美术待 UI 参考图产出后替换）。</summary>
+    private static void EnsureGlyph(Transform parent, string name, Vector2 offset)
     {
-        var c = parent.Find(name);
-        if (c == null) return;
-        SetRect(c.gameObject, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, size);
+        var go = parent.Find(name);
+        if (go == null)
+        {
+            var created = new GameObject(name, typeof(RectTransform));
+            created.transform.SetParent(parent, false);
+            go = created.transform;
+        }
+        var img = EnsureImage(go.gameObject);
+        img.sprite = null;
+        img.color = Color.white;
+        img.type = Image.Type.Simple;
+        SetRect(go.gameObject, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), offset, new Vector2(9f, PauseGlyphSize));
     }
 
     public static bool ApplyToPrefab()
@@ -157,6 +223,11 @@ public static class HeroHudLayoutTool
         var circle = AssetDatabase.LoadAssetAtPath<Sprite>(CircleSpritePath);
         var diamond = AssetDatabase.LoadAssetAtPath<Sprite>(DiamondSpritePath);
         var barFill = AssetDatabase.LoadAssetAtPath<Sprite>(BarFillSpritePath);
+        var healthFrameSprite = AssetDatabase.LoadAssetAtPath<Sprite>(HealthFrameSpritePath);
+        var healthTroughSprite = AssetDatabase.LoadAssetAtPath<Sprite>(HealthTroughSpritePath);
+        var healthFillSprite = AssetDatabase.LoadAssetAtPath<Sprite>(HealthFillSpritePath);
+        var orbDiscSprite = AssetDatabase.LoadAssetAtPath<Sprite>(OrbDiscSpritePath);
+        var orbLiquidSprite = AssetDatabase.LoadAssetAtPath<Sprite>(OrbLiquidSpritePath);
 
         // 根节点与卡片：贴底通铺（与场景实例一致）。卡片下缘推到**屏幕最底**（y=130 → 下缘 0）
         SetRect(root.gameObject, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0.5f), new Vector2(0, 1050), new Vector2(0, 1920));
@@ -181,27 +252,47 @@ public static class HeroHudLayoutTool
         var slider = healthGo.GetComponent<Slider>();
         if (slider != null) UnityEngine.Object.DestroyImmediate(slider);
 
-        // 血条：参考图实测 canvas x 53..902（宽 854，左右各留 53）、y 125..158（高 34）
-        SetRect(healthGo, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 125), new Vector2(-111, 34));
+        // 血条：2026-10-30 按刀锋口径收窄到 756（屏宽 77.9%），高度维持 34
+        // （刀锋含白框总高当量 ≈ 39 canvas，比我们还高一点，所以只收宽不压扁）
+        SetRect(healthGo, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 125), new Vector2(HealthBarWidth - 960f, HealthBarHeight));
 
         var bg = healthGo.transform.Find("Background_bottom");
         var frame = healthGo.transform.Find("Background_frame");
         var htext = healthGo.transform.Find("Health");
-        if (bg != null)
+
+        // ⚠️ 旧节点（Background_bottom / Background_frame）是 prefab 原有子节点，
+        // 在 prefab 实例里它们的 CanvasRenderer 网格不会随 RectTransform 重建（实测：只在中缝露出细条）。
+        // → 改成**新建** HealthTrough / HealthFrame（与 HealthFillLeft/Right 同套路，实测渲染正常），旧的关掉。
+        if (bg != null) bg.gameObject.SetActive(false);
+        if (frame != null) frame.gameObject.SetActive(false);
+
+        var troughGo = EnsureChild(healthGo.transform, "HealthTrough");
+        var trough = EnsureImage(troughGo);
+        trough.sprite = healthTroughSprite != null ? healthTroughSprite : barFill;   // 失去的血（深色轨道）
+        trough.color = Color.white;
+        trough.type = Image.Type.Simple;
+        Stretch(troughGo);
+
+        // 外框 = 一张整条框图（美术已画好：外 1px 近黑 + 内 2px 米白 + 两端阶梯收口）
+        var frameGo = EnsureChild(healthGo.transform, "HealthFrame");
+        var frameImg = EnsureImage(frameGo);
+        frameImg.sprite = healthFrameSprite != null ? healthFrameSprite : barFill;
+        frameImg.color = Color.white;
+        frameImg.type = Image.Type.Simple;
+        Stretch(frameGo);
+        foreach (var n in new[] { "HealthFrameTop", "HealthFrameBottom" })
         {
-            Stretch(bg.gameObject);
-            var bgImg = EnsureImage(bg.gameObject);
-            bgImg.sprite = barFill;                       // 纯色矩形底槽 = 失去的血
-            bgImg.color = new Color(0.17f, 0.14f, 0.12f, 1f);
-            bgImg.type = Image.Type.Simple;
+            var old = healthGo.transform.Find(n);
+            if (old != null) old.gameObject.SetActive(false);
         }
-        if (frame != null) Stretch(frame.gameObject);      // 金色花框（zhangfei_HP_Background），比例接近原设计
         TextMeshProUGUI healthTmp = null;
         if (htext != null)
         {
             Stretch(htext.gameObject);
             var tmp = htext.GetComponent<TMPro.TextMeshProUGUI>();
             healthTmp = tmp;
+            // 2026-10-30 用户拍板：**本版去掉血量数字**（刀锋的条上也没有数字）
+            htext.gameObject.SetActive(false);
             if (tmp != null)
             {
                 tmp.fontSize = 22f;
@@ -221,23 +312,24 @@ public static class HeroHudLayoutTool
         // 镜像切两半后两个圆头会挤在中间；纯色才能得到干净的切口。
         var fillL = EnsureChild(healthGo.transform, "HealthFillLeft");
         var fli = EnsureImage(fillL);
-        fli.sprite = barFill;
+        fli.sprite = healthFillSprite != null ? healthFillSprite : barFill;
         fli.type = Image.Type.Filled;
         fli.fillMethod = Image.FillMethod.Horizontal;
         fli.fillOrigin = (int)Image.Origin360.Right;   // 贴中心，向左收缩
         fli.fillAmount = 1f;
         fli.color = new Color(0.85f, 0.15f, 0.12f, 1f);
-        SetRect(fillL, new Vector2(0, 0), new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+        // 内缩 3：让金色外框与深褐底槽露出边框（对应刀锋的「白框 + 红芯」结构）
+        InsetHalf(fillL.transform, true);
 
         var fillR = EnsureChild(healthGo.transform, "HealthFillRight");
         var fri = EnsureImage(fillR);
-        fri.sprite = barFill;
+        fri.sprite = healthFillSprite != null ? healthFillSprite : barFill;
         fri.type = Image.Type.Filled;
         fri.fillMethod = Image.FillMethod.Horizontal;
         fri.fillOrigin = (int)Image.Origin360.Left;    // 贴中心，向右收缩
         fri.fillAmount = 1f;
         fri.color = new Color(0.85f, 0.15f, 0.12f, 1f);
-        SetRect(fillR, new Vector2(0.5f, 0), new Vector2(1, 1), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+        InsetHalf(fillR.transform, false);
 
         // ③ 头像整块（连大招能量环）搬左下并缩小 —— 三个子节点是写死尺寸，必须一起缩
         var ult = healthGo.transform.Find("UltPortraitButton");
@@ -263,9 +355,9 @@ public static class HeroHudLayoutTool
         // ④ 等级球：圆形面片 + 球内「水上涨」（Filled/Vertical/Bottom）
         var orb = EnsureChild(card, "LevelOrb");
         var orbImg = EnsureImage(orb);
-        orbImg.sprite = circle;
+        orbImg.sprite = orbDiscSprite != null ? orbDiscSprite : circle;   // 新画风：墨底 + 米白圈 + 浅色内壁
         orbImg.type = Image.Type.Simple;
-        orbImg.color = new Color(0.90f, 0.90f, 0.88f, 1f);   // 参考图：浅色白底
+        orbImg.color = Color.white;
         // 参考图实测：canvas x 29..72、y 288..341 → 叠在头像左上角（球在头像之上）
         SetRect(orb, Vector2.zero, Vector2.zero, new Vector2(0, 0), new Vector2(29, 288), new Vector2(43, 53));
         var mask = orb.GetComponent<Mask>();
@@ -274,13 +366,14 @@ public static class HeroHudLayoutTool
 
         var liquid = EnsureChild(orb.transform, "OrbLiquid");
         var li = EnsureImage(liquid);
-        li.sprite = circle;
+        li.sprite = orbLiquidSprite != null ? orbLiquidSprite : circle;
         li.type = Image.Type.Filled;
         li.fillMethod = Image.FillMethod.Vertical;
         li.fillOrigin = (int)Image.Origin360.Bottom;
         li.fillAmount = 0f;
         li.color = new Color(0.30f, 0.62f, 0.86f, 1f);
         Stretch(liquid);
+        InsetRect(liquid, 4f, 4f, 4f, 4f);   // 内缩：别盖住球的白圈
 
         var orbText = EnsureChild(orb.transform, "OrbLevelText");
         var ot = orbText.GetComponent<TextMeshProUGUI>();
@@ -305,31 +398,66 @@ public static class HeroHudLayoutTool
         if (fibT != null)
         {
             fibT.SetParent(card, false);
-            // 参考图实测：黄色棱形 canvas x 187..254 / 269..336 / 350..418 / 437..504
-            //             → 72 宽 × 139 高（**竖长菱形**），间距 15
-            SetRect(fibT.gameObject, Vector2.zero, Vector2.zero, new Vector2(0, 0.5f), new Vector2(184, 252), new Vector2(560, 160));
+            // 2026-10-30：棱形 62×125（刀锋大招菱形实心口径），行起点与垂直中心不变
+            SetRect(fibT.gameObject, Vector2.zero, Vector2.zero, new Vector2(0, 0.5f), new Vector2(184, 252), new Vector2(SlotRowWidth, SlotHeight));
             for (int i = 0; i < fibT.childCount; i++)
             {
                 var slot = fibT.GetChild(i);
                 // 槽位锚点用 (0,0.5)：anchoredPosition 相对的是**父级左缘**，才能真正“从左往右排”
-                // 参考图实测：72 宽 × 139 高（**竖长菱形**）
-                FixedLeft(slot, 72);
+                FixedLeft(slot, SlotWidth);
                 var slotRt = slot.GetComponent<RectTransform>();
-                if (slotRt != null) slotRt.sizeDelta = new Vector2(72f, 139f);
-                Fill(FindDeep(slot, "ButtonFrame"));
-                Fill(FindDeep(slot, "ButtonFace"));
-                Fixed(FindDeep(slot, "Icon"), 52);
-                Fill(FindDeep(slot, "CooldownDim"));
-                Fill(FindDeep(slot, "CooldownFill"));
-                // 棱形底框：道具样式走 Frame，技能样式走 ButtonFrame/ButtonFace —— 两套都要换
+                if (slotRt != null) slotRt.sizeDelta = new Vector2(SlotWidth, SlotHeight);
+
+                // 外框比内面每边大 SlotRim → 露出一圈暗金边（三层同图叠放导致外框不可见的问题）
+                SetFixed(FindDeep(slot, "ButtonFrame"), SlotWidth + SlotRim * 2f, SlotHeight + SlotRim * 2f);
                 SetDiamond(FindDeep(slot, "ButtonFrame"), diamond, new Color(0.72f, 0.56f, 0.16f, 1f));
+                SetFixed(FindDeep(slot, "ButtonFace"), SlotWidth, SlotHeight);
                 SetDiamond(FindDeep(slot, "ButtonFace"), diamond, new Color(0.95f, 0.78f, 0.25f, 1f));
+                Fixed(FindDeep(slot, "Icon"), SlotIconSize);
+                Fixed(FindDeep(slot, "ReadyGlow"), SlotIconSize);
+
+                // 冷却遮罩：不再复用图标贴图（会把整块菱形糊住）→ 独立菱形遮罩
+                var dim = FindDeep(slot, "CooldownDim");
+                if (dim != null)
+                {
+                    SetFixed(dim, SlotWidth, SlotHeight);
+                    var dimImg = EnsureImage(dim.gameObject);
+                    dimImg.sprite = diamond;
+                    dimImg.type = Image.Type.Simple;
+                    dimImg.color = new Color(0f, 0f, 0f, 0.55f);
+                }
+                var cool = FindDeep(slot, "CooldownFill");
+                if (cool != null)
+                {
+                    SetFixed(cool, SlotWidth, SlotHeight);
+                    var coolImg = EnsureImage(cool.gameObject);
+                    coolImg.sprite = diamond;
+                    coolImg.type = Image.Type.Filled;
+                    coolImg.fillMethod = Image.FillMethod.Vertical;
+                    coolImg.fillOrigin = (int)Image.Origin360.Bottom;
+                    coolImg.color = new Color(0f, 0f, 0f, 0.8f);
+                }
+
+                // 道具样式用的 Frame（技能样式下 BuffIcon 会把它隐藏；道具时再打开）
                 var fr = FindDeep(slot, "Frame");
                 if (fr != null)
                 {
-                    Fill(fr);
+                    SetFixed(fr, SlotWidth, SlotHeight);
                     SetDiamond(fr, diamond, new Color(0.95f, 0.78f, 0.25f, 1f));
-                    fr.gameObject.SetActive(true);
+                    fr.gameObject.SetActive(false);
+                }
+
+                // 运行时 BuffIcon.SyncCooldownSprite 会把遮罩换回图标 → 给它一个专属遮罩图
+                var iconComp = slot.GetComponent<BuffIcon>();
+                if (iconComp != null && diamond != null)
+                {
+                    var bi = new SerializedObject(iconComp);
+                    var maskProp = bi.FindProperty("_cooldownMaskSprite");
+                    if (maskProp != null)
+                    {
+                        maskProp.objectReferenceValue = diamond;
+                        bi.ApplyModifiedPropertiesWithoutUndo();
+                    }
                 }
             }
             // 运行时 SetFrame(_skillFrame) 会盖掉 Frame 的图 —— 所以字段也换成菱形
@@ -338,7 +466,7 @@ public static class HeroHudLayoutTool
             {
                 var fibSo = new SerializedObject(fibComp);
                 fibSo.FindProperty("_skillFrame").objectReferenceValue = diamond;
-                fibSo.FindProperty("_slotSpacing").floatValue = 11.3f;   // 参考图实测：菱形起点 187/269/350/437
+                fibSo.FindProperty("_slotSpacing").floatValue = SlotSpacing;
                 fibSo.ApplyModifiedPropertiesWithoutUndo();
             }
             // 改完槽位尺寸后立刻重排一次（否则 Edit Mode 下槽位还停在旧位）
@@ -360,8 +488,8 @@ public static class HeroHudLayoutTool
         so.FindProperty("healthFillLeft").objectReferenceValue = fli;
         so.FindProperty("healthFillRight").objectReferenceValue = fri;
         so.FindProperty("healthText").objectReferenceValue = htext != null ? htext.GetComponent<TextMeshProUGUI>() : null;
-        so.FindProperty("healthBottomImage").objectReferenceValue = bg != null ? bg.GetComponent<Image>() : null;
-        so.FindProperty("healthFrameImage").objectReferenceValue = frame != null ? frame.GetComponent<Image>() : null;
+        so.FindProperty("healthBottomImage").objectReferenceValue = trough;
+        so.FindProperty("healthFrameImage").objectReferenceValue = frameImg;
         so.FindProperty("levelOrbFill").objectReferenceValue = li;
         so.FindProperty("levelOrbText").objectReferenceValue = ot;
         so.FindProperty("levelOrbTarget").objectReferenceValue = orb.GetComponent<RectTransform>();
@@ -426,6 +554,48 @@ public static class HeroHudLayoutTool
         SetRect(t.gameObject, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
     }
 
+    /// <summary>铺满父节点并向内缩（用于画边框）。</summary>
+    private static void InsetRect(GameObject go, float left, float bottom, float right, float top)
+    {
+        var rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.offsetMin = new Vector2(left, bottom);
+        rt.offsetMax = new Vector2(-right, -top);
+        rt.localScale = Vector3.one;
+        rt.localRotation = Quaternion.identity;
+    }
+
+    /// <summary>在父级上沿或下沿贴一条实心细条（边框用）。</summary>
+    private static void EdgeStrip(Transform parent, string name, bool atTop, float height, Sprite sprite, Color color)
+    {
+        var go = EnsureChild(parent, name);
+        var img = EnsureImage(go);
+        img.sprite = sprite;
+        img.color = color;
+        img.type = Image.Type.Simple;
+        var rt = go.GetComponent<RectTransform>();
+        if (atTop)
+        {
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(0f, -height);
+        }
+        else
+        {
+            rt.anchorMin = new Vector2(0f, 0f);
+            rt.anchorMax = new Vector2(1f, 0f);
+            rt.pivot = new Vector2(0.5f, 0f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(0f, height);
+        }
+        rt.localScale = Vector3.one;
+        rt.localRotation = Quaternion.identity;
+    }
+
     /// <summary>固定尺寸、居中于父节点。</summary>
     private static void Fixed(Transform t, float size)
     {
@@ -433,11 +603,34 @@ public static class HeroHudLayoutTool
         SetRect(t.gameObject, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size, size));
     }
 
+    /// <summary>固定尺寸、居中于父节点（宽高可不同）。</summary>
+    private static void SetFixed(Transform t, float width, float height)
+    {
+        if (t == null) return;
+        SetRect(t.gameObject, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(width, height));
+    }
+
     /// <summary>固定尺寸、横向以父节点**左缘**为基准（配合 LayoutSlots 的左对齐）。</summary>
     private static void FixedLeft(Transform t, float size)
     {
         if (t == null) return;
         SetRect(t.gameObject, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size, size));
+    }
+
+    /// <summary>
+    /// 血条填充块内缩：上下各留 3（露出金框），外侧端头留 3（露出底槽），中缝不缩（切口干净）。
+    /// </summary>
+    private static void InsetHalf(Transform t, bool isLeft)
+    {
+        if (t == null) return;
+        var rt = t.GetComponent<RectTransform>();
+        rt.anchorMin = isLeft ? new Vector2(0f, 0f) : new Vector2(0.5f, 0f);
+        rt.anchorMax = isLeft ? new Vector2(0.5f, 1f) : new Vector2(1f, 1f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.offsetMin = isLeft ? new Vector2(3f, 3f) : new Vector2(0f, 3f);
+        rt.offsetMax = isLeft ? new Vector2(0f, -3f) : new Vector2(-3f, -3f);
+        rt.localScale = Vector3.one;
+        rt.localRotation = Quaternion.identity;
     }
 
     private static void SetDiamond(Transform t, Sprite diamond, Color? tint = null)

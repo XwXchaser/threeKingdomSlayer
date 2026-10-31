@@ -96,8 +96,10 @@ public partial class AttackSystem : MonoBehaviour
 
     // ── 招架诊断（临时）──────────────────────────────────────────────────────
     // 非 Development 打包（development=False）会剥掉 Debug.Log → 包里拿不到日志，
-    // 只能把招架链路的数字直接画到屏幕上。发布前把 ShowParryDebug 置 false 即可。
-    public static bool ShowParryDebug = true;
+    // 只能把招架链路的数字直接画到屏幕上。
+    // **默认关闭**：它是 IMGUI 覆盖层，会压在左上角（正对新的暂停键，参考图/截图都带脏）。
+    // 需要排查招架时运行时置 true：AttackSystem.ShowParryDebug = true;
+    public static bool ShowParryDebug = false;
     private static string _parryDebugText = "招架诊断：尚未出招";
 
     // ── 招架的 active-frame 判定（2026-10-26）────────────────────────────────
