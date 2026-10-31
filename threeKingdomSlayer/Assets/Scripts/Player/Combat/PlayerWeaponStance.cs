@@ -70,7 +70,6 @@ public sealed class PlayerWeaponStance
     private Vector3 _entryRoot;         // 起手位的枪尾（默认与斜举位相同 = 枪尾不动，只挑枪尖）
     private Vector3 _exitRoot;          // 收枪位的枪尾（要把整杆推出画面）
     private Vector3 _defendRootOffset;  // 防御位相对杆尾的下沉量（**只用位置差，不用角度差**）
-    private float _defendDrift;        // 防御保持期间已推进的总量（朝相机，负 Z）
     private Quaternion _poseIdle, _poseEntry, _poseOvershoot, _poseExit;
     private AttackSkillConfig _cfg;
 
@@ -174,7 +173,6 @@ public sealed class PlayerWeaponStance
         _holding = false;
         _holdRequested = false;
         _recoilTimer = 0f;
-        _defendDrift = 0f;
         if (_weapon != null) UnityEngine.Object.Destroy(_weapon);
         _weapon = null;
         _weaponTransform = null;
@@ -187,7 +185,8 @@ public sealed class PlayerWeaponStance
         _holding = pointerHeld;
 
         // 受击后退的衰减
-        if (_recoilTimer > 0f)        {
+        if (_recoilTimer > 0f)
+        {
             _recoilTimer -= deltaTime;
             float k = _recoilTimer > 0f ? Mathf.Clamp01(_recoilTimer / _recoilTotal) : 0f;
             _recoilOffset = new Vector3(0f, 0f, -_recoilAmount * k);
@@ -196,14 +195,6 @@ public sealed class PlayerWeaponStance
 
         // 预输入：挥入期间只**记住**按住，不切断动作（规则 1）
         if (Phase == StancePhase.SwingIn && _holding) _holdRequested = true;
-
-        // **防御保持期间持续前迎**（朝相机）：防御与向前是同一段动作，不是一次性位移。
-        if (Phase == StancePhase.Defending && _holding && _cfg != null)
-        {
-            float speed = Mathf.Max(0f, _cfg.parryStanceDefendDriftPerSecond);
-            float max = Mathf.Max(0f, _cfg.parryStanceDefendDriftMax);
-            if (speed > 0f) _defendDrift = Mathf.Min(_defendDrift + speed * deltaTime, max);
-        }
 
         if (_moving)
         {
@@ -234,31 +225,22 @@ public sealed class PlayerWeaponStance
 
     // ── 动作分段 ───────────────────────────────────────────────
 
-    /// <summary>
-    /// 挥入：**一段动作直接落到防御位**（斜劈入画 → 过冲 → 回弹 → 定格）。
-    ///
-    /// 「前迎」不是落位之后另加的一段：<see cref="parryStanceDefendOffset"/> 直接参与了
-    /// 这一段的落点（枪在入画到位的过程中就一路向前），所以整条防御动作只有
-    /// **一次连续的位移 + 一次过冲回弹**，中间没有“停顿后再补一下”。
-    /// </summary>
+    /// <summary>挥入：斜劈入画 → 过冲 → 回弹 → 定格 → 分流。</summary>
     private void StartSwingIn()
     {
         float swingIn = _cfg != null ? Mathf.Max(0.05f, _cfg.parryStanceSwingInSeconds) : 0.18f;
         float settle = _cfg != null ? Mathf.Max(0.05f, _cfg.parryStanceSettleSeconds) : 0.08f;
         float hold = _cfg != null ? Mathf.Max(0f, _cfg.parryStanceHoldSeconds) : 0.10f;
 
-        // 落点 = 防御位（斜举位 + 前迎偏移）：前迎在这一段里完成，不另起一段
-        Vector3 guardRoot = _rootAnchor + _defendRootOffset;
-
-        MoveTo(guardRoot, _poseIdle, swingIn, EaseMode.Out, onArrived: () =>
+        MoveTo(_rootAnchor, _poseIdle, swingIn, EaseMode.Out, onArrived: () =>
         {
             // 过冲：冲过目标角再收回来（“力度”的来源）
-            MoveTo(guardRoot, _poseOvershoot, settle * 0.4f, EaseMode.Smooth, onArrived: () =>
+            MoveTo(_rootAnchor, _poseOvershoot, settle * 0.4f, EaseMode.Smooth, onArrived: () =>
             {
-                MoveTo(guardRoot, _poseIdle, settle * 0.6f, EaseMode.Smooth, onArrived: () =>
+                MoveTo(_rootAnchor, _poseIdle, settle * 0.6f, EaseMode.Smooth, onArrived: () =>
                 {
                     // 定格：格住的那一下（保持姿势不动）
-                    MoveTo(guardRoot, _poseIdle, hold, EaseMode.Smooth, onArrived: AfterSwingIn);
+                    MoveTo(_rootAnchor, _poseIdle, hold, EaseMode.Smooth, onArrived: AfterSwingIn);
                 });
             });
         });
@@ -271,14 +253,13 @@ public sealed class PlayerWeaponStance
         else BeginExit();
     }
 
-    /// <summary>进入防御位：已经在防御位（挥入那段直接落在这里），这里只切相位。</summary>
+    /// <summary>进入防御位：角度与斜举位一致（读数一致），只用位置差表达“稍低于 idle”。</summary>
     private void EnterDefend(float durationOverride = -1f)
     {
         Phase = StancePhase.Defending;
         float dur = durationOverride > 0f
             ? durationOverride
             : (_cfg != null ? Mathf.Max(0.05f, _cfg.parryStanceDefendEnterSeconds) : 0.12f);
-        // 落点已经对了（挥入那段直接落到防御位）→ 这里的 MoveTo 只是一次同点插值，不产生第二段动作
         MoveTo(_rootAnchor + _defendRootOffset, _poseIdle, dur, EaseMode.Smooth);
     }
 
@@ -319,7 +300,7 @@ public sealed class PlayerWeaponStance
         float e = _ease == EaseMode.Out ? 1f - Mathf.Pow(1f - t, 3f) : t * t * (3f - 2f * t);
         Vector3 root = Vector3.Lerp(_rootFrom, _rootTo, e);
         Quaternion pose = Quaternion.Slerp(_poseFrom, _poseTo, e);
-        _weaponTransform.position = PlayerPosition + root + _recoilOffset + Vector3.back * _defendDrift;
+        _weaponTransform.position = PlayerPosition + root + _recoilOffset;
         _weaponTransform.rotation = pose;
     }
 
@@ -348,12 +329,7 @@ public sealed class PlayerWeaponStance
         _exitRoot = _rootAnchor + cfg.parryStanceExitRootOffset;
 
         // 防御位：只用位置差（角度与斜举位一致 → 枪尖上扬角每次都读得一样）
-        //   偏移来自 parryStanceDefendOffset（X 左 / Y 上抬 / Z 朝相机前迎），
-        //   枪身轴在 XY 平面内：-Z 是“迎面怼上来”的纵深，+Y 用来抵消它带来的下沉。
-        _defendRootOffset = new Vector3(
-            cfg.parryStanceDefendOffset.x,
-            cfg.parryStanceDefendOffset.y - cfg.parryStanceDefendAnchorDrop,
-            cfg.parryStanceDefendOffset.z);
+        _defendRootOffset = new Vector3(0f, -cfg.parryStanceDefendAnchorDrop, 0f);
     }
 
     /// <summary>由「枪尖指向的角度」反解世界旋转：0 = 指向屏幕右(+X)，90 = 竖直向上。</summary>

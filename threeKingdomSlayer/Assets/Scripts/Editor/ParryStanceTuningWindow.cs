@@ -22,10 +22,7 @@ public class ParryStanceTuningWindow : EditorWindow
 
     private Vector3 _anchor;
     private Vector3 _entryOffset;
-    private Vector3 _exitOffset;
-    private Vector3 _defendOffset;
-    private float _tipDeg, _entryDeg, _defendDrop, _exitDeg;
-    private float _driftSpeed, _driftMax;
+    private float _tipDeg, _entryDeg, _defendDrop;
     private float _swingIn, _overshoot, _settle, _hold, _exitFast, _exitNormal;
 
     private string _readout = "";
@@ -49,14 +46,9 @@ public class ParryStanceTuningWindow : EditorWindow
         if (_cfg == null) return;
         _anchor = _cfg.parryStanceHeadAnchor;
         _entryOffset = _cfg.parryStanceEntryRootOffset;
-        _exitOffset = _cfg.parryStanceExitRootOffset;
         _tipDeg = _cfg.parryStanceTipDegrees;
         _entryDeg = _cfg.parryStanceEntryAngleDegrees;
         _defendDrop = _cfg.parryStanceDefendAnchorDrop;
-        _defendOffset = _cfg.parryStanceDefendOffset;
-        _driftSpeed = _cfg.parryStanceDefendDriftPerSecond;
-        _driftMax = _cfg.parryStanceDefendDriftMax;
-        _exitDeg = _cfg.parryStanceExitAngleDegrees;
         _swingIn = _cfg.parryStanceSwingInSeconds;
         _overshoot = _cfg.parryStanceOvershootDegrees;
         _settle = _cfg.parryStanceSettleSeconds;
@@ -72,14 +64,9 @@ public class ParryStanceTuningWindow : EditorWindow
         Undo.RecordObject(_cfg, "招架姿态调参");
         _cfg.parryStanceHeadAnchor = _anchor;
         _cfg.parryStanceEntryRootOffset = _entryOffset;
-        _cfg.parryStanceExitRootOffset = _exitOffset;
         _cfg.parryStanceTipDegrees = _tipDeg;
         _cfg.parryStanceEntryAngleDegrees = _entryDeg;
         _cfg.parryStanceDefendAnchorDrop = _defendDrop;
-        _cfg.parryStanceDefendOffset = _defendOffset;
-        _cfg.parryStanceDefendDriftPerSecond = _driftSpeed;
-        _cfg.parryStanceDefendDriftMax = _driftMax;
-        _cfg.parryStanceExitAngleDegrees = _exitDeg;
         _cfg.parryStanceSwingInSeconds = _swingIn;
         _cfg.parryStanceOvershootDegrees = _overshoot;
         _cfg.parryStanceSettleSeconds = _settle;
@@ -106,12 +93,7 @@ public class ParryStanceTuningWindow : EditorWindow
         _tipDeg = EditorGUILayout.Slider("斜举角 (度)", _tipDeg, -90f, 180f);
         _entryDeg = EditorGUILayout.Slider("起手指向 (度)", _entryDeg, -90f, 180f);
         _entryOffset = EditorGUILayout.Vector3Field("起手枪尾偏移 (x,y,z)", _entryOffset);
-        _exitOffset = EditorGUILayout.Vector3Field("收枪枪尾偏移 (x,y,z)", _exitOffset);
-        _exitDeg = EditorGUILayout.Slider("收枪指向 (度)", _exitDeg, -180f, 180f);
         _defendDrop = EditorGUILayout.Slider("防御位下沉", _defendDrop, 0f, 1f);
-        _defendOffset = EditorGUILayout.Vector3Field("防御位额外位移 (x左/ y上抬/ z前迎)", _defendOffset);
-        _driftSpeed = EditorGUILayout.Slider("防御保持·持续前迎速度 (单位/秒)", _driftSpeed, 0f, 3f);
-        _driftMax = EditorGUILayout.Slider("防御保持·前迎总量上限", _driftMax, 0f, 4f);
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("时序", EditorStyles.boldLabel);
         _swingIn = EditorGUILayout.Slider("挥入时长 (s)", _swingIn, 0.05f, 1f);
@@ -196,21 +178,13 @@ public class ParryStanceTuningWindow : EditorWindow
 
         Vector3 dirIdle = new Vector3(Mathf.Cos(_tipDeg * Mathf.Deg2Rad), Mathf.Sin(_tipDeg * Mathf.Deg2Rad), 0f);
         Vector3 dirEntry = new Vector3(Mathf.Cos(_entryDeg * Mathf.Deg2Rad), Mathf.Sin(_entryDeg * Mathf.Deg2Rad), 0f);
-        Vector3 dirExit = new Vector3(Mathf.Cos(_exitDeg * Mathf.Deg2Rad), Mathf.Sin(_exitDeg * Mathf.Deg2Rad), 0f);
         Vector3 headIdle = _anchor;
         Vector3 rootIdle = headIdle - dirIdle * TipOffset;
         Vector3 rootEntry = rootIdle + _entryOffset;
         Vector3 headEntry = rootEntry + dirEntry * TipOffset;
-        Vector3 rootExit = rootIdle + _exitOffset;
-        Vector3 headExit = rootExit + dirExit * TipOffset;
-        // 防御位 = 斜举位 + 额外位移(X左/Y上抬/Z前迎) + 下沉，角度不变
-        Vector3 rootDefend = rootIdle + new Vector3(_defendOffset.x, _defendOffset.y - _defendDrop, _defendOffset.z);
-        Vector3 headDefend = rootDefend + dirIdle * TipOffset;
 
         Vector2 pHead = pct(headIdle), pRoot = pct(rootIdle);
         Vector2 pEntryHead = pct(headEntry), pEntryRoot = pct(rootEntry);
-        Vector2 pDefendHead = pct(headDefend), pDefendRoot = pct(rootDefend);
-        Vector2 pExitHead = pct(headExit), pExitRoot = pct(rootExit);
 
         // 杆身从画面左缘穿出的点
         float exitT = -1f; Vector2 pExit = Vector2.zero;
@@ -223,20 +197,11 @@ public class ParryStanceTuningWindow : EditorWindow
         var sb = new StringBuilder();
         sb.AppendLine($"矛头（斜举位）  右 {pHead.x * 100f:F0}%  上 {pHead.y * 100f:F0}%");
         sb.AppendLine($"枪尾（斜举位）  右 {pRoot.x * 100f:F0}%  上 {pRoot.y * 100f:F0}%");
-        sb.AppendLine($"矛头（防御位）  右 {pDefendHead.x * 100f:F0}%  上 {pDefendHead.y * 100f:F0}%  ← 偏移 {_defendOffset} / 下沉 {_defendDrop:F2}");
-        sb.AppendLine($"枪尾（防御位）  右 {pDefendRoot.x * 100f:F0}%  上 {pDefendRoot.y * 100f:F0}%");
         sb.AppendLine($"矛头（起手位）  右 {pEntryHead.x * 100f:F0}%  上 {pEntryHead.y * 100f:F0}%");
         sb.AppendLine($"枪尾（起手位）  右 {pEntryRoot.x * 100f:F0}%  上 {pEntryRoot.y * 100f:F0}%");
-        sb.AppendLine($"矛头（收枪位）  右 {pExitHead.x * 100f:F0}%  上 {pExitHead.y * 100f:F0}%");
-        sb.AppendLine($"枪尾（收枪位）  右 {pExitRoot.x * 100f:F0}%  上 {pExitRoot.y * 100f:F0}%");
         bool entryOffFrame = pEntryHead.x > 1f || pEntryHead.x < -1f || pEntryHead.y > 1f || pEntryHead.y < -1f
                             || pEntryRoot.x > 1f || pEntryRoot.x < -1f || pEntryRoot.y > 1f || pEntryRoot.y < -1f;
         sb.AppendLine($"起手是否整杆出画：{(entryOffFrame ? "是 ✓" : "否 ✗（武器会在画面里凭空出现）")}");
-        bool exitOffFrame = pExitHead.x > 1f || pExitHead.x < -1f || pExitHead.y > 1f || pExitHead.y < -1f
-                            || pExitRoot.x > 1f || pExitRoot.x < -1f || pExitRoot.y > 1f || pExitRoot.y < -1f;
-        sb.AppendLine($"收枪是否整杆出画：{(exitOffFrame ? "是 ✓" : "否 ✗（会在画面里凭空消失）")}");
-        bool tipInFrame = pDefendHead.x > -1f && pDefendHead.x < 1f && pDefendHead.y > -1f && pDefendHead.y < 1f;
-        sb.AppendLine($"防御位枪尖是否在画面内：{(tipInFrame ? "是 ✓" : "否 ✗（读不到枪尖 → 读不出格挡）")}");
         if (exitT >= 0f)
             sb.AppendLine($"杆身从左缘穿出：距矛头 {exitT:F2} 单位（占整杆 {exitT / WeaponLength * 100f:F0}%）位置 右 {pExit.x * 100f:F0}% 上 {pExit.y * 100f:F0}%");
         else
@@ -248,6 +213,6 @@ public class ParryStanceTuningWindow : EditorWindow
 
     private string BuildCopyText()
     {
-        return $"矛头锚点={_anchor} 斜举角={_tipDeg} 起手指向={_entryDeg} 起手枪尾偏移={_entryOffset} 防御下沉={_defendDrop} 防御额外位移={_defendOffset} 持续前迎={_driftSpeed}/s(上限 {_driftMax}) 收枪指向={_exitDeg} 收枪枪尾偏移={_exitOffset}";
+        return $"矛头锚点={_anchor} 斜举角={_tipDeg} 起手指向={_entryDeg} 起手枪尾偏移={_entryOffset} 防御下沉={_defendDrop}";
     }
 }
