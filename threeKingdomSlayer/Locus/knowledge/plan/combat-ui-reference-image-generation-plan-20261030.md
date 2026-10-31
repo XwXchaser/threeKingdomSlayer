@@ -642,3 +642,27 @@ prefab / Battle.scene / AttackSystem **自动合并**，双方改动都保住：
 **实机验证**：`Library/Locus/tmp/hud_analysis/token_wired_zoom.png` —— 4 个令牌并排、穿绳孔可见、白色描边清晰、行位未变；Console 0 error（仅 adb 无设备的环境噪声）。
 
 **尚未接入**：头像（需先定能量条方案 A/B/C）。
+
+### 11.14 头像拆三层（方案 A）+ 盾件换像素版（2026-10-31，崩溃后继续）
+
+**头像 = 三层**（能量条位置保留在圆盘右侧，结构不变只换皮）：
+| 层 | 节点 | 资产 |
+|---|---|---|
+| 底 | `PortraitFrame`（**新增节点**，最底层） | `hud_portrait_frame.png` 320×320：外 4px 近黑 + 内 9px 米白圆环，**中间透明** |
+| 中 | `UltBase` / `UltFill` | 沿用 `zhangfei_filler_base` / `filler_main`（能量条**位置与实现完全不动**） |
+| 上 | `Head` | `hud_portrait_silhouette.png` 320×320：三国武将剪影（铁盔红缨+蛇矛），冷铁灰 #39414E + 米白 1px 逆光边，**偏左摆**给右侧能量条让位 |
+
+接线要点：**`HeroHUDSkin_Zhangfei.portraitSprite` 才是运行时的决定者**（`HeroHUD.ApplySkin` 会覆盖 `Head` 的 sprite），
+只改 prefab/场景的 `Head` 不会生效 → 皮肤资产也要改指向剪影。
+`PortraitFrame` 放在 `UltBase` 之前 → 能量条压在圆环上（与旧金框的观感一致）。
+
+**盾件换像素版**：用户定"用我们新做的盾件"。
+- 我的 `Assets/Sprites/UI/Combat/hud_defend_shield.png` 与远端 `Assets/Sprites/UI/hud_defend_shield.png` **同名不同目录** → 易错
+  → 我的改名为 **`hud_defend_shield_pixel.png`**（Unity 内改名保留 GUID），DefenseButton 的 `Icon` 指向它
+- 远端那份（扁平对分）**保留在库里未删**，作为"对分 + 像素台阶 + 白边"重做时的参考
+- `DefenseButton` 的亮/暗逻辑（白=可防御 / 0.6 灰=出招中）**不用改**：乘白=原色，乘灰=压暗，对单色像素盾同样成立
+
+**已删除**：`hud_portrait_medallion.png`（不透明整盘方案，被拆三层取代，会盖住能量条）。
+
+**实机验证**：`final3_bottomrow.png`（底排：等级球 + 圆环剪影头像 + 能量条 + 4 个令牌 + 通栏红血条）、
+`final3_shield.png`（像素盾已接进防御键）。Console 0 error。

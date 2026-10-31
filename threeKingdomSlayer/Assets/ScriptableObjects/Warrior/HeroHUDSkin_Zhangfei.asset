@@ -18,7 +18,7 @@ MonoBehaviour:
   shieldFillSprite: {fileID: 21300000, guid: aaa758c4f01e1c640a29382b64ca1ab8, type: 3}
   ultimateBaseSprite: {fileID: 21300000, guid: ecbfe105e2c014443aff23877096bc1f, type: 3}
   ultimateFillSprite: {fileID: 21300000, guid: 676a27f4773321d45b9d5bd12a029fb0, type: 3}
-  portraitSprite: {fileID: 21300000, guid: e40d2452b5b7213459cf3468cb41dc2e, type: 3}
+  portraitSprite: {fileID: 21300000, guid: d027a9b417656a741896ef75463e2f64, type: 3}
   readyFireStartSprite: {fileID: 21300000, guid: 03748289f5b4a3a42a6c6b01c365dcbe, type: 3}
   readyFireLoopSprites:
   - {fileID: 21300000, guid: 70e7fabdc1a7ab94b9bda6a92b03e26f, type: 3}
