@@ -171,6 +171,12 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("防御位比斜举位低多少（世界单位）：**只用位置差**，角度保持一致（枪尖上扬角每次读得一样）")]
     [Range(0f, 1f)]
     public float parryStanceDefendAnchorDrop = 0.25f;
+    [Tooltip("防御位沿 **+X（屏幕右、朝敌阵列）** 的前压量（世界单位）。\n" +
+             "这是“迎敌”的主方向：枪身轴在 XY 平面内，朝相机推(-Z)只会把枪推大、\n" +
+             "并把枪尖顶出画面（见 design/… 竖屏构图约束），所以前压只能走 +X。\n" +
+             "注意：前压会把枪尖往右缘推，矛头锚点要留出余量（枪尖必须留在画面内）")]
+    [Range(-3f, 3f)]
+    public float parryStanceDefendForward = 0f;
     [Tooltip("落到防御保持位的时长（秒）")]
     [Range(0.02f, 0.5f)]
     public float parryStanceDefendEnterSeconds = 0.12f;

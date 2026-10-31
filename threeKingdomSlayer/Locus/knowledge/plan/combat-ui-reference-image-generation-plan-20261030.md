@@ -772,3 +772,51 @@ prefab / Battle.scene / AttackSystem **自动合并**，双方改动都保住：
 
 配套锚点：`_entryRoot` 放在防御位的**反方向**（x 更右、z 更深）→ 挥入变成"从右上后方斜插到左下前方"的弧线，
 而不是原地转圈；`_exitRoot` 沿同一条斜线反方向退出 → 收枪不回头。
+
+### 11.21 持枪防御姿态重做（2026-10-31，已实施并实机验证）
+
+**几何前提（实测）**：相机 (0,3,−10) 下俯 18°、FOV 60、1080×2160。枪长 10.8，
+在 z=−2.2 处的可视范围只有 **≈3.9 宽 × 10.5 高**（世界单位）→ **枪在任何朝向下都装不下**。
+所以这条动作的真问题不是"往哪挪"，而是 **哪一端出画、人物被放在哪**。
+本作口径：**枪尖在画内、枪尾从画面下缘出画**（没有可见人物时枪就是角色的替身，手应该在画面下方）。
+
+**代码改动**
+- `Assets/Scripts/Data/AttackSkillConfig.cs`：新增 `parryStanceDefendForward`（防御位沿 +X 的前压量，默认 0）。
+- `Assets/Scripts/Player/Combat/PlayerWeaponStance.cs`：
+  `_defendRootOffset = new Vector3(cfg.parryStanceDefendForward, -cfg.parryStanceDefendAnchorDrop, 0f)`
+  → **Z 恒 0**：枪身轴在 XY 平面内，朝相机推(−Z)只会把枪推大、并把枪尖顶出画面，"迎敌"只能走 +X。
+- `Assets/Scripts/Editor/ParryStanceTuningWindow.cs`：新增「防御位前压 (+X 朝敌阵)」滑条 + 收枪位读数
+  + 两条判定（**收枪是否整杆出画** / **防御位枪尖是否在画面内**）。
+
+**资产改动**（`Assets/Prefabs/UI/Skills/Zhangfei_Parry.asset`）
+| 字段 | 旧 | 新 |
+|---|---|---|
+| parryStanceTipDegrees | 42 | **78** |
+| parryStanceHeadAnchor | (5.6, 5, −2.2) | **(0.52, 3.38, −2.2)** |
+| parryStanceEntryAngleDegrees | 8 | **20** |
+| parryStanceEntryRootOffset | (0, −8.6, 0) | **(−1.22, −5.19, 0)** |
+| parryStanceExitAngleDegrees | −100 | **−15** |
+| parryStanceExitRootOffset | (2, −10, 0) | **(−1.22, −5.19, 0)** |
+| parryStanceSwingInSeconds | 0.12 | **0.20** |
+| parryStanceExitNormalSeconds | 0.54 | **0.30** |
+| parryStanceDefendAnchorDrop | 0.18 | **0.30** |
+| parryStanceDefendForward | 新增 | **0.60** |
+
+**实机实测**（Play Mode，屏幕 1080×2160，y 从下往上）
+| 阶段 | 枪尖 | 枪尾 |
+|---|---|---|
+| 入画起点 | (1196, 111) → 右下角外 | (−569, −425) → **整杆在画外** |
+| 挥入中 | (1233, 862) → 从右下角斜插进来（带白色挥痕） | — |
+| 抬枪位 | (820, 1725) | (234, −209) → 出下缘 |
+| **防御位**（前压 +0.6 / 下沉 0.3） | **(957~974, 1683~1720) → 完整在画内，距右缘约 105px** | (234, −209) → 出下缘 |
+| 收枪 | (1222,973)→(1209,296)→(1200,−26) → 从右下角沉出画面 | — |
+
+收枪 0.30s，**末帧整杆出画后才 Destroy**（Phase→Idle 时武器已不在画面内）✓ 符合 design/combo-move-state-machine.md §19。
+
+**取舍与遗留**
+1. 防御位整杆落在画面**右侧 1/3**，会挡住最右一列敌兵的部分身体（前景遮挡，属真实 3D 关系）。
+   要彻底避开只能给防御位单独做短枪（`parryGuardWeaponPrefab` 已留坑，当前 None → 回落 attackWavePrefab）；
+   用户已决定**保持长枪 10.8**。
+2. **−Z 前迎被否**：见上，枪身轴在 XY 平面内，−Z 与"枪尖必须在画内"直接冲突。
+3. `design/combo-move-state-machine.md` §19.3 仍写「挥入：从屏外**上方**斜劈入画」，
+   现行实现是**从屏外下方（右下角）挑入** → 该行待用户批准后再改设计文档。
