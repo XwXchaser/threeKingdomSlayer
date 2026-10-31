@@ -678,26 +678,3 @@ prefab / Battle.scene / AttackSystem **自动合并**，双方改动都保住：
 若要两侧节奏一致，需把被动排 pitch 改成 73.3 并同步 `Overflow`("+N") 的位置 → **未动**（属于原会话的布局决定）。
 
 **实机**：`final4_bottomrow.png` —— 左：旧描金头像 + 4 个兵符（主动技能）；右：4 个兵符（被动技能）；等级球 + 通栏红血条不变。
-
-### 11.16 盾牌按参考重做 + 招式 Z 前移（2026-10-31）
-
-**盾牌重做（用户定 C 方案）**：`Combat/hud_defend_shield_pixel.png`（280×320 = 140×160 canvas）
-- 造型照参考图（刀锋格挡图标 + 草图对分纹章）：**平直顶边**（顶角微切）+ 两侧近直 + 下部收**圆钝尖**；
-  **左半墨黑 #1A1A1E / 右半骨白 #E8E2D4 对分** + 右半上部一颗**铆钉点**
-- 质感照刀锋的扁平语言：**无渐变、无阴影、无底板**；按当前 HUD 方向加 **1px 米白像素描边**（外深内亮体系）
-
-**招式 Z 偏移全部前移**：规则 = 每个 `*SpawnZOffset` **-1**，招架 **-1.5**
-| 资产 | 类型 | 生效字段 | 改前 → 改后 |
-|---|---|---|---|
-| `Zhangfei_Stab` / `Jab1` / `Jab2` / `Jab3` / `StabR2` | Stab | stabSpawnZOffset | -5 → **-6** |
-| `Zhangfei_Slash` / `Launch` / `LaunchFinisher` | Slash/Launch | slashSpawnZOffset | -3.6 → **-4.6** |
-| `Zhangfei_Parry` | Parry | parrySpawnZOffset | -6 → **-7.5** |
-| `Zhangfei_Launch` | — | launchSpawnZOffset | -6 → **-7** |
-| 其余资产 | — | launchSpawnZOffset | 0 → **-1** |
-| 未生效字段（交叉类型的偏移） | — | — | 0.5 → **-0.5**（无害，保留一致性） |
-
-**坐标基准复核**：相机 (0,3,-10) 透视 → **z 越小越靠前/越靠屏幕下方**；玩家 z=0；敌兵排 -1.0 / 1.5 / 4.0 / 9.0（行距 2.5）；
-枪械骨架 `SpearRig` 握把 z=-5.40、枪尖约 +5.4（**枪是"指向屏幕深处"摆的**，属模型挂点，与波特效 Z 是两套，未动）。
-命中判定走列/排（`ColumnMode`/`rangeRows`），**与 z 无关** → 纯视觉改动，不影响难度。
-
-⚠️ **未做视觉验证**：教学关的攻击白名单挡住了程序化触发（`TutorialAttackGate.Allows`），需进正式关手打一次才能看效果。

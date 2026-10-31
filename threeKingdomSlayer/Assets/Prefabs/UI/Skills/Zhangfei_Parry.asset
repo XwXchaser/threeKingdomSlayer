@@ -28,7 +28,7 @@ MonoBehaviour:
   launchDuration: 0
   attackWavePrefab: {fileID: 1326451241060622409, guid: 27d8262bc67b9864ea33c9576052febc, type: 3}
   stabSpawnYOffset: 1.5
-  stabSpawnZOffset: -0.5
+  stabSpawnZOffset: 0.5
   stabVisualReachOffset: 0.5
   stabVisualTargetRandomRadius: 0.12
   slashSweepHalfWidth: 3
@@ -39,14 +39,13 @@ MonoBehaviour:
   slashOverrideVisualTilt: 0
   slashVisualTiltDegrees: 0
   slashSpawnYOffset: 1.5
-  slashSpawnZOffset: -0.5
+  slashSpawnZOffset: 0.5
   parrySweepAngle: 100
   parrySweepDuration: 0.25
   parrySpawnXOffset: 0
   parrySpawnYOffset: 1.5
-  parrySpawnZOffset: -7.5
+  parrySpawnZOffset: -6
   parryAngleVariance: 15
-  parryGestureEnabled: 0
   parryWhiffDuration: 0.6
   parryGuardBreakThreshold: 120
   parryGuardBreakDuration: 1.5
@@ -78,7 +77,7 @@ MonoBehaviour:
   launchSideTilt: 12
   launchSpawnXOffset: 0
   launchSpawnYOffset: 1.5
-  launchSpawnZOffset: -1
+  launchSpawnZOffset: 0
   launchAngleVariance: 15
   launchRiseHeight: 1
   launchSkipWindup: 0
