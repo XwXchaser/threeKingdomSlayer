@@ -355,11 +355,31 @@ public partial class AttackSystem : MonoBehaviour
         if (playerState == null) return false;
         if (playerState.stageState != StageState.InProgress) return false;
 
+        // **防御时不能出招**（2026-10-29 用户定：出招与防御互斥，与既有动作设计一致）
+        if (playerState.IsDefendingActive)
+        {
+            Debug.Log("[AttackSystem] 防御中，不能出招");
+            return false;
+        }
+
         // 教学关：还没教到的招式不允许发出（白名单 = 已教完的 + 当前这一拍要教的）
         if (!TutorialAttackGate.Allows(attackType))
         {
             Debug.Log("[Tutorial] 招式还没教到，不允许发出：" + attackType + "（当前可用：" + TutorialAttackGate.Describe() + "）");
             return false;
+        }
+
+        // 手势招架已下线（2026-10-29 用户定：取消精防，防御改用防御按键）。
+        // 竖划（不蓄力）不再触发招架 → 本次输入不生效（不消耗动作锁）。
+        // **代码与数据全部保留**：把 AttackSkillConfig.parryGestureEnabled 勾上即可重启旧链路。
+        if (attackType == AttackType.Parry)
+        {
+            var parryCfg = GetConfig(AttackType.Parry);
+            if (parryCfg != null && !parryCfg.parryGestureEnabled)
+            {
+                Debug.Log("[AttackSystem] 手势招架已下线（竖划不触发）；防御请用防御按键");
+                return false;
+            }
         }
 
         // 招架是局外解锁项：天赋树里配了节点且还没点时，竖滑不蓄力不再出招

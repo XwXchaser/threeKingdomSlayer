@@ -51,6 +51,9 @@ aiEditMode: inherit
   - 上下文逼近上限前就换会话并写交接文档，别等自动压缩兜底。
   - `contextLength` 配置值要给摘要预留留余量：上游真实窗口小于配置值时，压缩请求会先于主请求超预算。
   - 同一会话别混用 openai_chat 与 openai_responses 端点：换端点会换掉报错形态（2013 → `No tool output found`），极易误判成新故障。
+- **2026-10-29 根因修正（DeepSeek 端点实测）**：`No tool output found for tool call` **不只由压缩/裁剪引起**——全新小会话（3 条消息、无压缩）同样复现。根因是**端点协议不匹配**：该 DeepSeek 供应商在 `%APPDATA%/locus/custom_providers.json` 里配成 `apiFormat: openai_responses`（打 `https://api.deepseek.com`），而同一 id 在 `custom_endpoints.json` 里写的是 `openai_chat`；运行时以 providers 文件为准 ⇒ Locus 发 Responses 形状的 `function_call_output`，上游不认 ⇒ 400。
+  - **排查要点**：失败请求 100% 是「带工具结果」的请求，纯文本请求（input=1）从不报此错；同一载荷换 `openai_chat` 端点即通过；坏项会留在历史里把会话毒死（每轮都引用同一个 call id）⇒ **原地重试无效**，必须换模型或开新会话。
+  - 已知频率（2026-10-22→10-29 日志统计）：deepseek-flash 请求 89 次中失败 48 次，MiniMax 同一载荷无失败。
 
 ## 8. Locus 会话 413 Payload Too Large（图片附件累积撑爆请求体，工具侧）
 - **现象**：会话跑到中途后，**连续两轮 run 直接 error**，报错是网关层的 `Custom Chat API error (413 Payload Too Large): <html>…nginx…</html>`（上游 `https://api.muskapis.com/v1/chat/completions`，nginx 拒收请求体）。该会话之后任何消息都发不出去 → 任务卡死无法继续。

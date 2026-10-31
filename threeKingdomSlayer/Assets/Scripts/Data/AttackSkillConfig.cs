@@ -103,6 +103,10 @@ public class AttackSkillConfig : ScriptableObject
     public float parryAngleVariance = 15f;
 
     [Header("招架后摇")]
+    [Tooltip("**手势招架开关**（2026-10-29 用户定：取消精防）。\n" +
+             "false = 竖划（不蓄力）不再触发招架，防御改由**防御按键**发动（点按切换）。\n" +
+             "勾上 = 恢复旧的竖划招架（含接触帧判定与敌人被格开）—— 代码全部保留，随时可重启。")]
+    public bool parryGestureEnabled = false;
     [Tooltip("招架空放（没格挡到任何攻击）时的动作锁时长（秒，默认 0.8）。\n" +
              "格挡成功用 actionDuration；空放用这个更长的后摇，让招架不能连续刷。\n" +
              "动作锁模式下生效；独立 CD 模式仍走每招独立冷却。")]

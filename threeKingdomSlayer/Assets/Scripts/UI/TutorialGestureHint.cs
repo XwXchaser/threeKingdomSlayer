@@ -26,17 +26,28 @@ using System.Collections;
         [Tooltip("屏幕坐标换算用的容器（就是预制体根下的全屏 RectTransform）")]
         public RectTransform screenSpace;
     
-        [Header("尺寸（设计像素，1080 宽口径）")]
-        public float fingerSize = 220f;
-        public float trailThickness = 48f;
-        public float ringSize = 240f;
-        [Range(0f, 0.3f)] public float trailInset = 0.06f;
+    [Header("尺寸（设计像素，1080 宽口径）")]
+    public float fingerSize = 308f;
+    public float trailThickness = 67f;
+    public float ringSize = 336f;
+    [Range(0f, 0.3f)] public float trailInset = 0.06f;
     
     [Header("提示层压暗")]
     [Tooltip("提示层自带的全屏压暗透明度（0 = 不压暗）。\n" +
              "场景压暗（TutorialSceneDim）不作用于所有材质（SpriteRenderer 的 _Color 改不动、\n" +
              "自定义地形的 _TutorialDim 可能被别的脚本覆盖）→ 时停拍改用这一层保证「画面真的暗下来」。")]
     [Range(0f, 0.9f)] public float dimOverlayAlpha = 0.45f;
+
+    [Header("点击手部帧（可选）")]
+    [Tooltip("点击动作帧序列（按下 / 触底 / 回弹…）。**为空则退回程序化表现**。\n" +
+             "帧的画风、尺寸必须与 tutorial_gesture_finger_ui 一致，且**指尖要停在同一像素位置**\n" +
+             "（否则序列帧播放时指尖会跳 → 看上去是手在漂）。")]
+    [SerializeField] private Sprite[] tapFrames = new Sprite[0];
+    [Tooltip("每帧停留时长（秒）")]
+    [SerializeField] private float tapFrameInterval = 0.08f;
+    [Tooltip("程序化按压的角度（度）：手**绕指尖 pivot** 转 → 读作“手指按下去”。\n" +
+             "（Finger 节点的 pivot 正好在指尖 (0.26, 0.81) → 旋转时指尖不动，只有手在压）")]
+    [SerializeField] private float tapPressAngle = 14f;
 
     [Header("节奏")]
     public float tapDuration = 0.9f;
@@ -58,8 +69,9 @@ using System.Collections;
     [Tooltip("防御示范里光圈脉动的幅度（0.12 = ±12%）。")]
     public float parryPulseAmount = 0.12f;
     
-        private Coroutine _routine;
-        private Canvas _canvas;
+    private Coroutine _routine;
+    private Canvas _canvas;
+    private Sprite _fingerBaseSprite;
 
         [Header("引导门槛（做对才继续）")]
         [Tooltip("点击判定：按下到抬起的最大位移（像素）")]
@@ -317,14 +329,16 @@ using System.Collections;
         return Vector2.Dot(delta.normalized, expected.normalized) > 0.6f;
     }
     
-        private void Awake()
-        {
-            if (root == null) root = transform as RectTransform;
-            _canvas = GetComponentInParent<Canvas>();
-            if (screenSpace == null) screenSpace = root;
-            EnsureDimSprite();
-            HideLayers();
-        }
+    private void Awake()
+    {
+        if (root == null) root = transform as RectTransform;
+        _canvas = GetComponentInParent<Canvas>();
+        if (screenSpace == null) screenSpace = root;
+        var fingerImage = FingerImage;
+        if (fingerImage != null) _fingerBaseSprite = fingerImage.sprite;
+        EnsureDimSprite();
+        HideLayers();
+    }
     
         /// <summary>只隐藏图层，不动协程（协程自己收尾时用）。</summary>
         public void Hide()
@@ -350,14 +364,62 @@ using System.Collections;
             HideLayers();
         }
     
-        public void PlayTap(Vector2 screenPos)
+    public void PlayTap(Vector2 screenPos)
+    {
+        StartTap(screenPos, loop: false);
+    }
+
+    /// <summary>
+    /// 点击示范（**循环**）：教学拍需要“手反复点那个按钮”，不能只播一下就消失。
+    /// </summary>
+    public void PlayTapLoop(Vector2 screenPos)
+    {
+        StartTap(screenPos, loop: true);
+    }
+
+    /// <summary>
+    /// **按住保持**示范（循环）：防御键的交互是 hold（按住=防御中，松开=退出），
+    /// 所以示范应该是“手指按下去就不起来”，而不是反复点。
+    /// </summary>
+    public void PlayPressHoldLoop(Vector2 screenPos)
+    {
+        StopRoutine();
+        ShowLayers(ring: false, trail: false, finger: true);
+        Place(finger, screenPos, fingerSize);
+        SetAlpha(FingerImage, 1f);
+        _routine = StartCoroutine(PressHoldLoopRoutine(screenPos));
+    }
+
+    private IEnumerator PressHoldLoopRoutine(Vector2 screenPos)
+    {
+        // 0.25s 内按下去（缩到 0.88），然后一直按住，只做轻微呼吸
+        float t = 0f;
+        while (t < 0.25f)
         {
-            StopRoutine();   // 只停上一个示范协程，不能动引导本身
-            ShowLayers(ring: false, trail: false, finger: true);
-            Place(finger, screenPos, fingerSize);
-            SetAlpha(FingerImage, 1f);
-            _routine = StartCoroutine(TapRoutine());
+            t += Time.unscaledDeltaTime;
+            float k = Mathf.Clamp01(t / 0.25f);
+            finger.localScale = Vector3.one * Mathf.Lerp(1f, 0.88f, k * k);
+            yield return null;
         }
+        while (true)
+        {
+            float pulse = (Mathf.Sin(Time.unscaledTime * 4.2f) + 1f) * 0.5f;   // 0..1
+            finger.localScale = Vector3.one * Mathf.Lerp(0.88f, 0.92f, pulse);
+            yield return null;
+        }
+    }
+
+    private void StartTap(Vector2 screenPos, bool loop)
+    {
+        StopRoutine();   // 只停上一个示范协程，不能动引导本身
+        ShowLayers(ring: false, trail: false, finger: true);
+        Place(finger, screenPos, fingerSize);
+        // **光圈必须先摆位**：不摆的话它会停在 anchoredPosition(0,0) = 屏幕正中，
+        // 与手指尖分开（2026-10-29 实测：表现为「tap 只有屏幕中央一个光圈」）。
+        Place(ring.rectTransform, screenPos, ringSize);
+        SetAlpha(FingerImage, 1f);
+        _routine = StartCoroutine(TapRoutine(loop));
+    }
     
         /// <summary>普通滑动：拖尾铺在线段上，手指从尾端走到箭头端，不旋转。</summary>
         public void PlaySwipe(Vector2 fromScreenPos, Vector2 toScreenPos)
@@ -466,33 +528,62 @@ using System.Collections;
     
         // ---------------------------------------------------------------- 协程
     
-        private IEnumerator TapRoutine()
+    private IEnumerator TapRoutine(bool loop = false)
+    {
+        do
         {
-            // 点按表现：手指往下压一下，同时光圈从指尖扩散消失，明确表达“点这里”
+            // 点按表现：光圈从指尖扩散一次（表达“点在这”）
             if (ring != null)
             {
                 ring.gameObject.SetActive(true);
                 ring.rectTransform.localScale = Vector3.one * 0.5f;
                 SetAlpha(ring, 0.9f);
             }
-            float t = 0f;
-            while (t < tapDuration)
+
+            if (tapFrames != null && tapFrames.Length > 0)
             {
-                t += Time.unscaledDeltaTime;
-                float k = Mathf.Clamp01(t / tapDuration);
-                float press = k < 0.35f ? Mathf.Lerp(1f, 0.88f, k / 0.35f) : Mathf.Lerp(0.88f, 1f, (k - 0.35f) / 0.65f);
-                finger.localScale = Vector3.one * press;
-                if (ring != null)
+                // ── 帧序列版：手的动作由帧承担（2026-10-29 新增）
+                var image = FingerImage;
+                for (int i = 0; i < tapFrames.Length; i++)
                 {
-                    float ripple = Mathf.Clamp01(k / 0.6f);
-                    ring.rectTransform.localScale = Vector3.one * Mathf.Lerp(0.5f, 1.5f, ripple);
-                    SetAlpha(ring, 0.9f * (1f - ripple));
+                    if (image != null && tapFrames[i] != null) image.sprite = tapFrames[i];
+                    yield return new WaitForSecondsRealtime(tapFrameInterval);
                 }
-                yield return null;
+                if (image != null && _fingerBaseSprite != null) image.sprite = _fingerBaseSprite;
             }
-            finger.localScale = Vector3.one;
-            Finish();
+            else
+            {
+                // ── 无帧：程序化按压（**绕指尖 pivot 旋转** + 轻微压缩）
+                // 手的 pivot 在指尖 → 旋转时指尖不动、只有手在压 → 读作“按下去”。
+                float t = 0f;
+                while (t < tapDuration)
+                {
+                    t += Time.unscaledDeltaTime;
+                    float k = Mathf.Clamp01(t / tapDuration);
+                    // 前 35% 压下去，后 65% 回弹（sin 曲线：起手快、收尾稳）
+                    float press = k < 0.35f
+                        ? Mathf.SmoothStep(0f, 1f, k / 0.35f)
+                        : 1f - Mathf.SmoothStep(0f, 1f, (k - 0.35f) / 0.65f);
+                    finger.localRotation = Quaternion.Euler(0f, 0f, -tapPressAngle * press);
+                    finger.localScale = Vector3.one * Mathf.Lerp(1f, 0.94f, press);
+                    if (ring != null)
+                    {
+                        float ripple = Mathf.Clamp01(k / 0.6f);
+                        ring.rectTransform.localScale = Vector3.one * Mathf.Lerp(0.5f, 1.5f, ripple);
+                        SetAlpha(ring, 0.9f * (1f - ripple));
+                    }
+                    yield return null;
+                }
+                finger.localScale = Vector3.one;
+                finger.localRotation = Quaternion.identity;
+            }
+
+            if (!loop) { Finish(); yield break; }
+            // 循环模式：停一拍再点下一次
+            yield return new WaitForSecondsRealtime(0.35f);
         }
+        while (loop);
+    }
     
         private IEnumerator SwipeRoutine(Vector2 from, Vector2 to, float leadIn)
         {

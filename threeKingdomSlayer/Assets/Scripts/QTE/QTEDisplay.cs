@@ -97,6 +97,22 @@ public class QTEDisplay : MonoBehaviour
     {
         if (Instance == this)
             Instance = null;
+
+        // 结果反馈是运行时新建的 GameObject（挂在 HUD 的 QTE 指示区下），
+        // 场景重载时它会先被销毁，而这里的 tween 还活着 → 下一帧写已销毁 RectTransform 的
+        // localScale → MissingReferenceException（2026-10-29 实测）。
+        // 规则见 memory/dotween-destroyed-transform.md：销毁前必须按同一 target 显式 Kill。
+        if (_resultFeedbackTween != null)
+        {
+            _resultFeedbackTween.Kill(false);
+            _resultFeedbackTween = null;
+        }
+        if (_resultFeedback != null)
+        {
+            DOTween.Kill(_resultFeedback);
+            _resultFeedback.transform.DOKill();
+            _resultFeedback = null;
+        }
     }
 
     private RectTransform GetIndicatorParent()

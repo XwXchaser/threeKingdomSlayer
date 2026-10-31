@@ -61,13 +61,29 @@ public partial class TutorialStageDirector : MonoBehaviour
     }
 
     /// <summary>取目标敌人的屏幕坐标；没有敌人就返回 false。</summary>
+    /// <remarks>
+    /// **锚点用敌人的可见本体中心，不是根节点**：敌人根节点在脚底，1011/1012 本体高 2.66 世界单位
+    /// → 脚底到本体中心差 1.33 世界单位（≈250 px，透视相机 fov60/z-10/1080×2160）。
+    /// 锚在脚底会让提示落在小腿/脚边（2026-10-29 实测）。
+    /// </remarks>
     private bool TryGetTargetEnemyScreenPosition(out Vector2 screenPos)
     {
         screenPos = Vector2.zero;
         var cam = Camera.main;
         var best = FindTargetEnemy();
         if (cam == null || best == null) return false;
-        screenPos = cam.WorldToScreenPoint(best.transform.position);
+        Vector3 world = GetEnemyBodyCenter(best);
+        screenPos = cam.WorldToScreenPoint(world);
         return screenPos.x > 0f && screenPos.x < Screen.width && screenPos.y > 0f;
+    }
+
+    /// <summary>敌人的可见本体中心（有 SpriteRenderer 用它的 bounds，否则用实测兜底高度）。</summary>
+    private static Vector3 GetEnemyBodyCenter(Enemy enemy)
+    {
+        if (enemy == null) return Vector3.zero;
+        var renderer = enemy.GetComponentInChildren<SpriteRenderer>();
+        if (renderer != null) return renderer.bounds.center;
+        // 兜底：1011/1012 实测本体高 2.66 世界单位 → 中心在根节点上方 1.33
+        return enemy.transform.position + Vector3.up * 1.33f;
     }
 }

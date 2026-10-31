@@ -104,21 +104,28 @@ MonoBehaviour:
   ring: {fileID: 5209969634675463929}
   dimOverlay: {fileID: 3947618680283924917}
   screenSpace: {fileID: 2706636285945583473}
-  fingerSize: 220
-  trailThickness: 48
-  ringSize: 240
+  fingerSize: 308
+  trailThickness: 67
+  ringSize: 336
   trailInset: 0.06
+  dimOverlayAlpha: 0.45
   tapDuration: 0.9
   swipeDuration: 1.1
   holdDuration: 1.2
   ringEndScale: 0.55
   ringSpinSpeed: 90
+  parrySwipeSeconds: 0.22
+  parryHoldSeconds: 0.35
+  parryPlaySeconds: 0.9
+  parryPulseSpeed: 4
+  parryPulseAmount: 0.12
   tapMaxMovePixels: 60
   tapMaxSeconds: 0.3
   tapRadiusPixels: 260
   gateGraceSeconds: 0.5
   swipeMinPixels: 90
   chargeHoldSeconds: 0.9
+  chargeSwipeHoldSeconds: 0
 --- !u!1 &1224444850819687016
 GameObject:
   m_ObjectHideFlags: 0

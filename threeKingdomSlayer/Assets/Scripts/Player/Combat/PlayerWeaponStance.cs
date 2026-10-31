@@ -87,6 +87,9 @@ public sealed class PlayerWeaponStance
     /// <summary>当前是否处于防御姿态（挥入播完 + 按住维持）。</summary>
     public bool IsDefending => Phase == StancePhase.Defending;
 
+    /// <summary>当前是否在**挥入中**（防御按键按下后的举枪过程）。</summary>
+    public bool IsSwingingIn => Phase == StancePhase.SwingIn;
+
     public PlayerWeaponStance(PlayerState owner)
     {
         _owner = owner;
@@ -118,6 +121,36 @@ public sealed class PlayerWeaponStance
         ApplyPose(1f);
 
         StartSwingIn();
+    }
+
+    /// <summary>
+    /// **防御按键按下**：举起长枪（复用招架的挥入动作）→ 随后落防御位。
+    ///
+    /// 与手势招架的区别（2026-10-29 用户定：取消精防）：
+    ///   • **不做任何判定** —— 没有接触帧、不反弹飞行物、敌人不会被打断；
+    ///   • 只负责“把枪举起来”这条表现链（挥入 → 防御位 → 收枪出画）。
+    /// 防御期间的免伤/破防值走 <see cref="PlayerGuard"/>，与招架无关。
+    /// </summary>
+    public void PlayDefend(AttackSkillConfig cfg)
+    {
+        // 复用同一条挥入链；_parrySucceeded 保持 false → 收枪走正常速度。
+        PlayParry(cfg);
+    }
+
+    /// <summary>
+    /// 挥入期间受击：**跳位**进防御位（取消挥入、立即落防御姿态，并起后退反馈）。
+    ///
+    /// 需求（2026-10-29）：「若在 parry 的表现时受击就直接进 defend 的受击表示就好（允许武器跳位）」。
+    /// 受击伤害由 <see cref="PlayerGuard"/> 吸收（免伤、只涨破防值）。
+    /// </summary>
+    public void InterruptToDefend(AttackSkillConfig cfg)
+    {
+        if (Phase != StancePhase.SwingIn) return;
+
+        _moving = false;          // 取消挥入的后续运动
+        _holdRequested = true;    // 挥入被打断 → 直接进防御位，不再走收枪
+        EnterDefend(0.06f);       // 短促过渡 = “跳位”
+        Recoil(cfg);              // 受击后退再回位
     }
 
     /// <summary>回填招架结果（格开=true）→ 决定收枪是加速（格挡成功）还是正常速度。</summary>
@@ -221,10 +254,12 @@ public sealed class PlayerWeaponStance
     }
 
     /// <summary>进入防御位：角度与斜举位一致（读数一致），只用位置差表达“稍低于 idle”。</summary>
-    private void EnterDefend()
+    private void EnterDefend(float durationOverride = -1f)
     {
         Phase = StancePhase.Defending;
-        float dur = _cfg != null ? Mathf.Max(0.05f, _cfg.parryStanceDefendEnterSeconds) : 0.12f;
+        float dur = durationOverride > 0f
+            ? durationOverride
+            : (_cfg != null ? Mathf.Max(0.05f, _cfg.parryStanceDefendEnterSeconds) : 0.12f);
         MoveTo(_rootAnchor + _defendRootOffset, _poseIdle, dur, EaseMode.Smooth);
     }
 

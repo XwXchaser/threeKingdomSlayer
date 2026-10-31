@@ -54,6 +54,13 @@ public class BattleHUD : MonoBehaviour, ICombatHud
     private HeroHUD _heroHUD;
     private int _lastShieldAmount;
 
+    /// <summary>
+    /// 通关印章动画序列。**必须持有引用**：印章是运行时 Instantiate 到相机下的，
+    /// 场景重载时它会先被销毁；序列还活着就会继续写已销毁子节点的 localScale
+    /// → MissingReferenceException（2026-10-29 实测）。
+    /// </summary>
+    private Sequence _victorySequence;
+
     // Boss 血条池
     private List<BossHealthUI> _activeBossBars = new List<BossHealthUI>();
     private bool _bossEventSubscribed;
@@ -247,6 +254,14 @@ public class BattleHUD : MonoBehaviour, ICombatHud
         {
             EnemyManager.Instance.OnBossEngaged -= OnBossEngaged;
         }
+
+        // 印章动画：场景重载/退出战斗时必须先杀掉，否则会写已销毁的印章节点
+        // （memory/dotween-destroyed-transform.md 的规则：销毁前按同一 target 显式 Kill）。
+        if (_victorySequence != null)
+        {
+            _victorySequence.Kill(false);
+            _victorySequence = null;
+        }
     }
 
     #region UI更新
@@ -373,6 +388,8 @@ public class BattleHUD : MonoBehaviour, ICombatHud
 
         var seq = DOTween.Sequence();
         seq.SetUpdate(true); // 无视 timeScale 暂停
+        _victorySequence?.Kill(false);
+        _victorySequence = seq;
 
         // victory1 印章砸下
         if (victory1 != null && sr1 != null)
