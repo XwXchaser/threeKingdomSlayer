@@ -23,7 +23,8 @@ public class ParryStanceTuningWindow : EditorWindow
     private Vector3 _anchor;
     private Vector3 _entryOffset;
     private Vector3 _exitOffset;
-    private float _tipDeg, _entryDeg, _defendDrop, _defendForward, _exitDeg;
+    private Vector3 _defendOffset;
+    private float _tipDeg, _entryDeg, _defendDrop, _exitDeg;
     private float _swingIn, _overshoot, _settle, _hold, _exitFast, _exitNormal;
 
     private string _readout = "";
@@ -51,7 +52,7 @@ public class ParryStanceTuningWindow : EditorWindow
         _tipDeg = _cfg.parryStanceTipDegrees;
         _entryDeg = _cfg.parryStanceEntryAngleDegrees;
         _defendDrop = _cfg.parryStanceDefendAnchorDrop;
-        _defendForward = _cfg.parryStanceDefendForward;
+        _defendOffset = _cfg.parryStanceDefendOffset;
         _exitDeg = _cfg.parryStanceExitAngleDegrees;
         _swingIn = _cfg.parryStanceSwingInSeconds;
         _overshoot = _cfg.parryStanceOvershootDegrees;
@@ -72,7 +73,7 @@ public class ParryStanceTuningWindow : EditorWindow
         _cfg.parryStanceTipDegrees = _tipDeg;
         _cfg.parryStanceEntryAngleDegrees = _entryDeg;
         _cfg.parryStanceDefendAnchorDrop = _defendDrop;
-        _cfg.parryStanceDefendForward = _defendForward;
+        _cfg.parryStanceDefendOffset = _defendOffset;
         _cfg.parryStanceExitAngleDegrees = _exitDeg;
         _cfg.parryStanceSwingInSeconds = _swingIn;
         _cfg.parryStanceOvershootDegrees = _overshoot;
@@ -103,7 +104,7 @@ public class ParryStanceTuningWindow : EditorWindow
         _exitOffset = EditorGUILayout.Vector3Field("收枪枪尾偏移 (x,y,z)", _exitOffset);
         _exitDeg = EditorGUILayout.Slider("收枪指向 (度)", _exitDeg, -180f, 180f);
         _defendDrop = EditorGUILayout.Slider("防御位下沉", _defendDrop, 0f, 1f);
-        _defendForward = EditorGUILayout.Slider("防御位前压 (+X 朝敌阵)", _defendForward, -3f, 3f);
+        _defendOffset = EditorGUILayout.Vector3Field("防御位额外位移 (x左/ y上抬/ z前迎)", _defendOffset);
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("时序", EditorStyles.boldLabel);
         _swingIn = EditorGUILayout.Slider("挥入时长 (s)", _swingIn, 0.05f, 1f);
@@ -195,8 +196,8 @@ public class ParryStanceTuningWindow : EditorWindow
         Vector3 headEntry = rootEntry + dirEntry * TipOffset;
         Vector3 rootExit = rootIdle + _exitOffset;
         Vector3 headExit = rootExit + dirExit * TipOffset;
-        // 防御位 = 斜举位 + 前压(+X) + 下沉(-Y)，角度不变
-        Vector3 rootDefend = rootIdle + new Vector3(_defendForward, -_defendDrop, 0f);
+        // 防御位 = 斜举位 + 额外位移(X左/Y上抬/Z前迎) + 下沉，角度不变
+        Vector3 rootDefend = rootIdle + new Vector3(_defendOffset.x, _defendOffset.y - _defendDrop, _defendOffset.z);
         Vector3 headDefend = rootDefend + dirIdle * TipOffset;
 
         Vector2 pHead = pct(headIdle), pRoot = pct(rootIdle);
@@ -215,7 +216,7 @@ public class ParryStanceTuningWindow : EditorWindow
         var sb = new StringBuilder();
         sb.AppendLine($"矛头（斜举位）  右 {pHead.x * 100f:F0}%  上 {pHead.y * 100f:F0}%");
         sb.AppendLine($"枪尾（斜举位）  右 {pRoot.x * 100f:F0}%  上 {pRoot.y * 100f:F0}%");
-        sb.AppendLine($"矛头（防御位）  右 {pDefendHead.x * 100f:F0}%  上 {pDefendHead.y * 100f:F0}%  ← 前压 {_defendForward:F2} / 下沉 {_defendDrop:F2}");
+        sb.AppendLine($"矛头（防御位）  右 {pDefendHead.x * 100f:F0}%  上 {pDefendHead.y * 100f:F0}%  ← 偏移 {_defendOffset} / 下沉 {_defendDrop:F2}");
         sb.AppendLine($"枪尾（防御位）  右 {pDefendRoot.x * 100f:F0}%  上 {pDefendRoot.y * 100f:F0}%");
         sb.AppendLine($"矛头（起手位）  右 {pEntryHead.x * 100f:F0}%  上 {pEntryHead.y * 100f:F0}%");
         sb.AppendLine($"枪尾（起手位）  右 {pEntryRoot.x * 100f:F0}%  上 {pEntryRoot.y * 100f:F0}%");
@@ -240,6 +241,6 @@ public class ParryStanceTuningWindow : EditorWindow
 
     private string BuildCopyText()
     {
-        return $"矛头锚点={_anchor} 斜举角={_tipDeg} 起手指向={_entryDeg} 起手枪尾偏移={_entryOffset} 防御下沉={_defendDrop} 防御前压={_defendForward} 收枪指向={_exitDeg} 收枪枪尾偏移={_exitOffset}";
+        return $"矛头锚点={_anchor} 斜举角={_tipDeg} 起手指向={_entryDeg} 起手枪尾偏移={_entryOffset} 防御下沉={_defendDrop} 防御额外位移={_defendOffset} 收枪指向={_exitDeg} 收枪枪尾偏移={_exitOffset}";
     }
 }

@@ -329,9 +329,12 @@ public sealed class PlayerWeaponStance
         _exitRoot = _rootAnchor + cfg.parryStanceExitRootOffset;
 
         // 防御位：只用位置差（角度与斜举位一致 → 枪尖上扬角每次都读得一样）
-        //   X 分量 = 迎敌前压（朝敌阵列，屏幕平面内）；Y 分量 = 下沉。Z 恒 0：
-        //   枪身轴在 XY 平面内，朝相机推(-Z)只会把枪推大并把枪尖顶出画面。
-        _defendRootOffset = new Vector3(cfg.parryStanceDefendForward, -cfg.parryStanceDefendAnchorDrop, 0f);
+        //   偏移来自 parryStanceDefendOffset（X 左 / Y 上抬 / Z 朝相机前迎），
+        //   枪身轴在 XY 平面内：-Z 是“迎面怼上来”的纵深，+Y 用来抵消它带来的下沉。
+        _defendRootOffset = new Vector3(
+            cfg.parryStanceDefendOffset.x,
+            cfg.parryStanceDefendOffset.y - cfg.parryStanceDefendAnchorDrop,
+            cfg.parryStanceDefendOffset.z);
     }
 
     /// <summary>由「枪尖指向的角度」反解世界旋转：0 = 指向屏幕右(+X)，90 = 竖直向上。</summary>
