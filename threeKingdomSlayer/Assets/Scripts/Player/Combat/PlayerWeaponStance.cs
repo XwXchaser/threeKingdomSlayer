@@ -318,8 +318,12 @@ public sealed class PlayerWeaponStance
     {
         Vector3 headAnchor = cfg.parryStanceHeadAnchor;
         _poseIdle = PoseForAngle(cfg.parryStanceTipDegrees);
-        _poseEntry = PoseForAngle(cfg.parryStanceEntryAngleDegrees);
-        _poseExit = PoseForAngle(cfg.parryStanceExitAngleDegrees);
+
+        // 起手/收枪的**拧转**：绕枪自身 local X 轴（枪身长轴是 local +Y）。
+        // 只加在起手与收枪两个姿态上 → 防御位（_poseIdle）不受影响，终态与原来完全一致。
+        float roll = cfg.parryStanceEntryRollDegrees;
+        _poseEntry = PoseForAngle(cfg.parryStanceEntryAngleDegrees) * Quaternion.AngleAxis(roll, Vector3.right);
+        _poseExit = PoseForAngle(cfg.parryStanceExitAngleDegrees) * Quaternion.AngleAxis(roll, Vector3.right);
         _poseOvershoot = PoseForAngle(cfg.parryStanceTipDegrees + cfg.parryStanceOvershootDegrees);
 
         // 根节点（手的位置）= 矛头 − (Length/2)·斜举方向

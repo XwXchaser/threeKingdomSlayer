@@ -129,6 +129,13 @@ public class AttackSkillConfig : ScriptableObject
     public float parryGuardDecayPerSecond = 30f;
     [Tooltip("防御姿态的武器 Prefab（留空则用招架的 attackWavePrefab）")]
     public GameObject parryGuardWeaponPrefab;
+    [Tooltip("起手/收枪时枪身绕**自身 local X 轴**的拧转角（度）。\n" +
+             "0 = 不拧；>0 = 枪尖朝镜头、枪尾朝后（“左手递出、右手接握”）。\n" +
+             "拧转在挥入时解开 → 防御位姿态与不拧时**完全一致**（终态不变），\n" +
+             "只是整条动作从“纯平移”变成“多划一道弧线”；收枪时拧回去。\n" +
+             "注：运行时枪的长轴是根节点的 local +Y，所以 local X 垂直于枪身。")]
+    [Range(-90f, 90f)]
+    public float parryStanceEntryRollDegrees = 0f;
     [Tooltip("持枪姿态：枪尖指向的角度（度）。0 = 指向屏幕右(+X)，90 = 竖直向上。\n" +
              "参考图（《起源》背面视角）实测为屏幕右上 ≈42°。枪身长轴 = prefab 本地 +Y，用 FromToRotation 反解。\n" +
              "**防御位用同一个角度**（只用位置差表达“稍低于 idle”）→ 枪尖上扬角每次读得一样")]

@@ -22,7 +22,7 @@ public class ParryStanceTuningWindow : EditorWindow
 
     private Vector3 _anchor;
     private Vector3 _entryOffset;
-    private float _tipDeg, _entryDeg, _defendDrop;
+    private float _tipDeg, _entryDeg, _defendDrop, _entryRoll;
     private float _swingIn, _overshoot, _settle, _hold, _exitFast, _exitNormal;
 
     private string _readout = "";
@@ -49,6 +49,7 @@ public class ParryStanceTuningWindow : EditorWindow
         _tipDeg = _cfg.parryStanceTipDegrees;
         _entryDeg = _cfg.parryStanceEntryAngleDegrees;
         _defendDrop = _cfg.parryStanceDefendAnchorDrop;
+        _entryRoll = _cfg.parryStanceEntryRollDegrees;
         _swingIn = _cfg.parryStanceSwingInSeconds;
         _overshoot = _cfg.parryStanceOvershootDegrees;
         _settle = _cfg.parryStanceSettleSeconds;
@@ -67,6 +68,7 @@ public class ParryStanceTuningWindow : EditorWindow
         _cfg.parryStanceTipDegrees = _tipDeg;
         _cfg.parryStanceEntryAngleDegrees = _entryDeg;
         _cfg.parryStanceDefendAnchorDrop = _defendDrop;
+        _cfg.parryStanceEntryRollDegrees = _entryRoll;
         _cfg.parryStanceSwingInSeconds = _swingIn;
         _cfg.parryStanceOvershootDegrees = _overshoot;
         _cfg.parryStanceSettleSeconds = _settle;
@@ -92,6 +94,7 @@ public class ParryStanceTuningWindow : EditorWindow
         _anchor = EditorGUILayout.Vector3Field("矛头锚点 (x,y,z)", _anchor);
         _tipDeg = EditorGUILayout.Slider("斜举角 (度)", _tipDeg, -90f, 180f);
         _entryDeg = EditorGUILayout.Slider("起手指向 (度)", _entryDeg, -90f, 180f);
+        _entryRoll = EditorGUILayout.Slider("起手/收枪·拧转 (绕自身X轴, 度)", _entryRoll, -90f, 90f);
         _entryOffset = EditorGUILayout.Vector3Field("起手枪尾偏移 (x,y,z)", _entryOffset);
         _defendDrop = EditorGUILayout.Slider("防御位下沉", _defendDrop, 0f, 1f);
         EditorGUILayout.Space();
@@ -213,6 +216,6 @@ public class ParryStanceTuningWindow : EditorWindow
 
     private string BuildCopyText()
     {
-        return $"矛头锚点={_anchor} 斜举角={_tipDeg} 起手指向={_entryDeg} 起手枪尾偏移={_entryOffset} 防御下沉={_defendDrop}";
+        return $"矛头锚点={_anchor} 斜举角={_tipDeg} 起手指向={_entryDeg} 起手拧转={_entryRoll}° 起手枪尾偏移={_entryOffset} 防御下沉={_defendDrop}";
     }
 }
