@@ -70,6 +70,7 @@ public sealed class PlayerWeaponStance
     private Vector3 _entryRoot;         // 起手位的枪尾（默认与斜举位相同 = 枪尾不动，只挑枪尖）
     private Vector3 _exitRoot;          // 收枪位的枪尾（要把整杆推出画面）
     private Vector3 _defendRootOffset;  // 防御位相对杆尾的下沉量（**只用位置差，不用角度差**）
+    private Vector3 _pivotLocalOffset;  // 旋转支点在枪尾时，根节点相对支点的本地偏移（枪尾→根 = +Y 半个身长）
     private Quaternion _poseIdle, _poseEntry, _poseOvershoot, _poseExit;
     private AttackSkillConfig _cfg;
 
@@ -303,7 +304,11 @@ public sealed class PlayerWeaponStance
         float e = _ease == EaseMode.Out ? 1f - Mathf.Pow(1f - t, 3f) : t * t * (3f - 2f * t);
         Vector3 root = Vector3.Lerp(_rootFrom, _rootTo, e);
         Quaternion pose = Quaternion.Slerp(_poseFrom, _poseTo, e);
-        _weaponTransform.position = PlayerPosition + root + _recoilOffset;
+        // **旋转支点在枪尾**：根节点相对支点的偏移随姿态一起转。
+        // 落定姿态下这一项 = 0 → 落定画面与之前完全一致；
+        // 起手/收枪时枪头绕枪尾甩出一道弧（枪头位移 ≈ 身长·sin拧角）。
+        Vector3 pivotOffset = pose * _pivotLocalOffset - _poseIdle * _pivotLocalOffset;
+        _weaponTransform.position = PlayerPosition + root + pivotOffset + _recoilOffset;
         _weaponTransform.rotation = pose;
     }
 
@@ -329,6 +334,9 @@ public sealed class PlayerWeaponStance
         // 根节点（手的位置）= 矛头 − (Length/2)·斜举方向
         Vector3 dir = _poseIdle * Vector3.up;
         _rootAnchor = headAnchor - dir * _tipOffset;
+
+        // **旋转支点 = 枪尾端**：根节点相对枪尾的本地偏移（枪尾在根节点下方 半个身长）
+        _pivotLocalOffset = new Vector3(0f, _tipOffset, 0f);
 
         // 起手：枪尾不动（默认），只有枪尖压到下方 → 挑起来
         _entryRoot = _rootAnchor + cfg.parryStanceEntryRootOffset;
