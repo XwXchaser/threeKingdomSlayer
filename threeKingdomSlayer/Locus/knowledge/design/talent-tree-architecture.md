@@ -8,6 +8,22 @@ aiEditMode: inherit
 
 # 天赋页面 · 功能架构
 
+> ⚠️ **本文 §2.1 / §3.2 / §5 / §10 已被另一侧的实现取代（2026-11-02）。**
+> 另一侧已独立实现并验收（提交 `a0c84ad4`）：**3 个独立树资产**（`TalentTree_Stats` / `TalentTree_Moves` / `TalentTree_Pools`）+ **`TalentCatalog`**（3 引用 + 合法 id 集合）+ **`col`/`row` 整数格点**取代手填坐标 + **`upgradeConfig`**（页 3 直接引用 `UpgradeDefinition`）+ **`statId`/`statAdd`**（页 1 通用数值载荷）+ **`TalentNodeInfo`**（图标与文案自动取自解锁内容）。
+> → 本文提出的「单树 + `pageId`/`branchId` + `branches[]`」**不再采用**。
+>
+> **仍然有效的部分**（这些是另一侧**没有覆盖**的）：
+> - §4.1 **flag 机制零消费者**的更正（`IsFlagUnlocked` 全项目零调用 → 本周统一用 nodeId 解锁态表达「已解锁」）
+> - §6 **能力天赋的实现落点**（生命 / 铜钱 / 破阵 / 追击 / 运筹 / 不屈 / 槽位）—— 但挂点要改成读对方的 `statId`
+> - §7 **存档与 nodeId 兼容规则**（改名必须写迁移）
+> - §8 **两条局外获取路径**（铜钱买 / 秘籍掉）与边界规则
+> - §9.2 **删 `talent_ice_break_push` 的连带影响**
+> - §10 校验规则中「多前置环检测」「载荷必须非空」两条仍适用
+>
+> **两套方案的差异与待拍板冲突见 `plan/talent-scheme-alignment-20261102.md`** —— 动手前先读它。
+>
+> 以下内容按原样保留，便于追溯。
+
 > 2026-11 设计文档。属于「局外成长与关卡配置」这一轮的**需求 R1 / R2 / R3 / R4 / R5**。
 > 现状盘点与实测证据见 `design/out-of-game-growth-v2-analysis.md`（§2.1 天赋系统、§4A 天赋页结构）。
 > 页面视觉与交互见 `design/talent-page-ui.md`。

@@ -8,6 +8,16 @@ aiEditMode: inherit
 
 # 天赋页面 · 页面需求设计
 
+> ⚠️ **本文已被取代（2026-11-02）。**
+> 另一侧已**独立完成天赋界面的功能与交互并验收**（提交 `a0c84ad4`）：三分类（基础数值 / 招式解锁 / 三选一解锁）× **二维滑动分页**（左右划切类、上下划类内翻页），分页运行时推导，全项目 0 个 ScrollRect。
+> → 本文提出的「顶栏 Tab + 页内分支 + 滚动容器」方案**不再采用**，本文转为**历史设计记录**。
+>
+> **仍然有效的部分**：§9.1 的连线高度 bug 记录（`PlaceConnector` 把 `sizeDelta.y` 设成 0、`connectorThickness` 从未使用）；§10 的美术需求思路（但清单与画风见 `design/art-asset-brief-20261102.md` 的最新状态）。
+>
+> **两套方案的差异与待拍板冲突见 `plan/talent-scheme-alignment-20261102.md`** —— 动手前先读它。
+>
+> 以下内容按原样保留，便于追溯。
+
 > 2026-11 设计文档。属于需求 **R1**（两级结构）+ **R2**（招式解锁呈现）。
 > 数据模型与解锁语义见 `design/talent-tree-architecture.md`。
 > 现状盘点与实测证据见 `design/out-of-game-growth-v2-analysis.md`（§2.1、§4A）。

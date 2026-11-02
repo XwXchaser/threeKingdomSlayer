@@ -26,6 +26,7 @@ aiEditMode: inherit
 | `design/stage-configuration.md` | **关卡配置**（清单 / 拓扑 / StageConfig 字段 / 波次规范 / 本周配方 / 104 两阶段 / 铜钱 / 调试工具） | design |
 | `design/move-split-and-derivatives.md` | **招式衍生与拆分**（招式图模型 / 点线划线口径 / C2·C4 / Slash 衍生 / 扩展协议） | design |
 | `plan/growth-stage-move-plan-20261102.md` | **本周 todolist**（依赖顺序 + 5 个批次 + 待定项 + 风险） | plan |
+| `plan/talent-scheme-alignment-20261102.md` | **天赋方案对齐**（我的方案 vs 另一侧已实现方案；11 项差异 + 4 个待拍板冲突 + 任务清单裁剪） | plan |
 | `design/art-asset-brief-20261102.md` | **美术素材需求（美术依据文档）**（A 节点图标 / B 分支 / C 页面 / D 秘籍 / E 反馈；按编号交付 + 抗变更约定 + 变更影响矩阵） | design |
 
 > **拆分理由**：原 3 个主题里，「局内成长与解锁内容」（三选一 / 槽位 / 满槽补偿 / 等级上限 / 秘籍）既不属于页面，也不属于关卡，而是天赋解锁效果的**消费端** → 独立成文。
