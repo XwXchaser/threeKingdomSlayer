@@ -162,3 +162,8 @@ maintenanceRules: |-
 - **工具里"删旧建新"要删全部同名 + 递归查找**（2026-10-24）：`Transform.Find` 只找直接子节点，节点进了分组文件夹就找不到 → 每次重建多一份，场景里出现重复 UI。
 - **UI 素材先裁透明留白再排版**（2026-10-24）：生图给的 UI 元素常带大块透明留白（笔刷条 222 高里内容只有 113）→ 直接塞进小框再 Sliced 会「纵向压扁 + 横向拉长」。做法：先按 alpha 裁到内容 bbox，再按**素材自然比例**定元素尺寸；九宫格只用在真能横向拉伸的条子上，窄于素材的标签改 `Simple + preserveAspect`。**Unity 的 Image 没有 sprite 时会画白框** → 占位图标要先 `enabled=false`。
 - **Overlay 画布在 Scene 视图不可见**（2026-10-24）：要拖 UI 得把画布临时切成 `Screen Space - Camera`；要在 Play Mode 之外验收 UI，可把画布临时切到 Camera 模式 + 相机渲到 RenderTexture 存 PNG（注意 planeDistance 要比背景近，否则 UI 被背景挡住）。
+
+### 天赋三页改造踩到的三处（2026-11-01）
+- **`AssetDatabase.CreateAsset` 之后改字段必须 `EditorUtility.SetDirty`**：否则 `SaveAssets()` 只保存了刚创建时的空壳，**内存里看着是对的**（同一会话里 `LoadAssetAtPath` 拿到的就是那个内存对象），一进 Play Mode / 域重载就从磁盘重读出空数据。本次因此把三棵天赋树的 `nodes` 全部丢了（磁盘 `treeId: main` / `nodes: []`），表现为天赋页一个节点都没有。自查方式：改完一定要**看文件**（`grep nodeId:`）或 `AssetDatabase.Refresh()` 后重读。
+- **uGUI Button 必须有可射线的子 Graphic**：Button 组件 + `targetGraphic` 指向一个 `raycastTarget=false` 的 Image，等于永远点不到（点击根本不进 EventSystem 的命中列表）。`HubTalentEntry` / `HubStageEntry` 两张入口卡就是这个状态（卡内 Graphic 全为 false，targetGraphic 指向不可射线的 Icon）——用户报的“点不了天赋按钮”就是它。修法：把底板 Image 的 `raycastTarget` 打勾并把 `targetGraphic` 指回底板。诊断一行就够：`FindObjectsOfType<Button>()` 里挑“子树内没有任何 raycastTarget=true 的 Graphic”的。
+- **additive overlay 面板的 Close 不能只 `SetActive(false)`**：天赋面板 `Close()` 只隐藏自己 → overlay 场景还叠在战斗上，玩家看到空背景且退不回战斗（必须靠场景里另一个 `UIOverlayCloseButton`）。正确做法：`Close()` 里同时 `SceneFlowManager.RequestCloseOverlay()`。

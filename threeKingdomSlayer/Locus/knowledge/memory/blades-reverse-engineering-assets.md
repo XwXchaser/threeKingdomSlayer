@@ -20,6 +20,12 @@ aiEditMode: inherit
 全部在 **`Library/Locus/tmp/blades/`**（Unity 的 `Library` 目录 → **不在 git 里，但可能被 Unity 清理**）。
 清理后按 §3 两条命令即可完整重建（除 `server.py` 需手写，见 §5）。
 
+> ⚠ **2026-11-01 实测：该目录已被清理**（`Library/Locus/tmp/` 下只剩 `hud_analysis/` 的 HUD 参考图），**APK 也不在本机**（`C:/Users/Administrator/Downloads` 与各盘均无）⇒ 要用产物必须重新拿到 APK 按 §3 重建。
+>
+> **只想查「技能/天赋页长什么样」不需要 APK**：UESP `https://en.uesp.net/wiki/Blades:Skills` 的 `action=raw` 源码里用 `{{Chart}}` 记录了三个分页（Spells / Perks / Abilities）**每棵树的节点位置与连线**；`File:BL-icon-<技能名>.png`（256²，**黑色 alpha 剪影**，需衬底板或染色才可见）是游戏原图标、`File:BL-icon-Skill Frame.png` 是节点外框、`File:BL-icon-SkillPoint.png` 是技能点图标 ⇒ 用 `api.php?action=query&prop=imageinfo&iiprop=url` 拿原始 PNG。已按此法重建的两张图与全套图标在 `_art_process/Authoring/blades_skill_ref/`。
+>
+> **出网限制（同一会话实测）**：只有少数域名通（`en.uesp.net` / `images.uesp.net` / `is1-ssl.mzstatic.com` / `toucharcade.com` / `www.bing.com`），而 `fandom`、`wikipedia`、`google`、`archive.org`、`reddit`、`youtube` 全部连不上 ⇒ 找 Blades 资料优先走 UESP。另：**本环境无法读图**（模型侧收到的是二进制占位符），图片只能下载后交给用户看。
+
 | 文件 | 内容 | 规模 |
 |---|---|---|
 | `types.csv` | 托管类型清单（namespace / base / 方法数 / 字段数 / 接口标记） | 14498 行 |
