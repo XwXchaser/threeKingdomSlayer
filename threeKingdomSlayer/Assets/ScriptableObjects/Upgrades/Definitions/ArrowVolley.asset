@@ -17,6 +17,7 @@ MonoBehaviour:
   displayName: "\u7BAD\u77E2\u9F50\u5C04"
   descriptionTemplate: "\u6BCF{0}\u6B21\u653B\u51FB\u5411\u6700\u8FD1\u7684{1}\u4E2A\u654C\u4EBA\u5C04\u51FA{2}\u652F\u7BAD\u77E2"
   extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
   rarity: 1
   maxLevel: 10
   effectType: passive_arrow_volley
@@ -76,7 +77,10 @@ MonoBehaviour:
     baseDamage: 32
   reflectShieldLevels: []
   chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
   chargeHitShockwaveLevels: []
+  diseaseLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
@@ -89,3 +93,5 @@ MonoBehaviour:
     initialDamage: 0
     landingDamagePercent: 0
   prerequisites: []
+  requiredTalentIds:
+  - talent_pool_arrowvolley

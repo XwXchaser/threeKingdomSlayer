@@ -555,6 +555,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tree: {fileID: 11400000, guid: 591414917a01a664680971749f21f6a2, type: 2}
+  catalog: {fileID: 11400000, guid: 049a630ab5af9dd4ebc8e42d81bca198, type: 2}
+  categoryIndex: 0
+  categoryLabels:
+  - "\u57FA\u7840\u6570\u503C"
+  - "\u62DB\u5F0F\u89E3\u9501"
+  - "\u4E09\u9009\u4E00\u89E3\u9501"
   font: {fileID: 11400000, guid: 83ef45830ec08304fa249351a44a36e6, type: 2}
   dimBackground: {fileID: 0}
   panelBackground: {fileID: 21300000, guid: a2ea5098a4e3ea3459fde432715fa8f5, type: 3}
@@ -563,13 +569,25 @@ MonoBehaviour:
   nodeUnlocked: {fileID: 21300000, guid: b77096d06d96e8a46bf53898f7ba6898, type: 3}
   connector: {fileID: 21300000, guid: 12ae361e6cdd27244be09cb399e502f9, type: 3}
   coinIcon: {fileID: 21300000, guid: 8fe262c566ae6f24a8df70d0e111bc98, type: 3}
+  pagePlate: {fileID: 0}
+  tabNormal: {fileID: 0}
+  tabActive: {fileID: 0}
+  dotOff: {fileID: 0}
+  dotOn: {fileID: 0}
+  detailPlate: {fileID: 0}
+  buttonNormal: {fileID: 0}
+  preferProceduralNodes: 1
+  useProceduralPanel: 1
+  showDebugState: 1
   nodeSize: {x: 132, y: 132}
-  connectorThickness: 14
+  connectorThickness: 8
+  rowsPerPage: 8
+  snapDuration: 0.22
   lockedColor: {r: 0.32, g: 0.3, b: 0.28, a: 1}
   availableColor: {r: 0.86, g: 0.7, b: 0.36, a: 1}
   unlockedColor: {r: 0.93, g: 0.9, b: 0.82, a: 1}
-  connectorLockedColor: {r: 0.3, g: 0.28, b: 0.26, a: 1}
-  connectorUnlockedColor: {r: 0.82, g: 0.65, b: 0.32, a: 1}
+  connectorLockedColor: {r: 0.55, g: 0.47, b: 0.36, a: 1}
+  connectorUnlockedColor: {r: 0.95, g: 0.8, b: 0.5, a: 1}
   verboseLog: 0
 --- !u!1 &801225784
 GameObject:

@@ -38,4 +38,79 @@ public static class TalentTreeValidator
         if (bad == 0) EditorUtility.DisplayDialog("天赋树校验", $"{total} 棵天赋树 ✅ 全部通过 ✅", "好 ✅");
         else EditorUtility.DisplayDialog("天赋树校验", $"{bad} / {total} 棵有问题 ✅ —— 看 Console ✅", "好 ✅");
     }
+
+    private const int RowsPerPage = 8;
+
+    /// <summary>
+    /// 三分类目录校验：跨资产 id 唯一 / 位置派生 id / 自动切页可行性 / 页数预览。
+    /// 这几条是「三页 × 自动切页」新增的约束，单棵树的 Validate 看不到。
+    /// </summary>
+    [MenuItem("Tools/数据校验/天赋目录（三分类）")]
+    private static void ValidateCatalog()
+    {
+        var guids = AssetDatabase.FindAssets("t:TalentCatalog");
+        if (guids.Length == 0)
+        {
+            EditorUtility.DisplayDialog("天赋目录校验", "项目里没有 TalentCatalog 资产", "好");
+            return;
+        }
+
+        var sb = new StringBuilder();
+        int bad = 0;
+        foreach (var g in guids)
+        {
+            string cpath = AssetDatabase.GUIDToAssetPath(g);
+            var cat = AssetDatabase.LoadAssetAtPath<TalentCatalog>(cpath);
+            if (cat == null) continue;
+
+            sb.AppendLine($"== {cpath}");
+            var ids = new Dictionary<string, string>();   // id -> 来源
+            int issuesHere = 0;
+
+            for (int c = 0; c < TalentCatalog.CategoryCount; c++)
+            {
+                var tree = cat.Get(c);
+                if (tree == null)
+                {
+                    sb.AppendLine($"   [{c}] （留空）");
+                    continue;
+                }
+
+                // 自动切页可行性
+                var problems = new List<string>();
+                var pages = TalentPaginator.Split(tree, RowsPerPage, problems);
+                sb.AppendLine($"   [{c}] {tree.name}：{tree.nodes.Count} 节点 → {pages.Count} 页（rowsPerPage={RowsPerPage}）");
+                foreach (var p in pages)
+                    sb.AppendLine($"        · 第 {p.index + 1} 页：行 {p.rowStart + 1}-{p.rowEnd + 1}，{p.nodes.Count} 节点");
+                foreach (var pr in problems)
+                {
+                    sb.AppendLine("        ! " + pr);
+                    issuesHere++;
+                }
+
+                foreach (var n in tree.nodes)
+                {
+                    if (n == null || string.IsNullOrEmpty(n.nodeId)) continue;
+                    // 位置派生 id（OnValidate 曾经自动生成 "node_0" 这种，挪顺序即换身份）
+                    if (System.Text.RegularExpressions.Regex.IsMatch(n.nodeId, @"^node_\d+$"))
+                    {
+                        sb.AppendLine($"        ! {n.nodeId} 是位置派生 id（node_数字），必须改成语义 id");
+                        issuesHere++;
+                    }
+                    if (ids.TryGetValue(n.nodeId, out var owner))
+                    {
+                        sb.AppendLine($"        ! nodeId 重复：{n.nodeId}（{owner} 与分类 {c}）");
+                        issuesHere++;
+                    }
+                    else ids[n.nodeId] = $"分类 {c}";
+                }
+            }
+
+            sb.AppendLine(issuesHere == 0 ? "   ✅ 无问题" : $"   ❌ {issuesHere} 个问题");
+            bad += issuesHere;
+        }
+
+        Debug.Log($"[天赋目录校验]\n{sb}");
+        EditorUtility.DisplayDialog("天赋目录校验", bad == 0 ? "全部通过（详情见 Console）" : $"{bad} 个问题（详情见 Console）", "好");
+    }
 }

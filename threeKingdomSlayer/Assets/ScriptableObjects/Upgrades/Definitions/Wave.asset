@@ -16,9 +16,12 @@ MonoBehaviour:
   upgradeId: wave
   displayName: "\u6D77\u6D6A"
   descriptionTemplate: "\u53EC\u5524\u6D77\u6D6A\u63A8\u8FDB\uFF0C\u5BF9\u76EE\u6807\u6392\u654C\u4EBA\u9020\u6210\u4F24\u5BB3\u5E76\u8F7B\u5FAE\u51FB\u9000"
+  extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
   rarity: 0
   maxLevel: 5
   effectType: wave
+  numericLevels: []
   floatValue: 2
   intValue: 0
   secondaryIntValue: 1
@@ -30,8 +33,25 @@ MonoBehaviour:
   timedArrowLevels: []
   returnWaveLevels: []
   chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
+  chargeHitShockwaveLevels: []
+  diseaseLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
   gestureId: wave
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
   prerequisites: []
+  requiredTalentIds:
+  - talent_pool_wave

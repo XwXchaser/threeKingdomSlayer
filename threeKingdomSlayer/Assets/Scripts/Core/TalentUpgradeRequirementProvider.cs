@@ -13,12 +13,16 @@ public sealed class TalentUpgradeRequirementProvider : IUpgradeRequirementProvid
     /// <inheritdoc/>
     public bool AppliesTo(UpgradeDefinition def, UpgradePoolKind pool)
     {
+        // 天赋门禁**只管升级池**（常规三选一 / 主动技能）；道具池（Boss 锦囊）不受它影响，
+        // 否则像「海浪」这种既在道具池又在升级池里的条目会被误杀。
+        if (pool == UpgradePoolKind.Item) return false;
         return def != null && def.requiredTalentIds != null && def.requiredTalentIds.Count > 0;
     }
 
     /// <inheritdoc/>
     public bool IsSatisfied(UpgradeDefinition def, UpgradePoolKind pool)
     {
+        if (pool == UpgradePoolKind.Item) return true;
         if (def == null || def.requiredTalentIds == null) return true;
         for (int i = 0; i < def.requiredTalentIds.Count; i++)
         {

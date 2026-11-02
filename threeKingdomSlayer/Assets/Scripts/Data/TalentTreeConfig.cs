@@ -19,10 +19,12 @@ public sealed class TalentNodeConfig
     [Tooltip("解锁花费的铜钱。0 = 免费（仅用于框架验证）")]
     [Min(0)] public int coinCost = 100;
 
-    [Header("解锁载荷 ✅（可同时给多个 ✅ —— 不再有「解锁类型」枚举 ✅）")]
-    [Tooltip("**解锁招式** ✅ —— 解锁后该招式才可出招 ✅（留空 = 不解锁招式 ✅）")]
+    [Header("载荷（可同时给多个）")]
+    [Tooltip("**解锁招式** —— 解锁后该招式才可出招（留空 = 不解锁招式）")]
     public AttackSkillConfig moveConfig;
-    [Tooltip("**点亮机械开关** ✅ —— 开关 id ✅（后续系统用 `TalentTreeState.IsFlagUnlocked` ✅ 读 ✅）（留空 = 不点开关 ✅）")]
+    [Tooltip("**解锁三选一升级** —— 指向对应的 UpgradeDefinition；图标与详情文案直接引用它（留空 = 不解锁升级）")]
+    public UpgradeDefinition upgradeConfig;
+    [Tooltip("**点亮机械开关** —— 开关 id（留空 = 不点开关）")]
     public string flagId = "";
 
     [Header("前置关系")]
@@ -46,7 +48,7 @@ public sealed class TalentNodeConfig
     /// 这个节点**带没带解锁载荷** ✅ —— 两个载荷都空 ✅ = 无效 ✅（自检会报错 ✅ ✅）。
     /// </summary>
     public bool HasValidUnlockPayload =>
-        moveConfig != null || !string.IsNullOrEmpty(flagId);
+        moveConfig != null || upgradeConfig != null || !string.IsNullOrEmpty(flagId);
 
     /// <summary>解锁了招式 ✅（不再靠枚举判断 ✅ ✅）。</summary>
     public bool UnlocksMove => moveConfig != null;
@@ -131,22 +133,36 @@ public class TalentTreeConfig : ScriptableObject
                 if (FindById(id) == null) issues.Add($"{n.nodeId} 的前置 {id} 不存在 ✅");
             }
         }
-        // 环检测 ✅（沿前置回溯 ✅）
-        foreach (var n in nodes)
+        // 环检测：必须覆盖**所有**前置（“两边分支都点上”的树里，只沿第一个前置回溯会漏检）
+        var state = new Dictionary<string, int>();   // 0=未访问 1=在栈上 2=已完成
+        for (int i = 0; i < nodes.Count; i++)
         {
+            var n = nodes[i];
             if (n == null || string.IsNullOrEmpty(n.nodeId)) continue;
-            var path = new HashSet<string>();
-            var cur = n;
-            int guard = 0;
-            while (cur != null && guard++ < 256)
-            {
-                if (!path.Add(cur.nodeId)) { issues.Add($"{n.nodeId} 的前置形成环 ✅"); break; }
-                var ps = GetPrerequisites(cur);
-                if (ps.Count == 0) break;
-                cur = ps[0];
-            }
+            if (HasCycle(n, state, issues)) break;   // 已经报过环就不刷屏
         }
         return issues;
+    }
+
+    /// <summary>DFS 环检测，覆盖全部前置；返回 true 表示发现环。</summary>
+    private bool HasCycle(TalentNodeConfig node, Dictionary<string, int> state, List<string> issues)
+    {
+        if (node == null || string.IsNullOrEmpty(node.nodeId)) return false;
+        int s;
+        state.TryGetValue(node.nodeId, out s);
+        if (s == 1)
+        {
+            issues.Add($"{node.nodeId} 的前置形成环");
+            return true;
+        }
+        if (s == 2) return false;
+
+        state[node.nodeId] = 1;
+        var ps = GetPrerequisites(node);
+        for (int i = 0; i < ps.Count; i++)
+            if (HasCycle(ps[i], state, issues)) return true;
+        state[node.nodeId] = 2;
+        return false;
     }
 
     public TalentNodeConfig FindById(string nodeId)

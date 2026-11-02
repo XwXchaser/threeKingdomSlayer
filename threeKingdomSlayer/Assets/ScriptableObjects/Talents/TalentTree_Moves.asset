@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd892d81fa973d4ba5f0fc391ffb1f6, type: 3}
+  m_Name: TalentTree_Moves
+  m_EditorClassIdentifier: 
+  treeId: moves
+  nodes:
+  - nodeId: talent_move_stabc2
+    displayName: "\u6307\u5411\u7A81\u523A"
+    description: "\u6307\u5411\u7A81\u523A\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
+    coinCost: 1
+    moveConfig: {fileID: 11400000, guid: f0d6ad785959ad941b9b51d73a275d01, type: 2}
+    upgradeConfig: {fileID: 0}
+    flagId: 
+    prerequisiteIds: []
+    treePosition: {x: -300, y: 370}
+    icon: {fileID: 21300000, guid: 6e52545f49f8a7c4cad93b38790df8c8, type: 3}
+    hidden: 0
+  - nodeId: talent_move_slash
+    displayName: "\u6A2A\u626B"
+    description: "\u6A2A\u626B\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
+    coinCost: 1
+    moveConfig: {fileID: 11400000, guid: c4862b3d5d44d2543af3deae939e5053, type: 2}
+    upgradeConfig: {fileID: 0}
+    flagId: 
+    prerequisiteIds: []
+    treePosition: {x: 300, y: 370}
+    icon: {fileID: 21300000, guid: 161a6f491cac21945859876b19047b09, type: 3}
+    hidden: 0
+  - nodeId: talent_move_stabc4
+    displayName: "\u67AA\u7A81\u6536\u5C3E"
+    description: "\u67AA\u7A81\u6536\u5C3E\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
+    coinCost: 1
+    moveConfig: {fileID: 11400000, guid: 3fe76a22f36b7744fb64fb06cf75533a, type: 2}
+    upgradeConfig: {fileID: 0}
+    flagId: 
+    prerequisiteIds:
+    - talent_move_stabc2
+    treePosition: {x: 0, y: 520}
+    icon: {fileID: 0}
+    hidden: 0

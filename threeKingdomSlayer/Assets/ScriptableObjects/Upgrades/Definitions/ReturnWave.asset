@@ -16,9 +16,12 @@ MonoBehaviour:
   upgradeId: return_wave
   displayName: "\u56DE\u65CB\u6CE2"
   descriptionTemplate: "\u6BCF{0}\u6B21\u653B\u51FB\u89E6\u53D1\u6298\u8FD4\u6CE2\uFF0C\u547D\u4E2D\u8DEF\u5F84\u4E0A\u6240\u6709\u654C\u4EBA\u9020\u6210{1}%\u4F24\u5BB3"
+  extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
   rarity: 0
   maxLevel: 5
   effectType: passive_return_wave
+  numericLevels: []
   floatValue: 0.5
   intValue: 4
   secondaryIntValue: 0
@@ -26,10 +29,34 @@ MonoBehaviour:
   baseAttackConfig: {fileID: 0}
   icon: {fileID: 21300000, guid: 5997fa2858fb0354885ac7536f5aaeb4, type: 3}
   phantomLevels:
-  - triggerParam: 0
+  - intervalSeconds: 0
+    triggerParam: 0
+    attackType: 0
+    targetColumn: 0
     phantomSteps: []
+  timedAoeLevels: []
+  timedArrowLevels: []
+  returnWaveLevels: []
+  chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
+  chargeHitShockwaveLevels: []
+  diseaseLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
   gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
   prerequisites: []
+  requiredTalentIds:
+  - talent_pool_return

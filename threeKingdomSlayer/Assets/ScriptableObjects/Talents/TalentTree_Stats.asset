@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd892d81fa973d4ba5f0fc391ffb1f6, type: 3}
+  m_Name: TalentTree_Stats
+  m_EditorClassIdentifier: 
+  treeId: stats
+  nodes:
+  - nodeId: talent_stat_hp1
+    displayName: "\u4F53\u9B44 I"
+    description: "\u4F53\u9B44 I\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 0}
+    flagId: stat_hp1
+    prerequisiteIds: []
+    treePosition: {x: -300, y: 220}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_stat_hp2
+    displayName: "\u4F53\u9B44 II"
+    description: "\u4F53\u9B44 II\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 0}
+    flagId: stat_hp2
+    prerequisiteIds:
+    - talent_stat_hp1
+    treePosition: {x: -300, y: 370}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_stat_revive
+    displayName: "\u4E0D\u5C48\u4E4B\u5FD7"
+    description: "\u4E0D\u5C48\u4E4B\u5FD7\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 0}
+    flagId: stat_revive
+    prerequisiteIds:
+    - talent_stat_hp2
+    treePosition: {x: -300, y: 520}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_stat_slot
+    displayName: "\u884C\u56CA"
+    description: "\u884C\u56CA\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 0}
+    flagId: stat_slot
+    prerequisiteIds: []
+    treePosition: {x: 300, y: 220}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_stat_hp3
+    displayName: "\u94A2\u7B4B\u94C1\u9AA8"
+    description: "\u94A2\u7B4B\u94C1\u9AA8\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 0}
+    flagId: stat_hp3
+    prerequisiteIds:
+    - talent_stat_revive
+    - talent_stat_slot
+    treePosition: {x: 0, y: 520}
+    icon: {fileID: 0}
+    hidden: 0

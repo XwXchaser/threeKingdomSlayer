@@ -16,6 +16,8 @@ MonoBehaviour:
   upgradeId: push_wave
   displayName: "\u51FB\u9000\u6CE2"
   descriptionTemplate: "\u653B\u51FB\u547D\u4E2D\u65F6\u5C06\u654C\u4EBA\u51FB\u9000{0}\u6392\uFF08BOSS\u514D\u75AB\uFF09"
+  extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
   rarity: 0
   maxLevel: 5
   effectType: push_wave
@@ -48,8 +50,23 @@ MonoBehaviour:
   chainBounceLevels: []
   cycloneLevels: []
   arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
+  chargeHitShockwaveLevels: []
+  diseaseLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
   gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
   prerequisites: []
+  requiredTalentIds:
+  - talent_pool_push

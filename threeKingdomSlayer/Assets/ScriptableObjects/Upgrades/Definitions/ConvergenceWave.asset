@@ -16,6 +16,8 @@ MonoBehaviour:
   upgradeId: convergence_wave
   displayName: "\u805A\u62E2\u6CE2"
   descriptionTemplate: "\u653B\u51FB\u547D\u4E2D\u65F6\u5C06\u654C\u4EBA\u5411\u4E2D\u5FC3\u805A\u62E2{0}\u683C\uFF0C\u51B2\u7A81\u65F6\u9020\u6210{1}%\u751F\u547D\u4F24\u5BB3"
+  extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
   rarity: 0
   maxLevel: 5
   effectType: convergence_wave
@@ -48,8 +50,23 @@ MonoBehaviour:
   chainBounceLevels: []
   cycloneLevels: []
   arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
+  chargeHitShockwaveLevels: []
+  diseaseLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
   gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
   prerequisites: []
+  requiredTalentIds:
+  - talent_pool_convergence
