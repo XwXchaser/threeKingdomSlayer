@@ -90,3 +90,6 @@ StabWeaponArtSource/
 # Locus 工具包残留（Packages/com.farlocus.locus 未在 Packages/manifest.json 注册，Unity 不加载，
 # 约 13MB 的编辑器二进制；重装工具会重新生成）
 Packages/com.farlocus.locus/
+
+# Locus Roslyn 分析器临时文件（机器相关：每次分析都会重新生成，不入版本库）
+Directory.Build.props
