@@ -91,22 +91,22 @@ RECOMMEND = {
  ],
  "E0·残门垣前": [
    dict(rows={0: ["1011"], 1: ["1011","1011"]}, sec=30, spd=1.0, dmg=1.0, note="第1波：基础"),
-   dict(rows={0: ["1012"], 1: ["1021"], 2: ["1011"]}, sec=30, spd=1.0, dmg=1.0, note="第2波：**C 技霸体**（需 C2 重攻击）+ **盾卫**（破盾需重攻击）"),
-   dict(rows={0: ["109"], 1: ["1012"]}, sec=30, spd=1.0, dmg=1.0, note="第3波：**骑兵冲锋**（骑乘期免疫眩晕位移）→ 再次逼出 C2"),
+   dict(rows={0: ["1012"], 1: ["1021"], 2: ["1011"]}, sec=36, spd=1.0, dmg=1.0, note="第2波：**C 技霸体**（需 C2 重攻击）+ **盾卫**（破盾需重攻击）"),
+   dict(rows={0: ["109"], 1: ["1012"]}, sec=42, spd=1.0, dmg=1.0, note="第3波：**骑兵冲锋**（骑乘期免疫眩晕位移）→ 再次逼出 C2"),
  ],
  "J1·城郊分叉": [dict(rows={}, sec=0, spd=0, dmg=0, note="分叉节点，不打（现状正确）")],
  "EV·村落外围": [dict(rows={}, sec=0, spd=0, dmg=0, note="村落外围不打（现状正确）")],
  "N2·官道断后": [
-   dict(rows={0: ["1011","1011"], 1: ["105","1011"]}, sec=30, spd=1.0, dmg=1.0, note="第1波：1011 + 远程 105（**N2 未在 D1 配方内**，保持现状）"),
-   dict(rows={0: ["109"], 1: ["1021","1011"], 2: ["1011"]}, sec=30, spd=1.0, dmg=1.0, note="第2波：骑兵 + 盾卫 + 1011"),
-   dict(rows={0: ["1011","1011"], 1: ["1021"], 2: ["104"]}, sec=75, spd=1.0, dmg=1.0, boss=1.0, note="第3波：Boss 104 在最后一排（铁律九）"),
+   dict(rows={0: ["1011","1011"], 1: ["105","1011"]}, sec=30, spd=1.0, dmg=1.0, note="第1波：1011 + 远程 105（**N2 未在 D1 配方内**，保持现状编队）"),
+   dict(rows={0: ["109"], 1: ["1021","1011"], 2: ["1011"]}, sec=36, spd=1.0, dmg=1.0, note="第2波：骑兵 + 盾卫 + 1011"),
+   dict(rows={0: ["1011","1011"], 1: ["1021"], 2: ["104"]}, sec=20, spd=1.0, dmg=1.0, boss=1.0, note="第3波：Boss 104 在最后一排（铁律九）；**Boss 血量是最终值 4500**（铁律五）→ bossHp×=1，倍率只作用于护卫"),
  ],
  "N3·村落搜救": [
    dict(rows={0: ["1011","1011"], 1: ["1011","1011"]}, sec=30, spd=1.0, dmg=1.0, note="第1波：复现基础"),
-   dict(rows={0: ["1012","1012"], 1: ["1012","1012"]}, sec=30, spd=1.0, dmg=1.0, note="第2波：霸体已成常规"),
-   dict(rows={0: ["109"], 1: ["105"], 2: ["105"]}, sec=30, spd=1.0, dmg=1.0, note="第3波：**随机远程** → 需要位移 / 控制（105 固定在后两排 = 后 50%）"),
-   dict(rows={0: ["1021","1021"], 1: ["1021"], 2: ["105","105"]}, sec=30, spd=1.0, dmg=1.0, note="第4波：盾阵 + 远程混合（C2 + 位移）"),
-   dict(rows={0: ["1011","1011"], 1: ["1021"], 2: ["104"]}, sec=75, spd=1.0, dmg=1.0, boss=1.0, note="第5波：**BOSS 毕业考**（104 两阶段，在最后一排）"),
+   dict(rows={0: ["1012","1012"], 1: ["1012","1012"]}, sec=36, spd=1.0, dmg=1.0, note="第2波：霸体已成常规"),
+   dict(rows={0: ["109"], 1: ["105"], 2: ["105"]}, sec=42, spd=1.0, dmg=1.0, note="第3波：**随机远程** → 需要位移 / 控制（105 固定在后两排 = 后 50%）"),
+   dict(rows={0: ["1021","1021"], 1: ["1021"], 2: ["105","105"]}, sec=48, spd=1.0, dmg=1.0, note="第4波：盾阵 + 远程混合（C2 + 位移）"),
+   dict(rows={0: ["1011","1011"], 1: ["1021"], 2: ["104"]}, sec=20, spd=1.0, dmg=1.0, boss=1.0, note="第5波：**BOSS 毕业考**（104 两阶段，在最后一排；Boss 血量 4500 固定，倍率只作用于护卫）"),
  ],
 }
 NODE_ROLE = {
@@ -119,31 +119,39 @@ NODE_ROLE = {
 }
 # ── 已落进资产的 hp×（机器人实测反推后的值，表格里与推导值并列） ────────────
 APPLIED = {
- "N1·当阳乱军": [0.50, 0.50, 0.52, 0.52, 0.54],
- "E0·残门垣前": [0.55, 0.55, 0.56, 0.57, 0.58],
+ "N1·当阳乱军": [5.8],
+ "E0·残门垣前": [5.9, 6.1, 5.0],
  "J1·城郊分叉": [0],
  "EV·村落外围": [0],
- "N2·官道断后": [0.58, 0.58, 0.59, 0.59, 0.60, 0.60],
- "N3·村落搜救": [0.60, 0.60, 0.61, 0.61, 0.62, 0.62],
+ "N2·官道断后": [4.5, 2.9, 3.5],
+ "N3·村落搜救": [4.7, 5.6, 4.4, 4.7, 3.7],
 }
-# ── 机器人实测清场秒（平A 基线，2026-10-25 四次跑；同一波不同次 ±30%：随机三选一 → DPS 浮动） ──
+# ── 机器人实测清场秒（2026-11-03 重测；倍率落地后） ─────────────────────────
+# 机器人 attackInterval=0.35s、Boss QTE=Suppress；同一波不同次 ±15%（波中升级会让 DPS 上涨）。
 MEASURED = {
- ("N1·当阳乱军", 0): 3.8, ("N1·当阳乱军", 1): 5.8, ("N1·当阳乱军", 2): 6.5,
- ("N1·当阳乱军", 3): 9.4, ("N1·当阳乱军", 4): 9.1,
- ("E0·残门垣前", 0): 7.6, ("E0·残门垣前", 1): 9.7, ("E0·残门垣前", 2): 7.3,
- ("E0·残门垣前", 3): 6.8, ("E0·残门垣前", 4): 11.0,
- ("N3·村落搜救", 0): 7.7, ("N3·村落搜救", 1): 7.2, ("N3·村落搜救", 2): 11.8,
- ("N3·村落搜救", 3): 21.0, ("N3·村落搜救", 4): 11.7,
+ ("N1·当阳乱军", 0): 30.8,
+ ("E0·残门垣前", 0): 31.5, ("E0·残门垣前", 1): 30.0, ("E0·残门垣前", 2): 35.5,
 }
 NODE_TIME = {"N1·当阳乱军": 5, "E0·残门垣前": 6, "J1·城郊分叉": 1, "EV·村落外围": 2, "N2·官道断后": 7, "N3·村落搜救": 8}
 NODE_ORDER = ["N1·当阳乱军", "E0·残门垣前", "J1·城郊分叉", "EV·村落外围", "N2·官道断后", "N3·村落搜救"]
 
 # ── 逐波计算 ─────────────────────────────────────────────────────────────
 def base_hp_of(rows, boss_mult=0.0):
+    """非 Boss 敌人的基础总 HP（Boss 的 HP 走 bossHealthMultiplier，不吃通用倍率 → 铁律五）。"""
     total = 0.0
     for ids in rows.values():
         for e in ids:
-            total += ENEMY[e]["hp"] * (boss_mult if (is_boss(e) and boss_mult) else 1.0)
+            if is_boss(e): continue
+            total += ENEMY[e]["hp"]
+    return total
+
+def boss_hp_of(rows, boss_mult=0.0):
+    """Boss 的基础总 HP（乘 bossHealthMultiplier；0 = 用 Boss 自己的基础值）。"""
+    total = 0.0
+    for ids in rows.values():
+        for e in ids:
+            if not is_boss(e): continue
+            total += ENEMY[e]["hp"] * (boss_mult if boss_mult else 1.0)
     return total
 
 def exp_of_rows(rows):
@@ -159,10 +167,13 @@ for node in NODE_ORDER:
         dps = dps_at(lv)
         boss_mult = w.get("boss", 0.0)
         bh = base_hp_of(w["rows"], boss_mult)
+        boss_hp = boss_hp_of(w["rows"], boss_mult)
         exp_w = exp_of_rows(w["rows"])
         n = sum(len(v) for v in w["rows"].values())
+        # 通用倍率只作用在**非 Boss** 敌人上（Boss 的血量是最终值，铁律五）
         hp_mult = round(dps * w["sec"] / bh, 1) if (w["sec"] > 0 and bh > 0) else 0.0
-        est = (bh * hp_mult) / dps if (dps and hp_mult) else 0
+        total_hp = bh * hp_mult + boss_hp
+        est = total_hp / dps if dps else 0
         comp = {}
         for ids in w["rows"].values():
             for e in ids:
@@ -179,7 +190,7 @@ for node in NODE_ORDER:
             checks.append(f"清场{est:.0f}s" + ("✔" if 25 <= est <= 95 else "⚠"))
         rec = dict(node=node, idx=i, rows=w["rows"], comp=comp, n=n, base_hp=bh, hp_mult=hp_mult,
                    spd=w["spd"], dmg=w["dmg"], boss=boss_mult, exp=exp_w, sec=w["sec"], est=est,
-                   lv=lv, dps=dps, note=w["note"], checks=" ".join(checks), total_hp=bh * hp_mult)
+                   lv=lv, dps=dps, note=w["note"], checks=" ".join(checks), total_hp=total_hp)
         WAVES.append(rec); node_waves.append(rec); cum_xp += exp_w
     node_summary.append(dict(node=node, waves=node_waves, exp=sum(w["exp"] for w in node_waves),
                              kills=sum(w["n"] for w in node_waves), hp=sum(w["total_hp"] for w in node_waves),

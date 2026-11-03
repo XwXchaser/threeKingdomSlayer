@@ -20,8 +20,8 @@ MonoBehaviour:
     rows:
     - enemyIds: 0000000000000000f30300000000000000000000
     - enemyIds: 00000000f303000000000000f303000000000000
-    healthMultiplier: 1
-    bossHealthMultiplier: 1
+    healthMultiplier: 5.8
+    bossHealthMultiplier: 0
     attackSpeedMultiplier: 1
     damageMultiplier: 1
     expMultiplier: 1
@@ -40,7 +40,7 @@ MonoBehaviour:
       rewardAmount: 50
     - rewardType: 1
       rewardAmount: 30
-  clearCoinReward: 60
+  clearCoinReward: 0
   collisionDamage: 50
   formationConfig: {fileID: 11400000, guid: f329fc350cf1b54439fcc603e63223ba, type: 2}
   rushMoveDelay: 0.05
