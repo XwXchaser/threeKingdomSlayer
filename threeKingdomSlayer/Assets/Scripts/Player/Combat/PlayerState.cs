@@ -45,6 +45,8 @@ public class PlayerState : MonoBehaviour
 
     // GC 优化：复用容器，避免每帧 new
     private readonly List<AttackType> _cooldownKeysCache = new List<AttackType>();
+    /// <summary>追击用：先拓下键再改值（直接 foreach 改字典会抛「集合被修改」）。</summary>
+    private readonly List<AttackType> _killCooldownKeys = new List<AttackType>();
     private readonly List<string> _expiredBuffsCache = new List<string>();
 
     // 减伤Buff
@@ -68,6 +70,11 @@ public class PlayerState : MonoBehaviour
 
     // 无敌标记（狂怒大招等）
     [System.NonSerialized] public bool isInvincible;
+
+    /// <summary>不屈（天赋）：无敌剩余时间（>0 时免疫伤害）。每局一次。</summary>
+    [System.NonSerialized] private float _undyingTimer;
+    /// <summary>不屈（天赋）：本局是否已经触发过。</summary>
+    [System.NonSerialized] private bool _undyingUsed;
 
     /// <summary>
     /// 防御姿态（招架后按住进入；防御期间免伤、只累积破防值；破防则短硬直）。
@@ -234,6 +241,13 @@ public class PlayerState : MonoBehaviour
 
         if (damageReductionTimer > 0) damageReductionTimer -= Time.deltaTime;
 
+        // 不屈（天赋）无敌计时
+        if (_undyingTimer > 0f)
+        {
+            _undyingTimer -= Time.deltaTime;
+            if (_undyingTimer <= 0f) _undyingTimer = 0f;
+        }
+
         // 更新 Buff 计时器（复用缓存列表）
         _expiredBuffsCache.Clear();
         foreach (var kv in buffTimers)
@@ -256,7 +270,7 @@ public class PlayerState : MonoBehaviour
     public void ResetPlayer()
     {
         // heroConfig 为 null 时使用安全默认值
-        currentHealth = heroConfig != null ? heroConfig.maxHealth : 100f;
+        currentHealth = MaxHealth;
         currentRevives = heroConfig != null ? heroConfig.reviveCount : 0;
         killCount = 0;
         coinCount = 0;
@@ -274,12 +288,15 @@ public class PlayerState : MonoBehaviour
         damageReductionPercent = 0f;
         damageReductionTimer = 0f;
         buffTimers.Clear();
+        // 不屈（天赋）：每局一次 → 开新局重置
+        _undyingUsed = false;
+        _undyingTimer = 0f;
         // 元素一次性 BUFF 与破冰会话属于战斗内状态，开新局必须清空
         PlayerElementalBuffs.Clear();
         // 命中反应注册表（扩展点）：广播攻击结束（内置冰系 + 自定义处理器）。
         DamageReactionRegistry.EndAttack();
 
-        float maxHp = heroConfig != null ? heroConfig.maxHealth : 100f;
+        float maxHp = MaxHealth;
         OnHealthChanged?.Invoke(currentHealth, maxHp);
         OnReviveCountChanged?.Invoke(currentRevives);
         OnKillCountChanged?.Invoke(0);
@@ -290,12 +307,25 @@ public class PlayerState : MonoBehaviour
     #region 伤害系统
 
     /// <summary>
+    /// **生命上限**（资产值 + 天赋「铁血 / 体魄」加成）。
+    /// 所有涉及上限的地方都读它，别再直接读 <c>heroConfig.maxHealth</c>。
+    /// </summary>
+    public float MaxHealth
+    {
+        get
+        {
+            float baseMax = heroConfig != null ? heroConfig.maxHealth : 100f;
+            return baseMax + TalentCapabilities.ExtraMaxHealth;
+        }
+    }
+
+    /// <summary>
     /// 玩家受到伤害
     /// </summary>
     public void TakeDamage(float damage, Enemy source = null)
     {
         if (stageState == StageState.Defeat || stageState == StageState.Victory) return;
-        if (isInvincible) return;
+        if (isInvincible || _undyingTimer > 0f) return;
 
         // 防御姿态：免伤，只累积破防值（破防值满 → 破防硬直）
         // 把攻击者传进去 → 防御能给出「格挡」反馈（攻击者卡肉 + 镜头震动）
@@ -339,10 +369,24 @@ public class PlayerState : MonoBehaviour
                 finalDamage *= (1f - chargeReduction);
         }
 
+        // 不屈（天赋）：这次伤害会跌破 30% 生命 → 免疫本次伤害 + 2 秒无敌（每局 1 次）
+        if (TalentCapabilities.UndyingUnlocked && !_undyingUsed && _undyingTimer <= 0f)
+        {
+            float maxHp = MaxHealth;
+            if (maxHp > 0f && currentHealth - finalDamage < maxHp * TalentCapabilities.UndyingHealthThreshold)
+            {
+                _undyingUsed = true;
+                _undyingTimer = TalentCapabilities.UndyingInvincibleSeconds;
+                Debug.Log($"[PlayerState] 不屈触发：免疫本次伤害 {finalDamage:F0}，获得 {TalentCapabilities.UndyingInvincibleSeconds:F0} 秒无敌");
+                OnHealthChanged?.Invoke(currentHealth, maxHp);
+                return;
+            }
+        }
+
         currentHealth -= finalDamage;
         if (_isCharging && finalDamage > 0f && UpgradeEffectManager.Instance != null)
             UpgradeEffectManager.Instance.RegisterChargeHitShockwaveHit();
-        OnHealthChanged?.Invoke(currentHealth, heroConfig != null ? heroConfig.maxHealth : 500f);
+        OnHealthChanged?.Invoke(currentHealth, MaxHealth);
         // 受击震动已暂时关闭（安卓端不合适），后续在其他功能情景中重新启用
         // Handheld.Vibrate();
 
@@ -360,7 +404,7 @@ public class PlayerState : MonoBehaviour
     public void Heal(float amount)
     {
         if (stageState == StageState.Defeat || stageState == StageState.Victory) return;
-        float maxHp = heroConfig != null ? heroConfig.maxHealth : 100f;
+        float maxHp = MaxHealth;
         currentHealth = Mathf.Min(currentHealth + amount, maxHp);
         OnHealthChanged?.Invoke(currentHealth, maxHp);
     }
@@ -379,13 +423,13 @@ public class PlayerState : MonoBehaviour
             if (heroConfig == null)
             {
                 Debug.LogError("[PlayerState] HandleDeath: heroConfig 为 null，使用默认值");
-                currentHealth = 100f * 0.5f; // 默认 maxHealth=100, reviveHealthPercent=50%
+                currentHealth = MaxHealth * 0.5f; // 默认 maxHealth=100, reviveHealthPercent=50%
             }
             else
             {
-                currentHealth = heroConfig.maxHealth * heroConfig.reviveHealthPercent;
+                currentHealth = MaxHealth * heroConfig.reviveHealthPercent;
             }
-            OnHealthChanged?.Invoke(currentHealth, heroConfig != null ? heroConfig.maxHealth : 100f);
+            OnHealthChanged?.Invoke(currentHealth, MaxHealth);
             OnReviveCountChanged?.Invoke(currentRevives);
             Debug.Log($"[PlayerState] 复活！剩余复活次数: {currentRevives}, 生命值: {currentHealth}");
         }
@@ -516,6 +560,22 @@ public class PlayerState : MonoBehaviour
     public void AddKill()
     {
         killCount++;
+
+        // 追击（天赋）：击杀后攻击 CD −0.5s —— 把**正在走的**攻击冷却直接缩短
+        float reduction = TalentCapabilities.KillAttackCooldownReduction;
+        if (reduction > 0f && cooldownTimers.Count > 0)
+        {
+            // ⚠️ 不能直接 foreach 改字典的值（枚举器会失效 → 抛 InvalidOperationException）
+            _killCooldownKeys.Clear();
+            _killCooldownKeys.AddRange(cooldownTimers.Keys);
+            for (int i = 0; i < _killCooldownKeys.Count; i++)
+            {
+                var key = _killCooldownKeys[i];
+                if (cooldownTimers.TryGetValue(key, out float remain) && remain > 0f)
+                    cooldownTimers[key] = Mathf.Max(0f, remain - reduction);
+            }
+        }
+
         OnKillCountChanged?.Invoke(killCount);
     }
 

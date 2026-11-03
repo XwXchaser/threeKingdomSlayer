@@ -85,7 +85,7 @@ public partial class Enemy : MonoBehaviour
         // 规则（2026-10-25 霸体反制重定）：削韧只在霸体窗口内生效；归零 → 破势眩晕 → 同时解除霸体。
         // 只有玩家攻击本体算数：DoT / 被动 / 道具 / 碰撞不削韧（与冰系“破冰只认玩家本体”同口径）。
         if (poiseDamage > 0f && inArmorWindow && feedbackSource == HitFeedbackSource.BasicAttack)
-            Poise.TakeSuperArmorPoiseDamage(poiseDamage);
+            Poise.TakeSuperArmorPoiseDamage(poiseDamage + TalentCapabilities.AttackPoiseDamageBonus);
 
         // ----- 攻击打断逻辑（2026-10-26 招架时机重定）-----
         // 轻攻击：普通窗口（前摇）可打断；霸体期无效

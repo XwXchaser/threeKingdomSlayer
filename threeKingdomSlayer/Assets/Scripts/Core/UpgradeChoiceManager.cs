@@ -374,6 +374,11 @@ public class UpgradeChoiceManager : MonoBehaviour
         return asi != null && asi.UsesActiveSkills && asi.IsFull;
     }
 
+    /// <summary>
+    /// 本次弹窗的**选项数**：基础 <see cref="choiceCount"/> + 运筹天赋的 1 个额外选项（三选一 → 四选一）。
+    /// </summary>
+    private int EffectiveChoiceCount => Mathf.Max(1, choiceCount + TalentCapabilities.ChoiceCountBonus);
+
     /// <summary>执行选中后的额外效果（扩展点）。在升级本身的效果应用之后。</summary>
     private void ApplySelectionEffects(UpgradeDefinition selected)
     {
@@ -433,7 +438,7 @@ public class UpgradeChoiceManager : MonoBehaviour
             if (candidates.Count == 0)
                 return new List<UpgradeDefinition>();
     
-            return _sampler.DrawByRarity(candidates, choiceCount, RollRarity);
+            return _sampler.DrawByRarity(candidates, EffectiveChoiceCount, RollRarity);
         }
     
         /// <summary>收集所有满足前置条件且未满级的候选项；V2 从 activeSkillPoolConfig 读取全池。</summary>
@@ -496,7 +501,7 @@ public class UpgradeChoiceManager : MonoBehaviour
         {
             var candidates = new List<UpgradePoolSampler.Candidate>();
             CollectActiveSkills(candidates, includeCommon: false);
-            return _sampler.DrawByWeight(candidates, choiceCount);
+            return _sampler.DrawByWeight(candidates, EffectiveChoiceCount);
         }
     
         private void CollectActiveSkills(List<UpgradePoolSampler.Candidate> result, bool includeCommon)

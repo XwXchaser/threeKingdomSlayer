@@ -87,7 +87,8 @@ public class KillRewardManager : MonoBehaviour
             switch (r.rewardType)
             {
                 case KillRewardType.Coin:
-                    ps.AddCoins(r.rewardAmount);
+                    // 聚财（天赋）：铜钱获取 +30%
+                    ps.AddCoins(Mathf.RoundToInt(r.rewardAmount * TalentCapabilities.CoinGainMultiplier));
                     break;
 
                 case KillRewardType.Heal:

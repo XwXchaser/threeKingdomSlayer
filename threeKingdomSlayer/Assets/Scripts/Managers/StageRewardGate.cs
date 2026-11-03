@@ -51,7 +51,7 @@ public sealed class StageRewardGate : IRewardGate
         AudioManager.Instance?.StopBGM();
         _ctx.SetStageState(StageState.Victory);
         StageRouteBattleHost.ClearEnemyProjectiles();
-        if (clearReward > 0) _ctx.PlayerState?.AddCoins(clearReward);
+        if (clearReward > 0) _ctx.PlayerState?.AddCoins(Mathf.RoundToInt(clearReward * TalentCapabilities.CoinGainMultiplier));
         if (stageId > 0) SaveManager.MarkStageCleared(stageId);
         _ctx.SettleCoins();
         _ctx.RaiseStageVictory();
@@ -67,7 +67,7 @@ public sealed class StageRewardGate : IRewardGate
         AudioManager.Instance?.StopBGM();
         _ctx.SetStageState(StageState.Victory);
         StageRouteBattleHost.ClearEnemyProjectiles();
-        if (clearReward > 0) _ctx.PlayerState?.AddCoins(clearReward);
+        if (clearReward > 0) _ctx.PlayerState?.AddCoins(Mathf.RoundToInt(clearReward * TalentCapabilities.CoinGainMultiplier));
         SaveManager.MarkStageCleared(routeConfig.stageId);
         _ctx.SettleCoins();
         _ctx.RaiseStageVictory();

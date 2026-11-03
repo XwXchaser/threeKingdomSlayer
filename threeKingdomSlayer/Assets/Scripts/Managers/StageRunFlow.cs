@@ -233,7 +233,8 @@ public sealed class StageRunFlow : IRunFlow
         var stageConfig = _ctx.StageConfig;
         if (stageConfig != null)
         {
-            _ctx.PlayerState?.AddCoins(stageConfig.clearCoinReward);
+            // 聚财（天赋）：铜钱获取 +30%
+            _ctx.PlayerState?.AddCoins(Mathf.RoundToInt(stageConfig.clearCoinReward * TalentCapabilities.CoinGainMultiplier));
         }
         if (stageConfig != null)
             SaveManager.MarkStageCleared(stageConfig.stageId);
@@ -278,6 +279,7 @@ public sealed class StageRunFlow : IRunFlow
     public void OnEnemyDied(Enemy enemy)
     {
         _ctx.PlayerState?.AddKill();
-        _ctx.PlayerState?.AddCoins(enemy.coinReward);
+        // 聚财（天赋）：铜钱获取 +30%
+        _ctx.PlayerState?.AddCoins(Mathf.RoundToInt(enemy.coinReward * TalentCapabilities.CoinGainMultiplier));
     }
 }

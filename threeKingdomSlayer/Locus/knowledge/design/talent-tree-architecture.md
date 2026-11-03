@@ -210,17 +210,40 @@ public sealed class TalentBranchConfig
 
 ## 6. 能力类天赋的实现落点
 
+> ✅ **A5 已实现（2026-11-03）**：6 个消费点已全部落地，统一用 **nodeId 解锁态**。
+> 节点 id 与数值**集中在新文件 `Assets/Scripts/Core/TalentCapabilities.cs`** —— B 批重排节点时只改这一个文件。
+
 | 天赋 | 效果 | 消费方 | 状态 |
 |---|---|---|---|
-| 铁血 | 生命上限 +30 | `PlayerState` 读 `heroConfig.maxHealth` | **需新增消费点** |
+| 铁血 | 生命上限 +30 | `PlayerState` 读 `heroConfig.maxHealth` | ✅ **已实现**（`PlayerState.MaxHealth` = 资产值 + 体魄档位×30） |
 | 连击精通 | 连击阈值下调 | `ComboBuffConfig.triggers[]` 加一档即可 | ✅ **零代码**（`ComboManager.CheckTriggers` 已支持多档位） |
-| 巧思 | 主动槽 +1 | `ActiveSkillInventory.Capacity` | **需拆字段**（见下） |
-| 博学 | 被动槽 +1 | `UpgradePoolSampler` 的被动上限判定 | **需拆字段 + 新增消费点** |
-| 聚财 | 铜钱获取 +30% | 敌人 `coinReward` / 里程碑 / 通关奖励结算处 | **需新增消费点** |
-| 破阵 | 所有攻击 +1 架势伤害 | 伤害结算 | **需新增消费点** |
-| 追击 | 击杀后攻击 CD −0.5s | 冷却判定 | **需新增消费点** |
-| 运筹 | 三选一 → 四选一 | `UpgradeChoiceManager` 选项数 | **需新增消费点**（`in-game-growth-system.md` §3.12 已列该扩展接口） |
-| 不屈 | 血量 <30% 触发 2s 无敌（每局 1 次） | `PlayerState.TakeDamage` | **需新增消费点** |
+| 巧思 | 主动槽 +1 | `ActiveSkillInventory.Capacity` | 🟡 **字段已拆**（A1）；天赋消费点属 B 批（节点也不存在） |
+| 博学 | 被动槽 +1 | `UpgradePoolSampler` 的被动上限判定 | 🟡 **字段已拆**（A1）；天赋消费点属 B 批（节点也不存在） |
+| 聚财 | 铜钱获取 +30% | 敌人 `coinReward` / 里程碑 / 通关奖励结算处 | ✅ **已实现**（`TalentCapabilities.CoinGainMultiplier`） |
+| 破阵 | 所有攻击 +1 架势伤害 | 伤害结算 | ✅ **已实现**（`Enemy.TakeDamage` 的攻击架势伤害） |
+| 追击 | 击杀后攻击 CD −0.5s | 冷却判定 | ✅ **已实现**（`PlayerState.AddKill` 缩短正在走的冷却） |
+| 运筹 | 三选一 → 四选一 | `UpgradeChoiceManager` 选项数 | ✅ **已实现**（`EffectiveChoiceCount`） |
+| 不屈 | 血量 <30% 触发 2s 无敌（每局 1 次） | `PlayerState.TakeDamage` | ✅ **已实现**（免疫本次伤害 + 2s 无敌，每局一次） |
+
+#### 实现落点明细（A5）
+
+| 能力 | nodeId | 消费点 |
+|---|---|---|
+| 破阵 | `talent_break_formation` | `Enemy.Combat.cs` 的 `TakeDamage` → 攻击的架势伤害 `+ AttackPoiseDamageBonus` |
+| 追击 | `talent_pursuit` | `PlayerState.AddKill()` → 正在走的攻击冷却 −0.5s |
+| 运筹 | `talent_strategy` | `UpgradeChoiceManager.EffectiveChoiceCount` = `choiceCount + 1` |
+| 不屈 | `talent_undying` | `PlayerState.TakeDamage` → 跌破 30% 时免疫 + `_undyingTimer = 2s` |
+| 铁血 | `talent_stat_hp1` / `hp2` / `hp3` | `PlayerState.MaxHealth` = `heroConfig.maxHealth + 档位数 × 30` |
+| 聚财 | `talent_stat_coin`（⚠️ 节点不存在） | `KillRewardManager`（里程碑）、`StageRunFlow`（敌人钱 / 通关铜钱）、`StageRewardGate`（通关奖励） |
+
+#### ⚠️ 已知缺口（B 批补节点时对齐）
+
+| 能力 | 现状 |
+|---|---|
+| 聚财 | 树里**没有**这个节点 → 消费点已就位但恒不生效（B 批建节点后立即生效，nodeId 只需在 `TalentCapabilities` 里改） |
+| 巧思 / 博学（槽位 +1） | 树里**没有**对应节点（只有语义不明的 `talent_stat_slot`「行囊」）→ 本次**未做**消费点（B 批节点清单定稿后接） |
+| 铁血的档位值 | 设计文档只给了「铁血 +30」；树里是「体魄 I / II / 钢筋铁骨」三档 → 当前实现 = **每档 +30**（0/+30/+60/+90），档位值属**定价**（§0.6.4 归你定） |
+
 
 ### 6.1 槽位字段必须拆（阻断项）
 
