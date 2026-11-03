@@ -20,12 +20,6 @@ aiEditMode: inherit
 全部在 **`Library/Locus/tmp/blades/`**（Unity 的 `Library` 目录 → **不在 git 里，但可能被 Unity 清理**）。
 清理后按 §3 两条命令即可完整重建（除 `server.py` 需手写，见 §5）。
 
-> ⚠ **2026-11-01 实测：该目录已被清理**（`Library/Locus/tmp/` 下只剩 `hud_analysis/` 的 HUD 参考图），**APK 也不在本机**（`C:/Users/Administrator/Downloads` 与各盘均无）⇒ 要用产物必须重新拿到 APK 按 §3 重建。
->
-> **只想查「技能/天赋页长什么样」不需要 APK**：UESP `https://en.uesp.net/wiki/Blades:Skills` 的 `action=raw` 源码里用 `{{Chart}}` 记录了三个分页（Spells / Perks / Abilities）**每棵树的节点位置与连线**；`File:BL-icon-<技能名>.png`（256²，**黑色 alpha 剪影**，需衬底板或染色才可见）是游戏原图标、`File:BL-icon-Skill Frame.png` 是节点外框、`File:BL-icon-SkillPoint.png` 是技能点图标 ⇒ 用 `api.php?action=query&prop=imageinfo&iiprop=url` 拿原始 PNG。已按此法重建的两张图与全套图标在 `_art_process/Authoring/blades_skill_ref/`。
->
-> **出网限制（同一会话实测）**：只有少数域名通（`en.uesp.net` / `images.uesp.net` / `is1-ssl.mzstatic.com` / `toucharcade.com` / `www.bing.com`），而 `fandom`、`wikipedia`、`google`、`archive.org`、`reddit`、`youtube` 全部连不上 ⇒ 找 Blades 资料优先走 UESP。另：**本环境无法读图**（模型侧收到的是二进制占位符），图片只能下载后交给用户看。
-
 | 文件 | 内容 | 规模 |
 |---|---|---|
 | `types.csv` | 托管类型清单（namespace / base / 方法数 / 字段数 / 接口标记） | 14498 行 |
@@ -617,3 +611,94 @@ object(X) = holder[0] − 4X          （X = 静态字段偏移）
    ⚠ `dd if=/proc/<pid>/mem` 在 Android 上会被 SELinux 拦掉 ⇒ 读不了堆内容 ✓（别指望这条路）。
 2. **探“构造请求”的那个方法**：探 `Request::GetRequestForm` / `GetRequestJson` ⇒ 命中就说明请求真的被构造了 ✓
    （本项目就是靠它才发现“请求入队了但没构造”✓）。
+
+## 12. 第六阶段沉淀（2026-10-31 14:40）：v7a 常量解析 + “空对象会把客户端打死”
+
+### 12.1 ★★★ 解析 v7a 里的常量：`resolve_consts.py`（新脚本）
+
+两级链（IL2CPP ARM32 的通用形态）：
+```
+ldr rX, [pc, #imm]   ; 池字里放的是**相对偏移**
+ldr rY, [pc, rX]     ; 地址 = (本指令地址+8) + 偏移  ⇒ 静态槽
+ldr rZ, [rY]         ; 槽里的值 = 运行时对象地址（Il2CppString* / Il2CppClass*）
+```
+⚠⚠ **最大的坑**：这个 .so 的 RW 段 LOAD 是
+`off=0x2F0FB30 / vaddr=0x2F10B30` ⇒ **vaddr 与文件偏移差 0x1000**。
+直接拿 vaddr 当文件偏移去读 ⇒ **整体错 4KB** ⇒ 读出来的全是看似合法的假值
+（本轮一开始就被它坑了一次：以为 `enabled` 是字符串比较、以为 hash 是静态常量）。
+⇒ **任何读 .so 的脚本都必须先按 ELF 段表做 vaddr→offset 映射** ✓。
+
+★ **判断「某个值是什么类型」不用猜名字**：解析出两个 metadata usage 槽的运行时地址，
+**地址相同 ⇒ 同一个类 / 同一个字符串** ✓。
+（本轮用它证明了：`minGameVersion`/`manifestHash` 都是 `System.String`，
+而 `enabled` 的期望类型与 `MiniJSON` 装箱 bool 用的是**同一个槽** ⇒ 它是 `System.Boolean` ✓。）
+
+★ **`dumper_out_v7a/stringliteral.json` 的 `address` 就是运行时地址**（在 BSS 段）
+⇒ 可以直接把代码里的 BSS 常量地址翻译成文本
+⇒ `minGameVersion` / `manifestHash` / `enabled` 三个键名就是这么认出来的 ✓
+（不用再去猜 `Entry::Serialize` 里那几个 key 常量）。
+
+### 12.2 ★★★ 「协议文件」与「业务响应」必须分开：多一个键就是协议失败
+
+`BundleMetaManifest::Deserialize` 会**遍历顶层字典的每一个条目**，
+且要求**每个 value 都是同一个嵌套字典类**。
+⇒ 只要响应里混进一个数组（`"characters": []`）或标量，**整份解析直接失败**。
+⇒ **凡是协议文件（`MetaManifest.json` / `host_info_cn.json`），
+后端的「通用响应注入」绝不能碰** ✓（本轮就是被这个卡了两轮）。
+
+### 12.3 ★★★ 响应里出现「空对象」会让客户端抛 NRE
+
+`BackendCharacterData.RetrievePersistent()`（0xD4E450）第一句就读 `_persistentNode`（+0x18），
+为 null 直接抛 NRE。
+而 `_persistentNode` 是由**按端点 id 注册的转换表**创建的
+（`ResponseDeserializer.CONVERSION_TO_BACKEND_DATA`）：
+`characterToBackendCharacterData.conversion` 读 `character/id|name|tagId` ⇒ 写 `BackendCharacterData/BackendId|Name|TagId`。
+
+⇒ 响应里出现**空的** `"character": {}` / `"BackendCharacterData": {}`
+⇒ 转换表读不到 id/name ⇒ 持久化节点不会被创建 ⇒ **NRE**。
+⇒ **纪律**：响应只放**该端点自己的 schema 根键**；
+需要角色的端点就给**完整的** `character`（id/name/tagId），不给就别给空壳 ✓。
+
+### 12.4 ★★ 协议形状的权威顺序：`dump.cs` 的签名 > 自己读反汇编 > 旧笔记
+
+本轮最大的教训：`Entry::Deserialize` 的入参是 **`Dictionary<string, object>`**，
+而旧笔记（4O/4P）一直以为是 `Dictionary<string,string>`，
+于是推出了「enabled 必须逐字节等于字符串 "True"」的**错误结论**。
+⇒ **动手读码前先看 `dump.cs` 里那个方法的签名**（参数类型直接写在上面）✓，
+再读反汇编去确认**值的类型检查**（比较 klass）✓。
+
+### 12.5 ★★ Locus 知识文档：summary 里出现 ASCII 冒号+空格会让**整个文件不可编辑**
+
+`summary: … body: name/…` ⇒ YAML 把 `body` 当成键 ⇒ 报
+`mapping values are not allowed in this context` ⇒
+**Locus 在应用任何编辑前都会先校验 frontmatter ⇒ 校验不过 ⇒ 连正文都改不了**。
+⇒ 纪律：写长 summary 时**避开 ASCII `: `**（用全角「：」或改写）✓；
+已经坏掉的文件只能用 Python/脚本先修那一行，再继续用知识工具编辑 ✓。
+
+### 12.6 ★★ dex 补丁（IL2CPP 客户端的 Java 侧）的两个硬坑
+
+1. **35c（invoke-kind）的参数顺序是 `arg1=F(低 4 位), arg2=E, arg3=D, arg4=C`**（`arg5=G`），
+   而**不是**「C 是第一个参数」。`dexlib.enc_invoke` 就是按这个顺序编码的 ✓。
+   写错 ⇒ 运行时 `VerifyError` / `IncompatibleClassChangeError`（而且报错信息很误导：
+   会说「this argument 是 String 而不是 MainActivity」）。
+2. **静态方法必须用 `invoke-static`（0x71）** ⇒ 用 `invoke-virtual` 会抛
+   `IncompatibleClassChangeError: … expected to be of type virtual but … found to be of type static`。
+   （本轮 `MainActivity.sendUnityMessage(String,String)` 就是 static 的。）
+
+★ 另一个好用的结论：**游戏 C# 侧的回调往往不关心参数内容**。
+例：`N2U_GetTicketCallback(string ticket)` 只是「把字符串存字段 + 触发 Action」⇒
+**只要让回调被调用，伪造的参数值随便填** ⇒ 「本地伪造 SDK 票据」的成本几乎为零 ✓。
+
+### 12.7 ★★ 「让本地假后端被客户端认下来」的两条经验
+
+1. **会话身份要和客户端发过来的一致**：客户端认证请求体里带 `user_id=1`（SDK 假登录注入的），
+   响应里的 `session/userId` 就必须写 `"1"` ⇒ 写成 `"localplayer"` 时客户端会**无限重试认证**
+   （实测一轮 930~1219 次）——现象看起来像「响应体形状不对」，其实只是**身份对不上**。
+2. ★★ **`.schema` 里写的类型 ≠ 响应 DTO 的真实类型**！
+   `schemas_out/session.schema` 说 `tokenExpirationSeconds/featureStatus/linkedAccountsStatus/
+   requestIndex` 是 **String**，但**给字符串会让客户端把整个 session 判为不可用 ⇒ 无限重试**；
+   **给数字才正常**（3~4 个请求）。
+   ⇒ 原因：`.schema`/`.conversion` 描述的是**持久化层**的形状（那里确实要字符串→int 的转换），
+   而**响应 DTO 是直接把 JSON 值 cast 成 int 的**（`AuthResponse.GetSessionFromResponse`）。
+   ⇒ **纪律：响应字段类型以「读码 + A/B 实测」为准，schema 只能当参考** ✓；
+   判据：把两个字段类型各试一轮，看**请求数**是否从「几百次重试」降到「个位数」。

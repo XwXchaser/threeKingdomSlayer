@@ -4,7 +4,7 @@ injectMode: inherit
 injectAgents:
 - '*'
 aiEditMode: inherit
-summary: 《上古卷轴：刀锋》安卓包逆向/离线化 的开机读物（2026-10-30 21:10 更新，先读顶部续跑简报）：洞 B 的三个 bug 已修（控制流被写成无条件 b skip / 取触发器写成 add 而非 ldr / 栈没 8 字节对齐），洞 B 现在能跑；客户端已能自己完成平台认证（我们的后端首次真的收到 POST /api/authentication/v1/public/auth/gplus 并被接受），一路走到 FetchingSaveData → SaveManager::Load；剩下卡点是设备上没有本地存档文件，客户端读不到就停住并弹「网络错误」。关键事实：x86 模拟器的 ARM 转译层里代码段只能 pc-relative 读（计算地址读代码段直接 SIGSEGV）；触发器身份可由地址反查 object(X)=holder[0]−4X；认证链 = 0xa4→0x04→0x0c→0x10 后客户端自己发 0x1c/0x30/0xac。
+summary: 《上古卷轴：刀锋》安卓包逆向/离线化 的开机读物（2026-10-31 14:40 更新，先读顶部续跑简报与“当前状态快照”）。本轮大突破——bundle 初始化打通了，客户端第一次跑过 bundle 初始化、进入认证、拿到角色列表、开始请求业务端点。MetaManifest 契约定案（enabled 必须是 JSON 布尔 true 而不是字符串，版本串必须用 1.6.3.1.105，顶层 value 必须是嵌套字典），并修掉两个后端 bug（enabled 类型错、角色字段被注入到协议文件里）。当前卡点是客户端拿不到存档而陷入 ForceReset 循环，尚未走到建角 UI。注意屏幕上的“网络错误”弹窗不是游戏自己的 UI，点它会把游戏送进后台并被系统杀掉。
 ---
 
 > **2026-10-29 第三阶段修订（最重要，请先读这一段）**
@@ -53,6 +53,388 @@ summary: 《上古卷轴：刀锋》安卓包逆向/离线化 的开机读物（
 > 详细结论、证据与下一步见 **`plan/blades-java-bridge-breakthrough-20261029.md`（第 2 阶段）**。
 
 # Blades 离线化 · 开机读物（2026-10-29）
+
+> ## ★★★ 续跑简报（2026-11-01 00:20 最新 · 先读这段）★★★
+>
+> **一句话**：**bundle 初始化、认证、两关都过了** —— 客户端不再弹「0-10000-7」，
+> 能走完整条启动流程、能认证成功；**现在只卡在“读存档”这一步**：
+> `/sync` 请求确实发出来了、服务器也收到了，**但客户端把我们回的响应整个丢掉了**，
+> 所以它从不去请求角色列表，也就到不了选角界面。**⇒ 只差 `/sync` 这一个响应体。**
+>
+> ### 〇、★★★ 【给新对话】怎么接上（先读这段）
+>
+> 1. **先读这三份文档**（顺序别乱）：
+>    - `Locus/knowledge/plan/blades-handoff-20261029.md` —— **本文件**（现状 + 下一步）
+>    - `Locus/knowledge/plan/blades-flow-trace-breakthrough-20261029.md` —— **4Q 节**（这一系列的完整证据链）
+>    - `Locus/knowledge/memory/blades-reverse-engineering-assets.md` —— **第 12 节**（工具与踩过的坑）
+> 2. **工作目录**：`H:\Project\threeKingdomSlayer\threeKingdomSlayer\Library\Locus\tmp\blades\`
+>    （脚本、APK、逆向产物全在这；**不要重建工具链**：`build_c.sh` / `patch_c_fire.py` / `build_vtrace.py` 都在）
+> 3. **模拟器**：雷电 LdPlayer（`LdVBoxHeadless.exe`，控制台端口 **5555**），
+>    adb 用本地 emulator 传输（`emulator-5554`）；`adb connect 127.0.0.1:5555` 会 “offline” ⇒ 别用。
+> 4. **跑一轮测量的标准姿势**（在 `Library/Locus/tmp/blades/` 下）：
+>    ```bash
+>    export MSYS_NO_PATHCONV=1
+>    WAIT=70 ROUTES=shapes/R_perchar.json bash measure.sh
+>    ```
+>    ⇒ 打印各探针命中数 + 后端收到的请求 + 状态流。
+>    （`measure.sh` 会用 Task Scheduler 起后端 ⇒ 后端能活过脚本结束 ⇒ 不会“连不上后端”。）
+> 5. **改后端响应**改 `build_routes_per.py`（生成 `shapes/R_perchar.json`），
+>    改完跑一次 `python build_routes_per.py`；**不需要重新 build APK**（数据是运行时读的）。
+> 6. **要加探针**才需要重打 APK：`build_vtrace.py` 改 HOOKS → `bash build_c.sh`（约 8 分钟）
+>    → 跑测时 `INSTALL=1`。★ 洞区只装得下 **10 个**探针；`patch_c_fire.py` 里旧的 `[P]` 洞已被停用。
+> 7. ⚠ **不要提交/推送**（用户 2026-10-31 明确要求）；仓库里只有文档改动是预期的。
+>
+> ### 一、★★★ 突破点 1：MetaManifest.json 的契约（静态读码定案，细节见 flow-trace 文档 **4Q.1**）
+> ```json
+> {"1.6.3.1.105": {"minGameVersion": "0.0.0.0.0",
+>                 "manifestHash": "c80558062256ac4e383d6bba2ef2de6e",
+>                 "enabled": true}}
+> ```
+> * `Entry::Deserialize` 的入参是 **`Dictionary<string, object>`**（不是 string→string！），
+>   三个值都有**类型检查**：`minGameVersion` = string、`manifestHash` = string、**`enabled` = 装箱 bool**。
+> * ⇒ **`enabled` 必须是 JSON 布尔 `true`**（`"True"` 字符串会让类型检查失败）。
+>   （4O.3 / 4P.5 里「enabled 要逐字节等于 "True"」的结论**是错的**。）
+> * ⇒ **顶层 key 必须是版本串**，且要用 **`1.6.3.1.105`**（APK 里 `BuildVersionAsset` 资源的 5 个 int；
+>   APK 的 `versionName` 是 1.6.3.1.108，但以资源为准）。
+> * ⇒ **顶层 value 必须是嵌套的字典**（不能是数组）。
+>
+> ### 二、★★★ 突破点 2：认证→重置循环的真凶 = **UC SDK 取 ticket 失败**（细节见 **4Q.7**）
+> * logcat 铁证：`key=5&val=-1&desc=获取票据失败` 出现在存档回调前 50 ms。
+> * 已写 **`patch_ticket.py`**（dex 补丁）：把 `MainActivity.GetTicket` 的方法体换成
+>   `sendUnityMessage("N2U_GetTicketCallback", "1")`（`invoke-static`！）⇒ 完全不走 SDK。
+>   （客户端的 `N2U_GetTicketCallback` 只存字符串 + 触发回调，**不看 ticket 内容** ⇒ 伪造成本为零。）
+> * ⇒ 实测：SDK 不再报错，认证一次就过。
+>
+> ### 三、★★★ 突破点 3：响应形状的三条硬规矩（细节见 **4Q.11.4**）
+> 1. **每个端点只回它自己 schema 的根键**（`build_routes_per.py` 现在生成 18 条逐端点路由）。
+> 2. **认证响应必须最小**：`{"session": {...}, "requestIndex": 0}`
+>    ⇒ 加一个大写 `Session` 或塞通用体根键 ⇒ 客户端**无限重试认证**（实测 556 次/轮）。
+> 3. **类型以读码/实测为准，不要信 `.schema`**（它写的是持久化层的形状）：
+>    `session.tokenExpirationSeconds` / `requestIndex` 必须给**数字**；
+>    `session.userId` 必须 = 认证请求里的 SDK userid（我们假登录注入的是 `1`）。
+> ⇒ 顺带：`RetrievePersistent` 的 NRE 也因此消失（Unity 异常 3 条 → 0 条）。
+>
+> ### 四、★ 当前唯一的堵点：`/sync` 的响应被整个拒收（细节见 **4Q.11**）
+> ```
+> TLD=1  开始读存档
+> TSR=1  /sync 请求确实发出去了（后端也收到了，Authorization 头正确 ⇒ 认证成功）
+> TGC=0  ★/sync 的**响应回调**从没被调用 ⇒ 响应在派发前就被丢掉
+> TGA=0  ★角色列表请求从没被创建
+> TSF=0  存档回调从没触发
+> ```
+> ⇒ 客户端是拿**响应索引**匹配待处理请求的 ⇒ **多半是 `requestIndex` 对不上**
+> （`/sync` 这个请求**没带 `Request-Index` 头**，别的请求都带 ⇒ 它的期望索引可能不是 0，也可能是 -1）。
+> ⇒ **下一步（按性价比）**：
+> 1. 试 `"requestIndex": -1`；以及 `/sync` 响应**只带存档类根键、不带 requestIndex**。
+> 2. 读 `SavedDataServiceImpl::GetAllCharacters(SyncRequestIndexResponse)`（**0x15978A0**）的前几行：
+>    它**先读 `this._sessionService`（+0x20）再按类型查表** ⇒ **它要的东西可能根本不在响应体里**，
+>    而在会话服务状态里 ⇒ 那样要改的是“认证响应缺的东西”，而不是 `/sync`。
+> 3. 目标不变：客户端 `GET /characters`（我们回 `{"characters": []}`）⇒ 它判定“没有角色”
+>    ⇒ 走**建角/选角 UI** ⇒ 它自己 `POST /characters` 建角（**这是用户要的：不绕过角色创建**）。
+>
+> ### 五、★ 本轮实测轨迹（同一台设备、同一份 `.so`）
+> ```
+> TBM 08d94c48 ← BundleMetaManifest::Deserialize ✔
+> TCB 08d94c5c ← ChooseBundlesToUse        ✔★ bundle 初始化通过
+> → AuthenticationCreateAnonymousAccount → AuthenticationPlayGame → FetchingSaveData
+> → ForceReset → Loading → UninitializingGame → Bootstrap →（第二遍）→ FetchingSaveData（停住）
+> ```
+> 后端请求：`host_info` → `MetaManifest` → `POST auth/gplus` → `GET sync` → **（没有 `GET characters`！）**
+>
+> ### 五之二、★★ 跑测环境（这一轮最大的时间消耗）：**之前所有“时好时坏”都是环境问题，不是响应问题**
+> 见 flow-trace 文档 **4Q.11.3** 的完整表格。三条最容易再踩的：
+> * **后端进程会被回收** ⇒ 客户端 "Connection refused" ⇒ 看起来像“响应形状不对” ⇒ 现在后端用 **Task Scheduler** 起。
+> * **跑过 `adb reverse --remove-all` 之后，设备侧 shell 会彻底死掉** ⇒ 后面所有 adb 命令静默超时 ⇒ **别用 `--remove-all``。
+> * **别在 `$( )` 里跑 adb**（`timeout` 只杀 adb、管道不关 ⇒ 命令替换永远等不到 EOF）。
+> ### 四之二、⚠ 下面这段是 14:40 版的旧卡点（已被上面第四节取代，保留作演进记录）
+> * 当时的结论：客户端拿不到存档 ⇒ 走 `FlowState.<OnSaveDataFetched>b__0`(0xA72B28) 的「没存档」分支
+>   ⇒ 迁移到 `ForceReset` ⇒ 流程重来。
+> * 当时的真凶判断：`key=5&val=-1&desc=获取票据失败` ⇒ **UC SDK 取 ticket 失败** ⇒ 认证流程拿不到 ticket
+>   ⇒ 判成「未认证 + 没存档」⇒ ForceReset ⇒ 弹出游戏的「网络错误」。
+>   （弹窗文案在 `assets/bin/Data/sharedassets1.assets.split5` 的本地化表里 ⇒ 是游戏自己的 UI；
+>   ★ 但**别去点它**：实测点「好的」会把游戏送进后台，随后进程被系统杀掉。）
+> * 当时的补丁：`patch_ticket.py`（把 `MainActivity.GetTicket` 换成
+>   `sendUnityMessage("N2U_GetTicketCallback", "1")`，`invoke-static`）⇒ 已验证有效 ✓。
+> * ★★ **认证响应形状（与 .schema 相反！实测二分确定）**：
+>   | 改法 | 认证请求数/轮 |
+>   |---|---|
+>   | `userId="localplayer"` | 930~1219 次（无限重试）|
+>   | `userId="1"` + 三个字段给字符串 | 552 次（仍重试）|
+>   | **`userId="1"` + 三个字段给数字 + `requestIndex` 给数字** | **3~4 次（正常）** ✓ |
+>   ⇒ ① `session.userId` 必须 = 认证请求里的 SDK userid（我们假登录注入的是 `1`）；
+>      ② `tokenExpirationSeconds/featureStatus/linkedAccountsStatus/requestIndex`
+>      **必须给数字**（⚠ `schemas_out/session.schema` 写的是 String，**不能信**——
+>      那是持久化层的形状；响应 DTO 是直接 cast 成 int 的）。
+> * ★★ **探针系统的两条硬限制**：
+>   ① 洞区只装得下 **10 个探针**；`patch_c_fire.py` 里旧的 `[P]` 洞会**与探针洞重叠**
+>      ⇒ 客户端直接 SIGSEGV ⇒ 已把 `[P]` 默认停用。
+>   ② cave 的栈对齐必须算上原序言的 `sub sp,#imm`（判据：(寄存器数 n + d/4) 为偶数就补 4 字节），
+>      补位 nop 必须是 ARM 真 NOP `0xE320F000`。
+>
+> ### 五、★ 复现命令（推荐用 measure.sh；它会把后端用 Task Scheduler 起，能活过脚本结束）
+> ```bash
+> cd H:/Project/threeKingdomSlayer/threeKingdomSlayer/Library/Locus/tmp/blades
+> export MSYS_NO_PATHCONV=1
+> WAIT=70 ROUTES=shapes/R_perchar.json bash measure.sh
+> ```
+> 旧脚本（带截图/装 APK/点按）仍然可用：
+> ```bash
+> APK=build/blades_c.apk INSTALL=0 PREFS=1 CLEAR_SAVE=0 CLEAR_LOCAL=1 FTUE=1 >   WAIT=95 SHOT_AT="45 80" ROUTES=shapes/R_perchar.json bash run_ca.sh
+> ```
+> ⚠ 设备 `.so` 与本地 `build/libil2cpp.c.so` 一致（md5 `56f2c472fdb9a6b1c76d972b947e6cf2`）⇒ 可用 `INSTALL=0`；
+>   ★ **当前探针集是 10 个**：`TSF TFI TLS TBM TCB TGC TLD TSR TGA TIE`（`TEB` 从来没装进 .so，**`TEB=0` 不能当证据**）。
+> ⚠ **`WAIT` 不决定跑测时长**（真正决定时长的是 `SHOT_AT` 的最后一个值）。
+> ⚠ `adb logcat -c` / `pm grant` / `screencap` 都会**卡死** ⇒ 脚本里已加 `timeout`。
+> ⚠ **dex 已经是打过 ticket 补丁的版本**（`build/classes.dex`，由 `build_c.sh` 打进 APK）
+>   ⇒ 重打 APK 时**不要**用原始 APK 的 dex 覆盖它。
+>   想重建 dex 补丁链：`patch_ticket.py` 作用在 `build/classes.dex`（已含 `patch_v49` + `patch_sdk_float`）之上。
+> ⚠ 模拟器是**雷电 LdPlayer**（控制台端口 5555），`adb connect 127.0.0.1:5555` 会 offline ⇒ 用本地 `emulator-5554`。
+
+---
+
+> ## ⚠【已被上面 2026-10-31 14:40 版取代】续跑简报（2026-10-31 11:15）
+>
+> **一句话**：**请求队列的死锁解开了** ⇒ 客户端**第一次真的拿到了存档**
+> （`FlowState::OnSaveDataFetched(saveGameFound=1, isAuthenticated=1, isNoUi=1)` **命中**），
+> 并把整套角色状态（**16 个业务端点**）从我们的影子后端拉了下来。
+> **剩下的卡点**：拿到数据后流程仍在打转，屏幕上弹着「网络错误」。
+>
+> ### 一、★★★ 本轮最大的突破：请求队列死锁的根因（修法 E）
+> 上一轮说「请求入队了却不发出」，本轮定位到了**确切指令**：
+> `SerialBackendCommunicationService::StartNextRequest`(**0x1589808**)：
+> ```
+> 0x15898b4  ldr r7,[r7,#0x70]      ; r7 = request.RequestPriority（Request+0x70）
+> 0x15898b8  bl  0x11a49b8          ; BackendCommunicationService.get_PriorityFilter()
+> 0x15898bc  cmp r7,r0
+> 0x15898c0  bge 0x15898f0          ; ★★ priority >= filter ⇒ **取走这个请求**
+> ```
+> ⚠ **纠正上一版的方向性误读**：`bge` 是「**取走**」分支（0x15898f0 之后是
+> `List.RemoveAt(index)` + 虚调用 `PerformRequest`），**不是「跳过」**。
+> ⇒ 请求被跳过的条件是 **priority < filter**；而
+> `get_PriorityFilter()` → `RestManager.GetRequestPriority()` → 读 `RestManager._requestPriority`(+0xB0)
+> ⇒ 该阈值比请求的优先级高 ⇒ **低优先级请求永远被跳过 ⇒ 队列堵死**。
+> ⇒ **修法 E**（已启用）：把 `0x15898C0` 的 `bge`（0xAA00000A）改成无条件 `b`（0xEA00000A）⇒ 总是取走队首。
+> ⇒ **实测**：请求立刻发出去 ⇒ 认证 → 取存档 → 整套角色状态全部拉下来 ✓✓✓
+> （★ `RestManager::SetRequestPriority` 全库 **0 个调用点** ⇒ 这个阈值只在构造时定一次，**没法从调用点反推**。）
+>
+> ### 二、★★★ 另一个关键状态：`PLAYER_PREF_FTUE_STATUS`（决定走哪条流程）
+> 客户端把「教程已完成」记在
+> `/data/data/<pkg>/shared_prefs/<pkg>.v2.playerprefs.xml` 的 **`PLAYER_PREF_FTUE_STATUS`** 里。
+> | 值 | 走的流程 | 实测结果 |
+> |---|---|---|
+> | **5** | 已有账号：`AuthenticationPreFtueSetup → RetryAuthenticationPlatformSignIn → AuthenticationLink` | **卡死在 #12 AuthenticationLink**（只发 5 个请求）|
+> | **0 / 缺失** | 首次引导：`PostFtueStart → PostFtueSetup → CreateAnonymousAccount → PlayGame → FetchingSaveData` | **全通**：TSF 命中 + 16 个端点 |
+> ⇒ **`run_ca.sh` 新增 `FTUE=1`**：在杀掉进程之后把那个键改回 0（其余键不动）⇒ **可复现「首次引导」那条路** ✓
+> ⇒ ⚠ `CLEAR_SAVE=1`（只删 `preferences.xml`）**没用** —— FTUE 状态在 **v2.playerprefs.xml** 里。
+>
+> ### 三、★★★ 已达成的里程碑：`OnSaveDataFetched` 命中
+> ```
+> TSF  00000001 00000001 00000001
+>      └ saveGameFound=1  └ isAuthenticated=1  └ isNoUi=1
+> ```
+> ⇒ **存档到手 + 已认证 + 无 UI 模式** ⇒ 这是上一轮交接钦定的「终点信号」✓
+>
+> ### 四、★ 客户端真正要的 16 个端点（后端契约已经拿到）
+> ```
+> POST /api/authentication/v1/public/auth/gplus
+> POST /api/game/v1/public/characters//towns/current/rewards/current      （角色 id 为空！）
+> GET  /api/game/v1/public/sync                                          （×2）
+> GET  /api/game/v1/public/characters
+> GET  /api/game/v1/public/characters/1
+> GET  /api/game/v1/public/characters/1/wallets/current
+> GET  /api/game/v1/public/character/1/inventories/current?equippedItemsOnly=false&consumableStackableItemsOnly=false
+> GET  /api/game/v1/public/characters/1/abysses/current
+> GET  /api/game/v1/public/characters/1/dungeons
+> GET  /api/game/v1/public/characters/1/towns/current
+> GET  /api/game/v1/public/characters/1/crafts
+> POST /api/game/v1/public/characters/1/challenges
+> POST /api/game/v1/public/characters/1/quests
+> GET  /api/game/v1/public/characters/1/globalshops/current
+> GET  /api/game/v1/public/characters/1/globalgifts
+> POST /api/game/v1/public/characters/1/quests/73ab7435-…/accept
+> ```
+> ⇒ 我们现在用**通用合并体**（`shapes/R_auth.json`）应答**所有**端点 ⇒ 形状很可能不对
+> （客户端有**手写 parser**：TownParser / ChestParser / 角色 id 直接 cast 成 long）。
+> ⇒ **下一轮的第一件事就是给这 16 个端点逐个做正确形状的响应体**
+> （可用 `schemas_out/` 里已经抽好的 19 个 `.schema` + 15 个 `.conversion`）：
+> `GetCharacters` / `GetCharacter` / `GetCharacterWallet` / `characters` / `inventory` /
+> `town` / `wallet` / `GetQuests` / `chests` / `SaveGame` / `session` ……
+> ⚠ `dungeons` / `abysses` / `crafts` / `globalshops` / `globalgifts` / `challenges` / `sync`
+> **没有对应的 .schema** ⇒ 需要从 dump.cs 的 DTO 字段反推（`rest_spec.md` 里有 117 条路径 + 165 个 DTO）。
+>
+> ### 五、★ 用户要求：**不要绕过角色创建**（2026-10-31 11:40 追加）
+> 之前的通用响应体里**预置了一个占位角色**（id=1 / Hero）⇒ 客户端 `GET /characters` 拿到非空列表
+> ⇒ **它以为角色已存在 ⇒ 跳过了建角/选角**。现已改成：**客户端不建角就真的没有角色**。
+>
+> **建角契约（来自客户端自己的代码，dump.cs）**：
+> * 端点：`POST /api/game/v1/public/characters`（`CreateCharacterRequest.URL_PATH = "/characters"`）
+> * body：`name` / `characterSave`（客户端自己的存档 JSON）/ `customization` / `characterDetailId` / `data` / `backendId` / `id`
+> * 响应（`CreateCharacterResponse`）：`TryGetCreatedCharacterID(out string)` + `TryGetBackendCharacterData(out BackendCharacterData)`
+>   ⇒ 用 **BackendData** 形状：`requestIndex` / `Session` / `BackendCharacterData{BackendId,Name,TagId,CharacterSave}` / `BackendCharacterListData`
+> * 列表端点 `GET /characters`：`characters` 必须是**数组**（`characters.schema` + `charactersListToBackendCharactersListData.conversion`）
+>   ⇒ **空数组 = 没有角色** ⇒ 客户端就会走建角/选角
+>
+> **改完之后的新卡点（对照实验结论）**：
+> | 条件 | 现象 |
+> |---|---|
+> | 角色列表非空（占位角色） | 认证 → `OnSaveDataFetched` 命中 → 拉 16 个端点 → 在 `#29 PreCharacterSelection` / `#68 StopGameHardwareNotSupported` / `#62 ForceReset` 之间打转 |
+> | 角色列表**为空** | 停在 `#29 PreCharacterSelection`，弹 **「未知错误 (0-10000-7)」**，一个 API 请求都没发 |
+> ⇒ **路由表不是原因**（换回旧路由表现象一样）⇒ 触发条件就是“没有角色” ⇒ **客户端确实进了建角分支** ✓
+> ⇒ **`0-10000-7` = `BundleInitController`（SERVICE_ID=10000）的错误 7**
+> （`HttpErrorsHandling` 里 `1018=ASSET_BUNDLE` 那一族的 `7 = INVALID_SOURCE_BUCKET`）。
+> ⇒ 已排除：设备缺 bundle（manifest 里的 **1480 个一个不缺**，设备有 2963 个文件）、
+>   本地没有可服务的包（`bundles_src/` 有 1482 个）、
+>   清单 hash 不匹配（已改成真实 md5，现象不变）、客户端没发下载请求（file server 只收到 ManifestExtraData）。
+> ⇒ ★ `host_info_cn.json` 的 DTO = `EndpointsData` ⇒ **`Final`/`Review` 是 `EndpointsUrlData`**，
+>   其中的 **`Bundles` 就是 bundle 下载基址**（我们回 `https://bladesasia.jijiagames.com/Android/Bundles`，
+>   hosts 已重定向 + `adb reverse 443→8443` ⇒ server.py 能按 hash/名字供包 ✓）。
+> ⇒ **下一轮**：
+> ① **MetaManifest.json 的形状**（纯数据 ⇒ 不用重新 build ⇒ 一轮 4 分钟，可轮着试）：
+>    契约已从 `BundleMetaManifest.Entry::Serialize`(0xE23EF8) 反推出来 ⇒
+>    顶层 `Dictionary<string, Dictionary<string,string>>`，
+>    每个版本条目**恰好三个键**：`minGameVersion`（**5 段**版本串，如 `"0.0.0.0.0"`）、
+>    `manifestHash`（32 位十六进制）、`enabled`（**字符串 `"True"`**，因为 `bool.ToString()` 首字母大写）。
+>    当前 A 形状（嵌套 + 三个字符串值）仍然失败 ⇒ 下一轮试 B（顶层扁平，值是条目的 JSON 串）/
+>    C（顶层数组）/ D（换 enabled 与 hash 的写法）。
+> ② **bundle 初始化链的完整地图**（全部静态读出，见 flow-trace 文档 4N.1）：
+>    `BundleInitFlow::{Run, LoadLocalManifest, OnLocalManifestsLoaded, DownloadMetaManifest,
+>    OnDownloadMetaManifestSuccess, ChooseBundlesToUse, FindDesiredBundleVersion, LoadRemoteManifest,
+>    LoadRemoteManifestExtraData, RunBundleDownloader, StartBundleDownload, OnBundleDownloadDone,
+>    EndBundleInitFlow, ExtractWwiseBundles, …}` 的**确切 RVA 都在文档里**。
+> ③ 实测：**流程就停在 `BundleMetaManifest::Deserialize`(0xE240AC) 那里**
+>    （TBM 命中 1 次；`ChooseBundlesToUse`(0xD94D68) / `FindDesiredBundleVersion`(0xD95160) /
+>    `SendMessage`(0xD93170) / `StandardizedErrorCode::.ctor`(0xD93B08) **全部 0 命中**）
+>    ⇒ 它要么返回 false（但那样会走错误分支，与 SendMessage=0 矛盾），**要么抛了异常被游戏自己吃掉**
+>    （logcat 里也没有 `E Unity` ⇒ 确实被 catch 了）。
+> ⇒ **建角端点已经按契约接好了**（`POST /characters` + `capture_character()`），只要客户端走到那一步就能抓到真实的建角数据。
+>
+> ### 五之四、★★★ 当前状态快照（2026-10-31 12:40，写给下一个会话）
+>
+> ⚠ **本节已被上面 14:40 的「续跑简报」取代**（bundle 初始化已打通，契约已定案）。保留作演进记录。
+>
+> **一句话**：**「不绕建角」已经实现并验证**（后端在客户端没建角前不再伪造角色），
+> 客户端**确实走进了选角/建角分支**，但被 **bundle 初始化**挡住：
+> 弹 **「未知错误 (0-10000-7)」** ⇒ `BundleInitController` 错误 7 ⇒
+> `BundleMetaManifest::Deserialize` → `Entry::Deserialize` **返回 false**。
+>
+> **磁盘/设备现状（已核对）**
+> | 项 | 值 |
+> |---|---|
+> | 本地 `.so` md5 | `56f2c472fdb9a6b1c76d972b947e6cf2` |
+> | 设备 `.so` md5 | **同上** ✓ ⇒ 下一轮可直接 `INSTALL=0` |
+> | 当前路由表 | `shapes/R_perchar.json`（含 `GET/POST /characters` 单独路由；旧的 `R_auth.json` 保留） |
+> | `char_state.json` | **不存在** ⇒ 后端认为「没有角色」⇒ 客户端会走建角流程 ✓ |
+> | 当前探针集 | `TSF TFI TLS TBM TCB TFV TCO TIE`（8 个）|
+> | 当前 `MetaManifest` | `{"1.6.3.1.105":{"minGameVersion":"0.0.0.0.0","manifestHash":"c80558062256ac4e383d6bba2ef2de6e4ea0","enabled":"True"}}` |
+>
+> **复现命令**（`FTUE=1` 必须带，否则走已建账号那条卡死的路）：
+> ```bash
+> cd H:/Project/threeKingdomSlayer/threeKingdomSlayer/Library/Locus/tmp/blades
+> export MSYS_NO_PATHCONV=1
+> APK=build/blades_c.apk INSTALL=0 PREFS=1 CLEAR_SAVE=0 FTUE=1 WAIT=170 ROUTES=shapes/R_perchar.json bash run_ca.sh
+> ```
+> ⚠ **跑之前先看 `build_c.sh` 的输出**：`hooks=… / cave 用到 … / 签名 OK` 必须都有，
+> 且**设备 `.so` 的 md5 要与本地一致** —— 否则跑的是旧探针（4P.9 那个坑，本轮白跑 3 轮）。
+>
+> **下一个会话建议按这个顺序做**（细节见 flow-trace 文档 **4P.8**）：
+> 1. 在 `Entry::Deserialize` 的三个比较点（`0xE24530` minGameVersion 解析后 / `0xE24604` enabled 比较 /
+>    `0xE246E4` manifestHash 比较）各打一个探针 ⇒ **直接知道是哪一项没过**（洞区还有余量）。
+> 2. 同时试 **MetaManifest 顶层形状**变体（纯数据 ⇒ 不用重新 build）：现在是对象
+>    `{"版本":{...}}`，可试 **数组** `[{...}]`；`BundleMetaManifest.Deserialize` 里有类型检查，
+>    形状不对会直接失败（0xE24140..0xE24178）。
+> 3. 顺带把 `ManifestExtraData` 文件头 `[4..19]` 那个 16 字节
+>    （`c8055806…`）与**客户端本地算出来的清单 hash** 对一下（后者可从 1 点的探针里读出来）。
+>
+> **仍待解决的大问题**：建角界面还没出现（被 bundle 初始化挡住）；
+> 建角之后能不能进城镇/战斗，还要等这一关过了才知道。
+>
+> **★ 不要把这个项目提交/推送到 git**：它与当前工作区（threeKingdomSlayer）无关，
+> 知识文档里的改动保持本地未提交即可（用户 2026-10-31 明确要求）。
+>
+> ### 五之三、★★ 本轮最硬的两个结论 + 一个陷阱
+>
+> **① 流程停在 `MetaManifest.json` 的解析上（已钉到最后一层）**
+> 重新跑（装上新构建）后的实测：
+> ```
+> TLS lr=08d94778  ⇒ DownloadMetaManifest 的错误分支
+> TBM lr=08d94c48  ⇒ BundleMetaManifest::Deserialize 被调用
+> TEB lr=08e242d0  ⇒ Entry::Deserialize 被调用（⇒ 失败就在它内部）
+> TLS lr=08d94d2c  ⇒ Deserialize 返回 false 后的错误分支
+> ```
+> ⇒ `Entry::Deserialize`(0xE2442C) 的判定（静态读出）：
+> `minGameVersion` → `Version::FromString`（**≤5 段**的数字版本串 ⇒ `"0.0.0.0.0"` 对、`"0.0.0.0"` 错）；
+> `enabled` → **逐字节**比较 `"True"`（首字母大写，`"true"` 不行）；
+> `manifestHash` → 与一个**静态 Hash128** 逐字节比较（= 客户端本地清单的 hash）。
+> ⇒ **下一轮一步到位的做法**：在比较点 **`0xE246EC`（`bne 0xE247E0`）** 打个洞，把两边 16 字节
+> （我们给的值 vs 客户端期望值）都打出来 ⇒ 照抄期望值即可。
+> （已试过两个候选：APK `Manifest` 文件的 md5 `0f3a3bc0…` ✗、`ManifestExtraData` 文件头的 16 字节
+> `c8055806…` ✗ ⇒ 期望值另有出处，或字节序相反。）
+>
+> **② ★★ 陷阱：`build_c.sh` 失败时会沿用旧的 `.so`**
+> 探针区只有 800 字节，放不下时 `build_vtrace.py` 直接 `SystemExit` ⇒ `patch_c_fire.py` 不跑 ⇒
+> `build/libil2cpp.c.so` **沿用上一轮的** ⇒ 重打出的 APK 里装的是**旧探针** ⇒ 新探针全部 0 命中。
+> 本轮因此白跑了 3 轮才发现。
+> ⇒ **每轮跑之前必须确认**：`hooks=… / cave 用到 … / 签名 OK` 都打出来，
+> 且**设备上 `libil2cpp.so` 的 md5 与本地 `build/libil2cpp.c.so` 一致**。
+>
+> ### 五之二、★ 剩下的卡点（现象层）
+> * 屏幕上一直弹 **「网络错误 / 发生未知错误，请重试」**（1920×1080，按钮「好的」在 (960,617)）。
+>   查 `schemas_out/HttpErrorsHandling`：`Http.Error.NetworkNotReachable` 是 **UNKNOWN（HTTP 0 / error 0）** 那一档。
+> * 状态链会打转：`#65 FetchingSaveData → #3 → #5 → #12 AuthenticationLink → …`，
+>   另一支是 `→ #14 LevelLoaded → #66 LoadingBaseGameContent → TSL/TSD → #63 InitializingGame
+>   → #56 SyncVisitingTown → #68 StopGameHardwareNotSupported → #62 ForceReset → #29 PreCharacterSelection → #67 UninitializingGame`。
+> * ⚠ 「网络错误」弹窗在**第一个后端请求之前**就出现了（10:25:44，而第一个 API 请求是 10:26:12）
+>   ⇒ **很可能不是我们后端引起的**（更像是 UC SDK 对 `api.mygm.sdo.com` 的握手失败）⇒ 别盯着它。
+> * 客户端进程**活着**（TPN 每帧都在打），只是流程不动 ⇒ 是**语义**卡住，不是崩溃/超时。
+>
+> ### 六、★ 本轮**证伪**的两个假设（别再走一遍）
+> | 假设 | 实测 |
+> |---|---|
+> | 「请求被 `IsOmittedContext` 静默取消」 | **证伪**：`TAD`(`AddOmittedContextFilter`) 全程 **0 命中**、`TRM` 1 命中 ⇒ 位图压根没被设过 |
+> | 「`_isCommunicationEnabled` 关着导致取消」 | **证伪**：`TCM`(`set_IsCommunicationEnabled`) 全程 **0 命中** ⇒ 这个开关运行期从不被切换 |
+>
+> ### 七、★ 本轮修好的**工具** bug（都在 `Library/Locus/tmp/blades/`）
+> 1. **`build_vtrace.py`：cave 只补做了序言的第一条 STMDB** ⇒ **跳过了** `add fp,sp,#imm` / `sub sp,sp,#imm`
+>    ⇒ 被探函数的 fp/sp 不对 ⇒ 函数体里 `[fp,#-k]` 的局部变量写进**调用者栈帧**（静默栈损坏）。
+>    ⇒ 已加 `prologue_extra()` + `apply_prologue()`：把完整序言补做，并从 `target+4*(1+K)` 继续。
+>    ⚠ 连带要修：`bl __android_log_print` 的相对偏移、以及 `'off'` 模式的**池字 W**（它是相对第二条指令 PC 的偏移）。
+>    ⚠⚠ **坑**：`'off'` 模式的数据段开头是 4 字节池字 W，**排在 tag 前面** ⇒ 切代码/数据段**不能**用 tag 的位置。
+> 2. **`nregs` 少算一位**：原来 `bin(pro & 0x0FFF)` 漏了 fp(r11)/lr(r14) ⇒ 对齐算错 4 字节 ⇒ 改成 `& 0x5FFF`。
+> 3. 新增 **`'nopro'` 探针模式**（打**叶子函数**：第一条指令要先原样补做，再打点）。
+> 4. `run_ca.sh`：`$PKG_preferences.xml` 在 `set -u` 下是**未定义变量** ⇒ CLEAR_SAVE 直接报错 ⇒ 已改成 `${PKG}_preferences.xml`。
+> 5. `patch_c_fire.py` 新增修法 **E**（0x15898C0）与 **G**（`IsOmittedContext` 恒假，实测无效、保留当保险）、
+>    **H**（通信关着也入队，默认**关**：`BLADES_FORCE_COMMS=1`）。
+>
+> ### 八、★ 下一轮建议顺序
+> 1. **逐端点响应体**：按 `schemas_out/` 的 19 个 `.schema` 给上面那 16 个端点各造一份正确形状的 body
+>    （数值字段用 JSON number、集合形状按实测：`characters`/`chests`/`accountCurrencies`/`characterCurrencies` = **数组**，
+>    `inventory`/`wallet`/`BackendCharacterListData` = **字典**）⇒ 看流程能不能进城镇。
+> 2. **给「没有 .schema」的端点补 DTO**（`dungeons`/`abysses`/`crafts`/`globalshops`/`globalgifts`/`challenges`/`sync`）
+>    —— 从 `dump.cs` 的 DTO 字段反推，或从 `rest_spec.md` 里的 165 个 DTO 拿。
+> 3. **盯住 `#12 AuthenticationLink` 为什么在 FTUE=0 时能过去、在 FTUE=5 时过不去**（大概率是「本地账号/角色 id」相关）。
+> 4. 探针位还有余量（洞区 0xA7B9EC..0xA7BDFC，探针区 0xA7BADC 起）：可加
+>    `FlowState::OnSaveDataFetched` 之后的下一个状态、`TownParser`、错误弹窗的显示入口。
+>
+> ### 九、★ 复跑命令（可复现）
+> ```bash
+> cd H:/Project/threeKingdomSlayer/threeKingdomSlayer/Library/Locus/tmp/blades
+> export MSYS_NO_PATHCONV=1
+> APK=build/blades_c.apk INSTALL=0 PREFS=1 CLEAR_SAVE=0 FTUE=1 WAIT=170 \
+>   ROUTES=shapes/R_auth.json bash run_ca.sh
+> ```
+> ⚠ **一定要带 `FTUE=1`**（否则走「已有账号」那条卡死的路）；`INSTALL=1` 才会装上新的 .so。
+> ⚠ 设备上的 `libil2cpp.so` 必须与本地 `build/libil2cpp.c.so` 一致
+> （**2026-10-31 11:15 实测：两边 md5 = `739d1691dcb9bb14412de0e19b143723`** ✓ ⇒ 下一轮可以直接 `INSTALL=0`）。
+> ⚠ 模拟器必须是 `emulator-5554` 且在线；adb server / 后端进程活不过一次 bash 调用 ⇒ 全部在 `run_ca.sh` 里做完。
+> ⚠ 当前构建的 `.so` 已归档在 `build/history/libil2cpp_c_*.so`（每轮 build 都会存一份）。
+>
+> ### 十、最小阅读清单
+> 本文 → `plan/blades-flow-trace-breakthrough-20261029.md` **4L 节**（本轮完整证据）
+> → `memory/blades-reverse-engineering-assets.md` 第 10/11 节。工作目录 `Library/Locus/tmp/blades/`。
+>
+> ---
+>
+> ## ⚠【已被上面 2026-10-31 11:15 版取代】续跑简报（2026-10-30 21:50 · 存档）
 
 > ## ★★★ 续跑简报（2026-10-30 21:50 最新 · 先读这段）★★★
 >
