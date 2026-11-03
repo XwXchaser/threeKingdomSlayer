@@ -937,6 +937,41 @@ if (_currentChoices == null || _currentChoices.Count == 0)
 | **R9 关卡配置** | `StageConfig`（`waves` / `RowConfig` / `killMilestones` / `clearCoinReward` / `healthMultiplier` / `damageMultiplier` / `expMultiplier` / `formationConfig`）；`FakeRouteStageConfig.prerequisiteStageIds`；`RouteCatalogData` + `StageSelectUI`（选关 + 解锁判定）；`KillRewardManager`（里程碑 Coin / Heal） | N1 / E0 / N3 的波次数据（E0 2→3、N3 3→5）；**104 两阶段的 `BossPhaseData`**（现为 3 阶段） | **纯配置** + **新建 2 个 BossPhaseData 资产** |
 | **R10 铜钱闭环** | 完整：敌人 `coinReward` / 里程碑 / 通关奖励 / 局内「敛财」/ 天赋消费 / `SettleCoins` 结算 | 正式关全部 `clearCoinReward = 0`、`killMilestones` 未配 | **纯配置** |
 
+### 11.6 本周落地后的回填（2026-11-03）
+
+> §11.4 是**动手前**的盘点快照；这里是**做完之后**回填的结论 —— 重点记「项目里本来就有 / 踩过的坑」，
+> 避免下次再误判「要新建」或再踩同一个坑。
+
+#### 11.6.1 本周落地对照
+
+| 需求 | 落点 | 状态 |
+|---|---|---|
+| R4/R5 能力消费点 | `TalentStatService`（statId/statAdd 通用载荷）+ `TalentCapabilities` + `HeroConfig.abilityTree` | ✅ 6 个消费点（生命/复活/道具槽/主动槽/被动槽/铜钱/破阵/追击/运筹/不屈） |
+| R7 等级上限 | `UpgradeEffectManager.GetEffectiveMaxLevel` = `min(max(资产,天赋),数据)` | ✅ 两处上限判定改读它 |
+| R8 满槽补偿 | `UpgradeChoiceManager` 空候选分支 → `PlayerState.AddCoins` | ✅ 但**当前内容量下不会触发**（见 11.6.3） |
+| R6 秘籍 | `ManualDefinition` + `ManualSaveSection` + `ManualDropSystem` + `EnemyManager.TryDropItem` 分派 + `BreakableProp.manualDrop` | ✅ ①~⑤ |
+| R1 两级页 | 数据层：`groupId` / `col` / `row` / `statId` / `statAdd`；页 1 = 12 个能力节点、页 3 = 9 个流派节点 | ✅ 数据层完成；**面板分组仍待对方** |
+| R3 流派分线 | 9 个流派技能的 `requiredTalentIds` | ✅ 并修好「主动技能不过天赋条件」的漏洞 |
+| R9 关卡编队 | N1 1 波 / E0 3 波 / N2 3 波 / N3 5 波 + 104 两阶段 + hp 倍率 | ✅ |
+| R10 铜钱 | `killMilestones` + 路线级 `clearCoinReward` | ✅ 里程碑通道原本是死的（见 11.6.2） |
+
+#### 11.6.2 踩到的坑（**重要，别再踩**）
+
+| # | 现象 | 真相 / 处理 |
+|---|---|---|
+| 1 | **正式关配了 `killMilestones` 但永远不发钱** | `KillRewardManager` 在**开局**缓存 `killMilestones`，那一刻 `StageConfig` 还没挂上 → 缓存永远 null。**已改成实时读** `CurrentMilestones` |
+| 2 | 「天赋树的 guid 悬空 / 引用断了」 | **假警报**：本项目的 `.meta` 里 guid 是 **base64**、资产引用里是 **hex**，同一 guid 的两种写法 → 看起来像两个不同 id。`AssetDatabase.GUIDToAssetPath` 一查全是正常的 |
+| 3 | `KillRewardUI` 有完整的奖励弹窗代码，但游戏里从不见 | **组件存在但没部署**（Battle 场景只有 `KillRewardManager`）→ 里程碑/满槽补偿的弹窗都看不到。已留好端口 `CombatPresenters.InRunReward`，UI 侧挂上即生效 |
+| 4 | 难度表脚本的数据「全是实测」却和资产对不上 | 内置基线停在 2026-10-25（敌人血量/波次都变了），而且**表里根本没有 1012** → 新编队一用就 KeyError。已按 prefab 重测并补齐 |
+| 5 | 脚本的 Boss 血量模型与运行时不一致 | 脚本把 Boss 也乘进通用倍率；运行时 `bossHealthMultiplier` 单独算（铁律五：Boss 血量是**最终值**）。已把两者分开建模 |
+
+#### 11.6.3 两条会影响后续设计的实测结论
+
+| 结论 | 依据 |
+|---|---|
+| **R8 的满槽补偿在当前内容量下根本不会触发** | 一条路线只给 ~13 次升级，而 3 主动 + 3 被动 × 5 级 = 30 次升级才吃得下 → 池子永远不空 → 补偿是安全阀，不是收入主体 |
+| **XP 缺口 196%** | 全路线 3780 经验 → Lv17；「30 分钟约 42 次技能升级」需要 11172 → 内容量差约 3 倍 |
+
 ### 11.5 总体结论
 
 | 类别 | 条目 |
