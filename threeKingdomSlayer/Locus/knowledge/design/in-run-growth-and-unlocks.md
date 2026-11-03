@@ -169,21 +169,28 @@ aiEditMode: inherit
 
 ### 5.1 现状与目标
 
-| | 现状 | 目标 |
-|---|---|---|
-| 主动技能槽 | 4（`HeroConfig.itemSlotCount`，**与道具槽共用**） | **基础 3**，天赋渐进解锁 |
-| 被动槽 | 6（`UpgradeChoiceManager.CreateSampler` 里的硬编码 `PassiveUpgradeCount >= 6`） | **基础 3**，天赋渐进解锁 |
-| 道具槽 | 4（同一个 `itemSlotCount`） | 不变 |
+> ✅ **A1 已实现（2026-11-03）**：三个槽位已拆成三个独立字段，基础值 **3 主动 / 3 被动 / 4 道具**。
+> 「天赋渐进解锁更多槽位」的读开关仍属 B 批（**未做**）；被动槽口径仍属 A2（**未做**）。
 
-### 5.2 必须拆字段（阻断项）
-
-| 字段 | 归属 | 默认 | 读取处 |
+| | 拆分前 | 拆分后（A1 已实现） | 后续 |
 |---|---|---|---|
-| `activeSkillSlotCount` | `HeroConfig` | 3 | `ActiveSkillInventory.Capacity`（第 56 行） |
-| `passiveSlotCount` | `HeroConfig` | 3 | 采样器的被动上限判定（`UpgradeChoiceManager` 第 98 行） |
-| `itemSlotCount` | `HeroConfig`（保留原义） | 4 | `ItemInventory.Capacity`（第 22 行） |
+| 主动技能槽 | 4（`HeroConfig.itemSlotCount`，**与道具槽共用**） | **3**（`HeroConfig.activeSkillSlotCount` → `ActiveSkillInventory.Capacity`） | 天赋渐进解锁（B 批） |
+| 被动槽 | 6（`UpgradeChoiceManager.CreateSampler` 里的硬编码 `PassiveUpgradeCount >= 6`） | **3**（`HeroConfig.passiveSlotCount` → `UpgradeChoiceManager.PassiveSlotCapacity`） | 天赋渐进解锁（B 批） |
+| 道具槽 | 4（同一个 `itemSlotCount`） | **4**（`HeroConfig.itemSlotCount`，**语义不变**） | 不变 |
+
+### 5.2 必须拆字段（阻断项）✅ 已完成
+
+| 字段 | 归属 | 默认 | 读取处 | 状态 |
+|---|---|---|---|---|
+| `activeSkillSlotCount` | `HeroConfig` | 3 | `ActiveSkillInventory.Capacity` | ✅ |
+| `passiveSlotCount` | `HeroConfig` | 3 | `UpgradeChoiceManager.PassiveSlotCapacity` → 采样器的被动上限判定 | ✅ |
+| `itemSlotCount` | `HeroConfig`（保留原义） | 4 | `ItemInventory.Capacity` | ✅（未改语义） |
 
 ⚠️ **序列化陷阱**：Unity 新增 int 字段在老资产里是 **0**。必须**同时改 `Assets/ScriptableObjects/Warrior/Hero_Zhangfei.asset` 填 3**，并在读取处 `Mathf.Max(1, v)` 兜底。
+
+> ✅ A1 已按此处理：`Hero_Zhangfei.asset` 已显式写入 `activeSkillSlotCount: 3` / `passiveSlotCount: 3`（磁盘 YAML 已回读确认），
+> 两处读取点均带 `Mathf.Max(1, v)` 兜底（老资产 / 漏改资产 → 至少 1 槽，不会归零）。
+
 
 ### 5.3 槽位满时的行为（现行）
 

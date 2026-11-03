@@ -22,6 +22,13 @@ public class HeroConfig : ScriptableObject
     public float maxHealth = 500f;
     public int reviveCount = 3;
     public float reviveHealthPercent = 0.5f;
+
+    [Header("槽位")]
+    [Tooltip("主动技能槽上限（基础 3）。主动 / 被动 / 道具三套槽位互不共用。")]
+    [Min(1)] public int activeSkillSlotCount = 3;
+    [Tooltip("被动技能槽上限（基础 3）。上限判定含数值被动（专注 / 智慧 / 疾风…），口径与 UI 的差异见设计文档 §5.4。")]
+    [Min(1)] public int passiveSlotCount = 3;
+    [Tooltip("道具槽上限。与主动 / 被动槽独立。")]
     [Min(0)] public int itemSlotCount = 2;
 
     [Header("技能配置")]

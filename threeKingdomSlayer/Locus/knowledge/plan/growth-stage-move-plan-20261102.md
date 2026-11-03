@@ -42,7 +42,7 @@ aiEditMode: inherit
 
 | # | 任务 | 复杂度 | 为什么排最前 |
 |---|---|---|---|
-| **A1** | **槽位 3+3 拆分**（`HeroConfig` 拆 `activeSkillSlotCount` / `passiveSlotCount`） | 中 | **是地基** —— 后面全部依赖它；且要处理 Unity 新字段在老资产里为 0 的序列化陷阱 |
+| **A1** | **槽位 3+3 拆分**（`HeroConfig` 拆 `activeSkillSlotCount` / `passiveSlotCount`） | 中 | ✅ **已完成 2026-11-03**（见 `plan/task-a1-slot-split-20261102.md`）—— 是地基，后面全部依赖它；且要处理 Unity 新字段在老资产里为 0 的序列化陷阱 |
 | **A2** | 被动排 UI 口径对齐 | 小 | 紧跟 A1（同一个话题） |
 | **A3** | 满槽 → 金币补偿 | 小 | 改一个分支 + 复用现有 `KillRewardUI` 形态 |
 | **A4** | 运行时等级上限（三个上限相乘） | 中 | 纯逻辑，且必须夹「数据上限」否则 `GetTriggerInterval` 越界会让被动直接失效 |
@@ -228,7 +228,7 @@ aiEditMode: inherit
 
 | # | 任务 | 内容 | 归属 | 验收 |
 |---|---|---|---|---|
-| **T-11** | 槽位字段**拆分**（解耦） | `HeroConfig` 把 1 个 `itemSlotCount` 拆成 `activeSkillSlotCount` / `passiveSlotCount` / `itemSlotCount`（前两个默认 3）；`ActiveSkillInventory.Capacity` / 采样器被动上限改读新字段；**同时改 `Hero_Zhangfei.asset` 填 3** + 读取处 `Mathf.Max(1, v)` 兜底 | 数据层 + 代码 | 基础 3 主动 3 被动；旧存档不炸 |
+| **T-11** | 槽位字段**拆分**（解耦） ✅ 2026-11-03 | `HeroConfig` 把 1 个 `itemSlotCount` 拆成 `activeSkillSlotCount` / `passiveSlotCount` / `itemSlotCount`（前两个默认 3）；`ActiveSkillInventory.Capacity` / 采样器被动上限改读新字段；**同时改 `Hero_Zhangfei.asset` 填 3** + 读取处 `Mathf.Max(1, v)` 兜底 | 数据层 + 代码 | 基础 3 主动 3 被动；旧存档不炸 |
 | **T-12** | 被动排 UI 口径 | 方案 A：扩展现有 `PassiveSkillRow` 显示全部占用槽位的条目（含 Numeric）；或方案 B：Numeric 不占槽（**需拍板**） | 代码 | UI 显示与实际占用一致 |
 | **T-13** | 满槽金币补偿（**改现有分支**） | 改 `UpgradeChoiceManager.ShowNextChoice` 的空候选分支：发 `30 + 5 × 等级` 铜钱 + 提示（复用现有 `KillRewardUI.rewardPopup` 形态，**不新建 Toast 系统**） | 代码 | 池空时弹钱不静默跳过；结算后能在天赋树花 |
 | **T-14** | 能力天赋**消费点** | 给既有逻辑加一个「已解锁就生效」的读开关：生命上限（`PlayerState`）/ 铜钱获取（敌人钱 + 里程碑 + 通关结算处）/ 破阵（架势伤害）/ 追击（击杀 CD）/ 运筹（三选一→四选一）/ 不屈（血量<30% 无敌） | 代码 | 逐个实机验 |

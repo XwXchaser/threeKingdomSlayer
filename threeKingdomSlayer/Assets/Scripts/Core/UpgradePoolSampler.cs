@@ -75,7 +75,7 @@ public sealed class UpgradePoolSampler
             if (!RequirementsMet(wu.upgrade, UpgradePoolKind.Regular)) continue;
             int currentLevel = GetLevel(wu.upgrade);
             if (currentLevel >= wu.upgrade.maxLevel) continue;
-            // 被动技能上限 6 个：已满时只允许升级已有技能，不允许获得新技能
+            // 被动槽已满（上限来自 HeroConfig.passiveSlotCount）：只允许升级已有技能，不允许获得新技能
             if (currentLevel == 0 && IsPassiveCapReached()) continue;
             result.Add(new Candidate { upgrade = wu.upgrade, weight = wu.weight, rarity = rarity });
         }

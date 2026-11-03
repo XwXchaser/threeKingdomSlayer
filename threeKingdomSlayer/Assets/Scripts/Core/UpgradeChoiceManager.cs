@@ -89,12 +89,28 @@ public class UpgradeChoiceManager : MonoBehaviour
         }
     }
 
+    /// <summary>被动槽上限的缺省值（没有武将配置时用，与 <c>HeroConfig.passiveSlotCount</c> 的基础值一致）。</summary>
+    private const int DefaultPassiveSlotCount = 3;
+
+    /// <summary>
+    /// 被动槽上限（基础 3，来自 <c>HeroConfig.passiveSlotCount</c>）。
+    /// 老资产 / 漏改资产的字段是 0 → 按 1 兜底；没有武将配置时用基础值。
+    /// </summary>
+    private int PassiveSlotCapacity
+    {
+        get
+        {
+            var hero = PlayerState.Instance != null ? PlayerState.Instance.heroConfig : null;
+            return hero != null ? Mathf.Max(1, hero.passiveSlotCount) : DefaultPassiveSlotCount;
+        }
+    }
+
     /// <summary>创建抽池器（依赖注入：等级查询 / 被动上限 / 主动技能可获得性）。</summary>
     private UpgradePoolSampler CreateSampler()
     {
         var sampler = new UpgradePoolSampler(
             GetCurrentLevel,
-            () => UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.PassiveUpgradeCount >= 6,
+            () => UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.PassiveUpgradeCount >= PassiveSlotCapacity,
             def => ActiveSkillInventory.Instance != null && ActiveSkillInventory.Instance.CanAcquire(def));
         // 内置条件源：按天赋解锁入池（升级定义填了 requiredTalentIds 才生效）。
         sampler.AddRequirementProvider(new TalentUpgradeRequirementProvider());
