@@ -21,7 +21,6 @@ public class KillRewardManager : MonoBehaviour
     /// <summary>里程碑达成事件：(阈值, 奖励列表)</summary>
     public event System.Action<int, List<KillRewardEntry>> OnMilestoneReached;
 
-    private List<KillMilestoneEntry> _milestones;
 
     private void Awake()
     {
@@ -48,26 +47,38 @@ public class KillRewardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 重置已领取记录并重新加载当前关卡配置（新关卡开始时调用）
+    /// 重置已领取记录（新关卡开始时调用）
     /// </summary>
     public void ResetRewards()
     {
         _earnedThresholds.Clear();
-        var sc = StageBattleState;
-        _milestones = (sc != null && sc.StageConfig != null) ? sc.StageConfig.killMilestones : null;
     }
 
-    /// <summary>获取当前关卡里程碑（供 UI 读取进度）</summary>
-    public List<KillMilestoneEntry> CurrentMilestones => _milestones;
+    /// <summary>
+    /// 当前关卡的击杀里程碑（**实时读**）。
+    ///
+    /// ⚠️ 为什么不能开局缓存：<c>ResetRewards()</c> 在关卡开始时调，
+    /// 那一刻 <c>StageConfig</c> 可能还没挂上 → 缓存会一直是 null → **里程碑永远不发**
+    /// （2026-11-03 D1 实测发现：正式关配了 killMilestones 也不结算）。
+    /// </summary>
+    public List<KillMilestoneEntry> CurrentMilestones
+    {
+        get
+        {
+            var sc = StageBattleState;
+            return (sc != null && sc.StageConfig != null) ? sc.StageConfig.killMilestones : null;
+        }
+    }
 
     /// <summary>获取已领取的里程碑阈值集合（供暂停面板显示）</summary>
     public HashSet<int> GetEarnedThresholds() => _earnedThresholds;
 
     private void OnKillCountChanged(int killCount)
     {
-        if (_milestones == null || _milestones.Count == 0) return;
+        var milestones = CurrentMilestones;
+        if (milestones == null || milestones.Count == 0) return;
 
-        foreach (var entry in _milestones)
+        foreach (var entry in milestones)
         {
             if (killCount >= entry.killThreshold && _earnedThresholds.Add(entry.killThreshold))
             {
