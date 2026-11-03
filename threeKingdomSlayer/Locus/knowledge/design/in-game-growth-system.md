@@ -206,7 +206,11 @@ Assets/ScriptableObjects/Upgrades/
 ### 3.12 扩展接口
 
 - 局外成长可预置 `acquiredUpgrades`（开局携带能力）
-- 局外成长可增加选项数量（3选1 → 4选1 → 5选1）
+- ✅ 局外成长可增加选项数量（3选1 → 4选1 → 5选1）—— **已实现**：
+  「运筹」天赋（`statId=choice_count`）→ `UpgradeChoiceManager.EffectiveChoiceCount` = `choiceCount + 1`（2026-11-03 A5）
+- ✅ 局外成长可按**天赋节点**门控候选 —— **已实现**（2026-11-03 C1）：
+  `UpgradeDefinition.requiredTalentIds` → `TalentUpgradeRequirementProvider`（AND 语义）；
+  ⚠️ 旧实现里主动技能不过这道门（只查「能不能拿到」），已一并修好
 - `OnBeforeUpgradeChoice` 事件可修改候选列表
 - `OnUpgradeChosen` 事件供外部监听
 - `IGestureRecognizer` 接口预留新攻击手势（画圈、双指等）

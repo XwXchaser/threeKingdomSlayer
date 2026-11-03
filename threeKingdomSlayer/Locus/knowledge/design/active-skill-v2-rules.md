@@ -18,6 +18,10 @@ aiEditMode: inherit
 
 ## V2 获取与槽位
 - 主动技能并入玩家升级三选一池。
+- **流派天赋门（2026-11-03 C1）**：池内技能按 `requiredTalentIds` 绑天赋节点 → **未解锁对应节点的流派技能不进池**；
+  通用技能（疾风 / 智慧 / 地刺 / 箭雨 / 冰雾）`requiredTalentIds` 为空 → **常驻**。
+  判定链：`UpgradePoolSampler.CollectUnified` → `RequirementsMet` → `TalentUpgradeRequirementProvider`（AND 语义）。
+  ⚠️ 旧实现里**主动技能不过天赋条件**（只查“能不能拿到”），已一并修好。
 - 普通敌人不直接掉落主动技能。
 - Boss 主动技能三选一只提供 Rare 与 Legendary。
 - 槽位未满：可出现新主动技能，也可出现已持有且未满级技能。

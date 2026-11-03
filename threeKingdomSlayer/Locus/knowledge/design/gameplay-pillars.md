@@ -257,8 +257,10 @@ BOSS 差异：**重攻击**可打断 CFrame（C 技）/ SuperArmor（阶段霸�
 
 ### 5.4 当前分支**没有**任何玩法差异
 
-- 拓扑：`N1 → E0 → J1 →{ 左：EV → N3 ｜ 右：N2 }`。
-- 左支（EV，无战斗）最终打 N3、右支直达 N2，但 **N2 与 N3 引用的是同一份战斗配置**（`SmallBattle`），奖励、敌人、时长完全一致。
+- 拓扑（2026-11-03 实测 `Changbanpo_ScrollRoute.asset`）：`N1 → E0 → J1 → EV → N3`。
+  **J1 只有 `j1_to_ev` 一个出口** → 所谓「右支 N2」**没有任何节点指向它 = 不可达的孤儿节点**。
+- N2 与 N3 现在引用**不同的**战斗配置（`Formal_N2_Battle` 3 波 / `Formal_N3_Battle` 5 波 + 104 两阶段），
+  但因为 N2 不可达，玩家实际只会打 N3 —— **分支差异做在数据里，没有做在拓扑里**。
 - 选择面板只显示 `displayName` 与按钮布局，**没有任何风险/奖励/预览信息**（`FakeRouteChoiceConfig` 字段只有 choiceId / displayName / targetNode / presentation / layout）。
 
 → 也就是说：**支柱五目前只有"流程"没有"选择"**。这是本轮最值得先补的玩法缺口。

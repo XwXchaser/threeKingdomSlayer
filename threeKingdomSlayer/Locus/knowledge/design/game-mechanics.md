@@ -71,7 +71,7 @@ aiEditMode: inherit
 | N3 | 村落搜救 | 战斗 | 复用 `SmallBattle`（1×1011） | ✅ | 是 |
 | N2 | 官道断后 | 战斗 | 复用 `SmallBattle`（1×1011） | ✅ | 是 |
 
-流程：`N1 → E0 → J1 →{ 左：EV → N3 ｜ 右：N2 }`。
+流程（2026-11-03 实测）：`N1 → E0 → J1 → EV → N3`（J1 只有 `j1_to_ev` 一个出口；N2 是无入口的孤儿节点）。
 
 > 说明：**当前路线是美术/流程验证用的线性骨架**（每场战斗 1 排 1–3 个敌人、`clearCoinReward=0`、`fillUpRule=PerColumn`），不是正式数值关。正式「长坂坡 8–10 分钟」六战役节点 + 情景节点 + 分支拓扑只有设计文档（`design/changbanpo-six-node-level-design.md`）。
 
@@ -151,8 +151,9 @@ FakeRouteNodeConfig
 | 英雄 | 张飞（`Hero_Zhangfei`，唯一武将） |
 | 生命 | 100 |
 | 复活次数 | 0（`reviveHealthPercent=0.5` 已配但复活次数为 0） |
-| 主动技能槽 | `itemSlotCount = 4` |
-| 被动技能上限 | 6（`UpgradeChoiceManager` 硬编码） |
+| 主动技能槽 | 3（`HeroConfig.activeSkillSlotCount`；「巧思」天赋 +1） |
+| 被动技能上限 | 3（`HeroConfig.passiveSlotCount`；「博学」天赋 +1） |
+| 道具槽 | 4（`HeroConfig.itemSlotCount`；「行囊」天赋 +1） |
 
 ### 4.2 手势 → 招式映射（✅ 已部署）
 
@@ -349,7 +350,8 @@ FakeRouteNodeConfig
 - **曲线**：`PlayerState.expCurveConfig = ExpCurve_30min`（**60 级**，Lv1 需 200 经验，逐级约 +2%；另有 `DefaultExpCurve` 15 级、100→550）。当前 `currentLevel` 从 0 开始，超出曲线长度即不再升级。
 - **触发**：`PlayerState.OnLevelUp` → `UpgradeChoiceManager`：`Time.timeScale = 0` → 抽 3 张卡（`choiceCount=3`）→ 玩家**两次点击同一张卡**确认 → 应用效果 → 若还有待处理升级则**保持暂停继续弹窗**（支持一次经验多级）→ 全部完成恢复 `timeScale=1`。
 - **抽取**：`UpgradeChoiceManager.activeSkillPoolConfig`（V2 统一池），按稀有度权重 `Common 0.60 / Rare 0.35 / Legendary 0.05` 掷稀有度，再在同稀有度候选内按权重抽；同一次抽卡不重复；候选不足时降级到其他稀有度补足。
-- **过滤**：已达 `maxLevel` 排除；前置条件（`prerequisites`）不满足排除；**被动已满 6 个时不再出现新被动**；主动技能走 `ActiveSkillInventory.CanAcquire`（未持有且槽位未满，或已持有且未满级）。
+- **过滤**：已达 `maxLevel` 排除；前置条件（`prerequisites`）不满足排除；**被动已满 3 个时不再出现新被动**；主动技能走 `ActiveSkillInventory.CanAcquire`（未持有且槽位未满，或已持有且未满级）；**流派天赋门**（`requiredTalentIds`）：未解锁对应节点的流派技能不进池，通用技能常驻。
+- **无候选时**：不再静默跳过 → 改发 `30 + 5×等级` 铜钱（满槽补偿，`UpgradeChoiceManager`）；**提示**走端口 `CombatPresenters.InRunReward`（复用 `KillRewardUI` 的弹窗形态；该组件目前没部署到 Battle 场景 → 暂时只有铜钱飘字可见）。
 - **BOSS 掉落**：BOSS 死亡触发 `TriggerItemChoice()`，V2 规则下**只从 Rare + Legendary 的主动技能**中抽 3 张（不含 Common）。
 
 ### 6.4 当前 V2 池内容（工程实测，⚠️ 含调试权重）
@@ -407,8 +409,11 @@ public enum PropType { Coin = 0, /* 后续扩展: Key, Gem, ... */ }
 
 ### 7.2 铜钱获取
 
-- 击杀敌人获得铜钱（Enemy 组件 `coinReward` 字段）
-- 通关时获得通关奖励（`StageConfig.clearCoinReward`）
+- 击杀敌人获得铜钱（Enemy 组件 `coinReward` 字段，默认 10/只）
+- 通关时获得通关奖励（`StageConfig.clearCoinReward`，正式关 N1 60 / E0 120 / N3 200）
+- 击杀里程碑（`StageConfig.killMilestones`）——**当前正式关没有配这个机制**（仅测试资产 `testStage` 有）
+- ⚠️ **2026-11-03 实测**：卷轴路线流程里**正式关的 `clearCoinReward` 没被付**（只有路线级 `FakeRouteStageConfig.clearCoinReward=100` 会在整关结束时付）
+  → 一条路线到手 ≈ **410**（杀钱 310 + 路线通关 100），低于设计目标 600–800。**待定**（补流程 / 调数值）。
 
 ### 7.3 铜钱结算
 
