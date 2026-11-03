@@ -95,7 +95,7 @@ MonoBehaviour:
     icon: {fileID: 0}
     hidden: 0
   - nodeId: talent_pool_cyclone
-    displayName: displace
+    displayName: "\u65CB\u98CE"
     description: "\u53EC\u5524\u65CB\u98CE\u6301\u7EED\u4F24\u5BB3\u5E76\u51FB\u98DE\u3002"
     coinCost: 1
     moveConfig: {fileID: 0}
