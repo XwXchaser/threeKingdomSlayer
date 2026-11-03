@@ -50,6 +50,12 @@ public class UpgradeChoiceManager : MonoBehaviour
     [Tooltip("教学关等脚本化关卡用：置 true 时不弹三选一、不暂停（否则升级会把下一波卡住）")]
     public bool suppressChoices;
 
+    [Header("满槽铜钱补偿")]
+    [Tooltip("三选一没有候选时（槽位满 / 全部满级）改发的铜钱基数")]
+    [SerializeField] private int _fullSlotCoinBase = 30;
+    [Tooltip("每级额外铜钱：补偿 = 基数 + 每级 × 当前等级")]
+    [SerializeField] private int _fullSlotCoinPerLevel = 5;
+
     // ── 运行时状态 ──
     private bool _isChoosing;
     private int _pendingLevelUps;
@@ -273,6 +279,10 @@ public class UpgradeChoiceManager : MonoBehaviour
 
         if (_currentChoices == null || _currentChoices.Count == 0)
         {
+            // 池空不再是「静默跳过」：把这次没得选的升级折算成局内铜钱（R8 / A3）。
+            // 只对**升级三选一**生效；Boss 锦囊（Item）池空仍按原样跳过。
+            if (!_isShowingItemChoice) GrantFullSlotCoinCompensation();
+
             if (_pendingQueue.Count > 0 || _pendingLevelUps > 0 || _pendingItemChoices > 0)
                 ShowNextChoice();
             else
@@ -324,6 +334,41 @@ public class UpgradeChoiceManager : MonoBehaviour
         {
             FinishAllChoices();
         }
+    }
+
+    /// <summary>
+    /// 满槽 / 全部满级时的**铜钱补偿**（R8）：把这次「没得选」的升级折算成局内铜钱。
+    /// 铜钱走 <c>PlayerState.AddCoins</c> → 局内 session → <c>StageController.SettleCoins()</c>
+    /// → 存档 → **天赋树可花**（局外解锁力）。
+    /// 提示复用 <c>KillRewardUI</c> 的奖励弹窗形态（经 <see cref="CombatPresenters.InRunReward"/> 端口）；
+    /// 界面上没有这个实现时**安全降级**——<c>CoinCounterUI</c> 仍会飘「+N」。
+    /// </summary>
+    private void GrantFullSlotCoinCompensation()
+    {
+        var ps = PlayerState.Instance;
+        if (ps == null) return;
+
+        int level = Mathf.Max(0, ps.currentLevel);
+        int amount = _fullSlotCoinBase + _fullSlotCoinPerLevel * level;
+        if (amount <= 0) return;
+
+        ps.AddCoins(amount);
+
+        bool slotFull = IsUpgradeSlotFull();
+        string title = slotFull ? "槽位已满，改为发放铜钱" : "升级已满级，改为发放铜钱";
+        var popup = CombatPresenters.InRunReward;
+        if (popup != null) popup.ShowReward(title, $"+{amount} 铜钱");
+
+        Debug.Log($"[UpgradeChoiceManager] 没有可选项 → 发放铜钱补偿 +{amount}（等级 {level}，槽位满={slotFull}）");
+    }
+
+    /// <summary>槽位是否真的满了（用于区分「槽位满」与「全部满级」两种提示文案）。</summary>
+    private bool IsUpgradeSlotFull()
+    {
+        var uem = UpgradeEffectManager.Instance;
+        if (uem != null && uem.PassiveUpgradeCount >= PassiveSlotCapacity) return true;
+        var asi = ActiveSkillInventory.Instance;
+        return asi != null && asi.UsesActiveSkills && asi.IsFull;
     }
 
     /// <summary>执行选中后的额外效果（扩展点）。在升级本身的效果应用之后。</summary>

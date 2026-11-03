@@ -44,7 +44,7 @@ aiEditMode: inherit
 |---|---|---|---|
 | **A1** | **槽位 3+3 拆分**（`HeroConfig` 拆 `activeSkillSlotCount` / `passiveSlotCount`） | 中 | ✅ **已完成 2026-11-03**（见 `plan/task-a1-slot-split-20261102.md`）—— 是地基，后面全部依赖它；且要处理 Unity 新字段在老资产里为 0 的序列化陷阱 |
 | **A2** | 被动排 UI 口径对齐 | 小 | ✅ **已完成 2026-11-03**（方案 A：被动排显示全部占用条目，含 Numeric）—— 紧跟 A1（同一个话题） |
-| **A3** | 满槽 → 金币补偿 | 小 | 改一个分支 + 复用现有 `KillRewardUI` 形态 |
+| **A3** | 满槽 → 金币补偿 | 小 | ✅ **已完成 2026-11-03**（改一个分支 + 端口化复用 `KillRewardUI` 弹窗形态） |
 | **A4** | 运行时等级上限（三个上限相乘） | 中 | 纯逻辑，且必须夹「数据上限」否则 `GetTriggerInterval` 越界会让被动直接失效 |
 | **A5** | 能力天赋消费点 ×6（生命 / 铜钱 / 破阵 / 追击 / 运筹 / 不屈 / Slash 位移） | 中 | 全部用 **nodeId 解锁态**，**不需要新数据模型** |
 
@@ -230,7 +230,7 @@ aiEditMode: inherit
 |---|---|---|---|---|
 | **T-11** | 槽位字段**拆分**（解耦） ✅ 2026-11-03 | `HeroConfig` 把 1 个 `itemSlotCount` 拆成 `activeSkillSlotCount` / `passiveSlotCount` / `itemSlotCount`（前两个默认 3）；`ActiveSkillInventory.Capacity` / 采样器被动上限改读新字段；**同时改 `Hero_Zhangfei.asset` 填 3** + 读取处 `Mathf.Max(1, v)` 兜底 | 数据层 + 代码 | 基础 3 主动 3 被动；旧存档不炸 |
 | **T-12** | 被动排 UI 口径 ✅ 2026-11-03 | 方案 A：扩展现有 `PassiveSkillRow` 显示全部占用槽位的条目（含 Numeric）；或方案 B：Numeric 不占槽（**需拍板**） | 代码 | UI 显示与实际占用一致 |
-| **T-13** | 满槽金币补偿（**改现有分支**） | 改 `UpgradeChoiceManager.ShowNextChoice` 的空候选分支：发 `30 + 5 × 等级` 铜钱 + 提示（复用现有 `KillRewardUI.rewardPopup` 形态，**不新建 Toast 系统**） | 代码 | 池空时弹钱不静默跳过；结算后能在天赋树花 |
+| **T-13** | 满槽金币补偿（**改现有分支**） ✅ 2026-11-03 | 改 `UpgradeChoiceManager.ShowNextChoice` 的空候选分支：发 `30 + 5 × 等级` 铜钱 + 提示（复用现有 `KillRewardUI.rewardPopup` 形态，**不新建 Toast 系统**） | 代码 | 池空时弹钱不静默跳过；结算后能在天赋树花 |
 | **T-14** | 能力天赋**消费点** | 给既有逻辑加一个「已解锁就生效」的读开关：生命上限（`PlayerState`）/ 铜钱获取（敌人钱 + 里程碑 + 通关结算处）/ 破阵（架势伤害）/ 追击（击杀 CD）/ 运筹（三选一→四选一）/ 不屈（血量<30% 无敌） | 代码 | 逐个实机验 |
 | **T-15** | 运行时等级上限（**改现有判定**） | `UpgradeEffectManager` 增加「有效上限」查询 = `min(max(资产 maxLevel, 天赋 cap), availableRows(def))`；**现有的两处上限判定改读它**（`UpgradePoolSampler` / `ApplyUpgrade`），不新开判定链路 | 代码 | 10 级技能能升到 10；只有 5 级数据的停在 5；**不出现 `GetTriggerInterval` 返回 -1 导致被动失效** |
 | **T-16** | Slash 横向位移驱动 | 给现有 `_directionalPushStep` 加一个数据源（升级效果或天赋读开关），走**既有** `ColumnManager.ApplyDirectionalPush` 通道 | 代码 | 解锁「横扫位移」后 Slash 产生横向位移 |
@@ -271,7 +271,7 @@ aiEditMode: inherit
 | **Q5** | **冰雾 / 烈焰喷射的归属** | 冰雾不在池里也不在游戏里（`_grantDefaultSkills = 0`）；破冰顶开迁移需要它 | 纳入解锁池，并配「破冰顶开」技能升级 |
 | **Q6** | **通用技能是否占被动槽**（疾风 / 智慧 / 地刺 是 Numeric） | 方案 A（占，UI 要显示）vs B（不占） | **A**：统一口径，UI 显示全部占用条目 ✅ **已按 A 落地（2026-11-03，A2）** |
 | **Q7** | **连击阈值天赋的形式** | 「阈值下调」vs「加一档」 | **加一档**：`ComboBuffConfig.triggers[]` 已支持多档位，零代码 |
-| **Q8** | **满槽金币补偿的金额公式** | `30 + 5 × 等级` 是建议值 | 先按建议值跑，用机器人 `battle_end.coins` 观察再调 |
+| **Q8** | **满槽金币补偿的金额公式** | `30 + 5 × 等级` 是建议值 | 先按建议值跑，用机器人 `battle_end.coins` 观察再调 ⚠️ **已按建议值落地（A3），但实测发现会超出 T-05 的 600–800 预算 → 待你定调** |
 | **Q9** | **秘籍掉落的概率与数量** | 「随机或固定掉落」未定 | 固定点位（破坏物必掉）+ 敌人低概率随机 |
 | **Q10** | **节点级 `rewards[]` 死字段** | 字段存在但运行时从不读取 | 要么实现消费，要么删字段 |
 | **Q11** | **旧 4 个空壳 flag 的实现顺序** | 破阵 / 追击 / 运筹 / 不屈 | 运筹最简单，不屈次之 |

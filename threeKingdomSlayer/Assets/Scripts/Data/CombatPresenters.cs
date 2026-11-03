@@ -47,6 +47,17 @@ public interface IItemDiscardPrompt
 }
 
 /// <summary>
+/// **局内奖励提示端口**：满槽等「三选一没有候选」的场景要把局内成长折算成铜钱，
+/// 需要一个提示告诉玩家「钱到账了、为什么没有选项」。
+/// 内核只通过它提示，不碰 UI 组件类型 ✅。
+/// </summary>
+public interface IInRunRewardPopup
+{
+    /// <summary>弹一段奖励提示（标题 + 金额文案）。</summary>
+    void ShowReward(string title, string amountText);
+}
+
+/// <summary>
 /// **三选一弹窗端口**：内核（<c>UpgradeChoiceManager</c>）只通过它展示 / 关闭弹窗，
 /// 不再直接引用界面组件（<c>UpgradeChoicePopup</c>）。
 /// </summary>
@@ -114,6 +125,9 @@ public static class CombatPresenters
     /// <summary>道具弃置弹窗。</summary>
     public static IItemDiscardPrompt ItemDiscard { get; set; }
 
+    /// <summary>局内奖励提示（满槽铜钱补偿等）。</summary>
+    public static IInRunRewardPopup InRunReward { get; set; }
+
     /// <summary>伤害跳字。</summary>
     public static IDamageNumberPresenter DamageNumbers { get; set; }
 
@@ -129,6 +143,7 @@ public static class CombatPresenters
         Hud = null;
         Dialogue = null;
         ItemDiscard = null;
+        InRunReward = null;
         DamageNumbers = null;
         EnemyHealthBars = null;
         QteHud = null;

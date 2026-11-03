@@ -243,6 +243,10 @@ aiEditMode: inherit
 
 ## 6. 满槽 → 金币补偿（R8）
 
+> ✅ **A3 已实现（2026-11-03）**：三选一**没有候选**时不再静默跳过，而是把这次升级折算成
+> `30 + 5 × 当前等级` 铜钱（基数与每级增量都是 Inspector 可调字段）。
+> 实测：Lv1 → +35、Lv2 → +40、Lv3 → +45，局内 session → 结算 → 存档（`props` 里的 `PropType.Coin`）→ 天赋树可花。
+
 ### 6.1 触发点
 
 `Assets/Scripts/Core/UpgradeChoiceManager.cs` 第 258-265 行：
@@ -285,6 +289,33 @@ if (_currentChoices == null || _currentChoices.Count == 0)
 | `SupplyCoinBurst` / `SupplyCoinIcon` | 金币爆散 / 图标 | 可选加强 |
 
 > 项目**没有通用 Toast 组件**（只有 `ItemDiscardPromptAdapter`）。→ **不要新建 Toast 系统**，复用 `KillRewardUI` 的 popup 形态。
+
+### 6.5 实现现状（A3）与两个新发现
+
+| 项 | 现状 |
+|---|---|
+| 触发点 | `UpgradeChoiceManager.ShowNextChoice` 的「候选为空」分支；**只对升级三选一生效**（Boss 锦囊的 Item 池空仍按原样跳过） |
+| 金额 | `_fullSlotCoinBase`（默认 30）+ `_fullSlotCoinPerLevel`（默认 5）× `PlayerState.currentLevel`，两者都是 Inspector 可调 |
+| 发放 | `PlayerState.AddCoins(n)` → 局内 `coinCount` → `StageController.SettleCoins()` → `SaveManager.SetCoins` → 存档 `props` → **天赋树可花**（实测 320 → 355） |
+| 提示 | 走**新端口** `CombatPresenters.InRunReward`（`IInRunRewardPopup`）；`KillRewardUI` 实现该端口并复用它现有的 `rewardPopup` 形态。**界面上没有这个实现时安全降级**——`CoinCounterUI` 仍会飘「+N」 |
+
+#### ⚠️ 发现 1：`KillRewardUI` **不在 Battle 场景里**（组件存在但没部署）
+
+- `Assets/Scripts/UI/KillRewardUI.cs` 有完整的奖励弹窗（标题 + 金额 + 淡入淡出 + 缩放动效），但**Battle 场景里只有 `KillRewardManager`**（逻辑），`KillRewardUI`（视图）**没挂** → 击杀里程碑弹窗当前也是不显示的。
+- 结论：**本次不新建 UI**（纪律：不新建 Toast 系统 / 不动 UI 框架）。做法是——
+  - 核心只认端口 `CombatPresenters.InRunReward`（有实现就弹标题弹窗，没有就降级）；
+  - `KillRewardUI` 实现该端口并自我登记 → **UI 侧一旦把它挂进场景，核心零改动就能生效**；
+  - 今天的实际反馈 = `CoinCounterUI` 的「+N」飘字（实测飘字在屏内、alpha=1，玩家看得见）。
+- 待办（归 UI 侧）：把 `KillRewardUI` 挂进 Battle 场景并配好 `rewardPopup` / `rewardTitleText` / `rewardAmountText`。
+
+#### ⚠️ 发现 2：铜钱预算会超过 T-05 的「单关 600–800」
+
+- A1 把被动槽从 6 降到 3 之后，**满槽来得早得多**；而池子并不是一开始就空——
+  已持有的条目**还能继续升级**（每个 5 级），所以池子要等「已持有的全部升满 + 新条目全被槽位排除」才空。
+- 按当前池子（12 条 × 约 5 级）粗算：约 30 次升级用光池子，之后的每次升级才发铜钱补偿。
+  若一局约 40 次升级，补偿约 10 次 × 80~180 ≈ **800~1800 铜钱**，叠加 T-05 的击杀 + 通关铜钱会**超出 600–800**。
+- → **金额是设计决策（§0.6.4）**，代码已把基数与每级增量做成 Inspector 字段，可用跑关机器人 `battle_end.coins` 观测后再调。
+  本次按文档建议值（30 + 5×等级）落地，**未自行改价**。
 
 ---
 

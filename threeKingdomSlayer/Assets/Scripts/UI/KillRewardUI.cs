@@ -7,7 +7,7 @@ using DG.Tweening;
 /// 击杀奖励UI — 显示击杀进度 + 里程碑达成弹窗
 /// 所有 TMP/Image/Slider 引用均通过 Inspector 配置，无硬编码美术资源
 /// </summary>
-public class KillRewardUI : MonoBehaviour
+public class KillRewardUI : MonoBehaviour, IInRunRewardPopup
 {
 
     /// <summary>
@@ -55,6 +55,12 @@ public class KillRewardUI : MonoBehaviour
     private List<TMP_Text> _milestoneLabels = new List<TMP_Text>();
     private int _totalEnemyCount;
 
+    private void Awake()
+    {
+        // 登记到呈现层端口：满槽铜钱补偿等场景要弹同一套奖励弹窗（2026-11-03 A3）。
+        CombatPresenters.InRunReward = this;
+    }
+
     private void Start()
     {
         _manager = KillRewardManager.Instance;
@@ -85,6 +91,9 @@ public class KillRewardUI : MonoBehaviour
     private void OnDestroy()
     {
         _popupSequence?.Kill();
+
+        if (ReferenceEquals(CombatPresenters.InRunReward, this))
+            CombatPresenters.InRunReward = null;
 
         if (_manager != null)
             _manager.OnMilestoneReached -= OnMilestoneReached;
@@ -164,13 +173,8 @@ public class KillRewardUI : MonoBehaviour
 
     private void ShowRewardPopup(int threshold, List<KillRewardEntry> rewards)
     {
-        if (rewardPopup == null) return;
-
-        _popupSequence?.Kill();
-
-        if (rewardTitleText != null)
-            rewardTitleText.text = $"击杀 {threshold} 奖励!";
-
+        string title = $"击杀 {threshold} 奖励!";
+        string amount = string.Empty;
         if (rewardAmountText != null && rewards != null)
         {
             var sb = new System.Text.StringBuilder();
@@ -181,8 +185,23 @@ public class KillRewardUI : MonoBehaviour
                                rewards[i].rewardType == KillRewardType.Heal ? "生命" : "升级";
                 sb.Append($"+{rewards[i].rewardAmount} {label}");
             }
-            rewardAmountText.text = sb.ToString();
+            amount = sb.ToString();
         }
+        ShowReward(title, amount);
+    }
+
+    /// <summary>
+    /// 显示奖励弹窗（<see cref="IInRunRewardPopup"/>）。
+    /// 击杀里程碑与「满槽铜钱补偿」共用这一套弹窗形态与动效，不新建 Toast 系统。
+    /// </summary>
+    public void ShowReward(string title, string amountText)
+    {
+        if (rewardPopup == null) return;
+
+        _popupSequence?.Kill();
+
+        if (rewardTitleText != null) rewardTitleText.text = title;
+        if (rewardAmountText != null) rewardAmountText.text = amountText;
 
         rewardPopup.transform.localScale = Vector3.zero;
         rewardPopup.SetActive(true);
