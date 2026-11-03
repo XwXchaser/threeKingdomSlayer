@@ -1,0 +1,31 @@
+{
+  "state": "image_saved",
+  "http_status": 200,
+  "seconds": 46.5,
+  "error": null,
+  "output_image": "C:/Users/steam/Pictures/gptGen/talent_ui_ref_v6\\talent_page_ref_v6.png",
+  "download": "b64_json",
+  "bytes": 1665337,
+  "width": 1024,
+  "height": 1536,
+  "bit_depth": 8,
+  "color_type": 2,
+  "output_bytes": 1665337,
+  "output_sha256": "83137946e27f973fbfe95a9f2caf15a7a1fde9affeb7c2bdd4259c3a07360b5c",
+  "png_signature": true,
+  "usage": {
+    "input_tokens": 1272,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 1272
+    },
+    "output_tokens": 5488,
+    "output_tokens_details": {
+      "image_tokens": 5488
+    },
+    "total_tokens": 6760
+  },
+  "echoed_size": "1024x1536",
+  "echoed_quality": "max",
+  "created": 1793679154
+}
