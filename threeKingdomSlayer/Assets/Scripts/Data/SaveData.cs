@@ -28,6 +28,8 @@ public class SaveData
     public List<string> claimedSupplyIds = new List<string>();
     [Tooltip("已获得的秘籍 id（ManualDefinition.ManualId）。旧档缺失时由 ManualSaveSection 补空列表")]
     public List<string> unlockedManuals = new List<string>();
+    [Tooltip("已教过的招式引导 id（TalentNodeConfig.nodeId）。旧档缺失时由 MoveGuideSaveSection 补空列表")]
+    public List<string> taughtMoveGuides = new List<string>();
 
     /// <summary>
     /// 获取铜钱数量（优先从 props 列表读取，兼容旧存档的 coinCount 字段）

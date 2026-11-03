@@ -113,6 +113,11 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
             if (IsBattleEntryCompleted(_currentNode, _battleIndex)) continue;
 
             int generation = _generation;
+
+            // 解锁招式后**首次进关**的引导（手势示范 + 一行台词）：在波次开始前挡住开打 ✅。
+            yield return MoveGuideService.ShowPending();
+            if (generation != _generation || Phase == FakeRoutePhase.Defeated) yield break;
+
             _battleActive = true;
             _battleCleared = false;
             SetPhase(FakeRoutePhase.Battle);

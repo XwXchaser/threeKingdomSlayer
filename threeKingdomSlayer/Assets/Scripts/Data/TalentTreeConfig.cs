@@ -58,6 +58,14 @@ public sealed class TalentNodeConfig
              "② 招式改为直接开放后，把原来的解锁节点藏起来（保留链上的前置关系）✅。")]
     public bool hidden = false;
 
+    [Header("解锁后引导")]
+    [Tooltip("**解锁后首次进关**时弹的引导手势（None = 不弹）。\n" +
+             "只有配了手势的节点才会在解锁后弹一次提示 ✅（同一存档只教一次 ✅）。")]
+    public MoveGuideGesture moveGuideGesture = MoveGuideGesture.None;
+    [Tooltip("引导的**一行台词**（DialogueEventData；可留空 → 只演手势不说话）。\n" +
+             "台词走现成的对话层（自带压暗 + 点击继续 ✅），不新建 UI。")]
+    public DialogueEventData moveGuideDialogue;
+
     /// <summary>
     /// 这个节点**带没带解锁载荷** ✅ —— 任何一种载荷非空 ✅ = 有效 ✅（自检会报错 ✅ ✅）。
     /// </summary>

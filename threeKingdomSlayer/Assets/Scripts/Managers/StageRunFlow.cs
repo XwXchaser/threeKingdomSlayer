@@ -60,6 +60,10 @@ public sealed class StageRunFlow : IRunFlow
     {
         yield return null;
         Time.timeScale = 1f;
+        // 直连关卡（非卷轴路线）：开波前先弹「解锁招式」引导（挡住开打 ✅）。
+        // 路线流程的同一个钩子在 FakeRouteRuntime.RunBattleEntries 里（那边在节点战斗真正开打前 ✅）。
+        if (_ctx.RouteConfig == null)
+            yield return MoveGuideService.ShowPending();
         StartStage();
     }
 

@@ -30,6 +30,8 @@ MonoBehaviour:
     treePosition: {x: -300, y: 370}
     icon: {fileID: 21300000, guid: 6e52545f49f8a7c4cad93b38790df8c8, type: 3}
     hidden: 0
+    moveGuideGesture: 0
+    moveGuideDialogue: {fileID: 0}
   - nodeId: talent_move_slash
     displayName: "\u6A2A\u626B"
     description: "\u6A2A\u626B\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
@@ -46,6 +48,8 @@ MonoBehaviour:
     treePosition: {x: 300, y: 370}
     icon: {fileID: 21300000, guid: 161a6f491cac21945859876b19047b09, type: 3}
     hidden: 0
+    moveGuideGesture: 1
+    moveGuideDialogue: {fileID: 11400000, guid: d63f86179e072a74eac6ed31b3fc2fcd, type: 2}
   - nodeId: talent_move_stabc4
     displayName: "\u67AA\u7A81\u6536\u5C3E"
     description: "\u67AA\u7A81\u6536\u5C3E\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
@@ -63,6 +67,8 @@ MonoBehaviour:
     treePosition: {x: 0, y: 520}
     icon: {fileID: 0}
     hidden: 0
+    moveGuideGesture: 0
+    moveGuideDialogue: {fileID: 0}
   - nodeId: talent_move_slashc2
     displayName: "\u65A9\u51FB C2"
     description: "\u4EFB\u610F\u65B9\u5411\u65A9\u51FB\u540E\u84C4\u529B\u677E\u624B\uFF0C\u91CA\u653E\u4E00\u8BB0\u540C\u65B9\u5411\u7684\u5F3A\u5316\u65A9\u51FB\uFF08\u91CD\u653B\u51FB\u3001\u9644\u5E26\u5DE6\u53F3\u4F4D\u79FB\uFF09\u3002"
@@ -79,3 +85,5 @@ MonoBehaviour:
     treePosition: {x: 300, y: 670}
     icon: {fileID: 0}
     hidden: 0
+    moveGuideGesture: 0
+    moveGuideDialogue: {fileID: 0}

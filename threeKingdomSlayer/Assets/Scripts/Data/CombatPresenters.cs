@@ -106,6 +106,21 @@ public interface IEnemyHealthBarFactory
 }
 
 /// <summary>
+/// **招式引导端口**：内核（流程层）要在「解锁招式后首次进关」时弹一条手势 + 台词的提示，
+/// 但内核不能碰界面组件类型 → 只认这个接口 ✅。
+///
+/// 界面层（<c>MoveGuidePresenter</c>）把自己登记到 <see cref="CombatPresenters"/> ✅。
+/// </summary>
+public interface IMoveGuidePresenter
+{
+    /// <summary>当前是否正在播引导（流程层据此等它播完再开打 ✅）。</summary>
+    bool IsShowing { get; }
+
+    /// <summary>播一条引导；<paramref name="onDone"/> 在引导结束（玩家确认）后调用。</summary>
+    void ShowMoveGuide(MoveGuideRequest request, System.Action onDone);
+}
+
+/// <summary>
 /// **呈现层装配点**：界面层把自己登记进来，内核只通过接口使用。
 ///
 /// 规则：
@@ -137,6 +152,9 @@ public static class CombatPresenters
     /// <summary>QTE 演出用的英雄 HUD（QTE 侧只通过端口拿挂点与提示表现）。</summary>
     public static IQteHud QteHud { get; set; }
 
+    /// <summary>招式引导（解锁招式后首次进关的手势 + 台词提示）。</summary>
+    public static IMoveGuidePresenter MoveGuide { get; set; }
+
     /// <summary>清空登记（场景重载 / 退出战斗时用）。</summary>
     public static void Clear()
     {
@@ -147,5 +165,6 @@ public static class CombatPresenters
         DamageNumbers = null;
         EnemyHealthBars = null;
         QteHud = null;
+        MoveGuide = null;
     }
 }

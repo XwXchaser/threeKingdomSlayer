@@ -35,6 +35,7 @@ public static class SaveSections
         new PropSaveSection(),
         new TalentSaveSection(),
         new ManualSaveSection(),
+        new MoveGuideSaveSection(),
         new TutorialSaveSection(),
         new ProgressSaveSection(),
         new RunSnapshotSaveSection(),
