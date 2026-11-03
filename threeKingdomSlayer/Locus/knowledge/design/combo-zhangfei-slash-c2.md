@@ -62,10 +62,13 @@ Zhangfei_Slash.moveEdges:
 
 | 段 | 现有表现 | 待补 |
 |---|---|---|
-| ① Slash | `SweepEffect` 扫掠（扇形 + 拖尾）✓ | — |
-| ② 蓄力 | 现有蓄力视觉是 **Stab 专用**（`ChargeStabVisual`）⚠ | **SlashC2 的蓄力姿态**（收枪 + 蓄力条对齐）→ 美术 |
-| ③ SlashC2 | 暂复用 Slash 的扫掠 prefab（`attackWavePrefab`）⚠ | **强化斩击的招式动作**（建议：沿用 Slash 帧序列 + 加宽/加亮拖尾）→ 美术 |
-| 位移 | 只改列号，**无位移表现** ⚠ | 敌人被推开时的观感（可后置） |
+| ① Slash | `SweepEffect` 扫掠（3D 枪模型 `FantasySpear3D` + 2 张旋转拖尾）✓ | — |
+| ② 蓄力 | 跟手蓄力指示（`ChargeStabVisual`，**突刺风格**）⚠；**斩击后没有「枪体停住」**（那是 Stab 专属，`BeginComboChargeHold` 依赖 `_lastStabEffect`）⚠ | **SlashC2 的蓄力姿态**（收枪 + 蓄力弧）→ 美术，清单见 `plan/slash-c2-art-request-20261103.md` |
+| ③ SlashC2 | 暂复用 Slash 的扫掠 prefab（`attackWavePrefab`）⚠ | **强化斩击的招式动作**（更宽更亮的拖尾）→ 美术，清单同上 |
+| 位移 | 只改列号，**无位移表现** ⚠ | 敌人被推开时的撞击反馈（可后置） |
+
+> 拖尾贴图已改成 **per-move**：`AttackSkillConfig.slashRotateSprite1/2`（2026-11-03 加，留空回退场景全局贴图）
+> → SlashC2 的拖尾可以直接挂进资产，不用改场景 ✓。
 
 > 前端侧：天赋页**不需要改代码**就能显示新节点（面板按 `moveConfig` 自动取图标与文案 ✓）；
 > 但面板按 `groupId` 画泳道仍待对方 ✓（`groupId` 已填 `sweep` ✓）。
@@ -95,4 +98,4 @@ Zhangfei_Slash.moveEdges:
 | 1 | Sweep 期间再划一下 | 现在会**缓冲**并在窗口内重复 Sweep（之前是直接丢弃）→ Sweep 冷却 2s 会挡住 ✓ 实际无感 |
 | 2 | 教学关 | 教学期 `restrictChargedToVertical` 会拦 Hold → `comboChargeActive` 放行 ✓（与 C2 同机制 ✓）；若要教 SlashC2，需对方补一段教学 |
 | 3 | SlashC2 的数值 | 初值提议（伤害/架势/覆盖/位移排数）→ **需要你或数值同学定稿** |
-| 4 | 美术 | 蓄力动作 + 招式动作 + 位移反馈 + 天赋页图标（见 §4） |
+| 4 | 美术 | 蓄力动作 + 招式动作 + 位移反馈 + 天赋页图标 → **清单已出**：`plan/slash-c2-art-request-20261103.md`（尺寸/命名/导入设置/挂点/验收口径） |

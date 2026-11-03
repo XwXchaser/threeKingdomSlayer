@@ -410,10 +410,14 @@ public enum PropType { Coin = 0, /* 后续扩展: Key, Gem, ... */ }
 ### 7.2 铜钱获取
 
 - 击杀敌人获得铜钱（Enemy 组件 `coinReward` 字段，默认 10/只）
-- 通关时获得通关奖励（`StageConfig.clearCoinReward`，正式关 N1 60 / E0 120 / N3 200）
+- **战斗节点通关奖励**（`StageConfig.clearCoinReward`，正式关 N1 60 / E0 120 / N3 200）
+  ✅ **2026-11-03 C-2 已生效**：路线流程里每清完一场节点战斗就付该节点自己的通关奖（以前只在「非路线」的最终战斗节点付 → 路线里配了不发）
+  ⚠️ 付款点必须在「每个 BattleEntry 只走一次」的地方：`WaveSpawner` 会把 `OnAllWavesCompleted` 触发两次（付两次的坑）
+- **节点奖励**（`FakeRouteNodeConfig.rewards`）✅ 2026-11-03 C-2 已实装（铜钱 / 回血 / **秘籍**）；现役例子：`Node_N3` 奖励秘籍「重击解冻」
 - 击杀里程碑（`StageConfig.killMilestones`）——**当前正式关没有配这个机制**（仅测试资产 `testStage` 有）
-- ⚠️ **2026-11-03 实测**：卷轴路线流程里**正式关的 `clearCoinReward` 没被付**（只有路线级 `FakeRouteStageConfig.clearCoinReward=100` 会在整关结束时付）
-  → 一条路线到手 ≈ **410**（杀钱 310 + 路线通关 100），低于设计目标 600–800。**待定**（补流程 / 调数值）。
+- 整关级奖励（`FakeRouteStageConfig.clearCoinReward`）——卷轴路线配的是 **0**（教学关是 250）
+- **一条路线的收入**：杀钱 ≈ 310 + 战斗节点通关奖 60+120+200 = **≈ 690 铜钱**（落在 600–800 目标内 ✔）
+  （2026-11-03 C-2 实测：N1 后 90、E0 后 290；整线 ≈ 690）
 
 ### 7.3 铜钱结算
 
@@ -436,7 +440,9 @@ public enum PropType { Coin = 0, /* 后续扩展: Key, Gem, ... */ }
 
 ```
 Enemy死亡 → PlayerState.AddCoins(enemy.coinReward) → UI更新
-通关      → PlayerState.AddCoins(clearCoinReward) → SettleCoins() → SaveManager.SetCoins()
+战斗节点清空 → PlayerState.AddCoins(该节点 StageConfig.clearCoinReward)   ← 2026-11-03 C-2 新增
+节点内容跑完 → KillRewardUtility.Apply(节点 rewards[]) → 铜钱/回血/秘籍
+通关      → SettleCoins() → SaveManager.SetCoins()
 返回主菜单 → SettleCoins() → SaveManager.SetCoins()
 ```
 

@@ -241,7 +241,7 @@ BOSS 差异：**重攻击**可打断 CFrame（C 技）/ SuperArmor（阶段霸�
 | `savePoint` | 抵达即写快照 | ✅ 生效 |
 | `entryDialogue` / `postBattleDialogue` / `postBattlePresentation` | 进节点台词、战后台词与演出 | ✅ 生效 |
 | `dialogues[]` | 节点台词列表 | ❌ 未被运行时读取 |
-| **`rewards[]`** | 节点奖励（`KillRewardEntry`：铜钱/回血） | ❌ **字段存在，运行时完全未读取 → 节点奖励未实现** |
+| **`rewards[]`** | 节点奖励（`KillRewardEntry`：铜钱/回血/秘籍） | ✅ **2026-11-03 C-2 已实装**：节点内容跑完就发（`FakeRouteRuntime.GrantNodeRewards`），发放口径与击杀里程碑共用 `KillRewardUtility` |
 | `completionPolicy` | 完成策略枚举（4 种） | ❌ **全项目无任何消费点** |
 | `terminalPolicy` | 终点策略枚举 | 🟡 仅路线校验器使用 |
 | `visualProfile` | 节点视觉档 | 🟡 供卷轴表现层使用 |
@@ -253,8 +253,8 @@ BOSS 差异：**重攻击**可打断 CFrame（C 技）/ SuperArmor（阶段霸�
 | 层级 | 现状 |
 |---|---|
 | **战斗内** | 敌人 `coinReward = 10`/只、`expReward`（101 为 80、103 为 50、104 为 400 等）、击杀里程碑（`Stage_1` 配了 5/20/50 → 30/50/100 铜钱；卷轴预览关与 `Stage_Trial` 均**未配**） |
-| **节点级** | ⛔ 未实现（见 5.2） |
-| **整关级** | ✅ 生效但当前为 0 |
+| **节点级** | ✅ **2026-11-03 C-2 已实装**：节点奖励列表可配铜钱/回血/秘籍；现役例子：`Node_N3` 奖励秘籍「重击解冻」 |
+| **整关级** | ✅ 生效但当前为 0（`FakeRouteStageConfig.clearCoinReward`）；**战斗节点自己的** `StageConfig.clearCoinReward`（N1 60 / E0 120 / N3 200）**2026-11-03 C-2 起在路线流程里也会付** |
 
 ### 5.4 当前分支**没有**任何玩法差异
 

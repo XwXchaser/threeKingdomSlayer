@@ -9,6 +9,18 @@ aiEditMode: inherit
 
 > 现象与根因清单；带调试步骤的待办见 `plan/unresolved-issues.md`。
 
+## 0. 战斗结束时的事件会触发两次（WaveSpawner）✅ 已绕开（2026-11-03）
+- **现象**：`WaveSpawner` 在一场战斗结束时会把 `OnAllWavesCompleted` **触发两次**——
+  `NotifyWaveCleared()` 一次，`SpawnNextWave()` 的溢出分支再一次（`currentWaveIndex >= waves.Count`）。
+- **后果**：挂在该事件上的「一次性发奖 / 一次性结算」会**执行两次**
+  （实测 2026-11-03：路线战斗节点的通关奖 `clearCoinReward` 被付了两遍，N1 +60 变成 +120）。
+- **为什么没早暴露**：非路线分支在第一次调用里就把关卡状态切成 `Victory`，
+  第二次调用被 `CurrentState != InProgress` 的状态检查拦下 → **侥幸躲过**；
+  路线分支状态一直是 `InProgress` → **没有这道闸**。
+- **正确做法**：「战斗结束付一次」的逻辑挂在**每个 BattleEntry 只走一次**的地方
+  （本项目：`FakeRouteRuntime.RunBattleEntries` 里 `MarkBattleEntryCompleted` 旁边），
+  不要挂在 `StageRunFlow.OnAllWavesCleared` 上。
+
 ## 1. QTE 动画期间受道具伤害播放 Hit 动画
 - **现象**: BOSS 在 QTE 动画时若受到道具等其他伤害，会播放受击(hit)动画打断 QTE 动画
 - **预期**: 应继续 QTE 动画（死亡等不可逆状态除外）
