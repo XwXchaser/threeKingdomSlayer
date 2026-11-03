@@ -5,6 +5,11 @@ summary: Y分叉最新待办：54株草摇曳获用户确认，接线与自动�
 aiEditMode: inherit
 ---
 
+> ⚠️ **本文已被取代** —— 当前执行清单见 `plan/growth-stage-move-plan-20261102.md`
+> （配套设计文档 `design/in-run-growth-and-unlocks.md` / `design/talent-tree-architecture.md` /
+> `design/stage-configuration.md`）。本文保留作历史记录。
+
+
 ## 当前场景搭建交接入口（2026-10-01）
 
 - **2026-10-07 起本文件停用为待办总表**：新增 BUG 与新增需求登记到 `plan/bugs-and-requests.md`；进度以 `plan/october-milestone-plan.md` 为准。本文件仅保留历史记录，不再追加条目。
