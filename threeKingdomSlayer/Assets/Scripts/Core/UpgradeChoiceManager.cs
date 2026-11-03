@@ -99,7 +99,7 @@ public class UpgradeChoiceManager : MonoBehaviour
     private const int DefaultPassiveSlotCount = 3;
 
     /// <summary>
-    /// 被动槽上限（基础 3，来自 <c>HeroConfig.passiveSlotCount</c>）。
+    /// 被动槽上限（基础 3，来自 <c>HeroConfig.passiveSlotCount</c>；博学天赋再 +N）。
     /// 老资产 / 漏改资产的字段是 0 → 按 1 兜底；没有武将配置时用基础值。
     /// </summary>
     private int PassiveSlotCapacity
@@ -107,7 +107,8 @@ public class UpgradeChoiceManager : MonoBehaviour
         get
         {
             var hero = PlayerState.Instance != null ? PlayerState.Instance.heroConfig : null;
-            return hero != null ? Mathf.Max(1, hero.passiveSlotCount) : DefaultPassiveSlotCount;
+            int baseCap = hero != null ? Mathf.Max(1, hero.passiveSlotCount) : DefaultPassiveSlotCount;
+            return baseCap + TalentCapabilities.ExtraPassiveSlot;
         }
     }
 

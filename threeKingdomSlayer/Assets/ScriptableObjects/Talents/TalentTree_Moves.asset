@@ -20,8 +20,13 @@ MonoBehaviour:
     coinCost: 1
     moveConfig: {fileID: 11400000, guid: f0d6ad785959ad941b9b51d73a275d01, type: 2}
     upgradeConfig: {fileID: 0}
+    statId: 
+    statAdd: 0
     flagId: 
     prerequisiteIds: []
+    groupId: chain
+    col: 0
+    row: 2
     treePosition: {x: -300, y: 370}
     icon: {fileID: 21300000, guid: 6e52545f49f8a7c4cad93b38790df8c8, type: 3}
     hidden: 0
@@ -31,8 +36,13 @@ MonoBehaviour:
     coinCost: 1
     moveConfig: {fileID: 11400000, guid: c4862b3d5d44d2543af3deae939e5053, type: 2}
     upgradeConfig: {fileID: 0}
+    statId: 
+    statAdd: 0
     flagId: 
     prerequisiteIds: []
+    groupId: sweep
+    col: 2
+    row: 2
     treePosition: {x: 300, y: 370}
     icon: {fileID: 21300000, guid: 161a6f491cac21945859876b19047b09, type: 3}
     hidden: 0
@@ -42,9 +52,14 @@ MonoBehaviour:
     coinCost: 1
     moveConfig: {fileID: 11400000, guid: 3fe76a22f36b7744fb64fb06cf75533a, type: 2}
     upgradeConfig: {fileID: 0}
+    statId: 
+    statAdd: 0
     flagId: 
     prerequisiteIds:
     - talent_move_stabc2
+    groupId: chain
+    col: 1
+    row: 3
     treePosition: {x: 0, y: 520}
     icon: {fileID: 0}
     hidden: 0

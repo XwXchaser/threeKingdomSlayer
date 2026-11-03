@@ -138,19 +138,26 @@ aiEditMode: inherit
 
 ### 4.4 各流派的技能清单（对应天赋节点）
 
+> ✅ **C1 已落地（2026-11-03）**：节点 id 已按实际树资产对齐（原方案稿的 `talent_skill_*` 改成资产里实际用的 `talent_pool_*`）。
+
 | 流派 | 技能 | id | 天赋节点 |
 |---|---|---|---|
-| 蓄力流 | 铁壁 | `charge_damage_reduction` | `talent_skill_ironwall` |
-| | 震荡 | `charge_hit_shockwave` | `talent_skill_shockwave` |
-| | 冲击波 | `active_charge_attack_shockwave` | `talent_skill_charge_wave` |
-| 位移流 | 专注 | `cooldown_reduction` | `talent_skill_focus` |
-| | 海浪 | `active_wave` | `talent_skill_wave` |
-| | 旋风 | `active_cyclone` | `talent_skill_cyclone` |
-| | **染病** | `active_disease` | `talent_skill_disease` |
-| 火系 | 蛇形喷射 | `timed_fire_aoe` | `talent_skill_snake` |
-| | 火龙舌 | `active_fire_line` | `talent_skill_fireline` |
+| 蓄力流 | 铁壁 | `charge_damage_reduction` | `talent_pool_ironwall` |
+| | 震荡 | `charge_hit_shockwave` | `talent_pool_shockwave` |
+| | 冲击波 | `active_charge_attack_shockwave` | `talent_pool_chargewave` |
+| 位移流 | 专注 | `cooldown_reduction` | `talent_pool_focus` |
+| | 海浪 | `wave` | `talent_pool_wave` |
+| | 旋风 | `cyclone` | `talent_pool_cyclone` |
+| | **染病** | `active_disease` | `talent_pool_disease` |
+| 火系 | 蛇形喷射 | `timed_fire_aoe` | `talent_pool_snake` |
+| | 火龙舌 | `active_fire_line` | `talent_pool_fireline` |
 
 > **注意**：火系是**跨流派协同**（`design/in-run-build-archetypes.md`：「定位：跨流派通用组合，不单独作为第三条完整 Build」）。它作为一条分支给玩家开线，但**任何流派都能顺手拿**——即火系的技能解锁**不应挡住**其他流派。
+>
+> **分支内没有互相前置**（每个技能节点独立可买）——设计稿里的「流派入门」节点没有载荷，
+> 按「分支根 = 组内无同枝前置的节点」规则，组内第一个节点就是起始点。
+> 流派内的**组合前置**用技能的 `prerequisites` 表达（§4.5），当前未设（避免做成陷阱）。
+
 
 ### 4.5 流派内的组合前置（`prerequisites`，已存在零使用）
 

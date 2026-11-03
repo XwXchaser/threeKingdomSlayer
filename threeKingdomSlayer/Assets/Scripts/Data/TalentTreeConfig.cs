@@ -24,6 +24,12 @@ public sealed class TalentNodeConfig
     public AttackSkillConfig moveConfig;
     [Tooltip("**解锁三选一升级** —— 指向对应的 UpgradeDefinition；图标与详情文案直接引用它（留空 = 不解锁升级）")]
     public UpgradeDefinition upgradeConfig;
+    [Tooltip("**数值载荷** —— 通用载荷：statId 决定加什么，statAdd 是加多少（留空 = 不带数值）。\n" +
+           "如 max_health / revive_count / item_slot / active_slot / passive_slot /\n" +
+           "   attack_poise_damage / kill_cooldown_reduction / choice_count / coin_gain / undying")]
+    public string statId = "";
+    [Tooltip("**数值载荷的加成**（配合 statId 生效；statId 留空则忽略）")]
+    public float statAdd = 0f;
     [Tooltip("**点亮机械开关** —— 开关 id（留空 = 不点开关）")]
     public string flagId = "";
 
@@ -34,7 +40,15 @@ public sealed class TalentNodeConfig
     public List<string> prerequisiteIds = new List<string>();
 
     [Header("排版（美术稿下来后按设计稿填）")]
-    [Tooltip("节点中心在面板里的位置，单位=设计像素（1080×1920 口径），原点为面板中心，+Y 向上")]
+    [Tooltip("**分支 id**（流派 / 方向）：同一 groupId 的节点属于同一条分支。\n" +
+             "ability 页：combat / body / fortune；move 页：chain / sweep；skill 页：charge / displace / fire")]
+    public string groupId = "";
+    [Tooltip("**格点列**（0 起，从左到右）—— 整数格点，坐标不再手填")]
+    public int col = 0;
+    [Tooltip("**格点行**（0 起，从下到上）—— 整数格点，坐标不再手填")]
+    public int row = 0;
+    [Tooltip("节点中心在面板里的位置，单位=设计像素（1080×1920 口径），原点为面板中心，+Y 向上\n" +
+             "（由 col/row 推导：x=(col-1)*300，y=70+row*150）")]
     public Vector2 treePosition = Vector2.zero;
     [Tooltip("节点图标；为空时用程序化圆形占位")]
     public Sprite icon;
@@ -45,10 +59,11 @@ public sealed class TalentNodeConfig
     public bool hidden = false;
 
     /// <summary>
-    /// 这个节点**带没带解锁载荷** ✅ —— 两个载荷都空 ✅ = 无效 ✅（自检会报错 ✅ ✅）。
+    /// 这个节点**带没带解锁载荷** ✅ —— 任何一种载荷非空 ✅ = 有效 ✅（自检会报错 ✅ ✅）。
     /// </summary>
     public bool HasValidUnlockPayload =>
-        moveConfig != null || upgradeConfig != null || !string.IsNullOrEmpty(flagId);
+        moveConfig != null || upgradeConfig != null
+        || !string.IsNullOrEmpty(statId) || !string.IsNullOrEmpty(flagId);
 
     /// <summary>解锁了招式 ✅（不再靠枚举判断 ✅ ✅）。</summary>
     public bool UnlocksMove => moveConfig != null;

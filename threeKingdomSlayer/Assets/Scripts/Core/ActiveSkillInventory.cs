@@ -56,11 +56,11 @@ public class ActiveSkillInventory : MonoBehaviour
     public ItemRuleVersion RuleVersion => _versionLocked ? _lockedRuleVersion : _ruleVersion;
     public bool UsesActiveSkills => RuleVersion == ItemRuleVersion.V2_ActiveSkill;
     /// <summary>
-    /// 主动技能槽上限（基础 3，来自 <c>HeroConfig.activeSkillSlotCount</c>）。
+    /// 主动技能槽上限（基础 3，来自 <c>HeroConfig.activeSkillSlotCount</c>；巧思天赋再 +N）。
     /// 老资产 / 漏改资产的字段是 0 → 按 1 兜底，避免一个技能都放不下。
     /// </summary>
     public int Capacity => PlayerState.Instance != null && PlayerState.Instance.heroConfig != null
-        ? Mathf.Max(1, PlayerState.Instance.heroConfig.activeSkillSlotCount)
+        ? Mathf.Max(1, PlayerState.Instance.heroConfig.activeSkillSlotCount) + TalentCapabilities.ExtraActiveSlot
         : DefaultCapacity;
     public bool IsFull => _entries.Count >= Capacity;
 

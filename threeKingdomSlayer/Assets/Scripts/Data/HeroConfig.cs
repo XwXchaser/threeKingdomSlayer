@@ -42,6 +42,9 @@ public class HeroConfig : ScriptableObject
     [Header("局外天赋")]
     [Tooltip("招式解锁判定用（C2/C4 这类连段收尾）。留空 = 不做招式锁定；填了就按存档里已解锁的节点判定。")]
     public TalentTreeConfig talentTree;
+    [Tooltip("**能力页**天赋树（基础数值页）。消费点从这里读「已解锁节点的数值载荷」（statId/statAdd）。\n" +
+             "留空 = 没有能力天赋加成。天赋页的目录挂在 overlay 场景上，战斗里不加载 → 所以由武将资产直接指过来。")]
+    public TalentTreeConfig abilityTree;
 
     [Header("大招配置")]
     [Tooltip("大招技能配置（独立于普通技能体系）")]

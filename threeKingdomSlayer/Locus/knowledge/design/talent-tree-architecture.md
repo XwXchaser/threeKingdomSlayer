@@ -217,32 +217,40 @@ public sealed class TalentBranchConfig
 |---|---|---|---|
 | 铁血 | 生命上限 +30 | `PlayerState` 读 `heroConfig.maxHealth` | ✅ **已实现**（`PlayerState.MaxHealth` = 资产值 + 体魄档位×30） |
 | 连击精通 | 连击阈值下调 | `ComboBuffConfig.triggers[]` 加一档即可 | ✅ **零代码**（`ComboManager.CheckTriggers` 已支持多档位） |
-| 巧思 | 主动槽 +1 | `ActiveSkillInventory.Capacity` | 🟡 **字段已拆**（A1）；天赋消费点属 B 批（节点也不存在） |
-| 博学 | 被动槽 +1 | `UpgradePoolSampler` 的被动上限判定 | 🟡 **字段已拆**（A1）；天赋消费点属 B 批（节点也不存在） |
+| 巧思 | 主动槽 +1 | `ActiveSkillInventory.Capacity` | ✅ **已实现**（B1：`activeSkillSlotCount` + `TalentCapabilities.ExtraActiveSlot`） |
+| 博学 | 被动槽 +1 | `UpgradePoolSampler` 的被动上限判定 | ✅ **已实现**（B1：`passiveSlotCount` + `ExtraPassiveSlot`） |
 | 聚财 | 铜钱获取 +30% | 敌人 `coinReward` / 里程碑 / 通关奖励结算处 | ✅ **已实现**（`TalentCapabilities.CoinGainMultiplier`） |
 | 破阵 | 所有攻击 +1 架势伤害 | 伤害结算 | ✅ **已实现**（`Enemy.TakeDamage` 的攻击架势伤害） |
 | 追击 | 击杀后攻击 CD −0.5s | 冷却判定 | ✅ **已实现**（`PlayerState.AddKill` 缩短正在走的冷却） |
 | 运筹 | 三选一 → 四选一 | `UpgradeChoiceManager` 选项数 | ✅ **已实现**（`EffectiveChoiceCount`） |
 | 不屈 | 血量 <30% 触发 2s 无敌（每局 1 次） | `PlayerState.TakeDamage` | ✅ **已实现**（免疫本次伤害 + 2s 无敌，每局一次） |
 
-#### 实现落点明细（A5）
+#### 实现落点明细（A5 → B1 改为通用载荷驱动）
 
-| 能力 | nodeId | 消费点 |
-|---|---|---|
-| 破阵 | `talent_break_formation` | `Enemy.Combat.cs` 的 `TakeDamage` → 攻击的架势伤害 `+ AttackPoiseDamageBonus` |
-| 追击 | `talent_pursuit` | `PlayerState.AddKill()` → 正在走的攻击冷却 −0.5s |
-| 运筹 | `talent_strategy` | `UpgradeChoiceManager.EffectiveChoiceCount` = `choiceCount + 1` |
-| 不屈 | `talent_undying` | `PlayerState.TakeDamage` → 跌破 30% 时免疫 + `_undyingTimer = 2s` |
-| 铁血 | `talent_stat_hp1` / `hp2` / `hp3` | `PlayerState.MaxHealth` = `heroConfig.maxHealth + 档位数 × 30` |
-| 聚财 | `talent_stat_coin`（⚠️ 节点不存在） | `KillRewardManager`（里程碑）、`StageRunFlow`（敌人钱 / 通关铜钱）、`StageRewardGate`（通关奖励） |
+> ✅ **B1（2026-11-03）**：载荷方案定为 **statId / statAdd 通用载荷**（用户拍板）。
+> 节点 → statId/statAdd → 已解锁节点的 statAdd 按 statId 累加 → 消费点读总额。
+> 消费点不再硬编码 nodeId，改读 `TalentStatService`（读存档 + 能力页天赋树）。
+
+| 能力 | statId | statAdd | 消费点 |
+|---|---|---|---|
+| 破阵 | `attack_poise_damage` | 1 | `Enemy.TakeDamage` 的攻击架势伤害 |
+| 追击 | `kill_cooldown_reduction` | 0.5 | `PlayerState.AddKill` 缩短正在走的冷却 |
+| 运筹 | `choice_count` | 1 | `UpgradeChoiceManager.EffectiveChoiceCount` |
+| 不屈 | `undying` | 1 | `PlayerState.TakeDamage` |
+| 铁血 / 体魄 I·II·钢筋铁骨 | `max_health` | 30 / 档 | `PlayerState.MaxHealth` |
+| 不屈之志 | `revive_count` | 1 | `PlayerState.currentRevives`（开局结算） |
+| 行囊 | `item_slot` | 1 | `ItemInventory.Capacity` |
+| 巧思 | `active_slot` | 1 | `ActiveSkillInventory.Capacity` |
+| 博学 | `passive_slot` | 1 | `UpgradeChoiceManager.PassiveSlotCapacity` |
+| 聚财 | `coin_gain` | 0.3 | `KillRewardManager` / `StageRunFlow` / `StageRewardGate` |
 
 #### ⚠️ 已知缺口（B 批补节点时对齐）
 
 | 能力 | 现状 |
 |---|---|
-| 聚财 | 树里**没有**这个节点 → 消费点已就位但恒不生效（B 批建节点后立即生效，nodeId 只需在 `TalentCapabilities` 里改） |
-| 巧思 / 博学（槽位 +1） | 树里**没有**对应节点（只有语义不明的 `talent_stat_slot`「行囊」）→ 本次**未做**消费点（B 批节点清单定稿后接） |
-| 铁血的档位值 | 设计文档只给了「铁血 +30」；树里是「体魄 I / II / 钢筋铁骨」三档 → 当前实现 = **每档 +30**（0/+30/+60/+90），档位值属**定价**（§0.6.4 归你定） |
+| 连击精通 | 树里**没有**节点；按设计是「零代码」（给 `ComboBuffConfig.triggers[]` 加一档）→ **未做**（阈值属平衡，§0.6.4 归你定） |
+| 定价 | 按用户决定：**先不定价，沿用占位**（体魄/不屈之志/行囊 = 1；聚财 120 / 巧思 180 / 博学 180 来自设计文档；能力节点沿用原值） |
+
 
 
 ### 6.1 槽位字段必须拆（阻断项）

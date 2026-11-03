@@ -271,7 +271,7 @@ public class PlayerState : MonoBehaviour
     {
         // heroConfig 为 null 时使用安全默认值
         currentHealth = MaxHealth;
-        currentRevives = heroConfig != null ? heroConfig.reviveCount : 0;
+        currentRevives = (heroConfig != null ? heroConfig.reviveCount : 0) + TalentCapabilities.ExtraReviveCount;
         killCount = 0;
         coinCount = 0;
         currentWave = 0;
@@ -373,11 +373,11 @@ public class PlayerState : MonoBehaviour
         if (TalentCapabilities.UndyingUnlocked && !_undyingUsed && _undyingTimer <= 0f)
         {
             float maxHp = MaxHealth;
-            if (maxHp > 0f && currentHealth - finalDamage < maxHp * TalentCapabilities.UndyingHealthThreshold)
+            if (maxHp > 0f && currentHealth - finalDamage < maxHp * TalentStatService.UndyingHealthThreshold)
             {
                 _undyingUsed = true;
-                _undyingTimer = TalentCapabilities.UndyingInvincibleSeconds;
-                Debug.Log($"[PlayerState] 不屈触发：免疫本次伤害 {finalDamage:F0}，获得 {TalentCapabilities.UndyingInvincibleSeconds:F0} 秒无敌");
+                _undyingTimer = TalentStatService.UndyingInvincibleSeconds;
+                Debug.Log($"[PlayerState] 不屈触发：免疫本次伤害 {finalDamage:F0}，获得 {TalentStatService.UndyingInvincibleSeconds:F0} 秒无敌");
                 OnHealthChanged?.Invoke(currentHealth, maxHp);
                 return;
             }

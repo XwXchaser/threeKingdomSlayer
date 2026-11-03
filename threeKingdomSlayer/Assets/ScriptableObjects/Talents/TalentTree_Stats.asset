@@ -14,62 +14,195 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   treeId: stats
   nodes:
+  - nodeId: talent_break_formation
+    displayName: "\u7834\u9635"
+    description: "\u6240\u6709\u653B\u51FB\u9644\u5E26 1 \u70B9\u67B6\u52BF\u4F24\u5BB3\u3002\uFF08\u5360\u4F4D\uFF0C\u5F85\u8BA8\u8BBA\uFF09"
+    coinCost: 200
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 0}
+    statId: attack_poise_damage
+    statAdd: 1
+    flagId: 
+    prerequisiteIds: []
+    groupId: combat
+    col: 0
+    row: 0
+    treePosition: {x: -300, y: 70}
+    icon: {fileID: 21300000, guid: 327f8b816470dc54c8d9b5e0f2e0cbee, type: 3}
+    hidden: 0
+  - nodeId: talent_pursuit
+    displayName: "\u8FFD\u51FB"
+    description: "\u51FB\u6740\u654C\u4EBA\u540E\u653B\u51FB\u51B7\u5374 -0.5s\u3002\uFF08\u5360\u4F4D\uFF0C\u5F85\u8BA8\u8BBA\uFF09"
+    coinCost: 250
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 0}
+    statId: kill_cooldown_reduction
+    statAdd: 0.5
+    flagId: 
+    prerequisiteIds: []
+    groupId: combat
+    col: 1
+    row: 0
+    treePosition: {x: 0, y: 70}
+    icon: {fileID: 21300000, guid: 1d4783a508dc8724a9d8884a563adb0c, type: 3}
+    hidden: 0
+  - nodeId: talent_strategy
+    displayName: "\u8FD0\u7B79"
+    description: "\u4E09\u9009\u4E00\u53D8\u6210\u56DB\u9009\u4E00\u3002\uFF08\u5360\u4F4D\uFF0C\u5F85\u8BA8\u8BBA\uFF09"
+    coinCost: 300
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 0}
+    statId: choice_count
+    statAdd: 1
+    flagId: 
+    prerequisiteIds: []
+    groupId: combat
+    col: 2
+    row: 0
+    treePosition: {x: 300, y: 70}
+    icon: {fileID: 21300000, guid: 0129664365ecccd439f9ac184f79050e, type: 3}
+    hidden: 0
   - nodeId: talent_stat_hp1
     displayName: "\u4F53\u9B44 I"
-    description: "\u4F53\u9B44 I\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
+    description: "\u751F\u547D\u4E0A\u9650 +30\u3002"
     coinCost: 1
     moveConfig: {fileID: 0}
     upgradeConfig: {fileID: 0}
-    flagId: stat_hp1
+    statId: max_health
+    statAdd: 30
+    flagId: 
     prerequisiteIds: []
+    groupId: body
+    col: 0
+    row: 1
     treePosition: {x: -300, y: 220}
     icon: {fileID: 0}
     hidden: 0
   - nodeId: talent_stat_hp2
     displayName: "\u4F53\u9B44 II"
-    description: "\u4F53\u9B44 II\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
+    description: "\u751F\u547D\u4E0A\u9650 +30\u3002"
     coinCost: 1
     moveConfig: {fileID: 0}
     upgradeConfig: {fileID: 0}
-    flagId: stat_hp2
-    prerequisiteIds:
-    - talent_stat_hp1
-    treePosition: {x: -300, y: 370}
-    icon: {fileID: 0}
-    hidden: 0
-  - nodeId: talent_stat_revive
-    displayName: "\u4E0D\u5C48\u4E4B\u5FD7"
-    description: "\u4E0D\u5C48\u4E4B\u5FD7\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
-    coinCost: 1
-    moveConfig: {fileID: 0}
-    upgradeConfig: {fileID: 0}
-    flagId: stat_revive
-    prerequisiteIds:
-    - talent_stat_hp2
-    treePosition: {x: -300, y: 520}
-    icon: {fileID: 0}
-    hidden: 0
-  - nodeId: talent_stat_slot
-    displayName: "\u884C\u56CA"
-    description: "\u884C\u56CA\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
-    coinCost: 1
-    moveConfig: {fileID: 0}
-    upgradeConfig: {fileID: 0}
-    flagId: stat_slot
+    statId: max_health
+    statAdd: 30
+    flagId: 
     prerequisiteIds: []
-    treePosition: {x: 300, y: 220}
+    groupId: body
+    col: 1
+    row: 1
+    treePosition: {x: 0, y: 220}
     icon: {fileID: 0}
     hidden: 0
   - nodeId: talent_stat_hp3
     displayName: "\u94A2\u7B4B\u94C1\u9AA8"
-    description: "\u94A2\u7B4B\u94C1\u9AA8\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
+    description: "\u751F\u547D\u4E0A\u9650 +30\u3002"
     coinCost: 1
     moveConfig: {fileID: 0}
     upgradeConfig: {fileID: 0}
-    flagId: stat_hp3
-    prerequisiteIds:
-    - talent_stat_revive
-    - talent_stat_slot
+    statId: max_health
+    statAdd: 30
+    flagId: 
+    prerequisiteIds: []
+    groupId: body
+    col: 2
+    row: 1
+    treePosition: {x: 300, y: 220}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_stat_revive
+    displayName: "\u4E0D\u5C48\u4E4B\u5FD7"
+    description: "\u590D\u6D3B\u6B21\u6570 +1\u3002"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 0}
+    statId: revive_count
+    statAdd: 1
+    flagId: 
+    prerequisiteIds: []
+    groupId: body
+    col: 0
+    row: 2
+    treePosition: {x: -300, y: 370}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_undying
+    displayName: "\u4E0D\u5C48"
+    description: "\u8840\u91CF\u4F4E\u4E8E 30% \u65F6\u89E6\u53D1 2 \u79D2\u65E0\u654C\uFF0C\u6BCF\u5C40\u4E00\u6B21\u3002\uFF08\u5360\u4F4D\uFF0C\u5F85\u8BA8\u8BBA\uFF09"
+    coinCost: 400
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 0}
+    statId: undying
+    statAdd: 1
+    flagId: 
+    prerequisiteIds: []
+    groupId: body
+    col: 1
+    row: 2
+    treePosition: {x: 0, y: 370}
+    icon: {fileID: 21300000, guid: e078a3a5ca0ef1f409b9c02ba3f461c9, type: 3}
+    hidden: 0
+  - nodeId: talent_stat_coin
+    displayName: "\u805A\u8D22"
+    description: "\u94DC\u94B1\u83B7\u53D6 +30%\u3002"
+    coinCost: 120
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 0}
+    statId: coin_gain
+    statAdd: 0.3
+    flagId: 
+    prerequisiteIds: []
+    groupId: fortune
+    col: 0
+    row: 3
+    treePosition: {x: -300, y: 520}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_stat_slot_active
+    displayName: "\u5DE7\u601D"
+    description: "\u4E3B\u52A8\u6280\u80FD\u69FD +1\u3002"
+    coinCost: 180
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 0}
+    statId: active_slot
+    statAdd: 1
+    flagId: 
+    prerequisiteIds: []
+    groupId: fortune
+    col: 1
+    row: 3
     treePosition: {x: 0, y: 520}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_stat_slot_passive
+    displayName: "\u535A\u5B66"
+    description: "\u88AB\u52A8\u6280\u80FD\u69FD +1\u3002"
+    coinCost: 180
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 0}
+    statId: passive_slot
+    statAdd: 1
+    flagId: 
+    prerequisiteIds: []
+    groupId: fortune
+    col: 2
+    row: 3
+    treePosition: {x: 300, y: 520}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_stat_slot
+    displayName: "\u884C\u56CA"
+    description: "\u9053\u5177\u69FD +1\u3002"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 0}
+    statId: item_slot
+    statAdd: 1
+    flagId: 
+    prerequisiteIds: []
+    groupId: fortune
+    col: 0
+    row: 4
+    treePosition: {x: -300, y: 670}
     icon: {fileID: 0}
     hidden: 0

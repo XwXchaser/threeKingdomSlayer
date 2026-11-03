@@ -18,8 +18,9 @@ public class ItemInventory : MonoBehaviour
     public System.Action OnInventoryChanged;
     public IReadOnlyList<ItemEntry> Entries => _entries;
     public bool AllowSameTypeStacking => allowSameTypeStacking;
+    /// <summary>道具槽上限（资产值 + 行囊天赋加成）。</summary>
     public int Capacity => PlayerState.Instance != null && PlayerState.Instance.heroConfig != null
-        ? Mathf.Max(0, PlayerState.Instance.heroConfig.itemSlotCount)
+        ? Mathf.Max(0, PlayerState.Instance.heroConfig.itemSlotCount) + TalentCapabilities.ExtraItemSlot
         : 2;
     public bool HasFreeSlot => _entries.Count < Capacity;
 

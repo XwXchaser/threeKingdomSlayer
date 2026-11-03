@@ -14,73 +14,147 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   treeId: pools
   nodes:
-  - nodeId: talent_pool_cyclone
-    displayName: "\u65CB\u98CE"
-    description: "\u65CB\u98CE\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
+  - nodeId: talent_pool_ironwall
+    displayName: "\u94C1\u58C1"
+    description: "\u84C4\u529B\u671F\u95F4\u53D7\u5230\u7684\u4F24\u5BB3\u964D\u4F4E\u3002"
     coinCost: 1
     moveConfig: {fileID: 0}
-    upgradeConfig: {fileID: 11400000, guid: b731a9b5aa98a9642aef75a97e456691, type: 2}
-    flagId: pool_cyclone
-    prerequisiteIds:
-    - talent_pool_convergence
-    - talent_pool_return
-    treePosition: {x: 0, y: 520}
-    icon: {fileID: 0}
-    hidden: 0
-  - nodeId: talent_pool_convergence
-    displayName: "\u805A\u62E2\u6CE2"
-    description: "\u805A\u62E2\u6CE2\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
-    coinCost: 1
-    moveConfig: {fileID: 0}
-    upgradeConfig: {fileID: 11400000, guid: 222101a55e617534aa2c513066fdf779, type: 2}
-    flagId: pool_convergence
-    prerequisiteIds:
-    - talent_pool_push
-    treePosition: {x: -300, y: 370}
-    icon: {fileID: 0}
-    hidden: 0
-  - nodeId: talent_pool_return
-    displayName: "\u56DE\u65CB\u6CE2"
-    description: "\u56DE\u65CB\u6CE2\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
-    coinCost: 1
-    moveConfig: {fileID: 0}
-    upgradeConfig: {fileID: 11400000, guid: 497e6470ebb471d429716199c6aa2824, type: 2}
-    flagId: pool_return
-    prerequisiteIds:
-    - talent_pool_arrowvolley
-    treePosition: {x: 300, y: 370}
-    icon: {fileID: 0}
-    hidden: 0
-  - nodeId: talent_pool_push
-    displayName: "\u51FB\u9000\u6CE2"
-    description: "\u51FB\u9000\u6CE2\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
-    coinCost: 1
-    moveConfig: {fileID: 0}
-    upgradeConfig: {fileID: 11400000, guid: 706eae301ac007b4d86360836dfc3997, type: 2}
-    flagId: pool_push
+    upgradeConfig: {fileID: 11400000, guid: 6c85c67f02251b745a264f2f6057f27d, type: 2}
+    statId: 
+    statAdd: 0
+    flagId: 
     prerequisiteIds: []
+    groupId: charge
+    col: 0
+    row: 0
+    treePosition: {x: -300, y: 70}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_pool_shockwave
+    displayName: "\u9707\u8361"
+    description: "\u84C4\u529B\u547D\u4E2D\u65F6\u5BF9\u5468\u56F4\u9020\u6210\u9707\u8361\u4F24\u5BB3\u3002"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 11400000, guid: 0e968b19ca0b1fe4e8d9cc72b814bfef, type: 2}
+    statId: 
+    statAdd: 0
+    flagId: 
+    prerequisiteIds: []
+    groupId: charge
+    col: 1
+    row: 0
+    treePosition: {x: 0, y: 70}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_pool_chargewave
+    displayName: "\u51B2\u51FB\u6CE2"
+    description: "\u84C4\u529B\u6EE1\u540E\u91CA\u653E\u51B2\u51FB\u6CE2\uFF0C\u51FB\u9000\u5E76\u9020\u6210\u4F24\u5BB3\u3002"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 11400000, guid: 3cf32a208431f6e49b67da6c3603831c, type: 2}
+    statId: 
+    statAdd: 0
+    flagId: 
+    prerequisiteIds: []
+    groupId: charge
+    col: 2
+    row: 0
+    treePosition: {x: 300, y: 70}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_pool_focus
+    displayName: "\u4E13\u6CE8"
+    description: "\u4E3B\u52A8\u6280\u80FD\u51B7\u5374\u7F29\u51CF\u3002"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 11400000, guid: e5f4828a57240fd48a2b0c1048f30f90, type: 2}
+    statId: 
+    statAdd: 0
+    flagId: 
+    prerequisiteIds: []
+    groupId: displace
+    col: 0
+    row: 1
     treePosition: {x: -300, y: 220}
-    icon: {fileID: 0}
-    hidden: 0
-  - nodeId: talent_pool_arrowvolley
-    displayName: "\u7BAD\u77E2\u9F50\u5C04"
-    description: "\u7BAD\u77E2\u9F50\u5C04\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
-    coinCost: 1
-    moveConfig: {fileID: 0}
-    upgradeConfig: {fileID: 11400000, guid: 99cb5a0f1a541db4db3016f39b7a3a21, type: 2}
-    flagId: pool_arrowvolley
-    prerequisiteIds: []
-    treePosition: {x: 300, y: 220}
     icon: {fileID: 0}
     hidden: 0
   - nodeId: talent_pool_wave
     displayName: "\u6D77\u6D6A"
-    description: "\u6D77\u6D6A\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
+    description: "\u53EC\u5524\u6D77\u6D6A\u63A8\u5F00\u654C\u4EBA\u3002"
     coinCost: 1
     moveConfig: {fileID: 0}
     upgradeConfig: {fileID: 11400000, guid: c5d04c63b5fcce14a813db0c2f8770b3, type: 2}
-    flagId: pool_wave
+    statId: 
+    statAdd: 0
+    flagId: 
     prerequisiteIds: []
-    treePosition: {x: 0, y: 70}
+    groupId: displace
+    col: 1
+    row: 1
+    treePosition: {x: 0, y: 220}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_pool_cyclone
+    displayName: displace
+    description: "\u53EC\u5524\u65CB\u98CE\u6301\u7EED\u4F24\u5BB3\u5E76\u51FB\u98DE\u3002"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 11400000, guid: b731a9b5aa98a9642aef75a97e456691, type: 2}
+    statId: 
+    statAdd: 0
+    flagId: 
+    prerequisiteIds: []
+    groupId: displace
+    col: 2
+    row: 1
+    treePosition: {x: 300, y: 220}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_pool_disease
+    displayName: "\u67D3\u75C5"
+    description: "\u547D\u4E2D\u4F7F\u654C\u4EBA\u67D3\u75C5\uFF0C\u6301\u7EED\u6389\u8840\u3002"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 11400000, guid: f92ac42a92a07d44d8e2213b31ff0452, type: 2}
+    statId: 
+    statAdd: 0
+    flagId: 
+    prerequisiteIds: []
+    groupId: displace
+    col: 0
+    row: 2
+    treePosition: {x: -300, y: 370}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_pool_snake
+    displayName: "\u86C7\u5F62\u55B7\u5C04"
+    description: "\u5B9A\u65F6\u55B7\u51FA\u86C7\u5F62\u706B\u7130\u3002"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 11400000, guid: f1b74622f7f7d394cb36dbc89731662a, type: 2}
+    statId: 
+    statAdd: 0
+    flagId: 
+    prerequisiteIds: []
+    groupId: fire
+    col: 0
+    row: 3
+    treePosition: {x: -300, y: 520}
+    icon: {fileID: 0}
+    hidden: 0
+  - nodeId: talent_pool_fireline
+    displayName: "\u706B\u9F99\u820C"
+    description: "\u55B7\u51FA\u76F4\u7EBF\u706B\u820C\uFF0C\u8D2F\u7A7F\u4E00\u5217\u3002"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 11400000, guid: 6c0f2f4854ee0244daeac817f4cb828a, type: 2}
+    statId: 
+    statAdd: 0
+    flagId: 
+    prerequisiteIds: []
+    groupId: fire
+    col: 1
+    row: 3
+    treePosition: {x: 0, y: 520}
     icon: {fileID: 0}
     hidden: 0
