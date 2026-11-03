@@ -23,6 +23,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 8b7cece3bb9ea04468b277f70db3561a, type: 2}
     weight: 3
   - item: {fileID: 11400000, guid: 174c7ab9030b95f4a829df7dd803a376, type: 2}
-    weight: 2
+    weight: 6
   - item: {fileID: 11400000, guid: b6e2ecc80a2c38f408f18a7a13156e65, type: 2}
-    weight: 2
+    weight: 6

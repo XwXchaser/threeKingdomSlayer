@@ -34,10 +34,6 @@ MonoBehaviour:
     rewards:
     - rewardType: 0
       rewardAmount: 20
-  - killThreshold: 8
-    rewards:
-    - rewardType: 0
-      rewardAmount: 50
     - rewardType: 1
       rewardAmount: 30
   clearCoinReward: 0

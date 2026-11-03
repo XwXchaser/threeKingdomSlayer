@@ -206,3 +206,20 @@ MonoBehaviour:
     treePosition: {x: -300, y: 670}
     icon: {fileID: 0}
     hidden: 0
+  - nodeId: talent_stat_combo
+    displayName: "\u8FDE\u51FB\u7CBE\u901A"
+    description: "\u8FDE\u51FB\u9608\u503C\u4E0B\u8C03 5\uFF1A20 \u8FDE\u51FB\u7684\u300C\u8FDE\u51FB\u4F24\u5BB3\u300D\u63D0\u524D\u5230
+      15 \u8FDE\u51FB\u89E6\u53D1\u3002"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 0}
+    statId: combo_threshold_delta
+    statAdd: -5
+    flagId: 
+    prerequisiteIds: []
+    groupId: body
+    col: 2
+    row: 2
+    treePosition: {x: 300, y: 370}
+    icon: {fileID: 0}
+    hidden: 0

@@ -287,8 +287,28 @@ public class BattleHUD : MonoBehaviour, ICombatHud
 
     private void UpdateKillCount(int count)
     {
-        if (killCountText != null)
-            killCountText.text = $"击杀: {count}";
+        if (killCountText == null) return;
+        // 「击杀 N/下一个里程碑」——与 KillRewardUI 同一口径；本关没有里程碑时退回旧格式。
+        // 为什么需要它：里程碑是「发钱 + 回血」的隐性奖励，没有进度显示玩家看不到还差几只。
+        int next = NextMilestoneThreshold(count);
+        killCountText.text = next > 0 ? $"击杀 {count}/{next}" : $"击杀: {count}";
+    }
+
+    /// <summary>下一个里程碑阈值（0 = 本关没有里程碑 / 全部已达成）。</summary>
+    private static int NextMilestoneThreshold(int count)
+    {
+        var krm = KillRewardManager.Instance;
+        if (krm == null) return 0;
+        var milestones = krm.CurrentMilestones;
+        if (milestones == null) return 0;
+        int best = 0;
+        for (int i = 0; i < milestones.Count; i++)
+        {
+            var m = milestones[i];
+            if (m == null || m.killThreshold <= count) continue;
+            if (best == 0 || m.killThreshold < best) best = m.killThreshold;
+        }
+        return best;
     }
 
     private void UpdateCoins(int count)

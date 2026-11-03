@@ -93,11 +93,11 @@ MonoBehaviour:
     rewards:
     - rewardType: 0
       rewardAmount: 40
-  - killThreshold: 18
+  - killThreshold: 16
     rewards:
     - rewardType: 0
       rewardAmount: 80
-  - killThreshold: 30
+  - killThreshold: 20
     rewards:
     - rewardType: 0
       rewardAmount: 150

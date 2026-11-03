@@ -63,14 +63,10 @@ MonoBehaviour:
     rewards:
     - rewardType: 0
       rewardAmount: 30
-  - killThreshold: 12
+  - killThreshold: 8
     rewards:
     - rewardType: 0
       rewardAmount: 60
-  - killThreshold: 20
-    rewards:
-    - rewardType: 0
-      rewardAmount: 120
     - rewardType: 1
       rewardAmount: 30
   clearCoinReward: 0

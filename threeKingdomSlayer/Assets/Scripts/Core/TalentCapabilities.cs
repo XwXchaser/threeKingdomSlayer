@@ -40,4 +40,7 @@ public static class TalentCapabilities
 
     /// <summary>不屈：血量低于 30% 时触发 2 秒无敌（每局 1 次）。</summary>
     public static bool UndyingUnlocked => TalentStatService.Has(TalentStatService.StatUndying);
+
+    /// <summary>连击精通：连击阈值下调量（≤0；0 = 未解锁）。</summary>
+    public static int ComboThresholdDelta => Mathf.RoundToInt(TalentStatService.GetTotal(TalentStatService.StatComboThresholdDelta));
 }

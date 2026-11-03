@@ -29,6 +29,7 @@ public static class TalentStatService
     public const string StatKillCooldownReduction = "kill_cooldown_reduction"; // 击杀后攻击 CD −N 秒
     public const string StatChoiceCount = "choice_count";                // 三选一选项数 +N
     public const string StatCoinGain = "coin_gain";                      // 铜钱获取 +N（0.3 = +30%）
+    public const string StatComboThresholdDelta = "combo_threshold_delta"; // 连击阈值下调 N（负数 = 更早触发）
     public const string StatUndying = "undying";                          // 不屈（濒死无敌）
 
     /// <summary>不屈：血量低于此比例（30%）时触发。</summary>

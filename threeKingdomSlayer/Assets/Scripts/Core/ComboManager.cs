@@ -165,18 +165,22 @@ public class ComboManager : MonoBehaviour
         var triggers = config.triggers;
         if (triggers == null) return;
 
+        // 「连击精通」天赋（statId=combo_threshold_delta，负数 = 阈值下调）
+        int delta = TalentCapabilities.ComboThresholdDelta;
+
         // triggers 按阈值升序排列，从高到低检查是否触发
         for (int i = 0; i < triggers.Count; i++)
         {
             var t = triggers[i];
-            if (_currentCombo >= t.comboThreshold && _triggeredThresholds.Add(t.comboThreshold))
+            int threshold = t.comboThreshold + delta;
+            if (_currentCombo >= threshold && _triggeredThresholds.Add(t.comboThreshold))
             {
-                TriggerBuff(t);
+                TriggerBuff(t, threshold);
             }
         }
     }
 
-    private void TriggerBuff(ComboBuffTrigger trigger)
+    private void TriggerBuff(ComboBuffTrigger trigger, int effectiveThreshold)
     {
         if (BuffManager.Instance != null)
         {
@@ -184,6 +188,6 @@ public class ComboManager : MonoBehaviour
             _activeComboBuffIds.Add(trigger.buffId);
         }
         OnComboTrigger?.Invoke(trigger.buffId);
-        Debug.Log($"[ComboManager] 连击 {trigger.comboThreshold} 触发 Buff: {trigger.buffId}");
+        Debug.Log($"[ComboManager] 连击 {effectiveThreshold} 触发 Buff: {trigger.buffId}");
     }
 }
