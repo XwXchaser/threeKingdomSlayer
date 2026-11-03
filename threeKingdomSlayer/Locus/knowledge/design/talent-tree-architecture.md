@@ -216,7 +216,7 @@ public sealed class TalentBranchConfig
 | 天赋 | 效果 | 消费方 | 状态 |
 |---|---|---|---|
 | 铁血 | 生命上限 +30 | `PlayerState` 读 `heroConfig.maxHealth` | ✅ **已实现**（`PlayerState.MaxHealth` = 资产值 + 体魄档位×30） |
-| 连击精通 | 连击阈值下调 | `ComboBuffConfig.triggers[]` 加一档即可 | ✅ **零代码**（`ComboManager.CheckTriggers` 已支持多档位） |
+| 连击精通 | 连击阈值下调 | `ComboBuffConfig.triggers[]` 加一档即可 | ✅ **已实现**（2026-11-03）：`statId=combo_threshold_delta`（−5）→ `ComboManager.CheckTriggers` 用「阈值 + delta」判定 → 20 连击的连击伤害提前到 **15 连击**触发；节点 `talent_stat_combo`（生存向）。**已实测**：连击数到 15 即触发 `_triggeredThresholds` |
 | 巧思 | 主动槽 +1 | `ActiveSkillInventory.Capacity` | ✅ **已实现**（B1：`activeSkillSlotCount` + `TalentCapabilities.ExtraActiveSlot`） |
 | 博学 | 被动槽 +1 | `UpgradePoolSampler` 的被动上限判定 | ✅ **已实现**（B1：`passiveSlotCount` + `ExtraPassiveSlot`） |
 | 聚财 | 铜钱获取 +30% | 敌人 `coinReward` / 里程碑 / 通关奖励结算处 | ✅ **已实现**（`TalentCapabilities.CoinGainMultiplier`） |
