@@ -140,6 +140,8 @@ public class TalentTreeConfig : ScriptableObject
             if (n == null) { issues.Add("有空节点 ✅ —— 删掉它 ✅"); continue; }
             if (string.IsNullOrEmpty(n.nodeId)) { issues.Add("有节点没填 nodeId ✅"); continue; }
             if (!seen.Add(n.nodeId)) issues.Add($"nodeId 重复：{n.nodeId} ✅");
+            if (!n.HasValidUnlockPayload)
+                issues.Add($"{n.nodeId} 没有解锁载荷（招式 / 升级 / 数值 statId / flag 四选一）✅");
             if (n.prerequisiteIds == null) continue;
             foreach (var id in n.prerequisiteIds)
             {
@@ -155,6 +157,30 @@ public class TalentTreeConfig : ScriptableObject
             var n = nodes[i];
             if (n == null || string.IsNullOrEmpty(n.nodeId)) continue;
             if (HasCycle(n, state, issues)) break;   // 已经报过环就不刷屏
+        }
+
+        // 坐标重叠：面板按坐标摆节点 → 重叠 = 两个图标叠在一起（2026-11-03 加）
+        // 隐藏节点不参与（hidden 的节点根本不上面板）。
+        var seenPos = new Dictionary<string, string>();
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            var n = nodes[i];
+            if (n == null || n.hidden) continue;
+            string key = n.treePosition.x.ToString("F0") + "," + n.treePosition.y.ToString("F0");
+            if (seenPos.TryGetValue(key, out string other))
+                issues.Add($"坐标重叠：{n.nodeId} 与 {other} 都在 ({key}) ✅");
+            else seenPos[key] = n.nodeId;
+        }
+
+        // 坐标与格点不一致：填了 col/row 就要由它们推导坐标（x=(col-1)*300，y=70+row*150）
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            var n = nodes[i];
+            if (n == null) continue;
+            if (n.col == 0 && n.row == 0) continue;   // 没填格点的老节点不查
+            var expect = new Vector2((n.col - 1) * 300f, 70f + n.row * 150f);
+            if ((expect - n.treePosition).sqrMagnitude > 0.01f)
+                issues.Add($"{n.nodeId} 的坐标与格点(col={n.col}, row={n.row})不一致：应为 {expect}，实际 {n.treePosition} ✅");
         }
         return issues;
     }

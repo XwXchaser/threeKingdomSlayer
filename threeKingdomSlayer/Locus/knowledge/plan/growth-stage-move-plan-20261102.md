@@ -215,7 +215,7 @@ aiEditMode: inherit
 | # | 任务 | 内容 | 归属 | 验收 |
 |---|---|---|---|---|
 | **T-08** | 天赋两级字段 | `TalentNodeConfig` 加 `pageId`/`branchId`；`TalentTreeConfig` 加 `branches[]`（`TalentBranchConfig`） | **数据层** | 面板能按页/分支组织；存档不受影响 |
-| **T-09** | 校验器补强 | `Validate()` 补：多前置的环检测（现只查第一条边）、`HasValidUnlockPayload` 必须为 true、`pageId`/`branchId` 必须在清单内、`treePosition` 不得重复 | 数据层 | 故意造错能全被报出 |
+| **T-09** | 校验器补强 ✅ 2026-11-03 | `Validate()` 补：多前置的环检测（**对方已做** ✅）、**`HasValidUnlockPayload` 必须为 true** ✅、**`treePosition` 不得重复** ✅、**坐标与 `col`/`row` 格点一致** ✅（`pageId`/`branchId` 那两条随 T-08 作废） | 数据层 | 故意造错能全被报出 ✅ —— 新检查当场抓出 Main 树一个「无载荷的死节点」并已清理 |
 | **T-10** | combo-registry 建档 | `design/gameplay-pillars.md` §2.5 要求登记到 `design/combo-registry.md`，但**该文件不存在** → 建立 | 数据层 | 现有 9 个招式资产登记在册 |
 
 > **T-08 前必须与另一侧确认**：`pageId` / `branchId` 的**具体取值字符串**（避免两边命名不一致）。

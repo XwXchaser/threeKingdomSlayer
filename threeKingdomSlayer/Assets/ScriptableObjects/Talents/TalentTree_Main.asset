@@ -14,23 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   treeId: main
   nodes:
-  - nodeId: talent_unlock_c2
-    displayName: "\u6307\u5411\u7A81\u523A"
-    description: "\u89E3\u9501 C2\uFF1A\u70B9\u4E00\u4E0B\u540E\u6309\u4F4F\u53EF\u6A2A\u5411\u6539\u5217\uFF0C\u677E\u624B\u6233\u51FA\u6240\u6307\u5217\u524D
-      2 \u6392\u3002"
-    coinCost: 100
-    moveConfig: {fileID: 0}
-    upgradeConfig: {fileID: 0}
-    statId: 
-    statAdd: 0
-    flagId: 
-    prerequisiteIds: []
-    groupId: 
-    col: 0
-    row: 0
-    treePosition: {x: -56, y: 360}
-    icon: {fileID: 21300000, guid: 7c03071b89d13b347917441fe30a61ba, type: 3}
-    hidden: 1
   - nodeId: talent_ice_thaw
     displayName: "\u91CD\u51FB\u89E3\u51BB"
     description: "\u91CD\u653B\u51FB\u547D\u4E2D\u88AB\u51B0\u51BB\u7684\u654C\u4EBA\u65F6\u5C06\u5176\u6253\u788E\u89E3\u51BB\uFF0C\u5E76\u4E14\u8FD9\u4E00\u51FB\u4F24\u5BB3\u7FFB\u500D\u3002\uFF08\u672A\u70B9\uFF1A\u51B0\u96FE\u53EA\u80FD\u51BB\u4F4F\uFF0C\u4E0D\u80FD\u89E3\u51BB\uFF09"
