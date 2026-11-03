@@ -7,6 +7,8 @@ using UnityEngine;
 /// </summary>
 public class FrontItemBar : MonoBehaviour
 {
+    /// <summary>单例（教学关需要定位技能槽的屏幕坐标）。</summary>
+    public static FrontItemBar Instance { get; private set; }
     [SerializeField] private List<BuffIcon> _itemSlots = new List<BuffIcon>();
     [SerializeField] private Sprite _skillFrame;
     [Tooltip("相邻道具槽位的 Canvas 设计单位间距")]
@@ -25,6 +27,126 @@ public class FrontItemBar : MonoBehaviour
     private float _appliedSlotSpacing = float.NaN;
 
     public bool HasAvailableSlot => _itemSlots.Exists(s => s != null && !s.gameObject.activeSelf);
+
+    /// <summary>
+    /// **教学用**：取某个主动技能槽的屏幕坐标（<paramref name="upgradeId"/> 留空 = 第一个主动技能槽）。
+    ///
+    /// 教学「用技能打断霸体」这一拍要把提示手落在技能槽上 → 需要知道槽位在屏幕上的位置。
+    /// 返回 false = 现在没有可用的主动技能槽（还没拿到技能 / 槽位没刷新）。
+    /// </summary>
+    public bool TryGetActiveSkillSlotScreenPoint(string upgradeId, out Vector2 screenPos)
+    {
+        screenPos = Vector2.zero;
+        var inventory = ActiveSkillInventory.Instance;
+        if (inventory == null || !inventory.UsesActiveSkills) return false;
+
+        var entries = inventory.Entries;
+        for (int i = 0; i < entries.Count; i++)
+        {
+            var entry = entries[i];
+            if (entry == null || entry.definition == null) continue;
+            if (!string.IsNullOrEmpty(upgradeId) && entry.definition.upgradeId != upgradeId) continue;
+            if (!_itemIcons.TryGetValue(entry.id, out var slot) || slot == null) continue;
+
+            var rect = slot.GetComponent<RectTransform>();
+            if (rect == null) return false;
+            var canvas = rect.GetComponentInParent<Canvas>();
+            var cam = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+            screenPos = RectTransformUtility.WorldToScreenPoint(cam, rect.TransformPoint(rect.rect.center));
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 按**槽位序号**取主动技能槽的屏幕坐标（**不依赖 _itemIcons 注册表**）。
+    ///
+    /// 为什么要有这个（2026-11-02）：教学「用技能打断」那一拍要指技能槽，
+    /// 旧写法用 <see cref="TryGetActiveSkillSlotScreenPoint"/>（靠 _itemIcons 里的 entry.id 反查）——
+    /// 一旦图标还没刷进注册表（玩家刚拿到技能、FrontItemBar 还没重建槽位），
+    /// 查找就永远失败 → 那一拍在「等技能槽」上卡住 → 教学不发生、玩家全程挨打。
+    /// 这个接口直接按槽位 GameObject 取位置，图标没刷新也能指对地方。
+    /// </summary>
+    public bool TryGetActiveSkillSlotScreenPointByIndex(int slotIndex, out Vector2 screenPos)
+    {
+        screenPos = Vector2.zero;
+        if (slotIndex < 0 || slotIndex >= _itemSlots.Count) return false;
+        var slot = _itemSlots[slotIndex];
+        if (slot == null || !slot.gameObject.activeInHierarchy) return false;
+        var rect = slot.GetComponent<RectTransform>();
+        if (rect == null) return false;
+        var canvas = rect.GetComponentInParent<Canvas>();
+        var cam = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+        screenPos = RectTransformUtility.WorldToScreenPoint(cam, rect.TransformPoint(rect.rect.center));
+        return true;
+    }
+
+    /// <summary>
+    /// 调试：当前主动技能槽的注册情况（给教学拍排查「等不到技能槽」用）。
+    /// </summary>
+    public string DebugActiveSkillSlotState()
+    {
+        var inv = ActiveSkillInventory.Instance;
+        var sb = new System.Text.StringBuilder();
+        sb.Append("entries=" + (inv != null ? inv.Entries.Count : -1)
+            + " 图标已注册=" + _itemIcons.Count
+            + " 槽位数=" + _itemSlots.Count
+            + " capacity=" + (inv != null ? inv.Capacity : -1)
+            + " 用主动技能规则=" + (inv != null && inv.UsesActiveSkills));
+        if (inv != null)
+        {
+            for (int i = 0; i < inv.Entries.Count; i++)
+            {
+                var e = inv.Entries[i];
+                sb.Append(" | #" + i + " "
+                    + (e != null && e.definition != null ? e.definition.upgradeId : "?")
+                    + "(id=" + (e != null ? e.id : -1)
+                    + ",已注册=" + (e != null && _itemIcons.ContainsKey(e.id)) + ")");
+            }
+        }
+        return sb.ToString();
+    }
+
+    private void Awake()
+    {
+        // ⚠️ 场景里可能有**两个** FrontItemBar（Battle HUD 的那个才配了槽位，根节点上还有一个空的），
+        //    而 Instance 是“先 Awake 的赢” → 之前拿到的是那个空的 → 技能槽查找全查空表
+        //    → 「用技能打断」那一拍找不到技能槽 → 没有手势指引（2026-11-02 用户反馈）。
+        //    现在：**有槽位的那个优先当 Instance**。
+        if (Instance == null || (Instance._itemSlots.Count == 0 && _itemSlots.Count > 0))
+            Instance = this;
+    }
+
+    /// <summary>
+    /// 找到**真正带技能槽**的那个 FrontItemBar（场景里有多个时用这个，别只认 Instance）。
+    /// </summary>
+    public static FrontItemBar ResolveForSkills()
+    {
+        var bars = FindObjectsOfType<FrontItemBar>(true);
+        for (int i = 0; i < bars.Length; i++)
+        {
+            if (bars[i] != null && bars[i]._itemSlots.Count > 0) return bars[i];
+        }
+        return Instance;
+    }
+
+    /// <summary>
+    /// 按 upgradeId 找到技能槽的图标（找不到返回 null）。
+    /// </summary>
+    public BuffIcon FindActiveSkillSlotIcon(string upgradeId)
+    {
+        var inventory = ActiveSkillInventory.Instance;
+        if (inventory == null || !inventory.UsesActiveSkills) return null;
+        var entries = inventory.Entries;
+        for (int i = 0; i < entries.Count; i++)
+        {
+            var entry = entries[i];
+            if (entry == null || entry.definition == null) continue;
+            if (!string.IsNullOrEmpty(upgradeId) && entry.definition.upgradeId != upgradeId) continue;
+            if (_itemIcons.TryGetValue(entry.id, out var slot) && slot != null) return slot;
+        }
+        return null;
+    }
 
     private void Start()
     {
@@ -67,6 +189,7 @@ public class FrontItemBar : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (Instance == this) Instance = null;
         if (ItemInventory.Instance != null)
             ItemInventory.Instance.OnInventoryChanged -= RefreshItemSlots;
         if (ActiveSkillInventory.Instance != null)

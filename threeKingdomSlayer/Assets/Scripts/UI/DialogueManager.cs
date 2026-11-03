@@ -193,8 +193,18 @@ public sealed class DialogueManager : MonoBehaviour, IDialogueModal
         }
     }
 
+    /// <summary>
+    /// 教学用：即使游戏被暂停（三选一弹窗会把 timeScale 设为 0）也允许播这段对话。
+    ///
+    /// 背景（2026-11-01 用户反馈：「不是说了3选1的教学文本要用对话吗？」）：
+    /// 三选一弹窗一开就把游戏暂停了 → <see cref="IsBlockedByOtherUI"/> 判定“被别的 UI 挡住” → 对话队列不播。
+    /// 教学要在弹窗上用对话说清楚「选哪个」，所以给教学开这个口（只开那一拍）。
+    /// </summary>
+    public static bool AllowDialogueWhilePaused;
+
     private bool IsBlockedByOtherUI()
     {
+        if (AllowDialogueWhilePaused) return false;
         if (Time.timeScale == 0f) return true;
         if (UpgradeChoiceManager.Instance != null && UpgradeChoiceManager.Instance.IsChoosing) return true;
         if (ItemDiscardPopup.IsShowing) return true;

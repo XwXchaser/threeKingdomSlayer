@@ -88,6 +88,8 @@ public sealed class PlayerGuard
         float absorbed = Mathf.Max(0f, damage);
         AccumulatedDamage += absorbed;
         _owner?.WeaponStance?.Recoil(ParryConfig);
+        // 格挡金属音：与下面的卡肉/镜头震动同帧发生
+        AudioManager.Instance?.PostEvent("Guard_Block");
         OnDamageAbsorbed?.Invoke(absorbed);
 
         // 格挡反馈（2026-10-26）：挡下一下必须有明确的画面反馈 ——

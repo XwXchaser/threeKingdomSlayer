@@ -74,6 +74,9 @@ public class UpgradeChoiceManager : MonoBehaviour
     public System.Action OnAllChoicesDone;
 
     public bool IsChoosing => _isChoosing;
+
+    /// <summary>当前弹出的三选一窗口（教学要指着推荐的那张卡）。</summary>
+    public IUpgradeChoiceView ActivePopup => _activePopup;
     public int PendingLevelUps => _pendingLevelUps;
 
     /// <summary>抽池器（调试 / 工具用；注册条件源也走它）。惰性创建：Awake 之前也能用。</summary>

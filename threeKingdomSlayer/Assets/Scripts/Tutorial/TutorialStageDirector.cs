@@ -16,6 +16,18 @@ using UnityEngine;
 /// </summary>
 public partial class TutorialStageDirector : MonoBehaviour
 {
+    /// <summary>单例（常驻点击特效要判断「教学拍是不是在进行中」）。</summary>
+    public static TutorialStageDirector Instance { get; private set; }
+
+    private void Awake()
+    {
+        if (Instance == null) Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
     [Header("教学战斗与台词")]
     [Tooltip("教学 N1（教点戳 / 斩击）")]
     public StageConfig n1Battle;
@@ -33,6 +45,36 @@ public partial class TutorialStageDirector : MonoBehaviour
     [Header("教学升级")]
     [Tooltip("教学期固定给的这个技能（冰雾）。留空则不给")]
     public UpgradeDefinition tutorialIceSkill;
+
+    [Tooltip("**玩家全程唯一一次三选1** 的候选（节点二内容1 之后、经验升级时弹）。\n" +
+             "至少要有一个能打断敌人霸体的技能（旋风 / 海浪）。")]
+    public List<UpgradeDefinition> tutorialChoicePool = new List<UpgradeDefinition>();
+
+    [Tooltip("三选1 里**推荐玩家选的那张**（教学会指着它，并念出它的名字）。")]
+    public UpgradeDefinition recommendedChoice;
+
+    [Tooltip("教学三选1 **只允许选推荐的那张**：其余候选变灰且不可点。\n" +
+             "（教学的内容2 要教「用这个技能打断霸体」，让玩家选到别的就教不下去了）")]
+    public bool forceRecommendedChoiceOnly = true;
+
+    [Header("教学台词：技能与三选1")]
+    [Tooltip("三选1 弹出时的教学对话（**用对话系统说**，不说另起一块字幕）")]
+    public DialogueEventData choiceTeachingDialogue;
+
+    [Tooltip("三选1 弹出时的第一句：先讲清经验→升级→三选1")]
+    public string choiceExpLine = "击杀敌人获得经验，经验满了就会升级，升级会弹出三选1奖励。";
+
+    [Tooltip("三选1 弹出时的第二句：让玩家听引导选指定的技能（{0} = 技能名）")]
+    public string choicePickLine = "听我的，选【{0}】——它能把霸体敌人推回去，打断他的招。";
+
+    [Tooltip("内容2 用【旋风】时的台词")]
+    public DialogueEventData skillDialogueCyclone;
+
+    [Tooltip("内容2 用【海浪】时的台词")]
+    public DialogueEventData skillDialogueWave;
+
+    [Tooltip("内容2 用其它技能时的台词（兼底）")]
+    public DialogueEventData skillDialogueGeneric;
 
     [Header("教学路线")]
     [Tooltip("教学路线配置：整关结算时用它标记教学已完成")]
@@ -64,11 +106,37 @@ public partial class TutorialStageDirector : MonoBehaviour
     /// <summary>教学是否已经教到「防御按键」那一拍（教到之前防御键锁住）。</summary>
     private bool _defendTaught;
     private Coroutine _hintRoutine;
+    /// <summary>路线出口光标（wave=-2）那个协程 —— **与教学拍分开管**，
+    /// 免得清理路线光标时把正在跑的教学拍一起 StopCoroutine 掉（2026-11-02 的坑）。</summary>
+    private Coroutine _routeHintRoutine;
     private DialogueEventData _pendingWaveDialogue;
     private bool _openingPlayed;
     private bool _routeHintActive;
     private bool _beatActive;
     private bool _introPaused;
+    /// <summary>
+    /// **玩家在教学三选1 里选中的技能**（内容2 要指着它的槽位教）。
+    /// 选完之后才确定，所以是运行时记录的。
+    /// </summary>
+    private UpgradeDefinition _chosenSkill;
+    /// <summary>三选1 是否已经给过（教学全程只给一次）。</summary>
+    private bool _choiceGiven;
+    /// <summary>当前这一拍的配置（收拍后可能要补播 afterDialogue）。</summary>
+    private TutorialGestureStep _currentStep;
+
+    /// <summary>当前正在进行的教学拍（null = 没在教学）。供调试/自动化驱动读取。</summary>
+    public TutorialGestureStep CurrentStep => _currentStep;
+
+    /// <summary>这一拍是否正在等玩家动作。</summary>
+    public bool BeatActive => _beatActive;
+
+    /// <summary>
+    /// 「指着三选一卡片的那只手」是否正在展示（常驻点击特效/手势提示层靠它判断要不要收摊）。
+    /// </summary>
+    public bool ChoiceHintActive { get; private set; }
+
+    /// <summary>「指着路线出口箭头的那只手」是否正在展示。</summary>
+    public bool RouteHintActive => _routeHintActive;
     private TutorialGestureTarget _beatTarget = TutorialGestureTarget.None;
     private TutorialSceneDim _sceneDim;
     private bool _sceneDimBound;
@@ -82,12 +150,26 @@ public partial class TutorialStageDirector : MonoBehaviour
         _stageFlow = StageController.Instance as IRunFlow;
         _waveSpawner = WaveSpawner.Instance;
         if (_waveSpawner != null) _waveSpawner.OnWaveStarted += OnWaveStarted;
+        var choiceMgr = UpgradeChoiceManager.Instance;
+        if (choiceMgr != null)
+        {
+            choiceMgr.OnChoicesReady += OnChoicesReady;
+            choiceMgr.OnChoiceSelected += OnChoiceSelected;
+        }
         if (_stageState != null) _stageState.StageVictory += OnStageVictory;
     }
 
     private void OnDisable()
     {
+        // 【诊断】导演被禁用 → 教学拍会被收掉；把调用方写进日志
+        Debug.LogWarning("[Tutorial] OnDisable：教学导演被禁用 → 收拍\n" + System.Environment.StackTrace);
         if (_waveSpawner != null) _waveSpawner.OnWaveStarted -= OnWaveStarted;
+        var choiceMgr = UpgradeChoiceManager.Instance;
+        if (choiceMgr != null)
+        {
+            choiceMgr.OnChoicesReady -= OnChoicesReady;
+            choiceMgr.OnChoiceSelected -= OnChoiceSelected;
+        }
         if (_stageState != null) _stageState.StageVictory -= OnStageVictory;
         StopHint();
         // 教学结束：招式白名单必须放开（否则玩家进正式关仍然放不出招）
@@ -113,8 +195,11 @@ public partial class TutorialStageDirector : MonoBehaviour
         var button = DefenseButton.Instance;
         if (button == null) return;
 
+        // 教学路线里：**教到防御之前一律锁住**（看不见也点不到）。
+        // 不看存档的 tutorialCompleted —— 就算之前通关过，只要这一局还在教学路线上，
+        // 没教到就不给看（2026-11-01 用户反馈：「还没教格挡你给格挡按键干嘛」）。
         bool shouldLock = false;
-        if (!_defendTaught && !TutorialCompleted)
+        if (!_defendTaught)
         {
             var route = RouteFlowHub.Current;
             bool onTutorialRoute = route != null && tutorialRouteConfig != null && route.RouteConfig == tutorialRouteConfig;
@@ -173,10 +258,40 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 出口光标：选完路（或离开选择阶段/离开教学路线）就收起来。必须放在下面的「已推过」早退之前。
         if (_routeHintActive && (!onTutorialRoute || routeRuntime.Phase != FakeRoutePhase.ChoosingRoute))
         {
-            StopHint();
+            // ⚠️ 这里**只能收路线光标自己**，不能调 StopHint()：
+            //    StopHint() 会把「当前正在跑的教学拍」一起 StopCoroutine 掉
+            //    （2026-11-02：用户那次「用技能打断」那一拍在开拍的同一帧被这里掐掉
+            //      → 冻结代码根本没执行 → 玩家站着挨打、技能教学完全不发生）。
+            _routeHintActive = false;
+            if (_routeHintRoutine != null)
+            {
+                StopCoroutine(_routeHintRoutine);
+                _routeHintRoutine = null;
+                if (_hintRoutine == null) _hintRoutine = null;
+            }
             // 路线台词没读完也要收：它虽不暂停，但会挡住路线推进（Blocking 认对话）
             var liveView = ResolveDialogueView();
             if (liveView != null && liveView.IsShowing) liveView.Skip();
+        }
+
+        // ── 手势提示防残留（2026-11-02）────────────────────────────
+        // 循环示范（连点 / 按住防御 / 招架来回划）是**无限协程**：只要有一条路径没走到收尾，
+        // 它就会一直画下去 —— 表现为「拍结束了光圈还在」「教学关的残留跟着流进正式关」。
+        // 这里用两条兜底规则把提示层收干净：
+        //   ① 三选一弹窗已经关了 → 收掉指着卡片的那只手；
+        //   ② 不在教学路线上（落地页 / 正式关）→ 一律收掉。
+        if (ChoiceHintActive)
+        {
+            var choiceMgr = UpgradeChoiceManager.Instance;
+            if (choiceMgr == null || !choiceMgr.IsChoosing)
+            {
+                ChoiceHintActive = false;
+                gestureHint?.Hide();
+            }
+        }
+        if (!onTutorialRoute && gestureHint != null && gestureHint.IsShowing)
+        {
+            gestureHint.Hide();
         }
 
         if (_choiceDialogueShown || choiceDialogue == null || !onTutorialRoute) return;
@@ -188,6 +303,123 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (activeView != null && activeView.IsShowing) activeView.Skip();
         DialogueManager.Instance?.QueueEventAndNotify(choiceDialogue, forceReplay: true);
         StartHint(-2);
+    }
+
+    /// <summary>
+    /// 三选1 弹出来了 → 补一句教学台词（“这里可以选一个技能”）。
+    ///
+    /// 三选1 本身是**经验升级**给的（击杀节点二第一波敌人 → 升级 → 三选1），
+    /// 这里只负责把「怎么用」讲清楚，不负责发奖。
+    /// </summary>
+    private void OnChoicesReady(System.Collections.Generic.List<UpgradeDefinition> choices)
+    {
+        DebugLog.Info("[Tutorial] 三选1 回调：候选 " + (choices != null ? choices.Count : 0) + "，_choiceGiven=" + _choiceGiven);
+        if (_choiceGiven) return;
+        if (choices == null || choices.Count == 0) return;
+        _choiceGiven = true;
+        DebugLog.Info("[Tutorial] 三选1 弹出（" + choices.Count + " 个候选）→ 教学台词");
+
+        // 引导选哪个：提示手落在**推荐的那张卡**上（纯视觉，不拦点击）
+        var recommended = recommendedChoice != null && choices.Contains(recommendedChoice)
+            ? recommendedChoice
+            : (tutorialChoicePool != null && tutorialChoicePool.Count > 0 ? tutorialChoicePool[0] : null);
+
+        // 教学：**只让玩家选推荐的那张** —— 其余候选变灰 + 不可点
+        if (forceRecommendedChoiceOnly && recommended != null)
+        {
+            var mgr0 = UpgradeChoiceManager.Instance;
+            var popup0 = mgr0 != null ? mgr0.ActivePopup as UpgradeChoicePopup : null;
+            if (popup0 != null)
+            {
+                for (int i = 0; i < choices.Count; i++)
+                {
+                    if (choices[i] == null) continue;
+                    popup0.SetChoiceSelectable(choices[i], choices[i] == recommended);
+                }
+            }
+        }
+
+        if (recommended != null) ShowChoiceHint(recommended);
+
+        // 教学对话：**用对话系统**说「选哪个」（三选一弹窗会把游戏暂停 →
+        // 对话默认被“被别的 UI 挡住”拦下不播，所以这一拍开个口）。
+        if (choiceTeachingDialogue != null)
+        {
+            DialogueManager.AllowDialogueWhilePaused = true;
+            DialogueManager.Instance?.QueueEventAndNotify(choiceTeachingDialogue, forceReplay: true);
+        }
+
+        if (choiceTeachingDialogue != null)
+            DialogueManager.Instance?.QueueEventAndNotify(choiceTeachingDialogue, forceReplay: true);
+    }
+
+    /// <summary>把提示手落在三选一的推荐卡上。</summary>
+    private void ShowChoiceHint(UpgradeDefinition recommended)
+    {
+        var mgr = UpgradeChoiceManager.Instance;
+        if (mgr == null || gestureHint == null) return;
+        var popup = mgr.ActivePopup as UpgradeChoicePopup;
+        if (popup == null) return;
+        if (!popup.TryGetChoiceScreenPoint(recommended, out var pos)) return;
+        DebugLog.Info("[Tutorial] 三选一引导：指向 " + recommended.displayName);
+        ChoiceHintActive = true;
+        gestureHint.PlayTapLoop(pos);
+    }
+
+    /// <summary>
+    /// 玩家选完了 → 记下选的是哪个技能（内容2 要指着它的槽位教）。
+    /// </summary>
+    /// <summary>
+    /// 教学期间锁住防御键（2026-11-01 用户反馈：「点击防御会让技能按键无法交互，长枪也卡在空中没有收回」）。
+    /// 锁的时候顺带把可能举着的长枪收回去（防御是 hold 语义，松开才收枪）。
+    /// </summary>
+    private void SetDefenseButtonLocked(bool locked)
+    {
+        var button = DefenseButton.Instance;
+        if (locked)
+        {
+            _defenseLockedByTutorial = true;
+            if (button != null) button.SetAvailable(false);
+            var ps0 = PlayerState.Instance;
+            if (ps0 != null) ps0.SetDefend(false);      // 长枪收回去（别卡在空中）
+        }
+        else if (_defenseLockedByTutorial)
+        {
+            _defenseLockedByTutorial = false;
+            if (button != null) button.SetAvailable(_defendTaught);
+        }
+    }
+
+    /// <summary>防御键是否被教学锁住。</summary>
+    private bool _defenseLockedByTutorial;
+
+    /// <summary>内容2 的技能拍是否正在进行（那一拍允许在输入被拦下时也能释放技能）。</summary>
+    public bool SkillBeatActive { get; private set; }
+
+    private void OnChoiceSelected(UpgradeDefinition selected)
+    {
+        if (selected == null) return;
+        _chosenSkill = selected;
+        DebugLog.Info("[Tutorial] 玩家选中技能：" + selected.displayName);
+        // 选完了 → 收掉指着卡片的提示手
+        ChoiceHintActive = false;
+        gestureHint?.Hide();
+        DialogueManager.AllowDialogueWhilePaused = false;
+        // 三选1 → 内容2 技能拍 之间**锁住防御键**：
+        // 否则玩家在这个空档按下防御 → 长枪举起来（又收不回），同时技能键被输入拦截点不动。
+        SetDefenseButtonLocked(true);
+    }
+
+    /// <summary>玩家在教学三选1 里选中的技能（没选 = null）。</summary>
+    public UpgradeDefinition ChosenSkill => _chosenSkill;
+
+    /// <summary>内容2 的台词：按玩家选中的技能给对应的一条。</summary>
+    public DialogueEventData SkillDialogueFor(UpgradeDefinition skill)
+    {
+        if (skill == null) return skillDialogueGeneric;
+        if (skill.upgradeId == "active_cyclone") return skillDialogueCyclone != null ? skillDialogueCyclone : skillDialogueGeneric;
+        if (skill.upgradeId == "active_wave") return skillDialogueWave != null ? skillDialogueWave : skillDialogueGeneric;
+        return skillDialogueGeneric;
     }
 
     private void OnWaveStarted(int waveIndex)
@@ -203,6 +435,8 @@ public partial class TutorialStageDirector : MonoBehaviour
         {
             _taughtAttacks.Clear();
             ApplyAttackGate(null);
+            _choiceGiven = false;
+            _chosenSkill = null;
         }
         Debug.Log("[Tutorial] 波次开始 wave=" + waveIndex + " 招式白名单=" + TutorialAttackGate.Describe());
 
@@ -240,7 +474,18 @@ public enum GestureHintKind
     /// **防御按键**（2026-10-29 用户定）：点一下底排中间的防御键 → 长枪举起 → 落防御位。
     /// 不做任何招架判定（敌人不会被打断）；防御期免伤、只涨破防值。
     /// </summary>
-    DefendButton
+    DefendButton,
+    /// <summary>
+    /// **连点三下**（2026-11-01 用户定，节点一内容2）：连点 N 次触发一次连招（三连 stab）。
+    /// 与 <see cref="Tap"/> 的差别只是「要打几次才算完成」——由 <c>TutorialGestureStep.requiredHits</c> 决定。
+    /// </summary>
+    TapCombo,
+    /// <summary>
+    /// **用技能打断**（2026-11-01 用户定，节点二内容2）：提示手落在主动技能槽上，
+    /// 玩家点一下技能槽 → 技能释放 → 目标敌人的霸体攻击被打断（以「敌人不再处于攻击态」为成功判据）。
+    /// 这一拍里**禁止玩家出招**（闸门 = BlockAll），避免敌人被点死而没有打断机会。
+    /// </summary>
+    SkillSlot
 }
 
 [System.Serializable]
@@ -283,4 +528,24 @@ public class TutorialGestureStep
     public int loops = 0;
     [Tooltip("两次之间的间隔秒数")]
     public float gap = 0.6f;
+
+    [Tooltip("这一拍要打几次才算完成（1 = 打一次就完成）。TapCombo 用它做「连点三下」")]
+    public int requiredHits = 1;
+
+    [Tooltip("**在敌人的霸体攻击（C 技前摇）起手时冻结整个游戏**：\n" +
+             "用于「敌人正在抡霸体招 → 暂停教玩家按住防御键格挡这一击」。\n" +
+             "冻结点 = C 技起手瞬间（不是命中帧）——冻结在命中帧的话敌人已经挥下来了，玩家来不及反应。\n" +
+             "冻结期间玩家用**非缩放时间**推进持枪姿态（否则 timeScale=0 时防御位永远进不去）。")]
+    public bool freezeOnCAttack;
+
+    [Tooltip("等目标敌人**起 C 技（霸体前摇）**再开始这一拍（不冻结）。\n" +
+             "用于「教玩家用技能打断霸体」——必须在敌人正在抡招时提示，否则没有可打断的东西。")]
+    public bool waitForCAttack;
+
+    [Tooltip("SkillSlot 拍：要指向哪个技能（升级 id，如 active_cyclone）。留空 = 指向第一个主动技能槽")]
+    public string skillUpgradeId = "";
+
+    [Tooltip("这一拍**完成后**补播的台词（非阻塞，不暂停）。\n" +
+             "例：连点三下完成后补一句「多次攻击可以打断敌人的攻击」。")]
+    public DialogueEventData afterDialogue;
 }

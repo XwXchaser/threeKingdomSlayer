@@ -45,14 +45,19 @@ using System.Collections;
     [SerializeField] private Sprite[] tapFrames = new Sprite[0];
     [Tooltip("每帧停留时长（秒）")]
     [SerializeField] private float tapFrameInterval = 0.08f;
-    [Tooltip("程序化按压的角度（度）：手**绕指尖 pivot** 转 → 读作“手指按下去”。\n" +
-             "（Finger 节点的 pivot 正好在指尖 (0.26, 0.81) → 旋转时指尖不动，只有手在压）")]
-    [SerializeField] private float tapPressAngle = 14f;
+    [Tooltip("程序化按压的角度（度）。\n" +
+             "**绕掌心转**（pivot=掌心）→ 掌心在按压过程中不动，只有指尖沿弧线下沉。\n" +
+             "（之前还有一条逐帧补偿把指尖钉死在目标点，等价于绕指尖转 → 看着像整只手在转，2026-11-02 去掉）")]
+    [SerializeField] private float tapPressAngle = TutorialGestureStyle.PressAngle;
 
     [Header("节奏")]
     public float tapDuration = 0.9f;
     public float swipeDuration = 1.1f;
     public float holdDuration = 1.2f;
+
+    [Tooltip("**常驻光圈**：连点教学时让光圈一直留在场上（提示玩家「继续点这里」）。\n" +
+             "关闭时每次点按的光圈扩散完就消失。")]
+    public bool keepRingVisible;
     [Range(0.2f, 1f)] public float ringEndScale = 0.55f;
     public float ringSpinSpeed = 90f;
 
@@ -72,6 +77,18 @@ using System.Collections;
     private Coroutine _routine;
     private Canvas _canvas;
     private Sprite _fingerBaseSprite;
+    private Vector2 _fingerBasePos;
+
+    /// <summary>单例（常驻点击特效要判断「教学手势提示是不是还在屏上」）。</summary>
+    public static TutorialGestureHint Instance { get; private set; }
+
+    /// <summary>
+    /// 提示层现在有没有东西在屏幕上（外部做残留兜底用）。
+    /// </summary>
+    public bool IsShowing =>
+        (finger != null && finger.gameObject.activeSelf) ||
+        (ring != null && ring.gameObject.activeSelf) ||
+        (trail != null && trail.gameObject.activeSelf);
 
         [Header("引导门槛（做对才继续）")]
         [Tooltip("点击判定：按下到抬起的最大位移（像素）")]
@@ -86,8 +103,15 @@ using System.Collections;
         public float swipeMinPixels = 90f;
         [Tooltip("蓄力判定：需要按住的秒数")]
         public float chargeHoldSeconds = 0.9f;
-        [Tooltip("蓄力上挑判定：按住多久算「已蓄力」。<=0 时自动取 InputManager 的一级蓄力时长（与游戏实际手感对齐）")]
-        public float chargeSwipeHoldSeconds = 0f;
+    [Tooltip("蓄力上挑判定：按住多久算「已蓄力」。<=0 时自动取 InputManager 的一级蓄力时长（与游戏实际手感对齐）")]
+    public float chargeSwipeHoldSeconds = 0f;
+
+    [Header("手势旋转支点")]
+    [Tooltip("掌心在图里的位置（**旋转绕掌心**，不是绕指尖）")]
+    public Vector2 palmUV = TutorialGestureStyle.PalmUV;
+
+    [Tooltip("指尖在图里的位置（用于算「指尖→掌心」的偏移）")]
+    public Vector2 tipUV = TutorialGestureStyle.TipUV;
 
     private bool _gateActive;
     private GestureHintKind _gateKind;
@@ -331,18 +355,71 @@ using System.Collections;
     
     private void Awake()
     {
+        Instance = this;
         if (root == null) root = transform as RectTransform;
         _canvas = GetComponentInParent<Canvas>();
         if (screenSpace == null) screenSpace = root;
         var fingerImage = FingerImage;
         if (fingerImage != null) _fingerBaseSprite = fingerImage.sprite;
+        // 旋转支点设在**掌心**（统一样式）：RectTransform 只能绕 pivot 转，
+        // pivot 在指尖就会变成「整只手绕着指尖甩」。
+        if (finger != null) finger.pivot = TutorialGestureStyle.HandPivot;
+        // 尺寸也取统一样式（教学与常态引导同一套）
+        fingerSize = TutorialGestureStyle.BaseHandSize;
+        ringSize = TutorialGestureStyle.BaseRingSize;
         EnsureDimSprite();
+        // **提示层不能吃掉点击**（2026-11-01 用户反馈：「技能使用的引导似乎还会卡住不让我点」）：
+        // 提示手/光圈/轨迹盖在技能槽上时，它们的 Image 会接收射线 → 点不到底下的技能槽按钮。
+        // 所以全部改成不参与射线检测（提示只是视觉）。
+        SetNoRaycast(finger);
+        SetNoRaycast(ring);
+        SetNoRaycast(trail);
+        SetNoRaycast(dimOverlay);
         HideLayers();
     }
+
+    /// <summary>让某个图层不参与射线检测（提示层只做视觉，不拦点击）。</summary>
+    private static void SetNoRaycast(Component target)
+    {
+        if (target == null) return;
+        var img = target as Image;
+        if (img == null) img = target.GetComponentInChildren<Image>();
+        if (img != null) img.raycastTarget = false;
+    }
     
-        /// <summary>只隐藏图层，不动协程（协程自己收尾时用）。</summary>
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
+    /// <summary>
+    /// 宿主（教学导演）还希望这个示范继续吗？
+    ///
+    /// **为什么需要它**：循环示范（连点 / 按住防御 / 招架来回划）是**无限协程**，
+    /// 只要有一条路径没走到收尾（拍被中途打断、弹窗被关掉、教程提前结束…），
+    /// 它就会一直画下去 —— 表现为「拍结束了光圈还在」「教学关的残留跟着流进正式关」。
+    /// 所以每轮问一次宿主：宿主说不需要了就自己收摊（<see cref="Finish"/>）。
+    /// </summary>
+    private static bool HostAllowsDemo()
+    {
+        var dir = TutorialStageDirector.Instance;
+        if (dir == null) return true;   // 没有导演（别处复用这个提示）→ 不拦
+        return dir.BeatActive || dir.ChoiceHintActive || dir.RouteHintActive;
+    }
+
+    /// <summary>
+    /// 收掉提示层：**必须同时停掉示范协程**。
+        /// 旧实现只藏图层不动协程 → 循环示范（连点 / 按住防御）下一帧又把光圈 SetActive 回来，
+        /// 表现为「拍已经结束、选了卡，光圈和手指还赖在屏幕上」，正式关里也会残留教学引导
+        /// （2026-11-02 用户反馈：三选一选了【海浪】后光圈一直在、开场点按教学同样收不掉）。
+        /// 协程自己正常播完的路径走 <see cref="Finish"/>，那里用 HideLayers 即可。
+        /// </summary>
         public void Hide()
         {
+            StopRoutine();
+            // 「光圈常驻」是一次性的：连点教学结束后必须复位，
+            // 否则后面别的循环示范（例：指着三选一卡片的那只）每点一下都会把光圈留在场上。
+            keepRingVisible = false;
             HideLayers();
         }
     
@@ -361,6 +438,7 @@ using System.Collections;
             }
             if (dimOverlay != null) dimOverlay.gameObject.SetActive(false);
             StopRoutine();
+            keepRingVisible = false;
             HideLayers();
         }
     
@@ -396,6 +474,7 @@ using System.Collections;
         float t = 0f;
         while (t < 0.25f)
         {
+            if (!HostAllowsDemo()) { Finish(); yield break; }
             t += Time.unscaledDeltaTime;
             float k = Mathf.Clamp01(t / 0.25f);
             finger.localScale = Vector3.one * Mathf.Lerp(1f, 0.88f, k * k);
@@ -403,6 +482,8 @@ using System.Collections;
         }
         while (true)
         {
+            // 宿主不要这个示范了 → 自己收摊（否则「按住防御」的循环示范会一直留在屏上）
+            if (!HostAllowsDemo()) { Finish(); yield break; }
             float pulse = (Mathf.Sin(Time.unscaledTime * 4.2f) + 1f) * 0.5f;   // 0..1
             finger.localScale = Vector3.one * Mathf.Lerp(0.88f, 0.92f, pulse);
             yield return null;
@@ -532,6 +613,9 @@ using System.Collections;
     {
         do
         {
+            // 宿主不要这个示范了 → 自己收摊（连点是无限循环，不看宿主就会一直留在屏上）
+            if (!HostAllowsDemo()) { Finish(); yield break; }
+
             // 点按表现：光圈从指尖扩散一次（表达“点在这”）
             if (ring != null)
             {
@@ -558,14 +642,21 @@ using System.Collections;
                 float t = 0f;
                 while (t < tapDuration)
                 {
+                    // 收得及时一点：按压动画期间宿主要是不要了，立刻停（别再画满一轮）
+                    if (!HostAllowsDemo()) { Finish(); yield break; }
                     t += Time.unscaledDeltaTime;
                     float k = Mathf.Clamp01(t / tapDuration);
                     // 前 35% 压下去，后 65% 回弹（sin 曲线：起手快、收尾稳）
                     float press = k < 0.35f
                         ? Mathf.SmoothStep(0f, 1f, k / 0.35f)
                         : 1f - Mathf.SmoothStep(0f, 1f, (k - 0.35f) / 0.65f);
-                    finger.localRotation = Quaternion.Euler(0f, 0f, -tapPressAngle * press);
                     finger.localScale = Vector3.one * Mathf.Lerp(1f, 0.94f, press);
+                    // pivot 在**掌心** → 手绕掌心转、掌心不动（2026-11-02 用户反馈：
+                    // 「实际是绕着手指尖在转，不像点击」）。
+                    // 正角度 = 指尖向下沉（读作“按下去”）。
+                    finger.localRotation = Quaternion.Euler(0f, 0f, tapPressAngle * press);
+                    // **不再回写 anchoredPosition**：位置由 Place() 按「指尖落在目标点」摆好，
+                    // 按压只改旋转/缩放（绕掌心）→ 掌心不动，指尖沿弧线下沉一小段。
                     if (ring != null)
                     {
                         float ripple = Mathf.Clamp01(k / 0.6f);
@@ -576,11 +667,20 @@ using System.Collections;
                 }
                 finger.localScale = Vector3.one;
                 finger.localRotation = Quaternion.identity;
+                finger.anchoredPosition = _fingerBasePos;
             }
 
             if (!loop) { Finish(); yield break; }
             // 循环模式：停一拍再点下一次
             yield return new WaitForSecondsRealtime(0.35f);
+            // **常驻光圈**（连点教学）：每次点完后把光圈留在场上（不再淡出），
+            // 玩家一直看得见「点这里」，知道还要继续点。
+            if (keepRingVisible && ring != null)
+            {
+                ring.gameObject.SetActive(true);
+                ring.rectTransform.localScale = Vector3.one;
+                SetAlpha(ring, 0.55f);
+            }
         }
         while (loop);
     }
@@ -680,10 +780,14 @@ using System.Collections;
 
         while (true)
         {
+            // 宿主不要这个示范了 → 自己收摊（招架示范是无限循环）
+            if (!HostAllowsDemo()) { Finish(); yield break; }
+
             // ── 划过去 ──
             float t = 0f;
             while (t < dur)
             {
+                if (!HostAllowsDemo()) { Finish(); yield break; }
                 t += Time.unscaledDeltaTime;
                 float k = Mathf.Clamp01(t / dur);
                 Vector2 pos = Vector2.Lerp(from, to, Mathf.SmoothStep(0f, 1f, k));
@@ -717,6 +821,7 @@ using System.Collections;
                 float pulse = 0f;
                 while (true)
                 {
+                    if (!HostAllowsDemo()) { Finish(); yield break; }
                     pulse += Time.unscaledDeltaTime * parryPulseSpeed;
                     float s = 1f + parryPulseAmount * Mathf.Sin(pulse);
                     if (ring != null) ring.rectTransform.localScale = Vector3.one * s;
@@ -728,6 +833,7 @@ using System.Collections;
             t = 0f;
             while (t < dur)
             {
+                if (!HostAllowsDemo()) { Finish(); yield break; }
                 t += Time.unscaledDeltaTime;
                 float k = Mathf.Clamp01(t / dur);
                 Vector2 pos = Vector2.Lerp(to, from, Mathf.SmoothStep(0f, 1f, k));
@@ -754,9 +860,19 @@ using System.Collections;
     
         private void HideLayers()
         {
-            if (finger != null) finger.gameObject.SetActive(false);
+            // 收拍时把手恢复成静止姿态：否则下一次示范会从「按下 / 转过」的姿态起手，看着像手在歪着抖
+            if (finger != null)
+            {
+                finger.localScale = Vector3.one;
+                finger.localRotation = Quaternion.identity;
+                finger.gameObject.SetActive(false);
+            }
             if (trail != null) trail.gameObject.SetActive(false);
-            if (ring != null) ring.gameObject.SetActive(false);
+            if (ring != null)
+            {
+                ring.rectTransform.localScale = Vector3.one;
+                ring.gameObject.SetActive(false);
+            }
         }
     
         private void ShowLayers(bool ring, bool trail, bool finger)
@@ -779,15 +895,21 @@ using System.Collections;
             trail.preserveAspect = false;
         }
     
-        private void Place(RectTransform target, Vector2 screenPos, float size)
+    private void Place(RectTransform target, Vector2 screenPos, float size)
+    {
+        if (target == null) return;
+        Camera cam = _canvas != null && _canvas.renderMode != RenderMode.ScreenSpaceOverlay ? _canvas.worldCamera : null;
+        Vector2 local;
+        if (screenSpace != null && RectTransformUtility.ScreenPointToLocalPointInRectangle(screenSpace, screenPos, cam, out local))
+            target.anchoredPosition = local;
+        target.sizeDelta = new Vector2(size, size);
+        // 手的 pivot 在掌心 → 位置补一个偏移，让**指尖**落在目标点
+        if (target == finger)
         {
-            if (target == null) return;
-            Camera cam = _canvas != null && _canvas.renderMode != RenderMode.ScreenSpaceOverlay ? _canvas.worldCamera : null;
-            Vector2 local;
-            if (screenSpace != null && RectTransformUtility.ScreenPointToLocalPointInRectangle(screenSpace, screenPos, cam, out local))
-                target.anchoredPosition = local;
-            target.sizeDelta = new Vector2(size, size);
+            target.anchoredPosition += TutorialGestureStyle.HandPositionOffset(size);
+            _fingerBasePos = target.anchoredPosition;
         }
+    }
     
         private static void SetAlpha(Image image, float alpha)
         {

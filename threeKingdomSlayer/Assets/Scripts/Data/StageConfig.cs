@@ -93,6 +93,11 @@ public class WaveConfig
     [Tooltip("伤害倍率，>1 玩家承伤更高")]
     public float damageMultiplier = 1f;
 
+    [Tooltip("**经验倍率**：本波敌人击杀给的经验倍率（1 = 原值）。\n" +
+             "教学关用：节点一整波给 0 经验（不升级、不弹三选一），节点二第一波给足经验，\n" +
+             "让「升级 → 三选一」正好落在那一杀上。")]
+    public float expMultiplier = 1f;
+
     [Tooltip("敌人颜色叠加，白色(1,1,1) = 不变")]
     public Color waveTintColor = Color.white;
 

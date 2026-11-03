@@ -20,6 +20,9 @@ public sealed class RouteChoiceButton : MonoBehaviour
     /// <summary>本按钮绑定的路线选项 id（= RouteChoiceOption.id，例：J1_N2）。</summary>
     public string OptionId => _id;
 
+    /// <summary>可点的那个 Button（教学要挂在**它**的物体上才能收到按下事件）。</summary>
+    public Button Button => button;
+
     private string _id;
     private Action<string> _onSelected;
     private RectTransform _rectTransform;

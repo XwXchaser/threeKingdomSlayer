@@ -471,9 +471,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _ruleVersion: 1
-  _grantDefaultSkills: 1
-  _defaultSkills:
-  - {fileID: 11400000, guid: 1a1d2c13de246f34dbe94e8e46ceb6af, type: 2}
+  _grantDefaultSkills: 0
+  _defaultSkills: []
 --- !u!114 &5137013
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1906,17 +1905,16 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Unlit/Transparent (Instance) (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance)
   m_Shader: {fileID: 10750, guid: 0000000000000000f000000000000000, type: 0}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -4407,8 +4405,8 @@ RectTransform:
   - {fileID: 44102432}
   m_Father: {fileID: 2147134744}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.25}
-  m_AnchorMax: {x: 0.5, y: 0.25}
+  m_AnchorMin: {x: 0.5, y: 0.4}
+  m_AnchorMax: {x: 0.5, y: 0.4}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 240, y: 70}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -4870,6 +4868,7 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 486080387}
   - {fileID: 508890078}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -7569,6 +7568,74 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 478855407}
   m_CullTransparentMesh: 1
+--- !u!1 &486080386
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 486080387}
+  - component: {fileID: 486080388}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: Attack Tap Indicator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &486080387
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 486080386}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 275758067}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &486080388
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 486080386}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d096e576fb6bfa44b755f7341119a3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  handSprite: {fileID: 21300000, guid: 8426cacbbde92f44c8e6a0f06f003f35, type: 3}
+  handTapFrames: []
+  ringSprite: {fileID: 21300000, guid: 29478d34325fde346a6eb38397efec15, type: 3}
+  ringColor: {r: 1, g: 0.93, b: 0.66, a: 0.9}
+  handAlpha: 0.95
+  ringHeightRatio: 0.3
+  handToRingRatio: 1.2833333
+  fallbackRingSize: 240
+  pulseSpeed: 1.6
+  pulseAmount: 0.1
+  ringSpinSpeed: 16
+  tapDuration: 1
+  tapFrameInterval: 0.08
+  tapPressAngle: 8
+  blinkEnabled: 1
+  blinkPeriod: 1.8
+  blinkOnRatio: 0.55
+  blinkFadeSeconds: 0.22
+  checkInterval: 0.1
+  frontRowOnly: 1
+  singleRandomTarget: 1
+  hideWhileAttackOnCooldown: 1
+  showDuringTeaching: 0
 --- !u!1 &486130663
 GameObject:
   m_ObjectHideFlags: 0
@@ -9644,6 +9711,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tutorial Gesture Hint
       objectReference: {fileID: 0}
+    - target: {fileID: 6143482876073363773, guid: ead6bad571906194c981e56beef6465d, type: 3}
+      propertyPath: tapPressAngle
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: 6147820660479227051, guid: ead6bad571906194c981e56beef6465d, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -9723,6 +9794,10 @@ PrefabInstance:
     - target: {fileID: 6147820660479227051, guid: ead6bad571906194c981e56beef6465d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6732174150124876068, guid: ead6bad571906194c981e56beef6465d, type: 3}
+      propertyPath: m_SortingOrder
+      value: 200
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12015,7 +12090,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -350}
+  m_AnchoredPosition: {x: 0, y: -245}
   m_SizeDelta: {x: 500, y: 82}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &973164695
@@ -14497,6 +14572,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1155467309}
   - component: {fileID: 1155467308}
+  - component: {fileID: 1155467310}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Tutorial Director
@@ -14518,24 +14594,42 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   freezeTimeoutSeconds: 20
+  skillBeatTimeoutSeconds: 30
+  skillSlotWaitSeconds: 60
+  skillChoiceWaitSeconds: 90
+  skillResultWaitSeconds: 3
+  skillPromptToEndSeconds: 1.5
+  defendPromptToEndSeconds: 1.5
   n1Battle: {fileID: 11400000, guid: 7830540a0bfc4d14994a832e90cc9975, type: 2}
   n1Dialogues:
   - {fileID: 11400000, guid: cd6493962ad4ca243bac3ab251d1140a, type: 2}
-  - {fileID: 11400000, guid: cd82bdbb5c7b42843ac07d9c514e297c, type: 2}
+  - {fileID: 11400000, guid: 081e8f5bba2d7cb41a6fa1d839f9646c, type: 2}
   e0Battle: {fileID: 11400000, guid: 0342f43465c8ca44fa158b7937ed845b, type: 2}
   e0Dialogues:
   - {fileID: 11400000, guid: 56396570454d8084d8667d63212d6563, type: 2}
-  - {fileID: 11400000, guid: 20bd1e13308090744a61640eea921026, type: 2}
+  - {fileID: 0}
   choiceDialogue: {fileID: 11400000, guid: 5a23cc1452775bf4d8ea60aaabc3b339, type: 2}
-  tutorialIceSkill: {fileID: 11400000, guid: 1a1d2c13de246f34dbe94e8e46ceb6af, type: 2}
+  tutorialIceSkill: {fileID: 0}
+  tutorialChoicePool:
+  - {fileID: 11400000, guid: 894de3689a6692f41be5c5cf47b960a3, type: 2}
+  - {fileID: 11400000, guid: ad8f6c8edfab32b4d83f251559d240d7, type: 2}
+  - {fileID: 11400000, guid: 6c0f2f4854ee0244daeac817f4cb828a, type: 2}
+  recommendedChoice: {fileID: 11400000, guid: 894de3689a6692f41be5c5cf47b960a3, type: 2}
+  forceRecommendedChoiceOnly: 1
+  choiceTeachingDialogue: {fileID: 11400000, guid: ff63769998b3c8c49b579e8502e6f0df, type: 2}
+  choiceExpLine: "\u51FB\u6740\u654C\u4EBA\u83B7\u5F97\u7ECF\u9A8C\uFF0C\u7ECF\u9A8C\u6EE1\u4E86\u5C31\u4F1A\u5347\u7EA7\uFF0C\u5347\u7EA7\u4F1A\u5F39\u51FA\u4E09\u90091\u5956\u52B1\u3002"
+  choicePickLine: "\u542C\u6211\u7684\uFF0C\u9009\u3010{0}\u3011\u2014\u2014\u5B83\u80FD\u628A\u9738\u4F53\u654C\u4EBA\u63A8\u56DE\u53BB\uFF0C\u6253\u65AD\u4ED6\u7684\u62DB\u3002"
+  skillDialogueCyclone: {fileID: 11400000, guid: ce6ba1902db0ccc468faffb0e38ae409, type: 2}
+  skillDialogueWave: {fileID: 11400000, guid: ab533cd5fa061f240962fa843768b280, type: 2}
+  skillDialogueGeneric: {fileID: 11400000, guid: 4dd429cfb23b4d84cbc0f122467dfa10, type: 2}
   tutorialRouteConfig: {fileID: 11400000, guid: 8992d31e29e5e084a8281de6cbfa0c19, type: 2}
   gestureHint: {fileID: 760429143}
   gestureSteps:
   - battle: {fileID: 11400000, guid: 7830540a0bfc4d14994a832e90cc9975, type: 2}
     waveIndex: 0
     kind: 0
-    from01: {x: 0.5, y: 0.55}
-    to01: {x: 0.5, y: 0.55}
+    from01: {x: 0.5, y: 0.5}
+    to01: {x: 0.5, y: 0.72}
     delay: 0.2
     playSeconds: 1.2
     pauseUntilPerformed: 1
@@ -14547,15 +14641,20 @@ MonoBehaviour:
     despawnTargetOnSuccess: 0
     loops: 0
     gap: 0.6
+    requiredHits: 1
+    freezeOnCAttack: 0
+    waitForCAttack: 0
+    skillUpgradeId: 
+    afterDialogue: {fileID: 0}
   - battle: {fileID: 11400000, guid: 7830540a0bfc4d14994a832e90cc9975, type: 2}
     waveIndex: 1
-    kind: 2
-    from01: {x: 0.5, y: 0.7}
-    to01: {x: 0.18, y: 0.7}
+    kind: 8
+    from01: {x: 0.5, y: 0.5}
+    to01: {x: 0.5, y: 0.72}
     delay: 0.2
-    playSeconds: 1.2
+    playSeconds: 0.9
     pauseUntilPerformed: 1
-    lineAtWaveStart: 1
+    lineAtWaveStart: 0
     triggerHpPercent: 1
     freezeOnGesture: 0
     anchorToPlayer: 0
@@ -14563,11 +14662,16 @@ MonoBehaviour:
     despawnTargetOnSuccess: 0
     loops: 0
     gap: 0.6
+    requiredHits: 3
+    freezeOnCAttack: 0
+    waitForCAttack: 0
+    skillUpgradeId: 
+    afterDialogue: {fileID: 11400000, guid: 1a94f740ede91cf4fb71d851cb913bba, type: 2}
   - battle: {fileID: 0}
     waveIndex: -2
     kind: 0
     from01: {x: 0.5, y: 0.5}
-    to01: {x: 0.5, y: 0.5}
+    to01: {x: 0.5, y: 0.72}
     delay: 0.2
     playSeconds: 1.2
     pauseUntilPerformed: 0
@@ -14579,11 +14683,16 @@ MonoBehaviour:
     despawnTargetOnSuccess: 0
     loops: 0
     gap: 0.6
+    requiredHits: 1
+    freezeOnCAttack: 0
+    waitForCAttack: 0
+    skillUpgradeId: 
+    afterDialogue: {fileID: 0}
   - battle: {fileID: 11400000, guid: 0342f43465c8ca44fa158b7937ed845b, type: 2}
     waveIndex: 0
     kind: 7
-    from01: {x: 0.5, y: 0.55}
-    to01: {x: 0.5, y: 0.55}
+    from01: {x: 0.5, y: 0.5}
+    to01: {x: 0.5, y: 0.72}
     delay: 0.2
     playSeconds: 1.2
     pauseUntilPerformed: 0
@@ -14595,22 +14704,32 @@ MonoBehaviour:
     despawnTargetOnSuccess: 0
     loops: 0
     gap: 0.6
+    requiredHits: 1
+    freezeOnCAttack: 1
+    waitForCAttack: 0
+    skillUpgradeId: 
+    afterDialogue: {fileID: 0}
   - battle: {fileID: 11400000, guid: 0342f43465c8ca44fa158b7937ed845b, type: 2}
     waveIndex: 1
-    kind: 7
-    from01: {x: 0.5, y: 0.55}
-    to01: {x: 0.5, y: 0.55}
+    kind: 9
+    from01: {x: 0.5, y: 0.5}
+    to01: {x: 0.5, y: 0.72}
     delay: 0.2
     playSeconds: 1.2
     pauseUntilPerformed: 0
-    lineAtWaveStart: 1
+    lineAtWaveStart: 0
     triggerHpPercent: 1
     freezeOnGesture: 0
     anchorToPlayer: 0
     holdAfterGesture: 0
-    despawnTargetOnSuccess: 1
+    despawnTargetOnSuccess: 0
     loops: 0
     gap: 0.6
+    requiredHits: 1
+    freezeOnCAttack: 0
+    waitForCAttack: 0
+    skillUpgradeId: 
+    afterDialogue: {fileID: 0}
   tutorialLineSeconds: 2.2
   openingDialogue: {fileID: 11400000, guid: a42d1a72f05fbb24f90e336a3d9b4709, type: 2}
   hintWaitForEnemySeconds: 8
@@ -14630,6 +14749,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1155467310
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1155467307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b02ec9e0b5e61af4984cb398d61e6a70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1156913730
 GameObject:
   m_ObjectHideFlags: 0
@@ -18185,7 +18316,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 22
+  m_SortingOrder: 120
   m_TargetDisplay: 0
 --- !u!1 &1509591336
 GameObject:
@@ -18757,7 +18888,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -245}
+  m_AnchoredPosition: {x: 0, y: -140}
   m_SizeDelta: {x: 500, y: 82}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1559928911
@@ -19445,6 +19576,11 @@ MonoBehaviour:
   _launchHitClips:
   - {fileID: 8300000, guid: 827d3aacea4d7f64883b1ef827e2d3a8, type: 3}
   - {fileID: 8300000, guid: a791c91095c1ff847bfd56f70ab39bf0, type: 3}
+  _guardBlockClips:
+  - {fileID: 8300000, guid: 7808d9a5d42673d4bbde29678bcfe1a3, type: 3}
+  - {fileID: 8300000, guid: 29bdba8b58895fc4f8aeef5f962542ca, type: 3}
+  _guardBlockVolume: 1
+  _guardBlockCooldown: 0.08
 --- !u!4 &1593080085
 Transform:
   m_ObjectHideFlags: 0
@@ -20575,6 +20711,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy_1012_IdleTest
       objectReference: {fileID: 0}
+    - target: {fileID: 3109832582078915776, guid: d7eb64e771eae054a9ca748ec02a6d65, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -21223,6 +21363,85 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1672062201}
   m_CullTransparentMesh: 1
+--- !u!1 &1684724278
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1684724281}
+  - component: {fileID: 1684724280}
+  - component: {fileID: 1684724279}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: Tutorial Blackout
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1684724279
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1684724278}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8cad34f35b0afe346a0ec6494f872479, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  curtain: {fileID: 0}
+  maxAlpha: 0.55
+  fadeSeconds: 0.3
+  routeConfig: {fileID: 11400000, guid: 8992d31e29e5e084a8281de6cbfa0c19, type: 2}
+  tutorialOnly: 1
+  tutorialRouteConfig: {fileID: 11400000, guid: 8992d31e29e5e084a8281de6cbfa0c19, type: 2}
+--- !u!223 &1684724280
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1684724278}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 0
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 0
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_AdditionalShaderChannelsFlag: 0
+  m_UpdateRectTransformForStandalone: 0
+  m_SortingLayerID: 0
+  m_SortingOrder: 100
+  m_TargetDisplay: 0
+--- !u!224 &1684724281
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1684724278}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0, y: 0, z: 0}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0, y: 0}
 --- !u!1 &1686077280
 GameObject:
   m_ObjectHideFlags: 0
@@ -24022,6 +24241,7 @@ MonoBehaviour:
   ignoreFillUpOrders: 0
   isAttackDrawPhase: 0
   isCFrame: 0
+  attackInterrupted: 0
   pendingRushMove: 0
   targetRow: -1
 --- !u!212 &1793406371
@@ -28231,3 +28451,4 @@ SceneRoots:
   - {fileID: 760429142}
   - {fileID: 1155467309}
   - {fileID: 1620657435}
+  - {fileID: 1684724281}

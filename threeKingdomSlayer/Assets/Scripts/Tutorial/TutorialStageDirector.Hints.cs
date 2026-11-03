@@ -22,12 +22,26 @@ public partial class TutorialStageDirector : MonoBehaviour
             if (step == null || step.waveIndex != waveIndex) continue;
             if (step.battle != null && step.battle != battle) continue;
             Debug.Log($"[Tutorial] 命中手势步骤 {i} wave={waveIndex} kind={step.kind} pause={step.pauseUntilPerformed}");
+            _currentStep = step;
+            // 连点教学（TapCombo）：**光圈常驻**在场上（玩家一直看得见「点这里」）
+            if (gestureHint != null) gestureHint.keepRingVisible = (step.kind == GestureHintKind.TapCombo);
             // 教到「防御按键」这一拍 → 防御键从这一刻起才开放给玩家
             if (step.kind == GestureHintKind.DefendButton) _defendTaught = true;
             // 路线出口（负数波次）不走暂停门槛：那一拍没有战斗，只需把光标停在箭头上
             if (waveIndex < 0)
             {
                 _hintRoutine = StartCoroutine(RouteHintRoutine(step));
+                _routeHintRoutine = _hintRoutine;
+            }
+            else if (step.freezeOnCAttack)
+            {
+                // 霸体时停防御拍（2026-11-01）：敌人抡起霸体技时冻结 → 教按住防御键 → 解冻 → 这一击被吸收
+                _hintRoutine = StartCoroutine(DefendAtCAttackRoutine(step));
+            }
+            else if (step.kind == GestureHintKind.SkillSlot)
+            {
+                // 技能打断拍（2026-11-01）：提示点技能槽 → 技能释放 → 敌人的霸体攻击被打断
+                _hintRoutine = StartCoroutine(SkillSlotInterruptRoutine(step));
             }
             else if (step.freezeOnGesture)
             {
@@ -55,7 +69,14 @@ public partial class TutorialStageDirector : MonoBehaviour
 
     private void StopHint()
     {
-        if (_hintRoutine != null) { StopCoroutine(_hintRoutine); _hintRoutine = null; }
+        if (_hintRoutine != null)
+        {
+            // 【诊断】这一拍是被谁掐掉的？堆栈直接写进 Editor.log
+            Debug.LogWarning("[Tutorial] StopHint：中断当前手势拍\n" + System.Environment.StackTrace);
+            StopCoroutine(_hintRoutine);
+            _hintRoutine = null;
+        }
+        _routeHintRoutine = null;
         _routeHintActive = false;
         // 登场台词的暂停如果被打断（转场/阵亡），必须把时间恢复，否则回主菜单也是卡住的
         if (_introPaused)
@@ -85,7 +106,6 @@ public partial class TutorialStageDirector : MonoBehaviour
     {
         _routeHintActive = true;
         Vector2 pos = ScreenPoint(step.from01);
-
         // 等路线按钮真的生成出来，把光标放到箭头上（硬编码坐标会点偏）
         float waited = 0f;
         while (waited < 3f)
@@ -107,6 +127,8 @@ public partial class TutorialStageDirector : MonoBehaviour
         }
 
         gestureHint?.Hide();
+        _routeHintActive = false;
+        _routeHintRoutine = null;
         _hintRoutine = null;
     }
 
@@ -209,13 +231,16 @@ public partial class TutorialStageDirector : MonoBehaviour
             from = enemyScreen;
         }
 
-        BeginBeat(target, AttackTypeFor(step.kind));
+        BeginBeat(target, AttackTypeFor(step.kind), requiredHits: step.requiredHits);
         Debug.Log($"[Tutorial] 手势拍开始 wave={step.waveIndex} kind={step.kind} target={target} 敌人={CountAliveEnemies()}");
 
         float playSeconds = step.playSeconds > 0f ? step.playSeconds : 1.1f;
         // 蓄力上挑的示范本身要播「按住 1.2s + 上划 1.1s」，播放时长必须跟它对齐，
         // 否则会在示范没播完时就重开一轮，看起来像教程被“多调了一次”
         if (step.kind == GestureHintKind.ChargedSwipe) playSeconds = Mathf.Max(playSeconds, 2.5f);
+        // 连点教学：提示手势自己循环（单次点按会在播完后把整个提示层收起来 → 只剩光圈没有手指）
+        bool loopingGesture = step.kind == GestureHintKind.TapCombo;
+        if (loopingGesture) PlayGestureAt(step.kind, from, to);
         while (_beatActive)
         {
             if (_stageState != null && !_stageState.IsStageInProgress)
@@ -224,10 +249,10 @@ public partial class TutorialStageDirector : MonoBehaviour
                 EndBeat();
                 break;
             }
-            PlayGestureAt(step.kind, from, to);
+            if (!loopingGesture) PlayGestureAt(step.kind, from, to);
             yield return new WaitForSecondsRealtime(playSeconds);
             if (!_beatActive) break;
-            gestureHint.Hide();
+            if (!loopingGesture) gestureHint.Hide();
             if (step.gap > 0f) yield return new WaitForSecondsRealtime(step.gap);
         }
 
@@ -235,12 +260,14 @@ public partial class TutorialStageDirector : MonoBehaviour
         _hintRoutine = null;
     }
 
-    private void BeginBeat(TutorialGestureTarget target, AttackType? teachAttack, bool holdEnemies = true)
+    private void BeginBeat(TutorialGestureTarget target, AttackType? teachAttack, bool holdEnemies = true, int requiredHits = 1)
     {
         _beatActive = true;
         _beatTarget = target;
         _currentTeachAttack = teachAttack;
         _beatCompleted = false;
+        _beatHitCount = 0;
+        _beatRequiredHits = Mathf.Max(1, requiredHits);
         // 招架拍**不能冻敌人**（敌人必须真的挥下来才能被格开）→ holdEnemies=false
         if (holdEnemies) SetEnemiesHold(true);
         SetSceneDim(true);
@@ -293,6 +320,8 @@ public partial class TutorialStageDirector : MonoBehaviour
         switch (kind)
         {
             case GestureHintKind.Tap: gestureHint.PlayTap(from); break;
+            // 连点教学：必须用**循环**点按（单次点按播完会把整个提示层收起来 → 只剩光圈、没有手指）
+            case GestureHintKind.TapCombo: gestureHint.PlayTapLoop(from); break;
             case GestureHintKind.Hold: gestureHint.PlayHold(from); break;
             case GestureHintKind.Swipe: gestureHint.PlaySwipe(from, to); break;
             case GestureHintKind.ChargedSwipe: gestureHint.PlayChargedSwipe(from, to); break;
@@ -313,6 +342,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         switch (step.kind)
         {
             case GestureHintKind.Tap: gestureHint.PlayTap(from); break;
+            case GestureHintKind.TapCombo: gestureHint.PlayTapLoop(from); break;
             case GestureHintKind.Hold: gestureHint.PlayHold(from); break;
             case GestureHintKind.Swipe: gestureHint.PlaySwipe(from, to); break;
             case GestureHintKind.ChargedSwipe: gestureHint.PlayChargedSwipe(from, to); break;

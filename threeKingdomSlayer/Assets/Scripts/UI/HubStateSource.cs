@@ -32,6 +32,7 @@ public sealed class HubStateSource : MonoBehaviour
     /// <summary>是否有界面叠在战斗界面之上（选关 / 天赋）。</summary>
     public bool IsOverlayOpen => !string.IsNullOrEmpty(Overlay);
 
+
     /// <summary>IsPrepared / Overlay 任一变化时触发；初始化后的第一帧必定触发一次。</summary>
     public event Action Changed;
 

@@ -17,6 +17,10 @@ public partial class TutorialStageDirector : MonoBehaviour
     private AttackType? _currentTeachAttack;
     /// <summary>这一拍是否真的完成了（完成才把招式转为"已教"）。</summary>
     private bool _beatCompleted;
+    /// <summary>这一拍已经打中几次（TapCombo 用：要打满 requiredHits 次才算完成）。</summary>
+    private int _beatHitCount;
+    /// <summary>这一拍要打几次才算完成（1 = 一次就完成）。</summary>
+    private int _beatRequiredHits = 1;
 
     /// <summary>手势种类 → 它教的招式。</summary>
     private static AttackType? AttackTypeFor(GestureHintKind kind)
@@ -24,6 +28,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         switch (kind)
         {
             case GestureHintKind.Tap: return AttackType.Stab;
+            case GestureHintKind.TapCombo: return AttackType.Stab;
             case GestureHintKind.Swipe: return AttackType.Slash;
             case GestureHintKind.ChargedSwipe: return AttackType.Launch;
             case GestureHintKind.Parry:
@@ -75,17 +80,19 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (choices == null) return;
         if (config == n1Battle)
         {
-            // N1 给一次升级，固定冰雾
-            choices.suppressChoices = false;
-            choices.forcedChoices = tutorialIceSkill != null
-                ? new List<UpgradeDefinition> { tutorialIceSkill }
-                : new List<UpgradeDefinition>();
+            // 节点一：**不弹三选1**（升级照常发生，但选择被吞掉）
+            // —— 玩家全程只有一次三选1，在节点二第一波敌人被击杀、经验升级时给。
+            choices.suppressChoices = true;
+            choices.forcedChoices = new List<UpgradeDefinition>();
         }
         else
         {
-            // E0 是破盾与冲锋教学，不放三选一，避免随机技能盖掉冰雾
-            choices.forcedChoices = new List<UpgradeDefinition>();
-            choices.suppressChoices = true;
+            // 节点二：升级 → 三选1 = 教学技能池（旋风 / 海浪）。
+            // 节点二第一波敌人的经验给足 → 那一杀正好升级 → 弹出技能三选1。
+            choices.suppressChoices = false;
+            choices.forcedChoices = tutorialChoicePool != null
+                ? new List<UpgradeDefinition>(tutorialChoicePool)
+                : new List<UpgradeDefinition>();
         }
     }
 

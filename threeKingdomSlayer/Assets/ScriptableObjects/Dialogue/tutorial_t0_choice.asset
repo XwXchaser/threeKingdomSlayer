@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   eventId: tutorial_t0_choice
   eventType: 0
-  triggerType: 0
+  triggerType: 2
   stageId: 9000
   waveNumber: 0
   bossId: 0
@@ -24,4 +24,4 @@ MonoBehaviour:
   bossProfile: {fileID: 0}
   lines:
   - speaker: 0
-    text: "\u7EE7\u7EED\u524D\u8FDB"
+    text: "\u51FB\u6740\u654C\u4EBA\u83B7\u5F97\u7ECF\u9A8C\uFF0C\u7ECF\u9A8C\u6EE1\u4E86\u5C31\u4F1A\u5347\u7EA7\uFF0C\u5347\u7EA7\u4F1A\u5F39\u51FA\u4E09\u90091\u5956\u52B1\u3002\n\u542C\u6211\u7684\uFF0C\u9009\u3010\u6D77\u6D6A\u3011\u2014\u2014\u5B83\u80FD\u628A\u9738\u4F53\u654C\u4EBA\u63A8\u56DE\u53BB\uFF0C\u6253\u65AD\u4ED6\u7684\u62DB\u3002"

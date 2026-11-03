@@ -80,6 +80,43 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView
         _selectedCard.SetSelected(true);
     }
 
+    /// <summary>
+    /// 教学用：取某个候选卡在屏幕上的位置（把提示手落在推荐的那张卡上）。
+    /// 找不到返回 false。
+    /// </summary>
+    public bool TryGetChoiceScreenPoint(UpgradeDefinition def, out Vector2 screenPos)
+    {
+        screenPos = Vector2.zero;
+        if (def == null || _cards == null) return false;
+        for (int i = 0; i < _cards.Length; i++)
+        {
+            var card = _cards[i];
+            if (card == null || card.Definition != def) continue;
+            var rect = card.GetComponent<RectTransform>();
+            if (rect == null) return false;
+            var canvas = rect.GetComponentInParent<Canvas>();
+            var cam = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+            screenPos = RectTransformUtility.WorldToScreenPoint(cam, rect.TransformPoint(rect.rect.center));
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 教学用：把某个候选卡**设成不可选**（教学只让玩家选指定的那张）。
+    /// </summary>
+    public void SetChoiceSelectable(UpgradeDefinition def, bool selectable)
+    {
+        if (def == null || _cards == null) return;
+        for (int i = 0; i < _cards.Length; i++)
+        {
+            var card = _cards[i];
+            if (card == null || card.Definition != def) continue;
+            card.SetSelectable(selectable);
+            return;
+        }
+    }
+
     public void Dismiss(Action onDone)
     {
         FadeOut(() =>

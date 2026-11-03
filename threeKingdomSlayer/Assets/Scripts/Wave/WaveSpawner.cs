@@ -41,6 +41,21 @@ public class WaveSpawner : MonoBehaviour
     [Header("生成参数")]
     public Transform spawnRoot; // 生成根节点（可选）
 
+    /// <summary>
+    /// **当前波次的配置**（供按波调经验倍率等用）。没有波次在跑时返回 null。
+    /// </summary>
+    public WaveConfig CurrentWaveConfig
+    {
+        get
+        {
+            var cfg = ResolvedStageConfig;
+            if (cfg == null || cfg.waves == null) return null;
+            int idx = currentWaveIndex;
+            if (idx < 0 || idx >= cfg.waves.Count) return null;
+            return cfg.waves[idx];
+        }
+    }
+
     private const int SpawnEntryRowOffset = 2;
 
     // 运行时状态

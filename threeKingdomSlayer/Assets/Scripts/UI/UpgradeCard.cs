@@ -97,6 +97,38 @@ public class UpgradeCard : MonoBehaviour
         {
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(OnClicked);
+            button.interactable = true;      // 默认可点（教学会再按需要关掉某些卡）
+        }
+        SetSelectable(true);
+    }
+
+    /// <summary>
+    /// 设成不可选（教学的三选1 里只让玩家选指定的那张）：
+    /// 按钮不可点 + 整张卡变暗，玩家一眼看出「这张现在不能选」。
+    /// </summary>
+    public void SetSelectable(bool selectable)
+    {
+        if (button != null) button.interactable = selectable;
+        float a = selectable ? 1f : 0.4f;
+        if (backgroundImage != null)
+        {
+            var c = backgroundImage.color; c.a = a; backgroundImage.color = c;
+        }
+        if (iconImage != null)
+        {
+            var c = iconImage.color; c.a = a; iconImage.color = c;
+        }
+        if (iconFrameImage != null)
+        {
+            var c = iconFrameImage.color; c.a = a; iconFrameImage.color = c;
+        }
+        if (nameText != null)
+        {
+            var c = nameText.color; c.a = a; nameText.color = c;
+        }
+        if (descriptionText != null)
+        {
+            var c = descriptionText.color; c.a = a; descriptionText.color = c;
         }
     }
 

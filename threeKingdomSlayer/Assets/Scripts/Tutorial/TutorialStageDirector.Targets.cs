@@ -12,6 +12,8 @@ public partial class TutorialStageDirector : MonoBehaviour
         switch (kind)
         {
             case GestureHintKind.Tap: return TutorialGestureTarget.Tap;
+            case GestureHintKind.TapCombo: return TutorialGestureTarget.Tap;
+            case GestureHintKind.SkillSlot: return TutorialGestureTarget.BlockAll;
             case GestureHintKind.Swipe: return TutorialGestureTarget.SwipeHorizontal;
             case GestureHintKind.ChargedSwipe: return TutorialGestureTarget.ChargedVertical;
             case GestureHintKind.Parry:

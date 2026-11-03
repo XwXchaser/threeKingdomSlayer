@@ -84,6 +84,29 @@ public static class GameplayInputGate
         }
     }
 
+    /// <summary>
+    /// **教学专用开关**：拦截期间也允许释放主动技能。
+    ///
+    /// 背景（2026-11-01 用户反馈：「完成3选1到教点击技能释放这段时间，点击防御会让技能按键无法交互」）：
+    /// 三选1 弹窗/路线等待期间输入被拦下 → <c>ActiveSkillRunner.TryActivate</c> 直接返回 false →
+    /// 玩家点技能没反应；而防御键是 UI 按钮不受拦截 → 玩家能按下防御 → 长枪举起来后收不回（卡在空中）。
+    /// 教学「用技能打断」这一拍需要玩家能真的点出技能，所以那一拍把这个开关打开。
+    /// </summary>
+    public static bool AllowSkillActivationWhileBlocked;
+
+    /// <summary>
+    /// **教学专用开关**：**时停（timeScale = 0）时也允许释放主动技能**。
+    ///
+    /// 背景（2026-11-02 实测）：教学关「用技能打断霸体」那一拍是
+    ///   敌人抡起 C 技 → **时停** → 提示手落在技能槽上 → 玩家点技能。
+    /// 而 <c>ActiveSkillInventory.TryActivate</c> 有一道硬闸：
+    ///   <c>if (Time.timeScale &lt;= 0f) return false;</c>
+    /// → 时停期间**点技能槽没有任何反应** → 玩家永远完成不了这一拍 →
+    /// 只能等 30 秒超时放行 → 「用技能打断」这段教学等于没有（2026-11-02 实测：驱动每 2 秒点一次技能，全部无效）。
+    /// 这一拍把开关打开即可（只在这一拍期间为 true）。
+    /// </summary>
+    public static bool AllowSkillActivationWhileFrozen;
+
     /// <summary>是否有人以该原因持有拦截（诊断 / 自检用）。</summary>
     public static bool IsBlockedBy(InputBlockReason reason)
     {

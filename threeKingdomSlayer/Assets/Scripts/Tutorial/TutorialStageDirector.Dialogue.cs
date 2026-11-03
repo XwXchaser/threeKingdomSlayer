@@ -65,9 +65,24 @@ public partial class TutorialStageDirector : MonoBehaviour
             }
         }
 
-        DebugLog.Info($"[Tutorial] 手势拍完成：{attackType} col={column}");
+        // TapCombo：要打满 requiredHits 次才算完成（连点三下 → 三连 stab）
+        _beatHitCount++;
+        if (_beatHitCount < _beatRequiredHits)
+        {
+            DebugLog.Info($"[Tutorial] 手势拍进度：{_beatHitCount}/{_beatRequiredHits}（{attackType}）");
+            return;
+        }
+
+        DebugLog.Info($"[Tutorial] 手势拍完成：{attackType} col={column}（第 {_beatHitCount} 次）");
         _beatCompleted = true;
         EndBeat();
+
+        // 补播这一拍之后的说明台词（仅文字、不暂停）
+        if (_currentStep != null && _currentStep.afterDialogue != null)
+        {
+            DialogueManager.Instance?.QueueEventAndNotify(_currentStep.afterDialogue, forceReplay: true);
+            DebugLog.Info("[Tutorial] 补播收尾台词：" + _currentStep.afterDialogue.name);
+        }
     }
 
     private void OnStageVictory()

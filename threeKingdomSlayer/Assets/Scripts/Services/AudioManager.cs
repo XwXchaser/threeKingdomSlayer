@@ -45,6 +45,11 @@ public class AudioManager : MonoBehaviour
     [Header("Launch 命中 SFX — 随机二选一")]
     [SerializeField] private AudioClip[] _launchHitClips;
 
+    [Header("防御受击 SFX — 随机二选一")]
+    [SerializeField] private AudioClip[] _guardBlockClips;
+    [SerializeField, Range(0f, 4f)] private float _guardBlockVolume = 1f;
+    [SerializeField, Min(0f)] private float _guardBlockCooldown = 0.08f;
+
     private AudioSource _bgmMainSource;
     private AudioSource _bgmEnvSource;
     private AudioSource _sfxSource;
@@ -70,6 +75,8 @@ public class AudioManager : MonoBehaviour
     private int _lastSlashHitIndex = -1;
     private int _lastStabHitIndex = -1;
     private int _lastLaunchHitIndex = -1;
+    private int _lastGuardBlockIndex = -1;
+    private float _nextGuardBlockTime;
 
     private void Awake()
     {
@@ -155,6 +162,7 @@ public class AudioManager : MonoBehaviour
         PreloadClipArray(_slashHitClips);
         PreloadClipArray(_stabHitClips);
         PreloadClipArray(_launchHitClips);
+        PreloadClipArray(_guardBlockClips);
     }
 
     private void PreloadClip(AudioClip clip)
@@ -254,6 +262,9 @@ public class AudioManager : MonoBehaviour
             case "Launch_Hit":
                 PlayRandom(_launchHitClips, LAUNCH_HIT_VOLUME, ref _lastLaunchHitIndex);
                 break;
+            case "Guard_Block":
+                PlayGuardBlock();
+                break;
         }
     }
 
@@ -272,6 +283,18 @@ public class AudioManager : MonoBehaviour
             index = (index + Random.Range(1, clips.Length)) % clips.Length;
         lastIndex = index;
         PlayOneShot(clips[index], volumeScale);
+    }
+
+    /// <summary>
+    /// 防御受击（<see cref="PlayerGuard"/> 吸收伤害）时的冷兵器格挡音。
+    /// 带冷却：连续被打时不会叠成一片噪音。
+    /// </summary>
+    private void PlayGuardBlock()
+    {
+        if (_guardBlockClips == null || _guardBlockClips.Length == 0) return;
+        if (Time.time < _nextGuardBlockTime) return;
+        _nextGuardBlockTime = Time.time + _guardBlockCooldown;
+        PlayRandom(_guardBlockClips, _guardBlockVolume, ref _lastGuardBlockIndex);
     }
 
     private void PlayEnemyHit()

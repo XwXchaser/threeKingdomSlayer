@@ -425,5 +425,14 @@ public enum TutorialGestureTarget
     /// <summary>按住蓄力后再竖划（上挑）</summary>
     ChargedVertical = 3,
     /// <summary>未蓄力的竖向滑动（= 招架）</summary>
-    ParryVertical = 4
+    ParryVertical = 4,
+    /// <summary>
+    /// **禁止出招**（2026-11-01 教学关用）：这一拍里玩家不能攻击（点按/滑动/蓄力全部不成立），
+    /// 但**UI 点击仍然可用**（防御键、技能槽都是 UI 按钮，不走手势通道）。
+    ///
+    /// 用途：霸体教学拍 —— 敌人正在打霸体技时不能被玩家打死，否则教学瞬间就没了。
+    /// 映射上不需要改 <c>InputManager.Mapping</c>：点按判定是「== Tap 才成立」、
+    /// 滑动判定的 default 分支返回 false → 新增枚举值自动把所有手势挡住。
+    /// </summary>
+    BlockAll = 5
 }

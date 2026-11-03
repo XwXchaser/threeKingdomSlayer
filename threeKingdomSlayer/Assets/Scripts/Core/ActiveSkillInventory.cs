@@ -173,7 +173,9 @@ public class ActiveSkillInventory : MonoBehaviour
         if (PlayerState.Instance == null || PlayerState.Instance.stageState != StageState.InProgress) return false;
         if (StageBattleState != null && StageBattleState.IsRouteRewardWaiting) return false;
         if (!UsesActiveSkills) return false;
-        if (Time.timeScale <= 0f) return false;
+        // 时停（timeScale=0）时默认**不能**放技能；教学「用技能打断」那一拍例外
+        //（那一拍就是要玩家在时停里点技能，见 GameplayInputGate.AllowSkillActivationWhileFrozen）。
+        if (Time.timeScale <= 0f && !GameplayInputGate.AllowSkillActivationWhileFrozen) return false;
         if (CombatPresenters.Dialogue != null && CombatPresenters.Dialogue.IsInteractionBlocked) return false;
 
         var entry = FindById(entryId);
