@@ -435,18 +435,25 @@ git 历史里 **铁壁 / 地刺** 曾有完整 10 级数值（commit `0655bf3` /
 | 存档 | `SaveManager.Load/Save` + `ManualSaveSection`；**老档自动补空列表**（`MigrateIfNeeded`） |
 | 第一个秘籍 | `Assets/ScriptableObjects/Manuals/Manual_IceThaw.asset`（「重击解冻」，id=`manual_ice_thaw`）；图标暂用 `icon_31_unrealWeapons`（美术全重做前占位） |
 
-#### ⚠️ 破冰顶开迁移（§8.5）的**过渡实现**
+#### ✅ 破冰顶开迁移（§8.5）已完成（2026-11-03）
 
-> §8.5 原计划「删 `talent_ice_break_push` 节点 → 判定改为「秘籍已获得」」。
-> **删节点要动对方的树资产**（本轮不动）→ 所以先做成**过渡态**：
+> **决策（Q5「冰雾的归属」由本轮拍板）**：
+> **冰雾 = 通用技能（常驻池，不进天赋页）** —— 教学关本来就给玩家冰雾「只冻不解」，
+> 它是冰系的**入口**，两个「技巧」（重击解冻 / 破冰顶开）才是要解锁的东西。
+> 这与 §8.4 的边界规则一致：**秘籍给技巧类（重击解冻、破冰顶开），铜钱给流派 / 能力类**。
 >
-> ```csharp
-> IceBreakSession.IsThawAvailable
->     = 天赋节点已解锁 || 秘籍已获得
-> ```
->
-> → 现在两种来源都认；等对方删掉天赋节点后，秘籍这条路自动接上，**代码不用再改**。
-> 破冰顶开本身（`talent_ice_break_push`）尚未迁移，且**冰雾的归属仍是待定项**。
+> 落地：
+
+| 项 | 做法 |
+|---|---|
+| 冰雾 | 加进 `ActiveSkillPoolConfig.commonPool`（weight 100），`requiredTalentIds` 为空 → **常驻** |
+| 重击解冻 | 秘籍 `manual_ice_thaw`（已在掉落池） |
+| 破冰顶开 | 秘籍 `manual_ice_break_push`（新建，同池，weight 2） |
+| 判定 | `IceBreakSession.IsThawAvailable` / `IsBreakPushAvailable` = **天赋节点已解锁 \|\| 秘籍已获得**（两种来源都认 → 老存档与新秘籍并存都能用） |
+| 树资产 | 删掉 `talent_ice_break_push` 节点（功能已由秘籍接管）；`枪突收尾` 的前置改指 `talent_ice_thaw`（不留悬空前置） |
+
+> 实测：未解锁时 `IsBreakPushAvailable=False`；解锁秘籍后 `True`；冰雾出现在 commonPool 候选里 ✅。
+> 秘籍掉落概率约 **0.7%/杀**（池权重 2 / 总权重 29）—— 冰系是**可选支线**，慢一点是对的。
 
 
 ### 8.3 ⚠️ 秘籍不走 `ItemInventory`

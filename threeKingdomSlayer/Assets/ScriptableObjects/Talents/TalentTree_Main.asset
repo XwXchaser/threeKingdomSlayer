@@ -30,23 +30,6 @@ MonoBehaviour:
     treePosition: {x: -56, y: 360}
     icon: {fileID: 0}
     hidden: 0
-  - nodeId: talent_ice_break_push
-    displayName: "\u7834\u51B0\u51B2\u51FB"
-    description: "\u89E3\u51BB\u65F6\u628A\u51B0\u51BB\u7684\u654C\u4EBA\u5411\u540E\u9876\u5F00\u82E5\u5E72\u6392\uFF0C\u649E\u5230\u4EBA\u65F6\u53CC\u65B9\u53D7\u4F24\u3002\uFF08\u672A\u70B9\uFF1A\u53EA\u89E3\u51BB\u4E0D\u4F4D\u79FB\uFF09"
-    coinCost: 200
-    moveConfig: {fileID: 0}
-    upgradeConfig: {fileID: 0}
-    statId: 
-    statAdd: 0
-    flagId: ice_break_push
-    prerequisiteIds:
-    - talent_ice_thaw
-    groupId: 
-    col: 0
-    row: 0
-    treePosition: {x: -56, y: 150}
-    icon: {fileID: 0}
-    hidden: 0
   - nodeId: talent_unlock_c4
     displayName: "\u67AA\u7A81\u6536\u5C3E"
     description: "\u89E3\u9501 C4\uFF1A\u67AA\u7A81\u4E09\u4E0B\u540E\u6309\u4F4F\u84C4\u529B\u4E0A\u6311\uFF0C\u5168\u5217
@@ -58,7 +41,7 @@ MonoBehaviour:
     statAdd: 0
     flagId: 
     prerequisiteIds:
-    - talent_ice_break_push
+    - talent_ice_thaw
     groupId: 
     col: 0
     row: 0

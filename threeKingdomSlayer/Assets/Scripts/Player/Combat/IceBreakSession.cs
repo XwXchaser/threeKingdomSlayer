@@ -25,8 +25,9 @@ public static class IceBreakSession
     public const string TalentIdThaw = "talent_ice_thaw";
     public const string TalentIdBreakPush = "talent_ice_break_push";
 
-    /// <summary>秘籍 id（局外永久解锁物）：重击解冻改为「掉落拿到即永久生效」。</summary>
+    /// <summary>秘籍 id（局外永久解锁物）：重击解冻 / 破冰顶开改为「掉落拿到即永久生效」。</summary>
     public const string ManualIdThaw = "manual_ice_thaw";
+    public const string ManualIdBreakPush = "manual_ice_break_push";
 
     /// <summary>
     /// 「重击解冻」是否已解锁：**天赋节点 或 秘籍**（迁移期两种都认 —— 节点还在就按节点算，
@@ -34,6 +35,12 @@ public static class IceBreakSession
     /// </summary>
     public static bool IsThawAvailable =>
         TalentTreeState.IsUnlocked(TalentIdThaw) || ManualDropSystem.IsUnlocked(ManualIdThaw);
+
+    /// <summary>
+    /// 「破冰顶开」是否已解锁：**天赋节点 或 秘籍**（同上）。
+    /// </summary>
+    public static bool IsBreakPushAvailable =>
+        TalentTreeState.IsUnlocked(TalentIdBreakPush) || ManualDropSystem.IsUnlocked(ManualIdBreakPush);
 
     private static AttackSkillConfig _cfg;
     private static float _sessionEndTime;
@@ -127,8 +134,8 @@ public static class IceBreakSession
     public static void ApplyBreakPush(Enemy firstTarget)
     {
         if (firstTarget == null) return;
-        // 需要“击退碰撞”天赋，否则只解冻不位移。
-        if (!TalentTreeState.IsUnlocked(TalentIdBreakPush)) return;
+        // 需要“击退碰撞”天赋（或对应秘籍），否则只解冻不位移。
+        if (!IsBreakPushAvailable) return;
         if (_pushedThisAttack.Contains(firstTarget)) return;
         PushFrozenTargetsInColumn(firstTarget);
     }
