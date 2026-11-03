@@ -1,0 +1,35 @@
+Create one complete portrait mobile action-game talent-page concept in a high-definition pixel-art style for a Three Kingdoms war-themed game. It must read as a usable game interface, not as a character illustration or promotional poster.
+
+Take inspiration from the clean information hierarchy associated with The Elder Scrolls: Blades skill UI: clear title, category tabs, talent tree, readable connecting lines and a selected-talent detail area, with generous spacing. Do not copy its node shapes, fantasy ornament or exact interface.
+
+Use layered dark surfaces, carefully designed pixel-stepped contours, deliberate hard-edged color clusters and restrained light-facing planes. Give the interface the finish and visual weight of production game art without photorealism, painterly rendering, excessive wear or ornament. Avoid flat vector boxes, generic software dashboards and placeholder-looking UI.
+
+Reserve space for a title and coin counter at the top, followed by three category tabs with the third category selected. In the central viewport, show distinct charge, displacement and fire talent branches. Use a consistent node-frame family and distinguish locked, available and unlocked states with brightness, edge treatment and limited color accents. Connecting lines must express the actual branches; do not invent cross-branch connections.
+
+Design original high-definition pixel skill symbols for charging, defense, impact, water, cyclone and fire. Each icon has one clear focal subject and remains recognizable at mobile size. Allow restrained functional colors in the icons without making the screen oversaturated.
+
+At the bottom, include a clear selected-talent detail area with reserved spaces for a thumbnail, name, description, state, coin cost and confirmation button. Keep the primary action visually clear without excessive glow.
+
+Make the whole page feel like a finished interface from one coherent pixel-art action game. Leave all title, tab, node-name, price, description and button-text areas blank for later typesetting. No pseudo-text. No character portrait, battlefield backdrop or scenery outside the interface.
+
+设计一张竖屏手机动作游戏的天赋页面整体参考图，三国战争题材的高清像素游戏美术。画面是一个可阅读、可操作的游戏 UI，而不是角色插画或宣传海报。
+
+学习《上古卷轴：刀锋》技能界面给人的整洁感：明确的标题、分类、天赋树和详情层级，分支之间有留白，连线清楚，装饰服从信息。不要复制其节点形状、奇幻纹样或具体界面。
+
+整体使用有层次的深色承托，界面边缘和节点采用精细的像素阶梯轮廓、经过设计的硬边色块和克制的受光面。材质应有游戏美术的完成度和适度分量，但不做照片写实、厚涂、满屏磨损或繁复装饰。不要画成单层纯色矢量框、通用软件面板或程序占位界面。
+
+顶部预留标题和铜钱数量位置，下方有三个分类页签，第三个分类为选中状态。中部展示三选一技能解锁页：蓄力、位移、火系是不同分支；节点形状统一，锁定、可买和已解锁通过亮度、边缘层次和少量颜色变化区分。使用清楚的细连接线表达真实的分支关系，不画跨流派的虚假连线。
+
+节点内部使用新设计的高清像素技能符号：聚力与防御、冲击、水浪、旋风和火焰等，每个图标只有一个明确主体，在手机尺寸下仍可辨识。图标可以有少量功能性的色彩，但不能让整页饱和杂乱。
+
+底部是一块清楚的选中节点详情区，预留图标、名称、说明、状态、铜钱花费及确认按钮的位置。主要按钮突出但不刺眼。
+
+保持整个画面像同一款完整游戏的正式界面：高清像素色块、清楚的形体、克制的细节和可读的信息层级。所有标题、页签、节点名称、价格、描述和按钮文字均留空，由后期添加；不要生成伪文字。不要出现人物立绘、战场背景或 UI 外的场景。
+
+Canvas: the image is 1024x1536 (2:3) while the target device screen is 9:16. Compose the whole interface inside the central 9:16 safe area (about 864x1536); the narrow left and right margins continue as plain dark background only. Keep every meaningful element clear of the left and right edges.
+
+画布尺寸 1024x1536（2:3），目标设备是 9:16 竖屏：整个界面收在中央 9:16 安全区（约 864x1536）内，左右窄边只保留纯深色底延伸，任何重要元素都不要贴到左右边缘。
+
+Avoid all of the following: placeholder UI, wireframe, flat vector dashboard, corporate icons, generic app interface, oversized geometric blocks, crude low-resolution pixel art, mosaic filter, random pixel noise, blurry pixel edges, photorealistic, painterly, soft glow, bloom, excessive bevels, ornate engraved metal, excessive weathering, parchment scroll, western fantasy ornament, character illustration, background scenery, text, letters, numbers, gibberish.
+
+不要出现：占位线框 UI、扁平矢量仪表盘、通用软件图标、巨大几何色块、粗糙低清像素、马赛克滤镜、随机噪点、模糊像素边缘、照片写实、厚涂、柔光与辉光、过量倒角、繁复錾刻金属、过度做旧、羊皮卷、西方奇幻纹样、人物立绘、背景场景，以及任何文字、字母、数字、伪文字。

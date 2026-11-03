@@ -1,0 +1,221 @@
+{{trail}}
+'''Skills''' are primarily combat-related player competencies (as opposed to [[Blades:Services|services]] like [[Blades:Enchanting|enchanting]] or [[Blades:Crafting#Equipment_Crafting|forging]]) and are split into three sections: Spells, Perks, and Abilities. To learn a skill, you must meet its minimum required player level and have already learned its prerequisite skill (if any), as well as spend its Skill Point cost.
+__TOC__
+==Spells==
+Spells cause a variety of different magical effects that cost Magicka. Ranking up a Spell increases its effectiveness. Other than spending Skill Points to upgrade them, [[Blades:Jewelry|rings]] can give bonus ranks to Spells and Abilities. Like Abilities, Spells must be equipped to be able to use them in combat. Players can only slot 3 Spells at one time. These are represented by 3 icons that appear above the blue Magicka bar at the bottom-left of the player HUD.
+
+When combat starts, Spells start off on spell-specific cooldowns with their icon greyed-out and are unavailable for use. Once available, tapping on the icon will use the Spell, at which point it will go back on cooldown.
+
+<center>{{Chart/start}}
+{{Chart | border=0 | boxstyle=background: transparent; | | | |MAGSU| |ECHWE| | | |MAGSU={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Magicka Surge.png|link=Blades:Magicka Surge{{!}}Magicka Surge|50px}}<br>'''{{FC|black|[[Blades:Magicka Surge|Magicka Surge]]|coloredlinks=1}}'''|ECHWE={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Echo Weapon.png|link=Blades:Echo Weapon{{!}}Echo Weapon|50px}}<br>'''{{FC|black|[[Blades:Echo Weapon|Echo Weapon]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | | |,|'| |`|v|'| |`|.| | | }}
+{{Chart | border=0 | boxstyle=background: transparent; | |PARAL| |THUND| |BLIAR| |PARAL={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Paralyze.png|link=Blades:Paralyze{{!}}Paralyze|50px}}<br>'''{{FC|black|[[Blades:Paralyze|Paralyze]]|coloredlinks=1}}'''|THUND={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Thunderstorm.png|link=Blades:Thunderstorm{{!}}Thunderstorm|50px}}<br>'''{{FC|black|[[Blades:Thunderstorm|Thunderstorm]]|coloredlinks=1}}'''|BLIAR={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Blizzard Armor.png|link=Blades:Blizzard Armor{{!}}Blizzard Armor|50px}}<br>'''{{FC|black|[[Blades:Blizzard Armor|Blizzard Armor]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | | |!|WAOFI|!|WARD |!| | |WAOFI={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Wall of Fire.png|link=Blades:Wall of Fire{{!}}Wall of Fire|50px}}<br>'''{{FC|black|[[Blades:Wall of Fire|Wall of Fire]]|coloredlinks=1}}'''|WARD={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Ward.png|link=Blades:Ward{{!}}Ward|50px}}<br>'''{{FC|black|[[Blades:Ward|Ward]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | |BLIND|!|DELBO|!|ICESP| |BLIND={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Blind.png|link=Blades:Blind{{!}}Blind|50px}}<br>'''{{FC|black|[[Blades:Blind|Blind]]|coloredlinks=1}}'''|DELBO={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Delayed Lightning Bolt.png|link=Blades:Delayed Lightning Bolt{{!}}Delayed Lightning Bolt|50px}}<br>'''{{FC|black|[[Blades:Delayed Lightning Bolt|Delayed Lightning Bolt]]|coloredlinks=1}}'''|ICESP={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Ice Spike.png|link=Blades:Ice Spike{{!}}Ice Spike|50px}}<br>'''{{FC|black|[[Blades:Ice Spike|Ice Spike]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | | |!|CONIN|!|RESEL|!| | |CONIN={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Consuming Inferno.png|link=Blades:Consuming Inferno{{!}}Consuming Inferno|50px}}<br>'''{{FC|black|[[Blades:Consuming Inferno|Consuming Inferno]]|coloredlinks=1}}'''|RESEL={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Resist Elements.png|link=Blades:Resist Elements{{!}}Resist Elements|50px}}<br>'''{{FC|black|[[Blades:Resist Elements|Resist Elements]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | |POICL|!|LIGBO|!|FROST| |POICL={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Poison Cloud.png|link=Blades:Poison Cloud{{!}}Poison Cloud|50px}}<br>'''{{FC|black|[[Blades:Poison Cloud|Poison Cloud]]|coloredlinks=1}}'''|LIGBO={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Lightning Bolt.png|link=Blades:Lightning Bolt{{!}}Lightning Bolt|50px}}<br>'''{{FC|black|[[Blades:Lightning Bolt|Lightning Bolt]]|coloredlinks=1}}'''|FROST={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Frostbite.png|link=Blades:Frostbite{{!}}Frostbite|50px}}<br>'''{{FC|black|[[Blades:Frostbite|Frostbite]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | | |`|FIREB|^|ABSOR|'| | |FIREB={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Fireball.png|link=Blades:Fireball{{!}}Fireball|50px}}<br>'''{{FC|black|[[Blades:Fireball|Fireball]]|coloredlinks=1}}'''|ABSOR={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Absorb.png|link=Blades:Absorb{{!}}Absorb|50px}}<br>'''{{FC|black|[[Blades:Absorb|Absorb]]|coloredlinks=1}}'''}}
+{{Chart/end}}</center>
+
+{| class="wikitable sortable" {{AL|C}}
+! Skill
+! class="unsortable"|Description
+! Max Rank
+! [[File:BL-icon-Hourglass.png|22px|Initial Cooldown]] Initial Cooldown (seconds)
+! [[File:BL-icon-Hourglass.png|22px|Cooldown]] Cooldown (seconds)
+! [[File:BL-icon-Hourglass.png|22px|Casting Time]] Casting Time (seconds)
+! class="unsortable"| Requires
+! [[File:BL-icon-Required Level.png|20px|Unlock]] Lowest Level 
+|-
+|{{Anchor|[[Blades:Absorb|Absorb]]}}||{{AL|L}}|A magical sigil appears instantly. It negates up to <magnitude> damage directed at the caster and converts 100% of it into healing.||6||1.2||6||data-sort-value=0|Instant|| ||2
+|-
+|{{Anchor|[[Blades:Blind|Blind]]}}||{{AL|L}}|A ball of venom deals <magnitude> poison damage on impact. Enemies that suffer more than <magnitude 2> damage are temporarily Blinded.||4||2.53||7.35||1.4||Poison Cloud||14
+|-
+|{{Anchor|[[Blades:Blizzard Armor|Blizzard Armor]]}}||{{AL|L}}|A layer of ice with <magnitude> Health instantly covers the caster. It takes half of all damage directed at the caster.||2||	1.2||7.5||data-sort-value=0|Instant||Ice Spike||23
+|-
+|{{Anchor|[[Blades:Consuming Inferno|Consuming Inferno]]}}||{{AL|L}}|A continuous stream of flames deals <magnitude> fire damage per second while draining the caster's Stamina (Health if out of Stamina).||5||2.75||8.09||data-sort-value=0|Instant||Fireball||9
+|-
+|style=white-space:nowrap|{{Anchor|[[Blades:Delayed Lightning Bolt|Delayed Lightning Bolt]]}}||{{AL|L}}|A ball of electricity shoots up, then strikes as lightning 4 seconds later, dealing <magnitude> shock damage to Health and Magicka.||4||2.3||6.58||1.3||Lightning Bolt||15
+|-
+|{{Anchor|[[Blades:Echo Weapon|Echo Weapon]]}}||{{AL|L}}|A magical echo of the caster's weapon appears instantly, duplicating all of its attacks with a 0.5 second delay. Light, versatile and heavy echoes deal <magnitude>, <magnitude 2>, and <magnitude 3> damage, respectively.||1||10||10||data-sort-value=0|Instant||Thunderstorm ''or'' Blizzard&nbsp;Armor||35
+|-
+|{{Anchor|[[Blades:Fireball|Fireball]]}}||{{AL|L}}|A fiery projectile deals <magnitude> fire damage on impact.||6||1.4||3.54||0.9|| ||2
+|-
+|{{Anchor|[[Blades:Frostbite|Frostbite]]}}||{{AL|L}}|A stream of frigid air deals <magnitude> frost damage per second to Health and Stamina while Slowing enemies and increasing resistances to physical damage by <magnitude2>.||6||2.75||8.09||data-sort-value=0|Instant||Absorb||3
+|-
+|{{Anchor|[[Blades:Ice Spike|Ice Spike]]}}||{{AL|L}}|A razor-sharp ice spike deals <magnitude> frost damage to Health and Stamina on impact. Enemies that suffer more than <magnitude 2> damage are stunned.||4||1.9||5.23||1.12||Frostbite||13
+|-
+|{{Anchor|[[Blades:Lightning Bolt|Lightning Bolt]]}}||{{AL|L}}|A surge of electrical energy grows in front of the caster, then shoots forward to deal <magnitude> shock damage to Health and Magicka.||6||0.5||0.5||0.5||Fireball ''or'' Absorb||5
+|-
+|{{Anchor|[[Blades:Magicka Surge|Magicka Surge]]}}||{{AL|L}}|Instantly increases Magicka regeneration by <magnitude> per second and speeds up spell cooldowns. After the surge, Magicka falls to 0 and Magicka regeneration stops for 10 seconds.||1||10||10||data-sort-value=0|Instant||Paralyze ''or'' Thunderstorm||35
+|-
+|{{Anchor|[[Blades:Paralyze|Paralyze]]}}||{{AL|L}}|A ball of venom deals <magnitude> poison damage on impact. Enemies that suffer more than <magnitude 2> damage are temporarily Paralyzed.||2||2.75||8.09||1.5||Blind||24
+|-
+|{{Anchor|[[Blades:Poison Cloud|Poison Cloud]]}}||{{AL|L}}|A cloud of poison gas grows to engulf enemies, dealing <magnitude> poison damage per second.||6||2.3||6.58||1.3||Fireball||4
+|-
+|{{Anchor|[[Blades:Resist Elements|Resist Elements]]}}||{{AL|L}}|Protective energies cure the caster of elemental conditions and increase resistances to elemental damage by <magnitude>.||5||1.12||8||0.9||Absorb||10
+|-
+|{{Anchor|[[Blades:Thunderstorm|Thunderstorm]]}}||{{AL|L}}|A storm cloud appears instantly. Every 3 seconds, it emits a lightning bolt that deals <magnitude> shock damage to Health and Magicka.||2||1.5||6||data-sort-value=0|Instant||Delayed Lightning Bolt||25
+|-
+|{{Anchor|[[Blades:Wall of Fire|Wall of Fire]]}}||{{AL|L}}|A wall of fire appears instantly. Enemies attacking through it suffer <magnitude> fire damage, but it only deals <magnitude 2> fire damage to the caster.||3||1.2||7.5||data-sort-value=0|Instant||Consuming Inferno||19
+|-
+|{{Anchor|[[Blades:Ward|Ward]]}}||{{AL|L}}|A magical barrier appears instantly. It increases Armor Rating by <magnitude> and negates up to <magnitude 2> elemental damage, plus any excess damage from the attack that destroys it.||3||1.2||7.5||data-sort-value=0|Instant||Resist Elements||20
+|}
+
+==Perks==
+Perks provide passive, always active bonuses. Other than spending Skill Points to upgrade them, [[Blades:Jewelry|necklaces]] can give bonus ranks to Perks.
+
+<center>{{Chart/start}}
+{{Chart | border=0 | boxstyle=background: transparent; | | |,|MAXPO| |METTL|.| | |MAXPO={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Maximum Power.png|link=Blades:Maximum Power{{!}}Maximum Power|50px}}<br>'''{{FC|black|[[Blades:Maximum Power|Maximum Power]]|coloredlinks=1}}'''|METTL={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Mettle.png|link=Blades:Mettle{{!}}Mettle|50px}}<br>'''{{FC|black|[[Blades:Mettle|Mettle]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | |AUGSH|`|-|v|-|'|HEASU| |AUGSH={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Augmented Shock.png|link=Blades:Augmented Shock{{!}}Augmented Shock|50px}}<br>'''{{FC|black|[[Blades:Augmented Shock|Augmented Shock]]|coloredlinks=1}}'''|HEASU={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Healing Surge.png|link=Blades:Healing Surge{{!}}Healing Surge|50px}}<br>'''{{FC|black|[[Blades:Healing Surge|Healing Surge]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | | |!| | |ENCSY| | |!| | |ENCSY={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Enchantment Synergy.png|link=Blades:Enchantment Synergy{{!}}Enchantment Synergy|50px}}<br>'''{{FC|black|[[Blades:Enchantment Synergy|Enchantment Synergy]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | |AUGFR|,|-|^|-|.|AUGPO| |AUGFR={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Augmented Frost.png|link=Blades:Augmented Frost{{!}}Augmented Frost|50px}}<br>'''{{FC|black|[[Blades:Augmented Frost|Augmented Frost]]|coloredlinks=1}}'''|AUGPO={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Augmented Poison.png|link=Blades:Augmented Poison{{!}}Augmented Poison|50px}}<br>'''{{FC|black|[[Blades:Augmented Poison|Augmented Poison]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | | |!|MATSE| |ADVTE|!| | |MATSE={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Matching Set.png|link=Blades:Matching Set{{!}}Matching Set|50px}}<br>'''{{FC|black|[[Blades:Matching Set|Matching Set]]|coloredlinks=1}}'''|ADVTE={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Advanced Tempering.png|link=Blades:Advanced Tempering{{!}}Advanced Tempering|50px}}<br>'''{{FC|black|[[Blades:Advanced Tempering|Advanced Tempering]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | |WILLP|!| | | |!|COMFO| |WILLP={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Willpower.png|link=Blades:Willpower{{!}}Willpower|50px}}<br>'''{{FC|black|[[Blades:Willpower|Willpower]]|coloredlinks=1}}'''|COMFO={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Combat Focus.png|link=Blades:Combat Focus{{!}}Combat Focus|50px}}<br>'''{{FC|black|[[Blades:Combat Focus|Combat Focus]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | | |!|LOABE| |BARBA|!| | |LOABE={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Load Bearer.png|link=Blades:Load Bearer{{!}}Load Bearer|50px}}<br>'''{{FC|black|[[Blades:Load Bearer|Load Bearer]]|coloredlinks=1}}'''|BARBA={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Barbarian.png|link=Blades:Barbarian{{!}}Barbarian|50px}}<br>'''{{FC|black|[[Blades:Barbarian|Barbarian]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | |AUGFL|!| | | |!|SCOUT| |AUGFL={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Augmented Flames.png|link=Blades:Augmented Flames{{!}}Augmented Flames|50px}}<br>'''{{FC|black|[[Blades:Augmented Flames|Augmented Flames]]|coloredlinks=1}}'''|SCOUT={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Scout.png|link=Blades:Scout{{!}}Scout|50px}}<br>'''{{FC|black|[[Blades:Scout|Scout]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | | |`|ELEPR| |ARMSM|'| | |ELEPR={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Elemental Protection.png|link=Blades:Elemental Protection{{!}}Elemental Protection|50px}}<br>'''{{FC|black|[[Blades:Elemental Protection|Elemental Protection]]|coloredlinks=1}}'''|ARMSM={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Armsman.png|link=Blades:Armsman{{!}}Armsman|50px}}<br>'''{{FC|black|[[Blades:Armsman|Armsman]]|coloredlinks=1}}'''}}
+{{Chart/end}}</center>
+
+{| class="wikitable sortable" {{AL|C}}
+! Perk
+! class="unsortable"|Description
+! Max Rank
+! class="unsortable"|Requires
+! [[File:BL-icon-Required Level.png|20px|Unlock]] Lowest Level
+|-
+|{{Anchor|[[Blades:Advanced Tempering|Advanced Tempering]]}}||{{AL|L}}|Increases the Smithy's maximum tempering level by <magnitude>, up to level <magnitude2>.||3||Barbarian||10
+|-
+|{{Anchor|[[Blades:Armsman|Armsman]]}}||{{AL|L}}|+<magnitude> Damage with versatile weapons (longswords, war axes, and maces).||6|| ||2
+|-
+|{{Anchor|[[Blades:Augmented Flames|Augmented Flames]]}}||{{AL|L}}|Increases fire damage by <magnitude>.||6||Elemental Protection||5
+|-
+|{{Anchor|[[Blades:Augmented Frost|Augmented Frost]]}}||{{AL|L}}|Increases frost damage by <magnitude>.||4||Willpower||16
+|-
+|{{Anchor|[[Blades:Augmented Poison|Augmented Poison]]}}||{{AL|L}}|Increases poison damage by <magnitude>.||4||Combat Focus||15
+|-
+|{{Anchor|[[Blades:Augmented Shock|Augmented Shock]]}}||{{AL|L}}|Increases shock damage by <magnitude>.||2||Augmented Frost||24
+|-
+|{{Anchor|[[Blades:Barbarian|Barbarian]]}}||{{AL|L}}|+<magnitude> Damage with heavy weapons (greatswords, battleaxes, and warhammers).||6||Armsman||5
+|-
+|{{Anchor|[[Blades:Combat Focus|Combat Focus]]}}||{{AL|L}}|+<magnitude> Resistance to all damage while using an ability.||5||Scout||7
+|-
+|{{Anchor|[[Blades:Elemental Protection|Elemental Protection]]}}||{{AL|L}}|+<magnitude> Block Rating against elemental damage while blocking with a shield.||6|| ||2
+|-
+|style=white-space:nowrap|{{Anchor|[[Blades:Enchantment Synergy|Enchantment Synergy]]}}||{{AL|L}}|Stacked enchantments are <magnitude>% more effective.||2||Matching Set ''or'' Advanced Tempering||27
+|-
+|{{Anchor|[[Blades:Healing Surge|Healing Surge]]}}||{{AL|L}}|Increases Health regeneration while Stamina is high, by up to <magnitude> per second.||3||Augmented Poison||23
+|-
+|{{Anchor|[[Blades:Load Bearer|Load Bearer]]}}||{{AL|L}}|Increases inventory size by <magnitude>.||9||Elemental Protection||6
+|-
+|{{Anchor|[[Blades:Matching Set|Matching Set]]}}||{{AL|L}}|+<magnitude> Armor Rating while wearing a matched set of armor (armor, helmet, gauntlets, and boots).||4||Load Bearer||14
+|-
+|{{Anchor|[[Blades:Maximum Power|Maximum Power]]}}||{{AL|L}}|Spells are <magnitude>% more effective when cast while Magicka is full.||1||Augmented Shock ''or'' Enchantment Synergy||35
+|-
+|{{Anchor|[[Blades:Mettle|Mettle]]}}||{{AL|L}}|Abilities are <magnitude>% more effective while Health is critical.||1||Enchantment Synergy ''or'' Healing Surge||35
+|-
+|{{Anchor|[[Blades:Scout|Scout]]}}||{{AL|L}}|+<magnitude> Damage with light weapons (daggers, hand axes, and light hammers).||6||Armsman||4
+|-
+|{{Anchor|[[Blades:Willpower|Willpower]]}}||{{AL|L}}|+<magnitude> Resistance to all damage while casting a spell.||5||Augmented Flames||8
+|}
+
+==Abilities==
+Abilities cause a variety of different combat effects that cost Stamina. Ranking up an Ability increases its effectiveness. Other than spending Skill Points to upgrade them, [[Blades:Jewelry|rings]] can give bonus ranks to Spells and Abilities. Like Spells, Abilities must be equipped to use them in combat. Players can only slot 3 Abilities at one time. They are represented by 3 icons that appear above the green Stamina bar at the bottom-right of the player HUD.
+
+When combat starts, Abilities start off on an ability-specific cooldown with their icon greyed-out and cannot be used immediately. Once available, tapping on the icon will use the Ability, at which point it goes back on cooldown again.
+
+<center>{{Chart/start}}
+{{Chart | border=0 | boxstyle=background: transparent; | | | | | |RECFU| | | | | |RECFU={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Reckless Fury.png|link=Blades:Reckless Fury{{!}}Reckless Fury|50px}}<br>'''{{FC|black|[[Blades:Reckless Fury|Reckless Fury]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | |REFBA|,|-|^|-|.|RECST| |REFBA={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Reflecting Bash.png|link=Blades:Reflecting Bash{{!}}Reflecting Bash|50px}}<br>'''{{FC|black|[[Blades:Reflecting Bash|Reflecting Bash]]|coloredlinks=1}}'''|RECST={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Recovery Strikes.png|link=Blades:Recovery Strikes{{!}}Recovery Strikes|50px}}<br>'''{{FC|black|[[Blades:Recovery Strikes|Recovery Strikes]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | | |!|INDSM| |RENDO|!| | |INDSM={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Indomitable Smash.png|link=Blades:Indomitable Smash{{!}}Indomitable Smash|50px}}<br>'''{{FC|black|[[Blades:Indomitable Smash|Indomitable Smash]]|coloredlinks=1}}'''|RENDO={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Renewing Dodge.png|link=Blades:Renewing Dodge{{!}}Renewing Dodge|50px}}<br>'''{{FC|black|[[Blades:Renewing Dodge|Renewing Dodge]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | |STABA|!| | | |!|VENST| |STABA={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Staggering Bash.png|link=Blades:Staggering Bash{{!}}Staggering Bash|50px}}<br>'''{{FC|black|[[Blades:Staggering Bash|Staggering Bash]]|coloredlinks=1}}'''|VENST={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Venom Strikes.png|link=Blades:Venom Strikes{{!}}Venom Strikes|50px}}<br>'''{{FC|black|[[Blades:Venom Strikes|Venom Strikes]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | | |!|GUABR| |FOCDO|!| | |GUABR={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Guardbreaker.png|link=Blades:Guardbreaker{{!}}Guardbreaker|50px}}<br>'''{{FC|black|[[Blades:Guardbreaker|Guardbreaker]]|coloredlinks=1}}'''|FOCDO={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Focusing Dodge.png|link=Blades:Focusing Dodge{{!}}Focusing Dodge|50px}}<br>'''{{FC|black|[[Blades:Focusing Dodge|Focusing Dodge]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | |HARBA|!| | | |!|PIEST| |HARBA={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Harrying Bash.png|link=Blades:Harrying Bash{{!}}Harrying Bash|50px}}<br>'''{{FC|black|[[Blades:Harrying Bash|Harrying Bash]]|coloredlinks=1}}'''|PIEST={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Piercing Strikes.png|link=Blades:Piercing Strikes{{!}}Piercing Strikes|50px}}<br>'''{{FC|black|[[Blades:Piercing Strikes|Piercing Strikes]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | | |!|SKULL| |ADRDO|!| | |SKULL={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Skullcrusher.png|link=Blades:Skullcrusher{{!}}Skullcrusher|50px}}<br>'''{{FC|black|[[Blades:Skullcrusher|Skullcrusher]]|coloredlinks=1}}'''|ADRDO={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Adrenaline Dodge.png|link=Blades:Adrenaline Dodge{{!}}Adrenaline Dodge|50px}}<br>'''{{FC|black|[[Blades:Adrenaline Dodge|Adrenaline Dodge]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | |SHIBA|!| | | |!|QUIST| |SHIBA={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Shield Bash.png|link=Blades:Shield Bash{{!}}Shield Bash|50px}}<br>'''{{FC|black|[[Blades:Shield Bash|Shield Bash]]|coloredlinks=1}}'''|QUIST={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Quick Strikes.png|link=Blades:Quick Strikes{{!}}Quick Strikes|50px}}<br>'''{{FC|black|[[Blades:Quick Strikes|Quick Strikes]]|coloredlinks=1}}'''}}
+{{Chart | border=0 | boxstyle=background: transparent; | | |`|POWAT| |DODST|'| | |POWAT={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Power Attack.png|link=Blades:Power Attack{{!}}Power Attack|50px}}<br>'''{{FC|black|[[Blades:Power Attack|Power Attack]]|coloredlinks=1}}'''|DODST={{Image Overlay|BL-icon-Skill Frame.png|BL-icon-Dodging Strike.png|link=Blades:Dodging Strike{{!}}Dodging Strike|50px}}<br>'''{{FC|black|[[Blades:Dodging Strike|Dodging Strike]]|coloredlinks=1}}'''}}
+{{Chart/end}}</center>
+
+{| class="wikitable sortable" {{AL|C}}
+! Skill
+! class="unsortable"|Description
+! Max Rank
+! [[File:BL-icon-Hourglass.png|22px|Initial Cooldown]] Initial Cooldown (seconds)
+! [[File:BL-icon-Hourglass.png|22px|Cooldown]] Cooldown (seconds)
+! class="unsortable"| Requires
+! [[File:BL-icon-Required Level.png|20px|Unlock]] Lowest Level
+|-
+|{{Anchor|[[Blades:Adrenaline Dodge|Adrenaline Dodge]]}}||{{AL|L}}|This Dodging Strike evades up to <magnitude> damage and restores up to <magnitude 2> Health. The closer the fighter is to getting hit, the greater the healing.||5||2.06||8.65||Dodging Strike||10
+|-
+|{{Anchor|[[Blades:Dodging Strike|Dodging Strike]]}}||{{AL|L}}|The fighter instantly dodges to evade up to <magnitude> damage, then strikes back.||6||2.06||8.65|| ||2
+|-
+|{{Anchor|[[Blades:Focusing Dodge|Focusing Dodge]]}}||{{AL|L}}|This Dodging Strike evades up to <magnitude> damage and reduces skill cooldowns by up to <magnitude 2> seconds. The closer the fighter is to getting hit, the greater the reduction.||3||2.06||8.65||Adrenaline Dodge||17
+|-
+|{{Anchor|[[Blades:Guardbreaker|Guardbreaker]]}}||{{AL|L}}|This Power Attack deals <magnitude> extra damage (<magnitude2> with a two-handed weapon) and stuns a target that blocks it.||3||2.75||8.09||Skullcrusher||16
+|-
+|{{Anchor|[[Blades:Harrying Bash|Harrying Bash]]}}||{{AL|L}}|This Shield Bash deals <magnitude> extra bashing damage and adds <magnitude 2> seconds to all of the target's skill cooldowns. A shield is required.||4||1.77||6.7||Shield Bash||11
+|-
+|style=white-space:nowrap|{{Anchor|[[Blades:Indomitable Smash|Indomitable Smash]]}}||{{AL|L}}|During this Power Attack, all resistances are increased by <magnitude>. It also cures all of the fighter's conditions, but deals no extra damage.||2||2.75||8.09||Guardbreaker||23
+|-
+|{{Anchor|[[Blades:Piercing Strikes|Piercing Strikes]]}}||{{AL|L}}|These Quick Strikes each deal <magnitude> extra damage (no extra damage for two-handed weapons), and any elemental damage done with them ignores <magnitude 2> points of the target's Block Rating and <magnitude 3> points of resistance.||4||2.08||5.83||Quick Strikes||11
+|-
+|{{Anchor|[[Blades:Power Attack|Power Attack]]}}||{{AL|L}}|A slow but powerful overhead blow that deals <magnitude> extra damage (<magnitude 2> with a two-handed weapon).||6||2.75||8.09|| ||2
+|-
+|{{Anchor|[[Blades:Quick Strikes|Quick Strikes]]}}||{{AL|L}}|A quick combo of two strikes that each deal <magnitude> extra damage (no extra damage for two-handed weapons).||6||2.08||5.83||Dodging Strike||4
+|-
+|{{Anchor|[[Blades:Recovery Strikes|Recovery Strikes]]}}||{{AL|L}}|These Quick Strikes can be performed at any time, except when Paralyzed. They each deal <magnitude> extra damage (no extra damage for two-handed weapons).||2||2.08||5.83||Venom Strikes||25
+|-
+|{{Anchor|[[Blades:Reckless Fury|Reckless Fury]]}}||{{AL|L}}|An intense rage increases the fighter's damage and protects them from being stunned or killed, but also stops them from blocking or using skills. Light, versatile and heavy weapons deal <magnitude>, <magnitude 2>, and <magnitude 3> extra damage, respectively.||1||10.5||10.5||Indomitable Smash ''or'' Renewing Dodge||35
+|-
+|{{Anchor|[[Blades:Reflecting Bash|Reflecting Bash]]}}||{{AL|L}}|Up to <magnitude> points of any damage received during this Shield Bash are redirected at the target. A shield is required.||2||1.77||6.7||Staggering Bash||25
+|-
+|{{Anchor|[[Blades:Renewing Dodge|Renewing Dodge]]}}||{{AL|L}}|This Dodging Strike evades up to <magnitude> damage and restores up to <magnitude 2> Magicka. The closer the fighter is to getting hit, the greater the restoration.||2||2.06||8.65||Focusing Dodge||24
+|-
+|{{Anchor|[[Blades:Shield Bash|Shield Bash]]}}||{{AL|L}}|The fighter first blocks with their shield, then slams it into the enemy, dealing <magnitude> extra bashing damage. A shield is required.||6||1.77||6.7||Power Attack||4
+|-
+|{{Anchor|[[Blades:Skullcrusher|Skullcrusher]]}}||{{AL|L}}|This Power Attack deals <magnitude> extra damage (<magnitude2> with a two-handed weapon), and ignores both <magnitude3> points of the target's Block Rating and <magnitude4> points of their Armor Rating.||5||2.75||8.09||Power Attack||9
+|-
+|{{Anchor|[[Blades:Staggering Bash|Staggering Bash]]}}||{{AL|L}}|This Shield Bash deals <magnitude> extra bashing damage and stuns a target that does not block it. A shield is required.||3||1.77||6.7||Harrying Bash||18
+|-
+|{{Anchor|[[Blades:Venom Strikes|Venom Strikes]]}}||{{AL|L}}|These Quick Strikes each deal <magnitude> extra damage (no extra damage for two-handed weapons), and poisons delivered with them are <magnitude 2>% more effective.||3||2.08||5.83||Piercing Strikes||18
+|}
+
+==Unobtainable Skills==
+===Spells===
+{| class="wikitable sortable" {{AL|C}}
+! Spell
+! class="unsortable"|Unofficial Description
+! Max Rank
+|-
+|{{Anchor|[[Blades:Firestorm Armor|Firestorm Armor]]}}||{{AL|L}}|A circle of flames with <magnitude> Health instantly covers the caster. It takes half of all damage directed at the caster. || 12
+|-
+|{{Anchor|[[Blades:Siphon Life|Siphon Life]]}}||{{AL|L}}|A magical tether damages <magnitude> Health, Magicka, and Stamina for 5 seconds of the target.|| 11
+|-
+|{{Anchor|[[Blades:Snakebite|Snakebite]]}}||{{AL|L}}|All damage is increased by 15% and converted to Poison Damage for 7 seconds. || 11
+|-
+|{{Anchor|[[Blades:Tempest Armor|Tempest Armor]]}}||{{AL|L}}|A cloud of lightning with <magnitude> Health instantly covers the caster. It takes half of all damage directed at the caster. || 12
+|}
+
+===Perks===
+{| class="wikitable sortable" {{AL|C}}
+! Spell
+! class="unsortable"|Unofficial Description
+! Max Rank
+|-
+|{{Anchor|[[Blades:Atronach Power|Atronach Power]]}}||{{AL|L}}|As long as a storm armor spell is active, the Atronach's Health Regeneration is increased by 4%. || 1
+|}
+
+===Abilities===
+{| class="wikitable sortable" {{AL|C}}
+! Ability
+! class="unsortable"|Unofficial Description
+! Max Rank
+|-
+|{{Anchor|[[Blades:Fire Breath|Fire Breath]]}}||{{AL|L}}|During this attack, the dragon flies up in the air for 3 seconds, evading all weapon damage, and releases a fiery breath that deals <magnitude> fire damage per second. || 11
+|-
+|{{Anchor|[[Blades:Frost Breath|Frost Breath]]}}||{{AL|L}}|During this attack, the dragon flies up in the air for 3 seconds, evading all weapon damage, and releases an icy breath that deals <magnitude> frost damage per second. || 11
+|-
+|{{Anchor|[[Blades:Polar Slam|Polar Slam]]}}||{{AL|L}}|The extreme cold of this Power Attack can [[Blades:Paralyzed|Paralyze]] and [[Blades:Frozen|Freeze]] for <magnitude> seconds, but does not deal extra damage. || 12
+|-
+|{{Anchor|[[Blades:Shield of Mania|Shield of Mania]]}}||{{AL|L}}|Up to <magnitude> points of any damage received during this Reflecting Bash are redirected at the target as fire damage and the target is set [[Blades:On Fire|On Fire]]. A shield is required. || 11
+|}
