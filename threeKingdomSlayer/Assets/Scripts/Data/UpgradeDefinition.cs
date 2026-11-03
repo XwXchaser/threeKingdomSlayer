@@ -310,7 +310,8 @@ public enum UpgradeCategory
     Item,          // V1 道具型：手势触发的一次性/限次道具
     AttackPassive, // 攻击计数被动：每 N 次攻击触发
     TimedPassive,  // 定时被动：每 N 秒触发
-    ActiveSkill    // V2 主动技能：永久占槽、可升级、使用后进入独立冷却
+    ActiveSkill,   // V2 主动技能：永久占槽、可升级、使用后进入独立冷却
+    Manual         // 秘籍：局外永久解锁物（掉落拾取即生效，不占局内槽位、不走 ItemInventory）
 }
 
 public enum UpgradeRarity

@@ -207,11 +207,11 @@ public class EnemyManager : MonoBehaviour
     /// <summary>击杀掉落道具判定</summary>
     private void TryDropItem(Enemy enemy)
     {
-        // V1 才存在普通敌人道具掉落；V2 主动技能只从升级/Boss三选一获得。
-        if (ActiveSkillInventory.Instance != null && ActiveSkillInventory.Instance.UsesActiveSkills)
-            return;
         if (dropItemPoolConfig == null || dropItemPoolConfig.pool.Count == 0) return;
-        if (ItemInventory.Instance == null) return;
+
+        // V1 才存在普通敌人**道具**掉落；V2 主动技能只从升级/Boss三选一获得。
+        // ⚠️ 但**秘籍**（技巧类，局外永久解锁）在 V2 下**照掉** —— 它不走 ItemInventory。
+        bool v2Rules = ActiveSkillInventory.Instance != null && ActiveSkillInventory.Instance.UsesActiveSkills;
 
         float dropChance = dropItemPoolConfig.baseDropChance;
         var uem = UpgradeEffectManager.Instance;
@@ -232,6 +232,17 @@ public class EnemyManager : MonoBehaviour
             if (roll <= cumulative) { picked = dropItemPoolConfig.pool[i].item; break; }
         }
         if (picked == null) return;
+
+        // 秘籍：生成可见掉落物 → 拾取即永久解锁（V1/V2 都掉）
+        if (picked is ManualDefinition manual)
+        {
+            ManualDropSystem.SpawnDrop(manual, enemy != null ? enemy.transform.position : Vector3.zero);
+            return;
+        }
+
+        // 普通道具：V2 规则下不落（局内道具栏在 V2 不存在）
+        if (v2Rules) return;
+        if (ItemInventory.Instance == null) return;
 
         // 尝试添加，满则弹出弃置弹窗
         if (ItemInventory.Instance.CanAdd(picked))

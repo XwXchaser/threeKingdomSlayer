@@ -25,6 +25,16 @@ public static class IceBreakSession
     public const string TalentIdThaw = "talent_ice_thaw";
     public const string TalentIdBreakPush = "talent_ice_break_push";
 
+    /// <summary>秘籍 id（局外永久解锁物）：重击解冻改为「掉落拿到即永久生效」。</summary>
+    public const string ManualIdThaw = "manual_ice_thaw";
+
+    /// <summary>
+    /// 「重击解冻」是否已解锁：**天赋节点 或 秘籍**（迁移期两种都认 —— 节点还在就按节点算，
+    /// 节点被删后秘籍一条龙接上，不用再改这里）。
+    /// </summary>
+    public static bool IsThawAvailable =>
+        TalentTreeState.IsUnlocked(TalentIdThaw) || ManualDropSystem.IsUnlocked(ManualIdThaw);
+
     private static AttackSkillConfig _cfg;
     private static float _sessionEndTime;
     private static bool _armed;
@@ -96,9 +106,9 @@ public static class IceBreakSession
         // 同一目标在一次攻击里只结算一次（设计 §6：每个冻结目标各自走一遍 ①–④）
         if (_brokenThisAttack.Contains(target)) return false;
 
-        // 机制门槛：没点“重击解冻”天赋，重击打在冻结目标身上就是普通伤害，不会解冻。
+        // 机制门槛：没点“重击解冻”天赋（也没拿到对应秘籍），重击打在冻结目标身上就是普通伤害，不会解冻。
         // 教学关里玩家只有冰雾（只冻不解），天赋点出来才有后面的能力。
-        if (!TalentTreeState.IsUnlocked(TalentIdThaw)) return false;
+        if (!IsThawAvailable) return false;
 
         if (!_armed)
         {

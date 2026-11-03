@@ -73,6 +73,13 @@ public sealed class BreakableProp : MonoBehaviour, ISupplyPropTarget
     [Tooltip("局外层：奖励的局外金币（存档货币）；<=0 时用 coinReward")]
     [SerializeField] private int outOfRunCoinReward = 100;
 
+    [Header("秘籍掉落")]
+    [Tooltip("打碎时掉落的秘籍（局外永久解锁）。留空 = 不掉秘籍")]
+    [SerializeField] private ManualDefinition manualDrop;
+    [Tooltip("掉落概率（0-1）；1 = 必掉（固定点位）")]
+    [Range(0f, 1f)]
+    [SerializeField] private float manualDropChance = 1f;
+
     /// <summary>当前在场且可交互的道具。</summary>
     public static readonly List<BreakableProp> All = new List<BreakableProp>();
 
@@ -396,6 +403,11 @@ public sealed class BreakableProp : MonoBehaviour, ISupplyPropTarget
                 }
             }
         };
+
+        // 秘籍掉落（局外永久解锁）：**不挂到奖励表现上**（那个回调由 UI 决定何时触发），
+        // 破坏当场就入账 —— 秘籍是永久解锁，不需要等金币动画。
+        if (manualDrop != null && UnityEngine.Random.value < manualDropChance)
+            ManualDropSystem.Grant(manualDrop);
 
         SupplyRewardPort.Raise(new SupplyRewardInfo
         {

@@ -405,14 +405,42 @@ git 历史里 **铁壁 / 地刺** 曾有完整 10 级数值（commit `0655bf3` /
 
 ### 8.2 新增 / 修改清单
 
-| # | 内容 | 成本 |
-|---|---|---|
-| 1 | `ManualDefinition : UpgradeDefinition`（含 id / 名称 / 说明 / 解锁的 flag 或 moveConfig / 图标） | 小 |
-| 2 | `ManualSaveSection`（已获得秘籍 id 列表），与 `TalentSaveSection` 同构 | 小 |
-| 3 | `EnemyManager.TryDropItem` 分派：`ManualDefinition` → 写存档解锁；普通 `category=Item` → 进 `ItemInventory`。**同时处理 V2 短路**（V2 下只掉秘籍、不掉普通道具） | 中 |
-| 4 | `BreakableProp` 加秘籍字段 + 概率，复用现有分层 / 拾取 / 渐变销毁 | 小 |
-| 5 | 可见的秘籍掉落物（**照抄 `ExpGemManager` 范式**：生成 → 飞向玩家 → 到达结算） | 中 |
-| 6 | 天赋页显示「秘籍已获得」态 | 见 `design/talent-page-ui.md` §3.2 |
+> ✅ **C2 已实现（2026-11-03）**：① ~ ⑤ 全部落地（复用现有通道，未新建系统）。
+> ⑥（天赋页显示「已获得」）属**表现层**，归对方；§8.5 的「删天赋节点」属**树资产**，归对方。
+
+| # | 内容 | 成本 | 状态 |
+|---|---|---|---|
+| 1 | `ManualDefinition : UpgradeDefinition`（含 id / 名称 / 说明 / 图标 / 可选 moveConfig） | 小 | ✅ `Assets/Scripts/Data/ManualDefinition.cs`（`manualId` 留空退回 `upgradeId`） |
+| 2 | `ManualSaveSection`（已获得秘籍 id 列表），与 `TalentSaveSection` 同构 | 小 | ✅ `Assets/Scripts/Data/Save/ManualSaveSection.cs` + `SaveData.unlockedManuals` + 登记到 `SaveSections` |
+| 3 | `EnemyManager.TryDropItem` 分派：`ManualDefinition` → 可见掉落物；普通 `category=Item` → 进 `ItemInventory`。**同时处理 V2 短路**（V2 下只掉秘籍、不掉普通道具） | 中 | ✅ 已改；V2 短路从「方法开头 return」改成「抽中普通道具才 return」 |
+| 4 | `BreakableProp` 加秘籍字段 + 概率 | 小 | ✅ `manualDrop` + `manualDropChance`（**当场入账**，不挂奖励表现回调） |
+| 5 | 可见的秘籍掉落物（照抄 `ExpGemManager` 范式） | 中 | ✅ `ManualDropSystem`（静态类，**不需要改场景**：prefab 与父容器都从 `ExpGemManager` 取） |
+| 6 | 天赋页显示「秘籍已获得」态 | — | ⛔ 表现层（对方重做天赋页时一并做） |
+
+#### 实现细节（C2）
+
+| 项 | 落点 |
+|---|---|
+| 秘籍类别 | `UpgradeCategory.Manual`（新增枚举值）+ `UpgradeDefinitionEditor` 加一段（显示 `manualId` / `moveConfig`） |
+| 掉落池 | 直接放进**现有** `DropItemPoolConfig.asset`（weight=2，总权重 25 → 约 **0.8%/杀**；`baseDropChance` 仍是 0.1） |
+| 可见掉落物 | 复用 `ExpGemManager.gemPrefab`（与 `HealthPotionManager` 同一套路），`SetVisual(manual.icon)` → 飞向玩家 → 到达即解锁 |
+| 已获得不再掉 | `ManualDropSystem.SpawnDrop` 开头判 `IsUnlocked` → 已拿到就不生成 |
+| 存档 | `SaveManager.Load/Save` + `ManualSaveSection`；**老档自动补空列表**（`MigrateIfNeeded`） |
+| 第一个秘籍 | `Assets/ScriptableObjects/Manuals/Manual_IceThaw.asset`（「重击解冻」，id=`manual_ice_thaw`）；图标暂用 `icon_31_unrealWeapons`（美术全重做前占位） |
+
+#### ⚠️ 破冰顶开迁移（§8.5）的**过渡实现**
+
+> §8.5 原计划「删 `talent_ice_break_push` 节点 → 判定改为「秘籍已获得」」。
+> **删节点要动对方的树资产**（本轮不动）→ 所以先做成**过渡态**：
+>
+> ```csharp
+> IceBreakSession.IsThawAvailable
+>     = 天赋节点已解锁 || 秘籍已获得
+> ```
+>
+> → 现在两种来源都认；等对方删掉天赋节点后，秘籍这条路自动接上，**代码不用再改**。
+> 破冰顶开本身（`talent_ice_break_push`）尚未迁移，且**冰雾的归属仍是待定项**。
+
 
 ### 8.3 ⚠️ 秘籍不走 `ItemInventory`
 

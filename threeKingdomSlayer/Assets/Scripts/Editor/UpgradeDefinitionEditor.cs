@@ -140,6 +140,19 @@ public class UpgradeDefinitionEditor : Editor
             EditorGUILayout.HelpBox("主动技能请创建 ActiveSkillDefinition 资产，并配置独立冷却与每级效果。", MessageType.Info);
             DrawPassiveSection();
         }
+        else if (category == UpgradeCategory.Manual)
+        {
+            EditorGUILayout.HelpBox("秘籍：局外永久解锁物 —— 掉落拾取即永久生效，不占局内槽位、不进 ItemInventory。\n" +
+                                    "掉落与拾取由 ManualDropSystem 处理；解锁记录写进 SaveData.unlockedManuals。", MessageType.Info);
+            // manualId / moveConfig 只有 ManualDefinition 才有 → 按类型取，避免在普通升级资产上找不到属性
+            if (serializedObject.targetObject is ManualDefinition)
+            {
+                var manualIdProp = serializedObject.FindProperty("manualId");
+                var moveConfigProp = serializedObject.FindProperty("moveConfig");
+                if (manualIdProp != null) EditorGUILayout.PropertyField(manualIdProp);
+                if (moveConfigProp != null) EditorGUILayout.PropertyField(moveConfigProp);
+            }
+        }
 
         EditorGUILayout.Space();
 
