@@ -73,6 +73,8 @@ MonoBehaviour:
     initialDamage: 0
     landingDamagePercent: 0
   prerequisites: []
+  requiredTalentIds:
+  - talent_pool_disease
   activeEffectType: 6
   cooldownLevels:
   - 6

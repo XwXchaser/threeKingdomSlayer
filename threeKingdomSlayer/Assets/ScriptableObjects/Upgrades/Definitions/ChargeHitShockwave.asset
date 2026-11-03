@@ -73,3 +73,5 @@ MonoBehaviour:
     initialDamage: 0
     landingDamagePercent: 0
   prerequisites: []
+  requiredTalentIds:
+  - talent_pool_shockwave

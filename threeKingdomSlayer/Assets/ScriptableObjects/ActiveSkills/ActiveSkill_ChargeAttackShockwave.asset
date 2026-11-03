@@ -63,6 +63,8 @@ MonoBehaviour:
     initialDamage: 0
     landingDamagePercent: 0
   prerequisites: []
+  requiredTalentIds:
+  - talent_pool_chargewave
   activeEffectType: 4
   cooldownLevels:
   - 12

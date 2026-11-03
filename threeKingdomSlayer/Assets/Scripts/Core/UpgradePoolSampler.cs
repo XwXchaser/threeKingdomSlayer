@@ -97,6 +97,9 @@ public sealed class UpgradePoolSampler
             if (wu.upgrade.category == UpgradeCategory.ActiveSkill)
             {
                 if (!CanAcquireActiveSkill(wu.upgrade as ActiveSkillDefinition)) continue;
+                // ⚠️ 主动技能同样要过天赋解锁条件（流派分线靠的就是这条）——
+                // 旧实现只查了「能不能拿到」，导致 locked 的主动技能照样进池（2026-11-03 C1 修）。
+                if (!RequirementsMet(wu.upgrade, UpgradePoolKind.Regular)) continue;
             }
             else
             {
@@ -137,6 +140,8 @@ public sealed class UpgradePoolSampler
             var skill = wu.upgrade as ActiveSkillDefinition;
             if (skill == null) continue;
             if (!CanAcquireActiveSkill(skill)) continue;
+            // 同样的天赋解锁条件（与 CollectUnified 口径一致）
+            if (!RequirementsMet(wu.upgrade, UpgradePoolKind.Regular)) continue;
             result.Add(new Candidate { upgrade = skill, weight = Mathf.Max(1, wu.weight), rarity = rarity });
         }
     }

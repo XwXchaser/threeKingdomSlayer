@@ -37,6 +37,7 @@ MonoBehaviour:
     columns: 02000000
     burnTotalDamage: 12
     burnDurationSeconds: 6
+    iceFreezeChancePerHit: 0
   - intervalSeconds: 14
     triggerThreshold: 0
     rangeRows: 1
@@ -44,6 +45,7 @@ MonoBehaviour:
     columns: 02000000
     burnTotalDamage: 18
     burnDurationSeconds: 6
+    iceFreezeChancePerHit: 0
   - intervalSeconds: 13
     triggerThreshold: 0
     rangeRows: 2
@@ -51,6 +53,7 @@ MonoBehaviour:
     columns: 02000000
     burnTotalDamage: 24
     burnDurationSeconds: 6
+    iceFreezeChancePerHit: 0
   - intervalSeconds: 12
     triggerThreshold: 0
     rangeRows: 2
@@ -58,6 +61,7 @@ MonoBehaviour:
     columns: 0100000002000000
     burnTotalDamage: 30
     burnDurationSeconds: 6
+    iceFreezeChancePerHit: 0
   - intervalSeconds: 10
     triggerThreshold: 0
     rangeRows: 3
@@ -65,6 +69,7 @@ MonoBehaviour:
     columns: 0100000002000000
     burnTotalDamage: 36
     burnDurationSeconds: 6
+    iceFreezeChancePerHit: 0
   timedArrowLevels: []
   returnWaveLevels: []
   chainBounceLevels: []
@@ -88,3 +93,5 @@ MonoBehaviour:
     initialDamage: 0
     landingDamagePercent: 0
   prerequisites: []
+  requiredTalentIds:
+  - talent_pool_snake
