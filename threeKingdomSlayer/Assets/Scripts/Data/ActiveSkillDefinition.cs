@@ -33,4 +33,7 @@ public class ActiveSkillDefinition : UpgradeDefinition
             return 0f;
         return Mathf.Max(0f, cooldownLevels[Mathf.Clamp(level - 1, 0, cooldownLevels.Count - 1)]);
     }
+
+    /// <summary>主动技能的等级数据行数 = 冷却表行数（每级一条）。</summary>
+    public override int GetAvailableLevelCount() => cooldownLevels != null ? cooldownLevels.Count : 0;
 }

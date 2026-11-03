@@ -91,9 +91,10 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
         {
             int currentLevel = _appliedUpgrades.TryGetValue(def.upgradeId, out int lv) ? lv : 0;
             int newLevel = currentLevel + 1;
-            if (newLevel > def.maxLevel)
+            int passiveCap = GetEffectiveMaxLevel(def);
+            if (newLevel > passiveCap)
             {
-                Debug.LogWarning($"[UpgradeEffectManager] {def.upgradeId} 已达最大等级 {def.maxLevel}，跳过");
+                Debug.LogWarning($"[UpgradeEffectManager] {def.upgradeId} 已达最大等级 {passiveCap}，跳过");
                 return;
             }
             _appliedUpgrades[def.upgradeId] = newLevel;
@@ -127,9 +128,10 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
         int currentNumericLevel = _appliedUpgrades.TryGetValue(def.upgradeId, out int ln) ? ln : 0;
         int newNumericLevel = currentNumericLevel + 1;
 
-        if (newNumericLevel > def.maxLevel)
+        int numericCap = GetEffectiveMaxLevel(def);
+        if (newNumericLevel > numericCap)
         {
-            Debug.LogWarning($"[UpgradeEffectManager] {def.upgradeId} 已达最大等级 {def.maxLevel}，跳过");
+            Debug.LogWarning($"[UpgradeEffectManager] {def.upgradeId} 已达最大等级 {numericCap}，跳过");
             return;
         }
 

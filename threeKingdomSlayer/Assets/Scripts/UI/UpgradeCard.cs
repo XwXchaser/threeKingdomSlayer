@@ -55,13 +55,16 @@ public class UpgradeCard : MonoBehaviour
                 : def.descriptionTemplate;
 
         int currentLevel = GetCurrentLevel(def);
+        int maxLevel = UpgradeEffectManager.Instance != null
+            ? UpgradeEffectManager.Instance.GetEffectiveMaxLevel(def)
+            : Mathf.Max(1, def != null ? def.maxLevel : 1);
         if (levelStatusText != null)
         {
             if (currentLevel <= 0)
                 levelStatusText.text = "新获得";
-            else if (currentLevel >= def.maxLevel)
+            else if (currentLevel >= maxLevel)
                 levelStatusText.text = "Lv.Max";
-            else if (currentLevel + 1 >= def.maxLevel)
+            else if (currentLevel + 1 >= maxLevel)
                 levelStatusText.text = $"Lv.{currentLevel} → Lv.Max";
             else
                 levelStatusText.text = $"Lv.{currentLevel} → Lv.{currentLevel + 1}";

@@ -117,7 +117,10 @@ public class UpgradeChoiceManager : MonoBehaviour
         var sampler = new UpgradePoolSampler(
             GetCurrentLevel,
             () => UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.PassiveUpgradeCount >= PassiveSlotCapacity,
-            def => ActiveSkillInventory.Instance != null && ActiveSkillInventory.Instance.CanAcquire(def));
+            def => ActiveSkillInventory.Instance != null && ActiveSkillInventory.Instance.CanAcquire(def),
+            def => UpgradeEffectManager.Instance != null
+                ? UpgradeEffectManager.Instance.GetEffectiveMaxLevel(def)
+                : Mathf.Max(1, def != null ? def.maxLevel : 1));
         // 内置条件源：按天赋解锁入池（升级定义填了 requiredTalentIds 才生效）。
         sampler.AddRequirementProvider(new TalentUpgradeRequirementProvider());
         return sampler;

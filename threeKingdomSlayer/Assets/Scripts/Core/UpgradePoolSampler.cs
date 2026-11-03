@@ -26,16 +26,19 @@ public sealed class UpgradePoolSampler
     private readonly Func<UpgradeDefinition, int> _getLevel;
     private readonly Func<bool> _passiveCapReached;
     private readonly Func<ActiveSkillDefinition, bool> _canAcquireActiveSkill;
+    private readonly Func<UpgradeDefinition, int> _getEffectiveMaxLevel;
     private readonly List<IUpgradeRequirementProvider> _requirementProviders = new List<IUpgradeRequirementProvider>();
 
     public UpgradePoolSampler(
         Func<UpgradeDefinition, int> getLevel,
         Func<bool> passiveCapReached,
-        Func<ActiveSkillDefinition, bool> canAcquireActiveSkill)
+        Func<ActiveSkillDefinition, bool> canAcquireActiveSkill,
+        Func<UpgradeDefinition, int> getEffectiveMaxLevel = null)
     {
         _getLevel = getLevel;
         _passiveCapReached = passiveCapReached;
         _canAcquireActiveSkill = canAcquireActiveSkill;
+        _getEffectiveMaxLevel = getEffectiveMaxLevel;
     }
 
     // ───────── 扩展点：入池条件源 ─────────
@@ -74,7 +77,7 @@ public sealed class UpgradePoolSampler
             if (!PrerequisitesMet(wu.upgrade)) continue;
             if (!RequirementsMet(wu.upgrade, UpgradePoolKind.Regular)) continue;
             int currentLevel = GetLevel(wu.upgrade);
-            if (currentLevel >= wu.upgrade.maxLevel) continue;
+            if (currentLevel >= GetEffectiveMaxLevel(wu.upgrade)) continue;
             // 被动槽已满（上限来自 HeroConfig.passiveSlotCount）：只允许升级已有技能，不允许获得新技能
             if (currentLevel == 0 && IsPassiveCapReached()) continue;
             result.Add(new Candidate { upgrade = wu.upgrade, weight = wu.weight, rarity = rarity });
@@ -100,7 +103,7 @@ public sealed class UpgradePoolSampler
                 if (!PrerequisitesMet(wu.upgrade)) continue;
                 if (!RequirementsMet(wu.upgrade, UpgradePoolKind.Regular)) continue;
                 int currentLevel = GetLevel(wu.upgrade);
-                if (currentLevel >= wu.upgrade.maxLevel) continue;
+                if (currentLevel >= GetEffectiveMaxLevel(wu.upgrade)) continue;
                 if (currentLevel == 0 && IsPassiveCapReached()) continue;
             }
 
@@ -118,7 +121,7 @@ public sealed class UpgradePoolSampler
             if (wu == null || wu.upgrade == null) continue;
             if (!PrerequisitesMet(wu.upgrade)) continue;
             if (!RequirementsMet(wu.upgrade, UpgradePoolKind.Item)) continue;
-            if (GetLevel(wu.upgrade) >= wu.upgrade.maxLevel) continue;
+            if (GetLevel(wu.upgrade) >= GetEffectiveMaxLevel(wu.upgrade)) continue;
             result.Add(new Candidate { upgrade = wu.upgrade, weight = wu.weight, rarity = rarity });
         }
     }
@@ -242,6 +245,21 @@ public sealed class UpgradePoolSampler
     private int GetLevel(UpgradeDefinition def)
     {
         return _getLevel != null ? _getLevel(def) : 0;
+    }
+
+    /// <summary>
+    /// 有效等级上限（运行时覆盖 = 资产上限 ∩ 数据上限 ∪ 天赋放宽）。
+    /// 没注入查询时退回资产上的 <c>maxLevel</c>（旧行为）。
+    /// </summary>
+    private int GetEffectiveMaxLevel(UpgradeDefinition def)
+    {
+        if (def == null) return 1;
+        if (_getEffectiveMaxLevel != null)
+        {
+            int v = _getEffectiveMaxLevel(def);
+            if (v > 0) return v;
+        }
+        return Mathf.Max(1, def.maxLevel);
     }
 
     private bool IsPassiveCapReached()

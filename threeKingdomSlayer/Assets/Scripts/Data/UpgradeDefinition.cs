@@ -141,6 +141,36 @@ public class UpgradeDefinition : ScriptableObject
         };
     }
 
+    /// <summary>
+    /// 该定义**实际有多少行等级数据**（数据上限）。
+    /// 0 = 这个定义没有等级数据（走旧版字段 / 固定值兜底）→ **不夹上限**。
+    ///
+    /// 为什么要这个：<see cref="GetTriggerInterval"/> / <see cref="GetTriggerThreshold"/> 越界会返回 **-1**
+    /// → 触发模块直接判定「不适用」→ **该被动不注册 = 直接失效**。
+    /// 夹住数据上限后，这两个函数永远不会走到越界分支。
+    /// </summary>
+    public virtual int GetAvailableLevelCount()
+    {
+        switch (effectType)
+        {
+            case "passive_timed_aoe": return LevelCount(timedAoeLevels);
+            case "passive_timed_arrow": return LevelCount(timedArrowLevels);
+            case "passive_phantom_weapon": return LevelCount(phantomLevels);
+            case "passive_return_wave": return LevelCount(returnWaveLevels);
+            case "passive_chain_bounce": return LevelCount(chainBounceLevels);
+            case "passive_timed_cyclone": return LevelCount(cycloneLevels);
+            case "passive_arrow_volley": return LevelCount(arrowVolleyLevels);
+            case "charge_shockwave": return LevelCount(chargeShockwaveLevels);
+            case "charge_hit_shockwave": return LevelCount(chargeHitShockwaveLevels);
+            case "charge_reflect_shield": return LevelCount(reflectShieldLevels);
+            case "active_wave": return LevelCount(waveLevels);
+            case "active_disease": return LevelCount(diseaseLevels);
+            default: return LevelCount(numericLevels);
+        }
+    }
+
+    private static int LevelCount<T>(List<T> list) => list != null ? list.Count : 0;
+
     // ═══════════════════════════════════════════════
     // 道具型
     // ═══════════════════════════════════════════════

@@ -321,6 +321,10 @@ if (_currentChoices == null || _currentChoices.Count == 0)
 
 ## 7. 技能等级上限解锁（R7）
 
+> ✅ **A4 已实现（2026-11-03）**：有效上限查询已落地，**现有两处上限判定都改读它**。
+> 实测：**现有 40 个升级资产的有效上限 == 资产 maxLevel → 行为零变化**；
+> 数据上限与天赋上限两个分支都已用合成定义实测通过。
+
 ### 7.1 上限判定的两处
 
 | 位置 | 代码 |
@@ -363,6 +367,22 @@ if (_currentChoices == null || _currentChoices.Count == 0)
 | 箭矢齐射 / 反伤 / 神力 / 谋略 / 捡漏 / 箭雨（被动） | 10 | 10 | ✅ **有，但不在池里** |
 
 git 历史里 **铁壁 / 地刺** 曾有完整 10 级数值（commit `0655bf3` / `399a15b`），需要时可取回；**专注 / 智慧** 历史里从没有 10 级版本。
+
+### 7.5 实现现状（A4）
+
+| 项 | 落点 |
+|---|---|
+| 有效上限查询 | `UpgradeEffectManager.GetEffectiveMaxLevel(def)` = `min(max(资产上限, 天赋上限), 数据上限)` |
+| 数据上限 | `UpgradeDefinition.GetAvailableLevelCount()`（按 effectType 取对应等级表；`ActiveSkillDefinition` 覆写为冷却表行数）。**0 = 没有等级数据 → 不夹上限**（走旧版字段 / 固定值兜底的定义不会被误伤） |
+| 天赋上限 | **扩展点** `UpgradeEffectManager.RegisterLevelCapProvider(Func<UpgradeDefinition,int>)`。当前项目**还没有「解锁等级上限」的天赋节点** → 没有注册方 → 天赋项恒为 0 |
+| 改读它的判定点 | `UpgradePoolSampler.CollectRegular` / `CollectUnified` / `CollectItem`（注入 `Func<UpgradeDefinition,int>`，不注入则退回资产 maxLevel）、`UpgradeEffectManager.ApplyUpgrade`（被动型与数值型两处）、`ActiveSkillInventory.CanAcquire`、`UpgradeCard` 的等级状态文案 |
+
+> 夹住数据上限后，`GetTriggerInterval` / `GetTriggerThreshold` **永远不会越界**
+> （越界返回 -1 → 触发模块判定「不适用」→ 该被动不注册 = 直接失效）→ **这四个读取函数一行都不用改**。
+>
+> ⚠️ 与 B 批的关系：天赋上限是扩展点，**真正的「解锁到 10 级」需要 B 批把节点与载荷补齐**才能接上；
+> 机制已就位，数据一到即生效。
+
 
 ---
 

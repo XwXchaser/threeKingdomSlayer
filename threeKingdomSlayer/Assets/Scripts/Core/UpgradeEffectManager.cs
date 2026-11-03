@@ -165,6 +165,54 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
     /// <summary>当前已获得的被动技能数量（Numeric + AttackPassive + TimedPassive）</summary>
     public int PassiveUpgradeCount => _appliedUpgrades.Count;
 
+    // ── 运行时等级上限（有效上限）──
+
+    private readonly List<System.Func<UpgradeDefinition, int>> _levelCapProviders = new List<System.Func<UpgradeDefinition, int>>();
+
+    /// <summary>
+    /// 注册「天赋解锁的等级上限」来源（**扩展点**）。
+    /// 返回值 = 该升级允许到的最高等级（0 / 负数 = 没有放宽）。
+    /// 当前项目还没有「解锁等级上限」的天赋节点 → 没有注册方 → 天赋项恒为 0。
+    /// </summary>
+    public void RegisterLevelCapProvider(System.Func<UpgradeDefinition, int> provider)
+    {
+        if (provider == null) return;
+        _levelCapProviders.Add(provider);
+    }
+
+    /// <summary>
+    /// **有效等级上限** = min( max(资产上限, 天赋解锁上限), 数据上限 )。
+    ///
+    /// | 项 | 来源 |
+    /// |---|---|
+    /// | 资产上限 | <c>UpgradeDefinition.maxLevel</c> |
+    /// | 天赋解锁上限 | 天赋放宽的等级（扩展点；当前无对应节点 → 0） |
+    /// | 数据上限 | <c>UpgradeDefinition.GetAvailableLevelCount()</c>（0 = 没有等级数据 → 不夹） |
+    ///
+    /// 夹住数据上限之后，<c>GetTriggerInterval</c> / <c>GetTriggerThreshold</c> **永远不会越界**
+    /// （越界返回 -1 → 触发模块直接判定不适用 → 该被动不注册 = 直接失效）。
+    /// </summary>
+    public int GetEffectiveMaxLevel(UpgradeDefinition def)
+    {
+        if (def == null) return 1;
+
+        int assetCap = Mathf.Max(1, def.maxLevel);
+
+        int talentCap = 0;
+        for (int i = 0; i < _levelCapProviders.Count; i++)
+        {
+            int v = _levelCapProviders[i](def);
+            if (v > talentCap) talentCap = v;
+        }
+
+        int cap = Mathf.Max(assetCap, talentCap);
+
+        int dataRows = def.GetAvailableLevelCount();
+        if (dataRows > 0 && dataRows < cap) cap = dataRows;
+
+        return Mathf.Max(1, cap);
+    }
+
     // ── 数值查询接口 ──
 
     public float GetDamageMultiplier() => Mathf.Max(0f, _damageMultiplier + _buffDamageBonus);

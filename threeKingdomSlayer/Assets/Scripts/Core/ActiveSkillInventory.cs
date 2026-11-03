@@ -140,8 +140,11 @@ public class ActiveSkillInventory : MonoBehaviour
     {
         if (!UsesActiveSkills || definition == null) return false;
         var existing = FindByUpgradeId(definition.upgradeId);
+        int cap = UpgradeEffectManager.Instance != null
+            ? UpgradeEffectManager.Instance.GetEffectiveMaxLevel(definition)
+            : Mathf.Max(1, definition.maxLevel);
         if (existing != null)
-            return existing.level < definition.maxLevel;
+            return existing.level < cap;
         return !IsFull;
     }
 
