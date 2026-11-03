@@ -210,8 +210,8 @@ aiEditMode: inherit
 | E05 | `talent_icon_combo_mastery` | 连击计数 / 叠加 | **不要**画「20→15」 | P1 |
 | E06 | `talent_icon_undying` | 濒死时撑住 / 不倒 | | P1 |
 | E07 | `talent_icon_coin_gain` | 铜钱 / 财富 | 不要画金币数量 | P1 |
-| E08 | `talent_icon_slot_active` | **一个空的额外格子** | **不要**画「+1」数字 | P1 |
-| E09 | `talent_icon_slot_passive` | **一个空的额外格子**（可与 E08 同视觉家族，靠配色区分） | 同上 | P1 |
+| E08 | `talent_icon_slot_active` | 「能多带一个」的增量感（多一个可用位置） | **不要**画「+1」数字 | P1 |
+| E09 | `talent_icon_slot_passive` | 同上（被动槽位） | 同上 | P1 |
 
 ### F 组 · 技能解锁节点图标（9 件）
 

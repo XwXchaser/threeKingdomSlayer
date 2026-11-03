@@ -363,24 +363,30 @@ aiEditMode: inherit
 
 | 任务 | 必读 design 文档 |
 |---|---|
-| T-01 ~ T-03（修 C2 / 解绑 C4 / 删破冰节点） | `talent-tree-architecture.md` §9 |
-| T-04（流派分线进池） | `in-run-growth-and-unlocks.md` §4 |
-| T-05 ~ T-07（关卡铜钱 / 波次 / 104 两阶段） | `stage-configuration.md` §4–§6 |
-| T-08 ~ T-10（两级字段 / 校验器 / combo-registry） | `talent-tree-architecture.md` §3、§10 |
-| T-11 ~ T-12（槽位拆分 / 被动排 UI） | `in-run-growth-and-unlocks.md` §5 |
-| T-13（满槽金币补偿） | `in-run-growth-and-unlocks.md` §6 |
-| T-14（能力天赋消费点） | `talent-tree-architecture.md` §6 |
-| T-15（运行时等级上限） | `in-run-growth-and-unlocks.md` §7 |
-| T-16（Slash 横向位移） | `move-split-and-derivatives.md` §4.4 |
-| T-17（秘籍） | `in-run-growth-and-unlocks.md` §8 |
-| T-18 ~ T-22（面板侧） | `talent-page-ui.md` |
+| **A1**（槽位 3+3 拆分） | `in-run-growth-and-unlocks.md` §5 · 任务卡 `plan/task-a1-slot-split-20261102.md` |
+| **A2**（被动排 UI 口径） | `in-run-growth-and-unlocks.md` §5.4 |
+| **A3**（满槽金币补偿） | `in-run-growth-and-unlocks.md` §6 |
+| **A4**（运行时等级上限） | `in-run-growth-and-unlocks.md` §7 |
+| **A5**（能力天赋消费点） | `talent-tree-architecture.md` §6 |
+| **B1 ~ B3**（数据层对齐） | `plan/talent-scheme-alignment-20261102.md` §2.2 · `talent-tree-architecture.md` §3 |
+| **C1**（技能流派分线） | `in-run-growth-and-unlocks.md` §4 |
+| **C2**（秘籍） | `in-run-growth-and-unlocks.md` §8 |
+| **D1 ~ D2**（关卡与调参） | `stage-configuration.md` §3–§7 |
+| **美术**（画风与素材） | `design/talent-page-art-brief-20261102.md`（**美术侧唯一入口**） |
 
 ### 7.3 建议的开场白（直接复制）
 
 ```
-按 Locus/knowledge/plan/growth-stage-move-plan-20261102.md 执行任务 T-XX。
+按 Locus/knowledge/plan/growth-stage-move-plan-20261102.md 执行任务 A-XX
+（有任务卡的先读 plan/task-a1-slot-split-20261102.md）。
 先读该文档 §7.2 指定的 design 文档 + design/out-of-game-growth-v2-analysis.md 的对应章节。
-纪律：不开新功能，只在已有功能上做解耦与配置；动手前先确认「这个能力项目里是不是已经有了」。
+纪律：
+1) 不开新功能，只在已有功能上做解耦与配置；
+2) 动手前先确认「这个能力项目里是不是已经有了」（查代码/资产，不要凭印象）；
+3) 自检只用工程已有工具（校验器菜单 / BattleAutoPlayer / Tools/*.py / WaveConfigEditor），
+   不新建校验器脚本、不新建测试工程、不引入测试依赖；
+4) 不动对方已实现的文件（TalentTreePanel.cs / TalentTree.scene / 4 个树资产 /
+   TalentCatalog / TalentNodeInfo / TalentPaginator / ProceduralUiSprites）。
 ```
 
 ### 7.4 每个任务通用的开工检查
@@ -400,16 +406,18 @@ aiEditMode: inherit
 
 | 适合单独开一个对话 | 不适合（要合在一起做） |
 |---|---|
-| T-01、T-02、T-03（各改一个节点，互相有依赖，**建议连做**） | T-08 ~ T-10（字段 + 校验器 + 建档，同属数据层） |
-| T-04（流派分线） | T-11 + T-12（槽位拆分与 UI 口径必须一起） |
-| T-05 + T-06 + T-07（关卡配置，同属 `Formal_N*.asset`） | T-15（等级上限）必须与 T-04 一起（技能进池了才有等级可升） |
-| T-13（满槽补偿） | T-14 + T-15 + T-16（都是「加消费点」，可一次做完） |
-| T-17（秘籍，工作量最大，建议独占） | T-18 ~ T-22（面板侧，归另一侧） |
+| **A1**（槽位拆分，**建议第一个做**） | A2 + A1（被动排口径与槽位强相关） |
+| A3（满槽补偿） | A4 + A5（都是「加消费点」，可一次做完） |
+| **C2**（秘籍，工作量最大，建议独占） | B1 + B2 + B3（数据层三处修正必须一起，否则中间态不可用） |
+| 难度表脚本基线同步（纯脚本、无依赖） | C1（依赖 B3 的节点 id） |
+| | D1 + D2（关卡与调参一起） |
 
-> **建议的开对话顺序**（与 §1 一致）：
-> **数据层对齐（4 处修正）** → **局内机制（槽位 3+3 / 满槽补偿 / 等级上限 / 秘籍）** → **招式衍生** → **技能流派分线** → **画风重定与美术** → 关卡编队 → 机器人调参与难度表
+> **建议的开对话顺序**（与 §0.5 一致）：
+> **A1** → A2 → A3 → A4+A5 → （等 Q1 拍板）B1+B2+B3 → C1 → C2 → （等解锁链）D1+D2
+> 美术与画风**并行**，不占这条线。
 >
-> 首个对话推荐做「**数据层对齐**」：它不依赖关卡、不依赖画风、且是后续所有任务的地基。
+> 首个对话推荐做「**A1 槽位 3+3 拆分**」：它是地基、不需要你决策、我能自检完（Console + 校验器 + 实机数槽位 + 存档往返 + 旧档兼容），做完给你一条「改了什么 / 怎么验的 / 还差什么」就行。
+> 任务卡：`plan/task-a1-slot-split-20261102.md`。
 
 ### 7.6 每次做完的交接
 

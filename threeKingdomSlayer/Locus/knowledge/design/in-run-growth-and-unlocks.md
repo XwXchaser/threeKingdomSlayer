@@ -99,18 +99,33 @@ aiEditMode: inherit
 
 ### 4.2 流派线的落地方式
 
+> **载荷约定（2026-11-02 裁决后）**：节点的载荷用 **`upgradeConfig`**（指向该技能资产），**不靠 `flagId`** ——
+> `flagId` 目前全项目零消费者（`IsFlagUnlocked` 无调用点），用它做凭证会得到一个“买了但没生效”的节点。
+
 **「分支根节点 + 技能各指向自己那个节点」**：
 
 ```
 蓄力流入门（节点 A）           ← 分支根，负责把这条枝接进树
- ├─ 铁壁（节点 B）→ 铁壁.requiredTalentIds = [B]
- ├─ 震荡（节点 C）→ 震荡.requiredTalentIds = [C]
- └─ 冲击波（节点 D）→ 冲击波.requiredTalentIds = [D]
+ ├─ 铁壁（节点 B）→ 节点 B.upgradeConfig = 铁壁资产
+ │                   铁壁资产.requiredTalentIds = [B]
+ ├─ 震荡（节点 C）→ 节点 C.upgradeConfig = 震荡资产
+ │                   震荡资产.requiredTalentIds = [C]
+ └─ 冲击波（节点 D）→ 同上
 ```
+
+**双向引用是必要的**：
+
+| 方向 | 作用 |
+|---|---|
+| 节点 → 技能（`upgradeConfig`） | 面板自动显示该技能的图标与 1 级文案（`TalentNodeInfo`） |
+| 技能 → 节点（`requiredTalentIds`） | 节点未解锁时，该技能**不进局内三选一池**（`TalentUpgradeRequirementProvider`，AND 语义） |
 
 玩家买「蓄力流入门」→ 这条枝在树上出现；再逐个买技能节点 → 对应技能**开始进池**。
 
 **为什么不用根节点做 `requiredTalentIds`**：那样会一次解锁整条枝，失去「逐个解锁」的节奏感；而 AND 语义又做不到「买了枝上任一节点就进池」。
+
+> ⚠️ **AND 语义的坑**：`requiredTalentIds` 是「全部满足」。若技能 A 的前置是技能 B，而玩家先拿了 A 拿不到 B，则 A **永远拿不到**（不可达节点）。
+> → 用 `prerequisites` 表达技能间前置时，**前置技能必须是所有玩家都会买的**，否则会把技能做成陷井。
 
 ### 4.3 通用技能常驻（不进天赋页）
 
