@@ -66,6 +66,26 @@ aiEditMode: inherit
 | 3 | **锁定节点的锁头图标** | 美术 |
 | 4 | 泳道底板的**纹理/边框**（现在是程序化的半透明色块） | 美术 |
 
+## 0.7 参考图在哪（2026-11-03 补）
+
+| 用途 | 路径 |
+|---|---|
+| **V6 参考原图**（1024×1536，已验收） | `threeKingdomSlayer/_art_process/Authoring/talent_ui/talent_page_ref_v6/talent_page_ref_v6.png`（美术侧原交付，在 `_art_process` 下 → **Unity 里看不到**） |
+| 同上，**已放进工程** | `Assets/ArtReference/TalentPage/talent_page_ref_v6.png` ✅（本次补拷，Unity 里可直接看） |
+| 同上，**已放进知识库** | `Locus/knowledge/plan/talent-page-ref-v6.png` ✅（文档旁边可对照） |
+| 美术的静态组合预览 | `Locus/knowledge/plan/talent-page-ref-v6-composition.png`（= 美术的 `panel_full_overview.png`） |
+| 美术的其余预览（切页示意 / 单件检查 / 九宫格试拼） | `_art_process/Authoring/talent_ui/talent_page_v6_production/previews/` |
+
+## 0.8 验收反馈的两处修正（2026-11-03 第三轮）
+
+| 反馈 | 根因 | 修正 |
+|---|---|---|
+| **分支出框，跑到别的树上** | 分支牌/泳道底板的纵向范围取的是**整棵树**的高度 → 后面的页（另一段树）也会在页顶画牌 → 溢出到相邻页 | ① 纵向范围改为**只用本页的节点**；② 每页内容加 `RectMask2D` 裁剪到本页范围（页与页之间不可能互相溢出） |
+| **上下滑动切页逻辑反了** | Unity 的 `PointerEventData.delta.y` 是**手指上滑为正**，而代码按「上滑为负」写的：拖动时内容跟手指反着走，抬手判定也反了 | 拖动改为 `+ DampY(delta.y)`（内容跟手）；抬手「上滑 → 更深的一页」；`DampY` 的首/末页阻尼方向一并翻转。实机：上滑 → 第 2/2 页，下滑 → 回第 1/2 页 ✅ |
+
+> 上一轮我说「方向已修正」是**错的**：那次只修了数据（y 方向），代码里的手势符号仍然反着，
+> 而我当时的测试用了「上滑 = 负 delta」的假设，所以测出来是「对」的。方向问题实际是拖动与抬手两处符号都要翻。
+
 ---
 
 ## 0.5 结论：**已按美术的部署说明接入并实机跑通**（2026-11-03 第二轮）

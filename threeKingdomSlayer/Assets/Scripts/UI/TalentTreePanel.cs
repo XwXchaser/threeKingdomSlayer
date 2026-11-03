@@ -506,7 +506,10 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 nodeRoot.anchorMax = new Vector2(0.5f, 0.5f);
                 nodeRoot.pivot = new Vector2(0.5f, 0.5f);
                 nodeRoot.anchoredPosition = Vector2.zero;
-                nodeRoot.sizeDelta = Vector2.zero;
+                // 页内容裁剪到本页范围：分支牌/底板/连线超出本页就会被裁掉，
+                // 不会跑到相邻那一页（= 另一段树）上面去
+                nodeRoot.sizeDelta = new Vector2(_pageWidth, _pageHeight);
+                nodeRoot.gameObject.AddComponent<RectMask2D>();
                 view.nodeRoot = nodeRoot;
 
                 _pages.Add(view);
@@ -1197,7 +1200,8 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (_horizontalIntent)
             _pagesRoot.anchoredPosition = new Vector2(-categoryIndex * _pageWidth + DampX(_dragTotal.x), _pagesRoot.anchoredPosition.y);
         else
-            _pagesRoot.anchoredPosition = new Vector2(_pagesRoot.anchoredPosition.x, CurrentPageIndex * _pageHeight - DampY(_dragTotal.y));
+            // 竖向：手指**上滑** delta.y 为正 → 内容跟着手指往上走（露出更深的一层）✅
+            _pagesRoot.anchoredPosition = new Vector2(_pagesRoot.anchoredPosition.x, CurrentPageIndex * _pageHeight + DampY(_dragTotal.y));
     }
 
     public void OnEndDrag(PointerEventData eventData)
@@ -1222,8 +1226,9 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         else
         {
             float threshold = _pageHeight * 0.18f;
-            if (_dragTotal.y <= -threshold) targetPage = Mathf.Min(targetPage + 1, Mathf.Max(0, PageCountOf(categoryIndex) - 1));
-            else if (_dragTotal.y >= threshold) targetPage = Mathf.Max(targetPage - 1, 0);
+            // 竖向：手指上滑（delta.y > 0）→ 去**更深**的一页（树往下长）✅
+            if (_dragTotal.y >= threshold) targetPage = Mathf.Min(targetPage + 1, Mathf.Max(0, PageCountOf(categoryIndex) - 1));
+            else if (_dragTotal.y <= -threshold) targetPage = Mathf.Max(targetPage - 1, 0);
         }
         _dragTotal = Vector2.zero;
 
@@ -1265,8 +1270,9 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         int count = Mathf.Max(1, PageCountOf(categoryIndex));
         int page = CurrentPageIndex;
-        bool atFirst = page <= 0 && dy > 0f;
-        bool atLast = page >= count - 1 && dy < 0f;
+        // 阻尼：第一页时「往回滑」（手指下滑，dy<0）没内容可去 → 橡皮筋；最后一页时「往下滑」（手指上滑，dy>0）同理
+        bool atFirst = page <= 0 && dy < 0f;
+        bool atLast = page >= count - 1 && dy > 0f;
         return (atFirst || atLast) ? dy * 0.35f : dy;
     }
 
