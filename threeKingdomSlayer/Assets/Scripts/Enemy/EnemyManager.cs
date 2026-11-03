@@ -146,15 +146,20 @@ public class EnemyManager : MonoBehaviour
         UltimateSystem.Instance?.AddEnergyForKill(enemy.isBoss);
 
         // 经验值流转：击杀 → 生成经验宝石飞向经验条
+        // 经验 = 敌人基础经验 × 升级加成 × **本波经验倍率**（教学关用来控制「哪一杀会升级」）
+        float expMult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetExpMultiplier() : 1f;
+        float waveExpMult = 1f;
+        var waveCfg = WaveSpawner.Instance != null ? WaveSpawner.Instance.CurrentWaveConfig : null;
+        if (waveCfg != null) waveExpMult = waveCfg.expMultiplier;
+        float expGain = enemy.expReward * expMult * waveExpMult;
+
         if (ExpGemManager.Instance != null)
         {
-            float expMult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetExpMultiplier() : 1f;
-            ExpGemManager.Instance.SpawnGem(enemy.transform.position, enemy.expReward * expMult, enemy.gemSprite);
+            if (expGain > 0f) ExpGemManager.Instance.SpawnGem(enemy.transform.position, expGain, enemy.gemSprite);
         }
-        else
+        else if (expGain > 0f)
         {
-            float expMult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetExpMultiplier() : 1f;
-            PlayerState.Instance?.AddExp(enemy.expReward * expMult); // 回退：直接加经验
+            PlayerState.Instance?.AddExp(expGain); // 回退：直接加经验
         }
 
         // 道具掉落判定

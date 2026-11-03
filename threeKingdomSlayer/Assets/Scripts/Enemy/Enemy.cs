@@ -291,6 +291,30 @@ public GameObject freezeMeltEffectPrefab;
         float elapsed = _attackTween.Duration() * _attackTween.ElapsedPercentage();
         return _approachDuration - elapsed;
     }
+
+    /// <summary>
+    /// 敌人是否正在**向前移动**（补齐 / 往前推进）。
+    /// 还在移动的敌人不挂提示：玩家此刻点不到它（它马上还会往前走）。
+    /// </summary>
+    public bool IsMovingForward => isMovingToNextRow || state == EnemyState.Moving;
+
+    /// <summary>
+    /// **本次攻击还剩多久结束**（秒）。
+    ///
+    /// 与 <see cref="TimeToStrike"/> 的区别（很重要）：
+    ///   • TimeToStrike = approachDuration − 已过时间，假设「出伤发生在前摇结束」；
+    ///   • 但**声明了命中帧**的敌人（如 1012）出伤是在**攻击 tween 结束时**结算的，
+    ///     而 tween 的总长 = 动画 clip 长度（可能比 approachDuration 短）——
+    ///     所以 TimeToStrike 会一直返回一个偏大的值，**永远等不到 0**。
+    /// 教学「等敌人蓄势完 → 冻结 → 教玩家格挡」必须用这个：它直接看 tween 什么时候结束。
+    /// </summary>
+    public float TimeToAttackEnd()
+    {
+        if (_attackTween == null || !_attackTween.IsActive()) return -1f;
+        float dur = _attackTween.Duration();
+        if (dur <= 0f) return -1f;
+        return dur * (1f - _attackTween.ElapsedPercentage());
+    }
     internal bool _isStunExiting;
     private bool _resumeStunAfterLaunch;
     private Coroutine _stunExitRoutine;
@@ -324,6 +348,15 @@ public GameObject freezeMeltEffectPrefab;
     public bool ignoreFillUpOrders;
     public bool isAttackDrawPhase;  // 是否处于攻击收招阶段（不可被招架打断）
     public bool isCFrame;           // 是否处于C技起始帧（霸体窗口），仅 Parry/Launch 可打断
+    /// <summary>
+    /// 当前这次攻击是否**被打断**（而不是自然打完）。
+    /// 唯一的置位点是 <see cref="CancelAttack"/>；每次 <see cref="StartAttacking"/> 开新一段攻击时清零。
+    ///
+    /// 用途：教学关「用技能打断霸体」这一拍需要一个**精确**的成功判据 ——
+    /// 光看「敌人不再处于攻击态」会误判（C 技自然打完也是不再攻击）。
+    /// 教学侧只要轮询这个标记，就知道「这一下是真的被打断了」。
+    /// </summary>
+    public bool attackInterrupted;
     internal int _currentAttackStep;  // 攻击序列当前位置
     internal float actionCooldownTimer; // BOSS Idle 调度冷却计时器
     /// <summary> 当前攻击步骤的前摇时长（供 EnemySpriteController 读取） </summary>

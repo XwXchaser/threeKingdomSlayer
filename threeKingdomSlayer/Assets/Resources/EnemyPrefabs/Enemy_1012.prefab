@@ -259,6 +259,7 @@ MonoBehaviour:
   ignoreFillUpOrders: 0
   isAttackDrawPhase: 0
   isCFrame: 0
+  attackInterrupted: 0
   pendingRushMove: 0
   targetRow: -1
 --- !u!212 &1208212004601877169

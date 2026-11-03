@@ -146,6 +146,8 @@ public partial class Enemy : MonoBehaviour
         state = EnemyState.Attacking;
         isAttackAnimating = false;
         isAttackDrawPhase = false;
+        // 新的一段攻击开始 → 之前的「被打断」标记作废
+        attackInterrupted = false;
         // 使用与攻击动画 OnComplete 中相同的冷却计算，保证补齐后首次攻击也遵循攻击 CD
         float totalInterval = (1f / attackSpeed);
         float cooldown = totalInterval * 0.4f;
@@ -289,6 +291,7 @@ public partial class Enemy : MonoBehaviour
         StopHitScaleFeedback();
         transform.DOKill(false);
         DOTween.Kill(transform, false);
+        bool wasAttackAnimating = isAttackAnimating;
         if (_attackTween != null && _attackTween.IsActive())
         {
             _attackTween.Kill();
@@ -299,6 +302,8 @@ public partial class Enemy : MonoBehaviour
         isAttackAnimating = false;
         isAttackDrawPhase = false;
         isCFrame = false;
+        // 击飞也算「攻击被打断」（旋风靠击飞打断霸体；教学靠这个标记判成功）
+        if (wasAttackAnimating) attackInterrupted = true;
         UpdateOutlineState();
         isMovingToNextRow = false;
         pendingRushMove = HasRushMoveOrder;
@@ -370,6 +375,9 @@ public partial class Enemy : MonoBehaviour
     public bool CancelAttack()
     {
         if (state == EnemyState.Dead) return false;
+
+        // 这次攻击是**被打断**的（不是自然打完）—— 教学「用技能打断霸体」靠这个标记判成功
+        attackInterrupted = true;
 
         // 全阶段可打断：AttackDraw / AttackSpawn / 冷却阶段均可打断
         // 清理 DOTween 残留（修复形变不恢复问题）

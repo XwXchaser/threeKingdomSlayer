@@ -87,6 +87,7 @@ public partial class Enemy : MonoBehaviour
         initialized = false;
         isSuperArmor = false;
         isPhaseTransitioning = false;
+        attackInterrupted = false;   // 对象池回收：上一段「被打断」的标记要清掉
         _pierceHighlighted = false;
         _healthLocked = false;
         _isStunExiting = false;

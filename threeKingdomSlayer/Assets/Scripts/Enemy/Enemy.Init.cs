@@ -146,6 +146,7 @@ public partial class Enemy : MonoBehaviour
         isAttackAnimating = false;
         isAttackDrawPhase = false;
         isCFrame = false;
+        attackInterrupted = false;   // 对象池复用：上一段「被打断」的标记要清掉
         _pierceHighlighted = false;
         UpdateOutlineState();
         _currentAttackStep = 0;

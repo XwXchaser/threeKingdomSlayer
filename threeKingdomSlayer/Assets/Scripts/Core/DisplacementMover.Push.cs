@@ -386,7 +386,15 @@ public sealed partial class DisplacementMover
             // 骑乘骑兵免疫击退
             if (e.IsMountedCavalry) continue;
             if (e.state == EnemyState.Dead) continue;
-            if (e.isCFrame && !canInterruptCFrame) continue;
+            if (e.isCFrame)
+            {
+                // 霸体（C 技前摇）里的敌人：普通击退不打断它；
+                // 但**允许打断的击退**（canInterruptCFrame，例如海浪/聚拢波）必须真的打断它 ——
+                // 否则「击退」只是把人推后一排，敌人抡着的招照样落下来（实测：击退路径不调 CancelAttack）。
+                // 打断统一走 Enemy.CancelAttack() → 攻击 tween 被杀、isCFrame 清零。
+                if (!canInterruptCFrame) continue;
+                e.CancelAttack();
+            }
             if (!byColumn.ContainsKey(e.columnIndex))
             {
                 var newList = new List<Enemy>();
