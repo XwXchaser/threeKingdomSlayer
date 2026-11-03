@@ -67,6 +67,18 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     [Tooltip("按钮底板（九宫格）")]
     public Sprite buttonNormal;
 
+    [Header("V6 面板补件（2026-11-03 美术素材包；留空 = 不生成）")]
+    [Tooltip("顶部标题牌（九宫格）：垫在标题文字下面")]
+    public Sprite titlePlaque;
+    [Tooltip("铜钱金额底板（九宫格）：垫在铜钱行下面；美术包里它与页签常态图字节相同，可复用同一个 Sprite")]
+    public Sprite coinPlate;
+    [Tooltip("顶栏装饰（旗饰）：纯装饰，不拦点击")]
+    public Sprite bannerDecoration;
+    [Tooltip("返回箭头：叠在关闭按钮上（保留原来的文字与点击区）")]
+    public Sprite backArrow;
+    [Tooltip("选中角标：替代程序化的圆形高亮圈；留空 = 仍用程序化圆环")]
+    public Sprite selectionCorners;
+
     [Header("造型开关")]
     [Tooltip("节点用程序化金属方框（Blades 风）；关掉则用上面 nodeLocked / nodeAvailable / nodeUnlocked 槽位的图")]
     public bool preferProceduralNodes = true;
@@ -261,6 +273,21 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         panel.type = Image.Type.Sliced;
         Stretch(panel.rectTransform, 40f);
 
+        // 标题牌（美术）：垫在标题文字下面（固定宽度，用美术原比例；不能用 AnchorTop 的拉伸锚点）
+        if (titlePlaque != null)
+        {
+            var plaque = CreateImage("TitlePlaque", panel.rectTransform, Color.white, titlePlaque);
+            plaque.type = Image.Type.Sliced;
+            plaque.raycastTarget = false;
+            var pr = plaque.rectTransform;
+            pr.anchorMin = new Vector2(0.5f, 1f);
+            pr.anchorMax = new Vector2(0.5f, 1f);
+            pr.pivot = new Vector2(0.5f, 1f);
+            pr.sizeDelta = new Vector2(440f, 110f);
+            pr.anchoredPosition = new Vector2(0f, -64f);
+            plaque.transform.SetAsFirstSibling();
+        }
+
         _titleText = CreateText("Title", panel.rectTransform, "天  赋", 64f, TextAlignmentOptions.Center);
         AnchorTop(_titleText.rectTransform, 120f, new Vector2(0f, -80f));
 
@@ -273,8 +300,18 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         coinRowRect.anchorMin = new Vector2(1f, 1f);
         coinRowRect.anchorMax = new Vector2(1f, 1f);
         coinRowRect.pivot = new Vector2(1f, 1f);
-        coinRowRect.anchoredPosition = new Vector2(-72f, -56f);
-        coinRowRect.sizeDelta = new Vector2(320f, 72f);
+        coinRowRect.anchoredPosition = new Vector2(-40f, -72f);
+        coinRowRect.sizeDelta = new Vector2(200f, 60f);
+
+        // 铜钱金额底板（美术）：垫在铜钱行最底层
+        if (coinPlate != null)
+        {
+            var plate = CreateImage("CoinPlate", coinRowRect, Color.white, coinPlate);
+            plate.type = Image.Type.Sliced;
+            plate.raycastTarget = false;
+            Stretch(plate.rectTransform);
+            plate.transform.SetAsFirstSibling();
+        }
 
         var coin = CreateImage("CoinIcon", coinRowRect, Color.white, coinIcon);
         var coinRect = coin.rectTransform;
@@ -299,7 +336,7 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         dbgRect.anchorMax = new Vector2(1f, 1f);
         dbgRect.pivot = new Vector2(1f, 1f);
         dbgRect.sizeDelta = new Vector2(680f, 28f);
-        dbgRect.anchoredPosition = new Vector2(-72f, -118f);
+        dbgRect.anchoredPosition = new Vector2(-72f, -20f);
         _debugText.color = new Color(0.62f, 0.58f, 0.50f, 1f);
 
         // 分页视口
@@ -309,7 +346,7 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         _viewport.anchorMin = new Vector2(0f, 0f);
         _viewport.anchorMax = new Vector2(1f, 1f);
         _viewport.offsetMin = new Vector2(0f, 340f);
-        _viewport.offsetMax = new Vector2(0f, -300f);
+        _viewport.offsetMax = new Vector2(0f, -340f);
         viewport.AddComponent<RectMask2D>();
 
         var pages = new GameObject("Pages", typeof(RectTransform));
@@ -338,8 +375,8 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         closeRect.anchorMin = new Vector2(0f, 1f);
         closeRect.anchorMax = new Vector2(0f, 1f);
         closeRect.pivot = new Vector2(0f, 1f);
-        closeRect.sizeDelta = new Vector2(140f, 88f);
-        closeRect.anchoredPosition = new Vector2(56f, -40f);
+        closeRect.sizeDelta = new Vector2(140f, 70f);
+        closeRect.anchoredPosition = new Vector2(34f, -150f);
         close.raycastTarget = true;
         close.transform.SetAsLastSibling();
         var closeButton = close.gameObject.AddComponent<Button>();
@@ -347,6 +384,36 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         closeButton.onClick.AddListener(Close);
         var closeLabel = CreateText("Text", closeRect, "返回", 40f, TextAlignmentOptions.Center);
         Stretch(closeLabel.rectTransform);
+        // 关闭按钮底板是浅色（0.85,0.75,0.55）→ 文字用深色，否则白字压浅底看不清
+        closeLabel.color = new Color(0.16f, 0.13f, 0.10f, 1f);
+
+        // 返回箭头（美术）：叠在「返回」文字左边，只装饰不改点击区
+        if (backArrow != null)
+        {
+            var arrow = CreateImage("BackArrow", closeRect, Color.white, backArrow);
+            arrow.raycastTarget = false;
+            arrow.preserveAspect = true;
+            var ar = arrow.rectTransform;
+            ar.anchorMin = new Vector2(0f, 0.5f);
+            ar.anchorMax = new Vector2(0f, 0.5f);
+            ar.pivot = new Vector2(0f, 0.5f);
+            ar.sizeDelta = new Vector2(44f, 44f);
+            ar.anchoredPosition = new Vector2(6f, 0f);
+        }
+
+        // 顶栏旗饰（美术）：纯装饰，不拦点击
+        if (bannerDecoration != null)
+        {
+            var banner = CreateImage("BannerDecoration", panel.rectTransform, Color.white, bannerDecoration);
+            banner.raycastTarget = false;
+            banner.preserveAspect = true;
+            var brf = banner.rectTransform;
+            brf.anchorMin = new Vector2(0f, 1f);
+            brf.anchorMax = new Vector2(0f, 1f);
+            brf.pivot = new Vector2(0f, 1f);
+            brf.sizeDelta = new Vector2(100f, 114f);
+            brf.anchoredPosition = new Vector2(14f, -26f);
+        }
 
         BuildPages();
 
@@ -479,8 +546,10 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             }
         }
 
-        // 选中高亮圈
-        var ring = CreateImage("SelectionRing", view.nodeRoot, new Color(1f, 0.86f, 0.4f, 0.55f), ProceduralUiSprites.Ring(128, 12, 1f));
+        // 选中高亮圈（配了美术角标就用角标，否则用程序化圆环）
+        var ring = CreateImage("SelectionRing", view.nodeRoot,
+            selectionCorners != null ? Color.white : new Color(1f, 0.86f, 0.4f, 0.55f),
+            selectionCorners != null ? selectionCorners : ProceduralUiSprites.Ring(128, 12, 1f));
         ring.raycastTarget = false;
         ring.rectTransform.sizeDelta = new Vector2(nodeSize.x * 1.34f, nodeSize.y * 1.34f);
         ring.gameObject.SetActive(false);
@@ -584,7 +653,7 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         _tabRow.anchorMax = new Vector2(1f, 1f);
         _tabRow.pivot = new Vector2(0.5f, 1f);
         _tabRow.sizeDelta = new Vector2(-160f, 96f);
-        _tabRow.anchoredPosition = new Vector2(0f, -196f);
+        _tabRow.anchoredPosition = new Vector2(0f, -230f);
 
         float gap = 16f;
         float width = (1000f - 160f - gap * (TalentCatalog.CategoryCount - 1)) / TalentCatalog.CategoryCount;
@@ -595,8 +664,11 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 ? categoryLabels[i]
                 : $"分类 {i}";
             // 页签 = 纯文字 + 选中下划线（刀锋就是这么做的，不放牌子）
-            var hit = CreateImage($"Tab_{i}", _tabRow, new Color(1f, 1f, 1f, 0f), null);
+            // 配了美术页签图（A03/A04）时，底图改用美术图。
+            bool tabArt = tabNormal != null;
+            var hit = CreateImage($"Tab_{i}", _tabRow, tabArt ? Color.white : new Color(1f, 1f, 1f, 0f), tabArt ? tabNormal : null);
             hit.raycastTarget = true;
+            if (tabArt) hit.type = Image.Type.Sliced;
             var rect = hit.rectTransform;
             rect.anchorMin = new Vector2(0f, 0.5f);
             rect.anchorMax = new Vector2(0f, 0.5f);
@@ -632,8 +704,10 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     private void BuildDetailCard(RectTransform parent)
     {
-        var card = CreateImage("DetailCard", parent, new Color(0.12f, 0.10f, 0.08f, 0.97f),
+        var card = CreateImage("DetailCard", parent,
+            detailPlate != null ? Color.white : new Color(0.12f, 0.10f, 0.08f, 0.97f),
             detailPlate != null ? detailPlate : ProceduralUiSprites.RoundedPlate(22, 4, 0.95f, 1f));
+        if (detailPlate != null) card.type = Image.Type.Sliced;
         card.type = Image.Type.Sliced;
         card.raycastTarget = true;
         _detailCard = card.rectTransform;
@@ -695,7 +769,8 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         cr.sizeDelta = new Vector2(360f, 52f);
         cr.anchoredPosition = new Vector2(24f, 24f);
 
-        var buy = CreateImage("BuyButton", _detailCard, new Color(0.46f, 0.35f, 0.18f, 1f),
+        var buy = CreateImage("BuyButton", _detailCard,
+            buttonNormal != null ? Color.white : new Color(0.46f, 0.35f, 0.18f, 1f),
             buttonNormal != null ? buttonNormal : ProceduralUiSprites.RoundedPlate(16, 3, 0.9f, 1f));
         buy.type = Image.Type.Sliced;
         buy.raycastTarget = true;
@@ -808,7 +883,17 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             if (button == null) continue;
             var img = button.targetGraphic as Image;
             bool active = i == categoryIndex;
-            if (img != null) img.color = new Color(1f, 1f, 1f, 0f);   // 只做点击区，不画底
+            if (img != null)
+            {
+                if (tabNormal != null)
+                {
+                    // 美术页签图：常态/选中态换图；颜色保持原样（不乘暗色，否则美术色会偏）
+                    img.sprite = active ? (tabActive != null ? tabActive : tabNormal) : tabNormal;
+                    img.type = Image.Type.Sliced;
+                    img.color = Color.white;
+                }
+                else img.color = new Color(1f, 1f, 1f, 0f);   // 只做点击区，不画底
+            }
             if (i < _tabLabels.Count && _tabLabels[i] != null)
                 _tabLabels[i].color = active ? new Color(0.94f, 0.89f, 0.80f, 1f) : new Color(0.55f, 0.51f, 0.46f, 1f);
             if (i < _tabUnderlines.Count && _tabUnderlines[i] != null)
@@ -852,8 +937,9 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             var sprite = on
                 ? (dotOn != null ? dotOn : ProceduralUiSprites.Dot(28))
                 : (dotOff != null ? dotOff : ProceduralUiSprites.Dot(20));
+            var artDot = (on ? dotOn : dotOff) != null;
             var dot = CreateImage("Dot_" + i, _dotsRoot,
-                on ? new Color(0.95f, 0.80f, 0.45f, 1f) : new Color(0.55f, 0.50f, 0.44f, 1f), sprite);
+                artDot ? Color.white : (on ? new Color(0.95f, 0.80f, 0.45f, 1f) : new Color(0.55f, 0.50f, 0.44f, 1f)), sprite);
             dot.raycastTarget = false;
             var r = dot.rectTransform;
             r.anchorMin = new Vector2(0.5f, 0.5f);
@@ -953,7 +1039,11 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             _buyButton.interactable = canBuy;
             var img = _buyButton.targetGraphic as Image;
-            if (img != null) img.color = canBuy ? new Color(0.46f, 0.35f, 0.18f, 1f) : new Color(0.20f, 0.18f, 0.16f, 1f);
+            if (img != null)
+                img.color = buttonNormal != null
+                    // 美术按钮：可买 = 原色；不可买 = 压暗（美术包里没有单独的禁用图，禁用反馈由程序处理）
+                    ? (canBuy ? Color.white : new Color(0.35f, 0.32f, 0.30f, 1f))
+                    : (canBuy ? new Color(0.46f, 0.35f, 0.18f, 1f) : new Color(0.20f, 0.18f, 0.16f, 1f));
         }
         if (_buyLabel != null)
             _buyLabel.text = unlocked ? "已解锁" : canBuy ? $"解锁 {node.coinCost}" : "不可解锁";

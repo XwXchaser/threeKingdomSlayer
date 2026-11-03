@@ -319,7 +319,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &602144250
 RectTransform:
   m_ObjectHideFlags: 0
@@ -562,22 +562,27 @@ MonoBehaviour:
   - "\u62DB\u5F0F\u89E3\u9501"
   - "\u4E09\u9009\u4E00\u89E3\u9501"
   font: {fileID: 11400000, guid: 83ef45830ec08304fa249351a44a36e6, type: 2}
-  dimBackground: {fileID: 0}
-  panelBackground: {fileID: 21300000, guid: a2ea5098a4e3ea3459fde432715fa8f5, type: 3}
-  nodeLocked: {fileID: 21300000, guid: db259b5548199194ca092a435b1670e9, type: 3}
-  nodeAvailable: {fileID: 21300000, guid: 540cf89ebea4cb44e8433cc08475d9cd, type: 3}
-  nodeUnlocked: {fileID: 21300000, guid: b77096d06d96e8a46bf53898f7ba6898, type: 3}
-  connector: {fileID: 21300000, guid: 12ae361e6cdd27244be09cb399e502f9, type: 3}
-  coinIcon: {fileID: 21300000, guid: 8fe262c566ae6f24a8df70d0e111bc98, type: 3}
+  dimBackground: {fileID: 21300000, guid: c01dc31734e843046b7b21db344d585f, type: 3}
+  panelBackground: {fileID: 21300000, guid: dd3bccfe67d7efd45a8f39ef6744e60b, type: 3}
+  nodeLocked: {fileID: 21300000, guid: 268373e8b7f813c42a73d5754eaf7677, type: 3}
+  nodeAvailable: {fileID: 21300000, guid: e4712e9fd6bf0ec468fcb0087da5b271, type: 3}
+  nodeUnlocked: {fileID: 21300000, guid: 8c5501bfadbab6240b4a40d400dccdca, type: 3}
+  connector: {fileID: 21300000, guid: 9b1c2eb0a117c5a4a8f627c891940888, type: 3}
+  coinIcon: {fileID: 21300000, guid: 4edb96dab22d4e240a7979a17101d220, type: 3}
   pagePlate: {fileID: 0}
-  tabNormal: {fileID: 0}
-  tabActive: {fileID: 0}
-  dotOff: {fileID: 0}
-  dotOn: {fileID: 0}
-  detailPlate: {fileID: 0}
-  buttonNormal: {fileID: 0}
-  preferProceduralNodes: 1
-  useProceduralPanel: 1
+  tabNormal: {fileID: 21300000, guid: 2d494bb102594354ca4306a7a4f0c38e, type: 3}
+  tabActive: {fileID: 21300000, guid: afdb89fb36a97614c8bd22b438b3b577, type: 3}
+  dotOff: {fileID: 21300000, guid: cb8bbab1e69a1a049bc91c73fbb22454, type: 3}
+  dotOn: {fileID: 21300000, guid: 4eda0db440800ef4db35f989241304c4, type: 3}
+  detailPlate: {fileID: 21300000, guid: 9fd6ef965eb5cac468f1d6e5b7400a6e, type: 3}
+  buttonNormal: {fileID: 21300000, guid: be3c1bd6004056b4c9d31b1272db4c22, type: 3}
+  titlePlaque: {fileID: 21300000, guid: ce0faec82d686504eaa0a09a1f80d751, type: 3}
+  coinPlate: {fileID: 21300000, guid: 2d494bb102594354ca4306a7a4f0c38e, type: 3}
+  bannerDecoration: {fileID: 21300000, guid: e196460107229104a8e553951ea289b0, type: 3}
+  backArrow: {fileID: 21300000, guid: e560add1f5269b242bd3d2a5b2f5ee31, type: 3}
+  selectionCorners: {fileID: 21300000, guid: 2ce20a991d870cd42ad23e52375bb3e2, type: 3}
+  preferProceduralNodes: 0
+  useProceduralPanel: 0
   showDebugState: 1
   nodeSize: {x: 132, y: 132}
   connectorThickness: 8
@@ -815,8 +820,6 @@ MonoBehaviour:
   m_Script: {fileID: 1230132438}
   m_Name: 
   m_EditorClassIdentifier: 
-  sceneName: TalentTree
-  pauseUnderlyingScene: 0
 --- !u!4 &1357856302
 Transform:
   m_ObjectHideFlags: 0
