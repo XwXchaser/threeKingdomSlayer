@@ -43,12 +43,12 @@ public sealed class TalentNodeConfig
     [Tooltip("**分支 id**（流派 / 方向）：同一 groupId 的节点属于同一条分支。\n" +
              "ability 页：combat / body / fortune；move 页：chain / sweep；skill 页：charge / displace / fire")]
     public string groupId = "";
-    [Tooltip("**格点列**（0 起，从左到右）—— 整数格点，坐标不再手填")]
+    [Tooltip("**泳道列**（0 起，从左到右）—— 同一列 = 同一条分支（泳道）")]
     public int col = 0;
-    [Tooltip("**格点行**（0 起，从下到上）—— 整数格点，坐标不再手填")]
+    [Tooltip("**树深度**（0 起，从上到下）—— 根节点为 0，子节点更大；**树必须从上往下长**")]
     public int row = 0;
     [Tooltip("节点中心在面板里的位置，单位=设计像素（1080×1920 口径），原点为面板中心，+Y 向上\n" +
-             "（由 col/row 推导：x=(col-1)*300，y=70+row*150）")]
+             "（竖向树版式：**根节点 y 最大（在上）**，子节点 y 更小（往下）；同一泳道同深度的节点横向错开）")]
     public Vector2 treePosition = Vector2.zero;
     [Tooltip("节点图标；为空时用程序化圆形占位")]
     public Sprite icon;
@@ -180,15 +180,20 @@ public class TalentTreeConfig : ScriptableObject
             else seenPos[key] = n.nodeId;
         }
 
-        // 坐标与格点不一致：填了 col/row 就要由它们推导坐标（x=(col-1)*300，y=70+row*150）
+        // 坐标与格点：竖向树版式下坐标**不再由 col/row 直接推导**（泳道内同层还要横向错开），
+        // 所以只查**语义**：前置节点的 row 必须比子节点小（树必须从上往下长 ✅）。
         for (int i = 0; i < nodes.Count; i++)
         {
             var n = nodes[i];
             if (n == null) continue;
-            if (n.col == 0 && n.row == 0) continue;   // 没填格点的老节点不查
-            var expect = new Vector2((n.col - 1) * 300f, 70f + n.row * 150f);
-            if ((expect - n.treePosition).sqrMagnitude > 0.01f)
-                issues.Add($"{n.nodeId} 的坐标与格点(col={n.col}, row={n.row})不一致：应为 {expect}，实际 {n.treePosition} ✅");
+            var prereqs = GetPrerequisites(n);
+            for (int p = 0; p < prereqs.Count; p++)
+            {
+                var parent = prereqs[p];
+                if (parent == null) continue;
+                if (parent.row >= n.row)
+                    issues.Add($"{n.nodeId}（row={n.row}）的前置 {parent.nodeId}（row={parent.row}）不在它上面 —— 树必须从上往下长");
+            }
         }
         return issues;
     }

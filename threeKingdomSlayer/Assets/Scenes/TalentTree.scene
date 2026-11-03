@@ -581,12 +581,20 @@ MonoBehaviour:
   bannerDecoration: {fileID: 21300000, guid: e196460107229104a8e553951ea289b0, type: 3}
   backArrow: {fileID: 21300000, guid: e560add1f5269b242bd3d2a5b2f5ee31, type: 3}
   selectionCorners: {fileID: 21300000, guid: 2ce20a991d870cd42ad23e52375bb3e2, type: 3}
+  branchPlaques:
+  - {fileID: 21300000, guid: afd2acccbb1c66a48bb43be1abc51ab9, type: 3}
+  - {fileID: 21300000, guid: 34e67ee901ecd7343887d1e8c00bf86d, type: 3}
+  - {fileID: 21300000, guid: dcce2c239afbace4c993871cd0c46890, type: 3}
+  laneBackgroundColor: {r: 0.06, g: 0.07, b: 0.1, a: 0.55}
+  laneWidth: 270
+  lanePlaqueWidth: 300
+  lanePlaqueHeight: 188
   preferProceduralNodes: 0
   useProceduralPanel: 0
   showDebugState: 1
-  nodeSize: {x: 132, y: 132}
+  nodeSize: {x: 120, y: 120}
   connectorThickness: 8
-  rowsPerPage: 8
+  rowsPerPage: 3
   snapDuration: 0.22
   lockedColor: {r: 0.32, g: 0.3, b: 0.28, a: 1}
   availableColor: {r: 0.86, g: 0.7, b: 0.36, a: 1}

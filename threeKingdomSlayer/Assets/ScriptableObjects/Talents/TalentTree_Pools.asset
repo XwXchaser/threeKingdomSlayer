@@ -14,22 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   treeId: pools
   nodes:
-  - nodeId: talent_pool_ironwall
-    displayName: "\u94C1\u58C1"
-    description: "\u84C4\u529B\u671F\u95F4\u53D7\u5230\u7684\u4F24\u5BB3\u964D\u4F4E\u3002"
-    coinCost: 1
-    moveConfig: {fileID: 0}
-    upgradeConfig: {fileID: 11400000, guid: 6c85c67f02251b745a264f2f6057f27d, type: 2}
-    statId: 
-    statAdd: 0
-    flagId: 
-    prerequisiteIds: []
-    groupId: charge
-    col: 0
-    row: 0
-    treePosition: {x: -300, y: 70}
-    icon: {fileID: 0}
-    hidden: 0
   - nodeId: talent_pool_shockwave
     displayName: "\u9707\u8361"
     description: "\u84C4\u529B\u547D\u4E2D\u65F6\u5BF9\u5468\u56F4\u9020\u6210\u9707\u8361\u4F24\u5BB3\u3002"
@@ -41,11 +25,32 @@ MonoBehaviour:
     flagId: 
     prerequisiteIds: []
     groupId: charge
-    col: 1
+    col: 0
     row: 0
-    treePosition: {x: 0, y: 70}
+    treePosition: {x: -300, y: 0}
     icon: {fileID: 0}
     hidden: 0
+    moveGuideGesture: 0
+    moveGuideDialogue: {fileID: 0}
+  - nodeId: talent_pool_ironwall
+    displayName: "\u94C1\u58C1"
+    description: "\u84C4\u529B\u671F\u95F4\u53D7\u5230\u7684\u4F24\u5BB3\u964D\u4F4E\u3002"
+    coinCost: 1
+    moveConfig: {fileID: 0}
+    upgradeConfig: {fileID: 11400000, guid: 6c85c67f02251b745a264f2f6057f27d, type: 2}
+    statId: 
+    statAdd: 0
+    flagId: 
+    prerequisiteIds:
+    - talent_pool_shockwave
+    groupId: charge
+    col: 0
+    row: 1
+    treePosition: {x: -378, y: -200}
+    icon: {fileID: 0}
+    hidden: 0
+    moveGuideGesture: 0
+    moveGuideDialogue: {fileID: 0}
   - nodeId: talent_pool_chargewave
     displayName: "\u51B2\u51FB\u6CE2"
     description: "\u84C4\u529B\u6EE1\u540E\u91CA\u653E\u51B2\u51FB\u6CE2\uFF0C\u51FB\u9000\u5E76\u9020\u6210\u4F24\u5BB3\u3002"
@@ -55,13 +60,16 @@ MonoBehaviour:
     statId: 
     statAdd: 0
     flagId: 
-    prerequisiteIds: []
+    prerequisiteIds:
+    - talent_pool_shockwave
     groupId: charge
-    col: 2
-    row: 0
-    treePosition: {x: 300, y: 70}
+    col: 0
+    row: 1
+    treePosition: {x: -222, y: -200}
     icon: {fileID: 0}
     hidden: 0
+    moveGuideGesture: 0
+    moveGuideDialogue: {fileID: 0}
   - nodeId: talent_pool_focus
     displayName: "\u4E13\u6CE8"
     description: "\u4E3B\u52A8\u6280\u80FD\u51B7\u5374\u7F29\u51CF\u3002"
@@ -73,11 +81,13 @@ MonoBehaviour:
     flagId: 
     prerequisiteIds: []
     groupId: displace
-    col: 0
-    row: 1
-    treePosition: {x: -300, y: 220}
+    col: 1
+    row: 0
+    treePosition: {x: 0, y: 0}
     icon: {fileID: 0}
     hidden: 0
+    moveGuideGesture: 0
+    moveGuideDialogue: {fileID: 0}
   - nodeId: talent_pool_wave
     displayName: "\u6D77\u6D6A"
     description: "\u53EC\u5524\u6D77\u6D6A\u63A8\u5F00\u654C\u4EBA\u3002"
@@ -87,13 +97,16 @@ MonoBehaviour:
     statId: 
     statAdd: 0
     flagId: 
-    prerequisiteIds: []
+    prerequisiteIds:
+    - talent_pool_focus
     groupId: displace
     col: 1
     row: 1
-    treePosition: {x: 0, y: 220}
+    treePosition: {x: -156, y: -200}
     icon: {fileID: 0}
     hidden: 0
+    moveGuideGesture: 0
+    moveGuideDialogue: {fileID: 0}
   - nodeId: talent_pool_cyclone
     displayName: "\u65CB\u98CE"
     description: "\u53EC\u5524\u65CB\u98CE\u6301\u7EED\u4F24\u5BB3\u5E76\u51FB\u98DE\u3002"
@@ -103,13 +116,16 @@ MonoBehaviour:
     statId: 
     statAdd: 0
     flagId: 
-    prerequisiteIds: []
+    prerequisiteIds:
+    - talent_pool_focus
     groupId: displace
-    col: 2
+    col: 1
     row: 1
-    treePosition: {x: 300, y: 220}
+    treePosition: {x: 0, y: -200}
     icon: {fileID: 0}
     hidden: 0
+    moveGuideGesture: 0
+    moveGuideDialogue: {fileID: 0}
   - nodeId: talent_pool_disease
     displayName: "\u67D3\u75C5"
     description: "\u547D\u4E2D\u4F7F\u654C\u4EBA\u67D3\u75C5\uFF0C\u6301\u7EED\u6389\u8840\u3002"
@@ -119,13 +135,16 @@ MonoBehaviour:
     statId: 
     statAdd: 0
     flagId: 
-    prerequisiteIds: []
+    prerequisiteIds:
+    - talent_pool_focus
     groupId: displace
-    col: 0
-    row: 2
-    treePosition: {x: -300, y: 370}
+    col: 1
+    row: 1
+    treePosition: {x: 156, y: -200}
     icon: {fileID: 0}
     hidden: 0
+    moveGuideGesture: 0
+    moveGuideDialogue: {fileID: 0}
   - nodeId: talent_pool_snake
     displayName: "\u86C7\u5F62\u55B7\u5C04"
     description: "\u5B9A\u65F6\u55B7\u51FA\u86C7\u5F62\u706B\u7130\u3002"
@@ -137,11 +156,13 @@ MonoBehaviour:
     flagId: 
     prerequisiteIds: []
     groupId: fire
-    col: 0
-    row: 3
-    treePosition: {x: -300, y: 520}
+    col: 2
+    row: 0
+    treePosition: {x: 300, y: 0}
     icon: {fileID: 0}
     hidden: 0
+    moveGuideGesture: 0
+    moveGuideDialogue: {fileID: 0}
   - nodeId: talent_pool_fireline
     displayName: "\u706B\u9F99\u820C"
     description: "\u55B7\u51FA\u76F4\u7EBF\u706B\u820C\uFF0C\u8D2F\u7A7F\u4E00\u5217\u3002"
@@ -151,10 +172,13 @@ MonoBehaviour:
     statId: 
     statAdd: 0
     flagId: 
-    prerequisiteIds: []
+    prerequisiteIds:
+    - talent_pool_snake
     groupId: fire
-    col: 1
-    row: 3
-    treePosition: {x: 0, y: 520}
+    col: 2
+    row: 1
+    treePosition: {x: 300, y: -200}
     icon: {fileID: 0}
     hidden: 0
+    moveGuideGesture: 0
+    moveGuideDialogue: {fileID: 0}

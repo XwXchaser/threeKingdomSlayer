@@ -79,6 +79,17 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     [Tooltip("选中角标：替代程序化的圆形高亮圈；留空 = 仍用程序化圆环")]
     public Sprite selectionCorners;
 
+    [Header("竖向树版式（2026-11-03）")]
+    [Tooltip("各泳道的分支牌（按泳道序号 0/1/2 取；留空 = 不画）。美术包里是空底板，图标另算。")]
+    public Sprite[] branchPlaques;
+    [Tooltip("泳道底板色（半透明）；置 alpha=0 = 不画")]
+    public Color laneBackgroundColor = new Color(0.06f, 0.07f, 0.10f, 0.55f);
+    [Tooltip("泳道宽度（设计像素）")]
+    public float laneWidth = 270f;
+    [Tooltip("分支牌尺寸（设计像素）")]
+    public float lanePlaqueWidth = 300f;
+    public float lanePlaqueHeight = 188f;
+
     [Header("造型开关")]
     [Tooltip("节点用程序化金属方框（Blades 风）；关掉则用上面 nodeLocked / nodeAvailable / nodeUnlocked 槽位的图")]
     public bool preferProceduralNodes = true;
@@ -166,6 +177,8 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private float _lastDragEndTime = -1f;
     private Coroutine _snapRoutine;
     private bool _built;
+    /// <summary>选中节点所在页（与分类 + 页内序号一起定位选中；只记序号会取错节点）。</summary>
+    private int _selectedPage = -1;
 
     private static Sprite _circleSprite;
 
@@ -439,6 +452,7 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         _pages.Clear();
         _selectedCategory = -1;
         _selectedIndex = -1;
+        _selectedPage = -1;
         _feedback = null;
 
         _pageWidth = _viewport.rect.width;
@@ -527,7 +541,10 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         var treeRef = view.tree;
         if (treeRef == null || view.page == null) return;
 
-        // 连线：每个节点 → 它的每个前置（支持分叉与汇聚）；只画两端都在本页的边
+        BuildLanes(view);
+
+        // 连线：每个节点 → 它的每个前置（支持分叉与汇聚）
+        // 竖向树的连线用「竖段 + 斜段」的肘形（参考图），跨页的边画续接短线。
         for (int i = 0; i < view.page.nodes.Count; i++)
         {
             var to = view.page.nodes[i];
@@ -537,12 +554,15 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             {
                 var from = prereqs[p];
                 if (from == null || from.hidden) continue;
-                if (!view.page.nodes.Contains(from)) continue;   // 跨页边不画（数据侧应被校验器拦住）
-                var line = CreateImage($"Link_{from.nodeId}_{to.nodeId}", view.nodeRoot, connectorLockedColor, connector);
-                line.raycastTarget = false;
-                view.connectorImages.Add(line);
-                view.connectorTargets.Add(to);
-                PlaceConnector(line.rectTransform, NodePositionInPage(view, from), NodePositionInPage(view, to), connectorThickness);
+                if (!view.page.nodes.Contains(from))
+                {
+                    // 跨页前置：子节点画一段向上的续接线，提示「上面还有一层」
+                    Vector2 cb = NodePositionInPage(view, to);
+                    float childTop = cb.y + nodeSize.y * 0.5f;
+                    AddConnectorSegment(view, to, new Vector2(cb.x, childTop + 70f), new Vector2(cb.x, childTop));
+                    continue;
+                }
+                BuildElbowConnector(view, from, to);
             }
         }
 
@@ -619,6 +639,8 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             lr.pivot = new Vector2(0.5f, 0f);
             lr.sizeDelta = new Vector2(-10f, 26f);
             lr.anchoredPosition = new Vector2(0f, 6f);
+            // 用美术节点框时：节点上只留图标，名字与价格进详情卡（参考图就是这样 ✅）
+            label.gameObject.SetActive(preferProceduralNodes);
             view.nodeLabels.Add(label);
 
             // 价格：框内上沿
@@ -629,6 +651,7 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             costRect.pivot = new Vector2(0.5f, 1f);
             costRect.sizeDelta = new Vector2(-10f, 22f);
             costRect.anchoredPosition = new Vector2(0f, -5f);
+            cost.gameObject.SetActive(preferProceduralNodes);
             view.nodeCosts.Add(cost);
 
             if (node.hidden) go.SetActive(false);
@@ -823,7 +846,8 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 img.preserveAspect = true;
 
                 if (view.nodeButtons[i] != null)
-                    view.nodeButtons[i].interactable = available || unlocked;
+                    // 锁定节点**也允许点开看详情**（能否购买由详情卡的 canBuy 决定）
+                    view.nodeButtons[i].interactable = true;
 
                 if (view.nodeLabels[i] != null)
                     view.nodeLabels[i].color = unlocked ? new Color(0.15f, 0.12f, 0.10f, 1f)
@@ -865,6 +889,7 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (view.selectionRing == null) return;
         bool show = view.category == _selectedCategory
                     && _selectedCategory >= 0
+                    && view.pageIndex == _selectedPage
                     && view.tree != null
                     && view.page != null
                     && _selectedIndex >= 0
@@ -912,6 +937,8 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             var v = _pages[i];
             if (v.category != _selectedCategory) continue;
+            // 必须按**页**定位：只看「分类 + 页内序号」会在多页时取错节点
+            if (_selectedPage >= 0 && v.pageIndex != _selectedPage) continue;
             if (_selectedIndex >= 0 && _selectedIndex < v.page.nodes.Count) return v.page.nodes[_selectedIndex];
         }
         return null;
@@ -1061,6 +1088,7 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
         _selectedCategory = view.category;
         _selectedIndex = index;
+        _selectedPage = view.pageIndex;
         _feedback = null;
         Refresh();
     }
@@ -1101,9 +1129,12 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         categoryIndex = index;
         _selectedCategory = -1;
         _selectedIndex = -1;
+        _selectedPage = -1;
         _feedback = null;
         Refresh();
-        StartSnap(index, CurrentPageIndex);
+        // 切分类：回到**该分类自己**记住的页（不能沿用源分类的页号）
+        int remembered = Mathf.Clamp(_pageIndexByCategory[index], 0, Mathf.Max(0, PageCountOf(index) - 1));
+        StartSnap(index, remembered);
     }
 
     private void JumpTo(int category, int page)
@@ -1201,10 +1232,25 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             categoryIndex = targetCategory;
             _selectedCategory = -1;
             _selectedIndex = -1;
+            _selectedPage = -1;
             _feedback = null;
+            _pageIndexByCategory[Mathf.Clamp(categoryIndex, 0, TalentCatalog.CategoryCount - 1)] = targetPage;
             Refresh();
         }
-        _pageIndexByCategory[Mathf.Clamp(categoryIndex, 0, TalentCatalog.CategoryCount - 1)] = targetPage;
+        else if (targetPage != CurrentPageIndex)
+        {
+            // 上下翻页：清空选中（详情随之隐藏）并刷新页码高亮
+            _selectedCategory = -1;
+            _selectedIndex = -1;
+            _selectedPage = -1;
+            _feedback = null;
+            _pageIndexByCategory[Mathf.Clamp(categoryIndex, 0, TalentCatalog.CategoryCount - 1)] = targetPage;
+            Refresh();
+        }
+        else
+        {
+            _pageIndexByCategory[Mathf.Clamp(categoryIndex, 0, TalentCatalog.CategoryCount - 1)] = targetPage;
+        }
         StartSnap(categoryIndex, targetPage);
     }
 
@@ -1240,6 +1286,106 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     #endregion
 
     #region 小工具
+
+    /// <summary>
+    /// 泳道：每条分支一列，底板 + 顶部分支牌（参考图的三列结构）。
+    /// 泳道中心取**整棵树**里该列节点的 x 平均值 → 跨页时列位置不飘 ✅。
+    /// </summary>
+    private void BuildLanes(PageView view)
+    {
+        var treeRef = view.tree;
+        if (treeRef == null || treeRef.nodes == null) return;
+
+        var xs = new Dictionary<int, List<float>>();
+        var topY = new Dictionary<int, float>();
+        var bottomY = new Dictionary<int, float>();
+        float centerY = view.page != null ? view.page.CenterY : 0f;
+
+        // 泳道中心 x 取**整棵树**（跨页时列不飘 ✅）；
+        // 但上下范围只取**本页**的节点 → 分支牌与底板不会跑到别的页上去 ✅
+        foreach (var n in treeRef.nodes)
+        {
+            if (n == null || n.hidden) continue;
+            int lane = n.col;
+            if (!xs.ContainsKey(lane)) { xs[lane] = new List<float>(); }
+            xs[lane].Add(n.treePosition.x);
+            if (view.page == null || !view.page.nodes.Contains(n)) continue;
+            float y = n.treePosition.y - centerY;
+            if (!topY.ContainsKey(lane) || y > topY[lane]) topY[lane] = y;
+            if (!bottomY.ContainsKey(lane) || y < bottomY[lane]) bottomY[lane] = y;
+        }
+
+        foreach (var kv in xs)
+        {
+            int lane = kv.Key;
+            float sum = 0f;
+            foreach (float x in kv.Value) sum += x;
+            float centerX = sum / kv.Value.Count;
+
+            // 泳道底板（半透明暗块）
+            if (laneBackgroundColor.a > 0.01f && topY.ContainsKey(lane))
+            {
+                var bg = CreateImage($"Lane_{lane}", view.nodeRoot, laneBackgroundColor, null);
+                bg.raycastTarget = false;
+                var br = bg.rectTransform;
+                br.anchorMin = new Vector2(0.5f, 0.5f);
+                br.anchorMax = new Vector2(0.5f, 0.5f);
+                br.pivot = new Vector2(0.5f, 1f);
+                float top = topY[lane] + nodeSize.y * 0.5f + (lanePlaqueHeight + 40f);
+                float height = top - (bottomY[lane] - nodeSize.y * 0.5f - 40f);
+                br.sizeDelta = new Vector2(laneWidth, height);
+                br.anchoredPosition = new Vector2(centerX, top);
+                bg.transform.SetAsFirstSibling();
+            }
+
+            // 分支牌（美术空底板；图标后续由美术补）
+            if (branchPlaques != null && lane >= 0 && lane < branchPlaques.Length && branchPlaques[lane] != null && topY.ContainsKey(lane))
+            {
+                var plaque = CreateImage($"LanePlaque_{lane}", view.nodeRoot, Color.white, branchPlaques[lane]);
+                plaque.raycastTarget = false;
+                plaque.preserveAspect = true;
+                var pr = plaque.rectTransform;
+                pr.anchorMin = new Vector2(0.5f, 0.5f);
+                pr.anchorMax = new Vector2(0.5f, 0.5f);
+                pr.pivot = new Vector2(0.5f, 1f);
+                pr.sizeDelta = new Vector2(lanePlaqueWidth, lanePlaqueHeight);
+                // 牌在**根节点上方**：pivot 在上边 → 锚点要再往上抬一个牌高
+                pr.anchoredPosition = new Vector2(centerX, topY[lane] + nodeSize.y * 0.5f + 30f + lanePlaqueHeight);
+                plaque.transform.SetAsFirstSibling();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 肘形连线：同一条竖线上就画一段直线；不同列则「竖段 + 斜段」（参考图的分叉连线）。
+    /// </summary>
+    private void BuildElbowConnector(PageView view, TalentNodeConfig from, TalentNodeConfig to)
+    {
+        Vector2 a = NodePositionInPage(view, from);
+        Vector2 b = NodePositionInPage(view, to);
+        float parentBottom = a.y - nodeSize.y * 0.5f;
+        float childTop = b.y + nodeSize.y * 0.5f;
+
+        if (Mathf.Abs(b.x - a.x) < 1f)
+        {
+            AddConnectorSegment(view, to, new Vector2(a.x, parentBottom), new Vector2(b.x, childTop));
+            return;
+        }
+        // 肘点：取父子之间偏上的位置，斜段不会贴到子节点框上
+        float busY = Mathf.Lerp(parentBottom, childTop, 0.55f);
+        AddConnectorSegment(view, to, new Vector2(a.x, parentBottom), new Vector2(a.x, busY));
+        AddConnectorSegment(view, to, new Vector2(a.x, busY), new Vector2(b.x, childTop));
+    }
+
+    /// <summary>加一段连线（登记到页视图，刷新时会跟着节点状态染色）。</summary>
+    private void AddConnectorSegment(PageView view, TalentNodeConfig target, Vector2 from, Vector2 to)
+    {
+        var line = CreateImage($"Link_{target.nodeId}", view.nodeRoot, connectorLockedColor, connector);
+        line.raycastTarget = false;
+        view.connectorImages.Add(line);
+        view.connectorTargets.Add(target);
+        PlaceConnector(line.rectTransform, from, to, connectorThickness);
+    }
 
     private static void PlaceConnector(RectTransform rect, Vector2 from, Vector2 to, float thickness)
     {

@@ -3,12 +3,12 @@ using System.Collections.Generic;
 /// <summary>
 /// 天赋树**自动切页**：把一个分类里的节点按「行」切成若干页。
 ///
-/// 硬约束（用户定）：**页边界不能跨连线**（不做跨页前置）。
-/// 所以切点不是由数量决定的，而是由「图的缝隙」决定的：
-///   · 行 = 相同 y 的节点（用 treePosition.y 推导，不需要新字段）
-///   · 断点 r 合法 ⟺ 没有任何一条边从 r 及其上方跨到 r+1 及其下方
-///   · 每页行数 ≤ rowsPerPage（软上限）；预算超了就往回找最近的合法断点
-///   · 找不到合法断点 = 这棵子树自己就比一页高 → 溢出成一页长页，并报问题（数据侧应拆成多个独立子树）
+/// 硬约束（用户定，2026-11-03 更新）：**允许前置链跨页**（方案 B ✅）。
+/// 所以切页只按**行数预算**（rowsPerPage）切，不再要求页边界避开连线；
+/// 跨页的前置边会被记进 problems，面板据此在子节点上画一段「向上续接」短线 ✅。
+///
+/// 行 = 相同 y 的节点（用 treePosition.y 推导，不需要新字段）；
+/// 竖向树版式下 **y 越大越靠上**（根节点 y=0，子节点 y 为负）→ 分页顺序 = 从上到下 ✅。
 ///
 /// 纯数据、不依赖 UI：面板用它算页，校验器用它验数据。
 /// </summary>
@@ -79,38 +79,30 @@ public static class TalentPaginator
             }
         }
 
-        // 3) 贪心装箱：预算内尽量多装，但只能停在合法断点
+        // 3) 贪心装箱：**只按行数预算切**（允许前置链跨页 ✅ 用户已确认方案 B）
         int start = 0;
         while (start < rowCount)
         {
-            int limit = start + rowsPerPage - 1;          // 本页最多到这一行
+            int limit = start + rowsPerPage - 1;
             if (limit >= rowCount - 1)
             {
                 AddPage(pages, tree, rowOf, ys, start, rowCount - 1);
                 break;
             }
 
-            int end = -1;
-            for (int r = limit; r >= start; r--)           // 预算内从下往上找合法断点
+            // 跨页的前置边：记一笔，面板据此画续接线（不是错误，只是提示）
+            int crossed = 0;
+            for (int r = start; r <= limit; r++)
+                if (!cutLegal[r]) crossed++;
+            if (crossed > 0)
             {
-                if (r < rowCount - 1 && cutLegal[r]) { end = r; break; }
-            }
-
-            if (end < 0)
-            {
-                // 预算内没有缝隙 → 这棵子树本身超过一页，只能延长到下一个缝隙
-                for (int r = limit; r < rowCount - 1; r++)
-                {
-                    if (cutLegal[r]) { end = r; break; }
-                }
-                if (end < 0) end = rowCount - 1;
                 problems?.Add(
-                    $"第 {pages.Count + 1} 页超过 {rowsPerPage} 行：从第 {start + 1} 行往下找不到页内合法断点（连线会跨页）。" +
-                    "数据侧建议把它拆成多个没有前置关系的独立子树。");
+                    $"第 {pages.Count + 1} 页到第 {pages.Count + 2} 页之间有 {crossed} 条前置边跨页" +
+                    "（允许跨页 ✅，面板会在子节点上画向上续接线）。");
             }
 
-            AddPage(pages, tree, rowOf, ys, start, end);
-            start = end + 1;
+            AddPage(pages, tree, rowOf, ys, start, limit);
+            start = limit + 1;
         }
 
         for (int i = 0; i < pages.Count; i++) pages[i].index = i;
