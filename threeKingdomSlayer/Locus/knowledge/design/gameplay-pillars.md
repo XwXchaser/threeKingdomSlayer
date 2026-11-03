@@ -132,8 +132,9 @@ aiEditMode: inherit
 
 | 项 | 值 |
 |---|---|
-| 被动上限 | 6（硬编码） |
-| 主动槽 | 4（`HeroConfig.itemSlotCount`） |
+| 被动上限 | 3（`HeroConfig.passiveSlotCount`；「博学」天赋 +1） |
+| 主动槽 | 3（`HeroConfig.activeSkillSlotCount`；「巧思」天赋 +1） |
+| 道具槽 | 4（`HeroConfig.itemSlotCount`；「行囊」天赋 +1） |
 | 池条目 | 14 个（Common 6 / Rare 5 / Legendary 3） |
 | 稀有度权重 | Common 0.60 / Rare 0.35 / Legendary 0.05 |
 | BOSS 掉落 | 只抽 Rare + Legendary 的**主动技能** |
