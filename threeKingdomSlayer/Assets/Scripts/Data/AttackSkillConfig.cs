@@ -73,6 +73,11 @@ public class AttackSkillConfig : ScriptableObject
     public float slashSweepDuration = 0.25f;
     [Tooltip("扫掠方向：跟随手势（默认）/ 强制右到左 / 强制左到右。连段终结技用强制右到左表达「朝左上」")]
     public SlashSweepDirection slashSweepDirection = SlashSweepDirection.FromGesture;
+    [Tooltip("斩击命中后把敌人**左右推**几排（0 = 不推）。\n" +
+             "普通 Slash 配 0（不再有左右位移）；强化招式 SlashC2 配 N（带位移）。\n" +
+             "走既有 ColumnManager.ApplyDirectionalPush 通道（只改列号，不进击退回填）。")]
+    [Min(0)]
+    public int slashDirectionalPushRows = 0;
     [Tooltip("扫掠路径斜度（度）：让扫掠线左高右低（配合强制右到左即「朝左上」）；0 = 水平")]
     [Range(-45f, 45f)]
     public float slashMovementTiltDegrees = 0f;

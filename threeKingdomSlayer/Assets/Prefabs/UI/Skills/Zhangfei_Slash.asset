@@ -35,6 +35,7 @@ MonoBehaviour:
   slashSweepAngle: 60
   slashSweepDuration: 0.4
   slashSweepDirection: 0
+  slashDirectionalPushRows: 0
   slashMovementTiltDegrees: 0
   slashOverrideVisualTilt: 0
   slashVisualTiltDegrees: 0
@@ -53,6 +54,7 @@ MonoBehaviour:
   parryGuardDecayDelay: 3
   parryGuardDecayPerSecond: 30
   parryGuardWeaponPrefab: {fileID: 0}
+  parryStanceEntryRollDegrees: 0
   parryStanceTipDegrees: 42
   parryStanceHeadAnchor: {x: 1.1, y: 2.63, z: -5.5}
   parryStanceEntryAngleDegrees: -48
@@ -135,7 +137,13 @@ MonoBehaviour:
   releaseParryRangeRows: 1
   pushBackRows: 0
   repeatSelf: 1
-  overrideWindow: 0
-  windowStart01: 0
+  overrideWindow: 1
+  windowStart01: 0.55
   windowEnd01: 1
-  moveEdges: []
+  moveEdges:
+  - gesture: 1
+    minChargeLevel: 1
+    overrideWindow: 1
+    windowStart01: 0.55
+    windowEnd01: 1
+    next: {fileID: 11400000, guid: a19d24e0ccb53e341a492b373453f674, type: 2}

@@ -40,7 +40,6 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
     private int _pushWaveDistance;
     private int _convergenceStep;
     private float _convergenceDamagePercent = 0.1f;
-    private int _directionalPushStep;
     private float _chargeDamageReduction;
     private UpgradeDefinition _chargeHitShockwaveDefinition;
     private int _chargeHitShockwaveLevel;
@@ -311,7 +310,6 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
     public int GetPushWaveDistance() => _pushWaveDistance;
     public int GetConvergenceStep() => _convergenceStep;
     public float GetConvergenceDamagePercent() => _convergenceDamagePercent;
-    public int GetDirectionalPushStep() => _directionalPushStep;
     public float GetActiveSkillCDReduction() => _activeSkillCDReduction;
 
     /// <summary>蓄力减伤比例（0~1），仅在玩家处于蓄力状态时由 PlayerState 查询</summary>
@@ -395,7 +393,7 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
         _convergenceStep = step;
         if (damagePercent > 0f) _convergenceDamagePercent = damagePercent;
     }
-    public void DebugSetDirectionalPush(int step) => _directionalPushStep = step;
+    public void DebugSetDirectionalPush(int step) { /* 已移除：Slash 左右位移改为招式资产配置驱动（slashDirectionalPushRows） */ }
 
     #endregion
 
@@ -426,7 +424,6 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
         _pushWaveDistance = 0;
         _convergenceStep = 0;
         _convergenceDamagePercent = 0.1f;
-        _directionalPushStep = 0;
         _chargeDamageReduction = 0f;
         _chargeHitShockwaveDefinition = null;
         _chargeHitShockwaveLevel = 0;

@@ -178,7 +178,10 @@ roots: SwipeHorizontal → Zhangfei_Slash
 
 否则默认回落只能拿到 Slash 本体，边无处可挂。
 
-### 5.2 可用的衍生方向（待选）
+### 5.2 可用的衍生方向（**2026-11-03 已选：Slash C2**）
+
+> ✅ 已选并实现：**Slash C2**（任意方向斩击 → 蓄力松手 → 强化斩击，带左右位移）。
+> 详见 `design/combo-zhangfei-slash-c2.md`；下面的方向清单保留作后续备选。
 
 | 方向 | 机制 | 对位 |
 |---|---|---|
@@ -210,7 +213,7 @@ roots: SwipeHorizontal → Zhangfei_Slash
 | C2 `Zhangfei_StabR2` | `talent_move_stabc2`（Moves 页） | `moveConfig` | 占位 1 | ✅ 引用已修（活节点在 Moves 页，`PlayerMoveStateMachine.IsMoveLocked` 读的就是它） |
 | C4 `Zhangfei_LaunchFinisher` | `talent_move_stabc4`（Moves 页） | `moveConfig` | 占位 1 | ✅ 前置 = `talent_move_stabc2`（**先有 C2 才能买 C4**，链完整） |
 | 横扫 `Zhangfei_Slash` | `talent_move_slash`（Moves 页，划线分支占位） | `moveConfig` | 占位 1 | ✅ 划线分支当前只有这一个节点（R11/R12：Slash 衍生本期不定） |
-| Slash 位移 | `talent_unlock_slash_push` | `flag`（新） | 150 | ⏸ 未做：R11 的 Slash 衍生本期不定义 |
+| **Slash C2（划线）** | `talent_move_slashc2` | `moveConfig`（新） | 占位 1 | ✅ **2026-11-03 已实现并实机确认**：任意方向斩击 → 蓄力松手 → 强化斩击（全列 2 排 + 重攻击 + **左右位移 1 排**，方向继承上一段）；普通 Slash 的左右位移**已移除** → 见 `design/combo-zhangfei-slash-c2.md` |
 
 ### 6.1 两个必须处理的连带（✅ 2026-11-03 已处理）
 

@@ -14,7 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   roots:
   - gesture: 0
+    minChargeLevel: 0
     move: {fileID: 11400000, guid: edaea2bf7ba162b48bb0cb5c20db21ff, type: 2}
+  - gesture: 3
+    minChargeLevel: 0
+    move: {fileID: 11400000, guid: c4862b3d5d44d2543af3deae939e5053, type: 2}
+  - gesture: 3
+    minChargeLevel: 1
+    move: {fileID: 11400000, guid: b9436d083cf392d448b491eb34d9fb60, type: 2}
+  - gesture: 4
+    minChargeLevel: 0
+    move: {fileID: 11400000, guid: c4862b3d5d44d2543af3deae939e5053, type: 2}
   states: []
   clampWindowAfterHitWindow: 0
   minWindowSeconds: 0.06

@@ -63,3 +63,19 @@ MonoBehaviour:
     treePosition: {x: 0, y: 520}
     icon: {fileID: 0}
     hidden: 0
+  - nodeId: talent_move_slashc2
+    displayName: "\u65A9\u51FB C2"
+    description: "\u4EFB\u610F\u65B9\u5411\u65A9\u51FB\u540E\u84C4\u529B\u677E\u624B\uFF0C\u91CA\u653E\u4E00\u8BB0\u540C\u65B9\u5411\u7684\u5F3A\u5316\u65A9\u51FB\uFF08\u91CD\u653B\u51FB\u3001\u9644\u5E26\u5DE6\u53F3\u4F4D\u79FB\uFF09\u3002"
+    coinCost: 1
+    moveConfig: {fileID: 11400000, guid: a19d24e0ccb53e341a492b373453f674, type: 2}
+    upgradeConfig: {fileID: 0}
+    statId: 
+    statAdd: 0
+    flagId: 
+    prerequisiteIds: []
+    groupId: sweep
+    col: 2
+    row: 4
+    treePosition: {x: 300, y: 670}
+    icon: {fileID: 0}
+    hidden: 0

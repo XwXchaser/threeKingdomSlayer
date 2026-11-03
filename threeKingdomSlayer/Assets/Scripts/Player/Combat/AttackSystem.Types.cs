@@ -168,7 +168,7 @@ public partial class AttackSystem : MonoBehaviour
                 UltimateSystem.Instance?.AddEnergyForAttack(AttackType.Slash);
                 OnAttackPerformed?.Invoke(AttackType.Slash, -1, leftToRight);
             },
-            onAllHit: () => ApplySlashDirectionalPush(hitTargets, leftToRight),
+            onAllHit: () => ApplySlashDirectionalPush(hitTargets, leftToRight, cfg),
             targetDuration: GetAttackDuration(cfg),
             hitReactionDirection: leftToRight ? HitReactionDirection.Left : HitReactionDirection.Right,
             rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite,

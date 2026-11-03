@@ -202,20 +202,20 @@ public partial class AttackSystem : MonoBehaviour
         return 1f;
     }
 
-    /// <summary>Slash horizontal directional push. It changes only hit enemies' columns and never enters backward-push return/fill.</summary>
-    private void ApplySlashDirectionalPush(List<Enemy> targets, bool leftToRight)
+    /// <summary>
+    /// Slash 的左右位移：**按招式资产配置**执行（<c>slashDirectionalPushRows</c>，0 = 不位移）。
+    ///
+    /// 2026-11-03：位移能力从「普通 Slash」搬到「强化 SlashC2」——
+    /// 普通 Slash 的资产配 0（不再有左右位移），SlashC2 配 N（带位移）。
+    /// 步数不再来自 debug 工具（旧的 <c>_directionalPushStep</c> 已删除，正常游戏里恒为 0）。
+    /// </summary>
+    private void ApplySlashDirectionalPush(List<Enemy> targets, bool leftToRight, AttackSkillConfig cfg)
     {
-        if (UpgradeEffectManager.Instance == null || columnManager == null) return;
-        int step = UpgradeEffectManager.Instance.GetDirectionalPushStep();
+        if (cfg == null || columnManager == null || targets == null) return;
+        int step = cfg.slashDirectionalPushRows;
         if (step <= 0) return;
 
-        Debug.Log($"[Displacement] Slash DirectionalPush step={step} dir={(leftToRight ? "L→R" : "R→L")} targets={targets.Count}");
-        Debug.Log(columnManager.DumpColumns());
-
         columnManager.ApplyDirectionalPush(targets, step, leftToRight, canInterruptCFrame: false);
-
-        Debug.Log($"[Displacement] after Slash DirectionalPush:");
-        Debug.Log(columnManager.DumpColumns());
     }
 
     public float GetAttackDamage(AttackType attackType)

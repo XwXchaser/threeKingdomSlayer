@@ -23,16 +23,28 @@ public class MoveTableConfig : ScriptableObject
     [Tooltip("窗口最小绝对时长（秒），防止高攻速下窗口趋近 0")]
     public float minWindowSeconds = 0.06f;
 
-    /// <summary>按手势查找中立态入口，未配置返回 null</summary>
-    public AttackSkillConfig FindRoot(MoveGesture gesture)
+    /// <summary>
+    /// 按手势 + 蓄力等级查找中立态入口，未配置返回 null。
+    ///
+    /// 多个入口配同一手势时，**取蓄力要求最高且已满足的那个**（更具体的优先）：
+    /// 例：SwipeHorizontal 同时配「未蓄力 → Slash」与「蓄力一级 → Sweep」时，
+    /// 蓄力的一律走 Sweep，没蓄力的走 Slash ✓（2026-11-03 加 minChargeLevel 的原因）。
+    /// </summary>
+    public AttackSkillConfig FindRoot(MoveGesture gesture, int chargeLevel = 0)
     {
         if (roots == null) return null;
+        AttackSkillConfig best = null;
+        int bestCharge = -1;
         for (int i = 0; i < roots.Count; i++)
         {
-            if (roots[i] != null && roots[i].gesture == gesture && roots[i].move != null)
-                return roots[i].move;
+            var e = roots[i];
+            if (e == null || e.gesture != gesture || e.move == null) continue;
+            if (chargeLevel < e.minChargeLevel) continue;
+            if (e.minChargeLevel <= bestCharge) continue;
+            best = e.move;
+            bestCharge = e.minChargeLevel;
         }
-        return null;
+        return best;
     }
 
     /// <summary>按状态标识查找状态覆盖表，未配置返回 null</summary>
@@ -75,6 +87,9 @@ public class MoveTableConfig : ScriptableObject
 public class MoveEntry
 {
     public MoveGesture gesture;
+    [Tooltip("最低蓄力等级：0 = 任意输入；1 = 必须达到一级蓄力。\n" +
+             "同一手势配多个入口时，取**蓄力要求最高且已满足**的那个（更具体的优先）。")]
+    public int minChargeLevel = 0;
     public AttackSkillConfig move;
 }
 

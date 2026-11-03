@@ -43,6 +43,9 @@ public class PlayerMoveStateMachine : MonoBehaviour
     private AttackSkillConfig _currentMove;
     private AttackType _currentAttackType;
     private MoveGesture _entryGesture;
+    /// <summary>进入本段时的**斩击方向**（左→右 = true）。后继若是 Slash 系（SlashC2）要继承它 ——
+    /// 因为「蓄力松手」这个输入本身没有方向（长按不动）。</summary>
+    private bool _entrySlashLeftToRight;
     private float _elapsed;
     private float _duration;
     private float _hitStopRemaining;
@@ -189,8 +192,8 @@ public class PlayerMoveStateMachine : MonoBehaviour
             return false;
         }
 
-        // 中立态：查入口表；未配置的手势回落到默认攻击类型，保证招式表未填完时仍可游戏
-        AttackSkillConfig root = moveTable.FindRoot(input.gesture);
+        // 中立态：查入口表（按手势 + 蓄力等级）；未配置的手势回落到默认攻击类型，保证招式表未填完时仍可游戏
+        AttackSkillConfig root = moveTable.FindRoot(input.gesture, input.chargeLevel);
         if (root == null)
             return ExecuteDirect(input, ref resolvedType);
 
@@ -248,6 +251,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
         _currentMove = move;
         _currentAttackType = resolvedType;
         _entryGesture = input.gesture;
+        _entrySlashLeftToRight = input.slashLeftToRight;
         _elapsed = 0f;
         _hasBuffered = false;
         _executedCount++;
@@ -320,6 +324,9 @@ public class PlayerMoveStateMachine : MonoBehaviour
         }
 
         // 接续：取消当前招式的收尾，直接执行后继
+        // 后继若是 Slash 系（SlashC2）：方向继承**上一段**（蓄力松手本身没有方向）
+        if (next != null && next.attackType == AttackType.Slash)
+            input.slashLeftToRight = _entrySlashLeftToRight;
         return ExecuteMove(next, input, out resolvedType, cancelCurrentMove: true);
     }
 

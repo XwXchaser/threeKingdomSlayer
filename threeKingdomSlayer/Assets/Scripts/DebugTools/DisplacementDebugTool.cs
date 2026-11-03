@@ -19,10 +19,6 @@ public class DisplacementDebugTool : MonoBehaviour
     public bool enablePushWave = false;
     [Range(1, 5)] public int pushDistance = 1;
 
-    [Header("方向推 (Directional Push) — Slash 专属")]
-    public bool enableDirectionalPush = false;
-    [Range(1, 3)] public int directionalPushStep = 1;
-
     [Header("聚拢波 (Convergence Wave) — 独立效果")]
     public bool enableConvergenceWave = false;
     [Range(1, 3)] public int convergenceStep = 1;
@@ -45,12 +41,6 @@ public class DisplacementDebugTool : MonoBehaviour
         {
             UpgradeEffectManager.Instance.DebugSetPushWave(pushDistance);
             Debug.Log($"[DisplacementDebug] Push wave: distance={pushDistance}");
-        }
-
-        if (enableDirectionalPush)
-        {
-            UpgradeEffectManager.Instance.DebugSetDirectionalPush(directionalPushStep);
-            Debug.Log($"[DisplacementDebug] Directional push: step={directionalPushStep}");
         }
 
         if (enableConvergenceWave)

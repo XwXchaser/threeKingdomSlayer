@@ -42,7 +42,7 @@ aiEditMode: inherit
 | 1–9 | 直通招式（按攻击类型） | 1 Stab / 2 Slash / 3 Pierce / 4 Sweep / 5 Launch / 6 Parry |
 | 11–19 | 链 A：张飞·枪突链 | 11 Jab1 / 12 Jab2 / 13 Jab3 / 14 LaunchFinisher |
 | 21–29 | 链 B：张飞·指向突刺链 | 22 StabR2（已从 15 迁到 22） |
-| 30 起 | 每新增一条链给一个十位段，链内按段号递增 | — |
+| 30 起 | 每新增一条链给一个十位段，链内按段号递增 | **30 SlashC2**（斩击 C2 链） |
 
 ### 1.4 招式自身属性的归属（架构规则）
 
@@ -66,6 +66,7 @@ aiEditMode: inherit
 |---|---|---|---|---|---|---|
 | 张飞·枪突链 | 枪突-3 + 蓄力 = C4 | 点 → 点 → 点 → 按住 → 上划 | 全列 3 排 + 挑飞 | `design/combo-zhangfei-stab3-launch.md` | `Zhangfei_Jab1/2/3` + `Zhangfei_LaunchFinisher` | 已完成，实机可用 |
 | 张飞·指向突刺链 | 口语 C1 → C2 | 点一下 → 按住（可横向改列）→ 松手 | 松手所指列的前 2 排；击退 1 格（升级加成后 2 格） | `design/combo-zhangfei-aim-stab.md` | `Zhangfei_Jab1` + `Zhangfei_StabR2` | 已完成，已实机确认 |
+| 张飞·斩击 C2 链 | 划线分支 C2 | 任意方向斩击 → 按住蓄力 → 松手 | 全列 2 排；重攻击（架势 30）；**左右位移 1 排**（方向继承上一段） | `design/combo-zhangfei-slash-c2.md` | `Zhangfei_Slash` + `Zhangfei_SlashC2` | **结构已实现并实机确认**；蓄力/招式动作待美术 |
 
 ---
 
