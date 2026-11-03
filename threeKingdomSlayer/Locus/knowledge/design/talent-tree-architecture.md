@@ -252,21 +252,30 @@ public int Capacity => ... heroConfig.itemSlotCount
 
 ⚠️ **序列化陷阱**：Unity 新增 int 字段在老资产里是 **0**，不是默认值。必须**同时改 `Hero_Zhangfei.asset` 填 3**，并在读取处 `Mathf.Max(1, v)` 兜底，否则主动槽变 0 → 游戏直接坏。
 
-### 6.2 被动槽口径与 UI 不一致（已知问题）
+### 6.2 ✅ 被动槽口径与 UI 不一致（已解决）
+
+> ✅ **A2 已实现（2026-11-03）**：采纳**方案 A**——`PassiveSkillRow` 扩展为显示全部占用槽位的条目（含 Numeric）。
+> `IsPassive()` 已改名为 `OccupiesPassiveSlot()`，口径与 `UpgradeEffectManager.PassiveUpgradeCount` 完全一致。
+> 顺带修了一个隐患：少数升级资产**没配图标**，直接开 Image 会画成**白框** → 改为无图标时关掉 Image。
 
 | | 口径 |
 |---|---|
 | **上限判定** | `UpgradeEffectManager.PassiveUpgradeCount` = `_appliedUpgrades.Count` → **含 Numeric**（专注 / 智慧 / 疾风 / 铁壁 / 地刺 / 拔苗助长…） |
-| **被动排 UI 显示** | `PassiveSkillRow.IsPassive()` = 仅 `AttackPassive` + `TimedPassive` → **不含 Numeric** |
+| **被动排 UI 显示** | `PassiveSkillRow.OccupiesPassiveSlot()` = `Numeric` + `AttackPassive` + `TimedPassive` ✅ |
 
-→ 玩家塞了 3 个数值被动，**被动排上一个图标都不显示**，但确实占了槽。**降到 3 槽后这个矛盾会变成玩家可见的问题**（频繁撞顶却不知道为什么）。
+→ 玩家塞了 3 个数值被动，**被动排上现在能看到 3 个图标**（原先一个都不显示，但确实占了槽）。
 
-**处理选项（二选一，需拍板）**
+**处理选项（已拍板：A）**
 
 | 选项 | 做法 | 影响 |
 |---|---|---|
-| **A（推荐）** | 被动排 UI 扩展为显示全部占用槽位的条目 | 玩家看得见占用了什么；不改数值逻辑 |
-| **B** | 被动槽只算 `AttackPassive + TimedPassive`，Numeric 不占槽 | Numeric 变成无限槽（8 个数值条目 × 5 级 = 40 级），需要另设上限 |
+| **A（已采纳）** | 被动排 UI 扩展为显示全部占用槽位的条目 | 玩家看得见占用了什么；不改数值逻辑 |
+| ~~B~~ | 被动槽只算 `AttackPassive + TimedPassive`，Numeric 不占槽 | Numeric 变成无限槽（8 个数值条目 × 5 级 = 40 级），需要另设上限 |
+
+> ⚠️ 实测新发现：底部**中间**的 `BuffDisplayPanel` ColumnA 本来就显示全部被动条目（带数值），
+> 与右侧的被动排**内容重叠**。是否收敛属 HUD 结构问题 → 归 UI / 美术侧，本周不动。
+> 详见 `design/in-run-growth-and-unlocks.md` §5.4。
+
 
 ---
 

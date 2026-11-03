@@ -202,16 +202,33 @@ aiEditMode: inherit
 
 → 现行是「**满了就藏起来**」，玩家不会知道自己被卡住了。**R8 要改成金币补偿。**
 
-### 5.4 ⚠️ 被动槽口径与 UI 不一致
+### 5.4 ✅ 被动槽口径与 UI 不一致（已解决）
+
+> ✅ **A2 已实现（2026-11-03）**：按 **方案 A**——`PassiveSkillRow` 现在显示**全部占用被动槽的条目**（含 Numeric），
+> 口径与上限判定完全一致。**数值逻辑未动。**
 
 | | 口径 |
 |---|---|
 | **上限判定** | `PassiveUpgradeCount` = `_appliedUpgrades.Count` → **含 Numeric**（专注 / 智慧 / 疾风 / 铁壁 / 地刺 / 拔苗助长…） |
-| **被动排 UI 显示** | `PassiveSkillRow.IsPassive()` = 仅 `AttackPassive` + `TimedPassive` → **不含 Numeric** |
+| **被动排 UI 显示** | `PassiveSkillRow.OccupiesPassiveSlot()` = `Numeric` + `AttackPassive` + `TimedPassive` | ✅ 已对齐（原先只有后两类） |
 
-→ 玩家塞了 3 个数值被动，**被动排上一个图标都不显示**，但确实占了槽。**降到 3 槽后这个矛盾会变成玩家可见的问题。**
+→ 玩家塞了 3 个数值被动，**被动排上现在能看到 3 个图标**（原先一个都不显示，但确实占槽）。
 
 处理方案见 `design/talent-tree-architecture.md` §6.2（A：UI 显示全部占用 / B：Numeric 不占槽）。
+
+#### ⚠️ 实测新发现：底部有两处被动展示，内容重叠
+
+| 位置 | 组件 | 显示内容 |
+|---|---|---|
+| 底部**中间**卡片 | `BuffDisplayPanel` 的 ColumnA（6 槽） | **全部**被动条目 + **数值**（如 8% / 10%） |
+| 底部**右侧**条 | `PassiveSkillRow`（4 槽 + 溢出） | **全部**被动条目 + **等级**（A2 后） |
+
+→ A2 之后两处显示的是**同一批条目**（重叠；A2 之前 ColumnA 显示全部、右侧条只显示触发型，本来就部分重叠）。
+两处**职责不同**（一个给数值、一个给图标与等级），但视觉上冗余。
+**是否收敛属于 HUD 结构问题 → 归 UI / 美术侧判断，本周不动。**
+
+> 另一个口径细节：`PassiveUpgradeCount` 按 `upgradeId` 去重，而被动排按 `UpgradeDefinition` 逐条列。
+> 当前项目内 **40 个升级资产无重复 upgradeId**（已实测），两者数目一致。
 
 ### 5.5 UI 槽位数
 

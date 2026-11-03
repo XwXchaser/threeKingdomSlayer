@@ -12,8 +12,12 @@ using UnityEngine.UI;
 ///     参照《上古卷轴：刀锋》里“大招就绪”那类技能位的做法（单列、紧凑、不占中央），
 ///     我们把它放在右侧这一条，和左侧的**黄色棱形排**（主动技能 / 道具）分开：
 ///     左边=**能点的**，右边=**被动生效的**。
-///   • 内容：局内获得的**攻击计数被动**（AttackPassive）与**定时被动**（TimedPassive），
-///     用各自 `UpgradeDefinition.icon` ✅，右下角标等级。
+///   • 内容：**占用被动槽的全部条目**——数值被动（Numeric）+ 攻击计数被动（AttackPassive）
+///     + 定时被动（TimedPassive），用各自 `UpgradeDefinition.icon` ✅，右下角标等级。
+///     口径与「被动槽上限判定」（<c>UpgradeEffectManager.PassiveUpgradeCount</c>）**完全一致**：
+///     数值被动确实占被动槽（上限判定含它），所以必须显示——否则玩家塞满 3 个数值被动
+///     却被告知「被动排上一个图标都没有」。
+///   • 不显示：道具（Item）与主动技能（ActiveSkill）——它们不占被动槽。
 ///   • 纯展示：被动没有冷却、不可点击，只告诉玩家“我现在带着哪些被动”。
 ///   • 超出槽位用 “+N” 折叠（最多显示 5 个）。
 /// </summary>
@@ -83,7 +87,7 @@ public class PassiveSkillRow : MonoBehaviour
         {
             var u = list[i];
             if (u == null || u.definition == null) continue;
-            if (!IsPassive(u.definition.category)) continue;
+            if (!OccupiesPassiveSlot(u.definition.category)) continue;
             hash = hash * 31 + u.currentLevel;
         }
         return hash * 31 + list.Count;
@@ -97,14 +101,22 @@ public class PassiveSkillRow : MonoBehaviour
         {
             var u = list[i];
             if (u == null || u.definition == null) continue;
-            if (!IsPassive(u.definition.category)) continue;
+            if (!OccupiesPassiveSlot(u.definition.category)) continue;
             _passives.Add(u);
         }
     }
 
-    private static bool IsPassive(UpgradeCategory category)
+    /// <summary>
+    /// 是否**占用被动槽**。
+    /// 口径必须与 <c>UpgradeEffectManager.PassiveUpgradeCount</c>（被动槽上限判定）一致：
+    /// 上限计数含 <see cref="UpgradeCategory.Numeric"/>，所以这里也要含它（2026-11-03 A2）。
+    /// 道具与主动技能各有自己的库存，不占被动槽。
+    /// </summary>
+    private static bool OccupiesPassiveSlot(UpgradeCategory category)
     {
-        return category == UpgradeCategory.AttackPassive || category == UpgradeCategory.TimedPassive;
+        return category == UpgradeCategory.Numeric
+            || category == UpgradeCategory.AttackPassive
+            || category == UpgradeCategory.TimedPassive;
     }
 
     private void FillSlots()
@@ -124,8 +136,9 @@ public class PassiveSkillRow : MonoBehaviour
                 if (slot.icon != null)
                 {
                     slot.icon.sprite = passive.definition.icon;
-                    // 空槽时图标是**禁用**的（黄色棱形槽的惯例）→ 填内容时必须打开
-                    slot.icon.enabled = true;
+                    // 空槽时图标是**禁用**的（黄色棱形槽的惯例）→ 填内容时必须打开；
+                    // 但个别升级资产**没配图标** → 直接开 Image 会画成白框，宁可留空。
+                    slot.icon.enabled = passive.definition.icon != null;
                 }
                 if (slot.level != null)
                 {
