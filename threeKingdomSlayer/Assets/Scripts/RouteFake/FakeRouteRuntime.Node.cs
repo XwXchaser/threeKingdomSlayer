@@ -33,6 +33,9 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
         yield return RunBattleEntries();
         if (Phase == FakeRoutePhase.Defeated) yield break;
 
+        // 节点内容（战斗条目 + 战后演出）跑完 → 发节点奖励（2026-11-03 C-2）。
+        GrantNodeRewards(node);
+
         if (ShouldFinishRouteAtNode(node))
         {
             if (HasUncompletedBattleEntry(node))
@@ -129,6 +132,7 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
             if (generation != _generation || Phase == FakeRoutePhase.Defeated) yield break;
 
             MarkBattleEntryCompleted(_currentNode, _battleIndex);
+            PayBattleEntryClearReward(entry.battleConfig);
             _battleActive = false;
             anyExecuted = true;
             Debug.Log("[FakeRoute] battle entry completed node=" + _currentNode.nodeId + " index=" + _battleIndex);

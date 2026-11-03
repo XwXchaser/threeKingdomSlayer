@@ -182,7 +182,8 @@ public class KillRewardUI : MonoBehaviour, IInRunRewardPopup
             {
                 if (i > 0) sb.Append("  ");
                 string label = rewards[i].rewardType == KillRewardType.Coin ? "铜钱" :
-                               rewards[i].rewardType == KillRewardType.Heal ? "生命" : "升级";
+                               rewards[i].rewardType == KillRewardType.Heal ? "生命" :
+                               rewards[i].rewardType == KillRewardType.Manual ? "秘籍" : "升级";
                 sb.Append($"+{rewards[i].rewardAmount} {label}");
             }
             amount = sb.ToString();

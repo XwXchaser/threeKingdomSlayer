@@ -89,6 +89,11 @@ public class AttackSkillConfig : ScriptableObject
     public float slashSpawnYOffset = 1.5f;
     [Tooltip("生成位置 Z 偏移（相对敌人中心）")]
     public float slashSpawnZOffset = 0.5f;
+    [Tooltip("斩击旋转拖尾贴图 A（留空 = 用场景 AttackSystem 的全局贴图）。\n" +
+             "强化斩击（SlashC2）可以挂自己的拖尾，不必改全局设置。")]
+    public Sprite slashRotateSprite1;
+    [Tooltip("斩击旋转拖尾贴图 B（留空 = 用场景 AttackSystem 的全局贴图）")]
+    public Sprite slashRotateSprite2;
 
     [Header("招架扫掠")]
     [Tooltip("Z 轴旋转幅度（度，默认 100）。枪尾从起始角扫到起始角+此值")]

@@ -12,7 +12,9 @@ public enum KillRewardType
     [Tooltip("回血")]
     Heal,
     [Tooltip("随机升级（第三期实现）")]
-    RandomUpgrade
+    RandomUpgrade,
+    [Tooltip("秘籍（局外永久解锁物）")]
+    Manual
 }
 
 /// <summary>
@@ -25,6 +27,8 @@ public class KillRewardEntry
     public KillRewardType rewardType;
     [Tooltip("奖励数值（铜钱数或回血量）")]
     public int rewardAmount;
+    [Tooltip("奖励物（<see cref=\"KillRewardType.Manual\"/> 时填秘籍资产；直接拖引用，不走字符串 id）")]
+    public ManualDefinition manual;
 }
 
 /// <summary>

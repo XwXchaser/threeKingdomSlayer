@@ -171,7 +171,8 @@ public partial class AttackSystem : MonoBehaviour
             onAllHit: () => ApplySlashDirectionalPush(hitTargets, leftToRight, cfg),
             targetDuration: GetAttackDuration(cfg),
             hitReactionDirection: leftToRight ? HitReactionDirection.Left : HitReactionDirection.Right,
-            rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite,
+            rotateSprite1: cfg.slashRotateSprite1 != null ? cfg.slashRotateSprite1 : _stabRotate1Sprite,
+            rotateSprite2: cfg.slashRotateSprite2 != null ? cfg.slashRotateSprite2 : _stabRotate2Sprite,
             visualPathTilt: visualTilt,
             useEnhancedSlashMotion: true,
             interruptsCavalryCharge: chargeInterrupt,
@@ -645,7 +646,8 @@ public partial class AttackSystem : MonoBehaviour
             targetDuration: cfg.slashSweepDuration,
             // 终结技只保留一层很淡的拖尾（slashSweepAlpha），不再读成一次 slash
             alphaOverride: cfg.slashSweepAlpha,
-            rotateSprite1: _stabRotate1Sprite, rotateSprite2: _stabRotate2Sprite,
+            rotateSprite1: cfg.slashRotateSprite1 != null ? cfg.slashRotateSprite1 : _stabRotate1Sprite,
+            rotateSprite2: cfg.slashRotateSprite2 != null ? cfg.slashRotateSprite2 : _stabRotate2Sprite,
             movementTilt: cfg.slashMovementTiltDegrees,
             visualPathTilt: cfg.slashOverrideVisualTilt ? cfg.slashVisualTiltDegrees : 0f,
             useEnhancedSlashMotion: true, suppressHitReaction: true);

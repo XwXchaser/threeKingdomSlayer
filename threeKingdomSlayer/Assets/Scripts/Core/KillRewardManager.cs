@@ -90,28 +90,8 @@ public class KillRewardManager : MonoBehaviour
 
     private void GrantReward(KillMilestoneEntry entry)
     {
-        var ps = PlayerState.Instance;
-        if (ps == null || entry.rewards == null) return;
-
-        foreach (var r in entry.rewards)
-        {
-            switch (r.rewardType)
-            {
-                case KillRewardType.Coin:
-                    // 聚财（天赋）：铜钱获取 +30%
-                    ps.AddCoins(Mathf.RoundToInt(r.rewardAmount * TalentCapabilities.CoinGainMultiplier));
-                    break;
-
-                case KillRewardType.Heal:
-                    float maxHp = ps.heroConfig != null ? ps.heroConfig.maxHealth : 100f;
-                    ps.currentHealth = Mathf.Min(ps.currentHealth + r.rewardAmount, maxHp);
-                    ps.OnHealthChanged?.Invoke(ps.currentHealth, maxHp);
-                    break;
-
-                case KillRewardType.RandomUpgrade:
-                    Debug.Log($"[KillRewardManager] RandomUpgrade 奖励（第三期待实现）：x{r.rewardAmount}");
-                    break;
-            }
-        }
+        if (entry == null || entry.rewards == null) return;
+        // 发放口径统一到 KillRewardUtility（与路线节点奖励共用一份，2026-11-03 C-2）。
+        KillRewardUtility.Apply(entry.rewards);
     }
 }
