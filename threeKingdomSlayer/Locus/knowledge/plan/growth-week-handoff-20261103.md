@@ -65,6 +65,7 @@ SlashC2 美术资源清单已出 → 详见 §2 的「本轮新增」。
 | 4 | **SlashC2 美术资源清单** | `plan/slash-c2-art-request-20261103.md`（尺寸/命名/导入设置/挂点/验收口径） |
 | 5 | **SlashC2 拖尾贴图改成 per-move**（`AttackSkillConfig.slashRotateSprite1/2`，留空回退全局） | 已加字段 + 已接线 ✔ |
 | 6 | 难度表「待决与风险」页加了铜钱闭环行；`game-mechanics` / `stage-configuration` / `gameplay-pillars` 的旧数字已对齐 | 已更新 ✔ |
+| 7 | **招式解锁引导**：解锁横扫后**首次进关**弹「手势示范 + 一行文字」（复用 `TutorialGestureHint` + 对话层），挡住开打 | 实测：引导期间场上敌人 = 0 → 点继续 → 开波 → 存档记「已教过」（只教一次）✔；方案见 `plan/move-unlock-guide-20261103.md` |
 
 > ⚠️ **本轮踩到的坑（重要）**：`WaveSpawner` 一场战斗结束会把 `OnAllWavesCompleted` **触发两次**
 > （`NotifyWaveCleared` 一次 + `SpawnNextWave` 溢出分支一次）。
