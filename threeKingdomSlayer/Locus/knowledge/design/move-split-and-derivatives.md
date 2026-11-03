@@ -207,16 +207,23 @@ roots: SwipeHorizontal → Zhangfei_Slash
 
 | 招式 | 天赋节点 | 载荷 | 价 | 备注 |
 |---|---|---|---|---|
-| C2 `Zhangfei_StabR2` | `talent_unlock_c2` | `moveConfig` | 100 | ⚠️ **当前引用被 `d278593` 清空**，需回滚 |
-| C4 `Zhangfei_LaunchFinisher` | `talent_unlock_c4` | `moveConfig` | 180 | ⚠️ **当前前置挂在 `talent_ice_break_push` 上**，而该节点本周要删 → 必须先解绑 |
-| Slash 位移 | `talent_unlock_slash_push` | `flag`（新） | 150 | 新增；驱动 `_directionalPushStep` |
+| C2 `Zhangfei_StabR2` | `talent_move_stabc2`（Moves 页） | `moveConfig` | 占位 1 | ✅ 引用已修（活节点在 Moves 页，`PlayerMoveStateMachine.IsMoveLocked` 读的就是它） |
+| C4 `Zhangfei_LaunchFinisher` | `talent_move_stabc4`（Moves 页） | `moveConfig` | 占位 1 | ✅ 前置 = `talent_move_stabc2`（**先有 C2 才能买 C4**，链完整） |
+| 横扫 `Zhangfei_Slash` | `talent_move_slash`（Moves 页，划线分支占位） | `moveConfig` | 占位 1 | ✅ 划线分支当前只有这一个节点（R11/R12：Slash 衍生本期不定） |
+| Slash 位移 | `talent_unlock_slash_push` | `flag`（新） | 150 | ⏸ 未做：R11 的 Slash 衍生本期不定义 |
 
-### 6.1 两个必须处理的连带
+### 6.1 两个必须处理的连带（✅ 2026-11-03 已处理）
 
-| # | 问题 | 处理 |
-|---|---|---|
-| 1 | `talent_unlock_c2` 的 `moveConfig` 被清空 → **C2 现在开局就能用**，且该节点变成 hidden + 无载荷 + 无后继者的**孤儿节点** | 回滚：恢复引用、取消 hidden、理顺前置 |
-| 2 | `talent_unlock_c4.prerequisiteIds = [talent_ice_break_push]`，而该节点本周删除 → `GetPrerequisites` 找不到 id 就跳过 → **C4 静默变成「无前置根节点」**（不是买不到，是变成白送） | 改前置为 `talent_unlock_c2`；改完**必须跑一次 `TalentTreeConfig.Validate()`**（会报「前置不存在」） |
+| # | 问题 | 处理 | 结果 |
+|---|---|---|---|
+| 1 | `talent_unlock_c2` 的 `moveConfig` 被清空 → C2 开局就能用，且节点变成 hidden + 无载荷 + 无后继者的**孤儿节点** | 活节点迁到 Moves 页（`talent_move_stabc2` → `Zhangfei_StabR2`）；Main 里的旧副本删除 | ✅ 4 棵树校验零问题 |
+| 2 | `talent_unlock_c4.prerequisiteIds = [talent_ice_break_push]`，而该节点要删 → C4 静默变成「无前置根节点」（白送） | C4 的活节点是 Moves 页的 `talent_move_stabc4`，前置指向同页的 `talent_move_stabc2`；Main 里的重复副本删除 | ✅ C2→C4 的购买链完整 |
+
+> ⚠️ **为什么 C4 的前置不跨页**：天赋页是 3 棵树（Stats / Moves / Pools），`GetPrerequisites` **只在本树内**解析
+> → 跨页前置会被判成「前置不存在」（校验器直接报错）。需要跨页依赖时用**招式自己的 moveEdges**（招式图），
+> 不要用天赋节点的前置。
+
+> 另：`talent_ice_break_push`（破冰顶开）已随 §8.5 迁移**删除**，功能改由秘籍 `manual_ice_break_push` 承担。
 
 ---
 
