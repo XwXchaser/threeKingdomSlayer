@@ -78,6 +78,11 @@ public class AttackSkillConfig : ScriptableObject
              "走既有 ColumnManager.ApplyDirectionalPush 通道（只改列号，不进击退回填）。")]
     [Min(0)]
     public int slashDirectionalPushRows = 0;
+    [Tooltip("斩击命中的**打击反馈强度**（None / Light / Standard / Heavy）。\n" +
+             "Standard = 现状（顿帧 0.09s，不震镜头）；\n" +
+             "Heavy = 更重（顿帧 0.14s + 镜头震动 heavy 档），强化招式（SlashC2）用。\n" +
+             "只有**首击**吃满档，后续命中降为 Light，避免连续命中全是重反馈。")]
+    public HitFeedbackStrength slashFeedbackStrength = HitFeedbackStrength.Standard;
     [Tooltip("扫掠路径斜度（度）：让扫掠线左高右低（配合强制右到左即「朝左上」）；0 = 水平")]
     [Range(-45f, 45f)]
     public float slashMovementTiltDegrees = 0f;

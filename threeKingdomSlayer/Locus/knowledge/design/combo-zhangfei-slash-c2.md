@@ -60,18 +60,41 @@ Zhangfei_Slash.moveEdges:
 
 ## 4. 表现（含与已有链的区分）
 
-| 段 | 现有表现 | 待补 |
+> **2026-11-04 更新**：已把「带位移」与「更重的打击反馈」两条**落地为代码 + 配置**（见下方 ✅ 两行）。
+> 剩下的都是**素材侧**的事。
+
+| 段 | 现有表现 | 状态 / 待补 |
 |---|---|---|
 | ① Slash | `SweepEffect` 扫掠（3D 枪模型 `FantasySpear3D` + 2 张旋转拖尾）✓ | — |
-| ② 蓄力 | 跟手蓄力指示（`ChargeStabVisual`，**突刺风格**）⚠；**斩击后没有「枪体停住」**（那是 Stab 专属，`BeginComboChargeHold` 依赖 `_lastStabEffect`）⚠ | **SlashC2 的蓄力姿态**（收枪 + 蓄力弧）→ 美术，清单见 `plan/slash-c2-art-request-20261103.md` |
-| ③ SlashC2 | 暂复用 Slash 的扫掠 prefab（`attackWavePrefab`）⚠ | **强化斩击的招式动作**（更宽更亮的拖尾）→ 美术，清单同上 |
-| 位移 | 只改列号，**无位移表现** ⚠ | 敌人被推开时的撞击反馈（可后置） |
+| ② 蓄力 | 跟手蓄力指示（`ChargeStabVisual`，**突刺风格**）⚠；**斩击后没有「枪体停住」**（那是 Stab 专属，`BeginComboChargeHold` 依赖 `_lastStabEffect`）⚠ | **SlashC2 的蓄力姿态**（收枪 + 蓄力弧）→ 美术，清单见 `plan/slash-c2-art-request-20261103.md`；「按招式切蓄力样式」的代码钩子一并等素材做（钩子先做没有素材可切） |
+| ③ SlashC2 | ✅ **打击反馈 = Heavy**（顿帧 0.09→**0.14s** + 镜头震 heavy 档 0.11s/0.035 + 像素火花随 context）；拖尾仍复用 Slash 的两张全局贴图 ⚠ | **强化斩击的招式动作**（更宽更亮的拖尾）→ 美术，清单同上；填进 `Zhangfei_SlashC2.slashRotateSprite1/2` 即可，**不用改场景** ✓ |
+| 位移 | ✅ **已带位移**：`Zhangfei_SlashC2.slashDirectionalPushRows = 1`（横向推开 1 排，走既有 `ColumnManager.ApplyDirectionalPush` 通道，只改列号不进击退回填）；普通 Slash 保持 0 | 敌人被推开时的**撞击反馈**（可后置） |
+
+### 4.1 「更重的打击反馈」怎么实现的（2026-11-04）
+
+| 通道 | 做法 | 参数 |
+|---|---|---|
+| 顿帧 | `HitFeedbackStrength.Standard → Heavy` | `GetHitStopDuration`：Standard **0.09s** → Heavy **0.14s** |
+| 镜头震 | 同上（`CameraFeedbackController.heavyOnlyCameraShake = true` → **只有 Heavy 才震镜头**；普通 Slash 的 Standard 档不震，行为不变 ✓） | heavy：0.11s / 强度 0.035 |
+| 像素火花 | `PixelHitEffectManager.RequestHit(context)` 随 context 走 | 自动跟随强度 |
+| 音效 | Heavy → 播 `Slash_HeavyHit` 事件 → `AudioManager.PlayHeavyHit()`：**专用数组 `_heavyHitClips` 为空时回退到普通斩击音** → **素材没交时行为与现状完全一致（不静音、不回归）**；美术的「重击音」交来后直接填数组即生效，不用改代码 | `HEAVY_HIT_VOLUME = 1.35`（普通斩击 1.25） |
+
+**代码改动（4 个文件）**
+
+| 文件 | 改什么 |
+|---|---|
+| `Assets/Scripts/Data/AttackSkillConfig.cs` | 新增 `slashFeedbackStrength`（默认 `Standard` → **普通 Slash 零回归**） |
+| `Assets/Scripts/Attack/SweepEffect.cs` | `Create` 加 `feedbackStrengthOverride` 参数；新增 `ResolveHitFeedbackStrength(isFirstHit)`：**只有首击吃满档**，后续命中降为 Light（避免连续命中全是重反馈） |
+| `Assets/Scripts/Player/Combat/AttackSystem.Types.cs` | `ExecuteSlash` 传 `cfg.slashFeedbackStrength`；Heavy 时播 `Slash_HeavyHit` |
+| `Assets/Scripts/Services/AudioManager.cs` | 新增 `_heavyHitClips` + `PlayHeavyHit()`（空数组回退普通斩击音）+ 事件 `Slash_HeavyHit` |
+
+**配置改动（1 个资产）**：`Assets/ScriptableObjects/Moves/Zhangfei/Zhangfei_SlashC2.asset` → `slashFeedbackStrength: Standard → Heavy`（`slashDirectionalPushRows` 本来就是 1）
 
 > 拖尾贴图已改成 **per-move**：`AttackSkillConfig.slashRotateSprite1/2`（2026-11-03 加，留空回退场景全局贴图）
 > → SlashC2 的拖尾可以直接挂进资产，不用改场景 ✓。
 
 > 前端侧：天赋页**不需要改代码**就能显示新节点（面板按 `moveConfig` 自动取图标与文案 ✓）；
-> 但面板按 `groupId` 画泳道仍待对方 ✓（`groupId` 已填 `sweep` ✓）。
+> 面板按 `groupId` 画泳道（`groupId` 已填 `sweep` ✓）。
 
 ## 5. 解锁
 

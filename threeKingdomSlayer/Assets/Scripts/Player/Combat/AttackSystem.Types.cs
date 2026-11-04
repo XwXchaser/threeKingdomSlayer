@@ -164,7 +164,7 @@ public partial class AttackSystem : MonoBehaviour
             onHit: enemy => hitTargets.Add(enemy),
             onFirstHit: () =>
             {
-                AudioManager.Instance?.PostEvent("Slash_Hit");
+                AudioManager.Instance?.PostEvent(cfg.slashFeedbackStrength == HitFeedbackStrength.Heavy ? "Slash_HeavyHit" : "Slash_Hit");
                 UltimateSystem.Instance?.AddEnergyForAttack(AttackType.Slash);
                 OnAttackPerformed?.Invoke(AttackType.Slash, -1, leftToRight);
             },
@@ -177,7 +177,8 @@ public partial class AttackSystem : MonoBehaviour
             useEnhancedSlashMotion: true,
             interruptsCavalryCharge: chargeInterrupt,
             enableWeaponAfterimage: true,
-            isHeavyAttack: cfg.isHeavy, poiseDamage: cfg.isHeavy ? cfg.poiseDamage : 0f);
+            isHeavyAttack: cfg.isHeavy, poiseDamage: cfg.isHeavy ? cfg.poiseDamage : 0f,
+            feedbackStrengthOverride: cfg.slashFeedbackStrength);
         AudioManager.Instance?.PostEvent("Player_Attack");
 
         Debug.Log($"[AttackSystem] 斩击 方向:{(leftToRight ? "L→R" : "R→L")} 伤害:{finalDmg} 目标数:{targets.Count}");

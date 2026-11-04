@@ -36,11 +36,14 @@ MonoBehaviour:
   slashSweepDuration: 0.4
   slashSweepDirection: 0
   slashDirectionalPushRows: 1
+  slashFeedbackStrength: 3
   slashMovementTiltDegrees: 0
   slashOverrideVisualTilt: 0
   slashVisualTiltDegrees: 0
   slashSpawnYOffset: -0.3
   slashSpawnZOffset: -5.6
+  slashRotateSprite1: {fileID: 0}
+  slashRotateSprite2: {fileID: 0}
   parrySweepAngle: 100
   parrySweepDuration: 0.25
   parrySpawnXOffset: 0

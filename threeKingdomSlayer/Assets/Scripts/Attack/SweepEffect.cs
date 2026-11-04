@@ -28,6 +28,9 @@ public class SweepEffect : MonoBehaviour
     private bool isHeavyAttack;
     /// <summary>本次招式的削韧值（仅在霸体窗口内生效，归零 → 破势眩晕）</summary>
     private float poiseDamage;
+    /// <summary>命中反馈强度的外部指定（null = 沿用原行为：首击 Standard、后续 Light）。<br/>
+    /// 强化招式（SlashC2）用 Heavy 做「更重的打击」：顿帧更长 + 镜头震动 heavy 档。</summary>
+    private HitFeedbackStrength? feedbackStrengthOverride;
     private HitReactionDirection hitReactionDirection = HitReactionDirection.None;
     private bool suppressHitReaction;
     private List<TargetEntry> targets = new List<TargetEntry>();
@@ -60,7 +63,8 @@ public class SweepEffect : MonoBehaviour
         float additionalWeaponRotation = 0f, bool useEnhancedSlashMotion = false, float visualPathTilt = 0f,
         bool interruptsCavalryCharge = false, HitReactionDirection hitReactionDirection = HitReactionDirection.None,
         bool suppressHitReaction = false, bool enableMangaSweep = false,
-        bool enableWeaponAfterimage = false, bool isHeavyAttack = false, float poiseDamage = 0f)
+        bool enableWeaponAfterimage = false, bool isHeavyAttack = false, float poiseDamage = 0f,
+        HitFeedbackStrength? feedbackStrengthOverride = null)
     {
         float startX = leftToRight ? -halfWidth : halfWidth;
         float endX = leftToRight ? halfWidth : -halfWidth;
@@ -193,6 +197,7 @@ public class SweepEffect : MonoBehaviour
         effect.interruptsCavalryCharge = interruptsCavalryCharge;
         effect.isHeavyAttack = isHeavyAttack;
         effect.poiseDamage = poiseDamage;
+        effect.feedbackStrengthOverride = feedbackStrengthOverride;
         effect.hitReactionDirection = hitReactionDirection;
         effect.suppressHitReaction = suppressHitReaction;
         effect.onAllHit = onAllHit;
@@ -461,21 +466,33 @@ public class SweepEffect : MonoBehaviour
                 enemy.transform.position.z);
             enemy.TakeDamage(damage, damageType, damageNumberColor, canInterruptCFrame,
                 interruptsCavalryCharge: interruptsCavalryCharge,
-                feedbackStrength: isFirstHit ? HitFeedbackStrength.Standard : HitFeedbackStrength.Light,
+                feedbackStrength: ResolveHitFeedbackStrength(isFirstHit),
                 triggerHitAnimation: !suppressHitReaction,
                 impactPosition: impactPosition, impactDirection: impactDirection,
                 hitReactionDirection: hitReactionDirection,
                 isHeavyAttack: isHeavyAttack, poiseDamage: poiseDamage);
             if (isFirstHit)
-                PauseSequenceForHitStop(HitFeedbackStrength.Standard);
+                PauseSequenceForHitStop(ResolveHitFeedbackStrength(true));
             if (isFirstHit)
                 onFirstHit?.Invoke();
             onHit?.Invoke(enemy);
         }
     }
 
-    private void PauseSequenceForHitStop(HitFeedbackStrength feedbackStrength)
+    /// <summary>
+    /// 本次命中的反馈强度：
+    /// 招式指定了 override 就按它走（**只有首击**吃满档，后续命中降为 Light，
+    /// 避免连续命中全是重反馈）；没指定则沿用原行为（首击 Standard、后续 Light）。
+    /// </summary>
+    private HitFeedbackStrength ResolveHitFeedbackStrength(bool isFirstHit)
     {
+        if (!feedbackStrengthOverride.HasValue)
+            return isFirstHit ? HitFeedbackStrength.Standard : HitFeedbackStrength.Light;
+        if (!isFirstHit) return HitFeedbackStrength.Light;
+        return feedbackStrengthOverride.Value;
+    }
+
+    private void PauseSequenceForHitStop(HitFeedbackStrength feedbackStrength)    {
         if (seq == null || !seq.IsActive()) return;
         if (_hitStopRoutine != null)
             StopCoroutine(_hitStopRoutine);

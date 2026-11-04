@@ -45,6 +45,10 @@ public class AudioManager : MonoBehaviour
     [Header("Launch 命中 SFX — 随机二选一")]
     [SerializeField] private AudioClip[] _launchHitClips;
 
+    [Header("重击命中 SFX（强化招式 / Heavy 反馈档）")]
+    [Tooltip("留空 = **回退到普通斩击音**（当前行为）。美术的「重击音」交来后直接填这里即可生效，不用改代码。")]
+    [SerializeField] private AudioClip[] _heavyHitClips;
+
     [Header("防御受击 SFX — 随机二选一")]
     [SerializeField] private AudioClip[] _guardBlockClips;
     [SerializeField, Range(0f, 4f)] private float _guardBlockVolume = 1f;
@@ -64,6 +68,7 @@ public class AudioManager : MonoBehaviour
     private const float SLASH_HIT_VOLUME = 1.25f;
     private const float STAB_HIT_VOLUME = 1.25f;
     private const float LAUNCH_HIT_VOLUME = 1.25f;
+    private const float HEAVY_HIT_VOLUME = 1.35f;
     private const float ENEMY_HIT_VOLUME = 0.8f;
     private const float MIN_VOLUME_DB = -80f;
 
@@ -75,6 +80,7 @@ public class AudioManager : MonoBehaviour
     private int _lastSlashHitIndex = -1;
     private int _lastStabHitIndex = -1;
     private int _lastLaunchHitIndex = -1;
+    private int _lastHeavyHitIndex = -1;
     private int _lastGuardBlockIndex = -1;
     private float _nextGuardBlockTime;
 
@@ -256,6 +262,9 @@ public class AudioManager : MonoBehaviour
             case "Slash_Hit":
                 PlayRandom(_slashHitClips, SLASH_HIT_VOLUME, ref _lastSlashHitIndex);
                 break;
+            case "Slash_HeavyHit":
+                PlayHeavyHit();
+                break;
             case "Stab_Hit":
                 PlayRandom(_stabHitClips, STAB_HIT_VOLUME, ref _lastStabHitIndex);
                 break;
@@ -315,6 +324,21 @@ public class AudioManager : MonoBehaviour
     {
         EnsureAudioSources();
         PlayRandom(_slashHitClips, 1f, ref _lastSlashHitIndex);
+    }
+
+    /// <summary>
+    /// **重击命中音**（强化招式 / Heavy 反馈档）。
+    /// 专用数组为空时**回退到普通斩击音** → 素材还没交时行为与现状完全一致（不静音、不回归）。
+    /// </summary>
+    public void PlayHeavyHit()
+    {
+        EnsureAudioSources();
+        if (_heavyHitClips == null || _heavyHitClips.Length == 0)
+        {
+            PlayRandom(_slashHitClips, HEAVY_HIT_VOLUME, ref _lastSlashHitIndex);
+            return;
+        }
+        PlayRandom(_heavyHitClips, HEAVY_HIT_VOLUME, ref _lastHeavyHitIndex);
     }
 
     public void PlayStabHit()
