@@ -42,6 +42,10 @@ public class HeroConfig : ScriptableObject
     [Header("局外天赋")]
     [Tooltip("招式解锁判定用（C2/C4 这类连段收尾）。留空 = 不做招式锁定；填了就按存档里已解锁的节点判定。")]
     public TalentTreeConfig talentTree;
+    [Tooltip("**天赋目录**（3 棵分类树：基础数值 / 招式解锁 / 三选一解锁）。\n" +
+             "「招式解锁引导」要遍历**全部分类**才能教到页 1 / 页 3 的节点（只扫 talentTree 会漏）。\n" +
+             "留空 = 只扫 talentTree（兼容旧配置）。")]
+    public TalentCatalog talentCatalog;
     [Tooltip("**能力页**天赋树（基础数值页）。消费点从这里读「已解锁节点的数值载荷」（statId/statAdd）。\n" +
              "留空 = 没有能力天赋加成。天赋页的目录挂在 overlay 场景上，战斗里不加载 → 所以由武将资产直接指过来。")]
     public TalentTreeConfig abilityTree;

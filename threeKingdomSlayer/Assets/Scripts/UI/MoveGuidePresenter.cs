@@ -33,6 +33,9 @@ public class MoveGuidePresenter : MonoBehaviour, IMoveGuidePresenter
 
     public bool IsShowing { get; private set; }
 
+    /// <summary>上一次引导是否**完整演完**（false = 被 20s 超时兜底掐断）。</summary>
+    public bool CompletedNormally { get; private set; }
+
     private void Awake()
     {
         // 登记到呈现层端口（流程层只通过端口要引导 ✅）。
@@ -69,15 +72,22 @@ public class MoveGuidePresenter : MonoBehaviour, IMoveGuidePresenter
                       && dialogue.QueueEventAndNotify(request.dialogue, true);
         if (!queued) Debug.Log($"[MoveGuide] 无台词可播（dialogue={(request.dialogue != null)}），只演手势");
 
-        // 3) 等台词演完（且手势至少播满 minGestureSeconds）。
+        // 3) 等**台词演完**且**手势示范播完**（且至少 minGestureSeconds）。
+        //    旧实现只等「台词不忙 + 累计 1.2s」→ 示范（swipeDuration 可能 < 1.2s）会在
+        //    Finish() 里 HideLayers() 提前消失 → 玩家只看到一闪，什么都没演出来。
         float waited = 0f;
+        bool completed = false;
         while (waited < maxWaitSeconds)
         {
             waited += Time.unscaledDeltaTime;
             bool dialogueBusy = dialogue != null && dialogue.IsBusy;
-            if (!dialogueBusy && waited >= minGestureSeconds) break;
+            bool gestureShowing = gestureHint != null && gestureHint.IsShowing;
+            if (!dialogueBusy && !gestureShowing && waited >= minGestureSeconds) { completed = true; break; }
             yield return null;
         }
+        CompletedNormally = completed;
+        if (!completed)
+            Debug.Log($"[MoveGuide] 引导未完整播完（{waited:F1}s 兜底掐断）→ 不标记「已教过」，下次还会教");
 
         // 超时兜底：台词可能还挂在屏幕上（玩家一直没点）→ 收掉它，
         // 不然气泡会盖在战斗上（实测过：超时后气泡残留）。
@@ -114,7 +124,13 @@ public class MoveGuidePresenter : MonoBehaviour, IMoveGuidePresenter
                 gestureHint.PlayTap(from);
                 break;
         }
-        gestureHint.ShowDim(dimAlpha);
+
+        // 压暗**不要与对话压暗叠加**（否则叠成全黑，只看到黑屏、看不到示范）。
+        // 沿用 TutorialGestureHint 自己在教学门槛里的同一约定：
+        // 对话在播时它会关掉提示层压暗（TutorialGestureHint.cs:163-164）。
+        var dialogue = CombatPresenters.Dialogue;
+        bool dialogueDimming = dialogue != null && dialogue.IsBusy;
+        gestureHint.ShowDim(dialogueDimming ? 0f : dimAlpha);
     }
 
     /// <summary>屏幕归一化坐标 → 屏幕像素（与教学关的 from01/to01 同一口径 ✅）。</summary>

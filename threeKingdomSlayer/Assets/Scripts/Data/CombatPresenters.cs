@@ -116,6 +116,12 @@ public interface IMoveGuidePresenter
     /// <summary>当前是否正在播引导（流程层据此等它播完再开打 ✅）。</summary>
     bool IsShowing { get; }
 
+    /// <summary>
+    /// 上一次引导是否**完整演完**（false = 被超时兜底掐断）。
+    /// 只有完整演完才允许标记「已教过」—— 否则演出失败也会让玩家**永久失去**这个引导。
+    /// </summary>
+    bool CompletedNormally { get; }
+
     /// <summary>播一条引导；<paramref name="onDone"/> 在引导结束（玩家确认）后调用。</summary>
     void ShowMoveGuide(MoveGuideRequest request, System.Action onDone);
 }

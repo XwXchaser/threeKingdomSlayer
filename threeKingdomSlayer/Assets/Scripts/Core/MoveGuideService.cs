@@ -15,13 +15,31 @@ using UnityEngine;
 /// </summary>
 public static class MoveGuideService
 {
-    /// <summary>收集「已解锁但还没教过」的招式引导（按天赋树顺序）。</summary>
-    public static List<MoveGuideRequest> CollectPending(TalentTreeConfig tree)
+    /// <summary>收集「已解锁但还没教过」的招式引导（按天赋页顺序：目录里的页 → 武将挂的那棵）。</summary>
+    /// <param name="tree">武将直接挂的树（兼容旧配置 / 目录没配时的兜底）。</param>
+    /// <param name="catalog">天赋目录（3 棵分类树）。**只扫 tree 会漏掉页 1 / 页 3 的节点**。</param>
+    public static List<MoveGuideRequest> CollectPending(TalentTreeConfig tree, TalentCatalog catalog = null)
     {
         var result = new List<MoveGuideRequest>();
-        if (tree == null || tree.nodes == null) return result;
-
         var data = SaveManager.Load();
+        var seen = new HashSet<string>();
+
+        // 先扫目录里的全部分类（顺序 = 页签顺序）
+        if (catalog != null && catalog.categories != null)
+        {
+            for (int c = 0; c < catalog.categories.Length; c++)
+                CollectInto(result, seen, data, catalog.categories[c]);
+        }
+
+        // 兜底：武将直接挂的那棵（目录没配 / 老存档时也能教）
+        CollectInto(result, seen, data, tree);
+        return result;
+    }
+
+    private static void CollectInto(List<MoveGuideRequest> result, HashSet<string> seen,
+        SaveData data, TalentTreeConfig tree)
+    {
+        if (tree == null || tree.nodes == null) return;
         for (int i = 0; i < tree.nodes.Count; i++)
         {
             var node = tree.nodes[i];
@@ -30,6 +48,7 @@ public static class MoveGuideService
             if (node.moveConfig == null) continue;                          // 只教「解锁招式」的节点
             if (!TalentTreeState.IsUnlocked(node)) continue;                // 没解锁 = 不教
             if (MoveGuideSaveSection.IsTaught(data, node.nodeId)) continue; // 教过了 = 不再教
+            if (!seen.Add(node.nodeId)) continue;                          // 同一节点只教一次
 
             result.Add(new MoveGuideRequest
             {
@@ -40,7 +59,6 @@ public static class MoveGuideService
                 dialogue = node.moveGuideDialogue
             });
         }
-        return result;
     }
 
     /// <summary>标记「这条引导已经教过」（写存档 ✅）。</summary>
@@ -64,8 +82,9 @@ public static class MoveGuideService
         var ps = PlayerState.Instance;
         var hero = ps != null ? ps.heroConfig : null;
         var tree = hero != null ? hero.talentTree : null;
+        var catalog = hero != null ? hero.talentCatalog : null;
 
-        List<MoveGuideRequest> pending = CollectPending(tree);
+        List<MoveGuideRequest> pending = CollectPending(tree, catalog);
         for (int i = 0; i < pending.Count; i++)
         {
             MoveGuideRequest request = pending[i];
@@ -81,8 +100,12 @@ public static class MoveGuideService
             }
             if (done)
             {
-                MarkTaught(request.nodeId);
-                Debug.Log($"[MoveGuide] 已教：{request.nodeId}（{request.title}）");
+                // 只有**完整演完**才标记「已教过」——
+                // 演出被掐断（超时兜底 / 界面异常）时不能标记，
+                // 否则玩家会**永久失去**这个引导（第一次没看到 = 以后也不再教）。
+                bool complete = presenter.CompletedNormally;
+                if (complete) MarkTaught(request.nodeId);
+                Debug.Log($"[MoveGuide] {(complete ? "已教" : "未完整播出（不标记教过，下次还会教）")}：{request.nodeId}（{request.title}）");
             }
         }
     }
