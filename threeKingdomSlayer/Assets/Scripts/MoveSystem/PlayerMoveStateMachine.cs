@@ -197,6 +197,17 @@ public class PlayerMoveStateMachine : MonoBehaviour
         if (root == null)
             return ExecuteDirect(input, ref resolvedType);
 
+        // 天赋锁定：**中立态入口也要查**。
+        // 之前只有「连段转移」段查 IsMoveLocked（PlayerMoveStateMachine.cs:317），
+        // 所以中立态的 roots 入口（横滑 → Slash）完全绕过了天赋锁 ——
+        // 表现为「天赋还没解锁 Slash，照样能横滑出招」。
+        // 锁住 = 这个输入根本不成立：不执行，也不回落成别的招式（与转移段同一口径）。
+        if (IsMoveLocked(root))
+        {
+            _lastResolution = $"招式未解锁 {root.name}（不响应）";
+            return false;
+        }
+
         return ExecuteMove(root, input, out resolvedType);
     }
 
@@ -327,7 +338,13 @@ public class PlayerMoveStateMachine : MonoBehaviour
         // 后继若是 Slash 系（SlashC2）：方向继承**上一段**（蓄力松手本身没有方向）
         if (next != null && next.attackType == AttackType.Slash)
             input.slashLeftToRight = _entrySlashLeftToRight;
-        return ExecuteMove(next, input, out resolvedType, cancelCurrentMove: true);
+
+        // 自连（repeatSelf 回到**同一招式**）**不取消动作锁**：
+        // cancelCurrentMove=true 会让 AttackSystem 跳过动作锁判定
+        //（场景 useActionBasedCooldown=1 时：`if (!cancelCurrentMove && _actionLockTimer > 0f) return false;`），
+        // 于是同方向连续斩击可以无限快 —— 动作锁是斩击的节奏约束，不能被自连绕过。
+        bool isSelfRepeat = next != null && next == _currentMove;
+        return ExecuteMove(next, input, out resolvedType, cancelCurrentMove: !isSelfRepeat);
     }
 
     /// <summary>

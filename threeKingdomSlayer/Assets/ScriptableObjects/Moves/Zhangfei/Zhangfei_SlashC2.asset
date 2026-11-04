@@ -22,7 +22,7 @@ MonoBehaviour:
   columnMode: 1
   isHeavy: 1
   breakIcePushRows: 3
-  rangeRows: 2
+  rangeRows: 1
   cooldown: 0.3
   actionDuration: 0.66
   launchDuration: 0.5

@@ -186,6 +186,35 @@ public partial class TutorialStageDirector : MonoBehaviour
     }
 
     /// <summary>
+    /// **不在教学路线上时**，把**教学专用**的三选一开关还原（forcedChoices / suppressChoices）。
+    ///
+    /// 背景：这两个开关原本只在 <c>OnDisable</c> 里清。但教学关 → 正式关是**同一场景内切节点**，
+    /// Director 不会被禁用 / 销毁 → <c>OnDisable</c> 不跑 → 教学用的强制三选一池
+    /// （旋风 / 海浪）**残留到正式关**，把正式关的三选一锁死。
+    ///
+    /// 判定用「当前路线 != 教学路线」，与 <see cref="RefreshDefenseButtonAvailability"/> 同一口径；
+    /// 路线未就绪（route == null）时**不动**，避免教学刚开始就误清。
+    /// </summary>
+    private void ReleaseTutorialOnlyChoicesIfOffTutorialRoute()
+    {
+        var choices = UpgradeChoiceManager.Instance;
+        if (choices == null) return;
+
+        var route = RouteFlowHub.Current;
+        bool definitelyOffTutorial = route != null && tutorialRouteConfig != null
+                                    && route.RouteConfig != tutorialRouteConfig;
+        if (!definitelyOffTutorial) return;
+
+        bool hadForced = choices.forcedChoices != null && choices.forcedChoices.Count > 0;
+        bool suppressed = choices.suppressChoices;
+        if (!hadForced && !suppressed) return;
+
+        choices.suppressChoices = false;
+        choices.forcedChoices.Clear();
+        Debug.Log("[Tutorial] 已离开教学路线 → 还原教学专用三选一开关（forcedChoices 已清空 / suppressChoices=false）");
+    }
+
+    /// <summary>
     /// 防御键的开放时机：
     ///   • 教学关：**教到那一拍之前锁住**（锁住 = 不可见 + 不吃射线 → 既不会被点到，也不吞手势）；
     ///   • 正式关 / 教学已完成：一直开放。
@@ -234,6 +263,13 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 它是个可交互 UI，按输入规则（IsPointerOverUIAt：命中可交互 UI → 这次输入不算手势）
         // 会把玩家点敌人的手势吞掉 → 开局的点击提示点过去就落在按钮上。
         RefreshDefenseButtonAvailability();
+
+        // 【教学专用状态复位】离开教学路线后必须还原「教学专用的三选一」开关。
+        // forcedChoices / suppressChoices 是教学关强制的三选一池（旋风 / 海浪），
+        // 原本只在 OnDisable 里清 —— 但教学关 → 正式关是**同一场景内切节点**，
+        // Director 不会 OnDisable → 这两个开关**残留到正式关**，
+        // 于是正式关的三选一被锁死在教学池里（表现为「到该弹的时候选不了 / 卡住」）。
+        ReleaseTutorialOnlyChoicesIfOffTutorialRoute();
 
         // 开幕台词：教学路线一就绪就播一次
         if (!_openingPlayed && openingDialogue != null && tutorialRouteConfig != null)
