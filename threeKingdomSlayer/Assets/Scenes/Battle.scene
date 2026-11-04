@@ -14699,7 +14699,28 @@ MonoBehaviour:
     freezeOnCAttack: 0
     waitForCAttack: 0
     skillUpgradeId: 
-    afterDialogue: {fileID: 0}
+    afterDialogue: {fileID: 11400000, guid: cd6493962ad4ca243bac3ab251d1140a, type: 2}
+  - battle: {fileID: 11400000, guid: 7830540a0bfc4d14994a832e90cc9975, type: 2}
+    waveIndex: 1
+    kind: 2
+    from01: {x: 0.2, y: 0.5}
+    to01: {x: 0.8, y: 0.5}
+    delay: 0.2
+    playSeconds: 1.2
+    pauseUntilPerformed: 1
+    lineAtWaveStart: 0
+    triggerHpPercent: 1
+    freezeOnGesture: 0
+    anchorToPlayer: 0
+    holdAfterGesture: 0
+    despawnTargetOnSuccess: 0
+    loops: 0
+    gap: 0.6
+    requiredHits: 1
+    freezeOnCAttack: 0
+    waitForCAttack: 0
+    skillUpgradeId: 
+    afterDialogue: {fileID: 11400000, guid: cd82bdbb5c7b42843ac07d9c514e297c, type: 2}
   - battle: {fileID: 11400000, guid: 7830540a0bfc4d14994a832e90cc9975, type: 2}
     waveIndex: 1
     kind: 8
@@ -14762,7 +14783,7 @@ MonoBehaviour:
     freezeOnCAttack: 1
     waitForCAttack: 0
     skillUpgradeId: 
-    afterDialogue: {fileID: 0}
+    afterDialogue: {fileID: 11400000, guid: 56396570454d8084d8667d63212d6563, type: 2}
   - battle: {fileID: 11400000, guid: 0342f43465c8ca44fa158b7937ed845b, type: 2}
     waveIndex: 1
     kind: 9
@@ -14783,7 +14804,7 @@ MonoBehaviour:
     freezeOnCAttack: 0
     waitForCAttack: 0
     skillUpgradeId: 
-    afterDialogue: {fileID: 0}
+    afterDialogue: {fileID: 11400000, guid: 432ee4a03c2a1564580058955ebe41e1, type: 2}
   tutorialLineSeconds: 2.2
   openingDialogue: {fileID: 11400000, guid: a42d1a72f05fbb24f90e336a3d9b4709, type: 2}
   hintWaitForEnemySeconds: 8
@@ -19630,6 +19651,7 @@ MonoBehaviour:
   _launchHitClips:
   - {fileID: 8300000, guid: 827d3aacea4d7f64883b1ef827e2d3a8, type: 3}
   - {fileID: 8300000, guid: a791c91095c1ff847bfd56f70ab39bf0, type: 3}
+  _heavyHitClips: []
   _guardBlockClips:
   - {fileID: 8300000, guid: 7808d9a5d42673d4bbde29678bcfe1a3, type: 3}
   - {fileID: 8300000, guid: 29bdba8b58895fc4f8aeef5f962542ca, type: 3}
