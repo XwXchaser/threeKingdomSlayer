@@ -8,6 +8,11 @@ aiEditMode: inherit
 
 # 局内成长与解锁内容
 
+> ⚠️ **本文的 §4（流派分线）与 §8.5（秘籍）已按 2026-11-02 裁决实现；§6（满槽补偿）与 §7（等级上限）已由对方实现并验收。**
+> **§9「招式解锁引导」是 2026-11-02 新发现的一处坏功能**（黑屏 + 暂停 + 没有演出），修法见 `plan/handoff-growth-slash-guide-20261102.md` §5-T2。
+>
+> 需求 **R3 / R4（消费端）/ R6 / R7 / R8**。执行顺序见 `plan/growth-stage-move-plan-20261102.md` §0.5。
+
 > 2026-11 设计文档。属于需求 **R3 / R4（消费端）/ R6 / R7 / R8**。
 > 解锁内容的**产出端**（天赋树）见 `design/talent-tree-architecture.md`。
 > 现状盘点与实测证据见 `design/out-of-game-growth-v2-analysis.md`（§2.5 / §2.6 / §2.7）。

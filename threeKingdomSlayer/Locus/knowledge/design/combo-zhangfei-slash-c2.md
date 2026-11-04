@@ -96,6 +96,38 @@ Zhangfei_Slash.moveEdges:
 > 前端侧：天赋页**不需要改代码**就能显示新节点（面板按 `moveConfig` 自动取图标与文案 ✓）；
 > 面板按 `groupId` 画泳道（`groupId` 已填 `sweep` ✓）。
 
+### 4.2 「解锁后首次进关」的引导（**与关卡节点无关**，2026-11-02）
+
+> **口径**：玩家**首次解锁 slash 后、第一次进入战斗时**，弹一次「手势示范 + 一行文字」。
+> 依据 `MoveGuideService.cs` 自己的规则注释（「解锁后第一次进关时，在波次开始前弹一次」）。
+> → **教学关不需要 Slash 教学**。
+
+**当前实现状态（活体实测）**
+
+| 环节 | 状态 |
+|---|---|
+| 机制 | `MoveGuideService`（收集）+ `MoveGuidePresenter`（播）+ `TalentNodeConfig.moveGuideGesture/moveGuideDialogue`（数据位）+ `MoveGuideSaveSection`（存档）—— 全套都在 |
+| 数据 | `talent_move_slash` = `SwipeHorizontal` + `guide_move_slash`（台词「手指横着划过去 —— 横扫一排敌人！」）—— 已配 |
+| 触发 | `FakeRouteRuntime.Node.cs:118`（路线关卡，战斗开打前）+ `StageRunFlow.cs:66`（直连关卡） |
+| **实际表现** | **黑屏 + 暂停 + 敌人没到位 + 没有教学的演出**（坏的） |
+
+**根因（活体组件证据）**
+
+```
+MoveGuidePresenter: IsShowing=True  CompletedNormally=False  gestureHint.IsShowing=False
+Dialogue: IsBusy=True      Time.timeScale=0
+```
+
+| 现象 | 根因 |
+|---|---|
+| 敌人还没到位 | `ShowPending()` 在**波次开始前** → 战斗还没开始（设计，不是 bug） |
+| 黑幕 + 暂停 | 提示层 `ShowDim(0.5)` **叠加**对话层压暗；对话是「点击继续」式 → `IsBusy=true` → `timeScale=0` |
+| **没有演出** | `MoveGuidePresenter` 用 `PlaySwipe()`（**播一次**）→ 1.1s 后 `Finish()` → `HideLayers()` **自己藏了**；而它等 `minGestureSeconds=1.2s` → 示范在玩家读台词期间就消失 |
+
+**核心**：`MoveGuidePresenter` 用了「**演示一次**」（`Play*`），而教学用的是「**门槛循环演示**」（`TutorialGestureHint.Gate`）→ **应该复用 `Gate`，不自己播一次**。
+
+**修法**：见 `plan/handoff-growth-slash-guide-20261102.md` §5-T2。
+
 ## 5. 解锁
 
 - 节点：`TalentTree_Moves` → `talent_move_slashc2`（`moveConfig = Zhangfei_SlashC2`，`coinCost` 沿用占位 1）。

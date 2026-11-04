@@ -16,8 +16,9 @@ aiEditMode: inherit
 > `design/move-split-and-derivatives.md`（招式衍生与拆分）
 >
 > 现状盘点与实测证据：`design/out-of-game-growth-v2-analysis.md`
-> 美术素材需求：`design/art-asset-brief-20261102.md`
+> 美术素材需求：`design/art-asset-brief-20261102.md`（**已作废** —— 美术已由对方接手，见 `plan/talent-ui-art-handoff-20261101.md`）
 > **⚠️ 天赋方案对齐：`plan/talent-scheme-alignment-20261102.md`**
+> **★ 交接 todolist（本轮收尾，含活体证据与已确认事实）：`plan/handoff-growth-slash-guide-20261102.md`**
 
 ---
 
