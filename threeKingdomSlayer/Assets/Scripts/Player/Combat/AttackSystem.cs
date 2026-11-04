@@ -167,6 +167,23 @@ public partial class AttackSystem : MonoBehaviour
     public AttackSkillConfig LastMoveConfig { get; private set; }
 
     /// <summary>
+    /// **斩击类输入诊断**（2026-11 临时）：定位「同方向连续斩击比反方向快」。
+    /// 打印每次 Slash / SlashC2 出招时的关键时序：动作锁剩余、是否命中、方向、是否自连。
+    /// 定位完删掉这个类即可。
+    /// </summary>
+    public static class SlashTimingDiag
+    {
+        public const bool Enabled = true;
+        public static void Log(string tag, AttackType type, bool cancelCurrentMove,
+            bool leftToRight, bool hitAny, float actionLockRemaining)
+        {
+            if (!Enabled) return;
+            Debug.Log($"[SlashDiag] {tag} t={Time.time:F3} type={type} cancel={cancelCurrentMove} " +
+                      $"lockRemain={actionLockRemaining:F3} hit={hitAny} dir={(leftToRight ? "R" : "L")}");
+        }
+    }
+
+    /// <summary>
     /// 尝试取消最近一次戳击的起手：仅在其首个命中结算前有效。
     /// 供「按下即出轻攻击」模型下，滑动在起手阶段改写本次输入使用。
     /// 取消成功后清除动作锁与戳击视觉门；不触发能量、被动计数与击退波。
@@ -401,6 +418,9 @@ public partial class AttackSystem : MonoBehaviour
             return false;
 
         // 冷却检查：新模式（动作锁定）→ 全局锁；旧模式 → 独立技能CD
+        if (attackType == AttackType.Slash)
+            SlashTimingDiag.Log("尝试", attackType, cancelCurrentMove, slashLeftToRight, false, _actionLockTimer);
+
         if (useActionBasedCooldown)
         {
             if (!cancelCurrentMove && _actionLockTimer > 0f) return false;
@@ -449,6 +469,8 @@ public partial class AttackSystem : MonoBehaviour
 
         if (hitAny)
         {
+            if (attackType == AttackType.Slash)
+                SlashTimingDiag.Log("命中", attackType, cancelCurrentMove, slashLeftToRight, true, _actionLockTimer);
             // 动作锁模式只覆盖玩家自身的出手与收招；离手飞行物拥有独立生命周期。
             float moveDuration;
             bool parryWhiff = attackType == AttackType.Parry && _lastParryWhiff;
