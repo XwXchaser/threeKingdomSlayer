@@ -14,9 +14,9 @@ using UnityEngine.SceneManagement;
 ///     wave1 → 教**多次点击触发三连 stab**；完成后补一句「多次攻击可以打断敌人的攻击」（不暂停）
 ///     两波经验给 0 → 节点一不升级、不弹三选1
 ///   节点二（E0）
-///     wave0 → **1012（霸体）**：敌人起霸体技时**冻结** → 教按住防御键格挡这一击
+///     wave0 → **1011（霸体）**：敌人起霸体技时**冻结** → 教按住防御键格挡这一击
 ///             经验 ×3 → 击杀这一只正好升级 → **弹出唯一一次三选1（技能）**
-///     wave1 → **1012（霸体）**：教**用技能打断**霸体攻击（指着玩家刚选中的那个技能）
+///     wave1 → **1011（霸体）**：教**用技能打断**霸体攻击（指着玩家刚选中的那个技能）
 ///   节点之间 → **黑幕**（半透明压暗，不是全屏纯黑）
 ///
 /// 幂等：可重复执行。已有资产只改内容，不重建（不丢 GUID 引用）。
@@ -34,19 +34,21 @@ public static class TutorialSetupTool
     private const string WavePath = "Assets/ScriptableObjects/ActiveSkills/ActiveSkill_Wave.asset";
     private const string FireLinePath = "Assets/ScriptableObjects/ActiveSkills/ActiveSkill_FireLine.asset";
 
-    /// <summary>节点二 1012 的血量倍率（有效血量 = 100 × 1.5 = 150）。</summary>
+    /// <summary>节点二 1011 的血量倍率（有效血量 = 100 × 1.5 = 150）。</summary>
     private const float SuperArmorHealthMultiplier = 1.5f;
-    /// <summary>节点二 1012 的伤害倍率（3 × 0.3 = 0.9 一下，教学期间不会被打死）。</summary>
+    /// <summary>节点二 1011 的伤害倍率（3 × 0.3 = 0.9 一下，教学期间不会被打死）。</summary>
     private const float SuperArmorDamageMultiplier = 0.3f;
-    /// <summary>节点二 1012 的经验倍率（1012 基础 80 × 3 = 240 ≥ 升 1 级所需 200）。</summary>
+    /// <summary>节点二 1011 的经验倍率（1011 基础 80 × 3 = 240 ≥ 升 1 级所需 200）。</summary>
     private const float SuperArmorExpMultiplier = 3f;
 
-    /// <summary>节点一用的敌人 id（1011 = **没有 C 技**的普通兵 → 轻攻击能打断，\n" +
-    /// 「多次攻击可以打断敌人的攻击」这句才成立）。形象与 1012 一致（都是旧武将）。</summary>
-    private const int NormalEnemyId = 1011;
+    /// <summary>节点一用的敌人 id（1012 = **没有 C 技**的普通兵 → 轻攻击能打断，\n" +
+    /// 「多次攻击可以打断敌人的攻击」这句才成立）。形象与 1011 一致（都是旧武将）。\n" +
+    /// ⚠️ 2026-11-05：霸体机制从 1012 搬到 1011（1011=重甲/盔甲兵带霸体，1012=轻甲/民兵无霸体）→ 这个 id 跟着换了。</summary>
+    private const int NormalEnemyId = 1012;
 
-    /// <summary>节点二用的敌人 id（1012 = **带 C 技霸体前摇**的兵，用来教霸体与打断）。</summary>
-    private const int SuperArmorEnemyId = 1012;
+    /// <summary>节点二用的敌人 id（1011 = **带 C 技霸体前摇**的兵，用来教霸体与打断）。\n" +
+    /// ⚠️ 2026-11-05：霸体机制从 1012 搬到 1011 → 这个 id 跟着换了。</summary>
+    private const int SuperArmorEnemyId = 1011;
 
     [MenuItem("Tools/三国杀戮/教学关/应用教学关新配置")]
     public static void Apply()

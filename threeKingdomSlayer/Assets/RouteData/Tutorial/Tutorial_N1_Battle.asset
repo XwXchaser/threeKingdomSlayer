@@ -18,7 +18,7 @@ MonoBehaviour:
   - waveId: 0
     isBossWave: 0
     rows:
-    - enemyIds: 0000000000000000f30300000000000000000000
+    - enemyIds: 0000000000000000f40300000000000000000000
     healthMultiplier: 1
     bossHealthMultiplier: 0
     attackSpeedMultiplier: 1
@@ -31,7 +31,7 @@ MonoBehaviour:
   - waveId: 1
     isBossWave: 0
     rows:
-    - enemyIds: f303000000000000f303000000000000f3030000
+    - enemyIds: f403000000000000f403000000000000f4030000
     healthMultiplier: 1
     bossHealthMultiplier: 0
     attackSpeedMultiplier: 1

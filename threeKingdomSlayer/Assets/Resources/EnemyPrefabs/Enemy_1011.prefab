@@ -61,7 +61,7 @@ MonoBehaviour:
   moveSpeed: 0.3
   visualYOffset: 0.13886152
   attackSequence:
-  - isCAttack: 0
+  - isCAttack: 1
     animationTrigger: 
     spawnDuration: 2
     drawDuration: 1
