@@ -49,6 +49,22 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
     /// <summary>当前是否对玩家开放（锁住时不可见、也不吃点击）。</summary>
     public bool Available => _available;
 
+    /// <summary>
+    /// **暂时静音**（教学进行中）：按钮**可见但压暗**，按下去**既不防御、也不出招**。
+    ///
+    /// 和 <see cref="_available"/> 是**两件不同的事**，别混：
+    ///   • <c>_available = false</c> → **隐藏**（教学关还没教到格挡 → 干脆不给看，2026-10-01 用户定）
+    ///   • <c>_muted = true</c>     → **压暗可见但无效**（教学进行中暂时不让用：
+    ///                                3选1弹窗期间 / 招式解锁引导拍期间）
+    ///
+    /// 静音期间**仍然吃射线**（blocksRaycasts = true）→ 这一下被按钮吞掉，
+    /// **不会漏成游戏手势**（否则玩家按“防御”反而打出一招）。
+    /// </summary>
+    private bool _muted;
+
+    /// <summary>当前是否处于「暂时静音」（压暗、按了没反应）。</summary>
+    public bool Muted => _muted;
+
     private CanvasGroup _canvasGroup;
     private Coroutine _popRoutine;
     /// <summary>当前是否**按着**（hold 语义：按住=防御中，松开=退出）。</summary>
@@ -76,7 +92,7 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
         ApplyAvailability();
     }
 
-    /// <summary>开放 / 锁住这个键（教学关按拍解锁）。</summary>
+    /// <summary>开放 / 锁住这个键（教学关按拍解锁；锁住 = 隐藏）。</summary>
     public void SetAvailable(bool available)
     {
         if (_available == available) return;
@@ -85,15 +101,44 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
         if (!_available) Release();
     }
 
+    /// <summary>
+    /// **暂时静音**：可见但压暗，按下去既不防御也不出招（2026-11-05 用户定）。
+    /// 与 <see cref="SetAvailable"/> 独立 → 静音的恢复**不依赖**「教到格挡没有」那套逻辑。
+    /// </summary>
+    public void SetMuted(bool muted)
+    {
+        if (_muted == muted) return;
+        _muted = muted;
+        ApplyAvailability();
+        if (_muted) Release();   // 静音的瞬间把可能举着的枪收回去
+    }
+
     private void ApplyAvailability()
     {
         if (_canvasGroup != null)
         {
-            _canvasGroup.alpha = _available ? 1f : 0f;
-            _canvasGroup.blocksRaycasts = _available;
-            _canvasGroup.interactable = _available;
+            if (!_available)
+            {
+                // 隐藏（教学关还没教到格挡）
+                _canvasGroup.alpha = 0f;
+                _canvasGroup.blocksRaycasts = false;
+                _canvasGroup.interactable = false;
+            }
+            else if (_muted)
+            {
+                // 静音：**压暗但可见**；**仍然吃射线** → 这一下被按钮吞掉，不会漏成游戏手势
+                _canvasGroup.alpha = 0.35f;
+                _canvasGroup.blocksRaycasts = true;
+                _canvasGroup.interactable = false;   // 不派发事件 → 不会触发防御
+            }
+            else
+            {
+                _canvasGroup.alpha = 1f;
+                _canvasGroup.blocksRaycasts = true;
+                _canvasGroup.interactable = true;
+            }
         }
-        if (_button != null) _button.interactable = _available;
+        if (_button != null) _button.interactable = _available && !_muted;
     }
 
     private void OnEnable()
@@ -127,6 +172,7 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
     public void OnPointerDown(PointerEventData eventData)
     {
         if (!_available) return;
+        if (_muted) return;                       // 静音：按下去**什么都不发生**（也不防御）
         // 区域位置识别：点的地方下面有活着的敌人 → 那是攻击，不是防御 → 不接管
         if (eventData != null && ShouldYieldToCombat(eventData.position)) return;
 
@@ -153,6 +199,9 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
     /// </summary>
     public bool ShouldYieldToCombat(Vector2 screenPos)
     {
+        // 静音期间：这个键不接管任何点击 → **这一下也不能变成战斗手势**
+        //（否则玩家按“防御”反而打出一招 —— 2026-11-05 用户反馈「按下去没有防御」）
+        if (_muted) return false;
         return EnemyManager.TryGetEnemyAtScreenPoint(screenPos, Camera.main, out _);
     }
 
@@ -172,7 +221,7 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
         if (_icon == null) return;
         var player = PlayerState.Instance;
         bool canDefend = player != null && (player.IsDefendingActive || player.CanStartDefend());
-        _icon.color = canDefend ? _availableColor : _unavailableColor;
+        _icon.color = (_muted || !canDefend) ? _unavailableColor : _availableColor;
     }
 
     /// <summary>防御开启的弹入动效：0.88 → 1.06 → 1.0（用协程，不挂 DOTween，避免残留 tween）。</summary>

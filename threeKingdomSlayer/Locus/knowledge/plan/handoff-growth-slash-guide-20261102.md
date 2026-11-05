@@ -305,7 +305,7 @@ FakeRouteRuntime.Instance.Begin(route);   // 直接开跑，不用点落地页
 | ① 敌人挥舞武器音 | ✅ 新增 `_enemyAttackSwingClips[]`（**数组随机二选一**）：`enemy_swing_metal_whoosh`（Metal hit woosh，0.48s）+ `enemy_swing_dagger_whoosh`（Dagger whoosh，0.28s）。来源 Mixkit 免费许可（免署名），登记在 `Assets/SFX/enemy/SOURCES.md`。**旧的 `_enemyAttackTelegraphClip`（错接 QTE_block1）已删除**。选型按波形包络量化比较（起音 80~100ms、尾部干净）→ 排除了 Sword slash swoosh（只有 mp3 + 尾部 1.4s 静音）、Sword blade swish（起音 0.52s 太拖）、Fast sword whoosh（有效声仅 0.08s） |
 | ② BGM 不按节点切 | ✅ `AudioManager.PlayDefaultBGM()` 改为**幂等**：已在播就不重播（并加 `forceRestart` 参数给将来的打点切歌）。实测跨节点（N1→E0）**真重启次数 = 0**（BGM 素材 55.66s 循环，循环点会被误读成「重置」） |
 | ③ 启用格挡音效 | ✅ 新增 `_defendReadyClip` + `PostEvent("Player_DefendReady")`；`PlayerState.SetDefend(true)` **不再播招架音**。**素材留空 = 暂不播**（用户想要「轻微的握持声」，待定）→ 素材到位后在 Battle.scene 的 Audio Manager 组件上填进去即可，不用改代码 |
-| ④ 格挡受击音 | ✅ `_guardBlockClips` 从 `guard_block2/4` 改成 **`QTE_block1/2` 随机**（沿用原有的 0.08s 防刷冷却）。⚠️ `guard_block1..6` 六个素材变成**未引用**（未删，等用户决定） |
+| ④ 格挡受击音 | ⚠️ **2026-11-05 改回 `guard_block2/4/5`**：之前按“复用 QTE_block1/2”接，但那是 **0.7~1.1s 的 UI 提示音**（峰值很轻）→ 格挡时它和敌人的挥武器 whoosh 叠在一起，**听感像“播了两次音效”**（用户反馈的现象 B）。短撞击音（0.22~0.30s）+ whoosh = 一次“挥砍→铛”的 clash。QTE_block 回归 QTE 答题的用途 |
 
 > 实测：Play Mode 机器人跑正式关 → 敌人起手音已触发（`_lastEnemySwingIndex ≥ 0`）；BGM 跨节点连续；Console 0 error。
 > 导入参数用 **PCM + DecompressOnLoad**（比项目其它 SFX 的 Vorbis 更适合短促起音：Vorbis 的 pre-skip 会把 80ms 的起音抹钝）。

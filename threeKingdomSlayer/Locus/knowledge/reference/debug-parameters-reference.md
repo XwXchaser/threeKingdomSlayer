@@ -265,6 +265,20 @@ aiEditMode: inherit
 | 字段 | 说明 |
 |------|------|
 | `comboTimeout` | 连击超时时间（秒） |
+
+### DefenseButton（防御键的三种状态）
+
+**文件**: `Assets/Scripts/UI/DefenseButton.cs` · **控制方**: `TutorialStageDirector.SetDefenseButtonMuted(bool)`
+
+| 状态 | 外观 | 能不能按 | 什么时候 |
+|------|------|----------|----------|
+| `Available=true` / `Muted=false` | 正常 | 能防御 | 常态 |
+| `Available=false`（**隐藏**） | 不可见 | 点不到 | 教学关**还没教到格挡**（2026-10-01 用户定：干脆不给看） |
+| `Muted=true`（**静音**） | 压暗到 alpha 0.35 + 图标变灰 | **按了没反应**（既不防御、也不出招） | 教学进行中暂时不让用：① **3选1弹窗期间**（玩家按防御会举枪 → 技能槽点不动 / 长枪卡在空中，2026-11-01 老问题）② **招式解锁引导拍**（指向突刺的连招蓄力，按防御会抢走持枪姿态 → 这一拍收不了） |
+
+> ⚠️ 静音时**仍然吃射线**（`blocksRaycasts=true`）+ `ShouldYieldToCombat` 返回 false →
+> 玩家按“防御”既不会防御、**也不会漏成一次出招**。
+> 静音的恢复**不依赖**「教到格挡没有」（那个在正式关一直是 false）→ 两条状态线互不干扰。
 | `comboDisplayThreshold` | 连击显示最低数 |
 
 ### KillRewardManager

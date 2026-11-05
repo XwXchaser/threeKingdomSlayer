@@ -469,6 +469,11 @@ public partial class TutorialStageDirector : MonoBehaviour
 
         if (recommended != null) ShowChoiceHint(recommended);
 
+        // **3选1弹窗期间：防御键静音**（2026-11-05 用户定）。
+        // 弹窗一打开就静音 → 玩家在这段里按防御键不会举枪，
+        // 也就不会把技能槽点不动 / 长枪卡在空中（2026-11-01 那个老问题）。
+        SetDefenseButtonMuted(true);
+
         // 教学对话：**用对话系统**说「选哪个」（三选一弹窗会把游戏暂停 →
         // 对话默认被“被别的 UI 挡住”拦下不播，所以这一拍开个口）。
         if (choiceTeachingDialogue != null)
@@ -507,28 +512,34 @@ public partial class TutorialStageDirector : MonoBehaviour
     /// 玩家选完了 → 记下选的是哪个技能（内容2 要指着它的槽位教）。
     /// </summary>
     /// <summary>
-    /// 教学期间锁住防御键（2026-11-01 用户反馈：「点击防御会让技能按键无法交互，长枪也卡在空中没有收回」）。
-    /// 锁的时候顺带把可能举着的长枪收回去（防御是 hold 语义，松开才收枪）。
+    /// 教学期间**暂时静音**防御键（可见但压暗、按下去没反应）。
+    ///
+    /// 用在哪两处（2026-11-05 用户定）：
+    ///   ① **3选1弹窗 → 玩家点技能按钮**这段：弹窗一打开就静音。
+    ///      （旧实现是“选完之后”才锁 → **弹窗期间防御键是开的** →
+    ///        玩家这时按防御键 → 举枪 → 技能槽点不动 / 长枪卡在空中 —— 2026-11-01 那个老问题）
+    ///   ② **招式解锁引导拍**（指向突刺的连招蓄力）：那一拍玩家在蓄力，
+    ///      按防御键会抢走持枪姿态 → 这一拍收不了。
+    ///
+    /// ⚠️ 与「教到格挡之前锁住」是**两件不同的事**：
+    ///    那个是**隐藏**（<c>SetAvailable(false)</c>，2026-10-01 用户定）；
+    ///    这个是**压暗可见但无效**（<c>SetMuted(true)</c>）。
+    ///    → 所以静音的恢复**不依赖** <c>_defendTaught</c>（它在正式关一直是 false）。
     /// </summary>
-    private void SetDefenseButtonLocked(bool locked)
+    private void SetDefenseButtonMuted(bool muted)
     {
         var button = DefenseButton.Instance;
-        if (locked)
+        if (button != null) button.SetMuted(muted);
+        _defenseMutedByTutorial = muted;
+        if (muted)
         {
-            _defenseLockedByTutorial = true;
-            if (button != null) button.SetAvailable(false);
             var ps0 = PlayerState.Instance;
             if (ps0 != null) ps0.SetDefend(false);      // 长枪收回去（别卡在空中）
         }
-        else if (_defenseLockedByTutorial)
-        {
-            _defenseLockedByTutorial = false;
-            if (button != null) button.SetAvailable(_defendTaught);
-        }
     }
 
-    /// <summary>防御键是否被教学锁住。</summary>
-    private bool _defenseLockedByTutorial;
+    /// <summary>防御键是否被教学**静音**（压暗、按下无效）。</summary>
+    private bool _defenseMutedByTutorial;
 
     /// <summary>内容2 的技能拍是否正在进行（那一拍允许在输入被拦下时也能释放技能）。</summary>
     public bool SkillBeatActive { get; private set; }
@@ -542,9 +553,11 @@ public partial class TutorialStageDirector : MonoBehaviour
         ChoiceHintActive = false;
         SafeHideGestureHint();
         DialogueManager.AllowDialogueWhilePaused = false;
+        // 三选1 → 内容2 技能拍 之间**继续静音**防御键（弹窗阶段的静音在这里延续，
+        // 到技能拍开拍时（Beats.cs）才恢复 —— 那几秒玩家要能防御，见 2026-11-02 反馈「为什么我会受击」）。
         // 三选1 → 内容2 技能拍 之间**锁住防御键**：
         // 否则玩家在这个空档按下防御 → 长枪举起来（又收不回），同时技能键被输入拦截点不动。
-        SetDefenseButtonLocked(true);
+        SetDefenseButtonMuted(true);
     }
 
     /// <summary>玩家在教学三选1 里选中的技能（没选 = null）。</summary>

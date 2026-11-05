@@ -19647,8 +19647,9 @@ MonoBehaviour:
   - {fileID: 8300000, guid: a791c91095c1ff847bfd56f70ab39bf0, type: 3}
   _heavyHitClips: []
   _guardBlockClips:
-  - {fileID: 8300000, guid: f3e0f5e8d6efa8c40a80d5ce83964f8d, type: 3}
-  - {fileID: 8300000, guid: 17fc96aaf44d86749929bab776d78bd1, type: 3}
+  - {fileID: 8300000, guid: 7808d9a5d42673d4bbde29678bcfe1a3, type: 3}
+  - {fileID: 8300000, guid: 29bdba8b58895fc4f8aeef5f962542ca, type: 3}
+  - {fileID: 8300000, guid: 0eacdc4e528452541bdf0b378be51d8a, type: 3}
   _guardBlockVolume: 1
   _guardBlockCooldown: 0.08
 --- !u!4 &1593080085

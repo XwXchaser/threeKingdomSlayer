@@ -92,6 +92,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 教学拍被打断（波次结束/关场景）时必须把敌人、压暗、手势过滤全部恢复，否则整局卡死
         EndBeat(playAfterDialogue: false);   // 被打断的拍不补播收尾台词
         ResetSkillBeatFlags();               // 技能拍的全局开关（static）必须收回，否则漏到正式关
+        SetDefenseButtonMuted(false);         // 静音也必须收回（拍被打断 → 这一拍的教学窗口结束了）
         // 正在门槛里被打断时必须走 Cancel：它会恢复 timeScale 和游戏输入
         if (gestureHint != null)
         {
@@ -260,7 +261,11 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 连招蓄力拍：两段式（点一下 → 在窗口里按住蓄满 → 松手），单独一套流程
         if (step.kind == GestureHintKind.ComboCharge)
         {
+            // **这一拍期间防御键静音**（2026-11-05 用户定）：
+            // 玩家在蓄力（阶段 2 持枪姿态被冻住）→ 按防御键会抢走姿态 → 这一拍收不了。
+            SetDefenseButtonMuted(true);
             yield return ComboChargeRoutine(step, from, to, playSeconds);
+            SetDefenseButtonMuted(false);
             yield break;
         }
 

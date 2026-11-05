@@ -59,9 +59,12 @@ public class AudioManager : MonoBehaviour
     [Tooltip("留空 = **回退到普通斩击音**（当前行为）。美术的「重击音」交来后直接填这里即可生效，不用改代码。")]
     [SerializeField] private AudioClip[] _heavyHitClips;
 
-    [Header("防御受击 SFX — 随机二选一")]
+    [Header("防御受击 SFX — 随机三选一")]
     [Tooltip("格挡**吸收伤害**时的音（PlayerGuard 触发）。\n" +
-             "2026-11-05 用户定：直接复用 QTE_block1/2 随机播放（原先用 guard_block2/4）。")]
+             "2026-11-05：改回 guard_block 系列（0.22~0.30s 的短撞击音）。\n" +
+             " 之前按「复用 QTE_block1/2」接的，但那是 0.7~1.1s 的 **UI 提示音** →\n" +
+             "  格挡时它和敌人的挥武器音叠在一起，听感像「播了两次音效」（用户 2026-11-05 反馈）。\n" +
+             " 短撞击音 + 挥武器 whoosh = 一次「挥砍→铛」的 clash。")]
     [SerializeField] private AudioClip[] _guardBlockClips;
     [SerializeField, Range(0f, 4f)] private float _guardBlockVolume = 1f;
     [SerializeField, Min(0f)] private float _guardBlockCooldown = 0.08f;

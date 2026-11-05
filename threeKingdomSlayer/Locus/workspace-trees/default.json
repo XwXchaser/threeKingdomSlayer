@@ -3,8 +3,8 @@
   "presetId": "default",
   "name": "Default",
   "projectId": "unity-293bce2768c5fa7e2c039c6f",
-  "revision": 1234,
-  "lastOperationId": "66084319-fc8f-4e99-9513-f4f2bd4be301",
+  "revision": 1237,
+  "lastOperationId": "0d6357e1-54e6-45e8-955f-60ec031d024c",
   "nodes": [
     {
       "nodeId": "resource:knowledge:32ea9f99-4b8d-4ed1-9e16-8f4ed1f7200e",
@@ -4171,7 +4171,7 @@
       "resourceKind": "session",
       "resourceId": "c7f06f86-e4af-459c-a3ad-aa1f4bca111e",
       "hidden": false,
-      "position": 2
+      "position": 1
     },
     {
       "nodeId": "resource:session:cfed80bf-7f2a-4c13-8123-b69c57d20d85",
@@ -4180,7 +4180,7 @@
       "resourceKind": "session",
       "resourceId": "807923da-e255-4e65-9479-d1b5bce23aa1",
       "hidden": false,
-      "position": 1
+      "position": 2
     }
   ],
   "itemStates": []
