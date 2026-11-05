@@ -389,21 +389,53 @@ public partial class InputManager : MonoBehaviour
         // 计算方向向量与水平轴（右方向 = (1,0)）的夹角
         float angleToHorizontal = Vector2.Angle(direction, Vector2.right);
 
+        // 滑向的蓄力等级：**只有「有前置招式」（连段窗口内）时才带**。详见 ChargeForSwipe()。
+        int swipeCharge = ChargeForSwipe();
+
         // 近垂直划动（上/下）→ 挑飞
         // 方向与垂直轴夹角 < verticalSwipeThreshold
         if (angleToVertical < verticalSwipeThreshold)
-            return SubmitGesture(MoveGesture.SwipeVertical, CurrentChargeLevel, -1);
+            return SubmitGesture(MoveGesture.SwipeVertical, swipeCharge, -1);
 
         // 近水平划动（左/右）→ 横扫
         // 方向与水平轴夹角 < horizontalSwipeThreshold
         if (angleToHorizontal < horizontalSwipeThreshold)
-            return SubmitGesture(MoveGesture.SwipeHorizontal, restrictChargedToVertical ? 0 : CurrentChargeLevel, -1);
+            return SubmitGesture(MoveGesture.SwipeHorizontal, swipeCharge, -1);
 
         // 对角线划动 → 斩击（兜底）
         bool slashLeftToRight = direction.x > 0;
         float slashVisualTilt = GetSlashVisualTilt(direction);
         Debug.Log($"[SlashTilt] Input charged dir={direction} leftToRight={slashLeftToRight} tilt={slashVisualTilt:F2}");
-        return SubmitGesture(MoveGesture.SwipeDiagonal, CurrentChargeLevel, -1, slashLeftToRight, slashVisualTilt);
+        return SubmitGesture(MoveGesture.SwipeDiagonal, swipeCharge, -1, slashLeftToRight, slashVisualTilt);
+    }
+
+    /// <summary>
+    /// 滑向手势能带的蓄力等级 —— **只有「有前置招式」时才带**（2026-11-05）。
+    ///
+    /// 问题：「站桩蓄力 + 横滑/斜滑/竖滑」= **无前置的纯蓄力** —— 中立态就能打出蓄力招
+    /// （蓄力横扫 Sweep / 蓄力横斩 Slash / 蓄力上挑 Launch），
+    /// 绕过了「终结技身份由前置决定」（design/combo-move-state-machine.md:201）。
+    ///
+    /// 判据：<c>comboChargeActive</c> —— 招式状态机在「招式进行中再次按下」时置位，
+    /// 即**这次按下属于连段（有前置招式）**；站桩蓄力是「直通」，不算连段（见状态机里的注释）。
+    ///
+    /// 影响面：
+    ///   • 连段里的蓄力**不受影响**：指向突刺（Jab1 --Hold--> StabR2）、
+    ///     SlashC2（Slash --Hold--> SlashC2）、枪突三下 → 蓄力上挑终结技（Jab3 --竖滑--> LaunchFinisher）
+    ///     —— 这几个的蓄力都发生在连段窗口内 → comboChargeActive 为真 → 蓄力照常带。
+    ///   • 站桩蓄力（长按不滑 → Pierce）**不受影响**（走的不是滑向路径）。
+    ///   • 中立态的蓄力上挑（Launch）会失去入口 → 变成无入口内容（待设计定）。
+    /// </summary>
+    private int ChargeForSwipe()
+    {
+        if (restrictChargedToVertical) return 0;
+        bool hasPredecessor = comboChargeActive && moveStateMachine != null && moveStateMachine.IsMoveActive;
+        if (hasPredecessor) return CurrentChargeLevel;
+        if (CurrentChargeLevel >= 1)
+        {
+            DebugLog.Info("[InputManager] 滑向蓄力不成立：没有前置招式（comboChargeActive=false）→ 按未蓄力处理");
+        }
+        return 0;
     }
 
     private float GetSlashVisualTilt(Vector2 direction)

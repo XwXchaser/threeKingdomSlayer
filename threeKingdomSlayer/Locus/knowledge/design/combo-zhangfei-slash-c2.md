@@ -200,15 +200,20 @@ Dialogue: IsBusy=True      Time.timeScale=0
 | 唯一「无解锁门控的中立态终结技」 | **Sweep**（本次停用） |
 | 同一提交加的另外两条 root（横滑→Slash、斜滑→Slash） | 等价于旧的默认回落，**无副作用**（顺带把横滑纳入天赋锁，是好事） |
 
-**遗留口子 ①（重要）**：`MoveGestureDefaults.ResolveAttackType` 的**默认兜底**里写着
-`SwipeHorizontal + charged → Sweep`、`Hold → Pierce`。
-只要招式表里没有对应手势的入口，就会走 `ExecuteDirect` → **纯蓄力从兜底路径复活**。
-本次停用之所以有效，是因为 root[1]（横滑→Slash）仍在、盖住了兜底。
-→ **要彻底关掉，必须同时改默认映射或 `restrictChargedToVertical`。**
+**遗留口子 ①（已于 2026-11-05 第二轮一并堵上）**：
+第一次只停了 `root[2]`，但**蓄力本身还是能从中立态起手** → 「站桩蓄力 + 横滑」照样成立（用户反馈：
+「依然可以直接触发 swipe 或者 sweep 的前置蓄力」）。
+真正的闸门不在招式表，而在**输入层**：滑向手势带不带蓄力等级。
+→ 现已在 `InputManager.ProcessSwipeGesture` 里加 `ChargeForSwipe()`：
+**横滑 / 斜滑 / 竖滑的蓄力等级，只有「有前置招式」（连段窗口内，`comboChargeActive` 为真）时才带**；
+中立态一律按未蓄力处理。
+→ 连带效果：`MoveGestureDefaults.ResolveAttackType` 的默认兜底（`SwipeHorizontal+charged→Sweep`）也够不着了
+（进表前蓄力已被抹成 0）→ **纯蓄力从兜底路径复活的口子一并关闭**。
+→ 日志可查：`[InputManager] 滑向蓄力不成立：没有前置招式（comboChargeActive=false）→ 按未蓄力处理`。
 
-**遗留口子 ②**：`Hold → Pierce`（**站桩蓄力穿刺**）是**另一条无前置的纯蓄力**，本次未动
-（设计文档 `design/charge-build-three-options.md` 把「Pierce/Sweep 蓄力线」列为合法流派，
-而 `design/gameplay-pillars.md:148` 又写「疾病流与纯蓄力流互斥」—— 两条口径本身冲突，待用户定）。
+**遗留口子 ②（仍未关）**：`Hold → Pierce`（**站桩蓄力穿刺**）是另一条无前置的纯蓄力，本次未动
+（它走的是长按路径，不是滑向路径；且设计文档 `design/charge-build-three-options.md` 把「Pierce/Sweep 蓄力线」列为合法流派）。
+另：中立态的**蓄力上挑（Launch）**因为竖滑的蓄力也被要求有前置 → 失去入口 → 变成无入口内容（待设计定）。
 
 ### 8.5 设计口径待对齐（本次不动代码）
 
