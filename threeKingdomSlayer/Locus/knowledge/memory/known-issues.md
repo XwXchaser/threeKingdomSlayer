@@ -338,3 +338,12 @@ aiEditMode: inherit
 - **取证**：`H:/locus/data/locus.db` → `messages.images`（JSON 数组，`data` 是 base64；用 `length(data)`+sha1 比对，别把图读进对话）；`session_events` 里只有 `event_type='error'` 的才是真失败，`userMessage` 载荷也会带上粘贴的报错文本，只按 LIKE 计数会被骗。`session_context_attempts` 本机为空，拿不到真实请求体。
 - **恢复**：首选换新会话 + 交接摘要（同问题 7/8）。要把旧会话救回来，就只摘掉那条消息的附件：`UPDATE messages SET images=NULL WHERE id='<该条 tool 消息 id>'`（文本结果保留，tool_call/tool_result 配对不破；不要用 `include_in_prompt=0` 整条禁用，会打断配对）。改前先把 `images` 备份成文件。
 - **预防**：读图前先掂量内容来源——聊天窗、真人照片、别人给的界面截图、含大量文字的界面最容易被判敏感；一旦某张图被 422 拒，**不要在同一会话重试**，立刻换会话并写交接。
+
+## 13. 2026-11-05 手感与交互反馈 5 条（**已分析，未实施**）
+- **来源**：用户当面反馈（战斗/教学/三选一三条线）——① 需要动作游戏的**预输入**；② 教程**不应该点任意处都能继续**；③ 当前招式**不跟手、有延迟感**；④ 三选一应**长按选择**而不是双击；⑤ 三选一应**波次结束时弹出**而不是升级立刻弹出（避免体验断档）。
+- **状态**：用户明确要求「先分析、不立刻改」→ 只写了分析文档，**没动任何代码**。逐条根因、改法方向、代价与验收口径见 **`plan/input-and-choice-ux-feedback-20261105.md`**。
+- **三个已查实的关键事实（改之前先看）**：
+  1. **「按下即出轻攻击」是死代码**：`AttackSystem.TryCancelLightAttackStartup()` 与 `StabSweepEffect.TryCancelBeforeHit()` 都在，但**全工程零调用点** → 招式跟手的现成脚手架已经在了。
+  2. **「波末弹三选一」的架子也已经在了**：`StageRunFlow.OnWaveCleared` 已有「有待处理选择 → 等选完再出下一波」的逻辑，只是升级总是提前把弹窗弹了 → 改造成本比想象低。
+  3. **三选一确实是两次点击**：`UpgradeChoicePopup.OnCardClicked` 第一次点只选中、第二次点才确认。
+- **风险提示**：改 #5（三选一时机）与 #1/#3（预输入、窗口提前）都会**改变战斗节奏** → 之前标定的难度表/铁律八要重跑。
