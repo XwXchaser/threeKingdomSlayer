@@ -62,6 +62,7 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
         {
             if (suppressCharging) return 0;                          // 教学关：不允许完成充能
             if (IsGuarding) return 0;                                // 防御姿态：不是蓄力
+            if (!IsChargeAllowed()) return 0;                        // **没有前置招式 → 不存在蓄力**
             if (!isLongPress || hasTriggeredDuringHold) return 0;   // 本次按住已经出过招 → 必须先抬手重按
             if (chargeLevelTimes == null || chargeLevelTimes.Length == 0)
                 return isCharged ? 1 : 0;
@@ -73,6 +74,26 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
             }
             return level;
         }
+    }
+
+    /// <summary>
+    /// **这次按住能不能算「蓄力」** —— 只有「有前置招式」（连段窗口内）才算。
+    ///
+    /// 2026-11-05 用户口径：「我要关掉当前无前置纯蓄力」→
+    ///   **中立态不许蓄力**：没有蓄力等级、没有蓄力进度指示器、没有蓄力武器后拉表现，
+    ///   也不能靠蓄力打出蓄力招（蓄力横扫 / 蓄力横斩 / 蓄力上挑 / 站桩蓄力穿刺）。
+    ///
+    /// 判据：<c>comboChargeActive</c> —— 招式状态机在「**招式进行中再次按下**」或
+    /// 「按住期间招式节点切换」时置位，即**玩家自己刚出过招**（= 有前置招式）；
+    /// 站桩蓄力（中立态长按）是「直通」，不会置位 → 蓄力不成立 ✓。
+    /// 未按住时该标记每帧清零（<c>Update</c>）→ 不会残留成「假前置」。
+    ///
+    /// ⚠️ 不要再加「状态机此刻是否活跃」的条件：真实连招里节点可能先于蓄力完成而过期，
+    ///    那会让连招的蓄力随机失效（指向突刺教学会变得不稳）。
+    /// </summary>
+    public bool IsChargeAllowed()
+    {
+        return comboChargeActive;
     }
 
     /// <summary>
@@ -365,7 +386,8 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
             float verticalDrift = Mathf.Abs(currentPointerPos.y - segmentStartPos.y);
 
             if (!isLongPress && !hasTriggeredDuringHold && segmentDuration >= longPressDuration
-                && verticalDrift <= chargeMovementTolerance)
+                && verticalDrift <= chargeMovementTolerance
+                && IsChargeAllowed())   // 没有前置招式 → 不进入蓄力态（也就没有蓄力表现）
             {
                 isLongPress = true;
             }

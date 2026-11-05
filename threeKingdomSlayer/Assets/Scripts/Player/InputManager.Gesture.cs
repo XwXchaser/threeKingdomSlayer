@@ -115,7 +115,8 @@ public partial class InputManager : MonoBehaviour
         // 蓄力条件检查：横向位移视为“指向/改列”，只有纵向抖动受容差限制（与 Update 内一致）；
         // 本次按住已经出过招时不再累积蓄力（必须抬手重按）
         if (!isLongPress && !hasTriggeredDuringHold && segmentDuration >= longPressDuration
-            && verticalDrift <= chargeMovementTolerance)
+            && verticalDrift <= chargeMovementTolerance
+            && IsChargeAllowed())   // 没有前置招式 → 不进入蓄力态（也就没有蓄力表现）
             isLongPress = true;
         if (isLongPress)
             isCharged = segmentDuration >= minChargeTime;
@@ -219,11 +220,11 @@ public partial class InputManager : MonoBehaviour
     /// <summary>默认路径：以上 gate 都没消耗时执行的释放逻辑（普通戳 / 长穿 / 滑斩）。</summary>
     private void ProcessDefaultPathGate(Vector2 releasePos, bool isSwiped)
     {
-        if (CurrentChargeLevel >= 1)
+        // 站桩蓄力（长按不滑 → 穿刺）：同样要求「有前置招式」。
+        // 不成立时按普通处理往下走（滑动/点按），不吞输入。
+        if (CurrentChargeLevel >= 1 && IsChargeAllowed())
         {
-            // 教学期：站桩蓄力（穿刺）不成立，按什么都没发生
-            if (!restrictChargedToVertical) ProcessLongPressGesture(releasePos);
-            return;
+            if (!restrictChargedToVertical) { ProcessLongPressGesture(releasePos); return; }
         }
         if (isSwiped)
         {
@@ -429,8 +430,7 @@ public partial class InputManager : MonoBehaviour
     private int ChargeForSwipe()
     {
         if (restrictChargedToVertical) return 0;
-        bool hasPredecessor = comboChargeActive && moveStateMachine != null && moveStateMachine.IsMoveActive;
-        if (hasPredecessor) return CurrentChargeLevel;
+        if (IsChargeAllowed()) return CurrentChargeLevel;
         if (CurrentChargeLevel >= 1)
         {
             DebugLog.Info("[InputManager] 滑向蓄力不成立：没有前置招式（comboChargeActive=false）→ 按未蓄力处理");
