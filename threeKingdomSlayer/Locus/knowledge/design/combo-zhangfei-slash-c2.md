@@ -143,7 +143,7 @@ Dialogue: IsBusy=True      Time.timeScale=0
 | 3 | 带左右位移、方向继承上一段 | ✔ 实机：列 3 → 2 → 1（向左，与上一段右→左一致 ✔） |
 | 4 | 未解锁时打不出来 | ✔ 实机：`招式未解锁 Zhangfei_SlashC2（不响应）` |
 | 5 | 普通 Slash 不再位移 | ✔ 实机：列 1 → 1 |
-| 6 | 「横滑+蓄力 → Sweep」不被抢走 | ✔ 实机：`执行 Zhangfei_Sweep` |
+| 6 | 「横滑+蓄力 → Sweep」不被抢走 | ✔ 实机：`执行 Zhangfei_Sweep` —— ⚠️ **2026-11-05 已停用**，见 §8 |
 | 7 | 校验器 | ✔ 天赋树 4 棵零问题 |
 
 ## 7. 已知副作用与待实机项
@@ -154,3 +154,68 @@ Dialogue: IsBusy=True      Time.timeScale=0
 | 2 | 教学关 | 教学期 `restrictChargedToVertical` 会拦 Hold → `comboChargeActive` 放行 ✓（与 C2 同机制 ✓）；若要教 SlashC2，需对方补一段教学 |
 | 3 | SlashC2 的数值 | 初值提议（伤害/架势/覆盖/位移排数）→ **需要你或数值同学定稿** |
 | 4 | 美术 | 蓄力动作 + 招式动作 + 位移反馈 + 天赋页图标 → **清单已出**：`plan/slash-c2-art-request-20261103.md`（尺寸/命名/导入设置/挂点/验收口径） |
+
+## 8. 2026-11-05：纯蓄力横扫停用 + 同类错误关联审计
+
+> 用户反馈：「无前置的纯蓄力又回来了」。根因在**中立态入口**，不在代码。
+
+### 8.1 根因
+
+`MoveTable_Zhangfei.asset` 的 **中立态入口 roots** 里有一条：
+`gesture=SwipeHorizontal(3) + minChargeLevel=1 → Zhangfei_Sweep`
+→ `FindRoot` 按「蓄力要求最高且已满足」匹配 → **从中立态直接蓄力横滑就出横扫**（无前置）。
+
+**这条入口是本文件对应的提交 `41909871`（2026-11-03）加的**，提交信息里写明了用途：
+「MoveEntry 加 minChargeLevel …… **这是 Slash 进表的前提，否则「横滑+蓄力 → Sweep」会被 Slash 抢走**」
+→ 即：它是为了把「蓄力横滑」从 Slash 手里抢回来给 Sweep，**但被挂在了中立态入口而不是连段边**。
+
+**关键**：SlashC2 本身**不需要**这条入口 —— 它的连段边是
+`Zhangfei_Slash --Hold(minChargeLevel=1)--> Zhangfei_SlashC2`。
+所以这条 root 唯一的作用就是「让中立态的蓄力横滑变成横扫」。
+
+### 8.2 为什么「总是」成立
+
+| 条件 | 状态 |
+|---|---|
+| `InputManager.restrictChargedToVertical` | **恒为 false**（代码默认值 false + 场景值 0 + **全工程无任何写入者**）→ 站桩蓄力横滑这条路永远开着 |
+| `Zhangfei_Sweep` 的解锁门控 | **没有对应天赋节点** → `IsMoveLocked` 永远为 false → 中立态可直接出 |
+
+### 8.3 本次处置（暂时停用）
+
+`MoveTable_Zhangfei.asset` 的 root[2]：`minChargeLevel` 由 `1` 改为 **`99`（不可达）** → `FindRoot` 永远跳过它
+→ 蓄力横滑回落到 `Zhangfei_Slash`（且 Slash 受 `talent_move_slash` 天赋锁）。
+**恢复 = 把 99 改回 1**。
+
+实测：横滑+蓄力 0/1/2/3 全部解析为 `Zhangfei_Slash`；解锁横斩后实机 `执行 Zhangfei_Slash`（不再是 Sweep）。
+
+### 8.4 同类错误关联审计（结论：无第二例，但有两个遗留口子）
+
+审计范围：全工程只有 1 张招式表（`MoveTable_Zhangfei.asset`）；12 个 AttackSkillConfig；4 条连段边。
+
+| 检查项 | 结果 |
+|---|---|
+| 既是「中立态入口」又是「连段后继」的招 | **无**（Sweep 不是任何招的边后继） |
+| 中立态入口是否受天赋锁 | **受**（`PlayerMoveStateMachine` 的中立态段也查 `IsMoveLocked` —— 这是历史修过的坑） |
+| 连段后继是否受天赋锁 | **受**（StabR2 / LaunchFinisher / SlashC2 都有对应天赋节点） |
+| 唯一「无解锁门控的中立态终结技」 | **Sweep**（本次停用） |
+| 同一提交加的另外两条 root（横滑→Slash、斜滑→Slash） | 等价于旧的默认回落，**无副作用**（顺带把横滑纳入天赋锁，是好事） |
+
+**遗留口子 ①（重要）**：`MoveGestureDefaults.ResolveAttackType` 的**默认兜底**里写着
+`SwipeHorizontal + charged → Sweep`、`Hold → Pierce`。
+只要招式表里没有对应手势的入口，就会走 `ExecuteDirect` → **纯蓄力从兜底路径复活**。
+本次停用之所以有效，是因为 root[1]（横滑→Slash）仍在、盖住了兜底。
+→ **要彻底关掉，必须同时改默认映射或 `restrictChargedToVertical`。**
+
+**遗留口子 ②**：`Hold → Pierce`（**站桩蓄力穿刺**）是**另一条无前置的纯蓄力**，本次未动
+（设计文档 `design/charge-build-three-options.md` 把「Pierce/Sweep 蓄力线」列为合法流派，
+而 `design/gameplay-pillars.md:148` 又写「疾病流与纯蓄力流互斥」—— 两条口径本身冲突，待用户定）。
+
+### 8.5 设计口径待对齐（本次不动代码）
+
+| 文档 | 口径 |
+|---|---|
+| `design/combo-move-state-machine.md:201` | 终结技身份**由前置决定**（走图上的边） |
+| `design/charge-build-three-options.md` | **蓄力线（Pierce/Sweep 蓄力爆发）是被明确设计的独立流派** |
+| `design/gameplay-pillars.md:148` | 疾病流「**与纯蓄力流互斥**」 |
+
+→ 「纯蓄力该不该存在」是**口径问题**，不是单纯的 bug；这也是它反复回来的原因。

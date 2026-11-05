@@ -20,7 +20,7 @@ MonoBehaviour:
     minChargeLevel: 0
     move: {fileID: 11400000, guid: c4862b3d5d44d2543af3deae939e5053, type: 2}
   - gesture: 3
-    minChargeLevel: 1
+    minChargeLevel: 99
     move: {fileID: 11400000, guid: b9436d083cf392d448b491eb34d9fb60, type: 2}
   - gesture: 4
     minChargeLevel: 0
