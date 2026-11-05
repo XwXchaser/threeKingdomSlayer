@@ -261,11 +261,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 连招蓄力拍：两段式（点一下 → 在窗口里按住蓄满 → 松手），单独一套流程
         if (step.kind == GestureHintKind.ComboCharge)
         {
-            // **这一拍期间防御键静音**（2026-11-05 用户定）：
-            // 玩家在蓄力（阶段 2 持枪姿态被冻住）→ 按防御键会抢走姿态 → 这一拍收不了。
-            SetDefenseButtonMuted(true);
             yield return ComboChargeRoutine(step, from, to, playSeconds);
-            SetDefenseButtonMuted(false);
             yield break;
         }
 
@@ -359,6 +355,12 @@ public partial class TutorialStageDirector : MonoBehaviour
 
             // ── 阶段 2：等接续窗口打开 → 冻结招式推进（窗口一直开着）
             if (input != null) input.tutorialGestureTarget = TutorialGestureTarget.ComboHold;
+            // **阶段 2（蓄力）期间防御键静音**（2026-11-05 用户定）：
+            //   这一阶段玩家的持枪姿态被冻在蓄势位 → 按防御键会抢走姿态 → 蓄力/连段断掉 → 这一拍收不了。
+            //   ⚠️ **只静音阶段 2**：阶段 1（等敌人到位 / 等玩家点第一记）以及拍卡住的时候，
+            //   防御键仍然可用 —— 否则玩家在“等得没头绪”时连防御都用不了，只能站着挨打
+            //   （2026-11-02 用户反馈「为什么我会受击」）。
+            SetDefenseButtonMuted(true);
             float winWait = 0f;
             bool windowOk = false;
             while (_beatActive && winWait < 3f)
@@ -373,6 +375,8 @@ public partial class TutorialStageDirector : MonoBehaviour
             if (!windowOk)
             {
                 // 接续窗口没赶上 → 回到阶段 1 让玩家**再点一记**（不能干等，否则这一拍就废了）
+                // （回到阶段 1 → 防御键要恢复：玩家这时可以防御，只是不能再蓄力）
+                SetDefenseButtonMuted(false);
                 Debug.Log("[Tutorial] 连招蓄力拍：接续窗口没赶上 → 回阶段 1（再点一记）");
                 continue;
             }
@@ -411,6 +415,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (atkEnd != null) atkEnd.EndComboChargeHold();
         var psEnd = PlayerState.Instance;
         if (psEnd != null) psEnd.freezeWeaponStance = false;
+        SetDefenseButtonMuted(false);      // 蓄力阶段结束（或这一拍被中止）→ 恢复防御键
         _comboChargePhase = 0;
         EndBeat();
         _hintRoutine = null;

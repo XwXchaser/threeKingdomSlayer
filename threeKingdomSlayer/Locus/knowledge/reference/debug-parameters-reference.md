@@ -337,8 +337,8 @@ aiEditMode: inherit
 |---|---|---|
 | `Player_Attack` | `_attackVoices` + `_attackTiles` | 玩家出招 |
 | `Player_Parry` | `_parryClip` | 招架（挥入 / 挡下飞行物） |
-| `Player_DefendReady` | `_defendReadyClip` | **玩家启用格挡**（举枪落防御位）。⚠️ 素材未定 → 当前留空 = 不播 |
-| `Guard_Block` | `_guardBlockClips` | 格挡**吸收伤害**（带 0.08s 防刷冷却） |
+| `Player_DefendReady` | `_defendReadyClip` | **玩家启用格挡**（举枪落防御位）。素材：`defend_grip_lock`（Mixkit 免费许可） |
+| `Guard_Block` | `_guardBlockClips` | 格挡**吸收伤害**（带 0.08s 防刷冷却）。⚠️ **用户指定用 QTE_block1/2** |
 | `Enemy_AttackTelegraph` | `_enemyAttackSwingClips` | 敌人起手预警（**挥武器音**，随机二选一） |
 | `Enemy_Hit` | `_enemyHitClips` | 敌人受击 |
 | `Slash_Hit` / `Slash_HeavyHit` / `Stab_Hit` / `Launch_Hit` | 对应数组 | 命中反馈 |
