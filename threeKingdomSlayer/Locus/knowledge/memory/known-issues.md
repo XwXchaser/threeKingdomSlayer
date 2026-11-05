@@ -347,3 +347,5 @@ aiEditMode: inherit
   2. **「波末弹三选一」的架子也已经在了**：`StageRunFlow.OnWaveCleared` 已有「有待处理选择 → 等选完再出下一波」的逻辑，只是升级总是提前把弹窗弹了 → 改造成本比想象低。
   3. **三选一确实是两次点击**：`UpgradeChoicePopup.OnCardClicked` 第一次点只选中、第二次点才确认。
 - **风险提示**：改 #5（三选一时机）与 #1/#3（预输入、窗口提前）都会**改变战斗节奏** → 之前标定的难度表/铁律八要重跑。
+- **深化方案（当日晚补）**：规范见 **`design/action-game-feel-and-input-buffering.md`**，实施工作包见 **`plan/feel-optimization-work-packages-20261105.md`**（W0~W8）。
+- **第四个已查实的事实**：**当年撤回「按下即出轻攻击」的理由已经消失**。`design/combo-move-state-machine.md` §11.6 写的是「与起手即蓄力冲突」，而 2026-11-05 的 `2234ed95`（中立态彻底不许蓄力）已把那个冲突源删掉 → 轴 1 可以复活，且 `AttackSystem.TryCancelLightAttackStartup()` / `StabSweepEffect.TryCancelBeforeHit()` / `PlayerMoveStateMachine.NotifyExternalReset()` 三个预留接口**都还在、零调用点**。
