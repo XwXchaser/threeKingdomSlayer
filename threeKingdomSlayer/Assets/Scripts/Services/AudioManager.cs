@@ -30,9 +30,19 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip[] _qteBlockClips;
     [SerializeField, Range(0f, 4f)] private float _qteBlockVolume = 1.5f;
 
-    [Header("敌人攻击预警 SFX")]
-    [SerializeField] private AudioClip _enemyAttackTelegraphClip;
+    [Header("敌人攻击预警 SFX — 挥武器音（随机二选一）")]
+    [Tooltip("敌人起手预警（抡招）时播的**挥武器音**。\n" +
+             "⚠️ 这里原来错接了 QTE 答题 UI 音（QTE_block1）→ 敌人抡招「叮」一声，和 QTE 答题音一模一样（2026-11-05 修）。\n" +
+             "素材见 Assets/SFX/enemy/SOURCES.md（Mixkit 免费许可）。留空 = 不播。")]
+    [SerializeField] private AudioClip[] _enemyAttackSwingClips;
     [SerializeField, Range(0f, 4f)] private float _enemyAttackTelegraphVolume = 0.8f;
+
+    [Header("玩家启用格挡 SFX")]
+    [Tooltip("玩家**举起枪进入防御位**那一刻的音（不是招架、也不是格挡受击）。\n" +
+             "留空 = 不播（当前素材还没定：用户想要「轻微的握持声」，待补）。\n" +
+             "格挡**受击**音走 Guard_Block；招架音走 Player_Parry，两者与本条无关。")]
+    [SerializeField] private AudioClip _defendReadyClip;
+    [SerializeField, Range(0f, 4f)] private float _defendReadyVolume = 0.8f;
 
     [Header("普通敌人受击语音")]
     [SerializeField] private AudioClip[] _enemyHitClips;
@@ -50,6 +60,8 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip[] _heavyHitClips;
 
     [Header("防御受击 SFX — 随机二选一")]
+    [Tooltip("格挡**吸收伤害**时的音（PlayerGuard 触发）。\n" +
+             "2026-11-05 用户定：直接复用 QTE_block1/2 随机播放（原先用 guard_block2/4）。")]
     [SerializeField] private AudioClip[] _guardBlockClips;
     [SerializeField, Range(0f, 4f)] private float _guardBlockVolume = 1f;
     [SerializeField, Min(0f)] private float _guardBlockCooldown = 0.08f;
@@ -82,6 +94,7 @@ public class AudioManager : MonoBehaviour
     private int _lastLaunchHitIndex = -1;
     private int _lastHeavyHitIndex = -1;
     private int _lastGuardBlockIndex = -1;
+private int _lastEnemySwingIndex = -1;
     private float _nextGuardBlockTime;
 
     private void Awake()
@@ -163,7 +176,8 @@ public class AudioManager : MonoBehaviour
         PreloadClipArray(_attackTiles);
         PreloadClip(_parryClip);
         PreloadClipArray(_qteBlockClips);
-        PreloadClip(_enemyAttackTelegraphClip);
+        PreloadClipArray(_enemyAttackSwingClips);
+        PreloadClip(_defendReadyClip);
         PreloadClipArray(_enemyHitClips);
         PreloadClipArray(_slashHitClips);
         PreloadClipArray(_stabHitClips);
@@ -204,9 +218,21 @@ public class AudioManager : MonoBehaviour
 
     #region BGM
 
-    public void PlayDefaultBGM()
+    /// <summary>
+    /// 播放默认 BGM。
+    ///
+    /// ⚠️ **已经在播就不重播**（2026-11-05 修）：
+    ///   旧实现先 <c>StopBGM()</c> 再 <c>Play()</c> → 每进一个节点都从头重播一遍
+    ///   （用户：「不应该根据节点切 bgm，除非有打点切换的需求」）→ 改成幂等。
+    ///   真要切歌（打点）时用 <paramref name="forceRestart"/> = true。
+    /// </summary>
+    public void PlayDefaultBGM(bool forceRestart = false)
     {
         EnsureAudioSources();
+        bool mainPlaying = _bgmMain != null && _bgmMainSource != null && _bgmMainSource.isPlaying;
+        bool envPlaying = _bgmEnv != null && _bgmEnvSource != null && _bgmEnvSource.isPlaying;
+        if (!forceRestart && (mainPlaying || envPlaying)) return;
+
         StopBGM();
 
         if (_bgmMain != null && _bgmMainSource != null)
@@ -254,7 +280,10 @@ public class AudioManager : MonoBehaviour
                 PlayRandom(_qteBlockClips, _qteBlockVolume);
                 break;
             case "Enemy_AttackTelegraph":
-                PlayOneShot(_enemyAttackTelegraphClip, _enemyAttackTelegraphVolume);
+                PlayRandom(_enemyAttackSwingClips, _enemyAttackTelegraphVolume, ref _lastEnemySwingIndex);
+                break;
+            case "Player_DefendReady":
+                PlayOneShot(_defendReadyClip, _defendReadyVolume);
                 break;
             case "Enemy_Hit":
                 PlayEnemyHit();

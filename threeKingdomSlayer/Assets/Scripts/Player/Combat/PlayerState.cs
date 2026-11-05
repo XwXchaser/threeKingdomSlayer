@@ -128,7 +128,11 @@ public class PlayerState : MonoBehaviour
             {
                 // 点击即发动：复用招架的挥入表现（无判定、无打断）。
                 stance.PlayDefend(DefendConfig);
-                AudioManager.Instance?.PostEvent("Player_Parry");
+                // ⚠️ **启用防御不是招架** → 不该播招架音（2026-11-05 用户口径）。
+                //   走专门的「启用格挡」事件（Player_DefendReady）；
+                //   素材还没定（用户想要「轻微的握持声」）→ AudioManager 里 clip 留空 = 暂不播，
+                //   素材到位后在 Battle.scene 的 Audio Manager 组件上填进去即可，不用改代码。
+                AudioManager.Instance?.PostEvent("Player_DefendReady");
             }
             // 关闭时不做特殊处理：姿态链每帧看到「没有按住」→ 自动收枪出画。
         }

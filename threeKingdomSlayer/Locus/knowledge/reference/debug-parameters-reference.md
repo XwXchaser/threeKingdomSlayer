@@ -314,6 +314,40 @@ aiEditMode: inherit
 
 ---
 
+## 13. 音频 (AudioManager)
+
+**文件**: `Assets/Scripts/Services/AudioManager.cs` · **接线**: `Battle.scene` 的 `Audio Manager` 组件
+**事件入口**: `AudioManager.Instance.PostEvent("<事件名>")`
+
+| 事件名 | 音源字段 | 触发点 |
+|---|---|---|
+| `Player_Attack` | `_attackVoices` + `_attackTiles` | 玩家出招 |
+| `Player_Parry` | `_parryClip` | 招架（挥入 / 挡下飞行物） |
+| `Player_DefendReady` | `_defendReadyClip` | **玩家启用格挡**（举枪落防御位）。⚠️ 素材未定 → 当前留空 = 不播 |
+| `Guard_Block` | `_guardBlockClips` | 格挡**吸收伤害**（带 0.08s 防刷冷却） |
+| `Enemy_AttackTelegraph` | `_enemyAttackSwingClips` | 敌人起手预警（**挥武器音**，随机二选一） |
+| `Enemy_Hit` | `_enemyHitClips` | 敌人受击 |
+| `Slash_Hit` / `Slash_HeavyHit` / `Stab_Hit` / `Launch_Hit` | 对应数组 | 命中反馈 |
+| `QTE_Block` | `_qteBlockClips` | QTE 答题 |
+
+**可直接调的字段**（都在 `Battle.scene` 的 Audio Manager 组件上）：
+
+| 字段 | 默认 | 说明 |
+|---|---|---|
+| `_enemyAttackTelegraphVolume` | 0.8 | 敌人起手音音量 |
+| `_defendReadyVolume` | 0.8 | 启用格挡音音量（素材待定） |
+| `_guardBlockVolume` | 1 | 格挡受击音量 |
+| `_guardBlockCooldown` | 0.08 | 格挡音最小间隔（防刷屏） |
+| `_enemyHitCooldown` | 0.14 | 敌人受击音最小间隔 |
+| `_qteBlockVolume` | 1.5 | QTE 音音量 |
+
+**BGM**：`PlayDefaultBGM(bool forceRestart = false)` —— **幂等**：已在播就不重播（换节点不切歌）。
+真要按打点切歌才传 `forceRestart = true`。BGM 两层：`_bgmMain`（主曲）+ `_bgmEnv`（环境层），同时播。
+
+> 素材来源与许可登记在 `Assets/SFX/enemy/SOURCES.md`（第三方素材入库必须登记）。
+
+---
+
 ## 快速查询索引
 
 | 需求 | 查哪里 |
@@ -330,3 +364,5 @@ aiEditMode: inherit
 | 调整波次机制 | `WaveConfig`（每个波次独立配置） |
 | 查看动态补齐硬编码阈值 | `StageController.GetRushMoveDelay()` 代码 |
 | 调整QTE判定窗口 | `QTEController` Inspector |
+| 调整音量 / 换音效素材 | `Battle.scene` → `Audio Manager` 组件（见 §13） |
+| 查音效素材来源与许可 | `Assets/SFX/enemy/SOURCES.md` |

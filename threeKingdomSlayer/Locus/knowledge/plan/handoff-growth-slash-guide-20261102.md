@@ -37,7 +37,7 @@ aiEditMode: inherit
 
 | # | 事项 | 说明 |
 |---|---|---|
-| **1** | **T7 音效（唯一还开着的功能缺口）** | ① 敌人攻击的 `_enemyAttackTelegraphClip` 现在指到 `QTE_block1`（QTE UI 音）→ 需要一个**「挥武器」音效**（库里没有 → 要新素材）；② `PlayerState.SetDefend` 里 `PostEvent("Player_Parry")` → 启用防御不该播招架音。**用户 2026-11-04 明确要求放到 todolist** |
+| **1** | **T7 音效（唯一还开着的功能缺口）** | ✅ **2026-11-05 已完成**：① 敌人挥武器音（Mixkit 免费素材，数组随机）；② 启用防御不再播招架音（音效位留空待定）；③ 格挡受击音复用 QTE_block1/2；④ **BGM 不再按节点重播**（`PlayDefaultBGM` 改幂等） |
 | **2** | **正式关数值（用户说「先别管」）** | 已查清：单只敌人硬度是教学关的 **4.7~6.1 倍**（倍率按「中期玩家」推的，实际开局玩家没有那些招式）；铁律八（波次 30~55s）**实测 30.9s 合规**。建议方案 D：波次总血量不变，把血量从「集中在 1~3 只」摊到「更多只」 |
 | **3** | **T4 Q4（等真人实测）** | 同方向连斩过快 —— 交接文档已写明「不要猜」，等真人测两组数据（`[SlashDiag]` 日志已就位） |
 
@@ -292,7 +292,23 @@ FakeRouteRuntime.Instance.Begin(route);   // 直接开跑，不用点落地页
 | `design/combo-zhangfei-slash-c2.md` | §4 表现表：补「解锁引导」现状 + 根因 + 修法（T2） |
 | `design/in-run-growth-and-unlocks.md` | 补一节「招式解锁引导（MoveGuide）」：现状 + 活体证据 + 修法 |
 
-### T7 · 敌人攻击音效（**需要新素材，用户 2026-11-04 定的口径**）—— ⬜ **下一轮第一个做**
+### T7 · 敌人攻击音效 ✅ 已完成（2026-11-05）
+
+> **最终口径（用户 2026-11-05 定的）**：
+> ① 敌人挥舞武器音 → **用网上免费资源**（Mixkit，免费商用免署名许可）；
+> ② **BGM 不按节点切** —— 除非有打点切换需求，否则换节点不重播；
+> ③ **启用格挡要有音效**（素材用户还没想好，疑似「轻微的握持声」）→ **先留接线位**；
+> ④ **格挡音直接复用 QTE_BLOCK1/2 随机播放**。
+
+| 项 | 完成情况 |
+|---|---|
+| ① 敌人挥舞武器音 | ✅ 新增 `_enemyAttackSwingClips[]`（**数组随机二选一**）：`enemy_swing_metal_whoosh`（Metal hit woosh，0.48s）+ `enemy_swing_dagger_whoosh`（Dagger whoosh，0.28s）。来源 Mixkit 免费许可（免署名），登记在 `Assets/SFX/enemy/SOURCES.md`。**旧的 `_enemyAttackTelegraphClip`（错接 QTE_block1）已删除**。选型按波形包络量化比较（起音 80~100ms、尾部干净）→ 排除了 Sword slash swoosh（只有 mp3 + 尾部 1.4s 静音）、Sword blade swish（起音 0.52s 太拖）、Fast sword whoosh（有效声仅 0.08s） |
+| ② BGM 不按节点切 | ✅ `AudioManager.PlayDefaultBGM()` 改为**幂等**：已在播就不重播（并加 `forceRestart` 参数给将来的打点切歌）。实测跨节点（N1→E0）**真重启次数 = 0**（BGM 素材 55.66s 循环，循环点会被误读成「重置」） |
+| ③ 启用格挡音效 | ✅ 新增 `_defendReadyClip` + `PostEvent("Player_DefendReady")`；`PlayerState.SetDefend(true)` **不再播招架音**。**素材留空 = 暂不播**（用户想要「轻微的握持声」，待定）→ 素材到位后在 Battle.scene 的 Audio Manager 组件上填进去即可，不用改代码 |
+| ④ 格挡受击音 | ✅ `_guardBlockClips` 从 `guard_block2/4` 改成 **`QTE_block1/2` 随机**（沿用原有的 0.08s 防刷冷却）。⚠️ `guard_block1..6` 六个素材变成**未引用**（未删，等用户决定） |
+
+> 实测：Play Mode 机器人跑正式关 → 敌人起手音已触发（`_lastEnemySwingIndex ≥ 0`）；BGM 跨节点连续；Console 0 error。
+> 导入参数用 **PCM + DecompressOnLoad**（比项目其它 SFX 的 Vorbis 更适合短促起音：Vorbis 的 pre-skip 会把 80ms 的起音抹钝）。
 
 > ① 敌人攻击的 `_enemyAttackTelegraphClip` 现在指到 `QTE_block1`（**QTE UI 音**被敌人攻击借用了）→ 需要一个**「挥武器」音效**（库里没有 `guard_block/QTE_block/parry/enemy_hitted` 之外的素材 → 要新出）。
 > ② `PlayerState.SetDefend(true)` 里 `PostEvent("Player_Parry")` → 启用防御**不该播招架音**（它是「复用招架的挥入表现」时连音效一起复用的）。
