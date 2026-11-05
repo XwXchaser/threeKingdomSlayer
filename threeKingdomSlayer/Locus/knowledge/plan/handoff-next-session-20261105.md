@@ -1,0 +1,169 @@
+---
+id: kd_b71e1756-9259-4686-9745-dd1a170ce52f
+injectMode: inherit
+injectAgents:
+- '*'
+aiEditMode: inherit
+---
+
+---
+id: kd_next_session_20261105
+summary: 下一会话交接方案（2026-11-05 收尾）：现状快照、可直接粘贴的开场语、必读顺序、上一轮已完成清单（15 个提交）、P0/P1/P2 待办队列（铁律八重标/首关梯度/XP 缺口/1104 压测/引导拍 bug）、改资产与机器人实测手法、红线与坑、需要用户拍板的 4 个决策。
+---
+
+# 下一会话交接方案（2026-11-05 收尾）
+
+> **用法**：新开一个对话，把 §1 的「开场语」整段贴进去即可开工。
+> 本文只管「接下来怎么做」；关卡数值与编成的**事实**在 `plan/level-config-handoff-20261105.md`，不要重复维护。
+
+---
+
+## 0. 现状快照（2026-11-05 18:5x 实测）
+
+| 项 | 值 |
+|---|---|
+| 分支 | `feat/stage-select-talent-overlays`（与 origin 同步，无 ahead/behind） |
+| HEAD | `c4de437a`（见 §3 的 15 个提交） |
+| 工作区 | 干净，只剩 `Locus/workspace-trees/default.json`（Locus 自己的界面布局，不用管、不用提） |
+| Unity | Tuanjie 2022.3.62t7，**Edit Mode**，Active Scene = `Assets/Scenes/Battle.scene`，Build Target = Android |
+| Console | **0 error**（最后一次查） |
+| 包 | `Build/Android/threeKingdomSlayer_full_20261105_1825.apk`（334MB，传统分文件布局，arm64+x86，**与 HEAD 对齐**） |
+| 存档备份 | `Library/Locus/tmp/player_save_backup.txt`（1417 字节，2026-11-05 10:44，**早于今天所有改动** → 还原它等于把「已教过的教学拍」清空） |
+
+---
+
+## 1. 开场语（复制粘贴到新对话）
+
+```text
+先读这两份文档再动手：
+- Locus/knowledge/plan/handoff-next-session-20261105.md（交接方案，重点是 §4 队列和 §6 红线）
+- Locus/knowledge/plan/level-config-handoff-20261105.md（关卡配置与敌人数值的事实表）
+
+本轮只做 P0-1：给 1101 / 1102 / 1104 重标「铁律八」的波次时长。
+第一步只读：用跑关机器人把现状（三关都是 HP×1.00）各跑一遍，拿每波清场时长和掉血，报给我。
+不要改任何资产、不要改 1101 的敌人构成、不要动教学关，等我定方向（补怪数 还是 回填倍率）。
+```
+
+**为什么这么写**：上一轮的教训是「先动手改数值，再解释为什么」——铁律八的口径本身翻转过两次（§4-P0-1），
+所以第一步必须**先拿基线、再让用户定口径**，否则改完还要推翻。
+
+---
+
+## 2. 必读顺序
+
+| 顺序 | 文档 | 读哪几节 |
+|---|---|---|
+| 1 | `plan/level-config-handoff-20261105.md` | §2 路线与逐波编成、§3 铁律口径、§4 待决 |
+| 2 | `design/stage-configuration.md` | §5.6 / §5.6.1（倍率落地前后实测）、§6（铜钱与经验）、§7.3（机器人=下限探针） |
+| 3 | `plan/enemy-commander-buff-unit-plan.md` | 只在要做 1013 督战单位时读（P2-3） |
+| 4 | `memory/android-build-state.md` | 只在要打包时读 |
+
+---
+
+## 3. 上一轮（2026-11-05）做完了什么 —— 别重做
+
+| 提交 | 内容 |
+|---|---|
+| `fae0d4af` | 招式解锁引导改教学拍 + 修「用技能打断」这一拍没有台词 |
+| `27bf56d4` | 修教学关退出回主菜单必崩 + 教学状态漏到主菜单/正式关 |
+| `70f4d9c7` | 敌人挥武器音 + BGM 不再按节点重播 + 格挡音复用 `QTE_block` |
+| `9026c3d1` → `1d1be5ae` | 3选1/引导拍期间静音防御键 + 格挡音回退（用户指定）+ 格挡补轻微握持声 |
+| `6c047035` → `2234ed95` | 「无前置纯蓄力」连关三次：停用横扫 → 滑向要前置 → 中立态彻底不许蓄力 |
+| `20bc232c` | **霸体从 1012 搬到 1011** + 1012 攻速 0.28→0.4 + 教学关敌人对调 |
+| `fa0a322a` | 防御键静音没判路线 → 正式关三选 1 后被永久静音 |
+| `edb261db` | 移除被动技能在左侧旧面板的重复显示（只留右下角） |
+| `998ce31c` | 「按防御 → 教程卡死」根因修复 + **每教完一拍写存档**（`SaveData.taughtTutorialBeats`） |
+| `9384ed94` / `984f672c` / `c4de437a` | 关卡配置交接文档 + 1011 HP 200 + 1102/1104 编成更新（含 1011↔1012 17/32 处对调）+ 文档按实测校正 |
+
+---
+
+## 4. 待办队列
+
+### P0 —— 不定就没法继续配关卡
+
+**P0-1 铁律八重标（1101 / 1102 / 1104 全是 HP×1.00）**
+
+- 现状：倍率 ×1.00 + 怪量扩充，**两条都没为它重新标定**过。
+- 卡点：铁律八的口径翻转过 —— 2026-10-25 `79d124eb` 改成「杂兵波 4–12s / Boss 45–90s」；2026-11-03 的 `design/stage-configuration.md` §5.6.1 又回到「**普通波 30–55 秒**」。**必须先问用户用哪一版**。
+- 落点：`Formal_*_Battle.asset` 的 `healthMultiplier`，或波次里的怪数/排数。**不要同时改两边**（否则测不出因果）。
+- 验收：机器人跑左路整条，`Tools/analyze_level_telemetry.py` 的逐波时长入窗；掉血不出现单波 >50。
+- 风险：改倍率会连带经验（`expMultiplier`）和铜钱收入 → 与 P0-3 联动。
+
+**P0-2 第一关（1101）的梯度**
+
+- 现状：1 波、7 只、**全是 1012（无霸体）**、HP×1.00 → 第一次见霸体要等到 1102 W0 的那 1 只 1011。
+- 待定：第一关要不要出现 1011（重甲/霸体）？还是保持"零压力开局"？
+- 落点：`Formal_N1_Battle.asset`。**改之前先问**——这是设计取向，不是 bug。
+
+**P0-3 XP 缺口（铁律七）**
+
+- 现状：整条路线到 **Lv10**，`design/stage-configuration.md` 记的设计目标是 **Lv40**（原文「XP 缺口被实跑确认」）。
+- 先确认目标是否仍是 Lv40，再决定改 `expReward`（prefab 级）/ `expMultiplier`（波次级）/ 升级曲线（代码）。
+- 注意：P0-1 改倍率会改杀怪时长 → 单位时间经验会变，**两项要一起算**。
+
+### P1 —— 影响体验但不挡路
+
+**P1-1 1104（66 只 / 5 波）压测**
+- W2 一排 25 只 1012 + 3 弓，是本关最大压测点；机器人容易在这里掉光血（它不走位）。
+- 验收：逐波时长 + 掉血曲线，重点看 W0→W1→W2 是不是单调变长、有没有"打不动"的堆。
+
+**P1-2 引导拍阶段 1 的判定 bug（代码）**
+- `guideAttackType` 是派生招（StabR2），阶段 1 打的却是第一段（Jab1/Stab）→ 命中不被认 → 那一拍停在阶段 1（实测卡 70 秒）。
+- 根因位置：`TutorialStageDirector.Rules.cs` 的 `TeachAttackFor()`（阶段 1 也拿 `guideAttackType` 去比对）+ `.Dialogue.cs` 的 `_comboChargePhase` 阶段推进。
+- 修法：阶段 1 改用「第一段的招式类型」判定，阶段 2 才用派生招。
+
+**P1-3 教学 E0 出现霸体（确认项）**
+- 霸体搬家后：教学 N1 的 1012 不再带霸体、教学 E0 的 1011 带上了。
+- 若不想在 E0 就出现"打不断"的敌人 → 把 `Tutorial_E0_Battle` 的 1011 换回 1012（2 处）。
+
+### P2 —— 有空再说
+
+| # | 事项 | 备注 |
+|---|---|---|
+| P2-1 | 存档里主音量只有 1.5%（mixer −36.3 dB） | 真机验收前先拉起来，否则"什么都是轻的" |
+| P2-2 | 开放 N2（1103，右路） | 右路出口是 `79d124eb`「暂不开放」有意撤的；开放前要按新刻度重标 + 把 `Choice_J1_N2` 接回 J1 |
+| P2-3 | 督战型增益单位 1013 | 方案已拍板（`plan/enemy-commander-buff-unit-plan.md`），未实施 |
+
+---
+
+## 5. 工作方法（上一轮验证过的）
+
+**改资产**
+- 敌人基础值 → `Assets/Resources/EnemyPrefabs/Enemy_10XX.prefab`，波次 → `Assets/RouteData/.../Formal_*_Battle.asset`，**一律走 `unity_execute` + `SerializedProperty`**，不手改 YAML。
+- 绝不直接 `edit` `.meta`（Tuanjie 的 GUID 是加密的）。
+- `enemyIds` 是**每行 5 列 × int32 小端**（`f3030000`=1011、`f4030000`=1012）→ 文本 grep 搜不到 id；要么解码，要么读面板。
+
+**实测三段式**
+1. 备份存档：`cp <player_save> Library/Locus/tmp/player_save_backup.txt`（已有备份，注意它是 11-05 10:44 的旧档）。
+2. 机器人：`BattleAutoPlayer`（`autoStart=true`、`useAreaAttacks=false`、`bossQTEMode=Suppress`）+ 埋点 → `Library/Locus/telemetry/run-*.jsonl`。
+3. 分析 + 还原：`Tools/analyze_level_telemetry.py`；跑完把存档还原回去。
+
+**打包**
+- 不能直接调 `BuildPipeline.BuildPlayer`，要 `EditorApplication.delayCall += () => AndroidBuildMenu.BuildAndroidTraditionalLayout();`，然后轮询 `Build/Android/build-status.txt` 的 mtime（构建阻塞 3–4 分钟，期间**不要发 Unity 工具调用**）。
+- 出包自检：`unzip -l` 里 `level*` 要有分片、**不能有 `data.tj3d`**（集群包会崩）、ABI = arm64-v8a + x86。
+
+**提交纪律**
+- 只按**显式路径** `git add`，禁止 `git add -A`（上一轮曾把用户手改的 `Formal_N1_Battle.asset` 卷进别人的提交）。
+
+---
+
+## 6. 红线与坑
+
+1. **机器人不会走位/招架** → 它是「下限探针」，不是难度基准；它死在 Boss 面前不等于玩家打不过。
+2. **跑机器人前必须先备好天赋节点**（没有 C2 会卡在带霸体的敌人上，普通攻击全弹刀）。
+3. **教学重跑必须先退出 Play Mode 再进**（同会话重跑会污染采样）。
+4. **教学关存档**：`SaveData.taughtTutorialBeats` 会让"已教过的拍"直接跳过 —— 想看完整教学要先清档。
+5. **构建会阻塞编辑器**：`delayCall` 排入后，Unity 工具调用会排队甚至超时；用 bash 轮询产物。
+6. **adb 设备当前为空** → 真机验收要在有设备的环境做。
+7. **`Tools/build_first_level_difficulty_table.py` 的内置基线已漂移** → 重跑前先对资产，别直接信输出。
+
+---
+
+## 7. 需要你拍板的 4 件事（新会话第一句话就可以问）
+
+| # | 决策 | 为什么现在必须定 |
+|---|---|---|
+| 1 | 铁律八用哪一版口径（**30–55s** 还是 **4–12s**）？单关目标多少分钟？ | 决定 P0-1 往哪个方向调 |
+| 2 | 1101 要不要放 1011（带霸体）？ | 决定 P0-2 是不是要动 |
+| 3 | 教学 E0 要不要保留霸体 1011？ | 决定 P1-3 换不换回 1012 |
+| 4 | 下一步优先 **N2 开放** 还是 **1013 督战单位**？ | 决定 P2 的顺序 |
