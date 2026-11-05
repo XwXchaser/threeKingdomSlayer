@@ -250,6 +250,8 @@ public partial class TutorialStageDirector : MonoBehaviour
         _defendLocked = false;
         Debug.Log("[Tutorial] 防御拍：成功吸收伤害 " + damage.ToString("F0") + " → 收拍");
 
+        // 防御成功 = 玩家**真的做到了** → 这一拍算教完（写存档标记的依据）
+        _beatCompleted = true;
         EndBeat();
 
         // 不离场（despawnTargetOnSuccess = false）→ 敌人继续打，玩家继续用防御处理

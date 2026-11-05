@@ -19,6 +19,8 @@ public class SaveData
     public int coinCount;
     public bool tutorialCompleted;
     public List<string> completedTutorialDialogueIds = new List<string>();
+    [Tooltip("已教完的**教学关手势拍** id（每教完一拍就写，**与教学关通不通无关**）。\n旧档缺失时由 TutorialSaveSection 补空列表")]
+    public List<string> taughtTutorialBeats = new List<string>();
     public List<RouteStageSaveSnapshot> routeStageSnapshots = new List<RouteStageSaveSnapshot>();
     public List<FakeRouteStageSaveSnapshot> fakeRouteSnapshots = new List<FakeRouteStageSaveSnapshot>();
     public int activeFakeRouteStageId = -1;

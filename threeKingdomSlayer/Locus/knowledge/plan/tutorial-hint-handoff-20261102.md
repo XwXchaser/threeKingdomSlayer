@@ -550,3 +550,47 @@ WAIT-C 敌人=Enemy_1012(Clone)/Attacking 抡招=True C技=True 剩余=1.49s 阈
 
 > 细节与完整根因见 `memory/known-issues.md` 第 13 条。
 
+---
+
+## 15. 第十三轮（2026-11-05）：「按防御 → 教程卡死」+ 每教完一拍就写存档
+
+> 用户反馈两条：
+> ① 「出现按防御会导致教程卡死的问题（不是说要教程 mute 到防御按键吗？）」
+> ② 「我已完成点戳的教程，就应该在存档里标记完成，而不是根据关卡通过来判断（教程关除外）；
+>    所有非教程关教程都应该这样」
+
+### 15.1 卡死的根因与修法
+
+**根因**：`AttackSystem` 有硬闸「**防御中，不能出招**」→ 玩家在**需要出招的教学拍**里按住防御
+→ 招式永远打不出来 → **那一拍收不了 → 教程卡死**。
+
+**修法**：新增 `BeatNeedsAttack(kind)` —— **需要出招的拍**（Tap / TapCombo / ComboCharge）
+期间**静音防御键**；例外不静音：
+- `DefendButton` 拍 = 教玩家按防御键 → 必须可用
+- `SkillSlot` 拍 = 玩家点技能槽，不靠出招；且等敌人抡招时玩家要能防御（2026-11-02 反馈）
+
+> 之前的静音只盖了 ComboCharge 的**阶段 2**（蓄力窗口），阶段 1 没盖 → 阶段 1 按防御一样卡死。
+> 现在盖**整拍**（教学拍期间敌人是冻住的 → 不会让玩家挨打）。
+> 静音源从 2 个变成 2 个（`_defenseMutedByChoice` 教学专用 / `_defenseMutedByBeat` 出招拍），
+> `EndBeat` 会解除后者（否则两拍之间防御键一直是死的）。
+
+### 15.2 每教完一拍就写存档（不看关卡通不通）
+
+- 新增存档字段 `SaveData.taughtTutorialBeats`（List<string>，旧档由 `TutorialSaveSection.Migrate` 补空列表）。
+- 教学关的每一拍教完就写 id（形态 `kind@waveIndex`），3选1 教学用 `Choice3@0`；
+  **只有玩家真的做到才写**（`_beatCompleted`，防御拍在 `OnGuardAbsorbed` 里置位）。
+- 再进教学关时，**已教过的拍直接跳过**。
+  ⚠️ 跳过时必须把「这一拍教出来的东西」补上（`ApplyBeatOutcome`：招式白名单 + 防御键开放），
+  否则教学关里玩家打不出招 → 教学关直接卡住。
+- 引导拍（招式解锁）另有存档位 `MoveGuideSaveSection.taughtMoveGuides`（本来就是 per-tutorial ✓）。
+
+### 15.3 实测（三轮）
+
+| 轮次 | 结果 |
+|---|---|
+| 第 1 轮（从零教） | 写入 5 个标记：`Tap@0` / `TapCombo@1` / `DefendButton@0` / `Choice3@0` / `SkillSlot@1`（引导拍 `talent_move_stabc2` 也写入了 `taughtMoveGuides`） |
+| 第 2 轮（再进） | 4 个拍全部「已教过（存档标记）→ 跳过」；3选1 教学也跳过（但**三选一照常弹**）；**教学关仍然通关**；招式白名单 = `Stab`（跳过时补齐 ✓） |
+| 静音行为 | Tap / TapCombo / ComboCharge 进行中 → `Muted=True`；DefendButton / SkillSlot 进行中 → `Muted=False`；拍与拍之间 → 自动恢复 |
+
+Console 0 error / 0 warn；存档已逐字节还原。
+

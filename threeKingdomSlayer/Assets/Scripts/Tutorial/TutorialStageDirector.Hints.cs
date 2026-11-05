@@ -23,6 +23,16 @@ public partial class TutorialStageDirector : MonoBehaviour
             if (step.battle != null && step.battle != battle) continue;
             Debug.Log($"[Tutorial] 命中手势步骤 {i} wave={waveIndex} kind={step.kind} pause={step.pauseUntilPerformed}");
             _currentStep = step;
+            // **这一拍已经教过（存档标记）→ 跳过**（2026-11-05 用户口径：
+            //   「我已完成点戳的教程，就应该在存档里标记完成，而不是根据关卡通过来判断」）。
+            //   ⚠️ 跳过时必须把「这一拍教出来的东西」补上（招式白名单 / 防御键开放），
+            //      否则教学关里玩家打不出招 → 教学关直接卡住。
+            if (IsBeatAlreadyTaught(step))
+            {
+                ApplyBeatOutcome(step);
+                Debug.Log($"[Tutorial] 手势步骤 {i} wave={waveIndex} kind={step.kind} **已教过（存档标记）→ 跳过**");
+                return;
+            }
             // 连点教学（TapCombo）：**光圈常驻**在场上（玩家一直看得见「点这里」）
             if (gestureHint != null) gestureHint.keepRingVisible = (step.kind == GestureHintKind.TapCombo);
             // 教到「防御按键」这一拍 → 防御键从这一刻起才开放给玩家
@@ -93,7 +103,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         EndBeat(playAfterDialogue: false);   // 被打断的拍不补播收尾台词
         ResetSkillBeatFlags();               // 技能拍的全局开关（static）必须收回，否则漏到正式关
         SetDefenseMuteChoice(false);         // 静音也必须收回（拍被打断 → 这一拍的教学窗口结束了）
-        SetDefenseMuteGuide(false);          // 引导拍的蓄力静音同样收回
+        SetDefenseMuteBeat(false);          // 需要出招的拍的静音同样收回
         // 正在门槛里被打断时必须走 Cancel：它会恢复 timeScale 和游戏输入
         if (gestureHint != null)
         {
@@ -245,6 +255,12 @@ public partial class TutorialStageDirector : MonoBehaviour
         //    （正式关的「连招蓄力」教学拍就永远停在阶段 2 → 整条「教学→天赋→招式教学」链路卡死，
     //      2026-11-04 实测才发现）。
         _beatEndsOnAttack = true;
+        // **这一拍需要玩家出招 → 防御键静音**（2026-11-05 用户反馈「按防御会导致教程卡死」）。
+        //   机制：`AttackSystem` 有硬闸「防御中，不能出招」→ 玩家在这一拍里按住防御，
+        //   招式就永远打不出来 → 这一拍收不了 → **教程卡死**。
+        //   （教学拍期间敌人是冻住的 → 静音防御键不会让玩家挨打。）
+        //   例外见 BeatNeedsAttack：防御拍（教按防御键）与技能拍（点技能槽）不静音。
+        if (BeatNeedsAttack(step.kind)) SetDefenseMuteBeat(true);
         BeginBeat(target, TeachAttackFor(step), requiredHits: step.requiredHits);
         Debug.Log($"[Tutorial] 手势拍开始 wave={step.waveIndex} kind={step.kind} target={target} 敌人={CountAliveEnemies()}" +
                   $" | 台词={(step.beforeDialogue != null ? "与示范同时:" + step.beforeDialogue.name : (step.afterDialogue != null ? "收拍后:" + step.afterDialogue.name : "无"))}" +
@@ -358,12 +374,8 @@ public partial class TutorialStageDirector : MonoBehaviour
             if (input != null) input.tutorialGestureTarget = TutorialGestureTarget.ComboHold;
             // **阶段 2（蓄力）期间防御键静音**（2026-11-05 用户定）：
             //   这一阶段玩家的持枪姿态被冻在蓄势位 → 按防御键会抢走姿态 → 蓄力/连段断掉 → 这一拍收不了。
-            //   ⚠️ **只静音阶段 2**：阶段 1（等敌人到位 / 等玩家点第一记）以及拍卡住的时候，
-            //   防御键仍然可用 —— 否则玩家在“等得没头绪”时连防御都用不了，只能站着挨打
-            //   （2026-11-02 用户反馈「为什么我会受击」）。
-            //   ⚠️ 这是**招式解锁引导拍**自己的静音（任何关卡都可能有，正式关也会触发）→
-            //   不走「不在教学路线就还原」那套（否则正式关里这拍就失去保护）。
-            SetDefenseMuteGuide(true);
+            //   ⚠️ 「按防御会打断蓄力」这一层已由**整拍静音**接手（见上方 BeatNeedsAttack）→ 这里不再单独静音阶段 2。
+            SetDefenseMuteBeat(true);
             float winWait = 0f;
             bool windowOk = false;
             while (_beatActive && winWait < 3f)
@@ -379,7 +391,7 @@ public partial class TutorialStageDirector : MonoBehaviour
             {
                 // 接续窗口没赶上 → 回到阶段 1 让玩家**再点一记**（不能干等，否则这一拍就废了）
                 // （回到阶段 1 → 防御键要恢复：玩家这时可以防御，只是不能再蓄力）
-                SetDefenseMuteGuide(false);
+                SetDefenseMuteBeat(false);
                 Debug.Log("[Tutorial] 连招蓄力拍：接续窗口没赶上 → 回阶段 1（再点一记）");
                 continue;
             }
@@ -418,7 +430,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (atkEnd != null) atkEnd.EndComboChargeHold();
         var psEnd = PlayerState.Instance;
         if (psEnd != null) psEnd.freezeWeaponStance = false;
-        SetDefenseMuteGuide(false);      // 蓄力阶段结束（或这一拍被中止）→ 恢复防御键
+        SetDefenseMuteBeat(false);      // 蓄力阶段结束（或这一拍被中止）→ 恢复防御键
         _comboChargePhase = 0;
         EndBeat();
         _hintRoutine = null;
@@ -524,6 +536,8 @@ public partial class TutorialStageDirector : MonoBehaviour
         SetEnemiesHold(false);
         SetSceneDim(false);
         SafeHideGestureHint();
+        // 这一拍结束 → 「需要出招的拍」的防御键静音随之解除（否则两拍之间防御键一直是死的）
+        SetDefenseMuteBeat(false);
         // 做完立刻收掉台词：玩家要能马上看清自己打出了什么
         var view = ResolveDialogueView();
         if (view != null && view.IsShowing) view.Skip();
@@ -534,7 +548,12 @@ public partial class TutorialStageDirector : MonoBehaviour
             ApplyAttackGate(null);
         }
         // 招式解锁引导：**真的打出去**才算教完 → 写存档「已教过」（没打出去下次还会教）
-        if (_beatCompleted) MarkGuideTaughtIfNeeded();
+        if (_beatCompleted)
+        {
+            MarkGuideTaughtIfNeeded();
+            // 教学关的手势拍也一样：**每教完一拍就写存档标记**（不看教学关通不通）
+            MarkTutorialBeatTaughtIfNeeded();
+        }
         _beatCompleted = false;
 
         // 收拍后的补充台词：**每一拍都要能播**。

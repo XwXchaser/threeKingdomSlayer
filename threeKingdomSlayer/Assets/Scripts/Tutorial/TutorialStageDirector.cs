@@ -340,6 +340,63 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (button.Available == shouldLock) button.SetAvailable(!shouldLock);
     }
 
+    /// <summary>
+    /// 教学拍在存档里的**稳定 id**（形态 <c>kind@waveIndex</c>）。
+    /// 引导拍（招式解锁）另有存档位（<c>MoveGuideSaveSection.taughtMoveGuides</c>）→ 这里返回 null。
+    /// </summary>
+    private static string BeatSaveId(TutorialGestureStep step)
+    {
+        if (step == null) return null;
+        if (!string.IsNullOrEmpty(step.guideNodeId)) return null;
+        return step.kind + "@" + step.waveIndex;
+    }
+
+    /// <summary>这一拍是否**已经教过**（存档标记）。</summary>
+    private static bool IsBeatAlreadyTaught(TutorialGestureStep step)
+    {
+        string id = BeatSaveId(step);
+        if (string.IsNullOrEmpty(id)) return false;
+        return TutorialSaveSection.IsBeatTaught(SaveManager.Load(), id);
+    }
+
+    /// <summary>
+    /// 把「这一拍教出来的东西」记到当前状态（跳过已教过的拍时用来补齐）。
+    /// </summary>
+    private void ApplyBeatOutcome(TutorialGestureStep step)
+    {
+        if (step == null) return;
+        var teach = TeachAttackFor(step);
+        if (teach.HasValue && _taughtAttacks.Add(teach.Value)) ApplyAttackGate(null);
+        if (step.kind == GestureHintKind.DefendButton) _defendTaught = true;
+    }
+
+    /// <summary>
+    /// 这一拍真的教完了 → **写存档标记**（每教完一拍就记，不看教学关通不通）。
+    /// </summary>
+    private void MarkTutorialBeatTaughtIfNeeded()
+    {
+        MarkTutorialBeatTaughtById(BeatSaveId(_currentStep));
+    }
+
+    /// <summary>按 id 写入「已教过」标记。</summary>
+    private void MarkTutorialBeatTaughtById(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return;
+        var data = SaveManager.Load();
+        if (!TutorialSaveSection.MarkBeatTaught(data, id)) return;
+        SaveManager.Save(data);
+        Debug.Log($"[Tutorial] 已教完「{id}」→ 写入存档（下次不再教）");
+    }
+
+    /// <summary>3选1 教学的存档 id（它不是手势拍，单独一个口径）。</summary>
+    private const string ChoiceTeachId = "Choice3@0";
+
+    /// <summary>3选1 教学是否**已经教过**（存档标记）。</summary>
+    private static bool IsChoiceTeachDone()
+    {
+        return TutorialSaveSection.IsBeatTaught(SaveManager.Load(), ChoiceTeachId);
+    }
+
     /// <summary>教学是否已完成（缓存：只读一次，通关时置 true）。</summary>
     private bool? _tutorialCompletedCache;
     private bool TutorialCompleted
@@ -467,6 +524,15 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (_choiceGiven) return;
         if (choices == null || choices.Count == 0) return;
         _choiceGiven = true;
+
+        // **3选1 教学已经教过（存档标记）→ 不再教**（2026-11-05 用户口径：每教完一个教程就标记完成）。
+        //   ⚠️ 只是**不教**（不念台词、不指卡片、不限制只能选推荐的那张），
+        //      三选一本身**照常弹** —— 玩家要拿到技能。
+        if (IsChoiceTeachDone())
+        {
+            Debug.Log("[Tutorial] 3选1 教学已教过（存档标记）→ 不再教（但仍然正常弹三选1）");
+            return;
+        }
         DebugLog.Info("[Tutorial] 三选1 弹出（" + choices.Count + " 个候选）→ 教学台词");
 
         // 引导选哪个：提示手落在**推荐的那张卡**上（纯视觉，不拦点击）
@@ -551,12 +617,13 @@ public partial class TutorialStageDirector : MonoBehaviour
     /// <summary>
     /// 防御键的**静音**分两个来源（可同时存在），合并后一起应用：
     ///   • <see cref="_defenseMutedByChoice"/> = 教学关「3选1 → 技能拍」这段（**教学专用**，离开教学路线必须还原）
-    ///   • <see cref="_defenseMutedByGuide"/>  = 招式解锁引导拍的蓄力阶段（**任何关卡**都可能有，拍结束即恢复）
+    ///   • <see cref="_defenseMutedByBeat"/>  = **需要出招的教学拍**（点戳 / 连点三下 / 连招蓄力）
+    ///     —— 任何关卡都可能有（教学关的拍 + 招式解锁引导拍）→ 拍结束即恢复
     /// </summary>
     private void ApplyDefenseMute()
     {
         var button = DefenseButton.Instance;
-        bool muted = _defenseMutedByChoice || _defenseMutedByGuide;
+        bool muted = _defenseMutedByChoice || _defenseMutedByBeat;
         if (button != null) button.SetMuted(muted);
         if (muted)
         {
@@ -572,18 +639,36 @@ public partial class TutorialStageDirector : MonoBehaviour
         ApplyDefenseMute();
     }
 
-    /// <summary>招式解锁引导拍（蓄力阶段）的静音（任何关卡）。</summary>
-    private void SetDefenseMuteGuide(bool muted)
+    /// <summary>需要出招的教学拍期间的静音（任何关卡）。</summary>
+    private void SetDefenseMuteBeat(bool muted)
     {
-        _defenseMutedByGuide = muted;
+        _defenseMutedByBeat = muted;
         ApplyDefenseMute();
+    }
+
+    /// <summary>
+    /// **这一拍需要玩家出招**（点戳 / 连点三下 / 连招蓄力）。
+    ///
+    /// 这类拍期间**必须静音防御键**：`AttackSystem` 有硬闸「防御中，不能出招」
+    /// → 玩家按住防御 → 招式打不出来 → **这一拍永远收不了 → 教程卡死**（2026-11-05 用户反馈）。
+    ///
+    /// 例外（不静音）：
+    ///   • <see cref="GestureHintKind.DefendButton"/> = 这一拍就是教玩家按防御键 → 必须可用
+    ///   • <see cref="GestureHintKind.SkillSlot"/> = 玩家点技能槽，不靠出招；
+    ///     而且等敌人抡招时玩家要能防御（2026-11-02 反馈「为什么我会受击」）
+    /// </summary>
+    private static bool BeatNeedsAttack(GestureHintKind kind)
+    {
+        return kind == GestureHintKind.Tap
+            || kind == GestureHintKind.TapCombo
+            || kind == GestureHintKind.ComboCharge;
     }
 
     /// <summary>教学关「3选1 → 技能拍」这段的静音（教学专用，离开教学路线会自愈）。</summary>
     private bool _defenseMutedByChoice;
 
-    /// <summary>招式解锁引导拍（蓄力阶段）的静音（任何关卡都可能有，拍结束即恢复）。</summary>
-    private bool _defenseMutedByGuide;
+    /// <summary>需要出招的教学拍期间的防御键静音（任何关卡都可能有，拍结束即恢复）。</summary>
+    private bool _defenseMutedByBeat;
 
     /// <summary>内容2 的技能拍是否正在进行（那一拍允许在输入被拦下时也能释放技能）。</summary>
     public bool SkillBeatActive { get; private set; }
@@ -606,6 +691,9 @@ public partial class TutorialStageDirector : MonoBehaviour
         //   这个静音是**教学专用**（教学关的3选1 → 技能拍那段），而正式关也会弹3选1 →
         //   不判路线就会把正式关的防御键也静音，而且**永远没人解除**（技能拍只在教学关跑）。
         if (IsOnTutorialRoute()) SetDefenseMuteChoice(true);
+
+        // 玩家**真的选了** → 3选1 教学算教完 → 写存档标记（下次不再教这一段）
+        MarkTutorialBeatTaughtById(ChoiceTeachId);
     }
 
     /// <summary>玩家在教学三选1 里选中的技能（没选 = null）。</summary>

@@ -12,9 +12,11 @@ public sealed class TutorialSaveSection : ISaveSection
     {
         if (data.completedTutorialDialogueIds == null)
             data.completedTutorialDialogueIds = new List<string>();
+        if (data.taughtTutorialBeats == null)
+            data.taughtTutorialBeats = new List<string>();
     }
 
-    /// <summary>教学关是否已完成。</summary>
+    /// <summary>教学关是否已完成（= 教学关被打通关）。</summary>
     public static bool IsCompleted(SaveData data) => data.tutorialCompleted;
 
     /// <summary>标记教学关已完成（已存档则不重复写 ✅）。</summary>
@@ -45,5 +47,34 @@ public sealed class TutorialSaveSection : ISaveSection
         if (data.completedTutorialDialogueIds == null)
             data.completedTutorialDialogueIds = new List<string>();
         return data.completedTutorialDialogueIds;
+    }
+
+    // ── 每一拍的「已教过」标记（2026-11-05 用户口径）──────────────────────
+    //
+    // 「我已完成点戳的教程，就应该在存档里标记完成，**而不是根据关卡通过来判断**」
+    // → **每教完一拍就写**；下次进教学关（哪怕没通关）也**不再教这一拍**。
+    //   引导拍（招式解锁）另有存档位：<c>MoveGuideSaveSection.taughtMoveGuides</c>。
+
+    /// <summary>某一拍是否**已经教过**（存档标记）。</summary>
+    public static bool IsBeatTaught(SaveData data, string beatId)
+    {
+        if (data == null || string.IsNullOrEmpty(beatId)) return false;
+        return GetTaughtBeats(data).Contains(beatId);
+    }
+
+    /// <summary>标记某一拍已教完。返回 true = 本次真的写入了新标记。</summary>
+    public static bool MarkBeatTaught(SaveData data, string beatId)
+    {
+        if (data == null || string.IsNullOrEmpty(beatId)) return false;
+        var list = GetTaughtBeats(data);
+        if (list.Contains(beatId)) return false;
+        list.Add(beatId);
+        return true;
+    }
+
+    private static List<string> GetTaughtBeats(SaveData data)
+    {
+        if (data.taughtTutorialBeats == null) data.taughtTutorialBeats = new List<string>();
+        return data.taughtTutorialBeats;
     }
 }
