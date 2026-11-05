@@ -296,6 +296,27 @@ public partial class TutorialStageDirector : MonoBehaviour
     }
 
     /// <summary>
+    /// **不在教学路线上时**，把**教学专用的防御键静音**还原（压暗 + 按下无效）。
+    ///
+    /// 背景（2026-11-05 用户反馈「正式关3选1选择后无法按防御按键」）：
+    ///   静音是教学关「3选1 → 技能拍」那段用的，但**正式关也会弹3选1** → 一旦被静音，
+    ///   正式关里没人会解除（技能拍只在教学关跑）→ 防御键整局都是死的。
+    ///
+    /// 所以除了调用点判路线，这里再挂一道**每帧兜底**：只要不在教学路线上，静音一律还原。
+    /// （与 <see cref="ReleaseTutorialOnlyChoicesIfOffTutorialRoute"/> 同一口径：路由未就绪时不动。）
+    /// </summary>
+    private void ReleaseTutorialOnlyDefenseMuteIfOffTutorialRoute()
+    {
+        if (!_defenseMutedByChoice) return;
+        var route = RouteFlowHub.Current;
+        bool definitelyOffTutorial = route != null && tutorialRouteConfig != null
+                                    && route.RouteConfig != tutorialRouteConfig;
+        if (!definitelyOffTutorial) return;
+        SetDefenseMuteChoice(false);
+        Debug.Log("[Tutorial] 已离开教学路线 → 还原防御键（取消静音）");
+    }
+
+    /// <summary>
     /// 防御键的开放时机：
     ///   • 教学关：**教到那一拍之前锁住**（锁住 = 不可见 + 不吃射线 → 既不会被点到，也不吞手势）；
     ///   • 正式关 / 教学已完成：一直开放。
@@ -351,6 +372,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         // Director 不会 OnDisable → 这两个开关**残留到正式关**，
         // 于是正式关的三选一被锁死在教学池里（表现为「到该弹的时候选不了 / 卡住」）。
         ReleaseTutorialOnlyChoicesIfOffTutorialRoute();
+        ReleaseTutorialOnlyDefenseMuteIfOffTutorialRoute();
 
         // 开幕台词：教学路线一就绪就播一次
         if (!_openingPlayed && openingDialogue != null && tutorialRouteConfig != null)
@@ -472,7 +494,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         // **3选1弹窗期间：防御键静音**（2026-11-05 用户定）。
         // 弹窗一打开就静音 → 玩家在这段里按防御键不会举枪，
         // 也就不会把技能槽点不动 / 长枪卡在空中（2026-11-01 那个老问题）。
-        SetDefenseButtonMuted(true);
+        SetDefenseMuteChoice(true);
 
         // 教学对话：**用对话系统**说「选哪个」（三选一弹窗会把游戏暂停 →
         // 对话默认被“被别的 UI 挡住”拦下不播，所以这一拍开个口）。
@@ -526,11 +548,16 @@ public partial class TutorialStageDirector : MonoBehaviour
     ///    这个是**压暗可见但无效**（<c>SetMuted(true)</c>）。
     ///    → 所以静音的恢复**不依赖** <c>_defendTaught</c>（它在正式关一直是 false）。
     /// </summary>
-    private void SetDefenseButtonMuted(bool muted)
+    /// <summary>
+    /// 防御键的**静音**分两个来源（可同时存在），合并后一起应用：
+    ///   • <see cref="_defenseMutedByChoice"/> = 教学关「3选1 → 技能拍」这段（**教学专用**，离开教学路线必须还原）
+    ///   • <see cref="_defenseMutedByGuide"/>  = 招式解锁引导拍的蓄力阶段（**任何关卡**都可能有，拍结束即恢复）
+    /// </summary>
+    private void ApplyDefenseMute()
     {
         var button = DefenseButton.Instance;
+        bool muted = _defenseMutedByChoice || _defenseMutedByGuide;
         if (button != null) button.SetMuted(muted);
-        _defenseMutedByTutorial = muted;
         if (muted)
         {
             var ps0 = PlayerState.Instance;
@@ -538,8 +565,25 @@ public partial class TutorialStageDirector : MonoBehaviour
         }
     }
 
-    /// <summary>防御键是否被教学**静音**（压暗、按下无效）。</summary>
-    private bool _defenseMutedByTutorial;
+    /// <summary>教学关「3选1 → 技能拍」这段的静音（教学专用）。</summary>
+    private void SetDefenseMuteChoice(bool muted)
+    {
+        _defenseMutedByChoice = muted;
+        ApplyDefenseMute();
+    }
+
+    /// <summary>招式解锁引导拍（蓄力阶段）的静音（任何关卡）。</summary>
+    private void SetDefenseMuteGuide(bool muted)
+    {
+        _defenseMutedByGuide = muted;
+        ApplyDefenseMute();
+    }
+
+    /// <summary>教学关「3选1 → 技能拍」这段的静音（教学专用，离开教学路线会自愈）。</summary>
+    private bool _defenseMutedByChoice;
+
+    /// <summary>招式解锁引导拍（蓄力阶段）的静音（任何关卡都可能有，拍结束即恢复）。</summary>
+    private bool _defenseMutedByGuide;
 
     /// <summary>内容2 的技能拍是否正在进行（那一拍允许在输入被拦下时也能释放技能）。</summary>
     public bool SkillBeatActive { get; private set; }
@@ -557,7 +601,11 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 到技能拍开拍时（Beats.cs）才恢复 —— 那几秒玩家要能防御，见 2026-11-02 反馈「为什么我会受击」）。
         // 三选1 → 内容2 技能拍 之间**锁住防御键**：
         // 否则玩家在这个空档按下防御 → 长枪举起来（又收不回），同时技能键被输入拦截点不动。
-        SetDefenseButtonMuted(true);
+        //
+        // ⚠️ **必须判路线**（2026-11-05 用户反馈「正式关3选1选择后无法按防御按键」）：
+        //   这个静音是**教学专用**（教学关的3选1 → 技能拍那段），而正式关也会弹3选1 →
+        //   不判路线就会把正式关的防御键也静音，而且**永远没人解除**（技能拍只在教学关跑）。
+        if (IsOnTutorialRoute()) SetDefenseMuteChoice(true);
     }
 
     /// <summary>玩家在教学三选1 里选中的技能（没选 = null）。</summary>

@@ -531,7 +531,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         // ⚠️ **这一拍不要让防御键一直静音**（2026-11-02 用户反馈「为什么我会受击」）：
         //    等敌人抡招的这几秒里，玩家出招被封（教学需要）但**必须能防御** → 只能站着挨打。
         //    三选1 阶段的静音在这里解除（防御拍 E0 第 1 波已经教过，防御键此时本来就该是开放的）。
-        SetDefenseButtonMuted(false);
+        SetDefenseMuteChoice(false);
 
         bool frozen = false;
         bool skillUsed = false;
@@ -807,7 +807,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 收尾：恢复技能释放 + 恢复防御键（这一拍教完了）
         SkillBeatActive = false;
         GameplayInputGate.AllowSkillActivationWhileBlocked = false;
-        SetDefenseButtonMuted(false);
+        SetDefenseMuteChoice(false);
         _hintRoutine = null;
     }
 

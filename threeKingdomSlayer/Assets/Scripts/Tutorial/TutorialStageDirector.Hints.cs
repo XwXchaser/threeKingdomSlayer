@@ -92,7 +92,8 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 教学拍被打断（波次结束/关场景）时必须把敌人、压暗、手势过滤全部恢复，否则整局卡死
         EndBeat(playAfterDialogue: false);   // 被打断的拍不补播收尾台词
         ResetSkillBeatFlags();               // 技能拍的全局开关（static）必须收回，否则漏到正式关
-        SetDefenseButtonMuted(false);         // 静音也必须收回（拍被打断 → 这一拍的教学窗口结束了）
+        SetDefenseMuteChoice(false);         // 静音也必须收回（拍被打断 → 这一拍的教学窗口结束了）
+        SetDefenseMuteGuide(false);          // 引导拍的蓄力静音同样收回
         // 正在门槛里被打断时必须走 Cancel：它会恢复 timeScale 和游戏输入
         if (gestureHint != null)
         {
@@ -360,7 +361,9 @@ public partial class TutorialStageDirector : MonoBehaviour
             //   ⚠️ **只静音阶段 2**：阶段 1（等敌人到位 / 等玩家点第一记）以及拍卡住的时候，
             //   防御键仍然可用 —— 否则玩家在“等得没头绪”时连防御都用不了，只能站着挨打
             //   （2026-11-02 用户反馈「为什么我会受击」）。
-            SetDefenseButtonMuted(true);
+            //   ⚠️ 这是**招式解锁引导拍**自己的静音（任何关卡都可能有，正式关也会触发）→
+            //   不走「不在教学路线就还原」那套（否则正式关里这拍就失去保护）。
+            SetDefenseMuteGuide(true);
             float winWait = 0f;
             bool windowOk = false;
             while (_beatActive && winWait < 3f)
@@ -376,7 +379,7 @@ public partial class TutorialStageDirector : MonoBehaviour
             {
                 // 接续窗口没赶上 → 回到阶段 1 让玩家**再点一记**（不能干等，否则这一拍就废了）
                 // （回到阶段 1 → 防御键要恢复：玩家这时可以防御，只是不能再蓄力）
-                SetDefenseButtonMuted(false);
+                SetDefenseMuteGuide(false);
                 Debug.Log("[Tutorial] 连招蓄力拍：接续窗口没赶上 → 回阶段 1（再点一记）");
                 continue;
             }
@@ -415,7 +418,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (atkEnd != null) atkEnd.EndComboChargeHold();
         var psEnd = PlayerState.Instance;
         if (psEnd != null) psEnd.freezeWeaponStance = false;
-        SetDefenseButtonMuted(false);      // 蓄力阶段结束（或这一拍被中止）→ 恢复防御键
+        SetDefenseMuteGuide(false);      // 蓄力阶段结束（或这一拍被中止）→ 恢复防御键
         _comboChargePhase = 0;
         EndBeat();
         _hintRoutine = null;
