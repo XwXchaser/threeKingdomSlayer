@@ -111,8 +111,11 @@ public class PassiveSkillRow : MonoBehaviour
     /// 口径必须与 <c>UpgradeEffectManager.PassiveUpgradeCount</c>（被动槽上限判定）一致：
     /// 上限计数含 <see cref="UpgradeCategory.Numeric"/>，所以这里也要含它（2026-11-03 A2）。
     /// 道具与主动技能各有自己的库存，不占被动槽。
+    ///
+    /// ⚠️ **public**：<c>BuffDisplayPanel</c> 要用**同一个判定**来决定
+    /// 「这个被动要不要在左侧旧面板再显示一次」（2026-11-05 移除左侧重复显示）。
     /// </summary>
-    private static bool OccupiesPassiveSlot(UpgradeCategory category)
+    public static bool OccupiesPassiveSlot(UpgradeCategory category)
     {
         return category == UpgradeCategory.Numeric
             || category == UpgradeCategory.AttackPassive

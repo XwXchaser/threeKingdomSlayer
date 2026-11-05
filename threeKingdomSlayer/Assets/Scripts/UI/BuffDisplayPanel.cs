@@ -302,23 +302,28 @@ public class BuffDisplayPanel : MonoBehaviour, IQteInputLockTarget
         {
             if (_canvasGroup != null) _canvasGroup.alpha = 1f;
             RefreshItemSlots();
+            return;
         }
-        else
+
+        // **被动类不再显示在左侧 Column A**（2026-11-05 用户定）：
+        //   被动技能已经移到**右下角的被动排**（<see cref="PassiveSkillRow"/>），
+        //   左侧这一排是**重复显示** → 旧显示移除。
+        //   口径直接复用被动排的判定（两者必须一致，否则会出现「两边都显示」或「两边都不显示」）。
+        if (PassiveSkillRow.OccupiesPassiveSlot(def.category)) return;
+
+        if (!_upgradeIcons.TryGetValue(def.upgradeId, out var icon))
         {
-            if (!_upgradeIcons.TryGetValue(def.upgradeId, out var icon))
-            {
-                icon = ClaimColumnASlot();
-                if (icon == null) return;
+            icon = ClaimColumnASlot();
+            if (icon == null) return;
 
-                icon.Setup(def.icon, def.upgradeId, def.category, null);
-                icon.gameObject.SetActive(true);
-                _upgradeIcons[def.upgradeId] = icon;
-                icon.SetFrame(GetLevelFrame(newLevel));
-            }
-
+            icon.Setup(def.icon, def.upgradeId, def.category, null);
+            icon.gameObject.SetActive(true);
+            _upgradeIcons[def.upgradeId] = icon;
             icon.SetFrame(GetLevelFrame(newLevel));
-            RefreshNumericValue(icon, def, UpgradeEffectManager.Instance);
         }
+
+        icon.SetFrame(GetLevelFrame(newLevel));
+        RefreshNumericValue(icon, def, UpgradeEffectManager.Instance);
     }
 
     private void RefreshNumericValue(BuffIcon icon, UpgradeDefinition definition, UpgradeEffectManager uem)
