@@ -16,7 +16,7 @@ MonoBehaviour:
   nodes:
   - nodeId: talent_move_stabc2
     displayName: "\u6307\u5411\u7A81\u523A"
-    description: "\u6307\u5411\u7A81\u523A\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
+    description: "\u6307\u5411\u7A81\u523A\uFF1A\u70B9\u4E00\u8BB0\u6233\u540E\u522B\u62AC\u624B\uFF0C\u5728\u63A5\u7EED\u7A97\u53E3\u91CC\u6309\u4F4F\u84C4\u6EE1\u518D\u677E\u624B\uFF0C\u6253\u51FA\u8D2F\u7A7F\u4E24\u6392\u7684\u7A81\u523A\u3002"
     coinCost: 1
     moveConfig: {fileID: 11400000, guid: f0d6ad785959ad941b9b51d73a275d01, type: 2}
     upgradeConfig: {fileID: 0}
@@ -30,8 +30,9 @@ MonoBehaviour:
     treePosition: {x: -190, y: 0}
     icon: {fileID: 21300000, guid: 6e52545f49f8a7c4cad93b38790df8c8, type: 3}
     hidden: 0
-    moveGuideGesture: 0
-    moveGuideDialogue: {fileID: 0}
+    moveGuideGesture: 5
+    moveGuideDialogue: {fileID: 11400000, guid: ccbaad05a1b56d4448222196f7c3d889, type: 2}
+    moveGuidePhase2Dialogue: {fileID: 11400000, guid: f13b6ca02bddea649b1691e076f7f8f2, type: 2}
   - nodeId: talent_move_stabc4
     displayName: "\u67AA\u7A81\u6536\u5C3E"
     description: "\u67AA\u7A81\u6536\u5C3E\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
@@ -51,6 +52,7 @@ MonoBehaviour:
     hidden: 0
     moveGuideGesture: 0
     moveGuideDialogue: {fileID: 0}
+    moveGuidePhase2Dialogue: {fileID: 0}
   - nodeId: talent_move_slash
     displayName: "\u6A2A\u626B"
     description: "\u6A2A\u626B\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"
@@ -69,6 +71,7 @@ MonoBehaviour:
     hidden: 0
     moveGuideGesture: 1
     moveGuideDialogue: {fileID: 11400000, guid: d63f86179e072a74eac6ed31b3fc2fcd, type: 2}
+    moveGuidePhase2Dialogue: {fileID: 0}
   - nodeId: talent_move_slashc2
     displayName: "\u65A9\u51FB C2"
     description: "\u4EFB\u610F\u65B9\u5411\u65A9\u51FB\u540E\u84C4\u529B\u677E\u624B\uFF0C\u91CA\u653E\u4E00\u8BB0\u540C\u65B9\u5411\u7684\u5F3A\u5316\u65A9\u51FB\uFF08\u91CD\u653B\u51FB\u3001\u9644\u5E26\u5DE6\u53F3\u4F4D\u79FB\uFF09\u3002"
@@ -88,3 +91,4 @@ MonoBehaviour:
     hidden: 0
     moveGuideGesture: 0
     moveGuideDialogue: {fileID: 0}
+    moveGuidePhase2Dialogue: {fileID: 0}

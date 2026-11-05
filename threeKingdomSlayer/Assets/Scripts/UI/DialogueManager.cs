@@ -36,6 +36,16 @@ public sealed class DialogueManager : MonoBehaviour, IDialogueModal
     public bool IsBusy => _isPlaying || _queue.Count > 0;
     public bool IsInteractionBlocked => _isPlaying || _interactionBlockFrames > 0;
 
+    /// <summary>
+    /// 把当前正在播的对话收掉（玩家点气泡 / 自动化用）。
+    /// 收掉后走正常的 <see cref="Finish"/> → 暂停会恢复、对话会被记为已播 ✅。
+    /// </summary>
+    public void Skip()
+    {
+        if (_dialogueView == null) _dialogueView = BattleDialogueView.Instance;
+        if (_dialogueView != null && _dialogueView.IsShowing) _dialogueView.Skip();
+    }
+
     public BossDialogueProfile GetBossProfile(int bossId)
     {
         if (_database == null) return null;

@@ -17,7 +17,12 @@ public enum MoveGuideGesture
     /// <summary>按住蓄力。</summary>
     Hold = 3,
     /// <summary>点按。</summary>
-    Tap = 4
+    Tap = 4,
+    /// <summary>
+    /// **连招蓄力**（2026-11-04）：先点一下打出第一段，再在接续窗口里**按住蓄满 → 松手**打出派生招式。
+    /// （两段独立输入，和真实连招一致。）
+    /// </summary>
+    ComboCharge = 5
 }
 
 /// <summary>
@@ -43,4 +48,7 @@ public class MoveGuideRequest
 
     /// <summary>引导台词（一行文字；可为空 → 只演手势）。</summary>
     public DialogueEventData dialogue;
+
+    /// <summary>**连招蓄力引导**的第二段台词（「按住蓄满 → 松手」）；其它引导类型不用。</summary>
+    public DialogueEventData phase2Dialogue;
 }

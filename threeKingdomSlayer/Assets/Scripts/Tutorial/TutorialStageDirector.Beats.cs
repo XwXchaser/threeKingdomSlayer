@@ -509,7 +509,7 @@ public partial class TutorialStageDirector : MonoBehaviour
             waited += Time.unscaledDeltaTime;
             yield return null;
         }
-        if (target == null) { _hintRoutine = null; yield break; }
+        if (target == null) { ResetSkillBeatFlags(); _hintRoutine = null; yield break; }
 
         // 3) **拍一开始就禁掉出招**（对齐霸体防御拍）：
         //    等待期间玩家照打 → 教学目标被打死 → 这一拍静默结束，玩家永远学不到
@@ -705,10 +705,32 @@ public partial class TutorialStageDirector : MonoBehaviour
                     //   （2026-11-02 实测：驱动每 2s 点一次技能，全部被 timeScale 闸门吃掉）。
                     GameplayInputGate.AllowSkillActivationWhileFrozen = true;
 
-                    // 台词还在的话先收掉：台词在播时 IsInteractionBlocked=true →
-                    //   技能槽的点击会被直接吞掉（FrontItemBar.OnItemIconClicked）。
+                    // 冻结前的旧台词先收掉：这一拍要在冻结时换一句新的（点技能图标），
+                    //   不收的话两句会叠在一起。
                     var dlgView = ResolveDialogueView();
                     if (dlgView != null && dlgView.IsShowing) dlgView.Skip();
+
+                    // **冻结瞬间把这一拍的台词推出来**（和手势示范同时出现）：
+                    //   原来这一拍到冻结时**一句台词都没有** —— 玩家看到的是
+                    //   「敌人举着刀停住 + 手指落在技能槽上」，但没有任何文字告诉他该干什么。
+                    //   ⚠️ 冻结时 Time.timeScale = 0 → DialogueManager.IsBlockedByOtherUI()
+                    //      会把队列里的台词当「被别的 UI 挡住」拦下来 →
+                    //      必须临时开 AllowDialogueWhilePaused（教学专用开关）才推得上去。
+                    if (step.freezeDialogue != null)
+                    {
+                        DialogueManager.AllowDialogueWhilePaused = true;
+                        DialogueManager.Instance?.QueueEventAndNotify(step.freezeDialogue, forceReplay: true);
+                        var freezeView = ResolveDialogueView();
+                        float waitShow = 0f;
+                        while (freezeView != null && !freezeView.IsShowing && waitShow < 1.5f)
+                        {
+                            waitShow += Time.unscaledDeltaTime;
+                            yield return null;
+                        }
+                        // 已经显示出来了 → 开关收回去（没显示出来就留着，等这一拍收尾统一收）
+                        if (freezeView != null && freezeView.IsShowing) DialogueManager.AllowDialogueWhilePaused = false;
+                        DebugLog.Info("[Tutorial] 技能打断拍：冻结台词：" + step.freezeDialogue.name);
+                    }
 
                     var input = InputManager.Instance;
                     if (input != null) input.allowInputWhileTimeFrozen = true;
@@ -779,7 +801,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         }
 
         if (frozen) { _frozenByTutorial = false; Time.timeScale = 1f; }
-        GameplayInputGate.AllowSkillActivationWhileFrozen = false;
+        ResetSkillBeatFlags();
         ResetSkillSlotHighlight();
         // 收拍（EndBeat 会把「循环点技能槽」的示范收掉 → 光圈/手不会残留）
         if (beatStarted && _beatActive) EndBeat();
@@ -801,6 +823,22 @@ public partial class TutorialStageDirector : MonoBehaviour
             + " 打断=" + (target != null && target.attackInterrupted)
             + " 挂起=" + (target != null && target.IsSuspended);
         Debug.Log(line);
+    }
+
+    /// <summary>
+    /// 把「教学技能拍」打开的**全局开关**全部收回。
+    ///
+    /// ⚠️ 这些是 static（进程级）→ 漏收回就会漏到正式关：
+    ///   • AllowSkillActivationWhileBlocked → 技能不再受输入门/对话层拦截
+    ///   • AllowSkillActivationWhileFrozen → timeScale=0 时也能放技能
+    ///   • AllowDialogueWhilePaused        → 冻结时台词能推上屏
+    /// 调用点：**拍正常收尾 / 拍被 StopHint 打断 / 导演被禁用** —— 缺一个都会漏。
+    /// </summary>
+    private void ResetSkillBeatFlags()
+    {
+        GameplayInputGate.AllowSkillActivationWhileBlocked = false;
+        GameplayInputGate.AllowSkillActivationWhileFrozen = false;
+        DialogueManager.AllowDialogueWhilePaused = false;
     }
 
     /// <summary>冻结时高亮的技能槽图标（脉冲缩放）。</summary>

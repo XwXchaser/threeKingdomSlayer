@@ -154,7 +154,7 @@ public sealed partial class PixelHitEffectManager : MonoBehaviour
             || context.source == HitFeedbackSource.Dot)
             return;
 
-        var instance = _pool.Count > 0 ? _pool.Dequeue() : CreateInstance();
+        var instance = TakeInstance();
         Play(instance, context);
     }
 
@@ -512,6 +512,10 @@ public sealed partial class PixelHitEffectManager : MonoBehaviour
 
     private void ReturnToPool(EffectInstance instance, Sequence owner)
     {
+        if (instance == null) return;
+        // 实例的 GameObject 可能已被销毁（场景卸载 / 池根被销毁 / OnDestroy 里杀 Tween）
+        // → Unity 的「假 null」会直接抛 MissingReferenceException（2026-11-04 实测报错）。
+        if (instance.root == null) return;
         if (instance.sequence != owner || !instance.root.activeSelf)
             return;
 
@@ -519,6 +523,17 @@ public sealed partial class PixelHitEffectManager : MonoBehaviour
         instance.root.SetActive(false);
         instance.root.transform.SetParent(_poolRoot, false);
         _pool.Enqueue(instance);
+    }
+
+    /// <summary>从池里取一个可用实例（root 已被销毁的直接丢弃）。</summary>
+    private EffectInstance TakeInstance()
+    {
+        while (_pool.Count > 0)
+        {
+            var instance = _pool.Dequeue();
+            if (instance != null && instance.root != null) return instance;
+        }
+        return CreateInstance();
     }
 
     private EffectInstance CreateInstance()

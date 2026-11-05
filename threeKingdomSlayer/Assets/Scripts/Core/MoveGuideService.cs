@@ -56,7 +56,8 @@ public static class MoveGuideService
                 title = node.displayName,
                 move = node.moveConfig,
                 gesture = node.moveGuideGesture,
-                dialogue = node.moveGuideDialogue
+                dialogue = node.moveGuideDialogue,
+                phase2Dialogue = node.moveGuidePhase2Dialogue
             });
         }
     }
@@ -71,42 +72,15 @@ public static class MoveGuideService
     }
 
     /// <summary>
-    /// 把待教的引导依次弹出来（**挡住开打**：调用方要等这个协程结束再开波 ✅）。
-    /// 没有界面端口（端口没登记）就直接跳过 ✅。
+    /// 把待教的引导依次弹出来 —— **已废弃**（2026-11-04）。
+    ///
+    /// 引导现在是**教学拍**（<see cref="TutorialStageDirector"/> 在开波时拍出来）：
+    /// 玩家划的那一下必须**真的打出去**才算教完 → 不能在战斗开始之前弹（那时打不出去）。
+    /// 本方法保留只为兼容旧调用点，**不要再用**。
     /// </summary>
+    [System.Obsolete("引导已改为教学拍机制（TutorialStageDirector）→ 不要再调用")]
     public static IEnumerator ShowPending()
     {
-        var presenter = CombatPresenters.MoveGuide;
-        if (presenter == null) yield break;
-
-        var ps = PlayerState.Instance;
-        var hero = ps != null ? ps.heroConfig : null;
-        var tree = hero != null ? hero.talentTree : null;
-        var catalog = hero != null ? hero.talentCatalog : null;
-
-        List<MoveGuideRequest> pending = CollectPending(tree, catalog);
-        for (int i = 0; i < pending.Count; i++)
-        {
-            MoveGuideRequest request = pending[i];
-            bool done = false;
-            presenter.ShowMoveGuide(request, () => done = true);
-
-            // 等引导播完（最多 20 秒兜底，防止界面异常把战斗卡死 ✅）。
-            float waited = 0f;
-            while (!done && presenter.IsShowing && waited < 20f)
-            {
-                waited += Time.unscaledDeltaTime;
-                yield return null;
-            }
-            if (done)
-            {
-                // 只有**完整演完**才标记「已教过」——
-                // 演出被掐断（超时兜底 / 界面异常）时不能标记，
-                // 否则玩家会**永久失去**这个引导（第一次没看到 = 以后也不再教）。
-                bool complete = presenter.CompletedNormally;
-                if (complete) MarkTaught(request.nodeId);
-                Debug.Log($"[MoveGuide] {(complete ? "已教" : "未完整播出（不标记教过，下次还会教）")}：{request.nodeId}（{request.title}）");
-            }
-        }
+        yield break;
     }
 }

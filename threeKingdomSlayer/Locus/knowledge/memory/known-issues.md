@@ -232,6 +232,62 @@ aiEditMode: inherit
   - **遗留（非本条）**：常驻引导的「指尖→圈心」在按压时会离开圈心 ≤30px（第四轮定稿的分工：指尖=定位、掌心=旋转支点），已验收。
 
 
+## 15. 跑关机器人卡死在「升级三选一」✅ 已修复（2026-11-04）
+- **现象**：`BattleAutoPlayer` 跑到正式关 N1，敌人清完后停在「升级三选一」面板上不动：`IsChoosing=True`、`_pendingChoices` 有 3 个、`_running=True`，但机器人永远不选，`Time.timeScale=0`。
+- **根因**：三选一面板会 **暂停游戏**（`UpgradeChoiceManager.cs:245` → `Time.timeScale = 0f`）→ **缩放时间 `Time.time` 冻结** → 机器人的 UI 节流计时器 `if (Time.time < _nextUiClickTime) return;` **永远成立** → `HandleBlockingUi()` 每帧都在第一行就 return，连三选一的分支都进不去 → **死锁**（机器人卡住 → 面板不关 → 时间一直冻着）。
+- **实测取证**：`Time.time` 35.522 → 35.522（不动）而 `Time.unscaledTime` 152.912 → 153.027；`_nextUiClickTime=35.72 > Time.time=35.52` 恒成立。
+- **修复**：机器人所有 **UI 节流计时器改用 `Time.unscaledTime`**（UI 点击节流本来就该用真实时间）；并把「点掉对话气泡」分支挪到「选三选一」**后面**（三选一更重要，且它会暂停游戏）。
+- **规则**：**机器人里凡是「等一下再动作」的计时器，一律用 `Time.unscaledTime`** —— 缩放时间会在任何暂停 UI（三选一 / 对话 / 教学门槛）下冻结。
+- **注**：交接文档里「机器人已经会点三选一」的说法只在**弹窗恰好没暂停**时成立，升级三选一这个场景以前必卡死。
+
+## 16. 暂停恢复时 PixelHitEffectManager 抛 MissingReferenceException ✅ 已修复（2026-11-04）
+- **现象**：Console 报 `MissingReferenceException: The object of type 'GameObject' has been destroyed`，
+  栈是 `PixelHitEffectManager.ReturnToPool` → `GameplayPause.ResumeRegistered` → `Tween.Kill(false)` → `OnKill` 回调。
+- **根因（两层）**：
+  1. `PixelHitEffectManager.ReturnToPool` 直接访问 `instance.root.activeSelf`——池里的实例 GameObject 可能已被销毁
+     （场景卸载 / `OnDestroy` 里杀 Tween）→ Unity 的「假 null」→ 抛异常。
+  2. `GameplayPause.ResumeRegistered` 里 `t.Kill(false)` 会**触发该 Tween 的 OnKill 回调**→ 回调里抛异常 →
+     **异常向上冒 → 整批恢复循环中断** → 后面的 Tween 永远停在暂停态（且 `s_pausedByGate` 不清空）。
+- **修复**：① `ReturnToPool` 先判 `instance.root == null` 就直接丢弃；取实例改走 `TakeInstance()`（跳过已销毁的）；
+  ② `ResumeRegistered` 每条 Tween 单独 `try/catch` → 一条坏的不影响其余。
+- **规则**：`GameplayPause` 登记的 Tween 在「目标已销毁」时被 Kill 是**必然**发生的（暂停期间对象被销毁），
+  所以「Kill → 回调 → 访问已销毁对象」这条链必须处处判空。
+
+## 17. 教学手势「门槛机制」是没人用的旧机制 ⚠️ 别再当教学机制（2026-11-04 实测）
+- **事实**：`TutorialGestureHint.Gate(...)`（暂停整个游戏 + `GameplayInputGate.RequestBlock(TutorialGate)` + 原始输入自判）
+  **全工程无人调用**。教学拍（`TutorialStageDirector.Hints.cs` 的 `HintRoutine`）用的是完全另一套：
+  **示范循环 + 招式真的打出去并命中**（`OnTutorialAttackExecuted`）+ 冻敌人 + 压暗场景 + 手势闸门限手势，**不暂停全局**。
+- **代价**：交接文档 §3.2 曾写「Tap 教学用 Gate」→ 照它做的解锁引导与教学拍**不一致**（玩家划的那一下打不出去、
+  抢同一个提示层导致教学拍手势收不掉）。2026-11-04 已改为「解锁引导 = 教学拍」。
+- **规则**：要「教一个招式」→ 把它当**一拍拍出来**（`TutorialStageDirector`），不要另起一套表现。
+- 附带坑：`TutorialGestureHint.Hide()` **不会停掉 Gate 的示范循环**（只停 `_routine`）→ 门槛期间被 `Hide()` 会让手势反复冒出来。
+
+## 18. 教学关专属的教学行为漏进正式关 ✅ 已修复（2026-11-04）
+- **现象**：正式关 N1 节点升级弹三选1 时，弹出「三选1 教学台词」（「听我的，选【海浪】…」）+ 一只指着推荐卡的手；而且**只能选推荐的那张**。
+- **根因**：`TutorialStageDirector.OnChoicesReady` **没有任何路线门槛**。教学导演是**常驻组件**（挂在 Battle.scene），且每次切路线场景会**重建**（`Loaded scene 'Temp/__Backupscenes/0.backup'`）→ 新实例的「一次性标志位」复位 → 在正式关又教一遍。
+- **修复**：加 `IsOnTutorialRoute()` 门槛（判当前路线是不是教学路线），正式关**不念台词 / 不指卡 / 不限制只能选推荐项**。
+- **规则（P4）**：教学关专属的行为**必须自己判路线**，不能靠「只跑一次」的标志位——常驻组件 + 场景重建 = 标志位会复位。
+
+## 19. 教学系统的五个隐形坑（2026-11-04 全链路实测踩出来的）✅ 已修
+
+> 完整版见 `design/tutorial-guides-spec-20261104.md`（§4.1 全链路 + 5 个真 bug / §4.2 视觉 / §4.3 长枪）。
+
+| # | 现象 | 根因 |
+|---|---|---|
+| 1 | **教学关永远结算不出来** | `TutorialFlowDriver` 的「技能拍期间不点按」判断**没带 `beatRunning`** → 拍结束了驱动还在等 → 最后一只敌人永远不死 |
+| 2 | **天赋页教学不出现** | 天赋页是从 overlay **直接激活**的（不走 `Open()`）→ 教学没被启动 |
+| 3 | **所有招式拍收不了** | 教学关的防御拍/技能拍把 `_beatEndsOnAttack` 关成 false，而**从来没人复位** |
+| 4 | **派生招式明明打出来了，这一拍却不收** | 命中判定只靠 `OnAttackExecuted` 事件，而**连段/缓冲触发的执行不派发这个事件** → 改用**招式状态机当前节点**判定 |
+| 5 | 机器人在教学拍里**连点三下**把连招打没了 | 调试注入**绕过教学闸门**（真实输入会守）→ `SubmitGestureForDebug` 已补闸门校验 |
+
+**规则（避免再踩）**：
+- 教学导演常驻 + 切场景重建 → 「只跑一次」的标志位会复位 → 教学行为必须**自己判路线**。
+- 调试注入会绕过教学闸门 → 机器人跑教学拍前先确认注入路径也守闸门。
+- TMP 文字要有**带中文字形的字体**（`TMP_Settings.defaultFontAsset` 是 LiberationSans → 中文全空白）。
+- 引导锚点用 `rect.center`（视觉中心），不要用 `rectTransform.position`（那是 pivot，很多 UI 的 pivot 在角上）。
+- 带旋转动画的手，位置必须**每帧反算**，否则指尖会甩离目标。
+- `localScale` 是**倍率**不是尺寸 → 尺寸和缩放别同时乘（光圈会变成巨物）。
+
 ## 12. 正式关里常驻引导的手/光圈错位（指尖偏 ~200px）✅ 已修复（2026-11-02）
 - **现象**：正式关里，前排敌人身上的手和光圈对不上（教学关看不出）。
 - **根因**：`AttackTapIndicator` 的**手是 TapHint 根节点的子物体**（根节点已摆在敌人屏幕点上），但代码把手的 `anchoredPosition` 写成了**画布绝对坐标**（`local + 偏移`）→ **位置算了两遍**，指尖落到 `2×目标点`。敌人离画面中心越远偏得越多（教学关敌人居中 → 被掩盖）。

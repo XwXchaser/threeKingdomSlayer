@@ -21,6 +21,21 @@ public partial class TutorialStageDirector : MonoBehaviour
     private int _beatHitCount;
     /// <summary>这一拍要打几次才算完成（1 = 一次就完成）。</summary>
     private int _beatRequiredHits = 1;
+    /// <summary>这一拍刚打出了预期招式（等**敌人受击**确认「攻击成功」）。</summary>
+    private bool _beatAttackFired;
+    /// <summary>刚打出的招式类型（命中确认时写日志用）。</summary>
+    private AttackType _beatLastAttackType = AttackType.Stab;
+    /// <summary>刚打出的招式命中列（命中确认时写日志用）。</summary>
+    private int _beatLastAttackColumn = -1;
+    /// <summary>本拍正在监听受击的敌人（用来判断「攻击成功」= 真的打中了人）。</summary>
+    private readonly List<Enemy> _beatDamageWatchers = new List<Enemy>();
+    /// <summary>招式状态机（判定「刚打出去的那一招是不是这一拍教的」）。</summary>
+    private PlayerMoveStateMachine _moveMachine;
+    /// <summary>
+    /// **连招蓄力拍的阶段**：0 = 不是这一拍；1 = 等第一记戳；2 = 等蓄满松手；3 = 已完成。
+    /// （两段命中分开算：第一记戳只推进阶段，派生招式才收拍。）
+    /// </summary>
+    private int _comboChargePhase;
 
     /// <summary>手势种类 → 它教的招式。</summary>
     private static AttackType? AttackTypeFor(GestureHintKind kind)
@@ -35,6 +50,16 @@ public partial class TutorialStageDirector : MonoBehaviour
             case GestureHintKind.ParryHold: return AttackType.Parry;
             default: return null;
         }
+    }
+
+    /// <summary>
+    /// 这一拍要教的招式：**招式解锁引导**用天赋节点配的招式（<c>guideAttackType</c>），
+    /// 其余按拍型推断。
+    /// </summary>
+    private static AttackType? TeachAttackFor(TutorialGestureStep step)
+    {
+        if (step != null && step.guideAttackType >= 0) return (AttackType)step.guideAttackType;
+        return step != null ? AttackTypeFor(step.kind) : null;
     }
 
     /// <summary>把白名单刷成「已教完的 + 当前这一拍要教的」。</summary>

@@ -16,6 +16,8 @@ public partial class TutorialStageDirector : MonoBehaviour
             case GestureHintKind.SkillSlot: return TutorialGestureTarget.BlockAll;
             case GestureHintKind.Swipe: return TutorialGestureTarget.SwipeHorizontal;
             case GestureHintKind.ChargedSwipe: return TutorialGestureTarget.ChargedVertical;
+            // 连招蓄力拍：阶段 1 是「点一下」（阶段 2 会自己换成 ComboHold）
+            case GestureHintKind.ComboCharge: return TutorialGestureTarget.Tap;
             case GestureHintKind.Parry:
             case GestureHintKind.ParryHold: return TutorialGestureTarget.ParryVertical;
             default: return TutorialGestureTarget.None;

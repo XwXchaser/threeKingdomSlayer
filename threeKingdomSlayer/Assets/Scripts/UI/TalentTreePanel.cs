@@ -79,6 +79,29 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     [Tooltip("选中角标：替代程序化的圆形高亮圈；留空 = 仍用程序化圆环")]
     public Sprite selectionCorners;
 
+    [Header("首次打开的天赋页教学")]
+    [Tooltip("教学用的手指贴图（留空 = 只画光圈不画手）")]
+    public Sprite teachingHandSprite;
+    [Tooltip("教学用的光圈贴图（留空 = 程序化圆环）")]
+    public Sprite teachingRingSprite;
+    [Tooltip("教学手的帧序列（留空 = 只做程序化按压）")]
+    public Sprite[] teachingHandFrames;
+    [Tooltip("教学文案 1：指向一个「现在就能解锁」的节点")]
+    public string teachingTextPickNode = "点一个天赋节点 —— 花铜钱解锁它";
+    [Tooltip("教学文案 2：指向详情卡里的【解锁】按钮")]
+    public string teachingTextConfirm = "再点【解锁】确认 —— 天赋就生效了";
+
+    // ── 天赋页教学状态（2026-11-04）────────────────────────────
+    private bool _teachActive;
+    private int _teachStep;                 // 0 = 指向节点；1 = 指向确认按钮
+    private RectTransform _teachLayer;
+    private Image _teachHand;
+    private Image _teachRing;
+    private TextMeshProUGUI _teachLabel;
+    private RectTransform _teachLabelBg;
+    private Vector3 _teachTargetLocal;
+    private float _teachAnimTime;
+
     [Header("竖向树版式（2026-11-03）")]
     [Tooltip("各泳道的分支牌（按泳道序号 0/1/2 取；留空 = 不画）。美术包里是空底板，图标另算。")]
     public Sprite[] branchPlaques;
@@ -164,6 +187,8 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private TextMeshProUGUI _detailCost;
     private TextMeshProUGUI _detailState;
     private Button _buyButton;
+    /// <summary>面板左上角的「返回」按钮（天赋教学的第 3 步要指它）。</summary>
+    private RectTransform _closeButtonRect;
     private TextMeshProUGUI _buyLabel;
 
     // 二维分页状态
@@ -200,6 +225,8 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         TalentTreeState.OnChanged += Refresh;
         Refresh();
+        // 面板一显示就可能开教学（天赋页是从 overlay 直接激活的，**不走 Open()** → 教学会漏启动）
+        TryStartTeaching();
     }
 
     private void OnDisable()
@@ -222,6 +249,7 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             BuildPages();
             Refresh();   // 重建后必须刷一次，否则节点会停在“锁定”外观
         }
+        UpdateTeachingAnimation();   // 教学手势的按压动画
     }
 
     public void Toggle() => SetVisible(!gameObject.activeSelf);
@@ -230,6 +258,7 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         Build();
         SetVisible(true);
+        TryStartTeaching();
     }
 
     /// <summary>
@@ -238,6 +267,10 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     /// </summary>
     public void Close()
     {
+        // 关闭面板 = **放弃这次教学**（不写标记 → 下次打开还会教 ✅）
+        // 但教学的第 3 步就是「点返回」→ 这时关闭面板 = **教学完成** ✅
+        if (_teachActive && _teachStep == 2) CompleteTeaching();
+        else StopTeaching();
         SetVisible(false);
         var flow = SceneFlowManager.Instance;
         if (flow != null && !string.IsNullOrEmpty(flow.CurrentOverlay))
@@ -385,6 +418,7 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
         var close = CreateImage("CloseButton", panel.rectTransform, new Color(0.85f, 0.75f, 0.55f, 1f), null);
         var closeRect = close.rectTransform;
+        _closeButtonRect = closeRect;
         closeRect.anchorMin = new Vector2(0f, 1f);
         closeRect.anchorMax = new Vector2(0f, 1f);
         closeRect.pivot = new Vector2(0f, 1f);
@@ -828,6 +862,7 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         RefreshTabs();
         RefreshPageDots();
         RefreshDebugState();
+        UpdateTeaching();      // 教学的手要跟着节点/按钮走（重建后也要跟上）
 
         for (int p = 0; p < _pages.Count; p++)
         {
@@ -1094,6 +1129,13 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         _selectedPage = view.pageIndex;
         _feedback = null;
         Refresh();
+
+        // 天赋页教学：玩家点了一个节点 → 下一步指向【解锁】按钮
+        if (_teachActive && _teachStep == 0)
+        {
+            _teachStep = 1;
+            UpdateTeaching();
+        }
     }
 
     /// <summary>详情卡的确认按钮：真正的解锁（扣钱）只在这里发生。</summary>
@@ -1108,6 +1150,13 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             case TalentUnlockResult.Success:
                 _feedback = $"已解锁：{node.displayName}";
+                // 解锁成功 → **教学进入第 3 步**：教玩家点左上角「返回」回主菜单
+                // （不直接结束教学 —— 否则玩家解锁完就不知道该怎么回主菜单，2026-11-04 用户反馈）
+                if (_teachActive)
+                {
+                    _teachStep = 2;
+                    UpdateTeaching();
+                }
                 break;
             case TalentUnlockResult.AlreadyUnlocked:
                 _feedback = "已经解锁过了";
@@ -1486,6 +1535,254 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         tex.Apply();
         _circleSprite = Sprite.Create(tex, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 100f);
         return _circleSprite;
+    }
+
+    #endregion
+
+    #region 天赋页硬性教学（2026-11-04）
+
+    /// <summary>
+    /// **天赋页硬性教学**：第一次打开天赋页 → 教「怎么解锁天赋」。
+    ///   步骤 0：指向一个**现在就能解锁**的节点 → 玩家点它（详情卡展开）
+    ///   步骤 1：指向详情卡里的【解锁】按钮 → 玩家点它 → **真的解锁了**才算教完（写存档标记）
+    ///
+    /// 关闭面板 = 放弃（不写标记 → 下次打开还教 ✅）。
+    /// </summary>
+    private void TryStartTeaching()
+    {
+        if (_teachActive) return;
+        var data = SaveManager.Load();
+        if (TalentSaveSection.IsTalentPanelTaught(data)) return;          // 教过了 → 不再教
+        if (!FindTeachingTarget(out _, out _)) return;                     // 没有可解锁的节点 → 不教（全买完了）
+        BuildTeachingUI();
+        _teachActive = true;
+        _teachStep = 0;
+        UpdateTeaching();
+        Debug.Log("[TalentPanel] 天赋页教学开始（第一次打开）");
+    }
+
+    /// <summary>放弃这次教学（关闭面板时）：不写标记，下次还教。</summary>
+    private void StopTeaching()
+    {
+        _teachActive = false;
+        _teachStep = 0;
+        HideTeachingVisuals();
+    }
+
+    /// <summary>教学完成（真的解锁了一个节点）→ 写存档标记 → 以后不再教。</summary>
+    private void CompleteTeaching()
+    {
+        _teachActive = false;
+        _teachStep = 0;
+        HideTeachingVisuals();
+        var data = SaveManager.Load();
+        TalentSaveSection.MarkTalentPanelTaught(data);
+        SaveManager.Save(data);
+        Debug.Log("[TalentPanel] 天赋页教学完成（已解锁一个节点）→ 以后不再教");
+    }
+
+    private void BuildTeachingUI()
+    {
+        if (_teachLayer != null) return;
+        var self = (RectTransform)transform;
+
+        // 教学层：**不遮屏**（面板自己已经有 Dim，再叠一层黑会把整个面板压死 —— 2026-11-04 截图确认）。
+        // 这里只作为「手 / 光圈 / 文案」的容器，不填色。
+        var layer = CreateImage("TeachLayer", self, new Color(0f, 0f, 0f, 0f), null);
+        layer.raycastTarget = false;
+        Stretch(layer.rectTransform);
+        _teachLayer = layer.rectTransform;
+
+        _teachRing = CreateImage("TeachRing", layer.rectTransform, new Color(1f, 0.86f, 0.4f, 0.9f),
+            teachingRingSprite != null ? teachingRingSprite : ProceduralUiSprites.Ring(128, 12, 1f));
+        _teachRing.raycastTarget = false;
+
+        _teachHand = CreateImage("TeachHand", layer.rectTransform, Color.white, teachingHandSprite);
+        _teachHand.raycastTarget = false;
+
+        // 文案：**屏幕下方**（教学关的台词也在下方；放上方会压住标题和页签 —— 2026-11-04 截图确认）。
+        // 位置放在详情卡（高 300）**之上**，避免选中节点后互相压。
+        var labelBg = CreateImage("TeachLabelBg", layer.rectTransform, new Color(0.06f, 0.05f, 0.04f, 0.9f),
+            ProceduralUiSprites.RoundedPlate(18, 3, 1f, 1f));
+        labelBg.type = Image.Type.Sliced;
+        labelBg.raycastTarget = false;
+        var lbr = labelBg.rectTransform;
+        lbr.anchorMin = lbr.anchorMax = new Vector2(0.5f, 0.5f);
+        lbr.pivot = new Vector2(0.5f, 0.5f);
+        lbr.sizeDelta = new Vector2(820f, 96f);
+        lbr.anchoredPosition = Vector2.zero;
+
+        _teachLabel = CreateText("TeachLabel", labelBg.rectTransform, "", 34f, TextAlignmentOptions.Center);
+        _teachLabelBg = labelBg.rectTransform;
+        var lr = _teachLabel.rectTransform;
+        lr.anchorMin = lr.anchorMax = new Vector2(0.5f, 0.5f);
+        lr.pivot = new Vector2(0.5f, 0.5f);
+        lr.sizeDelta = new Vector2(940f, 104f);
+        lr.anchoredPosition = Vector2.zero;
+    }
+
+    /// <summary>教学手势的动画（按压 + 呼吸）——和战斗里的手势提示同一套观感。</summary>
+    private void UpdateTeachingAnimation()
+    {
+        if (!_teachActive) return;
+        _teachAnimTime += Time.unscaledDeltaTime;
+        float cycle = 1.1f;
+        float phase = (_teachAnimTime % cycle) / cycle;
+        float press = phase < 0.35f
+            ? Mathf.SmoothStep(0f, 1f, phase / 0.35f)
+            : 1f - Mathf.SmoothStep(0f, 1f, (phase - 0.35f) / 0.65f);
+
+        if (_teachHand != null)
+        {
+            var hr = _teachHand.rectTransform;
+            hr.localRotation = Quaternion.Euler(0f, 0f, 8f * press);   // 绕掌心压下去
+            hr.localScale = Vector3.one * Mathf.Lerp(1f, 0.94f, press);
+            // 帧序列（教学同款）：有帧就按帧切图
+            if (teachingHandFrames != null && teachingHandFrames.Length > 0 && _teachHand.sprite != null)
+            {
+                int fi = Mathf.Min(teachingHandFrames.Length - 1, (int)(phase * teachingHandFrames.Length));
+                var f = teachingHandFrames[fi];
+                if (f != null) _teachHand.sprite = f;
+            }
+        }
+        if (_teachRing != null)
+        {
+            float breathe = 1f + Mathf.Sin(_teachAnimTime * 3.2f) * 0.08f;
+            _teachRing.rectTransform.localScale = Vector3.one * breathe;
+            _teachRing.rectTransform.localRotation = Quaternion.Euler(0f, 0f, _teachAnimTime * 30f);
+        }
+        PlaceTeachHandOnTarget(TutorialGestureStyle.BaseHandSize * 0.55f);
+    }
+
+    /// <summary>把教学手势的**指尖**钉在目标上（按压动画的旋转不会把指尖甩离目标）。</summary>
+    private void PlaceTeachHandOnTarget(float handSize)
+    {
+        if (_teachHand == null || _teachHand.sprite == null || _teachLayer == null) return;
+        var hr = _teachHand.rectTransform;
+        Vector3 tipOffset = new Vector3(
+            (TutorialGestureStyle.TipUV.x - hr.pivot.x) * handSize,
+            (TutorialGestureStyle.TipUV.y - hr.pivot.y) * handSize, 0f);
+        tipOffset = hr.localRotation * tipOffset;
+        tipOffset = new Vector3(tipOffset.x * hr.localScale.x, tipOffset.y * hr.localScale.y, 0f);
+        hr.anchoredPosition = _teachTargetLocal - tipOffset;
+    }
+
+    /// <summary>把手 / 光圈指到当前该指的东西（步骤 0 = 节点；步骤 1 = 确认按钮）。</summary>
+    private void UpdateTeaching()
+    {
+        if (!_teachActive || _teachLayer == null) return;
+        if (_teachLabel != null)
+            _teachLabel.text = _teachStep == 0 ? teachingTextPickNode : teachingTextConfirm;
+
+        RectTransform target = null;
+        if (_teachStep == 0)
+        {
+            if (FindTeachingTarget(out var view, out int index) && index >= 0 && index < view.nodeImages.Count)
+            {
+                // 目标不在当前视图 → **切过去**（教学得让玩家看得见指的东西）
+                if (view.category != _selectedCategory || view.pageIndex != _selectedPage)
+                {
+                    _selectedCategory = view.category;
+                    _selectedPage = view.pageIndex;
+                    if (view.category >= 0 && view.category < 3) categoryIndex = view.category;
+                    Refresh();
+                }
+                var img = view.nodeImages[index];
+                if (img != null)
+                {
+                    // 指向节点**图标**（那个「枪」字）而不是外框 —— 指外框的话玩家不知道指的是哪个（截图确认）
+                    var icon = img.transform.Find("Icon");
+                    target = (icon != null ? icon : img.transform) as RectTransform;
+                }
+            }
+        }
+        else if (_teachStep == 1)
+        {
+            if (_buyButton != null) target = _buyButton.GetComponent<RectTransform>();
+        }
+        else
+        {
+            // 第 3 步：教玩家点「返回」回主菜单
+            target = _closeButtonRect;
+        }
+
+        if (target == null) { HideTeachingVisuals(); return; }
+
+        float handSize = TutorialGestureStyle.BaseHandSize * 0.55f;
+        float ringSize = TutorialGestureStyle.BaseRingSize * 0.55f;
+        // ⚠️ 锚点用**视觉中心**（`rect.center`），不是 `rectTransform.position`（那是 pivot，很多 UI 的 pivot 在角上）
+        Vector3 world = target != null ? target.TransformPoint(target.rect.center) : Vector3.zero;
+
+        if (_teachHand != null && _teachHand.sprite != null)
+        {
+            var hr = _teachHand.rectTransform;
+            hr.sizeDelta = new Vector2(handSize, handSize);
+            hr.pivot = TutorialGestureStyle.HandPivot;             // 支点放在掌心
+            hr.anchorMin = hr.anchorMax = new Vector2(0.5f, 0.5f);
+            // 指尖落在目标上 → 用 TipOffset 反推手的位置（**每帧重算** → 按压旋转不会把指尖甩离目标）
+            Vector3 local = _teachLayer.InverseTransformPoint(world);
+            _teachTargetLocal = local;
+            PlaceTeachHandOnTarget(handSize);
+
+            // 文案：**靠近手势，但既不遮手势、也不遮它指的节点**
+            if (_teachLabelBg != null)
+            {
+                Vector2 lblPos = TutorialGestureStyle.PlaceLabelNear(_teachLayer, world, new Vector2(620f, 96f), handSize);
+                _teachLabelBg.anchoredPosition = lblPos;
+            }
+        }
+        else if (_teachHand != null) _teachHand.gameObject.SetActive(false);
+
+        if (_teachRing != null)
+        {
+            var rr = _teachRing.rectTransform;
+            rr.sizeDelta = new Vector2(ringSize, ringSize);
+            rr.pivot = Vector2.one * 0.5f;                          // 光圈是居中的
+            rr.anchorMin = rr.anchorMax = new Vector2(0.5f, 0.5f);
+            rr.anchoredPosition = _teachLayer.InverseTransformPoint(world);        }
+    }
+
+    private void HideTeachingVisuals()
+    {
+        if (_teachLayer != null) _teachLayer.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 找一个「现在就能解锁」的节点当教学目标：**当前分类优先，其次「招式解锁」分类**，
+    /// 其余分类最后；节点必须**已解锁前置 + 玩家现在的铜钱够**（否则玩家点了也买不了）。
+    /// </summary>
+    private bool FindTeachingTarget(out PageView view, out int index)
+    {
+        view = null;
+        index = -1;
+        int coins = SaveManager.GetCoins();
+        // 优先级：**招式解锁(1)**（这条教学链就是「解锁一个招式」）→ 当前分类 → 其余
+        for (int rank = 0; rank < 3 && view == null; rank++)
+        {
+            for (int i = 0; i < _pages.Count; i++)
+            {
+                var pv = _pages[i];
+                if (pv == null || pv.page == null || pv.page.nodes == null) continue;
+                bool isMoves = pv.category == 1;        // 招式解锁
+                bool prefer = pv.category == _selectedCategory;
+                if (rank == 0 && !isMoves) continue;
+                if (rank == 1 && (isMoves || prefer)) continue;
+                if (rank == 2 && (isMoves || prefer)) continue;
+                var tree = pv.tree != null ? pv.tree : (catalog != null ? catalog.Get(pv.category) : null);
+                for (int n = 0; n < pv.page.nodes.Count; n++)
+                {
+                    var node = pv.page.nodes[n];
+                    if (node == null || node.hidden) continue;
+                    if (TalentTreeState.IsUnlocked(node)) continue;             // 已解锁的当目标没意义
+                    if (!TalentTreeState.IsAvailable(tree, node)) continue;      // 前置没满足 → 点不了
+                    if (node.coinCost > coins) continue;                        // 铜钱不够 → 买了也白点
+                    view = pv;
+                    index = n;
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     #endregion

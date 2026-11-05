@@ -434,5 +434,14 @@ public enum TutorialGestureTarget
     /// 映射上不需要改 <c>InputManager.Mapping</c>：点按判定是「== Tap 才成立」、
     /// 滑动判定的 default 分支返回 false → 新增枚举值自动把所有手势挡住。
     /// </summary>
-    BlockAll = 5
+    BlockAll = 5,
+    /// <summary>
+    /// **连招蓄力**（2026-11-04 教学拍用）：只接受「按住蓄满后松手」——
+    /// 普通的点按 / 滑动都不成立（这一拍要教的是「连招里蓄力释放」，不是站桩蓄力）。
+    ///
+    /// ⚠️ 教学闸门在**手势路径的第 1 道**（<c>InputManager.ProcessTutorialGate</c>），
+    /// 排在「连招释放」那道**前面** → 用 <see cref="BlockAll"/> 会把连招的松手一起 drop 掉，
+    /// 所以要单独开这个值：蓄满的按住松手放行，其余全部拦掉。
+    /// </summary>
+    ComboHold = 6
 }

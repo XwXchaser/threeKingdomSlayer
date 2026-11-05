@@ -29,7 +29,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (Instance == this) Instance = null;
     }
     [Header("教学战斗与台词")]
-    [Tooltip("教学 N1（教点戳 / 斩击）")]
+    [Tooltip("教学 N1（教点戳 / 连点三下）")]
     public StageConfig n1Battle;
     [Tooltip("按波次（0 起）对应的台词")]
     public DialogueEventData[] n1Dialogues = new DialogueEventData[0];
@@ -106,6 +106,8 @@ public partial class TutorialStageDirector : MonoBehaviour
     /// <summary>教学是否已经教到「防御按键」那一拍（教到之前防御键锁住）。</summary>
     private bool _defendTaught;
     private Coroutine _hintRoutine;
+    /// <summary>波次开始的节拍协程（引导拍 → 教学拍）：与教学拍分开管。</summary>
+    private Coroutine _waveRoutine;
     /// <summary>路线出口光标（wave=-2）那个协程 —— **与教学拍分开管**，
     /// 免得清理路线光标时把正在跑的教学拍一起 StopCoroutine 掉（2026-11-02 的坑）。</summary>
     private Coroutine _routeHintRoutine;
@@ -325,7 +327,10 @@ public partial class TutorialStageDirector : MonoBehaviour
                 gestureHint?.Hide();
             }
         }
-        if (!onTutorialRoute && gestureHint != null && gestureHint.IsShowing)
+        // ⚠️ ② 必须排除「**正在进行的教学拍**」（2026-11-04）：
+        //   「招式解锁引导拍」也在正式关跑 → 这条规则会把它的示范**每帧杀掉** →
+        //   示范只闪 1 帧（实测每 ~5.6s 闪一次）→ 玩家根本看不到手势。
+        if (!onTutorialRoute && !_beatActive && gestureHint != null && gestureHint.IsShowing)
         {
             gestureHint.Hide();
         }
@@ -350,6 +355,14 @@ public partial class TutorialStageDirector : MonoBehaviour
     private void OnChoicesReady(System.Collections.Generic.List<UpgradeDefinition> choices)
     {
         DebugLog.Info("[Tutorial] 三选1 回调：候选 " + (choices != null ? choices.Count : 0) + "，_choiceGiven=" + _choiceGiven);
+        // **正式关不教**（2026-11-04 用户定：「你见过教两次同样操作的教学吗？」）。
+        // 三选1 教学只属于教学关：正式关升级弹三选1 时 —— 不念台词、不指卡片、
+        // 也不「只让玩家选推荐的那张」（那是教学关的规则，不能带进正式关）。
+        if (!IsOnTutorialRoute())
+        {
+            DebugLog.Info("[Tutorial] 不在教学路线 → 三选1 不教");
+            return;
+        }
         if (_choiceGiven) return;
         if (choices == null || choices.Count == 0) return;
         _choiceGiven = true;
@@ -384,9 +397,18 @@ public partial class TutorialStageDirector : MonoBehaviour
             DialogueManager.AllowDialogueWhilePaused = true;
             DialogueManager.Instance?.QueueEventAndNotify(choiceTeachingDialogue, forceReplay: true);
         }
+    }
 
-        if (choiceTeachingDialogue != null)
-            DialogueManager.Instance?.QueueEventAndNotify(choiceTeachingDialogue, forceReplay: true);
+    /// <summary>
+    /// 当前是否在**教学路线**上（教学关专属的行为都要过这一关）。
+    /// 教学导演是常驻组件（挂在 Battle.scene）→ 正式关里它也在，
+    /// 所以教学行为必须自己判路线，不能靠「只跑一次」的标志位。
+    /// </summary>
+    private bool IsOnTutorialRoute()
+    {
+        var routeRuntime = RouteFlowHub.Current as FakeRouteRuntime;
+        return routeRuntime != null && tutorialRouteConfig != null
+               && routeRuntime.RouteConfig == tutorialRouteConfig;
     }
 
     /// <summary>把提示手落在三选一的推荐卡上。</summary>
@@ -461,32 +483,60 @@ public partial class TutorialStageDirector : MonoBehaviour
     private void OnWaveStarted(int waveIndex)
     {
         Debug.Log($"[Tutorial] 波次开始 wave={waveIndex} stage={(_stageState != null && _stageState.StageConfig != null ? _stageState.StageConfig.name : "NULL")} hint={(gestureHint != null)} steps={(gestureSteps != null ? gestureSteps.Length : -1)}");
-        if (_stageState == null || _stageState.StageConfig == null) return;
+        // 收掉上一波的拍（原来是在 StartHint 里做的）
+        StopHint();
+        _waveRoutine = StartCoroutine(OnWaveStartedRoutine(waveIndex));
+    }
+
+    /// <summary>
+    /// 波次开始的节拍：**先播招式解锁引导拍**（与关卡无关），再播教学关自己的拍。
+    /// </summary>
+    private System.Collections.IEnumerator OnWaveStartedRoutine(int waveIndex)
+    {
+        if (_stageState == null || _stageState.StageConfig == null) yield break;
         var config = _stageState.StageConfig;
         var dialogues = config == n1Battle ? n1Dialogues : (config == e0Battle ? e0Dialogues : null);
-        if (dialogues == null) return; // 不是教学战斗
+        bool isTutorialBattle = dialogues != null;
 
-        // 一次教学流程的开始（教学 N1 的第一波）→ 已教招式作废，从头学
-        if (config == n1Battle && waveIndex == 0)
+        if (isTutorialBattle)
         {
-            _taughtAttacks.Clear();
-            ApplyAttackGate(null);
-            _choiceGiven = false;
-            _chosenSkill = null;
+            // 一次教学流程的开始（教学 N1 的第一波）→ 已教招式作废，从头学
+            if (config == n1Battle && waveIndex == 0)
+            {
+                _taughtAttacks.Clear();
+                ApplyAttackGate(null);
+                _choiceGiven = false;
+                _chosenSkill = null;
+            }
+            Debug.Log("[Tutorial] 波次开始 wave=" + waveIndex + " 招式白名单=" + TutorialAttackGate.Describe());
+
+            // 新一波开始先把上一波没读完的台词收掉：否则手势门槛会用上一波的文字暂停在那里
+            var staleView = ResolveDialogueView();
+            if (staleView != null && staleView.IsShowing) staleView.Skip();
+
+            ApplyTutorialRules(config);
+
+            // 台词不在这里推：入场期间 timeScale=0 会让敌人走不动，也看不到。
+            // 交给 HintRoutine，等敌人站定后再推，这样台词和手势引导同时出现。
+            _pendingWaveDialogue = (waveIndex >= 0 && waveIndex < dialogues.Length) ? dialogues[waveIndex] : null;
         }
-        Debug.Log("[Tutorial] 波次开始 wave=" + waveIndex + " 招式白名单=" + TutorialAttackGate.Describe());
 
-        // 新一波开始先把上一波没读完的台词收掉：否则手势门槛会用上一波的文字暂停在那里
-        var staleView = ResolveDialogueView();
-        if (staleView != null && staleView.IsShowing) staleView.Skip();
+        // 招式解锁引导拍：与关卡节点无关（正式关也会播），排在教学关自己的拍**前面**。
+        var guideSteps = BuildMoveGuideSteps(config, waveIndex);
+        for (int i = 0; i < guideSteps.Count; i++)
+        {
+            var pendingDialogue = _pendingWaveDialogue;
+            _pendingWaveDialogue = null;      // 引导拍不推本波台词（那是教学拍自己的）
+            _currentStep = guideSteps[i];
+            // 「光圈常驻」是**连点拍**的规则（StartHint 里按拍型设的）；引导拍不走 StartHint
+            // → 这里要自己复位，否则上一拍残留的 true 会让引导拍也留个光圈。
+            if (gestureHint != null) gestureHint.keepRingVisible = false;
+            yield return HintRoutine(guideSteps[i]);
+            _pendingWaveDialogue = pendingDialogue;
+        }
 
-        ApplyTutorialRules(config);
-
-        // 台词不在这里推：入场期间 timeScale=0 会让敌人走不动，也看不到。
-        // 交给 HintRoutine，等敌人站定后再推，这样台词和手势引导同时出现。
-        _pendingWaveDialogue = (waveIndex >= 0 && waveIndex < dialogues.Length) ? dialogues[waveIndex] : null;
-
-        StartHint(waveIndex);
+        if (!isTutorialBattle) yield break;   // 不是教学战斗 → 没有自己的拍
+        StartHint(waveIndex, stopFirst: false);
     }
 }
 
@@ -521,7 +571,13 @@ public enum GestureHintKind
     /// 玩家点一下技能槽 → 技能释放 → 目标敌人的霸体攻击被打断（以「敌人不再处于攻击态」为成功判据）。
     /// 这一拍里**禁止玩家出招**（闸门 = BlockAll），避免敌人被点死而没有打断机会。
     /// </summary>
-    SkillSlot
+    SkillSlot,
+    /// <summary>
+    /// **连招蓄力**（2026-11-04）：两段独立输入 ——
+    /// ① **点一下**（像点戳教学那样）打出第一段；
+    /// ② 在**接续窗口打开时冻结**招式推进，玩家**按住蓄满 → 松手** → 打出派生招式。
+    /// </summary>
+    ComboCharge
 }
 
 [System.Serializable]
@@ -584,4 +640,28 @@ public class TutorialGestureStep
     [Tooltip("这一拍**完成后**补播的台词（非阻塞，不暂停）。\n" +
              "例：连点三下完成后补一句「多次攻击可以打断敌人的攻击」。")]
     public DialogueEventData afterDialogue;
+
+    [Tooltip("这一拍**开始时**推的台词（**和手势示范同时出现**）。\n" +
+             "教学关的波次台词走 `TutorialStageDirector` 的波次台词通道；\n" +
+             "「招式解锁引导」的一行文字走这里（它要和示范同时出现，不是收拍后补播）。")]
+    public DialogueEventData beforeDialogue;
+
+    [Tooltip("**冻结瞬间**推的台词（和冻结时出现的手势示范同时出现）。\n" +
+             "用于「用技能打断」这一拍：敌人抬手到顶 → 冻结 → 台词 + 手势落在技能槽上。\n" +
+             "⚠️ 别用 afterDialogue 干这件事：那一拍是「靠放技能收拍」的，\n" +
+             "   而 afterDialogue 只在「靠出招收拍」的路径上播（RegisterBeatHit）→ 永远播不出来。")]
+    public DialogueEventData freezeDialogue;
+
+    [Tooltip("**连招蓄力拍**：阶段 2（窗口打开、冻结之后）的台词 ——「按住蓄满 → 松手」。\n" +
+             "阶段 1 的台词走 <see cref=\"beforeDialogue\"/>（先点一下）。")]
+    public DialogueEventData comboPhase2Dialogue;
+
+    // ── 招式解锁引导（2026-11-04）──────────────────────────────────
+    // 「解锁了但还没教过的招式」当成**一拍拍出来**（和教学拍同一条机制），
+    // 而不是另起一套表现 → 玩家看到/学到的和教学关里学点戳完全一致。
+    [Tooltip("招式解锁引导：天赋节点 id。这一拍**真的打出去了**才写存档「已教过」（空 = 普通教学拍）")]
+    public string guideNodeId = "";
+
+    [Tooltip("招式解锁引导：要教的招式（-1 = 按 kind 推断）")]
+    public int guideAttackType = -1;
 }

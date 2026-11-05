@@ -63,8 +63,61 @@ public partial class TutorialStageDirector : MonoBehaviour
                 atk?.ClearActionLock();
                 return;
             }
+            // 招架不打伤害 → 它的「成功」就是格挡本身，不走命中判定
+            RegisterBeatHit(attackType, column);
+            return;
         }
 
+        // 连招蓄力拍的阶段 1：**第一记点出来就换闸门**（ComboHold）→ 玩家点第二下会被拦掉。
+        // 不换的话玩家/机器人会连点成 Jab1→Jab2→Jab3，而「指向突刺」的连段边只挂在 **Jab1** 上
+        // → 连点三下之后就再也没有出路了（2026-11-04 实测：机器人在这一拍里连点三次，直接把连招打没了）。
+        if (_comboChargePhase == 1)
+        {
+            var inputMgr = InputManager.Instance;
+            if (inputMgr != null) inputMgr.tutorialGestureTarget = TutorialGestureTarget.ComboHold;
+        }
+
+        // 「攻击成功」= 招式打出去**并且打中敌人**（2026-11-04 用户定）。
+        // 这里只记「刚打出了这一招」，**真正的命中**由敌人受击事件确认 → **空挥不收拍**。
+        _beatAttackFired = true;
+        _beatLastAttackType = attackType;
+        _beatLastAttackColumn = column;
+    }
+
+    /// <summary>敌人受击 → 确认「攻击成功」（这一拍刚打出的招式真的打中了）。</summary>
+    private void OnBeatEnemyDamaged(Enemy enemy)
+    {
+        if (!_beatActive || !_beatEndsOnAttack) return;
+        // 「这一下是不是这一拍教的招式」：**用招式状态机的当前节点**判，
+        // 不能只靠 <c>OnAttackExecuted</c> 事件 ——
+        // **连段/缓冲触发的执行不会派发那个事件**（2026-11-04 实测：「指向突刺」明明打出来了，
+        // 这一拍却收不了 → 「教学→天赋→招式教学」整条链路卡死）。
+        if (!IsBeatAttackExecutingNow()) return;
+
+        // 连招蓄力拍：**两段命中分开算** ——
+        //   阶段 1 的第一记戳只推进阶段（不算收拍）；阶段 2 的派生招式才收拍。
+        if (_comboChargePhase == 1) { _comboChargePhase = 2; return; }
+        if (_comboChargePhase == 2) { _comboChargePhase = 3; }
+
+        RegisterBeatHit(_beatLastAttackType, _beatLastAttackColumn);
+    }
+
+    /// <summary>
+    /// 此刻状态机里正在执行的招式，是不是这一拍要教的那一招。
+    /// （状态机在下一个输入到来之前会一直停在当前节点 → 受击那一刻看到的就是刚打出去的那一招 ✓）
+    /// </summary>
+    private bool IsBeatAttackExecutingNow()
+    {
+        var machine = _moveMachine != null ? _moveMachine : UnityEngine.Object.FindObjectOfType<PlayerMoveStateMachine>();
+        if (machine == null) return false;
+        var move = machine.CurrentMove;
+        if (move == null) return false;
+        return move.attackType == ExpectedAttackFor(_beatTarget);
+    }
+
+    /// <summary>记一次「攻击成功」（命中），并按 requiredHits 判定这一拍是否完成。</summary>
+    private void RegisterBeatHit(AttackType attackType, int column)
+    {
         // TapCombo：要打满 requiredHits 次才算完成（连点三下 → 三连 stab）
         _beatHitCount++;
         if (_beatHitCount < _beatRequiredHits)
@@ -75,14 +128,8 @@ public partial class TutorialStageDirector : MonoBehaviour
 
         DebugLog.Info($"[Tutorial] 手势拍完成：{attackType} col={column}（第 {_beatHitCount} 次）");
         _beatCompleted = true;
+        // 收尾台词统一由 EndBeat 补播（每一拍都能播 → 不靠出招收拍的拍也有台词）
         EndBeat();
-
-        // 补播这一拍之后的说明台词（仅文字、不暂停）
-        if (_currentStep != null && _currentStep.afterDialogue != null)
-        {
-            DialogueManager.Instance?.QueueEventAndNotify(_currentStep.afterDialogue, forceReplay: true);
-            DebugLog.Info("[Tutorial] 补播收尾台词：" + _currentStep.afterDialogue.name);
-        }
     }
 
     private void OnStageVictory()

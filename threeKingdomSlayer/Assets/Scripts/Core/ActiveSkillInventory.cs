@@ -185,7 +185,12 @@ public class ActiveSkillInventory : MonoBehaviour
         // 时停（timeScale=0）时默认**不能**放技能；教学「用技能打断」那一拍例外
         //（那一拍就是要玩家在时停里点技能，见 GameplayInputGate.AllowSkillActivationWhileFrozen）。
         if (Time.timeScale <= 0f && !GameplayInputGate.AllowSkillActivationWhileFrozen) return false;
-        if (CombatPresenters.Dialogue != null && CombatPresenters.Dialogue.IsInteractionBlocked) return false;
+        // 台词在播时会挡住技能释放（对话层把交互锁了）。
+        // 教学「用技能打断」那一拍**就是要玩家在冻结里点技能**，
+        // 而那一拍的说明台词是**同时**弹出来的 → 不能让它把技能槽挡掉
+        // （否则玩家点技能槽没反应 → 这一拍只能干等 30 秒超时放行）。
+        if (!GameplayInputGate.AllowSkillActivationWhileBlocked &&
+            CombatPresenters.Dialogue != null && CombatPresenters.Dialogue.IsInteractionBlocked) return false;
 
         var entry = FindById(entryId);
         if (entry == null)

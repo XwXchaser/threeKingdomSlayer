@@ -272,7 +272,21 @@ public partial class InputManager : MonoBehaviour
     public bool SubmitGestureForDebug(MoveGesture gesture, int chargeLevel, int targetColumn,
         Vector2 screenPos, bool slashLeftToRight = true, float slashVisualTilt = 0f)
     {
+        // 调试注入也要**守教学闸门**（真实输入会守）→ 否则机器人会在教学拍里乱出招：
+        // 2026-11-04 实测：机器人在「连招蓄力」拍的阶段 1 连点三下 → 点戳连段 Jab1→Jab2→Jab3
+        // → 「指向突刺」的连段边（只挂在 Jab1 上）就永远用不上了 → 这一拍收不了 → 整条链路卡死。
+        if (!TutorialAllowsDebugGesture(gesture, chargeLevel)) return false;
         return SubmitGesture(gesture, chargeLevel, targetColumn, slashLeftToRight, slashVisualTilt, screenPos);
+    }
+
+    /// <summary>调试注入版的教学闸门判定（与真实释放路径同一套规则 ✅）。</summary>
+    private bool TutorialAllowsDebugGesture(MoveGesture gesture, int chargeLevel)
+    {
+        if (tutorialGestureTarget == TutorialGestureTarget.None) return true;
+        if (gesture == MoveGesture.SwipeHorizontal || gesture == MoveGesture.SwipeVertical)
+            return TutorialAllowsSwipeGesture(gesture, chargeLevel);
+        // 点按 / 按住：走点按那一道（ComboHold 只放行「蓄满后的按住松手」）
+        return TutorialAllowsTapGesture(chargeLevel);
     }
 
     private bool SubmitGesture(MoveGesture gesture, int chargeLevel, int targetColumn,

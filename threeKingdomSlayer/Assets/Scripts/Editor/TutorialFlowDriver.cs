@@ -214,11 +214,39 @@ public static class TutorialFlowDriver
 
         // 3) 点按：拍正在「禁止出招」时停手，其他时候一直点（把敌人打死推进波次）
         //    ⚠️ 技能拍（SkillSlot）**无论拍开没开都不点**：
-        //    那一拍现在先等玩家选完三选1 再开拍（用户期望的流程），
-        //    这段等待期里驱动要是继续点，会把教学目标打死 → 拍直接死掉（2026-11-02 实测）。
-        //    （霸体防御拍 freezeOnCAttack 仍然只在「拍进行中」才停手：
-        //    拍一结束就要继续点，把上一波敌人打死才能推进到下一波。）
-        bool wantsTap = !(step != null && step.kind == GestureHintKind.SkillSlot)
+        //     那一拍现在先等玩家选完三选1 再开拍（用户期望的流程），
+        //     这段等待期里驱动要是继续点，会把教学目标打死 → 拍直接死掉（2026-11-02 实测）。
+        //     （霸体防御拍 freezeOnCAttack 仍然只在「拍进行中」才停手：
+        //     拍一结束就要继续点，把上一波敌人打死才能推进到下一波。）
+        // 3.5) 教学拍指定的手势：按闸门来（点一下 / 横划 / 连招蓄满松手）
+        var inputMgr = InputManager.Instance;
+        if (inputMgr != null && front != null && Time.unscaledTime >= _nextTapTime)
+        {
+            MoveGesture teachGesture = MoveGesture.Tap;
+            int teachCharge = 0;
+            bool hasTeachGesture = false;
+            switch (inputMgr.tutorialGestureTarget)
+            {
+                case TutorialGestureTarget.Tap: teachGesture = MoveGesture.Tap; hasTeachGesture = true; break;
+                case TutorialGestureTarget.SwipeHorizontal: teachGesture = MoveGesture.SwipeHorizontal; hasTeachGesture = true; break;
+                case TutorialGestureTarget.ChargedVertical: teachGesture = MoveGesture.SwipeVertical; teachCharge = 1; hasTeachGesture = true; break;
+                case TutorialGestureTarget.ComboHold: teachGesture = MoveGesture.Hold; teachCharge = 1; hasTeachGesture = true; break;
+            }
+            if (hasTeachGesture)
+            {
+                _nextTapTime = Time.unscaledTime + 0.4f;
+                _tapCount++;
+                inputMgr.SubmitGestureForDebug(teachGesture, teachCharge, front.columnIndex,
+                    new Vector2(Screen.width * 0.5f, Screen.height * 0.4f), true, 0f);
+                Log("教学手势 #" + _tapCount + " " + teachGesture + "（charge=" + teachCharge + "）");
+                return;
+            }
+        }
+
+        // ⚠️ 技能拍（SkillSlot）期间不点按：**只在这一拍**进行中时不点。
+        // 旧写法是「step.kind == SkillSlot 就一直不点」→ 拍结束了驱动还在等 → 最后一只敌人永远不死
+        // → **教学关结算不出来**（整个「教学→天赋→招式教学」的链路卡在这里，2026-11-04 实测才发现）。
+        bool wantsTap = !(beatRunning && step != null && step.kind == GestureHintKind.SkillSlot)
                         && !(beatRunning && step != null && step.freezeOnCAttack);
         if (wantsTap && front != null && Time.unscaledTime >= _nextTapTime)
         {

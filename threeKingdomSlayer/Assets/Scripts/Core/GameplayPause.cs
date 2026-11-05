@@ -105,13 +105,22 @@ public static class GameplayPause
         for (int i = 0; i < s_pausedByGate.Count; i++)
         {
             Tween t = s_pausedByGate[i];
-            if (!IsUsable(t))
+            try
             {
-                // 目标在暂停期间被销毁：直接结束，避免恢复瞬间访问已销毁对象。
-                if (t != null && t.IsActive()) t.Kill(false);
-                continue;
+                if (!IsUsable(t))
+                {
+                    // 目标在暂停期间被销毁：直接结束，避免恢复瞬间访问已销毁对象。
+                    if (t != null && t.IsActive()) t.Kill(false);
+                    continue;
+                }
+                t.Play();
             }
-            t.Play();
+            catch (System.Exception e)
+            {
+                // **一条坏掉的 Tween 不能中断整批恢复**（2026-11-04：PixelHitEffectManager 的回收回调
+                // 在对象已销毁时抛 MissingReferenceException → 异常向上冒 → 后面所有 Tween 永远停在暂停态）。
+                Debug.LogWarning("[GameplayPause] 恢复一条 Tween 失败（已跳过）：" + e.Message);
+            }
         }
         s_pausedByGate.Clear();
     }

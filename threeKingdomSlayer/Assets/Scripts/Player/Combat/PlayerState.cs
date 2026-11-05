@@ -89,6 +89,13 @@ public class PlayerState : MonoBehaviour
     public PlayerWeaponStance WeaponStance { get; private set; }
 
     /// <summary>
+    /// **冻结持枪姿态**（教学用，2026-11-04）：真的把枪冻在“还举在半空”的姿势。
+    /// 连招蓄力教学拍要用它 —— 不冻的话，枪会在玩家蓄力期间自己收回（用户反馈：「长枪提前收回」）。
+    /// 只停姿态推进，**不动全局 timeScale**（全局冻结会让「按住」判定失效 → 连招蓄力直接断）。
+    /// </summary>
+    public bool freezeWeaponStance;
+
+    /// <summary>
     /// **防御意图**（2026-10-29 用户定：防御按键点按切换，点击立即发动）。
     /// 与手势输入完全分开：手势走 `MoveGesture → AttackType`，防御走这条布尔状态。
     /// </summary>
@@ -224,7 +231,7 @@ public class PlayerState : MonoBehaviour
         // 持枪姿态：**防御只认防御键的 hold**（2026-10-29 用户定）。
         // 旧的“按住屏幕任意处也算按住”必须去掉 —— 否则玩家想做别的指令
         // （点一下攻击 / 划一下 / 长按蓄力）时会被拖回防御状态。
-        if (WeaponStance != null)
+        if (WeaponStance != null && !freezeWeaponStance)
         {
             WeaponStance.Tick(Time.deltaTime, DefendHeld);
         }

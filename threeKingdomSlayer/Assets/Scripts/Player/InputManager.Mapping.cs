@@ -139,6 +139,8 @@ public partial class InputManager : MonoBehaviour
     private bool TutorialAllowsTapGesture(int chargeLevel)
     {
         if (tutorialGestureTarget == TutorialGestureTarget.None) return true;
+        // 连招蓄力拍：只放行「蓄满后的按住松手」（普通点按要拦掉，否则会打断连招窗口）
+        if (tutorialGestureTarget == TutorialGestureTarget.ComboHold) return chargeLevel >= 1;
         return tutorialGestureTarget == TutorialGestureTarget.Tap && chargeLevel < 1;
     }
 

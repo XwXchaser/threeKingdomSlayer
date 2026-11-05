@@ -42,4 +42,36 @@ public sealed class TalentSaveSection : ISaveSection
     {
         GetUnlocked(data).Clear();
     }
+
+    /// <summary>
+    /// **天赋页教学是否已教过**（2026-11-04）。
+    /// 第一次打开天赋页会硬性教「怎么解锁天赋」→ 玩家**真的解锁了一个节点**才算教完。
+    /// </summary>
+    public static bool IsTalentPanelTaught(SaveData data)
+    {
+        return data != null && data.taughtTalentPanel;
+    }
+
+    /// <summary>标记「天赋页教学已教过」（重复调用无副作用 ✅）。</summary>
+    public static void MarkTalentPanelTaught(SaveData data)
+    {
+        if (data == null) return;
+        data.taughtTalentPanel = true;
+    }
+
+    /// <summary>
+    /// **「点开始关卡」的主菜单引导**是否已教过（2026-11-04）。
+    /// 玩家点过一次（或正式进入战斗）后 → 同一段教程里不再重复出现。
+    /// </summary>
+    public static bool IsStartStageTaught(SaveData data)
+    {
+        return data != null && data.taughtStartStage;
+    }
+
+    /// <summary>标记「开始关卡引导已教过」（重复调用无副作用 ✅）。</summary>
+    public static void MarkStartStageTaught(SaveData data)
+    {
+        if (data == null) return;
+        data.taughtStartStage = true;
+    }
 }

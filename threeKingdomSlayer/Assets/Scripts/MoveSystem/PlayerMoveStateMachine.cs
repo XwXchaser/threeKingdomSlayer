@@ -77,6 +77,26 @@ public class PlayerMoveStateMachine : MonoBehaviour
     public string LastResolution => _lastResolution;
     public int ExecutedCount => _executedCount;
 
+    /// <summary>
+    /// **冻结招式推进**（教学用）：`_elapsed` 不再前进 → 当前招式的**接续窗口一直开着**。
+    ///
+    /// 用途：「连招中按住蓄力打出派生招式」的教学拍 —— 窗口打开后冻住，
+    /// 玩家可以从容地「再按住 → 蓄满 → 松手」，不用抢那 0.2 秒的窗口。
+    ///
+    /// ⚠️ **不能用全局 timeScale=0 来冻结**：<c>InputManager.IsPointerDown</c> 要求 <c>timeScale > 0</c>，
+    /// 一冻结指针就判为未按下 → 连招蓄力直接断（2026-11-04 实测代码得出）。
+    /// </summary>
+    public bool Frozen { get; private set; }
+
+    /// <summary>冻结 / 解冻招式推进（教学拍用）。</summary>
+    public void SetFrozen(bool frozen) => Frozen = frozen;
+
+    /// <summary>
+    /// 当前节点的**接续窗口**对某个手势是否已经打开（教学拍用它判断「窗口开了没」）。
+    /// </summary>
+    public bool IsWindowOpenFor(MoveGesture gesture, int chargeLevel)
+        => IsInsideWindow(gesture, NormalizedTime, chargeLevel);
+
     private void Awake()
     {
         if (attackSystem == null) attackSystem = FindObjectOfType<AttackSystem>();
@@ -126,7 +146,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
         // 按住不成时本段先不结束：时钟推进到接续窗口起点就停住，等玩家松手或滑动。
         // 停驻时窗口已经开着，已缓冲的输入仍必须被消费（否则「刚蓄满就上划」永远出不来）。
         bool waiting = IsWaitingForHold();
-        if (!waiting) _elapsed += Time.deltaTime;
+        if (!waiting && !Frozen) _elapsed += Time.deltaTime;
 
         // 窗口打开后消费缓冲输入
         if (_hasBuffered && IsInsideWindow(_bufferedInput.gesture, NormalizedTime, _bufferedInput.chargeLevel))

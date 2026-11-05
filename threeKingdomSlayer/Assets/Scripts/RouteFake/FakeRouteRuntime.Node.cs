@@ -114,10 +114,9 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
 
             int generation = _generation;
 
-            // 解锁招式后**首次进关**的引导（手势示范 + 一行台词）：在波次开始前挡住开打 ✅。
-            yield return MoveGuideService.ShowPending();
-            if (generation != _generation || Phase == FakeRoutePhase.Defeated) yield break;
-
+            // 「解锁招式后首次进关」的引导**不在这里弹**：
+            // 它现在是**教学拍**（由 TutorialStageDirector 在开波时拍出来，和教点戳同一条机制）→
+            // 玩家划的那一下必须**真的打出去**才算教完 → 所以必须等战斗已经开始。
             _battleActive = true;
             _battleCleared = false;
             SetPhase(FakeRoutePhase.Battle);

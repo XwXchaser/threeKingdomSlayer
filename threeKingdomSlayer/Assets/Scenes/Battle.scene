@@ -901,57 +901,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   iconSprite: {fileID: 21300000, guid: c224bc9cdf63c4c43bacb322c2d15b71, type: 3}
   amountText: {fileID: 1456137478}
---- !u!1 &29762890
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 7
-  m_Component:
-  - component: {fileID: 29762892}
-  - component: {fileID: 29762891}
-  m_Layer: 0
-  m_HasEditorInfo: 1
-  m_Name: Move Guide Presenter
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &29762891
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 29762890}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: efb610b38d5438247b0b830366fa95aa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  gestureHint: {fileID: 760429143}
-  dimAlpha: 0.5
-  swipeFrom01: {x: 0.2, y: 0.58}
-  swipeTo01: {x: 0.8, y: 0.58}
-  minGestureSeconds: 1.2
-  maxWaitSeconds: 20
---- !u!4 &29762892
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 29762890}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &35596484
 GameObject:
   m_ObjectHideFlags: 0
@@ -6685,6 +6634,56 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 398325592}
   m_CullTransparentMesh: 1
+--- !u!1 &405713609
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 405713611}
+  - component: {fileID: 405713610}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: HubTutorialGuide
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &405713610
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 405713609}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 504f3614d8eff834e94ba8a73c3e2a7b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  handSprite: {fileID: 21300000, guid: 8426cacbbde92f44c8e6a0f06f003f35, type: 3}
+  ringSprite: {fileID: 21300000, guid: 29478d34325fde346a6eb38397efec15, type: 3}
+  font: {fileID: 11400000, guid: 83ef45830ec08304fa249351a44a36e6, type: 2}
+  talentText: "\u70B9\u8FD9\u91CC\u53BB\u89E3\u9501\u65B0\u62DB\u5F0F"
+  stageText: "\u70B9\u300C\u5F00\u59CB\u5173\u5361\u300D\u8FDB\u5165\u6218\u6597"
+--- !u!4 &405713611
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 405713609}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &407797582
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -14626,7 +14625,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1155467309}
   - component: {fileID: 1155467308}
-  - component: {fileID: 1155467310}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Tutorial Director
@@ -14699,28 +14697,12 @@ MonoBehaviour:
     freezeOnCAttack: 0
     waitForCAttack: 0
     skillUpgradeId: 
-    afterDialogue: {fileID: 11400000, guid: cd6493962ad4ca243bac3ab251d1140a, type: 2}
-  - battle: {fileID: 11400000, guid: 7830540a0bfc4d14994a832e90cc9975, type: 2}
-    waveIndex: 1
-    kind: 2
-    from01: {x: 0.2, y: 0.5}
-    to01: {x: 0.8, y: 0.5}
-    delay: 0.2
-    playSeconds: 1.2
-    pauseUntilPerformed: 1
-    lineAtWaveStart: 0
-    triggerHpPercent: 1
-    freezeOnGesture: 0
-    anchorToPlayer: 0
-    holdAfterGesture: 0
-    despawnTargetOnSuccess: 0
-    loops: 0
-    gap: 0.6
-    requiredHits: 1
-    freezeOnCAttack: 0
-    waitForCAttack: 0
-    skillUpgradeId: 
-    afterDialogue: {fileID: 11400000, guid: cd82bdbb5c7b42843ac07d9c514e297c, type: 2}
+    afterDialogue: {fileID: 0}
+    beforeDialogue: {fileID: 0}
+    freezeDialogue: {fileID: 0}
+    comboPhase2Dialogue: {fileID: 0}
+    guideNodeId: 
+    guideAttackType: -1
   - battle: {fileID: 11400000, guid: 7830540a0bfc4d14994a832e90cc9975, type: 2}
     waveIndex: 1
     kind: 8
@@ -14742,6 +14724,11 @@ MonoBehaviour:
     waitForCAttack: 0
     skillUpgradeId: 
     afterDialogue: {fileID: 11400000, guid: 1a94f740ede91cf4fb71d851cb913bba, type: 2}
+    beforeDialogue: {fileID: 0}
+    freezeDialogue: {fileID: 0}
+    comboPhase2Dialogue: {fileID: 0}
+    guideNodeId: 
+    guideAttackType: -1
   - battle: {fileID: 0}
     waveIndex: -2
     kind: 0
@@ -14763,6 +14750,11 @@ MonoBehaviour:
     waitForCAttack: 0
     skillUpgradeId: 
     afterDialogue: {fileID: 0}
+    beforeDialogue: {fileID: 0}
+    freezeDialogue: {fileID: 0}
+    comboPhase2Dialogue: {fileID: 0}
+    guideNodeId: 
+    guideAttackType: -1
   - battle: {fileID: 11400000, guid: 0342f43465c8ca44fa158b7937ed845b, type: 2}
     waveIndex: 0
     kind: 7
@@ -14783,7 +14775,12 @@ MonoBehaviour:
     freezeOnCAttack: 1
     waitForCAttack: 0
     skillUpgradeId: 
-    afterDialogue: {fileID: 11400000, guid: 56396570454d8084d8667d63212d6563, type: 2}
+    afterDialogue: {fileID: 0}
+    beforeDialogue: {fileID: 0}
+    freezeDialogue: {fileID: 0}
+    comboPhase2Dialogue: {fileID: 0}
+    guideNodeId: 
+    guideAttackType: -1
   - battle: {fileID: 11400000, guid: 0342f43465c8ca44fa158b7937ed845b, type: 2}
     waveIndex: 1
     kind: 9
@@ -14804,7 +14801,12 @@ MonoBehaviour:
     freezeOnCAttack: 0
     waitForCAttack: 0
     skillUpgradeId: 
-    afterDialogue: {fileID: 11400000, guid: 432ee4a03c2a1564580058955ebe41e1, type: 2}
+    afterDialogue: {fileID: 0}
+    beforeDialogue: {fileID: 0}
+    freezeDialogue: {fileID: 11400000, guid: 432ee4a03c2a1564580058955ebe41e1, type: 2}
+    comboPhase2Dialogue: {fileID: 0}
+    guideNodeId: 
+    guideAttackType: -1
   tutorialLineSeconds: 2.2
   openingDialogue: {fileID: 11400000, guid: a42d1a72f05fbb24f90e336a3d9b4709, type: 2}
   hintWaitForEnemySeconds: 8
@@ -14824,18 +14826,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1155467310
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1155467307}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b02ec9e0b5e61af4984cb398d61e6a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1156913730
 GameObject:
   m_ObjectHideFlags: 0
@@ -22265,7 +22255,6 @@ GameObject:
   serializedVersion: 7
   m_Component:
   - component: {fileID: 1732934626}
-  - component: {fileID: 1732934625}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Battle Y Route Host
@@ -22274,18 +22263,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 0
---- !u!114 &1732934625
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1732934624}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de6780ab46034c54ca17b6ccfd6c1f4c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &1732934626
 Transform:
   m_ObjectHideFlags: 0
@@ -24974,6 +24951,7 @@ MonoBehaviour:
   heroConfig: {fileID: 11400000, guid: 6a50843ddffb1fa43af2e2a34d5d2432, type: 2}
   expCurveConfig: {fileID: 11400000, guid: 9cdb0e82b7b5e1c47b39ab0e0ee0c3c1, type: 2}
   shieldGrantProgress: 0.3
+  freezeWeaponStance: 0
   probabilityLaunchBuff: {fileID: 11400000, guid: 81881d706de41384191260fd6d3a2798, type: 2}
 --- !u!4 &1878310419
 Transform:
@@ -28526,4 +28504,4 @@ SceneRoots:
   - {fileID: 1155467309}
   - {fileID: 1620657435}
   - {fileID: 1684724281}
-  - {fileID: 29762892}
+  - {fileID: 405713611}

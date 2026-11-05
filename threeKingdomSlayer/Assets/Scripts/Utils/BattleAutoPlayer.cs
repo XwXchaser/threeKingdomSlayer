@@ -268,6 +268,22 @@ public class BattleAutoPlayer : MonoBehaviour
             return;
         }
 
+        // 教学拍指定的招式：**按闸门给对应手势**（点一下 / 横划 / 竖划 / 连招蓄满松手）。
+        // 教学关外的正式关 → 闸门是 None → 走机器人自己的打法。
+        var teachTarget = _input != null ? _input.tutorialGestureTarget : TutorialGestureTarget.None;
+        if (teachTarget == TutorialGestureTarget.BlockAll) return;   // 这一拍不许出招
+        if (TryGetTutorialGesture(out var teachGesture, out var teachCharge))
+        {
+            // 连招蓄力拍：招式状态机本来就该是「进行中」（等的就是接续窗口）→ 不能被 moveBusy 拦住
+            bool forceAct = teachTarget == TutorialGestureTarget.ComboHold;
+            if (!moveBusy || forceAct)
+            {
+                _nextAttackTime = Time.time + attackInterval;
+                _input.SubmitGestureForDebug(teachGesture, teachCharge, column, CenterScreenPoint(), true, 0f);
+            }
+            return;
+        }
+
         // 前排 ≥2 只 → 横划（斩击）打整排（模拟「会用范围技」）
         if (useAreaAttacks && !moveBusy && CountFrontRow() >= 2)
         {
@@ -288,6 +304,44 @@ public class BattleAutoPlayer : MonoBehaviour
         // 默认：点一下（戳击 / 招式表的连招起手）
         _nextAttackTime = Time.time + attackInterval;
         _input.SubmitGestureForDebug(MoveGesture.Tap, 0, column, CenterScreenPoint(), true, 0f);
+    }
+
+    /// <summary>
+    /// 当前教学拍要求的手势（读 <c>InputManager.tutorialGestureTarget</c>）。
+    /// 返回 false = 没有教学闸门（正式关）→ 机器人按自己的打法来。
+    /// </summary>
+    private bool TryGetTutorialGesture(out MoveGesture gesture, out int charge)
+    {
+        gesture = MoveGesture.Tap;
+        charge = 0;
+        if (_input == null) return false;
+        switch (_input.tutorialGestureTarget)
+        {
+            case TutorialGestureTarget.Tap:
+                gesture = MoveGesture.Tap; charge = 0; return true;
+            case TutorialGestureTarget.SwipeHorizontal:
+                gesture = MoveGesture.SwipeHorizontal; charge = 0; return true;
+            case TutorialGestureTarget.ChargedVertical:
+                gesture = MoveGesture.SwipeVertical; charge = 1; return true;
+            case TutorialGestureTarget.ParryVertical:
+                gesture = MoveGesture.SwipeVertical; charge = 0; return true;
+            case TutorialGestureTarget.ComboHold:
+                // 连招蓄力：蓄满后松手（在敌人那一列上）
+                gesture = MoveGesture.Hold; charge = 1; return true;
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// 当前是不是「要划一下」的教学拍。
+    /// 教学拍会把手势闸门设成 <see cref="TutorialGestureTarget.SwipeHorizontal"/>（招式解锁引导拍）→
+    /// 机器人这时必须**划**，否则这一拍收不了（和教点戳同一条机制）。
+    /// </summary>
+    private bool NeedsSwipeNow()
+    {
+        if (_input == null) return false;
+        return _input.tutorialGestureTarget == TutorialGestureTarget.SwipeHorizontal;
     }
 
     /// <summary>QTE 处理：Suppress 模式下把 BOSS 的 QTE 关掉；Answer 模式下替玩家答一次。返回 true 表示「本帧已交给 QTE」。</summary>
@@ -324,15 +378,27 @@ public class BattleAutoPlayer : MonoBehaviour
     /// <summary>机器人也要会点 UI：升级三选一与路线选择都不点 → 游戏会暂停在原地。</summary>
     private void HandleBlockingUi()
     {
-        if (Time.time < _nextUiClickTime) return;
+        // ⚠️ 这里必须用 **unscaledTime**：三选一面板会把游戏暂停（timeScale=0），
+        // 用 Time.time（缩放时间）的话时间会冻结 → 下面的「等一下再点」永远等不到 → 机器人卡死在升级三选一。
+        if (Time.unscaledTime < _nextUiClickTime) return;
 
         var um = _ucm;
         if (um != null && um.IsChoosing && _pendingChoices.Count > 0)
         {
             var pick = _pendingChoices[Random.Range(0, _pendingChoices.Count)];
             _pendingChoices.Clear();
-            _nextUiClickTime = Time.time + 0.2f;
+            _nextUiClickTime = Time.unscaledTime + 0.2f;
             um.ConfirmChoice(pick);
+            return;
+        }
+
+        // 对话气泡：引导/三选1 的台词是「点击继续」式 → 不点就把机器人卡死
+        // （排在三选一**后面**：三选一面板会把游戏暂停（timeScale=0），更该先处理它）
+        var dialogue = CombatPresenters.Dialogue;
+        if (dialogue != null && dialogue.IsBusy)
+        {
+            _nextUiClickTime = Time.unscaledTime + 0.2f;
+            dialogue.Skip();
             return;
         }
 
@@ -354,7 +420,7 @@ public class BattleAutoPlayer : MonoBehaviour
             if (b == null || !b.gameObject.activeInHierarchy) continue;
             var btn = b.GetComponent<UnityEngine.UI.Button>();
             if (btn == null || !btn.interactable) continue;
-            _nextUiClickTime = Time.time + 0.5f;
+            _nextUiClickTime = Time.unscaledTime + 0.5f;
             btn.onClick.Invoke();
             break;
         }

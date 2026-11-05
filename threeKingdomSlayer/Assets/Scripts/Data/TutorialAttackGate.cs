@@ -19,6 +19,14 @@ public static class TutorialAttackGate
 {
     private static HashSet<AttackType> _allowed;
 
+    /// <summary>
+    /// **临时放行**（招式解锁引导期间用）：引导正在教的那一招必须能真的打出来 ——
+    /// 否则玩家划对了手势，却因为教学白名单打不出来 → 以为没学会。
+    ///
+    /// 与 <see cref="SetAllowed"/> 分开存 → 教学导演重建白名单时不会把临时放行冲掉。
+    /// </summary>
+    private static HashSet<AttackType> _temporary;
+
     /// <summary>是否处于"限制模式"（false = 不限制，正式战斗）。</summary>
     public static bool Enabled => _allowed != null;
 
@@ -29,16 +37,32 @@ public static class TutorialAttackGate
     }
 
     /// <summary>关闭限制（回到正式战斗的行为）。</summary>
-    public static void Clear() => _allowed = null;
+    public static void Clear()
+    {
+        _allowed = null;
+        _temporary?.Clear();
+    }
+
+    /// <summary>临时放行一招（引导开始时调用 → 引导结束时 <see cref="ClearTemporary"/>）。</summary>
+    public static void AllowTemporary(AttackType type)
+    {
+        if (_temporary == null) _temporary = new HashSet<AttackType>();
+        _temporary.Add(type);
+    }
+
+    /// <summary>清掉所有临时放行（引导结束时调用）。</summary>
+    public static void ClearTemporary() => _temporary?.Clear();
 
     /// <summary>该招式现在允许发出吗。</summary>
-    public static bool Allows(AttackType type) => _allowed == null || _allowed.Contains(type);
+    public static bool Allows(AttackType type) =>
+        _allowed == null || _allowed.Contains(type) || (_temporary != null && _temporary.Contains(type));
 
-    /// <summary>当前白名单的可读描述（调试用）。</summary>
+    /// <summary>当前白名单的可读描述（调试用）。**含临时放行** → 日志里不会说谎。</summary>
     public static string Describe()
     {
         if (_allowed == null) return "不限制";
         var list = new List<AttackType>(_allowed);
+        if (_temporary != null) list.AddRange(_temporary);
         list.Sort();
         var sb = new System.Text.StringBuilder();
         for (int i = 0; i < list.Count; i++)

@@ -390,7 +390,16 @@ public class FrontItemBar : MonoBehaviour
     private void OnItemIconClicked(BuffIcon icon)
     {
         if (_qteDimmed) return;
-        if (DialogueManager.Instance != null && DialogueManager.Instance.IsInteractionBlocked) return;
+        if (DialogueManager.Instance != null && DialogueManager.Instance.IsInteractionBlocked)
+        {
+            // 教学「用技能打断」那一拍：冻结着等玩家点技能槽 →
+            //   那一拍的说明台词是同时弹出来的 → 不能让它把点击吞掉
+            //   （见 ActiveSkillInventory.TryActivate 的同一处说明）。
+            bool skillBeat = ActiveSkillInventory.Instance != null
+                             && ActiveSkillInventory.Instance.UsesActiveSkills
+                             && GameplayInputGate.AllowSkillActivationWhileBlocked;
+            if (!skillBeat) return;
+        }
         if (!_iconEntryIds.TryGetValue(icon, out int entryId)) return;
 
         if (ActiveSkillInventory.Instance != null && ActiveSkillInventory.Instance.UsesActiveSkills)

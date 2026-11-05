@@ -30,6 +30,10 @@ public class SaveData
     public List<string> unlockedManuals = new List<string>();
     [Tooltip("已教过的招式引导 id（TalentNodeConfig.nodeId）。旧档缺失时由 MoveGuideSaveSection 补空列表")]
     public List<string> taughtMoveGuides = new List<string>();
+    [Tooltip("**天赋页教学**是否已教过（2026-11-04）。第一次打开天赋页会硬性教「如何解锁天赋」；教完（真的解锁了一个节点）才写 true → 同一存档只教一次。老档缺失时默认 false")]
+    public bool taughtTalentPanel = false;
+    [Tooltip("**「点开始关卡」的主菜单引导**是否已教过（2026-11-04）。玩家点过开始关卡（或正式进入战斗）后写 true → 同一段教程里不再重复出现")]
+    public bool taughtStartStage = false;
 
     /// <summary>
     /// 获取铜钱数量（优先从 props 列表读取，兼容旧存档的 coinCount 字段）

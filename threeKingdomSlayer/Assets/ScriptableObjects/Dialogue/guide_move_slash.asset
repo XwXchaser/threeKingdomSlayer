@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: guide_move_slash
   m_EditorClassIdentifier: 
   eventId: guide_move_slash
-  eventType: 1
+  eventType: 0
   triggerType: 0
   stageId: 0
   waveNumber: 0
   bossId: 0
   bossPhaseIndex: 0
   killCount: 0
-  nonBlocking: 0
+  nonBlocking: 1
   bossProfile: {fileID: 0}
   lines:
   - speaker: 0

@@ -66,6 +66,11 @@ public sealed class TalentNodeConfig
              "台词走现成的对话层（自带压暗 + 点击继续 ✅），不新建 UI。")]
     public DialogueEventData moveGuideDialogue;
 
+    [Tooltip("**连招蓄力引导**的第二段台词（「按住蓄满 → 松手」）。\n" +
+             "第一段台词走上面的 <see cref=\"moveGuideDialogue\"/>（先点一下）。\n" +
+             "只有 moveGuideGesture = ComboCharge 时才会用到。")]
+    public DialogueEventData moveGuidePhase2Dialogue;
+
     /// <summary>
     /// 这个节点**带没带解锁载荷** ✅ —— 任何一种载荷非空 ✅ = 有效 ✅（自检会报错 ✅ ✅）。
     /// </summary>
