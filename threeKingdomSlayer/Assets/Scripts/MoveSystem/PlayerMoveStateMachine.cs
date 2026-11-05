@@ -245,7 +245,17 @@ public class PlayerMoveStateMachine : MonoBehaviour
         // 中立态：查入口表（按手势 + 蓄力等级）；未配置的手势回落到默认攻击类型，保证招式表未填完时仍可游戏
         AttackSkillConfig root = moveTable.FindRoot(input.gesture, input.chargeLevel);
         if (root == null)
+        {
+            // ⚠️ **中立态不执行「按住」**（2026-11-05 修）：
+            //   中立态按住 = 站桩蓄力（穿刺），而站桩蓄力已在 2026-11-05 下线（中立态彻底不许蓄力）。
+            //   若让它回落到默认招式，就会打出一记**没有前置招式的穿刺**（“0 前置的蓄力”）。
+            if (input.gesture == MoveGesture.Hold)
+            {
+                _lastResolution = "中立态不执行按住（无前置招式，站桩蓄力已下线）";
+                return false;
+            }
             return ExecuteDirect(input, ref resolvedType);
+        }
 
         // 天赋锁定：**中立态入口也要查**。
         // 之前只有「连段转移」段查 IsMoveLocked（PlayerMoveStateMachine.cs:317），
@@ -347,6 +357,15 @@ public class PlayerMoveStateMachine : MonoBehaviour
 
     private bool ExecuteDirect(GestureInput input, ref AttackType resolvedType, bool cancelCurrentMove = false)
     {
+        // ⚠️ **中立态不执行「按住」**（2026-11-05 修）：
+        //   按住 → 默认招式 = 穿刺（站桩蓄力），而站桩蓄力已下线（中立态彻底不许蓄力）。
+        //   直通模式（没有招式表）同样不许：否则会出现“没有前置招式的穿刺”。
+        if (input.gesture == MoveGesture.Hold && !_active)
+        {
+            _lastResolution = "中立态不执行按住（无前置招式，站桩蓄力已下线）";
+            return false;
+        }
+
         resolvedType = MoveGestureDefaults.ResolveAttackType(input.gesture, input.charged);
         if (attackSystem == null) return false;
 
@@ -414,10 +433,24 @@ public class PlayerMoveStateMachine : MonoBehaviour
         // 招式表节点进行中且手指仍按着：这一按属于「连段蓄力」，不让站桩蓄力的表现插进来。
         // 注意：直通招式（move == null，例如站桩蓄力打出的横扫）不算连段，必须排除，
         // 否则该标记会一直为真，把后续滑动误判成连段蓄力（导致按住连滑可以一直刷同一个蓄力招式）。
-        if (InputPort != null && InputPort.IsPointerDown && move != null) InputPort.ComboChargeActive = true;
+        //
+        // ⚠️ **必须同时满足「本节点有蓄力后继」且「该后继没被天赋锁住」**（2026-11-05 修）：
+        //   ① 只看「有没有蓄力边」→ 天赋没解锁 C2（指向突刺）时，仍然会进入 C2 的蓄力
+        //      （枪停在回收段等蓄力 + 蓄力指示器出现），但松手时又被天赋锁拦掉 → 玩家看到“蓄了半天没出手”。
+        //   ② 只看「当前是不是连段」→ 没有蓄力后继的节点（如 Jab3、斩击）也会变成“有蓄力”
+        //      → 站桩蓄力复活（0 前置的蓄力），松手会打出一记没有前置的穿刺。
+        bool canChargeHere = move != null && HasUsableChargeContinuation(move);
+        if (InputPort != null)
+        {
+            // 标记的有效期 = 当前节点的蓄力上下文：
+            //   节点确实有**可用**（未被天赋锁）的蓄力后继 → 才算“连段蓄力”；
+            //   否则清掉（否则标记会一路带到没有蓄力后继的节点上 → 0 前置的蓄力复活）。
+            if (InputPort.IsPointerDown && canChargeHere) InputPort.ComboChargeActive = true;
+            else if (!canChargeHere) InputPort.ComboChargeActive = false;
+        }
 
         if (InputPort != null && InputPort.IsPointerDown && attackSystem != null
-            && move != null && move.HasChargeContinuation())
+            && move != null && canChargeHere)
         {
             attackSystem.BeginComboChargeHold();
             _comboChargeHeld = true;
@@ -657,7 +690,10 @@ public class PlayerMoveStateMachine : MonoBehaviour
             _holdWaitElapsed = 0f;
 
             // 连招进行中按下：这段输入属于连招，不属于站桩蓄力（穿刺指示器 / 蓄力视觉都让位）
-            if (_active && InputPort != null) InputPort.ComboChargeActive = true;
+            // ⚠️ 同上：只有「本节点确实有**可用**的蓄力后继」才允许进入连段蓄力
+            // （没解锁 C2 / 没有蓄力后继 → 不允许蓄力，否则会出现“0 前置的蓄力”与“未解锁的 C2 蓄力”）
+            if (_active && InputPort != null && _currentMove != null && HasUsableChargeContinuation(_currentMove))
+                InputPort.ComboChargeActive = true;
 
             // 本节点存在「没被天赋锁住」的蓄力后继时，才让枪体停在回收段中途等蓄力；
             // C2/C4 未解锁时不应该连蓄力状态都进得去。

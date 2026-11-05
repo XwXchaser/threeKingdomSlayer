@@ -715,6 +715,31 @@ MoveTableConfig（每武将一份）
 
 > 新增链时先读 `design/combo-registry.md`（命名、`id` 区间、登记表、checklist）。
 
+### 18.1 第五条共享规则：**蓄力必须有「可用的」蓄力后继**（2026-11-05 修 bug）
+
+> 现象：**天赋没解锁 C2（指向突刺）时，偶尔会进入 C2 的蓄力**；也会出现**没有前置招式的蓄力**（0 前置）。
+
+| 判据 | 含义 |
+|---|---|
+| `HasChargeContinuation(move)` | 节点**有**蓄力边（不看天赋锁） |
+| `HasUsableChargeContinuation(move)` | 节点有蓄力边 **且** 该后继**没被天赋锁住** ✅ 判定蓄力只能用这个 |
+
+**根因**：三处判定口径不一致 ——
+① `BeginMove` 用 `HasChargeContinuation()` → **没解锁 C2 也进 C2 的蓄力**（枪停在回收段 + 蓄力指示器出现，松手又被天赋锁拦掉 → “蓄了半天没出手”）；
+② `BeginMove` / `UpdatePointerHold` 把 `comboChargeActive`（=“允许蓄力”的总闸）设成“只要有前置招式” → **没有蓄力后继的节点（Jab3、斩击）也变成有蓄力** → 站桩蓄力复活（0 前置的蓄力）；
+③ 中立态的 `Hold` 手势回落到默认招式 = **穿刺** → 没有前置也能打出穿刺。
+
+**修法**（`PlayerMoveStateMachine`）：
+
+1. `BeginMove`：`comboChargeActive` 与 `BeginComboChargeHold()` 都改用 `HasUsableChargeContinuation(move)`；
+   节点**没有**可用蓄力后继时**清掉**该标记（标记的有效期 = 当前节点的蓄力上下文）。
+2. `UpdatePointerHold` 的“连招中按下”分支：同样要求 `HasUsableChargeContinuation`。
+3. 中立态（`SubmitInput` 的中立分支 + `ExecuteDirect`）：**不执行 `Hold` 手势**（站桩蓄力已下线）。
+
+> 实测（Unity 内核实）：`Zhangfei_StabR2` 确实被 `talent_move_stabc2` 锁住（`unlocked=false`），
+> 而 `Zhangfei_Jab1.HasChargeContinuation()=true`（有 Hold→StabR2 边）→ 旧逻辑必然进 C2 蓄力；
+> `HasUsableChargeContinuation=false` → 新逻辑不进。
+
 ---
 
 ## 19. 武器动作准则：进入与离开（所有武器动作的底层准则）

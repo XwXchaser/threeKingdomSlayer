@@ -339,7 +339,7 @@ aiEditMode: inherit
 - **恢复**：首选换新会话 + 交接摘要（同问题 7/8）。要把旧会话救回来，就只摘掉那条消息的附件：`UPDATE messages SET images=NULL WHERE id='<该条 tool 消息 id>'`（文本结果保留，tool_call/tool_result 配对不破；不要用 `include_in_prompt=0` 整条禁用，会打断配对）。改前先把 `images` 备份成文件。
 - **预防**：读图前先掂量内容来源——聊天窗、真人照片、别人给的界面截图、含大量文字的界面最容易被判敏感；一旦某张图被 422 拒，**不要在同一会话重试**，立刻换会话并写交接。
 
-## 13. 2026-11-05 手感与交互反馈 5 条（**已分析，未实施**）
+## 20. 2026-11-05 手感与交互反馈 5 条（**已分析，已实装第一批，待实机验收**）
 - **来源**：用户当面反馈（战斗/教学/三选一三条线）——① 需要动作游戏的**预输入**；② 教程**不应该点任意处都能继续**；③ 当前招式**不跟手、有延迟感**；④ 三选一应**长按选择**而不是双击；⑤ 三选一应**波次结束时弹出**而不是升级立刻弹出（避免体验断档）。
 - **状态**：用户明确要求「先分析、不立刻改」→ 只写了分析文档，**没动任何代码**。逐条根因、改法方向、代价与验收口径见 **`plan/input-and-choice-ux-feedback-20261105.md`**。
 - **三个已查实的关键事实（改之前先看）**：
@@ -355,5 +355,16 @@ aiEditMode: inherit
   - **教程不再点任意处继续**（同时发现：气泡与「继续」按钮的 `raycastTarget` 原本是 false → 以前根本点不到，只能靠那条裸输入路径）。
   - **「按下即出」默认关**（`InputManager.pressTapDelay = 0`）：本项目“按住”本身就是蓄力手势，任何小于 0.3s 的按下即出窗口都会把「按住一下再划」拆成“一记轻攻击 + 划动被丢弃”。
   - 规范与开关表见 `design/action-game-feel-and-input-buffering.md` §0.5；落点与回归重点见 `design/combo-move-state-machine.md` §11.11。
+
+## 21. 【已修 2026-11-05】未解锁 C2 时仍然进入 C2 的蓄力 / 0 前置的蓄力
+- **现象**：天赋**没解锁** `talent_move_stabc2`（指向突刺）时，偶尔会进入 **C2 的蓄力**（枪停在回收段等蓄力 + 蓄力指示器出现，松手却没出手）；也会出现**没有前置招式的蓄力**（站桩蓄力复活）。
+- **根因**：`PlayerMoveStateMachine` 里三处“能不能蓄力”的判定口径不一致：
+  1. `BeginMove` 用 `HasChargeContinuation()`（**不看天赋锁**）→ 没解锁 C2 也进 C2 的蓄力；
+  2. `BeginMove` / `UpdatePointerHold` 把 `comboChargeActive`（蓄力总闸）设成“只要有前置招式”→ 没有蓄力后继的节点（Jab3、斩击）也算有蓄力 → 0 前置的蓄力；
+  3. 中立态的 `Hold` 手势回落到默认招式 = **穿刺** → 没有前置也能打出穿刺。
+- **修法**：蓄力判定统一改用 `HasUsableChargeContinuation()`（有蓄力边 **且** 后继没被天赋锁住）；
+  节点没有可用蓄力后继时**清掉** `comboChargeActive`；中立态**不执行 Hold 手势**。
+- **实测**：Unity 内核实 `Zhangfei_StabR2` 确实被 `talent_move_stabc2` 锁住、`Zhangfei_Jab1.HasChargeContinuation()=true`（旧逻辑必然进蓄力）、`HasUsableChargeContinuation=false`（新逻辑不进）。
+- **详见** `design/combo-move-state-machine.md` §18.1（第五条共享输入规则）。
 - **深化方案（当日晚补）**：规范见 **`design/action-game-feel-and-input-buffering.md`**，实施工作包见 **`plan/feel-optimization-work-packages-20261105.md`**（W0~W8）。
 - **第四个已查实的事实**：**当年撤回「按下即出轻攻击」的理由已经消失**。`design/combo-move-state-machine.md` §11.6 写的是「与起手即蓄力冲突」，而 2026-11-05 的 `2234ed95`（中立态彻底不许蓄力）已把那个冲突源删掉 → 轴 1 可以复活，且 `AttackSystem.TryCancelLightAttackStartup()` / `StabSweepEffect.TryCancelBeforeHit()` / `PlayerMoveStateMachine.NotifyExternalReset()` 三个预留接口**都还在、零调用点**。
