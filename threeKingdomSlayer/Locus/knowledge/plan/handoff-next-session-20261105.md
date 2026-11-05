@@ -23,11 +23,11 @@ summary: 下一会话交接方案（2026-11-05 收尾）：现状快照、可直
 | 项 | 值 |
 |---|---|
 | 分支 | `feat/stage-select-talent-overlays`（与 origin 同步，无 ahead/behind） |
-| HEAD | `c4de437a`（见 §3 的 15 个提交） |
+| HEAD | 以 `git log -1` 为准（2026-11-05 收尾时是 `fa549ecd`）；§3 是上一轮的 15 个业务提交 |
 | 工作区 | 干净，只剩 `Locus/workspace-trees/default.json`（Locus 自己的界面布局，不用管、不用提） |
 | Unity | Tuanjie 2022.3.62t7，**Edit Mode**，Active Scene = `Assets/Scenes/Battle.scene`，Build Target = Android |
 | Console | **0 error**（最后一次查） |
-| 包 | `Build/Android/threeKingdomSlayer_full_20261105_1825.apk`（334MB，传统分文件布局，arm64+x86，**与 HEAD 对齐**） |
+| 包 | `Build/Android/threeKingdomSlayer_full_20261105_1825.apk`（334MB，传统分文件布局，arm64+x86；**打包时的资产与 `984f672c` 提交的一致**） |
 | 存档备份 | `Library/Locus/tmp/player_save_backup.txt`（1417 字节，2026-11-05 10:44，**早于今天所有改动** → 还原它等于把「已教过的教学拍」清空） |
 
 ---
