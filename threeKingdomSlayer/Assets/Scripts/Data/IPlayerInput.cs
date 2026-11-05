@@ -52,6 +52,13 @@ public interface IPlayerInput
     /// <summary>技能输入是否放行（狂化大招期间会关掉）。</summary>
     bool SkillInputEnabled { get; set; }
 
+    /// <summary>
+    /// **玩家输入是否放行**（只读）。
+    /// false = 有模态 UI（三选一）/ QTE / 暂停正在拦输入。
+    /// 内核用它判断「现在能不能兑现缓冲」——面板开着时不能把缓冲里的招打出去。
+    /// </summary>
+    bool GameplayInputEnabled { get; }
+
     /// <summary>屏蔽若干帧输入（防止 UI 弹窗的点击误触发攻击）。</summary>
     void BlockInputForFrames(int frames);
 

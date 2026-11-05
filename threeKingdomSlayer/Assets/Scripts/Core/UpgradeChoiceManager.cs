@@ -43,6 +43,8 @@ public class UpgradeChoiceManager : MonoBehaviour
     public int choiceCount = 3;
     [Tooltip("弹窗期间是否暂停游戏")]
     public bool pauseGameDuringChoice = true;
+    [Tooltip("波次结束时才弹三选一（2026-11-05 用户定）：升级不再当场打断战斗，\n选择攒到本波清空时一起给。关掉则恢复“升级立刻弹”。")]
+    public bool deferChoicesToWaveEnd = true;
 
     [Tooltip("教学关用：非空时三选一固定显示这些选项（按顺序），不走随机池；只填 1 个就是强制选择")]
     public List<UpgradeDefinition> forcedChoices = new List<UpgradeDefinition>();
@@ -82,6 +84,9 @@ public class UpgradeChoiceManager : MonoBehaviour
     public System.Action OnAllChoicesDone;
 
     public bool IsChoosing => _isChoosing;
+
+    /// <summary>当前是否有**排队中**、还没弹出来的选择（升级三选一 / Boss 锦囊）。</summary>
+    public bool HasPendingChoices => _pendingQueue.Count > 0 || _pendingLevelUps > 0 || _pendingItemChoices > 0;
 
     /// <summary>当前弹出的三选一窗口（教学要指着推荐的那张卡）。</summary>
     public IUpgradeChoiceView ActivePopup => _activePopup;
@@ -203,8 +208,27 @@ public class UpgradeChoiceManager : MonoBehaviour
     {
         _pendingLevelUps++;
         _pendingQueue.Enqueue(PendingType.LevelUp);
+
+        // 波末弹（默认）：升级只入队，不当场打断战斗。
+        // 波次清空时由 <see cref="FlushPendingChoices"/> 统一弹出。
+        if (deferChoicesToWaveEnd) return;
+
         if (!_isChoosing)
             StartChoiceFlow();
+    }
+
+    /// <summary>
+    /// **把待处理的选择弹出来**（波次清空时调用）。
+    ///
+    /// 升级三选一默认不再当场弹（<see cref="deferChoicesToWaveEnd"/>），
+    /// 而是攒到波末一起给 —— 避免战斗中途被弹窗打断（体验断档）。
+    /// 没有待处理的选择时什么都不做。
+    /// </summary>
+    public void FlushPendingChoices()
+    {
+        if (_isChoosing) return;
+        if (_pendingQueue.Count == 0 && _pendingLevelUps <= 0 && _pendingItemChoices <= 0) return;
+        StartChoiceFlow();
     }
 
     private static bool UsesActiveSkillRules => ActiveSkillInventory.Instance != null && ActiveSkillInventory.Instance.UsesActiveSkills;

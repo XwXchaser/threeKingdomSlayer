@@ -187,11 +187,17 @@ public sealed class StageRunFlow : IRunFlow
     public void OnWaveCleared(int waveIndex)
     {
         var ucm = UpgradeChoiceManager.Instance;
-        if (ucm != null && ucm.IsChoosing)
+        if (ucm != null)
         {
-            Debug.Log($"[StageController] 第{waveIndex + 1}波清空，有待处理选择，暂缓下一波");
-            ucm.OnAllChoicesDone += OnChoicesDoneSpawnNextWave;
-            return;
+            // 波末统一结算待处理的选择（2026-11-05 用户定）：
+            // 升级不再当场弹窗打断战斗，而是攒到本波清空时一起给。
+            ucm.FlushPendingChoices();
+            if (ucm.IsChoosing)
+            {
+                Debug.Log($"[StageController] 第{waveIndex + 1}波清空，有待处理选择，暂缓下一波");
+                ucm.OnAllChoicesDone += OnChoicesDoneSpawnNextWave;
+                return;
+            }
         }
 
         Debug.Log($"[StageController] 第{waveIndex + 1}波清空，自动开始下一波");
@@ -218,6 +224,36 @@ public sealed class StageRunFlow : IRunFlow
 
     /// <summary>所有波次已清空 → 关卡胜利</summary>
     public void OnAllWavesCleared()
+    {
+        if (_ctx.CurrentState != StageState.InProgress) return;
+
+        // 关卡结算前：如果还有待处理的三选一（波末弹的升级三选一），**先让玩家选完再结算**。
+        // 否则升级会在结算之后才生效（等于白送），这一级的成长也接不上。
+        var ucm = UpgradeChoiceManager.Instance;
+        if (ucm != null)
+        {
+            ucm.FlushPendingChoices();
+            if (ucm.IsChoosing)
+            {
+                Debug.Log("[StageController] 关卡结束前还有待处理选择 → 等选完再结算");
+                ucm.OnAllChoicesDone += CompleteStageAfterChoices;
+                return;
+            }
+        }
+
+        CompleteStageNow();
+    }
+
+    /// <summary>选择完成 → 继续结算（避免结算与弹窗撞车）。</summary>
+    private void CompleteStageAfterChoices()
+    {
+        var ucm = UpgradeChoiceManager.Instance;
+        if (ucm != null) ucm.OnAllChoicesDone -= CompleteStageAfterChoices;
+        CompleteStageNow();
+    }
+
+    /// <summary>真正的结算（胜利 / 铜钱 / 存档）。</summary>
+    private void CompleteStageNow()
     {
         if (_ctx.CurrentState != StageState.InProgress) return;
 

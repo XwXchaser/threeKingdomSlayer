@@ -132,6 +132,62 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
     /// <summary>当前指针位置对应的戳击目标列（C2 的「指向」用）。未落在有效列上时返回 -1</summary>
     public int CurrentPointerStabColumn => GetStabColumnFromScreenPosition(currentPointerPos);
 
+    // ── 「按下即出」实现 ─────────────────────────────────────────────────
+
+    /// <summary>按下时备好「待兑现的轻攻击」（按下即出）。</summary>
+    private void ArmPressTap(Vector2 pos)
+    {
+        _pressTapPending = false;
+        _pressTapFired = false;
+        if (pressTapDelay <= 0f) return;
+        if (!CanCommitPressTap()) return;
+        _pressTapPending = true;
+        _pressTapStart = Time.time;
+        _pressTapPos = pos;
+    }
+
+    /// <summary>取消待兑现的轻攻击（划动 / 手指漂移 / 开始蓄力）。</summary>
+    private void CancelPressTap()
+    {
+        _pressTapPending = false;
+    }
+
+    /// <summary>现在能不能兑现一记轻攻击（输入门 / QTE / 防御姿态 / 教学闸门 / 是否在战斗）。</summary>
+    private bool CanCommitPressTap()
+    {
+        if (!skillInputEnabled) return false;
+        if (!gameplayInputEnabled) return false;
+        if (blockInputFrames > 0) return false;
+        if (IsAnyQTEActive()) return false;
+        if (StanceActive) return false;                                  // 招架/防御姿态中
+        if (!TutorialAllowsTapGesture(CurrentChargeLevel)) return false;   // 教学手势闸门
+        if (!IsInBattleState()) return false;                             // 局外（落地页/主菜单）
+        return true;
+    }
+
+    /// <summary>每帧检查：到点了就兑现（不等抬手）。</summary>
+    private void UpdatePressTap()
+    {
+        if (!_pressTapPending) return;
+        if (!CanCommitPressTap()) { CancelPressTap(); return; }
+        // 玩家开始蓄力了（按住到一级）→ 不再自动出轻攻击
+        // （保持 2026-11-05 的口径： neutral 状态不许蓄力，也不该凭空多打一记）
+        if (CurrentChargeLevel >= 1) { CancelPressTap(); return; }
+        if (Time.time - _pressTapStart >= pressTapDelay) CommitPressTap();
+    }
+
+    /// <summary>兑现待发的轻攻击。</summary>
+    private void CommitPressTap()
+    {
+        if (!_pressTapPending) return;
+        _pressTapPending = false;
+        if (!CanCommitPressTap()) return;
+        int column = GetStabColumnFromScreenPosition(_pressTapPos);
+        if (column < 0) return;
+        bool executed = SubmitGesture(MoveGesture.Tap, CurrentChargeLevel, column, screenPos: _pressTapPos);
+        if (executed) _pressTapFired = true;
+    }
+
     /// <summary>
     /// 当前这次按下是否被招式状态机判定为「连段蓄力」（按下时置位，抬手或复位时清空）。
     /// 连段蓄力不是穿刺蓄力：依附蓄力事件链的附带表现（穿刺瞄准指示器、蓄力视觉进出场）应当让位。
@@ -141,6 +197,25 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
     [Header("蓄力招式开关")]
     [Tooltip("打开后只允许竖滑蓄力（上挑）：站桩蓄力（穿刺）与横滑蓄力（横扫）都不成立，蓄力指示器与蓄力武器视觉也不出现。\n蓄力 stab / 蓄力 slash 还没做完 —— 2026-10-21 起默认关闭（用户要求恢复蓄力表现），打开前先确认蓄力出招与命中正常。")]
     public bool restrictChargedToVertical = false;
+
+    // ── 「按下即出」（承诺点）────────────────────────────────────────────
+    [Header("按下即出（承诺点）")]
+    [Tooltip("按下后多久自动兑现一记轻攻击（秒）：抬手晚于这个时刻就先出招，不再等抬手。\n" +
+             "0 = 关闭（默认）。\n" +
+             "⚠️ **实测结论：默认关闭**。本项目的“按住”本身就是一个手势（按住到一级 = 蓄力，\n" +
+             "   门槛 0.3s），而滑动要 50px/180px·s⁻¹ 才成立 —— 任何小于蓄力门槛的“按下即出”窗口，\n" +
+             "   都会把「按住一下再划」误打成「先一记轻攻击 + 划动被丢弃」。\n" +
+             "   真正的跟手收益已由**输入缓冲 + 命中取消**提供（招式状态机那两个开关）。\n" +
+             "   想试按就把这个值调到 0.12 左右（两种自动取消：① 指针移动超过容差；② 玩家开始蓄力）。")]
+    public float pressTapDelay = 0f;
+    [Tooltip("按下后指针移动超过这个距离（像素）就取消待发的轻攻击")]
+    public float pressTapSlop = 8f;
+
+    private bool _pressTapPending;
+    private float _pressTapStart;
+    private Vector2 _pressTapPos;
+    /// <summary>本次按住已经由「按下即出」打过一记轻攻击（抬手时不要再补一记点按）</summary>
+    private bool _pressTapFired;
 
     // 技能输入开关（狂怒大招期间关闭）
     [System.NonSerialized] public bool skillInputEnabled = true;
@@ -153,6 +228,9 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
     /// 结果取决于调用顺序，代码上看不出来（隐式全局状态）——现在谁在拦、因为什么拦，一次查询就有答案。
     /// </summary>
     public bool gameplayInputEnabled => !GameplayInputGate.IsBlocked;
+
+    /// <summary>IPlayerInput 端口实现：内核用它判断「现在能不能兑现缓冲」。</summary>
+    bool IPlayerInput.GameplayInputEnabled => gameplayInputEnabled;
     /// <summary>教学手势拍：非 None 时只接受这个目标手势，其它手势一律不成立（不出招、也不消耗蓄力段）。</summary>
     [System.NonSerialized] public TutorialGestureTarget tutorialGestureTarget = TutorialGestureTarget.None;
     /// <summary>
@@ -376,10 +454,12 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
             HandleMouseInput();
         }
 
+        // 「按下即出」：到点就兑现一记轻攻击（不等抬手）
+        UpdatePressTap();
+
         // 每帧更新当前分段的蓄力状态与进度。
         if (isTouching)
-        {
-            float segmentDuration = Time.time - segmentStartTime;
+        {            float segmentDuration = Time.time - segmentStartTime;
 
             // 横向位移不再清零蓄力：横向移动 = 改目标列（指向），只有纵向抖动受容差限制。
             // 高速滑动仍由 TryDetectHoldSwipe 的速度门控拦下，不会被这里放行。

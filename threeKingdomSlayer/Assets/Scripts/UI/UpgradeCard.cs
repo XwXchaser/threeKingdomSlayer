@@ -1,11 +1,15 @@
 using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
 /// 三选一选项卡片 — 显示单个升级选项的名称、描述、稀有度背景
-/// 点击时通知 UpgradeChoiceManager.ConfirmChoice
+///
+/// **选择方式：长按确认**（2026-11-05 用户定：不要“点两下”）。
+///   按下 → 高亮并开始计进度 → 按住满 <see cref="holdConfirmSeconds"/> → 确认；
+///   提前松手 → 取消（不算选）。
 /// </summary>
 public class UpgradeCard : MonoBehaviour
 {
@@ -25,11 +29,20 @@ public class UpgradeCard : MonoBehaviour
     [SerializeField] private Image selectedGlowImage;
     [SerializeField] private float selectedLift = 16f;
 
+    [Header("长按确认")]
+    [Tooltip("按住多久算确认（秒）。三选一改成长按选择后，这个值就是“选一张卡”的成本。")]
+    public float holdConfirmSeconds = 0.35f;
+
     private UpgradeDefinition _upgradeDef;
     private Action<UpgradeCard> _onClicked;
     private Vector2 _baseAnchoredPosition;
     private Sprite _baseIconFrameSprite;
     private bool _hasBasePosition;
+
+    // ── 长按确认的运行时状态 ──
+    private bool _holding;
+    private bool _holdCompleted;
+    private float _holdStart;
 
     public UpgradeDefinition Definition => _upgradeDef;
 
@@ -98,9 +111,11 @@ public class UpgradeCard : MonoBehaviour
             iconImage.sprite = def.icon;
         if (button != null)
         {
+            // **不用 onClick 确认**（那是“点两下”）—— 长按由本脚本自己轮询指针实现。
+            // （Button 的 onPointerDown/onPointerUp UnityEvent 在 Unity 里并不存在，
+            //   而本脚本自己实现 IPointerDownHandler 又会被 Button 抢掉事件 —— 组件顺序不可控。）
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(OnClicked);
-            button.interactable = true;      // 默认可点（教学会再按需要关掉某些卡）
+            button.interactable = true;      // 默认可选（教学会再按需要关掉某些卡）
         }
         SetSelectable(true);
     }
@@ -167,10 +182,105 @@ public class UpgradeCard : MonoBehaviour
             ((RectTransform)transform).anchoredPosition = _baseAnchoredPosition + (selected ? Vector2.up * selectedLift : Vector2.zero);
     }
 
-    private void OnClicked()
+    // ── 长按确认 ────────────────────────────────────────────────────────
+
+    /// <summary>当前这张卡是否可选（教学会把非推荐卡置为不可选）。</summary>
+    private bool IsSelectable => button == null || button.interactable;
+
+    /// <summary>指针事件（鼠标 / 触摸统一）：返回是否按下 / 抬起，以及屏幕坐标。</summary>
+    private static bool ReadPointer(out bool down, out bool up, out Vector2 pos)
     {
-        Debug.Log($"[UpgradeCard] OnClicked frame={Time.frameCount} timeScale={Time.timeScale} upgradeId={_upgradeDef?.upgradeId}");
-        _onClicked?.Invoke(this);
+        down = false; up = false; pos = Vector2.zero;
+        if (Input.touchCount > 0)
+        {
+            var t = Input.GetTouch(0);
+            pos = t.position;
+            down = t.phase == TouchPhase.Began;
+            up = t.phase == TouchPhase.Ended || t.phase == TouchPhase.Canceled;
+            return true;
+        }
+        pos = Input.mousePosition;
+        down = Input.GetMouseButtonDown(0);
+        up = Input.GetMouseButtonUp(0);
+        return true;
+    }
+
+    private Camera EventCamera
+    {
+        get
+        {
+            var canvas = GetComponentInParent<Canvas>();
+            if (canvas == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay) return null;
+            return canvas.worldCamera != null ? canvas.worldCamera : Camera.main;
+        }
+    }
+
+    private bool IsPointerOverCard(Vector2 screenPos)
+    {
+        if (!IsSelectable) return false;
+        var rt = transform as RectTransform;
+        if (rt == null) return false;
+        return RectTransformUtility.RectangleContainsScreenPoint(rt, screenPos, EventCamera);
+    }
+
+    private void Update()
+    {
+        bool down, up; Vector2 pos;
+        ReadPointer(out down, out up, out pos);
+
+        if (!_holding)
+        {
+            if (down && IsPointerOverCard(pos))
+            {
+                _holding = true;
+                _holdCompleted = false;
+                _holdStart = Time.unscaledTime;   // 弹窗把 timeScale 压成 0 → 计时必须用 unscaled
+                SetSelected(true);               // 按下即高亮（"正在选"）
+                SetHoldProgress(0f);
+            }
+            return;
+        }
+
+        if (up)
+        {
+            _holding = false;
+            bool completed = _holdCompleted;
+            _holdCompleted = false;
+            if (completed)
+            {
+                SetHoldProgress(1f);   // 确认后的收尾由弹窗负责
+            }
+            else
+            {
+                SetHoldProgress(0f);
+                SetSelected(false);    // 提前松手 → 取消
+            }
+            return;
+        }
+
+        float t = holdConfirmSeconds <= 0f ? 1f : (Time.unscaledTime - _holdStart) / holdConfirmSeconds;
+        if (t >= 1f)
+        {
+            _holdCompleted = true;
+            _holding = false;
+            SetHoldProgress(1f);
+            Debug.Log($"[UpgradeCard] 长按确认 frame={Time.frameCount} upgradeId={_upgradeDef?.upgradeId}");
+            _onClicked?.Invoke(this);
+        }
+        else
+        {
+            SetHoldProgress(t);
+        }
+    }
+
+    /// <summary>按住进度表现（不新增美术：选中光圈由暗到亮）。</summary>
+    private void SetHoldProgress(float p)
+    {
+        if (selectedGlowImage == null) return;
+        var c = selectedGlowImage.color;
+        c.a = Mathf.Lerp(0.25f, 1f, Mathf.Clamp01(p));
+        selectedGlowImage.color = c;
+        selectedGlowImage.gameObject.SetActive(true);
     }
 
 }

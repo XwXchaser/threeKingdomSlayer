@@ -150,6 +150,23 @@ public partial class AttackSystem : MonoBehaviour
     /// <summary>动作锁剩余时间（0 表示可自由行动）</summary>
     public float ActionLockRemaining => _actionLockTimer > 0f ? _actionLockTimer : 0f;
 
+    /// <summary>
+    /// 本次招式**是否打中**（true = 真的打到了敌人）。
+    /// 招式状态机用它做「命中取消」：打中了才允许提前打断收尾接下一招，空挥走完收尾（让空挥有重量）。
+    ///
+    /// ⚠️ **注意**：<c>TryExecuteAttack</c> 的返回值只代表「招式演出了」（Stab/Slash 的命中是
+    /// 特效回调里异步结算的）→ 真正的命中信号由各招式的 <c>onFirstHit</c> 回调上报。
+    /// </summary>
+    public bool LastAttackConnected { get; private set; }
+
+    /// <summary>
+    /// 命中卡肉剩余时间（秒）。
+    /// **动作锁与招式时钟都要随卡肉一起冻结** —— 否则卡肉期间动作锁继续走，
+    /// 而招式时钟（<c>PlayerMoveStateMachine</c>）是冻结的，两者会错位：
+    /// 表现为「枪还没收完就已经能接下一招」（也会踩到武器动作连续性准则）。
+    /// </summary>
+    private float _hitStopRemaining;
+
     /// <summary>本次招式的蓄力等级（0 = 未蓄力；>=1 为蓄力招式等级）</summary>
     public int CurrentChargeLevel => _currentChargeLevel;
 
@@ -316,12 +333,40 @@ public partial class AttackSystem : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        HitFeedbackManager.OnHitStopApplied += OnHitStopApplied;
+    }
+
+    private void OnDisable()
+    {
+        HitFeedbackManager.OnHitStopApplied -= OnHitStopApplied;
+    }
+
+    /// <summary>命中卡肉广播：动作锁与戳击视觉门跟着一起停。</summary>
+    private void OnHitStopApplied(float duration)
+    {
+        if (duration > _hitStopRemaining) _hitStopRemaining = duration;
+    }
+
     private void Update()
     {
-        if (_actionLockTimer > 0f)
-            _actionLockTimer -= Time.deltaTime;
-        if (_stabVisualTimer > 0f)
-            _stabVisualTimer -= Time.deltaTime;
+        // 卡肉期间：动作锁与戳击视觉门**一起冻结**（与招式时钟、特效序列同步）
+        // ⚠️ 不能直接 return：招架接触帧用的是 unscaled 计时，必须继续走。
+        bool frozen = _hitStopRemaining > 0f;
+        if (frozen)
+        {
+            _hitStopRemaining -= Time.deltaTime;
+            if (_hitStopRemaining < 0f) _hitStopRemaining = 0f;
+        }
+
+        if (!frozen)
+        {
+            if (_actionLockTimer > 0f)
+                _actionLockTimer -= Time.deltaTime;
+            if (_stabVisualTimer > 0f)
+                _stabVisualTimer -= Time.deltaTime;
+        }
 
         // 招架接触帧：挥入结束（枪到位）才判能不能格开
         if (_parryJudgeTimer >= 0f)
@@ -371,6 +416,7 @@ public partial class AttackSystem : MonoBehaviour
         AttackSkillConfig moveConfig = null, ISupplyPropTarget supplyTarget = null)
     {
         _currentChargeLevel = chargeLevel;
+        LastAttackConnected = false;
         if (playerState == null) return false;
         if (playerState.stageState != StageState.InProgress) return false;
 

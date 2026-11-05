@@ -522,6 +522,30 @@ MoveTableConfig（每武将一份）
 
 ---
 
+### 11.11 手感改造第一批（2026-11-05 已落地，待实机验收）
+
+> 目标与取舍见 `design/action-game-feel-and-input-buffering.md`（§0.5 有实现状态与开关表）。
+> 本节只记**对连招系统有影响的部分**。
+
+| 改动 | 落点 | 对连招的影响 |
+|---|---|---|
+| **输入缓冲升级** | `PlayerMoveStateMachine` | 缓冲加有效期（0.25s）、跨招式兑现（中立态第一帧就出）、**无匹配边的手势也记**（原来直接拒绝）、蓄力不进缓冲、只留最近一条 |
+| **命中取消** | `PlayerMoveStateMachine` + `AttackSystem` | 打中后允许在「伤害窗口结束」处提前兑现缓冲（`hitCancelEnabled`）；命中信号由 Stab/Slash 的 `onFirstHit` 回调上报（**不是** `TryExecuteAttack` 的返回值 —— 那是“招式演出了”） |
+| **卡肉对齐** | `AttackSystem` | 动作锁与戳击视觉门随卡肉冻结（修掉 §14 坑点 1 的错位）；招架接触帧仍走 unscaled 计时，不受影响 |
+| **按下即出（承诺点）** | `InputManager.pressTapDelay` | **默认关**（0）。原因见 `design/action-game-feel-and-input-buffering.md` §3：「按住」本身就是手势，窗口 < 0.3s 会把「按住一下再划」拆成「一记轻攻击 + 划动被丢弃」 |
+| **三选一改波末弹出** | `UpgradeChoiceManager` / `StageRunFlow` | 升级不再当场打断战斗（`deferChoicesToWaveEnd`）；结算前先让玩家选完（否则升级白送） |
+| **三选一改长按选择** | `UpgradeCard` | 按住 0.35s 确认；教学的三选一提示改成「按住」 |
+
+**回归重点**（下一轮实机必测）：
+
+1. 三段枪突（点、点、点）能不能连上、会不会比原来快太多。
+2. 「点 → 按住蓄力 → 松手」这条链（指向突刺）有没有被缓冲改动影响。
+3. 教学的手势拍能不能全部收（尤其「连招蓄力」拍的两段式）。
+4. 波末三选一：教学关的那一拍还弹不弹、存档标记 `Choice3@0` 写没写。
+5. 难度表重标（节奏变快 → 铁律八要重新测）。
+
+---
+
 ## 12. 改造前必须保住的现有功能（回归清单）
 
 原则：状态机只接管「输入的解析与段位推进」，**不接管**下面这些既有职责。重构后逐条回归。
@@ -615,11 +639,11 @@ MoveTableConfig（每武将一份）
 
 | # | 坑点 | 证据 | 影响 |
 |---|------|------|------|
-| 1 | 卡肉只冻结敌人与特效序列，玩家动作锁继续走 | `HitFeedbackManager` 仅 `enemy.ApplyHitStop`；`StabSweepEffect` / `SweepEffect` / `AttackWave` 各自 `seq.Pause()`；全项目只有暂停/对话/三选一动 `Time.timeScale` | 动作锁先于视觉结束；窗口若按绝对秒会错位 |
+| 1 | ~~卡肉只冻结敌人与特效序列，玩家动作锁继续走~~ **✅ 2026-11-05 已修** | `HitFeedbackManager` 仅 `enemy.ApplyHitStop`；`StabSweepEffect` / `SweepEffect` / `AttackWave` 各自 `seq.Pause()`；全项目只有暂停/对话/三选一动 `Time.timeScale` | **动作锁与戳击视觉门现在也随卡肉冻结**（`AttackSystem` 订阅 `HitFeedbackManager.OnHitStopApplied`）→ 与招式时钟、特效序列三者同步 |
 | 2 | 所有滑动招式需按住 1.0s（场景实测，C# 默认 0.5s） | `InputManager.TryConsumeLiveGesture` 要求 `isLongPress && isCharged`；`minChargeTime` 被场景覆盖为 1.0 | 终结手势几乎不可能在连招窗口内完成 |
 | 3 | 未蓄满的快速滑动在抬手时不产生任何动作 | `InputManager.ProcessGesture` 只处理「蓄满长按」与「未滑动的点击」 | 滑动输入被静默吞掉，且最可能发生在连招窗口内 |
 | 4 | 点击在抬手才判定 | `ProcessGesture` 调用点位于 `TouchPhase.Ended` | 轻攻击固有延迟，连打节奏发糊 |
-| 5 | 动作锁期间输入被直接丢弃、无缓冲 | `AttackSystem.TryExecuteAttack` 冷却检查早退 | 掉输入；接续窗口的前提缺失 |
+| 5 | ~~动作锁期间输入被直接丢弃、无缓冲~~ **✅ 2026-11-05 已修** | `AttackSystem.TryExecuteAttack` 冷却检查早退 | **输入现在会被缓冲**：有效期 0.25s、只留最近一条、跨招式兑现（见 §11.11） |
 | 6 | Stab 有独立于动作锁的第二道门 | `AttackSystem`：`if (attackType == Stab && _stabVisualTimer > 0f) return false;` | Stab 实际可用间隔 = 视觉时长，与动作锁重复。P1 已让 `cancelCurrentMove` 在接续场景同时绕过两道门；**从入口重新起步仍受该门限制**，P2 需统一 |
 | 7 | 一个 `AttackType` 只能有一个配置 | `HeroConfig.GetSkillConfig` 按 `attackType` 唯一匹配 | 已解决：入口招式仍登记在 `skillConfigs`，后续段用 `moveEdges` 引用，不再受限制（见 11.8） |
 | 8 | `GetSkillConfig` 有 4 个调用点 | `AttackSystem.GetConfig`、`PlayerState`（冷却时长）、`UltimateSystem`（能量）、`QTEController`（QTE 取 Slash 配置） | 换 key 需一并处理；QTE 绕过输入直接取配置 |

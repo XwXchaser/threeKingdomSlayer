@@ -39,8 +39,6 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
     private int _lineIndex;
     private bool _isShowing;
 
-    private bool _pointerPressed;
-
     /// <summary>当前这行台词的**自动推进倒计时**（秒）；&lt;= 0 = 不自动推进。</summary>
     private float _autoAdvanceRemaining;
 
@@ -70,25 +68,33 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
                 return;
             }
         }
-
-        if (!PointerAdvanceEnabled)
-        {
-            _pointerPressed = false;
-            return;
-        }
-
-        if (Input.GetMouseButtonDown(0))
-            _pointerPressed = true;
-        if (Input.GetMouseButtonUp(0) && _pointerPressed)
-        {
-            _pointerPressed = false;
-            Advance();
-        }
     }
 
+    /// <summary>
+    /// 点击推进：**只认明确的目标**（当前台词气泡 / 「继续」按钮）。
+    ///
+    /// 2026-11-05 用户定：「教程不应该点任意处都能继续」。
+    /// 旧实现是一条裸的 <c>Input.GetMouseButton*</c> 路径（不查 UI 命中）→
+    /// 玩家在战场上点敌人（那是**攻击手势**）也会把台词点没了。
+    /// 现在改成：点气泡本体或「继续」按钮才推进；点别处（遮罩 / 战场）什么都不发生。
+    /// </summary>
     public void OnPointerClick(PointerEventData eventData)
     {
+        if (!PointerAdvanceEnabled) return;
+        var go = eventData != null ? eventData.pointerCurrentRaycast.gameObject : null;
+        if (go == null && eventData != null) go = eventData.pointerPressRaycast.gameObject;
+        if (!IsOnActiveBubble(go)) return;
         Advance();
+    }
+
+    /// <summary>点击是否落在当前显示的气泡上（气泡的子物体也算）。</summary>
+    private bool IsOnActiveBubble(GameObject go)
+    {
+        if (go == null) return false;
+        if (_tutorialBubble != null && _tutorialBubble.activeSelf && go.transform.IsChildOf(_tutorialBubble.transform)) return true;
+        if (_playerBubble != null && _playerBubble.activeSelf && go.transform.IsChildOf(_playerBubble.transform)) return true;
+        if (_bossBubble != null && _bossBubble.activeSelf && go.transform.IsChildOf(_bossBubble.transform)) return true;
+        return false;
     }
 
     private void Awake()
@@ -101,8 +107,36 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
         Instance = this;
         _advanceButton.onClick.AddListener(Advance);
         _skipButton.onClick.AddListener(Skip);
+        EnableClickTargets();
         ApplyDialogueLayout();
         Clear();
+    }
+
+    /// <summary>
+    /// **让气泡与「继续」按钮能收到点击**。
+    ///
+    /// 它们的 Graphic 原本都是 <c>raycastTarget = false</c> → 点不到 →
+    /// 推进台词只能靠一条“任意处点击”的裸输入路径（那正是用户要去掉的行为）。
+    /// 现在改成：点气泡本体 / 点「继续」按钮才推进（见 <see cref="OnPointerClick"/>）。
+    /// 在代码里打开，不用改场景资产。
+    /// </summary>
+    private void EnableClickTargets()
+    {
+        EnableRaycast(_tutorialBubble);
+        EnableRaycast(_playerBubble);
+        EnableRaycast(_bossBubble);
+        if (_advanceButton != null && _advanceButton.image != null) _advanceButton.image.raycastTarget = true;
+        if (_skipButton != null && _skipButton.image != null) _skipButton.image.raycastTarget = true;
+    }
+
+    private static void EnableRaycast(GameObject root)
+    {
+        if (root == null) return;
+        var graphics = root.GetComponentsInChildren<UnityEngine.UI.Graphic>(true);
+        for (int i = 0; i < graphics.Length; i++)
+        {
+            if (graphics[i] != null) graphics[i].raycastTarget = true;
+        }
     }
 
     private void ApplyDialogueLayout()
@@ -158,7 +192,6 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
     public void Show(DialogueEventData dialogueEvent, Action onFinished, bool blockClicks = true)
     {
         _lines.Clear();
-        _pointerPressed = false;
         PointerAdvanceEnabled = true;
         _lines.AddRange(dialogueEvent.lines);
         _lineIndex = 0;
@@ -181,7 +214,6 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
     public void Clear()
     {
         _isShowing = false;
-        _pointerPressed = false;
         _autoAdvanceRemaining = 0f;
         _onFinished = null;
         _lines.Clear();

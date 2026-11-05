@@ -29,7 +29,6 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView
     public float fadeOutDuration = 0.15f;
 
     private UpgradeCard[] _cards;
-    private UpgradeCard _selectedCard;
     private Tween _fadeTween;
 
     private void Awake()
@@ -49,13 +48,12 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView
     {
         if (_cards == null)
             _cards = new[] { card1, card2, card3 };
-        _selectedCard = null;
         for (int i = 0; i < _cards.Length; i++)
         {
             if (i < choices.Count && choices[i] != null)
             {
                 _cards[i].gameObject.SetActive(true);
-                _cards[i].Setup(choices[i], OnCardClicked);
+                _cards[i].Setup(choices[i], OnCardHeld);
             }
             else
             {
@@ -65,19 +63,14 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView
         FadeIn();
     }
 
-    private void OnCardClicked(UpgradeCard card)
+    /// <summary>
+    /// **长按确认某张卡**（2026-11-05 用户定：长按选择，而不是点两下）。
+    /// 卡自己按住计时（<see cref="UpgradeCard.holdConfirmSeconds"/>），满了才回调到这里。
+    /// </summary>
+    private void OnCardHeld(UpgradeCard card)
     {
         if (card == null) return;
-        if (_selectedCard == card)
-        {
-            UpgradeChoiceManager.Instance?.ConfirmChoice(card.Definition);
-            return;
-        }
-
-        if (_selectedCard != null)
-            _selectedCard.SetSelected(false);
-        _selectedCard = card;
-        _selectedCard.SetSelected(true);
+        UpgradeChoiceManager.Instance?.ConfirmChoice(card.Definition);
     }
 
     /// <summary>

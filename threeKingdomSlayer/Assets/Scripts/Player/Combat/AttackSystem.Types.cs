@@ -116,6 +116,7 @@ public partial class AttackSystem : MonoBehaviour
             enemy => ActiveSkillRunner.Instance?.ConsumeArmedDisease(enemy) ?? false,
             () =>
             {
+                LastAttackConnected = true;   // 真的打到了（命中取消用）
                 AudioManager.Instance?.PostEvent("Stab_Hit");
                 UltimateSystem.Instance?.AddEnergyForAttack(AttackType.Stab);
                 OnAttackPerformed?.Invoke(AttackType.Stab, columnIndex, true);
@@ -164,6 +165,7 @@ public partial class AttackSystem : MonoBehaviour
             onHit: enemy => hitTargets.Add(enemy),
             onFirstHit: () =>
             {
+                LastAttackConnected = true;   // 真的打到了（命中取消用）
                 AudioManager.Instance?.PostEvent(cfg.slashFeedbackStrength == HitFeedbackStrength.Heavy ? "Slash_HeavyHit" : "Slash_Hit");
                 UltimateSystem.Instance?.AddEnergyForAttack(AttackType.Slash);
                 OnAttackPerformed?.Invoke(AttackType.Slash, -1, leftToRight);

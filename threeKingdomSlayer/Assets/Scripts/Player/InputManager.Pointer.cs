@@ -94,6 +94,9 @@ public partial class InputManager : MonoBehaviour
             lastFramePos = Input.mousePosition;
             lastFrameTime = Time.time;
 
+            // 「按下即出」：按下这一帧就备好一记轻攻击（最多等 pressTapDelay）
+            ArmPressTap(touchStartPos);
+
             // 触发蓄力开始事件
             OnChargeBegan?.Invoke(currentPointerPos);
         }
@@ -102,6 +105,10 @@ public partial class InputManager : MonoBehaviour
         if (isTouching && Input.GetMouseButton(0))
         {
             currentPointerPos = Input.mousePosition;
+            // 「按下即出」：手指漂移超过容差 → 不再自动出轻攻击（判为划动）
+            if (_pressTapPending && pressTapSlop > 0f &&
+                Vector2.Distance(currentPointerPos, _pressTapPos) > pressTapSlop)
+                CancelPressTap();
             TryDetectHoldSwipe(currentPointerPos);
         }
 
@@ -162,6 +169,10 @@ public partial class InputManager : MonoBehaviour
                 if (isTouching)
                 {
                     currentPointerPos = touch.position;
+                    // 「按下即出」：手指漂移超过容差 → 不再自动出轻攻击（判为划动）
+                    if (_pressTapPending && pressTapSlop > 0f &&
+                        Vector2.Distance(touch.position, _pressTapPos) > pressTapSlop)
+                        CancelPressTap();
                     TryDetectHoldSwipe(touch.position);
                 }
                 break;
@@ -254,6 +265,9 @@ public partial class InputManager : MonoBehaviour
         currentPointerPos = touch.position;
         lastFramePos = touch.position;
         lastFrameTime = Time.time;
+
+        // 「按下即出」：按下这一帧就备好一记轻攻击（最多等 pressTapDelay）
+        ArmPressTap(touch.position);
 
         // 触发蓄力开始事件
         OnChargeBegan?.Invoke(currentPointerPos);

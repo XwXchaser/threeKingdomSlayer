@@ -593,7 +593,8 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (!popup.TryGetChoiceScreenPoint(recommended, out var pos)) return;
         DebugLog.Info("[Tutorial] 三选一引导：指向 " + recommended.displayName);
         ChoiceHintActive = true;
-        gestureHint.PlayTapLoop(pos);
+        // 2026-11-05：三选一改成**长按选择** → 提示也必须是“按住”，而不是“点一下”
+        gestureHint.PlayPressHoldLoop(pos);
     }
 
     /// <summary>

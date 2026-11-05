@@ -347,5 +347,13 @@ aiEditMode: inherit
   2. **「波末弹三选一」的架子也已经在了**：`StageRunFlow.OnWaveCleared` 已有「有待处理选择 → 等选完再出下一波」的逻辑，只是升级总是提前把弹窗弹了 → 改造成本比想象低。
   3. **三选一确实是两次点击**：`UpgradeChoicePopup.OnCardClicked` 第一次点只选中、第二次点才确认。
 - **风险提示**：改 #5（三选一时机）与 #1/#3（预输入、窗口提前）都会**改变战斗节奏** → 之前标定的难度表/铁律八要重跑。
+- **2026-11-05 晚：手感改造第一批已落地**（代码已合入，编译 0 error，**待实机验收**）：
+  - **输入缓冲升级**（`PlayerMoveStateMachine`）：有效期 0.25s、跨招式兑现、无匹配边的手势也记、蓄力不进缓冲。
+  - **命中取消**：打中后允许在“伤害窗口结束”处提前接下一招（`hitCancelEnabled`）；命中信号取自 Stab/Slash 的 `onFirstHit` 回调（**不是** `TryExecuteAttack` 的返回值）。
+  - **卡肉对齐**：动作锁与招式时钟现在一起随卡肉冻结（修掉「动作锁先于视觉结束」的错位）。
+  - **三选一改波末弹出** + **结算前先选完**；**三选一改长按选择**（按住 0.35s）。
+  - **教程不再点任意处继续**（同时发现：气泡与「继续」按钮的 `raycastTarget` 原本是 false → 以前根本点不到，只能靠那条裸输入路径）。
+  - **「按下即出」默认关**（`InputManager.pressTapDelay = 0`）：本项目“按住”本身就是蓄力手势，任何小于 0.3s 的按下即出窗口都会把「按住一下再划」拆成“一记轻攻击 + 划动被丢弃”。
+  - 规范与开关表见 `design/action-game-feel-and-input-buffering.md` §0.5；落点与回归重点见 `design/combo-move-state-machine.md` §11.11。
 - **深化方案（当日晚补）**：规范见 **`design/action-game-feel-and-input-buffering.md`**，实施工作包见 **`plan/feel-optimization-work-packages-20261105.md`**（W0~W8）。
 - **第四个已查实的事实**：**当年撤回「按下即出轻攻击」的理由已经消失**。`design/combo-move-state-machine.md` §11.6 写的是「与起手即蓄力冲突」，而 2026-11-05 的 `2234ed95`（中立态彻底不许蓄力）已把那个冲突源删掉 → 轴 1 可以复活，且 `AttackSystem.TryCancelLightAttackStartup()` / `StabSweepEffect.TryCancelBeforeHit()` / `PlayerMoveStateMachine.NotifyExternalReset()` 三个预留接口**都还在、零调用点**。

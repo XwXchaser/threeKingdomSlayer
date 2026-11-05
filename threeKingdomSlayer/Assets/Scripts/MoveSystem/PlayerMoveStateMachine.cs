@@ -29,6 +29,12 @@ public class PlayerMoveStateMachine : MonoBehaviour
     [Header("开关")]
     [Tooltip("输入缓冲：接续窗口尚未打开时提前输入的招式会被记住，窗口打开时执行。仅招式表模式生效")]
     public bool bufferEnabled = true;
+    [Tooltip("输入缓冲的有效期（秒）：超时即丢弃。动作游戏常用 0.2~0.3")]
+    public float bufferLifetime = 0.25f;
+    [Tooltip("缓冲是否跨招式兑现：招式打完回到中立后，缓冲里的输入仍然立刻打出（跨招式预输入）")]
+    public bool bufferCrossMove = true;
+    [Tooltip("命中取消：本次招式打中了 → 允许在「伤害窗口结束」处提前兑现缓冲（空挥不行，走完收尾）")]
+    public bool hitCancelEnabled = true;
     [Tooltip("按住不成时本段先不结束：时钟推进到接续窗口起点就停住，等玩家松手或滑动，避免抬手晚于窗口导致输入被丢（仅对无蓄力后继的连点生效）")]
     public bool holdWaitEnabled = true;
     [Tooltip("无蓄力后继时单次按住最长驻留时间（秒），超过后本段正常收尾，避免连点把收尾段卡住。有蓄力后继的节点不受此上限约束")]
@@ -51,6 +57,8 @@ public class PlayerMoveStateMachine : MonoBehaviour
     private float _hitStopRemaining;
     private bool _hasBuffered;
     private GestureInput _bufferedInput;
+    /// <summary>缓冲写入的时刻（用于有效期判定）</summary>
+    private float _bufferedAt;
     private string _lastResolution = "—";
     private int _executedCount;
     private bool _pointerWasDown;
@@ -135,7 +143,12 @@ public class PlayerMoveStateMachine : MonoBehaviour
 
         UpdatePointerHold();
 
-        if (!_active) return;
+        if (!_active)
+        {
+            // 中立态：兑现缓冲（跨招式预输入 —— 招式打完那一下提前输入的招，在这里立刻打出来）
+            TryExecuteBufferedInNeutral();
+            return;
+        }
 
         if (_duration <= 0f)
         {
@@ -148,14 +161,34 @@ public class PlayerMoveStateMachine : MonoBehaviour
         bool waiting = IsWaitingForHold();
         if (!waiting && !Frozen) _elapsed += Time.deltaTime;
 
-        // 窗口打开后消费缓冲输入
-        if (_hasBuffered && IsInsideWindow(_bufferedInput.gesture, NormalizedTime, _bufferedInput.chargeLevel))
+        // 缓冲过期：超时即丢弃（避免「很久之前按的那一下」突然打出来）
+        if (_hasBuffered && IsBufferExpired())
+        {
+            DropBuffered("缓冲过期");
+        }
+
+        // 窗口打开（或命中取消）后消费缓冲输入
+        if (_hasBuffered && (IsInsideWindow(_bufferedInput.gesture, NormalizedTime, _bufferedInput.chargeLevel)
+                            || CanHitCancelNow()))
         {
             GestureInput pending = _bufferedInput;
+            float pendingAt = _bufferedAt;
             _hasBuffered = false;
-            AttackType ignored;
-            ResolveFromCurrent(pending, out ignored);
-            if (!_active) return;
+            if (CanResolve(pending.gesture, pending.chargeLevel))
+            {
+                AttackType ignored;
+                ResolveFromCurrent(pending, out ignored);
+                if (!_active) return;
+            }
+            else
+            {
+                // 本节点没有这个手势的出路（例如在 Jab1 期间划了一下想接斩击）
+                // → 结束本段，回到中立后按中立入口兑现（跨招式预输入）
+                ExitToNeutral();
+                _bufferedInput = pending;
+                _bufferedAt = pendingAt;
+                _hasBuffered = true;
+            }
         }
 
         if (waiting) return;
@@ -181,9 +214,12 @@ public class PlayerMoveStateMachine : MonoBehaviour
         {
             float t = NormalizedTime;
 
-            // 本节点没有任何出路（无显式边、也不满足默认重复规则）→ 不响应，且不占用缓冲
+            // 本节点没有任何出路（无显式边、也不满足默认重复规则）
+            // → **仍然记进缓冲**（预输入）：等窗口开了、或回到中立再兑现。
+            //   不记的话，玩家在收招期间划的那一下会被静默吃掉（“我明明划了”）。
             if (!CanResolve(input.gesture, input.chargeLevel))
             {
+                if (TryBuffer(input, $"缓冲 {input.gesture}（本节点无出路，等可执行）")) return false;
                 _lastResolution = $"无匹配边 {input.gesture}（不响应）";
                 return false;
             }
@@ -195,19 +231,13 @@ public class PlayerMoveStateMachine : MonoBehaviour
 
             if (t < range.start)
             {
-                if (bufferEnabled)
-                {
-                    _bufferedInput = input;
-                    _hasBuffered = true;
-                    _lastResolution = $"缓冲 {input.gesture}（窗口 {range.start:P0} 未开）";
-                }
-                else
-                {
-                    _lastResolution = $"丢弃 {input.gesture}（窗口未开且缓冲关闭）";
-                }
+                if (TryBuffer(input, $"缓冲 {input.gesture}（窗口 {range.start:P0} 未开）")) return false;
+                _lastResolution = $"丢弃 {input.gesture}（窗口未开且缓冲关闭）";
                 return false;
             }
 
+            // 窗口已关闭（收招阶段）：仍然缓冲 → 招式结束后立即兑现（跨招式预输入）
+            if (TryBuffer(input, $"缓冲 {input.gesture}（窗口已关，等中立兑现）")) return false;
             _lastResolution = $"窗口已关闭 {input.gesture}（不响应）";
             return false;
         }
@@ -229,6 +259,88 @@ public class PlayerMoveStateMachine : MonoBehaviour
         }
 
         return ExecuteMove(root, input, out resolvedType);
+    }
+
+    // ---- 输入缓冲 ----
+
+    /// <summary>
+    /// 记一条缓冲（**只保留最近一条**，新的覆盖旧的）。
+    ///
+    /// **蓄力不进缓冲**：蓄力等级是按「按住时长」实时算的，延迟兑现会失真；
+    /// 而且蓄力的语义就是「手指还按着」，延迟执行等于凭空多一招。
+    /// </summary>
+    private bool TryBuffer(GestureInput input, string reason)
+    {
+        if (!bufferEnabled) return false;
+        if (input.chargeLevel >= 1)
+        {
+            _lastResolution = "蓄力输入不进缓冲";
+            return false;
+        }
+        _bufferedInput = input;
+        _bufferedAt = Time.time;
+        _hasBuffered = true;
+        _lastResolution = reason;
+        return true;
+    }
+
+    /// <summary>缓冲是否已过期（超过有效期即丢弃）。</summary>
+    private bool IsBufferExpired()
+    {
+        if (!_hasBuffered) return false;
+        if (bufferLifetime <= 0f) return true;
+        return Time.time - _bufferedAt > bufferLifetime;
+    }
+
+    private void DropBuffered(string reason)
+    {
+        if (!_hasBuffered) return;
+        _hasBuffered = false;
+        _lastResolution = reason;
+    }
+
+    /// <summary>
+    /// **命中取消**：本次招式打中了 → 允许在「伤害窗口结束」处提前兑现缓冲。
+    ///
+    /// 锚点用招式类型的默认窗口起点（它的定义就是「命中窗口结束时开窗」）；
+    /// 窗口按序列比例 → 攻速变化时自动跟随。
+    /// 空挥不取消 → 空挥走完收尾（让空挥有重量，也避免无脑乱按）。
+    /// </summary>
+    private bool CanHitCancelNow()
+    {
+        if (!hitCancelEnabled) return false;
+        if (attackSystem == null || !attackSystem.LastAttackConnected) return false;
+        if (_currentMove == null) return false;
+        float start, end;
+        MoveTableConfig.GetDefaultWindow(_currentAttackType, out start, out end);
+        return NormalizedTime >= start;
+    }
+
+    /// <summary>
+    /// **中立态兑现缓冲**（跨招式预输入）。
+    ///
+    /// 执行不成（动作锁还没结束等）→ 放回缓冲、保留原时间戳，下一帧重试；
+    /// 超过有效期即丢弃。
+    /// </summary>
+    private void TryExecuteBufferedInNeutral()
+    {
+        if (!_hasBuffered) return;
+        if (IsBufferExpired()) { DropBuffered("缓冲过期"); return; }
+        if (!bufferCrossMove) { DropBuffered("缓冲不跨招式"); return; }
+        // 输入门关着（三选一面板 / QTE / 暂停）→ 不兑现，缓冲先留着
+        if (InputPort != null && !InputPort.GameplayInputEnabled) return;
+
+        var pending = _bufferedInput;
+        float pendingAt = _bufferedAt;
+        _hasBuffered = false;   // 先清，避免重入
+        AttackType ignored;
+        bool executed = SubmitInput(pending, out ignored);
+        if (!executed)
+        {
+            _bufferedInput = pending;
+            _bufferedAt = pendingAt;
+            _hasBuffered = true;
+        }
     }
 
     // ---- 内部实现 ----
@@ -408,6 +520,9 @@ public class PlayerMoveStateMachine : MonoBehaviour
     public void NotifyExternalReset()
     {
         if (InputPort != null) InputPort.ComboChargeActive = false;
+        // 外部撤回（教学拍切换、起手改写）：缓冲里的输入也要作废
+        // —— 否则上一拍没打完的输入会在下一拍突然打出来。
+        _hasBuffered = false;
         ExitToNeutral();
         _lastResolution = "外部撤回：回到中立";
     }
@@ -423,7 +538,9 @@ public class PlayerMoveStateMachine : MonoBehaviour
         _currentMove = null;
         _duration = 0f;
         _elapsed = 0f;
-        _hasBuffered = false;
+        // ⚠️ **不再清空缓冲**：跨招式预输入靠它 ——
+        //    玩家在收招期间按的那一下，要在本段结束后立刻兑现，而不是被丢掉。
+        //    缓冲的有效期由 <see cref="bufferLifetime"/> 控制，过期会在 Update 里丢弃。
     }
 
     private bool IsInsideWindow(MoveGesture gesture, float normalizedTime, int chargeLevel)
@@ -609,7 +726,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
             $"[招式状态机] {(UsesTable ? "招式表模式" : "直通模式")}\n" +
             $"节点: {node}\n" +
             $"阶段: {NormalizedTime:P0}  ({_elapsed:F3}s / {_duration:F3}s)   窗口: {window}   等待: {(_isWaiting ? "是" : "否")}\n" +
-            $"缓冲: {(_hasBuffered ? _bufferedInput.gesture.ToString() : "无")}   卡肉: {_hitStopRemaining:F3}s   蓄力保持: {(_comboChargeHeld ? "是" : "否")}\n" +
+            $"缓冲: {(_hasBuffered ? $"{_bufferedInput.gesture}({Time.time - _bufferedAt:F2}s)" : "无")}   卡肉: {_hitStopRemaining:F3}s   蓄力保持: {(_comboChargeHeld ? "是" : "否")}\n" +
             $"最近: {_lastResolution}   执行数: {_executedCount}";
 
         GUI.Box(new Rect(10f, 10f, 400f, 108f), text);

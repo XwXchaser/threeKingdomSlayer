@@ -154,6 +154,10 @@ public partial class InputManager : MonoBehaviour
         // （姿态自己回落；防御中松手 → 回落 → 走完则收枪）
         if (StanceActive) return;
 
+        // 「按下即出」：抬手时若还有待兑现的轻攻击 → 立刻兑现
+        // （否则会等到 pressTapDelay 才出，或被下面的 hold 闸门吃掉）
+        if (_pressTapPending) CommitPressTap();
+
         bool isSwiped = swipeDistance >= swipeThreshold;
 
         // 手势过路径拆为多个独立 gate，每个 gate 返回 true = 已消耗 / 已处理（stop 后续）。
@@ -225,6 +229,12 @@ public partial class InputManager : MonoBehaviour
         if (CurrentChargeLevel >= 1 && IsChargeAllowed())
         {
             if (!restrictChargedToVertical) { ProcessLongPressGesture(releasePos); return; }
+        }
+        // 「按下即出」已经打过一记轻攻击 → 抬手不再补一记点按（否则一次点击变成两段）
+        if (_pressTapFired)
+        {
+            _pressTapFired = false;
+            return;
         }
         if (isSwiped)
         {
