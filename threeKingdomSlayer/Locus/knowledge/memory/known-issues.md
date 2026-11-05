@@ -288,6 +288,37 @@ aiEditMode: inherit
 - 带旋转动画的手，位置必须**每帧反算**，否则指尖会甩离目标。
 - `localScale` 是**倍率**不是尺寸 → 尺寸和缩放别同时乘（光圈会变成巨物）。
 
+## 13. 教学关退出回主菜单必崩 + 教学状态漏到主菜单/正式关 ✅ 已修复（2026-11-05）
+- **现象**：教学关里点「返回主菜单」（战败面板 / 暂停菜单那个按钮）→ 控制台抛
+  `MissingReferenceException: The object of type 'TutorialGestureHint' has been destroyed`；
+  异常顺着 `OnDisable` 往上冒 → **后半段清理全被跳过** → 教学状态漏到主菜单和正式关。
+- **根因（两层）**：
+  1. **`?.` 用在 `UnityEngine.Object` 上是错的**：`gestureHint?.Hide()` 走的是**引用 null** 判断，
+     而 Unity 的「假 null」（对象已 Destroy、引用还在）它挡不住 → 场景重载时提示层先被销毁，
+     这里照样调用 → 内部 `StopCoroutine` 抛异常。
+  2. **清理是一条没有容错的直线**：`OnDisable` 里「退订 → 收拍 → 清白名单/三选一开关/输入闸门」，
+     任何一步抛异常 → 后面全不跑。而漏掉的全是**活得比场景长**的状态（static）：
+     `TutorialAttackGate` 白名单、`GameplayInputGate.AllowSkillActivationWhileBlocked/Frozen`、
+     `DialogueManager.AllowDialogueWhilePaused`、`Time.timeScale`。
+- **后果（能坏到什么程度）**：
+  - `TutorialAttackGate` 白名单残留 → **正式关里玩家一个招式都放不出**（白名单 = 已教完的招式）。
+  - `Time.timeScale` 残留 0 → **主菜单点不动**（三选一面板开着退出时最典型：面板把时间压成 0）。
+  - `UpgradeChoiceManager.suppressChoices / forcedChoices` 残留 → 正式关的三选一被锁死在教学池。
+- **修复（架构级）**：
+  1. `TutorialGestureHint.StopRoutine / Cancel`：已销毁时不再调 `StopCoroutine`。
+  2. 导演新增 **`ReleaseGlobalTutorialState()`** —— 教学占用过的**全局/静态状态唯一出口**（幂等）。
+  3. `OnDisable` 重排为 **① 回收全局状态 → ② 退订事件 → ③ 收拍**，每步独立 `try/catch`
+     （`SafeStep`）—— **任何一步抛异常都不许挡住后面的步骤**；全局状态排在最前，因为它最危险（static）。
+  4. 导演里所有 `gestureHint?.X()` 改成 Unity 语义判空（`SafeHideGestureHint()` / `if (gestureHint != null)`）。
+  5. `UpgradeChoiceManager` 记录 `_pausedByUs` → `OnDestroy` 时把**自己**暂停的时间还回去。
+- **验证**：教学关跑到「白名单=Stab」→ 中途 `GoToMainMenu()` → 重载后：白名单随路线切换正确放开
+  （切正式关 = `不限制`）、四个 static 开关全 False、timeScale=1；三选一面板开着退出也 timeScale=1；
+  Console 0 error/0 warn。
+- **通用规则（写给下一个改教学的人）**：
+  - **`?.` 不能用在 `UnityEngine.Object` 字段上** —— 要用 `if (obj != null)`（Unity 语义，含假 null）。
+  - **凡是 static / 单例上的状态，退出路径必须有一个「唯一回收口」**，且回收要**幂等 + 分步容错**。
+  - **场景重载时对象销毁顺序不定** → 清理代码不能假设「我引用的对象还活着」。
+
 ## 12. 正式关里常驻引导的手/光圈错位（指尖偏 ~200px）✅ 已修复（2026-11-02）
 - **现象**：正式关里，前排敌人身上的手和光圈对不上（教学关看不出）。
 - **根因**：`AttackTapIndicator` 的**手是 TapHint 根节点的子物体**（根节点已摆在敌人屏幕点上），但代码把手的 `anchoredPosition` 写成了**画布绝对坐标**（`local + 偏移`）→ **位置算了两遍**，指尖落到 `2×目标点`。敌人离画面中心越远偏得越多（教学关敌人居中 → 被掩盖）。

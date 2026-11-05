@@ -427,11 +427,12 @@ using System.Collections;
         public void Cancel()
         {
             // 外部打断时如果正处在引导门槛里，必须把暂停恢复，否则整局卡在 timeScale=0
-            if (_gateActive)
-            {
-                _gateActive = false;
-                if (_gateLoop != null) { StopCoroutine(_gateLoop); _gateLoop = null; }
-                Time.timeScale = _prevTimeScale > 0f ? _prevTimeScale : 1f;
+        if (_gateActive)
+        {
+            _gateActive = false;
+            // 同 StopRoutine：已销毁时不能调 StopCoroutine（场景重载时机）
+            if (_gateLoop != null && this != null) { StopCoroutine(_gateLoop); _gateLoop = null; }
+            Time.timeScale = _prevTimeScale > 0f ? _prevTimeScale : 1f;
                 // 旧实现在这里写 gameplayInputEnabled = true（全局解锁）；现在只释放自己那一份拦截。
                 GameplayInputGate.Release(this);
                 _gateOnPass = null;
@@ -853,10 +854,16 @@ using System.Collections;
             HideLayers();
         }
     
-        private void StopRoutine()
-        {
-            if (_routine != null) { StopCoroutine(_routine); _routine = null; }
-        }
+    private void StopRoutine()
+    {
+        // ⚠️ **场景重载时本组件可能已经被销毁**（教学关退出回主菜单 → Battle 场景整场景重载 →
+        //   提示层先被销毁 → 导演的 OnDisable 再调 Hide()）。
+        //   对已销毁的 MonoBehaviour 调 StopCoroutine 会抛 MissingReferenceException →
+        //   异常顺着 OnDisable 往上冒 → 后面的清理全被跳过 → 教学状态漏到主菜单 / 正式关。
+        //   `this == null` 用的是 Unity 的「假 null」语义（已销毁也为 true）。
+        if (this == null) return;
+        if (_routine != null) { StopCoroutine(_routine); _routine = null; }
+    }
     
         private void HideLayers()
         {

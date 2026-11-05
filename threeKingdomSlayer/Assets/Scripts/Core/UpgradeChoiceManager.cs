@@ -58,6 +58,8 @@ public class UpgradeChoiceManager : MonoBehaviour
 
     // ── 运行时状态 ──
     private bool _isChoosing;
+    /// <summary>「这次的 timeScale=0 是我干的」→ 销毁时要把时间还回去（否则重载后的场景被冻住）。</summary>
+    private bool _pausedByUs;
     private int _pendingLevelUps;
     private int _pendingItemChoices;
     private bool _isShowingItemChoice;
@@ -150,6 +152,12 @@ public class UpgradeChoiceManager : MonoBehaviour
     {
         if (Instance == this)
             Instance = null;
+        // ⚠️ **面板开着的时候退出会话**（教学关退出回主菜单 → Battle 场景整场景重载）
+        //   → 这里 timeScale 还是 0（是本组件自己暂停的）→ **重载后的主菜单被冻住**、点不动。
+        //   本组件把游戏暂停了，就得负责在销毁时把时间还回去。
+        //   只还「自己暂停的那一次」→ 别人的暂停（教学的冻结等）不归我管。
+        if (_pausedByUs) Time.timeScale = 1f;
+        _pausedByUs = false;
     }
 
     // ── 扩展点注册 ──
@@ -242,7 +250,10 @@ public class UpgradeChoiceManager : MonoBehaviour
 
         _isChoosing = true;
         if (pauseGameDuringChoice)
+        {
             Time.timeScale = 0f;
+            _pausedByUs = true;   // 记住「这次暂停是我干的」→ 销毁时要还回去
+        }
         ShowNextChoice();
     }
 
@@ -418,6 +429,7 @@ public class UpgradeChoiceManager : MonoBehaviour
         if (pauseGameDuringChoice && !(CombatPresenters.ItemDiscard != null && CombatPresenters.ItemDiscard.IsShowing))
         {
             Time.timeScale = 1f;
+            _pausedByUs = false;
             if (PlayerInputHub.Current != null)
                 PlayerInputHub.Current.BlockInputForFrames(2);
         }

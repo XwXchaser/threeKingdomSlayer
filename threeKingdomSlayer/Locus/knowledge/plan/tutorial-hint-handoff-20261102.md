@@ -496,3 +496,57 @@ WAIT-C 敌人=Enemy_1012(Clone)/Attacking 抡招=True C技=True 剩余=1.49s 阈
 - 本条线所有改动**未提交**；`Battle.scene` 也被改过（`tapPressAngle` 8、组件字段）。
 - 自动化跑测会改存档：跑前备份 `player_save`（`Library/Locus/tmp/player_save_backup.txt`），跑完还原（本轮已还原）。
 - 驱动 `TutorialFlowDriver` 的约定：技能拍期间不出招、只在冻结时放技能；重跑教学必须**退出再进 Play Mode**。
+
+---
+
+## 14. 第十二轮（2026-11-05）：「拍弹出」修复 + **退出教学关回主菜单的架构补漏**
+
+> 用户反馈：「有报错」→ `MissingReferenceException: TutorialGestureHint has been destroyed`。
+> 用户判断：「似乎没有考虑到教程时退出返回主菜单的问题，架构考虑的不周到」→ 本节记录那半边架构。
+
+### 14.1 本轮做的两件事
+
+| # | 事项 | 结果 |
+|---|---|---|
+| **A** | **「用技能打断」这一拍一句台词都没有** | ✅ 新增 `TutorialGestureStep.freezeDialogue`（**冻结瞬间**的台词，与冻结时的手势示范同时上屏）；`afterDialogue` 改到 `EndBeat()` 统一播（每一拍都能播）；冻结时临时开 `DialogueManager.AllowDialogueWhilePaused`（`timeScale=0` 时对话层会拦队列）；台词在播时不再挡技能槽点击 |
+| **B** | **退出教学关回主菜单必崩 + 状态泄漏** | ✅ 见 §14.2 / §14.3 |
+
+### 14.2 根因（两层，都不是「少写一行」）
+
+1. **`?.` 用在 `UnityEngine.Object` 上是错的**：`gestureHint?.Hide()` 走**引用 null** 判断，
+   而 Unity 的「假 null」（对象已 Destroy、引用还在）挡不住 → `LoadScene` 重载时提示层先被销毁 →
+   照样调 → 内部 `StopCoroutine` 抛异常。
+   → **凡是 Unity 对象都要用 `if (obj != null)`**（Unity 语义）或专门的 safe 方法。
+2. **清理是一条没有容错的直线**：`OnDisable` 里「退订 → 收拍 → 清白名单/三选一开关/输入闸门」，
+   任何一步抛异常 → 后面全不跑。而漏掉的全是**活得比场景长**的状态（static / 全局）：
+   - `TutorialAttackGate` 白名单 → **正式关里玩家一个招式都放不出**（白名单 = 已教完的招式）
+   - `GameplayInputGate.AllowSkillActivationWhileBlocked / ...WhileFrozen`（static）
+   - `DialogueManager.AllowDialogueWhilePaused`（static）
+   - `Time.timeScale` → 三选一面板开着退出时残留 0 → **主菜单点不动**
+   - `UpgradeChoiceManager.suppressChoices / forcedChoices` → 正式关的三选一被锁死在教学池
+
+### 14.3 修法（架构级）
+
+- 导演新增 **`ReleaseGlobalTutorialState()`** —— 教学占用过的**全局/静态状态唯一出口**（幂等）。
+- `OnDisable` 重排为 **① 回收全局状态 → ② 退订事件 → ③ 收拍**，每步独立 `try/catch`（`SafeStep`）：
+  **任何一步抛异常都不许挡住后面的步骤**；全局状态排在最前，因为它最危险（static）。
+- `TutorialGestureHint.StopRoutine / Cancel`：已销毁时不再调 `StopCoroutine`。
+- `UpgradeChoiceManager`：记 `_pausedByUs` → `OnDestroy` 把**自己**暂停的时间还回去。
+
+### 14.4 验证口径（Play Mode 实跑）
+
+| 场景 | 期望 | 实测 |
+|---|---|---|
+| 教学关跑通 | 全流程 + 冻结台词上屏 | ✅ 台词顺序全对，冻结瞬间气泡出「用技能打断它——点下面的技能图标！」 |
+| 跑到「白名单=Stab」→ 中途回主菜单 | 白名单/开关/timeScale 全干净 | ✅ 白名单随路线切换正确放开（切正式关 = `不限制`），四个 static 开关全 False，timeScale=1 |
+| **三选一面板开着**回主菜单 | 主菜单不被冻住 | ✅ timeScale=1 |
+| Console | 0 error | ✅ 0 error / 0 warn |
+
+### 14.5 写给下一个人的三条
+
+1. **`?.` 不能用在 `UnityEngine.Object` 上**（含「已 Destroy 但引用还在」的假 null）。
+2. **凡是 static / 单例上的状态，退出路径必须有一个「唯一回收口」**，回收要**幂等 + 分步容错**。
+3. **场景重载时对象销毁顺序不定** → 清理代码不能假设「我引用的对象还活着」。
+
+> 细节与完整根因见 `memory/known-issues.md` 第 13 条。
+

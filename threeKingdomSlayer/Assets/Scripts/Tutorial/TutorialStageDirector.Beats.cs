@@ -736,7 +736,7 @@ public partial class TutorialStageDirector : MonoBehaviour
                     if (input != null) input.allowInputWhileTimeFrozen = true;
 
                     // 提示手落在技能槽上（循环点）；定位不到槽位就不画手势（教学本身仍然进行）
-                    if (gestureOnSlot) gestureHint?.PlayTapLoop(slotPos);
+                    if (gestureOnSlot && gestureHint != null) gestureHint.PlayTapLoop(slotPos);
                     freezeHappened = true;
                     SkillBeatProbe("③ 已冻结：敌人抬起到顶（" + (cAttack ? "C技" : "普通招") + "）→ 点技能槽打断它", target);
                     DebugLog.Info("[Tutorial] 技能打断拍：敌人抬手完成（剩余 " + toAttackEnd.ToString("F2")

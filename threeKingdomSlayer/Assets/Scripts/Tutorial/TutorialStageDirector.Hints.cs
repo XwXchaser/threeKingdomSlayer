@@ -124,15 +124,15 @@ public partial class TutorialStageDirector : MonoBehaviour
         float playSeconds = step.playSeconds > 0f ? step.playSeconds : 1.1f;
         while (_routeHintActive)
         {
-            gestureHint?.PlayTap(pos);
+            if (gestureHint != null) gestureHint.PlayTap(pos);
             yield return new WaitForSecondsRealtime(playSeconds);
             if (!_routeHintActive) break;
-            gestureHint?.Hide();
+            SafeHideGestureHint();
             if (step.gap > 0f) yield return new WaitForSecondsRealtime(step.gap);
             if (TryGetRouteChoiceScreenPosition(out var latest)) pos = latest;
         }
 
-        gestureHint?.Hide();
+        SafeHideGestureHint();
         _routeHintActive = false;
         _routeHintRoutine = null;
         _hintRoutine = null;
@@ -431,7 +431,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (changed && enemy == null)
         {
             Debug.Log("[Tutorial] 教学目标已无 → 收掉手势提示层");
-            gestureHint?.Hide();
+            SafeHideGestureHint();
         }
         return changed;
     }
@@ -510,7 +510,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         }
         SetEnemiesHold(false);
         SetSceneDim(false);
-        gestureHint?.Hide();
+        SafeHideGestureHint();
         // 做完立刻收掉台词：玩家要能马上看清自己打出了什么
         var view = ResolveDialogueView();
         if (view != null && view.IsShowing) view.Skip();

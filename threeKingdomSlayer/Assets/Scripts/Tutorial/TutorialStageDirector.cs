@@ -165,6 +165,66 @@ public partial class TutorialStageDirector : MonoBehaviour
     {
         // 【诊断】导演被禁用 → 教学拍会被收掉；把调用方写进日志
         Debug.LogWarning("[Tutorial] OnDisable：教学导演被禁用 → 收拍\n" + System.Environment.StackTrace);
+
+        // ⚠️ **顺序很重要**：先回收全局/静态状态，最后才收拍。
+        //   收拍会碰场景对象（提示层 / 对话层）—— 场景重载时它们可能**已经被销毁**，
+        //   一旦抛异常，后面的清理就全被跳过 → 全局状态漏到主菜单 / 正式关。
+        //   （2026-11-05 实测：教学关退出回主菜单 → Battle 场景整场景重载 →
+        //     提示层先被销毁 → EndBeat → gestureHint.Hide() → MissingReferenceException →
+        //     OnDisable 后半段（招式白名单 / 三选一开关 / 输入闸门）全没跑。）
+        SafeStep("回收全局状态", ReleaseGlobalTutorialState);
+        SafeStep("退订事件", UnsubscribeEvents);
+        SafeStep("收拍", StopHint);
+    }
+
+    /// <summary>
+    /// **教学占用过的全局 / 静态状态** —— 全部在这里回收（**唯一出口**）。
+    ///
+    /// 为什么必须集中成一处：
+    ///   这些状态**活得比场景长**（static / 单例），漏回收就会跟着玩家进主菜单和正式关：
+    ///   • <see cref="TutorialAttackGate"/>（static 白名单）→ 正式关里玩家放不出没教过的招式
+    ///   • <c>GameplayInputGate.AllowSkillActivationWhileBlocked</c> / <c>...WhileFrozen</c>（static）
+    ///   • <c>DialogueManager.AllowDialogueWhilePaused</c>（static）
+    ///   • <c>InputManager.tutorialGestureTarget</c> / <c>allowInputWhileTimeFrozen</c>
+    ///   • <c>Time.timeScale</c>（冻结态 / 登场台词暂停态退出时可能还是 0 → 主菜单被冻住）
+    ///
+    /// 幂等：可重复调用（OnDisable 与 OnDestroy 都会调）。
+    /// </summary>
+    private void ReleaseGlobalTutorialState()
+    {
+        // ① 招式白名单（static）—— 不清的话正式关里玩家放不出没教过的招式
+        TutorialAttackGate.Clear();
+        _attackGateOn = false;
+        _taughtAttacks.Clear();
+
+        // ② 技能拍 / 冻结 / 对话层的 static 开关
+        ResetSkillBeatFlags();
+
+        // ③ 输入闸门（手势过滤 + 冻结时仍吃输入）
+        var input = InputManager.Instance;
+        if (input != null)
+        {
+            input.tutorialGestureTarget = TutorialGestureTarget.None;
+            input.allowInputWhileTimeFrozen = false;
+        }
+
+        // ④ 教学专用的三选一开关（强制池）
+        var choices = UpgradeChoiceManager.Instance;
+        if (choices != null)
+        {
+            choices.suppressChoices = false;
+            choices.forcedChoices.Clear();
+        }
+
+        // ⑤ 时间缩放：**只恢复自己冻的**（别人的暂停不归我管）
+        if (_frozenByTutorial || _introPaused) Time.timeScale = 1f;
+        _frozenByTutorial = false;
+        _introPaused = false;
+    }
+
+    /// <summary>退订（可重复调用，重复退订无害）。</summary>
+    private void UnsubscribeEvents()
+    {
         if (_waveSpawner != null) _waveSpawner.OnWaveStarted -= OnWaveStarted;
         var choiceMgr = UpgradeChoiceManager.Instance;
         if (choiceMgr != null)
@@ -173,18 +233,37 @@ public partial class TutorialStageDirector : MonoBehaviour
             choiceMgr.OnChoiceSelected -= OnChoiceSelected;
         }
         if (_stageState != null) _stageState.StageVictory -= OnStageVictory;
-        StopHint();
-        // 教学结束：招式白名单必须放开（否则玩家进正式关仍然放不出招）
-        _attackGateOn = false;
-        _taughtAttacks.Clear();
-        TutorialAttackGate.Clear();
-        var input = InputManager.Instance;
-        if (input != null) { input.allowInputWhileTimeFrozen = false; }
-        if (UpgradeChoiceManager.Instance != null)
+    }
+
+    /// <summary>
+    /// 清理步骤包一层 try/catch：**任何一步抛异常都不能挡住后面的步骤**。
+    /// 清理的职责就是「把状态还回去」—— 一步失败就意味着有状态漏了，
+    /// 而漏掉的状态会跟着玩家进主菜单 / 正式关（比报错更难查）。
+    /// </summary>
+    private static void SafeStep(string label, System.Action action)
+    {
+        try { action(); }
+        catch (System.Exception e)
         {
-            UpgradeChoiceManager.Instance.suppressChoices = false;
-            UpgradeChoiceManager.Instance.forcedChoices.Clear();
+            Debug.LogError("[Tutorial] 清理步骤失败（" + label + "）：" + e);
         }
+    }
+
+    /// <summary>
+    /// 安全地收起手势提示层。
+    ///
+    /// ⚠️ **不能用 <c>gestureHint?.Hide()</c>**：<c>?.</c> 做的是**引用 null** 判断，
+    /// 而 Unity 的「假 null」（对象已被 Destroy、引用还在）它挡不住 →
+    /// 场景重载时提示层先被销毁，这里照样调用 → 内部 <c>StopCoroutine</c> 抛
+    /// MissingReferenceException → 异常顺着 OnDisable 往上冒 → 后面的清理全被跳过
+    /// （2026-11-05 实测：教学关退出回主菜单时必崩）。
+    /// </summary>
+    private void SafeHideGestureHint()
+    {
+        // Unity 语义：对象已销毁时 `== null` 为 true
+        if (gestureHint == null) return;
+        try { gestureHint.Hide(); }
+        catch (System.Exception e) { Debug.LogError("[Tutorial] 收起手势提示层失败：" + e.Message); }
     }
 
     /// <summary>
@@ -324,7 +403,7 @@ public partial class TutorialStageDirector : MonoBehaviour
             if (choiceMgr == null || !choiceMgr.IsChoosing)
             {
                 ChoiceHintActive = false;
-                gestureHint?.Hide();
+                SafeHideGestureHint();
             }
         }
         // ⚠️ ② 必须排除「**正在进行的教学拍**」（2026-11-04）：
@@ -461,7 +540,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         DebugLog.Info("[Tutorial] 玩家选中技能：" + selected.displayName);
         // 选完了 → 收掉指着卡片的提示手
         ChoiceHintActive = false;
-        gestureHint?.Hide();
+        SafeHideGestureHint();
         DialogueManager.AllowDialogueWhilePaused = false;
         // 三选1 → 内容2 技能拍 之间**锁住防御键**：
         // 否则玩家在这个空档按下防御 → 长枪举起来（又收不回），同时技能键被输入拦截点不动。
