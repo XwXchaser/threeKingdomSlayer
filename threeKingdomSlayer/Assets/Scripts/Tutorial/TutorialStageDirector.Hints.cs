@@ -196,6 +196,15 @@ public partial class TutorialStageDirector : MonoBehaviour
             Debug.Log($"[Tutorial] 教学条件满足，等待 {waited:F1} 秒");
         }
 
+        // ⚠️ **防御键从这一刻就静音**（2026-11-05 修）：
+        //   这一拍需要玩家出招 → 防御键一旦被按下就会抢走持枪姿态 →
+        //   `AttackSystem` 的硬闸「防御中，不能出招」会把这一记招打不出来 → 这一拍永远收不了。
+        //   旧实现是**开拍那一刻**才静音 → 前面这段（等条件 + 台词弹出 + 等敌人收招，最长几秒）
+        //   是**没静音的空窗**：玩家在这段里按了防御键 → 开拍时虽然把枪收回去了，
+        //   但玩家的第一下点击已经错位 → 表现为「点了没反应、这一拍过不去」。
+        //   → 静音提前到「条件满足」这一刻；拍结束/被打断时统一恢复（见 Hints.cs 的收拍路径）。
+        if (BeatNeedsAttack(step.kind)) SetDefenseMuteBeat(true);
+
         // 敌人站定后才推台词：此时台词和手势引导一起出现，玩家看得见该做什么
         BattleDialogueView view = null;
         // 台词来源：**波次台词**（教学关）或 **这一拍自带的 beforeDialogue**（招式解锁引导的一行文字）
@@ -221,6 +230,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (gestureHint == null || target == TutorialGestureTarget.None)
         {
             Debug.Log($"[Tutorial] 手势拍无法开始：hint={(gestureHint != null)} target={target}");
+            SetDefenseMuteBeat(false);      // 拍没开成 → 防御键静音要收回（否则永久静音）
             _hintRoutine = null;
             yield break;
         }
@@ -229,6 +239,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (_stageState != null && !_stageState.IsStageInProgress)
         {
             Debug.Log("[Tutorial] 舞台已结束，取消手势拍");
+            SetDefenseMuteBeat(false);
             _hintRoutine = null;
             yield break;
         }

@@ -366,5 +366,16 @@ aiEditMode: inherit
   节点没有可用蓄力后继时**清掉** `comboChargeActive`；中立态**不执行 Hold 手势**。
 - **实测**：Unity 内核实 `Zhangfei_StabR2` 确实被 `talent_move_stabc2` 锁住、`Zhangfei_Jab1.HasChargeContinuation()=true`（旧逻辑必然进蓄力）、`HasUsableChargeContinuation=false`（新逻辑不进）。
 - **详见** `design/combo-move-state-machine.md` §18.1（第五条共享输入规则）。
+
+## 22. 【已修 2026-11-05】教学需要出招的拍：防御键没提前锁 → 这一拍过不去
+- **现象**：正式关的「招式解锁引导拍」（ComboCharge / 指向突刺）里，防御键在该锁的时候没锁 →
+  玩家第一下点击错位 → 「点了没反应、无法继续」。
+- **日志证据**（Editor.log）：`[Defend] 防御 开启` 出现在「教学条件满足」之后、「手势拍开始」之前。
+- **根因**：① 防御键静音只在**开拍那一刻**生效 → 前面「等条件 + 台词 + 等敌人收招」是**没静音的空窗**；
+  ② 静音态的防御键**仍然吃射线** → 玩家点在那一块 → 这一点被按钮吞掉 → 招式永远打不出来。
+- **修法**：静音提前到「教学条件满足」那一刻（拍开不成/舞台结束时收回）；
+  `DefenseButton.SetMuted(muted, swallowClicks)` —— 需要出招的拍**不吃射线**，三选一面板那段仍吃。
+- **顺带**：`AttackSystem` 的两条静默丢弃路径（动作锁未结束 / 戳击视觉门未过）现在会打日志 → “我点了它没动”可查。
+- **详见** `plan/bugs-and-requests.md` BUG-009。
 - **深化方案（当日晚补）**：规范见 **`design/action-game-feel-and-input-buffering.md`**，实施工作包见 **`plan/feel-optimization-work-packages-20261105.md`**（W0~W8）。
 - **第四个已查实的事实**：**当年撤回「按下即出轻攻击」的理由已经消失**。`design/combo-move-state-machine.md` §11.6 写的是「与起手即蓄力冲突」，而 2026-11-05 的 `2234ed95`（中立态彻底不许蓄力）已把那个冲突源删掉 → 轴 1 可以复活，且 `AttackSystem.TryCancelLightAttackStartup()` / `StabSweepEffect.TryCancelBeforeHit()` / `PlayerMoveStateMachine.NotifyExternalReset()` 三个预留接口**都还在、零调用点**。

@@ -625,7 +625,11 @@ public partial class TutorialStageDirector : MonoBehaviour
     {
         var button = DefenseButton.Instance;
         bool muted = _defenseMutedByChoice || _defenseMutedByBeat;
-        if (button != null) button.SetMuted(muted);
+        // **需要出招的教学拍**：静音但**不吃射线** → 玩家点在防御键那一块也能出招
+        //   （否则这一点被按钮吞掉 → 招式打不出来 → 这一拍永远收不了）。
+        // **三选一面板那段**：仍然吃射线（玩家点防御键不该顺手打出一记攻击）。
+        bool swallowClicks = !_defenseMutedByBeat || _defenseMutedByChoice;
+        if (button != null) button.SetMuted(muted, swallowClicks);
         if (muted)
         {
             var ps0 = PlayerState.Instance;

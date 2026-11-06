@@ -461,7 +461,11 @@ public partial class AttackSystem : MonoBehaviour
         }
 
         if (!cancelCurrentMove && attackType == AttackType.Stab && _stabVisualTimer > 0f)
+        {
+            // ⚠️ 之前是**静默丢弃** → 玩家看到“我点了没反应”，日志里又什么都查不到（2026-11-05 加日志）
+            Debug.Log($"[AttackSystem] 戳击视觉门未过（剩 {_stabVisualTimer:F2}s）→ 本次输入被丢弃");
             return false;
+        }
 
         // 冷却检查：新模式（动作锁定）→ 全局锁；旧模式 → 独立技能CD
         if (attackType == AttackType.Slash)
@@ -469,7 +473,12 @@ public partial class AttackSystem : MonoBehaviour
 
         if (useActionBasedCooldown)
         {
-            if (!cancelCurrentMove && _actionLockTimer > 0f) return false;
+            if (!cancelCurrentMove && _actionLockTimer > 0f)
+            {
+                // ⚠️ 之前是**静默丢弃** → “我点了它没动”的头号嫌疑人，日志里查不到（2026-11-05 加日志）
+                Debug.Log($"[AttackSystem] 动作锁未结束（剩 {_actionLockTimer:F2}s）→ 本次输入被丢弃");
+                return false;
+            }
         }
         else
         {

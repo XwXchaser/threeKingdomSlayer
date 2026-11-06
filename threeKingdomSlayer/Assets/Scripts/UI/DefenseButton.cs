@@ -61,6 +61,8 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
     /// **不会漏成游戏手势**（否则玩家按“防御”反而打出一招）。
     /// </summary>
     private bool _muted;
+    /// <summary>静音时是否仍然吃射线（吞掉这一下点击，不让它漏成游戏手势）。</summary>
+    private bool _swallowClicks = true;
 
     /// <summary>当前是否处于「暂时静音」（压暗、按了没反应）。</summary>
     public bool Muted => _muted;
@@ -105,10 +107,18 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
     /// **暂时静音**：可见但压暗，按下去既不防御也不出招（2026-11-05 用户定）。
     /// 与 <see cref="SetAvailable"/> 独立 → 静音的恢复**不依赖**「教到格挡没有」那套逻辑。
     /// </summary>
-    public void SetMuted(bool muted)
+    /// <param name="muted">是否静音（压暗可见但不生效）。</param>
+    /// <param name="swallowClicks">
+    /// 静音时**是否仍然吃射线**（把这一下点击吞掉，不让它漏成游戏手势）。
+    ///   • <c>true</c>：三选一面板那段 —— 玩家点防御键不该顺手打出一记攻击；
+    ///   • <c>false</c>：**需要出招的教学拍** —— 否则玩家点在该区域 → 这一点被按钮吞掉 →
+    ///     招式永远打不出来 → 这一拍收不了（2026-11-05 用户反馈「输入出错无法继续」）。
+    /// </param>
+    public void SetMuted(bool muted, bool swallowClicks = true)
     {
-        if (_muted == muted) return;
+        if (_muted == muted && _swallowClicks == swallowClicks) return;
         _muted = muted;
+        _swallowClicks = swallowClicks;
         ApplyAvailability();
         if (_muted) Release();   // 静音的瞬间把可能举着的枪收回去
     }
@@ -126,10 +136,12 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
             }
             else if (_muted)
             {
-                // 静音：**压暗但可见**；**仍然吃射线** → 这一下被按钮吞掉，不会漏成游戏手势
+                // 静音：**压暗但可见**；按不下去（interactable=false → 不派发事件 → 不会触发防御）。
+                // **是否吃射线由调用方决定**（见 SetMuted 的参数说明）：
+                //   需要出招的教学拍 → 不吃（玩家点在这一块仍然能出招，否则这一拍收不了）。
                 _canvasGroup.alpha = 0.35f;
-                _canvasGroup.blocksRaycasts = true;
-                _canvasGroup.interactable = false;   // 不派发事件 → 不会触发防御
+                _canvasGroup.blocksRaycasts = _swallowClicks;
+                _canvasGroup.interactable = false;
             }
             else
             {
