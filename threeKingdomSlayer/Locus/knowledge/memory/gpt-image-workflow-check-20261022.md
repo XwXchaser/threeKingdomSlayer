@@ -15,7 +15,7 @@ aiEditMode: inherit
 | 项目 | 结果 |
 | --- | --- |
 | `MUSK_API_KEY` | Locus 进程环境内存在（长度 51）；**Windows 用户级环境变量里没有**，新开的终端不会自动继承，需要 `setx` 才持久 |
-| `GET /v1/models` | HTTP 200；图像模型只有 `gpt-image-2.5-sunburst`（`gpt-image-2.5-flare` 不在列表，与历史 403 一致） |
+| `GET /v1/models` | HTTP 200；图像模型只有 `gpt-image-2.5-sunburst`（`gpt-image-2.5-flare` 不在列表，与历史 403 一致）**（2026-10-22 快照；2026-11-06 复检后 2.5 与 2.6 同时可用，见文末）** |
 | 文生图 `/v1/images/generations` | HTTP 200，122.46s，1024×1024 PNG（Color Type 2 RGB，1,276,445 bytes），画面符合 prompt |
 | 图生图 `/v1/images/edits` | HTTP 200，123.68s，multipart `image[]` 正常，1024×1024 PNG（**Color Type 6 RGBA**，1,166,889 bytes） |
 
@@ -41,3 +41,43 @@ aiEditMode: inherit
 ## 体检脚本
 
 本次临时脚本：`Library/Locus/tmp/image_workflow_check/gpt_image_call.py`（t2i / i2i 两种模式，自动保存请求 JSON、响应 JSON、图片并输出 PNG 签名 / IHDR / Alpha 统计）。`Library/` 会被 Unity 清理，只作为临时工具；可复用的是它的请求结构（multipart 字段名必须是 `image[]`）和验收步骤。
+
+## 2026-11-06 复检：2.6 与 2.5 同时可用，**默认用 2.5**
+
+中转站在 2026-11-06 一天内来回切过两次路由（下午先只开 2.6，几十分钟后又把 2.5 开回来）。当前 `GET /v1/models` 共 8 个模型，图像模型两个都在：
+
+`gpt-image-2.5-sunburst`、`gpt-image-2.6-sunburst`
+
+**选型结论：默认用 `gpt-image-2.5-sunburst`**（2.6 保留作备选）。理由是实测 2.5 明显更便宜：同一 prompt / 同一 `size=1024x1024` / 同一 `quality=high`，2.5 的 image token 为 **1756**，2.6 为 **7024**，约差 4 倍。
+
+### 探测矩阵（2026-11-06 15:40 前后）
+
+| 探测 | 结果 |
+| --- | --- |
+| `GET /v1/models` | HTTP 200；`gpt-image-2.5-sunburst` + `gpt-image-2.6-sunburst` 同时在列表 |
+| `GET /v1/models/{id}` | 该子端点未实现，对列表内模型也回 `model_not_found`，**不可用作探针** |
+| `POST /v1/images/generations`，model=`gpt-image-2.5-sunburst` | 模型校验通过；空 prompt + `size=1x1` 探针得到 HTTP 400 参数错 |
+| `POST /v1/images/generations`，model=`gpt-image-2.6-sunburst` | 同上，HTTP 400 参数错 |
+| `POST /v1/images/generations`，model=`gpt-image-2.6` | HTTP 403 `This token has no access to model gpt-image-2.6` |
+| `POST /v1/images/generations`，model=`gpt-image-2.5` | HTTP 403 `This token has no access to model gpt-image-2.5` |
+| `POST /v1/images/generations`，model=`gpt-image-2.6-fake-xyz` | HTTP 403（403 假名基线） |
+| 真实文生图 `gpt-image-2.5-sunburst` | HTTP 200，47.06s，1024×1024 PNG（Color Type 2 RGB，884,878 bytes），画面符合 prompt；usage total 1769 |
+| 真实文生图 `gpt-image-2.6-sunburst` | HTTP 200，1024×1024 PNG（828,295 bytes）；usage total 7037 |
+
+两条硬结论：
+
+1. **不带后缀的写法（`gpt-image-2.5` / `gpt-image-2.6`）一律不可用**，403 与假名完全同型。模型名必须带 `-sunburst` 后缀。
+2. **中转站会当天反复开关模型**，不要根据上一次结果写死。上批量生图前先跑一次零成本探针（下面的 400/403 判别法），再用真实模型名。
+
+### 零成本探针写法（可复用）
+
+对 `/v1/images/generations` 发一个 `prompt=""` + `size="1x1"` 的请求：
+
+- 令牌无权访问的模型 → **403 muskapis_error**（"This token has no access to model ..."）
+- 模型有权但参数非法 → **400 invalid_request**（"请求参数有误或模型不可用"）
+
+两种情况都在真正生成前失败，**不产生计费**。配合 `GET /v1/models` 就能确定当下该用哪个模型名。
+
+### 影响面
+
+仓库里 84 个写死模型名的 Python 脚本已统一为 `gpt-image-2.5-sunburst`（多数在 `Library/Locus/tmp/`，一份在 `_art_process/Authoring/talent_ui/scripts/`，后者内容与 HEAD 一致、git 状态干净），全部通过 `py_compile`。历史记录类文件（`request-spec.json` / `production_record.json` / 交接 md）**保持原样不改**，它们记录的是当时真实发出的请求。
