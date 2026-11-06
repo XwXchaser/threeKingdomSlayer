@@ -88,6 +88,7 @@ summary: 本周 todolist · 交互与手感（2026-11-05 起，用户定优先�
 
 | # | 事项 | 依赖 / 备注 |
 |---|---|---|
+| 0 | **【下一步】教程开场流程重做** | 用户 2026-11-05 定：**暂停 + 第一段字幕（零交互，仅暂停键可用）→ 「点击继续」→ 第二段字幕 → 正式教学**。方案与落点见 **`plan/tutorial-intro-flow-redesign-20261105.md`**（含 6 个待拍板决策点 + 验收清单） |
 | 1 | **实机验收 2.2 + 2.3 的全部改动** | 手感无法自动化；下面是验收清单（§2.5） |
 | 2 | **难度表 / 铁律八重标** | 节奏变快了 → `Tools/analyze_level_telemetry.py` + `Tools/build_first_level_difficulty_table.py` + `design/stage-configuration.md` §5.6.1 |
 | 3 | **缓冲的可见反馈**（"我按下的那一下被记住了"） | 需要一点美术；可复用现有指示器，不一定要新素材 |
@@ -121,6 +122,7 @@ summary: 本周 todolist · 交互与手感（2026-11-05 起，用户定优先�
 | `design/combo-move-state-machine.md` | 招式系统权威口径：**§11.11** 手感改造落点与回归重点、**§18.1** 第五条共享输入规则（蓄力必须有可用后继） |
 | `plan/feel-optimization-work-packages-20261105.md` | W0~W8 工作包（状态列） |
 | `plan/input-and-choice-ux-feedback-20261105.md` | 5 条反馈的逐条根因分析 |
-| `plan/bugs-and-requests.md` | BUG / REQ 滚动登记（BUG-009 防御键、REQ-003 手感反馈） |
+| `plan/bugs-and-requests.md` | BUG / REQ 滚动登记（BUG-009 防御键、BUG-010 未解锁 C2 的蓄力、REQ-003 手感反馈、**REQ-004 教程开场流程重做**） |
+| **`plan/tutorial-intro-flow-redesign-20261105.md`** | **【下一步】教程开场流程重做：暂停 + 第一段字幕 → 点击继续 → 第二段字幕 → 正式教学** |
 | `memory/known-issues.md` | §20 手感反馈、§21 未解锁 C2 的蓄力 |
 | `plan/level-config-handoff-20261105.md` | P0：关卡编成与铁律 |
