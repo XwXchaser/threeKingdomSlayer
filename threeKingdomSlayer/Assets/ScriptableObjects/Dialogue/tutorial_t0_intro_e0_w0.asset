@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d61051663ed0dc4f8f4e19c8ae32432, type: 3}
+  m_Name: tutorial_t0_intro_e0_w0
+  m_EditorClassIdentifier: 
+  eventId: tutorial_t0_intro_e0_w0
+  eventType: 0
+  triggerType: 0
+  stageId: 0
+  waveNumber: 0
+  bossId: 0
+  bossPhaseIndex: 0
+  killCount: 0
+  nonBlocking: 1
+  bossProfile: {fileID: 0}
+  lines:
+  - speaker: 0
+    text: "\u8FD9\u56DE\u4E0D\u4E00\u6837\u3002\u5BF9\u9762\u90A3\u4E2A\u7A7F\u91CD\u7532\u7684\uFF0C\u6B63\u9762\u6253\u4E0D\u65AD\u3002"

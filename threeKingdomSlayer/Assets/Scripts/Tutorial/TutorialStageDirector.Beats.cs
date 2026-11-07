@@ -266,12 +266,39 @@ public partial class TutorialStageDirector : MonoBehaviour
 
     // ── 共用小工具 ───────────────────────────────────────────
 
-    /// <summary>推这一波的台词并等它真的显示出来（forceReplay：教学台词是固定节拍）。</summary>
+    /// <summary>推这一拍的台词并等它真的显示出来（forceReplay：教学台词是固定节拍）。</summary>
     private IEnumerator PushWaveDialogue()
     {
-        if (_pendingWaveDialogue == null) yield break;
-        DialogueManager.Instance?.QueueEventAndNotify(_pendingWaveDialogue, forceReplay: true);
+        // 走统一入口：教学拍会在这里变成「开场两段字幕 + 点击继续」
+        yield return PushBeatDialogue(null);
+    }
+
+    /// <summary>
+    /// 推这一拍的台词（**所有拍型共用**）。
+    ///
+    /// · 教学拍且配了开场第一段 → 走「两段字幕 + 点击继续」（第一段 = 开场铺垫，第二段 = 原本那行台词）
+    /// · 否则 → 原本的单句台词（forceReplay）
+    ///
+    /// ⚠️ 所有拍型共用这个入口 → **各种拍（点一下 / 连点 / 防御 / 霸体时停 / 技能打断）
+    ///   的开场两段都发生在「原本那行台词出现的那一刻」**，早晚一致。
+    /// </summary>
+    /// <param name="fallbackDialogue">这一拍自带的台词（没有波次台词时用它）。</param>
+    private IEnumerator PushBeatDialogue(DialogueEventData fallbackDialogue)
+    {
+        var waveDialogue = _pendingWaveDialogue;
         _pendingWaveDialogue = null;
+        var beatDialogue = waveDialogue != null ? waveDialogue : fallbackDialogue;
+
+        if (TryGetIntroLine(_currentStep, out var introLine))
+        {
+            yield return PlayTutorialIntro(introLine, beatDialogue);
+            yield break;
+        }
+
+        if (beatDialogue == null) yield break;
+        // 教学文本 → 压暗画面（黑幕）；压到这一拍的手势做完（EndBeat）才撤
+        SetTeachingDim(true);
+        DialogueManager.Instance?.QueueEventAndNotify(beatDialogue, forceReplay: true);
 
         var view = ResolveDialogueView();
         float waitShow = 0f;
@@ -599,8 +626,16 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 4) 台词：按玩家**实际选中的技能**给对应的一条（“用你刚选的【海浪】打断它”）
         //    （放在等槽位之后：这样才知道该念哪一条）
         var skillDialogue = SkillDialogueFor(ChosenSkill);
-        if (skillDialogue != null)
+        // 开场两段字幕：第一段 = 开场铺垫，第二段 = 原本这里要念的那条（技能台词）
+        if (TryGetIntroLine(_currentStep, out var introLine))
+        {
+            yield return PlayTutorialIntro(introLine, skillDialogue);
+        }
+        else if (skillDialogue != null)
+        {
+            SetTeachingDim(true);   // 教学文本 → 压暗（黑幕）
             DialogueManager.Instance?.QueueEventAndNotify(skillDialogue, forceReplay: true);
+        }
 
         // 5) 等敌人抡起霸体技 → **抬手做完后冻结** → 提示点技能槽 → 玩家点技能 → 打断
         DebugLog.Info("[Tutorial] 技能打断拍：等敌人抡起霸体技（抬起到顶就暂停，提示你去点技能槽）");
@@ -720,6 +755,7 @@ public partial class TutorialStageDirector : MonoBehaviour
                     if (step.freezeDialogue != null)
                     {
                         DialogueManager.AllowDialogueWhilePaused = true;
+                        SetTeachingDim(true);   // 教学文本 → 压暗（黑幕）
                         DialogueManager.Instance?.QueueEventAndNotify(step.freezeDialogue, forceReplay: true);
                         var freezeView = ResolveDialogueView();
                         float waitShow = 0f;

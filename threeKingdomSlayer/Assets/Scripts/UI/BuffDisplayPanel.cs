@@ -530,6 +530,8 @@ public class BuffDisplayPanel : MonoBehaviour, IQteInputLockTarget
     private void OnItemIconClicked(BuffIcon icon)
     {
         if (_qteDimmed) return;
+        // 引导/暂停/时停期间：**物品栏的点击整体无效**（2026-11-06）→ 与 FrontItemBar 同一口径。
+        if (GameplayInputGate.IsBlocked && !GameplayInputGate.AllowSkillActivationWhileBlocked) return;
         if (DialogueManager.Instance != null && DialogueManager.Instance.IsInteractionBlocked) return;
         if (!_iconEntryIds.TryGetValue(icon, out int entryId)) return;
 

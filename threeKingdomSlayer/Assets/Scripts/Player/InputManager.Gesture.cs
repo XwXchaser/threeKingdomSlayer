@@ -211,13 +211,28 @@ public partial class InputManager : MonoBehaviour
     /// </summary>
     private bool ProcessComboBranchGate(Vector2 releasePos)
     {
-        if (!comboChargeActive || CurrentChargeLevel < 1) return false;
-        if (moveStateMachine != null && moveStateMachine.IsMoveActive)
+        if (!comboChargeActive || CurrentChargeLevel < 1)
         {
-            int holdColumn = GetStabColumnFromScreenPosition(releasePos);
-            if (holdColumn >= 0)
-                SubmitGesture(MoveGesture.Hold, CurrentChargeLevel, holdColumn);
+            // 不是连段蓄力（或还没蓄满）→ 不在这里处理，交给后面的默认路径
+            // （⚠️ 以前这里是直接 return false，但上方两道门会把松手**静默吃掉** →
+            //   玩家看到的是“松开没反应”，而且没有任何日志能查）。
+            return false;
         }
+        if (moveStateMachine == null || !moveStateMachine.IsMoveActive)
+        {
+            // 前置招式已经结束 → 连段释放不成立 → 交给默认路径（至少给玩家一个招式）
+            DebugLog.Info("[InputManager] 连段松手：前置招式已结束 → 不走 combo 分支");
+            return false;
+        }
+        int holdColumn = GetStabColumnFromScreenPosition(releasePos);
+        if (holdColumn < 0)
+        {
+            DebugLog.Info("[InputManager] 连段松手：松手位置没有对应列 → 不走 combo 分支");
+            return false;
+        }
+        bool executed = SubmitGesture(MoveGesture.Hold, CurrentChargeLevel, holdColumn);
+        DebugLog.Info($"[InputManager] 连段松手：提交 Hold(蓄力{CurrentChargeLevel}) → 列{holdColumn}，执行={executed}");
+        // 已处理（不管执行没执行，这一帧都不再走默认路径：否则会多打一记普通戳）
         return true;
     }
 

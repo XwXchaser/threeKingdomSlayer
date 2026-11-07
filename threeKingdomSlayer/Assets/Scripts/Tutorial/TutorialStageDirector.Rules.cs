@@ -2,11 +2,26 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 规则与表现 —— 教学关导演的**规则与表现**部分 ✅（由 TutorialStageDirector.cs 拆出 ✅ ✅）
-/// </summary>
+    /// <summary>
+    /// 规则与表现 —— 教学关导演的**规则与表现**部分 ✅（由 TutorialStageDirector.cs 拆出 ✅ ✅）
+    /// </summary>
 public partial class TutorialStageDirector : MonoBehaviour
 {
+    /// <summary>
+    /// **教学文本的压暗（黑幕）**（2026-11-06 用户定）。
+    ///
+    /// 规则：局内教学文本出现 → 压暗画面；**一直压到这一拍的手势做完**（EndBeat）才撤。
+    ///
+    /// ⚠️ 压暗层在 order=110，**低于台词气泡**（DialogueOverlay order=120）→
+    ///   那行字不会被自己压暗；也低于「点击继续」按钮（121）→ 按钮不被压暗。
+    ///
+    /// ⚠️ **不能跟点击遮罩（Show/Hide）绑在一起**：点完「点击继续」只是第一段结束，
+    ///   第二段文本 + 手势示范还在屏上 → 这时不能撤压暗。
+    /// </summary>
+    private void SetTeachingDim(bool on)
+    {
+        if (introBlocker != null) introBlocker.SetDim(on);
+    }
     // ── 教学招式白名单（还没教到的招式不许发出）────────────────
     // 口径：白名单 = **已经教完的招式 ∪ 当前这一拍要教的招式**。
     // 拍开始时把当前招式加进去（这一拍里玩家必须能出它），拍真的完成了它就转为"已教"。

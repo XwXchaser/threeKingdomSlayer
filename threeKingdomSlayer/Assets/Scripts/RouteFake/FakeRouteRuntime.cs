@@ -136,11 +136,30 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour, IRouteNodeProgress
         if (routes.Count == 0) return null;
 
         int activeId = SaveManager.GetActiveFakeRouteStageId();
+        FakeRouteStageConfig resolved = null;
         for (int i = 0; i < routes.Count; i++)
-            if (routes[i] != null && routes[i].stageId == activeId) return routes[i];
+        {
+            if (routes[i] != null && routes[i].stageId == activeId) { resolved = routes[i]; break; }
+        }
+        if (resolved == null)
+        {
+            Debug.LogWarning("[FakeRoute] 存档当前关卡 id=" + activeId + " 不在可选列表里，回退到第一条: " + routes[0].stageName);
+            resolved = routes[0];
+        }
 
-        Debug.LogWarning("[FakeRoute] 存档当前关卡 id=" + activeId + " 不在可选列表里，回退到第一条: " + routes[0].stageName);
-        return routes[0];
+        // ★ 教学已经打完 → **不要又回到教学路线**（否则打完教学回主菜单会被再拉回教学）。
+        //   教学路线在可选列表里排第一 → 必须跳过它。
+        var tutorial = FindTutorialRoute();
+        bool tutorialDone = TutorialSaveSection.IsCompleted(SaveManager.Load());
+        if (tutorial != null && tutorialDone && resolved == tutorial)
+        {
+            for (int i = 0; i < routes.Count; i++)
+            {
+                if (routes[i] != null && routes[i] != tutorial) { resolved = routes[i]; break; }
+            }
+            Debug.Log("[FakeRoute] 教学已完成 → 不再回到教学路线，当前关卡 = " + (resolved != null ? resolved.stageName : "null"));
+        }
+        return resolved;
     }
 
     private void OnDestroy()

@@ -86,8 +86,11 @@ public class TutorialRouteBlackout : MonoBehaviour
     /// <summary>
     /// 当前是否应该黑着。
     ///
-    /// **只盖住「点完按钮 → 开始移动」这一小段**：
-    /// 节点真正开始移动（FakeMoving）时遮罩就收掉 —— 移动过程要看得见（用户反馈：「节点移动时依然有黑幕」）。
+    /// **两段**（2026-11-06 用户要求「非战斗的教学部分缺少黑幕」）：
+    ///   ① **ChoosingRoute（等玩家选路牌）** → 黑幕盖住战场，路牌浮在幕布上（玩家一眼看到只能选路）。
+    ///      幕布 `blocksRaycasts=false` → **路牌按钮照样点得到** ✓
+    ///   ② **RouteChoiceTransition（点完按钮 → 开始移动）** → 保持原有的“点了就黑”手感。
+    ///      节点真正开始移动（FakeMoving）时遮罩就收掉 —— 移动过程要看得见（用户反馈：「节点移动时依然有黑幕」）。
     /// </summary>
     private bool ShouldBeBlack()
     {
@@ -96,7 +99,8 @@ public class TutorialRouteBlackout : MonoBehaviour
         if (routeConfig != null && runtime.RouteConfig != routeConfig) return false;
         if (tutorialOnly && tutorialRouteConfig != null && runtime.RouteConfig != tutorialRouteConfig) return false;
 
-        return runtime.Phase == FakeRoutePhase.RouteChoiceTransition;
+        return runtime.Phase == FakeRoutePhase.ChoosingRoute
+            || runtime.Phase == FakeRoutePhase.RouteChoiceTransition;
     }
 
     /// <summary>

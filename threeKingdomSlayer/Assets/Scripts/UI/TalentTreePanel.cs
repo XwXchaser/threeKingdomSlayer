@@ -95,6 +95,7 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private bool _teachActive;
     private int _teachStep;                 // 0 = 指向节点；1 = 指向确认按钮
     private RectTransform _teachLayer;
+    private TutorialClickMask _teachMask;
     private Image _teachHand;
     private Image _teachRing;
     private TextMeshProUGUI _teachLabel;
@@ -1553,7 +1554,18 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (_teachActive) return;
         var data = SaveManager.Load();
         if (TalentSaveSection.IsTalentPanelTaught(data)) return;          // 教过了 → 不再教
-        if (!FindTeachingTarget(out _, out _)) return;                     // 没有可解锁的节点 → 不教（全买完了）
+        if (!FindTeachingTarget(out _, out _))
+        {
+            // ★ 教学目标是**指向突刺（C2）**（需求 R8）。C2 已经解锁 → 这段教学的目标已经达成
+            //   → **直接记为已教**（不能拿别的节点凑数教一遍没用的东西）。
+            if (IsTeachingTargetAlreadyUnlocked())
+            {
+                TalentSaveSection.MarkTalentPanelTaught(data);
+                SaveManager.Save(data);
+                Debug.Log("[TalentPanel] 指向突刺（C2）已解锁 → 天赋页教学目标已达成，不再教");
+            }
+            return;
+        }
         BuildTeachingUI();
         _teachActive = true;
         _teachStep = 0;
@@ -1561,12 +1573,67 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         Debug.Log("[TalentPanel] 天赋页教学开始（第一次打开）");
     }
 
+    /// <summary>教学目标（指向突刺 / C2）是否**已经解锁**了。</summary>
+    private bool IsTeachingTargetAlreadyUnlocked()
+    {
+        for (int i = 0; i < _pages.Count; i++)
+        {
+            var pv = _pages[i];
+            if (pv == null || pv.page == null || pv.page.nodes == null) continue;
+            for (int n = 0; n < pv.page.nodes.Count; n++)
+            {
+                var node = pv.page.nodes[n];
+                if (node == null || node.hidden) continue;
+                if (node.moveGuideGesture != MoveGuideGesture.ComboCharge) continue;
+                return TalentTreeState.IsUnlocked(node);
+            }
+        }
+        return false;
+    }
+
     /// <summary>放弃这次教学（关闭面板时）：不写标记，下次还教。</summary>
     private void StopTeaching()
     {
         _teachActive = false;
         _teachStep = 0;
+        UnlockAllNodes();
+        if (_teachMask != null) _teachMask.SetBlocking(false);
         HideTeachingVisuals();
+    }
+
+    /// <summary>
+    /// 教学期间锁住**除目标以外**的节点（玩家不许点别的天赋）。
+    /// 与「三选一只让选推荐卡」同一套做法。
+    /// </summary>
+    private void LockOtherNodes(PageView targetView, int targetIndex)
+    {
+        for (int i = 0; i < _pages.Count; i++)
+        {
+            var pv = _pages[i];
+            if (pv == null) continue;
+            for (int b = 0; b < pv.nodeButtons.Count; b++)
+            {
+                var btn = pv.nodeButtons[b];
+                if (btn == null) continue;
+                bool isTarget = (pv == targetView && b == targetIndex);
+                btn.interactable = isTarget;
+            }
+        }
+    }
+
+    /// <summary>教学结束 / 放弃 → 恢复所有节点可点。</summary>
+    private void UnlockAllNodes()
+    {
+        for (int i = 0; i < _pages.Count; i++)
+        {
+            var pv = _pages[i];
+            if (pv == null) continue;
+            for (int b = 0; b < pv.nodeButtons.Count; b++)
+            {
+                var btn = pv.nodeButtons[b];
+                if (btn != null) btn.interactable = true;
+            }
+        }
     }
 
     /// <summary>教学完成（真的解锁了一个节点）→ 写存档标记 → 以后不再教。</summary>
@@ -1574,6 +1641,8 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         _teachActive = false;
         _teachStep = 0;
+        UnlockAllNodes();          // 教学结束 → 节点恢复可点
+        if (_teachMask != null) _teachMask.SetBlocking(false);
         HideTeachingVisuals();
         var data = SaveManager.Load();
         TalentSaveSection.MarkTalentPanelTaught(data);
@@ -1593,12 +1662,23 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         Stretch(layer.rectTransform);
         _teachLayer = layer.rectTransform;
 
+        // ★ **同一套聚光遮罩**（2026-11-06 用户要求：「这种教学引导是通用准则，怎么到别的界面就不遵守了？」）：
+        //   天赋页的教学同样只允许点**被高亮指着的那个**（C2 节点 / 解锁按钮 / 返回按钮），
+        //   其余（页签、其它节点、关闭…）一律点不到 → 遮罩在目标处挖洞。
+        _teachMask = TutorialClickMask.EnsureExists(_teachLayer);
+
         _teachRing = CreateImage("TeachRing", layer.rectTransform, new Color(1f, 0.86f, 0.4f, 0.9f),
             teachingRingSprite != null ? teachingRingSprite : ProceduralUiSprites.Ring(128, 12, 1f));
         _teachRing.raycastTarget = false;
 
         _teachHand = CreateImage("TeachHand", layer.rectTransform, Color.white, teachingHandSprite);
         _teachHand.raycastTarget = false;
+
+        // ★ **不再用“高亮材质”**（2026-11-06 用户：「本质上来说确实不需要高亮材质，
+        //   而是让对应按钮显示在遮罩上层即可」）→ 手与光圈**不画**了：
+        //   高亮效果 = **遮罩在目标按钮处开洞** → 按钮原样亮着，其余压暗且点不到。
+        if (_teachHand != null) _teachHand.gameObject.SetActive(false);
+        if (_teachRing != null) _teachRing.gameObject.SetActive(false);
 
         // 文案：**屏幕下方**（教学关的台词也在下方；放上方会压住标题和页签 —— 2026-11-04 截图确认）。
         // 位置放在详情卡（高 300）**之上**，避免选中节点后互相压。
@@ -1675,10 +1755,17 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             _teachLabel.text = _teachStep == 0 ? teachingTextPickNode : teachingTextConfirm;
 
         RectTransform target = null;
+        RectTransform maskTarget = null;      // 遮罩开洞的目标 = 可点的那个（按钮）
         if (_teachStep == 0)
         {
             if (FindTeachingTarget(out var view, out int index) && index >= 0 && index < view.nodeImages.Count)
             {
+                // ★ 教学期间：除了**目标节点**，其它节点**不可点**
+                //   （同项目里「三选一只让选推荐卡」的做法 → 玩家不许点别的天赋）。
+                LockOtherNodes(view, index);
+                // 遮罩的洞开在**节点按钮**上（不是图标）→ 整张节点卡亮着 = 高亮
+                if (index < view.nodeButtons.Count && view.nodeButtons[index] != null)
+                    maskTarget = view.nodeButtons[index].transform as RectTransform;
                 // 目标不在当前视图 → **切过去**（教学得让玩家看得见指的东西）
                 if (view.category != _selectedCategory || view.pageIndex != _selectedPage)
                 {
@@ -1698,15 +1785,23 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         }
         else if (_teachStep == 1)
         {
-            if (_buyButton != null) target = _buyButton.GetComponent<RectTransform>();
+            if (_buyButton != null) { target = _buyButton.GetComponent<RectTransform>(); maskTarget = target; }
         }
         else
         {
             // 第 3 步：教玩家点「返回」回主菜单
             target = _closeButtonRect;
+            maskTarget = target;
         }
 
-        if (target == null) { HideTeachingVisuals(); return; }
+        if (target == null) { HideTeachingVisuals(); if (_teachMask != null) _teachMask.SetBlocking(false); return; }
+
+        // 遮罩的洞 = 当前该点的那个按钮 → 它不被遮罩盖住（原样亮着 = 高亮），其余点不到
+        if (_teachMask != null)
+        {
+            _teachMask.SetTarget(maskTarget != null ? maskTarget : target);
+            _teachMask.SetBlocking(true);
+        }
 
         float handSize = TutorialGestureStyle.BaseHandSize * 0.55f;
         float ringSize = TutorialGestureStyle.BaseRingSize * 0.55f;
@@ -1756,7 +1851,37 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         view = null;
         index = -1;
         int coins = SaveManager.GetCoins();
-        // 优先级：**招式解锁(1)**（这条教学链就是「解锁一个招式」）→ 当前分类 → 其余
+
+        // ★ ① **教学目标是「指向突刺（C2）」**（需求 R8：「主菜单教玩家进入天赋界面点出**蓄力 C2 stab**」；
+        //   解锁它之后，正式关里才有用「连招蓄力」引导拍教这个招（需求 R10 / D4））。
+        //   判据**不写死节点 id**：**教学手势 = 连招蓄力（ComboCharge）** 的那个节点 ——
+        //   只有指向突刺是这个手势（横划那个是 Slash）→ 与 `MoveGuideService` 同一套“数据决定”的口径 ✅。
+        bool hasComboChargeNode = false;
+        for (int i = 0; i < _pages.Count && view == null; i++)
+        {
+            var pv = _pages[i];
+            if (pv == null || pv.page == null || pv.page.nodes == null) continue;
+            var tree = pv.tree != null ? pv.tree : (catalog != null ? catalog.Get(pv.category) : null);
+            for (int n = 0; n < pv.page.nodes.Count; n++)
+            {
+                var node = pv.page.nodes[n];
+                if (node == null || node.hidden) continue;
+                if (node.moveGuideGesture != MoveGuideGesture.ComboCharge) continue;
+                hasComboChargeNode = true;
+                if (TalentTreeState.IsUnlocked(node)) continue;
+                if (!TalentTreeState.IsAvailable(tree, node)) continue;
+                if (node.coinCost > coins) continue;
+                view = pv;
+                index = n;
+                return true;
+            }
+        }
+
+        // 树里有「连招蓄力」型节点（= 指向突刺）但现在教不了（已解锁 / 前置没满足 / 铜钱不够）
+        //   → **不拿别的节点凑数**（那教的是没用的一招）→ 返回 false。
+        if (hasComboChargeNode) return false;
+
+        // ② 树里根本没有「连招蓄力」型节点（不是张飞这套）→ 退回旧行为（招式解锁 → 当前分类 → 其余）
         for (int rank = 0; rank < 3 && view == null; rank++)
         {
             for (int i = 0; i < _pages.Count; i++)

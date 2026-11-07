@@ -151,6 +151,22 @@ public static class TutorialFlowDriver
             return;
         }
 
+        // 0.2) 教学**开场流程**（2026-11-05）：冻场 + 第一段字幕 → 「点击继续」→ 第二段字幕
+        //     这段玩家零交互 → 驱动必须等按钮出来点它，**且不许点按**（点了会被冻场吞掉）。
+        if (_director.IntroActive)
+        {
+            var introBtn = _director.continueButton;
+            if (introBtn != null && introBtn.IsShowing && Time.unscaledTime >= _nextTapTime)
+            {
+                _nextTapTime = Time.unscaledTime + 0.5f;
+                // ⚠️ 必须走**真实 UI 点击路径**（射线 + EventSystem）→ 直接调回调会把
+                //    「按钮其实点不动」这类洞全漏过去（2026-11-06 实测踩到过）。
+                bool sent = introBtn.ClickViaUi();
+                Log(sent ? "点「点击继续」（真实 UI 路径）" : "点「点击继续」**失败**（按钮点不动）");
+            }
+            return;
+        }
+
         // 0.5) 拍型变化
         string stepKey = step != null ? (step.kind + "/" + step.waveIndex) : "none";
         if (stepKey != _lastStepKey)

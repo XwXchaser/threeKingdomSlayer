@@ -47,6 +47,14 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
     /// <summary>是否允许「点一下推进台词」。教学手势门槛期间要关掉，否则玩家做手势的那一下会把台词点没了。</summary>
     public bool PointerAdvanceEnabled { get; set; } = true;
 
+    /// <summary>
+    /// 是否允许**自动推进**（教学类台词按字数算停留时长后自己进下一句）。
+    ///
+    /// 教学开场的两段文本要**停在屏上等玩家动作**（第一段等玩家点「点击继续」，第二段等玩家做出手势）
+    /// → 开场期间由导演把它关掉，拍做完再恢复。
+    /// </summary>
+    public bool autoAdvanceEnabled { get; set; } = true;
+
     private void Start()
     {
         // 没有台词时，推进按钮不应该亮着（它在落地页上会压住底部的按钮）
@@ -87,14 +95,20 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
         Advance();
     }
 
-    /// <summary>点击是否落在当前显示的气泡上（气泡的子物体也算）。</summary>
+    /// <summary>点击是否落在当前显示的气泡上（气泡本体与它的子物体都算）。</summary>
     private bool IsOnActiveBubble(GameObject go)
     {
         if (go == null) return false;
-        if (_tutorialBubble != null && _tutorialBubble.activeSelf && go.transform.IsChildOf(_tutorialBubble.transform)) return true;
-        if (_playerBubble != null && _playerBubble.activeSelf && go.transform.IsChildOf(_playerBubble.transform)) return true;
-        if (_bossBubble != null && _bossBubble.activeSelf && go.transform.IsChildOf(_bossBubble.transform)) return true;
+        if (_tutorialBubble != null && _tutorialBubble.activeSelf && IsSameOrChild(go, _tutorialBubble)) return true;
+        if (_playerBubble != null && _playerBubble.activeSelf && IsSameOrChild(go, _playerBubble)) return true;
+        if (_bossBubble != null && _bossBubble.activeSelf && IsSameOrChild(go, _bossBubble)) return true;
         return false;
+    }
+
+    /// <summary>go 是不是 target 本身或它的子物体。</summary>
+    private static bool IsSameOrChild(GameObject go, GameObject target)
+    {
+        return go == target || go.transform.IsChildOf(target.transform);
     }
 
     private void Awake()
@@ -276,7 +290,8 @@ public sealed class BattleDialogueView : MonoBehaviour, IPointerClickHandler
             _bossText.text = line.text;
 
         // 教学类台词：排好自动推进的倒计时（正式对话不自动推进）
-        _autoAdvanceRemaining = _isTutorialEvent ? ComputeAutoAdvanceSeconds(line.text) : 0f;
+        // ⚠️ `autoAdvanceEnabled=false` 时**不排倒计时** → 文本留在屏上等玩家动作（教学开场用）。
+        _autoAdvanceRemaining = (_isTutorialEvent && autoAdvanceEnabled) ? ComputeAutoAdvanceSeconds(line.text) : 0f;
     }
 
     /// <summary>当前播的是否是教学类台词（只有教学类才自动推进）。</summary>

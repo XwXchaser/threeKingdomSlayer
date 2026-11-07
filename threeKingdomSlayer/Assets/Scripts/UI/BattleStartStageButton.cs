@@ -83,7 +83,11 @@ public class BattleStartStageButton : MonoBehaviour
     private void ApplyFromState()
     {
         var state = HubStateSource.Instance;
-        ApplyState(state != null && state.IsPrepared && !state.IsOverlayOpen);
+        bool ready = state != null && state.IsPrepared && !state.IsOverlayOpen;
+        // ⚠️ 这里**不再**根据教学链锁按钮（2026-11-06 用户：「灰掉开始游戏按钮毫无意义」）。
+        //   “还没做完天赋教学就不能开打”由**引导的聚光遮罩**实现：
+        //   遮罩的洞只开在高亮目标上 → 指向天赋入口时，开始按钮被遮罩挡住 → 点不到。
+        ApplyState(ready);
     }
 
     private void ApplyState(bool ready)

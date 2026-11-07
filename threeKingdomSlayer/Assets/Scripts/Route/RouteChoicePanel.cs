@@ -37,8 +37,26 @@ public sealed class RouteChoicePanel : MonoBehaviour
             : CreateFallbackPanel();
         panel._onSelected = onSelected;
         panel.gameObject.SetActive(true);
+        panel.EnsureIgnoresParentGroups();
         panel.Rebuild(title, options);
         return panel;
+    }
+
+    /// <summary>
+    /// 让路牌面板**不受战斗 HUD 根 CanvasGroup 的失能影响**。
+    ///
+    /// 背景（2026-11-06 用户要求「非战斗的教学部分……强制玩家跟教学走」）：
+    /// 教学在“选路牌”这段会把战斗 HUD 整块失能（防御键 / 道具栏 / 技能槽 / 头像都不可点）。
+    /// 但路牌面板**就挂在同一个 BattleHUD Canvas 下** → 不隔离的话路牌也会跟着失能 → 玩家点不到路牌。
+    /// → 给面板挂一个 `ignoreParentGroups` 的 CanvasGroup，把继承链断在这里。
+    /// </summary>
+    private void EnsureIgnoresParentGroups()
+    {
+        var group = GetComponent<CanvasGroup>();
+        if (group == null) group = gameObject.AddComponent<CanvasGroup>();
+        group.ignoreParentGroups = true;
+        group.interactable = true;
+        group.blocksRaycasts = true;
     }
 
     public static void HideCurrent()

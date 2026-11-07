@@ -122,6 +122,16 @@ public static class TutorialSetupTool
         director.skillDialogueWave = dlgSkillWave;
         director.skillDialogueGeneric = dlgSkillGeneric;
 
+        // 5.1b 开场流程的**第一段字幕**（2026-11-05）：
+        //   波次开始 → 冻场 + 第一段字幕 → 「点击继续」→ 第二段字幕（= 5.1 的波次台词）→ 正式教学。
+        //   ⚠️ 已存在的资产**不改文案**（用户可能已经改过）；只在缺失时用草稿建。
+        var introN1W0 = EnsureIntroDialogue("tutorial_t0_intro_n1_w0", "看好了——先别动手，听我把这一招讲完。", log);
+        var introN1W1 = EnsureIntroDialogue("tutorial_t0_intro_n1_w1", "这一波人更多。打法我先说一遍。", log);
+        var introE0W0 = EnsureIntroDialogue("tutorial_t0_intro_e0_w0", "这回不一样。对面那个穿重甲的，正面打不断。", log);
+        var introE0W1 = EnsureIntroDialogue("tutorial_t0_intro_e0_w1", "最后一波了。他抡招的时候，就是破绽。", log);
+        director.n1IntroDialogues = new[] { introN1W0, introN1W1 };
+        director.e0IntroDialogues = new[] { introE0W0, introE0W1 };
+
         // 5.2 手势拍
         director.gestureSteps = new[]
         {
@@ -464,6 +474,43 @@ public static class TutorialSetupTool
         d.nonBlocking = true;                     // 教学台词一律不暂停
         d.lines.Clear();
         d.lines.Add(new DialogueEventData.Line { speaker = DialogueSpeaker.Player, text = text });
+        EditorUtility.SetDirty(d);
+        return d;
+    }
+
+    /// <summary>
+    /// 开场流程的**第一段字幕**资产。
+    ///
+    /// 与 <see cref="EnsureDialogue"/> 的区别：**已存在的资产不改文案**
+    /// （用户可能已经改过台词，工具不该把它刷回草稿）；只保证字段口径一致。
+    /// </summary>
+    private static DialogueEventData EnsureIntroDialogue(string assetName, string draftText, List<string> log)
+    {
+        string path = DialogueDir + assetName + ".asset";
+        var d = AssetDatabase.LoadAssetAtPath<DialogueEventData>(path);
+        bool created = false;
+        if (d == null)
+        {
+            d = ScriptableObject.CreateInstance<DialogueEventData>();
+            AssetDatabase.CreateAsset(d, path);
+            created = true;
+            log.Add("新建开场台词资产：" + path);
+        }
+        d.eventId = assetName;
+        d.eventType = DialogueEventType.Tutorial;
+        d.triggerType = DialogueTriggerType.Manual;   // 不进 WaveStart 自动触发
+        d.stageId = 0;
+        d.nonBlocking = true;                          // 不阻塞 → 不出全屏遮罩 → 暂停键照常可按
+        if (d.lines == null) d.lines = new List<DialogueEventData.Line>();
+        if (d.lines.Count == 0)
+        {
+            d.lines.Add(new DialogueEventData.Line { speaker = DialogueSpeaker.Player, text = draftText });
+            log.Add("  开场台词文案已写入草稿：" + draftText);
+        }
+        else if (!created)
+        {
+            log.Add("  开场台词保留已有文案：" + d.lines[0].text);
+        }
         EditorUtility.SetDirty(d);
         return d;
     }

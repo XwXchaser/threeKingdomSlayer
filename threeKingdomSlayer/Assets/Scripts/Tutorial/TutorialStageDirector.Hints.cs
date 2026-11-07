@@ -101,6 +101,9 @@ public partial class TutorialStageDirector : MonoBehaviour
         }
         // 教学拍被打断（波次结束/关场景）时必须把敌人、压暗、手势过滤全部恢复，否则整局卡死
         EndBeat(playAfterDialogue: false);   // 被打断的拍不补播收尾台词
+        EndIntro();                          // 开场被打断 → 也要解冻/解锁（幂等）
+        SetTeachingDim(false);               // 压暗也要撤（拍没开成就被打断的情况，EndBeat 里会提前 return）
+        RestoreDialogueAutoAdvance();        // 台词自动推进恢复（幂等）
         ResetSkillBeatFlags();               // 技能拍的全局开关（static）必须收回，否则漏到正式关
         SetDefenseMuteChoice(false);         // 静音也必须收回（拍被打断 → 这一拍的教学窗口结束了）
         SetDefenseMuteBeat(false);          // 需要出招的拍的静音同样收回
@@ -161,6 +164,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (step.kind == GestureHintKind.None)
         {
             Debug.Log("[Tutorial] 本波只播登场台词，不教手势");
+            SetTeachingDim(false);   // 没有手势 → 文本读完就撤压暗（否则会一直暗着）
             _hintRoutine = null;
             yield break;
         }
@@ -206,24 +210,9 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (BeatNeedsAttack(step.kind)) SetDefenseMuteBeat(true);
 
         // 敌人站定后才推台词：此时台词和手势引导一起出现，玩家看得见该做什么
-        BattleDialogueView view = null;
-        // 台词来源：**波次台词**（教学关）或 **这一拍自带的 beforeDialogue**（招式解锁引导的一行文字）
-        var beatDialogue = _pendingWaveDialogue != null ? _pendingWaveDialogue : step.beforeDialogue;
-        if (beatDialogue != null)
-        {
-            _pendingWaveDialogue = null;
-            // 强制重播：教学台词是教学关的固定节拍，不能因为上一次通关就永久不再播
-            DialogueManager.Instance?.QueueEventAndNotify(beatDialogue, forceReplay: true);
-
-            // 等对话真的显示出来再弹手势；否则手势出现时屏幕上一个字也没有
-            view = ResolveDialogueView();
-            float waitShow = 0f;
-            while (view != null && !view.IsShowing && waitShow < 1.5f)
-            {
-                waitShow += Time.unscaledDeltaTime;
-                yield return null;
-            }
-        }
+        // ★ 统一入口：教学拍走「开场两段字幕 + 点继续」（第一段 = 开场铺垫，第二段 = 原本那行台词）；
+        //   暂停点 = **原本那行台词出现的那一刻**（就在这个位置，不是波次开始）；两段之间不留间隔。
+        yield return PushBeatDialogue(step.beforeDialogue);
 
         // 开始教学拍：冻结敌人（不让它们行动）、只压暗场景、只接受目标手势
         var target = ToGestureTarget(step.kind);
@@ -231,6 +220,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         {
             Debug.Log($"[Tutorial] 手势拍无法开始：hint={(gestureHint != null)} target={target}");
             SetDefenseMuteBeat(false);      // 拍没开成 → 防御键静音要收回（否则永久静音）
+            SetTeachingDim(false);          // 拍没开成 → 压暗也要撤
             _hintRoutine = null;
             yield break;
         }
@@ -240,6 +230,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         {
             Debug.Log("[Tutorial] 舞台已结束，取消手势拍");
             SetDefenseMuteBeat(false);
+            SetTeachingDim(false);
             _hintRoutine = null;
             yield break;
         }
@@ -529,6 +520,8 @@ public partial class TutorialStageDirector : MonoBehaviour
     {
         if (!_beatActive) return;
         _beatActive = false;
+        // 教学文本的压暗（黑幕）：手势做完 → 撤（用户 2026-11-06 定：「一直压到手势做完」）
+        SetTeachingDim(false);
         UnwatchEnemiesForDamage();
         _beatAttackFired = false;
         var input = InputManager.Instance;
@@ -576,6 +569,10 @@ public partial class TutorialStageDirector : MonoBehaviour
             DialogueManager.Instance?.QueueEventAndNotify(_currentStep.afterDialogue, forceReplay: true);
             DebugLog.Info("[Tutorial] 补播收尾台词：" + _currentStep.afterDialogue.name);
         }
+
+        // ★ 开场两段字幕的第二段文本**留到玩家做出手势**（需求：不自动消失）→ 拍收尾时才清。
+        //   文本由上面的 view.Skip() 清掉；这里把「台词自动推进」恢复回去。
+        RestoreDialogueAutoAdvance();
     }
 
     private void PlayGestureAt(GestureHintKind kind, Vector2 from, Vector2 to)

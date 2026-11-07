@@ -90,12 +90,30 @@ public class HealthPotionManager : MonoBehaviour
     {
         if (PotionCount <= 0) return false;
         if (PlayerState.Instance == null || ItemInventory.Instance == null) return false;
+        // 引导/暂停/时停期间**不许喝药**（2026-11-06）：
+        //   药水这条路**不经过手势系统** → `GameplayInputGate` 拦不到它 →
+        //   教学期（尤其开场等「点击继续」那段没有台词在播）点道具栏会**真的喝掉**。
+        //   口径与技能释放一致（见 ActiveSkillInventory.TryActivate）。
+        if (!CanUsePotionNow()) return false;
         if (!ItemInventory.Instance.TryConsume(ItemInventory.HealthPotionGestureId)) return false;
 
         _potionCount = PotionCount;
         OnPotionCountChanged?.Invoke(_potionCount);
 
         PlayerState.Instance.Heal(healAmount);
+        return true;
+    }
+
+    /// <summary>
+    /// 此刻能不能喝药（教学引导 / 暂停 / 时停期间不能喝）。
+    ///
+    /// 为什么单独开一个口径：血包是**道具栏点击**触发的，不走手势输入路径 →
+    /// 输入门拦不到 → 必须在这里自己判一次（与技能释放的口径保持一致）。
+    /// </summary>
+    public static bool CanUsePotionNow()
+    {
+        if (Time.timeScale <= 0f && !GameplayInputGate.AllowSkillActivationWhileFrozen) return false;
+        if (GameplayInputGate.IsBlocked && !GameplayInputGate.AllowSkillActivationWhileBlocked) return false;
         return true;
     }
 

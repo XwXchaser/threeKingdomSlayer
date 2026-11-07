@@ -23,6 +23,12 @@ public enum InputBlockReason
     /// <summary>教学手势门槛：等玩家做对指定手势。</summary>
     TutorialGate,
 
+    /// <summary>
+    /// **教程开场流程**（2026-11-05）：波次开始 → 冻场 + 第一段字幕 →
+    /// 「点击继续」→ 第二段字幕。这段玩家零交互（只有左上角暂停键可按）。
+    /// </summary>
+    TutorialIntro,
+
     /// <summary>遗留路线驱动（RouteV1 / RouteV2 原型）。</summary>
     LegacyRoute,
 

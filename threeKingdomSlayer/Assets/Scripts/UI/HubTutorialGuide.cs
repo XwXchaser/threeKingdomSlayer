@@ -29,6 +29,7 @@ public class HubTutorialGuide : MonoBehaviour
     [TextArea(2, 3)] public string stageText = "点「开始关卡」进入战斗";
 
     private RectTransform _layer;
+    private TutorialClickMask _mask;
     private Image _hand;
     private Image _ring;
     private TextMeshProUGUI _label;
@@ -39,12 +40,38 @@ public class HubTutorialGuide : MonoBehaviour
     private void Update()
     {
         var mode = ResolveMode();
-        if (mode == Mode.None) { Hide(); return; }
+        if (mode == Mode.None) { Hide(); if (_mask != null) _mask.SetBlocking(false); return; }
         EnsureUI();
         var anchor = ResolveAnchor(mode);
-        if (anchor == null) { Hide(); return; }
+        if (anchor == null) { Hide(); if (_mask != null) _mask.SetBlocking(false); return; }
         Show(anchor, mode == Mode.Talent ? talentText : stageText);
         Animate();
+
+        // ★ **聚光遮罩**：一整块遮罩铺满引导层；字幕板与要点的那个按钮都在它上面
+        //   （按钮由 `TutorialClickMask` 提到引导层里 → 不被压暗、也能点到）。
+        if (_mask == null) _mask = TutorialClickMask.EnsureExists(_layer);
+        if (_mask != null)
+        {
+            var maskTarget = ResolveMaskTarget(mode);
+            _mask.SetTarget(maskTarget != null ? maskTarget : anchor);
+            _mask.SetBlocking(true);
+        }
+    }
+
+    /// <summary>遮罩开洞的目标 = **可点的那个按钮**（不是它的图片）→ 整张按钮亮着。</summary>
+    private static RectTransform ResolveMaskTarget(Mode mode)
+    {
+        if (mode == Mode.Talent)
+        {
+            var entry = FindObjectOfType<HubTalentEntry>();
+            var btn = entry != null ? entry.GetComponent<UnityEngine.UI.Button>() : null;
+            if (btn != null) return btn.transform as RectTransform;
+            return entry != null ? entry.transform as RectTransform : null;
+        }
+        var start = FindObjectOfType<BattleStartStageButton>();
+        var startBtn = start != null ? start.GetComponent<UnityEngine.UI.Button>() : null;
+        if (startBtn != null) return startBtn.transform as RectTransform;
+        return start != null ? start.transform as RectTransform : null;
     }
 
     private enum Mode { None, Talent, Stage }
@@ -67,9 +94,19 @@ public class HubTutorialGuide : MonoBehaviour
             }
             return Mode.None;
         }
+        // 天赋页开着 → 那一段由天赋页自己的教学接管（指 C2 节点）→ 落地页这条收起来
+        if (IsTalentPanelOpen()) return Mode.None;
         // 天赋页还没教过 → 先去天赋；教过了 → 去开打
         if (!data.taughtTalentPanel) return Mode.Talent;
         return TalentSaveSection.IsStartStageTaught(data) ? Mode.None : Mode.Stage;
+    }
+
+    /// <summary>天赋页（overlay）是否开着 —— 开着的���候由**天赋页自己的教学**接管（指 C2 节点），
+    /// 落地页这条引导要收起来（否则那只手会浮在天赋面板上面，指着一个被面板挡住的东西）。</summary>
+    private static bool IsTalentPanelOpen()
+    {
+        var panel = Object.FindObjectOfType<TalentTreePanel>();
+        return panel != null && panel.gameObject.activeInHierarchy;
     }
 
     /// <summary>要指向的那个 UI 元素的**视觉中心**（按钮容器 ≠ 按钮图案）。</summary>
@@ -122,6 +159,11 @@ public class HubTutorialGuide : MonoBehaviour
         var own = layerGo.AddComponent<Canvas>();
         own.overrideSorting = true;
         own.sortingOrder = 60;
+        // **必须有 GraphicRaycaster**：引导层的**点击遮罩**靠它接射线
+        //   （没有它 → 遮罩存在但收不到点击 → 等于没有遮罩）。
+        //   手 / 光圈 / 文字的 `raycastTarget` 都是 false → 它们不会抢点击 ✓。
+        if (layerGo.GetComponent<UnityEngine.UI.GraphicRaycaster>() == null)
+            layerGo.AddComponent<UnityEngine.UI.GraphicRaycaster>();
         var scaler = layerGo.AddComponent<UnityEngine.UI.CanvasScaler>();
         scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1080f, 2160f);
@@ -129,11 +171,22 @@ public class HubTutorialGuide : MonoBehaviour
         scaler.matchWidthOrHeight = 0.5f;
         _layer = lr;
 
+        // ★ **遮罩要最先创建**（2026-11-06 实测）：运行时新建的 Graphic 如果排在别的图形之后，
+        //   会进不了 canvas 的渲染批次 → 半透明压暗**画不出来**（不透明色却正常）。
+        //   → 遮罩面板必须是本 canvas 的**第一个图形** → 字幕板 / 光圈 / 手 都在它上面。
+        _mask = TutorialClickMask.EnsureExists(_layer);
+
         _ring = MakeImage("GuideRing", new Color(1f, 0.86f, 0.4f, 0.9f),
             ringSprite != null ? ringSprite : ProceduralUiSprites.Ring(128, 12, 1f));
         _hand = MakeImage("GuideHand", Color.white, handSprite);
         _label = MakeText("GuideLabel");
         _labelBg = _label != null ? _label.transform.parent as RectTransform : null;
+
+        // ★ **不再用“高亮材质”**（2026-11-06 用户：「本质上来说确实不需要高亮材质，
+        //   而是让对应按钮显示在遮罩上层即可」）→ 手与光圈**不画**了：
+        //   高亮效果 = **遮罩在目标按钮处开洞** → 按钮原样亮着，其余压暗。
+        if (_ring != null) _ring.gameObject.SetActive(false);
+        if (_hand != null) _hand.gameObject.SetActive(false);
     }
 
     private Image MakeImage(string name, Color color, Sprite sprite)
@@ -197,6 +250,9 @@ public class HubTutorialGuide : MonoBehaviour
     {
         if (_layer == null) return;
         _layer.gameObject.SetActive(true);
+        // Hide() 不再关 canvas（避免渲染批次失效）→ 这里只把文字显示出来
+        if (_label != null) _label.gameObject.SetActive(true);
+        if (_labelBg != null) _labelBg.gameObject.SetActive(true);
         if (_currentText != text) { _currentText = text; if (_label != null) _label.text = text; }
 
         Vector3 world = VisualCenter(anchor);
@@ -283,6 +339,13 @@ public class HubTutorialGuide : MonoBehaviour
     private void Hide()
     {
         _currentText = null;
-        if (_layer != null) _layer.gameObject.SetActive(false);
+        // ★ **不关引导层 canvas**（只隐藏里面的字/图标）：
+        //   反复 SetActive(false/true) 会让这个 canvas 的渲染批次失效
+        //   → 之后新建的半透明 UI（聚光遮罩）就**画不出来**（实测 2026-11-06）。
+        if (_layer == null) return;
+        if (_label != null) _label.gameObject.SetActive(false);
+        if (_labelBg != null) _labelBg.gameObject.SetActive(false);
+        if (_ring != null) _ring.gameObject.SetActive(false);
+        if (_hand != null) _hand.gameObject.SetActive(false);
     }
 }

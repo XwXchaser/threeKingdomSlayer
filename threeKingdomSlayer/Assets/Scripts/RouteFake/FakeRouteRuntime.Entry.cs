@@ -17,12 +17,78 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
     // ══════════════════════════════════════════════════════════════════
 
     /// <summary>
+    /// 进入教学路线时把**这一趟教学**的进度清零（从头开始）。
+    ///
+    /// 清两样：
+    ///   ① 存档里的「已教过的教学拍」标记（否则重进会直接跳过那些拍 → 玩家没真学过）
+    ///   ② 教学路线的存档点（checkpoint）→ 否则会从中途的节点继续
+    /// </summary>
+    private static void ResetTutorialProgressOnEntry(FakeRouteStageConfig config)
+    {
+        var catalog = RouteCatalog.Resolve();
+        var tutorial = catalog != null ? catalog.tutorialStage : null;
+        if (tutorial == null || config != tutorial) return;
+
+        var data = SaveManager.Load();
+        if (data == null) return;
+        if (data.tutorialCompleted) return;              // 已经整条通关 → 不清（那是“教学已完成”的存档）
+
+        int taught = data.taughtTutorialBeats != null ? data.taughtTutorialBeats.Count : 0;
+        TutorialSaveSection.ClearTutorialProgress(data);
+        SaveManager.Save(data);
+        SaveManager.ClearFakeRouteSnapshot(config.routeId, config.stageId);
+        if (taught > 0) Debug.Log("[FakeRoute] 进入教学关 → 教学进度清零（从头开始）");
+    }
+
+    /// <summary>
+    /// 教学路线（<c>RouteCatalog.tutorialStage</c>）。
+    /// </summary>
+    private static FakeRouteStageConfig FindTutorialRoute()
+    {
+        var catalog = RouteCatalog.Resolve();
+        return catalog != null ? catalog.tutorialStage : null;
+    }
+
+    /// <summary>
+    /// **教学还没打完 → 强制走教学路线**（不能从主菜单/选关页绕过教学）。
+    ///
+    /// 判据：<c>SaveData.tutorialCompleted</c>（由教学导演在**整条教学路线跑完**时置位）。
+    /// </summary>
+    private static FakeRouteStageConfig ForceTutorialRouteIfTutorialIncomplete(FakeRouteStageConfig requested)
+    {
+        var data = SaveManager.Load();
+        if (data == null || TutorialSaveSection.IsCompleted(data)) return requested;
+
+        var tutorial = FindTutorialRoute();
+        if (tutorial == null)
+        {
+            Debug.LogWarning("[FakeRoute] 教学未完成，但场景里没有教学路线配置（RouteCatalog.tutorialStage）→ 按请求的路线走");
+            return requested;
+        }
+        if (requested == tutorial) return requested;
+
+        Debug.Log("[FakeRoute] 教学未完成 → 强制进入教学路线：" + tutorial.stageName
+                  + "（原请求：" + (requested != null ? requested.stageName : "null") + "）");
+        return tutorial;
+    }
+
+    /// <summary>
     /// 【落地页】只准备、不跑流程：加载路线场景表现 + 把视觉定位到起始节点（含 checkpoint 恢复）。
     /// 准备完成后 Phase = Ready；任何时刻调 <see cref="RunPrepared"/> 才真正开始跑节点流程。
     /// 与 <see cref="Begin"/> 互斥：会顶掉正在跑的流程。
     /// </summary>
     public void PrepareForEntry(FakeRouteStageConfig config)
     {
+        // ★ **教学没打完 → 强制走教学路线**（2026-11-06 用户反馈：「在主菜单不点教学引导直接点开始游戏」）。
+        //   之前这里只看存档里的「当前关卡」→ 教学没打完也能直接进正式关（这条是所有入口的总咽喉：
+        //   主菜单「开始关卡」/ 选关页切关 / 落地页自举都走它）。
+        config = ForceTutorialRouteIfTutorialIncomplete(config);
+
+        // ★ **进教学关 → 教学进度清零**（2026-11-06 用户：「如果玩家中途退出，不应该从头开始这段教程吗？」）。
+        //   教学进度是**这一趟教学内**的事：中途退出 / 掉线 / 换设备 → 下次从头开始。
+        //   （只有整条教学路线通关才写「教学完成」→ 那是另一件事，见 TutorialStageDirector。）
+        ResetTutorialProgressOnEntry(config);
+
         if (_flow != null) { StopCoroutine(_flow); _flow = null; }
         routeConfig = config;
         if (ResolveBattleHost() == null || routeConfig == null)

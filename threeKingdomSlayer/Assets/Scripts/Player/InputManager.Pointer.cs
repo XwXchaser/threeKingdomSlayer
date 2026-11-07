@@ -146,7 +146,15 @@ public partial class InputManager : MonoBehaviour
 
     private void HandleTouchInput()
     {
-        if (Input.touchCount == 0) return;
+        if (Input.touchCount == 0)
+        {
+            // ⚠️ **抬手那一帧 touchCount 可能已经归零 → 看不到 Ended 相位 → 这次松手会被整帧丢掉**
+            //   （教学里“蓄满松手出招”就是这样断的）。
+            //   这里自己补一次“抬起”，与 `TutorialGestureHint.PollRawInput` 里的同一处补丁保持一致。
+            //   只在“我们确实在跟踪一根手指、而 Unity 这帧没给任何触摸”时补一次 → 不会重复触发。
+            if (isTouching && currentTouchId >= 0) ReleaseTouch(currentPointerPos, synthesized: true);
+            return;
+        }
 
         Touch touch = PickGameplayTouch();
         if (touch.fingerId < 0) return;   // 没有可用的游戏手指（都在 UI 上）
@@ -188,29 +196,39 @@ public partial class InputManager : MonoBehaviour
             case TouchPhase.Canceled:
                 if (isTouching && touch.fingerId == currentTouchId)
                 {
-                    float pressDuration = Time.time - touchStartTime;
-                    float swipeDistance = Vector2.Distance(touch.position, touchStartPos);
-                    try
-                    {
-                        ProcessGesture(touch.position, pressDuration, swipeDistance);
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Debug.LogError($"[InputManager] ProcessGesture(touch) exception: {ex}");
-                    }
-
-                    // 触发蓄力结束事件（在重置状态之前）
-                    OnChargeEnded?.Invoke();
-
-                    isTouching = false;
-                    isLongPress = false;
-                    isCharged = false;
-                    isSwiping = false;
-                    hasTriggeredDuringHold = false;
-                    currentTouchId = -1;
+                    ReleaseTouch(touch.position, synthesized: false);
                 }
                 break;
         }
+    }
+
+    /// <summary>
+    /// 一次“抬手”：把松手交给手势链（连招蓄力的松手在这里触发派生招式），然后复位按住状态。
+    /// </summary>
+    /// <param name="synthesized">true = Unity 这帧没给 Ended 相位，是我们自己补的抬手。</param>
+    private void ReleaseTouch(Vector2 releasePos, bool synthesized)
+    {
+        float pressDuration = Time.time - touchStartTime;
+        float swipeDistance = Vector2.Distance(releasePos, touchStartPos);
+        DebugLog.Info($"[InputManager] TouchRelease frame={Time.frameCount} pos=({releasePos.x:F0},{releasePos.y:F0}) dur={pressDuration:F3} swipe={swipeDistance:F1} synthesized={synthesized}");
+        try
+        {
+            ProcessGesture(releasePos, pressDuration, swipeDistance);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[InputManager] ProcessGesture(touch) exception: {ex}");
+        }
+
+        // 触发蓄力结束事件（在重置状态之前）
+        OnChargeEnded?.Invoke();
+
+        isTouching = false;
+        isLongPress = false;
+        isCharged = false;
+        isSwiping = false;
+        hasTriggeredDuringHold = false;
+        currentTouchId = -1;
     }
 
     /// <summary>

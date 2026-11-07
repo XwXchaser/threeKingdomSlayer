@@ -390,6 +390,12 @@ public class FrontItemBar : MonoBehaviour
     private void OnItemIconClicked(BuffIcon icon)
     {
         if (_qteDimmed) return;
+        // 引导/暂停/时停期间：**物品栏的点击整体无效**（2026-11-06）。
+        //   药水/旋风/旋风圈等道具都是**点图标**触发的，不走手势路径 →
+        //   `GameplayInputGate` 拦不到 → 教学期点一下就会真的生效（喝药/放道具）。
+        //   例外：教学「用技能打断」那一拍把 `AllowSkillActivationWhileBlocked` 打开 →
+        //   那时候物品栏就是技能槽，必须能点（见下面的 skillBeat 判定）。
+        if (GameplayInputGate.IsBlocked && !GameplayInputGate.AllowSkillActivationWhileBlocked) return;
         if (DialogueManager.Instance != null && DialogueManager.Instance.IsInteractionBlocked)
         {
             // 教学「用技能打断」那一拍：冻结着等玩家点技能槽 →

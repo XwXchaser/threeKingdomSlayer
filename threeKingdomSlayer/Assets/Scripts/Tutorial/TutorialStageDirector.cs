@@ -38,6 +38,20 @@ public partial class TutorialStageDirector : MonoBehaviour
     [Tooltip("按波次（0 起）对应的台词")]
     public DialogueEventData[] e0Dialogues = new DialogueEventData[0];
 
+    [Header("教学开场流程")]
+    [Tooltip("教学 N1 各波的**第一段字幕**（0 起）；留空 = 这一波不走开场")]
+    public DialogueEventData[] n1IntroDialogues = new DialogueEventData[0];
+    [Tooltip("教学 E0 各波的**第一段字幕**（0 起）；留空 = 这一波不走开场")]
+    public DialogueEventData[] e0IntroDialogues = new DialogueEventData[0];
+    [Tooltip("开场流程的「点击继续」按钮（场景里的实例；自带 Canvas+GraphicRaycaster，点得到）")]
+    public TutorialContinueButton continueButton;
+    [Tooltip("引导期点击遮罩（挡住战场等；HUD 由 hudCanvasGroup 整块失能）")]
+    public TutorialInputBlocker introBlocker;
+    [Tooltip("战斗 HUD 根上的 CanvasGroup（引导期整块失能：道具栏 / 技能槽 / 防御键 / 头像都不可点）")]
+    public CanvasGroup hudCanvasGroup;
+    // ⚠️ 这里**没有**“超时自动跳过”的开关：需求明确「不存在任何计时器直接跳过」。
+    //   「点击继续」只能由玩家点击推进；拍做完才退出暂停。
+
     [Header("教学台词：路线移动")]
     [Tooltip("路线出现出口箭头时播放，教玩家点箭头走到下一个节点")]
     public DialogueEventData choiceDialogue;
@@ -220,6 +234,16 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (_frozenByTutorial || _introPaused) Time.timeScale = 1f;
         _frozenByTutorial = false;
         _introPaused = false;
+
+        // ⑥ 输入闸门：开场流程（TutorialIntro）持有的那份锁必须还回去。
+        //   ⚠️ owner 规则只在**对象被销毁**时自动回收；导演被「禁用但没销毁」时
+        //   那份锁会留着 → 玩家进主菜单/正式关后点不动 → 所以这里显式 Release。
+        GameplayInputGate.Release(this);
+        IntroActive = false;
+        // 开场流程的「点击继续」按钮也是场景对象：导演被禁用时它会留在屏上 → 收掉
+        if (continueButton != null) continueButton.Hide();
+        // 教学文本的压暗（黑幕）也要收 → 否则离开教学后整个游戏都是暗的
+        SetTeachingDim(false);
     }
 
     /// <summary>退订（可重复调用，重复退订无害）。</summary>
@@ -305,6 +329,43 @@ public partial class TutorialStageDirector : MonoBehaviour
     /// 所以除了调用点判路线，这里再挂一道**每帧兜底**：只要不在教学路线上，静音一律还原。
     /// （与 <see cref="ReleaseTutorialOnlyChoicesIfOffTutorialRoute"/> 同一口径：路由未就绪时不动。）
     /// </summary>
+    /// <summary>
+    /// 路线选择期（等玩家选路牌）的教学锁定：**战斗 HUD 整块失能**。
+    ///
+    /// 需求（2026-11-06 用户）：「非战斗的教学部分……依然可以点击其他 UI，没有强制玩家跟教学走」
+    /// → 这段时间只允许点**路牌按钮**（幕布不拦射线）+ 左上角**暂停键**
+    /// （暂停层自己挂了 `ignoreParentGroups` 的 CanvasGroup → 不受 HUD 失能影响；
+    ///   路牌面板同理，自己挂了 `ignoreParentGroups` → 不会被 HUD 失能连带）。
+    /// </summary>
+    private void UpdateRouteTeachingLock()
+    {
+        var route = RouteFlowHub.Current as FakeRouteRuntime;
+        bool shouldLock = route != null && route.Phase == FakeRoutePhase.ChoosingRoute && IsOnTutorialRoute();
+        if (shouldLock == _routeTeachingLocked) return;
+        _routeTeachingLocked = shouldLock;
+
+        if (shouldLock)
+        {
+            if (hudCanvasGroup != null)
+            {
+                _routeHudInteractableBackup = hudCanvasGroup.interactable;
+                _routeHudBlocksRaycastsBackup = hudCanvasGroup.blocksRaycasts;
+                hudCanvasGroup.interactable = false;
+                hudCanvasGroup.blocksRaycasts = false;
+            }
+            Debug.Log("[Tutorial] 路线选择教学：HUD 已锁定（只能点路牌 / 暂停键）");
+        }
+        else if (hudCanvasGroup != null)
+        {
+            hudCanvasGroup.interactable = _routeHudInteractableBackup;
+            hudCanvasGroup.blocksRaycasts = _routeHudBlocksRaycastsBackup;
+        }
+    }
+
+    private bool _routeTeachingLocked;
+    private bool _routeHudInteractableBackup = true;
+    private bool _routeHudBlocksRaycastsBackup = true;
+
     private void ReleaseTutorialOnlyDefenseMuteIfOffTutorialRoute()
     {
         if (!_defenseMutedByChoice) return;
@@ -430,6 +491,12 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 于是正式关的三选一被锁死在教学池里（表现为「到该弹的时候选不了 / 卡住」）。
         ReleaseTutorialOnlyChoicesIfOffTutorialRoute();
         ReleaseTutorialOnlyDefenseMuteIfOffTutorialRoute();
+
+        // 路线选择期（等玩家选路牌）的教学锁定：其它 UI 不可点 → 强制玩家跟教学走。
+        UpdateRouteTeachingLock();
+
+        // 教学**整条路线**跑完才算完成（置位时机错了 → 玩家会在主菜单被直接放进正式关）。
+        UpdateTutorialRouteCompletion();
 
         // 开幕台词：教学路线一就绪就播一次
         if (!_openingPlayed && openingDialogue != null && tutorialRouteConfig != null)

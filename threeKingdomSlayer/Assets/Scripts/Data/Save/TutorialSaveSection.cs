@@ -77,4 +77,20 @@ public sealed class TutorialSaveSection : ISaveSection
         if (data.taughtTutorialBeats == null) data.taughtTutorialBeats = new List<string>();
         return data.taughtTutorialBeats;
     }
+
+    /// <summary>
+    /// **清掉教学进度**（教学中途退出 / 换设备 / 清档后重进 → 下次从头开始）。
+    ///
+    /// 需求（2026-11-06 用户）：「如果玩家中途退出，不应该从头开始这段教程吗？」
+    ///   → 中途退出时，之前「每教完一拍写存档」的标记**不能算数** → 全部清掉。
+    ///   → 只有**整条教学路线通关**才算数（见 <c>TutorialStageDirector.UpdateTutorialRouteCompletion</c>）。
+    ///
+    /// ⚠️ 只清**教学拍的标记**；天赋页教学 / 招式解锁引导 / 开始关卡引导不在这里（它们不在教学关里）。
+    /// </summary>
+    public static void ClearTutorialProgress(SaveData data)
+    {
+        if (data == null) return;
+        if (data.taughtTutorialBeats == null) return;
+        data.taughtTutorialBeats.Clear();
+    }
 }

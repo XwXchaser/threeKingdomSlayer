@@ -134,16 +134,33 @@ public partial class TutorialStageDirector : MonoBehaviour
 
     private void OnStageVictory()
     {
-        if (_stageState == null || tutorialRouteConfig == null) return;
-        var runtime = RouteFlowHub.Current;
+        // ⚠️ **不再在这里置位「教学完成」**（2026-11-06 用户反馈：「在主菜单不点教学引导直接点开始游戏」）。
+        //   旧逻辑在**第一场战斗（N1）胜利**时就置位 → 打完 N1 就被当成“教学完成”
+        //   → 回到主菜单直接进正式关 → **E0 那半段（防御拍 / 三选一 / 技能打断）再也没人教**。
+        //   需求（plan/tutorial-and-hint-overhaul-plan-20261101.md R7）：
+        //   「击杀节点二所有波次敌人 → 结束初始教学」→ 置位时机 = **整条教学路线跑完**。
+        //   → 见 `UpdateTutorialRouteCompletion()`。
+    }
+
+    /// <summary>
+    /// 教学路线**整条跑完**（N1 → 选路 → E0 → 结算）才算「教学完成」→ 写存档。
+    ///
+    /// ⚠️ 置位时机是这条链的关键：早一步置位，玩家就会在主菜单被直接放进正式关
+    ///   （用户 2026-11-06 反馈：「在主菜单不点教学引导直接点开始游戏」）。
+    /// </summary>
+    private void UpdateTutorialRouteCompletion()
+    {
+        if (tutorialRouteConfig == null) return;
+        var runtime = RouteFlowHub.Current as FakeRouteRuntime;
         if (runtime == null || runtime.RouteConfig != tutorialRouteConfig) return;
+        if (runtime.Phase != FakeRoutePhase.Completed) return;
 
         var data = SaveManager.Load();
-        if (TutorialSaveSection.IsCompleted(data)) return;
+        if (data == null || TutorialSaveSection.IsCompleted(data)) return;
         TutorialSaveSection.MarkCompleted(data);
         SaveManager.Save(data);
         _tutorialCompletedCache = true;   // 缓存刷新：之后防御键在正式关一直开放
-        DebugLog.Info("[Tutorial] 教学关已完成并记档");
+        DebugLog.Info("[Tutorial] 教学路线整条跑完 → 记「教学完成」");
     }
 
     // ── 对话视图缓存 ✅ ──
