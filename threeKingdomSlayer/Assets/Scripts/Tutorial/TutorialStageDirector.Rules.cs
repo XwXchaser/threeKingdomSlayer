@@ -12,15 +12,17 @@ public partial class TutorialStageDirector : MonoBehaviour
     ///
     /// 规则：局内教学文本出现 → 压暗画面；**一直压到这一拍的手势做完**（EndBeat）才撤。
     ///
-    /// ⚠️ 压暗层在 order=110，**低于台词气泡**（DialogueOverlay order=120）→
-    ///   那行字不会被自己压暗；也低于「点击继续」按钮（121）→ 按钮不被压暗。
+    /// ⚠️ **压暗只能走「场景压暗」**（<c>TutorialSceneDim</c>：给背景渲染器乘亮度系数），
+    ///   **不能用全屏 UI 遮罩** —— 战场是透视相机 + 世界物件（长枪是 MeshRenderer、敌人是精灵），
+    ///   任何 Overlay 画布都必然盖在角色上面（层级无解）→ 用户原话：
+    ///   「应该让说话的头像、敌人和武器都在遮罩上方，你把这些都遮住怎么教？」
+    ///   → 敌人与武器必须保持亮，只有背景被压暗。
     ///
-    /// ⚠️ **不能跟点击遮罩（Show/Hide）绑在一起**：点完「点击继续」只是第一段结束，
-    ///   第二段文本 + 手势示范还在屏上 → 这时不能撤压暗。
+    /// 台词气泡与说话头像都是 UI → 场景压暗不影响它们。
     /// </summary>
     private void SetTeachingDim(bool on)
     {
-        if (introBlocker != null) introBlocker.SetDim(on);
+        SetSceneDim(on);
     }
     // ── 教学招式白名单（还没教到的招式不许发出）────────────────
     // 口径：白名单 = **已经教完的招式 ∪ 当前这一拍要教的招式**。
@@ -157,7 +159,12 @@ public partial class TutorialStageDirector : MonoBehaviour
             if (alive[i] != null) alive[i].tutorialHold = hold;
     }
 
-    /// <summary>只压暗路线场景（背景/地形/植被），不动角色与敌人。</summary>
+    /// <summary>
+    /// 只压暗**背景**（路线场景的景物 + 天空盒），**不动角色与敌人**。
+    ///
+    /// ⚠️ 教学关可能**没有路线场景**（背景只剩天空盒）→ 之前这里直接 return → **一点都不暗**，
+    ///   这就是「局内教学文本没有黑幕」的真正原因。现在改成：**没场景也压天空盒**。
+    /// </summary>
     private void SetSceneDim(bool dim)
     {
         if (_sceneDim == null) _sceneDim = GetComponent<TutorialSceneDim>();
@@ -172,15 +179,18 @@ public partial class TutorialStageDirector : MonoBehaviour
         bool haveScene = presenter != null && presenter.TryGetActiveScene(out routeScene);
         if (dim)
         {
-            if (!haveScene)
-            {
-                Debug.Log("[Tutorial] 场景压暗：路线场景未就绪，跳过压暗");
-                return;
-            }
-            _sceneDim.Bind(routeScene);
+            // 没路线场景时传 default → TutorialSceneDim 内部会**只绑天空盒**（背景照旧压暗）
+            _sceneDim.Rebind(routeScene);
             _sceneDimBound = true;
-            _dimBoundScene = routeScene;
-            _dimBoundSceneValid = true;
+            if (haveScene)
+            {
+                _dimBoundScene = routeScene;
+                _dimBoundSceneValid = true;
+            }
+            else
+            {
+                _dimBoundSceneValid = false;
+            }
         }
         _sceneDim.FadeTo(dim);
     }

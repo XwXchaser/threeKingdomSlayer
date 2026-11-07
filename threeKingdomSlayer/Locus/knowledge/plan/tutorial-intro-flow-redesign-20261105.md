@@ -373,14 +373,22 @@ OnWaveStartedRoutine(waveIndex)
 > 「`DialogueDimOverlay` / `Tutorial Blackout` 幕布**从来没显示过**」的说法**不成立** ——
 > `DialogueDimOverlay` 就是用户看到的那个黑幕（它会显示）。`Tutorial Blackout` 幕布仍待单独验。
 
-### 6.10.2 局内教学文本统一压暗（黑幕）
+### 6.10.2 局内教学文本统一压暗（黑幕）—— **只压暗背景，敌人与武器保持亮**
+
+> ⚠️ **这一条返工过一次**（用户 2026-11-06 当场纠正）：
+> 「应该让**说话的头像、敌人和武器**都在遮罩上方（教学应该教的内容），你把这些都遮住怎么教？」
+>
+> **不能用全屏 UI 遮罩**：战场是透视相机 + 世界物件（长枪是 `MeshRenderer`、敌人是精灵），
+> 任何 Overlay 画布都必然盖在角色上面 → 层级无解。
+> 项目里本来就有正确的机制：**`TutorialSceneDim`**（“教学压暗：只压暗场景，玩家、长枪与敌人保持原亮度”），
+> 它的类注释早写了这一条。
 
 | 项 | 内容 |
 |---|---|
-| 实现 | 不透明黑 `Image` + `CanvasGroup.alpha`（0.55）——**不用半透明 Image**（本项目实测半透明 Image 会画不出来） |
-| 层级 | **order=110** 的独立根 Canvas `TutorialTeachingDim`：在台词气泡（DialogueOverlay 120）**之下** → 那行字不被压暗；在「点击继续」按钮（121）**之下** → 按钮不被压暗；在战斗 HUD（21）**之上** → 场景被压暗 |
-| 开关点 | 教学文本出现 → `SetTeachingDim(true)`（`PushBeatDialogue` / 开场两段 / 技能拍台词 / 冻结台词）；手势做完 → `EndBeat` → `SetTeachingDim(false)`；被打断 / 离开教学 / 不教手势的波次 → 也撤 |
-| **不压的** | 三选一教学台词、路线选择台词、开幕台词 —— 压暗层 order=110 **高于**三选一弹窗 order=100，压上去会把弹窗一起变暗 |
+| 实现 | `TutorialSceneDim`：给**背景渲染器**（路线场景景物）+ **天空盒**乘亮度系数（`dimBrightness`，默认 0.42）。敌人 / 长枪 / 台词气泡 / 说话头像 → **都不碰**（前两者是世界物件，后两者是 UI） |
+| 开关点 | 教学文本出现（`PushBeatDialogue` / 开场两段 / 技能拍台词 / 冻结台词）→ `SetTeachingDim(true)`；手势做完（`EndBeat`）→ 撤；被打断 / 离开教学 / 不教手势的波次 → 也撤 |
+| **顺带修的真 bug** | **教学关没有路线场景时，`SetSceneDim` 直接 return → 一点都��暗** → 这就是「局内教学文本没有黑幕」的真正原因。现在改成**没场景也压天空盒**（`TutorialSceneDim.Bind` 内部逻辑） |
+| 避免闪烁 | 新增 `TutorialSceneDim.Rebind()`：重绑时**保留当前压暗程度** → 不会“文本压一次、开拍又压一次”时先亮一下 |
 
 ### 6.10.3 「点击继续」按钮 → 玩家血条上方
 
@@ -392,14 +400,15 @@ OnWaveStartedRoutine(waveIndex)
 
 | 文件 | 改动 |
 |---|---|
-| `Assets/Scripts/UI/TutorialInputBlocker.cs` | 新增 `_dim` + 公开 `SetDim(bool)`；压暗与点击遮罩**解耦**（点完「点击继续」不能撤压暗） |
+| `Assets/Scripts/UI/TutorialInputBlocker.cs` | 只管点击遮罩（无压暗层） |
 | `Assets/Scripts/UI/TutorialContinueButton.cs` | 新增 `_placeAbove` + `PlaceAboveAnchor()`（跨 Canvas 换算） |
-| `Assets/Scripts/Tutorial/TutorialStageDirector.Rules.cs` | 新增 `SetTeachingDim(bool)` |
+| `Assets/Scripts/Tutorial/TutorialStageDirector.Rules.cs` | 新增 `SetTeachingDim(bool)`（转调 `SetSceneDim`）；`SetSceneDim` 改成**没路线场景也压天空盒** |
+| `Assets/Scripts/Tutorial/TutorialSceneDim.cs` | `Bind()` **总是绑天空盒**；新增 `Rebind()`（重绑时保留压暗程度，避免闪烁） |
 | `Assets/Scripts/Tutorial/TutorialStageDirector.Hints.cs` | 开拍处不压暗、收拍（`EndBeat`）撤压暗；`StopHint` / 不教手势的波次 / 拍没开成 也撤 |
 | `Assets/Scripts/Tutorial/TutorialStageDirector.Beats.cs` | `PushBeatDialogue` / 技能拍台词 / 冻结台词 → 开压暗 |
 | `Assets/Scripts/Tutorial/TutorialStageDirector.Intro.cs` | 开场两段的第一段 → 开压暗 |
 | `Assets/Scripts/Tutorial/TutorialStageDirector.cs` | `ReleaseGlobalTutorialState` → 撤压暗 |
-| `Assets/Scenes/Battle.scene` | 新增 `TutorialTeachingDim/IntroDim`；`TutorialContinueButton._placeAbove` / `TutorialInputBlocker._dim` 接线；按钮位置 |
+| `Assets/Scenes/Battle.scene` | `TutorialContinueButton._placeAbove` 接线；按钮位置。（**没有**压暗层——那层已被删） |
 | `Assets/ScriptableObjects/Dialogue/tutorial_t0_opening.asset` | `nonBlocking: 0 → 1` |
 | `Assets/Scripts/Editor/TutorialIntroSetupTool.cs`（新） | 幂等接线工具：`Tools ▸ 三国杀戮 ▸ 教学关 ▸ 开场 UI 布线` |
 
@@ -407,7 +416,7 @@ OnWaveStartedRoutine(waveIndex)
 
 1. **第一段字幕 4 条文案仍是草稿** → 待用户改。
 2. **真机表现待验**（压暗、按钮位置、触摸松手）。
-3. **三选一教学台词要不要也压暗** → 悬着（压了会把弹窗变暗）。
+3. **背景压暗的强度**：`dimBrightness` 默认 0.42（背景保留 42% 亮度）→ 真机看够不够“黑”。
 
 ---
 

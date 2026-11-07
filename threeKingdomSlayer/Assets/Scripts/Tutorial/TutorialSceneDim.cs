@@ -53,49 +53,70 @@ public sealed class TutorialSceneDim : MonoBehaviour
     {
         RestoreNow();
         Clear();
-        if (!scenery.IsValid() || !scenery.isLoaded) return;
-
-        var roots = scenery.GetRootGameObjects();
-        for (int r = 0; r < roots.Length; r++)
+        bool haveScene = scenery.IsValid() && scenery.isLoaded;
+        if (haveScene)
         {
-            var root = roots[r];
-            if (root == null) continue;
-
-            // 网格：只能走材质属性
-            var meshes = root.GetComponentsInChildren<MeshRenderer>(true);
-            for (int i = 0; i < meshes.Length; i++)
+            var roots = scenery.GetRootGameObjects();
+            for (int r = 0; r < roots.Length; r++)
             {
-                var mesh = meshes[i];
-                var material = mesh != null ? mesh.sharedMaterial : null;
-                AddByMaterial(mesh, material);
-            }
+                var root = roots[r];
+                if (root == null) continue;
 
-            // 精灵：改共享材质的 _Color（PropertyBlock / sprite.color 对这个自定义 shader 都无效）
-            var sprites = root.GetComponentsInChildren<SpriteRenderer>(true);
-            for (int i = 0; i < sprites.Length; i++)
-            {
-                var sprite = sprites[i];
-                if (sprite == null) continue;
-                var mat = sprite.sharedMaterial;
-                if (mat != null && mat.HasProperty("_Color"))
+                // 网格：只能走材质属性
+                var meshes = root.GetComponentsInChildren<MeshRenderer>(true);
+                for (int i = 0; i < meshes.Length; i++)
                 {
-                    if (!_dimMaterials.Contains(mat))
-                    {
-                        _dimMaterials.Add(mat);
-                        _dimMaterialColors.Add(mat.GetColor("_Color"));
-                    }
-                    continue;
+                    var mesh = meshes[i];
+                    var material = mesh != null ? mesh.sharedMaterial : null;
+                    AddByMaterial(mesh, material);
                 }
-                _fallbackSprites.Add(sprite);
-                _fallbackColors.Add(sprite.color);
+
+                // 精灵：改共享材质的 _Color（PropertyBlock / sprite.color 对这个自定义 shader 都无效）
+                var sprites = root.GetComponentsInChildren<SpriteRenderer>(true);
+                for (int i = 0; i < sprites.Length; i++)
+                {
+                    var sprite = sprites[i];
+                    if (sprite == null) continue;
+                    var mat = sprite.sharedMaterial;
+                    if (mat != null && mat.HasProperty("_Color"))
+                    {
+                        if (!_dimMaterials.Contains(mat))
+                        {
+                            _dimMaterials.Add(mat);
+                            _dimMaterialColors.Add(mat.GetColor("_Color"));
+                        }
+                        continue;
+                    }
+                    _fallbackSprites.Add(sprite);
+                    _fallbackColors.Add(sprite.color);
+                }
             }
         }
 
+        // ⚠️ **天空盒总是要绑**：教学关可能没有路线场景（背景只剩天空盒）
+        //    → 不绑就等于「什么都不暗」→ 教学文本出现时看不到黑幕。
         BindSkybox();
 
         _bound = true;
         _current = 0f;
         Apply(0f);
+    }
+
+    /// <summary>
+    /// 重新绑定场景，**但保留当前的压暗程度**。
+    ///
+    /// 为什么需要：教学文本出现时压一次、开拍时又压一次 → 第二次如果从 0 开始淡入，
+    /// 画面会先亮一下再暗下去（闪烁）→ 这里把当前程度带过去。
+    /// </summary>
+    public void Rebind(Scene scenery)
+    {
+        float keep = _current;
+        Bind(scenery);
+        if (keep > 0.001f)
+        {
+            _current = keep;
+            Apply(keep);
+        }
     }
 
     private bool AddByMaterial(Renderer renderer, Material material)

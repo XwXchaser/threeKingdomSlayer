@@ -21,26 +21,6 @@ public sealed class TutorialInputBlocker : MonoBehaviour
 {
     [SerializeField] private Image _blocker;
 
-    /// <summary>
-    /// **压暗（黑幕）层**：教学文本出现时把画面压暗，突出那行字。
-    ///
-    /// ⚠️ **压暗必须用「不透明黑底图 + CanvasGroup.alpha」**：
-    ///   本项目实测，半透明 Image（<c>Image.color.a &lt; 1</c>）在某些情况下画不出来
-    ///   （逐像素比对等于没画），而 CanvasGroup 的 alpha 走批次级通道 → 稳定生效。
-    ///   → 场景里的 TutorialTeachingDim 就是一个 **不透明黑 Image + CanvasGroup**，
-    ///     这里只驱动它的 alpha。
-    ///
-    /// ⚠️ 这个层**不能**挂在「点击继续」按钮的祖先上（CanvasGroup 会连按钮一起压暗、
-    ///   interactable=false 还会让按钮点不动）→ 它是独立的层，按钮在它上面。
-    ///
-    /// ⚠️ 它的层级必须**低于台词气泡**（DialogueOverlay order=120）→
-    ///   否则那行字自己也被压暗了（这层 order=110）。
-    /// </summary>
-    [SerializeField] private CanvasGroup _dim;
-
-    [Tooltip("压暗的透明度（0 = 不压暗）")]
-    [Range(0f, 1f)] public float dimAlpha = 0.55f;
-
     /// <summary>遮罩当前是否在挡点击。</summary>
     public bool IsBlocking { get; private set; }
 
@@ -64,18 +44,5 @@ public sealed class TutorialInputBlocker : MonoBehaviour
     {
         IsBlocking = false;
         if (_blocker != null) { _blocker.raycastTarget = false; _blocker.enabled = false; }
-    }
-
-    /// <summary>
-    /// 开 / 关压暗（黑幕）。
-    ///
-    /// ⚠️ **与 Show()/Hide() 分开**：点击遮罩只管「挡不挡点击」，
-    ///   压暗的开关由教学导演按**拍的节奏**管（文本出现 → 压暗；手势做完 → 撤）。
-    ///   所以「点完『点击继续』」这一步**不能**把压暗撤掉 —— 第二段文本 + 手势还在屏幕上。
-    /// </summary>
-    public void SetDim(bool on)
-    {
-        if (_dim == null) return;
-        _dim.alpha = on ? dimAlpha : 0f;
     }
 }

@@ -21,15 +21,8 @@ public static class TutorialIntroSetupTool
 {
     private const string OverlayName = "TutorialIntroOverlay";
     private const string DimCanvasName = "TutorialTeachingDim";
-    private const string DimName = "IntroDim";
     private const string HealthBarName = "HealthBar";
     private const string OpeningDialogueName = "tutorial_t0_opening";
-
-    /// <summary>
-    /// 压暗层的层级：**必须低于台词气泡**（DialogueOverlay order=120），
-    /// 否则那行教学文字自己也被压暗了；又要**高于战斗 HUD**（order=21）→ 110。
-    /// </summary>
-    private const int DimSortingOrder = 110;
 
     [MenuItem("Tools/三国杀戮/教学关/开场 UI 布线")]
     public static void RunMenu()
@@ -55,64 +48,20 @@ public static class TutorialIntroSetupTool
             return log.ToString();
         }
 
-        // ── ① 压暗层（独立的置顶 Canvas，order=110）────────────────
-        //    先清掉旧位置的残留（之前版本放在「点击继续」那层里 → 会把台词气泡一起压暗）
-        var stale = overlay.Find(DimName);
+        // ── ① 清理：早期版本用**全屏 UI 遮罩**做「黑幕」──
+        //    全屏 Overlay 必然盖在敌人与武器上面（战场是透视相机 + 世界物件，层级无解）
+        //    → 改成「只压暗背景」的 TutorialSceneDim → 这里把旧层删掉。
+        var dimCanvasGo = GameObject.Find(DimCanvasName);
+        if (dimCanvasGo != null)
+        {
+            UnityEngine.Object.DestroyImmediate(dimCanvasGo);
+            log.Append("[TutorialIntroSetup] 删掉了全屏遮罩层 " + DimCanvasName + "（改用场景压暗）\n");
+        }
+        var stale = overlay.Find("IntroDim");
         if (stale != null)
         {
             UnityEngine.Object.DestroyImmediate(stale.gameObject);
-            log.Append("[TutorialIntroSetup] 删掉了旧的压暗层残留\n");
-        }
-
-        //    不能挂在「点击继续」按钮的祖先上（CanvasGroup 会连按钮一起压暗），
-        //    也不能放在 order≥120 的层里（会把台词气泡一起压暗）。
-        var dimCanvasGo = GameObject.Find(DimCanvasName);
-        if (dimCanvasGo == null)
-        {
-            dimCanvasGo = new GameObject(DimCanvasName);
-            var canvas = dimCanvasGo.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = DimSortingOrder;
-            dimCanvasGo.AddComponent<CanvasScaler>();
-        }
-        var dimRoot = dimCanvasGo.transform;
-        var dim = dimRoot.Find(DimName) as RectTransform;
-        if (dim == null)
-        {
-            var go = new GameObject(DimName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup));
-            go.transform.SetParent(dimRoot, false);
-            dim = go.GetComponent<RectTransform>();
-            dim.anchorMin = Vector2.zero;
-            dim.anchorMax = Vector2.one;
-            dim.offsetMin = Vector2.zero;
-            dim.offsetMax = Vector2.zero;
-
-            var img = go.GetComponent<Image>();
-            img.color = new Color(0f, 0f, 0f, 1f);   // 不透明黑；透明度交给 CanvasGroup.alpha
-            img.raycastTarget = false;                // 射线由「点击继续」那层的遮罩负责
-
-            var group = go.GetComponent<CanvasGroup>();
-            group.alpha = 0f;
-            group.interactable = false;
-            group.blocksRaycasts = false;
-            log.Append("[TutorialIntroSetup] 建了压暗层 " + DimCanvasName + "/" + DimName + "\n");
-        }
-        else
-        {
-            // 之前放在「点击继续」那层里 → 移出来（否则会把台词气泡压暗）
-            if (dim.parent != dimRoot)
-            {
-                dim.SetParent(dimRoot, false);
-                dim.anchorMin = Vector2.zero;
-                dim.anchorMax = Vector2.one;
-                dim.offsetMin = Vector2.zero;
-                dim.offsetMax = Vector2.zero;
-                log.Append("[TutorialIntroSetup] 压暗层移到独立 Canvas\n");
-            }
-            else
-            {
-                log.Append("[TutorialIntroSetup] 压暗层已就位\n");
-            }
+            log.Append("[TutorialIntroSetup] 删掉了旧的压暗层残留 IntroDim\n");
         }
 
         // ── ② 接线 ──────────────────────────────────────────────────
@@ -120,13 +69,9 @@ public static class TutorialIntroSetupTool
         var dimProp = blockerSo.FindProperty("_dim");
         if (dimProp != null)
         {
-            dimProp.objectReferenceValue = dim.GetComponent<CanvasGroup>();
+            dimProp.objectReferenceValue = null;
             blockerSo.ApplyModifiedPropertiesWithoutUndo();
-            log.Append("[TutorialIntroSetup] _dim 已接\n");
-        }
-        else
-        {
-            log.Append("[TutorialIntroSetup] !! 找不到 _dim 字段\n");
+            log.Append("[TutorialIntroSetup] 清掉了场景里旧的 _dim 接线\n");
         }
 
         var buttonSo = new SerializedObject(continueBtn);
