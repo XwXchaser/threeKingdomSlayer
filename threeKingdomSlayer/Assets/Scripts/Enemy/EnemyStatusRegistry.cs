@@ -46,6 +46,12 @@ public static class EnemyStatusRegistry
     public const string Disease = "disease";
     public const string Frozen = "frozen";
 
+    /// <summary>出站攻击力**加攻**（督战单位 1013 的号令；可叠加，看层数）。</summary>
+    public const string AtkUp = "atk_up";
+
+    /// <summary>出站攻击力**减攻**（督战单位 1013 死亡时的一次性结算）。</summary>
+    public const string AtkDown = "atk_down";
+
     /// <summary>一次状态查询的结果。</summary>
     public struct Snapshot
     {

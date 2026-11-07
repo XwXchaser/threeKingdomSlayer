@@ -108,6 +108,7 @@ public partial class Enemy : MonoBehaviour
         _cavalry?.ResetCavalry();
         _shieldGuard = GetComponent<ShieldGuardEnemy>();
         _shieldGuard?.ResetShieldGuard();
+        _commander = GetComponent<EnemyCommander>();   // 督战单位（1013）：不攻击、给全场加攻
         columnIndex = col;
         rowIndex = row;
 

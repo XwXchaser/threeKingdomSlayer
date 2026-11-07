@@ -128,6 +128,14 @@ public partial class Enemy : MonoBehaviour
     public void StartAttacking()
     {
         if (state == EnemyState.Dead || IsCoward || formState == EnemyFormState.ShieldBroken) return;
+        // ★ **督战单位（1013）永不攻击**：不进入 Attacking 态（它只号令）。
+        //   ⚠️ 行军完成分支在 StartAttacking() 之后**独立**调用 CompleteRushMoveOrder()
+        //   → 这里早退**不会卡住补齐队列**（见 plan/enemy-commander-buff-unit-plan.md §5.2 M2）。
+        if (_commander != null)
+        {
+            state = EnemyState.Idle;
+            return;
+        }
         // 骑乘期间不做普通攻击：攻击行为全部由 CavalryEnemy 的冲锋循环负责。
         if (_cavalry != null && _cavalry.IsMounted)
         {

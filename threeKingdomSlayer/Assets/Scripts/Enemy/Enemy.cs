@@ -550,6 +550,8 @@ public GameObject freezeMeltEffectPrefab;
     internal CavalryEnemy _cavalry;
     internal CavalryVisualController _cavalryVisual;
     private ShieldGuardEnemy _shieldGuard;
+    /// <summary>督战型增益单位（1013）组件；有它 = 这个敌人**不攻击**、只号令。</summary>
+    internal EnemyCommander _commander;
     private AnimationClip _attackClip; // 缓存的 Attack clip（用于同步 DOTween 与 Animator 时长）
 
     // 事件
@@ -567,6 +569,12 @@ public GameObject freezeMeltEffectPrefab;
     /// </summary>
     [System.NonSerialized] public System.Func<Enemy, bool> CustomDeathVisualHandler;
     public System.Action<Enemy> OnDamageTaken;
+    /// <summary>
+    /// **带伤害来源**的受击事件（2026-11-07：督战单位的号令要区分「谁能打断」）。
+    /// 与 <see cref="OnDamageTaken"/> 的区别：本事件**每次伤害落血都会发**（不看是否计入连击），
+    /// 且带来源 → 订阅方自己按来源判定（只有本体招式 / 主动技能 / 大招能打断号令）。
+    /// </summary>
+    public System.Action<Enemy, HitFeedbackSource> OnDamagedWithSource;
     public System.Action<Enemy, float, float> OnHealthChanged; // enemy, current, max
     public System.Action<Enemy, float, float> OnPoiseChanged;  // enemy, current, max
     public System.Action<Enemy> OnBossEngaged;                  // Boss 到达应战排

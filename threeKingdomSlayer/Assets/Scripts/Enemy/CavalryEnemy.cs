@@ -108,7 +108,7 @@ public sealed partial class CavalryEnemy : MonoBehaviour
     public int ChargeOriginRow => _chargeOriginRow;
     public int ChargeGrids => _chargeGrids;
 
-    /// <summary>本次冲锋造成的伤害：chargeDamage × 冲锋格数 × 波次攻击倍率。</summary>
+    /// <summary>本次冲锋造成的伤害：chargeDamage × 冲锋格数 × 波次攻击倍率 × 出站攻击倍率。</summary>
     public float ChargeDamage
     {
         get
@@ -116,7 +116,9 @@ public sealed partial class CavalryEnemy : MonoBehaviour
             float waveMult = _enemy != null && _enemy.BaseAttackDamage > 0f
                 ? _enemy.attackDamage / _enemy.BaseAttackDamage
                 : 1f;
-            return chargeDamage * Mathf.Max(1, _chargeGrids) * waveMult;
+            // ★ 出站攻击倍率（督战单位 1013 的号令）：骑兵是**独立伤害源**，不乘就完全不吃增益。
+            float atkMult = EnemyStatusAtkMod.GetOutgoingMultiplier(_enemy);
+            return chargeDamage * Mathf.Max(1, _chargeGrids) * waveMult * atkMult;
         }
     }
 

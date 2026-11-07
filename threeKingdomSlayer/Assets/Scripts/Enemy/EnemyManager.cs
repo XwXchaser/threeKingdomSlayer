@@ -281,7 +281,9 @@ public class EnemyManager : MonoBehaviour
     public void OnEnemyAttackPlayer(Enemy enemy)
     {
         if (enemy == null) return;
-        float damage = enemy.attackDamage;
+        // ★ **出站攻击倍率**（督战单位 1013 的号令）：加攻 / 减攻只作用在「敌人打玩家」这一层。
+        //   enemy.attackDamage 里已经乘过波次倍率 → 本倍率乘在它**之后**。
+        float damage = enemy.attackDamage * EnemyStatusAtkMod.GetOutgoingMultiplier(enemy);
         Debug.Log($"[EnemyManager] OnEnemyAttackPlayer: enemy={enemy.DebugTag} damage={damage} playerState={PlayerState.Instance != null}");
         PlayerState.Instance?.TakeDamage(damage, enemy);
     }

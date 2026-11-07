@@ -164,6 +164,11 @@ public partial class Enemy : MonoBehaviour
 
         currentHealth -= finalDamage;
 
+        // ★ **带来源的受击事件**（督战单位 1013 用它判定「号令能不能被打断」）
+        //   · 发在**扣血之后**：伤害真的落下了才通知；
+        //   · 与是否计入连击无关（DoT 也要能通知到，由订阅方按来源判定）。
+        OnDamagedWithSource?.Invoke(this, feedbackSource);
+
         // QTE 中挂起转阶段时，血量不得跌破转阶段阈值（否则 QTE 未结束即触发死亡/转阶段）
         if (_deferredPhaseTransition != null)
         {

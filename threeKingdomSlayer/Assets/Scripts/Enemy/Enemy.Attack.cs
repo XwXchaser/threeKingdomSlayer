@@ -184,7 +184,10 @@ private void SpawnProjectile()
         float durationMultiplier = arrowConfig != null ? arrowConfig.GetFlightDurationMultiplierForRow(rowIndex) : 1f;
         float arcHeightMultiplier = arrowConfig != null ? arrowConfig.GetArcHeightMultiplierForRow(rowIndex) : 1f;
         float maxDescentPitch = arrowConfig != null ? arrowConfig.maxDescentPitch : 89f;
-        proj.Launch(startPos, endZ, endX, attackDamage, projectileArcHeight * arcHeightMultiplier,
+        // ★ **出站攻击倍率快照**（督战单位 1013 的号令）：远程箭矢在发射时把伤害**快照**走
+        //   （与波次倍率的快照口径一致）→ 之后号令层数变化不影响已在途的箭矢。
+        float outgoingMult = EnemyStatusAtkMod.GetOutgoingMultiplier(this);
+        proj.Launch(startPos, endZ, endX, attackDamage * outgoingMult, projectileArcHeight * arcHeightMultiplier,
             projectileFlyDuration * durationMultiplier, this, maxDescentPitch: maxDescentPitch);
 
         DebugLog.Info($"[Enemy] {DebugTag} 发射飞行物: start=({startPos.x:F1},{startPos.y:F1},{startPos.z:F1}) endZ={endZ:F1} endX={endX:F1}");
