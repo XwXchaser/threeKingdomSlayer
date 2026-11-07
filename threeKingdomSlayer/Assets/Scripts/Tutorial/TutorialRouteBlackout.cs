@@ -11,6 +11,14 @@ using UnityEngine.UI;
 /// **黑幕 = 半透明压暗**（默认 0.55），**不是**全屏纯黑：画面在转场时仍然看得见，
 /// 不会黑屏一闪把玩家晃到。
 ///
+/// ⚠️ **层级：黑幕在路牌面板之下**（黑幕 Canvas order=19 < BattleHUD root 21）→
+///   路牌按钮与它的文字**不被压暗**（用户 2026-11-07：「按钮和文本被挡在遮罩下方？」）
+///   → 与教学拍的原则一致：**只压暗背景，要教学的东西保持亮**。
+///   手势提示层（order 200）与暂停层（130）也在它上面 ✓。
+///
+/// ⚠️ **底图必须不透明**（透明交给 CanvasGroup.alpha）：本项目实测半透明 Image 渲染不可靠
+///   → 之前这层幕布**从来没显示过**（用户截图确认）。
+///
 /// 为什么不用现有的 <see cref="TutorialSceneDim"/>：它是「只压暗路线场景（背景/地形/植被）」
 /// 的实现，靠改材质与精灵颜色，不是全屏遮罩，而且它的设计明确写了「不用全屏 UI 遮罩 ——
 /// 那会把角色也遮住」。节点移动时画面里没有角色在打，这时用一层半透明黑幕正好。
@@ -54,7 +62,11 @@ public class TutorialRouteBlackout : MonoBehaviour
         _group.alpha = 0f;
         _group.blocksRaycasts = false;      // 黑幕不拦点击（路牌按钮要点得到）
         _group.interactable = false;
-        curtain.color = new Color(0f, 0f, 0f, maxAlpha);
+        // ⚠️ **底图必须是不透明的**（透明由 CanvasGroup.alpha 控制）：
+        //   本项目实测，**半透明 Image（Image.color.a < 1）渲染不可靠**
+        //   （运行时新建的半透明黑图整层画不出来 → “黑幕从来没显示过”的真正原因）。
+        //   → 统一「不透明底图 + CanvasGroup.alpha」。
+        curtain.color = new Color(0f, 0f, 0f, 1f);
     }
 
     private void OnDisable()
@@ -144,6 +156,8 @@ public class TutorialRouteBlackout : MonoBehaviour
     private void Apply()
     {
         if (_group == null) return;
+        // ⚠️ **只能乘一次**：之前底图自带 0.55 透明、这里又乘一次 maxAlpha → 实际只有 0.30。
+        //   现在底图是不透明的（alpha=1）→ 这里乘一次就是最终黑度。
         _group.alpha = Mathf.Clamp01(_alpha) * maxAlpha;
     }
 
@@ -154,7 +168,8 @@ public class TutorialRouteBlackout : MonoBehaviour
         var canvas = GetComponentInParent<Canvas>();
         if (canvas == null) return;
 
-        var go = new GameObject("Tutorial Blackout Curtain", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        // ⚠️ 底图**不透明** + CanvasGroup 控透明（半透明 Image 在本项目画不出来）
+        var go = new GameObject("Tutorial Blackout Curtain", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup));
         go.transform.SetParent(canvas.transform, false);
         var rect = go.GetComponent<RectTransform>();
         rect.anchorMin = Vector2.zero;
@@ -162,7 +177,12 @@ public class TutorialRouteBlackout : MonoBehaviour
         rect.offsetMin = Vector2.zero;
         rect.offsetMax = Vector2.zero;
         var img = go.GetComponent<Image>();
+        img.color = new Color(0f, 0f, 0f, 1f);
         img.raycastTarget = false;
+        var cg = go.GetComponent<CanvasGroup>();
+        cg.alpha = 0f;
+        cg.interactable = false;
+        cg.blocksRaycasts = false;
         curtain = img;
         // 置顶：黑幕要盖住一切
         go.transform.SetAsLastSibling();

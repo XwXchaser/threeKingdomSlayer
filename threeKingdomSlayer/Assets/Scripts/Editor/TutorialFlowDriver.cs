@@ -27,6 +27,12 @@ public static class TutorialFlowDriver
     private static List<UpgradeDefinition> _pendingChoices;
     private static float _choicePickAt;
     private static int _tapCount;
+    /// <summary>
+    /// 调试 / 审计用：**不自动点路牌按钮**（让审计工具能停在选路那一刻截图）。
+    /// 默认 false（照常自动点）。
+    /// </summary>
+    public static bool skipRouteChoiceClick;
+
     private static FakeRoutePhase _lastPhase = FakeRoutePhase.None;
     private static string _lastStepKey = "none";
     private static readonly List<string> Events = new List<string>();
@@ -142,7 +148,7 @@ public static class TutorialFlowDriver
         if (runtime.Phase == FakeRoutePhase.ChoosingRoute)
         {
             var btn = Object.FindObjectOfType<RouteChoiceButton>();
-            if (btn != null && Time.unscaledTime >= _nextTapTime)
+            if (btn != null && Time.unscaledTime >= _nextTapTime && !skipRouteChoiceClick)
             {
                 _nextTapTime = Time.unscaledTime + 1.0f;
                 Log("点击路线选择按钮");
