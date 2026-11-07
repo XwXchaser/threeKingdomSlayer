@@ -152,16 +152,21 @@ public class EnemyCommander : MonoBehaviour
     private void ApplyAtkUpToAll()
     {
         int count = 0;
+        int stacks = 0;
         foreach (var e in GetPresentEnemies())
         {
             EnemyStatusAtkMod.ApplyUp(e, atkBonusPercent, maxStacks);
             // 让该敌人的**血条视图**存在 → 它左上角的加攻标记才会出现
             //（血条视图是惰性创建的：平时只有被打过的敌人才有；走现成的呈现层端口，不新增通道）
             CombatPresenters.EnemyHealthBars?.GetOrCreate(e.gameObject);
+            if (stacks == 0) stacks = EnemyStatusAtkMod.GetUpStacks(e);
             count++;
         }
         _castCount++;
-        DebugLog.Info($"[Commander] 号令 ×{_castCount}: 在场敌人 +{atkBonusPercent * 100f:F0}% 攻击力（{count} 个）");
+        // ⚠️ 只在**层数真的涨了**时打日志：号令每 4 秒一次，一直刷会把 Console 淹掉
+        //   （实测跑一轮机器人时刷了 70+ 行，机器人的日志全被冲掉）。
+        if (stacks > 0 && stacks <= maxStacks)
+            DebugLog.Info($"[Commander] 号令 ×{stacks}: 在场敌人 +{atkBonusPercent * 100f:F0}% 攻击力（{count} 个）");
     }
 
     /// <summary>指挥官死亡：给**当时仍在场**的敌人一次性减攻。</summary>

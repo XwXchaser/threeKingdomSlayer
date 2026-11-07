@@ -350,7 +350,7 @@ MonoBehaviour:
   lowColor: {r: 0.9, g: 0.2, b: 0.2, a: 1}
   lowThreshold: 0.3
   atkBuffIconSprite: {fileID: 0}
-  atkBuffIconSizeRatio: 0.28
+  atkBuffIconSizeRatio: 0.4
   atkBuffIconGap: 0.12
   atkBuffIconLift: 0.06
 --- !u!95 &5100236280932012696

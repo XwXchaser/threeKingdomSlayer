@@ -40,14 +40,13 @@ public class EnemyHealthBar : MonoBehaviour, IEnemyHealthBarView
     /// <summary>标记的根（与血条根平级，**不挂在血条里** → 血条隐藏时标记仍可见）。</summary>
     private GameObject _atkBuffMarkerRoot;
     private SpriteRenderer _atkBuffIcon;
-    private TextMeshPro _atkBuffLayersText;
     private float _atkBuffIconScale = 1f;
 
     [Header("被加攻标记（敌人左上角）")]
     [Tooltip("标记图标（留空 = 用**玩家连击的加攻标记**，即 combo_red_dagger_pixel）")]
     public Sprite atkBuffIconSprite;
     [Tooltip("标记图标尺寸（相对血条宽度）")]
-    public float atkBuffIconSizeRatio = 0.28f;
+    public float atkBuffIconSizeRatio = 0.4f;
     [Tooltip("标记相对美术**左边界**的横向间距（0 = 跨在左边界上）")]
     public float atkBuffIconGap = 0.12f;
     [Tooltip("标记相对美术**上边界**的纵向间距")]
@@ -221,8 +220,9 @@ public class EnemyHealthBar : MonoBehaviour, IEnemyHealthBarView
     /// 需求（2026-11-07 用户定）：「敌人加攻暂时在单位左上方用**连击的加攻标记**表示」
     ///   • 图标 = **玩家连击的加攻标记**（<c>ComboBuffHUD.DamageBuffIcon</c> = combo_red_dagger_pixel）
     ///     → 玩家一眼认得「这是加攻」；
-    ///   • 位置 = 血条左端（血条就在头顶 → 左端就是单位的左上方）；
-    ///   • 数字 = 加攻层数。
+    ///   • 位置 = 单位美术剪影的左边界 / 上边界（左上方）；
+    ///   • 层数**不做文字**：世界空间 TMP 在本项目里画不出可读的尺寸（实测网格 10×0.02），
+    ///     层数仍可查（<c>EnemyStatusAtkMod.GetUpStacks</c>）；要可见的层数应该做在**指挥头顶飘字**上。
     ///
     /// ⚠️ 标记根与血条根**平级**（不挂在血条里）→ 血条隐藏（敌人没掉血）时标记仍然可见。
     /// </summary>
@@ -238,14 +238,6 @@ public class EnemyHealthBar : MonoBehaviour, IEnemyHealthBarView
         _atkBuffIcon = iconGo.AddComponent<SpriteRenderer>();
         _atkBuffIcon.sortingOrder = StatusSortingOrder + 4;
         iconGo.transform.localScale = Vector3.one;
-
-        var textGo = new GameObject("Layers", typeof(TextMeshPro));
-        textGo.transform.SetParent(_atkBuffMarkerRoot.transform, false);
-        _atkBuffLayersText = textGo.GetComponent<TextMeshPro>();
-        _atkBuffLayersText.fontStyle = FontStyles.Bold;
-        _atkBuffLayersText.color = new Color(1f, 0.86f, 0.45f);
-        _atkBuffLayersText.alignment = TextAlignmentOptions.Left;
-        _atkBuffLayersText.sortingOrder = StatusSortingOrder + 5;
 
         _atkBuffMarkerRoot.SetActive(false);
     }
@@ -284,15 +276,6 @@ public class EnemyHealthBar : MonoBehaviour, IEnemyHealthBarView
                 _atkBuffIconScale = scale;
                 _atkBuffIcon.transform.localScale = Vector3.one * scale;
             }
-        }
-        if (_atkBuffLayersText != null)
-        {
-            // ⚠️ 用 ASCII 的 x（× 在很多字体里没有字形 → 会整段不显示）
-            string t = "x" + status.stacks;
-            if (_atkBuffLayersText.text != t) _atkBuffLayersText.text = t;
-            _atkBuffLayersText.fontSize = barHeight * 1.2f;
-            var tr = _atkBuffLayersText.transform;
-            tr.localPosition = new Vector3(barWidth * atkBuffIconSizeRatio * 0.5f + 0.04f, 0f, 0f);
         }
 
         // 位置：**单位的左上方**（以美术剪影的左边界 / 上边界为基准）
