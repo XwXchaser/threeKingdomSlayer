@@ -27,19 +27,35 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView
     public CanvasGroup canvasGroup;
     public float fadeInDuration = 0.2f;
     public float fadeOutDuration = 0.15f;
+    [Tooltip("弹出时的起始缩放（1 = 不缩放）")]
+    public float popStartScale = 0.8f;
+    [Tooltip("弹出动画时长（秒；不受 timeScale 影响 —— 弹窗期间游戏是暂停的）")]
+    public float popDuration = 0.3f;
+    [Tooltip("弹出时的上浮距离（画布单位）")]
+    public float popRise = 48f;
 
     private UpgradeCard[] _cards;
     private Tween _fadeTween;
+    private Tween _scaleTween;
+    private Tween _moveTween;
+    /// <summary>弹窗根的原始缩放（弹出动画结束要回到它）。</summary>
+    private Vector3 _baseScale = Vector3.one;
 
     private void Awake()
     {
         _cards = new[] { card1, card2, card3 };
+        var rt = transform as RectTransform;
+        if (rt != null) _baseScale = rt.localScale;
     }
 
     private void OnDestroy()
     {
         if (_fadeTween != null && _fadeTween.IsActive())
             _fadeTween.Kill(false);
+        if (_scaleTween != null && _scaleTween.IsActive())
+            _scaleTween.Kill(false);
+        if (_moveTween != null && _moveTween.IsActive())
+            _moveTween.Kill(false);
         if (canvasGroup != null)
             canvasGroup.DOKill(false);
     }
@@ -124,6 +140,25 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView
         if (canvasGroup == null) return;
         _fadeTween?.Kill(false);
         canvasGroup.blocksRaycasts = true;
+        canvasGroup.alpha = 0f;
+
+        // ★ **弹出窗口的动态效果**（2026-11-07 用户定）：缩放回弹 + 上浮。
+        //   ⚠️ 必须 `SetUpdate(true)`：弹窗期间游戏是暂停的（timeScale=0）→ 用缩放时间才动得了。
+        var rt = transform as RectTransform;
+        if (rt != null)
+        {
+            _scaleTween?.Kill(false);
+            _moveTween?.Kill(false);
+            Vector3 baseScale = _baseScale == Vector3.zero ? Vector3.one : _baseScale;
+            Vector2 basePos = rt.anchoredPosition;
+            rt.localScale = baseScale * popStartScale;
+            rt.anchoredPosition = basePos - new Vector2(0f, popRise);
+            _scaleTween = rt.DOScale(baseScale, popDuration).SetUpdate(true).SetEase(Ease.OutBack);
+            // anchoredPosition 没有现成的扩展（UI 模块未引入）→ 用 DOTween.To 自己做插值
+            _moveTween = DOTween.To(() => rt.anchoredPosition, v => rt.anchoredPosition = v, basePos, popDuration)
+                .SetUpdate(true).SetEase(Ease.OutCubic);
+        }
+
         _fadeTween = canvasGroup.DOFade(1f, fadeInDuration).SetUpdate(true);
     }
 

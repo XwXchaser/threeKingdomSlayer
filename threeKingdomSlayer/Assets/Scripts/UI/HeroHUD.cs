@@ -26,10 +26,12 @@ public class HeroHUD : MonoBehaviour, IQteHud
     [Header("等级球")]
     [Tooltip("球内液体层：Filled / Vertical / fillOrigin=Bottom（自下而上「水上涨」）")]
     public Image levelOrbFill;
-    [Tooltip("等级数字（只显示等级，不显示具体经验值）")]
+    [Tooltip("球内数字：**距离下一级还差多少经验**（不再显示等级）")]
     public TMP_Text levelOrbText;
     [Tooltip("等级球本体 —— 经验宝石的飞行目标")]
     public RectTransform levelOrbTarget;
+    [Tooltip("待选取三选一的数量徽标（等级球上方；留空 = 不显示）")]
+    public TMP_Text pendingChoiceBadgeText;
 
     [Header("大招头像")]
     public Image ultimateBaseImage;
@@ -129,7 +131,18 @@ public class HeroHUD : MonoBehaviour, IQteHud
     {
         if (_hudForegroundCanvas != null)
             _hudForegroundCanvas.enabled = true;
+
+        // ★ **待选取的三选一数量**（2026-11-07 用户定：等级球不再显示等级，改显示
+        //   「下一级所需经验」+「待选取的三选一数量」）→ 徽标只在有排队时出现。
+        int pending = UpgradeChoiceManager.Instance != null ? UpgradeChoiceManager.Instance.PendingChoiceCount : 0;
+        if (pending != _lastPendingChoiceCount)
+        {
+            _lastPendingChoiceCount = pending;
+            SetPendingChoiceCount(pending);
+        }
     }
+
+    private int _lastPendingChoiceCount = -1;
 
     private void EnsurePortraitForegroundLayer()
     {
@@ -203,19 +216,36 @@ public class HeroHUD : MonoBehaviour, IQteHud
         }
     }
 
-    /// <summary>等级球：只显示等级与「水上涨」的经验比例，不显示具体经验值。</summary>
+    /// <summary>
+    /// 等级球：液面显示「离下一级的进度」，
+    /// 球里的数字 = **距离下一级还差多少经验**（2026-11-07 用户定：不再显示等级）。
+    /// </summary>
     public void SetLevelExp(float currentExp, float requiredExp)
     {
-        if (levelOrbFill == null) return;
-        float ratio = requiredExp > 0f ? Mathf.Clamp01(currentExp / requiredExp) : 0f;
-        levelOrbFill.fillAmount = ratio;
+        if (levelOrbFill != null)
+        {
+            float ratio = requiredExp > 0f ? Mathf.Clamp01(currentExp / requiredExp) : 0f;
+            levelOrbFill.fillAmount = ratio;
+        }
+        if (levelOrbText != null && requiredExp > 0f)
+        {
+            float remain = Mathf.Max(0f, requiredExp - currentExp);
+            levelOrbText.text = Mathf.CeilToInt(remain).ToString();
+        }
     }
 
-    /// <summary>等级球的等级数字。</summary>
-    public void SetLevelText(int level)
+    /// <summary>等级球上方的「待选取三选一数量」徽标（0 = 隐藏）。</summary>
+    public void SetPendingChoiceCount(int count)
     {
-        if (levelOrbText == null) return;
-        levelOrbText.text = $"{level}";
+        if (pendingChoiceBadgeText == null) return;
+        bool show = count > 0;
+        if (pendingChoiceBadgeText.gameObject.activeSelf != show)
+            pendingChoiceBadgeText.gameObject.SetActive(show);
+        if (show)
+        {
+            string t = $"×{count}";
+            if (pendingChoiceBadgeText.text != t) pendingChoiceBadgeText.text = t;
+        }
     }
 
     public void SetReviveCount(int count)

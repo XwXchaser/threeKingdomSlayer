@@ -91,8 +91,7 @@ public class BattleHUD : MonoBehaviour, ICombatHud
             PlayerState.Instance.OnCoinChanged += UpdateCoins;
             PlayerState.Instance.OnStageStateChanged += OnStageStateChanged;
             PlayerState.Instance.OnExpChanged += UpdateExpBar;
-            PlayerState.Instance.OnLevelUp += UpdateExpLevel;
-            PlayerState.Instance.OnLevelChanged += UpdateExpLevel;
+            // ★ 等级球**不再显示等级**（2026-11-07 用户定：改成显示「下一级所需经验」）→ 不再订阅等级事件。
         }
 
         StartCoroutine(SyncPlayerStateNextFrame());
@@ -127,7 +126,6 @@ public class BattleHUD : MonoBehaviour, ICombatHud
         if (curve != null && curve.expRequiredPerLevel != null && PlayerState.Instance.currentLevel < curve.expRequiredPerLevel.Count)
             requiredExp = curve.expRequiredPerLevel[PlayerState.Instance.currentLevel];
         UpdateExpBar(PlayerState.Instance.currentExp, requiredExp);
-        UpdateExpLevel(PlayerState.Instance.currentLevel);
     }
 
     private void InstantiateHeroHUD()
@@ -246,8 +244,6 @@ public class BattleHUD : MonoBehaviour, ICombatHud
             PlayerState.Instance.OnCoinChanged -= UpdateCoins;
             PlayerState.Instance.OnStageStateChanged -= OnStageStateChanged;
             PlayerState.Instance.OnExpChanged -= UpdateExpBar;
-            PlayerState.Instance.OnLevelUp -= UpdateExpLevel;
-            PlayerState.Instance.OnLevelChanged -= UpdateExpLevel;
         }
 
         if (EnemyManager.Instance != null)
@@ -301,12 +297,6 @@ public class BattleHUD : MonoBehaviour, ICombatHud
     {
         if (_heroHUD != null)
             _heroHUD.SetLevelExp(currentExp, requiredExp);
-    }
-
-    private void UpdateExpLevel(int level)
-    {
-        if (_heroHUD != null)
-            _heroHUD.SetLevelText(level);
     }
 
     private void OnStageStateChanged(StageState state)

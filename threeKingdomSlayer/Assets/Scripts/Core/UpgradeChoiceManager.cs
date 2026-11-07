@@ -92,6 +92,12 @@ public class UpgradeChoiceManager : MonoBehaviour
     public IUpgradeChoiceView ActivePopup => _activePopup;
     public int PendingLevelUps => _pendingLevelUps;
 
+    /// <summary>
+    /// 当前**待选取**的三选一数量（升级三选一 + Boss 锦囊三选一）。
+    /// HUD 的等级球徽标用它显示「还有几个三选一等着选」。
+    /// </summary>
+    public int PendingChoiceCount => _pendingLevelUps + _pendingItemChoices;
+
     /// <summary>抽池器（调试 / 工具用；注册条件源也走它）。惰性创建：Awake 之前也能用。</summary>
     public UpgradePoolSampler PoolSampler
     {
