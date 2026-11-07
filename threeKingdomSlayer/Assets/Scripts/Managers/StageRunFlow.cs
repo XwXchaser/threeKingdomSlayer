@@ -186,6 +186,29 @@ public sealed class StageRunFlow : IRunFlow
     /// <summary>单波清空 → 若有待处理的三选一（升级/道具），等待选择完成再生成下一波</summary>
     public void OnWaveCleared(int waveIndex)
     {
+        _ctx.RunCoroutine(FlushChoicesAfterExpSettled(waveIndex, false));
+    }
+
+    /// <summary>
+    /// **等经验宝石落地之后再 flush 待处理的三选一**（2026-11-07 修：弹窗晚一波）。
+    ///
+    /// 根因：**击杀不给经验** —— 经验是「击杀 → 经验宝石飞到经验条 → 落地才结算」
+    ///（<c>EnemyManager.OnEnemyDied</c> 只负责生成宝石）。于是：
+    ///   本波最后一只怪死 → 波末 flush（此刻经验还没到，队列是空的）→ 下一波开打
+    ///   → 宝石落地 → 升级事件发生 → 升级三选一被**顺延到下一波末**才弹。
+    /// 实测：教学 E0 的三选一因此晚一波弹出 → 玩家拿到三选一时「用技能打断」那一拍已经过去了。
+    ///
+    /// 做法：波末先等宝石飞完（<c>ExpGemManager.IsCollecting</c>），再 flush → 升级事件已经入队 ✓。
+    /// </summary>
+    private System.Collections.IEnumerator FlushChoicesAfterExpSettled(int waveIndex, bool isLastWave)
+    {
+        float timeout = 3f;
+        while (ExpGemManager.Instance != null && ExpGemManager.Instance.IsCollecting && timeout > 0f)
+        {
+            timeout -= Time.deltaTime;
+            yield return null;
+        }
+
         var ucm = UpgradeChoiceManager.Instance;
         if (ucm != null)
         {
@@ -194,10 +217,24 @@ public sealed class StageRunFlow : IRunFlow
             ucm.FlushPendingChoices();
             if (ucm.IsChoosing)
             {
-                Debug.Log($"[StageController] 第{waveIndex + 1}波清空，有待处理选择，暂缓下一波");
-                ucm.OnAllChoicesDone += OnChoicesDoneSpawnNextWave;
-                return;
+                if (isLastWave)
+                {
+                    Debug.Log("[StageController] 关卡结束前还有待处理选择 → 等选完再结算");
+                    ucm.OnAllChoicesDone += CompleteStageAfterChoices;
+                }
+                else
+                {
+                    Debug.Log($"[StageController] 第{waveIndex + 1}波清空，有待处理选择，暂缓下一波");
+                    ucm.OnAllChoicesDone += OnChoicesDoneSpawnNextWave;
+                }
+                yield break;
             }
+        }
+
+        if (isLastWave)
+        {
+            CompleteStageNow();
+            yield break;
         }
 
         Debug.Log($"[StageController] 第{waveIndex + 1}波清空，自动开始下一波");
@@ -229,19 +266,8 @@ public sealed class StageRunFlow : IRunFlow
 
         // 关卡结算前：如果还有待处理的三选一（波末弹的升级三选一），**先让玩家选完再结算**。
         // 否则升级会在结算之后才生效（等于白送），这一级的成长也接不上。
-        var ucm = UpgradeChoiceManager.Instance;
-        if (ucm != null)
-        {
-            ucm.FlushPendingChoices();
-            if (ucm.IsChoosing)
-            {
-                Debug.Log("[StageController] 关卡结束前还有待处理选择 → 等选完再结算");
-                ucm.OnAllChoicesDone += CompleteStageAfterChoices;
-                return;
-            }
-        }
-
-        CompleteStageNow();
+        // ⚠️ 同样要**等经验宝石落地**：否则最后一波的经验到得太晚 → 升级三选一被推到结算之后。
+        _ctx.RunCoroutine(FlushChoicesAfterExpSettled(-1, true));
     }
 
     /// <summary>选择完成 → 继续结算（避免结算与弹窗撞车）。</summary>
