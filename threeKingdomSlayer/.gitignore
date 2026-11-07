@@ -61,6 +61,7 @@ Enemy1013ArtSource/*
 !Enemy1013ArtSource/00_Index/
 !Enemy1013ArtSource/01_SourceVideos/
 !Enemy1013ArtSource/02_IdentityImages/
+!Enemy1013ArtSource/03_InGameShots/
 
 # 109 骑乘枪骑（约 406MB）：同步源视频 + 关键姿态 + 视频准备记录
 Enemy109ArtSource/*
