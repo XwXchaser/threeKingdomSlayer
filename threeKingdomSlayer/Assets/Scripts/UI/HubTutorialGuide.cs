@@ -197,8 +197,9 @@ public class HubTutorialGuide : MonoBehaviour
         _label = MakeText("GuideLabel");
 
         // ★ **不再用“高亮材质”**（2026-11-06 用户：「本质上来说确实不需要高亮材质，
-        //   而是让对应按钮显示在遮罩上层即可」）→ 手与光圈**不画**了：
-        //   高亮效果 = **遮罩在目标按钮处开洞** → 按钮原样亮着，其余压暗。
+        //   而是让对应按钮显示在遮罩上层即可」）→ 高亮效果 = **遮罩在目标按钮处开洞** → 按钮原样亮着。
+        //   但**手与光圈要画**（2026-11-07 用户反馈：「非战斗部分的引导缺少了光圈和手势」）：
+        //   → 这里只保证「创建时不显示」，真正显示由 Show() 负责。
         if (_ring != null) _ring.gameObject.SetActive(false);
         if (_hand != null) _hand.gameObject.SetActive(false);
     }
@@ -280,7 +281,14 @@ public class HubTutorialGuide : MonoBehaviour
             rr.pivot = Vector2.one * 0.5f;
             rr.anchorMin = rr.anchorMax = new Vector2(0.5f, 0.5f);
             rr.anchoredPosition = local;
+            rr.SetAsLastSibling();     // 压在「遮罩开洞的目标按钮」上面 → 手势不被按钮盖住
         }
+        if (_hand != null)
+        {
+            _hand.gameObject.SetActive(_hand.sprite != null);
+            _hand.transform.SetAsLastSibling();
+        }
+        if (_ring != null) _ring.gameObject.SetActive(true);
         PlaceHandOnTarget(handSize);
 
         // 文案：**只显示白色文字**，尺寸按内容收缩 →

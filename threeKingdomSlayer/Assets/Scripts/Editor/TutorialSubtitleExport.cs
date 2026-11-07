@@ -101,22 +101,28 @@ public static class TutorialSubtitleExport
         // 组件上的字符串字段（不是独立资产）
         sb.Append("\"inline\":[");
         bool firstI = true;
-        Action<string, string, string, string> I2 = (id, area, node, trigger) =>
+        Action<string, string, string, string, string> I2 = (id, area, node, trigger, currentText) =>
         {
             if (!firstI) sb.Append(",");
             firstI = false;
-            sb.Append("{\"id\":").Append(Q(id)).Append(",\"area\":").Append(Q(area)).Append(",\"node\":").Append(Q(node)).Append(",\"trigger\":").Append(Q(trigger)).Append("}");
+            sb.Append("{\"id\":").Append(Q(id)).Append(",\"area\":").Append(Q(area)).Append(",\"node\":").Append(Q(node))
+              .Append(",\"trigger\":").Append(Q(trigger)).Append(",\"text\":").Append(Q(currentText)).Append("}");
         };
         if (dir != null)
         {
-            I2("director.choiceExpLine", "教学关", "E0", "三选一弹出时（第一句）");
-            I2("director.choicePickLine", "教学关", "E0", "三选一弹出时（第二句，{0}=技能名）");
+            I2("director.choiceExpLine", "教学关", "E0", "三选一弹出时（第一句）", dir.choiceExpLine);
+            I2("director.choicePickLine", "教学关", "E0", "三选一弹出时（第二句，{0}=技能名）", dir.choicePickLine);
         }
         var hub = UnityEngine.Object.FindObjectOfType<HubTutorialGuide>();
         if (hub != null)
         {
-            I2("hubGuide.talentText", "落地页", "天赋入口", "教学完成后 · 落地页引导");
-            I2("hubGuide.stageText", "落地页", "开始关卡", "天赋教学完成后 · 落地页引导");
+            I2("hubGuide.talentText", "落地页", "天赋入口", "教学完成后 · 落地页引导", hub.talentText);
+            I2("hubGuide.stageText", "落地页", "开始关卡", "天赋教学完成后 · 落地页引导", hub.stageText);
+        }
+        var orbGuide = UnityEngine.Object.FindObjectOfType<LevelOrbGuide>();
+        if (orbGuide != null)
+        {
+            I2("levelOrbGuide.guideText", "教学关", "等级球", "教学关开场 · 等级球教学引导", orbGuide.guideText);
         }
         sb.Append("]}");
 

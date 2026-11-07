@@ -55,6 +55,10 @@ public partial class TutorialStageDirector : MonoBehaviour
     public TutorialContinueButton continueButton;
     [Tooltip("引导期点击遮罩的宿主层（TutorialIntroOverlay，order=121；挡住战场等，HUD 由 hudCanvasGroup 整块失能）")]
     public RectTransform introMaskHost;
+    [Tooltip("**等级球教学引导**（战斗 HUD 左下角；第一波叫起、第一拍开始时收掉）")]
+    public LevelOrbGuide levelOrbGuide;
+    /// <summary>等级球教学引导是否已经叫起过（只叫一次）。</summary>
+    private bool _orbGuideShown;
     [Tooltip("战斗 HUD 根上的 CanvasGroup（引导期整块失能：道具栏 / 技能槽 / 防御键 / 头像都不可点）")]
     public CanvasGroup hudCanvasGroup;
     // ⚠️ 这里**没有**“超时自动跳过”的开关：需求明确「不存在任何计时器直接跳过」。
@@ -811,6 +815,14 @@ public partial class TutorialStageDirector : MonoBehaviour
                 ApplyAttackGate(null);
                 _choiceGiven = false;
                 _chosenSkill = null;
+                // ★ **等级球教学引导**（2026-11-07 用户需求）：告诉玩家等级球在哪、显示什么信息。
+                //   这里才叫起：**战斗 HUD（等级球）已经存在**（落地页没有 HUD，叫了也看不见）；
+                //   → 第一拍开始时收掉（见 TutorialStageDirector.Hints.cs）。
+                if (!_orbGuideShown)
+                {
+                    _orbGuideShown = true;
+                    if (levelOrbGuide != null) levelOrbGuide.Show();
+                }
             }
             Debug.Log("[Tutorial] 波次开始 wave=" + waveIndex + " 招式白名单=" + TutorialAttackGate.Describe());
 

@@ -146,12 +146,17 @@ def build():
         "director.choicePickLine": "听我的，选【{0}】——它能把霸体敌人推回去，打断他的招。",
         "hubGuide.talentText": "点这里去解锁新招式",
         "hubGuide.stageText": "点「开始关卡」进入战斗",
+        "levelOrbGuide.guideText": "等级球：液面是经验进度，数字是等你选的三选一数量",
     }
     for it in dump["inline"]:
+        # 当前文本由导出工具带出（inline 里的 "text"）；上面的字典只作兵底
+        text = it.get("text") or inline_texts.get(it["id"], "")
+        where = ("Battle.scene / TutorialStageDirector" if it["id"].startswith("director.")
+                 else "Battle.scene / HubTutorialGuide" if it["id"].startswith("hubGuide.")
+                 else "Battle.scene / LevelOrbGuide")
         add(it["area"], it["node"], "-", it["trigger"], it["trigger"],
-            it["id"], "Battle.scene / TutorialStageDirector" if it["id"].startswith("director.")
-            else "Battle.scene / HubTutorialGuide",
-            1, "Player", inline_texts.get(it["id"], ""), "组件上的字符串字段")
+            it["id"], where,
+            1, "Player", text, "组件上的字符串字段")
 
     # 3) 天赋页教学文案（TalentTree.scene / TalentTreePanel）
     tt = talent_texts()

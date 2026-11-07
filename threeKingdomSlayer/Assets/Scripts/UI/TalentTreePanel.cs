@@ -1680,8 +1680,9 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         _teachHand.raycastTarget = false;
 
         // ★ **不再用“高亮材质”**（2026-11-06 用户：「本质上来说确实不需要高亮材质，
-        //   而是让对应按钮显示在遮罩上层即可」）→ 手与光圈**不画**了：
-        //   高亮效果 = **遮罩在目标按钮处开洞** → 按钮原样亮着，其余压暗且点不到。
+        //   而是让对应按钮显示在遮罩上层即可」）→ 高亮效果 = **遮罩在目标按钮处开洞** → 按钮原样亮着。
+        //   但**手与光圈要画**（2026-11-07 用户反馈：「非战斗部分的引导缺少了光圈和手势」）：
+        //   → 这里只保证「创建时不显示」，真正显示由 UpdateTeaching 负责。
         if (_teachHand != null) _teachHand.gameObject.SetActive(false);
         if (_teachRing != null) _teachRing.gameObject.SetActive(false);
 
@@ -1833,6 +1834,8 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             Vector3 local = _teachLayer.InverseTransformPoint(world);
             _teachTargetLocal = local;
             PlaceTeachHandOnTarget(handSize);
+            _teachHand.gameObject.SetActive(true);
+            _teachHand.transform.SetAsLastSibling();     // 压在「遮罩开洞的目标」上面
         }
         else if (_teachHand != null) _teachHand.gameObject.SetActive(false);
 
@@ -1842,7 +1845,10 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             rr.sizeDelta = new Vector2(ringSize, ringSize);
             rr.pivot = Vector2.one * 0.5f;                          // 光圈是居中的
             rr.anchorMin = rr.anchorMax = new Vector2(0.5f, 0.5f);
-            rr.anchoredPosition = _teachLayer.InverseTransformPoint(world);        }
+            rr.anchoredPosition = _teachLayer.InverseTransformPoint(world);
+            _teachRing.gameObject.SetActive(true);
+            _teachRing.transform.SetAsLastSibling();
+        }
     }
 
     private void HideTeachingVisuals()

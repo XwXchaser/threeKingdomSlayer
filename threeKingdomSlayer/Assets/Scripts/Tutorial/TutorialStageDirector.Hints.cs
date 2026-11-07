@@ -155,6 +155,9 @@ public partial class TutorialStageDirector : MonoBehaviour
 
     private IEnumerator HintRoutine(TutorialGestureStep step)
     {
+        // ★ 等级球教学引导：**第一拍开始就收掉**（避免与教学拍自己的手势示范撞在一起）
+        if (levelOrbGuide != null) levelOrbGuide.Hide();
+
         if (step.delay > 0f) yield return new WaitForSecondsRealtime(step.delay);
 
         // 登场拍：一开波就冻结敌人并暂停把台词播完（骑兵这类先见人的场面）

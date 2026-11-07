@@ -26,12 +26,10 @@ public class HeroHUD : MonoBehaviour, IQteHud
     [Header("等级球")]
     [Tooltip("球内液体层：Filled / Vertical / fillOrigin=Bottom（自下而上「水上涨」）")]
     public Image levelOrbFill;
-    [Tooltip("球内数字：**下一级所需的经验（总需求）**（不再显示等级）")]
+    [Tooltip("球内数字：**当前待选取的三选一数量**（0 = 不显示数字；不再显示等级 / 经验值）")]
     public TMP_Text levelOrbText;
     [Tooltip("等级球本体 —— 经验宝石的飞行目标")]
     public RectTransform levelOrbTarget;
-    [Tooltip("待选取三选一的数量徽标（等级球上方；留空 = 不显示）")]
-    public TMP_Text pendingChoiceBadgeText;
 
     [Header("大招头像")]
     public Image ultimateBaseImage;
@@ -135,8 +133,7 @@ public class HeroHUD : MonoBehaviour, IQteHud
         if (_hudForegroundCanvas != null)
             _hudForegroundCanvas.enabled = true;
 
-        // ★ **待选取的三选一数量**（2026-11-07 用户定：等级球不再显示等级，改显示
-        //   「下一级所需经验」+「待选取的三选一数量」）→ 徽标只在有排队时出现。
+        // ★ **待选取的三选一数量**（2026-11-07 用户定：等级球里的数字就是这个）
         int pending = UpgradeChoiceManager.Instance != null ? UpgradeChoiceManager.Instance.PendingChoiceCount : 0;
         if (pending != _lastPendingChoiceCount)
         {
@@ -225,29 +222,17 @@ public class HeroHUD : MonoBehaviour, IQteHud
     /// </summary>
     public void SetLevelExp(float currentExp, float requiredExp)
     {
-        if (levelOrbFill != null)
-        {
-            float ratio = requiredExp > 0f ? Mathf.Clamp01(currentExp / requiredExp) : 0f;
-            levelOrbFill.fillAmount = ratio;
-        }
-        if (levelOrbText != null && requiredExp > 0f)
-        {
-            levelOrbText.text = Mathf.CeilToInt(requiredExp).ToString();
-        }
+        if (levelOrbFill == null) return;
+        float ratio = requiredExp > 0f ? Mathf.Clamp01(currentExp / requiredExp) : 0f;
+        levelOrbFill.fillAmount = ratio;
     }
 
-    /// <summary>等级球上方的「待选取三选一数量」徽标（0 = 隐藏）。</summary>
+    /// <summary>球里的数字 = **待选取的三选一数量**（0 = 不显示数字）。</summary>
     public void SetPendingChoiceCount(int count)
     {
-        if (pendingChoiceBadgeText == null) return;
-        bool show = count > 0;
-        if (pendingChoiceBadgeText.gameObject.activeSelf != show)
-            pendingChoiceBadgeText.gameObject.SetActive(show);
-        if (show)
-        {
-            string t = $"×{count}";
-            if (pendingChoiceBadgeText.text != t) pendingChoiceBadgeText.text = t;
-        }
+        if (levelOrbText == null) return;
+        string t = count > 0 ? count.ToString() : string.Empty;
+        if (levelOrbText.text != t) levelOrbText.text = t;
     }
 
     public void SetReviveCount(int count)

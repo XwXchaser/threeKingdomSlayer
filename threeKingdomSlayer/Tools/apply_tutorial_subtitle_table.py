@@ -33,6 +33,7 @@ COMPONENT_TARGETS = {
     "director.choicePickLine": ("Assets/Scenes/Battle.scene", "Tutorial Director", "TutorialStageDirector", "choicePickLine"),
     "hubGuide.talentText": ("Assets/Scenes/Battle.scene", "HubTutorialGuide", "HubTutorialGuide", "talentText"),
     "hubGuide.stageText": ("Assets/Scenes/Battle.scene", "HubTutorialGuide", "HubTutorialGuide", "stageText"),
+    "levelOrbGuide.guideText": ("Assets/Scenes/Battle.scene", "LevelOrbGuide", "LevelOrbGuide", "guideText"),
     "TalentTreePanel.teachingTextPickNode": ("Assets/Scenes/TalentTree.scene", "TalentTreePanel", "TalentTreePanel", "teachingTextPickNode"),
     "TalentTreePanel.teachingTextConfirm": ("Assets/Scenes/TalentTree.scene", "TalentTreePanel", "TalentTreePanel", "teachingTextConfirm"),
 }
