@@ -8,11 +8,50 @@ summary: 督战型增益单位 enemyId 1013 的开发方向与制作方案（202
 ---
 
 # 督战型增益单位制作方案（2026-11-05）
-> **状态：开发方向与方案已定，未实施。** 本文只定义与规划；实施顺序见 §12，决策记录见 §13。
+
+> **状态：功能已落地（2026-11-07）**，数值/形象/打断规则沿用本文拍板结论。实施记录见 §0.0。
+> 波次投放与正式美术仍未做（属关卡配置 / 美术排期）。
 > 定位：给玩家一个**必须优先解决的目标**（现役敌人没有"先打谁"的决策）。
 > 配套背景：`design/gameplay-pillars.md` §4（敌人机制与反制表）、`design/game-mechanics.md` §5.1（敌人图鉴）、`design/immutable-constraints.md`（位移/补齐硬约束）。
 > 对标参照：`design/blades-gameplay-benchmark.md`（Blades 玩法层实测）、`reference/game-design-references.md`（外部作品清单）。
 > 工程基线：分支 `feat/stage-select-talent-overlays`，实测数据取自 2026-11-05 的活体工程（预制体 / 招式资产 / 已部署波次 / 代码分支）。
+
+---
+
+## 0.0 实施记录（2026-11-07）
+
+**已落地**（提交 `92952ac0`）：
+
+| 刀 | 内容 | 落点 |
+|---|---|---|
+| 逻辑层 | 出站攻击倍率状态（`atk_up` 可叠加 / `atk_down` 一次性） | `Assets/Scripts/Enemy/EnemyStatusAtkMod.cs` |
+| 逻辑层 | 督战组件（号令计时 / 前摇 / 打断 / 全场加攻 / 死亡减攻） | `Assets/Scripts/Enemy/EnemyCommander.cs` |
+| 逻辑层 | 三处伤害乘点 | `EnemyManager.OnEnemyAttackPlayer`（近战）/ `CavalryEnemy.ChargeDamage`（骑兵）/ `Enemy.Attack.SpawnProjectile`（远程，发射时快照） |
+| 逻辑层 | “永不攻击”早退 | `Enemy.StateSwitch.StartAttacking()` |
+| 逻辑层 | 带来源的受击事件 | `Enemy.OnDamagedWithSource`（`Enemy.Combat.TakeDamage` 内触发） |
+| 逻辑层 | 状态 id | `EnemyStatusRegistry.AtkUp / AtkDown` |
+| 显示层 | **按用户 2026-11-07 的决定改写**：被加成敌人的**左上角摆玩家的加攻图标 + 层数**（不做描边、不做血条第三根条） | `Assets/Scripts/UI/EnemyAtkBuffMarkerManager.cs`（图标由 `Battle.scene` 的 Inspector 直连 `icon_31_power`） |
+| 资产 | `Enemy_1013.prefab`（复制 104 → 删 QTEController → 150 血 / 不攻击 / 经验 150 → 挂 EnemyCommander）+ `Animator_1013.controller`，已注册进 `Battle/EnemyPool.enemyPrefabList` | `Assets/Resources/EnemyPrefabs/`、`Assets/Animations/`、`Assets/Scenes/Battle.scene` |
+
+**Play Mode 实测（2026-11-07）**：
+
+| 验收项 | 结果 |
+|---|---|
+| 号令生效 | 每次号令全场敌人 +10% ✅（实测 3 层 → 出站倍率 1.30） |
+| 可叠加 / 上限 | ✅（5 层封顶，Inspector 参数） |
+| 死亡减攻 | ✅（实测 1.30 → **0.975** = 1.3×0.75） |
+| 本体招式打断 | ✅（前摇中命中 → 取消本次施放 + 重置为完整周期 4.0s） |
+| DoT 不打断 | ✅（灼烧类伤害 → 施放不中断） |
+| 永不攻击 | ✅（全程 `Idle`，无攻击动画，`attackDamage=0`，`attackSequence` 空） |
+| 跨波不泄漏 | ✅（下一波新生成敌人层数 0 —— 走既有 `StatusHost.ClearAll()`） |
+| 标记显示 | ✅（被加成敌人左上角出现加攻图标；层数文字暂用 ASCII `xN`） |
+
+**未做（仍属别的线）**：
+
+- **波次投放**：没有把 1013 放进任何波次（属关卡配置）——目前只能在 Play Mode 手动生成验证。
+- **最终美术**：仍是 104 的临时形象；施法动作仍借放箭 QTE 三段（不放箭）。
+- **描边/血条条**：按用户决定，本期用“左上加攻标记”代替。
+- **头顶飘字「号令 ×N」**：未做（当前层数只体现在敌人左上的标记上）。
 
 ---
 

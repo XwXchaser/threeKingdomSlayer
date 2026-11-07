@@ -314,6 +314,36 @@ MaskService（唯一入口，按 owner 管理）
 
 ---
 
+## 2.9 2026-11-07 本轮改动（教学线 + 三选一线）
+
+> 用户当天给了四项需求：P0 非战斗引导去掉黑框、P1 导出全部教学字幕到 Excel、P1.5 三选一改为波末弹 +
+> 等级球改显示经验与待选数量 + 弹窗动态效果、P2 督战单位 1013。
+
+### P0：非战斗引导去掉黑底板（提交 `c5abfc0e`）
+
+- **落地页**（`HubTutorialGuide`）与**天赋页**（`TalentTreePanel`）的引导文字：删除深色圆角底板（820×96）→
+  **只留白字**，尺寸按内容收缩；摆位避开要教学的目标、也不压住落地页底部功能 UI 带。
+- 共享样式 `TutorialGestureStyle` 新增 `FitLabelToContent / ClampToLayer / PlaceLabelClearOf`（两处共用一套，不各写一份）。
+- 实测：落地页两种引导 + 天赋页教学，文字均不再有黑板；天赋页文案从「跑到屏幕外」改为固定摆在面板底部、详情卡之上。
+
+### P1：教学字幕总表（提交 `a89155e7`）
+
+- 产物：`Locus/knowledge/plan/tutorial-subtitles-20261107.xlsx`（34 条字幕 + 5 个教学拍结构 + 说明页）。
+- 列：区域 / 节点 / 波次 / 位置 / 触发时机 / 台词资产 / 行号 / 说话人 / 原文 / **新文案（留空=不改）**。
+- 未在教学链引用的历史遗留台词（`tutorial_t0_wave2/wave4/open/skill/death` 等）灰底标出。
+- 写回链路：`Tools/apply_tutorial_subtitle_table.py` 读表 → `Library/Locus/tmp/tutorial_subtitle_edits.json`
+  → Editor 侧按 SerializedProperty 写回资产（不手改 YAML）。**用户改完 Excel 说一声即可部署。**
+
+### P1.5：三选一（提交 `69d3d656`）
+
+- **波末弹出**：实测确认**本来就是波末才弹**（`deferChoicesToWaveEnd=1`）：经验满只入队不弹窗，波次清空才弹
+  → 本轮未改逻辑，只补了实测记录。
+- **等级球**：球内数字从「当前等级」改成「**距离下一级还差多少经验**」；等级球上方新增「×N」徽标 =
+  当前**待选取的三选一数量**（`UpgradeChoiceManager.PendingChoiceCount`）。
+- **弹窗动态效果**：弹出时缩放回弹（0.8→1，OutBack）+ 上浮 48px（`SetUpdate(true)`，弹窗期 timeScale=0 也能动）。
+
+---
+
 ## 3. 文档索引
 
 | 文档 | 内容 |
