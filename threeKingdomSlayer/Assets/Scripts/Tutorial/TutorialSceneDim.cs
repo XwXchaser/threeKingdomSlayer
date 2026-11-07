@@ -10,10 +10,13 @@ using UnityEngine.SceneManagement;
 /// 为什么不用全屏 UI 遮罩：战场是透视相机 + 世界物件（长枪是 MeshRenderer），
 /// 任何 Overlay 画布都必然盖在角色上面，层级无解。改成给场景渲染器乘一个亮度系数，
 /// 既不挡角色，也不需要动相机/排序层。
+///
+/// ⚠️ 2026-11-07：它是**统一遮罩系统的世界侧后端**（<see cref="IMaskWorldDim"/>）——
+/// UI 侧由 <c>UiMask</c> 负责，两边由同一条 <c>MaskRule</c> 发起。
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(1000)]   // 必须在 Y 场景脚本（LateUpdate 写属性块）之后压
-public sealed class TutorialSceneDim : MonoBehaviour
+public sealed class TutorialSceneDim : MonoBehaviour, IMaskWorldDim
 {
     [Tooltip("压暗后场景保留的亮度（1 = 不压暗）")]
     [Range(0.1f, 1f)] public float dimBrightness = 0.42f;
@@ -47,6 +50,38 @@ public sealed class TutorialSceneDim : MonoBehaviour
     private Color _groundColorOriginal = Color.white;
 
     public bool IsDimming => _target > 0.001f;
+
+    /// <summary>
+    /// **统一遮罩系统的世界侧后端入口**（2026-11-07）。
+    ///
+    /// 开压暗时**重新绑定**路线场景：Y 场景表驱动会在同一个场景里重建景物
+    /// （scene handle 不变，但旧的渲染器已销毁）→ 绑一次就会变成“压的是上一批已死对象”。
+    /// 路线场景没就绪时也能压（只压天空盒）→ 教学关照样有黑幕。
+    /// </summary>
+    public void SetDimmed(bool dimmed, float brightness)
+    {
+        dimBrightness = Mathf.Clamp(brightness, 0.1f, 1f);
+        if (!dimmed)
+        {
+            FadeTo(false);
+            return;
+        }
+        Bind(FindRouteScene());
+        FadeTo(true);
+    }
+
+    /// <summary>找当前路线表现层对应的场景（没有就返回 default → 只压天空盒）。</summary>
+    private static Scene FindRouteScene()
+    {
+        var behaviours = FindObjectsOfType<MonoBehaviour>(true);
+        for (int i = 0; i < behaviours.Length; i++)
+        {
+            var presenter = behaviours[i] as IRouteMotionPresenter;
+            if (presenter == null) continue;
+            if (presenter.TryGetActiveScene(out var scene)) return scene;
+        }
+        return default;
+    }
 
     /// <summary>绑定一个场景的渲染器（只调用一次；重新绑定会先恢复原色）。</summary>
     public void Bind(Scene scenery)

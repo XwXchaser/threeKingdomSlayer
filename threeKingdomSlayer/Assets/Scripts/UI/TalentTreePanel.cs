@@ -95,7 +95,9 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private bool _teachActive;
     private int _teachStep;                 // 0 = 指向节点；1 = 指向确认按钮
     private RectTransform _teachLayer;
-    private TutorialClickMask _teachMask;
+    /// <summary>天赋页教学遮罩的压暗强度 / 过渡时长。</summary>
+    private const float TeachMaskDimAlpha = 0.45f;
+    private const float TeachMaskFadeSeconds = 0.12f;
     private Image _teachHand;
     private Image _teachRing;
     private TextMeshProUGUI _teachLabel;
@@ -1597,7 +1599,7 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         _teachActive = false;
         _teachStep = 0;
         UnlockAllNodes();
-        if (_teachMask != null) _teachMask.SetBlocking(false);
+        MaskService.Clear(this);
         HideTeachingVisuals();
     }
 
@@ -1642,7 +1644,7 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         _teachActive = false;
         _teachStep = 0;
         UnlockAllNodes();          // 教学结束 → 节点恢复可点
-        if (_teachMask != null) _teachMask.SetBlocking(false);
+        MaskService.Clear(this);
         HideTeachingVisuals();
         var data = SaveManager.Load();
         TalentSaveSection.MarkTalentPanelTaught(data);
@@ -1662,10 +1664,10 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         Stretch(layer.rectTransform);
         _teachLayer = layer.rectTransform;
 
-        // ★ **同一套聚光遮罩**（2026-11-06 用户要求：「这种教学引导是通用准则，怎么到别的界面就不遵守了？」）：
+        // ★ **同一套聚光遮罩**（统一遮罩系统，2026-11-06 用户要求：「这种教学引导是通用准则，怎么到别的界面就不遵守了？」）：
         //   天赋页的教学同样只允许点**被高亮指着的那个**（C2 节点 / 解锁按钮 / 返回按钮），
-        //   其余（页签、其它节点、关闭…）一律点不到 → 遮罩在目标处挖洞。
-        _teachMask = TutorialClickMask.EnsureExists(_teachLayer);
+        //   其余（页签、其它节点、关闭…）一律点不到 → 遮罩在目标处开洞。
+        //   （遮罩本身由 MaskService 在 Apply 时创建，它会自动成为本层的第一个子物体 ✓）
 
         _teachRing = CreateImage("TeachRing", layer.rectTransform, new Color(1f, 0.86f, 0.4f, 0.9f),
             teachingRingSprite != null ? teachingRingSprite : ProceduralUiSprites.Ring(128, 12, 1f));
@@ -1794,14 +1796,18 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             maskTarget = target;
         }
 
-        if (target == null) { HideTeachingVisuals(); if (_teachMask != null) _teachMask.SetBlocking(false); return; }
+        if (target == null) { HideTeachingVisuals(); MaskService.Clear(this); return; }
 
         // 遮罩的洞 = 当前该点的那个按钮 → 它不被遮罩盖住（原样亮着 = 高亮），其余点不到
-        if (_teachMask != null)
+        var rule = new MaskRule
         {
-            _teachMask.SetTarget(maskTarget != null ? maskTarget : target);
-            _teachMask.SetBlocking(true);
-        }
+            Host = _teachLayer,
+            Alpha = TeachMaskDimAlpha,
+            BlockClicks = true,
+            FadeSeconds = TeachMaskFadeSeconds
+        };
+        rule.Exempt.Add(maskTarget != null ? maskTarget : target);
+        MaskService.Apply(this, rule);
 
         float handSize = TutorialGestureStyle.BaseHandSize * 0.55f;
         float ringSize = TutorialGestureStyle.BaseRingSize * 0.55f;

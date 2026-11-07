@@ -8,6 +8,28 @@ using UnityEngine;
 public partial class TutorialStageDirector : MonoBehaviour
 {
     /// <summary>
+    /// **教学遮罩规则**（统一遮罩系统，2026-11-07）。
+    ///
+    /// 一条规则同时表达两件事：
+    /// ① <c>DimWorld</c> = 只压暗**背景**（敌人 / 长枪 / 台词气泡 / 说话头像都保持亮）；
+    /// ② <c>BlockClicks</c> = 开场两段期间挡住别的 UI 的点击（透明遮罩，不压暗）。
+    /// </summary>
+    private MaskRule _maskRule;
+
+    private void EnsureMaskRule()
+    {
+        if (_maskRule == null) _maskRule = new MaskRule();
+        _maskRule.WorldBrightness = sceneDimBrightness;
+    }
+
+    /// <summary>把当前规则推给遮罩服务。</summary>
+    private void ApplyMaskRule()
+    {
+        EnsureMaskRule();
+        MaskService.Apply(this, _maskRule);
+    }
+
+    /// <summary>
     /// **教学文本的压暗（黑幕）**（2026-11-06 用户定）。
     ///
     /// 规则：局内教学文本出现 → 压暗画面；**一直压到这一拍的手势做完**（EndBeat）才撤。
@@ -23,6 +45,19 @@ public partial class TutorialStageDirector : MonoBehaviour
     private void SetTeachingDim(bool on)
     {
         SetSceneDim(on);
+    }
+
+    /// <summary>
+    /// 开场两段：开 / 关「引导期点击遮罩」（透明，只吃射线，不压暗）。
+    /// 遮罩建在 <c>introMaskHost</c>（TutorialIntroOverlay，order=121）→
+    /// 挡得住别的 UI，但挡不住更上层的暂停键（order=130）。
+    /// </summary>
+    private void SetIntroClickBlock(bool on)
+    {
+        EnsureMaskRule();
+        _maskRule.BlockClicks = on;
+        _maskRule.Host = on ? introMaskHost : null;
+        ApplyMaskRule();
     }
     // ── 教学招式白名单（还没教到的招式不许发出）────────────────
     // 口径：白名单 = **已经教完的招式 ∪ 当前这一拍要教的招式**。
@@ -164,39 +199,22 @@ public partial class TutorialStageDirector : MonoBehaviour
     ///
     /// ⚠️ 教学关可能**没有路线场景**（背景只剩天空盒）→ 之前这里直接 return → **一点都不暗**，
     ///   这就是「局内教学文本没有黑幕」的真正原因。现在改成：**没场景也压天空盒**。
+    ///
+    /// （2026-11-07：这段逻辑已并入 <c>TutorialSceneDim.SetDimmed()</c>，
+    ///   由统一遮罩服务调用；导演不再直接碰场景压暗。）
     /// </summary>
     private void SetSceneDim(bool dim)
     {
-        if (_sceneDim == null) _sceneDim = GetComponent<TutorialSceneDim>();
-        if (_sceneDim == null) _sceneDim = gameObject.AddComponent<TutorialSceneDim>();
-        if (_sceneDim == null) return;
-        _sceneDim.dimBrightness = sceneDimBrightness;
-
-        // **每次开压暗都重新绑定**：Y 场景表驱动的节点切换会在**同一个场景里重建景物**
-        // （scene handle 不变，但旧的渲染器已销毁）→ 绑一次就会变成“压的是上一批已死对象”。
-        var presenter = FindRoutePresenter();
-        UnityEngine.SceneManagement.Scene routeScene = default;
-        bool haveScene = presenter != null && presenter.TryGetActiveScene(out routeScene);
-        if (dim)
-        {
-            // 没路线场景时传 default → TutorialSceneDim 内部会**只绑天空盒**（背景照旧压暗）
-            _sceneDim.Rebind(routeScene);
-            _sceneDimBound = true;
-            if (haveScene)
-            {
-                _dimBoundScene = routeScene;
-                _dimBoundSceneValid = true;
-            }
-            else
-            {
-                _dimBoundSceneValid = false;
-            }
-        }
-        _sceneDim.FadeTo(dim);
+        EnsureMaskRule();
+        _maskRule.DimWorld = dim;
+        ApplyMaskRule();
     }
 
+    /// <summary>
     /// 找路线表现层。Unity 的 FindObjectOfType 不接受接口类型，所以扫一遍 MonoBehaviour 再按接口筛
     /// （与 SceneFlowManager 找 ISceneTransitionCamera 同一手法）。
+    /// ⚠️ 2026-11-07：场景压暗的绑定逻辑已移入 <c>TutorialSceneDim.SetDimmed</c>（统一遮罩系统），
+    ///   这里只留给其它查询用。
     /// </summary>
     private static IRouteMotionPresenter FindRoutePresenter()
     {

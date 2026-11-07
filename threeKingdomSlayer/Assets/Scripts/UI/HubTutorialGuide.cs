@@ -29,7 +29,6 @@ public class HubTutorialGuide : MonoBehaviour
     [TextArea(2, 3)] public string stageText = "点「开始关卡」进入战斗";
 
     private RectTransform _layer;
-    private TutorialClickMask _mask;
     private Image _hand;
     private Image _ring;
     private TextMeshProUGUI _label;
@@ -40,23 +39,30 @@ public class HubTutorialGuide : MonoBehaviour
     private void Update()
     {
         var mode = ResolveMode();
-        if (mode == Mode.None) { Hide(); if (_mask != null) _mask.SetBlocking(false); return; }
+        if (mode == Mode.None) { Hide(); MaskService.Clear(this); return; }
         EnsureUI();
         var anchor = ResolveAnchor(mode);
-        if (anchor == null) { Hide(); if (_mask != null) _mask.SetBlocking(false); return; }
+        if (anchor == null) { Hide(); MaskService.Clear(this); return; }
         Show(anchor, mode == Mode.Talent ? talentText : stageText);
         Animate();
 
-        // ★ **聚光遮罩**：一整块遮罩铺满引导层；字幕板与要点的那个按钮都在它上面
-        //   （按钮由 `TutorialClickMask` 提到引导层里 → 不被压暗、也能点到）。
-        if (_mask == null) _mask = TutorialClickMask.EnsureExists(_layer);
-        if (_mask != null)
+        // ★ **聚光遮罩**（统一遮罩系统）：一整块遮罩铺满引导层；字幕板与要点的那个按钮都在它上面
+        //   （按钮由规则里的 Exempt 提到引导层里 → 不被压暗、也能点到）。
+        var maskTarget = ResolveMaskTarget(mode);
+        var rule = new MaskRule
         {
-            var maskTarget = ResolveMaskTarget(mode);
-            _mask.SetTarget(maskTarget != null ? maskTarget : anchor);
-            _mask.SetBlocking(true);
-        }
+            Host = _layer,
+            Alpha = MaskDimAlpha,
+            BlockClicks = true,
+            FadeSeconds = MaskFadeSeconds
+        };
+        rule.Exempt.Add(maskTarget != null ? maskTarget : anchor);
+        MaskService.Apply(this, rule);
     }
+
+    /// <summary>聚光遮罩的压暗强度。</summary>
+    private const float MaskDimAlpha = 0.45f;
+    private const float MaskFadeSeconds = 0.12f;
 
     /// <summary>遮罩开洞的目标 = **可点的那个按钮**（不是它的图片）→ 整张按钮亮着。</summary>
     private static RectTransform ResolveMaskTarget(Mode mode)
@@ -174,7 +180,7 @@ public class HubTutorialGuide : MonoBehaviour
         // ★ **遮罩要最先创建**（2026-11-06 实测）：运行时新建的 Graphic 如果排在别的图形之后，
         //   会进不了 canvas 的渲染批次 → 半透明压暗**画不出来**（不透明色却正常）。
         //   → 遮罩面板必须是本 canvas 的**第一个图形** → 字幕板 / 光圈 / 手 都在它上面。
-        _mask = TutorialClickMask.EnsureExists(_layer);
+        //   （统一遮罩系统 UiMask.Create() 自己就是第一个子物体 ✓）
 
         _ring = MakeImage("GuideRing", new Color(1f, 0.86f, 0.4f, 0.9f),
             ringSprite != null ? ringSprite : ProceduralUiSprites.Ring(128, 12, 1f));

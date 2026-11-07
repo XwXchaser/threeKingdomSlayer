@@ -32,9 +32,6 @@ using UnityEngine.UI;
 public class TutorialRouteBlackout : MonoBehaviour
 {
     [Header("外观")]
-    [Tooltip("黑幕 Image（场景里配好；留空则自动在本物体下建一个全屏 Image）")]
-    public Image curtain;
-
     [Tooltip("黑幕不透明度（**半透明压暗**，不是全屏纯黑）")]
     [Range(0f, 1f)] public float maxAlpha = 0.55f;
 
@@ -48,25 +45,15 @@ public class TutorialRouteBlackout : MonoBehaviour
     [Tooltip("只在教学关生效：离开教学路线时立刻恢复（不进黑）")]
     public bool tutorialOnly = true;
 
-    private CanvasGroup _group;
     private float _alpha;
     private float _target;
     private readonly List<RouteChoiceButton> _hookedButtons = new List<RouteChoiceButton>();
     private bool _pressedCover;
+    private RectTransform _host;
 
     private void Awake()
     {
-        EnsureCurtain();
-        _group = curtain.GetComponent<CanvasGroup>();
-        if (_group == null) _group = curtain.gameObject.AddComponent<CanvasGroup>();
-        _group.alpha = 0f;
-        _group.blocksRaycasts = false;      // 黑幕不拦点击（路牌按钮要点得到）
-        _group.interactable = false;
-        // ⚠️ **底图必须是不透明的**（透明由 CanvasGroup.alpha 控制）：
-        //   本项目实测，**半透明 Image（Image.color.a < 1）渲染不可靠**
-        //   （运行时新建的半透明黑图整层画不出来 → “黑幕从来没显示过”的真正原因）。
-        //   → 统一「不透明底图 + CanvasGroup.alpha」。
-        curtain.color = new Color(0f, 0f, 0f, 1f);
+        EnsureHost();
     }
 
     private void OnDisable()
@@ -155,36 +142,24 @@ public class TutorialRouteBlackout : MonoBehaviour
 
     private void Apply()
     {
-        if (_group == null) return;
-        // ⚠️ **只能乘一次**：之前底图自带 0.55 透明、这里又乘一次 maxAlpha → 实际只有 0.30。
-        //   现在底图是不透明的（alpha=1）→ 这里乘一次就是最终黑度。
-        _group.alpha = Mathf.Clamp01(_alpha) * maxAlpha;
+        // 2026-11-07：黑幕的**渲染**交给统一遮罩系统（UiMask）：
+        //   本组件只管**时机**（什么时候黑），不再自己维护 Image/CanvasGroup。
+        var rule = new MaskRule
+        {
+            Host = _host,
+            Alpha = Mathf.Clamp01(_alpha) * maxAlpha,
+            BlockClicks = false,                 // 黑幕不拦点击（路牌按钮要点得到）
+            FadeSeconds = fadeSeconds
+        };
+        MaskService.Apply(this, rule);
     }
 
-    /// <summary>没有配 curtain 就自己建一个全屏黑 Image。</summary>
-    private void EnsureCurtain()
+    /// <summary>黑幕建在哪一层：自己的 Canvas（order 19 → 在路牌面板 21 之下）。</summary>
+    private void EnsureHost()
     {
-        if (curtain != null) return;
+        if (_host != null) return;
         var canvas = GetComponentInParent<Canvas>();
         if (canvas == null) return;
-
-        // ⚠️ 底图**不透明** + CanvasGroup 控透明（半透明 Image 在本项目画不出来）
-        var go = new GameObject("Tutorial Blackout Curtain", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup));
-        go.transform.SetParent(canvas.transform, false);
-        var rect = go.GetComponent<RectTransform>();
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
-        var img = go.GetComponent<Image>();
-        img.color = new Color(0f, 0f, 0f, 1f);
-        img.raycastTarget = false;
-        var cg = go.GetComponent<CanvasGroup>();
-        cg.alpha = 0f;
-        cg.interactable = false;
-        cg.blocksRaycasts = false;
-        curtain = img;
-        // 置顶：黑幕要盖住一切
-        go.transform.SetAsLastSibling();
+        _host = canvas.transform as RectTransform;
     }
 }

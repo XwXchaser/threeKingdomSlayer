@@ -22,11 +22,19 @@ public partial class TutorialStageDirector : MonoBehaviour
     private void Awake()
     {
         if (Instance == null) Instance = this;
+        // 注册**世界侧压暗后端**（统一遮罩系统）：
+        //   UI 侧由 UiMask 负责，背景侧由 TutorialSceneDim 负责 → 两者由同一条规则发起。
+        if (_sceneDim == null) _sceneDim = GetComponent<TutorialSceneDim>();
+        if (_sceneDim == null) _sceneDim = gameObject.AddComponent<TutorialSceneDim>();
+        if (_sceneDim != null) MaskService.WorldDim = _sceneDim;
     }
 
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
+        // 导演没了 → 它申请的遮罩与世界压暗都要收
+        MaskService.Clear(this);
+        if (MaskService.WorldDim == _sceneDim) MaskService.WorldDim = null;
     }
     [Header("教学战斗与台词")]
     [Tooltip("教学 N1（教点戳 / 连点三下）")]
@@ -45,8 +53,8 @@ public partial class TutorialStageDirector : MonoBehaviour
     public DialogueEventData[] e0IntroDialogues = new DialogueEventData[0];
     [Tooltip("开场流程的「点击继续」按钮（场景里的实例；自带 Canvas+GraphicRaycaster，点得到）")]
     public TutorialContinueButton continueButton;
-    [Tooltip("引导期点击遮罩（挡住战场等；HUD 由 hudCanvasGroup 整块失能）")]
-    public TutorialInputBlocker introBlocker;
+    [Tooltip("引导期点击遮罩的宿主层（TutorialIntroOverlay，order=121；挡住战场等，HUD 由 hudCanvasGroup 整块失能）")]
+    public RectTransform introMaskHost;
     [Tooltip("战斗 HUD 根上的 CanvasGroup（引导期整块失能：道具栏 / 技能槽 / 防御键 / 头像都不可点）")]
     public CanvasGroup hudCanvasGroup;
     // ⚠️ 这里**没有**“超时自动跳过”的开关：需求明确「不存在任何计时器直接跳过」。
@@ -155,10 +163,6 @@ public partial class TutorialStageDirector : MonoBehaviour
     public bool RouteHintActive => _routeHintActive;
     private TutorialGestureTarget _beatTarget = TutorialGestureTarget.None;
     private TutorialSceneDim _sceneDim;
-    private bool _sceneDimBound;
-    /// <summary>已绑定压暗的路线场景（换节点后场景会换 → 需要重新绑定）。</summary>
-    private UnityEngine.SceneManagement.Scene _dimBoundScene;
-    private bool _dimBoundSceneValid;
 
     private void Start()
     {
@@ -242,8 +246,8 @@ public partial class TutorialStageDirector : MonoBehaviour
         IntroActive = false;
         // 开场流程的「点击继续」按钮也是场景对象：导演被禁用时它会留在屏上 → 收掉
         if (continueButton != null) continueButton.Hide();
-        // 教学文本的压暗（黑幕）也要收 → 否则离开教学后整个游戏都是暗的
-        SetTeachingDim(false);
+        // 教学遮罩（点击遮罩 + 背景压暗）也要收 → 否则离开教学后画面还暗着 / 点击还被挡
+        MaskService.Clear(this);
     }
 
     /// <summary>退订（可重复调用，重复退订无害）。</summary>

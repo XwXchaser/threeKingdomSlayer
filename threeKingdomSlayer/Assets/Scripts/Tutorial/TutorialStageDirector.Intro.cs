@@ -70,7 +70,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         Time.timeScale = 0f;
         GameplayInputGate.RequestBlock(this, InputBlockReason.TutorialIntro);
         DialogueManager.AllowDialogueWhilePaused = true;   // 冻结中台词队列要能播
-        if (introBlocker != null) introBlocker.Show();
+        SetIntroClickBlock(true);
         DisableHudInteraction();
         // 文本不会自己消失：第一段等玩家点按钮、第二段等玩家做出手势
         SetDialogueAutoAdvance(false);
@@ -148,7 +148,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 只解自己的冻（别的系统冻的时间我们不接管）
         if (Time.timeScale == 0f) Time.timeScale = 1f;
 
-        SafeStep("收引导期点击遮罩", () => { if (introBlocker != null) introBlocker.Hide(); });
+        SafeStep("收引导期点击遮罩", () => SetIntroClickBlock(false));
         SafeStep("收「点击继续」按钮", () => { if (continueButton != null) continueButton.Hide(); });
         SafeStep("恢复 HUD 交互", RestoreHudInteraction);
         SafeStep("解冻敌人", () => SetEnemiesHold(false));

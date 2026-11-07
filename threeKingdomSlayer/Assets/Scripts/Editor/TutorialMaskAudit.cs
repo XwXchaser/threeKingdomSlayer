@@ -101,7 +101,15 @@ public static class TutorialMaskAudit
         if (view != null && view.IsShowing)
         {
             var dim = UnityEngine.Object.FindObjectOfType<TutorialSceneDim>(true);
-            if (dim != null && dim.IsDimming && Captured.Add("beat"))
+            var director = UnityEngine.Object.FindObjectOfType<TutorialStageDirector>(true);
+            bool introPhase = director != null && director.IntroActive;
+            if (dim != null && dim.IsDimming && introPhase && Captured.Add("intro"))
+            {
+                // 开场第一段：压暗 + 点击遮罩都在 → 这里验证“除了按钮与暂停键都点不到”
+                Capture("intro_first_line");
+                AuditIntroPhase();
+            }
+            else if (dim != null && dim.IsDimming && !introPhase && Captured.Add("beat"))
             {
                 Capture("teaching_beat");
                 AuditTeachingBeat();
@@ -126,12 +134,15 @@ public static class TutorialMaskAudit
         Report.AppendLine("======== 选路牌（ChoosingRoute）========");
 
         var curtain = FindCurtain();
-        Report.AppendLine($"-- 幕布 Tutorial Blackout Curtain：{(curtain == null ? "不存在" : "存在")}");
-        if (curtain != null)
+        Report.AppendLine($"-- 幕布：{(curtain == null ? "（旧名字已不存在）" : "旧版预置幕布")}");
+        // 新版：统一遮罩系统的 UiMask
+        foreach (var r in UnityEngine.Object.FindObjectsOfType<RectTransform>(true))
         {
-            var cg = curtain.GetComponent<CanvasGroup>();
-            var canvas = curtain.GetComponentInParent<Canvas>();
-            Report.AppendLine($"   canvas={canvas.name}(order {canvas.sortingOrder}) color={curtain.color} groupAlpha={(cg == null ? "-" : cg.alpha.ToString("F2"))} blocks={(cg == null ? "-" : cg.blocksRaycasts.ToString())} active={curtain.gameObject.activeInHierarchy} raycastTarget={curtain.raycastTarget}");
+            if (r.name != "UiMask") continue;
+            var c = r.GetComponentInParent<Canvas>();
+            var img = r.GetComponent<UnityEngine.UI.Image>();
+            var gc = r.GetComponent<CanvasGroup>();
+            Report.AppendLine($"-- UiMask 宿主={r.parent.name} canvas={c.name}/{c.sortingOrder} alpha={(gc == null ? "-" : gc.alpha.ToString("F2"))} raycastTarget={(img == null ? "-" : img.raycastTarget.ToString())}");
         }
 
         var btn = UnityEngine.Object.FindObjectOfType<RouteChoiceButton>();
@@ -144,6 +155,35 @@ public static class TutorialMaskAudit
         var canvasBtn = rt.GetComponentInParent<Canvas>();
         Report.AppendLine($"-- 路牌按钮 canvas={canvasBtn.name}(order {canvasBtn.sortingOrder}) 位置={rt.anchoredPosition} 世界={rt.position}");
         RaycastAt(rt, "路牌按钮中心");
+    }
+
+    // ── 开场第一段：压暗 + 点击遮罩 ─────────────────────────────
+    private static void AuditIntroPhase()
+    {
+        Report.AppendLine();
+        Report.AppendLine("======== 开场第一段（压暗 + 点击遮罩）========");
+        Report.AppendLine($"-- MaskService.ActiveMaskCount={MaskService.ActiveMaskCount}");
+        var dim = UnityEngine.Object.FindObjectOfType<TutorialSceneDim>(true);
+        Report.AppendLine($"-- TutorialSceneDim.IsDimming={(dim == null ? "组件缺失" : dim.IsDimming.ToString())}");
+        var sky = RenderSettings.skybox;
+        if (sky != null && sky.HasProperty("_SkyTint")) Report.AppendLine($"-- 天空盒 {sky.name} _SkyTint={sky.GetColor("_SkyTint")}");
+
+        // 点击遮罩（UiMask）：它在哪一层、挡不挡射线
+        foreach (var r in UnityEngine.Object.FindObjectsOfType<RectTransform>(true))
+        {
+            if (r.name != "UiMask") continue;
+            var c = r.GetComponentInParent<Canvas>();
+            var img = r.GetComponent<UnityEngine.UI.Image>();
+            var gc = r.GetComponent<CanvasGroup>();
+            Report.AppendLine($"-- UiMask 宿主={r.parent.name} canvas={c.name}/{c.sortingOrder} alpha={(gc == null ? "-" : gc.alpha.ToString("F2"))} raycastTarget={(img == null ? "-" : img.raycastTarget.ToString())}");
+        }
+
+        var cont = UnityEngine.Object.FindObjectOfType<TutorialContinueButton>(true);
+        if (cont != null && cont.IsShowing) RaycastAt((RectTransform)cont.transform, "继续按钮中心");
+        var bubble = FindRect("TutorialBubble");
+        if (bubble != null) RaycastAt(bubble, "台词气泡中心");
+        var pause = FindRect("PauseIcon");
+        if (pause != null) RaycastAt(pause, "暂停键中心");
     }
 
     // ── 教学拍那一刻 ─────────────────────────────────────────

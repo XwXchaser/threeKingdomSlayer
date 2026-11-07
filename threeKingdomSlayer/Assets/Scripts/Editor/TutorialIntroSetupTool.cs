@@ -9,7 +9,7 @@ using UnityEngine.UI;
 /// 干什么：
 /// ① 在 <c>TutorialIntroOverlay</c> 下建 <c>IntroDim</c>（不透明黑图 + CanvasGroup）
 ///    → 教学「第一段文本」期间压暗画面（黑幕），按钮垫在它上面不被压暗；
-/// ② 把 <c>TutorialInputBlocker._dim</c> 接到 IntroDim 的 CanvasGroup；
+/// ② 把 <c>TutorialContinueButton._placeAbove</c> 接到玩家血条；
 /// ③ 把 <c>TutorialContinueButton._placeAbove</c> 接到玩家的血条（HealthBar）
 ///    → 「点击继续」按钮摆在血条正上方；
 /// ④ 把开幕台词 <c>tutorial_t0_opening</c> 改成 **非阻塞**
@@ -38,12 +38,11 @@ public static class TutorialIntroSetupTool
         var overlay = FindRect(OverlayName);
         var button = FindRect("TutorialContinueButton");
         var healthBar = FindRect(HealthBarName);
-        var blocker = UnityEngine.Object.FindObjectOfType<TutorialInputBlocker>(true);
         var continueBtn = UnityEngine.Object.FindObjectOfType<TutorialContinueButton>(true);
 
-        if (overlay == null || button == null || healthBar == null || blocker == null || continueBtn == null)
+        if (overlay == null || button == null || healthBar == null || continueBtn == null)
         {
-            log.Append("[TutorialIntroSetup] 找不到目标对象（overlay/button/healthBar/blocker/continueBtn）→ 中止\n");
+            log.Append("[TutorialIntroSetup] 找不到目标对象（overlay/button/healthBar/continueBtn）→ 中止\n");
             Debug.Log(log.ToString());
             return log.ToString();
         }
@@ -65,15 +64,6 @@ public static class TutorialIntroSetupTool
         }
 
         // ── ② 接线 ──────────────────────────────────────────────────
-        var blockerSo = new SerializedObject(blocker);
-        var dimProp = blockerSo.FindProperty("_dim");
-        if (dimProp != null)
-        {
-            dimProp.objectReferenceValue = null;
-            blockerSo.ApplyModifiedPropertiesWithoutUndo();
-            log.Append("[TutorialIntroSetup] 清掉了场景里旧的 _dim 接线\n");
-        }
-
         var buttonSo = new SerializedObject(continueBtn);
         var aboveProp = buttonSo.FindProperty("_placeAbove");
         if (aboveProp != null)

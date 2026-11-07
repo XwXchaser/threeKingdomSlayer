@@ -8,14 +8,16 @@ using UnityEngine.UI;
 ///
 /// 为什么有这个工具：项目里先后长出了好几套「遮罩/压暗」实现（场景压暗、全屏 UI 遮罩、
 /// 聚光遮罩、点击遮罩），每套各写各的 → 层级、透明度、渲染可靠性都不一致。
-/// 本工具把**场景侧的遮罩**收成一套：
 ///
-/// | 遮罩 | 实现 | 层级 | 作用 |
+/// 现在**统一成一套规则系统**（`MaskRule` + `MaskService` + `UiMask`），
+/// 遮罩由服务在运行时创建 → 场景里**不需要预置遮罩对象**，本工具只做「清残留 + 接线」。
+///
+/// | 遮罩 | 实现 | 宿主层 | 作用 |
 /// |---|---|---|---|
 /// | 教学拍压暗 | `TutorialSceneDim`（改背景渲染器亮度） | 世界侧 | 只压背景，角色/武器保持亮 |
-/// | 选路黑幕 | `TutorialRouteBlackout` + 场景预置的不透明底图 | order **19** | 压暗战场；**路牌按钮与文字在它上面** |
-/// | 开场点击遮罩 | `TutorialInputBlocker`（透明 Image，只吃射线） | order 121 | 挡点击，不遮挡 |
-/// | 聚光遮罩 | `TutorialClickMask`（不透明底图 + 目标提层） | 宿主层内 | 主菜单 / 天赋页 |
+/// | 选路黑幕 | `MaskService` → `UiMask` | `Tutorial Blackout`（order **19**） | 压暗战场；**路牌按钮与文字在它上面** |
+/// | 开场点击遮罩 | `MaskService` → `UiMask` | `TutorialIntroOverlay`（order 121） | 挡点击，不遮挡 |
+/// | 主菜单/天赋页聚光 | `MaskService` → `UiMask` | 引导层 / 面板教学层 | 目标豁免（提到上层） |
 ///
 /// ⚠️ **两条硬规矩**（都来自实测）：
 ///   ① UI 遮罩的底图**一律不透明**，透明度由 `CanvasGroup.alpha` 控制
@@ -27,7 +29,8 @@ using UnityEngine.UI;
 public static class TutorialMaskSetupTool
 {
     private const string BlackoutHostName = "Tutorial Blackout";
-    private const string CurtainName = "Tutorial Blackout Curtain";
+    private const string LegacyCurtainName = "Tutorial Blackout Curtain";
+    private const string IntroOverlayName = "TutorialIntroOverlay";
 
     /// <summary>
     /// 黑幕 Canvas 的层级：**必须在路牌面板（BattleHUD root order=21）之下**
@@ -65,43 +68,52 @@ public static class TutorialMaskSetupTool
 
         if (canvas.sortingOrder != BlackoutSortingOrder)
         {
+            var before = canvas.sortingOrder;
             canvas.sortingOrder = BlackoutSortingOrder;
-            log.Append($"[MaskSetup] 黑幕 Canvas 层级 {canvas.sortingOrder} → {BlackoutSortingOrder}（路牌面板在 21，必须在它下面）\n");
+            log.Append($"[MaskSetup] 黑幕 Canvas 层级 {before} → {BlackoutSortingOrder}（路牌面板在 21，必须在它下面）\n");
         }
 
-        var curtain = canvas.transform.Find(CurtainName) as RectTransform;
-        if (curtain == null)
+        // 遮罩本体由 MaskService 运行时创建（不再场景预置）→ 清掉旧版残留
+        var legacy = GameObject.Find(LegacyCurtainName);
+        if (legacy != null)
         {
-            var go = new GameObject(CurtainName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup));
-            go.transform.SetParent(canvas.transform, false);
-            curtain = go.GetComponent<RectTransform>();
-            log.Append("[MaskSetup] 建了场景预置的幕布\n");
+            UnityEngine.Object.DestroyImmediate(legacy);
+            log.Append("[MaskSetup] 删掉了旧的场景预置幕布（改由 MaskService 创建）\n");
         }
-        else
+
+        // 旧版：TutorialIntroOverlay 上的点击遮罩 Image + TutorialInputBlocker 组件
+        var overlay = GameObject.Find(IntroOverlayName);
+        if (overlay != null)
         {
-            log.Append("[MaskSetup] 幕布已存在\n");
+            // 组件的脚本已被删（统一成 MaskService）→ 场景里会变成 missing script → 一次性清掉
+            int missing = GameObjectUtility.RemoveMonoBehavioursWithMissingScript(overlay);
+            if (missing > 0) log.Append($"[MaskSetup] 清掉了 {missing} 个 missing script（旧的点击遮罩组件）\n");
+            // 遮罩现在由 MaskService 建在 **TutorialIntroOverlay 下面**（第一个子物体）
+            // → 原来那块 Image 必须去掉，否则它会抢走「点击继续」按钮的射线。
+            var oldImage = overlay.GetComponent<Image>();
+            if (oldImage != null)
+            {
+                UnityEngine.Object.DestroyImmediate(oldImage);
+                log.Append("[MaskSetup] 删掉了 TutorialIntroOverlay 上旧的遮罩 Image\n");
+            }
         }
 
-        // 铺满宿主层
-        curtain.anchorMin = Vector2.zero;
-        curtain.anchorMax = Vector2.one;
-        curtain.offsetMin = Vector2.zero;
-        curtain.offsetMax = Vector2.zero;
+        // 导演接线：开场点击遮罩的宿主层
+        var director = UnityEngine.Object.FindObjectOfType<TutorialStageDirector>(true);
+        if (director != null && overlay != null)
+        {
+            var dso = new SerializedObject(director);
+            var prop = dso.FindProperty("introMaskHost");
+            if (prop != null)
+            {
+                prop.objectReferenceValue = overlay.transform as RectTransform;
+                dso.ApplyModifiedPropertiesWithoutUndo();
+                log.Append("[MaskSetup] 导演 introMaskHost 已接到 " + IntroOverlayName + "\n");
+            }
+        }
 
-        // 底图**不透明**（透明交给 CanvasGroup.alpha）
-        var img = curtain.GetComponent<Image>();
-        if (img == null) img = curtain.gameObject.AddComponent<Image>();
-        img.color = new Color(0f, 0f, 0f, 1f);
-        img.raycastTarget = false;                 // 不拦点击（路牌按钮要点得到）
-
-        var group = curtain.GetComponent<CanvasGroup>();
-        if (group == null) group = curtain.gameObject.AddComponent<CanvasGroup>();
-        group.alpha = 0f;                          // 默认不黑
-        group.interactable = false;
-        group.blocksRaycasts = false;              // 黑幕不拦点击
-
-        blackout.curtain = img;
-        log.Append("[MaskSetup] 幕布已接到 TutorialRouteBlackout\n");
+        // 幕布渲染已交给 MaskService（运行时创建 UiMask）→ 组件里不再需要 curtain 字段
+        log.Append("[MaskSetup] 幕布渲染已交给 MaskService\n");
 
         var scene = EditorSceneManager.GetActiveScene();
         EditorSceneManager.MarkSceneDirty(scene);

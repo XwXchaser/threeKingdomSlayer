@@ -248,6 +248,67 @@ summary: 本周 todolist · 交互与手感（2026-11-05 起，用户定优先�
    `DialogueDimOverlay` 与选路黑幕都是「全屏 UI 压暗」→ 以后各收成一个组件。
 7. 用 `TutorialMaskAudit` 守住：每次教学改动跑一遍，看射线命中顺序 + 抓图。
 
+### 2.8 遮罩统一（2026-11-07 用户拍板：「本质应该只有一套，只是按不同规则遮挡 UI 物体」）
+
+> 之前的 8 套实现（见 §2.7）已**收成一套规则系统**。
+
+#### 结构
+
+```
+MaskRule  ← 规则：谁要遮、遮多强、哪些 UI 豁免、要不要压背景、过渡时长
+   ↓
+MaskService（唯一入口，按 owner 管理）
+   ├─ UI 侧 → UiMask（唯一的 UI 遮罩实现：不透明底图 + CanvasGroup.alpha）
+   └─ 世界侧 → IMaskWorldDim 后端（教学：TutorialSceneDim）
+```
+
+| 规则字段 | 作用 |
+|---|---|
+| `Host` | 遮罩建在哪一层（它所在的 Canvas 决定实际层级） |
+| `Alpha` | 压暗强度 0..1 |
+| `BlockClicks` | 是否吃射线（挡住同层其它 UI 的点击） |
+| `DimWorld` + `WorldBrightness` | 要不要同时压暗**世界背景**（走世界侧后端） |
+| `Exempt` / `ExemptFilter` | 哪些 UI 要保持亮 + 保持可点（会被提到遮罩上层，关掉时放回原位） |
+| `FadeSeconds` | 淡入淡出 |
+
+#### 为什么必须分「UI 侧 / 世界侧」两个后端
+
+战场是**透视相机 + 世界物件**（长枪是 MeshRenderer、敌人是精灵）→ **任何 Overlay 画布都必然盖在角色上面**，
+层级无解 → 「背景压暗、敌人与武器保持亮」只能改背景渲染器的亮度（世界侧）。
+**但**“遮哪些 UI”这件事统一由规则描述 → 对外只有**一个 API**。
+
+#### 迁移前 → 迁移后
+
+| 旧实现 | 现在 |
+|---|---|
+| `TutorialClickMask`（主菜单/天赋页聚光） | **已删** → `MaskService`（`Exempt` = 目标按钮） |
+| `TutorialInputBlocker`（开场点击遮罩） | **已删** → `MaskService`（`BlockClicks=true`、`Alpha=0`） |
+| `TutorialRouteBlackout` 的幕布 | 组件只管**时机**，渲染交给 `MaskService` |
+| `TutorialSceneDim` | 保留为**世界侧唯一实现**（实现 `IMaskWorldDim`） |
+| `DialogueDimOverlay` / `BattleDialogueView._clickBlocker` | **暂未迁移**（对话系统，不属教学线）；以后要收就按同一套规则做 |
+
+#### 三条硬规矩（都来自实测）
+
+1. **UI 遮罩底图一律不透明**，透明只由 `CanvasGroup.alpha` 控制 —— 半透明 Image 在本项目渲染不可靠。
+2. **遮罩不能压在要教学的东西上面**：要么压背景（世界侧），要么把目标提到遮罩上层（`Exempt`）。
+3. **豁免对象只在集合变化时重挂**（不能每帧重挂 → 会丢原始父节点，关掉时放不回原位）。
+
+#### 实测（Play Mode + 射线命中顺序）
+
+| 场景 | 结果 |
+|---|---|
+| 教学拍 | 背景压暗（天空盒 0.50→0.21）；**敌人亮度 1.00 / 武器 0.30 不变**；敌人中心射线命中 0 个 → 无 UI 遮挡 |
+| 开场第一段 | `ActiveMaskCount=1`；点击遮罩 `raycastTarget=True`；继续按钮射线第一命中 = 按钮 ✓；气泡第一命中 = 遮罩（点气泡不推进 ✓）；暂停键第一命中 = PauseIcon（order 130 > 121 ✓ 仍可按） |
+| 选路 | 幕布逐像素：天空 132→65、地面 94→45、旗帜 111→51（均匀 ≈0.48×）；路牌按钮第一命中 = Icon ✓（幕布 order 19 在路牌面板 21 之下） |
+| 落地页聚光 | `ActiveMaskCount=1`，遮罩 alpha 0.45；**豁免目标**（开始关卡）第一命中 = 按钮 ✓；**非豁免**（天赋入口）第一命中 = 遮罩（被挡）✓ |
+
+#### 顺带查出的一个旧 bug（**未修，待拍板**）
+
+落地页「点开始关卡」引导（`HubTutorialGuide` 的 R9）**几乎不会出现**：
+启动早期有一帧路线不在 `Ready` → `ResolveMode()` 走进 `!atLanding` 分支 → 直接把
+`taughtStartStage` 标成已教并写存档 → 之后永远不再教。
+（本次靠手动把 `taughtStartStage` 改回 false 才拍到落地页遮罩。）
+
 ---
 
 ## 3. 文档索引
