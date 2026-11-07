@@ -14988,6 +14988,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c863340ed6bbee24cb51e0e7b00e2792, type: 2}
   continueButton: {fileID: 265148321}
   introMaskHost: {fileID: 926787061}
+  levelOrbGuide: {fileID: 1601026400}
   hudCanvasGroup: {fileID: 2027225540}
   choiceDialogue: {fileID: 11400000, guid: 5a23cc1452775bf4d8ea60aaabc3b339, type: 2}
   tutorialIceSkill: {fileID: 0}
@@ -20595,6 +20596,59 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1595449895}
   m_CullTransparentMesh: 1
+--- !u!1 &1601026399
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1601026401}
+  - component: {fileID: 1601026400}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: LevelOrbGuide
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1601026400
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1601026399}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ea7e6d67c7bf2f4d82ab6deefe77d90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  handSprite: {fileID: 21300000, guid: 8426cacbbde92f44c8e6a0f06f003f35, type: 3}
+  ringSprite: {fileID: 21300000, guid: 29478d34325fde346a6eb38397efec15, type: 3}
+  guideText: "\u7B49\u7EA7\u7403\uFF1A\u6DB2\u9762\u662F\u7ECF\u9A8C\u8FDB\u5EA6\uFF0C\u6570\u5B57\u662F\u7B49\u4F60\u9009\u7684\u4E09\u9009\u4E00\u6570\u91CF"
+  handSize: 190
+  ringSize: 150
+  textGap: 130
+  textRise: 90
+  sortingOrder: 140
+--- !u!4 &1601026401
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1601026399}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1602900036
 GameObject:
   m_ObjectHideFlags: 0
@@ -28946,3 +29000,4 @@ SceneRoots:
   - {fileID: 1620657435}
   - {fileID: 1684724281}
   - {fileID: 405713611}
+  - {fileID: 1601026401}
