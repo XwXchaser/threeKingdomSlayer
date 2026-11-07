@@ -1,0 +1,11 @@
+animation,file,bytes,source,note
+idle,sword_enemy_v4_combat_idle_loop_v1_720p_4s.mp4,1677207,Enemy1012ArtSource/01_SourceVideos/,1012 的 idle 母本；1013 沿用（站姿微呼吸）
+walk,sword_enemy_walk_front_v4.mp4,2590328,Enemy1012ArtSource/01_SourceVideos/,1012 的 walk 母本
+hitLeft,sword_enemy_hit_right_v1.mp4,2160235,Enemy1012ArtSource/01_SourceVideos/,1012 的受击左母本（命名对调过）
+hitRight,sword_enemy_hit_left_v3.mp4,1801808,Enemy1012ArtSource/01_SourceVideos/,1012 的受击右母本
+dead,sword_enemy_dead_front_v4.mp4,1960796,Enemy1012ArtSource/01_SourceVideos/,1012 的死亡母本
+rise,enemy1011_launch_rise_v1.mp4,1913855,Enemy1012ArtSource/01_SourceVideos/,击飞上升；末帧 ≡ landing 首帧
+landing,enemy1011_launch_landing_v1.mp4,2107363,Enemy1012ArtSource/01_SourceVideos/,击飞落地；首帧 ≡ rise 末帧
+getup,enemy1011_launch_getup_v1.mp4,2256652,Enemy1012ArtSource/01_SourceVideos/,击飞起身；末帧 ≡ getup 首帧
+cast,TBD,0,待生成,1013 专属「号令/举旗」动作：**没有母本**（新动作）→ 需单独生成一支；只描述「举旗」这一个动作
+attack,NONE,0,-,**1013 不攻击** → 不做 attack 动作（省一支视频）；预制体的 attackSequence 清空、attackDamage=0

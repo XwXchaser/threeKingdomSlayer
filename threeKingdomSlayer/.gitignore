@@ -56,6 +56,12 @@ Enemy1012ArtSource/*
 !Enemy1012ArtSource/01_SourceVideos/
 !Enemy1012ArtSource/02_IdentityImages/
 
+Enemy1013ArtSource/*
+!Enemy1013ArtSource/README.md
+!Enemy1013ArtSource/00_Index/
+!Enemy1013ArtSource/01_SourceVideos/
+!Enemy1013ArtSource/02_IdentityImages/
+
 # 109 骑乘枪骑（约 406MB）：同步源视频 + 关键姿态 + 视频准备记录
 Enemy109ArtSource/*
 !Enemy109ArtSource/README.md
@@ -86,6 +92,9 @@ Enemy1021ArtSource/*
 
 # 长枪 / 其他素材源：仍整体本地留档（已入库的历史文件不受影响，新增文件不入库）
 StabWeaponArtSource/
+
+# 视觉库：打包输出不入库（临时产物，含缩放后的图）
+_art_process/VisualLibrary/bundles/
 
 # Locus 工具包残留（Packages/com.farlocus.locus 未在 Packages/manifest.json 注册，Unity 不加载，
 # 约 13MB 的编辑器二进制；重装工具会重新生成）
