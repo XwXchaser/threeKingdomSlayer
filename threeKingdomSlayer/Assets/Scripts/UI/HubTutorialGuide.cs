@@ -32,7 +32,8 @@ public class HubTutorialGuide : MonoBehaviour
     private Image _hand;
     private Image _ring;
     private TextMeshProUGUI _label;
-    private RectTransform _labelBg;
+    private Vector2 _labelSize;
+    private string _labelFitText;
     private float _animTime;
     private string _currentText;
 
@@ -115,6 +116,14 @@ public class HubTutorialGuide : MonoBehaviour
         return panel != null && panel.gameObject.activeInHierarchy;
     }
 
+    /// <summary>落地页底部功能 UI 带（任务栏 / 路线标题 / 天赋卡）的高度（图层本地单位）。</summary>
+    private float BottomBandLocal()
+    {
+        if (_layer == null) return 0f;
+        float s = Mathf.Abs(_layer.lossyScale.y);
+        return s > 0.0001f ? TutorialGestureStyle.BottomHudBandPx / s : 0f;
+    }
+
     /// <summary>要指向的那个 UI 元素的**视觉中心**（按钮容器 ≠ 按钮图案）。</summary>
     private RectTransform ResolveAnchor(Mode mode)
     {
@@ -186,7 +195,6 @@ public class HubTutorialGuide : MonoBehaviour
             ringSprite != null ? ringSprite : ProceduralUiSprites.Ring(128, 12, 1f));
         _hand = MakeImage("GuideHand", Color.white, handSprite);
         _label = MakeText("GuideLabel");
-        _labelBg = _label != null ? _label.transform.parent as RectTransform : null;
 
         // ★ **不再用“高亮材质”**（2026-11-06 用户：「本质上来说确实不需要高亮材质，
         //   而是让对应按钮显示在遮罩上层即可」）→ 手与光圈**不画**了：
@@ -208,22 +216,12 @@ public class HubTutorialGuide : MonoBehaviour
 
     private TextMeshProUGUI MakeText(string name)
     {
-        // 底板（深色）→ 白字在浅色背景上也看得清
-        var bgGo = new GameObject(name + "Bg", typeof(RectTransform));
-        bgGo.transform.SetParent(_layer, false);
-        var bg = bgGo.AddComponent<Image>();
-        bg.color = new Color(0.06f, 0.05f, 0.04f, 0.88f);
-        bg.sprite = ProceduralUiSprites.RoundedPlate(18, 3, 1f, 1f);
-        bg.type = Image.Type.Sliced;
-        bg.raycastTarget = false;
-        var br = (RectTransform)bgGo.transform;
-        br.anchorMin = br.anchorMax = new Vector2(0.5f, 0.5f);
-        br.pivot = new Vector2(0.5f, 0.5f);
-        br.sizeDelta = new Vector2(820f, 96f);
-        br.anchoredPosition = new Vector2(0f, 0f);
-
+        // ★ **只有白字，没有底板**（2026-11-07 用户反馈：「对话黑框严重阻挡了功能UI，
+        //   应该只显示白色文字，去除底框且注意排布问题」）
+        //   → 原来这里是「深色圆角底板 820×96 + 暖白字」→ 那一大块黑板盖住了旁边的功能 UI。
+        //   → 现在：纯白字 + 尺寸按内容收缩（见 TutorialGestureStyle.FitLabelToContent）+ 摆位躲开目标。
         var go = new GameObject(name, typeof(RectTransform));
-        go.transform.SetParent(bgGo.transform, false);
+        go.transform.SetParent(_layer, false);
         var txt = go.AddComponent<TextMeshProUGUI>();
         // 字体必须给（不设的话 TMP 什么都不画 —— 2026-11-04 截图发现主菜单引导的字是空的）
         if (font != null) txt.font = font;
@@ -231,12 +229,12 @@ public class HubTutorialGuide : MonoBehaviour
         txt.raycastTarget = false;
         txt.fontSize = 34f;
         txt.alignment = TextAlignmentOptions.Center;
-        txt.color = new Color(1f, 0.94f, 0.82f, 1f);
-        txt.enableWordWrapping = true;
+        txt.color = Color.white;
+        txt.enableWordWrapping = false;
         var r = (RectTransform)go.transform;
         r.anchorMin = r.anchorMax = new Vector2(0.5f, 0.5f);
         r.pivot = new Vector2(0.5f, 0.5f);
-        r.sizeDelta = new Vector2(860f, 96f);
+        r.sizeDelta = new Vector2(400f, 48f);
         r.anchoredPosition = Vector2.zero;
         return txt;
     }
@@ -258,8 +256,7 @@ public class HubTutorialGuide : MonoBehaviour
         _layer.gameObject.SetActive(true);
         // Hide() 不再关 canvas（避免渲染批次失效）→ 这里只把文字显示出来
         if (_label != null) _label.gameObject.SetActive(true);
-        if (_labelBg != null) _labelBg.gameObject.SetActive(true);
-        if (_currentText != text) { _currentText = text; if (_label != null) _label.text = text; }
+        if (_currentText != text) { _currentText = text; if (_label != null) _label.text = text; _labelFitText = null; }
 
         Vector3 world = VisualCenter(anchor);
         _targetWorld = world;
@@ -286,11 +283,17 @@ public class HubTutorialGuide : MonoBehaviour
         }
         PlaceHandOnTarget(handSize);
 
-        // 文案：**靠近手势，但既不遮手势、也不遮它指的按钮**
-        if (_labelBg != null)
+        // 文案：**只显示白色文字**，尺寸按内容收缩 →
+        //   摆在目标旁边（不遮目标、不出屏）→ 不再挡住下面的功能 UI。
+        if (_label != null)
         {
-            Vector2 lblPos = TutorialGestureStyle.PlaceLabelNear(_layer, _layer.TransformPoint(local), new Vector2(700f, 96f), handSize);
-            _labelBg.anchoredPosition = lblPos;
+            if (_labelFitText != text)
+            {
+                _labelFitText = text;
+                _labelSize = TutorialGestureStyle.FitLabelToContent(_label, TutorialGestureStyle.MaxLabelWidth);
+            }
+            _label.rectTransform.anchoredPosition =
+                TutorialGestureStyle.PlaceLabelClearOf(_layer, anchor, _labelSize, 20f, BottomBandLocal());
         }
     }
 
@@ -350,7 +353,6 @@ public class HubTutorialGuide : MonoBehaviour
         //   → 之后新建的半透明 UI（聚光遮罩）就**画不出来**（实测 2026-11-06）。
         if (_layer == null) return;
         if (_label != null) _label.gameObject.SetActive(false);
-        if (_labelBg != null) _labelBg.gameObject.SetActive(false);
         if (_ring != null) _ring.gameObject.SetActive(false);
         if (_hand != null) _hand.gameObject.SetActive(false);
     }

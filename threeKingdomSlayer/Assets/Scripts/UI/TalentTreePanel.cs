@@ -98,10 +98,13 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     /// <summary>天赋页教学遮罩的压暗强度 / 过渡时长。</summary>
     private const float TeachMaskDimAlpha = 0.45f;
     private const float TeachMaskFadeSeconds = 0.12f;
+    /// <summary>教学文案离面板底边的距离（详情卡高 300 + 底边距 24 + 余量 16）。</summary>
+    private const float TeachLabelBottomOffset = 340f;
     private Image _teachHand;
     private Image _teachRing;
     private TextMeshProUGUI _teachLabel;
-    private RectTransform _teachLabelBg;
+    private Vector2 _teachLabelSize;
+    private string _teachLabelFitText;
     private Vector3 _teachTargetLocal;
     private float _teachAnimTime;
 
@@ -1682,24 +1685,17 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (_teachHand != null) _teachHand.gameObject.SetActive(false);
         if (_teachRing != null) _teachRing.gameObject.SetActive(false);
 
-        // 文案：**屏幕下方**（教学关的台词也在下方；放上方会压住标题和页签 —— 2026-11-04 截图确认）。
-        // 位置放在详情卡（高 300）**之上**，避免选中节点后互相压。
-        var labelBg = CreateImage("TeachLabelBg", layer.rectTransform, new Color(0.06f, 0.05f, 0.04f, 0.9f),
-            ProceduralUiSprites.RoundedPlate(18, 3, 1f, 1f));
-        labelBg.type = Image.Type.Sliced;
-        labelBg.raycastTarget = false;
-        var lbr = labelBg.rectTransform;
-        lbr.anchorMin = lbr.anchorMax = new Vector2(0.5f, 0.5f);
-        lbr.pivot = new Vector2(0.5f, 0.5f);
-        lbr.sizeDelta = new Vector2(820f, 96f);
-        lbr.anchoredPosition = Vector2.zero;
-
-        _teachLabel = CreateText("TeachLabel", labelBg.rectTransform, "", 34f, TextAlignmentOptions.Center);
-        _teachLabelBg = labelBg.rectTransform;
+        // 文案：**只有白字，没有底板**（2026-11-07 用户反馈：「对话黑框严重阻挡了功能UI，
+        //   应该只显示白色文字，去除底框且注意排布问题」）
+        //   → 原来这里是「深色圆角底板 820×96」→ 那块黑板把天赋节点和详情卡都盖住了。
+        //   → 现在：纯白字 + 尺寸按内容收缩 + 固定摆在**面板底部**（详情卡之上）→ 不再挡任何功能 UI。
+        _teachLabel = CreateText("TeachLabel", layer.rectTransform, "", 34f, TextAlignmentOptions.Center);
+        _teachLabel.color = Color.white;
+        _teachLabel.enableWordWrapping = false;
         var lr = _teachLabel.rectTransform;
         lr.anchorMin = lr.anchorMax = new Vector2(0.5f, 0.5f);
         lr.pivot = new Vector2(0.5f, 0.5f);
-        lr.sizeDelta = new Vector2(940f, 104f);
+        lr.sizeDelta = new Vector2(400f, 48f);
         lr.anchoredPosition = Vector2.zero;
     }
 
@@ -1754,7 +1750,20 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         if (!_teachActive || _teachLayer == null) return;
         if (_teachLabel != null)
-            _teachLabel.text = _teachStep == 0 ? teachingTextPickNode : teachingTextConfirm;
+        {
+            string text = _teachStep == 0 ? teachingTextPickNode : teachingTextConfirm;
+            if (_teachLabelFitText != text)
+            {
+                _teachLabelFitText = text;
+                _teachLabel.text = text;
+                _teachLabelSize = TutorialGestureStyle.FitLabelToContent(_teachLabel, TutorialGestureStyle.MaxLabelWidth);
+            }
+            // 摆在**面板底部、详情卡之上**（详情卡高 300 + 底边距 24）→ 不遮节点网格、不遮详情卡
+            Rect bounds = _teachLayer != null ? _teachLayer.rect : new Rect(0f, 0f, 1080f, 2160f);
+            Vector2 pos = new Vector2(bounds.center.x, bounds.yMin + TeachLabelBottomOffset + _teachLabelSize.y * 0.5f);
+            _teachLabel.rectTransform.anchoredPosition =
+                TutorialGestureStyle.ClampToLayer(_teachLayer, pos, _teachLabelSize, 8f);
+        }
 
         RectTransform target = null;
         RectTransform maskTarget = null;      // 遮罩开洞的目标 = 可点的那个（按钮）
@@ -1824,13 +1833,6 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             Vector3 local = _teachLayer.InverseTransformPoint(world);
             _teachTargetLocal = local;
             PlaceTeachHandOnTarget(handSize);
-
-            // 文案：**靠近手势，但既不遮手势、也不遮它指的节点**
-            if (_teachLabelBg != null)
-            {
-                Vector2 lblPos = TutorialGestureStyle.PlaceLabelNear(_teachLayer, world, new Vector2(620f, 96f), handSize);
-                _teachLabelBg.anchoredPosition = lblPos;
-            }
         }
         else if (_teachHand != null) _teachHand.gameObject.SetActive(false);
 

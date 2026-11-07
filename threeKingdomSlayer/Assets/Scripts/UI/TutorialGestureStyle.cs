@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 /// <summary>
@@ -70,6 +71,131 @@ public static class TutorialGestureStyle
     public static Vector2 TipOffset(float size)
     {
         return new Vector2((TipUV.x - PalmUV.x) * size, (TipUV.y - PalmUV.y) * size);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 提示文案（2026-11-07 用户反馈：「对话黑框严重阻挡了功能UI，
+    // 应该只显示白色文字，去除底框且注意排布问题」）
+    //
+    // 规则：
+    //   • **没有底板** → 只有白字（原来的深色圆角底板 820×96 会盖住一整条功能 UI）
+    //   • **尺寸按内容收缩** → 不再是固定的一大块
+    //   • **摆位要躲开要教学的东西** → 不遮目标、也不出图层（屏幕 / 面板）
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>提示文案的宽度上限（画布单位；参考分辨率 1080 宽）。</summary>
+    public const float MaxLabelWidth = 760f;
+
+    /// <summary>
+    /// 落地页**底部功能 UI 带**的高度（屏幕像素）：任务栏 + 路线标题 + 天赋卡。
+    /// 提示文案不许进这条带子 → 否则白字会压在路线标题上（实测）。
+    /// </summary>
+    public const float BottomHudBandPx = 440f;
+
+    /// <summary>
+    /// 按**内容**收缩文案尺寸（单行优先）→ 返回实际尺寸。
+    /// 不做换行：文案是短句，换行反而更挡 UI。
+    /// </summary>
+    public static Vector2 FitLabelToContent(TextMeshProUGUI text, float maxWidth, float minWidth = 120f)
+    {
+        if (text == null) return Vector2.zero;
+        text.enableWordWrapping = false;
+        var pref = text.GetPreferredValues(text.text != null ? text.text : string.Empty, 100000f, 100000f);
+        float w = Mathf.Clamp(pref.x + 12f, minWidth, maxWidth);
+        float h = pref.y + 10f;
+        var rt = text.rectTransform;
+        rt.sizeDelta = new Vector2(w, h);
+        return new Vector2(w, h);
+    }
+
+    /// <summary>把中心点夹回图层范围内（不出屏幕 / 不出面板）。</summary>
+    public static Vector2 ClampToLayer(RectTransform layer, Vector2 center, Vector2 size, float margin = 8f)
+    {
+        if (layer == null) return center;
+        Rect b = layer.rect;
+        float hx = size.x * 0.5f;
+        float hy = size.y * 0.5f;
+        float minX = b.xMin + margin + hx;
+        float maxX = b.xMax - margin - hx;
+        float minY = b.yMin + margin + hy;
+        float maxY = b.yMax - margin - hy;
+        float x = maxX < minX ? b.center.x : Mathf.Clamp(center.x, minX, maxX);
+        float y = maxY < minY ? b.center.y : Mathf.Clamp(center.y, minY, maxY);
+        return new Vector2(x, y);
+    }
+
+    /// <summary>
+    /// 把文案摆在**目标旁边**：不遮目标（那是要教学的东西）、不出图层。
+    /// 候选顺序：上 → 下 → 右 → 左；都不合格就取第一个并夹回范围内。
+    /// </summary>
+    public static Vector2 PlaceLabelClearOf(RectTransform layer, RectTransform target, Vector2 labelSize, float gap = 20f, float bottomKeepOut = 0f)
+    {
+        if (layer == null) return Vector2.zero;
+
+        Vector2 tc, ts;
+        TargetBounds(layer, target, out tc, out ts);
+
+        float hx = labelSize.x * 0.5f;
+        float hy = labelSize.y * 0.5f;
+        float minY = layer.rect.yMin + bottomKeepOut + hy;
+        Vector2[] candidates =
+        {
+            new Vector2(tc.x, tc.y + ts.y * 0.5f + gap + hy),   // 上
+            new Vector2(tc.x, tc.y - ts.y * 0.5f - gap - hy),   // 下
+            new Vector2(tc.x + ts.x * 0.5f + gap + hx, tc.y),   // 右
+            new Vector2(tc.x - ts.x * 0.5f - gap - hx, tc.y),   // 左
+        };
+
+        Rect b = layer.rect;
+        for (int i = 0; i < candidates.Length; i++)
+        {
+            Vector2 c = candidates[i];
+            if (c.y - hy < minY) continue;                       // 不许压到底部功能 UI 带
+            if (!Inside(c, labelSize, b, 8f)) continue;
+            if (Overlaps(c, labelSize, tc, ts, 8f)) continue;
+            return c;
+        }
+        // 都不行 → 取第一个，并夹回范围内（同时抬出底部带）
+        Vector2 fallback = candidates[0];
+        if (fallback.y - hy < minY) fallback.y = minY;
+        return ClampToLayer(layer, fallback, labelSize, 8f);
+    }
+
+    /// <summary>目标在图层坐标系里的包围盒（中心 + 尺寸）。</summary>
+    private static void TargetBounds(RectTransform layer, RectTransform target, out Vector2 center, out Vector2 size)
+    {
+        center = Vector2.zero;
+        size = Vector2.zero;
+        if (target == null) return;
+        var corners = new Vector3[4];
+        target.GetWorldCorners(corners);
+        Vector2 min = new Vector2(float.MaxValue, float.MaxValue);
+        Vector2 max = new Vector2(float.MinValue, float.MinValue);
+        for (int i = 0; i < 4; i++)
+        {
+            Vector3 p = layer.InverseTransformPoint(corners[i]);
+            min = Vector2.Min(min, new Vector2(p.x, p.y));
+            max = Vector2.Max(max, new Vector2(p.x, p.y));
+        }
+        center = (min + max) * 0.5f;
+        size = max - min;
+    }
+
+    private static bool Inside(Vector2 center, Vector2 size, Rect bounds, float margin)
+    {
+        float hx = size.x * 0.5f;
+        float hy = size.y * 0.5f;
+        return center.x - hx >= bounds.xMin + margin && center.x + hx <= bounds.xMax - margin
+            && center.y - hy >= bounds.yMin + margin && center.y + hy <= bounds.yMax - margin;
+    }
+
+    private static bool Overlaps(Vector2 center, Vector2 size, Vector2 otherCenter, Vector2 otherSize, float margin)
+    {
+        float hx = size.x * 0.5f + margin;
+        float hy = size.y * 0.5f + margin;
+        float ox = otherSize.x * 0.5f + margin;
+        float oy = otherSize.y * 0.5f + margin;
+        return Mathf.Abs(center.x - otherCenter.x) < hx + ox && Mathf.Abs(center.y - otherCenter.y) < hy + oy;
     }
 
     /// <summary>
