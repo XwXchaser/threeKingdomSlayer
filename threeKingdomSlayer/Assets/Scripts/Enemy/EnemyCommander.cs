@@ -155,6 +155,9 @@ public class EnemyCommander : MonoBehaviour
         foreach (var e in GetPresentEnemies())
         {
             EnemyStatusAtkMod.ApplyUp(e, atkBonusPercent, maxStacks);
+            // 让该敌人的**血条视图**存在 → 它左上角的加攻标记才会出现
+            //（血条视图是惰性创建的：平时只有被打过的敌人才有；走现成的呈现层端口，不新增通道）
+            CombatPresenters.EnemyHealthBars?.GetOrCreate(e.gameObject);
             count++;
         }
         _castCount++;

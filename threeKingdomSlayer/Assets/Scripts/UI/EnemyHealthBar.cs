@@ -35,6 +35,23 @@ public class EnemyHealthBar : MonoBehaviour, IEnemyHealthBarView
     private StatusBarVisual _diseaseBar;
     private StatusBarVisual _burnBar;
     private TextMeshPro _diseaseLayersText;
+
+    // ── 被加攻标记（督战单位 1013 的号令）──
+    /// <summary>标记的根（与血条根平级，**不挂在血条里** → 血条隐藏时标记仍可见）。</summary>
+    private GameObject _atkBuffMarkerRoot;
+    private SpriteRenderer _atkBuffIcon;
+    private TextMeshPro _atkBuffLayersText;
+    private float _atkBuffIconScale = 1f;
+
+    [Header("被加攻标记（敌人左上角）")]
+    [Tooltip("标记图标（留空 = 用**玩家连击的加攻标记**，即 combo_red_dagger_pixel）")]
+    public Sprite atkBuffIconSprite;
+    [Tooltip("标记图标尺寸（相对血条宽度）")]
+    public float atkBuffIconSizeRatio = 0.28f;
+    [Tooltip("标记相对美术**左边界**的横向间距（0 = 跨在左边界上）")]
+    public float atkBuffIconGap = 0.12f;
+    [Tooltip("标记相对美术**上边界**的纵向间距")]
+    public float atkBuffIconLift = 0.06f;
     private float hideTimer;
     private bool created;
     private Vector3 fillOriginPos;
@@ -141,6 +158,7 @@ public class EnemyHealthBar : MonoBehaviour, IEnemyHealthBarView
         _diseaseBar = CreateStatusBar(quad, "DiseaseBar", new Color(0.72f, 0.28f, 0.9f));
         _burnBar = CreateStatusBar(quad, "BurnBar", new Color(0.9f, 0.15f, 0.15f));
         CreateDiseaseLayersText();
+        CreateAtkBuffMarker();
 
         barRoot.SetActive(false);
     }
@@ -195,6 +213,103 @@ public class EnemyHealthBar : MonoBehaviour, IEnemyHealthBarView
         _diseaseLayersText.alignment = TextAlignmentOptions.Right;
         _diseaseLayersText.sortingOrder = StatusSortingOrder + 4;
         go.SetActive(false);
+    }
+
+    /// <summary>
+    /// 建「被加攻标记」（敌人**左上角**）。
+    ///
+    /// 需求（2026-11-07 用户定）：「敌人加攻暂时在单位左上方用**连击的加攻标记**表示」
+    ///   • 图标 = **玩家连击的加攻标记**（<c>ComboBuffHUD.DamageBuffIcon</c> = combo_red_dagger_pixel）
+    ///     → 玩家一眼认得「这是加攻」；
+    ///   • 位置 = 血条左端（血条就在头顶 → 左端就是单位的左上方）；
+    ///   • 数字 = 加攻层数。
+    ///
+    /// ⚠️ 标记根与血条根**平级**（不挂在血条里）→ 血条隐藏（敌人没掉血）时标记仍然可见。
+    /// </summary>
+    private void CreateAtkBuffMarker()
+    {
+        if (_atkBuffMarkerRoot != null) return;
+
+        _atkBuffMarkerRoot = new GameObject("AtkBuffMarker");
+        _atkBuffMarkerRoot.transform.position = GetHeadWorldPosition();
+
+        var iconGo = new GameObject("Icon");
+        iconGo.transform.SetParent(_atkBuffMarkerRoot.transform, false);
+        _atkBuffIcon = iconGo.AddComponent<SpriteRenderer>();
+        _atkBuffIcon.sortingOrder = StatusSortingOrder + 4;
+        iconGo.transform.localScale = Vector3.one;
+
+        var textGo = new GameObject("Layers", typeof(TextMeshPro));
+        textGo.transform.SetParent(_atkBuffMarkerRoot.transform, false);
+        _atkBuffLayersText = textGo.GetComponent<TextMeshPro>();
+        _atkBuffLayersText.fontStyle = FontStyles.Bold;
+        _atkBuffLayersText.color = new Color(1f, 0.86f, 0.45f);
+        _atkBuffLayersText.alignment = TextAlignmentOptions.Left;
+        _atkBuffLayersText.sortingOrder = StatusSortingOrder + 5;
+
+        _atkBuffMarkerRoot.SetActive(false);
+    }
+
+    /// <summary>标记图标：Inspector 指定优先；否则用玩家连击的加攻标记。</summary>
+    private Sprite ResolveAtkBuffIcon()
+    {
+        if (atkBuffIconSprite != null) return atkBuffIconSprite;
+        var hud = HeroHUD.Instance;
+        if (hud == null) return null;
+        var combo = hud.ComboBuffHud;
+        return combo != null ? combo.DamageBuffIcon : null;
+    }
+
+    /// <summary>刷新被加攻标记（每帧跟随敌人）。</summary>
+    private void UpdateAtkBuffMarker()
+    {
+        if (_atkBuffMarkerRoot == null) return;
+        var enemy = GetComponent<Enemy>();
+        var status = EnemyStatusRegistry.GetStatus(enemy, EnemyStatusRegistry.AtkUp);
+        bool show = status.active && status.stacks > 0;
+
+        var icon = ResolveAtkBuffIcon();
+        if (show && icon == null) show = false;   // 图标还没取到（玩家 HUD 未就绪）→ 先不显示
+        if (_atkBuffMarkerRoot.activeSelf != show) _atkBuffMarkerRoot.SetActive(show);
+        if (!show) return;
+
+        if (_atkBuffIcon != null)
+        {
+            if (_atkBuffIcon.sprite != icon) _atkBuffIcon.sprite = icon;
+            float target = barWidth * atkBuffIconSizeRatio;
+            float spriteSize = icon.bounds.size.x;
+            float scale = spriteSize > 0.0001f ? target / spriteSize : 1f;
+            if (!Mathf.Approximately(_atkBuffIconScale, scale))
+            {
+                _atkBuffIconScale = scale;
+                _atkBuffIcon.transform.localScale = Vector3.one * scale;
+            }
+        }
+        if (_atkBuffLayersText != null)
+        {
+            // ⚠️ 用 ASCII 的 x（× 在很多字体里没有字形 → 会整段不显示）
+            string t = "x" + status.stacks;
+            if (_atkBuffLayersText.text != t) _atkBuffLayersText.text = t;
+            _atkBuffLayersText.fontSize = barHeight * 1.2f;
+            var tr = _atkBuffLayersText.transform;
+            tr.localPosition = new Vector3(barWidth * atkBuffIconSizeRatio * 0.5f + 0.04f, 0f, 0f);
+        }
+
+        // 位置：**单位的左上方**（以美术剪影的左边界 / 上边界为基准）
+        //   ⚠️ 不能用血条左端做基准：血条宽度（1）远小于敌人宽度（5.76）→ 血条左端在敌人的**身上**。
+        float iconWorld = barWidth * atkBuffIconSizeRatio;
+        Vector3 pos;
+        var sr = enemy != null ? enemy.GetComponent<SpriteRenderer>() : null;
+        if (sr != null && sr.sprite != null)
+        {
+            var b = sr.bounds;
+            pos = new Vector3(b.min.x + iconWorld * 0.5f + atkBuffIconGap, b.max.y + atkBuffIconLift, b.min.z);
+        }
+        else
+        {
+            pos = GetHeadWorldPosition() + new Vector3(-barWidth * 0.5f, 0f, 0f);
+        }
+        _atkBuffMarkerRoot.transform.position = pos;
     }
 
     private static Mesh CreateQuadMesh()
@@ -323,9 +438,13 @@ public class EnemyHealthBar : MonoBehaviour, IEnemyHealthBarView
 
     private void Update()
     {
-        if (!created) return;
+        // ⚠️ 不再因为「没被 Show 过」而早退：
+        //   被加攻的敌人可能从没掉过血（血条没显示过）→ 但它的加攻标记必须出现。
+        //   EnsureCreated 幂等，且血条根建好后是隐藏的（不会凭空冒出血条）。
+        if (!created) EnsureCreated();
 
         bool hasDot = UpdateDotVisuals();
+        UpdateAtkBuffMarker();
         if (hideTimer <= 0f && !hasDot)
         {
             barRoot.SetActive(false);
@@ -349,5 +468,7 @@ public class EnemyHealthBar : MonoBehaviour, IEnemyHealthBarView
     {
         if (barRoot != null)
             Destroy(barRoot);
+        if (_atkBuffMarkerRoot != null)
+            Destroy(_atkBuffMarkerRoot);
     }
 }

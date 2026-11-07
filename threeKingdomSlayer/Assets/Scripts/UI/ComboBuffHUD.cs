@@ -11,6 +11,9 @@ public class ComboBuffHUD : MonoBehaviour
     [SerializeField] private SpriteNumberDisplay _bonusDisplay;
     [SerializeField] private Sprite _damageBuffIcon;
 
+    /// <summary>**连击的加攻标记图标**（敌人被加攻时显示的就是它 → 用户 2026-11-07 定）。</summary>
+    public Sprite DamageBuffIcon => _damageBuffIcon;
+
     private ComboManager _comboManager;
     private CanvasGroup _canvasGroup;
     private bool _isShowing;

@@ -93,16 +93,34 @@ public static class TutorialGestureStyle
     public const float BottomHudBandPx = 440f;
 
     /// <summary>
-    /// 按**内容**收缩文案尺寸（单行优先）→ 返回实际尺寸。
-    /// 不做换行：文案是短句，换行反而更挡 UI。
+    /// 按**内容**收缩文案尺寸 → 返回实际尺寸。
+    /// 单行放得下就单行；放不下就**换行**（不是溢出）→ 超出上限宽度的长句不会压到别的 UI 上。
     /// </summary>
     public static Vector2 FitLabelToContent(TextMeshProUGUI text, float maxWidth, float minWidth = 120f)
     {
         if (text == null) return Vector2.zero;
+        string content = text.text != null ? text.text : string.Empty;
+
+        // ① 先按“无限宽”量一次 → 放得下就是单行
         text.enableWordWrapping = false;
-        var pref = text.GetPreferredValues(text.text != null ? text.text : string.Empty, 100000f, 100000f);
-        float w = Mathf.Clamp(pref.x + 12f, minWidth, maxWidth);
-        float h = pref.y + 10f;
+        var single = text.GetPreferredValues(content, 100000f, 100000f);
+        bool oneLine = single.x + 12f <= maxWidth;
+
+        float w, h;
+        if (oneLine)
+        {
+            w = Mathf.Clamp(single.x + 12f, minWidth, maxWidth);
+            h = single.y + 10f;
+        }
+        else
+        {
+            // ② 放不下 → 按上限宽度换行，再量一次
+            text.enableWordWrapping = true;
+            var wrapped = text.GetPreferredValues(content, maxWidth - 12f, 10000f);
+            w = maxWidth;
+            h = wrapped.y + 10f;
+        }
+
         var rt = text.rectTransform;
         rt.sizeDelta = new Vector2(w, h);
         return new Vector2(w, h);
@@ -198,49 +216,5 @@ public static class TutorialGestureStyle
         return Mathf.Abs(center.x - otherCenter.x) < hx + ox && Mathf.Abs(center.y - otherCenter.y) < hy + oy;
     }
 
-    /// <summary>
-    /// **提示文案的摆放**：靠近手势，但**不遮手势、也不遮它指的那个按钮**。
-    ///
-    /// 做法：候选位（上/下/左/右）→ 逐个检查「在屏幕内」且「与手势的矩形不重叠」→ 取第一个合格的。
-    /// 都没有就退回到手势上方。
-    /// </summary>
-    /// <param name="layer">引导层（屏幕坐标 ↔ 本地坐标的换算用）。</param>
-    /// <param name="gestureWorld">手势（指尖）的世界坐标。</param>
-    /// <param name="labelSize">文案底板尺寸（本地坐标）。</param>
-    /// <param name="handSize">手势尺寸（本地坐标，用于避让）。</param>
-    public static Vector2 PlaceLabelNear(RectTransform layer, Vector3 gestureWorld, Vector2 labelSize, float handSize)
-    {
-        Vector2 screen = RectTransformUtility.WorldToScreenPoint(null, gestureWorld);
-        Vector2 local;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(layer, screen, null, out local);
 
-        float halfW = Screen.width * 0.5f;
-        float halfH = Screen.height * 0.5f;
-        float gap = handSize * 0.5f + labelSize.y * 0.5f + 16f;
-
-        Vector2[] candidates =
-        {
-            local + new Vector2(0f, gap),      // 上
-            local - new Vector2(0f, gap),      // 下
-            local + new Vector2(gap, 0f),      // 右
-            local - new Vector2(gap, 0f),      // 左
-        };
-
-        for (int i = 0; i < candidates.Length; i++)
-        {
-            Vector2 c = candidates[i];
-            float halfW2 = labelSize.x * 0.5f;
-            float halfH2 = labelSize.y * 0.5f;
-            bool inside = c.x - halfW2 >= -halfW + 12f && c.x + halfW2 <= halfW - 12f
-                        && c.y - halfH2 >= -halfH + 12f && c.y + halfH2 <= halfH - 12f;
-            if (!inside) continue;
-            // 不遮手势本身（手势的矩形 = 以指尖为中心的手尺寸）
-            bool coversGesture = Mathf.Abs(c.x - local.x) < (labelSize.x * 0.5f + handSize * 0.35f)
-                             && Mathf.Abs(c.y - local.y) < (labelSize.y * 0.5f + handSize * 0.35f);
-            if (coversGesture) continue;
-            return c;
-        }
-        // 都不行 → 放在手势上方（至少是「靠近」的）
-        return candidates[0];
-    }
 }

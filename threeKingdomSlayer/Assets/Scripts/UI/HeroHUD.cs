@@ -26,7 +26,7 @@ public class HeroHUD : MonoBehaviour, IQteHud
     [Header("等级球")]
     [Tooltip("球内液体层：Filled / Vertical / fillOrigin=Bottom（自下而上「水上涨」）")]
     public Image levelOrbFill;
-    [Tooltip("球内数字：**距离下一级还差多少经验**（不再显示等级）")]
+    [Tooltip("球内数字：**下一级所需的经验（总需求）**（不再显示等级）")]
     public TMP_Text levelOrbText;
     [Tooltip("等级球本体 —— 经验宝石的飞行目标")]
     public RectTransform levelOrbTarget;
@@ -41,6 +41,9 @@ public class HeroHUD : MonoBehaviour, IQteHud
 
     [Header("扩展UI")]
     public Transform extraUIRoot;
+
+    /// <summary>连击加攻标记的显示组件（<c>ComboBuffStrip</c>）——敌人被加攻时的标记图标取自它。</summary>
+    public ComboBuffHUD ComboBuffHud => GetComponentInChildren<ComboBuffHUD>(true);
 
     [Header("复活次数")]
     public TMP_Text reviveText;
@@ -218,7 +221,7 @@ public class HeroHUD : MonoBehaviour, IQteHud
 
     /// <summary>
     /// 等级球：液面显示「离下一级的进度」，
-    /// 球里的数字 = **距离下一级还差多少经验**（2026-11-07 用户定：不再显示等级）。
+    /// 球里的数字 = **下一级所需的经验（总需求）**（2026-11-07 用户定：不再显示等级）。
     /// </summary>
     public void SetLevelExp(float currentExp, float requiredExp)
     {
@@ -229,8 +232,7 @@ public class HeroHUD : MonoBehaviour, IQteHud
         }
         if (levelOrbText != null && requiredExp > 0f)
         {
-            float remain = Mathf.Max(0f, requiredExp - currentExp);
-            levelOrbText.text = Mathf.CeilToInt(remain).ToString();
+            levelOrbText.text = Mathf.CeilToInt(requiredExp).ToString();
         }
     }
 

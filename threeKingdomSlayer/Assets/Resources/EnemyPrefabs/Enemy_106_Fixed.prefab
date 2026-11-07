@@ -133,6 +133,10 @@ MonoBehaviour:
   highColor: {r: 0.2, g: 0.8, b: 0.2, a: 1}
   lowColor: {r: 0.9, g: 0.2, b: 0.2, a: 1}
   lowThreshold: 0.3
+  atkBuffIconSprite: {fileID: 0}
+  atkBuffIconSizeRatio: 0.28
+  atkBuffIconGap: 0.12
+  atkBuffIconLift: 0.06
 --- !u!95 &3292484454379296013
 Animator:
   serializedVersion: 6
