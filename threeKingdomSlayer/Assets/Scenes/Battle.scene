@@ -14989,6 +14989,9 @@ MonoBehaviour:
   continueButton: {fileID: 265148321}
   introMaskHost: {fileID: 926787061}
   levelOrbGuide: {fileID: 1601026400}
+  comboWindupFreezeSeconds: 1.5
+  comboBeatTimeoutSeconds: 20
+  comboChargeTimeoutSeconds: 8
   hudCanvasGroup: {fileID: 2027225540}
   choiceDialogue: {fileID: 11400000, guid: 5a23cc1452775bf4d8ea60aaabc3b339, type: 2}
   tutorialIceSkill: {fileID: 0}
@@ -15031,6 +15034,7 @@ MonoBehaviour:
     beforeDialogue: {fileID: 0}
     freezeDialogue: {fileID: 0}
     comboPhase2Dialogue: {fileID: 0}
+    comboPhase3Dialogue: {fileID: 0}
     guideNodeId: 
     guideAttackType: -1
   - battle: {fileID: 11400000, guid: 7830540a0bfc4d14994a832e90cc9975, type: 2}
@@ -15057,6 +15061,7 @@ MonoBehaviour:
     beforeDialogue: {fileID: 0}
     freezeDialogue: {fileID: 0}
     comboPhase2Dialogue: {fileID: 0}
+    comboPhase3Dialogue: {fileID: 0}
     guideNodeId: 
     guideAttackType: -1
   - battle: {fileID: 0}
@@ -15083,6 +15088,7 @@ MonoBehaviour:
     beforeDialogue: {fileID: 0}
     freezeDialogue: {fileID: 0}
     comboPhase2Dialogue: {fileID: 0}
+    comboPhase3Dialogue: {fileID: 0}
     guideNodeId: 
     guideAttackType: -1
   - battle: {fileID: 11400000, guid: 0342f43465c8ca44fa158b7937ed845b, type: 2}
@@ -15109,6 +15115,7 @@ MonoBehaviour:
     beforeDialogue: {fileID: 0}
     freezeDialogue: {fileID: 0}
     comboPhase2Dialogue: {fileID: 0}
+    comboPhase3Dialogue: {fileID: 0}
     guideNodeId: 
     guideAttackType: -1
   - battle: {fileID: 11400000, guid: 0342f43465c8ca44fa158b7937ed845b, type: 2}
@@ -15135,6 +15142,7 @@ MonoBehaviour:
     beforeDialogue: {fileID: 0}
     freezeDialogue: {fileID: 0}
     comboPhase2Dialogue: {fileID: 0}
+    comboPhase3Dialogue: {fileID: 0}
     guideNodeId: 
     guideAttackType: -1
   tutorialLineSeconds: 2.2

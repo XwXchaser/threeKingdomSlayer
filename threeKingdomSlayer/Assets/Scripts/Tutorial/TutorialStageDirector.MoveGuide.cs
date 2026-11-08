@@ -79,8 +79,10 @@ public partial class TutorialStageDirector
             to01 = new Vector2(0.5f, 0.75f);
             return;
         }
-        if (gesture == MoveGuideGesture.Tap || gesture == MoveGuideGesture.Hold)
+        if (gesture == MoveGuideGesture.Tap || gesture == MoveGuideGesture.Hold || gesture == MoveGuideGesture.ComboCharge)
         {
+            // 连招蓄力拍（ComboCharge）也走这一条：它是「点一下 + 按住」，
+            // 不能拿横划的轨迹当示范（2026-11-08：那一拍本来教的就是点/蓄，不是划）。
             from01 = new Vector2(0.5f, 0.5f);
             to01 = new Vector2(0.5f, 0.72f);
             return;

@@ -95,8 +95,16 @@ public partial class TutorialStageDirector : MonoBehaviour
 
         // 连招蓄力拍：**两段命中分开算** ——
         //   阶段 1 的第一记戳只推进阶段（不算收拍）；阶段 2 的派生招式才收拍。
+        bool isComboChargeBeat = _currentStep != null && _currentStep.kind == GestureHintKind.ComboCharge;
         if (_comboChargePhase == 1)
         {
+            // ★ 必须打在**目标那只**身上（1011 这类会打霸体招的）才算推进（2026-11-08）：
+            //   打到别的敌人不算「学会瞄准」。
+            if (_beatTargetEnemy != null && enemy != _beatTargetEnemy)
+            {
+                Debug.Log("[Tutorial] 连招蓄力拍：这一下打中的不是目标 → 不推进阶段");
+                return;
+            }
             _comboChargePhase = 2;
             // ★ **命中了才换闸门**（ComboHold）：玩家接下来只能蓄力松手，不能再乱点
             //   （原来在「招式打出去」时就换 → 空挥也会换 → 玩家再也点不了第二下 → 卡死）
@@ -118,6 +126,18 @@ public partial class TutorialStageDirector : MonoBehaviour
                 return;
             }
             _comboChargePhase = 3;
+            // ★ 打断成功 → 这一拍**真的教完了** → 必须走通用收拍登记：
+            //   RegisterBeatHit → `_beatCompleted = true` → EndBeat → 写存档「已教过」+ 招式白名单解除。
+            //   （2026-11-08 实测：被下面那道「阶段异常」守卫吃掉 → 存档没标记 → 下一场又教一遍。）
+            RegisterBeatHit(_beatLastAttackType, _beatLastAttackColumn);
+            return;
+        }
+        if (isComboChargeBeat)
+        {
+            // 连招蓄力拍：阶段 0 / 3 之后的命中**不能**走通用「打中就算完成」→
+            //   否则这一拍会在玩家第一次点按时就瞬间收掉（2026-11-08 实测）。
+            Debug.Log("[Tutorial] 连招蓄力拍：这一下不在阶段 1/2（阶段号=" + _comboChargePhase + "）→ 忽略");
+            return;
         }
 
         RegisterBeatHit(_beatLastAttackType, _beatLastAttackColumn);

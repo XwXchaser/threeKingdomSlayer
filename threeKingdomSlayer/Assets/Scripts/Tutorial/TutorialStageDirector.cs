@@ -60,10 +60,15 @@ public partial class TutorialStageDirector : MonoBehaviour
     /// <summary>等级球教学引导是否已经叫起过（只叫一次）。</summary>
     private bool _orbGuideShown;
 
-    [Tooltip("**指向突刺教学**：敌人抡招「抬手到顶」多少秒内冻结（口径同技能打断拍）")]
-    public float comboWindupFreezeSeconds = 0.35f;
+    [Tooltip("**指向突刺教学**：敌人抡招「抬手到顶」多少秒内冻结（口径同技能打断拍/霸体防御拍 = 1.5s）")]
+    // ⚠️ 2026-11-08 实测修：原来 0.35s → 冻在了**出伤/收招段**（那一段 isAttackDrawPhase=true → **打不断**）
+    //   → 玩家松手派生招式打中了却「没打断」→ 这一拍永远过不去。
+    //   1.5s = 「武器已经举到位、刀还没落」＝霸体防御拍与技能打断拍用的同一个口径。
+    public float comboWindupFreezeSeconds = 1.5f;
     [Tooltip("**指向突刺教学**：冻结后等玩家操作的保险上限（秒，unscaled）—— 不能永久冻结把整局卡死")]
     public float comboBeatTimeoutSeconds = 20f;
+    [Tooltip("**指向突刺教学**：阶段 2（蓄力+松手）多少秒内没打断 → 回阶段 1 重来（防卡死）")]
+    public float comboChargeTimeoutSeconds = 8f;
     [Tooltip("战斗 HUD 根上的 CanvasGroup（引导期整块失能：道具栏 / 技能槽 / 防御键 / 头像都不可点）")]
     public CanvasGroup hudCanvasGroup;
     // ⚠️ 这里**没有**“超时自动跳过”的开关：需求明确「不存在任何计时器直接跳过」。
