@@ -1,0 +1,12 @@
+animation,file,bytes,sha256,note
+idle,1051_idle_v1_4s.mp4,1413616,bd35de7f16009cc2e1d328812de71c864390a4315ee69e17f0cb224d448d1f19,**已验收**：idle 待机源片 —— 04_IdleFrames/Enemy_1051_idle1..6.png 的来源（f000/f008/f016/f024/f032/f040）；周期 48 帧 = 1.98s。**六帧尚未获用户确认**，勿当已验收资产使用。
+walk,1051_walk_v4_4s.mp4,2874789,09f6efcfcd9cff7c541385d0f44a85c730f449eb1fa208bf7b905175673d28ac,**采用**：walk 行走源片（文字路线）—— 05_WalkFrames/Enemy_1051_walk1..6.png 的来源（f005/f008/f010/f013/f015/f018，取自闪回前的干净对侧交替段 f00–f18）；躯干不扭、原地踏步。**六帧尚未获用户确认**。
+attack,1051_shoot_v3_6s.mp4,2011562,e2011de696979bee8887c4ba29deac13a8abac24577026bbfed9d7eeb5e5947d,**用户选定的 take**：射箭动作源片 —— 03_AttackFrames/Enemy_1051_attack1/2/3/5/6.png 的来源（f020/f026/f027/f069/f113）。**保留此 take 的理由：它有「抽箭」动作**（v4 丢了）；代价：搭箭帧的箭被画成一捆散羽（v3 固有瑕疵）。
+attack_alternative,1051_shoot_v4_6s.mp4,1958527,f1254020e0767deadb85c9b427e4f5a7922b39c25d35a04978fe38e846133c33,**留档未采用**：持箭待机→搭箭→满弓→放箭；箭修成一支但**丢了抽箭动作**，用户选了 v3。
+attack_keyframes,1051_shoot_keyframes_v4_6s.mp4,342971,95b3230438378dad6acb7014005a465aeb83628ae93b5f3473705edc6fd7a206,关键帧母片（持箭待机/搭箭/满弓/放箭 四张姿势图排成 6.000s）—— v4 路线的输入。
+attack_keyframes_v1,1051_shoot_keyframes_6s.mp4,337323,76dbe19ca4e27144cfd566036de0dbf87694b919e243a6bfcbecd96a7abbcf72,关键帧母片（旧版，同四张姿势图排成 6.000s）—— v3 路线的输入。
+attack_rejected,1051_shoot_v1_6s_REJECTED_aim_sideways.mp4,2540738,2f25449c2c93a9c2d0be45dd244e07e5c1c484bf5c74618a421c7aafd54ea398,**作废**：纯文字描述动作，模型把瞄准方向改到画面右侧。
+attack_rejected,1051_shoot_v2_6s.mp4,2485135,a63b3146f9bb696dd6d6929ade964eb9f06a1bbe8a0835345cce500453ca0415,**作废**：缺 idle 衔接，箭被拉成长斜箭。
+walk_rejected,1051_walk_v1_4s.mp4,2002629,defbe7fd5e88ae8f0c534f1a6a92b923eafe0ce0f5fd4023ddf6604db7881172,**作废**：母片路线 —— 只喂了旧 105 的两帧走姿，模型在两个姿势间跳帧，完全不流畅（喂两帧 = 让模型偷懒）。
+walk_rejected,1051_walk_v2_4s.mp4,2616380,bc74930e71471c4dbc1c1b8e706c928bba79eadd9bddce0e9b5ac86e42c4aac3,**作废**：躯干在扭转，看着像斜着走。
+walk_rejected,1051_walk_v3_4s.mp4,2907798,bf02dfe5f78dac534c94168e08e32b371dc2cadb5af0002106a60efdf603c326,**作废**：提示词写了 marches straight at the viewer，模型真的朝镜头走来（脚底线漂 103px、身体变大）。

@@ -1,0 +1,59 @@
+Edit image 1. This is a proportion-only correction. The character in image 1 is a finished, approved bandit design. Keep that character completely and change only the proportions of the body so that they match the proportion reference in image 2.
+
+KEEP — do not change any of the following; they are the approved identity of this character:
+the face and its expression; the stubble; the rounded-dome helmet with its short red plume, forehead guard and neck guard, and it must stay a dome helmet with NO wide brim; the linen tunic; the dark chest plate; the ROPE belt with the red sash — do not turn it into a leather belt with a buckle; the leather bracers; the cream cloth leg wrappings; the thick wooden-soled boots; the whole colour palette; the materials; the rendering style; and the sword — the blade, the straight blade edge, the gold ring pommel, the T-shaped guard, the downward-hanging grip, its angle and its position all stay exactly as they are in image 1.
+
+CHANGE — only these three proportions, using image 2 and image 3 as the reference. In image 2 the head and the sword of the reference are masked out; the sword in image 1 must stay exactly as it is.
+1. The shoulders and upper arms must be broader. At 25% of the figure's height the body must be about 39% of the figure height wide, instead of the current 28%. The figure must read as broader and heavier through the chest and the upper arms, like the reference in image 2.
+2. The trousers must be a much bigger mass. From the hips down to 78% of the figure's height the trousers must form one wide, heavy, bell-shaped mass: at 65% of the height about 44% of the figure height wide (currently 33%), at 70% about 48% (currently 38%), at 75% about 54% (currently 18%). The trouser hem must NOT close before 78% of the figure's height — it must close there, so that the cream leg wrappings are only revealed below that line, exactly as in image 2 and in the right-hand figure of image 3.
+3. The waist line must sit slightly higher: the top of the rope belt and the red sash moves from 44.6% of the figure height to about 42.7%.
+
+Do not change the canvas position, the overall height of the figure, the head size, or the boots.
+
+Numerical anchors — hard requirements, not suggestions:
+The figure must keep exactly the same vertical extent as in image 1, from the top of the helmet to the soles of the boots.
+The figure must keep exactly the same position on the canvas as in image 1: same 1024x1024 canvas, same distance from the top edge to the helmet, same distance from the soles to the bottom edge.
+The head must keep exactly the same size and position as in image 1.
+The waist line: currently 44.6% of the figure height; change it to about 42.7%.
+Width at 25% of the figure height: currently 28%; change it to about 39%.
+Width at 65% of the figure height: currently 33%; change it to about 44%.
+Width at 70% of the figure height: currently 38%; change it to about 48%.
+Width at 75% of the figure height: currently 18%; change it to about 54%, and the trouser hem closes at 78% of the figure height.
+The boots, the sword and the head keep their current size.
+
+Only these three proportions may change. Everything else — head, helmet, face, tunic, chest plate, rope belt, red sash, bracers, boots, sword, canvas position, total height, colour, rendering style — must stay exactly as in image 1.
+
+Output the figure alone, full body visible including the helmet plume and the soles of the boots, on a pure green screen (RGB 8,145,73), centered, with no ground shadow, no scenery and no text.
+
+
+编辑 image 1。这是一次**只改比例**的修正。image 1 里的角色是一份**已验收完成**的山贼形象，你必须完整保留这个角色，只把**身体比例**改成与 image 2 的比例参照一致。
+
+**保留**——以下一律不得改动，它们就是这个角色已验收的身份特征：
+脸与表情；络腮胡；半球顶兜鍪连同短红缨、护额、顿项，且**必须是半球顶盔、绝不能出现宽檐**；麻布上衣；深色护胸甲；**麻绳腰带配红布条——不得改成皮带扣**；皮护腕；米白色绑腿；厚木底靴；整体配色；材质；画风；以及**刀**——刀身、直刃、柄末金色环首、T 形护手、垂直下垂的握持、刀的角度与位置，全部与 image 1 完全一致。
+
+**改变**——只用 image 2 与 image 3 作参照（image 2 的头部与刀已遮蔽；image 1 的刀必须原样保留），只改这三处比例：
+1. **肩与上臂要加宽**。在身高的 25% 高度处，身体宽度要是身高的约 **39%**（现在是 28%）。整个上身要读作更宽更厚、更压得住地，像 image 2 那样。
+2. **裤装要成为大得多的体量**。从髋部一直到身高的 **78%**，裤子必须构成**一整块宽大厚重的钟形体量**：65% 高度处约为身高的 **44%** 宽（现在 33%），70% 高度处约 **48%**（现在 38%），75% 高度处约 **54%**（现在 18%）。**裤脚不得在 78% 之前收口**，必须到 78% 才收，使米白绑腿只在那条线以下才露出来——与 image 2、image 3 右图完全一致。
+3. **腰线略微上移**：麻绳腰带与红布条的上缘由身高的 44.6% 移到约 **42.7%**。
+
+不要改动画布占位、人物总高、头的尺寸、靴子。
+
+数值锚点 —— 以下是硬性要求，不是建议：
+人物必须保持与 image 1 **完全相同的竖向占位**：从盔顶到靴底。
+人物必须保持与 image 1 **完全相同的画布位置**：同为 1024x1024 画布，盔顶距上边缘的距离相同，靴底距下边缘的距离相同。
+头部必须保持与 image 1 **完全相同的大小与位置**。
+腰线：image 1 为身高的 44.6%；改为约 42.7%。
+25% 高度处的宽度：image 1 为 28%；改为约 39%。
+65% 高度处的宽度：image 1 为 33%；改为约 44%。
+70% 高度处的宽度：image 1 为 38%；改为约 48%。
+75% 高度处的宽度：image 1 为 18%；改为约 54%，且裤脚在身高的 78% 处收口。
+靴子、刀、头保持现有尺寸。
+
+**只有这三处比例允许改变**。其余一切——头、兜鍪、脸、上衣、护胸甲、麻绳腰带、红布条、护腕、靴子、刀、画布位置、总身高、配色、画风——必须与 image 1 完全一致。
+
+输出单独的人物，完整全身（含头盔红缨与靴底），置于纯绿幕背景（RGB 8,145,73），居中，无地面阴影、无场景元素、无文字。
+
+
+Avoid all of the following: closing the trouser hem above 78% of the figure height, thin thighs, narrow shoulders, a slim upper body, tight slim trousers, small boots, changing the boots' design, changing the sword in any way, raising the sword into a diagonal half-raise, a bent or kinked blade, a different weapon, removing the ring pommel, a wide-brimmed helmet, adding a helmet knob, changing the face, changing the facial expression, changing the stubble, changing the red plume, changing the linen tunic, changing the chest plate, turning the rope belt into a leather belt with a buckle, changing the red sash, changing the bracers, changing the leg wrappings' colour, blood, scenery, ground, cast shadow, a background, multiple characters, cropped body, missing feet, extra limbs, deformed hands, text, watermark, logo, pixel art, a mosaic filter, blurry edges, low resolution, noise, photorealism, 3D render, smooth vector shading, oversharpening, color shift, overexposure.
+
+不要出现：裤脚在身高的 78% 之前收口、大腿太细、肩膀太窄、上身单薄、贴身瘦裤、靴子变小、改变靴子设计、以任何方式改动刀、把刀改成斜举半起手、刀身弯曲或折角、更换武器、去掉环首、宽檐头盔、加顶钮、改动脸部、改变表情、改变胡须、改变红缨、改变麻布上衣、改变护胸甲、把麻绳腰带改成皮带扣、改变红布条、改变护腕、改变绑腿颜色、血迹、场景、地面、投影、背景、多人、裁切身体、缺失脚部、多余肢体、手部畸形、文字、水印、logo、像素化、马赛克滤镜、模糊边缘、低分辨率、噪点、照片写实、3D 渲染、平滑矢量上色、过度锐化、色彩偏移、过曝。

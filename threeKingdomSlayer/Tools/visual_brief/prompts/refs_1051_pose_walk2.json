@@ -1,0 +1,14 @@
+{
+  "title": "1051 弓手 · 走路姿势 2（右脚在前）",
+  "base_note": "image 1 = 新 1051 身份图（形象唯一真源）；image 2 = 工程内旧 105 弓手 Enemy_5_walk2 帧（跨步姿势唯一真源）。旧帧脚下的尘土**不取**（新美术规矩：1012 的 walk 无脚尘）。",
+  "references": [
+    {
+      "path": "Enemy1051ArtSource/02_IdentityImages/1051_idle_identity_greenscreen_1024.png",
+      "role": "形象唯一真源：脸、头带、发髻、蒙面布巾、麻衣、皮背心、腰带、短刀、红布条、护腕、裤、绑腿、绑脚鞋、右肩箭袋、左手木弓、配色、画风、体量、站位与脚底位置全部照它，不改。"
+    },
+    {
+      "path": "Enemy1051ArtSource/02_IdentityImages/1051_old105_walk2_pose_reference.png",
+      "role": "跨步姿势唯一真源：只取迈步的腿位（前脚落地、后脚脚跟抬起、上身前倾、身体高度）。只取姿势，不取它的脸、红头巾、黑发、甲胄、红围巾与配色；**它脚下的尘土不要复现**。"
+    }
+  ]
+}

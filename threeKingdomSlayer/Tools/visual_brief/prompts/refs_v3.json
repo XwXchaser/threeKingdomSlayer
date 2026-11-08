@@ -1,0 +1,16 @@
+{
+  "version": "v3",
+  "title": "1012 第三轮：只改下半身（裤脚高度 / 裤腿分缝 / 绑腿加粗 / 靴子加大 / 髋部收窄）",
+  "base_image": "C:/Users/steam/Pictures/gptGen/enemy1012_proportion_fix/1012_fix_v2.png",
+  "base_note": "image 1 用第二轮结果（身份零漂移、刀已直且本轮不动刀）；本轮只重做腰线以下",
+  "references": [
+    {
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1012_proportion_fix/1012_fix_v2.png",
+      "role": "image 1 = 唯一权威：脸、兜鍪、胡须、上衣、护胸甲、腰带、红布条、护腕、刀、配色、材质、画风、画布占位；除下半身外全部不得改动"
+    },
+    {
+      "path": "_art_process/VisualLibrary/bundles/1012_proportion_fix/images/11_baseline_lowerbody_ref.png",
+      "role": "image 2 = 基准下半身形态参考（上半身已遮蔽）：只给上窄下宽的垂坠宽裤、两条分开的裤腿、粗壮裸露的绑腿、大方靴；禁止引用其脸/盔/上身服装"
+    }
+  ]
+}

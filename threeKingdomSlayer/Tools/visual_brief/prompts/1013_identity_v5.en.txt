@@ -1,0 +1,14 @@
+Edit the uploaded image: it is the frozen key frame of the 1013 Cao army standard-bearer (both hands on a long pole with a square flag) at the instant he gives the command. Keep this character's identity, equipment, colors and rendering exactly as they are, and change only the pose and the face as described below.
+
+The character and the equipment stay exactly the same: the same mature stern square face, heavy brows, full dark beard, the tied hair knot and the indigo cloth headband, the studded leather brow band, the cream cross-collar cloth robe, the dark blue-grey shoulder and chest armor plates, the dark brown belt with the square buckle, the thick bracers, the dark brown trousers, the pale leg wraps, the heavy boots; the same plain wooden pole with its metal cap at the top; the same dark vermilion square military flag with its gold border pattern. The size, the pattern and the colors of the flag do not change.
+
+Only these things change, everything else stays as it is.
+1. The pole stays upright and vertical, exactly as in image 1: it never tilts, never swings sideways, never drops noticeably. The top of the pole sits only about one tenth of his body height higher than in image 1, and it still stays far below the top edge of the frame.
+2. Both hands keep gripping the pole at the same spots: no change of hands, no sliding up or down the shaft, and the shaft does not bend, does not grow and does not shrink.
+3. The body leans forward about 5 degrees, the chest lifts, the shoulders and back straighten; the feet stay in exactly the same place as in image 1 and the soles stay on the same ground line; his overall height stays the same as in image 1, never smaller and never stretched.
+4. The flag cloth is pulled straight and taut: the cloth opens out, the folds are pulled into radiating creases, and a wave runs out along the free edge.
+5. The face is the peak of a shouted command: the jaw drops, only the upper teeth show, the brows lift and then pinch inward, the eyes widen and the beard opens with the shout. Apart from this face, do not change any other feature.
+
+The composition stays the same as in image 1: the same framing and the same placement, his position across the frame, the ground line under his boots and the position of the pole in the picture are all identical to image 1. A perfectly flat and uniform green screen background, RGB 0,159,62, with no ground, no shadow, no scenery and no other person.
+
+Never: a tilted or sideways pole, a pole that shortens or lengthens, a flag that grows or shrinks or loses its gold border, hands that change grip or slide on the pole, feet that move or leave the ground line, a body that shrinks or grows, a different face, different clothes, a different hairstyle, a sword, a shield, a drum or any other prop, more than one person, writing or emblems, a gradient background or a floor, photorealism, 3D plastic, soft cute cartoon, blur, checkerboard or watermark.

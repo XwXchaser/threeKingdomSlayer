@@ -1,0 +1,59 @@
+Edit image 1. This is a controlled proportion correction of one existing character sheet, not a redesign.
+
+Keep everything about the character's identity exactly as it is in image 1: the face and its expression, the rounded-dome helmet with the short red plume, forehead guard and neck guard, the stubble, the linen tunic, the dark chest plate, the rope belt with the red sash, the leather bracers, the brown leather trousers, the cloth leg wraps, the thick wooden-soled boots, the whole color palette, the materials and the rendering style. Do not repaint, restyle, beautify, simplify or add anything to the character.
+
+Change exactly two things and nothing else:
+
+1. Narrow the horizontal flare of the lower body. Pull the outer edges of the pelvis and the flared trouser hems inward so that the hip width becomes about 35% of the figure's total height, matching the hip-to-height ratio shown in image 2. The shoulders, the leg length and the distance between the two feet must stay exactly as they are.
+
+2. Make the sword blade perfectly straight. In image 1 the blade has a kink in its middle and the tip falls off the blade's axis. Remove the kink: the blade becomes one single straight edge, the tip lies exactly on the straight extension of the guard and the blade root, and both edges of the blade are parallel. Keep the sword in the current downward-hanging grip, keep the gold ring pommel in its current orientation, and keep the sword's length and width unchanged.
+
+Numerical anchors — these are hard requirements, not suggestions:
+The figure must keep exactly the same vertical extent as in image 1, from the top of the helmet to the soles of the boots.
+The figure must keep exactly the same position on the canvas as in image 1: same 1024x1024 canvas, same distance from the top edge to the helmet, same distance from the soles to the bottom edge.
+The head must keep exactly the same size and the same position as in image 1. Do not scale the head up or down.
+The torso must keep exactly the same height as in image 1. Do not shorten or lengthen the torso.
+The feet must keep exactly the same distance from each other and the same position on the canvas as in image 1.
+Only the outward flare of the hips and trousers may change, and only the blade's kink may change.
+
+Output the figure alone, full body visible including the helmet plume and the soles of the boots, on a pure green screen (RGB 8,145,73), centered, with no ground shadow, no scenery and no text.
+
+编辑 image 1。这是在一张既有角色立绘上做**受控的比例修正**，不是重新设计。
+
+角色的身份特征一律保持 image 1 原样：脸部与表情、半球顶兜鍪（短红缨、护额、顿项）、络腮胡、麻布上衣、深色护胸甲、麻绳腰带与红布条、皮护腕、棕色皮裤、绑腿、厚木底靴，以及整体配色、材质与画风。不要重画、不要改风格、不要美化、不要给角色加任何新元素。
+
+只改下面两处，其余一律不动：
+
+1. **收窄下半身的横向外扩**。把髋部外缘与阔腿裤下摆的外缘向内收，使腰胯宽度约为人物总身高的 35%，与 image 2 的腰胯/身高比例一致。肩宽、腿长、两脚之间的距离保持不变。
+
+2. **把刀身改为笔直的一条**。image 1 的刀身中段有折角、刀尖偏出刀身轴线。消除折角：刀身成为一条笔直的刃，刀尖正好落在护手与刃根的延长线上，刀身两侧边缘平行。持刀姿态保持当前的垂直下垂握持，柄末金色环首朝向保持现状，刀身长度与宽度不变。
+
+数值锚点 —— 以下是硬性要求，不是建议：
+人物必须保持与 image 1 **完全相同的竖向占位**：从盔顶到靴底。
+人物必须保持与 image 1 **完全相同的画布位置**：同为 1024x1024 画布，盔顶距上边缘的距离相同，靴底距下边缘的距离相同。
+头部必须保持与 image 1 **完全相同的大小与位置**，不得放大或缩小头部。
+躯干高度必须与 image 1 **完全相同**，不得压短或拉长。
+两脚之间的距离与在画布上的位置必须与 image 1 **完全相同**。
+只有髋部与裤装的外扩量、以及刀身的折角允许改变。
+
+输出单独的人物，完整全身（含头盔红缨与靴底），置于纯绿幕背景（RGB 8,145,73），居中，无地面阴影、无场景元素、无文字。
+
+Geometry anchors, repeated for emphasis — each is a measured value taken from image 1 and must be preserved exactly:
+total figure height in the 1024x1024 canvas: from the top of the helmet down to the soles of the boots, keep it exactly as in image 1.
+hip width: currently about 40.7% of the figure height in image 1; change it to about 35%.
+head height: about 24% of the figure height in image 1; keep it at about 24%.
+torso height (shoulder line to belt line): about 13.6% of the figure height in image 1; keep it at about 13.6%.
+leg length (belt line to soles): about 53.4% of the figure height in image 1; keep it at about 53.4%.
+distance between the outer edges of the two boots: about 66.9% of the figure height in image 1; keep it at about 66.9%.
+
+几何锚点（重复强调，每个数值都实测自 image 1，必须原样保持）：
+1024x1024 画布内人物总高（盔顶→靴底）＝与 image 1 完全相同。
+腰胯宽：image 1 约为身高的 40.7%，改为约 35%。
+头高：image 1 约为身高的 24%，保持约 24%。
+躯干高（肩线→腰线）：image 1 约为身高的 13.6%，保持约 13.6%。
+腿长（腰线→靴底）：image 1 约为身高的 53.4%，保持约 53.4%。
+两靴外缘间距：image 1 约为身高的 66.9%，保持约 66.9%。
+
+Avoid all of the following: changing the face, changing the facial expression, changing the helmet shape, adding a wide-brimmed helmet, a helmet knob, changing the plume, changing the stubble, changing the clothing, changing the chest plate, changing the belt or the red sash, changing the boots, changing the color palette, changing the materials, changing the rendering style, a different weapon, removing the ring pommel, adding a crossguard, a second weapon, blood, scenery, ground, cast shadow, a background, multiple characters, cropped body, missing feet, extra limbs, deformed hands, text, watermark, logo, pixel art, a mosaic filter, blurry edges, low resolution, noise, photorealism, 3D render, smooth vector shading, oversharpening, color shift, overexposure.
+
+不要出现：改动脸部、改变表情、改变兜鍪形制、加宽檐头盔、加顶钮、改变红缨、改变胡须、改变服装、改变护胸甲、改变腰带与红布条、改变靴子、改变配色、改变材质、改变画风、更换武器、去掉环首、加装护手、第二把武器、血迹、场景、地面、投影、背景、多人、裁切身体、缺失脚部、多余肢体、手部畸形、文字、水印、logo、像素化、马赛克滤镜、模糊边缘、低分辨率、噪点、照片写实、3D 渲染、平滑矢量上色、过度锐化、色彩偏移、过曝。

@@ -1,0 +1,73 @@
+Edit image 1. This is a proportion-only correction. The character in image 1 is a finished, approved bandit design. You must keep that character completely and only reshape the proportions of the lower body.
+
+KEEP — do not change any of the following, they are the approved identity of this character:
+the face and its expression; the stubble; the rounded-dome helmet with its short red plume, forehead guard and neck guard, and it must stay a dome helmet with NO wide brim; the linen tunic; the dark chest plate; the ROPE belt with the red sash — do not turn it into a leather belt with a buckle; the leather bracers; the brown trousers; the cream cloth leg wrappings; the thick wooden-soled boots; the whole colour palette; the materials; the rendering style; and the sword — the blade, the straight blade edge, the gold ring pommel, the T-shaped guard, the downward-hanging grip, its angle and its position all stay exactly as they are in image 1.
+
+CHANGE — only the proportions of the lower body, using image 2 and image 3 as the proportion reference:
+1. The trousers must hang as ONE wide mass. At knee height the two trouser legs must MERGE into a single wide silhouette, exactly like the reference in image 2 and the right-hand figure in image 3. Above the knee there must be NO gap and NO separately readable legs — the trousers cover the tops of the legs and read as one heavy bell-shaped mass.
+2. The trouser hem must end above the ankle, so that a clearly visible section of thick cream leg wrapping shows between the hem and the boots. The leg wrappings must be much thicker than they are now.
+3. The boots must be larger and blockier than they are now, with a thicker sole, and the top of the boot must be clearly visible below the leg wrappings.
+4. The outer edge of the pelvis is pulled slightly inward, so the hip width becomes about 36% of the figure's total height.
+5. The two boots move further apart, so the distance between their outer edges becomes about 68% of the figure's total height.
+
+Numerical anchors — hard requirements, not suggestions:
+The figure must keep exactly the same vertical extent as in image 1, from the top of the helmet to the soles of the boots.
+The figure must keep exactly the same position on the canvas as in image 1: same 1024x1024 canvas, same distance from the top edge to the helmet, same distance from the soles to the bottom edge.
+The head must keep exactly the same size and position as in image 1 — the head stays at about 20% of the figure height.
+The waist line (the top of the rope belt and the red sash) must stay at about 46.6% of the figure height.
+The shoulder width must stay the same as in image 1, about 42% of the figure height.
+The sword must be identical to image 1 in blade, width, guard, pommel, angle and position.
+The character must still read as the same bandit of image 1 — only the mass and the proportions of the lower body change.
+
+Geometry anchors, repeated for emphasis — each value is measured from image 1 and must be preserved:
+total figure height: from the top of the helmet down to the soles of the boots, keep it exactly as in image 1.
+head height: about 20% of the figure height in image 1; keep it at about 20%.
+waist line: about 46.6% of the figure height in image 1; keep it at about 46.6%.
+shoulder width: about 42% of the figure height in image 1; keep it at about 42%.
+hip width: currently about 37.8% of the figure height in image 1; change it to about 36%.
+lower-body mass at knee height (70-85% of figure height): currently about 39.5% of the figure height as two separate legs; it must become about 54% as one merged wide mass.
+distance between the outer edges of the two boots: currently about 63.4% of the figure height in image 1; change it to about 68%.
+
+Only the lower-body mass and proportions may change. Everything else — head, helmet, face, tunic, chest plate, rope belt, red sash, bracers, sword, canvas position, total height, colour, rendering style — must stay exactly as in image 1.
+
+Output the figure alone, full body visible including the helmet plume and the soles of the boots, on a pure green screen (RGB 8,145,73), centered, with no ground shadow, no scenery and no text.
+
+
+编辑 image 1。这是一次**只改比例**的修正。image 1 里的角色是一份**已验收完成**的山贼形象，你必须完整保留这个角色，只重塑下半身的比例。
+
+**保留**——以下一律不得改动，它们就是这个角色已验收的身份特征：
+脸与表情；络腮胡；半球顶兜鍪连同短红缨、护额、顿项，且**必须是半球顶盔、绝不能出现宽檐**；麻布上衣；深色护胸甲；**麻绳腰带配红布条——不得改成皮带扣**；皮护腕；棕色裤子；米白色绑腿；厚木底靴；整体配色；材质；画风；以及**刀**——刀身、直刃、柄末金色环首、T 形护手、垂直下垂的握持、刀的角度与位置，全部与 image 1 完全一致。
+
+**改变**——只用 image 2 与 image 3 作比例参考，只重塑下半身的比例与体量：
+1. **裤子必须吊成一整块**。在膝盖高度，两条裤腿必须**并拢融合成单一宽体量**，与 image 2、image 3 右图完全一致。膝盖以上**不得有缝隙、不得能读出两条分开的腿**——裤子盖住腿部上段，整体读作一个厚重的钟形块体。
+2. **裤脚收在脚踝上方**，使裤脚到靴子之间**完整露出一段粗壮的米白色绑腿**，绑腿要比现在粗得多。
+3. **靴子要比现在加大加方**，鞋底更厚，靴口必须清楚地露在绑腿下方。
+4. 髋部外缘略微向内收，使腰胯宽度约为人物总身高的 **36%**。
+5. **两脚再拉开一些**，两靴外缘间距约为人物总身高的 **68%**。
+
+数值锚点 —— 以下是硬性要求，不是建议：
+人物必须保持与 image 1 **完全相同的竖向占位**：从盔顶到靴底。
+人物必须保持与 image 1 **完全相同的画布位置**：同为 1024x1024 画布，盔顶距上边缘的距离相同，靴底距下边缘的距离相同。
+头部必须保持与 image 1 **完全相同的大小与位置**，头仍约为身高的 20%。
+腰线（麻绳腰带与红布条的上缘）必须保持在身高的约 **46.6%**。
+肩宽必须与 image 1 相同，约为身高的 **42%**。
+刀必须与 image 1 在刀身、宽度、护手、环首、角度、位置上完全一致。
+角色必须仍然读作 image 1 的**同一个山贼**——只有下半身的体量与比例改变。
+
+几何锚点（重复强调，每个数值都实测自 image 1）：
+人物总高（盔顶→靴底）＝与 image 1 完全相同。
+头高：image 1 约为身高的 20%，保持约 20%。
+腰线：image 1 约为身高的 46.6%，保持约 46.6%。
+肩宽：image 1 约为身高的 42%，保持约 42%。
+腰胯宽：image 1 约为身高的 37.8%，改为约 36%。
+下半身膝高段（身高 70–85%）体量：image 1 是两条分开的腿，约身高的 39.5%；**改为并成一体的约 54%**。
+两靴外缘间距：image 1 约为身高的 63.4%，改为约 68%。
+
+**只有下半身的体量与比例允许改变**。其余一切——头、兜鍪、脸、上衣、护胸甲、麻绳腰带、红布条、护腕、刀、画布位置、总身高、配色、画风——必须与 image 1 完全一致。
+
+输出单独的人物，完整全身（含头盔红缨与靴底），置于纯绿幕背景（RGB 8,145,73），居中，无地面阴影、无场景元素、无文字。
+
+
+Avoid all of the following: two separately readable legs at knee height, a gap between the legs above the knee, tight slim trousers, thin shins, small boots, shrinking the distance between the boots, a wide-brimmed helmet, adding a helmet knob, changing the face, changing the facial expression, changing the stubble, changing the red plume, changing the linen tunic, changing the chest plate, turning the rope belt into a leather belt with a buckle, changing the red sash, changing the bracers, changing the trousers' colour, changing the leg wrappings' colour, changing the boots' design, changing the sword in any way, raising the sword into a diagonal half-raise, a bent or kinked blade, a different weapon, removing the ring pommel, blood, scenery, ground, cast shadow, a background, multiple characters, cropped body, missing feet, extra limbs, deformed hands, text, watermark, logo, pixel art, a mosaic filter, blurry edges, low resolution, noise, photorealism, 3D render, smooth vector shading, oversharpening, color shift, overexposure.
+
+不要出现：膝盖高度出现两条能分辨的腿、膝盖以上两腿之间有缝隙、贴身瘦裤、小腿变细、靴子变小、两靴间距缩小、宽檐头盔、加顶钮、改动脸部、改变表情、改变胡须、改变红缨、改变麻布上衣、改变护胸甲、把麻绳腰带改成皮带扣、改变红布条、改变护腕、改变裤子颜色、改变绑腿颜色、改变靴子设计、以任何方式改动刀、把刀改成斜举半起手、刀身弯曲或折角、更换武器、去掉环首、血迹、场景、地面、投影、背景、多人、裁切身体、缺失脚部、多余肢体、手部畸形、文字、水印、logo、像素化、马赛克滤镜、模糊边缘、低分辨率、噪点、照片写实、3D 渲染、平滑矢量上色、过度锐化、色彩偏移、过曝。

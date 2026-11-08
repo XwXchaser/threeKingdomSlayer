@@ -56,12 +56,27 @@ Enemy1012ArtSource/*
 !Enemy1012ArtSource/01_SourceVideos/
 !Enemy1012ArtSource/02_IdentityImages/
 
+# 1013 曹军旗手：形象 + Idle/Cast/Walk 动作帧 + 源视频 + 身份图 + 台账
+# 00_Reference/ 是从网上抓的第三方游戏参考图（真三国无双 / 三国志战略版 等），**不入库**：
+# 公开仓库不发布第三方版权素材，且可按 00_Reference/walk/references.csv 的来源链接重建。
 Enemy1013ArtSource/*
 !Enemy1013ArtSource/README.md
 !Enemy1013ArtSource/00_Index/
 !Enemy1013ArtSource/01_SourceVideos/
 !Enemy1013ArtSource/02_IdentityImages/
-!Enemy1013ArtSource/03_InGameShots/
+!Enemy1013ArtSource/03_CastFrames/
+!Enemy1013ArtSource/04_IdleFrames/
+!Enemy1013ArtSource/05_WalkFrames/
+
+# 1051 曹军弓手：形象 + idle/walk/attack 动作帧 + 源视频 + 身份图 + 台账
+Enemy1051ArtSource/*
+!Enemy1051ArtSource/README.md
+!Enemy1051ArtSource/00_Index/
+!Enemy1051ArtSource/01_SourceVideos/
+!Enemy1051ArtSource/02_IdentityImages/
+!Enemy1051ArtSource/03_AttackFrames/
+!Enemy1051ArtSource/04_IdleFrames/
+!Enemy1051ArtSource/05_WalkFrames/
 
 # 109 骑乘枪骑（约 406MB）：同步源视频 + 关键姿态 + 视频准备记录
 Enemy109ArtSource/*

@@ -1,0 +1,20 @@
+{
+  "version": "v5",
+  "title": "1012 第五轮：保留 v3 身份，按 v11 身份图的比例改肩宽/裤装体量/腰线",
+  "base_image": "C:/Users/steam/Pictures/gptGen/enemy1012_proportion_fix/1012_fix_v3.png",
+  "base_note": "image 1 = 生图 v3（已验收的山贼形象：脸/无宽檐兜鍪/麻绳腰带/红布条/垂持直刃刀全部保留）；本轮只改三处比例",
+  "references": [
+    {
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1012_proportion_fix/1012_fix_v3.png",
+      "role": "image 1 = 唯一权威身份：脸、兜鍪（半球顶+短红缨+护额+顿项，无宽檐）、络腮胡、上衣、护胸甲、麻绳腰带、红布条、护腕、绑腿、靴子、刀（型制与垂持姿态）、配色、材质、画风、画布占位。除三处比例外一律不得改动"
+    },
+    {
+      "path": "_art_process/VisualLibrary/bundles/1012_proportion_fix/images/18_v11_identity_masked.png",
+      "role": "image 2 = v11 目标比例参照（动画管线身份图，主体高696；**头部与刀已遮蔽**，标出腰线42.7%与裤脚收口78%）：只给肩宽、裤装体量、裤脚收口位置、腰线位置；禁止引用其脸/盔/举起的刀/腰带"
+    },
+    {
+      "path": "_art_process/VisualLibrary/bundles/1012_proportion_fix/images/19_v3_vs_v11_identity_lowerbody.png",
+      "role": "image 3 = 下半身对照（左=image 1 现状：裤脚72%收口；右=目标：裤脚78%收口，刀已遮蔽）：只给裤装体量与收口位置；禁止引用其脸/盔/腰带"
+    }
+  ]
+}

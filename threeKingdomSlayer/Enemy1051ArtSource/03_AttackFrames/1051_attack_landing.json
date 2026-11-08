@@ -1,0 +1,305 @@
+{
+  "canvas": [
+    1108,
+    1108
+  ],
+  "target": {
+    "body_h": 605,
+    "foot_line": 897,
+    "center_x": 521
+  },
+  "sprites": [
+    {
+      "name": "idle1",
+      "output": {
+        "path": "Enemy1051ArtSource\\04_Sprites\\Enemy_1051_idle1.png",
+        "sha256": "9859331776eaf570a45cff51fac7bb31157de34c70ead0ace88627dc51f97e52",
+        "bytes": 402882
+      },
+      "source": {
+        "bbox": [
+          490,
+          694,
+          934,
+          1333
+        ],
+        "head_top_y": 708,
+        "foot_y": 1333,
+        "body_h": 626,
+        "body_center_x": 700,
+        "path": "Library\\Locus\\tmp\\1051_idle_keyed\\f004.png"
+      },
+      "landing": {
+        "scale": 0.96645,
+        "paste_xy": [
+          318,
+          279
+        ],
+        "visible_bottom_scaled": 618
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 626,
+        "body_top_y": 293,
+        "foot_line": 897,
+        "body_center_x": 532.5,
+        "bbox": [
+          318,
+          279,
+          747,
+          897
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 2
+      }
+    },
+    {
+      "name": "idle2",
+      "output": {
+        "path": "Enemy1051ArtSource\\04_Sprites\\Enemy_1051_idle2.png",
+        "sha256": "a830fbe4c9c0072d3b8fbb8076f86756e6c69d15cc17f434b49f15cbb8eea273",
+        "bytes": 398659
+      },
+      "source": {
+        "bbox": [
+          491,
+          694,
+          932,
+          1333
+        ],
+        "head_top_y": 706,
+        "foot_y": 1333,
+        "body_h": 628,
+        "body_center_x": 700,
+        "path": "Library\\Locus\\tmp\\1051_idle_keyed\\f011.png"
+      },
+      "landing": {
+        "scale": 0.96338,
+        "paste_xy": [
+          320,
+          281
+        ],
+        "visible_bottom_scaled": 616
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 628,
+        "body_top_y": 293,
+        "foot_line": 897,
+        "body_center_x": 532.5,
+        "bbox": [
+          320,
+          281,
+          745,
+          897
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 4
+      }
+    },
+    {
+      "name": "idle3",
+      "output": {
+        "path": "Enemy1051ArtSource\\04_Sprites\\Enemy_1051_idle3.png",
+        "sha256": "650c0b8da3469ac842209bf6838bd731415454b6c43fd079e79290604c02b8e0",
+        "bytes": 398538
+      },
+      "source": {
+        "bbox": [
+          491,
+          694,
+          931,
+          1333
+        ],
+        "head_top_y": 705,
+        "foot_y": 1333,
+        "body_h": 629,
+        "body_center_x": 700,
+        "path": "Library\\Locus\\tmp\\1051_idle_keyed\\f019.png"
+      },
+      "landing": {
+        "scale": 0.96184,
+        "paste_xy": [
+          320,
+          282
+        ],
+        "visible_bottom_scaled": 615
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 629,
+        "body_top_y": 293,
+        "foot_line": 897,
+        "body_center_x": 531.5,
+        "bbox": [
+          320,
+          282,
+          743,
+          897
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 4
+      }
+    },
+    {
+      "name": "idle4",
+      "output": {
+        "path": "Enemy1051ArtSource\\04_Sprites\\Enemy_1051_idle4.png",
+        "sha256": "61d4e9e7908b730f28eafcc35147932a54f2a867b6ad335ffe7f657795567c27",
+        "bytes": 398197
+      },
+      "source": {
+        "bbox": [
+          490,
+          694,
+          933,
+          1333
+        ],
+        "head_top_y": 708,
+        "foot_y": 1333,
+        "body_h": 626,
+        "body_center_x": 700,
+        "path": "Library\\Locus\\tmp\\1051_idle_keyed\\f077.png"
+      },
+      "landing": {
+        "scale": 0.96645,
+        "paste_xy": [
+          318,
+          279
+        ],
+        "visible_bottom_scaled": 618
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 626,
+        "body_top_y": 293,
+        "foot_line": 897,
+        "body_center_x": 532.0,
+        "bbox": [
+          318,
+          279,
+          746,
+          897
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 2
+      }
+    },
+    {
+      "name": "idle5",
+      "output": {
+        "path": "Enemy1051ArtSource\\04_Sprites\\Enemy_1051_idle5.png",
+        "sha256": "64d616d311c6fbcbc681ace08cda8c3ede92e9455657b47c65e9ca01528b2371",
+        "bytes": 401858
+      },
+      "source": {
+        "bbox": [
+          490,
+          694,
+          935,
+          1333
+        ],
+        "head_top_y": 710,
+        "foot_y": 1333,
+        "body_h": 624,
+        "body_center_x": 700,
+        "path": "Library\\Locus\\tmp\\1051_idle_keyed\\f085.png"
+      },
+      "landing": {
+        "scale": 0.96955,
+        "paste_xy": [
+          317,
+          277
+        ],
+        "visible_bottom_scaled": 620
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 624,
+        "body_top_y": 293,
+        "foot_line": 897,
+        "body_center_x": 532.5,
+        "bbox": [
+          317,
+          277,
+          748,
+          897
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 2
+      }
+    },
+    {
+      "name": "idle6",
+      "output": {
+        "path": "Enemy1051ArtSource\\04_Sprites\\Enemy_1051_idle6.png",
+        "sha256": "11cd203fb5c98ccd4a34ec04fec6ac496c8545c673ffd1ba5deda80363dd99e1",
+        "bytes": 400311
+      },
+      "source": {
+        "bbox": [
+          490,
+          694,
+          935,
+          1333
+        ],
+        "head_top_y": 710,
+        "foot_y": 1333,
+        "body_h": 624,
+        "body_center_x": 700,
+        "path": "Library\\Locus\\tmp\\1051_idle_keyed\\f093.png"
+      },
+      "landing": {
+        "scale": 0.96955,
+        "paste_xy": [
+          317,
+          277
+        ],
+        "visible_bottom_scaled": 620
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 624,
+        "body_top_y": 293,
+        "foot_line": 897,
+        "body_center_x": 532.5,
+        "bbox": [
+          317,
+          277,
+          748,
+          897
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 1
+      }
+    }
+  ],
+  "attack_registration_to_idle": {
+    "method": "站姿帧配准（掩码 IoU 搜索）",
+    "reference": "04_IdleFrames/Enemy_1051_idle1.png",
+    "iou": 0.8866,
+    "offset_px": [
+      -12,
+      0
+    ],
+    "note": "attack 六张统一平移，使脚位与 idle 对齐"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "source": {
+    "path": "Enemy1051ArtSource\\02_IdentityImages\\1051_pose_draw2_raw.png",
+    "size": [
+      1024,
+      1024
+    ],
+    "sha256": "12a235452e1f9795015fe5370d2acd22b0125bff9267d6b26294138dbbe2fcf4"
+  },
+  "source_metrics": {
+    "bbox": [
+      219,
+      172,
+      706,
+      863
+    ],
+    "head_top_y": 172,
+    "foot_y": 863,
+    "body_height": 692,
+    "body_center_x": 462
+  },
+  "target": {
+    "canvas": [
+      1024,
+      1024
+    ],
+    "body_h": 696,
+    "foot_y": 895,
+    "center_x": 474.5,
+    "scale": 1.00578,
+    "paste_xy": [
+      230,
+      200
+    ]
+  },
+  "output": {
+    "path": "Enemy1051ArtSource\\02_IdentityImages\\1051_pose_draw2_greenscreen_1024.png",
+    "sha256": "1c75d73c97e11207c2d6c2b8711c91bd0c13fe3577fecf66d0e3b8d662d65ad2",
+    "bytes": 352696,
+    "subject_bbox": [
+      230,
+      200,
+      720,
+      895
+    ],
+    "clipped_at_canvas_edge": false
+  }
+}

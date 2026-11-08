@@ -1,0 +1,324 @@
+{
+  "canvas": [
+    1108,
+    1108
+  ],
+  "target": {
+    "body_h": 605,
+    "foot_line": 897,
+    "center_x": 521
+  },
+  "sprites": [
+    {
+      "name": "idle1",
+      "output": {
+        "path": "Enemy1051ArtSource\\04_IdleFrames\\Enemy_1051_idle1.png",
+        "sha256": "afb63807c17fb1623c23278bf49ebfbc2d59b0b3b70f263e0b82651e2e81f812",
+        "bytes": 404792
+      },
+      "source": {
+        "bbox": [
+          490,
+          694,
+          935,
+          1333
+        ],
+        "head_top_y": 709,
+        "foot_y": 1333,
+        "body_h": 625,
+        "body_center_x": 700,
+        "path": "Library\\Locus\\tmp\\1051_idle_keyed\\f000.png"
+      },
+      "landing": {
+        "scale": 0.96645,
+        "paste_xy": [
+          318,
+          279
+        ],
+        "visible_bottom_scaled": 618
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 625,
+        "body_top_y": 293,
+        "foot_line": 897,
+        "body_center_x": 533.0,
+        "bbox": [
+          318,
+          279,
+          748,
+          897
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 1
+      },
+      "source_frame": ""
+    },
+    {
+      "name": "idle2",
+      "output": {
+        "path": "Enemy1051ArtSource\\04_IdleFrames\\Enemy_1051_idle2.png",
+        "sha256": "230842376dc3aae47fd8679e0f335a249d356986d3866cf31e59930bc17a0e97",
+        "bytes": 401777
+      },
+      "source": {
+        "bbox": [
+          490,
+          694,
+          933,
+          1333
+        ],
+        "head_top_y": 706,
+        "foot_y": 1333,
+        "body_h": 628,
+        "body_center_x": 700,
+        "path": "Library\\Locus\\tmp\\1051_idle_keyed\\f008.png"
+      },
+      "landing": {
+        "scale": 0.96645,
+        "paste_xy": [
+          318,
+          279
+        ],
+        "visible_bottom_scaled": 618
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 628,
+        "body_top_y": 291,
+        "foot_line": 897,
+        "body_center_x": 532.0,
+        "bbox": [
+          318,
+          279,
+          746,
+          897
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 3
+      },
+      "source_frame": ""
+    },
+    {
+      "name": "idle3",
+      "output": {
+        "path": "Enemy1051ArtSource\\04_IdleFrames\\Enemy_1051_idle3.png",
+        "sha256": "2e323899035f07df2768ddad6b8e9854b94a1c7f90672002767e418aca60d063",
+        "bytes": 402967
+      },
+      "source": {
+        "bbox": [
+          491,
+          694,
+          931,
+          1333
+        ],
+        "head_top_y": 705,
+        "foot_y": 1333,
+        "body_h": 629,
+        "body_center_x": 700,
+        "path": "Library\\Locus\\tmp\\1051_idle_keyed\\f016.png"
+      },
+      "landing": {
+        "scale": 0.96645,
+        "paste_xy": [
+          319,
+          279
+        ],
+        "visible_bottom_scaled": 618
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 629,
+        "body_top_y": 290,
+        "foot_line": 897,
+        "body_center_x": 531.5,
+        "bbox": [
+          319,
+          279,
+          744,
+          897
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 3
+      },
+      "source_frame": ""
+    },
+    {
+      "name": "idle4",
+      "output": {
+        "path": "Enemy1051ArtSource\\04_IdleFrames\\Enemy_1051_idle4.png",
+        "sha256": "cad341611ad9ba8d28ec5483fad702c04df464c8f843364d5f52ac3f8dcc8e0f",
+        "bytes": 399045
+      },
+      "source": {
+        "bbox": [
+          491,
+          694,
+          932,
+          1333
+        ],
+        "head_top_y": 706,
+        "foot_y": 1333,
+        "body_h": 628,
+        "body_center_x": 700,
+        "path": "Library\\Locus\\tmp\\1051_idle_keyed\\f024.png"
+      },
+      "landing": {
+        "scale": 0.96645,
+        "paste_xy": [
+          319,
+          279
+        ],
+        "visible_bottom_scaled": 618
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 628,
+        "body_top_y": 291,
+        "foot_line": 897,
+        "body_center_x": 532.0,
+        "bbox": [
+          319,
+          279,
+          745,
+          897
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 5
+      },
+      "source_frame": ""
+    },
+    {
+      "name": "idle5",
+      "output": {
+        "path": "Enemy1051ArtSource\\04_IdleFrames\\Enemy_1051_idle5.png",
+        "sha256": "b8fe728cf8ffb60d68cbfdb799a8678b055b024b89d8557d47793f9cd4a27902",
+        "bytes": 400004
+      },
+      "source": {
+        "bbox": [
+          490,
+          694,
+          934,
+          1333
+        ],
+        "head_top_y": 709,
+        "foot_y": 1333,
+        "body_h": 625,
+        "body_center_x": 700,
+        "path": "Library\\Locus\\tmp\\1051_idle_keyed\\f032.png"
+      },
+      "landing": {
+        "scale": 0.96645,
+        "paste_xy": [
+          318,
+          279
+        ],
+        "visible_bottom_scaled": 618
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 625,
+        "body_top_y": 293,
+        "foot_line": 897,
+        "body_center_x": 532.5,
+        "bbox": [
+          318,
+          279,
+          747,
+          897
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 2
+      },
+      "source_frame": ""
+    },
+    {
+      "name": "idle6",
+      "output": {
+        "path": "Enemy1051ArtSource\\04_IdleFrames\\Enemy_1051_idle6.png",
+        "sha256": "c76f9a12e0e0458ae1a7608c5ffa53373eab98b888b6d83e51b3653b720d4280",
+        "bytes": 402136
+      },
+      "source": {
+        "bbox": [
+          490,
+          694,
+          935,
+          1333
+        ],
+        "head_top_y": 710,
+        "foot_y": 1333,
+        "body_h": 624,
+        "body_center_x": 700,
+        "path": "Library\\Locus\\tmp\\1051_idle_keyed\\f040.png"
+      },
+      "landing": {
+        "scale": 0.96645,
+        "paste_xy": [
+          318,
+          279
+        ],
+        "visible_bottom_scaled": 618
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 624,
+        "body_top_y": 294,
+        "foot_line": 897,
+        "body_center_x": 533.0,
+        "bbox": [
+          318,
+          279,
+          748,
+          897
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 3
+      },
+      "source_frame": ""
+    }
+  ],
+  "cycle_s": 1.98,
+  "period_source_frames": 48,
+  "anim_timing_30fps": {
+    "idle1": 0.0,
+    "idle2": 0.33,
+    "idle3": 0.66,
+    "idle4": 0.99,
+    "idle5": 1.32,
+    "idle6": 1.65
+  },
+  "pivot": {
+    "value": [
+      0.5,
+      0.5
+    ],
+    "ppu": 16
+  },
+  "landing_fixed_k": 0.96645,
+  "landing_note": "固定 k（不逐帧归一化）：逐帧归一化会把「头上下浮动」翻译成「整体缩放」",
+  "selection_note": "谷底起步、整段取帧不取模绕回（旧选法绕回导致接缝跳一大截）；覆盖完整呼吸周期，步长均匀",
+  "source_video": "01_SourceVideos/1051_idle_v1_4s.mp4",
+  "source_task": "task_dd5ca1fc4b7b4e8e858c3fbfe90ebb33",
+  "known_issue": "源片里模型没做胸肩起伏（全身高/头顶y/脚底y 全程恒定），帧间变化是重绘噪点+表情弧线；目前六帧是「表情+轮廓微动」的待机，不是胸肩呼吸"
+}

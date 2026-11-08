@@ -42,7 +42,22 @@ aiEditMode: inherit
 
 本次临时脚本：`Library/Locus/tmp/image_workflow_check/gpt_image_call.py`（t2i / i2i 两种模式，自动保存请求 JSON、响应 JSON、图片并输出 PNG 签名 / IHDR / Alpha 统计）。`Library/` 会被 Unity 清理，只作为临时工具；可复用的是它的请求结构（multipart 字段名必须是 `image[]`）和验收步骤。
 
-## 2026-11-06 复检：2.6 与 2.5 同时可用，**默认用 2.5**
+## 2026-11-08 复检：默认模型切到 `gpt-image-2.6-sunburst`
+
+用户指定「后续都用 2.6 代替 2.5，其他参数不变，质量用 `max`」。切换前跑探针：
+
+| 探测 | 结果 |
+| --- | --- |
+| `GET /v1/models` | HTTP 200；图像模型**只有 `gpt-image-2.6-sunburst`**（2.5 当天已不在列表）；其余为 `claude-haiku-5-5` / `gpt-6-astra` / `gpt-6-luna` / `gpt-6.1-sol` / `gpt-6.1-terra` / `grok-4.7` |
+| `POST /v1/images/generations`，model=`gpt-image-2.6-sunburst` | **HTTP 200，87.66s**，1024×1024 PNG（Color Type 2 RGB，837,807 bytes），usage total 1777 |
+
+- 结论：2.6 可用 → **默认模型从 2.5 改为 2.6**；参数只改模型名，`quality=max` 等其余参数一律不变。
+- 探针脚本 `Library/Locus/tmp/1013art/probe_gpt_image_2_6.py`，留档 `C:/Users/steam/Pictures/gptGen/probe_gpt_image_2.6/probe_2_6.{png,result.json}`。
+- 工作流文档 `skill/gpt-image-generation.md` 同步更新（含模型默认值变更记录章节）。
+- 仓库里写死模型名的 **125 个 Python 脚本**已统一为 `gpt-image-2.6-sunburst`（含 `Tools/visual_brief/` 两个正式提交脚本与 `Library/Locus/tmp/` 下 117 个临时脚本），全部通过 `py_compile`。历史记录类文件（`*.request.json` / `*.response.json` / `*.status.json` / 交接 md）**保持原样不改**。
+- 提醒（沿用 11-06 结论）：中转站会当天反复开关模型，**不要**把这次的「只有 2.6」写死为长期事实；批量生图前仍应先跑一次零成本探针。
+
+## 2026-11-06 复检：2.6 与 2.5 同时可用，**默认用 2.5**（已被 2026-11-08 的切换取代）
 
 中转站在 2026-11-06 一天内来回切过两次路由（下午先只开 2.6，几十分钟后又把 2.5 开回来）。当前 `GET /v1/models` 共 8 个模型，图像模型两个都在：
 

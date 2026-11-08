@@ -1,0 +1,5 @@
+"variant","source_path","bytes","sha256","note"
+"lineup_crop_reference","Enemy1013ArtSource/02_IdentityImages/1013_lineup_crop_reference_rgba.png","497387","b24a3bcdc17048c0890bbd76dea7d61f2a2d89ebe3e04a895566ea1caf1ddad7","**已验收形象（唯一基准）**：四兵种并排比例研究图里 1013 旗手的独立裁切，389×720 RGBA（含杆与旗）。人物本体与 1011 等高（476 / 472 = 1.008，体型同族）；旗杆总高 1.51× 人物身高（设计 1.25×，经用户决定本轮不改）。1013 的所有出片都从这张派生。"
+"proportion_sheet","Enemy1013ArtSource/02_IdentityImages/1013_vs_1011_proportion_sheet.png","651896","f687806058842a4203fc5d6f94f0ac1390f469498fb9a9afbc8079b3ae46a180","1011 与 1013 脚底对齐并排对照图：等高目视复核用（体型同族的证据）。"
+"cast_anchor_centered","Enemy1013ArtSource/02_IdentityImages/1013_cast_anchor_green_1080x1080_v6.png","317542","fed405d071357f20106c2894d83a67a443387473f8f439ae51e90ec3c607d34b","**已验收出片锚图**：1080² 绿幕（0,159,62，std=0）、**身体中心在画幅正中**、人物身 470（画幅 43%）、杆顶 y=290、脚底 y=1000、人物最左 12%。1013 出片统一用这张（人居中，旗向右展）。"
+"cast_anchor_raised","Enemy1013ArtSource/02_IdentityImages/1013_cast_raisedpose_anchor_green_1440.png","441172","d42bb4997a372edce73f4a277d5790e90d26664b67e197f17bd157f59a4fc8bd","**已验收挥舞段起始锚图**：举起后的姿态（1440² 绿幕，杆顶 y=68、身体 634px），用于生成 `1013_cast_wave_v1.mp4`（挥舞段）。"
