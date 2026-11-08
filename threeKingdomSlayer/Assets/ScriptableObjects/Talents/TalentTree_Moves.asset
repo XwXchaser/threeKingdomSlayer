@@ -32,8 +32,8 @@ MonoBehaviour:
     hidden: 0
     moveGuideGesture: 5
     moveGuideDialogue: {fileID: 11400000, guid: ccbaad05a1b56d4448222196f7c3d889, type: 2}
-    moveGuidePhase2Dialogue: {fileID: 11400000, guid: f13b6ca02bddea649b1691e076f7f8f2, type: 2}
-    moveGuidePhase3Dialogue: {fileID: 11400000, guid: 9ae1a416a894a064bb4a2346e674e291, type: 2}
+    moveGuidePhase2Dialogue: {fileID: 11400000, guid: 32fd5e0e065996e45a6ffc72cf047cdf, type: 2}
+    moveGuidePhase3Dialogue: {fileID: 0}
   - nodeId: talent_move_stabc4
     displayName: "\u67AA\u7A81\u6536\u5C3E"
     description: "\u67AA\u7A81\u6536\u5C3E\uFF08\u6D4B\u8BD5\u8282\u70B9\uFF09"

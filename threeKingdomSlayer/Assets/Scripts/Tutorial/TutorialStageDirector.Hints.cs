@@ -468,33 +468,12 @@ public partial class TutorialStageDirector : MonoBehaviour
             // **把长枪拉回蓄势位**（2026-11-04 用户反馈：「长枪提前收回」）
             var atkSystem = AttackSystem.Instance;
             if (atkSystem != null) atkSystem.BeginComboChargeHold();
-            if (step.comboPhase2Dialogue != null)
-                DialogueManager.Instance?.QueueEventAndNotify(step.comboPhase2Dialogue, forceReplay: true);
-            // ★ 「瞄准」台词也放在**蓄力之前**播（2026-11-08 实测）：
-            //   如果放在时停那一刻弹 → 玩家要点「继续」才能关掉台词 → **那一下点击就是松手**
-            //   → 派生招式在「继续按钮」的位置释放 → 没打在敌人身上 → 瞄准教学反而把玩家带偏。
-            //   放在蓄力前：台词读完 → 玩家按住敌人 → 时停 → 玩家在敌人身上松手 ✓
-            if (step.comboPhase3Dialogue != null)
-                DialogueManager.Instance?.QueueEventAndNotify(step.comboPhase3Dialogue, forceReplay: true);
+            // ★ **台词不在这里排**（2026-11-08 用户口径）：
+            //   这一段教学内容（「别抬手，按住蓄满再松手 —— 手指按在他身上别松手，松手就是指向突刺」）
+            //   应该在**敌人抬手（时停）那一刻一次弹出**，而不是拆成两段、在不同时机分别排进队列。
+            //   （教学台词是 nonBlocking → 不暂停、不压暗、不挡点击 → 玩家照常按住蓄力 ✓）
+            Debug.Log("[Tutorial] 连招蓄力拍：阶段 2 → 接续窗口已开，武器悬停，可以按住蓄力");
 
-            // ⚠️ **必须等这段台词播完，才让玩家开始蓄力**（2026-11-08 实测日志）：
-            //   教学台词会**暂停整个游戏**（DialogueManager._pausedForDialogue → timeScale=0），而
-            //   ① 蓄力时长走的是**缩放时间**（Time.time - segmentStartTime）→ 暂停期间按住也不涨；
-            //   ② `InputManager.Update` 在 `timeScale == 0` 时会**直接把这次按住取消掉**
-            //      （isTouching / isLongPress / hasTriggeredDuringHold 全清）
-            //   → 玩家在台词还没关掉时按住 → 松手只有 0 级蓄力 → 打出来的是普通戳、不是指向突刺
-            //   → 这一拍永远过不去（实测日志：「连段松手：提交 Hold(蓄力0)」）。
-            if (step.comboPhase2Dialogue != null || step.comboPhase3Dialogue != null)
-            {
-                var dlg = DialogueManager.Instance;
-                float dlgWait = 0f;
-                while (dlg != null && (dlg.IsPlaying || dlg.IsBusy) && dlgWait < 8f)
-                {
-                    dlgWait += Time.unscaledDeltaTime;
-                    yield return null;
-                }
-                Debug.Log("[Tutorial] 连招蓄力拍：阶段 2 台词结束 → 放行给玩家蓄力");
-            }
 
             demoTimer = 0f;
             PlayGestureAt(GestureHintKind.Hold, from, to);
@@ -541,6 +520,22 @@ public partial class TutorialStageDirector : MonoBehaviour
                         frozenAt = Time.unscaledTime;
                         FreezeWorldForTutorial();
                         _comboTargetWasAttacking = true;
+                        // ★ 这一段教学内容在**敌人抬手这一刻**一次弹出（nonBlocking → 不挡玩家操作 ✓）
+                        //   时停中 DialogueManager 会把队列里的台词当「被别的 UI 挡住」拦下来
+                        //   → 临时开 AllowDialogueWhilePaused（同技能打断拍的做法 ✓）
+                        if (step.comboPhase2Dialogue != null)
+                        {
+                            DialogueManager.AllowDialogueWhilePaused = true;
+                            DialogueManager.Instance?.QueueEventAndNotify(step.comboPhase2Dialogue, forceReplay: true);
+                            var freezeView = ResolveDialogueView();
+                            float showWait = 0f;
+                            while (freezeView != null && !freezeView.IsShowing && showWait < 1.5f)
+                            {
+                                showWait += Time.unscaledDeltaTime;
+                                yield return null;
+                            }
+                            if (freezeView != null && freezeView.IsShowing) DialogueManager.AllowDialogueWhilePaused = false;
+                        }
                         Debug.Log("[Tutorial] 连招蓄力拍：敌人抬起到顶（剩余 " + toAttackEnd.ToString("F2")
                             + "s）→ 整局时停（把手指按在目标身上松手 → 派生招式）");
                     }
@@ -572,8 +567,8 @@ public partial class TutorialStageDirector : MonoBehaviour
                     {
                         // 没朝目标打出去 → 提示玩家**重打一遍这个连段**（C1→C2），不结束这一拍。
                         Debug.Log("[Tutorial] 连招蓄力拍：这一下没朝目标打出去 → 提示玩家把这一段连招重打一遍");
-                        if (step.comboPhase3Dialogue != null)
-                            DialogueManager.Instance?.QueueEventAndNotify(step.comboPhase3Dialogue, forceReplay: true);
+                        if (step.comboPhase2Dialogue != null)
+                            DialogueManager.Instance?.QueueEventAndNotify(step.comboPhase2Dialogue, forceReplay: true);
                         // 连段被这一记消费了（Jab1→StabR2 的边没了）→ 状态机打回中立，
                         //   玩家下一记点按才能从 Jab1 起 → 才能再蓄满、再朝敌人松手。
                         if (machine != null) { machine.SetFrozen(false); machine.NotifyExternalReset(); }
@@ -591,6 +586,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         }
 
         UnfreezeWorldForTutorial();   // 收尾：教学冻结必须解除（否则整局停在时停）
+        DialogueManager.AllowDialogueWhilePaused = false;   // 教学用开关收回去（不能漏给别的拍）
         if (machine != null) machine.SetFrozen(false);
         var atkEnd = AttackSystem.Instance;
         if (atkEnd != null) atkEnd.EndComboChargeHold();

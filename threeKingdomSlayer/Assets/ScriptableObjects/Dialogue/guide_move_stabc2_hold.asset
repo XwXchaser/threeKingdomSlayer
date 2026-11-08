@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d61051663ed0dc4f8f4e19c8ae32432, type: 3}
+  m_Name: guide_move_stabc2_hold
+  m_EditorClassIdentifier: 
+  eventId: guide_move_stabc2_hold
+  eventType: 0
+  triggerType: 0
+  stageId: 0
+  waveNumber: 0
+  bossId: 0
+  bossPhaseIndex: 0
+  killCount: 0
+  nonBlocking: 1
+  bossProfile: {fileID: 0}
+  lines:
+  - speaker: 0
+    text: "\u522B\u62AC\u624B\uFF0C\u6309\u4F4F\u84C4\u6EE1\u518D\u677E\u624B \u2014\u2014
+      \u6253\u51FA\u6307\u5411\u7A81\u523A\uFF01\u624B\u6307\u6309\u5728\u4ED6\u8EAB\u4E0A\u522B\u677E\u624B\u2014\u2014\u677E\u624B\u5C31\u662F\u6307\u5411\u7A81\u523A\uFF01"
