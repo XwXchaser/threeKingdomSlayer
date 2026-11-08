@@ -401,6 +401,7 @@ public partial class TutorialStageDirector : MonoBehaviour
 
         bool frozen = false;
         float frozenAt = 0f;      // 时停开始的时刻（unscaled）
+        float dbgT = 0f;          // 探针节流（每秒一行日志）
 
         while (_beatActive)
         {
@@ -501,27 +502,35 @@ public partial class TutorialStageDirector : MonoBehaviour
                 //   台词系统结束时会把 timeScale 顶回 1 → 不压住的话敌人就提前继续挥了。
                 if (frozen && Time.timeScale != 0f) Time.timeScale = 0f;
 
-                // ★ **等「敌人抬手到顶」→ 时停**（口径同霸体防御拍/技能打断拍：
-                //   「武器已经举到位、刀还没落」＝ 攻击剩余时长 <= 1.5s）
+                // ★ **等「敌人抬手到顶」→ 时停**（2026-11-08 用户口径：**完全对齐霸体防御拍** ✓）
                 //
-                //   ⚠️ **判据里不能带「玩家有没有蓄满」**（2026-11-08 用户反馈：
-                //   「我都不用按，你怎么解释敌人抬手后没有暂停？」）：
-                //     霸体/技能拍都是**敌人一抬手就暂停**，跟玩家在做什么无关；
-                //     之前这里加了 `CurrentChargeLevel >= 1` → 玩家不按住就永远不冻结
-                //     → 敌人抡招照旧砸下来 → 这一拍既没教到、玩家还挨打。
-                //   ⇒ 冻结**无条件**触发；玩家在冻结里按住蓄满即可
-                //     （冻结期间按住时长走 unscaled 时钟 → 蓄力照样能攒满 ✓）。
+                // 霸体防御拍的判据（Beats.cs 原文，一字不改地照抄）：
+                //     bool cAttack = target.isAttackAnimating && target.isCFrame;
+                //     float toAttackEnd = cAttack ? target.TimeToAttackEnd() : -1f;
+                //     if (cAttack && toAttackEnd >= 0f && toAttackEnd <= defendPromptToEndSeconds) → 冻结
                 //
-                //   ⚠️ 2026-11-08 实测修：**必须落在「可打断的前摇」里** ——
-                //     • `IsInAttackWindup` = 前摇中（不是收招段；收招段 isAttackDrawPhase=true → 一律打不断）
-                //     • `!IsInStrikeWindow()` = 还没进出伤窗口（进了就来不及了）
-                //   不加这两个判据时，冻结会落在出伤那一瞬 → 玩家松手打中了也「没打断」→ 这一拍永远过不去。
+                // ⚠️ 我先前在这之上多加的两条（`IsInAttackWindup` / `!IsInStrikeWindow()`）**已删除**：
+                //   1011 这种「命中帧解析不到 clip」的敌人，`IsInStrikeWindow()` 几乎整段为真
+                //   → 冻结被永久挡住 → 表现为「敌人根本没有被冻结」。判据只留霸体拍那三条。
+                // ⚠️ 判据里也**不能带「玩家有没有蓄满」**（那会让玩家不按就永不冻结）。
                 if (!frozen && !freezeDone && target != null && target.state != EnemyState.Dead)
                 {
-                    bool attacking = target.isAttackAnimating;
-                    float toAttackEnd = attacking ? target.TimeToAttackEnd() : -1f;
-                    bool interruptible = target.IsInAttackWindup && !target.IsInStrikeWindow();
-                    if (attacking && interruptible && toAttackEnd >= 0f && toAttackEnd <= comboWindupFreezeSeconds)
+                    bool cAttack = target.isAttackAnimating && target.isCFrame;
+                    float toAttackEnd = cAttack ? target.TimeToAttackEnd() : -1f;
+
+                    // 探针（每秒一行，同技能打断拍 SkillBeatProbe 的做法）：冻结没发生时，一眼看出是哪一条挡住的
+                    if (Time.unscaledTime - dbgT > 1f)
+                    {
+                        dbgT = Time.unscaledTime;
+                        Debug.Log("[Tutorial][连招拍] WAIT 抡招=" + target.isAttackAnimating
+                            + " C技=" + target.isCFrame
+                            + " 剩余=" + (target.isAttackAnimating ? target.TimeToAttackEnd().ToString("F2") : "-") + "s"
+                            + " 阈值=" + comboWindupFreezeSeconds.ToString("F2") + "s"
+                            + " 阶段=" + _comboChargePhase + " ts=" + Time.timeScale.ToString("F2")
+                            + " 目标=" + target.enemyId + "/" + target.state);
+                    }
+
+                    if (cAttack && toAttackEnd >= 0f && toAttackEnd <= comboWindupFreezeSeconds)
                     {
                         // —— 时停（**与霸体防御拍 / 技能打断拍完全同一套**：整局停住 + 冻结中仍能操作）——
                         frozen = true;
