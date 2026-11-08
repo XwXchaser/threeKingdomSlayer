@@ -442,9 +442,7 @@ public GameObject freezeMeltEffectPrefab;
     {
         None = 0,
         HitStop = 1,
-        Frozen = 2,
-        /// <summary>教学冻结：由 TutorialStageDirector 手动挂起 / 解除（不会自动恢复）。</summary>
-        Tutorial = 4
+        Frozen = 2
     }
     internal SuspendSource _suspendSources;
     private bool _suspendAnimatorWasEnabled;

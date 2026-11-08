@@ -81,6 +81,9 @@ public partial class TutorialStageDirector : MonoBehaviour
         _beatAttackFired = true;
         _beatLastAttackType = attackType;
         _beatLastAttackColumn = column;
+        // 连招蓄力拍：阶段 2 的这一记 = **派生招式（指向突刺）** → 时停该解冻了
+        //   （时停中 tween 不走 → 伤害不落地 → 「打断」永远判不出来 → 这一拍卡死）
+        if (_comboChargePhase == 2) _comboChargeAttackFired = true;
     }
 
     /// <summary>敌人受击 → 确认「攻击成功」（这一拍刚打出的招式真的打中了）。</summary>
@@ -114,6 +117,14 @@ public partial class TutorialStageDirector : MonoBehaviour
         }
         if (_comboChargePhase == 2)
         {
+            // ★ 只有**派生招式（指向突刺）打出来**的那一下才算（2026-11-08）：
+            //   • 多段攻击的前一段命中 → 不能推进
+            //   • 玩家在时停之前就松手打出来的那一下 → 更不能推进（那是抢跑）
+            if (!_comboChargeAttackFired)
+            {
+                Debug.Log("[Tutorial] 连招蓄力拍：这一下不是派生招式打出来的 → 忽略");
+                return;
+            }
             // ★ 必须**打断**目标的霸体攻击（2026-11-08 用户定：只是打中不算数）。
             //   判据：目标确实在抡招（冻结那一刻记下）+ 它的攻击被打断（Enemy.CancelAttack 会置 attackInterrupted）。
             var tgt = _beatTargetEnemy;
@@ -121,7 +132,8 @@ public partial class TutorialStageDirector : MonoBehaviour
             if (!interrupted)
             {
                 Debug.Log("[Tutorial] 连招蓄力拍：这一下没打断目标的霸体招 → 不算，回阶段 1 重来");
-                if (_moveMachine != null) _moveMachine.NotifyExternalReset();
+                // ⚠️ 状态机时钟也要解冻：阶段 2 撑着接续窗口用的，不解冻 → 下一轮窗口开不了 + 戳击视觉门不过期 → 死等
+                if (_moveMachine != null) { _moveMachine.SetFrozen(false); _moveMachine.NotifyExternalReset(); }
                 _comboChargePhase = 1;
                 return;
             }

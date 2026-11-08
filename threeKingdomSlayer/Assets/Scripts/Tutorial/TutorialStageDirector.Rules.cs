@@ -95,6 +95,11 @@ public partial class TutorialStageDirector : MonoBehaviour
     private bool _comboTargetWasAttacking;
     /// <summary>连招蓄力拍的教学目标（会打霸体招的那只；判据用）。</summary>
     private Enemy _beatTargetEnemy;
+    /// <summary>
+    /// 连招蓄力拍：阶段 2 里**派生招式已经打出**（时停中打的）→
+    /// 该解冻了（不然伤害不落地 → 打断判据永远不成立）。
+    /// </summary>
+    private bool _comboChargeAttackFired;
 
     /// <summary>手势种类 → 它教的招式。</summary>
     private static AttackType? AttackTypeFor(GestureHintKind kind)

@@ -106,24 +106,19 @@ public partial class TutorialStageDirector : MonoBehaviour
                 float toStrike = target.TimeToStrike();
                 if (target.isAttackAnimating && toStrike >= 0f && toStrike <= 0.03f)
                 {
-                    Time.timeScale = 0f;
-                    _frozenByTutorial = true;
                     frozen = true;
                     frozenAt = Time.unscaledTime;
 
+                    // —— 冻结（与霸体防御拍 / 技能打断拍同一套）——
                     // 冻结时 Time.deltaTime = 0 → 上一拍留下的动作锁永远走不完 → 招架发不出来
-                    AttackSystem.Instance?.ClearActionLock();
-
                     // 压暗：只压暗**场景**（角色/敌人/长枪保持原亮度）。
                     // 不用提示层的全屏遮罩 —— 那会把角色也遮住（与「遮罩只遮场景」的设计相反）。
-                    SetSceneDim(true);
+                    FreezeWorldForTutorial();
                     // 开拍：闸门只放行"不蓄力竖滑"（= 招架）；这一拍教的就是招架 → 允许发出
                     _currentTeachAttack = AttackType.Parry;
                     _requireParryBlocked = true;     // 格不到不算完成 → 玩家可以再试（教学不设失败）
                     BeginBeat(TutorialGestureTarget.ParryVertical, AttackType.Parry, holdEnemies: false);
 
-                    var input = InputManager.Instance;
-                    if (input != null) input.allowInputWhileTimeFrozen = true;   // 冻结中仍处理玩家输入
                     // **手势示范**（自己循环，玩家任何时候都能看到要在哪儿划）
                     PlayGestureAt(step.kind, demoFrom, demoTo);
                     Debug.Log("[Tutorial] 时停招架拍：已冻结（timeScale=0），等待玩家上划招架");
@@ -421,21 +416,15 @@ public partial class TutorialStageDirector : MonoBehaviour
                     float toAttackEnd = cAttack ? target.TimeToAttackEnd() : -1f;
                     if (cAttack && toAttackEnd >= 0f && toAttackEnd <= defendPromptToEndSeconds)
                     {
-                        // —— 冻结 ——
-                        Time.timeScale = 0f;
-                        _frozenByTutorial = true;
+                        // —— 冻结（与技能打断拍 / 时停招架拍同一套）——
                         frozen = true;
                         frozenAt = Time.unscaledTime;
-                        AttackSystem.Instance?.ClearActionLock();
+                        FreezeWorldForTutorial();
 
-                        SetSceneDim(true);
                         _currentTeachAttack = null;
                         _beatEndsOnAttack = false;              // 成功判据 = 吸收伤害 / 这一击没打中
                         _defendLocked = false;
                         _defendStep = step;
-
-                        var input = InputManager.Instance;
-                        if (input != null) input.allowInputWhileTimeFrozen = true;
 
                         // 提示手落在防御键上
                         if (TryGetDefendButtonScreenPoint(out var btnPos))
@@ -456,8 +445,7 @@ public partial class TutorialStageDirector : MonoBehaviour
                 if (!_defendLocked && p != null && p.WeaponStance != null && p.WeaponStance.IsDefending)
                 {
                     _defendLocked = true;
-                    _frozenByTutorial = false;
-                    Time.timeScale = 1f;
+                    UnfreezeWorldForTutorial();
                     frozen = false;
                     awaitingStrike = true;
                     DebugLog.Info("[Tutorial] 霸体防御拍：玩家已进入防御 → 解冻，等敌人这一击打下来");
@@ -479,7 +467,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (ps != null && ps.Guard != null) ps.Guard.OnDamageAbsorbed -= OnGuardAbsorbed;
         _beatEndsOnAttack = true;
         _defendLocked = false;
-        if (frozen) { _frozenByTutorial = false; Time.timeScale = 1f; }
+        if (frozen) UnfreezeWorldForTutorial();
         // 拍在开头就开了 → 收尾统一收掉（否则「禁止出招」会一直留着，玩家永远出不了招）
         if (_beatActive) EndBeat();
 
@@ -679,8 +667,7 @@ public partial class TutorialStageDirector : MonoBehaviour
                 if (frozen)
                 {
                     // 解冻 → 技能效果结算 → 敌人的霸体攻击被打断
-                    _frozenByTutorial = false;
-                    Time.timeScale = 1f;
+                    UnfreezeWorldForTutorial();
                     frozen = false;
                     GameplayInputGate.AllowSkillActivationWhileFrozen = false;
                     DebugLog.Info("[Tutorial] 技能打断拍：玩家已释放技能 → 解冻，等技能生效");
@@ -725,14 +712,11 @@ public partial class TutorialStageDirector : MonoBehaviour
                 }
                 if (cAttack && toAttackEnd >= 0f && toAttackEnd <= skillPromptToEndSeconds)
                 {
-                    // —— 冻结：敌人的抬手动作被定住，玩家可以从容点技能 ——
-                    Time.timeScale = 0f;
-                    _frozenByTutorial = true;
+                    // —— 冻结：敌人的抬手动作被定住，玩家可以从容点技能（与霸体防御拍同一套）——
                     frozen = true;
                     frozenAt = Time.unscaledTime;
-                    AttackSystem.Instance?.ClearActionLock();
+                    FreezeWorldForTutorial();
 
-                    SetSceneDim(true);
                     _currentTeachAttack = null;
                     _beatEndsOnAttack = false;
 
@@ -769,9 +753,6 @@ public partial class TutorialStageDirector : MonoBehaviour
                         DebugLog.Info("[Tutorial] 技能打断拍：冻结台词：" + step.freezeDialogue.name);
                     }
 
-                    var input = InputManager.Instance;
-                    if (input != null) input.allowInputWhileTimeFrozen = true;
-
                     // 提示手落在技能槽上（循环点）；定位不到槽位就不画手势（教学本身仍然进行）
                     if (gestureOnSlot && gestureHint != null) gestureHint.PlayTapLoop(slotPos);
                     freezeHappened = true;
@@ -800,8 +781,7 @@ public partial class TutorialStageDirector : MonoBehaviour
                 if (Time.unscaledTime - frozenAt > skillBeatTimeoutSeconds)
                 {
                     DebugLog.Warning("[Tutorial] 技能打断拍：等待超时，放行");
-                    _frozenByTutorial = false;
-                    Time.timeScale = 1f;
+                    UnfreezeWorldForTutorial();
                     frozen = false;
                     GameplayInputGate.AllowSkillActivationWhileFrozen = false;
                     EndBeat();
@@ -828,7 +808,7 @@ public partial class TutorialStageDirector : MonoBehaviour
                     + " 挂起=" + target.IsSuspended + " 卡肉=" + target.IsHitStopped
                     + " 已放技能=" + skillUsed + (skillTimeout ? " 未打断=超时收拍" : "") + "）");
                 _beatCompleted = skillLanded;
-                if (frozen) { _frozenByTutorial = false; Time.timeScale = 1f; frozen = false; }
+                if (frozen) { UnfreezeWorldForTutorial(); frozen = false; }
                 if (beatStarted && _beatActive) EndBeat();
                 break;
             }
@@ -837,7 +817,7 @@ public partial class TutorialStageDirector : MonoBehaviour
             yield return null;
         }
 
-        if (frozen) { _frozenByTutorial = false; Time.timeScale = 1f; }
+        if (frozen) UnfreezeWorldForTutorial();
         ResetSkillBeatFlags();
         ResetSkillSlotHighlight();
         // 收拍（EndBeat 会把「循环点技能槽」的示范收掉 → 光圈/手不会残留）

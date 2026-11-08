@@ -729,6 +729,38 @@ public partial class TutorialStageDirector : MonoBehaviour
         ApplyDefenseMute();
     }
 
+    // ────────────────────── 教学冻结（整局时停）：**只有这一套** ──────────────────────
+    // 所有需要「敌人停在抬手那一帧、玩家从容操作」的拍都走这里：
+    //   霸体防御拍 / 技能打断拍 / 时停招架拍 / **指向突刺（连招蓄力）拍**。
+    //
+    // 四个动作缺一不可：
+    //   ① Time.timeScale = 0        → 世界停住：敌人停在抬手那一帧，玩家也**不会挨打**
+    //   ② allowInputWhileTimeFrozen → 冻结中玩家的手势通道照常工作（否则按了没反应）
+    //   ③ ClearActionLock()         → 上一拍残留的动作锁在冻结时走不完 → 不清就发不出招
+    //   ④ SetSceneDim(true)         → 只压暗**场景**（角色/敌人/长枪保持原亮度）
+    //
+    // ⚠️ **不要再为某一拍另造冻结机制**（2026-11-08 用户反馈：「并没有实现与霸体教学一样的冻结 /
+    //   不要乱造轮子」）：自己加挂起来源（SuspendSource.Tutorial）只停住了敌人 →
+    //   世界照旧跑 → 玩家在等抬手时照样挨打，而且和另外三拍的观感不一致。
+    private void FreezeWorldForTutorial()
+    {
+        Time.timeScale = 0f;
+        _frozenByTutorial = true;
+        AttackSystem.Instance?.ClearActionLock();
+        SetSceneDim(true);
+        var input = InputManager.Instance;
+        if (input != null) input.allowInputWhileTimeFrozen = true;   // 冻结中仍处理玩家输入
+    }
+
+    /// <summary>解除教学冻结（与 <see cref="FreezeWorldForTutorial"/> 成对使用）。</summary>
+    private void UnfreezeWorldForTutorial()
+    {
+        var input = InputManager.Instance;
+        if (input != null) input.allowInputWhileTimeFrozen = false;
+        _frozenByTutorial = false;
+        Time.timeScale = 1f;
+    }
+
     /// <summary>需要出招的教学拍期间的静音（任何关卡）。</summary>
     private void SetDefenseMuteBeat(bool muted)
     {
