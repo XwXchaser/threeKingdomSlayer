@@ -68,7 +68,7 @@ public partial class InputManager : MonoBehaviour
         // （滑动出招必须先松手退出防御，姿态自己回落）
         if (StanceActive) return false;
 
-        float segmentDuration = Time.time - segmentStartTime;
+        float segmentDuration = SegmentDuration;
         float verticalDrift = Mathf.Abs(currentPos.y - segmentStartPos.y);
 
         // 瞬时速度
@@ -129,6 +129,7 @@ public partial class InputManager : MonoBehaviour
         OnChargeEnded?.Invoke();
         segmentStartPos = position;
         segmentStartTime = Time.time;
+        segmentStartTimeUnscaled = Time.unscaledTime;
         isLongPress = false;
         isCharged = false;
         isSwiping = false;
@@ -140,6 +141,7 @@ public partial class InputManager : MonoBehaviour
         OnChargeEnded?.Invoke();
         segmentStartPos = position;
         segmentStartTime = Time.time;
+        segmentStartTimeUnscaled = Time.unscaledTime;
         isLongPress = false;
         isCharged = false;
         isSwiping = false;

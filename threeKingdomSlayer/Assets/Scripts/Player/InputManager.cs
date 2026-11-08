@@ -127,7 +127,12 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
         && blockInputFrames <= 0 && Time.timeScale > 0f && !IsAnyQTEActive();
 
     /// <summary>按住时长（秒）：连段蓄力用它驱动「拉回蓄势位」的进度</summary>
-    public float HoldDurationSeconds => isTouching ? Mathf.Max(0f, Time.time - segmentStartTime) : 0f;
+    public float HoldDurationSeconds => isTouching ? Mathf.Max(0f, SegmentDuration) : 0f;
+
+    /// <summary>当前按住段的时长（教学时停时走 unscaled 时钟 → 冻结中也能蓄满）。</summary>
+    private float SegmentDuration => useUnscaledHoldTime
+        ? Time.unscaledTime - segmentStartTimeUnscaled
+        : Time.time - segmentStartTime;
 
     /// <summary>当前指针位置对应的戳击目标列（C2 的「指向」用）。未落在有效列上时返回 -1</summary>
     public int CurrentPointerStabColumn => GetStabColumnFromScreenPosition(currentPointerPos);
@@ -239,6 +244,14 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
     /// 只有教学导演会开它，拍结束必须清零。
     /// </summary>
     [System.NonSerialized] public bool allowInputWhileTimeFrozen;
+    /// <summary>
+    /// **按住时长改用不受 timeScale 影响的时钟**（教学时停专用）。
+    ///
+    /// 教学把整个游戏冻住（timeScale=0）时，玩家的「按住蓄满」必须还能继续攒时间
+    /// → 否则蓄力条永远涨不上去 → 派生招式出不来 → 这一拍死等（2026-11-08）。
+    /// 正常战斗保持 false（按住时长仍是**游戏时间**，卡肉/慢动作的手感不变 ✓）。
+    /// </summary>
+    [System.NonSerialized] public bool useUnscaledHoldTime;
     /// <summary>输入屏蔽帧计数器（由 UpgradeChoiceManager 设置，防止选择选项的点击触发攻击）</summary>
     [System.NonSerialized] public int blockInputFrames = 0;
 
@@ -305,6 +318,8 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
     private float touchStartTime;
     private Vector2 segmentStartPos;
     private float segmentStartTime;
+    /// <summary>按住段的 unscaled 起点（教学时停用：冻结中蓄力也要能继续攒时间）。</summary>
+    private float segmentStartTimeUnscaled;
     private bool isTouching;
     private bool isLongPress;
     private bool isCharged;     // 当前分段蓄力是否已满
@@ -459,7 +474,7 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
 
         // 每帧更新当前分段的蓄力状态与进度。
         if (isTouching)
-        {            float segmentDuration = Time.time - segmentStartTime;
+        {            float segmentDuration = SegmentDuration;
 
             // 横向位移不再清零蓄力：横向移动 = 改目标列（指向），只有纵向抖动受容差限制。
             // 高速滑动仍由 TryDetectHoldSwipe 的速度门控拦下，不会被这里放行。

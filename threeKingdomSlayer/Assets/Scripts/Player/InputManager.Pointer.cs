@@ -84,6 +84,7 @@ public partial class InputManager : MonoBehaviour
             touchStartTime = Time.time;
             segmentStartPos = touchStartPos;
             segmentStartTime = touchStartTime;
+            segmentStartTimeUnscaled = Time.unscaledTime;
             isTouching = true;
             isLongPress = false;
             isCharged = false;
@@ -273,6 +274,7 @@ public partial class InputManager : MonoBehaviour
         touchStartTime = Time.time;
         segmentStartPos = touchStartPos;
         segmentStartTime = touchStartTime;
+        segmentStartTimeUnscaled = Time.unscaledTime;
         currentTouchId = touch.fingerId;
         isTouching = true;
         isLongPress = false;

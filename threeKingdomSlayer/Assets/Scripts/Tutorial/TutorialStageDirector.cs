@@ -62,6 +62,8 @@ public partial class TutorialStageDirector : MonoBehaviour
 
     [Tooltip("**指向突刺教学**：敌人抡招「抬手到顶」多少秒内冻结（口径同技能打断拍）")]
     public float comboWindupFreezeSeconds = 0.35f;
+    [Tooltip("**指向突刺教学**：冻结后等玩家操作的保险上限（秒，unscaled）—— 不能永久冻结把整局卡死")]
+    public float comboBeatTimeoutSeconds = 20f;
     [Tooltip("战斗 HUD 根上的 CanvasGroup（引导期整块失能：道具栏 / 技能槽 / 防御键 / 头像都不可点）")]
     public CanvasGroup hudCanvasGroup;
     // ⚠️ 这里**没有**“超时自动跳过”的开关：需求明确「不存在任何计时器直接跳过」。
