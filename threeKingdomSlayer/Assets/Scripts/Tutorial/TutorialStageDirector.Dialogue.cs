@@ -68,14 +68,13 @@ public partial class TutorialStageDirector : MonoBehaviour
             return;
         }
 
-        // 连招蓄力拍的阶段 1：**第一记点出来就换闸门**（ComboHold）→ 玩家点第二下会被拦掉。
-        // 不换的话玩家/机器人会连点成 Jab1→Jab2→Jab3，而「指向突刺」的连段边只挂在 **Jab1** 上
-        // → 连点三下之后就再也没有出路了（2026-11-04 实测：机器人在这一拍里连点三次，直接把连招打没了）。
-        if (_comboChargePhase == 1)
-        {
-            var inputMgr = InputManager.Instance;
-            if (inputMgr != null) inputMgr.tutorialGestureTarget = TutorialGestureTarget.ComboHold;
-        }
+        // ★ 闸门切换从「招式打出去」改成「**真的打中**」（2026-11-07 用户反馈：
+        //   「stabC2 教学里没释放对应招式，游戏也无法继续」→ 实测根因之一：
+        //   玩家/示范的**第一记点空**时（前面的怪被打死了、目标不在了），
+        //   这里已经把闸门换成 ComboHold → 玩家**再点第二下会被自己的闸门拦掉**
+        //   → 阶段永远停在 1 → 玩家既不能点、也进不了阶段2 → 整拍收不了（游戏冻着）→ 卡死。
+        //   现在：**打中了才换闸门**（见 OnBeatEnemyDamaged）；空挥 → 闸门仍是 Tap → 玩家可以再点。
+        //   （防连点的老问题由招式自己的「戳击视觉门」与「每帧把状态机打回中立」兜住。）
 
         // 「攻击成功」= 招式打出去**并且打中敌人**（2026-11-04 用户定）。
         // 这里只记「刚打出了这一招」，**真正的命中**由敌人受击事件确认 → **空挥不收拍**。
@@ -96,7 +95,15 @@ public partial class TutorialStageDirector : MonoBehaviour
 
         // 连招蓄力拍：**两段命中分开算** ——
         //   阶段 1 的第一记戳只推进阶段（不算收拍）；阶段 2 的派生招式才收拍。
-        if (_comboChargePhase == 1) { _comboChargePhase = 2; return; }
+        if (_comboChargePhase == 1)
+        {
+            _comboChargePhase = 2;
+            // ★ **命中了才换闸门**（ComboHold）：玩家接下来只能蓄力松手，不能再乱点
+            //   （原来在「招式打出去」时就换 → 空挥也会换 → 玩家再也点不了第二下 → 卡死）
+            var inputMgr = InputManager.Instance;
+            if (inputMgr != null) inputMgr.tutorialGestureTarget = TutorialGestureTarget.ComboHold;
+            return;
+        }
         if (_comboChargePhase == 2) { _comboChargePhase = 3; }
 
         RegisterBeatHit(_beatLastAttackType, _beatLastAttackColumn);

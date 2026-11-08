@@ -369,6 +369,12 @@ public partial class TutorialStageDirector : MonoBehaviour
             PlayGestureAt(GestureHintKind.Tap, from, to);
             while (_beatActive && _comboChargePhase == 1)
             {
+                // ★ **放开行军**（2026-11-08 用户反馈：「stabC2 教学里没释放对应招式，游戏也无法继续」）：
+                //   这一拍默认把全场敌人「按住」不让动（BeginBeat 的 holdEnemies）。
+                //   前排被打死 → 后面那个正在补上来的敌人**被按住冻在半路** → 玩家够不着任何目标
+                //   → 打不出任何东西 → 这一拍永远收不了 → 整局卡住。
+                //   → 没有「够得着的目标」时放开行军，让它补上来（这一拍在正式关跑，放开不影响教学安全）。
+                if (!HasReachableTarget()) SetEnemiesHold(false);
                 demoTimer += Time.unscaledDeltaTime;
                 if (demoTimer >= playSeconds) { demoTimer = 0f; PlayGestureAt(GestureHintKind.Tap, from, to); }
                 yield return null;
@@ -416,6 +422,7 @@ public partial class TutorialStageDirector : MonoBehaviour
             // ── 示范「按住蓄力」→ 玩家按住 → 蓄满 → 松手 → 派生招式打中敌人
             demoTimer = 0f;
             PlayGestureAt(GestureHintKind.Hold, from, to);
+            float phase2Time = 0f;
             while (_beatActive && _comboChargePhase == 2)
             {
                 // **把枪一直保持在蓄势位**（2026-11-04 用户反馈：「长枪还是没收住，会缩回去」）：
@@ -423,10 +430,32 @@ public partial class TutorialStageDirector : MonoBehaviour
                 //   但它平时跟着「手指按住」走 → 玩家还没按住时枪就自己收回去了。
                 //   这里**每帧重新声明一次** → 枪一直举着；玩家中途松手（没蓄满）也还是举着 → 可以再蓄一次。
                 if (atkSystem != null) atkSystem.BeginComboChargeHold();
+
+                // ★ **空挥兜底**（2026-11-08 用户反馈：「stabC2 教学里没释放对应招式，游戏也无法继续」）：
+                //   玩家松手后，派生招式（指向突刺）可能**没打出来 / 打空了**（没命中任何敌人）
+                //   → 阶段 2 收不到命中 → 招式状态机已经越过 Jab1（连段边没了）→ 玩家再也接不出蓄力
+                //   → 这一拍永远收不了，而拍子期间**游戏是冻着的** → 整个教学卡死。
+                //   判据：**接续窗口关了 + 状态机空闲**（= 玩家的蓄力/派生已经结束，却没收到命中）
+                //   → 回到阶段 1（重新点一记 → 再蓄一次），与「接续窗口没赶上」的兜底同一套语义。
+                if (machine != null && phase2Time > 0.6f && !machine.IsMoveActive && !machine.IsWindowOpenFor(MoveGesture.Hold, 1))
+                {
+                    Debug.Log("[Tutorial] 连招蓄力拍：派生招式没打中（空挥）→ 回阶段 1（再点一记）");
+                    SetDefenseMuteBeat(false);
+                    machine.NotifyExternalReset();     // 回到中立 → 下一记戳从 Jab1 起 → 能再接蓄满松手
+                    _comboChargePhase = 1;
+                    break;
+                }
+
+                // ★ 同样：**目标没了 / 够不着** → 放开行军，让下一个敌人补上来（否则玩家打不到东西 → 卡死）
+                if (!HasReachableTarget()) SetEnemiesHold(false);
+
+                phase2Time += Time.unscaledDeltaTime;
+
                 demoTimer += Time.unscaledDeltaTime;
                 if (demoTimer >= playSeconds) { demoTimer = 0f; PlayGestureAt(GestureHintKind.Hold, from, to); }
                 yield return null;
             }
+            if (_beatActive && _comboChargePhase == 1) continue;   // 空挥兜底 → 回到阶段 1 再来一次
             break;
         }
 
@@ -439,6 +468,23 @@ public partial class TutorialStageDirector : MonoBehaviour
         _comboChargePhase = 0;
         EndBeat();
         _hintRoutine = null;
+    }
+
+    /// <summary>
+    /// 场上还有没有**玩家够得着**的活目标（第 0~1 排）。
+    /// （玩家的普通戳击打不到更远的排 → 没有可打目标时这一拍就永远收不了 → 教学卡死。）
+    /// </summary>
+    private bool HasReachableTarget()
+    {
+        var alive = EnemyManager.Instance != null ? EnemyManager.Instance.GetAllAliveEnemies() : null;
+        if (alive == null) return false;
+        for (int i = 0; i < alive.Count; i++)
+        {
+            var e = alive[i];
+            if (e == null || e.state == EnemyState.Dead) continue;
+            if (e.rowIndex <= 1) return true;
+        }
+        return false;
     }
 
     /// <summary>
