@@ -1,0 +1,48 @@
+{
+  "source": {
+    "path": "Enemy1051ArtSource\\02_IdentityImages\\1051_pose_walk1_raw.png",
+    "size": [
+      1024,
+      1024
+    ],
+    "sha256": "db671227c3c066a5392e2c38be53a354abbbbbd14e89f676110e4db1d514e2d2"
+  },
+  "source_metrics": {
+    "bbox": [
+      273,
+      182,
+      714,
+      886
+    ],
+    "head_top_y": 200,
+    "foot_y": 886,
+    "body_height": 687,
+    "body_center_x": 504
+  },
+  "target": {
+    "canvas": [
+      1024,
+      1024
+    ],
+    "body_h": 696,
+    "foot_y": 895,
+    "center_x": 474.5,
+    "scale": 1.0131,
+    "paste_xy": [
+      240,
+      182
+    ]
+  },
+  "output": {
+    "path": "Enemy1051ArtSource\\02_IdentityImages\\1051_pose_walk1_greenscreen_1024.png",
+    "sha256": "ffb048b8aed3f2e732c45b13767c2e28f93975963d770c98c413e7a566ea6665",
+    "bytes": 428748,
+    "subject_bbox": [
+      240,
+      182,
+      687,
+      895
+    ],
+    "clipped_at_canvas_edge": false
+  }
+}

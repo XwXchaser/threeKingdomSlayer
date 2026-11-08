@@ -15,7 +15,7 @@ argumentHint: "<prompt> [--image path ...] [--size 1024x1024|1024x1536|1536x1024
 
 ## 使用说明
 
-`/gpt-image` 用于脱离 Unity Editor 调用 GPT Image 图像生成接口，当前优先使用 `gpt-image-2.5-sunburst`。Unity 断开、未启动、或项目不在 Play Mode 都不影响使用。
+`/gpt-image` 用于脱离 Unity Editor 调用 GPT Image 图像生成接口，**当前默认使用 `gpt-image-2.6-sunburst`**（2026-11-08 起；探针实测 2.6 可用）。Unity 断开、未启动、或项目不在 Play Mode 都不影响使用。
 
 支持三类任务：
 
@@ -142,7 +142,7 @@ POST https://api.muskapis.com/v1/images/generations
 
 必填字段：
 
-- `model`: 当前优先使用 `gpt-image-2.5-sunburst`；`gpt-image-2.5-flare` 也属于当前 GPT Image 模型，但具体路由/权限须实测
+- `model`: **当前默认 `gpt-image-2.6-sunburst`**（2026-11-08 用户指定并探针实测）；模型名必须带 `-sunburst` 后缀，不带后缀的写法一律 403
 - `prompt`
 
 常用可选字段：
@@ -164,7 +164,7 @@ POST https://api.muskapis.com/v1/images/edits
 
 必填字段：
 
-- `model`: 当前优先使用 `gpt-image-2.5-sunburst`；`gpt-image-2.5-flare` 的可用性须按当前路由实测
+- `model`: **当前默认 `gpt-image-2.6-sunburst`**（2026-11-08 起）；`gpt-image-2.5-sunburst` 的可用性随路由变化，用前须实测
 - `prompt`
 - `image[]`
 
@@ -181,7 +181,7 @@ POST https://api.muskapis.com/v1/images/edits
 
 ### 质量档位与透明参数
 
-当前 `gpt-image-2.5-sunburst` 和 `gpt-image-2.5-flare` 文档列出的 `quality` 枚举为：
+当前 GPT Image 模型（`gpt-image-2.6-sunburst` 等）文档列出的 `quality` 枚举为：
 
 ```text
 low | medium | high | xhigh | max | auto
@@ -189,7 +189,7 @@ low | medium | high | xhigh | max | auto
 
 - `auto` 是模型默认档位，由模型自动选择。
 - 当前项目的 GPT Image 请求（文生图、单图编辑、多图融合、去背）一律使用 `quality=max`，包括候选和探针；未经用户明确要求，不降档到 `high`、`medium` 或 `low`。
-- `xhigh` 和 `max` 是当前 2.5 模型较高的质量档位；项目默认固定采用最高已知档 `max`。
+- `xhigh` 和 `max` 是当前模型较高的质量档位；项目默认固定采用最高已知档 `max`（切到 2.6 后 `quality=max` 保持不变，其余参数也保持不变）。
 - 质量档位不是姿态锁定或角色身份锁定开关。`max` 可能带来更丰富的重绘细节，也可能改变局部轮廓；参考图编辑仍需使用明确的不可改变约束和 `input_fidelity=high`。`quality=max` 与 `input_fidelity=high` 是两个独立参数，可同时使用。
 - 早期 GPT Image 模型最高支持到 `high`，不能把 `max` 自动外推给旧模型。
 - `size`、`quality` 和 `background` 在当前文档中支持 `auto`；透明输出应显式设置 `background=transparent`，并使用支持 Alpha 的 `png` 或 `webp`。
@@ -224,7 +224,7 @@ image[]: 从视频解码得到的原始 RGB 帧
 - 已用 PNG 容器证据排除“CDN 事后把 alpha 压平”：好/坏两种输出都带生成器特征辅助 chunk `caBX`（若经中间层重编码该 chunk 会丢失），且坏输出的背景是**带噪声的近白**（边框值集中在 240–254，恰好 255 仅占 4.75%–12.45%）→ 是模型自己画了底，不是透明被填白。
 - B 后端的行为更像**降级回退**（首选后端忙/不可用时顶上）：G/B 会成段交错出现（相隔 32 秒即可能切换），与请求速率无关，失败时仍能出图，只是不执行 `background=transparent`。
 - 实操：请求后先看回显与 token 指纹判断拿到哪套后端；拿到 B 时**不要连发**（同一时段大概率仍是 B），隔一段时间再试。
-- 可用模型可用**免费** `GET https://api.muskapis.com/v1/models` 查询（不生成图、不计费）：当前令牌只列出 `gpt-image-2.5-sunburst` 一个图像模型（其余为 `gpt-5.6-luna`、`gpt-6-astra`、`gpt-6.1-sol`）。请求 `gpt-image-2.5-flare` 返回 **HTTP 403 “This token has no access to model”**，已实测，不要再把它当可用候选。
+- 可用模型可用**免费** `GET https://api.muskapis.com/v1/models` 查询（不生成图、不计费）：**2026-11-08 探针时令牌只列出 `gpt-image-2.6-sunburst` 一个图像模型**（其余为 `claude-haiku-5-5`、`gpt-6-astra`、`gpt-6-luna`、`gpt-6.1-sol`、`gpt-6.1-terra`、`grok-4.7`）；`gpt-image-2.5-sunburst` 当天已不在列表。请求无 `-sunburst` 后缀或 `gpt-image-2.5-flare` 一类名字返回 **HTTP 403 “This token has no access to model”**，已实测，不要再把它们当可用候选。
 - 结论：“透明能力”不取决于模型名，而是取决于**本次落到哪套后端**；同一 `sunburst` 在 G1/G2 上能给出原生 alpha，在 B 上一定不给。
 - 机器验收第一步永远是读 PNG Color Type 或 IHDR：`2`=RGB、`6`=RGBA。查看器或预览图里显示的“透明格子”不能作为透明度证据。
 - 用 Alpha 直方图求最大值时注意偏移：`enumerate(reversed(hist))` 的下标 `i` 对应 Alpha 值 `254 - i`，直接取 `i` 会把 max=254 误报成 1，看起来像“整张全透明”的假故障。正确写法：`next((254 - i for i, c in enumerate(reversed(hist)) if c), None)`。
@@ -268,7 +268,7 @@ out = pathlib.Path.home() / "Pictures" / "gptGen" / "result.png"
 out.parent.mkdir(parents=True, exist_ok=True)
 request = urllib.request.Request(
     "https://api.muskapis.com/v1/images/generations",
-    data=json.dumps({"model": "gpt-image-2.5-sunburst", "prompt": "...", "size": "1024x1024", "quality": "max", "output_format": "png"}).encode("utf-8"),
+    data=json.dumps({"model": "gpt-image-2.6-sunburst", "prompt": "...", "size": "1024x1024", "quality": "max", "output_format": "png"}).encode("utf-8"),
     headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
     method="POST")
 with urllib.request.urlopen(request, timeout=300) as response:
@@ -330,7 +330,7 @@ out_path.parent.mkdir(parents=True, exist_ok=True)
 request = urllib.request.Request(
     "https://api.muskapis.com/v1/images/generations",
     data=json.dumps({
-        "model": "gpt-image-2.5-sunburst",
+        "model": "gpt-image-2.6-sunburst",
         "prompt": prompt,
         "size": "1024x1024",
         "quality": "max",
@@ -444,6 +444,23 @@ pathlib.Path('目标路径').write_bytes(png)
 该服务支持中文标题渲染，但复杂长文仍可能出错。
 
 处理：减少文字长度，明确写：`顶部中文大字标题：「具体文字」`。
+
+## 模型默认值变更记录
+
+### 2026-11-08：默认模型切到 `gpt-image-2.6-sunburst`
+
+用户指定「后续都用 2.6 代替 2.5，其他参数不变，质量用 `max`」。切换前先做探针：
+
+| 探测 | 结果 |
+| --- | --- |
+| `GET /v1/models` | HTTP 200；图像模型只有 `gpt-image-2.6-sunburst`（`gpt-image-2.5-sunburst` 当天已不在列表） |
+| `POST /v1/images/generations`，model=`gpt-image-2.6-sunburst`，`quality=max`、`size=1024x1024`、`output_format=png`、`n=1` | **HTTP 200，87.66s**，1024×1024 PNG（Color Type 2 RGB，837,807 bytes），usage total 1777 |
+
+- 结论：**2.6 可用**，默认模型改为 `gpt-image-2.6-sunburst`。
+- 参数口径**只改模型名**：`quality=max`、`input_fidelity=high`、`size`、`output_format=png`、`n=1`、是否传 `background` 等一律沿用原设定。
+- 探针脚本：`Library/Locus/tmp/1013art/probe_gpt_image_2_6.py`；探针留档：`C:/Users/steam/Pictures/gptGen/probe_gpt_image_2.6/probe_2_6.{png,result.json}`。
+- 成本差异（历史实测，仅供知悉）：2.5 与 2.6 在同一 `quality` 下的 image token 差距可达约 4 倍；本次切换是用户明确指定的版本升级，不以成本为依据自动回退。
+- 切换后**所有生成脚本的 `MODEL` 常量统一改为 `gpt-image-2.6-sunburst`**；历史记录类文件（`*.request.json` / `*.response.json` / `*.status.json` / 交接 md 里的历史参数）保持原样不改，它们记录的是当时真实发出的请求。
 
 ## 安全注意事项
 

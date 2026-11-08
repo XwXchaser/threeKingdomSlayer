@@ -1,0 +1,321 @@
+{
+  "canvas": [
+    1108,
+    1108
+  ],
+  "target": {
+    "body_h": 605,
+    "foot_line": 897,
+    "center_x": 521
+  },
+  "sprites": [
+    {
+      "name": "walk1",
+      "output": {
+        "path": "Enemy1051ArtSource\\05_WalkFrames\\Enemy_1051_walk1.png",
+        "sha256": "f0a499fb89c9c82eefd338b0edc3ede55321035149806f881018f9a1e66e418c",
+        "bytes": 369585
+      },
+      "source": {
+        "bbox": [
+          493,
+          672,
+          933,
+          1330
+        ],
+        "head_top_y": 686,
+        "foot_y": 1330,
+        "body_h": 645,
+        "body_center_x": 716,
+        "path": "Library\\Locus\\tmp\\1051_walk_v4_keyed\\f005.png"
+      },
+      "landing": {
+        "scale": 0.93871,
+        "paste_xy": [
+          306,
+          280
+        ],
+        "visible_bottom_scaled": 618
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 645,
+        "body_top_y": 293,
+        "foot_line": 898,
+        "body_center_x": 512.5,
+        "bbox": [
+          306,
+          280,
+          719,
+          898
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 11
+      },
+      "source_frame": ""
+    },
+    {
+      "name": "walk2",
+      "output": {
+        "path": "Enemy1051ArtSource\\05_WalkFrames\\Enemy_1051_walk2.png",
+        "sha256": "5c6abddea07a6aaf696ae7a7fb6997882a51b7edd76fb6b29d80043c376ff81a",
+        "bytes": 372618
+      },
+      "source": {
+        "bbox": [
+          507,
+          672,
+          938,
+          1332
+        ],
+        "head_top_y": 682,
+        "foot_y": 1332,
+        "body_h": 651,
+        "body_center_x": 713,
+        "path": "Library\\Locus\\tmp\\1051_walk_v4_keyed\\f008.png"
+      },
+      "landing": {
+        "scale": 0.93871,
+        "paste_xy": [
+          306,
+          280
+        ],
+        "visible_bottom_scaled": 619
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 651,
+        "body_top_y": 289,
+        "foot_line": 899,
+        "body_center_x": 508.5,
+        "bbox": [
+          306,
+          280,
+          711,
+          899
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 7
+      },
+      "source_frame": ""
+    },
+    {
+      "name": "walk3",
+      "output": {
+        "path": "Enemy1051ArtSource\\05_WalkFrames\\Enemy_1051_walk3.png",
+        "sha256": "f709b3b1096e3a0a81a26fdc8eac457569402a0889df98c1aae321087d0378d1",
+        "bytes": 365155
+      },
+      "source": {
+        "bbox": [
+          504,
+          681,
+          933,
+          1334
+        ],
+        "head_top_y": 696,
+        "foot_y": 1334,
+        "body_h": 639,
+        "body_center_x": 718,
+        "path": "Library\\Locus\\tmp\\1051_walk_v4_keyed\\f010.png"
+      },
+      "landing": {
+        "scale": 0.93871,
+        "paste_xy": [
+          306,
+          280
+        ],
+        "visible_bottom_scaled": 613
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 639,
+        "body_top_y": 294,
+        "foot_line": 893,
+        "body_center_x": 507.5,
+        "bbox": [
+          306,
+          280,
+          709,
+          893
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 9
+      },
+      "source_frame": ""
+    },
+    {
+      "name": "walk4",
+      "output": {
+        "path": "Enemy1051ArtSource\\05_WalkFrames\\Enemy_1051_walk4.png",
+        "sha256": "ec9156c2955438a7cc70c24bb35e17959ee021bfb6ed41cc10d49577e4e0f50c",
+        "bytes": 370494
+      },
+      "source": {
+        "bbox": [
+          486,
+          676,
+          933,
+          1333
+        ],
+        "head_top_y": 690,
+        "foot_y": 1333,
+        "body_h": 644,
+        "body_center_x": 722,
+        "path": "Library\\Locus\\tmp\\1051_walk_v4_keyed\\f013.png"
+      },
+      "landing": {
+        "scale": 0.93871,
+        "paste_xy": [
+          306,
+          280
+        ],
+        "visible_bottom_scaled": 617
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 644,
+        "body_top_y": 293,
+        "foot_line": 897,
+        "body_center_x": 516.0,
+        "bbox": [
+          306,
+          280,
+          726,
+          897
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 2
+      },
+      "source_frame": ""
+    },
+    {
+      "name": "walk5",
+      "output": {
+        "path": "Enemy1051ArtSource\\05_WalkFrames\\Enemy_1051_walk5.png",
+        "sha256": "2490dc1d1f65d0301de3f359040b8df505423d71e3f3cb0ddea6f1077d642959",
+        "bytes": 373832
+      },
+      "source": {
+        "bbox": [
+          468,
+          668,
+          936,
+          1324
+        ],
+        "head_top_y": 679,
+        "foot_y": 1324,
+        "body_h": 646,
+        "body_center_x": 705,
+        "path": "Library\\Locus\\tmp\\1051_walk_v4_keyed\\f015.png"
+      },
+      "landing": {
+        "scale": 0.93871,
+        "paste_xy": [
+          306,
+          280
+        ],
+        "visible_bottom_scaled": 616
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 646,
+        "body_top_y": 290,
+        "foot_line": 896,
+        "body_center_x": 525.5,
+        "bbox": [
+          306,
+          280,
+          745,
+          896
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 8
+      },
+      "source_frame": ""
+    },
+    {
+      "name": "walk6",
+      "output": {
+        "path": "Enemy1051ArtSource\\05_WalkFrames\\Enemy_1051_walk6.png",
+        "sha256": "88cfb28b32bd03e0b688fb67c4846c8dbb617ce3ec7515d75d191176e0486410",
+        "bytes": 368987
+      },
+      "source": {
+        "bbox": [
+          468,
+          684,
+          934,
+          1334
+        ],
+        "head_top_y": 699,
+        "foot_y": 1334,
+        "body_h": 636,
+        "body_center_x": 716,
+        "path": "Library\\Locus\\tmp\\1051_walk_v4_keyed\\f018.png"
+      },
+      "landing": {
+        "scale": 0.93871,
+        "paste_xy": [
+          306,
+          280
+        ],
+        "visible_bottom_scaled": 610
+      },
+      "result": {
+        "canvas": [
+          1108,
+          1108
+        ],
+        "body_h": 636,
+        "body_top_y": 294,
+        "foot_line": 890,
+        "body_center_x": 524.5,
+        "bbox": [
+          306,
+          280,
+          743,
+          890
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 3
+      },
+      "source_frame": ""
+    }
+  ],
+  "anim_timing_30fps": {
+    "walk1": 0.0,
+    "walk2": 0.1,
+    "walk3": 0.2,
+    "walk4": 0.3,
+    "walk5": 0.4,
+    "walk6": 0.5
+  },
+  "cycle_s": 0.6,
+  "pivot": {
+    "value": [
+      0.5,
+      0.5
+    ],
+    "ppu": 16
+  },
+  "selection_note": "取自**闪回之前**的干净对侧交替段（f04–f18）：f005 右脚落地 → f008 左脚抬起 → f010 并腿 → f013 左脚落地 → f015 并腿 → f018 右脚落地；walk6 与 walk1 同相位，接缝顺",
+  "source_video": "01_SourceVideos/1051_walk_v4_4s.mp4",
+  "source_task": "task_f102f9e5c70a4432a52256b97ba75c9a",
+  "source_defect": "该成片 t≈1.0s（f24 附近）有一次闪回（步态倒退/重放），且 f28 之后退化为同一条腿反复抬起；选帧必须避开"
+}

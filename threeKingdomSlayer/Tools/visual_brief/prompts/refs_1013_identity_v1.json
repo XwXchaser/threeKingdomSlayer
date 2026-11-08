@@ -1,0 +1,14 @@
+{
+  "title": "1013 旗手 · 身份图 v1（双参考图融合）",
+  "base_note": "参考图 1 = 1011 已入库 Idle（比例 / 体量基准）；参考图 2 = 1012 已入库 v11 刀兵（汉末军人题材参考）。两张都不是待复制的成品。",
+  "references": [
+    {
+      "path": "Enemy1013ArtSource/02_IdentityImages/base_1011_idle1.png",
+      "role": "比例与体量参考：2.5–3 头身、大头宽肩短腿。不复制其全身重甲 / 兜鍪 / 红缨 / 剑。"
+    },
+    {
+      "path": "Enemy1013ArtSource/02_IdentityImages/base_1012_idle1.png",
+      "role": "三国题材参考：可见人脸、交领布衣、皮革肩带 / 腰带、护腕、绑腿。不复制其斗笠、红头巾、身材比例与剑。"
+    }
+  ]
+}

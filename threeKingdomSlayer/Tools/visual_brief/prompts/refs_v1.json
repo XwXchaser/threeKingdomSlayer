@@ -1,0 +1,20 @@
+{
+  "version": "v1",
+  "title": "1012 第一轮：收窄腰胯 + 刀身折角",
+  "base_image": "C:/Users/steam/Pictures/gptGen/enemy1012_bandit_face_v3/stageA6b_fullbody_v1.png",
+  "base_note": "image 1 = A6b 原图（第一轮的起点）",
+  "references": [
+    {
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1012_bandit_face_v3/stageA6b_fullbody_v1.png",
+      "role": "image 1 = 唯一权威：脸、兜鍪、胡须、服装、配色、材质、画风、持刀姿态、画布占位"
+    },
+    {
+      "path": "_art_process/VisualLibrary/bundles/1012_proportion_fix/images/09_baseline_skeleton.png",
+      "role": "image 2 = 基准比例骨架（头部已遮蔽）：只给身体比例与剪影、腰线 47.8%；禁止引用其脸/盔/服装"
+    },
+    {
+      "path": "_art_process/VisualLibrary/bundles/1012_proportion_fix/images/06_sword_detail_compare.png",
+      "role": "image 3 = 刀身对照：只给刀身形态；禁止引用其脸"
+    }
+  ]
+}

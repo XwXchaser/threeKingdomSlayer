@@ -1,0 +1,5 @@
+"variant","source_path","bytes","sha256","note"
+"lineup_crop_reference","Enemy1051ArtSource/02_IdentityImages/1051_lineup_crop_reference_rgba.png","255932","c5528d1909d7f3be0c9bf680ac3f52b5f06092ca41680c926f37b09f5a89e49d","**形象来源**：四兵种并排比例研究图（enemy_proportion_lineup_v1.png，最右一位）里的 1051 弓手独立裁切，334×479 RGBA。人物本体高 468px，与同图 1011 的 472px 之比 0.992（体型同族）。"
+"cast_anchor","Enemy1051ArtSource/02_IdentityImages/1051_cast_anchor_green_1080x1080.png","246398","0e4bf9e47f621ab0a16926dc831742067cf1595e4696a34323813524ac11ca46","**视频首尾帧锚图**（1080² / 绿 RGB(0,159,62) / std=0 / 人物本体高 470 / 脚底 1000 / 身体居中 540）—— seedance frames 工作流的输入。"
+"idle_identity","Enemy1051ArtSource/02_IdentityImages/1051_idle_identity_greenscreen_1024.png","470600","f40bd12e53b3ac77810fee2412d0b4b47f2f7ddb7b63eb66c5eca28cee006ca4","**idle 形象**（1024² / 绿幕 / 人物本体高 696 / 脚底 895 / 身体中心 474.5）—— idle 源片的生成参考图。"
+"pose_nock2","Enemy1051ArtSource/02_IdentityImages/1051_pose_nock2_greenscreen_1024.png","354383","cf87ba11a3a40ac0864f806efdb1cd66ae2f8aca5d4fcca8af9ac38e9d822265","**拉弓开始·搭箭姿势绿幕图 v2**（手捏箭尾、箭抵弓弦与弓身）—— 03_AttackFrames/Enemy_1051_attack4.png 的来源，替掉了原 f045（用户指正：原帧右手握在箭杆中段、白羽戳在手上方）。"

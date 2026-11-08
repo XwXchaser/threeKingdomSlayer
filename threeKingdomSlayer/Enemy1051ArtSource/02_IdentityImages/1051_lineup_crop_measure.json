@@ -1,0 +1,178 @@
+{
+  "purpose": "1051 弓手 · 并排组图裁切 + 身份图/锚图落位量测",
+  "source": {
+    "path": "C:\\Users\\steam\\Pictures\\gptGen\\enemy_proportion_lineup_v1\\enemy_proportion_lineup_v1.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "sha256": "e08eeb0eefb495b4f785886dba1ab206b5e08cdd0ea1c1eca1ab6d0a610c96fe"
+  },
+  "alpha_threshold": 128,
+  "target_index": 3,
+  "all_character_components": [
+    {
+      "px": 98931,
+      "bbox": [
+        41,
+        351,
+        410,
+        846
+      ]
+    },
+    {
+      "px": 96012,
+      "bbox": [
+        401,
+        358,
+        766,
+        847
+      ]
+    },
+    {
+      "px": 145024,
+      "bbox": [
+        812,
+        129,
+        1198,
+        846
+      ]
+    },
+    {
+      "px": 93854,
+      "bbox": [
+        1156,
+        368,
+        1489,
+        846
+      ]
+    }
+  ],
+  "crop": {
+    "path": "Enemy1051ArtSource\\02_IdentityImages\\1051_lineup_crop_reference_rgba.png",
+    "size": [
+      334,
+      479
+    ],
+    "sha256": "c5528d1909d7f3be0c9bf680ac3f52b5f06092ca41680c926f37b09f5a89e49d",
+    "bbox_global": [
+      1156,
+      368,
+      1489,
+      846
+    ]
+  },
+  "character_1051": {
+    "head_top_y_local": 11,
+    "head_top_source": "auto(cx=172, +/-60)",
+    "foot_y_local": 478,
+    "body_height": 468,
+    "body_center_x_local": 172,
+    "body_center_x_global": 1328,
+    "total_height": 479,
+    "total_width": 334,
+    "total_over_body": 1.0235,
+    "prop_above_head_px": 11
+  },
+  "identity_green": {
+    "path": "Enemy1051ArtSource\\02_IdentityImages\\1051_idle_identity_greenscreen_1024.png",
+    "sha256": "f40bd12e53b3ac77810fee2412d0b4b47f2f7ddb7b63eb66c5eca28cee006ca4",
+    "canvas": [
+      1024,
+      1024
+    ],
+    "scale": 1.48718,
+    "paste_xy": [
+      219,
+      184
+    ],
+    "body_height_px": 696,
+    "foot_y": 895,
+    "body_center_x": 474.5,
+    "subject_bbox": [
+      219,
+      184,
+      715,
+      895
+    ],
+    "head_top_y_in_canvas": 200,
+    "prop_top_y_in_canvas": 184,
+    "green_check": {
+      "median": [
+        0,
+        159,
+        62
+      ],
+      "std": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "target": [
+        0,
+        159,
+        62
+      ]
+    }
+  },
+  "cast_anchor": {
+    "path": "Enemy1051ArtSource\\02_IdentityImages\\1051_cast_anchor_green_1080x1080.png",
+    "sha256": "0e4bf9e47f621ab0a16926dc831742067cf1595e4696a34323813524ac11ca46",
+    "canvas": [
+      1080,
+      1080
+    ],
+    "scale": 1.00427,
+    "paste_xy": [
+      367,
+      520
+    ],
+    "body_height_px": 470,
+    "feet_y": 1000,
+    "body_center_x": 540.0,
+    "head_top_y_in_canvas": 531,
+    "subject_bbox": [
+      367,
+      520,
+      701,
+      1000
+    ],
+    "subject_width_pct": 31.0,
+    "prompt_pct": {
+      "body_height_pct": 43.5,
+      "head_top_pct": 49.2,
+      "feet_pct": 92.6,
+      "prop_top_pct": 48.1
+    },
+    "green_check": {
+      "median": [
+        0,
+        159,
+        62
+      ],
+      "std": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "target": [
+        0,
+        159,
+        62
+      ]
+    }
+  },
+  "game_impact": {
+    "scale_lineup_to_game": 1.29274,
+    "body_in_game_px": 605,
+    "total_in_game_px": 619,
+    "total_width_in_game_px": 432,
+    "fits_1108_canvas": true,
+    "column_spacing_px": 273,
+    "subject_spans_columns": 1.58
+  },
+  "outputs_proportion_sheet": {
+    "path": "Enemy1051ArtSource\\02_IdentityImages\\1051_vs_1013_proportion_sheet.png",
+    "sha256": "3ed4077fb6eb230949e16fffa46212992d001a15e0e3cce0c95ff5400524936e"
+  }
+}
