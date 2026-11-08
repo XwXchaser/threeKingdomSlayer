@@ -84,6 +84,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 连招蓄力拍：阶段 2 的这一记 = **派生招式（指向突刺）** → 时停该解冻了
         //   （时停中 tween 不走 → 伤害不落地 → 「打断」永远判不出来 → 这一拍卡死）
         if (_comboChargePhase == 2) _comboChargeAttackFired = true;
+
     }
 
     /// <summary>敌人受击 → 确认「攻击成功」（这一拍刚打出的招式真的打中了）。</summary>

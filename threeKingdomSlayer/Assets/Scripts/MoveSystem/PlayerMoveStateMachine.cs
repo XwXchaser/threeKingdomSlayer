@@ -99,6 +99,7 @@ public class PlayerMoveStateMachine : MonoBehaviour
     /// <summary>冻结 / 解冻招式推进（教学拍用）。</summary>
     public void SetFrozen(bool frozen) => Frozen = frozen;
 
+
     /// <summary>
     /// 当前节点的**接续窗口**对某个手势是否已经打开（教学拍用它判断「窗口开了没」）。
     /// </summary>
