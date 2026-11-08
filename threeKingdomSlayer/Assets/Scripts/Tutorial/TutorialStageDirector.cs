@@ -749,14 +749,24 @@ public partial class TutorialStageDirector : MonoBehaviour
         AttackSystem.Instance?.ClearActionLock();
         SetSceneDim(true);
         var input = InputManager.Instance;
-        if (input != null) input.allowInputWhileTimeFrozen = true;   // 冻结中仍处理玩家输入
+        if (input != null)
+        {
+            input.allowInputWhileTimeFrozen = true;   // 冻结中仍处理玩家输入
+            // 冻结中**按住时长改走 unscaled 时钟** → 玩家在冻结里照样能蓄满
+            //   （否则缩放时间停住 → 蓄力条不涨 → 松手出不来派生招式 → 这一拍死等）。
+            input.useUnscaledHoldTime = true;
+        }
     }
 
     /// <summary>解除教学冻结（与 <see cref="FreezeWorldForTutorial"/> 成对使用）。</summary>
     private void UnfreezeWorldForTutorial()
     {
         var input = InputManager.Instance;
-        if (input != null) input.allowInputWhileTimeFrozen = false;
+        if (input != null)
+        {
+            input.allowInputWhileTimeFrozen = false;
+            input.useUnscaledHoldTime = false;   // 恢复正常战斗的按住计时口径
+        }
         _frozenByTutorial = false;
         Time.timeScale = 1f;
     }

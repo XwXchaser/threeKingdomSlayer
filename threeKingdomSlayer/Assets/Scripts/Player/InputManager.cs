@@ -66,7 +66,11 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
             if (!isLongPress || hasTriggeredDuringHold) return 0;   // 本次按住已经出过招 → 必须先抬手重按
             if (chargeLevelTimes == null || chargeLevelTimes.Length == 0)
                 return isCharged ? 1 : 0;
-            float held = Time.time - segmentStartTime;
+            // ⚠️ **必须和 SegmentDuration 用同一把时钟**（2026-11-08）：
+            //   教学时停（timeScale=0）时玩家照样要能「按住蓄满」→ 派生招式才出得来。
+            //   原来这里写死 `Time.time - segmentStartTime`（缩放时间）→ 冻结期间蓄力永远是 0
+            //   → 松手只打得出 0 级蓄力 → 指向突刺出不来 → 这一拍死等。
+            float held = SegmentDuration;
             int level = 0;
             for (int i = 0; i < chargeLevelTimes.Length; i++)
             {
@@ -124,7 +128,12 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
     /// QTE 输入优先级高于连招，QTE 期间不视为连招输入。
     /// </summary>
     public bool IsPointerDown => isTouching && gameplayInputEnabled && skillInputEnabled
-        && blockInputFrames <= 0 && Time.timeScale > 0f && !IsAnyQTEActive();
+        // ⚠️ 教学时停（allowInputWhileTimeFrozen）时**也要算「按着」**（2026-11-08）：
+        //   `PlayerMoveStateMachine.UpdatePointerHold` 靠 IsPointerDown 判断「玩家正按住」
+        //   → 时停时它恒为 false → 连段蓄力标记（comboChargeActive）永远置不上
+        //   → 蓄力等级恒为 0 → 松手出不来派生招式 → 这一拍死等。
+        //   口径与下面 Update() 的早退分支一致（时停且放行输入时照常处理输入 ✓）。
+        && blockInputFrames <= 0 && (Time.timeScale > 0f || allowInputWhileTimeFrozen) && !IsAnyQTEActive();
 
     /// <summary>按住时长（秒）：连段蓄力用它驱动「拉回蓄势位」的进度</summary>
     public float HoldDurationSeconds => isTouching ? Mathf.Max(0f, SegmentDuration) : 0f;

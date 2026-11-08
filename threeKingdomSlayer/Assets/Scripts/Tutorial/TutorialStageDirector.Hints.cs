@@ -515,20 +515,22 @@ public partial class TutorialStageDirector : MonoBehaviour
                 //   台词系统结束时会把 timeScale 顶回 1 → 不压住的话敌人就提前继续挥了。
                 if (frozen && Time.timeScale != 0f) Time.timeScale = 0f;
 
-                // ★ **等「敌人抬手到顶」且「玩家蓄力已满」→ 才时停**（口径同霸体防御拍/技能打断拍：
+                // ★ **等「敌人抬手到顶」→ 时停**（口径同霸体防御拍/技能打断拍：
                 //   「武器已经举到位、刀还没落」＝ 攻击剩余时长 <= 1.5s）
                 //
-                //   ⚠️ **为什么必须「蓄满在前、时停在后」**：
-                //     时停 = Time.timeScale = 0 → 蓄力时长（Time.time - segmentStartTime）**不再涨** →
-                //     冻结时还没蓄满的话，玩家松手只能打出 0 级蓄力 → 派生招式出不来 → 这一拍死等。
-                //     所以先把蓄力条蓄满（世界照常走），等敌人抬手了再时停 → 玩家松手就能出派生招式。
+                //   ⚠️ **判据里不能带「玩家有没有蓄满」**（2026-11-08 用户反馈：
+                //   「我都不用按，你怎么解释敌人抬手后没有暂停？」）：
+                //     霸体/技能拍都是**敌人一抬手就暂停**，跟玩家在做什么无关；
+                //     之前这里加了 `CurrentChargeLevel >= 1` → 玩家不按住就永远不冻结
+                //     → 敌人抡招照旧砸下来 → 这一拍既没教到、玩家还挨打。
+                //   ⇒ 冻结**无条件**触发；玩家在冻结里按住蓄满即可
+                //     （冻结期间按住时长走 unscaled 时钟 → 蓄力照样能攒满 ✓）。
                 //
                 //   ⚠️ 2026-11-08 实测修：**必须落在「可打断的前摇」里** ——
                 //     • `IsInAttackWindup` = 前摇中（不是收招段；收招段 isAttackDrawPhase=true → 一律打不断）
                 //     • `!IsInStrikeWindow()` = 还没进出伤窗口（进了就来不及了）
                 //   不加这两个判据时，冻结会落在出伤那一瞬 → 玩家松手打中了也「没打断」→ 这一拍永远过不去。
-                bool chargeReady = input != null && input.CurrentChargeLevel >= 1;
-                if (!frozen && !freezeDone && chargeReady && target != null && target.state != EnemyState.Dead)
+                if (!frozen && !freezeDone && target != null && target.state != EnemyState.Dead)
                 {
                     bool attacking = target.isAttackAnimating;
                     float toAttackEnd = attacking ? target.TimeToAttackEnd() : -1f;
