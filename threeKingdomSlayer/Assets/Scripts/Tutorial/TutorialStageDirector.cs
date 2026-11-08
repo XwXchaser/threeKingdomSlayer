@@ -65,10 +65,8 @@ public partial class TutorialStageDirector : MonoBehaviour
     //   → 玩家松手派生招式打中了却「没打断」→ 这一拍永远过不去。
     //   1.5s = 「武器已经举到位、刀还没落」＝霸体防御拍与技能打断拍用的同一个口径。
     public float comboWindupFreezeSeconds = 1.5f;
-    [Tooltip("**指向突刺教学**：冻结后等玩家操作的保险上限（秒，unscaled）—— 不能永久冻结把整局卡死")]
-    public float comboBeatTimeoutSeconds = 20f;
-    [Tooltip("**指向突刺教学**：阶段 2（蓄力+松手）多少秒内没打断 → 回阶段 1 重来（防卡死）")]
-    public float comboChargeTimeoutSeconds = 8f;
+    // ⚠️ 2026-11-08：**指向突刺教学不再有「到点自动结束」的超时**（用户口径：「严禁任何兜底提前结束的方案」）：
+    //   玩家没蓄满 / 没朝目标打出去 → 这一拍一直等 → 直到玩家真的打出并打断为止。
     [Tooltip("战斗 HUD 根上的 CanvasGroup（引导期整块失能：道具栏 / 技能槽 / 防御键 / 头像都不可点）")]
     public CanvasGroup hudCanvasGroup;
     // ⚠️ 这里**没有**“超时自动跳过”的开关：需求明确「不存在任何计时器直接跳过」。

@@ -14965,11 +14965,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b95dce47b8d9624a82eb1cc82dbd3a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  freezeTimeoutSeconds: 20
-  skillBeatTimeoutSeconds: 30
   skillSlotWaitSeconds: 60
-  skillChoiceWaitSeconds: 90
-  skillResultWaitSeconds: 3
   skillPromptToEndSeconds: 1.5
   defendPromptToEndSeconds: 1.5
   n1Battle: {fileID: 11400000, guid: 7830540a0bfc4d14994a832e90cc9975, type: 2}
@@ -14990,8 +14986,6 @@ MonoBehaviour:
   introMaskHost: {fileID: 926787061}
   levelOrbGuide: {fileID: 1601026400}
   comboWindupFreezeSeconds: 1.5
-  comboBeatTimeoutSeconds: 20
-  comboChargeTimeoutSeconds: 8
   hudCanvasGroup: {fileID: 2027225540}
   choiceDialogue: {fileID: 11400000, guid: 5a23cc1452775bf4d8ea60aaabc3b339, type: 2}
   tutorialIceSkill: {fileID: 0}

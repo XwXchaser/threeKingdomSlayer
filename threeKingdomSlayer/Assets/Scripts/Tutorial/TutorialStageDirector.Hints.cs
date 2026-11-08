@@ -394,7 +394,6 @@ public partial class TutorialStageDirector : MonoBehaviour
 
         bool frozen = false;
         float frozenAt = 0f;      // 时停开始的时刻（unscaled）
-        float phase2Time = 0f;
 
         while (_beatActive)
         {
@@ -499,7 +498,6 @@ public partial class TutorialStageDirector : MonoBehaviour
 
             demoTimer = 0f;
             PlayGestureAt(GestureHintKind.Hold, from, to);
-            phase2Time = 0f;
             _comboChargeAttackFired = false;
             // 上一轮冻结时记下的「目标确实在抡招」也要清掉 → 否则下一轮没冻结也会被判成「在抡招」
             //   → 判据放宽，玩家随便打中一下就算过（2026-11-08 实测加的）。
@@ -563,26 +561,27 @@ public partial class TutorialStageDirector : MonoBehaviour
                 {
                     UnfreezeWorldForTutorial();
                     frozen = false;
-                    Debug.Log("[Tutorial] 连招蓄力拍：派生招式已打出 → 解冻，等伤害落地打断他");
+                    // ★ **这一下照常放出去**（不拦玩家的操作 ✓）→ 打没打中目标，事后判定：
+                    //   打中了 → 伤害落地 → 打断成立 → 收拍（见 OnBeatEnemyDamaged）；
+                    //   没打中 → **这一拍不结束**（严禁任何兜底提前结束 ✓）→ 提示玩家把这一段连招重打一遍。
+                    int targetCol = target != null ? target.columnIndex : -1;
+                    bool hitTarget = target != null && _beatLastAttackColumn == targetCol;
+                    Debug.Log("[Tutorial] 连招蓄力拍：派生招式已打出 → 解冻，等伤害落地打断他（列="
+                        + _beatLastAttackColumn + " 目标列=" + targetCol + "）");
+                    if (!hitTarget)
+                    {
+                        // 没朝目标打出去 → 提示玩家**重打一遍这个连段**（C1→C2），不结束这一拍。
+                        Debug.Log("[Tutorial] 连招蓄力拍：这一下没朝目标打出去 → 提示玩家把这一段连招重打一遍");
+                        if (step.comboPhase3Dialogue != null)
+                            DialogueManager.Instance?.QueueEventAndNotify(step.comboPhase3Dialogue, forceReplay: true);
+                        // 连段被这一记消费了（Jab1→StabR2 的边没了）→ 状态机打回中立，
+                        //   玩家下一记点按才能从 Jab1 起 → 才能再蓄满、再朝敌人松手。
+                        if (machine != null) { machine.SetFrozen(false); machine.NotifyExternalReset(); }
+                        _comboChargePhase = 1;
+                        break;
+                    }
                 }
 
-                // ★ **超时兜底**：这一轮没能打断目标 → 解冻 → 回阶段 1 重来
-                //   （**不能靠「状态机空闲」判空挥**：阶段 2 里状态机是冻着的 → 那个条件永远不成立 → 会卡死）
-                if (phase2Time > comboChargeTimeoutSeconds)
-                {
-                    Debug.Log("[Tutorial] 连招蓄力拍：这一轮没能打断目标的霸体招 → 解冻，回阶段 1 重来");
-                    UnfreezeWorldForTutorial();
-                    frozen = false;
-                    // ⚠️ **状态机时钟也要解冻**（2026-11-08 实测）：
-                    //   阶段 2 用 `machine.SetFrozen(true)` 把接续窗口一直撑开；
-                    //   这一轮失败后不解冻 → 窗口永不再开 + **戳击视觉门也永不过期**
-                    //   → 玩家下一记戳被自己的视觉门吞掉 → 这一拍彻底死等。
-                    if (machine != null) { machine.SetFrozen(false); machine.NotifyExternalReset(); }
-                    _comboChargePhase = 1;
-                    break;
-                }
-
-                phase2Time += Time.unscaledDeltaTime;
                 demoTimer += Time.unscaledDeltaTime;
                 if (demoTimer >= playSeconds) { demoTimer = 0f; PlayGestureAt(GestureHintKind.Hold, from, to); }
                 yield return null;

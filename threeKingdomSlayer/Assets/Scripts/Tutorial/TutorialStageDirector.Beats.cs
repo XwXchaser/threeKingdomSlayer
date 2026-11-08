@@ -17,27 +17,16 @@ using UnityEngine;
 public partial class TutorialStageDirector : MonoBehaviour
 {
     [Header("时停招架拍")]
-    [Tooltip("冻结后等玩家手势的保险上限（秒，unscaled）。\n" +
-             "正常情况下玩家很快就会上划；这个上限只为防“永远识别不到 → 永久冻结”把游戏卡死。")]
-    public float freezeTimeoutSeconds = 20f;
+    // ⚠️ 2026-11-08：**不再有「等不到就放行」的超时字段**（用户口径：「严禁任何兜底提前结束的方案」）。
+    //   教学拍一律等玩家做出动作为止；玩家自己按暂停菜单退出是唯一的脱困出口。
 
-    [Tooltip("「用技能打断霸体」这一拍的上限（秒，unscaled）：玩家一直没点技能就收拍放行，不能把这一波卡死")]
-    public float skillBeatTimeoutSeconds = 30f;
 
     [Tooltip("技能打断拍：**等 FrontItemBar 把技能图标刷进注册表**的上限（秒）。\n" +
              "（2026-11-02：旧写法等满 60 秒才跳过整拍 → 教学不发生、玩家站着挨打；\n" +
              "  现在超过这个时间就用「按槽位序号取位置」的兜底，教学照旧进行。）")]
     public float skillSlotWaitSeconds = 2f;
 
-    [Tooltip("技能打断拍：**等玩家把三选一选完**的上限（秒）。\n" +
-             "这一拍必须排在选卡之后（用户期望：「玩家点击选择3选1奖励后 → 敌人进 C 技 → 暂停 → 手势 → 点技能」）；\n" +
-             "旧顺序是拍先开、三选一弹窗后到 → 冻结画面被弹窗整个盖住 → 教学等于没发生（2026-11-02 实测：22.38s 冻结 / 22.40s 弹窗）。")]
-    public float skillChoiceWaitSeconds = 90f;
 
-    [Tooltip("技能打断拍：玩家**已经放出技能**之后，最多再等多久看这一击有没有被打断（秒）。\n" +
-             "到期就收拍 —— 教学不能把玩家卡在「只能防御和技能」的状态里\n" +
-             "（2026-11-02 用户反馈：「玩家点击技能后也无法回到正常流程攻击敌人」）。")]
-    public float skillResultWaitSeconds = 3f;
 
     [Tooltip("技能打断拍：敌人的 C 技**只剩多少秒**时才冻结并开始教学（与霸体防御拍同一口径：武器已举到位、还没落）。\n" +
              "调大 = 更早暂停（抬手没做完）；调小 = 更晚（可能刀已经落下）。")]
@@ -128,13 +117,8 @@ public partial class TutorialStageDirector : MonoBehaviour
             {
                 // 每帧压住：DialogueManager.Finish() 会把 timeScale 顶回 1
                 if (Time.timeScale != 0f) Time.timeScale = 0f;
-                // 防卡死保险：玩家一直没做出手势 → 放行并结束这一拍（不让游戏永远冻着）
-                if (Time.unscaledTime - frozenAt > freezeTimeoutSeconds)
-                {
-                    Debug.LogWarning("[Tutorial] 时停招架拍：等待手势超时，放行并结束这一拍");
-                    EndBeat();
-                    break;
-                }
+                // ⚠️ **没有超时兜底**（2026-11-08 用户口径：「严禁任何兜底提前结束的方案」）：
+                //   玩家一直没上划 → 这一拍就一直等（敌人定格、玩家安全）→ 直到玩家真的划出来为止。
             }
 
             waited += Time.unscaledDeltaTime;
@@ -451,13 +435,8 @@ public partial class TutorialStageDirector : MonoBehaviour
                     DebugLog.Info("[Tutorial] 霸体防御拍：玩家已进入防御 → 解冻，等敌人这一击打下来");
                 }
 
-                // 防卡死保险：玩家一直没按防御键 → 放行并结束这一拍
-                if (Time.unscaledTime - frozenAt > freezeTimeoutSeconds)
-                {
-                    DebugLog.Warning("[Tutorial] 霸体防御拍：等待防御超时，放行并结束这一拍");
-                    EndBeat();
-                    break;
-                }
+                // ⚠️ **没有超时兜底**（2026-11-08 用户口径：「严禁任何兜底提前结束的方案」）：
+                //   玩家一直没按防御键 → 这一拍就一直等（敌人定格、玩家安全）→ 直到玩家按住防御键为止。
             }
 
             waited += Time.unscaledDeltaTime;
@@ -504,16 +483,16 @@ public partial class TutorialStageDirector : MonoBehaviour
         //
         //    所以这里：**先等选卡完成，不开拍、不拦出招**（这一步是玩家自己的选择），
         //    选完之后再正式开拍。
+        // ⚠️ **没有超时兜底**（2026-11-08 用户口径：「严禁任何兜底提前结束的方案」）：
+        //   玩家没选技能 → 这一拍就一直等（**不开拍、不拦出招**）→ 直到玩家自己选完为止。
         float readyWaited = 0f;
-        while (ChosenSkill == null && readyWaited < skillChoiceWaitSeconds)
+        while (ChosenSkill == null)
         {
             if (_stageState != null && !_stageState.IsStageInProgress) { SkillBeatProbe("READY-WAIT stage-not-in-progress", null); _hintRoutine = null; yield break; }
             readyWaited += Time.unscaledDeltaTime;
             yield return null;
         }
         SkillBeatProbe("① 等玩家选完技能：等了 " + readyWaited.ToString("F1") + "s，选中=" + (ChosenSkill != null ? ChosenSkill.upgradeId : "(未选)"), null);
-        if (ChosenSkill == null)
-            DebugLog.Warning("[Tutorial] 技能打断拍：玩家还没选技能（等 " + skillChoiceWaitSeconds + "s 超时），继续");
         // 2) 等目标敌人站定
         var target = FindTargetEnemy();
         float waited = 0f;
@@ -554,7 +533,6 @@ public partial class TutorialStageDirector : MonoBehaviour
         bool skillUsed = false;
         bool freezeHappened = false;
         float frozenAt = 0f;
-        float skillDeadline = 0f;
         SkillBeatProbe("② 开拍（暂时禁出招，等它抡霸体招）", target);
 
         // 4) 等技能槽出现（玩家选完就有）——**不再硬失败**：
@@ -663,7 +641,6 @@ public partial class TutorialStageDirector : MonoBehaviour
             if (!skillUsed && freezeHappened && IsSkillOnCooldown(wantedId))
             {
                 skillUsed = true;
-                skillDeadline = Time.unscaledTime + skillResultWaitSeconds;
                 if (frozen)
                 {
                     // 解冻 → 技能效果结算 → 敌人的霸体攻击被打断
@@ -778,15 +755,8 @@ public partial class TutorialStageDirector : MonoBehaviour
                     }
                 }
 
-                if (Time.unscaledTime - frozenAt > skillBeatTimeoutSeconds)
-                {
-                    DebugLog.Warning("[Tutorial] 技能打断拍：等待超时，放行");
-                    UnfreezeWorldForTutorial();
-                    frozen = false;
-                    GameplayInputGate.AllowSkillActivationWhileFrozen = false;
-                    EndBeat();
-                    break;
-                }
+                // ⚠️ **没有超时兜底**（2026-11-08 用户口径：「严禁任何兜底提前结束的方案」）：
+                //   玩家一直没放技能 → 这一拍就一直等（敌人定格）→ 直到玩家真的打出技能为止。
             }
 
             // 成功判据：**玩家确实放了技能** 且 敌人的这一击被压住 ——
@@ -797,16 +767,16 @@ public partial class TutorialStageDirector : MonoBehaviour
             //      触发（ApplyHitStop → PushSuspend(HitStop)）→ 拍瞬间判定成功收拍
             //      → 玩家根本没机会点技能按钮 → 这一段教学等于没有
             //      （2026-11-02 实测日志：打断=False 挂起=True → 收拍）。
-            //   ② 技能放出去之后最多再等 skillResultWaitSeconds；
-            //      **没打断也要收拍** —— 教学不能把玩家卡在「只能防御和技能」的状态里
-            //      （2026-11-02 用户反馈：「玩家点击技能后也无法回到正常流程攻击敌人」）。
+            //   ② 技能放出去但**没打断** → 这一拍继续等（等玩家再放一次技能），
+            //      **不自动收拍**（2026-11-08 用户口径：「严禁任何兜底提前结束的方案」）。
             bool skillLanded = skillUsed && (target.attackInterrupted || target.IsSuspended);
-            bool skillTimeout = skillUsed && Time.unscaledTime > skillDeadline;
-            if (skillLanded || skillTimeout)
+            // ⚠️ **没有「没打断也收拍」的兜底**（2026-11-08 用户口径）：
+            //   技能放出去但没打断 → 这一拍继续等（等玩家再放一次技能）→ **不自动结束**。
+            if (skillLanded)
             {
                 DebugLog.Info("[Tutorial] 技能打断拍：收拍（打断=" + target.attackInterrupted
                     + " 挂起=" + target.IsSuspended + " 卡肉=" + target.IsHitStopped
-                    + " 已放技能=" + skillUsed + (skillTimeout ? " 未打断=超时收拍" : "") + "）");
+                    + " 已放技能=" + skillUsed + "）");
                 _beatCompleted = skillLanded;
                 if (frozen) { UnfreezeWorldForTutorial(); frozen = false; }
                 if (beatStarted && _beatActive) EndBeat();
