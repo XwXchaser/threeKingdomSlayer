@@ -471,17 +471,49 @@ public partial class TutorialStageDirector : MonoBehaviour
             if (atkSystem != null) atkSystem.BeginComboChargeHold();
             if (step.comboPhase2Dialogue != null)
                 DialogueManager.Instance?.QueueEventAndNotify(step.comboPhase2Dialogue, forceReplay: true);
+            // ★ 「瞄准」台词也放在**蓄力之前**播（2026-11-08 实测）：
+            //   如果放在时停那一刻弹 → 玩家要点「继续」才能关掉台词 → **那一下点击就是松手**
+            //   → 派生招式在「继续按钮」的位置释放 → 没打在敌人身上 → 瞄准教学反而把玩家带偏。
+            //   放在蓄力前：台词读完 → 玩家按住敌人 → 时停 → 玩家在敌人身上松手 ✓
+            if (step.comboPhase3Dialogue != null)
+                DialogueManager.Instance?.QueueEventAndNotify(step.comboPhase3Dialogue, forceReplay: true);
+
+            // ⚠️ **必须等这段台词播完，才让玩家开始蓄力**（2026-11-08 实测日志）：
+            //   教学台词会**暂停整个游戏**（DialogueManager._pausedForDialogue → timeScale=0），而
+            //   ① 蓄力时长走的是**缩放时间**（Time.time - segmentStartTime）→ 暂停期间按住也不涨；
+            //   ② `InputManager.Update` 在 `timeScale == 0` 时会**直接把这次按住取消掉**
+            //      （isTouching / isLongPress / hasTriggeredDuringHold 全清）
+            //   → 玩家在台词还没关掉时按住 → 松手只有 0 级蓄力 → 打出来的是普通戳、不是指向突刺
+            //   → 这一拍永远过不去（实测日志：「连段松手：提交 Hold(蓄力0)」）。
+            if (step.comboPhase2Dialogue != null || step.comboPhase3Dialogue != null)
+            {
+                var dlg = DialogueManager.Instance;
+                float dlgWait = 0f;
+                while (dlg != null && (dlg.IsPlaying || dlg.IsBusy) && dlgWait < 8f)
+                {
+                    dlgWait += Time.unscaledDeltaTime;
+                    yield return null;
+                }
+                Debug.Log("[Tutorial] 连招蓄力拍：阶段 2 台词结束 → 放行给玩家蓄力");
+            }
 
             demoTimer = 0f;
             PlayGestureAt(GestureHintKind.Hold, from, to);
             phase2Time = 0f;
             _comboChargeAttackFired = false;
+            // 上一轮冻结时记下的「目标确实在抡招」也要清掉 → 否则下一轮没冻结也会被判成「在抡招」
+            //   → 判据放宽，玩家随便打中一下就算过（2026-11-08 实测加的）。
+            _comboTargetWasAttacking = false;
             bool freezeDone = false;
 
             while (_beatActive && _comboChargePhase == 2)
             {
                 // **每帧重新声明蓄力保持** → 枪一直举着（玩家中途松手也没蓄满也还举着 → 可以再蓄一次）
                 if (atkSystem != null) atkSystem.BeginComboChargeHold();
+
+                // 时停期间**每帧压住 timeScale**（同霸体防御拍 / 技能打断拍）：
+                //   台词系统结束时会把 timeScale 顶回 1 → 不压住的话敌人就提前继续挥了。
+                if (frozen && Time.timeScale != 0f) Time.timeScale = 0f;
 
                 // ★ **等「敌人抬手到顶」且「玩家蓄力已满」→ 才时停**（口径同霸体防御拍/技能打断拍：
                 //   「武器已经举到位、刀还没落」＝ 攻击剩余时长 <= 1.5s）
@@ -509,14 +541,6 @@ public partial class TutorialStageDirector : MonoBehaviour
                         frozenAt = Time.unscaledTime;
                         FreezeWorldForTutorial();
                         _comboTargetWasAttacking = true;
-                        // 「瞄准」台词：手指按在敌人身上别松 → 松手就是指向突刺
-                        // （时停中 DialogueManager 会把队列里的台词当「被别的 UI 挡住」拦下来 →
-                        //   必须临时开 AllowDialogueWhilePaused，同技能打断拍的做法）
-                        if (step.comboPhase3Dialogue != null)
-                        {
-                            DialogueManager.AllowDialogueWhilePaused = true;
-                            DialogueManager.Instance?.QueueEventAndNotify(step.comboPhase3Dialogue, forceReplay: true);
-                        }
                         Debug.Log("[Tutorial] 连招蓄力拍：敌人抬起到顶（剩余 " + toAttackEnd.ToString("F2")
                             + "s）→ 整局时停（把手指按在目标身上松手 → 派生招式）");
                     }
