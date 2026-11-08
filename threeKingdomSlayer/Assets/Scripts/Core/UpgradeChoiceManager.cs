@@ -94,9 +94,13 @@ public class UpgradeChoiceManager : MonoBehaviour
 
     /// <summary>
     /// 当前**待选取**的三选一数量（升级三选一 + Boss 锦囊三选一）。
-    /// HUD 的等级球徽标用它显示「还有几个三选一等着选」。
+    ///
+    /// ⚠️ **包含已经在弹的那一个**（2026-11-07 用户反馈：「等级球实际显示的是能获得的 3 选 1 数量 - 1」）：
+    ///   弹出时 <see cref="ShowNextChoice"/> 会把计数**先减掉**（那一项已经被取出来放进弹窗了），
+    ///   所以只看队列计数会**少 1** → 这里把「正在弹的那一个」也算回去。
+    /// HUD 的等级球数字用它。
     /// </summary>
-    public int PendingChoiceCount => _pendingLevelUps + _pendingItemChoices;
+    public int PendingChoiceCount => _pendingLevelUps + _pendingItemChoices + (_isChoosing ? 1 : 0);
 
     /// <summary>抽池器（调试 / 工具用；注册条件源也走它）。惰性创建：Awake 之前也能用。</summary>
     public UpgradePoolSampler PoolSampler

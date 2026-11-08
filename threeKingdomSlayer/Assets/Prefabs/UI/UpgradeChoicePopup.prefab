@@ -475,6 +475,7 @@ MonoBehaviour:
   button: {fileID: 462401007819868575}
   selectedGlowImage: {fileID: 3088621751261190047}
   selectedLift: 16
+  holdConfirmSeconds: 0.35
 --- !u!1 &2116189581331254460
 GameObject:
   m_ObjectHideFlags: 0
@@ -781,6 +782,7 @@ MonoBehaviour:
   button: {fileID: 6083057298900111543}
   selectedGlowImage: {fileID: 2938179066382517464}
   selectedLift: 16
+  holdConfirmSeconds: 0.35
 --- !u!1 &2780443630500419838
 GameObject:
   m_ObjectHideFlags: 0
@@ -2496,6 +2498,7 @@ MonoBehaviour:
   button: {fileID: 3677422745955133732}
   selectedGlowImage: {fileID: 385396047823477777}
   selectedLift: 16
+  holdConfirmSeconds: 0.35
 --- !u!1 &5156545123122153463
 GameObject:
   m_ObjectHideFlags: 0
@@ -3368,9 +3371,15 @@ MonoBehaviour:
   card1: {fileID: 1423984117899856023}
   card2: {fileID: 3397497752380820606}
   card3: {fileID: 6657848741605593460}
+  discardOuterFrame: {fileID: 0}
+  discardCardBackground: {fileID: 0}
+  newItemCardBackground: {fileID: 0}
   canvasGroup: {fileID: 7777246056681051982}
-  fadeInDuration: 0.2
+  fadeInDuration: 0.28
   fadeOutDuration: 0.15
+  popStartScale: 0.6
+  popDuration: 0.4
+  popRise: 60
 --- !u!114 &2356754868269687712
 MonoBehaviour:
   m_ObjectHideFlags: 0

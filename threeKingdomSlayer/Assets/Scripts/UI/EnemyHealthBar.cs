@@ -278,47 +278,45 @@ public class EnemyHealthBar : MonoBehaviour, IEnemyHealthBarView
             }
         }
 
-        // 位置：**单位的左上方**
-        //   ⚠️ 锚点要用**实际画出来的那块美术**，不能用 sprite.bounds：
-        //     打包图集里的多帧精灵，bounds 含**整块图位**（实测 1012：图位 1108×1108px，
-        //     实际画出来只有 530×609px，而且贴在图位的左下角）→ 用 bounds 会把标记甩到美术外面几十个世界单位。
+        // 位置：**单位的正上方居中**（2026-11-07 用户定：「保持高度然后居中」）
+        //   → X 用美术的**水平中心**（不是左边缘），Y 保持美术顶边往上一点。
         float iconWorld = barWidth * atkBuffIconSizeRatio;
         Vector3 pos;
         var sr = enemy != null ? enemy.GetComponent<SpriteRenderer>() : null;
-        if (sr != null && sr.sprite != null && TryGetArtTopLeft(sr, out Vector3 artLeft, out Vector3 artTop))
+        if (sr != null && sr.sprite != null && TryGetArtAnchor(sr, out Vector3 artCenter, out Vector3 artTop))
         {
-            pos = new Vector3(artLeft.x + iconWorld * 0.5f + atkBuffIconGap, artTop.y + atkBuffIconLift, artLeft.z);
+            pos = new Vector3(artCenter.x, artTop.y + atkBuffIconLift, artCenter.z);
         }
         else
         {
-            pos = GetHeadWorldPosition() + new Vector3(-barWidth * 0.5f, 0f, 0f);
+            pos = GetHeadWorldPosition();
         }
         _atkBuffMarkerRoot.transform.position = pos;
     }
 
     /// <summary>
-    /// 精灵**实际画出来的那块**的左上角（世界坐标）。
+    /// 精灵**实际画出来那块**的水平中心与顶边（世界坐标）。
     ///
     /// ⚠️ 不能用 <c>sprite.bounds</c>：打包图集里的多帧精灵，bounds 是**整块图位**
     /// （1012 实测：图位 1108×1108px = 69.25 世界单位，实际画面只有 530×609px 且贴在图位左下角）。
     /// → 用 bounds 当锚点，标记会飘到美术外面几十个世界单位（2026-11-07 用户反馈「位置很离谱」）。
     /// </summary>
-    private static bool TryGetArtTopLeft(SpriteRenderer sr, out Vector3 left, out Vector3 top)
+    private static bool TryGetArtAnchor(SpriteRenderer sr, out Vector3 center, out Vector3 top)
     {
-        left = top = Vector3.zero;
+        center = top = Vector3.zero;
         var sprite = sr.sprite;
         if (sprite == null) return false;
 
         Rect tr = sprite.textureRect;                       // 真正被画出来的区域（在图集里的位置）
         float ppu = Mathf.Max(0.0001f, sprite.pixelsPerUnit);
         Vector2 pivot = sprite.pivot;                       // 枢轴（在图位像素空间）
-        float artLeftLocal = (tr.x - pivot.x) / ppu;
+        float artCenterLocal = (tr.x + tr.width * 0.5f - pivot.x) / ppu;
         float artTopLocal = (tr.y + tr.height - pivot.y) / ppu;
 
         Transform owner = sr.transform;
         Vector3 p = owner.position;
         Vector3 s = owner.lossyScale;
-        left = new Vector3(p.x + artLeftLocal * s.x, p.y, p.z);
+        center = new Vector3(p.x + artCenterLocal * s.x, p.y, p.z);
         top = new Vector3(p.x, p.y + artTopLocal * s.y, p.z);
         return true;
     }

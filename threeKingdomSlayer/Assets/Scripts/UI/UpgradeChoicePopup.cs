@@ -25,19 +25,19 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView
 
     [Header("动画")]
     public CanvasGroup canvasGroup;
-    public float fadeInDuration = 0.2f;
+    public float fadeInDuration = 0.28f;
     public float fadeOutDuration = 0.15f;
     [Tooltip("弹出时的起始缩放（1 = 不缩放）")]
-    public float popStartScale = 0.8f;
+    public float popStartScale = 0.6f;
     [Tooltip("弹出动画时长（秒；不受 timeScale 影响 —— 弹窗期间游戏是暂停的）")]
-    public float popDuration = 0.3f;
+    public float popDuration = 0.4f;
     [Tooltip("弹出时的上浮距离（画布单位）")]
-    public float popRise = 48f;
+    public float popRise = 60f;
 
     private UpgradeCard[] _cards;
     private Tween _fadeTween;
-    private Tween _scaleTween;
-    private Tween _moveTween;
+    private readonly List<Tween> _scaleTweens = new List<Tween>();
+    private readonly List<Tween> _moveTweens = new List<Tween>();
     /// <summary>弹窗根的原始缩放（弹出动画结束要回到它）。</summary>
     private Vector3 _baseScale = Vector3.one;
 
@@ -48,16 +48,37 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView
         if (rt != null) _baseScale = rt.localScale;
     }
 
+    /// <summary>
+    /// 弹窗的**视觉子物体**（框体 + 内容）：缩放动画作用在它们身上。
+    /// </summary>
+    private List<RectTransform> GetVisualRoots()
+    {
+        var result = new List<RectTransform>();
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            var c = transform.GetChild(i) as RectTransform;
+            if (c != null) result.Add(c);
+        }
+        return result;
+    }
+
     private void OnDestroy()
     {
         if (_fadeTween != null && _fadeTween.IsActive())
             _fadeTween.Kill(false);
-        if (_scaleTween != null && _scaleTween.IsActive())
-            _scaleTween.Kill(false);
-        if (_moveTween != null && _moveTween.IsActive())
-            _moveTween.Kill(false);
+        KillTweens(_scaleTweens);
+        KillTweens(_moveTweens);
         if (canvasGroup != null)
             canvasGroup.DOKill(false);
+    }
+
+    private static void KillTweens(List<Tween> list)
+    {
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i] != null && list[i].IsActive()) list[i].Kill(false);
+        }
+        list.Clear();
     }
 
     public void ShowChoices(List<UpgradeDefinition> choices)
@@ -142,21 +163,35 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView
         canvasGroup.blocksRaycasts = true;
         canvasGroup.alpha = 0f;
 
-        // ★ **弹出窗口的动态效果**（2026-11-07 用户定）：缩放回弹 + 上浮。
+        // ★ **弹出窗口的动态效果**（2026-11-07 用户定：「框体**变大打开**」，
+        //   不要「等比立刻显示」）→ 从 0.6 倍**长大**到 1 倍，配一段淡入，整体比之前长一截。
+        //   ⚠️ **不能缩放根节点**：弹窗根上挂着 Canvas + CanvasScaler → CanvasScaler 每帧改写根的
+        //   localScale → 根上的缩放补间会被**立刻覆盖** → 看起来就是「等比立刻显示」（2026-11-07 实测）。
+        //   → 改成缩放根下面的**视觉子物体**（框体 + 内容），它们不受 CanvasScaler 影响。
         //   ⚠️ 必须 `SetUpdate(true)`：弹窗期间游戏是暂停的（timeScale=0）→ 用缩放时间才动得了。
-        var rt = transform as RectTransform;
-        if (rt != null)
+        KillTweens(_scaleTweens);
+        KillTweens(_moveTweens);
+
+        var visuals = GetVisualRoots();
+        var baseScales = new List<Vector3>();
+        for (int i = 0; i < visuals.Count; i++)
         {
-            _scaleTween?.Kill(false);
-            _moveTween?.Kill(false);
-            Vector3 baseScale = _baseScale == Vector3.zero ? Vector3.one : _baseScale;
-            Vector2 basePos = rt.anchoredPosition;
-            rt.localScale = baseScale * popStartScale;
-            rt.anchoredPosition = basePos - new Vector2(0f, popRise);
-            _scaleTween = rt.DOScale(baseScale, popDuration).SetUpdate(true).SetEase(Ease.OutBack);
+            var v = visuals[i];
+            if (v == null) continue;
+            baseScales.Add(v.localScale);
+            v.localScale = v.localScale * popStartScale;
+            v.anchoredPosition = v.anchoredPosition - new Vector2(0f, popRise);
+        }
+        for (int i = 0; i < visuals.Count; i++)
+        {
+            var v = visuals[i];
+            if (v == null) continue;
+            Vector3 targetScale = baseScales[i];
+            Vector2 targetPos = v.anchoredPosition + new Vector2(0f, popRise);
+            _scaleTweens.Add(v.DOScale(targetScale, popDuration).SetUpdate(true).SetEase(Ease.OutCubic));
             // anchoredPosition 没有现成的扩展（UI 模块未引入）→ 用 DOTween.To 自己做插值
-            _moveTween = DOTween.To(() => rt.anchoredPosition, v => rt.anchoredPosition = v, basePos, popDuration)
-                .SetUpdate(true).SetEase(Ease.OutCubic);
+            _moveTweens.Add(DOTween.To(() => v.anchoredPosition, p => v.anchoredPosition = p, targetPos, popDuration)
+                .SetUpdate(true).SetEase(Ease.OutCubic));
         }
 
         _fadeTween = canvasGroup.DOFade(1f, fadeInDuration).SetUpdate(true);
