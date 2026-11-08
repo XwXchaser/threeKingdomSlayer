@@ -207,6 +207,25 @@ public partial class TutorialStageDirector : MonoBehaviour
     }
 
     /// <summary>
+    /// **按住除指定目标以外的所有敌人**（连招蓄力拍用）。
+    ///
+    /// 需求（2026-11-08 用户原话）：「后面的敌人还在正常出招/运动」「玩家在等待抬手时照样挨打」
+    /// → 这一拍必须把**其它**敌人按住，玩家才不会被无关的攻击打断。
+    /// 但**目标不能按住** —— 它得能抡起霸体招，玩家才有东西可以打断 ✓。
+    /// </summary>
+    private static void SetEnemiesHoldExcept(Enemy keep)
+    {
+        if (EnemyManager.Instance == null) return;
+        var alive = EnemyManager.Instance.GetAllAliveEnemies();
+        for (int i = 0; i < alive.Count; i++)
+        {
+            var e = alive[i];
+            if (e == null) continue;
+            e.tutorialHold = (e != keep);
+        }
+    }
+
+    /// <summary>
     /// 只压暗**背景**（路线场景的景物 + 天空盒），**不动角色与敌人**。
     ///
     /// ⚠️ 教学关可能**没有路线场景**（背景只剩天空盒）→ 之前这里直接 return → **一点都不暗**，

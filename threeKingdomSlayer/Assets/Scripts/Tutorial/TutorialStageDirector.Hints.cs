@@ -277,8 +277,10 @@ public partial class TutorialStageDirector : MonoBehaviour
         //   例外见 BeatNeedsAttack：防御拍（教按防御键）与技能拍（点技能槽）不静音。
         if (BeatNeedsAttack(step.kind)) SetDefenseMuteBeat(true);
         BeginBeat(target, TeachAttackFor(step), requiredHits: step.requiredHits,
-            // ★ 连招蓄力拍（指向突刺教学）**不能按住敌人**：目标得能抡起霸体招，
-            //   玩家才能在它抬手那一瞬打断（口径同技能打断拍：那一拍 holdEnemies=false）。
+            // ★ 连招蓄力拍（指向突刺教学）：**目标不能按住**（它得能抡起霸体招，玩家才有东西可打断），
+            //   但**其它敌人要按住** —— 否则这一拍从头到尾玩家都在挨打
+            //   （2026-11-08 用户原话：「后面的敌人还在正常出招/运动」「玩家在等待抬手时照样挨打」；
+            //     实测日志：拍刚开始 1011 就把玩家打了 22 血）。
             holdEnemies: step.kind != GestureHintKind.ComboCharge);
         Debug.Log($"[Tutorial] 手势拍开始 wave={step.waveIndex} kind={step.kind} target={target} 敌人={CountAliveEnemies()}" +
                   $" | 台词={(step.beforeDialogue != null ? "与示范同时:" + step.beforeDialogue.name : (step.afterDialogue != null ? "收拍后:" + step.afterDialogue.name : "无"))}" +
@@ -391,6 +393,11 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (target == null || target.state == EnemyState.Dead) target = FindCAttackTarget();
         if (target == null) target = FindTargetEnemy();
         _beatTargetEnemy = target;
+        // ★ 这一拍**按住除目标以外的所有敌人**（目标保持自由，好抡起霸体招）：
+        //   否则玩家在「点一下 → 蓄力 → 等抬手」这段时间里一直在挨打
+        //   （2026-11-08 用户原话：「后面的敌人还在正常出招/运动」「玩家在等待抬手时照样挨打」；
+        //     实测日志：拍刚开始 1011 就把玩家打了 22 血）。
+        if (target != null) SetEnemiesHoldExcept(target);
 
         bool frozen = false;
         float frozenAt = 0f;      // 时停开始的时刻（unscaled）
@@ -426,6 +433,8 @@ public partial class TutorialStageDirector : MonoBehaviour
                             target = next;
                             _beatTargetEnemy = next;
                             if (TryGetEnemyScreenPosition(target, out var tp)) { from = tp; to = tp; }
+                            // 换了目标 → 按住关系跟着换：新的目标放开（好抡招），其余继续按住
+                            SetEnemiesHoldExcept(next);
                             Debug.Log("[Tutorial] 连招蓄力拍：原目标已不在 → 换目标继续等");
                         }
                     }
