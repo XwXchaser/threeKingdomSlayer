@@ -277,11 +277,11 @@ public partial class TutorialStageDirector : MonoBehaviour
         //   例外见 BeatNeedsAttack：防御拍（教按防御键）与技能拍（点技能槽）不静音。
         if (BeatNeedsAttack(step.kind)) SetDefenseMuteBeat(true);
         BeginBeat(target, TeachAttackFor(step), requiredHits: step.requiredHits,
-            // ★ 所有拍都**先按住敌人**（含目标）：玩家要能安全地做第一步动作。
-            //   连招蓄力拍会在**进阶段 2 的那一刻单独放开目标**（让它抡招给玩家打断 ✓），
-            //   否则玩家在阶段 1（还没点出那一记连招）就一直挨打
-            //   （2026-11-08 用户日志：拍刚开始 1011 打了玩家 22 + 24 血，且冻结一次没发生）。
-            holdEnemies: true);
+            // ★ 连招蓄力拍**不能按住敌人**：目标必须能**起新的霸体攻击**，否则
+            //   `isAttackAnimating` 永远 false → 冻结条件永远不成立
+            //   → 表现就是「敌人只是不进攻击，攻击动作根本没被冻住」（2026-11-08 用户实测）。
+            //   其它敌人由 routine 里的 SetEnemiesHoldExcept(target) 按住（玩家不至于挨打）。
+            holdEnemies: step.kind != GestureHintKind.ComboCharge);
         Debug.Log($"[Tutorial] 手势拍开始 wave={step.waveIndex} kind={step.kind} target={target} 敌人={CountAliveEnemies()}" +
                   $" | 台词={(step.beforeDialogue != null ? "与示范同时:" + step.beforeDialogue.name : (step.afterDialogue != null ? "收拍后:" + step.afterDialogue.name : "无"))}" +
                   $" | 示范={step.from01}→{step.to01}");
@@ -393,6 +393,54 @@ public partial class TutorialStageDirector : MonoBehaviour
         if (target == null || target.state == EnemyState.Dead) target = FindCAttackTarget();
         if (target == null) target = FindTargetEnemy();
         _beatTargetEnemy = target;
+        // 其它敌人按住（目标保持自由：它要抡起霸体招，玩家才有东西可打断）
+        if (target != null) SetEnemiesHoldExcept(target);
+
+        // ═══ 阶段 0：**敌人抬手到顶 → 挂起（定格）** ═══
+        //   只挂敌人、**不动 Time.timeScale** → 世界照常跑：
+        //   玩家在定格期间照样能点 C1、蓄力、松手；窗口/蓄力计时/戳击视觉门全部正常。
+        //   冻结时机**只跟敌人有关**，与玩家是否已经点过 C1 完全无关（用户多次强调）。
+        //   判据与霸体防御拍 Beats.cs:420 一致：isAttackAnimating && isCFrame && 剩余 <= 1.5s
+        bool frozenAtWindup = false;
+        float freezeDbgT = 0f;
+        while (_beatActive && !frozenAtWindup)
+        {
+            if (target == null || target.state == EnemyState.Dead)
+            {
+                var nextT = FindCAttackTarget();
+                if (nextT == null) nextT = FindTargetEnemy();
+                if (nextT != null && nextT != target)
+                {
+                    target = nextT;
+                    _beatTargetEnemy = nextT;
+                    SetEnemiesHoldExcept(nextT);
+                    if (TryGetEnemyScreenPosition(target, out var tp2)) { from = tp2; to = tp2; }
+                    Debug.Log("[Tutorial] 连招蓄力拍：原目标已不在 → 换目标继续等抬手");
+                }
+                yield return null;
+                continue;
+            }
+
+            bool cAtk = target.isAttackAnimating && target.isCFrame;
+            float tEnd = cAtk ? target.TimeToAttackEnd() : -1f;
+            if (Time.unscaledTime - freezeDbgT > 1f)
+            {
+                freezeDbgT = Time.unscaledTime;
+                Debug.Log("[Tutorial][连招拍] WAIT 抡招=" + target.isAttackAnimating + " C技=" + target.isCFrame
+                    + " 剩余=" + (target.isAttackAnimating ? target.TimeToAttackEnd().ToString("F2") : "-")
+                    + "s 阈值=" + comboWindupFreezeSeconds.ToString("F2") + "s 目标=" + target.enemyId + "/" + target.state);
+            }
+            if (cAtk && tEnd >= 0f && tEnd <= comboWindupFreezeSeconds)
+            {
+                FreezeAllEnemiesForTutorial();
+                frozenAtWindup = true;
+                _comboTargetWasAttacking = true;
+                if (step.comboPhase2Dialogue != null)
+                    DialogueManager.Instance?.QueueEventAndNotify(step.comboPhase2Dialogue, forceReplay: true);
+                Debug.Log("[Tutorial] 连招蓄力拍：敌人抬起到顶（剩余 " + tEnd.ToString("F2") + "s）→ 敌人定格（世界照常跑）");
+            }
+            yield return null;
+        }
 
         while (_beatActive)
         {
@@ -478,33 +526,29 @@ public partial class TutorialStageDirector : MonoBehaviour
             PlayGestureAt(GestureHintKind.Hold, from, to);
             float phase2Time = 0f;
             bool frozen = false;
+            float chargeDbgT = 0f;
             while (_beatActive && _comboChargePhase == 2)
             {
+                // 探针：蓄力为什么涨不上去（每秒一行）
+                if (Time.unscaledTime - chargeDbgT > 1f)
+                {
+                    chargeDbgT = Time.unscaledTime;
+                    var imD = InputManager.Instance;
+                    Debug.Log("[Tutorial][连招拍] CHARGE 等级=" + (imD != null ? imD.CurrentChargeLevel : -1)
+                        + " 连段蓄力=" + (imD != null && imD.comboChargeActive)
+                        + " 长按=" + (imD != null && imD.IsLongPressForDebug)
+                        + " 指针按下=" + (imD != null && imD.IsPointerDown)
+                        + " 状态机活跃=" + (machine != null && machine.IsMoveActive)
+                        + " 时钟冻=" + (machine != null && machine.Frozen)
+                        + " ts=" + Time.timeScale.ToString("F2")
+                        + " 阶段=" + _comboChargePhase);
+                }
+
                 // **把枪一直保持在蓄势位**（2026-11-04 用户反馈：「长枪还是没收住，会缩回去」）：
                 //   枪体停在回收段中途是游戏自己的「连段蓄力保持」表现（AttackSystem.BeginComboChargeHold），
                 //   但它平时跟着「手指按住」走 → 玩家还没按住时枪就自己收回去了。
                 //   这里**每帧重新声明一次** → 枪一直举着；玩家中途松手（没蓄满）也还是举着 → 可以再蓄一次。
                 if (atkSystem != null) atkSystem.BeginComboChargeHold();
-
-                // ★ **等目标抡起霸体招 → 抬手到顶 → 冻结全场**（2026-11-08 用户定：
-                //   流程与「海浪技能教学」「格挡教学」一致 → 等他抬手；并且要**冻结敌人的动作**）。
-                //   判据口径同技能打断拍：任何一次攻击的**抬起到顶**（toAttackEnd <= 阈值）。
-                if (!frozen && target != null && target.state != EnemyState.Dead)
-                {
-                    // 判据与霸体防御拍（Beats.cs:420）完全一致：正在攻击 + **是 C 技** + 剩余 <= 1.5s
-                    bool attacking = target.isAttackAnimating && target.isCFrame;
-                    float toAttackEnd = attacking ? target.TimeToAttackEnd() : -1f;
-                    if (attacking && toAttackEnd >= 0f && toAttackEnd <= comboWindupFreezeSeconds)
-                    {
-                        FreezeAllEnemiesForTutorial();
-                        frozen = true;
-                        _comboTargetWasAttacking = true;
-                        // 这一段教学内容在**敌人抬手这一刻**一次弹出（nonBlocking → 不挡玩家操作）
-                        if (step.comboPhase2Dialogue != null)
-                            DialogueManager.Instance?.QueueEventAndNotify(step.comboPhase2Dialogue, forceReplay: true);
-                        Debug.Log("[Tutorial] 连招蓄力拍：目标已抬手 → 冻结全场（玩家把手指按在目标身上松手）");
-                    }
-                }
 
                 // 目标没了（被打死）→ 解冻 → 回阶段 1 重来
                 if (target == null || target.state == EnemyState.Dead)
@@ -704,6 +748,11 @@ public partial class TutorialStageDirector : MonoBehaviour
             Time.timeScale = 1f;
         }
         SetEnemiesHold(false);
+        // ★ 连招蓄力拍的两个「枪停在蓄势位」表现也要收回：否则拍被打断/提前结束时
+        //   长枪会**一直悬停在空中**（2026-11-08 用户实测）。两者都是幂等的。
+        AttackSystem.Instance?.EndComboChargeHold();
+        var psEnd = PlayerState.Instance;
+        if (psEnd != null) psEnd.freezeWeaponStance = false;
         UnfreezeWorldForTutorial();   // ★ 教学冻结（指向突刺拍）必须解除 —— 否则整局停在时停
         SetSceneDim(false);
         SafeHideGestureHint();

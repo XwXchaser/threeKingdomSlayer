@@ -127,6 +127,9 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
     /// 供招式状态机判断「按住不放时本段先不结束」的宽限与连段蓄力保持。
     /// QTE 输入优先级高于连招，QTE 期间不视为连招输入。
     /// </summary>
+    /// <summary>调试用：当前是否已进入长按态（教学探针用）。</summary>
+    public bool IsLongPressForDebug => isLongPress;
+
     public bool IsPointerDown => isTouching && gameplayInputEnabled && skillInputEnabled
         // ⚠️ 教学时停（allowInputWhileTimeFrozen）时**也要算「按着」**（2026-11-08）：
         //   `PlayerMoveStateMachine.UpdatePointerHold` 靠 IsPointerDown 判断「玩家正按住」
