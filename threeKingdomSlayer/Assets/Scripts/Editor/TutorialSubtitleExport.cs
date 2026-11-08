@@ -94,6 +94,7 @@ public static class TutorialSubtitleExport
                 if (n == null) continue;
                 if (n.moveGuideDialogue != null) U(n.moveGuideDialogue.name, "正式关", "招式解锁引导", "-", n.displayName + "（" + n.nodeId + "）", "解锁后首次进关", "");
                 if (n.moveGuidePhase2Dialogue != null) U(n.moveGuidePhase2Dialogue.name, "正式关", "招式解锁引导", "-", n.displayName + "（" + n.nodeId + "）", "连招蓄力 阶段2", "");
+                if (n.moveGuidePhase3Dialogue != null) U(n.moveGuidePhase3Dialogue.name, "正式关", "招式解锁引导", "-", n.displayName + "（" + n.nodeId + "）", "连招蓄力 阶段3（瞄准）", "");
             }
         }
         sb.Append("],");
