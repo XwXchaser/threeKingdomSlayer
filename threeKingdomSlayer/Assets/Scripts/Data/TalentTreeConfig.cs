@@ -71,6 +71,11 @@ public sealed class TalentNodeConfig
              "只有 moveGuideGesture = ComboCharge 时才会用到。")]
     public DialogueEventData moveGuidePhase2Dialogue;
 
+    [Tooltip("**连招蓄力引导**的第三段台词（「瞄准」：敌人抬手被冻结时播 ——\n" +
+             "教玩家把**手指按在敌人身上**再松手，否则武器退回收蓄力漂浮位、要重新蓄力）。\n" +
+             "只有 moveGuideGesture = ComboCharge 时才会用到。")]
+    public DialogueEventData moveGuidePhase3Dialogue;
+
     /// <summary>
     /// 这个节点**带没带解锁载荷** ✅ —— 任何一种载荷非空 ✅ = 有效 ✅（自检会报错 ✅ ✅）。
     /// </summary>

@@ -51,4 +51,7 @@ public class MoveGuideRequest
 
     /// <summary>**连招蓄力引导**的第二段台词（「按住蓄满 → 松手」）；其它引导类型不用。</summary>
     public DialogueEventData phase2Dialogue;
+
+    /// <summary>**连招蓄力引导**的第三段台词（「瞄准」：敌人抬手被冻结时播）；其它引导类型不用。</summary>
+    public DialogueEventData phase3Dialogue;
 }

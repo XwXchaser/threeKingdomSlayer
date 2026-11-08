@@ -59,6 +59,9 @@ public partial class TutorialStageDirector : MonoBehaviour
     public LevelOrbGuide levelOrbGuide;
     /// <summary>等级球教学引导是否已经叫起过（只叫一次）。</summary>
     private bool _orbGuideShown;
+
+    [Tooltip("**指向突刺教学**：敌人抡招「抬手到顶」多少秒内冻结（口径同技能打断拍）")]
+    public float comboWindupFreezeSeconds = 0.35f;
     [Tooltip("战斗 HUD 根上的 CanvasGroup（引导期整块失能：道具栏 / 技能槽 / 防御键 / 头像都不可点）")]
     public CanvasGroup hudCanvasGroup;
     // ⚠️ 这里**没有**“超时自动跳过”的开关：需求明确「不存在任何计时器直接跳过」。
@@ -971,6 +974,10 @@ public class TutorialGestureStep
     [Tooltip("**连招蓄力拍**：阶段 2（窗口打开、冻结之后）的台词 ——「按住蓄满 → 松手」。\n" +
              "阶段 1 的台词走 <see cref=\"beforeDialogue\"/>（先点一下）。")]
     public DialogueEventData comboPhase2Dialogue;
+
+    [Tooltip("**连招蓄力拍**：阶段 3 的台词 ——「瞄准」：敌人抡招抬手被**冻结**的那一刻播。\n" +
+             "教玩家把**手指按在敌人身上**再松手（否则武器退回收蓄力漂浮位，要重新蓄力）。")]
+    public DialogueEventData comboPhase3Dialogue;
 
     // ── 招式解锁引导（2026-11-04）──────────────────────────────────
     // 「解锁了但还没教过的招式」当成**一拍拍出来**（和教学拍同一条机制），

@@ -212,6 +212,16 @@ public partial class TutorialStageDirector : MonoBehaviour
         //   → 静音提前到「条件满足」这一刻；拍结束/被打断时统一恢复（见 Hints.cs 的收拍路径）。
         if (BeatNeedsAttack(step.kind)) SetDefenseMuteBeat(true);
 
+        // ★ 连招蓄力拍（指向突刺教学）：**提前选好会打霸体招的目标**。
+        //   选晚了不行：台词期间玩家/机器人可能把它打死 → 只剩别的敌人 → 这一拍教的东西就不对了。
+        Enemy comboTarget = null;
+        if (step.kind == GestureHintKind.ComboCharge)
+        {
+            comboTarget = FindCAttackTarget();
+            if (comboTarget == null) comboTarget = FindTargetEnemy();
+            Debug.Log("[Tutorial] 连招蓄力拍：教学目标=" + (comboTarget == null ? "无" : ("敌人#" + comboTarget.enemyId + "（会打霸体招）row=" + comboTarget.rowIndex)));
+        }
+
         // 敌人站定后才推台词：此时台词和手势引导一起出现，玩家看得见该做什么
         // ★ 统一入口：教学拍走「开场两段字幕 + 点继续」（第一段 = 开场铺垫，第二段 = 原本那行台词）；
         //   暂停点 = **原本那行台词出现的那一刻**（就在这个位置，不是波次开始）；两段之间不留间隔。
@@ -266,7 +276,10 @@ public partial class TutorialStageDirector : MonoBehaviour
         //   （教学拍期间敌人是冻住的 → 静音防御键不会让玩家挨打。）
         //   例外见 BeatNeedsAttack：防御拍（教按防御键）与技能拍（点技能槽）不静音。
         if (BeatNeedsAttack(step.kind)) SetDefenseMuteBeat(true);
-        BeginBeat(target, TeachAttackFor(step), requiredHits: step.requiredHits);
+        BeginBeat(target, TeachAttackFor(step), requiredHits: step.requiredHits,
+            // ★ 连招蓄力拍（指向突刺教学）**不能按住敌人**：目标得能抡起霸体招，
+            //   玩家才能在它抬手那一瞬打断（口径同技能打断拍：那一拍 holdEnemies=false）。
+            holdEnemies: step.kind != GestureHintKind.ComboCharge);
         Debug.Log($"[Tutorial] 手势拍开始 wave={step.waveIndex} kind={step.kind} target={target} 敌人={CountAliveEnemies()}" +
                   $" | 台词={(step.beforeDialogue != null ? "与示范同时:" + step.beforeDialogue.name : (step.afterDialogue != null ? "收拍后:" + step.afterDialogue.name : "无"))}" +
                   $" | 示范={step.from01}→{step.to01}");
@@ -283,7 +296,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 连招蓄力拍：两段式（点一下 → 在窗口里按住蓄满 → 松手），单独一套流程
         if (step.kind == GestureHintKind.ComboCharge)
         {
-            yield return ComboChargeRoutine(step, from, to, playSeconds);
+            yield return ComboChargeRoutine(step, from, to, playSeconds, comboTarget);
             yield break;
         }
 
@@ -346,11 +359,76 @@ public partial class TutorialStageDirector : MonoBehaviour
     /// ⚠️ 阶段 2 的闸门不能用 <c>BlockAll</c>：教学闸门在手势路径的**第 1 道**，
     ///    排在「连招释放」那道前面 → BlockAll 会把连招的松手一起 drop 掉（所以单独开了 ComboHold）。
     /// </summary>
-    private System.Collections.IEnumerator ComboChargeRoutine(TutorialGestureStep step, Vector2 from, Vector2 to, float playSeconds)
+    /// <summary>
+    /// **教学冻结**：把场上所有活敌人按住 + 挂起（Animatior 停、攻击 tween 停）。
+    /// 用在「敌人抡招抬手到顶」那一刻 → 玩家从容操作，打断后再解冻。
+    /// </summary>
+    private void FreezeAllEnemiesForTutorial()
+    {
+        var alive = EnemyManager.Instance != null ? EnemyManager.Instance.GetAllAliveEnemies() : null;
+        if (alive != null)
+        {
+            for (int i = 0; i < alive.Count; i++)
+            {
+                var e = alive[i];
+                if (e == null) continue;
+                e.PushSuspend(Enemy.SuspendSource.Tutorial);
+            }
+        }
+        SetEnemiesHold(true);
+    }
+
+    /// <summary>解除教学冻结（挂起 + 按住）。</summary>
+    private void UnfreezeAllEnemiesForTutorial()
+    {
+        var alive = EnemyManager.Instance != null ? EnemyManager.Instance.GetAllAliveEnemies() : null;
+        if (alive != null)
+        {
+            for (int i = 0; i < alive.Count; i++)
+            {
+                var e = alive[i];
+                if (e == null) continue;
+                e.PopSuspend(Enemy.SuspendSource.Tutorial);
+            }
+        }
+        SetEnemiesHold(false);
+    }
+
+    /// <summary>某个敌人的可见本体中心（屏幕坐标）。</summary>
+    private bool TryGetEnemyScreenPosition(Enemy enemy, out Vector2 screenPos)
+    {
+        screenPos = Vector2.zero;
+        var cam = Camera.main;
+        if (cam == null || enemy == null) return false;
+        Vector3 world = GetEnemyBodyCenter(enemy);
+        screenPos = cam.WorldToScreenPoint(world);
+        return screenPos.x > 0f && screenPos.x < Screen.width && screenPos.y > 0f;
+    }
+
+    /// <summary>
+    /// 连招蓄力拍（指向突刺教学）—— **两段式 + 打断**：
+    ///   阶段 1：点一下（命中目标才进阶段 2）
+    ///   阶段 2：按住蓄力（**手指按在敌人位置 = 瞄准**）→ 等目标**抡起霸体招** → **冻结全场** → 松手 → **必须打断**它
+    ///
+    /// 2026-11-08 用户定：
+    ///   • 流程与「海浪技能教学」「格挡教学」一致：**等敌人抬手**再进入教学；
+    ///   • **冻结全场敌人**（目标停在抬手那一瞬，后面的敌人也不动、不出招）；
+    ///   • **必须打断**（只是打中不算）；玩家得**把手指放在敌人位置上**松手才释放，
+    ///     否则武器退回收蓄力漂浮位、要重新蓄力 → 所以必须教「瞄准」；
+    ///   • **强制教学**：不提供跳过兜底 → 学不会就一直停在这一拍。
+    /// </summary>
+    private System.Collections.IEnumerator ComboChargeRoutine(TutorialGestureStep step, Vector2 from, Vector2 to, float playSeconds, Enemy presetTarget)
     {
         var input = InputManager.Instance;
         var machine = UnityEngine.Object.FindObjectOfType<PlayerMoveStateMachine>();
         float demoTimer = 0f;
+
+        // ★ 教学目标 = **会打霸体招（C 技）**的敌人（1011 这类）—— 这一拍要教的是
+        //   「用指向突刺**打断**他的霸体攻击」（2026-11-08 用户定）。
+        var target = presetTarget;
+        if (target == null || target.state == EnemyState.Dead) target = FindCAttackTarget();
+        if (target == null) target = FindTargetEnemy();
+        _beatTargetEnemy = target;
 
         while (_beatActive)
         {
@@ -369,12 +447,24 @@ public partial class TutorialStageDirector : MonoBehaviour
             PlayGestureAt(GestureHintKind.Tap, from, to);
             while (_beatActive && _comboChargePhase == 1)
             {
-                // ★ **放开行军**（2026-11-08 用户反馈：「stabC2 教学里没释放对应招式，游戏也无法继续」）：
-                //   这一拍默认把全场敌人「按住」不让动（BeginBeat 的 holdEnemies）。
-                //   前排被打死 → 后面那个正在补上来的敌人**被按住冻在半路** → 玩家够不着任何目标
-                //   → 打不出任何东西 → 这一拍永远收不了 → 整局卡住。
-                //   → 没有「够得着的目标」时放开行军，让它补上来（这一拍在正式关跑，放开不影响教学安全）。
-                if (!HasReachableTarget()) SetEnemiesHold(false);
+                // 目标死了 → 换一个**会打 C 技**的活目标（示范也跟着挪过去）
+                if (target == null || target.state == EnemyState.Dead)
+                {
+                    var next = FindCAttackTarget();
+                    if (next != null)
+                    {
+                        target = next;
+                        _beatTargetEnemy = next;
+                        Vector2 nFrom = from, nTo = to;
+                        if (TryGetEnemyScreenPosition(target, out var tp))
+                        {
+                            nTo = tp;
+                            nFrom = tp;
+                        }
+                        from = nFrom; to = nTo;
+                        Debug.Log("[Tutorial] 连招蓄力拍：原目标已不在 → 换目标继续等");
+                    }
+                }
                 demoTimer += Time.unscaledDeltaTime;
                 if (demoTimer >= playSeconds) { demoTimer = 0f; PlayGestureAt(GestureHintKind.Tap, from, to); }
                 yield return null;
@@ -419,10 +509,11 @@ public partial class TutorialStageDirector : MonoBehaviour
             if (step.comboPhase2Dialogue != null)
                 DialogueManager.Instance?.QueueEventAndNotify(step.comboPhase2Dialogue, forceReplay: true);
 
-            // ── 示范「按住蓄力」→ 玩家按住 → 蓄满 → 松手 → 派生招式打中敌人
+            // ── 示范「按住蓄力」→ 玩家按住（手指按在目标上 = 瞄准）→ 等目标抡招 → 冻结 → 松手打断
             demoTimer = 0f;
             PlayGestureAt(GestureHintKind.Hold, from, to);
             float phase2Time = 0f;
+            bool frozen = false;
             while (_beatActive && _comboChargePhase == 2)
             {
                 // **把枪一直保持在蓄势位**（2026-11-04 用户反馈：「长枪还是没收住，会缩回去」）：
@@ -430,6 +521,35 @@ public partial class TutorialStageDirector : MonoBehaviour
                 //   但它平时跟着「手指按住」走 → 玩家还没按住时枪就自己收回去了。
                 //   这里**每帧重新声明一次** → 枪一直举着；玩家中途松手（没蓄满）也还是举着 → 可以再蓄一次。
                 if (atkSystem != null) atkSystem.BeginComboChargeHold();
+
+                // ★ **等目标抡起霸体招 → 抬手到顶 → 冻结全场**（2026-11-08 用户定：
+                //   流程与「海浪技能教学」「格挡教学」一致 → 等他抬手；并且要**冻结敌人的动作**）。
+                //   判据口径同技能打断拍：任何一次攻击的**抬起到顶**（toAttackEnd <= 阈值）。
+                if (!frozen && target != null && target.state != EnemyState.Dead)
+                {
+                    bool attacking = target.isAttackAnimating;
+                    float toAttackEnd = attacking ? target.TimeToAttackEnd() : -1f;
+                    if (attacking && toAttackEnd >= 0f && toAttackEnd <= comboWindupFreezeSeconds)
+                    {
+                        FreezeAllEnemiesForTutorial();
+                        frozen = true;
+                        _comboTargetWasAttacking = true;
+                        // 「瞄准」台词：手指按在敌人身上别松 → 松手就是指向突刺
+                        if (step.comboPhase3Dialogue != null)
+                            DialogueManager.Instance?.QueueEventAndNotify(step.comboPhase3Dialogue, forceReplay: true);
+                        Debug.Log("[Tutorial] 连招蓄力拍：目标已抬手 → 冻结全场（玩家把手指按在目标身上松手）");
+                    }
+                }
+
+                // 目标没了（被打死）→ 解冻 → 回阶段 1 重来
+                if (target == null || target.state == EnemyState.Dead)
+                {
+                    UnfreezeAllEnemiesForTutorial();
+                    frozen = false;
+                    if (machine != null) machine.NotifyExternalReset();
+                    _comboChargePhase = 1;
+                    break;
+                }
 
                 // ★ **空挥兜底**（2026-11-08 用户反馈：「stabC2 教学里没释放对应招式，游戏也无法继续」）：
                 //   玩家松手后，派生招式（指向突刺）可能**没打出来 / 打空了**（没命中任何敌人）
@@ -446,9 +566,6 @@ public partial class TutorialStageDirector : MonoBehaviour
                     break;
                 }
 
-                // ★ 同样：**目标没了 / 够不着** → 放开行军，让下一个敌人补上来（否则玩家打不到东西 → 卡死）
-                if (!HasReachableTarget()) SetEnemiesHold(false);
-
                 phase2Time += Time.unscaledDeltaTime;
 
                 demoTimer += Time.unscaledDeltaTime;
@@ -459,6 +576,7 @@ public partial class TutorialStageDirector : MonoBehaviour
             break;
         }
 
+        UnfreezeAllEnemiesForTutorial();   // 收尾：教学冻结必须解除（否则全场敌人僵住）
         if (machine != null) machine.SetFrozen(false);
         var atkEnd = AttackSystem.Instance;
         if (atkEnd != null) atkEnd.EndComboChargeHold();
@@ -587,6 +705,7 @@ public partial class TutorialStageDirector : MonoBehaviour
             Time.timeScale = 1f;
         }
         SetEnemiesHold(false);
+        UnfreezeAllEnemiesForTutorial();   // ★ 教学冻结（指向突刺拍）必须解除 —— 否则全场敌人僵住
         SetSceneDim(false);
         SafeHideGestureHint();
         // 这一拍结束 → 「需要出招的拍」的防御键静音随之解除（否则两拍之间防御键一直是死的）

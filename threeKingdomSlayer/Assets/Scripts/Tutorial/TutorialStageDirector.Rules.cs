@@ -88,6 +88,13 @@ public partial class TutorialStageDirector : MonoBehaviour
     /// （两段命中分开算：第一记戳只推进阶段，派生招式才收拍。）
     /// </summary>
     private int _comboChargePhase;
+    /// <summary>
+    /// 连招蓄力拍：冻结那一刻目标**确实在抡招**（→ 后面派生招式命中时，
+    /// 「打中了目标」与「打断了目标的霸体招」是两回事，后者才算学会）。
+    /// </summary>
+    private bool _comboTargetWasAttacking;
+    /// <summary>连招蓄力拍的教学目标（会打霸体招的那只；判据用）。</summary>
+    private Enemy _beatTargetEnemy;
 
     /// <summary>手势种类 → 它教的招式。</summary>
     private static AttackType? AttackTypeFor(GestureHintKind kind)

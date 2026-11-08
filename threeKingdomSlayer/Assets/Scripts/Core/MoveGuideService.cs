@@ -57,7 +57,8 @@ public static class MoveGuideService
                 move = node.moveConfig,
                 gesture = node.moveGuideGesture,
                 dialogue = node.moveGuideDialogue,
-                phase2Dialogue = node.moveGuidePhase2Dialogue
+                phase2Dialogue = node.moveGuidePhase2Dialogue,
+                phase3Dialogue = node.moveGuidePhase3Dialogue
             });
         }
     }

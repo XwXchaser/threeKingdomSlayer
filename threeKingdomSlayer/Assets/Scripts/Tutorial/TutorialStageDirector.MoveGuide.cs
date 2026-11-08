@@ -59,6 +59,7 @@ public partial class TutorialStageDirector
                 to01 = to01,
                 beforeDialogue = req.dialogue, // **和手势示范同时出现**（不是收拍后补播）
                 comboPhase2Dialogue = req.phase2Dialogue, // 连招蓄力拍：阶段 2 的台词
+                comboPhase3Dialogue = req.phase3Dialogue, // 连招蓄力拍：阶段 3（瞄准）的台词
                 guideNodeId = req.nodeId,
                 guideAttackType = req.move != null ? (int)req.move.attackType : -1,
             });

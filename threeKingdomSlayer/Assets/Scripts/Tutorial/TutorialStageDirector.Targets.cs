@@ -54,6 +54,38 @@ public partial class TutorialStageDirector : MonoBehaviour
         return best;
     }
 
+    /// <summary>
+    /// 找**会打霸体招（C 技）**的活目标（打断类教学用；1011 这类）。
+    /// 与 <see cref="FindTargetEnemy"/> 的区别：那边只要「站在第 0 排的活人」，
+    /// 这边要「攻击序列里真的带 C 技」（否则这一拍永远等不到抡招）。
+    /// </summary>
+    private Enemy FindCAttackTarget()
+    {
+        if (EnemyManager.Instance == null) return null;
+        var alive = EnemyManager.Instance.GetAllAliveEnemies();
+        Enemy best = null;
+        for (int i = 0; i < alive.Count; i++)
+        {
+            var e = alive[i];
+            if (e == null || e.state == EnemyState.Dead) continue;
+            if (!HasCAttackStep(e)) continue;
+            if (best == null || e.rowIndex < best.rowIndex) { best = e; }
+        }
+        return best;
+    }
+
+    /// <summary>这个敌人的攻击序列里有没有 C 技（霸体招）。</summary>
+    private static bool HasCAttackStep(Enemy e)
+    {
+        var seq = e.attackSequence;
+        if (seq == null) return false;
+        for (int i = 0; i < seq.Count; i++)
+        {
+            if (seq[i].isCAttack) return true;
+        }
+        return false;
+    }
+
     /// <summary>引导指向的敌人所在列；没有敌人返回 -1。</summary>
     private int TargetColumn
     {

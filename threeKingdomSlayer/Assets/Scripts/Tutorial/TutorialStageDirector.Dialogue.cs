@@ -104,7 +104,21 @@ public partial class TutorialStageDirector : MonoBehaviour
             if (inputMgr != null) inputMgr.tutorialGestureTarget = TutorialGestureTarget.ComboHold;
             return;
         }
-        if (_comboChargePhase == 2) { _comboChargePhase = 3; }
+        if (_comboChargePhase == 2)
+        {
+            // ★ 必须**打断**目标的霸体攻击（2026-11-08 用户定：只是打中不算数）。
+            //   判据：目标确实在抡招（冻结那一刻记下）+ 它的攻击被打断（Enemy.CancelAttack 会置 attackInterrupted）。
+            var tgt = _beatTargetEnemy;
+            bool interrupted = tgt != null && _comboTargetWasAttacking && tgt.attackInterrupted;
+            if (!interrupted)
+            {
+                Debug.Log("[Tutorial] 连招蓄力拍：这一下没打断目标的霸体招 → 不算，回阶段 1 重来");
+                if (_moveMachine != null) _moveMachine.NotifyExternalReset();
+                _comboChargePhase = 1;
+                return;
+            }
+            _comboChargePhase = 3;
+        }
 
         RegisterBeatHit(_beatLastAttackType, _beatLastAttackColumn);
     }

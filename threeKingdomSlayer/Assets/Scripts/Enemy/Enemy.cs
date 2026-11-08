@@ -442,7 +442,9 @@ public GameObject freezeMeltEffectPrefab;
     {
         None = 0,
         HitStop = 1,
-        Frozen = 2
+        Frozen = 2,
+        /// <summary>教学冻结（招式引导拍：把敌人停在抡招抬手的那一瞬，等玩家操作完再解冻）。</summary>
+        Tutorial = 3
     }
     internal SuspendSource _suspendSources;
     private bool _suspendAnimatorWasEnabled;
