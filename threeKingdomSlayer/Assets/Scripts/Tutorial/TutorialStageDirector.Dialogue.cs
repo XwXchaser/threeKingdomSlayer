@@ -113,6 +113,8 @@ public partial class TutorialStageDirector : MonoBehaviour
             //   （原来在「招式打出去」时就换 → 空挥也会换 → 玩家再也点不了第二下 → 卡死）
             var inputMgr = InputManager.Instance;
             if (inputMgr != null) inputMgr.tutorialGestureTarget = TutorialGestureTarget.ComboHold;
+            Debug.Log("[Tutorial] 连招蓄力拍：阶段 1 命中目标（敌人#" + (enemy != null ? enemy.enemyId : 0)
+                + "）→ 进入阶段 2（闸门 ComboHold，可以按住蓄力）");
             return;
         }
         if (_comboChargePhase == 2)
