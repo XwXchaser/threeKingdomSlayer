@@ -1,0 +1,19 @@
+{
+  "version": "1021_identity_v1",
+  "handoff": "Locus/knowledge/plan/enemy1021-art-production-handoff.md §0.21",
+  "note": "1021 曹军轻装楯兵身份图：只换面相 + 盾侧修正。图1 是五人并排图 v2 里 1021 的镜像重贴基件（盾已翻到画面左、由人物右手持握）；图2 是面谱 v5 第 6 格，只提供面相（风霜老兵 + 浅灰胡茬）。",
+  "references": [
+    {
+      "order": 1,
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1021_identity_v1/1021_base_mirrored_green_1024.png",
+      "role": "image 1: 1021 曹军轻装楯兵 —— 身体 / 站姿 / 比例 / 布袍小甲片 / 素色布帽 / 木盾（盾在画面左、人物右手）全部沿用，只换脸",
+      "expected_sha256_prefix": "e114ac6d096b3149"
+    },
+    {
+      "order": 2,
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1021_identity_v1/1021_face_ref_v5c6.png",
+      "role": "image 2: 面谱 v5 第 6 格 —— 只提供面相（风霜老兵、半垂窄眼、浅灰胡茬）；其金属盔 / 红缨 / 红围巾一律不继承",
+      "expected_sha256_prefix": "6c9e29e25c887f12"
+    }
+  ]
+}

@@ -24,8 +24,11 @@ public class ParryStanceTuningWindow : EditorWindow
     private Vector3 _entryOffset;
     private float _tipDeg, _entryDeg, _defendDrop, _entryRoll;
     private float _swingIn, _overshoot, _settle, _hold, _exitFast, _exitNormal;
-    private float _breakSpin, _breakDrift, _breakSeconds;
+    private float _breakSpin, _breakDrift, _breakSeconds, _breakWobble;
     private float _blockHitStop, _breakHitStop, _breakSlowScale, _breakSlowSeconds;
+    // REQ-006 破防演出包
+    private float _gbEnemyFreeze, _gbEnemySlowScale, _gbEnemySlowSeconds;
+    private float _gbWeaponFlash, _gbScreenFlash, _gbPushDegrees, _gbSoundPitch, _gbSoundVolume;
 
     private string _readout = "";
     private float _targetScreenX = 95f;
@@ -61,10 +64,19 @@ public class ParryStanceTuningWindow : EditorWindow
         _breakSpin = _cfg.parryStanceBreakSpinDegrees;
         _breakDrift = _cfg.parryStanceBreakDrift;
         _breakSeconds = _cfg.parryStanceBreakSeconds;
+        _breakWobble = _cfg.parryStanceBreakWobbleDegrees;
         _blockHitStop = _cfg.parryGuardBlockHitStopSeconds;
         _breakHitStop = _cfg.parryGuardBreakHitStopSeconds;
         _breakSlowScale = _cfg.parryGuardBreakSlowScale;
         _breakSlowSeconds = _cfg.parryGuardBreakSlowSeconds;
+        _gbEnemyFreeze = _cfg.parryGuardBreakEnemyFreezeSeconds;
+        _gbEnemySlowScale = _cfg.parryGuardBreakEnemySlowScale;
+        _gbEnemySlowSeconds = _cfg.parryGuardBreakEnemySlowSeconds;
+        _gbWeaponFlash = _cfg.parryGuardBreakWeaponFlashSeconds;
+        _gbScreenFlash = _cfg.parryGuardBreakScreenFlashSeconds;
+        _gbPushDegrees = _cfg.parryGuardBreakPushDegrees;
+        _gbSoundPitch = _cfg.parryGuardBreakSoundPitch;
+        _gbSoundVolume = _cfg.parryGuardBreakSoundVolume;
         Compute();
     }
 
@@ -87,10 +99,19 @@ public class ParryStanceTuningWindow : EditorWindow
         _cfg.parryStanceBreakSpinDegrees = _breakSpin;
         _cfg.parryStanceBreakDrift = _breakDrift;
         _cfg.parryStanceBreakSeconds = _breakSeconds;
+        _cfg.parryStanceBreakWobbleDegrees = _breakWobble;
         _cfg.parryGuardBlockHitStopSeconds = _blockHitStop;
         _cfg.parryGuardBreakHitStopSeconds = _breakHitStop;
         _cfg.parryGuardBreakSlowScale = _breakSlowScale;
         _cfg.parryGuardBreakSlowSeconds = _breakSlowSeconds;
+        _cfg.parryGuardBreakEnemyFreezeSeconds = _gbEnemyFreeze;
+        _cfg.parryGuardBreakEnemySlowScale = _gbEnemySlowScale;
+        _cfg.parryGuardBreakEnemySlowSeconds = _gbEnemySlowSeconds;
+        _cfg.parryGuardBreakWeaponFlashSeconds = _gbWeaponFlash;
+        _cfg.parryGuardBreakScreenFlashSeconds = _gbScreenFlash;
+        _cfg.parryGuardBreakPushDegrees = _gbPushDegrees;
+        _cfg.parryGuardBreakSoundPitch = _gbSoundPitch;
+        _cfg.parryGuardBreakSoundVolume = _gbSoundVolume;
         EditorUtility.SetDirty(_cfg);
         AssetDatabase.SaveAssets();
         Compute();
@@ -126,10 +147,21 @@ public class ParryStanceTuningWindow : EditorWindow
         _breakSpin = EditorGUILayout.Slider("破防·绕世界Z旋转 (度, 正=屏幕逆时针)", _breakSpin, 0f, 540f);
         _breakDrift = EditorGUILayout.Slider("破防·向左漂移 (世界单位)", _breakDrift, 0f, 3f);
         _breakSeconds = EditorGUILayout.Slider("破防·时长 (s)", _breakSeconds, 0.1f, 2f);
+        _breakWobble = EditorGUILayout.Slider("破防·起手余震 (度)", _breakWobble, 0f, 12f);
         _blockHitStop = EditorGUILayout.Slider("格挡·命中定格 (真实s)", _blockHitStop, 0f, 0.2f);
         _breakHitStop = EditorGUILayout.Slider("破防·命中定格 (真实s)", _breakHitStop, 0f, 0.3f);
         _breakSlowScale = EditorGUILayout.Slider("破防·受击慢放倍率 (1=不慢放)", _breakSlowScale, 0.05f, 1f);
-        _breakSlowSeconds = EditorGUILayout.Slider("破防·受击慢放时长 (真实s)", _breakSlowSeconds, 0f, 0.5f);
+        _breakSlowSeconds = EditorGUILayout.Slider("破防·受击慢放时长 (真实s)", _breakSlowSeconds, 0f, 1.5f);
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("破防演出包（REQ-006）", EditorStyles.boldLabel);
+        _gbEnemyFreeze = EditorGUILayout.Slider("破防·攻击者冻结 (真实s)", _gbEnemyFreeze, 0f, 0.6f);
+        _gbEnemySlowScale = EditorGUILayout.Slider("破防·攻击者慢放倍率 (1=不慢放)", _gbEnemySlowScale, 0.05f, 1f);
+        _gbEnemySlowSeconds = EditorGUILayout.Slider("破防·攻击者慢放时长 (真实s)", _gbEnemySlowSeconds, 0f, 1f);
+        _gbWeaponFlash = EditorGUILayout.Slider("破防·枪闪白 (真实s)", _gbWeaponFlash, 0f, 0.5f);
+        _gbScreenFlash = EditorGUILayout.Slider("破防·屏幕红边框停留 (s)", _gbScreenFlash, 0f, 0.6f);
+        _gbPushDegrees = EditorGUILayout.Slider("破防·镜头推近 FOV (度)", _gbPushDegrees, 0f, 6f);
+        _gbSoundPitch = EditorGUILayout.Slider("破防·专属音音高", _gbSoundPitch, 0.25f, 2f);
+        _gbSoundVolume = EditorGUILayout.Slider("破防·专属音音量 (倍)", _gbSoundVolume, 0f, 4f);
         if (EditorGUI.EndChangeCheck()) Apply();
 
         EditorGUILayout.Space();

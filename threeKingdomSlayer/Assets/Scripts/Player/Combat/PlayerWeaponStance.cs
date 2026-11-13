@@ -121,6 +121,7 @@ public sealed class PlayerWeaponStance
     //   口径：**不显示任何数值**，玩家只从枪的样子读状态（被压低 / 枪尖下垂 / 抖 / 红缨甩开）。
     private WeaponTasselDynamics _tassel;
     private PlayerGuard.StrainLevel _lastStrain = PlayerGuard.StrainLevel.Steady;
+    private MeshWeaponVisual _meshVisual;   // 闪白（命中确认）用
 
     /// <summary>防御位额外下沉（满档，世界单位）。</summary>
     private const float StrainExtraDefendDrop = 0.45f;
@@ -264,6 +265,22 @@ public sealed class PlayerWeaponStance
         if (_weapon != null) UnityEngine.Object.Destroy(_weapon);
         _weapon = null;
         _weaponTransform = null;
+        _meshVisual = null;
+    }
+
+    /// <summary>
+    /// 枪闪白（破防那一拍的「命中确认」层，REQ-006）。
+    /// 只闪材质不动姿态 ⇒ 与「被顶开」的位移不冲突。
+    /// </summary>
+    public void FlashGuardBreak(float seconds)
+    {
+        if (_meshVisual == null)
+        {
+            if (_weapon == null) return;
+            _meshVisual = _weapon.GetComponentInChildren<MeshWeaponVisual>();
+        }
+        if (_meshVisual == null) return;
+        _meshVisual.PlayFlash(seconds);
     }
 
     /// <summary>每帧推进。</summary>
@@ -271,6 +288,11 @@ public sealed class PlayerWeaponStance
     {
         if (_weaponTransform == null) return;
         _holding = pointerHeld;
+
+        // ★ 破防的慢放**完全由动画时长本身决定**（2026-11-13 定稿）：
+        //   不再靠全局 timeScale（会被教学/对话/三选一/暂停菜单的 `Time.timeScale = 1` 顶掉），
+        //   也不再叠本地慢放（否则会被减速两次）。
+        //   `parryStanceBreakSeconds` = 0.85 游戏秒 ⇒ 150° 匀速转完 ≈ 3°/帧（读成“被缓缓打飞”）。
 
         // ★ 命中定格（局部顿）：姿态停住、**世界照常跑**。
         //   定格期间后坐计时也不走 ⇒ 画面里摆的是「刚被顶开」的那一帧（最有信息量的一帧）。
@@ -317,6 +339,11 @@ public sealed class PlayerWeaponStance
                 _recoilOffset = Vector3.zero;
                 _recoilTimer = 0f;
             }
+            // ★ 破防的慢放**完全由动画时长本身决定**（不再靠全局 timeScale）。
+            //   原因（2026-11-13 实测）：全局慢放会被教学/对话/三选一/暂停菜单的
+            //   `Time.timeScale = 1` 直接顶掉（DialogueManager.cs:95、TutorialStageDirector.cs:250 …）
+            //   ⇒ 真实游戏里等于没慢。
+            //   现状：`parryStanceBreakSeconds` = 0.85 游戏秒 ⇒ 150° 匀速转完 ≈ 3°/帧（读成“被缓缓打飞”）。
             _brokenT += deltaTime / Mathf.Max(0.05f, _brokenDuration);
             ApplyPose(1f);
             if (_brokenT >= 1f) Reset();
@@ -557,10 +584,14 @@ public sealed class PlayerWeaponStance
             float k = Mathf.Clamp01(_brokenT);      // 等后坐期间 k=0 ⇒ 旋转尚未开始
             // 绕**世界 Z 轴**逆时针旋转（屏幕 +X 右 / +Y 上 ⇒ 正向 Z 旋转 = 屏幕逆时针）。
             //   前乘 ⇒ 旋转发生在世界空间；因为支点偏移用 pose 算，枪尾会**留在原地**、整杆翻转。
-            float spin = BreakSpinDegrees * BreakSpinCurve(k);
+            float eased = BreakSpinCurve(k);
+            float spin = BreakSpinDegrees * eased;
+            // ★ 被撞的余震（2026-11-13）：旋转刚起的 ~1/3 段叠一个衰减抖动
+            //   ⇒ 读成「被顶了一下」而不是机械匀速旋转（原来只有匀速 ⇒ 生硬）。
+            spin += BreakWobbleDegrees * Mathf.Sin(k * BreakWobbleCycles * Mathf.PI * 2f) * Mathf.Max(0f, 1f - k * 3f);
             pose = Quaternion.AngleAxis(spin, Vector3.forward) * pose;
-            // 轻微向左漂移（真正离开画面主要靠旋转）
-            root += Vector3.left * (BreakDriftDistance * k);
+            // 轻微向左漂移（真正离开画面主要靠旋转）—— 跟着同一条缓动曲线 ⇒ 整体一起失速
+            root += Vector3.left * (BreakDriftDistance * eased);
         }
         else
         {
@@ -580,8 +611,20 @@ public sealed class PlayerWeaponStance
     /// <summary>破防向左漂移（世界单位）。</summary>
     private float BreakDriftDistance => _cfg != null ? _cfg.parryStanceBreakDrift : 0.8f;
 
-    /// <summary>破防旋转曲线：前慢后快（被甩出去的手感）。</summary>
-    private static float BreakSpinCurve(float k) => k * (0.6f + 0.4f * k);
+    /// <summary>破防旋转曲线：**匀速**（2026-11-13 定稿）。
+    ///
+    /// 为什么不能用“失速”曲线：数学上，**角速度单调递减且末速为 0 ⇒ 起步必然 ≥ 2 倍均值**
+    ///   ⇒ 用户读到的就是「起步最快、然后加速离开」（实测反馈）。
+    /// ⇒ 现在的口径：**角速度恒定**（没有任何加速），「慢」完全由 **动画时长** 决定
+    ///   （`parryStanceBreakSeconds` = 0.85 游戏秒 ⇒ 150° 匀速 ≈ 3°/帧）。
+    /// </summary>
+    private static float BreakSpinCurve(float k) => k;
+
+    /// <summary>破防旋转起手的余震幅度（度）：读成「被顶了一下」。</summary>
+    private float BreakWobbleDegrees => _cfg != null ? _cfg.parryStanceBreakWobbleDegrees : 3f;
+
+    /// <summary>余震抖动次数（整个旋转过程内）。</summary>
+    private const float BreakWobbleCycles = 2f;
 
     /// <summary>
     /// **破防**：枪被打脱手 —— 以破防这一刻的姿态为起点，沿**世界 Z 轴逆时针旋转**整杆枪
@@ -611,9 +654,10 @@ public sealed class PlayerWeaponStance
         _shakeBlend = 0f;
         // ★ 后坐**不归零**：它要先播完（问题 2），破防的旋转在那之后才开始
         _brokenWaitForRecoil = _recoilTimer > 0f;
-        // ★ 受击慢放（Layer B）：破防这一刻起，姿态以 slowScale 播 slowSeconds（真实秒）
+        // ★ 受击慢放（Layer B）：破防的慢放**已改由动画时长本身决定**（`parryStanceBreakSeconds`）
+        //   ⇒ 本地慢放不再叠加，否则会被减速两次（0.35 × 0.85 ⇒ 枪几乎冻住）。
         _breakSlowScale = _cfg != null ? Mathf.Clamp(_cfg.parryGuardBreakSlowScale, 0.05f, 1f) : 0.35f;
-        _breakSlowRemaining = _cfg != null ? Mathf.Max(0f, _cfg.parryGuardBreakSlowSeconds) : 0.15f;
+        _breakSlowRemaining = 0f;
 
         Phase = StancePhase.Broken;
         _brokenDuration = durationOverride > 0f
@@ -679,6 +723,7 @@ public sealed class PlayerWeaponStance
             foreach (var col2 in _weapon.GetComponentsInChildren<Collider2D>()) UnityEngine.Object.Destroy(col2);
             var meshVisual = _weapon.GetComponentInChildren<MeshWeaponVisual>();
             if (meshVisual != null) meshVisual.SetSorting(2);
+            _meshVisual = meshVisual;
             _weaponBaseScale = _weapon.transform.localScale.x;
 
             // 枪长：与 Stab 判定用的是同一份（10.8 = 整杆长度，scale=1）

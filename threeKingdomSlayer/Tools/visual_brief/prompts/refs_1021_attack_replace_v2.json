@@ -1,0 +1,19 @@
+{
+  "version": "1021_attack_replace_v2",
+  "handoff": "Locus/knowledge/plan/enemy1021-art-production-handoff.md §0.21.8",
+  "note": "1021 attack 替换重跑 v2（方案 A）：动作仍由**原始母片**继承（不用替换片 v1 当源，避免叠轮掉锐度），prompt = 已验收标准句 + 表情层（单峰值弧线，峰值处一声短促低吼、只露上齿）。",
+  "references": [
+    {
+      "order": 1,
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1021_attack_replace/1021_identity_for_attack_960.png",
+      "role": "image 1（reference_image）: 1021 曹军轻装楯兵定稿身份图（960²，已按母片构图与色键对齐）—— 形象从它继承",
+      "expected_sha256_prefix": "0ecb4d00e3d4f816"
+    },
+    {
+      "order": 2,
+      "path": "C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_attack_v1.mp4",
+      "role": "reference_video: **原始母片**（旧 1021 的重盾击）—— 动作、节拍、幅度、持盾侧全部从它继承；**不是**替换片 v1（那已是重绘产物，再当源会叠轮掉锐度）",
+      "expected_sha256_prefix": "ea41b8a47b01b4d9"
+    }
+  ]
+}

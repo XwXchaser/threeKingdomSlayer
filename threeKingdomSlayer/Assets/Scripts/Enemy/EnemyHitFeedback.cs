@@ -45,6 +45,69 @@ public sealed class EnemyHitFeedback
         _owner.PopSuspend(Enemy.SuspendSource.HitStop);
     }
 
+    // ───────────────────────── 破防慢放（REQ-006 · A1） ─────────────────────────
+
+    /// <summary>
+    /// 破防时「攻击者被顶住 → 被打慢」的表现。
+    ///
+    /// 口径（<c>design/guard-break-presentation-overhaul.md</c> §3.2）：
+    ///   ① 先**冻结** freezeSeconds（复用卡肉机制：Animator 停 + 攻击位移暂停）⇒ 读成「被顶住」；
+    ///   ② 冻结结束后以 <c>Animator.speed = slowScale</c> **慢放** slowSeconds ⇒ 读成「被打慢」；
+    ///   ③ 结束还原 <c>speed = 1</c>。
+    ///
+    /// ⚠ 只改 Animator 的速度，**不改攻击判定时钟**（判定仍走正常 deltaTime）
+    ///   ⇒ 慢放期间会出现「动作慢、判定正常」的错拍；这是有意取舍（不动判定数值）。
+    /// ⚠ 对象池复用会带脏值 ⇒ 还原必须在 <see cref="StopGuardBreakSlow"/> 做（OnDisable / ResetEnemy 都调）。
+    /// </summary>
+    public void PlayGuardBreakSlow(float freezeSeconds, float slowSeconds, float slowScale)
+    {
+        StopGuardBreakSlow();
+        if (_owner == null || slowSeconds <= 0f) return;
+        _owner._guardBreakSlowRoutine = _owner.StartCoroutine(
+            GuardBreakSlowRoutine(freezeSeconds, slowSeconds, slowScale));
+    }
+
+    /// <summary>停止破防慢放并还原 Animator 速度（停用 / 回池时必须调用）。</summary>
+    public void StopGuardBreakSlow()
+    {
+        if (_owner == null) return;
+        if (_owner._guardBreakSlowRoutine != null)
+        {
+            _owner.StopCoroutine(_owner._guardBreakSlowRoutine);
+            _owner._guardBreakSlowRoutine = null;
+        }
+        if (_owner._animator != null && _owner._animator.speed != 1f)
+            _owner._animator.speed = 1f;
+    }
+
+    private System.Collections.IEnumerator GuardBreakSlowRoutine(float freezeSeconds, float slowSeconds, float slowScale)
+    {
+        // 等冻结结束（卡肉计时归零）：冻结期间 Animator 是 disabled ⇒ speed 无意义
+        float wait = Mathf.Max(0f, freezeSeconds) + 0.25f;
+        while (_owner != null && _owner._hitStopRemaining > 0f && wait > 0f)
+        {
+            wait -= GameplayPause.UnscaledDelta;
+            yield return null;
+        }
+        if (_owner == null || _owner._animator == null) yield break;
+
+        _owner._animator.speed = Mathf.Clamp(slowScale, 0.05f, 1f);
+        float t = 0f;
+        while (t < slowSeconds)
+        {
+            t += GameplayPause.UnscaledDelta;
+            // ★ **每帧重申**：敌人自己的状态机会写 `animator.speed`
+            //   （Attack 结束 Enemy.Attack.cs:334、转走路 Enemy.StateSwitch.cs:96、Movement、FormSwitch …）
+            //   ⇒ 只在开始时写一次的话，慢放会被踩掉（实测只活了 ~0.07s）。
+            //   协程在 Update 之后恢复 ⇒ 这一行会盖掉那些写入。
+            if (_owner == null || _owner._animator == null) yield break;
+            _owner._animator.speed = Mathf.Clamp(slowScale, 0.05f, 1f);
+            yield return null;
+        }
+        if (_owner != null && _owner._animator != null) _owner._animator.speed = 1f;
+        if (_owner != null) _owner._guardBreakSlowRoutine = null;
+    }
+
     // ───────────────────────── 挂起时的攻击位移暂停 ─────────────────────────
 
     /// <summary>挂起：与 Animator 同时暂停攻击位移（自持标记，不依赖 DOTween 的暂停查询接口）。</summary>

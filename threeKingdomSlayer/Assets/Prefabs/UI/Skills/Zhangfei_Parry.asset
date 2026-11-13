@@ -76,13 +76,22 @@ MonoBehaviour:
   parryStanceTasselMaxBend: 14
   parryGuardRecoilDistance: 0.5
   parryGuardRecoilSeconds: 0.18
-  parryStanceBreakSpinDegrees: 230
-  parryStanceBreakDrift: 0.8
-  parryStanceBreakSeconds: 0.55
+  parryStanceBreakSpinDegrees: 150
+  parryStanceBreakDrift: 2
+  parryStanceBreakSeconds: 2
+  parryStanceBreakWobbleDegrees: 3
   parryGuardBlockHitStopSeconds: 0.033
-  parryGuardBreakHitStopSeconds: 0.066
-  parryGuardBreakSlowScale: 0.35
-  parryGuardBreakSlowSeconds: 0.15
+  parryGuardBreakHitStopSeconds: 0.033
+  parryGuardBreakSlowScale: 0.25
+  parryGuardBreakSlowSeconds: 1.15
+  parryGuardBreakEnemyFreezeSeconds: 0.12
+  parryGuardBreakEnemySlowScale: 0.25
+  parryGuardBreakEnemySlowSeconds: 1.1
+  parryGuardBreakWeaponFlashSeconds: 0.35
+  parryGuardBreakScreenFlashSeconds: 0.4
+  parryGuardBreakPushDegrees: 2
+  parryGuardBreakSoundPitch: 0.75
+  parryGuardBreakSoundVolume: 1.4
   launchFlickAngle: 90
   launchFlickDuration: 0.2
   launchWindupDuration: 0.1

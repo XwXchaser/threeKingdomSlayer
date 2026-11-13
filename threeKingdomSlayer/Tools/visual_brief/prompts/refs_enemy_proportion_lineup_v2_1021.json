@@ -1,0 +1,37 @@
+{
+  "version": "enemy_proportion_lineup_v2_1021",
+  "handoff": "Locus/knowledge/plan/enemy-commander-buff-unit-plan.md",
+  "note": "五人并排同族验证图：图组 v1（1011/1012/1013/1051）+ 新增 1021 曹军轻装楯兵。图3 用并排图裁切替代已不在仓库的 1013 原始候选；图1 用 1011 绿幕锚图替代已不在仓库的 1108 副本；图5 只提供木盾形制与持盾方式。",
+  "references": [
+    {
+      "order": 1,
+      "path": "Enemy1011ArtSource/01_SourceVideos/_first_last_frame_anchor/anchor_green.png",
+      "role": "image 1: 1011 重甲兵 —— 唯一共同体型 / 画风基准，同时是第一位重甲兵的造型参考",
+      "expected_sha256_prefix": "d84119f756ef72be"
+    },
+    {
+      "order": 2,
+      "path": "Enemy1012ArtSource/02_IdentityImages/input_identity_v12_bandit_idle_v6_1024.png",
+      "role": "image 2: 1012 山贼刀兵 —— 脸 / 汉末布衣 / 皮革 / 绑腿 / 刀兵身份参考，不作比例基准（与 v1 图组输入逐字节一致）",
+      "expected_sha256_prefix": "a7d6ee5de716cf24"
+    },
+    {
+      "order": 3,
+      "path": "Enemy1013ArtSource/02_IdentityImages/1013_lineup_crop_reference_rgba.png",
+      "role": "image 3: 1013 旗手 —— 并排图里已获认可的旗手裁切（可见汉末人脸 / 布甲 / 双手持杆与方旗）；旗杆旗布不计入身高",
+      "expected_sha256_prefix": "b24a3bcdc17048c0"
+    },
+    {
+      "order": 4,
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1051_redesign/T7_1051_identity_green_v1.png",
+      "role": "image 4: 1051 弓手候选 —— 木弓 / 箭袋 / 三国布革题材方向参考，非正式 105 定稿（与 v1 图组输入逐字节一致）",
+      "expected_sha256_prefix": "711757e81bea91c1"
+    },
+    {
+      "order": 5,
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1021_shield_hold_v3_green_v1.png",
+      "role": "image 5: 1021 现有持盾兵 —— 只提供木盾形制构造与持盾方式（盾在画面左）；其兜鍪 / 发光面甲眼 / 全身重甲 / 红围巾一律不继承",
+      "expected_sha256_prefix": "d398a1eb7cd436f8"
+    }
+  ]
+}

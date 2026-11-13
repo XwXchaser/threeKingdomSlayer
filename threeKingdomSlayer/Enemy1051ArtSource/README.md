@@ -3,11 +3,13 @@
 > **用途**：1051 弓手的**形象制作**素材与台账。
 > **状态（2026-11-08）：形象 + idle / walk / attack 三套动作均已验收**；12 张动作帧在 `03_AttackFrames/` `04_IdleFrames/` `05_WalkFrames/`，
 > **尚未进 `Assets/`**（1051 还没有 prefab）。完整交接见方案文档 §10。
+> **⚠ Dead 套（P3 关键姿势图）四轮全部验收不通过，已作废**：四版原图已撤出本包，归档在 `C:/Users/steam/Pictures/gptGen/enemy1051_rejected/03_DeadPose_P3/`，**不得当素材用**。根因与修正后的量化规格见 `plan/enemy1051-remaining-animation-art-plan.md` §4.7.6。
 > **共用规格**：1108² 透明底 / 人物本体高 605 / 可见脚底线 897 / 身体中心 x 521 / pivot 0.5,0.5（PPU 16）；半透明 0、幕布残留 0。
 > **落位三原则**：固定 k + 统一偏移（不逐帧归一化）/ 按动作相位抽帧（不按时间等距）/ 选帧前先整片看相位尺（避开闪回）。
 > **形象来源**：四兵种并排比例组图 `C:/Users/steam/Pictures/gptGen/enemy_proportion_lineup_v1/enemy_proportion_lineup_v1.png`
 > （最右一位，SHA-256 `e08eeb0eefb495b4f785886dba1ab206b5e08cdd0ea1c1eca1ab6d0a610c96fe`）的裁切。
 > **方案文档**：`Locus/knowledge/plan/enemy1051-bandit-archer-redesign-handoff.md`（含 T1–T7 形象研发史与「奸邪面相」规格）。
+> **剩余动作方案**：`Locus/knowledge/plan/enemy1051-remaining-animation-art-plan.md`（受击 3 套 / 击飞 3 套 / 死亡 1 套，共 36 帧；已定：Dead 弓脱手、Rise 弓不脱手、箭只在射箭时存在、不上传动作参考图只上传身份照；批次 A 先做 Dead）。
 > **管线经验**：`Locus/knowledge/memory/enemy1012-art-replacement-pipeline.md`、`Locus/knowledge/memory/enemy-proportion-lineup-reference.md`。
 > **现行画风**：`Locus/knowledge/design/art-style-guide.md`。
 

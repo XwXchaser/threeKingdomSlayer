@@ -85,6 +85,15 @@ public partial class Enemy : MonoBehaviour
     public bool isRanged;
     [Tooltip("飞行物 Prefab（需挂载 EnemyProjectile 组件）")]
     public GameObject projectilePrefab;
+    [Tooltip("飞行物命中后给玩家留下的毒（每次跳伤）。**防御只免直接伤害，毒照扣** —— 投壶兵的威胁来源。")]
+    public float projectilePoisonDamage;
+    [Tooltip("中毒持续时间（秒）。")]
+    public float projectilePoisonDuration;
+    [Tooltip("毒跳伤间隔（秒）。")]
+    public float projectilePoisonTickInterval = 0.5f;
+    [Tooltip("投射物能否被玩家的攻击在半空**打落**（打落则既不伤害也不留毒）。\n" +
+             "默认关：只有陶壶类（投壶兵）需要它；弓手的箭保持原行为（防被随手打掉）。")]
+    public bool projectileCanBeShotDown = false;
     [Tooltip("飞行物抛物线最高点高度")]
     public float projectileArcHeight = 3f;
     [Tooltip("飞行物飞行时长")]

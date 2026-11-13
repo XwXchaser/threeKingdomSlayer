@@ -15,6 +15,15 @@ public class EnemyProjectile : MonoBehaviour
     [Tooltip("QTE 飞行物标记：设为 true 则不会被常规 Parry 反弹")]
     public bool isQTEProjectile;
 
+    [Tooltip("命中后给玩家留下的毒（每次跳伤）。**防御只免直接伤害，毒照扣** —— 投壶兵的威胁来源。")]
+    public float poisonDamagePerTick;
+    [Tooltip("中毒持续时间（秒）。")]
+    public float poisonDuration;
+    [Tooltip("毒跳伤间隔（秒）。")]
+    public float poisonTickInterval = 0.5f;
+    [Tooltip("能否被玩家的攻击在半空**打落**（打落则既不伤害也不留毒）。默认关（由敌人配置写入）。")]
+    public bool canBeShotDown = false;
+
     private Enemy _sourceEnemy;
 
     private Vector3 _startPos;
@@ -135,10 +144,52 @@ public class EnemyProjectile : MonoBehaviour
         if (_arrived) return;
         _arrived = true;
 
+        // ★ 毒**先于**伤害结算：防御只吸收直接伤害 ⇒ 陶壶即使被挡下，毒照样上（投壶兵的设计核心）。
+        if (poisonDuration > 0f && poisonDamagePerTick > 0f)
+            PlayerState.Instance?.ApplyPoison(poisonDamagePerTick, poisonDuration, poisonTickInterval);
+
         // 玩家受到伤害
         PlayerState.Instance?.TakeDamage(damage, _sourceEnemy);
 
         DisposeProjectile();
+    }
+
+    /// <summary>
+    /// **被玩家的攻击在半空打落**（投壶兵的核心交互：把陶壶打掉 ⇒ 不伤害、不留毒）。
+    /// 不造成任何伤害，只是让投掷物消失（沿用既有的淡出回收）。
+    /// </summary>
+    public void ShootDown()
+    {
+        if (!gameObject.activeSelf)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        if (_arrived) return;
+
+        _arrived = true;
+        _flightProgressTween?.Kill();
+        _flightProgressTween = null;
+        DebugLog.Info($"[EnemyProjectile] 被击落 id={GetInstanceID()} pos={transform.position}");
+        DisposeProjectile();
+    }
+
+    /// <summary>
+    /// 玩家挥枪时，**身边的敌方投射物会被打落**（把陶壶在半空打掉）。
+    /// 规则：玩家正在出招（<see cref="AttackSystem.IsActionPlaying"/>）且投射物在
+    /// <see cref="AttackSystem.ProjectileShootDownRadius"/> 半径内 ⇒ 打落。
+    /// </summary>
+    private void TryShootDown()
+    {
+        if (!canBeShotDown || _arrived) return;
+        var attack = AttackSystem.Instance;
+        if (attack == null || !attack.IsActionPlaying) return;
+        float radius = attack.ProjectileShootDownRadius;
+        if (radius <= 0f) return;
+        var player = PlayerState.Instance;
+        if (player == null) return;
+        if (Vector3.Distance(player.transform.position, transform.position) > radius) return;
+        ShootDown();
     }
 
     private void CacheVisualTransforms()
@@ -237,6 +288,10 @@ public class EnemyProjectile : MonoBehaviour
         Vector3 position = EvaluatePosition(_flightProgress);
         Vector3 nextPosition = EvaluatePosition(Mathf.Min(_flightProgress + 0.01f, 1f));
         transform.position = position;
+
+        // ★ 玩家用攻击打落投射物（投壶兵）
+        TryShootDown();
+        if (_arrived) return;
 
         Vector3 velocity = nextPosition - position;
         if (velocity.sqrMagnitude > 0.0001f)

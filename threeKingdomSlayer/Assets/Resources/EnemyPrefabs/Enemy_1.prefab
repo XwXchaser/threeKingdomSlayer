@@ -310,6 +310,10 @@ MonoBehaviour:
     hitFrames: []
   isRanged: 0
   projectilePrefab: {fileID: 0}
+  projectilePoisonDamage: 0
+  projectilePoisonDuration: 0
+  projectilePoisonTickInterval: 0.5
+  projectileCanBeShotDown: 0
   projectileArcHeight: 3
   projectileFlyDuration: 1
   projectileZTargetOffset: 5

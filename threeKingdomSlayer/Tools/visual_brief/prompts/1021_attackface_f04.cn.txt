@@ -1,0 +1,7 @@
+把图一改成同一个 2D 游戏精灵，整个角色保持原样：同样的身体、同样的姿势、同样的头部角度、同一顶素色深布帽与发髻垂带、同一层浅灰胡茬、同样的眉形、同一张脸与同样的年龄、同一件灰米布袍与深色皮革小甲片、同一面带铁包边铆钉的木盾（举在画面左侧）、同样的绘制尺寸、同样的纯色绿幕背景。**只改一样：他的表情。**
+
+他此刻的表情是这一记重盾击里最吃力、最紧绷的一拍：眉毛向内下方拧成深结；眼睛比图一睁得略大，但上眼睑仍压住、**不露眼白**；鼻翼张开；下颌前送、牙关咬紧，颊肌绷紧贴在骨头上。他是在**较劲**发力，不是在咆哮。**嘴保持闭合，不露齿。**
+
+必须仍然是图一里的**同一个人**：同样的脸型、同样的眉形、同样的胡茬、同一顶帽子、同样的肤色。不要美化他，不要让他变年轻，不要改他的面部特征，不要加胡子或八字胡，不要改帽子/服装/盾/持盾的手，不要改姿势、构图或背景。
+
+负面词：bared teeth, showing teeth, open mouth, shouting, screaming, roaring, exaggerated grimace, comic rage, bulging eyes, wide open eyes, white of the eyes, distorted face, different face, younger face, beard, moustache, metal helmet, glowing eyes, red scarf, shield on the right side of the picture, sword, second person, extra limbs, cropped limb, hidden face, scenery, floor, shadow, text, UI, watermark, checkerboard

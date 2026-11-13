@@ -1,0 +1,3 @@
+﻿variant,source_path,bytes,sha256,note
+idle_identity_greenscreen_1024,Enemy1021ArtSource/01_KeyPosePreparation/1021_idle_identity_greenscreen_1024.png,461911,49634fdcac936a66dbc5cb29af3af4f48c2d03e0fdf5dca346d4c6e2d7b1a176,"**已验收身份图（当前定稿）**：1021 曹军轻装楯兵，1024² 纯绿幕 (0,159,62) std=0、人物本体高 696、可见脚底 y=895、身体中心 x=474.5、封闭孔 0。盾在画面左侧、由人物右手持握。表情＝『凶但克制』（压眉+收窄直视+闭嘴硬线），用户 2026-11-09 验收通过。规格见同目录 1021_idle_identity_prompt.md。"
+base_crop_from_v3_lineup,Enemy1021ArtSource/01_KeyPosePreparation/1021_base_crop_from_v3_lineup.png,245963,42df8f29fd980a4fb8e72fe249f48ad59aca1c32c6597dc655419231ad9acf7f,1021 的**编辑底件**：从五人并排图 v3 里裁出的 1021（277×410，含盾）。所有 1021 单图编辑（表情三档迭代）都以它的 1024² 重贴版为输入，保证身体/装备/盾侧/画风基线一致。

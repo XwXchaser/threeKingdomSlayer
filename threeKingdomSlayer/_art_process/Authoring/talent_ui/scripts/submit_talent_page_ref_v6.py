@@ -6,7 +6,7 @@
 
 接口沿用项目既有 GPT Image 链路（skill/gpt-image-generation.md）：
   POST https://api.muskapis.com/v1/images/generations
-  model=gpt-image-2.5-sunburst  size=1024x1536  quality=max  output_format=png  n=1
+  model=gpt-image-2.6-sunburst  size=1024x1536  quality=max  output_format=png  n=1
   response_format=b64_json —— 图片 CDN 从本机不可达（见 talent_ui_v5 记录），改 base64 直回
 
 纪律：只提交一次，不自动重试、不批量生成（交接 §7）。
@@ -30,7 +30,7 @@ RESP_JSON = os.path.join(OUT_DIR, "talent_page_ref_v6.response.json")
 STATUS_JSON = os.path.join(OUT_DIR, "talent_page_ref_v6.status.json")
 
 ENDPOINT = "https://api.muskapis.com/v1/images/generations"
-MODEL = "gpt-image-2.5-sunburst"
+MODEL = "gpt-image-2.6-sunburst"
 SIZE = "1024x1536"
 QUALITY = "max"
 TIMEOUT = 900

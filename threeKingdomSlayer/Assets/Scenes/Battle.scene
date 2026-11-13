@@ -461,6 +461,7 @@ MonoBehaviour:
   _arrowEffectPrefab: {fileID: 1707118907136065935, guid: 7d3ceaa069c134f419679af082cb68a5, type: 3}
   _cycloneEffectPrefab: {fileID: 3409137233646897394, guid: cc817a47c8a9d8b47820f0677fe9f041, type: 3}
   _waveManager: {fileID: 0}
+  _chainLinkSprite: {fileID: 21300000, guid: 81cf6e71845380a4b800caacaab0edbb, type: 3}
 --- !u!114 &5137012
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24444,6 +24445,7 @@ MonoBehaviour:
   - {fileID: 2638271005461821682, guid: d5ca2237e6fd0c245a7300fb592baac0, type: 3}
   - {fileID: 688460577474092011, guid: 8259a459d63c77d4389e863f6d90ad8d, type: 3}
   - {fileID: 1987404102585906723, guid: 36266560527f15d4c80027f6217e6cc6, type: 3}
+  - {fileID: 4490234657047111907, guid: e18f635ddcaa68048885cad0cba1df4d, type: 3}
 --- !u!1 &1774428171
 GameObject:
   m_ObjectHideFlags: 0
@@ -24643,6 +24645,10 @@ MonoBehaviour:
   attackSequence: []
   isRanged: 0
   projectilePrefab: {fileID: 0}
+  projectilePoisonDamage: 0
+  projectilePoisonDuration: 0
+  projectilePoisonTickInterval: 0.5
+  projectileCanBeShotDown: 0
   projectileArcHeight: 3
   projectileFlyDuration: 1
   projectileZTargetOffset: 5
@@ -25011,6 +25017,7 @@ MonoBehaviour:
   playerState: {fileID: 1878310418}
   parryProjectileRange: 10
   finisherParryUnlocked: 0
+  projectileShootDownRadius: 3.5
   _phantomMaterial: {fileID: 2100000, guid: fee439e9b5beeee4e8d78510d42a97ee, type: 2}
   motionBlurMaterial: {fileID: 2100000, guid: 98ae1b8f68e3bfd41b9d2ba54b30bc73, type: 2}
   _returnWavePrefab: {fileID: 1696509926255576402, guid: 8d45dcaf9eddb404882cd74d73471000, type: 3}

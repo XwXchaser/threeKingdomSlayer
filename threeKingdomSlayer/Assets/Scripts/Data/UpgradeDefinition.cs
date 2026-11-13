@@ -118,6 +118,14 @@ public class UpgradeDefinition : ScriptableObject
     [Tooltip("按等级配置主动疾病效果。index 0 = Lv1")]
     public List<DiseaseLevelConfig> diseaseLevels = new List<DiseaseLevelConfig>();
 
+    [Header("抡斧劈砍（ActiveSkillEffectType=AxeSmash）")]
+    [Tooltip("按等级配置抡斧。index 0 = Lv1")]
+    public List<AxeSmashLevelConfig> axeSmashLevels = new List<AxeSmashLevelConfig>();
+
+    [Header("追命锁链（ActiveSkillEffectType=ChainPull）")]
+    [Tooltip("按等级配置锁链拉人。index 0 = Lv1")]
+    public List<ChainPullLevelConfig> chainPullLevels = new List<ChainPullLevelConfig>();
+
     // ═══════════════════════════════════════════════
     // 旧版兼容字段（Inspector 隐藏，保留序列化数据）
     // ═══════════════════════════════════════════════
@@ -613,4 +621,42 @@ public struct PhantomStep
     public float alpha;
     [Tooltip("该段幻影延迟（秒），0=无延迟")]
     public float delaySeconds;
+}
+
+/// <summary>抡斧劈砍配置段（REQ-008 · 参考影之刃零「巨凶斧」：破坏型 / 高破盾）。</summary>
+[System.Serializable]
+public struct AxeSmashLevelConfig
+{
+    [Tooltip("每个敌人受到的伤害")]
+    public int damage;
+    [Tooltip("覆盖前方排数（从第 0 排起）")]
+    public int rangeRows;
+    [Tooltip("无视盾牌减伤且必定破盾")]
+    public bool ignoreShieldBlock;
+    [Tooltip("附加破防值（削韧）")]
+    public int poiseDamage;
+    [Tooltip("特效预制体（留空则用刀光占位）")]
+    public GameObject effectPrefab;
+    [Tooltip("**抡起来的武器模型**（3D）。留空 = 用玩家这杆长枪占位。\n" +
+             "规范见 design/weapon-3d-art-spec-axe-and-chain.md。")]
+    public GameObject weaponPrefab;
+}
+
+/// <summary>追命锁链配置段（REQ-009 · 参考影之刃零「猎人的追命锁镰」：钩索勾住远处）。</summary>
+[System.Serializable]
+public struct ChainPullLevelConfig
+{
+    [Tooltip("命中伤害（伤害不是这个技能的重点，重点是拉人）")]
+    public int damage;
+    [Tooltip("拉拽时长（秒）")]
+    public float pullSeconds;
+    [Tooltip("只拉这个距离以内的敌人（世界单位；0 = 不限）")]
+    public float maxRange;
+    [Tooltip("特效预制体（留空则用箭矢占位）")]
+    public GameObject effectPrefab;
+    [Tooltip("**锁镰模型**（3D，带铁链）。留空 = 用玩家这杆长枪占位。\n" +
+             "规范见 design/weapon-3d-art-spec-axe-and-chain.md。")]
+    public GameObject weaponPrefab;
+    [Tooltip("**链节贴图**（2D，一个链环）。留空 = 用 Inspector 上的默认链节贴图。")]
+    public Sprite chainLinkSprite;
 }

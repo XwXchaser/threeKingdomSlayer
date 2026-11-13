@@ -27,7 +27,7 @@ aiEditMode: inherit
 |---|---|---|---|
 | Idle | `sword_enemy_v4_combat_idle_loop_v1_720p_4s.mp4` | `task_688460292bfc499f9f1f217b9a4c329c` | `sword_enemy_v4_idle_cycle_v1/clean_raw`（f000–f048） |
 | 正面受击 | `sword_enemy_hit_front_v2.mp4` | `task_39f03a1065f5447bb302ab4e81bfe03b` | `sword_enemy_hit_front_v2/`（f000–f096 每 8 帧 + f059）与 `sword_enemy_hit_front_v2/selected/raw_fNNN.png` |
-| Attack | `sword_enemy_attack_front_v2.mp4` | `task_67c87dbe7385459cb37f16aa958bee7e` | `sword_enemy_attack_front_v1/clean_raw` |
+| Attack | `sword_enemy_attack_front_v1.mp4` | `task_e92bbc89a802478db2863251b66d9abb` | `sword_enemy_attack_front_v1/clean_raw` |
 | Dead | `sword_enemy_dead_front_v4.mp4` | `task_e3d84ebe3403436192b5c1d3697488aa` | `sword_enemy_dead_v1/clean_raw_v4` |
 | Walk | `sword_enemy_walk_front_v4.mp4` | `task_18e87a74532b4f1f86161a1b00b318cf` | `sword_enemy_walk_v1/raw_frames_v4` |
 | 左受击 | `sword_enemy_hit_left_v3.mp4` | `task_3992f2cba10041af902a0aff47a43e05` | `sword_enemy_hit_left_v3/frames` |
@@ -35,6 +35,8 @@ aiEditMode: inherit
 | 击飞 Rise | `enemy1011_launch_rise_v1.mp4` | `task_1c5d1f90fb0549f2b649110eda38208d` | `sword_enemy_launch_v1/frames_rise_v1` |
 | 落地 Fall | `enemy1011_launch_landing_v1.mp4` | `task_9f5c4081f24c4206afeae33c071e19c3` | `sword_enemy_launch_v1/frames_landing_v1` |
 | 起身 Getup | `enemy1011_launch_getup_v1.mp4` | `task_b226b12b3dc24b9aae00e0ad63480260` | `sword_enemy_launch_v1/frames_getup_v1` |
+
+> **2026-11-05 更正（Attack）**：原记录把 Attack 的源视频写作 `sword_enemy_attack_front_v2.mp4`（task_67c87dbe…），但实测**已部署的 `Enemy_1011_attack1..16.png` 出自 `sword_enemy_attack_front_v1.mp4`**（task_e92bbc89…，字节数 2,015,371 与台账 v1 行一致）：掩码 IoU attack10/f055=**0.930**、attack6/f049=**0.956**、attack3/f029=**0.957**，而 v2 最高仅 **0.61**（已扫 f025–f094 全帧，排除帧号漂移）。**v2 是另一支未被验收的 take（中段带大回旋弧光）**，源包内该文件已删除并替换为 v1；工程内已部署精灵与 v1 一致，**无需重新接入**。复核工具：`Tools/visual_brief/compare_video_takes.py`。
 
 左/右受击与四条 Launch 视频的首尾帧都是 `Library/Locus/tmp/sword_enemy_hit_front_v2/anchor_green.png`（960²，背景中位 RGB(0,177,64)）。
 

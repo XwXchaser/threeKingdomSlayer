@@ -1,0 +1,13 @@
+{
+  "version": "1021_attack_expr_study_E1",
+  "handoff": "Locus/knowledge/plan/enemy1021-art-production-handoff.md §0.21.8",
+  "note": "1021 attack 表情研究片（视频路线第 1 步）。用途：只做表演参考，不进工程；验收后作为第二个 reference_video 喂给替换重跑（第 2 步）。输入 = 已验收身份图按母片构图/色键对齐的 960² 上传副本（与替换重跑用同一张，保证形象与尺度一致）。",
+  "references": [
+    {
+      "order": 1,
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1021_attack_replace/1021_identity_for_attack_960.png",
+      "role": "image 1: 1021 曹军轻装楯兵（已验收身份图按母片构图与色键对齐的 960² 副本）—— 脸/布帽/胡茬/服装/木盾/持盾手全部沿用；本片只演表情弧线，身体站定不动",
+      "expected_sha256_prefix": "0ecb4d00e3d4f816"
+    }
+  ]
+}

@@ -40,6 +40,15 @@ public partial class AttackSystem : MonoBehaviour
              "正式版本应由局外解锁（天赋树/存档）写入，这里先用编辑器开关代替，避免阻塞内容验证。")]
     [SerializeField] private bool finisherParryUnlocked = false;
 
+    [Header("投射物")]
+    [Tooltip("玩家挥枪时，**多近的敌方投射物会被打落**（世界单位）。\n" +
+             "0 = 关闭“打落”机制。\n" +
+             "用途（投壶兵）：陶壶在半空被打掉 ⇒ 不伤害、也不留毒 ⇒ 远程投掷物成为高优先级目标。")]
+    [SerializeField] private float projectileShootDownRadius = 3.5f;
+
+    /// <summary>玩家挥枪时可打落的投射物半径（世界单位；0 = 关闭）。</summary>
+    public float ProjectileShootDownRadius => projectileShootDownRadius;
+
     [Header("幻影攻击")]
     [Tooltip("幻影攻击使用的紫色透明材质")]
     [SerializeField] private Material _phantomMaterial;

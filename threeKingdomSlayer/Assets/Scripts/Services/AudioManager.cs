@@ -69,6 +69,8 @@ public class AudioManager : MonoBehaviour
     private AudioSource _bgmMainSource;
     private AudioSource _bgmEnvSource;
     private AudioSource _sfxSource;
+    /// <summary>变调音效专用音源（不与主音效源共用 ⇒ 改 pitch 不会影响其它音效）。</summary>
+    private AudioSource _pitchedSource;
 
     private const string MASTER_VOLUME_KEY = "master_volume";
     private const string BGM_VOLUME_KEY = "bgm_volume";
@@ -266,6 +268,17 @@ private int _lastEnemySwingIndex = -1;
 
     public void PostEvent(string eventName)
     {
+        PostEvent(eventName, 1f, 1f);
+    }
+
+    /// <summary>
+    /// 带**音高 / 音量**的事件派发（REQ-006 · 破防专属音）。
+    /// ⚠ <c>AudioSource.PlayOneShot</c> 本身没有 pitch 参数 ⇒ 变调必须走**独立的音源**，
+    ///   否则会连带改掉主音效源的音高（把其它正在播的音效一起变调）。
+    /// ⚠ 只有需要变调的事件用这个重载；其余事件的音量仍由各自的档位决定。
+    /// </summary>
+    public void PostEvent(string eventName, float pitch, float volume)
+    {
         EnsureAudioSources();
         switch (eventName)
         {
@@ -303,7 +316,53 @@ private int _lastEnemySwingIndex = -1;
             case "Guard_Block":
                 PlayGuardBlock();
                 break;
+            case "Guard_Break":
+                PlayGuardBreak(pitch, volume);
+                break;
         }
+    }
+
+    /// <summary>
+    /// **破防专属音**（REQ-006）：格挡音**降调** + 重击音叠一层更低的低频
+    /// ⇒ 读成「被顶开」而不是普通格挡。
+    /// 素材还没交 ⇒ 先用现有 clip 降调拼（<c>_guardBlockClips</c> / <c>_heavyHitClips</c>）。
+    /// </summary>
+    private void PlayGuardBreak(float pitch, float volume)
+    {
+        if (_guardBlockClips != null && _guardBlockClips.Length > 0)
+        {
+            int index = Random.Range(0, _guardBlockClips.Length);
+            PlayOneShotPitched(_guardBlockClips[index], volume, pitch);
+        }
+        if (_heavyHitClips != null && _heavyHitClips.Length > 0)
+        {
+            int index = Random.Range(0, _heavyHitClips.Length);
+            // 低频垫底：再降一档、音量略低
+            PlayOneShotPitched(_heavyHitClips[index], volume * 0.7f, Mathf.Max(0.25f, pitch - 0.2f));
+        }
+    }
+
+    /// <summary>
+    /// 变调的一次性音效：走**专用音源**，不动主音效源的 pitch。
+    /// </summary>
+    private void PlayOneShotPitched(AudioClip clip, float volume, float pitch)
+    {
+        if (clip == null) return;
+        EnsureAudioSources();
+        if (_pitchedSource == null)
+        {
+            _pitchedSource = gameObject.AddComponent<AudioSource>();
+            _pitchedSource.playOnAwake = false;
+            _pitchedSource.loop = false;
+            _pitchedSource.spatialBlend = 0f;
+            if (_audioMixer != null)
+            {
+                var sfxGroups = _audioMixer.FindMatchingGroups("SFX");
+                if (sfxGroups.Length > 0) _pitchedSource.outputAudioMixerGroup = sfxGroups[0];
+            }
+        }
+        _pitchedSource.pitch = Mathf.Clamp(pitch, 0.25f, 3f);
+        _pitchedSource.PlayOneShot(clip, Mathf.Clamp(volume, 0f, 4f));
     }
 
     private void PlayRandom(AudioClip[] clips, float volumeScale = 1f)

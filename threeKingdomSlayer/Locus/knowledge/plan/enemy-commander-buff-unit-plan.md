@@ -17,7 +17,7 @@ aiEditMode: inherit
 >
 > **【交接文档：`plan/enemy1013-art-handoff-20261108.md`】**
 >
-> **最新任务（2026-11-08 续）：1013 idle 形象裁切与后续视频内容（§2.15.10）。** **1013 的形象、Idle、Cast、Walk（奔跑）四项均已验收**；已验收内容归集到 `Enemy1013ArtSource/`（该文件夹只放验收内容；被否候选与过程产物已移出到 `C:/Users/steam/Pictures/gptGen/enemy1013_rejected/`）。**暂不接入 Unity**（未导入 Assets、未接 Animator）。已验收帧：**Idle 6 帧**（`04_IdleFrames/`，循环 P=16 起相位 f003）、**Cast 12 帧**（`03_CastFrames/`，举→挥→收回到 idle，首尾同为 idle 姿态）、**Walk 6 帧**（`05_WalkFrames/`，奔跑；步态周期 P=20 起相位 f033；成片出框 0 帧、首末帧 IoU 0.9962、旗无横向漂移）。两组源片人物身高 636 / 632px → 像素密度一致，落位 k 分别 0.951 / 0.972 → 游戏内人物身同为 605。详见 §2.15.10.11–§2.15.10.12。下一步（待指示）：落位写入 Assets/Sprites/Enemy/Enemy1013/ 并接 Animator；其余动作（受击三支／Dead／击飞链）按同口径推进（每支 6 帧、杆布与人物整张一起动、不走视频替换流）。Walk 的过程与结论见 `plan/enemy1013-art-handoff-20261108.md` 与 `memory/enemy1012-art-replacement-pipeline.md` §13。
+> **最新任务（2026-11-08 续）：1013 idle 形象裁切与后续视频内容（§2.15.10）。** **1013 的形象、Idle、Cast、Walk（奔跑）四项均已验收**；已验收内容归集到 `Enemy1013ArtSource/`（该文件夹只放验收内容；被否候选与过程产物已移出到 `C:/Users/steam/Pictures/gptGen/enemy1013_rejected/`）。**暂不接入 Unity**（未导入 Assets、未接 Animator）。已验收帧：**Idle 6 帧**（`04_IdleFrames/`，循环 P=16 起相位 f003）、**Cast 12 帧**（`03_CastFrames/`，举→挥→收回到 idle，首尾同为 idle 姿态）、**Walk 6 帧**（`05_WalkFrames/`，奔跑；步态周期 P=20 起相位 f033；成片出框 0 帧、首末帧 IoU 0.9962、旗无横向漂移）。两组源片人物身高 636 / 632px → 像素密度一致，落位 k 分别 0.951 / 0.972 → 游戏内人物身同为 605。详见 §2.15.10.11–§2.15.10.12。**Dead 那一轮（2026-11-09）验收不通过，已作废**，Dead 需重做（原因与规则见交接文档「❌ Dead 轮」）。下一步（待指示）：落位写入 Assets/Sprites/Enemy/Enemy1013/ 并接 Animator；其余动作（受击三支／Dead／击飞链）按同口径推进（每支 6 帧、杆布与人物整张一起动、不走视频替换流）。Walk 的过程与结论见 `plan/enemy1013-art-handoff-20261108.md` 与 `memory/enemy1012-art-replacement-pipeline.md` §13。
 >
 > **Cast（号令）方案已备妥但**未提交（§2.15.10.2）**：锚图 `Enemy1013ArtSource/02_IdentityImages/1013_cast_anchor_green_834x1112.png`（3:4、身体 560px、旗上方留白 153px）+ 中英提示词 `Tools/visual_brief/prompts/1013_cast_v1.txt` / `.cn.txt` 已存盘并 dry-run 校验；用户选定 3:4 构图，但选择**先不提交**（等其确认动作设计/提示词）。
 >
@@ -192,7 +192,7 @@ side view, three-quarter view, rear view, cropped body, extra people, extra limb
 
 - **Idle / Walk**：双手握高举旗待命，旗布随步轻晃；正常随队行军，旗始终清楚，不画成不能移动的场景旗台。
 - **Cast 前摇 0.8s（2026-11-08 用户澄清后定稿）**：**挥旗**——旗手原地双手握杆，**在身前反复横扫**：肩带臂、手腕领杆，杆顶在头顶前方**划弧线来回甩**，一下接一下不停顿；旗布有惯性、**滞后甩在杆后**，每甩到弧线末端布面被拉直「炸开」成一整片再回落；身体随甩动拧转、重心在两脚间来回压；**最后一甩到达弧线末端的那一瞬张口呐喊**（顶点表情）。**注意：「挥」是一次性的向上「举」完全不同的动作**——举是到某个姿势停住，挥是反复划弧、停不下来。
-- **Dead**：旗手失力倒地，**长杆与旗面倒地**——旗面低垂摊在地上、旗杆斜倒，不再飘动，表现号令中断；不做魔法爆炸。旗与杆的保留 / 脱离方式须随动画和后续接线单独确认。
+- **Dead**：⚠️ **2026-11-09 本条作废，待重定** —— 原写法“旗手失力倒地，长杆与旗面倒地（旗面摊在地上、旗杆斜倒）”被用户否决：**旗与杆的相对位置关系不能改**（旗始终系在杆顶，杆倒时旗跟着杆倒，不能把旗画成身体旁边另一块平铺的布），且死法必须与工程内其他敌人已部署的 Dead 一致。**详见 `plan/enemy1013-art-handoff-20261108.md`「❌ Dead 轮」与 `memory/enemy1012-art-replacement-pipeline.md` §14。**
 
 ### 2.6 后续 Unity 技术规格（旧管线参考，待新形象实测）
 

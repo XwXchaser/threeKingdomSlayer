@@ -1,0 +1,13 @@
+{
+  "version": "1021_idle_menace_v1",
+  "handoff": "Locus/knowledge/plan/enemy1021-art-production-handoff.md §0.21.3",
+  "note": "1021 idle 形象 · 表情回收一档：上一版（idle_fierce_v1）龇牙露齿、用力过猛。本版从 v3 组图裁切底件重新做，目标＝『凶但克制』：压眉、锐利直视、闭紧嘴、下颌绷紧，不露齿不瞪眼。",
+  "references": [
+    {
+      "order": 1,
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1021_identity_v2/1021_base_v3_green_1024.png",
+      "role": "image 1: 1021 轻装楯兵（从 v3 组图裁出重贴，画风与前四位同源）—— 身体 / 站姿 / 比例 / 布袍小甲片 / 素色布帽 / 浅灰胡茬 / 木盾（画面左、人物右手）全部保留；只把表情做成『凶但克制』",
+      "expected_sha256_prefix": "3a60eab0ba8ff4c"
+    }
+  ]
+}

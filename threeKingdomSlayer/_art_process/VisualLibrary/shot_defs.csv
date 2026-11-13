@@ -1,0 +1,14 @@
+shot_id,title,scene,camera,setup,capture,time,tags,crop,max_long_edge,status,notes
+hub_landing,落地页（主菜单）,Assets/Scenes/Battle.scene,MainCamera,hub,game,,hub;ui;landing,,1080,planned,关卡内容进场景即加载的主落地页
+battle_hud_idle,战斗 HUD 常态,Assets/Scenes/Battle.scene,MainCamera,wave:1,game,,combat;hud,,1080,planned,底部 HUD 常态布局
+battle_hud_combo,连击数与 Buff 图标,Assets/Scenes/Battle.scene,MainCamera,wave:2+combo:20,game,,combat;hud;combo;buff,"0,0,1,0.55",1080,planned,连击数 + 玩家头像左下 buff 图标
+battle_qte,QTE 老虎机提示,Assets/Scenes/Battle.scene,MainCamera,qte:Sweep,game,,combat;qte;ui,"0,0,1,0.45",1080,planned,只截上方 QTE 判定区
+battle_enemy_1021,1021 胆怯持盾兵,Assets/Scenes/Battle.scene,MainCamera,spawn:Enemy_1021,game,,combat;enemy;1021,"0,0,1,0.75",1080,planned,中景看盾与站姿
+battle_boss_104,Boss 104,Assets/Scenes/Battle.scene,MainCamera,spawn:Boss_104,game,,combat;boss,,1080,planned,Boss 战全景
+battle_damage_numbers,伤害跳字,Assets/Scenes/Battle.scene,MainCamera,spawn:Enemy_1021+player_attack:Stab,game,,combat;feedback;ui,"0,0,1,0.5",1080,planned,跳字分级
+stage_select,关卡选择页,Assets/Scenes/StageSelect.scene,MainCamera,none,game,,stage_select;ui,,1080,planned,选关与天赋入口
+talent_page,天赋页总览,Assets/Scenes/TalentTree.scene,MainCamera,none,game,,talent;ui,,1080,planned,三分页 + 节点树现状
+talent_page_detail,天赋详情卡,Assets/Scenes/TalentTree.scene,MainCamera,select_node:talent_ice_thaw,game,,talent;ui,,1080,planned,详情卡两段式解锁说明
+battle_skill_icons_choice,三选一弹窗（技能图标实机显示）,Assets/Scenes/Battle.scene,MainCamera,upgrade_choice:active_cyclone|active_arrow_rain|active_wave,game,,combat;skill;icon;choice;ui,,1080,planned,旋风/箭雨/海浪三个主动技能图标的实机显示
+battle_overall_scene,战斗场景整体,Assets/Scenes/Battle.scene,MainCamera,none,game,,combat;overall;scene,,1080,planned,整屏构图与 HUD 现状
+battle_enemy_1012,1012 兜鍪贼兵（实机）,Assets/Scenes/Battle.scene,MainCamera,spawn:Enemy_1012+freeze,game,,combat;enemy;1012;bandit,"0,0,1,0.8",1080,planned,引擎内 1012 的实际显示：像素化程度与身材比例

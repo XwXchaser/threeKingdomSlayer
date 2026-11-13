@@ -261,6 +261,11 @@ public partial class Enemy : MonoBehaviour
         // ★ **出站攻击倍率快照**（督战单位 1013 的号令）：远程箭矢在发射时把伤害**快照**走
         //   （与波次倍率的快照口径一致）→ 之后号令层数变化不影响已在途的箭矢。
         float outgoingMult = EnemyStatusAtkMod.GetOutgoingMultiplier(this);
+        // ★ 投壶兵的毒 / 可击落：随发射写入投射物（毒在命中时结算 ⇒ 防御也挡不住）
+        proj.poisonDamagePerTick = projectilePoisonDamage;
+        proj.poisonDuration = projectilePoisonDuration;
+        proj.poisonTickInterval = projectilePoisonTickInterval > 0f ? projectilePoisonTickInterval : 0.5f;
+        proj.canBeShotDown = projectileCanBeShotDown;
         proj.Launch(startPos, endZ, endX, attackDamage * outgoingMult, projectileArcHeight * arcHeightMultiplier,
             projectileFlyDuration * durationMultiplier, this, maxDescentPitch: maxDescentPitch);
 

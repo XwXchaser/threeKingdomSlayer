@@ -16,7 +16,11 @@ public enum ActiveSkillEffectType
     ChargeAttackShockwave,
     Wave,
     Disease,
-    IceMist
+    IceMist,
+    /// <summary>抡斧劈砍（REQ-008）：无视盾牌减伤 + 必定破盾。</summary>
+    AxeSmash,
+    /// <summary>追命锁链（REQ-009）：把**最远、最弱**的敌人拉到最前排（排序工具，不是伤害工具）。</summary>
+    ChainPull
 }
 
 [CreateAssetMenu(fileName = "ActiveSkillDefinition", menuName = "一夫当关/主动技能定义")]

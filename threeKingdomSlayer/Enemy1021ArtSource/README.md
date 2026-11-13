@@ -1,8 +1,22 @@
 # Enemy 1021 持盾兵 · 美术素材包（待另一台主机回填）
 
-- 本目录**在这台主机（Administrator）上是空的**：1021 的源视频与关键姿态在另一台开发主机（`steam`）的
-  `C:/Users/steam/Videos/doubaoVideo/` 与 `C:/Users/steam/Pictures/gptGen/`，本机没有文件，无法代为拷贝。
+> **2026-11-09 更新：本机（steam）已入库 1021 的验收身份图与编辑底件，见下方「当前已入库内容」。**
+> 下列“本机是空的”说的是另一台主机（Administrator）的状态，仍然成立。
+
+- 本目录**在另一台开发主机（Administrator）上是空的**：1021 的源视频与关键姿态在开发主机（`steam`）的
+  `C:/Users/steam/Videos/doubaoVideo/` 与 `C:/Users/steam/Pictures/gptGen/`，那台机器没有文件，无法代为拷贝。
 - 目录结构与同步白名单已经在根 `.gitignore` 里预留，另一台主机按下面的约定放文件即可直接入库。
+
+## 当前已入库内容（2026-11-09）
+
+| 路径 | 内容 |
+|---|---|
+| `01_KeyPosePreparation/1021_idle_identity_greenscreen_1024.png` | **已验收身份图（当前定稿）**：1024² 纯绿幕 (0,159,62)、人物本体高 696、可见脚底 y=895、身体中心 x=474.5；盾在画面左侧由人物右手持握；表情＝“凶但克制”。用户 2026-11-09 验收通过 |
+| `01_KeyPosePreparation/1021_idle_identity_prompt.md` | 该图的生成规格（中英提示词、负面词、参考图职责、参数、溯源链、被否版本、已知偏差） |
+| `01_KeyPosePreparation/1021_base_crop_from_v3_lineup.png` | 1021 的编辑底件（从五人并排图 v3 裁切），所有 1021 单图编辑的输入基线 |
+| `00_Index/identity-images.csv` | 身份图台账（variant / source_path / bytes / sha256 / note） |
+
+> 源视频与动作帧仍未回填；`00_SourceVideos/` 与 `01_KeyPosePreparation/` 的动作部分目前是空的。
 
 ## 约定结构（与 1011 / 109 一致）
 
@@ -60,5 +74,6 @@ enemy1021_hit_front_keypose_v2.png
 ## 已知进度入口
 
 - `Locus/knowledge/plan/enemy1021-minimal-playable-handoff.md`（Idle/Walk/Attack/ShieldGuardHit/HitFlash/Dead 已游戏验收；HitRight、ShieldBreak 已接入待验收）
-- `Locus/knowledge/plan/enemy1021-art-production-handoff.md`
+- `Locus/knowledge/plan/enemy1021-art-production-handoff.md`（**§0.21 / §0.21.1–§0.21.5：三国风身份重构与 idle 形象定稿全过程**）
 - `Locus/knowledge/plan/enemy1021-coward-dead-10s-video-preparation.md`
+- `Locus/knowledge/memory/enemy-proportion-lineup-reference.md`（并排比例研究图的方法与经验）

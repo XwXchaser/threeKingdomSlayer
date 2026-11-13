@@ -1,0 +1,11 @@
+Edit image 1 into a single front-facing 2D game-sprite identity image of a Han-era Cao army shield-bearer. This is a portrait edit of one existing character, not a new design and not a video.
+
+KEEP UNCHANGED from image 1: the entire body and stance, the head-to-body proportions, the plain dark cloth cap with its trailing tie, the grey-beige cross-collar cloth tunic with only a few small dark leather-and-iron armor plates over the shoulders and chest, the brown leather belt and sturdy bracers, the brown trousers, the grey-white leg wraps, the heavy boots — and above all THE SHIELD: the same broad rectangular timber shield with dark iron bands and studs, held upright in front of his body on the LEFT side of the picture, in front of his right arm, with his right arm hidden behind it and his left arm hanging free at his side. Do not move the shield to the other side of the picture, do not swap which arm holds it, and do not mirror the character.
+
+REPLACE ONLY THE FACE with the face from image 2: the weathered older Han-era soldier's face — heavy-lidded narrowed eyes, level heavy brows with a faint crease between them, a broad weathered nose, sunken cheeks with light grey stubble over the jaw and chin, a firm closed mouth, a lined brow and crow's feet. Copy that facial structure, that age and that stubble faithfully. His face must be completely visible from the eyebrows down to the chin.
+
+Do NOT keep the face from image 1: remove his full black beard, remove the heavy black eyebrows of image 1, and remove the hard glare of image 1. He is no longer a black-bearded commander. He is a grizzled line soldier in his forties, with short grey stubble and a tired, stubborn, watchful look.
+
+Do NOT copy the metal helmet, the red plume or the red scarf from image 2 — he keeps the plain dark cloth cap of image 1.
+
+Keep the flat chroma-green background (RGB 0,159,62), the same full-body framing and the same drawing size. High-definition pixel-art Three Kingdoms action-game rendering: clean dark contours, clustered light and shadow planes, solid cool iron and warm cloth and leather volumes. Serious and worn, not cute.

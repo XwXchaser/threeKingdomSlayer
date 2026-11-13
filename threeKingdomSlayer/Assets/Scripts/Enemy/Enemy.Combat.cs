@@ -24,7 +24,7 @@ public partial class Enemy : MonoBehaviour
     /// <summary>
     /// 受到伤害
     /// </summary>
-    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true, bool canInterruptAttack = true, bool triggerHitAnimation = true, bool ignoreDamageModifiers = false, HitFeedbackSource feedbackSource = HitFeedbackSource.BasicAttack, HitFeedbackStrength? feedbackStrength = null, Vector3? impactPosition = null, Vector3 impactDirection = default, bool diseaseStabHit = false, bool interruptsCavalryCharge = false, HitReactionDirection hitReactionDirection = HitReactionDirection.None, bool suppressHitReactionAnimation = false, bool isHeavyAttack = false, float poiseDamage = 0f, float parryPoiseDamage = 0f)
+    public void TakeDamage(float damage, DamageType damageType = DamageType.Stab, Color? damageNumberColor = null, bool canInterruptCFrame = false, bool isParryInterrupt = false, bool countsForCombo = true, bool canInterruptAttack = true, bool triggerHitAnimation = true, bool ignoreDamageModifiers = false, HitFeedbackSource feedbackSource = HitFeedbackSource.BasicAttack, HitFeedbackStrength? feedbackStrength = null, Vector3? impactPosition = null, Vector3 impactDirection = default, bool diseaseStabHit = false, bool interruptsCavalryCharge = false, HitReactionDirection hitReactionDirection = HitReactionDirection.None, bool suppressHitReactionAnimation = false, bool isHeavyAttack = false, float poiseDamage = 0f, float parryPoiseDamage = 0f, bool ignoreShieldBlock = false)
     {
         if (state == EnemyState.Dead) return;
         if (isBoss && bossState != BossState.InCombat) return;
@@ -154,7 +154,7 @@ public partial class Enemy : MonoBehaviour
         bool shieldBrokenNow = false;
         if (_shieldGuard != null && !ignoreDamageModifiers)
         {
-            var guardResult = _shieldGuard.ProcessHit(finalDamage, damageType, hitReactionDirection, interruptsCavalryCharge);
+            var guardResult = _shieldGuard.ProcessHit(finalDamage, damageType, hitReactionDirection, interruptsCavalryCharge, ignoreShieldBlock);
             finalDamage = guardResult.finalDamage;
             shieldBlocked = guardResult.blocked;
             shieldBrokenNow = guardResult.broke;
@@ -366,6 +366,26 @@ public partial class Enemy : MonoBehaviour
         _hitStopRemaining = Mathf.Max(_hitStopRemaining, duration);
     }
 
+    // 破防慢放协程（REQ-006 · A1）：由 EnemyHitFeedback 持有与还原，对象池复用前必须清干净。
+    internal Coroutine _guardBreakSlowRoutine;
+
+    /// <summary>
+    /// **破防时攻击者的反应**（REQ-006 · A1）：「被顶住 → 被打慢」。
+    ///
+    /// ★ **不打断攻击表现**（2026-11-13 用户拍板）⇒ **不切受击动画**，
+    ///   只做「冻结（卡肉）→ Animator 慢放 → 回 1」。
+    ///   冻结让攻击者**停在出招途中**（读成被顶住），慢放让它的动作**变慢**（读成被打慢），
+    ///   攻击本身仍然继续（不会被这次反应打断）。
+    ///
+    /// 规格：<c>design/guard-break-presentation-overhaul.md</c> §3.2「被打方慢放」。
+    /// </summary>
+    public void ApplyGuardBreakReaction(float freezeSeconds, float slowSeconds, float slowScale)
+    {
+        if (state == EnemyState.Dead) return;
+        ApplyHitStop(freezeSeconds);
+        HitFeedback.PlayGuardBreakSlow(freezeSeconds, slowSeconds, slowScale);
+    }
+
     /// <summary>挂起：暂停 Animator 与攻击位移。可叠加（卡肉 + 冻结），全部解除才恢复。</summary>
     public void PushSuspend(SuspendSource source)
     {
@@ -410,6 +430,8 @@ public partial class Enemy : MonoBehaviour
     private void UpdateHitStop() => HitFeedback.UpdateHitStop();
 
     private void StopHitStop() => HitFeedback.StopHitStop();
+
+    private void StopGuardBreakSlow() => HitFeedback.StopGuardBreakSlow();
 
     private void PauseAttackTweenForSuspend() => HitFeedback.PauseAttackTweenForSuspend();
 

@@ -216,26 +216,67 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("破防时枪向左（-X）漂移的距离（世界单位）：轻微即可，离开画面主要靠旋转")]
     [Range(0f, 3f)]
     public float parryStanceBreakDrift = 0.8f;
-    [Tooltip("破防动作时长（秒）：旋转 + 漂移的总时长，到时销毁")]
-    [Range(0.1f, 2f)]
-    public float parryStanceBreakSeconds = 0.55f;
+    [Tooltip("破防动作时长（秒）：旋转 + 漂移的总时长，到时销毁。\n" +
+             "★ 「被缓缓打飞」的读感完全由这个时长决定（2026-11-14 用户定稿：2 秒）。\n" +
+             "150° 匀速转完 ⇒ 约 1.25°/帧（60fps）⇒ 读成慢动作，而不是弹射。")]
+    [Range(0.1f, 4f)]
+    public float parryStanceBreakSeconds = 2f;
+    [Tooltip("破防旋转**起手的余震**（度）：旋转刚起的 1/3 段叠一个衰减抖动。\n" +
+             "★ 0 = 没有余震 ⇒ 读成机械匀速旋转（生硬）；3 左右 = 「被顶了一下」。")]
+    [Range(0f, 12f)]
+    public float parryStanceBreakWobbleDegrees = 3f;
     [Tooltip("**命中定格**（局部顿）：格挡命中帧把持枪姿态定住多久（秒，**真实时间**）。\n" +
              "只停持枪姿态，**世界照常跑** ⇒ 靠对比读出顿感（全局慢动作没有对比，只像掉帧）。\n" +
              "参考：传统动作游戏的 hit pause 轻击 1~3 帧 / 中 3~5 帧；60fps 下 0.033s ≈ 2 帧。")]
     [Range(0f, 0.2f)]
     public float parryGuardBlockHitStopSeconds = 0.033f;
     [Tooltip("**命中定格**（局部顿）：破防命中帧的定格时长（秒，**真实时间**）。\n" +
-             "比普通格挡长一档（破防是更大的冲击）；0.066s ≈ 4 帧。")]
+             "比普通格挡长一档（破防是更大的冲击）；0.033s ≈ 2 帧。\n" +
+             "★ 枪自己的定格别太长：4 帧以上的静止读成「卡住」；「顿」主要由**攻击者的冻结** + 闪白/火花承担。")]
     [Range(0f, 0.3f)]
-    public float parryGuardBreakHitStopSeconds = 0.066f;
-    [Tooltip("**受击慢放**（局部慢动作）：破防那一刻起，持枪姿态以多少倍速播放。\n" +
-             "1 = 不慢放；0.35 = 枪被顶开/脱手的过程放慢到 1/3 速度（魂系受击慢放）。\n" +
-             "★ 只作用在持枪姿态，**不动全局 Time.timeScale**。")]
+    public float parryGuardBreakHitStopSeconds = 0.033f;
+    [Tooltip("**受击慢放**（局部慢动作）：破防**起旋转那一刻**起，持枪姿态以多少倍速播放。\n" +
+             "1 = 不慢放；0.35 = 枪被顶开/脱手的过程放慢（读成重量）。\n" +
+             "★ 只作用在持枪姿态，**不动全局 Time.timeScale**。\n" +
+             "★ 2026-11-13：慢放**不再覆盖后坐**（后坐 = 冲击，要快而脆），只覆盖**脱手旋转**。")]
     [Range(0.05f, 1f)]
     public float parryGuardBreakSlowScale = 0.35f;
-    [Tooltip("**受击慢放**的持续时长（秒，**真实时间**）")]
+    [Tooltip("**受击慢放**的持续时长（秒，**真实时间**）：要盖住整段脱手旋转 ⇒ 约 = 旋转时长 / 慢放倍率。")]
+    [Range(0f, 1.5f)]
+    public float parryGuardBreakSlowSeconds = 0.95f;
+
+    [Header("破防演出包（REQ-006 · A1/A2/A3）")]
+    [Tooltip("**攻击者被冻结**的时长（秒，真实时间）：破防时先把攻击者定住 ⇒ 读成「被顶住」。\n" +
+             "0.25s ≈ 15 帧；与既有卡肉机制同源（Animator 停 + 攻击位移暂停）。\n" +
+             "★ 2026-11-13：冻结太长会读成「卡住」⇒ 建议 ≤0.15s，把「被打慢」交给慢放。")]
+    [Range(0f, 0.6f)]
+    public float parryGuardBreakEnemyFreezeSeconds = 0.12f;
+    [Tooltip("**攻击者慢放倍率**（1 = 不慢放）：冻结结束后以 Animator.speed 慢放 ⇒ 读成「被打慢」。\n" +
+             "★ 只改 Animator 速度，**不改攻击判定时钟**（会有「动作慢、判定正常」的错拍，是有意取舍）。\n" +
+             "★ **不打断攻击表现**：不切受击动画。")]
+    [Range(0.05f, 1f)]
+    public float parryGuardBreakEnemySlowScale = 0.25f;
+    [Tooltip("**攻击者慢放**的持续时长（秒，真实时间）：要盖住「被顶住 → 被打慢」这一拍。\n" +
+             "★ 2026-11-13：盖住**整个脱手窗口** ⇒ 破防那一拍里两个演员都慢、世界照常 ⇒ 对比最强。")]
+    [Range(0f, 1.5f)]
+    public float parryGuardBreakEnemySlowSeconds = 1.10f;
+    [Tooltip("**枪闪白**（命中确认层）的时长（秒，真实时间）：破防那一帧画面上要有东西说「打中了」。\n" +
+             "★ 要盖住慢放窗口（否则「顿」的瞬间画面上什么都没在动）。0 = 关闭。")]
     [Range(0f, 0.5f)]
-    public float parryGuardBreakSlowSeconds = 0.15f;
+    public float parryGuardBreakWeaponFlashSeconds = 0.35f;
+    [Tooltip("**屏幕红边框**（命中确认层）的停留时长（秒）。0 = 关闭。")]
+    [Range(0f, 0.8f)]
+    public float parryGuardBreakScreenFlashSeconds = 0.40f;
+    [Tooltip("**镜头推近**（FOV 脉冲）的幅度（度）：推近再回，**不是抖**。\n" +
+             "⚠ FOV 会动构图 ⇒ 幅度 ≤2°；0 = 关闭。")]
+    [Range(0f, 6f)]
+    public float parryGuardBreakPushDegrees = 2f;
+    [Tooltip("**破防专属音**的音高（1 = 原速）：<0.75 读成「被顶开」而不是普通格挡。")]
+    [Range(0.25f, 2f)]
+    public float parryGuardBreakSoundPitch = 0.75f;
+    [Tooltip("**破防专属音**的音量倍数：>1 比普通格挡音更响。")]
+    [Range(0f, 4f)]
+    public float parryGuardBreakSoundVolume = 1.4f;
 
     [Header("挑飞上挑")]
     [Tooltip("Z 轴旋转幅度（度，默认 90）。枪头从低到高上挑")]

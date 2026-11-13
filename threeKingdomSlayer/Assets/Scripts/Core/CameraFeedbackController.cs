@@ -53,6 +53,7 @@ public sealed class CameraFeedbackController : MonoBehaviour
     [SerializeField] private bool heavyOnlyCameraShake = true;
 
     private Sequence _feedbackSequence;
+    private Sequence _fovTween;
     private float _lastRequestTime = -10f;
     private HitFeedbackStrength _activeStrength = HitFeedbackStrength.None;
     private Vector3 _baseLocalPosition;
@@ -227,6 +228,34 @@ public sealed class CameraFeedbackController : MonoBehaviour
             _feedbackSequence = null;
             _activeStrength = HitFeedbackStrength.None;
         });
+    }
+
+    /// <summary>
+    /// 破防的**镜头推近**（REQ-006 · ⑤层）：FOV 脉冲（推近再回），**不是抖**。
+    /// PBZ 的「成功瞬间」靠极短推近制造时间感；幅度必须小（≤2°）否则会动构图。
+    /// ⚠ 推近幅度影响构图 ⇒ 参数进配置、默认保守，随时可关（幅度 = 0 即关闭）。
+    /// ★ 2026-11-13：**推进后要有一段保持**（hold）⇒ 镜头在整个慢放窗口里持续“压着”，
+    ///   慢放才读得出来（一次性推完就回 ⇒ 只剩一下普通抖动）。
+    /// </summary>
+    public void RequestGuardBreakPush(float fovDegrees, float holdSeconds = 0.55f)
+    {
+        if (fovDegrees <= 0f) return;
+        var cam = GetComponent<Camera>();
+        if (cam == null) cam = Camera.main;
+        if (cam == null) return;
+
+        _fovTween?.Kill(false);
+        float baseFov = cam.fieldOfView;
+        float pushedFov = baseFov - fovDegrees;
+        _fovTween = GameplayPause.Bind(DOTween.Sequence()
+            .Append(DOTween.To(() => cam.fieldOfView, v => cam.fieldOfView = v, pushedFov, 0.08f)
+                .SetEase(Ease.OutQuad))
+            .Append(DOTween.To(() => cam.fieldOfView, v => cam.fieldOfView = v, pushedFov, Mathf.Max(0f, holdSeconds)))
+            .Append(DOTween.To(() => cam.fieldOfView, v => cam.fieldOfView = v, baseFov, 0.3f)
+                .SetEase(Ease.OutCubic))
+            .SetUpdate(UpdateType.Normal, true));
+        _fovTween.OnComplete(() => { cam.fieldOfView = baseFov; _fovTween = null; });
+        _fovTween.OnKill(() => { cam.fieldOfView = baseFov; _fovTween = null; });
     }
 
     private void StopFeedback()

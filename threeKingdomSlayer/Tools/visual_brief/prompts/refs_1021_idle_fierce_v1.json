@@ -1,0 +1,13 @@
+{
+  "version": "1021_idle_fierce_v1",
+  "handoff": "Locus/knowledge/plan/enemy1021-art-production-handoff.md §0.21.2",
+  "note": "1021 idle 形象 · 只改表情。五图组图路线（enemy_proportion_lineup_v4_1021）两次上游超时未产出，改走轻量单图编辑：只发 1 张输入（v3 组图裁出重贴的 1021 底件，538 KB），装备/站姿/比例/盾侧/画风全部保留，只把表情从平静改成凶狠。",
+  "references": [
+    {
+      "order": 1,
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1021_identity_v2/1021_base_v3_green_1024.png",
+      "role": "image 1: 1021 轻装楯兵（从 v3 组图裁出重贴，画风与前四位同源）—— 身体 / 站姿 / 比例 / 布袍小甲片 / 素色布帽 / 浅灰胡茬 / 木盾（画面左、人物右手）全部保留；只把表情从平静改成凶狠",
+      "expected_sha256_prefix": "3a60eab0ba8ff4c"
+    }
+  ]
+}

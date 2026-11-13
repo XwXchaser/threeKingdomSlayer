@@ -131,7 +131,7 @@ public class ShieldGuardEnemy : MonoBehaviour
     /// <summary>
     /// 伤害结算前的盾牌判定。damage 为已应用弱点倍率后的伤害。
     /// </summary>
-    public HitResult ProcessHit(float damage, DamageType damageType, HitReactionDirection rawDirection, bool isHeavy)
+    public HitResult ProcessHit(float damage, DamageType damageType, HitReactionDirection rawDirection, bool isHeavy, bool forceBreak = false)
     {
         var result = new HitResult { finalDamage = damage };
 
@@ -140,6 +140,15 @@ public class ShieldGuardEnemy : MonoBehaviour
             return result;
         if (damage <= 0f)
             return result;
+
+        // ★ **无视盾牌减伤 + 必定破盾**（抡斧劈砍，REQ-008）：
+        //   正面也照全额结算，且盾直接破 —— 这是巨斧相对其它招式的唯一价值。
+        if (forceBreak)
+        {
+            result.broke = true;
+            result.finalDamage = damage;
+            return result;
+        }
 
         // 未破盾 → 无盾形态：胆怯形态增伤
         if (_enemy != null && _enemy.formState != EnemyFormState.Normal)

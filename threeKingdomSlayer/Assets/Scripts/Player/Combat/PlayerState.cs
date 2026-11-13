@@ -445,6 +445,41 @@ public class PlayerState : MonoBehaviour
     }
 
     /// <summary>
+    /// 直接扣血：**绕过防御与反伤护盾**（毒 / 灼烧这类持续伤害用）。
+    ///
+    /// ★ 为什么不能用 <see cref="TakeDamage"/>：那条路径会先走防御吸收（防御态免伤），
+    ///   而“投壶兵的毒不被防御抵消”正是需求本身（防御只能免掉直接伤害）。
+    /// </summary>
+    public void TakeDamageUnblockable(float amount)
+    {
+        if (amount <= 0f) return;
+        if (stageState == StageState.Defeat || stageState == StageState.Victory) return;
+        currentHealth -= amount;
+        OnHealthChanged?.Invoke(currentHealth, MaxHealth);
+        DebugLog.Info($"[PlayerState] 中毒扣血 {amount:F1}，剩余 {currentHealth:F0}");
+        if (currentHealth <= 0f) HandleDeath();
+    }
+
+    /// <summary>玩家是否处于中毒（投壶兵的陶壶命中留下的毒）。</summary>
+    public bool HasPoison => StatusHost.Get(PlayerPoisonStatus.Id) != null;
+
+    /// <summary>
+    /// 施加中毒（**不可被防御抵消**）：投壶兵命中后留下的毒。
+    /// 同 id 后登记者覆盖先登记者 ⇒ 反复命中只刷新强度/时长，不叠层。
+    /// </summary>
+    public void ApplyPoison(float damagePerTick, float durationSeconds, float tickInterval = 0.5f)
+    {
+        if (damagePerTick <= 0f || durationSeconds <= 0f) return;
+        var existing = StatusHost.Get(PlayerPoisonStatus.Id) as PlayerPoisonStatus;
+        if (existing != null)
+        {
+            existing.Refresh(damagePerTick, durationSeconds);
+            return;
+        }
+        StatusHost.Add(new PlayerPoisonStatus(this, damagePerTick, durationSeconds, tickInterval));
+    }
+
+    /// <summary>
     /// 回复生命值（不超过最大值）
     /// </summary>
     public void Heal(float amount)

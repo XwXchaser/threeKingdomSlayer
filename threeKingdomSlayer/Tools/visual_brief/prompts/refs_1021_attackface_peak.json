@@ -1,0 +1,13 @@
+{
+  "version": "1021_attackface_peak",
+  "handoff": "Locus/knowledge/plan/enemy1021-art-production-handoff.md §0.21.7",
+  "note": "1021 attack 表情试点：只生图不生视频。输入 = 替换片选帧里的峰值帧（接触帧）原始 960² 绿幕帧，只把表情从基准『凶但克制』改成『重盾击最紧绷的一拍』，脸型/眉形/胡茬/帽子/装备/盾/姿势/构图全部锁死。",
+  "references": [
+    {
+      "order": 1,
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1021_attack_replace/selected_frames/raw/attack06_f048.png",
+      "role": "image 1: 1021 重盾击的接触帧（原始 960² 绿幕帧）—— 身体/姿势/头部角度/布帽/胡茬/眉形/脸/服装/木盾/绘制尺寸/绿幕背景全部锁死，只改表情",
+      "expected_sha256_prefix": "19bd6515b02398bc"
+    }
+  ]
+}

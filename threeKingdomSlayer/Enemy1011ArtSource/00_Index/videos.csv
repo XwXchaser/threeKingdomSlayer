@@ -1,5 +1,5 @@
 animation,file,bytes,sha256,task_id,acceptance
-attack,sword_enemy_attack_front_v2.mp4,2222219,895686cadb9efadbca56850ee10c6560ab925d671be12fc6f76c3cf5c1e4d39a,task_67c87dbe7385459cb37f16aa958bee7e,已部署到 Assets/Sprites/Enemy/Enemy1_1（69 帧精灵），见 00_Index/frame-provenance.md
+attack,sword_enemy_attack_front_v1.mp4,2015371,bbc8f914f480eb732fb169da9b38a907dbc55df8af459f7ec2166cf4aa15f7da,task_e92bbc89a802478db2863251b66d9abb,已部署到 Assets/Sprites/Enemy/Enemy1_1（69 帧精灵），见 00_Index/frame-provenance.md；2026-11-05 更正：原记录 sword_enemy_attack_front_v2.mp4（task_67c87dbe…）是另一支 take（中段带大回旋弧光），并非已部署精灵的来源——实测已部署精灵出自 v1（掩码 IoU attack10/f055=0.930、attack6/f049=0.956、attack3/f029=0.957，v2 最高仅 0.61，已扫全帧排除帧号漂移）；源包文件已替换为 v1
 dead,sword_enemy_dead_front_v4.mp4,1960796,3a3924c22da68e1cc826c64a2e7b4251d6b6def153e360386619a21f4a545f6b,task_e3d84ebe3403436192b5c1d3697488aa,已部署到 Assets/Sprites/Enemy/Enemy1_1（69 帧精灵），见 00_Index/frame-provenance.md
 getup,enemy1011_launch_getup_v1.mp4,2256652,8f7221af811664b0c662c597915d7a640f28bbd171712fd5e969fef8ac3aa786,task_b226b12b3dc24b9aae00e0ad63480260,已部署到 Assets/Sprites/Enemy/Enemy1_1（69 帧精灵），见 00_Index/frame-provenance.md
 hit,sword_enemy_hit_front_v2.mp4,1989310,ef374866a9b8106208c4f893f49bc55930173481e0fb954dce868df02de77698,task_39f03a1065f5447bb302ab4e81bfe03b,已部署到 Assets/Sprites/Enemy/Enemy1_1（69 帧精灵），见 00_Index/frame-provenance.md

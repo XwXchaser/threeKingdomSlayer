@@ -7,6 +7,9 @@ Shader "Custom/WeaponColorUnlit"
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Source Blend", Float) = 1
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Destination Blend", Float) = 0
         [Enum(Off,0,On,1)] _ZWrite ("Depth Write", Float) = 1
+        // ★ 命中确认闪白（REQ-006）：_Color 是**乘法染色乘数** ⇒ 改不亮 ⇒ 必须新增通道。
+        //   范式同敌人 Custom/EnemyOutline 的 _PierceHighlightStrength。
+        _FlashStrength ("Flash Strength", Range(0,1)) = 0
     }
 
     SubShader
@@ -45,6 +48,7 @@ Shader "Custom/WeaponColorUnlit"
             sampler2D _MainTex;
             float4 _MainTex_ST;
             fixed4 _Color;
+            float _FlashStrength;
 
             v2f vert(appdata v)
             {
@@ -62,7 +66,16 @@ Shader "Custom/WeaponColorUnlit"
                 UNITY_SETUP_INSTANCE_ID(i);
                 // The texture owns all painted light and material detail.
                 // Both opaque and fade materials use this same colour path.
-                return tex2D(_MainTex, i.uv) * _Color;
+                fixed4 c = tex2D(_MainTex, i.uv) * _Color;
+                // ★ 闪白（破防的「命中确认」层）：只有 _FlashStrength > 0 时才改写颜色，
+                //   正常路径保持与改造前逐字一致（淡出淡入的观感不受影响）。
+                float flash = saturate(_FlashStrength);
+                if (flash > 0.001)
+                {
+                    c.rgb = lerp(c.rgb, fixed3(1.0, 1.0, 1.0), flash);
+                    c.rgb *= c.a;
+                }
+                return c;
             }
             ENDCG
         }

@@ -80,3 +80,75 @@ Enemy1012ArtSource/
 仍只留在本机、不进版本库：各动作的原始抽帧、选帧副本、抠图中间产物（都在 `Library/Locus/tmp/`，被 git 忽略）。
 
 核对方式：`python Locus/tools/art-sync/verify_art_sync.py`（按 `videos.csv` 逐条 sha256）。
+
+
+---
+
+## 山贼版 v5 立绘替换（2026-11-04；attack 于 2026-11-05 重做）
+
+已验收的山贼新形象（v5 立绘）替换了 v11 刀兵形象。已替换 **idle**、**attack**、**walk**、**hitRight**、**hitLeft**、**hitHeavy** 六个动作，其余动作仍是 v11 形象。
+
+| 动作 | 新成片 | 身份图 | 选帧 | 落位 |
+|---|---|---|---|---|
+| idle | `01_SourceVideos/enemy1012_bandit_idle_v6.mp4` | `02_IdentityImages/input_identity_v12_bandit_idle_v6_1024.png` | f010 / f017 / f024 / f032 / f039 / f046 | k=0.92366 + 逐帧偏移 x=521-缩放后中心x、y=897-可见底行 |
+| attack | `01_SourceVideos/enemy1012_bandit_attack_arc_E2.mp4` | 同上 | f004 / f007 / f010 / f013 / f016 / f050 / f054 / f058 / f062 / f066 / f070 / f074 / f078 / f082 / f086 / f090 | **与 idle 站姿帧配准**（dx=0 / dy=0，IoU=0.986）→ k=0.92366 + 固定偏移 (+109,+122)；脚底线 897（刀尖可低于脚） |
+| attack 表情探针 | `01_SourceVideos/enemy1012_bandit_attack_arc_E1.mp4` | A6 头肩 `stageA6_wicked_grin_v1.png` | —（不入工程，仅验证表情弧线） | — |
+| walk | `01_SourceVideos/enemy1012_bandit_walk_v1.mp4` | 同上 | f040 / f043 / f045 / f048 / f051 / f053（步态周期 16 帧内等距） | k=0.92366 + 固定偏移 (+53,+122)；脚底线 897（与 idle 同一偏移） |
+| hitRight（向右倒的受击） | `01_SourceVideos/enemy1012_bandit_hitHeavy_v1.mp4` | 同上 | f012 / f026 / f044 / f076 / f086，末帧用 idle1 | k=0.92366 + 固定偏移 (+110,+122)；脚底线 897 |
+| hitLeft（另一面的受击） | `01_SourceVideos/enemy1012_bandit_hitLeft_v1.mp4` | 同上 | f008 / f026 / f042 / f072 / f078，末帧用 idle1 | k=0.92366 + 固定偏移 (+110,+122)；脚底线 897 |
+| hitHeavy（正面受击） | `01_SourceVideos/enemy1012_bandit_hitHeavy_v6.mp4` | `02_IdentityImages/anchor_bandit_960.png`（首尾帧） | f030 / f062 / f068 / f100 / f118 / f140 | k=0.92366 + 固定偏移 (+110,+122)；脚底线 897 |
+
+- 视频接口：`POST https://direct.reachapi.ai/v1/vids/create`，`seedance-2-fast` / 4 s / 720p / 1:1 / 无音频 / 无水印 / seed −1；first_frame 与 last_frame 用同一张身份图。
+- 抠图：SVL Chroma T=79 / softness 16 / halo 1 / 半透明转不透明（2026-11-05 起改用本地 `Tools/visual_brief/chroma_key.py`，与归档产物逐帧 alpha 一致率 99.75%，残留更少）。
+- 身份图规格：1024×1024、绿 (0,159,62)、**主体高 696 / 脚底 895 / 中心 474.5**（与 v11 身份图同规格）。
+- idle 选帧口径：周期 43 帧（= Enemy_1012_Idle.anim 的 1.8 s 键距 @24fps）内等距取 6 帧，起点取「首尾姿态差最小」处；该口径在旧源片上回归 **16/16 精确命中**（工具 `Tools/visual_brief/pick_attack_frames.py --validate-on`）。
+- attack 选帧口径（2026-11-05 版）：**举刀段手选 + 劈砍段 DP 最大化最小相邻差**（排除 f052/f053 大回旋弧光）；旧的“峰值对齐”法在本片会把举刀段塔缩进静止保持区（s03–s05 剪影完全相同）。
+- attack 表情口径：**方案 A —— 起手与收势 = idle 的半笑，峰值 = 劈砍瞬间露齿**；首帧与末帧同 idle1，idle↔attack 无跳变。
+
+**已知偏差（山贼版源片固有，非选帧问题）**
+- **idle**：当前部署的 idle 是 v6 成片，其提示词为“保持表情不变”写法 → 脸全程冻结浅笑，**没有当初验收过的表情弧线**；且选帧只取 f010–f046（43 帧 = 前 1.8 s），弧线的回落段（f060–f096）未被选中。
+- attack 刀形在片内会变（起手/收势为直刃细刀，举刀段与劈砍段为环首弯刀）——生成模型的固有不一致。
+- attack 劈砍段 f060–f072 为定格段，选出的 s09–s11 因此是同一姿势（落定停顿约 0.2 s）。
+- attack 全片可分辨姿势约 14 个，16 键需复用。
+- attack 劈砍帧的刀尖带白色拖尾（s07–s08），非大回旋弧光。
+- walk 步态周期实测 **16 帧**（0.667 s），与游戏 clip 的 0.6 s 循环基本等速。
+- walk 躯干在源片内有 **±19 px 左右摆动**（重心转移，旧 v11 为 ±21.5 px，同量级），原样保留。
+- walk 源片刀形与身份图一致（直刃 + 金 T 护手 + 金环首）；**attack 片内刀形会变**（直刃 ↔ 弯刀），两者不一致。
+- hitRight：表情为「痛苦龇牙惨叫」（眼挤紧 + 下巴抬起 + 露齿）→ 收回半笑；身体**向右倒**（对位 v11 hitRight 的方向约定：头明显偏右 +124~+203 px）。
+- hitRight 源片在 **f018–f025 有刀脱手**（刀变成独立漂浮物体），选帧已全程避开；其余帧刀在手中。
+- hitRight 后仰幅度偏大（源片最深约 45°）且保持约 2 s；工程里只取 5 帧 + idle1 收尾，实际只播 0.81 s。
+- **hitHeavy（正面受击）已替换**：跨原型换角色（山贼版 ↔ v11 差异大）**必须走首尾帧锚图路线**（首尾帧 = `02_IdentityImages/anchor_bandit_960.png`，身份图缩到 960²，主体高 652/脚底 839/中心 445，与其余素材同构图）；**reference_video 路线会回退成参考片人物**（实测两次：v4 长词、v5 标准一句词，均在 f022–f030 起变回 v11 的宽方脸络腮胡）。
+- hitHeavy 成片 QC：剑脱手 **0** 帧、武器形变 **0** 帧、脚底线恒定 839；头顶下沉 +64（母本 +27，工程现有 v11 为 9% 身高）；刀尖贴画面左缘（母本同阶段也是 0px 余量）。
+- hitHeavy 选帧按**相位**：f030 刀被震起 → f062 下扫 → f068 蹲底 → f100 蹲底 → f118 起身 → f140 站定。
+- **母本 v11 的脸是完全可见且表演很足的**（红布是束带不是遮脸）：f041 咬牙瞪眼、f051 张口惨叫、f067–f090 低头龇牙、f100 脸收回 → 走 reference_video 即连表演一起继承，**不需要另发表情片**。
+- hitLeft：动势**照 v11 原设计**（原地站立不倒不蹲、刀自身侧抬起向左上、头微沉）；表情=痛苦龇牙惨叫 → 收回半笑；**剑全程在手**（连通域检测 0 帧脱手），已避开 f004-f005（刀形变木桩）。
+
+**未替换**：dead / rise / landing / getup 仍是 v11 形象，与山贼版不一致，后续需按同一流程逐个替换。
+
+---
+
+## 山贼版比例修正 v5 的「正面受击」替换（2026-11-07，**候选片，未接入工程**）
+
+> 触发：用户提供 `C:/Users/steam/Pictures/gptGen/enemy1012_proportion_fix/1012_fix_v5.png`（山贼版按 v11 比例修正后的第五轮立绘）作参考图，
+> 要求把 `C:/Users/steam/Videos/doubaoVideo/dao_v11_hitfront_v1_6s_720p.mp4`（正面受击母本）里的人物换成它。
+
+### 产出
+
+| 项 | 值 |
+|---|---|
+| 成片 | `01_SourceVideos/enemy1012_bandit_v5fix_hitHeavy_replace_v1.mp4`（sha `0a714b098af343203942b405c8e3053da17d69cd27ec3b6fbd23ce6a55b79d78`，task `task_d94fc5b0031a4ccfa6c96f7863a1e92c`） |
+| 路线 | **替换视频工作流**（`reference_image` = 新身份图，`reference_video` = 母本，`duration` = 6 s = 母本时长；提示词用已验收的标准一句词，26 字符） |
+| 参考图 | `02_IdentityImages/input_identity_v12_bandit_v5fix_1024.png`（由 1012_fix_v5.png 抠图→缩放到主体高 696→贴 (175,200)→合成绿 0,159,62） |
+| 备用锚图 | `02_IdentityImages/anchor_bandit_v5fix_960.png`（主体高 652 / 脚底 839 / 中心 445；**当前未被任何成片使用**，为备用） |
+| 提示词 | `Tools/visual_brief/prompts/1012_hitHeavy_replace_v5fix_v1.txt` |
+
+### QC 结论（证据在 `Library/Locus/tmp/1012_batches/12_hitHeavy_replace_v5fix/`）
+
+- **动作继承极好**：与母本的包围盒轨迹相关 **左沿 0.975 / 上沿 0.993 / 高度 0.996**
+- **角色只在开头 1.25 s 成立**：**f000–f029 是参考图角色，f030 起回退成母本里的 v11 刀兵**（宽檐斗笠盔 + 红发 + 络腮胡）
+- 且开头这 1.25 s **没有动作**：主体高 650→646、盔顶行 227→232 —— 是参考图的静态站姿，母本此时的「举剑」没有继承
+- 武器脱手 0 帧；四边全在框内 142 帧；片基 dG −33.2…−13.0
+- → **本片无法用于游戏的正面受击**：新角色既没有拿到受击动作，也只覆盖了前 1/5 时长
+
+> 结论与项目既有实测一致（`Locus/knowledge/skill/reachapi-seedance-video-generation-v2.md`）：
+> **跨原型换角色时，`reference_video` 路线锁得住动作、锁不住角色**；本轮用新比例立绘复测，结论不变。

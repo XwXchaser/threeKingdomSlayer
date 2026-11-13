@@ -232,13 +232,14 @@ aiEditMode: inherit
 
 | 动作 | 版本 | task id | 成片 | 大小 (bytes) | 费用 | 结论 |
 |---|---|---|---|---|---|---|
-| Attack | v1 | `task_e92bbc89a802478db2863251b66d9abb` | `C:/Users/Administrator/Videos/doubaoVideo/sword_enemy_attack_front_v1.mp4` | 2,015,371 | 0.48888 | 中间版 |
-| Attack | v2 | `task_67c87dbe7385459cb37f16aa958bee7e` | `C:/Users/Administrator/Videos/doubaoVideo/sword_enemy_attack_front_v2.mp4` | 2,222,219 | 0.48888 | **已验收并部署**（16 帧 → `Enemy_1011_attack1..16.png`；clip `Enemy_1011_Attack.anim` 18 键 / 30fps / stop 2.9，命中键 2.000s） |
+| Attack | v1 | `task_e92bbc89a802478db2863251b66d9abb` | `C:/Users/Administrator/Videos/doubaoVideo/sword_enemy_attack_front_v1.mp4` | 2,015,371 | 0.48888 | **实际部署源**（2026-11-05 像素实测更正）：已部署的 `Enemy_1011_attack1..16.png` 出自本片（掩码 IoU 0.93–0.96）；原记“中间版”有误 |
+| Attack | v2 | `task_67c87dbe7385459cb37f16aa958bee7e` | `C:/Users/Administrator/Videos/doubaoVideo/sword_enemy_attack_front_v2.mp4` | 2,222,219 | 0.48888 | **未用于部署**（2026-11-05 更正）：另一支 take，中段带大回旋弧光；原记“已验收并部署”有误——已部署精灵实测出自 v1。原文件已从 `Enemy1011ArtSource/01_SourceVideos/` 删除并替换为 v1 |
 | Dead | v4 | `task_e3d84ebe3403436192b5c1d3697488aa` | `C:/Users/Administrator/Videos/doubaoVideo/sword_enemy_dead_front_v4.mp4` | 1,960,796 | 0.48888（会话记录；`record_v4.json` 的 attempts 无 cost 字段） | **已验收并部署**（6 帧 → `Enemy_1011_dead1..6.png`；clip `Enemy_1011_Dead.anim` 6 键 / stop 0.6） |
 | Walk | v1 | `task_46dfa536ac1a40e6b5d16af3612a4e96` | `C:/Users/Administrator/Videos/doubaoVideo/sword_enemy_walk_front_v1.mp4` | 2,486,774（sha256 `887d5cf408d37848…`） | 0.48888 | **用户否决**（像散步，不像行军；测量见下） |
 | Walk | v2 | `task_18fe8d8af7554019a6b6905c5150c540` | `C:/Users/Administrator/Videos/doubaoVideo/sword_enemy_walk_front_v2.mp4` | 2,908,962（sha256 `f377bcab628655b3…`） | 0.48888 | 手臂问题已修，但**真实超框**，需 v3（见下） |
 | Walk | v4 | `task_18e87a74532b4f1f86161a1b00b318cf` | `C:/Users/Administrator/Videos/doubaoVideo/sword_enemy_walk_front_v4.mp4` | 2,590,328（sha256 `763084a9aa1dea88…`） | 0.48888 | **用户已验收**（语义改为冲锋跑；v3 未生成） |
 
+- **2026-11-05 攻击 take 更正（重要）**：用 `Tools/visual_brief/compare_video_takes.py`（绿幕键 → 裁内容 bbox → 归一化 → 掩码 IoU，并扫 f025–f094 全帧排除帧号漂移）复核已部署的 `Enemy_1011_attack1..16.png`：attack10/f055 对 **v1 IoU=0.930**、attack6/f049=**0.956**、attack3/f029=**0.957**，而 v2 最高仅 **0.61**。**部署实际用的是 v1（task_e92bbc89…，bytes 2,015,371），不是台账原记的 v2**（v2 中段带大回旋弧光）。`Enemy1011ArtSource/01_SourceVideos/` 内原 v2 文件已删除并替换为 v1；两个包的 `00_Index/videos.csv`、`frame-provenance.csv/.md` 与本台账同步更正。**教训：别信文件名/台账归属，像素对拍才作数。**
 - 四支视频参数一致：`seedance-2-fast`、请求 4s / 720p / 1:1、无音频与无日水印、seed=-1；**实际输出均为 960×960、24fps、97 帧**；首尾帧同为 `Library/Locus/tmp/sword_enemy_hit_front_v2/anchor_green.png`（960²；绿键前景框 x[155,697] y[187,776]，最小留白 16.1%，背景中位 RGB(0,177,64)）。
 - 补录说明：本段任务此前只存在于 `Library/Locus/tmp/*/record*.json`，台账漏记，2026-10-04 补录。
 - Walk v1 否决的客观测量（`Library/Locus/tmp/sword_enemy_walk_v1/`）：自由臂一侧（腰高带左缘）全程只移动 **8 px**；躯干横向摆动 **31 px（0.16 世界单位）**；跨步周期 ≈ **16 帧（0.67s）= 1.5 步/秒** 的慢节奏；抬腿峰值 46~49 px（身高 8%）；最低像素行 756..777（支撑脚并不固定）。

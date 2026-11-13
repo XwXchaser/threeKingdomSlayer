@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
 public class ActiveSkillRunner : MonoBehaviour
@@ -22,6 +23,11 @@ public class ActiveSkillRunner : MonoBehaviour
     [SerializeField] private GameObject _arrowEffectPrefab;
     [SerializeField] private GameObject _cycloneEffectPrefab;
     [SerializeField] private WaveManager _waveManager;
+
+    [Header("追命锁链表现")]
+    [Tooltip("铁链链节贴图（**Inspector 引用**，不走 Resources / 字符串查找）。\n" +
+             "占位可用 Assets/Sprites/Enemy/Enemy2/chain.png；留空 = 只显示锁镰、不显示链身。")]
+    [SerializeField] private Sprite _chainLinkSprite;
 
     private readonly Dictionary<string, int> _chargeAttackShockwaveLayers = new Dictionary<string, int>();
     private ActiveSkillDefinition _armedDiseaseDefinition;
@@ -69,6 +75,10 @@ public class ActiveSkillRunner : MonoBehaviour
                 return ActivateDisease(definition, level);
             case ActiveSkillEffectType.IceMist:
                 return ActivateIceMist(definition, level);
+            case ActiveSkillEffectType.AxeSmash:
+                return ActivateAxeSmash(definition, level);
+            case ActiveSkillEffectType.ChainPull:
+                return ActivateChainPull(definition, level);
             default:
                 return false;
         }
@@ -259,6 +269,259 @@ public class ActiveSkillRunner : MonoBehaviour
 
         waveManager.TriggerWave(0, cfg.rangeRows - 1, cfg.damage, cfg.bossPoiseDamagePercent);
         return true;
+    }
+
+    /// <summary>
+    /// **抡斧劈砍**（REQ-008 · 参考影之刃零「巨凶斧」：破坏型 / 高破盾能力）。
+    ///
+    /// 特点：**无视盾牌减伤 + 必定破盾** —— 正面砍盾卫也能全额结算并直接破盾。
+    /// 这是巨斧相对其它招式唯一不可替代的价值（其余伤害用枪突/横斩也能打）。
+    ///
+    /// ★ **表现（占位）**：用户 2026-11-14 指示「斧头暂时用这杆长枪代替」⇒
+    ///   另起一个**长枪实例**（不动玩家自己的姿态武器），**抡起 → 劈下**，命中帧结算伤害。
+    ///   正式版换成大斧模型/动作时，只需换这一个实例与两段轨迹。
+    /// </summary>
+    private bool ActivateAxeSmash(ActiveSkillDefinition definition, int level)
+    {
+        if (definition.axeSmashLevels == null || level > definition.axeSmashLevels.Count)
+        {
+            Debug.LogWarning($"[ActiveSkillRunner] ActivateAxeSmash failed: levels missing for Lv.{level}");
+            return false;
+        }
+
+        var cfg = definition.axeSmashLevels[level - 1];
+        var columnManager = AttackSystem.Instance != null ? AttackSystem.Instance.columnManager : null;
+        if (columnManager == null || cfg.rangeRows <= 0 || cfg.damage <= 0)
+        {
+            Debug.LogWarning($"[ActiveSkillRunner] ActivateAxeSmash failed: rows={cfg.rangeRows} damage={cfg.damage}");
+            return false;
+        }
+
+        var targets = columnManager.GetAllEnemiesInRange(cfg.rangeRows);
+        if (targets == null || targets.Count == 0)
+        {
+            Debug.Log("[ActiveSkillRunner] 抡斧劈砍：前方没有敌人");
+            return false;
+        }
+
+        StartCoroutine(RunAxeSmash(cfg, targets));
+        return true;
+    }
+
+    /// <summary>抡斧的表现与结算：抡起（0.18s）→ 劈下（0.12s）→ 命中帧结算。</summary>
+    private System.Collections.IEnumerator RunAxeSmash(AxeSmashLevelConfig cfg, List<Enemy> targets)
+    {
+        var player = PlayerState.Instance;
+        if (player == null) yield break;
+
+        GameObject axe = null;
+        var weaponPrefab = cfg.weaponPrefab != null ? cfg.weaponPrefab : ResolvePlayerWeaponPrefab();
+        if (weaponPrefab != null)
+        {
+            axe = Instantiate(weaponPrefab);
+            axe.name = "AxePlaceholder";
+            var vis = axe.GetComponentInChildren<MeshWeaponVisual>();
+            if (vis != null) vis.SetSorting(100);   // ★ 技能表现必须在敌人精灵**之上**（否则被人群挡住）
+            axe.transform.localScale = Vector3.one * 0.45f;   // 占位：长枪太长 ⇒ 缩成“斧头”尺度
+        }
+
+        Vector3 pivot = player.transform.position + new Vector3(0f, 1.6f, -0.6f);
+        Vector3 raisePos = pivot + new Vector3(-0.4f, 2.6f, -1.6f);
+        Vector3 smashPos = pivot + new Vector3(0.2f, -1.2f, 1.4f);
+
+        if (axe != null)
+        {
+            axe.transform.position = raisePos;
+            axe.transform.rotation = Quaternion.Euler(35f, 0f, 0f);
+            float t = 0f;
+            while (t < 0.18f) { t += Time.deltaTime; yield return null; }
+            t = 0f;
+            Vector3 from = axe.transform.position;
+            while (t < 0.12f)
+            {
+                t += Time.deltaTime;
+                float k = Mathf.Clamp01(t / 0.12f);
+                axe.transform.position = Vector3.Lerp(from, smashPos, k * k);
+                axe.transform.rotation = Quaternion.Slerp(Quaternion.Euler(35f, 0f, 0f), Quaternion.Euler(-70f, 0f, 0f), k);
+                yield return null;
+            }
+        }
+        else
+        {
+            yield return new WaitForSeconds(0.3f);
+        }
+
+        // 命中帧：结算（无视盾牌减伤 + 必定破盾）
+        int hit = 0;
+        for (int i = 0; i < targets.Count; i++)
+        {
+            var enemy = targets[i];
+            if (enemy == null) continue;
+            enemy.TakeDamage(cfg.damage, DamageType.Slash, countsForCombo: true,
+                feedbackStrength: HitFeedbackStrength.Heavy, isHeavyAttack: true,
+                ignoreShieldBlock: cfg.ignoreShieldBlock, poiseDamage: cfg.poiseDamage);
+            hit++;
+        }
+        Debug.Log($"[ActiveSkillRunner] 抡斧劈砍: 命中 {hit} 个 rows={cfg.rangeRows} damage={cfg.damage} 无视盾减伤={cfg.ignoreShieldBlock} 削韧={cfg.poiseDamage}");
+
+        if (axe != null) Destroy(axe);
+    }
+
+    /// <summary>
+    /// **追命锁链**（REQ-009 · 参考影之刃零「猎人的追命锁镰」：钩索勾住远处的锚点）。
+    ///
+    /// 锁定**最远**（rowIndex 最大）且**最弱**（当前血量最低）的敌人，把它拉到**本列最前的空格**。
+    /// ⇒ 这是**排序工具**（把躲在后排的脆皮 / 远程 / 阴兵拽到前排解决），不是伤害工具。
+    /// ⚠ 落点**不跨列** ⇒ 不会与其它敌人重叠，也不走补齐通道（`design/immutable-constraints.md`）。
+    ///
+    /// ★ **表现（占位）**：用户 2026-11-14 指示「锁链暂时用这杆长枪代替」⇒
+    ///   ① **锁镰 = 长枪实例**（飞向目标）；② **铁链 = 弹簧骨链**（`ChainLinkRig`，程序生成骨链）；
+    ///   ③ 三段动画：**甩出 → 绷紧（拽人）→ 回收**（见 `ChainLinkRig` 的设计注释）。
+    /// </summary>
+    private bool ActivateChainPull(ActiveSkillDefinition definition, int level)
+    {
+        if (definition.chainPullLevels == null || level > definition.chainPullLevels.Count)
+        {
+            Debug.LogWarning($"[ActiveSkillRunner] ActivateChainPull failed: levels missing for Lv.{level}");
+            return false;
+        }
+
+        var cfg = definition.chainPullLevels[level - 1];
+        var columnManager = AttackSystem.Instance != null ? AttackSystem.Instance.columnManager : null;
+        var player = PlayerState.Instance;
+        if (columnManager == null || player == null) return false;
+
+        // 目标：最远（rowIndex 最大）→ 同排再取最弱（当前血量最低）
+        var all = columnManager.GetEnemiesByRowLimit(999);
+        Enemy target = null;
+        int bestRow = -1;
+        float bestHp = float.MaxValue;
+        for (int i = 0; i < all.Count; i++)
+        {
+            var e = all[i];
+            if (e == null) continue;
+            if (cfg.maxRange > 0f && Vector3.Distance(e.transform.position, player.transform.position) > cfg.maxRange) continue;
+            if (e.rowIndex < bestRow) continue;
+            if (e.rowIndex == bestRow && e.currentHealth >= bestHp) continue;
+            target = e;
+            bestRow = e.rowIndex;
+            bestHp = e.currentHealth;
+        }
+        if (target == null)
+        {
+            Debug.Log("[ActiveSkillRunner] 追命锁链：没有可锁定的目标");
+            return false;
+        }
+
+        // 落点：本列**最前的空格**（不跨列 ⇒ 不重叠）
+        int col = target.columnIndex;
+        int targetRow = -1;
+        for (int r = 0; r < 64; r++)
+        {
+            if (columnManager.GetEnemyAt(col, r) == null) { targetRow = r; break; }
+        }
+        if (targetRow < 0 || targetRow >= target.rowIndex)
+        {
+            Debug.Log($"[ActiveSkillRunner] 追命锁链：{target.DebugTag} 已在最前（或本列无空位），不拉");
+            return false;
+        }
+
+        StartCoroutine(RunChainPull(cfg, target, targetRow, bestRow, col));
+        return true;
+    }
+
+    /// <summary>锁链的表现与结算：甩出 → 绷紧拽人 → 回收。</summary>
+    private System.Collections.IEnumerator RunChainPull(ChainPullLevelConfig cfg, Enemy target, int targetRow, int oldRow, int col)
+    {
+        var player = PlayerState.Instance;
+        if (player == null) yield break;
+
+        Vector3 hand = player.transform.position + new Vector3(0f, 1.2f, -0.4f);
+        Vector3 targetPos = target.transform.position;
+
+        // ① 锁镰（占位：长枪实例）
+        GameObject hook = null;
+        var weaponPrefab = cfg.weaponPrefab != null ? cfg.weaponPrefab : ResolvePlayerWeaponPrefab();
+        if (weaponPrefab != null)
+        {
+            hook = Instantiate(weaponPrefab);
+            hook.name = "ChainHookPlaceholder";
+            var vis = hook.GetComponentInChildren<MeshWeaponVisual>();
+            if (vis != null) vis.SetSorting(100);   // ★ 同上：锁镰要压在敌人之上
+            hook.transform.localScale = Vector3.one * 0.9f;
+            // ★ 3D 模型在透视相机下靠**深度**排序，sortingOrder 压不过 2D 精灵
+            //   ⇒ 把锁镰拉到**更靠近相机**的 z（相机在 z=-10，z 越小越靠前）。
+            hook.transform.position = hand + new Vector3(0f, 0f, -1.2f);
+            hook.transform.rotation = Quaternion.LookRotation((targetPos - hand).normalized, Vector3.up);
+        }
+
+        // ② 铁链骨链（程序生成的骨链；正式链子换“每节怎么画”即可，解算器不变）
+        var rig = ChainLinkRig.Create(player.transform,
+            cfg.chainLinkSprite != null ? cfg.chainLinkSprite : _chainLinkSprite, 9, 0.95f);
+        if (rig != null) rig.Setup(hand, hand);
+
+        // ③ 甩出：链头（枪）飞向目标
+        float throwTime = 0.25f;
+        float t = 0f;
+        while (t < throwTime)
+        {
+            t += Time.deltaTime;
+            float k = Mathf.Clamp01(t / throwTime);
+            Vector3 pos = Vector3.Lerp(hand, targetPos, k) + new Vector3(0f, 0f, -1.2f);
+            if (hook != null) hook.transform.position = pos;
+            if (rig != null) { rig.SetHeadTarget(pos); rig.SetTail(hand); }
+            yield return null;
+        }
+
+        // ④ 命中：链绷紧 ⇒ 目标被拽向最前排
+        if (rig != null) rig.SetTaut(true);
+        Vector3 from = target.transform.position;
+        int startRow = target.rowIndex;
+        target.SetRowIndex(targetRow);      // 逻辑位置立即更新（射程 / AI 判定即刻生效）
+        Vector3 to = target.transform.position;
+        target.transform.position = from;   // 视觉从原位开始，被链子拽过去
+        float pullTime = Mathf.Max(0.08f, cfg.pullSeconds);
+        t = 0f;
+        while (t < pullTime)
+        {
+            t += Time.deltaTime;
+            float k = Mathf.Clamp01(t / pullTime);
+            target.transform.position = Vector3.Lerp(from, to, k * (2f - k));   // ease-out：先快后慢
+            if (hook != null) hook.transform.position = Vector3.Lerp(targetPos, to, k);
+            if (rig != null) rig.SetHeadTarget(hook != null ? hook.transform.position : target.transform.position);
+            yield return null;
+        }
+
+        if (cfg.damage > 0)
+            target.TakeDamage(cfg.damage, DamageType.Stab, countsForCombo: true,
+                feedbackStrength: HitFeedbackStrength.Light);
+
+        // ⑤ 回收：链头飞回玩家
+        if (rig != null) rig.SetTaut(false);
+        Vector3 backFrom = hook != null ? hook.transform.position : to;
+        t = 0f;
+        while (t < 0.2f)
+        {
+            t += Time.deltaTime;
+            float k = Mathf.Clamp01(t / 0.2f);
+            Vector3 pos = Vector3.Lerp(backFrom, hand, k);
+            if (hook != null) hook.transform.position = pos;
+            if (rig != null) rig.SetHeadTarget(pos);
+            yield return null;
+        }
+
+        if (rig != null) Destroy(rig.gameObject);
+        if (hook != null) Destroy(hook);
+
+        Debug.Log($"[ActiveSkillRunner] 追命锁链: {target.DebugTag} row {startRow}→{targetRow} col={col}");
+    }
+
+    /// <summary>取玩家的长枪预制体（占位武器：斧头 / 锁镰都用它）。</summary>
+    private static GameObject ResolvePlayerWeaponPrefab()
+    {
+        var hero = PlayerState.Instance != null ? PlayerState.Instance.heroConfig : null;
+        var parry = hero != null ? hero.GetSkillConfig(AttackType.Parry) : null;
+        return parry != null ? parry.attackWavePrefab : null;
     }
 
     private bool ActivateDisease(ActiveSkillDefinition definition, int level)

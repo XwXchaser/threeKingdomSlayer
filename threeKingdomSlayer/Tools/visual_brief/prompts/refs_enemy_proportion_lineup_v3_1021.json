@@ -1,0 +1,37 @@
+{
+  "version": "enemy_proportion_lineup_v3_1021",
+  "handoff": "Locus/knowledge/plan/enemy1021-art-production-handoff.md §0.21 / §0.21.1",
+  "note": "五人并排同族验证图 v3：前四位与 v2 完全相同的输入；第 5 位换成 v2 之后定稿的 1021 身份图（盾已在画面左 / 人物右手；风霜老卒面相；轻甲布袍），并新增“画风必须与前四位一致”的硬约束。",
+  "references": [
+    {
+      "order": 1,
+      "path": "Enemy1011ArtSource/01_SourceVideos/_first_last_frame_anchor/anchor_green.png",
+      "role": "image 1: 1011 重甲兵 —— 唯一共同体型 / 画风基准，同时是第一位重甲兵的造型参考",
+      "expected_sha256_prefix": "d84119f756ef72be"
+    },
+    {
+      "order": 2,
+      "path": "Enemy1012ArtSource/02_IdentityImages/input_identity_v12_bandit_idle_v6_1024.png",
+      "role": "image 2: 1012 山贼刀兵 —— 脸 / 汉末布衣 / 皮革 / 绑腿 / 刀兵身份参考，不作比例基准（与 v1/v2 输入逐字节一致）",
+      "expected_sha256_prefix": "a7d6ee5de716cf24"
+    },
+    {
+      "order": 3,
+      "path": "Enemy1013ArtSource/02_IdentityImages/1013_lineup_crop_reference_rgba.png",
+      "role": "image 3: 1013 旗手 —— 并排图里已获认可的旗手裁切（可见汉末人脸 / 布甲 / 双手持杆与方旗）；旗杆旗布不计入身高",
+      "expected_sha256_prefix": "b24a3bcdc17048c0"
+    },
+    {
+      "order": 4,
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1051_redesign/T7_1051_identity_green_v1.png",
+      "role": "image 4: 1051 弓手候选 —— 木弓 / 箭袋 / 三国布革题材方向参考，非正式 105 定稿（与 v1/v2 输入逐字节一致）",
+      "expected_sha256_prefix": "711757e81bea91c1"
+    },
+    {
+      "order": 5,
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1021_identity_v1/1021_identity_v1_greenscreen_1024.png",
+      "role": "image 5: 1021 曹军轻装楯兵定稿 —— 提供全部装备（轻甲布袍 / 素色布帽 / 木盾在画面左、由人物右手持握）与风霜老卒面相；渲染时必须改画成与前四位同一种画风",
+      "expected_sha256_prefix": "493f24bf488a109c"
+    }
+  ]
+}

@@ -27,7 +27,7 @@ Enemy1011ArtSource/
 |---|---|---|---|---|
 | `Idle` | `sword_enemy_v4_combat_idle_loop_v1_720p_4s.mp4` | `task_688460292bfc499f9f1f217b9a4c329c` | `Enemy_1011_idle1..6` | f000–f048（**0-based**，前 49 帧） |
 | `HitFront` | `sword_enemy_hit_front_v2.mp4` | `task_39f03a1065f5447bb302ab4e81bfe03b` | `Enemy_1011_hit1..5`（末键引用 idle1） | f000–f096 每 8 帧 + f059，另补 f076/f084 |
-| `Attack` | `sword_enemy_attack_front_v2.mp4` | `task_67c87dbe7385459cb37f16aa958bee7e` | `Enemy_1011_attack1..16` | f001–f097（**1-based**） |
+| `Attack` | `sword_enemy_attack_front_v1.mp4` | `task_e92bbc89a802478db2863251b66d9abb` | `Enemy_1011_attack1..16` | f001–f097（**1-based**） |
 | `Dead` | `sword_enemy_dead_front_v4.mp4` | `task_e3d84ebe3403436192b5c1d3697488aa` | `Enemy_1011_dead1..6` | f001–f097 |
 | `Walk` | `sword_enemy_walk_front_v4.mp4` | `task_18e87a74532b4f1f86161a1b00b318cf` | `Enemy_1011_walk1..6` | f001–f097 |
 | `HitLeft` | `sword_enemy_hit_left_v3.mp4` | `task_3992f2cba10041af902a0aff47a43e05` | `Enemy_1011_hitLeft1..6` | f001–f097 |
@@ -37,6 +37,8 @@ Enemy1011ArtSource/
 | `Launch_Getup` | `enemy1011_launch_getup_v1.mp4` | `task_b226b12b3dc24b9aae00e0ad63480260` | `Enemy_1011_getup1..6` | f001–f097 |
 
 时间换算：全部 960x960 / 24fps / 97 帧。`Launch_*` 的 Rise/Fall/Getup 是同一任务下的三段独立视频（Fall 段来自 `enemy1011_launch_landing_v1.mp4`）。
+
+> **2026-11-05 攻击源片更正**：本包原存 `01_SourceVideos/sword_enemy_attack_front_v2.mp4`（task_67c87dbe…），并在溯源表里记为 Attack 的源视频。实测**已部署的 `Enemy_1011_attack1..16.png` 实际出自 `sword_enemy_attack_front_v1.mp4`**（task_e92bbc89…）：掩码 IoU attack10/f055=0.930、attack6/f049=0.956、attack3/f029=0.957，v2 最高仅 0.61（已扫 f025–f094 全帧排除帧号漂移）。**v2 是另一支未被验收的 take（中段带大回旋弧光）**，已删除；本包现存的 `01_SourceVideos/sword_enemy_attack_front_v1.mp4` 即用户验收的原片（bytes 2,015,371 / sha256 `bbc8f914f480eb732fb169da9b38a907dbc55df8af459f7ec2166cf4aa15f7da`）。工程内已部署精灵与 v1 一致，**无需重新接入**。复核工具：`Tools/visual_brief/compare_video_takes.py`。
 
 ## 命名规则
 

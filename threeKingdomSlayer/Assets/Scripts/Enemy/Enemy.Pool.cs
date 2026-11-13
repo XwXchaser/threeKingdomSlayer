@@ -39,6 +39,7 @@ public partial class Enemy : MonoBehaviour
         _attackTelegraph?.StopWarning();
         EnemyManager.Instance?.columnManager?.CancelPushReturnForEnemy(this, "cancel-reset");
         StopHitStop();
+        StopGuardBreakSlow();
         ClearFreezeOnTeardown();
         StopHitScaleFeedback();
         // 受击闪白协程：停用时协程会被 Unity 停掉，但**引用会变野**。
@@ -62,6 +63,7 @@ public partial class Enemy : MonoBehaviour
         _cavalry?.ResetCavalry();
         _shieldGuard?.ResetShieldGuard();
         StopHitStop();
+        StopGuardBreakSlow();
         ClearFreezeOnTeardown();
         StopHitScaleFeedback();
         // 同 OnDisable：受击闪白协程的野引用会锁死敌人的攻击循环（见 OnDisable 注释）

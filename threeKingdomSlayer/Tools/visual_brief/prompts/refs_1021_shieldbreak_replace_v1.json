@@ -1,0 +1,19 @@
+{
+  "version": "1021_shieldbreak_replace_v1",
+  "handoff": "Locus/knowledge/plan/enemy1021-art-production-handoff.md §0.21.8",
+  "note": "1021 脱盾（ShieldBreak）替换片：动作继承自母片窗口（母片 f044..f140，4.04s，已按 crf12/presetslow 重编码，实测锐度 −2.7%），prompt = 已验收标准句 + 表情层（脱手一瞬一声短促低吼、只露上齿）+ 盾的连续性约束（脱手前始终握在右手、不得变形/凭空出现消失）。",
+  "references": [
+    {
+      "order": 1,
+      "path": "C:/Users/steam/Pictures/gptGen/enemy1021_shieldbreak/1021_identity_for_break_960.png",
+      "role": "image 1（reference_image）: 1021 曹军轻装楯兵定稿身份图（960²，已按母片窗口首帧构图与色键对齐）—— 形象从它继承",
+      "expected_sha256_prefix": "d8e06899d4e024f0"
+    },
+    {
+      "order": 2,
+      "path": "C:/Users/steam/Videos/doubaoVideo/enemy1021_shield_break_trim4s.mp4",
+      "role": "reference_video: 母片脱盾窗口（母片 f044..f140，4.04s）—— 动作、节拍、持盾侧与盾脱手轨迹全部从它继承；不是替换片 v1/v2（那些是重绘产物，再当源会叠轮掉锐度）",
+      "expected_sha256_prefix": "bd893e8453e8992a"
+    }
+  ]
+}

@@ -162,11 +162,21 @@ public sealed class PlayerGuard
             : (_owner != null ? _owner.transform.position : Vector3.zero);
         CameraFeedbackController.Instance?.RequestGuardBlock(blockPos);
 
-        if (AccumulatedDamage >= Threshold) Break(ParryConfig, blockPos);
+        if (AccumulatedDamage >= Threshold) Break(ParryConfig, blockPos, source);
         return true;
     }
 
-    private void Break(AttackSkillConfig cfg, Vector3 impactPos)
+    /// <summary>
+    /// **破防**：硬直 + 防御锁 + 专属动作 + **演出包**（REQ-006）。
+    ///
+    /// 演出包（<c>design/guard-break-presentation-overhaul.md</c> §3.1 的目标时序）：
+    ///   f0    命中帧：枪闪白 + 接触点火花 + 屏幕红边框 + 专属音 + 枪被顶开 + 攻击者被冻结
+    ///   f0-3  定格 4 帧（局部顿，世界照常跑）
+    ///   f4    攻击者转入慢放（被顶开/被打慢）+ 镜头极短推近
+    ///   f19+  全部回正常速度，硬直开始
+    /// ⚠ **不打断攻击者的攻击表现**（2026-11-13 用户拍板）⇒ 不切受击动画。
+    /// </summary>
+    private void Break(AttackSkillConfig cfg, Vector3 impactPos, Enemy source = null)
     {
         State = GuardState.Broken;
         _breakTimer = cfg != null ? cfg.parryGuardBreakDuration : 1.5f;
@@ -182,6 +192,54 @@ public sealed class PlayerGuard
         // 破防镜头：比普通格挡**时长略长、幅度更小**（2026-11-12）——
         //   破防是「被顶开」，要读得出这一下；但幅度大 + 时长长会读成「地动山摇」。
         CameraFeedbackController.Instance?.RequestGuardBreak(impactPos);
+
+        // ── REQ-006 · A1：攻击者「被顶住 → 被打慢」（不切受击动画）──
+        if (source != null)
+        {
+            source.ApplyGuardBreakReaction(
+                cfg != null ? cfg.parryGuardBreakEnemyFreezeSeconds : 0.25f,
+                cfg != null ? cfg.parryGuardBreakEnemySlowSeconds : 0.35f,
+                cfg != null ? cfg.parryGuardBreakEnemySlowScale : 0.25f);
+        }
+
+        // ── REQ-006 · A2：命中确认（画面上必须有人说「打中了」）──
+        //  枪闪白
+        _owner?.WeaponStance?.FlashGuardBreak(cfg != null ? cfg.parryGuardBreakWeaponFlashSeconds : 0.12f);
+        //  接触点火花（复用现成通路；强度取 Heavy）
+        if (source != null)
+        {
+            PixelHitEffectManager.Instance?.RequestHit(new HitFeedbackContext(
+                source,
+                DamageType.Stab,
+                HitFeedbackSource.BasicAttack,
+                HitFeedbackStrength.Heavy,
+                0f,
+                false,
+                false,
+                impactPos,
+                Vector3.zero,
+                true));
+        }
+        //  屏幕红边框（PlayerHitFeedback 挂在 Player 根物体上，而 PlayerState 在其子物体 ⇒ 必须往父级找）
+        if (_owner != null)
+        {
+            _owner.GetComponentInParent<PlayerHitFeedback>()?.TriggerGuardBreakFlash(
+                cfg != null ? cfg.parryGuardBreakScreenFlashSeconds : 0.25f);
+        }
+
+        // ── REQ-006 · A3：收尾（专属音 + 镜头推近）──
+        AudioManager.Instance?.PostEvent("Guard_Break",
+            cfg != null ? cfg.parryGuardBreakSoundPitch : 0.75f,
+            cfg != null ? cfg.parryGuardBreakSoundVolume : 1.4f);
+        CameraFeedbackController.Instance?.RequestGuardBreakPush(
+            cfg != null ? cfg.parryGuardBreakPushDegrees : 2f);
+
+        // ── REQ-006 · 无双口径：破防那一拍 = **世界定格 + 径向模糊** ──
+        //   ★ 子弹时间不在这里开：命中这一帧保持 1× 速度（冲击要脆），
+        //     子弹时间挂在**脱手旋转的那一刻**（见 PlayerWeaponStance），
+        //     否则后坐会把窗口耗光、旋转等窗口结束才开 ⇒ 读成「弹射」。
+        //   慢的是「别人」（敌人被压住、拖成流线）；我方的枪在子弹时间里**一起慢放**（用户口径）。
+
         GameplayInputGate.RequestBlock(this, InputBlockReason.GuardBroken);
         DebugLog.Info($"[Guard] 破防！硬直 {_breakTimer:F2}s（累积伤害 {AccumulatedDamage:F0}）");
         OnStateChanged?.Invoke(State);

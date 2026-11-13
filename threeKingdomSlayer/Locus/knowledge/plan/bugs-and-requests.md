@@ -280,6 +280,54 @@ aiEditMode: inherit
 
 ## 待实现需求
 
+### REQ-007 新增 1 个兵种（类型待定）
+
+- 日期：2026-11-14
+- 类型：需求 / 战斗 | 内容
+- 动机：现役敌人去重后只有 6 种原型（近战杂兵 / 脆皮近战 / 盾卫 / 督战 / 远程弓 / 骑兵），“玩家现在做不了哪些决策”的缺口 G1–G6 已在 `design/new-enemy-archetypes-20261109.md` 列清。
+- 期望行为：新增 1 个「**一个威胁 + 一个唯一对策**」的敌人原型（pillar 四 §4.6 原则）。
+- 候选（待用户拍板）：**1016 破阵重锤**（推荐：给防御键一个「错误对策」，与本周破防/反击线同题）/ 1017 长枪突刺兵（射程 2）/ 1018 号令旗手（光环）。
+- 验收标准：威胁可被玩家一眼识别；对策唯一；教学关不出；美术按铁律 11（idle → 关键动作 → 剩余动作）。
+- 相关：`design/new-enemy-archetypes-20261109.md`、`design/gameplay-pillars.md` §4、`plan/week-20261114-new-enemy-two-skills-parry-counter.md` §2
+- 状态：**待处理（类型待用户定）**
+
+### REQ-008 技能：抡斧劈砍（巨斧）
+
+- 日期：2026-11-14
+- 类型：需求 / 战斗 | 表现
+- 动机：参考《影之刃零》**巨凶斧**（破坏型 A 级：伤害 309 / 破防能力 208 / 卡牌标注「高破盾能力」）；玩法上需要一个**无视盾牌类减伤 + 高额破盾**的解法，对应现役 1021 盾卫的「正面格挡 + 只允许反侧重攻击破盾」设计（`ShieldGuardEnemy.heavyFromShieldSideBreaks = false`）。
+- 期望行为：从地上抡起一把大斧劈砍；命中带「**无视盾牌减伤**」与「**必定破盾**」；**3D 模型后置**（先无数值表现）。
+- 验收标准：打盾卫正面不减伤且盾直接破；打无盾敌人伤害正常；CD 与动作锁生效。
+- 验收标准（实测）：对照——普通攻击 10 打在盾卫正面只掉 1 血；抡斧 90 伤全额生效且盾破（形态 ShieldBroken）✔
+- 数值草案：伤害 90 / 130 / 180（rows 2/3/4，CD 8/7/6）——**待用户校准**。
+- 相关：`design/pbz-reference-analysis-20261109.md`、`design/enemy-1021-shield-guard.md`、`plan/week-20261114-new-enemy-two-skills-parry-counter.md` §1.1、**`design/weapon-3d-art-spec-axe-and-chain.md`（四视图需求 + 3D 制作规范）**
+- 状态：**已实现（机制+数值），表现待补**（`ActiveSkill_AxeSmash` / `ActiveSkill_AxeSmash.asset`，已入技能池 rarePool）
+  - ★ **模型依赖**：大斧 3D 模型的四视图需求与制作规范见 `design/weapon-3d-art-spec-axe-and-chain.md`；工程侧已预留 `axeSmashLevels[].weaponPrefab`（模型到位只改资产、不改代码）。
+
+### REQ-009 技能：追命锁链（链镰拉人）
+
+- 日期：2026-11-14
+- 类型：需求 / 战斗 | 表现
+- 动机：参考《影之刃零》**猎人的追命锁镰**（武学 B 级：范围覆盖中远距离；卡牌「钩索可勾住远处的锚点」；铸魂后锁链伤害与刀刃相同）。本项目里它的价值是**排序**而不是伤害：把躲在后排的最弱敌人拽到前排解决（缺口 G4 目标优先级 / G5 清波不可信）。
+- 期望行为：发射带铁链的镰刀 → 锁定「**射程最远**且**当前血量最低**」的敌人 → 拉到**本列最前的空格**；**3D 模型后置**。
+- 验收标准：拉的是后排最弱者；落点不与其它敌人重叠；**不触发补齐**（`design/immutable-constraints.md`）；被拉敌人照常可被打死/挑飞。
+- 验收标准（实测）：远弱(row4,hp20) → row0；近强(row1,hp200) 不动；视觉被拽过来 ✔
+- 数值草案：伤害 25 / 40 / 60（CD 10/9/8）——**待用户校准**。
+- 相关：`design/pbz-reference-analysis-20261109.md` §4.2（追命是锁链型敌人）、`design/immutable-constraints.md`、`plan/week-20261114-new-enemy-two-skills-parry-counter.md` §1.2、**`design/weapon-3d-art-spec-axe-and-chain.md`（四视图需求 + 3D 制作规范）**
+- 状态：**已实现（机制+数值），表现待补**（`ActiveSkill_ChainPull` / `ActiveSkill_ChainPull.asset`，已入技能池 rarePool）
+  - ★ **模型依赖**：锁链 + 镰刀 3D 模型的四视图需求与制作规范见 `design/weapon-3d-art-spec-axe-and-chain.md`；工程侧已预留 `chainPullLevels[].weaponPrefab` 与 `chainPullLevels[].chainLinkSprite`。
+  - ★ **链身默认走程序骨链**（`ChainLinkRig` 运行时生成 9 节骨骼）⇒ 链环只需一个静态模型，不必绑定骨骼。
+
+### REQ-010 防御后的反击：防御态直接衔接攻击
+
+- 日期：2026-11-14
+- 类型：需求 / 手感 | 战斗
+- 动机：用户原话「玩家防御时若不在受击处理，则可以按点或滑动衔接 stab 和 slash……需要思考长枪如何从防御态衔接到那两个抬手动作，如何旋转移动这杆长枪，以实现动作类游戏防御姿态直接转换为攻击而不需要先完成防御收尾」。现状：`AttackSystem.cs:424` 一律拦下（`IsDefendingActive` ⇒ 不许出招），且武器准则是「必须出画才销毁」（`design/combo-move-state-machine.md` §19）。
+- 期望行为：防御态（**不在受击处理**：破防硬直 / 格挡后摇 / 受击硬直 / 动作锁 / 输入门 / 三选一弹窗）→ **点按 = 枪突、滑动 = 横斩**，**不播收枪**；枪从防御位直接转到该招式的抬手姿态；攻击后若仍按住防御 ⇒ 接回防御位。
+- 验收标准：① 防御中点按不播收枪、枪直接转进枪突抬手；② 滑动转进横斩抬手；③ 受击中点按 → 输入被**缓冲**不误出招；④ 全程**不出现两把枪同屏**；⑤ 互斥口径改为**单向**（防御→攻击允许；攻击→防御仍禁止）。
+- 相关：`plan/week-20261114-new-enemy-two-skills-parry-counter.md` §3、`design/attack-interrupt-system.md` §4.7、`design/combo-move-state-machine.md` §19、`design/action-game-feel-and-input-buffering.md`
+- 状态：**待处理（方案已成文，待用户拍板：边防御边输出是否允许 / 武器交接方案 A·B·C / 是否开 §19 例外）**
+
 ### REQ-004 教程开场流程重做：暂停 → 第一段字幕 → 点击继续 → 第二段字幕 → 正式教学
 
 - 日期：2026-11-05
@@ -427,7 +475,64 @@ aiEditMode: inherit
   交接 `plan/guard-break-handoff-20261112.md`；研究 `design/pbz-reference-analysis-20261109.md`；
   打击反馈既有口径 `memory/hit-feedback-system.md`
 - 优先级：高（用户连续三轮反馈的核心问题）
-- 状态：**待处理（方案已定，未实施）**
+- 状态：**已实现（2026-11-13），待用户实机验收** —— A1/A2/A3 三批全部落地，脚本化逐帧实测通过（详见下方）。
+  - ★ 按用户拍板：**破防时攻击者**不打断攻击表现**（不切受击动画），只做「冻结 → 慢放 → 回 1」。
+  - 实现清单：
+    - A1 `Enemy.ApplyGuardBreakReaction(freeze, slowSec, slowScale)`（`Enemy.Combat.cs`）→
+      `EnemyHitFeedback.PlayGuardBreakSlow/StopGuardBreakSlow`：冻结复用既有卡肉机制，
+      冻结结束后 `Animator.speed = slowScale`，结束还原 1；`Enemy.Pool` 的 OnDisable / ResetEnemy 都清理
+      （对象池不会带脏 speed）。
+    - A2 枪闪白：`WeaponColorUnlit.shader` 新增 `_FlashStrength` 通道（乘法混合的 `_Color` 变不亮）
+      + `MeshWeaponVisual.SetFlash/PlayFlash`（MaterialPropertyBlock，不实例化材质）
+      + `PlayerWeaponStance.FlashGuardBreak`；
+      火花：`PixelHitEffectManager.RequestHit(context)` 复用现成通路（Heavy 档，接触点 = 攻击者位置）；
+      屏幕红边框：`PlayerHitFeedback.TriggerGuardBreakFlash`（复用 `hitted.png`）。
+    - A3 专属音：`AudioManager.PostEvent(name, pitch, volume)` 重载 + `Guard_Break` 事件
+      （格挡音降调 0.75 + 重击音低频垫底，走**独立音源**不污染主音效源音高）；
+      镜头推近：`CameraFeedbackController.RequestGuardBreakPush(fovDegrees)`（FOV 脉冲，不是抖）。
+    - 参数（8 项）进 `AttackSkillConfig`，**真值已写入** `Assets/Prefabs/UI/Skills/Zhangfei_Parry.asset`
+      （freeze 0.25 / slow 0.25×0.35s / flash 0.12 / screen 0.25 / push 2° / pitch 0.75 / volume 1.4），
+      `Tools ▸ 三国杀戮 ▸ 招架姿态调参` 加了对应滑条。
+  - 实测（Play Mode，真实 player loop 协程采样，采样文件 `Library/Locus/tmp/guardbreak-*-smoke.txt`）：
+    - A1：f00–f15 `animator.enabled=False`（冻结）→ f18–f36 `speed=0.25` → f39+ `speed=1.00` ✔
+    - A2：枪闪白 `flash 0.85 → 0.57 → 0.32 → 0.04 → 0` ✔（0.12s 衰减）
+    - A3：FOV `60.00 → 58.68 → 58.09 → 59.00 → 60.00` ✔（2° 推近并回位）
+    - 全程 `Time.timeScale = 1.00` ✔（不动全局时间，符合项目口径）
+  - ⚠ 已知取舍：慢放**只改 Animator.speed**，不改攻击判定时钟 ⇒ 慢放窗口内会出现「动作慢、判定正常」的错拍
+    （设计文档 §5 风险表已列；本次按「不动判定数值」的口径取舍）。
+  - ⚠ 待用户实机验收：破防那一拍的「爽不爽」只能真机判断（设计文档 §6）。
+  - ★ **第二轮修正（2026-11-13 晚，用户反馈「没有慢放感 / 武器生硬」）**：定位到三条实因并修掉 ——
+    ① **慢放窗口没覆盖旋转段**（`BeginBreak` 就开慢放 0.15s，只盖住后坐的前 29%，**230° 脱手旋转全程 1×**）
+    ⇒ 慢放改到「起旋转那一刻」才开；② **旋转曲线方向反了**（`k*(0.6+0.4k)` = 前慢后快 = 被甩出去反而加速）
+    ⇒ 改成 `1-(1-k)²`（先快后慢 = 失速 = 重量）；③ ★★ **敌人的慢放被它自己的状态机踩掉**
+    （敌人代码有 6 处写 `animator.speed`：`Enemy.Attack.cs:334`、`Enemy.StateSwitch.cs:96/222`、
+    `Enemy.Movement.cs:36`、`Enemy.FormSwitch.cs:55`、`CavalryVisualController.cs:197/292`
+    ⇒ 慢放实测只活 **0.07s**）⇒ 协程改为**每帧重申** speed（协程在 Update 之后恢复，盖得住）。
+    参数重配（已写资产）：破防时长 0.55→**0.30**、新增起手余震 **3°**、慢放时长 0.15→**0.95**、
+    枪定格 0.066→**0.033**、敌人冻结 0.25→**0.12**、敌人慢放 0.35→**0.55**、
+    闪白 0.12→**0.25**、红边框 0.25→**0.40**。
+    实测：脱手段 0.55s@1× → **0.80s@0.35× 且失速**；敌人慢放 0.07s → **0.55s**；
+    全局 timeScale 仍为 1.00。详见 `plan/guard-break-handoff-20261112.md` §8。
+  - ★ **第三轮修正（同日晚，用户再驳「破防的瞬间长枪还加速离开了」）** —— §8 那版**改错了**：
+    「失速曲线」`1-(1-k)²` 的代价是**起始角速度 = 2 倍均值** ⇒ 起步反而比旧版更快（251°/s → 538°/s）
+    ⇒ 用户体感「加速离开」完全正确。⇒ 铁律：**破防的起步必须就是慢速**，速度靠「破防时长 ÷ 慢放倍率」调，
+    **不要靠改曲线**。现口径：`k*(1.12-0.12k)`（匀速微收）+ 旋转 230°→**150°** + 漂移 0.8→**2.0**
+    （靠平移出画，不扫屏）+ 慢放 0.35→**0.25×** + 敌人慢放 **1.10s**（盖住整个脱手窗口）
+    + 镜头推近改成「**0.08 进 / 0.55 保持 / 0.3 回**」。
+    实测：脱手均速 **144°/s**（旧版峰值 418、§8 起步 538），真实时长 **1.04s**，全程 timeScale=1.00。
+    详见 `plan/guard-break-handoff-20261112.md` §9。
+  - ★ **第四轮（2026-11-13 深夜，用户开代理让重查无双后）**：查到**无双的子弹时间语法 = 慢的是「别人」、清晰且正常速度的是「自己」**
+    （EN 维基：Musou 乱舞时普通敌兵慢速、敌方将不受影响；用户第一手观察：无双破防也有「慢放 + 模糊」）
+    ⇒ 我们前几轮把慢放全堆在**自己的枪**上（无对比、无模糊）才是「读不出来」的根因。
+    ⇒ 已实施「破防那一拍 = **时停 + 慢放 + 径向模糊**」：
+    新增 `Assets/Scripts/Core/GuardBreakTimeFx.cs` + `Assets/Shaders/GuardBreakRadialBlur.shader`；
+    全局 timeScale 压到 **0.25**（绝不用 0，避开项目的「timeScale<=0 判暂停」坑）**持续 0.6s 真实时间**
+    ⇒ 世界只走 0.15 秒游戏时间（约 9 帧）⇒ 真的慢放；
+    以玩家为焦点的**径向拖影**（半分辨率两趟）+ **去饱和 + 压暗**（否则暖色背景会抹成彩虹）；
+    **持枪姿态改用 unscaled 时间** ⇒ 枪照常速度飞且清晰、世界凝住并拖成流线；敌人本地慢放等慢放结束后再上（不二次减速）。
+    组件已**落盘**到 Battle 场景 Main Camera（shader 走 Inspector 引用），参数 Inspector 可调。
+    实测：0.59s 真实时间里世界只前进 0.145 归一化时间；同期枪 ~10°/帧；截图对照确认模糊生效且 HUD 保持锐利。
+    详见 `plan/guard-break-handoff-20261112.md` §10 与 `design/guard-break-dynasty-warriors-reference.md`。
 
 ---
 

@@ -71,6 +71,22 @@ public class PlayerHitFeedback : MonoBehaviour
             .SetUpdate(UpdateType.Normal, true);
     }
 
+    /// <summary>
+    /// 破防时的屏幕红边框（REQ-006 · 命中确认层）。
+    /// 与「普通受击」的边框共用同一张图，但**参数分开**（破防更短更红）⇒ 两套频率不互相打架。
+    /// </summary>
+    public void TriggerGuardBreakFlash(float holdSeconds = 0.25f, float fadeSeconds = 0.1f)
+    {
+        if (hittedImage == null) return;
+
+        _hittedTween?.Kill();
+        hittedImage.color = Color.white;
+        _hittedTween = hittedImage.DOFade(0f, Mathf.Max(0.01f, fadeSeconds))
+            .SetDelay(Mathf.Max(0f, holdSeconds))
+            .SetEase(Ease.OutCubic)
+            .SetUpdate(UpdateType.Normal, true);
+    }
+
     private void ShakeCamera()
     {
         CameraFeedbackController.Instance?.RequestPlayerDamage();
