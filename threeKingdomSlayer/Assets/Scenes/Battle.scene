@@ -2916,11 +2916,16 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 145927958}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: de97d9d3a33207d4097eb36e9d1b0bd6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  guardBreakDuration: 0.14
+  guardBreakIntensity: 0.045
+  shakeIntensityScale: 0.35
+  rotationDegreesPerUnit: 20
+  rotationVibrato: 4
   standardDuration: 0.07
   standardIntensity: 0.012
   heavyDuration: 0.11
@@ -2928,9 +2933,7 @@ MonoBehaviour:
   playerDamageDuration: 0.15
   playerDamageIntensity: 0.07
   requestCooldown: 0.04
-  standardVibrato: 10
-  heavyVibrato: 14
-  worldBackground: {fileID: 149835881}
+  disableBackgroundFollow: 0
   hitRotationScale: 1
   playerDamageRotationScale: 1
   heavyOnlyCameraShake: 1
@@ -6821,8 +6824,8 @@ MonoBehaviour:
   handSprite: {fileID: 21300000, guid: 8426cacbbde92f44c8e6a0f06f003f35, type: 3}
   ringSprite: {fileID: 21300000, guid: 29478d34325fde346a6eb38397efec15, type: 3}
   font: {fileID: 11400000, guid: 83ef45830ec08304fa249351a44a36e6, type: 2}
-  talentText: "\u70B9\u8FD9\u91CC\u53BB\u89E3\u9501\u65B0\u62DB\u5F0F"
-  stageText: "\u70B9\u300C\u5F00\u59CB\u5173\u5361\u300D\u8FDB\u5165\u6218\u6597"
+  talentText: "\u5728\u5929\u8D4B\u9875\u9762\u89E3\u9501\u65B0\u62DB\u5F0F"
+  stageText: "\u7EE7\u7EED\u6218\u6597"
 --- !u!4 &405713611
 Transform:
   m_ObjectHideFlags: 0
@@ -9288,6 +9291,7 @@ MonoBehaviour:
   stageConfig: {fileID: 0}
   autoStartStage: 0
   fakeRouteStageConfig: {fileID: 0}
+  waveEndSettleDelay: 1.2
   waveSpawner: {fileID: 1221163314}
   enemyManager: {fileID: 598331925}
   playerState: {fileID: 1878310418}
@@ -14997,7 +15001,7 @@ MonoBehaviour:
   forceRecommendedChoiceOnly: 1
   choiceTeachingDialogue: {fileID: 11400000, guid: ff63769998b3c8c49b579e8502e6f0df, type: 2}
   choiceExpLine: "\u51FB\u6740\u654C\u4EBA\u83B7\u5F97\u7ECF\u9A8C\uFF0C\u7ECF\u9A8C\u6EE1\u4E86\u5C31\u4F1A\u5347\u7EA7\uFF0C\u5347\u7EA7\u4F1A\u5F39\u51FA\u4E09\u90091\u5956\u52B1\u3002"
-  choicePickLine: "\u542C\u6211\u7684\uFF0C\u9009\u3010{0}\u3011\u2014\u2014\u5B83\u80FD\u628A\u9738\u4F53\u654C\u4EBA\u63A8\u56DE\u53BB\uFF0C\u6253\u65AD\u4ED6\u7684\u62DB\u3002"
+  choicePickLine: "\u9009\u3010{0}\u3011\u2014\u2014\u5B83\u80FD\u628A\u9738\u4F53\u654C\u4EBA\u63A8\u56DE\u53BB\uFF0C\u6253\u65AD\u4ED6\u7684\u62DB\u3002"
   skillDialogueCyclone: {fileID: 11400000, guid: ce6ba1902db0ccc468faffb0e38ae409, type: 2}
   skillDialogueWave: {fileID: 11400000, guid: ab533cd5fa061f240962fa843768b280, type: 2}
   skillDialogueGeneric: {fileID: 11400000, guid: 4dd429cfb23b4d84cbc0f122467dfa10, type: 2}
@@ -21869,6 +21873,7 @@ MonoBehaviour:
   fadeSeconds: 0.3
   routeConfig: {fileID: 11400000, guid: 8992d31e29e5e084a8281de6cbfa0c19, type: 2}
   tutorialOnly: 1
+  pressedCoverTimeout: 1.5
   tutorialRouteConfig: {fileID: 11400000, guid: 8992d31e29e5e084a8281de6cbfa0c19, type: 2}
 --- !u!223 &1684724280
 Canvas:
@@ -24438,6 +24443,7 @@ MonoBehaviour:
   - {fileID: 8370877317619064943, guid: 72fa501694f0de5418eded223f290ae0, type: 3}
   - {fileID: 2638271005461821682, guid: d5ca2237e6fd0c245a7300fb592baac0, type: 3}
   - {fileID: 688460577474092011, guid: 8259a459d63c77d4389e863f6d90ad8d, type: 3}
+  - {fileID: 1987404102585906723, guid: 36266560527f15d4c80027f6217e6cc6, type: 3}
 --- !u!1 &1774428171
 GameObject:
   m_ObjectHideFlags: 0
@@ -24627,9 +24633,12 @@ MonoBehaviour:
   occupySlots: 1
   attackSpeed: 1
   attackDamage: 10
+  guardBreakBonus: 0
   normalFormDamageReductionPercent: 0
   attackRange: 1
   moveSpeed: 1
+  rushBounceHeight: 0
+  walkCycleScale: 0.75
   visualYOffset: 0
   attackSequence: []
   isRanged: 0

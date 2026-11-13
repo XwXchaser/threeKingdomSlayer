@@ -33,6 +33,27 @@ public sealed class PlayerGuard
     /// <summary>当前累积的破防值（= 衰减条当前长度）。</summary>
     public float AccumulatedDamage { get; private set; }
 
+    /// <summary>
+    /// 破防后**防御被锁住**多久（秒，2026-11-09 用户定）。
+    ///
+    /// 破防的惩罚不能只是 1.5 秒硬直：硬直期间玩法输入被门禁拦下，但**防御键是 UI** →
+    /// 玩家可以在硬直里按一下，防御键的**预输入**会把这次按压排队 → 硬直一结束就**自动进防御**
+    /// → 破防惩罚被抵消、防御变成免费护盾。
+    /// → 所以破防后这段时间内**防御键直接按不了**（灰掉），玩家必须重新决定。
+    /// </summary>
+    public float DefenseLockSeconds = 3f;
+
+    /// <summary>防御是否被锁住（破防后的一段时间内）→ 防御键灰掉、按不了。</summary>
+    public bool IsDefenseLocked { get; private set; }
+    private float _defenseLockTimer;
+
+    /// <summary>锁住防御一段时间（破防时调用）。</summary>
+    public void LockDefense(float seconds)
+    {
+        _defenseLockTimer = Mathf.Max(0f, seconds);
+        IsDefenseLocked = _defenseLockTimer > 0f;
+    }
+
     public bool IsBroken => State == GuardState.Broken;
 
     /// <summary>状态变化回调（表现层可订阅）。</summary>
@@ -62,6 +83,41 @@ public sealed class PlayerGuard
     /// <summary>破防条的显示比例（0~1），供 HUD 用。</summary>
     public float MeterRatio => Mathf.Clamp01(AccumulatedDamage / Threshold);
 
+    /// <summary>
+    /// 破防压力的**定性档位**（2026-11-09）。
+    ///
+    /// ⚠️ **玩家看不到任何数字**（用户 2026-11-09：「我不想显示具体剩余的值」）：
+    /// 档位只给**表现层**用 —— 枪被压低 / 枪尖下垂 / 持续微抖 / 红缨甩开；
+    /// 玩家从**枪的样子**读状态，而不是从条子读数值。
+    /// </summary>
+    public enum StrainLevel
+    {
+        /// <summary>稳：还撑得住（表现与改造前完全一致）。</summary>
+        Steady = 0,
+        /// <summary>吃力：开始被压（枪下沉 + 红缨开始甩 + 格挡后退变大变慢）。</summary>
+        Strained = 1,
+        /// <summary>临界：快崩了（枪明显下沉下垂 + 持续抖 + 红缨狂甩 + 后退很大）。</summary>
+        Critical = 2,
+    }
+
+    /// <summary>进入「吃力」的阈值（破防条比例）。</summary>
+    public const float StrainedThreshold = 0.45f;
+
+    /// <summary>进入「临界」的阈值（破防条比例）。</summary>
+    public const float CriticalThreshold = 0.8f;
+
+    /// <summary>当前破防压力档位（**只给表现层用，玩家看不到数值**）。</summary>
+    public StrainLevel Strain
+    {
+        get
+        {
+            float r = MeterRatio;
+            if (r >= CriticalThreshold) return StrainLevel.Critical;
+            if (r >= StrainedThreshold) return StrainLevel.Strained;
+            return StrainLevel.Steady;
+        }
+    }
+
     /// <summary>破防条当前是否应该显示（防御中才有值）。</summary>
     public bool MeterVisible => _owner != null && _owner.WeaponStance != null && _owner.WeaponStance.IsDefending;
 
@@ -81,13 +137,16 @@ public sealed class PlayerGuard
     /// 非防御状态一律返回 false，由调用方照常结算。
     /// <paramref name="source">攻击者（用来做「格挡」反馈：攻击者被卡肉 + 镜头震动）。
     /// </summary>
-    public bool TryAbsorbDamage(float damage, Enemy source = null)
+    public bool TryAbsorbDamage(float damage, Enemy source = null, float guardBreakBonus = 0f)
     {
         if (State == GuardState.Broken) return false;
 
         float absorbed = Mathf.Max(0f, damage);
-        AccumulatedDamage += absorbed;
+        AccumulatedDamage += absorbed + Mathf.Max(0f, guardBreakBonus);
         _owner?.WeaponStance?.Recoil(ParryConfig);
+        // ★ 局部顿（命中定格）：命中帧把**持枪姿态**定住一小段（真实时间），世界照常跑
+        //   ⇒ 画面摆出「刚被顶开」的那一帧，靠对比读出顿感（不动全局 Time.timeScale）。
+        _owner?.WeaponStance?.ApplyHitStop(ParryConfig != null ? ParryConfig.parryGuardBlockHitStopSeconds : 0.033f);
         // 格挡金属音：与下面的卡肉/镜头震动同帧发生
         AudioManager.Instance?.PostEvent("Guard_Block");
         OnDamageAbsorbed?.Invoke(absorbed);
@@ -103,16 +162,26 @@ public sealed class PlayerGuard
             : (_owner != null ? _owner.transform.position : Vector3.zero);
         CameraFeedbackController.Instance?.RequestGuardBlock(blockPos);
 
-        if (AccumulatedDamage >= Threshold) Break(ParryConfig);
+        if (AccumulatedDamage >= Threshold) Break(ParryConfig, blockPos);
         return true;
     }
 
-    private void Break(AttackSkillConfig cfg)
+    private void Break(AttackSkillConfig cfg, Vector3 impactPos)
     {
         State = GuardState.Broken;
         _breakTimer = cfg != null ? cfg.parryGuardBreakDuration : 1.5f;
-        // 破防：持枪姿态**挥出画面**（走收枪，不原地消失）+ 拦下全部玩法输入
-        _owner?.WeaponStance?.BeginExit(cfg != null ? Mathf.Max(0.05f, cfg.parryStanceExitFastSeconds) : 0.12f);
+        // 破防 → 防御被锁住（防御键灰掉、按不了）：否则预输入会在硬直结束后自动进防御 → 破防等于没破。
+        LockDefense(DefenseLockSeconds);
+        // 破防：持枪姿态**被打脱手**（2026-11-12 用户定）
+        //   ★ 不再走「收枪出画」（沿原路挥出 ⇒ 读起来像玩家自己把枪收走，不像被打爆）
+        //   → 专属动作：以破防这一刻的姿态为起点，绕**世界 Z 轴逆时针旋转** + 轻微向左漂移出画。
+        _owner?.WeaponStance?.BeginBreak();
+        // ★ 局部顿（命中定格）：破防定格比普通格挡长一档（破防是更大的冲击）。
+        //   只停**持枪姿态**，世界照常跑 ⇒ 靠对比读出顿感（不动全局 Time.timeScale）。
+        _owner?.WeaponStance?.ApplyHitStop(cfg != null ? cfg.parryGuardBreakHitStopSeconds : 0.066f);
+        // 破防镜头：比普通格挡**时长略长、幅度更小**（2026-11-12）——
+        //   破防是「被顶开」，要读得出这一下；但幅度大 + 时长长会读成「地动山摇」。
+        CameraFeedbackController.Instance?.RequestGuardBreak(impactPos);
         GameplayInputGate.RequestBlock(this, InputBlockReason.GuardBroken);
         DebugLog.Info($"[Guard] 破防！硬直 {_breakTimer:F2}s（累积伤害 {AccumulatedDamage:F0}）");
         OnStateChanged?.Invoke(State);
@@ -126,6 +195,17 @@ public sealed class PlayerGuard
         float perSecond = ParryConfig != null ? ParryConfig.parryGuardDecayPerSecond : 30f;
         if (AccumulatedDamage > 0f && perSecond > 0f)
             AccumulatedDamage = Mathf.Max(0f, AccumulatedDamage - perSecond * deltaTime);
+
+        // 防御锁：破防后的一段时间内防御用不了（防御键灰掉）
+        if (IsDefenseLocked)
+        {
+            _defenseLockTimer -= deltaTime;
+            if (_defenseLockTimer <= 0f)
+            {
+                _defenseLockTimer = 0f;
+                IsDefenseLocked = false;
+            }
+        }
 
         if (State != GuardState.Broken) return;
 
@@ -144,6 +224,8 @@ public sealed class PlayerGuard
         State = GuardState.None;
         AccumulatedDamage = 0f;
         _breakTimer = 0f;
+        IsDefenseLocked = false;
+        _defenseLockTimer = 0f;
         GameplayInputGate.Release(this);
     }
 }

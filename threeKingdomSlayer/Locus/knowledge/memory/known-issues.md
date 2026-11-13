@@ -379,3 +379,100 @@ aiEditMode: inherit
 - **详见** `plan/bugs-and-requests.md` BUG-009。
 - **深化方案（当日晚补）**：规范见 **`design/action-game-feel-and-input-buffering.md`**，实施工作包见 **`plan/feel-optimization-work-packages-20261105.md`**（W0~W8）。
 - **第四个已查实的事实**：**当年撤回「按下即出轻攻击」的理由已经消失**。`design/combo-move-state-machine.md` §11.6 写的是「与起手即蓄力冲突」，而 2026-11-05 的 `2234ed95`（中立态彻底不许蓄力）已把那个冲突源删掉 → 轴 1 可以复活，且 `AttackSystem.TryCancelLightAttackStartup()` / `StabSweepEffect.TryCancelBeforeHit()` / `PlayerMoveStateMachine.NotifyExternalReset()` 三个预留接口**都还在、零调用点**。
+
+## 23. 【已修 2026-11-08】冰冻 / 击退后敌人不向前补齐，永久掉队（可软锁）
+- **现象（用户实测）**：用冰雾**冰冻**敌人（有时连带**击退**）后，被冻/被推的敌人**不向前补齐，停在原位**；
+  后面那一列跟着卡在后面 → 玩家射程只有 1 排 → 排 2 以后的敌人打不到 → **这一波再也清不掉**（软锁）。
+- **根因（一句话）**：`Enemy.TryStartRushMove()` 把「冻结中 / 解冻恢复期」判成 **`RushMoveStartResult.Rejected`**，
+  而 `Rejected` 的语义是**「放弃这个敌人」**，两个调用方都据此**取消订单**：
+  - `Column.cs` 的列链（`TryAdvanceChain`）→ `CancelRushMoveOrder` + `continue` → **它永久掉队**
+    （补齐计划只建一次，不会再给它派单）；
+  - `DisplacementMover.PushReturn.cs`（击退回位）→ 取消回位事务 → **被击退的敌人留在击退位**。
+  正确语义应是 **`Deferred`**（保留订单，下一帧再试）—— 冻结语义是「挂起」不是「取消」
+  （`Enemy.cs` 里 `rushMoveDelayTimer` 的注释本来就写着这句话）。
+- **修法（2 处）**：
+  1. `Enemy.Visuals.cs TryStartRushMove()`：冻结 / 解冻恢复期 → 返回 `Deferred`（不再 `Rejected`）。
+  2. `Enemy.cs Update`：补一条**解冻后自己重试**的钩子（原来只有 `rushMoveDelayTimer` 到期才会重试，
+     冻结期间挂起的订单没人执行 → 永久掉队）。
+- **实测（Play Mode 白盒，同一脚本前后对照）**：
+  冻结同列后排 → 杀掉前排 → 补齐：修前被冻的 1013 **永远停在排 2**；修后 **解冻后归队到排 0** ✅。
+  推波 + 冻结：修后**自动回位到原排** ✅。机器人回归跑通 N1→E0 多波，无停滞，Console 0 error。
+- **越位重叠验证（2026-11-08 用户关注点）**：冻结 → 前排死亡 → 补齐 → 解冻归队，三个阶段实测
+  「同列同行」重叠数恒为 **0** ✅。两道保险：① 逻辑排的占位空排保证间距（后面的敌人保持距离，不会挤进被冻敌人那一排）；
+  ② 归队的那一步是**逐排**走位且每排都查占用（`UpdateMovement` → `IsRowOccupied`）→ 目标排被占就停下。
+- **行为差异（注意）**：普通补齐走**跨列**的波次行军（`WaveMarchScheduler`），所以**冰冻期间同列后面的敌人照常前进**（间距由逻辑排占位保证），
+  被冻的那个解冻后自己追到自己的逻辑排；只有**列链**路径（入场链 / 击退回位链）才是「等前面的走完」。
+  两者都不产生重叠。
+- **教训**：`RushMoveStartResult` 的 `Rejected` 与 `Deferred` 差一个字母，语义却是「放弃」与「等一等」；
+  任何「暂时动不了」的状态都必须走 `Deferred`，否则会被调用方当成永久放弃。
+
+## 24. 【已修 2026-11-09】第三排之后的敌人只显示脚底阴影（身体隐形）
+
+- **现象**：阵型第三排之后的敌人看不见人，只剩脚底一团影子；打到那排像打空气。
+- **根因（数据）**：`Enemy.GetAlphaForRow(row)` 越界时 `return 0f`（身体 alpha 归零）。
+  `rowAlphaFactors` 按**可视排**配置只有 5 项（0~4），但敌人用的是**网格排** ——
+  `WaveSpawner` 按 `count + 2` 排布，实际 rowIndex = **1 / 3 / 5 / 7 / 9** ⇒ ≥5 的排越界 ⇒ 身体全透明。
+  影子（`EnemyGroundShadow`）用**自己独立的 alpha**（0.45），不跟随排淡出 ⇒ 只剩影子。
+- **修法**：越界取最后一个系数（与 `RowFormation.GetColumnOffsetX` 对 `manualRowHalfWidths` 的既有夹取约定一致）。
+- **验证**：Play Mode 跑 E0，rowIndex 5/7/8/9 的身体 alpha 由 **0.00 → 0.75**，截图对照可见上方 3 排敌人全部显示。
+- **教训（通用）**：**任何「按排索引」的数组，敌人拿到的 rowIndex 是网格排（1/3/5/7/9），不是可视排（0~4）**。
+  这类数组越界必须夹取、不能当作「不可见」——否则后排整排消失，而影子还在，画面上就只剩影子。
+  详见 `plan/bugs-and-requests.md` BUG-011。
+
+## 25. 【格挡链 2026-11-12】玩家格挡链的三个表现问题（问题 1 **已验收**；问题 2 已加时缓+镜头·待验收；问题 3 待修）
+
+> 详版见 `design/guard-break-feedback-20261109.md` §5.3（含实测数据与修法）。
+
+- **①（✅ 已验收）被命中后松手，「收枪」表现丢失**：收枪的插值起点取的是**原始插值位置**（不含后坐），
+  而后坐是 **−Z（朝镜头）**、收枪是 **+Z（进画面深处）** ⇒ 两者几乎抵消 ⇒ 收枪被吃掉。
+  修法：收枪/破防起点改取**视觉位置**并把叠加偏移**吸收**进起点。
+  实测：修后同一场景收枪从 z −5.16 一路走到 +1.15（真的挥出画面）；修前 16 帧只挪 0.64。
+  → **2026-11-12 用户在真实战斗里确认修复**。
+- **②（已改·待验收）破防读起来像「玩家主动收枪」**：破防帧的反馈此前与「一次普通格挡」**完全一样**
+  （枪后退 + 攻击者卡肉 0.12s + 镜头 heavy 震 + 同一个 `Guard_Block` 音），且因为防御**不扣血**
+  ⇒ `PlayerHitFeedback` 监听的 `OnHealthChanged` 不触发 ⇒ **连屏幕边框闪都没有**；
+  画面上没有任何「被击中」的挂起感 ⇒ 读起来像连贯的主动动作。
+  修法（2026-11-12 用户拍板「全局时缓 + 镜头升级」→ **方向被推翻，已改为局部**）：
+  - ❌ 已撤回：全局时缓（`Time.timeScale` 1→0.02 保持 0.1s 再回正）。
+    实测**读不出顿帧感**（用户：「完全没有时停感」「感觉方向就错了」）——
+    ① 慢速里没东西在动（攻击者已被自己的 0.12s 卡肉冻住、其它敌人静止、枪只退 0.5 单位）；
+    ② **顿感来自对比**，全局慢动作让所有东西一起停 ⇒ 读成掉帧。
+    （详见 `memory/hit-feedback-system.md` §「2026-11-12：方向复盘」）
+  - ✅ 现行做法（局部优先，**不动全局 timeScale**）：
+    - **命中定格**：`PlayerWeaponStance.ApplyHitStop()` —— 只把**持枪姿态**定住（世界照常跑）。
+      格挡 0.033s（≈2 帧）、破防 0.066s（≈4 帧），参数在 `AttackSkillConfig.parryGuardBlockHitStopSeconds / parryGuardBreakHitStopSeconds`。
+    - **破防受击慢放**：`parryGuardBreakSlowScale/SlowSeconds`（0.35× / 0.15s 真实）—— 只把持枪姿态放慢。
+    - 顺带修掉一个真问题：**后坐位移原来是在衰减段里算出来的** ⇒ 命中定格帧显示的不是「被顶开」的姿态，
+      而是在定格结束后突然跳出去；现在 `Recoil()` 命中即写入偏移 ⇒ 定格帧摆的就是被击中的那一帧。
+    - 镜头：上一轮加的「破防专用更重档」（0.22s/0.075 ⇒ 旋转 6°）已**撤回**（它是「整个世界在抖」的最大来源），
+      破防回到与普通格挡同档（0.11s/0.035 ⇒ 旋转 2.8°）。
+    - ★ 第四轮（Layer D）：破防镜头重新加了一档，但**时长略长、幅度更小**（0.14s / 0.045 / vibrato 18）；
+      并且修掉了「地动山摇」的根因：**远景天空是钉在屏幕上的 clip 空间四边形**（`YSkyBackground.shader` 不过投影矩阵），
+      相机一动它不动 ⇒ 给它加了全局 `_LocusScreenShake` 参数，震动期间跟着相机的屏幕位移与滚转一起动
+      （驱动挂在**震动 Tween 的 OnUpdate** 上 —— 组件在 Battle 场景里 `enabled=false`，`LateUpdate` 根本不跑）。
+      详见 `memory/hit-feedback-system.md` §5。
+  - 实测（真实 player loop 协程采样）：
+    ```
+    格挡 逐帧枪位移: 0.506 0.003 0.013 0.034 0.048 0.060 0.069 0.068 0.067 0.059 0.046 0.029 0.008 0.003
+          镜头峰值=0.0339  全局 timeScale 峰值=1.000
+    破防 逐帧枪位移: 1.116 0.000 0.000 0.000 0.001 0.003 0.005 0.006 0.008 0.010 0.011 0.012 0.014 0.015
+          0.049 0.057 0.062 0.069 …
+          镜头峰值=0.0344  全局 timeScale 峰值=1.000
+    ```
+    ⇒ 破防的定格帧枪身**完全零位移**（3~4 帧）、随后慢放爬回、再起旋转；**全局时间全程 1.000**（没被动过）。
+  - 现状：**只有 Editor Play 的脚本驱动实测，尚未经用户在真实战斗里验收**。
+- **③（待修）受击缺卡肉（敌人侧也缺）**：`HitFeedbackManager` 的 `context.enemy` 是「**被打的那个敌人**」
+  ⇒ `ApplyHitStop` 只作用在**敌人**身上 ⇒ 「敌人打玩家」这个方向**完全没有卡肉**
+  （唯一例外是防御挡下时 `PlayerGuard` 手动给攻击者加了 0.12s）。
+  ⚠ **实测更正**：Battle 场景里玩家对象 `Player` 只有 `Transform + PlayerHitFeedback + ThornArmorEffect +
+  ChargeStabVisual + PierceAimIndicator + PlayerMoveStateMachine` —— **连 SpriteRenderer 都没有**
+  ⇒ 设计文档里「玩家侧缩放挤压 / 闪白」在当前结构下**没有载体**；
+  玩家侧可用的手牌只有四样：**枪的姿态 / 屏幕（`Assets/Sprites/BatlleHUD/hitted.png` 全屏红边框图）/
+  镜头 / 时间**。
+  ⇒ 2026-11-12 已在「枪的姿态」这张牌上做了**玩家侧局部命中定格 + 破防受击慢放**；
+  「真挨打」（不防御、直接掉血）这条路径**尚未接**，仍待用户拍板。
+  设计文档 `design/combat-hit-feedback-direction.md` 早已写明要「受击者/攻击者/镜头」三层协同。
+- **④（已定位·未修）敌人的「闪白」根本看不到**：材质染色（`_Color=white`）在乘法混合的 sprite shader 下
+  **无法提亮**，可见的闪完全依赖美术帧 `Enemy_1011_hit1..hit5`；
+  真闪白需要给 `EnemyOutline` 加 `_FlashStrength`（`SetPropertyBlock` 驱动，不污染材质）之类的通道。详见
+  `memory/hit-feedback-system.md`。

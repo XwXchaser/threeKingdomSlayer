@@ -112,17 +112,35 @@ aiEditMode: inherit
   - `Assets/Experiments/CurvedScroll/Art/EnvironmentV2/N1/N1_FarBackground_v1.png` —— **SpriteRenderer 实际用的 sprite**（比例 1:2），与材质 `_MainTex` **不是同一张图**；两者比例不一致。
   - `Assets/Experiments/CurvedScroll/Art/EnvironmentV2/ValleySkybox_v2.png` —— 导入设置 `type=Sprite` + `compression=Uncompressed` + `mipmap=False`（1024×1536, RGB24）。
 - 优先级：高（首屏观感）
-- 状态：待处理（**已排查到证据链，未定根因**；需要一张打包版截图才能收敛）
+- 状态：**已修（2026-11-09）** —— 根因 = **手写裁剪空间的四边形拿不到 RenderTexture 目标的投影 Y 翻转**；
+  shader 里那句手动 `o.uv.y=1-o.uv.y` 恰好把编辑器（Scene/Game 视图渲到 RT）的那次翻转抵消，
+  所以在编辑器里看着正常、真机（直渲窗口、无翻转）就整张倒过来（截图实测：真机顶部是贴图底部的暖色带）。
+  另有一层混淆：`_MainTex` 带 `[PerRendererData]`，SpriteRenderer 会把 sprite 的贴图绑上去，
+  实际采样的是 `N1_FarBackground_v1` 而不是材质里的 `ValleySkybox_v2`。
+- 修法（已验证于编辑器、待真机复验）：
+  1. 新增 `Assets/Experiments/CurvedScroll/Authoring/SkyScreenQuad.asset`（自建 UV 0..1、V 朝上的全屏四边形）；
+     把 `Skybox Background - editable` 的 **SpriteRenderer 换成 MeshFilter+MeshRenderer**（材质不变，
+     `_MainTex` 显式设为 `N1_FarBackground_v1` 保持当前观感，`_VerticalOffset` 仍为 -0.23）。
+     —— 顺带消掉 sprite 网格 UV 方向不可控这一层风险。
+  2. `YSkyBackground.shader`：去掉 `[PerRendererData]`；采样改用网格 UV（v=1 = 屏幕顶）；
+     顶点 y 乘 **`_ProjectionParams.x`**（渲染目标翻转投影时为 -1），让手写裁剪四边形和其它几何体同处一个空间。
+  3. 验证：Scene 视图顶部蓝色天空 `#789BC1 → #93AFC8`，向下过渡到地平线暖色（与改动前编辑器观感一致），
+     Console 0 error；真机需重新打包复验。
 - 备注：**已排除**（均有实测证据）：
   ① 天空 quad 不在 `scenery[]` 数组（164 条不含它）→ 记忆里「天空被加进 scenery 读取投影全局量」那条坑**没复发**；
   ② `_VerticalOffset=-0.23` 与真机验收值一致、git 上从未被改；
   ③ 天空 quad 参数与旧场景完全一致（`scale=(22,33,1)`、`pos=(0,5,300)`、`active=1`）；
-  ④ 材质 `_MainTex` 引用**未断裂**（能解析到 ValleySkybox_v2.png）；
-  ⑤ `7198b85`（2026-10-17）把 `cover.y` 改成常量 `1` —— 该改动只在屏幕比例 > 0.667（平板/横屏）时才有差异，手机竖屏 0.45 下与旧值**完全等价** → 不是它。
-  **待查**：a) SpriteRenderer 的 sprite 与材质 `_MainTex` 是两张图、两个比例，shader 到底采样哪一个；
-  b) 贴图导入为 Sprite + Uncompressed + 无 mipmap 时，GLES3 上的采样/压缩行为与编辑器（D3D11）不同；
-  c) shader 手动 `o.uv.y=1-o.uv.y` 在 GLES3 上方向相反（`memory/android-build-state.md` 2026-10-15 记过同一线索，当时以「真机已验收通过」结案）。
-  **下一步需要**：一张打包版落地页截图（或描述是「缺失 / 上下颠倒 / 拉伸变形 / 位置错位」中的哪一种）→ 可直接判定是 a/b/c 哪一类。
+  ④ 材质 `_MainTex` 引用**未断裂**；
+  ⑤ `7198b85`（2026-10-17）把 `cover.y` 改成常量 `1` —— 只在屏幕比例 > 0.667 时才有差异，手机竖屏下与旧值等价 → 不是它；
+  ⑥ 贴图导入为 Sprite + Uncompressed 时 GLES3 的采样方向与编辑器不同 —— `Graphics.Blit` 实测贴图 v=0 = 图片底行，
+     符合 Unity 标准约定 → 不是它（原猜的 a/b/c 三条全部否掉）。
+- 同类风险：`N1_FarBackground_v1.mat` / `N1_CityWallScreenOverlay_v1.mat` 仍用同一 shader 且当前**无任何引用**；
+  若日后复用，宿主**必须是 Mesh 四边形**（`SkyScreenQuad.asset`），不要再挂到 SpriteRenderer 上。
+- **连带回归（2026-11-09 同日修复）**：把天空从 SpriteRenderer 换成 MeshRenderer 时丢了 `sortingOrder = -100`（新渲染器默认 0）
+  → E0 城门的**拱门门洞**（`E0_A01_CentralStoneArch`，order **-1**）与**上方旗子**（`E0_Flag_Left_Independent`，order **-1**）
+  被后画的天空盖掉（低矮墙 `E0_B01_*` 是 -2 也没了）。判据：用户实测“禁用天空渲染器后缺失部分回来” → 是遮挡不是缺图。
+  修法：`Renderer.sortingOrder = -100` + `sortingLayerID = 0`，与旧 SpriteRenderer 完全对齐（diff 里该行回到 HEAD 值）。
+  **规则：SpriteRenderer → MeshRenderer 搬迁时必须逐项复制**：sortingLayerID / sortingOrder / material / (阴影、探针用法按需)。
 
 ### BUG-005 重新进入游戏从「检查点节点」开始，而不是关卡的初始节点
 
@@ -337,6 +355,82 @@ aiEditMode: inherit
 
 ---
 
+### REQ-005 教学/引导文案资产化：把 12 条场景内联文案搬进 ScriptableObject
+
+- 日期：2026-11-08
+- 类型：需求 / 架构 + 配置（**用户已决定延后执行**）
+- 动机（根因不是“表怎么分”，而是**同一种文案有两个家**）：
+  - 台词/对白（29 条）已经资产化：`Assets/ScriptableObjects/Dialogue/*.asset`（`DialogueEventData`）→ 改一句只改 .asset，不碰场景 ✅
+  - 教学/引导 UI 文案（下面 12 条）还留在**场景组件的序列化字段**上 → 改一句必然把场景改脏 → 与并行 agent 抢同一文件；而且局外文案**分居两个场景**，导致配表工具必须跨场景打开 `TalentTree.scene`（曾发生“关闭临时打开的场景时把带着未保存改动的实例一起关掉 → 改动丢失”的事故，已修工具但根因未除）。
+  - 项目自身的配表规范要求运行时数据尽量放资产、Inspector 可追踪（`design/anti-ghost-reference.md`）→ 这 12 条是当前唯一的不一致点。
+- 待迁移清单（12 条，现状）：
+  | 场景 | 组件 | 字段 |
+  |---|---|---|
+  | Battle.scene | TutorialContinueButton | `_labelText` |
+  | Battle.scene | TutorialStageDirector | `choiceExpLine` / `choicePickLine` |
+  | Battle.scene | LevelOrbGuide | `guideText` |
+  | Battle.scene | HubTalentEntry | `labelText` |
+  | Battle.scene | HubTutorialGuide | `talentText` / `stageText` |
+  | TalentTree.scene | TalentTreePanel | `categoryLabels[0..2]` / `teachingTextPickNode` / `teachingTextConfirm` |
+- 期望行为：
+  - 新建 `TutorialCopy` ScriptableObject（建议 `Assets/ScriptableObjects/UI/TutorialCopy.asset`），内部分「局内教学 / 局外教学」两组存放上述 12 条；
+  - 6 个组件改为从该资产读文案，**删除各自场景里的序列化字符串字段**；
+  - 组件引用资产的方式必须是 Inspector 可追踪的场景→资产引用，不得用字符串键/枚举在运行时反查。
+- 约束：
+  - `DialogueEventData` 台词资产**不动**（已资产化且工作正常）；
+  - prefab 里的静态 UI 标签（按钮 TMP 文本等）**本轮不动**（改 prefab 不改场景，冲突面小，另行评估）；
+  - 迁移过程中只删字段不改语义，文案文本必须与迁移前逐字一致；
+  - 迁移那一次会改一次场景（删字段，diff 很小），之后这类文案不再动场景。
+- 步骤：
+  1. 新建 `TutorialCopy : ScriptableObject`（字段 + 局内/局外分组）与 `.asset` 实例；
+  2. 6 个组件改为读资产：`Assets/Scripts/Tutorial/TutorialStageDirector.Beats.cs`、`Assets/Scripts/UI/HubTutorialGuide.cs`、`Assets/Scripts/UI/LevelOrbGuide.cs`、`Assets/Scripts/UI/TutorialContinueButton.cs`、`Assets/Scripts/UI/HubTalentEntry.cs`、`Assets/Scripts/UI/TalentTreePanel.cs`；
+  3. 删掉场景里对应的序列化字段（Battle.scene / TalentTree.scene 各一次改脏，保存后 diff 应很小）；
+  4. 配表工具：`Assets/Scripts/Editor/ConfigTableDomains.cs` 的场景扫描改为只读该资产（删掉 `CollectSceneTextRows` 的场景打开/关闭逻辑）；`Assets/Scripts/Editor/ConfigTablePipeline.cs` 的 `ResolveTarget` **删掉整个场景分支**（场景不再需要被写回）；
+  5. 重新导出配置总表（`Tools/三国杀戮/配置总表/① 导出 dump` → `python Tools/build_config_workbook.py`），确认 `91_局外教学文案` / `90_局内教学文案` 的行数与文案逐字未变。
+- 验收标准：
+  - 改任意一条教学/引导文案 → **只改 .asset**，`git status` 里两个场景都不出现；
+  - 教学关、落地页、天赋页三处文案显示与迁移前一致；
+  - 配置总表的回填不再产生任何“场景已改脏”提示；
+  - `python Tools/apply_config_workbook.py` 幂等（连跑两次第二次 0 改动）。
+- 优先级：中（不阻塞内容制作；但每改一句教学文案都要动场景，长期成本高）
+- 状态：**待处理（2026-11-08 用户决定“列入待办，迟点做”）**
+- 相关：配置总表 Excel 管线见 `memory/config-table-excel-pipeline.md`；资产引用规范见 `design/anti-ghost-reference.md`
+
+### REQ-006 破防演出重做：按《影之刃零》完美格挡的六层语法重建「破防那一拍」
+- 日期：2026-11-12
+- 类型：需求 / 表现 | 战斗
+- 动机：用户反馈「玩家破防时依然没有时停感」。根因（已定位，非幅度问题）：
+  ① **顿帧落错了对象** —— 定格落在**自己的枪**上（玩家在 Battle 场景没有可见身体，只有枪）⇒ 读成「我的动作卡了一下」；
+  ② **没有命中确认** —— 没有闪白、没有火花，画面上没有任何东西在说「打中了」；
+  ③ **慢放作用在枪上而不是时间上**（0.35× 只作用于持枪姿态）⇒ 读成「枪变慢了」；
+  ④ 4 帧定格孤立静止、旁边什么都没有 ⇒ 只是「微卡」，不是「顿住了一瞬」。
+  参考《影之刃零》(PBZ)「完美格挡 / 完美闪避」的演出语法（判定点 → 顿帧 → 闪白 → 音效 → 镜头 → 奖励）。
+- 期望行为（方案 A，六层；**分 3 批实施**，每批可独立验收）：
+  - **A1 被打方**：破防时**攻击者**不是只被冻结，而是「冻结 0.25s → 以 `Animator.speed=0.25` 慢放 0.35s → 回 1」，
+    并让攻击者播一个「被顶开」的受击动画（敌人现成的 `HitFlash`/`HitLeft`/`HitRight`）。
+  - **A2 命中确认**：① 枪闪白（给 `Assets/Shaders/WeaponColorUnlit.shader` 加 `_FlashStrength`，
+    用 `MaterialPropertyBlock` 驱动；**不能靠改 `_Color`**，乘法混合变不亮）；
+    ② 接触点火花（复用 `Assets/Scripts/Core/PixelHitEffectManager.cs` 的 `RequestHit(context)`，需拿到接触点坐标）；
+    ③ 屏幕红边框闪（复用 `Assets/Sprites/BattleHUD/hitted.png` + `PlayerHitFeedback`）。
+  - **A3 收尾**：破防专属音效（`AudioManager` 需加 `Guard_Break` 事件与 pitch/volume 参数，现无）；
+    镜头**推近**（FOV 脉冲 ≤2°，不是抖；可一键关）。
+  - 目标时序：f0 命中帧（火花+闪白+边框+专属音+枪被顶开）→ f0-3 定格（**周边必须有东西在动**）→
+    f4 转慢放 + 镜头推近 → f19+ 回正常速度。
+- 验收标准：
+  - 破防那一帧画面上出现明确的「命中确认」（闪白/火花/边框任一可见）；
+  - 玩家能感到「对方被顶住/被打慢」，而不是「我的动作卡了」；
+  - **不出现**全局时间缩放（已试过并被否：没有对比 ⇒ 读成掉帧）；
+  - 不改破防阈值/衰减/硬直/防御锁等任何数值；
+  - 参数进 `AttackSkillConfig` 且真值写进 `Assets/Prefabs/UI/Skills/Zhangfei_Parry.asset`
+    （域重载会保留 managed 状态，只改代码默认值运行时吃不到）。
+- 相关：设计文档 `design/guard-break-presentation-overhaul.md`（含逐层规格、风险、回归清单）；
+  交接 `plan/guard-break-handoff-20261112.md`；研究 `design/pbz-reference-analysis-20261109.md`；
+  打击反馈既有口径 `memory/hit-feedback-system.md`
+- 优先级：高（用户连续三轮反馈的核心问题）
+- 状态：**待处理（方案已定，未实施）**
+
+---
+
 ## 已关闭（归档）
 
 ### BUG-008 敌人被连续命中后不再攻击（受击硬直无限锁死攻击循环）
@@ -364,3 +458,58 @@ aiEditMode: inherit
   |---|---|
   | 硬直预算=无限（≈修前） | **0 次**（完全锁死） |
   | 硬直预算=0.6s（修后） | **2 次**（= 不打它的基线 2 次/10s） |
+
+### BUG-011 第三排之后的敌人只显示脚底阴影（身体完全不可见）✅ 已修（2026-11-09）
+
+- 日期：2026-11-09
+- 类型：BUG / 表现
+- 现象：阵型里**第三排之后**的敌人看不见人，只剩脚底的一团影子；打到那一排时像是空气。
+- 复现（编辑器内即可，无需打包）：`Assets/Scenes/Battle.scene` → Play → `StageController.StartRouteBattle(Formal_E0_Battle)` → 等 8 秒 → 场上第 3 排以后的敌人只余影子。
+- 根因：`Enemy.GetAlphaForRow(int row)`（`Assets/Scripts/Enemy/Enemy.Visuals.cs`）
+  ```csharp
+  if (row < factors.Length) return factors[row];
+  return 0f;          // ← 越界 = 身体 alpha 归零 = 人整个隐形
+  ```
+  - `rowAlphaFactors`（`DefaultFormation.asset` / `Formation_Tutorial.asset`）按**可视排**配置，只有 5 项 {1, 0.9, 0.8, 0.75, 0.75}；
+  - 但敌人用的是**网格排**：`WaveSpawner` 按 `count + 2` 排布，实际落在 rowIndex **1 / 3 / 5 / 7 / 9**；
+  - ⇒ rowIndex ≥ 5 的排（5/7/8/9）越界 → alpha = 0 → **身体完全透明**；
+  - 影子（`EnemyGroundShadow`）用**自己独立的 alpha**（baseAlpha 0.45），不跟随排淡出 ⇒ 只剩影子。
+  - 同一条路径上的 X 偏移（`RowFormation.GetColumnOffsetX` 对 `manualRowHalfWidths`）**早就做了夹取**（`Mathf.Min(rowIndex, len-1)`），只有透明度这一路是 `return 0f` —— 唯一的例外。
+- 修法（与 `RowFormation.GetColumnOffsetX` 的既有约定一致）：越界取最后一个系数，不再归零。
+  ```csharp
+  return factors[Mathf.Clamp(row, 0, factors.Length - 1)];
+  ```
+- 涉及：`Assets/Scripts/Enemy/Enemy.Visuals.cs`（`GetAlphaForRow`）
+- 优先级：高（后排敌人整排不可见，等于少了一半战斗面）
+- 状态：**已修（2026-11-09）**
+- 验证（Play Mode，E0 战斗，同一场景前后对照）：
+  | rowIndex | 修前 身体alpha | 修后 身体alpha |
+  |---|---|---|
+  | 1 / 3 | 0.90 / 0.75 | 0.90 / 0.75（不变） |
+  | **5 / 7 / 8 / 9** | **0.00（隐形）** | **0.75（可见）** |
+  截图对照：修前画面只有前景 3 个敌人、往上全空；修后 6 个敌人（含上方 3 个更小的）全部显示。
+
+### BUG-012 天赋页教学进入后不切页、手势/台词不出现、整页点不动（真机必现）✅ 已修（2026-11-09）
+
+- 日期：2026-11-09
+- 类型：BUG / 交互流程
+- 现象（模拟器）：落地页点「天赋」→ 天赋页打开、教学启动，但**页面停在默认分类**，没有切到「招式解锁」；
+  教学的金色光圈/手势/底部台词都不在屏上；由于教学遮罩只放行"目标按钮"，而目标在别的页 → **整页什么都点不了**，教学无法继续。
+- 编辑器复现不到：编辑器存档里「指向突刺（C2）」已解锁/已教过 → `TryStartTeaching()` 直接 return，这段教学根本不触发。
+- 根因（两处叠加）：
+  1. `TalentTreePanel.UpdateTeaching()` 第 0 步切页时只做了
+     `_selectedCategory = view.category; _selectedPage = view.pageIndex; categoryIndex = ...; Refresh();`
+     —— **分页容器 `_pagesRoot` 只在 `JumpTo()` / `OnTabClicked()` / 拖拽吸附里被移动**，`Refresh()` 不动它。
+     ⇒ 状态切了、画面没动，目标节点留在屏幕外，手势/光圈/台词按目标世界坐标摆放 ⇒ 全在屏幕外。
+  2. 真机首帧 `_viewport.rect` 还没布局（实测 `[Talent] 分页建成` 用的是 fallback **页宽 1000**），
+     下一帧 `Update()` 的尺寸守卫必然触发一次 `BuildPages()`；它开头把 `_selectedCategory/_selectedPage` 清成 -1。
+- 修法：教学切页改成 **`JumpTo(view.category, view.pageIndex)` + `Refresh()`**（`JumpTo` 内部会设 `categoryIndex`、
+  `_pageIndexByCategory` 并即时移动 `_pagesRoot`，不播吸附动画），并加一行 `Debug.Log` 记录切页参数。
+- 验证（模拟器，`Build/Android/threeKingdomSlayer_full_20261109_1324.apk`）：
+  - logcat：`[Talent] 教学切页 → 分类1 第0页（页宽1000 页高1160）` → 确认切到「招式解锁」；
+  - 截图：画面中部出现金色教学光圈（采样 bbox 297–402 / 789–891）；
+  - 点该节点后光圈移到详情卡的【解锁】按钮（bbox 687–945 / 1734–1845），教学从第 0 步进到第 1 步 ⇒ 目标可点、流程能继续。
+- 残留（未修，不影响流程）：`Assets/Scenes/TalentTree.scene` 的 `TalentTreeOverlay` 上有一个
+  `MonoBehaviour` 的 `m_Script: {fileID: 1230132438}`（**只有 fileID、没有 guid**）→ 运行时/打包都报
+  `The referenced script on this Behaviour (Game Object 'TalentTreeOverlay') is missing!`。是历史遗留的空壳组件，
+  建议单独清理（删掉该组件，或指名它原本对应的脚本）。

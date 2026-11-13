@@ -40,6 +40,8 @@ public sealed class PlayerWeaponStance
         Defending = 2,
         /// <summary>收枪中：挥出画面，出画后销毁。</summary>
         Exiting = 3,
+        /// <summary>破防中：枪被打脱手（绕世界 Z 逆时针旋转 + 向左漂移离开画面）。</summary>
+        Broken = 4,
     }
 
     private enum EaseMode
@@ -83,6 +85,58 @@ public sealed class PlayerWeaponStance
     private bool _holdRequested;     // 预输入：挥入期间记住"玩家按着"
     private bool _parrySucceeded;     // 本次招架是否真的格开了什么 → 决定收尾速度
 
+    // ── 破防（枪被打脱手）───────────────────────────────────────────
+    //   破防不再走「收枪出画」那条路（沿原路挥出 ⇒ 读起来像玩家自己把枪收走），
+    //   而是专属动作：**以破防那一刻的姿态为起点**，绕**世界 Z 轴逆时针旋转**整杆枪
+    //   （枪尾为支点）+ **轻微向左漂移**，直到离开画面后销毁。
+    private float _brokenT;
+    private float _brokenDuration = 0.55f;
+    private bool _brokenWaitForRecoil;   // ★ 等后坐播完再起旋转（问题 2）
+    private Vector3 _brokenBaseRoot;      // 破防起点的**视觉**根节点（含应变/后坐偏移）
+    private Quaternion _brokenBasePose;   // 破防起点的**视觉**姿态
+
+    // ── 命中定格 / 受击慢放（2026-11-12，局部打击感）──────────────────────
+    //   ★ **局部优先：不动全局 Time.timeScale**，只作用在**持枪姿态**这一侧。
+    //   ① 命中定格（Layer A）：命中帧把姿态定住 N 秒（**真实时间**）
+    //      ⇒ 画面里摆出「被击中」的那一帧；**世界照常跑** ⇒ 靠对比读出顿感。
+    //      （全局慢动作没有对比 ⇒ 只像掉帧；这是传统动作游戏的通行做法，见
+    //        design/combat-hit-feedback-direction.md 与 memory/hit-feedback-system.md）
+    //   ② 受击慢放（Layer B）：破防那一刻起，姿态以 slowScale 速度播 slowSeconds（真实秒）
+    //      ⇒ 读成「被冲击」而不是「被定住」（魂系受击慢放的做法）。
+    private float _hitStopRemaining;     // 命中定格剩余（真实秒）
+    private float _breakSlowRemaining;   // 受击慢放剩余（真实秒）
+    private float _breakSlowScale = 0.35f;
+
+    // ── 应变表现的连续性（2026-11-12）─────────────────────────────────
+    //   _strainActive：是否还在表现"被压"（防御中）
+    //   ⚠ 2026-11-12 改版：原先用 "_strainFade 在收枪时淡出" 来消除「松手瞬间跳回原位」，
+    //      现在改成**吸收**（见 MoveTo 的 absorbOffsets）：收枪/破防的**起点直接取视觉位置**、
+    //      并把后坐/应变**归零** ⇒ ① 从被命中后的位置无缝继续 ② 轨迹不再被偏移污染。
+    //   _shakeBlend：临界抖动的淡入淡出包络 ⇒ 进入/退出临界不「啪」地一下出现/消失。
+    private bool _strainActive;
+    private float _shakeBlend;
+    private float _exitDuration = 0.3f;
+
+    // ── 破防压力的表现（2026-11-09）────────────────────────────────────
+    //   口径：**不显示任何数值**，玩家只从枪的样子读状态（被压低 / 枪尖下垂 / 抖 / 红缨甩开）。
+    private WeaponTasselDynamics _tassel;
+    private PlayerGuard.StrainLevel _lastStrain = PlayerGuard.StrainLevel.Steady;
+
+    /// <summary>防御位额外下沉（满档，世界单位）。</summary>
+    private const float StrainExtraDefendDrop = 0.45f;
+    /// <summary>枪尖额外下垂（满档，度）。</summary>
+    private const float StrainTipDropDegrees = 4f;
+    /// <summary>持续微抖的**角度**幅度（满档，度；仅临界档）。</summary>
+    private const float StrainShakeDegrees = 0.8f;
+    /// <summary>持续微抖的**位移**幅度（世界单位；仅临界档）。</summary>
+    private const float StrainShakePosition = 0.05f;
+    /// <summary>微抖频率（Hz）。</summary>
+    private const float StrainShakeHz = 14f;
+    /// <summary>红缨摆幅上限倍率（稳 / 吃力 / 临界）。</summary>
+    private static readonly float[] TasselMaxBendScale = { 1f, 1.35f, 1.6f };
+    /// <summary>格挡后退倍率（稳 / 吃力 / 临界）。</summary>
+    private static readonly float[] RecoilScale = { 1f, 1.3f, 1.6f };
+
     public StancePhase Phase { get; private set; } = StancePhase.Idle;
 
     /// <summary>当前是否处于防御姿态（挥入播完 + 按住维持）。</summary>
@@ -113,6 +167,10 @@ public sealed class PlayerWeaponStance
 
         _holdRequested = _holding;   // 招架前就按着 = 预输入
         Phase = StancePhase.SwingIn;
+
+        // 挥入阶段不表现"被压"（此时还没有破防值）⇒ 防御位才开
+        _strainActive = false;
+        _shakeBlend = 0f;
 
         // 起点在屏外（矛头出画），动作从这里挥入
         _rootFrom = _entryRoot;
@@ -157,13 +215,36 @@ public sealed class PlayerWeaponStance
     /// <summary>回填招架结果（格开=true）→ 决定收枪是加速（格挡成功）还是正常速度。</summary>
     public void SetParryResult(bool succeeded) { _parrySucceeded = succeeded; }
 
-    /// <summary>受击：武器先后退再回位。</summary>
+    /// <summary>受击：武器先后退再回位（后退量/时长随破防压力变大变慢）。</summary>
     public void Recoil(AttackSkillConfig cfg)
     {
         if (_weaponTransform == null || cfg == null) return;
-        _recoilTotal = Mathf.Max(0.05f, cfg.parryGuardRecoilSeconds);
+        var guard = _owner != null ? _owner.Guard : null;
+        var level = guard != null ? guard.Strain : PlayerGuard.StrainLevel.Steady;
+        float scale = RecoilScale[(int)level];
+        _recoilTotal = Mathf.Max(0.05f, cfg.parryGuardRecoilSeconds * scale);
         _recoilTimer = _recoilTotal;
-        _recoilAmount = cfg.parryGuardRecoilDistance;
+        _recoilAmount = cfg.parryGuardRecoilDistance * scale;
+        // ★ 立刻摆出「被顶开」的姿态（2026-11-12）：
+        //   后坐位移原本是在衰减段里按计时算出来的 ⇒ 命中帧上还是旧值，
+        //   会变成「定格结束后才突然跳出去」—— 定格帧显示的就不是被击中的那一帧了。
+        //   这里命中即写入 ⇒ 命中定格（ApplyHitStop）期间画面摆的正是「刚被顶开」的姿态。
+        _recoilOffset = new Vector3(0f, 0f, -_recoilAmount);
+    }
+
+    /// <summary>
+    /// **命中定格**（局部顿）：把持枪姿态定住 <paramref name="seconds"/>（**真实秒**）。
+    ///
+    /// 为什么是「局部」而不是改全局 <c>Time.timeScale</c>：
+    ///   顿感来自**对比** —— 被击中的东西定住了、其它东西还在动。
+    ///   全局慢动作/时停会让**所有东西一起停** ⇒ 没有对比 ⇒ 读成掉帧/卡了一下，
+    ///   而且会把「节奏卡顿」的错觉误传给战斗系统。
+    ///   项目既有口径见 memory/hit-feedback-system.md：「局部表现暂停，不修改全局 Time.timeScale」。
+    /// </summary>
+    public void ApplyHitStop(float seconds)
+    {
+        if (seconds <= 0f) return;
+        if (seconds > _hitStopRemaining) _hitStopRemaining = seconds;
     }
 
     /// <summary>收枪（立即结束）：破防 / 场景重置用。</summary>
@@ -174,6 +255,12 @@ public sealed class PlayerWeaponStance
         _holding = false;
         _holdRequested = false;
         _recoilTimer = 0f;
+        _strainActive = false;
+        _shakeBlend = 0f;
+        _brokenT = 0f;
+        _brokenWaitForRecoil = false;
+        _hitStopRemaining = 0f;
+        _breakSlowRemaining = 0f;
         if (_weapon != null) UnityEngine.Object.Destroy(_weapon);
         _weapon = null;
         _weaponTransform = null;
@@ -185,17 +272,65 @@ public sealed class PlayerWeaponStance
         if (_weaponTransform == null) return;
         _holding = pointerHeld;
 
+        // ★ 命中定格（局部顿）：姿态停住、**世界照常跑**。
+        //   定格期间后坐计时也不走 ⇒ 画面里摆的是「刚被顶开」的那一帧（最有信息量的一帧）。
+        if (_hitStopRemaining > 0f)
+        {
+            _hitStopRemaining -= Time.unscaledDeltaTime;
+            ApplyPose(1f);
+            return;
+        }
+
+        // ★ 受击慢放（局部慢动作）：**只有持枪姿态**慢放，世界照常。
+        if (_breakSlowRemaining > 0f)
+        {
+            _breakSlowRemaining -= Time.unscaledDeltaTime;
+            deltaTime *= _breakSlowScale;
+        }
+
         // 受击后退的衰减
         if (_recoilTimer > 0f)
         {
             _recoilTimer -= deltaTime;
             float k = _recoilTimer > 0f ? Mathf.Clamp01(_recoilTimer / _recoilTotal) : 0f;
+            k = k * k * (3f - 2f * k);      // ★ 平滑收尾：最后一帧不再「啪」地归零
             _recoilOffset = new Vector3(0f, 0f, -_recoilAmount * k);
             if (_recoilTimer <= 0f) _recoilOffset = Vector3.zero;
         }
 
+        // 破防：枪被打飞（专属动作）⇒ 这一段不再走其它分支
+        if (Phase == StancePhase.Broken)
+        {
+            // ★★ 2026-11-12（问题 2）：**先把「被打退」那一下播完，再起破防的旋转**
+            //   ⇒ 破防不再与受击后坐并行（并行时 0.18s 的后退会被 0.55s 的旋转盖住）。
+            //   等后坐期间：姿态保持破防起点 + 正在衰减的后坐（能看见"被顶开"），
+            //   而 _brokenT 仍是 0 ⇒ 旋转/漂移都还没开始。
+            if (_brokenWaitForRecoil)
+            {
+                if (_recoilTimer > 0f)
+                {
+                    ApplyPose(1f);
+                    return;
+                }
+                // 后坐播完 ⇒ 把它归零（此时位置已回到破防起点），然后起旋转
+                _brokenWaitForRecoil = false;
+                _recoilOffset = Vector3.zero;
+                _recoilTimer = 0f;
+            }
+            _brokenT += deltaTime / Mathf.Max(0.05f, _brokenDuration);
+            ApplyPose(1f);
+            if (_brokenT >= 1f) Reset();
+            return;
+        }
+
         // 预输入：挥入期间只**记住**按住，不切断动作（规则 1）
         if (Phase == StancePhase.SwingIn && _holding) _holdRequested = true;
+
+        // 破防压力 → 红缨摆幅（压力越大，枪尾红缨甩得越开 = "手要滑了"）
+        UpdateTasselSettle();
+
+        // 临界抖动的淡入淡出包络（进入/退出临界不「啪」地一下出现/消失）
+        UpdateShakeBlend(deltaTime);
 
         if (_moving)
         {
@@ -258,6 +393,8 @@ public sealed class PlayerWeaponStance
     private void EnterDefend(float durationOverride = -1f)
     {
         Phase = StancePhase.Defending;
+        // ★ 防御位开始表现"被压"（线性跟随破防值）
+        _strainActive = true;
         float dur = durationOverride > 0f
             ? durationOverride
             : (_cfg != null ? Mathf.Max(0.05f, _cfg.parryStanceDefendEnterSeconds) : 0.12f);
@@ -274,15 +411,34 @@ public sealed class PlayerWeaponStance
             : (_cfg != null
                 ? (_parrySucceeded ? Mathf.Max(0.05f, _cfg.parryStanceExitFastSeconds) : Mathf.Max(0.05f, _cfg.parryStanceExitNormalSeconds))
                 : 0.3f);
-        MoveTo(_exitRoot, _poseExit, dur, EaseMode.Out, onArrived: () => Reset());
+        // ★ 应变表现在这段时间里**连续淡出**（而不是松手瞬间就没了）
+        _exitDuration = dur;
+        // ★ 起点 = 枪**现在画面上**的位置（含后坐/应变），并把叠加偏移吸收掉
+        //   ⇒ 被命中后松手，收枪从「被顶开后的那个位置」无缝继续，而不是回到标准起点。
+        MoveTo(_exitRoot, _poseExit, dur, EaseMode.Out, onArrived: () => Reset(), absorbOffsets: true);
     }
 
     // ── 内部实现 ───────────────────────────────────────────────
 
-    private void MoveTo(Vector3 root, Quaternion pose, float duration, EaseMode ease = EaseMode.Smooth, Action onArrived = null)
+    private void MoveTo(Vector3 root, Quaternion pose, float duration, EaseMode ease = EaseMode.Smooth, Action onArrived = null, bool absorbOffsets = false)
     {
-        _rootFrom = CurrentRoot();
-        _poseFrom = CurrentPose();
+        if (absorbOffsets)
+        {
+            // ★★ 2026-11-12（问题 1）：起点取**视觉位置**（含后坐/应变/抖动），
+            //   并把这些**叠加偏移吸收**进起点（归零）。
+            //   ⇒ ① 收枪/破防从枪「现在在的地方」无缝继续（被命中后松手不再丢表现）；
+            //   ② 动作轨迹不再被正在衰减的后坐 / 正在变化的应变污染。
+            ComputeVisual(Mathf.Clamp01(_moveT), out _rootFrom, out _poseFrom);
+            _recoilOffset = Vector3.zero;
+            _recoilTimer = 0f;
+            _strainActive = false;
+            _shakeBlend = 0f;
+        }
+        else
+        {
+            _rootFrom = CurrentRoot();
+            _poseFrom = CurrentPose();
+        }
         _rootTo = root;
         _poseTo = pose;
         _moveT = 0f;
@@ -297,19 +453,173 @@ public sealed class PlayerWeaponStance
 
     private Vector3 PlayerPosition => _owner != null ? _owner.transform.position : Vector3.zero;
 
+    /// <summary>
+    /// 破防压力 → 枪的表现（2026-11-09）。
+    ///
+    /// 设计口径：**不显示数值**，玩家只从枪的样子读状态：
+    ///   • 被压低（防御位下沉）→ 吃力的量（连续）
+    ///   • 枪尖下垂 → 吃力的量（连续）
+    ///   • 持续微抖 → **临界的标志**（稳档/吃力档完全不抖 → 玩家能"突然开始抖"= 知道进临界了）
+    ///   • 红缨甩得更开 → 吃力的标志（见 <see cref="UpdateTasselSettle"/>）
+    ///
+    /// ★ 2026-11-12（问题 1：格挡恢复不线性、复位两段瞬移）：
+    ///   下沉/下垂改成**线性跟随破防值**（不再按档位闸门硬切），
+    ///   且收枪/破防时叠加偏移被**吸收**进起点（见 <see cref="MoveTo"/>）
+    ///   ⇒ 破防值回落与松手复位全程平滑，不再出现两段跳变。
+    /// </summary>
+    private void ApplyStrain(ref Vector3 root, ref Quaternion pose)
+    {
+        var guard = _owner != null ? _owner.Guard : null;
+        if (guard == null) return;
+        if (!_strainActive) return;
+
+        float ratio = guard.MeterRatio;   // 连续量 0~1
+
+        // ① 被压低：**线性跟随破防值**（旧版按档位硬切 ⇒ 回落跨阈值时“啪”地跳一下）
+        root += new Vector3(0f, -StrainExtraDefendDrop * ratio, 0f);
+
+        // ② 枪尖下垂：同样连续
+        //    ⚠️ 不影响读招：招架的"角度一致"设计只针对**挥入那一瞬**；
+        //    防御位是"按住"的持续状态，压角度不会干扰玩家读**敌人**的招式。
+        if (_cfg != null)
+        {
+            float dropDeg = StrainTipDropDegrees * ratio;
+            if (dropDeg > 0.01f)
+                pose = Quaternion.Slerp(pose, PoseForAngle(_cfg.parryStanceTipDegrees - dropDeg), 1f);
+        }
+
+        // ③ 持续微抖：**只有关键档才抖**（"突然开始抖"= 明确的信号），
+        //    但起/止走淡入淡出包络 ⇒ 不会“啪”地一下出现/消失。
+        if (_shakeBlend > 0.001f)
+        {
+            float ph = Time.unscaledTime * StrainShakeHz;
+            float amp = StrainShakeDegrees * ratio * _shakeBlend;
+            pose = pose * Quaternion.AngleAxis(Mathf.Sin(ph * 6.283f) * amp, Vector3.right);
+            root += new Vector3(Mathf.Sin(ph * 3.1f) * StrainShakePosition * _shakeBlend,
+                                Mathf.Cos(ph * 4.7f) * StrainShakePosition * _shakeBlend, 0f);
+        }
+    }
+
+    /// <summary>破防压力 → 红缨摆幅上限（压力越大甩得越开）。</summary>
+    private void UpdateTasselSettle()
+    {
+        var guard = _owner != null ? _owner.Guard : null;
+        if (guard == null || _tassel == null) return;
+        var level = guard.Strain;
+        if (level == _lastStrain) return;
+        _lastStrain = level;
+        float maxBend = _cfg != null ? _cfg.parryStanceTasselMaxBend : 14f;
+        float damping = _cfg != null ? _cfg.parryStanceTasselDamping : 26f;
+        _tassel.SetSettle(damping, maxBend * TasselMaxBendScale[(int)level]);
+    }
+
+    /// <summary>
+    /// 临界抖动的**淡入淡出包络**（2026-11-12）。
+    /// 「突然开始抖」是设计想要的信号，但硬切会变成一次位置/角度的跳变 ⇒ 用短包络淡入淡出。
+    /// </summary>
+    private void UpdateShakeBlend(float deltaTime)
+    {
+        var guard = _owner != null ? _owner.Guard : null;
+        float target = guard != null && guard.Strain == PlayerGuard.StrainLevel.Critical ? 1f : 0f;
+        _shakeBlend = Mathf.MoveTowards(_shakeBlend, target, deltaTime * 8f);
+    }
+
+    /// <summary>当前**基准**根节点/姿态（原始插值 + 应变，**不含后坐**）。</summary>
+    private void ComputeBase(float t, out Vector3 root, out Quaternion pose)
+    {
+        float e = _ease == EaseMode.Out ? 1f - Mathf.Pow(1f - t, 3f) : t * t * (3f - 2f * t);
+        root = Vector3.Lerp(_rootFrom, _rootTo, e);
+        pose = Quaternion.Slerp(_poseFrom, _poseTo, e);
+        // 破防压力的表现：被压低 / 枪尖下垂 / 持续微抖（不显示数值）
+        ApplyStrain(ref root, ref pose);
+    }
+
+    /// <summary>当前**视觉**根节点/姿态（含应变与后坐偏移，不含支点偏移）。</summary>
+    private void ComputeVisual(float t, out Vector3 root, out Quaternion pose)
+    {
+        ComputeBase(t, out root, out pose);
+        root += _recoilOffset;
+    }
+
     /// <summary>应用当前姿态：根节点位置 + 枪身指向。</summary>
     private void ApplyPose(float t)
     {
         if (_weaponTransform == null) return;
-        float e = _ease == EaseMode.Out ? 1f - Mathf.Pow(1f - t, 3f) : t * t * (3f - 2f * t);
-        Vector3 root = Vector3.Lerp(_rootFrom, _rootTo, e);
-        Quaternion pose = Quaternion.Slerp(_poseFrom, _poseTo, e);
+        Vector3 root;
+        Quaternion pose;
+        if (Phase == StancePhase.Broken)
+        {
+            // ★ 破防：以破防那一刻的**基准**姿态为起点（"以破防为止"）
+            root = _brokenBaseRoot;
+            pose = _brokenBasePose;
+            // ★ 等后坐播完的那段时间里，保留「被顶开」的位移（后坐本身在衰减）
+            if (_brokenWaitForRecoil) root += _recoilOffset;
+            float k = Mathf.Clamp01(_brokenT);      // 等后坐期间 k=0 ⇒ 旋转尚未开始
+            // 绕**世界 Z 轴**逆时针旋转（屏幕 +X 右 / +Y 上 ⇒ 正向 Z 旋转 = 屏幕逆时针）。
+            //   前乘 ⇒ 旋转发生在世界空间；因为支点偏移用 pose 算，枪尾会**留在原地**、整杆翻转。
+            float spin = BreakSpinDegrees * BreakSpinCurve(k);
+            pose = Quaternion.AngleAxis(spin, Vector3.forward) * pose;
+            // 轻微向左漂移（真正离开画面主要靠旋转）
+            root += Vector3.left * (BreakDriftDistance * k);
+        }
+        else
+        {
+            ComputeVisual(t, out root, out pose);
+        }
         // **旋转支点在枪尾**：根节点相对支点的偏移随姿态一起转。
         // 落定姿态下这一项 = 0 → 落定画面与之前完全一致；
         // 起手/收枪时枪头绕枪尾甩出一道弧（枪头位移 ≈ 身长·sin拧角）。
         Vector3 pivotOffset = pose * _pivotLocalOffset - _poseIdle * _pivotLocalOffset;
-        _weaponTransform.position = PlayerPosition + root + pivotOffset + _recoilOffset;
+        _weaponTransform.position = PlayerPosition + root + pivotOffset;
         _weaponTransform.rotation = pose;
+    }
+
+    /// <summary>破防旋转角度（度）。</summary>
+    private float BreakSpinDegrees => _cfg != null ? _cfg.parryStanceBreakSpinDegrees : 230f;
+
+    /// <summary>破防向左漂移（世界单位）。</summary>
+    private float BreakDriftDistance => _cfg != null ? _cfg.parryStanceBreakDrift : 0.8f;
+
+    /// <summary>破防旋转曲线：前慢后快（被甩出去的手感）。</summary>
+    private static float BreakSpinCurve(float k) => k * (0.6f + 0.4f * k);
+
+    /// <summary>
+    /// **破防**：枪被打脱手 —— 以破防这一刻的姿态为起点，沿**世界 Z 轴逆时针旋转**整杆枪
+    /// （枪尾为支点）+ **轻微向左漂移**，直到离开画面后销毁。
+    ///
+    /// 为什么不走 BeginExit（2026-11-12 用户定）：
+    ///   原来的破防走的是「收枪出画」那条路（沿原路挥出）⇒ 读起来像玩家自己把枪收走，
+    ///   不像被打爆 ⇒ 破防要有一条**专属动作**。
+    /// </summary>
+    public void BeginBreak(float durationOverride = -1f)
+    {
+        if (_weaponTransform == null) return;
+
+        // 冻结当前**基准**姿态（含应变、不含后坐）作为破防起点 ⇒「以破防为止」
+        //   ⇒ 后坐留给等待期自己播（问题 2：先后退、再破防）
+        Vector3 root;
+        Quaternion pose;
+        ComputeBase(Mathf.Clamp01(_moveT), out root, out pose);
+        _brokenBaseRoot = root;
+        _brokenBasePose = pose;
+
+        _moving = false;          // 取消收枪/回位等后续运动
+        _onArrive = null;
+        _holdRequested = false;
+        _holding = false;
+        _strainActive = false;    // 应变已被吸收进起点 ⇒ 之后不再叠加
+        _shakeBlend = 0f;
+        // ★ 后坐**不归零**：它要先播完（问题 2），破防的旋转在那之后才开始
+        _brokenWaitForRecoil = _recoilTimer > 0f;
+        // ★ 受击慢放（Layer B）：破防这一刻起，姿态以 slowScale 播 slowSeconds（真实秒）
+        _breakSlowScale = _cfg != null ? Mathf.Clamp(_cfg.parryGuardBreakSlowScale, 0.05f, 1f) : 0.35f;
+        _breakSlowRemaining = _cfg != null ? Mathf.Max(0f, _cfg.parryGuardBreakSlowSeconds) : 0.15f;
+
+        Phase = StancePhase.Broken;
+        _brokenDuration = durationOverride > 0f
+            ? durationOverride
+            : (_cfg != null ? Mathf.Max(0.1f, _cfg.parryStanceBreakSeconds) : 0.55f);
+        _brokenT = 0f;
     }
 
     /// <summary>
@@ -379,7 +689,10 @@ public sealed class PlayerWeaponStance
 
             // 红缨物理：持枪时收敛摆幅（让枪头的视觉角度稳定）
             if (dynamics != null)
+            {
                 dynamics.SetSettle(cfg.parryStanceTasselDamping, cfg.parryStanceTasselMaxBend);
+                _tassel = dynamics;
+            }
         }
 
         _weaponTransform = _weapon.transform;

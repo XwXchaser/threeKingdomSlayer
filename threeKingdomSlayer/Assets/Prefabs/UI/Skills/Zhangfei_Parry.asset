@@ -35,11 +35,15 @@ MonoBehaviour:
   slashSweepAngle: 45
   slashSweepDuration: 0.25
   slashSweepDirection: 0
+  slashDirectionalPushRows: 0
+  slashFeedbackStrength: 2
   slashMovementTiltDegrees: 0
   slashOverrideVisualTilt: 0
   slashVisualTiltDegrees: 0
   slashSpawnYOffset: 1.5
   slashSpawnZOffset: 0.5
+  slashRotateSprite1: {fileID: 0}
+  slashRotateSprite2: {fileID: 0}
   parrySweepAngle: 100
   parrySweepDuration: 0.25
   parrySpawnXOffset: 0
@@ -72,6 +76,13 @@ MonoBehaviour:
   parryStanceTasselMaxBend: 14
   parryGuardRecoilDistance: 0.5
   parryGuardRecoilSeconds: 0.18
+  parryStanceBreakSpinDegrees: 230
+  parryStanceBreakDrift: 0.8
+  parryStanceBreakSeconds: 0.55
+  parryGuardBlockHitStopSeconds: 0.033
+  parryGuardBreakHitStopSeconds: 0.066
+  parryGuardBreakSlowScale: 0.35
+  parryGuardBreakSlowSeconds: 0.15
   launchFlickAngle: 90
   launchFlickDuration: 0.2
   launchWindupDuration: 0.1

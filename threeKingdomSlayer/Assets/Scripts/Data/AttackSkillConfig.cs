@@ -207,6 +207,36 @@ public class AttackSkillConfig : ScriptableObject
     [Tooltip("受击后退回原位的时间（秒）")]
     public float parryGuardRecoilSeconds = 0.18f;
 
+    [Header("破防（枪被打脱手）")]
+    [Tooltip("破防时枪绕**世界 Z 轴**旋转的角度（度，正值 = 屏幕上逆时针）。\n" +
+             "这是破防专属动作：不再沿原路收枪出画（那读起来像玩家自己把枪收走），\n" +
+             "而是“被打飞”：枪尾为支点整杆翻转 + 轻微向左漂移，直到离开画面")]
+    [Range(0f, 540f)]
+    public float parryStanceBreakSpinDegrees = 230f;
+    [Tooltip("破防时枪向左（-X）漂移的距离（世界单位）：轻微即可，离开画面主要靠旋转")]
+    [Range(0f, 3f)]
+    public float parryStanceBreakDrift = 0.8f;
+    [Tooltip("破防动作时长（秒）：旋转 + 漂移的总时长，到时销毁")]
+    [Range(0.1f, 2f)]
+    public float parryStanceBreakSeconds = 0.55f;
+    [Tooltip("**命中定格**（局部顿）：格挡命中帧把持枪姿态定住多久（秒，**真实时间**）。\n" +
+             "只停持枪姿态，**世界照常跑** ⇒ 靠对比读出顿感（全局慢动作没有对比，只像掉帧）。\n" +
+             "参考：传统动作游戏的 hit pause 轻击 1~3 帧 / 中 3~5 帧；60fps 下 0.033s ≈ 2 帧。")]
+    [Range(0f, 0.2f)]
+    public float parryGuardBlockHitStopSeconds = 0.033f;
+    [Tooltip("**命中定格**（局部顿）：破防命中帧的定格时长（秒，**真实时间**）。\n" +
+             "比普通格挡长一档（破防是更大的冲击）；0.066s ≈ 4 帧。")]
+    [Range(0f, 0.3f)]
+    public float parryGuardBreakHitStopSeconds = 0.066f;
+    [Tooltip("**受击慢放**（局部慢动作）：破防那一刻起，持枪姿态以多少倍速播放。\n" +
+             "1 = 不慢放；0.35 = 枪被顶开/脱手的过程放慢到 1/3 速度（魂系受击慢放）。\n" +
+             "★ 只作用在持枪姿态，**不动全局 Time.timeScale**。")]
+    [Range(0.05f, 1f)]
+    public float parryGuardBreakSlowScale = 0.35f;
+    [Tooltip("**受击慢放**的持续时长（秒，**真实时间**）")]
+    [Range(0f, 0.5f)]
+    public float parryGuardBreakSlowSeconds = 0.15f;
+
     [Header("挑飞上挑")]
     [Tooltip("Z 轴旋转幅度（度，默认 90）。枪头从低到高上挑")]
     [Range(30f, 180f)]

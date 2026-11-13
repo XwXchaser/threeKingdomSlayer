@@ -24,6 +24,8 @@ public class ParryStanceTuningWindow : EditorWindow
     private Vector3 _entryOffset;
     private float _tipDeg, _entryDeg, _defendDrop, _entryRoll;
     private float _swingIn, _overshoot, _settle, _hold, _exitFast, _exitNormal;
+    private float _breakSpin, _breakDrift, _breakSeconds;
+    private float _blockHitStop, _breakHitStop, _breakSlowScale, _breakSlowSeconds;
 
     private string _readout = "";
     private float _targetScreenX = 95f;
@@ -56,6 +58,13 @@ public class ParryStanceTuningWindow : EditorWindow
         _hold = _cfg.parryStanceHoldSeconds;
         _exitFast = _cfg.parryStanceExitFastSeconds;
         _exitNormal = _cfg.parryStanceExitNormalSeconds;
+        _breakSpin = _cfg.parryStanceBreakSpinDegrees;
+        _breakDrift = _cfg.parryStanceBreakDrift;
+        _breakSeconds = _cfg.parryStanceBreakSeconds;
+        _blockHitStop = _cfg.parryGuardBlockHitStopSeconds;
+        _breakHitStop = _cfg.parryGuardBreakHitStopSeconds;
+        _breakSlowScale = _cfg.parryGuardBreakSlowScale;
+        _breakSlowSeconds = _cfg.parryGuardBreakSlowSeconds;
         Compute();
     }
 
@@ -75,6 +84,13 @@ public class ParryStanceTuningWindow : EditorWindow
         _cfg.parryStanceHoldSeconds = _hold;
         _cfg.parryStanceExitFastSeconds = _exitFast;
         _cfg.parryStanceExitNormalSeconds = _exitNormal;
+        _cfg.parryStanceBreakSpinDegrees = _breakSpin;
+        _cfg.parryStanceBreakDrift = _breakDrift;
+        _cfg.parryStanceBreakSeconds = _breakSeconds;
+        _cfg.parryGuardBlockHitStopSeconds = _blockHitStop;
+        _cfg.parryGuardBreakHitStopSeconds = _breakHitStop;
+        _cfg.parryGuardBreakSlowScale = _breakSlowScale;
+        _cfg.parryGuardBreakSlowSeconds = _breakSlowSeconds;
         EditorUtility.SetDirty(_cfg);
         AssetDatabase.SaveAssets();
         Compute();
@@ -105,6 +121,15 @@ public class ParryStanceTuningWindow : EditorWindow
         _hold = EditorGUILayout.Slider("定格时长 (s)", _hold, 0f, 0.5f);
         _exitFast = EditorGUILayout.Slider("收枪·格挡成功 (s)", _exitFast, 0.05f, 1f);
         _exitNormal = EditorGUILayout.Slider("收枪·未格挡 (s)", _exitNormal, 0.05f, 2f);
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("破防（枪被打脱手）", EditorStyles.boldLabel);
+        _breakSpin = EditorGUILayout.Slider("破防·绕世界Z旋转 (度, 正=屏幕逆时针)", _breakSpin, 0f, 540f);
+        _breakDrift = EditorGUILayout.Slider("破防·向左漂移 (世界单位)", _breakDrift, 0f, 3f);
+        _breakSeconds = EditorGUILayout.Slider("破防·时长 (s)", _breakSeconds, 0.1f, 2f);
+        _blockHitStop = EditorGUILayout.Slider("格挡·命中定格 (真实s)", _blockHitStop, 0f, 0.2f);
+        _breakHitStop = EditorGUILayout.Slider("破防·命中定格 (真实s)", _breakHitStop, 0f, 0.3f);
+        _breakSlowScale = EditorGUILayout.Slider("破防·受击慢放倍率 (1=不慢放)", _breakSlowScale, 0.05f, 1f);
+        _breakSlowSeconds = EditorGUILayout.Slider("破防·受击慢放时长 (真实s)", _breakSlowSeconds, 0f, 0.5f);
         if (EditorGUI.EndChangeCheck()) Apply();
 
         EditorGUILayout.Space();
