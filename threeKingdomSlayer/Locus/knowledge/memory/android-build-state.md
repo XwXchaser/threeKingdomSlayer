@@ -39,7 +39,7 @@ aiEditMode: inherit
 - 编辑器（Play，玩家存活）：顶部 5%~30% 均色 (115,140,193)…(114,150,199)，与 `ValleySkybox_v2` **顶部蓝天行**色距仅 42~56；顶部 40% 里蓝天占 56.6%。
 - **已排除**（均有数据）：宽高比（纵向取景与比例无关）、HeroHUD（在屏幕底部 74%~97%）、投影全局量（设备与编辑器完全一致：`_YSAngle=0.7854`、`_YSViewDistance=266.1`、`_YSPose=(0,0,0,0)`、`_YSEnabled=0`）、天空对象状态（设备 `激活/渲染器启用/isVisible` 均 True）、shader 支持（不支持数=0）、shader 编译（Editor.log 里 `CurvedScroll/Y Sky Background` 编译无错）、模拟器熄屏。
 - **定量线索**：设备顶部色 ≈ 贴图**底部**暖米行(240,214,181) 的 ~0.26 倍（62/56/47 vs 实测 63/55/51）→ 指向“**打包版把天空贴图上下颠倒采样**（shader 里那行 `o.uv.y=1-o.uv.y` 在 GLES3 上方向与编辑器相反）+ 一层压暗”两个方向。
-- （已不存在待定实验：真机已验收，天空与该比例口径均已结案）
+- ✅ **2026-11-09 已定根因并修复**：不是 GLES3 贴图方向，而是**手写裁剪空间的四边形拿不到 RenderTexture 目标的投影 Y 翻转**（编辑器 Scene/Game 视图渲到 RT → 会翻；真机直渲窗口 → 不翻），shader 里的 `o.uv.y=1-o.uv.y` 恰好抵消了编辑器那一次。修法：天空改用自建 Mesh 四边形（`SkyScreenQuad.asset`，UV 0..1 V 朝上）替代 SpriteRenderer，顶点 y 乘 `_ProjectionParams.x`，采样改用网格 UV。详见 `plan/bugs-and-requests.md` BUG-004。
 
 ### “手机上有天空+山脉、编辑器里地面占比太高”核查（2026-10-15）
 

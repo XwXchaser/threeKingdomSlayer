@@ -15,6 +15,15 @@ public sealed class RouteChoiceButton : MonoBehaviour
     [SerializeField] private float guideCycleDuration = 0.9f;
     [SerializeField] private float breathingAlpha = 0.12f;
     [SerializeField] private float breathingScale = 0.025f;
+    /// <summary>
+    /// 是否让引导呼吸把按钮**变暗**（透明度呼吸）。
+    ///
+    /// ⚠️ **默认 false**（2026-11-09 用户反馈：「点移动按钮还是会变暗」）：
+    ///   按钮的底板是 targetGraphic，ColorTint 的 pressed 色（C8C8C8）会让**白色底板**变灰，
+    ///   叠在透明度呼吸（1↔0.88）上就是「按一下整块暗掉」→ 看着像被别的东西盖住。
+    ///   现在：按下不变暗（pressed=normal）+ 呼吸不再动透明度 → 按钮**恒亮**，只保留位置/缩放的引导。
+    /// </summary>
+    [SerializeField] private bool breatheAlpha = false;
     [NonSerialized] public Text fallbackText;
 
     /// <summary>本按钮绑定的路线选项 id（= RouteChoiceOption.id，例：J1_N2）。</summary>
@@ -25,6 +34,8 @@ public sealed class RouteChoiceButton : MonoBehaviour
 
     private string _id;
     private Action<string> _onSelected;
+    /// <summary>是否已经点过（防重复点击；**不动 interactable**，否则按钮会变暗）。</summary>
+    private bool _consumed;
     private RectTransform _rectTransform;
     private RectTransform _iconRectTransform;
     private Vector2 _baseAnchoredPosition;
@@ -37,6 +48,7 @@ public sealed class RouteChoiceButton : MonoBehaviour
     {
         _id = option.id;
         _onSelected = onSelected;
+        _consumed = false;
         if (labelText != null) labelText.text = option.label;
         if (descriptionText != null)
         {
@@ -57,6 +69,12 @@ public sealed class RouteChoiceButton : MonoBehaviour
             button.onClick.AddListener(Select);
             // 锁定的出口不可点（原因已显示在副标题上）。
             button.interactable = !option.locked;
+            // **按下不变暗**（2026-11-09 用户反馈）：ColorTint 的 pressed/disabled 色会让底板变灰，
+            // 看着像「按钮被什么盖住了」。引导感由呼吸位移/缩放提供，不靠变色。
+            var colors = button.colors;
+            colors.pressedColor = colors.normalColor;
+            colors.disabledColor = colors.normalColor;
+            button.colors = colors;
         }
         StartVisualLoopNextFrame();
     }
@@ -121,7 +139,8 @@ public sealed class RouteChoiceButton : MonoBehaviour
         _visualSequence = DOTween.Sequence().SetTarget(this).SetUpdate(true);
         _visualSequence.Append(_rectTransform.DOAnchorPos(guideTarget, cycleDuration).SetEase(Ease.InOutSine));
         _visualSequence.Append(_rectTransform.DOAnchorPos(_baseAnchoredPosition, cycleDuration).SetEase(Ease.InOutSine));
-        _visualSequence.Join(visualGroup.DOFade(1f - breathingAlpha, cycleDuration).SetEase(Ease.InOutSine));
+        if (breatheAlpha)
+            _visualSequence.Join(visualGroup.DOFade(1f - breathingAlpha, cycleDuration).SetEase(Ease.InOutSine));
         _visualSequence.Join(_rectTransform.DOScale(_baseLocalScale * (1f + breathingScale), cycleDuration).SetEase(Ease.InOutSine));
         _visualSequence.SetLoops(-1, LoopType.Restart);
     }
@@ -161,8 +180,26 @@ public sealed class RouteChoiceButton : MonoBehaviour
 
     private void Select()
     {
-        if (button != null) button.interactable = false;
+        // 防重复点击：**不再用 `button.interactable = false`** ——
+        //   Button 的 Color Tint 过渡会把目标 Image 立刻切到 **disabled 色**（变暗 + 半透明），
+        //   而路牌面板在选完之后**不会立刻隐藏**（要等旅行开始才 HideCurrent）→
+        //   玩家会看到「点一下下一节点按钮，它就暗一下」（2026-11-08 用户反馈）。
+        //   改用自己的 _consumed 标志挡重复点击 → 视觉完全不动。
+        if (_consumed) return;
+        _consumed = true;
         _visualSequence?.Kill();
+        ResetVisualToBase();
         _onSelected?.Invoke(_id);
+    }
+
+    /// <summary>把按钮外观恢复到基准状态（位置 / 缩放 / 透明度）。</summary>
+    private void ResetVisualToBase()
+    {
+        if (_rectTransform != null)
+        {
+            _rectTransform.anchoredPosition = _baseAnchoredPosition;
+            _rectTransform.localScale = _baseLocalScale;
+        }
+        if (visualGroup != null) visualGroup.alpha = 1f;
     }
 }

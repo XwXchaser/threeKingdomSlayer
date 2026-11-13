@@ -23,9 +23,11 @@ public partial class Enemy : MonoBehaviour
         _attackTelegraph?.StopWarning();
         if (_attackTween != null && _attackTween.IsActive())
         {
+            _attackTweenKillReason = "QTE 攻击";
             _attackTween.Kill();
             _attackTween = null;
         }
+        _attackTweenKillReason = "QTE 攻击（transform.DOKill 连带杀）";
         transform.DOKill(false);
         StopHitScaleFeedback();
         UpdateWorldPosition();

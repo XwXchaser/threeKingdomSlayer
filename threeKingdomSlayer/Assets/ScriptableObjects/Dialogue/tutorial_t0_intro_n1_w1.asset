@@ -24,4 +24,4 @@ MonoBehaviour:
   bossProfile: {fileID: 0}
   lines:
   - speaker: 0
-    text: "\u8FD9\u4E00\u6CE2\u4EBA\u66F4\u591A\u3002\u6253\u6CD5\u6211\u5148\u8BF4\u4E00\u904D\u3002"
+    text: "\u66F4\u591A\u7684\u654C\u4EBA\u4E0A\u6765\u4E86\uFF0C\u522B\u614C"

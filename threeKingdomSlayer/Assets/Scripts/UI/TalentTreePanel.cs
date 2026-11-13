@@ -1784,6 +1784,13 @@ public class TalentTreePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                     _selectedCategory = view.category;
                     _selectedPage = view.pageIndex;
                     if (view.category >= 0 && view.category < 3) categoryIndex = view.category;
+                    // ★ **必须显式 JumpTo**：只改 _selectedCategory/_selectedPage 再 Refresh() 是**不会移动分页容器的**
+                    //   （容器只在 JumpTo / OnTabClicked / 拖拽吸附里被摆）。
+                    //   后果：目标节点（指向突刺 C2，在「招式解锁」类）留在屏幕外，手势/光圈/台词也全挂到屏幕外，
+                    //   而遮罩又把当前页所有按钮挡掉 → 玩家看到的是「没切页 + 什么都点不了」（2026-11-09 真机实测）。
+                    //   教学要即时生效，用 JumpTo 不播吸附动画。
+                    JumpTo(view.category, view.pageIndex);
+                    Debug.Log($"[Talent] 教学切页 → 分类{view.category} 第{view.pageIndex}页（页宽{_pageWidth:0} 页高{_pageHeight:0}）");
                     Refresh();
                 }
                 var img = view.nodeImages[index];

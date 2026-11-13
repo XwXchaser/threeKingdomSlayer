@@ -85,31 +85,63 @@ public partial class Enemy : MonoBehaviour
         if (isRush && (_shieldGuard == null || formState == EnemyFormState.Normal))
         {
             _animator?.SetTrigger("Walk");
-            // 加速 Walk 动画，使两帧都能在 moveSpeed 时间内可见
-            // Walk clip 约 0.6s 循环，需在 moveSpeed 时间内至少完成一次循环
+            // 让 walk 动画与推进速度匹配：
+            //   目标周期 = moveSpeed(秒/排) × walkCycleScale（1 = 一个周期走完一排；<1 = 腿动更快）
+            //   播放速度 = walk clip 长度 / 目标周期
+            // 旧行为（walkCycleScale = 1）= max(1, 0.6 / moveSpeed)，保持兼容。
             if (_animator != null && moveSpeed > 0f)
-                _animator.speed = Mathf.Max(1f, 0.6f / moveSpeed);
+            {
+                float walkClipLength = GetWalkClipLength();
+                float targetCycle = moveSpeed * Mathf.Max(0.05f, walkCycleScale);
+                _animator.speed = Mathf.Max(1f, walkClipLength / targetCycle);
+            }
         }
 
-        // DOTween: 前进补齐时 Y 轴弹跳动画（一边前进一边沿 Y 轴跳动）
+        // DOTween: 前进补齐时 Y 轴弹跳动画（默认关闭：rushBounceHeight = 0）
+        // 弹跳幅度由 Enemy.rushBounceHeight 控制（0 = 不弹跳），避免“走着走着跳一下”。
         if (isRush)
         {
+            _attackTweenKillReason = "开始移动（补齐/移动）的 DOTween.Kill(transform) 连带杀";
             DOTween.Kill(transform, false); // 终止之前可能残留的弹跳动画
             StopHitScaleFeedback();
             transform.localScale = originalScale; // 重置被 DOPunchScale 打断后的残留 scale
             float moveDuration = moveSpeed;
-            float bounceHeight = 0.5f; // 弹跳峰值高度
-            // 通过 DOTween.To 驱动 bounceYOffset，形成抛物线弹跳轨迹
-            DOTween.To(() => bounceYOffset, x => bounceYOffset = x, bounceHeight, moveDuration * 0.5f)
-                .SetEase(Ease.OutQuad)
-                .SetTarget(transform)
-                .SetId("rushBounce");
-            DOTween.To(() => bounceYOffset, x => bounceYOffset = x, 0f, moveDuration * 0.5f)
-                .SetEase(Ease.InQuad)
-                .SetDelay(moveDuration * 0.5f)
-                .SetTarget(transform)
-                .SetId("rushBounce");
+            float bounceHeight = rushBounceHeight;
+            if (bounceHeight > 0f)
+            {
+                // 通过 DOTween.To 驱动 bounceYOffset，形成抛物线弹跳轨迹
+                DOTween.To(() => bounceYOffset, x => bounceYOffset = x, bounceHeight, moveDuration * 0.5f)
+                    .SetEase(Ease.OutQuad)
+                    .SetTarget(transform)
+                    .SetId("rushBounce");
+                DOTween.To(() => bounceYOffset, x => bounceYOffset = x, 0f, moveDuration * 0.5f)
+                    .SetEase(Ease.InQuad)
+                    .SetDelay(moveDuration * 0.5f)
+                    .SetTarget(transform)
+                    .SetId("rushBounce");
+            }
+            else
+            {
+                // 不弹跳：确保上一次残留的偏移被清掉（DOTween.Kill 不会重置数值）
+                bounceYOffset = 0f;
+            }
         }
+    }
+
+    /// <summary>
+    /// 取 walk clip 的实际长度（秒）。拿不到时回退 0.6（旧公式里的硬编码值）。
+    /// </summary>
+    private float GetWalkClipLength()
+    {
+        if (_animator == null || _animator.runtimeAnimatorController == null) return 0.6f;
+        var clips = _animator.runtimeAnimatorController.animationClips;
+        for (int i = 0; i < clips.Length; i++)
+        {
+            if (clips[i] == null) continue;
+            if (clips[i].name.IndexOf("Walk", System.StringComparison.Ordinal) >= 0)
+                return clips[i].length;
+        }
+        return 0.6f;
     }
 
 
@@ -191,6 +223,7 @@ public partial class Enemy : MonoBehaviour
                     _animator.ResetTrigger("Walk");
                 }
             }
+            _attackTweenKillReason = "眩晕时的移动清理（DOTween.Kill(transform) 连带杀）";
             DOTween.Kill(transform, false);
             StopHitScaleFeedback();
             transform.localScale = originalScale;
@@ -205,9 +238,11 @@ public partial class Enemy : MonoBehaviour
             _attackTelegraph?.StopWarning();
             if (_attackTween != null && _attackTween.IsActive())
             {
+                _attackTweenKillReason = "眩晕/破势";
                 _attackTween.Kill();
                 _attackTween = null;
             }
+            _attackTweenKillReason = "眩晕（transform.DOKill 连带杀）";
             transform.DOKill(false);
             StopHitScaleFeedback();
             transform.localScale = originalScale;
@@ -297,11 +332,13 @@ public partial class Enemy : MonoBehaviour
         // 清理所有 DOTween 动效（攻击动画、受击抖动等）
         _attackTelegraph?.StopWarning();
         StopHitScaleFeedback();
+        _attackTweenKillReason = "挑飞（transform.DOKill 连带杀）";
         transform.DOKill(false);
         DOTween.Kill(transform, false);
         bool wasAttackAnimating = isAttackAnimating;
         if (_attackTween != null && _attackTween.IsActive())
         {
+            _attackTweenKillReason = "挑飞";
             _attackTween.Kill();
             _attackTween = null;
         }
@@ -390,11 +427,13 @@ public partial class Enemy : MonoBehaviour
         // 全阶段可打断：AttackDraw / AttackSpawn / 冷却阶段均可打断
         // 清理 DOTween 残留（修复形变不恢复问题）
         _attackTelegraph?.StopWarning();
+        _attackTweenKillReason = "取消攻击（transform.DOKill 连带杀）";
         transform.DOKill(false);
         StopHitScaleFeedback();
 
         if (_attackTween != null && _attackTween.IsActive())
         {
+            _attackTweenKillReason = "受击/招架打断（CancelAttack）";
             _attackTween.Kill();
             _attackTween = null;
         }

@@ -25,6 +25,7 @@ public partial class Enemy : MonoBehaviour
     {
         SceneRegistry<Enemy>.Unregister(this);
         _attackTelegraph?.StopWarning();
+        _attackTweenKillReason = "对象销毁（OnDestroy）";
         _attackTween?.Kill(false);
         _attackTween = null;
         // 用原始引用 Kill（目标已销毁时 DOKill 会因 Unity 假 null 直接跳过）
@@ -75,6 +76,9 @@ public partial class Enemy : MonoBehaviour
         _statusHost?.ClearAll();
 
         // 终止所有活跃的 DOTween 动画（完成当前值后跳转到最终值）
+        // ★ 攻击 tween 的 target 是「自己」而不是 Transform → 这里杀不到它 → 必须显式杀。
+        _attackTween?.Kill(false);
+        _attackTween = null;
         transform.DOKill(true);
         transform.localScale = originalScale;
         transform.localRotation = originalRotation;

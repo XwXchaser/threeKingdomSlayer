@@ -28,6 +28,7 @@ public partial class Enemy : MonoBehaviour
         // 留下中间值（如 ScaleX=-0.2）导致视觉错误，且攻击动画与补齐移动并发
         if (_attackTween != null && _attackTween.IsActive())
         {
+            _attackTweenKillReason = "重置移动状态（补齐/移动）";
             _attackTween.Kill();
             _attackTween = null;
             UpdateWorldPosition();
@@ -126,11 +127,22 @@ public partial class Enemy : MonoBehaviour
     /// </summary>
     public RushMoveStartResult TryStartRushMove()
     {
-        if (!HasRushMoveOrder || !pendingRushMove || state == EnemyState.Dead || state == EnemyState.Frozen || IsInPostFreezeRecovery)
+        if (!HasRushMoveOrder || !pendingRushMove || state == EnemyState.Dead)
             return RushMoveStartResult.Rejected;
-        if (_rushMoveOrderOwner == RushMoveOrderOwner.WaveMarch &&
-            _cavalry != null && _cavalry.IsMounted)
+
+        // ★ 冻结中 / 解冻恢复期：**Deferred**（**保留订单**，下一帧再试），不能 Rejected。
+        //   Rejected 的语义是「放弃这个敌人」→ 调用方会 CancelRushMoveOrder 并跳过它：
+        //     • 列链（Column.cs TryAdvanceChain）→ 它永久掉队 → 后面整列跟着停在后面
+        //       → 玩家射程只有 1 排 → **这一波再也清不掉**（软锁）；
+        //     • 击退回位（DisplacementMover.PushReturn）→ 回位事务取消 → 被击退的敌人留在击退位。
+        //   冻结语义是「挂起」不是「取消」（见 Enemy.cs 里 rushMoveDelayTimer 的注释），
+        //   所以这里必须挂起而不是放弃：解冻后由 Enemy.Update 的补齐订单重试接上。
+        if (state == EnemyState.Frozen || IsInPostFreezeRecovery)
             return RushMoveStartResult.Deferred;
+
+        // 骑乘态 109 现在**参与阵型行军**（随波次前移到攻击距离，见 WaveMarchScheduler），
+        // 所以这里不再拒绝它的 WaveMarch 订单。
+        // 冲锋期间它会被波次行军打断（AssignRushMoveOrder → AbortForExternalOrder），那是预期行为。
 
         if (_rushMoveOrderOwner == RushMoveOrderOwner.WaveMarch)
         {
@@ -373,12 +385,14 @@ public partial class Enemy : MonoBehaviour
             return 1f;
 
         // 从StageController获取透明度配置
-        // 默认：第0排=1.0, 第1排=0.8, 第2排=0.6, 第3排=0.4, 第4排=0.2, 第5排+=0
+        // 默认：第0排=1.0, 第1排=0.8, 第2排=0.6, 第3排=0.4, 第4排=0.2
         float[] factors = StageFormation?.GetRowAlphaFactors()
                           ?? DefaultRowAlphaFactors;
-        if (row < factors.Length)
-            return factors[row];
-        return 0f;
+        // 越界时取最后一个系数（与 RowFormation.GetColumnOffsetX 对 manualRowHalfWidths 的夹取一致）。
+        // 旧实现直接 return 0f：系数数组按**可视排**（0~4）配置，而敌人用的是**网格排**
+        // （WaveSpawner 按 count+2 排布，实际落在 1/3/5/7/9）→ 超出数组的排身体 alpha 归零，
+        // 人整个看不见，只剩 EnemyGroundShadow 的影子（影子用自己独立的 alpha，不跟随排淡出）。
+        return factors[Mathf.Clamp(row, 0, factors.Length - 1)];
     }
 
     #endregion

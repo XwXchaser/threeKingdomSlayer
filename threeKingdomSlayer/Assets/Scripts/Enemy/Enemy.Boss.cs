@@ -82,6 +82,9 @@ public partial class Enemy : MonoBehaviour
         CancelRushMoveOrder(resetActiveMovement: true);
 
         StopHitScaleFeedback();
+        // 攻击 tween 的 target 是「自己」→ transform.DOKill 杀不到它 → 显式杀（Boss 暂停时要中断攻击）。
+        _attackTween?.Kill(false);
+        _attackTween = null;
         transform.DOKill(false);
         UpdateWorldPosition();
         transform.localScale = originalScale;

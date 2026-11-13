@@ -701,17 +701,19 @@ public partial class TutorialStageDirector : MonoBehaviour
     /// <summary>
     /// 防御键的**静音**分两个来源（可同时存在），合并后一起应用：
     ///   • <see cref="_defenseMutedByChoice"/> = 教学关「3选1 → 技能拍」这段（**教学专用**，离开教学路线必须还原）
-    ///   • <see cref="_defenseMutedByBeat"/>  = **需要出招的教学拍**（点戳 / 连点三下 / 连招蓄力）
+    ///   • <see cref="_defenseMutedByBeat"/>  = **教学拍期间**（2026-11-08 用户口径：除「教按防御键」那一拍外全静音）
     ///     —— 任何关卡都可能有（教学关的拍 + 招式解锁引导拍）→ 拍结束即恢复
     /// </summary>
     private void ApplyDefenseMute()
     {
         var button = DefenseButton.Instance;
         bool muted = _defenseMutedByChoice || _defenseMutedByBeat;
-        // **需要出招的教学拍**：静音但**不吃射线** → 玩家点在防御键那一块也能出招
+        // **要出招的教学拍**：静音但**不吃射线** → 玩家点在防御键那一块也能出招
         //   （否则这一点被按钮吞掉 → 招式打不出来 → 这一拍永远收不了）。
-        // **三选一面板那段**：仍然吃射线（玩家点防御键不该顺手打出一记攻击）。
-        bool swallowClicks = !_defenseMutedByBeat || _defenseMutedByChoice;
+        // **其余拍（三选一面板 / 教技能 / 其它教学段）**：吃射线（点防御键不该顺手打出一记攻击）。
+        //   「要不要出招」由**当前这一拍**决定（`_currentStep`），不由「静音来自哪个来源」决定。
+        bool requiresAttack = _currentStep != null && BeatRequiresPlayerAttack(_currentStep.kind);
+        bool swallowClicks = !requiresAttack || _defenseMutedByChoice;
         if (button != null) button.SetMuted(muted, swallowClicks);
         if (muted)
         {
@@ -777,27 +779,51 @@ public partial class TutorialStageDirector : MonoBehaviour
     }
 
     /// <summary>
-    /// **这一拍需要玩家出招**（点戳 / 连点三下 / 连招蓄力）。
+    /// **这一拍要不要灰掉防御键**（2026-11-08 用户口径：**除「教按防御键」外全静音**）。
     ///
-    /// 这类拍期间**必须静音防御键**：`AttackSystem` 有硬闸「防御中，不能出招」
-    /// → 玩家按住防御 → 招式打不出来 → **这一拍永远收不了 → 教程卡死**（2026-11-05 用户反馈）。
+    /// 为什么用**黑名单**而不是白名单：
+    ///   白名单（只列"要出招的拍"）每加一种新拍型就会漏一个 ——
+    ///   漏了就是 BUG-009 的老问题（玩家按住防御 → `AttackSystem` 硬闸「防御中，不能出招」
+    ///   → 招式打不出来 → 那一拍永远收不了 → 教程卡死）。
+    ///   **横扫引导拍（`Swipe`）就是这么漏过一次的**（正式关解锁横扫后的首次引导拍）。
     ///
-    /// 例外（不静音）：
-    ///   • <see cref="GestureHintKind.DefendButton"/> = 这一拍就是教玩家按防御键 → 必须可用
-    ///   • <see cref="GestureHintKind.SkillSlot"/> = 玩家点技能槽，不靠出招；
-    ///     而且等敌人抡招时玩家要能防御（2026-11-02 反馈「为什么我会受击」）
+    /// 例外：<see cref="GestureHintKind.DefendButton"/> = 这一拍**就是**教玩家按防御键 → 必须可用。
     /// </summary>
-    private static bool BeatNeedsAttack(GestureHintKind kind)
+    private static bool BeatShouldMuteDefense(GestureHintKind kind)
     {
-        return kind == GestureHintKind.Tap
-            || kind == GestureHintKind.TapCombo
-            || kind == GestureHintKind.ComboCharge;
+        return kind != GestureHintKind.DefendButton;
+    }
+
+    /// <summary>
+    /// **这一拍玩家要出招**（决定静音时**吃不吃射线**）。
+    ///
+    /// 要出招的拍 → 静音但**不吃射线**：玩家点在防御键那一块仍然能出招。
+    ///   （吃射线的话这一点被按钮吞掉 → 招式打不出来 → 这一拍永远收不了 → BUG-009。）
+    /// 不出招的拍（教按防御 / 教点技能槽 / 只播台词）→ **吃射线**：
+    ///   玩家点防御键不该顺手打出一记攻击。
+    /// </summary>
+    private static bool BeatRequiresPlayerAttack(GestureHintKind kind)
+    {
+        switch (kind)
+        {
+            case GestureHintKind.Tap:
+            case GestureHintKind.TapCombo:
+            case GestureHintKind.ComboCharge:
+            case GestureHintKind.Swipe:
+            case GestureHintKind.ChargedSwipe:
+            case GestureHintKind.Hold:
+            case GestureHintKind.Parry:
+            case GestureHintKind.ParryHold:
+                return true;
+            default:
+                return false;
+        }
     }
 
     /// <summary>教学关「3选1 → 技能拍」这段的静音（教学专用，离开教学路线会自愈）。</summary>
     private bool _defenseMutedByChoice;
 
-    /// <summary>需要出招的教学拍期间的防御键静音（任何关卡都可能有，拍结束即恢复）。</summary>
+    /// <summary>教学拍期间的防御键静音（口径：除「教按防御键」那一拍外全静音；任何关卡都可能有，拍结束即恢复）。</summary>
     private bool _defenseMutedByBeat;
 
     /// <summary>内容2 的技能拍是否正在进行（那一拍允许在输入被拦下时也能释放技能）。</summary>

@@ -529,6 +529,7 @@ public partial class Enemy : MonoBehaviour
         _attackTelegraph?.StopWarning();
         if (_attackTween != null && _attackTween.IsActive())
         {
+            _attackTweenKillReason = "死亡";
             _attackTween.Kill();
             _attackTween = null;
             UpdateWorldPosition();
@@ -548,6 +549,7 @@ public partial class Enemy : MonoBehaviour
         OnDeath?.Invoke(this);
 
         // 清理所有残留 DOTween（rush bounce 等），避免与死亡动画冲突
+        _attackTweenKillReason = "死亡后清理（transform.DOKill 连带杀）";
         transform.DOKill();
 
         // 启动死亡动效协程（弹起 + 旋转 + 重力掉落，纯视觉表现）
@@ -685,6 +687,10 @@ public partial class Enemy : MonoBehaviour
         if (state != EnemyState.Dead || !gameObject.activeInHierarchy) return;
 
         StopAllCoroutines();
+        _attackTweenKillReason = "取消死亡动画回池（transform.DOKill 连带杀）";
+        // 攻击 tween 的 target 是「自己」→ transform.DOKill 杀不到它 → 显式杀。
+        _attackTween?.Kill(false);
+        _attackTween = null;
         transform.DOKill(false);
         EnemyPool.Instance?.ReturnEnemy(this);
     }

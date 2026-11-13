@@ -583,10 +583,9 @@ MonoBehaviour:
   selectionCorners: {fileID: 21300000, guid: 2ce20a991d870cd42ad23e52375bb3e2, type: 3}
   teachingHandSprite: {fileID: 21300000, guid: 8426cacbbde92f44c8e6a0f06f003f35, type: 3}
   teachingRingSprite: {fileID: 21300000, guid: 29478d34325fde346a6eb38397efec15, type: 3}
-  teachingTextPickNode: "\u70B9\u4E00\u4E2A\u5929\u8D4B\u8282\u70B9 \u2014\u2014
-    \u82B1\u94DC\u94B1\u89E3\u9501\u5B83"
-  teachingTextConfirm: "\u518D\u70B9\u3010\u89E3\u9501\u3011\u786E\u8BA4 \u2014\u2014
-    \u5929\u8D4B\u5C31\u751F\u6548\u4E86"
+  teachingHandFrames: []
+  teachingTextPickNode: "\u8BA9\u6211\u4EEC\u9009\u62E9\u3010\u84C4\u529B\u7A81\u523A\u3011"
+  teachingTextConfirm: "\u82B1\u8D39\u94DC\u94B1\u89E3\u9501\u8FD9\u4E2A\u62DB\u5F0F\uFF0C\u7136\u540E\u8FD4\u56DE\u4E3B\u83DC\u5355"
   branchPlaques:
   - {fileID: 21300000, guid: afd2acccbb1c66a48bb43be1abc51ab9, type: 3}
   - {fileID: 21300000, guid: 34e67ee901ecd7343887d1e8c00bf86d, type: 3}

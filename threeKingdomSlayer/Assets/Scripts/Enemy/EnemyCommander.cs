@@ -111,6 +111,16 @@ public class EnemyCommander : MonoBehaviour
     {
         if (_enemy == null || _enemy.state == EnemyState.Dead) return;
 
+        // ★ **补齐优先于号令**（2026-11-09 用户定）：
+        //   前方出现补齐需求（已派单、待前移）→ **打断正在进行的号令** → 回 Idle → 走 Walk 补齐。
+        //   对标 105 的口径：补齐需求一旦成立，动作让位；号令与移动**不并发**。
+        //   （号令在 Enemy 状态机之外，所以这里由督战组件自己判、自己断。）
+        if (_casting && HasPendingFillUp())
+        {
+            InterruptCast("前方补齐");
+            return;
+        }
+
         if (_casting)
         {
             _castTimer += Time.deltaTime;
@@ -134,7 +144,64 @@ public class EnemyCommander : MonoBehaviour
         }
 
         _nextCastTimer -= Time.deltaTime;
-        if (_nextCastTimer <= 0f) BeginCast();
+        // ★ 移动中 / 有待执行的补齐订单 → **不开始号令**（同一条「补齐优先」规则的反向：
+        //   否则会出现「边走边号令」，与被要求消除的「边鼓舞边补齐」是同一个毛病）。
+        if (_nextCastTimer <= 0f && CanStartCast()) BeginCast();
+    }
+
+    // ── 补齐与号令的互斥 ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 该敌人是否有**待执行的前移订单**（普通补齐 / 新波次入场都算）。
+    /// 判定用「已派单 + pendingRushMove」，与 Enemy 内部的补齐口径一致：
+    /// 订单已存在但目标排就在脚下（pendingRushMove=false）→ 不需要动 → 不打断号令。
+    /// </summary>
+    private bool HasPendingFillUp()
+    {
+        if (_enemy == null) return false;
+        return _enemy.HasRushMoveOrder && _enemy.pendingRushMove;
+    }
+
+    /// <summary>能不能开始号令：移动中 / 有待执行的前移订单 → 不能。</summary>
+    private bool CanStartCast()
+    {
+        if (_enemy == null) return false;
+        if (_enemy.state == EnemyState.Moving) return false;
+        if (HasPendingFillUp()) return false;
+        return true;
+    }
+
+    /// <summary>
+    /// 打断号令：取消本次施放 → 回 Idle → 重置为**完整**周期。
+    /// 与「本体伤害打断」同一口径（重置为完整周期），差别只在触发来源。
+    ///
+    /// ⚠️ 必须重置 <c>_nextCastTimer</c>：号令进行中该计时器是冻结的（早已 ≤0），
+    ///   不重置的话下一帧就会立刻重开一次号令（打断 → 立刻再打断 的死循环）。
+    ///
+    /// ⚠️ 不重置 Animator 的 "Walk" trigger：补齐移动可能已经把 trigger 置上
+    ///   （移动先于打断发生），保留它才能让 Idle → Walk 的转移正常触发（变回 Walk 补齐）。
+    /// </summary>
+    private void InterruptCast(string reason)
+    {
+        _casting = false;
+        _appliedThisCast = false;
+        _nextCastTimer = castInterval;
+        StopTelegraph();
+        // 只在敌人没有自己的专属演出动画时才回 Idle：
+        // 击飞 / 眩晕 / 冻结 / 起身 各有各的动画，强行播 Idle 会把它们盖掉。
+        if (_enemy != null && !HasOwnPerformanceVisual(_enemy.state))
+            PlayState("Idle");
+        DebugLog.Info($"[Commander] 号令被{reason}打断 → 本次取消，重置为完整周期");
+    }
+
+    /// <summary>该状态是否由敌人自己的演出动画接管（此时不能播 Idle 盖掉它）。</summary>
+    private static bool HasOwnPerformanceVisual(EnemyState state)
+    {
+        return state == EnemyState.Launched
+            || state == EnemyState.Stunned
+            || state == EnemyState.Frozen
+            || state == EnemyState.GettingUp
+            || state == EnemyState.Dead;
     }
 
     // ── 施放 ────────────────────────────────────────────────────────────────
@@ -194,12 +261,7 @@ public class EnemyCommander : MonoBehaviour
             && source != HitFeedbackSource.Ultimate)
             return;
 
-        _casting = false;
-        _appliedThisCast = false;
-        _nextCastTimer = castInterval;      // 重置为**完整**周期
-        StopTelegraph();
-        PlayState("Idle");
-        DebugLog.Info("[Commander] 号令被打断 → 本次取消，重置为完整周期");
+        InterruptCast("本体伤害");
     }
 
     /// <summary>

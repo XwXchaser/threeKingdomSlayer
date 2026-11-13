@@ -56,9 +56,12 @@ MonoBehaviour:
   occupySlots: 1
   attackSpeed: 0.5
   attackDamage: 3
+  guardBreakBonus: 47
   normalFormDamageReductionPercent: 0
   attackRange: 1
-  moveSpeed: 0.3
+  moveSpeed: 0.5
+  rushBounceHeight: 0
+  walkCycleScale: 0.75
   visualYOffset: 0.01125012
   attackSequence:
   - isCAttack: 0

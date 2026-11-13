@@ -45,10 +45,15 @@ public class TutorialRouteBlackout : MonoBehaviour
     [Tooltip("只在教学关生效：离开教学路线时立刻恢复（不进黑）")]
     public bool tutorialOnly = true;
 
+    [Tooltip("按下路牌后，若路线在这段时间内**没有前进**（没进入 FakeMoving），就自动把黑幕收掉。\n" +
+             "防止「点击没完成 → 黑幕永远留在屏上 → 卡在黑屏」（2026-11-09 用户反馈）。")]
+    [Range(0.5f, 5f)] public float pressedCoverTimeout = 1.5f;
+
     private float _alpha;
     private float _target;
     private readonly List<RouteChoiceButton> _hookedButtons = new List<RouteChoiceButton>();
     private bool _pressedCover;
+    private float _pressedAt = -1f;
     private RectTransform _host;
 
     private void Awake()
@@ -71,7 +76,29 @@ public class TutorialRouteBlackout : MonoBehaviour
 
         // 节点开始移动 → **收掉遮罩**（移动过程要看得见，不遮）
         var rt = RouteFlowHub.Current;
-        if (_pressedCover && rt != null && rt.Phase == FakeRoutePhase.FakeMoving) _pressedCover = false;
+        if (_pressedCover)
+        {
+            if (rt != null && rt.Phase == FakeRoutePhase.FakeMoving)
+            {
+                _pressedCover = false;
+                _pressedAt = -1f;
+            }
+            else
+            {
+                // ★ **超时兜底**（2026-11-09 用户反馈：「按下后没移动但是出现了黑涩遮罩」）：
+                //   黑幕是**按下那一帧**就拉起来的（2026-11-01 的设计：遮罩跟着玩家的点击出现），
+                //   但它原本**只在路线进入 FakeMoving 时才收** → 万一点击没完成（按歪 / 按钮在呼吸位移 /
+                //   点在了提示手上），黑幕就会**永远留在屏上** → 玩家卡在黑屏里出不来。
+                //   这里加个兜底：按下后若路线没在 pressedCoverTimeout 内动起来，就把黑幕收掉。
+                if (_pressedAt < 0f) _pressedAt = Time.unscaledTime;
+                else if (Time.unscaledTime - _pressedAt > pressedCoverTimeout)
+                {
+                    _pressedCover = false;
+                    _pressedAt = -1f;
+                    DebugLog.Warning($"[TutorialRouteBlackout] 按下后 {pressedCoverTimeout:F1}s 内路线没有前进 → 自动收回黑幕（本次点击未生效）");
+                }
+            }
+        }
 
         _target = (_pressedCover || ShouldBeBlack()) ? 1f : 0f;
         if (!Mathf.Approximately(_alpha, _target))
@@ -134,6 +161,7 @@ public class TutorialRouteBlackout : MonoBehaviour
     public void ShowNow()
     {
         _pressedCover = true;
+        _pressedAt = Time.unscaledTime;
         _target = 1f;
     }
 

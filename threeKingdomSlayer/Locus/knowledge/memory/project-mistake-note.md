@@ -167,3 +167,12 @@ maintenanceRules: |-
 - **`AssetDatabase.CreateAsset` 之后改字段必须 `EditorUtility.SetDirty`**：否则 `SaveAssets()` 只保存了刚创建时的空壳，**内存里看着是对的**（同一会话里 `LoadAssetAtPath` 拿到的就是那个内存对象），一进 Play Mode / 域重载就从磁盘重读出空数据。本次因此把三棵天赋树的 `nodes` 全部丢了（磁盘 `treeId: main` / `nodes: []`），表现为天赋页一个节点都没有。自查方式：改完一定要**看文件**（`grep nodeId:`）或 `AssetDatabase.Refresh()` 后重读。
 - **uGUI Button 必须有可射线的子 Graphic**：Button 组件 + `targetGraphic` 指向一个 `raycastTarget=false` 的 Image，等于永远点不到（点击根本不进 EventSystem 的命中列表）。`HubTalentEntry` / `HubStageEntry` 两张入口卡就是这个状态（卡内 Graphic 全为 false，targetGraphic 指向不可射线的 Icon）——用户报的“点不了天赋按钮”就是它。修法：把底板 Image 的 `raycastTarget` 打勾并把 `targetGraphic` 指回底板。诊断一行就够：`FindObjectsOfType<Button>()` 里挑“子树内没有任何 raycastTarget=true 的 Graphic”的。
 - **additive overlay 面板的 Close 不能只 `SetActive(false)`**：天赋面板 `Close()` 只隐藏自己 → overlay 场景还叠在战斗上，玩家看到空背景且退不回战斗（必须靠场景里另一个 `UIOverlayCloseButton`）。正确做法：`Close()` 里同时 `SceneFlowManager.RequestCloseOverlay()`。
+
+### 手写裁剪空间的屏幕四边形在 RT 目标上会上下颠倒（2026-11-09）
+- 症状：`Skybox Background - editable` 的全屏天空在编辑器里正常，Android 包里整张上下颠倒（顶部出现贴图底部的暖色带）。
+- 根因：shader 把顶点直接写进裁剪空间（`o.vertex = float4(v.uv*2-1, 0, 1)`），**不经过投影矩阵**。渲到 RenderTexture 的目标（Scene/Game 视图）会对所有几何体做一次投影 Y 翻转，手写裁剪四边形拿不到 ⇒ 它相对场景是倒的；真机直渲窗口没有这次翻转 ⇒ 相对场景是正的。源文件里那句手动 `o.uv.y=1-o.uv.y` 正好抵消了编辑器那一次 ⇒ **编辑器正确、真机颠倒**。
+- 实测判据：把 frag 临时改成 `return fixed4(i.screen.x, i.screen.y, 0.5, 1)`（`i.screen = o.vertex.xy*0.5+0.5`），抓 Scene 视图，顶部 G≈0.06、底部 G≈0.95 ⇒ 手写四边形在 RT 里确实是倒的。
+- 修法：顶点 y 乘 **`_ProjectionParams.x`**（翻转投影时为 -1），让它跟普通几何体同处一个空间；采样用**自建 Mesh 的 UV**（`SkyScreenQuad.asset`，v=1 = 屏幕顶），不要再依赖 SpriteRenderer：sprite 网格的 V 方向在编辑器与 Android 包里不可靠，且 `[PerRendererData] _MainTex` 会让 SpriteRenderer 把 sprite 的贴图绑上去、盖掉材质里配的那张（本次两张图构图还不一样，排查时极易误判）。
+- 排查纪律：**`Camera.Render()` + `ReadPixels` 抓帧对手写裁剪空间的 shader 会呈现与真实屏幕相反的方向**，这类探针只能比对“同一 shader 改动前后的相对变化”，不能判定绝对朝向；判绝对朝向要用 `unity_capture_viewport`（Scene/Game 视图）。另外 shader 改完若渲染结果与源码不符，先怀疑**变体没重编**——`AssetDatabase.ImportAsset(path, ForceUpdate|ForceSynchronousImport)` 后再抓帧。
+- **连带坑（同日）：SpriteRenderer → MeshRenderer 搬迁必须复制 `sortingOrder`**。新建的 MeshRenderer 默认 `sortingOrder=0`，而旧 SpriteRenderer 是 `-100`；同层透明景物里排序号更小的构件（本例 E0 城门拱门/旗子都是 `-1`）就从“天空之后才画”变成“天空之前画” → 被不透明的天空整块盖掉，表现为“某几个构件凭空消失”。
+  判断口径：把天空渲染器禁用（或 `SetActive(false)`）后缺失部分回来 = 遮挡；不回来 = 缺图。搬迁时逐项对齐：`sortingLayerID` / `sortingOrder` / `sharedMaterial` / 阴影与探针用法。

@@ -203,14 +203,15 @@ public partial class TutorialStageDirector : MonoBehaviour
             Debug.Log($"[Tutorial] 教学条件满足，等待 {waited:F1} 秒");
         }
 
-        // ⚠️ **防御键从这一刻就静音**（2026-11-05 修）：
-        //   这一拍需要玩家出招 → 防御键一旦被按下就会抢走持枪姿态 →
+        // ⚠️ **防御键从这一刻就静音**（2026-11-05 修 / 2026-11-08 改口径）：
+        //   这一拍玩家要出招 → 防御键一旦被按下就会抢走持枪姿态 →
         //   `AttackSystem` 的硬闸「防御中，不能出招」会把这一记招打不出来 → 这一拍永远收不了。
         //   旧实现是**开拍那一刻**才静音 → 前面这段（等条件 + 台词弹出 + 等敌人收招，最长几秒）
         //   是**没静音的空窗**：玩家在这段里按了防御键 → 开拍时虽然把枪收回去了，
         //   但玩家的第一下点击已经错位 → 表现为「点了没反应、这一拍过不去」。
         //   → 静音提前到「条件满足」这一刻；拍结束/被打断时统一恢复（见 Hints.cs 的收拍路径）。
-        if (BeatNeedsAttack(step.kind)) SetDefenseMuteBeat(true);
+        //   口径：除「教按防御键」那一拍外全静音（见 BeatShouldMuteDefense）。
+        if (BeatShouldMuteDefense(step.kind)) SetDefenseMuteBeat(true);
 
         // ★ 连招蓄力拍（指向突刺教学）：**提前选好会打霸体招的目标**。
         //   选晚了不行：台词期间玩家/机器人可能把它打死 → 只剩别的敌人 → 这一拍教的东西就不对了。
@@ -225,7 +226,16 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 敌人站定后才推台词：此时台词和手势引导一起出现，玩家看得见该做什么
         // ★ 统一入口：教学拍走「开场两段字幕 + 点继续」（第一段 = 开场铺垫，第二段 = 原本那行台词）；
         //   暂停点 = **原本那行台词出现的那一刻**（就在这个位置，不是波次开始）；两段之间不留间隔。
-        yield return PushBeatDialogue(step.beforeDialogue);
+        //
+        // ★ **连招蓄力拍（指向突刺教学）例外**：它的第一句台词挪到「敌人抬手定格」那一刻再播
+        //   （ComboChargeRoutine 内 → 那里弹 beforeDialogue）。
+        //   这里只保留**压暗**：PushBeatDialogue 在没有台词时会 early-out（Beats.cs:277），
+        //   压暗得自己设 —— 否则整拍不压暗（那是可见变化，不是本次要改的东西）。
+        //   ⚠️ 引导拍期间 _pendingWaveDialogue 本来就被置空（TutorialStageDirector.cs:920-921），
+        //   所以这里置空 fallback 不会吞掉任何波次台词。
+        bool deferBeforeDialogue = step.kind == GestureHintKind.ComboCharge;
+        if (deferBeforeDialogue) SetTeachingDim(true);
+        yield return PushBeatDialogue(deferBeforeDialogue ? null : step.beforeDialogue);
 
         // 开始教学拍：冻结敌人（不让它们行动）、只压暗场景、只接受目标手势
         var target = ToGestureTarget(step.kind);
@@ -270,12 +280,12 @@ public partial class TutorialStageDirector : MonoBehaviour
         //    （正式关的「连招蓄力」教学拍就永远停在阶段 2 → 整条「教学→天赋→招式教学」链路卡死，
     //      2026-11-04 实测才发现）。
         _beatEndsOnAttack = true;
-        // **这一拍需要玩家出招 → 防御键静音**（2026-11-05 用户反馈「按防御会导致教程卡死」）。
+        // **这一拍要灰掉防御键**（2026-11-08 用户口径：除「教按防御键」那一拍外全静音）。
         //   机制：`AttackSystem` 有硬闸「防御中，不能出招」→ 玩家在这一拍里按住防御，
         //   招式就永远打不出来 → 这一拍收不了 → **教程卡死**。
         //   （教学拍期间敌人是冻住的 → 静音防御键不会让玩家挨打。）
-        //   例外见 BeatNeedsAttack：防御拍（教按防御键）与技能拍（点技能槽）不静音。
-        if (BeatNeedsAttack(step.kind)) SetDefenseMuteBeat(true);
+        //   例外见 BeatShouldMuteDefense：只有「教按防御键」那一拍不静音。
+        if (BeatShouldMuteDefense(step.kind)) SetDefenseMuteBeat(true);
         BeginBeat(target, TeachAttackFor(step), requiredHits: step.requiredHits,
             // ★ 连招蓄力拍**不能按住敌人**：目标必须能**起新的霸体攻击**，否则
             //   `isAttackAnimating` 永远 false → 冻结条件永远不成立
@@ -435,8 +445,10 @@ public partial class TutorialStageDirector : MonoBehaviour
                 FreezeAllEnemiesForTutorial();
                 frozenAtWindup = true;
                 _comboTargetWasAttacking = true;
-                if (step.comboPhase2Dialogue != null)
-                    DialogueManager.Instance?.QueueEventAndNotify(step.comboPhase2Dialogue, forceReplay: true);
+                // ★ **文本①挪到这里**（2026-11-09）：敌人抡招到顶、敌人定格这一刻才弹
+                //   「让我教你点新招式，先戳一下敌人」——原本它在拍开始就弹（那时敌人还没抬手）。
+                if (step.beforeDialogue != null)
+                    DialogueManager.Instance?.QueueEventAndNotify(step.beforeDialogue, forceReplay: true);
                 Debug.Log("[Tutorial] 连招蓄力拍：敌人抬起到顶（剩余 " + tEnd.ToString("F2") + "s）→ 敌人定格（世界照常跑）");
             }
             yield return null;
@@ -487,7 +499,7 @@ public partial class TutorialStageDirector : MonoBehaviour
             if (input != null) input.tutorialGestureTarget = TutorialGestureTarget.ComboHold;
             // **阶段 2（蓄力）期间防御键静音**（2026-11-05 用户定）：
             //   这一阶段玩家的持枪姿态被冻在蓄势位 → 按防御键会抢走姿态 → 蓄力/连段断掉 → 这一拍收不了。
-            //   ⚠️ 「按防御会打断蓄力」这一层已由**整拍静音**接手（见上方 BeatNeedsAttack）→ 这里不再单独静音阶段 2。
+            //   ⚠️ 「按防御会打断蓄力」这一层已由**整拍静音**接手（见上方 BeatShouldMuteDefense）→ 这里不再单独静音阶段 2。
             SetDefenseMuteBeat(true);
             float winWait = 0f;
             bool windowOk = false;
@@ -570,9 +582,9 @@ public partial class TutorialStageDirector : MonoBehaviour
                     if (!hitTarget)
                     {
                         Debug.Log("[Tutorial] 连招蓄力拍：这一下没朝目标打出去（列=" + _beatLastAttackColumn
-                            + " 目标列=" + targetCol + "）→ 提示重打这一段连招");
-                        if (step.comboPhase2Dialogue != null)
-                            DialogueManager.Instance?.QueueEventAndNotify(step.comboPhase2Dialogue, forceReplay: true);
+                            + " 目标列=" + targetCol + "）→ 回到阶段 1 重打这一段连招");
+                        // ★ **不弹任何文本**（2026-11-09 用户定）：流程回到阶段 1（重新点戳），
+                        //   此刻弹「长按蓄力」是错位的 → 只靠手势示范 + 日志提示。
                         if (machine != null) machine.NotifyExternalReset();
                         _comboChargePhase = 1;
                         break;
@@ -682,6 +694,11 @@ public partial class TutorialStageDirector : MonoBehaviour
         _beatHitCount = 0;
         _beatRequiredHits = Mathf.Max(1, requiredHits);
         _beatAttackFired = false;
+        // **防御键静音**（2026-11-08 用户口径：除「教按防御键」那一拍外全静音）。
+        //   放在这里 = **所有拍型都覆盖**（招式拍 / 霸体防御拍 / 技能打断拍 / 时停招架拍 …），
+        //   收拍时由 `EndBeat` 统一恢复（见 Hints.cs）。
+        //   招式拍那条路径还会**提前**到「条件满足」那一刻静音（BUG-009 的修法）。
+        SetDefenseMuteBeat(_currentStep != null && BeatShouldMuteDefense(_currentStep.kind));
         // 招架拍**不能冻敌人**（敌人必须真的挥下来才能被格开）→ holdEnemies=false
         if (holdEnemies) SetEnemiesHold(true);
         SetSceneDim(true);

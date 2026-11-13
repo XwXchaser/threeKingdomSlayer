@@ -27,6 +27,11 @@ public class StageController : MonoBehaviour, IStageFormation, IStageBattleState
     [Tooltip("卷轴/假移动路线关卡配置。为空时该流程不参与。")]
     public FakeRouteStageConfig fakeRouteStageConfig;
 
+    [Header("节奏")]
+    [Tooltip("一波打完后**稍等多久**再进后续流程（三选一 / 结算面板 / 下一波 / 路牌按钮）。\n" +
+             "让玩家先看清「这波打完了」+ 经验条结算，再被 UI 接管。")]
+    public float waveEndSettleDelay = 1.2f;
+
     [Header("组件引用")]
     public WaveSpawner waveSpawner;
     public EnemyManager enemyManager;
@@ -188,6 +193,8 @@ public class StageController : MonoBehaviour, IStageFormation, IStageBattleState
     }
 
     bool IStageRoleContext.SuppressDefeatUI => suppressDefeatUI;
+
+    float IStageRoleContext.WaveEndSettleDelay => waveEndSettleDelay;
 
     string IStageRoleContext.BattleSceneName => battleSceneName;
 

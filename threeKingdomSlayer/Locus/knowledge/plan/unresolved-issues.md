@@ -190,3 +190,31 @@ Phase 2 已完成：延迟攻击、蓝色伤害数字、per-level 配置均已�
 > - `Assets/Scripts/Tutorial/TutorialStageDirector.cs`（Update 里的路线光标清理）
 > - `Assets/Scripts/UI/FrontItemBar.cs`（Instance 选取 / 技能槽定位）
 > - 详见 `plan/tutorial-hint-handoff-20261102.md` §12、§13。
+
+## TODO-8 [中] 技能解锁：冰雾 / 疾风的图标是占位
+
+- 现状：`talent_pool_icemist` 用 `icon_31_timedFire`（蛇形喷射的火系图），`talent_pool_wind` 用 `icon_31_longer`。
+- 要做的：按 `design/skill-item-icon-art-guideline.md` 出两张正式图标，然后改
+  `Assets/ScriptableObjects/Talents/TalentTree_Pools.asset` 对应节点的 `icon`，以及
+  `Assets/ScriptableObjects/ActiveSkills/ActiveSkill_IceMist.asset` / `Assets/ScriptableObjects/Upgrades/Definitions/AttackSpeed.asset` 的 `icon`（池里三选一卡也显示这个）。
+- 关联：`plan/skill-unlock-branch-deployment-20261109.md` §7.1。
+
+## TODO-9 [低] 染病在池里的权重仍是 300
+
+- 现状：`ActiveSkillPoolConfig.commonPool` 里 `active_disease` 的 `weight = 300`，其它项都是 100（早期测试值）。
+- 待定：是否归一到 100；如果要保留“染色系更容易出现”的意图，应改成有明确理由的数值并写进设计文档。
+- 关联：`plan/skill-unlock-branch-deployment-20261109.md` §7.2。
+
+## TODO-10 [中] 火龙舌在位移流第三层，解锁成本偏高
+
+- 现状：链为 地刺(250) → 染病(250) → 火龙舌(250)，摸到火龙舌要 750 铜钱；一条路线整关收入约 690 铜钱（`design/game-mechanics.md` §7.2）。
+- 待定：是否符合节奏预期；备选是把链缩短（火龙舌提到第二层）或降低单节点价格。
+
+## TODO-11 [低] TalentTree.scene 上有一个找不到脚本的空壳组件
+
+- 现状：`Assets/Scenes/TalentTree.scene` 的 `TalentTreeOverlay` 上有一份 `MonoBehaviour` 的
+  `m_Script: {fileID: 1230132438}`（只有 fileID、没有 guid）→ 运行时与打包都报
+  `The referenced script on this Behaviour (Game Object 'TalentTreeOverlay') is missing!`。
+- 影响：目前无害（面板功能与教学都正常），但会污染日志/构建告警。
+- 要做：确认它原本对应的脚本后重建，或直接删掉该组件（删前先确认没有别的脚本按 `GetComponent` 依赖它）。
+- 关联：`plan/bugs-and-requests.md` BUG-012 末尾。

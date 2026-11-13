@@ -12,6 +12,15 @@ using DG.Tweening;
 
 public partial class Enemy : MonoBehaviour
 {
+    // ── 诊断（2026-11-09 BUG B「1051 射箭哑火」定位用，定位完成后删除）────────
+    /// <summary>远程攻击已起手，但**箭还没发出**（等待 tween 回调的窗口）。</summary>
+    private bool _rangedArrowPending;
+    /// <summary>杀掉攻击 tween 的凶手标签（诊断用，由各处 Kill 前赋值）。</summary>
+    private string _attackTweenKillReason = "";
+    /// <summary>攻击 tween 的序号（诊断用）。DOTween 会**池化复用** Sequence 对象，
+    /// 被回收的对象仍带着旧的 OnKill 回调 → 不加序号护栏会误报（2026-11-09 实测到）。</summary>
+    private int _attackTweenSerial = 0;
+
     private void UpdateAttack()
     {
         // 教学手势拍：不再起新的一刀（已经挥出去的这一下让它播完，不硬切动画）
@@ -112,6 +121,7 @@ public partial class Enemy : MonoBehaviour
         DebugLog.Warning($"[Enemy] 攻击动画卡死自愈: {DebugTag}, state={state}, tweenAlive={IsAttackTweenAlive()}");
         if (_attackTween != null)
         {
+            _attackTweenKillReason = "攻击动画卡死自愈";
             _attackTween.Kill();
             _attackTween = null;
         }
@@ -125,6 +135,66 @@ public partial class Enemy : MonoBehaviour
         float cooldown = totalInterval * 0.4f;
         if (cooldown < 0.1f) cooldown = 0.1f;
         attackTimer = cooldown;
+    }
+
+    /// <summary>
+    /// 攻击 tween 被杀（诊断）：如果是远程攻击且**箭还没发出** → 这一箭哑火了。
+    /// 凶手标签由各处 Kill 前赋值，调用栈里也能直接看到是谁杀的。
+    /// </summary>
+    private void OnAttackTweenKilled(int serial)
+    {
+        // DOTween 池化复用：拿到一个旧对象身上的陈旧回调 → 忽略。
+        if (serial != _attackTweenSerial) return;
+        // ⚠️ **只有「箭还待发」时才记录**：
+        //   DOTween 池化复用会让同一个 tween 对象上叠加多个 OnKill 回调 → 近战敌人被杀一次能刷几十条。
+        //   近战不归本诊断管（没有「箭哑火」问题）→ 只留远程这一类。
+        if (!_rangedArrowPending) return;
+        // 不动 _rangedArrowPending —— 补发由 CheckRangedArrowFallback() 统一负责。
+        if (state == EnemyState.Dead) return;
+        var st = new System.Diagnostics.StackTrace(true);
+        string report =
+            $"=== [ArrowDiag] 攻击 tween 被杀：{DebugTag} row={rowIndex} col={columnIndex} "
+            + $"state={state} isAttackAnimating={isAttackAnimating} 凶手标签=[{_attackTweenKillReason}] "
+            + $"frame={Time.frameCount} t={Time.time:F3} ===\n"
+            + st.ToString() + "\n\n";
+        // 完整栈写文件（Console 会截断长栈）
+        try
+        {
+            const string path = "Library/Locus/tmp/arrowkill.txt";
+            System.IO.Directory.CreateDirectory("Library/Locus/tmp");
+            System.IO.File.AppendAllText(path, report);
+        }
+        catch (System.Exception e) { Debug.LogWarning("[ArrowDiag] 写诊断文件失败: " + e.Message); }
+        DebugLog.Warning($"[ArrowDiag] ⚠ 攻击 tween 被杀：{DebugTag} row={rowIndex} col={columnIndex} "
+            + $"state={state} isAttackAnimating={isAttackAnimating} 凶手=[{_attackTweenKillReason}] "
+            + $"(frame={Time.frameCount} t={Time.time:F2}) 完整栈见 Library/Locus/tmp/arrowkill.txt");
+    }
+
+    /// <summary>
+    /// **远程收尾兜底**（2026-11-09 修 BUG B「1051 射箭哑火」）：
+    /// 攻击 tween 被中途掐断（受击 / 眩晕 / 挑飞 / 卡死自愈）而**箭还没发出**时，补发一次。
+    ///
+    /// 为什么需要：
+    ///   远程箭**只**由攻击 tween 的回调在 <c>spawnDuration</c> 后发出（<c>hitFrames</c> 为空 → 没有别的出口）。
+    ///   tween 一旦在这段窗口内被杀掉，那条回调**静默消失** → 箭永远不发。
+    ///   而 Animator 由 Animator 独立驱动 → **动作动画照常走完** → 玩家看到「动作走完却没有箭」。
+    ///
+    /// 为什么用**每帧轮询**而不是 tween 的 OnKill 回调：
+    ///   实测 OnKill **不是 Kill 的瞬间触发**（DOTween 池化复用 Sequence，对象被回收后再次被 Kill 才回调）→ 时机不可靠。
+    ///   轮询「箭还待发 且 攻击 tween 已经不在活动状态」是可靠的判定。
+    /// </summary>
+    private void CheckRangedArrowFallback()
+    {
+        if (!_rangedArrowPending) return;
+        if (_attackTween != null && _attackTween.IsActive()) return;   // 攻击还在正常跑 → 等它发箭
+
+        // 攻击 tween 已经没了（被掐断）→ 补发，敌人永不哑火。
+        _rangedArrowPending = false;
+        if (state == EnemyState.Dead) return;
+        DebugLog.Warning($"[Enemy] 远程攻击被掐断，箭未发出 → 收尾兜底补发一次: {DebugTag} "
+            + $"(凶手标签=[{_attackTweenKillReason}])");
+        SpawnProjectile();
+        isAttackDrawPhase = true;
     }
 
     private void PerformAttack()
@@ -158,8 +228,12 @@ public partial class Enemy : MonoBehaviour
         }
     }
 
-private void SpawnProjectile()
+    private void SpawnProjectile()
     {
+        // 诊断：箭真的发出去了 → 之前的“待发”窗口结束。
+        _rangedArrowPending = false;
+        DebugLog.Info($"[ArrowDiag] 箭已发出：{DebugTag} row={rowIndex} col={columnIndex} (frame={Time.frameCount} t={Time.time:F2})");
+
         if (projectilePrefab == null)
         {
             DebugLog.Warning($"[Enemy] {DebugTag} isRanged=true 但 projectilePrefab 为空");
@@ -274,9 +348,20 @@ private void SpawnProjectile()
         float totalInterval = (1f / attackSpeed);
 
         _attackTween = DOTween.Sequence().SetUpdate(UpdateType.Normal, false);
-        _attackTween.SetTarget(transform);
+        // ★ **攻击 tween 用「自己」作 target，不可用 Transform**（2026-11-09 修 BUG B）：
+        //   攻击 tween 与位移/缩放 tween 共用 Transform 作 target 时，
+        //   代码里任何「清理位移 tween」的 `transform.DOKill(false)` / `DOTween.Kill(transform, false)`
+        //   （CancelAttack / ResetMovementState / Stun / Launch / 死亡清理 …）
+        //   **都会连带把攻击 tween 一起杀掉** → 远程箭那条「N 秒后发箭」的回调静默消失 → 1051 哑火。
+        //   改成 `this` 之后，只有「显式杀攻击 tween」才会真的中断攻击（受击/眩晕/挑飞仍是设计内打断）。
+        _attackTween.SetTarget(this);
         _attackTween.SetId("attackAnim");
         _suspendTweenPaused = false;
+
+        // 诊断：tween 被杀（而不是跑完）时，指名凶手。远程箭还没发出 → 这一箭哑火了。
+        // 序号护栏：DOTween 池化复用 Sequence → 旧回调串台时忽略。
+        int attackSerial = ++_attackTweenSerial;
+        _attackTween.OnKill(() => OnAttackTweenKilled(attackSerial));
 
         // 出伤落点：近战 = 前摇结束那一帧；远程 = 发射瞬间（= spawnDuration）
         _approachDuration = isRanged ? spawnDuration : approachDuration;
@@ -284,6 +369,14 @@ private void SpawnProjectile()
         // 远程攻击：不移动；声明命中帧时由命中帧决定击发时刻
         if (isRanged)
         {
+            // 诊断：远程攻击起手 → 箭在 spawnDuration 之后由 tween 回调发出。
+            // 如果这期间 tween 被杀（受击/眩晕/挑飞/补齐重置/卡死自愈/回池），箭就哑了。
+            _rangedArrowPending = true;
+            _attackTweenKillReason = "";
+            DebugLog.Info($"[ArrowDiag] 远程攻击起手：{DebugTag} row={rowIndex} col={columnIndex} "
+                + $"spawnDuration={spawnDuration:F2} 声明命中帧={hasDeclaredHitFrames} "
+                + $"→ 箭将在约 {spawnDuration:F2}s 后发出 (frame={Time.frameCount} t={Time.time:F2})");
+
             if (hasDeclaredHitFrames)
             {
                 // 击发出现在声明命中帧上（见 UpdateAttackHitFrames），这里只把时长覆盖到 clip 结束
@@ -310,7 +403,7 @@ private void SpawnProjectile()
             // 近战：原地前摇 + 翻转（AttackSpawn），不做位移；时长保留以维持命中帧与预警时序
             _attackTween.AppendInterval(approachDuration);
             if (useFlip)
-                _attackTween.Join(transform.DOScaleX(-startScale.x, approachDuration).SetEase(Ease.OutQuad));
+                _attackTween.Join(transform.DOScaleX(-startScale.x, approachDuration).SetEase(Ease.OutQuad).SetTarget(this));
 
             if (!hasDeclaredHitFrames)
             {
@@ -328,7 +421,7 @@ private void SpawnProjectile()
             // 声明命中帧时 drawDuration 已被改写为 clip 剩余时间，整段时长与动画同时结束
             _attackTween.AppendInterval(drawDuration);
             if (useFlip)
-                _attackTween.Join(transform.DOScaleX(startScale.x, drawDuration).SetEase(Ease.InQuad));
+                _attackTween.Join(transform.DOScaleX(startScale.x, drawDuration).SetEase(Ease.InQuad).SetTarget(this));
         }
 
         // 预警回调必须在时间线构建完成后再插入：InsertCallback 会把 Sequence 时长撑到该位置，

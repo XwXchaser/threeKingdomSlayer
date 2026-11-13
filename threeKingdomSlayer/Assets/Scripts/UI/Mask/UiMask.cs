@@ -203,6 +203,19 @@ public sealed class UiMask : MonoBehaviour
             Apply();
             return;
         }
+
+        // ⚠️ **目标已失活时不能启协程**（2026-11-09 修）：
+        //   遮罩宿主被禁用 / 场景卸载时，`Configure` → `FadeTo` 会走到这里 →
+        //   `StartCoroutine` 报「Coroutine couldn't be started because the the game object 'UiMask' is inactive!」
+        //   **而且协程不跑 → 淡出永远不执行**（alpha 卡在原值）。
+        //   和 `TutorialSceneDim.FadeTo` 同一套处理：直接落终值。
+        if (!isActiveAndEnabled || !gameObject.activeInHierarchy)
+        {
+            _alpha = _target;
+            Apply();
+            return;
+        }
+
         _fadeRoutine = StartCoroutine(FadeRoutine());
     }
 

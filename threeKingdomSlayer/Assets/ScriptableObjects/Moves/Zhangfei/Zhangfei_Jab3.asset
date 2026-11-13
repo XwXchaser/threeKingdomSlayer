@@ -16,7 +16,7 @@ MonoBehaviour:
   attackType: 0
   damageType: 0
   hitReactionDirection: 4
-  damage: 37
+  damage: 40
   poiseDamage: 0
   interruptsCavalryCharge: 0
   columnMode: 0
@@ -35,11 +35,15 @@ MonoBehaviour:
   slashSweepAngle: 50
   slashSweepDuration: 0.25
   slashSweepDirection: 0
+  slashDirectionalPushRows: 0
+  slashFeedbackStrength: 2
   slashMovementTiltDegrees: 0
   slashOverrideVisualTilt: 0
   slashVisualTiltDegrees: 0
   slashSpawnYOffset: 1.5
   slashSpawnZOffset: 0.5
+  slashRotateSprite1: {fileID: 0}
+  slashRotateSprite2: {fileID: 0}
   parrySweepAngle: 100
   parrySweepDuration: 0.25
   parrySpawnXOffset: 0
@@ -53,6 +57,7 @@ MonoBehaviour:
   parryGuardDecayDelay: 3
   parryGuardDecayPerSecond: 30
   parryGuardWeaponPrefab: {fileID: 0}
+  parryStanceEntryRollDegrees: 0
   parryStanceTipDegrees: 42
   parryStanceHeadAnchor: {x: 1.1, y: 2.63, z: -5.5}
   parryStanceEntryAngleDegrees: -48

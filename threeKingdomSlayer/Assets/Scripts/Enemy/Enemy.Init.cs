@@ -167,6 +167,8 @@ public partial class Enemy : MonoBehaviour
         targetRow = -1;
         actionCooldownTimer = 0f;
         bounceYOffset = 0f;
+        // 攻击 tween 的 target 是「自己」→ 不会被 transform.DOKill 连带清掉 → 这里必须显式杀。
+        _attackTween?.Kill(false);
         _attackTween = null;
         _attackTelegraph = GetComponentInChildren<EnemyAttackTelegraph>(true);
         _attackTelegraph?.StopWarning();

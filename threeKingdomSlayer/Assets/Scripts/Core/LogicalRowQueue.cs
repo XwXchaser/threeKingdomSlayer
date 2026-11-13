@@ -86,6 +86,9 @@ public sealed class LogicalRowQueue
             _rows.Add(logicalRow);
             _rowsByInitialRow[runtimeRow] = logicalRow;
         }
+
+        // 诊断（BUG A 定位用）：开波就能看出「第一排是不是空排占位」。
+        FillUpDiag.LogQueueConfigured(this, $"配置 {rows?.Count ?? 0} 排（offset={rowOffset}）");
     }
 
     /// <summary>清空队列（回到遗留扫描模式）。</summary>
@@ -183,6 +186,26 @@ public sealed class LogicalRowQueue
         return false;
     }
 
+    /// <summary>
+    /// 该逻辑排里是否还有活着的敌人（**排除指定的那一个**）。
+    ///
+    /// 「正在被移出列的那个」不算活人：否则**非死亡离场**（109 骑兵回退淡出、教学 despawn）
+    /// 在移除那一刻它还没被置 Dead → 这一排看起来还活着 → 永远不触发「整排清空」重排
+    /// → 它后面的逻辑排永远不前移（幽灵排）。
+    /// </summary>
+    public bool HasLivingMembersExcluding(LogicalWaveRow logicalRow, Enemy exclude)
+    {
+        foreach (var pair in _enemyRows)
+        {
+            var enemy = pair.Key;
+            if (pair.Value != logicalRow) continue;
+            if (enemy == null) continue;
+            if (exclude != null && ReferenceEquals(enemy, exclude)) continue;
+            if (enemy.state != EnemyState.Dead) return true;
+        }
+        return false;
+    }
+
     /// <summary>该活人排被清空：从队列移除并标记待重排。</summary>
     public void MarkRowRemoved(LogicalWaveRow row)
     {
@@ -215,7 +238,10 @@ public sealed class LogicalRowQueue
         {
             var row = _rows[i];
             if (row.removed)
+            {
+                FillUpDiag.LogReflowRow(i, row, "已被标记移除（整排清空）");
                 continue;
+            }
 
             if (row.kind == LogicalWaveRowKind.RhythmGate)
             {
@@ -223,22 +249,29 @@ public sealed class LogicalRowQueue
                 {
                     nextRuntimeRow = row.currentRow + 1;
                     hasLiveBefore = false;
+                    FillUpDiag.LogReflowRow(i, row, "节奏门未开（前方还有活人排）→ 保留");
                     continue;
                 }
 
                 row.removed = true;
+                FillUpDiag.LogReflowRow(i, row, "节奏门已开 → 移除");
                 continue;
             }
 
             if (row.kind == LogicalWaveRowKind.Empty && !hasLiveBefore)
             {
                 row.removed = true;
+                FillUpDiag.LogReflowRow(i, row, "前导空排（前方已无活人排）→ 移除");
                 continue;
             }
 
+            int oldRow = row.currentRow;
             row.currentRow = nextRuntimeRow++;
             if (row.kind == LogicalWaveRowKind.Live)
                 hasLiveBefore = true;
+            FillUpDiag.LogReflowRow(i, row, $"排号 {oldRow} → {row.currentRow}");
         }
+
+        FillUpDiag.LogReflowSummary(this);
     }
 }

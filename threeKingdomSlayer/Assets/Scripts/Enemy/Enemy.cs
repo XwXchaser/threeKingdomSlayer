@@ -36,11 +36,35 @@ public partial class Enemy : MonoBehaviour
     public int occupySlots = 1;
     public float attackSpeed = 1f;
     public float attackDamage = 10f;
+
+    /// <summary>
+    /// **破防值额外贡献**（2026-11-09 新增）：本次命中除了伤害之外，额外给玩家的**破防条**加多少。
+    ///
+    /// 为什么需要：玩家防御期间**伤害全额转成破防值**（<c>PlayerGuard.TryAbsorbDamage</c>），
+    /// 但破防值**每帧回落 30/秒**，而普通敌人的「伤害/攻击间隔」远小于 30
+    /// → 破防条永远回不满 → **没有任何敌人能打破玩家的防** → 防御变成免费护盾（玩家按住就行）。
+    ///
+    /// 这个字段把「破防能力」从「伤害大小」里解耦出来：
+    /// 重击型敌人可以**伤害不高、但极快推满破防条**（不防御时也不会一击秒杀玩家），
+    /// 而玩家被打出破防后防御键会灰掉一段时间 → 必须改用别的对策（重攻击打断 / 位移 / 技能）。
+    /// </summary>
+    public float guardBreakBonus = 0f;
     [Range(0f, 1f)]
     [Tooltip("普通形态下的伤害减免比例。0.5 = 减伤50%；胆怯形态下不生效。")]
     public float normalFormDamageReductionPercent = 0f;
     public float attackRange = 1f;
     public float moveSpeed = 1f;
+
+    [Header("移动表现")]
+    [Tooltip("补齐前进时的 Y 轴弹跳峰值高度（世界单位）。0 = 不弹跳（默认）。\n" +
+             "弹跳由 DOTween 驱动 bounceYOffset，直接加进 UpdateWorldPosition 的 Y，\n" +
+             "会让敌人一边前进一边整体跳一下。骑兵（109）走自己的冲锋位移，不受此参数影响。")]
+    public float rushBounceHeight = 0f;
+
+    [Tooltip("walk 动画周期相对「一排推进时间（moveSpeed 秒/排）」的倍率。\n" +
+             "1 = 一个 walk 周期正好走完一排（旧行为）；<1 = 腿动得更快、更贴近推进速度；>1 = 更慢。\n" +
+             "最终播放速度 = walk clip 长度 / (moveSpeed × 本倍率)。")]
+    public float walkCycleScale = 0.75f;
 
     [Header("视觉偏移")]
     [Tooltip("美术基准偏移（Inspector 手工值）。精灵锚点在画布中心，此值把脚下移到地面基准线；对齐 -1.8 时取值见 EnemyGroundAligner。")]
@@ -595,6 +619,8 @@ public GameObject freezeMeltEffectPrefab;
         if (!initialized || state == EnemyState.Dead) return;
 
         UpdateHitStop();
+        // 远程收尾兜底：攻击 tween 被掐断而箭还没发出 → 补发一次（敌人永不哑火）。
+        CheckRangedArrowFallback();
         // 状态效果宿主：统一驱动该敌人身上的状态效果（冻结是其中之一）。
         StatusHost.Tick(Time.deltaTime);
         if (_pierceHighlighted)
@@ -660,6 +686,18 @@ public GameObject freezeMeltEffectPrefab;
             rushMoveDelayTimer -= Time.deltaTime;
             if (rushMoveDelayTimer <= 0f && HasRushMoveOrder)
                 TryStartRushMove();
+        }
+
+        // ★ **解冻后接上补齐**（2026-11-08 修）：
+        //   冻结 / 解冻恢复期，敌人的补齐订单会被挂起（TryStartRushMove → Deferred，订单保留）。
+        //   解冻后必须**自己再试一次**，否则这个订单永远没人执行 → 它永久停在后面
+        //   → 后面整列跟着卡住 → 玩家射程只有 1 排 → 这一波再也清不掉（软锁）。
+        //   （实测：冰雾冻结同列后排 → 前排死亡触发补齐 → 被冻的那个被跳过 → 解冻后永远不归队。）
+        if (HasRushMoveOrder && pendingRushMove && !IsActionPaused
+            && state != EnemyState.Frozen && !IsInPostFreezeRecovery
+            && rushMoveDelayTimer <= 0f && !IsRushMovementActive)
+        {
+            TryStartRushMove();
         }
 
         // Boss 应战缓冲计时器：到达应战排后短暂无敌（给出场动画留时间）

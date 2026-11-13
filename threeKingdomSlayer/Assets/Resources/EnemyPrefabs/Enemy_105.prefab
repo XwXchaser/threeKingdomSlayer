@@ -292,10 +292,13 @@ MonoBehaviour:
   maxHealth: 100
   occupySlots: 1
   attackSpeed: 0.25
-  attackDamage: 4
+  attackDamage: 10
+  guardBreakBonus: 40
   normalFormDamageReductionPercent: 0
   attackRange: 3
-  moveSpeed: 0.2
+  moveSpeed: 0.5
+  rushBounceHeight: 0
+  walkCycleScale: 0.75
   visualYOffset: 0.26250008
   attackSequence:
   - isCAttack: 0

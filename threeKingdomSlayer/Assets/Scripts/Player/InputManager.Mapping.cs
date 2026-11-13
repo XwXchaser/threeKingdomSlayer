@@ -155,6 +155,14 @@ public partial class InputManager : MonoBehaviour
                 return chargeLevel < 1 && directionGesture == MoveGesture.SwipeHorizontal;
             case TutorialGestureTarget.ChargedVertical:
                 return chargeLevel >= 1 && directionGesture == MoveGesture.SwipeVertical;
+            case TutorialGestureTarget.ComboHold:
+                // 连招蓄力拍：**蓄满后的松手一律放行，不看划动位移**。
+                // 松手位置决定打哪一列（瞄准），位移大小无关。
+                // ⚠️ 原来这里没有 ComboHold 分支 → 落到 default 返回 false →
+                //   松手位移超过 swipeThreshold(30px) 时被判成「非目标手势」直接丢弃
+                //   → 连段松手跑不到 → stabC2 永远打不出来 → 这一拍卡死
+                //   （2026-11-08 实机日志：蓄力 3 级、swipeDistance=86.6、无任何「连段松手」记录）。
+                return chargeLevel >= 1;
             case TutorialGestureTarget.ParryVertical:
                 // 招架 = 不蓄力的竖滑（与游戏映射一致：ResolveAttackType(SwipeVertical, false) == Parry）
                 return chargeLevel < 1 && directionGesture == MoveGesture.SwipeVertical;

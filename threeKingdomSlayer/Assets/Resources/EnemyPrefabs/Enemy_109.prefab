@@ -394,7 +394,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: moveSpeed
-      value: 0.2
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: attackSpeed
@@ -411,6 +411,10 @@ PrefabInstance:
     - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: launchDuration
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
+      propertyPath: guardBreakBonus
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 4802786043111480108, guid: 80c5e561a39dbc8419bc811e940055ff, type: 3}
       propertyPath: normalFormDamageReductionPercent
@@ -544,6 +548,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cavalryEnemyId: 109
   chargeDamage: 20
+  chargeRange: 3
   windupDuration: 0.5
   strikeWindup: 0.5
   strikeRecover: 0.8

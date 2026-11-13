@@ -1,12 +1,4 @@
 ---
-id: kd_445654b7-c163-4993-9bb9-8c43800c50e5
-injectMode: inherit
-injectAgents:
-- '*'
-aiEditMode: inherit
----
-
----
 id: kd_tutorial_system_overview_20261107
 summary: 教程系统权威总览（2026-11-07）：设计模型、教学链 R1~R10、六层架构与"新需求放哪层"、一次教学拍的完整时序、统一遮罩系统（MaskRule/MaskService/UiMask/IMaskWorldDim + 三条硬规矩）、输入拦截（GameplayInputGate + 各输入入口）、存档语义表、"要做什么改哪里"扩展指引、反模式清单（带实测原因）、三个 Editor 工具、已知问题与待办。目的：防止后续改动再造一套。
 ---
@@ -248,3 +240,27 @@ MaskService（唯一入口，按 owner 管理）
 | 5 | 对话层的压暗（`DialogueDimOverlay`）与 `_clickBlocker` 未并入统一遮罩系统 | 未做（不属教学线；要并就按 §4 的规则写一条） |
 | 6 | 三选一教学的波末弹出 / 顺序 / 卡面 | 用户指定 later |
 | 7 | 开场第一段的 4 条字幕文案仍是草稿 | 待用户改 |
+
+---
+
+## 11. 2026-11-09 修：路牌按钮变暗 + 黑幕卡死
+
+> 现场：用户报「点移动按钮还是会变暗，似乎这个按钮叠了什么东西上去，边缘还有一个按键，
+> 我按下后没移动但是出现了黑涩遮罩」。用 `TutorialMaskAudit` 实跑选路阶段取证（截图 + 射线）。
+
+| # | 问题 | 根因 | 处理 |
+|---|---|---|---|
+| A | **路牌按钮一直在变暗** | ① 引导呼吸动画把 `visualGroup.alpha` 在 1↔0.88 之间呼吸（`breathingAlpha=0.12`）；② `Button` 的 ColorTint `pressed=C8C8C8` / `disabled=C8C8C880` 会让**白色底板**变灰半透 | `RouteChoiceButton`：**呼吸不再动透明度**（新增 `breatheAlpha`，默认 false）+ **`pressed/disabled` 色改成与 `normal` 相同** → 按钮恒亮、按下不变暗 |
+| B | **点下去后黑幕留在屏上（黑了但没动）** | 黑幕是**按下那一帧**就拉起来的（`TutorialBlackoutPointerTrigger.OnPointerDown` → `ShowNow()`，2026-11-01 的设计），但它**只在路线进入 `FakeMoving` 时才收** → 点击没完成就永久黑屏 | `TutorialRouteBlackout`：新增 `pressedCoverTimeout`（默认 1.5s）——按下后若路线没前进就**自动收回黑幕**并记日志 |
+| C | Console 报错 `Coroutine couldn't be started because the game object 'UiMask' is inactive!` | `UiMask.FadeTo` 在宿主已失活时仍 `StartCoroutine` → **报错且淡出根本不执行**（alpha 卡住） | `UiMask.FadeTo`：加 `isActiveAndEnabled / activeInHierarchy` 守卫，失活时直接落终值（与 `TutorialSceneDim.FadeTo` 同一套处理） |
+
+### 11.1 取证时确认、但**未改**的三点（等用户拍板）
+
+| 现象 | 实测结论 |
+|---|---|
+| 「这个按钮叠了什么东西上去」 | **手势提示的手指精灵（308×308）+ 黄色光环（240×240）画在路牌箭头正上方**（提示层 Canvas order=200 vs 路牌面板 order=21）。两者 `raycastTarget=false` → **不挡点击**，但视觉上确实压着箭头 |
+| 「边缘还有一个按键」 | 是 **`DevSkipBattleButton`「跳过战斗 N1」**：`DEVELOPMENT_BUILD \|\| UNITY_EDITOR` 才存在（正式包没有），但编辑器/开发包里**一直挂在画面顶部中间**（Canvas order=500）；不在战斗态时 `interactable=false` + 半透明黑底板 → 点它没反应 |
+| 「按了没移动」 | 箭头**唯一可点的图形是 `Icon`（135×165）**，按钮自己的底板 `raycastTarget=false` → 可点区域比看上去小；提示手的指尖落在箭头下缘，容易按空 |
+
+> ⚠️ 另外记一条：**选路阶段黑幕本来就是设计内的压暗**（`ShouldBeBlack()` 对 `ChoosingRoute` 返回 true，55% 半透明压暗战场、路牌浮在幕布上），
+> 不是 bug；真正的问题是「点击没完成时它不收」。

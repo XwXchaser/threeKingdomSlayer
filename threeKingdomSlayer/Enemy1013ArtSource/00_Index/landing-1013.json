@@ -1,0 +1,1322 @@
+{
+  "canvas": [
+    1440,
+    1440
+  ],
+  "target": {
+    "body_h": 605,
+    "foot_line": 1333,
+    "center_x": 720
+  },
+  "pivot": {
+    "value": [
+      0.5,
+      0.5
+    ],
+    "ppu": 16
+  },
+  "note": "以人为基点：脚底=可见底行，身体中心x=靴子列区间中心；旗杆/旗面不参与定尺与落地基准",
+  "groups": [
+    {
+      "group": "idle",
+      "scale": 0.9618441971383148,
+      "offset_mode": "uniform",
+      "ref_person_body_h": 629,
+      "spread_x": 1,
+      "spread_y": 0,
+      "frames": 6
+    },
+    {
+      "group": "cast",
+      "scale": 0.9805510534846029,
+      "offset_mode": "per_frame",
+      "ref_person_body_h": 617,
+      "spread_x": 451,
+      "spread_y": 560,
+      "frames": 12
+    },
+    {
+      "group": "walk",
+      "scale": 0.9758064516129032,
+      "offset_mode": "uniform",
+      "ref_person_body_h": 620,
+      "spread_x": 91,
+      "spread_y": 16,
+      "frames": 6
+    }
+  ],
+  "sprites": [
+    {
+      "index": 1,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_idle1.png",
+        "sha256": "1cb40d5e197751afd16104ea439f35f3c589a6db5c5b9fe71e7ef22da80d07bc",
+        "bytes": 519339
+      },
+      "source": {
+        "file": "idle_01_f040.png",
+        "bbox": [
+          172,
+          17,
+          689,
+          981
+        ],
+        "foot_y": 981,
+        "boot_center_x": 372,
+        "boot_cols": [
+          183,
+          562
+        ],
+        "person_head_y": 352,
+        "person_body_h": 630,
+        "ledger_body_h": "634"
+      },
+      "landing": {
+        "scale": 0.9618441971383148,
+        "mode": "uniform",
+        "paste_xy": [
+          528,
+          406
+        ],
+        "visible_bottom_scaled": 927
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 721,
+        "head_top_y": 728,
+        "body_h": 606,
+        "bbox": [
+          528,
+          406,
+          1025,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 1
+      }
+    },
+    {
+      "index": 2,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_idle2.png",
+        "sha256": "e399d3a58167952d92ebf4df7b3f8fac00e559ed80338dda218c97e81e941828",
+        "bytes": 507943
+      },
+      "source": {
+        "file": "idle_02_f044.png",
+        "bbox": [
+          173,
+          17,
+          697,
+          981
+        ],
+        "foot_y": 981,
+        "boot_center_x": 372,
+        "boot_cols": [
+          183,
+          562
+        ],
+        "person_head_y": 353,
+        "person_body_h": 629,
+        "ledger_body_h": "634"
+      },
+      "landing": {
+        "scale": 0.9618441971383148,
+        "mode": "uniform",
+        "paste_xy": [
+          529,
+          406
+        ],
+        "visible_bottom_scaled": 927
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 721,
+        "head_top_y": 729,
+        "body_h": 605,
+        "bbox": [
+          529,
+          406,
+          1033,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 0
+      }
+    },
+    {
+      "index": 3,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_idle3.png",
+        "sha256": "d126f0bb16fb9a44d8bad3d2feee54305bed09c6d1e0a7fc9be3debfffd3f805",
+        "bytes": 513210
+      },
+      "source": {
+        "file": "idle_03_f048.png",
+        "bbox": [
+          173,
+          17,
+          697,
+          981
+        ],
+        "foot_y": 981,
+        "boot_center_x": 372,
+        "boot_cols": [
+          183,
+          562
+        ],
+        "person_head_y": 353,
+        "person_body_h": 629,
+        "ledger_body_h": "633"
+      },
+      "landing": {
+        "scale": 0.9618441971383148,
+        "mode": "uniform",
+        "paste_xy": [
+          529,
+          406
+        ],
+        "visible_bottom_scaled": 927
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 721,
+        "head_top_y": 729,
+        "body_h": 605,
+        "bbox": [
+          529,
+          406,
+          1033,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 0
+      }
+    },
+    {
+      "index": 4,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_idle4.png",
+        "sha256": "0afbf85bcca29819f3b4d843043915ae73c183880b780ca5fe6ec5f43e8065e7",
+        "bytes": 518101
+      },
+      "source": {
+        "file": "idle_04_f052.png",
+        "bbox": [
+          173,
+          17,
+          693,
+          981
+        ],
+        "foot_y": 981,
+        "boot_center_x": 372,
+        "boot_cols": [
+          183,
+          562
+        ],
+        "person_head_y": 353,
+        "person_body_h": 629,
+        "ledger_body_h": "633"
+      },
+      "landing": {
+        "scale": 0.9618441971383148,
+        "mode": "uniform",
+        "paste_xy": [
+          529,
+          406
+        ],
+        "visible_bottom_scaled": 927
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 721,
+        "head_top_y": 729,
+        "body_h": 605,
+        "bbox": [
+          529,
+          406,
+          1029,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 2
+      }
+    },
+    {
+      "index": 5,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_idle5.png",
+        "sha256": "2df574a48e3847a431edcd5f73202650d9a25212843d8245419b692060e64af9",
+        "bytes": 517936
+      },
+      "source": {
+        "file": "idle_05_f056.png",
+        "bbox": [
+          173,
+          17,
+          691,
+          981
+        ],
+        "foot_y": 981,
+        "boot_center_x": 372,
+        "boot_cols": [
+          183,
+          562
+        ],
+        "person_head_y": 353,
+        "person_body_h": 629,
+        "ledger_body_h": "633"
+      },
+      "landing": {
+        "scale": 0.9618441971383148,
+        "mode": "uniform",
+        "paste_xy": [
+          529,
+          406
+        ],
+        "visible_bottom_scaled": 927
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 721,
+        "head_top_y": 729,
+        "body_h": 605,
+        "bbox": [
+          529,
+          406,
+          1027,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 0
+      }
+    },
+    {
+      "index": 6,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_idle6.png",
+        "sha256": "d438c4c9856632990e270cf24035aa9126d1604ac6c5dff0b25122ceeb39b12d",
+        "bytes": 524730
+      },
+      "source": {
+        "file": "idle_06_f060.png",
+        "bbox": [
+          172,
+          17,
+          689,
+          981
+        ],
+        "foot_y": 981,
+        "boot_center_x": 372,
+        "boot_cols": [
+          183,
+          562
+        ],
+        "person_head_y": 352,
+        "person_body_h": 630,
+        "ledger_body_h": "635"
+      },
+      "landing": {
+        "scale": 0.9618441971383148,
+        "mode": "uniform",
+        "paste_xy": [
+          528,
+          406
+        ],
+        "visible_bottom_scaled": 927
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 721,
+        "head_top_y": 728,
+        "body_h": 606,
+        "bbox": [
+          528,
+          406,
+          1025,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 1
+      }
+    },
+    {
+      "index": 1,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_cast1.png",
+        "sha256": "a6b9022e2767b0b8c44995b21548d46434c3ab00cb98a8b6664c51b878732d85",
+        "bytes": 516435
+      },
+      "source": {
+        "file": "cast_01_v9_f000.png",
+        "bbox": [
+          521,
+          388,
+          1027,
+          1332
+        ],
+        "foot_y": 1332,
+        "boot_center_x": 717,
+        "boot_cols": [
+          531,
+          903
+        ],
+        "person_head_y": 716,
+        "person_body_h": 617,
+        "ledger_body_h": "621"
+      },
+      "landing": {
+        "scale": 0.9805510534846029,
+        "mode": "per_frame",
+        "paste_xy": [
+          528,
+          407
+        ],
+        "visible_bottom_scaled": 926
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 720,
+        "head_top_y": 729,
+        "body_h": 605,
+        "bbox": [
+          528,
+          407,
+          1024,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 3
+      }
+    },
+    {
+      "index": 2,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_cast2.png",
+        "sha256": "15d633db57d906ffbcc010f16a35d98bf400773582692627540ec3fdab652b27",
+        "bytes": 498251
+      },
+      "source": {
+        "file": "cast_02_v9_f014.png",
+        "bbox": [
+          505,
+          388,
+          1043,
+          1332
+        ],
+        "foot_y": 1332,
+        "boot_center_x": 717,
+        "boot_cols": [
+          528,
+          906
+        ],
+        "person_head_y": 750,
+        "person_body_h": 583,
+        "ledger_body_h": "589"
+      },
+      "landing": {
+        "scale": 0.9805510534846029,
+        "mode": "per_frame",
+        "paste_xy": [
+          512,
+          407
+        ],
+        "visible_bottom_scaled": 926
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 720,
+        "head_top_y": 762,
+        "body_h": 572,
+        "bbox": [
+          512,
+          407,
+          1040,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 0
+      }
+    },
+    {
+      "index": 3,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_cast3.png",
+        "sha256": "7c13d962deb656cbbca92c2959db6bb2e456f367c5b5141d5b1cfae165018523",
+        "bytes": 499451
+      },
+      "source": {
+        "file": "cast_03_v9_f026.png",
+        "bbox": [
+          500,
+          385,
+          1033,
+          1332
+        ],
+        "foot_y": 1332,
+        "boot_center_x": 718,
+        "boot_cols": [
+          528,
+          907
+        ],
+        "person_head_y": 746,
+        "person_body_h": 587,
+        "ledger_body_h": "591"
+      },
+      "landing": {
+        "scale": 0.9805510534846029,
+        "mode": "per_frame",
+        "paste_xy": [
+          506,
+          404
+        ],
+        "visible_bottom_scaled": 929
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 719,
+        "head_top_y": 758,
+        "body_h": 576,
+        "bbox": [
+          506,
+          404,
+          1029,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 1
+      }
+    },
+    {
+      "index": 4,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_cast4.png",
+        "sha256": "5d37d290a945d6c05e2da2dfd918ceca02798048bacd04536cf1307ddc3a32c9",
+        "bytes": 520132
+      },
+      "source": {
+        "file": "cast_04_v9_f038.png",
+        "bbox": [
+          532,
+          95,
+          983,
+          1332
+        ],
+        "foot_y": 1332,
+        "boot_center_x": 717,
+        "boot_cols": [
+          532,
+          902
+        ],
+        "person_head_y": 641,
+        "person_body_h": 692,
+        "ledger_body_h": "635"
+      },
+      "landing": {
+        "scale": 0.9805510534846029,
+        "mode": "per_frame",
+        "paste_xy": [
+          539,
+          120
+        ],
+        "visible_bottom_scaled": 1213
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 720,
+        "head_top_y": 655,
+        "body_h": 679,
+        "bbox": [
+          539,
+          120,
+          981,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 1
+      }
+    },
+    {
+      "index": 5,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_cast5.png",
+        "sha256": "0abfa1993015d670a9df09277ad6bda165c45a023f2249dfccfd4eb6a3a0f01a",
+        "bytes": 537858
+      },
+      "source": {
+        "file": "cast_05_v9_f056.png",
+        "bbox": [
+          532,
+          64,
+          1042,
+          1332
+        ],
+        "foot_y": 1332,
+        "boot_center_x": 717,
+        "boot_cols": [
+          532,
+          902
+        ],
+        "person_head_y": 648,
+        "person_body_h": 685,
+        "ledger_body_h": "635"
+      },
+      "landing": {
+        "scale": 0.9805510534846029,
+        "mode": "per_frame",
+        "paste_xy": [
+          539,
+          90
+        ],
+        "visible_bottom_scaled": 1243
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 720,
+        "head_top_y": 662,
+        "body_h": 672,
+        "bbox": [
+          539,
+          90,
+          1039,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 2
+      }
+    },
+    {
+      "index": 6,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_cast6.png",
+        "sha256": "202ad1a0c916a127849d884b8571fb53729969885fe4d16034ebeaaa568b00cc",
+        "bytes": 517431
+      },
+      "source": {
+        "file": "cast_06_wave_v1_f008.png",
+        "bbox": [
+          508,
+          62,
+          1029,
+          1332
+        ],
+        "foot_y": 1332,
+        "boot_center_x": 716,
+        "boot_cols": [
+          532,
+          901
+        ],
+        "person_head_y": 630,
+        "person_body_h": 703,
+        "ledger_body_h": "645"
+      },
+      "landing": {
+        "scale": 0.9805510534846029,
+        "mode": "per_frame",
+        "paste_xy": [
+          516,
+          88
+        ],
+        "visible_bottom_scaled": 1245
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 720,
+        "head_top_y": 645,
+        "body_h": 689,
+        "bbox": [
+          516,
+          88,
+          1027,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 2
+      }
+    },
+    {
+      "index": 7,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_cast7.png",
+        "sha256": "8b4a2011a2feec99480612d618bfe48ea2e9b4b727e30149516ae3efe1db21f5",
+        "bytes": 517122
+      },
+      "source": {
+        "file": "cast_07_wave_v1_f016.png",
+        "bbox": [
+          75,
+          230,
+          922,
+          1331
+        ],
+        "foot_y": 1331,
+        "boot_center_x": 718,
+        "boot_cols": [
+          532,
+          905
+        ],
+        "person_head_y": 376,
+        "person_body_h": 956,
+        "ledger_body_h": "624"
+      },
+      "landing": {
+        "scale": 0.9805510534846029,
+        "mode": "per_frame",
+        "paste_xy": [
+          90,
+          253
+        ],
+        "visible_bottom_scaled": 1080
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 721,
+        "head_top_y": 396,
+        "body_h": 938,
+        "bbox": [
+          90,
+          253,
+          921,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 7
+      }
+    },
+    {
+      "index": 8,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_cast8.png",
+        "sha256": "668cd366bf57a68b4f89cee27c3b825485b262a160e7f309e5b5e9056b7bcc87",
+        "bytes": 431392
+      },
+      "source": {
+        "file": "cast_08_wave_v1_f020.png",
+        "bbox": [
+          148,
+          634,
+          1311,
+          1333
+        ],
+        "foot_y": 1333,
+        "boot_center_x": 720,
+        "boot_cols": [
+          536,
+          905
+        ],
+        "person_head_y": 693,
+        "person_body_h": 641,
+        "ledger_body_h": "646"
+      },
+      "landing": {
+        "scale": 0.9805510534846029,
+        "mode": "per_frame",
+        "paste_xy": [
+          159,
+          648
+        ],
+        "visible_bottom_scaled": 685
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 720,
+        "head_top_y": 706,
+        "body_h": 628,
+        "bbox": [
+          159,
+          648,
+          1299,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 7
+      }
+    },
+    {
+      "index": 9,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_cast9.png",
+        "sha256": "7b7f1499299da806b5cb5b6989fa702fcf7aecd4aca391d6db7541a4544af4ad",
+        "bytes": 546267
+      },
+      "source": {
+        "file": "cast_09_wave_v1_f024.png",
+        "bbox": [
+          540,
+          208,
+          1324,
+          1334
+        ],
+        "foot_y": 1334,
+        "boot_center_x": 724,
+        "boot_cols": [
+          544,
+          905
+        ],
+        "person_head_y": 280,
+        "person_body_h": 1055,
+        "ledger_body_h": "659"
+      },
+      "landing": {
+        "scale": 0.9805510534846029,
+        "mode": "per_frame",
+        "paste_xy": [
+          540,
+          229
+        ],
+        "visible_bottom_scaled": 1104
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 721,
+        "head_top_y": 300,
+        "body_h": 1034,
+        "bbox": [
+          540,
+          229,
+          1309,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 12
+      }
+    },
+    {
+      "index": 10,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_cast10.png",
+        "sha256": "811397249cd12a9df740651c745e96fa9d5776506d96ec7134435ad40e0eb346",
+        "bytes": 550598
+      },
+      "source": {
+        "file": "cast_10_wave_v1_f066.png",
+        "bbox": [
+          537,
+          70,
+          1314,
+          1333
+        ],
+        "foot_y": 1333,
+        "boot_center_x": 720,
+        "boot_cols": [
+          537,
+          902
+        ],
+        "person_head_y": 616,
+        "person_body_h": 718,
+        "ledger_body_h": "619"
+      },
+      "landing": {
+        "scale": 0.9805510534846029,
+        "mode": "per_frame",
+        "paste_xy": [
+          541,
+          95
+        ],
+        "visible_bottom_scaled": 1238
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 720,
+        "head_top_y": 630,
+        "body_h": 704,
+        "bbox": [
+          541,
+          95,
+          1303,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 2
+      }
+    },
+    {
+      "index": 11,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_cast11.png",
+        "sha256": "cac2d0c97239fdef05767a1d0b7fcc824ce14a71b5d818b4fad681f3e0536801",
+        "bytes": 508644
+      },
+      "source": {
+        "file": "cast_11_v9_f080.png",
+        "bbox": [
+          507,
+          192,
+          1005,
+          1332
+        ],
+        "foot_y": 1332,
+        "boot_center_x": 717,
+        "boot_cols": [
+          529,
+          905
+        ],
+        "person_head_y": 733,
+        "person_body_h": 600,
+        "ledger_body_h": "605"
+      },
+      "landing": {
+        "scale": 0.9805510534846029,
+        "mode": "per_frame",
+        "paste_xy": [
+          514,
+          215
+        ],
+        "visible_bottom_scaled": 1118
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 720,
+        "head_top_y": 746,
+        "body_h": 588,
+        "bbox": [
+          514,
+          215,
+          1002,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 2
+      }
+    },
+    {
+      "index": 12,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_cast12.png",
+        "sha256": "9d8ce0b4303acf1d474221556d4608e8047a3e47fc0566c1e2c16d794ea3838c",
+        "bytes": 499927
+      },
+      "source": {
+        "file": "cast_12_v9_f090.png",
+        "bbox": [
+          521,
+          388,
+          1037,
+          1332
+        ],
+        "foot_y": 1332,
+        "boot_center_x": 717,
+        "boot_cols": [
+          531,
+          903
+        ],
+        "person_head_y": 716,
+        "person_body_h": 617,
+        "ledger_body_h": "621"
+      },
+      "landing": {
+        "scale": 0.9805510534846029,
+        "mode": "per_frame",
+        "paste_xy": [
+          528,
+          407
+        ],
+        "visible_bottom_scaled": 926
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 720,
+        "head_top_y": 729,
+        "body_h": 605,
+        "bbox": [
+          528,
+          407,
+          1034,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 2
+      }
+    },
+    {
+      "index": 1,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_walk1.png",
+        "sha256": "958a307cef6db3d9dd69b20d9dc97a704133061d31bc8af0dae7b097c3777ff5",
+        "bytes": 427920
+      },
+      "source": {
+        "file": "walk_01_f033.png",
+        "bbox": [
+          526,
+          390,
+          1025,
+          1331
+        ],
+        "foot_y": 1331,
+        "boot_center_x": 802,
+        "boot_cols": [
+          746,
+          857
+        ],
+        "person_head_y": 710,
+        "person_body_h": 622,
+        "ledger_body_h": "942"
+      },
+      "landing": {
+        "scale": 0.9758064516129032,
+        "mode": "uniform",
+        "paste_xy": [
+          451,
+          415
+        ],
+        "visible_bottom_scaled": 918
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 720,
+        "head_top_y": 727,
+        "body_h": 607,
+        "bbox": [
+          451,
+          415,
+          938,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 1
+      }
+    },
+    {
+      "index": 2,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_walk2.png",
+        "sha256": "229e28593e5b81d2908841488024fd91d75772a016e5f148134eba80333aef68",
+        "bytes": 431548
+      },
+      "source": {
+        "file": "walk_02_f036.png",
+        "bbox": [
+          528,
+          401,
+          1043,
+          1331
+        ],
+        "foot_y": 1331,
+        "boot_center_x": 790,
+        "boot_cols": [
+          736,
+          843
+        ],
+        "person_head_y": 720,
+        "person_body_h": 612,
+        "ledger_body_h": "931"
+      },
+      "landing": {
+        "scale": 0.9758064516129032,
+        "mode": "uniform",
+        "paste_xy": [
+          464,
+          425
+        ],
+        "visible_bottom_scaled": 907
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1332,
+        "boot_center_x": 720,
+        "head_top_y": 736,
+        "body_h": 597,
+        "bbox": [
+          464,
+          425,
+          967,
+          1332
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 3
+      }
+    },
+    {
+      "index": 3,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_walk3.png",
+        "sha256": "b5a61582f1ce51eb4cecd959a5d33ae7cd7d80b22b9bcf0df0793a492335cd97",
+        "bytes": 436123
+      },
+      "source": {
+        "file": "walk_03_f040.png",
+        "bbox": [
+          523,
+          366,
+          1003,
+          1323
+        ],
+        "foot_y": 1323,
+        "boot_center_x": 784,
+        "boot_cols": [
+          753,
+          816
+        ],
+        "person_head_y": 686,
+        "person_body_h": 638,
+        "ledger_body_h": "958"
+      },
+      "landing": {
+        "scale": 0.9758064516129032,
+        "mode": "uniform",
+        "paste_xy": [
+          465,
+          399
+        ],
+        "visible_bottom_scaled": 934
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 720,
+        "head_top_y": 711,
+        "body_h": 623,
+        "bbox": [
+          465,
+          399,
+          933,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 1
+      }
+    },
+    {
+      "index": 4,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_walk4.png",
+        "sha256": "f51e45929844733f484dccef0f969fed73626133addf777a9bdf81d9c7500f05",
+        "bytes": 428199
+      },
+      "source": {
+        "file": "walk_04_f043.png",
+        "bbox": [
+          518,
+          388,
+          1016,
+          1329
+        ],
+        "foot_y": 1329,
+        "boot_center_x": 660,
+        "boot_cols": [
+          608,
+          713
+        ],
+        "person_head_y": 712,
+        "person_body_h": 618,
+        "ledger_body_h": "942"
+      },
+      "landing": {
+        "scale": 0.9758064516129032,
+        "mode": "uniform",
+        "paste_xy": [
+          581,
+          415
+        ],
+        "visible_bottom_scaled": 918
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 720,
+        "head_top_y": 731,
+        "body_h": 603,
+        "bbox": [
+          581,
+          415,
+          1067,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 3
+      }
+    },
+    {
+      "index": 5,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_walk5.png",
+        "sha256": "131f253edeb9ffce785786e8945eee0ea85aeab0cb6cdef6275f62ff8cd2d112",
+        "bytes": 426082
+      },
+      "source": {
+        "file": "walk_05_f046.png",
+        "bbox": [
+          520,
+          403,
+          1033,
+          1331
+        ],
+        "foot_y": 1331,
+        "boot_center_x": 667,
+        "boot_cols": [
+          617,
+          717
+        ],
+        "person_head_y": 718,
+        "person_body_h": 614,
+        "ledger_body_h": "929"
+      },
+      "landing": {
+        "scale": 0.9758064516129032,
+        "mode": "uniform",
+        "paste_xy": [
+          577,
+          427
+        ],
+        "visible_bottom_scaled": 906
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 720,
+        "head_top_y": 735,
+        "body_h": 599,
+        "bbox": [
+          577,
+          427,
+          1078,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 1
+      }
+    },
+    {
+      "index": 6,
+      "output": {
+        "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_walk6.png",
+        "sha256": "0ce0f6b04507ab17c9fae2a7f88569d77fdc06205751ee5d7f23d5af9be67675",
+        "bytes": 429538
+      },
+      "source": {
+        "file": "walk_06_f050.png",
+        "bbox": [
+          522,
+          368,
+          1000,
+          1325
+        ],
+        "foot_y": 1325,
+        "boot_center_x": 731,
+        "boot_cols": [
+          645,
+          817
+        ],
+        "person_head_y": 684,
+        "person_body_h": 642,
+        "ledger_body_h": "958"
+      },
+      "landing": {
+        "scale": 0.9758064516129032,
+        "mode": "uniform",
+        "paste_xy": [
+          516,
+          399
+        ],
+        "visible_bottom_scaled": 934
+      },
+      "result": {
+        "canvas": [
+          1440,
+          1440
+        ],
+        "foot_line": 1333,
+        "boot_center_x": 721,
+        "head_top_y": 739,
+        "body_h": 595,
+        "bbox": [
+          516,
+          399,
+          982,
+          1333
+        ],
+        "semi_alpha_px": 0,
+        "degreened_px": 4
+      }
+    }
+  ]
+}

@@ -21,6 +21,10 @@ public class EnemyProjectile : MonoBehaviour
     private Vector3 _endPos;
     private Tween _flightProgressTween;
     private Sequence _deflectTween;
+    /// <summary>到达后的淡出 tween（unscaled 真实时间）。存成字段才能统一管理与诊断。</summary>
+    private Sequence _fadeTween;
+    /// <summary>淡出是否已正常完成（= 不需要再报“被掐断”）。</summary>
+    private bool _fadeCompleted;
     private bool _arrived;
     private float _flightProgress;
     private float _maxDescentPitch;
@@ -52,6 +56,9 @@ public class EnemyProjectile : MonoBehaviour
         _maxDescentPitch = maxDescentPitch;
         _arrived = false;
         _isDisposing = false;
+        _fadeCompleted = true;      // 重用旧淡出：先标记完成，免得 Kill 时报“被掐断”
+        _fadeTween?.Kill();
+        _fadeTween = null;
         _flightProgressTween?.Kill();
         _deflectTween?.Kill();
         _flightProgress = 0f;
@@ -171,13 +178,57 @@ public class EnemyProjectile : MonoBehaviour
 
         if (_spriteRenderers != null && _spriteRenderers.Length > 0 && _spriteRenderers[0].color.a > 0.05f && gameObject.activeInHierarchy)
         {
-            var fade = DOTween.Sequence().SetUpdate(UpdateType.Normal, false);
+            // ★ **淡出改成 unscaled（真实时间 0.25s）**（2026-11-09 修）：
+            //   回收是纯表现，用缩放时间会被任意暂停/卡肉冻住。
+            //   实测（探针取证）：招架 hit-stop（0.12s）期间淡出被掐断在 alpha≈0.78，
+            //   OnComplete 不触发 → 箭永远留在屏上；而 3 秒安全兜底已被本函数停掉 → 没人能收它。
+            //   （DOTween 的 unscaled = SetUpdate(UpdateType.Normal, independentUpdate: true)）
+            _fadeCompleted = false;
+            _fadeTween = DOTween.Sequence().SetUpdate(UpdateType.Normal, true);
             for (int i = 0; i < _spriteRenderers.Length; i++)
-                fade.Join(_spriteRenderers[i].DOFade(0f, 0.25f).SetEase(Ease.InQuad));
-            fade.OnComplete(() => Destroy(gameObject));
+                _fadeTween.Join(_spriteRenderers[i].DOFade(0f, 0.25f).SetEase(Ease.InQuad).SetUpdate(UpdateType.Normal, true));
+            _fadeTween.OnComplete(() => { _fadeCompleted = true; _fadeTween = null; Destroy(gameObject); });
+            // 诊断：淡出被谁 Kill（OnKill 是同步回调 → 栈里能看到凶手）
+            _fadeTween.OnKill(() => LogFadeInterrupted());
+            // ★ 兜底：真实时间 0.6s 后无条件销毁 → 箭**不可能**留在屏上
+            StartCoroutine(ForceDestroyAfterRealtime(0.6f));
             return;
         }
 
+        Destroy(gameObject);
+    }
+
+    /// <summary>
+    /// 淡出 tween 被掐断的诊断日志（凶手在栈里）。
+    /// </summary>
+    private void LogFadeInterrupted()
+    {
+        if (_fadeCompleted) return;
+        float alpha = -1f;
+        if (_spriteRenderers != null && _spriteRenderers.Length > 0 && _spriteRenderers[0] != null)
+            alpha = _spriteRenderers[0].color.a;
+        var st = new System.Diagnostics.StackTrace(true);
+        DebugLog.Warning($"[EnemyProjectile] ⚠ 淡出 tween 被 Kill：id={GetInstanceID()} alpha={alpha:F3} pos={transform.position}\n{st}");
+    }
+
+    /// <summary>
+    /// 兜底：真实时间 delay 秒后**无条件**销毁。
+    ///
+    /// 淡出 tween 可能被任意东西掐断（实测在招架 hit-stop 期间），一旦被掐断
+    /// OnComplete 就不会触发 → 箭会永远留在屏上（3 秒安全兜底此时已被 DisposeProjectile 停掉）。
+    /// 这里用**真实时间**计时（不受暂停影响）→ 箭最多留 delay 秒。
+    /// </summary>
+    private System.Collections.IEnumerator ForceDestroyAfterRealtime(float delay)
+    {
+        yield return new WaitForSecondsRealtime(delay);
+        if (this == null) yield break;
+        float alpha = -1f;
+        if (_spriteRenderers != null && _spriteRenderers.Length > 0 && _spriteRenderers[0] != null)
+            alpha = _spriteRenderers[0].color.a;
+        bool fadeAlive = _fadeTween != null && _fadeTween.IsActive();
+        bool fadePlaying = _fadeTween != null && _fadeTween.IsPlaying();
+        DebugLog.Warning($"[EnemyProjectile] ⚠ 兜底硬销毁（淡出未完成）：id={GetInstanceID()} alpha={alpha:F3} "
+            + $"fadeAlive={fadeAlive} fadePlaying={fadePlaying} pos={transform.position}");
         Destroy(gameObject);
     }
 
@@ -210,8 +261,9 @@ public class EnemyProjectile : MonoBehaviour
 
     private System.Collections.IEnumerator SafetyTimeout(float delay)
     {
-        yield return new WaitForSeconds(delay);
-        Debug.LogWarning($"[EnemyProjectile] 安全超时强制销毁");
+        // ★ 改用**真实时间**：缩放时间在暂停（timeScale=0）时不走 → 兜底也跟着停 → 箭永远留在屏上。
+        yield return new WaitForSecondsRealtime(delay);
+        DebugLog.Warning($"[EnemyProjectile] 安全超时强制销毁 id={GetInstanceID()} prog={_flightProgress:F2} pos={transform.position}");
         if (_safetyTimeout != null)
         {
             _safetyTimeout = null;
@@ -232,8 +284,10 @@ public class EnemyProjectile : MonoBehaviour
     private void OnDestroy()
     {
         SceneRegistry<EnemyProjectile>.Unregister(this);
+        _fadeCompleted = true;      // 自己销毁时不要再报“淡出被掐断”
         _flightProgressTween?.Kill();
         _deflectTween?.Kill();
+        _fadeTween?.Kill();
         if (_safetyTimeout != null)
         {
             StopCoroutine(_safetyTimeout);

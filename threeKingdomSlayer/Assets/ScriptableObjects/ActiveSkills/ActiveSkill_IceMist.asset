@@ -93,7 +93,8 @@ MonoBehaviour:
     initialDamage: 0
     landingDamagePercent: 0
   prerequisites: []
-  requiredTalentIds: []
+  requiredTalentIds:
+  - talent_pool_icemist
   activeEffectType: 7
   cooldownLevels:
   - 12

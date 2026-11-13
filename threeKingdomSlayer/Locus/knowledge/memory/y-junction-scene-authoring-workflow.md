@@ -110,6 +110,18 @@ Right Progress 0 / 0.25 / 0.5 / 0.75 / 1
 
 单张竖版概念图只能作为色彩/山体参考，不能未经职责检查直接作为最终天空盒。
 
+#### 背景的渲染实现（2026-11-09 定稿）
+
+- 宿主是 `Y Junction - select for preview/Skybox Background - editable` 上的 **Mesh 四边形**
+  （`Assets/Experiments/CurvedScroll/Authoring/SkyScreenQuad.asset`，UV 0..1、V 朝上）+ 材质 `YSampleScenerySkybox_v2`，
+  **不要再挂回 SpriteRenderer**：sprite 网格的 V 方向在编辑器与 Android 包里不一致，会把整张图上下颠倒。
+- shader `CurvedScroll/Y Sky Background` 把顶点直接写进裁剪空间（`o.vertex = float4(uv*2-1, …)`）来铺满全屏。
+  这类“手写裁剪空间”的四边形**拿不到 RenderTexture 目标的投影 Y 翻转**（Scene/Game 视图都渲到 RT），
+  所以顶点 y 必须乘 `_ProjectionParams.x`，否则会出现“编辑器正常、真机整张翻转”。采样用网格 UV（不靠 sprite UV）。
+- `Renderer.sortingOrder = -100`（旧 SpriteRenderer 的值）：低于所有景物构件（E0 拱门/旗子 -1、矮墙 -2），保证天空先画。
+  换渲染器类型时这个值必须手工带过去（新建 MeshRenderer 默认 0 → 天空会盖掉那些构件）。
+- 完整复盘见 `plan/bugs-and-requests.md` BUG-004。
+
 ### Phase 2：三层地面
 
 地面不能只用“中央道路 + 外侧地面”两层高差贴图硬切。目标职责为：
@@ -266,6 +278,22 @@ Y Junction - select for preview
 - 暂停、恢复、退出 Play、重复打开 Battle Host；
 - Player/Enemy/QTE/Projectile 坐标与命中不变；
 - Console 无新 error/warning、MissingReference、DOTween 或数组越界。
+
+## 场景段表（segments）与运行时部署
+
+- Y 场景道路两侧的景物段是**表驱动**的：宿主组件上有 `segments: [{prefab, startDistance, endDistance}]`
+  加一个窗口（`enableWindow` / `renderAhead` / `renderBehind` / `residentAhead` / `residentBehind`），
+  **按路线距离在运行时实例化 / 回收**。
+- ⇒ 所以在 `YJunctionSample.unity` 的 YAML 里 **grep 不到这些构件的对象名**，只能搜到
+  `- prefab: {fileID: …, guid: …}` 这种表项。排查“某个景物缺失/错位”必须顺着段表查（表项 → 预制体），
+  不能只搜场景对象名，也不要因此判定“场景里没有它”。
+- E0 城门由两个段组成：`E0 Integrated - Gate and Aftermath @ 90 - Approach`（90–129）+ 
+  `E0 Integrated - Gate and Aftermath @ 90`（130–135）；预制体都在
+  `Assets/Experiments/CurvedScroll/Authoring/Segments/`（共 17 个）。
+- 段内构件靠 `sortingOrder` 决定同层透明物的先后（拱门 -1 / 旗子 -1 / 矮墙 -2 / 墩台 0），天空是 -100。
+  **任何换渲染器类型（SpriteRenderer ↔ MeshRenderer）的改动都要把 `sortingLayerID` / `sortingOrder` 带过去**，
+  否则同层里序号更小的构件会被后画的不透明层盖掉，表现成“某几个构件凭空消失”。
+- 判“被遮挡”还是“缺图”：临时禁用可疑渲染器（或 `SetActive(false)`）截一张，缺失部分回来 = 遮挡，不回来 = 缺图/缺引用。
 
 ## 绝对禁止
 

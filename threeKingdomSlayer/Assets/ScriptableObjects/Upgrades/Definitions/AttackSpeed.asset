@@ -17,6 +17,7 @@ MonoBehaviour:
   displayName: "\u75BE\u98CE"
   descriptionTemplate: "\u653B\u51FB\u901F\u5EA6\u63D0\u5347 {0}%"
   extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
   rarity: 0
   maxLevel: 5
   effectType: attack_speed
@@ -54,6 +55,7 @@ MonoBehaviour:
   chargeAttackShockwaveLevels: []
   waveLevels: []
   chargeHitShockwaveLevels: []
+  diseaseLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
@@ -66,3 +68,5 @@ MonoBehaviour:
     initialDamage: 0
     landingDamagePercent: 0
   prerequisites: []
+  requiredTalentIds:
+  - talent_pool_wind

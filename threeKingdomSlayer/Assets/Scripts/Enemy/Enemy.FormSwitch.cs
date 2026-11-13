@@ -107,9 +107,11 @@ public partial class Enemy : MonoBehaviour
         _attackTelegraph?.StopWarning();
         if (_attackTween != null && _attackTween.IsActive())
         {
+            _attackTweenKillReason = "形态切换（进入胆怯）";
             _attackTween.Kill();
             _attackTween = null;
         }
+        _attackTweenKillReason = "形态切换（transform.DOKill 连带杀）";
         transform.DOKill(false);
         StopHitScaleFeedback();
         transform.localScale = originalScale;

@@ -71,6 +71,17 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
     private Coroutine _popRoutine;
     /// <summary>当前是否**按着**（hold 语义：按住=防御中，松开=退出）。</summary>
     private bool _pressed;
+    /// <summary>
+    /// **预输入**（2026-11-08 用户口径 4）：按了防御键，但**现在还不能防御**
+    /// （出招动作锁 / 连段未结束）→ 记住这次按压，等**连段结束**自动转进防御。
+    ///
+    /// 取消只有两条路：松手、静音（见 <see cref="Release"/>）—— **不设超时**。
+    /// </summary>
+    private bool _pendingDefend;
+    /// <summary>上一次看到的「防御被锁住」状态（变了才重刷表现）。</summary>
+    private bool _lastDefenseLocked;
+    /// <summary>招式状态机（判断「连段是不是还在进行」）。</summary>
+    private PlayerMoveStateMachine _moveMachine;
 
     public Button Button => _button;
     public Image Icon => _icon;
@@ -149,8 +160,14 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
                 _canvasGroup.blocksRaycasts = true;
                 _canvasGroup.interactable = true;
             }
+            // 破防灰掉（2026-11-09）：可见但压暗、按不了；仍然吃射线（把这一下点击吞掉，不漏成游戏手势）。
+            if (IsDefenseLockedNow())
+            {
+                _canvasGroup.alpha = Mathf.Min(_canvasGroup.alpha, 0.2f);
+                _canvasGroup.interactable = false;
+            }
         }
-        if (_button != null) _button.interactable = _available && !_muted;
+        if (_button != null) _button.interactable = _available && !_muted && !IsDefenseLockedNow();
     }
 
     private void OnEnable()
@@ -158,13 +175,18 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
         var player = PlayerState.Instance;
         if (player == null) return;
         player.OnDefendChanged += OnDefendChanged;
+        if (player.Guard != null) player.Guard.OnStateChanged += OnGuardStateChanged;
         RefreshAvailability();
     }
 
     private void OnDisable()
     {
         var player = PlayerState.Instance;
-        if (player != null) player.OnDefendChanged -= OnDefendChanged;
+        if (player != null)
+        {
+            player.OnDefendChanged -= OnDefendChanged;
+            if (player.Guard != null) player.Guard.OnStateChanged -= OnGuardStateChanged;
+        }
         Release();   // HUD 被隐藏时别把防御卡在开启状态
     }
 
@@ -177,6 +199,23 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
     {
         // 图标亮度 = 能不能防御（出招中 → 不亮）
         RefreshAvailability();
+        // 预输入：连段结束 → 自动转进防御
+        TryConsumePendingDefend();
+        // 破防锁的状态变了 → 重刷表现（灰掉 / 恢复）
+        bool locked = IsDefenseLockedNow();
+        if (locked != _lastDefenseLocked)
+        {
+            _lastDefenseLocked = locked;
+            ApplyAvailability();
+            RefreshAvailability();
+        }
+    }
+
+    /// <summary>防御是否被锁住（破防后的一段时间内）→ 防御键灰掉、按不了。</summary>
+    private bool IsDefenseLockedNow()
+    {
+        var player = PlayerState.Instance;
+        return player != null && player.Guard != null && player.Guard.IsDefenseLocked;
     }
 
     // ── hold 语义 ───────────────────────────────────────────────
@@ -185,11 +224,26 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
     {
         if (!_available) return;
         if (_muted) return;                       // 静音：按下去**什么都不发生**（也不防御）
+        if (IsDefenseLockedNow()) return;        // 破防锁：按不了（也不排队预输入）
         // 区域位置识别：点的地方下面有活着的敌人 → 那是攻击，不是防御 → 不接管
         if (eventData != null && ShouldYieldToCombat(eventData.position)) return;
 
         _pressed = true;
-        PlayerState.Instance?.SetDefend(true);   // 按下立即发动；出招中会被 SetDefend 拒绝
+        var ps = PlayerState.Instance;
+        if (ps == null) return;
+
+        // **硬门**（游戏结束 / 三选一弹窗 / 输入门拦下）→ 拒绝（连预输入都不产生）
+        if (!ps.CanAcceptDefendIntent()) return;
+
+        if (ps.CanStartDefend())
+        {
+            ps.SetDefend(true);                   // 按下立即发动
+            return;
+        }
+
+        // **软门**（出招动作锁 / 连段未结束）→ **预输入**：
+        //   记住这次按压 → 连段结束的那一帧自动转进防御（见 TryConsumePendingDefend）。
+        _pendingDefend = true;
     }
 
     public void OnPointerUp(PointerEventData eventData)
@@ -200,9 +254,49 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
     /// <summary>松开 → 退出防御。</summary>
     private void Release()
     {
+        // **预输入取消**（口径 5）：只在松手 / 静音 / 隐藏时取消 —— 不设超时。
+        //   静音时也取消是必须的：教学拍一开始就把玩家之前挂着的防御意图清掉，
+        //   否则那一拍要教的招式会被自动防御挡掉（BUG-009 同型）。
+        _pendingDefend = false;
         if (!_pressed) return;
         _pressed = false;
         PlayerState.Instance?.SetDefend(false);
+    }
+
+    /// <summary>
+    /// **预输入兑现**（2026-11-08 用户口径 4）：
+    /// 玩家在「现在还不能防御」的时候按下了防御键 → 记住 → **连段结束**的那一帧自动进防御。
+    ///
+    /// 兑现条件 = 动作锁结束（<c>AttackSystem.IsActionPlaying</c>）**且** 连段走完
+    /// （<c>PlayerMoveStateMachine.IsMoveActive</c>）—— 只等动作锁的话会把玩家正在打的连段砍掉。
+    /// </summary>
+    private void TryConsumePendingDefend()
+    {
+        if (!_pendingDefend || !_pressed) return;
+        if (IsDefenseLockedNow()) return;        // 破防锁期间不许兑现（否则破防等于没破）
+        var ps = PlayerState.Instance;
+        if (ps == null || !ps.CanStartDefend()) return;
+        if (IsComboStillRunning()) return;         // 连段还没结束 → 不兑现
+
+        ps.SetDefend(true);
+        // 只在**真的进防御了**才清（SetDefend 内部还会再查一次能不能防御）
+        if (ps.IsDefendingActive) _pendingDefend = false;
+    }
+
+    /// <summary>
+    /// 连段是不是还在进行（招式状态机还挂在当前节点上）。
+    /// 取不到状态机就**不拦**（宁可早兑现，也不要让玩家的按压卡住）。
+    /// </summary>
+    private bool IsComboStillRunning()
+    {
+        if (_moveMachine == null)
+        {
+            var input = InputManager.Instance;
+            if (input != null) _moveMachine = input.moveStateMachine;
+            if (_moveMachine == null) _moveMachine = FindObjectOfType<PlayerMoveStateMachine>();
+        }
+        if (_moveMachine == null) return false;
+        return _moveMachine.IsMoveActive;
     }
 
     /// <summary>
@@ -226,6 +320,24 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
     }
 
     /// <summary>
+    /// 破防 → 防御键灰掉一段时间（2026-11-09 用户定）。
+    ///
+    /// 为什么必须做：破防硬直期间**玩法输入被门禁拦下**，但防御键是 **UI** → 玩家可以在硬直里按一下，
+    /// 防御键的**预输入**会把这次按压排队 → 硬直一结束就**自动进防御** → 破防惩罚被抵消。
+    /// 灰掉期间：**按不了、也不排队** → 玩家必须抬手重新按一次 → 防御不再是免费护盾。
+    /// </summary>
+    private void OnGuardStateChanged(PlayerGuard.GuardState state)
+    {
+        if (state == PlayerGuard.GuardState.Broken)
+        {
+            // 破防 → 立刻松开防御（否则 DefendHeld 一直为真 → 玩家不松手就出不了招）
+            Release();
+        }
+        ApplyAvailability();
+        RefreshAvailability();
+    }
+
+    /// <summary>
     /// 刷新图标亮度：**能防御 → 亮**（空闲或防御中）；**不能防御 → 不亮**（出招中）。
     /// </summary>
     public void RefreshAvailability()
@@ -233,7 +345,7 @@ public class DefenseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
         if (_icon == null) return;
         var player = PlayerState.Instance;
         bool canDefend = player != null && (player.IsDefendingActive || player.CanStartDefend());
-        _icon.color = (_muted || !canDefend) ? _unavailableColor : _availableColor;
+        _icon.color = (_muted || IsDefenseLockedNow() || !canDefend) ? _unavailableColor : _availableColor;
     }
 
     /// <summary>防御开启的弹入动效：0.88 → 1.06 → 1.0（用协程，不挂 DOTween，避免残留 tween）。</summary>

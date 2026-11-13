@@ -994,11 +994,18 @@ fewer than four people, extra person, duplicate soldiers, overlapping characters
 - **描边/血条条**：按用户决定，本期用"左上加攻标记"代替。
 - **头顶飘字「号令 ×N」**：未做（当前层数只体现在敌人左上的标记上）。
 
-### 5.1 三条设计不变量（改代码/改图都不能破坏）
+**2026-11-09 增补**：**号令与移动互斥（补齐优先）** —— 原实现里号令全程不碰 `Enemy` 状态机，敌人保持 `Idle` / `isAttackAnimating=false` → 补齐闸门 `Enemy.IsRushMoveReady` 恒开 → **边鼓舞边向前补齐**。修法见 §5.1 不变量 4 / §5.6 M10（只改 `EnemyCommander.cs`，不动 `Enemy` 与调度器）。
+
+### 5.1 四条设计不变量（改代码/改图都不能破坏）
 
 1. **只用既有动词**：威胁必须落在 **{选列 / 换招 / 择时 / 用技能}** 四个动词上 —— 玩家**没有位移动词**（`Assets/Scripts/Player/` 下无 `transform` 位置赋值），任何"需要走位才能解"的威胁都是无解。
 2. **不新增移动语义**：正常行军（**不设** `ignoreFillUpOrders`），位移走 `ColumnManager` 既有通道（`design/immutable-constraints.md`）。
 3. **不改既有平衡口径**：不加新系统、不改通用伤害公式；倍率只作用在"**出站伤害**"这一层，且只作用于本单位的加/减攻。
+4. **号令与移动互斥（2026-11-09 定）**：号令（鼓舞）**不能与补齐移动并发**。
+   - 前方出现补齐需求（已派单、待前移）→ **打断正在进行的号令** → 回 Idle → 走 Walk 补齐；
+   - 移动中 / 有待执行的补齐订单 → **不开始号令**；
+   - 打断口径与「本体伤害打断」一致：取消本次施放（**已落下的加攻不回滚**）+ 重置为**完整**周期；
+   - ⚠️ 不许用 `ignoreFillUpOrders` 豁免补齐来实现（与不变量 2 冲突），也不许新增移动通道。
 
 ### 5.2 它补的三层缺口
 
@@ -1066,6 +1073,7 @@ fewer than four people, extra person, duplicate soldiers, overlapping characters
 | M7 | `EnemyHealthBar.cs` + `Enemy.Visuals.cs` + `EnemyOutline.OutlineFacts` | ① 血条第三根状态条（加攻）+ 层数文本；② 新增 `AtkBuffed` 描边事实位 |
 | M8 | `Enemy.cs` + `Enemy.Combat.cs` | 新增 `OnDamagedWithSource`（带 `HitFeedbackSource`）→ 区分"谁能打断号令" |
 | M9 | `EnemyCommander.cs` | 订阅 M8：前摇被打断 → 取消施放、重置完整周期、回 Idle |
+| M10 | `EnemyCommander.cs` | **补齐优先于号令**（2026-11-09）：有前移订单（普通补齐 / 新波次入场）→ 打断正在进行的号令 → 回 Idle → 走 Walk 补齐；移动中 / 有待执行订单 → 不开始号令。打断与「本体伤害打断」共用同一函数 `InterruptCast(reason)`（重置完整周期 + 回 Idle）；号令在 `Enemy` 状态机之外，所以由督战组件自己判、自己断，不改 `Enemy` / 调度器 |
 
 **倍率存放（选 B）**：`EnemyStatusAtkMod : IStatusEffect` 挂在 `StatusHost`，自带层数，UI 走 `EnemyStatusRegistry` 查询；回池由**既有** `Enemy.Pool.cs:75` `_statusHost?.ClearAll()` 统一清理。
 **公式**：`最终倍率 = (1 + 加攻层数 × X) × (1 − 减攻层数 × Y)`（减攻只有一层）。

@@ -702,3 +702,95 @@ ldr rZ, [rY]         ; 槽里的值 = 运行时对象地址（Il2CppString* / Il
    而**响应 DTO 是直接把 JSON 值 cast 成 int 的**（`AuthResponse.GetSessionFromResponse`）。
    ⇒ **纪律：响应字段类型以「读码 + A/B 实测」为准，schema 只能当参考** ✓；
    判据：把两个字段类型各试一轮，看**请求数**是否从「几百次重试」降到「个位数」。
+
+---
+
+## 13. 第七阶段沉淀（2026-11-11）：静态读码三件套 + 跑测环境恢复 + 「实验作废」自检
+
+> 详细证据见 `plan/blades-sync-response-blocker-20261111.md`；这里是可复用的方法与坑。
+
+### 13.1 ★★★ 不进 Unity 也能读 IL2CPP 客户端：两个新脚本
+
+| 脚本 | 作用 | 用法 |
+|---|---|---|
+| `dis_rva.py` | 按 **RVA** 反汇编 `dumper_in_v7a/libil2cpp.so`，并把 IL2CPP 的**池字链**解成可读字符串 | `python dis_rva.py 0x1392480 --n 40 [--arm]` |
+| `find_xref.py` | **字面量 → 代码引用点**（先在数据段找池槽，再在代码段找 `ldr rX,[pc,#imm]` 引用） | `python find_xref.py --str BladeBackendResponseIndex` |
+
+★ **IL2CPP 取字符串的两种指令形态（PC 都是 insn+8）**：
+* `ldr rX,[pc,#imm]` ⇒ 池地址 = insn+8+imm，**池字是相对偏移**；
+* `ldr rY,[pc,rX]` ⇒ 地址 = **insn+8** + rX 的值（⚠ **不是**「池地址+8」——写错就解不出字符串，
+  会把字面量误判成 metadata 字符串，本轮就踩了）。
+
+★ **字面量表**（`dumper_out_v7a/stringliteral.json`）的 `address` 是**运行时地址**（BSS 段），
+代码里以「池槽 → 绝对地址」的方式引用 ⇒ 用 `find_xref.py` 反查即可知道**哪条代码用了这个字符串**。
+★ **elf 段的 vaddr≠file offset 差 0x1000**（§12.1）——任何读 .so 的脚本都必须先做 vaddr→offset 映射。
+
+### 13.2 ★★★ 读码得到的两条可复用结论（Blades 实例）
+
+* 响应索引来自**响应头 `Request-Index`**（`Response.ProcessResponseHeaders` 0x1B77918）：
+  取不到 ⇒ `_responseIndex` 恒为 -1；取到但不是整数 ⇒ 报
+  `PARAMETER_REQUEST_INDEX: Wrong value, should be an int: '{0}'`。
+  ⇒ **服务器必须在响应头回 `Request-Index: <整数>`**。
+  ⚠ 但本轮实测：**光回这个头并不能让客户端认下响应**（TGC 仍 0）⇒ 它是**必须补的协议项**，不是唯一卡点。
+* 后端下发的数据里还有第二个索引字段 **`BladeBackendResponseIndex`**（在 base64 解码后的 JSON 里）。
+
+### 13.3 ★★★ 跑测环境的三条硬规矩（本轮各踩了一次）
+
+1. **后端实例必须自证**：旧 server.py 进程占着端口 ⇒ 新实例起不来 ⇒ **跑测用的是旧代码 ⇒ 实验作废**。
+   ⇒ 影子后端加 `GET /__health`（回 pid/开关/路由表/启动时间），跑测脚本起完后台**必须**打一次并打印。
+2. **`adb reverse` 会让设备 shell 死掉**（adb server 重启之后必现）⇒ 症状是「客户端根本没启动、所有探针 0 命中」。
+   ⇒ `adb reboot` **不够**（会触发 system_server watchdog）；
+   **必须完整重启雷电**：`ldconsole.exe quit --index 0` → 杀 `dnplayer/LdVBoxHeadless` →
+   **用 schtasks 拉起**（`ldconsole.exe launch --index 0`；⚠ Git Bash 下要 `MSYS_NO_PATHCONV=1`，
+   否则 `schtasks /create` 的 `/create` 会被改写成路径而报错）→ 等 90~120 s → 重新 `adb reverse`。
+3. **adb server 活不过一次 Locus bash 调用**（每次调用都重新起）⇒
+   「起后端 + 建 reverse + 拉客户端 + 抓 logcat」必须全在**同一次调用**里（`measure.sh` 已经这么写 ✓）。
+
+### 13.4 ★★ 判读跑测结果的纪律
+
+* **认证重试风暴（N 百次 `POST /auth/gplus`）通常是下游症状**，不是独立问题：
+  本轮 609 次重试里，`/sync` 请求**带着 `Authorization`** ⇒ 认证其实成功过 ⇒ 风暴是「流程重置重入认证」的结果。
+* 客户端**每个请求都带同一个 `Request-Index`** ⇒ 请求索引计数器**没有前进** ⇒ 这是「响应没被认下」的下游指纹。
+  ⇒ 修法：服务器回**递��**的 `Request-Index`（`server.py --echo-index-seq`）⇒ 实测客户端索引会前进（0→94→…→349）✓。
+* 看探针命中数要**自己 grep 复核**（`grep -oE " I [A-Z]{3} +: " log_tail.txt | sort | uniq -c`），别只信脚本汇总表。
+* 「改了后端/路由但行为逐字相同」要先怀疑**改动没生效**（旧进程/旧路由），再怀疑假设错。
+
+### 13.5 ★★★ 探针系统的四条硬规矩（本轮踩全，代价很大）
+
+1. **绝不探每帧函数**：`CompleteRequest` 实测 8992 次/轮 ⇒ 把 logcat 环形缓冲冲光 ⇒
+   其他探针的命中**全被挤掉（假 0）**。⇒ 每轮都要用「探针命中数 vs 后端请求数」交叉验证。
+2. **IL2CPP 会把相同方法体合并成共享实现** ⇒ 「端点专属」的直觉会骗人：
+   `BackendSyncRequestIndexData.RetrievePersistent` 实测是所有 `IBackendData` 的**共用实现**（每个响应都触发）。
+3. **用 `bl` 扫描判断「会不会被调用」会漏掉虚调用**（基类 `ProcessResponseData` 有 0 个 `bl` 调用点却被调用了 534 次）。
+4. ★ **构建输出里的「跳过（非 STMDB 序言）」= 该探针没装上** ⇒ 计数恒 0 是**假 0** ⇒ 不算证据。
+   ⇒ 每次跑完先看构建输出里有没有「跳过」。
+
+### 13.6 ★★ ★ 定位「某个特定请求的响应死在哪」的手法：**对象地址关联**
+
+探针会打印入口 `r0`（对象地址）⇒ 只要两个探针打的是**同一个对象**，地址就相同：
+
+```
+TSU = SyncRequestIndexRequest.Setup   ⇒ 目标请求对象的地址（只打一次）
+TRP = BladeRequest.ProcessResponse     ⇒ 每个收到响应的请求对象地址
+TXD = BladeRequest.ExecuteActionOnDone ⇒ 每个被完成的请求对象地址
+```
+⇒ 把 TSU 的地址在 TRP/TXD 的地址集合里查：在 TRP 不在 TXD ⇒ **响应到了但请求没被完成**。
+（Blades 实例：靠这一招把 `/sync` 的死因从「响应被丢」精确到「`Request._requestCompleted` 守卫跳过了完成」。）
+
+### 13.7 ★★ 迭代提速：热替换设备上的 `libil2cpp.so`（15 分钟 → 4 分钟）
+
+改探针后**不要重装 1.2GB APK**（实测要 10 分钟以上，且装到一半设备掉线就白装）：
+
+```bash
+adb push build/libil2cpp.c.so /data/local/tmp/libil2cpp.so        # 实测 1.9 秒
+adb shell su -c "cp /data/local/tmp/libil2cpp.so /data/app/<pkg>-N/lib/arm/libil2cpp.so; chmod 755 ..."
+adb shell su -c "md5sum /data/app/<pkg>-N/lib/arm/libil2cpp.so"   # 与本地一致才算成功
+```
+* 包目录后缀会变（`-1`/`-2`）⇒ 用 `pm path <pkg>` 现场取；
+* ⚠ **模拟器重启会还原**（package manager reconcile）⇒ 顺序必须是「重启 → 热替换 → 跑测」；
+* ⚠ `classes.dex` 的补丁仍在已装 APK 里 ⇒ 不必重装。
+
+⇒ 本项目现在有 **`run_full.sh`**（一条龙跑测：可选重启模拟器 → 等设备 → reverse+shell 自检重试 5 次 →
+起后端+`/__health` 自检 → 可选热替换 .so/装 APK → 清状态+启动 → 观察 → 导出探针/端点/状态流），
+**必须一条龙**的原因：Locus 每次 bash 调用结束会回收 **adb server** ⇒ 跨调用的 reverse 隧道全丢，
+而 adb server 重启后的**第一次** `adb reverse` 会让 LDPlayer 设备通道 **offline**。

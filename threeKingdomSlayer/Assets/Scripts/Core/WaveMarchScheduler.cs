@@ -248,31 +248,60 @@ public sealed class WaveMarchScheduler
 
         _queue.ReassignRuntimeRows();
 
+        // 诊断（BUG A 定位用）：候选数与每个敌人的去留。
+        int diagCandidates = 0;
+
         foreach (var pair in _queue.EnemyRows)
         {
             var enemy = pair.Key;
             var logicalRow = pair.Value;
+            diagCandidates++;
             if (enemy == null || enemy.isBoss || enemy.state == EnemyState.Dead || logicalRow == null || logicalRow.removed)
+            {
+                FillUpDiag.LogPlanEnemy(enemy, logicalRow, -1, "跳过（已死 / Boss / 逻辑排已移除 / null）");
                 continue;
-            if (enemy.GetComponent<CavalryEnemy>()?.IsMounted == true)
+            }
+            if (_hasPushReturnTransaction != null && _hasPushReturnTransaction(enemy))
+            {
+                FillUpDiag.LogPlanEnemy(enemy, logicalRow, -1, "跳过（击退回位事务中）");
                 continue;
-            if (_hasPushReturnTransaction != null && _hasPushReturnTransaction(enemy)) continue;
-            if (enemy.rowIndex <= logicalRow.currentRow)
+            }
+
+            // ★ 骑乘态 109 参与阵型推进：目标排 = 逻辑排号，但**不低于它的攻击距离**
+            //   （骑兵不占第 0 排；第 0 排是玩家的近战排，骑兵要留出冲锋距离）。
+            //   它仍然占着自己的逻辑排 → 同列后排不会越过它补齐（占位语义不变）。
+            var cavalry = enemy.GetComponent<CavalryEnemy>();
+            int targetRow = (cavalry != null && cavalry.IsMounted)
+                ? cavalry.GetMarchTargetRow(logicalRow.currentRow)
+                : logicalRow.currentRow;
+
+            if (enemy.rowIndex <= targetRow)
+            {
+                FillUpDiag.LogPlanEnemy(enemy, logicalRow, targetRow,
+                    $"跳过（rowIndex {enemy.rowIndex} ≤ 目标排 {targetRow}，已经在位）");
                 continue;
+            }
             // 「豁免补齐」：该敌人不参与波次行军——不派单、不预留目标槽（原地下不动）。
             // 注意这是**设计意图的排除**（敌人自己声明不参与），不是按状态过滤；
             // 按状态过滤会让敌人永远拿不到本该有的订单（历史缺陷：105 远程敌人永远不补齐）。
             if (enemy.ignoreFillUpOrders)
             {
                 DebugLog.Info("[FillUp] 豁免补齐（不参与波次行军）: " + enemy.DebugTag);
+                FillUpDiag.LogPlanEnemy(enemy, logicalRow, targetRow, "跳过（豁免补齐：敌人声明不参与）");
                 continue;
             }
 
-            long slotKey = ((long)enemy.columnIndex << 32) ^ (uint)logicalRow.currentRow;
+            long slotKey = ((long)enemy.columnIndex << 32) ^ (uint)targetRow;
             if (!plannedWaveTargetSlots.Add(slotKey))
+            {
+                FillUpDiag.LogPlanEnemy(enemy, logicalRow, targetRow, "跳过（目标槽位已被同列别的敌人占用）");
                 continue;
-            plannedWaveTargetRows[enemy] = logicalRow.currentRow;
+            }
+            plannedWaveTargetRows[enemy] = targetRow;
+            FillUpDiag.LogPlanEnemy(enemy, logicalRow, targetRow, "派出");
         }
+
+        FillUpDiag.LogPlanSummary(_queue, diagCandidates, plannedWaveTargetRows.Count);
 
         return plannedWaveTargetRows.Count > 0;
     }
@@ -334,8 +363,6 @@ public sealed class WaveMarchScheduler
             {
                 if (enemy == null || enemy.isBoss || enemy.state == EnemyState.Dead || enemy.rowIndex != sourceRow)
                     continue;
-                if (enemy.GetComponent<CavalryEnemy>()?.IsMounted == true)
-                    continue;
                 if (restrictedEnemies != null && !restrictedEnemies.Contains(enemy))
                     continue;
                 // 「豁免补齐」：不参与波次行军（与规划层一致，见 TryBuildLogicalWaveMarchPlan 注释）
@@ -350,7 +377,12 @@ public sealed class WaveMarchScheduler
                     : null;
                 if (reservationOwner != null && reservationOwner != enemy)
                     reservationOwner.GetComponent<CavalryEnemy>()?.AbortForExternalOrder("WaveMarch目标优先");
-                if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, waveGeneration, currentWaveTargetRow,
+                // 骑乘态 109 同样不占第 0 排：目标排不低于它的攻击距离。
+                var cavalry = enemy.GetComponent<CavalryEnemy>();
+                int orderTargetRow = (cavalry != null && cavalry.IsMounted)
+                    ? cavalry.GetMarchTargetRow(currentWaveTargetRow)
+                    : currentWaveTargetRow;
+                if (!enemy.AssignRushMoveOrder(RushMoveOrderOwner.WaveMarch, waveGeneration, orderTargetRow,
                     continuousRun ? RushMoveMode.ContinuousEmptyRun : RushMoveMode.Step))
                     continue;
 

@@ -59,3 +59,33 @@ aiEditMode: inherit
 - **复现手法（可复用）**：新建 `RectTransform` → `DOScale(rt, …)`（或 `Sequence` 里 `Append` 一个 `DOScale`）→
   `Destroy` 目标 → 下一帧必抛；想同一帧复现就用 `DestroyImmediate`。
 
+## 2026-11-09 补充：target 共享 → 清理位移 tween 连带杀掉攻击 tween（1051 射箭哑火根因）
+
+- **现场**：1051 弓手在「拉弓等待发箭」的 2 秒窗口里，箭**没发出来**，但**射击动作动画照常走完**（用户原话：「准备射箭时动画走完，但没有箭射出」）。
+- **机制（三条合起来才成立）**：
+  1. 远程箭**没有兜底**：它由攻击 tween 的回调在 `spawnDuration=2s` 后发出（`Assets/Scripts/Enemy/Enemy.Attack.cs` 的 `AppendInterval(spawnDuration)` + `AppendCallback(SpawnProjectile)`）。
+     攻击 tween 一旦在这 2 秒内被杀掉，那条回调**静默消失** → 箭永远不会发（`Enemy.HitFrame.ResolvePendingHitFramesOnAttackEnd` 对空 `hitFrames` 直接 return，不补发）。
+  2. **攻击 tween 的 DOTween target 就是敌人的 Transform**（`_attackTween.SetTarget(transform)`）→
+     于是代码里所有「清理位移 / 缩放 tween」的调用 —— `transform.DOKill(false)` / `DOTween.Kill(transform, false)` ——
+     **都会连带把攻击 tween 一起杀掉**。实测命中点：`CancelAttack()`（受击/招架）、`ResetMovementState()`（补齐/移动重置）、`Stun()`、`Launch()`、死亡清理。
+     其中 **`Stun()` 与 `ResetMovementState()` 不碰 Animator** → **动画照常走完、箭没了**，与用户描述完全一致。
+  3. Animator 由 Animator 独立驱动，DOTween 杀它管不着 → 所以观感是「动作走完但没箭」。
+- **修复方向（任一即可根治）**：给攻击 tween 一个**独立 target**（不要用 Transform）→ `DOTween.Kill(transform)` 再也碰不到它；
+  或给远程路径加「收尾兜底补发」（tween 结束而箭未发出就补发一次）。
+- **✅ 已修（2026-11-09）**：两件都做了。`Assets/Scripts/Enemy/Enemy.Attack.cs` 里 `_attackTween.SetTarget(transform)` → **`SetTarget(this)`**
+  （近战翻转的 `DOScaleX` 子 tween 同样改用 `this`），并新增 `CheckRangedArrowFallback()`（每帧轮询「箭还待发 且 攻击 tween 已死」→ 补发一次）。
+  ⚠️ **改了 target 就必须补显式杀**：原来靠 `transform.DOKill()` 顺带清掉攻击 tween 的地方
+  （`Enemy.Pool.cs` 回池、`Enemy.Init.cs` 重置、`Enemy.Combat.cs` 取消死亡动画、`Enemy.Boss.cs` Boss 暂停）
+  都要加一行 `_attackTween?.Kill(false)`，否则攻击 tween 会漏进对象池。
+  验证：机器人跑 E0，**远程起手 12 = 箭已发出 9 + 兜底补发 3**，全关打通，0 error。
+- **诊断陷阱 ①：OnKill 回调不是 Kill 的瞬间触发**。实测 `transform.DOKill(false)` 杀掉攻击 tween 时，
+  OnKill **没有当场触发**；它延后到该 Sequence 对象被 DOTween 池回收后**再次被 Kill** 时才触发
+  （现场栈顶是 `DamageNumber.SafetyTimeoutRealtime → animSeq.Kill()`，与真实凶手无关）。
+  → **靠 OnKill 的调用栈找不到真凶，必须在每个 Kill 点打标签**（本项目已加 `_attackTweenKillReason`）。
+- **诊断陷阱 ②：DOTween 会池化复用 `Sequence` 对象**。实测：`DOTween.Sequence()` 两次不是同一对象，
+  但 **Kill 掉之后再取就拿到同一个对象**（`ReferenceEquals == true`）→ 被回收的对象**仍带着旧的 OnKill 回调**，
+  会在下一次被 Kill 时**串台**触发别人的回调。
+  → 任何挂在 tween 上的诊断回调**必须带序号护栏**（本项目用 `_attackTweenSerial`，序号不匹配就忽略），
+  否则会报出「凶手是 DamageNumber」这种假线索。
+- **判定「tween 真的死了」的可靠办法**：不要靠 OnKill 的时机，靠**业务状态**（例如「箭是否已发出」标志位）配合**在 Kill 点打的标签**。
+

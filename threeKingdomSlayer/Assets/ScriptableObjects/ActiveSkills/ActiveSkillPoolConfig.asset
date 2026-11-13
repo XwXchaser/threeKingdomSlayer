@@ -33,8 +33,6 @@ MonoBehaviour:
   rarePool:
   - upgrade: {fileID: 11400000, guid: 0e968b19ca0b1fe4e8d9cc72b814bfef, type: 2}
     weight: 100
-  - upgrade: {fileID: 11400000, guid: 3cf32a208431f6e49b67da6c3603831c, type: 2}
-    weight: 100
   - upgrade: {fileID: 11400000, guid: 6d5a56942b0b68a488b7dd0d90501abb, type: 2}
     weight: 100
   - upgrade: {fileID: 11400000, guid: f1b74622f7f7d394cb36dbc89731662a, type: 2}
@@ -43,8 +41,6 @@ MonoBehaviour:
     weight: 100
   legendaryPool:
   - upgrade: {fileID: 11400000, guid: ad8f6c8edfab32b4d83f251559d240d7, type: 2}
-    weight: 100
-  - upgrade: {fileID: 11400000, guid: d216bdf8d0deb414596b22fb5afd5221, type: 2}
     weight: 100
   - upgrade: {fileID: 11400000, guid: 894de3689a6692f41be5c5cf47b960a3, type: 2}
     weight: 100

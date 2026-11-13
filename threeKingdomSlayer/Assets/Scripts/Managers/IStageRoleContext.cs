@@ -25,6 +25,12 @@ public interface IStageRoleContext : StageRouteBattleHost.IContext
     /// <summary>是否压掉战败面板。</summary>
     bool SuppressDefeatUI { get; }
 
+    /// <summary>
+    /// 一波打完后**稍等多久**再进后续流程（三选一 / 结算面板 / 下一波 / 路牌按钮）。
+    /// 让玩家先看清「这波打完了」+ 经验条结算，再被 UI 接管。
+    /// </summary>
+    float WaveEndSettleDelay { get; }
+
     /// <summary>战斗场景名（回落地页 / 切战斗场景用）。</summary>
     string BattleSceneName { get; }
 

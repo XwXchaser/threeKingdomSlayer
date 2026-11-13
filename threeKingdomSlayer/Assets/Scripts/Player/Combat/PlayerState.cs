@@ -112,6 +112,14 @@ public class PlayerState : MonoBehaviour
     {
         if (DefendHeld == on) return;
 
+        // **硬门**（2026-11-08 用户口径 3）：非战斗状态 / 输入门拦下 / 三选一弹窗
+        //   → 防御键这时不该生效（与攻击手势的开关同一套口径，见 CanAcceptDefendIntent）。
+        if (on && !CanAcceptDefendIntent())
+        {
+            DebugLog.Info("[Defend] 当前不能防御（非战斗状态 / 弹窗拦输入 / 三选一弹窗）");
+            return;
+        }
+
         // **出招时不能防御**（2026-10-29 用户定：出招与防御互斥，与既有动作设计一致）
         if (on && !CanStartDefend())
         {
@@ -148,9 +156,36 @@ public class PlayerState : MonoBehaviour
     public bool IsDefendingActive =>
         DefendHeld || (WeaponStance != null && (WeaponStance.IsDefending || WeaponStance.IsSwingingIn));
 
-    /// <summary>现在能不能举枪防御：出招中不行（动作锁未结束 → 还在出招）。</summary>
+    /// <summary>
+    /// **硬门：防御意图能不能被接收**（2026-11-08 用户口径 3）。
+    ///
+    /// 与**攻击手势的开关同一套口径**（手势通道见 `InputManager`）：
+    ///   • 非战斗状态（游戏结束 / 结算面板）→ 与 `AttackSystem.TryExecuteAttack` 的
+    ///     `stageState != StageState.InProgress` 同源；
+    ///   • 输入门拦下（结算面板 / 路线旅行 / 破防硬直 / 开场字幕）→ 与
+    ///     `InputManager.gameplayInputEnabled`（= `!GameplayInputGate.IsBlocked`）同源；
+    ///   • 三选一弹窗打开 → 弹窗自己把 `Time.timeScale` 压成 0，手势通道已关，防御要跟上。
+    ///
+    /// ⚠️ **软门不在这里**：出招动作锁 / 连段未结束 → 那一层走「预输入」
+    ///    （`DefenseButton` 记住这次按压，等连段结束自动转进防御）。
+    /// </summary>
+    public bool CanAcceptDefendIntent()
+    {
+        if (stageState != StageState.InProgress) return false;
+        if (GameplayInputGate.IsBlocked) return false;
+        var choices = UpgradeChoiceManager.Instance;
+        if (choices != null && choices.IsChoosing) return false;
+        return true;
+    }
+
+    /// <summary>
+    /// 现在能不能举枪防御：硬门（游戏结束 / 弹窗 / 输入门）+ 软门（出招动作锁）。
+    ///
+    /// ⚠️ 全工程只有两处调用：`SetDefend` 与 `DefenseButton.RefreshAvailability`。
+    /// </summary>
     public bool CanStartDefend()
     {
+        if (!CanAcceptDefendIntent()) return false;
         var attack = AttackSystem.Instance;
         if (attack != null && attack.IsActionPlaying) return false;
         return true;
@@ -344,7 +379,7 @@ public class PlayerState : MonoBehaviour
         // 且此时直接跳位进防御位（PlayerWeaponStance.InterruptToDefend）。
         if (Guard != null && WeaponStance != null
             && (WeaponStance.IsDefending || WeaponStance.IsSwingingIn)
-            && Guard.TryAbsorbDamage(damage, source))
+            && Guard.TryAbsorbDamage(damage, source, source != null ? source.guardBreakBonus : 0f))
         {
             if (WeaponStance.IsSwingingIn) WeaponStance.InterruptToDefend(DefendConfig);
             return;

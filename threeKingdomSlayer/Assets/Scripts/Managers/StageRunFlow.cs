@@ -209,6 +209,20 @@ public sealed class StageRunFlow : IRunFlow
             yield return null;
         }
 
+        // ★ 波末**先停一下**再进后续流程（2026-11-08 用户定）：
+        //   让玩家先看清「这波打完了」+ 经验条跳动 + 掉落结算，
+        //   然后才被三选一 / 结算面板 / 路牌按钮接管（不然弹窗糊脸，很突然）。
+        float settleDelay = _ctx.WaveEndSettleDelay;
+        if (settleDelay > 0f)
+        {
+            float waited = 0f;
+            while (waited < settleDelay)
+            {
+                waited += Time.deltaTime;
+                yield return null;
+            }
+        }
+
         var ucm = UpgradeChoiceManager.Instance;
         if (ucm != null)
         {

@@ -218,10 +218,26 @@ public class ColumnManager : MonoBehaviour
         ReleaseEnemyFromSchedulers(enemy, columnIndex);
         columns[columnIndex].ResumeRushMoveChain();
 
+        // ── 诊断（BUG A 定位用，定位完成后删除本段）────────────────────────
+        //   移除之后的排活人数：现有判定 vs 排除「正在被移出的那一个」。
+        //   两者不一致 = 非死亡离场（109 回退淡出 / 教学 despawn）踩中了判定缺口。
+        bool diagLivingAsIs = clearedLogicalRow != null && _queue.HasLivingMembers(clearedLogicalRow);
+        bool diagLivingExclSelf = clearedLogicalRow != null && _queue.HasLivingMembersExcluding(clearedLogicalRow, enemy);
+        //   移除之后它**仍在队列里登记** = 幽灵排（它的逻辑排归属从没被注销）。
+        bool diagStillRegistered = enemy != null && _queue.HasRowFor(enemy);
+        bool diagReflowRequested = false;
+        // ───────────────────────────────────────────────────────────────────
+
         if (mayCreateWaveMarch && !WaveMarch.HasLivingMembers(clearedLogicalRow))
+        {
             WaveMarch.RequestLogicalLayoutReflow(clearedLogicalRow);
+            diagReflowRequested = true;
+        }
         else if (!_queue.UseRowMarchPlanner && enemy != null && enemy.state == EnemyState.Dead)
             WaveMarch.StartWaveMarch();
+
+        FillUpDiag.LogRemoveEnemy(_queue, enemy, columnIndex, diagStillRegistered, clearedLogicalRow,
+            diagLivingAsIs, diagLivingExclSelf, mayCreateWaveMarch, diagReflowRequested);
 
         NotifyPushReturnTopologyChanged();
         OnColumnsModified?.Invoke();

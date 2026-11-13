@@ -6,7 +6,8 @@ using UnityEngine;
 ///   判定 → 前摇 → 前移 → 命中（打前方敌人或玩家）/ 被打断 → 原路返航 → 结束
 /// 规则要点：
 /// - 骑乘期间不做普通攻击；落马后交回普通敌人逻辑（含普通攻击与普通补齐）。
-/// - 冲锋可以从任意排发起，不需要先回到某固定排；冲锋伤害 = chargeDamage × (发起排 + 1) × 波次攻击倍率。
+/// - 冲锋从**配置的攻击距离**发起（见 chargeRange，性质同招式的 rangeRows）；
+///   冲锋伤害 = chargeDamage × 冲锋距离（发起瞬间锁定）× 波次攻击倍率。
 /// - 冲锋路径上出现敌人就停在它后面一排前探打它，不越过、不并排。
 /// - 返航目标是本次冲锋的发起排；中途受阻就停在阻塞前等待，状态机继续循环重试。
 /// - 只有被标记为“可打断骑兵冲锋”的攻击（当前 = 蓄力攻击）能打断冲锋；Parry 暂不打断。
@@ -18,8 +19,12 @@ public sealed partial class CavalryEnemy : MonoBehaviour
     [Header("骑兵配置")]
     [Tooltip("骑兵敌人ID，用于校验Prefab配置。")]
     [SerializeField] private int cavalryEnemyId = 109;
-    [Tooltip("冲锋基础伤害；最终伤害 = 本值 × 冲锋格数（发起排+1）× 波次攻击倍率。")]
+    [Tooltip("冲锋基础伤害；最终伤害 = 本值 × 冲锋距离（chargeRange）× 波次攻击倍率。")]
     [SerializeField, Min(0f)] private float chargeDamage = 8f;
+    [Tooltip("**冲锋距离（格）** —— 发起冲锋时离玩家几格（性质同招式的 rangeRows，可配置）。\n" +
+             "发起位置 = 玩家所在排 + 本值 - 1（第 0 排就是玩家的近战排 → 3 格 = 第 2 排发起）。\n" +
+             "伤害按**发起瞬间锁定的这个距离**算，不随它实际从哪一排起步放大。")]
+    [SerializeField, Min(1)] private int chargeRange = 3;
 
     /// <summary>
     /// 教学关演出用：把本次冲锋伤害改成固定值（不污染 Enemy_109.prefab 的正式数值）。
@@ -100,6 +105,18 @@ public sealed partial class CavalryEnemy : MonoBehaviour
     private float _spawnEntrySettleUntil;
     /// <summary>本次冲锋是否在冻结中被暂停过：解冻后不续播冲锋，转为返航（设计 §4.1 / 用例 11f）。</summary>
     private bool _frozenDuringCharge;
+
+    /// <summary>
+    /// 允许发起冲锋的排号（第 0 排 = 玩家排）—— 由配置的 <c>chargeRange</c> 推导：
+    /// 冲锋距离 3 格 → 从第 2 排发起。
+    /// </summary>
+    public int ChargeAttackRow => Mathf.Max(0, chargeRange - 1);
+
+    /// <summary>本次冲锋的格数（= 配置的冲锋距离，发起瞬间锁定）。</summary>
+    public int ChargeRange => Mathf.Max(1, chargeRange);
+
+    /// <summary>随阵型推进时的目标排：不低于攻击距离（骑乘态不占第 0 排）。</summary>
+    public int GetMarchTargetRow(int logicalRow) => Mathf.Max(ChargeAttackRow, logicalRow);
 
     public bool IsMounted => _mounted;
     /// <summary>冲锋判定已开始且本次伤害尚未提交：只有这段时间会被“可打断冲锋”的攻击打断。</summary>
@@ -222,8 +239,15 @@ public sealed partial class CavalryEnemy : MonoBehaviour
             return false;
         }
 
+        // ★ 只有推进到**攻击距离**（= 配置的冲锋距离）才发起冲锋。
+        //   格数按**配置的冲锋距离**锁（不再是「发起排 + 1」）→ 伤害不随波次纵深放大
+        //   （旧实现深波次第 9 排发起 = 10 格 × chargeDamage = 200，直接秒杀玩家）。
+        //   还没到攻击距离时安静等阵型把它推上来（骑乘态 109 参与波次行军，见 WaveMarchScheduler）。
+        if (_enemy.rowIndex != ChargeAttackRow)
+            return false;
+
         _chargeOriginRow = _enemy.rowIndex;
-        _chargeGrids = _chargeOriginRow + 1;
+        _chargeGrids = ChargeRange;
         _cycleRoutine = StartCoroutine(CavalryCycle());
         return true;
     }
