@@ -49,18 +49,42 @@ MonoBehaviour:
     effectPrefab: {fileID: 0}
     weaponPrefab: {fileID: 0}
     chainLinkSprite: {fileID: 0}
+    chainSegmentCount: 9
+    chainSegmentLength: 0.95
+    chainLinkScale: 3.4
+    chainStiffness: 900
+    chainDamping: 40
+    chainGravityScale: 0.22
+    chainThrowSeconds: 0.25
+    chainReturnSeconds: 0.2
   - damage: 40
     pullSeconds: 0.4
     maxRange: 0
     effectPrefab: {fileID: 0}
     weaponPrefab: {fileID: 0}
     chainLinkSprite: {fileID: 0}
+    chainSegmentCount: 9
+    chainSegmentLength: 0.95
+    chainLinkScale: 3.4
+    chainStiffness: 900
+    chainDamping: 40
+    chainGravityScale: 0.22
+    chainThrowSeconds: 0.25
+    chainReturnSeconds: 0.2
   - damage: 60
     pullSeconds: 0.35
     maxRange: 0
     effectPrefab: {fileID: 0}
     weaponPrefab: {fileID: 0}
     chainLinkSprite: {fileID: 0}
+    chainSegmentCount: 9
+    chainSegmentLength: 0.95
+    chainLinkScale: 3.4
+    chainStiffness: 900
+    chainDamping: 40
+    chainGravityScale: 0.22
+    chainThrowSeconds: 0.25
+    chainReturnSeconds: 0.2
   triggerParam: 0
   phantomSteps: []
   useCount: 1

@@ -659,4 +659,22 @@ public struct ChainPullLevelConfig
     public GameObject weaponPrefab;
     [Tooltip("**链节贴图**（2D，一个链环）。留空 = 用 Inspector 上的默认链节贴图。")]
     public Sprite chainLinkSprite;
+
+    // ── 链的表现参数（架构 ⑥ · 2026-11-14：原来这些是散在代码里的魔法数字）────────
+    [Tooltip("链节数量（= 骨骼数）。")]
+    public int chainSegmentCount;
+    [Tooltip("链节在世界里的长度（单位）。")]
+    public float chainSegmentLength;
+    [Tooltip("链环显示缩放（链环固定尺寸，靠间距读出链节）。")]
+    public float chainLinkScale;
+    [Tooltip("链的弹簧硬度（越大越快贴住目标）。")]
+    public float chainStiffness;
+    [Tooltip("链的阻尼（越大越快停）。")]
+    public float chainDamping;
+    [Tooltip("链的重力下垂比例。")]
+    public float chainGravityScale;
+    [Tooltip("甩出时长（秒）：链头飞向目标的时长。")]
+    public float chainThrowSeconds;
+    [Tooltip("回收时长（秒）：链头飞回玩家的时长。")]
+    public float chainReturnSeconds;
 }

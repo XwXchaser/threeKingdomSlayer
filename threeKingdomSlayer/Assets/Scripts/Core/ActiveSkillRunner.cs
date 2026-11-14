@@ -456,12 +456,22 @@ public class ActiveSkillRunner : MonoBehaviour
         }
 
         // ② 铁链骨链（程序生成的骨链；正式链子换“每节怎么画”即可，解算器不变）
+        //    ★ 架构 ⑥：链的形状与手感参数**全部来自技能资产**（原来散在代码里当魔法数字）
+        var chainSettings = new ChainLinkSettings
+        {
+            SegmentCount = cfg.chainSegmentCount,
+            SegmentLength = cfg.chainSegmentLength,
+            LinkScale = cfg.chainLinkScale,
+            Stiffness = cfg.chainStiffness,
+            Damping = cfg.chainDamping,
+            GravityScale = cfg.chainGravityScale,
+        };
         var rig = ChainLinkRig.Create(player.transform,
-            cfg.chainLinkSprite != null ? cfg.chainLinkSprite : _chainLinkSprite, 9, 0.95f);
+            cfg.chainLinkSprite != null ? cfg.chainLinkSprite : _chainLinkSprite, chainSettings);
         if (rig != null) rig.Setup(hand, hand);
 
         // ③ 甩出：链头（枪）飞向目标
-        float throwTime = 0.25f;
+        float throwTime = Mathf.Max(0.05f, cfg.chainThrowSeconds);
         float t = 0f;
         while (t < throwTime)
         {
@@ -499,11 +509,12 @@ public class ActiveSkillRunner : MonoBehaviour
         // ⑤ 回收：链头飞回玩家
         if (rig != null) rig.SetTaut(false);
         Vector3 backFrom = hook != null ? hook.transform.position : to;
+        float returnTime = Mathf.Max(0.05f, cfg.chainReturnSeconds);
         t = 0f;
-        while (t < 0.2f)
+        while (t < returnTime)
         {
             t += Time.deltaTime;
-            float k = Mathf.Clamp01(t / 0.2f);
+            float k = Mathf.Clamp01(t / returnTime);
             Vector3 pos = Vector3.Lerp(backFrom, hand, k);
             if (hook != null) hook.transform.position = pos;
             if (rig != null) rig.SetHeadTarget(pos);
