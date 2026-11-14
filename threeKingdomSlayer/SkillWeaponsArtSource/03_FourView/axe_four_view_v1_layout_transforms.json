@@ -1,0 +1,103 @@
+{
+  "source": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\SkillWeaponsArtSource\\03_FourView\\axe_five_view_v1_raw.png",
+  "plain_size": [
+    1536,
+    1024
+  ],
+  "annotated_size": [
+    1856,
+    1440
+  ],
+  "views": [
+    {
+      "view": "front",
+      "source_rect": [
+        128,
+        10,
+        432,
+        969
+      ],
+      "scale": 0.9676746611053181,
+      "board_rect": [
+        45,
+        48,
+        294,
+        928
+      ],
+      "cell_rect": [
+        0,
+        0,
+        384,
+        1024
+      ]
+    },
+    {
+      "view": "left",
+      "source_rect": [
+        274,
+        5,
+        662,
+        1411
+      ],
+      "scale": 0.6600284495021337,
+      "board_rect": [
+        448,
+        48,
+        256,
+        928
+      ],
+      "cell_rect": [
+        384,
+        0,
+        384,
+        1024
+      ]
+    },
+    {
+      "view": "right",
+      "source_rect": [
+        585,
+        8,
+        664,
+        969
+      ],
+      "scale": 0.9656607700312175,
+      "board_rect": [
+        922,
+        48,
+        76,
+        928
+      ],
+      "cell_rect": [
+        768,
+        0,
+        384,
+        1024
+      ]
+    },
+    {
+      "view": "back",
+      "source_rect": [
+        812,
+        10,
+        1118,
+        969
+      ],
+      "scale": 0.9676746611053181,
+      "board_rect": [
+        1196,
+        48,
+        296,
+        928
+      ],
+      "cell_rect": [
+        1152,
+        0,
+        384,
+        1024
+      ]
+    }
+  ],
+  "source_cells_used_at_native_size": false,
+  "added_chinese_text_locally": true
+}

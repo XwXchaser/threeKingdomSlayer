@@ -59,24 +59,41 @@ aiEditMode: inherit
 | **无字合图** | **1536×1024** | 顺序固定：**前／左／右／后** |
 | **中文标注版** | **1856×1440** | 视图名 + 观察方向由本地排版加上（标注不烧进模型图） |
 | 生成原图 | 1024×1536 纯白不透明 PNG（每张一次生成） | `quality=max`；正文/负面词见 §6 |
+| ★ **五视图合板**（额外） | **1536×1024** 无字 + **1856×1440** 标注 | 左三格 384×1024 = 正／右／后，右列 384×1024 上下两格 384×512 = 顶视／底视。**建模用四视图即可** |
 
-### 2.2 目录结构（沿用 `StabWeaponArtSource/` 的做法）
+#### 2.1.1 ★ 实际产出（2026-11-14 已完成 · 抡斧）
+
+`SkillWeaponsArtSource/03_FourView/`：
+
+| 文件 | 内容 |
+|---|---|
+| `axe_four_view_v1_plain.png` / `_annotated.png` | 四视图无字合图 1536×1024 + 中文标注版 1856×1440 |
+| `views/{front,left,right,back}.png` | 四张 384×1024 单图 |
+| `axe_five_view_v1_plain.png` / `_annotated.png` | 五视图合板 + 标注版 |
+| `axe_five_view_v1_raw.png` / `axe_left_view_v1_raw.png` | 生成原图（可追溯） |
+
+**只花了 2 次付费生成**：① 一次出五视图合板（正/右/后/顶/底）② 用它当参考补一张左侧 ⇒ 本地切格合成四视图。
+（沿用长枪 V05/V06 的成例。）
+
+⚠ **顶视/底视给的信息有限**：生成器画的是**柄端的端面**（尖头 + 圆环），
+**没给出斧头的 X 宽 / Z 深比例** ⇒ 建模时按 §3.1 的数字自行把握（刃宽 1.28 / 斧背厚 0.22 / 刃口 0.03）。
+⚠ 四图是**各自生成**的，不是同一模型的几何投影 ⇒ 只能当造型与配色参考，**不能当比例验收**。
+
+### 2.2 目录结构（实际布局）
 
 ```
 SkillWeaponsArtSource/
-  00_Index/
-    axe_four_view_specification.json          # 执行规格（模型/参数/日期/哈希）
-    chain_sickle_four_view_specification.json
-  01_Axe/
-    01_Reference/        # 概念图、来源与许可记录
-    02_FourViewPreparation/   # 生成前的参考拼版
-    03_FourView/         # front/left/right/back 单图 + 合图 + 标注版 + delivery_verification.json
-    04_Model/            # 3D 模型源文件（fbx / blend）与贴图
-  02_ChainSickle/
-    （同上结构）
+  README.md
+  00_Index/            执行规格与台账（axe / chain 各一份）
+  01_Reference/        参考图（★第三方素材只留本地，不进仓库）
+    pbz/               PBZ 官方立绘 + 斧头特写 + references.csv
+  02_Concept/          概念图（v1..v6）+ 提示词留痕
+  03_FourView/         正交视图交付物（原始图 + 切好的单图 + 无字合图 + 标注版 + 校验 JSON）
+  04_Model/            3D 源文件（fbx / blend）与贴图（不入 Unity）
 ```
 
 > ⚠ `04_Model/` 里的 3D 源文件**不入 Unity**（Unity 侧只放导出好的 FBX + 贴图 + Prefab），源文件归档在这里。
+> ⚠ 第三方参考图（PBZ 等）按 `.gitignore` 白名单**只留本地**；只放行 `README.md` / `00_Index/` / `02_Concept/` / `03_FourView/`。
 
 ---
 

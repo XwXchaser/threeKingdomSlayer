@@ -411,6 +411,28 @@ image[]    多图，顺序有意义
 
 ## 5. C2 四视图（8 次提交）
 
+> ★ **2026-11-14 实际只花了 2 次付费生成**（沿用长枪 V05/V06 的成例）：
+> ① 一次生成**五视图合板**（1536×1024，左三格 正/右/后 + 右上顶视 + 右下底视）；
+> ② 用它当参考图**补一张左侧**（1024×1536）；
+> ③ 剩下全是**本地合成**：切格 → 同一缩放对齐 → 无字合图 + 中文标注版。
+> ⇒ **不要一张张生成 4~5 个视图。**
+
+- 抡斧已完成，交付物在 `SkillWeaponsArtSource/03_FourView/`（见 §2.1.1）。
+- 链镰尚未开始：`Tools/visual_brief/prompts/chain_concept_v1.txt` 已改成基础档素铁，
+  先出它的概念图（1 次），再用同一套流程走四视图。
+
+**参数**：`gpt-image-2.6-sunburst` / `quality=max` / `input_fidelity=high` / `output_format=png` / `n=1`。
+⚠ **不传 `background`**（长枪那轮传了，但本机这条链路传了会 400 内容策略拦截）。
+⚠ 本机 key **只有 2.6 权限**（2.5 会 403：`This token has no access to model gpt-image-2.5-sunburst`）。
+⚠ 提示词里别写「X 光 / 爆炸图 / 剖切 / 分解图」这类词 —— 会触发内容安全策略（实测 400）。
+
+**工具**：
+- `Tools/visual_brief/submit_weapon_view.py --mode five|left`（提交）
+- `Tools/visual_brief/assemble_view_board.py`（切格 / 对齐 / 合成看板 + 写校验 JSON）
+
+**对齐口径**：四个正交视图用**同一套缩放**，主体高度取四图主体高度的**中位数**
+（★ 不能用平均值 —— 单独生成的左侧视图在它自己的原图里占得更高，用平均值会超出画布被裁断）。
+
 - 输入参考：`image[1]` = **已验收的 C1 概念图**（唯一形状参考）；`image[2]` = 1011 Idle（画风，可选）。
 - 提示词直接用 `design/weapon-3d-art-spec-axe-and-chain.md` §6.1 / §6.2 的四视图正文（那两段已经写好了），把「输入参考图」的定义换成「已验收的概念图」。
 - 尺寸 `1024x1536`、`quality=max`、`input_fidelity=high`，**逐视图一次一张**（一次出多视图会把比例带歪）。

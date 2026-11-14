@@ -115,6 +115,7 @@ SkillWeaponsArtSource/*
 !SkillWeaponsArtSource/README.md
 !SkillWeaponsArtSource/00_Index/
 !SkillWeaponsArtSource/02_Concept/
+!SkillWeaponsArtSource/03_FourView/
 
 # 视觉库：打包输出不入库（临时产物，含缩放后的图）
 _art_process/VisualLibrary/bundles/
