@@ -60,6 +60,8 @@ MODES = {
     # mode -> (提示词基名, 尺寸)
     "five": ("axe_five_view", "1536x1024"),
     "left": ("axe_left_view", "1024x1536"),
+    # single：单视图逐张生成（提示词基名与尺寸由命令行覆盖）
+    "single": ("axe_view_front", "1024x1536"),
 }
 
 
@@ -67,8 +69,9 @@ def abs_path(p):
     return p if os.path.isabs(p) else os.path.join(PROJ, p.replace("/", os.sep))
 
 
-def load_version(mode, version):
-    stem, _size = MODES[mode]
+def load_version(mode, version, prompt_base=None, size=None):
+    stem = prompt_base or MODES[mode][0]
+    size = size or MODES[mode][1]
     prompt_file = os.path.join(PROMPT_DIR, "%s_%s.txt" % (stem, version))
     refs_file = os.path.join(PROMPT_DIR, "refs_%s_%s.json" % (stem, version))
     neg_file = os.path.join(PROMPT_DIR, "%s_negative_%s.txt" % (stem, version))
@@ -80,7 +83,7 @@ def load_version(mode, version):
         prompt = prompt + "\n\n不要：" + neg
     with open(refs_file, "r", encoding="utf-8") as fh:
         refs = json.load(fh)
-    return prompt, refs
+    return prompt, refs, size
 
 
 def png_info(path):
@@ -133,16 +136,19 @@ def build_multipart(fields, files):
 
 def main():
     ap = argparse.ArgumentParser(description="提交技能武器正交视图生成请求")
-    ap.add_argument("--mode", required=True, choices=sorted(MODES), help="five=五视图合板 / left=左侧视图")
+    ap.add_argument("--mode", required=True, choices=sorted(MODES),
+                    help="five=五视图合板 / left=左侧视图 / single=单视图（配合 --prompt-base）")
     ap.add_argument("--version", default="v1")
+    ap.add_argument("--prompt-base", default="", help="覆盖提示词基名（single 模式用）")
+    ap.add_argument("--size", default="", help="覆盖出图尺寸，如 1024x1536")
     ap.add_argument("--stem", default="", help="产物名前缀")
     ap.add_argument("--out", default="", help="成图输出路径（默认落 03_FourView/）")
     ap.add_argument("--dry-run", action="store_true", help="只打印请求内容，不提交")
     ap.add_argument("--approve", action="store_true", help="确认已获用户批准，实际提交")
     args = ap.parse_args()
 
-    stem_base, size = MODES[args.mode]
-    prompt, refs = load_version(args.mode, args.version)
+    stem_base = MODES[args.mode][0]
+    prompt, refs, size = load_version(args.mode, args.version, args.prompt_base, args.size)
     images = [(abs_path(r["path"]), r["role"]) for r in refs["references"]]
     for p, _ in images:
         if not os.path.isfile(p):

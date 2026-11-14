@@ -116,6 +116,11 @@ SkillWeaponsArtSource/*
 !SkillWeaponsArtSource/00_Index/
 !SkillWeaponsArtSource/02_Concept/
 !SkillWeaponsArtSource/03_FourView/
+# 第三方参考图（PBZ 立绘与头部特写）只留本地；只放行自产的画风参考。
+# ⚠ 父目录必须先 ! 回来，否则 git 不允许重新包含被排除目录里的子目录。
+!SkillWeaponsArtSource/01_Reference/
+SkillWeaponsArtSource/01_Reference/*
+!SkillWeaponsArtSource/01_Reference/style/
 
 # 视觉库：打包输出不入库（临时产物，含缩放后的图）
 _art_process/VisualLibrary/bundles/
