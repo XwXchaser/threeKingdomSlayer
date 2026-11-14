@@ -109,6 +109,13 @@ Enemy1021ArtSource/*
 # 长枪 / 其他素材源：仍整体本地留档（已入库的历史文件不受影响，新增文件不入库）
 StabWeaponArtSource/
 
+# 技能武器素材源（抡斧 / 追命锁链）：第三方参考图（PBZ 等）只留本地、不进仓库；
+# 只放行 README / 00_Index 台账 / 本项目自产的 02_Concept 概念图。
+SkillWeaponsArtSource/*
+!SkillWeaponsArtSource/README.md
+!SkillWeaponsArtSource/00_Index/
+!SkillWeaponsArtSource/02_Concept/
+
 # 视觉库：打包输出不入库（临时产物，含缩放后的图）
 _art_process/VisualLibrary/bundles/
 
