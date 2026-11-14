@@ -591,6 +591,32 @@ public partial class AttackSystem : MonoBehaviour
     }
 
     /// <summary>
+    /// 打落玩家周围的敌方投射物（投壶兵）：陶壶在半空被打掉 ⇒ 不伤害、也不留毒。
+    ///
+    /// ★ 规则归**攻击侧**（与「反弹」<see cref="DeflectProjectilesNear"/> 同源同位置）：
+    /// 投射物只保留被动的 <c>ShootDown()</c>，不再反向依赖玩家层的攻击系统。
+    /// 只有主动声明 <c>canBeShotDown</c> 的投射物会被打落（弓手的箭保持原行为）。
+    /// 返回打落数量。
+    /// </summary>
+    private int ShootDownProjectilesNear(Vector3 playerPos, float range)
+    {
+        if (range <= 0f) return 0;
+        var projectiles = SceneRegistry<EnemyProjectile>.Snapshot();
+        int shotDown = 0;
+        foreach (var p in projectiles)
+        {
+            if (p == null || !p.canBeShotDown) continue;
+            float dist = Vector3.Distance(p.GetWorldPosition(), playerPos);
+            if (dist > range) continue;
+
+            p.ShootDown();
+            shotDown++;
+            Debug.Log($"[AttackSystem] 打落投射物: dist={dist:F1} range={range:F1}");
+        }
+        return shotDown;
+    }
+
+    /// <summary>
     /// 释放格挡（Parry 式附加效果：仅机制，不播 Parry 视觉与音效）。
     /// 释放瞬间一次性结算：反弹范围内飞行物 + 打断正在攻击的敌人。
     /// 效果由招式资产声明（releaseParryEnabled / 半径 / 排数），是否已解锁由 finisherParryUnlocked 决定。

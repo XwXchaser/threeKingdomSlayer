@@ -377,6 +377,19 @@ public partial class AttackSystem : MonoBehaviour
                 _stabVisualTimer -= Time.deltaTime;
         }
 
+        // ★ 玩家出招 ⇒ 打落身边的敌方投射物（投壶兵：把陶壶在半空打掉 ⇒ 不伤害、不留毒）。
+        //   规则归攻击侧（与「反弹」同源）⇒ 投射物不再反向依赖 AttackSystem。
+        //   口径与旧实现一致：**动作播放期间**（动作锁未结束）都算数，不是只在命中帧。
+        //   ⚠ 世界停走时（教学时停 / 暂停菜单 timeScale=0）不打落 —— 旧实现挂在投射物的飞行 tick 上，
+        //     timeScale=0 时那个 tick 不跑，行为必须对齐，否则教学拍会被远程偷伤。
+        if (_actionLockTimer > 0f && projectileShootDownRadius > 0f && Time.timeScale > 0f)
+        {
+            Vector3 playerPos = playerState != null
+                ? playerState.transform.position
+                : (PlayerState.Instance != null ? PlayerState.Instance.transform.position : transform.position);
+            ShootDownProjectilesNear(playerPos, projectileShootDownRadius);
+        }
+
         // 招架接触帧：挥入结束（枪到位）才判能不能格开
         if (_parryJudgeTimer >= 0f)
         {

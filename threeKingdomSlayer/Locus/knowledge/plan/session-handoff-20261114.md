@@ -11,6 +11,9 @@ aiEditMode: inherit
 > **给下一个对话的入口。** 先读本文，再按需展开引用文档。
 > 本轮主线：① 破防演出包（REQ-006）② 新兵种「投壶兵」+ 两个技能 ③ 两个武器模型的四视图需求与 3D 制作规范。
 > 架构体检见 `plan/architecture-review-new-features-20261114.md`（**下一轮先做其中的 ①⑤⑥**）。
+>
+> ★ **2026-11-14 续轮（拉取 `a9fbac88` 后）已完成架构 ①**，并修正了本文 §2 待办 5 的一处**勘误**。
+> 续轮记录见 **§6**；架构侧见 `plan/architecture-review-new-features-20261114.md` §5。
 
 ---
 
@@ -70,7 +73,7 @@ Prefab 结构；面数 ≤8k）、两个武器形态要求、中英提示词与�
 | 2 | **两个武器的 3D 模型** | 四视图需求已给（§1.4）；拿到图后做「图 → 模型」尺寸/锚点对照与 Prefab 接线 |
 | 3 | **架构优化 ①⑤⑥** | `plan/architecture-review-new-features-20261114.md` §4 |
 | 4 | **链链读感偏弱** | 链环偏小、链身偏短 ⇒ 调 `ChainLinkRig.linkScale / segmentLength / segmentCount` 或等正式链节美术 |
-| 5 | ★ **主动技能放不出来** | `ActiveSkillInventory.UsesActiveSkills` 当前为 **false**（V1 道具规则）⇒ 机器人拿得到技能但 `TryActivate` 被门禁拦下。**需用户确认规则版本** |
+| 5 | ★ **主动技能放不出来** | ⚠ **勘误：实际不是问题。** `ActiveSkillInventory.UsesActiveSkills` 在 **Battle 场景里实测为 `true`**（规则版本 = `V2_ActiveSkill`）。代码里的默认值 `V1_LimitedItem` 只是**新挂组件时的缺省值**，Battle 场景的实例已被显式写成 V2 ⇒ **机器人拿得到、也放得出**。若哪天又「放不出」，先查这个场景实例的 `_ruleVersion`，不是查代码默认值。详见 §6.2 |
 | 6 | 数值校准 | 抡斧 90/130/180（rows 2/3/4，CD 8/7/6）；锁链 25/40/60（CD 10/9/8）；陶壶毒 2.5×4s |
 | 7 | 正式图标 | 两个新技能现在用海浪图标占位 |
 | 8 | 投壶兵的正式外观 | 现在是 106 的外观占位（美术按铁律 11：idle → 关键动作 → 剩余动作） |
@@ -128,3 +131,109 @@ Prefab 结构；面数 ≤8k）、两个武器形态要求、中英提示词与�
 
 **建议下一轮的第一件事**：先做架构 ①（打落规则挪到攻击侧，纯重构、可机器人回归），
 再做 §2 待办 1（防御→攻击衔接，方案已备好，只差 3 个拍板）。
+
+---
+
+## 6. 续轮（2026-11-14，git 拉取 `a9fbac88` 后）
+
+### 6.1 拉取到的内容
+
+`git pull` 取到 1 个提交：
+
+```
+a9fbac88 feat(combat): 破防演出重做 + 投壶兵(1014) + 两个主动技能（抡斧劈砍 / 追命锁链）
+```
+
+**拉取后必须做的一步**：Unity 弹出「场景在磁盘上被外部修改」模态框 → **选 Reload**，
+否则编辑器拿的是旧场景实例（表现为 `EnemyPool` 里没有 1014、技能池里没有两个新技能）。
+选完 Reload 后编辑器会重新导入，**但仍可能用内存里的旧 Prefab 覆盖磁盘**（见 §6.3）。
+
+### 6.2 勘误：主动技能其实放得出来
+
+| 断言 | 实测 |
+|---|---|
+| 旧记录：「`UsesActiveSkills` 当前为 false（V1 道具规则）⇒ 机器人拿得到技能但 `TryActivate` 被门禁拦下」 | **不成立。** Battle 场景里的 `ActiveSkillInventory` 实例：`_ruleVersion = V2_ActiveSkill`、`UsesActiveSkills = True`、`Entries = 0`（未领技能而已） |
+
+**根因**：`ActiveSkillInventory._ruleVersion` 的**代码默认值**是 `V1_LimitedItem`，
+但 Battle 场景的实例已显式写成 `V2_ActiveSkill` ⇒ 读代码默认值会误判。
+⇒ **以后查这条规则一定读场景实例，不要读代码默认值。**
+
+顺带核实（拉取后实测）：
+
+- `ActiveSkillPoolConfig.rarePool` = 6 项，**含** `ActiveSkill_AxeSmash`（effect=8）与 `ActiveSkill_ChainPull`（effect=9），权重均为 100；
+  三个池权重已还原为 `common 0.6 / rare 0.35 / legendary 0.05`（**没有被留在临时的权重拉高状态**）✔
+- `EnemyPool.enemyPrefabList` = **16** 项，**含 `Enemy_1014`** ✔（运行时日志 `注册敌人预制体: Enemy_1014 → enemyId=1014` 也印证）
+
+### 6.3 一个必须知道的坑：拉取后 Prefab 会被内存旧值刷回磁盘
+
+**现象**：`git pull` 后 Unity 重新导入，`Assets/Resources/EnemyPrefabs/Enemy_1014.prefab`
+的 `projectilePoisonDamage/Duration` 从磁盘上的 `2.5 / 4` 变成 `0 / 0`，
+`projectileCanBeShotDown` 从 `1` 变 `0` ⇒ **投壶兵既不中毒、也不可被打落**。
+
+**根因**：Editor 内存里还是上一版的 Prefab 实例，导入时把内存版重新序列化回了磁盘。
+
+**修法（本轮已用）**：不要 `git checkout` 去抢磁盘，而是**改内存实例再显式写盘**：
+
+```csharp
+var p  = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/EnemyPrefabs/Enemy_1014.prefab");
+var so = new SerializedObject(p.GetComponent<Enemy>());
+so.FindProperty("projectilePoisonDamage").floatValue    = 2.5f;
+so.FindProperty("projectilePoisonDuration").floatValue   = 4f;
+so.FindProperty("projectileCanBeShotDown").boolValue     = true;
+so.ApplyModifiedPropertiesWithoutUndo();
+EditorUtility.SetDirty(p.GetComponent<Enemy>());
+AssetDatabase.SaveAssets();   // ← 少了这一行，下次刷新又会被刷回去
+```
+
+**验收**：写入后 `git diff --numstat` 无差异、`git hash-object --path=...` 与 HEAD blob 哈希一致
+（`9bb7d465…`）⇒ 内容已完全对齐；`git status` 仍可能显示 `M`，那只是 `core.autocrlf=true`
+造成的换行符伪差异，不是内容变更。
+
+### 6.4 架构 ① 已完成：「投射物打落」规则挪到攻击侧
+
+**改动（3 个文件，+42 / −20）**：
+
+| 文件 | 改动 |
+|---|---|
+| `Assets/Scripts/Enemy/EnemyProjectile.cs` | 删掉 `TryShootDown()` 及其在 `UpdateFlight()` 里的调用；`ShootDown()` 保留但降为**被动**方法（补了注释说明「何时打落」由攻击侧决定） |
+| `Assets/Scripts/Player/Combat/AttackSystem.Types.cs` | 新增 `ShootDownProjectilesNear(Vector3, float)`，**紧邻**既有的 `DeflectProjectilesNear`（反弹通道）⇒ 两条同类规则同源同位置 |
+| `Assets/Scripts/Player/Combat/AttackSystem.cs` | `Update()` 里在**动作锁未结束**时调用打落扫描 |
+
+**口径与旧实现对齐的两点（都是刻意保持行为不变）**：
+
+1. **触发窗口 = 整个动作播放期**（动作锁 `_actionLockTimer > 0`），**不是**只在命中帧。
+   （架构体检原文建议「在攻击命中帧调用」，但那会**缩短**打落窗口 ⇒ 不是纯重构 ⇒ 未采纳。）
+2. **世界停走时不打落**（`Time.timeScale > 0`）。
+   旧实现挂在投射物的飞行 tick 上，而 `timeScale=0`（教学时停 / 暂停菜单 / 三选一面板）时那个 tick 不跑
+   ⇒ 旧行为就是「停走时不打落」。**不写这条会让教学拍被远程偷伤。**
+
+**实测（Play Mode，三态对照，机器人驱动进战斗）**：
+
+| 场景 | 投射物 | 结果 | 玩家 HP | 中毒 |
+|---|---|---|---|---|
+| 出招中 | `canBeShotDown=true` | **被打落** ✔ | 不变 | 无 ✔ |
+| 出招中 | `canBeShotDown=false`（弓手口径） | **仍在飞** ✔（未被顺手打掉） | — | — |
+| **不出招** | `canBeShotDown=true` | **仍在飞** ✔（没有动作锁就不打落） | — | — |
+
+运行时调用链（Console 取证）：
+
+```
+[EnemyProjectile] 被击落 id=-45590 pos=(0.00, 0.81, 2.49)
+  EnemyProjectile:ShootDown ()                        (EnemyProjectile.cs:176)
+  AttackSystem:ShootDownProjectilesNear (Vector3,single) (AttackSystem.Types.cs:612)
+  AttackSystem:Update ()                              (AttackSystem.cs:390)
+```
+
+对照组投射物随后正常落地（`EnemyProjectile:OnArrival` → `PlayerState.TakeDamage`）⇒ 未被打落 ✔
+
+**副作用**：`EnemyProjectile` 不再引用 `AttackSystem` / `PlayerState` ⇒ 敌人层不再反向依赖玩家层。
+
+### 6.5 续轮之后，下一个该做什么
+
+| 优先 | 事项 | 状态 |
+|---|---|---|
+| 1 | **架构 ⑤+⑥**：抽公共弹簧骨链求解器（`ChainLinkRig` vs `WeaponTasselDynamics`）＋ 把链的魔法数字（节数 9 / 节长 0.95 / 缩放）搬进 `ChainPullLevelConfig` | **可直接做**（纯重构，不需拍板） |
+| 2 | **REQ-010 防御→攻击衔接** | **卡在 3 个拍板点**（见 §2 待办 1 / `plan/week-20261114-new-enemy-two-skills-parry-counter.md` §3.3） |
+| 3 | 架构 ②：`Enemy.TakeDamage` 分组参数（**只给新代码**引入 `HitOptions`，旧调用点逐步迁移） | 可做，但收益一般 |
+| 4 | 待办 2/4/6/7/8：3D 模型（等用户出图）、链链读感、两个技能数值、正式图标、投壶兵正式外观 | 等用户 |
+| 5 | 架构 ③④⑧：`ActiveSkillRunner` 上帝类拆分 | **攒够 2~3 个新技能再做**，别和新功能混批 |

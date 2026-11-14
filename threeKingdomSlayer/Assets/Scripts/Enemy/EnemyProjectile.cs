@@ -157,6 +157,9 @@ public class EnemyProjectile : MonoBehaviour
     /// <summary>
     /// **被玩家的攻击在半空打落**（投壶兵的核心交互：把陶壶打掉 ⇒ 不伤害、不留毒）。
     /// 不造成任何伤害，只是让投掷物消失（沿用既有的淡出回收）。
+    ///
+    /// ★ 本方法是**被动**的：<b>何时打落</b>由攻击侧决定（<c>AttackSystem</c> 的「打落投射物」通道，
+    /// 与「反弹」同源同位置）⇒ 敌人层的飞行物不再反向依赖玩家层的攻击系统。
     /// </summary>
     public void ShootDown()
     {
@@ -172,24 +175,6 @@ public class EnemyProjectile : MonoBehaviour
         _flightProgressTween = null;
         DebugLog.Info($"[EnemyProjectile] 被击落 id={GetInstanceID()} pos={transform.position}");
         DisposeProjectile();
-    }
-
-    /// <summary>
-    /// 玩家挥枪时，**身边的敌方投射物会被打落**（把陶壶在半空打掉）。
-    /// 规则：玩家正在出招（<see cref="AttackSystem.IsActionPlaying"/>）且投射物在
-    /// <see cref="AttackSystem.ProjectileShootDownRadius"/> 半径内 ⇒ 打落。
-    /// </summary>
-    private void TryShootDown()
-    {
-        if (!canBeShotDown || _arrived) return;
-        var attack = AttackSystem.Instance;
-        if (attack == null || !attack.IsActionPlaying) return;
-        float radius = attack.ProjectileShootDownRadius;
-        if (radius <= 0f) return;
-        var player = PlayerState.Instance;
-        if (player == null) return;
-        if (Vector3.Distance(player.transform.position, transform.position) > radius) return;
-        ShootDown();
     }
 
     private void CacheVisualTransforms()
@@ -289,8 +274,6 @@ public class EnemyProjectile : MonoBehaviour
         Vector3 nextPosition = EvaluatePosition(Mathf.Min(_flightProgress + 0.01f, 1f));
         transform.position = position;
 
-        // ★ 玩家用攻击打落投射物（投壶兵）
-        TryShootDown();
         if (_arrived) return;
 
         Vector3 velocity = nextPosition - position;

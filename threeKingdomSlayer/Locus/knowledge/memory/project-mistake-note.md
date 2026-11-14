@@ -151,6 +151,8 @@ maintenanceRules: |-
 - 根因：`LoadPrefabContents` 是**从磁盘重新读取** Prefab 到隔离场景，`SaveAsPrefabAsset` 再整体写回，内存中尚未落盘的 Inspector 改动会被直接丢弃。任何重载/刷新都会让未写盘的值回到磁盘版本。
 - 正确做法：只改 Prefab 资产字段时用 `AssetDatabase.LoadAssetAtPath<GameObject>` 取**内存实例** + `SerializedObject` / `AddComponent`，再 `EditorUtility.SetDirty` + `AssetDatabase.SaveAssets()`；确需 `LoadPrefabContents` 时先 `AssetDatabase.SaveAssets()` 把待写改动落盘。给用户报数值前先确认是「内存值」还是「磁盘值」（grep 文件内容只能证明磁盘值）。
 - 附带纪律：交付用户可调的 Inspector 数值后，提示其改完按 Ctrl+S；改回正确值时必须显式写盘（`AssetDatabase.SaveAssets()`），否则下次刷新仍会回到旧值。
+- **反向变体（2026-11-14 续轮实测）：`git pull` 之后，磁盘上的新值会被 Editor 内存里的旧版覆盖回磁盘。** 拉到一个改了 Prefab 的提交后，Unity 重新导入时用内存旧实例把文件写回去 ⇒ 拉下来的改动静默丢失（实测：`Enemy_1014.prefab` 的毒伤 `2.5/4s` 与 `projectileCanBeShotDown` 被刷成 `0/0` 与 `false`，投壶兵直接失效）。修法：**改内存实例 + `EditorUtility.SetDirty` + `AssetDatabase.SaveAssets()` 显式写盘**，不要用 `git checkout` 去抢磁盘（抢完下次刷新还会被刷回去）。验收看 `git hash-object --path=<path> <path>` 是否等于 `git rev-parse HEAD:<path>`（内容哈希一致即已对齐）；`git status` 可能因 `core.autocrlf=true` 仍显示 `M`，那是换行符伪差异，用 `git diff --numstat`（无输出）区分。
+- 附带纪律（拉取后）：Unity 会弹「场景在磁盘上被外部修改」模态框 → **选 Reload**，否则编辑器拿到的是旧场景实例（会误判「新增的 Prefab/技能没注册进场景」）。
 
 ### 素材“零引用”审计必须包含 .scene（2026-10-17）
 - 症状：清理 N1 未引用重复贴图后，又批量删除“零引用垃圾素材”，其中 `Assets/Sprites/background_MENU.jpg` 实际被 `Assets/Scenes/MainMenu.scene` 引用，被误删。
