@@ -1,0 +1,38 @@
+{
+  "version": "axe_combat_vfx_overlay_board_v3",
+  "handoff": "Locus/knowledge/plan/axe-skill-integration-20261115.md §6.15",
+  "spec": "Locus/knowledge/design/axe-ground-crack-vfx-spec-20261115.md",
+  "note": "抡斧砸地裂纹「战斗特效叠加概念板 v3」（3 列 × 2 行六格，1536×1024）。六格 = 纯粗裂纹 / +金白命中核 / +朱红强调 / +少量碎土像素 / +斧刃方向拖痕 / 推荐综合版。全部是平铺在地面上的 2D/2.5D 特效层，不是环境/地形概念图；只用于决定最终扁平特效的视觉层级，不是最终贴图，不导入 Unity。沿用 §6.14a 的结论：503/504 是上游故障，原样重发 + 等待即可，不改提示词。",
+  "references": [
+    {
+      "order": 1,
+      "path": "SkillWeaponsArtSource/05_VfxConcept/refs/conv_battle_1_small.jpg",
+      "role": "image 1: 项目战斗特效最高优先参考（原图 C:/Users/Administrator/Downloads/微信图片_20260928101136_13_455.png 的 640 宽缩小副本）—— 只取战斗特效色彩、金白/朱红命中色与像素化世界语言；HUD、角色、武器都不复制",
+      "expected_sha256_prefix": "d8617578e23a9fb9"
+    },
+    {
+      "order": 2,
+      "path": "SkillWeaponsArtSource/05_VfxConcept/refs/conv_battle_2_small.jpg",
+      "role": "image 2: 三国暖土与空间氛围补充参考（原图 C:/Users/Administrator/Downloads/微信图片_20260928101137_14_455.png 的 640 宽缩小副本）—— 其建筑、军阵、远景都不生成",
+      "expected_sha256_prefix": "c05dc3d61b773414"
+    },
+    {
+      "order": 3,
+      "path": "Assets/Sprites/Enemy/Enemy1_1/Enemy_1011_idle1.png",
+      "role": "image 3: 已验收 1011 精灵 —— 只负责高清像素色簇、硬边与局部细节组织；角色本身不复制",
+      "expected_sha256_prefix": "b8ac9bcf97804e4c"
+    },
+    {
+      "order": 4,
+      "path": "SkillWeaponsArtSource/05_VfxConcept/refs/axe_four_view_small.png",
+      "role": "image 4: 抡斧四视图缩小副本 —— 只提示武器是厚重单刃斧，用于决定裂纹轻微方向性；不画斧头、不用白底、不作画风参考",
+      "expected_sha256_prefix": "46c71f85bec105b1"
+    },
+    {
+      "order": 5,
+      "path": "SkillWeaponsArtSource/05_VfxConcept/refs/ingame_ground_crop.png",
+      "role": "image 5: 旧实机地面裁切 —— 只定义当前地面颜色与对比度，地面保持原样",
+      "expected_sha256_prefix": "4d078d655562df24"
+    }
+  ]
+}

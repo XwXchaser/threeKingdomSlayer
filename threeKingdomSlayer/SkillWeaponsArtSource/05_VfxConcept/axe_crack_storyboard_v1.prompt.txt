@@ -1,0 +1,19 @@
+Create one animation concept storyboard sheet for a high-definition pixel-art Three Kingdoms battlefield action game: a six-panel grid, three columns by two rows, on one 1536x1024 board, read left to right and top to bottom. Every panel is the same instant of the same ground impact seen from the same locked camera, so the whole sheet reads as one short animation.
+
+THE SHOT, IDENTICAL IN ALL SIX PANELS: a close view of warm yellow-brown battlefield earth seen from a fixed oblique top-down 2.5D angle, the camera locked, the same patch of ground, the same lighting, the same scale in every panel. Only one thing changes from panel to panel: how much of the ground crack is visible, and how opaque it is.
+
+THE CRACK, THE SAME SHAPE AND THE SAME SIZE IN EVERY PANEL WHERE IT APPEARS: a heavy impact fracture in cold gray-brown packed soil and stone. The centre is the densest and darkest spot, about six to eight irregular thick cracks branching outward from it, with a few short secondary branches, and the outer ends sparse and fading out. The crack body is deep cold gray-brown soil-and-stone colour, with a few restrained gray-white gravel highlights along its edges. Big clean colour clusters with hard stepped pixel edges, in the same rendering language as the reference game screenshots: clustered light and shadow planes, stepped silhouettes, no smooth airbrushed gradients.
+
+THE SIX PANELS:
+1. Nothing has happened yet. The ground is clean and unbroken, warm yellow-brown earth with the same texture and lighting as the other panels. No crack, no mark, no debris.
+2. The crack has just started to open from the centre. Only the inner half of the fracture is visible: the dense dark centre with about half of its branches reaching outwards, the rest of the ground still clean. The visible part is fully opaque.
+3. The crack is fully revealed. The complete fracture is visible, dense and dark in the centre, branching out to its sparse fading ends.
+4. The crack is identical to panel 3, fully revealed and fully opaque, held for a short beat.
+5. The same crack is fading out as a whole. It is still clearly the same fracture and still readable, but the whole thing is now translucent and lighter, as if dissolving into the ground.
+6. The crack is gone. The ground reads as clean warm yellow-brown earth again, exactly like panel 1.
+
+Draw the six panels separated by thin dark gutters, all panels the same size and aligned in a strict 3x2 grid. Keep the camera, the ground texture, the lighting, the crack shape, the crack scale and the crack position identical across the panels; only the visible extent and the opacity of the crack change.
+
+Reference image duties, one job each. Images 1 and 2 are real gameplay screenshots of this battlefield: they define the battle world, the warm yellow-brown ground, the overall effect quality and the pixel rendering language. They are full mobile screenshots, so use only the world, the ground and the effect quality from them and keep their battle interface out of this sheet. Image 3 is an approved enemy sprite from this same game: it defines the high-definition pixel colour clusters, the hard edges and the way detail is grouped. Image 4 gives only the impression of a heavy single-bladed axe shape; the sheet shows ground and crack only, so nothing from image 4 is drawn on this sheet and its plain light background is not used. This sheet is an animation concept for review only, not a production sprite sheet and not a final texture.
+
+Negative constraints: regular spiderweb, complete circular ring, lightning, flame, magic runes, glowing magic circle, blue energy, soft blurry glow, uniform noise, dust cloud, sparks, shockwave, camera motion, character, weapon, text, UI, white background, transparent checkerboard

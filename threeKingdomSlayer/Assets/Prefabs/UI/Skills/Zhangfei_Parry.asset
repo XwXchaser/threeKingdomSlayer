@@ -76,6 +76,9 @@ MonoBehaviour:
   parryStanceTasselMaxBend: 14
   parryGuardRecoilDistance: 0.5
   parryGuardRecoilSeconds: 0.18
+  parryGuardRecoilTiltDegrees: -8
+  parryGuardRecoilDrop: 0.12
+  parryGuardHitDefendEnterSeconds: 0.08
   parryStanceBreakSpinDegrees: 150
   parryStanceBreakDrift: 2
   parryStanceBreakSeconds: 2

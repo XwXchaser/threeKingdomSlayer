@@ -36,6 +36,7 @@ public class StageSelectUI : MonoBehaviour
 
     private List<FakeRouteStageConfig> _routes = new List<FakeRouteStageConfig>();
     private RectTransform _grid;
+    private RectTransform _gridLayout;
     private float _uiScale;
 
     private void Awake()
@@ -77,6 +78,18 @@ public class StageSelectUI : MonoBehaviour
     {
         if (_grid != null) Destroy(_grid.gameObject);
 
+        // ⚠ 页面根节点默认是 100×100（Unity 新建 RectTransform 的默认值）→
+        //   网格是它的子节点（锚点拉伸）→ 网格只有 100 宽 → 只能排一列。
+        //   ⇒ 先把根节点撑满画布。
+        var rootRt = transform as RectTransform;
+        if (rootRt != null)
+        {
+            rootRt.anchorMin = Vector2.zero;
+            rootRt.anchorMax = Vector2.one;
+            rootRt.offsetMin = Vector2.zero;
+            rootRt.offsetMax = Vector2.zero;
+        }
+
         _grid = new GameObject("StageGrid", typeof(RectTransform)).GetComponent<RectTransform>();
         _grid.SetParent(transform, false);
         _grid.anchorMin = new Vector2(0.06f, 0.14f);
@@ -84,7 +97,22 @@ public class StageSelectUI : MonoBehaviour
         _grid.offsetMin = Vector2.zero;
         _grid.offsetMax = Vector2.zero;
 
-        var grid = _grid.gameObject.AddComponent<GridLayoutGroup>();
+        // ⚠ **LayoutGroup 必须挂在子节点上**（2026-11-16 实测修）：
+        //   GridLayoutGroup 会把自己的 RectTransform 压成**内容大小**，
+        //   挂在容器上时容器被压成 88×72（刚好一个格子）→ 三个按钮全叠在屏幕正中央。
+        //   ⇒ 容器只负责占位（锚点拉伸），排版交给子节点。
+        var layoutRt = new GameObject("Grid", typeof(RectTransform)).GetComponent<RectTransform>();
+        layoutRt.SetParent(_grid, false);
+        // ⚠ 排版子节点必须有**真实高度**（拉伸填满容器）：
+        //   高度为 0 时 GridLayoutGroup 只能排一列 → 三个按钮竖着叠。
+        layoutRt.anchorMin = new Vector2(0f, 0f);
+        layoutRt.anchorMax = new Vector2(1f, 1f);
+        layoutRt.pivot = new Vector2(0.5f, 1f);
+        layoutRt.offsetMin = Vector2.zero;
+        layoutRt.offsetMax = Vector2.zero;
+        _gridLayout = layoutRt;
+
+        var grid = layoutRt.gameObject.AddComponent<GridLayoutGroup>();
         grid.cellSize = new Vector2(200f * _uiScale, 80f * _uiScale);
         grid.spacing = new Vector2(12f * _uiScale, 12f * _uiScale);
         grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
@@ -95,7 +123,7 @@ public class StageSelectUI : MonoBehaviour
         if (_routes.Count == 0)
         {
             var emptyGo = new GameObject("EmptyHint", typeof(RectTransform));
-            emptyGo.transform.SetParent(_grid, false);
+            emptyGo.transform.SetParent(layoutRt, false);
             var emptyTxt = emptyGo.AddComponent<Text>();
             emptyTxt.text = "未找到路线关卡配置";
             emptyTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -105,8 +133,59 @@ public class StageSelectUI : MonoBehaviour
             return;
         }
 
+        CreateEndlessButton();
         foreach (var cfg in _routes)
             CreateRouteButton(cfg);
+
+        // ⚠ **层级**：画布上的 Background 图是 Canvas 的子节点，默认盖在网格上 →
+        //   网格必须排到 Canvas 的最后（否则整页按钮都看不见，2026-11-16 实测）。
+        transform.SetAsLastSibling();
+    }
+
+    /// <summary>
+    /// **无尽关入口**（2026-11-16）：独立于剧情关的第二种模式（循环刷分 + 局内 build 跨圈保留）。
+    /// 放在选关列表第一位（第一行第一格），点击后：关闭选关页 → 建运行时 + HUD → 开跑。
+    /// </summary>
+    private void CreateEndlessButton()
+    {
+        var go = new GameObject("EndlessBtn", typeof(RectTransform));
+        go.transform.SetParent(_gridLayout != null ? _gridLayout : _grid, false);
+        var img = go.AddComponent<Image>();
+        img.color = new Color(0.30f, 0.17f, 0.11f, 0.96f);
+        var btn = go.AddComponent<Button>();
+        var colors = btn.colors;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color(1.25f, 1.18f, 1.1f, 1f);
+        colors.pressedColor = new Color(0.8f, 0.76f, 0.72f, 1f);
+        btn.colors = colors;
+
+        // 用 TMP（默认字体带中文；选关页其它按钮用的是 legacy Text）
+        var labelGo = new GameObject("Text", typeof(RectTransform));
+        labelGo.transform.SetParent(go.transform, false);
+        var labelRt = labelGo.GetComponent<RectTransform>();
+        labelRt.anchorMin = Vector2.zero;
+        labelRt.anchorMax = Vector2.one;
+        labelRt.offsetMin = new Vector2(4, 4);
+        labelRt.offsetMax = new Vector2(-4, -4);
+        var tmp = labelGo.AddComponent<TMPro.TextMeshProUGUI>();
+        tmp.font = UiFontUtility.ResolveCjkFont();
+        tmp.text = "[无尽关]\n循环刷分";
+        tmp.fontSize = Mathf.RoundToInt(16f * _uiScale);
+        tmp.alignment = TMPro.TextAlignmentOptions.Center;
+        tmp.color = new Color(1f, 0.86f, 0.55f, 1f);
+
+        btn.onClick.AddListener(OnEndlessSelected);
+    }
+
+    private void OnEndlessSelected()
+    {
+        Debug.Log("[StageSelect] 选择无尽关");
+        var controller = EndlessRunController.GetOrCreate();
+        var hud = EndlessHud.GetOrCreate();
+        hud.Bind(controller);
+        // 先关选关页（否则 overlay 会挡住战斗输入），再开跑
+        OnCloseClicked();
+        controller.StartEndlessRun();
     }
 
     /// <summary>
@@ -144,7 +223,7 @@ public class StageSelectUI : MonoBehaviour
     private void CreateRouteButton(FakeRouteStageConfig cfg)
     {
         var go = new GameObject("RouteBtn_" + cfg.stageId, typeof(RectTransform));
-        go.transform.SetParent(_grid, false);
+        go.transform.SetParent(_gridLayout != null ? _gridLayout : _grid, false);
         var img = go.AddComponent<Image>();
         img.color = panelColor;
         var btn = go.AddComponent<Button>();
@@ -172,8 +251,11 @@ public class StageSelectUI : MonoBehaviour
         }
     }
 
-    private Text AddLabel(Transform parent)
+    private TMPro.TextMeshProUGUI AddLabel(Transform parent)
     {
+        // ⚠ **必须用 TMP + 项目中文字体**（2026-11-16 修）：
+        //   原来用 legacy Text + Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
+        //   ——那是拉丁字体，**中文没有字形** → 按钮上的关卡名全是空白（看上去像“空按钮”）。
         var textGo = new GameObject("Text", typeof(RectTransform));
         textGo.transform.SetParent(parent, false);
         var textRt = textGo.GetComponent<RectTransform>();
@@ -181,11 +263,13 @@ public class StageSelectUI : MonoBehaviour
         textRt.anchorMax = Vector2.one;
         textRt.offsetMin = new Vector2(4, 4);
         textRt.offsetMax = new Vector2(-4, -4);
-        var txt = textGo.AddComponent<Text>();
-        txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        txt.fontSize = Mathf.RoundToInt(16f * _uiScale);
-        txt.alignment = TextAnchor.MiddleCenter;
-        return txt;
+        var tmp = textGo.AddComponent<TMPro.TextMeshProUGUI>();
+        tmp.font = UiFontUtility.ResolveCjkFont();
+        tmp.fontSize = Mathf.RoundToInt(16f * _uiScale);
+        tmp.alignment = TMPro.TextAlignmentOptions.Center;
+        tmp.color = Color.white;
+        tmp.enableWordWrapping = true;
+        return tmp;
     }
 
     // ────────────────────────── 选择处理 ──────────────────────────

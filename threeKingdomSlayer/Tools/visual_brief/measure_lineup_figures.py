@@ -27,6 +27,7 @@ except ImportError:  # pragma: no cover
     raise
 
 ALPHA_MIN = 128         # 可见阈值
+BG_COLOR_TOL = 30       # 实色背景分人时，与背景色的最小色差
 MIN_AREA = 1000         # 连通域最小面积，滤掉噪点
 BODY_WINDOW = 60        # 头顶判定窗口（腿中心列 ±N）
 MIN_HEAD_WIDTH = 24     # 判定"头顶"所需的窗口内连续可见段最小宽度（排除旗杆/弓尖等细杆）
@@ -138,19 +139,48 @@ def main() -> int:
     ap.add_argument("--image", required=True)
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--labels", default="1011,1012,1013,1051,1021")
+    ap.add_argument("--bg-rgb", default=None,
+                    help="不透明底图的背景色 'r,g,b'（不给则自动取画布四边中位色）")
     args = ap.parse_args()
 
     im = Image.open(args.image).convert("RGBA")
     w, h = im.size
     alpha = im.getchannel("A")
-    mask = bytearray(1 if v > ALPHA_MIN else 0 for v in alpha.getdata())
+    if alpha.getextrema()[0] < ALPHA_MIN:
+        # 有透明通道 → 直接用 alpha 分人
+        mask = bytearray(1 if v > ALPHA_MIN else 0 for v in alpha.getdata())
+        bg_mode = "alpha"
+    else:
+        # 不透明底（实色背景）→ 按与背景色的差异分人
+        if args.bg_rgb:
+            bgc = tuple(int(v) for v in args.bg_rgb.split(","))
+        else:
+            border = []
+            px = im.load()
+            for x in range(w):
+                border.append(px[x, 0][:3]); border.append(px[x, h - 1][:3])
+            for y in range(h):
+                border.append(px[0, y][:3]); border.append(px[w - 1, y][:3])
+            arr = sorted(border)
+            bgc = tuple(arr[len(arr) // 2][i] for i in range(3))
+        bg_mode = "color%s" % (bgc,)
+        mask = bytearray(0) * (w * h)
+        mlist = bytearray(w * h)
+        pxl = im.load()
+        for y in range(h):
+            for x in range(w):
+                r, g, b = pxl[x, y][:3]
+                d = ((r - bgc[0]) ** 2 + (g - bgc[1]) ** 2 + (b - bgc[2]) ** 2) ** 0.5
+                if d > BG_COLOR_TOL:
+                    mlist[y * w + x] = 1
+        mask = mlist
 
     comps = [c for c in components(mask, w, h) if len(c) >= MIN_AREA]
     comps.sort(key=lambda c: min(p % w for p in c))
     labels = [s.strip() for s in args.labels.split(",")]
 
     result = {"image": args.image, "size": [w, h], "figure_count": len(comps),
-              "components": len(comps), "figures": []}
+              "components": len(comps), "segmentation": bg_mode, "figures": []}
     for i, pix in enumerate(comps):
         m = measure(pix, w, h)
         m["index"] = i + 1

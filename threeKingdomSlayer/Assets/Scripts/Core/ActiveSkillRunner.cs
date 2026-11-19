@@ -57,6 +57,23 @@ public class ActiveSkillRunner : MonoBehaviour
         // 输入被拦下时（破防硬直、路线转场、三选一面板……）不能释放主动技能
         if (GameplayInputGate.IsBlocked && !GameplayInputGate.AllowSkillActivationWhileBlocked) return false;
 
+        // **暗源消耗**（2026-11-16）：暗源只靠进攻获取 → 防御回血型玩法放不出技能。
+        // 先查够不够（不够直接拒绝），释放**成功之后**才扣 → 失败不误扣。
+        float cost = definition.GetShadowCost(level);
+        if (cost > 0f && !PlayerState.Instance.HasShadowSource(cost))
+        {
+            Debug.Log($"[ActiveSkillRunner] 暗源不足：{definition.displayName} 需要 {cost:F0}，当前 {PlayerState.Instance.ShadowSource:F0}");
+            return false;
+        }
+
+        bool activated = ActivateByType(definition, level);
+        if (activated && cost > 0f) PlayerState.Instance.TrySpendShadowSource(cost);
+        return activated;
+    }
+
+    /// <summary>按效果类型分发（从 TryActivate 里抽出来，便于“成功后扣暗源”）。</summary>
+    private bool ActivateByType(ActiveSkillDefinition definition, int level)
+    {
         switch (definition.activeEffectType)
         {
             case ActiveSkillEffectType.FireAoe:
@@ -308,63 +325,170 @@ public class ActiveSkillRunner : MonoBehaviour
         return true;
     }
 
-    /// <summary>抡斧的表现与结算：抡起（0.18s）→ 劈下（0.12s）→ 命中帧结算。</summary>
+    /// <summary>
+    /// 抡斧劈砍的表现参数在 <see cref="AxeSmashPose"/>（单一来源，编辑器调姿工具共用）。
+    /// </summary>
+
+    /// <summary>抡斧的表现与结算：抡起 → 劈下 → **命中帧结算** → 停顿 → 收势。</summary>
     private System.Collections.IEnumerator RunAxeSmash(AxeSmashLevelConfig cfg, List<Enemy> targets)
     {
         var player = PlayerState.Instance;
         if (player == null) yield break;
 
+        // ── 落点：命中的敌人里**最靠前的那一排**（rowIndex 最小）的胸口 ──
+        //   用敌人自己的 transform 取位置（排位 z = Enemies 根节点 + (maxRows-1-row)*(-rowSpacing)），
+        //   不写死常量 ⇒ rangeRows 变化、阵型换预设都自动跟着走。
+        Vector3 impactPoint = Vector3.zero;
+        bool hasTarget = false;
+        int bestRow = int.MaxValue;
+        for (int i = 0; i < targets.Count; i++)
+        {
+            var e = targets[i];
+            if (e == null) continue;
+            if (!hasTarget || e.rowIndex < bestRow)
+            {
+                hasTarget = true;
+                bestRow = e.rowIndex;
+                impactPoint = e.transform.position;
+            }
+        }
+        if (!hasTarget) yield break;
+        // 胸口高度 + 往相机挪一点（3D 斧头要压在 2D 敌人前面，否则会被精灵盖住）
+        impactPoint = AxeSmashPose.ImpactPoint(impactPoint);
+
         GameObject axe = null;
+        MeshWeaponVisual axeVisual = null;
         var weaponPrefab = cfg.weaponPrefab != null ? cfg.weaponPrefab : ResolvePlayerWeaponPrefab();
+        Vector3 tipLocal = Vector3.zero;      // 刃尖锚点（Prefab 局部）
         if (weaponPrefab != null)
         {
             axe = Instantiate(weaponPrefab);
-            axe.name = "AxePlaceholder";
+            axe.name = "Axe3D";
             var vis = axe.GetComponentInChildren<MeshWeaponVisual>();
+            axeVisual = vis;
             if (vis != null) vis.SetSorting(100);   // ★ 技能表现必须在敌人精灵**之上**（否则被人群挡住）
-            axe.transform.localScale = Vector3.one * 0.45f;   // 占位：长枪太长 ⇒ 缩成“斧头”尺度
+            // ★ 用 Prefab 自带的 Tip 锚点反解握把位置：刃口必然落在目标胸口，
+            //   不写死网格轴向（模型朝向改了也不用重调）。
+            //   实例刚生成、根节点在原点且无旋转缩放 ⇒ 此时世界坐标 = Prefab 局部坐标。
+            tipLocal = vis != null ? vis.TipPosition : Vector3.zero;
+            axe.transform.localScale = Vector3.one * AxeSmashPose.RuntimeScale;
         }
 
-        Vector3 pivot = player.transform.position + new Vector3(0f, 1.6f, -0.6f);
-        Vector3 raisePos = pivot + new Vector3(-0.4f, 2.6f, -1.6f);
-        Vector3 smashPos = pivot + new Vector3(0.2f, -1.2f, 1.4f);
+        // ★ 三帧位姿：美术 2026-11-15 在 Battle 场景里摆定，原样照搬（Start 起手 → Apex 抡到最高 → End 砸下＝命中帧）。
+        //   **绝对坐标**：本技能是“对排的范围伤害”，伤害按排结算，武器表现不锁任何敌人的位置。
+        Vector3 startGrip = AxeSmashPose.StartGrip();
+        Quaternion startRot = AxeSmashPose.StartRot;
+        Vector3 apexGrip = AxeSmashPose.ApexGrip();
+        Quaternion apexRot = AxeSmashPose.ApexRot;
+        Vector3 endGrip = AxeSmashPose.EndGrip();
+        Quaternion endRot = AxeSmashPose.EndRot;
 
         if (axe != null)
         {
-            axe.transform.position = raisePos;
-            axe.transform.rotation = Quaternion.Euler(35f, 0f, 0f);
+            // ① 蓄势：把斧举起来。**ease-out** ⇒ 到位前的后半段明显变慢（蓄势感由“减速到位”表达，不抖动）
             float t = 0f;
-            while (t < 0.18f) { t += Time.deltaTime; yield return null; }
-            t = 0f;
-            Vector3 from = axe.transform.position;
-            while (t < 0.12f)
+            while (t < AxeSmashPose.WindUpSeconds)
             {
                 t += Time.deltaTime;
-                float k = Mathf.Clamp01(t / 0.12f);
-                axe.transform.position = Vector3.Lerp(from, smashPos, k * k);
-                axe.transform.rotation = Quaternion.Slerp(Quaternion.Euler(35f, 0f, 0f), Quaternion.Euler(-70f, 0f, 0f), k);
+                float kPos = AxeSmashPose.EaseWindUpPos(t / AxeSmashPose.WindUpSeconds);
+                float kRot = AxeSmashPose.EaseWindUpRot(t / AxeSmashPose.WindUpSeconds);
+                axe.transform.position = Vector3.Lerp(startGrip, apexGrip, kPos);
+                axe.transform.rotation = Quaternion.Slerp(startRot, apexRot, kRot);
                 yield return null;
             }
-        }
-        else
-        {
-            yield return new WaitForSeconds(0.3f);
+            axe.transform.position = apexGrip;
+            axe.transform.rotation = apexRot;
+
+            // ② 绷住：最高点停一拍（张力 —— 这一拍就是“蓄势”的观感来源）
+            t = 0f;
+            while (t < AxeSmashPose.ApexHoldSeconds) { t += Time.deltaTime; yield return null; }
+
+            // ③ 劈下：**要快** —— 出手即有速度，末端刃口甩下去砸中
+            //    ★ 挥空音（金属风声）跟出手一起播
+            if (cfg.swingClip != null) AudioManager.Instance?.PlaySfx(cfg.swingClip, 1f);
+            else AudioManager.Instance?.PlayHeavySwing();
+            t = 0f;
+            while (t < AxeSmashPose.ChopSeconds)
+            {
+                t += Time.deltaTime;
+                float kPos = AxeSmashPose.EaseChopPos(t / AxeSmashPose.ChopSeconds);
+                float kRot = AxeSmashPose.EaseChopRot(t / AxeSmashPose.ChopSeconds);
+                axe.transform.position = Vector3.Lerp(apexGrip, endGrip, kPos);
+                axe.transform.rotation = Quaternion.Slerp(apexRot, endRot, kRot);
+                yield return null;
+            }
+            axe.transform.position = endGrip;
+            axe.transform.rotation = endRot;
         }
 
-        // 命中帧：结算（无视盾牌减伤 + 必定破盾）
+        // ③ 命中帧：刃口在目标胸口 → 结算（无视盾牌减伤 + 必定破盾）
+        //    ★ 命中感四件套：斧身**轻微**高光（peak 0.35，不用全白剪影）＋ 命中音 ＋ 镜头推近 ＋ 命中点对齐
+        //      （目标侧已有的：敌人局部卡肉 0.14s ＋ 像素特效 ＋ 震屏 ＋ 伤害数字）
+        if (axeVisual != null) axeVisual.PlayFlash(0.06f, 0.35f);
+        if (cfg.impactClip != null) AudioManager.Instance?.PlaySfx(cfg.impactClip, 1f);
+        else AudioManager.Instance?.PlayHeavyHit();
+        // ★ 音效第二层：低频“闷”响（PBZ 演出语法④：极短金属交击 ＋ 一记低频闷响）
+        AudioManager.Instance?.PlayHeavyThud();
+        CameraFeedbackController.Instance?.RequestImpactPush(
+            AxeSmashPose.ImpactCameraPushDegrees, AxeSmashPose.ImpactCameraPushHold);
+        // ★ 重武器镜头：被“顶开”一下（低频单次大位移），与普通命中的高频小抖区分开
+        CameraFeedbackController.Instance?.RequestImpactSway(impactPoint);
+
         int hit = 0;
         for (int i = 0; i < targets.Count; i++)
         {
             var enemy = targets[i];
             if (enemy == null) continue;
+            // ★ 每个敌人用**自己的**胸口位置做命中点（范围伤害：各排各算，数字/特效不落在同一点）
+            Vector3 hitPoint = enemy.transform.position + new Vector3(0f, AxeSmashPose.ImpactHeightOffset, -AxeSmashPose.DepthInFrontOfRow);
             enemy.TakeDamage(cfg.damage, DamageType.Slash, countsForCombo: true,
                 feedbackStrength: HitFeedbackStrength.Heavy, isHeavyAttack: true,
-                ignoreShieldBlock: cfg.ignoreShieldBlock, poiseDamage: cfg.poiseDamage);
+                ignoreShieldBlock: cfg.ignoreShieldBlock, poiseDamage: cfg.poiseDamage,
+                impactPosition: hitPoint);
             hit++;
         }
-        Debug.Log($"[ActiveSkillRunner] 抡斧劈砍: 命中 {hit} 个 rows={cfg.rangeRows} damage={cfg.damage} 无视盾减伤={cfg.ignoreShieldBlock} 削韧={cfg.poiseDamage}");
+        Debug.Log($"[ActiveSkillRunner] 抡斧劈砍: 命中 {hit} 个 rows={cfg.rangeRows} damage={cfg.damage} 无视盾减伤={cfg.ignoreShieldBlock} 削韧={cfg.poiseDamage} 落点={impactPoint}");
 
-        if (axe != null) Destroy(axe);
+        // ★ 砸地裂纹特效：**放在伤害结算之后**（表现层的异常绝不能挡住伤害）
+        //    位置＝斧刃实际入地点：取斧 mesh 最低点（局部坐标常量）投影到地面 ⇒ 美术改三帧姿态也会自动跟随
+        if (cfg.effectPrefab != null && axe != null)
+        {
+            Vector3 lowestWorld = axe.transform.TransformPoint(AxeSmashPose.AxeLowestVertexRootLocal);
+            Vector3 contact = new Vector3(lowestWorld.x, 0f, lowestWorld.z);
+            var crack = Instantiate(cfg.effectPrefab);
+            crack.transform.position = contact;
+            var crackFx = crack.GetComponent<GroundCrackEffect>();
+            if (crackFx != null) crackFx.Play(contact, AxeSmashPose.GroundCrackDiameter);
+            else Destroy(crack);
+        }
+
+        if (axe != null)
+        {
+            // ④ 命中停顿：斧头压在目标上不动（让打击感立住）
+            float t = 0f;
+            while (t < AxeSmashPose.HitStopSeconds) { t += Time.deltaTime; yield return null; }
+
+            // ⑤ 渐变消失：**End 就是最终位置**（不再往下沉 / 不再往前钻），原地淡出
+            //    ★ 2026-11-16 用户口径：End 之后不该还有位移，之前那版“收势”会把斧头继续推进 0.7 单位
+            //      并多转 26°，看着像沉到地里；现在改为原地淡出（MeshWeaponVisual.SetAlpha 会切到淡出材质）。
+            if (axeVisual != null)
+            {
+                float fade = AxeSmashPose.FollowThroughSeconds;
+                var fadeTween = GameplayPause.Bind(DOTween.To(
+                    () => axeVisual.Alpha,
+                    v => axeVisual.SetAlpha(v),
+                    0f, fade).SetEase(Ease.InQuad));
+                float elapsed = 0f;
+                while (elapsed < fade)
+                {
+                    elapsed += Time.deltaTime;
+                    if (fadeTween == null || !fadeTween.IsActive()) break;   // 被打断（对象销毁等）就别空转
+                    yield return null;
+                }
+                if (axeVisual != null) axeVisual.SetAlpha(0f);
+            }
+            Destroy(axe);
+        }
     }
 
     /// <summary>

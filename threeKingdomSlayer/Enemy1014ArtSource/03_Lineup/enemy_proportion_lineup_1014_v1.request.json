@@ -1,0 +1,74 @@
+{
+  "version": "enemy_proportion_lineup_1014",
+  "handoff": "Locus\\knowledge\\plan\\session-handoff-20261114.md §7.2",
+  "brief": "Locus\\knowledge\\design\\enemy-1014-art-brief.md §2 B / §7",
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "method": "POST",
+  "content_type": "multipart/form-data; boundary=----locus7a576a3aa93244f891949ae23cb80acc",
+  "fields": {
+    "model": "gpt-image-2.6-sunburst",
+    "prompt": "Create a horizontal character proportion lineup for a high-definition pixelized Three Kingdoms action game. Show exactly six Cao Wei enemy soldiers in this order from left to right: 1011 heavy armored swordsman, 1012 bandit swordsman, 1013 standard bearer, 1051 archer, 1021 light shield soldier, and 1014 pottery-throwing soldier. All face directly forward with identical body orientation and feet on one shared baseline. Use no perspective depth or near/far size change. Keep the human bodies compact, short and sturdy, with consistent head, shoulders, torso, hips, legs, hands and feet. Match the approved 1011 pixel-art style: clustered color masses, stepped silhouettes, readable cold blue-gray steel, warm brown leather, dark cloth and restrained dark red accents. Do not use smooth painted rendering or a mosaic filter. Keep the first five soldiers recognizable with their existing equipment. Design 1014 as an exposed-face, closed-mouth, lowered-brow Cao Wei pottery thrower with tied hair, narrow forehead band, dark blue-gray crossed-collar robe, a few small armor plates, thick brown bracers, dark trousers, pale leg wraps and heavy boots. He carries no sword, knife, spear, bow, quiver, flag or shield. His defining prop is one unglazed rough ceramic jar held with both hands in front of the chest and abdomen, on the left side of the image, corresponding to the character's right hand. The jar has a round belly, short neck, short spout and two small loop handles, with muted earthenware colors and no pattern, glaze, gold trim, runes or green glow. Keep 1014's human body at 0.94 to 0.99 of 1011; props do not count as body height. Use clear gaps, a single neutral solid background, and no scene, ground perspective, effects, text, UI, logo or watermark. This is a proportion study, not a final game sprite.\n\nReference image duties, one job each. Image 1 is the approved 1011 sprite: it sets the shared body proportions, the shared mass and the rendering style for all six soldiers, and it is the costume reference for the first soldier only. Image 2 is the 1012 bandit sprite: it supplies the bandit's face, Han-era cloth tunic, leather and leg wraps, nothing else. Image 3 is the 1013 standard-bearer sprite: it supplies the flag-bearer's clothing and his relationship to the pole and the flag cloth; the pole and the flag are not part of his body height. Image 4 is the 1051 archer sprite: it supplies the head wrap, the wooden bow and the quiver. Image 5 is the 1021 shield-bearer sprite: it supplies the old soldier's face, cloth robe, small armor plates and shield; the shield is not part of his body height. Draw each of the first five soldiers with the equipment he already has, and do not let one soldier inherit another soldier's gear.\n\nThe sixth soldier is the new one and is the point of this study. Give him an exposed face with a closed mouth and a lowered brow, tied hair with a narrow forehead band, a dark blue-gray crossed-collar robe, a few small dark blue-gray shoulder and chest armor plates, thick warm-brown bracers, dark brown trousers, pale gray-white leg wraps and heavy boots. He stands with both feet planted and a slight forward lean. His only prop is the rough ceramic jar, held steady with both hands in front of his chest and abdomen, sitting on the left side of the picture in front of his right hand. The jar has a round belly, a short drawn-in neck, a short pouring spout and two small loop handles on the sides. Its surface is unglazed coarse earthenware in warm ochre to gray-brown, with a little firing mottling and coarse sandy grain; a warm brown cord and a short dark red cloth strip may sit around the neck. The jar reads as plain coarse pottery, so its belly and its short spout stay readable. Keep his human body height at 0.94 to 0.99 of the first soldier's body height; the jar, the bow, the shield, the sword, the quiver, the flag cloth and the flagpole are not counted as body height.\n\nRender every soldier in the same chunky clustered pixel rendering as the reference sprites, with hard-edged colour masses, stepped silhouettes, clean dark contours, cold blue-gray steel, warm brown leather and dark cloth with only small dark red accents. Keep the sixth soldier in that same rendering and the same level of detail as the other five, so all six read as one family from one game.\n\nNegative constraints: seven characters, fewer than six characters, duplicated character, missing character, wrong order, side view, three-quarter view, turned body, inconsistent baseline, perspective depth, oversized 1014, tiny 1014, oversized pottery jar, jar covering the torso, prop overlapping neighboring character, weapon overlap, cropped feet, cropped head, extra sword, extra knife, extra spear, extra bow, extra quiver, extra shield, extra flag, 1014 wearing helmet, 1014 wearing wide-brimmed hat, 1014 wearing face mask, 1014 wearing heavy full plate armor, 1014 as a mage, glowing green poison jar, magic staff, runes, painted ceramic pattern, gold trim, glazed pottery, vase, gourd, wine bottle, large amphora, bomb, modern grenade, fantasy armor, European knight, cute chibi, toy-like, glossy 3D plastic, smooth rendering, airbrushed shading, painterly rendering, soft gradients, random pixel noise, blurry edges, gray halo, white halo, ground shadow, scenery, text, labels, numbers, logo, watermark, UI, checkerboard",
+    "size": "1536x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "output_format": "png",
+    "n": "1"
+  },
+  "reference_images": [
+    {
+      "order": 1,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1_1\\Enemy_1011_idle1.png",
+      "role": "image 1: 1011 重甲刀兵 —— 唯一共同体型 / 体量 / 画风基准，同时是第一位重甲兵的造型参考",
+      "sha256": "b8ac9bcf97804e4cbb9d41e798e02c9c9a7e7b818e77159d952342fcf66f6939",
+      "bytes": 423179
+    },
+    {
+      "order": 2,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1012\\Enemy_1012_idle1.png",
+      "role": "image 2: 1012 兜鍪贼兵 —— 只负责脸 / 汉末布衣 / 皮革 / 绑腿语言",
+      "sha256": "0879e94058c368909b3dafcfea2486802b25f6032e158ef4cf1c193c6dd0cad4",
+      "bytes": 354237
+    },
+    {
+      "order": 3,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1013\\Enemy_1013_idle1.png",
+      "role": "image 3: 1013 督战旗手 —— 只负责服装与旗杆 / 旗面关系；旗杆旗面不计入身高",
+      "sha256": "1cb40d5e197751afd16104ea439f35f3c589a6db5c5b9fe71e7ef22da80d07bc",
+      "bytes": 519339
+    },
+    {
+      "order": 4,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1051\\Enemy_1051_idle1.png",
+      "role": "image 4: 1051 弓手 —— 只负责裹巾 / 木弓 / 箭袋",
+      "sha256": "afb63807c17fb1623c23278bf49ebfbc2d59b0b3b70f263e0b82651e2e81f812",
+      "bytes": 404792
+    },
+    {
+      "order": 5,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1021\\Enemy_1021_idle1.png",
+      "role": "image 5: 1021 轻装楯兵 —— 只负责老卒的脸 / 布袍 / 小甲片 / 盾；盾不计入身高",
+      "sha256": "222fd60a189463081256ab15f65a40a95b8573017a82aacf1f5b1cf8778c4718",
+      "bytes": 294178
+    }
+  ],
+  "models_check": {
+    "http_status": 200,
+    "models": [
+      "claude-haiku-5-5",
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-image-2.6-sunburst",
+      "grok-4.7"
+    ],
+    "image_models": [
+      "gpt-image-2.6-sunburst"
+    ]
+  },
+  "prompt_sha256": "443f9c70fed5104d27c266f1292fad77ea2a49a6b9c4e8eaf744e9abf7ec3692",
+  "prompt_chars": 5373,
+  "automatic_retries": 0,
+  "read_timeout_seconds": 840,
+  "submitted_at_local": "2026-11-16 13:28:54"
+}

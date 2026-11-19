@@ -35,6 +35,14 @@ public class UpgradeDefinition : ScriptableObject
     public UpgradeRarity rarity = UpgradeRarity.Common;
     [Tooltip("最高等级（1-10）")]
     public int maxLevel = 10;
+    [Tooltip("**基础上限（软锁）**：0 = 用 maxLevel。\n" +
+             ">0 时本条升级默认只能升到这一级，**只能靠局外天赋解锁**（节点 statId=\"upgrade_level_cap\"）才能抬高。\n" +
+             "资产硬上限仍是 maxLevel —— 天赋不能突破它（等级数据只有这么多行）。")]
+    public int defaultLevelCap = 0;
+    [Tooltip("**品质档**（普通 / 精良 / 传说）。与稀有度是两个独立维度。\n" +
+             "同一条升级在同一档内靠等级涨数值；跨档由不同条目或不同卡片实例表达。\n" +
+             "部分内容只有单一品质（例如「一次性复活」类饰品只有精良品质）。")]
+    public UpgradeQuality quality = UpgradeQuality.Common;
 
     [Header("效果")]
     [Tooltip("效果类型: damage_multiplier | attack_speed | stab_range_boost | sweep_range_boost | push_wave | convergence_wave | spike_trap | charge_damage_reduction | charge_reflect_shield | charge_shockwave | on_attack_trigger | on_kill_chance | unlock_attack | passive_phantom_weapon | passive_return_wave | passive_chain_bounce | passive_timed_aoe | passive_timed_arrow | passive_timed_cyclone")]
@@ -327,6 +335,17 @@ public enum UpgradeRarity
     Common,
     Rare,
     Legendary
+}
+
+/// <summary>
+/// **品质档**（2026-11-16，与稀有度是两个独立维度）。
+/// 普通 / 精良 / 传说：同一条升级在同一档内靠等级涨数值；跨档 = 不同的条目或不同的卡片实例。
+/// </summary>
+public enum UpgradeQuality
+{
+    Common = 0,    // 普通
+    Fine = 1,      // 精良
+    Legendary = 2  // 传说
 }
 
 // ═══════════════════════════════════════════════
@@ -640,6 +659,10 @@ public struct AxeSmashLevelConfig
     [Tooltip("**抡起来的武器模型**（3D）。留空 = 用玩家这杆长枪占位。\n" +
              "规范见 design/weapon-3d-art-spec-axe-and-chain.md。")]
     public GameObject weaponPrefab;
+    [Tooltip("**抡出时的挥空音**（金属风声）。留空 = 回退到 AudioManager 的重武器挥空音。")]
+    public AudioClip swingClip;
+    [Tooltip("**命中音**（重斧砸实的声音）。留空 = 回退到 AudioManager 的重击命中音。")]
+    public AudioClip impactClip;
 }
 
 /// <summary>追命锁链配置段（REQ-009 · 参考影之刃零「猎人的追命锁镰」：钩索勾住远处）。</summary>

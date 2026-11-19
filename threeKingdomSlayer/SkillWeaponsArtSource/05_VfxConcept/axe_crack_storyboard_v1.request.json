@@ -1,0 +1,67 @@
+{
+  "version": "axe_crack_storyboard_v1",
+  "handoff": "Locus\\knowledge\\plan\\axe-skill-integration-20261115.md §6.12",
+  "spec": "Locus\\knowledge\\design\\axe-ground-crack-vfx-spec-20261115.md",
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "method": "POST",
+  "content_type": "multipart/form-data; boundary=----locus9e2884ec0c5d4e8facd740b634fd022f",
+  "fields": {
+    "model": "gpt-image-2.6-sunburst",
+    "prompt": "Create one animation concept storyboard sheet for a high-definition pixel-art Three Kingdoms battlefield action game: a six-panel grid, three columns by two rows, on one 1536x1024 board, read left to right and top to bottom. Every panel is the same instant of the same ground impact seen from the same locked camera, so the whole sheet reads as one short animation.\n\nTHE SHOT, IDENTICAL IN ALL SIX PANELS: a close view of warm yellow-brown battlefield earth seen from a fixed oblique top-down 2.5D angle, the camera locked, the same patch of ground, the same lighting, the same scale in every panel. Only one thing changes from panel to panel: how much of the ground crack is visible, and how opaque it is.\n\nTHE CRACK, THE SAME SHAPE AND THE SAME SIZE IN EVERY PANEL WHERE IT APPEARS: a heavy impact fracture in cold gray-brown packed soil and stone. The centre is the densest and darkest spot, about six to eight irregular thick cracks branching outward from it, with a few short secondary branches, and the outer ends sparse and fading out. The crack body is deep cold gray-brown soil-and-stone colour, with a few restrained gray-white gravel highlights along its edges. Big clean colour clusters with hard stepped pixel edges, in the same rendering language as the reference game screenshots: clustered light and shadow planes, stepped silhouettes, no smooth airbrushed gradients.\n\nTHE SIX PANELS:\n1. Nothing has happened yet. The ground is clean and unbroken, warm yellow-brown earth with the same texture and lighting as the other panels. No crack, no mark, no debris.\n2. The crack has just started to open from the centre. Only the inner half of the fracture is visible: the dense dark centre with about half of its branches reaching outwards, the rest of the ground still clean. The visible part is fully opaque.\n3. The crack is fully revealed. The complete fracture is visible, dense and dark in the centre, branching out to its sparse fading ends.\n4. The crack is identical to panel 3, fully revealed and fully opaque, held for a short beat.\n5. The same crack is fading out as a whole. It is still clearly the same fracture and still readable, but the whole thing is now translucent and lighter, as if dissolving into the ground.\n6. The crack is gone. The ground reads as clean warm yellow-brown earth again, exactly like panel 1.\n\nDraw the six panels separated by thin dark gutters, all panels the same size and aligned in a strict 3x2 grid. Keep the camera, the ground texture, the lighting, the crack shape, the crack scale and the crack position identical across the panels; only the visible extent and the opacity of the crack change.\n\nReference image duties, one job each. Images 1 and 2 are real gameplay screenshots of this battlefield: they define the battle world, the warm yellow-brown ground, the overall effect quality and the pixel rendering language. They are full mobile screenshots, so use only the world, the ground and the effect quality from them and keep their battle interface out of this sheet. Image 3 is an approved enemy sprite from this same game: it defines the high-definition pixel colour clusters, the hard edges and the way detail is grouped. Image 4 gives only the impression of a heavy single-bladed axe shape; the sheet shows ground and crack only, so nothing from image 4 is drawn on this sheet and its plain light background is not used. This sheet is an animation concept for review only, not a production sprite sheet and not a final texture.\n\nNegative constraints: regular spiderweb, complete circular ring, lightning, flame, magic runes, glowing magic circle, blue energy, soft blurry glow, uniform noise, dust cloud, sparks, shockwave, camera motion, character, weapon, text, UI, white background, transparent checkerboard",
+    "size": "1536x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "output_format": "png",
+    "n": "1"
+  },
+  "reference_images": [
+    {
+      "order": 1,
+      "path": "C:/Users/Administrator/Downloads/微信图片_20260928101136_13_455.png",
+      "role": "image 1: 实机截图 —— 只负责战斗世界、暖黄褐战场地面与特效气质（界面元素不要用）",
+      "sha256": "a41aa2bcb271ea404f9e9e8577844d56f19ed25a6222bfe509579c97d6a02b7f",
+      "bytes": 2492150
+    },
+    {
+      "order": 2,
+      "path": "C:/Users/Administrator/Downloads/微信图片_20260928101137_14_455.png",
+      "role": "image 2: 实机截图 —— 只负责战斗世界、地面材质与像素渲染语言（界面元素不要用）",
+      "sha256": "643d50375a9fcdd2210aa40f43b5a70fb05099f01664de9ae54dfb0423016210",
+      "bytes": 2596005
+    },
+    {
+      "order": 3,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1_1\\Enemy_1011_idle1.png",
+      "role": "image 3: 已验收 1011 精灵 —— 只负责高清像素色簇、硬边与细节组织",
+      "sha256": "b8ac9bcf97804e4cbb9d41e798e02c9c9a7e7b818e77159d952342fcf66f6939",
+      "bytes": 423179
+    },
+    {
+      "order": 4,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\SkillWeaponsArtSource\\03_FourView\\axe_four_view_plain.png",
+      "role": "image 4: 抡斧四视图 —— 只提供厚重单刃的形体印象；板子只画地面与裂纹，武器本体与白底都不使用",
+      "sha256": "4f6465a9376d1b11d090a2ed729d6d29f248df176076f20e53a0097a975799e8",
+      "bytes": 922230
+    }
+  ],
+  "models_check": {
+    "http_status": 200,
+    "models": [
+      "claude-haiku-5-5",
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-image-2.6-sunburst",
+      "grok-4.7"
+    ],
+    "image_models": [
+      "gpt-image-2.6-sunburst"
+    ]
+  },
+  "prompt_sha256": "b6b95e80742f28363cf8b6cf445481365662d2cafe27dea3d9c0bb774596bfbc",
+  "prompt_chars": 3773,
+  "automatic_retries": 0,
+  "read_timeout_seconds": 900,
+  "submitted_at_local": "2026-11-16 13:49:46"
+}

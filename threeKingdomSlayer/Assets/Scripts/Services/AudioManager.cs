@@ -59,6 +59,12 @@ public class AudioManager : MonoBehaviour
     [Tooltip("留空 = **回退到普通斩击音**（当前行为）。美术的「重击音」交来后直接填这里即可生效，不用改代码。")]
     [SerializeField] private AudioClip[] _heavyHitClips;
 
+    [Header("重武器挥空 SFX（玩家抡斧等）")]
+    [Tooltip("重武器抡出时的**金属风声**（抡斧/大锤）。\n" +
+             "当前复用 Assets/SFX/enemy/enemy_swing_metal_whoosh.wav（Mixkit 免费许可）。留空 = 不播。")]
+    [SerializeField] private AudioClip[] _heavySwingClips;
+    [SerializeField, Range(0f, 4f)] private float _heavySwingVolume = 1f;
+
     [Header("防御受击 SFX — 随机二选一")]
     [Tooltip("格挡**吸收伤害**时的音（PlayerGuard 触发）。\n" +
              "2026-11-05 用户定：直接复用 QTE_block1/2 随机播放。")]
@@ -95,6 +101,7 @@ public class AudioManager : MonoBehaviour
     private int _lastStabHitIndex = -1;
     private int _lastLaunchHitIndex = -1;
     private int _lastHeavyHitIndex = -1;
+    private int _lastHeavySwingIndex = -1;
     private int _lastGuardBlockIndex = -1;
 private int _lastEnemySwingIndex = -1;
     private float _nextGuardBlockTime;
@@ -429,10 +436,44 @@ private int _lastEnemySwingIndex = -1;
         PlayRandom(_heavyHitClips, HEAVY_HIT_VOLUME, ref _lastHeavyHitIndex);
     }
 
+    /// <summary>
+    /// **重武器命中音的第二层：低频“闷”响**（胸腔感）。
+    /// PBZ「成功瞬间」音效语法 = 极短金属交击（高频瞬态）＋ 一记低频闷响；抡斧命中现在两层都出。
+    /// 复用 Launch 命中音（重击类），美术后续可在 `_launchHitClips` 里换成专属素材。
+    /// </summary>
+    public void PlayHeavyThud()
+    {
+        EnsureAudioSources();
+        if (_launchHitClips == null || _launchHitClips.Length == 0) return;
+        PlayRandom(_launchHitClips, HEAVY_HIT_VOLUME * 0.9f, ref _lastLaunchHitIndex);
+    }
+
     public void PlayStabHit()
     {
         EnsureAudioSources();
         PlayRandom(_stabHitClips, 1f, ref _lastStabHitIndex);
+    }
+
+    /// <summary>
+    /// **重武器挥空音**（抡斧/大锤抡出时的金属风声）。
+    /// 素材留空 = 不播（不报错、不回归）。
+    /// </summary>
+    public void PlayHeavySwing()
+    {
+        EnsureAudioSources();
+        if (_heavySwingClips == null || _heavySwingClips.Length == 0) return;
+        PlayRandom(_heavySwingClips, _heavySwingVolume, ref _lastHeavySwingIndex);
+    }
+
+    /// <summary>
+    /// 播一个**指定的**音效片段（技能配置里直接指定素材时用）。
+    /// 片段为空 = 不播。
+    /// </summary>
+    public void PlaySfx(AudioClip clip, float volumeScale = 1f)
+    {
+        if (clip == null) return;
+        EnsureAudioSources();
+        PlayOneShot(clip, volumeScale);
     }
 
     private void PlayOneShot(AudioClip clip, float volumeScale = 1f)

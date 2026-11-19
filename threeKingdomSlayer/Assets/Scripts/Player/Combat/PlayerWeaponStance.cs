@@ -80,6 +80,12 @@ public sealed class PlayerWeaponStance
     private Vector3 _recoilOffset;
     private float _recoilTimer;
     private float _recoilTotal;
+    // ★ 受击姿态（2026-11-16）：歪 + 沉 + 退 = “被顶开”。
+    //   退（_recoilOffset）单独存在时读不出“被打到”（枪在前景，只像变大了一点）。
+    private float _recoilTilt;        // 当前歪斜角（度，绕屏幕法线）
+    private float _recoilTiltMax;     // 歪斜角峰值
+    private float _recoilDrop;        // 当前下沉量（世界单位）
+    private float _recoilDropMax;     // 下沉量峰值
 
     private bool _holding;
     private bool _holdRequested;     // 预输入：挥入期间记住"玩家按着"
@@ -198,25 +204,39 @@ public sealed class PlayerWeaponStance
     }
 
     /// <summary>
-    /// 挥入期间受击：**跳位**进防御位（取消挥入、立即落防御姿态，并起后退反馈）。
+    /// 挥入期间受击：**立刻进入受击姿态 + 加速到位**。
     ///
-    /// 需求（2026-10-29）：「若在 parry 的表现时受击就直接进 defend 的受击表示就好（允许武器跳位）」。
-    /// 受击伤害由 <see cref="PlayerGuard"/> 吸收（免伤、只涨破防值）。
+    /// 需求（2026-11-16 用户定）：「按下防御就有防御判定，但此时长枪还未到达防御位置，
+    /// 此时受到攻击没有加快或立刻切换到受击的姿态」⇒ 这是**姿态**问题：
+    ///   ① 受击那一刻，枪必须立刻摆出**被打歪 / 被压下 / 被顶开**的样子（不是只位移一点点）；
+    ///   ② 同时**加速补位**到防御位（不是取消挥入、也不是单帧瞬移）。
+    /// 伤害口径不变（窗口内仍免伤，只涨破防值）—— 由 <see cref="PlayerGuard"/> 负责。
     /// </summary>
     public void InterruptToDefend(AttackSkillConfig cfg)
     {
         if (Phase != StancePhase.SwingIn) return;
 
-        _moving = false;          // 取消挥入的后续运动
         _holdRequested = true;    // 挥入被打断 → 直接进防御位，不再走收枪
-        EnterDefend(0.06f);       // 短促过渡 = “跳位”
-        Recoil(cfg);              // 受击后退再回位
+        // ★ 加速到位：短促补位（**不取消挥入、不瞬移**）。
+        EnterDefend(GuardHitDefendEnterSeconds);
+        Recoil(cfg);              // 受击姿态（歪 + 沉 + 后退）立刻写入
     }
+
+    /// <summary>受击时「加速到位」的补位时长（秒）。</summary>
+    private float GuardHitDefendEnterSeconds =>
+        _cfg != null ? Mathf.Max(0.02f, _cfg.parryGuardHitDefendEnterSeconds) : 0.08f;
 
     /// <summary>回填招架结果（格开=true）→ 决定收枪是加速（格挡成功）还是正常速度。</summary>
     public void SetParryResult(bool succeeded) { _parrySucceeded = succeeded; }
 
-    /// <summary>受击：武器先后退再回位（后退量/时长随破防压力变大变慢）。</summary>
+    /// <summary>
+    /// 受击姿态：武器先后退再回位（后退量/时长随破防压力变大变慢）。
+    ///
+    /// ★ 2026-11-16：这里从“只有后退位移”升级成**完整的受击姿态** = **歪 + 沉 + 退**。
+    ///   原因（用户口径：这是姿态问题）：枪在前景（z≈-1.5~-4.7），光靠根节点退 0.5 个世界单位
+    ///   在画面上几乎读不出来（只像“变大了一点”）⇒ 玩家自己的枪上没有任何“我被打了”的信息。
+    ///   ⇒ 追加**歪**（绕屏幕法线）与**沉**（下沉），三者一起 = “被顶开”。
+    /// </summary>
     public void Recoil(AttackSkillConfig cfg)
     {
         if (_weaponTransform == null || cfg == null) return;
@@ -226,11 +246,15 @@ public sealed class PlayerWeaponStance
         _recoilTotal = Mathf.Max(0.05f, cfg.parryGuardRecoilSeconds * scale);
         _recoilTimer = _recoilTotal;
         _recoilAmount = cfg.parryGuardRecoilDistance * scale;
+        _recoilTiltMax = cfg.parryGuardRecoilTiltDegrees * scale;
+        _recoilDropMax = cfg.parryGuardRecoilDrop * scale;
         // ★ 立刻摆出「被顶开」的姿态（2026-11-12）：
         //   后坐位移原本是在衰减段里按计时算出来的 ⇒ 命中帧上还是旧值，
         //   会变成「定格结束后才突然跳出去」—— 定格帧显示的就不是被击中的那一帧了。
         //   这里命中即写入 ⇒ 命中定格（ApplyHitStop）期间画面摆的正是「刚被顶开」的姿态。
         _recoilOffset = new Vector3(0f, 0f, -_recoilAmount);
+        _recoilTilt = _recoilTiltMax;
+        _recoilDrop = _recoilDropMax;
     }
 
     /// <summary>
@@ -256,6 +280,8 @@ public sealed class PlayerWeaponStance
         _holding = false;
         _holdRequested = false;
         _recoilTimer = 0f;
+        _recoilTilt = 0f;
+        _recoilDrop = 0f;
         _strainActive = false;
         _shakeBlend = 0f;
         _brokenT = 0f;
@@ -299,7 +325,10 @@ public sealed class PlayerWeaponStance
         if (_hitStopRemaining > 0f)
         {
             _hitStopRemaining -= Time.unscaledDeltaTime;
-            ApplyPose(1f);
+            // ★ 2026-11-16：定格在**当前**姿态，不是当前动作的**终点**。
+            //   终点姿态在「挥入被打断」这种场景下 = 防御位 ⇒ 定格会变成一次**单帧瞬移**
+            //   （读起来像出 bug，而不是像挨打）。正常防御态下 _moveT 本来就是 1 ⇒ 画面不变。
+            ApplyPose(Mathf.Clamp01(_moveT));
             return;
         }
 
@@ -317,7 +346,14 @@ public sealed class PlayerWeaponStance
             float k = _recoilTimer > 0f ? Mathf.Clamp01(_recoilTimer / _recoilTotal) : 0f;
             k = k * k * (3f - 2f * k);      // ★ 平滑收尾：最后一帧不再「啪」地归零
             _recoilOffset = new Vector3(0f, 0f, -_recoilAmount * k);
-            if (_recoilTimer <= 0f) _recoilOffset = Vector3.zero;
+            _recoilTilt = _recoilTiltMax * k;      // ★ 歪：与后退同步衰减
+            _recoilDrop = _recoilDropMax * k;      // ★ 沉：与后退同步衰减
+            if (_recoilTimer <= 0f)
+            {
+                _recoilOffset = Vector3.zero;
+                _recoilTilt = 0f;
+                _recoilDrop = 0f;
+            }
         }
 
         // 破防：枪被打飞（专属动作）⇒ 这一段不再走其它分支
@@ -378,7 +414,12 @@ public sealed class PlayerWeaponStance
         }
 
         // 防御态：松手 → 收枪
-        if (Phase == StancePhase.Defending && !_holding)
+        //   ★ 2026-11-16：刚挨打（**后坐还在播**）时，**先播完「被顶开」那一下再收枪**
+        //     （沿用破防的 _brokenWaitForRecoil 做法）：
+        //     否则收枪的 MoveTo(absorbOffsets:true) 会把**受击姿态整个吸收掉**
+        //     ⇒ 玩家只看到枪一闪就没了，读不到「被打」；
+        //     实测（快速点击防御时挨打）：受击姿态只存在 2 帧就被收枪吞掉。
+        if (Phase == StancePhase.Defending && !_holding && _recoilTimer <= 0f)
             BeginExit();
 
         // 收枪途中按住 → 接住 → 回防御位
@@ -458,6 +499,8 @@ public sealed class PlayerWeaponStance
             ComputeVisual(Mathf.Clamp01(_moveT), out _rootFrom, out _poseFrom);
             _recoilOffset = Vector3.zero;
             _recoilTimer = 0f;
+            _recoilTilt = 0f;         // ★ 受击姿态的“歪”也被吸收（否则收枪会带着歪斜走）
+            _recoilDrop = 0f;         // ★ “沉”同理
             _strainActive = false;
             _shakeBlend = 0f;
         }
@@ -475,8 +518,24 @@ public sealed class PlayerWeaponStance
         _onArrive = onArrived;
     }
 
-    private Vector3 CurrentRoot() => Vector3.Lerp(_rootFrom, _rootTo, Mathf.Clamp01(_moveT));
-    private Quaternion CurrentPose() => Quaternion.Slerp(_poseFrom, _poseTo, Mathf.Clamp01(_moveT));
+    /// <summary>
+    /// 当前动作的**缓动后**进度。
+    ///
+    /// ★ 2026-11-16 修一个真 BUG（“打断时枪瞬移”）：原来 <c>CurrentRoot/CurrentPose</c>
+    ///   用的是**线性**插值（Lerp/Slerp 直接吃 t），而画面渲染用的是**缓动后**的进度
+    ///   （ease-out 挥入：t=0.27 时 eased 已经跑到 0.62）⇒ 两者差得很远。
+    ///   而 <c>MoveTo</c> 用 CurrentRoot/CurrentPose 取新动作的**起点**
+    ///   ⇒ 新动作的起点落在了枪**其实不在的位置**上 ⇒ 打断那一帧枪会跳过去。
+    /// ⇒ 现在两边共用同一个缓动函数，起点 = 画面上真正所在的位置。
+    /// </summary>
+    private float EaseT(float t)
+    {
+        t = Mathf.Clamp01(t);
+        return _ease == EaseMode.Out ? 1f - Mathf.Pow(1f - t, 3f) : t * t * (3f - 2f * t);
+    }
+
+    private Vector3 CurrentRoot() => Vector3.Lerp(_rootFrom, _rootTo, EaseT(_moveT));
+    private Quaternion CurrentPose() => Quaternion.Slerp(_poseFrom, _poseTo, EaseT(_moveT));
 
     private Vector3 PlayerPosition => _owner != null ? _owner.transform.position : Vector3.zero;
 
@@ -508,11 +567,18 @@ public sealed class PlayerWeaponStance
         // ② 枪尖下垂：同样连续
         //    ⚠️ 不影响读招：招架的"角度一致"设计只针对**挥入那一瞬**；
         //    防御位是"按住"的持续状态，压角度不会干扰玩家读**敌人**的招式。
+        //    ★ 2026-11-16 修一个真 BUG（“被打中时枪凭空跳到防御位”）：
+        //      原来写成 `Slerp(pose, PoseForAngle(tipDegrees - dropDeg), 1f)`
+        //      —— 那是**把姿态整个替换**成「斜举位 - 下垂角」，只在姿态本来就是斜举位时才对。
+        //      挥入途中挨打时（姿态还在半路）这一句会**一帧把枪拽到防御位**。
+        //      ⇒ 改成**相对当前姿态**绕屏幕法线（世界 Z）转 −dropDeg：
+        //      屏幕上就是“枪尖往下垂一点”，与当前姿态无关（挥入途中也成立），
+        //      且在防御位上与旧写法**结果完全一致**（防御位本身就是绕 Z 的旋转，两者可交换）。
         if (_cfg != null)
         {
             float dropDeg = StrainTipDropDegrees * ratio;
             if (dropDeg > 0.01f)
-                pose = Quaternion.Slerp(pose, PoseForAngle(_cfg.parryStanceTipDegrees - dropDeg), 1f);
+                pose = Quaternion.AngleAxis(-dropDeg, Vector3.forward) * pose;
         }
 
         // ③ 持续微抖：**只有关键档才抖**（"突然开始抖"= 明确的信号），
@@ -554,18 +620,25 @@ public sealed class PlayerWeaponStance
     /// <summary>当前**基准**根节点/姿态（原始插值 + 应变，**不含后坐**）。</summary>
     private void ComputeBase(float t, out Vector3 root, out Quaternion pose)
     {
-        float e = _ease == EaseMode.Out ? 1f - Mathf.Pow(1f - t, 3f) : t * t * (3f - 2f * t);
+        float e = EaseT(t);
         root = Vector3.Lerp(_rootFrom, _rootTo, e);
         pose = Quaternion.Slerp(_poseFrom, _poseTo, e);
         // 破防压力的表现：被压低 / 枪尖下垂 / 持续微抖（不显示数值）
         ApplyStrain(ref root, ref pose);
     }
 
-    /// <summary>当前**视觉**根节点/姿态（含应变与后坐偏移，不含支点偏移）。</summary>
+    /// <summary>当前**视觉**根节点/姿态（含应变与**受击姿态**偏移，不含支点偏移）。</summary>
     private void ComputeVisual(float t, out Vector3 root, out Quaternion pose)
     {
         ComputeBase(t, out root, out pose);
         root += _recoilOffset;
+        // ★ 受击姿态（2026-11-16）：歪 + 沉 + 退 = “被顶开”。
+        //   退（_recoilOffset）单独存在时读不出“被打到”（枪在前景，只像变大了一点）；
+        //   歪 + 沉 叠在**当前姿态**上（相对量）⇒ 挥入途中挨打时也是“在半路被打歪”，
+        //   不会把枪整个拽到某个固定姿态。
+        if (_recoilDrop > 0f) root += new Vector3(0f, -_recoilDrop, 0f);
+        if (Mathf.Abs(_recoilTilt) > 0.01f)
+            pose = Quaternion.AngleAxis(_recoilTilt, Vector3.forward) * pose;
     }
 
     /// <summary>应用当前姿态：根节点位置 + 枪身指向。</summary>
@@ -580,7 +653,13 @@ public sealed class PlayerWeaponStance
             root = _brokenBaseRoot;
             pose = _brokenBasePose;
             // ★ 等后坐播完的那段时间里，保留「被顶开」的位移（后坐本身在衰减）
-            if (_brokenWaitForRecoil) root += _recoilOffset;
+            if (_brokenWaitForRecoil)
+            {
+                root += _recoilOffset;
+                if (_recoilDrop > 0f) root += new Vector3(0f, -_recoilDrop, 0f);
+                if (Mathf.Abs(_recoilTilt) > 0.01f)
+                    pose = Quaternion.AngleAxis(_recoilTilt, Vector3.forward) * pose;
+            }
             float k = Mathf.Clamp01(_brokenT);      // 等后坐期间 k=0 ⇒ 旋转尚未开始
             // 绕**世界 Z 轴**逆时针旋转（屏幕 +X 右 / +Y 上 ⇒ 正向 Z 旋转 = 屏幕逆时针）。
             //   前乘 ⇒ 旋转发生在世界空间；因为支点偏移用 pose 算，枪尾会**留在原地**、整杆翻转。

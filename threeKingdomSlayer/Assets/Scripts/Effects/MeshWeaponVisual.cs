@@ -22,6 +22,7 @@ public sealed class MeshWeaponVisual : MonoBehaviour
     private Color _tint = Color.white;
     private Coroutine _flashRoutine;
     private float _flash;
+    private float _flashPeak = 1f;
 
     public Renderer[] Renderers => renderers;
     public Transform ModelRoot => modelRoot;
@@ -105,10 +106,13 @@ public sealed class MeshWeaponVisual : MonoBehaviour
     /// <summary>
     /// 播放一次「命中确认」闪白：强度 1 → 0，<paramref name="seconds"/> 秒。
     /// 用**真实时间**（unscaled）⇒ 全局暂停/慢放时闪白依然看得见。
+    /// ★ 2026-11-16：新增 <paramref name="peak"/>＝最亮时的强度（1 = 纯白剪影，0.3~0.4 = 打点高光）。
+    ///   抡斧命中时用过 peak=1 ⇒ 斧头整个变成白色剪影（看着像“材质丢失变灰模”）⇒ 重武器改用小 peak。
     /// </summary>
-    public void PlayFlash(float seconds)
+    public void PlayFlash(float seconds, float peak = 1f)
     {
         if (seconds <= 0f) return;
+        _flashPeak = Mathf.Clamp01(peak);
         if (_flashRoutine != null) StopCoroutine(_flashRoutine);
         _flashRoutine = StartCoroutine(FlashRoutine(seconds));
     }
@@ -119,7 +123,7 @@ public sealed class MeshWeaponVisual : MonoBehaviour
         while (t < seconds)
         {
             t += Time.unscaledDeltaTime;
-            SetFlash(1f - Mathf.Clamp01(t / seconds));
+            SetFlash(_flashPeak * (1f - Mathf.Clamp01(t / seconds)));
             yield return null;
         }
         SetFlash(0f);

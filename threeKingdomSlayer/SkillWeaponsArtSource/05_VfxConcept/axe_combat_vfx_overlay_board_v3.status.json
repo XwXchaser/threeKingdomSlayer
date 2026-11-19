@@ -1,0 +1,45 @@
+{
+  "state": "image_saved",
+  "http_status": 200,
+  "seconds": 112.26,
+  "error": null,
+  "output_image": "C:/Users/steam/Pictures/gptGen/axe_combat_vfx_overlay_board_20261116\\axe_combat_vfx_overlay_board_v3.png",
+  "download": "b64_json",
+  "width": 1536,
+  "height": 1024,
+  "bit_depth": 8,
+  "color_type": 2,
+  "output_bytes": 2510663,
+  "output_sha256": "670adb56e80daf4b765f7903e96105e243715dce8025756e1b94661e5afbeee8",
+  "usage": {
+    "input_tokens": 4408,
+    "input_tokens_details": {
+      "image_tokens": 2800,
+      "text_tokens": 1608
+    },
+    "output_tokens": 5488,
+    "output_tokens_details": {
+      "image_tokens": 5488
+    },
+    "total_tokens": 9896
+  },
+  "echoed_size": "1536x1024",
+  "echoed_quality": "max",
+  "models_check": {
+    "http_status": 200,
+    "models": [
+      "claude-haiku-5-5",
+      "claude-opus-5-5",
+      "claude-sonnet-5-5",
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-image-2.6-sunburst",
+      "grok-4.7"
+    ],
+    "image_models": [
+      "gpt-image-2.6-sunburst"
+    ]
+  }
+}

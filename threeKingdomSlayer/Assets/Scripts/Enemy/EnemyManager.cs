@@ -142,6 +142,16 @@ public class EnemyManager : MonoBehaviour
         // 触发事件（必须在 ReturnEnemy 之前）
         OnAnyEnemyDied?.Invoke(enemy);
 
+        // **精英 / Boss 掉落宝箱**（2026-11-17 用户定口径）：
+        //   · 精英 = 敌人预制体上勾了「掉宝箱」标记（用户自己打标记，代码不维护名单）
+        //   · 精英和 Boss 都是 **100%** 掉
+        //   · 宝箱飞到玩家被拾取后，才入队一次「装备三选一」（波末统一弹）
+        if (EliteDropRules.ShouldDropEquipment(enemy))
+        {
+            EquipmentChestManager.Instance?.SpawnChest(enemy.transform.position);
+            DebugLog.Info($"[Enemy] 精英/Boss 掉落宝箱：{enemy.DebugTag}");
+        }
+
         // 击杀充能：按 HeroConfig 的普通敌人/Boss数值结算。
         UltimateSystem.Instance?.AddEnergyForKill(enemy.isBoss);
 

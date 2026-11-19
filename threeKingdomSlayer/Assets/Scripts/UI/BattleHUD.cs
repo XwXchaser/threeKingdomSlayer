@@ -182,6 +182,11 @@ public class BattleHUD : MonoBehaviour, ICombatHud
         {
             HealthPotionManager.Instance.gemParent = (RectTransform)transform;
         }
+        // 装备宝箱（精英/Boss 掉落）也挂在 HUD 下
+        if (EquipmentChestManager.Instance != null)
+        {
+            EquipmentChestManager.Instance.chestParent = (RectTransform)transform;
+        }
 
         // 注入依赖到 StageProgressBar（避免时序问题）
         if (_heroHUD.stageProgressBar != null)

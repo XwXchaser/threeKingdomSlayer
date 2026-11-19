@@ -426,7 +426,20 @@ UnityEditor.EditorApplication.delayCall += () => AndroidBuildMenu.BuildAndroidTr
 
 ---
 
-## 经验教训
+## 2026-11-16 巨斧入池 + 防御姿态修正后的包（340MB）
+
+- 产物：`Build/Android/threeKingdomSlayer_full_20261116_2145.apk`（**340MB**，errors=**0**，warnings=36，用时 4:58）
+- 布局自检：✅ 传统分文件（条目 2127、`level*`=4、`data.tj3d`=**False**）→ 避开集群包崩溃根因
+- ABI：`arm64-v8a` + `x86`（模拟器与真机都能装）；`useCustomKeystore=False`（debug 签名，**不能上架**）
+- 场景：Battle / YJunctionSample / StageSelect / TalentTree（4 张）
+- 打包前处理：删掉 Battle 场景里三把**已停用**的探针斧 `AxePose_Start/Apex/End`（inactive 也会被打进包体；三帧位姿已烘进 `AxeSmashPose.cs`，不再需要）
+- 本包含：巨斧劈砍入池（稀有池，权重 100）+ 开局默认赠送撤销 + 巨斧/锁链/冰雾图标去重 + 防御姿态（受击歪+沉+退、加速到位）与防御判定修正
+- ⚠ 遗留：① **砸地裂纹贴图仍缺**（预制体 sprite 与材质 `_MainTex` 都为空 ⇒ 命中时裂纹特效自毁不显示，不会出白盘）
+  ② 字体图集 35MB 未重建（阶段 3.4）→ 界面可能缺字
+  ③ 包体 340MB：只留 ARM64 可省 ~70MB，字体重建可省 ~33MB
+  ④ 本机无 AVD / 无设备 ⇒ **装机冒烟未做**（需在有真机或模拟器的环境验）
+
+---
 
 - **绝不直接 `edit` .meta 文件**（Tuanjie 引擎加密 GUID，会触发重生成导致引用断裂）。纹理/音频等导入设置的修改必须通过 `unity_execute` API
 - Roslyn `code_diagnostics` + `unity_recompile` 双重验证后再 commit

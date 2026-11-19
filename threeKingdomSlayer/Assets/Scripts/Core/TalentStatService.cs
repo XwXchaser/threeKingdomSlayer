@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 /// <summary>
 /// **天赋数值载荷的读取层**（2026-11-03 B1）。
@@ -31,6 +32,7 @@ public static class TalentStatService
     public const string StatCoinGain = "coin_gain";                      // 铜钱获取 +N（0.3 = +30%）
     public const string StatComboThresholdDelta = "combo_threshold_delta"; // 连击阈值下调 N（负数 = 更早触发）
     public const string StatUndying = "undying";                          // 不屈（濒死无敌）
+    public const string StatUpgradeLevelCap = "upgrade_level_cap";        // 解锁某条升级的等级上限（绝对值）
 
     /// <summary>不屈：血量低于此比例（30%）时触发。</summary>
     public const float UndyingHealthThreshold = 0.30f;
@@ -60,6 +62,34 @@ public static class TalentStatService
 
     /// <summary>某个能力是否已解锁（布尔型，如「不屈」：statAdd &gt; 0 即视为已解锁）。</summary>
     public static bool Has(string statId) => GetTotal(statId) > 0f;
+
+    /// <summary>
+    /// **局外天赋解锁的升级等级上限**（软锁，2026-11-16）。
+    ///
+    /// 节点写法：<c>statId = StatUpgradeLevelCap</c>、<c>statAdd = 绝对上限</c>（如 8 = 该升级可升到 8 级）、
+    /// <c>targetId = 目标 upgradeId</c>。多个节点取**最大值**。
+    /// 未解锁任何相关节点 → 返回 0（= 没有局外放宽，由 UpgradeEffectManager 回落到资产基础上限）。
+    /// </summary>
+    public static int GetUpgradeLevelCap(string upgradeId)
+    {
+        if (string.IsNullOrEmpty(upgradeId)) return 0;
+        var unlocked = TalentSaveSection.GetUnlocked(SaveManager.Load());
+        var tree = GetAbilityTree();
+        if (unlocked == null || tree == null || tree.nodes == null) return 0;
+
+        int cap = 0;
+        for (int i = 0; i < tree.nodes.Count; i++)
+        {
+            var node = tree.nodes[i];
+            if (node == null || string.IsNullOrEmpty(node.nodeId)) continue;
+            if (node.statId != StatUpgradeLevelCap) continue;
+            if (!string.Equals(node.targetId, upgradeId, System.StringComparison.Ordinal)) continue;
+            if (!unlocked.Contains(node.nodeId)) continue;
+            int v = Mathf.RoundToInt(node.statAdd);
+            if (v > cap) cap = v;
+        }
+        return cap;
+    }
 
     /// <summary>能力页的天赋树（由武将资产指定；没有则没有能力加成）。</summary>
     private static TalentTreeConfig GetAbilityTree()

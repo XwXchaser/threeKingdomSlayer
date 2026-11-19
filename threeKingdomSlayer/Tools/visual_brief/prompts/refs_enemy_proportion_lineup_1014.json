@@ -1,0 +1,38 @@
+{
+  "version": "enemy_proportion_lineup_1014",
+  "handoff": "Locus/knowledge/plan/session-handoff-20261114.md §7.2",
+  "brief": "Locus/knowledge/design/enemy-1014-art-brief.md §2 B / §7",
+  "note": "六人并排比例研究图（阶段 A）：1011 重甲刀兵 / 1012 兜鍪贼兵 / 1013 督战旗手 / 1051 弓手 / 1021 轻装楯兵 / 1014 投壶兵。五张输入全部是工程内已部署的 idle 精灵帧（唯一画风与体型真源），1014 没有任何输入图（当前只是 106 的占位外观，按任务书不得用作造型参考）。组图只用于比例/画风研究，不可直接裁切为 Unity Sprite。",
+  "references": [
+    {
+      "order": 1,
+      "path": "Assets/Sprites/Enemy/Enemy1_1/Enemy_1011_idle1.png",
+      "role": "image 1: 1011 重甲刀兵 —— 唯一共同体型 / 体量 / 画风基准，同时是第一位重甲兵的造型参考",
+      "expected_sha256_prefix": "b8ac9bcf97804e4c"
+    },
+    {
+      "order": 2,
+      "path": "Assets/Sprites/Enemy/Enemy1012/Enemy_1012_idle1.png",
+      "role": "image 2: 1012 兜鍪贼兵 —— 只负责脸 / 汉末布衣 / 皮革 / 绑腿语言",
+      "expected_sha256_prefix": "0879e94058c36890"
+    },
+    {
+      "order": 3,
+      "path": "Assets/Sprites/Enemy/Enemy1013/Enemy_1013_idle1.png",
+      "role": "image 3: 1013 督战旗手 —— 只负责服装与旗杆 / 旗面关系；旗杆旗面不计入身高",
+      "expected_sha256_prefix": "1cb40d5e197751af"
+    },
+    {
+      "order": 4,
+      "path": "Assets/Sprites/Enemy/Enemy1051/Enemy_1051_idle1.png",
+      "role": "image 4: 1051 弓手 —— 只负责裹巾 / 木弓 / 箭袋",
+      "expected_sha256_prefix": "afb63807c17fb162"
+    },
+    {
+      "order": 5,
+      "path": "Assets/Sprites/Enemy/Enemy1021/Enemy_1021_idle1.png",
+      "role": "image 5: 1021 轻装楯兵 —— 只负责老卒的脸 / 布袍 / 小甲片 / 盾；盾不计入身高",
+      "expected_sha256_prefix": "222fd60a18946308"
+    }
+  ]
+}

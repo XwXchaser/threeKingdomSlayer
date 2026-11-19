@@ -25,11 +25,19 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
     public static UpgradeEffectManager Instance { get; private set; }
 
     // ── 数值累积 ──
-    private float _damageMultiplier = 1f;
+    /// <summary>属性 id：攻击力（伤害）。分层乘算模型的唯一入口键。</summary>
+    public const string StatAtk = "atk";
+    /// <summary>属性 id：生命上限（转化器的合法源属性：只被加法影响，不参与转化）。</summary>
+    public const string StatMaxHealth = "max_health";
+
+    /// <summary>
+    /// **属性分层乘算模型**（2026-11-16 新增）：伤害的加法层 / 乘法层 / 固定值层 / 转化器都走这里。
+    /// 迁移期等价：没有固定值与乘区时 = 旧的 <c>_damageMultiplier + _buffDamageBonus</c>。
+    /// </summary>
+    private readonly StatLayerModel _statLayers = new StatLayerModel();
     private float _attackSpeedMultiplier = 1f;
     private float _moveSpeedMultiplier = 1f;
     private float _expMultiplier = 1f;
-    private float _buffDamageBonus;
     private float _buffAttackSpeedBonus;
     private float _buffMoveSpeedBonus;
     private float _buffExpBonus;
@@ -79,6 +87,11 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
             return;
         }
         Instance = this;
+
+        // 局外天赋可以抬高某条升级的**等级上限**（软锁）。
+        // 口径：节点 statId = "upgrade_level_cap"、statAdd = 绝对上限、targetId = 目标 upgradeId。
+        // 见 design/weapon-system-design.md §4.2。
+        RegisterLevelCapProvider(def => TalentStatService.GetUpgradeLevelCap(def != null ? def.upgradeId : null));
     }
 
     private void Start()
@@ -164,6 +177,24 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
     /// <summary>当前已获得的被动技能数量（Numeric + AttackPassive + TimedPassive）</summary>
     public int PassiveUpgradeCount => _appliedUpgrades.Count;
 
+    /// <summary>
+    /// **占被动槽的升级数**（2026-11-16 修正）。
+    ///
+    /// ⚠ 之前槽位判定用的是 <see cref="PassiveUpgradeCount"/>（= **所有**升级数）⇒ **数值类升级也占被动槽**
+    ///   → 被动槽只有 2 时，玩家拿满 2 个数值升级后，抽池的“被动槽已满”过滤会把
+    ///   **所有没拿过的条目全排掉** ⇒ 玩家再也拿不到任何升级。
+    ///   （用户 2026-11-16 反馈：“玩家也获取不到数值提升”）
+    ///
+    /// ⇒ 修正口径（与“属性 / 装备分成两段”的设计一致）：
+    ///   · **数值类（Numeric）= 属性，不占槽**，只受自己的等级上限约束；
+    ///   · **机制型被动（AttackPassive / TimedPassive）占被动槽**；
+    ///   · 主动技能有自己的槽（不计入这里）。
+    /// </summary>
+    public int PassiveSlotUserCount => _passiveSlotUsers;
+
+    /// <summary>占被动槽的升级计数（只数机制型被动）。</summary>
+    private int _passiveSlotUsers;
+
     // ── 运行时等级上限（有效上限）──
 
     private readonly List<System.Func<UpgradeDefinition, int>> _levelCapProviders = new List<System.Func<UpgradeDefinition, int>>();
@@ -180,22 +211,21 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
     }
 
     /// <summary>
-    /// **有效等级上限** = min( max(资产上限, 天赋解锁上限), 数据上限 )。
+    /// 有效等级上限 = clamp(基础上限 ∪ 天赋上限, 资产硬上限, 等级数据行数)。
     ///
-    /// | 项 | 来源 |
-    /// |---|---|
-    /// | 资产上限 | <c>UpgradeDefinition.maxLevel</c> |
-    /// | 天赋解锁上限 | 天赋放宽的等级（扩展点；当前无对应节点 → 0） |
-    /// | 数据上限 | <c>UpgradeDefinition.GetAvailableLevelCount()</c>（0 = 没有等级数据 → 不夹） |
-    ///
-    /// 夹住数据上限之后，<c>GetTriggerInterval</c> / <c>GetTriggerThreshold</c> **永远不会越界**
-    /// （越界返回 -1 → 触发模块直接判定不适用 → 该被动不注册 = 直接失效）。
+    /// | 项 | 来源 | 作用 |
+    /// |---|---|---|
+    /// | 资产硬上限 | <c>UpgradeDefinition.maxLevel</c> | 天赋**不能突破**它（数据只有这么多行） |
+    /// | 基础上限 | <c>UpgradeDefinition.defaultLevelCap</c>（0 = 用 maxLevel） | **软锁**：不局外解锁就升不上去 |
+    /// | 天赋上限 | 局外天赋节点（statId=upgrade_level_cap） | 唯一的抬升途径 |
+    /// | 数据上限 | <c>UpgradeDefinition.GetAvailableLevelCount()</c> | 行数不够就夹住（0 = 不夹） |
     /// </summary>
     public int GetEffectiveMaxLevel(UpgradeDefinition def)
     {
         if (def == null) return 1;
 
         int assetCap = Mathf.Max(1, def.maxLevel);
+        int baseCap = def.defaultLevelCap > 0 ? def.defaultLevelCap : assetCap;
 
         int talentCap = 0;
         for (int i = 0; i < _levelCapProviders.Count; i++)
@@ -204,7 +234,8 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
             if (v > talentCap) talentCap = v;
         }
 
-        int cap = Mathf.Max(assetCap, talentCap);
+        // 天赋可以抬高软锁，但不能突破资产硬上限
+        int cap = Mathf.Clamp(Mathf.Max(baseCap, talentCap), 1, assetCap);
 
         int dataRows = def.GetAvailableLevelCount();
         if (dataRows > 0 && dataRows < cap) cap = dataRows;
@@ -214,7 +245,45 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
 
     // ── 数值查询接口 ──
 
-    public float GetDamageMultiplier() => Mathf.Max(0f, _damageMultiplier + _buffDamageBonus);
+    /// <summary>
+    /// 伤害倍率（**不含固定值加成**）= (1 + 加法层百分比) × Π(1 + 乘法层乘区)。
+    /// 迁移期与旧实现等价（旧实现只有一个加法标量）。
+    /// </summary>
+    public float GetDamageMultiplier() => Mathf.Max(0f, _statLayers.EvaluateMultiplier(StatAtk));
+
+    /// <summary>
+    /// **统一伤害出口**（2026-11-16）：基础伤害 → 固定值加成 → 加法百分比 → 转化器 → 乘法乘区。
+    /// 改造前各处写的是 <c>base * GetDamageMultiplier()</c>；现在统一走这里，
+    /// 后续「固定伤害加成 / 乘区 / 转化器」只需要在这一个函数里生效。
+    /// </summary>
+    public float ComputeDamage(float baseDamage)
+    {
+        return _statLayers.Evaluate(StatAtk, baseDamage, ResolveStatSource);
+    }
+
+    /// <summary>固定值伤害加成（+20 攻击这种 flat，不吃百分比）。</summary>
+    public void AddFlatDamageBonus(float amount) => _statLayers.AddFlat(StatAtk, amount);
+
+    /// <summary>乘法乘区（0.2 = ×1.2，与加法层独立相乘）。</summary>
+    public void AddMultiplicativeDamageBonus(float amount) => _statLayers.AddMultiplicative(StatAtk, amount);
+
+    /// <summary>注册属性转化器（例：每 100 点生命 → +20 攻击）。</summary>
+    public void AddStatConverter(StatConverter converter) => _statLayers.AddConverter(converter);
+
+    /// <summary>
+    /// 转化器的源属性解析：只暴露**不参与转化**的汇点属性（当前只有生命上限）。
+    /// 返回值必须是不含转化器产出的值 ⇒ 结构上不可能成环。
+    /// </summary>
+    private static float ResolveStatSource(string statId)
+    {
+        if (string.IsNullOrEmpty(statId)) return 0f;
+        if (statId == StatMaxHealth)
+        {
+            var ps = PlayerState.Instance;
+            if (ps != null) return ps.MaxHealth;
+        }
+        return 0f;
+    }
     public float GetAttackSpeedMultiplier() => Mathf.Max(0.01f, _attackSpeedMultiplier + _buffAttackSpeedBonus);
     public float GetMoveSpeedMultiplier() => Mathf.Max(0f, _moveSpeedMultiplier + _buffMoveSpeedBonus);
     public float GetExpMultiplier() => Mathf.Max(0f, _expMultiplier + _buffExpBonus);
@@ -236,7 +305,7 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
         switch (modifier.statId)
         {
             case "atk":
-                _buffDamageBonus += amount;
+                _statLayers.AddAdditive(StatAtk, amount);
                 break;
             case "attack_speed":
                 _buffAttackSpeedBonus += amount;
@@ -293,8 +362,8 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
     /// <summary>叠加伤害倍率（供道具型测试等直接调用）</summary>
     public void AddDamageBonus(float amount)
     {
-        _damageMultiplier += amount;
-        Debug.Log($"[UpgradeEffectManager] 伤害加成 +{amount:P0} → 当前倍率 {_damageMultiplier:P0}");
+        _statLayers.AddAdditive(StatAtk, amount);
+        Debug.Log($"[UpgradeEffectManager] 伤害加成 +{amount:P0} → 当前倍率 {GetDamageMultiplier():P0}");
     }
     /// <summary>攻速累计加成百分比（如 1.45 → 45）</summary>
     public float GetAttackSpeedBonusPercent() => (GetAttackSpeedMultiplier() - 1f) * 100f;
@@ -409,11 +478,11 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
         }
 
         _appliedUpgrades.Clear();
-        _damageMultiplier = 1f;
+        _passiveSlotUsers = 0;
+        _statLayers.Clear();
         _attackSpeedMultiplier = 1f;
         _moveSpeedMultiplier = 1f;
         _expMultiplier = 1f;
-        _buffDamageBonus = 0f;
         _buffAttackSpeedBonus = 0f;
         _buffMoveSpeedBonus = 0f;
         _buffExpBonus = 0f;

@@ -61,8 +61,9 @@ public partial class AttackSystem : MonoBehaviour
     private float GetFinalDamage(AttackSkillConfig cfg)
     {
         if (cfg == null) return 0f;
-        float mult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetDamageMultiplier() : 1f;
-        return cfg.damage * mult;
+        // 统一伤害出口：固定值加成 → 加法百分比 → 乘区 → 转化器（见 UpgradeEffectManager.ComputeDamage）
+        if (UpgradeEffectManager.Instance != null) return UpgradeEffectManager.Instance.ComputeDamage(cfg.damage);
+        return cfg.damage;
     }
 
     /// <summary>释放蓄力受击增伤冲击波，每次蓄力攻击释放后清空累计。</summary>

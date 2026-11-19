@@ -534,7 +534,7 @@ MoveTableConfig（每武将一份）
 | **卡肉对齐** | `AttackSystem` | 动作锁与戳击视觉门随卡肉冻结（修掉 §14 坑点 1 的错位）；招架接触帧仍走 unscaled 计时，不受影响 |
 | **按下即出（承诺点）** | `InputManager.pressTapDelay` | **默认关**（0）。原因见 `design/action-game-feel-and-input-buffering.md` §3：「按住」本身就是手势，窗口 < 0.3s 会把「按住一下再划」拆成「一记轻攻击 + 划动被丢弃」 |
 | **三选一改波末弹出** | `UpgradeChoiceManager` / `StageRunFlow` | 升级不再当场打断战斗（`deferChoicesToWaveEnd`）；结算前先让玩家选完（否则升级白送） |
-| **三选一改长按选择** | `UpgradeCard` | 按住 0.35s 确认；教学的三选一提示改成「按住」 |
+| **三选一的选择方式** | `UpgradeCard` | **点按确认**（2026-11-16 用户定：从长按 0.35s 改回点按）；长按确认的实现已移除（`holdConfirmSeconds` 字段已删） |
 
 **回归重点**（下一轮实机必测）：
 

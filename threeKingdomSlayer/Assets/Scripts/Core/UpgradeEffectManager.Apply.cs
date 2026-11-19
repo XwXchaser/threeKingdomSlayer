@@ -99,6 +99,8 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
             }
             _appliedUpgrades[def.upgradeId] = newLevel;
             SyncToPlayerState(def, newLevel);
+            // ★ 只有**机制型被动**占被动槽（2026-11-16）：数值类（属性）不占槽
+            if (currentLevel == 0) _passiveSlotUsers++;
 
             if (def.category == UpgradeCategory.TimedPassive)
             {
@@ -188,7 +190,7 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
     
         // ── IUpgradeStatSink 实现（数值型升级通过它写玩家数值）──
     
-        void IUpgradeStatSink.AddDamageMultiplier(float value) => _damageMultiplier += value;
+        void IUpgradeStatSink.AddDamageMultiplier(float value) => _statLayers.AddAdditive(StatAtk, value);
     
         void IUpgradeStatSink.AddAttackSpeedMultiplier(float value) => _attackSpeedMultiplier += value;
     

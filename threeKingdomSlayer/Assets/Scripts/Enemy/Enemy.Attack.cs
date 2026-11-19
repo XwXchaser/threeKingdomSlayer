@@ -191,6 +191,9 @@ public partial class Enemy : MonoBehaviour
         // 攻击 tween 已经没了（被掐断）→ 补发，敌人永不哑火。
         _rangedArrowPending = false;
         if (state == EnemyState.Dead) return;
+        // ⚠ **被玩家打断（受击 / 招架）→ 不补发**（2026-11-16 修严重 BUG）：
+        //   攻击已被取消（动画已回 Idle）→ 再补一箭就变成「前摇被吞 + 受击瞬间射箭」。
+        if (attackInterrupted) return;
         DebugLog.Warning($"[Enemy] 远程攻击被掐断，箭未发出 → 收尾兜底补发一次: {DebugTag} "
             + $"(凶手标签=[{_attackTweenKillReason}])");
         SpawnProjectile();

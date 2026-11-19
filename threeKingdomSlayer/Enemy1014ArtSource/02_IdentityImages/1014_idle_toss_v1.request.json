@@ -1,0 +1,46 @@
+{
+  "version": "1014_idle_toss_v1",
+  "handoff": "Locus\\knowledge\\plan\\session-handoff-20261114.md §7.14",
+  "brief": "Locus\\knowledge\\design\\enemy-1014-art-brief.md §8.3",
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "method": "POST",
+  "content_type": "multipart/form-data; boundary=----locus9f427c624f184105af8a89970da75b26",
+  "fields": {
+    "model": "gpt-image-2.6-sunburst",
+    "prompt": "Draw this same soldier in a new idle pose that reads as a man idly tossing his small ceramic canteen up for fun, waiting on the road, nowhere near an attack.\n\nThe character stays exactly as he is: the same lean sharp face with its sly crooked toothy grin, the same forward-looking eyes straight at the viewer, the same short dark stubble on the jaw and cheeks, the same tied hair bun, the same narrow cloth headband with its loose end hanging on the right side of the picture, the same grey-beige coarse cloth tunic with frayed edges, the same dark brown leather shoulder strap and its metal buckle, the same belt with the small dark red cloth pouch, the same dark trousers, the same wrapped pale leg bindings, the same worn cloth shoes, and the same small unglazed earthenware canteen with a flattened round body, a short neck and a small spout. Same build as before: the same heavy head, the same broad shoulders set high on the chest, the same compact torso and waist, the same short sturdy legs, the same body height and the same overall proportions. Same camera angle, same framing, same plain green screen background, same rendering style, same outline weight and the same level of detail.\n\nTHE POSE. He stands facing the viewer with both feet planted on the ground, weight resting mostly on his left leg while his right knee softens. His shoulders stay relaxed and square to the viewer, his chest open, his back upright. His left arm hangs down loosely at his side, the hand relaxed and open. His right arm, on the LEFT side of the picture, is bent at the elbow and lifted so that his right hand is held up in front of his chest, palm facing up and open, fingers relaxed and slightly curled. The small ceramic canteen hovers a little above that open palm, caught in mid-air just after he tossed it up, tilted slightly, about to drop back into his hand. His head tilts a few degrees as he watches the canteen, while his eyes still look straight out of the picture at the viewer with the same sly grin.\n\nThis is a relaxed idle fidget with a small object, nothing more: the arm is not drawn back, the shoulder is not cocked, the body is not leaning forward, nothing is aimed at the viewer. He stays on the spot, both feet on the ground, no dust, no motion blur, no action line, no projectile trail, no effect, no glow, no poison smoke.\n\nNegative constraints: different costume, changed outfit, new hat, helmet, hood, face mask, different face, clean shaven face, smiling without teeth, different body proportions, lanky, narrow shoulders, stretched body, long legs, small head, walking, stepping, mid-stride, running, dust, motion blur, action line, speed line, projectile trail, glowing effect, poison smoke, green glow, both hands holding the canteen, canteen held in the left hand, arms crossed, arm drawn back, cocked shoulder, leaning forward, throwing at the viewer, spear, sword, bow, quiver, flag, shield, extra fingers, extra arms, missing hand, blurry, out of focus, text, watermark, logo, scenery, ground shadow, frame, border, multiple characters",
+    "size": "1024x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "output_format": "png",
+    "n": "1"
+  },
+  "base_image": {
+    "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy1014ArtSource\\02_IdentityImages\\1014_v3_lineup_greenscreen_1024.png",
+    "sha256": "d56da937e3c063cf1c69a740bf87c4783f127d5b6460a465b41f800f7b4a728e",
+    "bytes": 360344,
+    "size": [
+      1024,
+      1024
+    ]
+  },
+  "models_check": {
+    "http_status": 200,
+    "models": [
+      "claude-haiku-5-5",
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-image-2.6-sunburst",
+      "grok-4.7"
+    ],
+    "image_models": [
+      "gpt-image-2.6-sunburst"
+    ]
+  },
+  "prompt_sha256": "715ca8f54ccc6fec6c709dc5f6f6ff54f12b090da8a8cfc0fc79cc60bd4177cc",
+  "prompt_chars": 3062,
+  "automatic_retries": 0,
+  "read_timeout_seconds": 600,
+  "submitted_at_local": "2026-11-16 15:51:14"
+}

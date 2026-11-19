@@ -106,6 +106,15 @@ Enemy1021ArtSource/*
 !Enemy1021ArtSource/00_SourceVideos/
 !Enemy1021ArtSource/01_KeyPosePreparation/
 
+# 1014 投壶兵：形象 + 陶壶道具 + 六人并排比例组图
+# 只放行 README / 00_Index 台账 / 02_IdentityImages 身份图 / 03_Lineup 组图；
+# 原始视频、review、upload 等中间产物仍留本地不入库。
+Enemy1014ArtSource/*
+!Enemy1014ArtSource/README.md
+!Enemy1014ArtSource/00_Index/
+!Enemy1014ArtSource/02_IdentityImages/
+!Enemy1014ArtSource/03_Lineup/
+
 # 长枪 / 其他素材源：仍整体本地留档（已入库的历史文件不受影响，新增文件不入库）
 StabWeaponArtSource/
 
@@ -116,6 +125,7 @@ SkillWeaponsArtSource/*
 !SkillWeaponsArtSource/00_Index/
 !SkillWeaponsArtSource/02_Concept/
 !SkillWeaponsArtSource/03_FourView/
+!SkillWeaponsArtSource/05_VfxConcept/
 # 第三方参考图（PBZ 立绘与头部特写）只留本地；只放行自产的画风参考。
 # ⚠ 父目录必须先 ! 回来，否则 git 不允许重新包含被排除目录里的子目录。
 !SkillWeaponsArtSource/01_Reference/

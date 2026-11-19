@@ -37,6 +37,12 @@ public class SaveData
     [Tooltip("**「点开始关卡」的主菜单引导**是否已教过（2026-11-04）。玩家点过开始关卡（或正式进入战斗）后写 true → 同一段教程里不再重复出现")]
     public bool taughtStartStage = false;
 
+    // ── 无限模式（无尽关）记录（2026-11-16）──
+    [Tooltip("无限模式历史最佳分")]
+    public int endlessBestScore = 0;
+    [Tooltip("无限模式历史最高圈数")]
+    public int endlessMaxCircle = 0;
+
     /// <summary>
     /// 获取铜钱数量（优先从 props 列表读取，兼容旧存档的 coinCount 字段）
     /// </summary>

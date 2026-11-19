@@ -1,0 +1,234 @@
+{
+  "version": "axe_combat_vfx_overlay_board_v3",
+  "image": "SkillWeaponsArtSource/05_VfxConcept/axe_combat_vfx_overlay_board_v3.png",
+  "source": "C:/Users/steam/Pictures/gptGen/axe_combat_vfx_overlay_board_20261116/axe_combat_vfx_overlay_board_v3.png",
+  "sha256": "670adb56e80daf4b765f7903e96105e243715dce8025756e1b94661e5afbeee8",
+  "bytes": 2510663,
+  "size": [
+    1536,
+    1024
+  ],
+  "grid": "3 列 × 2 行；实测竖缝 x=510-513 / 1022-1024，横缝 y=511-513",
+  "submit": {
+    "model": "gpt-image-2.6-sunburst",
+    "endpoint": "POST /v1/images/edits",
+    "params": "1536x1024 / quality=max / input_fidelity=high / output_format=png / n=1 / 不传 background",
+    "refs": "5 张 image[]（两张项目概念图缩小副本 + 1011 精灵 + 抡斧四视图缩小副本 + 实机地面裁切），合计 1.86 MB",
+    "attempts": [
+      {
+        "attempt": 1,
+        "result": "HTTP 200",
+        "seconds": 112.26,
+        "usage_total": 9896
+      }
+    ]
+  },
+  "measurement_note": "effect_coverage = 与本格地面中位色差异>30 的像素占比（需求 35%-50%）；crack_frac = 亮度<115 的像素；bright_core_frac = 亮度>205 且 R>200 的金白核心像素；vermilion_frac = R-(G,B)>55 的朱红像素。",
+  "panels": {
+    "1 纯粗裂纹": {
+      "cell": [
+        0,
+        0,
+        510,
+        511
+      ],
+      "ground_median_rgb": [
+        205.0,
+        146.0,
+        72.0
+      ],
+      "effect_coverage": 0.1508,
+      "crack_frac": 0.1057,
+      "bright_core_frac": 0.0001,
+      "vermilion_frac": 0.7334,
+      "core_bright_frac": 0.0002,
+      "vermilion_sat_frac": 0.0,
+      "crack_sector_hist": [
+        48,
+        53,
+        21,
+        40,
+        31,
+        54,
+        48,
+        100,
+        26,
+        34,
+        38,
+        58
+      ],
+      "active_sectors": 12
+    },
+    "2 +金白命中核": {
+      "cell": [
+        514,
+        0,
+        1022,
+        511
+      ],
+      "ground_median_rgb": [
+        205.0,
+        146.0,
+        72.0
+      ],
+      "effect_coverage": 0.1531,
+      "crack_frac": 0.0936,
+      "bright_core_frac": 0.0102,
+      "vermilion_frac": 0.7304,
+      "core_bright_frac": 0.0209,
+      "vermilion_sat_frac": 0.0,
+      "crack_sector_hist": [
+        59,
+        50,
+        12,
+        18,
+        25,
+        47,
+        40,
+        100,
+        23,
+        25,
+        40,
+        52
+      ],
+      "active_sectors": 12
+    },
+    "3 +朱红强调": {
+      "cell": [
+        1025,
+        0,
+        1536,
+        511
+      ],
+      "ground_median_rgb": [
+        206.0,
+        146.0,
+        72.0
+      ],
+      "effect_coverage": 0.1703,
+      "crack_frac": 0.1077,
+      "bright_core_frac": 0.0097,
+      "vermilion_frac": 0.7765,
+      "core_bright_frac": 0.0198,
+      "vermilion_sat_frac": 0.0203,
+      "crack_sector_hist": [
+        64,
+        59,
+        17,
+        35,
+        33,
+        48,
+        54,
+        100,
+        29,
+        35,
+        45,
+        55
+      ],
+      "active_sectors": 12
+    },
+    "4 +碎土像素": {
+      "cell": [
+        0,
+        514,
+        510,
+        1024
+      ],
+      "ground_median_rgb": [
+        206.0,
+        146.0,
+        72.0
+      ],
+      "effect_coverage": 0.1944,
+      "crack_frac": 0.1294,
+      "bright_core_frac": 0.0101,
+      "vermilion_frac": 0.7354,
+      "core_bright_frac": 0.0206,
+      "vermilion_sat_frac": 0.0109,
+      "crack_sector_hist": [
+        79,
+        66,
+        22,
+        30,
+        38,
+        72,
+        84,
+        100,
+        29,
+        33,
+        46,
+        66
+      ],
+      "active_sectors": 12
+    },
+    "5 +斧刃拖痕": {
+      "cell": [
+        514,
+        514,
+        1022,
+        1024
+      ],
+      "ground_median_rgb": [
+        206.0,
+        146.0,
+        72.0
+      ],
+      "effect_coverage": 0.2084,
+      "crack_frac": 0.1423,
+      "bright_core_frac": 0.0101,
+      "vermilion_frac": 0.7342,
+      "core_bright_frac": 0.0206,
+      "vermilion_sat_frac": 0.0093,
+      "crack_sector_hist": [
+        56,
+        48,
+        13,
+        22,
+        26,
+        49,
+        59,
+        100,
+        19,
+        23,
+        34,
+        43
+      ],
+      "active_sectors": 12
+    },
+    "6 综合版": {
+      "cell": [
+        1025,
+        514,
+        1536,
+        1024
+      ],
+      "ground_median_rgb": [
+        206.0,
+        146.0,
+        72.0
+      ],
+      "effect_coverage": 0.2127,
+      "crack_frac": 0.1486,
+      "bright_core_frac": 0.0103,
+      "vermilion_frac": 0.7394,
+      "core_bright_frac": 0.0209,
+      "vermilion_sat_frac": 0.0117,
+      "crack_sector_hist": [
+        55,
+        50,
+        17,
+        25,
+        24,
+        50,
+        58,
+        100,
+        21,
+        22,
+        31,
+        44
+      ],
+      "active_sectors": 12
+    }
+  },
+  "note2": "vermilion_sat_frac = 饱和朱红（R>175 且 R-G>95 且 R-B>95）像素占比；crack_sector_hist = 裂纹像素在 12 个角度扇区上的相对分布（%），active_sectors = 质量>12%峰值的扇区数（接近 12 ⇒ 均匀放射的星形，越少越有方向性）。"
+}

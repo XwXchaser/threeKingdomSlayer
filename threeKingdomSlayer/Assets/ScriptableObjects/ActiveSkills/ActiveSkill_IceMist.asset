@@ -27,7 +27,7 @@ MonoBehaviour:
   secondaryIntValue: 0
   stringValue: 
   baseAttackConfig: {fileID: 0}
-  icon: {fileID: 21300000, guid: ddca02e6e8040c948a9908a5c48c4b57, type: 3}
+  icon: {fileID: 21300000, guid: 01af8b8bf5132ed499740f1e3af39d0f, type: 3}
   phantomLevels: []
   timedAoeLevels:
   - intervalSeconds: 0
@@ -81,6 +81,8 @@ MonoBehaviour:
   waveLevels: []
   chargeHitShockwaveLevels: []
   diseaseLevels: []
+  axeSmashLevels: []
+  chainPullLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

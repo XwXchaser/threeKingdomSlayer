@@ -30,6 +30,14 @@ MonoBehaviour:
     weight: 300
   - upgrade: {fileID: 11400000, guid: 1a1d2c13de246f34dbe94e8e46ceb6af, type: 2}
     weight: 100
+  - upgrade: {fileID: 11400000, guid: 961580bcfd22c5842baa8ea69dc7d8f4, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 706eae301ac007b4d86360836dfc3997, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: e965be9a60eab8e4d84512b5c227d8d8, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 810784d3604ab674b9952b8f79c21f06, type: 2}
+    weight: 100
   rarePool:
   - upgrade: {fileID: 11400000, guid: 0e968b19ca0b1fe4e8d9cc72b814bfef, type: 2}
     weight: 100
@@ -43,8 +51,30 @@ MonoBehaviour:
     weight: 100
   - upgrade: {fileID: 11400000, guid: 184ddf13aae305e45ae9f92f2feba541, type: 2}
     weight: 100
+  - upgrade: {fileID: 11400000, guid: d216bdf8d0deb414596b22fb5afd5221, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 222101a55e617534aa2c513066fdf779, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 6ae10de45f8beaf4bbf7a1fbc3dd1f77, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 4f8408a000a49ad47b01f58b8f8fbb09, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 497e6470ebb471d429716199c6aa2824, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: a2a47bf6f63ff334eaa42819ada48a92, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 99cb5a0f1a541db4db3016f39b7a3a21, type: 2}
+    weight: 100
   legendaryPool:
   - upgrade: {fileID: 11400000, guid: ad8f6c8edfab32b4d83f251559d240d7, type: 2}
     weight: 100
   - upgrade: {fileID: 11400000, guid: 894de3689a6692f41be5c5cf47b960a3, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: f97b886fd435d3f4e8832f7188f953d9, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 570297b9f08ef0c42988680913f70bd3, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: dc0cedf370225574297d20b47db525ce, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 5016fd13808ab214c876acd4029c1c61, type: 2}
     weight: 100

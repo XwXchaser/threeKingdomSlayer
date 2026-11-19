@@ -224,6 +224,7 @@ GameObject:
   - component: {fileID: 5137011}
   - component: {fileID: 5137013}
   - component: {fileID: 5137014}
+  - component: {fileID: 5137015}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: Manager
@@ -520,6 +521,23 @@ MonoBehaviour:
   slashShadowColor: {r: 0.9, g: 0.28, b: 0.03, a: 1}
   pierceColor: {r: 1, g: 0.86, b: 0.32, a: 1}
   heavyColor: {r: 1, g: 0.48, b: 0.06, a: 1}
+--- !u!114 &5137015
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5136998}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fac0b0e4f2adbe949a8b7e30d7adbdc9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  chestPrefab: {fileID: 8867886689965201508, guid: 96f0092324c828b4585731cfcd8ec20e, type: 3}
+  chestParent: {fileID: 0}
+  playerCollectPoint: {fileID: 864291162}
+  flySpeed: 900
+  chestSize: 110
 --- !u!1 &6885100
 GameObject:
   m_ObjectHideFlags: 0
@@ -2938,6 +2956,9 @@ MonoBehaviour:
   hitRotationScale: 1
   playerDamageRotationScale: 1
   heavyOnlyCameraShake: 1
+  impactSwayDistance: 0.07
+  impactSwayDuration: 0.16
+  impactSwayRotationDegrees: 0.25
 --- !u!1 &147321613
 GameObject:
   m_ObjectHideFlags: 0
@@ -3211,6 +3232,38 @@ MonoBehaviour:
   scaleDuration: 0.15
   _referenceWidth: 1080
   _referenceGap: 8
+--- !u!1 &171795058
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 171795059}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: BladeMid
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &171795059
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 171795058}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.2, y: 2.55, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &172049863
 GameObject:
   m_ObjectHideFlags: 0
@@ -5651,6 +5704,72 @@ MonoBehaviour:
   pressOffset: 4
   pressTime: 0.06
   releaseTime: 0.2
+--- !u!1 &326258437
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 326258439}
+  - component: {fileID: 326258438}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: EndlessRunController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &326258438
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 326258437}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f6539f0b35951245a0d412fb9462346, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startHpScale: 0.55
+  startDamageScale: 0.5
+  startAttackSpeedScale: 0.8
+  startingChoices: 0
+  fallbackFormation: {fileID: 11400000, guid: f329fc350cf1b54439fcc603e63223ba, type: 2}
+  useAuthoredLevels: 1
+  hpGrowthPerCircle: 1.6
+  bossHpGrowthPerCircle: 1.25
+  attackSpeedGrowthPerCircle: 1.06
+  damageGrowthPerCircle: 1.04
+  maxAttackSpeedMultiplier: 1.5
+  maxDamageMultiplier: 2
+  maxBossHpMultiplier: 4
+  seed: 20261116
+  wavesPerNode: 2
+  n1NodesPerCircle: 2
+  n3NodesPerBranch: 3
+  n2NodesPerBranch: 3
+  nodeSettleDelay: 0.8
+  loopStartNodeId: N1
+  sourceRoute: {fileID: 0}
+--- !u!4 &326258439
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 326258437}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &327019554
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -14169,7 +14288,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1066807472
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19999,6 +20118,9 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 827d3aacea4d7f64883b1ef827e2d3a8, type: 3}
   - {fileID: 8300000, guid: a791c91095c1ff847bfd56f70ab39bf0, type: 3}
   _heavyHitClips: []
+  _heavySwingClips:
+  - {fileID: 8300000, guid: 227a43e90e0b0ba449488bdc6354cda9, type: 3}
+  _heavySwingVolume: 1
   _guardBlockClips:
   - {fileID: 8300000, guid: f3e0f5e8d6efa8c40a80d5ce83964f8d, type: 3}
   - {fileID: 8300000, guid: 17fc96aaf44d86749929bab776d78bd1, type: 3}
@@ -24631,6 +24753,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: "\u9AB7\u9AC5\u5175"
   enemyId: 0
+  dropsEquipment: 0
   maxHealth: 100
   occupySlots: 1
   attackSpeed: 1
@@ -29019,3 +29142,5 @@ SceneRoots:
   - {fileID: 1684724281}
   - {fileID: 405713611}
   - {fileID: 1601026401}
+  - {fileID: 171795059}
+  - {fileID: 326258439}

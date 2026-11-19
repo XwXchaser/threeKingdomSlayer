@@ -1,0 +1,43 @@
+{
+  "state": "image_saved",
+  "http_status": 200,
+  "seconds": 212.66,
+  "error": null,
+  "output_image": "C:/Users/steam/Pictures/gptGen/enemy_proportion_lineup_1014_v2\\enemy_proportion_lineup_1014_v2.png",
+  "download": "b64_json",
+  "width": 1536,
+  "height": 1024,
+  "bit_depth": 8,
+  "color_type": 6,
+  "output_bytes": 1804423,
+  "output_sha256": "216e1f8d1438b317ffa1fe29324a23140b92536345fd661070058d7ec4080f65",
+  "usage": {
+    "input_tokens": 4883,
+    "input_tokens_details": {
+      "image_tokens": 2800,
+      "text_tokens": 2083
+    },
+    "output_tokens": 5488,
+    "output_tokens_details": {
+      "image_tokens": 5488
+    },
+    "total_tokens": 10371
+  },
+  "echoed_size": "1536x1024",
+  "echoed_quality": "max",
+  "models_check": {
+    "http_status": 200,
+    "models": [
+      "claude-haiku-5-5",
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-image-2.6-sunburst",
+      "grok-4.7"
+    ],
+    "image_models": [
+      "gpt-image-2.6-sunburst"
+    ]
+  }
+}

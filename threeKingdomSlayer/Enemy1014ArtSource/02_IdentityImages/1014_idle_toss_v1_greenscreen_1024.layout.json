@@ -1,0 +1,69 @@
+{
+  "source": "C:\\Users\\steam\\Pictures\\gptGen\\enemy1014_idle_toss_v1\\1014_idle_toss_v1.png",
+  "source_size": [
+    1024,
+    1024
+  ],
+  "alpha_threshold": 128,
+  "filled_holes_px": 0,
+  "cut": {
+    "bbox": [
+      289,
+      195,
+      663,
+      881
+    ],
+    "subject_w": 375,
+    "subject_h": 687
+  },
+  "scale": 1.0131,
+  "composited": {
+    "path": "Enemy1014ArtSource\\02_IdentityImages\\1014_idle_toss_v1_greenscreen_1024.png",
+    "canvas": [
+      1024,
+      1024
+    ],
+    "green": [
+      0,
+      159,
+      62
+    ],
+    "paste_xy": [
+      284,
+      200
+    ],
+    "bbox": [
+      285,
+      200,
+      663,
+      894
+    ],
+    "subject_w": 379,
+    "subject_h": 695,
+    "visible_bottom_y": 894,
+    "center_x": 474.0
+  },
+  "green_purity": {
+    "corner_median": [
+      0,
+      159,
+      62
+    ],
+    "corner_std": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "shield_side_check": {
+    "head_band_centroid_x": 509.1,
+    "torso_band_centroid_x": 484.7,
+    "delta_x": -24.4,
+    "shield_side": "shield_on_picture_LEFT"
+  },
+  "target": {
+    "subject_h": 696,
+    "foot_y": 895,
+    "center_x": 474.5
+  }
+}

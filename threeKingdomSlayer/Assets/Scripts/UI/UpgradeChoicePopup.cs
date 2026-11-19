@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using DG.Tweening;
+using TMPro;
 using UnityEngine;
 
 /// <summary>
@@ -8,12 +9,28 @@ using UnityEngine;
 /// 代码只负责填充内容 + 淡入淡出动画。
 /// 由 UpgradeChoiceManager 动态 Instantiate / Destroy 管理生命周期。
 /// </summary>
-public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView
+public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView, IUpgradeChoiceKindView
 {
     [Header("预置卡片")]
     public UpgradeCard card1;
     public UpgradeCard card2;
     public UpgradeCard card3;
+
+    [Header("标题（区分奖励来源）")]
+    [Tooltip("标题文本（2026-11-17：属性强化 = 经验升级；装备掉落 = 精英敌人）")]
+    public TextMeshProUGUI titleText;
+    [Tooltip("属性（经验升级）的标题文案")]
+    public string attributeTitle = "属性强化";
+    [Tooltip("装备 / 饰品（精英敌人掉落）的标题文案")]
+    public string equipmentTitle = "装备掉落";
+    [Tooltip("道具（Boss 锦囊，V1）的标题文案")]
+    public string itemTitle = "战利品";
+    [Tooltip("属性标题颜色")]
+    public Color attributeTitleColor = new Color(0.91f, 0.89f, 0.82f, 1f);
+    [Tooltip("装备标题颜色")]
+    public Color equipmentTitleColor = new Color(0.96f, 0.77f, 0.26f, 1f);
+    [Tooltip("道具标题颜色")]
+    public Color itemTitleColor = new Color(0.85f, 0.85f, 0.85f, 1f);
 
     [Header("弃置弹窗素材（道具栏满时弹出的弃置窗用）")]
     [Tooltip("弃置弹窗外框（Inspector 引用，替代运行时按路径加载）")]
@@ -90,7 +107,7 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView
             if (i < choices.Count && choices[i] != null)
             {
                 _cards[i].gameObject.SetActive(true);
-                _cards[i].Setup(choices[i], OnCardHeld);
+                _cards[i].Setup(choices[i], OnCardTapped);
             }
             else
             {
@@ -101,10 +118,36 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView
     }
 
     /// <summary>
-    /// **长按确认某张卡**（2026-11-05 用户定：长按选择，而不是点两下）。
-    /// 卡自己按住计时（<see cref="UpgradeCard.holdConfirmSeconds"/>），满了才回调到这里。
+    /// **标题区分奖励来源**（2026-11-17）：
+    ///   · 属性强化 → 来自**经验升级**
+    ///   · 装备掉落 → 来自**精英敌人**
+    /// 玩家一眼能看出这一轮拿到的卡是从哪条线来的。
     /// </summary>
-    private void OnCardHeld(UpgradeCard card)
+    public void SetChoiceKind(UpgradeRewardKind kind)
+    {
+        if (titleText == null) return;
+        switch (kind)
+        {
+            case UpgradeRewardKind.Equipment:
+                titleText.text = equipmentTitle;
+                titleText.color = equipmentTitleColor;
+                break;
+            case UpgradeRewardKind.Item:
+                titleText.text = itemTitle;
+                titleText.color = itemTitleColor;
+                break;
+            default:
+                titleText.text = attributeTitle;
+                titleText.color = attributeTitleColor;
+                break;
+        }
+    }
+
+    /// <summary>
+    /// **点按确认某张卡**（2026-11-16 用户定：从长按改回点按）。
+    /// 卡自己走 Unity 标准 Button 的 onClick（按下+抬起 = 一次点按）。
+    /// </summary>
+    private void OnCardTapped(UpgradeCard card)
     {
         if (card == null) return;
         UpgradeChoiceManager.Instance?.ConfirmChoice(card.Definition);

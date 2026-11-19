@@ -15,6 +15,11 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
 {
     private IEnumerator EnterNode(FakeRouteNodeConfig node)
     {
+        if (_suspended)
+        {
+            Debug.LogWarning("[FakeRoute] 无限模式接管中，忽略节点进入：" + (node != null ? node.nodeId : "null"));
+            yield break;
+        }
         if (node == null || !ContainsNode(node))
         {
             Debug.LogError("[FakeRoute] 目标节点无效");
@@ -63,7 +68,8 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
     {
         if (node == null || (node.postBattleDialogue == null && node.postBattlePresentation == null)) yield break;
         int generation = _generation;
-        RouteChoicePanel.HideCurrent();
+        // ⚠ 无限模式接管中 → **不要隐藏面板**（那个面板是无限模式自己的出口面板）
+        if (!_suspended) RouteChoicePanel.HideCurrent();
         SetGameplayInput(false);
         yield return PlayEntryDialogue(node.postBattleDialogue);
         if (generation != _generation || Phase == FakeRoutePhase.Defeated) yield break;

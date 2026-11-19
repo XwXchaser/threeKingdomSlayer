@@ -44,8 +44,10 @@ public partial class AttackSystem : MonoBehaviour
         // 解锁攻击伤害 = baseAttackConfig.damage + floatValue × (level - 1)
         float baseDmg = cfg.damage;
         float bonusPerLevel = _unlockedFloatValues.TryGetValue(unlockId, out float fv) ? fv : 0f;
-        float finalDmg = (baseDmg + bonusPerLevel * (level - 1))
-            * (UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetDamageMultiplier() : 1f);
+        float rawDmg = baseDmg + bonusPerLevel * (level - 1);
+        float finalDmg = UpgradeEffectManager.Instance != null
+            ? UpgradeEffectManager.Instance.ComputeDamage(rawDmg)
+            : rawDmg;
 
         List<Enemy> targets;
         if (targetColumn >= 0)

@@ -1,0 +1,76 @@
+{
+  "version": "axe_combat_vfx_overlay_board_v3",
+  "handoff": "Locus\\knowledge\\plan\\axe-skill-integration-20261115.md §6.12",
+  "spec": "Locus\\knowledge\\design\\axe-ground-crack-vfx-spec-20261115.md",
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "method": "POST",
+  "content_type": "multipart/form-data; boundary=----locus6bd3e5ece5f74dafbb156b77a812d076",
+  "fields": {
+    "model": "gpt-image-2.6-sunburst",
+    "prompt": "Create one combat VFX overlay concept sheet for an existing high-definition pixel-art Three Kingdoms battle screen: a single 1536x1024 board with six panels, three columns by two rows, read left to right and top to bottom.\n\nThis is a 2D/2.5D ground-overlay VFX design for the existing in-game combat screen, not an environment concept, not terrain destruction, and not a 3D geological fracture. Every effect must read as a flat sprite layered on the warm ochre battlefield ground, using the project's existing high-definition pixel combat language: a short gold-white impact core, restrained vermilion accents, thick cool gray-brown cracks, hard-edged colour clusters, and stepped silhouettes.\n\nWHAT IS IDENTICAL IN ALL SIX PANELS: the same warm yellow-brown battlefield soil seen from the same fixed close oblique top-down 2.5D angle, the same camera, the same ground texture and the same lighting; the same effect position at the centre of the frame and the same effect size in every panel. The effect fills roughly 35 to 50 percent of the frame. The background ground is simplified, but it keeps the project's real warm soil colour, its pixel texture and its brightness relationship. The ground keeps its own lighting and its own texture in every panel; only the flat effect layer differs from panel to panel.\n\nWHAT EACH PANEL SHOWS:\n1. CRACKS ONLY. Five to seven thick cool gray-brown ground cracks with a clear hierarchy, some thick and long, others short and secondary, plus a few short branches. The whole crack set leans slightly in one direction, as a single-edged axe blow would leave it, and it never radiates evenly like a star.\n2. CRACKS + GOLD-WHITE IMPACT CORE. The same cracks, plus a short gold-white impact core at the centre: a small concentrated hard-edged flash shape, like the hit spark of this game, not a round glowing ball and not a large white blob.\n3. CRACKS + GOLD-WHITE CORE + VERMILION ACCENT. The same cracks and the same gold-white core, plus a few short vermilion accent strokes right around the core, the colour of this game's slash and impact effects. The vermilion stays a small accent close to the centre and never spreads across the ground.\n4. CRACKS + A FEW BROKEN SOIL PIXELS. The same cracks, plus a small number of flat dark-brown soil pixels and tiny clods scattered close to the crack edges, drawn as flat pixel clusters with no volume, no floating slabs and no 3D rocks.\n5. CRACKS + AXE-DIRECTION DRAG MARK. The same cracks, plus one short, thick, hard-edged ground scrape that reads as the direction of the single-edged axe blow: a compact straight drag, not a long light streak, not a sweeping arc and not a glowing trail.\n6. COMBINED VERSION. The cracks of panel 1, the gold-white impact core of panel 2 with the vermilion accent of panel 3, the few broken soil pixels of panel 4 and the light directional drag mark of panel 5, all combined into one flat effect. This is the proposed final look.\n\nHARD CONSTRAINTS FOR ALL SIX PANELS: everything is a flat layer lying on the ground plane. No vertical surfaces, no pit walls, no canyon, no crater, no raised blocks, no thick earth chunks, no terrain slices, no tilted rock plates, no 3D rock structures. The centre is a flat high-contrast impact area, never a hollow and never a three-dimensional hole. The cracks are five to seven thick hard main cracks plus a few short branches, with clear hierarchy in thickness and length, leaning slightly in one direction and never evenly radial. Gold-white is used only for the short impact core and a few lit edges, vermilion only for a few short speed and impact accents; there is no full white slab, no neon and no magic glow. Everything is drawn in the project's high-definition pixel language: big hard-edged colour clusters, stepped silhouettes, a clear focal point, no realistic materials, no soft gradients, no airbrushed halo, no volumetric light and no uniform noise. No character, no axe, no enemy, no interface, no text, no label, no distant scenery and no scenery props in the background. This sheet compares flat combat VFX overlays for review only; it is not a final transparent texture and not an animation frame sequence.\n\nReference image duties, one job each. Image 1 is the highest priority reference for this project's combat effects: take from it the combat VFX colour language, the gold-white and vermilion impact effect colours, and the pixel world language; it contains a battle interface and characters, and none of that is copied here. Image 2 is a supplementary reference for the Three Kingdoms warm soil, the spatial atmosphere and the pixel world; none of its buildings, army formation or distant scenery is generated. Image 3 is an approved enemy sprite from this same game: it defines the high-definition pixel colour clusters, the hard edges and the way local detail is organised, and the character itself is not copied. Image 4 only hints that the weapon is a heavy single-edged axe and is used to decide the slight direction of the cracks; no axe is drawn, its plain light background is not used, and it is not a style reference. Image 5 is a crop of the current in-game ground: it defines the current ground colour and contrast only, and the ground is kept as it is.\n\nNegative constraints: 3D terrain destruction, geological fault, canyon, crater, deep pit, vertical cliff walls, raised slabs, tilted rock plates, thick broken ground chunks, isometric environment art, realistic rocks, photorealism, painterly concept art, volumetric lighting, soft glow, fog, dust cloud, smoke, fireball, lava, lightning, magic circle, runes, blue energy, tree-root star crack, evenly radial spokes, hairline scratches, complete ring, character, axe, weapon, enemy, UI, text, labels, background scenery, wide battlefield vista",
+    "size": "1536x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "output_format": "png",
+    "n": "1"
+  },
+  "reference_images": [
+    {
+      "order": 1,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\SkillWeaponsArtSource\\05_VfxConcept\\refs\\conv_battle_1_small.jpg",
+      "role": "image 1: 项目战斗特效最高优先参考（原图 C:/Users/Administrator/Downloads/微信图片_20260928101136_13_455.png 的 640 宽缩小副本）—— 只取战斗特效色彩、金白/朱红命中色与像素化世界语言；HUD、角色、武器都不复制",
+      "sha256": "d8617578e23a9fb9c0e759e537f7c7af7aeeee75ffdb03311b94a6af0ec0007d",
+      "bytes": 276720
+    },
+    {
+      "order": 2,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\SkillWeaponsArtSource\\05_VfxConcept\\refs\\conv_battle_2_small.jpg",
+      "role": "image 2: 三国暖土与空间氛围补充参考（原图 C:/Users/Administrator/Downloads/微信图片_20260928101137_14_455.png 的 640 宽缩小副本）—— 其建筑、军阵、远景都不生成",
+      "sha256": "c05dc3d61b773414fd3acc20abc87fe879c59daffb31c50e1fac6e03aa3c572f",
+      "bytes": 297409
+    },
+    {
+      "order": 3,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1_1\\Enemy_1011_idle1.png",
+      "role": "image 3: 已验收 1011 精灵 —— 只负责高清像素色簇、硬边与局部细节组织；角色本身不复制",
+      "sha256": "b8ac9bcf97804e4cbb9d41e798e02c9c9a7e7b818e77159d952342fcf66f6939",
+      "bytes": 423179
+    },
+    {
+      "order": 4,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\SkillWeaponsArtSource\\05_VfxConcept\\refs\\axe_four_view_small.png",
+      "role": "image 4: 抡斧四视图缩小副本 —— 只提示武器是厚重单刃斧，用于决定裂纹轻微方向性；不画斧头、不用白底、不作画风参考",
+      "sha256": "46c71f85bec105b1e9d6993cd3a3fafe21d43a77be90347eb44374c590c71e0f",
+      "bytes": 452821
+    },
+    {
+      "order": 5,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\SkillWeaponsArtSource\\05_VfxConcept\\refs\\ingame_ground_crop.png",
+      "role": "image 5: 旧实机地面裁切 —— 只定义当前地面颜色与对比度，地面保持原样",
+      "sha256": "4d078d655562df24fb906ecfdfccfe03c6f41f573477f6baa42a4dac5204954e",
+      "bytes": 496845
+    }
+  ],
+  "models_check": {
+    "http_status": 200,
+    "models": [
+      "claude-haiku-5-5",
+      "claude-opus-5-5",
+      "claude-sonnet-5-5",
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-image-2.6-sunburst",
+      "grok-4.7"
+    ],
+    "image_models": [
+      "gpt-image-2.6-sunburst"
+    ]
+  },
+  "prompt_sha256": "0617e0bd9024ebcc939d6027ca430fbab6eaee422f422a3e8b402e447c45716d",
+  "prompt_chars": 5782,
+  "automatic_retries": 0,
+  "read_timeout_seconds": 900,
+  "submitted_at_local": "2026-11-16 15:59:47"
+}

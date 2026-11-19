@@ -1,0 +1,54 @@
+{
+  "version": "enemy_proportion_lineup_1014_v3_small",
+  "note": "v3 的轻量版参考图：原图等比降到长边 640，只为规避 503 upstream_unavailable 的重请求；六张参考图与顺序完全不变。",
+  "references": [
+    {
+      "order": 1,
+      "path": "Library/Locus/tmp/1014lineup/refs_v3_small/img1_anchor_green.jpg",
+      "role": "image 1: 1011 重甲刀兵 —— 唯一共同体型 / 体量 / 画风基准（渲染风格也由它决定），同时是第一位重甲兵的造型参考",
+      "bytes": 55183,
+      "expected_sha256_prefix": "b64751c2eebe4c5e",
+      "note": "由 Enemy1011ArtSource/01_SourceVideos/_first_last_frame_anchor/anchor_green.png 等比降采样到长边 640（只减传输体积，不改内容）"
+    },
+    {
+      "order": 2,
+      "path": "Library/Locus/tmp/1014lineup/refs_v3_small/img2_input_identity_v12_bandit_idle_v6_1024.jpg",
+      "role": "image 2: 1012 山贼刀兵 —— 脸 / 汉末粗布 / 皮革 / 绑腿语言；并同时是 1014 的同源民兵气质基准",
+      "bytes": 56720,
+      "expected_sha256_prefix": "22704796978dd72c",
+      "note": "由 Enemy1012ArtSource/02_IdentityImages/input_identity_v12_bandit_idle_v6_1024.png 等比降采样到长边 640（只减传输体积，不改内容）"
+    },
+    {
+      "order": 3,
+      "path": "Library/Locus/tmp/1014lineup/refs_v3_small/img3_1013_lineup_crop_reference_rgba.jpg",
+      "role": "image 3: 1013 旗手 —— 并排图里已获认可的旗手裁切（汉末人脸 / 布甲 / 双手持杆与方旗）；旗杆旗布不计入身高",
+      "bytes": 72696,
+      "expected_sha256_prefix": "67846a27cefe47e3",
+      "note": "由 Enemy1013ArtSource/02_IdentityImages/1013_lineup_crop_reference_rgba.png 等比降采样到长边 640（只减传输体积，不改内容）"
+    },
+    {
+      "order": 4,
+      "path": "Library/Locus/tmp/1014lineup/refs_v3_small/img4_1051_idle_identity_greenscreen_1024.jpg",
+      "role": "image 4: 1051 弓手 —— 窄额布巾 / 下半脸蒙面 / 木弓 / 羽箭箭袋 / 汉末布革方向",
+      "bytes": 63609,
+      "expected_sha256_prefix": "9cf3d52de5bca1bd",
+      "note": "由 Enemy1051ArtSource/02_IdentityImages/1051_idle_identity_greenscreen_1024.png 等比降采样到长边 640（只减传输体积，不改内容）"
+    },
+    {
+      "order": 5,
+      "path": "Library/Locus/tmp/1014lineup/refs_v3_small/img5_1021_idle_identity_greenscreen_1024.jpg",
+      "role": "image 5: 1021 轻装楯兵 —— 装备 / 站姿 / 盾在画面左由人物右手持握 / 布帽 / 浅灰胡茬 全部保留",
+      "bytes": 60800,
+      "expected_sha256_prefix": "1b808b502c970581",
+      "note": "由 Enemy1021ArtSource/01_KeyPosePreparation/1021_idle_identity_greenscreen_1024.png 等比降采样到长边 640（只减传输体积，不改内容）"
+    },
+    {
+      "order": 6,
+      "path": "Library/Locus/tmp/1014lineup/refs_v3_small/img6_1014_face_shape_v2_greenscreen_1024.jpg",
+      "role": "image 6: 1014 投壶兵已定稿设计（基层民兵粗布衣 + 右手小水壶 + 瘦脸 + 咧嘴奸笑 + 胡茬）—— 只提供 1014 的造型与脸，不提供身材比例：他的身材跟图1家族走",
+      "bytes": 51098,
+      "expected_sha256_prefix": "26a0f405aed9da78",
+      "note": "由 Enemy1014ArtSource/02_IdentityImages/1014_face_shape_v2_greenscreen_1024.png 等比降采样到长边 640（只减传输体积，不改内容）"
+    }
+  ]
+}

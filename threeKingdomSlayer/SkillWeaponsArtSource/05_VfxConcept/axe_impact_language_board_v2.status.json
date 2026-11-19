@@ -1,0 +1,43 @@
+{
+  "state": "image_saved",
+  "http_status": 200,
+  "seconds": 104.21,
+  "error": null,
+  "output_image": "C:/Users/steam/Pictures/gptGen/axe_impact_language_board_20261116\\axe_impact_language_board_v2.png",
+  "download": "b64_json",
+  "width": 1536,
+  "height": 1024,
+  "bit_depth": 8,
+  "color_type": 2,
+  "output_bytes": 2845312,
+  "output_sha256": "277a4d45ed8d306d6b95a307db7c2e9ff3638d6701cb0eca8ab7eddd6a123e99",
+  "usage": {
+    "input_tokens": 3987,
+    "input_tokens_details": {
+      "image_tokens": 2800,
+      "text_tokens": 1187
+    },
+    "output_tokens": 5488,
+    "output_tokens_details": {
+      "image_tokens": 5488
+    },
+    "total_tokens": 9475
+  },
+  "echoed_size": "1536x1024",
+  "echoed_quality": "max",
+  "models_check": {
+    "http_status": 200,
+    "models": [
+      "claude-haiku-5-5",
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-image-2.6-sunburst",
+      "grok-4.7"
+    ],
+    "image_models": [
+      "gpt-image-2.6-sunburst"
+    ]
+  }
+}

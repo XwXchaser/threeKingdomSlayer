@@ -1,0 +1,160 @@
+{
+  "image": "C:/Users/steam/Pictures/gptGen/enemy_proportion_lineup_1014/enemy_proportion_lineup_1014.png",
+  "size": [
+    1536,
+    1024
+  ],
+  "figure_count": 6,
+  "components": 6,
+  "figures": [
+    {
+      "bbox": [
+        28,
+        355,
+        284,
+        700
+      ],
+      "leg_center_x": 175.5,
+      "head_top_y": 359,
+      "foot_bottom_y": 700,
+      "body_height_px": 341,
+      "total_width_px": 256,
+      "total_height_px": 345,
+      "head_band_centroid_x": 174.5,
+      "torso_band_centroid_x": 168.8,
+      "shield_side_vs_body": "shield_on_picture_LEFT",
+      "pixels": 48283,
+      "index": 1,
+      "label": "1011",
+      "body_height_vs_1011": 1.0,
+      "game_scale_k": 1.774,
+      "game_total_width_px": 454.2,
+      "game_width_in_columns": 1.66
+    },
+    {
+      "bbox": [
+        282,
+        363,
+        518,
+        699
+      ],
+      "leg_center_x": 409.2,
+      "head_top_y": 371,
+      "foot_bottom_y": 699,
+      "body_height_px": 328,
+      "total_width_px": 236,
+      "total_height_px": 336,
+      "head_band_centroid_x": 421.1,
+      "torso_band_centroid_x": 418.9,
+      "shield_side_vs_body": "shield_on_picture_LEFT",
+      "pixels": 41511,
+      "index": 2,
+      "label": "1012",
+      "body_height_vs_1011": 0.962,
+      "game_scale_k": 1.845,
+      "game_total_width_px": 435.3,
+      "game_width_in_columns": 1.59
+    },
+    {
+      "bbox": [
+        538,
+        242,
+        789,
+        700
+      ],
+      "leg_center_x": 635.4,
+      "head_top_y": 261,
+      "foot_bottom_y": 700,
+      "body_height_px": 439,
+      "total_width_px": 251,
+      "total_height_px": 458,
+      "head_band_centroid_x": 660.4,
+      "torso_band_centroid_x": 634.2,
+      "shield_side_vs_body": "shield_on_picture_LEFT",
+      "pixels": 61260,
+      "index": 3,
+      "label": "1013",
+      "body_height_vs_1011": 1.287,
+      "game_scale_k": 1.378,
+      "game_total_width_px": 345.9,
+      "game_width_in_columns": 1.27
+    },
+    {
+      "bbox": [
+        780,
+        378,
+        999,
+        700
+      ],
+      "leg_center_x": 884.5,
+      "head_top_y": 384,
+      "foot_bottom_y": 700,
+      "body_height_px": 316,
+      "total_width_px": 219,
+      "total_height_px": 322,
+      "head_band_centroid_x": 889.5,
+      "torso_band_centroid_x": 888.2,
+      "shield_side_vs_body": "shield_on_picture_LEFT",
+      "pixels": 43063,
+      "index": 4,
+      "label": "1051",
+      "body_height_vs_1011": 0.927,
+      "game_scale_k": 1.915,
+      "game_total_width_px": 419.3,
+      "game_width_in_columns": 1.54
+    },
+    {
+      "bbox": [
+        1035,
+        385,
+        1247,
+        700
+      ],
+      "leg_center_x": 1140.2,
+      "head_top_y": 388,
+      "foot_bottom_y": 700,
+      "body_height_px": 312,
+      "total_width_px": 212,
+      "total_height_px": 315,
+      "head_band_centroid_x": 1155.2,
+      "torso_band_centroid_x": 1137.4,
+      "shield_side_vs_body": "shield_on_picture_LEFT",
+      "pixels": 42679,
+      "index": 5,
+      "label": "1021",
+      "body_height_vs_1011": 0.915,
+      "game_scale_k": 1.939,
+      "game_total_width_px": 411.1,
+      "game_width_in_columns": 1.51
+    },
+    {
+      "bbox": [
+        1283,
+        387,
+        1474,
+        700
+      ],
+      "leg_center_x": 1383.0,
+      "head_top_y": 389,
+      "foot_bottom_y": 700,
+      "body_height_px": 311,
+      "total_width_px": 191,
+      "total_height_px": 313,
+      "head_band_centroid_x": 1395.5,
+      "torso_band_centroid_x": 1379.9,
+      "shield_side_vs_body": "shield_on_picture_LEFT",
+      "pixels": 37642,
+      "index": 6,
+      "label": "1014",
+      "body_height_vs_1011": 0.912,
+      "game_scale_k": 1.945,
+      "game_total_width_px": 371.6,
+      "game_width_in_columns": 1.36
+    }
+  ],
+  "game_projection": {
+    "normal_body_px": 605,
+    "column_spacing_px": 273,
+    "note": "scale = 605 / 本图人物本体高；width_in_columns = 折算总宽 / 273"
+  }
+}

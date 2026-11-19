@@ -60,6 +60,21 @@ aiEditMode: inherit
 - 生图后**先量测再加工**：比例/落位用 `Tools/visual_brief/compose_identity_greenscreen.py`（绿幕口径：1024²、绿 (0,159,62)、主体高 696、脚底 895、中心 474.5）。
 - **易漏**：去背/合成后要**回读** alpha、脚底、中心、高度；研究图（比例对照图）**不能**直接当身份图或游戏素材加工。
 
+### 概念板 / 多格分镜（评审用，不是素材）
+
+2026-11-16 抡斧砸地裂纹：先出**一张 3×2 六格分镜板**（1536×1024）确认形态与时序，再出最终贴图。
+
+- **六格只变一个量**：同一镜头、同一地面、同一裂纹形状与尺度，逐格只改「显现范围 + 整体透明度」；文案按时间点逐格写（0.00s / 0.03s / 0.16s / 0.28s / 0.42s / 0.50s）。
+- **参考图三类职责**：实机截图（世界 / 地面 / 特效气质，**要交代它带战斗 HUD，只取世界**）+ 已验收精灵（像素色簇与硬边）+ 道具四视图（只给形体印象，**不画武器本体、不用它的白底**）。
+- **校验用像素统计，不靠目视**：按亮度阈值统计每格中心区域的暗部像素占比，即可验证「显现到一半 / 保持 / 淡出但仍可辨 / 归零」的序列（抡斧那版实测：18 / 1712 / 3640 / 3690 / 18246(<130) / 14）。
+- ⚠ **多格图里的重复元素是「近似同形」而非逐像素相同**：六格里同一条裂纹会被重画成略有差异的形状，评审按「同形同尺度」判断即可，不要写成精确复制要求。
+- ⚠ 概念板**只用于评审，不得导入 Unity**；归档在素材包（如 `SkillWeaponsArtSource/05_VfxConcept/`），不进 `Assets/`。
+- ★ **“扁平叠加 VFX” 与 “3D 地形破坏” 的措辞分野（2026-11-16 抡斧裂纹，两轮实测）**：
+  - 失败写法（V2）：`crushed pit` / `thick slabs` / `broken fault surfaces` / `tilted earth and rock` ⇒ 模型给**地质断层概念图**：峡谷、竖直断层面、陨石坑、岩板。
+  - 成功写法（V3）：开头就钉死 **“a 2D/2.5D ground-overlay VFX design … not an environment concept, not terrain destruction, and not a 3D geological fracture”**，并把 “every effect must read as a flat sprite layered on the ground” 写进正文；负面词再列 `3D terrain destruction, geological fault, canyon, crater, vertical cliff walls, raised slabs, tilted rock plates, isometric environment art`。
+  - ⇒ **同一个需求，只换措辞就从“概念图”变成“可叠在战斗地面上的特效层”**。写 VFX 需求时**禁用“坑 / 断层 / 岩板 / 破碎块”这类地质词**，改用 “flat overlay / flat sprite / lying on the ground plane”。
+  - ⇒ 残差：模型仍会把裂纹画成**根状放射**（12 个角度扇区都有质量）。要压住得写 **“5–7 条粗主裂纹 + 少量短分支、粗细分层明显、整体朝一个方向倾斜、绝不平均放射”**，并在验收时用“角度扇区质量分布”量它，而不是靠目视。
+
 ### S3 动作视频
 
 - **产出顺序：新兵种按「idle 形象 → 关键动作（攻击/技能）→ 剩余通用动作」做**（2026-11-09 用户定，见 §0 铁律 11）。做视频前先确认这一步该做的是哪个动作。
@@ -95,8 +110,9 @@ aiEditMode: inherit
 |---|---|
 | 1013 旗手（当前角色） | `plan/enemy-commander-buff-unit-plan.md`（顶部状态 + §2 画风/身份 + §4 交付 + §5 工程附录） |
 | **抡斧 / 追命锁链（武器 3D）** | `design/weapon-3d-art-spec-axe-and-chain.md`（**四视图需求 + 3D 制作规范**：尺度/轴向与原点/材质/锚点/Prefab 结构/提示词/验收） |
+| **1014 投壶兵（角色 + 陶壶道具 + 并排组图）** | ★ **`design/enemy-1014-art-brief.md`**（**独立任务书**：当前画风 + 实机画面 + 已有六兵种画风描述与实测体量 + 形象规范 + 陶壶规范 + 组图方法 + 红线 + 验收）；机制看 `design/enemy-1014-javelin-thrower-mechanics.md` |
 | **本轮（破防演出 + 投壶兵 + 两个技能）** | `plan/session-handoff-20261114.md`（总交接）　`plan/architecture-review-new-features-20261114.md`（架构体检与优化清单） |
-| 四兵种并排比例研究图 | `memory/enemy-proportion-lineup-reference.md`；`plan/…` §2.15–§2.15.10 |
+| 四兵种并排比例研究图 | `memory/enemy-proportion-lineup-reference.md`；`plan/…` §2.15–§2.15.10（★ **并排组图的做法与红线在 `design/enemy-1014-art-brief.md` §7**） |
 | 管线级经验（表情/选帧/落位/抠图/写精灵） | `memory/enemy1012-art-replacement-pipeline.md` |
 | 已知问题与调试步骤 | `memory/known-issues.md`；`plan/unresolved-issues.md` |
 | 视觉库索引 | `memory/visual-library.md` |

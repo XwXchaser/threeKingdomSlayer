@@ -1,0 +1,161 @@
+{
+  "image": "C:/Users/steam/Pictures/gptGen/enemy_proportion_lineup_1014_v3_small/enemy_proportion_lineup_1014_v3_small.png",
+  "size": [
+    1536,
+    1024
+  ],
+  "figure_count": 6,
+  "components": 6,
+  "segmentation": "color(113, 114, 115)",
+  "figures": [
+    {
+      "bbox": [
+        25,
+        352,
+        289,
+        745
+      ],
+      "leg_center_x": 172.0,
+      "head_top_y": 357,
+      "foot_bottom_y": 745,
+      "body_height_px": 388,
+      "total_width_px": 264,
+      "total_height_px": 393,
+      "head_band_centroid_x": 178.0,
+      "torso_band_centroid_x": 166.1,
+      "shield_side_vs_body": "shield_on_picture_LEFT",
+      "pixels": 54738,
+      "index": 1,
+      "label": "1011",
+      "body_height_vs_1011": 1.0,
+      "game_scale_k": 1.559,
+      "game_total_width_px": 411.6,
+      "game_width_in_columns": 1.51
+    },
+    {
+      "bbox": [
+        281,
+        369,
+        525,
+        745
+      ],
+      "leg_center_x": 414.8,
+      "head_top_y": 375,
+      "foot_bottom_y": 745,
+      "body_height_px": 370,
+      "total_width_px": 244,
+      "total_height_px": 376,
+      "head_band_centroid_x": 426.7,
+      "torso_band_centroid_x": 419.6,
+      "shield_side_vs_body": "shield_on_picture_LEFT",
+      "pixels": 49871,
+      "index": 2,
+      "label": "1012",
+      "body_height_vs_1011": 0.954,
+      "game_scale_k": 1.635,
+      "game_total_width_px": 399.0,
+      "game_width_in_columns": 1.46
+    },
+    {
+      "bbox": [
+        525,
+        193,
+        825,
+        744
+      ],
+      "leg_center_x": 643.6,
+      "head_top_y": 216,
+      "foot_bottom_y": 744,
+      "body_height_px": 528,
+      "total_width_px": 300,
+      "total_height_px": 551,
+      "head_band_centroid_x": 672.3,
+      "torso_band_centroid_x": 640.5,
+      "shield_side_vs_body": "shield_on_picture_LEFT",
+      "pixels": 90489,
+      "index": 3,
+      "label": "1013",
+      "body_height_vs_1011": 1.361,
+      "game_scale_k": 1.146,
+      "game_total_width_px": 343.8,
+      "game_width_in_columns": 1.26
+    },
+    {
+      "bbox": [
+        772,
+        376,
+        1008,
+        744
+      ],
+      "leg_center_x": 885.9,
+      "head_top_y": 390,
+      "foot_bottom_y": 744,
+      "body_height_px": 354,
+      "total_width_px": 236,
+      "total_height_px": 368,
+      "head_band_centroid_x": 895.3,
+      "torso_band_centroid_x": 890.2,
+      "shield_side_vs_body": "shield_on_picture_LEFT",
+      "pixels": 55921,
+      "index": 4,
+      "label": "1051",
+      "body_height_vs_1011": 0.912,
+      "game_scale_k": 1.709,
+      "game_total_width_px": 403.3,
+      "game_width_in_columns": 1.48
+    },
+    {
+      "bbox": [
+        1036,
+        375,
+        1267,
+        744
+      ],
+      "leg_center_x": 1150.8,
+      "head_top_y": 389,
+      "foot_bottom_y": 744,
+      "body_height_px": 355,
+      "total_width_px": 231,
+      "total_height_px": 369,
+      "head_band_centroid_x": 1147.0,
+      "torso_band_centroid_x": 1150.0,
+      "shield_side_vs_body": "shield_on_picture_RIGHT",
+      "pixels": 51833,
+      "index": 5,
+      "label": "1021",
+      "body_height_vs_1011": 0.915,
+      "game_scale_k": 1.704,
+      "game_total_width_px": 393.7,
+      "game_width_in_columns": 1.44
+    },
+    {
+      "bbox": [
+        1285,
+        379,
+        1489,
+        744
+      ],
+      "leg_center_x": 1385.7,
+      "head_top_y": 381,
+      "foot_bottom_y": 744,
+      "body_height_px": 363,
+      "total_width_px": 204,
+      "total_height_px": 365,
+      "head_band_centroid_x": 1392.8,
+      "torso_band_centroid_x": 1383.9,
+      "shield_side_vs_body": "shield_on_picture_LEFT",
+      "pixels": 47422,
+      "index": 6,
+      "label": "1014",
+      "body_height_vs_1011": 0.936,
+      "game_scale_k": 1.667,
+      "game_total_width_px": 340.0,
+      "game_width_in_columns": 1.25
+    }
+  ],
+  "game_projection": {
+    "normal_body_px": 605,
+    "column_spacing_px": 273,
+    "note": "scale = 605 / 本图人物本体高；width_in_columns = 折算总宽 / 273"
+  }
+}

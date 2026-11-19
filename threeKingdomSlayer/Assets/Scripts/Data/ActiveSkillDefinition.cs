@@ -31,6 +31,20 @@ public class ActiveSkillDefinition : UpgradeDefinition
     [Tooltip("按等级配置冷却时间。index 0 = Lv1")]
     public List<float> cooldownLevels = new List<float>();
 
+    [Header("暗源（释放消耗，2026-11-16）")]
+    [Tooltip("**释放该技能消耗的暗源**（逐等级；index 0 = Lv1）。\n" +
+             "暗源**只靠进攻获取**（命中 / 击杀）→ 防御姿态不回 → 防止“按住防御纯放技能”。\n" +
+             "空列表或全 0 = 不消耗（现有技能保持原样）。")]
+    public List<float> shadowCostLevels = new List<float>();
+
+    /// <summary>该等级释放一次消耗的暗源（0 = 不消耗）。</summary>
+    public float GetShadowCost(int level)
+    {
+        if (shadowCostLevels == null || shadowCostLevels.Count == 0) return 0f;
+        int idx = Mathf.Clamp(level - 1, 0, shadowCostLevels.Count - 1);
+        return Mathf.Max(0f, shadowCostLevels[idx]);
+    }
+
     public float GetCooldown(int level)
     {
         if (cooldownLevels == null || cooldownLevels.Count == 0)

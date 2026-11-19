@@ -1,0 +1,64 @@
+{
+  "source": "Library\\Locus\\tmp\\1014lineup\\v3_1014_raw_crop.png",
+  "source_size": [
+    216,
+    377
+  ],
+  "source_background_color": [
+    113,
+    114,
+    115
+  ],
+  "green_tolerance": 79,
+  "filled_holes_px": 14366,
+  "cut": {
+    "bbox": [
+      6,
+      6,
+      209,
+      371
+    ],
+    "subject_w": 204,
+    "subject_h": 366
+  },
+  "scale": 1.90164,
+  "composited": {
+    "path": "Enemy1014ArtSource\\02_IdentityImages\\1014_v3_lineup_greenscreen_1024.png",
+    "canvas": [
+      1024,
+      1024
+    ],
+    "green": [
+      0,
+      159,
+      62
+    ],
+    "paste_xy": [
+      280,
+      200
+    ],
+    "bbox": [
+      280,
+      200,
+      667,
+      895
+    ],
+    "subject_w": 388,
+    "subject_h": 696,
+    "visible_bottom_y": 895,
+    "center_x": 473.5
+  },
+  "green_purity": {
+    "corner_median": [
+      0,
+      159,
+      62
+    ],
+    "corner_max_channel_deviation": 0.0
+  },
+  "target": {
+    "subject_h": 696,
+    "foot_y": 895,
+    "center_x": 474.5
+  }
+}

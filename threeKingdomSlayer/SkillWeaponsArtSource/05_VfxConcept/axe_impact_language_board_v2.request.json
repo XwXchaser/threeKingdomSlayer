@@ -1,0 +1,74 @@
+{
+  "version": "axe_impact_language_board_v2",
+  "handoff": "Locus\\knowledge\\plan\\axe-skill-integration-20261115.md §6.12",
+  "spec": "Locus\\knowledge\\design\\axe-ground-crack-vfx-spec-20261115.md",
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "method": "POST",
+  "content_type": "multipart/form-data; boundary=----locus25e24abe6d134eec88670b36cedf64e0",
+  "fields": {
+    "model": "gpt-image-2.6-sunburst",
+    "prompt": "Create one impact-language comparison board for a high-definition pixel-art Three Kingdoms battlefield action game: a single 1536x1024 sheet holding four panels in a 2x2 grid. Each panel is one independent peak-impact instant of a heavy ground strike, seen close up, and the four panels exist to compare four different ways the earth can break. This sheet compares destruction language only; it is not a time sequence and not a production texture.\n\nWHAT IS IDENTICAL IN ALL FOUR PANELS: the same warm yellow-brown battlefield soil seen from the same fixed oblique top-down 2.5D angle, the same camera height and framing, the same lighting, the same ground texture and colour, the same pixel rendering language. The impact area fills roughly 55 to 65 percent of each panel, centred, and the background is simplified plain ground with no scenery props and no clutter, so the damage stays the subject.\n\nWHAT EACH PANEL SHOWS:\nPANEL A - CRUSHED DEPRESSION. The centre, about a fifth of the impact area, collapses into an irregular crushed pit of broken soil and stone with a lumpy broken rim; around it four to six clods of earth and rock are crushed flat or lifted slightly at their edges; from the rim of the pit a few thick cracks burst outward.\nPANEL B - SINGLE-BLADE SPLIT. The centre is cut by one short deep split with the clean weight of a heavy single-edged axe blow; the crack pattern is clearly asymmetric and stretches along the direction of the chop, with the branches on one side long and the branches on the other side short, so the whole shape leans.\nPANEL C - BURST. A high-contrast broken core bursts open at the centre, six to eight thick cracks shoot out to the outer ring, their mid sections broken and offset like snapped stone, and a few small clods of earth are thrown outward from the core.\nPANEL D - OFFSET SLABS. The ground at the centre is smashed into three to five thick slabs of earth and rock that have shifted and tilted against each other, each slab showing a clear fault edge where it broke; the cracks between them are few but very thick.\n\nTHE DAMAGE LANGUAGE IN ALL FOUR PANELS: the centre reads as a solid crushed and broken core of soil and stone, not a crossing of thin lines. About five to seven main cracks with a clear hierarchy, some thick and long, others short and secondary, and they never radiate evenly like a star. The main split has a slight direction and a slight asymmetry, as a single-edged axe blow would leave. A few small dirt clods, gravel and a bright lit edge on the broken fault surfaces show real material under force. Warm yellow-brown battlefield soil, deep cold gray-brown crack interior, a few gray-white lit soil and stone edges, high-definition pixel rendering with big hard-edged colour clusters and stepped silhouettes. The impression must be the physical weight of a heavy cold blue-gray steel single-edged giant axe hitting the ground. No weapon is drawn anywhere on this sheet.\n\nReference image duties, one job each. Images 1 and 2 are project concept images of this battlefield: they define the new art style, the warm battlefield and the combat atmosphere. Image 3 is an approved enemy sprite from this same game: it defines the pixel colour clusters and the way edges and detail are organised. Image 4 gives only the impression of the heavy single-edged axe shape; the sheet shows ground and damage only, so nothing from image 4 is drawn and its plain light background is not used. Image 5 is a crop of the current in-game ground: it defines the current ground colour and contrast only, not the style. This sheet is a review-only concept board, not a production sprite sheet and not a final texture.\n\nNegative constraints: tree-root star-shaped cracks, evenly radial six-way spokes, hairline cracks, ordinary scratches on the ground, complete spiderweb, complete ring, magic circle, runes, flame, lava, lightning, blue energy, soft glow, fog clumps, excessive dust, excessive debris, meteor crater, explosion fireball, character, weapon, UI, text, labels, wide battlefield vista, background details competing with the subject",
+    "size": "1536x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "output_format": "png",
+    "n": "1"
+  },
+  "reference_images": [
+    {
+      "order": 1,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\SkillWeaponsArtSource\\05_VfxConcept\\refs\\conv_battle_1_small.jpg",
+      "role": "image 1: 项目概念图（原图 C:/Users/Administrator/Downloads/微信图片_20260928101136_13_455.png 的 640 宽缩小副本）—— 只负责新画风、暖色战场与战斗氛围（界面元素不要用）",
+      "sha256": "d8617578e23a9fb9c0e759e537f7c7af7aeeee75ffdb03311b94a6af0ec0007d",
+      "bytes": 276720
+    },
+    {
+      "order": 2,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\SkillWeaponsArtSource\\05_VfxConcept\\refs\\conv_battle_2_small.jpg",
+      "role": "image 2: 项目概念图（原图 C:/Users/Administrator/Downloads/微信图片_20260928101137_14_455.png 的 640 宽缩小副本）—— 只负责新画风、战场地面与特效气质（界面元素不要用）",
+      "sha256": "c05dc3d61b773414fd3acc20abc87fe879c59daffb31c50e1fac6e03aa3c572f",
+      "bytes": 297409
+    },
+    {
+      "order": 3,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Assets\\Sprites\\Enemy\\Enemy1_1\\Enemy_1011_idle1.png",
+      "role": "image 3: 已验收 1011 精灵 —— 只负责像素色簇、边缘与细节组织",
+      "sha256": "b8ac9bcf97804e4cbb9d41e798e02c9c9a7e7b818e77159d952342fcf66f6939",
+      "bytes": 423179
+    },
+    {
+      "order": 4,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\SkillWeaponsArtSource\\05_VfxConcept\\refs\\axe_four_view_small.png",
+      "role": "image 4: 抡斧四视图（原图 SkillWeaponsArtSource/03_FourView/axe_four_view_plain.png 的 1024 宽缩小副本）—— 只提供厚重单刃的形体印象；板子只画地面与破坏，武器本体与白底都不使用",
+      "sha256": "46c71f85bec105b1e9d6993cd3a3fafe21d43a77be90347eb44374c590c71e0f",
+      "bytes": 452821
+    },
+    {
+      "order": 5,
+      "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\SkillWeaponsArtSource\\05_VfxConcept\\refs\\ingame_ground_crop.png",
+      "role": "image 5: 旧实机地面裁切（自 _art_process/VisualLibrary/shots/battle_overall_scene.png 裁出）—— 只用于了解当前地面落位与对比度，不反向定义画风",
+      "sha256": "4d078d655562df24fb906ecfdfccfe03c6f41f573477f6baa42a4dac5204954e",
+      "bytes": 496845
+    }
+  ],
+  "models_check": {
+    "http_status": 200,
+    "models": [
+      "claude-haiku-5-5",
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-image-2.6-sunburst",
+      "grok-4.7"
+    ],
+    "image_models": [
+      "gpt-image-2.6-sunburst"
+    ]
+  },
+  "prompt_sha256": "e420515124a38ab4cbde0de7f112c44c23cd028e9b93484f0ff34527fe76c67e",
+  "prompt_chars": 4097,
+  "automatic_retries": 0,
+  "read_timeout_seconds": 900,
+  "submitted_at_local": "2026-11-16 15:05:11"
+}

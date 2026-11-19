@@ -12,3 +12,5 @@ talent_page_detail,天赋详情卡,Assets/Scenes/TalentTree.scene,MainCamera,sel
 battle_skill_icons_choice,三选一弹窗（技能图标实机显示）,Assets/Scenes/Battle.scene,MainCamera,upgrade_choice:active_cyclone|active_arrow_rain|active_wave,game,,combat;skill;icon;choice;ui,,1080,planned,旋风/箭雨/海浪三个主动技能图标的实机显示
 battle_overall_scene,战斗场景整体,Assets/Scenes/Battle.scene,MainCamera,none,game,,combat;overall;scene,,1080,planned,整屏构图与 HUD 现状
 battle_enemy_1012,1012 兜鍪贼兵（实机）,Assets/Scenes/Battle.scene,MainCamera,spawn:Enemy_1012+freeze,game,,combat;enemy;1012;bandit,"0,0,1,0.8",1080,planned,引擎内 1012 的实际显示：像素化程度与身材比例
+battle_enemy_1014,投壶兵 1014（实机·当前占位形象）,Assets/Scenes/Battle.scene,MainCamera,spawn:Enemy_1014+freeze,game,,combat;enemy;1014;javelin;placeholder,"0,0,1,0.8",1080,planned,引擎内 1014 的实际显示：当前沿用 106 弓箭手占位形象，用于确认屏上体量与画风基线
+battle_enemy_1014_projectile,投壶兵投射物（毒陶壶·飞行中）,Assets/Scenes/Battle.scene,MainCamera,spawn:Enemy_1014,game,,combat;enemy;1014;projectile;poison,"0,0,1,0.8",1080,planned,1014 投出的投射物在飞行中的屏上表现与尺寸（当前为箭矢占位）

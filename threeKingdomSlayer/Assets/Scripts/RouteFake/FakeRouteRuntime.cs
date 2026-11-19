@@ -14,6 +14,18 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour, IRouteNodeProgress
     [SerializeField] private bool useTestStartNode;
     [SerializeField] private RouteChoicePanel choicePanelPrefab;
 
+    /// <summary>
+    /// 出口面板预制体（**无限模式复用同一套出口确认 UI**）。
+    /// 出口面板是「玩家确认下一步」的统一入口，不应该各模式各画一套。
+    /// </summary>
+    public RouteChoicePanel ChoicePanelPrefab => choicePanelPrefab;
+
+    /// <summary>
+    /// 旅行表现层（**无限模式复用同一套旅行演出**）。
+    /// 只暴露只读引用：调用方只管播，不该改表现层的内部状态。
+    /// </summary>
+    public IRouteMotionPresenter MovementPresenter => movementPresenter;
+
     [SerializeField] private FakeRouteNodeConfig testStartNode;
 
     // ── 节点完成策略注册表（扩展点）──
@@ -172,6 +184,12 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour, IRouteNodeProgress
 
     public void Begin(FakeRouteStageConfig config)
     {
+        // 无限模式接管中 → 拒绝启动剧情路线（否则两套流程并行，正式关配置会顶掉无限模式）
+        if (_suspended)
+        {
+            Debug.LogWarning("[FakeRoute] 无限模式接管中，忽略 Begin（剧情路线不启动）");
+            return;
+        }
         // 显式 Begin = 由 MainMenu 选关/继续启动的老路径，结算后回 MainMenu。
         IsHubEntry = false;
         if (_flow != null) StopCoroutine(_flow);

@@ -99,6 +99,43 @@ python H:/CindyData/skills/blender-mcp/scripts/blender_bridge.py exec-file Libra
 - 4.4+ Action 数据结构需按配套 Skill 核对，不盲用旧 `Action.fcurves`。
 - 修改网格原点处的 scale 会移动其世界高度范围：上一轮衣摆按世界原点缩短导致腰部断裂。
 
+## 贴图相关硬坑（2026-11-15 实测）
+
+1. **法线图另存后必须显式设 Non-Color**：Tripo 等外部导入的贴图，法线图在 .blend 里是
+   `colorspace=Non-Color`。一旦另存成 PNG 再重新加载，Blender 默认按 **sRGB** 解释，
+   sRGB→线性转换会改掉法线值，渲染出来是**成片硬边“面片”**，很容易误判成 UV 坏了。
+   加载后立刻写 `img.colorspace_settings.name = 'Non-Color'`（base color 保持 sRGB）。
+2. **改图集前要精确判定空位，不能用采样点**：自动展开的 UV 是**细长条带**，
+   12×12 采样点会漏掉穿过空位的细条带 → 把新岛涂到别的部位上（本次把刃背涂成灰白碎片）。
+   正确做法：逐像素边函数精确栅格化成占用图 + 积分图，矩形是否为空用 O(1) 求和判定。
+3. **只改真正坏掉的面**：用「UV 面积=0」筛退化面，别用「法线朝上/位置」这类近似条件，
+   否则会把正常的老面一起搬走。
+4. **改完必须多视角渲染 + 与基线逐像素比对**：只看一个角度会漏掉整片区域的破坏。
+   基线＝改动前的原始 .blend，同角度同参数各渲一遍，用图像差分定位「哪些像素变了、变在哪」，
+   目标是「除目标区域外 0 像素变化」。
+
+## GUI 崩溃防线（2026-11-15 新增）
+
+在 Blender **GUI 进程**里做下面这些事，实测会把 Blender 搞崩（进程直接消失、无崩溃日志、MCP 先报
+`Connection closed` 再报 `Not connected`）：
+
+- 2048² 图像的 `image.pixels.foreach_get / foreach_set`（大数组读写）；
+- 全图集三角形栅格化（每个三角形一次 `np.meshgrid`，大 bbox 会放大到整张图量级）。
+
+**防线**
+
+1. **动手前先存现场**：`bpy.ops.wm.save_as_mainfile(filepath=..., copy=True)`。用户场景常常是未保存的，
+   崩了就只能靠这个副本恢复（本次即靠它保住了用户的模型修复）。
+2. **重活放 `--background`**：`H:/Blender5.2/blender.exe --background <scene.blend> --python <script>`，
+   独立进程、崩了不伤 GUI、输出用**绝对路径**（相对路径在后台模式下可能写到别处）。
+   后台模式下 EEVEE 可用（`BLENDER_EEVEE`），必要时退回 Cycles CPU。
+3. **像素与图像处理放在 Blender 之外**：Blender 自带 Python 没有 PIL；导出 `.npy`，用托管 Python 的
+   numpy/PIL 处理后再由 Blender 读文件。
+4. **Blender 内置 Python 没有 PIL**；也别用 `inspect.py` 这类文件名做脚本（会挡标准库 `inspect`，
+   numpy 直接 import 失败）。
+5. 后台跑 `bpy.ops.render.render(write_still=True)` 后**必须检查返回与文件是否落盘**，
+   成功响应不等于图片写出来了（相对路径 + 未检查返回值曾出现“打印了 RENDER 但没有文件”）。
+
 ## 正确显示面数，而不是只切属性页
 
 用户所说数据面板包含查看面数的需求。`PROPERTIES.context='DATA'` 不是面数统计开关；选中灯光时它显示的是灯光数据。

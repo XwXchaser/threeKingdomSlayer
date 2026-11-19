@@ -365,9 +365,11 @@ public class PassiveTriggerModule : MonoBehaviour
 
         if (selected.Count == 0) yield break;
 
-        // 计算最终伤害
-        float mult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetDamageMultiplier() : 1f;
-        int finalDamage = Mathf.RoundToInt(cfg.baseDamage * mult);
+        // 计算最终伤害（统一伤害出口：固定值 → 加法百分比 → 乘区 → 转化器）
+        float rawDamage = UpgradeEffectManager.Instance != null
+            ? UpgradeEffectManager.Instance.ComputeDamage(cfg.baseDamage)
+            : cfg.baseDamage;
+        int finalDamage = Mathf.RoundToInt(rawDamage);
 
         // 获取玩家位置
         Vector3 playerPos = AttackSystem.Instance.playerState != null

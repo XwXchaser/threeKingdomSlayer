@@ -154,6 +154,10 @@ maintenanceRules: |-
 - **反向变体（2026-11-14 续轮实测）：`git pull` 之后，磁盘上的新值会被 Editor 内存里的旧版覆盖回磁盘。** 拉到一个改了 Prefab 的提交后，Unity 重新导入时用内存旧实例把文件写回去 ⇒ 拉下来的改动静默丢失（实测：`Enemy_1014.prefab` 的毒伤 `2.5/4s` 与 `projectileCanBeShotDown` 被刷成 `0/0` 与 `false`，投壶兵直接失效）。修法：**改内存实例 + `EditorUtility.SetDirty` + `AssetDatabase.SaveAssets()` 显式写盘**，不要用 `git checkout` 去抢磁盘（抢完下次刷新还会被刷回去）。验收看 `git hash-object --path=<path> <path>` 是否等于 `git rev-parse HEAD:<path>`（内容哈希一致即已对齐）；`git status` 可能因 `core.autocrlf=true` 仍显示 `M`，那是换行符伪差异，用 `git diff --numstat`（无输出）区分。
 - 附带纪律（拉取后）：Unity 会弹「场景在磁盘上被外部修改」模态框 → **选 Reload**，否则编辑器拿到的是旧场景实例（会误判「新增的 Prefab/技能没注册进场景」）。
 
+### Prefab 加子节点 / 场景清理的两处自伤（2026-11-17）
+- **给 Prefab 资产加子节点：`new GameObject(...)` + `SetParent(prefabAssetRoot)` 不会落盘**。改完 `PrefabUtility.SavePrefabAsset(root)` 静默无效（回读 `titleText` 仍是 NULL、节点不存在）。原因：新建对象属于**当前场景**，挂到 Prefab 资产根上不是合法的资产编辑路径。正确做法：`PrefabUtility.LoadPrefabContents(path)` → 在隔离场景里改 → `PrefabUtility.SaveAsPrefabAsset(contents, path)` → `UnloadPrefabContents`。而且 `LoadPrefabContents` 会**从磁盘重读**（见上面 2026-10-16 那条），改之前先确认没有未落盘的 Inspector 改动。
+- **`GameObject.Find("名字")` 清理场景残留会误伤同名正式对象**：本项目 `Battle.scene` 里本来就有两个叫 `Title` 的 UI 节点（HUD 的 `Card/Title` 与 `TextBox/Title`），用 `Find` + `DestroyImmediate` 清理自己留下的同名残留时，把正式对象一起删了。**教训**：清理残留要按**父子路径/自建标记**定位，不能只按名字；而且**先备份场景**（`EditorSceneManager.SaveScene(scene, "Library/Locus/tmp/xxx.unity")`）再动手，出事可回滚。事后校验：`OpenScene(path, Single)` 从磁盘重载（恢复被误删的对象），再用 YAML diff（比对 `--- !u!N &` 段 + `m_Name` 序列）确认**除误删项外无其它差异**——本轮就是这样确认「没有丢用户未保存的改动」的。
+
 ### 素材“零引用”审计必须包含 .scene（2026-10-17）
 - 症状：清理 N1 未引用重复贴图后，又批量删除“零引用垃圾素材”，其中 `Assets/Sprites/background_MENU.jpg` 实际被 `Assets/Scenes/MainMenu.scene` 引用，被误删。
 - 根因：本项目是 Tuanjie 变体，场景扩展名是 **`.scene`**（不是常见的 `.unity`），审计脚本只扫了 `.unity/.prefab/.mat/.asset`，目标只被 `.scene` 引用的素材被误判为零引用。

@@ -1,0 +1,44 @@
+{
+  "version": "enemy_proportion_lineup_1014_v3",
+  "handoff": "Locus/knowledge/plan/session-handoff-20261114.md §7.13",
+  "brief": "Locus/knowledge/design/enemy-1014-art-brief.md §7",
+  "note": "六人并排比例研究图 v3。① 前五张输入与 v2 完全相同（像素风锚图，sha256 前缀一致）；② 新增第 6 张 = 已验收的 1014 身份底件（face shape v2 归一化版），用来锁住 1014 的造型与脸（沿用 v3 组图 1021 的做法：新角色定稿图当第 N 张输入）；③ 正文追加「第六位身材 = 前五位身材，不许瘦长溜肩」与「六人都直视玩家」，因为单图连改两轮把肩线从体高 15% 拖到 30%（用户反馈比例不对）。组图只用于比例/画风研究，不可直接裁切为 Unity Sprite。",
+  "references": [
+    {
+      "order": 1,
+      "path": "Enemy1011ArtSource/01_SourceVideos/_first_last_frame_anchor/anchor_green.png",
+      "role": "image 1: 1011 重甲刀兵 —— 唯一共同体型 / 体量 / 画风基准（渲染风格也由它决定），同时是第一位重甲兵的造型参考",
+      "expected_sha256_prefix": "d84119f756ef72be"
+    },
+    {
+      "order": 2,
+      "path": "Enemy1012ArtSource/02_IdentityImages/input_identity_v12_bandit_idle_v6_1024.png",
+      "role": "image 2: 1012 山贼刀兵 —— 脸 / 汉末粗布 / 皮革 / 绑腿语言；并同时是 1014 的同源民兵气质基准",
+      "expected_sha256_prefix": "a7d6ee5de716cf24"
+    },
+    {
+      "order": 3,
+      "path": "Enemy1013ArtSource/02_IdentityImages/1013_lineup_crop_reference_rgba.png",
+      "role": "image 3: 1013 旗手 —— 并排图里已获认可的旗手裁切（汉末人脸 / 布甲 / 双手持杆与方旗）；旗杆旗布不计入身高",
+      "expected_sha256_prefix": "b24a3bcdc17048c0"
+    },
+    {
+      "order": 4,
+      "path": "Enemy1051ArtSource/02_IdentityImages/1051_idle_identity_greenscreen_1024.png",
+      "role": "image 4: 1051 弓手 —— 窄额布巾 / 下半脸蒙面 / 木弓 / 羽箭箭袋 / 汉末布革方向",
+      "expected_sha256_prefix": "f40bd12e53b3ac77"
+    },
+    {
+      "order": 5,
+      "path": "Enemy1021ArtSource/01_KeyPosePreparation/1021_idle_identity_greenscreen_1024.png",
+      "role": "image 5: 1021 轻装楯兵 —— 装备 / 站姿 / 盾在画面左由人物右手持握 / 布帽 / 浅灰胡茬 全部保留",
+      "expected_sha256_prefix": "49634fdcac936a66"
+    },
+    {
+      "order": 6,
+      "path": "Enemy1014ArtSource/02_IdentityImages/1014_face_shape_v2_greenscreen_1024.png",
+      "role": "image 6: 1014 投壶兵已定稿设计（基层民兵粗布衣 + 右手小水壶 + 瘦脸 + 咧嘴奸笑 + 胡茬）—— 只提供 1014 的造型与脸，不提供身材比例：他的身材跟图1家族走",
+      "expected_sha256_prefix": "2c541af9330fd099"
+    }
+  ]
+}

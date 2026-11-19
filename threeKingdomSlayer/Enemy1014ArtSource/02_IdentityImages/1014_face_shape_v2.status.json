@@ -1,0 +1,43 @@
+{
+  "state": "image_saved",
+  "http_status": 200,
+  "seconds": 201.75,
+  "error": null,
+  "output_image": "C:/Users/steam/Pictures/gptGen/enemy1014_face_shape_v2\\1014_face_shape_v2.png",
+  "download": "b64_json",
+  "width": 1024,
+  "height": 1024,
+  "bit_depth": 8,
+  "color_type": 2,
+  "output_bytes": 1159920,
+  "output_sha256": "44feb7f847caa5c8b624bd4d1702c3ec4ce36dd6bb021042f36b13eecb242c90",
+  "usage": {
+    "input_tokens": 1379,
+    "input_tokens_details": {
+      "image_tokens": 560,
+      "text_tokens": 819
+    },
+    "output_tokens": 7024,
+    "output_tokens_details": {
+      "image_tokens": 7024
+    },
+    "total_tokens": 8403
+  },
+  "echoed_size": "1024x1024",
+  "echoed_quality": "max",
+  "models_check": {
+    "http_status": 200,
+    "models": [
+      "claude-haiku-5-5",
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-image-2.6-sunburst",
+      "grok-4.7"
+    ],
+    "image_models": [
+      "gpt-image-2.6-sunburst"
+    ]
+  }
+}

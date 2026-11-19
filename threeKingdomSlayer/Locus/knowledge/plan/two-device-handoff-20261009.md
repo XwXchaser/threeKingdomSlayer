@@ -26,6 +26,18 @@ summary: 双设备项目交接入口（2026-10-09）：仓库历史已重写（W
   备份：`.git/info/exclude.bak-20261024`。
 - `Locus/workspace-trees/default.json` 仍是**本机修改态**（Locus 索引缓存），提交时已排除，不要提交。
 
+## 0.2 ★ 2026-11-17 更新（换机接续点）
+
+- 分支不变：**`feat/stage-select-talent-overlays`**。引擎仍为 **Tuanjie 2022.3.62t7**（两台必须完全一致）。
+- **本轮（B 机）的实际进度与待办，全部在 `plan/session-handoff-20261117.md`**：
+  §8 属性/装备两条来源线 · §9 无尽关手势输入被锁死 · §10 三个报障（阵型/波末弹/精英宝箱）·
+  **§11 换机交接 + 下一轮主线（属性池·装备池·武器池的入池内容实测清单与待拍板项）**。
+- 逆向（刀锋）那条线**与主工程无关**，状态在 `plan/blades-handoff-20261029.md` / `plan/blades-login-bypass-20261029.md`，不要混。
+- 本轮提交要点：属性/装备拆分 + 精英宝箱链 + 无尽关输入门与阵型修复 + 交接文档更新。
+- **A 机同步步骤不变**：`git fetch origin --prune` → `git merge --ff-only origin/feat/stage-select-talent-overlays` → 回 Unity 重新导入。
+  若 A 机有本地未推送提交，先 `git pull --rebase` 再 `merge --ff-only`（禁止 `--force`）。
+
+
 ## 0. 如果你在另一台主机上（先执行这段）
 
 本工程的历史已在 2026-10-08 被重写（剔除废弃 Wwise 与构建产物），**所有 commit hash 已改变**。旧克隆不能 `git pull`——拉取只会把旧历史混回来。要拿到本文内容，必须先迁到新历史：

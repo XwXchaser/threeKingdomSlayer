@@ -1,0 +1,43 @@
+{
+  "state": "image_saved",
+  "http_status": 200,
+  "seconds": 163.88,
+  "error": null,
+  "output_image": "C:/Users/steam/Pictures/gptGen/enemy1014_idle_toss_v1\\1014_idle_toss_v1.png",
+  "download": "b64_json",
+  "width": 1024,
+  "height": 1024,
+  "bit_depth": 8,
+  "color_type": 6,
+  "output_bytes": 1041981,
+  "output_sha256": "dcda9ca26af2d3810d0076fda6c66bf5b6fa70b33a8d61418906e46406e5af81",
+  "usage": {
+    "input_tokens": 1488,
+    "input_tokens_details": {
+      "image_tokens": 560,
+      "text_tokens": 928
+    },
+    "output_tokens": 7024,
+    "output_tokens_details": {
+      "image_tokens": 7024
+    },
+    "total_tokens": 8512
+  },
+  "echoed_size": "1024x1024",
+  "echoed_quality": "max",
+  "models_check": {
+    "http_status": 200,
+    "models": [
+      "claude-haiku-5-5",
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-image-2.6-sunburst",
+      "grok-4.7"
+    ],
+    "image_models": [
+      "gpt-image-2.6-sunburst"
+    ]
+  }
+}

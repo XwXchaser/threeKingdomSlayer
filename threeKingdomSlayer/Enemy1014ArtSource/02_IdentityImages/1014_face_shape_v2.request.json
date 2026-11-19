@@ -1,0 +1,46 @@
+{
+  "version": "1014_face_shape_v2",
+  "handoff": "Locus\\knowledge\\plan\\session-handoff-20261114.md §7.12",
+  "brief": "Locus\\knowledge\\design\\enemy-1014-art-brief.md §5.6",
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "method": "POST",
+  "content_type": "multipart/form-data; boundary=----locus54a19c78171a4613aeda050d7227941c",
+  "fields": {
+    "model": "gpt-image-2.6-sunburst",
+    "prompt": "Edit the face of this single soldier and keep the rest of the picture exactly as it is.\n\nCHANGE ONLY THE FACE. Two things on the face change, and nothing else in the picture does.\n\nFIRST, REDRAW THE FACE SHAPE. The face is currently broad and square. Make it noticeably narrower and longer: pull the cheeks in, sharpen the cheekbone line into an angular ridge, taper the jaw down to a slightly pointed chin, narrow the forehead a little and slim the bridge of the nose. The new face reads lean, sharp and cunning instead of broad and heavy, the face of a man who is grinning at you while he plans a trick. Keep the same skin tone, the same hair, the same dark stubble over the jaw and cheeks, and the same shading and brushwork on the face as the rest of the picture.\n\nSECOND, AIM THE FACE STRAIGHT AT THE VIEWER. The head is angled and the eyes are looking off to the side. Bring the head back around so the face points straight at the camera: both eyes look directly out of the picture at the viewer, the pupils centred in each eye and aimed straight forward, the nose pointing straight at the viewer, the chin level and lifted a little, the face upright with no tilt to either side. Keep the sly toothy grin exactly as it is, the mouth still showing the crooked line of teeth with one corner higher than the other, and add two or three short crease lines at the outer corners of the eyes and beside the nose, as if the sly squint is creasing the skin.\n\nThe rest of the picture is unchanged: the tied hair bun on top of the head, the narrow cloth headband and the loose end of the cloth hanging on the right side of the picture, the grey-beige coarse cloth tunic with frayed edges, the dark brown leather shoulder strap with its metal buckle, the belt with the small dark red cloth pouch, the wrapped pale leg bindings, the worn cloth shoes, and the small unglazed earthenware canteen held low in his right hand on the left side of the picture. The same standing pose with both feet planted, the same body proportions, the same camera angle and framing, the same plain green screen background, and the same rendering style, outline weight and level of detail across the whole picture.\n\nNegative constraints: different costume, changed outfit, new hat, helmet, hood, face mask, different pose, different camera angle, different framing, smaller figure, larger figure, extra fingers, extra arms, extra legs, missing hand, missing canteen, changed body proportions, open mouth shouting, wide open jaw, blurry, out of focus, soft focus, text, watermark, logo, scenery, ground shadow, frame, border, collage, multiple characters",
+    "size": "1024x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "output_format": "png",
+    "n": "1"
+  },
+  "base_image": {
+    "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy1014ArtSource\\02_IdentityImages\\1014_face_grin_v1.png",
+    "sha256": "6518306de02da15faf8592e83613a64b5a4901c0d8d0c50960efc708b7686505",
+    "bytes": 952956,
+    "size": [
+      1024,
+      1024
+    ]
+  },
+  "models_check": {
+    "http_status": 200,
+    "models": [
+      "claude-haiku-5-5",
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-image-2.6-sunburst",
+      "grok-4.7"
+    ],
+    "image_models": [
+      "gpt-image-2.6-sunburst"
+    ]
+  },
+  "prompt_sha256": "f4270ab1633c1a87e90489d7b662345661a57a08a7cf0f56be4b7c0317823696",
+  "prompt_chars": 2625,
+  "automatic_retries": 0,
+  "read_timeout_seconds": 600,
+  "submitted_at_local": "2026-11-16 14:36:42"
+}

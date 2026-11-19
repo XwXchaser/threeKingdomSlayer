@@ -111,8 +111,9 @@ public class WhirlwindController : MonoBehaviour
         if (_activeDef == null || _activeDef.baseAttackConfig == null || _attackSystem == null) return;
 
         var cfg = _activeDef.baseAttackConfig;
-        float dmgMult = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetDamageMultiplier() : 1f;
-        float dmg = cfg.damage * dmgMult;
+        float dmg = UpgradeEffectManager.Instance != null
+            ? UpgradeEffectManager.Instance.ComputeDamage(cfg.damage)
+            : cfg.damage;
 
         var enemies = _attackSystem.columnManager?.GetAllEnemiesInRange(cfg.rangeRows);
         if (enemies == null || enemies.Count == 0) return;

@@ -3,8 +3,8 @@ using UnityEngine;
 
 public class ActiveSkillInventory : MonoBehaviour
 {
-    /// <summary>没有武将配置时的主动槽缺省值（与 <c>HeroConfig.activeSkillSlotCount</c> 的基础值一致）。</summary>
-    private const int DefaultCapacity = 3;
+    /// <summary>没有武将配置时的主动槽缺省值（与 <c>HeroConfig.activeSkillSlotCount</c> 的基础值一致 = 2）。</summary>
+    private const int DefaultCapacity = 2;
 
     /// <summary>
     /// 关卡战斗状态（只读 + 状态事件）。 历史上直接摸 StageController 门面，现只依赖角色接口
@@ -56,7 +56,7 @@ public class ActiveSkillInventory : MonoBehaviour
     public ItemRuleVersion RuleVersion => _versionLocked ? _lockedRuleVersion : _ruleVersion;
     public bool UsesActiveSkills => RuleVersion == ItemRuleVersion.V2_ActiveSkill;
     /// <summary>
-    /// 主动技能槽上限（基础 3，来自 <c>HeroConfig.activeSkillSlotCount</c>；巧思天赋再 +N）。
+    /// 主动技能槽上限（基础 2，来自 <c>HeroConfig.activeSkillSlotCount</c>；巧思天赋再 +N）。
     /// 老资产 / 漏改资产的字段是 0 → 按 1 兜底，避免一个技能都放不下。
     /// </summary>
     public int Capacity => PlayerState.Instance != null && PlayerState.Instance.heroConfig != null

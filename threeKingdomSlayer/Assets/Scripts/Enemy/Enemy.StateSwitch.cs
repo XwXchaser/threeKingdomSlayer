@@ -431,6 +431,13 @@ public partial class Enemy : MonoBehaviour
         transform.DOKill(false);
         StopHitScaleFeedback();
 
+        // ⚠ **远程攻击被取消时，必须清掉「箭还待发」标记**（2026-11-16 修严重 BUG）：
+        //   玩家在前摇命中 → CancelAttack 杀掉攻击 tween → 箭还没发出去 →
+        //   `CheckRangedArrowFallback()` 每帧轮询看到「箭待发 + tween 不在活动」→ **立刻补发** →
+        //   表现成「**前摇被吞掉 + 受击瞬间射箭**」（玩家根本躲不掉）。
+        //   ⇒ 被打断 = 这次射击**作废**，不发箭（攻击已取消、动画已回 Idle）。
+        _rangedArrowPending = false;
+
         if (_attackTween != null && _attackTween.IsActive())
         {
             _attackTweenKillReason = "受击/招架打断（CancelAttack）";

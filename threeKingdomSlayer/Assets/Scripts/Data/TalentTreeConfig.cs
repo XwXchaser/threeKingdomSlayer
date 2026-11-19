@@ -30,6 +30,10 @@ public sealed class TalentNodeConfig
     public string statId = "";
     [Tooltip("**数值载荷的加成**（配合 statId 生效；statId 留空则忽略）")]
     public float statAdd = 0f;
+    [Tooltip("**载荷的作用目标 id**（可选）。\n" +
+             "statId = \"upgrade_level_cap\" 时**必填**：写目标升级的 upgradeId，statAdd = 它的等级上限（绝对值）。\n" +
+             "其它 statId 留空即可。")]
+    public string targetId = "";
     [Tooltip("**点亮机械开关** —— 开关 id（留空 = 不点开关）")]
     public string flagId = "";
 

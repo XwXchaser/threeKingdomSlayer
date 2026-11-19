@@ -794,3 +794,125 @@ adb shell su -c "md5sum /data/app/<pkg>-N/lib/arm/libil2cpp.so"   # 与本地一
 起后端+`/__health` 自检 → 可选热替换 .so/装 APK → 清状态+启动 → 观察 → 导出探针/端点/状态流），
 **必须一条龙**的原因：Locus 每次 bash 调用结束会回收 **adb server** ⇒ 跨调用的 reverse 隧道全丢，
 而 adb server 重启后的**第一次** `adb reverse` 会让 LDPlayer 设备通道 **offline**。
+
+---
+
+## 12. 第六阶段沉淀（2026-11-14）：洞区布局、adb reverse、ARM32 标志位
+
+> 详细过程见 `plan/blades-sync-refusal-handoff-20261112.md` §十三；这里只留**可复用**的部分。
+
+### 12.1 ★★ 洞区（cave）真实布局 —— 探针区与补丁洞是**共用**的
+
+```
+0xA7B9EC 洞A(68B) | 0xA7BA40 洞B(148B) | 0xA7BADC 探针区 |
+0xA7BD04 洞F(88B) | 0xA7BD4C 洞E(停用，与洞F重叠) | 0xA7BDA0 洞C |
+0xA7BE60 洞J(48B) | 0xA7BE90 洞K2 | 之后是活代码（没有更多空间）
+```
+
+* **探针区上限必须是 0xA7BD04（洞 F 起点）**，不是 0xA7BDA0。
+  写错的后果实测过两次：**第 9 个探针起就盖住洞 F** ⇒
+  ① 洞 F 被静默覆盖 ⇒ 对应补丁失效（结果被污染，却看不出异常）；
+  ② 覆盖到洞 F 的指令流 ⇒ **客户端启动 1 秒后 SIGSEGV**（logcat `#00 pc 00a7bd0c` 直接指认）。
+* ⇒ **加探针前先算空间**：`(0xA7BD04 - 0xA7BADC) = 652B` ⇒ 13 个 0x48 探针（含两个 0x60 的 `regstr3` 时 11 个）。
+* ⇒ **补丁洞之间也会互相重叠**（洞 E 与洞 F 重叠）⇒ 停用的洞要写清楚，别让人随手打开。
+
+### 12.2 ★★ `adb reverse` 只有 Android SDK 版 adb 支持
+
+* **雷电自带的 adb（1.0.31）没有 `reverse` 命令**（只会打印帮助）⇒ 隧道建不起来
+  ⇒ 客户端报 `Curl error 7: Connection refused`，看起来像「后端没响应」，极易误判。
+* **两套 adb 不能同时在跑**：SDK 版启动会
+  `adb server version (31) doesn't match this client (41); killing...` 把雷电的 server 踢掉
+  ⇒ 设备变 offline ⇒ **必须完整重启雷电**（`ldconsole quit` → `schtasks launch` → 等 120s）。
+* **adb server 重启后的第一次 `adb reverse` 会让设备通道掉线** ⇒ 脚本里要重试，
+  仍失败就直接带 `RESTART=1` 重启模拟器。
+* ⇒ 纪律：**一轮实验里只用一套 adb**；查设备状态时别顺手用另一套把 server 顶掉。
+
+### 12.3 ★★★ ARM32：`and Rd, Rn, #imm` **默认不带 S 位 ⇒ 不改标志位**
+
+* ARM 数据处理指令的 **S 位在 bit20**（不是 bit24，bit24 属于 opcode）。
+  `and r1, r1, #0x200` 编码 `0xE2011C02` ⇒ S=0 ⇒ **不更新 N/Z/C/V**。
+* ⇒ 判读 IL2CPP 生成的条件分支时，**必须确认中间那条指令是否带 S**：
+  带 S（`ands`/`adds`/`eors`…）⇒ 后面的 `beq/bge` 测的是它；
+  不带 S ⇒ 测的仍然是更早那句 `cmp`。
+  ⇒ 本项目因此把一整条分支链读错过一次（把活着的 `cmp` 当成死代码），结论全错。
+
+### 12.4 ★ 静态读码提速：把反汇编做成「臂入口 + 前置判定」的控制流图
+
+脚本思路（可直接复用）：解析 `disasm.py --raw` 的输出 → 收集所有 `b/bl/blx` 的目标 →
+目标地址 = 「臂入口」；对每个臂入口，回看它前面 10~16 条指令里的 `cmp/tst` ⇒ 就是该臂的判定条件。
+⇒ 一条 3KB 的 IL2CPP lambda（40 来个 if 分支）半小时就能读出结构，
+   比逐行看快一个量级。判读时注意 `ldr` 不改标志位、`ldrb/ldrh` 也不改。
+
+### 12.5 ★★ agent **能直接读 PNG** ⇒ 界面类逆向可以「看着点」
+
+* `read` 工具支持图片附件（PNG/JPEG/GIF/WebP）⇒ 把模拟器截图存成 PNG 再 `read` 即可看到画面。
+* ⇒ 老笔记里「本环境无法读图 ⇒ 找按钮必须走 hook + logcat 打点 + 坐标扫描」**这条限制已经解除**：
+  现在可以**看截图 → 找按钮坐标 → `adb shell input tap`**，再用第二张截图确认。
+* 纪律仍然有效：**任何 `input tap` 之前先确认前台是游戏**（`dumpsys activity activities | grep mResumedActivity`），
+  坐标必须来自刚拍到的截图 ⇒ 不要盲点（历史上误触过系统卸载流程）。
+* 截图体积还能当状态指纹：内存文档里记了「同分辨率下错误页 PNG 的字节数」，
+  例如 2,066,418 = 「网络错误 + 发生未知错误」那一帧 ⇒ 一次 `stat -c %s` 就能判断屏幕上是什么。
+
+### 12.6 ★★★ 写原生洞的硬规矩补充
+
+* **洞地址必须 4 字节对齐**（ARM 指令不能落在奇地址）。第一版洞 G 放在 0xA7BDEE（未对齐）
+  ⇒ `b`/`bl` 的相对位移 `imm24 = (target - pc - 8) >> 2` 算出来差 2 字节
+  ⇒ 跳飞到错误地址（而且 `assert` 不会报错，因为位移仍是 4 的倍数——只是少了一格）。
+  ⇒ 写洞时先 `assert addr % 4 == 0`，再用 capstone 反汇编**逐条核对跳转目标**。
+* 洞区是**共享**的：探针区、洞 A/B/F/C/J/K2 共用 0xA7B9EC..0xA7BE90 这一段，
+  **加任何东西之前先把所有洞的地址和长度列出来**（本轮就因为探针区上限写成 0xA7BDA0 而压住了洞 F，
+  导致「洞 F 静默失效」和「客户端启动即崩」两种症状）。
+
+### 12.7 ★★ IL2CPP 客户端「响应体 → 内部模型」的通用踩坑清单（本项目血泪）
+
+1. **数组元素要带端点自己的 id 字段**：客户端把数组转成「按 id 索引的字典」再按具体 id 取
+   ⇒ 元素没有那个字段就 `KeyNotFoundException`（栈：`SearchArrayToDictionaryParser.Parse`）。
+   用哪个字段由 `SearchArrayToDictionaryParser._fieldtoMatchInJson` 决定（**每个端点一个
+   `*LabelResponseParser`**，字段名不同：实测任务数组用 `questId`）。
+   ⇒ **想知道字段名：探针打这个字符串**（`this+0x8`，Il2CppString）。
+   ⚠ **但探针本身有风险**：该字段为 null 时读它 ⇒ SIGSEGV（fault addr 0x0）⇒ 用完要撤。
+2. **数值字段不能给字符串**：客户端有一条「直接 cast」的解析路径（`SequentialParser`），
+   字符串数字 ⇒ `InvalidCastException: 'String'→'Int64'`；发 `1.0`(Double) ⇒ `'Double'→'Int64'`。
+   ⇒ **.schema 声明 String 的字段**（如 `town/townLevel/level`）走的是**转换路径**，字符串可以；
+   而**模型里是数值**的字段（`session.tokenExpirationSeconds`、`Character.ShapeWeight`、
+   存档 JSON 字符串内部的 `0.0`）必须给**数字**。
+3. **服务端「先匹配先赢」**：新加的具体路由必须排在兜底 `/api/*` **之前**，
+   `{id}` 模板路由也会挡在具体路由前面 ⇒ 客户端拿到通用合并体 ⇒ 数据块取不到。
+4. ⇒ 配套工具：`check_types.py`（按 .schema 逐字段核对响应体类型）比人肉试快得多。
+
+### 12.8 ★★★ 「手动启动游戏」与「脚本跑测」是两套生命周期（血泪）
+
+* 一次工具调用结束会**回收整棵进程树** ⇒ **adb server 被杀** ⇒
+  **`adb reverse` 隧道随之消失** ⇒ 手动启动客户端时它连本地服务器都连不上，
+  表现为**原始症状**（「网络错误 / 更新包下载失败 (0-10000-1)」），让人误以为是游戏坏了。
+* ⇒ **要让用户能自己手动玩**，反向隧道必须**常驻**：
+  * 用计划任务（ONLOGON）跑一个**自愈循环**脚本：起后端 → `adb start-server` → 重建 reverse，
+    每 20~30 秒重复一次（模拟器重启、端口被占也能自恢复）。
+  * `schtasks /create` 在 Git Bash 里必须先 `export MSYS_NO_PATHCONV=1`，否则 `/create` 被当路径。
+  * 计划任务里**不要用 `timeout /t`**（非交互控制台会直接退出进程）⇒ 用 `ping -n N 127.0.0.1 >nul` 延时。
+  * 后端本身用 `schtasks` 起就比用工具调用起更耐久（进程不在工具的进程树里）。
+* ⇒ 排障口诀：**先看 `adb reverse --list` 和 `netstat`，再看游戏报什么错** ——
+  「更新包下载失败」= 隧道/服务器没起来；「发生未知错误」= 客户端跑起来了但内部出错。
+
+### 12.9 ★★★ IL2CPP 客户端「状态机 + 存档服务」这类流程的三条通用规律（2026-11-14 血泪）
+
+1. **「某个状态/标志被客户端自己改成异常值 ⇒ 无限重置」是最常见的死循环形态**。
+   本例：`OnSaveDataFetched` 把 FTUE 状态改成 4(IsAuthenticated)，而尾巴 `cmp r0,#4 / bge ⇒ Fire(ResetGame)`
+   ⇒ **任何**初始状态都会掉进去 ⇒ 表现是「每轮都重来一遍」。定位法：**读那个把状态改掉的指令 + 它前面的比较**。
+   ⇒ 修法往往只要 1 条指令（把 4 改成 1/3）。
+2. **流程分支的判据常常是「某个本地服务的布尔属性」**，而这个属性**不在服务端存档里** ⇒ 后端补数据没用。
+   本例：`get_IsAcceptedToPlay`（SaveService 的本地字段 0x25）⇒ 只能让 getter 恒真（改 2 条指令的小函数）。
+   ⇒ **定位手段**：探针打「接口方法调用点」的 MethodInfo+0x8 ⇒ 直接拿到方法名（如 `get_IsAcceptedToPlay`）。
+3. **数组元素的 id 字段名是逐端点不同的**（`SearchArrayToDictionaryParser._fieldtoMatchInJson`）。
+   本例任务数组用 **`questId`**；给错就是 `KeyNotFoundException`，且**症状与「数据缺失」几乎一样**。
+   ⇒ 用同一个探针手段可一次性把多个端点的字段名都打出来。
+
+### 12.10 ★ “客户端认不认我的角色”这类问题，先分清三种可能
+
+| 可能 | 判据 | 表现 |
+|---|---|---|
+| 列表形状错 | `InvalidCastException: PersistentObject→PersistentArray` | 解析就炸 |
+| 列表形状对但元素被过滤 | 客户端**从不请求** `/characters/{id}` | 静默忽略 |
+| 分支判据不满足 | 走错分支（状态被改坏）⇒ 无限重置 | 循环 |
+
+⇒ 探「客户端有没有去请求那个详情端点」是最快的分界点（本例：**请求了** ⇒ 形状对；随后才查出是分支判据）。

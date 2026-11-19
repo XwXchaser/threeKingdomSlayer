@@ -1,0 +1,59 @@
+{
+  "source": "C:\\Users\\steam\\Pictures\\gptGen\\enemy1014_face_shape_v2\\1014_face_shape_v2.png",
+  "source_size": [
+    1024,
+    1024
+  ],
+  "green_tolerance": 79,
+  "filled_holes_px": 3002,
+  "cut": {
+    "bbox": [
+      278,
+      188,
+      673,
+      884
+    ],
+    "subject_w": 396,
+    "subject_h": 697
+  },
+  "scale": 0.99857,
+  "composited": {
+    "path": "Enemy1014ArtSource\\02_IdentityImages\\1014_face_shape_v2_greenscreen_1024.png",
+    "canvas": [
+      1024,
+      1024
+    ],
+    "green": [
+      0,
+      159,
+      62
+    ],
+    "paste_xy": [
+      277,
+      200
+    ],
+    "bbox": [
+      277,
+      200,
+      671,
+      895
+    ],
+    "subject_w": 395,
+    "subject_h": 696,
+    "visible_bottom_y": 895,
+    "center_x": 474.0
+  },
+  "green_purity": {
+    "corner_median": [
+      0,
+      159,
+      62
+    ],
+    "corner_max_channel_deviation": 0.0
+  },
+  "target": {
+    "subject_h": 696,
+    "foot_y": 895,
+    "center_x": 474.5
+  }
+}

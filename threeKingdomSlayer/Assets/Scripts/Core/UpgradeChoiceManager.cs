@@ -64,7 +64,11 @@ public class UpgradeChoiceManager : MonoBehaviour
     private bool _pausedByUs;
     private int _pendingLevelUps;
     private int _pendingItemChoices;
+    /// <summary>待处理的**装备**选择次数（影之武装 / 饰品；精英敌人掉落带来）。</summary>
+    private int _pendingEquipmentChoices;
     private bool _isShowingItemChoice;
+    /// <summary>当前这次选择是不是“装备类”（用于 UI 标题区分）。</summary>
+    private bool _isShowingEquipmentChoice;
     private List<UpgradeDefinition> _currentChoices;
     private IUpgradeChoiceView _activePopup;
 
@@ -75,7 +79,13 @@ public class UpgradeChoiceManager : MonoBehaviour
     private readonly List<IUpgradeSelectionEffect> _selectionEffects = new List<IUpgradeSelectionEffect>();
 
     // 排队：按触发时间先后
-    private enum PendingType { LevelUp, Item }
+    /// <summary>
+    /// 待处理选择的类型（2026-11-16 拆成三类）：
+    ///   LevelUp   = **属性 / 机制**（经验升级带来；**不含主动技能**）
+    ///   Equipment = **装备**（影之武装 / 饰品；**精英敌人掉落**带来）
+    ///   Item      = 道具（Boss 锦囊）
+    /// </summary>
+    private enum PendingType { LevelUp, Equipment, Item }
     private Queue<PendingType> _pendingQueue = new Queue<PendingType>();
 
     // ── 事件（供 UI 订阅）──
@@ -100,7 +110,7 @@ public class UpgradeChoiceManager : MonoBehaviour
     ///   所以只看队列计数会**少 1** → 这里把「正在弹的那一个」也算回去。
     /// HUD 的等级球数字用它。
     /// </summary>
-    public int PendingChoiceCount => _pendingLevelUps + _pendingItemChoices + (_isChoosing ? 1 : 0);
+    public int PendingChoiceCount => _pendingLevelUps + _pendingItemChoices + _pendingEquipmentChoices + (_isChoosing ? 1 : 0);
 
     /// <summary>抽池器（调试 / 工具用；注册条件源也走它）。惰性创建：Awake 之前也能用。</summary>
     public UpgradePoolSampler PoolSampler
@@ -112,11 +122,11 @@ public class UpgradeChoiceManager : MonoBehaviour
         }
     }
 
-    /// <summary>被动槽上限的缺省值（没有武将配置时用，与 <c>HeroConfig.passiveSlotCount</c> 的基础值一致）。</summary>
-    private const int DefaultPassiveSlotCount = 3;
+    /// <summary>被动槽上限的缺省值（没有武将配置时用，与 <c>HeroConfig.passiveSlotCount</c> 的基础值一致 = 2）。</summary>
+    private const int DefaultPassiveSlotCount = 2;
 
     /// <summary>
-    /// 被动槽上限（基础 3，来自 <c>HeroConfig.passiveSlotCount</c>；博学天赋再 +N）。
+    /// 被动槽上限（基础 2，来自 <c>HeroConfig.passiveSlotCount</c>；博学天赋再 +N）。
     /// 老资产 / 漏改资产的字段是 0 → 按 1 兜底；没有武将配置时用基础值。
     /// </summary>
     private int PassiveSlotCapacity
@@ -134,7 +144,7 @@ public class UpgradeChoiceManager : MonoBehaviour
     {
         var sampler = new UpgradePoolSampler(
             GetCurrentLevel,
-            () => UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.PassiveUpgradeCount >= PassiveSlotCapacity,
+            () => UpgradeEffectManager.Instance != null && UpgradeEffectManager.Instance.PassiveSlotUserCount >= PassiveSlotCapacity,
             def => ActiveSkillInventory.Instance != null && ActiveSkillInventory.Instance.CanAcquire(def),
             def => UpgradeEffectManager.Instance != null
                 ? UpgradeEffectManager.Instance.GetEffectiveMaxLevel(def)
@@ -212,6 +222,22 @@ public class UpgradeChoiceManager : MonoBehaviour
             PlayerState.Instance.OnLevelUp += OnPlayerLevelUp;
     }
 
+    /// <summary>
+    /// **主动发放 N 次三选一**（2026-11-16，无尽模式开局给"起步 build"用）。
+    /// 与升级同一条队列（默认波末统一弹，不打断战斗）。
+    /// </summary>
+    public void GrantChoices(int count)
+    {
+        if (count <= 0) return;
+        for (int i = 0; i < count; i++)
+        {
+            _pendingLevelUps++;
+            _pendingQueue.Enqueue(PendingType.LevelUp);
+        }
+        if (deferChoicesToWaveEnd) return;
+        if (!_isChoosing) StartChoiceFlow();
+    }
+
     // ── 升级触发 ──
 
     private void OnPlayerLevelUp(int newLevel)
@@ -237,7 +263,7 @@ public class UpgradeChoiceManager : MonoBehaviour
     public void FlushPendingChoices()
     {
         if (_isChoosing) return;
-        if (_pendingQueue.Count == 0 && _pendingLevelUps <= 0 && _pendingItemChoices <= 0) return;
+        if (_pendingQueue.Count == 0 && _pendingLevelUps <= 0 && _pendingItemChoices <= 0 && _pendingEquipmentChoices <= 0) return;
         StartChoiceFlow();
     }
 
@@ -246,9 +272,17 @@ public class UpgradeChoiceManager : MonoBehaviour
     /// <summary>
     /// Boss死亡掉落锦囊，触发物品三选一。
     /// 由 EnemyManager 调用。
+    ///
+    /// ⚠️ **V2（主动技能）规则下直接返回**（2026-11-17 用户定）：
+    /// 「装备 / 饰品应该跟**精英敌人**」⇒ Boss 的战利品就是**精英掉落**那一段（100% 掉）。
+    /// 再单独弹一次锦囊 ⇒ Boss 弹两次、内容还和精英掉落撞车（锦囊里发的正是主动技能）。
+    /// ⇒ V2 下锦囊并入精英掉落；V1（旧道具规则）保持原样。
     /// </summary>
     public void TriggerItemChoice()
     {
+        // V2：装备的唯一来源是精英敌人掉落 → 不再单独弹 Boss 锦囊
+        if (UsesActiveSkillRules) return;
+
         // 教学关等脚本化关卡：不弹三选一、不暂停（否则波次会被卡住）
         if (suppressChoices) return;
 
@@ -269,6 +303,7 @@ public class UpgradeChoiceManager : MonoBehaviour
         {
             _pendingLevelUps = 0;
             _pendingItemChoices = 0;
+            _pendingEquipmentChoices = 0;
             _pendingQueue.Clear();
             return;
         }
@@ -278,6 +313,7 @@ public class UpgradeChoiceManager : MonoBehaviour
         {
             _pendingLevelUps = 0;
             _pendingItemChoices = 0;
+            _pendingEquipmentChoices = 0;
             _pendingQueue.Clear();
             return;
         }
@@ -299,6 +335,8 @@ public class UpgradeChoiceManager : MonoBehaviour
             // 安全回退：无队列但有计数器时
             if (_pendingLevelUps > 0)
                 _pendingQueue.Enqueue(PendingType.LevelUp);
+            else if (_pendingEquipmentChoices > 0)
+                _pendingQueue.Enqueue(PendingType.Equipment);
             else if (_pendingItemChoices > 0)
                 _pendingQueue.Enqueue(PendingType.Item);
             else
@@ -310,29 +348,35 @@ public class UpgradeChoiceManager : MonoBehaviour
 
         var nextType = _pendingQueue.Dequeue();
         _isShowingItemChoice = (nextType == PendingType.Item);
+        _isShowingEquipmentChoice = (nextType == PendingType.Equipment);
 
         if (_isShowingItemChoice)
         {
             _pendingItemChoices--;
-            _currentChoices = UsesActiveSkillRules ? DrawBossActiveSkillChoices() : DrawItemChoices();
+            _currentChoices = DrawItemChoices();
+        }
+        else if (_isShowingEquipmentChoice)
+        {
+            // 装备三选一（影之武装 / 饰品）：**只从主动技能池抽**，不与属性/机制混
+            _pendingEquipmentChoices--;
+            _currentChoices = DrawEquipmentChoices();
         }
         else
         {
+            // 属性 / 机制三选一（经验升级带来）：**不抽主动技能**（2026-11-16 拆分）
             _pendingLevelUps--;
             _currentChoices = forcedChoices != null && forcedChoices.Count > 0
                 ? new List<UpgradeDefinition>(forcedChoices)
                 : DrawChoices();
-            if (UsesActiveSkillRules && (_currentChoices == null || _currentChoices.Count == 0))
-                _currentChoices = DrawBossActiveSkillChoices();
         }
 
         if (_currentChoices == null || _currentChoices.Count == 0)
         {
             // 池空不再是「静默跳过」：把这次没得选的升级折算成局内铜钱（R8 / A3）。
             // 只对**升级三选一**生效；Boss 锦囊（Item）池空仍按原样跳过。
-            if (!_isShowingItemChoice) GrantFullSlotCoinCompensation();
+            if (!_isShowingItemChoice && !_isShowingEquipmentChoice) GrantFullSlotCoinCompensation();
 
-            if (_pendingQueue.Count > 0 || _pendingLevelUps > 0 || _pendingItemChoices > 0)
+            if (_pendingQueue.Count > 0 || _pendingLevelUps > 0 || _pendingItemChoices > 0 || _pendingEquipmentChoices > 0)
                 ShowNextChoice();
             else
                 FinishAllChoices();
@@ -358,7 +402,21 @@ public class UpgradeChoiceManager : MonoBehaviour
         }
 
         _activePopup.ShowChoices(_currentChoices);
+        NotifyChoiceKind();
         OnChoicesReady?.Invoke(_currentChoices);
+    }
+
+    /// <summary>
+    /// 告诉弹窗「这次弹的是哪一类奖励」（标题区分：属性强化 / 装备掉落）。
+    /// 弹窗没实现 <see cref="IUpgradeChoiceKindView"/> 时静默跳过。
+    /// </summary>
+    private void NotifyChoiceKind()
+    {
+        var kindView = _activePopup as IUpgradeChoiceKindView;
+        if (kindView == null) return;
+        kindView.SetChoiceKind(_isShowingItemChoice ? UpgradeRewardKind.Item
+            : _isShowingEquipmentChoice ? UpgradeRewardKind.Equipment
+            : UpgradeRewardKind.Attribute);
     }
 
     // ── 玩家确认选择（由 UI 按钮调用）──
@@ -415,7 +473,7 @@ public class UpgradeChoiceManager : MonoBehaviour
     private bool IsUpgradeSlotFull()
     {
         var uem = UpgradeEffectManager.Instance;
-        if (uem != null && uem.PassiveUpgradeCount >= PassiveSlotCapacity) return true;
+        if (uem != null && uem.PassiveSlotUserCount >= PassiveSlotCapacity) return true;
         var asi = ActiveSkillInventory.Instance;
         return asi != null && asi.UsesActiveSkills && asi.IsFull;
     }
@@ -480,23 +538,29 @@ public class UpgradeChoiceManager : MonoBehaviour
                 Debug.LogWarning("[UpgradeChoiceManager] poolConfig 未配置");
                 return new List<UpgradeDefinition>();
             }
-    
-            var candidates = CollectEligible();
+
+            // ★ 属性成长 = **纯数值**（2026-11-17 用户口径）：
+            //   「属性成长应该跟经验」⇒ 经验升级带来的三选一**只出属性**，不出装备 / 饰品。
+            var candidates = CollectAttributeCandidates();
             if (candidates.Count == 0)
                 return new List<UpgradeDefinition>();
-    
+
             return _sampler.DrawByRarity(candidates, EffectiveChoiceCount, RollRarity);
         }
-    
-        /// <summary>收集所有满足前置条件且未满级的候选项；V2 从 activeSkillPoolConfig 读取全池。</summary>
-        private List<UpgradePoolSampler.Candidate> CollectEligible()
+
+        /// <summary>
+        /// **属性候选**（经验升级这一段）。
+        /// V2：只收纯数值（不占槽、可无限叠）。
+        /// V1（旧道具规则）：保持旧口径不变（除主动技能外全收）——V1 没有"装备 / 饰品"这条线。
+        /// </summary>
+        private List<UpgradePoolSampler.Candidate> CollectAttributeCandidates()
         {
             var candidates = new List<UpgradePoolSampler.Candidate>();
             if (UsesActiveSkillRules && activeSkillPoolConfig != null)
             {
-                _sampler.CollectUnified(candidates, activeSkillPoolConfig.commonPool, UpgradeRarity.Common);
-                _sampler.CollectUnified(candidates, activeSkillPoolConfig.rarePool, UpgradeRarity.Rare);
-                _sampler.CollectUnified(candidates, activeSkillPoolConfig.legendaryPool, UpgradeRarity.Legendary);
+                _sampler.CollectAttributes(candidates, activeSkillPoolConfig.commonPool, UpgradeRarity.Common);
+                _sampler.CollectAttributes(candidates, activeSkillPoolConfig.rarePool, UpgradeRarity.Rare);
+                _sampler.CollectAttributes(candidates, activeSkillPoolConfig.legendaryPool, UpgradeRarity.Legendary);
             }
             else
             {
@@ -506,7 +570,88 @@ public class UpgradeChoiceManager : MonoBehaviour
             }
             return candidates;
         }
+
+        /// <summary>
+        /// **装备三选一**（影之武装 + 饰品）：只由**精英敌人掉落**触发
+        /// （见 <see cref="GrantEquipmentChoices"/>）。
+        ///
+        /// 两个子池**交替**出牌，保证每次都能看到"武器 + 饰品"的组合：
+        ///   · **影之武装** = 主动技能（占主动槽）
+        ///   · **饰品**     = 机制型被动（占被动槽）
+        /// 子池内部按稀有度权重抽；某个子池没货就退回另一个。
+        /// </summary>
+        private List<UpgradeDefinition> DrawEquipmentChoices()
+        {
+            var shadowArmaments = new List<UpgradePoolSampler.Candidate>();
+            var accessories = new List<UpgradePoolSampler.Candidate>();
+            CollectActiveSkills(shadowArmaments, includeCommon: true);
+            CollectAccessories(accessories);
+
+            int count = EffectiveChoiceCount;
+            var results = new List<UpgradeDefinition>();
+            var usedIds = new HashSet<string>();
+            // 每次弹窗随机决定先出武器还是先出饰品（避免每张牌的顺序都一样）
+            bool firstIsShadowArmament = Random.value < 0.5f;
+
+            for (int i = 0; i < count; i++)
+            {
+                bool preferShadowArmament = ((i % 2 == 0) == firstIsShadowArmament);
+                var primary = preferShadowArmament ? shadowArmaments : accessories;
+                var fallback = preferShadowArmament ? accessories : shadowArmaments;
+                if (CountAvailable(primary, usedIds) == 0) primary = fallback;
+                if (CountAvailable(primary, usedIds) == 0) break;
+
+                var picked = _sampler.DrawOneByRarity(primary, usedIds, RollRarity);
+                if (picked == null) break;
+                results.Add(picked);
+                usedIds.Add(picked.upgradeId);
+            }
+            return results;
+        }
+
+        /// <summary>子池里还有多少条没被选过。</summary>
+        private static int CountAvailable(List<UpgradePoolSampler.Candidate> candidates, HashSet<string> usedIds)
+        {
+            if (candidates == null) return 0;
+            int n = 0;
+            for (int i = 0; i < candidates.Count; i++)
+                if (!usedIds.Contains(candidates[i].upgrade.upgradeId)) n++;
+            return n;
+        }
+
+        /// <summary>
+        /// **发放 N 次装备选择**（2026-11-17：影之武装 / 饰品改为**精英敌人掉落**，不再混在升级三选一里）。
+        /// 由 EnemyManager 在精英死亡时调用。
+        ///
+        /// ⚠️ 只在 V2（主动技能）规则下生效：V1 没有"影之武装"这条线。
+        /// </summary>
+        public void GrantEquipmentChoices(int count)
+        {
+            if (!UsesActiveSkillRules) return;
+            if (suppressChoices) return;
+            if (StageBattleState != null && !StageBattleState.IsStageInProgress) return;
+            if (count <= 0) return;
+            for (int i = 0; i < count; i++)
+            {
+                _pendingEquipmentChoices++;
+                _pendingQueue.Enqueue(PendingType.Equipment);
+            }
+            // ★ **波末统一弹**（2026-11-17 用户定：“波次结束后才选升级成长和武器”）：
+            //   精英掉落的装备选择与升级三选一走**同一条队列、同一个时机** ⇒
+            //   不再在精英死亡的那一瞬间当场弹窗打断战斗。
+            if (deferChoicesToWaveEnd) return;
+            if (!_isChoosing) StartChoiceFlow();
+        }
     
+        /// <summary>收集**饰品**候选（机制型被动，占被动槽）。</summary>
+        private void CollectAccessories(List<UpgradePoolSampler.Candidate> result)
+        {
+            if (activeSkillPoolConfig == null) return;
+            _sampler.CollectAccessories(result, activeSkillPoolConfig.commonPool, UpgradeRarity.Common);
+            _sampler.CollectAccessories(result, activeSkillPoolConfig.rarePool, UpgradeRarity.Rare);
+            _sampler.CollectAccessories(result, activeSkillPoolConfig.legendaryPool, UpgradeRarity.Legendary);
+        }
+
         /// <summary>从物品池抽取候选项</summary>
         private List<UpgradeDefinition> DrawItemChoices()
         {
@@ -542,13 +687,6 @@ public class UpgradeChoiceManager : MonoBehaviour
             if (roll < itemPoolConfig.commonWeight) return UpgradeRarity.Common;
             if (roll < itemPoolConfig.commonWeight + itemPoolConfig.rareWeight) return UpgradeRarity.Rare;
             return UpgradeRarity.Legendary;
-        }
-    
-        private List<UpgradeDefinition> DrawBossActiveSkillChoices()
-        {
-            var candidates = new List<UpgradePoolSampler.Candidate>();
-            CollectActiveSkills(candidates, includeCommon: false);
-            return _sampler.DrawByWeight(candidates, EffectiveChoiceCount);
         }
     
         private void CollectActiveSkills(List<UpgradePoolSampler.Candidate> result, bool includeCommon)

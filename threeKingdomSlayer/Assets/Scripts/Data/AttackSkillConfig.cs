@@ -206,6 +206,22 @@ public class AttackSkillConfig : ScriptableObject
     public float parryGuardRecoilDistance = 0.5f;
     [Tooltip("受击后退回原位的时间（秒）")]
     public float parryGuardRecoilSeconds = 0.18f;
+    [Tooltip("**受击姿态·歪**：受击时枪被顶歪的角度（度，绕屏幕法线/世界 Z 轴，正值 = 屏幕上逆时针）。\n" +
+             "★ 这才是“受击反馈”的**姿态**层（2026-11-16 用户口径：这是姿态问题）。\n" +
+             "   只有后退位移的话，枪在前景里看起来只是“变大了一点”，读不出被顶开。\n" +
+             "   负值 = 枪尖被压向屏幕右下（配合下沉 = “被压下去”）。")]
+    [Range(-30f, 30f)]
+    public float parryGuardRecoilTiltDegrees = -8f;
+    [Tooltip("**受击姿态·沉**：受击时枪被压下的高度（世界单位）。\n" +
+             "与“歪”一起构成受击姿态：歪 + 沉 + 后退 = “被顶开”。")]
+    [Range(0f, 0.6f)]
+    public float parryGuardRecoilDrop = 0.12f;
+    [Tooltip("**加速到位**：举枪（挥入）途中被击中时，枪用这段时间补到防御位的时长（秒）。\n" +
+             "★ 口径（2026-11-16 用户定）：窗口内**免伤不变**，这里只管**姿态**。\n" +
+             "   命中定格先把枪定在“被打歪”的那一帧（读出“被打到”），随后用这段时间加速补位到防御位\n" +
+             "   （读出“及时赶到挡下了”）。0.06~0.12 比较合适。")]
+    [Range(0.02f, 0.3f)]
+    public float parryGuardHitDefendEnterSeconds = 0.08f;
 
     [Header("破防（枪被打脱手）")]
     [Tooltip("破防时枪绕**世界 Z 轴**旋转的角度（度，正值 = 屏幕上逆时针）。\n" +

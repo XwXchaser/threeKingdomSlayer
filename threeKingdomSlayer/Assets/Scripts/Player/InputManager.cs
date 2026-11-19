@@ -519,8 +519,9 @@ public partial class InputManager : MonoBehaviour, IPlayerInput
         }
 
         var cfg = def.baseAttackConfig;
-        float baseDmg = cfg.damage
-            * (UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetDamageMultiplier() : 1f);
+        float baseDmg = UpgradeEffectManager.Instance != null
+            ? UpgradeEffectManager.Instance.ComputeDamage(cfg.damage)
+            : cfg.damage;
 
         int hitCount = 0;
         foreach (var enemy in enemies)

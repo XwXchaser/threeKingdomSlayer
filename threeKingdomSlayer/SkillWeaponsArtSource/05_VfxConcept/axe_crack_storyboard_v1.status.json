@@ -1,0 +1,43 @@
+{
+  "state": "image_saved",
+  "http_status": 200,
+  "seconds": 182.22,
+  "error": null,
+  "output_image": "C:/Users/steam/Pictures/gptGen/axe_crack_storyboard_20261116\\axe_crack_storyboard_v1.png",
+  "download": "b64_json",
+  "width": 1536,
+  "height": 1024,
+  "bit_depth": 8,
+  "color_type": 2,
+  "output_bytes": 2436477,
+  "output_sha256": "8dfd3b6b81db0d85f1a445facf4761b44703ceaaeb5f86ec127d320580bd4b85",
+  "usage": {
+    "input_tokens": 3346,
+    "input_tokens_details": {
+      "image_tokens": 2240,
+      "text_tokens": 1106
+    },
+    "output_tokens": 5488,
+    "output_tokens_details": {
+      "image_tokens": 5488
+    },
+    "total_tokens": 8834
+  },
+  "echoed_size": "1536x1024",
+  "echoed_quality": "max",
+  "models_check": {
+    "http_status": 200,
+    "models": [
+      "claude-haiku-5-5",
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-image-2.6-sunburst",
+      "grok-4.7"
+    ],
+    "image_models": [
+      "gpt-image-2.6-sunburst"
+    ]
+  }
+}

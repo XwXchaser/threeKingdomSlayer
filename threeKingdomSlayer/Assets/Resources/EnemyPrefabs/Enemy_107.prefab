@@ -53,6 +53,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: boss_wave3
   enemyId: 107
+  dropsEquipment: 0
   maxHealth: 500
   occupySlots: 5
   attackSpeed: 0.2

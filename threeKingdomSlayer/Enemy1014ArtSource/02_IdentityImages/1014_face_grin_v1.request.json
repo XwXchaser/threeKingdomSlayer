@@ -1,0 +1,46 @@
+{
+  "version": "1014_face_grin_v1",
+  "handoff": "Locus\\knowledge\\plan\\session-handoff-20261114.md §7.10",
+  "brief": "Locus\\knowledge\\design\\enemy-1014-art-brief.md §5.5（方案 C）",
+  "endpoint": "https://api.muskapis.com/v1/images/edits",
+  "method": "POST",
+  "content_type": "multipart/form-data; boundary=----locusd5d12317ee6549859aec7ce300a522ea",
+  "fields": {
+    "model": "gpt-image-2.6-sunburst",
+    "prompt": "Edit the face of this single soldier and keep the rest of the picture exactly as it is.\n\nCHANGE ONLY THE EXPRESSION ON HIS FACE. Give the man a sly, cunning, almost amused grin, the look of a bandit sizing up a victim. His eyes narrow into short slits with the upper lids pressed down over them; the outer ends of his eyebrows lift while the inner ends press down toward the bridge of his nose; his nose wrinkles slightly; one cheek pushes up higher than the other. His mouth opens into a crooked grin that shows a line of teeth, with one corner of the mouth pulled noticeably higher than the other, so the whole expression is lopsided rather than symmetric. His chin lifts a little and his head tilts a few degrees, as if he is looking at you sideways and thinking of a trick.\n\nKeep his head cloth, the tied hair bun on top of his head and the loose end of the cloth hanging on the right side of the picture as they are. Keep the same face shape, jaw, ears, skin tone, hair color and the same shading and brushwork on the face as the rest of the picture.\n\nThe rest of the picture is unchanged: the grey-beige coarse cloth tunic with frayed edges, the dark brown leather shoulder strap with its metal buckle, the belt with the small dark red cloth pouch, the wrapped pale leg bindings, the worn cloth shoes, and the small unglazed earthenware canteen held low in his right hand on the left side of the picture. The same standing pose with both feet planted, the same body proportions, the same camera angle and framing, the same plain green screen background, and the same rendering style, outline weight and level of detail across the whole picture.\n\nNegative constraints: different costume, changed outfit, new hat, helmet, hood, face mask, different pose, different camera angle, different framing, smaller figure, larger figure, extra fingers, extra arms, extra legs, missing hand, missing canteen, changed body proportions, blurry, out of focus, soft focus, text, watermark, logo, scenery, ground shadow, frame, border, collage, multiple characters",
+    "size": "1024x1024",
+    "quality": "max",
+    "input_fidelity": "high",
+    "output_format": "png",
+    "n": "1"
+  },
+  "base_image": {
+    "path": "H:\\Project\\threeKingdomSlayer\\threeKingdomSlayer\\Enemy1014ArtSource\\02_IdentityImages\\1014_v2_base_greenscreen_1024.png",
+    "sha256": "3e36d1175939102cd30b9db6ac21905e67545368780798b76d467ceffb702c6f",
+    "bytes": 373299,
+    "size": [
+      1024,
+      1024
+    ]
+  },
+  "models_check": {
+    "http_status": 200,
+    "models": [
+      "claude-haiku-5-5",
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-image-2.6-sunburst",
+      "grok-4.7"
+    ],
+    "image_models": [
+      "gpt-image-2.6-sunburst"
+    ]
+  },
+  "prompt_sha256": "8784edcf26a1c8630d6e4980564e6fa610e8106802e58267b59ba95c3151b034",
+  "prompt_chars": 2053,
+  "automatic_retries": 0,
+  "read_timeout_seconds": 600,
+  "submitted_at_local": "2026-11-16 14:28:08"
+}

@@ -23,6 +23,47 @@ public class PlayerState : MonoBehaviour
     [System.NonSerialized] public int currentWave;
     [System.NonSerialized] public StageState stageState = StageState.None;
 
+    // ── 暗源（影之武装资源，2026-11-16）──
+    // 口径：**只靠进攻获取**（命中 / 击杀 / 破防）；防御姿态**不回**暗源
+    // → 防止“按住防御纯放技能”的退化玩法。
+    // 与**大招能量并存**（暗源管主动技能，大招能量管大招），两者互不替代。
+    private float _shadowSource;
+    private float _shadowSourceMax = 30f;
+
+    /// <summary>暗源数量变化（UI 订阅）。</summary>
+    public System.Action OnShadowSourceChanged;
+
+    /// <summary>暗源当前值。</summary>
+    public float ShadowSource => _shadowSource;
+
+    /// <summary>暗源上限。</summary>
+    public float ShadowSourceMax => _shadowSourceMax;
+
+    /// <summary>暗源上限设置（局外天赋 / 饰品可改）。</summary>
+    public void SetShadowSourceMax(float max) => _shadowSourceMax = Mathf.Max(1f, max);
+
+    /// <summary>获得暗源（只应由进攻事件调用）。</summary>
+    public void AddShadowSource(float amount)
+    {
+        if (amount <= 0f) return;
+        float before = _shadowSource;
+        _shadowSource = Mathf.Min(_shadowSourceMax, _shadowSource + amount);
+        if (!Mathf.Approximately(before, _shadowSource)) OnShadowSourceChanged?.Invoke();
+    }
+
+    /// <summary>暗源是否够付这个消耗。</summary>
+    public bool HasShadowSource(float cost) => cost <= 0f || _shadowSource >= cost;
+
+    /// <summary>消耗暗源（不够则不扣、返回 false）。</summary>
+    public bool TrySpendShadowSource(float cost)
+    {
+        if (cost <= 0f) return true;
+        if (_shadowSource < cost) return false;
+        _shadowSource -= cost;
+        OnShadowSourceChanged?.Invoke();
+        return true;
+    }
+
     /// <summary>
     /// 玩家身上的**状态效果容器**（与敌人的同类容器是同一个类型，宿主无关）。
     /// 玩家的反伤护盾、破冰预备等都挂在这里——它们是玩家身上的状态，
@@ -220,10 +261,13 @@ public class PlayerState : MonoBehaviour
         Instance = this;
         Guard = new PlayerGuard(this);
         WeaponStance = new PlayerWeaponStance(this);
+        // 暗源：只靠进攻获取（命中）
+        HitFeedbackManager.OnPlayerHitEnemy += OnPlayerHitEnemy;
     }
 
     private void OnDestroy()
     {
+        HitFeedbackManager.OnPlayerHitEnemy -= OnPlayerHitEnemy;
         if (Instance == this)
         {
             Instance = null;
@@ -322,6 +366,9 @@ public class PlayerState : MonoBehaviour
         coinCount = 0;
         currentWave = 0;
         stageState = StageState.Starting;
+        // 暗源：开新局清零（只能靠进攻重新攒）
+        _shadowSource = 0f;
+        OnShadowSourceChanged?.Invoke();
 
         currentLevel = 0;
         currentExp = 0f;
@@ -377,13 +424,21 @@ public class PlayerState : MonoBehaviour
         // 把攻击者传进去 → 防御能给出「格挡」反馈（攻击者卡肉 + 镜头震动）
         // **挥入（举枪）期间也算防御**：2026-10-29 用户定「挥入期受击免伤」，
         // 且此时直接跳位进防御位（PlayerWeaponStance.InterruptToDefend）。
+        // ★ 2026-11-16 修正：**必须同时看 `DefendHeld`（防御意图）**。
+        //   原条件只看「枪在手」（IsDefending || IsSwingingIn）⇒ 玩家**按了又松手**之后
+        //   （防御意图已关闭），只要枪还在举（挥入要 0.42s），挨打**仍然免伤**
+        //   ⇒ 实测「快速点击防御」＝不掉血、看着像白挨。
+        //   ⇒ 口径：**按住防御键期间**免伤（挥入期也算）；**松开之后**就不再是防御 ⇒ 正常挨打。
+        bool guardIntent = DefendHeld;   // 防御键是否还按着
         if (Guard != null && WeaponStance != null
+            && guardIntent
             && (WeaponStance.IsDefending || WeaponStance.IsSwingingIn)
             && Guard.TryAbsorbDamage(damage, source, source != null ? source.guardBreakBonus : 0f))
         {
             if (WeaponStance.IsSwingingIn) WeaponStance.InterruptToDefend(DefendConfig);
             return;
         }
+        DebugLog.Info($"[PlayerState] 正常受击 {damage:F0}（防御意图={guardIntent} 持枪={WeaponStance?.Phase.ToString() ?? "无"}）");
 
         float originalDamage = damage;
 
@@ -435,6 +490,17 @@ public class PlayerState : MonoBehaviour
         OnHealthChanged?.Invoke(currentHealth, MaxHealth);
         // 受击震动已暂时关闭（安卓端不合适），后续在其他功能情景中重新启用
         // Handheld.Vibrate();
+
+        // ★ 正常受击（没被防御挡住）时，**持枪实体也要有受击姿态**（2026-11-16）。
+        //   玩家挨打时枪往往还在画面上（收枪中 / 举枪中），
+        //   而持枪姿态的受击表现原本只挂在**防御分支**（PlayerGuard.TryAbsorbDamage）上
+        //   ⇒ 收枪中挨打时枪完全没反应 ⇒「挨打」这件事在枪上没有着落。
+        //   ⇒ 这里补上：歪 + 沉 + 退（同一套受击姿态）+ 命中定格。
+        if (WeaponStance != null && WeaponStance.Phase != PlayerWeaponStance.StancePhase.Idle)
+        {
+            WeaponStance.Recoil(DefendConfig);
+            WeaponStance.ApplyHitStop(DefendConfig != null ? DefendConfig.parryGuardBlockHitStopSeconds : 0.033f);
+        }
 
         Debug.Log($"[PlayerState] 受到伤害: {originalDamage}(原始) -> {finalDamage}(最终), 剩余生命: {currentHealth}");
 
@@ -638,9 +704,23 @@ public class PlayerState : MonoBehaviour
     /// <summary>
     /// 增加击杀数
     /// </summary>
+    /// <summary>每次命中的暗源收益。</summary>
+    public const float ShadowSourcePerHit = 1f;
+    /// <summary>每次击杀的暗源收益。</summary>
+    public const float ShadowSourcePerKill = 3f;
+
+    /// <summary>玩家命中敌人 → 暗源 +1（只靠进攻获取）。</summary>
+    private void OnPlayerHitEnemy(float damage)
+    {
+        if (damage <= 0f) return;
+        AddShadowSource(ShadowSourcePerHit);
+    }
+
     public void AddKill()
     {
         killCount++;
+        // 暗源：击杀额外收益
+        AddShadowSource(ShadowSourcePerKill);
 
         // 追击（天赋）：击杀后攻击 CD −0.5s —— 把**正在走的**攻击冷却直接缩短
         float reduction = TalentCapabilities.KillAttackCooldownReduction;

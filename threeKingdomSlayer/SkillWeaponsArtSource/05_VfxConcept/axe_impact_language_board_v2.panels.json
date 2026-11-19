@@ -1,0 +1,124 @@
+{
+  "version": "axe_impact_language_board_v2",
+  "image": "SkillWeaponsArtSource/05_VfxConcept/axe_impact_language_board_v2.png",
+  "sha256": "277a4d45ed8d306d6b95a307db7c2e9ff3638d6701cb0eca8ab7eddd6a123e99",
+  "bytes": 2845312,
+  "size": [
+    1536,
+    1024
+  ],
+  "grid": "2 列 × 2 行；实测暗缝：列 766-769、行 510-513；面板 766×510 / 767×511",
+  "submit": {
+    "model": "gpt-image-2.6-sunburst",
+    "endpoint": "POST /v1/images/edits",
+    "params": "1536x1024 / quality=max / input_fidelity=high / output_format=png / n=1 / 不传 background",
+    "refs": "5 张（两张项目概念图缩小副本 + 1011 精灵 + 抡斧四视图缩小副本 + 实机地面裁切），合计 1.86 MB",
+    "attempts": [
+      {
+        "attempt": 1,
+        "result": "HTTP 503 upstream_unavailable",
+        "request_id": "20261116064647127370305wOO5KSYQ",
+        "payload_mb": 6.61
+      },
+      {
+        "attempt": 2,
+        "result": "HTTP 504 upstream_timeout",
+        "request_id": "202611160650334442423328dxr2tJ4",
+        "payload_mb": 6.61
+      },
+      {
+        "attempt": 3,
+        "result": "HTTP 503 upstream_unavailable",
+        "request_id": "202611160654344656332833FTGXbyt",
+        "payload_mb": 1.86
+      },
+      {
+        "attempt": 4,
+        "result": "HTTP 503 upstream_unavailable",
+        "request_id": "20261116065830105525208gxH3gMxM",
+        "payload_mb": 1.86
+      },
+      {
+        "attempt": 5,
+        "result": "HTTP 200",
+        "seconds": 104.21,
+        "payload_mb": 1.86,
+        "usage_total": 9475
+      }
+    ]
+  },
+  "measurement_note": "impact_area_coverage = 与本格地面中位色差异 >30 的像素占比（目标 55%-65%，实测偏低：抬起的土板顶面与地面色接近，低估）；dark_frac = 亮度<85 的像素占比；core_dark_frac = 中央 40% 区域暗像素占比（“实心破碎核”判据）；面板 A 四角暗像素占比 0.9%-6.3% ⇒ 外圈是干净地面。",
+  "panels": {
+    "A_压陷型": {
+      "cell": [
+        0,
+        0,
+        766,
+        510
+      ],
+      "ground_median_rgb": [
+        205.0,
+        144.0,
+        73.0
+      ],
+      "impact_area_coverage": 0.3725,
+      "dark_frac": 0.1466,
+      "core_dark_frac": 0.3906
+    },
+    "B_斧刃劈裂型": {
+      "cell": [
+        769,
+        0,
+        1536,
+        510
+      ],
+      "ground_median_rgb": [
+        211.0,
+        150.0,
+        77.0
+      ],
+      "impact_area_coverage": 0.2526,
+      "dark_frac": 0.1004,
+      "core_dark_frac": 0.3395
+    },
+    "C_爆裂型": {
+      "cell": [
+        0,
+        513,
+        766,
+        1024
+      ],
+      "ground_median_rgb": [
+        212.0,
+        150.0,
+        77.0
+      ],
+      "impact_area_coverage": 0.3119,
+      "dark_frac": 0.1387,
+      "core_dark_frac": 0.3693
+    },
+    "D_板块错裂型": {
+      "cell": [
+        769,
+        513,
+        1536,
+        1024
+      ],
+      "ground_median_rgb": [
+        209.0,
+        148.0,
+        78.0
+      ],
+      "impact_area_coverage": 0.3618,
+      "dark_frac": 0.1568,
+      "core_dark_frac": 0.4385
+    }
+  },
+  "verdict": [
+    "四格各自有可辨认的实体破碎核（core_dark 0.34-0.44），不再是细线交点 ✔",
+    "四格地面中位色一致（约 205-212 / 144-150 / 73-78），外圈干净 ✔",
+    "裂纹粗细分层明显、坑缘/断口有受光亮边，无魔法/火焰/尘雾/角色/武器/文字 ✔",
+    "与 V1 的差别：V1 是均匀放射的树根状细星形裂纹；V2 四格都是实体破碎/错裂块面，重量感明显提升 ✔",
+    "偏差：A、B 两格被画成较深的沟槽/峡谷（壁面很高），更像采石沟而非压陷坑；冲击面积占比 25%-37%，低于需求的 55%-65%"
+  ]
+}

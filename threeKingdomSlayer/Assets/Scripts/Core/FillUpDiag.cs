@@ -18,8 +18,13 @@ using UnityEngine;
 /// </summary>
 public static class FillUpDiag
 {
-    /// <summary>总开关（Editor 内也能临时关掉）。</summary>
-    public static bool Enabled = true;
+    /// <summary>
+    /// 总开关（Editor 内也能临时关掉）。
+    /// ★ 2026-11-16 默认**关**：开着时每次排阵重排都会逐行打一条带完整堆栈的日志
+    ///   （一次死亡重排 ≈ 287 条 ≈ 4000 行），任何敌人死亡都会把 Console 灌满，
+    ///   看起来像编辑器卡死。需要查补齐问题时再临时打开。
+    /// </summary>
+    public static bool Enabled = false;
 
     // ── 快照构造 ────────────────────────────────────────────────────────────
 

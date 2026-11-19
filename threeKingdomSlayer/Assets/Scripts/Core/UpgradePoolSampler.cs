@@ -85,7 +85,12 @@ public sealed class UpgradePoolSampler
     }
 
     /// <summary>V2 统一池：主动技能走可获得性，其余走前置条件 + 槽位检查。</summary>
-    public void CollectUnified(List<Candidate> result, List<WeightedUpgrade> pool, UpgradeRarity rarity)
+    /// <param name="excludeActiveSkills">
+    /// ★ **true = 只收“属性 / 机制”条目（不含主动技能）**（2026-11-16）。
+    ///   用户的口径：“经验升级只有玩家属性或机制提升；影之武装和饰品这一类要在精英敌人身上掉落”
+    ///   ⇒ 升级三选一与装备三选一**分成两段、两套池**。
+    /// </param>
+    public void CollectUnified(List<Candidate> result, List<WeightedUpgrade> pool, UpgradeRarity rarity, bool excludeActiveSkills = false)
     {
         if (result == null || pool == null) return;
         for (int i = 0; i < pool.Count; i++)
@@ -96,6 +101,7 @@ public sealed class UpgradePoolSampler
 
             if (wu.upgrade.category == UpgradeCategory.ActiveSkill)
             {
+                if (excludeActiveSkills) continue;   // ★ 属性/机制池不混主动技能
                 if (!CanAcquireActiveSkill(wu.upgrade as ActiveSkillDefinition)) continue;
                 // ⚠️ 主动技能同样要过天赋解锁条件（流派分线靠的就是这条）——
                 // 旧实现只查了「能不能拿到」，导致 locked 的主动技能照样进池（2026-11-03 C1 修）。
@@ -107,9 +113,60 @@ public sealed class UpgradePoolSampler
                 if (!RequirementsMet(wu.upgrade, UpgradePoolKind.Regular)) continue;
                 int currentLevel = GetLevel(wu.upgrade);
                 if (currentLevel >= GetEffectiveMaxLevel(wu.upgrade)) continue;
-                if (currentLevel == 0 && IsPassiveCapReached()) continue;
+                // ★ **只有机制型被动占被动槽**（2026-11-16）：数值类（属性）不占槽
+                //   ⇒ 被动槽满了也不会把“数值升级”从池里排掉（否则玩家拿满 2 个数值就再也拿不到升级）。
+                bool occupiesPassiveSlot = wu.upgrade.category == UpgradeCategory.AttackPassive
+                                      || wu.upgrade.category == UpgradeCategory.TimedPassive;
+                if (currentLevel == 0 && occupiesPassiveSlot && IsPassiveCapReached()) continue;
             }
 
+            result.Add(new Candidate { upgrade = wu.upgrade, weight = Mathf.Max(1, wu.weight), rarity = rarity });
+        }
+    }
+
+    /// <summary>
+    /// **属性池**（2026-11-17）：只收「**纯数值**」条目（<see cref="UpgradeCategory.Numeric"/>）。
+    ///
+    /// 用户口径：“属性成长应该跟**经验**” ⇒ 经验升级带来的三选一**只出属性**。
+    /// 属性**不占任何槽位**、抽到就叠 → 所以这里**不做被动槽判定**。
+    /// </summary>
+    public void CollectAttributes(List<Candidate> result, List<WeightedUpgrade> pool, UpgradeRarity rarity)
+    {
+        if (result == null || pool == null) return;
+        for (int i = 0; i < pool.Count; i++)
+        {
+            var wu = pool[i];
+            if (wu == null || wu.upgrade == null) continue;
+            if (!UpgradeRewardClassifier.IsAttribute(wu.upgrade)) continue;
+            if (!PrerequisitesMet(wu.upgrade)) continue;
+            if (!RequirementsMet(wu.upgrade, UpgradePoolKind.Regular)) continue;
+            int currentLevel = GetLevel(wu.upgrade);
+            if (currentLevel >= GetEffectiveMaxLevel(wu.upgrade)) continue;
+            result.Add(new Candidate { upgrade = wu.upgrade, weight = Mathf.Max(1, wu.weight), rarity = rarity });
+        }
+    }
+
+    /// <summary>
+    /// **饰品池**（2026-11-17）：只收「**机制型被动**」条目
+    /// （<see cref="UpgradeCategory.AttackPassive"/> / <see cref="UpgradeCategory.TimedPassive"/>）。
+    ///
+    /// 用户口径：“装备**饰品**应该跟**精英敌人**” ⇒ 饰品从精英掉落里出。
+    /// 饰品**占被动槽** ⇒ 被动槽满了就不再进池（已持有的可以继续升级，不占新槽）。
+    /// </summary>
+    public void CollectAccessories(List<Candidate> result, List<WeightedUpgrade> pool, UpgradeRarity rarity)
+    {
+        if (result == null || pool == null) return;
+        for (int i = 0; i < pool.Count; i++)
+        {
+            var wu = pool[i];
+            if (wu == null || wu.upgrade == null) continue;
+            if (!UpgradeRewardClassifier.IsAccessory(wu.upgrade)) continue;
+            if (!PrerequisitesMet(wu.upgrade)) continue;
+            if (!RequirementsMet(wu.upgrade, UpgradePoolKind.Regular)) continue;
+            int currentLevel = GetLevel(wu.upgrade);
+            if (currentLevel >= GetEffectiveMaxLevel(wu.upgrade)) continue;
+            // 被动槽已满 → 不再给新的饰品（已持有的同款可以继续升，不占新槽）
+            if (currentLevel == 0 && IsPassiveCapReached()) continue;
             result.Add(new Candidate { upgrade = wu.upgrade, weight = Mathf.Max(1, wu.weight), rarity = rarity });
         }
     }
@@ -210,6 +267,45 @@ public sealed class UpgradePoolSampler
             usedIds.Add(picked.upgrade.upgradeId);
         }
         return results;
+    }
+
+    /// <summary>
+    /// 从**一个子池**里按稀有度抽 1 个（不重复）——装备三选一用。
+    ///
+    /// 与 <see cref="DrawByRarity"/> 的差别：**降级只在该子池内部发生**。
+    /// （整池降级会把「影之武装 / 饰品」的比例冲掉 —— 掷到稀有度没货就跑去另一个子池。）
+    ///
+    /// @param usedIds 已经选过的 upgradeId（跨整次弹窗累计）。
+    /// </summary>
+    public UpgradeDefinition DrawOneByRarity(List<Candidate> candidates, HashSet<string> usedIds, Func<UpgradeRarity> rollRarity)
+    {
+        if (candidates == null || candidates.Count == 0) return null;
+        usedIds ??= new HashSet<string>();
+
+        UpgradeRarity target = rollRarity != null ? rollRarity() : UpgradeRarity.Common;
+
+        var bucket = new List<Candidate>();
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            var c = candidates[i];
+            if (c.rarity != target) continue;
+            if (usedIds.Contains(c.upgrade.upgradeId)) continue;
+            bucket.Add(c);
+        }
+
+        // 该稀有度在本子池里没货 → 降级到本子池剩余候选
+        if (bucket.Count == 0)
+        {
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                var c = candidates[i];
+                if (usedIds.Contains(c.upgrade.upgradeId)) continue;
+                bucket.Add(c);
+            }
+        }
+
+        if (bucket.Count == 0) return null;
+        return WeightedPick(bucket).upgrade;
     }
 
     /// <summary>按权重随机抽取一个</summary>

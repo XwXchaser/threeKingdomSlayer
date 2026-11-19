@@ -26,4 +26,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 64494f266ab77bf46b987e20c001a182, type: 2}
   - {fileID: 11400000, guid: 6bc7b629080bf6e45a9b461bb4d2858b, type: 2}
   clearCoinReward: 0
+  extraChoices:
+  - {fileID: 11400000, guid: 966e16de89949e74d923ed9f70c5aed2, type: 2}
   prerequisiteStageIds: 

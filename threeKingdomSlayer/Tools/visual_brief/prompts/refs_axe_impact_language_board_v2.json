@@ -1,0 +1,38 @@
+{
+  "version": "axe_impact_language_board_v2",
+  "handoff": "Locus/knowledge/plan/axe-skill-integration-20261115.md §6.14",
+  "spec": "Locus/knowledge/design/axe-ground-crack-vfx-spec-20261115.md",
+  "note": "抡斧砸地裂纹「冲击语言 2×2 四格峰值对照板」（1536×1024）。四格 = A 压陷型 / B 斧刃劈裂型 / C 爆裂型 / D 板块错裂型，各自是独立的冲击峰值瞬间，不展示时间变化；只用于评审方向选型，不是最终贴图，不导入 Unity。⚠ 前两次提交均被上游挡回（503 upstream_unavailable / 504 upstream_timeout，request id 20261116064647127370305wOO5KSYQ / 202611160650334442423328dxr2tJ4）⇒ 按「重请求连续失败就降体积」的纪律，本清单改用等比缩小后的参考图（内容不变），image 1/2/4 为缩小副本，image 3/5 仍用原文件。",
+  "references": [
+    {
+      "order": 1,
+      "path": "SkillWeaponsArtSource/05_VfxConcept/refs/conv_battle_1_small.jpg",
+      "role": "image 1: 项目概念图（原图 C:/Users/Administrator/Downloads/微信图片_20260928101136_13_455.png 的 640 宽缩小副本）—— 只负责新画风、暖色战场与战斗氛围（界面元素不要用）",
+      "expected_sha256_prefix": "d8617578e23a9fb9"
+    },
+    {
+      "order": 2,
+      "path": "SkillWeaponsArtSource/05_VfxConcept/refs/conv_battle_2_small.jpg",
+      "role": "image 2: 项目概念图（原图 C:/Users/Administrator/Downloads/微信图片_20260928101137_14_455.png 的 640 宽缩小副本）—— 只负责新画风、战场地面与特效气质（界面元素不要用）",
+      "expected_sha256_prefix": "c05dc3d61b773414"
+    },
+    {
+      "order": 3,
+      "path": "Assets/Sprites/Enemy/Enemy1_1/Enemy_1011_idle1.png",
+      "role": "image 3: 已验收 1011 精灵 —— 只负责像素色簇、边缘与细节组织",
+      "expected_sha256_prefix": "b8ac9bcf97804e4c"
+    },
+    {
+      "order": 4,
+      "path": "SkillWeaponsArtSource/05_VfxConcept/refs/axe_four_view_small.png",
+      "role": "image 4: 抡斧四视图（原图 SkillWeaponsArtSource/03_FourView/axe_four_view_plain.png 的 1024 宽缩小副本）—— 只提供厚重单刃的形体印象；板子只画地面与破坏，武器本体与白底都不使用",
+      "expected_sha256_prefix": "46c71f85bec105b1"
+    },
+    {
+      "order": 5,
+      "path": "SkillWeaponsArtSource/05_VfxConcept/refs/ingame_ground_crop.png",
+      "role": "image 5: 旧实机地面裁切（自 _art_process/VisualLibrary/shots/battle_overall_scene.png 裁出）—— 只用于了解当前地面落位与对比度，不反向定义画风",
+      "expected_sha256_prefix": "4d078d655562df24"
+    }
+  ]
+}

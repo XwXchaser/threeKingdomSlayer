@@ -167,6 +167,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: "\u5200\u5175_1012"
   enemyId: 1012
+  dropsEquipment: 0
   maxHealth: 100
   occupySlots: 1
   attackSpeed: 0.4

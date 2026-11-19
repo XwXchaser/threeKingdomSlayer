@@ -1,0 +1,25 @@
+{
+  "background": "auto",
+  "created": 1794813552,
+  "data": [
+    {
+      "b64_json": "<base64 omitted; image saved to C:/Users/steam/Pictures/gptGen/enemy_proportion_lineup_1014_v3_small\\enemy_proportion_lineup_1014_v3_small.png>"
+    }
+  ],
+  "moderation": "auto",
+  "output_format": "png",
+  "quality": "max",
+  "size": "1536x1024",
+  "usage": {
+    "input_tokens": 5713,
+    "input_tokens_details": {
+      "image_tokens": 3360,
+      "text_tokens": 2353
+    },
+    "output_tokens": 5488,
+    "output_tokens_details": {
+      "image_tokens": 5488
+    },
+    "total_tokens": 11201
+  }
+}

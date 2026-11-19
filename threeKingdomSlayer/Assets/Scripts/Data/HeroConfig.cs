@@ -24,10 +24,12 @@ public class HeroConfig : ScriptableObject
     public float reviveHealthPercent = 0.5f;
 
     [Header("槽位")]
-    [Tooltip("主动技能槽上限（基础 3）。主动 / 被动 / 道具三套槽位互不共用。")]
-    [Min(1)] public int activeSkillSlotCount = 3;
-    [Tooltip("被动技能槽上限（基础 3）。上限判定含数值被动（专注 / 智慧 / 疾风…），口径与 UI 的差异见设计文档 §5.4。")]
-    [Min(1)] public int passiveSlotCount = 3;
+    [Tooltip("主动技能槽上限（基础 2）。主动 / 被动 / 道具三套槽位互不共用。\n" +
+             "更多槽位由**局外天赋**解锁（巧思 +1 / 博学 +1，见 talent_stat_slot_active / talent_stat_slot_passive）。")]
+    [Min(1)] public int activeSkillSlotCount = 2;
+    [Tooltip("被动技能槽上限（基础 2）。上限判定含数值被动（专注 / 智慧 / 疾风…），口径与 UI 的差异见设计文档 §5.4。\n" +
+             "更多槽位由**局外天赋**解锁（博学 +1）。")]
+    [Min(1)] public int passiveSlotCount = 2;
     [Tooltip("道具槽上限。与主动 / 被动槽独立。")]
     [Min(0)] public int itemSlotCount = 2;
 

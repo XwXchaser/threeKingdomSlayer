@@ -27,7 +27,7 @@ MonoBehaviour:
   secondaryIntValue: 0
   stringValue: 
   baseAttackConfig: {fileID: 0}
-  icon: {fileID: 21300000, guid: abc906ce8c23eee429af4b40ef11d513, type: 3}
+  icon: {fileID: 21300000, guid: 9f0a3363135405c45b8e651efad6a3aa, type: 3}
   phantomLevels: []
   timedAoeLevels: []
   timedArrowLevels: []
@@ -42,24 +42,30 @@ MonoBehaviour:
   chargeHitShockwaveLevels: []
   diseaseLevels: []
   axeSmashLevels:
-  - damage: 90
+  - damage: 200
     rangeRows: 2
     ignoreShieldBlock: 1
-    poiseDamage: 40
-    effectPrefab: {fileID: 0}
-    weaponPrefab: {fileID: 0}
-  - damage: 130
+    poiseDamage: 100
+    effectPrefab: {fileID: 7200517310957066831, guid: 09e02dbc2d07a2f4099395b50f42f3ff, type: 3}
+    weaponPrefab: {fileID: 4438465509445186954, guid: 65a8bba3e8c6d7243b2dda32b4f8d886, type: 3}
+    swingClip: {fileID: 8300000, guid: 227a43e90e0b0ba449488bdc6354cda9, type: 3}
+    impactClip: {fileID: 8300000, guid: 08a7a8dc2d94a4244a324a3b226c1c63, type: 3}
+  - damage: 300
     rangeRows: 3
     ignoreShieldBlock: 1
-    poiseDamage: 55
-    effectPrefab: {fileID: 0}
-    weaponPrefab: {fileID: 0}
-  - damage: 180
+    poiseDamage: 100
+    effectPrefab: {fileID: 7200517310957066831, guid: 09e02dbc2d07a2f4099395b50f42f3ff, type: 3}
+    weaponPrefab: {fileID: 4438465509445186954, guid: 65a8bba3e8c6d7243b2dda32b4f8d886, type: 3}
+    swingClip: {fileID: 8300000, guid: 227a43e90e0b0ba449488bdc6354cda9, type: 3}
+    impactClip: {fileID: 8300000, guid: 470f8dd55025e3f4c8a0c6a6d819c994, type: 3}
+  - damage: 500
     rangeRows: 4
     ignoreShieldBlock: 1
-    poiseDamage: 70
-    effectPrefab: {fileID: 0}
-    weaponPrefab: {fileID: 0}
+    poiseDamage: 200
+    effectPrefab: {fileID: 7200517310957066831, guid: 09e02dbc2d07a2f4099395b50f42f3ff, type: 3}
+    weaponPrefab: {fileID: 4438465509445186954, guid: 65a8bba3e8c6d7243b2dda32b4f8d886, type: 3}
+    swingClip: {fileID: 8300000, guid: 227a43e90e0b0ba449488bdc6354cda9, type: 3}
+    impactClip: {fileID: 8300000, guid: 08a7a8dc2d94a4244a324a3b226c1c63, type: 3}
   chainPullLevels: []
   triggerParam: 0
   phantomSteps: []

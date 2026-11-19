@@ -748,12 +748,17 @@ public class BattleAutoPlayer : MonoBehaviour
             return;
         }
 
-        // 路线选择：只在真的进入选路阶段时扫按钮（避免每帧 FindObjectsOfType）
+        // 路线选择：只在真的出现选路面板时扫按钮（避免每帧 FindObjectsOfType）
+        // ⚠ 2026-11-16：**不能只看路线运行器的相位**——无限模式里路线运行时是挂起的（IsChoosing 永远 false），
+        //   但它也会弹同一套出口面板 ⇒ 改用「面板注册表」判定（面板自己注册，开销极低）。
         var runtime = FakeRouteRuntime.Instance;
-        if (runtime == null || !runtime.IsChoosing) return;
+        bool routeChoosing = runtime != null && runtime.IsChoosing;
+        var panels = SceneRegistry<RouteChoicePanel>.Snapshot();
+        bool panelChoosing = panels != null && panels.Length > 0;
+        if (!routeChoosing && !panelChoosing) return;
 
         // 指定了目标出口 → 直接走运行时的选择接口（比点按钮可靠：按钮可能还没 Bind 好）
-        if (!string.IsNullOrEmpty(preferredRouteChoiceId))
+        if (!string.IsNullOrEmpty(preferredRouteChoiceId) && routeChoosing)
         {
             if (runtime.TrySelectChoice(preferredRouteChoiceId)) return;
         }

@@ -17,6 +17,19 @@ public partial class Enemy : MonoBehaviour
     public int enemyId;
 
     /// <summary>
+    /// **精英标记**（2026-11-17 用户定：「我自己打标记配」）。
+    ///
+    /// 勾上 = 这个敌人死亡时**掉宝箱**（宝箱拾取后给一次装备 / 饰品三选一）。
+    /// 由策划在**敌人预制体**上自行勾选 —— 不再由代码按敌人 ID 维护名单
+    /// （名单在代码里 = 用户看不见、改不动，还容易把杂兵误算成精英）。
+    ///
+    /// ⚠ Boss **不用勾**：Boss 恒定掉宝箱（见 <see cref="EliteDropRules"/>）。
+    /// </summary>
+    [Tooltip("★ 精英标记：死亡时掉宝箱（拾取后给装备 / 饰品三选一）。\n" +
+             "策划在敌人预制体上自行勾选；Boss 恒定掉，不用勾。")]
+    public bool dropsEquipment;
+
+    /// <summary>
     /// 实例唯一 ID（运行时分配，用于调试日志区分同一 prefab 的不同实例）
     /// </summary>
     [System.NonSerialized] public int instanceId;

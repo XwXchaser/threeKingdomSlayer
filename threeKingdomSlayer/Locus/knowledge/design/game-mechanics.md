@@ -115,6 +115,14 @@ FakeRouteNodeConfig
 - 站位宽度来自 `FormationConfig`（`DefaultFormation`：逐排半宽 2 / 2.5 / 3 / 4 / 4.5，`rowSpacing=2.5`，`maxVisibleRows=5`，逐排透明度 1/0.9/0.8/0.75/0.75）。
 - 波次可配 `healthMultiplier` / `bossHealthMultiplier` / `attackSpeedMultiplier` / `damageMultiplier` / `waveTintColor`（波次染色）/ 补齐延迟。
 
+> ★ **新建 / 复制关卡时，“波次 + 阵型”是一套**（2026-11-17 血泪）：只搬 `waves` 不搬 `formationConfig` ⇒
+> `StageFormation` 走**代码兜底** ⇒ 敌人间距变成 `(col-2)*2.0`（平排、无梯形）、
+> 逐排透明度变成 `[1,0.8,0.6,0.4,0.2]`（比基准淡得多）⇒ 看上去就是
+> **“敌人间距和近远透明度完全错误，每次新建关卡都这样”**。
+> ⇒ **凡是运行时拼出来的 `StageConfig`，必须显式带上 `formationConfig`**：
+> 优先用**该节点自己手写关卡的**阵型 → 都没有时用 `DefaultFormation`（别留 null）。
+> ⇒ 判定口径：`StageConfig.formationConfig == null` ⇒ 排布一定不对（`Enemy.Visuals` 也会退回 `DefaultRowAlphaFactors`）。
+
 ### 3.2 补齐（唯一合法移动来源）
 
 | 现象 | 规则 |
@@ -353,7 +361,7 @@ FakeRouteNodeConfig
 
 - **经验来源**：击杀敌人获得 `expReward`（宝石飞向玩家，`ExpGemManager`）。
 - **曲线**：`PlayerState.expCurveConfig = ExpCurve_30min`（**60 级**，Lv1 需 200 经验，逐级约 +2%；另有 `DefaultExpCurve` 15 级、100→550）。当前 `currentLevel` 从 0 开始，超出曲线长度即不再升级。
-- **触发**：`PlayerState.OnLevelUp` → `UpgradeChoiceManager`：`Time.timeScale = 0` → 抽 3 张卡（`choiceCount=3`）→ 玩家**两次点击同一张卡**确认 → 应用效果 → 若还有待处理升级则**保持暂停继续弹窗**（支持一次经验多级）→ 全部完成恢复 `timeScale=1`。
+- **触发**：`PlayerState.OnLevelUp` → `UpgradeChoiceManager`：`Time.timeScale = 0` → 抽 3 张卡（`choiceCount=3`）→ 玩家**点按一张卡**确认（2026-11-16 从长按改回点按；走 Unity 标准 Button 的 `onClick`）→ 应用效果 → 若还有待处理升级则**保持暂停继续弹窗**（支持一次经验多级）→ 全部完成恢复 `timeScale=1`。
 - **抽取**：`UpgradeChoiceManager.activeSkillPoolConfig`（V2 统一池），按稀有度权重 `Common 0.60 / Rare 0.35 / Legendary 0.05` 掷稀有度，再在同稀有度候选内按权重抽；同一次抽卡不重复；候选不足时降级到其他稀有度补足。
 - **过滤**：已达 `maxLevel` 排除；前置条件（`prerequisites`）不满足排除；**被动已满 3 个时不再出现新被动**；主动技能走 `ActiveSkillInventory.CanAcquire`（未持有且槽位未满，或已持有且未满级）；**流派天赋门**（`requiredTalentIds`）：未解锁对应节点的流派技能不进池，通用技能常驻。
 - **无候选时**：不再静默跳过 → 改发 `30 + 5×等级` 铜钱（满槽补偿，`UpgradeChoiceManager`）；**提示**走端口 `CombatPresenters.InRunReward`（复用 `KillRewardUI` 的弹窗形态；该组件目前没部署到 Battle 场景 → 暂时只有铜钱飘字可见）。

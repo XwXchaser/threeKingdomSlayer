@@ -231,6 +231,70 @@ public sealed class CameraFeedbackController : MonoBehaviour
     }
 
     /// <summary>
+    [Header("重武器命中（抡斧等）镜头反馈")]
+    [Tooltip("重武器命中时镜头被**顶开**的幅度（世界单位）。\n" +
+             "重武器＝大质量：镜头应该是**低频、一次、大位移**的“被顶一下”，\n" +
+             "而不是高频抖动（高频会读成噪声/地震，2026-11-15 用户已否掉“像地震”的方向）。\n" +
+             "量级参考：抡斧命中时斧在相机前 ~4.5 单位处，1 单位 ≈ 415 px（1080×2160）⇒ 0.07 单位 ≈ 29 px ≈ 屏高 1.3%。")]
+    [SerializeField] private float impactSwayDistance = 0.07f;
+    [SerializeField] private float impactSwayDuration = 0.16f;
+    [Tooltip("重武器命中的镜头**滚转**幅度（度）。刻意压得很小：滚转一大就变成“地动山摇”。")]
+    [SerializeField] private float impactSwayRotationDegrees = 0.25f;
+
+    /// <summary>
+    /// **重武器命中的镜头“被顶开”**（2026-11-15 为抡斧新增）。
+    ///
+    /// 与普通命中震屏（<see cref="PlayFeedback"/>）的区别在**频率与幅度**：
+    /// · 普通命中 = 高频小抖（默认 4 次/0.11s、≈5 px）⇒ 读成“打到了一下”
+    /// · 本方法 = **一次**低频推移（0.16s、≈29 px）＋ 极小滚转（≤0.25°）⇒ 读成“被重物砸了一下”
+    ///
+    /// 方向沿冲击来源（把镜头从攻击者那侧顶开），与格挡同一套方向解算。
+    /// ⚠ 项目规则：相机组件参数必须**落盘进场景资产**，否则 domain reload 后回退默认值。
+    /// </summary>
+    public void RequestImpactSway(Vector3 worldPosition)
+    {
+        _lastRequestTime = GameplayPause.UnscaledTime;
+        float dist = impactSwayDistance > 0f ? impactSwayDistance : 0.07f;
+        float dur = impactSwayDuration > 0f ? impactSwayDuration : 0.16f;
+        float rotDeg = impactSwayRotationDegrees >= 0f ? impactSwayRotationDegrees : 0.25f;
+
+        Vector3 dir = GetImpactDirection(worldPosition);
+        Vector3 offset = dir.sqrMagnitude > 0.0001f
+            ? dir.normalized * dist
+            : new Vector3(0f, -dist * 0.6f, 0f);
+
+        _feedbackSequence?.Kill(false);
+        transform.localPosition = _baseLocalPosition;
+        transform.localRotation = _baseLocalRotation;
+
+        _feedbackSequence = GameplayPause.Bind(DOTween.Sequence().SetTarget(transform).SetUpdate(UpdateType.Normal, true));
+        // 单次快推 → 慢回：读成“被顶开一下”，而不是持续抖
+        _feedbackSequence.Append(transform.DOLocalMove(_baseLocalPosition + offset, dur * 0.22f).SetEase(Ease.OutQuad));
+        _feedbackSequence.Append(transform.DOLocalMove(_baseLocalPosition, dur * 0.78f).SetEase(Ease.OutCubic));
+        if (rotDeg > 0f)
+        {
+            // vibrato = 1 ⇒ 只摇一次（低频）；幅度极小 ⇒ 不读成地震
+            _feedbackSequence.Join(transform.DOShakeRotation(dur, new Vector3(0f, 0f, rotDeg), 1, 90f, false).SetEase(Ease.OutQuad));
+        }
+        _feedbackSequence.OnUpdate(UpdateBackgroundFollow);
+        _feedbackSequence.OnComplete(() =>
+        {
+            transform.localPosition = _baseLocalPosition;
+            transform.localRotation = _baseLocalRotation;
+            UpdateBackgroundFollow();
+            _feedbackSequence = null;
+            _activeStrength = HitFeedbackStrength.None;
+        });
+        _feedbackSequence.OnKill(() =>
+        {
+            transform.localPosition = _baseLocalPosition;
+            transform.localRotation = _baseLocalRotation;
+            UpdateBackgroundFollow();
+            _feedbackSequence = null;
+            _activeStrength = HitFeedbackStrength.None;
+        });
+    }
+
     /// 破防的**镜头推近**（REQ-006 · ⑤层）：FOV 脉冲（推近再回），**不是抖**。
     /// PBZ 的「成功瞬间」靠极短推近制造时间感；幅度必须小（≤2°）否则会动构图。
     /// ⚠ 推近幅度影响构图 ⇒ 参数进配置、默认保守，随时可关（幅度 = 0 即关闭）。
@@ -238,6 +302,15 @@ public sealed class CameraFeedbackController : MonoBehaviour
     ///   慢放才读得出来（一次性推完就回 ⇒ 只剩一下普通抖动）。
     /// </summary>
     public void RequestGuardBreakPush(float fovDegrees, float holdSeconds = 0.55f)
+    {
+        RequestImpactPush(fovDegrees, holdSeconds);
+    }
+
+    /// <summary>
+    /// **通用命中推近**（2026-11-15）：重武器命中（抡斧等）用的 FOV 推近。
+    /// 与格挡推近同一条实现，只是语义分开（免得把“斧”写成“格挡”）。
+    /// </summary>
+    public void RequestImpactPush(float fovDegrees, float holdSeconds = 0.22f)
     {
         if (fovDegrees <= 0f) return;
         var cam = GetComponent<Camera>();

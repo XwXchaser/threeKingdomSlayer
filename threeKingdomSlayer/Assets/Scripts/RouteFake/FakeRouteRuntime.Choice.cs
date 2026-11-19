@@ -90,6 +90,7 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
 
     public bool TrySelectChoice(string choiceId)
     {
+        if (_suspended) return false;   // 无限模式接管中 → 路线不弹/不接出口
         if (Phase != FakeRoutePhase.ChoosingRoute || _currentNode == null || string.IsNullOrEmpty(choiceId)) return false;
         if (_currentNode.outgoingChoices == null) return false;
         for (int i = 0; i < _currentNode.outgoingChoices.Count; i++)
@@ -134,6 +135,12 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
     }
     private void ShowRouteChoice()
     {
+        // 无限模式接管中 → 路线**不弹**出口面板（否则会把无限模式的出口面板销毁掉）
+        if (_suspended)
+        {
+            Debug.LogWarning("[FakeRoute] 无限模式接管中，路线不弹出口面板");
+            return;
+        }
         var options = BuildChoiceOptions(_currentNode);
         RouteChoicePanel.Show(choicePanelPrefab, _currentNode != null ? _currentNode.displayName : string.Empty, options, id => TrySelectChoice(id));
     }

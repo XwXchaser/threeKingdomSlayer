@@ -1,0 +1,25 @@
+{
+  "background": "auto",
+  "created": 1794810489,
+  "data": [
+    {
+      "b64_json": "<base64 omitted; image saved to C:/Users/steam/Pictures/gptGen/enemy1014_face_grin_v1\\1014_face_grin_v1.png>"
+    }
+  ],
+  "moderation": "auto",
+  "output_format": "png",
+  "quality": "max",
+  "size": "1024x1024",
+  "usage": {
+    "input_tokens": 1236,
+    "input_tokens_details": {
+      "image_tokens": 560,
+      "text_tokens": 676
+    },
+    "output_tokens": 7024,
+    "output_tokens_details": {
+      "image_tokens": 7024
+    },
+    "total_tokens": 8260
+  }
+}

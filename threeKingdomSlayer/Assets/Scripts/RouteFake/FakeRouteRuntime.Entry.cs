@@ -162,6 +162,13 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
         if (Phase == FakeRoutePhase.Defeated) yield break;
 
         _prepared = true;
+        // 无限模式接管中 → **不点亮就绪态**（否则「开始关卡」按钮会亮，两套流程并行）
+        if (_suspended)
+        {
+            _prepared = false;
+            Debug.Log("[FakeRoute] 无限模式接管中，跳过就绪态");
+            yield break;
+        }
         // 就绪态（落地页 / 主菜单）：局外补给物件可交互，局内补给不可交互
         BreakableProp.HubState = true;
         SetPhase(FakeRoutePhase.Ready);
@@ -173,6 +180,11 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
     /// <summary>【落地页】玩家点「开始关卡」：从已准备的起始节点开始跑节点流程。</summary>
     public void RunPrepared()
     {
+        if (_suspended)
+        {
+            Debug.LogWarning("[FakeRoute] 无限模式接管中，忽略 RunPrepared");
+            return;
+        }
         if (!_prepared || routeConfig == null || _preparedStartNode == null)
         {
             Debug.LogWarning("[FakeRoute] RunPrepared 被忽略：尚未准备就绪（Phase=" + Phase + "）");
@@ -180,6 +192,71 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
         }
         if (_flow != null) StopCoroutine(_flow);
         _flow = StartCoroutine(RunPreparedFlow());
+    }
+
+    /// <summary>就绪态被无限模式挂起（持久标记，见 <see cref="SuspendPrepared"/>）。</summary>
+    private bool _suspended;
+
+    /// <summary>
+    /// **无限模式接管**（2026-11-16）：停掉路线自身的流程，并禁止它再弹出口面板 / 进节点。
+    ///
+    /// ⚠ **为什么必须“接管”而不是只“挂起就绪态”**（实测踩到）：
+    ///   接管时路线可能已经跑到某个节点、甚至在旅行中（落地页被点过「开始关卡」）。
+    ///   两套流程会争同一个 <see cref="RouteChoicePanel"/> ⇒ 路线弹面板时会把无限模式的出口面板
+    ///   销毁掉 ⇒ 无限模式永远等不到玩家点击（表现为“卡在节点不动”）。
+    /// </summary>
+    public void SuspendForEndless()
+    {
+        _suspended = true;
+        _prepared = false;
+        if (_flow != null) { StopCoroutine(_flow); _flow = null; }
+        _currentNode = null;
+        _battleActive = false;
+        _battleCleared = false;
+        SetPhase(FakeRoutePhase.None);
+        // ★ **交还输入门**（2026-11-17 修「无尽关整局做不了手势」）：
+        //   `SetPhase(None)` 会走 `SetGameplayInput(false)` → 路线**申请**一份 RouteTravel 拦截。
+        //   路线让位后它再也不会去 Release ⇒ 那份拦截会挂到场景销毁为止
+        //   ⇒ 无限模式整局 `GameplayInputGate.IsBlocked == true` ⇒ 玩家一个手势都做不出来。
+        //   ⇒ 这里把路线自己那份释放掉；之后输入由无限模式自己管（见 EndlessRunController）。
+        GameplayInputGate.Release(this);
+        // 把可能残留的面板清掉（后面由无限模式自己弹）
+        RouteChoicePanel.HideCurrent();
+        Debug.Log("[FakeRoute] 已让位给无限模式（路线流程停止，输入门已交还）");
+    }
+
+    /// <summary>
+    /// **挂起就绪态**（无限模式接管时用，2026-11-16）。
+    ///
+    /// 背景：就绪态为真时落地页的「开始关卡」按钮会亮着（<c>HubStateSource.IsPrepared</c>）。
+    /// 无限模式接管战斗后如果按钮还亮着，玩家一按就会启动剧情路线 → 与无限模式打架。
+    ///
+    /// ⚠ **必须是"持久标记"而不是"当刻清标志"**：无限模式可能在路线运行时就绪**之前**接管
+    /// （落地页自举是协程），那时 <c>_prepared</c> 还是 false → 直接置 false 等于没做；
+    /// 随后路线准备完成又会把就绪态点亮 → 两套流程并行（实测：正式关配置把无限模式顶掉）。
+    /// ⇒ 这里置一个 <c>_suspended</c> 标记，<see cref="PrepareSceneOnly"/> 收尾时据此**不再点亮就绪态**。
+    /// </summary>
+    public void SuspendPrepared()
+    {
+        _suspended = true;
+        _prepared = false;
+        Debug.Log("[FakeRoute] 就绪态已挂起（无限模式接管）");
+    }
+
+    /// <summary>
+    /// **恢复就绪态**（无限模式结束后）：重新准备存档里的当前关卡，让落地页回到可开跑状态。
+    /// </summary>
+    public void ResumePrepared()
+    {
+        _suspended = false;
+        var route = ResolveActiveRouteFromSave();
+        if (route == null)
+        {
+            Debug.LogWarning("[FakeRoute] 恢复就绪态失败：找不到可用路线配置");
+            return;
+        }
+        Debug.Log("[FakeRoute] 恢复就绪态：" + route.stageName);
+        PrepareForEntry(route);
     }
 
     private IEnumerator RunPreparedFlow()

@@ -53,6 +53,12 @@ public static class HitFeedbackManager
     /// </summary>
     public static event System.Action<float> OnHitStopApplied;
 
+    /// <summary>
+    /// **玩家命中敌人**（每次实际伤害结算触发一次，参数 = 本次伤害）。
+    /// 暗源（影之武装资源）靠这个事件“只靠进攻获取”→ 防御姿态不会回暗源。
+    /// </summary>
+    public static event System.Action<float> OnPlayerHitEnemy;
+
     public static HitFeedbackContext CreateDamageContext(Enemy enemy, DamageType damageType,
         HitFeedbackSource source, HitFeedbackStrength strength, float damage, bool isSharedHealth = false,
         Vector3? impactPosition = null, Vector3 impactDirection = default, bool isDiseaseStabHit = false,
@@ -95,6 +101,10 @@ public static class HitFeedbackManager
         CameraFeedbackController.Instance?.RequestHit(context);
         if (context.source != HitFeedbackSource.SpikeTrap)
             PixelHitEffectManager.Instance?.RequestHit(context);
+
+        // 暗源：只有“进攻造成的伤害”才回（DoT / 位移不算）
+        if (context.source != HitFeedbackSource.Dot && context.source != HitFeedbackSource.Displacement)
+            OnPlayerHitEnemy?.Invoke(context.damage);
     }
 
     public static HitFeedbackStrength ResolveStrength(DamageType damageType,

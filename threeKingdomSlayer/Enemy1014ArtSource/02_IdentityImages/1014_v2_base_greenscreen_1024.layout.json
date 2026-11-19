@@ -1,0 +1,69 @@
+{
+  "source": "Enemy1014ArtSource\\02_IdentityImages\\1014_lineup_crop_reference_rgba.png",
+  "source_size": [
+    214,
+    364
+  ],
+  "alpha_threshold": 128,
+  "filled_holes_px": 626,
+  "cut": {
+    "bbox": [
+      8,
+      8,
+      206,
+      356
+    ],
+    "subject_w": 199,
+    "subject_h": 349
+  },
+  "scale": 1.99427,
+  "composited": {
+    "path": "Enemy1014ArtSource\\02_IdentityImages\\1014_v2_base_greenscreen_1024.png",
+    "canvas": [
+      1024,
+      1024
+    ],
+    "green": [
+      0,
+      159,
+      62
+    ],
+    "paste_xy": [
+      276,
+      200
+    ],
+    "bbox": [
+      276,
+      200,
+      672,
+      895
+    ],
+    "subject_w": 397,
+    "subject_h": 696,
+    "visible_bottom_y": 895,
+    "center_x": 474.0
+  },
+  "green_purity": {
+    "corner_median": [
+      0,
+      159,
+      62
+    ],
+    "corner_std": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "shield_side_check": {
+    "head_band_centroid_x": 487.1,
+    "torso_band_centroid_x": 470.3,
+    "delta_x": -16.7,
+    "shield_side": "shield_on_picture_LEFT"
+  },
+  "target": {
+    "subject_h": 696,
+    "foot_y": 895,
+    "center_x": 474.5
+  }
+}
