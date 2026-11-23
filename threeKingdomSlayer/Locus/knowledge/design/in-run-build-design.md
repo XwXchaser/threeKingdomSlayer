@@ -8,6 +8,8 @@ aiEditMode: inherit
 
 # 局内 Build 设计：属性卡 / 影之武装 / 饰品（无尽模式）
 
+> **2026-11-21 局内外循环口径更新**：影之武装 / 饰品的本局使用、永久解锁与本局后续宝箱、永久资源到账，以及主武器的局内外边界，以 `design/gameplay-progression-loop.md` 的本轮用户确认口径为准。本文件保留此前草案与工程记录；旧数值、次数和实施建议不等同于本轮结论。
+>
 > **本文是长线的核心设计文档**（2026-11-16）。
 > 上级：`design/weapon-system-design.md`（武器与局外经济）、`design/endless-mode-design.md`（无限模式）、
 > 对标数据：`design/pbz-reference-analysis-20261109.md`。

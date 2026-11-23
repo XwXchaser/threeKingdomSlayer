@@ -8,6 +8,8 @@ aiEditMode: inherit
 
 # 武器系统与局内外经济（主角化 + 武器=战斗身份）
 
+> **2026-11-21 局内外循环口径更新**：主武器、全局成长、局内影之武装 / 饰品及永久解锁的最新讨论见 `design/gameplay-progression-loop.md`。本文件仍保留此前的设计与工程记录；若与新文档冲突，以新文档的用户确认口径为准，未确认部分不视为新结论。
+>
 > **本文是长线主设计文档。** 讨论于 2026-11-16，结论已与用户对齐；标记 **【暂定】** 的条目表示用户外出期间按推荐先定、可随时推翻。
 > 配套：`design/pbz-reference-analysis-20261109.md`（对标数据）、`design/endless-mode-design.md`（无限模式）、
 > 执行清单 `plan/weapon-endless-mode-plan-20261116.md`。

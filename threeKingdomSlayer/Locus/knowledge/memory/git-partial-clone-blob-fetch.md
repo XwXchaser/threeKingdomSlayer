@@ -42,3 +42,21 @@ fatal: index-pack failed
 
 **注意**：`.meta` 里的 guid 是 **base64**、资产引用里是 **hex**，两者不是简单 base64/hex 互转，
 **别指望用脚本从 `.meta` 反查场景里的引用**（`base64decode(meta_guid).hex()` 得到的串和场景里的对不上）。
+
+## 直接 `git pull` 的操作配方（2026-11-19 实测，330 文件 / +26k 行）
+
+1. **必须放后台任务跑**。`git pull --ff-only` 会先完成 ref 更新（秒级），**再回填 blob**；
+   本次实测下载速度只有 **~55 KB/s**，`git status` 里 "behind 14" 一动不动就是这个阶段，
+   整个过程 **约 14 分钟**。前台同步命令会超时并被中止 ⇒ 用 `async + notify` 的 bash 任务。
+2. **只读命令同样会触发懒取**。`git diff --stat a..b` 在 blob 没回填时**会卡住**（本次 120s 超时），
+   别误判成"仓库坏了"。等 pull 完成后同样的命令立刻就快。
+3. **中止会留垃圾，必须手动清理**才能重试：
+   - `<gitdir>/index.lock`（0 字节）——删掉才能再 pull；
+   - `<gitdir>/objects/pack/tmp_pack_*`（中断时的半成品 pack，几十 MB）——删掉回收空间；
+     `git gc` 也会清，但当场没必要跑。
+   - 删除前先确认没有 git 进程在跑（`Get-Process git`）。
+4. **网络**：SSH 通道可能不通（DNS/端口被挡）而 HTTPS 通 ⇒ `git fetch https://<host>/<repo>.git "+refs/heads/*:refs/remotes/origin/*"` 也能写回同样的 ref。
+   `git fetch --all` 连不上时用 HTTPS 手动 fetch 一次即可。
+5. **拉完后 Unity 会弹「打开的场景已在磁盘上被改变」模态框** → **选「重新加载」**，
+   否则编辑器拿着旧场景实例，会误判"新增的 Prefab / 技能没注册进场景"。
+   详见 `memory/project-mistake-note.md` 的「反向变体」条目。
