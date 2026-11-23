@@ -165,8 +165,12 @@ public sealed class UpgradePoolSampler
             if (!RequirementsMet(wu.upgrade, UpgradePoolKind.Regular)) continue;
             int currentLevel = GetLevel(wu.upgrade);
             if (currentLevel >= GetEffectiveMaxLevel(wu.upgrade)) continue;
-            // 被动槽已满 → 不再给新的饰品（已持有的同款可以继续升，不占新槽）
-            if (currentLevel == 0 && IsPassiveCapReached()) continue;
+            // 被动槽已满 → 不再给新的**占被动槽**的饰品（已持有的同款可以继续升，不占新槽）
+            // ⚠ 只有 AttackPassive / TimedPassive 占槽；机制条目（地刺 / 击退波 / 聚拢波 / 反伤）
+            //   不占槽，**不受被动槽已满的过滤**（2026-11-19）。
+            bool occupiesPassiveSlot = wu.upgrade.category == UpgradeCategory.AttackPassive
+                                  || wu.upgrade.category == UpgradeCategory.TimedPassive;
+            if (currentLevel == 0 && occupiesPassiveSlot && IsPassiveCapReached()) continue;
             result.Add(new Candidate { upgrade = wu.upgrade, weight = Mathf.Max(1, wu.weight), rarity = rarity });
         }
     }

@@ -20,7 +20,10 @@ MonoBehaviour:
   levelFeatureDescriptions: []
   rarity: 0
   maxLevel: 5
+  defaultLevelCap: 0
+  quality: 0
   effectType: spike_trap
+  statId: 
   numericLevels:
   - floatValue: 20
     intValue: 1
@@ -56,6 +59,8 @@ MonoBehaviour:
   waveLevels: []
   chargeHitShockwaveLevels: []
   diseaseLevels: []
+  axeSmashLevels: []
+  chainPullLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

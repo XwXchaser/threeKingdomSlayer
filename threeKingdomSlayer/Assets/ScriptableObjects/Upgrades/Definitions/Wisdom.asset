@@ -17,9 +17,13 @@ MonoBehaviour:
   displayName: "\u667A\u6167"
   descriptionTemplate: "\u83B7\u5F97\u7ECF\u9A8C\u63D0\u5347 +{0}%"
   extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
   rarity: 0
   maxLevel: 5
+  defaultLevelCap: 0
+  quality: 0
   effectType: exp_multiplier
+  statId: exp_bonus
   numericLevels:
   - floatValue: 0.08
     intValue: 0
@@ -54,6 +58,9 @@ MonoBehaviour:
   chargeAttackShockwaveLevels: []
   waveLevels: []
   chargeHitShockwaveLevels: []
+  diseaseLevels: []
+  axeSmashLevels: []
+  chainPullLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
@@ -66,3 +73,4 @@ MonoBehaviour:
     initialDamage: 0
     landingDamagePercent: 0
   prerequisites: []
+  requiredTalentIds: []

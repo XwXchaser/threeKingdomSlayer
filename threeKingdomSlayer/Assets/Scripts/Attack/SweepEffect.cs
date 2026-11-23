@@ -464,9 +464,17 @@ public class SweepEffect : MonoBehaviour
                 impactDirection = Quaternion.Euler(0f, 0f, visualPathTilt) * impactDirection;
             Vector3 impactPosition = new Vector3(transform.position.x, enemy.transform.position.y + 0.8f,
                 enemy.transform.position.z);
-            enemy.TakeDamage(damage, damageType, damageNumberColor, canInterruptCFrame,
+            // ★ **暴击**（2026-11-19）：每次命中判一次；暴击复用既有最高反馈档 Heavy。
+            float hitDamage = damage;
+            bool isCrit = false;
+            if (UpgradeEffectManager.Instance != null)
+                hitDamage = UpgradeEffectManager.Instance.ApplyCrit(hitDamage, out isCrit);
+            HitFeedbackStrength hitStrength = isCrit
+                ? HitFeedbackStrength.Heavy
+                : ResolveHitFeedbackStrength(isFirstHit);
+            enemy.TakeDamage(hitDamage, damageType, damageNumberColor, canInterruptCFrame,
                 interruptsCavalryCharge: interruptsCavalryCharge,
-                feedbackStrength: ResolveHitFeedbackStrength(isFirstHit),
+                feedbackStrength: hitStrength,
                 triggerHitAnimation: !suppressHitReaction,
                 impactPosition: impactPosition, impactDirection: impactDirection,
                 hitReactionDirection: hitReactionDirection,

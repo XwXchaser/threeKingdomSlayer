@@ -34,9 +34,13 @@ MonoBehaviour:
     weight: 100
   - upgrade: {fileID: 11400000, guid: 706eae301ac007b4d86360836dfc3997, type: 2}
     weight: 100
-  - upgrade: {fileID: 11400000, guid: e965be9a60eab8e4d84512b5c227d8d8, type: 2}
-    weight: 100
   - upgrade: {fileID: 11400000, guid: 810784d3604ab674b9952b8f79c21f06, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 70807bf499eacb54abe1dfb8d576b65e, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 3c0914d8a1a7c324284d83fb4f863c93, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: d3b0f5b46979343468246353384ac5c1, type: 2}
     weight: 100
   rarePool:
   - upgrade: {fileID: 11400000, guid: 0e968b19ca0b1fe4e8d9cc72b814bfef, type: 2}
@@ -65,6 +69,12 @@ MonoBehaviour:
     weight: 100
   - upgrade: {fileID: 11400000, guid: 99cb5a0f1a541db4db3016f39b7a3a21, type: 2}
     weight: 100
+  - upgrade: {fileID: 11400000, guid: ee765578e1232b5489de4320c8a958ee, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 6e09559f589a69044859ee7c56d8d912, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 02e101fc32116034eaf8d31ffd438460, type: 2}
+    weight: 100
   legendaryPool:
   - upgrade: {fileID: 11400000, guid: ad8f6c8edfab32b4d83f251559d240d7, type: 2}
     weight: 100
@@ -75,6 +85,4 @@ MonoBehaviour:
   - upgrade: {fileID: 11400000, guid: 570297b9f08ef0c42988680913f70bd3, type: 2}
     weight: 100
   - upgrade: {fileID: 11400000, guid: dc0cedf370225574297d20b47db525ce, type: 2}
-    weight: 100
-  - upgrade: {fileID: 11400000, guid: 5016fd13808ab214c876acd4029c1c61, type: 2}
     weight: 100

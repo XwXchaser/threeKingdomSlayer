@@ -12,12 +12,11 @@ using UnityEngine.UI;
 ///     参照《上古卷轴：刀锋》里“大招就绪”那类技能位的做法（单列、紧凑、不占中央），
 ///     我们把它放在右侧这一条，和左侧的**黄色棱形排**（主动技能 / 道具）分开：
 ///     左边=**能点的**，右边=**被动生效的**。
-///   • 内容：**占用被动槽的全部条目**——数值被动（Numeric）+ 攻击计数被动（AttackPassive）
-///     + 定时被动（TimedPassive），用各自 `UpgradeDefinition.icon` ✅，右下角标等级。
-///     口径与「被动槽上限判定」（<c>UpgradeEffectManager.PassiveUpgradeCount</c>）**完全一致**：
-///     数值被动确实占被动槽（上限判定含它），所以必须显示——否则玩家塞满 3 个数值被动
-///     却被告知「被动排上一个图标都没有」。
-///   • 不显示：道具（Item）与主动技能（ActiveSkill）——它们不占被动槽。
+///   • 内容：**饰品 / 机制型被动**（资产上 <c>statId</c> 为空的升级：AttackPassive / TimedPassive
+///     + 机制型 Numeric），用各自 `UpgradeDefinition.icon` ✅，右下角标等级。
+///     ★ **属性提升（<c>statId</c> 非空）不在这一排**（2026-11-19 用户定：“属性提升不是饰品，
+///     当前右侧应该显示的是饰品”）—— 它们显示在**左侧的数值排**（BuffDisplayPanel）。
+///   • 不显示：道具（Item）与主动技能（ActiveSkill）——它们各有自己的位置。
 ///   • 纯展示：被动没有冷却、不可点击，只告诉玩家“我现在带着哪些被动”。
 ///   • 超出槽位用 “+N” 折叠（最多显示 5 个）。
 /// </summary>
@@ -87,7 +86,7 @@ public class PassiveSkillRow : MonoBehaviour
         {
             var u = list[i];
             if (u == null || u.definition == null) continue;
-            if (!OccupiesPassiveSlot(u.definition.category)) continue;
+            if (!ShowsInPassiveRow(u.definition)) continue;
             hash = hash * 31 + u.currentLevel;
         }
         return hash * 31 + list.Count;
@@ -101,25 +100,32 @@ public class PassiveSkillRow : MonoBehaviour
         {
             var u = list[i];
             if (u == null || u.definition == null) continue;
-            if (!OccupiesPassiveSlot(u.definition.category)) continue;
+            if (!ShowsInPassiveRow(u.definition)) continue;
             _passives.Add(u);
         }
     }
 
     /// <summary>
-    /// 是否**占用被动槽**。
-    /// 口径必须与 <c>UpgradeEffectManager.PassiveUpgradeCount</c>（被动槽上限判定）一致：
-    /// 上限计数含 <see cref="UpgradeCategory.Numeric"/>，所以这里也要含它（2026-11-03 A2）。
-    /// 道具与主动技能各有自己的库存，不占被动槽。
+    /// 这条升级**是不是显示在右下角那一排**（被动技能排 / 饰品排）。
+    ///
+    /// 口径（2026-11-19 用户定：“属性提升不是饰品，当前右侧应该显示的是饰品”）：
+    ///   · **属性**（资产上填了 <c>statId</c>）⇒ **不在这一排**，它显示在左侧的数值排；
+    ///   · **饰品 / 机制**（没填 <c>statId</c>）⇒ 在这一排；
+    ///   · 道具（Item）与主动技能（ActiveSkill）⇒ 都不在（它们各有自己的位置）。
+    ///
+    /// ⚠ 旧口径是「<c>category == Numeric</c> 也算」⇒ **属性提升被塞进这一排**，
+    /// 同时又被从左侧数值排排除掉 ⇒ 玩家在两处都看不到属性。
+    /// 且它早就跟**被动槽上限判定**（<c>UpgradeEffectManager.PassiveSlotUserCount</c>，只数机制型被动）脱节了。
     ///
     /// ⚠️ **public**：<c>BuffDisplayPanel</c> 要用**同一个判定**来决定
-    /// 「这个被动要不要在左侧旧面板再显示一次」（2026-11-05 移除左侧重复显示）。
+    /// 「这条是不是已经在右下角显示了」（避免两边都显示 / 两边都不显示）。
     /// </summary>
-    public static bool OccupiesPassiveSlot(UpgradeCategory category)
+    public static bool ShowsInPassiveRow(UpgradeDefinition def)
     {
-        return category == UpgradeCategory.Numeric
-            || category == UpgradeCategory.AttackPassive
-            || category == UpgradeCategory.TimedPassive;
+        if (def == null) return false;
+        if (def.category == UpgradeCategory.Item) return false;
+        if (def.category == UpgradeCategory.ActiveSkill) return false;
+        return string.IsNullOrEmpty(def.statId);
     }
 
     private void FillSlots()

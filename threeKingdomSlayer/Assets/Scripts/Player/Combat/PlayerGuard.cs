@@ -70,13 +70,19 @@ public sealed class PlayerGuard
         _owner = owner;
     }
 
-    /// <summary>破防阈值（来自招架招式资产）。</summary>
+    /// <summary>
+    /// 破防阈值（来自招架招式资产 + 局内属性「破盾值」加成）。
+    /// </summary>
     public float Threshold
     {
         get
         {
             var cfg = ParryConfig;
-            return cfg != null ? Mathf.Max(1f, cfg.parryGuardBreakThreshold) : 120f;
+            float baseThreshold = cfg != null ? Mathf.Max(1f, cfg.parryGuardBreakThreshold) : 120f;
+            float bonus = UpgradeEffectManager.Instance != null
+                ? UpgradeEffectManager.Instance.GetGuardBreakThresholdBonus()
+                : 0f;
+            return Mathf.Max(1f, baseThreshold + bonus);
         }
     }
 

@@ -219,6 +219,25 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
         void IUpgradeStatSink.AddChargeDamageReduction(float value) => _chargeDamageReduction += value;
     
         void IUpgradeStatSink.AddActiveSkillCDReduction(float value) => _activeSkillCDReduction += value;
+
+    // ── 角色属性（2026-11-19）──
+
+    void IUpgradeStatSink.AddMaxHealthBonus(float value)
+    {
+        _maxHealthBonus += value;
+        // 生命上限涨了要把**当前血量**一起补上，否则玩家看不到任何变化
+        PlayerState.Instance?.OnMaxHealthBonusAdded(value);
+    }
+
+    void IUpgradeStatSink.AddAttackPowerBonus(float value) => _statLayers.AddFlat(StatAtk, value);
+
+    void IUpgradeStatSink.AddDamageReduction(float value) => _damageReductionBonus += value;
+
+    void IUpgradeStatSink.AddGuardBreakThresholdBonus(float value) => _guardBreakThresholdBonus += value;
+
+    void IUpgradeStatSink.AddCritRate(float value) => _critRate += value;
+
+    void IUpgradeStatSink.AddCritDamage(float value) => _critDamage += value;
     
         void IUpgradeStatSink.ApplyReflectShieldLevel(UpgradeDefinition def, int level)
         {

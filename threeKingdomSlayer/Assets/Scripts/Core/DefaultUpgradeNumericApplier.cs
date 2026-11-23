@@ -29,6 +29,13 @@ public sealed class DefaultUpgradeNumericApplier : IUpgradeNumericApplier
         "charge_reflect_shield",
         "spike_trap",
         "cooldown_reduction",
+        // 角色属性（2026-11-19；statId 见 UpgradeStatIds）
+        "max_health",
+        "attack_power",
+        "damage_reduction",
+        "guard_break_threshold",
+        "crit_rate",
+        "crit_damage",
     };
 
     private readonly IUpgradeStatSink _sink;
@@ -96,6 +103,28 @@ public sealed class DefaultUpgradeNumericApplier : IUpgradeNumericApplier
                 break;
             case "cooldown_reduction":
                 _sink.AddActiveSkillCDReduction(cfg.floatValue);
+                break;
+
+            // ── 角色属性（2026-11-19）──
+            //   口径：**绝对值走 intValue**（生命上限 / 攻击力 / 破防条宽度），
+            //        **百分比走 floatValue**（减伤 / 暴击率 / 暴击伤害）。
+            case "max_health":
+                _sink.AddMaxHealthBonus(cfg.intValue);
+                break;
+            case "attack_power":
+                _sink.AddAttackPowerBonus(cfg.intValue);
+                break;
+            case "damage_reduction":
+                _sink.AddDamageReduction(cfg.floatValue);
+                break;
+            case "guard_break_threshold":
+                _sink.AddGuardBreakThresholdBonus(cfg.intValue);
+                break;
+            case "crit_rate":
+                _sink.AddCritRate(cfg.floatValue);
+                break;
+            case "crit_damage":
+                _sink.AddCritDamage(cfg.floatValue);
                 break;
         }
     }

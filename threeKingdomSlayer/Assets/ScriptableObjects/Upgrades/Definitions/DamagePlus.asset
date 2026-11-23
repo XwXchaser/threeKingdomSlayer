@@ -16,9 +16,14 @@ MonoBehaviour:
   upgradeId: damage_plus
   displayName: "\u795E\u529B"
   descriptionTemplate: "\u9020\u6210\u4F24\u5BB3\u63D0\u5347 {0}%"
+  extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
   rarity: 0
   maxLevel: 10
+  defaultLevelCap: 0
+  quality: 0
   effectType: damage_multiplier
+  statId: damage_percent
   numericLevels:
   - floatValue: 0.05
     intValue: 0
@@ -63,8 +68,24 @@ MonoBehaviour:
   chainBounceLevels: []
   cycloneLevels: []
   arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
+  chargeHitShockwaveLevels: []
+  diseaseLevels: []
+  axeSmashLevels: []
+  chainPullLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
   gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
   prerequisites: []
+  requiredTalentIds: []

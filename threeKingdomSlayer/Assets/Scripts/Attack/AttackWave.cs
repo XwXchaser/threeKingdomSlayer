@@ -638,8 +638,16 @@ public class AttackWave : MonoBehaviour
         if (enemy != null && enemy.state != EnemyState.Dead)
         {
             float hitDamage = _isReturning ? damage * _returnDamageMultiplier : damage;
+            // ★ **暴击**（2026-11-19）：每次命中判一次。
+            //   暴击表现**复用既有最高反馈档 Heavy**（伤害数字放大 1.35× + 强卡肉 + 强震动），
+            //   不新增任何画面元素。
+            bool isCrit = false;
+            if (UpgradeEffectManager.Instance != null)
+                hitDamage = UpgradeEffectManager.Instance.ApplyCrit(hitDamage, out isCrit);
             HitFeedbackStrength strength;
-            if (damageType == DamageType.Launch)
+            if (isCrit)
+                strength = HitFeedbackStrength.Heavy;
+            else if (damageType == DamageType.Launch)
                 strength = HitFeedbackStrength.Heavy;
             else if (damageType == DamageType.Pierce)
                 strength = HitFeedbackStrength.Standard; // 贯穿每个命中都卡肉

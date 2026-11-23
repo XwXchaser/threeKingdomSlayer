@@ -62,16 +62,24 @@ public sealed class DevSkipBattleButton : MonoBehaviour
 
     private void Update()
     {
+        // ★ **无尽模式也认这个按钮**（2026-11-19）：
+        //   无尽模式接管后，剧情路线被 SuspendForEndless 置成 Phase.None
+        //   ⇒ 只看 RouteFlowHub 的话按钮永远变灰、点不动。
+        var endless = EndlessRunController.Instance;
+        bool endlessRunning = endless != null && endless.IsRunning;
+
         var flow = RouteFlowHub.Current;
         // 没有路线流程就藏起来 ✅（主菜单 / 其它场景不显示 ✅）
         // 落地页（就绪态）不显示这个按钮：它是"跳过本节点战斗"的局内工具
         var hubState = HubStateSource.Instance;
         bool landing = hubState != null && hubState.IsPrepared;
-        bool show = flow != null && !landing;
+        bool show = endlessRunning || (flow != null && !landing);
         if (_button != null && _button.gameObject.activeSelf != show) _button.gameObject.SetActive(show);
         if (!show) return;
 
-        bool inBattle = flow.Phase == FakeRoutePhase.Battle;
+        bool inBattle = endlessRunning
+            ? endless.IsInNodeBattle
+            : (flow != null && flow.Phase == FakeRoutePhase.Battle);
         if (_button != null)
         {
             _button.interactable = inBattle;
@@ -83,7 +91,9 @@ public sealed class DevSkipBattleButton : MonoBehaviour
             }
         }
 
-        string nodeId = flow.CurrentNodeId;
+        string nodeId = endlessRunning
+            ? endless.CurrentNodeName
+            : (flow != null ? flow.CurrentNodeId : "");
         string text = string.IsNullOrEmpty(nodeId) ? LabelCn : LabelCn + " " + nodeId;
         if (text != _lastLabel)
         {
@@ -94,6 +104,15 @@ public sealed class DevSkipBattleButton : MonoBehaviour
 
     private void OnClick()
     {
+        // 无尽模式优先（它接管后路线通道是停的）
+        var endless = EndlessRunController.Instance;
+        if (endless != null && endless.IsRunning)
+        {
+            bool okEndless = endless.SkipCurrentNodeBattle();
+            Debug.Log("[DevSkip] 跳过战斗（无尽） " + (okEndless ? "成功" : "失败（当前不在战斗中）"));
+            return;
+        }
+
         var flow = RouteFlowHub.Current;
         if (flow == null) return;
         bool ok = flow.SkipCurrentNodeBattle();

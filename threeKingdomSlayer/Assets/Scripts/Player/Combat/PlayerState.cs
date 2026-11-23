@@ -400,7 +400,7 @@ public class PlayerState : MonoBehaviour
     #region 伤害系统
 
     /// <summary>
-    /// **生命上限**（资产值 + 天赋「铁血 / 体魄」加成）。
+    /// **生命上限**（资产值 + 天赋「铁血 / 体魄」加成 + 局内属性加成）。
     /// 所有涉及上限的地方都读它，别再直接读 <c>heroConfig.maxHealth</c>。
     /// </summary>
     public float MaxHealth
@@ -408,8 +408,19 @@ public class PlayerState : MonoBehaviour
         get
         {
             float baseMax = heroConfig != null ? heroConfig.maxHealth : 100f;
-            return baseMax + TalentCapabilities.ExtraMaxHealth;
+            float inRunBonus = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetMaxHealthBonus() : 0f;
+            return baseMax + TalentCapabilities.ExtraMaxHealth + inRunBonus;
         }
+    }
+
+    /// <summary>
+    /// 局内生命上限加成生效时回调（2026-11-19）。
+    /// 把**当前血量**一起补上 —— 否则上限涨了但血量不动，玩家看不到任何变化。
+    /// </summary>
+    public void OnMaxHealthBonusAdded(float amount)
+    {
+        if (amount <= 0f) return;
+        currentHealth = Mathf.Min(currentHealth + amount, MaxHealth);
     }
 
     /// <summary>
@@ -457,9 +468,13 @@ public class PlayerState : MonoBehaviour
         }
 
         float finalDamage = originalDamage;
-        if (damageReductionTimer > 0f)
+        // 常驻减伤（局内属性「防御力」）+ 限时减伤 Buff，两者相加后统一结算
+        float permanentReduction = UpgradeEffectManager.Instance != null ? UpgradeEffectManager.Instance.GetDamageReduction() : 0f;
+        float timedReduction = damageReductionTimer > 0f ? damageReductionPercent : 0f;
+        float totalReduction = Mathf.Clamp01(permanentReduction + timedReduction);
+        if (totalReduction > 0f)
         {
-            finalDamage = originalDamage * (1f - damageReductionPercent);
+            finalDamage = originalDamage * (1f - totalReduction);
         }
 
         // 蓄力减伤（与招架减伤乘法叠加）

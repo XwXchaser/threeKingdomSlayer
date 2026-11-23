@@ -20,7 +20,10 @@ MonoBehaviour:
   levelFeatureDescriptions: []
   rarity: 0
   maxLevel: 5
+  defaultLevelCap: 0
+  quality: 0
   effectType: charge_damage_reduction
+  statId: charge_damage_reduction
   numericLevels:
   - floatValue: 0.15
     intValue: 0
@@ -56,6 +59,8 @@ MonoBehaviour:
   waveLevels: []
   chargeHitShockwaveLevels: []
   diseaseLevels: []
+  axeSmashLevels: []
+  chainPullLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1

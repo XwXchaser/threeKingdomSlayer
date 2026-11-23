@@ -305,11 +305,12 @@ public class BuffDisplayPanel : MonoBehaviour, IQteInputLockTarget
             return;
         }
 
-        // **被动类不再显示在左侧 Column A**（2026-11-05 用户定）：
+        // **被动 / 饰品类不再显示在左侧 Column A**（2026-11-05 用户定）：
         //   被动技能已经移到**右下角的被动排**（<see cref="PassiveSkillRow"/>），
         //   左侧这一排是**重复显示** → 旧显示移除。
         //   口径直接复用被动排的判定（两者必须一致，否则会出现「两边都显示」或「两边都不显示」）。
-        if (PassiveSkillRow.OccupiesPassiveSlot(def.category)) return;
+        // ★ 2026-11-19：属性提升（<c>statId</c> 非空）**不再算被动** ⇒ 它回到左侧数值排显示。
+        if (PassiveSkillRow.ShowsInPassiveRow(def)) return;
 
         if (!_upgradeIcons.TryGetValue(def.upgradeId, out var icon))
         {

@@ -56,6 +56,24 @@ public interface IUpgradeStatSink
     /// <summary>累加主动技能冷却缩减（传入的是小数，0.1 = 10%）。</summary>
     void AddActiveSkillCDReduction(float value);
 
+    /// <summary>累加生命上限（传入的是**绝对值**，30 = +30 生命上限）。</summary>
+    void AddMaxHealthBonus(float value);
+
+    /// <summary>累加攻击力（传入的是**固定值**，10 = 所有招式伤害 +10，再乘倍率层）。</summary>
+    void AddAttackPowerBonus(float value);
+
+    /// <summary>累加常驻减伤（传入的是小数，0.1 = 减伤 10%）。</summary>
+    void AddDamageReduction(float value);
+
+    /// <summary>累加破防条阈值（传入的是**绝对值**，20 = 破防条加宽 20）。</summary>
+    void AddGuardBreakThresholdBonus(float value);
+
+    /// <summary>累加暴击率（传入的是小数，0.05 = 5%）。</summary>
+    void AddCritRate(float value);
+
+    /// <summary>累加暴击伤害倍率（传入的是小数，0.5 = 暴击时伤害 ×1.5）。</summary>
+    void AddCritDamage(float value);
+
     /// <summary>按升级定义写入反射护盾的该级配置（等级从 1 起）。</summary>
     void ApplyReflectShieldLevel(UpgradeDefinition def, int level);
 }

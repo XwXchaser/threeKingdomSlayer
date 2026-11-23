@@ -17,9 +17,13 @@ MonoBehaviour:
   displayName: "\u6CE2\u957F"
   descriptionTemplate: "\u653B\u51FB\u8303\u56F4\u63D0\u5347{0}\u683C\uFF0C\u8BE5\u63D0\u5347\u8303\u56F4\u7684\u653B\u51FB\u4F24\u5BB3-{1}%"
   extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
   rarity: 1
   maxLevel: 2
+  defaultLevelCap: 0
+  quality: 0
   effectType: sweep_range_boost
+  statId: attack_range
   numericLevels:
   - floatValue: 0
     intValue: 1
@@ -45,6 +49,9 @@ MonoBehaviour:
   chargeAttackShockwaveLevels: []
   waveLevels: []
   chargeHitShockwaveLevels: []
+  diseaseLevels: []
+  axeSmashLevels: []
+  chainPullLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
@@ -57,3 +64,4 @@ MonoBehaviour:
     initialDamage: 0
     landingDamagePercent: 0
   prerequisites: []
+  requiredTalentIds: []

@@ -45,8 +45,18 @@ public class UpgradeDefinition : ScriptableObject
     public UpgradeQuality quality = UpgradeQuality.Common;
 
     [Header("效果")]
-    [Tooltip("效果类型: damage_multiplier | attack_speed | stab_range_boost | sweep_range_boost | push_wave | convergence_wave | spike_trap | charge_damage_reduction | charge_reflect_shield | charge_shockwave | on_attack_trigger | on_kill_chance | unlock_attack | passive_phantom_weapon | passive_return_wave | passive_chain_bounce | passive_timed_aoe | passive_timed_arrow | passive_timed_cyclone")]
+    [Tooltip("效果类型: damage_multiplier | attack_speed | stab_range_boost | sweep_range_boost | push_wave | convergence_wave | spike_trap | charge_damage_reduction | charge_reflect_shield | charge_shockwave | on_attack_trigger | on_kill_chance | unlock_attack | passive_phantom_weapon | passive_return_wave | passive_chain_bounce | passive_timed_aoe | passive_timed_arrow | passive_timed_cyclone | max_health | attack_power | damage_reduction | guard_break_threshold | crit_rate | crit_damage")]
     public string effectType;
+
+    [Header("角色属性（statId）")]
+    [Tooltip("**这条升级是不是「玩家可持有的属性」**（2026-11-19）。\n" +
+             "• **填了 = 属性** ⇒ 进**属性池**（来源：经验升级）。玩家身上能挂着、会随成长变强的数值。\n" +
+             "• **留空 = 机制 / 主动技能** ⇒ 进**装备池**（来源：精英敌人掉落）。\n" +
+             "取值见 `UpgradeStatIds`（max_health / attack_power / damage_percent / attack_speed /\n" +
+             "crit_rate / crit_damage / damage_reduction / guard_break_threshold / exp_bonus /\n" +
+             "cooldown_reduction / item_drop_rate / item_damage_bonus / charge_damage_reduction / attack_range）。\n" +
+             "⚠ 分类口径**写在资产上**，不要在代码里按 upgradeId 写名单。")]
+    public string statId = "";
 
     [Header("数值型 — 每级效果配置（effectType 匹配时使用，index 0 = Lv1）")]
     [Tooltip("按等级配置数值效果。index 0 = Lv1。每级数值独立填写，无需一致。")]

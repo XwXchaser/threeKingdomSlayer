@@ -122,10 +122,16 @@ public sealed partial class StabSweepEffect : MonoBehaviour
             if (!_hitAny)
                 diseaseStabHit = _onFirstHitBeforeDamage?.Invoke(enemy) == true;
             HitFeedbackStrength feedbackStrength = _hitAny ? HitFeedbackStrength.Light : _motion.firstHitStrength;
+            // ★ **暴击**（2026-11-19）：每次命中判一次；暴击复用既有最高反馈档 Heavy。
+            float hitDamage = _damage;
+            bool isCrit = false;
+            if (UpgradeEffectManager.Instance != null)
+                hitDamage = UpgradeEffectManager.Instance.ApplyCrit(hitDamage, out isCrit);
+            if (isCrit) feedbackStrength = HitFeedbackStrength.Heavy;
             // 命中震动：首排 = 1，第二排起按资产倍率；独立计时，不受卡肉暂停影响
             TriggerHitShake(_hitAny ? _motion.shakeSecondRowScale : 1f);
             Vector3 impactPosition = GetVisualTipPosition();
-            enemy.TakeDamage(_damage, _damageType, feedbackStrength: feedbackStrength,
+            enemy.TakeDamage(hitDamage, _damageType, feedbackStrength: feedbackStrength,
                 triggerHitAnimation: !_suppressHitReaction,
                 impactPosition: impactPosition, impactDirection: _rayDirection,
                 diseaseStabHit: diseaseStabHit, interruptsCavalryCharge: _interruptsCavalryCharge,

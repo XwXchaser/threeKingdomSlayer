@@ -221,6 +221,16 @@ using UnityEngine;
             var cfg = GetDisplayNumericConfig(def, nextLevel);
             desc = desc.Replace("{0}", (cfg.floatValue * 100f).ToString("F0"));
         }
+        else if (def.effectType == "max_health" || def.effectType == "attack_power"
+                 || def.effectType == "guard_break_threshold" || def.effectType == "damage_reduction"
+                 || def.effectType == "crit_rate" || def.effectType == "crit_damage")
+        {
+            // ★ 角色属性（2026-11-19）：显示**累计值**（与 charge_damage_reduction 同口径）。
+            //   {0} = 百分比（floatValue × 100），{1} = 绝对值（intValue）。
+            var cfg = GetCumulativeNumericConfig(def, nextLevel);
+            desc = desc.Replace("{0}", (cfg.floatValue * 100f).ToString("F0"));
+            desc = desc.Replace("{1}", cfg.intValue.ToString());
+        }
         else if (def.effectType == "spike_trap")
         {
             var cfg = def.GetNumericConfig(nextLevel);

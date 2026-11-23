@@ -54,6 +54,13 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
     private int _chargeHitShockwaveHitCount;
     private float _activeSkillCDReduction;
 
+    // ── 角色属性（2026-11-19 新增；statId 见 UpgradeStatIds）──
+    private float _maxHealthBonus;          // 生命上限加成（绝对值）
+    private float _damageReductionBonus;    // 常驻减伤（小数，0.1 = 减伤 10%）
+    private float _guardBreakThresholdBonus;// 破防条加宽（绝对值）
+    private float _critRate;                // 暴击率（小数）
+    private float _critDamage;              // 暴击伤害倍率加成（小数，0.5 = ×1.5）
+
     // 反伤盾（由 charge_reflect_shield 管理）
     // 反伤盾的状态已迁至玩家侧状态 ReflectShieldStatus（2026-10-22），本类只保留薄转发。
 
@@ -288,6 +295,49 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
     public float GetMoveSpeedMultiplier() => Mathf.Max(0f, _moveSpeedMultiplier + _buffMoveSpeedBonus);
     public float GetExpMultiplier() => Mathf.Max(0f, _expMultiplier + _buffExpBonus);
 
+    // ── 角色属性的读点（2026-11-19）──
+
+    /// <summary>局内生命上限加成（绝对值）。</summary>
+    public float GetMaxHealthBonus() => _maxHealthBonus;
+
+    /// <summary>常驻减伤（小数，0.1 = 减伤 10%）。</summary>
+    public float GetDamageReduction() => Mathf.Clamp01(_damageReductionBonus);
+
+    /// <summary>破防条加宽（绝对值）。</summary>
+    public float GetGuardBreakThresholdBonus() => _guardBreakThresholdBonus;
+
+    /// <summary>暴击率（小数，0.05 = 5%）。</summary>
+    public float GetCritRate() => Mathf.Clamp01(_critRate);
+
+    /// <summary>暴击伤害倍率加成（小数，0.5 = 暴击时伤害 ×1.5）。</summary>
+    public float GetCritDamage() => Mathf.Max(0f, _critDamage);
+
+    /// <summary>
+    /// **暴击判定**（2026-11-19 新增）。
+    ///
+    /// 由**伤害施加点**调用（每次命中判一次）。
+    ///
+    /// **暴击基础倍率 = ×1.5**（暴击的定义）；属性「暴击伤害」在这个基础上**再加**百分比
+    /// （满级 +50% ⇒ 最高 ×2.0）。
+    /// 暴击率 = 0 时直接返回原伤害，不摇随机数。
+    /// </summary>
+    /// <param name="damage">已算好倍率层的伤害。</param>
+    /// <param name="crit">是否暴击。</param>
+    /// <returns>暴击后的伤害。</returns>
+    public float ApplyCrit(float damage, out bool crit)
+    {
+        crit = false;
+        if (damage <= 0f) return damage;
+        float rate = GetCritRate();
+        if (rate <= 0f) return damage;
+        if (UnityEngine.Random.value >= rate) return damage;
+        crit = true;
+        return damage * (CritBaseMultiplier + GetCritDamage());
+    }
+
+    /// <summary>暴击的**基础倍率**（×1.5）。属性「暴击伤害」在它之上再加。</summary>
+    public const float CritBaseMultiplier = 1.5f;
+
     public void ApplyModifier(StatModifier modifier)
     {
         ApplyBuffModifier(modifier, 1f);
@@ -498,6 +548,11 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier,
         _chargeHitShockwaveLevel = 0;
         _chargeHitShockwaveHitCount = 0;
         _activeSkillCDReduction = 0f;
+        _maxHealthBonus = 0f;
+        _damageReductionBonus = 0f;
+        _guardBreakThresholdBonus = 0f;
+        _critRate = 0f;
+        _critDamage = 0f;
 
         // 反伤盾：状态已迁至玩家侧，重置走玩家状态容器
         ResetReflectShieldState();
