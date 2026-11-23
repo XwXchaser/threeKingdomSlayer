@@ -5,10 +5,14 @@ using TMPro;
 /// <summary>
 /// **无限模式 HUD**（2026-11-16 新增）。
 ///
-/// 职责（纯展示 + 两个按钮）：
+/// 职责（纯展示 + 一个退出按钮）：
 ///   · 顶部信息条：当前圈数 / 总分 / 当前节点名；
 ///   · 波次结算飘字（+分数）；
-///   · 圈结算面板：本圈得分 / 总分 / 历史最佳 + 「继续」「退出」两个按钮。
+///   · 局结束飘字（最终分 / 新纪录）。
+///
+/// ⚠ **没有圈结算面板**（2026-11-19 用户定：“除非玩家死亡、结束本局，你出这个结算干嘛？”）
+///   ⇒ 走完一圈**直接接着走下一圈**，不打断玩家；
+///   ⇒ 退出入口改成顶部信息条里的**常驻小按钮**（否则玩家会被困在这一局里）。
 ///
 /// 全部**运行时创建**（不碰场景、不需要美术资源）⇒ 不用改 Battle.scene。
 /// 数据源是 <see cref="EndlessRunController"/> 的事件，本组件不读任何运行时对象。
@@ -35,10 +39,6 @@ public class EndlessHud : MonoBehaviour
     private TextMeshProUGUI _scoreText;
     private TextMeshProUGUI _nodeText;
     private TextMeshProUGUI _toastText;
-    private RectTransform _settlePanel;
-    private TextMeshProUGUI _settleTitle;
-    private TextMeshProUGUI _settleDetail;
-    private Button _continueButton;
     private Button _exitButton;
 
     private float _toastTimer;
@@ -70,7 +70,6 @@ public class EndlessHud : MonoBehaviour
         if (_controller == null) return;
         _controller.OnStateChanged += RefreshInfo;
         _controller.OnWaveSettled += OnWaveSettled;
-        _controller.OnCircleSettled += OnCircleSettled;
         _controller.OnRunEnded += OnRunEnded;
         SetVisible(true);
         RefreshInfo();
@@ -81,7 +80,6 @@ public class EndlessHud : MonoBehaviour
         if (_controller == null) return;
         _controller.OnStateChanged -= RefreshInfo;
         _controller.OnWaveSettled -= OnWaveSettled;
-        _controller.OnCircleSettled -= OnCircleSettled;
         _controller.OnRunEnded -= OnRunEnded;
         _controller = null;
     }
@@ -136,34 +134,18 @@ public class EndlessHud : MonoBehaviour
         toastRt.sizeDelta = new Vector2(700f, 80f);
         _toastText.alpha = 0f;
 
-        // ── 圈结算面板 ──
-        var settle = CreatePanel(root, "SettlePanel", new Color(0f, 0f, 0f, 0.72f));
-        _settlePanel = settle.GetComponent<RectTransform>();
-        Stretch(_settlePanel);
-
-        var box = CreatePanel(_settlePanel, "Box", new Color(0.13f, 0.11f, 0.09f, 0.98f));
-        var boxRt = box.GetComponent<RectTransform>();
-        boxRt.anchorMin = new Vector2(0.5f, 0.5f);
-        boxRt.anchorMax = new Vector2(0.5f, 0.5f);
-        boxRt.pivot = new Vector2(0.5f, 0.5f);
-        boxRt.sizeDelta = new Vector2(860f, 760f);
-
-        _settleTitle = CreateText(boxRt, "Title", "圈结算", 56, TextAlignmentOptions.Center, accentColor);
-        _settleTitle.rectTransform.anchoredPosition = new Vector2(0f, 390f);
-        _settleTitle.rectTransform.sizeDelta = new Vector2(760f, 70f);
-
-        // ⚠ 定位口径：这些子物件的 pivot 都是 (0.5,0.5) → anchoredPosition 是**中心**偏移，
-        //   想让文字靠左就得自己算（先前直接给 -360 → 整块文字跑到屏幕外，看不见）。
-        _settleDetail = CreateText(boxRt, "Detail", "", 38, TextAlignmentOptions.Top, textColor);
-        _settleDetail.rectTransform.anchoredPosition = new Vector2(0f, 220f);
-        _settleDetail.rectTransform.sizeDelta = new Vector2(720f, 300f);
-
-        _continueButton = CreateButton(boxRt, "ContinueButton", "继续", new Vector2(0f, -150f));
-        _continueButton.onClick.AddListener(OnContinueClicked);
-        _exitButton = CreateButton(boxRt, "ExitButton", "退出", new Vector2(0f, -260f));
+        // ── 退出（常驻小按钮，挂在画面右上角）──
+        //   圈结算面板没了，但玩家仍然需要能退出这一局 ⇒ 做成常驻按钮。
+        _exitButton = CreateButton(root, "ExitButton", "退出", Vector2.zero);
+        var exitRt = _exitButton.GetComponent<RectTransform>();
+        exitRt.anchorMin = new Vector2(1f, 1f);
+        exitRt.anchorMax = new Vector2(1f, 1f);
+        exitRt.pivot = new Vector2(1f, 1f);
+        exitRt.anchoredPosition = new Vector2(-24f, -24f);
+        exitRt.sizeDelta = new Vector2(160f, 72f);
+        var exitLabel = _exitButton.GetComponentInChildren<TextMeshProUGUI>();
+        if (exitLabel != null) exitLabel.fontSize = 36f;
         _exitButton.onClick.AddListener(OnExitClicked);
-
-        _settlePanel.gameObject.SetActive(false);
     }
 
     private GameObject CreatePanel(RectTransform parent, string name, Color color)
@@ -240,9 +222,6 @@ public class EndlessHud : MonoBehaviour
             int shown = Mathf.Clamp(_controller.NodeIndex + 1, 1, _controller.NodeCount);
             _nodeText.text = $"{_controller.CurrentNodeName}（{shown}/{_controller.NodeCount}）  ·  {_controller.CurrentBranchName}";
         }
-        // 控制器不再等玩家选择时，收起结算面板（程序化“继续”也要生效）
-        if (!_controller.IsWaitingForCircleChoice && _settlePanel.gameObject.activeSelf)
-            _settlePanel.gameObject.SetActive(false);
     }
 
     private void OnWaveSettled(int gained, int total)
@@ -252,39 +231,19 @@ public class EndlessHud : MonoBehaviour
         _toastTimer = 1.2f;
     }
 
-    private void OnCircleSettled(int circleGain, int total)
-    {
-        if (_controller == null) return;
-        var data = SaveManager.Load();
-        int best = data != null ? data.endlessBestScore : 0;
-        _settleTitle.text = $"第 {_controller.Circle} 圈结算";
-        _settleDetail.text =
-            $"本圈得分  +{circleGain}\n" +
-            $"当前总分  {total}\n" +
-            $"历史最佳  {best}\n\n" +
-            "下一圈敌人更强。";
-        _settlePanel.gameObject.SetActive(true);
-    }
-
     private void OnRunEnded(bool improved)
     {
-        _settlePanel.gameObject.SetActive(false);
-        if (_controller != null)
-        {
-            _settleTitle.text = "结束";
-            _settleDetail.text = improved ? "新纪录！" : "";
-        }
-    }
-
-    private void OnContinueClicked()
-    {
-        _settlePanel.gameObject.SetActive(false);
-        _controller?.ContinueToNextCircle();
+        // 局结束（阵亡 / 主动退出）：用飘字报最终分，不弹面板。
+        var data = SaveManager.Load();
+        int best = data != null ? data.endlessBestScore : 0;
+        _toastText.text = improved ? $"本局 {_controller.Ledger.TotalScore}  ·  新纪录！" : $"本局 {_controller.Ledger.TotalScore}";
+        _toastText.alpha = 1f;
+        _toastTimer = 3f;
+        if (improved) Debug.Log("[EndlessHud] 新纪录 " + best);
     }
 
     private void OnExitClicked()
     {
-        _settlePanel.gameObject.SetActive(false);
         _controller?.ExitToLanding();
     }
 

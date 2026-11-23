@@ -16,20 +16,39 @@ public sealed class ScrollRouteNodePresentation : MonoBehaviour
         SyncTransformFromDistance();
     }
 
+    /// <summary>
+    /// **按圈重定位**：锚点（及其子物体 = 节点布景）用本圈的**刚体帧**摆放。
+    ///
+    /// ★ 第 0 圈 frame 为恒等 ⇒ 与旧表现逐像素一致。
+    /// </summary>
+    public void SyncTransformForLap(int lap)
+    {
+        var route = GetComponentInParent<YScrollSample>();
+        if (route == null) return;
+
+        float heading;
+        float distance = worldDistance;
+        var local = YScrollSample.Evaluate(distance, route.turnAngle,
+            direction == ScrollRouteDirection.Right, out heading);
+        var rotation = Quaternion.Euler(0f, heading, 0f);
+
+        if (route.infiniteScroll)
+        {
+            // ★ **刚体帧**：地图在转（转向由 shader 绕相机旋转做出来）
+            //   ⇒ 锚点也必须带着本圈累积的旋转一起摆，不能只沿 +z 平移。
+            var frame = route.GetLapFrame(lap);
+            transform.localPosition = frame.Apply(local);
+            transform.localRotation = frame.Rotation * rotation;
+            return;
+        }
+
+        transform.position = route.transform.TransformPoint(local);
+        transform.rotation = route.transform.rotation * rotation;
+    }
+
     public void SyncTransformFromDistance()
     {
-        gameObject.name = (node != null ? node.nodeId : "Node") + " - Presentation Anchor";
-        var route = GetComponentInParent<YScrollSample>();
-        if (route != null)
-        {
-            float heading;
-            var position = YScrollSample.Evaluate(worldDistance, route.turnAngle,
-                direction == ScrollRouteDirection.Right, out heading);
-            transform.position = route.transform.TransformPoint(position);
-            transform.rotation = route.transform.rotation * Quaternion.Euler(0f, heading, 0f);
-        }
-        else if (worldDistance > 0f)
-            transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y, worldDistance);
+        SyncTransformForLap(0);
     }
     void OnDrawGizmos()
     {

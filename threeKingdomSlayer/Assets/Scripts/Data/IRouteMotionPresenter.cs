@@ -31,6 +31,24 @@ public interface IRouteMotionPresenter
     /// <summary>节点内演出（战后演出等）。presentation 为空时立即返回。</summary>
     IEnumerator PlayNodePresentation(FakeRoutePresentation presentation, Func<bool> canContinue);
 
+    /// <summary>
+    /// **沿路走到某个节点**（不换道、不播出口演出）。
+    ///
+    /// ★ 2026-11-19 无限循环：用于「走到下一圈的起点」这种**内部转场**——
+    ///   以前是「黑幕 + 锚点跳转」（瞬移），现在是**真的沿路往前走**。
+    ///   目标位置由 <c>TryGetNodeProgress</c> 决定（它返回**当前之后最近的那一次出现**）
+    ///   ⇒ 天然往前走，不会倒着滚回去。
+    /// </summary>
+    IEnumerator PlayNodeTravel(FakeRouteNodeConfig to, float seconds, Func<bool> canContinue);
+
+    /// <summary>
+    /// **开关无限卷轴**。
+    ///
+    /// 开启后沿路距离可以无限增长、内容按一圈长度循环重复（无尽关用）；
+    /// 剧情关必须保持关闭 —— 关闭时路径、内容、归一化全部与旧版一致。
+    /// </summary>
+    void SetEndlessScroll(bool enabled);
+
     /// <summary>进入节点后同步视觉状态（分支车道、锚点、随行表现开关）。</summary>
     void ApplyNodeVisuals(FakeRouteNodeConfig node);
 

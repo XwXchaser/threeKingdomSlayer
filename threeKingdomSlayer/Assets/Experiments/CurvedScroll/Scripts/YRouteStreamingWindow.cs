@@ -38,8 +38,10 @@ public sealed class YRouteStreamingWindow : MonoBehaviour
 
     Vector2[] pathSamples;
     int samplesPerBranch;
+    float pathBuiltLength;
     readonly List<Renderer> tracked = new List<Renderer>();
     readonly List<float> trackedDistance = new List<float>();
+    readonly List<int> trackedLap = new List<int>();
     readonly List<bool> authoredEnabled = new List<bool>();
     readonly List<bool> appliedEnabled = new List<bool>();
     readonly List<Renderer> registeredScenery = new List<Renderer>();
@@ -113,17 +115,27 @@ public sealed class YRouteStreamingWindow : MonoBehaviour
             Debug.Log($"[YStream] table built: tracked={tracked.Count} submitted={SubmittedCount} pos={lastPosition:F1}");
     }
 
-    void AddEntry(Renderer renderer)
+    void AddEntry(Renderer renderer, int lap = 0)
     {
+        EnsurePath();
         var p = renderer.transform.position;
+        float cycle = route != null ? Mathf.Max(1f, route.Length) : 0f;
+        // ★ 注册时实例还在**未套帧**的原始位置 ⇒ 世界 XZ 就是局部沿路坐标，
+        //   直接投影即可；第 lap 圈的整体偏移只影响标量距离（刚体帧保弧长）。
         tracked.Add(renderer);
-        trackedDistance.Add(ProjectDistance(new Vector2(p.x, p.z)));
+        trackedLap.Add(lap);
+        trackedDistance.Add(ProjectDistance(new Vector2(p.x, p.z)) + lap * cycle);
         authoredEnabled.Add(renderer.enabled);
         appliedEnabled.Add(true);
     }
 
     /// <summary>按需实例化的段装载后调用：加入距离表和 scenery 的 bounds 表，并按当前窗口立即生效。</summary>
-    public void RegisterSegment(GameObject segmentRoot)
+    /// <param name="lap">
+    /// **圈号**（2026-11-19 无限循环）：同一批段 prefab 在第 k 圈会再装一份，
+    /// 摆在「本圈位置 + k × 圈偏移」处 ⇒ 它的沿路距离要加 k × 一圈长度，
+    /// 否则窗口会拿本圈的数字去比第 k 圈的世界位置 ⇒ 段会被错误地淡出/激活。
+    /// </param>
+    public void RegisterSegment(GameObject segmentRoot, int lap = 0)
     {
         if (segmentRoot == null) return;
         var renderers = segmentRoot.GetComponentsInChildren<Renderer>(true);
@@ -132,11 +144,56 @@ public sealed class YRouteStreamingWindow : MonoBehaviour
             if (renderer == null) continue;
             if (IsFollowerOwned(renderer)) continue;
             if (tracked.Contains(renderer)) continue;
-            AddEntry(renderer);
+            AddEntry(renderer, lap);
             registeredScenery.Add(renderer);
         }
         SyncScenery();
         ApplyWindow(float.IsNaN(lastPosition) ? CurrentPosition() : lastPosition);
+    }
+
+    /// <summary>
+    /// 把指定一组 renderer 的**沿路距离**整体平移（2026-11-19 无限循环）。
+    ///
+    /// 为什么需要：<see cref="YLapFollower"/> 把静态布景按圈平移了（世界位置变了），
+    /// 但窗口判定用的是**采集时的沿路距离** ⇒ 不同步的话，圈一变这些物件就掉出窗口被**淡出**。
+    /// </summary>
+    public void ShiftTrackedDistance(System.Collections.Generic.IEnumerable<Renderer> renderers, float amount)
+    {
+        if (renderers == null || Mathf.Approximately(amount, 0f)) return;
+        for (int i = 0; i < tracked.Count; i++)
+        {
+            var r = tracked[i];
+            if (r == null) continue;
+            foreach (var target in renderers)
+            {
+                if (r != target) continue;
+                trackedDistance[i] += amount;
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// **直接设定**一组 renderer 的沿路距离（幂等），不用增量。
+    ///
+    /// 为什么：圈号可能**跳变**（检查点、直接改 progress、一次跨多圈），增量就要求
+    /// 每一跳恰好收到一次事件 ⇒ 漏一次就永久错位（表现为「第二圈某个节点整片物件消失」）。
+    /// 这里按物件**当前位置**反算，错了也能自己纠正。
+    /// </summary>
+    public void SetTrackedDistance(System.Collections.Generic.IEnumerable<Renderer> renderers, int lap)
+    {
+        if (renderers == null || route == null) return;
+        float cycle = Mathf.Max(1f, route.Length);
+        var frame = route.GetLapFrame(lap);
+        foreach (var target in renderers)
+        {
+            if (target == null) continue;
+            int idx = tracked.IndexOf(target);
+            if (idx < 0) continue;
+            Vector3 local = frame.Inverse(target.transform.position);
+            trackedDistance[idx] = ProjectDistance(new Vector2(local.x, local.z)) + lap * cycle;
+            if (idx < trackedLap.Count) trackedLap[idx] = lap;
+        }
     }
 
     /// <summary>段卸载前调用：从距离表与 scenery 的 bounds 表里移除。</summary>
@@ -149,6 +206,7 @@ public sealed class YRouteStreamingWindow : MonoBehaviour
             if (!renderers.Contains(tracked[i])) continue;
             tracked.RemoveAt(i);
             trackedDistance.RemoveAt(i);
+            if (i < trackedLap.Count) trackedLap.RemoveAt(i);
             authoredEnabled.RemoveAt(i);
             appliedEnabled.RemoveAt(i);
         }
@@ -174,6 +232,7 @@ public sealed class YRouteStreamingWindow : MonoBehaviour
     void BuildPath()
     {
         float length = route.Length;
+        pathBuiltLength = length;
         samplesPerBranch = Mathf.CeilToInt(length / 0.5f) + 1;
         pathSamples = new Vector2[samplesPerBranch * 2];
         for (int side = 0; side < 2; side++)
@@ -185,6 +244,33 @@ public sealed class YRouteStreamingWindow : MonoBehaviour
                 var p = YScrollSample.Evaluate(i * 0.5f, route.turnAngle, right, out heading);
                 pathSamples[side * samplesPerBranch + i] = new Vector2(p.x, p.z);
             }
+        }
+    }
+
+    /// <summary>
+    /// ★ 采样表是按「当时的 Length」建的。无限卷轴开启后 Length 从地图长度变成一圈长度，
+    /// 不重建的话所有超过地图末端的内容都会被投影到地图末端（= 反推过来说它们“在身后”）
+    /// ⇒ 最后一段布景会在相机走到那里之前就被窗口淡出（表现为“到那儿什么都没有”）。
+    /// </summary>
+    void EnsurePath()
+    {
+        if (pathSamples != null && Mathf.Abs(pathBuiltLength - route.Length) < 0.01f) return;
+        BuildPath();
+        RebuildDistances();
+    }
+
+    /// <summary>采样表重建后，按新路径重算所有已登记物件的沿路距离。</summary>
+    void RebuildDistances()
+    {
+        if (route == null) return;
+        float cycle = Mathf.Max(1f, route.Length);
+        for (int i = 0; i < tracked.Count && i < trackedDistance.Count; i++)
+        {
+            var r = tracked[i];
+            if (r == null) continue;
+            int lap = i < trackedLap.Count ? trackedLap[i] : 0;
+            Vector3 local = route.GetLapFrame(lap).Inverse(r.transform.position);
+            trackedDistance[i] = ProjectDistance(new Vector2(local.x, local.z)) + lap * cycle;
         }
     }
 

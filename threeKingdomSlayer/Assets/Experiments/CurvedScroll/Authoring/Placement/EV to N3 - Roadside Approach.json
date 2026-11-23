@@ -1,0 +1,999 @@
+{
+  "nodeId": "EV to N3 - Roadside Approach",
+  "space": "local",
+  "origin": [
+    -49.177583788599804,
+    0.0,
+    250.84165433268208
+  ],
+  "rootRotation": [
+    0.0,
+    315.0,
+    0.0
+  ],
+  "backgroundMaterial": "",
+  "spriteSearchFolders": "",
+  "roadHalfWidth": 2.5,
+  "items": [
+    {
+      "id": "EVN3_Tree_Broad_T0",
+      "kind": "sprite",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "J1_Tree_Broad_v2",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Tree_Broad_v2.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        -12.5,
+        -0.04,
+        3.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.85,
+        0.85,
+        0.85
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": true
+    },
+    {
+      "id": "Wind Mesh",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks/EVN3_Tree_Broad_T0",
+      "spriteName": "",
+      "meshName": "WindSceneryGrid",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+      "material": "Tree_J1_Tree_Broad_v2_Wind",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Tree_J1_Tree_Broad_v2_Wind.mat",
+      "at": [
+        -0.246,
+        5.985,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        10.96,
+        12.29,
+        1.0
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Tree_Willow_T1",
+      "kind": "sprite",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "J1_Tree_Willow_v2",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Tree_Willow_v2.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        13.0,
+        -0.04,
+        9.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.85,
+        0.85,
+        0.85
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": true
+    },
+    {
+      "id": "Wind Mesh",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks/EVN3_Tree_Willow_T1",
+      "spriteName": "",
+      "meshName": "WindSceneryGrid",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+      "material": "Tree_J1_Tree_Willow_v2_Wind",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Tree_J1_Tree_Willow_v2_Wind.mat",
+      "at": [
+        -1.063,
+        5.995,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        9.08,
+        12.33,
+        1.0
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Tree_Willow_T2",
+      "kind": "sprite",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "J1_Tree_Willow_v2",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Tree_Willow_v2.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        -14.0,
+        -0.04,
+        18.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.85,
+        0.85,
+        0.85
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": true
+    },
+    {
+      "id": "Wind Mesh",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks/EVN3_Tree_Willow_T2",
+      "spriteName": "",
+      "meshName": "WindSceneryGrid",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+      "material": "Tree_J1_Tree_Willow_v2_Wind",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Tree_J1_Tree_Willow_v2_Wind.mat",
+      "at": [
+        -1.063,
+        5.995,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        9.08,
+        12.33,
+        1.0
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Tree_Broad_T3",
+      "kind": "sprite",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "J1_Tree_Broad_v2",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Tree_Broad_v2.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        16.0,
+        -0.04,
+        26.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.85,
+        0.85,
+        0.85
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": true
+    },
+    {
+      "id": "Wind Mesh",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks/EVN3_Tree_Broad_T3",
+      "spriteName": "",
+      "meshName": "WindSceneryGrid",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+      "material": "Tree_J1_Tree_Broad_v2_Wind",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Tree_J1_Tree_Broad_v2_Wind.mat",
+      "at": [
+        -0.246,
+        5.985,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        10.96,
+        12.29,
+        1.0
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Tree_Broad_T4",
+      "kind": "sprite",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "J1_Tree_Broad_v2",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Tree_Broad_v2.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        -13.5,
+        -0.04,
+        36.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": true
+    },
+    {
+      "id": "Wind Mesh",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks/EVN3_Tree_Broad_T4",
+      "spriteName": "",
+      "meshName": "WindSceneryGrid",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+      "material": "Tree_J1_Tree_Broad_v2_Wind",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Tree_J1_Tree_Broad_v2_Wind.mat",
+      "at": [
+        -0.246,
+        5.985,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        10.96,
+        12.29,
+        1.0
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Tree_Willow_T5",
+      "kind": "sprite",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "J1_Tree_Willow_v2",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Tree_Willow_v2.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        13.5,
+        -0.04,
+        46.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.85,
+        0.85,
+        0.85
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": true
+    },
+    {
+      "id": "Wind Mesh",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks/EVN3_Tree_Willow_T5",
+      "spriteName": "",
+      "meshName": "WindSceneryGrid",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+      "material": "Tree_J1_Tree_Willow_v2_Wind",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Tree_J1_Tree_Willow_v2_Wind.mat",
+      "at": [
+        -1.063,
+        5.995,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        9.08,
+        12.33,
+        1.0
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Tree_Broad_T6",
+      "kind": "sprite",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "J1_Tree_Broad_v2",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/EnvironmentV2/J1/Vegetation/J1_Tree_Broad_v2.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        -15.0,
+        -0.04,
+        54.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.85,
+        0.85,
+        0.85
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": true
+    },
+    {
+      "id": "Wind Mesh",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks/EVN3_Tree_Broad_T6",
+      "spriteName": "",
+      "meshName": "WindSceneryGrid",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/WindSceneryGrid.asset",
+      "material": "Tree_J1_Tree_Broad_v2_Wind",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/WindScenery/Tree_J1_Tree_Broad_v2_Wind.mat",
+      "at": [
+        -0.246,
+        5.985,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        10.96,
+        12.29,
+        1.0
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Grass_00",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "",
+      "meshName": "YGrassMesh_GrassMedium_v1",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+      "material": "YGrass_GrassMedium_v1",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+      "at": [
+        -4.5,
+        -0.04,
+        1.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.55,
+        0.55,
+        0.55
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Grass_01",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "",
+      "meshName": "YGrassMesh_GrassMedium_v1",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+      "material": "YGrass_GrassMedium_v1",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+      "at": [
+        5.0,
+        -0.04,
+        5.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.48,
+        0.48,
+        0.48
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Grass_02",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "",
+      "meshName": "YGrassMesh_GrassMedium_v1",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+      "material": "YGrass_GrassMedium_v1",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+      "at": [
+        -6.2,
+        -0.04,
+        9.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.48,
+        0.48,
+        0.48
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Grass_03",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "",
+      "meshName": "YGrassMesh_GrassMedium_v1",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+      "material": "YGrass_GrassMedium_v1",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+      "at": [
+        4.8,
+        -0.04,
+        14.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.55,
+        0.55,
+        0.55
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Grass_04",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "",
+      "meshName": "YGrassMesh_GrassMedium_v1",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+      "material": "YGrass_GrassMedium_v1",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+      "at": [
+        -5.4,
+        -0.04,
+        19.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.48,
+        0.48,
+        0.48
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Grass_05",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "",
+      "meshName": "YGrassMesh_GrassMedium_v1",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+      "material": "YGrass_GrassMedium_v1",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+      "at": [
+        6.5,
+        -0.04,
+        23.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.48,
+        0.48,
+        0.48
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Grass_06",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "",
+      "meshName": "YGrassMesh_GrassMedium_v1",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+      "material": "YGrass_GrassMedium_v1",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+      "at": [
+        -7.0,
+        -0.04,
+        28.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.55,
+        0.55,
+        0.55
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Grass_07",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "",
+      "meshName": "YGrassMesh_GrassMedium_v1",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+      "material": "YGrass_GrassMedium_v1",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+      "at": [
+        5.2,
+        -0.04,
+        33.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.48,
+        0.48,
+        0.48
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Grass_08",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "",
+      "meshName": "YGrassMesh_GrassMedium_v1",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+      "material": "YGrass_GrassMedium_v1",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+      "at": [
+        -4.9,
+        -0.04,
+        39.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.48,
+        0.48,
+        0.48
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Grass_09",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "",
+      "meshName": "YGrassMesh_GrassMedium_v1",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+      "material": "YGrass_GrassMedium_v1",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+      "at": [
+        6.8,
+        -0.04,
+        43.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.55,
+        0.55,
+        0.55
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Grass_10",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "",
+      "meshName": "YGrassMesh_GrassMedium_v1",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+      "material": "YGrass_GrassMedium_v1",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+      "at": [
+        -6.4,
+        -0.04,
+        48.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.48,
+        0.48,
+        0.48
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Grass_11",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "",
+      "meshName": "YGrassMesh_GrassMedium_v1",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+      "material": "YGrass_GrassMedium_v1",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+      "at": [
+        5.6,
+        -0.04,
+        53.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.48,
+        0.48,
+        0.48
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Grass_12",
+      "kind": "mesh",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "",
+      "meshName": "YGrassMesh_GrassMedium_v1",
+      "asset": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrassMesh_GrassMedium_v1.asset",
+      "material": "YGrass_GrassMedium_v1",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/GrassWindMeshes/YGrass_GrassMedium_v1.mat",
+      "at": [
+        -8.0,
+        -0.04,
+        57.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.55,
+        0.55,
+        0.55
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Rock_00",
+      "kind": "sprite",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "RockRound",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        -5.5,
+        -0.02,
+        6.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.42,
+        0.42,
+        0.42
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Rock_01",
+      "kind": "sprite",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "RockRound",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        5.8,
+        -0.02,
+        12.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.36,
+        0.36,
+        0.36
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Rock_02",
+      "kind": "sprite",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "RockRound",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        -6.0,
+        -0.02,
+        16.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.42,
+        0.42,
+        0.42
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Rock_03",
+      "kind": "sprite",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "RockRound",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        7.5,
+        -0.02,
+        27.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.36,
+        0.36,
+        0.36
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Rock_04",
+      "kind": "sprite",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "RockRound",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        -7.2,
+        -0.02,
+        31.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.42,
+        0.42,
+        0.42
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Rock_05",
+      "kind": "sprite",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "RockRound",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        6.2,
+        -0.02,
+        41.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.36,
+        0.36,
+        0.36
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Rock_06",
+      "kind": "sprite",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "RockRound",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        -6.8,
+        -0.02,
+        50.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.42,
+        0.42,
+        0.42
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    },
+    {
+      "id": "EVN3_Rock_07",
+      "kind": "sprite",
+      "layer": "Roadside Trees Grass and Rocks",
+      "spriteName": "RockRound",
+      "meshName": "",
+      "asset": "Assets/Experiments/CurvedScroll/Art/ValleyProps.png",
+      "material": "YSampleScenery_E0Route",
+      "materialPath": "Assets/Experiments/CurvedScroll/Authoring/YSampleScenery_E0Route.mat",
+      "at": [
+        8.2,
+        -0.02,
+        56.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.36,
+        0.36,
+        0.36
+      ],
+      "sortingOrder": 0,
+      "active": true,
+      "rendererDisabled": false
+    }
+  ]
+}

@@ -55,8 +55,12 @@ Material:
     - _RoadHalfWidth: 2.45
     - _ShoulderWidth: 1.5
     - _StoneEntryLength: 8
+    - _StoneExitFade: 26
+    - _StoneExitStart: 350
+    - _YSGroundMaxZ: 0
     m_Colors:
     - _LeftStoneTint: {r: 0.89, g: 1.04, b: 0.93, a: 1}
     - _OuterTint: {r: 1.18, g: 1.11, b: 1.02, a: 1}
     - _ShoulderTint: {r: 1, g: 1, b: 1, a: 1}
+    - _TutorialDim: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

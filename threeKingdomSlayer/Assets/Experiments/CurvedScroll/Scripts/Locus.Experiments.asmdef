@@ -7,6 +7,7 @@
         "Locus.Combat",
         "Locus.Flow",
         "Locus.UI",
+        "Unity.TextMeshPro",
         "DOTween.Modules"
     ],
     "includePlatforms": [],

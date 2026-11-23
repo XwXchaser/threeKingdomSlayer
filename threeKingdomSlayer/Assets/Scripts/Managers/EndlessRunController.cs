@@ -49,12 +49,14 @@ public class EndlessRunController : MonoBehaviour
     }
 
     [Header("起始难度（无尽模式专用）")]
-    [Tooltip("第 1 圈的敌人血量倍率（<1 = 比剧情关轻松；剧情关是按“中局玩家”调的，冷启动直接用会打不过）")]
-    public float startHpScale = 0.55f;
-    [Tooltip("第 1 圈的敌人伤害倍率")]
-    public float startDamageScale = 0.5f;
-    [Tooltip("第 1 圈的敌人攻速倍率")]
-    public float startAttackSpeedScale = 0.8f;
+    [Tooltip("第 1 圈的敌人血量倍率。\n" +
+             "**默认 1 = 敌人就是该节点手写关卡里的原始数值**（2026-11-19 用户定：“敌人 = 第一关原数值”）。\n" +
+             "留 <1 会让无尽关比剧情关轻松；留 >1 会更狠。")]
+    public float startHpScale = 1f;
+    [Tooltip("第 1 圈的敌人伤害倍率（默认 1 = 原数值）。")]
+    public float startDamageScale = 1f;
+    [Tooltip("第 1 圈的敌人攻速倍率（默认 1 = 原数值）。")]
+    public float startAttackSpeedScale = 1f;
     [Tooltip("开局免费发放的三选一次数（起步 build）。\n" +
              "**默认 0** —— 2026-11-17 用户定：“去掉免费build”（没拍板过的临时加塞已撤）。\n" +
              "需要的难度曲线请改上面的起始倍率 / 每圈成长，不要用白送卡来拐弯。")]
@@ -75,14 +77,16 @@ public class EndlessRunController : MonoBehaviour
     public bool useAuthoredLevels = true;
 
     [Header("圈数难度缩放（只对手写配置生效）")]
-    [Tooltip("每圈血量倍率（乘性）：圈 2 = ×1.6，圈 3 = ×2.56 …")]
-    public float hpGrowthPerCircle = 1.6f;
-    [Tooltip("每圈 BOSS 血量倍率（乘性，比杂兵温和）")]
-    public float bossHpGrowthPerCircle = 1.25f;
-    [Tooltip("每圈攻速倍率（乘性）")]
-    public float attackSpeedGrowthPerCircle = 1.06f;
-    [Tooltip("每圈伤害倍率（乘性）")]
-    public float damageGrowthPerCircle = 1.04f;
+    [Tooltip("每圈血量倍率（乘性）。\n" +
+             "**默认 1 = 敌人不随圈数成长**（2026-11-19 用户定：“第一圈固定，不成长”，\n" +
+             "且“敌人 = 第一关原数值”）⇒ 圈数只影响路线走法与分数，难度靠玩家自己的属性成长。")]
+    public float hpGrowthPerCircle = 1f;
+    [Tooltip("每圈 BOSS 血量倍率（乘性，比杂兵温和）。默认 1 = 不成长。")]
+    public float bossHpGrowthPerCircle = 1f;
+    [Tooltip("每圈攻速倍率（乘性）。默认 1 = 不成长。")]
+    public float attackSpeedGrowthPerCircle = 1f;
+    [Tooltip("每圈伤害倍率（乘性）。默认 1 = 不成长。")]
+    public float damageGrowthPerCircle = 1f;
     [Tooltip("攻速倍率上限")]
     public float maxAttackSpeedMultiplier = 1.5f;
     [Tooltip("伤害倍率上限")]
@@ -95,14 +99,10 @@ public class EndlessRunController : MonoBehaviour
     public int seed = 20261116;
     [Tooltip("每个节点的波数。")]
     public int wavesPerNode = 2;
-    [Tooltip("每圈开头几个 N1 节点。")]
-    public int n1NodesPerCircle = 2;
-    [Tooltip("左路（村庄）的 N3 节点数。")]
-    public int n3NodesPerBranch = 3;
-    [Tooltip("右路（官道）的 N2 节点数。")]
-    public int n2NodesPerBranch = 3;
     [Tooltip("节点之间的停顿（秒，不受 timeScale 影响）。")]
     public float nodeSettleDelay = 0.8f;
+    [Tooltip("回程（走到下一圈起点）的旅行时长（秒）。")]
+    public float wrapTravelSeconds = 3f;
 
     [Header("路线（沿用剧情关的节点资产，只借用名字与视觉档）")]
     [Tooltip("起点节点 id（提交回它 = 完成一圈）。")]
@@ -119,14 +119,11 @@ public class EndlessRunController : MonoBehaviour
     public int NodeIndex { get; private set; } = 1;
     /// <summary>本圈节点总数（显示用）。</summary>
     public int NodeCount { get; private set; } = 1;
-    /// <summary>是否停在圈结算面板等玩家点「继续」。</summary>
-    public bool IsWaitingForCircleChoice { get; private set; }
     public EndlessScoreLedger Ledger { get; } = new EndlessScoreLedger();
 
     // ── 事件（UI 层订阅；本类不碰任何 UI 对象）──
     public event Action OnStateChanged;
     public event Action<int, int> OnWaveSettled;
-    public event Action<int, int> OnCircleSettled;
     public event Action<bool> OnRunEnded;
 
     /// <summary>无限模式的一条边（出口）。</summary>
@@ -137,9 +134,6 @@ public class EndlessRunController : MonoBehaviour
         public FakeRouteNodeConfig target;
         /// <summary>回程边（几何闭环前用「黑幕 + 锚点跳转」代替真旅行）。</summary>
         public bool wrap;
-        /// <summary>循环边（再打一轮同一个节点）；<see cref="maxLoops"/> = 本圈最多连续几次。</summary>
-        public bool isLoop;
-        public int maxLoops;
     }
 
     private readonly EndlessWaveGenerator _generator = new EndlessWaveGenerator();
@@ -182,7 +176,6 @@ public class EndlessRunController : MonoBehaviour
         if (IsRunning) return;
 
         IsRunning = true;
-        IsWaitingForCircleChoice = false;
         Circle = 1;
         NodeIndex = 1;
         Ledger.Reset();
@@ -207,6 +200,8 @@ public class EndlessRunController : MonoBehaviour
 
         // 让落地页的「开始关卡」按钮隐藏 + **独占路线流程**（否则两套流程争同一个出口面板）
         FakeRouteRuntime.Instance?.SuspendForEndless();
+        // ★ 无限卷轴：无尽关必须开，否则走完一圈就出了地图（什么都不剩）
+        FakeRouteRuntime.Instance?.MovementPresenter?.SetEndlessScroll(true);
         // 若剧情路线此刻正在跑（战斗 / 旅行），先把它停掉 → 否则两套流程并行
         StageController.Instance?.AbortRouteBattle();
 
@@ -247,25 +242,17 @@ public class EndlessRunController : MonoBehaviour
         SetGameplayInputAllowed(true);
 
         IsRunning = false;
-        IsWaitingForCircleChoice = false;
         _pendingEdge = null;
+
+        // 关掉无限卷轴 ⇒ 回落地页 / 剧情路线时表现与旧版一致
+        FakeRouteRuntime.Instance?.MovementPresenter?.SetEndlessScroll(false);
 
         Debug.Log($"[Endless] 结束（阵亡={byDeath}）{Ledger}");
         OnRunEnded?.Invoke(Ledger.TotalScore > 0);
         OnStateChanged?.Invoke();
     }
 
-    /// <summary>玩家在圈结算面板点「继续」→ 下一圈。</summary>
-    public void ContinueToNextCircle()
-    {
-        if (!IsWaitingForCircleChoice) return;
-        IsWaitingForCircleChoice = false;
-        Circle++;
-        Ledger.BeginCircle(Circle);
-        OnStateChanged?.Invoke();
-    }
-
-    /// <summary>玩家在圈结算面板点「退出」→ 回落地页。</summary>
+    /// <summary>退出无限模式 → 回落地页。</summary>
     public void ExitToLanding()
     {
         if (!IsRunning) return;
@@ -354,16 +341,16 @@ public class EndlessRunController : MonoBehaviour
         }
 
         // 回程边（几何闭环做好之前 = 黑幕跳转；闭环之后改成真旅行）
+        // ★ 这两条边就是「无限循环」的来源：两个终点接回起点 ⇒ 走完 = 一圈 ⇒ 结算 ⇒ 再来一圈。
         AddEdge("N3", new EndlessEdge { choiceId = "n3_to_n1", displayName = "出村：回到当阳", target = _nodes.ContainsKey("N1") ? _nodes["N1"] : null, wrap = true });
         AddEdge("N2", new EndlessEdge { choiceId = "n2_to_n1", displayName = "官道折返：回到当阳", target = _nodes.ContainsKey("N1") ? _nodes["N1"] : null, wrap = true });
 
-        // 循环边（用户给的圈拓扑：N1 ×k / N3 ×3 / N2 ×3）
-        if (_nodes.ContainsKey("N1"))
-            AddEdge("N1", new EndlessEdge { choiceId = "n1_loop", displayName = "再战一轮：当阳乱军", target = _nodes["N1"], isLoop = true, maxLoops = Mathf.Max(1, n1NodesPerCircle) });
-        if (_nodes.ContainsKey("N3"))
-            AddEdge("N3", new EndlessEdge { choiceId = "n3_loop", displayName = "再战一轮：村落搜救", target = _nodes["N3"], isLoop = true, maxLoops = Mathf.Max(1, n3NodesPerBranch) });
-        if (_nodes.ContainsKey("N2"))
-            AddEdge("N2", new EndlessEdge { choiceId = "n2_loop", displayName = "再战一轮：官道断后", target = _nodes["N2"], isLoop = true, maxLoops = Mathf.Max(1, n2NodesPerBranch) });
+        // ⚠ **不再有「循环边」**（2026-11-19）。
+        //   旧实现在 N1/N3/N2 上各挂一条自环（N1→N1 / N3→N3 / N2→N2），
+        //   让「一圈」变成 N1×2 → E0 → J1 → 左路 N3×3 / 右路 N2×3 —— 那是**另搭的一套拓扑**，
+        //   和「拿原本第一关的内容做循环」不是一回事。
+        //   现在：圈 = **第一关的一条完整路径**（N1 → E0 → J1 → 〔EV → N3 | N2〕 → 回 N1），
+        //   走完回程边就结算一圈。J1 的左右支路由玩家在出口面板上选（和剧情关一致）。
 
         if (!_nodes.ContainsKey(loopStartNodeId)) return false;
         return true;
@@ -475,7 +462,7 @@ public class EndlessRunController : MonoBehaviour
             if (edge == null || edge.target == null) break;
             id = edge.target.nodeId;
             if (!visited.Add(id)) break;   // 回到起点 → 一圈结束
-            if (id == loopStartNodeId) { count++; break; }
+            if (id == loopStartNodeId) break;   // 回到起点 = 走完一圈（起点本身不重复计数）
         }
         return Mathf.Max(1, count);
     }
@@ -484,12 +471,17 @@ public class EndlessRunController : MonoBehaviour
     {
         while (IsRunning)
         {
-            // ── 节点战斗（波次由生成器现造）──
+            // ── 节点战斗 ──
+            //   **纯情景节点不打怪**（2026-11-19）：剧情关里 J1（城郊分叉）/ EV（村落外围）
+            //   本来就没有战斗配置 —— 它们只是旅行过场。无尽模式**不得凭空给它们造一波怪**。
             _nodeCleared = false;
-            StartNodeBattle();
-            OnStateChanged?.Invoke();
+            if (CurrentNodeHasBattle())
+            {
+                StartNodeBattle();
+                OnStateChanged?.Invoke();
 
-            while (!_nodeCleared && IsRunning) yield return null;
+                while (!_nodeCleared && IsRunning) yield return null;
+            }
             if (!IsRunning) yield break;
 
             // ── 出口确认（与剧情路线同一套面板与同一套纪律）──
@@ -508,18 +500,14 @@ public class EndlessRunController : MonoBehaviour
             CurrentBranchName = _currentNodeId == "N3" ? "左路·村庄" : (_currentNodeId == "N2" ? "右路·官道" : CurrentBranchName);
             AddVisitCount(_currentNodeId);
 
-            // 走完**回程边** = 完成一圈（⚠ 不能用“当前节点是起点”判定：
+            // 走完**回程边** = 走完一圈（⚠ 不能用“当前节点是起点”判定：
             //   循环边（N1 → N1）也会把节点指回起点，但那一圈还没走完）
+            // ★ **不再有圈结算画面**（2026-11-19 用户定：“除非玩家死亡、结束本局，
+            //   你出这个结算干嘛？”）⇒ 走完回程边就**直接接着走下一圈**。
             if (edge.wrap)
             {
-                // ⚠ 必须先置标记再广播：HUD 收到 OnStateChanged 时会看这个标记决定收不收起结算面板
-                IsWaitingForCircleChoice = true;
                 int circleGain = Ledger.SettleCircle();
-                OnCircleSettled?.Invoke(circleGain, Ledger.TotalScore);
-                OnStateChanged?.Invoke();
-
-                while (IsWaitingForCircleChoice && IsRunning) yield return null;
-                if (!IsRunning) yield break;
+                Debug.Log("[Endless] 第 " + Circle + " 圈完成，本圈得分 " + circleGain + "，继续下一圈");
 
                 Circle++;
                 Ledger.BeginCircle(Circle);
@@ -565,8 +553,6 @@ public class EndlessRunController : MonoBehaviour
         {
             var e = list[i];
             if (e == null || e.target == null) continue;
-            // 循环边：本圈的重复次数用满了就不再给（用户拓扑：N1 ×k / N3 ×3 / N2 ×3）
-            if (e.isLoop && GetVisitCount(e.target.nodeId) >= e.maxLoops) continue;
             options.Add(new RouteChoiceOption
             {
                 id = e.choiceId,
@@ -611,8 +597,11 @@ public class EndlessRunController : MonoBehaviour
 
         if (edge.wrap)
         {
-            // 回程：黑幕一闪 + 把视觉定位回起点锚点（几何闭环后这里换成真旅行）
-            yield return presenter.PlayOpening(null, edge.target, () => IsRunning);
+            // ★ 回程：**沿路走到下一圈的起点**（2026-11-19 无限循环）。
+            //   以前是「黑幕 + 锚点跳转」（瞬移 ⇒ 玩家看不到前进，像被扔回起点）。
+            //   现在是真的往前走一段 —— 目标位置由表现层的 TryGetNodeProgress 决定，
+            //   它返回「当前之后最近的那一次出现」⇒ 下一圈 N1 ⇒ 天然往前走。
+            yield return presenter.PlayNodeTravel(edge.target, wrapTravelSeconds, () => IsRunning);
             yield break;
         }
 
@@ -626,6 +615,71 @@ public class EndlessRunController : MonoBehaviour
         {
             yield return presenter.PlayOpening(null, edge.target, () => IsRunning);
         }
+    }
+
+    /// <summary>
+    /// **开发者跳过当前节点战斗**（2026-11-19）。
+    ///
+    /// 与剧情路线的 <see cref="IRouteFlow.SkipCurrentNodeBattle"/> 同一套语义：
+    /// **清场** ✅ + 标记本节点战斗结束 ✅ → 直接进出口面板 ✅；
+    /// **不碰奖励发放** ✅（三选一该弹还是弹）。
+    ///
+    /// 用途：**直接测无尽循环**（不用真打一场就能一路点「前进」把圈走完）。
+    ///
+    /// ⚠ 为什么需要它：剧情路线的跳过按钮只认 <see cref="RouteFlowHub"/>，
+    /// 而无尽模式接管后路线被 <c>SuspendForEndless</c> 置成 <c>Phase.None</c>
+    /// ⇒ 那个按钮会被判成“不在战斗中”而变灰。
+    /// </summary>
+    public bool SkipCurrentNodeBattle()
+    {
+        if (!IsRunning) return false;
+        if (!CurrentNodeHasBattle()) return false;        // 纯情景节点（J1 / EV）本来就没怪
+        if (_nodeCleared) return false;                   // 已经打完了
+
+        // 清场：停波次 + 清敌人 + 清投射物（不动节点状态 ✅）
+        StageController.Instance?.AbortRouteBattle();
+        // 通知战斗结束 → RunLoop 里的等待循环会退出 ✅
+        _nodeCleared = true;
+        Debug.Log("[Endless] 开发者跳过战斗 node=" + _currentNodeId);
+        return true;
+    }
+
+    /// <summary>
+    /// 当前是否正处在「一场节点战斗里」（给开发者按钮判可用性）。
+    /// </summary>
+    public bool IsInNodeBattle => IsRunning
+        && !_nodeCleared
+        && CurrentNodeHasBattle();
+
+    /// <summary>
+    /// 当前节点**要不要打怪**。
+    ///
+    /// 手写配置模式下：只有**带战斗配置**的节点才打（N1 / E0 / N3 / N2）；
+    /// J1 / EV 这种**纯情景节点**只做旅行过场。
+    /// 生成器模式下：每个节点都有波次（保留旧行为）。
+    /// </summary>
+    private bool CurrentNodeHasBattle()
+    {
+        if (!useAuthoredLevels) return true;
+        return TryGetNodeBattleConfig(_currentNodeId, out _);
+    }
+
+    /// <summary>取节点自己的手写关卡配置（<c>FakeRouteNodeConfig.battleEntries[].battleConfig</c>）。</summary>
+    private bool TryGetNodeBattleConfig(string nodeId, out StageConfig cfg)
+    {
+        cfg = null;
+        if (string.IsNullOrEmpty(nodeId)) return false;
+        if (!_nodes.TryGetValue(nodeId, out var node) || node == null || node.battleEntries == null) return false;
+        for (int i = 0; i < node.battleEntries.Count; i++)
+        {
+            var entry = node.battleEntries[i];
+            if (entry != null && entry.battleConfig != null)
+            {
+                cfg = entry.battleConfig;
+                return true;
+            }
+        }
+        return false;
     }
 
     private void StartNodeBattle()
@@ -684,18 +738,12 @@ public class EndlessRunController : MonoBehaviour
     {
         StageConfig baseCfg = null;
         _nodeFormation = null;   // 先清：上一个节点的阵型不能泄到下一个节点
-        if (_nodes.TryGetValue(_currentNodeId, out var node) && node != null && node.battleEntries != null)
+        if (!TryGetNodeBattleConfig(_currentNodeId, out baseCfg) || baseCfg == null)
         {
-            for (int i = 0; i < node.battleEntries.Count && baseCfg == null; i++)
-            {
-                var entry = node.battleEntries[i];
-                if (entry != null && entry.battleConfig != null) baseCfg = entry.battleConfig;
-            }
-        }
-        if (baseCfg == null)
-        {
-            Debug.LogWarning("[Endless] 节点 " + _currentNodeId + " 没有关卡配置 → 退回程序生成");
-            return BuildGeneratedWaves();
+            // 纯情景节点（J1 / EV）：剧情关里它们本来就没有战斗
+            // ⇒ **不退回程序生成器**（2026-11-19）：凭空造怪会让无尽关和第一关手感不一致。
+            Debug.Log($"[Endless] 节点 {_currentNodeId} 没有手写关卡 ⇒ 纯情景节点，只过场不打怪");
+            return new List<WaveConfig>();
         }
 
         // ★ 阵型配置**从这份手写关卡里拿**（2026-11-17 修「敌人间距和近远透明度完全错误」）：

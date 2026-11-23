@@ -32,8 +32,33 @@ public sealed class ScrollRoutePresenter : MonoBehaviour, IRouteMotionPresenter
 
     YScrollSample route;
     bool skipRequested;
+    /// <summary>路线场景还没加载时先记下「要开无限卷轴」，加载完再套用。</summary>
+    bool pendingEndlessScroll;
 
     // ---------------------------------------------------------------- 接口实现
+
+    /// <summary>
+    /// **开关无限卷轴**。无尽关开启后沿路距离无限增长、内容按一圈长度循环。
+    /// 剧情关不开 ⇒ 表现与旧版一致。
+    /// </summary>
+    public void SetEndlessScroll(bool enabled)
+    {
+        pendingEndlessScroll = enabled;
+        ApplyEndlessScroll();
+    }
+
+    void ApplyEndlessScroll()
+    {
+        if (route == null) return;
+        if (route.infiniteScroll == pendingEndlessScroll) return;
+        // 一圈长度优先用场景里配的值（385 = 现有内容末端 375.5 + 余量）；
+        // 没配就用整张地图长度。
+        if (pendingEndlessScroll && route.flatCycleLength <= 0f)
+            route.flatCycleLength = YScrollSample.GetRouteLength(route.turnAngle);
+        route.infiniteScroll = pendingEndlessScroll;
+        Debug.Log("[ScrollRoute] 无限卷轴 = " + pendingEndlessScroll + "（一圈 " + route.Length.ToString("F0") + " 米）");
+        if (pendingEndlessScroll) route.RefreshNodeAnchors();
+    }
 
     public bool TryValidate(FakeRouteStageConfig config, out string error)
     {
@@ -90,7 +115,7 @@ public sealed class ScrollRoutePresenter : MonoBehaviour, IRouteMotionPresenter
             yield break;
         }
 
-        ApplyLane(choice, from);
+        ApplyLane(choice, from, to);
         float duration = choice != null && choice.presentation != null ? choice.presentation.duration : 2f;
         AnimationCurve curve = choice != null && choice.presentation != null ? choice.presentation.speedCurve : null;
         yield return MoveTo(end, duration, curve);
@@ -113,6 +138,19 @@ public sealed class ScrollRoutePresenter : MonoBehaviour, IRouteMotionPresenter
         }
         IsPlaying = false;
         skipRequested = false;
+    }
+
+    public IEnumerator PlayNodeTravel(FakeRouteNodeConfig to, float seconds, Func<bool> canContinue)
+    {
+        yield return EnsureRoute();
+        if (route == null) yield break;
+        if (!route.TryGetNodeProgress(to, out float end))
+        {
+            Debug.LogError("[ScrollRoute] 缺少目标节点锚点: " + (to ? to.nodeId : "null"));
+            yield break;
+        }
+        // end 可能 > 1（下一圈）⇒ progress 会**继续增长**，不会倒着滚回去。
+        yield return MoveTo(end, Mathf.Max(0.1f, seconds), fallbackProgressCurve);
     }
 
     public void ApplyNodeVisuals(FakeRouteNodeConfig node)
@@ -165,6 +203,7 @@ public sealed class ScrollRoutePresenter : MonoBehaviour, IRouteMotionPresenter
 
         route.viewCamera = battleCamera;
         route.animate = false;
+        ApplyEndlessScroll();
         var position = route.transform.position;
         position.y = groundHeight;
         route.transform.position = position;
@@ -213,21 +252,38 @@ public sealed class ScrollRoutePresenter : MonoBehaviour, IRouteMotionPresenter
     // ---------------------------------------------------------------- 分支车道与视觉组
 
     /// <summary>
-    /// 出口所在车道：优先读出口的 layout（overrideDefault 时用 anchoredPosition.x），
-    /// 否则按默认排布 (index-(n-1)/2)*spacing 推断；只有一个出口时保持当前车道不变（宽路阶段车道无意义）。
+    /// 出口所在车道。
+    ///
+    /// ★ **优先看目标节点自己的锚点方向**（2026-11-19 修「J1 走右路也跑到村庄」）：
+    ///   旧口径按「from.outgoingChoices 的第几个出口」推断，而**分叉点的节点资产里只挂了一条路**
+    ///   （另一条挂在路线的 <c>extraChoices</c> 上，剧情关不能动它）⇒ 计数 ≤ 1 就直接 return
+    ///   ⇒ <c>route.right</c> 永远是 false ⇒ 走右路也渲染成左边的村庄。
+    ///   改成看**目的地在哪条支路上**（锚点的 direction）⇒ 与出口挂在哪里无关了。
+    ///
+    /// 目标在**主线**上（Forward）时回落到旧口径：只有一个出口就**保持当前车道不变**（宽路阶段车道无意义）。
     /// </summary>
-    void ApplyLane(FakeRouteChoiceConfig choice, FakeRouteNodeConfig from)
+    void ApplyLane(FakeRouteChoiceConfig choice, FakeRouteNodeConfig from, FakeRouteNodeConfig to)
     {
         if (route == null) return;
-        int count = from != null && from.outgoingChoices != null ? from.outgoingChoices.Count : 1;
-        if (count <= 1) return;
 
-        int index = from.outgoingChoices.IndexOf(choice);
-        if (index < 0) index = 0;
-        float x = choice != null && choice.layout != null && choice.layout.overrideDefault
-            ? choice.layout.anchoredPosition.x
-            : (index - (count - 1) * 0.5f) * defaultChoiceSpacing;
-        bool right = x >= 0f;
+        bool right;
+        bool determined = false;
+        if (to != null && route.TryGetNodeDirection(to, out var dir) && dir != ScrollRouteDirection.Forward)
+        {
+            right = dir == ScrollRouteDirection.Right;
+            determined = true;
+        }
+        else
+        {
+            int count = from != null && from.outgoingChoices != null ? from.outgoingChoices.Count : 1;
+            if (count <= 1) return;   // 单出口：保持当前车道
+            int index = from.outgoingChoices.IndexOf(choice);
+            if (index < 0) index = 0;
+            float x = choice != null && choice.layout != null && choice.layout.overrideDefault
+                ? choice.layout.anchoredPosition.x
+                : (index - (count - 1) * 0.5f) * defaultChoiceSpacing;
+            right = x >= 0f;
+        }
 
         route.right = right;
         SetAllBranchVisuals(false);
