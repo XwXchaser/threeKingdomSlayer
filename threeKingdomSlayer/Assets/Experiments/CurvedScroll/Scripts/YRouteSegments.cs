@@ -54,6 +54,9 @@ public sealed class YRouteSegments : MonoBehaviour
         public float startDistance;
         public float endDistance;
         public GameObject instance;
+        /// <summary>套圈帧**之前**的作者态位姿（重摆时要用）。</summary>
+        public Vector3 authoredLocalPosition;
+        public Quaternion authoredLocalRotation;
     }
 
     private readonly List<LiveSegment> _live = new List<LiveSegment>();
@@ -104,10 +107,37 @@ public sealed class YRouteSegments : MonoBehaviour
         lastPosition = position;
     }
 
+    void OnEnable()
+    {
+        if (route == null) route = GetComponent<YScrollSample>();
+        if (route != null) route.OnLapFramesChanged += OnLapFramesChanged;
+    }
+
     void OnDisable()
     {
+        if (route != null) route.OnLapFramesChanged -= OnLapFramesChanged;
         for (int i = _live.Count - 1; i >= 0; i--) Unload(_live[i]);
         preloadTarget = float.NegativeInfinity;
+    }
+
+    /// <summary>
+    /// 玩家在本圈 J1 确认支路 ⇒ 未来圈的圈帧重建 ⇒ **已装在未来圈上的段要重摆**。
+    /// 已确定的圈（k ≤ 当前圈）帧不变，重摆是幂等的。不重摆就会出现
+    /// 「地面跟着新帧走了、布景还在旧帧上」的沿路错位。
+    /// </summary>
+    void OnLapFramesChanged()
+    {
+        if (route == null || !route.infiniteScroll) return;
+        for (int i = 0; i < _live.Count; i++)
+        {
+            var live = _live[i];
+            if (live == null || live.instance == null) continue;
+            var frame = route.GetLapFrame(live.lap);
+            var t = live.instance.transform;
+            t.localPosition = frame.Apply(live.authoredLocalPosition);
+            t.localRotation = frame.Rotation * live.authoredLocalRotation;
+            if (window != null) window.SetTrackedDistance(live.instance.GetComponentsInChildren<Renderer>(true), live.lap);
+        }
     }
 
     void TrackDwell(float position)
@@ -130,11 +160,19 @@ public sealed class YRouteSegments : MonoBehaviour
     {
         float renderAhead = window != null ? window.renderAhead : 105f;
         float behind = window != null ? window.residentBehind : 30f;
+        // 进度向后跳转（例如无尽退出落地页）时，前一位置的远处段不再属于驻留窗口。
+        if (!float.IsNaN(lastPosition) && position < lastPosition - 0.05f)
+        {
+            preloadTarget = float.NegativeInfinity;
+            stillFrames = 0;
+        }
         bool preloading = position <= preloadTarget;
         int budget = preloading ? dwellBudgetPerFrame : fallbackBudgetPerFrame;
         int startBudget = budget;
         // 预载时按绝对目标距离装载；否则只补渲染窗口内的缺口（检查点跳变兜底）
         float limit = preloading ? Mathf.Max(preloadTarget, position + renderAhead) : position + renderAhead;
+        float residentLimit = preloading ? Mathf.Max(preloadTarget, position + (window != null ? window.residentAhead : renderAhead))
+                                         : position + (window != null ? window.residentAhead : renderAhead);
 
         // ★ 圈长 = 当前的一圈 flat 长度（无限卷轴开启时 = 切片序列总长；关闭时 = 路径形状长度）
         float lap = route != null ? Mathf.Max(0.1f, route.Length) : 1f;
@@ -144,7 +182,7 @@ public sealed class YRouteSegments : MonoBehaviour
         {
             var live = _live[i];
             if (live == null || live.instance == null) { _live.RemoveAt(i); continue; }
-            if (position - live.endDistance > behind) Unload(live);
+            if (position - live.endDistance > behind || live.startDistance > residentLimit) Unload(live);
         }
 
         // ② 该加载的：**按圈展开**（同一批段 prefab 在每圈各有一份）
@@ -212,12 +250,14 @@ public sealed class YRouteSegments : MonoBehaviour
         // ★ 按圈摆放 = **刚体帧**（位置 + 朝向），不是只沿 +z 平移：
         //   转向是「地图在转」⇒ 第 k 圈的内容必须带着本圈累积的旋转一起摆
         //   ⇒ 接缝处内容与相机同时跨一步 ⇒ 位置/朝向都连续。
-        if (route != null && lap != 0)
+        live.authoredLocalPosition = instance.transform.localPosition;
+        live.authoredLocalRotation = instance.transform.localRotation;
+        if (route != null)
         {
             var frame = route.GetLapFrame(lap);
             var t = instance.transform;
-            t.localPosition = frame.Apply(t.localPosition);
-            t.localRotation = frame.Rotation * t.localRotation;
+            t.localPosition = frame.Apply(live.authoredLocalPosition);
+            t.localRotation = frame.Rotation * live.authoredLocalRotation;
         }
         if (logSegments)
             Debug.Log($"[YSegment] load '{segment.prefab.name}' lap={lap} range=[{start:F0},{end:F0}]");
@@ -228,9 +268,9 @@ public sealed class YRouteSegments : MonoBehaviour
         if (live == null || live.instance == null) return;
         if (window != null) window.UnregisterSegment(live.instance);
         if (logSegments) Debug.Log($"[YSegment] unload '{live.source?.prefab?.name}' lap={live.lap}");
+        if (live.source != null && live.source.instance == live.instance) live.source.instance = null;
         Destroy(live.instance);
         live.instance = null;
-        if (live.source != null && live.source.instance == live.instance) live.source.instance = null;
         _live.Remove(live);
     }
 }

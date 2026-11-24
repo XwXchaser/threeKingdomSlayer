@@ -111,10 +111,86 @@ public sealed class YScrollSample : MonoBehaviour
     private readonly System.Collections.Generic.List<YRouteFrame> lapFrames = new System.Collections.Generic.List<YRouteFrame>();
     private float frameCacheCycle = -1f;
     private float frameCacheAngle = float.NaN;
-    private bool frameCacheRight;
 
-    /// <summary>一圈走下来，内容相对上一圈的**增量帧**（位置 = 本圈末端的局部落点，朝向 = 本圈净转角）。</summary>
-    private YRouteFrame lapStep;
+    /// <summary>
+    /// **每圈已定的支路**（索引 = 圈号；只由玩家在该圈 J1 的选择写入）。
+    ///
+    /// ★ 为什么必须有它：<see cref="right"/> 是**当前是否走右支**的一个 bool，它一旦变，
+    ///   旧实现会把 `lapStep` 重算并清空帧表 ⇒ **已经走过的圈也被镜像重算**，
+    ///   而地面/布景副本只在创建时套过帧 ⇒ 副本与 `GetLapFrame` 错位（实测差 253.9m / 898.2m，
+    ///   Game 里整片地面消失）。圈必须记住当时玩家真的选了什么。
+    /// </summary>
+    private readonly System.Collections.Generic.List<bool> lapBranches = new System.Collections.Generic.List<bool>();
+
+    /// <summary>本圈/未来圈的圈帧或分支被重新确定（副本、段据此重摆）。</summary>
+    public event System.Action OnLapFramesChanged;
+
+    /// <summary>在当前圈的分支已定后，未决定的未来圈仅用于预览。</summary>
+    public bool BranchOfLap(int lap)
+    {
+        if (lap < 0) lap = 0;
+        return lap < lapBranches.Count ? lapBranches[lap] : right;
+    }
+
+    /// <summary>该圈支路是否已由玩家的 J1 选择确定（否则只是预览）。</summary>
+    public bool IsLapBranchCommitted(int lap) => lap >= 0 && lap < lapBranches.Count;
+
+    /// <summary>一局开始/结束时清空会话历史（不持久化）。</summary>
+    public void ClearLapHistory()
+    {
+        lapBranches.Clear();
+        lapFrames.Clear();
+        frameCacheCycle = -1f;
+        frameCacheAngle = float.NaN;
+        OnLapFramesChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// **提交本圈分支**（玩家在 J1 确认出口时调用）。
+    ///
+    /// ★ 只写入**当前圈**并丢弃**未来圈**的帧缓存：已经过去的圈（含本圈起点帧）一律不变。
+    ///   预览用的未来帧会随新分支重建 ⇒ 由 <see cref="OnLapFramesChanged"/> 通知副本重摆。
+    /// </summary>
+    public void CommitLapBranch(bool rightBranch)
+    {
+        int lap = Mathf.Max(0, CurrentLap);
+        if (lapBranches.Count < lap)
+        {
+            Debug.LogWarning("[YScroll] 无法提交第 " + lap + " 圈分支：更早的圈尚未记录玩家选择。");
+            return;
+        }
+        if (lap < lapBranches.Count)
+        {
+            if (lapBranches[lap] == rightBranch) return;
+            lapBranches[lap] = rightBranch;
+        }
+        else
+        {
+            lapBranches.Add(rightBranch);
+        }
+
+        // F_(lap+1) = F_lap ∘ S(branch_lap) ⇒ 只作废 lap+1 及以后，F_0..F_lap 保留。
+        int keep = lap + 1;
+        if (lapFrames.Count > keep) lapFrames.RemoveRange(keep, lapFrames.Count - keep);
+        OnLapFramesChanged?.Invoke();
+    }
+
+    /// <summary>一圈长度（无限卷轴 = 一圈内容长度；否则 = 路径形状长度）。</summary>
+    private float CycleLength => Mathf.Max(0.1f, flatCycleLength > 0f ? flatCycleLength : GetRouteLength(turnAngle));
+
+    /// <summary>
+    /// 第 <paramref name="lap"/> 圈走完的**增量帧**（位置 = 本圈末端的局部落点，朝向 = 本圈净转角）。
+    /// 用的是**该圈自己的分支**（已定或预览），不是全局 right。
+    /// </summary>
+    private YRouteFrame StepForLap(int lap)
+    {
+        bool branch = BranchOfLap(lap);
+        float cycle = CycleLength;
+        float startHeading, endHeading;
+        var start = Evaluate(0f, turnAngle, branch, out startHeading);
+        var end = Evaluate(cycle, turnAngle, branch, out endHeading);
+        return new YRouteFrame { position = end - start, heading = endHeading - startHeading };
+    }
 
     /// <summary>
     /// 第 <paramref name="lap"/> 圈的摆放帧。**第 0 圈恒为 <see cref="YRouteFrame.Identity"/>**
@@ -122,35 +198,26 @@ public sealed class YScrollSample : MonoBehaviour
     /// </summary>
     public YRouteFrame GetLapFrame(int lap)
     {
-        EnsureLapFrames();
         if (lap < 0) lap = 0;
+        EnsureLapFrames();
         while (lapFrames.Count <= lap)
-            lapFrames.Add(lapFrames[lapFrames.Count - 1].Compose(lapStep));
+        {
+            int k = lapFrames.Count - 1;   // 用第 k 圈的分支推进到第 k+1 圈
+            lapFrames.Add(lapFrames[k].Compose(StepForLap(k)));
+        }
         return lapFrames[lap];
     }
 
     void EnsureLapFrames()
     {
-        float cycle = Mathf.Max(0.1f, flatCycleLength > 0f ? flatCycleLength : GetRouteLength(turnAngle));
+        float cycle = CycleLength;
         if (lapFrames.Count > 0 && Mathf.Approximately(frameCacheCycle, cycle)
-            && Mathf.Approximately(frameCacheAngle, turnAngle) && frameCacheRight == right) return;
+            && Mathf.Approximately(frameCacheAngle, turnAngle)) return;
 
         frameCacheCycle = cycle;
         frameCacheAngle = turnAngle;
-        frameCacheRight = right;
 
-        // 增量帧 = 本圈内容末端 → 下一圈内容原点：
-        //   位置 = 本圈末端在局部空间的落点（相机开到那里时脚下就是它）
-        //   朝向 = 本圈净转角（右路 +turnAngle / 左路 −turnAngle）
-        float startHeading, endHeading;
-        var start = Evaluate(0f, turnAngle, right, out startHeading);
-        var end = Evaluate(cycle, turnAngle, right, out endHeading);
-        lapStep = new YRouteFrame
-        {
-            position = end - start,
-            heading = endHeading - startHeading
-        };
-
+        // 圈长/转角变了才重建；重建用的仍是**已定分支历史** ⇒ F_0..F_current 结果不变。
         lapFrames.Clear();
         lapFrames.Add(YRouteFrame.Identity);
     }
@@ -176,7 +243,9 @@ public sealed class YScrollSample : MonoBehaviour
             lap = Mathf.FloorToInt(distance / cycle);
             float local = distance - lap * cycle;
             var frame = GetLapFrame(lap);
-            routePosition = frame.Apply(Evaluate(local, turnAngle, right, out float localAngle));
+            // ★ 本圈**之内**的形状用该圈自己的分支（已定/预览），不是全局 right：
+            //   否则玩家在本圈 J1 选右时，已经走过的左路弧线会被镜像重算。
+            routePosition = frame.Apply(Evaluate(local, turnAngle, BranchOfLap(lap), out float localAngle));
             heading = localAngle + frame.heading;
             return;
         }
@@ -260,16 +329,18 @@ public sealed class YScrollSample : MonoBehaviour
         if (!match || float.IsNaN(match.worldDistance) || match.worldDistance < 0f
             || match.worldDistance > Length + 0.2f) return false;
 
-        // ★ **周期化**：目标一律取「当前沿路距离**之后**最近的那一次出现」⇒ 永不倒退。
-        //   一圈长度用 <see cref="Length"/>（无限卷轴时 = 一圈内容长度）。
-        //   ⚠ 这里以前写死 445，与数据（切片序列总长）不一致 ⇒ 节点与相机按两个周期走。
+        // 无限关取当前位置之后最近的一次出现；有限关直接使用作者态节点距离。
+        // 从无尽关退出时 progress 可能大于 1，有限关不能把它再按圈展开。
         float lap = Mathf.Max(0.1f, Length);
         float w = match.worldDistance;
-        float current = progress * Length;
-        float k = Mathf.FloorToInt((current - w) / lap);
-        if (k * lap + w < current - 0.001f) k += 1f;   // 取第一个 ≥ current 的出现
-        float target = k * lap + w;
-        // 归一化用 Length（progress 可能 >1 ⇒ 相机继续沿路往前走，不会倒退）
+        float target = w;
+        if (infiniteScroll)
+        {
+            float current = progress * Length;
+            float k = Mathf.FloorToInt((current - w) / lap);
+            if (k * lap + w < current - 0.001f) k += 1f;
+            target = k * lap + w;
+        }
         normalizedProgress = target / Mathf.Max(0.1f, Length);
         return true;
     }
@@ -323,7 +394,7 @@ public sealed class YScrollSample : MonoBehaviour
         Restore();
         Shader.SetGlobalFloat("_YSAngle",turnAngle*Mathf.Deg2Rad);
         Shader.SetGlobalFloat("_YSViewDistance",Length);
-        // 一圈长度：地面副本按它把自己裁到「本圈那一段」（0 = 不裁，旧行为）
+        // 一圈长度：地面副本按它把自己裁到「本圈那一段」（0 = 不裁，剧情关行为）
         Shader.SetGlobalFloat("_YSCycleLength", (infiniteScroll && flatCycleLength > 0f) ? flatCycleLength : 0f);
         if(cam!=viewCamera)return;
         ComputePosition();

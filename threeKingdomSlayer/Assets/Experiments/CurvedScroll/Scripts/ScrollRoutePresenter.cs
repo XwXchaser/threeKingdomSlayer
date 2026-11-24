@@ -44,6 +44,12 @@ public sealed class ScrollRoutePresenter : MonoBehaviour, IRouteMotionPresenter
     public void SetEndlessScroll(bool enabled)
     {
         pendingEndlessScroll = enabled;
+        if (route != null && enabled && !route.infiniteScroll)
+        {
+            // 无尽局内进度不继承上一局；从当前落地页直接进入时必须先回到首圈。
+            route.progress = 0f;
+            route.animate = false;
+        }
         ApplyEndlessScroll();
     }
 
@@ -56,6 +62,8 @@ public sealed class ScrollRoutePresenter : MonoBehaviour, IRouteMotionPresenter
         if (pendingEndlessScroll && route.flatCycleLength <= 0f)
             route.flatCycleLength = YScrollSample.GetRouteLength(route.turnAngle);
         route.infiniteScroll = pendingEndlessScroll;
+        // 一局开始 / 结束：圈分支历史不跨局保留。
+        route.ClearLapHistory();
         Debug.Log("[ScrollRoute] 无限卷轴 = " + pendingEndlessScroll + "（一圈 " + route.Length.ToString("F0") + " 米）");
         if (pendingEndlessScroll) route.RefreshNodeAnchors();
     }
@@ -286,6 +294,8 @@ public sealed class ScrollRoutePresenter : MonoBehaviour, IRouteMotionPresenter
         }
 
         route.right = right;
+        // 仅无限关维护每圈分支；剧情关继续使用原有的单程车道选择。
+        if (route.infiniteScroll) route.CommitLapBranch(right);
         SetAllBranchVisuals(false);
         SetBranchGroup(right ? route.rightBranchVisuals : route.leftBranchVisuals, true);
         SetBranchGroup(right ? route.rightBranchEncounter : route.leftBranchEncounter, true);

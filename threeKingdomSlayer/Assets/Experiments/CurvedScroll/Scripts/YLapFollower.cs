@@ -30,9 +30,7 @@ public sealed class YLapFollower : MonoBehaviour
              "景物 / 节点布景这类真实物件保持关闭（搬家即可）。")]
     public bool copyInsteadOfMove = false;
 
-    [Tooltip("复制模式下**同时**保留前后各几圈的副本。\n" +
-             "⚠ 必须为 0：shader 只有一个全局朝向角，只能把**一个朝向**的内容捋直。\n" +
-             "前后圈的副本朝向不同，同时显示会出现一块歪着的地面把正常内容盖掉。")]
+    [Tooltip("复制模式下同时保留前后各几圈的副本；具体半径由地面或景物的可见范围决定。")]
     [Min(0)] public int copyLapRadius = 0;
 
     private Vector3 _baseLocalPosition;
@@ -46,6 +44,16 @@ public sealed class YLapFollower : MonoBehaviour
 
     private readonly Dictionary<int, GameObject> _copies = new Dictionary<int, GameObject>();
 
+    /// <summary>地面副本各自的圈号与分支；其它渲染器不写入这些属性。</summary>
+    private static readonly int LapIndexId = Shader.PropertyToID("_YSLapIndex");
+    private static readonly int LapBranchId = Shader.PropertyToID("_YSLapBranchSign");
+
+    /// <summary>可复用的 MaterialPropertyBlock（只写本组件负责的两个属性，不碰其它系统的值）。</summary>
+    /// ⚠ 不能在字段初始化器里 `new`：Unity 禁止在 MonoBehaviour 构造期创建原生对象
+    ///   （`Instantiate` 一个带本组件的物体时会直接抛 UnityException）。延迟创建。
+    private MaterialPropertyBlock _lapBlock;
+    private MaterialPropertyBlock LapBlock => _lapBlock ??= new MaterialPropertyBlock();
+
     private void Awake()
     {
         if (route == null) route = GetComponentInParent<YScrollSample>();
@@ -55,14 +63,39 @@ public sealed class YLapFollower : MonoBehaviour
 
     private void OnEnable()
     {
-        if (route != null) route.OnLapChanged += OnLapChanged;
+        if (route != null)
+        {
+            route.OnLapChanged += OnLapChanged;
+            route.OnLapFramesChanged += OnLapFramesChanged;
+        }
         InflateCullingBounds();
     }
 
     private void OnDisable()
     {
-        if (route != null) route.OnLapChanged -= OnLapChanged;
+        if (route != null)
+        {
+            route.OnLapChanged -= OnLapChanged;
+            route.OnLapFramesChanged -= OnLapFramesChanged;
+        }
         RestoreCullingBounds();
+    }
+
+    /// <summary>
+    /// 玩家确定本圈支路后，刷新已缓存副本的圈帧和地面参数。
+    /// 已确定的历史圈帧不变；未来预览帧可能变化。
+    /// </summary>
+    private void OnLapFramesChanged()
+    {
+        if (route == null || !route.infiniteScroll) return;
+        foreach (var pair in _copies)
+        {
+            var copy = pair.Value;
+            if (copy == null) continue;
+            PlaceCopy(copy.transform, pair.Key);
+            ApplyLapBlock(copy, pair.Key);
+            if (window != null) window.SetTrackedDistance(copy.GetComponentsInChildren<Renderer>(true), pair.Key);
+        }
     }
 
     /// <summary>
@@ -222,13 +255,44 @@ public sealed class YLapFollower : MonoBehaviour
         }
     }
 
+    /// <summary>按第 <paramref name="lap"/> 圈的刚体帧摆一份副本（创建与重摆共用）。</summary>
+    private void PlaceCopy(Transform target, int lap)
+    {
+        if (target == null || route == null) return;
+        var frame = route.GetLapFrame(lap);
+        target.localPosition = frame.Apply(_baseLocalPosition);
+        target.localRotation = frame.Rotation * _baseLocalRotation;
+    }
+
+    /// <summary>
+    /// 写入地面副本的圈号与本圈支路，并保留该渲染器上其它系统的属性。
+    /// 本圈起点由本地 z=0 界定，终点使用本圈支路的实际落点和切线。
+    /// </summary>
+    private void ApplyLapBlock(GameObject target, int lap)
+    {
+        if (target == null || route == null) return;
+        float branchSign = route.BranchOfLap(lap) ? 1f : -1f;
+        var renderers = target.GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            var renderer = renderers[i];
+            if (renderer == null) continue;
+            var material = renderer.sharedMaterial;
+            if (material == null || !material.HasProperty(LapIndexId)) continue;
+            // ★ 先取回既有 block 再合入：别把别人（可能有）的属性抹掉。
+            var block = LapBlock;
+            renderer.GetPropertyBlock(block);
+            block.SetFloat(LapIndexId, lap);
+            block.SetFloat(LapBranchId, branchSign);
+            renderer.SetPropertyBlock(block);
+        }
+    }
+
     private GameObject CreateCopy(int lap)
     {
-        var frame = route.GetLapFrame(lap);
         var copy = Instantiate(gameObject, transform.parent, false);
         copy.name = gameObject.name + " (Slice c" + lap + ")";
-        copy.transform.localPosition = frame.Apply(_baseLocalPosition);
-        copy.transform.localRotation = frame.Rotation * _baseLocalRotation;
+        PlaceCopy(copy.transform, lap);
 
         // 副本上的 Follower 不要再管它
         var follower = copy.GetComponent<YLapFollower>();
@@ -245,6 +309,7 @@ public sealed class YLapFollower : MonoBehaviour
             renderers[i].enabled = true;
             renderers[i].localBounds = new Bounds(Vector3.zero, Vector3.one * 10000f);
         }
+        ApplyLapBlock(copy, lap);
         return copy;
     }
 }

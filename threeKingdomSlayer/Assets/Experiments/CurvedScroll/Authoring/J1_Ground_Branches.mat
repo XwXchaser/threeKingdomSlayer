@@ -58,6 +58,9 @@ Material:
     - _StoneExitFade: 26
     - _StoneExitStart: 350
     - _YSGroundMaxZ: 0
+    - _YSLapBranchSign: 0
+    - _YSLapIndex: 0
+    - _YSRoadAlongUv: 1
     m_Colors:
     - _LeftStoneTint: {r: 0.89, g: 1.04, b: 0.93, a: 1}
     - _OuterTint: {r: 1.18, g: 1.11, b: 1.02, a: 1}
