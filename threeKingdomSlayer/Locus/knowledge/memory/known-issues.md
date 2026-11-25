@@ -591,3 +591,19 @@ aiEditMode: inherit
 - **规则**：装备栏只有两种——**主动槽 / 被动槽**；被动内部两种 category 不是互斥的。
   三选一再次抽到**同一变体**是合法结果，必须幂等成功，不得作废奖励。
 - **文件**：`Assets/Scripts/Core/EquipmentLoadout.cs`、`Assets/Scripts/Core/AccessoryLoadout.cs`
+
+## 32. 【已修 2026-11-25】无尽关场景破坏物（补给箱）无法交互
+
+- **现象**：无尽关战斗中 / 战斗后，场景里 InRun 的补给箱点不动；落地页的 OutOfRun 箱子反而可点。
+- **根因**：`BreakableProp.IsSupplyInteractable` 对 InRun 物件要求 `!HubState`；
+  `FakeRouteRuntime.PrepareSceneOnly` 在落地页把 `HubState` 置 true；
+  `SuspendForEndless` 只挂起路线流程，**没有把 HubState 切回关卡态** ⇒ 无尽整局 `HubState=true`
+  ⇒ 所有 InRun 箱子永久不可交互（无论战斗还是战斗后）。
+- **修复**：
+  1. `FakeRouteRuntime.SuspendForEndless()` 置 `BreakableProp.HubState = false`；
+  2. `EndlessRunController.StartEndlessRun()` 再置一次（路线未挂上时双保险）；
+  3. 回落地页由 `ResumePrepared` → `PrepareSceneOnly` 重新置 true。
+- **验证**（Editor Play）：无尽开局前 `HubState=True`，开局后 `HubState=False`；
+  N1 时 E0 箱子 `within=False / sprite=False` 是路线距离/可见性正常现象，到 E0/范围内再验交互。
+- **规则**：`HubState` 是“落地页态 / 关卡态”的全局开关；任何接管战斗流程的模式必须显式切到关卡态。
+- **文件**：`Assets/Scripts/RouteFake/FakeRouteRuntime.Entry.cs`、`Assets/Scripts/Managers/EndlessRunController.cs`

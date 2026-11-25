@@ -223,6 +223,10 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
         _battleActive = false;
         _battleCleared = false;
         SetPhase(FakeRoutePhase.None);
+        // ★ **切到关卡态**（2026-11-25 修「无尽里场景破坏物不能交互」）：
+        //   落地页 PrepareSceneOnly 会把 HubState 置 true；路线让位后没人再置 false，
+        //   而 InRun 破坏物的可交互条件是 !HubState ⇒ 无尽整局（含战斗后）都点不了。
+        BreakableProp.HubState = false;
         // ★ **交还输入门**（2026-11-17 修「无尽关整局做不了手势」）：
         //   `SetPhase(None)` 会走 `SetGameplayInput(false)` → 路线**申请**一份 RouteTravel 拦截。
         //   路线让位后它再也不会去 Release ⇒ 那份拦截会挂到场景销毁为止

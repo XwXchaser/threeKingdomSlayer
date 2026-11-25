@@ -204,6 +204,8 @@ public class EndlessRunController : MonoBehaviour, IEndlessCircleSource
 
         // 让落地页的「开始关卡」按钮隐藏 + **独占路线流程**（否则两套流程争同一个出口面板）
         FakeRouteRuntime.Instance?.SuspendForEndless();
+        // 双保险：即使路线没挂上，无尽也必须是关卡态（InRun 场景破坏物可交互）。
+        BreakableProp.HubState = false;
         // ★ **回收所有教学专属状态**（2026-11-25）：
         //   路线让位后 RouteFlowHub.Current 仍指向那条假路线，教学导演只凭 RouteConfig
         //   会把它当成“还在教学关” → 招式白名单 / 防御键隐藏与静音 / 强制三选一 全都会残留。

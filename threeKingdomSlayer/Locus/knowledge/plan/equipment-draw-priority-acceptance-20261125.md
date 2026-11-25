@@ -70,6 +70,7 @@ aiEditMode: inherit
 
 ### D. Case 2：场景破坏物
 
+0. **前置**：进入无尽后 `BreakableProp.HubState` 必须为 `false`（2026-11-25 修：`SuspendForEndless` / `StartEndlessRun` 切关卡态）。N1 时 E0 箱子 `within=False / sprite=False` 是路线距离/可见性正常现象，到 E0/范围内再验。
 1. 在路线场景选一个 `BreakableProp`，勾「装备奖励（V2）」。
 2. 战斗中选择性打碎：
    - 若在本波末选择**之前**打碎 → 本次波末窗口弹出装备选择。
