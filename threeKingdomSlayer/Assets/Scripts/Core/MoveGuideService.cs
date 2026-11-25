@@ -15,25 +15,65 @@ using UnityEngine;
 /// </summary>
 public static class MoveGuideService
 {
-    /// <summary>收集「已解锁但还没教过」的招式引导（按天赋页顺序：目录里的页 → 武将挂的那棵）。</summary>
+    /// <summary>收集「已解锁但还没教过」的招式引导（武器招式 → 天赋目录 → 武将挂的树）。</summary>
     /// <param name="tree">武将直接挂的树（兼容旧配置 / 目录没配时的兜底）。</param>
     /// <param name="catalog">天赋目录（3 棵分类树）。**只扫 tree 会漏掉页 1 / 页 3 的节点**。</param>
-    public static List<MoveGuideRequest> CollectPending(TalentTreeConfig tree, TalentCatalog catalog = null)
+    /// <param name="weapon">当前装备的主武器。2026-11-24 起招式解锁搬到武器上，引导数据也在 WeaponMoveEntry。</param>
+    public static List<MoveGuideRequest> CollectPending(TalentTreeConfig tree, TalentCatalog catalog = null,
+                                                        MainWeaponConfig weapon = null)
     {
         var result = new List<MoveGuideRequest>();
         var data = SaveManager.Load();
         var seen = new HashSet<string>();
 
-        // 先扫目录里的全部分类（顺序 = 页签顺序）
+        // ① 主武器招式（2026-11-24 的新家；Moves 树已移出）
+        CollectWeaponInto(result, seen, data, weapon);
+
+        // ② 天赋目录里的全部分类（顺序 = 页签顺序）
         if (catalog != null && catalog.categories != null)
         {
             for (int c = 0; c < catalog.categories.Length; c++)
                 CollectInto(result, seen, data, catalog.categories[c]);
         }
 
-        // 兜底：武将直接挂的那棵（目录没配 / 老存档时也能教）
+        // ③ 兜底：武将直接挂的那棵（目录没配 / 老存档时也能教）
         CollectInto(result, seen, data, tree);
         return result;
+    }
+
+    /// <summary>引导 id（存档记「已教过」用）。带前缀避免与旧天赋节点 id 撞。</summary>
+    public static string GuideIdFor(WeaponMoveEntry entry)
+    {
+        return entry != null ? "weapon_move:" + entry.EffectiveMoveId : "";
+    }
+
+    private static void CollectWeaponInto(List<MoveGuideRequest> result, HashSet<string> seen,
+        SaveData data, MainWeaponConfig weapon)
+    {
+        if (weapon == null || weapon.moves == null) return;
+        for (int i = 0; i < weapon.moves.Count; i++)
+        {
+            var entry = weapon.moves[i];
+            if (entry == null || entry.move == null) continue;
+            if (entry.moveGuideGesture == MoveGuideGesture.None) continue;   // 没配手势 = 不教
+            if (!WeaponService.IsEntryUnlocked(entry)) continue;             // 没解锁 = 不教
+
+            string id = GuideIdFor(entry);
+            if (string.IsNullOrEmpty(id)) continue;
+            if (MoveGuideSaveSection.IsTaught(data, id)) continue;           // 教过了 = 不再教
+            if (!seen.Add(id)) continue;
+
+            result.Add(new MoveGuideRequest
+            {
+                nodeId = id,
+                title = string.IsNullOrEmpty(entry.displayName) ? entry.move.name : entry.displayName,
+                move = entry.move,
+                gesture = entry.moveGuideGesture,
+                dialogue = entry.moveGuideDialogue,
+                phase2Dialogue = entry.moveGuidePhase2Dialogue,
+                phase3Dialogue = entry.moveGuidePhase3Dialogue
+            });
+        }
     }
 
     private static void CollectInto(List<MoveGuideRequest> result, HashSet<string> seen,

@@ -47,6 +47,9 @@ aiEditMode: inherit
 
 ## 2. 概念模型
 
+> ⚠️ **2026-11-24 起招式页（move）已移出天赋树**：招式解锁改在 `MainWeaponConfig.moves`（武器界面）。
+> 下面描述的是天赋页的通用结构与历史三页划分；**不要再往天赋树放招式节点**。
+
 ```
 天赋页（TalentTreeConfig, treeId = "main"）
  └─ 大页面 pageId        能力 / 招式 / 技能
@@ -140,7 +143,7 @@ public sealed class TalentBranchConfig
 
 | 前缀 | 用途 | 例 |
 |---|---|---|
-| `talent_move_*` | 招式解锁节点 | `talent_move_c2` |
+| `talent_move_*` | ~~招式解锁节点~~（2026-11-24 起招式移出天赋树，改用 `WeaponMoveEntry.EffectiveMoveId`） | `talent_move_c2`（历史） |
 | `talent_flow_*` | 流派开线节点 | `talent_flow_charge` |
 | `talent_skill_*` | 技能解锁节点 | `talent_skill_ironwall` |
 | `talent_ability_*` | 能力节点 | `talent_ability_vitality` |

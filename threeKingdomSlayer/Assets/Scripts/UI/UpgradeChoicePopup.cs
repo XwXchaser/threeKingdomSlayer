@@ -9,7 +9,7 @@ using UnityEngine;
 /// 代码只负责填充内容 + 淡入淡出动画。
 /// 由 UpgradeChoiceManager 动态 Instantiate / Destroy 管理生命周期。
 /// </summary>
-public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView, IUpgradeChoiceKindView
+public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView, IUpgradeChoiceKindView, IEquipmentReplacePrompt
 {
     [Header("预置卡片")]
     public UpgradeCard card1;
@@ -52,6 +52,10 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView, IUpgradeCho
     public float popRise = 60f;
 
     private UpgradeCard[] _cards;
+    /// <summary>本次弹窗的奖励类别（装备卡片要按「固定变体」渲染）。</summary>
+    private UpgradeRewardKind _kind = UpgradeRewardKind.Attribute;
+    /// <summary>满槽换装时下方弹出的旧装备名单（运行时创建，不改 prefab）。</summary>
+    private EquipmentReplaceListView _replaceList;
     private Tween _fadeTween;
     private readonly List<Tween> _scaleTweens = new List<Tween>();
     private readonly List<Tween> _moveTweens = new List<Tween>();
@@ -81,6 +85,7 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView, IUpgradeCho
 
     private void OnDestroy()
     {
+        _replaceList = null;
         if (_fadeTween != null && _fadeTween.IsActive())
             _fadeTween.Kill(false);
         KillTweens(_scaleTweens);
@@ -102,12 +107,13 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView, IUpgradeCho
     {
         if (_cards == null)
             _cards = new[] { card1, card2, card3 };
+        bool fixedVariant = _kind == UpgradeRewardKind.Equipment;
         for (int i = 0; i < _cards.Length; i++)
         {
             if (i < choices.Count && choices[i] != null)
             {
                 _cards[i].gameObject.SetActive(true);
-                _cards[i].Setup(choices[i], OnCardTapped);
+                _cards[i].Setup(choices[i], OnCardTapped, fixedVariant);
             }
             else
             {
@@ -125,6 +131,7 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView, IUpgradeCho
     /// </summary>
     public void SetChoiceKind(UpgradeRewardKind kind)
     {
+        _kind = kind;
         if (titleText == null) return;
         switch (kind)
         {
@@ -150,7 +157,50 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView, IUpgradeCho
     private void OnCardTapped(UpgradeCard card)
     {
         if (card == null) return;
+        if (IsShowing) return;   // 正在等下方旧装备：不再接受新卡点击
         UpgradeChoiceManager.Instance?.ConfirmChoice(card.Definition);
+    }
+
+    // ── IEquipmentReplacePrompt（满槽异款：下方选旧装备）──
+
+    /// <summary>当前是否在等玩家点下方的旧装备。</summary>
+    public bool IsShowing => _replaceList != null;
+
+    /// <summary>在候选卡下方展示同类别已装备名单（只展示、不推进队列）。</summary>
+    public void ShowReplaceTargets(UpgradeDefinition newVariant, List<EquippedItem> equipped, Action<UpgradeDefinition> onPicked)
+    {
+        HideReplaceTargets();
+
+        var content = card1 != null ? card1.transform.parent as RectTransform : null;
+        var parent = content != null ? content : transform as RectTransform;
+        if (parent == null)
+        {
+            Debug.LogError("[UpgradeChoicePopup] 找不到 Content 节点，无法展示替换列表");
+            return;
+        }
+
+        var font = titleText != null ? titleText.font : TMP_Settings.defaultFontAsset;
+        _replaceList = EquipmentReplaceListView.Create(parent, font, newVariant, equipped, onPicked);
+
+        // 名单开着时，上方卡片不再可点（选新装备那一步已经完成）
+        if (_cards != null)
+        {
+            for (int i = 0; i < _cards.Length; i++)
+            {
+                var card = _cards[i];
+                if (card != null && card.gameObject.activeSelf) card.SetSelectable(false);
+            }
+        }
+    }
+
+    /// <summary>收起名单（替换成功 / 本次奖励结束时调用）。</summary>
+    public void HideReplaceTargets()
+    {
+        if (_replaceList != null)
+        {
+            Destroy(_replaceList.gameObject);
+            _replaceList = null;
+        }
     }
 
     /// <summary>

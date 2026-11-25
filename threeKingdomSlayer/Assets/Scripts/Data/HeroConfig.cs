@@ -52,6 +52,13 @@ public class HeroConfig : ScriptableObject
              "留空 = 没有能力天赋加成。天赋页的目录挂在 overlay 场景上，战斗里不加载 → 所以由武将资产直接指过来。")]
     public TalentTreeConfig abilityTree;
 
+    [Header("主武器")]
+    [Tooltip("主武器目录（换武器 / 招式解锁界面用）。\n" +
+             "武器与招式不进天赋树：装备状态存在 SaveData.equippedWeaponId，\n" +
+             "招式解锁 / 等级存在 unlockedWeaponMoves（前置关系写在武器资产上）。\n" +
+             "留空 = 主武器界面不可用（招式不做武器门，全部视为已解锁）。")]
+    public MainWeaponCatalog weaponCatalog;
+
     [Header("大招配置")]
     [Tooltip("大招技能配置（独立于普通技能体系）")]
     public UltimateSkillConfig ultimateSkillConfig;

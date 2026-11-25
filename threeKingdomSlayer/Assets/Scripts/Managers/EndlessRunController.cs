@@ -36,7 +36,7 @@ using UnityEngine;
 /// ## 存档
 /// 只存**最佳分**与**最高圈数**；局内进度不存（退出即清零）。
 /// </summary>
-public class EndlessRunController : MonoBehaviour
+public class EndlessRunController : MonoBehaviour, IEndlessCircleSource
 {
     public static EndlessRunController Instance { get; private set; }
 
@@ -112,6 +112,8 @@ public class EndlessRunController : MonoBehaviour
 
     // ── 运行时状态 ──
     public bool IsRunning { get; private set; }
+    /// <summary>本局是否刷新了历史最高分（结算面板用；由 <see cref="SaveBest"/> 在写档前判定）。</summary>
+    public bool LastRunSetRecord { get; private set; }
     public int Circle { get; private set; } = 1;
     public string CurrentNodeName { get; private set; } = "";
     public string CurrentBranchName { get; private set; } = "";
@@ -123,7 +125,6 @@ public class EndlessRunController : MonoBehaviour
 
     // ── 事件（UI 层订阅；本类不碰任何 UI 对象）──
     public event Action OnStateChanged;
-    public event Action<int, int> OnWaveSettled;
     public event Action<bool> OnRunEnded;
 
     /// <summary>无限模式的一条边（出口）。</summary>
@@ -145,10 +146,6 @@ public class EndlessRunController : MonoBehaviour
     private int _circleWaveIndex;
     private int _circleWaveTotal;
     private bool _nodeCleared;
-    private bool _waveActive;
-    private float _waveStartTime;
-    private float _waveStartHealth;
-    private int _waveComboPeak;
     private EndlessEdge _pendingEdge;
     private StageConfig _formationSource;
     private bool _choicePanelOpen;
@@ -165,6 +162,8 @@ public class EndlessRunController : MonoBehaviour
 
     private void OnDestroy()
     {
+        // 无尽关没正常结束就销毁（切场景 / 退出）时也要注销，避免留下失效的圈数来源。
+        UpgradeChoiceManager.Instance?.ClearCircleSource(this);
         if (Instance == this) Instance = null;
     }
 
@@ -179,7 +178,6 @@ public class EndlessRunController : MonoBehaviour
         Circle = 1;
         NodeIndex = 1;
         Ledger.Reset();
-        Ledger.BeginCircle(Circle);
 
         if (!BuildRouteGraph())
         {
@@ -200,6 +198,13 @@ public class EndlessRunController : MonoBehaviour
 
         // 让落地页的「开始关卡」按钮隐藏 + **独占路线流程**（否则两套流程争同一个出口面板）
         FakeRouteRuntime.Instance?.SuspendForEndless();
+        // ★ **回收所有教学专属状态**（2026-11-25）：
+        //   路线让位后 RouteFlowHub.Current 仍指向那条假路线，教学导演只凭 RouteConfig
+        //   会把它当成“还在教学关” → 招式白名单 / 防御键隐藏与静音 / 强制三选一 全都会残留。
+        //   ⇒ 由教学导演的统一出口一次性清掉；导演没挂上时至少清掉白名单。
+        // 教学导演在 UI 程序集，Flow 不能直接引用 → 通过 Data 层端口请求回收。
+        TutorialStatePort.ReleaseForModeTakeover();
+        TutorialAttackGate.Clear();   // 无导演时兜底；有导演时这次调用幂等
         // ★ 无限卷轴：无尽关必须开，否则走完一圈就出了地图（什么都不剩）
         FakeRouteRuntime.Instance?.MovementPresenter?.SetEndlessScroll(true);
         // 若剧情路线此刻正在跑（战斗 / 旅行），先把它停掉 → 否则两套流程并行
@@ -214,6 +219,8 @@ public class EndlessRunController : MonoBehaviour
         if (StageController.Instance != null) StageController.Instance.blockRestartOnDefeat = true;
 
         Subscribe();
+        // 装备档位按**内部圈数**分阶段（2026-11-25）：Combat 只认 Data 层接口，不反向引用 Flow。
+        UpgradeChoiceManager.Instance?.SetCircleSource(this);
         BeginCircle();
 
         // **起步 build**：开局免费发几次三选一（冷启动没有天赋/技能/装备，
@@ -230,9 +237,14 @@ public class EndlessRunController : MonoBehaviour
     {
         if (!IsRunning) return;
         Unsubscribe();
+        UpgradeChoiceManager.Instance?.ClearCircleSource(this);
         if (_flow != null) { StopCoroutine(_flow); _flow = null; }
         RouteChoicePanel.HideCurrent();
         _choicePanelOpen = false;
+
+        // 本局铜钱落盘（幂等）：阵亡 / 主动退出都走这里。
+        //   ⚠ 必须在 SaveBest 之前，否则结算面板读到的仍是旧钱包（面板只显示分数，但顺序保持一致）。
+        StageController.Instance?.SettleCoins();
 
         SaveBest();
 
@@ -240,6 +252,10 @@ public class EndlessRunController : MonoBehaviour
 
         // 交还输入门（别把玩家永久锁住；回落地页时路线会重新拦）
         SetGameplayInputAllowed(true);
+        // 正常结束也回收一次教学专属状态（幂等），避免残留到下一局 / 落地页。
+        // 教学导演在 UI 程序集，Flow 不能直接引用 → 通过 Data 层端口请求回收。
+        TutorialStatePort.ReleaseForModeTakeover();
+        TutorialAttackGate.Clear();   // 无导演时兜底；有导演时这次调用幂等
 
         IsRunning = false;
         _pendingEdge = null;
@@ -506,11 +522,9 @@ public class EndlessRunController : MonoBehaviour
             //   你出这个结算干嘛？”）⇒ 走完回程边就**直接接着走下一圈**。
             if (edge.wrap)
             {
-                int circleGain = Ledger.SettleCircle();
-                Debug.Log("[Endless] 第 " + Circle + " 圈完成，本圈得分 " + circleGain + "，继续下一圈");
-
+                // ⚠ **没有圈里程碑分**（2026-11-24 用户定：“删，从来没有这样的内容”）：
+                //   圈只是内部的难度/内容复用单位，**不进分数、不进 HUD、不进结算**。
                 Circle++;
-                Ledger.BeginCircle(Circle);
                 BeginCircle();
                 yield break;   // BeginCircle 已经重新起了协程
             }
@@ -881,12 +895,6 @@ public class EndlessRunController : MonoBehaviour
         if (em != null) em.OnAnyEnemyDied += OnEnemyDied;
         var ps = PlayerState.Instance;
         if (ps != null) ps.OnPlayerDied += OnPlayerDiedHandler;
-        var ws = WaveSpawner.Instance;
-        if (ws != null)
-        {
-            ws.OnWaveStarted += OnWaveStarted;
-            ws.OnWaveCompleted += OnWaveCompleted;
-        }
     }
 
     private void Unsubscribe()
@@ -901,12 +909,6 @@ public class EndlessRunController : MonoBehaviour
         if (em != null) em.OnAnyEnemyDied -= OnEnemyDied;
         var ps = PlayerState.Instance;
         if (ps != null) ps.OnPlayerDied -= OnPlayerDiedHandler;
-        var ws = WaveSpawner.Instance;
-        if (ws != null)
-        {
-            ws.OnWaveStarted -= OnWaveStarted;
-            ws.OnWaveCompleted -= OnWaveCompleted;
-        }
     }
 
     private void OnRouteBattleCompleted()
@@ -939,47 +941,12 @@ public class EndlessRunController : MonoBehaviour
     {
         if (!IsRunning || enemy == null) return;
         Ledger.AddKill(enemy.enemyId);
-        int combo = ComboManager.Instance != null ? ComboManager.Instance.CurrentCombo : 0;
-        if (combo > _waveComboPeak) _waveComboPeak = combo;
-        Ledger.AddComboPeak(_waveComboPeak);
-    }
 
-    private void OnWaveStarted(int waveIndex)
-    {
-        _waveActive = true;
-        _waveStartTime = Time.time;
-        var ps = PlayerState.Instance;
-        _waveStartHealth = ps != null ? ps.currentHealth : 0f;
-        _waveComboPeak = 0;
-    }
-
-    private void OnWaveCompleted(int waveIndex)
-    {
-        if (!IsRunning || !_waveActive) return;
-        _waveActive = false;
-
-        var ps = PlayerState.Instance;
-        float healthRatio = 0f;
-        bool noHit = false;
-        if (ps != null)
-        {
-            float max = Mathf.Max(1f, ps.MaxHealth);
-            healthRatio = Mathf.Clamp01(ps.currentHealth / max);
-            noHit = ps.currentHealth >= _waveStartHealth - 0.001f;
-        }
-
-        int gained = Ledger.SettleWave(new EndlessScoreLedger.WaveSettlementInput
-        {
-            elapsedSeconds = Time.time - _waveStartTime,
-            targetSeconds = 30f,
-            healthRatio = healthRatio,
-            maxCombo = _waveComboPeak,
-            noHitTaken = noHit,
-            noBreakTaken = false
-        });
-
-        OnWaveSettled?.Invoke(gained, Ledger.TotalScore);
-        OnStateChanged?.Invoke();
+        // ⚠ **击杀铜钱不在这里加**（2026-11-24 核对）：
+        //   <c>StageController.Start</c> 无条件把 <c>StageRunFlow.OnEnemyDied</c> 订到
+        //   <c>EnemyManager.OnAnyEnemyDied</c>，而那个回调里已经做了
+        //   <c>AddKill + AddCoins(coinReward × 聚财)</c>，且**不按关卡状态拦截** ⇒ 无尽关一直在加钱。
+        //   这里再写一遍就是双倍。真正缺的是**阵亡时的落盘**，见 EndRun → StageController.SettleCoins。
     }
 
     // ─────────────────────────── 开局重置 / 存档 ───────────────────────────
@@ -999,9 +966,11 @@ public class EndlessRunController : MonoBehaviour
     {
         var data = SaveManager.Load();
         if (data == null) return;
-        if (Ledger.TotalScore > data.endlessBestScore) data.endlessBestScore = Ledger.TotalScore;
+        // 先判定再写：写完之后 best 已经等于本局，就分不出「新纪录」与「平记录」了。
+        LastRunSetRecord = Ledger.TotalScore > data.endlessBestScore;
+        if (LastRunSetRecord) data.endlessBestScore = Ledger.TotalScore;
         if (Circle > data.endlessMaxCircle) data.endlessMaxCircle = Circle;
         SaveManager.Save(data);
-        Debug.Log($"[Endless] 存档：最佳分 {data.endlessBestScore}，最高圈 {data.endlessMaxCircle}");
+        Debug.Log($"[Endless] 存档：最佳分 {data.endlessBestScore}");
     }
 }

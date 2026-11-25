@@ -69,7 +69,9 @@ public class HubDebugSaveButton : MonoBehaviour
 
         // 第二次点：真删
         SaveManager.Delete();
-        Debug.Log("[Hub] 存档已清除（SaveManager.Delete）");
+        // 清完立刻关掉可能开着的运行时面板，避免玩家看到“清完还是解锁”的旧画面
+        WeaponLoadoutPanel.Instance?.Hide();
+        Debug.Log($"[Hub] 存档已清除：HasSave={SaveManager.HasSave}，解锁招式={SaveManager.Load().unlockedWeaponMoves.Count}，铜钱={SaveManager.GetCoins()}");
 
         if (reloadSceneAfterClear)
         {

@@ -86,3 +86,20 @@ void Before(Camera cam) {
 
 - 路线投影材质上的景物一律 **`scale.x > 0`**，左右朝向用 `flipX`。
 - 内嵌 `Sprites/Default` 上的景物不受约束 0/1 影响（无投影分支，Scene 与 Game 一致），但若计划将来换到路线材质，也应提前改为正缩放 + `flipX`。
+
+## 6. 无尽圈地面：UV 归属与覆盖（2026-11-24 用户已验收）
+
+`YGroundJ1Branches.shader` 是本项目唯一由 `_YSLapIndex` / `_YSLapBranchSign`（每 Renderer 的 MPB）驱动的地面材质。
+要改它先读 `design/endless-mode-design.md` §2.4，下面是**容易写错的四条**：
+
+1. **圈界归属用本圈本地空间的互补半空间**，不要用 `k·L` 或全路线距离：
+   `_YSLapIndex > 0 && map.y < 0` 丢弃；`dot(map − lapEnd(支路), lapForward(支路)) >= 0` 丢弃。
+   相邻两份共享同一平面（`F_(k+1) = F_k ∘ S(branch_k)`）⇒ 不分叉不露洞。`copyLapRadius` 必须 ≥ 1。
+2. **UV 分区**：路外恒为 `i.map/4`；只有道路走廊（路宽 + 路肩 + 1.5 m 内）用沿路坐标。
+   每圈相位按 **4 m 周期**，只作用于走廊与圈界局部；给路外加相位会让**非 4 倍数圈长时路外纹理每圈平移**。
+3. **石板收尾按本圈 flat z 反算**，不能把沿路米数直接填进 flat z（分叉后 1 m 沿路 ≈ 0.707 m flat z）。
+4. `_YSCycleLength = 0`（剧情关）必须走原 `_StoneExitStart` 分支，公式逐字保留 ⇒ 有限关逐像素不变。
+
+**坑（本轮差点误判）**：远处地面有 `0.009·d²` 的无上限下沉，会**投影回折**到近景屏幕像素 ⇒
+同一像素会被两份地面各画一次。这**不是**共面闪烁。判覆盖要用 Frame Debugger 导出的 RT（或临时 `_YSGroundMaxZ=40` 隔离近景），
+不要用带 HUD/后载景物的截图做颜色掩码统计。

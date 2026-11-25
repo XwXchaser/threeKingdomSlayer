@@ -20,7 +20,11 @@ MonoBehaviour:
   levelFeatureDescriptions: []
   rarity: 0
   maxLevel: 5
+  defaultLevelCap: 0
+  quality: 0
+  unlockedByDefault: 1
   effectType: wave
+  statId: 
   numericLevels: []
   floatValue: 2
   intValue: 0
@@ -41,6 +45,8 @@ MonoBehaviour:
   waveLevels: []
   chargeHitShockwaveLevels: []
   diseaseLevels: []
+  axeSmashLevels: []
+  chainPullLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
@@ -53,5 +59,4 @@ MonoBehaviour:
     initialDamage: 0
     landingDamagePercent: 0
   prerequisites: []
-  requiredTalentIds:
-  - talent_pool_wave
+  requiredTalentIds: []

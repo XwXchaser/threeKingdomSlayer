@@ -239,6 +239,11 @@ aiEditMode: inherit
 两处**职责不同**（一个给数值、一个给图标与等级），但视觉上冗余。
 **是否收敛属于 HUD 结构问题 → 归 UI / 美术侧判断，本周不动。**
 
+> ✅ **2026-11-24 已收敛（用户验收）**：`BuffDisplayPanel.ColumnA`（左侧属性图标排）**整套废弃**——
+> 属性提升（`statId` 非空）不再在左侧显示图标；底部只剩右下角 `PassiveSkillRow`（饰品/机制被动）。
+> 场景里的 `BuffIcon_A_*` 槽位保留但不再被引用（保持 inactive）；`ColumnB`（道具/主动技能）不变。
+> 代码落点：`BuffDisplayPanel.OnUpgradeApplied` 对非道具/非主动技能直接 return。
+
 > 另一个口径细节：`PassiveUpgradeCount` 按 `upgradeId` 去重，而被动排按 `UpgradeDefinition` 逐条列。
 > 当前项目内 **40 个升级资产无重复 upgradeId**（已实测），两者数目一致。
 

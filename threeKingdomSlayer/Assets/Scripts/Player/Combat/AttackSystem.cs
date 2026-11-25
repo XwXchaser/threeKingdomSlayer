@@ -473,11 +473,10 @@ public partial class AttackSystem : MonoBehaviour
         if (attackType == AttackType.Parry)
         {
             var hero = playerState.heroConfig;
-            var tree = hero != null ? hero.talentTree : null;
             var parryCfg = hero != null ? hero.GetSkillConfig(AttackType.Parry) : null;
-            if (TalentTreeState.IsMoveGatedAndLocked(tree, parryCfg))
+            if (!WeaponService.IsMoveUnlocked(parryCfg))
             {
-                Debug.Log("[Talent] 招架尚未解锁，本次输入不生效");
+                Debug.Log("[Weapon] 招架尚未解锁，本次输入不生效");
                 return false;
             }
         }

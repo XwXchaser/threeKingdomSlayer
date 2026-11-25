@@ -161,6 +161,8 @@ public sealed class UpgradePoolSampler
             var wu = pool[i];
             if (wu == null || wu.upgrade == null) continue;
             if (!UpgradeRewardClassifier.IsAccessory(wu.upgrade)) continue;
+            // **永久解锁过滤**（2026-11-24）：没解锁的饰品不进候选
+            if (!EquipmentUnlockService.IsUnlocked(wu.upgrade)) continue;
             if (!PrerequisitesMet(wu.upgrade)) continue;
             if (!RequirementsMet(wu.upgrade, UpgradePoolKind.Regular)) continue;
             int currentLevel = GetLevel(wu.upgrade);
@@ -200,6 +202,8 @@ public sealed class UpgradePoolSampler
             if (wu == null || wu.upgrade == null || wu.upgrade.category != UpgradeCategory.ActiveSkill) continue;
             var skill = wu.upgrade as ActiveSkillDefinition;
             if (skill == null) continue;
+            // **永久解锁过滤**（2026-11-24）：没解锁的影之武装不进候选（初始解锁靠 unlockedByDefault）
+            if (!EquipmentUnlockService.IsUnlocked(skill)) continue;
             if (!CanAcquireActiveSkill(skill)) continue;
             // 同样的天赋解锁条件（与 CollectUnified 口径一致）
             if (!RequirementsMet(wu.upgrade, UpgradePoolKind.Regular)) continue;
@@ -332,8 +336,11 @@ public sealed class UpgradePoolSampler
 
     // ───────── 判定 ─────────
 
-    /// <summary>前置条件：需要其他升级达到指定等级。</summary>
-    private bool PrerequisitesMet(UpgradeDefinition def)
+    /// <summary>
+    /// 前置条件：需要其他升级达到指定等级。
+    /// public：属性抽取器（<see cref="AttributeChoiceDrawer"/>）复用同一套前置判定，避免两套口径。
+    /// </summary>
+    public bool PrerequisitesMet(UpgradeDefinition def)
     {
         if (def == null) return false;
         if (def.prerequisites == null || def.prerequisites.Count == 0) return true;

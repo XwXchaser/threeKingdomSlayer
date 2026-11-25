@@ -29,6 +29,8 @@ public static class TutorialSetupTool
     private const string RoutePath = "Assets/RouteData/Tutorial/Tutorial_Route.asset";
     private const string DialogueDir = "Assets/ScriptableObjects/Dialogue/";
     private const string SkillPoolPath = "Assets/ScriptableObjects/ActiveSkills/ActiveSkillPoolConfig.asset";
+    /// <summary>2026-11-25 起 V2 实际读取的装备池（冰雾也要从这里移走，否则教学仍能抽到）。</summary>
+    private const string EquipmentPoolPath = "Assets/ScriptableObjects/Equipment/EquipmentPoolConfig.asset";
 
     private const string CyclonePath = "Assets/ScriptableObjects/ActiveSkills/ActiveSkill_Cyclone.asset";
     private const string WavePath = "Assets/ScriptableObjects/ActiveSkills/ActiveSkill_Wave.asset";
@@ -386,7 +388,7 @@ public static class TutorialSetupTool
             log.Add("已关闭主动技能默认赠送（冰雾不再开局白送）");
         }
 
-        // ② 随机技能池
+        // ② 随机技能池（旧池；V2 已不读，保留避免旧工具引用丢失）
         var pool = Load<ActiveSkillPoolConfig>(SkillPoolPath);
         if (pool != null)
         {
@@ -398,6 +400,28 @@ public static class TutorialSetupTool
             {
                 EditorUtility.SetDirty(pool);
                 log.Add("随机技能池已移除冰雾（" + removed + " 处）");
+            }
+        }
+
+        // ②b 新装备池（2026-11-25 起 V2 实际读取这里）
+        var equipPool = Load<EquipmentPoolConfig>(EquipmentPoolPath);
+        if (equipPool != null && equipPool.variants != null)
+        {
+            int removed = 0;
+            for (int i = equipPool.variants.Count - 1; i >= 0; i--)
+            {
+                var entry = equipPool.variants[i];
+                if (entry == null || entry.variant == null) continue;
+                if (entry.variant.upgradeId == "active_ice_mist")
+                {
+                    equipPool.variants.RemoveAt(i);
+                    removed++;
+                }
+            }
+            if (removed > 0)
+            {
+                EditorUtility.SetDirty(equipPool);
+                log.Add("装备池已移除冰雾（" + removed + " 处）");
             }
         }
     }

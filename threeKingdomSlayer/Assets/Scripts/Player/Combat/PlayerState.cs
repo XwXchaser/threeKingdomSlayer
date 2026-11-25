@@ -285,6 +285,9 @@ public class PlayerState : MonoBehaviour
 
     private void Start()
     {
+        // 主武器（2026-11-24）：把存档里装备的武器配置套上。换武器只在局外做，下一次进关生效。
+        WeaponService.ApplyEquippedHeroConfig(this);
+
         if (heroConfig == null)
         {
             Debug.LogError("[PlayerState] heroConfig 未赋值！将使用默认值运行，部分功能可能受限");

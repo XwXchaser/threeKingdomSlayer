@@ -198,6 +198,15 @@ public sealed partial class FakeRouteRuntime : MonoBehaviour
     private bool _suspended;
 
     /// <summary>
+    /// 路线是否已**让位给无尽模式**（2026-11-25）。
+    ///
+    /// 为什么需要这个只读口：让位后 <see cref="RouteFlowHub.Current"/> 仍会返回本对象
+    /// （它只是不跑流程），而教学导演 / 各类“是否在教学路线”的判定只看 RouteConfig
+    /// ⇒ 会把无尽关误判成教学关（实测：招式白名单启用且为空 → 所有攻击被拦）。
+    /// </summary>
+    public bool IsSuspended => _suspended;
+
+    /// <summary>
     /// **无限模式接管**（2026-11-16）：停掉路线自身的流程，并禁止它再弹出口面板 / 进节点。
     ///
     /// ⚠ **为什么必须“接管”而不是只“挂起就绪态”**（实测踩到）：

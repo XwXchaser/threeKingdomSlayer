@@ -1,4 +1,3 @@
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,7 +8,8 @@ using UnityEngine.UI;
 /// 用途：打到手机上直接跳到下一个节点 ✅（测路线 / 测场景表现 ✅，不用真打一场 ✅）。
 ///
 /// 边界（别越线 ✅）：
-///   • **只进开发构建** ✅（<c>DEVELOPMENT_BUILD</c> / 编辑器 ✅）→ 正式包里没有这个按钮 ✅；
+///   • **正式包也保留**（2026-11-24 用户定：“我需要正式版也保留这个按钮，后续再关闭”）
+///     ⇒ 已移除原先的 <c>DEVELOPMENT_BUILD</c> 条件编译；要关掉时再加回或加开关。
 ///   • **不碰战斗逻辑** ✅：走现成通路 ✅ —— 清场 ✅ + 把本节点战斗条目标记完成 ✅
 ///     → 直接进战后演出 / 选路 ✅（见 <see cref="IRouteFlow.SkipCurrentNodeBattle"/> ✅）；
 ///   • **不碰奖励发放** ✅：三选一该弹还是弹 ✅（没开就不弹 ✅）。
@@ -199,4 +199,3 @@ public sealed class DevSkipBattleButton : MonoBehaviour
         return null;
     }
 }
-#endif

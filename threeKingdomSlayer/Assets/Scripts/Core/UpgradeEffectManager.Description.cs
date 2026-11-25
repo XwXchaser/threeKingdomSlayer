@@ -22,6 +22,18 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
         return AppendFeatureDescriptions(GetDescriptionForLevel(def, level + 1), def, level + 1, false, level);
     }
 
+    /// <summary>
+    /// **指定等级的效果文本**（2026-11-25）——装备变体卡片用：
+    /// 直接显示“装上这一件就是这一级的数值”，不做「当前 → 下一级」对比。
+    /// </summary>
+    public string GetUpgradeDescriptionAtLevel(UpgradeDefinition def, int level)
+    {
+        if (def == null) return string.Empty;
+        level = Mathf.Max(1, level);
+        string description = GetDescriptionForLevel(def, level);
+        return AppendFeatureDescriptions(description, def, level, false, level);
+    }
+
     public string GetUpgradePreviewDescription(UpgradeDefinition def)
     {
         int currentLevel = GetDisplayLevel(def);

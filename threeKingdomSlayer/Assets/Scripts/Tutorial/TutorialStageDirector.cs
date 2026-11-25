@@ -14,7 +14,7 @@ using UnityEngine;
 /// 1021 的破盾教学就做不出来；C4 终结技由天赋节点锁着，不需要再禁一次。
 /// 玩家阵亡也不改判定：死了就是失败，弹失败面板，按检查点重来。
 /// </summary>
-public partial class TutorialStageDirector : MonoBehaviour
+public partial class TutorialStageDirector : MonoBehaviour, ITutorialStateGate
 {
     /// <summary>单例（常驻点击特效要判断「教学拍是不是在进行中」）。</summary>
     public static TutorialStageDirector Instance { get; private set; }
@@ -22,6 +22,8 @@ public partial class TutorialStageDirector : MonoBehaviour
     private void Awake()
     {
         if (Instance == null) Instance = this;
+        // 把“教学状态回收”能力注册到 Data 层端口：Flow（无尽）不能反向引用 UI。
+        TutorialStatePort.Register(this);
         // 注册**世界侧压暗后端**（统一遮罩系统）：
         //   UI 侧由 UiMask 负责，背景侧由 TutorialSceneDim 负责 → 两者由同一条规则发起。
         if (_sceneDim == null) _sceneDim = GetComponent<TutorialSceneDim>();
@@ -31,6 +33,7 @@ public partial class TutorialStageDirector : MonoBehaviour
 
     private void OnDestroy()
     {
+        TutorialStatePort.Unregister(this);
         if (Instance == this) Instance = null;
         // 导演没了 → 它申请的遮罩与世界压暗都要收
         MaskService.Clear(this);
@@ -262,6 +265,26 @@ public partial class TutorialStageDirector : MonoBehaviour
         MaskService.Clear(this);
     }
 
+    /// <summary>
+    /// **模式接管**（无尽 / 非教学流程）时回收所有教学专属状态（2026-11-25）。
+    ///
+    /// 与 OnDisable 的 <see cref="ReleaseGlobalTutorialState"/> 区别：
+    ///   导演仍然启用、仍会在下一帧 Update 里跑；所以要在“接管这一刻”把状态清干净，
+    ///   之后由 <see cref="IsTutorialSessionActive"/> 保证它不会再按教学关处理。
+    ///
+    /// 覆盖：攻击白名单 / 教学三选一 / 教学输入 static / 教学时停 / 教学输入门 / 遮罩 /
+    ///       防御键静音 / 防御键隐藏锁。
+    /// 幂等：可重复调用。
+    /// </summary>
+    public void ReleaseTutorialOnlyStateForModeTakeover()
+    {
+        SafeStep("收拍", StopHint);
+        SafeStep("回收全局教学状态", ReleaseGlobalTutorialState);
+        SafeStep("取消防御静音", () => { SetDefenseMuteChoice(false); SetDefenseMuteBeat(false); });
+        SafeStep("开放防御键", () => DefenseButton.Instance?.SetAvailable(true));
+        Debug.Log("[Tutorial] 模式接管：已回收教学专属状态（攻击白名单 / 防御键 / 三选一 / 输入 / 遮罩）");
+    }
+
     /// <summary>退订（可重复调用，重复退订无害）。</summary>
     private void UnsubscribeEvents()
     {
@@ -321,10 +344,8 @@ public partial class TutorialStageDirector : MonoBehaviour
         var choices = UpgradeChoiceManager.Instance;
         if (choices == null) return;
 
-        var route = RouteFlowHub.Current;
-        bool definitelyOffTutorial = route != null && tutorialRouteConfig != null
-                                    && route.RouteConfig != tutorialRouteConfig;
-        if (!definitelyOffTutorial) return;
+        if (RouteFlowHub.Current == null) return;   // 路线未就绪：不动，避免教学刚开始就误清
+        if (IsTutorialSessionActive()) return;
 
         bool hadForced = choices.forcedChoices != null && choices.forcedChoices.Count > 0;
         bool suppressed = choices.suppressChoices;
@@ -384,13 +405,14 @@ public partial class TutorialStageDirector : MonoBehaviour
 
     private void ReleaseTutorialOnlyDefenseMuteIfOffTutorialRoute()
     {
-        if (!_defenseMutedByChoice) return;
-        var route = RouteFlowHub.Current;
-        bool definitelyOffTutorial = route != null && tutorialRouteConfig != null
-                                    && route.RouteConfig != tutorialRouteConfig;
-        if (!definitelyOffTutorial) return;
+        if (!_defenseMutedByChoice && !_defenseMutedByBeat) return;
+        if (RouteFlowHub.Current == null) return;   // 路线未就绪：不动
+        if (IsTutorialSessionActive()) return;
         SetDefenseMuteChoice(false);
-        Debug.Log("[Tutorial] 已离开教学路线 → 还原防御键（取消静音）");
+        SetDefenseMuteBeat(false);
+        // “教学未教到 → 隐藏”也是教学专属状态：非教学模式必须把防御键还回来。
+        DefenseButton.Instance?.SetAvailable(true);
+        Debug.Log("[Tutorial] 已离开教学会话 → 还原防御键（取消静音 + 解除隐藏）");
     }
 
     /// <summary>
@@ -406,13 +428,9 @@ public partial class TutorialStageDirector : MonoBehaviour
         // 教学路线里：**教到防御之前一律锁住**（看不见也点不到）。
         // 不看存档的 tutorialCompleted —— 就算之前通关过，只要这一局还在教学路线上，
         // 没教到就不给看（2026-11-01 用户反馈：「还没教格挡你给格挡按键干嘛」）。
-        bool shouldLock = false;
-        if (!_defendTaught)
-        {
-            var route = RouteFlowHub.Current;
-            bool onTutorialRoute = route != null && tutorialRouteConfig != null && route.RouteConfig == tutorialRouteConfig;
-            shouldLock = onTutorialRoute;
-        }
+        // ★ 2026-11-25：非教学模式（含被无尽挂起的路线）**一律开放** ——
+        //   之前这里自己复制了一份 RouteConfig 比较，没看 IsSuspended → 无尽关防御键被隐藏。
+        bool shouldLock = !_defendTaught && IsTutorialSessionActive();
 
         if (button.Available == shouldLock) button.SetAvailable(!shouldLock);
     }
@@ -520,7 +538,7 @@ public partial class TutorialStageDirector : MonoBehaviour
             var route = RouteFlowHub.Current;
             // 只在**真正进关卡**时播（2026-10-26：原来只要路线不是 None 就播 → 落地页（Ready）也播，
             // 于是玩家还没点「开始关卡」就被一句阻塞台词 + 遮罩糊在脸上）
-            if (route != null && route.RouteConfig == tutorialRouteConfig &&
+            if (route != null && !route.IsSuspended && route.RouteConfig == tutorialRouteConfig &&
                 (route.Phase == FakeRoutePhase.EnteringNode || route.Phase == FakeRoutePhase.Battle))
             {
                 _openingPlayed = true;
@@ -532,7 +550,7 @@ public partial class TutorialStageDirector : MonoBehaviour
         }
 
         var routeRuntime = RouteFlowHub.Current;
-        bool onTutorialRoute = routeRuntime != null && tutorialRouteConfig != null && routeRuntime.RouteConfig == tutorialRouteConfig;
+        bool onTutorialRoute = IsTutorialSessionActive();
 
         // 出口光标：选完路（或离开选择阶段/离开教学路线）就收起来。必须放在下面的「已推过」早退之前。
         if (_routeHintActive && (!onTutorialRoute || routeRuntime.Phase != FakeRoutePhase.ChoosingRoute))
@@ -659,12 +677,24 @@ public partial class TutorialStageDirector : MonoBehaviour
     /// 教学导演是常驻组件（挂在 Battle.scene）→ 正式关里它也在，
     /// 所以教学行为必须自己判路线，不能靠「只跑一次」的标志位。
     /// </summary>
-    private bool IsOnTutorialRoute()
+    /// <summary>
+    /// **教学会话是否真的在进行**（2026-11-25 单一判定）：
+    ///   · 当前路线必须是教学路线；
+    ///   · 且这条路线**没有被无尽模式挂起**（让位后它仍留在 RouteFlowHub.Current 里）；
+    ///   · 路线配置已就绪。
+    ///
+    /// 所有“教学专属”状态（招式白名单 / 防御键锁 / 强制三选一 / 静音 / HUD 锁）都问这里，
+    /// 不要各自复制一份 RouteConfig 比较 —— 那样必然漏掉“已挂起”这一维。
+    /// </summary>
+    public bool IsTutorialSessionActive()
     {
         var routeRuntime = RouteFlowHub.Current as FakeRouteRuntime;
-        return routeRuntime != null && tutorialRouteConfig != null
+        return routeRuntime != null && !routeRuntime.IsSuspended && tutorialRouteConfig != null
                && routeRuntime.RouteConfig == tutorialRouteConfig;
     }
+
+    /// <summary>兼容旧调用点：等价于 <see cref="IsTutorialSessionActive"/>。</summary>
+    private bool IsOnTutorialRoute() => IsTutorialSessionActive();
 
     /// <summary>把提示手落在三选一的推荐卡上。</summary>
     private void ShowChoiceHint(UpgradeDefinition recommended)

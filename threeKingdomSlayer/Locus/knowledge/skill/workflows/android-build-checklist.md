@@ -42,6 +42,8 @@ skillSurface: command
 ## 5. 出包前确认
 
 - [ ] Roslyn `code_diagnostics` 与 `unity_recompile` 双重验证通过后再提交
+- [ ] 调试入口符合当前口径：`DevSkipBattleButton` **2026-11-24 起正式包保留**（用户定，后续再关）；
+      其它调试 / 实验 UI **不应**用无条件 `RuntimeInitializeOnLoadMethod` 进正式包（参见 `memory/known-issues.md` §27）
 - [ ] 真机验证中文文本渲染、纹理画质，以及长屏比例（18:9 以上）下 UI 不重叠
 - [ ] 每次改动单独出包验证，不累积多个未验证改动
 

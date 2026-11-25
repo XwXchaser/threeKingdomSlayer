@@ -31,7 +31,7 @@ public partial class TutorialStageDirector
         var hero = ps != null ? ps.heroConfig : null;
         if (hero == null) return result;
 
-        var pending = MoveGuideService.CollectPending(hero.talentTree, hero.talentCatalog);
+        var pending = MoveGuideService.CollectPending(hero.talentTree, hero.talentCatalog, WeaponService.Equipped);
         for (int i = 0; i < pending.Count; i++)
         {
             var req = pending[i];

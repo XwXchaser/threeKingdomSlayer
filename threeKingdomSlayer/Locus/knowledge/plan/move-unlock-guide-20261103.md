@@ -14,6 +14,8 @@ aiEditMode: inherit
 
 # 招式解锁引导（解锁后首次进关弹出）（2026-11-03）
 
+> **2026-11-24 迁移提示**：招式已从天赋树搬到武器树；文中 `talent_move_slash` → `move_spear_slash`（`MainWeapon_ZhangfeiSpear`），`guide_move_slash` 继续复用。其余流程与验收口径仍适用。
+
 > 需求（用户）：「建议做 slash 解锁后的相关教学，在玩家解锁 slash 后初次进入关卡弹出 slash 引导（这个引导之前就有）」。
 >
 > 裁决（用户 2026-11-03 选定）：

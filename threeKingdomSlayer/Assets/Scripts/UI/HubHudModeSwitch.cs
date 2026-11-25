@@ -122,6 +122,11 @@ public sealed class HubHudModeSwitch : MonoBehaviour
         bool ready = state != null && state.IsPrepared;
         bool overlayOpen = state != null && state.IsOverlayOpen;
 
+        // **主武器入口**（2026-11-24）：运行时克隆落地页的「天赋」卡做一个同级入口。
+        // ⚠ 不能挂在 `BattleHubTabBar.Start`：那个 tab 栏在落地页是 **inactive** 的，Start 根本不会跑。
+        //   这里在活跃的 HubHUD 上，且就绪态 / 状态变化时都会重试（首次可能早于 PlayerState）。
+        if (ready) HubWeaponEntry.EnsureCreated();
+
         // 进入 Play 后第一次强制应用：清掉编辑模式留下的预览隐藏，
         // 否则状态恰好等于缓存默认值时，战斗组会一直保持隐藏。
         if (!_playPrimed)

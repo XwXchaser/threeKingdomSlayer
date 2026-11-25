@@ -22,6 +22,7 @@ MonoBehaviour:
   maxLevel: 5
   defaultLevelCap: 0
   quality: 0
+  unlockedByDefault: 1
   effectType: push_wave
   statId: 
   numericLevels:
@@ -73,5 +74,4 @@ MonoBehaviour:
     initialDamage: 0
     landingDamagePercent: 0
   prerequisites: []
-  requiredTalentIds:
-  - talent_pool_push
+  requiredTalentIds: []

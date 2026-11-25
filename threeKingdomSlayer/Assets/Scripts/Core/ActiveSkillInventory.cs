@@ -177,6 +177,160 @@ public class ActiveSkillInventory : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// **换装：把指定槽位的影之武装换成另一件**（2026-11-24 用户定：影之武装本局可替换）。
+    ///
+    /// 语义：**槽位不动，内容换掉**，等级从 Lv.1 重新开始（换掉的技能本身不留等级）。
+    /// 不做的事：不碰其它槽位、不碰被动、不在这里写存档（解锁资格才是存档的，本局持有不存）。
+    /// ⚠ 调用时机应该在**波末三选一**（此时没有技能在施放）；不提供中途打断当前技能的保证。
+    /// </summary>
+    /// <returns>换成功返回 true；槽位不存在 / 目标已在其它槽 / 同一件 / 规则不是 V2 返回 false。</returns>
+    public bool Replace(int entryId, ActiveSkillDefinition definition)
+    {
+        // 旧 F2 入口：固定 Lv.1。新变体规则走 ReplaceVariant（按可见等级、按种类查重）。
+        return ReplaceVariant(entryId, definition, 1);
+    }
+
+    /// <summary>按**同款身份**（<see cref="UpgradeDefinition.KindId"/>）查已装备的影之武装。</summary>
+    public SkillEntry FindByKind(string kindId)
+    {
+        if (string.IsNullOrEmpty(kindId)) return null;
+        for (int i = 0; i < _entries.Count; i++)
+        {
+            var entry = _entries[i];
+            if (entry.definition != null && entry.definition.KindId == kindId) return entry;
+        }
+        return null;
+    }
+
+    /// <summary>该种类的影之武装是否已在某个槽里（不同品质 / 等级算同款）。</summary>
+    public bool IsKindEquipped(string kindId) => FindByKind(kindId) != null;
+
+    /// <summary>
+    /// **空槽装备一个变体**（2026-11-25）：等级 = 变体的可见等级，不做 +1 / 不合成。
+    /// 已有同款、槽位已满、非 V2 规则都返回 false（调用方应先判定「同款替换 / 满槽换装」）。
+    /// </summary>
+    public bool TryEquipVariant(ActiveSkillDefinition variant, int level, out SkillEntry entry)
+    {
+        entry = null;
+        if (!UsesActiveSkills || variant == null) return false;
+        if (FindByKind(variant.KindId) != null) return false;
+        if (IsFull) return false;
+
+        entry = new SkillEntry
+        {
+            id = _nextEntryId++,
+            definition = variant,
+            level = Mathf.Max(1, level),
+            cooldownRemaining = 0f,
+            cooldownDuration = 0f
+        };
+        _entries.Add(entry);
+        SyncPlayerState(null, variant, entry.level);
+        OnSkillsChanged?.Invoke();
+        OnCooldownsChanged?.Invoke();
+        Debug.Log($"[ActiveSkillInventory] 装备 {variant.displayName}（{variant.quality} Lv.{entry.level}，kind={variant.KindId}）");
+        return true;
+    }
+
+    /// <summary>
+    /// **把指定槽换成新变体**（同款换品质 / 等级，或异款替换）：槽位不动，等级取新变体的可见等级。
+    /// 同款已在另一个槽时拒绝（不允许同一件影之武装占两格）。
+    /// </summary>
+    public bool ReplaceVariant(int entryId, ActiveSkillDefinition variant, int level)
+    {
+        if (!UsesActiveSkills || variant == null) return false;
+
+        var entry = FindById(entryId);
+        if (entry == null) return false;
+
+        // 目标同款已经在**别的**槽里 ⇒ 拒绝（否则同一件技能会占两格，冷却与 HUD 都会重复）
+        var sameKind = FindByKind(variant.KindId);
+        if (sameKind != null && sameKind != entry) return false;
+
+        level = Mathf.Max(1, level);
+        var oldDefinition = entry.definition;
+        if (oldDefinition == variant && entry.level == level)
+            return true;   // 幂等：同一变体同一级，重复点不算失败
+
+        entry.definition = variant;
+        entry.level = level;
+        entry.cooldownRemaining = 0f;
+        entry.cooldownDuration = 0f;
+
+        SyncPlayerState(oldDefinition, variant, level);
+        OnSkillsChanged?.Invoke();
+        OnCooldownsChanged?.Invoke();
+        Debug.Log($"[ActiveSkillInventory] 槽 {entryId} 换装 → {variant.displayName}（{variant.quality} Lv.{level}）");
+        return true;
+    }
+
+    /// <summary>把**当前持有的同款**换成新变体（同款直接替换原槽）。</summary>
+    public bool ReplaceKindVariant(ActiveSkillDefinition variant, int level)
+    {
+        if (variant == null) return false;
+        var entry = FindByKind(variant.KindId);
+        return entry != null && ReplaceVariant(entry.id, variant, level);
+    }
+
+    /// <summary>移除一个主动槽位（换装流程里用于清掉被替下的那一件），同时清掉玩家持有记录。</summary>
+    public bool Remove(int entryId)
+    {
+        var entry = FindById(entryId);
+        if (entry == null) return false;
+
+        _entries.Remove(entry);
+        RemoveFromPlayerState(entry.definition);
+        OnSkillsChanged?.Invoke();
+        OnCooldownsChanged?.Invoke();
+        return true;
+    }
+
+    /// <summary>
+    /// 同步玩家持有记录（`PlayerState.acquiredUpgrades` 是 HUD / 快照的读取源）。
+    /// 换装时必须把**旧变体**那条换成**新变体**，否则同等级换装会留下旧记录。
+    /// </summary>
+    private void SyncPlayerState(UpgradeDefinition oldDefinition, UpgradeDefinition newDefinition, int level)
+    {
+        var ps = PlayerState.Instance;
+        if (ps == null || newDefinition == null) return;
+
+        if (oldDefinition == newDefinition)
+        {
+            for (int i = 0; i < ps.acquiredUpgrades.Count; i++)
+            {
+                if (ps.acquiredUpgrades[i].definition != newDefinition) continue;
+                ps.acquiredUpgrades[i].currentLevel = level;
+                return;
+            }
+        }
+        else
+        {
+            RemoveFromPlayerState(oldDefinition);
+        }
+
+        for (int i = 0; i < ps.acquiredUpgrades.Count; i++)
+        {
+            if (ps.acquiredUpgrades[i].definition != newDefinition) continue;
+            ps.acquiredUpgrades[i].currentLevel = level;
+            return;
+        }
+        ps.acquiredUpgrades.Add(new UpgradeAcquired { definition = newDefinition, currentLevel = level });
+    }
+
+    private static void RemoveFromPlayerState(UpgradeDefinition definition)
+    {
+        if (definition == null) return;
+        var ps = PlayerState.Instance;
+        if (ps == null) return;
+        for (int i = ps.acquiredUpgrades.Count - 1; i >= 0; i--)
+        {
+            var acquired = ps.acquiredUpgrades[i];
+            if (acquired != null && acquired.definition == definition)
+                ps.acquiredUpgrades.RemoveAt(i);
+        }
+    }
+
     public bool TryActivate(int entryId)
     {
         if (PlayerState.Instance == null || PlayerState.Instance.stageState != StageState.InProgress) return false;

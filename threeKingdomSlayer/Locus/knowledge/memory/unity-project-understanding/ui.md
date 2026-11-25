@@ -31,7 +31,7 @@ aiEditMode: inherit
 | **伤害数字** ✅ ✅ | `UI/DamageNumber.cs` ✅ ✅、`DamageNumberManager.cs` ✅ ✅ ✅ | ✅ |
 | **敌人血条** ✅ ✅ | `UI/EnemyHealthBar.cs` ✅ ✅ + `EnemyHealthBarFactory.cs` ✅ ✅✅ ✅ | ✅ |
 | **Boss 血条** ✅ ✅ | `UI/BossHealthUI.cs` ✅ ✅ | Boss 阶段 ✅ ✅✅ ✅ |
-| **状态图标 HUD** ✅ ✅ | `UI/BuffDisplayPanel.cs` ✅ ✅、`BuffIcon.cs` ✅ ✅、`ElementalBuffHUD.cs` ✅ ✅ | 状态 ✅ ✅（两套 ✅ ✅ 见 `buff-and-status.md` ✅ ✅✅ ✅）✅ ✅ |
+| **状态图标 HUD** ✅ ✅ | `UI/BuffDisplayPanel.cs` ✅ ✅、`BuffIcon.cs` ✅ ✅、`ElementalBuffHUD.cs` ✅ ✅ | 状态 ✅ ✅（两套 ✅ ✅ 见 `buff-and-status.md` ✅ ✅✅ ✅）。⚠ 左侧 ColumnA（属性提升图标）**2026-11-24 已废弃**；现存 ColumnB = 道具/主动技能 ✅ ✅ |
 | **升级三选一弹窗** ✅ ✅ | `UI/UpgradeChoicePopup.cs` ✅ ✅、`UpgradeCard.cs` ✅ ✅ | `UpgradeChoiceManager` ✅ ✅✅ ✅ |
 | **道具栏 / 丢弃** ✅ ✅ | `UI/FrontItemBar.cs` ✅ ✅、`ItemDiscardPopup.cs` ✅ ✅、`ItemDiscardPromptAdapter.cs` ✅ ✅ | `ItemInventory` ✅ ✅✅ ✅ |
 | **大招按钮** ✅ ✅ | `UI/UltimateButtonUI.cs` ✅ ✅ | `HeroConfig.ultimateSkillConfig` ✅ ✅✅ ✅ |

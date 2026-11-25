@@ -16,6 +16,8 @@ aiEditMode: inherit
 
 # 天赋解锁教学 · 指向突刺（stabC2）硬性教学 —— 需求与方案（2026-11-04）
 
+> **2026-11-24 迁移提示**：招式已从天赋树搬到武器树；文中 `talent_move_stabc2` 现为 `move_spear_stabc2`，`talent_move_stabc4` → `move_spear_launch`，`talent_move_slashc2` → `move_spear_slashc2`。拍型 / 冻结 / 存档口径不变。
+
 > **本文只做「需求梳理 + 方案」，不改代码。** 实施前请先确认 §5 的三个未决点。
 > 配套：`design/tutorial-guides-spec-20261104.md`（教学拍标准形态）· `design/stage-configuration.md`（关卡数值约束）
 
@@ -103,7 +105,7 @@ aiEditMode: inherit
 ### 1.6 存档现状
 
 - `unlockedTalents`：已解锁节点（权威）。
-- `taughtMoveGuides`：已教过的招式引导 id（只有横扫在用）。
+- `taughtMoveGuides`：已教过的招式引导 id（武器条目 / 天赋节点；当前有指向突刺、横扫等）。
 - **没有**「已看过天赋页教学」这类标记 → R1 需要新增。
 
 ---
@@ -288,7 +290,7 @@ aiEditMode: inherit
 | ① 教学关（自动驱动） | ✅ 完成，167s，铜钱 310 |
 | ② 结算「返回」→ 落地页 | ✅ |
 | ③ 天赋页（右下角「天赋」卡，**tab 栏被 HubSceneSetup 关掉了**） | ✅ 教学自动出现 → 视图切到「招式解锁」→ 点「指向突刺」→ 点确认 → **解锁**（309 铜钱）+ `taughtTalentPanel=true` |
-| ④ 正式关 → 「连招蓄力」教学拍 | ✅ 点一记 → 窗口冻结 → 蓄满松手 → **打出 `Zhangfei_StabR2`（指向突刺）** → 收拍 → `taughtMoveGuides=[talent_move_stabc2]` |
+| ④ 正式关 → 「连招蓄力」教学拍 | ✅ 点一记 → 窗口冻结 → 蓄满松手 → **打出 `Zhangfei_StabR2`（指向突刺）** → 收拍 → `taughtMoveGuides=[weapon_move:move_spear_stabc2]`（2026-11-24 起 id 前缀变为 `weapon_move:`） |
 
 ⇒ **教学关 ✅ / 天赋解锁 ✅ / 天赋页教学 ✅ / 招式教学 ✅**
 

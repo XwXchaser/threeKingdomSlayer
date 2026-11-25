@@ -15,10 +15,17 @@ public class UpgradeDefinitionEditor : Editor
     // ── 顶层属性 ──
     private SerializedProperty categoryProp;
     private SerializedProperty upgradeIdProp;
+    private SerializedProperty kindIdProp;
     private SerializedProperty displayNameProp;
     private SerializedProperty descriptionTemplateProp;
+    private SerializedProperty extraDescriptionTemplateProp;
     private SerializedProperty levelFeatureDescriptionsProp;
     private SerializedProperty rarityProp;
+    private SerializedProperty qualityProp;
+    private SerializedProperty visibleLevelProp;
+    private SerializedProperty statIdProp;
+    private SerializedProperty unlockedByDefaultProp;
+    private SerializedProperty defaultLevelCapProp;
     private SerializedProperty maxLevelProp;
     private SerializedProperty effectTypeProp;
     private SerializedProperty numericLevelsProp;
@@ -54,10 +61,17 @@ public class UpgradeDefinitionEditor : Editor
     {
         categoryProp = serializedObject.FindProperty("category");
         upgradeIdProp = serializedObject.FindProperty("upgradeId");
+        kindIdProp = serializedObject.FindProperty("kindId");
         displayNameProp = serializedObject.FindProperty("displayName");
         descriptionTemplateProp = serializedObject.FindProperty("descriptionTemplate");
+        extraDescriptionTemplateProp = serializedObject.FindProperty("extraDescriptionTemplate");
         levelFeatureDescriptionsProp = serializedObject.FindProperty("levelFeatureDescriptions");
         rarityProp = serializedObject.FindProperty("rarity");
+        qualityProp = serializedObject.FindProperty("quality");
+        visibleLevelProp = serializedObject.FindProperty("visibleLevel");
+        statIdProp = serializedObject.FindProperty("statId");
+        unlockedByDefaultProp = serializedObject.FindProperty("unlockedByDefault");
+        defaultLevelCapProp = serializedObject.FindProperty("defaultLevelCap");
         maxLevelProp = serializedObject.FindProperty("maxLevel");
         effectTypeProp = serializedObject.FindProperty("effectType");
         numericLevelsProp = serializedObject.FindProperty("numericLevels");
@@ -93,6 +107,7 @@ public class UpgradeDefinitionEditor : Editor
         EditorGUILayout.LabelField("标识", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(categoryProp);
         EditorGUILayout.PropertyField(upgradeIdProp);
+        EditorGUILayout.PropertyField(kindIdProp, new GUIContent("同款身份 kindId", "留空 = 用 upgradeId。同一件装备的不同品质 / 等级变体填同一个 kindId。"));
 
         EditorGUILayout.Space();
 
@@ -100,15 +115,21 @@ public class UpgradeDefinitionEditor : Editor
         EditorGUILayout.LabelField("显示", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(displayNameProp);
         EditorGUILayout.PropertyField(descriptionTemplateProp);
+        EditorGUILayout.PropertyField(extraDescriptionTemplateProp);
         EditorGUILayout.PropertyField(levelFeatureDescriptionsProp, true);
         EditorGUILayout.PropertyField(iconProp);
 
         EditorGUILayout.Space();
 
-        // ── 稀有度 ──
-        EditorGUILayout.LabelField("稀有度与等级", EditorStyles.boldLabel);
-        EditorGUILayout.PropertyField(rarityProp);
+        // ── 品质 / 等级 / 分类 / 解锁 ──
+        EditorGUILayout.LabelField("品质与等级", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(rarityProp, new GUIContent("稀有度（旧字段）"));
+        EditorGUILayout.PropertyField(qualityProp, new GUIContent("品质", "普通 / 精良 / 传说。玩家可见；与池内档位无关。"));
+        EditorGUILayout.PropertyField(visibleLevelProp, new GUIContent("可见等级", "只对装备生效：选中后按这一级生效（装备变体用）。属性不使用。"));
         EditorGUILayout.PropertyField(maxLevelProp);
+        EditorGUILayout.PropertyField(defaultLevelCapProp, new GUIContent("基础上限（软锁）"));
+        EditorGUILayout.PropertyField(statIdProp, new GUIContent("属性 statId", "非空 = 属性（经验升级池）；留空 = 装备 / 机制。"));
+        EditorGUILayout.PropertyField(unlockedByDefaultProp, new GUIContent("初始即解锁（仅装备）"));
 
         EditorGUILayout.Space();
 

@@ -44,6 +44,25 @@ public class UpgradeDefinition : ScriptableObject
              "部分内容只有单一品质（例如「一次性复活」类饰品只有精良品质）。")]
     public UpgradeQuality quality = UpgradeQuality.Common;
 
+    [Tooltip("**同款身份（kindId）**——2026-11-25：同一件装备的不同品质 / 等级变体共用这个 id。\n" +
+             "• **留空 = 用 upgradeId**（现有资产不用改，天然各自一款）；\n" +
+             "• 复制出「传说 染病」变体时：新资产给新的 upgradeId，kindId 填原件的 upgradeId；\n" +
+             "• 用途：同次三选一去重、同款不能同时装备两份、永久解锁按种类判定；\n" +
+             "• **属性**也用它做「同一升级内容」的去重（同次不出普通 / 传说两张生命上限）。\n" +
+             "⚠ 主动旋风与被动旋风是不同种类，不要因为它们同名就填同一个 kindId。")]
+    public string kindId = "";
+
+    [Tooltip("**玩家可见等级**（2026-11-25）——**只对装备（影之武装 / 饰品）生效**。\n" +
+             "装备变体被选中时按这个等级直接生效（不 +1、不继承旧等级、不合成）。\n" +
+             "• 默认 1；填 3 = 卡片显示「传说 Lv.3」，实际读取本资产**第 3 行**效果数据；\n" +
+             "• 属性（statId 非空）**不使用**这个字段，仍按既有「每选一次升一级」累积。")]
+    public int visibleLevel = 1;
+    [Tooltip("**初始即解锁**（2026-11-24）——**只对装备池**（影之武装 / 饰品）生效。\n" +
+             "• 勾上 = 不写存档也视为已解锁（demo 期现有内容全部勾上）；\n" +
+             "• 取消 = 只能靠精英 / Boss / 探索宝箱**永久解锁**（写入 SaveData.unlockedActiveSkills / unlockedAccessories）。\n" +
+             "属性 / 秘籍不受影响（它们不走这套解锁）。")]
+    public bool unlockedByDefault = true;
+
     [Header("效果")]
     [Tooltip("效果类型: damage_multiplier | attack_speed | stab_range_boost | sweep_range_boost | push_wave | convergence_wave | spike_trap | charge_damage_reduction | charge_reflect_shield | charge_shockwave | on_attack_trigger | on_kill_chance | unlock_attack | passive_phantom_weapon | passive_return_wave | passive_chain_bounce | passive_timed_aoe | passive_timed_arrow | passive_timed_cyclone | max_health | attack_power | damage_reduction | guard_break_threshold | crit_rate | crit_damage")]
     public string effectType;
@@ -152,6 +171,12 @@ public class UpgradeDefinition : ScriptableObject
     [HideInInspector] public List<PhantomStep> phantomSteps = new List<PhantomStep>();
 
     // ── 辅助方法 ──
+
+    /// <summary>
+    /// **同款身份**（2026-11-25）：同一件装备 / 同一条升级内容的不同品质变体共用它。
+    /// 留空 <see cref="kindId"/> 时退回 <see cref="upgradeId"/> —— 现有资产不需要改数据。
+    /// </summary>
+    public string KindId => string.IsNullOrEmpty(kindId) ? upgradeId : kindId;
 
     /// <summary>获取指定等级的数值配置。优先 numericLevels，回退到旧版字段 × level。</summary>
     public NumericLevelConfig GetNumericConfig(int level)

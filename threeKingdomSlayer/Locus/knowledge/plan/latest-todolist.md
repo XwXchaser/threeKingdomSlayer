@@ -6,8 +6,11 @@ aiEditMode: inherit
 ---
 
 > ⚠️ **本文已被取代** —— 当前执行清单见 `plan/growth-stage-move-plan-20261102.md`
-> （配套设计文档 `design/in-run-growth-and-unlocks.md` / `design/talent-tree-architecture.md` /
-> `design/stage-configuration.md`）。本文保留作历史记录。
+>
+> ⚠️ **无尽关当前入口**：最新待办见 **`plan/endless-demo-handoff-20261124.md` §0.8**；
+> 下一批 P0 执行方案为 **`plan/endless-demo-equipment-p0-implementation-plan.md`**，
+> 已确认玩法见 `design/gameplay-progression-loop.md` §3.3–§3.4。
+> 历史需求与节点数据见 `plan/endless-demo-requirements-20261124.md`；下文其他待办为历史记录，不覆盖新入口。
 
 
 ## 当前场景搭建交接入口（2026-10-01）

@@ -30,6 +30,19 @@ public class SaveData
     public List<string> claimedSupplyIds = new List<string>();
     [Tooltip("已获得的秘籍 id（ManualDefinition.ManualId）。旧档缺失时由 ManualSaveSection 补空列表")]
     public List<string> unlockedManuals = new List<string>();
+    [Tooltip("已**永久解锁**的影之武装 upgradeId（ActiveSkillDefinition.upgradeId）。\n" +
+             "与「本局持有」无关：本局装备在 PlayerState / ActiveSkillInventory，本局结束即清空。\n" +
+             "旧档缺失时由 EquipmentUnlockSaveSection 补空列表")]
+    public List<string> unlockedActiveSkills = new List<string>();
+    [Tooltip("已**永久解锁**的饰品 upgradeId（机制型被动：AttackPassive / TimedPassive）。\n" +
+             "旧档缺失时由 EquipmentUnlockSaveSection 补空列表")]
+    public List<string> unlockedAccessories = new List<string>();
+    [Tooltip("当前**装备的主武器** weaponId（MainWeaponConfig.EffectiveWeaponId）。\n" +
+             "本局内不切武器；换武器只在局外界面做，下一次进关生效。旧档缺失时由 WeaponSaveSection 补空串")]
+    public string equippedWeaponId = "";
+    [Tooltip("已**永久解锁**的招式 id（WeaponMoveEntry.EffectiveMoveId）。\n" +
+             "旧档缺失时由 WeaponSaveSection 补空列表")]
+    public List<string> unlockedWeaponMoves = new List<string>();
     [Tooltip("已教过的招式引导 id（TalentNodeConfig.nodeId）。旧档缺失时由 MoveGuideSaveSection 补空列表")]
     public List<string> taughtMoveGuides = new List<string>();
     [Tooltip("**天赋页教学**是否已教过（2026-11-04）。第一次打开天赋页会硬性教「如何解锁天赋」；教完（真的解锁了一个节点）才写 true → 同一存档只教一次。老档缺失时默认 false")]

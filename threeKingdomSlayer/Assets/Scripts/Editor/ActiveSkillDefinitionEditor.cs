@@ -10,13 +10,24 @@ public class ActiveSkillDefinitionEditor : Editor
 
         EditorGUILayout.PropertyField(serializedObject.FindProperty("category"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("upgradeId"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("kindId"),
+            new GUIContent("同款身份 kindId", "留空 = 用 upgradeId。同一件装备的不同品质 / 等级变体填同一个 kindId。"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("displayName"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("descriptionTemplate"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("extraDescriptionTemplate"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("levelFeatureDescriptions"), true);
         EditorGUILayout.PropertyField(serializedObject.FindProperty("icon"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("rarity"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("quality"),
+            new GUIContent("品质", "普通 / 精良 / 传说（玩家可见；与装备池内档位无关）。"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("visibleLevel"),
+            new GUIContent("可见等级", "选中后按这一级生效（装备变体用）：不 +1、不继承旧等级。"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("maxLevel"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("defaultLevelCap"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("statId"),
+            new GUIContent("属性 statId", "影之武装留空；属性条目才填。"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("unlockedByDefault"),
+            new GUIContent("初始即解锁", "demo 期现有内容全勾；长线改为掉落解锁。"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("prerequisites"), true);
 
         EditorGUILayout.Space();

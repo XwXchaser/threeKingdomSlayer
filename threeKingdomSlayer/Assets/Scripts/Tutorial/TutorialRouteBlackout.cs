@@ -122,6 +122,7 @@ public class TutorialRouteBlackout : MonoBehaviour
     {
         var runtime = RouteFlowHub.Current;
         if (runtime == null) return false;
+        if (runtime.IsSuspended) return false;   // 让位给无尽后不再铺教学黑幕
         if (routeConfig != null && runtime.RouteConfig != routeConfig) return false;
         if (tutorialOnly && tutorialRouteConfig != null && runtime.RouteConfig != tutorialRouteConfig) return false;
 

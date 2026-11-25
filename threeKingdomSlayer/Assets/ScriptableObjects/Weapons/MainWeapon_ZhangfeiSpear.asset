@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcf741d2dad3bf24b861b2fe06d22411, type: 3}
+  m_Name: MainWeapon_ZhangfeiSpear
+  m_EditorClassIdentifier: 
+  weaponId: weapon_spear_zhangfei
+  displayName: "\u957F\u67AA"
+  description: "\u5355\u5217\u7CBE\u51C6 + \u8FDE\u6BB5\uFF0C\u6536\u5C3E\u6280\u624D\u8986\u76D6\u5168\u5217\u3002\u7A33\u5B9A\u8F93\u51FA\u7684\u57FA\u51C6\u7EBF\u3002"
+  icon: {fileID: 0}
+  heroConfig: {fileID: 11400000, guid: 6a50843ddffb1fa43af2e2a34d5d2432, type: 2}
+  unlockedByDefault: 1
+  moves:
+  - move: {fileID: 11400000, guid: f0d6ad785959ad941b9b51d73a275d01, type: 2}
+    moveId: move_spear_stabc2
+    displayName: "\u6307\u5411\u7A81\u523A"
+    description: "\u6233\u540E\u6309\u4F4F\u84C4\u6EE1\u518D\u677E\u624B\uFF0C\u8D2F\u7A7F\u4E24\u6392\u3002"
+    icon: {fileID: 0}
+    unlockedByDefault: 0
+    unlockCoinCost: 30
+    prerequisiteIds: []
+    treePosition: {x: 230, y: 0}
+    moveGuideGesture: 5
+    moveGuideDialogue: {fileID: 11400000, guid: ccbaad05a1b56d4448222196f7c3d889, type: 2}
+    moveGuidePhase2Dialogue: {fileID: 11400000, guid: f13b6ca02bddea649b1691e076f7f8f2, type: 2}
+    moveGuidePhase3Dialogue: {fileID: 0}
+  - move: {fileID: 11400000, guid: 3fe76a22f36b7744fb64fb06cf75533a, type: 2}
+    moveId: move_spear_launch
+    displayName: "\u67AA\u7A81\u6536\u5C3E"
+    description: "\u67AA\u7A81\u7684\u6536\u5C3E\u6280\u3002"
+    icon: {fileID: 0}
+    unlockedByDefault: 0
+    unlockCoinCost: 40
+    prerequisiteIds:
+    - move_spear_stabc2
+    treePosition: {x: 230, y: 190}
+    moveGuideGesture: 0
+    moveGuideDialogue: {fileID: 0}
+    moveGuidePhase2Dialogue: {fileID: 0}
+    moveGuidePhase3Dialogue: {fileID: 0}
+  - move: {fileID: 11400000, guid: a19d24e0ccb53e341a492b373453f674, type: 2}
+    moveId: move_spear_slashc2
+    displayName: "\u65A9\u51FB C2"
+    description: "\u65A9\u51FB\u540E\u84C4\u529B\u677E\u624B\uFF0C\u5F3A\u5316\u65A9\u51FB\u5E76\u5E26\u4F4D\u79FB\u3002"
+    icon: {fileID: 0}
+    unlockedByDefault: 0
+    unlockCoinCost: 50
+    prerequisiteIds:
+    - move_spear_slash
+    treePosition: {x: 0, y: 190}
+    moveGuideGesture: 0
+    moveGuideDialogue: {fileID: 0}
+    moveGuidePhase2Dialogue: {fileID: 0}
+    moveGuidePhase3Dialogue: {fileID: 0}
+  - move: {fileID: 11400000, guid: c4862b3d5d44d2543af3deae939e5053, type: 2}
+    moveId: move_spear_slash
+    displayName: "\u6A2A\u626B"
+    description: "\u6A2A\u5411\u5212\u52A8\uFF0C\u6A2A\u626B\u4E00\u6392\u654C\u4EBA\u3002"
+    icon: {fileID: 21300000, guid: 161a6f491cac21945859876b19047b09, type: 3}
+    unlockedByDefault: 0
+    unlockCoinCost: 1
+    prerequisiteIds: []
+    treePosition: {x: 0, y: 0}
+    moveGuideGesture: 1
+    moveGuideDialogue: {fileID: 11400000, guid: d63f86179e072a74eac6ed31b3fc2fcd, type: 2}
+    moveGuidePhase2Dialogue: {fileID: 0}
+    moveGuidePhase3Dialogue: {fileID: 0}

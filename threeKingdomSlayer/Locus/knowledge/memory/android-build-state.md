@@ -443,3 +443,33 @@ UnityEditor.EditorApplication.delayCall += () => AndroidBuildMenu.BuildAndroidTr
 
 - **绝不直接 `edit` .meta 文件**（Tuanjie 引擎加密 GUID，会触发重生成导致引用断裂）。纹理/音频等导入设置的修改必须通过 `unity_execute` API
 - Roslyn `code_diagnostics` + `unity_recompile` 双重验证后再 commit
+
+---
+
+## 2026-11-24 地面修复验证包 + 正式包保留跳过按钮
+
+### 13:43 包（地面接缝验证）
+
+- 产物：`Build/Android/threeKingdomSlayer_full_20261124_1343.apk`（355,954,440 B ≈ 339 MB）
+- `RESULT=Succeeded errors=0 warnings=42`，4:48；布局 ✅（条目 2127、`level*=4`、`data.tj3d=False`、`arm64-v8a,x86`）
+- 用途：无尽关地面/接缝修复后的设备冒烟（用户在模拟器验收通过）
+- SHA-256 前 24：`0b2b13b30d55a9efb7b2e872`
+
+### 14:03 包（正式包保留「跳过战斗」）
+
+- 产物：`Build/Android/threeKingdomSlayer_full_20261124_1403.apk`（355,953,314 B）
+- `RESULT=Succeeded errors=0 warnings=12`，1:52（增量）；布局 ✅ 同上
+- 本包新增：`DevSkipBattleButton` **移除 `#if DEVELOPMENT_BUILD || UNITY_EDITOR`** → **正式包也带按钮**（用户 2026-11-24 定，后续再关）
+- 同包删除：`EndlessHud` 右上角退出按钮、`YRouteSliceLoader`（卷轴实验开关，整个文件 + `.meta`）
+- SHA-256 前 24：`00f728fd355ccb36aa7e2ce5`
+- 模拟器：安装 `Success`、`lastUpdateTime=2026-11-24 14:05:47`、落地页自举正常、无 FATAL
+
+### 构建通道（再次确认，含新踩的坑）
+
+- 直接 `BuildPipeline.BuildPlayer` / `EditorApplication.ExecuteMenuItem` 在 Locus 片段栈里**都失败**：
+  `[ProducePlayerScriptAssemblies] InvalidCastException: Specified cast is not valid.`
+- ⚠ **`EditorApplication.delayCall += …` 在片段返回后被清空**；即使片段内 `await ctx.WaitFrames(6)` 也不执行（2026-11-24 实测，旧经验已失效）。
+- **可用通道**：临时写一个 `[InitializeOnLoad]` Editor 脚本，静态构造里 `delayCall`，
+  检查标志文件后调 `AndroidBuildMenu.BuildAndroidTraditionalLayout()`；再用 `AssetDatabase.ImportAsset` 触发域重载
+  ⇒ 构建在 Editor 自己的调用栈里执行。构建完成后**立即删除**临时脚本与标志，再 `unity_recompile` 恢复干净。
+- 构建期间 Editor 主线程被占：Locus 工具会报 unresponsive/超时，**用 bash 轮询 `Build/Android/build-status.txt` 的 mtime**。

@@ -485,7 +485,7 @@ Tap/0  →  TapCombo/1（三连） → 路线选择 → FakeMoving（黑幕 alph
 - 现有提示件：`Assets/Prefabs/UI/TutorialGestureHint.prefab`（Canvas 1080×1920 match 0.5，1 单位≈1 像素）：手指 308 / 光圈 336 / 轨迹 67 / `dimOverlayAlpha 0.45`。
 - 但它是**单实例 + 教学闸门专用**（`Gate()` 会接管手势输入），不能直接当常驻战斗提示用 → 需要**独立组件/独立 prefab**（多实例或池化）。
 - 前排定义：`rowIndex == 0`（教学的目标敌人选择器 `FindTargetEnemy` 就是这么取的）。
-- 玩家可攻击范围：`Zhangfei_Stab/Slash/Launch` 的 `rangeRows` 都是 **1** → **基础招式只打得到前排** → 「仅前排带特效」与规则一致。
+- 玩家可攻击范围：`Zhangfei_Stab/Slash/Launch` 的 `rangeRows` 都是 **1** → **这三招只打得到前排** → 「仅前排带特效」与规则一致。（Slash 现为武器树解锁项，解锁后射程不变。）
 - 已有但**不能直接复用**的相关件：`EnemyAttackTelegraph`（敌人起手预警：菱形点→十字星→十字星+外环）——那是敌人侧的，方向相反。
 - 历史结论见 `plan/task2-tutorial-ui-handoff-20261028.md` §9.4：白手 220/240 px 相对敌人（本体高 ≈500 px）过大，建议**缩到描边光圈级**；提示要「不阻塞、不抢输入」。
 

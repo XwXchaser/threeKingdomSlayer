@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09cb51c394afa9f498b6c90c7af4f557, type: 3}
+  m_Name: AttributePoolConfig
+  m_EditorClassIdentifier: 
+  variants:
+  - upgrade: {fileID: 11400000, guid: e5f4828a57240fd48a2b0c1048f30f90, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 3fc88d0e01fc4a34cb3f123aefc9acaf, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 6c85c67f02251b745a264f2f6057f27d, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 961580bcfd22c5842baa8ea69dc7d8f4, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 810784d3604ab674b9952b8f79c21f06, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 70807bf499eacb54abe1dfb8d576b65e, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 3c0914d8a1a7c324284d83fb4f863c93, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: d3b0f5b46979343468246353384ac5c1, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 2b9a84ee93ab1eb40ba4ecabf6a72606, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: d216bdf8d0deb414596b22fb5afd5221, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 6ae10de45f8beaf4bbf7a1fbc3dd1f77, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: ee765578e1232b5489de4320c8a958ee, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 6e09559f589a69044859ee7c56d8d912, type: 2}
+    weight: 100
+  - upgrade: {fileID: 11400000, guid: 02e101fc32116034eaf8d31ffd438460, type: 2}
+    weight: 100
+  qualityWeights:
+  - quality: 0
+    weight: 1
+  - quality: 1
+    weight: 0
+  - quality: 2
+    weight: 0

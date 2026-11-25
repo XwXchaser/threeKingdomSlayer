@@ -33,13 +33,23 @@ public class UpgradeCard : MonoBehaviour
     private Vector2 _baseAnchoredPosition;
     private Sprite _baseIconFrameSprite;
     private bool _hasBasePosition;
+    private bool _showAsFixedVariant;
 
     public UpgradeDefinition Definition => _upgradeDef;
 
-    public void Setup(UpgradeDefinition def, Action<UpgradeCard> onClicked = null)
+    /// <summary>
+    /// 填充卡片。
+    /// </summary>
+    /// <param name="showAsFixedVariant">
+    /// true = **装备变体**（2026-11-25）：显示「品质 Lv.可见等级」与**该等级**的实际数值，
+    /// 不做「当前 → 下一级」对比（同款选到是替换，不是 +1）。
+    /// false = 属性 / V1：保持既有「当前 → 下一级」预览。
+    /// </param>
+    public void Setup(UpgradeDefinition def, Action<UpgradeCard> onClicked = null, bool showAsFixedVariant = false)
     {
         _upgradeDef = def;
         _onClicked = onClicked;
+        _showAsFixedVariant = showAsFixedVariant;
         if (!_hasBasePosition)
         {
             _baseAnchoredPosition = ((RectTransform)transform).anchoredPosition;
@@ -47,15 +57,24 @@ public class UpgradeCard : MonoBehaviour
             _hasBasePosition = true;
         }
         SetSelected(false);
+        Color qualityColor = UpgradeQualityStyle.Color(def.quality);
         if (nameText != null)
         {
             nameText.text = def.displayName;
             nameText.alignment = TextAlignmentOptions.Center;
+            nameText.color = qualityColor;   // 品质靠颜色 + 等级文本一起读，不改数值
         }
         if (descriptionText != null)
-            descriptionText.text = UpgradeEffectManager.Instance != null
-                ? UpgradeEffectManager.Instance.GetUpgradePreviewDescription(def)
-                : def.descriptionTemplate;
+        {
+            if (_showAsFixedVariant)
+                descriptionText.text = UpgradeEffectManager.Instance != null
+                    ? UpgradeEffectManager.Instance.GetUpgradeDescriptionAtLevel(def, Mathf.Max(1, def.visibleLevel))
+                    : def.descriptionTemplate;
+            else
+                descriptionText.text = UpgradeEffectManager.Instance != null
+                    ? UpgradeEffectManager.Instance.GetUpgradePreviewDescription(def)
+                    : def.descriptionTemplate;
+        }
 
         int currentLevel = GetCurrentLevel(def);
         int maxLevel = UpgradeEffectManager.Instance != null
@@ -63,29 +82,52 @@ public class UpgradeCard : MonoBehaviour
             : Mathf.Max(1, def != null ? def.maxLevel : 1);
         if (levelStatusText != null)
         {
-            if (currentLevel <= 0)
-                levelStatusText.text = "新获得";
+            if (_showAsFixedVariant)
+            {
+                // 装备变体：品质 + 可见等级（选中就是这一件，不会变成 +1）
+                levelStatusText.text = UpgradeQualityStyle.QualityAndLevel(def.quality, Mathf.Max(1, def.visibleLevel));
+            }
+            else if (currentLevel <= 0)
+            {
+                levelStatusText.text = UpgradeQualityStyle.Name(def.quality) + " · 新获得";
+            }
             else if (currentLevel >= maxLevel)
-                levelStatusText.text = "Lv.Max";
+            {
+                levelStatusText.text = UpgradeQualityStyle.Name(def.quality) + " · Lv.Max";
+            }
             else if (currentLevel + 1 >= maxLevel)
-                levelStatusText.text = $"Lv.{currentLevel} → Lv.Max";
+            {
+                levelStatusText.text = UpgradeQualityStyle.Name(def.quality) + $" · Lv.{currentLevel} → Lv.Max";
+            }
             else
-                levelStatusText.text = $"Lv.{currentLevel} → Lv.{currentLevel + 1}";
+            {
+                levelStatusText.text = UpgradeQualityStyle.Name(def.quality) + $" · Lv.{currentLevel} → Lv.{currentLevel + 1}";
+            }
+            levelStatusText.color = qualityColor;
         }
 
         bool isActiveSkill = def.category == UpgradeCategory.ActiveSkill;
         if (cooldownText != null)
         {
-            float nextCooldown = GetDisplayCooldown(def, currentLevel + 1);
+            float nextCooldown = _showAsFixedVariant
+                ? GetDisplayCooldown(def, Mathf.Max(1, def.visibleLevel))
+                : GetDisplayCooldown(def, currentLevel + 1);
             bool hasCooldown = nextCooldown > 0f;
             cooldownText.gameObject.SetActive(hasCooldown);
             if (hasCooldown)
             {
-                float currentCooldown = currentLevel > 0 ? GetDisplayCooldown(def, currentLevel) : 0f;
-                string cooldownValue = currentLevel > 0 && !Mathf.Approximately(currentCooldown, nextCooldown)
-                    ? $"{currentCooldown:0} → <b><color=#F5C542>{nextCooldown:0}</color></b>"
-                    : $"<b><color=#F5C542>{nextCooldown:0}</color></b>";
-                cooldownText.text = $"冷却时间 {cooldownValue} 秒";
+                if (_showAsFixedVariant)
+                {
+                    cooldownText.text = $"冷却时间 <b><color=#F5C542>{nextCooldown:0}</color></b> 秒";
+                }
+                else
+                {
+                    float currentCooldown = currentLevel > 0 ? GetDisplayCooldown(def, currentLevel) : 0f;
+                    string cooldownValue = currentLevel > 0 && !Mathf.Approximately(currentCooldown, nextCooldown)
+                        ? $"{currentCooldown:0} → <b><color=#F5C542>{nextCooldown:0}</color></b>"
+                        : $"<b><color=#F5C542>{nextCooldown:0}</color></b>";
+                    cooldownText.text = $"冷却时间 {cooldownValue} 秒";
+                }
             }
         }
         if (activeTagImage != null)

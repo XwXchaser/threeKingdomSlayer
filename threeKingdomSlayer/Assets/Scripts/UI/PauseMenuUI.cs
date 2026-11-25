@@ -87,6 +87,20 @@ public class PauseMenuUI : MonoBehaviour
     private void OnMainMenuClicked()
     {
         Time.timeScale = 1f;
+
+        // **无限模式**（2026-11-24）：退出必须先结束本局。
+        //   直接 GoToMainMenu 不进 EndlessRunController ⇒ 不存最高分、不结算铜钱、也不弹结算面板
+        //   （用户定：阵亡与提前退出共用同一个结算面板，只显示分数）。
+        var endless = EndlessRunController.Instance;
+        if (endless != null && endless.IsRunning)
+        {
+            if (pausePanel != null) pausePanel.SetActive(false);
+            _isPaused = false;
+            endless.EndRun(false);          // → OnRunEnded → EndlessHud 弹结算面板
+            if (EndlessHud.Instance == null) StageFlow?.GoToMainMenu();   // 没HUD时任底
+            return;
+        }
+
         StageFlow?.GoToMainMenu();
     }
 

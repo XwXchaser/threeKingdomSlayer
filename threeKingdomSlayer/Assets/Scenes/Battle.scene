@@ -308,6 +308,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   poolConfig: {fileID: 11400000, guid: 1153c98a3e993ac458edf91331125bbc, type: 2}
   itemPoolConfig: {fileID: 11400000, guid: e4e71ab312bff9744bd70e0750aefb9b, type: 2}
+  attributePoolConfig: {fileID: 11400000, guid: 78ea4a1e653865d40b0f7388074ae066, type: 2}
+  equipmentPoolConfig: {fileID: 11400000, guid: 5a4bda4bea2388744a4b353a8d2c945b, type: 2}
   activeSkillPoolConfig: {fileID: 11400000, guid: ccb0403656e3155499f6a43ee0bb602f, type: 2}
   popupPrefab: {fileID: 7107821338073346431, guid: c64a9f62de511c348ad5e3c153c89f28, type: 3}
   discardPopupPrefab: {fileID: 7107821338073346431, guid: df18255a4d7748444a03f0106865276d, type: 3}
@@ -316,8 +318,6 @@ MonoBehaviour:
   deferChoicesToWaveEnd: 1
   forcedChoices: []
   suppressChoices: 0
-  _fullSlotCoinBase: 30
-  _fullSlotCoinPerLevel: 5
 --- !u!114 &5137004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5749,10 +5749,8 @@ MonoBehaviour:
   maxBossHpMultiplier: 4
   seed: 20261116
   wavesPerNode: 2
-  n1NodesPerCircle: 2
-  n3NodesPerBranch: 3
-  n2NodesPerBranch: 3
   nodeSettleDelay: 0.8
+  wrapTravelSeconds: 3
   loopStartNodeId: N1
   sourceRoute: {fileID: 0}
 --- !u!4 &326258439

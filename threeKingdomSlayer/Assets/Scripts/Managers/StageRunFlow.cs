@@ -209,6 +209,16 @@ public sealed class StageRunFlow : IRunFlow
             yield return null;
         }
 
+        // 2026-11-25：**同时等飞行中的装备箱到位**。
+        //   箱子是在 OnChestArrived 里才入队装备选择的；末杀精英 / 末波产生的箱子如果还在飞，
+        //   这一轮的 flush 会看不到它 → 装备选择被顺延到下一波末才弹（静态风险，已补上时序）。
+        timeout = 3f;
+        while (EquipmentChestManager.Instance != null && EquipmentChestManager.Instance.HasFlyingChests && timeout > 0f)
+        {
+            timeout -= Time.deltaTime;
+            yield return null;
+        }
+
         // ★ 波末**先停一下**再进后续流程（2026-11-08 用户定）：
         //   让玩家先看清「这波打完了」+ 经验条跳动 + 掉落结算，
         //   然后才被三选一 / 结算面板 / 路牌按钮接管（不然弹窗糊脸，很突然）。

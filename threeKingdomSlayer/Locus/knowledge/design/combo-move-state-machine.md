@@ -736,7 +736,7 @@ MoveTableConfig（每武将一份）
 2. `UpdatePointerHold` 的“连招中按下”分支：同样要求 `HasUsableChargeContinuation`。
 3. 中立态（`SubmitInput` 的中立分支 + `ExecuteDirect`）：**不执行 `Hold` 手势**（站桩蓄力已下线）。
 
-> 实测（Unity 内核实）：`Zhangfei_StabR2` 确实被 `talent_move_stabc2` 锁住（`unlocked=false`），
+> 实测（Unity 内核实）：`Zhangfei_StabR2` 确实被 `talent_move_stabc2` 锁住（`unlocked=false`；2026-11-24 起为武器条目 `move_spear_stabc2`），
 > 而 `Zhangfei_Jab1.HasChargeContinuation()=true`（有 Hold→StabR2 边）→ 旧逻辑必然进 C2 蓄力；
 > `HasUsableChargeContinuation=false` → 新逻辑不进。
 

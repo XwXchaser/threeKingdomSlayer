@@ -4,8 +4,10 @@ using UnityEngine;
 /// <summary>
 /// 屏幕左侧 Buff 图标面板 — 槽位制。
 ///
-/// Column A（数值型 + 被动型）：持久，永不删除，再次获得仅更新角标。
-/// Column B（道具型）：可消耗，消耗后槽位清空、后续槽位前移补位。
+/// Column B（道具 / 主动技能）：可消耗，消耗后槽位清空、后续槽位前移补位。
+///
+/// ★ 2026-11-24：**旧的 Column A（左侧属性提升图标排）已废弃**——属性提升不再在左侧显示图标，
+///   被动/饰品由右下角 <see cref="PassiveSkillRow"/> 展示。场景里的 BuffIcon_A_* 槽位保留但不再被引用。
 ///
 /// 在 Inspector 中将 BuffIcon 实例拖入 _columnASlots / _columnBSlots，
 /// 槽位按列表顺序分配（0 → N），代码不创建/销毁实例。
@@ -305,26 +307,10 @@ public class BuffDisplayPanel : MonoBehaviour, IQteInputLockTarget
             return;
         }
 
-        // **被动 / 饰品类不再显示在左侧 Column A**（2026-11-05 用户定）：
-        //   被动技能已经移到**右下角的被动排**（<see cref="PassiveSkillRow"/>），
-        //   左侧这一排是**重复显示** → 旧显示移除。
-        //   口径直接复用被动排的判定（两者必须一致，否则会出现「两边都显示」或「两边都不显示」）。
-        // ★ 2026-11-19：属性提升（<c>statId</c> 非空）**不再算被动** ⇒ 它回到左侧数值排显示。
-        if (PassiveSkillRow.ShowsInPassiveRow(def)) return;
-
-        if (!_upgradeIcons.TryGetValue(def.upgradeId, out var icon))
-        {
-            icon = ClaimColumnASlot();
-            if (icon == null) return;
-
-            icon.Setup(def.icon, def.upgradeId, def.category, null);
-            icon.gameObject.SetActive(true);
-            _upgradeIcons[def.upgradeId] = icon;
-            icon.SetFrame(GetLevelFrame(newLevel));
-        }
-
-        icon.SetFrame(GetLevelFrame(newLevel));
-        RefreshNumericValue(icon, def, UpgradeEffectManager.Instance);
+        // ★ 2026-11-24 用户定：**旧的左侧属性图标排（Column A）已废弃，别再用了**。
+        //   属性提升（`statId` 非空）不再在左侧显示图标；被动/饰品由右下角
+        //   `PassiveSkillRow` 负责。这里直接返回 ⇒ 永不占用 Column A 槽位。
+        //   （场景里的 BuffIcon_A_* 槽位保留但不再被引用，保持 inactive。）
     }
 
     private void RefreshNumericValue(BuffIcon icon, UpgradeDefinition definition, UpgradeEffectManager uem)

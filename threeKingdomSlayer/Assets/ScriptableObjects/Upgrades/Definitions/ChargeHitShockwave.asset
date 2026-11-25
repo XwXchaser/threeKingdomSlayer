@@ -20,7 +20,11 @@ MonoBehaviour:
   levelFeatureDescriptions: []
   rarity: 0
   maxLevel: 5
+  defaultLevelCap: 0
+  quality: 0
+  unlockedByDefault: 1
   effectType: charge_hit_shockwave
+  statId: 
   numericLevels: []
   floatValue: 0
   intValue: 0
@@ -61,6 +65,8 @@ MonoBehaviour:
     rangeRows: 5
     damageBonusPerHit: 0.25
   diseaseLevels: []
+  axeSmashLevels: []
+  chainPullLevels: []
   triggerParam: 0
   phantomSteps: []
   useCount: 1
@@ -73,5 +79,4 @@ MonoBehaviour:
     initialDamage: 0
     landingDamagePercent: 0
   prerequisites: []
-  requiredTalentIds:
-  - talent_pool_shockwave
+  requiredTalentIds: []

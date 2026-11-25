@@ -18,6 +18,13 @@ public interface IRouteFlow
     /// <summary>当前路线阶段。</summary>
     FakeRoutePhase Phase { get; }
 
+    /// <summary>
+    /// 路线是否已**让位给无尽模式**（2026-11-25）。
+    /// 让位后它仍留在 <see cref="RouteFlowHub.Current"/> 里（只是不推进）；
+    /// 教学 / 黑幕 / 招式白名单等“教学专属”判定必须排除它。
+    /// </summary>
+    bool IsSuspended { get; }
+
     /// <summary>当前路线配置（未绑定时为 null）。</summary>
     FakeRouteStageConfig RouteConfig { get; }
 

@@ -208,7 +208,7 @@ public partial class TutorialStageDirector : MonoBehaviour
     {
         if (tutorialRouteConfig == null) return;
         var runtime = RouteFlowHub.Current as FakeRouteRuntime;
-        if (runtime == null || runtime.RouteConfig != tutorialRouteConfig) return;
+        if (runtime == null || runtime.IsSuspended || runtime.RouteConfig != tutorialRouteConfig) return;
         if (runtime.Phase != FakeRoutePhase.Completed) return;
 
         var data = SaveManager.Load();

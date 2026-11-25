@@ -177,6 +177,8 @@ FakeRouteNodeConfig
 
 附加规则：**一次按住只出一记蓄力招式**（出招后必须抬手重按）；「连段蓄力」与「站桩蓄力」的判定依据是**是否有招式表节点在跑**；连段中有「松手释放」的边时，该次松手交给招式状态机裁定。
 
+> **解锁门（2026-11-25 纠正）**：可出招与否由武器树 `WeaponMoveEntry` 决定。**基础 = 戳 / 上挑 / 招架**；横滑不蓄力的 `Zhangfei_Slash`（旧节点名「横扫」）、`Zhangfei_SlashC2`、`Zhangfei_StabR2`、`Zhangfei_LaunchFinisher` 在 `MainWeapon_ZhangfeiSpear` 解锁。`Sweep` 是横滑蓄力，与 `Slash` **不是同一招**。
+
 ### 4.3 招式状态机与连招图（✅ 已部署）
 
 `PlayerMoveStateMachine` 挂在 Player 上（`bufferEnabled=1`、`holdWaitEnabled=1`、`holdWaitMaxSeconds=1.2`，招式表默认取 `Hero_Zhangfei.moveTable`）。输入不再直接映射到攻击类型，而是投递给状态机：
@@ -569,7 +571,7 @@ Enemy死亡 → PlayerState.AddCoins(enemy.coinReward) → UI更新
 
 ### 数值/一致性观察
 
-- 基础招式数值存在**倒挂**：Slash（8）低于 Stab（20），Launch 仅 2，与「段位越深越强」意图相反。
+- 招式数值存在**倒挂**：Slash（8）低于 Stab（20），Launch 仅 2，与「段位越深越强」意图相反（Slash 是解锁项，不是基础招式）。
 - 101 血量 200 + 攻击力 3 与早期文档（HP 16 / 攻击 10）完全不同：**预制体是唯一事实来源**，旧文档数字不可引用。
 - 池内调试权重（染病 300、蛇形喷射 100000）会强烈扭曲三选一体感。
 - HUD 冷却显示在动作锁模式下不准（读的是独立 CD 口径）。

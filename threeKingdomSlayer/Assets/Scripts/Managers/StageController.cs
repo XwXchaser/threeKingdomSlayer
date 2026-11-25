@@ -210,7 +210,7 @@ public class StageController : MonoBehaviour, IStageFormation, IStageBattleState
 
     void IStageRoleContext.PrewarmEnemyPools() => _routeHost.PrewarmEnemyPools();
 
-    void IStageRoleContext.SettleCoins() => SettleCoins();
+
 
     void IStageRoleContext.RunCoroutine(IEnumerator routine) => StartCoroutine(routine);
 
@@ -380,9 +380,13 @@ public class StageController : MonoBehaviour, IStageFormation, IStageBattleState
     public void GoToMainMenu() => _runFlow.GoToMainMenu();
 
     /// <summary>
-    /// 结算本局铜钱到存档（幂等：同一局只结算一次）
+    /// 结算本局铜钱到存档（幂等：同一局只结算一次）。
+    ///
+    /// ⚠ **public**（2026-11-24）：无限模式不进剧情关的胜利 / RewardGate 流程，
+    /// 它的本局结束点是 <c>EndlessRunController.EndRun</c> ⇒ 那边要能直接调到这里，
+    /// 否则阵亡 / 退出时本局铜钱全部丢掉（「无尽不产钱 ⇒ 天赋买不了」的最大缺口）。
     /// </summary>
-    private void SettleCoins()
+    public void SettleCoins()
     {
         if (_coinsSettled) return;
         if (playerState == null) return;

@@ -13,6 +13,8 @@ summary: 防御键静音口径（除教防御外全静音）+ 防御键预输入
 
 # 防御键：静音口径 + 预输入（方案稿 · 2026-11-08）
 
+> **2026-11-24 迁移提示**：文中 `TalentTree_Moves` 的引导拍引用已迁到武器条目（`move_spear_stabc2` / `move_spear_slash`）；静音 / 预输入的机制口径不变。
+
 > 状态：**已落地**（2026-11-08，隔壁 agent 提交后动工）。
 > 改动 4 个文件：`DefenseButton.cs` / `PlayerState.cs` / `TutorialStageDirector.cs` / `TutorialStageDirector.Hints.cs`。
 > 编译通过（Console 0 error / 0 warn）；机制层已用 Play Mode 白盒验证（见 §8）。

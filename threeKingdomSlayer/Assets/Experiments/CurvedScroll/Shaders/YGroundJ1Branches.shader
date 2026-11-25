@@ -96,6 +96,31 @@ Shader "CurvedScroll/Y Ground J1 Branches"
                 float2 end=float2(_CurveRadius*(1-cos(_YSAngle)),_CurveRadius*sin(_YSAngle));
                 return min(length(p-arc),lineDist(p,end,end+float2(sin(_YSAngle),cos(_YSAngle))*600));
             }
+            // 路面走廊的坐标：横向有符号距离、纵向沿路米数。只在窄路面/路肩内使用；
+            // 远离路线时这种坐标会在弯道内侧发生折叠，绝不能用来映射整张大地面。
+            float2 roadCoordinates(float2 map,float branchSign)
+            {
+                float radius=max(.001,_CurveRadius);
+                float2 p=float2(map.x*branchSign,map.y-_JunctionDistance);
+                float t=clamp(atan2(p.y,radius-p.x),0,_YSAngle);
+                float2 arc=float2(radius*(1-cos(t)),radius*sin(t));
+                float2 end=float2(radius*(1-cos(_YSAngle)),radius*sin(_YSAngle));
+                float2 tangent=float2(sin(_YSAngle),cos(_YSAngle));
+                float tail=max(0,dot(p-end,tangent));
+                float2 fromStart=p-float2(0,min(p.y,0));
+                float2 fromArc=p-arc;
+                float2 fromTail=p-(end+tangent*tail);
+                float startDistance=dot(fromStart,fromStart);
+                float arcDistance=dot(fromArc,fromArc);
+                float tailDistance=dot(fromTail,fromTail);
+                if(startDistance<=arcDistance&&startDistance<=tailDistance)
+                    return float2(map.x,min(map.y,_JunctionDistance));
+                if(arcDistance<=tailDistance)
+                    return float2(branchSign*dot(fromArc,float2(cos(t),-sin(t))),
+                                  _JunctionDistance+radius*t);
+                return float2(branchSign*dot(p-end,float2(tangent.y,-tangent.x)),
+                              _JunctionDistance+radius*_YSAngle+tail);
+            }
             fixed4 frag(v2f i):SV_Target
             {
                 // ★ 下沉是 0.009*d²，**无上限**：100m 处 60m、200m 处 324m、380m 处 1179m。
@@ -121,24 +146,51 @@ Shader "CurvedScroll/Y Ground J1 Branches"
                 float outerStart=_RoadHalfWidth+_ShoulderWidth;
                 float roadToShoulder=smoothstep(_RoadHalfWidth-_RoadBlend*.5,_RoadHalfWidth+_RoadBlend*.5,dist);
                 float shoulderToOuter=smoothstep(outerStart-_OuterBlend*.5,outerStart+_OuterBlend*.5,dist);
-                // 接缝前逐步改采下一圈入口的地图坐标，接缝两边在同一位置、同一朝向采样。
-                // 只影响无限关的尾段；路面、路肩和外侧各自用原纹理，不改道路归属。
+                // 本圈纹理相位随真实沿路距离延续；按 4m 周期约束，避免使用无界的 k*L。
+                // 材质使用 Repeat，后续圈入口的相位恰等于前一圈终点。
+                float phase=0;
+                if(endless>.5) phase=fmod(_YSLapIndex*fmod(_YSCycleLength,4.0),4.0);
+                float2 phaseOffset=float2(0,phase);
+                // 地图基线始终使用本圈原始坐标；相位只用于道路走廊和圈界过渡。
+                float2 mapUV=i.map/4;
+
+                // 道路走廊跟随本圈分支逐渐转向，替代旧的“地图坐标一直斜铺”及圈界双纹理混合。
+                // 半径只延伸到路肩外少量过渡，防止沿路坐标在远离弯道时拉伸或折叠。
+                float corridorWeight=0;
+                float2 corridorUV=mapUV;
+                if(endless>.5)
+                {
+                    float2 roadMap=roadCoordinates(i.map,_YSLapBranchSign);
+                    corridorUV=(roadMap+phaseOffset)/4;
+                    corridorWeight=1-smoothstep(outerStart,outerStart+1.5,abs(roadMap.x));
+                }
+
+                fixed4 road=tex2D(_Road,mapUV);
+                fixed4 shoulder=tex2D(_Shoulder,mapUV)*_ShoulderTint;
+                fixed4 outer=tex2D(_Outer,mapUV)*_OuterTint;
+                if(corridorWeight>0)
+                {
+                    road=lerp(road,tex2D(_Road,corridorUV),corridorWeight);
+                    shoulder=lerp(shoulder,tex2D(_Shoulder,corridorUV)*_ShoulderTint,corridorWeight);
+                    outer=lerp(outer,tex2D(_Outer,corridorUV)*_OuterTint,corridorWeight);
+                }
+                // 路外地面仍沿用旧地图坐标。圈界处只衔接圈界局部的两套坐标，避免
+                // 对全地图使用沿路 UV 或世界 XZ；路心不再进行两套土纹颜色叠加。
                 float seamMix=0;
                 float2 nextMap=i.map;
                 if(endless>.5)
                 {
                     nextMap=float2(forward.y*(i.map.x-end.x)-forward.x*(i.map.y-end.y),
                                    forward.x*(i.map.x-end.x)+forward.y*(i.map.y-end.y));
-                    seamMix=smoothstep(-24.0,-4.0,endDistance);
+                    seamMix=smoothstep(-24.0,-4.0,endDistance)*(1-corridorWeight);
                 }
-                fixed4 road=tex2D(_Road,i.map/4);
-                fixed4 shoulder=tex2D(_Shoulder,i.map/4)*_ShoulderTint;
-                fixed4 outer=tex2D(_Outer,i.map/4)*_OuterTint;
                 if(seamMix>0)
                 {
-                    road=lerp(road,tex2D(_Road,nextMap/4),seamMix);
-                    shoulder=lerp(shoulder,tex2D(_Shoulder,nextMap/4)*_ShoulderTint,seamMix);
-                    outer=lerp(outer,tex2D(_Outer,nextMap/4)*_OuterTint,seamMix);
+                    float2 nextPhaseOffset=float2(0,fmod(phase+fmod(_YSCycleLength,4.0),4.0));
+                    float2 nextUV=(nextMap+nextPhaseOffset)/4;
+                    road=lerp(road,tex2D(_Road,nextUV),seamMix);
+                    shoulder=lerp(shoulder,tex2D(_Shoulder,nextUV)*_ShoulderTint,seamMix);
+                    outer=lerp(outer,tex2D(_Outer,nextUV)*_OuterTint,seamMix);
                 }
                 fixed4 dirt=lerp(lerp(road,shoulder,roadToShoulder),outer,shoulderToOuter);
 

@@ -77,7 +77,11 @@ public class PassiveSkillRow : MonoBehaviour
         FillSlots();
     }
 
-    /// <summary>内容签名（数量 + 各自等级）——变了才重排。</summary>
+    /// <summary>
+    /// 内容签名（数量 + 各自等级 + **装备身份**）——变了才重排。
+    /// 2026-11-25：同等级换装（普通染病 → 传说染病）等级可能相同，
+    /// 只用等级做签名会留下旧图标 → 把变体资产的实例 id 也算进去。
+    /// </summary>
     private static int ComputeSignature(PlayerState player)
     {
         int hash = 17;
@@ -88,6 +92,7 @@ public class PassiveSkillRow : MonoBehaviour
             if (u == null || u.definition == null) continue;
             if (!ShowsInPassiveRow(u.definition)) continue;
             hash = hash * 31 + u.currentLevel;
+            hash = hash * 31 + u.definition.GetInstanceID();
         }
         return hash * 31 + list.Count;
     }

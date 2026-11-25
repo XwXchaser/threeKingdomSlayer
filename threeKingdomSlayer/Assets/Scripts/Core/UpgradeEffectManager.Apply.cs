@@ -102,25 +102,7 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
             // ★ 只有**机制型被动**占被动槽（2026-11-16）：数值类（属性）不占槽
             if (currentLevel == 0) _passiveSlotUsers++;
 
-            if (def.category == UpgradeCategory.TimedPassive)
-            {
-                if (TimedPassiveModule.Instance != null)
-                    TimedPassiveModule.Instance.Register(def, newLevel);
-                else
-                    Debug.LogWarning("[UpgradeEffectManager] TimedPassiveModule 未找到");
-            }
-            else if (def.effectType == "charge_hit_shockwave")
-            {
-                _chargeHitShockwaveDefinition = def;
-                _chargeHitShockwaveLevel = newLevel;
-            }
-            else
-            {
-                if (PassiveTriggerModule.Instance != null)
-                    PassiveTriggerModule.Instance.Register(def, newLevel);
-                else
-                    Debug.LogWarning("[UpgradeEffectManager] PassiveTriggerModule 未找到");
-            }
+            RegisterPassiveAtLevel(def, newLevel);
 
             OnUpgradeApplied?.Invoke(def, newLevel);
             Debug.Log($"[UpgradeEffectManager] 应用被动 {def.displayName} Lv.{newLevel} category={def.category} effectType={def.effectType}");
@@ -150,6 +132,71 @@ public partial class UpgradeEffectManager : MonoBehaviour, IStatModifierApplier
 
         Debug.Log($"[UpgradeEffectManager] 应用 {def.displayName} Lv.{newNumericLevel} (effectType={def.effectType})");
     }
+    /// <summary>
+    /// **按指定等级装备一件占槽饰品**（2026-11-25）——影之武装 / 饰品变体用。
+    ///
+    /// 与 <see cref="ApplyUpgrade"/> 的区别：**不做 +1、不继承旧等级、不合成**；
+    /// 直接用变体资产上的可见等级生效（同款换品质 / 等级也是“换成新的这一件”，不是升级）。
+    /// 已装备同款时调用方应先拆旧（见 <see cref="EquipmentLoadout.TryReplace"/>），
+    /// 这里只负责把**这一件变体**登记到指定等级。
+    /// </summary>
+    /// <returns>登记成功返回 true；类别不支持 / 等级超出该变体的数据行数返回 false（并报错）。</returns>
+    public bool ApplyUpgradeAtLevel(UpgradeDefinition def, int level)
+    {
+        if (def == null || level < 1) return false;
+        if (def.category != UpgradeCategory.AttackPassive && def.category != UpgradeCategory.TimedPassive)
+        {
+            Debug.LogError($"[UpgradeEffectManager] {def.upgradeId} 不是占槽饰品（category={def.category}），不能按等级装备");
+            return false;
+        }
+
+        int rows = def.GetAvailableLevelCount();
+        if (rows > 0 && level > rows)
+        {
+            Debug.LogError($"[UpgradeEffectManager] {def.upgradeId} 可见等级 Lv.{level} 超出等级数据行数 {rows}，拒绝装备（配置错误）");
+            return false;
+        }
+        if (rows <= 0 && level > Mathf.Max(1, def.maxLevel))
+        {
+            Debug.LogError($"[UpgradeEffectManager] {def.upgradeId} 没有逐级数据时可见等级 Lv.{level} 不能超过 maxLevel（{Mathf.Max(1, def.maxLevel)}）");
+            return false;
+        }
+
+        bool alreadyApplied = _appliedUpgrades.TryGetValue(def.upgradeId, out int previous);
+        _appliedUpgrades[def.upgradeId] = level;
+        if (!alreadyApplied || previous <= 0) _passiveSlotUsers++;
+
+        SyncToPlayerState(def, level);
+        RegisterPassiveAtLevel(def, level);
+        OnUpgradeApplied?.Invoke(def, level);
+        Debug.Log($"[UpgradeEffectManager] 装备饰品 {def.displayName}（{def.quality} Lv.{level}，kind={def.KindId}）");
+        return true;
+    }
+
+    /// <summary>按 category / effectType 把被动注册到指定等级（ApplyUpgrade 与 ApplyUpgradeAtLevel 共用）。</summary>
+    private void RegisterPassiveAtLevel(UpgradeDefinition def, int level)
+    {
+        if (def.category == UpgradeCategory.TimedPassive)
+        {
+            if (TimedPassiveModule.Instance != null)
+                TimedPassiveModule.Instance.Register(def, level);
+            else
+                Debug.LogWarning("[UpgradeEffectManager] TimedPassiveModule 未找到");
+        }
+        else if (def.effectType == "charge_hit_shockwave")
+        {
+            _chargeHitShockwaveDefinition = def;
+            _chargeHitShockwaveLevel = level;
+        }
+        else
+        {
+            if (PassiveTriggerModule.Instance != null)
+                PassiveTriggerModule.Instance.Register(def, level);
+            else
+                Debug.LogWarning("[UpgradeEffectManager] PassiveTriggerModule 未找到");
+        }
+    }
+
     private void SyncToPlayerState(UpgradeDefinition def, int level)
     {
         var ps = PlayerState.Instance;

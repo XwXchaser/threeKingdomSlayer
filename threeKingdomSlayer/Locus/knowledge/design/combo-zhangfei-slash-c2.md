@@ -100,14 +100,14 @@ Zhangfei_Slash.moveEdges:
 
 > **口径**：玩家**首次解锁 slash 后、第一次进入战斗时**，弹一次「手势示范 + 一行文字」。
 > 依据 `MoveGuideService.cs` 自己的规则注释（「解锁后第一次进关时，在波次开始前弹一次」）。
-> → **教学关不需要 Slash 教学**。
+> → **教学关本身没有横扫拍**；解锁后的手势教学由这条 MoveGuide 负责（教学关不重复教）。
 
 **当前实现状态（活体实测）**
 
 | 环节 | 状态 |
 |---|---|
 | 机制 | `MoveGuideService`（收集）+ `MoveGuidePresenter`（播）+ `TalentNodeConfig.moveGuideGesture/moveGuideDialogue`（数据位）+ `MoveGuideSaveSection`（存档）—— 全套都在 |
-| 数据 | `talent_move_slash` = `SwipeHorizontal` + `guide_move_slash`（台词「手指横着划过去 —— 横扫一排敌人！」）—— 已配 |
+| 数据 | `move_spear_slash`（2026-11-24 起武器条目；旧 `talent_move_slash`）= `SwipeHorizontal` + `guide_move_slash`（台词「手指横着划过去 —— 横扫一排敌人！」）—— 已配 |
 | 触发 | `FakeRouteRuntime.Node.cs:118`（路线关卡，战斗开打前）+ `StageRunFlow.cs:66`（直连关卡） |
 | **实际表现** | **黑屏 + 暂停 + 敌人没到位 + 没有教学的演出**（坏的） |
 
@@ -130,7 +130,7 @@ Dialogue: IsBusy=True      Time.timeScale=0
 
 ## 5. 解锁
 
-- 节点：`TalentTree_Moves` → `talent_move_slashc2`（`moveConfig = Zhangfei_SlashC2`，`coinCost` 沿用占位 1）。
+- 节点：`MainWeapon_ZhangfeiSpear` → `move_spear_slashc2`（`move = Zhangfei_SlashC2`，前置 `move_spear_slash`；2026-11-24 起；旧 `talent_move_slashc2`）。
 - 解锁判定：**零代码**（`PlayerMoveStateMachine.IsMoveLocked` 读 `hero.talentTree` = Moves 页 ✓）。
 - 未解锁时：蓄力松手**不响应**（不回落成别的招式 ✓）。
 
@@ -183,7 +183,7 @@ Dialogue: IsBusy=True      Time.timeScale=0
 ### 8.3 本次处置（暂时停用）
 
 `MoveTable_Zhangfei.asset` 的 root[2]：`minChargeLevel` 由 `1` 改为 **`99`（不可达）** → `FindRoot` 永远跳过它
-→ 蓄力横滑回落到 `Zhangfei_Slash`（且 Slash 受 `talent_move_slash` 天赋锁）。
+→ 蓄力横滑回落到 `Zhangfei_Slash`（且 Slash 受 `move_spear_slash` 武器锁）。
 **恢复 = 把 99 改回 1**。
 
 实测：横滑+蓄力 0/1/2/3 全部解析为 `Zhangfei_Slash`；解锁横斩后实机 `执行 Zhangfei_Slash`（不再是 Sweep）。
@@ -218,7 +218,7 @@ Dialogue: IsBusy=True      Time.timeScale=0
 **遗留口子 ②（仍未关）**：`Hold → Pierce`（**站桩蓄力穿刺**）已随上面的改动一起失效
 （长按不再进蓄力态 → 不会打出蓄力穿刺；中立态长按退化为普通点按）。
 但 `Zhangfei_Pierce` / `Zhangfei_Launch`（中立态蓄力上挑）现在**都没有入口**了 → 变成无入口内容，
-是否给它们天赋入口（像 `talent_move_slashc2` 那样）还是删，**待设计定**。
+是否给它们武器条目入口（像 `move_spear_slashc2` 那样）还是删，**待设计定**。
 
 ### 8.5 设计口径待对齐（本次不动代码）
 

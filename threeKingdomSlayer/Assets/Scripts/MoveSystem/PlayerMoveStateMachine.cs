@@ -514,22 +514,13 @@ public class PlayerMoveStateMachine : MonoBehaviour
     }
 
     /// <summary>
-    /// 招式是否被天赋锁住：招式表里有 MoveUnlock 节点指向它、但存档里还没解锁。
-    /// 没配天赋树（或没有对应节点）一律视为已解锁，避免配置缺失把招式全锁死。
+    /// 招式是否被**主武器**锁住（2026-11-24 用户定：招式跟武器走，不在天赋树里卖）。
+    /// 未配置在武器目录里的招式一律视为已解锁（不能让配置缺失把招式全锁死）。
     /// </summary>
     private bool IsMoveLocked(AttackSkillConfig move)
     {
         if (move == null) return false;
-        var hero = attackSystem != null && attackSystem.playerState != null ? attackSystem.playerState.heroConfig : null;
-        var tree = hero != null ? hero.talentTree : null;
-        if (tree == null || tree.nodes == null) return false;
-        for (int i = 0; i < tree.nodes.Count; i++)
-        {
-            var node = tree.nodes[i];
-            if (node == null || node.moveConfig != move) continue;
-            return !TalentTreeState.IsUnlocked(node);
-        }
-        return false;
+        return !WeaponService.IsMoveUnlocked(move);
     }
 
     /// <summary>

@@ -8,6 +8,8 @@ aiEditMode: inherit
 
 # 交接 todolist · 局外成长 / 天赋页 / SlashC2 表现（2026-11-02 收尾）
 
+> **2026-11-24 迁移提示**：`talent_move_slash` / `talent_move_stabc2` 现为武器条目 `move_spear_slash` / `move_spear_stabc2`；`guide_move_slash` 台词与流程不变。
+
 > **给下一个对话**：先读本文 §1（现状快照）与 §3（已确认事实），再按 §5 的顺序做。
 > 配套文档：`design/talent-tree-architecture.md` · `design/talent-page-ui.md` · `design/in-run-growth-and-unlocks.md` ·
 > `design/stage-configuration.md` · `design/move-split-and-derivatives.md` · `design/combo-zhangfei-slash-c2.md` ·

@@ -69,10 +69,11 @@ aiEditMode: inherit
 
 ### 3.1 招式解锁引导（#2）细则
 
-- **触发**：天赋节点配了 `moveGuideGesture` + 招式已解锁 + 存档里没教过 → 由 `MoveGuideService.CollectPending` 收集。
+- **触发**：**武器招式条目（`WeaponMoveEntry`，2026-11-24 起）** 或天赋节点配了 `moveGuideGesture` + 招式已解锁 + 存档里没教过 → 由 `MoveGuideService.CollectPending(tree, catalog, weapon)` 收集。
+  （当前：`move_spear_slash` → `SwipeHorizontal` + `guide_move_slash`；`move_spear_stabc2` → `ComboCharge` + `guide_move_stabc2`。）
 - **时机**：**开波那一刻**（`OnWaveStarted`），排在教学关自己的拍**前面**；正式关同样适用。
 - **形式**：完全等同教学拍（§2）——等敌人到位、冻结、示范循环、玩家划出横扫**并打中敌人**才收拍。
-- **收尾**：收拍后补播该天赋节点自己的台词（`guide_move_slash`：「手指横着划过去 —— 横扫一排敌人！」），台词为**教学类**（自动推进，不把游戏暂停等点击）。
+- **收尾**：收拍后补播**该条目 / 节点自己的台词**（`guide_move_slash`：「手指横着划过去 —— 横扫一排敌人！」），台词为**教学类**（自动推进，不把游戏暂停等点击）。
 - **「已教过」**：**只有招式真的打中敌人**才写 `SaveData.taughtMoveGuides`；没打中 → 下次进关再教。
 - **正式关**：解锁引导**要教**（这是玩家第一次用这招）；但**三选1 教学不教**（见 3.2）。
 
@@ -142,7 +143,7 @@ aiEditMode: inherit
 | ① 教学关（自动驱动） | ✅ 完成，~140s，铜钱 310 |
 | ② 结算「返回」→ 落地页 | ✅ 主菜单出现**引导**（指右下角「天赋」卡） |
 | ③ 天赋页 → 教学 → 解锁指向突刺 | ✅ 教学自动出现 → 视图切到「招式解锁」→ 点节点 → 点确认 → **解锁** + `taughtTalentPanel=true` |
-| ④ 正式关 → 「连招蓄力」教学拍 | ✅ 点一记 → 窗口冻结 → 蓄满松手 → **打出 `Zhangfei_StabR2`（指向突刺）** → 收拍 → `taughtMoveGuides=[talent_move_stabc2]` |
+| ④ 正式关 → 「连招蓄力」教学拍 | ✅ 点一记 → 窗口冻结 → 蓄满松手 → **打出 `Zhangfei_StabR2`（指向突刺）** → 收拍 → `taughtMoveGuides=[weapon_move:move_spear_stabc2]`（2026-11-24 起 id 前缀） |
 
 ⇒ **教学关 ✅ / 天赋解锁 ✅ / 天赋页教学 ✅ / 招式教学 ✅**
 

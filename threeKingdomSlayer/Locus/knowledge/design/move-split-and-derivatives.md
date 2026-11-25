@@ -206,14 +206,18 @@ roots: SwipeHorizontal → Zhangfei_Slash
 
 ---
 
-## 6. 招式解锁与天赋节点的对应
+## 6. 招式解锁的当前位置（2026-11-24 起：武器树）
 
-| 招式 | 天赋节点 | 载荷 | 价 | 备注 |
+> **2026-11-24 起招式已移出天赋树**，解锁位置改为 `MainWeapon_ZhangfeiSpear` 的 `WeaponMoveEntry`。
+> 下表的 `talent_move_*` 只是历史节点 id（`TalentTree_Moves` 已清空，不再驱动解锁）；当前以“武器条目”列为准。
+> 另外：`Zhangfei_Slash`（横滑不蓄力，旧节点显示名「横扫」）与 `Zhangfei_Sweep`（横滑蓄力，也叫横扫）**不是同一招**；Sweep 当前未入 `skillConfigs` / 未启用。
+
+| 招式 | 武器条目（当前） | 旧天赋节点（历史） | 价 | 备注 |
 |---|---|---|---|---|
-| C2 `Zhangfei_StabR2` | `talent_move_stabc2`（Moves 页） | `moveConfig` | 占位 1 | ✅ 引用已修（活节点在 Moves 页，`PlayerMoveStateMachine.IsMoveLocked` 读的就是它） |
-| C4 `Zhangfei_LaunchFinisher` | `talent_move_stabc4`（Moves 页） | `moveConfig` | 占位 1 | ✅ 前置 = `talent_move_stabc2`（**先有 C2 才能买 C4**，链完整） |
-| 横扫 `Zhangfei_Slash` | `talent_move_slash`（Moves 页，划线分支占位） | `moveConfig` | 占位 1 | ✅ 划线分支当前只有这一个节点（R11/R12：Slash 衍生本期不定） |
-| **Slash C2（划线）** | `talent_move_slashc2` | `moveConfig`（新） | 占位 1 | ✅ **2026-11-03 已实现并实机确认**：任意方向斩击 → 蓄力松手 → 强化斩击（全列 2 排 + 重攻击 + **左右位移 1 排**，方向继承上一段）；普通 Slash 的左右位移**已移除** → 见 `design/combo-zhangfei-slash-c2.md` |
+| C2 `Zhangfei_StabR2` | `move_spear_stabc2` | `talent_move_stabc2` | 30 | 根节点；引导 `ComboCharge` / `guide_move_stabc2` |
+| C4 `Zhangfei_LaunchFinisher` | `move_spear_launch` | `talent_move_stabc4` | 40 | 前置 `move_spear_stabc2`（**先有 C2 才能买 C4**） |
+| 横扫 `Zhangfei_Slash` | `move_spear_slash` | `talent_move_slash` | 1（旧值，**待填正式价**） | 根节点；引导 `SwipeHorizontal` / `guide_move_slash` |
+| **Slash C2（划线）** | `move_spear_slashc2` | `talent_move_slashc2` | 50 | 前置 `move_spear_slash`；**2026-11-03 已实现并实机确认**：任意方向斩击 → 蓄力松手 → 强化斩击（全列 2 排 + 重攻击 + **左右位移 1 排**，方向继承上一段）；普通 Slash 的左右位移**已移除** → 见 `design/combo-zhangfei-slash-c2.md` |
 
 ### 6.1 两个必须处理的连带（✅ 2026-11-03 已处理）
 

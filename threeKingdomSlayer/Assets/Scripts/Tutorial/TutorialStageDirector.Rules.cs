@@ -144,9 +144,9 @@ public partial class TutorialStageDirector : MonoBehaviour
     /// </summary>
     private void UpdateAttackGate()
     {
-        var route = RouteFlowHub.Current;
-        bool onTutorial = route != null && tutorialRouteConfig != null && route.RouteConfig == tutorialRouteConfig;
-        if (onTutorial)
+        // ★ 2026-11-25：统一用 IsTutorialSessionActive（含“路线已让位给无尽”）。
+        //   之前这里自己算 RouteConfig → 无尽接管后每帧又把白名单打开（空白名单锁死所有攻击）。
+        if (IsTutorialSessionActive())
         {
             if (!_attackGateOn)
             {

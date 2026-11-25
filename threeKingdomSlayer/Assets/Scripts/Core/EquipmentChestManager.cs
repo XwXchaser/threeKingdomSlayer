@@ -34,6 +34,12 @@ public class EquipmentChestManager : MonoBehaviour
 
     private readonly List<EquipmentChest> _flyingChests = new List<EquipmentChest>();
 
+    /// <summary>
+    /// 是否还有装备箱在飞（2026-11-25）。
+    /// 波末结算要等它们到位并入队，否则**末杀精英**的箱子会拖到下一波末才弹选择。
+    /// </summary>
+    public bool HasFlyingChests => _flyingChests.Count > 0;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)

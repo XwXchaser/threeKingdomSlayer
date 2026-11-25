@@ -67,7 +67,7 @@ aiEditMode: inherit
   - **排查要点**：失败请求 100% 是「带工具结果」的请求，纯文本请求（input=1）从不报此错；同一载荷换 `openai_chat` 端点即通过；坏项会留在历史里把会话毒死（每轮都引用同一个 call id）⇒ **原地重试无效**，必须换模型或开新会话。
   - 已知频率（2026-10-22→10-29 日志统计）：deepseek-flash 请求 89 次中失败 48 次，MiniMax 同一载荷无失败。
 
-## 8. Locus 会话 413 Payload Too Large（图片附件累积撑爆请求体，工具侧）
+## 8. Locus 会话 413 / 400（图片附件累积撑爆请求体，工具侧）
 - **现象**：会话跑到中途后，**连续两轮 run 直接 error**，报错是网关层的 `Custom Chat API error (413 Payload Too Large): <html>…nginx…</html>`（上游 `https://api.muskapis.com/v1/chat/completions`，nginx 拒收请求体）。该会话之后任何消息都发不出去 → 任务卡死无法继续。
 - **与问题 7 的区别**：问题 7 是**上下文 token 预算**型（400 / 2013 / 压缩死锁）；本条是**请求体字节数**型（413），别按同一种故障排查。
 - **根因（实测 2026-10-22 会话 `6938f3dc-20ac-4da1-87dc-5a198e9d8585`）**：会话 1038 条消息里只有 **26 条带图片附件，合计 104,510,310 B ≈ 99.7 MiB 的 base64 PNG**（`read` 工具读 PNG / 截图回传时把**全分辨率原图**内联进消息）。同期纯文本只有 content 0.61 MiB + tool_calls 0.61 MiB + thinking 0.93 MiB → **撑爆的是图片，不是文字**。单张最大三张 base64 分别 12.65 MB / 12.45 MB / 12.38 MB。
@@ -80,6 +80,12 @@ aiEditMode: inherit
   - 长会话里**别把全分辨率 PNG 读进对话**：先用外部脚本裁剪/缩放后再 `read`；成组对比图改用拼图脚本合成一张。
   - 会话里读图次数控制在个位数；每读一张大图就估算累积体积，超过 ~20 MiB 就先写交接文档再换会话。
   - 截图验收优先走「渲染到文件 → 桌面文件夹」而不是反复回传图给模型。
+- **2026-11-24 补充实测（同一故障的 400 版，拿到了显式上限）**：修无尽关地面时，单会话拍了 17 张 1080×2160 Game 截图（46.1 MB PNG）+ 若干历史截图与贴图读取，上游直接回
+  `400 Bad Request: "request body exceeds 128 MB: request body too large"`（`type=muskapis_error`），同一会话三次重试**全部同一条**，随后会话 failed。
+  ⇒ **硬上限 = 128 MB/请求**；400 与 413 是同一病根的两种表现，不要按 token 超限去查。
+  ⇒ 换算基准：1080×2160 截图 ≈2.6 MB/张，降到 640 长边 ≈90 KB/张（**约 1/28**）。
+  ⇒ 细化后的取证流程与预算见 `skill/session-image-payload-discipline.md`
+  （截图分级 480/640/原图、优先「写盘截图 + 脚本统计只回数字」、单会话累计原图 ≤30 MB）。
 
 ## 10. 常态点击引导（手 + 光圈）与敌人对不齐 / 圈过大 / 无敌人处出现光圈 ✅ 已修复（2026-11-02）
 - **现象 A**：正式关卡里，引导的**手指与光圈位置对不上**；光圈**明显偏大**。
@@ -476,3 +482,92 @@ aiEditMode: inherit
   **无法提亮**，可见的闪完全依赖美术帧 `Enemy_1011_hit1..hit5`；
   真闪白需要给 `EnemyOutline` 加 `_FlashStrength`（`SetPropertyBlock` 驱动，不污染材质）之类的通道。详见
   `memory/hit-feedback-system.md`。
+
+## 26. 无尽 HUD 的「退出」按钮已删除（2026-11-24 用户定）✅
+
+- **原实现**：`EndlessHud` 右上角常驻「退出」按钮（`ExitButton`）→ `EndlessRunController.ExitToLanding()`。
+- **问题（用户实测）**：
+  1. 退出只回落地页，**不中止当前节点战斗** —— `EndRun` 没有 `StageController.AbortRouteBattle()`
+     （对比 `StartEndlessRun` 有），敌人 / 波次 / HUD 会继续在后台跑；
+  2. 无尽本来就有**暂停菜单**的退出入口，这个按钮是重复入口。
+- **处置**：删除按钮（字段 / 创建 / 回调）。退出统一走暂停菜单。
+  `ExitToLanding()` 作为公共 API 保留；**若将来恢复入口，必须先补 `AbortRouteBattle()` + 清怪 / 停波次**。
+- **文件**：`Assets/Scripts/UI/EndlessHud.cs`
+
+## 27. 卷轴实验开关会混进正式包 ✅ 已删除（2026-11-24）
+
+- **现象**：正式包右上角出现「卷轴实验 开/关」按钮；点开后会改 `route.flatCycleLength` / `infiniteScroll`
+  并直接推进 `route.progress`，与无尽模式抢同一套进度。
+- **根因**：`YRouteSliceLoader` 用 `[RuntimeInitializeOnLoadMethod(AfterSceneLoad)]` **无条件**自建 GameObject + 按钮，
+  没有任何场景 / Prefab 引用，也没有 `#if` 保护 ⇒ 任何构建、任何场景都会出现。
+- **处置**：整文件删除（`.cs` + `.meta`），全工程零引用。
+- **规则**：实验 / 调试入口**不要**用无条件 `RuntimeInitializeOnLoadMethod` 自建 UI；
+  至少加 `#if UNITY_EDITOR || DEVELOPMENT_BUILD`，或做成场景里显式挂载的组件。
+
+## 28. 【已修 2026-11-25】无尽关**所有攻击手势**被教学招式白名单拦下
+
+- **现象**：进入无尽关后，敌人正常攻击玩家，但玩家点 / 划 / 蓄力**全部无效**；防御键可用，输入门显示“可操作”。
+  仅无尽关出现，剧情关 / 教学关正常。
+- **根因**：`FakeRouteRuntime.SuspendForEndless()` 让位后，`RouteFlowHub.Current` **仍返回这条假路线**（只是不跑流程）；
+  `TutorialStageDirector.IsOnTutorialRoute()` 只比对 `RouteConfig == tutorialRouteConfig` ⇒ 把无尽关误判成“还在教学路线”
+  ⇒ 保持 `TutorialAttackGate` 启用；而无尽不跑教学拍，白名单一直为空
+  ⇒ `AttackSystem.TryExecuteAttack` 在 `TutorialAttackGate.Allows` 处丢弃**所有**招式。
+- **证据**（Editor Play 实测）：
+  - Console 47 次 `[Tutorial] 招式还没教到，不允许发出：Stab（当前可用：）`；
+  - `TutorialAttackGate.Enabled=True`、`Describe()=''`、`_attackGateOn=true`、`IsOnTutorialRoute=true`、
+    `FakeRouteRuntime.IsSuspended=true`；
+  - 同一时刻 `GameplayInputGate` 为“未拦下”、`Time.timeScale=1`、`PlayerState.stageState=InProgress`。
+- **修复**：
+  1. `FakeRouteRuntime` 暴露 `IsSuspended`；
+  2. `TutorialStageDirector.IsOnTutorialRoute()` 增加 `!routeRuntime.IsSuspended`；
+  3. `EndlessRunController.StartEndlessRun()` 在 `SuspendForEndless()` 后显式 `TutorialAttackGate.Clear()`；
+     `EndRun()` 也清一次，避免残留到落地页 / 下一局。
+- **验证**：修后无尽关 `TutorialAttackGate.Enabled=False`（不限制）、调试手势 `executed=True`，
+  `BattleAutoPlayer` 10 秒击杀 6 只、继续清到下一节点与下一波，`Time.timeScale=1`、输入门保持 open。
+- **规则**：任何“教学 / 临时专属”的**全局静态开关**在模式接管（无尽 / 正式关）时都必须显式回收；
+  “是不是在教学路线”不能只看 `RouteConfig`，还要看这条路线**是否已被挂起**。
+- **文件**：`Assets/Scripts/RouteFake/FakeRouteRuntime.Entry.cs`、`Assets/Scripts/Tutorial/TutorialStageDirector.cs`、
+  `Assets/Scripts/Managers/EndlessRunController.cs`
+
+## 29. 【已修 2026-11-25】无尽关防御键被教学“还没教到”逻辑隐藏
+
+- **现象**：无尽关里攻击手势已修好，但防御键仍然不可见 / 不可按；教学关表现正常。
+- **根因**：`TutorialStageDirector.RefreshDefenseButtonAvailability` 自己复制了一份
+  `RouteConfig == tutorialRouteConfig` 判定，**不看路线是否已被无尽挂起**；
+  无尽里 `_defendTaught=false` → `shouldLock=true` → `SetAvailable(false)`（隐藏）。
+  同类问题还有：防御静音还原、强制三选一还原、`UpdateAttackGate`、开场台词、
+  教学完成判定、教学黑幕 —— 各自复制了同一条判定。
+- **修复**：
+  1. 统一为 `TutorialStageDirector.IsTutorialSessionActive()`（教学路线 **且 `!IsSuspended`**）；
+  2. 新增 Data 层端口 `Assets/Scripts/Data/TutorialStatePort.cs`（`ITutorialStateGate` + 注册表）——
+     `TutorialStageDirector` 在 `Locus.UI`、`EndlessRunController` 在 `Locus.Flow`，Flow 不能反向引用 UI；
+  3. 新增 `ReleaseTutorialOnlyStateForModeTakeover()`：一次性回收招式白名单 / 防御键隐藏与静音 /
+     强制三选一 / 教学输入 static / 教学时停 / 教学输入门 / 遮罩；无尽开局与结束都调用。
+- **验证**（Editor Play）：无尽开局后 `DefenseButton.Available=True`、`Muted=False`；
+  真实指针 `OnPointerDown` → `IsDefendingActive=True`、`WeaponStance.SwingIn`，`OnPointerUp` 退出；
+  攻击 `SubmitGestureForDebug(Tap)=True`，`BattleAutoPlayer` 8 秒击杀 5 只；Console 0 error。
+- **规则**：**教学专属状态必须共用一个“教学会话是否真在进行”的判定**；
+  `RouteConfig` 相等 ≠ 在教学（路线可能已让位给无尽）。
+- **文件**：`Assets/Scripts/Tutorial/TutorialStageDirector*.cs`、`TutorialRouteBlackout.cs`、
+  `Assets/Scripts/Data/TutorialStatePort.cs`、`Assets/Scripts/Data/IRouteFlow.cs`、
+  `Assets/Scripts/Managers/EndlessRunController.cs`
+
+## 30. 【已修 2026-11-25】武器化改造漏掉「横扫」解锁节点，清档后非教学关仍能横扫
+
+- **✅ 用户已确认修复（2026-11-25）。**
+- **现象**：清除存档后，非教学关（第一关 / 无尽）仍然可以直接横滑出「横扫」；用户指出“还有对应的解锁教学，这不该是基础招式”。
+- **根因**：旧 `TalentTree_Moves` 有 4 个节点：
+  `talent_move_stabc2` 指向突刺 / `talent_move_stabc4` 枪突收尾 / **`talent_move_slash` 横扫** / **`talent_move_slashc2` 斩击 C2（前置 = 横扫）**。
+  2026-11-24 武器化时只搬了 3 个节点到 `MainWeapon_ZhangfeiSpear`，**横扫节点和 C2 前置一起丢失**。
+  `WeaponService.FindEntry(Zhangfei_Slash)` 返回 null → `IsMoveUnlocked` 走“不在目录 ⇒ 不锁”的安全回退
+  ⇒ 基础 Slash 永远可用；对应引导台词 `guide_move_slash` 变成孤儿资产。
+- **修复**：
+  1. 武器资产补回 `move_spear_slash`（横扫）：`Zhangfei_Slash`、`unlockedByDefault=false`、`cost=1`（旧节点原价，**待填正式价**）、
+     `moveGuideGesture=SwipeHorizontal`、`moveGuideDialogue=guide_move_slash`、`treePosition=(0,0)`；
+  2. `斩击 C2` 前置改为 `move_spear_slash`、位置 `(0,190)`；
+  3. `WeaponLoadoutPanel` 的节点状态改用 `IsEntryUnlocked(entry)`（不再依赖 `PlayerState`/目录解析的“找不到 = 不锁”回退）。
+- **验证**（Editor Play）：武器面板 4 节点——横扫“花 1 解锁”、斩击 C2“需先解锁：横扫”；
+  `IsMoveUnlocked(Zhangfei_Slash)=False`；无尽关（教学白名单 free）横滑 `SubmitGestureForDebug=False`。
+- **规则**：`hero.skillConfigs` 里有资产 ≠ 基础招式；**招式是否解锁只看武器目录 `WeaponMoveEntry`**。
+  基础招式目前是 **戳 / 上挑 / 招架**；横扫是解锁项。新增/迁移招式时必须对照旧树逐节点核对，不能凭“看起来像基础招式”删节点。
+- **文件**：`Assets/ScriptableObjects/Weapons/MainWeapon_ZhangfeiSpear.asset`、`Assets/Scripts/UI/WeaponLoadoutPanel.cs`
