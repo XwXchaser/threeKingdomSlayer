@@ -96,8 +96,7 @@ public class UpgradeChoiceManager : MonoBehaviour
     ///   Equipment = **装备**（影之武装 / 饰品；**精英敌人掉落**带来）
     ///   Item      = 道具（Boss 锦囊）
     /// </summary>
-    private enum PendingType { LevelUp, Equipment, Item }
-    private Queue<PendingType> _pendingQueue = new Queue<PendingType>();
+    private readonly RewardChoiceQueue _pendingQueue = new RewardChoiceQueue();
 
     // ── 事件（供 UI 订阅）──
     public System.Action<List<UpgradeDefinition>> OnChoicesReady;
@@ -115,7 +114,7 @@ public class UpgradeChoiceManager : MonoBehaviour
     public int PendingLevelUps => _pendingLevelUps;
 
     /// <summary>
-    /// 当前**待选取**的三选一数量（升级三选一 + Boss 锦囊三选一）。
+    /// 当前**待选取**的三选一数量（属性升级 + 装备 + Boss 锦囊）。
     ///
     /// ⚠️ **包含已经在弹的那一个**（2026-11-07 用户反馈：「等级球实际显示的是能获得的 3 选 1 数量 - 1」）：
     ///   弹出时 <see cref="ShowNextChoice"/> 会把计数**先减掉**（那一项已经被取出来放进弹窗了），
@@ -249,8 +248,8 @@ public class UpgradeChoiceManager : MonoBehaviour
         if (ReferenceEquals(_circleSource, source)) _circleSource = null;
     }
 
-    /// <summary>本次装备抽取要用的内部圈数（无来源时按 1；不进 HUD / 不计分）。</summary>
-    private int CurrentCircle => _circleSource != null ? Mathf.Max(1, _circleSource.Circle) : 1;
+    /// <summary>当前内部圈数（供掉落时盖章；无来源时按 1；不进 HUD / 不计分）。</summary>
+    public int CurrentCircleForDrop => _circleSource != null ? Mathf.Max(1, _circleSource.Circle) : 1;
 
     /// <summary>
     /// **主动发放 N 次三选一**（2026-11-16，无尽模式开局给"起步 build"用）。
@@ -262,7 +261,7 @@ public class UpgradeChoiceManager : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             _pendingLevelUps++;
-            _pendingQueue.Enqueue(PendingType.LevelUp);
+            _pendingQueue.Add(RewardChoiceType.LevelUp);
         }
         if (deferChoicesToWaveEnd) return;
         if (!_isChoosing) StartChoiceFlow();
@@ -273,7 +272,7 @@ public class UpgradeChoiceManager : MonoBehaviour
     private void OnPlayerLevelUp(int newLevel)
     {
         _pendingLevelUps++;
-        _pendingQueue.Enqueue(PendingType.LevelUp);
+        _pendingQueue.Add(RewardChoiceType.LevelUp);
 
         // 波末弹（默认）：升级只入队，不当场打断战斗。
         // 波次清空时由 <see cref="FlushPendingChoices"/> 统一弹出。
@@ -321,7 +320,7 @@ public class UpgradeChoiceManager : MonoBehaviour
             return;
 
         _pendingItemChoices++;
-        _pendingQueue.Enqueue(PendingType.Item);
+        _pendingQueue.Add(RewardChoiceType.Item);
         if (!_isChoosing)
             StartChoiceFlow();
     }
@@ -353,16 +352,16 @@ public class UpgradeChoiceManager : MonoBehaviour
 
     private void ShowNextChoice()
     {
-        // 从队列取下一个待处理的类型
+        // 从队列取下一个待处理的类型（Equipment 优先于 LevelUp；同类型按到达顺序）
         if (_pendingQueue.Count == 0)
         {
-            // 安全回退：无队列但有计数器时
-            if (_pendingLevelUps > 0)
-                _pendingQueue.Enqueue(PendingType.LevelUp);
-            else if (_pendingEquipmentChoices > 0)
-                _pendingQueue.Enqueue(PendingType.Equipment);
+            // 安全回退：无队列但有计数器时（按优先级补一个；后续会继续补）
+            if (_pendingEquipmentChoices > 0)
+                _pendingQueue.Add(RewardChoiceType.Equipment, CurrentCircleForDrop);
+            else if (_pendingLevelUps > 0)
+                _pendingQueue.Add(RewardChoiceType.LevelUp);
             else if (_pendingItemChoices > 0)
-                _pendingQueue.Enqueue(PendingType.Item);
+                _pendingQueue.Add(RewardChoiceType.Item);
             else
             {
                 FinishAllChoices();
@@ -370,9 +369,14 @@ public class UpgradeChoiceManager : MonoBehaviour
             }
         }
 
-        var nextType = _pendingQueue.Dequeue();
-        _isShowingItemChoice = (nextType == PendingType.Item);
-        _isShowingEquipmentChoice = (nextType == PendingType.Equipment);
+        if (!_pendingQueue.TryDequeueNext(out var nextChoice))
+        {
+            FinishAllChoices();
+            return;
+        }
+        var nextType = nextChoice.type;
+        _isShowingItemChoice = (nextType == RewardChoiceType.Item);
+        _isShowingEquipmentChoice = (nextType == RewardChoiceType.Equipment);
 
         RewardDrawReport drawReport = null;
         if (_isShowingItemChoice)
@@ -383,7 +387,7 @@ public class UpgradeChoiceManager : MonoBehaviour
         else if (_isShowingEquipmentChoice)
         {
             _pendingEquipmentChoices--;
-            _currentChoices = DrawEquipmentChoices(out drawReport);
+            _currentChoices = DrawEquipmentChoices(nextChoice.circle, out drawReport);
         }
         else
         {
@@ -399,8 +403,9 @@ public class UpgradeChoiceManager : MonoBehaviour
         if (_currentChoices == null || _currentChoices.Count == 0)
         {
             // 2026-11-25 用户拍定：零候选 **报错跳过**，不再发铜钱补偿、不伪造候选。
-            // （属性池与装备池统一口径；V1 道具池保持旧行为。）
-            if (!_isShowingItemChoice && (drawReport == null || !drawReport.HasError))
+            // 但“候选都已经是当前已装备的完全一致变体”属于**状态性缺货**（isShortage）：
+            // 不报配置错误、不整组作废，只记录警告并跳过本次。
+            if (!_isShowingItemChoice && (drawReport == null || !drawReport.HasError) && (drawReport == null || !drawReport.isShortage))
                 Debug.LogError("[UpgradeChoiceManager] 本次"
                     + (_isShowingEquipmentChoice ? "装备" : "属性")
                     + "没有任何候选，按配置错误跳过本次奖励（不发放补偿）");
@@ -689,7 +694,7 @@ public class UpgradeChoiceManager : MonoBehaviour
         /// **装备三选一**（2026-11-25）：影之武装与饰品**统一一套候选**。
         /// 内部圈数 → 档位概率 → 档内权重 → 同次按种类去重；不保底、不交替、不受槽位 / 同款过滤。
         /// </summary>
-        private List<UpgradeDefinition> DrawEquipmentChoices(out RewardDrawReport report)
+        private List<UpgradeDefinition> DrawEquipmentChoices(int circle, out RewardDrawReport report)
         {
             report = new RewardDrawReport();
             if (_circleSource == null && !_circleFallbackLogged)
@@ -698,8 +703,11 @@ public class UpgradeChoiceManager : MonoBehaviour
                 Debug.Log("[UpgradeChoiceManager] 没有无尽圈数来源（非无尽关）→ 装备档位按第 1 圈处理");
             }
 
-            var drawer = new EquipmentChoiceDrawer(equipmentPoolConfig, EquipmentUnlockService.IsUnlocked);
-            return drawer.Draw(CurrentCircle, EffectiveChoiceCount, report);
+            var drawer = new EquipmentChoiceDrawer(
+                equipmentPoolConfig,
+                EquipmentUnlockService.IsUnlocked,
+                EquipmentLoadout.IsEquippedExact);
+            return drawer.Draw(Mathf.Max(1, circle), EffectiveChoiceCount, report);
         }
 
         /// <summary>
@@ -709,18 +717,26 @@ public class UpgradeChoiceManager : MonoBehaviour
         /// ⚠️ 只在 V2（主动技能）规则下生效：V1 没有"影之武装"这条线。
         /// </summary>
         public void GrantEquipmentChoices(int count)
+            => GrantEquipmentChoices(count, CurrentCircleForDrop);
+
+        /// <summary>
+        /// 发放 N 次装备选择，并记录**掉落时**的内部圈数（2026-11-25）。
+        /// 跨圈迟到时抽档仍用这个圈数，而不是弹出时的当前圈数。
+        /// </summary>
+        public void GrantEquipmentChoices(int count, int circle)
         {
             if (!UsesActiveSkillRules) return;
             if (suppressChoices) return;
             if (StageBattleState != null && !StageBattleState.IsStageInProgress) return;
             if (count <= 0) return;
+            int stampedCircle = Mathf.Max(1, circle);
             for (int i = 0; i < count; i++)
             {
                 _pendingEquipmentChoices++;
-                _pendingQueue.Enqueue(PendingType.Equipment);
+                _pendingQueue.Add(RewardChoiceType.Equipment, stampedCircle);
             }
             // ★ **波末统一弹**（2026-11-17 用户定：“波次结束后才选升级成长和武器”）：
-            //   精英掉落的装备选择与升级三选一走**同一条队列、同一个时机** ⇒
+            //   装备与升级走同一个波末时机；队列按 **Equipment 优先于 LevelUp** 出牌（2026-11-25）。
             //   不再在精英死亡的那一瞬间当场弹窗打断战斗。
             if (deferChoicesToWaveEnd) return;
             if (!_isChoosing) StartChoiceFlow();

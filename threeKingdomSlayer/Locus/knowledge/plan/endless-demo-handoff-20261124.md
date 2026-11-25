@@ -270,6 +270,7 @@ aiEditMode: inherit
 - 验证：N1 7 只敌人全部 `drops=true`；击杀入队装备选择；波末三选一出现测试变体；满槽选旧装备列表可点；同款 Fine→Legendary 精确变 Lv2；Console 0 error。
 - **还原**：取消场景勾选；把原两条权重改回 100（或你正式填的值）；删除 `TestVariants/` 与池内 4 行（或保留作测试资产）。
 - 本次测试顺手修掉两个替换误判（见 `memory/known-issues.md` §31）：被动内 `AttackPassive`/`TimedPassive` 可互换；同一变体重抽幂等成功。
+- **2026-11-25 第二批已实施**：精确排除当前已装备的完全一致变体（同档位耗尽按缺货少出）、装备优先于属性的波末队列、装备掉落时圈数盖章、只等敌人飞行箱、场景破坏物装备入口。验收方案见 `plan/equipment-draw-priority-acceptance-20261125.md`。
 
 ### 关键文件（本批新增 / 改动）
 

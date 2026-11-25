@@ -35,10 +35,30 @@ public class EquipmentChestManager : MonoBehaviour
     private readonly List<EquipmentChest> _flyingChests = new List<EquipmentChest>();
 
     /// <summary>
-    /// 是否还有装备箱在飞（2026-11-25）。
-    /// 波末结算要等它们到位并入队，否则**末杀精英**的箱子会拖到下一波末才弹选择。
+    /// 是否还有**敌人掉落的装备箱**在飞（2026-11-25）。
+    /// 波末结算要等它们到位并入队；**场景破坏物不算**（玩家可打可不打，不能阻塞波末）。
+    /// 查询时顺手剔除已被销毁 / 场景清掉的箱子，避免永久等待。
     /// </summary>
-    public bool HasFlyingChests => _flyingChests.Count > 0;
+    public bool HasFlyingChests
+    {
+        get
+        {
+            PruneDestroyed();
+            return _flyingChests.Count > 0;
+        }
+    }
+
+    /// <summary>箱子被外部销毁 / 未拾取时从等待列表剔除（不发放奖励）。</summary>
+    public void ForgetChest(EquipmentChest chest)
+    {
+        if (chest != null) _flyingChests.Remove(chest);
+    }
+
+    private void PruneDestroyed()
+    {
+        for (int i = _flyingChests.Count - 1; i >= 0; i--)
+            if (_flyingChests[i] == null) _flyingChests.RemoveAt(i);
+    }
 
     private void Awake()
     {
@@ -85,6 +105,11 @@ public class EquipmentChestManager : MonoBehaviour
         var chest = go.GetComponent<EquipmentChest>();
         if (chest == null) chest = go.AddComponent<EquipmentChest>();
 
+        // 掉落时盖章：抽档用这个圈数，而不是选择窗口弹出时的当前圈数。
+        chest.circleAtDrop = UpgradeChoiceManager.Instance != null
+            ? UpgradeChoiceManager.Instance.CurrentCircleForDrop
+            : 1;
+
         go.transform.SetAsLastSibling();
 
         var rt = go.GetComponent<RectTransform>();
@@ -116,7 +141,8 @@ public class EquipmentChestManager : MonoBehaviour
     public void OnChestArrived(EquipmentChest chest)
     {
         if (chest != null) _flyingChests.Remove(chest);
-        UpgradeChoiceManager.Instance?.GrantEquipmentChoices(1);
+        int circle = chest != null ? chest.circleAtDrop : 1;
+        UpgradeChoiceManager.Instance?.GrantEquipmentChoices(1, circle);
     }
 
     /// <summary>清除所有飞行中的宝箱（新对局重置）。</summary>

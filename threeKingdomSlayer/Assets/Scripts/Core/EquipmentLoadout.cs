@@ -44,6 +44,31 @@ public static class EquipmentLoadout
             : AccessoryLoadout.IsKindEquipped(def.KindId);
     }
 
+    /// <summary>
+    /// 这个**具体变体**当前是否已装备（同一个 `upgradeId` / 同一资产）。
+    ///
+    /// 只排除“完全一致”的那一件；同种类的其他品质 / 等级变体仍可出现在候选里，
+    /// 用于同款换装（2026-11-25 用户口径）。
+    /// </summary>
+    public static bool IsEquippedExact(UpgradeDefinition def)
+    {
+        if (def == null) return false;
+
+        if (def.category == UpgradeCategory.ActiveSkill)
+        {
+            var inventory = ActiveSkillInventory.Instance;
+            if (inventory == null) return false;
+            var entry = inventory.FindByKind(def.KindId);
+            return entry != null && entry.definition == def;
+        }
+
+        if (!AccessoryLoadout.IsSwappable(def)) return false;
+        var items = AccessoryLoadout.EquippedItems();
+        for (int i = 0; i < items.Count; i++)
+            if (items[i].definition == def) return true;
+        return false;
+    }
+
     /// <summary>该变体所在类别的槽位是否已满。</summary>
     public static bool IsCategoryFull(UpgradeDefinition def)
     {

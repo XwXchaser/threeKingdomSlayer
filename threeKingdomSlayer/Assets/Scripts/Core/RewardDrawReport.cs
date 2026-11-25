@@ -15,6 +15,12 @@ public sealed class RewardDrawReport
     /// <summary>是否出现配置错误（出现 ⇒ 本次奖励整组作废）。</summary>
     public bool HasError => errors.Count > 0;
 
+    /// <summary>
+    /// **状态性缺货**（2026-11-25）：不是配置错误，而是“候选都已经是当前已装备的完全一致变体”
+    /// 这类正常游戏状态。按用户口径：不报配置错误、不整组作废；有几张出几张。
+    /// </summary>
+    public bool isShortage;
+
     /// <summary>配置错误明细（每条都带具体对象 / 条目）。</summary>
     public readonly List<string> errors = new List<string>();
 

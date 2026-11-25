@@ -266,6 +266,7 @@ public class EndlessRunController : MonoBehaviour, IEndlessCircleSource
         IsRunning = false;
         _pendingEdge = null;
         EquipmentDropTestMode.ForceAllDrops = false;
+        EquipmentChestManager.Instance?.ClearAll();
 
         // 关掉无限卷轴 ⇒ 回落地页 / 剧情路线时表现与旧版一致
         FakeRouteRuntime.Instance?.MovementPresenter?.SetEndlessScroll(false);
@@ -970,6 +971,8 @@ public class EndlessRunController : MonoBehaviour, IEndlessCircleSource
     private void ResetRunState()
     {
         EquipmentDropTestMode.ForceAllDrops = false;
+        // 清掉上一局可能残留的飞行宝箱，避免新一局波末被旧箱子阻塞 / 误入队。
+        EquipmentChestManager.Instance?.ClearAll();
         PlayerState.Instance?.ResetPlayer();
         UltimateSystem.Instance?.ResetEnergy();
         EnemyManager.Instance?.ClearAllEnemies();

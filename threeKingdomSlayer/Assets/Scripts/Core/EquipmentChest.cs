@@ -18,12 +18,25 @@ public class EquipmentChest : MonoBehaviour
     /// <summary>到达回调（可覆盖默认行为）。</summary>
     [System.NonSerialized] public System.Action<EquipmentChest> onArrived;
 
+    /// <summary>
+    /// **掉落时**的内部圈数（2026-11-25）。
+    /// 抽装备档位时用它，而不是选择窗口弹出时的当前圈数；跨圈迟到箱不会套错阶段。
+    /// </summary>
+    [System.NonSerialized] public int circleAtDrop = 1;
+
     private RectTransform _rectTransform;
     private bool _collected;
 
     private void Awake()
     {
         _rectTransform = GetComponent<RectTransform>();
+    }
+
+    private void OnDestroy()
+    {
+        // 被外部销毁 / 场景清掉但没被拾取：从 Manager 的等待列表里剔除，
+        // 否则 HasFlyingChests 会永久为 true（波末一直等）。
+        if (!_collected) EquipmentChestManager.Instance?.ForgetChest(this);
     }
 
     private void Update()

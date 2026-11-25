@@ -209,15 +209,17 @@ public sealed class StageRunFlow : IRunFlow
             yield return null;
         }
 
-        // 2026-11-25：**同时等飞行中的装备箱到位**。
-        //   箱子是在 OnChestArrived 里才入队装备选择的；末杀精英 / 末波产生的箱子如果还在飞，
-        //   这一轮的 flush 会看不到它 → 装备选择被顺延到下一波末才弹（静态风险，已补上时序）。
-        timeout = 3f;
+        // 2026-11-25 用户口径：战斗结束但**敌人掉落的装备箱**还在飞 → 等它到位再弹选择窗口。
+        //   · 只等 EquipmentChestManager 里的飞行箱；场景破坏物不算（玩家可打可不打）。
+        //   · 箱子被销毁 / 丢失会从列表剔除；这里的 10 秒只作为“箱子卡死”的异常兜底。
+        timeout = 10f;
         while (EquipmentChestManager.Instance != null && EquipmentChestManager.Instance.HasFlyingChests && timeout > 0f)
         {
             timeout -= Time.deltaTime;
             yield return null;
         }
+        if (EquipmentChestManager.Instance != null && EquipmentChestManager.Instance.HasFlyingChests)
+            Debug.LogError("[StageRunFlow] 波末等装备箱超过 10 秒仍未到位（箱子可能丢失/卡住）→ 先继续结算，避免整局卡死");
 
         // ★ 波末**先停一下**再进后续流程（2026-11-08 用户定）：
         //   让玩家先看清「这波打完了」+ 经验条跳动 + 掉落结算，

@@ -11,25 +11,30 @@ using UnityEngine;
 ///   ③ 从该档的合规变体里按**档内权重**抽一个；
 ///   ④ 同一次候选按**种类身份**（<see cref="UpgradeDefinition.KindId"/>）去重 —— 不出现同款的不同品质 / 等级。
 ///
-/// 不保底：允许三张全是影之武装、或全是饰品；不按类型交替，也不因为槽位满 / 同款已装备而过滤。
-/// 没有库存：抽到 / 已装备都不减少池内数量，后续仍能再出现同款。
+/// 不保底：允许三张全是影之武装、或全是饰品；不按类型交替，也不因为槽位满 / 同款**种类**已装备而过滤。
+/// 没有库存：抽到 / 已装备都不减少池内数量，后续仍能再出现同款**种类**的其他变体。
 ///
-/// ⚠ 抽到「已有同款」不是过滤条件：它可以用来替换原槽（规则见 <see cref="EquipmentLoadout"/>）。
+/// ⚠ **排除当前已装备的那个“完全一致变体”**（同一 `upgradeId`）：再抽到它没有意义；
+///   同种类的其他品质 / 等级变体仍可出现，用于替换原槽（规则见 <see cref="EquipmentLoadout"/>）。
+/// ⚠ 这种排除是**状态性缺货**，不是配置错误：某档只剩已装备的那一件时少出牌，不整组作废。
 /// ⚠ 抽到「该类满槽且没有同款」也不过滤：由玩家在候选下方点旧装备替换。
 /// </summary>
 public sealed class EquipmentChoiceDrawer
 {
     private readonly EquipmentPoolConfig _config;
     private readonly Func<UpgradeDefinition, bool> _isUnlocked;
+    private readonly Func<UpgradeDefinition, bool> _isEquippedExact;
     private readonly Func<float> _random01;
 
     public EquipmentChoiceDrawer(
         EquipmentPoolConfig config,
         Func<UpgradeDefinition, bool> isUnlocked,
+        Func<UpgradeDefinition, bool> isEquippedExact = null,
         Func<float> random01 = null)
     {
         _config = config;
         _isUnlocked = isUnlocked;
+        _isEquippedExact = isEquippedExact;
         _random01 = random01 ?? (() => UnityEngine.Random.value);
     }
 
@@ -157,20 +162,40 @@ public sealed class EquipmentChoiceDrawer
             return results;
         }
 
-        // ── ③ 每个正权重档位都必须有可用变体（解锁过滤后）──
+        // ── ③ 每个正权重档位都必须有可用变体（解锁 + **未装备完全一致** 过滤后）──
         for (int i = 0; i < tierWeights.Count; i++)
         {
             int tier = tierWeights[i].tier;
+            int configured = 0;
+            int unlocked = 0;
             int usable = 0;
             for (int j = 0; j < entries.Count; j++)
             {
                 if (entries[j].tier != tier || entries[j].weight <= 0) continue;
+                configured++;
                 if (!IsUnlocked(entries[j].variant)) continue;
+                unlocked++;
+                if (IsEquippedExact(entries[j].variant)) continue;
                 usable++;
             }
-            if (usable == 0)
+            if (usable > 0) continue;
+
+            if (unlocked > 0)
+            {
+                // 全部可用变体都正好是当前已装备的那一件 → 状态性缺货（不是配置错误）。
+                report.isShortage = true;
+                report.Warn("阶段「" + report.stageLabel + "」：档位 " + tier
+                    + " 本次缺货 —— 可用变体都已经是当前已装备的完全一致变体");
+            }
+            else if (configured > 0)
+            {
                 report.Error("阶段「" + report.stageLabel + "」：档位 " + tier
                     + " 有权重但没有可用变体（未配置 / 权重为 0 / 未解锁）");
+            }
+            else
+            {
+                report.Error("阶段「" + report.stageLabel + "」：档位 " + tier + " 没有配置任何变体");
+            }
         }
         if (report.HasError) return results;
 
@@ -179,7 +204,7 @@ public sealed class EquipmentChoiceDrawer
             report.Warn("可用种类只有 " + distinctKinds + " 种，少于请求的 " + report.requested
                 + " 张 —— 本次按真实数量出牌（不补卡）");
 
-        // ── ④ 抽档 → 档内加权 → 同次按种类去重 ──
+        // ── ④ 抽档 → 档内加权 → 同次按种类去重（排除当前已装备的完全一致变体）──
         var usedKinds = new HashSet<string>();
         for (int pick = 0; pick < report.requested; pick++)
         {
@@ -188,11 +213,24 @@ public sealed class EquipmentChoiceDrawer
             {
                 var e = entries[i];
                 if (e.weight <= 0) continue;
-                if (usedKinds.Contains(e.variant.KindId)) continue;
                 if (!IsUnlocked(e.variant)) continue;
+                if (usedKinds.Contains(e.variant.KindId)) continue;
+                if (IsEquippedExact(e.variant)) continue;
                 available.Add(e);
             }
-            if (available.Count == 0) break;
+            if (available.Count == 0)
+            {
+                // 剩余候选若还有“当前已装备的完全一致变体”，属于状态性缺货，少出牌即可。
+                for (int i = 0; i < entries.Count; i++)
+                {
+                    var e = entries[i];
+                    if (e.weight <= 0 || !IsUnlocked(e.variant) || !IsEquippedExact(e.variant)) continue;
+                    report.isShortage = true;
+                    report.Warn("装备候选缺货：剩余变体都已是当前已装备的完全一致变体，本次按真实数量少出牌");
+                    break;
+                }
+                break;
+            }
 
             int tier = RollTier(tierWeights, totalTierWeight);
             var bucket = new List<EquipmentVariantEntry>();
@@ -201,6 +239,26 @@ public sealed class EquipmentChoiceDrawer
 
             if (bucket.Count == 0)
             {
+                // 该档没有“未出过且未装备完全一致”的候选：区分缺货与同次去重耗尽。
+                bool hasAnyInTier = false;
+                bool hasNonExactInTier = false;
+                for (int i = 0; i < entries.Count; i++)
+                {
+                    var e = entries[i];
+                    if (e.weight <= 0 || e.tier != tier || !IsUnlocked(e.variant)) continue;
+                    hasAnyInTier = true;
+                    if (!IsEquippedExact(e.variant)) hasNonExactInTier = true;
+                }
+
+                if (hasAnyInTier && !hasNonExactInTier)
+                {
+                    // 该档只剩当前已装备的完全一致变体 → 缺货，不报配置错误，少出牌。
+                    report.isShortage = true;
+                    report.Warn("阶段「" + report.stageLabel + "」：抽到档位 " + tier
+                        + "，但该档只剩当前已装备的完全一致变体 → 按缺货少出牌");
+                    break;
+                }
+
                 // 用户 2026-11-25 拍定：同次去重把原本有效的档抽空 = 配置错误 ⇒ 整组作废。
                 report.Error("阶段「" + report.stageLabel + "」：抽到档位 " + tier
                     + "，但该档的变体都已在本次出现过（同次去重耗尽）");
@@ -215,7 +273,7 @@ public sealed class EquipmentChoiceDrawer
         }
 
         report.produced = results.Count;
-        if (results.Count == 0)
+        if (results.Count == 0 && !report.HasError && !report.isShortage)
             report.Error("没有任何可用装备变体（配置与解锁检查通过，但候选为 0）");
         return results;
     }
@@ -225,12 +283,19 @@ public sealed class EquipmentChoiceDrawer
         return _isUnlocked == null || _isUnlocked(def);
     }
 
-    private static int CountDistinctKinds(List<EquipmentVariantEntry> entries)
+    private bool IsEquippedExact(UpgradeDefinition def)
+    {
+        return _isEquippedExact != null && _isEquippedExact(def);
+    }
+
+    private int CountDistinctKinds(List<EquipmentVariantEntry> entries)
     {
         var kinds = new HashSet<string>();
         for (int i = 0; i < entries.Count; i++)
         {
             if (entries[i].weight <= 0) continue;
+            if (!IsUnlocked(entries[i].variant)) continue;
+            if (IsEquippedExact(entries[i].variant)) continue;
             kinds.Add(entries[i].variant.KindId);
         }
         return kinds.Count;

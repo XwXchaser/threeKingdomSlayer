@@ -80,6 +80,12 @@ public sealed class BreakableProp : MonoBehaviour, ISupplyPropTarget
     [Range(0f, 1f)]
     [SerializeField] private float manualDropChance = 1f;
 
+    [Header("装备奖励（V2）")]
+    [Tooltip("打碎时入队一次装备三选一（影之武装 / 饰品）。\n" +
+             "不立刻弹；按**打碎时**内部圈数盖章，在下一次弹出奖励窗口的时机弹出（下一波末）。\n" +
+             "场景破坏物是**可选**的，不会阻塞波末等箱。")]
+    [SerializeField] private bool grantEquipmentChoice = false;
+
     /// <summary>当前在场且可交互的道具。</summary>
     public static readonly List<BreakableProp> All = new List<BreakableProp>();
 
@@ -408,6 +414,14 @@ public sealed class BreakableProp : MonoBehaviour, ISupplyPropTarget
         // 破坏当场就入账 —— 秘籍是永久解锁，不需要等金币动画。
         if (manualDrop != null && UnityEngine.Random.value < manualDropChance)
             ManualDropSystem.Grant(manualDrop);
+
+        // 装备奖励（2026-11-25）：入队一次装备三选一；不打断当前窗口，
+        // 在下一次弹出奖励窗口的时机（下一波末）弹出。按打碎时圈数盖章。
+        if (grantEquipmentChoice)
+        {
+            var ucm = UpgradeChoiceManager.Instance;
+            if (ucm != null) ucm.GrantEquipmentChoices(1, ucm.CurrentCircleForDrop);
+        }
 
         SupplyRewardPort.Raise(new SupplyRewardInfo
         {
