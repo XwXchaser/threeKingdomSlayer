@@ -5753,6 +5753,7 @@ MonoBehaviour:
   wrapTravelSeconds: 3
   loopStartNodeId: N1
   sourceRoute: {fileID: 0}
+  debugForceEliteDropsFirstCircle: 1
 --- !u!4 &326258439
 Transform:
   m_ObjectHideFlags: 0

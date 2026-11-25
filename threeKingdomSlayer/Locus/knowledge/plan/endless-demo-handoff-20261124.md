@@ -259,6 +259,18 @@ aiEditMode: inherit
 - 旧 `TalentTree_Moves.asset` 保持空文件（不恢复天赋 UI）；数据只活在武器资产上。
 - **✅ 用户已确认修复（2026-11-25）。**
 
+### 测试配置（2026-11-25，临时）
+
+- 场景：`EndlessRunController.debugForceEliteDropsFirstCircle = true` ⇒ **第一圈 N1 / E0 所有敌人** 都按精英处理（100% 掉宝箱）。实现：Data 层 `EquipmentDropTestMode` + `WaveSpawner` 在 `Initialize` 前注入 `enemy.dropsEquipment=true`；`EnemyPool.ReturnEnemy` 回池时恢复预制体默认值。
+- 测试变体（`Assets/ScriptableObjects/Equipment/TestVariants/`）：
+  - `ActiveSkill_FireLine_Fine`（Fine Lv1）/ `ActiveSkill_FireLine_Legendary`（Legendary Lv2）
+  - `TimedFireAOE_Fine`（Fine Lv1）/ `TimedFireAOE_Legendary`（Legendary Lv2）
+  - `kindId` 分别指向 `active_fire_line` / `timed_fire_aoe`，`unlockedByDefault=true`。
+- 装备池：原 `active_fire_line` / `timed_fire_aoe` 的权重**临时改为 0**；4 个变体 tier1 / weight100（其余 14 个基础装备不变）。
+- 验证：N1 7 只敌人全部 `drops=true`；击杀入队装备选择；波末三选一出现测试变体；满槽选旧装备列表可点；同款 Fine→Legendary 精确变 Lv2；Console 0 error。
+- **还原**：取消场景勾选；把原两条权重改回 100（或你正式填的值）；删除 `TestVariants/` 与池内 4 行（或保留作测试资产）。
+- 本次测试顺手修掉两个替换误判（见 `memory/known-issues.md` §31）：被动内 `AttackPassive`/`TimedPassive` 可互换；同一变体重抽幂等成功。
+
 ### 关键文件（本批新增 / 改动）
 
 - 数据：`Assets/Scripts/Data/EquipmentPoolConfig.cs`、`AttributePoolConfig.cs`、`EquipmentVariantRules.cs`、`IEndlessCircleSource.cs`、`IEquipmentReplacePrompt.cs`、`UpgradeDefinition.cs`

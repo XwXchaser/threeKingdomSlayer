@@ -571,3 +571,23 @@ aiEditMode: inherit
 - **规则**：`hero.skillConfigs` 里有资产 ≠ 基础招式；**招式是否解锁只看武器目录 `WeaponMoveEntry`**。
   基础招式目前是 **戳 / 上挑 / 招架**；横扫是解锁项。新增/迁移招式时必须对照旧树逐节点核对，不能凭“看起来像基础招式”删节点。
 - **文件**：`Assets/ScriptableObjects/Weapons/MainWeapon_ZhangfeiSpear.asset`、`Assets/Scripts/UI/WeaponLoadoutPanel.cs`
+
+## 31. 【已修 2026-11-25】饰品替换的两处误判（跨类型 / 同款重抽）
+
+- **现象**（无尽 N1/E0 全掉宝箱测试时）：
+  1. 满槽后点旧饰品替换，报「类别不一致：`chain_bounce`（AttackPassive）→ `test_timed_fire_aoe_fine`（TimedPassive）」；
+  2. 同一变体再次被抽到并选中，报「饰品换装失败（拆卸或登记失败，已尝试回滚）」，整组奖励被作废。
+- **根因**：
+  1. `EquipmentLoadout.TryReplace` 用 `category` **严格相等**判断装备栏，把 `AttackPassive` / `TimedPassive` 当成不同类别；二者都是**饰品**，共用被动槽，应该可互换。
+  2. `AccessoryLoadout.TryReplace` 对 `ReferenceEquals(oldDef, newDef)` 直接 `return false`；同一变体再次抽到是合法结果，应该幂等成功（或按可见等级重新登记），不能算失败。
+- **修复**：
+  1. `EquipmentLoadout.SameSlotCategory`：主动槽（ActiveSkill）/ 被动槽（AttackPassive ∪ TimedPassive）两类的兼容判定；
+  2. `AccessoryLoadout.TryReplace`：同引用且等级一致 → 幂等 true；等级不一致 → 按 `visibleLevel` 重新登记；不再提前 return false。
+- **验证**（Editor Play，实机状态）：
+  - `chain_bounce`（AttackPassive）→ `TimedFireAOE_Fine`（TimedPassive）替换成功，槽位仍 2；
+  - 同款重复选中 → `Equipped`（不再报错）；
+  - `Fine Lv1` → `Legendary Lv2` 同款替换，等级精确为 2，槽位仍 2；
+  - Console 0 error。
+- **规则**：装备栏只有两种——**主动槽 / 被动槽**；被动内部两种 category 不是互斥的。
+  三选一再次抽到**同一变体**是合法结果，必须幂等成功，不得作废奖励。
+- **文件**：`Assets/Scripts/Core/EquipmentLoadout.cs`、`Assets/Scripts/Core/AccessoryLoadout.cs`

@@ -308,6 +308,10 @@ public class WaveSpawner : MonoBehaviour
                 continue;
             }
 
+            // 测试模式（2026-11-25）：无尽第一圈 N1/E0 的敌人全部按“精英”处理 → 100% 掉宝箱。
+            // 必须在 Initialize 之前设置，任何后续表现才会读到这个标记。
+            if (EquipmentDropTestMode.ForceAllDrops) enemy.dropsEquipment = true;
+
             // 直接使用数组索引作为列号：enemyIds[0]=列0(最左), enemyIds[4]=列4(最右)
             Debug.Log($"[WaveSpawner] 生成敌人 id={enemyId} → 列{i} 排{rowIndex}");
             enemy.Initialize(i, rowIndex);

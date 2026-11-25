@@ -1,0 +1,113 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9bf2b0c688767c4792fda72a76ca5ac, type: 3}
+  m_Name: ActiveSkill_FireLine_Fine
+  m_EditorClassIdentifier: 
+  category: 4
+  upgradeId: test_active_fire_line_fine
+  displayName: "\u706B\u9F99\u820C\xB7\u7CBE\u826F"
+  descriptionTemplate: "\u5BF9\u524D\u65B9\u76F4\u7EBF\u9020\u6210{1}\u70B9\u4F24\u5BB3\uFF0C\u82E5\u654C\u4EBA\u5904\u4E8E\u707C\u70E7\u72B6\u6001\u5219\u66B4\u51FB\uFF08200%\u4F24\u5BB3\uFF09"
+  extraDescriptionTemplate: 
+  levelFeatureDescriptions: []
+  rarity: 1
+  maxLevel: 5
+  defaultLevelCap: 0
+  quality: 1
+  kindId: active_fire_line
+  visibleLevel: 1
+  unlockedByDefault: 1
+  effectType: 
+  statId: 
+  numericLevels: []
+  floatValue: 0
+  intValue: 0
+  secondaryIntValue: 0
+  stringValue: 
+  baseAttackConfig: {fileID: 0}
+  icon: {fileID: 21300000, guid: 6e52545f49f8a7c4cad93b38790df8c8, type: 3}
+  phantomLevels: []
+  timedAoeLevels:
+  - intervalSeconds: 0
+    triggerThreshold: 0
+    rangeRows: 5
+    damage: 20
+    columns: 02000000
+    burnTotalDamage: 0
+    burnDurationSeconds: 0
+    iceFreezeChancePerHit: 0
+  - intervalSeconds: 0
+    triggerThreshold: 0
+    rangeRows: 5
+    damage: 30
+    columns: 02000000
+    burnTotalDamage: 0
+    burnDurationSeconds: 0
+    iceFreezeChancePerHit: 0
+  - intervalSeconds: 0
+    triggerThreshold: 0
+    rangeRows: 5
+    damage: 40
+    columns: 02000000
+    burnTotalDamage: 0
+    burnDurationSeconds: 0
+    iceFreezeChancePerHit: 0
+  - intervalSeconds: 0
+    triggerThreshold: 0
+    rangeRows: 5
+    damage: 50
+    columns: 02000000
+    burnTotalDamage: 0
+    burnDurationSeconds: 0
+    iceFreezeChancePerHit: 0
+  - intervalSeconds: 0
+    triggerThreshold: 0
+    rangeRows: 5
+    damage: 50
+    columns: 02000000
+    burnTotalDamage: 0
+    burnDurationSeconds: 0
+    iceFreezeChancePerHit: 0
+  timedArrowLevels: []
+  returnWaveLevels: []
+  chainBounceLevels: []
+  cycloneLevels: []
+  arrowVolleyLevels: []
+  reflectShieldLevels: []
+  chargeShockwaveLevels: []
+  chargeAttackShockwaveLevels: []
+  waveLevels: []
+  chargeHitShockwaveLevels: []
+  diseaseLevels: []
+  axeSmashLevels: []
+  chainPullLevels: []
+  triggerParam: 0
+  phantomSteps: []
+  useCount: 1
+  gestureId: 
+  cycloneItemConfig:
+    durationSeconds: 0
+    intervalSeconds: 0
+    cooldownSeconds: 0
+    rowCount: 0
+    initialDamage: 0
+    landingDamagePercent: 0
+  prerequisites: []
+  requiredTalentIds:
+  - talent_pool_fireline
+  activeEffectType: 3
+  cooldownLevels:
+  - 20
+  - 18
+  - 16
+  - 14
+  - 10
+  shadowCostLevels: []

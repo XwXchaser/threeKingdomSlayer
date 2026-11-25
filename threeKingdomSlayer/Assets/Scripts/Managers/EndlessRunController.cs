@@ -110,6 +110,11 @@ public class EndlessRunController : MonoBehaviour, IEndlessCircleSource
     [Tooltip("路线来源（提供节点与出口资产）。留空 = 自动找可选路线里的第一条。")]
     public FakeRouteStageConfig sourceRoute;
 
+    [Header("测试（临时）")]
+    [Tooltip("勾上后：**第一圈的 N1 / E0** 节点所有敌人都按精英处理（100% 掉装备宝箱），用于验收换装。\n" +
+             "只影响这两个节点；节点结束 / 本局结束自动清除。测试完取消勾选。")]
+    public bool debugForceEliteDropsFirstCircle = false;
+
     // ── 运行时状态 ──
     public bool IsRunning { get; private set; }
     /// <summary>本局是否刷新了历史最高分（结算面板用；由 <see cref="SaveBest"/> 在写档前判定）。</summary>
@@ -164,6 +169,7 @@ public class EndlessRunController : MonoBehaviour, IEndlessCircleSource
     {
         // 无尽关没正常结束就销毁（切场景 / 退出）时也要注销，避免留下失效的圈数来源。
         UpgradeChoiceManager.Instance?.ClearCircleSource(this);
+        EquipmentDropTestMode.ForceAllDrops = false;
         if (Instance == this) Instance = null;
     }
 
@@ -259,6 +265,7 @@ public class EndlessRunController : MonoBehaviour, IEndlessCircleSource
 
         IsRunning = false;
         _pendingEdge = null;
+        EquipmentDropTestMode.ForceAllDrops = false;
 
         // 关掉无限卷轴 ⇒ 回落地页 / 剧情路线时表现与旧版一致
         FakeRouteRuntime.Instance?.MovementPresenter?.SetEndlessScroll(false);
@@ -544,6 +551,8 @@ public class EndlessRunController : MonoBehaviour, IEndlessCircleSource
     /// <summary>显示出口面板并等玩家选（与剧情路线共用 <see cref="RouteChoicePanel"/>）。</summary>
     private IEnumerator ShowExitAndWaitChoice()
     {
+        // 节点战斗结束 → 关闭测试掉宝（后面不会再生成该节点的敌人）。
+        EquipmentDropTestMode.ForceAllDrops = false;
         _pendingEdge = null;
 
         // ★ 出口面板期间拦下手势输入（面板按钮是 UI，不受影响）
@@ -705,6 +714,13 @@ public class EndlessRunController : MonoBehaviour, IEndlessCircleSource
             EndRun(false);
             return;
         }
+
+        // 测试掉宝（2026-11-25）：只在第一圈的 N1 / E0 打开；后续节点 / 圈数一律关闭。
+        EquipmentDropTestMode.ForceAllDrops = debugForceEliteDropsFirstCircle
+            && Circle == 1
+            && (_currentNodeId == "N1" || _currentNodeId == "E0");
+        if (EquipmentDropTestMode.ForceAllDrops)
+            Debug.Log("[Endless][Test] 本节点所有敌人强制掉装备宝箱 node=" + _currentNodeId + " circle=" + Circle);
 
         // ★ **战斗期间放开手势输入**（2026-11-17）。
         //   这里不用 `stageState` 做门槛：节点战斗由本控制器自己的流程推进，
@@ -953,6 +969,7 @@ public class EndlessRunController : MonoBehaviour, IEndlessCircleSource
 
     private void ResetRunState()
     {
+        EquipmentDropTestMode.ForceAllDrops = false;
         PlayerState.Instance?.ResetPlayer();
         UltimateSystem.Instance?.ResetEnergy();
         EnemyManager.Instance?.ClearAllEnemies();

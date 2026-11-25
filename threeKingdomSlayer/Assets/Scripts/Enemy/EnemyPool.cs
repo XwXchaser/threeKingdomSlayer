@@ -234,6 +234,15 @@ public class EnemyPool : MonoBehaviour
         int enemyId = enemy.enemyId;
 
         enemy.ResetEnemy();
+
+        // 测试模式会把实例的 dropsEquipment 改成 true；回池时恢复预制体默认值，
+        // 避免测试标记污染后续波次 / 剧情关（2026-11-25）。
+        if (enemyPrefabs != null && enemyPrefabs.TryGetValue(enemyId, out var prefab) && prefab != null)
+        {
+            var prefabEnemy = prefab.GetComponent<Enemy>();
+            if (prefabEnemy != null) enemy.dropsEquipment = prefabEnemy.dropsEquipment;
+        }
+
         // 回收时挂回 poolRoot（隐藏起来），下次激活时 CreateNewEnemy 会重新挂到 enemiesRoot
         enemy.transform.SetParent(poolRoot);
 

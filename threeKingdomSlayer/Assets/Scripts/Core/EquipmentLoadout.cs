@@ -146,7 +146,9 @@ public static class EquipmentLoadout
             error = problem;
             return false;
         }
-        if (oldDefinition.category != newVariant.category)
+        // 影之武装 = 主动槽；饰品 = 被动槽。**AttackPassive 与 TimedPassive 都是饰品，可互换**
+        // （2026-11-25 实测：替换列表里点旧饰品时被“类别不一致”误拒）。
+        if (!SameSlotCategory(oldDefinition.category, newVariant.category))
         {
             error = $"类别不一致：{oldDefinition.upgradeId}（{oldDefinition.category}）→ {newVariant.upgradeId}（{newVariant.category}）";
             return false;
@@ -194,6 +196,15 @@ public static class EquipmentLoadout
             return false;
         }
         return true;
+    }
+
+    /// <summary>两个 category 是否属于同一个装备栏（主动 / 饰品）。</summary>
+    private static bool SameSlotCategory(UpgradeCategory a, UpgradeCategory b)
+    {
+        if (a == b) return true;
+        bool aPassive = a == UpgradeCategory.AttackPassive || a == UpgradeCategory.TimedPassive;
+        bool bPassive = b == UpgradeCategory.AttackPassive || b == UpgradeCategory.TimedPassive;
+        return aPassive && bPassive;
     }
 
     /// <summary>

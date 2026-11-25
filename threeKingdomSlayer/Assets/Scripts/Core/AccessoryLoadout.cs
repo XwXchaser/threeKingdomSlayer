@@ -91,12 +91,21 @@ public static class AccessoryLoadout
     public static bool TryReplace(UpgradeDefinition oldDef, UpgradeDefinition newDef)
     {
         if (!IsSwappable(oldDef) || !IsSwappable(newDef)) return false;
-        if (ReferenceEquals(oldDef, newDef)) return false;
         if (!IsKindEquipped(oldDef.KindId)) return false;
         if (IsKindEquipped(newDef.KindId) && newDef.KindId != oldDef.KindId) return false;   // 新的已经在别的槽
 
         var uem = UpgradeEffectManager.Instance;
         if (uem == null) return false;
+
+        // 同一个变体（同池同品质同等级）再次被抽到：已装备且等级一致 = 幂等成功；
+        // 等级不一致 = 按新变体的可见等级重新登记（不拆旧件）。
+        // ⚠ 旧实现直接 return false → 三选一被误判为换装失败并整组作废（2026-11-25 实测）。
+        if (ReferenceEquals(oldDef, newDef))
+        {
+            int targetLevel = LevelOf(newDef);
+            if (uem.GetUpgradeLevel(oldDef.upgradeId) == targetLevel) return true;
+            return uem.ApplyUpgradeAtLevel(newDef, targetLevel);
+        }
 
         int oldLevel = uem.GetUpgradeLevel(oldDef.upgradeId);
         if (!uem.RemoveUpgrade(oldDef)) return false;
