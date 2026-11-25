@@ -20,7 +20,8 @@ public struct EquippedItem
 /// 口径（`design/gameplay-progression-loop.md` §3.4 / P0 计划 §1.3）：
 ///   · 已有同款 → 点新卡直接替换原槽（不经过这个端口）；
 ///   · 没有同款且该类满槽 → 点新卡后，在**下方列出同类别的已装备装备**，点旧装备替换；
-///   · 选择完成前整个奖励流程保持等待，不推进队列 / 下一波；**不新增**取消、跳过、重抽、二次确认。
+///   · 选择完成前整个奖励流程保持等待，不推进队列 / 下一波；
+///   · 2026-11-25 用户确认：**允许切换上方其他候选卡**，并**允许「跳过」本次装备奖励**（保留原装备）。
 ///
 /// 弹窗没实现这个接口时，抽取器会报错并跳过本次奖励（不会静默吞掉、也不会伪造候选）。
 /// </summary>
@@ -35,7 +36,12 @@ public interface IEquipmentReplacePrompt
     /// <param name="newVariant">玩家刚点的新装备变体（用于标题 / 对比展示）。</param>
     /// <param name="equipped">同类别已装备的旧装备（按持有顺序）。</param>
     /// <param name="onPicked">玩家点了某件旧装备 → 用它换上新变体。</param>
-    void ShowReplaceTargets(UpgradeDefinition newVariant, List<EquippedItem> equipped, Action<UpgradeDefinition> onPicked);
+    /// <param name="onSkip">
+    /// 玩家点「跳过」→ 放弃本次装备奖励，保留原装备（2026-11-25 用户要求）。
+    /// 跳过不发放补偿、不改变任何槽位；由 <c>UpgradeChoiceManager</c> 推进到下一项。
+    /// </param>
+    void ShowReplaceTargets(UpgradeDefinition newVariant, List<EquippedItem> equipped,
+        Action<UpgradeDefinition> onPicked, Action onSkip = null);
 
     /// <summary>收起名单（替换成功 / 奖励结束时调用）。</summary>
     void HideReplaceTargets();

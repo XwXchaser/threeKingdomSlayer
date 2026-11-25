@@ -607,3 +607,29 @@ aiEditMode: inherit
   N1 时 E0 箱子 `within=False / sprite=False` 是路线距离/可见性正常现象，到 E0/范围内再验交互。
 - **规则**：`HubState` 是“落地页态 / 关卡态”的全局开关；任何接管战斗流程的模式必须显式切到关卡态。
 - **文件**：`Assets/Scripts/RouteFake/FakeRouteRuntime.Entry.cs`、`Assets/Scripts/Managers/EndlessRunController.cs`
+
+## 33. 【已修 2026-11-25】场景破坏物点上半部分不响应（只出戳击）
+
+- **现象**：补给箱点中心能打碎，点箱子上半部只打出 Stab、箱子不动；用户实机点箱子时经常落空。
+- **根因**：`BreakableProp.TryGetScreenHitDistance` 以 `transform.position`（脚底锚点）为圆心，
+  `hitRadius=0.95` 作硬上限；而 Sprite 包围盒中心比锚点高约 0.89、半高 1.02 ⇒ 点上部距锚点 > 0.95，被过滤成“没点中”。
+- **修复**：命中中心改用 `SpriteRenderer.bounds.center`；有效半径 = `max(hitRadius, bounds.extents.magnitude)`；
+  `TryHitAtScreenPoint` 用有效半径。`hitRadius` 改为“最小值”，Inspector 提示同步。
+- **验证**（Editor Play，Hub crate：bounds 1.02 / hitRadius 0.95）：中心、上缘、下缘、左右缘均命中；
+  修复前上缘 `False`，修复后 `True`。
+- **规则**：脚底锚点的角色 / 道具做屏幕点选时，判定圆心必须用渲染包围盒中心，不能直接用 transform；
+  配置半径只作最小值，避免美术换图后再次回归。
+- **文件**：`Assets/Scripts/Prop/BreakableProp.cs`
+
+## 34. 【已实现 2026-11-25】满槽换装：可切换候选 + 跳过
+
+- **需求**（用户 2026-11-25）：满槽替换名单打开后，点上方另一张装备卡应能切换，不应被锁死；并加「跳过」按钮。
+- **实现**：
+  - `UpgradeChoicePopup.OnCardTapped` 去掉 `IsShowing` 拦截；点新卡先清其他卡高亮，再交给 UCM；
+  - `ShowReplaceTargets` 不再把卡片设为不可选；
+  - UCM 在 `_awaitingReplacePick` 时收到新卡 → 清旧名单/旧 pending，按新卡重新解析；
+  - `IEquipmentReplacePrompt.ShowReplaceTargets(..., onSkip)`；`EquipmentReplaceListView` 右上角「跳过」；
+  - `UCM.OnReplacementSkipped`：不清槽、不装新件、不发补偿，直接 `AdvanceAfterChoice()`。
+- **验证**（Editor Play，两件饰品占满槽）：点 A → 名单；点 B → pending 切到 B，A 高亮关/B 高亮开；点跳过 → 原装备保留、新件未入包、队列收尾；点旧装备 → 替换成功（Lv.2）。
+- **规则**：跳过是“放弃本次装备奖励”，不是“取消替换后留在三选一”；因此不回到卡片选择，直接推进队列。
+- **文件**：`Assets/Scripts/Core/UpgradeChoiceManager.cs`、`Assets/Scripts/UI/UpgradeChoicePopup.cs`、`Assets/Scripts/UI/EquipmentReplaceListView.cs`、`Assets/Scripts/Data/IEquipmentReplacePrompt.cs`

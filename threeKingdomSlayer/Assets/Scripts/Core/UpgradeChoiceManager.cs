@@ -74,7 +74,8 @@ public class UpgradeChoiceManager : MonoBehaviour
     private List<UpgradeDefinition> _currentChoices;
     private IUpgradeChoiceView _activePopup;
 
-    /// <summary>满槽异款：正在等玩家点下方旧装备（此期间不推进队列、不接受新卡点击）。</summary>
+    /// <summary>满槽异款：正在等玩家点下方旧装备 / 跳过。
+    /// 此期间不推进队列；上方候选卡仍可点，用于切换到另一件新装备。</summary>
     private bool _awaitingReplacePick;
     /// <summary>满槽异款时玩家刚点的新变体（等下方选中旧装备后使用）。</summary>
     private UpgradeDefinition _pendingReplacementVariant;
@@ -464,8 +465,15 @@ public class UpgradeChoiceManager : MonoBehaviour
     {
         Debug.Log($"[UpgradeChoiceManager] ConfirmChoice frame={Time.frameCount} timeScale={Time.timeScale} upgradeId={selected?.upgradeId} isItem={_isShowingItemChoice} isEquipment={_isShowingEquipmentChoice} pendingLevelUps={_pendingLevelUps} pendingItems={_pendingItemChoices} pendingEquipment={_pendingEquipmentChoices} queue={_pendingQueue.Count}");
         if (!_isChoosing || _currentChoices == null) return;
-        if (_awaitingReplacePick) return;   // 正在等下方旧装备：卡片不再接受点击
         if (!_currentChoices.Contains(selected)) return;
+
+        // 正在等下方旧装备时，玩家仍可点上方的其他候选卡 → 收掉旧名单，按新卡重新处理。
+        if (_awaitingReplacePick)
+        {
+            _awaitingReplacePick = false;
+            _pendingReplacementVariant = null;
+            (_activePopup as IEquipmentReplacePrompt)?.HideReplaceTargets();
+        }
 
         if (_isShowingEquipmentChoice)
         {
@@ -509,11 +517,22 @@ public class UpgradeChoiceManager : MonoBehaviour
             }
             _awaitingReplacePick = true;
             _pendingReplacementVariant = selected;
-            prompt.ShowReplaceTargets(selected, candidates, OnReplacementPicked);
+            prompt.ShowReplaceTargets(selected, candidates, OnReplacementPicked, OnReplacementSkipped);
             return;
         }
 
         AbortChoice("装备三选一：装上失败", error);
+    }
+
+    /// <summary>玩家在下方点了「跳过」：放弃本次装备奖励，保留原装备，推进队列。</summary>
+    private void OnReplacementSkipped()
+    {
+        if (!_awaitingReplacePick) return;
+        _awaitingReplacePick = false;
+        _pendingReplacementVariant = null;
+        (_activePopup as IEquipmentReplacePrompt)?.HideReplaceTargets();
+        Debug.Log("[UpgradeChoiceManager] 装备选择已跳过（保留原装备，不发放补偿）");
+        AdvanceAfterChoice();
     }
 
     /// <summary>玩家在下方点了要换掉的旧装备（仅在 <see cref="_awaitingReplacePick"/> 时生效）。</summary>

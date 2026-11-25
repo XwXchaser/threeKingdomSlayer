@@ -8,8 +8,8 @@ aiEditMode: inherit
 
 # 装备抽取 / 波末队列 / 换装验收方案（2026-11-25）
 
-> **状态：已按用户确认规则实施，等待 Play Mode 验收。**
-> 关联：`plan/endless-demo-handoff-20261124.md` §0.9、`plan/endless-demo-equipment-p0-implementation-plan.md`、`memory/known-issues.md` §30–§31。
+> **状态：已按用户确认规则实施；编译通过，命中判定 / 满槽切换 / 跳过 / 替换已做局部 Play Mode 验证，等待用户完整实机验收。**
+> 关联：`plan/endless-demo-handoff-20261124.md` §0.9、`plan/endless-demo-equipment-p0-implementation-plan.md`、`memory/known-issues.md` §30–§34。
 
 ## 1. 本次确认的规则
 
@@ -20,6 +20,8 @@ aiEditMode: inherit
 5. **场景破坏物**：可选；打碎入队一次装备选择，在下一次弹出奖励窗口的时机弹出（下一波末）。
 6. **跨圈**：按**掉落/打碎时**的内部圈数抽档，不用弹出时的当前圈数。
 7. **Boss**：V2 100% 掉装备宝箱；不再有独立锦囊/道具三选一。
+8. **满槽换装可切换**：下方旧装备名单打开时，上方候选卡仍可点；点另一张即切换“用哪件新装备替换”。
+9. **满槽换装可跳过**：名单右上角「跳过」= 放弃本次装备奖励、保留原装备；不发放补偿，直接推进队列。
 
 ## 2. 实现落点
 
@@ -34,6 +36,8 @@ aiEditMode: inherit
 | 波末等箱 | `Assets/Scripts/Managers/StageRunFlow.cs` | 只等 `HasFlyingChests`；10 秒仅作卡死兜底并 `LogError` |
 | 箱清理 / 失效剔除 | `Assets/Scripts/Core/EquipmentChestManager.cs`、`EquipmentChest.cs` | `ForgetChest`、`PruneDestroyed`、`OnDestroy` 剔除；`ClearAll` 接进无尽重置 / 结束 |
 | 场景破坏物装备 | `Assets/Scripts/Prop/BreakableProp.cs` | 新增 `grantEquipmentChoice`；打碎时 `GrantEquipmentChoices(1, 当前圈)` |
+| 场景破坏物命中 | `Assets/Scripts/Prop/BreakableProp.cs` | 命中中心改用 `SpriteRenderer.bounds.center`；有效半径 = `max(hitRadius, bounds.extents.magnitude)` |
+| 换装可切换 / 跳过 | `UpgradeChoiceManager.cs`、`UpgradeChoicePopup.cs`、`EquipmentReplaceListView.cs`、`Data/IEquipmentReplacePrompt.cs` | 名单打开时卡片不再禁用；点新卡清旧名单重解析；`ShowReplaceTargets(..., onSkip)`；右上角「跳过」→ `OnReplacementSkipped` |
 | 测试掉宝 | `Assets/Scripts/Data/EquipmentDropTestMode.cs`、`Wave/WaveSpawner.cs`、`Enemy/EnemyPool.cs` | N1/E0 全掉宝箱（测试）；回池恢复预制体默认 |
 
 ## 3. 当前测试数据（临时）
@@ -72,6 +76,7 @@ aiEditMode: inherit
 
 0. **前置**：进入无尽后 `BreakableProp.HubState` 必须为 `false`（2026-11-25 修：`SuspendForEndless` / `StartEndlessRun` 切关卡态）。N1 时 E0 箱子 `within=False / sprite=False` 是路线距离/可见性正常现象，到 E0/范围内再验。
 1. 在路线场景选一个 `BreakableProp`，勾「装备奖励（V2）」。
+1.1. **命中范围**：站到箱子旁，分别点箱子的**中心 / 上半部 / 下半部**，都应打碎；不再出现“点上半部只出戳击、箱子不动”。
 2. 战斗中选择性打碎：
    - 若在本波末选择**之前**打碎 → 本次波末窗口弹出装备选择。
    - 若在本波末选择**之后**打碎 → 下一次弹出奖励窗口时（下一波末）弹出装备选择；不立刻插在结算/旅行中。
@@ -94,6 +99,8 @@ aiEditMode: inherit
 3. 满槽异款 → 下方旧装备列表，点旧装备替换。
 4. 被动 `AttackPassive` 与 `TimedPassive` 可互相替换（都是饰品）。
 5. 同一变体重复抽到 → 幂等成功，不再报错作废；但正常抽取应已被 A 排除，只有异常/旧队列才可能重复。
+6. 满槽异款 → 名单打开后，点上方另一张卡：名单跟着换成新卡，旧卡高亮清除，不卡死。
+7. 名单右上角「跳过」：窗口推进到下一项（或正常关闭）；原装备不丢，新变体不入包，不弹补偿。
 
 ### H. 回归
 
@@ -110,7 +117,13 @@ aiEditMode: inherit
   - `EquipmentLoadout.IsEquippedExact`：已装备 Fine=true、同款 Legend=false。
   - 真实池 8 轮抽取：已装备 Fine 0 次出现，同款 Legend 正常出现。
 - Play Mode 已通过：UCM 先弹装备（`GrantChoices(1)` + `GrantEquipmentChoices(2,1)` 时首窗为装备卡）。
-- 待用户验收：Case 1 等箱时序、Case 2 场景破坏物、跨圈概率、完整 UI 流程。
+- Play Mode 2026-11-25 命中实测（Hub crate，bounds 1.02 / hitRadius 0.95）：
+  - 中心 / 上缘 / 下缘 / 左右缘全部 `TryHitAtScreenPoint=True`；修复前上缘为 `False`（只出戳击）。
+- Play Mode 2026-11-25 换装 UI 实测（两件饰品占满槽，候选为异款饰品）：
+  - 点卡 A → 名单出现且含「跳过」；点卡 B → `_pendingReplacementVariant` 从 A 切到 B，A 高亮关闭、B 高亮打开，名单仍可用；
+  - 点「跳过」→ 名单销毁、队列收尾、原装备仍在、新变体未入包；
+  - 点旧装备 chip → 替换成功（旧件移除，新件按可见等级 2 生效），名单关闭、队列收尾。
+- 待用户验收：Case 1 等箱时序、Case 2 场景破坏物实际掉落、跨圈概率、完整实机 UI 流程。
 
 ## 6. 还原测试数据
 

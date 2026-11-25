@@ -66,7 +66,8 @@ public sealed class BreakableProp : MonoBehaviour, ISupplyPropTarget
     [Header("层与命中")]
     [Tooltip("局内层：关卡态可交互，奖励进局内资源，状态记路线快照；局外层：就绪态可交互，奖励进存档金币，交互后渐变消失并销毁")]
     [SerializeField] private SupplyLayer supplyLayer = SupplyLayer.InRun;
-    [Tooltip("点中判定的世界半径（以物件中心为圆心）")]
+    [Tooltip("点中判定的**最小**世界半径。\n" +
+             "实际会取 `max(该值, Sprite 包围盒半径)` —— 否则锚点在脚底时，点箱子上半部分会判不中（只打出戳击）。")]
     [SerializeField] private float hitRadius = 0.95f;
     [Tooltip("局外层：被交互后渐变消失并销毁的时长（秒）")]
     [SerializeField] private float fadeOutSeconds = 1f;
@@ -271,7 +272,7 @@ public sealed class BreakableProp : MonoBehaviour, ISupplyPropTarget
             var prop = All[i];
             if (prop == null || !prop.IsSupplyInteractable) continue;
             if (!prop.TryGetScreenHitDistance(cam, screenPos, out float distance)) continue;
-            if (distance > prop.hitRadius) continue;
+            if (distance > prop.EffectiveHitRadius) continue;
             if (distance >= bestDistance) continue;
             bestDistance = distance;
             target = prop;
@@ -279,20 +280,40 @@ public sealed class BreakableProp : MonoBehaviour, ISupplyPropTarget
         return target != null;
     }
 
-    /// <summary>屏幕落点到本道具的世界距离（把落点投影到与本道具同深的平面上算，分辨率无关）。</summary>
+    /// <summary>点中判定的中心：有 Sprite 时用**包围盒中心**，否则用 transform。
+    /// 锚点常在脚底，用 transform 当中心会让上半部分点不中（2026-11-25 用户实测）。</summary>
+    private Vector3 HitCenter =>
+        (spriteRenderer != null && spriteRenderer.sprite != null)
+            ? spriteRenderer.bounds.center
+            : transform.position;
+
+    /// <summary>有效命中半径：配置值作为最小值，Sprite 包围盒半径作为实际覆盖。</summary>
+    private float EffectiveHitRadius
+    {
+        get
+        {
+            float radius = Mathf.Max(0.01f, hitRadius);
+            if (spriteRenderer != null && spriteRenderer.sprite != null)
+                radius = Mathf.Max(radius, spriteRenderer.bounds.extents.magnitude);
+            return radius;
+        }
+    }
+
+    /// <summary>屏幕落点到本道具命中中心的世界距离（投影到同深平面，分辨率无关）。</summary>
     private bool TryGetScreenHitDistance(Camera cam, Vector2 screenPos, out float distance)
     {
         distance = 0f;
+        Vector3 center = HitCenter;
         Vector3 camPos = cam.transform.position;
         Vector3 forward = cam.transform.forward;
-        float depth = Vector3.Dot(transform.position - camPos, forward);
+        float depth = Vector3.Dot(center - camPos, forward);
         if (depth <= 0.01f) return false;
         Ray ray = cam.ScreenPointToRay(screenPos);
         float forwardDot = Vector3.Dot(ray.direction, forward);
         if (Mathf.Abs(forwardDot) < 0.0001f) return false;
         float t = depth / forwardDot;
         if (t <= 0f) return false;
-        distance = Vector3.Distance(camPos + ray.direction * t, transform.position);
+        distance = Vector3.Distance(camPos + ray.direction * t, center);
         return true;
     }
 

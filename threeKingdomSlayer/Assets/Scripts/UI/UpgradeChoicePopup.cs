@@ -157,7 +157,15 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView, IUpgradeCho
     private void OnCardTapped(UpgradeCard card)
     {
         if (card == null) return;
-        if (IsShowing) return;   // 正在等下方旧装备：不再接受新卡点击
+        // 2026-11-25：等待下方旧装备时，仍可点其他候选卡切换；只收掉旧卡高亮。
+        if (_cards != null)
+        {
+            for (int i = 0; i < _cards.Length; i++)
+            {
+                var other = _cards[i];
+                if (other != null && other != card) other.SetSelected(false);
+            }
+        }
         UpgradeChoiceManager.Instance?.ConfirmChoice(card.Definition);
     }
 
@@ -167,7 +175,8 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView, IUpgradeCho
     public bool IsShowing => _replaceList != null;
 
     /// <summary>在候选卡下方展示同类别已装备名单（只展示、不推进队列）。</summary>
-    public void ShowReplaceTargets(UpgradeDefinition newVariant, List<EquippedItem> equipped, Action<UpgradeDefinition> onPicked)
+    public void ShowReplaceTargets(UpgradeDefinition newVariant, List<EquippedItem> equipped,
+        Action<UpgradeDefinition> onPicked, Action onSkip = null)
     {
         HideReplaceTargets();
 
@@ -180,17 +189,8 @@ public class UpgradeChoicePopup : MonoBehaviour, IUpgradeChoiceView, IUpgradeCho
         }
 
         var font = titleText != null ? titleText.font : TMP_Settings.defaultFontAsset;
-        _replaceList = EquipmentReplaceListView.Create(parent, font, newVariant, equipped, onPicked);
-
-        // 名单开着时，上方卡片不再可点（选新装备那一步已经完成）
-        if (_cards != null)
-        {
-            for (int i = 0; i < _cards.Length; i++)
-            {
-                var card = _cards[i];
-                if (card != null && card.gameObject.activeSelf) card.SetSelectable(false);
-            }
-        }
+        _replaceList = EquipmentReplaceListView.Create(parent, font, newVariant, equipped, onPicked, onSkip);
+        // 卡片保持可点：玩家可以随时切换上方的新装备候选。
     }
 
     /// <summary>收起名单（替换成功 / 本次奖励结束时调用）。</summary>
